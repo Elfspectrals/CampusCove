@@ -1,0 +1,60 @@
+# Logs
+*.log
+logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.idea
+.fleet
+.nova
+.vscode/*
+!.vscode/extensions.json
+.zed
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Env
+.env
+.env.backup
+.env.production
+.env.*
+!.env.example
+
+# --- Backend (Laravel) ---
+backend/vendor
+backend/node_modules
+backend/public/build
+backend/public/hot
+backend/public/storage
+backend/storage/*.key
+backend/storage/pail
+backend/storage/logs/*
+backend/storage/framework/cache/*
+backend/storage/framework/sessions/*
+backend/storage/framework/views/*
+backend/.phpunit.result.cache
+backend/.phpunit.cache
+backend/auth.json
+backend/Homestead.json
+backend/Homestead.yaml
+backend/.phpactor.json
+
+# --- Front (Vue/Vite) ---
+front/node_modules
+front/dist
+front/dist-ssr
+front/*.local
+
+# --- Socket (Node) ---
+socket/node_modules

@@ -1,0 +1,74 @@
+services:
+  socket:
+    build:
+      context: ./socket
+      dockerfile: Dockerfile
+    container_name: campuscove-socket
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: 3000
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: campuscove-db
+    environment:
+      POSTGRES_DB: campus_cove
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: secret
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d campus_cove"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: campuscove-backend
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_URL: http://localhost:8000
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: campus_cove
+      DB_USERNAME: postgres
+      DB_PASSWORD: secret
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./backend:/var/www/html
+      - backend_vendor:/var/www/html/vendor
+    command: sh -c "composer install --no-interaction && php artisan key:generate --force && php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=8000"
+
+  front:
+    build:
+      context: ./front
+      dockerfile: Dockerfile
+    container_name: campuscove-front
+    environment:
+      VITE_API_URL: http://localhost:8000/api
+      VITE_SOCKET_URL: http://localhost:3000
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./front:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+      - socket
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+
+volumes:
+  postgres_data:
+  backend_vendor:
