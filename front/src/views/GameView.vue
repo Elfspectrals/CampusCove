@@ -71,11 +71,11 @@ function initThree() {
 function connectSocket() {
   const auth = getStoredAuth()
   if (!auth) {
-    router.push({ name: 'login' })
+    router.push({ name: 'landing' })
     return
   }
   socket = io(socketUrl, {
-    auth: { userId: auth.user.id, pseudo: auth.user.pseudo },
+    auth: { userId: auth.user.account_id, pseudo: auth.user.display_name || auth.user.username },
     transports: ['websocket', 'polling'],
   })
   socket.on('me', (data: { socketId: string; x: number; y: number; z: number }) => {
@@ -226,7 +226,7 @@ function animate() {
 function logout() {
   clearAuth()
   socket?.disconnect()
-  router.push({ name: 'login' })
+  router.push({ name: 'landing' })
 }
 
 onMounted(() => {
