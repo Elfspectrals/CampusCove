@@ -1,50 +1,38 @@
-# CampusCove
+# CampusCove — local installation
 
-A Habbo hotel–like virtual campus for students, built with Vue 3 (TypeScript), Laravel, PostgreSQL, and Three.js.
+This document describes how to install and run the project on your machine. It does not cover features or architecture.
 
-## Stack
+## Prerequisites
 
-- **front**: Vue 3 + TypeScript + Vite + Tailwind CSS + Three.js + Socket.io client
-- **backend**: Laravel 12 API (Sanctum auth)
-- **socket**: Node.js Socket.io server (multi-user positions)
-- **database**: PostgreSQL 16
+- **Docker** (recommended): Docker Engine and Docker Compose, or
+- **Without Docker**: Node.js (LTS), PHP 8.2+ with extensions Laravel needs, [Composer](https://getcomposer.org/), and PostgreSQL 16 (or compatible).
 
-## Quick start (Docker)
+---
 
-From the project root:
+## Option A — Docker (simplest)
+
+From the repository root:
 
 ```bash
 docker compose up --build
 ```
 
-- **Frontend**: http://localhost:5173 (login/register → 3D FPS game)
-- **Backend API**: http://localhost:8000  
-- **API health**: http://localhost:8000/api/health  
+- **Frontend**: http://localhost:5173  
+- **Backend API**: http://localhost:8000 (health: http://localhost:8000/api/health)  
 - **Socket.io**: http://localhost:3000  
-- **PostgreSQL**: `localhost:5432` (user: `postgres`, password: `secret`, database: `campus_cove`)
+- **PostgreSQL**: `localhost:5432` — database `campus_cove`, user `postgres`, password `secret`
 
-> **Si vous voyez « Ce site est inaccessible » / ERR_CONNECTION_REFUSED sur localhost:8000**  
-> Le backend Laravel n’est pas démarré. Démarrez-le (voir [Sans Docker](#local-development-without-docker) ci‑dessous) ou lancez tout avec `docker compose up`.
+The compose file runs `composer install` and migrations in the backend container and `npm install` in the frontend container. Named volumes keep `vendor` and `node_modules` inside Docker so host folders stay clean; see **Cleaning dependencies** below.
 
-### Proof of concept
+---
 
-- **Auth**: Register/Login with email, pseudo, password (Laravel + Sanctum).
-- **3D world**: FPS view with ZQSD / WASD movement, mouse look (click to lock pointer).
-- **Multi-user**: Each connected user is a colored sphere; positions sync via Socket.io.
+## Option B — Without Docker
 
-Backend runs migrations on first start. To run them again:
+Run services in this order: **database → backend → socket → frontend**.
 
-```bash
-docker compose exec backend php artisan migrate
-```
+### 1. PostgreSQL
 
-## Local development (without Docker)
-
-**Ordre à respecter :** 1) Base de données (PostgreSQL ou SQLite) → 2) Backend (port 8000) → 3) Socket (port 3000) → 4) Front (port 5173). Si le front affiche « connexion refusée », c’est que le backend n’est pas lancé.
-
-### PostgreSQL
-
-Create a database `campus_cove` and set in `backend/.env`:
+Create a database named `campus_cove`. In `backend/.env` (copy from `backend/.env.example`), set:
 
 ```env
 DB_CONNECTION=pgsql
@@ -52,10 +40,12 @@ DB_HOST=127.0.0.1
 DB_PORT=5432
 DB_DATABASE=campus_cove
 DB_USERNAME=postgres
-DB_PASSWORD=secret
+DB_PASSWORD=<your-password>
 ```
 
-### Backend (obligatoire pour l’API)
+Adjust `APP_URL` if needed (e.g. `http://localhost:8000`).
+
+### 2. Backend (Laravel)
 
 ```bash
 cd backend
@@ -66,17 +56,9 @@ php artisan migrate
 php artisan serve
 ```
 
-Laissez cette fenêtre ouverte. Quand vous voyez « Server running on [http://127.0.0.1:8000] », testez : http://localhost:8000/api/health
+Leave this process running (default: http://127.0.0.1:8000).
 
-### Frontend
-
-```bash
-cd front
-npm install
-npm run dev
-```
-
-### Socket (for multi-user 3D)
+### 3. Socket server (Node)
 
 ```bash
 cd socket
@@ -84,20 +66,30 @@ npm install
 npm start
 ```
 
-## Project structure
+Runs on port **3000** by default (see `socket/server.js` if you change it).
 
+### 4. Frontend (Vue + Vite)
+
+```bash
+cd front
+npm install
+npm run dev
 ```
-CampusCove/
-├── front/          # Vue 3 + TypeScript + Vite + Three.js
-├── backend/        # Laravel API (auth, users)
-├── socket/        # Socket.io server (positions, colors)
-├── docker-compose.yml
-└── README.md
-```
 
-## Next steps (Habbo-like features)
+Default dev server: **5173**. The Vite config proxies `/api` to `http://localhost:8000`; Socket defaults to `http://localhost:3000`. Override with `VITE_API_URL` / `VITE_SOCKET_URL` only if your URLs differ.
 
-- **Rooms** and **furniture** (API + 3D assets)
-- **Chat** and interactions between students
-- **Avatars** instead of spheres
-- **Inventory** and items
+---
+
+## Cleaning dependencies (project hygiene goal)
+
+The goal is to keep installs **explicit and reproducible** so every Node app has its own correct `node_modules`, and the PHP app has `vendor/` from Composer—no mixed or stale trees.
+
+| Location    | Install command   | What to reset if something is broken        |
+|------------|-------------------|---------------------------------------------|
+| `front/`   | `npm install`     | Delete `front/node_modules` and reinstall   |
+| `socket/`  | `npm install`     | Delete `socket/node_modules` and reinstall  |
+| `backend/` | `composer install`| Delete `backend/vendor` and run Composer again |
+
+There is no root `package.json`; install **per folder** (`front`, `socket`). With Docker, rely on the compose-managed volumes for `node_modules`/`vendor` unless you intentionally develop with bind mounts and local installs.
+
+After pulling changes, run `npm install` / `composer install` again in the folders that changed.

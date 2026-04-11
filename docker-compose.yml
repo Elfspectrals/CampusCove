@@ -63,12 +63,14 @@ services:
       - "5173:5173"
     volumes:
       - ./front:/app
-      - /app/node_modules
+      - front_node_modules:/app/node_modules
     depends_on:
       - backend
       - socket
     command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
 
+# Named volumes persist across `docker compose down` (avoid `docker compose down -v` or data is removed)
 volumes:
-  postgres_data:
-  backend_vendor:
+  postgres_data:      # DB data – survives down/up
+  backend_vendor:     # Composer packages – survives down/up
+  front_node_modules: # npm packages – survives down/up
