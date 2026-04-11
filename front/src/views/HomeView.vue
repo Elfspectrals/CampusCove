@@ -1,19 +1,29 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
-import { getStoredAuth, clearAuth } from '../api/auth'
+import { getStoredAuth } from '../api/auth'
+import { useWalletBalances } from '../composables/useWalletBalances'
 import * as friendsApi from '../api/friends'
 import type { Friend } from '../api/friends'
 
 const router = useRouter()
-const menuOpen = ref(false)
 const activeTab = ref<'about' | 'inventory' | 'achievements'>('about')
 const friendsPanelOpen = ref(false)
 
 const auth = computed(() => getStoredAuth())
+const wallet = useWalletBalances()
+const coinsDisplay = computed(() =>
+  wallet.value.coins === null ? '—' : wallet.value.coins.toLocaleString()
+)
+const premiumDisplay = computed(() =>
+  wallet.value.premium === null ? '—' : wallet.value.premium.toLocaleString()
+)
 const displayName = computed(() => auth.value?.user?.display_name || auth.value?.user?.username || 'Player')
 const email = computed(() => auth.value?.user?.email ?? '')
-const initial = computed(() => (displayName.value ? displayName.value[0].toUpperCase() : 'P'))
+const initial = computed(() => {
+  const n = displayName.value
+  return n.length > 0 ? n.charAt(0).toUpperCase() : 'P'
+})
 
 const friends = ref<Friend[]>([])
 const friendsLoading = ref(false)
@@ -36,17 +46,8 @@ async function loadFriends() {
   }
 }
 
-async function removeFriend(accountId: number) {
-  try {
-    await friendsApi.removeFriend(accountId)
-    await loadFriends()
-  } catch {
-    // ignore
-  }
-}
-
 function friendInitial(name: string): string {
-  return name ? name[0].toUpperCase() : '?'
+  return name.length > 0 ? name.charAt(0).toUpperCase() : '?'
 }
 
 function statusDotClass(status: string): string {
@@ -65,21 +66,11 @@ function launchGame() {
   router.push({ name: 'game' })
 }
 
-function logout() {
-  clearAuth()
-  router.push({ name: 'landing' })
-}
-
-function closeMenu() {
-  menuOpen.value = false
-}
-
 function openChat(friend: Friend) {
   // TODO: Implement chat functionality
   console.log('Open chat with', friend.display_name)
 }
 
-const coins = 5000
 const memberSince = 'February 2026'
 const lastOnline = 'Just now'
 const stats = computed(() => ({
@@ -99,70 +90,8 @@ const recentItems = [
 </script>
 
 <template>
-  <div class="min-h-screen flex bg-slate-100">
-    <!-- Sidebar (Figma 25-161: FRIENDS section + menu) -->
-    <aside
-      :class="[
-        'fixed inset-y-0 left-0 z-40 w-64 bg-[#191C28] text-white transform transition-transform duration-200 ease-out md:translate-x-0 flex flex-col',
-        menuOpen ? 'translate-x-0' : '-translate-x-full',
-      ]"
-    >
-      <div class="flex items-center justify-between px-4 py-4 border-b border-white/10 shrink-0">
-        <span class="font-bold text-sm tracking-wider">MENU</span>
-        <button type="button" class="p-2 hover:bg-white/10 rounded-lg md:hidden" aria-label="Close menu" @click="closeMenu">
-          <span class="text-lg">×</span>
-        </button>
-      </div>
-      <nav class="p-3 space-y-1 shrink-0">
-        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-white/90 hover:bg-white/10">🛒 Item Shop</a>
-        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-white/90 hover:bg-white/10">⭐ Featured</a>
-        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-white/90 hover:bg-white/10">🏠 Furniture</a>
-        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-white/90 hover:bg-white/10">📦 Bundles</a>
-        <RouterLink to="/friends" class="flex items-center gap-3 px-3 py-2 rounded-lg text-white/90 hover:bg-white/10" @click="closeMenu">
-          👥 Friends
-        </RouterLink>
-        <div class="flex items-center gap-3 px-3 py-2 rounded-lg bg-amber-500 text-slate-900 font-semibold">
-          👤 Profile
-        </div>
-        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-white/90 hover:bg-white/10">🏆 Achievements</a>
-        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-white/90 hover:bg-white/10">⚙️ Settings</a>
-      </nav>
-
-      <div class="flex-1 shrink-0" />
-
-      <div class="p-3 border-t border-white/10 shrink-0">
-        <button
-          type="button"
-          class="flex items-center gap-3 px-3 py-2 rounded-lg text-red-400 hover:bg-red-500/20 w-full text-left"
-          @click="logout"
-        >
-          🚪 Logout
-        </button>
-      </div>
-    </aside>
-
-    <div v-if="menuOpen" class="fixed inset-0 z-30 bg-black/50 md:hidden" aria-hidden="true" @click="closeMenu" />
-
-    <div class="flex-1 flex flex-col min-h-screen md:ml-64 relative">
-      <header class="flex items-center justify-between px-4 py-3 bg-slate-800 text-white border-b border-white/10">
-        <button
-          type="button"
-          class="p-2 rounded-lg hover:bg-white/10 md:hidden"
-          aria-label="Open menu"
-          @click="menuOpen = true"
-        >
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </button>
-        <h1 class="text-lg font-bold text-white ml-2 md:ml-0">CampusCove</h1>
-        <div class="flex items-center gap-2 rounded-lg bg-amber-500 px-3 py-2 text-slate-900 font-semibold text-sm">
-          <span>🪙</span>
-          <span>{{ coins }}</span>
-        </div>
-      </header>
-
-      <main class="flex-1 p-4 md:p-6 overflow-auto" :class="{ 'mr-80': friendsPanelOpen }">
+  <div class="relative">
+      <main class="overflow-auto p-4 md:p-6" :class="{ 'mr-80': friendsPanelOpen }">
         <div class="rounded-2xl bg-slate-800 text-white p-6 mb-6 flex flex-col md:flex-row md:items-center gap-6">
           <div class="flex items-center gap-4 flex-1">
             <div class="w-20 h-20 rounded-full bg-gradient-to-br from-purple-500 to-fuchsia-500 flex items-center justify-center text-3xl font-bold text-white shrink-0">
@@ -179,13 +108,6 @@ const recentItems = [
               </div>
             </div>
           </div>
-          <button
-            type="button"
-            class="flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 text-white font-bold text-sm hover:bg-red-500 shrink-0"
-            @click="logout"
-          >
-            <span>→</span> LOGOUT
-          </button>
           <div class="flex border-b border-white/20 -mb-2 md:border-0 md:mb-0 flex gap-1">
             <button
               type="button"
@@ -234,7 +156,11 @@ const recentItems = [
               </div>
               <div>
                 <p class="m-0 text-white/50 text-xs uppercase tracking-wide">COINS</p>
-                <p class="m-0 font-semibold text-white flex items-center gap-2">🪙 {{ coins }}</p>
+                <p class="m-0 font-semibold text-white flex items-center gap-2">🪙 {{ coinsDisplay }}</p>
+              </div>
+              <div>
+                <p class="m-0 text-white/50 text-xs uppercase tracking-wide">PREMIUM</p>
+                <p class="m-0 font-semibold text-white flex items-center gap-2">✨ {{ premiumDisplay }}</p>
               </div>
             </div>
           </div>
@@ -259,9 +185,12 @@ const recentItems = [
           <div class="rounded-2xl bg-slate-800 text-white p-5">
             <h3 class="m-0 mb-4 font-bold text-sm tracking-wider">QUICK ACTIONS</h3>
             <div class="space-y-2">
-              <button type="button" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium">
+              <RouterLink
+                to="/item-shop"
+                class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium"
+              >
                 🛒 Visit Shop
-              </button>
+              </RouterLink>
               <RouterLink to="/friends" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium">
                 👥 View Friends
               </RouterLink>
@@ -292,7 +221,7 @@ const recentItems = [
       <!-- Collapsible Friends Panel (Right Side) -->
       <aside
         :class="[
-          'fixed top-0 right-0 bottom-0 z-30 w-80 bg-slate-800 text-white border-l border-white/10 transform transition-transform duration-300 ease-out flex flex-col',
+          'fixed right-0 top-14 bottom-0 z-30 w-80 border-l border-white/10 bg-slate-800 text-white transition-transform duration-300 ease-out flex flex-col transform',
           friendsPanelOpen ? 'translate-x-0' : 'translate-x-full',
         ]"
       >
@@ -381,6 +310,5 @@ const recentItems = [
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>
-    </div>
   </div>
 </template>

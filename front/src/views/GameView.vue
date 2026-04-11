@@ -6,7 +6,16 @@ import { io } from 'socket.io-client'
 import { getStoredAuth, clearAuth } from '../api/auth'
 
 const router = useRouter()
+const containerRef = ref<HTMLElement | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
+
+function containerSize(): { w: number; h: number } {
+  const el = containerRef.value
+  if (el && el.clientWidth > 0 && el.clientHeight > 0) {
+    return { w: el.clientWidth, h: el.clientHeight }
+  }
+  return { w: window.innerWidth, h: window.innerHeight }
+}
 const socketUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000'
 
 let scene: THREE.Scene
@@ -38,12 +47,13 @@ function initThree() {
   scene.background = new THREE.Color(0x1a1a2e)
   scene.fog = new THREE.Fog(0x1a1a2e, 10, 50)
 
-  const aspect = window.innerWidth / window.innerHeight
+  const { w, h } = containerSize()
+  const aspect = w / h
   camera = new THREE.PerspectiveCamera(75, aspect, 0.1, 1000)
   camera.position.set(0, 1.6, 0)
 
   renderer = new THREE.WebGLRenderer({ canvas: canvasRef.value, antialias: true })
-  renderer.setSize(window.innerWidth, window.innerHeight)
+  renderer.setSize(w, h)
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
   renderer.shadowMap.enabled = true
   renderer.shadowMap.type = THREE.PCFSoftShadowMap
@@ -130,9 +140,10 @@ function requestPointerLock() {
 
 function onResize() {
   if (!camera || !renderer) return
-  camera.aspect = window.innerWidth / window.innerHeight
+  const { w, h } = containerSize()
+  camera.aspect = w / h
   camera.updateProjectionMatrix()
-  renderer.setSize(window.innerWidth, window.innerHeight)
+  renderer.setSize(w, h)
 }
 
 function onKeyDown(e: KeyboardEvent) {
@@ -253,8 +264,8 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="relative h-screen w-screen overflow-hidden">
-    <canvas ref="canvasRef" class="block h-full w-full cursor-crosshair" @click="requestPointerLock" />
+  <div ref="containerRef" class="relative flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden">
+    <canvas ref="canvasRef" class="block min-h-0 w-full flex-1 cursor-crosshair" @click="requestPointerLock" />
     <div
       v-show="!pointerLocked"
       class="pointer-events-auto absolute inset-0 flex flex-col items-center justify-center gap-4 bg-black/60"

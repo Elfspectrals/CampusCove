@@ -25,8 +25,8 @@ async function submit() {
 </script>
 
 <template>
-  <div class="min-h-screen flex items-center justify-center px-4 py-8 bg-gradient-to-r from-purple-600 via-fuchsia-500 to-orange-500">
-    <div class="w-full max-w-[420px] rounded-2xl bg-white shadow-xl p-8">
+  <div class="flex min-h-[calc(100dvh-8rem)] items-center justify-center px-4 py-10">
+    <div class="w-full max-w-[420px] rounded-2xl border border-slate-200 bg-white p-8 shadow-lg">
       <router-link
         :to="{ name: 'landing' }"
         class="inline-flex items-center gap-1 text-gray-700 hover:text-gray-900 text-sm font-medium mb-6"

@@ -1,10 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
 import * as friendsApi from '../api/friends'
 import type { Friend, PendingFriend } from '../api/friends'
 
-const router = useRouter()
 const friends = ref<Friend[]>([])
 const pending = ref<PendingFriend[]>([])
 const friendsLoading = ref(false)
@@ -116,7 +114,7 @@ async function removeFriend(accountId: number) {
 }
 
 function friendInitial(name: string): string {
-  return name ? name[0].toUpperCase() : '?'
+  return name.length > 0 ? name.charAt(0).toUpperCase() : '?'
 }
 
 function statusDotClass(status: string): string {
@@ -131,31 +129,10 @@ function statusLabel(status: string): string {
   return 'Offline'
 }
 
-function goBack() {
-  router.push({ name: 'home' })
-}
 </script>
 
 <template>
-  <div class="min-h-screen bg-slate-100">
-    <!-- Header -->
-    <header class="bg-slate-800 text-white border-b border-white/10 px-4 py-3">
-      <div class="flex items-center gap-4 max-w-6xl mx-auto">
-        <button
-          type="button"
-          class="p-2 rounded-lg hover:bg-white/10"
-          aria-label="Go back"
-          @click="goBack"
-        >
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
-        <h1 class="text-xl font-bold">Friends</h1>
-      </div>
-    </header>
-
-    <main class="max-w-6xl mx-auto p-4 md:p-6">
+  <div class="mx-auto max-w-6xl">
       <!-- Add friend: username + handle (same as on HomeView profile) -->
       <div class="bg-white rounded-2xl p-6 mb-6 shadow-sm">
         <h2 class="text-lg font-bold text-slate-800 mb-4">Add Friend</h2>
@@ -347,6 +324,5 @@ function goBack() {
           </div>
         </template>
       </div>
-    </main>
   </div>
 </template>

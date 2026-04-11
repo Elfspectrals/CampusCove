@@ -13,7 +13,7 @@ return new class extends Migration
     public function up(): void
     {
         $path = database_path('schema/campus_cove_schema.sql');
-        if (!File::exists($path)) {
+        if (! File::exists($path)) {
             throw new \RuntimeException("Schema file not found: {$path}");
         }
         $sql = File::get($path);
@@ -50,6 +50,8 @@ return new class extends Migration
             'buildings',
             'inventory_stacks',
             'item_instances',
+            'account_shop_purchases',
+            'shop_catalog_items',
             'item_defs',
             'gift_inboxes',
             'character_inventories',
