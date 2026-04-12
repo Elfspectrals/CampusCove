@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue'
-import * as adminShopApi from '../api/adminShop'
+import * as adminShopApi from '../../api/adminShop'
 import type {
   AdminShopCatalogRow,
   AdminShopItemCreateBody,
   AdminShopListParams,
   ShopCurrency,
-} from '../api/adminShop'
+} from '../../api/adminShop'
 const items = ref<AdminShopCatalogRow[]>([])
 const listLoading = ref(true)
 const listError = ref<string | null>(null)

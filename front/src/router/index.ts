@@ -1,15 +1,15 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { getStoredAuth, isAdminUser, validateStoredAuth } from '../api/auth'
-import AdminShopView from '../views/AdminShopView.vue'
-import ForgotPasswordView from '../views/ForgotPasswordView.vue'
+import AdminShopView from '../views/admin/AdminShopView.vue'
+import ForgotPasswordView from '../views/auth/ForgotPasswordView.vue'
 import FriendsView from '../views/FriendsView.vue'
 import GameView from '../views/GameView.vue'
 import HomeView from '../views/HomeView.vue'
 import InventoryView from '../views/InventoryView.vue'
 import ItemShopView from '../views/ItemShopView.vue'
 import LandingView from '../views/LandingView.vue'
-import LoginView from '../views/LoginView.vue'
-import RegisterView from '../views/RegisterView.vue'
+import LoginView from '../views/auth/LoginView.vue'
+import RegisterView from '../views/auth/RegisterView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
