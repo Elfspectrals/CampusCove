@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Account;
 use App\Models\AccountAuthLocal;
 use App\Models\AccountHandle;
+use App\Services\WalletSummaryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -14,6 +15,11 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
+    public function __construct(
+        private readonly WalletSummaryService $walletSummary,
+    ) {
+    }
+
     public function register(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -119,6 +125,8 @@ class AuthController extends Controller
     {
         $handle = $account->relationLoaded('handle') ? $account->handle : $account->handle()->first();
         $displayName = $handle ? $handle->display_name : '';
+        $roleNames = $account->roles()->pluck('roles.name')->values()->all();
+        $isAdmin = in_array('admin', $roleNames, true);
 
         return [
             'account_id' => $account->account_id,
@@ -127,6 +135,9 @@ class AuthController extends Controller
             'tag' => $handle?->tag ?? 0,
             'display_name' => $displayName,
             'email' => $account->relationLoaded('localAuth') ? $account->localAuth?->email : $account->localAuth()->value('email'),
+            'roles' => $roleNames,
+            'is_admin' => $isAdmin,
+            'wallet_summary' => $this->walletSummary->forAccountId((int) $account->account_id),
         ];
     }
 }

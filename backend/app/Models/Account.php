@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Laravel\Sanctum\HasApiTokens;
 
@@ -39,6 +40,12 @@ class Account extends Model implements AuthenticatableContract
     public function localAuth(): HasOne
     {
         return $this->hasOne(AccountAuthLocal::class, 'account_id', 'account_id');
+    }
+
+    public function roles(): BelongsToMany
+    {
+        return $this->belongsToMany(Role::class, 'account_roles', 'account_id', 'role_id')
+            ->withTimestamps(false);
     }
 
     // AuthenticatableContract

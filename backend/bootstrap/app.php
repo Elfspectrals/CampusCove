@@ -1,5 +1,7 @@
 <?php
 
+use App\Exceptions\ShopPurchaseRejectedException;
+use App\Http\Middleware\EnsureAccountIsAdmin;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -17,8 +19,21 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->api(prepend: [
             HandleCors::class,
         ]);
+        $middleware->alias([
+            'admin' => EnsureAccountIsAdmin::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->renderable(function (ShopPurchaseRejectedException $e, \Illuminate\Http\Request $request) {
+            if ($request->is('api/*')) {
+                return response()->json([
+                    'message' => $e->getMessage(),
+                    'code' => $e->errorCode,
+                ], $e->httpStatus);
+            }
+
+            return null;
+        });
         $exceptions->respond(function (Response $response): Response {
             if (request()->is('api/*') && request()->header('Origin')) {
                 $origin = request()->header('Origin');
@@ -30,6 +45,7 @@ return Application::configure(basePath: dirname(__DIR__))
                     $response->headers->set('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');
                 }
             }
+
             return $response;
         });
     })->create();
