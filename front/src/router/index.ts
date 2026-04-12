@@ -5,6 +5,7 @@ import ForgotPasswordView from '../views/ForgotPasswordView.vue'
 import FriendsView from '../views/FriendsView.vue'
 import GameView from '../views/GameView.vue'
 import HomeView from '../views/HomeView.vue'
+import InventoryView from '../views/InventoryView.vue'
 import ItemShopView from '../views/ItemShopView.vue'
 import LandingView from '../views/LandingView.vue'
 import LoginView from '../views/LoginView.vue'
@@ -24,6 +25,7 @@ const router = createRouter({
     },
     { path: '/item-shop', name: 'item-shop', component: ItemShopView, meta: { title: 'Item Shop' } },
     { path: '/home', name: 'home', component: HomeView, meta: { requiresAuth: true, title: 'Profile' } },
+    { path: '/inventory', name: 'inventory', component: InventoryView, meta: { requiresAuth: true, title: 'Inventory' } },
     { path: '/friends', name: 'friends', component: FriendsView, meta: { requiresAuth: true, title: 'Friends' } },
     { path: '/game', name: 'game', component: GameView, meta: { requiresAuth: true, title: 'Game', fullBleed: true } },
     { path: '/admin/shop', name: 'admin-shop', component: AdminShopView, meta: { requiresAdmin: true, title: 'Admin — Shop' } },

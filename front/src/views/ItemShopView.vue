@@ -106,9 +106,21 @@ async function confirmPurchase() {
 
 <template>
   <div class="flex min-h-0 flex-col">
-    <p class="m-0 mb-6 text-slate-600">
-      Browse cosmetics and gear for your campus. Prices are in coins or premium.
-    </p>
+    <div class="mb-6 text-slate-600">
+      <p class="m-0">
+        Browse cosmetics and gear for your campus. Prices are in coins or premium.
+      </p>
+      <p v-if="isLoggedIn" class="m-0 mt-2 text-sm text-slate-500">
+        After you buy, items appear in your
+        <RouterLink
+          to="/inventory"
+          class="font-semibold text-purple-700 underline decoration-purple-300 underline-offset-2 hover:text-purple-600"
+        >
+          Inventory
+        </RouterLink>
+        .
+      </p>
+    </div>
 
     <div
       v-if="!isLoggedIn"
@@ -192,7 +204,18 @@ async function confirmPurchase() {
           ]"
           role="status"
         >
-          {{ feedbackByItem[item.shop_catalog_item_id]?.text }}
+          <p class="m-0">{{ feedbackByItem[item.shop_catalog_item_id]?.text }}</p>
+          <p
+            v-if="feedbackByItem[item.shop_catalog_item_id]?.kind === 'success'"
+            class="m-0 mt-2 text-xs font-medium text-emerald-800/90"
+          >
+            <RouterLink
+              to="/inventory"
+              class="underline decoration-emerald-600/60 underline-offset-2 hover:text-emerald-950"
+            >
+              View in Inventory
+            </RouterLink>
+          </p>
         </div>
 
         <div class="mt-auto">

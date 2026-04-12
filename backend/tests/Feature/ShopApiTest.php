@@ -68,7 +68,7 @@ class ShopApiTest extends TestCase
         $catalog = DB::table('shop_catalog_items')->where('currency', 'coins')->first();
         $this->assertNotNull($catalog);
 
-        $token = $this->registerAndCreditWallet(10_000, 'coins');
+        $token = $this->registerAndCreditWallet(10_000, 'coins')['token'];
 
         $response = $this->postJson('/api/shop/purchase', [
             'shop_item_public_id' => $catalog->public_id,
@@ -84,10 +84,67 @@ class ShopApiTest extends TestCase
         $this->assertSame(10_000 - (int) $catalog->price, $response->json('purchase.balance_after'));
     }
 
+    public function test_purchase_increases_stackable_inventory_stacks(): void
+    {
+        $catalog = DB::table('shop_catalog_items')
+            ->join('item_defs', 'item_defs.item_def_id', '=', 'shop_catalog_items.item_def_id')
+            ->where('item_defs.code', 'lamp_study')
+            ->select('shop_catalog_items.*', 'item_defs.item_def_id')
+            ->first();
+        $this->assertNotNull($catalog);
+
+        ['token' => $token, 'account_id' => $accountId] = $this->registerAndCreditWallet(10_000, 'coins');
+
+        $this->postJson('/api/shop/purchase', [
+            'shop_item_public_id' => $catalog->public_id,
+            'quantity' => 2,
+        ], [
+            'Authorization' => 'Bearer '.$token,
+        ])->assertOk();
+
+        $containerId = DB::table('gift_inboxes')->where('account_id', $accountId)->value('container_id');
+        $this->assertNotNull($containerId);
+
+        $qty = (int) DB::table('inventory_stacks')
+            ->where('container_id', $containerId)
+            ->where('item_def_id', $catalog->item_def_id)
+            ->value('quantity');
+        $this->assertSame(2, $qty);
+    }
+
+    public function test_purchase_non_stackable_creates_item_instances(): void
+    {
+        $catalog = DB::table('shop_catalog_items')
+            ->join('item_defs', 'item_defs.item_def_id', '=', 'shop_catalog_items.item_def_id')
+            ->where('item_defs.code', 'chair_campus_basic')
+            ->select('shop_catalog_items.*', 'item_defs.item_def_id')
+            ->first();
+        $this->assertNotNull($catalog);
+
+        ['token' => $token, 'account_id' => $accountId] = $this->registerAndCreditWallet(10_000, 'coins');
+
+        $this->postJson('/api/shop/purchase', [
+            'shop_item_public_id' => $catalog->public_id,
+            'quantity' => 1,
+        ], [
+            'Authorization' => 'Bearer '.$token,
+        ])->assertOk();
+
+        $containerId = DB::table('gift_inboxes')->where('account_id', $accountId)->value('container_id');
+        $this->assertNotNull($containerId);
+
+        $count = (int) DB::table('item_instances')
+            ->where('container_id', $containerId)
+            ->where('item_def_id', $catalog->item_def_id)
+            ->where('owner_account_id', $accountId)
+            ->count();
+        $this->assertSame(1, $count);
+    }
+
     public function test_purchase_fails_when_insufficient_funds(): void
     {
         $catalog = DB::table('shop_catalog_items')->where('currency', 'coins')->first();
-        $token = $this->registerAndCreditWallet(1, 'coins');
+        $token = $this->registerAndCreditWallet(1, 'coins')['token'];
 
         $this->postJson('/api/shop/purchase', [
             'shop_item_public_id' => $catalog->public_id,
@@ -101,7 +158,7 @@ class ShopApiTest extends TestCase
 
     public function test_purchase_fails_for_unknown_public_id(): void
     {
-        $token = $this->registerAndCreditWallet(5000, 'coins');
+        $token = $this->registerAndCreditWallet(5000, 'coins')['token'];
 
         $this->postJson('/api/shop/purchase', [
             'shop_item_public_id' => '00000000-0000-4000-8000-000000000001',
@@ -120,7 +177,7 @@ class ShopApiTest extends TestCase
             ->where('shop_catalog_item_id', $row->shop_catalog_item_id)
             ->update(['is_active' => false, 'updated_at' => now()]);
 
-        $token = $this->registerAndCreditWallet(10_000, 'coins');
+        $token = $this->registerAndCreditWallet(10_000, 'coins')['token'];
 
         $this->postJson('/api/shop/purchase', [
             'shop_item_public_id' => $row->public_id,
@@ -140,7 +197,7 @@ class ShopApiTest extends TestCase
             ->first();
         $this->assertNotNull($row);
 
-        $token = $this->registerAndCreditWallet(50_000, 'coins');
+        $token = $this->registerAndCreditWallet(50_000, 'coins')['token'];
 
         $this->postJson('/api/shop/purchase', [
             'shop_item_public_id' => $row->public_id,
@@ -171,8 +228,8 @@ class ShopApiTest extends TestCase
             ->where('shop_catalog_item_id', $row->shop_catalog_item_id)
             ->update(['stock_remaining' => 1, 'updated_at' => now()]);
 
-        $tokenA = $this->registerAndCreditWallet(50_000, 'coins');
-        $tokenB = $this->registerAndCreditWallet(50_000, 'coins');
+        $tokenA = $this->registerAndCreditWallet(50_000, 'coins')['token'];
+        $tokenB = $this->registerAndCreditWallet(50_000, 'coins')['token'];
 
         $this->postJson('/api/shop/purchase', [
             'shop_item_public_id' => $row->public_id,
@@ -191,7 +248,10 @@ class ShopApiTest extends TestCase
             ->assertJsonPath('code', 'item_unavailable');
     }
 
-    private function registerAndCreditWallet(int $coins, string $currency): string
+    /**
+     * @return array{token: string, account_id: int}
+     */
+    private function registerAndCreditWallet(int $coins, string $currency): array
     {
         $email = 'u'.uniqid('', true).'@test.com';
         $username = 'u'.substr(str_replace('.', '', uniqid('', true)), 0, 10);
@@ -203,7 +263,7 @@ class ShopApiTest extends TestCase
             'password_confirmation' => 'password1x',
         ]);
         $reg->assertCreated();
-        $accountId = $reg->json('user.account_id');
+        $accountId = (int) $reg->json('user.account_id');
         $token = $reg->json('token');
 
         $walletId = (int) DB::table('wallets')->insertGetId([
@@ -221,6 +281,6 @@ class ShopApiTest extends TestCase
             'created_at' => now(),
         ]);
 
-        return $token;
+        return ['token' => $token, 'account_id' => $accountId];
     }
 }

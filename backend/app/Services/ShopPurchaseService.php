@@ -14,6 +14,10 @@ use Illuminate\Support\Facades\DB;
 
 final class ShopPurchaseService
 {
+    public function __construct(
+        private readonly AccountInventoryService $accountInventoryService,
+    ) {}
+
     public function purchaseByCatalogPublicId(Account $account, string $shopItemPublicId, int $quantity): ShopPurchaseResult
     {
         if ($quantity < 1) {
@@ -124,6 +128,8 @@ final class ShopPurchaseService
                     throw new ShopPurchaseRejectedException('item_unavailable', 'This item is out of stock.', 422);
                 }
             }
+
+            $this->accountInventoryService->grantPurchasedItems((int) $accountId, $itemDef, $quantity);
 
             $balanceAfter = $this->walletBalance((int) $wallet->wallet_id);
 

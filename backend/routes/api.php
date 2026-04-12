@@ -3,6 +3,7 @@
 use App\Http\Controllers\AdminShopItemController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\FriendController;
+use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ShopController;
 use Illuminate\Support\Facades\Route;
 
@@ -28,6 +29,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/friends/{accountId}', [FriendController::class, 'destroy']);
 
     Route::post('/shop/purchase', [ShopController::class, 'purchase']);
+    Route::get('/inventory', [InventoryController::class, 'index']);
 
     Route::middleware('admin')->prefix('admin/shop')->group(function () {
         Route::get('/items', [AdminShopItemController::class, 'index']);

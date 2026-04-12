@@ -147,6 +147,16 @@ const navLink = (active: boolean) =>
 
         <RouterLink
           v-if="isLoggedIn"
+          :to="{ name: 'inventory' }"
+          :class="navLink(route.name === 'inventory')"
+          @click="closeSidebar"
+        >
+          <span aria-hidden="true">🎒</span>
+          Inventory
+        </RouterLink>
+
+        <RouterLink
+          v-if="isLoggedIn"
           :to="{ name: 'friends' }"
           :class="navLink(route.name === 'friends')"
           @click="closeSidebar"
@@ -262,6 +272,12 @@ const navLink = (active: boolean) =>
             <p class="truncate text-xs text-white/55">{{ userSubtitle }}</p>
           </div>
 
+          <RouterLink
+            :to="{ name: 'inventory' }"
+            class="hidden rounded-lg px-2 py-1.5 text-xs font-medium text-white/80 hover:bg-white/10 hover:text-white lg:inline"
+          >
+            Inventory
+          </RouterLink>
           <RouterLink
             :to="{ name: 'friends' }"
             class="hidden rounded-lg px-2 py-1.5 text-xs font-medium text-white/80 hover:bg-white/10 hover:text-white xl:inline"
