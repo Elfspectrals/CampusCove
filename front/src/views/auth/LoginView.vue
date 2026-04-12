@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import * as authApi from '../api/auth'
+import * as authApi from '../../api/auth'
 
 const router = useRouter()
 const email = ref('')
