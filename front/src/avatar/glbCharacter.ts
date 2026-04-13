@@ -7,7 +7,7 @@ let templateRoot: THREE.Group | null = null
 let loadFailed = false
 
 /**
- * Loads `low_poly_character.glb` once, centers and scales to ~1.75m tall (feet at y=0).
+ * Loads `assets/models/low_poly_character.glb` once, centers and scales to ~1.75m tall (feet at y=0).
  */
 export async function loadCharacterTemplate(): Promise<THREE.Group | null> {
   if (loadFailed) return null
@@ -15,7 +15,7 @@ export async function loadCharacterTemplate(): Promise<THREE.Group | null> {
 
   try {
     const loader = new GLTFLoader()
-    const url = new URL('../low_poly_character.glb', import.meta.url).href
+    const url = new URL('../assets/models/low_poly_character.glb', import.meta.url).href
     const gltf = await loader.loadAsync(url)
     const root = gltf.scene as THREE.Group
     normalizeCharacterScale(root)

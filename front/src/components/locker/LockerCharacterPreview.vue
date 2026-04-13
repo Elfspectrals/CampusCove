@@ -7,12 +7,8 @@ import { getPreviewCharacterAssetById } from '../../avatar/previewCharacterAsset
 
 const props = withDefaults(defineProps<{
   assetId?: string
-  assetSrc?: string
-  modelFileName?: string
 }>(), {
   assetId: '',
-  assetSrc: '',
-  modelFileName: '',
 })
 
 const containerRef = ref<HTMLElement | null>(null)
@@ -41,9 +37,7 @@ let loadVersion = 0
 const loader = new GLTFLoader()
 const modelCache = new Map<string, THREE.Group>()
 const selectedAssetSource = computed<string | null>(() => {
-  if (props.assetSrc) return props.assetSrc
   if (props.assetId) return getPreviewCharacterAssetById(props.assetId)?.src ?? null
-  if (props.modelFileName) return new URL(`../../${props.modelFileName}`, import.meta.url).href
   return null
 })
 
@@ -359,7 +353,7 @@ onMounted(() => {
 })
 
 watch(
-  () => [props.assetId, props.assetSrc, props.modelFileName],
+  () => props.assetId,
   () => {
     if (!avatarPivot) return
     void loadPreviewModel()

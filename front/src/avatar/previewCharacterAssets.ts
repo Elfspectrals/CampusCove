@@ -10,19 +10,19 @@ export const PREVIEW_CHARACTER_ASSETS: PreviewCharacterAsset[] = [
     id: 'campus-body',
     label: 'Campus Body',
     fileName: 'low_poly_character.glb',
-    src: new URL('../low_poly_character.glb', import.meta.url).href,
+    src: new URL('../assets/models/low_poly_character.glb', import.meta.url).href,
   },
   {
     id: 'adventurer',
     label: 'Adventurer',
     fileName: 'low_poly_adventurer.glb',
-    src: new URL('../low_poly_adventurer.glb', import.meta.url).href,
+    src: new URL('../assets/models/low_poly_adventurer.glb', import.meta.url).href,
   },
   {
     id: 'swordsman',
     label: 'Swordsman',
     fileName: 'low_poly_character_swordsman.glb',
-    src: new URL('../low_poly_character_swordsman.glb', import.meta.url).href,
+    src: new URL('../assets/models/low_poly_character_swordsman.glb', import.meta.url).href,
   },
 ]
 

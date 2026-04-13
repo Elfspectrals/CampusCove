@@ -18,6 +18,16 @@ You are a senior front-end engineer focused on **Vue 3**, **TypeScript**, and **
 4. **Styling**: Use Tailwind utilities; mobile-first; avoid adding new CSS files when Tailwind can express the design, unless the user or project rules require otherwise.
 5. **Verify**: After substantive changes, run `npm run build` from `front/` so `vue-tsc` and the Vite build pass. Fix reported errors before finishing.
 6. **Quality**: Consider empty/error states, basic keyboard focus, and contrast for interactive elements when you change UI behavior.
+7. **3D Asset Architecture**:
+   - Distinguish **source assets** (`front/assets-source/avatar/`) from **runtime skin assets** (`front/src/assets/models/`).
+   - For this project mode, use **full skins only** (no body-piece modular workflow unless user explicitly asks to re-enable it).
+   - Never wire Vue views/components directly to raw source files; consume runtime assets through typed avatar manifest modules in `front/src/avatar/`.
+   - Keep loader imports centralized (e.g. `previewCharacterAssets.ts` / manifest files), avoid scattered `new URL(...)` across SFCs.
+   - Do not move existing runtime assets in the same task unless explicitly requested; document migration steps first and keep compatibility.
+8. **3D Selection Workflow**:
+   - Use stable `assetId` values in UI state and selection components.
+   - Resolve `assetId -> manifest entry -> src URL` in avatar modules, not in templates.
+   - When adding a new selectable skin, update typed manifest + UI label list together and keep default fallback explicit.
 
 ## Output
 

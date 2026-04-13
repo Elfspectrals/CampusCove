@@ -1,15 +1,14 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import { RouterLink } from 'vue-router'
-import * as inventoryApi from '../api/inventory'
-import type { AccountInventoryRow, InventoryKindFilter } from '../api/inventory'
-import { emptyCosmeticLoadout, fetchCharacterCosmetics, putCharacterCosmetics } from '../api/characterCosmetics'
-import type { CosmeticLoadout, CosmeticSlot } from '../api/characterCosmetics'
+import type { AccountInventoryRow } from '../api/inventory'
+import type { CosmeticSlot } from '../api/characterCosmetics'
 import LockerCategoryTabs from '../components/locker/LockerCategoryTabs.vue'
 import LockerCharacterPreview from '../components/locker/LockerCharacterPreview.vue'
-import LockerModularCharacterPreview from '../components/locker/LockerModularCharacterPreview.vue'
 import LockerItemCard from '../components/locker/LockerItemCard.vue'
 import LockerStatChip from '../components/locker/LockerStatChip.vue'
+import { useLockerInventory } from '../composables/useLockerInventory'
+import { useCosmeticEquip } from '../composables/useCosmeticEquip'
 import {
   DEFAULT_PREVIEW_CHARACTER_ASSET_ID,
   PREVIEW_CHARACTER_ASSETS,
@@ -38,96 +37,28 @@ const categories: LockerCategory[] = [
 ]
 
 const selectedCategory = ref<string>('outfit')
-const items = ref<AccountInventoryRow[]>([])
-const loading = ref<boolean>(true)
-const loadError = ref<string | null>(null)
-const cosmeticLoadout = ref<CosmeticLoadout>(emptyCosmeticLoadout())
-const loadoutError = ref<string | null>(null)
-const equipMessage = ref<string | null>(null)
-const equipError = ref<string | null>(null)
-const equippingId = ref<number | null>(null)
-
-const kindFilter = ref<InventoryKindFilter>('cosmetic')
-const searchInput = ref<string>('')
-const debouncedQ = ref<string>('')
+const {
+  items,
+  loading,
+  loadError,
+  kindFilter,
+  searchInput,
+  debouncedQ,
+} = useLockerInventory()
+const {
+  loadoutError,
+  equipMessage,
+  equipError,
+  equippingId,
+  slotDisplayName,
+  canEquipCosmetic,
+  isEquipped,
+  equipCosmetic,
+} = useCosmeticEquip()
 
 const fpsStat = ref<string>('120 FPS')
 const pingStat = ref<string>('35 MS')
-const useModularPreview = ref<boolean>(false)
 const selectedPreviewAssetId = ref<PreviewCharacterAsset['id']>(DEFAULT_PREVIEW_CHARACTER_ASSET_ID)
-
-let debounceTimer: ReturnType<typeof setTimeout> | null = null
-
-watch(searchInput, (value) => {
-  if (debounceTimer !== null) clearTimeout(debounceTimer)
-  debounceTimer = setTimeout(() => {
-    debouncedQ.value = value.trim()
-    debounceTimer = null
-  }, 350)
-})
-
-watch([kindFilter, debouncedQ], () => {
-  void loadInventory()
-}, { immediate: true })
-
-onMounted(() => {
-  void refreshCosmeticLoadout()
-})
-
-async function refreshCosmeticLoadout(): Promise<void> {
-  loadoutError.value = null
-  try {
-    const state = await fetchCharacterCosmetics()
-    cosmeticLoadout.value = state.slots
-  } catch (error: unknown) {
-    loadoutError.value = error instanceof Error ? error.message : 'Could not load outfit'
-    cosmeticLoadout.value = emptyCosmeticLoadout()
-  }
-}
-
-async function loadInventory(): Promise<void> {
-  loading.value = true
-  loadError.value = null
-  try {
-    const res = await inventoryApi.fetchAccountInventory({
-      kind: kindFilter.value,
-      q: debouncedQ.value === '' ? undefined : debouncedQ.value,
-    })
-    items.value = res.items
-  } catch (error: unknown) {
-    loadError.value = error instanceof Error ? error.message : 'Could not load inventory'
-    items.value = []
-  } finally {
-    loading.value = false
-  }
-}
-
-function slotDisplayName(slot: CosmeticSlot): string {
-  const labels: Record<CosmeticSlot, string> = {
-    body: 'Outfit',
-    hair: 'Hair',
-    top: 'Top',
-    bottom: 'Bottom',
-    shoes: 'Shoes',
-    head_accessory: 'Back Bling',
-  }
-  return labels[slot]
-}
-
-const SLOT_SET: Record<CosmeticSlot, true> = {
-  body: true,
-  hair: true,
-  top: true,
-  bottom: true,
-  shoes: true,
-  head_accessory: true,
-}
-
-function canEquipCosmetic(row: AccountInventoryRow): boolean {
-  if (row.item.kind !== 'cosmetic') return false
-  const slot = row.item.cosmetic_slot
-  return typeof slot === 'string' && slot in SLOT_SET
-}
 
 const cosmeticItems = computed<AccountInventoryRow[]>(() => items.value.filter((row) => canEquipCosmetic(row)))
 
@@ -155,35 +86,6 @@ const activeFilterCount = computed<number>(() => {
   return count
 })
 
-function isEquipped(row: AccountInventoryRow | undefined): boolean {
-  if (!row || !canEquipCosmetic(row)) return false
-  const slot = row.item.cosmetic_slot as CosmeticSlot
-  return cosmeticLoadout.value[slot]?.item_def_id === row.item.item_def_id
-}
-
-async function equipCosmetic(row: AccountInventoryRow | undefined): Promise<void> {
-  if (!row || !canEquipCosmetic(row)) return
-  const slot = row.item.cosmetic_slot
-  if (!slot || !(slot in SLOT_SET)) return
-  const cosmeticSlot = slot as CosmeticSlot
-  equipMessage.value = null
-  equipError.value = null
-  equippingId.value = row.id
-  try {
-    const state = await putCharacterCosmetics({ slots: { [cosmeticSlot]: row.item.item_def_id } })
-    cosmeticLoadout.value = state.slots
-    equipMessage.value = `Equipped ${row.item.name}.`
-  } catch (error: unknown) {
-    equipError.value = error instanceof Error ? error.message : 'Could not equip item'
-  } finally {
-    equippingId.value = null
-  }
-}
-
-function togglePreviewMode(): void {
-  useModularPreview.value = !useModularPreview.value
-}
-
 function selectPreviewAsset(assetId: PreviewCharacterAsset['id']): void {
   selectedPreviewAssetId.value = assetId
 }
@@ -200,20 +102,12 @@ function selectPreviewAsset(assetId: PreviewCharacterAsset['id']): void {
         </div>
 
         <div class="flex flex-1">
-          <LockerModularCharacterPreview v-if="useModularPreview" />
-          <LockerCharacterPreview v-else :asset-id="selectedPreviewAssetId" />
+          <LockerCharacterPreview :asset-id="selectedPreviewAssetId" />
         </div>
 
         <div class="mt-4 flex items-center gap-3 self-start">
           <LockerStatChip label="FPS" :value="fpsStat" tone="success" />
           <LockerStatChip label="PING" :value="pingStat" tone="warning" />
-          <button
-            type="button"
-            class="rounded-md border border-cyan-300/45 bg-cyan-500/15 px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-cyan-100 transition duration-150 hover:bg-cyan-500/25"
-            @click="togglePreviewMode"
-          >
-            {{ useModularPreview ? 'Use Standard Preview' : 'Use Modular POC' }}
-          </button>
         </div>
       </section>
 
@@ -258,7 +152,7 @@ function selectPreviewAsset(assetId: PreviewCharacterAsset['id']): void {
 
           <div class="mb-4">
             <p class="mb-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-300">
-              Preview Character
+              Available Skins
             </p>
             <div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
               <button
