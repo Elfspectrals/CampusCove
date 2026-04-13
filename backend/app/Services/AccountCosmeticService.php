@@ -86,7 +86,14 @@ final class AccountCosmeticService
     }
 
     /**
-     * @return array<string, array{item_def_id: int, code: string, name: string, cosmetic_slot: string|null}|null>
+     * @return array<string, array{
+     *   item_def_id: int,
+     *   code: string,
+     *   name: string,
+     *   cosmetic_slot: string|null,
+     *   preview_image: string|null,
+     *   model_glb: string|null
+     * }|null>
      */
     public function getLoadout(int $accountId): array
     {
@@ -104,6 +111,8 @@ final class AccountCosmeticService
                 'd.code',
                 'd.name',
                 'd.cosmetic_slot',
+                'd.preview_image',
+                'd.model_glb',
             ])
             ->get();
 
@@ -117,6 +126,8 @@ final class AccountCosmeticService
                 'code' => (string) $row->code,
                 'name' => (string) $row->name,
                 'cosmetic_slot' => $row->cosmetic_slot !== null ? (string) $row->cosmetic_slot : null,
+                'preview_image' => $row->preview_image !== null ? (string) $row->preview_image : null,
+                'model_glb' => $row->model_glb !== null ? (string) $row->model_glb : null,
             ];
         }
 
@@ -127,7 +138,14 @@ final class AccountCosmeticService
      * Partial update: only keys present in $slots are applied. Use null to clear a slot.
      *
      * @param  array<string, int|null>  $slots
-     * @return array<string, array{item_def_id: int, code: string, name: string, cosmetic_slot: string|null}|null>
+     * @return array<string, array{
+     *   item_def_id: int,
+     *   code: string,
+     *   name: string,
+     *   cosmetic_slot: string|null,
+     *   preview_image: string|null,
+     *   model_glb: string|null
+     * }|null>
      */
     public function setLoadout(int $accountId, array $slots): array
     {
@@ -177,7 +195,14 @@ final class AccountCosmeticService
      * Equip one item per wearable slot using {@see StarterCosmeticGrantService::STARTER_CODES} (Campus default outfit).
      * Caller should ensure those item_defs exist and the account owns them (e.g. after grant).
      *
-     * @return array<string, array{item_def_id: int, code: string, name: string, cosmetic_slot: string|null}|null>
+     * @return array<string, array{
+     *   item_def_id: int,
+     *   code: string,
+     *   name: string,
+     *   cosmetic_slot: string|null,
+     *   preview_image: string|null,
+     *   model_glb: string|null
+     * }|null>
      */
     public function equipDefaultStarterLook(int $accountId): array
     {

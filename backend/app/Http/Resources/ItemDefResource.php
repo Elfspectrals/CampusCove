@@ -25,6 +25,9 @@ class ItemDefResource extends JsonResource
             'premium_only' => $this->premium_only,
             'bind' => $this->bind,
             'max_stack' => $this->max_stack,
+            'cosmetic_slot' => $this->cosmetic_slot,
+            'preview_image' => $this->preview_image,
+            'model_glb' => $this->model_glb,
         ];
     }
 }

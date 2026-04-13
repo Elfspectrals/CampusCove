@@ -95,6 +95,8 @@ class CharacterCosmeticApiTest extends TestCase
         $body = $res->json('slots.body');
         $this->assertIsArray($body);
         $this->assertSame('COS_WEAR_BODY_DEFAULT', $body['code']);
+        $this->assertArrayHasKey('preview_image', $body);
+        $this->assertArrayHasKey('model_glb', $body);
     }
 
     /**

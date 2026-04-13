@@ -64,6 +64,9 @@ class AdminShopItemController extends Controller
             'premium_only' => ['nullable', 'boolean'],
             'bind' => ['nullable', 'string', 'in:none,bind_on_equip,bind_on_place,bound'],
             'max_stack' => ['nullable', 'integer', 'min:1'],
+            'cosmetic_slot' => ['nullable', 'string', 'in:body,hair,top,bottom,shoes,head_accessory'],
+            'preview_image' => ['nullable', 'string', 'max:2048'],
+            'model_glb' => ['nullable', 'string', 'max:2048'],
             'prices' => ['required', 'array'],
             'prices.coins' => ['nullable', 'integer', 'min:1'],
             'prices.premium' => ['nullable', 'integer', 'min:1'],
@@ -91,6 +94,9 @@ class AdminShopItemController extends Controller
                 'premium_only' => $validated['premium_only'] ?? false,
                 'bind' => $validated['bind'] ?? 'none',
                 'max_stack' => $validated['max_stack'] ?? 1,
+                'cosmetic_slot' => $validated['cosmetic_slot'] ?? null,
+                'preview_image' => $validated['preview_image'] ?? null,
+                'model_glb' => $validated['model_glb'] ?? null,
             ]);
 
             $base = [
@@ -144,6 +150,9 @@ class AdminShopItemController extends Controller
             'premium_only' => ['sometimes', 'boolean'],
             'bind' => ['sometimes', 'string', 'in:none,bind_on_equip,bind_on_place,bound'],
             'max_stack' => ['sometimes', 'integer', 'min:1'],
+            'cosmetic_slot' => ['sometimes', 'nullable', 'string', 'in:body,hair,top,bottom,shoes,head_accessory'],
+            'preview_image' => ['sometimes', 'nullable', 'string', 'max:2048'],
+            'model_glb' => ['sometimes', 'nullable', 'string', 'max:2048'],
             'currency' => [
                 'sometimes',
                 'string',
@@ -162,7 +171,19 @@ class AdminShopItemController extends Controller
         DB::transaction(function () use ($validated, $shopCatalogItem) {
             $itemFields = array_intersect_key(
                 $validated,
-                array_flip(['code', 'name', 'kind', 'rarity', 'tradable', 'premium_only', 'bind', 'max_stack'])
+                array_flip([
+                    'code',
+                    'name',
+                    'kind',
+                    'rarity',
+                    'tradable',
+                    'premium_only',
+                    'bind',
+                    'max_stack',
+                    'cosmetic_slot',
+                    'preview_image',
+                    'model_glb',
+                ])
             );
             if ($itemFields !== []) {
                 ItemDef::query()

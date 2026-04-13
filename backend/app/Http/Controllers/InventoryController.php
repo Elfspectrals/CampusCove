@@ -40,6 +40,8 @@ class InventoryController extends Controller
                 'bind' => $row->bind,
                 'max_stack' => $row->max_stack,
                 'cosmetic_slot' => $row->cosmetic_slot ?? null,
+                'preview_image' => $row->preview_image ?? null,
+                'model_glb' => $row->model_glb ?? null,
                 'quantity' => $row->quantity,
             ])->values()->all(),
         ]);

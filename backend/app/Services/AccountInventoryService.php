@@ -63,6 +63,8 @@ final class AccountInventoryService
      *   bind: string,
      *   max_stack: int,
      *   cosmetic_slot: string|null,
+     *   preview_image: string|null,
+     *   model_glb: string|null,
      *   quantity: int
      * }>
      */
@@ -78,7 +80,7 @@ final class AccountInventoryService
         $stackRows = DB::table('inventory_stacks as s')
             ->join('item_defs as d', 'd.item_def_id', '=', 's.item_def_id')
             ->where('s.container_id', $containerId)
-            ->selectRaw('d.item_def_id, d.code, d.name, d.kind, d.rarity, d.tradable, d.premium_only, d.bind, d.max_stack, d.cosmetic_slot, s.quantity::int as quantity');
+            ->selectRaw('d.item_def_id, d.code, d.name, d.kind, d.rarity, d.tradable, d.premium_only, d.bind, d.max_stack, d.cosmetic_slot, d.preview_image, d.model_glb, s.quantity::int as quantity');
 
         $instanceRows = DB::table('item_instances as i')
             ->join('item_defs as d', 'd.item_def_id', '=', 'i.item_def_id')
@@ -95,8 +97,10 @@ final class AccountInventoryService
                 'd.bind',
                 'd.max_stack',
                 'd.cosmetic_slot',
+                'd.preview_image',
+                'd.model_glb',
             ])
-            ->selectRaw('d.item_def_id, d.code, d.name, d.kind, d.rarity, d.tradable, d.premium_only, d.bind, d.max_stack, d.cosmetic_slot, COUNT(*)::int as quantity');
+            ->selectRaw('d.item_def_id, d.code, d.name, d.kind, d.rarity, d.tradable, d.premium_only, d.bind, d.max_stack, d.cosmetic_slot, d.preview_image, d.model_glb, COUNT(*)::int as quantity');
 
         if ($kind !== null && $kind !== '') {
             $stackRows->where('d.kind', $kind);
@@ -141,6 +145,8 @@ final class AccountInventoryService
                     'bind' => $first->bind,
                     'max_stack' => $first->max_stack,
                     'cosmetic_slot' => $first->cosmetic_slot ?? null,
+                    'preview_image' => $first->preview_image ?? null,
+                    'model_glb' => $first->model_glb ?? null,
                     'quantity' => $qty,
                 ];
             })
@@ -160,6 +166,8 @@ final class AccountInventoryService
             'bind' => (string) $row->bind,
             'max_stack' => (int) $row->max_stack,
             'cosmetic_slot' => isset($row->cosmetic_slot) && $row->cosmetic_slot !== null ? (string) $row->cosmetic_slot : null,
+            'preview_image' => isset($row->preview_image) && $row->preview_image !== null ? (string) $row->preview_image : null,
+            'model_glb' => isset($row->model_glb) && $row->model_glb !== null ? (string) $row->model_glb : null,
             'quantity' => (int) $row->quantity,
         ];
     }

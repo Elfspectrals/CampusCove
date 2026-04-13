@@ -81,6 +81,8 @@ class AdminShopApiTest extends TestCase
             'name' => 'Admin Test Sofa',
             'kind' => 'furniture',
             'rarity' => 1,
+            'preview_image' => '/assets/skins/admin_test_sofa-preview.png',
+            'model_glb' => '/assets/skins/admin_test_sofa.glb',
             'prices' => [
                 'coins' => 99,
                 'premium' => 10,
@@ -95,6 +97,8 @@ class AdminShopApiTest extends TestCase
         $currencies = array_column($response->json('items'), 'currency');
         sort($currencies);
         $this->assertSame(['coins', 'premium'], $currencies);
+        $this->assertSame('/assets/skins/admin_test_sofa-preview.png', $response->json('items.0.item.preview_image'));
+        $this->assertSame('/assets/skins/admin_test_sofa.glb', $response->json('items.0.item.model_glb'));
 
         $this->assertDatabaseHas('item_defs', ['code' => 'admin_test_sofa']);
     }

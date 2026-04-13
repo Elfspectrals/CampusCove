@@ -13,6 +13,8 @@ import {
   DEFAULT_PREVIEW_CHARACTER_ASSET_ID,
   PREVIEW_CHARACTER_ASSETS,
   type PreviewCharacterAsset,
+  getPreviewImageByCosmetic,
+  resolvePreviewCharacterAssetIdFromCosmetic,
 } from '../avatar/previewCharacterAssets'
 
 interface LockerCategory {
@@ -20,20 +22,16 @@ interface LockerCategory {
   label: string
 }
 
-interface LockerGridEntry {
+interface LockerOwnedSkinEntry {
   key: string
-  row?: AccountInventoryRow
-  isEmpty: boolean
+  row: AccountInventoryRow
   isNew: boolean
+  previewImageSrc: string
+  fallbackImageUsed: boolean
 }
 
 const categories: LockerCategory[] = [
   { id: 'outfit', label: 'Outfit' },
-  { id: 'backbling', label: 'Back Bling' },
-  { id: 'pickaxe', label: 'Pickaxe' },
-  { id: 'glider', label: 'Glider' },
-  { id: 'emote', label: 'Emote' },
-  { id: 'wrap', label: 'Wrap' },
 ]
 
 const selectedCategory = ref<string>('outfit')
@@ -60,23 +58,22 @@ const fpsStat = ref<string>('120 FPS')
 const pingStat = ref<string>('35 MS')
 const selectedPreviewAssetId = ref<PreviewCharacterAsset['id']>(DEFAULT_PREVIEW_CHARACTER_ASSET_ID)
 
-const cosmeticItems = computed<AccountInventoryRow[]>(() => items.value.filter((row) => canEquipCosmetic(row)))
+const cosmeticItems = computed<AccountInventoryRow[]>(() =>
+  items.value.filter((row) => canEquipCosmetic(row) && row.item.cosmetic_slot === 'body'),
+)
 
-const gridItems = computed<LockerGridEntry[]>(() => {
-  const base = cosmeticItems.value.slice(0, 20).map((row) => ({
-    key: `item-${row.id}`,
-    row,
-    isEmpty: false,
-    isNew: row.quantity <= 1 || row.item.rarity >= 4,
-  }))
-  const placeholdersNeeded = Math.max(0, 20 - base.length)
-  const placeholders: LockerGridEntry[] = Array.from({ length: placeholdersNeeded }, (_, index) => ({
-    key: `empty-${index}`,
-    isEmpty: true,
-    isNew: false,
-  }))
-  return [...base, ...placeholders]
-})
+const gridItems = computed<LockerOwnedSkinEntry[]>(() =>
+  cosmeticItems.value.map((row) => {
+    const previewMeta = getPreviewImageByCosmetic(row.item.code, row.item.name)
+    return {
+      key: `item-${row.id}`,
+      row,
+      isNew: row.quantity <= 1 || row.item.rarity >= 4,
+      previewImageSrc: previewMeta.src,
+      fallbackImageUsed: previewMeta.fallbackUsed,
+    }
+  }),
+)
 
 const activeFilterCount = computed<number>(() => {
   let count = 0
@@ -88,6 +85,11 @@ const activeFilterCount = computed<number>(() => {
 
 function selectPreviewAsset(assetId: PreviewCharacterAsset['id']): void {
   selectedPreviewAssetId.value = assetId
+}
+
+async function equipSkinFromInventoryRow(row: AccountInventoryRow): Promise<void> {
+  selectPreviewAsset(resolvePreviewCharacterAssetIdFromCosmetic(row.item.code, row.item.name))
+  await equipCosmetic(row)
 }
 </script>
 
@@ -154,12 +156,12 @@ function selectPreviewAsset(assetId: PreviewCharacterAsset['id']): void {
             <p class="mb-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-300">
               Available Skins
             </p>
-            <div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <button
                 v-for="asset in PREVIEW_CHARACTER_ASSETS"
                 :key="asset.id"
                 type="button"
-                class="rounded-lg border px-3 py-2 text-left transition duration-150"
+                class="group overflow-hidden rounded-lg border text-left transition duration-150"
                 :class="
                   selectedPreviewAssetId === asset.id
                     ? 'border-cyan-300 bg-cyan-500/20 text-cyan-50 shadow-[0_0_14px_rgba(34,211,238,0.3)]'
@@ -167,8 +169,18 @@ function selectPreviewAsset(assetId: PreviewCharacterAsset['id']): void {
                 "
                 @click="selectPreviewAsset(asset.id)"
               >
-                <p class="text-xs font-bold uppercase tracking-[0.1em]">{{ asset.label }}</p>
-                <p class="mt-1 text-[11px] font-semibold text-slate-300">{{ asset.fileName }}</p>
+                <div class="aspect-square overflow-hidden">
+                  <img
+                    class="h-full w-full object-cover transition duration-200 group-hover:scale-[1.03]"
+                    :src="asset.previewImageSrc"
+                    :alt="`${asset.label} thumbnail`"
+                    loading="lazy"
+                  />
+                </div>
+                <div class="space-y-1 p-2.5">
+                  <p class="text-xs font-bold uppercase tracking-[0.1em]">{{ asset.label }}</p>
+                  <p class="text-[11px] font-semibold text-slate-300">{{ asset.fileName }}</p>
+                </div>
               </button>
             </div>
           </div>
@@ -185,25 +197,30 @@ function selectPreviewAsset(assetId: PreviewCharacterAsset['id']): void {
             <p class="text-[14px] font-semibold text-slate-200">Loading locker items...</p>
           </div>
 
+          <div v-else-if="gridItems.length === 0" class="rounded-md border border-dashed border-slate-500 bg-black/20 p-6 text-center">
+            <p class="text-[14px] font-semibold text-slate-200">No skins found in your inventory.</p>
+          </div>
+
           <div v-else class="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-5">
             <LockerItemCard
               v-for="entry in gridItems"
               :key="entry.key"
               :selected="isEquipped(entry.row)"
               :is-new="entry.isNew"
-              :is-empty="entry.isEmpty"
+              :is-empty="false"
               :busy="equippingId === entry.row?.id"
               :item="
-                entry.row
-                  ? {
-                      id: entry.row.id,
-                      name: entry.row.item.name,
-                      slot: slotDisplayName(entry.row.item.cosmetic_slot as CosmeticSlot),
-                      quantity: entry.row.quantity,
-                    }
-                  : undefined
+                {
+                  id: entry.row.id,
+                  name: entry.row.item.name,
+                  slot: slotDisplayName(entry.row.item.cosmetic_slot as CosmeticSlot),
+                  quantity: entry.row.quantity,
+                  previewImageSrc: entry.previewImageSrc,
+                  fallbackImageUsed: entry.fallbackImageUsed,
+                }
               "
-              @select="equipCosmetic(entry.row)"
+              @select="equipSkinFromInventoryRow(entry.row)"
+              @equip="equipSkinFromInventoryRow(entry.row)"
             />
           </div>
 

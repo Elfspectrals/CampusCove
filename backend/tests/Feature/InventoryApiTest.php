@@ -50,6 +50,8 @@ class InventoryApiTest extends TestCase
         $this->assertNotNull($chair);
         $this->assertSame(1, $chair['quantity']);
         $this->assertSame('furniture', $chair['kind']);
+        $this->assertArrayHasKey('preview_image', $chair);
+        $this->assertArrayHasKey('model_glb', $chair);
     }
 
     public function test_inventory_filters_by_kind(): void

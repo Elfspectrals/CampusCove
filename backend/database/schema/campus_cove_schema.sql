@@ -246,6 +246,8 @@ CREATE TABLE IF NOT EXISTS item_defs (
   bind            bind_rule NOT NULL DEFAULT 'none',
   max_stack       INT NOT NULL DEFAULT 1,
   cosmetic_slot   TEXT NULL,
+  preview_image   TEXT NULL,
+  model_glb       TEXT NULL,
   created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT ck_max_stack CHECK (max_stack >= 1),
   CONSTRAINT ck_item_defs_cosmetic_slot CHECK (
