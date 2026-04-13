@@ -12,6 +12,8 @@ final class StarterCosmeticGrantService
     /** @var list<string> */
     public const STARTER_CODES = [
         'COS_WEAR_BODY_DEFAULT',
+        'COS_WEAR_BODY_ADVENTURER',
+        'COS_WEAR_BODY_SWORDSMAN',
         'COS_WEAR_HAIR_DEFAULT',
         'COS_WEAR_TOP_DEFAULT',
         'COS_WEAR_BOTTOM_DEFAULT',

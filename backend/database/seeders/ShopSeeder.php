@@ -63,6 +63,32 @@ class ShopSeeder extends Seeder
                 'cosmetic_slot' => 'body',
             ],
             [
+                'code' => 'COS_WEAR_BODY_ADVENTURER',
+                'name' => 'Campus Adventurer',
+                'kind' => 'cosmetic',
+                'rarity' => 0,
+                'tradable' => false,
+                'premium_only' => false,
+                'bind' => 'bound',
+                'max_stack' => 99,
+                'cosmetic_slot' => 'body',
+                'preview_image' => '/assets/image/placeholderSkin.jpg',
+                'model_glb' => '/assets/models/low_poly_adventurer.glb',
+            ],
+            [
+                'code' => 'COS_WEAR_BODY_SWORDSMAN',
+                'name' => 'Campus Swordsman',
+                'kind' => 'cosmetic',
+                'rarity' => 0,
+                'tradable' => false,
+                'premium_only' => false,
+                'bind' => 'bound',
+                'max_stack' => 99,
+                'cosmetic_slot' => 'body',
+                'preview_image' => '/assets/image/placeholderSkin.jpg',
+                'model_glb' => '/assets/models/low_poly_character_swordsman.glb',
+            ],
+            [
                 'code' => 'COS_WEAR_HAIR_DEFAULT',
                 'name' => 'Campus Hair (default)',
                 'kind' => 'cosmetic',
@@ -124,8 +150,12 @@ class ShopSeeder extends Seeder
             $existing = DB::table('item_defs')->where('code', $def['code'])->value('item_def_id');
             if ($existing !== null) {
                 $itemDefIds[$def['code']] = (int) $existing;
-                if (array_key_exists('cosmetic_slot', $def)) {
-                    DB::table('item_defs')->where('code', $def['code'])->update(['cosmetic_slot' => $def['cosmetic_slot']]);
+                if (array_key_exists('cosmetic_slot', $def) || array_key_exists('preview_image', $def) || array_key_exists('model_glb', $def)) {
+                    DB::table('item_defs')->where('code', $def['code'])->update(array_filter([
+                        'cosmetic_slot' => $def['cosmetic_slot'] ?? null,
+                        'preview_image' => $def['preview_image'] ?? null,
+                        'model_glb' => $def['model_glb'] ?? null,
+                    ], static fn (mixed $value): bool => $value !== null));
                 }
 
                 continue;
@@ -144,6 +174,12 @@ class ShopSeeder extends Seeder
             ];
             if (array_key_exists('cosmetic_slot', $def)) {
                 $insert['cosmetic_slot'] = $def['cosmetic_slot'];
+            }
+            if (array_key_exists('preview_image', $def)) {
+                $insert['preview_image'] = $def['preview_image'];
+            }
+            if (array_key_exists('model_glb', $def)) {
+                $insert['model_glb'] = $def['model_glb'];
             }
 
             $itemDefIds[$def['code']] = (int) DB::table('item_defs')->insertGetId($insert, 'item_def_id');

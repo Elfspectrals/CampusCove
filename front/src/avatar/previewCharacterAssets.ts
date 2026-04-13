@@ -57,8 +57,10 @@ const PREVIEW_ASSET_BY_LOOKUP_TOKEN: Readonly<Record<string, PreviewCharacterAss
   campus_body: 'campus-body',
   campusbody: 'campus-body',
   low_poly_character: 'campus-body',
+  cos_wear_body_adventurer: 'adventurer',
   adventurer: 'adventurer',
   low_poly_adventurer: 'adventurer',
+  cos_wear_body_swordsman: 'swordsman',
   swordsman: 'swordsman',
   low_poly_character_swordsman: 'swordsman',
 }

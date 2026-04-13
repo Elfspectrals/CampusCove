@@ -4,12 +4,17 @@ namespace App\Http\Controllers;
 
 use App\Models\Account;
 use App\Services\AccountInventoryService;
+use App\Services\StarterCosmeticGrantService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class InventoryController extends Controller
 {
-    public function index(Request $request, AccountInventoryService $accountInventoryService): JsonResponse
+    public function index(
+        Request $request,
+        AccountInventoryService $accountInventoryService,
+        StarterCosmeticGrantService $starterCosmeticGrantService
+    ): JsonResponse
     {
         $validated = $request->validate([
             'kind' => 'nullable|string|in:furniture,cosmetic,consumable,misc',
@@ -19,6 +24,7 @@ class InventoryController extends Controller
         /** @var Account $account */
         $account = $request->user();
         $accountId = (int) $account->getAuthIdentifier();
+        $starterCosmeticGrantService->ensureStarterCosmeticsForAccount($accountId);
 
         $kind = $validated['kind'] ?? null;
         $q = $validated['q'] ?? null;
