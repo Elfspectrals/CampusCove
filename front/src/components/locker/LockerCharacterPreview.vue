@@ -57,6 +57,16 @@ function normalizeAndOrientModel(root: THREE.Object3D): void {
   const grounded = new THREE.Box3().setFromObject(root)
   root.position.y -= grounded.min.y
   root.updateMatrixWorld(true)
+
+  const centered = new THREE.Box3().setFromObject(root)
+  const centeredPoint = centered.getCenter(new THREE.Vector3())
+  root.position.x -= centeredPoint.x
+  root.position.z -= centeredPoint.z
+  root.updateMatrixWorld(true)
+
+  const finalGround = new THREE.Box3().setFromObject(root)
+  root.position.y -= finalGround.min.y
+  root.updateMatrixWorld(true)
 }
 
 function enhanceMaterialVisibility(root: THREE.Object3D): void {
@@ -99,8 +109,8 @@ function frameCameraToModel(): void {
   const fitWidth = (safeWidth * 1.24) / (2 * Math.tan(hFov / 2))
   const distance = Math.max(fitHeight, fitWidth) + safeDepth * 0.75
 
-  lookAtTarget = new THREE.Vector3(center.x, center.y + safeHeight * 0.06, center.z)
-  camera.position.set(center.x, center.y + safeHeight * 0.12, center.z + distance)
+  lookAtTarget = new THREE.Vector3(0, center.y + safeHeight * 0.06, 0)
+  camera.position.set(0, center.y + safeHeight * 0.12, distance)
   camera.near = Math.max(0.01, distance / 120)
   camera.far = Math.max(30, distance * 12)
   camera.updateProjectionMatrix()
@@ -191,7 +201,6 @@ function renderFrame(): void {
 
   currentRotationY += (targetRotationY - currentRotationY) * 0.14
   avatarPivot.rotation.y = currentRotationY
-  camera.lookAt(lookAtTarget)
 
   renderer.render(scene, camera)
 }
