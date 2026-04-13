@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Services\StarterCosmeticGrantService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -50,6 +51,72 @@ class ShopSeeder extends Seeder
                 'bind' => 'none',
                 'max_stack' => 1,
             ],
+            [
+                'code' => 'COS_WEAR_BODY_DEFAULT',
+                'name' => 'Campus Body (default)',
+                'kind' => 'cosmetic',
+                'rarity' => 0,
+                'tradable' => false,
+                'premium_only' => false,
+                'bind' => 'bound',
+                'max_stack' => 99,
+                'cosmetic_slot' => 'body',
+            ],
+            [
+                'code' => 'COS_WEAR_HAIR_DEFAULT',
+                'name' => 'Campus Hair (default)',
+                'kind' => 'cosmetic',
+                'rarity' => 0,
+                'tradable' => false,
+                'premium_only' => false,
+                'bind' => 'bound',
+                'max_stack' => 99,
+                'cosmetic_slot' => 'hair',
+            ],
+            [
+                'code' => 'COS_WEAR_TOP_DEFAULT',
+                'name' => 'Campus Hoodie',
+                'kind' => 'cosmetic',
+                'rarity' => 0,
+                'tradable' => false,
+                'premium_only' => false,
+                'bind' => 'bound',
+                'max_stack' => 99,
+                'cosmetic_slot' => 'top',
+            ],
+            [
+                'code' => 'COS_WEAR_BOTTOM_DEFAULT',
+                'name' => 'Campus Pants',
+                'kind' => 'cosmetic',
+                'rarity' => 0,
+                'tradable' => false,
+                'premium_only' => false,
+                'bind' => 'bound',
+                'max_stack' => 99,
+                'cosmetic_slot' => 'bottom',
+            ],
+            [
+                'code' => 'COS_WEAR_SHOES_DEFAULT',
+                'name' => 'Campus Sneakers',
+                'kind' => 'cosmetic',
+                'rarity' => 0,
+                'tradable' => false,
+                'premium_only' => false,
+                'bind' => 'bound',
+                'max_stack' => 99,
+                'cosmetic_slot' => 'shoes',
+            ],
+            [
+                'code' => 'COS_WEAR_HEAD_EMPTY',
+                'name' => 'No head accessory',
+                'kind' => 'cosmetic',
+                'rarity' => 0,
+                'tradable' => false,
+                'premium_only' => false,
+                'bind' => 'bound',
+                'max_stack' => 99,
+                'cosmetic_slot' => 'head_accessory',
+            ],
         ];
 
         $itemDefIds = [];
@@ -57,14 +124,29 @@ class ShopSeeder extends Seeder
             $existing = DB::table('item_defs')->where('code', $def['code'])->value('item_def_id');
             if ($existing !== null) {
                 $itemDefIds[$def['code']] = (int) $existing;
+                if (array_key_exists('cosmetic_slot', $def)) {
+                    DB::table('item_defs')->where('code', $def['code'])->update(['cosmetic_slot' => $def['cosmetic_slot']]);
+                }
 
                 continue;
             }
 
-            $itemDefIds[$def['code']] = (int) DB::table('item_defs')->insertGetId([
-                ...$def,
+            $insert = [
+                'code' => $def['code'],
+                'name' => $def['name'],
+                'kind' => $def['kind'],
+                'rarity' => $def['rarity'],
+                'tradable' => $def['tradable'],
+                'premium_only' => $def['premium_only'],
+                'bind' => $def['bind'],
+                'max_stack' => $def['max_stack'],
                 'created_at' => now(),
-            ], 'item_def_id');
+            ];
+            if (array_key_exists('cosmetic_slot', $def)) {
+                $insert['cosmetic_slot'] = $def['cosmetic_slot'];
+            }
+
+            $itemDefIds[$def['code']] = (int) DB::table('item_defs')->insertGetId($insert, 'item_def_id');
         }
 
         $catalogRows = [
@@ -125,6 +207,10 @@ class ShopSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
+        }
+
+        foreach (DB::table('gift_inboxes')->cursor() as $gi) {
+            app(StarterCosmeticGrantService::class)->ensureStarterCosmeticsForAccount((int) $gi->account_id);
         }
     }
 }

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdminShopItemController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CharacterCosmeticController;
 use App\Http\Controllers\FriendController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ShopController;
@@ -30,6 +31,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/shop/purchase', [ShopController::class, 'purchase']);
     Route::get('/inventory', [InventoryController::class, 'index']);
+
+    Route::get('/character/cosmetics', [CharacterCosmeticController::class, 'show']);
+    Route::put('/character/cosmetics', [CharacterCosmeticController::class, 'update']);
 
     Route::middleware('admin')->prefix('admin/shop')->group(function () {
         Route::get('/items', [AdminShopItemController::class, 'index']);

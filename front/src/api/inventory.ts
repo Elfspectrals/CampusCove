@@ -19,6 +19,8 @@ export interface InventoryItemDef {
   premium_only: boolean
   bind: string
   max_stack: number
+  /** Set for `kind === 'cosmetic'` wearables. */
+  cosmetic_slot?: string | null
 }
 
 export interface AccountInventoryRow {
@@ -57,7 +59,7 @@ function parseInventoryItemDef(row: unknown): InventoryItemDef | null {
   if (typeof row.premium_only !== 'boolean') return null
   if (typeof row.bind !== 'string') return null
   if (typeof row.max_stack !== 'number') return null
-  return {
+  const def: InventoryItemDef = {
     item_def_id: row.item_def_id,
     code: row.code,
     name: row.name,
@@ -68,6 +70,10 @@ function parseInventoryItemDef(row: unknown): InventoryItemDef | null {
     bind: row.bind,
     max_stack: row.max_stack,
   }
+  if (row.cosmetic_slot !== undefined && row.cosmetic_slot !== null && typeof row.cosmetic_slot === 'string') {
+    def.cosmetic_slot = row.cosmetic_slot
+  }
+  return def
 }
 
 function parseRowId(row: Record<string, unknown>, itemDefId: number): number {

@@ -20,7 +20,7 @@ class Account extends Model implements AuthenticatableContract
 
     const CREATED_AT = 'created_at';
 
-    protected $fillable = ['status'];
+    protected $fillable = ['status', 'cosmetic_colors'];
 
     protected $hidden = [];
 
@@ -29,6 +29,7 @@ class Account extends Model implements AuthenticatableContract
         return [
             'created_at' => 'datetime',
             'last_login_at' => 'datetime',
+            'cosmetic_colors' => 'array',
         ];
     }
 

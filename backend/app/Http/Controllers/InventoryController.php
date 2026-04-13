@@ -39,6 +39,7 @@ class InventoryController extends Controller
                 'premium_only' => $row->premium_only,
                 'bind' => $row->bind,
                 'max_stack' => $row->max_stack,
+                'cosmetic_slot' => $row->cosmetic_slot ?? null,
                 'quantity' => $row->quantity,
             ])->values()->all(),
         ]);

@@ -78,7 +78,8 @@ CREATE TABLE IF NOT EXISTS accounts (
   public_id      UUID NOT NULL DEFAULT gen_random_uuid(),
   status         account_status NOT NULL DEFAULT 'active',
   created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
-  last_login_at  TIMESTAMPTZ NULL
+  last_login_at  TIMESTAMPTZ NULL,
+  cosmetic_colors JSONB NULL
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS ux_accounts_public_id ON accounts(public_id);
@@ -244,11 +245,26 @@ CREATE TABLE IF NOT EXISTS item_defs (
   premium_only    BOOLEAN NOT NULL DEFAULT FALSE,
   bind            bind_rule NOT NULL DEFAULT 'none',
   max_stack       INT NOT NULL DEFAULT 1,
+  cosmetic_slot   TEXT NULL,
   created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
-  CONSTRAINT ck_max_stack CHECK (max_stack >= 1)
+  CONSTRAINT ck_max_stack CHECK (max_stack >= 1),
+  CONSTRAINT ck_item_defs_cosmetic_slot CHECK (
+    cosmetic_slot IS NULL OR cosmetic_slot IN ('body','hair','top','bottom','shoes','head_accessory')
+  )
 );
 
 CREATE INDEX IF NOT EXISTS ix_item_defs_kind ON item_defs(kind);
+
+CREATE TABLE IF NOT EXISTS account_cosmetic_equipment (
+  account_id   BIGINT NOT NULL REFERENCES accounts(account_id) ON DELETE CASCADE,
+  slot         TEXT NOT NULL,
+  item_def_id  BIGINT NOT NULL REFERENCES item_defs(item_def_id) ON DELETE RESTRICT,
+  updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (account_id, slot),
+  CONSTRAINT ck_account_cosmetic_slot CHECK (slot IN ('body','hair','top','bottom','shoes','head_accessory'))
+);
+
+CREATE INDEX IF NOT EXISTS ix_account_cosmetic_equipment_item ON account_cosmetic_equipment(item_def_id);
 
 CREATE TABLE IF NOT EXISTS item_instances (
   item_instance_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,

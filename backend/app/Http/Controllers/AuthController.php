@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Account;
 use App\Models\AccountAuthLocal;
 use App\Models\AccountHandle;
+use App\Services\StarterCosmeticGrantService;
 use App\Services\WalletSummaryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -59,6 +60,8 @@ class AuthController extends Controller
         $account = Account::whereHas('localAuth', fn ($q) => $q->where('email', $validated['email']))
             ->with('handle', 'localAuth')
             ->firstOrFail();
+
+        app(StarterCosmeticGrantService::class)->ensureStarterCosmeticsForAccount((int) $account->account_id);
 
         $account->update(['last_login_at' => now()]);
         $token = $account->createToken('auth')->plainTextToken;

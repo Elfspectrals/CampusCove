@@ -14,6 +14,31 @@ use Illuminate\Support\Facades\DB;
 
 final class AccountInventoryService
 {
+    public function accountHasPositiveQuantity(int $accountId, int $itemDefId): bool
+    {
+        $gift = GiftInbox::query()->where('account_id', $accountId)->first();
+        if ($gift === null) {
+            return false;
+        }
+        $containerId = (int) $gift->container_id;
+
+        $stackQty = (int) (DB::table('inventory_stacks')
+            ->where('container_id', $containerId)
+            ->where('item_def_id', $itemDefId)
+            ->value('quantity') ?? 0);
+        if ($stackQty > 0) {
+            return true;
+        }
+
+        $instanceCount = (int) DB::table('item_instances')
+            ->where('container_id', $containerId)
+            ->where('item_def_id', $itemDefId)
+            ->whereNotNull('owner_account_id')
+            ->count();
+
+        return $instanceCount > 0;
+    }
+
     public function grantPurchasedItems(int $accountId, ItemDef $itemDef, int $quantity): void
     {
         $containerId = $this->getOrCreateGiftInboxContainerId($accountId);
@@ -37,6 +62,7 @@ final class AccountInventoryService
      *   premium_only: bool,
      *   bind: string,
      *   max_stack: int,
+     *   cosmetic_slot: string|null,
      *   quantity: int
      * }>
      */
@@ -52,7 +78,7 @@ final class AccountInventoryService
         $stackRows = DB::table('inventory_stacks as s')
             ->join('item_defs as d', 'd.item_def_id', '=', 's.item_def_id')
             ->where('s.container_id', $containerId)
-            ->selectRaw('d.item_def_id, d.code, d.name, d.kind, d.rarity, d.tradable, d.premium_only, d.bind, d.max_stack, s.quantity::int as quantity');
+            ->selectRaw('d.item_def_id, d.code, d.name, d.kind, d.rarity, d.tradable, d.premium_only, d.bind, d.max_stack, d.cosmetic_slot, s.quantity::int as quantity');
 
         $instanceRows = DB::table('item_instances as i')
             ->join('item_defs as d', 'd.item_def_id', '=', 'i.item_def_id')
@@ -68,8 +94,9 @@ final class AccountInventoryService
                 'd.premium_only',
                 'd.bind',
                 'd.max_stack',
+                'd.cosmetic_slot',
             ])
-            ->selectRaw('d.item_def_id, d.code, d.name, d.kind, d.rarity, d.tradable, d.premium_only, d.bind, d.max_stack, COUNT(*)::int as quantity');
+            ->selectRaw('d.item_def_id, d.code, d.name, d.kind, d.rarity, d.tradable, d.premium_only, d.bind, d.max_stack, d.cosmetic_slot, COUNT(*)::int as quantity');
 
         if ($kind !== null && $kind !== '') {
             $stackRows->where('d.kind', $kind);
@@ -113,6 +140,7 @@ final class AccountInventoryService
                     'premium_only' => $first->premium_only,
                     'bind' => $first->bind,
                     'max_stack' => $first->max_stack,
+                    'cosmetic_slot' => $first->cosmetic_slot ?? null,
                     'quantity' => $qty,
                 ];
             })
@@ -131,6 +159,7 @@ final class AccountInventoryService
             'premium_only' => (bool) $row->premium_only,
             'bind' => (string) $row->bind,
             'max_stack' => (int) $row->max_stack,
+            'cosmetic_slot' => isset($row->cosmetic_slot) && $row->cosmetic_slot !== null ? (string) $row->cosmetic_slot : null,
             'quantity' => (int) $row->quantity,
         ];
     }
