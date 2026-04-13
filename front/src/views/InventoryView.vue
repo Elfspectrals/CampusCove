@@ -7,8 +7,14 @@ import { emptyCosmeticLoadout, fetchCharacterCosmetics, putCharacterCosmetics } 
 import type { CosmeticLoadout, CosmeticSlot } from '../api/characterCosmetics'
 import LockerCategoryTabs from '../components/locker/LockerCategoryTabs.vue'
 import LockerCharacterPreview from '../components/locker/LockerCharacterPreview.vue'
+import LockerModularCharacterPreview from '../components/locker/LockerModularCharacterPreview.vue'
 import LockerItemCard from '../components/locker/LockerItemCard.vue'
 import LockerStatChip from '../components/locker/LockerStatChip.vue'
+import {
+  DEFAULT_PREVIEW_CHARACTER_ASSET_ID,
+  PREVIEW_CHARACTER_ASSETS,
+  type PreviewCharacterAsset,
+} from '../avatar/previewCharacterAssets'
 
 interface LockerCategory {
   id: string
@@ -47,6 +53,8 @@ const debouncedQ = ref<string>('')
 
 const fpsStat = ref<string>('120 FPS')
 const pingStat = ref<string>('35 MS')
+const useModularPreview = ref<boolean>(false)
+const selectedPreviewAssetId = ref<PreviewCharacterAsset['id']>(DEFAULT_PREVIEW_CHARACTER_ASSET_ID)
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -171,6 +179,14 @@ async function equipCosmetic(row: AccountInventoryRow | undefined): Promise<void
     equippingId.value = null
   }
 }
+
+function togglePreviewMode(): void {
+  useModularPreview.value = !useModularPreview.value
+}
+
+function selectPreviewAsset(assetId: PreviewCharacterAsset['id']): void {
+  selectedPreviewAssetId.value = assetId
+}
 </script>
 
 <template>
@@ -184,12 +200,20 @@ async function equipCosmetic(row: AccountInventoryRow | undefined): Promise<void
         </div>
 
         <div class="flex flex-1">
-          <LockerCharacterPreview />
+          <LockerModularCharacterPreview v-if="useModularPreview" />
+          <LockerCharacterPreview v-else :asset-id="selectedPreviewAssetId" />
         </div>
 
         <div class="mt-4 flex items-center gap-3 self-start">
           <LockerStatChip label="FPS" :value="fpsStat" tone="success" />
           <LockerStatChip label="PING" :value="pingStat" tone="warning" />
+          <button
+            type="button"
+            class="rounded-md border border-cyan-300/45 bg-cyan-500/15 px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-cyan-100 transition duration-150 hover:bg-cyan-500/25"
+            @click="togglePreviewMode"
+          >
+            {{ useModularPreview ? 'Use Standard Preview' : 'Use Modular POC' }}
+          </button>
         </div>
       </section>
 
@@ -230,6 +254,29 @@ async function equipCosmetic(row: AccountInventoryRow | undefined): Promise<void
               Sort / Filter
               <span class="rounded-full bg-[#FFD700] px-2 text-xs font-bold text-black">{{ activeFilterCount }}</span>
             </button>
+          </div>
+
+          <div class="mb-4">
+            <p class="mb-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-300">
+              Preview Character
+            </p>
+            <div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
+              <button
+                v-for="asset in PREVIEW_CHARACTER_ASSETS"
+                :key="asset.id"
+                type="button"
+                class="rounded-lg border px-3 py-2 text-left transition duration-150"
+                :class="
+                  selectedPreviewAssetId === asset.id
+                    ? 'border-cyan-300 bg-cyan-500/20 text-cyan-50 shadow-[0_0_14px_rgba(34,211,238,0.3)]'
+                    : 'border-slate-500/80 bg-slate-900/40 text-slate-100 hover:border-cyan-300/60 hover:bg-cyan-500/10'
+                "
+                @click="selectPreviewAsset(asset.id)"
+              >
+                <p class="text-xs font-bold uppercase tracking-[0.1em]">{{ asset.label }}</p>
+                <p class="mt-1 text-[11px] font-semibold text-slate-300">{{ asset.fileName }}</p>
+              </button>
+            </div>
           </div>
 
           <div v-if="equipMessage" class="mb-3 rounded-md border border-emerald-300/30 bg-emerald-500/10 px-3 py-2 text-sm font-semibold text-emerald-100" role="status">
