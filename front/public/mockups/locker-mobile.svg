@@ -1,0 +1,49 @@
+<svg width="1080" height="1920" viewBox="0 0 1080 1920" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="mobileBg" x1="0" y1="0" x2="1080" y2="1920" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0A192F"/>
+      <stop offset="1" stop-color="#1A365D"/>
+    </linearGradient>
+  </defs>
+  <rect width="1080" height="1920" fill="url(#mobileBg)"/>
+  <text x="56" y="112" fill="white" font-size="32" font-family="Inter, Arial, sans-serif" font-weight="700">CHARACTER</text>
+  <rect x="48" y="144" width="984" height="570" rx="12" stroke="#64748B" stroke-opacity="0.7" stroke-width="2" stroke-dasharray="10 8" fill="#1E293B" fill-opacity="0.24"/>
+  <circle cx="540" cy="322" r="52" fill="#94A3B8" fill-opacity="0.36"/>
+  <rect x="488" y="382" width="104" height="210" rx="52" fill="#94A3B8" fill-opacity="0.4"/>
+  <path d="M458 636C458 566 496 512 540 512C584 512 622 566 622 636" fill="#94A3B8" fill-opacity="0.3"/>
+  <rect x="64" y="732" width="132" height="34" rx="6" fill="black" fill-opacity="0.25"/>
+  <rect x="210" y="732" width="132" height="34" rx="6" fill="black" fill-opacity="0.25"/>
+  <text x="76" y="754" fill="#22C55E" font-size="12" font-family="monospace">FPS 120</text>
+  <text x="222" y="754" fill="#F97316" font-size="12" font-family="monospace">PING 35</text>
+  <rect x="48" y="788" width="984" height="1086" rx="12" fill="#1E293B" fill-opacity="0.8" stroke="#3B82F6"/>
+  <rect x="72" y="818" width="128" height="42" rx="8" fill="#FFD700" stroke="#FFD700"/>
+  <text x="108" y="845" fill="#020617" font-size="14" font-family="Inter, Arial, sans-serif" font-weight="700">Outfit</text>
+  <rect x="212" y="818" width="144" height="42" rx="8" stroke="#475569"/>
+  <text x="242" y="845" fill="white" font-size="14" font-family="Inter, Arial, sans-serif" font-weight="600">Back Bling</text>
+  <rect x="368" y="818" width="112" height="42" rx="8" stroke="#475569"/>
+  <text x="400" y="845" fill="white" font-size="14" font-family="Inter, Arial, sans-serif" font-weight="600">Pickaxe</text>
+  <rect x="492" y="818" width="98" height="42" rx="8" stroke="#475569"/>
+  <text x="520" y="845" fill="white" font-size="14" font-family="Inter, Arial, sans-serif" font-weight="600">Glider</text>
+  <rect x="602" y="818" width="92" height="42" rx="8" stroke="#475569"/>
+  <text x="631" y="845" fill="white" font-size="14" font-family="Inter, Arial, sans-serif" font-weight="600">Emote</text>
+  <rect x="706" y="818" width="84" height="42" rx="8" stroke="#475569"/>
+  <text x="736" y="845" fill="white" font-size="14" font-family="Inter, Arial, sans-serif" font-weight="600">Wrap</text>
+  <rect x="72" y="880" width="644" height="46" rx="8" fill="#334155" stroke="#3B82F6"/>
+  <text x="106" y="909" fill="white" font-size="14" font-family="Inter, Arial, sans-serif" font-weight="600">Search items</text>
+  <rect x="728" y="880" width="280" height="46" rx="8" fill="#475569"/>
+  <text x="768" y="909" fill="white" font-size="14" font-family="Inter, Arial, sans-serif" font-weight="600">Sort / Filter</text>
+  <rect x="966" y="891" width="24" height="24" rx="12" fill="#FFD700"/>
+  <text x="974" y="907" fill="black" font-size="12" font-family="Inter, Arial, sans-serif" font-weight="800">2</text>
+  <rect x="72" y="946" width="226" height="248" rx="8" fill="#1E293B" stroke="#3B82F6"/>
+  <rect x="312" y="946" width="226" height="248" rx="8" fill="#1E293B" stroke="#334155"/>
+  <rect x="72" y="1208" width="226" height="248" rx="8" fill="#1E293B" stroke="#334155"/>
+  <rect x="312" y="1208" width="226" height="248" rx="8" fill="#1E293B" stroke="#334155"/>
+  <rect x="72" y="1470" width="226" height="248" rx="8" fill="#1E293B" stroke="#64748B" stroke-dasharray="6 4"/>
+  <path d="M185 1570v54M158 1597h54" stroke="#94A3B8" stroke-width="2"/>
+  <rect x="312" y="1470" width="226" height="248" rx="8" fill="#1E293B" stroke="#64748B" stroke-dasharray="6 4"/>
+  <path d="M425 1570v54M398 1597h54" stroke="#94A3B8" stroke-width="2"/>
+  <rect x="780" y="1798" width="112" height="44" rx="6" fill="#475569"/>
+  <rect x="904" y="1798" width="112" height="44" rx="6" fill="#475569"/>
+  <text x="815" y="1826" fill="white" font-size="14" font-family="Inter, Arial, sans-serif" font-weight="600">Edit</text>
+  <text x="938" y="1826" fill="white" font-size="14" font-family="Inter, Arial, sans-serif" font-weight="600">Back</text>
+</svg>

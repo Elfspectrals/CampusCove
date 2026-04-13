@@ -3,40 +3,57 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import * as inventoryApi from '../api/inventory'
 import type { AccountInventoryRow, InventoryKindFilter } from '../api/inventory'
-import {
-  defaultCosmeticColors,
-  emptyCosmeticLoadout,
-  fetchCharacterCosmetics,
-  putCharacterCosmetics,
-  SLOT_ORDER,
-} from '../api/characterCosmetics'
-import type { CosmeticColors, CosmeticLoadout, CosmeticSlot } from '../api/characterCosmetics'
-import AvatarInventoryPreview from '../components/AvatarInventoryPreview.vue'
+import { emptyCosmeticLoadout, fetchCharacterCosmetics, putCharacterCosmetics } from '../api/characterCosmetics'
+import type { CosmeticLoadout, CosmeticSlot } from '../api/characterCosmetics'
+import LockerCategoryTabs from '../components/locker/LockerCategoryTabs.vue'
+import LockerCharacterPreview from '../components/locker/LockerCharacterPreview.vue'
+import LockerItemCard from '../components/locker/LockerItemCard.vue'
+import LockerStatChip from '../components/locker/LockerStatChip.vue'
 
+interface LockerCategory {
+  id: string
+  label: string
+}
+
+interface LockerGridEntry {
+  key: string
+  row?: AccountInventoryRow
+  isEmpty: boolean
+  isNew: boolean
+}
+
+const categories: LockerCategory[] = [
+  { id: 'outfit', label: 'Outfit' },
+  { id: 'backbling', label: 'Back Bling' },
+  { id: 'pickaxe', label: 'Pickaxe' },
+  { id: 'glider', label: 'Glider' },
+  { id: 'emote', label: 'Emote' },
+  { id: 'wrap', label: 'Wrap' },
+]
+
+const selectedCategory = ref<string>('outfit')
 const items = ref<AccountInventoryRow[]>([])
-const loading = ref(true)
+const loading = ref<boolean>(true)
 const loadError = ref<string | null>(null)
 const cosmeticLoadout = ref<CosmeticLoadout>(emptyCosmeticLoadout())
-const cosmeticColors = ref<CosmeticColors>(defaultCosmeticColors())
-/** Editable palette; preview uses this for live feedback. */
-const draftColors = ref<CosmeticColors>(defaultCosmeticColors())
 const loadoutError = ref<string | null>(null)
 const equipMessage = ref<string | null>(null)
 const equipError = ref<string | null>(null)
 const equippingId = ref<number | null>(null)
-const savingColors = ref(false)
-const colorSaveError = ref<string | null>(null)
 
-const kindFilter = ref<InventoryKindFilter>('')
-const searchInput = ref('')
-const debouncedQ = ref('')
+const kindFilter = ref<InventoryKindFilter>('cosmetic')
+const searchInput = ref<string>('')
+const debouncedQ = ref<string>('')
+
+const fpsStat = ref<string>('120 FPS')
+const pingStat = ref<string>('35 MS')
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
-watch(searchInput, (v) => {
+watch(searchInput, (value) => {
   if (debounceTimer !== null) clearTimeout(debounceTimer)
   debounceTimer = setTimeout(() => {
-    debouncedQ.value = v.trim()
+    debouncedQ.value = value.trim()
     debounceTimer = null
   }, 350)
 })
@@ -45,36 +62,22 @@ watch([kindFilter, debouncedQ], () => {
   void loadInventory()
 }, { immediate: true })
 
-const hasUnsavedColors = computed(() => {
-  for (const slot of SLOT_ORDER) {
-    if (draftColors.value[slot].toLowerCase() !== cosmeticColors.value[slot].toLowerCase()) {
-      return true
-    }
-  }
-  return false
-})
-
-async function refreshCosmeticLoadout() {
-  loadoutError.value = null
-  try {
-    const state = await fetchCharacterCosmetics()
-    cosmeticLoadout.value = state.slots
-    cosmeticColors.value = state.colors
-    draftColors.value = { ...state.colors }
-  } catch (e) {
-    loadoutError.value = e instanceof Error ? e.message : 'Could not load outfit'
-    cosmeticLoadout.value = emptyCosmeticLoadout()
-    const fallback = defaultCosmeticColors()
-    cosmeticColors.value = fallback
-    draftColors.value = { ...fallback }
-  }
-}
-
 onMounted(() => {
   void refreshCosmeticLoadout()
 })
 
-async function loadInventory() {
+async function refreshCosmeticLoadout(): Promise<void> {
+  loadoutError.value = null
+  try {
+    const state = await fetchCharacterCosmetics()
+    cosmeticLoadout.value = state.slots
+  } catch (error: unknown) {
+    loadoutError.value = error instanceof Error ? error.message : 'Could not load outfit'
+    cosmeticLoadout.value = emptyCosmeticLoadout()
+  }
+}
+
+async function loadInventory(): Promise<void> {
   loading.value = true
   loadError.value = null
   try {
@@ -83,8 +86,8 @@ async function loadInventory() {
       q: debouncedQ.value === '' ? undefined : debouncedQ.value,
     })
     items.value = res.items
-  } catch (e) {
-    loadError.value = e instanceof Error ? e.message : 'Could not load inventory'
+  } catch (error: unknown) {
+    loadError.value = error instanceof Error ? error.message : 'Could not load inventory'
     items.value = []
   } finally {
     loading.value = false
@@ -93,12 +96,12 @@ async function loadInventory() {
 
 function slotDisplayName(slot: CosmeticSlot): string {
   const labels: Record<CosmeticSlot, string> = {
-    body: 'Body',
+    body: 'Outfit',
     hair: 'Hair',
     top: 'Top',
     bottom: 'Bottom',
     shoes: 'Shoes',
-    head_accessory: 'Head accessory',
+    head_accessory: 'Back Bling',
   }
   return labels[slot]
 }
@@ -118,29 +121,42 @@ function canEquipCosmetic(row: AccountInventoryRow): boolean {
   return typeof slot === 'string' && slot in SLOT_SET
 }
 
-const cosmeticItems = computed(() => items.value.filter((row) => canEquipCosmetic(row)))
+const cosmeticItems = computed<AccountInventoryRow[]>(() => items.value.filter((row) => canEquipCosmetic(row)))
 
-function isEquipped(row: AccountInventoryRow): boolean {
-  if (!canEquipCosmetic(row)) return false
+const gridItems = computed<LockerGridEntry[]>(() => {
+  const base = cosmeticItems.value.slice(0, 20).map((row) => ({
+    key: `item-${row.id}`,
+    row,
+    isEmpty: false,
+    isNew: row.quantity <= 1 || row.item.rarity >= 4,
+  }))
+  const placeholdersNeeded = Math.max(0, 20 - base.length)
+  const placeholders: LockerGridEntry[] = Array.from({ length: placeholdersNeeded }, (_, index) => ({
+    key: `empty-${index}`,
+    isEmpty: true,
+    isNew: false,
+  }))
+  return [...base, ...placeholders]
+})
+
+const activeFilterCount = computed<number>(() => {
+  let count = 0
+  if (selectedCategory.value !== 'outfit') count += 1
+  if (debouncedQ.value !== '') count += 1
+  if (kindFilter.value !== 'cosmetic') count += 1
+  return count
+})
+
+function isEquipped(row: AccountInventoryRow | undefined): boolean {
+  if (!row || !canEquipCosmetic(row)) return false
   const slot = row.item.cosmetic_slot as CosmeticSlot
   return cosmeticLoadout.value[slot]?.item_def_id === row.item.item_def_id
 }
 
-function slotLabelFromRow(row: AccountInventoryRow): string {
-  if (!canEquipCosmetic(row)) return 'Item'
-  return slotDisplayName(row.item.cosmetic_slot as CosmeticSlot)
-}
-
-function cardInitial(name: string): string {
-  const trimmed = name.trim()
-  if (trimmed.length === 0) return '?'
-  return trimmed.charAt(0).toUpperCase()
-}
-
-async function equipCosmetic(row: AccountInventoryRow) {
-  if (!canEquipCosmetic(row)) return
+async function equipCosmetic(row: AccountInventoryRow | undefined): Promise<void> {
+  if (!row || !canEquipCosmetic(row)) return
   const slot = row.item.cosmetic_slot
-  if (slot === undefined || slot === null || !(slot in SLOT_SET)) return
+  if (!slot || !(slot in SLOT_SET)) return
   const cosmeticSlot = slot as CosmeticSlot
   equipMessage.value = null
   equipError.value = null
@@ -148,238 +164,124 @@ async function equipCosmetic(row: AccountInventoryRow) {
   try {
     const state = await putCharacterCosmetics({ slots: { [cosmeticSlot]: row.item.item_def_id } })
     cosmeticLoadout.value = state.slots
-    cosmeticColors.value = state.colors
-    draftColors.value = { ...state.colors }
-    equipMessage.value = `Equipped “${row.item.name}”. Preview updated — jump into Game when you are ready.`
-    void loadInventory()
-  } catch (e) {
-    equipError.value = e instanceof Error ? e.message : 'Could not equip item'
+    equipMessage.value = `Equipped ${row.item.name}.`
+  } catch (error: unknown) {
+    equipError.value = error instanceof Error ? error.message : 'Could not equip item'
   } finally {
     equippingId.value = null
   }
 }
-
-function normalizeHexInput(raw: string): string | null {
-  const t = raw.trim()
-  const withHash = t.startsWith('#') ? t : `#${t}`
-  if (!/^#[0-9A-Fa-f]{6}$/.test(withHash)) return null
-  return withHash.toUpperCase()
-}
-
-function onHexBlur(slot: CosmeticSlot, ev: Event) {
-  const el = ev.target as HTMLInputElement
-  const n = normalizeHexInput(el.value)
-  if (n) draftColors.value = { ...draftColors.value, [slot]: n }
-  else el.value = draftColors.value[slot]
-}
-
-async function saveDraftColors() {
-  colorSaveError.value = null
-  savingColors.value = true
-  try {
-    const payload: Partial<CosmeticColors> = {}
-    for (const slot of SLOT_ORDER) {
-      payload[slot] = draftColors.value[slot]
-    }
-    const state = await putCharacterCosmetics({ colors: payload })
-    cosmeticLoadout.value = state.slots
-    cosmeticColors.value = state.colors
-    draftColors.value = { ...state.colors }
-    equipMessage.value = 'Colors saved. They will show in Game for other players after you connect.'
-  } catch (e) {
-    colorSaveError.value = e instanceof Error ? e.message : 'Could not save colors'
-  } finally {
-    savingColors.value = false
-  }
-}
-
-function resetDraftColors() {
-  colorSaveError.value = null
-  draftColors.value = { ...cosmeticColors.value }
-}
 </script>
 
 <template>
-  <div class="min-h-0 bg-slate-950 text-slate-100">
-    <div class="mx-auto flex max-w-[1600px] min-h-0 flex-col p-4 md:p-6 lg:p-8">
-      <div class="mb-4 border-b border-white/10 pb-3">
-        <p class="m-0 text-xs font-semibold uppercase tracking-[0.2em] text-slate-300">Character</p>
-        <h2 class="m-0 mt-1 text-2xl font-extrabold tracking-tight md:text-3xl">Locker</h2>
-        <p class="m-0 mt-1 text-sm text-slate-400">
-          Build your look, then jump in game to show it off.
-          <RouterLink to="/item-shop" class="font-semibold text-cyan-300 hover:text-cyan-200"> Open Item Shop </RouterLink>
-        </p>
-      </div>
+  <div class="min-h-screen bg-gradient-to-br from-[#0A192F] to-[#1A365D] text-white">
+    <div class="mx-auto grid min-h-screen max-w-[1800px] grid-cols-1 gap-4 p-4 md:p-6 lg:grid-cols-5 lg:gap-6 lg:p-8">
+      <section class="relative flex min-h-[40vh] flex-col rounded-xl border border-slate-600/40 bg-black/10 p-4 lg:col-span-3 lg:min-h-[80vh]">
+        <div class="mb-4">
+          <p class="text-sm font-semibold uppercase tracking-[0.22em] text-slate-300">Character Locker</p>
+          <h1 class="text-[32px] font-bold leading-none [text-shadow:0_2px_8px_rgba(0,0,0,0.95)]">CHARACTER</h1>
+          <p class="mt-2 text-[14px] font-semibold text-slate-200">Customize your loadout and equip your best look.</p>
+        </div>
 
-      <div v-if="equipMessage" class="mb-3 rounded-lg border border-emerald-300/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100" role="status">
-        {{ equipMessage }}
-      </div>
-      <div v-if="equipError" class="mb-3 rounded-lg border border-rose-300/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-100" role="alert">
-        {{ equipError }}
-      </div>
-      <div v-if="colorSaveError" class="mb-3 rounded-lg border border-rose-300/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-100" role="alert">
-        {{ colorSaveError }}
-      </div>
-      <div v-if="loadoutError" class="mb-3 rounded-lg border border-amber-300/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100" role="status">
-        Outfit preview unavailable: {{ loadoutError }}
-      </div>
+        <div class="flex flex-1">
+          <LockerCharacterPreview />
+        </div>
 
-      <div class="grid min-h-0 grid-cols-1 gap-4 lg:grid-cols-12 lg:gap-6">
-        <div class="order-2 flex flex-col gap-4 lg:order-none lg:col-span-5 xl:col-span-4">
-          <div class="rounded-2xl bg-slate-900/80 p-4 ring-1 ring-white/10 md:p-5 lg:p-6">
-            <AvatarInventoryPreview :loadout="cosmeticLoadout" :colors="draftColors" />
-          </div>
+        <div class="mt-4 flex items-center gap-3 self-start">
+          <LockerStatChip label="FPS" :value="fpsStat" tone="success" />
+          <LockerStatChip label="PING" :value="pingStat" tone="warning" />
+        </div>
+      </section>
 
-          <div class="rounded-2xl bg-slate-900/80 p-4 ring-1 ring-white/10">
-            <div class="mb-3 border-b border-white/10 pb-3">
-              <p class="m-0 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-300">Style</p>
-              <p class="m-0 mt-1 text-sm font-semibold text-slate-100">Character colors</p>
-              <p class="m-0 mt-1 text-xs text-slate-400">Live in preview, saved on click. FBX currently blends unmatched slots.</p>
-            </div>
-            <div class="mb-3 flex items-center gap-2">
-              <button
-                type="button"
-                class="inline-flex items-center justify-center rounded-lg border border-rose-300/30 bg-rose-500/10 px-4 py-2 text-sm font-medium text-rose-100 transition hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-40"
-                :disabled="!hasUnsavedColors || savingColors"
-                @click="resetDraftColors"
-              >
-                Reset
-              </button>
-              <button
-                type="button"
-                class="inline-flex items-center justify-center rounded-lg bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
-                :disabled="!hasUnsavedColors || savingColors"
-                @click="saveDraftColors"
-              >
-                {{ savingColors ? 'Saving…' : 'Save colors' }}
-              </button>
-            </div>
-            <ul class="m-0 grid list-none grid-cols-1 gap-3 p-0 sm:grid-cols-2">
-            <li
-              v-for="slot in SLOT_ORDER"
-              :key="slot"
-              class="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-slate-800/70 px-3 py-2.5"
+      <section class="lg:col-span-2">
+        <div class="rounded-[12px] border border-[#3B82F6] bg-[#1E293B]/80 p-4 shadow-[0_12px_36px_rgba(2,6,23,0.55)] backdrop-blur-sm md:p-5">
+          <div class="mb-4 flex items-start justify-between gap-3">
+            <LockerCategoryTabs v-model="selectedCategory" :categories="categories" />
+            <RouterLink
+              to="/item-shop"
+              class="hidden rounded-md border border-slate-500 bg-[#475569] px-3 py-2 text-xs font-semibold text-white transition duration-200 hover:shadow-[0_0_10px_rgba(59,130,246,0.45)] md:inline-flex"
             >
-              <label class="min-w-0 flex-1 text-sm font-medium text-slate-100" :for="`color-${slot}`">
-                {{ slotDisplayName(slot) }}
-              </label>
+              Shop
+            </RouterLink>
+          </div>
+
+          <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <label for="inv-search" class="relative block flex-1">
+              <span class="sr-only">Search cosmetics</span>
+              <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M21 21l-4.4-4.4M10.8 18a7.2 7.2 0 100-14.4 7.2 7.2 0 000 14.4z" />
+              </svg>
               <input
-                :id="`color-${slot}`"
-                v-model="draftColors[slot]"
-                type="color"
-                class="h-9 w-11 cursor-pointer rounded-md border border-white/15 bg-transparent p-0"
-                :aria-label="`${slotDisplayName(slot)} color`"
-              />
-              <input
-                type="text"
-                class="w-[5.75rem] rounded-md border border-slate-700 bg-slate-900 px-2 py-1 font-mono text-[11px] text-slate-100 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400/40"
-                :value="draftColors[slot]"
-                maxlength="7"
-                spellcheck="false"
+                id="inv-search"
+                v-model="searchInput"
+                type="search"
                 autocomplete="off"
-                @change="onHexBlur(slot, $event)"
+                placeholder="Search items"
+                class="w-full rounded-md border border-slate-600 bg-[#334155] py-2 pl-9 pr-3 text-sm font-semibold text-white placeholder:text-slate-300 transition duration-200 focus:border-[#3B82F6] focus:outline-none focus:ring-2 focus:ring-[#3B82F6]/40"
               />
-            </li>
-            </ul>
+            </label>
+            <button
+              type="button"
+              class="inline-flex items-center justify-center gap-2 rounded-md border border-slate-500 bg-[#475569] px-3 py-2 text-sm font-semibold text-white transition duration-200 hover:shadow-[0_0_12px_rgba(59,130,246,0.45)]"
+            >
+              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                <path d="M4 6h16M7 12h10M10 18h4" />
+              </svg>
+              Sort / Filter
+              <span class="rounded-full bg-[#FFD700] px-2 text-xs font-bold text-black">{{ activeFilterCount }}</span>
+            </button>
+          </div>
+
+          <div v-if="equipMessage" class="mb-3 rounded-md border border-emerald-300/30 bg-emerald-500/10 px-3 py-2 text-sm font-semibold text-emerald-100" role="status">
+            {{ equipMessage }}
+          </div>
+          <div v-if="equipError || loadError || loadoutError" class="mb-3 rounded-md border border-rose-300/30 bg-rose-500/10 px-3 py-2 text-sm font-semibold text-rose-100" role="alert">
+            {{ equipError ?? loadError ?? loadoutError }}
+          </div>
+
+          <div v-if="loading" class="rounded-md border border-dashed border-slate-500 bg-black/20 p-8 text-center">
+            <span class="mx-auto mb-3 block h-10 w-10 animate-spin rounded-full border-2 border-slate-500 border-t-[#3B82F6]" aria-hidden="true" />
+            <p class="text-[14px] font-semibold text-slate-200">Loading locker items...</p>
+          </div>
+
+          <div v-else class="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-5">
+            <LockerItemCard
+              v-for="entry in gridItems"
+              :key="entry.key"
+              :selected="isEquipped(entry.row)"
+              :is-new="entry.isNew"
+              :is-empty="entry.isEmpty"
+              :busy="equippingId === entry.row?.id"
+              :item="
+                entry.row
+                  ? {
+                      id: entry.row.id,
+                      name: entry.row.item.name,
+                      slot: slotDisplayName(entry.row.item.cosmetic_slot as CosmeticSlot),
+                      quantity: entry.row.quantity,
+                    }
+                  : undefined
+              "
+              @select="equipCosmetic(entry.row)"
+            />
+          </div>
+
+          <div class="mt-4 flex justify-end gap-2">
+            <button
+              type="button"
+              class="rounded-[6px] border border-slate-500 bg-[#475569] px-4 py-2 text-sm font-semibold text-white transition duration-200 hover:shadow-[0_0_10px_rgba(59,130,246,0.4)]"
+            >
+              Edit
+            </button>
+            <button
+              type="button"
+              class="rounded-[6px] border border-slate-500 bg-[#475569] px-4 py-2 text-sm font-semibold text-white transition duration-200 hover:shadow-[0_0_10px_rgba(59,130,246,0.4)]"
+            >
+              Back
+            </button>
           </div>
         </div>
-
-        <div class="order-1 lg:order-none lg:col-span-7 xl:col-span-8">
-          <div class="rounded-2xl bg-slate-900/80 p-4 ring-1 ring-white/10 md:p-5 lg:p-6">
-            <div class="mb-4 border-b border-white/10 pb-3">
-              <div class="mb-3 flex flex-wrap items-center gap-2">
-                <button type="button" class="rounded-full bg-cyan-400 px-3 py-1 text-xs font-bold uppercase tracking-wide text-slate-950">Outfit</button>
-                <button type="button" disabled class="rounded-full bg-slate-700/70 px-3 py-1 text-xs font-bold uppercase tracking-wide text-slate-300">Back Bling</button>
-                <button type="button" disabled class="rounded-full bg-slate-700/70 px-3 py-1 text-xs font-bold uppercase tracking-wide text-slate-300">Pickaxe</button>
-              </div>
-              <div class="flex flex-col gap-3 xl:flex-row xl:items-end">
-                <div class="min-w-[180px] flex-1">
-                  <label for="inv-search" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-400">Search</label>
-                  <input
-                    id="inv-search"
-                    v-model="searchInput"
-                    type="search"
-                    autocomplete="off"
-                    placeholder="Find cosmetics"
-                    class="w-full rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-400"
-                  />
-                </div>
-                <div class="min-w-[150px] xl:w-52">
-                  <label for="inv-kind" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-400">Kind</label>
-                  <select
-                    id="inv-kind"
-                    v-model="kindFilter"
-                    class="w-full rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-cyan-400"
-                  >
-                    <option value="">All kinds</option>
-                    <option value="cosmetic">Cosmetic</option>
-                    <option value="furniture">Furniture</option>
-                    <option value="consumable">Consumable</option>
-                    <option value="misc">Misc</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <div v-if="loading" class="rounded-xl border border-dashed border-slate-700 bg-slate-800/40 p-6 text-center">
-              <span class="mx-auto mb-3 block h-10 w-10 animate-spin rounded-full border-2 border-slate-500 border-t-cyan-400" aria-hidden="true" />
-              <p class="m-0 text-sm text-slate-300">Loading locker items…</p>
-            </div>
-
-            <div v-else-if="loadError" class="rounded-xl border border-rose-300/30 bg-rose-500/10 p-6 text-center" role="alert">
-              <p class="m-0 text-base font-semibold text-rose-100">Could not load inventory</p>
-              <p class="mt-1 text-sm text-rose-200/90">{{ loadError }}</p>
-              <button
-                type="button"
-                class="mt-4 rounded-lg bg-rose-500 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-rose-400"
-                @click="loadInventory"
-              >
-                Try again
-              </button>
-            </div>
-
-            <div v-else-if="cosmeticItems.length === 0" class="rounded-xl border border-dashed border-slate-700 bg-slate-800/40 p-8 text-center">
-              <p class="m-0 text-lg font-semibold text-slate-100">No cosmetics found</p>
-              <p class="mt-2 text-sm text-slate-400">
-                Try another filter or
-                <RouterLink to="/item-shop" class="font-semibold text-cyan-300 hover:text-cyan-200">visit the shop</RouterLink>.
-              </p>
-            </div>
-
-            <div v-else class="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
-              <article
-                v-for="row in cosmeticItems"
-                :key="row.id"
-                class="group relative overflow-hidden rounded-xl bg-slate-800/80 ring-1 ring-slate-700 transition hover:ring-cyan-400/60"
-                :class="isEquipped(row) ? 'ring-2 ring-cyan-400 bg-cyan-500/10' : ''"
-              >
-                <span
-                  v-if="isEquipped(row)"
-                  class="absolute left-2 top-2 rounded bg-cyan-400 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-950"
-                >
-                  Equipped
-                </span>
-                <div class="flex aspect-square items-center justify-center bg-gradient-to-b from-sky-500/20 to-slate-900 px-4">
-                  <span class="text-4xl font-black text-white/85">{{ cardInitial(row.item.name) }}</span>
-                </div>
-                <div class="p-3">
-                  <p class="m-0 truncate text-sm font-semibold text-slate-100">{{ row.item.name }}</p>
-                  <p class="m-0 mt-1 text-xs text-slate-400">{{ slotLabelFromRow(row) }} · Qty {{ row.quantity.toLocaleString() }}</p>
-                  <button
-                    type="button"
-                    class="mt-3 w-full rounded-md py-2 text-sm font-semibold transition"
-                    :class="isEquipped(row) ? 'cursor-default bg-cyan-400 text-slate-950' : 'bg-slate-700 text-slate-100 hover:bg-slate-600'"
-                    :disabled="equippingId === row.id || isEquipped(row)"
-                    @click="equipCosmetic(row)"
-                  >
-                    {{ isEquipped(row) ? 'Equipped' : equippingId === row.id ? 'Equipping…' : 'Equip' }}
-                  </button>
-                </div>
-              </article>
-            </div>
-          </div>
-        </div>
-      </div>
+      </section>
     </div>
-    </div>
+  </div>
 </template>
