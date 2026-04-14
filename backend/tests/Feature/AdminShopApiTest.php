@@ -39,7 +39,7 @@ class AdminShopApiTest extends TestCase
             ->where('shop_catalog_item_id', $row->shop_catalog_item_id)
             ->update(['is_active' => false, 'updated_at' => now()]);
 
-        $token = $this->registerToken(fn (int $id) => $this->grantAdminRole($id));
+        $token = $this->registerToken(fn (int $id) => $this->setAdminFlag($id));
 
         $response = $this->getJson('/api/admin/shop/items', [
             'Authorization' => 'Bearer '.$token,
@@ -53,7 +53,7 @@ class AdminShopApiTest extends TestCase
 
     public function test_admin_list_filters_by_query_currency_and_active(): void
     {
-        $token = $this->registerToken(fn (int $id) => $this->grantAdminRole($id));
+        $token = $this->registerToken(fn (int $id) => $this->setAdminFlag($id));
 
         $this->getJson('/api/admin/shop/items?q=Chair&currency=coins&is_active=1', [
             'Authorization' => 'Bearer '.$token,
@@ -76,7 +76,7 @@ class AdminShopApiTest extends TestCase
 
     public function test_admin_can_create_item_def_with_dual_currency_catalog_pricing(): void
     {
-        $token = $this->registerToken(fn (int $id) => $this->grantAdminRole($id));
+        $token = $this->registerToken(fn (int $id) => $this->setAdminFlag($id));
 
         $response = $this->postJson('/api/admin/shop/items', [
             'code' => 'admin_test_sofa',
@@ -109,7 +109,7 @@ class AdminShopApiTest extends TestCase
     public function test_admin_can_create_item_with_uploaded_skin_files(): void
     {
         Storage::fake('public');
-        $token = $this->registerToken(fn (int $id) => $this->grantAdminRole($id));
+        $token = $this->registerToken(fn (int $id) => $this->setAdminFlag($id));
 
         $response = $this->post('/api/admin/shop/items', [
             'code' => 'admin_uploaded_skin',
@@ -133,7 +133,7 @@ class AdminShopApiTest extends TestCase
 
     public function test_admin_create_cosmetic_defaults_slot_and_coerces_kind_when_slot_is_set(): void
     {
-        $token = $this->registerToken(fn (int $id) => $this->grantAdminRole($id));
+        $token = $this->registerToken(fn (int $id) => $this->setAdminFlag($id));
 
         $defaults = $this->postJson('/api/admin/shop/items', [
             'code' => 'admin_cosmetic_default_slot',
@@ -163,7 +163,7 @@ class AdminShopApiTest extends TestCase
 
     public function test_admin_create_validation_requires_at_least_one_price(): void
     {
-        $token = $this->registerToken(fn (int $id) => $this->grantAdminRole($id));
+        $token = $this->registerToken(fn (int $id) => $this->setAdminFlag($id));
 
         $this->postJson('/api/admin/shop/items', [
             'code' => 'no_prices',
@@ -179,7 +179,7 @@ class AdminShopApiTest extends TestCase
 
     public function test_admin_can_patch_catalog_and_item_fields(): void
     {
-        $token = $this->registerToken(fn (int $id) => $this->grantAdminRole($id));
+        $token = $this->registerToken(fn (int $id) => $this->setAdminFlag($id));
 
         $create = $this->postJson('/api/admin/shop/items', [
             'code' => 'patch_target',
@@ -210,7 +210,7 @@ class AdminShopApiTest extends TestCase
 
     public function test_admin_delete_returns_204(): void
     {
-        $token = $this->registerToken(fn (int $id) => $this->grantAdminRole($id));
+        $token = $this->registerToken(fn (int $id) => $this->setAdminFlag($id));
 
         $create = $this->postJson('/api/admin/shop/items', [
             'code' => 'to_delete',
@@ -229,7 +229,7 @@ class AdminShopApiTest extends TestCase
 
     public function test_admin_delete_conflict_returns_409_when_purchases_exist(): void
     {
-        $adminToken = $this->registerToken(fn (int $id) => $this->grantAdminRole($id));
+        $adminToken = $this->registerToken(fn (int $id) => $this->setAdminFlag($id));
 
         $create = $this->postJson('/api/admin/shop/items', [
             'code' => 'has_purchase',
@@ -296,20 +296,10 @@ class AdminShopApiTest extends TestCase
         return $reg->json('token');
     }
 
-    private function grantAdminRole(int $accountId): void
+    private function setAdminFlag(int $accountId): void
     {
-        $roleId = DB::table('roles')->where('name', 'admin')->value('role_id');
-        if ($roleId === null) {
-            $roleId = DB::table('roles')->insertGetId([
-                'name' => 'admin',
-                'created_at' => now(),
-            ], 'role_id');
-        }
-
-        DB::table('account_roles')->insertOrIgnore([
-            'account_id' => $accountId,
-            'role_id' => $roleId,
-            'created_at' => now(),
+        DB::table('accounts')->where('account_id', $accountId)->update([
+            'is_admin' => true,
         ]);
     }
 

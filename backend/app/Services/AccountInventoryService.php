@@ -14,6 +14,154 @@ use Illuminate\Support\Facades\DB;
 
 final class AccountInventoryService
 {
+    public function grantItem(int $accountId, ItemDef $itemDef, int $quantity): void
+    {
+        DB::transaction(function () use ($accountId, $itemDef, $quantity): void {
+            $containerId = $this->getOrCreateGiftInboxContainerId($accountId);
+            if ($itemDef->max_stack > 1) {
+                $stack = InventoryStack::query()
+                    ->where('container_id', $containerId)
+                    ->where('item_def_id', $itemDef->item_def_id)
+                    ->lockForUpdate()
+                    ->first();
+
+                $nextQty = ($stack !== null ? (int) $stack->quantity : 0) + $quantity;
+                if ($stack !== null) {
+                    $stack->update(['quantity' => $nextQty]);
+                } else {
+                    InventoryStack::query()->create([
+                        'item_def_id' => $itemDef->item_def_id,
+                        'container_id' => $containerId,
+                        'quantity' => $quantity,
+                    ]);
+                }
+
+                return;
+            }
+
+            $this->addInstances($containerId, $accountId, $itemDef, $quantity);
+        });
+    }
+
+    public function revokeItem(int $accountId, ItemDef $itemDef, int $quantity): void
+    {
+        DB::transaction(function () use ($accountId, $itemDef, $quantity): void {
+            $gift = GiftInbox::query()->where('account_id', $accountId)->first();
+            if ($gift === null) {
+                return;
+            }
+            $containerId = (int) $gift->container_id;
+            $remaining = $quantity;
+
+            // Remove from stack first, then instances. This handles legacy/mixed data safely.
+            $stack = InventoryStack::query()
+                ->where('container_id', $containerId)
+                ->where('item_def_id', $itemDef->item_def_id)
+                ->lockForUpdate()
+                ->first();
+            if ($stack !== null && $remaining > 0) {
+                $stackQty = (int) $stack->quantity;
+                $consume = min($stackQty, $remaining);
+                $nextQty = $stackQty - $consume;
+                if ($nextQty > 0) {
+                    $stack->update(['quantity' => $nextQty]);
+                } else {
+                    $stack->delete();
+                }
+                $remaining -= $consume;
+            }
+
+            if ($remaining > 0) {
+                $instanceIds = ItemInstance::query()
+                    ->where('container_id', $containerId)
+                    ->where('item_def_id', $itemDef->item_def_id)
+                    ->orderBy('item_instance_id')
+                    ->limit($remaining)
+                    ->pluck('item_instance_id')
+                    ->all();
+
+                if ($instanceIds !== []) {
+                    ItemInstance::query()
+                        ->whereIn('item_instance_id', $instanceIds)
+                        ->delete();
+                }
+            }
+        });
+    }
+
+    public function setItemQuantity(int $accountId, ItemDef $itemDef, int $quantity): void
+    {
+        DB::transaction(function () use ($accountId, $itemDef, $quantity): void {
+            $containerId = $this->getOrCreateGiftInboxContainerId($accountId);
+            if ($itemDef->max_stack > 1) {
+                $stack = InventoryStack::query()
+                    ->where('container_id', $containerId)
+                    ->where('item_def_id', $itemDef->item_def_id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($quantity <= 0) {
+                    $stack?->delete();
+
+                    return;
+                }
+
+                if ($stack !== null) {
+                    $stack->update(['quantity' => $quantity]);
+                } else {
+                    InventoryStack::query()->create([
+                        'item_def_id' => $itemDef->item_def_id,
+                        'container_id' => $containerId,
+                        'quantity' => $quantity,
+                    ]);
+                }
+
+                return;
+            }
+
+            $existing = (int) ItemInstance::query()
+                ->where('container_id', $containerId)
+                ->where('item_def_id', $itemDef->item_def_id)
+                ->count();
+
+            if ($existing > $quantity) {
+                $instanceIds = ItemInstance::query()
+                    ->where('container_id', $containerId)
+                    ->where('item_def_id', $itemDef->item_def_id)
+                    ->orderByDesc('item_instance_id')
+                    ->limit($existing - $quantity)
+                    ->pluck('item_instance_id')
+                    ->all();
+
+                if ($instanceIds !== []) {
+                    ItemInstance::query()
+                        ->whereIn('item_instance_id', $instanceIds)
+                        ->delete();
+                }
+
+                return;
+            }
+            if ($existing < $quantity) {
+                $this->addInstances($containerId, $accountId, $itemDef, $quantity - $existing);
+            }
+        });
+    }
+
+    public function resetInventory(int $accountId): void
+    {
+        DB::transaction(function () use ($accountId): void {
+            $gift = GiftInbox::query()->where('account_id', $accountId)->first();
+            if ($gift === null) {
+                return;
+            }
+            $containerId = (int) $gift->container_id;
+
+            InventoryStack::query()->where('container_id', $containerId)->delete();
+            ItemInstance::query()->where('container_id', $containerId)->delete();
+            DB::table('account_cosmetic_equipment')->where('account_id', $accountId)->delete();
+        });
+    }
+
     public function accountHasPositiveQuantity(int $accountId, int $itemDefId): bool
     {
         $gift = GiftInbox::query()->where('account_id', $accountId)->first();
@@ -177,7 +325,7 @@ final class AccountInventoryService
         return str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $value);
     }
 
-    private function getOrCreateGiftInboxContainerId(int $accountId): int
+    public function getOrCreateGiftInboxContainerId(int $accountId): int
     {
         $existing = GiftInbox::query()
             ->where('account_id', $accountId)

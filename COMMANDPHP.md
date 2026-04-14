@@ -26,9 +26,10 @@ docker compose exec -T backend php artisan migrate
 docker compose exec -T backend php artisan setAdmin <email>
 ```
 
-Gives the `admin` role to the account linked to `<email>`.
+Grants admin access to the account linked to `<email>`.
 
-- Creates the `admin` role automatically if it does not exist.
+- Sets `accounts.is_admin = true` (required by `/api/admin/*` middleware).
+- Ensures the `admin` role relation too (kept for compatibility).
 - Safe to run multiple times.
 
 Example:
@@ -36,6 +37,8 @@ Example:
 ```bash
 docker compose exec -T backend php artisan setAdmin jerome.neupert@gmail.com
 ```
+
+After running `setAdmin`, log out and log back in to refresh the stored user session on the frontend.
 
 ---
 
@@ -82,3 +85,31 @@ docker compose exec -T backend php artisan fillOutfit you@example.com
 After this, open **Inventory** in the app: you should see the wearables, the **Outfit preview** should show your character, and **Game** will use the same loadout on next connect.
 
 If the command errors about missing item definitions, run the **ShopSeeder** command in [Prerequisites](#prerequisites-avatar--inventory) first.
+
+---
+
+## Admin panel quick checks
+
+Apply latest migrations (includes admin/moderation fields on `accounts`):
+
+```bash
+docker compose exec -T backend php artisan migrate
+```
+
+Check that admin API routes are available:
+
+```bash
+docker compose exec -T backend php artisan route:list --path=api/admin
+```
+
+Verify current session user payload returns `is_admin: true`:
+
+```bash
+curl -H "Authorization: Bearer <TOKEN>" -H "Accept: application/json" http://localhost:8000/api/user
+```
+
+If `/admin/users` shows "No users found" unexpectedly:
+
+- Confirm backend request is not returning `403` (`admin_required`).
+- Re-run `setAdmin <email>`.
+- Re-login on frontend (`http://localhost:5173`) to refresh local auth cache.

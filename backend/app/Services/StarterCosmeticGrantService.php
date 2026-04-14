@@ -10,10 +10,19 @@ use App\Models\ItemDef;
 final class StarterCosmeticGrantService
 {
     /** @var list<string> */
-    public const STARTER_CODES = [
+    public const FREE_BODY_CODES = [
         'COS_WEAR_BODY_DEFAULT',
         'COS_WEAR_BODY_ADVENTURER',
         'COS_WEAR_BODY_SWORDSMAN',
+    ];
+
+    /**
+     * Legacy wearable starter pack (used by dev helper flows like fillOutfit).
+     *
+     * @var list<string>
+     */
+    public const STARTER_CODES = [
+        ...self::FREE_BODY_CODES,
         'COS_WEAR_HAIR_DEFAULT',
         'COS_WEAR_TOP_DEFAULT',
         'COS_WEAR_BOTTOM_DEFAULT',
@@ -27,7 +36,15 @@ final class StarterCosmeticGrantService
 
     public function ensureStarterCosmeticsForAccount(int $accountId): void
     {
-        foreach (self::STARTER_CODES as $code) {
+        $this->ensureCodesForAccount($accountId, self::FREE_BODY_CODES);
+    }
+
+    /**
+     * @param  list<string>  $codes
+     */
+    public function ensureCodesForAccount(int $accountId, array $codes): void
+    {
+        foreach ($codes as $code) {
             /** @var ItemDef|null $def */
             $def = ItemDef::query()->where('code', $code)->first();
             if ($def === null) {

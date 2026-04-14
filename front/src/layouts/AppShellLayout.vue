@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import {
   clearAuth,
@@ -9,6 +9,7 @@ import {
   logout as logoutApi,
   subscribeAuth,
 } from '../api/auth'
+import { setAdminModeEnabled, syncAdminModeForUser, useAdminMode } from '../composables/useAdminMode'
 
 const router = useRouter()
 const route = useRoute()
@@ -38,6 +39,8 @@ const balances = computed(() => {
 
 const isLoggedIn = computed(() => Boolean(auth.value?.token))
 const showAdmin = computed(() => isAdminUser(auth.value?.user))
+const { adminModeEnabled } = useAdminMode()
+const isAdminMode = computed(() => showAdmin.value && adminModeEnabled.value)
 const displayName = computed(() => {
   const u = auth.value?.user
   if (!u) return ''
@@ -61,6 +64,11 @@ const sidebarOpen = ref(false)
 
 function closeSidebar() {
   sidebarOpen.value = false
+}
+
+function toggleAdminMode() {
+  if (!showAdmin.value) return
+  setAdminModeEnabled(!adminModeEnabled.value)
 }
 
 function formatMoney(n: number | null): string {
@@ -87,6 +95,40 @@ const navLink = (active: boolean) =>
     'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
     active ? 'bg-white/15 text-white' : 'text-white/85 hover:bg-white/10 hover:text-white',
   ].join(' ')
+
+const defaultNavItems = computed(() =>
+  [
+    !isLoggedIn.value ? { name: 'landing', icon: '🏠', label: 'Home' } : { name: 'home', icon: '🏠', label: 'Home' },
+    { name: 'item-shop', icon: '🛒', label: 'Item Shop' },
+    ...(isLoggedIn.value
+      ? [
+          { name: 'inventory', icon: '🎒', label: 'Inventory' },
+          { name: 'friends', icon: '👥', label: 'Friends' },
+          { name: 'game', icon: '🎮', label: 'Game' },
+        ]
+      : []),
+  ] as Array<{ name: string; icon: string; label: string }>
+)
+
+const adminNavItems = [
+  { name: 'admin-users', icon: '👤', label: 'Users' },
+  { name: 'admin-shop', icon: '🛍', label: 'Shop' },
+  { name: 'admin-inventories', icon: '🎒', label: 'Inventories' },
+]
+
+watch(showAdmin, (isAdmin) => {
+  if (!isAdmin) {
+    setAdminModeEnabled(false)
+  }
+})
+
+watch(
+  auth,
+  (nextAuth) => {
+    syncAdminModeForUser(nextAuth?.user)
+  },
+  { immediate: true }
+)
 </script>
 
 <template>
@@ -117,71 +159,28 @@ const navLink = (active: boolean) =>
       </div>
 
       <nav class="flex-1 space-y-1 overflow-y-auto p-3">
-        <RouterLink
-          v-if="!isLoggedIn"
-          :to="{ name: 'landing' }"
-          :class="navLink(route.name === 'landing')"
-          @click="closeSidebar"
-        >
-          <span aria-hidden="true">🏠</span>
-          Home
-        </RouterLink>
-        <RouterLink
-          v-else
-          :to="{ name: 'home' }"
-          :class="navLink(route.name === 'home')"
-          @click="closeSidebar"
-        >
-          <span aria-hidden="true">🏠</span>
-          Home
-        </RouterLink>
+        <div v-if="showAdmin" class="mb-3 rounded-lg border border-white/10 bg-white/5 p-2">
+          <button
+            type="button"
+            class="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-xs font-semibold uppercase tracking-wide text-white/90 hover:bg-white/10"
+            @click="toggleAdminMode"
+          >
+            <span>{{ isAdminMode ? 'Admin mode on' : 'Admin mode off' }}</span>
+            <span class="rounded-full px-2 py-0.5 text-[10px]" :class="isAdminMode ? 'bg-emerald-400/20 text-emerald-200' : 'bg-slate-500/30 text-slate-200'">
+              {{ isAdminMode ? 'ON' : 'OFF' }}
+            </span>
+          </button>
+        </div>
 
         <RouterLink
-          :to="{ name: 'item-shop' }"
-          :class="navLink(route.name === 'item-shop')"
+          v-for="link in isAdminMode ? adminNavItems : defaultNavItems"
+          :key="link.name"
+          :to="{ name: link.name }"
+          :class="navLink(route.name === link.name)"
           @click="closeSidebar"
         >
-          <span aria-hidden="true">🛒</span>
-          Item Shop
-        </RouterLink>
-
-        <RouterLink
-          v-if="isLoggedIn"
-          :to="{ name: 'inventory' }"
-          :class="navLink(route.name === 'inventory')"
-          @click="closeSidebar"
-        >
-          <span aria-hidden="true">🎒</span>
-          Inventory
-        </RouterLink>
-
-        <RouterLink
-          v-if="isLoggedIn"
-          :to="{ name: 'friends' }"
-          :class="navLink(route.name === 'friends')"
-          @click="closeSidebar"
-        >
-          <span aria-hidden="true">👥</span>
-          Friends
-        </RouterLink>
-        <RouterLink
-          v-if="isLoggedIn"
-          :to="{ name: 'game' }"
-          :class="navLink(route.name === 'game')"
-          @click="closeSidebar"
-        >
-          <span aria-hidden="true">🎮</span>
-          Game
-        </RouterLink>
-
-        <RouterLink
-          v-if="showAdmin"
-          :to="{ name: 'admin-shop' }"
-          :class="navLink(route.name === 'admin-shop')"
-          @click="closeSidebar"
-        >
-          <span aria-hidden="true">🛠</span>
-          Admin shop
+          <span aria-hidden="true">{{ link.icon }}</span>
+          {{ link.label }}
         </RouterLink>
 
         <template v-if="!isLoggedIn">
@@ -271,6 +270,15 @@ const navLink = (active: boolean) =>
             <p class="truncate text-sm font-semibold leading-tight">{{ displayName }}</p>
             <p class="truncate text-xs text-white/55">{{ userSubtitle }}</p>
           </div>
+
+          <button
+            v-if="showAdmin"
+            type="button"
+            class="hidden rounded-lg border border-white/25 px-2.5 py-1.5 text-xs font-semibold text-white/90 hover:bg-white/10 lg:inline"
+            @click="toggleAdminMode"
+          >
+            {{ isAdminMode ? 'Exit admin' : 'Admin mode' }}
+          </button>
 
           <RouterLink
             :to="{ name: 'inventory' }"

@@ -47,9 +47,7 @@ export interface User {
 
 export function isAdminUser(user: User | null | undefined): boolean {
   if (!user) return false
-  if (user.is_admin === true) return true
-  if (user.roles !== undefined && user.roles.includes('admin')) return true
-  return false
+  return user.is_admin === true
 }
 
 export function parseUser(raw: unknown): User | null {

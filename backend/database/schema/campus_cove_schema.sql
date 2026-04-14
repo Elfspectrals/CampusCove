@@ -77,9 +77,15 @@ CREATE TABLE IF NOT EXISTS accounts (
   account_id     BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   public_id      UUID NOT NULL DEFAULT gen_random_uuid(),
   status         account_status NOT NULL DEFAULT 'active',
+  is_admin       BOOLEAN NOT NULL DEFAULT FALSE,
   created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
   last_login_at  TIMESTAMPTZ NULL,
-  cosmetic_colors JSONB NULL
+  cosmetic_colors JSONB NULL,
+  suspended_until TIMESTAMPTZ NULL,
+  suspension_reason TEXT NULL,
+  banned_at TIMESTAMPTZ NULL,
+  ban_reason TEXT NULL,
+  deleted_at TIMESTAMPTZ NULL
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS ux_accounts_public_id ON accounts(public_id);

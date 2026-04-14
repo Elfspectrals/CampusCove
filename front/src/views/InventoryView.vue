@@ -11,7 +11,6 @@ import { useLockerInventory } from '../composables/useLockerInventory'
 import { useCosmeticEquip } from '../composables/useCosmeticEquip'
 import {
   DEFAULT_PREVIEW_CHARACTER_ASSET_ID,
-  PREVIEW_CHARACTER_ASSETS,
   type PreviewCharacterAsset,
   getPreviewImageByCosmetic,
   resolvePreviewCharacterAssetIdFromCosmetic,
@@ -62,7 +61,12 @@ const selectedPreviewAssetId = ref<PreviewCharacterAsset['id']>(DEFAULT_PREVIEW_
 const selectedPreviewAssetSrc = ref<string | null>(null)
 
 const cosmeticItems = computed<AccountInventoryRow[]>(() =>
-  items.value.filter((row) => row.item.kind === 'cosmetic'),
+  items.value.filter(
+    (row) =>
+      row.item.kind === 'cosmetic' &&
+      row.item.cosmetic_slot === 'body' &&
+      row.quantity > 0,
+  ),
 )
 
 const gridItems = computed<LockerOwnedSkinEntry[]>(() =>
@@ -93,11 +97,6 @@ const activeFilterCount = computed<number>(() => {
   if (kindFilter.value !== 'cosmetic') count += 1
   return count
 })
-
-function selectPreviewAsset(assetId: PreviewCharacterAsset['id']): void {
-  selectedPreviewAssetSrc.value = null
-  selectedPreviewAssetId.value = assetId
-}
 
 async function equipSkinFromInventoryRow(row: AccountInventoryRow): Promise<void> {
   if (!canEquipCosmetic(row)) return
@@ -165,39 +164,6 @@ async function equipSkinFromInventoryRow(row: AccountInventoryRow): Promise<void
               Sort / Filter
               <span class="rounded-full bg-[#FFD700] px-2 text-xs font-bold text-black">{{ activeFilterCount }}</span>
             </button>
-          </div>
-
-          <div class="mb-4">
-            <p class="mb-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-300">
-              Available Skins
-            </p>
-            <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <button
-                v-for="asset in PREVIEW_CHARACTER_ASSETS"
-                :key="asset.id"
-                type="button"
-                class="group overflow-hidden rounded-lg border text-left transition duration-150"
-                :class="
-                  selectedPreviewAssetId === asset.id
-                    ? 'border-cyan-300 bg-cyan-500/20 text-cyan-50 shadow-[0_0_14px_rgba(34,211,238,0.3)]'
-                    : 'border-slate-500/80 bg-slate-900/40 text-slate-100 hover:border-cyan-300/60 hover:bg-cyan-500/10'
-                "
-                @click="selectPreviewAsset(asset.id)"
-              >
-                <div class="aspect-square overflow-hidden">
-                  <img
-                    class="h-full w-full object-cover transition duration-200 group-hover:scale-[1.03]"
-                    :src="asset.previewImageSrc"
-                    :alt="`${asset.label} thumbnail`"
-                    loading="lazy"
-                  />
-                </div>
-                <div class="space-y-1 p-2.5">
-                  <p class="text-xs font-bold uppercase tracking-[0.1em]">{{ asset.label }}</p>
-                  <p class="text-[11px] font-semibold text-slate-300">{{ asset.fileName }}</p>
-                </div>
-              </button>
-            </div>
           </div>
 
           <div v-if="equipMessage" class="mb-3 rounded-md border border-emerald-300/30 bg-emerald-500/10 px-3 py-2 text-sm font-semibold text-emerald-100" role="status">

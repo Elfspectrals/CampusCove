@@ -42,11 +42,14 @@ Artisan::command('setAdmin {email}', function () {
         'role_id' => $role->role_id,
         'created_at' => now(),
     ]);
+    Account::query()
+        ->where('account_id', $auth->account_id)
+        ->update(['is_admin' => true]);
 
-    $this->info("Admin role ensured for account_id={$auth->account_id} ({$normalizedEmail}).");
+    $this->info("Admin access ensured for account_id={$auth->account_id} ({$normalizedEmail}): role + is_admin=true.");
 
     return 0;
-})->purpose('Grant admin role to account by email');
+})->purpose('Grant admin access to account by email (role + is_admin)');
 
 Artisan::command('setMoney {account} {currency} {sum}', function () {
     $account = (string) $this->argument('account');
