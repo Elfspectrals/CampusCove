@@ -102,7 +102,7 @@ const defaultNavItems = computed(() =>
     { name: 'item-shop', icon: '🛒', label: 'Item Shop' },
     ...(isLoggedIn.value
       ? [
-          { name: 'inventory', icon: '🎒', label: 'Inventory' },
+          { name: 'locker', icon: '🎒', label: 'Locker' },
           { name: 'friends', icon: '👥', label: 'Friends' },
           { name: 'game', icon: '🎮', label: 'Game' },
         ]
@@ -281,10 +281,10 @@ watch(
           </button>
 
           <RouterLink
-            :to="{ name: 'inventory' }"
+            :to="{ name: 'locker' }"
             class="hidden rounded-lg px-2 py-1.5 text-xs font-medium text-white/80 hover:bg-white/10 hover:text-white lg:inline"
           >
-            Inventory
+            Locker
           </RouterLink>
           <RouterLink
             :to="{ name: 'friends' }"

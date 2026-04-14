@@ -124,10 +124,10 @@ async function confirmPurchase() {
       <p v-if="isLoggedIn" class="m-0 mt-2 text-sm text-slate-500">
         After you buy, items appear in your
         <RouterLink
-          to="/inventory"
+          to="/locker"
           class="font-semibold text-purple-700 underline decoration-purple-300 underline-offset-2 hover:text-purple-600"
         >
-          Inventory
+          Locker
         </RouterLink>
         .
       </p>
