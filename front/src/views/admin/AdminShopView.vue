@@ -1,521 +1,680 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import * as adminShopApi from '../../api/adminShop'
-import type { AdminShopCatalogRow, AdminShopItemCreateBody, AdminShopListParams, ShopCurrency } from '../../api/adminShop'
+import {
+  bulkAdminShopAction,
+  createAdminShopItem,
+  deleteAdminShopItem,
+  fetchAdminShopItems,
+  restoreAdminShopItem,
+  updateAdminShopItem,
+  type AdminShopCatalogRow,
+  type AdminShopItemCreateBody,
+  type AdminShopItemUpdateBody,
+  type AdminShopListMeta,
+  type AdminShopListParams,
+  type ShopCurrency,
+} from '../../api/adminShop'
 
-type PricingMode = 'coins' | 'premium' | 'both'
+type ItemKind = 'furniture' | 'cosmetic' | 'consumable' | 'misc'
+type CosmeticSlot = 'body' | 'hair' | 'top' | 'bottom' | 'shoes' | 'head_accessory'
+type BindMode = 'none' | 'bind_on_equip' | 'bind_on_place' | 'bound'
+type DeletedFilter = 'all' | 'active' | 'deleted'
+type BulkAction = 'publish' | 'unpublish' | 'activate' | 'deactivate' | 'soft_delete' | 'restore'
+type SortBy = 'name' | 'code' | 'kind' | 'price' | 'is_active' | 'is_published' | 'sort_order'
 
-const items = ref<AdminShopCatalogRow[]>([])
-const listLoading = ref(true)
+interface ShopFormState {
+  code: string
+  name: string
+  kind: ItemKind
+  cosmetic_slot: CosmeticSlot | null
+  rarity: number
+  tradable: boolean
+  premium_only: boolean
+  bind: BindMode
+  max_stack: number
+  preview_image: string
+  model_glb: string
+  coins_price: number | null
+  premium_price: number | null
+  is_active: boolean
+  is_published: boolean
+  is_unique_per_account: boolean
+  stock_remaining: number | null
+  sort_order: number
+  previewImageFile: File | null
+  modelGlbFile: File | null
+}
+
+const rows = ref<AdminShopCatalogRow[]>([])
+const selectedIds = ref<number[]>([])
+const loading = ref(false)
+const actionLoading = ref<number | null>(null)
+const bulkLoading = ref(false)
 const listError = ref<string | null>(null)
 const pageMessage = ref<{ kind: 'success' | 'error'; text: string } | null>(null)
+const meta = ref<AdminShopListMeta>({ current_page: 1, last_page: 1, per_page: 20, total: 0 })
 
 const searchInput = ref('')
+const filterPublished = ref<'all' | 'yes' | 'no'>('all')
+const filterActive = ref<'all' | 'yes' | 'no'>('all')
+const filterKind = ref<'all' | ItemKind>('all')
 const filterCurrency = ref<'all' | ShopCurrency>('all')
-const filterActive = ref<'all' | 'active' | 'inactive'>('all')
+const filterDeleted = ref<DeletedFilter>('all')
+const page = ref(1)
+const perPage = ref(20)
+const sortBy = ref<SortBy>('sort_order')
+const sortDir = ref<'asc' | 'desc'>('asc')
 
 const panelOpen = ref(false)
+const editingId = ref<number | null>(null)
 const formSubmitting = ref(false)
 const formError = ref<string | null>(null)
-
-const formCode = ref('')
-const formName = ref('')
-const formKind = ref<'furniture' | 'cosmetic' | 'consumable' | 'misc'>('cosmetic')
-const formPricingMode = ref<PricingMode>('coins')
-const formCoinsPrice = ref<number | null>(null)
-const formPremiumPrice = ref<number | null>(null)
-const formActive = ref(true)
-const formPublished = ref(false)
-const formPreviewFile = ref<File | null>(null)
-const formGlbFile = ref<File | null>(null)
+const formState = ref<ShopFormState>(newFormState())
 
 let searchDebounce: ReturnType<typeof setTimeout> | null = null
 
-const groupedItems = computed(() => {
-  const byDef = new Map<number, { item: AdminShopCatalogRow['item']; row: AdminShopCatalogRow }>()
-  for (const row of items.value) {
-    const key = row.item.item_def_id
-    if (!byDef.has(key)) byDef.set(key, { item: row.item, row })
-  }
-  return Array.from(byDef.values())
-})
+const allSelected = computed(() => rows.value.length > 0 && selectedIds.value.length === rows.value.length)
+const selectedCount = computed(() => selectedIds.value.length)
 
-function resetForm() {
-  formCode.value = ''
-  formName.value = ''
-  formKind.value = 'cosmetic'
-  formPricingMode.value = 'coins'
-  formCoinsPrice.value = null
-  formPremiumPrice.value = null
-  formActive.value = true
-  formPublished.value = false
-  formPreviewFile.value = null
-  formGlbFile.value = null
-  formError.value = null
+function newFormState(): ShopFormState {
+  return {
+    code: '',
+    name: '',
+    kind: 'cosmetic',
+    cosmetic_slot: 'body',
+    rarity: 0,
+    tradable: true,
+    premium_only: false,
+    bind: 'none',
+    max_stack: 1,
+    preview_image: '',
+    model_glb: '',
+    coins_price: null,
+    premium_price: null,
+    is_active: true,
+    is_published: false,
+    is_unique_per_account: false,
+    stock_remaining: null,
+    sort_order: 0,
+    previewImageFile: null,
+    modelGlbFile: null,
+  }
 }
 
-function openCreate() {
-  resetForm()
+function rowPriceText(row: AdminShopCatalogRow): string {
+  const parts: string[] = []
+  if (row.allow_coins && row.coins_price !== null) parts.push(`Coins ${row.coins_price.toLocaleString()}`)
+  if (row.allow_premium && row.premium_price !== null) parts.push(`Premium ${row.premium_price.toLocaleString()}`)
+  if (parts.length === 0) parts.push(`${row.currency} ${row.price.toLocaleString()}`)
+  return parts.join(' / ')
+}
+
+function statusLabel(row: AdminShopCatalogRow): string {
+  if (row.deleted_at) return 'Deleted'
+  if (!row.is_active) return 'Inactive'
+  if (!row.is_published) return 'Draft'
+  return 'Live'
+}
+
+function statusClass(row: AdminShopCatalogRow): string {
+  if (row.deleted_at) return 'bg-slate-300 text-slate-800'
+  if (!row.is_active) return 'bg-amber-100 text-amber-900'
+  if (!row.is_published) return 'bg-violet-100 text-violet-900'
+  return 'bg-emerald-100 text-emerald-900'
+}
+
+function setSort(next: SortBy): void {
+  if (sortBy.value === next) {
+    sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    sortBy.value = next
+    sortDir.value = 'asc'
+  }
+  page.value = 1
+  void loadRows()
+}
+
+function toggleSelectAll(): void {
+  if (allSelected.value) {
+    selectedIds.value = []
+    return
+  }
+  selectedIds.value = rows.value.map((row) => row.shop_catalog_item_id)
+}
+
+function toggleRowSelection(id: number): void {
+  if (selectedIds.value.includes(id)) {
+    selectedIds.value = selectedIds.value.filter((entry) => entry !== id)
+    return
+  }
+  selectedIds.value = [...selectedIds.value, id]
+}
+
+function toListParams(): AdminShopListParams {
+  return {
+    search: searchInput.value.trim() === '' ? undefined : searchInput.value.trim(),
+    currency: filterCurrency.value,
+    kind: filterKind.value,
+    is_active: filterActive.value === 'all' ? 'all' : filterActive.value === 'yes',
+    is_published: filterPublished.value === 'all' ? 'all' : filterPublished.value === 'yes',
+    with_deleted: filterDeleted.value !== 'active',
+    only_deleted: filterDeleted.value === 'deleted',
+    sort_by: sortBy.value,
+    sort_dir: sortDir.value,
+    page: page.value,
+    per_page: perPage.value,
+  }
+}
+
+async function loadRows(): Promise<void> {
+  loading.value = true
+  listError.value = null
+  try {
+    const response = await fetchAdminShopItems(toListParams())
+    rows.value = response.items
+    meta.value = response.meta
+    selectedIds.value = selectedIds.value.filter((id) => rows.value.some((row) => row.shop_catalog_item_id === id))
+  } catch (caught) {
+    listError.value = caught instanceof Error ? caught.message : 'Could not load shop items'
+    rows.value = []
+  } finally {
+    loading.value = false
+  }
+}
+
+function openCreate(): void {
+  editingId.value = null
+  formState.value = newFormState()
+  formError.value = null
   panelOpen.value = true
 }
 
-function closePanel() {
+function openEdit(row: AdminShopCatalogRow): void {
+  editingId.value = row.shop_catalog_item_id
+  formState.value = {
+    code: row.item.code,
+    name: row.item.name,
+    kind: (row.item.kind as ItemKind) ?? 'misc',
+    cosmetic_slot: row.item.cosmetic_slot ? (row.item.cosmetic_slot as CosmeticSlot) : null,
+    rarity: row.item.rarity,
+    tradable: row.item.tradable,
+    premium_only: row.item.premium_only,
+    bind: (row.item.bind as BindMode) ?? 'none',
+    max_stack: row.item.max_stack,
+    preview_image: row.item.preview_image ?? '',
+    model_glb: row.item.model_glb ?? '',
+    coins_price: row.coins_price,
+    premium_price: row.premium_price,
+    is_active: row.is_active,
+    is_published: row.is_published,
+    is_unique_per_account: row.is_unique_per_account,
+    stock_remaining: row.stock_remaining,
+    sort_order: row.sort_order,
+    previewImageFile: null,
+    modelGlbFile: null,
+  }
+  formError.value = null
+  panelOpen.value = true
+}
+
+function closePanel(): void {
   panelOpen.value = false
 }
 
-function listParams(): AdminShopListParams {
-  const p: AdminShopListParams = {}
-  if (searchInput.value.trim() !== '') p.search = searchInput.value.trim()
-  if (filterCurrency.value !== 'all') p.currency = filterCurrency.value
-  if (filterActive.value === 'active') p.is_published = true
-  if (filterActive.value === 'inactive') p.is_published = false
-  return p
+function onPreviewFileChange(event: Event): void {
+  const target = event.target
+  if (!(target instanceof HTMLInputElement)) return
+  formState.value.previewImageFile = target.files?.[0] ?? null
 }
 
-function currencyLabel(c: ShopCurrency): string {
-  return c === 'coins' ? 'Coins' : 'Premium'
+function onGlbFileChange(event: Event): void {
+  const target = event.target
+  if (!(target instanceof HTMLInputElement)) return
+  formState.value.modelGlbFile = target.files?.[0] ?? null
 }
 
-function pricingOptions(row: AdminShopCatalogRow): Array<{ currency: ShopCurrency; price: number }> {
-  const options: Array<{ currency: ShopCurrency; price: number }> = []
-  if (row.allow_coins && row.coins_price !== null) {
-    options.push({ currency: 'coins', price: row.coins_price })
-  }
-  if (row.allow_premium && row.premium_price !== null) {
-    options.push({ currency: 'premium', price: row.premium_price })
-  }
-  if (options.length === 0) {
-    options.push({ currency: row.currency, price: row.price })
-  }
-  return options
-}
-
-function parsePrice(value: number | null): number | null {
+function parsePositiveInt(value: number | null): number | null {
   if (value === null) return null
-  if (!Number.isFinite(value) || !Number.isInteger(value) || value < 1) return null
+  if (!Number.isInteger(value) || value < 1) return null
   return value
 }
 
-function onPreviewFileChange(event: Event) {
-  const target = event.target
-  if (!(target instanceof HTMLInputElement)) return
-  const file = target.files?.[0] ?? null
-  formPreviewFile.value = file
-}
-
-function onGlbFileChange(event: Event) {
-  const target = event.target
-  if (!(target instanceof HTMLInputElement)) return
-  const file = target.files?.[0] ?? null
-  formGlbFile.value = file
-}
-
-async function loadItems() {
-  listLoading.value = true
-  listError.value = null
-  try {
-    const res = await adminShopApi.fetchAdminShopItems(listParams())
-    items.value = res.items
-  } catch (e) {
-    listError.value = e instanceof Error ? e.message : 'Could not load shop items'
-    items.value = []
-  } finally {
-    listLoading.value = false
-  }
-}
-
-async function submitForm() {
+async function submitForm(): Promise<void> {
   formError.value = null
-  const code = formCode.value.trim()
-  const name = formName.value.trim()
-  if (code === '') {
+  const form = formState.value
+  if (form.code.trim() === '') {
     formError.value = 'Code is required'
     return
   }
-  if (name === '') {
+  if (form.name.trim() === '') {
     formError.value = 'Name is required'
     return
   }
-  if (!formPreviewFile.value) {
-    formError.value = 'Preview image is required'
+  if (form.kind === 'cosmetic' && !form.cosmetic_slot) {
+    formError.value = 'Cosmetic slot is required for cosmetic items'
     return
   }
-  if (!formGlbFile.value) {
-    formError.value = 'GLB file is required'
+  const coinsPrice = parsePositiveInt(form.coins_price)
+  const premiumPrice = parsePositiveInt(form.premium_price)
+  if (coinsPrice === null && premiumPrice === null) {
+    formError.value = 'At least one currency price is required'
     return
   }
-  const prices: Partial<Record<ShopCurrency, number>> = {}
-  if (formPricingMode.value === 'coins' || formPricingMode.value === 'both') {
-    const parsed = parsePrice(formCoinsPrice.value)
-    if (parsed === null) {
-      formError.value = 'Coins price must be a positive integer'
-      return
-    }
-    prices.coins = parsed
+  if (form.coins_price !== null && coinsPrice === null) {
+    formError.value = 'Coins price must be a positive integer'
+    return
   }
-  if (formPricingMode.value === 'premium' || formPricingMode.value === 'both') {
-    const parsed = parsePrice(formPremiumPrice.value)
-    if (parsed === null) {
-      formError.value = 'Premium price must be a positive integer'
-      return
-    }
-    prices.premium = parsed
+  if (form.premium_price !== null && premiumPrice === null) {
+    formError.value = 'Premium price must be a positive integer'
+    return
   }
 
-  const body: AdminShopItemCreateBody = {
-    code,
-    name,
-    kind: formKind.value,
-    prices,
-    previewImageFile: formPreviewFile.value,
-    modelGlbFile: formGlbFile.value,
-    is_active: formActive.value,
-    is_published: formPublished.value,
-    stock_remaining: null,
-    is_unique_per_account: true,
-  }
+  const prices: Partial<Record<ShopCurrency, number>> = {}
+  if (coinsPrice !== null) prices.coins = coinsPrice
+  if (premiumPrice !== null) prices.premium = premiumPrice
 
   formSubmitting.value = true
   try {
-    await adminShopApi.createAdminShopItem(body)
-    pageMessage.value = { kind: 'success', text: 'Skin created successfully.' }
+    if (editingId.value === null) {
+      const createBody: AdminShopItemCreateBody = {
+        code: form.code.trim(),
+        name: form.name.trim(),
+        kind: form.kind,
+        rarity: form.rarity,
+        tradable: form.tradable,
+        premium_only: form.premium_only,
+        bind: form.bind,
+        max_stack: form.max_stack,
+        cosmetic_slot: form.kind === 'cosmetic' ? form.cosmetic_slot : null,
+        preview_image: form.preview_image.trim() || null,
+        model_glb: form.model_glb.trim() || null,
+        prices,
+        previewImageFile: form.previewImageFile,
+        modelGlbFile: form.modelGlbFile,
+        is_active: form.is_active,
+        is_published: form.is_published,
+        is_unique_per_account: form.is_unique_per_account,
+        stock_remaining: form.stock_remaining,
+        sort_order: form.sort_order,
+      }
+      await createAdminShopItem(createBody)
+      pageMessage.value = { kind: 'success', text: 'Item created.' }
+    } else {
+      const updateBody: AdminShopItemUpdateBody = {
+        code: form.code.trim(),
+        name: form.name.trim(),
+        kind: form.kind,
+        rarity: form.rarity,
+        tradable: form.tradable,
+        premium_only: form.premium_only,
+        bind: form.bind,
+        max_stack: form.max_stack,
+        cosmetic_slot: form.kind === 'cosmetic' ? form.cosmetic_slot : null,
+        preview_image: form.preview_image.trim() || null,
+        model_glb: form.model_glb.trim() || null,
+        prices,
+        is_active: form.is_active,
+        is_published: form.is_published,
+        is_unique_per_account: form.is_unique_per_account,
+        stock_remaining: form.stock_remaining,
+        sort_order: form.sort_order,
+      }
+      if (form.previewImageFile) updateBody.previewImageFile = form.previewImageFile
+      if (form.modelGlbFile) updateBody.modelGlbFile = form.modelGlbFile
+      await updateAdminShopItem(editingId.value, updateBody)
+      pageMessage.value = { kind: 'success', text: 'Item updated.' }
+    }
     closePanel()
-    await loadItems()
-  } catch (e) {
-    formError.value = e instanceof Error ? e.message : 'Could not create skin'
+    await loadRows()
+  } catch (caught) {
+    formError.value = caught instanceof Error ? caught.message : 'Could not save item'
   } finally {
     formSubmitting.value = false
   }
 }
 
-async function togglePublish(row: AdminShopCatalogRow) {
-  pageMessage.value = null
+async function publishToggle(row: AdminShopCatalogRow): Promise<void> {
+  actionLoading.value = row.shop_catalog_item_id
   try {
-    await adminShopApi.updateAdminShopItem(row.shop_catalog_item_id, {
-      name: row.item.name,
-      is_published: !row.is_published,
-      stock_remaining: row.stock_remaining,
-      is_unique_per_account: row.is_unique_per_account,
-    })
-    pageMessage.value = {
-      kind: 'success',
-      text: `${row.item.name} is now ${row.is_published ? 'unpublished' : 'published'}.`,
-    }
-    await loadItems()
-  } catch (e) {
-    pageMessage.value = { kind: 'error', text: e instanceof Error ? e.message : 'Could not update publish state' }
+    await updateAdminShopItem(row.shop_catalog_item_id, { is_published: !row.is_published })
+    pageMessage.value = { kind: 'success', text: `${row.item.name} ${row.is_published ? 'unpublished' : 'published'}.` }
+    await loadRows()
+  } catch (caught) {
+    pageMessage.value = { kind: 'error', text: caught instanceof Error ? caught.message : 'Could not update publish state' }
+  } finally {
+    actionLoading.value = null
   }
 }
 
+async function activeToggle(row: AdminShopCatalogRow): Promise<void> {
+  actionLoading.value = row.shop_catalog_item_id
+  try {
+    await updateAdminShopItem(row.shop_catalog_item_id, { is_active: !row.is_active })
+    pageMessage.value = { kind: 'success', text: `${row.item.name} ${row.is_active ? 'deactivated' : 'activated'}.` }
+    await loadRows()
+  } catch (caught) {
+    pageMessage.value = { kind: 'error', text: caught instanceof Error ? caught.message : 'Could not update active state' }
+  } finally {
+    actionLoading.value = null
+  }
+}
+
+async function softDeleteRow(row: AdminShopCatalogRow): Promise<void> {
+  if (!window.confirm(`Soft-delete ${row.item.name}?`)) return
+  actionLoading.value = row.shop_catalog_item_id
+  try {
+    await deleteAdminShopItem(row.shop_catalog_item_id)
+    pageMessage.value = { kind: 'success', text: `${row.item.name} deleted.` }
+    await loadRows()
+  } catch (caught) {
+    pageMessage.value = { kind: 'error', text: caught instanceof Error ? caught.message : 'Could not delete item' }
+  } finally {
+    actionLoading.value = null
+  }
+}
+
+async function restoreRow(row: AdminShopCatalogRow): Promise<void> {
+  actionLoading.value = row.shop_catalog_item_id
+  try {
+    await restoreAdminShopItem(row.shop_catalog_item_id)
+    pageMessage.value = { kind: 'success', text: `${row.item.name} restored.` }
+    await loadRows()
+  } catch (caught) {
+    pageMessage.value = { kind: 'error', text: caught instanceof Error ? caught.message : 'Could not restore item' }
+  } finally {
+    actionLoading.value = null
+  }
+}
+
+async function fallbackBulkAction(action: BulkAction, ids: number[]): Promise<void> {
+  for (const id of ids) {
+    const row = rows.value.find((entry) => entry.shop_catalog_item_id === id)
+    if (!row) continue
+    if (action === 'publish') await updateAdminShopItem(id, { is_published: true })
+    if (action === 'unpublish') await updateAdminShopItem(id, { is_published: false })
+    if (action === 'activate') await updateAdminShopItem(id, { is_active: true })
+    if (action === 'deactivate') await updateAdminShopItem(id, { is_active: false })
+    if (action === 'soft_delete') await deleteAdminShopItem(id)
+    if (action === 'restore') await restoreAdminShopItem(id)
+  }
+}
+
+async function runBulkAction(action: BulkAction): Promise<void> {
+  const ids = [...selectedIds.value]
+  if (ids.length === 0) return
+  bulkLoading.value = true
+  try {
+    try {
+      await bulkAdminShopAction({ action, ids })
+    } catch {
+      await fallbackBulkAction(action, ids)
+    }
+    selectedIds.value = []
+    pageMessage.value = { kind: 'success', text: `Bulk action "${action}" applied to ${ids.length} item(s).` }
+    await loadRows()
+  } catch (caught) {
+    pageMessage.value = { kind: 'error', text: caught instanceof Error ? caught.message : 'Bulk action failed' }
+  } finally {
+    bulkLoading.value = false
+  }
+}
+
+function goToPage(nextPage: number): void {
+  if (nextPage < 1 || nextPage > meta.value.last_page || nextPage === page.value) return
+  page.value = nextPage
+  void loadRows()
+}
+
 onMounted(() => {
-  void loadItems()
+  void loadRows()
 })
 
 watch(searchInput, () => {
   if (searchDebounce) clearTimeout(searchDebounce)
   searchDebounce = setTimeout(() => {
-    void loadItems()
-  }, 400)
+    page.value = 1
+    void loadRows()
+  }, 350)
 })
 
-watch([filterCurrency, filterActive], () => {
-  void loadItems()
+watch([filterPublished, filterActive, filterKind, filterCurrency, filterDeleted, perPage], () => {
+  page.value = 1
+  void loadRows()
 })
 </script>
 
 <template>
-  <div class="mx-auto flex w-full max-w-6xl flex-col">
-    <main class="w-full flex-1">
-      <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p class="m-0 text-sm text-slate-600">
-          Create and publish skins with uploaded preview images and GLB models.
-        </p>
-        <button
-          type="button"
-          class="inline-flex items-center justify-center rounded-lg bg-purple-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-purple-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2"
-          @click="openCreate"
-        >
-          Create skin
-        </button>
+  <div class="mx-auto flex w-full max-w-7xl flex-col">
+    <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <h1 class="m-0 text-2xl font-bold text-slate-900">Admin shop</h1>
+        <p class="mt-1 text-sm text-slate-600">Manage catalog items, publication, availability, and pricing.</p>
       </div>
-
-      <div
-        v-if="pageMessage"
-        :class="[
-          'mb-4 rounded-xl border px-4 py-3 text-sm',
-          pageMessage.kind === 'success'
-            ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
-            : 'border-red-200 bg-red-50 text-red-900',
-        ]"
+      <button
+        type="button"
+        class="rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-500"
+        @click="openCreate"
       >
-        {{ pageMessage.text }}
-      </div>
+        New item
+      </button>
+    </div>
 
-      <div class="mb-6 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:flex-row md:flex-wrap md:items-end">
-        <div class="min-w-[200px] flex-1">
-          <label for="admin-shop-search" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Search
-          </label>
-          <input
-            id="admin-shop-search"
-            v-model="searchInput"
-            type="search"
-            placeholder="Name or code"
-            autocomplete="off"
-            class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
-          />
-        </div>
-        <div class="w-full min-w-[140px] md:w-40">
-          <label for="admin-shop-currency" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Currency
-          </label>
-          <select
-            id="admin-shop-currency"
-            v-model="filterCurrency"
-            class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
-          >
-            <option value="all">All</option>
-            <option value="coins">Coins</option>
-            <option value="premium">Premium</option>
-          </select>
-        </div>
-        <div class="w-full min-w-[140px] md:w-40">
-          <label for="admin-shop-active" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Status
-          </label>
-          <select
-            id="admin-shop-active"
-            v-model="filterActive"
-            class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
-          >
-            <option value="all">All</option>
-            <option value="active">Published only</option>
-            <option value="inactive">Unpublished only</option>
-          </select>
-        </div>
-      </div>
-
-      <div v-if="listLoading" class="flex flex-col items-center justify-center gap-3 py-20 text-slate-600">
-        <span class="h-10 w-10 animate-spin rounded-full border-2 border-slate-300 border-t-purple-600" aria-hidden="true" />
-        <p class="m-0 text-sm font-medium">Loading skins…</p>
-      </div>
-
-      <div v-else-if="listError" class="rounded-xl border border-red-200 bg-red-50 px-4 py-4 text-red-900" role="alert">
-        <p class="m-0 font-semibold">Could not load skins</p>
-        <p class="mt-1 text-sm">{{ listError }}</p>
-        <button
-          type="button"
-          class="mt-4 rounded-lg bg-red-700 px-4 py-2 text-sm font-semibold text-white hover:bg-red-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
-          @click="loadItems"
-        >
-          Try again
-        </button>
-      </div>
-
-      <div
-        v-else-if="groupedItems.length === 0"
-        class="rounded-xl border border-slate-200 bg-white px-6 py-12 text-center text-slate-600"
-      >
-        <p class="m-0 text-lg font-semibold text-slate-800">No skins match</p>
-        <p class="mt-2 text-sm">Adjust filters or create a new skin listing.</p>
-      </div>
-
-      <ul v-else class="m-0 grid list-none gap-4 p-0 sm:grid-cols-2">
-        <li v-for="entry in groupedItems" :key="entry.item.item_def_id" class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div class="mb-3 flex items-start justify-between gap-2">
-            <div>
-              <h2 class="m-0 text-lg font-bold text-slate-900">{{ entry.item.name }}</h2>
-              <p class="m-0 mt-1 font-mono text-xs text-slate-500">{{ entry.item.code }}</p>
-            </div>
-            <span
-              :class="[
-                'rounded-full px-2 py-1 text-xs font-semibold',
-                entry.row.is_published ? 'bg-emerald-100 text-emerald-900' : 'bg-slate-200 text-slate-700',
-              ]"
-            >
-              {{ entry.row.is_published ? 'Published' : 'Unpublished' }}
-            </span>
-          </div>
-
-          <img
-            v-if="entry.item.preview_image"
-            :src="entry.item.preview_image"
-            :alt="`${entry.item.name} preview`"
-            class="mb-3 h-36 w-full rounded-xl border border-slate-200 object-cover"
-          />
-          <div v-else class="mb-3 flex h-36 w-full items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50 text-sm text-slate-500">
-            No preview image
-          </div>
-
-          <ul class="m-0 mb-4 list-none space-y-2 p-0 text-sm text-slate-700">
-            <li v-for="option in pricingOptions(entry.row)" :key="`${entry.row.shop_catalog_item_id}-${option.currency}`" class="flex items-center justify-between">
-              <span>{{ currencyLabel(option.currency) }}</span>
-              <span class="font-semibold">{{ option.currency === 'coins' ? `🪙 ${option.price.toLocaleString()}` : `✨ ${option.price.toLocaleString()}` }}</span>
-            </li>
-          </ul>
-
-          <div class="flex gap-2">
-            <button
-              type="button"
-              class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-50"
-              @click="togglePublish(entry.row)"
-            >
-              {{ entry.row.is_published ? 'Unpublish' : 'Publish' }}
-            </button>
-          </div>
-        </li>
-      </ul>
-    </main>
-
-    <div
-      v-if="panelOpen"
-      class="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 sm:items-center"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="admin-shop-panel-title"
-      @click.self="closePanel"
+    <p
+      v-if="pageMessage"
+      class="mb-4 rounded-lg border px-3 py-2 text-sm"
+      :class="pageMessage.kind === 'success' ? 'border-emerald-200 bg-emerald-50 text-emerald-900' : 'border-red-200 bg-red-50 text-red-900'"
     >
-      <div class="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-xl">
-        <h2 id="admin-shop-panel-title" class="m-0 text-lg font-bold text-slate-900">Create skin</h2>
-        <p class="mt-1 text-sm text-slate-500">Upload files and set one or both currency prices.</p>
+      {{ pageMessage.text }}
+    </p>
 
-        <form class="mt-6 flex flex-col gap-4" @submit.prevent="submitForm">
+    <section class="mb-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div class="grid gap-3 md:grid-cols-6">
+        <input
+          v-model="searchInput"
+          type="search"
+          class="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2"
+          placeholder="Search code or name"
+        />
+        <select v-model="filterPublished" class="rounded-lg border border-slate-300 px-3 py-2 text-sm">
+          <option value="all">Published: All</option>
+          <option value="yes">Published only</option>
+          <option value="no">Unpublished only</option>
+        </select>
+        <select v-model="filterActive" class="rounded-lg border border-slate-300 px-3 py-2 text-sm">
+          <option value="all">Active: All</option>
+          <option value="yes">Active only</option>
+          <option value="no">Inactive only</option>
+        </select>
+        <select v-model="filterKind" class="rounded-lg border border-slate-300 px-3 py-2 text-sm">
+          <option value="all">Kind: All</option>
+          <option value="cosmetic">Cosmetic</option>
+          <option value="furniture">Furniture</option>
+          <option value="consumable">Consumable</option>
+          <option value="misc">Misc</option>
+        </select>
+        <select v-model="filterCurrency" class="rounded-lg border border-slate-300 px-3 py-2 text-sm">
+          <option value="all">Currency: All</option>
+          <option value="coins">Coins</option>
+          <option value="premium">Premium</option>
+        </select>
+      </div>
+      <div class="mt-3 flex flex-wrap items-center gap-3">
+        <select v-model="filterDeleted" class="rounded-lg border border-slate-300 px-3 py-2 text-sm">
+          <option value="all">Deleted state: All</option>
+          <option value="active">Active records only</option>
+          <option value="deleted">Deleted only</option>
+        </select>
+        <select v-model.number="perPage" class="rounded-lg border border-slate-300 px-3 py-2 text-sm">
+          <option :value="10">10 / page</option>
+          <option :value="20">20 / page</option>
+          <option :value="50">50 / page</option>
+        </select>
+      </div>
+    </section>
+
+    <section v-if="selectedCount > 0" class="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-purple-200 bg-purple-50 p-3 text-sm">
+      <span class="font-semibold text-purple-900">{{ selectedCount }} selected</span>
+      <button type="button" class="rounded-md border border-slate-300 bg-white px-2.5 py-1.5 font-semibold text-slate-800" :disabled="bulkLoading" @click="runBulkAction('publish')">Publish</button>
+      <button type="button" class="rounded-md border border-slate-300 bg-white px-2.5 py-1.5 font-semibold text-slate-800" :disabled="bulkLoading" @click="runBulkAction('unpublish')">Unpublish</button>
+      <button type="button" class="rounded-md border border-slate-300 bg-white px-2.5 py-1.5 font-semibold text-slate-800" :disabled="bulkLoading" @click="runBulkAction('activate')">Activate</button>
+      <button type="button" class="rounded-md border border-slate-300 bg-white px-2.5 py-1.5 font-semibold text-slate-800" :disabled="bulkLoading" @click="runBulkAction('deactivate')">Deactivate</button>
+      <button type="button" class="rounded-md border border-red-300 bg-red-50 px-2.5 py-1.5 font-semibold text-red-900" :disabled="bulkLoading" @click="runBulkAction('soft_delete')">Soft-delete</button>
+      <button type="button" class="rounded-md border border-emerald-300 bg-emerald-50 px-2.5 py-1.5 font-semibold text-emerald-900" :disabled="bulkLoading" @click="runBulkAction('restore')">Restore</button>
+    </section>
+
+    <div v-if="loading" class="rounded-xl border border-slate-200 bg-white px-4 py-16 text-center text-sm text-slate-600">Loading items...</div>
+    <div v-else-if="listError" class="rounded-xl border border-red-200 bg-red-50 px-4 py-4 text-red-900">
+      <p class="m-0 font-semibold">Could not load items</p>
+      <p class="m-0 mt-1 text-sm">{{ listError }}</p>
+      <button type="button" class="mt-3 rounded-md bg-red-700 px-3 py-2 text-sm font-semibold text-white hover:bg-red-600" @click="loadRows">Try again</button>
+    </div>
+    <div v-else-if="rows.length === 0" class="rounded-xl border border-slate-200 bg-white px-4 py-16 text-center text-sm text-slate-600">
+      No items found.
+    </div>
+    <div v-else class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-slate-200 text-sm">
+          <thead class="bg-slate-50">
+            <tr>
+              <th class="px-3 py-3 text-left"><input type="checkbox" :checked="allSelected" class="h-4 w-4 rounded border-slate-300" @change="toggleSelectAll" /></th>
+              <th class="px-3 py-3 text-left font-semibold text-slate-700"><button type="button" class="hover:text-slate-900" @click="setSort('name')">Name</button></th>
+              <th class="px-3 py-3 text-left font-semibold text-slate-700"><button type="button" class="hover:text-slate-900" @click="setSort('code')">Code</button></th>
+              <th class="px-3 py-3 text-left font-semibold text-slate-700"><button type="button" class="hover:text-slate-900" @click="setSort('kind')">Kind</button></th>
+              <th class="px-3 py-3 text-left font-semibold text-slate-700"><button type="button" class="hover:text-slate-900" @click="setSort('price')">Price</button></th>
+              <th class="px-3 py-3 text-left font-semibold text-slate-700">Status</th>
+              <th class="px-3 py-3 text-right font-semibold text-slate-700">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            <tr v-for="row in rows" :key="row.shop_catalog_item_id">
+              <td class="px-3 py-3"><input type="checkbox" :checked="selectedIds.includes(row.shop_catalog_item_id)" class="h-4 w-4 rounded border-slate-300" @change="toggleRowSelection(row.shop_catalog_item_id)" /></td>
+              <td class="px-3 py-3">
+                <p class="m-0 font-semibold text-slate-900">{{ row.item.name }}</p>
+                <p class="m-0 text-xs text-slate-500">#{{ row.shop_catalog_item_id }}</p>
+              </td>
+              <td class="px-3 py-3 font-mono text-xs text-slate-700">{{ row.item.code }}</td>
+              <td class="px-3 py-3 text-slate-700">{{ row.item.kind }}<span v-if="row.item.cosmetic_slot" class="text-xs text-slate-500"> / {{ row.item.cosmetic_slot }}</span></td>
+              <td class="px-3 py-3 text-slate-700">{{ rowPriceText(row) }}</td>
+              <td class="px-3 py-3">
+                <span class="rounded-full px-2 py-1 text-xs font-semibold" :class="statusClass(row)">{{ statusLabel(row) }}</span>
+              </td>
+              <td class="px-3 py-3">
+                <div class="flex flex-wrap justify-end gap-2">
+                  <button type="button" class="rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-50" :disabled="actionLoading === row.shop_catalog_item_id" @click="openEdit(row)">Edit</button>
+                  <button type="button" class="rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-50" :disabled="actionLoading === row.shop_catalog_item_id || !!row.deleted_at" @click="publishToggle(row)">{{ row.is_published ? 'Unpublish' : 'Publish' }}</button>
+                  <button type="button" class="rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-50" :disabled="actionLoading === row.shop_catalog_item_id || !!row.deleted_at" @click="activeToggle(row)">{{ row.is_active ? 'Deactivate' : 'Activate' }}</button>
+                  <button v-if="!row.deleted_at" type="button" class="rounded-md border border-red-300 bg-red-50 px-2.5 py-1.5 text-xs font-semibold text-red-900 hover:bg-red-100" :disabled="actionLoading === row.shop_catalog_item_id" @click="softDeleteRow(row)">Soft-delete</button>
+                  <button v-else type="button" class="rounded-md border border-emerald-300 bg-emerald-50 px-2.5 py-1.5 text-xs font-semibold text-emerald-900 hover:bg-emerald-100" :disabled="actionLoading === row.shop_catalog_item_id" @click="restoreRow(row)">Restore</button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="mt-4 flex items-center justify-between text-sm text-slate-600">
+      <p class="m-0">Showing page {{ meta.current_page }} of {{ meta.last_page }} ({{ meta.total }} total)</p>
+      <div class="flex gap-2">
+        <button type="button" class="rounded-md border border-slate-300 bg-white px-3 py-1.5 font-semibold text-slate-800 disabled:opacity-50" :disabled="meta.current_page <= 1" @click="goToPage(meta.current_page - 1)">Previous</button>
+        <button type="button" class="rounded-md border border-slate-300 bg-white px-3 py-1.5 font-semibold text-slate-800 disabled:opacity-50" :disabled="meta.current_page >= meta.last_page" @click="goToPage(meta.current_page + 1)">Next</button>
+      </div>
+    </div>
+
+    <div v-if="panelOpen" class="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 sm:items-center" @click.self="closePanel">
+      <div class="max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-xl border border-slate-200 bg-white p-5 shadow-xl">
+        <h2 class="m-0 text-lg font-bold text-slate-900">{{ editingId === null ? 'Create item' : 'Edit item' }}</h2>
+        <form class="mt-4 grid gap-3 md:grid-cols-2" @submit.prevent="submitForm">
           <div>
-            <label for="admin-form-code" class="mb-1 block text-sm font-medium text-slate-800">Code</label>
-            <input
-              id="admin-form-code"
-              v-model="formCode"
-              type="text"
-              required
-              class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
-              placeholder="e.g. campus_hero_skin"
-            />
+            <label class="mb-1 block text-sm font-medium text-slate-700">Code</label>
+            <input v-model="formState.code" type="text" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" required />
           </div>
-
           <div>
-            <label for="admin-form-name" class="mb-1 block text-sm font-medium text-slate-800">Name</label>
-            <input
-              id="admin-form-name"
-              v-model="formName"
-              type="text"
-              required
-              class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
-            />
+            <label class="mb-1 block text-sm font-medium text-slate-700">Name</label>
+            <input v-model="formState.name" type="text" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" required />
           </div>
-
           <div>
-            <label for="admin-form-kind" class="mb-1 block text-sm font-medium text-slate-800">Kind</label>
-            <select
-              id="admin-form-kind"
-              v-model="formKind"
-              class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
-            >
+            <label class="mb-1 block text-sm font-medium text-slate-700">Kind</label>
+            <select v-model="formState.kind" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
               <option value="cosmetic">Cosmetic</option>
               <option value="furniture">Furniture</option>
               <option value="consumable">Consumable</option>
               <option value="misc">Misc</option>
             </select>
           </div>
-
           <div>
-            <label for="admin-form-pricing-mode" class="mb-1 block text-sm font-medium text-slate-800">Pricing mode</label>
-            <select
-              id="admin-form-pricing-mode"
-              v-model="formPricingMode"
-              class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
-            >
-              <option value="coins">Coins</option>
-              <option value="premium">Premium</option>
-              <option value="both">Both</option>
+            <label class="mb-1 block text-sm font-medium text-slate-700">Cosmetic slot</label>
+            <select v-model="formState.cosmetic_slot" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" :disabled="formState.kind !== 'cosmetic'">
+              <option :value="null">None</option>
+              <option value="body">body</option>
+              <option value="hair">hair</option>
+              <option value="top">top</option>
+              <option value="bottom">bottom</option>
+              <option value="shoes">shoes</option>
+              <option value="head_accessory">head_accessory</option>
             </select>
           </div>
-
-          <div v-if="formPricingMode === 'coins' || formPricingMode === 'both'">
-            <label for="admin-form-price-coins" class="mb-1 block text-sm font-medium text-slate-800">Coins price</label>
-            <input
-              id="admin-form-price-coins"
-              v-model.number="formCoinsPrice"
-              type="number"
-              min="1"
-              step="1"
-              required
-              class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
-            />
-          </div>
-
-          <div v-if="formPricingMode === 'premium' || formPricingMode === 'both'">
-            <label for="admin-form-price-premium" class="mb-1 block text-sm font-medium text-slate-800">Premium price</label>
-            <input
-              id="admin-form-price-premium"
-              v-model.number="formPremiumPrice"
-              type="number"
-              min="1"
-              step="1"
-              required
-              class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
-            />
-          </div>
-
           <div>
-            <label for="admin-form-preview" class="mb-1 block text-sm font-medium text-slate-800">Preview image</label>
-            <input
-              id="admin-form-preview"
-              type="file"
-              accept="image/png,image/jpeg,image/webp"
-              class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-slate-700 hover:file:bg-slate-200"
-              @change="onPreviewFileChange"
-            />
-            <p v-if="formPreviewFile" class="mt-1 text-xs text-slate-500">Selected: {{ formPreviewFile.name }}</p>
+            <label class="mb-1 block text-sm font-medium text-slate-700">Rarity</label>
+            <input v-model.number="formState.rarity" type="number" min="0" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
           </div>
-
           <div>
-            <label for="admin-form-glb" class="mb-1 block text-sm font-medium text-slate-800">GLB model</label>
-            <input
-              id="admin-form-glb"
-              type="file"
-              accept=".glb,model/gltf-binary"
-              class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-slate-700 hover:file:bg-slate-200"
-              @change="onGlbFileChange"
-            />
-            <p v-if="formGlbFile" class="mt-1 text-xs text-slate-500">Selected: {{ formGlbFile.name }}</p>
+            <label class="mb-1 block text-sm font-medium text-slate-700">Max stack</label>
+            <input v-model.number="formState.max_stack" type="number" min="1" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
           </div>
-
-          <label class="flex items-center gap-2">
-            <input
-              id="admin-form-active"
-              v-model="formActive"
-              type="checkbox"
-              class="h-4 w-4 rounded border-slate-300 text-purple-600 focus:ring-purple-500"
-            />
-            <span class="text-sm font-medium text-slate-800">Active listing</span>
-          </label>
-          <label class="flex items-center gap-2">
-            <input
-              id="admin-form-published"
-              v-model="formPublished"
-              type="checkbox"
-              class="h-4 w-4 rounded border-slate-300 text-purple-600 focus:ring-purple-500"
-            />
-            <span class="text-sm font-medium text-slate-800">Visible in shop now</span>
-          </label>
-
-          <p v-if="formError" class="m-0 text-sm text-red-600" role="alert">{{ formError }}</p>
-
-          <div class="mt-2 flex flex-wrap justify-end gap-2">
-            <button
-              type="button"
-              class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50"
-              :disabled="formSubmitting"
-              @click="closePanel"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              class="rounded-lg bg-purple-600 px-4 py-2 text-sm font-bold text-white hover:bg-purple-500 disabled:cursor-not-allowed disabled:opacity-60"
-              :disabled="formSubmitting"
-            >
-              {{ formSubmitting ? 'Creating…' : 'Create skin' }}
+          <div>
+            <label class="mb-1 block text-sm font-medium text-slate-700">Bind</label>
+            <select v-model="formState.bind" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+              <option value="none">none</option>
+              <option value="bind_on_equip">bind_on_equip</option>
+              <option value="bind_on_place">bind_on_place</option>
+              <option value="bound">bound</option>
+            </select>
+          </div>
+          <div>
+            <label class="mb-1 block text-sm font-medium text-slate-700">Sort order</label>
+            <input v-model.number="formState.sort_order" type="number" min="0" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+          </div>
+          <div>
+            <label class="mb-1 block text-sm font-medium text-slate-700">Coins price</label>
+            <input v-model.number="formState.coins_price" type="number" min="1" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+          </div>
+          <div>
+            <label class="mb-1 block text-sm font-medium text-slate-700">Premium price</label>
+            <input v-model.number="formState.premium_price" type="number" min="1" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+          </div>
+          <div>
+            <label class="mb-1 block text-sm font-medium text-slate-700">Preview image URL</label>
+            <input v-model="formState.preview_image" type="url" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="/assets/skins/example-preview.png" />
+          </div>
+          <div>
+            <label class="mb-1 block text-sm font-medium text-slate-700">Model GLB URL</label>
+            <input v-model="formState.model_glb" type="url" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="/assets/skins/example.glb" />
+          </div>
+          <div>
+            <label class="mb-1 block text-sm font-medium text-slate-700">Preview image file</label>
+            <input type="file" accept="image/png,image/jpeg,image/webp" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" @change="onPreviewFileChange" />
+          </div>
+          <div>
+            <label class="mb-1 block text-sm font-medium text-slate-700">GLB file</label>
+            <input type="file" accept=".glb,model/gltf-binary" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" @change="onGlbFileChange" />
+          </div>
+          <div>
+            <label class="mb-1 block text-sm font-medium text-slate-700">Stock remaining</label>
+            <input v-model.number="formState.stock_remaining" type="number" min="0" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+          </div>
+          <div class="flex flex-wrap items-center gap-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 md:col-span-2">
+            <label class="flex items-center gap-2 text-sm text-slate-800"><input v-model="formState.tradable" type="checkbox" class="h-4 w-4 rounded border-slate-300" />Tradable</label>
+            <label class="flex items-center gap-2 text-sm text-slate-800"><input v-model="formState.premium_only" type="checkbox" class="h-4 w-4 rounded border-slate-300" />Premium only</label>
+            <label class="flex items-center gap-2 text-sm text-slate-800"><input v-model="formState.is_active" type="checkbox" class="h-4 w-4 rounded border-slate-300" />Active</label>
+            <label class="flex items-center gap-2 text-sm text-slate-800"><input v-model="formState.is_published" type="checkbox" class="h-4 w-4 rounded border-slate-300" />Published</label>
+            <label class="flex items-center gap-2 text-sm text-slate-800"><input v-model="formState.is_unique_per_account" type="checkbox" class="h-4 w-4 rounded border-slate-300" />Unique per account</label>
+          </div>
+          <p v-if="formError" class="m-0 text-sm text-red-600 md:col-span-2">{{ formError }}</p>
+          <div class="flex justify-end gap-2 md:col-span-2">
+            <button type="button" class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800" :disabled="formSubmitting" @click="closePanel">Cancel</button>
+            <button type="submit" class="rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-500 disabled:opacity-60" :disabled="formSubmitting">
+              {{ formSubmitting ? 'Saving...' : editingId === null ? 'Create item' : 'Save changes' }}
             </button>
           </div>
         </form>

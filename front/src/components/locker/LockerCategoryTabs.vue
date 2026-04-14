@@ -43,10 +43,10 @@ function iconForCategory(categoryId: string): string {
       type="button"
       :class="
         props.modelValue === category.id
-          ? 'border-[#FFD700] bg-[#FFD700] text-black shadow-[0_0_14px_rgba(59,130,246,0.55)]'
-          : 'border-[#475569] bg-transparent text-white hover:border-slate-300 hover:shadow-[0_0_10px_rgba(59,130,246,0.35)]'
+          ? 'border-[#facc15] bg-[#facc15] text-black shadow-[0_0_0_1px_rgba(250,204,21,0.5),0_10px_22px_rgba(250,204,21,0.28)]'
+          : 'border-white/30 bg-[#0f172a]/40 text-white hover:border-white/60 hover:bg-[#1e293b]'
       "
-      class="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold transition duration-200"
+      class="inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-black uppercase tracking-[0.12em] transition duration-200"
       @click="selectCategory(category.id)"
     >
       <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">

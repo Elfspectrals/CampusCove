@@ -6,7 +6,6 @@ use App\Http\Resources\ShopCatalogItemResource;
 use App\Models\ItemDef;
 use App\Models\ShopCatalogItem;
 use App\Support\AssetUrl;
-use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -24,21 +23,28 @@ class AdminShopItemController extends Controller
             'currency' => ['nullable', 'string', 'in:coins,premium'],
             'is_active' => ['nullable', 'boolean'],
             'is_published' => ['nullable', 'boolean'],
+            'active' => ['nullable', 'boolean'],
+            'published' => ['nullable', 'boolean'],
+            'kind' => ['nullable', 'string', 'in:furniture,cosmetic,consumable,misc'],
+            'deleted' => ['nullable', 'string', 'in:without,with,only,0,1,false,true'],
+            'sort_by' => ['nullable', 'string', 'in:shop_catalog_item_id,sort_order,created_at,updated_at,name,code,price,coins_price,premium_price'],
+            'sort_dir' => ['nullable', 'string', 'in:asc,desc'],
             'page' => ['nullable', 'integer', 'min:1'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
 
         $query = ShopCatalogItem::query()
+            ->select('shop_catalog_items.*')
+            ->leftJoin('item_defs', 'item_defs.item_def_id', '=', 'shop_catalog_items.item_def_id')
             ->with('itemDef')
-            ->orderBy('sort_order')
-            ->orderBy('shop_catalog_item_id');
+            ->distinct();
 
         if (! empty($validated['q'])) {
             $term = $validated['q'];
             $pattern = '%'.$this->escapeLikePattern($term).'%';
-            $query->whereHas('itemDef', function ($q) use ($pattern) {
-                $q->where('name', 'ilike', $pattern)
-                    ->orWhere('code', 'ilike', $pattern);
+            $query->where(function ($q) use ($pattern) {
+                $q->where('item_defs.name', 'ilike', $pattern)
+                    ->orWhere('item_defs.code', 'ilike', $pattern);
             });
         }
 
@@ -50,18 +56,134 @@ class AdminShopItemController extends Controller
             }
         }
 
-        if (array_key_exists('is_active', $validated)) {
-            $query->where('is_active', $validated['is_active']);
-        }
-        if (array_key_exists('is_published', $validated)) {
-            $query->where('is_published', $validated['is_published']);
+        if (array_key_exists('kind', $validated)) {
+            $query->where('item_defs.kind', $validated['kind']);
         }
 
+        $activeFilter = $validated['active'] ?? ($validated['is_active'] ?? null);
+        if ($activeFilter !== null) {
+            $query->where('shop_catalog_items.is_active', (bool) $activeFilter);
+        }
+        $publishedFilter = $validated['published'] ?? ($validated['is_published'] ?? null);
+        if ($publishedFilter !== null) {
+            $query->where('shop_catalog_items.is_published', (bool) $publishedFilter);
+        }
+
+        $deletedFilter = $validated['deleted'] ?? 'without';
+        if ($deletedFilter === '1' || $deletedFilter === 'true') {
+            $deletedFilter = 'only';
+        }
+        if ($deletedFilter === '0' || $deletedFilter === 'false') {
+            $deletedFilter = 'without';
+        }
+        if ($deletedFilter === 'with') {
+            $query->withTrashed();
+        } elseif ($deletedFilter === 'only') {
+            $query->onlyTrashed();
+        }
+
+        $sortMap = [
+            'shop_catalog_item_id' => 'shop_catalog_items.shop_catalog_item_id',
+            'sort_order' => 'shop_catalog_items.sort_order',
+            'created_at' => 'shop_catalog_items.created_at',
+            'updated_at' => 'shop_catalog_items.updated_at',
+            'name' => 'item_defs.name',
+            'code' => 'item_defs.code',
+            'price' => 'shop_catalog_items.price',
+            'coins_price' => 'shop_catalog_items.coins_price',
+            'premium_price' => 'shop_catalog_items.premium_price',
+        ];
+        $sortBy = (string) ($validated['sort_by'] ?? 'sort_order');
+        $sortDir = (string) ($validated['sort_dir'] ?? 'asc');
+        $query->orderBy($sortMap[$sortBy], $sortDir)
+            ->orderBy('shop_catalog_items.shop_catalog_item_id');
         $perPage = $validated['per_page'] ?? 20;
 
         return ShopCatalogItemResource::collection(
             $query->paginate($perPage)->withQueryString()
         )->response();
+    }
+
+    public function bulk(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'action' => ['required', 'string', 'in:publish,unpublish,activate,deactivate,soft-delete,restore'],
+            'ids' => ['required', 'array', 'min:1', 'max:500'],
+            'ids.*' => ['integer', 'min:1', 'distinct'],
+        ]);
+
+        $ids = array_values(array_unique(array_map(static fn (mixed $id): int => (int) $id, $validated['ids'])));
+        $action = (string) $validated['action'];
+        $items = ShopCatalogItem::query()->withTrashed()->whereIn('shop_catalog_item_id', $ids)->get();
+
+        if ($items->count() !== count($ids)) {
+            return response()->json([
+                'message' => 'Some provided ids were not found.',
+            ], 422);
+        }
+
+        $updated = 0;
+        $softDeleted = 0;
+        $restored = 0;
+        DB::transaction(function () use ($action, $items, &$updated, &$softDeleted, &$restored): void {
+            foreach ($items as $item) {
+                if ($action === 'publish') {
+                    $item->update(['is_published' => true]);
+                    $updated++;
+                    continue;
+                }
+                if ($action === 'unpublish') {
+                    $item->update(['is_published' => false]);
+                    $updated++;
+                    continue;
+                }
+                if ($action === 'activate') {
+                    $item->update(['is_active' => true]);
+                    $updated++;
+                    continue;
+                }
+                if ($action === 'deactivate') {
+                    $item->update(['is_active' => false]);
+                    $updated++;
+                    continue;
+                }
+                if ($action === 'soft-delete') {
+                    if ($item->trashed()) {
+                        continue;
+                    }
+                    $item->update([
+                        'is_active' => false,
+                        'is_published' => false,
+                    ]);
+                    $item->delete();
+                    $softDeleted++;
+                    continue;
+                }
+                if ($action === 'restore') {
+                    if (! $item->trashed()) {
+                        continue;
+                    }
+                    $item->restore();
+                    $restored++;
+                }
+            }
+        });
+
+        $resultItems = ShopCatalogItem::query()
+            ->withTrashed()
+            ->with('itemDef')
+            ->whereIn('shop_catalog_item_id', $ids)
+            ->orderBy('shop_catalog_item_id')
+            ->get();
+
+        return response()->json([
+            'action' => $action,
+            'total' => count($ids),
+            'updated' => $updated,
+            'soft_deleted' => $softDeleted,
+            'restored' => $restored,
+            'items' => ShopCatalogItemResource::collection($resultItems)->resolve(),
+        ]);
     }
 
     public function store(Request $request): JsonResponse
@@ -237,16 +359,12 @@ class AdminShopItemController extends Controller
 
     public function destroy(ShopCatalogItem $shopCatalogItem): JsonResponse
     {
-        try {
+        if (! $shopCatalogItem->trashed()) {
+            $shopCatalogItem->update([
+                'is_active' => false,
+                'is_published' => false,
+            ]);
             $shopCatalogItem->delete();
-        } catch (QueryException $e) {
-            if (($e->errorInfo[0] ?? '') === '23503') {
-                return response()->json([
-                    'message' => 'Cannot delete this catalog entry because related records exist (for example purchases). Remove dependencies first or deactivate the listing instead.',
-                ], 409);
-            }
-
-            throw $e;
         }
 
         return response()->json(null, 204);

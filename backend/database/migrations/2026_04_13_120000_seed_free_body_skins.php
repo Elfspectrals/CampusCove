@@ -6,6 +6,15 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    private const PREVIEW_IMAGE = '/storage/skins/previews/placeholderSkin.jpg';
+
+    /** @var array<string, string> */
+    private const MODEL_BY_CODE = [
+        'COS_WEAR_BODY_DEFAULT' => '/storage/skins/models/low_poly_character.glb',
+        'COS_WEAR_BODY_ADVENTURER' => '/storage/skins/models/low_poly_adventurer.glb',
+        'COS_WEAR_BODY_SWORDSMAN' => '/storage/skins/models/low_poly_character_swordsman.glb',
+    ];
+
     public function up(): void
     {
         $now = now();
@@ -16,17 +25,14 @@ return new class extends Migration
             [
                 'code' => 'COS_WEAR_BODY_DEFAULT',
                 'name' => 'Campus Body (default)',
-                'model_glb' => '/assets/models/low_poly_character.glb',
             ],
             [
                 'code' => 'COS_WEAR_BODY_ADVENTURER',
                 'name' => 'Campus Adventurer',
-                'model_glb' => '/assets/models/low_poly_adventurer.glb',
             ],
             [
                 'code' => 'COS_WEAR_BODY_SWORDSMAN',
                 'name' => 'Campus Swordsman',
-                'model_glb' => '/assets/models/low_poly_character_swordsman.glb',
             ],
         ];
 
@@ -46,10 +52,10 @@ return new class extends Migration
                     'created_at' => $now,
                 ];
                 if ($hasPreviewImage) {
-                    $insert['preview_image'] = '/assets/image/placeholderSkin.jpg';
+                    $insert['preview_image'] = self::PREVIEW_IMAGE;
                 }
                 if ($hasModelGlb) {
-                    $insert['model_glb'] = $def['model_glb'];
+                    $insert['model_glb'] = self::MODEL_BY_CODE[$def['code']];
                 }
                 DB::table('item_defs')->insert($insert);
                 continue;
@@ -66,10 +72,10 @@ return new class extends Migration
                 'cosmetic_slot' => 'body',
             ];
             if ($hasPreviewImage) {
-                $update['preview_image'] = '/assets/image/placeholderSkin.jpg';
+                $update['preview_image'] = self::PREVIEW_IMAGE;
             }
             if ($hasModelGlb) {
-                $update['model_glb'] = $def['model_glb'];
+                $update['model_glb'] = self::MODEL_BY_CODE[$def['code']];
             }
 
             DB::table('item_defs')
@@ -80,8 +86,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        DB::table('item_defs')
-            ->whereIn('code', ['COS_WEAR_BODY_ADVENTURER', 'COS_WEAR_BODY_SWORDSMAN'])
-            ->delete();
+        // Intentionally no-op: starter item defs are shared data and should not be hard-deleted on rollback.
     }
 };

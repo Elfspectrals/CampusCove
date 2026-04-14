@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\DB;
 
 class ShopSeeder extends Seeder
 {
+    private const STARTER_BODY_PREVIEW_IMAGE = '/storage/skins/previews/placeholderSkin.jpg';
+
     public function run(): void
     {
         $defs = [
@@ -61,6 +63,8 @@ class ShopSeeder extends Seeder
                 'bind' => 'bound',
                 'max_stack' => 99,
                 'cosmetic_slot' => 'body',
+                'preview_image' => self::STARTER_BODY_PREVIEW_IMAGE,
+                'model_glb' => '/storage/skins/models/low_poly_character.glb',
             ],
             [
                 'code' => 'COS_WEAR_BODY_ADVENTURER',
@@ -72,8 +76,8 @@ class ShopSeeder extends Seeder
                 'bind' => 'bound',
                 'max_stack' => 99,
                 'cosmetic_slot' => 'body',
-                'preview_image' => '/assets/image/placeholderSkin.jpg',
-                'model_glb' => '/assets/models/low_poly_adventurer.glb',
+                'preview_image' => self::STARTER_BODY_PREVIEW_IMAGE,
+                'model_glb' => '/storage/skins/models/low_poly_adventurer.glb',
             ],
             [
                 'code' => 'COS_WEAR_BODY_SWORDSMAN',
@@ -85,8 +89,8 @@ class ShopSeeder extends Seeder
                 'bind' => 'bound',
                 'max_stack' => 99,
                 'cosmetic_slot' => 'body',
-                'preview_image' => '/assets/image/placeholderSkin.jpg',
-                'model_glb' => '/assets/models/low_poly_character_swordsman.glb',
+                'preview_image' => self::STARTER_BODY_PREVIEW_IMAGE,
+                'model_glb' => '/storage/skins/models/low_poly_character_swordsman.glb',
             ],
             [
                 'code' => 'COS_WEAR_HAIR_DEFAULT',

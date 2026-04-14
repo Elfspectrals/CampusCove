@@ -57,6 +57,7 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
         Route::prefix('shop')->group(function () {
             Route::get('/items', [AdminShopItemController::class, 'index']);
             Route::post('/items', [AdminShopItemController::class, 'store']);
+            Route::post('/items/bulk', [AdminShopItemController::class, 'bulk']);
             Route::put('/items/{shop_catalog_item}', [AdminShopItemController::class, 'update']);
             Route::patch('/items/{shop_catalog_item}', [AdminShopItemController::class, 'update']);
             Route::delete('/items/{shop_catalog_item}', [AdminShopItemController::class, 'destroy']);

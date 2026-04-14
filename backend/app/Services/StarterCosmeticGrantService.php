@@ -9,6 +9,15 @@ use App\Models\ItemDef;
  */
 final class StarterCosmeticGrantService
 {
+    private const FREE_BODY_PREVIEW_IMAGE = '/storage/skins/previews/placeholderSkin.jpg';
+
+    /** @var array<string, string> */
+    private const FREE_BODY_MODEL_BY_CODE = [
+        'COS_WEAR_BODY_DEFAULT' => '/storage/skins/models/low_poly_character.glb',
+        'COS_WEAR_BODY_ADVENTURER' => '/storage/skins/models/low_poly_adventurer.glb',
+        'COS_WEAR_BODY_SWORDSMAN' => '/storage/skins/models/low_poly_character_swordsman.glb',
+    ];
+
     /** @var list<string> */
     public const FREE_BODY_CODES = [
         'COS_WEAR_BODY_DEFAULT',
@@ -36,6 +45,7 @@ final class StarterCosmeticGrantService
 
     public function ensureStarterCosmeticsForAccount(int $accountId): void
     {
+        $this->ensureFreeBodyDefinitionsConfigured();
         $this->ensureCodesForAccount($accountId, self::FREE_BODY_CODES);
     }
 
@@ -54,6 +64,31 @@ final class StarterCosmeticGrantService
                 continue;
             }
             $this->accountInventoryService->grantPurchasedItems($accountId, $def, 1);
+        }
+    }
+
+    private function ensureFreeBodyDefinitionsConfigured(): void
+    {
+        foreach (self::FREE_BODY_CODES as $code) {
+            ItemDef::query()->updateOrCreate(
+                ['code' => $code],
+                [
+                    'name' => match ($code) {
+                        'COS_WEAR_BODY_ADVENTURER' => 'Campus Adventurer',
+                        'COS_WEAR_BODY_SWORDSMAN' => 'Campus Swordsman',
+                        default => 'Campus Body (default)',
+                    },
+                    'kind' => 'cosmetic',
+                    'rarity' => 0,
+                    'tradable' => false,
+                    'premium_only' => false,
+                    'bind' => 'bound',
+                    'max_stack' => 99,
+                    'cosmetic_slot' => 'body',
+                    'preview_image' => self::FREE_BODY_PREVIEW_IMAGE,
+                    'model_glb' => self::FREE_BODY_MODEL_BY_CODE[$code],
+                ]
+            );
         }
     }
 }

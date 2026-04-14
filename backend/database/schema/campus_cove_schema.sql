@@ -329,6 +329,7 @@ CREATE TABLE IF NOT EXISTS shop_catalog_items (
   is_unique_per_account  BOOLEAN NOT NULL DEFAULT FALSE,
   stock_remaining        INT NULL,
   sort_order             INT NOT NULL DEFAULT 0,
+  deleted_at             TIMESTAMPTZ NULL,
   created_at             TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at             TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT ck_shop_catalog_price CHECK (price > 0),
@@ -343,6 +344,7 @@ CREATE TABLE IF NOT EXISTS shop_catalog_items (
 
 CREATE UNIQUE INDEX IF NOT EXISTS ux_shop_catalog_public_id ON shop_catalog_items(public_id);
 CREATE INDEX IF NOT EXISTS ix_shop_catalog_active_sort ON shop_catalog_items(is_active, sort_order);
+CREATE INDEX IF NOT EXISTS ix_shop_catalog_deleted_at ON shop_catalog_items(deleted_at);
 
 CREATE TABLE IF NOT EXISTS account_shop_purchases (
   purchase_id              BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,

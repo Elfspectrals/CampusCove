@@ -5,9 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ShopCatalogItem extends Model
 {
+    use SoftDeletes;
+
     protected $table = 'shop_catalog_items';
 
     protected $primaryKey = 'shop_catalog_item_id';
@@ -32,6 +35,7 @@ class ShopCatalogItem extends Model
         'is_unique_per_account',
         'stock_remaining',
         'sort_order',
+        'deleted_at',
     ];
 
     protected function casts(): array
@@ -50,6 +54,7 @@ class ShopCatalogItem extends Model
             'stock_remaining' => 'integer',
             'sort_order' => 'integer',
             'item_def_id' => 'integer',
+            'deleted_at' => 'datetime',
         ];
     }
 
