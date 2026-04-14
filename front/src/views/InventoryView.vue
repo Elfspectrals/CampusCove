@@ -28,6 +28,8 @@ interface LockerOwnedSkinEntry {
   isNew: boolean
   previewImageSrc: string
   fallbackImageUsed: boolean
+  canEquip: boolean
+  slotLabel: string
 }
 
 const categories: LockerCategory[] = [
@@ -57,20 +59,29 @@ const {
 const fpsStat = ref<string>('120 FPS')
 const pingStat = ref<string>('35 MS')
 const selectedPreviewAssetId = ref<PreviewCharacterAsset['id']>(DEFAULT_PREVIEW_CHARACTER_ASSET_ID)
+const selectedPreviewAssetSrc = ref<string | null>(null)
 
 const cosmeticItems = computed<AccountInventoryRow[]>(() =>
-  items.value.filter((row) => canEquipCosmetic(row) && row.item.cosmetic_slot === 'body'),
+  items.value.filter((row) => row.item.kind === 'cosmetic'),
 )
 
 const gridItems = computed<LockerOwnedSkinEntry[]>(() =>
   cosmeticItems.value.map((row) => {
-    const previewMeta = getPreviewImageByCosmetic(row.item.code, row.item.name)
+    const previewMeta = row.item.preview_image
+      ? { src: row.item.preview_image, fallbackUsed: false }
+      : getPreviewImageByCosmetic(row.item.code, row.item.name)
+    const canEquip = canEquipCosmetic(row)
+    const slotLabel = canEquip
+      ? slotDisplayName(row.item.cosmetic_slot as CosmeticSlot)
+      : 'Outfit'
     return {
       key: `item-${row.id}`,
       row,
       isNew: row.quantity <= 1 || row.item.rarity >= 4,
       previewImageSrc: previewMeta.src,
       fallbackImageUsed: previewMeta.fallbackUsed,
+      canEquip,
+      slotLabel,
     }
   }),
 )
@@ -84,11 +95,15 @@ const activeFilterCount = computed<number>(() => {
 })
 
 function selectPreviewAsset(assetId: PreviewCharacterAsset['id']): void {
+  selectedPreviewAssetSrc.value = null
   selectedPreviewAssetId.value = assetId
 }
 
 async function equipSkinFromInventoryRow(row: AccountInventoryRow): Promise<void> {
-  selectPreviewAsset(resolvePreviewCharacterAssetIdFromCosmetic(row.item.code, row.item.name))
+  if (!canEquipCosmetic(row)) return
+  const mappedAssetId = resolvePreviewCharacterAssetIdFromCosmetic(row.item.code, row.item.name)
+  selectedPreviewAssetId.value = mappedAssetId
+  selectedPreviewAssetSrc.value = row.item.model_glb ?? null
   await equipCosmetic(row)
 }
 </script>
@@ -104,7 +119,7 @@ async function equipSkinFromInventoryRow(row: AccountInventoryRow): Promise<void
         </div>
 
         <div class="flex flex-1">
-          <LockerCharacterPreview :asset-id="selectedPreviewAssetId" />
+          <LockerCharacterPreview :asset-id="selectedPreviewAssetId" :asset-src="selectedPreviewAssetSrc" />
         </div>
 
         <div class="mt-4 flex items-center gap-3 self-start">
@@ -208,12 +223,12 @@ async function equipSkinFromInventoryRow(row: AccountInventoryRow): Promise<void
               :selected="isEquipped(entry.row)"
               :is-new="entry.isNew"
               :is-empty="false"
-              :busy="equippingId === entry.row?.id"
+              :busy="equippingId === entry.row?.id || !entry.canEquip"
               :item="
                 {
                   id: entry.row.id,
                   name: entry.row.item.name,
-                  slot: slotDisplayName(entry.row.item.cosmetic_slot as CosmeticSlot),
+                  slot: entry.slotLabel,
                   quantity: entry.row.quantity,
                   previewImageSrc: entry.previewImageSrc,
                   fallbackImageUsed: entry.fallbackImageUsed,

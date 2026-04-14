@@ -23,13 +23,23 @@ CREATE TABLE shop_catalog_items (
   item_def_id            BIGINT NOT NULL REFERENCES item_defs(item_def_id) ON DELETE RESTRICT,
   currency               currency_code NOT NULL,
   price                  BIGINT NOT NULL,
+  allow_coins            BOOLEAN NOT NULL DEFAULT FALSE,
+  coins_price            BIGINT NULL,
+  allow_premium          BOOLEAN NOT NULL DEFAULT FALSE,
+  premium_price          BIGINT NULL,
   is_active              BOOLEAN NOT NULL DEFAULT TRUE,
+  is_published           BOOLEAN NOT NULL DEFAULT TRUE,
   is_unique_per_account  BOOLEAN NOT NULL DEFAULT FALSE,
   stock_remaining        INT NULL,
   sort_order             INT NOT NULL DEFAULT 0,
   created_at             TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at             TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT ck_shop_catalog_price CHECK (price > 0),
+  CONSTRAINT ck_shop_catalog_pricing CHECK (
+    (allow_coins = TRUE AND coins_price IS NOT NULL AND coins_price > 0)
+    OR
+    (allow_premium = TRUE AND premium_price IS NOT NULL AND premium_price > 0)
+  ),
   CONSTRAINT ck_shop_catalog_stock CHECK (stock_remaining IS NULL OR stock_remaining >= 0),
   UNIQUE(item_def_id, currency)
 );

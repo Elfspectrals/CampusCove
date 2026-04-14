@@ -22,11 +22,16 @@ class ShopController extends Controller
         $query = ShopCatalogItem::query()
             ->with('itemDef')
             ->where('is_active', true)
+            ->where('is_published', true)
             ->orderBy('sort_order')
             ->orderBy('shop_catalog_item_id');
 
         if (isset($validated['currency'])) {
-            $query->where('currency', $validated['currency']);
+            if ($validated['currency'] === 'coins') {
+                $query->where('allow_coins', true);
+            } else {
+                $query->where('allow_premium', true);
+            }
         }
 
         $items = $query->get();
@@ -42,6 +47,7 @@ class ShopController extends Controller
             'shop_item_public_id' => 'required_without:shop_catalog_item_id|uuid',
             'shop_catalog_item_id' => 'required_without:shop_item_public_id|integer|min:1',
             'quantity' => 'integer|min:1|max:999',
+            'currency' => 'nullable|string|in:coins,premium',
         ]);
 
         /** @var Account $account */
@@ -67,7 +73,8 @@ class ShopController extends Controller
         $result = $shopPurchaseService->purchaseByCatalogPublicId(
             $account,
             (string) $catalogRow->public_id,
-            $quantity
+            $quantity,
+            $validated['currency'] ?? null
         );
 
         $purchase = $result->purchase;

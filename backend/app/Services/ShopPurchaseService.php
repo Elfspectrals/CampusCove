@@ -18,13 +18,18 @@ final class ShopPurchaseService
         private readonly AccountInventoryService $accountInventoryService,
     ) {}
 
-    public function purchaseByCatalogPublicId(Account $account, string $shopItemPublicId, int $quantity): ShopPurchaseResult
+    public function purchaseByCatalogPublicId(
+        Account $account,
+        string $shopItemPublicId,
+        int $quantity,
+        ?string $selectedCurrency = null
+    ): ShopPurchaseResult
     {
         if ($quantity < 1) {
             throw new ShopPurchaseRejectedException('invalid_quantity', 'Quantity must be at least 1.', 422);
         }
 
-        return DB::transaction(function () use ($account, $shopItemPublicId, $quantity): ShopPurchaseResult {
+        return DB::transaction(function () use ($account, $shopItemPublicId, $quantity, $selectedCurrency): ShopPurchaseResult {
             /** @var ShopCatalogItem|null $catalogItem */
             $catalogItem = ShopCatalogItem::query()
                 ->where('public_id', $shopItemPublicId)
@@ -44,6 +49,9 @@ final class ShopPurchaseService
             if (! $catalogItem->is_active) {
                 throw new ShopPurchaseRejectedException('item_unavailable', 'This item is not available for purchase.', 422);
             }
+            if (! $catalogItem->is_published) {
+                throw new ShopPurchaseRejectedException('item_unavailable', 'This item is not available for purchase.', 422);
+            }
 
             if ($catalogItem->is_unique_per_account && $quantity !== 1) {
                 throw new ShopPurchaseRejectedException('invalid_quantity', 'This item can only be purchased one at a time.', 422);
@@ -58,8 +66,7 @@ final class ShopPurchaseService
                 throw new ShopPurchaseRejectedException('item_unavailable', 'This item is out of stock.', 422);
             }
 
-            $currency = $catalogItem->currency;
-            $unitPrice = $catalogItem->price;
+            [$currency, $unitPrice] = $this->resolvePricing($catalogItem, $selectedCurrency);
             $totalDebit = $unitPrice * $quantity;
 
             $accountId = $account->getAuthIdentifier();
@@ -176,5 +183,68 @@ final class ShopPurchaseService
             ->where('currency', $currency)
             ->lockForUpdate()
             ->firstOrFail();
+    }
+
+    /**
+     * @return array{0: string, 1: int}
+     */
+    private function resolvePricing(ShopCatalogItem $catalogItem, ?string $selectedCurrency): array
+    {
+        $allowCoins = (bool) $catalogItem->allow_coins;
+        $allowPremium = (bool) $catalogItem->allow_premium;
+
+        if ($allowCoins || $allowPremium) {
+            $available = [];
+            if ($allowCoins) {
+                $available[] = 'coins';
+            }
+            if ($allowPremium) {
+                $available[] = 'premium';
+            }
+
+            if ($selectedCurrency === null) {
+                if (count($available) > 1) {
+                    throw new ShopPurchaseRejectedException(
+                        'currency_required',
+                        'This item supports multiple currencies. Provide currency in the purchase request.',
+                        422
+                    );
+                }
+                $selectedCurrency = $available[0];
+            }
+
+            if (! in_array($selectedCurrency, $available, true)) {
+                throw new ShopPurchaseRejectedException(
+                    'invalid_currency',
+                    'Selected currency is not available for this item.',
+                    422
+                );
+            }
+
+            $price = $selectedCurrency === 'coins'
+                ? (int) $catalogItem->coins_price
+                : (int) $catalogItem->premium_price;
+
+            if ($price <= 0) {
+                throw new ShopPurchaseRejectedException('invalid_shop_item', 'Shop item pricing is invalid.', 422);
+            }
+
+            return [$selectedCurrency, $price];
+        }
+
+        $legacyCurrency = (string) $catalogItem->currency;
+        $legacyPrice = (int) $catalogItem->price;
+        if ($selectedCurrency !== null && $selectedCurrency !== $legacyCurrency) {
+            throw new ShopPurchaseRejectedException(
+                'invalid_currency',
+                'Selected currency is not available for this item.',
+                422
+            );
+        }
+        if ($legacyPrice <= 0) {
+            throw new ShopPurchaseRejectedException('invalid_shop_item', 'Shop item pricing is invalid.', 422);
+        }
+
+        return [$legacyCurrency, $legacyPrice];
     }
 }

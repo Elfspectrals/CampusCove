@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdminShopItemController;
+use App\Http\Controllers\AssetController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CharacterCosmeticController;
 use App\Http\Controllers\FriendController;
@@ -17,6 +18,7 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
 
 Route::get('/shop/items', [ShopController::class, 'index']);
+Route::get('/assets/public/{path}', [AssetController::class, 'publicDisk'])->where('path', '.*');
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', [AuthController::class, 'user']);

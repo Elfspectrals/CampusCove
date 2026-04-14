@@ -3,6 +3,7 @@
  * Endpoints are conventional REST; adjust paths here if your backend uses a different prefix.
  */
 import { formatApiError, getStoredAuth } from './auth'
+import { normalizeApiAssetUrl } from './url'
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api'
 
@@ -12,12 +13,15 @@ export interface AdminShopItemNested {
   item_def_id: number
   code: string
   name: string
+  description?: string | null
   kind: string
   rarity: number
   tradable: boolean
   premium_only: boolean
   bind: string
   max_stack: number
+  preview_image?: string | null
+  model_glb?: string | null
 }
 
 export interface AdminShopCatalogRow {
@@ -25,7 +29,12 @@ export interface AdminShopCatalogRow {
   public_id: string
   currency: ShopCurrency
   price: number
+  allow_coins: boolean
+  coins_price: number | null
+  allow_premium: boolean
+  premium_price: number | null
   is_active: boolean
+  is_published: boolean
   is_unique_per_account: boolean
   stock_remaining: number | null
   sort_order: number
@@ -37,32 +46,42 @@ export interface AdminShopItemCreateBody {
   name: string
   kind: 'furniture' | 'cosmetic' | 'consumable' | 'misc'
   prices: Partial<Record<ShopCurrency, number>>
+  previewImageFile: File | null
+  modelGlbFile: File | null
   is_active: boolean
+  is_published: boolean
   stock_remaining: number | null
   is_unique_per_account: boolean
 }
 
 export interface AdminShopItemUpdateBody {
-  name: string
-  currency: ShopCurrency
-  price: number
-  is_active: boolean
-  stock_remaining: number | null
-  is_unique_per_account: boolean
+  name?: string
+  prices?: Partial<Record<ShopCurrency, number>>
+  is_active?: boolean
+  is_published?: boolean
+  stock_remaining?: number | null
+  is_unique_per_account?: boolean
 }
 
 export interface AdminShopListParams {
   search?: string
   currency?: ShopCurrency | 'all'
   is_active?: boolean | 'all'
+  is_published?: boolean | 'all'
 }
 
-function authJsonHeaders(): HeadersInit {
+function authHeaders(): HeadersInit {
   const auth = getStoredAuth()
   return {
     Accept: 'application/json',
-    'Content-Type': 'application/json',
     ...(auth?.token ? { Authorization: `Bearer ${auth.token}` } : {}),
+  }
+}
+
+function authJsonHeaders(): HeadersInit {
+  return {
+    ...authHeaders(),
+    'Content-Type': 'application/json',
   }
 }
 
@@ -85,6 +104,9 @@ function parseNestedItem(row: unknown): AdminShopItemNested | null {
   if (typeof row.premium_only !== 'boolean') return null
   if (typeof row.bind !== 'string') return null
   if (typeof row.max_stack !== 'number') return null
+  if (!(row.description === undefined || row.description === null || typeof row.description === 'string')) return null
+  if (!(row.preview_image === undefined || row.preview_image === null || typeof row.preview_image === 'string')) return null
+  if (!(row.model_glb === undefined || row.model_glb === null || typeof row.model_glb === 'string')) return null
   return {
     item_def_id: row.item_def_id,
     code: row.code,
@@ -95,6 +117,9 @@ function parseNestedItem(row: unknown): AdminShopItemNested | null {
     premium_only: row.premium_only,
     bind: row.bind,
     max_stack: row.max_stack,
+    description: row.description === undefined ? null : row.description,
+    preview_image: normalizeApiAssetUrl(row.preview_image),
+    model_glb: normalizeApiAssetUrl(row.model_glb),
   }
 }
 
@@ -104,7 +129,12 @@ function parseCatalogRow(row: unknown): AdminShopCatalogRow | null {
   if (typeof row.public_id !== 'string') return null
   if (!isShopCurrency(row.currency)) return null
   if (typeof row.price !== 'number') return null
+  if (typeof row.allow_coins !== 'boolean') return null
+  if (!(row.coins_price === null || typeof row.coins_price === 'number')) return null
+  if (typeof row.allow_premium !== 'boolean') return null
+  if (!(row.premium_price === null || typeof row.premium_price === 'number')) return null
   if (typeof row.is_active !== 'boolean') return null
+  if (typeof row.is_published !== 'boolean') return null
   if (typeof row.is_unique_per_account !== 'boolean') return null
   if (!(row.stock_remaining === null || typeof row.stock_remaining === 'number')) return null
   if (typeof row.sort_order !== 'number') return null
@@ -115,7 +145,12 @@ function parseCatalogRow(row: unknown): AdminShopCatalogRow | null {
     public_id: row.public_id,
     currency: row.currency,
     price: row.price,
+    allow_coins: row.allow_coins,
+    coins_price: row.coins_price,
+    allow_premium: row.allow_premium,
+    premium_price: row.premium_price,
     is_active: row.is_active,
+    is_published: row.is_published,
     is_unique_per_account: row.is_unique_per_account,
     stock_remaining: row.stock_remaining,
     sort_order: row.sort_order,
@@ -150,6 +185,9 @@ function buildListQuery(params: AdminShopListParams): string {
   if (params.is_active !== undefined && params.is_active !== 'all') {
     q.set('is_active', params.is_active ? '1' : '0')
   }
+  if (params.is_published !== undefined && params.is_published !== 'all') {
+    q.set('is_published', params.is_published ? '1' : '0')
+  }
   const s = q.toString()
   return s ? `?${s}` : ''
 }
@@ -164,10 +202,33 @@ export async function fetchAdminShopItems(params: AdminShopListParams = {}): Pro
 }
 
 export async function createAdminShopItem(body: AdminShopItemCreateBody): Promise<AdminShopCatalogRow> {
+  const formData = new FormData()
+  formData.set('code', body.code)
+  formData.set('name', body.name)
+  formData.set('kind', body.kind)
+  formData.set('is_active', body.is_active ? '1' : '0')
+  formData.set('is_published', body.is_published ? '1' : '0')
+  formData.set('is_unique_per_account', body.is_unique_per_account ? '1' : '0')
+  if (body.stock_remaining !== null) {
+    formData.set('stock_remaining', String(body.stock_remaining))
+  }
+  if (body.prices.coins !== undefined) {
+    formData.set('prices[coins]', String(body.prices.coins))
+  }
+  if (body.prices.premium !== undefined) {
+    formData.set('prices[premium]', String(body.prices.premium))
+  }
+  if (body.previewImageFile) {
+    formData.set('preview_image_file', body.previewImageFile)
+  }
+  if (body.modelGlbFile) {
+    formData.set('model_glb_file', body.modelGlbFile)
+  }
+
   const res = await fetch(`${API_BASE}/admin/shop/items`, {
     method: 'POST',
-    headers: authJsonHeaders(),
-    body: JSON.stringify(body),
+    headers: authHeaders(),
+    body: formData,
   })
   const data: unknown = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(formatApiError(data))

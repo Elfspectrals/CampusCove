@@ -28,7 +28,12 @@ class ShopApiTest extends TestCase
                     'public_id',
                     'currency',
                     'price',
+                    'allow_coins',
+                    'coins_price',
+                    'allow_premium',
+                    'premium_price',
                     'is_active',
+                    'is_published',
                     'is_unique_per_account',
                     'stock_remaining',
                     'sort_order',
@@ -49,8 +54,23 @@ class ShopApiTest extends TestCase
 
         $response->assertOk();
         foreach ($response->json('items') as $item) {
-            $this->assertSame('premium', $item['currency']);
+            $this->assertTrue($item['allow_premium']);
         }
+    }
+
+    public function test_public_shop_catalog_hides_unpublished_items(): void
+    {
+        $row = DB::table('shop_catalog_items')->first();
+        $this->assertNotNull($row);
+
+        DB::table('shop_catalog_items')
+            ->where('shop_catalog_item_id', $row->shop_catalog_item_id)
+            ->update(['is_published' => false, 'updated_at' => now()]);
+
+        $response = $this->getJson('/api/shop/items');
+        $response->assertOk();
+        $ids = array_column($response->json('items'), 'shop_catalog_item_id');
+        $this->assertNotContains($row->shop_catalog_item_id, $ids);
     }
 
     public function test_purchase_requires_authentication(): void
@@ -154,6 +174,57 @@ class ShopApiTest extends TestCase
         ])
             ->assertStatus(422)
             ->assertJsonPath('code', 'insufficient_funds');
+    }
+
+    public function test_purchase_with_dual_currency_requires_selection_and_uses_chosen_wallet(): void
+    {
+        $row = DB::table('shop_catalog_items')->where('currency', 'coins')->first();
+        $this->assertNotNull($row);
+        DB::table('shop_catalog_items')
+            ->where('shop_catalog_item_id', $row->shop_catalog_item_id)
+            ->update([
+                'allow_coins' => true,
+                'coins_price' => 20,
+                'allow_premium' => true,
+                'premium_price' => 3,
+                'updated_at' => now(),
+            ]);
+
+        $account = $this->registerAndCreditWallet(1000, 'coins');
+        $token = $account['token'];
+        $accountId = $account['account_id'];
+        $premiumWalletId = (int) DB::table('wallets')->insertGetId([
+            'owner_type' => 'account',
+            'owner_id' => $accountId,
+            'currency' => 'premium',
+            'created_at' => now(),
+        ], 'wallet_id');
+        DB::table('wallet_ledger')->insert([
+            'wallet_id' => $premiumWalletId,
+            'tx_id' => null,
+            'delta' => 10,
+            'reason' => 'test_credit',
+            'created_at' => now(),
+        ]);
+
+        $this->postJson('/api/shop/purchase', [
+            'shop_item_public_id' => $row->public_id,
+            'quantity' => 1,
+        ], [
+            'Authorization' => 'Bearer '.$token,
+        ])->assertStatus(422)->assertJsonPath('code', 'currency_required');
+
+        $response = $this->postJson('/api/shop/purchase', [
+            'shop_item_public_id' => $row->public_id,
+            'currency' => 'premium',
+            'quantity' => 1,
+        ], [
+            'Authorization' => 'Bearer '.$token,
+        ]);
+
+        $response->assertOk();
+        $response->assertJsonPath('purchase.currency', 'premium');
+        $response->assertJsonPath('purchase.total_debit', 3);
     }
 
     public function test_purchase_fails_for_unknown_public_id(): void

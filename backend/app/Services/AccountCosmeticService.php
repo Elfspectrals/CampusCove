@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Account;
 use App\Models\GiftInbox;
 use App\Models\ItemDef;
+use App\Support\AssetUrl;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -126,8 +127,8 @@ final class AccountCosmeticService
                 'code' => (string) $row->code,
                 'name' => (string) $row->name,
                 'cosmetic_slot' => $row->cosmetic_slot !== null ? (string) $row->cosmetic_slot : null,
-                'preview_image' => $row->preview_image !== null ? (string) $row->preview_image : null,
-                'model_glb' => $row->model_glb !== null ? (string) $row->model_glb : null,
+                'preview_image' => AssetUrl::normalize($row->preview_image !== null ? (string) $row->preview_image : null),
+                'model_glb' => AssetUrl::normalize($row->model_glb !== null ? (string) $row->model_glb : null),
             ];
         }
 

@@ -66,18 +66,24 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
 }
 
+function normalizeCosmeticSlot(slot: unknown): string | null {
+  if (typeof slot !== 'string') return null
+  const normalized = slot.trim().toLowerCase()
+  return normalized === '' ? null : normalized
+}
+
 function parseEquipped(raw: unknown): EquippedCosmetic | null {
   if (raw === null) return null
   if (!isRecord(raw)) return null
   if (typeof raw.item_def_id !== 'number') return null
   if (typeof raw.code !== 'string') return null
   if (typeof raw.name !== 'string') return null
-  const cs = raw.cosmetic_slot
+  const cs = normalizeCosmeticSlot(raw.cosmetic_slot)
   return {
     item_def_id: raw.item_def_id,
     code: raw.code,
     name: raw.name,
-    cosmetic_slot: typeof cs === 'string' ? cs : null,
+    cosmetic_slot: cs,
   }
 }
 

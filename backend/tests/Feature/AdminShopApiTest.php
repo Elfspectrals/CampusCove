@@ -3,7 +3,9 @@
 namespace Tests\Feature;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class AdminShopApiTest extends TestCase
@@ -68,11 +70,11 @@ class AdminShopApiTest extends TestCase
             'Authorization' => 'Bearer '.$token,
         ])->json('data');
         foreach ($allPremium as $row) {
-            $this->assertSame('premium', $row['currency']);
+            $this->assertTrue($row['allow_premium']);
         }
     }
 
-    public function test_admin_can_create_item_def_with_dual_currency_catalog_rows(): void
+    public function test_admin_can_create_item_def_with_dual_currency_catalog_pricing(): void
     {
         $token = $this->registerToken(fn (int $id) => $this->grantAdminRole($id));
 
@@ -93,14 +95,70 @@ class AdminShopApiTest extends TestCase
         ]);
 
         $response->assertCreated();
-        $response->assertJsonCount(2, 'items');
-        $currencies = array_column($response->json('items'), 'currency');
-        sort($currencies);
-        $this->assertSame(['coins', 'premium'], $currencies);
-        $this->assertSame('/assets/skins/admin_test_sofa-preview.png', $response->json('items.0.item.preview_image'));
-        $this->assertSame('/assets/skins/admin_test_sofa.glb', $response->json('items.0.item.model_glb'));
+        $response->assertJsonPath('item.allow_coins', true);
+        $response->assertJsonPath('item.coins_price', 99);
+        $response->assertJsonPath('item.allow_premium', true);
+        $response->assertJsonPath('item.premium_price', 10);
+        $this->assertSame(url('/assets/skins/admin_test_sofa-preview.png'), $response->json('item.item.preview_image'));
+        $this->assertSame(url('/assets/skins/admin_test_sofa.glb'), $response->json('item.item.model_glb'));
+        $this->assertFalse($response->json('item.is_published'));
 
         $this->assertDatabaseHas('item_defs', ['code' => 'admin_test_sofa']);
+    }
+
+    public function test_admin_can_create_item_with_uploaded_skin_files(): void
+    {
+        Storage::fake('public');
+        $token = $this->registerToken(fn (int $id) => $this->grantAdminRole($id));
+
+        $response = $this->post('/api/admin/shop/items', [
+            'code' => 'admin_uploaded_skin',
+            'name' => 'Admin Uploaded Skin',
+            'kind' => 'cosmetic',
+            'cosmetic_slot' => 'body',
+            'prices' => ['coins' => 150],
+            'preview_image_file' => UploadedFile::fake()->image('preview.png'),
+            'model_glb_file' => UploadedFile::fake()->create('skin.glb', 64, 'model/gltf-binary'),
+        ], [
+            'Authorization' => 'Bearer '.$token,
+            'Accept' => 'application/json',
+        ]);
+
+        $response->assertCreated();
+        $this->assertStringContainsString('/storage/skins/previews/', (string) $response->json('item.item.preview_image'));
+        $this->assertStringContainsString('/storage/skins/models/', (string) $response->json('item.item.model_glb'));
+        $this->assertStringStartsWith('http', (string) $response->json('item.item.preview_image'));
+        $this->assertStringStartsWith('http', (string) $response->json('item.item.model_glb'));
+    }
+
+    public function test_admin_create_cosmetic_defaults_slot_and_coerces_kind_when_slot_is_set(): void
+    {
+        $token = $this->registerToken(fn (int $id) => $this->grantAdminRole($id));
+
+        $defaults = $this->postJson('/api/admin/shop/items', [
+            'code' => 'admin_cosmetic_default_slot',
+            'name' => 'Admin Cosmetic Default Slot',
+            'kind' => 'cosmetic',
+            'prices' => ['coins' => 70],
+        ], [
+            'Authorization' => 'Bearer '.$token,
+        ]);
+        $defaults->assertCreated();
+        $defaults->assertJsonPath('item.item.kind', 'cosmetic');
+        $defaults->assertJsonPath('item.item.cosmetic_slot', 'body');
+
+        $coerced = $this->postJson('/api/admin/shop/items', [
+            'code' => 'admin_cosmetic_kind_coerced',
+            'name' => 'Admin Cosmetic Kind Coerced',
+            'kind' => 'misc',
+            'cosmetic_slot' => 'body',
+            'prices' => ['coins' => 80],
+        ], [
+            'Authorization' => 'Bearer '.$token,
+        ]);
+        $coerced->assertCreated();
+        $coerced->assertJsonPath('item.item.kind', 'cosmetic');
+        $coerced->assertJsonPath('item.item.cosmetic_slot', 'body');
     }
 
     public function test_admin_create_validation_requires_at_least_one_price(): void
@@ -132,11 +190,11 @@ class AdminShopApiTest extends TestCase
             'Authorization' => 'Bearer '.$token,
         ]);
         $create->assertCreated();
-        $id = $create->json('items.0.shop_catalog_item_id');
+        $id = $create->json('item.shop_catalog_item_id');
 
         $patch = $this->patchJson('/api/admin/shop/items/'.$id, [
             'name' => 'Patched Name',
-            'price' => 75,
+            'prices' => ['coins' => 75],
             'is_active' => false,
             'stock_remaining' => 3,
         ], [
@@ -144,7 +202,7 @@ class AdminShopApiTest extends TestCase
         ]);
 
         $patch->assertOk();
-        $patch->assertJsonPath('item.price', 75);
+        $patch->assertJsonPath('item.coins_price', 75);
         $patch->assertJsonPath('item.is_active', false);
         $patch->assertJsonPath('item.stock_remaining', 3);
         $patch->assertJsonPath('item.item.name', 'Patched Name');
@@ -162,7 +220,7 @@ class AdminShopApiTest extends TestCase
         ], [
             'Authorization' => 'Bearer '.$token,
         ]);
-        $id = $create->json('items.0.shop_catalog_item_id');
+        $id = $create->json('item.shop_catalog_item_id');
 
         $this->deleteJson('/api/admin/shop/items/'.$id, [], [
             'Authorization' => 'Bearer '.$token,
@@ -181,7 +239,7 @@ class AdminShopApiTest extends TestCase
         ], [
             'Authorization' => 'Bearer '.$adminToken,
         ]);
-        $catalogId = $create->json('items.0.shop_catalog_item_id');
+        $catalogId = $create->json('item.shop_catalog_item_id');
 
         $buyerToken = $this->registerToken();
         $buyerId = $this->accountIdFromToken($buyerToken);

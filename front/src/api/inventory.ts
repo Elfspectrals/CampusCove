@@ -3,6 +3,7 @@
  * GET /inventory — optional query: `kind`, `q`
  */
 import { formatApiError, getStoredAuth } from './auth'
+import { normalizeApiAssetUrl } from './url'
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api'
 
@@ -21,6 +22,8 @@ export interface InventoryItemDef {
   max_stack: number
   /** Set for `kind === 'cosmetic'` wearables. */
   cosmetic_slot?: string | null
+  preview_image?: string | null
+  model_glb?: string | null
 }
 
 export interface AccountInventoryRow {
@@ -48,6 +51,12 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
 }
 
+function normalizeCosmeticSlot(slot: unknown): string | null {
+  if (typeof slot !== 'string') return null
+  const normalized = slot.trim().toLowerCase()
+  return normalized === '' ? null : normalized
+}
+
 function parseInventoryItemDef(row: unknown): InventoryItemDef | null {
   if (!isRecord(row)) return null
   if (typeof row.item_def_id !== 'number') return null
@@ -70,9 +79,10 @@ function parseInventoryItemDef(row: unknown): InventoryItemDef | null {
     bind: row.bind,
     max_stack: row.max_stack,
   }
-  if (row.cosmetic_slot !== undefined && row.cosmetic_slot !== null && typeof row.cosmetic_slot === 'string') {
-    def.cosmetic_slot = row.cosmetic_slot
-  }
+  const normalizedSlot = normalizeCosmeticSlot(row.cosmetic_slot)
+  if (normalizedSlot !== null) def.cosmetic_slot = normalizedSlot
+  def.preview_image = normalizeApiAssetUrl(typeof row.preview_image === 'string' ? row.preview_image : null)
+  def.model_glb = normalizeApiAssetUrl(typeof row.model_glb === 'string' ? row.model_glb : null)
   return def
 }
 
