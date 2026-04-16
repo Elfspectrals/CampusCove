@@ -25,8 +25,10 @@ const io = new Server(httpServer, {
   cors: { origin: '*' }
 })
 
-/** @type {Map<string, { id: string, pseudo: string, color: number, x: number, y: number, z: number, appearance: Record<string, number|null>, appearanceCodes: Record<string, string|null>, slotHexes: Record<string, string> }>} */
+/** @type {Map<string, { id: string, pseudo: string, color: number, x: number, y: number, z: number, appearance: Record<string, number|null>, slotHexes: Record<string, string>, bodyModelGlb: string|null }>} */
 const users = new Map()
+/** @type {Map<string, string>} */
+const activeUserSockets = new Map()
 
 function getColor(index) {
   return COLORS[index % COLORS.length]
@@ -45,15 +47,6 @@ function normalizeAppearanceIds(raw) {
   return out
 }
 
-function normalizeAppearanceCodes(raw) {
-  const out = {}
-  for (const s of SLOTS) {
-    const c = raw && Object.prototype.hasOwnProperty.call(raw, s) ? raw[s] : null
-    out[s] = typeof c === 'string' && c.length > 0 ? c : null
-  }
-  return out
-}
-
 function normalizeSlotHexes(raw) {
   const out = {}
   for (const s of SLOTS) {
@@ -67,6 +60,12 @@ function normalizeSlotHexes(raw) {
   return out
 }
 
+function normalizeBodyModelGlb(raw) {
+  if (typeof raw !== 'string') return null
+  const trimmed = raw.trim()
+  return trimmed.length > 0 ? trimmed : null
+}
+
 function publicUser(socketId, u) {
   return {
     socketId: socketId,
@@ -77,12 +76,47 @@ function publicUser(socketId, u) {
     y: u.y,
     z: u.z,
     appearance: u.appearance,
-    appearanceCodes: u.appearanceCodes,
-    slotHexes: u.slotHexes
+    slotHexes: u.slotHexes,
+    bodyModelGlb: u.bodyModelGlb
   }
 }
 
+function disconnectSocketAsDuplicate(socketId, reasonUserId) {
+  const duplicateUser = users.get(socketId)
+  users.delete(socketId)
+  const duplicateSocket = io.sockets.sockets.get(socketId)
+  if (duplicateSocket) {
+    duplicateSocket.disconnect(true)
+  }
+  if (duplicateUser) {
+    io.to(GAME_ROOM).emit('user_left', { socketId })
+  }
+  console.log(`[socket] replaced stale socket ${socketId} for user ${reasonUserId}`)
+}
+
 io.on('connection', (socket) => {
+  const {
+    userId,
+    pseudo,
+    appearance: rawAppearance,
+    slotHexes: rawHexes,
+    bodyModelGlb: rawBodyModelGlb
+  } = socket.handshake.auth || {}
+  const id = userId || socket.id
+  const normalizedUserId = String(id)
+
+  const previousSocketId = activeUserSockets.get(normalizedUserId)
+  if (previousSocketId && previousSocketId !== socket.id) {
+    disconnectSocketAsDuplicate(previousSocketId, normalizedUserId)
+  }
+
+  // Defensive pass: handle stale duplicates even if activeUserSockets got out of sync.
+  for (const [sid, existing] of users) {
+    if (sid === socket.id) continue
+    if (existing.id !== normalizedUserId) continue
+    disconnectSocketAsDuplicate(sid, normalizedUserId)
+  }
+
   const room = io.sockets.adapter.rooms.get(GAME_ROOM)
   const inRoom = room ? room.size : 0
   if (inRoom >= MAX_PLAYERS) {
@@ -91,27 +125,20 @@ io.on('connection', (socket) => {
     return
   }
 
-  const {
-    userId,
-    pseudo,
-    appearance: rawAppearance,
-    appearanceCodes: rawCodes,
-    slotHexes: rawHexes
-  } = socket.handshake.auth || {}
-  const id = userId || socket.id
   const color = getColor(users.size)
   const user = {
-    id: String(id),
+    id: normalizedUserId,
     pseudo: pseudo || `User_${socket.id.slice(0, 6)}`,
     color,
     x: 0,
     y: 1.6,
     z: 0,
     appearance: normalizeAppearanceIds(rawAppearance),
-    appearanceCodes: normalizeAppearanceCodes(rawCodes),
-    slotHexes: normalizeSlotHexes(rawHexes)
+    slotHexes: normalizeSlotHexes(rawHexes),
+    bodyModelGlb: normalizeBodyModelGlb(rawBodyModelGlb)
   }
   users.set(socket.id, user)
+  activeUserSockets.set(user.id, socket.id)
   socket.join(GAME_ROOM)
 
   socket.emit('me', publicUser(socket.id, user))
@@ -119,12 +146,19 @@ io.on('connection', (socket) => {
   socket.to(GAME_ROOM).emit('user_joined', publicUser(socket.id, user))
 
   const others = []
+  const seenUserIds = new Set()
   const roomSet = io.sockets.adapter.rooms.get(GAME_ROOM)
   if (roomSet) {
     for (const sid of roomSet) {
       if (sid === socket.id) continue
       const u = users.get(sid)
-      if (u) others.push(publicUser(sid, u))
+      if (!u) continue
+      if (seenUserIds.has(u.id)) {
+        console.warn(`[socket] skipping duplicate room member for user id ${u.id} (socket ${sid})`)
+        continue
+      }
+      seenUserIds.add(u.id)
+      others.push(publicUser(sid, u))
     }
   }
   socket.emit('users', others)
@@ -143,22 +177,27 @@ io.on('connection', (socket) => {
     const u = users.get(socket.id)
     if (!u) return
     const slots = payload && payload.slots ? payload.slots : payload
-    const codes = payload && payload.codes ? payload.codes : {}
     const hexes = payload && payload.slotHexes ? payload.slotHexes : {}
+    const bodyModelGlb = payload && Object.prototype.hasOwnProperty.call(payload, 'bodyModelGlb')
+      ? payload.bodyModelGlb
+      : null
     u.appearance = normalizeAppearanceIds(slots)
-    u.appearanceCodes = normalizeAppearanceCodes(codes)
     u.slotHexes = normalizeSlotHexes(hexes)
+    u.bodyModelGlb = normalizeBodyModelGlb(bodyModelGlb)
     io.to(GAME_ROOM).emit('appearance_updated', {
       socketId: socket.id,
       appearance: { ...u.appearance },
-      appearanceCodes: { ...u.appearanceCodes },
-      slotHexes: { ...u.slotHexes }
+      slotHexes: { ...u.slotHexes },
+      bodyModelGlb: u.bodyModelGlb
     })
   })
 
   socket.on('disconnect', () => {
     const u = users.get(socket.id)
     users.delete(socket.id)
+    if (u && activeUserSockets.get(u.id) === socket.id) {
+      activeUserSockets.delete(u.id)
+    }
     if (u) io.to(GAME_ROOM).emit('user_left', { socketId: socket.id })
   })
 })

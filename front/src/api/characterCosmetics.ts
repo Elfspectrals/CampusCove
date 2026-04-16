@@ -17,6 +17,8 @@ export interface EquippedCosmetic {
   code: string
   name: string
   cosmetic_slot: string | null
+  preview_image: string | null
+  model_glb: string | null
 }
 
 export type CosmeticLoadout = Record<CosmeticSlot, EquippedCosmetic | null>
@@ -84,6 +86,8 @@ function parseEquipped(raw: unknown): EquippedCosmetic | null {
     code: raw.code,
     name: raw.name,
     cosmetic_slot: cs,
+    preview_image: typeof raw.preview_image === 'string' ? raw.preview_image : null,
+    model_glb: typeof raw.model_glb === 'string' ? raw.model_glb : null,
   }
 }
 
@@ -133,9 +137,15 @@ export function appearanceCodesFromLoadout(slots: CosmeticLoadout): Record<Cosme
   return out
 }
 
+export function bodyModelGlbFromLoadout(slots: CosmeticLoadout): string | null {
+  const value = slots.body?.model_glb
+  return typeof value === 'string' && value.length > 0 ? value : null
+}
+
 export async function fetchCharacterCosmetics(): Promise<CharacterCosmeticsState> {
   const res = await fetch(`${API_BASE}/character/cosmetics`, {
     headers: authJsonHeaders(),
+    cache: 'no-store',
   })
   const data: unknown = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(formatApiError(data))

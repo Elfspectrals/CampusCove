@@ -5,6 +5,7 @@ import { DEFAULT_SLOT_COLORS, SLOT_ORDER } from '../api/characterCosmetics'
 
 let templateRoot: THREE.Group | null = null
 let loadFailed = false
+const modelCache = new Map<string, Promise<THREE.Group | null>>()
 
 /**
  * Loads `assets/models/low_poly_character.glb` once, centers and scales to ~1.75m tall (feet at y=0).
@@ -27,16 +28,86 @@ export async function loadCharacterTemplate(): Promise<THREE.Group | null> {
   }
 }
 
+async function loadCharacterModelByUrl(url: string): Promise<THREE.Group | null> {
+  const normalized = url.trim()
+  if (normalized.length === 0) return null
+  const existing = modelCache.get(normalized)
+  if (existing) return existing
+
+  const task = (async () => {
+    try {
+      const loader = new GLTFLoader()
+      const gltf = await loader.loadAsync(normalized)
+      const root = gltf.scene as THREE.Group
+      normalizeCharacterScale(root)
+      return root
+    } catch {
+      return null
+    }
+  })()
+  modelCache.set(normalized, task)
+  return task
+}
+
 function normalizeCharacterScale(root: THREE.Object3D): void {
-  const box = new THREE.Box3().setFromObject(root)
-  const size = box.getSize(new THREE.Vector3())
-  const center = box.getCenter(new THREE.Vector3())
   const targetH = 1.75
-  const scale = targetH / Math.max(size.y, 0.001)
-  root.scale.setScalar(scale)
-  root.position.copy(center).multiplyScalar(-scale)
-  const box2 = new THREE.Box3().setFromObject(root)
-  root.position.y -= box2.min.y
+  root.updateMatrixWorld(true)
+
+  let preBox = computeMeshBounds(root)
+  if (!preBox) return
+  const preSize = preBox.getSize(new THREE.Vector3())
+  if (preSize.y < preSize.z * 0.6) {
+    root.rotation.x = -Math.PI / 2
+    root.updateMatrixWorld(true)
+    preBox = computeMeshBounds(root)
+    if (!preBox) return
+  }
+
+  const size = preBox.getSize(new THREE.Vector3())
+  const measuredHeight = Math.max(size.y, size.z, 0.001)
+  const scale = targetH / measuredHeight
+  root.scale.multiplyScalar(scale)
+  root.updateMatrixWorld(true)
+
+  const centeredBox = computeMeshBounds(root)
+  if (!centeredBox) return
+  const center = centeredBox.getCenter(new THREE.Vector3())
+  root.position.x -= center.x
+  root.position.z -= center.z
+  root.position.y -= centeredBox.min.y
+  root.updateMatrixWorld(true)
+
+  const regrounded = computeMeshBounds(root)
+  if (!regrounded) return
+  root.position.y -= regrounded.min.y
+}
+
+function computeMeshBounds(root: THREE.Object3D): THREE.Box3 | null {
+  root.updateMatrixWorld(true)
+  const box = new THREE.Box3()
+  let hasMesh = false
+
+  root.traverse((obj) => {
+    if (!(obj instanceof THREE.Mesh)) return
+    const geometry = obj.geometry
+    if (!geometry.boundingBox) {
+      geometry.computeBoundingBox()
+    }
+    const localBounds = geometry.boundingBox
+    if (!localBounds) return
+    const worldBounds = localBounds.clone().applyMatrix4(obj.matrixWorld)
+    if (!hasMesh) {
+      box.copy(worldBounds)
+      hasMesh = true
+      return
+    }
+    box.union(worldBounds)
+  })
+
+  if (hasMesh) return box
+  const fallback = new THREE.Box3().setFromObject(root)
+  if (fallback.isEmpty()) return null
+  return fallback
 }
 
 /** Deep clone with unique materials so each instance can be tinted independently. */
@@ -97,6 +168,18 @@ function blendSlotHexes(colors: CosmeticColors): THREE.Color {
 
 export async function createTintedCharacter(colors: CosmeticColors): Promise<THREE.Group | null> {
   const template = await loadCharacterTemplate()
+  if (!template) return null
+  const instance = cloneCharacterWithUniqueMaterials(template)
+  applyCosmeticColors(instance, colors)
+  return instance
+}
+
+export async function createTintedCharacterFromUrl(
+  modelUrl: string | null | undefined,
+  colors: CosmeticColors,
+): Promise<THREE.Group | null> {
+  const normalized = typeof modelUrl === 'string' ? modelUrl.trim() : ''
+  const template = normalized.length > 0 ? await loadCharacterModelByUrl(normalized) : await loadCharacterTemplate()
   if (!template) return null
   const instance = cloneCharacterWithUniqueMaterials(template)
   applyCosmeticColors(instance, colors)

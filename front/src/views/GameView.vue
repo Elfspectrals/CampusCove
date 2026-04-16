@@ -4,8 +4,8 @@ import { useRouter } from 'vue-router'
 import * as THREE from 'three'
 import { io } from 'socket.io-client'
 import {
-  appearanceCodesFromLoadout,
   appearanceIdsFromLoadout,
+  bodyModelGlbFromLoadout,
   defaultCosmeticColors,
   emptyCosmeticLoadout,
   fetchCharacterCosmetics,
@@ -15,12 +15,11 @@ import {
   DEFAULT_SLOT_COLORS,
 } from '../api/characterCosmetics'
 import { getStoredAuth, clearAuth } from '../api/auth'
-import { createTintedCharacter } from '../avatar/glbCharacter'
+import { createTintedCharacterFromUrl } from '../avatar/glbCharacter'
 import {
   buildCompositeAvatar,
   buildFirstPersonHands,
   disposeObject3D,
-  type AppearanceCodes,
 } from '../avatar/compositeAvatar'
 
 const router = useRouter()
@@ -44,16 +43,27 @@ let fpHands: THREE.Group | null = null
 let socket: ReturnType<typeof io> | null = null
 
 interface OtherUser {
+  userId: string
   group: THREE.Group
   x: number
   y: number
   z: number
   color: number
-  codes: Partial<AppearanceCodes>
-  slotColors: CosmeticColors
+  bodyTintColors: CosmeticColors
+  bodyModelGlb: string | null
+}
+
+interface PendingAppearanceUpdate {
+  appearance: Record<string, number | null>
+  slotHexes?: Record<string, string>
+  bodyModelGlb?: string | null
 }
 
 const otherUsers = ref<Map<string, OtherUser>>(new Map())
+const socketByUserId = new Map<string, string>()
+const pendingAppearanceUpdates = new Map<string, PendingAppearanceUpdate>()
+const upsertTokenByUserId = new Map<string, number>()
+const renderTokenBySocketId = new Map<string, number>()
 const keys = { forward: false, back: false, left: false, right: false }
 const pointerLocked = ref(false)
 const velocity = new THREE.Vector3(0, 0, 0)
@@ -62,100 +72,188 @@ const moveSpeed = 8
 const myPosition = { x: 0, y: 1.6, z: 0 }
 let lastEmit = 0
 const emitInterval = 50
+let refreshMyAppearance: (() => void) | null = null
+
+function nextRenderToken(socketId: string): number {
+  const next = (renderTokenBySocketId.get(socketId) ?? 0) + 1
+  renderTokenBySocketId.set(socketId, next)
+  return next
+}
 
 function hexStringToNumber(hex: string): number {
   return parseInt(hex.length === 7 ? hex.slice(1) : hex, 16)
 }
 
-function parseCodesFromServer(raw: Record<string, string | null> | null | undefined): Partial<AppearanceCodes> {
-  if (!raw) return {}
-  const slots: (keyof AppearanceCodes)[] = ['body', 'hair', 'top', 'bottom', 'shoes', 'head_accessory']
-  const out: Partial<AppearanceCodes> = {}
-  for (const s of slots) {
-    const v = raw[s]
-    out[s] = typeof v === 'string' && v.length > 0 ? v : null
-  }
+function parseBodyTintColors(raw: Record<string, string> | null | undefined): CosmeticColors {
+  const bodyHex =
+    raw && typeof raw.body === 'string' && /^#[0-9A-Fa-f]{6}$/.test(raw.body) ? raw.body : DEFAULT_SLOT_COLORS.body
+  const out = { ...DEFAULT_SLOT_COLORS }
+  for (const s of SLOTS) out[s] = bodyHex
   return out
 }
 
-function parseSlotHexesFromServer(raw: Record<string, string> | null | undefined): CosmeticColors {
-  const out = { ...DEFAULT_SLOT_COLORS }
-  if (!raw) return out
-  for (const s of SLOTS) {
-    const v = raw[s]
-    if (typeof v === 'string' && /^#[0-9A-Fa-f]{6}$/.test(v)) {
-      out[s] = v
-    }
-  }
-  return out
+function parseBodyModelGlb(raw: unknown): string | null {
+  return typeof raw === 'string' && raw.trim().length > 0 ? raw.trim() : null
 }
 
 function placeAvatar(group: THREE.Group, x: number, y: number, z: number) {
   group.position.set(x, y, z)
 }
 
+function removeSceneAvatarDuplicates(socketId: string, userId: string) {
+  const toRemove: THREE.Object3D[] = []
+  for (const child of scene.children) {
+    if (!(child instanceof THREE.Group)) continue
+    const tag = child.userData as { isRemoteAvatar?: boolean; socketId?: string; userId?: string }
+    if (!tag.isRemoteAvatar) continue
+    if (tag.socketId === socketId || tag.userId === userId) {
+      toRemove.push(child)
+    }
+  }
+  for (const obj of toRemove) {
+    scene.remove(obj)
+    disposeObject3D(obj)
+  }
+}
+
+/** One logical remote player per userId: drop stale socket rows even if socketByUserId was out of sync. */
+function removeOtherUsersByUserIdExcept(userId: string, keepSocketId: string) {
+  for (const [sid, ou] of [...otherUsers.value.entries()]) {
+    if (ou.userId !== userId || sid === keepSocketId) continue
+    removeOtherUser(sid)
+  }
+}
+
 function removeOtherUser(socketId: string) {
   const entry = otherUsers.value.get(socketId)
   if (!entry) return
+  removeSceneAvatarDuplicates(socketId, entry.userId)
   scene.remove(entry.group)
   disposeObject3D(entry.group)
   otherUsers.value.delete(socketId)
+  if (socketByUserId.get(entry.userId) === socketId) {
+    socketByUserId.delete(entry.userId)
+  }
+  pendingAppearanceUpdates.delete(socketId)
+  renderTokenBySocketId.delete(socketId)
 }
 
 async function upsertOtherUser(
   socketId: string,
   data: {
+    userId: string
     x: number
     y: number
     z: number
     color: number
-    appearanceCodes?: Record<string, string | null>
     slotHexes?: Record<string, string>
+    bodyModelGlb?: string | null
   },
 ) {
-  const codes = parseCodesFromServer(data.appearanceCodes ?? undefined)
-  const slotColors = parseSlotHexesFromServer(data.slotHexes)
+  const renderToken = nextRenderToken(socketId)
+  const token = (upsertTokenByUserId.get(data.userId) ?? 0) + 1
+  upsertTokenByUserId.set(data.userId, token)
+
+  removeOtherUsersByUserIdExcept(data.userId, socketId)
+
+  const knownSocketId = socketByUserId.get(data.userId)
+  if (knownSocketId && knownSocketId !== socketId) {
+    removeOtherUser(knownSocketId)
+  }
+  const bodyTintColors = parseBodyTintColors(data.slotHexes)
+  const bodyModelGlb = parseBodyModelGlb(data.bodyModelGlb)
   const existing = otherUsers.value.get(socketId)
   if (existing) {
     scene.remove(existing.group)
     disposeObject3D(existing.group)
+    otherUsers.value.delete(socketId)
+    if (socketByUserId.get(existing.userId) === socketId) {
+      socketByUserId.delete(existing.userId)
+    }
+    pendingAppearanceUpdates.delete(socketId)
   }
-  const glb = await createTintedCharacter(slotColors)
-  const group = glb ?? buildCompositeAvatar(codes, data.color)
+  const glb = await createTintedCharacterFromUrl(bodyModelGlb, bodyTintColors)
+  const group = glb ?? buildCompositeAvatar(null, data.color)
+
+  // A newer upsert request for this same user won the race: drop this stale render.
+  if (upsertTokenByUserId.get(data.userId) !== token) {
+    disposeObject3D(group)
+    return
+  }
+  if (renderTokenBySocketId.get(socketId) !== renderToken) {
+    disposeObject3D(group)
+    return
+  }
+
+  const latestSocketId = socketByUserId.get(data.userId)
+  if (latestSocketId && latestSocketId !== socketId) {
+    removeOtherUser(latestSocketId)
+  }
+  removeOtherUsersByUserIdExcept(data.userId, socketId)
+  removeSceneAvatarDuplicates(socketId, data.userId)
+  group.userData.isRemoteAvatar = true
+  group.userData.socketId = socketId
+  group.userData.userId = data.userId
   placeAvatar(group, data.x, data.y, data.z)
   scene.add(group)
   otherUsers.value.set(socketId, {
+    userId: data.userId,
     group,
     x: data.x,
     y: data.y,
     z: data.z,
     color: data.color,
-    codes,
-    slotColors,
+    bodyTintColors,
+    bodyModelGlb,
   })
+  socketByUserId.set(data.userId, socketId)
+
+  const pending = pendingAppearanceUpdates.get(socketId)
+  if (pending) {
+    pendingAppearanceUpdates.delete(socketId)
+    void updateOtherAppearance(socketId, pending.appearance, pending.slotHexes, pending.bodyModelGlb)
+  }
 }
 
 async function updateOtherAppearance(
   socketId: string,
   _appearance: Record<string, number | null>,
-  appearanceCodes: Record<string, string | null>,
   slotHexes?: Record<string, string>,
+  bodyModelGlb?: string | null,
 ) {
   const entry = otherUsers.value.get(socketId)
-  if (!entry) return
-  const codes = parseCodesFromServer(appearanceCodes)
-  const slotColors = parseSlotHexesFromServer(slotHexes)
-  scene.remove(entry.group)
-  disposeObject3D(entry.group)
-  const glb = await createTintedCharacter(slotColors)
-  const group = glb ?? buildCompositeAvatar(codes, entry.color)
-  placeAvatar(group, entry.x, entry.y, entry.z)
+  if (!entry) {
+    pendingAppearanceUpdates.set(socketId, { appearance: _appearance, slotHexes, bodyModelGlb })
+    return
+  }
+  const renderToken = nextRenderToken(socketId)
+  const bodyTintColors = parseBodyTintColors(slotHexes)
+  const parsedBodyModelGlb = parseBodyModelGlb(bodyModelGlb)
+  const glb = await createTintedCharacterFromUrl(parsedBodyModelGlb, bodyTintColors)
+  const latestEntry = otherUsers.value.get(socketId)
+  const group = glb ?? buildCompositeAvatar(null, (latestEntry ?? entry).color)
+  if (!latestEntry) {
+    disposeObject3D(group)
+    return
+  }
+  if (renderTokenBySocketId.get(socketId) !== renderToken) {
+    disposeObject3D(group)
+    return
+  }
+  removeOtherUsersByUserIdExcept(latestEntry.userId, socketId)
+  removeSceneAvatarDuplicates(socketId, latestEntry.userId)
+  group.userData.isRemoteAvatar = true
+  group.userData.socketId = socketId
+  group.userData.userId = latestEntry.userId
+  scene.remove(latestEntry.group)
+  disposeObject3D(latestEntry.group)
+  placeAvatar(group, latestEntry.x, latestEntry.y, latestEntry.z)
   scene.add(group)
   otherUsers.value.set(socketId, {
-    ...entry,
+    ...latestEntry,
     group,
-    codes,
-    slotColors,
+    bodyTintColors,
+    bodyModelGlb: parsedBodyModelGlb,
   })
 }
 
@@ -207,21 +305,51 @@ function connectSocket(state: CharacterCosmeticsState) {
     return
   }
   const appearance = appearanceIdsFromLoadout(state.slots)
-  const appearanceCodes = appearanceCodesFromLoadout(state.slots)
+  const bodyState = {
+    appearanceBody: appearance.body,
+    bodyHex: state.colors.body,
+    bodyModelGlb: bodyModelGlbFromLoadout(state.slots),
+  }
+
+  const emitBodyAppearance = () => {
+    socket?.emit('appearance', {
+      slots: { body: bodyState.appearanceBody },
+      slotHexes: { body: bodyState.bodyHex },
+      bodyModelGlb: bodyState.bodyModelGlb,
+    })
+  }
+
+  const refreshAppearanceFromApi = async () => {
+    try {
+      const latest = await fetchCharacterCosmetics()
+      const latestAppearance = appearanceIdsFromLoadout(latest.slots)
+      bodyState.appearanceBody = latestAppearance.body
+      bodyState.bodyHex = latest.colors.body
+      bodyState.bodyModelGlb = bodyModelGlbFromLoadout(latest.slots)
+      emitBodyAppearance()
+    } catch {
+      // Keep existing body state if the refresh fails.
+    }
+  }
+  refreshMyAppearance = () => {
+    void refreshAppearanceFromApi()
+  }
 
   socket = io(socketUrl, {
     auth: {
       userId: auth.user.account_id,
       pseudo: auth.user.display_name || auth.user.username,
       appearance,
-      appearanceCodes,
-      slotHexes: state.colors,
+      slotHexes: { body: bodyState.bodyHex },
+      bodyModelGlb: bodyState.bodyModelGlb,
     },
     transports: ['websocket', 'polling'],
   })
 
   socket.on('connect', () => {
     roomFullMessage.value = null
+    emitBodyAppearance()
+    void refreshAppearanceFromApi()
   })
 
   socket.on('connect_error', () => {
@@ -253,24 +381,26 @@ function connectSocket(state: CharacterCosmeticsState) {
     (
       list: Array<{
         socketId: string
+        id: string
         pseudo: string
         color: number
         x: number
         y: number
         z: number
-        appearanceCodes?: Record<string, string | null>
         slotHexes?: Record<string, string>
+        bodyModelGlb?: string | null
       }>,
     ) => {
       list.forEach((u) => {
         if (u.socketId === socket?.id) return
         void upsertOtherUser(u.socketId, {
+          userId: u.id,
           x: u.x,
           y: u.y,
           z: u.z,
           color: u.color,
-          appearanceCodes: u.appearanceCodes,
           slotHexes: u.slotHexes,
+          bodyModelGlb: u.bodyModelGlb,
         })
       })
     },
@@ -280,22 +410,24 @@ function connectSocket(state: CharacterCosmeticsState) {
     'user_joined',
     (data: {
       socketId: string
+      id: string
       pseudo: string
       color: number
       x: number
       y: number
       z: number
-      appearanceCodes?: Record<string, string | null>
       slotHexes?: Record<string, string>
+      bodyModelGlb?: string | null
     }) => {
       if (data.socketId === socket?.id) return
       void upsertOtherUser(data.socketId, {
+        userId: data.id,
         x: data.x,
         y: data.y,
         z: data.z,
         color: data.color,
-        appearanceCodes: data.appearanceCodes,
         slotHexes: data.slotHexes,
+        bodyModelGlb: data.bodyModelGlb,
       })
     },
   )
@@ -315,17 +447,27 @@ function connectSocket(state: CharacterCosmeticsState) {
     (data: {
       socketId: string
       appearance: Record<string, number | null>
-      appearanceCodes: Record<string, string | null>
       slotHexes?: Record<string, string>
+      bodyModelGlb?: string | null
     }) => {
       if (data.socketId === socket?.id) return
-      void updateOtherAppearance(data.socketId, data.appearance, data.appearanceCodes, data.slotHexes)
+      void updateOtherAppearance(data.socketId, data.appearance, data.slotHexes, data.bodyModelGlb)
     },
   )
 
   socket.on('user_left', (data: { socketId: string }) => {
     removeOtherUser(data.socketId)
   })
+
+}
+
+function onVisibilityOrFocus() {
+  if (document.visibilityState !== 'visible') return
+  refreshMyAppearance?.()
+}
+
+function onBeforeUnload() {
+  socket?.disconnect()
 }
 
 function onPointerLockChange() {
@@ -467,6 +609,10 @@ async function bootGame() {
 onMounted(() => {
   void bootGame()
   window.addEventListener('resize', onResize)
+  window.addEventListener('focus', onVisibilityOrFocus)
+  window.addEventListener('beforeunload', onBeforeUnload)
+  window.addEventListener('pagehide', onBeforeUnload)
+  document.addEventListener('visibilitychange', onVisibilityOrFocus)
   document.addEventListener('pointerlockchange', onPointerLockChange)
   document.addEventListener('keydown', onKeyDown)
   document.addEventListener('keyup', onKeyUp)
@@ -476,10 +622,15 @@ onMounted(() => {
 onUnmounted(() => {
   cancelAnimationFrame(frameId)
   window.removeEventListener('resize', onResize)
+  window.removeEventListener('focus', onVisibilityOrFocus)
+  window.removeEventListener('beforeunload', onBeforeUnload)
+  window.removeEventListener('pagehide', onBeforeUnload)
+  document.removeEventListener('visibilitychange', onVisibilityOrFocus)
   document.removeEventListener('pointerlockchange', onPointerLockChange)
   document.removeEventListener('keydown', onKeyDown)
   document.removeEventListener('keyup', onKeyUp)
   document.removeEventListener('mousemove', onMouseMove)
+  refreshMyAppearance = null
   socket?.disconnect()
   for (const id of [...otherUsers.value.keys()]) {
     removeOtherUser(id)
