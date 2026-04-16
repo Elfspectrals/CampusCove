@@ -19,6 +19,7 @@ class CharacterCosmeticController extends Controller
         return response()->json([
             'slots' => $accountCosmeticService->getLoadout($accountId),
             'colors' => $accountCosmeticService->getColors($accountId),
+            'owned' => $accountCosmeticService->getOwnedLockerSkins($accountId),
         ]);
     }
 
@@ -62,6 +63,7 @@ class CharacterCosmeticController extends Controller
         return response()->json([
             'slots' => $slotsOut,
             'colors' => $colorsOut,
+            'owned' => $accountCosmeticService->getOwnedLockerSkins($accountId),
         ]);
     }
 }

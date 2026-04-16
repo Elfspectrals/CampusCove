@@ -274,6 +274,18 @@ CREATE TABLE IF NOT EXISTS account_cosmetic_equipment (
 
 CREATE INDEX IF NOT EXISTS ix_account_cosmetic_equipment_item ON account_cosmetic_equipment(item_def_id);
 
+CREATE TABLE IF NOT EXISTS account_locker_cosmetics (
+  account_id   BIGINT NOT NULL REFERENCES accounts(account_id) ON DELETE CASCADE,
+  item_def_id  BIGINT NOT NULL REFERENCES item_defs(item_def_id) ON DELETE RESTRICT,
+  quantity     INT NOT NULL DEFAULT 1,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (account_id, item_def_id),
+  CONSTRAINT ck_account_locker_cosmetics_qty CHECK (quantity > 0)
+);
+
+CREATE INDEX IF NOT EXISTS ix_account_locker_cosmetics_item_def ON account_locker_cosmetics(item_def_id);
+
 CREATE TABLE IF NOT EXISTS item_instances (
   item_instance_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   public_id        UUID NOT NULL DEFAULT gen_random_uuid(),

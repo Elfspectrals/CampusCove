@@ -159,6 +159,10 @@ class ShopApiTest extends TestCase
             ->where('owner_account_id', $accountId)
             ->count();
         $this->assertSame(1, $count);
+        $this->assertDatabaseMissing('account_locker_cosmetics', [
+            'account_id' => $accountId,
+            'item_def_id' => $catalog->item_def_id,
+        ]);
     }
 
     public function test_purchase_fails_when_insufficient_funds(): void

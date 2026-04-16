@@ -62,24 +62,6 @@ const selectedEntry = computed<LockerOwnedSkinEntry | null>(() => {
   return found ?? gridItems.value[0] ?? null
 })
 
-const selectedRarityLabel = computed<string>(() => {
-  const rarity = selectedEntry.value?.row.item.rarity ?? 1
-  if (rarity >= 5) return 'Legendary'
-  if (rarity >= 4) return 'Epic'
-  if (rarity >= 3) return 'Rare'
-  if (rarity >= 2) return 'Uncommon'
-  return 'Common'
-})
-
-const selectedRarityClasses = computed<string>(() => {
-  const rarity = selectedEntry.value?.row.item.rarity ?? 1
-  if (rarity >= 5) return 'bg-[#f97316] text-white shadow-[0_0_20px_rgba(249,115,22,0.65)]'
-  if (rarity >= 4) return 'bg-[#8b5cf6] text-white shadow-[0_0_20px_rgba(139,92,246,0.6)]'
-  if (rarity >= 3) return 'bg-[#2563eb] text-white shadow-[0_0_20px_rgba(37,99,235,0.6)]'
-  if (rarity >= 2) return 'bg-[#10b981] text-white shadow-[0_0_20px_rgba(16,185,129,0.6)]'
-  return 'bg-slate-500 text-white shadow-[0_0_20px_rgba(100,116,139,0.5)]'
-})
-
 function syncSelectedPreview(row: AccountInventoryRow): void {
   selectedInventoryRowId.value = row.id
   selectedPreviewAssetId.value = resolvePreviewCharacterAssetIdFromCosmetic(row.item.code, row.item.name)
@@ -87,10 +69,9 @@ function syncSelectedPreview(row: AccountInventoryRow): void {
 }
 
 async function equipSelectedSkin(): Promise<void> {
-  const row = selectedEntry.value?.row
-  if (!row || !canEquipCosmetic(row)) return
-  syncSelectedPreview(row)
-  await equipCosmetic(row)
+  const entry = selectedEntry.value
+  if (!entry || !entry.canEquip) return
+  await equipCosmetic(entry.row)
 }
 
 watch(
@@ -153,15 +134,35 @@ watch(
       </section>
 
       <section class="relative flex flex-col border-cyan-300/45 p-7">
-        
-
         <div class="mb-6 flex h-full min-h-[220px] items-center justify-center rounded-xl border border-cyan-300/25 bg-black/20">
           <LockerCharacterPreview :asset-id="selectedPreviewAssetId" :asset-src="selectedPreviewAssetSrc" />
         </div>
 
-       
-
-        
+        <div class="space-y-4 rounded-xl border border-cyan-300/25 bg-black/30 p-4">
+          <p class="m-0 text-xs font-bold uppercase tracking-[0.18em] text-cyan-200/80">Selected outfit</p>
+          <p class="m-0 truncate text-2xl font-black uppercase tracking-[0.06em] text-white">
+            {{ selectedEntry?.row.item.name ?? 'No skin selected' }}
+          </p>
+          <p class="m-0 text-sm font-semibold text-slate-200/90">
+            {{ selectedEntry ? `Owned x${selectedEntry.row.quantity}` : 'Select a skin from your locker.' }}
+          </p>
+          <button
+            type="button"
+            class="w-full rounded-lg border border-cyan-300/80 bg-[radial-gradient(circle_at_center,_#4cc2ff_0%,_#1e5db7_58%,_#0e2b63_100%)] px-4 py-3 text-lg font-black uppercase tracking-[0.08em] text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+            :disabled="!selectedEntry || !selectedEntry.canEquip || equippingId === selectedEntry.row.id"
+            @click="equipSelectedSkin"
+          >
+            {{
+              !selectedEntry
+                ? 'Select Skin'
+                : equippingId === selectedEntry.row.id
+                  ? 'Equipping...'
+                  : isEquipped(selectedEntry.row)
+                    ? 'Equipped'
+                    : 'Equip'
+            }}
+          </button>
+        </div>
       </section>
     </div>
   </div>

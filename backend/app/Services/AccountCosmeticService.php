@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\Account;
-use App\Models\GiftInbox;
 use App\Models\ItemDef;
 use App\Support\AssetUrl;
 use Illuminate\Support\Facades\DB;
@@ -136,6 +135,47 @@ final class AccountCosmeticService
     }
 
     /**
+     * @return list<array{
+     *   item_def_id: int,
+     *   code: string,
+     *   name: string,
+     *   cosmetic_slot: string|null,
+     *   preview_image: string|null,
+     *   model_glb: string|null,
+     *   quantity: int
+     * }>
+     */
+    public function getOwnedLockerSkins(int $accountId): array
+    {
+        $rows = DB::table('account_locker_cosmetics as alc')
+            ->join('item_defs as d', 'd.item_def_id', '=', 'alc.item_def_id')
+            ->where('alc.account_id', $accountId)
+            ->where('d.kind', 'cosmetic')
+            ->orderBy('d.name')
+            ->orderBy('d.item_def_id')
+            ->select([
+                'd.item_def_id',
+                'd.code',
+                'd.name',
+                'd.cosmetic_slot',
+                'd.preview_image',
+                'd.model_glb',
+                'alc.quantity',
+            ])
+            ->get();
+
+        return $rows->map(fn (object $row): array => [
+            'item_def_id' => (int) $row->item_def_id,
+            'code' => (string) $row->code,
+            'name' => (string) $row->name,
+            'cosmetic_slot' => $row->cosmetic_slot !== null ? (string) $row->cosmetic_slot : null,
+            'preview_image' => AssetUrl::normalize($row->preview_image !== null ? (string) $row->preview_image : null),
+            'model_glb' => AssetUrl::normalize($row->model_glb !== null ? (string) $row->model_glb : null),
+            'quantity' => (int) $row->quantity,
+        ])->values()->all();
+    }
+
+    /**
      * Partial update: only keys present in $slots are applied. Use null to clear a slot.
      *
      * @param  array<string, int|null>  $slots
@@ -225,26 +265,11 @@ final class AccountCosmeticService
 
     private function accountOwnsItemDef(int $accountId, int $itemDefId): bool
     {
-        $gift = GiftInbox::query()->where('account_id', $accountId)->first();
-        if ($gift === null) {
-            return false;
-        }
-        $containerId = (int) $gift->container_id;
-
-        $stackQty = (int) (DB::table('inventory_stacks')
-            ->where('container_id', $containerId)
+        $qty = (int) (DB::table('account_locker_cosmetics')
+            ->where('account_id', $accountId)
             ->where('item_def_id', $itemDefId)
             ->value('quantity') ?? 0);
-        if ($stackQty > 0) {
-            return true;
-        }
 
-        $instanceCount = (int) DB::table('item_instances')
-            ->where('container_id', $containerId)
-            ->where('item_def_id', $itemDefId)
-            ->whereNotNull('owner_account_id')
-            ->count();
-
-        return $instanceCount > 0;
+        return $qty > 0;
     }
 }

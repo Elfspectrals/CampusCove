@@ -39,6 +39,7 @@ class CharacterCosmeticApiTest extends TestCase
         $this->assertIsArray($colors);
         $this->assertSame('#8B7AA8', $colors['body']);
         $this->assertArrayHasKey('head_accessory', $colors);
+        $this->assertIsArray($res->json('owned'));
     }
 
     public function test_cosmetics_put_colors_only(): void
@@ -97,6 +98,88 @@ class CharacterCosmeticApiTest extends TestCase
         $this->assertSame('COS_WEAR_BODY_DEFAULT', $body['code']);
         $this->assertArrayHasKey('preview_image', $body);
         $this->assertArrayHasKey('model_glb', $body);
+    }
+
+    public function test_cosmetic_purchase_is_account_locker_owned_and_available_for_all_account_characters(): void
+    {
+        $itemDefId = (int) DB::table('item_defs')->insertGetId([
+            'code' => 'cosmetic_locker_shared_body',
+            'name' => 'Locker Shared Body',
+            'kind' => 'cosmetic',
+            'rarity' => 2,
+            'tradable' => true,
+            'premium_only' => false,
+            'bind' => 'none',
+            'max_stack' => 1,
+            'cosmetic_slot' => 'body',
+            'preview_image' => '/storage/skins/previews/locker-shared.jpg',
+            'model_glb' => '/storage/skins/models/locker-shared.glb',
+            'created_at' => now(),
+        ], 'item_def_id');
+
+        $catalogId = DB::table('shop_catalog_items')->insertGetId([
+            'item_def_id' => $itemDefId,
+            'currency' => 'coins',
+            'price' => 100,
+            'allow_coins' => true,
+            'coins_price' => 100,
+            'allow_premium' => false,
+            'premium_price' => null,
+            'is_active' => true,
+            'is_published' => true,
+            'is_unique_per_account' => false,
+            'stock_remaining' => null,
+            'sort_order' => 12,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ], 'shop_catalog_item_id');
+
+        $catalog = DB::table('shop_catalog_items')->where('shop_catalog_item_id', $catalogId)->first();
+        $this->assertNotNull($catalog);
+
+        ['token' => $token, 'account_id' => $accountId] = $this->registerAndCreditWallet(10_000, 'coins');
+
+        $serverId = (int) DB::table('servers')->insertGetId([
+            'name' => 'test-server-'.uniqid('', true),
+            'created_at' => now(),
+        ], 'server_id');
+        DB::table('characters')->insert([
+            [
+                'account_id' => $accountId,
+                'server_id' => $serverId,
+                'name' => 'MainChar',
+                'normalized' => 'mainchar_'.uniqid('', true),
+                'created_at' => now(),
+            ],
+            [
+                'account_id' => $accountId,
+                'server_id' => $serverId,
+                'name' => 'AltChar',
+                'normalized' => 'altchar_'.uniqid('', true),
+                'created_at' => now(),
+            ],
+        ]);
+
+        $this->postJson('/api/shop/purchase', [
+            'shop_item_public_id' => $catalog->public_id,
+            'quantity' => 1,
+        ], [
+            'Authorization' => 'Bearer '.$token,
+        ])->assertOk();
+
+        $this->putJson('/api/character/cosmetics', [
+            'slots' => ['body' => $itemDefId],
+        ], [
+            'Authorization' => 'Bearer '.$token,
+        ])->assertOk()->assertJsonPath('slots.body.code', 'cosmetic_locker_shared_body');
+
+        $show = $this->getJson('/api/character/cosmetics', [
+            'Authorization' => 'Bearer '.$token,
+        ]);
+        $show->assertOk();
+        $owned = collect($show->json('owned'))->firstWhere('code', 'cosmetic_locker_shared_body');
+        $this->assertNotNull($owned);
+        $this->assertSame(1, $owned['quantity']);
     }
 
     public function test_starter_body_item_defs_are_kept_with_storage_asset_paths(): void

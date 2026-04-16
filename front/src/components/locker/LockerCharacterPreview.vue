@@ -8,9 +8,22 @@ import { getPreviewCharacterAssetById } from '../../avatar/previewCharacterAsset
 const props = withDefaults(defineProps<{
   assetId?: string
   assetSrc?: string | null
+  interactive?: boolean
+  showDragHint?: boolean
+  plain?: boolean
 }>(), {
   assetId: '',
   assetSrc: null,
+  interactive: true,
+  showDragHint: true,
+  plain: false,
+})
+
+const containerClass = computed<string>(() => {
+  if (props.plain) {
+    return 'relative h-full w-full overflow-hidden'
+  }
+  return 'relative h-full min-h-[320px] w-full overflow-hidden rounded-[12px] border border-[#60A5FA]/30 bg-gradient-to-b from-[#14356F] via-[#102A5C] to-[#0B1F48] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]'
 })
 
 const containerRef = ref<HTMLElement | null>(null)
@@ -209,6 +222,7 @@ function cloneCharacterWithUniqueMaterials(source: THREE.Object3D): THREE.Group 
 }
 
 function onPointerDown(event: PointerEvent): void {
+  if (!props.interactive) return
   if (!canvasRef.value) return
   dragActive = true
   dragPointerId = event.pointerId
@@ -218,6 +232,7 @@ function onPointerDown(event: PointerEvent): void {
 }
 
 function onPointerMove(event: PointerEvent): void {
+  if (!props.interactive) return
   if (!dragActive || dragPointerId !== event.pointerId) return
   const deltaX = event.clientX - lastPointerX
   lastPointerX = event.clientX
@@ -228,6 +243,7 @@ function onPointerMove(event: PointerEvent): void {
 }
 
 function endDrag(event: PointerEvent): void {
+  if (!props.interactive) return
   if (!canvasRef.value) return
   if (dragPointerId !== event.pointerId) return
   dragActive = false
@@ -374,25 +390,28 @@ onUnmounted(() => {
 <template>
   <div
     ref="containerRef"
-    class="relative h-full min-h-[320px] w-full overflow-hidden rounded-[12px] border border-[#60A5FA]/30 bg-gradient-to-b from-[#14356F] via-[#102A5C] to-[#0B1F48] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]"
+    :class="containerClass"
   >
-    <div class="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-cyan-300/12 to-transparent" />
-    <div class="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/35 to-transparent" />
-    <p class="pointer-events-none absolute left-3 top-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-200/90">
+    <div v-if="!props.plain" class="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-cyan-300/12 to-transparent" />
+    <div v-if="!props.plain" class="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/35 to-transparent" />
+    <p v-if="!props.plain" class="pointer-events-none absolute left-3 top-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-200/90">
       Outfit Preview
     </p>
-    <p class="pointer-events-none absolute bottom-3 left-3 text-[11px] font-semibold text-slate-300/85">
+    <p
+      v-if="!props.plain && props.showDragHint && props.interactive"
+      class="pointer-events-none absolute bottom-3 left-3 text-[11px] font-semibold text-slate-300/85"
+    >
       Drag to rotate
     </p>
     <p
-      v-if="loadingModel && !previewError"
+      v-if="!props.plain && loadingModel && !previewError"
       class="pointer-events-none absolute bottom-3 right-3 rounded-md border border-cyan-200/30 bg-slate-900/55 px-2 py-1 text-[11px] font-semibold text-cyan-100"
       role="status"
     >
       Loading character...
     </p>
     <p
-      v-if="previewError"
+      v-if="!props.plain && previewError"
       class="pointer-events-none absolute bottom-3 right-3 rounded-md border border-rose-300/30 bg-rose-500/20 px-2 py-1 text-[11px] font-semibold text-rose-100"
     >
       {{ previewError }}

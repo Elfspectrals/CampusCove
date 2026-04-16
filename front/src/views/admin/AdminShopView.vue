@@ -22,15 +22,27 @@ type DeletedFilter = 'all' | 'active' | 'deleted'
 type BulkAction = 'publish' | 'unpublish' | 'activate' | 'deactivate' | 'soft_delete' | 'restore'
 type SortBy = 'name' | 'code' | 'kind' | 'price' | 'is_active' | 'is_published' | 'sort_order'
 
+/** Numeric tiers sent to the API (SMALLINT); labels are for admins only. */
+const RARITY_PRESET_OPTIONS: readonly { value: number; label: string }[] = [
+  { value: 0, label: 'Common' },
+  { value: 1, label: 'Uncommon' },
+  { value: 2, label: 'Rare' },
+  { value: 3, label: 'Epic' },
+  { value: 4, label: 'Legendary' },
+]
+
 interface ShopFormState {
   code: string
   name: string
   kind: ItemKind
+  /** Not shown in the skin form; preserved on edit, default for new skins. */
   cosmetic_slot: CosmeticSlot | null
   rarity: number
   tradable: boolean
   premium_only: boolean
+  /** Not shown; preserved on edit. */
   bind: BindMode
+  /** Not shown; preserved on edit. */
   max_stack: number
   preview_image: string
   model_glb: string
@@ -40,6 +52,7 @@ interface ShopFormState {
   is_published: boolean
   is_unique_per_account: boolean
   stock_remaining: number | null
+  /** Not shown; preserved on edit. */
   sort_order: number
   previewImageFile: File | null
   modelGlbFile: File | null
@@ -75,6 +88,13 @@ let searchDebounce: ReturnType<typeof setTimeout> | null = null
 
 const allSelected = computed(() => rows.value.length > 0 && selectedIds.value.length === rows.value.length)
 const selectedCount = computed(() => selectedIds.value.length)
+
+const raritySelectOptions = computed(() => {
+  const r = formState.value.rarity
+  const presets = RARITY_PRESET_OPTIONS
+  if (presets.some((o) => o.value === r)) return presets
+  return [...presets, { value: r, label: `Other (rarity ${r})` }]
+})
 
 function newFormState(): ShopFormState {
   return {
@@ -248,10 +268,6 @@ async function submitForm(): Promise<void> {
   }
   if (form.name.trim() === '') {
     formError.value = 'Name is required'
-    return
-  }
-  if (form.kind === 'cosmetic' && !form.cosmetic_slot) {
-    formError.value = 'Cosmetic slot is required for cosmetic items'
     return
   }
   const coinsPrice = parsePositiveInt(form.coins_price)
@@ -448,14 +464,14 @@ watch([filterPublished, filterActive, filterKind, filterCurrency, filterDeleted,
     <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
       <div>
         <h1 class="m-0 text-2xl font-bold text-slate-900">Admin shop</h1>
-        <p class="mt-1 text-sm text-slate-600">Manage catalog items, publication, availability, and pricing.</p>
+        <p class="mt-1 text-sm text-slate-600">Manage catalog entries, publication, availability, and pricing.</p>
       </div>
       <button
         type="button"
         class="rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-500"
         @click="openCreate"
       >
-        New item
+        New skin
       </button>
     </div>
 
@@ -583,7 +599,13 @@ watch([filterPublished, filterActive, filterKind, filterCurrency, filterDeleted,
 
     <div v-if="panelOpen" class="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 sm:items-center" @click.self="closePanel">
       <div class="max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-xl border border-slate-200 bg-white p-5 shadow-xl">
-        <h2 class="m-0 text-lg font-bold text-slate-900">{{ editingId === null ? 'Create item' : 'Edit item' }}</h2>
+        <h2 class="m-0 text-lg font-bold text-slate-900">{{ editingId === null ? 'Create shop skin' : 'Edit shop skin' }}</h2>
+        <p class="mt-2 text-sm text-slate-600">
+          Skins are <span class="font-medium text-slate-800">permanent, account-wide</span> cosmetics—unlocked for the whole account when purchased.
+        </p>
+        <p v-if="editingId !== null && formState.kind !== 'cosmetic'" class="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">
+          This row is <span class="font-semibold">{{ formState.kind }}</span>, not a cosmetic. Save keeps that item type; new skins created here are always cosmetics.
+        </p>
         <form class="mt-4 grid gap-3 md:grid-cols-2" @submit.prevent="submitForm">
           <div>
             <label class="mb-1 block text-sm font-medium text-slate-700">Code</label>
@@ -594,46 +616,10 @@ watch([filterPublished, filterActive, filterKind, filterCurrency, filterDeleted,
             <input v-model="formState.name" type="text" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" required />
           </div>
           <div>
-            <label class="mb-1 block text-sm font-medium text-slate-700">Kind</label>
-            <select v-model="formState.kind" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
-              <option value="cosmetic">Cosmetic</option>
-              <option value="furniture">Furniture</option>
-              <option value="consumable">Consumable</option>
-              <option value="misc">Misc</option>
-            </select>
-          </div>
-          <div>
-            <label class="mb-1 block text-sm font-medium text-slate-700">Cosmetic slot</label>
-            <select v-model="formState.cosmetic_slot" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" :disabled="formState.kind !== 'cosmetic'">
-              <option :value="null">None</option>
-              <option value="body">body</option>
-              <option value="hair">hair</option>
-              <option value="top">top</option>
-              <option value="bottom">bottom</option>
-              <option value="shoes">shoes</option>
-              <option value="head_accessory">head_accessory</option>
-            </select>
-          </div>
-          <div>
             <label class="mb-1 block text-sm font-medium text-slate-700">Rarity</label>
-            <input v-model.number="formState.rarity" type="number" min="0" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-          </div>
-          <div>
-            <label class="mb-1 block text-sm font-medium text-slate-700">Max stack</label>
-            <input v-model.number="formState.max_stack" type="number" min="1" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-          </div>
-          <div>
-            <label class="mb-1 block text-sm font-medium text-slate-700">Bind</label>
-            <select v-model="formState.bind" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
-              <option value="none">none</option>
-              <option value="bind_on_equip">bind_on_equip</option>
-              <option value="bind_on_place">bind_on_place</option>
-              <option value="bound">bound</option>
+            <select v-model.number="formState.rarity" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+              <option v-for="opt in raritySelectOptions" :key="`rarity-${opt.value}`" :value="opt.value">{{ opt.label }} ({{ opt.value }})</option>
             </select>
-          </div>
-          <div>
-            <label class="mb-1 block text-sm font-medium text-slate-700">Sort order</label>
-            <input v-model.number="formState.sort_order" type="number" min="0" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
           </div>
           <div>
             <label class="mb-1 block text-sm font-medium text-slate-700">Coins price</label>
@@ -674,7 +660,7 @@ watch([filterPublished, filterActive, filterKind, filterCurrency, filterDeleted,
           <div class="flex justify-end gap-2 md:col-span-2">
             <button type="button" class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800" :disabled="formSubmitting" @click="closePanel">Cancel</button>
             <button type="submit" class="rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-500 disabled:opacity-60" :disabled="formSubmitting">
-              {{ formSubmitting ? 'Saving...' : editingId === null ? 'Create item' : 'Save changes' }}
+              {{ formSubmitting ? 'Saving...' : editingId === null ? 'Create skin' : 'Save changes' }}
             </button>
           </div>
         </form>
