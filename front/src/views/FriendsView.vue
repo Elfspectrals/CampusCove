@@ -144,7 +144,7 @@ function statusLabel(status: string): string {
               id="add-username"
               v-model="addUsername"
               type="text"
-              placeholder="e.g. tryme"
+              placeholder="pseudo"
               class="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-slate-800 placeholder:text-slate-400 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 focus:outline-none"
               @keydown.enter="sendFriendRequest"
             />
