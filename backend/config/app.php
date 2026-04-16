@@ -56,6 +56,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Public SPA origin (SEO)
+    |--------------------------------------------------------------------------
+    |
+    | Used for sitemap.xml and robots.txt when the crawlable Vue app is served
+    | from a different host than this Laravel app. Defaults to APP_URL.
+    |
+    */
+
+    'spa_public_url' => env('SPA_PUBLIC_URL') ?: env('APP_URL', 'http://localhost'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |
