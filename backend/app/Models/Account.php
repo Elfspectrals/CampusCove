@@ -6,11 +6,13 @@ use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Laravel\Sanctum\HasApiTokens;
 
 class Account extends Model implements AuthenticatableContract
 {
     use HasApiTokens;
+    use SoftDeletes;
 
     protected $table = 'accounts';
 
@@ -20,7 +22,16 @@ class Account extends Model implements AuthenticatableContract
 
     const CREATED_AT = 'created_at';
 
-    protected $fillable = ['status'];
+    protected $fillable = [
+        'status',
+        'cosmetic_colors',
+        'is_admin',
+        'suspended_until',
+        'suspension_reason',
+        'banned_at',
+        'ban_reason',
+        'deleted_at',
+    ];
 
     protected $hidden = [];
 
@@ -29,6 +40,11 @@ class Account extends Model implements AuthenticatableContract
         return [
             'created_at' => 'datetime',
             'last_login_at' => 'datetime',
+            'cosmetic_colors' => 'array',
+            'is_admin' => 'boolean',
+            'suspended_until' => 'datetime',
+            'banned_at' => 'datetime',
+            'deleted_at' => 'datetime',
         ];
     }
 

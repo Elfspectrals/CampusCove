@@ -4,8 +4,11 @@ use App\Models\Account;
 use App\Models\AccountAuthLocal;
 use App\Models\EconomyTransaction;
 use App\Models\Role;
+use App\Models\ItemDef;
 use App\Models\Wallet;
 use App\Models\WalletLedgerEntry;
+use App\Services\AccountCosmeticService;
+use App\Services\StarterCosmeticGrantService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -39,11 +42,14 @@ Artisan::command('setAdmin {email}', function () {
         'role_id' => $role->role_id,
         'created_at' => now(),
     ]);
+    Account::query()
+        ->where('account_id', $auth->account_id)
+        ->update(['is_admin' => true]);
 
-    $this->info("Admin role ensured for account_id={$auth->account_id} ({$normalizedEmail}).");
+    $this->info("Admin access ensured for account_id={$auth->account_id} ({$normalizedEmail}): role + is_admin=true.");
 
     return 0;
-})->purpose('Grant admin role to account by email');
+})->purpose('Grant admin access to account by email (role + is_admin)');
 
 Artisan::command('setMoney {account} {currency} {sum}', function () {
     $account = (string) $this->argument('account');
@@ -158,3 +164,64 @@ Artisan::command('setMoney {account} {currency} {sum}', function () {
 
     return 0;
 })->purpose('Set account balance to an absolute value (account_id or email)');
+
+Artisan::command('fillOutfit {account}', function () {
+    $raw = (string) $this->argument('account');
+    $identifier = trim($raw);
+    if ($identifier === '') {
+        $this->error('Account identifier is required (account_id or email).');
+
+        return 1;
+    }
+
+    $accountModel = null;
+    if (preg_match('/^\d+$/', $identifier)) {
+        $accountModel = Account::query()->where('account_id', (int) $identifier)->first();
+    } else {
+        $auth = AccountAuthLocal::query()
+            ->where('email', $identifier)
+            ->first();
+        if ($auth) {
+            $accountModel = Account::query()->where('account_id', $auth->account_id)->first();
+        }
+    }
+
+    if (! $accountModel) {
+        $this->error("Account '{$identifier}' was not found. Use account_id or email.");
+
+        return 1;
+    }
+
+    $accountId = (int) $accountModel->account_id;
+
+    $missingCodes = [];
+    foreach (StarterCosmeticGrantService::STARTER_CODES as $code) {
+        if (! ItemDef::query()->where('code', $code)->exists()) {
+            $missingCodes[] = $code;
+        }
+    }
+    if ($missingCodes !== []) {
+        $this->error('Wearable item definitions are missing. Seed the shop first, e.g.:');
+        $this->line('  docker compose exec -T backend php artisan db:seed --class=ShopSeeder');
+
+        return 1;
+    }
+
+    $grant = app(StarterCosmeticGrantService::class);
+    $cosmetic = app(AccountCosmeticService::class);
+
+    try {
+        DB::transaction(function () use ($grant, $cosmetic, $accountId): void {
+            $grant->ensureStarterCosmeticsForAccount($accountId);
+            $cosmetic->equipDefaultStarterLook($accountId);
+        });
+    } catch (\InvalidArgumentException $e) {
+        $this->error('Could not equip outfit: '.$e->getMessage());
+
+        return 1;
+    }
+
+    $this->info("Locker filled for account_id={$accountId}: starter wearables in inventory + default outfit equipped.");
+
+    return 0;
+})->purpose('Grant starter wearable stacks and equip the default Campus outfit (account_id or email)');

@@ -1,14 +1,35 @@
 # Command PHP
 
+Commands below assume **Docker** (`docker compose` from the repo root). For a local PHP install without Docker, run the same `php artisan …` from `backend/` with your environment.
+
+---
+
+## Prerequisites (avatar / inventory)
+
+Wearable item definitions (`COS_WEAR_*`) come from **`ShopSeeder`**. If `fillOutfit` says definitions are missing, run once:
+
+```bash
+docker compose exec -T backend php artisan db:seed --class=ShopSeeder
+```
+
+Ensure migrations are applied (includes `item_defs.cosmetic_slot` and `account_cosmetic_equipment`):
+
+```bash
+docker compose exec -T backend php artisan migrate
+```
+
+---
+
 ## `setAdmin`
 
 ```bash
 docker compose exec -T backend php artisan setAdmin <email>
 ```
 
-Gives the `admin` role to the account linked to `<email>`.
+Grants admin access to the account linked to `<email>`.
 
-- Creates the `admin` role automatically if it does not exist.
+- Sets `accounts.is_admin = true` (required by `/api/admin/*` middleware).
+- Ensures the `admin` role relation too (kept for compatibility).
 - Safe to run multiple times.
 
 Example:
@@ -16,6 +37,10 @@ Example:
 ```bash
 docker compose exec -T backend php artisan setAdmin jerome.neupert@gmail.com
 ```
+
+After running `setAdmin`, log out and log back in to refresh the stored user session on the frontend.
+
+---
 
 ## `setMoney`
 
@@ -35,3 +60,56 @@ Example:
 docker compose exec -T backend php artisan setMoney 1 coins 25000
 docker compose exec -T backend php artisan setMoney jerome.neupert@gmail.com premium 150
 ```
+
+---
+
+## `fillOutfit`
+
+```bash
+docker compose exec -T backend php artisan fillOutfit <account>
+```
+
+**Dev helper:** grants the starter wearable stacks (body, hair, top, bottom, shoes, head accessory) into the account gift inbox **and** equips the default Campus outfit so Inventory preview and in-game multiplayer use your avatar right away.
+
+- `<account>`: numeric `account_id` **or** login **email**
+- Idempotent for **grants** (missing stacks are added; existing quantities are not wiped).
+- **Equip** overwrites cosmetic slots with the default `COS_WEAR_*` set (same as a fresh “full default” look).
+
+Example:
+
+```bash
+docker compose exec -T backend php artisan fillOutfit 1
+docker compose exec -T backend php artisan fillOutfit you@example.com
+```
+
+After this, open **Inventory** in the app: you should see the wearables, the **Outfit preview** should show your character, and **Game** will use the same loadout on next connect.
+
+If the command errors about missing item definitions, run the **ShopSeeder** command in [Prerequisites](#prerequisites-avatar--inventory) first.
+
+---
+
+## Admin panel quick checks
+
+Apply latest migrations (includes admin/moderation fields on `accounts`):
+
+```bash
+docker compose exec -T backend php artisan migrate
+```
+
+Check that admin API routes are available:
+
+```bash
+docker compose exec -T backend php artisan route:list --path=api/admin
+```
+
+Verify current session user payload returns `is_admin: true`:
+
+```bash
+curl -H "Authorization: Bearer <TOKEN>" -H "Accept: application/json" http://localhost:8000/api/user
+```
+
+If `/admin/users` shows "No users found" unexpectedly:
+
+- Confirm backend request is not returning `403` (`admin_required`).
+- Re-run `setAdmin <email>`.
+- Re-login on frontend (`http://localhost:5173`) to refresh local auth cache.

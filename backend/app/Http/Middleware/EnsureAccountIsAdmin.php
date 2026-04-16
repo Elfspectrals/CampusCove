@@ -3,7 +3,6 @@
 namespace App\Http\Middleware;
 
 use App\Models\Account;
-use App\Models\Role;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -17,12 +16,11 @@ class EnsureAccountIsAdmin
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
 
-        $isAdmin = $user->roles()
-            ->where('roles.name', Role::NAME_ADMIN)
-            ->exists();
-
-        if (! $isAdmin) {
-            return response()->json(['message' => 'Forbidden.'], 403);
+        if (! (bool) $user->is_admin) {
+            return response()->json([
+                'message' => 'Forbidden.',
+                'code' => 'admin_required',
+            ], 403);
         }
 
         return $next($request);

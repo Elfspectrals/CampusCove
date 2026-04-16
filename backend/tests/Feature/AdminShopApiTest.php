@@ -3,7 +3,9 @@
 namespace Tests\Feature;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class AdminShopApiTest extends TestCase
@@ -30,28 +32,51 @@ class AdminShopApiTest extends TestCase
         ])->assertForbidden();
     }
 
-    public function test_admin_can_list_catalog_including_inactive(): void
+    public function test_admin_can_list_with_filters_sort_and_pagination(): void
     {
-        $row = DB::table('shop_catalog_items')->where('currency', 'coins')->first();
-        DB::table('shop_catalog_items')
-            ->where('shop_catalog_item_id', $row->shop_catalog_item_id)
-            ->update(['is_active' => false, 'updated_at' => now()]);
+        $token = $this->registerToken(fn (int $id) => $this->setAdminFlag($id));
 
-        $token = $this->registerToken(fn (int $id) => $this->grantAdminRole($id));
+        $createA = $this->postJson('/api/admin/shop/items', [
+            'code' => 'admin_list_sort_a',
+            'name' => 'AAA Sort Item',
+            'kind' => 'furniture',
+            'prices' => ['coins' => 10],
+            'is_active' => true,
+            'is_published' => true,
+            'sort_order' => 100,
+        ], [
+            'Authorization' => 'Bearer '.$token,
+        ]);
+        $createA->assertCreated();
 
-        $response = $this->getJson('/api/admin/shop/items', [
+        $createZ = $this->postJson('/api/admin/shop/items', [
+            'code' => 'admin_list_sort_z',
+            'name' => 'ZZZ Sort Item',
+            'kind' => 'misc',
+            'prices' => ['premium' => 15],
+            'is_active' => false,
+            'is_published' => false,
+            'sort_order' => 200,
+        ], [
+            'Authorization' => 'Bearer '.$token,
+        ]);
+        $createZ->assertCreated();
+
+        $response = $this->getJson('/api/admin/shop/items?kind=furniture&published=1&active=1&sort_by=name&sort_dir=asc&page=1&per_page=1', [
             'Authorization' => 'Bearer '.$token,
         ]);
 
         $response->assertOk();
-        $inactive = collect($response->json('data'))->firstWhere('shop_catalog_item_id', $row->shop_catalog_item_id);
-        $this->assertNotNull($inactive);
-        $this->assertFalse($inactive['is_active']);
+        $response->assertJsonPath('meta.per_page', 1);
+        $response->assertJsonPath('meta.current_page', 1);
+        $response->assertJsonPath('data.0.item.kind', 'furniture');
+        $response->assertJsonPath('data.0.is_published', true);
+        $response->assertJsonPath('data.0.is_active', true);
     }
 
-    public function test_admin_list_filters_by_query_currency_and_active(): void
+    public function test_admin_list_filters_query_and_currency_backward_compatible_params(): void
     {
-        $token = $this->registerToken(fn (int $id) => $this->grantAdminRole($id));
+        $token = $this->registerToken(fn (int $id) => $this->setAdminFlag($id));
 
         $this->getJson('/api/admin/shop/items?q=Chair&currency=coins&is_active=1', [
             'Authorization' => 'Bearer '.$token,
@@ -68,19 +93,21 @@ class AdminShopApiTest extends TestCase
             'Authorization' => 'Bearer '.$token,
         ])->json('data');
         foreach ($allPremium as $row) {
-            $this->assertSame('premium', $row['currency']);
+            $this->assertTrue($row['allow_premium']);
         }
     }
 
-    public function test_admin_can_create_item_def_with_dual_currency_catalog_rows(): void
+    public function test_admin_can_create_item_def_with_dual_currency_catalog_pricing(): void
     {
-        $token = $this->registerToken(fn (int $id) => $this->grantAdminRole($id));
+        $token = $this->registerToken(fn (int $id) => $this->setAdminFlag($id));
 
         $response = $this->postJson('/api/admin/shop/items', [
             'code' => 'admin_test_sofa',
             'name' => 'Admin Test Sofa',
             'kind' => 'furniture',
             'rarity' => 1,
+            'preview_image' => '/assets/skins/admin_test_sofa-preview.png',
+            'model_glb' => '/assets/skins/admin_test_sofa.glb',
             'prices' => [
                 'coins' => 99,
                 'premium' => 10,
@@ -91,17 +118,75 @@ class AdminShopApiTest extends TestCase
         ]);
 
         $response->assertCreated();
-        $response->assertJsonCount(2, 'items');
-        $currencies = array_column($response->json('items'), 'currency');
-        sort($currencies);
-        $this->assertSame(['coins', 'premium'], $currencies);
+        $response->assertJsonPath('item.allow_coins', true);
+        $response->assertJsonPath('item.coins_price', 99);
+        $response->assertJsonPath('item.allow_premium', true);
+        $response->assertJsonPath('item.premium_price', 10);
+        $this->assertSame(url('/assets/skins/admin_test_sofa-preview.png'), $response->json('item.item.preview_image'));
+        $this->assertSame(url('/assets/skins/admin_test_sofa.glb'), $response->json('item.item.model_glb'));
+        $this->assertFalse($response->json('item.is_published'));
 
         $this->assertDatabaseHas('item_defs', ['code' => 'admin_test_sofa']);
     }
 
+    public function test_admin_can_create_item_with_uploaded_skin_files(): void
+    {
+        Storage::fake('public');
+        $token = $this->registerToken(fn (int $id) => $this->setAdminFlag($id));
+
+        $response = $this->post('/api/admin/shop/items', [
+            'code' => 'admin_uploaded_skin',
+            'name' => 'Admin Uploaded Skin',
+            'kind' => 'cosmetic',
+            'cosmetic_slot' => 'body',
+            'prices' => ['coins' => 150],
+            'preview_image_file' => UploadedFile::fake()->image('preview.png'),
+            'model_glb_file' => UploadedFile::fake()->create('skin.glb', 64, 'model/gltf-binary'),
+        ], [
+            'Authorization' => 'Bearer '.$token,
+            'Accept' => 'application/json',
+        ]);
+
+        $response->assertCreated();
+        $this->assertStringContainsString('/storage/skins/previews/', (string) $response->json('item.item.preview_image'));
+        $this->assertStringContainsString('/storage/skins/models/', (string) $response->json('item.item.model_glb'));
+        $this->assertStringStartsWith('http', (string) $response->json('item.item.preview_image'));
+        $this->assertStringStartsWith('http', (string) $response->json('item.item.model_glb'));
+    }
+
+    public function test_admin_create_cosmetic_defaults_slot_and_coerces_kind_when_slot_is_set(): void
+    {
+        $token = $this->registerToken(fn (int $id) => $this->setAdminFlag($id));
+
+        $defaults = $this->postJson('/api/admin/shop/items', [
+            'code' => 'admin_cosmetic_default_slot',
+            'name' => 'Admin Cosmetic Default Slot',
+            'kind' => 'cosmetic',
+            'prices' => ['coins' => 70],
+        ], [
+            'Authorization' => 'Bearer '.$token,
+        ]);
+        $defaults->assertCreated();
+        $defaults->assertJsonPath('item.item.kind', 'cosmetic');
+        $defaults->assertJsonPath('item.item.cosmetic_slot', 'body');
+
+        $coerced = $this->postJson('/api/admin/shop/items', [
+            'code' => 'admin_cosmetic_kind_coerced',
+            'name' => 'Admin Cosmetic Kind Coerced',
+            'kind' => 'misc',
+            'cosmetic_slot' => 'body',
+            'prices' => ['coins' => 80],
+        ], [
+            'Authorization' => 'Bearer '.$token,
+        ]);
+        $coerced->assertCreated();
+        $coerced->assertJsonPath('item.item.kind', 'cosmetic');
+        $coerced->assertJsonPath('item.item.cosmetic_slot', 'body');
+    }
+
     public function test_admin_create_validation_requires_at_least_one_price(): void
     {
-        $token = $this->registerToken(fn (int $id) => $this->grantAdminRole($id));
+        $token = $this->registerToken(fn (int $id) => $this->setAdminFlag($id));
 
         $this->postJson('/api/admin/shop/items', [
             'code' => 'no_prices',
@@ -117,7 +202,7 @@ class AdminShopApiTest extends TestCase
 
     public function test_admin_can_patch_catalog_and_item_fields(): void
     {
-        $token = $this->registerToken(fn (int $id) => $this->grantAdminRole($id));
+        $token = $this->registerToken(fn (int $id) => $this->setAdminFlag($id));
 
         $create = $this->postJson('/api/admin/shop/items', [
             'code' => 'patch_target',
@@ -128,11 +213,11 @@ class AdminShopApiTest extends TestCase
             'Authorization' => 'Bearer '.$token,
         ]);
         $create->assertCreated();
-        $id = $create->json('items.0.shop_catalog_item_id');
+        $id = $create->json('item.shop_catalog_item_id');
 
         $patch = $this->patchJson('/api/admin/shop/items/'.$id, [
             'name' => 'Patched Name',
-            'price' => 75,
+            'prices' => ['coins' => 75],
             'is_active' => false,
             'stock_remaining' => 3,
         ], [
@@ -140,15 +225,15 @@ class AdminShopApiTest extends TestCase
         ]);
 
         $patch->assertOk();
-        $patch->assertJsonPath('item.price', 75);
+        $patch->assertJsonPath('item.coins_price', 75);
         $patch->assertJsonPath('item.is_active', false);
         $patch->assertJsonPath('item.stock_remaining', 3);
         $patch->assertJsonPath('item.item.name', 'Patched Name');
     }
 
-    public function test_admin_delete_returns_204(): void
+    public function test_admin_delete_soft_deletes_and_can_be_listed_when_deleted_filter_is_used(): void
     {
-        $token = $this->registerToken(fn (int $id) => $this->grantAdminRole($id));
+        $token = $this->registerToken(fn (int $id) => $this->setAdminFlag($id));
 
         $create = $this->postJson('/api/admin/shop/items', [
             'code' => 'to_delete',
@@ -158,57 +243,104 @@ class AdminShopApiTest extends TestCase
         ], [
             'Authorization' => 'Bearer '.$token,
         ]);
-        $id = $create->json('items.0.shop_catalog_item_id');
+        $id = $create->json('item.shop_catalog_item_id');
 
         $this->deleteJson('/api/admin/shop/items/'.$id, [], [
             'Authorization' => 'Bearer '.$token,
         ])->assertNoContent();
+
+        $defaultList = $this->getJson('/api/admin/shop/items?q=to_delete', [
+            'Authorization' => 'Bearer '.$token,
+        ]);
+        $defaultList->assertOk();
+        $this->assertCount(0, $defaultList->json('data'));
+
+        $deletedOnly = $this->getJson('/api/admin/shop/items?deleted=only&q=to_delete', [
+            'Authorization' => 'Bearer '.$token,
+        ]);
+        $deletedOnly->assertOk();
+        $deletedOnly->assertJsonPath('data.0.shop_catalog_item_id', $id);
+        $deletedOnly->assertJsonPath('data.0.is_deleted', true);
     }
 
-    public function test_admin_delete_conflict_returns_409_when_purchases_exist(): void
+    public function test_admin_bulk_actions_publish_activate_soft_delete_and_restore(): void
     {
-        $adminToken = $this->registerToken(fn (int $id) => $this->grantAdminRole($id));
+        $token = $this->registerToken(fn (int $id) => $this->setAdminFlag($id));
 
-        $create = $this->postJson('/api/admin/shop/items', [
-            'code' => 'has_purchase',
-            'name' => 'Has Purchase',
+        $first = $this->postJson('/api/admin/shop/items', [
+            'code' => 'bulk_item_1',
+            'name' => 'Bulk Item 1',
             'kind' => 'misc',
-            'prices' => ['coins' => 20],
+            'prices' => ['coins' => 5],
+            'is_active' => false,
+            'is_published' => false,
         ], [
-            'Authorization' => 'Bearer '.$adminToken,
+            'Authorization' => 'Bearer '.$token,
         ]);
-        $catalogId = $create->json('items.0.shop_catalog_item_id');
+        $first->assertCreated();
+        $firstId = (int) $first->json('item.shop_catalog_item_id');
 
-        $buyerToken = $this->registerToken();
-        $buyerId = $this->accountIdFromToken($buyerToken);
-
-        $txId = (int) DB::table('transactions')->insertGetId([
-            'server_id' => null,
-            'type' => 'shop_purchase',
-            'status' => 'committed',
-            'created_by_account_id' => $buyerId,
-            'created_at' => now(),
-            'committed_at' => now(),
-            'meta_json' => '{}',
-        ], 'tx_id');
-
-        DB::table('account_shop_purchases')->insert([
-            'account_id' => $buyerId,
-            'shop_catalog_item_id' => $catalogId,
-            'tx_id' => $txId,
-            'quantity' => 1,
-            'unit_price' => 20,
-            'total_debit' => 20,
-            'currency' => 'coins',
-            'is_unique_at_purchase' => false,
-            'created_at' => now(),
+        $second = $this->postJson('/api/admin/shop/items', [
+            'code' => 'bulk_item_2',
+            'name' => 'Bulk Item 2',
+            'kind' => 'misc',
+            'prices' => ['premium' => 8],
+            'is_active' => true,
+            'is_published' => true,
+        ], [
+            'Authorization' => 'Bearer '.$token,
         ]);
+        $second->assertCreated();
+        $secondId = (int) $second->json('item.shop_catalog_item_id');
 
-        $this->deleteJson('/api/admin/shop/items/'.$catalogId, [], [
-            'Authorization' => 'Bearer '.$adminToken,
-        ])
-            ->assertStatus(409)
-            ->assertJsonStructure(['message']);
+        $this->postJson('/api/admin/shop/items/bulk', [
+            'action' => 'publish',
+            'ids' => [$firstId],
+        ], [
+            'Authorization' => 'Bearer '.$token,
+        ])->assertOk()->assertJsonPath('updated', 1);
+
+        $this->postJson('/api/admin/shop/items/bulk', [
+            'action' => 'activate',
+            'ids' => [$firstId],
+        ], [
+            'Authorization' => 'Bearer '.$token,
+        ])->assertOk()->assertJsonPath('updated', 1);
+
+        $this->postJson('/api/admin/shop/items/bulk', [
+            'action' => 'soft-delete',
+            'ids' => [$firstId, $secondId],
+        ], [
+            'Authorization' => 'Bearer '.$token,
+        ])->assertOk()->assertJsonPath('soft_deleted', 2);
+
+        $this->postJson('/api/admin/shop/items/bulk', [
+            'action' => 'restore',
+            'ids' => [$firstId, $secondId],
+        ], [
+            'Authorization' => 'Bearer '.$token,
+        ])->assertOk()->assertJsonPath('restored', 2);
+
+        $withDeleted = $this->getJson('/api/admin/shop/items?deleted=with&q=bulk_item_', [
+            'Authorization' => 'Bearer '.$token,
+        ]);
+        $withDeleted->assertOk();
+        $this->assertCount(2, $withDeleted->json('data'));
+        foreach ($withDeleted->json('data') as $row) {
+            $this->assertFalse($row['is_deleted']);
+        }
+    }
+
+    public function test_admin_bulk_validation_rejects_unknown_ids(): void
+    {
+        $token = $this->registerToken(fn (int $id) => $this->setAdminFlag($id));
+
+        $this->postJson('/api/admin/shop/items/bulk', [
+            'action' => 'publish',
+            'ids' => [999999999],
+        ], [
+            'Authorization' => 'Bearer '.$token,
+        ])->assertStatus(422)->assertJsonStructure(['message']);
     }
 
     /**
@@ -234,30 +366,11 @@ class AdminShopApiTest extends TestCase
         return $reg->json('token');
     }
 
-    private function grantAdminRole(int $accountId): void
+    private function setAdminFlag(int $accountId): void
     {
-        $roleId = DB::table('roles')->where('name', 'admin')->value('role_id');
-        if ($roleId === null) {
-            $roleId = DB::table('roles')->insertGetId([
-                'name' => 'admin',
-                'created_at' => now(),
-            ], 'role_id');
-        }
-
-        DB::table('account_roles')->insertOrIgnore([
-            'account_id' => $accountId,
-            'role_id' => $roleId,
-            'created_at' => now(),
+        DB::table('accounts')->where('account_id', $accountId)->update([
+            'is_admin' => true,
         ]);
     }
 
-    private function accountIdFromToken(string $token): int
-    {
-        $response = $this->getJson('/api/user', [
-            'Authorization' => 'Bearer '.$token,
-        ]);
-        $response->assertOk();
-
-        return (int) $response->json('user.account_id');
-    }
 }

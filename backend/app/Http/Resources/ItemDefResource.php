@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Support\AssetUrl;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -25,6 +26,9 @@ class ItemDefResource extends JsonResource
             'premium_only' => $this->premium_only,
             'bind' => $this->bind,
             'max_stack' => $this->max_stack,
+            'cosmetic_slot' => $this->cosmetic_slot,
+            'preview_image' => AssetUrl::normalize($this->preview_image),
+            'model_glb' => AssetUrl::normalize($this->model_glb),
         ];
     }
 }

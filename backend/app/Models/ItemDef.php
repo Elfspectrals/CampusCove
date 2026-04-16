@@ -24,6 +24,9 @@ class ItemDef extends Model
         'premium_only',
         'bind',
         'max_stack',
+        'cosmetic_slot',
+        'preview_image',
+        'model_glb',
     ];
 
     protected function casts(): array

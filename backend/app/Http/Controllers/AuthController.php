@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Account;
 use App\Models\AccountAuthLocal;
 use App\Models\AccountHandle;
+use App\Services\StarterCosmeticGrantService;
 use App\Services\WalletSummaryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -60,6 +61,8 @@ class AuthController extends Controller
             ->with('handle', 'localAuth')
             ->firstOrFail();
 
+        app(StarterCosmeticGrantService::class)->ensureStarterCosmeticsForAccount((int) $account->account_id);
+
         $account->update(['last_login_at' => now()]);
         $token = $account->createToken('auth')->plainTextToken;
 
@@ -85,6 +88,23 @@ class AuthController extends Controller
             throw ValidationException::withMessages([
                 'email' => ['The provided credentials are incorrect.'],
             ]);
+        }
+        if ($account->banned_at !== null) {
+            $account->tokens()->delete();
+
+            return response()->json([
+                'message' => 'Account is banned.',
+                'code' => 'account_banned',
+            ], 403);
+        }
+        if ($account->suspended_until !== null && $account->suspended_until->isFuture()) {
+            $account->tokens()->delete();
+
+            return response()->json([
+                'message' => 'Account is suspended.',
+                'code' => 'account_suspended',
+                'suspended_until' => $account->suspended_until->toIso8601String(),
+            ], 403);
         }
 
         $account->update(['last_login_at' => now()]);
@@ -126,7 +146,7 @@ class AuthController extends Controller
         $handle = $account->relationLoaded('handle') ? $account->handle : $account->handle()->first();
         $displayName = $handle ? $handle->display_name : '';
         $roleNames = $account->roles()->pluck('roles.name')->values()->all();
-        $isAdmin = in_array('admin', $roleNames, true);
+        $isAdmin = (bool) $account->is_admin;
 
         return [
             'account_id' => $account->account_id,
@@ -137,6 +157,8 @@ class AuthController extends Controller
             'email' => $account->relationLoaded('localAuth') ? $account->localAuth?->email : $account->localAuth()->value('email'),
             'roles' => $roleNames,
             'is_admin' => $isAdmin,
+            'suspended_until' => $account->suspended_until?->toIso8601String(),
+            'banned_at' => $account->banned_at?->toIso8601String(),
             'wallet_summary' => $this->walletSummary->forAccountId((int) $account->account_id),
         ];
     }

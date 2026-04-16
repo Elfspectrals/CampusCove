@@ -20,10 +20,17 @@ class ShopCatalogItemResource extends JsonResource
             'public_id' => $this->public_id,
             'currency' => $this->currency,
             'price' => $this->price,
+            'allow_coins' => $this->allow_coins,
+            'coins_price' => $this->coins_price,
+            'allow_premium' => $this->allow_premium,
+            'premium_price' => $this->premium_price,
             'is_active' => $this->is_active,
+            'is_published' => $this->is_published,
             'is_unique_per_account' => $this->is_unique_per_account,
             'stock_remaining' => $this->stock_remaining,
             'sort_order' => $this->sort_order,
+            'deleted_at' => optional($this->deleted_at)->toISOString(),
+            'is_deleted' => $this->deleted_at !== null,
             'item' => ItemDefResource::make($this->whenLoaded('itemDef')),
         ];
     }

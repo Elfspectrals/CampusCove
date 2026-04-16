@@ -50,6 +50,8 @@ class InventoryApiTest extends TestCase
         $this->assertNotNull($chair);
         $this->assertSame(1, $chair['quantity']);
         $this->assertSame('furniture', $chair['kind']);
+        $this->assertArrayHasKey('preview_image', $chair);
+        $this->assertArrayHasKey('model_glb', $chair);
     }
 
     public function test_inventory_filters_by_kind(): void
@@ -114,6 +116,69 @@ class InventoryApiTest extends TestCase
         ]);
         $miss->assertOk();
         $this->assertSame([], $miss->json('items'));
+    }
+
+    public function test_purchased_body_cosmetic_is_visible_in_cosmetic_inventory_filter(): void
+    {
+        $itemDefId = (int) DB::table('item_defs')->insertGetId([
+            'code' => 'cosmetic_shop_body_test',
+            'name' => 'Cosmetic Shop Body Test',
+            'kind' => 'cosmetic',
+            'rarity' => 2,
+            'tradable' => true,
+            'premium_only' => false,
+            'bind' => 'none',
+            'max_stack' => 1,
+            'cosmetic_slot' => 'body',
+            'preview_image' => '/storage/skins/previews/test-body.jpg',
+            'model_glb' => '/storage/skins/models/test-body.glb',
+            'created_at' => now(),
+        ], 'item_def_id');
+
+        $publicId = DB::table('shop_catalog_items')->insertGetId([
+            'item_def_id' => $itemDefId,
+            'currency' => 'coins',
+            'price' => 250,
+            'allow_coins' => true,
+            'coins_price' => 250,
+            'allow_premium' => false,
+            'premium_price' => null,
+            'is_active' => true,
+            'is_published' => true,
+            'is_unique_per_account' => false,
+            'stock_remaining' => null,
+            'sort_order' => 99,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ], 'shop_catalog_item_id');
+        $this->assertGreaterThan(0, $publicId);
+
+        $catalog = DB::table('shop_catalog_items')
+            ->where('shop_catalog_item_id', $publicId)
+            ->first();
+        $this->assertNotNull($catalog);
+
+        $token = $this->registerAndCreditWallet(10_000, 'coins')['token'];
+
+        $this->postJson('/api/shop/purchase', [
+            'shop_item_public_id' => $catalog->public_id,
+            'quantity' => 1,
+        ], [
+            'Authorization' => 'Bearer '.$token,
+        ])->assertOk();
+
+        $response = $this->getJson('/api/inventory?kind=cosmetic', [
+            'Authorization' => 'Bearer '.$token,
+        ]);
+        $response->assertOk();
+
+        $item = collect($response->json('items'))->firstWhere('code', 'cosmetic_shop_body_test');
+        $this->assertNotNull($item);
+        $this->assertSame('cosmetic', $item['kind']);
+        $this->assertSame('body', $item['cosmetic_slot']);
+        $this->assertSame(1, $item['quantity']);
+        $this->assertStringStartsWith('http', (string) $item['preview_image']);
+        $this->assertStringStartsWith('http', (string) $item['model_glb']);
     }
 
     /**

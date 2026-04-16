@@ -1,6 +1,7 @@
 <?php
 
 use App\Exceptions\ShopPurchaseRejectedException;
+use App\Http\Middleware\EnsureAccountIsActive;
 use App\Http\Middleware\EnsureAccountIsAdmin;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -21,6 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
         $middleware->alias([
             'admin' => EnsureAccountIsAdmin::class,
+            'account.active' => EnsureAccountIsActive::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

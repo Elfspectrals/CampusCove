@@ -4,19 +4,29 @@
  * - POST /shop/purchase       — authenticated (Bearer token)
  */
 import { applyCachedBalanceAfterPurchase, formatApiError, getStoredAuth } from './auth'
+import { normalizeApiAssetUrl } from './url'
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api'
 
 export type ShopCurrency = 'coins' | 'premium'
 
-export interface ShopItem {
+export interface ShopItemCurrencyOption {
   shop_catalog_item_id: number
+  public_id: string
+  currency: ShopCurrency
+  price: number
+}
+
+export interface ShopItem {
+  item_def_id: number
+  shop_catalog_item_id: number
+  public_id: string
   code: string
   name: string
   description: string | null
-  /** Price in `currency` units (legacy field name). */
-  price_coins: number
-  currency: ShopCurrency
+  preview_image: string | null
+  model_glb: string | null
+  options: ShopItemCurrencyOption[]
 }
 
 export interface PurchaseSuccess {
@@ -48,21 +58,58 @@ function parseCurrency(value: unknown): ShopCurrency | null {
 function normalizeCatalogRow(row: unknown): ShopItem | null {
   if (!isRecord(row)) return null
   if (typeof row.shop_catalog_item_id !== 'number') return null
+  if (typeof row.public_id !== 'string') return null
   if (typeof row.price !== 'number') return null
   const currency = parseCurrency(row.currency)
-  if (currency === null) return null
+  const allowCoins = row.allow_coins === true
+  const allowPremium = row.allow_premium === true
+  const coinsPrice = typeof row.coins_price === 'number' ? row.coins_price : null
+  const premiumPrice = typeof row.premium_price === 'number' ? row.premium_price : null
   if (!isRecord(row.item)) return null
+  if (typeof row.item.item_def_id !== 'number') return null
   if (typeof row.item.code !== 'string') return null
   if (typeof row.item.name !== 'string') return null
   if (!(row.item.description === undefined || row.item.description === null || typeof row.item.description === 'string')) return null
+  if (!(row.item.preview_image === undefined || row.item.preview_image === null || typeof row.item.preview_image === 'string')) return null
+  if (!(row.item.model_glb === undefined || row.item.model_glb === null || typeof row.item.model_glb === 'string')) return null
+
+  const options: ShopItemCurrencyOption[] = []
+  if (allowCoins && coinsPrice !== null && coinsPrice > 0) {
+    options.push({
+      shop_catalog_item_id: row.shop_catalog_item_id,
+      public_id: row.public_id,
+      currency: 'coins',
+      price: coinsPrice,
+    })
+  }
+  if (allowPremium && premiumPrice !== null && premiumPrice > 0) {
+    options.push({
+      shop_catalog_item_id: row.shop_catalog_item_id,
+      public_id: row.public_id,
+      currency: 'premium',
+      price: premiumPrice,
+    })
+  }
+  if (options.length === 0 && currency !== null && row.price > 0) {
+    options.push({
+      shop_catalog_item_id: row.shop_catalog_item_id,
+      public_id: row.public_id,
+      currency,
+      price: row.price,
+    })
+  }
+  if (options.length === 0) return null
 
   return {
+    item_def_id: row.item.item_def_id,
     shop_catalog_item_id: row.shop_catalog_item_id,
+    public_id: row.public_id,
     code: row.item.code,
     name: row.item.name,
     description: typeof row.item.description === 'string' ? row.item.description : null,
-    price_coins: row.price,
-    currency,
+    preview_image: normalizeApiAssetUrl(row.item.preview_image),
+    model_glb: normalizeApiAssetUrl(row.item.model_glb),
+    options,
   }
 }
 
@@ -70,11 +117,29 @@ function parseCatalog(data: unknown): { items: ShopItem[] } {
   if (!isRecord(data)) throw new Error('Invalid catalog response')
   const rec = data
   if (!Array.isArray(rec.items)) throw new Error('Invalid catalog response')
-  const items: ShopItem[] = []
+  const byDef = new Map<number, ShopItem>()
   for (const row of rec.items) {
     const item = normalizeCatalogRow(row)
     if (!item) throw new Error('Invalid catalog item')
-    items.push(item)
+    const existing = byDef.get(item.item_def_id)
+    if (!existing) {
+      byDef.set(item.item_def_id, item)
+      continue
+    }
+    const firstOption = item.options[0]
+    if (!firstOption) throw new Error('Invalid catalog item')
+    existing.options.push(firstOption)
+    if (item.shop_catalog_item_id < existing.shop_catalog_item_id) {
+      existing.shop_catalog_item_id = item.shop_catalog_item_id
+      existing.public_id = item.public_id
+    }
+  }
+  const items = Array.from(byDef.values())
+  for (const item of items) {
+    item.options.sort((a, b) => {
+      if (a.currency === b.currency) return a.price - b.price
+      return a.currency === 'coins' ? -1 : 1
+    })
   }
   return { items }
 }
@@ -88,11 +153,17 @@ export async function fetchItemShopCatalog(): Promise<{ items: ShopItem[] }> {
   return parseCatalog(data)
 }
 
-export async function purchaseShopItem(shopCatalogItemId: number): Promise<PurchaseSuccess> {
+export interface PurchaseShopItemBody {
+  shop_catalog_item_id?: number
+  shop_item_public_id?: string
+  currency?: ShopCurrency
+}
+
+export async function purchaseShopItem(body: PurchaseShopItemBody): Promise<PurchaseSuccess> {
   const res = await fetch(`${API_BASE}/shop/purchase`, {
     method: 'POST',
     headers: authJsonHeaders(),
-    body: JSON.stringify({ shop_catalog_item_id: shopCatalogItemId }),
+    body: JSON.stringify(body),
   })
   const data: unknown = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(formatApiError(data))

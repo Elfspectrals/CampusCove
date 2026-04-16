@@ -77,8 +77,15 @@ CREATE TABLE IF NOT EXISTS accounts (
   account_id     BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   public_id      UUID NOT NULL DEFAULT gen_random_uuid(),
   status         account_status NOT NULL DEFAULT 'active',
+  is_admin       BOOLEAN NOT NULL DEFAULT FALSE,
   created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
-  last_login_at  TIMESTAMPTZ NULL
+  last_login_at  TIMESTAMPTZ NULL,
+  cosmetic_colors JSONB NULL,
+  suspended_until TIMESTAMPTZ NULL,
+  suspension_reason TEXT NULL,
+  banned_at TIMESTAMPTZ NULL,
+  ban_reason TEXT NULL,
+  deleted_at TIMESTAMPTZ NULL
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS ux_accounts_public_id ON accounts(public_id);
@@ -244,11 +251,40 @@ CREATE TABLE IF NOT EXISTS item_defs (
   premium_only    BOOLEAN NOT NULL DEFAULT FALSE,
   bind            bind_rule NOT NULL DEFAULT 'none',
   max_stack       INT NOT NULL DEFAULT 1,
+  cosmetic_slot   TEXT NULL,
+  preview_image   TEXT NULL,
+  model_glb       TEXT NULL,
   created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
-  CONSTRAINT ck_max_stack CHECK (max_stack >= 1)
+  CONSTRAINT ck_max_stack CHECK (max_stack >= 1),
+  CONSTRAINT ck_item_defs_cosmetic_slot CHECK (
+    cosmetic_slot IS NULL OR cosmetic_slot IN ('body','hair','top','bottom','shoes','head_accessory')
+  )
 );
 
 CREATE INDEX IF NOT EXISTS ix_item_defs_kind ON item_defs(kind);
+
+CREATE TABLE IF NOT EXISTS account_cosmetic_equipment (
+  account_id   BIGINT NOT NULL REFERENCES accounts(account_id) ON DELETE CASCADE,
+  slot         TEXT NOT NULL,
+  item_def_id  BIGINT NOT NULL REFERENCES item_defs(item_def_id) ON DELETE RESTRICT,
+  updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (account_id, slot),
+  CONSTRAINT ck_account_cosmetic_slot CHECK (slot IN ('body','hair','top','bottom','shoes','head_accessory'))
+);
+
+CREATE INDEX IF NOT EXISTS ix_account_cosmetic_equipment_item ON account_cosmetic_equipment(item_def_id);
+
+CREATE TABLE IF NOT EXISTS account_locker_cosmetics (
+  account_id   BIGINT NOT NULL REFERENCES accounts(account_id) ON DELETE CASCADE,
+  item_def_id  BIGINT NOT NULL REFERENCES item_defs(item_def_id) ON DELETE RESTRICT,
+  quantity     INT NOT NULL DEFAULT 1,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (account_id, item_def_id),
+  CONSTRAINT ck_account_locker_cosmetics_qty CHECK (quantity > 0)
+);
+
+CREATE INDEX IF NOT EXISTS ix_account_locker_cosmetics_item_def ON account_locker_cosmetics(item_def_id);
 
 CREATE TABLE IF NOT EXISTS item_instances (
   item_instance_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -296,19 +332,31 @@ CREATE TABLE IF NOT EXISTS shop_catalog_items (
   item_def_id            BIGINT NOT NULL REFERENCES item_defs(item_def_id) ON DELETE RESTRICT,
   currency               currency_code NOT NULL,
   price                  BIGINT NOT NULL,
+  allow_coins            BOOLEAN NOT NULL DEFAULT FALSE,
+  coins_price            BIGINT NULL,
+  allow_premium          BOOLEAN NOT NULL DEFAULT FALSE,
+  premium_price          BIGINT NULL,
   is_active              BOOLEAN NOT NULL DEFAULT TRUE,
+  is_published           BOOLEAN NOT NULL DEFAULT TRUE,
   is_unique_per_account  BOOLEAN NOT NULL DEFAULT FALSE,
   stock_remaining        INT NULL,
   sort_order             INT NOT NULL DEFAULT 0,
+  deleted_at             TIMESTAMPTZ NULL,
   created_at             TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at             TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT ck_shop_catalog_price CHECK (price > 0),
+  CONSTRAINT ck_shop_catalog_pricing CHECK (
+    (allow_coins = TRUE AND coins_price IS NOT NULL AND coins_price > 0)
+    OR
+    (allow_premium = TRUE AND premium_price IS NOT NULL AND premium_price > 0)
+  ),
   CONSTRAINT ck_shop_catalog_stock CHECK (stock_remaining IS NULL OR stock_remaining >= 0),
   UNIQUE(item_def_id, currency)
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS ux_shop_catalog_public_id ON shop_catalog_items(public_id);
 CREATE INDEX IF NOT EXISTS ix_shop_catalog_active_sort ON shop_catalog_items(is_active, sort_order);
+CREATE INDEX IF NOT EXISTS ix_shop_catalog_deleted_at ON shop_catalog_items(deleted_at);
 
 CREATE TABLE IF NOT EXISTS account_shop_purchases (
   purchase_id              BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,

@@ -7,7 +7,7 @@ import * as friendsApi from '../api/friends'
 import type { Friend } from '../api/friends'
 
 const router = useRouter()
-const activeTab = ref<'about' | 'inventory' | 'achievements'>('about')
+const activeTab = ref<'about' | 'locker' | 'achievements'>('about')
 const friendsPanelOpen = ref(false)
 
 const auth = computed(() => getStoredAuth())
@@ -123,11 +123,11 @@ const recentItems = [
               type="button"
               :class="[
                 'px-4 py-2 text-sm font-semibold rounded-t-lg md:rounded-lg',
-                activeTab === 'inventory' ? 'bg-amber-500 text-slate-900 md:underline md:decoration-amber-500 md:decoration-2' : 'text-white/80 hover:bg-white/10',
+                activeTab === 'locker' ? 'bg-amber-500 text-slate-900 md:underline md:decoration-amber-500 md:decoration-2' : 'text-white/80 hover:bg-white/10',
               ]"
-              @click="activeTab = 'inventory'"
+              @click="activeTab = 'locker'"
             >
-              INVENTORY
+              LOCKER
             </button>
             <button
               type="button"
