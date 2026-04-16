@@ -9,6 +9,18 @@ use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\HandleCors;
 use Symfony\Component\HttpFoundation\Response;
 
+$defaultAllowedOrigins = [
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+];
+
+$envAllowedOrigins = env('CORS_ALLOWED_ORIGINS');
+$allowedOrigins = is_string($envAllowedOrigins) && $envAllowedOrigins !== ''
+    ? array_values(array_filter(array_map('trim', explode(',', $envAllowedOrigins))))
+    : $defaultAllowedOrigins;
+
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
@@ -39,8 +51,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->respond(function (Response $response): Response {
             if (request()->is('api/*') && request()->header('Origin')) {
                 $origin = request()->header('Origin');
-                $allowed = ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:3000', 'http://127.0.0.1:3000'];
-                if (in_array($origin, $allowed, true)) {
+                if (in_array($origin, $allowedOrigins, true)) {
                     $response->headers->set('Access-Control-Allow-Origin', $origin);
                     $response->headers->set('Access-Control-Allow-Credentials', 'true');
                     $response->headers->set('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
