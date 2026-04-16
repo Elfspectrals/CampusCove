@@ -48,7 +48,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
             return null;
         });
-        $exceptions->respond(function (Response $response): Response {
+        $exceptions->respond(function (Response $response) use ($allowedOrigins): Response {
             if (request()->is('api/*') && request()->header('Origin')) {
                 $origin = request()->header('Origin');
                 if (in_array($origin, $allowedOrigins, true)) {
