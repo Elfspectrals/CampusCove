@@ -8,6 +8,15 @@ services:
       - "3000:3000"
     environment:
       PORT: 3000
+      BACKEND_API_URL: http://backend:8000/api
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: campus_cove
+      DB_USERNAME: postgres
+      DB_PASSWORD: secret
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   postgres:
     image: postgres:16-alpine

@@ -7,6 +7,8 @@
     "start": "node server.js"
   },
   "dependencies": {
-    "socket.io": "^4.8.1"
+    "@colyseus/schema": "^4.0.20",
+    "colyseus": "^0.17.10",
+    "pg": "^8.16.3"
   }
 }
