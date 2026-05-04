@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
+import { useHead } from '@unhead/vue'
 import { useRouter } from 'vue-router'
 import * as THREE from 'three'
 import { io } from 'socket.io-client'
@@ -23,6 +24,53 @@ import {
 } from '../avatar/compositeAvatar'
 
 const router = useRouter()
+
+useHead({
+  title: 'CampusCove | Explore ton campus en 3D',
+  meta: [
+    {
+      name: 'description',
+      content: `Vis ta première expérience immersive dans CampusCove : déplace-toi, rencontre d'autres avatars et découvre ton campus social.`,
+    },
+    {
+      name: 'keywords',
+      content: 'campus 3D, jeu multijoueur, exploration, avatars, social, campus virtuel',
+    },
+    {
+      property: 'og:title',
+      content: 'CampusCove | Explore ton campus en 3D',
+    },
+    {
+      property: 'og:description',
+      content: `Vis ta première expérience immersive dans CampusCove : déplace-toi, rencontre d'autres avatars et découvre ton campus social.`,
+    },
+    {
+      property: 'og:type',
+      content: 'website',
+    },
+    {
+      property: 'og:image',
+      content: '/mockups/locker-desktop.svg',
+    },
+    {
+      name: 'twitter:card',
+      content: 'summary_large_image',
+    },
+    {
+      name: 'twitter:title',
+      content: 'CampusCove | Explore ton campus en 3D',
+    },
+    {
+      name: 'twitter:description',
+      content: `Vis ta première expérience immersive dans CampusCove : déplace-toi, rencontre d'autres avatars et découvre ton campus social.`,
+    },
+    {
+      name: 'twitter:image',
+      content: '/mockups/locker-desktop.svg',
+    },
+  ],
+})
+
 const containerRef = ref<HTMLElement | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const roomFullMessage = ref<string | null>(null)

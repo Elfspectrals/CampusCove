@@ -1,7 +1,54 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { useHead } from '@unhead/vue'
 import * as friendsApi from '../api/friends'
 import type { Friend, PendingFriend } from '../api/friends'
+
+useHead({
+  title: 'CampusCove | Amis et social',
+  meta: [
+    {
+      name: 'description',
+      content: 'Trouve des amis, envoie des demandes et discute avec les utilisateurs de ton campus virtuel CampusCove.',
+    },
+    {
+      name: 'keywords',
+      content: 'amis, réseau social, multijoueur, campus virtuel, groupe, ESGI',
+    },
+    {
+      property: 'og:title',
+      content: 'CampusCove | Amis et social',
+    },
+    {
+      property: 'og:description',
+      content: 'Trouve des amis, envoie des demandes et discute avec les utilisateurs de ton campus virtuel CampusCove.',
+    },
+    {
+      property: 'og:type',
+      content: 'website',
+    },
+    {
+      property: 'og:image',
+      content: '/mockups/locker-desktop.svg',
+    },
+    {
+      name: 'twitter:card',
+      content: 'summary_large_image',
+    },
+    {
+      name: 'twitter:title',
+      content: 'CampusCove | Amis et social',
+    },
+    {
+      name: 'twitter:description',
+      content: 'Trouve des amis, envoie des demandes et discute avec les utilisateurs de ton campus virtuel CampusCove.',
+    },
+    {
+      name: 'twitter:image',
+      content: '/mockups/locker-desktop.svg',
+    },
+  ],
+})
 
 const friends = ref<Friend[]>([])
 const pending = ref<PendingFriend[]>([])

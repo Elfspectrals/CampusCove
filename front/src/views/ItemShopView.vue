@@ -1,11 +1,58 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { useHead } from '@unhead/vue'
 import { RouterLink } from 'vue-router'
 import { getStoredAuth } from '../api/auth'
 import { useWalletBalances } from '../composables/useWalletBalances'
 import LockerCharacterPreview from '../components/locker/LockerCharacterPreview.vue'
 import * as itemShopApi from '../api/itemShop'
 import type { ShopCurrency, ShopItem, ShopItemCurrencyOption } from '../api/itemShop'
+
+useHead({
+  title: 'CampusCove | Boutique d’objets et skins',
+  meta: [
+    {
+      name: 'description',
+      content: 'Achète des cosmétiques et objets pour personnaliser ton avatar et ta chambre virtuelle dans CampusCove.',
+    },
+    {
+      name: 'keywords',
+      content: 'boutique, skins, cosmétiques, items, avatar, campus virtuel, multijoueur',
+    },
+    {
+      property: 'og:title',
+      content: 'CampusCove | Boutique d’objets et skins',
+    },
+    {
+      property: 'og:description',
+      content: 'Achète des cosmétiques et objets pour personnaliser ton avatar et ta chambre virtuelle dans CampusCove.',
+    },
+    {
+      property: 'og:type',
+      content: 'website',
+    },
+    {
+      property: 'og:image',
+      content: '/mockups/locker-desktop.svg',
+    },
+    {
+      name: 'twitter:card',
+      content: 'summary_large_image',
+    },
+    {
+      name: 'twitter:title',
+      content: 'CampusCove | Boutique d’objets et skins',
+    },
+    {
+      name: 'twitter:description',
+      content: 'Achète des cosmétiques et objets pour personnaliser ton avatar et ta chambre virtuelle dans CampusCove.',
+    },
+    {
+      name: 'twitter:image',
+      content: '/mockups/locker-desktop.svg',
+    },
+  ],
+})
 
 const items = ref<ShopItem[]>([])
 const catalogLoading = ref(true)

@@ -1,10 +1,57 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
+import { useHead } from '@unhead/vue'
 import { getStoredAuth } from '../api/auth'
 import { useWalletBalances } from '../composables/useWalletBalances'
 import * as friendsApi from '../api/friends'
 import type { Friend } from '../api/friends'
+
+useHead({
+  title: 'CampusCove | Tableau de bord étudiant',
+  meta: [
+    {
+      name: 'description',
+      content: 'Accède à ton espace CampusCove : amis, inventaire, statistiques et lancement rapide du campus 3D social.',
+    },
+    {
+      name: 'keywords',
+      content: 'campus virtuel, tableau de bord, amis, inventaire, jeu social, étudiant',
+    },
+    {
+      property: 'og:title',
+      content: 'CampusCove | Tableau de bord étudiant',
+    },
+    {
+      property: 'og:description',
+      content: 'Accède à ton espace CampusCove : amis, inventaire, statistiques et lancement rapide du campus 3D social.',
+    },
+    {
+      property: 'og:type',
+      content: 'website',
+    },
+    {
+      property: 'og:image',
+      content: '/mockups/locker-desktop.svg',
+    },
+    {
+      name: 'twitter:card',
+      content: 'summary_large_image',
+    },
+    {
+      name: 'twitter:title',
+      content: 'CampusCove | Tableau de bord étudiant',
+    },
+    {
+      name: 'twitter:description',
+      content: 'Accède à ton espace CampusCove : amis, inventaire, statistiques et lancement rapide du campus 3D social.',
+    },
+    {
+      name: 'twitter:image',
+      content: '/mockups/locker-desktop.svg',
+    },
+  ],
+})
 
 const router = useRouter()
 const activeTab = ref<'about' | 'locker' | 'achievements'>('about')

@@ -11,6 +11,7 @@
     "start": "serve -s dist -l ${PORT:-3000}"
   },
   "dependencies": {
+    "@unhead/vue": "^3.1.0",
     "serve": "^14.2.6",
     "socket.io-client": "^4.8.1",
     "three": "^0.170.0",

@@ -134,6 +134,7 @@ watch(
 <template>
   <div class="min-h-screen bg-slate-100">
     <aside
+      id="sidebar-menu"
       :class="[
         'fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-white/10 bg-[#191C28] text-white shadow-lg transition-transform duration-200 ease-out md:translate-x-0',
         sidebarOpen ? 'translate-x-0' : '-translate-x-full',
@@ -216,10 +217,11 @@ watch(
       </div>
     </aside>
 
-    <div
+    <button
       v-if="sidebarOpen"
+      type="button"
       class="fixed inset-0 z-30 bg-black/50 md:hidden"
-      aria-hidden="true"
+      aria-label="Close menu"
       @click="closeSidebar"
     />
 
@@ -231,6 +233,8 @@ watch(
           type="button"
           class="rounded-lg p-2 hover:bg-white/10 md:hidden"
           aria-label="Open menu"
+          aria-controls="sidebar-menu"
+          :aria-expanded="sidebarOpen"
           @click="sidebarOpen = true"
         >
           <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { useHead } from '@unhead/vue'
 import type { AccountInventoryRow } from '../api/inventory'
 import LockerCharacterPreview from '../components/locker/LockerCharacterPreview.vue'
 import LockerItemCard from '../components/locker/LockerItemCard.vue'
@@ -11,6 +12,52 @@ import {
   getPreviewImageByCosmetic,
   resolvePreviewCharacterAssetIdFromCosmetic,
 } from '../avatar/previewCharacterAssets'
+
+useHead({
+  title: 'CampusCove | Mon Locker',
+  meta: [
+    {
+      name: 'description',
+      content: 'Gère tes skins et personnalise ton avatar dans le locker CampusCove, avec aperçu en temps réel.',
+    },
+    {
+      name: 'keywords',
+      content: 'locker, skins, avatar, personnalisation, boutique, campus virtuel, ESGI',
+    },
+    {
+      property: 'og:title',
+      content: 'CampusCove | Mon Locker',
+    },
+    {
+      property: 'og:description',
+      content: 'Gère tes skins et personnalise ton avatar dans le locker CampusCove, avec aperçu en temps réel.',
+    },
+    {
+      property: 'og:type',
+      content: 'website',
+    },
+    {
+      property: 'og:image',
+      content: '/mockups/locker-desktop.svg',
+    },
+    {
+      name: 'twitter:card',
+      content: 'summary_large_image',
+    },
+    {
+      name: 'twitter:title',
+      content: 'CampusCove | Mon Locker',
+    },
+    {
+      name: 'twitter:description',
+      content: 'Gère tes skins et personnalise ton avatar dans le locker CampusCove, avec aperçu en temps réel.',
+    },
+    {
+      name: 'twitter:image',
+      content: '/mockups/locker-desktop.svg',
+    },
+  ],
+})
 
 interface LockerOwnedSkinEntry {
   key: string
