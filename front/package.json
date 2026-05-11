@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@colyseus/sdk": "^0.17.41",
+    "@dimforge/rapier3d-compat": "^0.19.3",
     "serve": "^14.2.6",
     "three": "^0.170.0",
     "vue": "^3.5.24",

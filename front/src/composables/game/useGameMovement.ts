@@ -1,7 +1,6 @@
 import { ref, type Ref, type ShallowRef } from 'vue'
 import type { Room } from '@colyseus/sdk'
 import * as THREE from 'three'
-import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js'
 import { KEY_BINDINGS, matchesAnyMovementKey } from '../../config/keybindings'
 import {
   APARTMENT_CLAMP_MARGIN,
@@ -13,6 +12,7 @@ import {
 } from '../../game/gameRoomConstants'
 
 export interface UseGameMovementDeps {
+  pointerLocked?: Ref<boolean>
   myPosition: { x: number; y: number; z: number }
   direction: THREE.Vector3
   canvasRef: Ref<HTMLCanvasElement | null>
@@ -20,12 +20,10 @@ export interface UseGameMovementDeps {
   gameRoomRef: ShallowRef<Room | null>
   currentRoomLabel: Ref<'city' | 'apartment'>
   apartmentInventoryOpen: Ref<boolean>
-  editorEnabled: Ref<boolean>
   getScene: () => THREE.Scene | undefined
   getCamera: () => THREE.PerspectiveCamera | undefined
   getRenderer: () => THREE.WebGLRenderer | undefined
   getFpHands: () => THREE.Group | null
-  getTransformControls: () => TransformControls | null
   refreshMyAppearance: Ref<(() => void) | null>
   onNearApartmentDoorInteract: () => Promise<void>
   onNearCityDoorInteract: () => void
@@ -33,10 +31,17 @@ export interface UseGameMovementDeps {
   onHotbarDigit: (index: number) => void
   nearApartmentDoor: Ref<boolean>
   nearCityDoor: Ref<boolean>
+  /** Return `true` if the event was consumed (placement shortcuts, etc.). */
+  handleExtraKeyDown?: (e: KeyboardEvent) => boolean
+  onCanvasMouseDown?: (e: MouseEvent) => void
+  onCanvasMouseUp?: (e: MouseEvent) => void
+  /** Called each animation frame after movement. */
+  onBeforeRender?: (dt: number) => void
 }
 
 export function useGameMovement(deps: UseGameMovementDeps) {
-  const pointerLocked = ref(false)
+  const pointerLockedOwned = ref(false)
+  const pointerLocked = deps.pointerLocked ?? pointerLockedOwned
 
   const keys = { forward: false, back: false, left: false, right: false }
   const myPosition = deps.myPosition
@@ -117,6 +122,7 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     const dt = (now - lastTime) / 1000
     lastTime = now
     if (pointerLocked.value) updateMovement(dt)
+    deps.onBeforeRender?.(dt)
     const renderer = deps.getRenderer()
     const scene = deps.getScene()
     const camera = deps.getCamera()
@@ -150,10 +156,6 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     if (fpHands) {
       fpHands.visible = pointerLocked.value
     }
-    const transformControls = deps.getTransformControls()
-    if (transformControls) {
-      transformControls.enabled = !pointerLocked.value && deps.editorEnabled.value
-    }
   }
 
   function requestPointerLock() {
@@ -166,7 +168,18 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     mouseY = e.movementY
   }
 
+  function onCanvasMouseDown(e: MouseEvent) {
+    deps.onCanvasMouseDown?.(e)
+  }
+
+  function onCanvasMouseUp(e: MouseEvent) {
+    deps.onCanvasMouseUp?.(e)
+  }
+
   function onKeyDown(e: KeyboardEvent) {
+    if (deps.handleExtraKeyDown?.(e)) {
+      return
+    }
     if (e.code === KEY_BINDINGS.interact) {
       if (deps.currentRoomLabel.value === 'apartment' && deps.nearApartmentDoor.value) {
         void deps.onNearApartmentDoorInteract()
@@ -181,7 +194,7 @@ export function useGameMovement(deps: UseGameMovementDeps) {
       deps.onToggleApartmentInventory()
       return
     }
-    if (deps.currentRoomLabel.value === 'apartment' && deps.apartmentInventoryOpen.value && !e.repeat) {
+    if (deps.currentRoomLabel.value === 'apartment' && !e.repeat) {
       const digit = /^Digit([1-9])$/.exec(e.code)
       if (digit) {
         const index = Number(digit[1]) - 1
@@ -244,5 +257,7 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     onVisibilityOrFocus,
     startRenderLoop,
     stopRenderLoop,
+    onCanvasMouseDown,
+    onCanvasMouseUp,
   }
 }

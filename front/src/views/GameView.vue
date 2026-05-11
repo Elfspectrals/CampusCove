@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, shallowRef } from 'vue'
+import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import { useRouter } from 'vue-router'
 import * as THREE from 'three'
 import type { Room } from '@colyseus/sdk'
-import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js'
 import {
   defaultCosmeticColors,
   emptyCosmeticLoadout,
@@ -12,16 +11,21 @@ import {
 } from '../api/characterCosmetics'
 import { getStoredAuth, clearAuth } from '../api/auth'
 import { buildFirstPersonHands, disposeObject3D } from '../avatar/compositeAvatar'
+import { matchesRotateCCW, matchesRotateCW } from '../config/keybindings'
 import GameApartmentInventoryPanel from '../components/game/GameApartmentInventoryPanel.vue'
 import GameDoorHints from '../components/game/GameDoorHints.vue'
 import GameHudToolbar from '../components/game/GameHudToolbar.vue'
+import GamePlacementHud from '../components/game/GamePlacementHud.vue'
 import GamePointerLockOverlay from '../components/game/GamePointerLockOverlay.vue'
 import GameRoomMessageBanner from '../components/game/GameRoomMessageBanner.vue'
 import { useApartmentInventory } from '../composables/game/useApartmentInventory'
 import { useApartmentObjects } from '../composables/game/useApartmentObjects'
+import { useApartmentPlacement } from '../composables/game/useApartmentPlacement'
 import { useGameMovement } from '../composables/game/useGameMovement'
 import { useGameRealtime } from '../composables/game/useGameRealtime'
 import { applySceneAtmosphere, buildApartmentEnvironment, buildCityEnvironment } from '../game/roomEnvironments'
+
+const YAW_STEP = Math.PI / 12
 
 const router = useRouter()
 const containerRef = ref<HTMLElement | null>(null)
@@ -30,9 +34,8 @@ const roomMessage = ref<string | null>(null)
 const currentRoomLabel = ref<'city' | 'apartment'>('city')
 const nearApartmentDoor = ref(false)
 const nearCityDoor = ref(false)
-const editorEnabled = ref(false)
-const transformMode = ref<'translate' | 'rotate'>('translate')
 const switchingRoom = ref(false)
+const pointerLocked = ref(false)
 
 const realtimeHttpUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000'
 const gameRoomRef = shallowRef<Room | null>(null)
@@ -45,28 +48,54 @@ let camera: THREE.PerspectiveCamera
 let renderer: THREE.WebGLRenderer
 let roomEnvironment: THREE.Group | null = null
 let fpHands: THREE.Group | null = null
-let transformControls: TransformControls | null = null
-let transformControlsHelper: THREE.Object3D | null = null
+
+let apartmentPlacementRef: ReturnType<typeof useApartmentPlacement> | null = null
+
+let getApartmentInventoryOpen: () => boolean = () => false
+let runRefreshApartmentInventory: () => void = () => {}
 
 const {
   apartmentObjectCount,
   apartmentObjectIds,
   selectedPlacedObjectId,
-  registerTransformPersistListeners,
   detachForRoomSwitch,
   clearPersistTimers,
   clearApartmentObjects,
   ensureApartmentObjectsFromServer,
-  attachSelectedPlacedObject,
   upsertApartmentObjectFromRemote,
   removeApartmentObjectMesh,
+  persistApartmentTransformForMesh,
+  getApartmentObjectMesh,
 } = useApartmentObjects({
   getScene: () => scene,
-  getTransformControls: () => transformControls,
-  getTransformControlsHelper: () => transformControlsHelper,
   getGameRoom: () => gameRoomRef.value,
   currentRoomLabel,
+  onApartmentObjectMeshUpserted: (mesh) => {
+    const id = typeof mesh.userData.apartmentObjectId === 'string' ? mesh.userData.apartmentObjectId : ''
+    if (id) apartmentPlacementRef?.registerApartmentProp(id, mesh)
+  },
+  onApartmentObjectMeshRemoved: (objectId) => {
+    apartmentPlacementRef?.unregisterApartmentProp(objectId)
+  },
+  onApartmentObjectRemovedNotify: (objectId) => {
+    apartmentPlacementRef?.notifyPropRemovedFromWorld(objectId)
+  },
 })
+
+const apartmentPlacement = useApartmentPlacement({
+  getScene: () => scene,
+  getCamera: () => camera,
+  getRenderer: () => renderer,
+  getColyseusRoom: () => gameRoomRef.value,
+  getApartmentObjectMesh,
+  getApartmentInventoryOpen: () => getApartmentInventoryOpen(),
+  currentRoomLabel,
+  pointerLocked,
+  persistApartmentTransformForMesh,
+  refreshApartmentInventory: () => runRefreshApartmentInventory(),
+})
+
+apartmentPlacementRef = apartmentPlacement
 
 const {
   apartmentInventory,
@@ -83,7 +112,6 @@ const {
   selectInventoryItem,
   onHotbarSlotClick,
   clearHotbarSlot,
-  spawnSelectedInventoryAsset,
   pickupSelectedPlacedObject,
   onPlacedObjectSelected,
   refreshApartmentInventory,
@@ -96,7 +124,51 @@ const {
   myPosition,
   direction,
   selectedPlacedObjectId,
-  attachSelectedPlacedObject,
+  attachSelectedPlacedObject: () => undefined,
+  startPlacementPreview: (itemDef, ownedCountRef) => {
+    apartmentPlacement.startPreviewNew(itemDef, ownedCountRef)
+  },
+})
+
+getApartmentInventoryOpen = () => apartmentInventoryOpen.value
+runRefreshApartmentInventory = refreshApartmentInventory
+
+const placementHudHints = computed(() => apartmentPlacement.hudHints.value)
+
+const placementPreviewActive = computed(
+  () =>
+    apartmentPlacement.currentState.value.kind === 'preview_new' ||
+    apartmentPlacement.currentState.value.kind === 'preview_existing',
+)
+
+const { connectRealtime, clearRemoteUsers, refreshMyAppearance } = useGameRealtime({
+  router,
+  realtimeHttpUrl,
+  gameRoomRef,
+  getScene: () => scene,
+  camera: () => camera,
+  currentRoomLabel,
+  myPosition,
+  roomMessage,
+  switchingRoom,
+  apartmentInventoryLoading,
+  apartmentInventoryError,
+  apartmentInventoryOpen,
+  apartmentInventory,
+  normalizeInventoryAndHotbarSelection,
+  selectedPlacedObjectId,
+  apartment: {
+    detachForRoomSwitch,
+    ensureApartmentObjectsFromServer,
+    attachSelectedPlacedObject: () => undefined,
+    clearApartmentObjects,
+    upsertApartmentObjectFromRemote,
+    removeApartmentObjectMesh,
+  },
+  setRoomEnvironment,
+  onApartmentActionErrorBanner: () => {
+    apartmentPlacement.onApartmentActionError()
+  },
 })
 
 function hexStringToNumber(hex: string): number {
@@ -114,69 +186,68 @@ async function loadCosmeticsState(): Promise<CharacterCosmeticsState> {
   }
 }
 
+function toggleApartmentInventoryWrapped(): void {
+  toggleApartmentInventory()
+}
+
+function handleExtraKeyDown(e: KeyboardEvent): boolean {
+  if (currentRoomLabel.value !== 'apartment') return false
+  if (e.code === 'Escape' && !e.repeat) {
+    if (apartmentPlacement.currentState.value.kind !== 'idle') {
+      apartmentPlacement.cancelPreview()
+      return true
+    }
+    return false
+  }
+  if (matchesRotateCW(e) && !e.repeat) {
+    if (apartmentPlacement.currentState.value.kind !== 'idle') {
+      apartmentPlacement.stepRotate(YAW_STEP)
+      return true
+    }
+    return false
+  }
+  if (matchesRotateCCW(e) && !e.repeat) {
+    if (apartmentPlacement.currentState.value.kind !== 'idle') {
+      apartmentPlacement.stepRotate(-YAW_STEP)
+      return true
+    }
+    return false
+  }
+  return false
+}
+
 function setRoomEnvironment(kind: 'city' | 'apartment') {
+  if (kind === 'city') {
+    apartmentPlacement.setPlayerInsideApartment(false)
+  }
   if (roomEnvironment) {
     scene.remove(roomEnvironment)
     disposeObject3D(roomEnvironment)
     roomEnvironment = null
   }
   applySceneAtmosphere(scene, kind)
-  roomEnvironment = kind === 'city' ? buildCityEnvironment() : buildApartmentEnvironment()
-  scene.add(roomEnvironment)
   if (kind === 'city') {
+    roomEnvironment = buildCityEnvironment()
+    scene.add(roomEnvironment)
     nearApartmentDoor.value = false
-    setEditorEnabled(false)
-    clearApartmentObjects()
     resetClientStateForCityWorld()
+    clearApartmentObjects()
   } else {
+    const built = buildApartmentEnvironment()
+    roomEnvironment = built.group
+    scene.add(roomEnvironment)
+    apartmentPlacement.registerApartmentEnvironment(built)
     nearCityDoor.value = false
+    void apartmentPlacement.init({
+      scene,
+      camera,
+      renderer,
+      colyseusRoom: gameRoomRef,
+    })
   }
 }
-
-function setEditorEnabled(value: boolean) {
-  editorEnabled.value = value
-  if (transformControls) {
-    transformControls.enabled = value && !pointerLocked.value
-    if (transformControlsHelper) transformControlsHelper.visible = value
-    if (!value) {
-      transformControls.detach()
-    }
-  }
-}
-
-const { connectRealtime, clearRemoteUsers, refreshMyAppearance } = useGameRealtime({
-  router,
-  realtimeHttpUrl,
-  gameRoomRef,
-  getScene: () => scene,
-  camera: () => camera,
-  currentRoomLabel,
-  myPosition,
-  roomMessage,
-  switchingRoom,
-  editorEnabled,
-  getTransformControls: () => transformControls,
-  getTransformControlsHelper: () => transformControlsHelper,
-  apartmentInventoryLoading,
-  apartmentInventoryError,
-  apartmentInventoryOpen,
-  apartmentInventory,
-  normalizeInventoryAndHotbarSelection,
-  selectedPlacedObjectId,
-  apartment: {
-    detachForRoomSwitch,
-    ensureApartmentObjectsFromServer,
-    attachSelectedPlacedObject,
-    clearApartmentObjects,
-    upsertApartmentObjectFromRemote,
-    removeApartmentObjectMesh,
-  },
-  setRoomEnvironment,
-  setEditorEnabled,
-})
 
 const {
-  pointerLocked,
   containerSize,
   onKeyDown,
   onKeyUp,
@@ -187,7 +258,10 @@ const {
   onVisibilityOrFocus,
   startRenderLoop,
   stopRenderLoop,
+  onCanvasMouseDown,
+  onCanvasMouseUp,
 } = useGameMovement({
+  pointerLocked,
   myPosition,
   direction,
   canvasRef,
@@ -195,31 +269,46 @@ const {
   gameRoomRef,
   currentRoomLabel,
   apartmentInventoryOpen,
-  editorEnabled,
-  nearApartmentDoor,
-  nearCityDoor,
   getScene: () => scene,
   getCamera: () => camera,
   getRenderer: () => renderer,
   getFpHands: () => fpHands,
-  getTransformControls: () => transformControls,
   refreshMyAppearance,
   onNearApartmentDoorInteract: async () => {
+    apartmentPlacement.cancelPreview()
     await tryExitApartmentAtDoor(nearApartmentDoor.value)
   },
   onNearCityDoorInteract: () => {
     tryEnterApartmentAtDoor(nearCityDoor.value)
   },
-  onToggleApartmentInventory: () => toggleApartmentInventory(),
+  onToggleApartmentInventory: () => toggleApartmentInventoryWrapped(),
   onHotbarDigit: (index: number) => {
     if (index < 0 || index > 8) return
     selectedHotbarIndex.value = index
     const code = hotbarSlots.value[index]
     if (code) {
-      selectedInventoryObjectKey.value = code
+      selectInventoryItem(code)
+    }
+  },
+  nearApartmentDoor,
+  nearCityDoor,
+  handleExtraKeyDown,
+  onCanvasMouseDown: (e) => {
+    apartmentPlacement.onPointerDown(e)
+  },
+  onCanvasMouseUp: () => undefined,
+  onBeforeRender: (dt) => {
+    if (currentRoomLabel.value === 'apartment') {
+      apartmentPlacement.tick(dt)
     }
   },
 })
+
+function logout() {
+  clearAuth()
+  void gameRoomRef.value?.leave()
+  router.push({ name: 'landing' })
+}
 
 function initThree(accentColor: number) {
   if (!canvasRef.value) return
@@ -250,38 +339,6 @@ function initThree(accentColor: number) {
   fpHands = buildFirstPersonHands(accentColor)
   fpHands.visible = false
   camera.add(fpHands)
-
-  transformControls = new TransformControls(camera, renderer.domElement)
-  transformControls.setMode('translate')
-  transformControlsHelper = transformControls.getHelper()
-  transformControlsHelper.visible = false
-  registerTransformPersistListeners(transformControls)
-  scene.add(transformControlsHelper)
-}
-
-function toggleEditor() {
-  if (currentRoomLabel.value !== 'apartment') return
-  const next = !editorEnabled.value
-  if (next && document.pointerLockElement) {
-    document.exitPointerLock()
-  }
-  setEditorEnabled(next)
-  if (transformControls) {
-    if (transformControlsHelper) transformControlsHelper.visible = editorEnabled.value
-    if (!transformControls.object) attachSelectedPlacedObject()
-  }
-}
-
-function setTransformMode(mode: 'translate' | 'rotate') {
-  transformMode.value = mode
-  if (!transformControls) return
-  transformControls.setMode(mode)
-}
-
-function logout() {
-  clearAuth()
-  void gameRoomRef.value?.leave()
-  router.push({ name: 'landing' })
 }
 
 async function bootGame() {
@@ -329,20 +386,12 @@ onUnmounted(() => {
   void gameRoomRef.value?.leave()
   clearPersistTimers()
   clearRemoteUsers()
+  apartmentPlacement.dispose()
   clearApartmentObjects()
   if (roomEnvironment) {
     scene.remove(roomEnvironment)
     disposeObject3D(roomEnvironment)
     roomEnvironment = null
-  }
-  if (transformControls) {
-    transformControls.dispose()
-    transformControls = null
-  }
-  if (transformControlsHelper) {
-    scene.remove(transformControlsHelper)
-    disposeObject3D(transformControlsHelper)
-    transformControlsHelper = null
   }
   if (fpHands) {
     camera.remove(fpHands)
@@ -351,19 +400,32 @@ onUnmounted(() => {
   }
   renderer?.dispose()
 })
+
+const crosshairClass = computed(() => {
+  if (!placementPreviewActive.value) return 'border-white/90 bg-white/25'
+  if (apartmentPlacement.crosshairTint.value === 'invalid') return 'border-rose-400/80 bg-rose-500/35'
+  if (apartmentPlacement.crosshairTint.value === 'valid') return 'border-emerald-400/80 bg-emerald-400/30'
+  return 'border-white/90 bg-white/25'
+})
 </script>
 
 <template>
   <div ref="containerRef" class="relative flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden">
-    <canvas ref="canvasRef" class="block min-h-0 w-full flex-1 cursor-crosshair" @click="requestPointerLock" />
-    <GameRoomMessageBanner v-if="roomMessage" :message="roomMessage" />
-    <GameHudToolbar
-      :current-room-label="currentRoomLabel"
-      :apartment-object-count="apartmentObjectCount"
-      :editor-enabled="editorEnabled"
-      @toggle-editor="toggleEditor"
-      @set-transform-mode="setTransformMode"
+    <canvas
+      ref="canvasRef"
+      class="block min-h-0 w-full flex-1 cursor-crosshair"
+      @click="requestPointerLock"
+      @mousedown="onCanvasMouseDown"
+      @mouseup="onCanvasMouseUp"
+      @contextmenu.prevent
     />
+    <div
+      class="pointer-events-none absolute left-1/2 top-1/2 z-10 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full border transition-colors duration-150"
+      :class="crosshairClass"
+    />
+    <GameRoomMessageBanner v-if="roomMessage" :message="roomMessage" />
+    <GameHudToolbar :current-room-label="currentRoomLabel" :apartment-object-count="apartmentObjectCount" />
+    <GamePlacementHud :visible="placementPreviewActive" :hints="placementHudHints" />
     <GameApartmentInventoryPanel
       v-if="currentRoomLabel === 'apartment' && apartmentInventoryOpen"
       :apartment-inventory="apartmentInventory"
@@ -376,16 +438,16 @@ onUnmounted(() => {
       :can-spawn-selected-inventory-item="canSpawnSelectedInventoryItem"
       :hotbar-slots="hotbarSlots"
       :selected-hotbar-index="selectedHotbarIndex"
+      :placement-preview-active="placementPreviewActive"
       @refresh-apartment-inventory="refreshApartmentInventory"
       @select-inventory-item="selectInventoryItem"
-      @spawn-selected-inventory-asset="spawnSelectedInventoryAsset"
       @pickup-selected-placed-object="pickupSelectedPlacedObject"
       @placed-object-selected="onPlacedObjectSelected"
       @on-hotbar-slot-click="onHotbarSlotClick"
       @clear-hotbar-slot="clearHotbarSlot"
     />
     <GamePointerLockOverlay
-      v-show="!pointerLocked && !editorEnabled && !apartmentInventoryOpen"
+      v-show="!pointerLocked && !apartmentInventoryOpen"
       @request-pointer-lock="requestPointerLock"
       @logout="logout"
     />
@@ -398,6 +460,12 @@ onUnmounted(() => {
         Logout
       </button>
     </div>
+    <p
+      v-if="currentRoomLabel === 'apartment' && apartmentInventoryOpen && placementPreviewActive"
+      class="pointer-events-none absolute bottom-24 left-3 z-10 max-w-md text-[10px] leading-snug text-white/70 md:left-[22rem]"
+    >
+      R = rotate · Shift+R = reverse · LMB = place / pick · RMB = cancel · Esc / E = cancel
+    </p>
     <GameDoorHints
       :current-room-label="currentRoomLabel"
       :near-apartment-door="nearApartmentDoor"

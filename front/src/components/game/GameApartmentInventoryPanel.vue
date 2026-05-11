@@ -12,12 +12,12 @@ defineProps<{
   canSpawnSelectedInventoryItem: boolean
   hotbarSlots: string[]
   selectedHotbarIndex: number
+  placementPreviewActive: boolean
 }>()
 
 const emit = defineEmits<{
   refreshApartmentInventory: []
   selectInventoryItem: [code: string]
-  spawnSelectedInventoryAsset: []
   pickupSelectedPlacedObject: []
   placedObjectSelected: [objectId: string]
   onHotbarSlotClick: [index: number]
@@ -49,7 +49,7 @@ function onPlacedSelect(event: Event) {
     <p v-if="apartmentInventoryError" class="mb-2 text-rose-300">{{ apartmentInventoryError }}</p>
     <div class="grid grid-cols-[1fr_17rem] gap-3">
       <div>
-        <div class="mb-2 text-[11px] uppercase tracking-wide text-white/70">Assets (click to select)</div>
+        <div class="mb-2 text-[11px] uppercase tracking-wide text-white/70">Assets (click to preview place)</div>
         <div class="grid max-h-[22rem] grid-cols-6 gap-2 overflow-y-auto rounded border border-white/10 bg-black/35 p-2">
           <button
             v-for="item in apartmentInventory"
@@ -78,6 +78,12 @@ function onPlacedSelect(event: Event) {
             <div class="mt-1 truncate text-[10px] font-semibold text-white/90">{{ item.name }}</div>
             <div class="text-[10px] text-white/70">x{{ item.quantity }}</div>
             <div
+              v-if="placementPreviewActive && selectedInventoryObjectKey === item.code"
+              class="absolute right-1 top-1 rounded bg-emerald-500/90 px-1.5 py-0.5 text-[9px] font-bold uppercase text-white shadow"
+            >
+              In hand
+            </div>
+            <div
               v-if="item.quantity <= 0"
               class="absolute inset-0 flex items-center justify-center rounded bg-black/70 text-[10px] font-semibold uppercase text-rose-200"
             >
@@ -86,7 +92,8 @@ function onPlacedSelect(event: Event) {
           </button>
         </div>
         <div class="mt-2 text-[11px] text-white/65">
-          Tip: press keys <span class="font-semibold">1..9</span> to select a hotbar slot.
+          Tip: press keys <span class="font-semibold">1..9</span> for hotbar (apartment). Selecting starts placement
+          preview.
         </div>
       </div>
 
@@ -108,17 +115,14 @@ function onPlacedSelect(event: Event) {
           <div class="text-sm font-semibold text-white">{{ selectedInventoryItem.name }}</div>
           <div class="text-[11px] text-white/70">Code: {{ selectedInventoryItem.code }}</div>
           <div class="text-[11px] text-white/70">Qty: x{{ selectedInventoryItem.quantity }}</div>
+          <div
+            v-if="placementPreviewActive && canSpawnSelectedInventoryItem"
+            class="rounded border border-emerald-500/40 bg-emerald-500/15 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-emerald-200"
+          >
+            Placement preview active — close panel or RMB to cancel
+          </div>
         </div>
         <div v-else class="text-[11px] text-white/60">Select an asset card.</div>
-
-        <button
-          type="button"
-          class="mt-3 w-full rounded border border-white/30 bg-black/35 px-2 py-1.5 text-xs font-semibold hover:border-campus-accent hover:text-campus-accent disabled:opacity-50"
-          :disabled="!canSpawnSelectedInventoryItem"
-          @click="emit('spawnSelectedInventoryAsset')"
-        >
-          Spawn Selected Asset
-        </button>
 
         <div class="mt-3 text-[11px] uppercase tracking-wide text-white/70">Placed Objects</div>
         <select

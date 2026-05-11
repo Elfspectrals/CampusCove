@@ -1,26 +1,27 @@
 import { ref, type Ref } from 'vue'
 import type { Room } from '@colyseus/sdk'
 import * as THREE from 'three'
-import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import {
   TRANSFORM_EPSILON_POSITION,
   TRANSFORM_EPSILON_ROTATION,
-  TRANSFORM_PERSIST_THROTTLE_MS,
 } from '../../game/gameRoomConstants'
-import type { ApartmentObjectPayload, TransformDragEvent } from '../../types/gameRealtime'
+import type { ApartmentObjectPayload } from '../../types/gameRealtime'
 import { disposeObject3D } from '../../avatar/compositeAvatar'
 
 export interface ApartmentObjectsDeps {
   getScene: () => THREE.Scene | undefined
-  getTransformControls: () => TransformControls | null
-  /** Optional helper visibility when editor toggles — may not exist yet at setup. */
-  getTransformControlsHelper: () => THREE.Object3D | null | undefined
   getGameRoom: () => Room | null
   currentRoomLabel: Ref<'city' | 'apartment'>
+  /** After an apartment anchor mesh is created or updated (placement / remote sync). */
+  onApartmentObjectMeshUpserted?: (mesh: THREE.Mesh) => void
+  /** Before mesh disposal (pickup, room clear, remote delete). */
+  onApartmentObjectMeshRemoved?: (objectId: string) => void
+  /** Optional: placement system cancels preview if object disappears. */
+  onApartmentObjectRemovedNotify?: (objectId: string) => void
 }
 
-/** Remote/other apartment mesh UX + editor transform persistence. */
+/** Remote/other apartment mesh UX + transform persistence for placement commits. */
 export function useApartmentObjects(deps: ApartmentObjectsDeps) {
   const apartmentObjectCount = ref(0)
   const apartmentObjectIds = ref<string[]>([])
@@ -29,37 +30,10 @@ export function useApartmentObjects(deps: ApartmentObjectsDeps) {
   const apartmentObjects = new Map<string, THREE.Mesh>()
   const apartmentModelTemplateCache = new Map<string, THREE.Object3D>()
   const apartmentModelLoader = new GLTFLoader()
-  let persistTransformTimer: ReturnType<typeof setTimeout> | null = null
-  let lastTransformPersistAt = 0
   const lastPersistedByObjectId = new Map<string, ApartmentObjectPayload>()
 
   function detachForRoomSwitch() {
     lastPersistedByObjectId.clear()
-    lastTransformPersistAt = 0
-    if (persistTransformTimer) {
-      clearTimeout(persistTransformTimer)
-      persistTransformTimer = null
-    }
-    const tc = deps.getTransformControls()
-    const helper = deps.getTransformControlsHelper()
-    if (helper) helper.visible = false
-    tc?.detach()
-  }
-
-  function registerTransformPersistListeners(transformControls: TransformControls) {
-    transformControls.addEventListener('dragging-changed', (event) => {
-      const drag = event as TransformDragEvent
-      if (drag.value && document.pointerLockElement) {
-        document.exitPointerLock()
-      }
-      if (!drag.value) {
-        schedulePersistAttachedObject(true)
-      }
-    })
-    transformControls.addEventListener('objectChange', () => {
-      if (deps.currentRoomLabel.value !== 'apartment') return
-      schedulePersistAttachedObject()
-    })
   }
 
   function getAnchorMaterial(anchor: THREE.Mesh): THREE.MeshStandardMaterial | null {
@@ -160,16 +134,15 @@ export function useApartmentObjects(deps: ApartmentObjectsDeps) {
     if (options?.syncPersistSnapshot) {
       lastPersistedByObjectId.set(payload.objectId, payload)
     }
+    deps.onApartmentObjectMeshUpserted?.(mesh)
   }
 
   function removeApartmentObjectMesh(objectId: string) {
     const scene = deps.getScene()
-    const tc = deps.getTransformControls()
     const mesh = apartmentObjects.get(objectId)
     if (!mesh) return
-    if (tc && tc.object === mesh) {
-      tc.detach()
-    }
+    deps.onApartmentObjectMeshRemoved?.(objectId)
+    deps.onApartmentObjectRemovedNotify?.(objectId)
     if (scene) scene.remove(mesh)
     disposeObject3D(mesh)
     apartmentObjects.delete(objectId)
@@ -183,6 +156,11 @@ export function useApartmentObjects(deps: ApartmentObjectsDeps) {
 
   function clearApartmentObjects() {
     const scene = deps.getScene()
+    const ids = [...apartmentObjects.keys()]
+    for (const objectId of ids) {
+      deps.onApartmentObjectMeshRemoved?.(objectId)
+      deps.onApartmentObjectRemovedNotify?.(objectId)
+    }
     for (const mesh of apartmentObjects.values()) {
       if (scene) scene.remove(mesh)
       disposeObject3D(mesh)
@@ -192,6 +170,10 @@ export function useApartmentObjects(deps: ApartmentObjectsDeps) {
     apartmentObjectCount.value = 0
     selectedPlacedObjectId.value = ''
     lastPersistedByObjectId.clear()
+  }
+
+  function getApartmentObjectMesh(objectId: string): THREE.Mesh | undefined {
+    return apartmentObjects.get(objectId)
   }
 
   function apartmentPayloadFromMesh(objectId: string, objectKey: string, mesh: THREE.Mesh): ApartmentObjectPayload {
@@ -227,51 +209,24 @@ export function useApartmentObjects(deps: ApartmentObjectsDeps) {
     )
   }
 
-  function attachedMeshAndObjectId(): { mesh: THREE.Mesh; objectId: string; objectKey: string } | null {
-    const attached = deps.getTransformControls()?.object
-    if (!(attached instanceof THREE.Mesh)) return null
-    const objectId = typeof attached.userData.apartmentObjectId === 'string' ? attached.userData.apartmentObjectId : ''
-    const objectKey = typeof attached.userData.apartmentObjectKey === 'string' ? attached.userData.apartmentObjectKey : ''
-    if (!objectId || !objectKey) return null
-    return { mesh: attached, objectId, objectKey }
-  }
-
-  function persistAttachedObject(force: boolean) {
+  function persistApartmentTransformForMesh(mesh: THREE.Mesh, force: boolean) {
     const room = deps.getGameRoom()
     if (!room || deps.currentRoomLabel.value !== 'apartment') return
-    const attached = attachedMeshAndObjectId()
-    if (!attached) return
-    const payload = apartmentPayloadFromMesh(attached.objectId, attached.objectKey, attached.mesh)
-    const previous = lastPersistedByObjectId.get(attached.objectId)
+    const objectId = typeof mesh.userData.apartmentObjectId === 'string' ? mesh.userData.apartmentObjectId : ''
+    const objectKey = typeof mesh.userData.apartmentObjectKey === 'string' ? mesh.userData.apartmentObjectKey : ''
+    if (!objectId || !objectKey) return
+    const payload = apartmentPayloadFromMesh(objectId, objectKey, mesh)
+    const previous = lastPersistedByObjectId.get(objectId)
     if (!force && previous && sameTransform(payload, previous)) {
       return
     }
     room.send('apartment_transform_request', payload)
-    lastPersistedByObjectId.set(attached.objectId, payload)
-    lastTransformPersistAt = Date.now()
+    lastPersistedByObjectId.set(objectId, payload)
   }
 
   function schedulePersistAttachedObject(force = false) {
-    if (!deps.getGameRoom() || deps.currentRoomLabel.value !== 'apartment') return
-    if (force) {
-      if (persistTransformTimer) {
-        clearTimeout(persistTransformTimer)
-        persistTransformTimer = null
-      }
-      persistAttachedObject(true)
-      return
-    }
-    const elapsed = Date.now() - lastTransformPersistAt
-    if (elapsed >= TRANSFORM_PERSIST_THROTTLE_MS) {
-      persistAttachedObject(false)
-      return
-    }
-    if (persistTransformTimer) return
-    const remaining = TRANSFORM_PERSIST_THROTTLE_MS - elapsed
-    persistTransformTimer = setTimeout(() => {
-      persistTransformTimer = null
-      persistAttachedObject(false)
-    }, remaining)
+    void force
+    /** Legacy no-op: TransformControls removed — placement commits send transforms explicitly. */
   }
 
   function ensureApartmentObjectsFromServer(objects: ApartmentObjectPayload[]) {
@@ -282,19 +237,7 @@ export function useApartmentObjects(deps: ApartmentObjectsDeps) {
   }
 
   function attachSelectedPlacedObject() {
-    const tc = deps.getTransformControls()
-    if (!tc) return
-    const selectedId = selectedPlacedObjectId.value
-    if (!selectedId) {
-      tc.detach()
-      return
-    }
-    const mesh = apartmentObjects.get(selectedId)
-    if (!mesh) {
-      tc.detach()
-      return
-    }
-    tc.attach(mesh)
+    /** No-op: legacy TransformControls attachment. */
   }
 
   /** Server-driven upserts (broadcast or init). Updates snapshot used for throttle dedupe. */
@@ -302,19 +245,13 @@ export function useApartmentObjects(deps: ApartmentObjectsDeps) {
     upsertApartmentObjectMesh(payload, { syncPersistSnapshot: true })
   }
 
-  /** Clear pending persist timer — call on teardown. */
-  function clearPersistTimers() {
-    if (persistTransformTimer) {
-      clearTimeout(persistTransformTimer)
-      persistTransformTimer = null
-    }
-  }
+  /** Clear pending persist timer — call on teardown (no-op; kept for GameView API). */
+  function clearPersistTimers() {}
 
   return {
     apartmentObjectCount,
     apartmentObjectIds,
     selectedPlacedObjectId,
-    registerTransformPersistListeners,
     detachForRoomSwitch,
     clearPersistTimers,
     clearApartmentObjects,
@@ -324,5 +261,7 @@ export function useApartmentObjects(deps: ApartmentObjectsDeps) {
     ensureApartmentObjectsFromServer,
     attachSelectedPlacedObject,
     schedulePersistAttachedObject,
+    persistApartmentTransformForMesh,
+    getApartmentObjectMesh,
   }
 }

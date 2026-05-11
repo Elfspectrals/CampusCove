@@ -1,7 +1,6 @@
 import { ref, type Ref, type ShallowRef } from 'vue'
 import type { Router } from 'vue-router'
 import * as THREE from 'three'
-import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js'
 import { Client as ColyseusClient, type Room } from '@colyseus/sdk'
 import {
   SLOTS,
@@ -72,12 +71,6 @@ export interface GameRealtimeDeps {
   roomMessage: Ref<string | null>
   switchingRoom: Ref<boolean>
 
-  editorEnabled: Ref<boolean>
-
-  getTransformControls: () => TransformControls | null
-
-  getTransformControlsHelper: () => THREE.Object3D | null | undefined
-
   apartmentInventoryLoading: Ref<boolean>
   apartmentInventoryError: Ref<string | null>
   apartmentInventoryOpen: Ref<boolean>
@@ -96,7 +89,7 @@ export interface GameRealtimeDeps {
   }
 
   setRoomEnvironment: (kind: 'city' | 'apartment') => void
-  setEditorEnabled: (value: boolean) => void
+  onApartmentActionErrorBanner?: () => void
 }
 
 /** Colyseus room wiring, remote avatars, and server message bindings. */
@@ -311,9 +304,6 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
 
       resolveCamera()?.position.set(payload.me.x, payload.me.y, payload.me.z)
 
-      deps.setEditorEnabled(false)
-      const helper = deps.getTransformControlsHelper()
-      if (helper) helper.visible = false
       payload.users.forEach((u) => {
         if (u.sessionId === room.sessionId) return
         void upsertOtherUser(u.sessionId, u)
@@ -378,9 +368,6 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
             }
           }
           if (data.zone === 'city') {
-            deps.setEditorEnabled(false)
-            const helperCity = deps.getTransformControlsHelper()
-            if (helperCity) helperCity.visible = false
             deps.apartment.clearApartmentObjects()
           }
           return
@@ -413,8 +400,6 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       }
       deps.apartment.ensureApartmentObjectsFromServer(payload.objects)
       deps.apartment.attachSelectedPlacedObject()
-      const helperApt = deps.getTransformControlsHelper()
-      if (helperApt) helperApt.visible = deps.editorEnabled.value
       deps.apartmentInventoryLoading.value = true
       room.send('apartment_inventory_request')
     })
@@ -424,12 +409,10 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       if (!deps.selectedPlacedObjectId.value) {
         deps.selectedPlacedObjectId.value = data.objectId
       }
-      if (deps.editorEnabled.value) deps.apartment.attachSelectedPlacedObject()
     })
 
     room.onMessage('apartment_object_removed', (data: { objectId: string }) => {
       deps.apartment.removeApartmentObjectMesh(data.objectId)
-      deps.apartment.attachSelectedPlacedObject()
     })
 
     room.onMessage('apartment_inventory', (data: { items: ApartmentInventoryItem[] }) => {
@@ -446,6 +429,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
 
     room.onMessage('apartment_action_error', (data: { message?: string }) => {
       deps.roomMessage.value = data.message ?? 'Apartment action failed.'
+      deps.onApartmentActionErrorBanner?.()
     })
 
     room.onMessage('apartment_error', (data: { message?: string }) => {
@@ -486,11 +470,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
         deps.gameRoomRef.value = null
       }
       clearRemoteUsers()
-      deps.setEditorEnabled(false)
       deps.apartment.detachForRoomSwitch()
-      const helperRt = deps.getTransformControlsHelper()
-      if (helperRt) helperRt.visible = false
-      deps.getTransformControls()?.detach()
 
       deps.currentRoomLabel.value = 'city'
       const nextRoom: Room = await colyseusClient.joinOrCreate('city', roomOptions)

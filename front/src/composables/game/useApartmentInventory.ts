@@ -1,8 +1,9 @@
-import { computed, ref, type ComputedRef, type Ref, type ShallowRef } from 'vue'
+import { computed, ref, watch, type ComputedRef, type Ref, type ShallowRef } from 'vue'
 import type { Room } from '@colyseus/sdk'
 import * as THREE from 'three'
 import { getStoredAuth } from '../../api/auth'
 import type { ApartmentInventoryItem } from '../../types/gameRealtime'
+import type { ApartmentPlacementItemDef } from './useApartmentPlacement'
 
 export interface UseApartmentInventoryDeps {
   gameRoomRef: ShallowRef<Room | null>
@@ -11,6 +12,7 @@ export interface UseApartmentInventoryDeps {
   direction: THREE.Vector3
   selectedPlacedObjectId: Ref<string>
   attachSelectedPlacedObject: () => void
+  startPlacementPreview?: (itemDef: ApartmentPlacementItemDef, ownedCountRef: Ref<number>) => void
 }
 
 export interface UseApartmentInventoryResult {
@@ -30,7 +32,6 @@ export interface UseApartmentInventoryResult {
   assignSelectedItemToHotbar: (index: number) => void
   clearHotbarSlot: (index: number) => void
   onHotbarSlotClick: (index: number) => void
-  spawnSelectedInventoryAsset: () => void
   pickupSelectedPlacedObject: () => void
   onPlacedObjectSelected: (objectId: string) => void
   enterMyApartment: () => Promise<void>
@@ -79,8 +80,42 @@ export function useApartmentInventory(deps: UseApartmentInventoryDeps): UseApart
     return item !== null && item.quantity > 0
   })
 
+  function inventoryItemToDef(item: ApartmentInventoryItem): ApartmentPlacementItemDef {
+    return {
+      objectKey: item.code,
+      modelGlb:
+        typeof item.model_glb === 'string' && item.model_glb.trim().length > 0 ? item.model_glb.trim() : undefined,
+      defaultColor: '#8B7AA8',
+      variant: 'default',
+    }
+  }
+
+  function beginPlacementPreviewForInventoryItem(item: ApartmentInventoryItem): void {
+    if (!deps.startPlacementPreview || deps.currentRoomLabel.value !== 'apartment') return
+    const ownedCountRef = ref(item.quantity)
+    watch(
+      apartmentInventory,
+      () => {
+        const row = apartmentInventory.value.find((r) => r.code === item.code)
+        ownedCountRef.value = row?.quantity ?? 0
+      },
+      { deep: true },
+    )
+    deps.startPlacementPreview(inventoryItemToDef(item), ownedCountRef)
+    apartmentInventoryOpen.value = false
+  }
+
+  function tryBeginPreviewForCode(code: string): void {
+    if (deps.currentRoomLabel.value !== 'apartment') return
+    const item = apartmentInventory.value.find((i) => i.code === code)
+    if (item && item.quantity > 0) {
+      beginPlacementPreviewForInventoryItem(item)
+    }
+  }
+
   function selectInventoryItem(code: string) {
     selectedInventoryObjectKey.value = code
+    tryBeginPreviewForCode(code)
   }
 
   function selectHotbarSlot(index: number) {
@@ -89,6 +124,7 @@ export function useApartmentInventory(deps: UseApartmentInventoryDeps): UseApart
     const code = hotbarSlots.value[index]
     if (code) {
       selectedInventoryObjectKey.value = code
+      tryBeginPreviewForCode(code)
     }
   }
 
@@ -110,33 +146,6 @@ export function useApartmentInventory(deps: UseApartmentInventoryDeps): UseApart
       return
     }
     selectHotbarSlot(index)
-  }
-
-  function spawnSelectedInventoryAsset() {
-    if (!deps.gameRoomRef.value || deps.currentRoomLabel.value !== 'apartment') return
-    const objectKey = selectedInventoryObjectKey.value
-    if (!objectKey) return
-    const selectedItem = apartmentInventory.value.find((item) => item.code === objectKey)
-    if (!selectedItem || selectedItem.quantity <= 0) return
-    const objectId = crypto.randomUUID()
-    const spawnDistance = 2
-    const spawnX = deps.myPosition.x + deps.direction.x * spawnDistance
-    const spawnZ = deps.myPosition.z + deps.direction.z * spawnDistance
-    deps.gameRoomRef.value.send('apartment_spawn_request', {
-      objectId,
-      objectKey,
-      variant: 'default',
-      color: '#8B7AA8',
-      x: spawnX,
-      y: 0,
-      z: spawnZ,
-      rotX: 0,
-      rotY: 0,
-      rotZ: 0,
-    })
-    setTimeout(() => {
-      refreshApartmentInventory()
-    }, 250)
   }
 
   function pickupSelectedPlacedObject() {
@@ -214,7 +223,6 @@ export function useApartmentInventory(deps: UseApartmentInventoryDeps): UseApart
     assignSelectedItemToHotbar,
     clearHotbarSlot,
     onHotbarSlotClick,
-    spawnSelectedInventoryAsset,
     pickupSelectedPlacedObject,
     onPlacedObjectSelected,
     enterMyApartment,
