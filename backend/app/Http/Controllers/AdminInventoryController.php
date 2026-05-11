@@ -54,7 +54,7 @@ class AdminInventoryController extends Controller
         Account::withTrashed()->findOrFail($accountId);
 
         $validated = $request->validate([
-            'kind' => ['nullable', 'string', 'in:furniture,cosmetic,consumable,misc'],
+            'kind' => ['nullable', 'string', 'in:furniture,cosmetic,consumable,misc,apartment_asset'],
             'q' => ['nullable', 'string', 'max:200'],
         ]);
 

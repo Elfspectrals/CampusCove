@@ -50,7 +50,7 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 DO $$ BEGIN
-  CREATE TYPE item_kind AS ENUM ('furniture', 'cosmetic', 'consumable', 'misc');
+  CREATE TYPE item_kind AS ENUM ('furniture', 'cosmetic', 'consumable', 'misc', 'apartment_asset');
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 DO $$ BEGIN

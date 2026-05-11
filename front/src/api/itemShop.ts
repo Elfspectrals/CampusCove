@@ -9,6 +9,7 @@ import { normalizeApiAssetUrl } from './url'
 const API_BASE = import.meta.env.VITE_API_URL || '/api'
 
 export type ShopCurrency = 'coins' | 'premium'
+export type ShopItemKind = 'furniture' | 'cosmetic' | 'consumable' | 'misc' | 'apartment_asset'
 
 export interface ShopItemCurrencyOption {
   shop_catalog_item_id: number
@@ -26,6 +27,7 @@ export interface ShopItem {
   description: string | null
   preview_image: string | null
   model_glb: string | null
+  kind: ShopItemKind
   options: ShopItemCurrencyOption[]
 }
 
@@ -55,6 +57,13 @@ function parseCurrency(value: unknown): ShopCurrency | null {
   return null
 }
 
+function parseItemKind(value: unknown): ShopItemKind | null {
+  if (value === 'furniture' || value === 'cosmetic' || value === 'consumable' || value === 'misc' || value === 'apartment_asset') {
+    return value
+  }
+  return null
+}
+
 function normalizeCatalogRow(row: unknown): ShopItem | null {
   if (!isRecord(row)) return null
   if (typeof row.shop_catalog_item_id !== 'number') return null
@@ -69,6 +78,8 @@ function normalizeCatalogRow(row: unknown): ShopItem | null {
   if (typeof row.item.item_def_id !== 'number') return null
   if (typeof row.item.code !== 'string') return null
   if (typeof row.item.name !== 'string') return null
+  const itemKind = parseItemKind(row.item.kind)
+  if (itemKind === null) return null
   if (!(row.item.description === undefined || row.item.description === null || typeof row.item.description === 'string')) return null
   if (!(row.item.preview_image === undefined || row.item.preview_image === null || typeof row.item.preview_image === 'string')) return null
   if (!(row.item.model_glb === undefined || row.item.model_glb === null || typeof row.item.model_glb === 'string')) return null
@@ -109,6 +120,7 @@ function normalizeCatalogRow(row: unknown): ShopItem | null {
     description: typeof row.item.description === 'string' ? row.item.description : null,
     preview_image: normalizeApiAssetUrl(row.item.preview_image),
     model_glb: normalizeApiAssetUrl(row.item.model_glb),
+    kind: itemKind,
     options,
   }
 }

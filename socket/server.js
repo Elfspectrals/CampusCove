@@ -1,6 +1,4 @@
-import { randomUUID } from 'node:crypto'
 import { Room, Server, WebSocketTransport } from 'colyseus'
-import { Pool } from 'pg'
 
 const COLORS = [
   0xe94560, 0x0f3460, 0x533483, 0x00d9ff, 0x00ff88,
@@ -9,10 +7,7 @@ const COLORS = [
 
 const SLOTS = ['body', 'hair', 'top', 'bottom', 'shoes', 'head_accessory']
 const CITY_MAX_PLAYERS = parseInt(process.env.CITY_MAX_PLAYERS || '30', 10)
-const APARTMENT_MAX_PLAYERS = parseInt(process.env.APARTMENT_MAX_PLAYERS || '8', 10)
 const BACKEND_API_URL = (process.env.BACKEND_API_URL || 'http://localhost:8000/api').replace(/\/+$/, '')
-const DECOR_EPSILON_POSITION = 0.01
-const DECOR_EPSILON_ROTATION = 0.01
 
 const DEFAULT_SLOT_HEX = {
   body: '#8B7AA8',
@@ -22,26 +17,6 @@ const DEFAULT_SLOT_HEX = {
   shoes: '#4A3F62',
   head_accessory: '#7A6B94'
 }
-
-function dbConfigFromEnv() {
-  const databaseUrl = process.env.DATABASE_URL
-  if (databaseUrl) {
-    const forceSsl = process.env.DB_SSL === 'true' || process.env.NODE_ENV === 'production'
-    return {
-      connectionString: databaseUrl,
-      ssl: forceSsl ? { rejectUnauthorized: false } : false
-    }
-  }
-  return {
-    host: process.env.DB_HOST || '127.0.0.1',
-    port: parseInt(process.env.DB_PORT || '5432', 10),
-    database: process.env.DB_DATABASE || 'campus_cove',
-    user: process.env.DB_USERNAME || 'postgres',
-    password: process.env.DB_PASSWORD || 'secret'
-  }
-}
-
-const pool = new Pool(dbConfigFromEnv())
 
 function getColor(index) {
   return COLORS[index % COLORS.length]
@@ -90,7 +65,7 @@ async function resolveIdentity(options) {
   const token = typeof options?.token === 'string' ? options.token.trim() : ''
   if (!token) {
     if (fallbackId === null) throw new Error('missing auth token and fallback account id')
-    return { accountId: fallbackId, pseudo: fallbackPseudo ?? `User_${fallbackId}` }
+    return { accountId: fallbackId, pseudo: fallbackPseudo ?? `User_${fallbackId}`, token: null }
   }
   try {
     const res = await fetch(`${BACKEND_API_URL}/user`, {
@@ -110,180 +85,35 @@ async function resolveIdentity(options) {
       : typeof data?.user?.username === 'string' && data.user.username.trim().length > 0
         ? data.user.username.trim()
         : fallbackPseudo ?? `User_${accountId}`
-    return { accountId, pseudo }
+    return { accountId, pseudo, token }
   } catch (error) {
     if (fallbackId === null) throw error
-    return { accountId: fallbackId, pseudo: fallbackPseudo ?? `User_${fallbackId}` }
+    return { accountId: fallbackId, pseudo: fallbackPseudo ?? `User_${fallbackId}`, token }
   }
 }
 
-async function ensureSchema() {
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS apartment_instances (
-      id BIGSERIAL PRIMARY KEY,
-      owner_account_id BIGINT NOT NULL,
-      template_key TEXT NOT NULL DEFAULT 'starter_loft',
-      name TEXT NOT NULL DEFAULT 'Starter Loft',
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      UNIQUE (owner_account_id, template_key)
-    );
-  `)
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS apartment_guests (
-      apartment_id BIGINT NOT NULL REFERENCES apartment_instances(id) ON DELETE CASCADE,
-      guest_account_id BIGINT NOT NULL,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      PRIMARY KEY (apartment_id, guest_account_id)
-    );
-  `)
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS apartment_objects (
-      object_id TEXT PRIMARY KEY,
-      apartment_id BIGINT NOT NULL REFERENCES apartment_instances(id) ON DELETE CASCADE,
-      object_key TEXT NOT NULL,
-      variant TEXT NULL,
-      color TEXT NULL,
-      x DOUBLE PRECISION NOT NULL,
-      y DOUBLE PRECISION NOT NULL,
-      z DOUBLE PRECISION NOT NULL,
-      rot_x DOUBLE PRECISION NOT NULL,
-      rot_y DOUBLE PRECISION NOT NULL,
-      rot_z DOUBLE PRECISION NOT NULL,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    );
-  `)
-  await pool.query(`CREATE INDEX IF NOT EXISTS apartment_objects_apartment_id_idx ON apartment_objects(apartment_id);`)
-  await pool.query(`CREATE INDEX IF NOT EXISTS apartment_guests_guest_account_id_idx ON apartment_guests(guest_account_id);`)
-}
-
-async function ensureApartment(ownerAccountId, templateKey) {
-  const inserted = await pool.query(
-    `
-    INSERT INTO apartment_instances (owner_account_id, template_key)
-    VALUES ($1, $2)
-    ON CONFLICT (owner_account_id, template_key) DO UPDATE SET updated_at = NOW()
-    RETURNING id, owner_account_id, template_key, name;
-    `,
-    [ownerAccountId, templateKey]
-  )
-  return inserted.rows[0]
-}
-
-async function loadApartmentObjects(apartmentId) {
-  const result = await pool.query(
-    `
-    SELECT object_id, object_key, variant, color, x, y, z, rot_x, rot_y, rot_z
-    FROM apartment_objects
-    WHERE apartment_id = $1
-    ORDER BY created_at ASC;
-    `,
-    [apartmentId]
-  )
-  return result.rows.map((r) => ({
-    objectId: String(r.object_id),
-    objectKey: String(r.object_key),
-    variant: typeof r.variant === 'string' ? r.variant : null,
-    color: typeof r.color === 'string' ? r.color : null,
-    x: normalizeNumber(r.x, 0),
-    y: normalizeNumber(r.y, 0),
-    z: normalizeNumber(r.z, 0),
-    rotX: normalizeNumber(r.rot_x, 0),
-    rotY: normalizeNumber(r.rot_y, 0),
-    rotZ: normalizeNumber(r.rot_z, 0)
-  }))
-}
-
-async function loadApartmentGuests(apartmentId) {
-  const result = await pool.query(
-    `SELECT guest_account_id FROM apartment_guests WHERE apartment_id = $1;`,
-    [apartmentId]
-  )
-  const out = new Set()
-  for (const row of result.rows) {
-    const guestId = parseAccountId(row.guest_account_id)
-    if (guestId !== null) out.add(guestId)
+async function callBackendJson(token, path, method = 'POST', body = null) {
+  if (!token || typeof token !== 'string' || token.trim().length === 0) {
+    throw new Error('missing auth token')
   }
-  return out
-}
-
-async function upsertApartmentObject(apartmentId, payload) {
-  const normalized = normalizeApartmentObjectPayload(payload)
-  const { objectId, objectKey, variant, color, x, y, z, rotX, rotY, rotZ } = normalized
-  await pool.query(
-    `
-    INSERT INTO apartment_objects
-      (object_id, apartment_id, object_key, variant, color, x, y, z, rot_x, rot_y, rot_z, updated_at)
-    VALUES
-      ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())
-    ON CONFLICT (object_id) DO UPDATE SET
-      object_key = EXCLUDED.object_key,
-      variant = EXCLUDED.variant,
-      color = EXCLUDED.color,
-      x = EXCLUDED.x,
-      y = EXCLUDED.y,
-      z = EXCLUDED.z,
-      rot_x = EXCLUDED.rot_x,
-      rot_y = EXCLUDED.rot_y,
-      rot_z = EXCLUDED.rot_z,
-      updated_at = NOW();
-    `,
-    [objectId, apartmentId, objectKey, variant, color, x, y, z, rotX, rotY, rotZ]
-  )
-  return normalized
-}
-
-function normalizeApartmentObjectPayload(payload) {
-  const objectId = typeof payload?.objectId === 'string' && payload.objectId.trim().length > 0
-    ? payload.objectId.trim()
-    : randomUUID()
-  const objectKey = typeof payload?.objectKey === 'string' && payload.objectKey.trim().length > 0
-    ? payload.objectKey.trim()
-    : 'furniture.generic'
-  const variant = typeof payload?.variant === 'string' && payload.variant.trim().length > 0 ? payload.variant.trim() : null
-  const color = typeof payload?.color === 'string' && payload.color.trim().length > 0 ? payload.color.trim() : null
-  const x = normalizeNumber(payload?.x, 0)
-  const y = normalizeNumber(payload?.y, 0)
-  const z = normalizeNumber(payload?.z, 0)
-  const rotX = normalizeNumber(payload?.rotX, 0)
-  const rotY = normalizeNumber(payload?.rotY, 0)
-  const rotZ = normalizeNumber(payload?.rotZ, 0)
-  return { objectId, objectKey, variant, color, x, y, z, rotX, rotY, rotZ }
-}
-
-function sameDecorState(a, b) {
-  return (
-    Math.abs(a.x - b.x) <= DECOR_EPSILON_POSITION &&
-    Math.abs(a.y - b.y) <= DECOR_EPSILON_POSITION &&
-    Math.abs(a.z - b.z) <= DECOR_EPSILON_POSITION &&
-    Math.abs(a.rotX - b.rotX) <= DECOR_EPSILON_ROTATION &&
-    Math.abs(a.rotY - b.rotY) <= DECOR_EPSILON_ROTATION &&
-    Math.abs(a.rotZ - b.rotZ) <= DECOR_EPSILON_ROTATION &&
-    a.objectKey === b.objectKey &&
-    a.variant === b.variant &&
-    a.color === b.color
-  )
-}
-
-async function removeApartmentObject(apartmentId, objectId) {
-  if (typeof objectId !== 'string' || objectId.trim().length === 0) return false
-  const result = await pool.query(
-    `DELETE FROM apartment_objects WHERE apartment_id = $1 AND object_id = $2;`,
-    [apartmentId, objectId.trim()]
-  )
-  return result.rowCount > 0
-}
-
-async function addGuest(apartmentId, guestAccountId) {
-  await pool.query(
-    `
-    INSERT INTO apartment_guests (apartment_id, guest_account_id)
-    VALUES ($1, $2)
-    ON CONFLICT (apartment_id, guest_account_id) DO NOTHING;
-    `,
-    [apartmentId, guestAccountId]
-  )
+  const res = await fetch(`${BACKEND_API_URL}${path}`, {
+    method,
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`
+    },
+    body: body !== null ? JSON.stringify(body) : undefined
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    const message = typeof data?.message === 'string' ? data.message : `backend error ${res.status}`
+    const code = typeof data?.code === 'string' ? data.code : 'backend_error'
+    const err = new Error(message)
+    err.code = code
+    throw err
+  }
+  return data
 }
 
 class PresenceRoom extends Room {
@@ -292,12 +122,17 @@ class PresenceRoom extends Room {
     this.players = new Map()
     this.byAccountId = new Map()
     this.apartmentCacheByOwner = new Map()
+    this.inventoryCacheByAccount = new Map()
     this.onMessage('move', (client, payload) => this.onMove(client, payload))
     this.onMessage('appearance', (client, payload) => this.onAppearance(client, payload))
     this.onMessage('enter_apartment', async (client, payload) => this.onEnterApartment(client, payload))
     this.onMessage('exit_apartment', (client) => this.onExitApartment(client))
     this.onMessage('decorate_upsert', async (client, payload) => this.onDecorateUpsert(client, payload))
     this.onMessage('decorate_remove', async (client, payload) => this.onDecorateRemove(client, payload))
+    this.onMessage('apartment_spawn_request', async (client, payload) => this.onApartmentSpawnRequest(client, payload))
+    this.onMessage('apartment_transform_request', async (client, payload) => this.onApartmentTransformRequest(client, payload))
+    this.onMessage('apartment_pickup_request', async (client, payload) => this.onApartmentPickupRequest(client, payload))
+    this.onMessage('apartment_inventory_request', async (client) => this.onApartmentInventoryRequest(client))
   }
 
   async onAuth(_client, options) {
@@ -326,6 +161,8 @@ class PresenceRoom extends Room {
       z: 0,
       zone: 'city',
       apartmentOwnerId: null,
+      apartmentTemplateKey: null,
+      token: client?.auth?.token ?? null,
       appearance,
       slotHexes,
       bodyModelGlb
@@ -374,18 +211,55 @@ class PresenceRoom extends Room {
     const cacheKey = `${ownerAccountId}:${templateKey}`
     const existing = this.apartmentCacheByOwner.get(cacheKey)
     if (existing) return existing
-    await ensureSchema()
-    const apartment = await ensureApartment(ownerAccountId, templateKey)
-    const objects = await loadApartmentObjects(apartment.id)
+    const tokenPlayer = this.players.get(this.byAccountId.get(ownerAccountId) ?? '')
+    const token = tokenPlayer?.token
+    const response = await callBackendJson(token, '/apartments/state', 'POST', {
+      owner_account_id: ownerAccountId,
+      template_key: templateKey
+    })
+    const apartment = response?.apartment
+    const objects = Array.isArray(apartment?.objects) ? apartment.objects : []
     const cache = {
-      apartmentId: apartment.id,
+      roomPublicId: typeof apartment?.room_public_id === 'string' ? apartment.room_public_id : '',
       ownerAccountId,
       templateKey,
-      name: apartment.name,
+      name: 'Apartment',
       objects: new Map(objects.map((obj) => [obj.objectId, obj]))
     }
     this.apartmentCacheByOwner.set(cacheKey, cache)
     return cache
+  }
+
+  apartmentCacheKey(ownerAccountId, templateKey) {
+    return `${ownerAccountId}:${templateKey}`
+  }
+
+  apartmentViewPlayers(ownerAccountId, templateKey) {
+    return this.clients.filter((c) => {
+      const p = this.players.get(c.sessionId)
+      if (!p) return false
+      return p.zone === 'apartment' && p.apartmentOwnerId === ownerAccountId && p.apartmentTemplateKey === templateKey
+    })
+  }
+
+  async onApartmentInventoryRequest(client) {
+    const player = this.players.get(client.sessionId)
+    if (!player) return
+    if (!player.token) {
+      client.send('apartment_inventory_error', { message: 'Missing auth token', code: 'missing_token' })
+      return
+    }
+    try {
+      const response = await callBackendJson(player.token, '/apartments/assets', 'GET')
+      const items = Array.isArray(response?.items) ? response.items : []
+      this.inventoryCacheByAccount.set(player.accountId, items)
+      client.send('apartment_inventory', { items })
+    } catch (error) {
+      client.send('apartment_inventory_error', {
+        message: error instanceof Error ? error.message : 'Inventory request failed',
+        code: error?.code ?? 'inventory_error'
+      })
+    }
   }
 
   async onJoin(client, options) {
@@ -454,9 +328,34 @@ class PresenceRoom extends Room {
     const templateKey = typeof payload?.templateKey === 'string' && payload.templateKey.trim().length > 0
       ? payload.templateKey.trim()
       : 'starter_loft'
-    const apartment = await this.getApartmentCache(ownerAccountId, templateKey)
+    if (!player.token) {
+      client.send('apartment_error', { message: 'Missing auth token', code: 'missing_token' })
+      return
+    }
+    let apartment
+    try {
+      const response = await callBackendJson(player.token, '/apartments/state', 'POST', {
+        owner_account_id: ownerAccountId,
+        template_key: templateKey
+      })
+      const state = response?.apartment ?? {}
+      apartment = {
+        ownerAccountId,
+        templateKey,
+        name: 'Apartment',
+        objects: new Map((Array.isArray(state.objects) ? state.objects : []).map((obj) => [obj.objectId, obj]))
+      }
+      this.apartmentCacheByOwner.set(this.apartmentCacheKey(ownerAccountId, templateKey), apartment)
+    } catch (error) {
+      client.send('apartment_error', {
+        message: error instanceof Error ? error.message : 'Could not enter apartment',
+        code: error?.code ?? 'apartment_enter_error'
+      })
+      return
+    }
     player.zone = 'apartment'
     player.apartmentOwnerId = ownerAccountId
+    player.apartmentTemplateKey = templateKey
     player.x = 0
     player.y = 1.6
     player.z = 4
@@ -466,6 +365,7 @@ class PresenceRoom extends Room {
       name: apartment.name,
       objects: [...apartment.objects.values()]
     })
+    await this.onApartmentInventoryRequest(client)
     this.broadcast('user_zone_changed', {
       sessionId: client.sessionId,
       zone: player.zone,
@@ -481,6 +381,7 @@ class PresenceRoom extends Room {
     if (!player) return
     player.zone = 'city'
     player.apartmentOwnerId = null
+    player.apartmentTemplateKey = null
     player.x = 0
     player.y = 1.6
     player.z = 6
@@ -495,39 +396,93 @@ class PresenceRoom extends Room {
   }
 
   async onDecorateUpsert(client, payload) {
+    // Backward-compatible alias for transform/spawn requests.
+    await this.onApartmentUpsertOrTransform(client, payload)
+  }
+
+  async onApartmentSpawnRequest(client, payload) {
+    await this.onApartmentUpsertOrTransform(client, payload, true)
+  }
+
+  async onApartmentTransformRequest(client, payload) {
+    await this.onApartmentUpsertOrTransform(client, payload, false)
+  }
+
+  async onApartmentUpsertOrTransform(client, payload, forceSpawn = null) {
     const player = this.players.get(client.sessionId)
     if (!player || player.zone !== 'apartment') return
     const ownerAccountId = player.apartmentOwnerId
-    if (!ownerAccountId || ownerAccountId !== player.accountId) return
-    const apartment = await this.getApartmentCache(ownerAccountId, 'starter_loft')
-    const normalized = normalizeApartmentObjectPayload(payload)
-    const previous = apartment.objects.get(normalized.objectId)
-    if (previous && sameDecorState(previous, normalized)) return
-    const saved = await upsertApartmentObject(apartment.apartmentId, normalized)
-    apartment.objects.set(saved.objectId, saved)
-    for (const c of this.clients) {
-      const cp = this.players.get(c.sessionId)
-      if (!cp) continue
-      if (cp.zone !== 'apartment' || cp.apartmentOwnerId !== ownerAccountId) continue
-      c.send('apartment_object_upserted', saved)
+    const templateKey = player.apartmentTemplateKey ?? 'starter_loft'
+    if (!ownerAccountId || !player.token) return
+    const cacheKey = this.apartmentCacheKey(ownerAccountId, templateKey)
+    const apartment = this.apartmentCacheByOwner.get(cacheKey) ?? {
+      ownerAccountId,
+      templateKey,
+      name: 'Apartment',
+      objects: new Map()
+    }
+    const objectId = typeof payload?.objectId === 'string' ? payload.objectId.trim() : ''
+    if (!objectId) return
+    const hasObject = apartment.objects.has(objectId)
+    const shouldSpawn = forceSpawn === null ? !hasObject : forceSpawn
+    const endpoint = shouldSpawn ? '/apartments/spawn' : '/apartments/transform'
+    try {
+      const response = await callBackendJson(player.token, endpoint, shouldSpawn ? 'POST' : 'PATCH', {
+        owner_account_id: ownerAccountId,
+        template_key: templateKey,
+        ...payload
+      })
+      const saved = response?.object
+      if (!saved || typeof saved.objectId !== 'string') return
+      apartment.objects.set(saved.objectId, saved)
+      this.apartmentCacheByOwner.set(cacheKey, apartment)
+      for (const c of this.apartmentViewPlayers(ownerAccountId, templateKey)) {
+        c.send('apartment_object_upserted', saved)
+      }
+    } catch (error) {
+      client.send('apartment_action_error', {
+        message: error instanceof Error ? error.message : 'Could not update apartment object',
+        code: error?.code ?? 'apartment_object_error'
+      })
     }
   }
 
   async onDecorateRemove(client, payload) {
+    await this.onApartmentPickupRequest(client, payload)
+  }
+
+  async onApartmentPickupRequest(client, payload) {
     const player = this.players.get(client.sessionId)
     if (!player || player.zone !== 'apartment') return
     const ownerAccountId = player.apartmentOwnerId
-    if (!ownerAccountId || ownerAccountId !== player.accountId) return
-    const apartment = await this.getApartmentCache(ownerAccountId, 'starter_loft')
+    const templateKey = player.apartmentTemplateKey ?? 'starter_loft'
+    if (!ownerAccountId || !player.token) return
+    const cacheKey = this.apartmentCacheKey(ownerAccountId, templateKey)
+    const apartment = this.apartmentCacheByOwner.get(cacheKey) ?? {
+      ownerAccountId,
+      templateKey,
+      name: 'Apartment',
+      objects: new Map()
+    }
     const objectId = typeof payload?.objectId === 'string' ? payload.objectId : ''
-    const removed = await removeApartmentObject(apartment.apartmentId, objectId)
-    if (!removed) return
-    apartment.objects.delete(objectId)
-    for (const c of this.clients) {
-      const cp = this.players.get(c.sessionId)
-      if (!cp) continue
-      if (cp.zone !== 'apartment' || cp.apartmentOwnerId !== ownerAccountId) continue
-      c.send('apartment_object_removed', { objectId })
+    if (!objectId) return
+    try {
+      await callBackendJson(player.token, '/apartments/pickup', 'POST', {
+        owner_account_id: ownerAccountId,
+        template_key: templateKey,
+        objectId: objectId
+      })
+      apartment.objects.delete(objectId)
+      this.apartmentCacheByOwner.set(cacheKey, apartment)
+      for (const c of this.apartmentViewPlayers(ownerAccountId, templateKey)) {
+        c.send('apartment_object_removed', { objectId })
+      }
+      await this.onApartmentInventoryRequest(client)
+    } catch (error) {
+      client.send('apartment_action_error', {
+        message: error instanceof Error ? error.message : 'Could not pickup apartment object',
+        code: error?.code ?? 'apartment_pickup_error'
+      })
     }
   }
 
@@ -565,9 +520,7 @@ async function boot() {
   gameServer.define('city', CityRoom)
   await gameServer.listen(port)
   console.log(`Colyseus server on port ${port} (city:${CITY_MAX_PLAYERS}, apartment-in-city enabled)`)
-  console.log(
-    '[colyseus] city room does not require Postgres; apartment persistence runs ensureSchema() on first apartment room.'
-  )
+  console.log('[colyseus] apartment economy is backend-authoritative via Laravel API')
 }
 
 boot().catch((error) => {

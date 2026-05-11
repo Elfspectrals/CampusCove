@@ -3,6 +3,7 @@
 use App\Http\Controllers\AdminInventoryController;
 use App\Http\Controllers\AdminShopItemController;
 use App\Http\Controllers\AdminUserController;
+use App\Http\Controllers\ApartmentPlacementController;
 use App\Http\Controllers\AssetController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CharacterCosmeticController;
@@ -38,6 +39,11 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
 
     Route::get('/character/cosmetics', [CharacterCosmeticController::class, 'show']);
     Route::put('/character/cosmetics', [CharacterCosmeticController::class, 'update']);
+    Route::get('/apartments/assets', [ApartmentPlacementController::class, 'inventory']);
+    Route::post('/apartments/state', [ApartmentPlacementController::class, 'state']);
+    Route::post('/apartments/spawn', [ApartmentPlacementController::class, 'spawn']);
+    Route::patch('/apartments/transform', [ApartmentPlacementController::class, 'transform']);
+    Route::post('/apartments/pickup', [ApartmentPlacementController::class, 'pickup']);
 
     Route::middleware('admin')->prefix('admin')->group(function () {
         Route::prefix('users')->group(function () {

@@ -186,10 +186,16 @@ const recentItems = [
             <h3 class="m-0 mb-4 font-bold text-sm tracking-wider">QUICK ACTIONS</h3>
             <div class="space-y-2">
               <RouterLink
-                to="/item-shop"
+                to="/shop"
                 class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium"
               >
                 🛒 Visit Shop
+              </RouterLink>
+              <RouterLink
+                to="/shop-skin"
+                class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium"
+              >
+                🧥 Visit Shop Skin
               </RouterLink>
               <RouterLink to="/friends" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium">
                 👥 View Friends
