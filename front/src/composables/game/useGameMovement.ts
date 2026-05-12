@@ -19,7 +19,7 @@ export interface UseGameMovementDeps {
   containerRef: Ref<HTMLElement | null>
   gameRoomRef: ShallowRef<Room | null>
   currentRoomLabel: Ref<'city' | 'apartment'>
-  apartmentInventoryOpen: Ref<boolean>
+  inventoryOpen: Ref<boolean>
   getScene: () => THREE.Scene | undefined
   getCamera: () => THREE.PerspectiveCamera | undefined
   getRenderer: () => THREE.WebGLRenderer | undefined
@@ -27,7 +27,7 @@ export interface UseGameMovementDeps {
   refreshMyAppearance: Ref<(() => void) | null>
   onNearApartmentDoorInteract: () => Promise<void>
   onNearCityDoorInteract: () => void
-  onToggleApartmentInventory: () => void
+  onToggleInventory: () => void
   onHotbarDigit: (index: number) => void
   nearApartmentDoor: Ref<boolean>
   nearCityDoor: Ref<boolean>
@@ -88,11 +88,13 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     direction.set(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw)
     const rightVec = new THREE.Vector3().crossVectors(direction, new THREE.Vector3(0, 1, 0)).normalize()
     velocity.set(0, 0, 0)
-    if (forward) velocity.add(direction.clone().multiplyScalar(forward * moveSpeed * dt))
-    if (right) velocity.add(rightVec.clone().multiplyScalar(right * moveSpeed * dt))
-    myPosition.x += velocity.x
+    if (!deps.inventoryOpen.value) {
+      if (forward) velocity.add(direction.clone().multiplyScalar(forward * moveSpeed * dt))
+      if (right) velocity.add(rightVec.clone().multiplyScalar(right * moveSpeed * dt))
+      myPosition.x += velocity.x
+      myPosition.z += velocity.z
+    }
     myPosition.y = 1.6
-    myPosition.z += velocity.z
     if (deps.currentRoomLabel.value === 'apartment') {
       clampMyPositionToApartment()
       const dx = myPosition.x - APARTMENT_DOOR_POS.x
@@ -191,10 +193,10 @@ export function useGameMovement(deps: UseGameMovementDeps) {
       }
     }
     if (e.code === KEY_BINDINGS.apartmentInventoryToggle && !e.repeat) {
-      deps.onToggleApartmentInventory()
+      deps.onToggleInventory()
       return
     }
-    if (deps.currentRoomLabel.value === 'apartment' && !e.repeat) {
+    if (!e.repeat) {
       const digit = /^Digit([1-9])$/.exec(e.code)
       if (digit) {
         const index = Number(digit[1]) - 1

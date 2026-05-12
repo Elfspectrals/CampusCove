@@ -70,12 +70,19 @@ export interface GameRealtimeDeps {
 
   roomMessage: Ref<string | null>
   switchingRoom: Ref<boolean>
+  transitioningApartment: Ref<boolean>
+  wasPointerLockedAtTransitionStart: Ref<boolean>
 
-  apartmentInventoryLoading: Ref<boolean>
-  apartmentInventoryError: Ref<string | null>
-  apartmentInventoryOpen: Ref<boolean>
-  apartmentInventory: Ref<ApartmentInventoryItem[]>
-  normalizeInventoryAndHotbarSelection: () => void
+  /** Assigned in `connectRealtime`; read by movement (focus refresh). */
+  refreshMyAppearance: Ref<(() => void) | null>
+
+  getCanvas?: () => HTMLCanvasElement | null
+  requestPointerLock?: () => void
+  pickupCodeToHotbar?: (code: string) => void
+
+  inventoryLoading: Ref<boolean>
+  inventoryError: Ref<string | null>
+  applyServerInventoryPayload: (items: ApartmentInventoryItem[]) => void
 
   selectedPlacedObjectId: Ref<string>
 
@@ -103,7 +110,30 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
   const upsertTokenByUserId = new Map<string, number>()
   const renderTokenBySessionId = new Map<string, number>()
 
-  const refreshMyAppearance = ref<(() => void) | null>(null)
+  let previousQuantityByCode: Record<string, number> = {}
+  let isInitialInventoryLoad = true
+
+  function finishApartmentTransition(): void {
+    deps.transitioningApartment.value = false
+    const shouldRecover = deps.wasPointerLockedAtTransitionStart.value
+    setTimeout(() => {
+      if (!shouldRecover) {
+        deps.wasPointerLockedAtTransitionStart.value = false
+        return
+      }
+      const canvas = deps.getCanvas?.() ?? null
+      if (!canvas || document.pointerLockElement === canvas) {
+        deps.wasPointerLockedAtTransitionStart.value = false
+        return
+      }
+      try {
+        deps.requestPointerLock?.()
+      } catch {
+        /* browsers may reject without a gesture */
+      }
+      deps.wasPointerLockedAtTransitionStart.value = false
+    }, 0)
+  }
 
   function resolveCamera(): THREE.PerspectiveCamera | undefined {
     const cam = deps.camera
@@ -369,6 +399,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
           }
           if (data.zone === 'city') {
             deps.apartment.clearApartmentObjects()
+            finishApartmentTransition()
           }
           return
         }
@@ -387,6 +418,8 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     )
 
     room.onMessage('apartment_init', (payload: ApartmentInitPayload) => {
+      previousQuantityByCode = {}
+      isInitialInventoryLoad = true
       deps.currentRoomLabel.value = 'apartment'
       deps.setRoomEnvironment('apartment')
       deps.myPosition.x = APARTMENT_SPAWN.x
@@ -400,8 +433,9 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       }
       deps.apartment.ensureApartmentObjectsFromServer(payload.objects)
       deps.apartment.attachSelectedPlacedObject()
-      deps.apartmentInventoryLoading.value = true
+      deps.inventoryLoading.value = true
       room.send('apartment_inventory_request')
+      finishApartmentTransition()
     })
 
     room.onMessage('apartment_object_upserted', (data: ApartmentObjectPayload) => {
@@ -416,15 +450,25 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     })
 
     room.onMessage('apartment_inventory', (data: { items: ApartmentInventoryItem[] }) => {
-      deps.apartmentInventory.value = Array.isArray(data.items) ? data.items : []
-      deps.normalizeInventoryAndHotbarSelection()
-      deps.apartmentInventoryLoading.value = false
-      deps.apartmentInventoryError.value = null
+      const items = Array.isArray(data.items) ? data.items : []
+      const newQuantityByCode: Record<string, number> = {}
+      for (const it of items) {
+        if (it?.code) newQuantityByCode[it.code] = it.quantity
+      }
+      if (!isInitialInventoryLoad) {
+        for (const [code, qty] of Object.entries(newQuantityByCode)) {
+          const prev = previousQuantityByCode[code] ?? 0
+          if (qty > prev) deps.pickupCodeToHotbar?.(code)
+        }
+      }
+      isInitialInventoryLoad = false
+      previousQuantityByCode = { ...newQuantityByCode }
+      deps.applyServerInventoryPayload(items)
     })
 
     room.onMessage('apartment_inventory_error', (data: { message?: string }) => {
-      deps.apartmentInventoryLoading.value = false
-      deps.apartmentInventoryError.value = data.message ?? 'Could not load apartment inventory.'
+      deps.inventoryLoading.value = false
+      deps.inventoryError.value = data.message ?? 'Could not load apartment inventory.'
     })
 
     room.onMessage('apartment_action_error', (data: { message?: string }) => {
@@ -434,6 +478,8 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
 
     room.onMessage('apartment_error', (data: { message?: string }) => {
       deps.roomMessage.value = data.message ?? 'Could not enter apartment.'
+      deps.transitioningApartment.value = false
+      deps.wasPointerLockedAtTransitionStart.value = false
     })
 
     room.onLeave(() => {
@@ -504,7 +550,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
         /** keep previous values if refresh fails */
       }
     }
-    refreshMyAppearance.value = () => {
+    deps.refreshMyAppearance.value = () => {
       void refreshAppearanceFromApi()
     }
 
@@ -514,6 +560,6 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
   return {
     connectRealtime,
     clearRemoteUsers,
-    refreshMyAppearance,
+    refreshMyAppearance: deps.refreshMyAppearance,
   }
 }

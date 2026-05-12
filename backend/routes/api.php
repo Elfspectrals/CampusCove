@@ -9,6 +9,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CharacterCosmeticController;
 use App\Http\Controllers\FriendController;
 use App\Http\Controllers\InventoryController;
+use App\Http\Controllers\PlayerInventoryLayoutController;
 use App\Http\Controllers\ShopController;
 use Illuminate\Support\Facades\Route;
 
@@ -36,6 +37,8 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
 
     Route::post('/shop/purchase', [ShopController::class, 'purchase']);
     Route::get('/inventory', [InventoryController::class, 'index']);
+    Route::get('/inventory/layout', [PlayerInventoryLayoutController::class, 'show']);
+    Route::put('/inventory/layout', [PlayerInventoryLayoutController::class, 'update']);
 
     Route::get('/character/cosmetics', [CharacterCosmeticController::class, 'show']);
     Route::put('/character/cosmetics', [CharacterCosmeticController::class, 'update']);

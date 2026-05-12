@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
+import { computed, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import * as THREE from 'three'
 import type { Room } from '@colyseus/sdk'
@@ -12,18 +12,21 @@ import {
 import { getStoredAuth, clearAuth } from '../api/auth'
 import { buildFirstPersonHands, disposeObject3D } from '../avatar/compositeAvatar'
 import { matchesRotateCCW, matchesRotateCW } from '../config/keybindings'
-import GameApartmentInventoryPanel from '../components/game/GameApartmentInventoryPanel.vue'
 import GameDoorHints from '../components/game/GameDoorHints.vue'
 import GameHudToolbar from '../components/game/GameHudToolbar.vue'
+import GameInteractionPrompt from '../components/game/GameInteractionPrompt.vue'
 import GamePlacementHud from '../components/game/GamePlacementHud.vue'
+import GamePlayerHotbar from '../components/game/GamePlayerHotbar.vue'
+import GamePlayerInventoryPanel from '../components/game/GamePlayerInventoryPanel.vue'
 import GamePointerLockOverlay from '../components/game/GamePointerLockOverlay.vue'
 import GameRoomMessageBanner from '../components/game/GameRoomMessageBanner.vue'
-import { useApartmentInventory } from '../composables/game/useApartmentInventory'
 import { useApartmentObjects } from '../composables/game/useApartmentObjects'
 import { useApartmentPlacement } from '../composables/game/useApartmentPlacement'
 import { useGameMovement } from '../composables/game/useGameMovement'
 import { useGameRealtime } from '../composables/game/useGameRealtime'
+import { usePlayerInventory } from '../composables/game/usePlayerInventory'
 import { applySceneAtmosphere, buildApartmentEnvironment, buildCityEnvironment } from '../game/roomEnvironments'
+import { APARTMENT_DOOR_POS, CITY_BUILDING_DOOR_POS } from '../game/gameRoomConstants'
 
 const YAW_STEP = Math.PI / 12
 
@@ -36,6 +39,11 @@ const nearApartmentDoor = ref(false)
 const nearCityDoor = ref(false)
 const switchingRoom = ref(false)
 const pointerLocked = ref(false)
+const transitioningApartment = ref(false)
+const wasPointerLockedAtTransitionStart = ref(false)
+const refreshMyAppearance = ref<(() => void) | null>(null)
+const doorPromptPos = ref<{ x: number; y: number; key: string; action: string } | null>(null)
+const doorProjectionVec = new THREE.Vector3()
 
 const realtimeHttpUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000'
 const gameRoomRef = shallowRef<Room | null>(null)
@@ -51,7 +59,7 @@ let fpHands: THREE.Group | null = null
 
 let apartmentPlacementRef: ReturnType<typeof useApartmentPlacement> | null = null
 
-let getApartmentInventoryOpen: () => boolean = () => false
+let getInventoryOpen: () => boolean = () => false
 let runRefreshApartmentInventory: () => void = () => {}
 
 const {
@@ -88,7 +96,7 @@ const apartmentPlacement = useApartmentPlacement({
   getRenderer: () => renderer,
   getColyseusRoom: () => gameRoomRef.value,
   getApartmentObjectMesh,
-  getApartmentInventoryOpen: () => getApartmentInventoryOpen(),
+  getApartmentInventoryOpen: () => getInventoryOpen(),
   currentRoomLabel,
   pointerLocked,
   persistApartmentTransformForMesh,
@@ -98,27 +106,34 @@ const apartmentPlacement = useApartmentPlacement({
 apartmentPlacementRef = apartmentPlacement
 
 const {
-  apartmentInventory,
-  selectedInventoryObjectKey,
-  hotbarSlots,
+  slots,
   selectedHotbarIndex,
-  apartmentInventoryLoading,
-  apartmentInventoryError,
-  apartmentInventoryOpen,
-  normalizeInventoryAndHotbarSelection,
+  inventoryOpen,
+  inventoryLoading,
+  inventoryError,
+  cursorItem,
+  itemByCode,
   resetClientStateForCityWorld,
-  selectedInventoryItem,
-  canSpawnSelectedInventoryItem,
-  selectInventoryItem,
-  onHotbarSlotClick,
-  clearHotbarSlot,
+  selectHotbarIndex,
+  onSlotPointerDown,
+  onSlotPointerUp,
+  onSlotDragStart,
+  onSlotDragOver,
+  onSlotDrop,
+  onSlotDragEnd,
+  cancelCursorPick,
+  clearSlot,
+  refreshOwnedItems,
+  applyServerInventoryPayload,
+  loadLayoutFromServer,
   pickupSelectedPlacedObject,
   onPlacedObjectSelected,
-  refreshApartmentInventory,
-  toggleApartmentInventory,
+  toggleInventory,
+  closeInventory,
   tryExitApartmentAtDoor,
   tryEnterApartmentAtDoor,
-} = useApartmentInventory({
+  pickupToHotbar,
+} = usePlayerInventory({
   gameRoomRef,
   currentRoomLabel,
   myPosition,
@@ -128,10 +143,11 @@ const {
   startPlacementPreview: (itemDef, ownedCountRef) => {
     apartmentPlacement.startPreviewNew(itemDef, ownedCountRef)
   },
+  cancelPlacementPreview: () => apartmentPlacement.cancelPreview(),
 })
 
-getApartmentInventoryOpen = () => apartmentInventoryOpen.value
-runRefreshApartmentInventory = refreshApartmentInventory
+getInventoryOpen = () => inventoryOpen.value
+runRefreshApartmentInventory = refreshOwnedItems
 
 const placementHudHints = computed(() => apartmentPlacement.hudHints.value)
 
@@ -140,36 +156,6 @@ const placementPreviewActive = computed(
     apartmentPlacement.currentState.value.kind === 'preview_new' ||
     apartmentPlacement.currentState.value.kind === 'preview_existing',
 )
-
-const { connectRealtime, clearRemoteUsers, refreshMyAppearance } = useGameRealtime({
-  router,
-  realtimeHttpUrl,
-  gameRoomRef,
-  getScene: () => scene,
-  camera: () => camera,
-  currentRoomLabel,
-  myPosition,
-  roomMessage,
-  switchingRoom,
-  apartmentInventoryLoading,
-  apartmentInventoryError,
-  apartmentInventoryOpen,
-  apartmentInventory,
-  normalizeInventoryAndHotbarSelection,
-  selectedPlacedObjectId,
-  apartment: {
-    detachForRoomSwitch,
-    ensureApartmentObjectsFromServer,
-    attachSelectedPlacedObject: () => undefined,
-    clearApartmentObjects,
-    upsertApartmentObjectFromRemote,
-    removeApartmentObjectMesh,
-  },
-  setRoomEnvironment,
-  onApartmentActionErrorBanner: () => {
-    apartmentPlacement.onApartmentActionError()
-  },
-})
 
 function hexStringToNumber(hex: string): number {
   return parseInt(hex.length === 7 ? hex.slice(1) : hex, 16)
@@ -184,10 +170,6 @@ async function loadCosmeticsState(): Promise<CharacterCosmeticsState> {
       colors: defaultCosmeticColors(),
     }
   }
-}
-
-function toggleApartmentInventoryWrapped(): void {
-  toggleApartmentInventory()
 }
 
 function handleExtraKeyDown(e: KeyboardEvent): boolean {
@@ -214,6 +196,38 @@ function handleExtraKeyDown(e: KeyboardEvent): boolean {
     return false
   }
   return false
+}
+
+function updateDoorPromptScreenPos(): void {
+  if (!camera || !canvasRef.value) {
+    doorPromptPos.value = null
+    return
+  }
+  const inApartment = currentRoomLabel.value === 'apartment'
+  const isNear = inApartment ? nearApartmentDoor.value : nearCityDoor.value
+  if (!isNear || inventoryOpen.value) {
+    doorPromptPos.value = null
+    return
+  }
+  if (inApartment) {
+    doorProjectionVec.set(APARTMENT_DOOR_POS.x, 1.5, APARTMENT_DOOR_POS.z)
+  } else {
+    doorProjectionVec.set(CITY_BUILDING_DOOR_POS.x, 1.8, CITY_BUILDING_DOOR_POS.z)
+  }
+  doorProjectionVec.project(camera)
+  if (doorProjectionVec.z > 1) {
+    doorPromptPos.value = null
+    return
+  }
+  const rect = canvasRef.value.getBoundingClientRect()
+  const sx = (doorProjectionVec.x * 0.5 + 0.5) * rect.width
+  const sy = (-doorProjectionVec.y * 0.5 + 0.5) * rect.height
+  doorPromptPos.value = {
+    x: sx,
+    y: sy,
+    key: 'I',
+    action: inApartment ? 'Exit' : 'Enter',
+  }
 }
 
 function setRoomEnvironment(kind: 'city' | 'apartment') {
@@ -268,27 +282,28 @@ const {
   containerRef,
   gameRoomRef,
   currentRoomLabel,
-  apartmentInventoryOpen,
+  inventoryOpen,
   getScene: () => scene,
   getCamera: () => camera,
   getRenderer: () => renderer,
   getFpHands: () => fpHands,
   refreshMyAppearance,
   onNearApartmentDoorInteract: async () => {
+    if (!gameRoomRef.value) return
     apartmentPlacement.cancelPreview()
+    transitioningApartment.value = true
+    wasPointerLockedAtTransitionStart.value = pointerLocked.value
     await tryExitApartmentAtDoor(nearApartmentDoor.value)
   },
   onNearCityDoorInteract: () => {
+    if (!getStoredAuth() || !gameRoomRef.value) return
+    transitioningApartment.value = true
+    wasPointerLockedAtTransitionStart.value = pointerLocked.value
     tryEnterApartmentAtDoor(nearCityDoor.value)
   },
-  onToggleApartmentInventory: () => toggleApartmentInventoryWrapped(),
+  onToggleInventory: () => toggleInventory(),
   onHotbarDigit: (index: number) => {
-    if (index < 0 || index > 8) return
-    selectedHotbarIndex.value = index
-    const code = hotbarSlots.value[index]
-    if (code) {
-      selectInventoryItem(code)
-    }
+    selectHotbarIndex(index)
   },
   nearApartmentDoor,
   nearCityDoor,
@@ -301,6 +316,53 @@ const {
     if (currentRoomLabel.value === 'apartment') {
       apartmentPlacement.tick(dt)
     }
+    updateDoorPromptScreenPos()
+  },
+})
+
+watch(inventoryOpen, (open) => {
+  if (open) {
+    if (document.pointerLockElement) {
+      document.exitPointerLock()
+    }
+    return
+  }
+  if (!document.pointerLockElement) {
+    requestPointerLock()
+  }
+})
+
+const { connectRealtime, clearRemoteUsers } = useGameRealtime({
+  router,
+  realtimeHttpUrl,
+  gameRoomRef,
+  getScene: () => scene,
+  camera: () => camera,
+  currentRoomLabel,
+  myPosition,
+  roomMessage,
+  switchingRoom,
+  transitioningApartment,
+  wasPointerLockedAtTransitionStart,
+  refreshMyAppearance,
+  getCanvas: () => canvasRef.value,
+  requestPointerLock,
+  pickupCodeToHotbar: pickupToHotbar,
+  inventoryLoading,
+  inventoryError,
+  applyServerInventoryPayload,
+  selectedPlacedObjectId,
+  apartment: {
+    detachForRoomSwitch,
+    ensureApartmentObjectsFromServer,
+    attachSelectedPlacedObject: () => undefined,
+    clearApartmentObjects,
+    upsertApartmentObjectFromRemote,
+    removeApartmentObjectMesh,
+  },
+  setRoomEnvironment,
+  onApartmentActionErrorBanner: () => {
+    apartmentPlacement.onApartmentActionError()
   },
 })
 
@@ -351,6 +413,8 @@ async function bootGame() {
   const bodyTint = hexStringToNumber(state.colors.body)
   initThree(bodyTint)
   await connectRealtime(state)
+  await loadLayoutFromServer()
+  refreshOwnedItems()
   startRenderLoop()
 }
 
@@ -425,29 +489,53 @@ const crosshairClass = computed(() => {
     />
     <GameRoomMessageBanner v-if="roomMessage" :message="roomMessage" />
     <GameHudToolbar :current-room-label="currentRoomLabel" :apartment-object-count="apartmentObjectCount" />
+    <GameInteractionPrompt
+      v-if="doorPromptPos"
+      :screen-x="doorPromptPos.x"
+      :screen-y="doorPromptPos.y"
+      :key-label="doorPromptPos.key"
+      :action-label="doorPromptPos.action"
+    />
     <GamePlacementHud :visible="placementPreviewActive" :hints="placementHudHints" />
-    <GameApartmentInventoryPanel
-      v-if="currentRoomLabel === 'apartment' && apartmentInventoryOpen"
-      :apartment-inventory="apartmentInventory"
-      :apartment-inventory-loading="apartmentInventoryLoading"
-      :apartment-inventory-error="apartmentInventoryError"
-      :selected-inventory-object-key="selectedInventoryObjectKey"
-      :selected-placed-object-id="selectedPlacedObjectId"
-      :apartment-object-ids="apartmentObjectIds"
-      :selected-inventory-item="selectedInventoryItem"
-      :can-spawn-selected-inventory-item="canSpawnSelectedInventoryItem"
-      :hotbar-slots="hotbarSlots"
+    <GamePlayerHotbar
+      :slots="slots"
       :selected-hotbar-index="selectedHotbarIndex"
-      :placement-preview-active="placementPreviewActive"
-      @refresh-apartment-inventory="refreshApartmentInventory"
-      @select-inventory-item="selectInventoryItem"
+      :item-by-code="itemByCode"
+      @select-slot="selectHotbarIndex"
+      @pointer-down="onSlotPointerDown"
+      @pointer-up="onSlotPointerUp"
+      @drag-start="onSlotDragStart"
+      @drag-over="onSlotDragOver"
+      @drop="onSlotDrop"
+      @drag-end="onSlotDragEnd"
+      @clear-slot="clearSlot"
+    />
+    <GamePlayerInventoryPanel
+      v-if="inventoryOpen"
+      :slots="slots"
+      :selected-hotbar-index="selectedHotbarIndex"
+      :item-by-code="itemByCode"
+      :cursor-item="cursorItem"
+      :loading="inventoryLoading"
+      :error="inventoryError"
+      :current-room-label="currentRoomLabel"
+      :apartment-object-ids="apartmentObjectIds"
+      :selected-placed-object-id="selectedPlacedObjectId"
+      @close="closeInventory"
+      @refresh="refreshOwnedItems"
+      @cancel-cursor="cancelCursorPick"
+      @slot-pointer-down="onSlotPointerDown"
+      @slot-pointer-up="onSlotPointerUp"
+      @slot-drag-start="onSlotDragStart"
+      @slot-drag-over="onSlotDragOver"
+      @slot-drop="onSlotDrop"
+      @slot-drag-end="onSlotDragEnd"
+      @clear-slot="clearSlot"
       @pickup-selected-placed-object="pickupSelectedPlacedObject"
       @placed-object-selected="onPlacedObjectSelected"
-      @on-hotbar-slot-click="onHotbarSlotClick"
-      @clear-hotbar-slot="clearHotbarSlot"
     />
     <GamePointerLockOverlay
-      v-show="!pointerLocked && !apartmentInventoryOpen"
+      v-show="!pointerLocked && !inventoryOpen && !transitioningApartment && !switchingRoom"
       @request-pointer-lock="requestPointerLock"
       @logout="logout"
     />
@@ -461,16 +549,11 @@ const crosshairClass = computed(() => {
       </button>
     </div>
     <p
-      v-if="currentRoomLabel === 'apartment' && apartmentInventoryOpen && placementPreviewActive"
+      v-if="currentRoomLabel === 'apartment' && inventoryOpen && placementPreviewActive"
       class="pointer-events-none absolute bottom-24 left-3 z-10 max-w-md text-[10px] leading-snug text-white/70 md:left-[22rem]"
     >
       R = rotate · Shift+R = reverse · LMB = place / pick · RMB = cancel · Esc / E = cancel
     </p>
-    <GameDoorHints
-      :current-room-label="currentRoomLabel"
-      :near-apartment-door="nearApartmentDoor"
-      :near-city-door="nearCityDoor"
-      :apartment-inventory-open="apartmentInventoryOpen"
-    />
+    <GameDoorHints :inventory-open="inventoryOpen" />
   </div>
 </template>
