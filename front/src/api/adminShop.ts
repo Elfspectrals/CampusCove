@@ -46,7 +46,7 @@ export interface AdminShopCatalogRow {
 export interface AdminShopItemCreateBody {
   code: string
   name: string
-  kind: 'furniture' | 'cosmetic' | 'consumable' | 'misc'
+  kind: 'furniture' | 'cosmetic' | 'consumable' | 'misc' | 'apartment_asset'
   rarity?: number
   tradable?: boolean
   premium_only?: boolean
@@ -68,7 +68,7 @@ export interface AdminShopItemCreateBody {
 export interface AdminShopItemUpdateBody {
   code?: string
   name?: string
-  kind?: 'furniture' | 'cosmetic' | 'consumable' | 'misc'
+  kind?: 'furniture' | 'cosmetic' | 'consumable' | 'misc' | 'apartment_asset'
   rarity?: number
   tradable?: boolean
   premium_only?: boolean
@@ -92,7 +92,7 @@ export interface AdminShopItemUpdateBody {
 export interface AdminShopListParams {
   search?: string
   currency?: ShopCurrency | 'all'
-  kind?: 'furniture' | 'cosmetic' | 'consumable' | 'misc' | 'all'
+  kind?: 'furniture' | 'cosmetic' | 'consumable' | 'misc' | 'apartment_asset' | 'all'
   with_deleted?: boolean
   only_deleted?: boolean
   is_active?: boolean | 'all'

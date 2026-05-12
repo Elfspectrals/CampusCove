@@ -8,7 +8,7 @@ import { normalizeApiAssetUrl } from './url'
 const API_BASE = import.meta.env.VITE_API_URL || '/api'
 
 /** Matches `item_kind` / admin shop kinds; empty means no filter. */
-export type InventoryKindFilter = '' | 'furniture' | 'cosmetic' | 'consumable' | 'misc'
+export type InventoryKindFilter = '' | 'furniture' | 'cosmetic' | 'consumable' | 'misc' | 'apartment_asset'
 
 export interface InventoryItemDef {
   item_def_id: number

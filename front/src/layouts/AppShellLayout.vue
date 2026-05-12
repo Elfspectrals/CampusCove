@@ -99,7 +99,8 @@ const navLink = (active: boolean) =>
 const defaultNavItems = computed(() =>
   [
     !isLoggedIn.value ? { name: 'landing', icon: '🏠', label: 'Home' } : { name: 'home', icon: '🏠', label: 'Home' },
-    { name: 'item-shop', icon: '🛒', label: 'Item Shop' },
+    { name: 'shop', icon: '🛒', label: 'Shop' },
+    { name: 'shop-skin', icon: '🧥', label: 'Shop Skin' },
     ...(isLoggedIn.value
       ? [
           { name: 'locker', icon: '🎒', label: 'Locker' },
@@ -112,7 +113,8 @@ const defaultNavItems = computed(() =>
 
 const adminNavItems = [
   { name: 'admin-users', icon: '👤', label: 'Users' },
-  { name: 'admin-shop', icon: '🛍', label: 'Shop' },
+  { name: 'admin-shop', icon: '🪑', label: 'Shop Items' },
+  { name: 'admin-shop-skin', icon: '🧥', label: 'Shop Skins' },
   { name: 'admin-inventories', icon: '🎒', label: 'Inventories' },
 ]
 

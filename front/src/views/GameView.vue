@@ -1,267 +1,381 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import * as THREE from 'three'
-import { io } from 'socket.io-client'
+import type { Room } from '@colyseus/sdk'
 import {
-  appearanceIdsFromLoadout,
-  bodyModelGlbFromLoadout,
   defaultCosmeticColors,
   emptyCosmeticLoadout,
   fetchCharacterCosmetics,
-  SLOTS,
   type CharacterCosmeticsState,
-  type CosmeticColors,
-  DEFAULT_SLOT_COLORS,
 } from '../api/characterCosmetics'
 import { getStoredAuth, clearAuth } from '../api/auth'
-import { createTintedCharacterFromUrl } from '../avatar/glbCharacter'
-import {
-  buildCompositeAvatar,
-  buildFirstPersonHands,
-  disposeObject3D,
-} from '../avatar/compositeAvatar'
+import { buildFirstPersonHands, disposeObject3D } from '../avatar/compositeAvatar'
+import { matchesRotateCCW, matchesRotateCW } from '../config/keybindings'
+import GameDoorHints from '../components/game/GameDoorHints.vue'
+import GameHudToolbar from '../components/game/GameHudToolbar.vue'
+import GameInteractionPrompt from '../components/game/GameInteractionPrompt.vue'
+import GamePlacementHud from '../components/game/GamePlacementHud.vue'
+import GamePlayerHotbar from '../components/game/GamePlayerHotbar.vue'
+import GamePlayerInventoryPanel from '../components/game/GamePlayerInventoryPanel.vue'
+import GamePointerLockOverlay from '../components/game/GamePointerLockOverlay.vue'
+import GameRoomMessageBanner from '../components/game/GameRoomMessageBanner.vue'
+import { useApartmentObjects } from '../composables/game/useApartmentObjects'
+import { useApartmentPlacement } from '../composables/game/useApartmentPlacement'
+import { useGameMovement } from '../composables/game/useGameMovement'
+import { useGameRealtime } from '../composables/game/useGameRealtime'
+import { usePlayerInventory } from '../composables/game/usePlayerInventory'
+import { applySceneAtmosphere, buildApartmentEnvironment, buildCityEnvironment } from '../game/roomEnvironments'
+import { APARTMENT_DOOR_POS, CITY_BUILDING_DOOR_POS } from '../game/gameRoomConstants'
+
+const YAW_STEP = Math.PI / 12
 
 const router = useRouter()
 const containerRef = ref<HTMLElement | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
-const roomFullMessage = ref<string | null>(null)
+const roomMessage = ref<string | null>(null)
+const currentRoomLabel = ref<'city' | 'apartment'>('city')
+const nearApartmentDoor = ref(false)
+const nearCityDoor = ref(false)
+const switchingRoom = ref(false)
+const pointerLocked = ref(false)
+const transitioningApartment = ref(false)
+const wasPointerLockedAtTransitionStart = ref(false)
+const refreshMyAppearance = ref<(() => void) | null>(null)
+const doorPromptPos = ref<{ x: number; y: number; key: string; action: string } | null>(null)
+const doorProjectionVec = new THREE.Vector3()
 
-function containerSize(): { w: number; h: number } {
-  const el = containerRef.value
-  if (el && el.clientWidth > 0 && el.clientHeight > 0) {
-    return { w: el.clientWidth, h: el.clientHeight }
-  }
-  return { w: window.innerWidth, h: window.innerHeight }
-}
-const socketUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000'
+const realtimeHttpUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000'
+const gameRoomRef = shallowRef<Room | null>(null)
+
+const myPosition = { x: 0, y: 1.6, z: 0 }
+const direction = new THREE.Vector3(0, 0, -1)
 
 let scene: THREE.Scene
 let camera: THREE.PerspectiveCamera
 let renderer: THREE.WebGLRenderer
+let roomEnvironment: THREE.Group | null = null
 let fpHands: THREE.Group | null = null
-let socket: ReturnType<typeof io> | null = null
 
-interface OtherUser {
-  userId: string
-  group: THREE.Group
-  x: number
-  y: number
-  z: number
-  color: number
-  bodyTintColors: CosmeticColors
-  bodyModelGlb: string | null
-}
+let apartmentPlacementRef: ReturnType<typeof useApartmentPlacement> | null = null
 
-interface PendingAppearanceUpdate {
-  appearance: Record<string, number | null>
-  slotHexes?: Record<string, string>
-  bodyModelGlb?: string | null
-}
+let getInventoryOpen: () => boolean = () => false
+let runRefreshApartmentInventory: () => void = () => {}
 
-const otherUsers = ref<Map<string, OtherUser>>(new Map())
-const socketByUserId = new Map<string, string>()
-const pendingAppearanceUpdates = new Map<string, PendingAppearanceUpdate>()
-const upsertTokenByUserId = new Map<string, number>()
-const renderTokenBySocketId = new Map<string, number>()
-const keys = { forward: false, back: false, left: false, right: false }
-const pointerLocked = ref(false)
-const velocity = new THREE.Vector3(0, 0, 0)
-const direction = new THREE.Vector3(0, 0, -1)
-const moveSpeed = 8
-const myPosition = { x: 0, y: 1.6, z: 0 }
-let lastEmit = 0
-const emitInterval = 50
-let refreshMyAppearance: (() => void) | null = null
+const {
+  apartmentObjectCount,
+  apartmentObjectIds,
+  selectedPlacedObjectId,
+  detachForRoomSwitch,
+  clearPersistTimers,
+  clearApartmentObjects,
+  ensureApartmentObjectsFromServer,
+  upsertApartmentObjectFromRemote,
+  removeApartmentObjectMesh,
+  persistApartmentTransformForMesh,
+  getApartmentObjectMesh,
+} = useApartmentObjects({
+  getScene: () => scene,
+  getGameRoom: () => gameRoomRef.value,
+  currentRoomLabel,
+  onApartmentObjectMeshUpserted: (mesh) => {
+    const id = typeof mesh.userData.apartmentObjectId === 'string' ? mesh.userData.apartmentObjectId : ''
+    if (id) apartmentPlacementRef?.registerApartmentProp(id, mesh)
+  },
+  onApartmentObjectMeshRemoved: (objectId) => {
+    apartmentPlacementRef?.unregisterApartmentProp(objectId)
+  },
+  onApartmentObjectRemovedNotify: (objectId) => {
+    apartmentPlacementRef?.notifyPropRemovedFromWorld(objectId)
+  },
+})
 
-function nextRenderToken(socketId: string): number {
-  const next = (renderTokenBySocketId.get(socketId) ?? 0) + 1
-  renderTokenBySocketId.set(socketId, next)
-  return next
-}
+const apartmentPlacement = useApartmentPlacement({
+  getScene: () => scene,
+  getCamera: () => camera,
+  getRenderer: () => renderer,
+  getColyseusRoom: () => gameRoomRef.value,
+  getApartmentObjectMesh,
+  getApartmentInventoryOpen: () => getInventoryOpen(),
+  currentRoomLabel,
+  pointerLocked,
+  persistApartmentTransformForMesh,
+  refreshApartmentInventory: () => runRefreshApartmentInventory(),
+})
+
+apartmentPlacementRef = apartmentPlacement
+
+const {
+  slots,
+  selectedHotbarIndex,
+  inventoryOpen,
+  inventoryLoading,
+  inventoryError,
+  cursorItem,
+  itemByCode,
+  resetClientStateForCityWorld,
+  selectHotbarIndex,
+  onSlotPointerDown,
+  onSlotPointerUp,
+  onSlotDragStart,
+  onSlotDragOver,
+  onSlotDrop,
+  onSlotDragEnd,
+  cancelCursorPick,
+  clearSlot,
+  refreshOwnedItems,
+  applyServerInventoryPayload,
+  loadLayoutFromServer,
+  pickupSelectedPlacedObject,
+  onPlacedObjectSelected,
+  toggleInventory,
+  closeInventory,
+  tryExitApartmentAtDoor,
+  tryEnterApartmentAtDoor,
+  pickupToHotbar,
+} = usePlayerInventory({
+  gameRoomRef,
+  currentRoomLabel,
+  myPosition,
+  direction,
+  selectedPlacedObjectId,
+  attachSelectedPlacedObject: () => undefined,
+  startPlacementPreview: (itemDef, ownedCountRef) => {
+    apartmentPlacement.startPreviewNew(itemDef, ownedCountRef)
+  },
+  cancelPlacementPreview: () => apartmentPlacement.cancelPreview(),
+})
+
+getInventoryOpen = () => inventoryOpen.value
+runRefreshApartmentInventory = refreshOwnedItems
+
+const placementHudHints = computed(() => apartmentPlacement.hudHints.value)
+
+const placementPreviewActive = computed(
+  () =>
+    apartmentPlacement.currentState.value.kind === 'preview_new' ||
+    apartmentPlacement.currentState.value.kind === 'preview_existing',
+)
 
 function hexStringToNumber(hex: string): number {
   return parseInt(hex.length === 7 ? hex.slice(1) : hex, 16)
 }
 
-function parseBodyTintColors(raw: Record<string, string> | null | undefined): CosmeticColors {
-  const bodyHex =
-    raw && typeof raw.body === 'string' && /^#[0-9A-Fa-f]{6}$/.test(raw.body) ? raw.body : DEFAULT_SLOT_COLORS.body
-  const out = { ...DEFAULT_SLOT_COLORS }
-  for (const s of SLOTS) out[s] = bodyHex
-  return out
-}
-
-function parseBodyModelGlb(raw: unknown): string | null {
-  return typeof raw === 'string' && raw.trim().length > 0 ? raw.trim() : null
-}
-
-function placeAvatar(group: THREE.Group, x: number, y: number, z: number) {
-  group.position.set(x, y, z)
-}
-
-function removeSceneAvatarDuplicates(socketId: string, userId: string) {
-  const toRemove: THREE.Object3D[] = []
-  for (const child of scene.children) {
-    if (!(child instanceof THREE.Group)) continue
-    const tag = child.userData as { isRemoteAvatar?: boolean; socketId?: string; userId?: string }
-    if (!tag.isRemoteAvatar) continue
-    if (tag.socketId === socketId || tag.userId === userId) {
-      toRemove.push(child)
+async function loadCosmeticsState(): Promise<CharacterCosmeticsState> {
+  try {
+    return await fetchCharacterCosmetics()
+  } catch {
+    return {
+      slots: emptyCosmeticLoadout(),
+      colors: defaultCosmeticColors(),
     }
   }
-  for (const obj of toRemove) {
-    scene.remove(obj)
-    disposeObject3D(obj)
+}
+
+function handleExtraKeyDown(e: KeyboardEvent): boolean {
+  if (currentRoomLabel.value !== 'apartment') return false
+  if (e.code === 'Escape' && !e.repeat) {
+    if (apartmentPlacement.currentState.value.kind !== 'idle') {
+      apartmentPlacement.cancelPreview()
+      return true
+    }
+    return false
+  }
+  if (matchesRotateCW(e) && !e.repeat) {
+    if (apartmentPlacement.currentState.value.kind !== 'idle') {
+      apartmentPlacement.stepRotate(YAW_STEP)
+      return true
+    }
+    return false
+  }
+  if (matchesRotateCCW(e) && !e.repeat) {
+    if (apartmentPlacement.currentState.value.kind !== 'idle') {
+      apartmentPlacement.stepRotate(-YAW_STEP)
+      return true
+    }
+    return false
+  }
+  return false
+}
+
+function updateDoorPromptScreenPos(): void {
+  if (!camera || !canvasRef.value) {
+    doorPromptPos.value = null
+    return
+  }
+  const inApartment = currentRoomLabel.value === 'apartment'
+  const isNear = inApartment ? nearApartmentDoor.value : nearCityDoor.value
+  if (!isNear || inventoryOpen.value) {
+    doorPromptPos.value = null
+    return
+  }
+  if (inApartment) {
+    doorProjectionVec.set(APARTMENT_DOOR_POS.x, 1.5, APARTMENT_DOOR_POS.z)
+  } else {
+    doorProjectionVec.set(CITY_BUILDING_DOOR_POS.x, 1.8, CITY_BUILDING_DOOR_POS.z)
+  }
+  doorProjectionVec.project(camera)
+  if (doorProjectionVec.z > 1) {
+    doorPromptPos.value = null
+    return
+  }
+  const rect = canvasRef.value.getBoundingClientRect()
+  const sx = (doorProjectionVec.x * 0.5 + 0.5) * rect.width
+  const sy = (-doorProjectionVec.y * 0.5 + 0.5) * rect.height
+  doorPromptPos.value = {
+    x: sx,
+    y: sy,
+    key: 'I',
+    action: inApartment ? 'Exit' : 'Enter',
   }
 }
 
-/** One logical remote player per userId: drop stale socket rows even if socketByUserId was out of sync. */
-function removeOtherUsersByUserIdExcept(userId: string, keepSocketId: string) {
-  for (const [sid, ou] of [...otherUsers.value.entries()]) {
-    if (ou.userId !== userId || sid === keepSocketId) continue
-    removeOtherUser(sid)
+function setRoomEnvironment(kind: 'city' | 'apartment') {
+  if (kind === 'city') {
+    apartmentPlacement.setPlayerInsideApartment(false)
+  }
+  if (roomEnvironment) {
+    scene.remove(roomEnvironment)
+    disposeObject3D(roomEnvironment)
+    roomEnvironment = null
+  }
+  applySceneAtmosphere(scene, kind)
+  if (kind === 'city') {
+    roomEnvironment = buildCityEnvironment()
+    scene.add(roomEnvironment)
+    nearApartmentDoor.value = false
+    resetClientStateForCityWorld()
+    clearApartmentObjects()
+  } else {
+    const built = buildApartmentEnvironment()
+    roomEnvironment = built.group
+    scene.add(roomEnvironment)
+    apartmentPlacement.registerApartmentEnvironment(built)
+    nearCityDoor.value = false
+    void apartmentPlacement.init({
+      scene,
+      camera,
+      renderer,
+      colyseusRoom: gameRoomRef,
+    })
   }
 }
 
-function removeOtherUser(socketId: string) {
-  const entry = otherUsers.value.get(socketId)
-  if (!entry) return
-  removeSceneAvatarDuplicates(socketId, entry.userId)
-  scene.remove(entry.group)
-  disposeObject3D(entry.group)
-  otherUsers.value.delete(socketId)
-  if (socketByUserId.get(entry.userId) === socketId) {
-    socketByUserId.delete(entry.userId)
-  }
-  pendingAppearanceUpdates.delete(socketId)
-  renderTokenBySocketId.delete(socketId)
-}
-
-async function upsertOtherUser(
-  socketId: string,
-  data: {
-    userId: string
-    x: number
-    y: number
-    z: number
-    color: number
-    slotHexes?: Record<string, string>
-    bodyModelGlb?: string | null
+const {
+  containerSize,
+  onKeyDown,
+  onKeyUp,
+  onMouseMove,
+  onPointerLockChange,
+  onResize,
+  requestPointerLock,
+  onVisibilityOrFocus,
+  startRenderLoop,
+  stopRenderLoop,
+  onCanvasMouseDown,
+  onCanvasMouseUp,
+} = useGameMovement({
+  pointerLocked,
+  myPosition,
+  direction,
+  canvasRef,
+  containerRef,
+  gameRoomRef,
+  currentRoomLabel,
+  inventoryOpen,
+  getScene: () => scene,
+  getCamera: () => camera,
+  getRenderer: () => renderer,
+  getFpHands: () => fpHands,
+  refreshMyAppearance,
+  onNearApartmentDoorInteract: async () => {
+    if (!gameRoomRef.value) return
+    apartmentPlacement.cancelPreview()
+    transitioningApartment.value = true
+    wasPointerLockedAtTransitionStart.value = pointerLocked.value
+    await tryExitApartmentAtDoor(nearApartmentDoor.value)
   },
-) {
-  const renderToken = nextRenderToken(socketId)
-  const token = (upsertTokenByUserId.get(data.userId) ?? 0) + 1
-  upsertTokenByUserId.set(data.userId, token)
-
-  removeOtherUsersByUserIdExcept(data.userId, socketId)
-
-  const knownSocketId = socketByUserId.get(data.userId)
-  if (knownSocketId && knownSocketId !== socketId) {
-    removeOtherUser(knownSocketId)
-  }
-  const bodyTintColors = parseBodyTintColors(data.slotHexes)
-  const bodyModelGlb = parseBodyModelGlb(data.bodyModelGlb)
-  const existing = otherUsers.value.get(socketId)
-  if (existing) {
-    scene.remove(existing.group)
-    disposeObject3D(existing.group)
-    otherUsers.value.delete(socketId)
-    if (socketByUserId.get(existing.userId) === socketId) {
-      socketByUserId.delete(existing.userId)
+  onNearCityDoorInteract: () => {
+    if (!getStoredAuth() || !gameRoomRef.value) return
+    transitioningApartment.value = true
+    wasPointerLockedAtTransitionStart.value = pointerLocked.value
+    tryEnterApartmentAtDoor(nearCityDoor.value)
+  },
+  onToggleInventory: () => toggleInventory(),
+  onHotbarDigit: (index: number) => {
+    selectHotbarIndex(index)
+  },
+  nearApartmentDoor,
+  nearCityDoor,
+  handleExtraKeyDown,
+  onCanvasMouseDown: (e) => {
+    apartmentPlacement.onPointerDown(e)
+  },
+  onCanvasMouseUp: () => undefined,
+  onBeforeRender: (dt) => {
+    if (currentRoomLabel.value === 'apartment') {
+      apartmentPlacement.tick(dt)
     }
-    pendingAppearanceUpdates.delete(socketId)
-  }
-  const glb = await createTintedCharacterFromUrl(bodyModelGlb, bodyTintColors)
-  const group = glb ?? buildCompositeAvatar(null, data.color)
+    updateDoorPromptScreenPos()
+  },
+})
 
-  // A newer upsert request for this same user won the race: drop this stale render.
-  if (upsertTokenByUserId.get(data.userId) !== token) {
-    disposeObject3D(group)
+watch(inventoryOpen, (open) => {
+  if (open) {
+    if (document.pointerLockElement) {
+      document.exitPointerLock()
+    }
     return
   }
-  if (renderTokenBySocketId.get(socketId) !== renderToken) {
-    disposeObject3D(group)
-    return
+  if (!document.pointerLockElement) {
+    requestPointerLock()
   }
+})
 
-  const latestSocketId = socketByUserId.get(data.userId)
-  if (latestSocketId && latestSocketId !== socketId) {
-    removeOtherUser(latestSocketId)
-  }
-  removeOtherUsersByUserIdExcept(data.userId, socketId)
-  removeSceneAvatarDuplicates(socketId, data.userId)
-  group.userData.isRemoteAvatar = true
-  group.userData.socketId = socketId
-  group.userData.userId = data.userId
-  placeAvatar(group, data.x, data.y, data.z)
-  scene.add(group)
-  otherUsers.value.set(socketId, {
-    userId: data.userId,
-    group,
-    x: data.x,
-    y: data.y,
-    z: data.z,
-    color: data.color,
-    bodyTintColors,
-    bodyModelGlb,
-  })
-  socketByUserId.set(data.userId, socketId)
+const { connectRealtime, clearRemoteUsers } = useGameRealtime({
+  router,
+  realtimeHttpUrl,
+  gameRoomRef,
+  getScene: () => scene,
+  camera: () => camera,
+  currentRoomLabel,
+  myPosition,
+  roomMessage,
+  switchingRoom,
+  transitioningApartment,
+  wasPointerLockedAtTransitionStart,
+  refreshMyAppearance,
+  getCanvas: () => canvasRef.value,
+  requestPointerLock,
+  pickupCodeToHotbar: pickupToHotbar,
+  inventoryLoading,
+  inventoryError,
+  applyServerInventoryPayload,
+  selectedPlacedObjectId,
+  apartment: {
+    detachForRoomSwitch,
+    ensureApartmentObjectsFromServer,
+    attachSelectedPlacedObject: () => undefined,
+    clearApartmentObjects,
+    upsertApartmentObjectFromRemote,
+    removeApartmentObjectMesh,
+  },
+  setRoomEnvironment,
+  onApartmentActionErrorBanner: () => {
+    apartmentPlacement.onApartmentActionError()
+  },
+})
 
-  const pending = pendingAppearanceUpdates.get(socketId)
-  if (pending) {
-    pendingAppearanceUpdates.delete(socketId)
-    void updateOtherAppearance(socketId, pending.appearance, pending.slotHexes, pending.bodyModelGlb)
-  }
-}
-
-async function updateOtherAppearance(
-  socketId: string,
-  _appearance: Record<string, number | null>,
-  slotHexes?: Record<string, string>,
-  bodyModelGlb?: string | null,
-) {
-  const entry = otherUsers.value.get(socketId)
-  if (!entry) {
-    pendingAppearanceUpdates.set(socketId, { appearance: _appearance, slotHexes, bodyModelGlb })
-    return
-  }
-  const renderToken = nextRenderToken(socketId)
-  const bodyTintColors = parseBodyTintColors(slotHexes)
-  const parsedBodyModelGlb = parseBodyModelGlb(bodyModelGlb)
-  const glb = await createTintedCharacterFromUrl(parsedBodyModelGlb, bodyTintColors)
-  const latestEntry = otherUsers.value.get(socketId)
-  const group = glb ?? buildCompositeAvatar(null, (latestEntry ?? entry).color)
-  if (!latestEntry) {
-    disposeObject3D(group)
-    return
-  }
-  if (renderTokenBySocketId.get(socketId) !== renderToken) {
-    disposeObject3D(group)
-    return
-  }
-  removeOtherUsersByUserIdExcept(latestEntry.userId, socketId)
-  removeSceneAvatarDuplicates(socketId, latestEntry.userId)
-  group.userData.isRemoteAvatar = true
-  group.userData.socketId = socketId
-  group.userData.userId = latestEntry.userId
-  scene.remove(latestEntry.group)
-  disposeObject3D(latestEntry.group)
-  placeAvatar(group, latestEntry.x, latestEntry.y, latestEntry.z)
-  scene.add(group)
-  otherUsers.value.set(socketId, {
-    ...latestEntry,
-    group,
-    bodyTintColors,
-    bodyModelGlb: parsedBodyModelGlb,
-  })
+function logout() {
+  clearAuth()
+  void gameRoomRef.value?.leave()
+  router.push({ name: 'landing' })
 }
 
 function initThree(accentColor: number) {
   if (!canvasRef.value) return
   scene = new THREE.Scene()
-  scene.background = new THREE.Color(0x1a1a2e)
-  scene.fog = new THREE.Fog(0x1a1a2e, 10, 50)
+  applySceneAtmosphere(scene, 'city')
 
   const { w, h } = containerSize()
   const aspect = w / h
@@ -282,305 +396,11 @@ function initThree(accentColor: number) {
   dir.shadow.mapSize.set(1024, 1024)
   scene.add(dir)
 
-  const floorGeo = new THREE.PlaneGeometry(50, 50)
-  const floorMat = new THREE.MeshStandardMaterial({ color: 0x16213e })
-  const floor = new THREE.Mesh(floorGeo, floorMat)
-  floor.rotation.x = -Math.PI / 2
-  floor.receiveShadow = true
-  scene.add(floor)
-
-  const grid = new THREE.GridHelper(50, 50, 0x0f3460, 0x0f3460)
-  grid.position.y = 0.01
-  scene.add(grid)
+  setRoomEnvironment('city')
 
   fpHands = buildFirstPersonHands(accentColor)
   fpHands.visible = false
   camera.add(fpHands)
-}
-
-function connectSocket(state: CharacterCosmeticsState) {
-  const auth = getStoredAuth()
-  if (!auth) {
-    router.push({ name: 'landing' })
-    return
-  }
-  const appearance = appearanceIdsFromLoadout(state.slots)
-  const bodyState = {
-    appearanceBody: appearance.body,
-    bodyHex: state.colors.body,
-    bodyModelGlb: bodyModelGlbFromLoadout(state.slots),
-  }
-
-  const emitBodyAppearance = () => {
-    socket?.emit('appearance', {
-      slots: { body: bodyState.appearanceBody },
-      slotHexes: { body: bodyState.bodyHex },
-      bodyModelGlb: bodyState.bodyModelGlb,
-    })
-  }
-
-  const refreshAppearanceFromApi = async () => {
-    try {
-      const latest = await fetchCharacterCosmetics()
-      const latestAppearance = appearanceIdsFromLoadout(latest.slots)
-      bodyState.appearanceBody = latestAppearance.body
-      bodyState.bodyHex = latest.colors.body
-      bodyState.bodyModelGlb = bodyModelGlbFromLoadout(latest.slots)
-      emitBodyAppearance()
-    } catch {
-      // Keep existing body state if the refresh fails.
-    }
-  }
-  refreshMyAppearance = () => {
-    void refreshAppearanceFromApi()
-  }
-
-  socket = io(socketUrl, {
-    auth: {
-      userId: auth.user.account_id,
-      pseudo: auth.user.display_name || auth.user.username,
-      appearance,
-      slotHexes: { body: bodyState.bodyHex },
-      bodyModelGlb: bodyState.bodyModelGlb,
-    },
-    transports: ['websocket', 'polling'],
-  })
-
-  socket.on('connect', () => {
-    roomFullMessage.value = null
-    emitBodyAppearance()
-    void refreshAppearanceFromApi()
-  })
-
-  socket.on('connect_error', () => {
-    roomFullMessage.value = 'Could not connect to game server.'
-  })
-
-  socket.on('room_full', () => {
-    roomFullMessage.value = 'Room is full (10 players max). Try again in a moment.'
-  })
-
-  socket.on(
-    'me',
-    (data: {
-      socketId: string
-      x: number
-      y: number
-      z: number
-      color?: number
-    }) => {
-      myPosition.x = data.x
-      myPosition.y = data.y
-      myPosition.z = data.z
-      camera.position.set(data.x, data.y, data.z)
-    },
-  )
-
-  socket.on(
-    'users',
-    (
-      list: Array<{
-        socketId: string
-        id: string
-        pseudo: string
-        color: number
-        x: number
-        y: number
-        z: number
-        slotHexes?: Record<string, string>
-        bodyModelGlb?: string | null
-      }>,
-    ) => {
-      list.forEach((u) => {
-        if (u.socketId === socket?.id) return
-        void upsertOtherUser(u.socketId, {
-          userId: u.id,
-          x: u.x,
-          y: u.y,
-          z: u.z,
-          color: u.color,
-          slotHexes: u.slotHexes,
-          bodyModelGlb: u.bodyModelGlb,
-        })
-      })
-    },
-  )
-
-  socket.on(
-    'user_joined',
-    (data: {
-      socketId: string
-      id: string
-      pseudo: string
-      color: number
-      x: number
-      y: number
-      z: number
-      slotHexes?: Record<string, string>
-      bodyModelGlb?: string | null
-    }) => {
-      if (data.socketId === socket?.id) return
-      void upsertOtherUser(data.socketId, {
-        userId: data.id,
-        x: data.x,
-        y: data.y,
-        z: data.z,
-        color: data.color,
-        slotHexes: data.slotHexes,
-        bodyModelGlb: data.bodyModelGlb,
-      })
-    },
-  )
-
-  socket.on('user_moved', (data: { socketId: string; x: number; y: number; z: number }) => {
-    const entry = otherUsers.value.get(data.socketId)
-    if (entry) {
-      entry.x = data.x
-      entry.y = data.y
-      entry.z = data.z
-      entry.group.position.set(data.x, data.y, data.z)
-    }
-  })
-
-  socket.on(
-    'appearance_updated',
-    (data: {
-      socketId: string
-      appearance: Record<string, number | null>
-      slotHexes?: Record<string, string>
-      bodyModelGlb?: string | null
-    }) => {
-      if (data.socketId === socket?.id) return
-      void updateOtherAppearance(data.socketId, data.appearance, data.slotHexes, data.bodyModelGlb)
-    },
-  )
-
-  socket.on('user_left', (data: { socketId: string }) => {
-    removeOtherUser(data.socketId)
-  })
-
-}
-
-function onVisibilityOrFocus() {
-  if (document.visibilityState !== 'visible') return
-  refreshMyAppearance?.()
-}
-
-function onBeforeUnload() {
-  socket?.disconnect()
-}
-
-function onPointerLockChange() {
-  pointerLocked.value = document.pointerLockElement === canvasRef.value
-  if (fpHands) {
-    fpHands.visible = pointerLocked.value
-  }
-}
-
-function requestPointerLock() {
-  canvasRef.value?.requestPointerLock()
-}
-
-function onResize() {
-  if (!camera || !renderer) return
-  const { w, h } = containerSize()
-  camera.aspect = w / h
-  camera.updateProjectionMatrix()
-  renderer.setSize(w, h)
-}
-
-function onKeyDown(e: KeyboardEvent) {
-  switch (e.code) {
-    case 'KeyW':
-    case 'KeyZ':
-      keys.forward = true
-      break
-    case 'KeyS':
-      keys.back = true
-      break
-    case 'KeyA':
-    case 'KeyQ':
-      keys.left = true
-      break
-    case 'KeyD':
-      keys.right = true
-      break
-  }
-}
-
-function onKeyUp(e: KeyboardEvent) {
-  switch (e.code) {
-    case 'KeyW':
-    case 'KeyZ':
-      keys.forward = false
-      break
-    case 'KeyS':
-      keys.back = false
-      break
-    case 'KeyA':
-    case 'KeyQ':
-      keys.left = false
-      break
-    case 'KeyD':
-      keys.right = false
-      break
-  }
-}
-
-let mouseX = 0
-let mouseY = 0
-let yaw = 0
-let pitch = 0
-
-function onMouseMove(e: MouseEvent) {
-  if (!pointerLocked.value) return
-  mouseX = e.movementX
-  mouseY = e.movementY
-}
-
-function updateMovement(dt: number) {
-  const forward = keys.forward ? 1 : keys.back ? -1 : 0
-  const right = keys.right ? 1 : keys.left ? -1 : 0
-  yaw -= mouseX * 0.002
-  pitch -= mouseY * 0.002
-  pitch = Math.max(-Math.PI / 2 + 0.1, Math.min(Math.PI / 2 - 0.1, pitch))
-  mouseX = 0
-  mouseY = 0
-  direction.set(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw)
-  const rightVec = new THREE.Vector3().crossVectors(direction, new THREE.Vector3(0, 1, 0)).normalize()
-  velocity.set(0, 0, 0)
-  if (forward) velocity.add(direction.clone().multiplyScalar(forward * moveSpeed * dt))
-  if (right) velocity.add(rightVec.clone().multiplyScalar(right * moveSpeed * dt))
-  myPosition.x += velocity.x
-  myPosition.y = 1.6
-  myPosition.z += velocity.z
-  camera.position.set(myPosition.x, myPosition.y, myPosition.z)
-  camera.rotation.order = 'YXZ'
-  camera.rotation.y = yaw
-  camera.rotation.x = pitch
-  const now = Date.now()
-  if (socket && now - lastEmit > emitInterval) {
-    lastEmit = now
-    socket.emit('move', { x: myPosition.x, y: myPosition.y, z: myPosition.z })
-  }
-}
-
-let frameId = 0
-let lastTime = performance.now()
-
-function animate() {
-  frameId = requestAnimationFrame(animate)
-  const now = performance.now()
-  const dt = (now - lastTime) / 1000
-  lastTime = now
-  if (pointerLocked.value) updateMovement(dt)
-  renderer?.render(scene, camera)
-}
-
-function logout() {
-  clearAuth()
-  socket?.disconnect()
-  router.push({ name: 'landing' })
 }
 
 async function bootGame() {
@@ -589,21 +409,13 @@ async function bootGame() {
     router.push({ name: 'landing' })
     return
   }
-
-  let state: CharacterCosmeticsState
-  try {
-    state = await fetchCharacterCosmetics()
-  } catch {
-    state = {
-      slots: emptyCosmeticLoadout(),
-      colors: defaultCosmeticColors(),
-    }
-  }
-
+  const state = await loadCosmeticsState()
   const bodyTint = hexStringToNumber(state.colors.body)
   initThree(bodyTint)
-  connectSocket(state)
-  animate()
+  await connectRealtime(state)
+  await loadLayoutFromServer()
+  refreshOwnedItems()
+  startRenderLoop()
 }
 
 onMounted(() => {
@@ -619,8 +431,12 @@ onMounted(() => {
   document.addEventListener('mousemove', onMouseMove)
 })
 
+function onBeforeUnload() {
+  void gameRoomRef.value?.leave()
+}
+
 onUnmounted(() => {
-  cancelAnimationFrame(frameId)
+  stopRenderLoop()
   window.removeEventListener('resize', onResize)
   window.removeEventListener('focus', onVisibilityOrFocus)
   window.removeEventListener('beforeunload', onBeforeUnload)
@@ -630,10 +446,16 @@ onUnmounted(() => {
   document.removeEventListener('keydown', onKeyDown)
   document.removeEventListener('keyup', onKeyUp)
   document.removeEventListener('mousemove', onMouseMove)
-  refreshMyAppearance = null
-  socket?.disconnect()
-  for (const id of [...otherUsers.value.keys()]) {
-    removeOtherUser(id)
+  refreshMyAppearance.value = null
+  void gameRoomRef.value?.leave()
+  clearPersistTimers()
+  clearRemoteUsers()
+  apartmentPlacement.dispose()
+  clearApartmentObjects()
+  if (roomEnvironment) {
+    scene.remove(roomEnvironment)
+    disposeObject3D(roomEnvironment)
+    roomEnvironment = null
   }
   if (fpHands) {
     camera.remove(fpHands)
@@ -642,38 +464,81 @@ onUnmounted(() => {
   }
   renderer?.dispose()
 })
+
+const crosshairClass = computed(() => {
+  if (!placementPreviewActive.value) return 'border-white/90 bg-white/25'
+  if (apartmentPlacement.crosshairTint.value === 'invalid') return 'border-rose-400/80 bg-rose-500/35'
+  if (apartmentPlacement.crosshairTint.value === 'valid') return 'border-emerald-400/80 bg-emerald-400/30'
+  return 'border-white/90 bg-white/25'
+})
 </script>
 
 <template>
   <div ref="containerRef" class="relative flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden">
-    <canvas ref="canvasRef" class="block min-h-0 w-full flex-1 cursor-crosshair" @click="requestPointerLock" />
+    <canvas
+      ref="canvasRef"
+      class="block min-h-0 w-full flex-1 cursor-crosshair"
+      @click="requestPointerLock"
+      @mousedown="onCanvasMouseDown"
+      @mouseup="onCanvasMouseUp"
+      @contextmenu.prevent
+    />
     <div
-      v-if="roomFullMessage"
-      class="pointer-events-auto absolute left-1/2 top-4 z-10 max-w-md -translate-x-1/2 rounded-lg border border-amber-400/50 bg-amber-950/90 px-4 py-2 text-center text-sm text-amber-100"
-      role="status"
-    >
-      {{ roomFullMessage }}
-    </div>
-    <div
-      v-show="!pointerLocked"
-      class="pointer-events-auto absolute inset-0 flex flex-col items-center justify-center gap-4 bg-black/60"
-    >
-      <p class="m-0 text-base text-white/80">Click to lock pointer · ZQSD / WASD to move · Mouse to look</p>
-      <button
-        type="button"
-        class="rounded-lg border-0 bg-campus-accent px-8 py-3 text-lg font-semibold text-white hover:opacity-90"
-        @click="requestPointerLock"
-      >
-        Play
-      </button>
-      <button
-        type="button"
-        class="rounded-md border border-white/30 bg-transparent px-4 py-2 text-sm text-white/90 hover:border-campus-accent hover:text-campus-accent"
-        @click="logout"
-      >
-        Logout
-      </button>
-    </div>
+      class="pointer-events-none absolute left-1/2 top-1/2 z-10 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full border transition-colors duration-150"
+      :class="crosshairClass"
+    />
+    <GameRoomMessageBanner v-if="roomMessage" :message="roomMessage" />
+    <GameHudToolbar :current-room-label="currentRoomLabel" :apartment-object-count="apartmentObjectCount" />
+    <GameInteractionPrompt
+      v-if="doorPromptPos"
+      :screen-x="doorPromptPos.x"
+      :screen-y="doorPromptPos.y"
+      :key-label="doorPromptPos.key"
+      :action-label="doorPromptPos.action"
+    />
+    <GamePlacementHud :visible="placementPreviewActive" :hints="placementHudHints" />
+    <GamePlayerHotbar
+      :slots="slots"
+      :selected-hotbar-index="selectedHotbarIndex"
+      :item-by-code="itemByCode"
+      @select-slot="selectHotbarIndex"
+      @pointer-down="onSlotPointerDown"
+      @pointer-up="onSlotPointerUp"
+      @drag-start="onSlotDragStart"
+      @drag-over="onSlotDragOver"
+      @drop="onSlotDrop"
+      @drag-end="onSlotDragEnd"
+      @clear-slot="clearSlot"
+    />
+    <GamePlayerInventoryPanel
+      v-if="inventoryOpen"
+      :slots="slots"
+      :selected-hotbar-index="selectedHotbarIndex"
+      :item-by-code="itemByCode"
+      :cursor-item="cursorItem"
+      :loading="inventoryLoading"
+      :error="inventoryError"
+      :current-room-label="currentRoomLabel"
+      :apartment-object-ids="apartmentObjectIds"
+      :selected-placed-object-id="selectedPlacedObjectId"
+      @close="closeInventory"
+      @refresh="refreshOwnedItems"
+      @cancel-cursor="cancelCursorPick"
+      @slot-pointer-down="onSlotPointerDown"
+      @slot-pointer-up="onSlotPointerUp"
+      @slot-drag-start="onSlotDragStart"
+      @slot-drag-over="onSlotDragOver"
+      @slot-drop="onSlotDrop"
+      @slot-drag-end="onSlotDragEnd"
+      @clear-slot="clearSlot"
+      @pickup-selected-placed-object="pickupSelectedPlacedObject"
+      @placed-object-selected="onPlacedObjectSelected"
+    />
+    <GamePointerLockOverlay
+      v-show="!pointerLocked && !inventoryOpen && !transitioningApartment && !switchingRoom"
+      @request-pointer-lock="requestPointerLock"
+      @logout="logout"
+    />
     <div v-show="pointerLocked" class="absolute right-3 top-3">
       <button
         type="button"
@@ -683,5 +548,12 @@ onUnmounted(() => {
         Logout
       </button>
     </div>
+    <p
+      v-if="currentRoomLabel === 'apartment' && inventoryOpen && placementPreviewActive"
+      class="pointer-events-none absolute bottom-24 left-3 z-10 max-w-md text-[10px] leading-snug text-white/70 md:left-[22rem]"
+    >
+      R = rotate · Shift+R = reverse · LMB = place / pick · RMB = cancel · Esc / E = cancel
+    </p>
+    <GameDoorHints :inventory-open="inventoryOpen" />
   </div>
 </template>

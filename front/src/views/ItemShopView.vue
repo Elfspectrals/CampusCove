@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRoute } from 'vue-router'
 import { getStoredAuth } from '../api/auth'
 import { useWalletBalances } from '../composables/useWalletBalances'
 import LockerCharacterPreview from '../components/locker/LockerCharacterPreview.vue'
+import ItemShopPurchaseConfirmModal from '../components/shop/ItemShopPurchaseConfirmModal.vue'
 import * as itemShopApi from '../api/itemShop'
 import type { ShopCurrency, ShopItem, ShopItemCurrencyOption } from '../api/itemShop'
+import { cardToneClasses, currencyLabel, priceBadge } from '../utils/itemShopPresentation'
 
 const items = ref<ShopItem[]>([])
+const route = useRoute()
 const catalogLoading = ref(true)
 const catalogError = ref<string | null>(null)
 const purchasingId = ref<number | null>(null)
@@ -27,12 +30,14 @@ const confirmItem = ref<ShopItem | null>(null)
 const confirmCurrency = ref<ShopCurrency>('coins')
 const selectedItemDefId = ref<number | null>(null)
 
-const confirmOptions = computed(() => {
-  return confirmItem.value?.options ?? []
+const currentSection = computed<'character' | 'apartment'>(() => {
+  return route.name === 'shop-skin' ? 'character' : 'apartment'
 })
 
 const confirmOption = computed<ShopItemCurrencyOption | null>(() => {
-  return confirmOptions.value.find((opt) => opt.currency === confirmCurrency.value) ?? null
+  const item = confirmItem.value
+  if (!item) return null
+  return item.options.find((opt) => opt.currency === confirmCurrency.value) ?? null
 })
 
 const confirmCurrent = computed(() => {
@@ -47,9 +52,16 @@ const confirmAfter = computed(() => {
 })
 
 const selectedItem = computed<ShopItem | null>(() => {
-  if (items.value.length === 0) return null
-  if (selectedItemDefId.value === null) return items.value[0] ?? null
-  return items.value.find((item) => item.item_def_id === selectedItemDefId.value) ?? items.value[0] ?? null
+  if (filteredItems.value.length === 0) return null
+  if (selectedItemDefId.value === null) return filteredItems.value[0] ?? null
+  return filteredItems.value.find((item) => item.item_def_id === selectedItemDefId.value) ?? filteredItems.value[0] ?? null
+})
+
+const filteredItems = computed<ShopItem[]>(() => {
+  if (currentSection.value === 'apartment') {
+    return items.value.filter((item) => item.kind === 'apartment_asset' || item.kind === 'furniture')
+  }
+  return items.value.filter((item) => item.kind !== 'apartment_asset' && item.kind !== 'furniture')
 })
 
 const selectedPrimaryOption = computed<ShopItemCurrencyOption | null>(() => {
@@ -74,18 +86,6 @@ const selectedRarityClass = computed<string>(() => {
   if (selectedItem.value && selectedItem.value.options.length > 1) return 'border-fuchsia-300 text-fuchsia-300'
   return 'border-orange-300 text-orange-300'
 })
-
-function cardToneClasses(item: ShopItem): string {
-  const hasPremium = item.options.some((option) => option.currency === 'premium')
-  const hasCoins = item.options.some((option) => option.currency === 'coins')
-  if (hasPremium && hasCoins) {
-    return 'border-fuchsia-400/90 bg-[radial-gradient(circle_at_center,_#a855f7_0%,_#6d28d9_55%,_#3b1a73_100%)]'
-  }
-  if (hasPremium) {
-    return 'border-cyan-300/90 bg-[radial-gradient(circle_at_center,_#4cc2ff_0%,_#1e5db7_58%,_#0e2b63_100%)]'
-  }
-  return 'border-orange-300/90 bg-[radial-gradient(circle_at_center,_#f59e66_0%,_#aa5b30_58%,_#6f311b_100%)]'
-}
 
 function selectItem(item: ShopItem) {
   selectedItemDefId.value = item.item_def_id
@@ -113,15 +113,6 @@ function clearFeedbackForItem(itemDefId: number) {
   const next = { ...feedbackByItem.value }
   delete next[itemDefId]
   feedbackByItem.value = next
-}
-
-function currencyLabel(c: ShopCurrency): string {
-  return c === 'coins' ? 'Coins' : 'Premium'
-}
-
-function priceBadge(option: ShopItemCurrencyOption): string {
-  const sym = option.currency === 'coins' ? '🪙' : '✨'
-  return `${sym} ${option.price.toLocaleString()}`
 }
 
 function openPurchaseConfirm(item: ShopItem) {
@@ -168,7 +159,9 @@ async function confirmPurchase() {
     <div class="relative mx-auto flex min-h-screen max-w-[1540px] flex-col lg:flex-row">
       <section class="flex min-h-0 flex-1 flex-col border-b border-cyan-300/35 lg:border-b-0 lg:border-r lg:border-cyan-300/40">
         <header class="h-16 border-b border-slate-400/20 bg-[#5b71994d] px-6 py-3">
-          <h1 class="m-0 text-2xl font-black uppercase tracking-[0.08em] text-white/85">My Locker</h1>
+          <h1 class="m-0 text-2xl font-black uppercase tracking-[0.08em] text-white/85">
+            {{ currentSection === 'character' ? 'Shop Skin' : 'Shop' }}
+          </h1>
         </header>
 
         <div class="flex-1 p-5">
@@ -197,13 +190,13 @@ async function confirmPurchase() {
             </button>
           </div>
 
-          <div v-else-if="items.length === 0" class="flex min-h-[320px] items-center justify-center rounded-md border border-slate-200/20 bg-black/20 text-sm font-semibold text-slate-300">
-            No skins yet. Check back later.
+          <div v-else-if="filteredItems.length === 0" class="flex min-h-[320px] items-center justify-center rounded-md border border-slate-200/20 bg-black/20 text-sm font-semibold text-slate-300">
+            No items in this section yet.
           </div>
 
           <ul v-else class="m-0 grid max-h-[calc(100vh-9.5rem)] list-none grid-cols-2 gap-3 overflow-y-auto p-0 sm:grid-cols-3 xl:grid-cols-4">
             <li
-              v-for="item in items"
+              v-for="item in filteredItems"
               :key="item.item_def_id"
               :class="[
                 'relative overflow-hidden border transition',
@@ -337,8 +330,13 @@ async function confirmPurchase() {
               Sign in to buy
             </RouterLink>
             <p class="m-0 mt-2 text-center text-xs text-white/50">
-              Purchased items appear in your
-              <RouterLink to="/locker" class="font-semibold text-cyan-200 underline underline-offset-2">Locker</RouterLink>.
+              <template v-if="currentSection === 'character'">
+                Purchased items appear in your
+                <RouterLink to="/locker" class="font-semibold text-cyan-200 underline underline-offset-2">Locker</RouterLink>.
+              </template>
+              <template v-else>
+                Purchased apartment assets appear in your in-game apartment inventory.
+              </template>
             </p>
           </template>
           <p v-else class="m-0 text-sm text-white/70">No item selected.</p>
@@ -346,68 +344,16 @@ async function confirmPurchase() {
       </aside>
     </div>
 
-    <div
+    <ItemShopPurchaseConfirmModal
       v-if="confirmItem"
-      class="fixed inset-0 z-[100] flex items-end justify-center bg-black/50 p-4 sm:items-center"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="purchase-confirm-title"
-      @click.self="closePurchaseConfirm"
-    >
-      <div class="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 text-slate-900 shadow-xl">
-        <h2 id="purchase-confirm-title" class="m-0 text-lg font-bold text-slate-900">Confirm purchase</h2>
-        <p class="mt-1 text-sm text-slate-600">{{ confirmItem.name }}</p>
-
-        <div class="mt-4">
-          <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Choose currency</p>
-          <div class="grid gap-2 sm:grid-cols-2">
-            <label
-              v-for="option in confirmOptions"
-              :key="`confirm-option-${option.shop_catalog_item_id}`"
-              class="flex cursor-pointer items-center justify-between rounded-lg border border-slate-300 px-3 py-2 text-sm"
-            >
-              <span class="flex items-center gap-2">
-                <input v-model="confirmCurrency" :value="option.currency" type="radio" class="h-4 w-4 border-slate-300 text-purple-600 focus:ring-purple-500" />
-                <span>{{ currencyLabel(option.currency) }}</span>
-              </span>
-              <span class="font-semibold text-slate-900">{{ option.price.toLocaleString() }}</span>
-            </label>
-          </div>
-        </div>
-
-        <dl class="mt-4 space-y-2 text-sm">
-          <div class="flex justify-between gap-4">
-            <dt class="text-slate-500">Current balance</dt>
-            <dd class="font-semibold text-slate-900">{{ confirmCurrent === null ? '—' : confirmCurrent.toLocaleString() }}</dd>
-          </div>
-          <div class="flex justify-between gap-4">
-            <dt class="text-slate-500">Item cost</dt>
-            <dd class="font-semibold text-slate-900">{{ confirmOption ? confirmOption.price.toLocaleString() : '—' }}</dd>
-          </div>
-          <div class="flex justify-between gap-4 border-t border-slate-200 pt-2">
-            <dt class="text-slate-500">Balance after purchase</dt>
-            <dd class="font-semibold text-slate-900">{{ confirmAfter === null ? '—' : confirmAfter.toLocaleString() }}</dd>
-          </div>
-        </dl>
-
-        <div class="mt-6 flex flex-wrap justify-end gap-2">
-          <button
-            type="button"
-            class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-            @click="closePurchaseConfirm"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            class="rounded-lg bg-purple-600 px-4 py-2 text-sm font-bold text-white hover:bg-purple-500 disabled:cursor-not-allowed disabled:opacity-60"
-            :disabled="purchasingId !== null || !confirmOption"
-            @click="confirmPurchase"
-          >
-            {{ purchasingId === confirmOption?.shop_catalog_item_id ? 'Processing…' : 'Confirm purchase' }}
-          </button>
-        </div>
-      </div>
-    </div>
+      :item="confirmItem"
+      v-model:confirm-currency="confirmCurrency"
+      :confirm-current="confirmCurrent"
+      :confirm-after="confirmAfter"
+      :confirm-option="confirmOption"
+      :purchasing-id="purchasingId"
+      @close="closePurchaseConfirm"
+      @confirm="confirmPurchase"
+    />
   </div>
 </template>
