@@ -12,6 +12,12 @@ $allowedOrigins = is_string($envAllowedOrigins) && $envAllowedOrigins !== ''
     ? array_values(array_filter(array_map('trim', explode(',', $envAllowedOrigins))))
     : $defaultAllowedOrigins;
 
+// Regex patterns (comma-separated) to allow dynamic origins like Vercel preview URLs.
+$envAllowedOriginPatterns = env('CORS_ALLOWED_ORIGIN_PATTERNS');
+$allowedOriginPatterns = is_string($envAllowedOriginPatterns) && $envAllowedOriginPatterns !== ''
+    ? array_values(array_filter(array_map('trim', explode(',', $envAllowedOriginPatterns))))
+    : [];
+
 return [
 
     'paths' => ['api/*', 'sanctum/csrf-cookie'],
@@ -20,7 +26,7 @@ return [
 
     'allowed_origins' => $allowedOrigins,
 
-    'allowed_origins_patterns' => [],
+    'allowed_origins_patterns' => $allowedOriginPatterns,
 
     'allowed_headers' => ['*'],
 
