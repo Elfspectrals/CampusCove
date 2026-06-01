@@ -2,6 +2,7 @@
 import { computed, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import * as THREE from 'three'
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import type { Room } from '@colyseus/sdk'
 import {
   defaultCosmeticColors,
@@ -22,7 +23,7 @@ import GamePointerLockOverlay from '../components/game/GamePointerLockOverlay.vu
 import GameRoomMessageBanner from '../components/game/GameRoomMessageBanner.vue'
 import { useApartmentObjects } from '../composables/game/useApartmentObjects'
 import { useApartmentPlacement } from '../composables/game/useApartmentPlacement'
-import { useGameMovement } from '../composables/game/useGameMovement'
+import { isNearNpc, useGameMovement } from '../composables/game/useGameMovement'
 import { useGameRealtime } from '../composables/game/useGameRealtime'
 import { usePlayerInventory } from '../composables/game/usePlayerInventory'
 import { applySceneAtmosphere, buildApartmentEnvironment, buildCityEnvironment } from '../game/roomEnvironments'
@@ -44,6 +45,8 @@ const wasPointerLockedAtTransitionStart = ref(false)
 const refreshMyAppearance = ref<(() => void) | null>(null)
 const doorPromptPos = ref<{ x: number; y: number; key: string; action: string } | null>(null)
 const doorProjectionVec = new THREE.Vector3()
+const npcPromptPos = ref<{ x: number; y: number; key: string; action: string } | null>(null)
+const npcProjectionVec = new THREE.Vector3()
 
 const realtimeHttpUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000'
 const gameRoomRef = shallowRef<Room | null>(null)
@@ -56,6 +59,7 @@ let camera: THREE.PerspectiveCamera
 let renderer: THREE.WebGLRenderer
 let roomEnvironment: THREE.Group | null = null
 let fpHands: THREE.Group | null = null
+let npcCharacter: THREE.Group | null = null
 
 let apartmentPlacementRef: ReturnType<typeof useApartmentPlacement> | null = null
 
@@ -230,6 +234,40 @@ function updateDoorPromptScreenPos(): void {
   }
 }
 
+function updateNpcPromptScreenPos(): void {
+  if (!camera || !canvasRef.value) {
+    npcPromptPos.value = null
+    return
+  }
+  if (!isNearNpc.value || inventoryOpen.value) {
+    npcPromptPos.value = null
+    return
+  }
+  if (!npcCharacter) {
+    npcPromptPos.value = null
+    return
+  }
+  npcProjectionVec.copy(npcCharacter.position)
+  npcProjectionVec.project(camera)
+  if (npcProjectionVec.z > 1) {
+    npcPromptPos.value = null
+    return
+  }
+  const rect = canvasRef.value.getBoundingClientRect()
+  let sx = (npcProjectionVec.x * 0.5 + 0.5) * rect.width
+  let sy = (-npcProjectionVec.y * 0.5 + 0.5) * rect.height
+  // Clamp inside canvas with small margin to avoid sidebar clipping
+  const margin = 12
+  sx = Math.max(margin, Math.min(rect.width - margin, sx))
+  sy = Math.max(margin, Math.min(rect.height - margin, sy))
+  npcPromptPos.value = {
+    x: sx,
+    y: sy,
+    key: 'I',
+    action: 'Parler au Maître de Guilde',
+  }
+}
+
 function setRoomEnvironment(kind: 'city' | 'apartment') {
   if (kind === 'city') {
     apartmentPlacement.setPlayerInsideApartment(false)
@@ -288,6 +326,7 @@ const {
   getRenderer: () => renderer,
   getFpHands: () => fpHands,
   refreshMyAppearance,
+  getNpcCharacter: () => npcCharacter,
   onNearApartmentDoorInteract: async () => {
     if (!gameRoomRef.value) return
     apartmentPlacement.cancelPreview()
@@ -317,6 +356,7 @@ const {
       apartmentPlacement.tick(dt)
     }
     updateDoorPromptScreenPos()
+    updateNpcPromptScreenPos()
   },
 })
 
@@ -401,6 +441,33 @@ function initThree(accentColor: number) {
   fpHands = buildFirstPersonHands(accentColor)
   fpHands.visible = false
   camera.add(fpHands)
+
+  const npcLoader = new GLTFLoader()
+  const npcUrl = new URL('../assets/models/low_poly_adventurer.glb', import.meta.url).href
+  void new Promise<void>((resolve) => {
+      npcLoader.load(
+      npcUrl,
+      (gltf) => {
+        npcCharacter = gltf.scene
+        npcCharacter.name = 'npc-adventurer'
+        npcCharacter.position.set(5, 0.55, 5)
+        npcCharacter.rotation.y = Math.PI * 0.25
+        npcCharacter.traverse((child) => {
+          if (child instanceof THREE.Mesh) {
+            child.castShadow = true
+            child.receiveShadow = true
+          }
+        })
+        scene.add(npcCharacter)
+        resolve()
+      },
+      undefined,
+      (error) => {
+        console.warn('Unable to load NPC GLB model:', error)
+        resolve()
+      }
+    )
+  })
 }
 
 async function bootGame() {
@@ -457,6 +524,11 @@ onUnmounted(() => {
     disposeObject3D(roomEnvironment)
     roomEnvironment = null
   }
+  if (npcCharacter) {
+    scene.remove(npcCharacter)
+    disposeObject3D(npcCharacter)
+    npcCharacter = null
+  }
   if (fpHands) {
     camera.remove(fpHands)
     disposeObject3D(fpHands)
@@ -495,6 +567,13 @@ const crosshairClass = computed(() => {
       :screen-y="doorPromptPos.y"
       :key-label="doorPromptPos.key"
       :action-label="doorPromptPos.action"
+    />
+    <GameInteractionPrompt
+      v-if="npcPromptPos"
+      :screen-x="npcPromptPos.x"
+      :screen-y="npcPromptPos.y"
+      :key-label="npcPromptPos.key"
+      :action-label="npcPromptPos.action"
     />
     <GamePlacementHud :visible="placementPreviewActive" :hints="placementHudHints" />
     <GamePlayerHotbar

@@ -305,7 +305,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     group.userData.userId = latestEntry.userId
     scene.remove(latestEntry.group)
     disposeObject3D(latestEntry.group)
-    placeAvatar(group, latestEntry.x, latestEntry.y, latestEntry.z)
+    group.position.set(latestEntry.x, latestEntry.y, latestEntry.z)
     scene.add(group)
     otherUsers.value.set(sessionId, {
       ...latestEntry,

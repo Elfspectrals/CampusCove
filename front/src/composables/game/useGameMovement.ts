@@ -11,6 +11,8 @@ import {
   CITY_BUILDING_DOOR_RADIUS,
 } from '../../game/gameRoomConstants'
 
+export const isNearNpc = ref(false)
+
 export interface UseGameMovementDeps {
   pointerLocked?: Ref<boolean>
   myPosition: { x: number; y: number; z: number }
@@ -35,6 +37,7 @@ export interface UseGameMovementDeps {
   handleExtraKeyDown?: (e: KeyboardEvent) => boolean
   onCanvasMouseDown?: (e: MouseEvent) => void
   onCanvasMouseUp?: (e: MouseEvent) => void
+  getNpcCharacter?: () => THREE.Group | null
   /** Called each animation frame after movement. */
   onBeforeRender?: (dt: number) => void
 }
@@ -48,6 +51,7 @@ export function useGameMovement(deps: UseGameMovementDeps) {
   const velocity = new THREE.Vector3(0, 0, 0)
   const direction = deps.direction
   const moveSpeed = 8
+  const npcPlayerPosition = new THREE.Vector3()
   let lastEmit = 0
   const emitInterval = 50
 
@@ -118,12 +122,32 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     }
   }
 
+  function updateNpcProximity() {
+    if (!deps.getNpcCharacter) {
+      isNearNpc.value = false
+      return
+    }
+    const npc = deps.getNpcCharacter()
+    if (!npc) {
+      isNearNpc.value = false
+      return
+    }
+    npcPlayerPosition.set(myPosition.x, myPosition.y, myPosition.z)
+    const prevNear = isNearNpc.value
+    const newNear = npcPlayerPosition.distanceTo(npc.position) < 3
+    isNearNpc.value = newNear
+    if (!prevNear && newNear) {
+      console.log('[debug] isNearNpc -> true (player at', myPosition.x.toFixed(2), myPosition.y.toFixed(2), myPosition.z.toFixed(2), 'npc at', npc.position.x.toFixed(2), npc.position.y.toFixed(2), npc.position.z.toFixed(2), ')')
+    }
+  }
+
   function animate() {
     frameId = requestAnimationFrame(animate)
     const now = performance.now()
     const dt = (now - lastTime) / 1000
     lastTime = now
     if (pointerLocked.value) updateMovement(dt)
+    updateNpcProximity()
     deps.onBeforeRender?.(dt)
     const renderer = deps.getRenderer()
     const scene = deps.getScene()
@@ -182,6 +206,7 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     if (deps.handleExtraKeyDown?.(e)) {
       return
     }
+    console.log('[debug] onKeyDown', e.code, 'isNearNpc=', isNearNpc.value)
     if (e.code === KEY_BINDINGS.interact) {
       if (deps.currentRoomLabel.value === 'apartment' && deps.nearApartmentDoor.value) {
         void deps.onNearApartmentDoorInteract()
@@ -191,6 +216,10 @@ export function useGameMovement(deps: UseGameMovementDeps) {
         deps.onNearCityDoorInteract()
         return
       }
+    }
+    if (!e.repeat && isNearNpc.value && e.code === KEY_BINDINGS.interact) {
+      console.log("Bingo ! Le joueur veut parler au PNJ. L'UI de dialogue s'ouvrira ici.")
+      return
     }
     if (e.code === KEY_BINDINGS.apartmentInventoryToggle && !e.repeat) {
       deps.onToggleInventory()

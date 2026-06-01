@@ -24,7 +24,7 @@ defineProps<{
         </div>
       </div>
       <div
-        class="mt-1.5 rounded bg-black/65 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-white/95"
+        class="mt-1.5 rounded bg-black/65 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-white/95 text-center max-w-[10rem] break-words whitespace-normal"
       >
         {{ actionLabel }}
       </div>
