@@ -7,6 +7,8 @@ use App\Models\Account;
 use App\Services\ApartmentPlacementService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class ApartmentPlacementController extends Controller
 {
@@ -19,7 +21,23 @@ class ApartmentPlacementController extends Controller
     {
         /** @var Account $account */
         $account = $request->user();
-        $items = $this->placements->listSpawnableAssets((int) $account->getAuthIdentifier());
+        $accountId = (int) $account->getAuthIdentifier();
+
+        try {
+            $items = $this->placements->listSpawnableAssets($accountId);
+        } catch (ApartmentPlacementException $e) {
+            return $this->placementError($e);
+        } catch (Throwable $e) {
+            Log::error('apartments.assets failed', [
+                'account_id' => $accountId,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'message' => 'Could not load apartment assets.',
+                'code' => 'apartment_assets_error',
+            ], 500);
+        }
 
         return response()->json([
             'items' => $items->values()->all(),
@@ -45,6 +63,18 @@ class ApartmentPlacementController extends Controller
             );
         } catch (ApartmentPlacementException $e) {
             return $this->placementError($e);
+        } catch (Throwable $e) {
+            Log::error('apartments.state failed', [
+                'actor_account_id' => $actorAccountId,
+                'owner_account_id' => $ownerAccountId,
+                'template_key' => $validated['template_key'] ?? null,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'message' => 'Could not load apartment state.',
+                'code' => 'apartment_state_error',
+            ], 500);
         }
 
         return response()->json([

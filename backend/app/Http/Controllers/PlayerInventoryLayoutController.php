@@ -6,6 +6,8 @@ use App\Models\Account;
 use App\Models\AccountInventoryLayout;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class PlayerInventoryLayoutController extends Controller
 {
@@ -17,21 +19,29 @@ class PlayerInventoryLayoutController extends Controller
         $account = $request->user();
         $accountId = (int) $account->getAuthIdentifier();
 
-        $row = AccountInventoryLayout::query()->where('account_id', $accountId)->first();
+        try {
+            $row = AccountInventoryLayout::query()->where('account_id', $accountId)->first();
+        } catch (Throwable $e) {
+            Log::warning('inventory.layout.show failed, returning defaults', [
+                'account_id' => $accountId,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'layout' => $this->defaultLayoutPayload(),
+            ]);
+        }
 
         if ($row === null) {
             return response()->json([
-                'layout' => [
-                    'slots' => array_fill(0, self::SLOT_COUNT, ''),
-                    'selected_hotbar_index' => 0,
-                ],
+                'layout' => $this->defaultLayoutPayload(),
             ]);
         }
 
         return response()->json([
             'layout' => [
-                'slots' => $row->slots,
-                'selected_hotbar_index' => $row->selected_hotbar_index,
+                'slots' => $this->normalizeSlotsForResponse($row->slots),
+                'selected_hotbar_index' => (int) $row->selected_hotbar_index,
             ],
         ]);
     }
@@ -40,7 +50,7 @@ class PlayerInventoryLayoutController extends Controller
     {
         $validated = $request->validate([
             'slots' => ['required', 'array', 'size:'.self::SLOT_COUNT],
-            'slots.*' => ['string', 'max:160'],
+            'slots.*' => ['nullable', 'string', 'max:160'],
             'selected_hotbar_index' => ['required', 'integer', 'min:0', 'max:8'],
         ]);
 
@@ -50,7 +60,7 @@ class PlayerInventoryLayoutController extends Controller
 
         $sanitizedSlots = [];
         foreach ($validated['slots'] as $slot) {
-            $trimmed = trim((string) $slot);
+            $trimmed = trim((string) ($slot ?? ''));
             $sanitizedSlots[] = strlen($trimmed) > 160 ? substr($trimmed, 0, 160) : $trimmed;
         }
 
@@ -63,5 +73,38 @@ class PlayerInventoryLayoutController extends Controller
         );
 
         return response()->json(['ok' => true]);
+    }
+
+    /**
+     * @return array{slots: array<int,string>, selected_hotbar_index: int}
+     */
+    private function defaultLayoutPayload(): array
+    {
+        return [
+            'slots' => array_fill(0, self::SLOT_COUNT, ''),
+            'selected_hotbar_index' => 0,
+        ];
+    }
+
+    /**
+     * @param  mixed  $slots
+     * @return array<int,string>
+     */
+    private function normalizeSlotsForResponse($slots): array
+    {
+        $out = [];
+        if (is_array($slots)) {
+            foreach ($slots as $slot) {
+                $out[] = is_string($slot) ? $slot : '';
+                if (count($out) >= self::SLOT_COUNT) {
+                    break;
+                }
+            }
+        }
+        while (count($out) < self::SLOT_COUNT) {
+            $out[] = '';
+        }
+
+        return $out;
     }
 }

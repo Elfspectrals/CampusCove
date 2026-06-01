@@ -29,6 +29,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Empty inventory slots are sent as "" — keep them as strings for layout validation.
+        $middleware->convertEmptyStringsToNull(except: [
+            'api/inventory/layout',
+        ]);
         $middleware->api(prepend: [
             HandleCors::class,
         ]);

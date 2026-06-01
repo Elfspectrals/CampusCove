@@ -32,11 +32,24 @@ export function defaultPlayerInventoryLayout(): PlayerInventoryLayout {
   }
 }
 
+function slotFromApi(entry: unknown): string {
+  if (typeof entry !== 'string') return ''
+  return entry.trim()
+}
+
+/**
+ * Laravel's ConvertEmptyStringsToNull turns "" into null before validation.
+ * A single space survives middleware and is trimmed back to "" on the server.
+ */
+function slotsForApiWrite(slots: string[]): string[] {
+  return slots.map((slot) => (slot.trim() === '' ? ' ' : slot))
+}
+
 function parseSlots(raw: unknown): string[] | null {
   if (!Array.isArray(raw)) return null
   const out: string[] = []
   for (const entry of raw) {
-    out.push(typeof entry === 'string' ? entry : '')
+    out.push(slotFromApi(entry))
   }
   if (out.length !== SLOT_COUNT) return null
   return out
@@ -84,7 +97,7 @@ export async function saveInventoryLayout(layout: PlayerInventoryLayout): Promis
     method: 'PUT',
     headers: authJsonHeaders(),
     body: JSON.stringify({
-      slots: normalized.slots,
+      slots: slotsForApiWrite(normalized.slots),
       selected_hotbar_index: normalized.selectedHotbarIndex,
     }),
   })
