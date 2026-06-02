@@ -7,6 +7,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\HandleCors;
+use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 $defaultAllowedOrigins = [
@@ -31,7 +32,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         // Empty inventory slots are sent as "" — keep them as strings for layout validation.
         $middleware->convertEmptyStringsToNull(except: [
-            'api/inventory/layout',
+            fn (Request $request) => $request->is('api/inventory/layout'),
         ]);
         $middleware->api(prepend: [
             HandleCors::class,
