@@ -2,6 +2,8 @@
 
 This document describes how to install and run the project on your machine. It does not cover features or architecture.
 
+> **Command hub:** all common commands are centralized in the root [Makefile](Makefile) — run `make help` to list them (requires GNU make; on Windows use Git Bash with make installed, e.g. `choco install make`).
+
 ## Prerequisites
 
 - **Docker** (recommended): Docker Engine and Docker Compose, or
@@ -77,6 +79,33 @@ npm run dev
 ```
 
 Default dev server: **5173**. The Vite config proxies `/api` to `http://localhost:8000`; Socket defaults to `http://localhost:3000`. Override with `VITE_API_URL` / `VITE_SOCKET_URL` only if your URLs differ.
+
+---
+
+## Game map (LobbyMap)
+
+The city map served to players is the optimized `front/public/maps/LobbyMap.glb`. The raw Unreal Engine export lives in `map-src/LobbyMap/` (gitignored, never served).
+
+When you re-export from Unreal: drop the export (`LobbyMap.gltf` + `.bin` + textures) into `map-src/LobbyMap/`, then run:
+
+```bash
+cd front
+npm run map:optimize
+```
+
+This regenerates `front/public/maps/LobbyMap.glb` (Draco geometry compression, WebP textures capped at 1024 px, GPU instancing).
+
+### Apartment interior
+
+Source: `map-src/Appartment/Stylized_Interior_Appartment_1.glb` (gitignored). Optimized outputs: `front/public/maps/ApartmentInterior.glb` (+ `.low`).
+
+```bash
+cd front
+npm run apartment:optimize
+# or: make apartment-optimize
+```
+
+Enter your apartment from the lobby at **SM_Opera_A** (Press **I**). Others stay in the city zone.
 
 ---
 

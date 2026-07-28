@@ -1,4 +1,6 @@
 import * as THREE from 'three'
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js'
 import {
   APARTMENT_DOOR_POS,
   APARTMENT_HALF_EXTENT,
@@ -6,14 +8,84 @@ import {
   APARTMENT_WALL_THICKNESS,
   CITY_BUILDING_DOOR_POS,
 } from './gameRoomConstants'
+import { createGltfLoader } from './gltfLoaderFactory'
+import { getGraphicsQuality } from './graphicsQuality'
+
+const CITY_SKY_COLOR = 0x9fc3e8
+
+function lobbyMapPathForQuality(): string {
+  return getGraphicsQuality() === 'low' ? '/maps/LobbyMap.low.glb' : '/maps/LobbyMap.glb'
+}
+
+function apartmentMapPathForQuality(): string {
+  return getGraphicsQuality() === 'low' ? '/maps/ApartmentInterior.low.glb' : '/maps/ApartmentInterior.glb'
+}
+
+function addLobbyLighting(group: THREE.Group): void {
+  const hemi = new THREE.HemisphereLight(0xcfe5ff, 0x8a7f70, 1.0)
+  group.add(hemi)
+}
+
+let cachedLobbyEnvironment: THREE.Group | null = null
+let lobbyEnvironmentLoadPromise: Promise<THREE.Group> | null = null
+
+function prepareLobbyGroup(root: THREE.Group): THREE.Group {
+  const toRemove: THREE.Object3D[] = []
+  root.traverse((obj) => {
+    if (obj instanceof THREE.Light || obj instanceof THREE.Camera) {
+      toRemove.push(obj)
+    }
+    if (obj instanceof THREE.Mesh) {
+      obj.castShadow = false
+      obj.receiveShadow = false
+    }
+  })
+  for (const obj of toRemove) {
+    obj.removeFromParent()
+  }
+  addLobbyLighting(root)
+  root.userData.isRoomEnvironment = true
+  root.userData.isPersistentEnvironment = true
+  return root
+}
+
+/** Loads LobbyMap.glb once; subsequent calls reuse the cached group (never disposed). */
+export function loadLobbyEnvironment(): Promise<THREE.Group> {
+  if (cachedLobbyEnvironment) {
+    return Promise.resolve(cachedLobbyEnvironment)
+  }
+  if (!lobbyEnvironmentLoadPromise) {
+    lobbyEnvironmentLoadPromise = new Promise<THREE.Group>((resolve, reject) => {
+      const dracoLoader = new DRACOLoader()
+      dracoLoader.setDecoderPath('/draco-decoder/')
+      const loader = new GLTFLoader()
+      loader.setDRACOLoader(dracoLoader)
+      loader.load(
+        lobbyMapPathForQuality(),
+        (gltf) => {
+          const group = prepareLobbyGroup(gltf.scene)
+          cachedLobbyEnvironment = group
+          resolve(group)
+        },
+        undefined,
+        (error) => {
+          lobbyEnvironmentLoadPromise = null
+          reject(error)
+        },
+      )
+    })
+  }
+  return lobbyEnvironmentLoadPromise
+}
 
 export function applySceneAtmosphere(scene: THREE.Scene, kind: 'city' | 'apartment'): void {
   if (kind === 'city') {
-    scene.background = new THREE.Color(0x1a1a2e)
-    scene.fog = new THREE.Fog(0x1a1a2e, 10, 50)
+    scene.background = new THREE.Color(CITY_SKY_COLOR)
+    const fogFar = getGraphicsQuality() === 'low' ? 120 : 250
+    scene.fog = new THREE.Fog(CITY_SKY_COLOR, 30, fogFar)
   } else {
     scene.background = new THREE.Color(0x3a342f)
-    scene.fog = new THREE.Fog(0x3a342f, 4, 22)
+    scene.fog = new THREE.Fog(0x3a342f, 6, 40)
   }
 }
 
@@ -48,11 +120,86 @@ export function buildCityEnvironment(): THREE.Group {
   return g
 }
 
-/** Result from `buildApartmentEnvironment` for scene + placement raycast/collider registration. */
+/** Result from apartment environment builders for scene + placement raycast/collider registration. */
 export interface ApartmentEnvironmentBuildResult {
   group: THREE.Group
 }
 
+function addApartmentLighting(group: THREE.Group): void {
+  const hemi = new THREE.HemisphereLight(0xfff5e6, 0x6b5344, 0.65)
+  group.add(hemi)
+}
+
+function tagApartmentFloor(root: THREE.Object3D): void {
+  root.traverse((obj) => {
+    if (/House_Floor/i.test(obj.name)) {
+      obj.userData.apartmentEnvPart = 'floor'
+    }
+  })
+}
+
+function addApartmentExitDoor(group: THREE.Group): void {
+  const door = new THREE.Mesh(
+    new THREE.BoxGeometry(1.2, 2.2, 0.1),
+    new THREE.MeshBasicMaterial({ visible: false }),
+  )
+  door.position.set(APARTMENT_DOOR_POS.x, 1.1, APARTMENT_DOOR_POS.z)
+  door.userData.isApartmentDoor = true
+  group.add(door)
+}
+
+function prepareApartmentGroup(root: THREE.Group): ApartmentEnvironmentBuildResult {
+  const toRemove: THREE.Object3D[] = []
+  root.traverse((obj) => {
+    if (obj instanceof THREE.Light || obj instanceof THREE.Camera) {
+      toRemove.push(obj)
+    }
+    if (obj instanceof THREE.Mesh) {
+      obj.castShadow = false
+      obj.receiveShadow = false
+    }
+  })
+  for (const obj of toRemove) {
+    obj.removeFromParent()
+  }
+  tagApartmentFloor(root)
+  addApartmentExitDoor(root)
+  addApartmentLighting(root)
+  root.userData.isRoomEnvironment = true
+  root.userData.isPersistentEnvironment = true
+  return { group: root }
+}
+
+let cachedApartmentEnvironment: THREE.Group | null = null
+let apartmentEnvironmentLoadPromise: Promise<ApartmentEnvironmentBuildResult> | null = null
+
+/** Loads ApartmentInterior.glb once; subsequent calls reuse the cached group (never disposed). */
+export function loadApartmentEnvironment(): Promise<ApartmentEnvironmentBuildResult> {
+  if (cachedApartmentEnvironment) {
+    return Promise.resolve({ group: cachedApartmentEnvironment })
+  }
+  if (!apartmentEnvironmentLoadPromise) {
+    apartmentEnvironmentLoadPromise = new Promise<ApartmentEnvironmentBuildResult>((resolve, reject) => {
+      const loader = createGltfLoader()
+      loader.load(
+        apartmentMapPathForQuality(),
+        (gltf) => {
+          const built = prepareApartmentGroup(gltf.scene)
+          cachedApartmentEnvironment = built.group
+          resolve(built)
+        },
+        undefined,
+        (error) => {
+          apartmentEnvironmentLoadPromise = null
+          reject(error)
+        },
+      )
+    })
+  }
+  return apartmentEnvironmentLoadPromise
+}
+
+/** Procedural fallback when the GLB is unavailable (unused after `loadApartmentEnvironment` wiring). */
 export function buildApartmentEnvironment(): ApartmentEnvironmentBuildResult {
   const g = new THREE.Group()
   g.userData.isRoomEnvironment = true

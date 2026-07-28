@@ -22,6 +22,7 @@ class ShopSeeder extends Seeder
                 'premium_only' => false,
                 'bind' => 'none',
                 'max_stack' => 1,
+                'model_glb' => '/models/ChairCampusBasic.glb',
             ],
             [
                 'code' => 'lamp_study',
@@ -32,6 +33,7 @@ class ShopSeeder extends Seeder
                 'premium_only' => false,
                 'bind' => 'none',
                 'max_stack' => 5,
+                'model_glb' => '/models/LampStudy.glb',
             ],
             [
                 'code' => 'emote_wave',
@@ -64,7 +66,7 @@ class ShopSeeder extends Seeder
                 'max_stack' => 99,
                 'cosmetic_slot' => 'body',
                 'preview_image' => self::STARTER_BODY_PREVIEW_IMAGE,
-                'model_glb' => '/storage/skins/models/low_poly_character.glb',
+                'model_glb' => '/models/CharacterDefault.glb',
             ],
             [
                 'code' => 'COS_WEAR_BODY_ADVENTURER',
@@ -77,7 +79,7 @@ class ShopSeeder extends Seeder
                 'max_stack' => 99,
                 'cosmetic_slot' => 'body',
                 'preview_image' => self::STARTER_BODY_PREVIEW_IMAGE,
-                'model_glb' => '/storage/skins/models/low_poly_adventurer.glb',
+                'model_glb' => '/models/CharacterAdventurer.glb',
             ],
             [
                 'code' => 'COS_WEAR_BODY_SWORDSMAN',
@@ -90,7 +92,7 @@ class ShopSeeder extends Seeder
                 'max_stack' => 99,
                 'cosmetic_slot' => 'body',
                 'preview_image' => self::STARTER_BODY_PREVIEW_IMAGE,
-                'model_glb' => '/storage/skins/models/low_poly_character_swordsman.glb',
+                'model_glb' => '/models/CharacterSwordsman.glb',
             ],
             [
                 'code' => 'COS_WEAR_HAIR_DEFAULT',

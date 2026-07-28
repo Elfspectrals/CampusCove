@@ -23,10 +23,12 @@ import GameRoomMessageBanner from '../components/game/GameRoomMessageBanner.vue'
 import { useApartmentObjects } from '../composables/game/useApartmentObjects'
 import { useApartmentPlacement } from '../composables/game/useApartmentPlacement'
 import { useGameMovement } from '../composables/game/useGameMovement'
+import { buildWorldCollisionFromGroup } from '../composables/game/useWorldCollision'
 import { useGameRealtime } from '../composables/game/useGameRealtime'
 import { usePlayerInventory } from '../composables/game/usePlayerInventory'
-import { applySceneAtmosphere, buildApartmentEnvironment, buildCityEnvironment } from '../game/roomEnvironments'
-import { APARTMENT_DOOR_POS, CITY_BUILDING_DOOR_POS } from '../game/gameRoomConstants'
+import { getGraphicsQuality, toggleGraphicsQuality } from '../game/graphicsQuality'
+import { applySceneAtmosphere, loadApartmentEnvironment, loadLobbyEnvironment } from '../game/roomEnvironments'
+import { APARTMENT_DOOR_POS, CITY_BUILDING_DOOR_POS, CITY_SPAWN } from '../game/gameRoomConstants'
 
 const YAW_STEP = Math.PI / 12
 
@@ -48,13 +50,17 @@ const doorProjectionVec = new THREE.Vector3()
 const realtimeHttpUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000'
 const gameRoomRef = shallowRef<Room | null>(null)
 
-const myPosition = { x: 0, y: 1.6, z: 0 }
+const myPosition = { x: CITY_SPAWN.x, y: CITY_SPAWN.y, z: CITY_SPAWN.z }
+const positionLabel = ref(
+  `${CITY_SPAWN.x.toFixed(1)}, ${CITY_SPAWN.y.toFixed(1)}, ${CITY_SPAWN.z.toFixed(1)}`,
+)
 const direction = new THREE.Vector3(0, 0, -1)
 
 let scene: THREE.Scene
 let camera: THREE.PerspectiveCamera
 let renderer: THREE.WebGLRenderer
 let roomEnvironment: THREE.Group | null = null
+let roomEnvironmentLoadToken = 0
 let fpHands: THREE.Group | null = null
 
 let apartmentPlacementRef: ReturnType<typeof useApartmentPlacement> | null = null
@@ -157,6 +163,15 @@ const placementPreviewActive = computed(
     apartmentPlacement.currentState.value.kind === 'preview_existing',
 )
 
+const graphicsQuality = ref(getGraphicsQuality())
+const graphicsQualityLabel = computed(() => (graphicsQuality.value === 'low' ? 'Low' : 'High'))
+
+function onToggleGraphicsQuality(event: MouseEvent): void {
+  event.stopPropagation()
+  toggleGraphicsQuality()
+  window.location.reload()
+}
+
 function hexStringToNumber(hex: string): number {
   return parseInt(hex.length === 7 ? hex.slice(1) : hex, 16)
 }
@@ -231,32 +246,41 @@ function updateDoorPromptScreenPos(): void {
 }
 
 function setRoomEnvironment(kind: 'city' | 'apartment') {
+  const token = ++roomEnvironmentLoadToken
   if (kind === 'city') {
     apartmentPlacement.setPlayerInsideApartment(false)
   }
   if (roomEnvironment) {
     scene.remove(roomEnvironment)
-    disposeObject3D(roomEnvironment)
+    if (!roomEnvironment.userData.isPersistentEnvironment) {
+      disposeObject3D(roomEnvironment)
+    }
     roomEnvironment = null
   }
   applySceneAtmosphere(scene, kind)
   if (kind === 'city') {
-    roomEnvironment = buildCityEnvironment()
-    scene.add(roomEnvironment)
-    nearApartmentDoor.value = false
-    resetClientStateForCityWorld()
-    clearApartmentObjects()
+    void loadLobbyEnvironment().then((group) => {
+      if (token !== roomEnvironmentLoadToken) return
+      roomEnvironment = group
+      scene.add(group)
+      void buildWorldCollisionFromGroup(group)
+      nearApartmentDoor.value = false
+      resetClientStateForCityWorld()
+      clearApartmentObjects()
+    })
   } else {
-    const built = buildApartmentEnvironment()
-    roomEnvironment = built.group
-    scene.add(roomEnvironment)
-    apartmentPlacement.registerApartmentEnvironment(built)
-    nearCityDoor.value = false
-    void apartmentPlacement.init({
-      scene,
-      camera,
-      renderer,
-      colyseusRoom: gameRoomRef,
+    void loadApartmentEnvironment().then((built) => {
+      if (token !== roomEnvironmentLoadToken) return
+      roomEnvironment = built.group
+      scene.add(roomEnvironment)
+      apartmentPlacement.registerApartmentEnvironment(built)
+      nearCityDoor.value = false
+      void apartmentPlacement.init({
+        scene,
+        camera,
+        renderer,
+        colyseusRoom: gameRoomRef,
+      })
     })
   }
 }
@@ -313,6 +337,7 @@ const {
   },
   onCanvasMouseUp: () => undefined,
   onBeforeRender: (dt) => {
+    positionLabel.value = `${myPosition.x.toFixed(1)}, ${myPosition.y.toFixed(1)}, ${myPosition.z.toFixed(1)}`
     if (currentRoomLabel.value === 'apartment') {
       apartmentPlacement.tick(dt)
     }
@@ -374,26 +399,34 @@ function logout() {
 
 function initThree(accentColor: number) {
   if (!canvasRef.value) return
+  const isLowQuality = getGraphicsQuality() === 'low'
+
   scene = new THREE.Scene()
   applySceneAtmosphere(scene, 'city')
 
   const { w, h } = containerSize()
   const aspect = w / h
-  camera = new THREE.PerspectiveCamera(75, aspect, 0.1, 1000)
-  camera.position.set(0, 1.6, 0)
+  camera = new THREE.PerspectiveCamera(75, aspect, 0.1, isLowQuality ? 300 : 1000)
+  camera.position.set(CITY_SPAWN.x, CITY_SPAWN.y, CITY_SPAWN.z)
 
-  renderer = new THREE.WebGLRenderer({ canvas: canvasRef.value, antialias: true })
+  renderer = new THREE.WebGLRenderer({ canvas: canvasRef.value, antialias: !isLowQuality })
   renderer.setSize(w, h)
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-  renderer.shadowMap.enabled = true
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap
+  renderer.setPixelRatio(isLowQuality ? 1 : Math.min(window.devicePixelRatio, 2))
+  renderer.shadowMap.enabled = !isLowQuality
+  if (!isLowQuality) {
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap
+  }
+  renderer.toneMapping = THREE.ACESFilmicToneMapping
+  renderer.toneMappingExposure = 1.15
 
   const ambient = new THREE.AmbientLight(0x404060, 0.6)
   scene.add(ambient)
-  const dir = new THREE.DirectionalLight(0xffffff, 0.8)
+  const dir = new THREE.DirectionalLight(0xffffff, 1.4)
   dir.position.set(10, 20, 10)
-  dir.castShadow = true
-  dir.shadow.mapSize.set(1024, 1024)
+  if (!isLowQuality) {
+    dir.castShadow = true
+    dir.shadow.mapSize.set(1024, 1024)
+  }
   scene.add(dir)
 
   setRoomEnvironment('city')
@@ -488,7 +521,21 @@ const crosshairClass = computed(() => {
       :class="crosshairClass"
     />
     <GameRoomMessageBanner v-if="roomMessage" :message="roomMessage" />
-    <GameHudToolbar :current-room-label="currentRoomLabel" :apartment-object-count="apartmentObjectCount" />
+    <GameHudToolbar
+      :current-room-label="currentRoomLabel"
+      :apartment-object-count="apartmentObjectCount"
+      :position-label="positionLabel"
+    >
+      <button
+        v-if="!pointerLocked"
+        type="button"
+        class="rounded-md border border-white/25 bg-black/45 px-2 py-1 text-xs text-white/90 hover:border-campus-accent hover:text-campus-accent"
+        @click.stop="onToggleGraphicsQuality"
+        @mousedown.stop
+      >
+        Graphics: {{ graphicsQualityLabel }}
+      </button>
+    </GameHudToolbar>
     <GameInteractionPrompt
       v-if="doorPromptPos"
       :screen-x="doorPromptPos.x"
