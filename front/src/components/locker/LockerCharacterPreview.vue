@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import * as THREE from 'three'
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { createGltfLoader } from '../../game/gltfLoaderFactory'
 import { disposeObject3D } from '../../avatar/compositeAvatar'
 import { getPreviewCharacterAssetById } from '../../avatar/previewCharacterAssets'
 
@@ -49,7 +49,7 @@ let currentRotationY = 0
 let inertiaVelocity = 0
 let loadVersion = 0
 
-const loader = new GLTFLoader()
+const loader = createGltfLoader()
 const modelCache = new Map<string, THREE.Group>()
 const selectedAssetSource = computed<string | null>(() => {
   if (props.assetSrc && props.assetSrc.trim() !== '') return props.assetSrc

@@ -1,7 +1,7 @@
 import { ref, type Ref } from 'vue'
 import type { Room } from '@colyseus/sdk'
 import * as THREE from 'three'
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { createGltfLoader } from '../../game/gltfLoaderFactory'
 import {
   TRANSFORM_EPSILON_POSITION,
   TRANSFORM_EPSILON_ROTATION,
@@ -29,7 +29,7 @@ export function useApartmentObjects(deps: ApartmentObjectsDeps) {
 
   const apartmentObjects = new Map<string, THREE.Mesh>()
   const apartmentModelTemplateCache = new Map<string, THREE.Object3D>()
-  const apartmentModelLoader = new GLTFLoader()
+  const apartmentModelLoader = createGltfLoader()
   const lastPersistedByObjectId = new Map<string, ApartmentObjectPayload>()
 
   function detachForRoomSwitch() {

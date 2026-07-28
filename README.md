@@ -2,6 +2,8 @@
 
 This document describes how to install and run the project on your machine. It does not cover features or architecture.
 
+> **Command hub:** all common commands are centralized in the root [Makefile](Makefile) — run `make help` to list them (requires GNU make; on Windows use Git Bash with make installed, e.g. `choco install make`).
+
 ## Prerequisites
 
 - **Docker** (recommended): Docker Engine and Docker Compose, or

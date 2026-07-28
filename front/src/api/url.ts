@@ -13,6 +13,9 @@ function parseApiBaseUrl(): URL | null {
 
 const API_BASE_URL = parseApiBaseUrl()
 
+/** Paths served from the front's own public/ folder (e.g. GLBs from `npm run optimize`), not the API. */
+const FRONT_PUBLIC_PREFIXES = ['/models/', '/maps/']
+
 export function normalizeApiAssetUrl(path: string | null | undefined): string | null {
   if (typeof path !== 'string') return null
   const trimmed = path.trim()
@@ -21,6 +24,13 @@ export function normalizeApiAssetUrl(path: string | null | undefined): string | 
   if (/^(?:https?:)?\/\//i.test(trimmed) || /^(?:data|blob):/i.test(trimmed)) {
     if (trimmed.startsWith('//') && typeof window !== 'undefined') {
       return `${window.location.protocol}${trimmed}`
+    }
+    return trimmed
+  }
+
+  if (FRONT_PUBLIC_PREFIXES.some((prefix) => trimmed.startsWith(prefix))) {
+    if (typeof window !== 'undefined') {
+      return new URL(trimmed, window.location.origin).toString()
     }
     return trimmed
   }

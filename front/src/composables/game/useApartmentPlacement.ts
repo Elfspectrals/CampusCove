@@ -3,7 +3,7 @@ import type { Room } from '@colyseus/sdk'
 import * as THREE from 'three'
 import * as RAPIER from '@dimforge/rapier3d-compat'
 import type { Collider, World } from '@dimforge/rapier3d-compat'
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { createGltfLoader } from '../../game/gltfLoaderFactory'
 import {
   APARTMENT_DOOR_POS,
   APARTMENT_HALF_EXTENT,
@@ -240,7 +240,7 @@ export function useApartmentPlacement(ctx: ApartmentPlacementInit) {
   /** Rapier query: exclude apartment props we're ray-hitting (stacking support surface). */
   const hitPropsToExclude = new Set<string>()
 
-  const ghostLoader = new GLTFLoader()
+  const ghostLoader = createGltfLoader()
   const ghostTemplateCache = new Map<string, THREE.Object3D>()
 
   const isPreviewing = computed(
