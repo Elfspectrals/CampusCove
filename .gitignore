@@ -58,3 +58,6 @@ front/*.local
 
 # --- Socket (Node) ---
 socket/node_modules
+
+# --- Map sources (raw UE5 exports, optimized via front `npm run map:optimize`) ---
+map-src/

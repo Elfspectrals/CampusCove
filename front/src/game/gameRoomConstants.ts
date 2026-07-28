@@ -1,6 +1,9 @@
 /** Fixed entry when joining an apartment instance (must match server sync via immediate `move`). */
 export const APARTMENT_SPAWN = { x: 0, y: 1.6, z: 4 }
 
+/** City spawn next to the SM_Thuja_81 tree in LobbyMap.glb; socket/server.js hardcodes the same values. */
+export const CITY_SPAWN = { x: -89.6, y: 1.6, z: 22.4 }
+
 /** Inner half-size of the apartment box (player clamp margin applied in movement). */
 export const APARTMENT_HALF_EXTENT = 5
 

@@ -1,4 +1,6 @@
 import * as THREE from 'three'
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js'
 import {
   APARTMENT_DOOR_POS,
   APARTMENT_HALF_EXTENT,
@@ -7,10 +9,63 @@ import {
   CITY_BUILDING_DOOR_POS,
 } from './gameRoomConstants'
 
+const CITY_SKY_COLOR = 0x87a8c9
+
+let cachedLobbyEnvironment: THREE.Group | null = null
+let lobbyEnvironmentLoadPromise: Promise<THREE.Group> | null = null
+
+function prepareLobbyGroup(root: THREE.Group): THREE.Group {
+  const toRemove: THREE.Object3D[] = []
+  root.traverse((obj) => {
+    if (obj instanceof THREE.Light || obj instanceof THREE.Camera) {
+      toRemove.push(obj)
+    }
+    if (obj instanceof THREE.Mesh) {
+      obj.castShadow = false
+      obj.receiveShadow = false
+    }
+  })
+  for (const obj of toRemove) {
+    obj.removeFromParent()
+  }
+  root.userData.isRoomEnvironment = true
+  root.userData.isPersistentEnvironment = true
+  return root
+}
+
+/** Loads LobbyMap.glb once; subsequent calls reuse the cached group (never disposed). */
+export function loadLobbyEnvironment(): Promise<THREE.Group> {
+  if (cachedLobbyEnvironment) {
+    return Promise.resolve(cachedLobbyEnvironment)
+  }
+  if (!lobbyEnvironmentLoadPromise) {
+    lobbyEnvironmentLoadPromise = new Promise<THREE.Group>((resolve, reject) => {
+      const dracoLoader = new DRACOLoader()
+      dracoLoader.setDecoderPath('/draco-decoder/')
+      const loader = new GLTFLoader()
+      loader.setDRACOLoader(dracoLoader)
+      loader.load(
+        '/maps/LobbyMap.glb',
+        (gltf) => {
+          const group = prepareLobbyGroup(gltf.scene)
+          cachedLobbyEnvironment = group
+          resolve(group)
+        },
+        undefined,
+        (error) => {
+          lobbyEnvironmentLoadPromise = null
+          reject(error)
+        },
+      )
+    })
+  }
+  return lobbyEnvironmentLoadPromise
+}
+
 export function applySceneAtmosphere(scene: THREE.Scene, kind: 'city' | 'apartment'): void {
   if (kind === 'city') {
-    scene.background = new THREE.Color(0x1a1a2e)
-    scene.fog = new THREE.Fog(0x1a1a2e, 10, 50)
+    scene.background = new THREE.Color(CITY_SKY_COLOR)
+    scene.fog = new THREE.Fog(CITY_SKY_COLOR, 30, 250)
   } else {
     scene.background = new THREE.Color(0x3a342f)
     scene.fog = new THREE.Fog(0x3a342f, 4, 22)

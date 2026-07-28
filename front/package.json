@@ -8,7 +8,8 @@
     "build": "vue-tsc -b && vite build",
     "preview": "vite preview",
     "heroku-postbuild": "npm run build",
-    "start": "serve -s dist -l ${PORT:-3000}"
+    "start": "serve -s dist -l ${PORT:-3000}",
+    "map:optimize": "npx --yes @gltf-transform/cli optimize ../map-src/LobbyMap/LobbyMap.gltf public/maps/LobbyMap.glb --compress draco --texture-compress webp --texture-size 1024"
   },
   "dependencies": {
     "@colyseus/sdk": "^0.17.41",

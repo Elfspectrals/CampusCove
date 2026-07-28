@@ -80,6 +80,21 @@ Default dev server: **5173**. The Vite config proxies `/api` to `http://localhos
 
 ---
 
+## Game map (LobbyMap)
+
+The city map served to players is the optimized `front/public/maps/LobbyMap.glb`. The raw Unreal Engine export lives in `map-src/LobbyMap/` (gitignored, never served).
+
+When you re-export from Unreal: drop the export (`LobbyMap.gltf` + `.bin` + textures) into `map-src/LobbyMap/`, then run:
+
+```bash
+cd front
+npm run map:optimize
+```
+
+This regenerates `front/public/maps/LobbyMap.glb` (Draco geometry compression, WebP textures capped at 1024 px, GPU instancing).
+
+---
+
 ## Cleaning dependencies (project hygiene goal)
 
 The goal is to keep installs **explicit and reproducible** so every Node app has its own correct `node_modules`, and the PHP app has `vendor/` from Composer—no mixed or stale trees.

@@ -6,6 +6,8 @@ const COLORS = [
 ]
 
 const SLOTS = ['body', 'hair', 'top', 'bottom', 'shoes', 'head_accessory']
+// Must match CITY_SPAWN in front/src/game/gameRoomConstants.ts (SM_Thuja_81 tree in LobbyMap)
+const CITY_SPAWN = { x: -89.6, y: 1.6, z: 22.4 }
 const CITY_MAX_PLAYERS = parseInt(process.env.CITY_MAX_PLAYERS || '30', 10)
 const BACKEND_API_URL = (process.env.BACKEND_API_URL || 'http://localhost:8000/api').replace(/\/+$/, '')
 
@@ -156,9 +158,9 @@ class PresenceRoom extends Room {
       accountId,
       pseudo,
       color: getColor(this.players.size),
-      x: 0,
-      y: 1.6,
-      z: 0,
+      x: CITY_SPAWN.x,
+      y: CITY_SPAWN.y,
+      z: CITY_SPAWN.z,
       zone: 'city',
       apartmentOwnerId: null,
       apartmentTemplateKey: null,
@@ -382,9 +384,9 @@ class PresenceRoom extends Room {
     player.zone = 'city'
     player.apartmentOwnerId = null
     player.apartmentTemplateKey = null
-    player.x = 0
-    player.y = 1.6
-    player.z = 6
+    player.x = CITY_SPAWN.x
+    player.y = CITY_SPAWN.y
+    player.z = CITY_SPAWN.z
     this.broadcast('user_zone_changed', {
       sessionId: client.sessionId,
       zone: player.zone,

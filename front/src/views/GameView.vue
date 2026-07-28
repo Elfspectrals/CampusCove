@@ -25,8 +25,8 @@ import { useApartmentPlacement } from '../composables/game/useApartmentPlacement
 import { useGameMovement } from '../composables/game/useGameMovement'
 import { useGameRealtime } from '../composables/game/useGameRealtime'
 import { usePlayerInventory } from '../composables/game/usePlayerInventory'
-import { applySceneAtmosphere, buildApartmentEnvironment, buildCityEnvironment } from '../game/roomEnvironments'
-import { APARTMENT_DOOR_POS, CITY_BUILDING_DOOR_POS } from '../game/gameRoomConstants'
+import { applySceneAtmosphere, buildApartmentEnvironment, loadLobbyEnvironment } from '../game/roomEnvironments'
+import { APARTMENT_DOOR_POS, CITY_BUILDING_DOOR_POS, CITY_SPAWN } from '../game/gameRoomConstants'
 
 const YAW_STEP = Math.PI / 12
 
@@ -48,13 +48,14 @@ const doorProjectionVec = new THREE.Vector3()
 const realtimeHttpUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000'
 const gameRoomRef = shallowRef<Room | null>(null)
 
-const myPosition = { x: 0, y: 1.6, z: 0 }
+const myPosition = { x: CITY_SPAWN.x, y: CITY_SPAWN.y, z: CITY_SPAWN.z }
 const direction = new THREE.Vector3(0, 0, -1)
 
 let scene: THREE.Scene
 let camera: THREE.PerspectiveCamera
 let renderer: THREE.WebGLRenderer
 let roomEnvironment: THREE.Group | null = null
+let roomEnvironmentLoadToken = 0
 let fpHands: THREE.Group | null = null
 
 let apartmentPlacementRef: ReturnType<typeof useApartmentPlacement> | null = null
@@ -231,21 +232,27 @@ function updateDoorPromptScreenPos(): void {
 }
 
 function setRoomEnvironment(kind: 'city' | 'apartment') {
+  const token = ++roomEnvironmentLoadToken
   if (kind === 'city') {
     apartmentPlacement.setPlayerInsideApartment(false)
   }
   if (roomEnvironment) {
     scene.remove(roomEnvironment)
-    disposeObject3D(roomEnvironment)
+    if (!roomEnvironment.userData.isPersistentEnvironment) {
+      disposeObject3D(roomEnvironment)
+    }
     roomEnvironment = null
   }
   applySceneAtmosphere(scene, kind)
   if (kind === 'city') {
-    roomEnvironment = buildCityEnvironment()
-    scene.add(roomEnvironment)
-    nearApartmentDoor.value = false
-    resetClientStateForCityWorld()
-    clearApartmentObjects()
+    void loadLobbyEnvironment().then((group) => {
+      if (token !== roomEnvironmentLoadToken) return
+      roomEnvironment = group
+      scene.add(group)
+      nearApartmentDoor.value = false
+      resetClientStateForCityWorld()
+      clearApartmentObjects()
+    })
   } else {
     const built = buildApartmentEnvironment()
     roomEnvironment = built.group
@@ -380,7 +387,7 @@ function initThree(accentColor: number) {
   const { w, h } = containerSize()
   const aspect = w / h
   camera = new THREE.PerspectiveCamera(75, aspect, 0.1, 1000)
-  camera.position.set(0, 1.6, 0)
+  camera.position.set(CITY_SPAWN.x, CITY_SPAWN.y, CITY_SPAWN.z)
 
   renderer = new THREE.WebGLRenderer({ canvas: canvasRef.value, antialias: true })
   renderer.setSize(w, h)
