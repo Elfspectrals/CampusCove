@@ -95,6 +95,18 @@ npm run map:optimize
 
 This regenerates `front/public/maps/LobbyMap.glb` (Draco geometry compression, WebP textures capped at 1024 px, GPU instancing).
 
+### Apartment interior
+
+Source: `map-src/Appartment/Stylized_Interior_Appartment_1.glb` (gitignored). Optimized outputs: `front/public/maps/ApartmentInterior.glb` (+ `.low`).
+
+```bash
+cd front
+npm run apartment:optimize
+# or: make apartment-optimize
+```
+
+Enter your apartment from the lobby at **SM_Opera_A** (Press **I**). Others stay in the city zone.
+
 ---
 
 ## Cleaning dependencies (project hygiene goal)

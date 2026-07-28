@@ -49,6 +49,9 @@ optimize: ## Optimize a .glb/.gltf into front/public/models/ + generate a TS loa
 map-optimize: ## Rebuild LobbyMap.glb + LobbyMap.low.glb from map-src/LobbyMap/
 	cd front && npm run map:optimize
 
+apartment-optimize: ## Rebuild ApartmentInterior.glb + .low from map-src/Appartment/
+	cd front && npm run apartment:optimize
+
 # ---------------------------------------------------------------- backend (Laravel)
 
 backend-install: ## Install backend dependencies (Composer)
@@ -71,4 +74,4 @@ socket-install: ## Install socket server dependencies
 socket-start: ## Run the socket server locally (port 3000)
 	cd socket && npm start
 
-.PHONY: help up up-build down rebuild-socket logs front-install front-dev front-build typecheck optimize map-optimize backend-install backend-serve migrate seed socket-install socket-start
+.PHONY: help up up-build down rebuild-socket logs front-install front-dev front-build typecheck optimize map-optimize apartment-optimize backend-install backend-serve migrate seed socket-install socket-start

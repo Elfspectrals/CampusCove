@@ -8,6 +8,10 @@ const COLORS = [
 const SLOTS = ['body', 'hair', 'top', 'bottom', 'shoes', 'head_accessory']
 // Must match CITY_SPAWN in front/src/game/gameRoomConstants.ts (SM_Thuja_81 tree in LobbyMap)
 const CITY_SPAWN = { x: -89.6, y: 1.6, z: 22.4 }
+// Must match APARTMENT_SPAWN in front/src/game/gameRoomConstants.ts (near Door_Frame_A2 inside new apartment GLB)
+const APARTMENT_SPAWN = { x: 3.8, y: 1.6, z: -1.2 }
+// Must match CITY_APARTMENT_EXIT in front/src/game/gameRoomConstants.ts (street in front of Opera, clear of wall colliders)
+const CITY_APARTMENT_EXIT = { x: -114.0, y: 1.6, z: 31.5 }
 const CITY_MAX_PLAYERS = parseInt(process.env.CITY_MAX_PLAYERS || '30', 10)
 const BACKEND_API_URL = (process.env.BACKEND_API_URL || 'http://localhost:8000/api').replace(/\/+$/, '')
 
@@ -358,9 +362,9 @@ class PresenceRoom extends Room {
     player.zone = 'apartment'
     player.apartmentOwnerId = ownerAccountId
     player.apartmentTemplateKey = templateKey
-    player.x = 0
-    player.y = 1.6
-    player.z = 4
+    player.x = APARTMENT_SPAWN.x
+    player.y = APARTMENT_SPAWN.y
+    player.z = APARTMENT_SPAWN.z
     client.send('apartment_init', {
       ownerAccountId: apartment.ownerAccountId,
       templateKey: apartment.templateKey,
@@ -384,9 +388,9 @@ class PresenceRoom extends Room {
     player.zone = 'city'
     player.apartmentOwnerId = null
     player.apartmentTemplateKey = null
-    player.x = CITY_SPAWN.x
-    player.y = CITY_SPAWN.y
-    player.z = CITY_SPAWN.z
+    player.x = CITY_APARTMENT_EXIT.x
+    player.y = CITY_APARTMENT_EXIT.y
+    player.z = CITY_APARTMENT_EXIT.z
     this.broadcast('user_zone_changed', {
       sessionId: client.sessionId,
       zone: player.zone,

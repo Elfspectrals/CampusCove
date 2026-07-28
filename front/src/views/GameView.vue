@@ -27,7 +27,7 @@ import { buildWorldCollisionFromGroup } from '../composables/game/useWorldCollis
 import { useGameRealtime } from '../composables/game/useGameRealtime'
 import { usePlayerInventory } from '../composables/game/usePlayerInventory'
 import { getGraphicsQuality, toggleGraphicsQuality } from '../game/graphicsQuality'
-import { applySceneAtmosphere, buildApartmentEnvironment, loadLobbyEnvironment } from '../game/roomEnvironments'
+import { applySceneAtmosphere, loadApartmentEnvironment, loadLobbyEnvironment } from '../game/roomEnvironments'
 import { APARTMENT_DOOR_POS, CITY_BUILDING_DOOR_POS, CITY_SPAWN } from '../game/gameRoomConstants'
 
 const YAW_STEP = Math.PI / 12
@@ -266,16 +266,18 @@ function setRoomEnvironment(kind: 'city' | 'apartment') {
       clearApartmentObjects()
     })
   } else {
-    const built = buildApartmentEnvironment()
-    roomEnvironment = built.group
-    scene.add(roomEnvironment)
-    apartmentPlacement.registerApartmentEnvironment(built)
-    nearCityDoor.value = false
-    void apartmentPlacement.init({
-      scene,
-      camera,
-      renderer,
-      colyseusRoom: gameRoomRef,
+    void loadApartmentEnvironment().then((built) => {
+      if (token !== roomEnvironmentLoadToken) return
+      roomEnvironment = built.group
+      scene.add(roomEnvironment)
+      apartmentPlacement.registerApartmentEnvironment(built)
+      nearCityDoor.value = false
+      void apartmentPlacement.init({
+        scene,
+        camera,
+        renderer,
+        colyseusRoom: gameRoomRef,
+      })
     })
   }
 }

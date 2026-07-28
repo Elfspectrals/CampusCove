@@ -295,7 +295,7 @@ function addBorderWalls(w: World, bounds: THREE.Box3): void {
 function ensureCharacterController(): void {
   if (!world || playerCollider) return
 
-  playerBody = world.createRigidBody(RAPIER.RigidBodyDesc.kinematicPositionBased().lockRotations(true, true))
+  playerBody = world.createRigidBody(RAPIER.RigidBodyDesc.kinematicPositionBased().lockRotations())
   const colliderDesc = RAPIER.ColliderDesc.capsule(CAPSULE_HALF_HEIGHT, CAPSULE_RADIUS).setActiveCollisionTypes(
     RAPIER.ActiveCollisionTypes.KINEMATIC_FIXED,
   )
@@ -317,7 +317,21 @@ async function ensureWorld(): Promise<World> {
   return world!
 }
 
+function disposeWorld(): void {
+  if (world) {
+    world.free()
+  }
+  world = null
+  initPromise = null
+  playerBody = null
+  playerCollider = null
+  characterController = null
+  collidersReady = false
+}
+
 async function buildCollidersFromGroup(group: THREE.Object3D): Promise<void> {
+  // Always rebuild from a clean world so HMR / re-enter never stacks stale colliders.
+  disposeWorld()
   const w = await ensureWorld()
   resetStats()
   collidersReady = false

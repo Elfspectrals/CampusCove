@@ -10,7 +10,8 @@
     "heroku-postbuild": "npm run build",
     "start": "serve -s dist -l ${PORT:-3000}",
     "optimize": "node scripts/optimize-model.mjs",
-    "map:optimize": "node scripts/fix-map-materials.mjs && npx --yes @gltf-transform/cli optimize ../map-src/LobbyMap/LobbyMap.fixed.gltf public/maps/LobbyMap.glb --compress draco --texture-compress webp --texture-size 1024 && npx --yes @gltf-transform/cli optimize ../map-src/LobbyMap/LobbyMap.fixed.gltf public/maps/LobbyMap.low.glb --compress draco --texture-compress webp --texture-size 512 --simplify-ratio 0.5 --simplify-error 0.001"
+    "map:optimize": "node scripts/fix-map-materials.mjs && npx --yes @gltf-transform/cli optimize ../map-src/LobbyMap/LobbyMap.fixed.gltf public/maps/LobbyMap.glb --compress draco --texture-compress webp --texture-size 1024 && npx --yes @gltf-transform/cli optimize ../map-src/LobbyMap/LobbyMap.fixed.gltf public/maps/LobbyMap.low.glb --compress draco --texture-compress webp --texture-size 512 --simplify-ratio 0.5 --simplify-error 0.001",
+    "apartment:optimize": "npx --yes @gltf-transform/cli optimize ../map-src/Appartment/Stylized_Interior_Appartment_1.glb public/maps/ApartmentInterior.glb --compress draco --texture-compress webp --texture-size 1024 && npx --yes @gltf-transform/cli optimize ../map-src/Appartment/Stylized_Interior_Appartment_1.glb public/maps/ApartmentInterior.low.glb --compress draco --texture-compress webp --texture-size 512 --simplify-ratio 0.5 --simplify-error 0.001"
   },
   "dependencies": {
     "@colyseus/sdk": "^0.17.41",
