@@ -10,6 +10,7 @@ import {
   CITY_BUILDING_DOOR_POS,
   CITY_BUILDING_DOOR_RADIUS,
 } from '../../game/gameRoomConstants'
+import { resolveWorldMovement } from './useWorldCollision'
 
 export interface UseGameMovementDeps {
   pointerLocked?: Ref<boolean>
@@ -91,8 +92,14 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     if (!deps.inventoryOpen.value) {
       if (forward) velocity.add(direction.clone().multiplyScalar(forward * moveSpeed * dt))
       if (right) velocity.add(rightVec.clone().multiplyScalar(right * moveSpeed * dt))
-      myPosition.x += velocity.x
-      myPosition.z += velocity.z
+      if (deps.currentRoomLabel.value === 'apartment') {
+        myPosition.x += velocity.x
+        myPosition.z += velocity.z
+      } else {
+        const resolved = resolveWorldMovement(myPosition, velocity.x, velocity.z)
+        myPosition.x = resolved.x
+        myPosition.z = resolved.z
+      }
     }
     myPosition.y = 1.6
     if (deps.currentRoomLabel.value === 'apartment') {

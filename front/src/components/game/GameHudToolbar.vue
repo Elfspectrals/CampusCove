@@ -16,5 +16,6 @@ defineProps<{
     >
       Objects: {{ apartmentObjectCount }}
     </span>
+    <slot />
   </div>
 </template>

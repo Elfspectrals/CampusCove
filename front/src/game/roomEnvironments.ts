@@ -8,8 +8,18 @@ import {
   APARTMENT_WALL_THICKNESS,
   CITY_BUILDING_DOOR_POS,
 } from './gameRoomConstants'
+import { getGraphicsQuality } from './graphicsQuality'
 
-const CITY_SKY_COLOR = 0x87a8c9
+const CITY_SKY_COLOR = 0x9fc3e8
+
+function lobbyMapPathForQuality(): string {
+  return getGraphicsQuality() === 'low' ? '/maps/LobbyMap.low.glb' : '/maps/LobbyMap.glb'
+}
+
+function addLobbyLighting(group: THREE.Group): void {
+  const hemi = new THREE.HemisphereLight(0xcfe5ff, 0x8a7f70, 1.0)
+  group.add(hemi)
+}
 
 let cachedLobbyEnvironment: THREE.Group | null = null
 let lobbyEnvironmentLoadPromise: Promise<THREE.Group> | null = null
@@ -28,6 +38,7 @@ function prepareLobbyGroup(root: THREE.Group): THREE.Group {
   for (const obj of toRemove) {
     obj.removeFromParent()
   }
+  addLobbyLighting(root)
   root.userData.isRoomEnvironment = true
   root.userData.isPersistentEnvironment = true
   return root
@@ -45,7 +56,7 @@ export function loadLobbyEnvironment(): Promise<THREE.Group> {
       const loader = new GLTFLoader()
       loader.setDRACOLoader(dracoLoader)
       loader.load(
-        '/maps/LobbyMap.glb',
+        lobbyMapPathForQuality(),
         (gltf) => {
           const group = prepareLobbyGroup(gltf.scene)
           cachedLobbyEnvironment = group
@@ -65,7 +76,8 @@ export function loadLobbyEnvironment(): Promise<THREE.Group> {
 export function applySceneAtmosphere(scene: THREE.Scene, kind: 'city' | 'apartment'): void {
   if (kind === 'city') {
     scene.background = new THREE.Color(CITY_SKY_COLOR)
-    scene.fog = new THREE.Fog(CITY_SKY_COLOR, 30, 250)
+    const fogFar = getGraphicsQuality() === 'low' ? 120 : 250
+    scene.fog = new THREE.Fog(CITY_SKY_COLOR, 30, fogFar)
   } else {
     scene.background = new THREE.Color(0x3a342f)
     scene.fog = new THREE.Fog(0x3a342f, 4, 22)
