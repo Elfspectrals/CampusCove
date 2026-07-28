@@ -51,6 +51,9 @@ const realtimeHttpUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:300
 const gameRoomRef = shallowRef<Room | null>(null)
 
 const myPosition = { x: CITY_SPAWN.x, y: CITY_SPAWN.y, z: CITY_SPAWN.z }
+const positionLabel = ref(
+  `${CITY_SPAWN.x.toFixed(1)}, ${CITY_SPAWN.y.toFixed(1)}, ${CITY_SPAWN.z.toFixed(1)}`,
+)
 const direction = new THREE.Vector3(0, 0, -1)
 
 let scene: THREE.Scene
@@ -334,6 +337,7 @@ const {
   },
   onCanvasMouseUp: () => undefined,
   onBeforeRender: (dt) => {
+    positionLabel.value = `${myPosition.x.toFixed(1)}, ${myPosition.y.toFixed(1)}, ${myPosition.z.toFixed(1)}`
     if (currentRoomLabel.value === 'apartment') {
       apartmentPlacement.tick(dt)
     }
@@ -517,7 +521,11 @@ const crosshairClass = computed(() => {
       :class="crosshairClass"
     />
     <GameRoomMessageBanner v-if="roomMessage" :message="roomMessage" />
-    <GameHudToolbar :current-room-label="currentRoomLabel" :apartment-object-count="apartmentObjectCount">
+    <GameHudToolbar
+      :current-room-label="currentRoomLabel"
+      :apartment-object-count="apartmentObjectCount"
+      :position-label="positionLabel"
+    >
       <button
         v-if="!pointerLocked"
         type="button"
