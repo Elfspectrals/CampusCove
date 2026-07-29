@@ -64,6 +64,9 @@ backend-install: ## Install backend dependencies (Composer)
 backend-serve: ## Run the Laravel API locally (http://localhost:8000)
 	cd backend && php artisan serve
 
+backend-test: ## Run Laravel tests against an isolated ephemeral PostgreSQL database
+	docker compose --profile test run --rm backend-test
+
 migrate: ## Run database migrations (inside Docker)
 	docker compose exec -T backend php artisan migrate
 
@@ -78,4 +81,7 @@ socket-install: ## Install socket server dependencies
 socket-start: ## Run the socket server locally (port 3000)
 	cd socket && npm start
 
-.PHONY: help up up-build down rebuild-socket logs front-install front-dev front-build typecheck optimize map-optimize apartment-optimize collision-extract backend-install backend-serve migrate seed socket-install socket-start
+socket-test: ## Run Colyseus socket tests
+	cd socket && npm test
+
+.PHONY: help up up-build down rebuild-socket logs front-install front-dev front-build typecheck optimize map-optimize apartment-optimize collision-extract backend-install backend-serve backend-test migrate seed socket-install socket-start socket-test

@@ -22,14 +22,14 @@ class PlayerInventoryLayoutController extends Controller
         try {
             $row = AccountInventoryLayout::query()->where('account_id', $accountId)->first();
         } catch (Throwable $e) {
-            Log::warning('inventory.layout.show failed, returning defaults', [
+            Log::error('inventory.layout.show failed', [
                 'account_id' => $accountId,
                 'error' => $e->getMessage(),
             ]);
 
             return response()->json([
-                'layout' => $this->defaultLayoutPayload(),
-            ]);
+                'message' => 'Inventory layout is temporarily unavailable.',
+            ], 503);
         }
 
         if ($row === null) {

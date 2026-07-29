@@ -2,13 +2,54 @@
 
 namespace Tests\Feature;
 
+use App\Models\Account;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
 
 class AuthUserApiTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_registration_uses_the_account_model_created_for_that_request(): void
+    {
+        $eventName = 'eloquent.created: '.Account::class;
+        $createdAccountId = null;
+        $decoyAccountId = null;
+
+        Event::listen($eventName, function (Account $created) use (&$createdAccountId, &$decoyAccountId): void {
+            $createdAccountId = (int) $created->account_id;
+            $decoy = Account::withoutEvents(
+                fn (): Account => Account::query()->create(['status' => 'active'])
+            );
+            $decoyAccountId = (int) $decoy->account_id;
+        });
+
+        try {
+            $response = $this->postJson('/api/register', [
+                'email' => 'race-safe@test.com',
+                'username' => 'race_safe_user',
+                'password' => 'password1x',
+                'password_confirmation' => 'password1x',
+            ]);
+        } finally {
+            Event::forget($eventName);
+        }
+
+        $response->assertCreated();
+        $this->assertNotNull($createdAccountId);
+        $this->assertNotNull($decoyAccountId);
+        $this->assertNotSame($createdAccountId, $decoyAccountId);
+        $response->assertJsonPath('user.account_id', $createdAccountId);
+        $this->assertDatabaseHas('account_auth_local', [
+            'account_id' => $createdAccountId,
+            'email' => 'race-safe@test.com',
+        ]);
+        $this->assertDatabaseMissing('account_auth_local', [
+            'account_id' => $decoyAccountId,
+        ]);
+    }
 
     public function test_user_endpoint_includes_wallet_summary_with_zero_balances_for_new_account(): void
     {
@@ -43,6 +84,39 @@ class AuthUserApiTest extends TestCase
         ]);
         $response->assertJsonPath('user.wallet_summary.coins', 0);
         $response->assertJsonPath('user.wallet_summary.premium', 0);
+    }
+
+    public function test_disabled_accounts_cannot_log_in_or_keep_using_existing_tokens(): void
+    {
+        $registration = $this->postJson('/api/register', [
+            'email' => 'disabled@test.com',
+            'username' => 'disabled_user',
+            'password' => 'password1x',
+            'password_confirmation' => 'password1x',
+        ]);
+        $registration->assertCreated();
+
+        $accountId = (int) $registration->json('user.account_id');
+        $token = (string) $registration->json('token');
+        DB::table('accounts')->where('account_id', $accountId)->update(['status' => 'disabled']);
+
+        $this->getJson('/api/user', [
+            'Authorization' => 'Bearer '.$token,
+        ])
+            ->assertForbidden()
+            ->assertJsonPath('code', 'account_disabled');
+
+        $this->postJson('/api/login', [
+            'email' => 'disabled@test.com',
+            'password' => 'password1x',
+        ])
+            ->assertForbidden()
+            ->assertJsonPath('code', 'account_disabled');
+
+        $this->assertDatabaseMissing('personal_access_tokens', [
+            'tokenable_type' => Account::class,
+            'tokenable_id' => $accountId,
+        ]);
     }
 
     public function test_user_endpoint_wallet_summary_matches_wallet_ledger_sums(): void

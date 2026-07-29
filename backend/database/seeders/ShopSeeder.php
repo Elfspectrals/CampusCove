@@ -8,7 +8,14 @@ use Illuminate\Support\Facades\DB;
 
 class ShopSeeder extends Seeder
 {
-    private const STARTER_BODY_PREVIEW_IMAGE = '/storage/skins/previews/placeholderSkin.jpg';
+    private const LEGACY_BODY_PREVIEW_IMAGE = '/storage/skins/previews/placeholderSkin.jpg';
+
+    /** @var array<string, string> */
+    private const LEGACY_BODY_MODEL_BY_CODE = [
+        'COS_WEAR_BODY_DEFAULT' => '/storage/skins/models/low_poly_character.glb',
+        'COS_WEAR_BODY_ADVENTURER' => '/storage/skins/models/low_poly_adventurer.glb',
+        'COS_WEAR_BODY_SWORDSMAN' => '/storage/skins/models/low_poly_character_swordsman.glb',
+    ];
 
     public function run(): void
     {
@@ -65,7 +72,7 @@ class ShopSeeder extends Seeder
                 'bind' => 'bound',
                 'max_stack' => 99,
                 'cosmetic_slot' => 'body',
-                'preview_image' => self::STARTER_BODY_PREVIEW_IMAGE,
+                'preview_image' => null,
                 'model_glb' => '/models/CharacterDefault.glb',
             ],
             [
@@ -78,7 +85,7 @@ class ShopSeeder extends Seeder
                 'bind' => 'bound',
                 'max_stack' => 99,
                 'cosmetic_slot' => 'body',
-                'preview_image' => self::STARTER_BODY_PREVIEW_IMAGE,
+                'preview_image' => null,
                 'model_glb' => '/models/CharacterAdventurer.glb',
             ],
             [
@@ -91,7 +98,7 @@ class ShopSeeder extends Seeder
                 'bind' => 'bound',
                 'max_stack' => 99,
                 'cosmetic_slot' => 'body',
-                'preview_image' => self::STARTER_BODY_PREVIEW_IMAGE,
+                'preview_image' => null,
                 'model_glb' => '/models/CharacterSwordsman.glb',
             ],
             [
@@ -153,22 +160,10 @@ class ShopSeeder extends Seeder
 
         $itemDefIds = [];
         foreach ($defs as $def) {
-            $existing = DB::table('item_defs')->where('code', $def['code'])->value('item_def_id');
-            if ($existing !== null) {
-                $itemDefIds[$def['code']] = (int) $existing;
-                if (array_key_exists('cosmetic_slot', $def) || array_key_exists('preview_image', $def) || array_key_exists('model_glb', $def)) {
-                    DB::table('item_defs')->where('code', $def['code'])->update(array_filter([
-                        'cosmetic_slot' => $def['cosmetic_slot'] ?? null,
-                        'preview_image' => $def['preview_image'] ?? null,
-                        'model_glb' => $def['model_glb'] ?? null,
-                    ], static fn (mixed $value): bool => $value !== null));
-                }
-
-                continue;
-            }
-
-            $insert = [
-                'code' => $def['code'],
+            $existing = DB::table('item_defs')
+                ->where('code', $def['code'])
+                ->first(['item_def_id', 'preview_image', 'model_glb']);
+            $values = [
                 'name' => $def['name'],
                 'kind' => $def['kind'],
                 'rarity' => $def['rarity'],
@@ -176,17 +171,35 @@ class ShopSeeder extends Seeder
                 'premium_only' => $def['premium_only'],
                 'bind' => $def['bind'],
                 'max_stack' => $def['max_stack'],
+                'cosmetic_slot' => $def['cosmetic_slot'] ?? null,
+                'preview_image' => $def['preview_image'] ?? null,
+                'model_glb' => $def['model_glb'] ?? null,
+            ];
+
+            if ($existing !== null) {
+                $itemDefIds[$def['code']] = (int) $existing->item_def_id;
+                $legacyUpdates = [];
+                if ($existing->preview_image === self::LEGACY_BODY_PREVIEW_IMAGE) {
+                    $legacyUpdates['preview_image'] = null;
+                }
+                $legacyModel = self::LEGACY_BODY_MODEL_BY_CODE[$def['code']] ?? null;
+                if ($legacyModel !== null && $existing->model_glb === $legacyModel) {
+                    $legacyUpdates['model_glb'] = $def['model_glb'];
+                }
+                if ($legacyUpdates !== []) {
+                    DB::table('item_defs')
+                        ->where('item_def_id', $existing->item_def_id)
+                        ->update($legacyUpdates);
+                }
+
+                continue;
+            }
+
+            $insert = [
+                'code' => $def['code'],
+                ...$values,
                 'created_at' => now(),
             ];
-            if (array_key_exists('cosmetic_slot', $def)) {
-                $insert['cosmetic_slot'] = $def['cosmetic_slot'];
-            }
-            if (array_key_exists('preview_image', $def)) {
-                $insert['preview_image'] = $def['preview_image'];
-            }
-            if (array_key_exists('model_glb', $def)) {
-                $insert['model_glb'] = $def['model_glb'];
-            }
 
             $itemDefIds[$def['code']] = (int) DB::table('item_defs')->insertGetId($insert, 'item_def_id');
         }
@@ -244,15 +257,19 @@ class ShopSeeder extends Seeder
 
         foreach ($catalogRows as $catalog) {
             $itemDefId = $itemDefIds[$catalog['item_def_code']];
+            $currency = $catalog['allow_coins'] ? 'coins' : 'premium';
+            $existingCatalogId = DB::table('shop_catalog_items')
+                ->where('item_def_id', $itemDefId)
+                ->where('currency', $currency)
+                ->value('shop_catalog_item_id');
 
-            $exists = DB::table('shop_catalog_items')->where('item_def_id', $itemDefId)->exists();
-            if ($exists) {
+            if ($existingCatalogId !== null) {
                 continue;
             }
 
             DB::table('shop_catalog_items')->insert([
                 'item_def_id' => $itemDefId,
-                'currency' => $catalog['allow_coins'] ? 'coins' : 'premium',
+                'currency' => $currency,
                 'price' => $catalog['allow_coins'] ? $catalog['coins_price'] : $catalog['premium_price'],
                 'allow_coins' => $catalog['allow_coins'],
                 'coins_price' => $catalog['coins_price'],

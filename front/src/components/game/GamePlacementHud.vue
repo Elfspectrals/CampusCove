@@ -1,8 +1,16 @@
 <script setup lang="ts">
-defineProps<{
-  visible: boolean
-  hints: string[]
-}>()
+withDefaults(
+  defineProps<{
+    visible: boolean
+    hints: string[]
+    rotateCwLabel?: string
+    rotateCcwLabel?: string
+  }>(),
+  {
+    rotateCwLabel: 'R',
+    rotateCcwLabel: 'Shift + R',
+  },
+)
 </script>
 
 <template>
@@ -21,9 +29,9 @@ defineProps<{
         <span>place / pick</span>
         <span class="rounded bg-white/10 px-1.5 py-0.5">RMB</span>
         <span>cancel</span>
-        <span class="rounded bg-white/10 px-1.5 py-0.5">R</span>
+        <span class="rounded bg-white/10 px-1.5 py-0.5">{{ rotateCwLabel }}</span>
         <span>rotate</span>
-        <span class="rounded bg-white/10 px-1.5 py-0.5">Shift+R</span>
+        <span class="rounded bg-white/10 px-1.5 py-0.5">{{ rotateCcwLabel }}</span>
         <span>reverse</span>
       </div>
     </div>

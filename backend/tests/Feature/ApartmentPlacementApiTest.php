@@ -115,6 +115,113 @@ class ApartmentPlacementApiTest extends TestCase
         $this->assertSame(2, (int) $assetAfterPickup['quantity']);
     }
 
+    public function test_unauthorized_state_and_mutation_requests_do_not_create_apartment_records(): void
+    {
+        $owner = $this->registerAndCreditWallet(0, 'coins');
+        $outsider = $this->registerAndCreditWallet(0, 'coins');
+        $countsBefore = [
+            'servers' => DB::table('servers')->count(),
+            'rooms' => DB::table('rooms')->count(),
+            'containers' => DB::table('containers')->count(),
+            'memberships' => DB::table('room_memberships')->count(),
+        ];
+
+        $this->postJson('/api/apartments/state', [
+            'owner_account_id' => $owner['account_id'],
+            'template_key' => 'starter_loft',
+        ], [
+            'Authorization' => 'Bearer '.$outsider['token'],
+        ])
+            ->assertForbidden()
+            ->assertJsonPath('code', 'apartment_view_forbidden');
+
+        $this->postJson('/api/apartments/spawn', [
+            'owner_account_id' => $owner['account_id'],
+            'template_key' => 'starter_loft',
+            'objectId' => 'unauthorized_spawn',
+            'objectKey' => 'missing_asset',
+            'x' => 0,
+            'y' => 0,
+            'z' => 0,
+            'rotX' => 0,
+            'rotY' => 0,
+            'rotZ' => 0,
+        ], [
+            'Authorization' => 'Bearer '.$outsider['token'],
+        ])
+            ->assertForbidden()
+            ->assertJsonPath('code', 'apartment_edit_forbidden');
+
+        $this->assertSame($countsBefore['servers'], DB::table('servers')->count());
+        $this->assertSame($countsBefore['rooms'], DB::table('rooms')->count());
+        $this->assertSame($countsBefore['containers'], DB::table('containers')->count());
+        $this->assertSame($countsBefore['memberships'], DB::table('room_memberships')->count());
+    }
+
+    public function test_visitor_membership_can_view_but_cannot_edit_an_apartment(): void
+    {
+        $owner = $this->registerAndCreditWallet(0, 'coins');
+        $visitor = $this->registerAndCreditWallet(0, 'coins');
+
+        $this->postJson('/api/apartments/state', [
+            'owner_account_id' => $owner['account_id'],
+            'template_key' => 'starter_loft',
+        ], [
+            'Authorization' => 'Bearer '.$owner['token'],
+        ])->assertOk();
+
+        $roomId = (int) DB::table('rooms')
+            ->where('name', 'apartment:'.$owner['account_id'].':starter_loft')
+            ->value('room_id');
+        DB::table('room_memberships')->insert([
+            'room_id' => $roomId,
+            'account_id' => $visitor['account_id'],
+            'role' => 'visitor',
+            'created_at' => now(),
+        ]);
+
+        $this->postJson('/api/apartments/state', [
+            'owner_account_id' => $owner['account_id'],
+            'template_key' => 'starter_loft',
+        ], [
+            'Authorization' => 'Bearer '.$visitor['token'],
+        ])->assertOk();
+
+        $this->patchJson('/api/apartments/transform', [
+            'owner_account_id' => $owner['account_id'],
+            'template_key' => 'starter_loft',
+            'objectId' => 'visitor_edit_attempt',
+            'x' => 0,
+            'y' => 0,
+            'z' => 0,
+            'rotX' => 0,
+            'rotY' => 0,
+            'rotZ' => 0,
+        ], [
+            'Authorization' => 'Bearer '.$visitor['token'],
+        ])
+            ->assertForbidden()
+            ->assertJsonPath('code', 'apartment_edit_forbidden');
+    }
+
+    public function test_only_the_supported_apartment_template_can_be_created(): void
+    {
+        $owner = $this->registerAndCreditWallet(0, 'coins');
+
+        $this->postJson('/api/apartments/state', [
+            'owner_account_id' => $owner['account_id'],
+            'template_key' => 'unsupported_penthouse',
+        ], [
+            'Authorization' => 'Bearer '.$owner['token'],
+        ])
+            ->assertUnprocessable()
+            ->assertJsonPath('code', 'unsupported_apartment_template');
+
+        $this->assertDatabaseMissing('rooms', [
+            'name' => 'apartment:'.$owner['account_id'].':unsupported_penthouse',
+        ]);
+    }
+
     private function createApartmentAssetCatalog(): object
     {
         $itemDefId = (int) DB::table('item_defs')->insertGetId([
@@ -192,4 +299,3 @@ class ApartmentPlacementApiTest extends TestCase
         return ['token' => $token, 'account_id' => $accountId];
     }
 }
-

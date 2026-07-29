@@ -7,7 +7,6 @@ import * as friendsApi from '../api/friends'
 import type { Friend } from '../api/friends'
 
 const router = useRouter()
-const activeTab = ref<'about' | 'locker' | 'achievements'>('about')
 const friendsPanelOpen = ref(false)
 
 const auth = computed(() => getStoredAuth())
@@ -20,6 +19,11 @@ const premiumDisplay = computed(() =>
 )
 const displayName = computed(() => auth.value?.user?.display_name || auth.value?.user?.username || 'Player')
 const email = computed(() => auth.value?.user?.email ?? '')
+const accountHandle = computed(() => {
+  const user = auth.value?.user
+  if (!user) return ''
+  return `${user.username}#${String(user.tag).padStart(4, '0')}`
+})
 const initial = computed(() => {
   const n = displayName.value
   return n.length > 0 ? n.charAt(0).toUpperCase() : 'P'
@@ -27,8 +31,7 @@ const initial = computed(() => {
 
 const friends = ref<Friend[]>([])
 const friendsLoading = ref(false)
-
-const onlineCount = computed(() => friends.value.filter((f) => f.status === 'online' || f.status === 'playing').length)
+const friendsError = ref('')
 
 onMounted(async () => {
   await loadFriends()
@@ -36,11 +39,12 @@ onMounted(async () => {
 
 async function loadFriends() {
   friendsLoading.value = true
+  friendsError.value = ''
   try {
     const friendsRes = await friendsApi.getFriends()
     friends.value = friendsRes.friends
-  } catch {
-    friends.value = []
+  } catch (caught) {
+    friendsError.value = caught instanceof Error ? caught.message : 'Could not load friends'
   } finally {
     friendsLoading.value = false
   }
@@ -59,39 +63,21 @@ function statusDotClass(status: string): string {
 function statusLabel(status: string): string {
   if (status === 'online') return 'Online'
   if (status === 'playing') return 'Playing CampusCove'
-  return 'Offline'
+  return 'Presence unavailable'
 }
 
 function launchGame() {
   router.push({ name: 'game' })
 }
 
-function openChat(friend: Friend) {
-  // TODO: Implement chat functionality
-  console.log('Open chat with', friend.display_name)
+function openFriends() {
+  void router.push({ name: 'friends' })
 }
-
-const memberSince = 'February 2026'
-const lastOnline = 'Just now'
-const stats = computed(() => ({
-  friends: friends.value.length,
-  level: 5,
-  items: 24,
-  achievements: 8,
-}))
-const recentItems = [
-  { name: 'Gaming Chair Pro', color: 'bg-red-400' },
-  { name: 'Modern Couch', color: 'bg-gray-400' },
-  { name: 'Neon Lights', color: 'bg-pink-400' },
-  { name: 'Indoor Plant', color: 'bg-green-400' },
-  { name: 'LED Strip', color: 'bg-purple-400' },
-  { name: 'Wall Art', color: 'bg-amber-400' },
-]
 </script>
 
 <template>
   <div class="relative">
-      <main class="overflow-auto p-4 md:p-6" :class="{ 'mr-80': friendsPanelOpen }">
+      <section class="overflow-auto p-2 transition-[margin] md:p-4" :class="{ 'lg:mr-80': friendsPanelOpen }">
         <div class="rounded-2xl bg-slate-800 text-white p-6 mb-6 flex flex-col md:flex-row md:items-center gap-6">
           <div class="flex items-center gap-4 flex-1">
             <div class="w-20 h-20 rounded-full bg-gradient-to-br from-purple-500 to-fuchsia-500 flex items-center justify-center text-3xl font-bold text-white shrink-0">
@@ -99,60 +85,33 @@ const recentItems = [
             </div>
             <div>
               <h2 class="m-0 text-xl font-bold text-white">{{ displayName }}</h2>
-              <p class="m-0 text-sm text-white/70">{{ email }}</p>
-              <div class="flex flex-wrap gap-4 mt-2 text-sm text-white/80">
-                <span>{{ stats.friends }} Friends</span>
-                <span>{{ stats.level }} Level</span>
-                <span>{{ stats.items }} Items</span>
-                <span>{{ stats.achievements }} Achievements</span>
+              <p class="m-0 text-sm text-white/70">{{ accountHandle }}</p>
+              <div class="mt-3 flex flex-wrap gap-2 text-xs font-semibold text-white/80">
+                <span class="rounded-full bg-white/10 px-3 py-1.5">{{ friends.length }} friends</span>
+                <span class="rounded-full bg-amber-400/15 px-3 py-1.5 text-amber-200">🪙 {{ coinsDisplay }}</span>
+                <span class="rounded-full bg-fuchsia-400/15 px-3 py-1.5 text-fuchsia-200">✨ {{ premiumDisplay }}</span>
               </div>
             </div>
           </div>
-          <div class="flex border-b border-white/20 -mb-2 md:border-0 md:mb-0 flex gap-1">
-            <button
-              type="button"
-              :class="[
-                'px-4 py-2 text-sm font-semibold rounded-t-lg md:rounded-lg',
-                activeTab === 'about' ? 'bg-amber-500 text-slate-900 md:underline md:decoration-amber-500 md:decoration-2' : 'text-white/80 hover:bg-white/10',
-              ]"
-              @click="activeTab = 'about'"
-            >
-              ABOUT
-            </button>
-            <button
-              type="button"
-              :class="[
-                'px-4 py-2 text-sm font-semibold rounded-t-lg md:rounded-lg',
-                activeTab === 'locker' ? 'bg-amber-500 text-slate-900 md:underline md:decoration-amber-500 md:decoration-2' : 'text-white/80 hover:bg-white/10',
-              ]"
-              @click="activeTab = 'locker'"
-            >
-              LOCKER
-            </button>
-            <button
-              type="button"
-              :class="[
-                'px-4 py-2 text-sm font-semibold rounded-t-lg md:rounded-lg',
-                activeTab === 'achievements' ? 'bg-amber-500 text-slate-900 md:underline md:decoration-amber-500 md:decoration-2' : 'text-white/80 hover:bg-white/10',
-              ]"
-              @click="activeTab = 'achievements'"
-            >
-              ACHIEVEMENTS
-            </button>
-          </div>
+          <RouterLink
+            :to="{ name: 'locker' }"
+            class="inline-flex shrink-0 items-center justify-center rounded-lg border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-white/15"
+          >
+            Customize character
+          </RouterLink>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <div class="rounded-2xl bg-slate-800 text-white p-5">
-            <h3 class="m-0 mb-4 font-bold text-sm tracking-wider">ABOUT</h3>
+            <h3 class="m-0 mb-4 font-bold text-sm tracking-wider">ACCOUNT</h3>
             <div class="space-y-3 text-sm">
               <div>
-                <p class="m-0 text-white/50 text-xs uppercase tracking-wide">MEMBER SINCE</p>
-                <p class="m-0 font-semibold text-white">{{ memberSince }}</p>
+                <p class="m-0 text-white/50 text-xs uppercase tracking-wide">HANDLE</p>
+                <p class="m-0 font-semibold text-white">{{ accountHandle }}</p>
               </div>
               <div>
-                <p class="m-0 text-white/50 text-xs uppercase tracking-wide">LAST ONLINE</p>
-                <p class="m-0 text-white">{{ lastOnline }}</p>
+                <p class="m-0 text-white/50 text-xs uppercase tracking-wide">EMAIL</p>
+                <p class="m-0 truncate text-white">{{ email }}</p>
               </div>
               <div>
                 <p class="m-0 text-white/50 text-xs uppercase tracking-wide">COINS</p>
@@ -165,7 +124,7 @@ const recentItems = [
             </div>
           </div>
 
-          <div class="rounded-2xl bg-gradient-to-br from-purple-600 to-fuchsia-500 text-white p-6 flex flex-col items-center justify-center text-center min-h-[180px]">
+          <div class="flex min-h-44 flex-col items-center justify-center rounded-2xl bg-gradient-to-br from-purple-600 to-fuchsia-500 p-6 text-center text-white">
             <div class="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center mb-3">
               <svg class="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M8 5v14l11-7z" />
@@ -197,37 +156,24 @@ const recentItems = [
               >
                 🧥 Visit Shop Skin
               </RouterLink>
+              <RouterLink
+                to="/locker"
+                class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium"
+              >
+                🎒 Open Locker
+              </RouterLink>
               <RouterLink to="/friends" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium">
                 👥 View Friends
               </RouterLink>
-              <button type="button" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium">
-                🏆 Achievements
-              </button>
             </div>
           </div>
         </div>
-
-        <section>
-          <h3 class="m-0 mb-4 font-bold text-slate-800 text-lg">RECENT ITEMS</h3>
-          <div class="flex gap-4 overflow-x-auto pb-2">
-            <div
-              v-for="(item, i) in recentItems"
-              :key="i"
-              class="shrink-0 w-36 h-36 rounded-xl overflow-hidden bg-slate-200 cursor-pointer group"
-            >
-              <div :class="['w-full h-24', item.color]" />
-              <div class="px-2 py-2 bg-slate-800 text-white text-xs font-medium">
-                {{ item.name }}
-              </div>
-            </div>
-          </div>
-        </section>
-      </main>
+      </section>
 
       <!-- Collapsible Friends Panel (Right Side) -->
       <aside
         :class="[
-          'fixed right-0 top-14 bottom-0 z-30 w-80 border-l border-white/10 bg-slate-800 text-white transition-transform duration-300 ease-out flex flex-col transform',
+          'fixed bottom-0 right-0 top-14 z-30 flex w-80 max-w-full transform flex-col border-l border-white/10 bg-slate-800 text-white transition-transform duration-300 ease-out',
           friendsPanelOpen ? 'translate-x-0' : 'translate-x-full',
         ]"
       >
@@ -258,16 +204,21 @@ const recentItems = [
 
         <div class="flex-1 overflow-y-auto px-3 py-3 min-h-0">
           <div v-if="friendsLoading" class="py-8 text-center text-sm text-white/50">Loading friends…</div>
+          <div v-else-if="friendsError" class="rounded-lg border border-rose-300/20 bg-rose-500/10 p-3 text-sm text-rose-100" role="alert">
+            <p class="m-0">{{ friendsError }}</p>
+            <button type="button" class="mt-2 font-bold underline underline-offset-2" @click="loadFriends">Try again</button>
+          </div>
           <div v-else-if="friends.length === 0" class="py-8 text-center text-sm text-white/50">
             <p class="mb-2">No friends yet</p>
             <RouterLink to="/friends" class="text-purple-400 hover:text-purple-300 underline">Add friends</RouterLink>
           </div>
           <div v-else class="space-y-1">
-            <div
+            <button
               v-for="f in friends"
               :key="f.account_id"
-              class="flex items-center gap-3 p-3 rounded-lg hover:bg-white/5 cursor-pointer group"
-              @click="openChat(f)"
+              type="button"
+              class="group flex w-full items-center gap-3 rounded-lg p-3 text-left hover:bg-white/5"
+              @click="openFriends"
             >
               <div class="relative shrink-0">
                 <div class="w-10 h-10 rounded-full bg-gradient-to-br from-[#DA62C4] to-[#A744E3] flex items-center justify-center text-white font-bold text-sm">
@@ -282,22 +233,13 @@ const recentItems = [
                 <p class="m-0 font-medium text-white text-sm truncate">{{ f.display_name }}</p>
                 <p class="m-0 text-xs text-white/50 truncate">{{ statusLabel(f.status) }}</p>
               </div>
-              <button
-                type="button"
-                class="shrink-0 p-1.5 rounded text-white/40 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                title="Message"
-                @click.stop="openChat(f)"
-              >
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                </svg>
-              </button>
-            </div>
+              <span class="shrink-0 text-white/35 transition group-hover:translate-x-0.5 group-hover:text-white" aria-hidden="true">→</span>
+            </button>
           </div>
         </div>
 
         <div class="px-3 py-3 border-t border-white/10 shrink-0">
-          <p class="m-0 mb-2 text-xs text-white/50">{{ onlineCount }} of {{ friends.length }} online</p>
+          <p class="m-0 text-xs text-white/50">{{ friends.length }} {{ friends.length === 1 ? 'friend' : 'friends' }}</p>
         </div>
       </aside>
 
@@ -305,7 +247,7 @@ const recentItems = [
       <button
         type="button"
         class="fixed bottom-6 right-6 z-20 w-14 h-14 rounded-full bg-gradient-to-r from-[#DA62C4] to-[#A744E3] text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all flex items-center justify-center"
-        :class="{ 'right-80': friendsPanelOpen }"
+        :class="{ 'pointer-events-none opacity-0': friendsPanelOpen }"
         :title="friendsPanelOpen ? 'Close friends' : 'Open friends'"
         @click="friendsPanelOpen = !friendsPanelOpen"
       >

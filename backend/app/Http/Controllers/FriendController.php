@@ -7,7 +7,6 @@ use App\Models\AccountHandle;
 use App\Models\Friendship;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class FriendController extends Controller
@@ -160,12 +159,32 @@ class FriendController extends Controller
         if ($accountId === $myId) {
             throw ValidationException::withMessages(['account_id' => ['You cannot block yourself.']]);
         }
+        if (! Account::query()->whereKey($accountId)->exists()) {
+            throw ValidationException::withMessages(['account_id' => ['Account not found.']]);
+        }
 
         $a = min($myId, $accountId);
         $b = max($myId, $accountId);
 
-        $updated = Friendship::where('account_id_a', $a)->where('account_id_b', $b)->update(['status' => 'blocked', 'requested_by' => $myId, 'updated_at' => now()]);
-        if ($updated === 0) {
+        $friendship = Friendship::where('account_id_a', $a)->where('account_id_b', $b)->first();
+        if ($friendship?->status === 'blocked') {
+            if ((int) $friendship->requested_by !== (int) $myId) {
+                return response()->json([
+                    'message' => 'A block created by another account cannot be changed.',
+                    'code' => 'block_change_forbidden',
+                ], 403);
+            }
+
+            return response()->json(['message' => 'User blocked.']);
+        }
+
+        if ($friendship !== null) {
+            Friendship::where('account_id_a', $a)->where('account_id_b', $b)->update([
+                'status' => 'blocked',
+                'requested_by' => $myId,
+                'updated_at' => now(),
+            ]);
+        } else {
             Friendship::create([
                 'account_id_a' => $a,
                 'account_id_b' => $b,
@@ -190,6 +209,14 @@ class FriendController extends Controller
 
         $a = min($myId, $accountId);
         $b = max($myId, $accountId);
+
+        $friendship = Friendship::where('account_id_a', $a)->where('account_id_b', $b)->first();
+        if ($friendship?->status === 'blocked' && (int) $friendship->requested_by !== (int) $myId) {
+            return response()->json([
+                'message' => 'Only the account that created this block can remove it.',
+                'code' => 'block_removal_forbidden',
+            ], 403);
+        }
 
         Friendship::where('account_id_a', $a)->where('account_id_b', $b)->delete();
 

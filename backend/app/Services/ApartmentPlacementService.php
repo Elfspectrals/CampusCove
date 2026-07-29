@@ -22,6 +22,11 @@ class ApartmentPlacementService
     /**
      * @var list<string>
      */
+    private const EDIT_ROLES = ['owner', 'co_owner', 'editor', 'mod'];
+
+    /**
+     * @var list<string>
+     */
     private const PLACEABLE_KINDS = ['apartment_asset', 'furniture'];
 
     public function __construct(
@@ -52,8 +57,8 @@ class ApartmentPlacementService
     public function resolveApartmentState(int $actorAccountId, int $ownerAccountId, ?string $templateKey = null): array
     {
         $template = $this->normalizeTemplateKey($templateKey);
+        $this->assertCanAccessApartmentBeforeCreate($actorAccountId, $ownerAccountId, $template, false);
         [$room, ] = $this->resolveOrCreateApartment($ownerAccountId, $template);
-        $this->assertCanEditApartment($actorAccountId, $ownerAccountId, (int) $room->room_id);
 
         return [
             'room_public_id' => (string) $room->public_id,
@@ -127,9 +132,9 @@ class ApartmentPlacementService
         $template = $this->normalizeTemplateKey($templateKey);
 
         return DB::transaction(function () use ($actorAccountId, $ownerAccountId, $template, $payload): array {
+            $this->assertCanAccessApartmentBeforeCreate($actorAccountId, $ownerAccountId, $template, true);
             [$room, $roomContainerId] = $this->resolveOrCreateApartment($ownerAccountId, $template);
             $roomId = (int) $room->room_id;
-            $this->assertCanEditApartment($actorAccountId, $ownerAccountId, $roomId);
 
             $objectId = $this->normalizeObjectId($payload['objectId'] ?? '');
             $objectKey = $this->normalizeObjectKey($payload['objectKey'] ?? '');
@@ -223,9 +228,9 @@ class ApartmentPlacementService
         $template = $this->normalizeTemplateKey($templateKey);
 
         return DB::transaction(function () use ($actorAccountId, $ownerAccountId, $template, $payload): array {
+            $this->assertCanAccessApartmentBeforeCreate($actorAccountId, $ownerAccountId, $template, true);
             [$room, ] = $this->resolveOrCreateApartment($ownerAccountId, $template);
             $roomId = (int) $room->room_id;
-            $this->assertCanEditApartment($actorAccountId, $ownerAccountId, $roomId);
 
             $objectId = $this->normalizeObjectId($payload['objectId'] ?? '');
             $furniture = $this->findRoomFurnitureByObjectIdForUpdate($roomId, $objectId);
@@ -274,9 +279,9 @@ class ApartmentPlacementService
         $template = $this->normalizeTemplateKey($templateKey);
 
         return DB::transaction(function () use ($actorAccountId, $ownerAccountId, $template, $objectId): array {
+            $this->assertCanAccessApartmentBeforeCreate($actorAccountId, $ownerAccountId, $template, true);
             [$room, ] = $this->resolveOrCreateApartment($ownerAccountId, $template);
             $roomId = (int) $room->room_id;
-            $this->assertCanEditApartment($actorAccountId, $ownerAccountId, $roomId);
 
             $normalizedObjectId = $this->normalizeObjectId($objectId);
             $furniture = $this->findRoomFurnitureByObjectIdForUpdate($roomId, $normalizedObjectId);
@@ -361,6 +366,53 @@ class ApartmentPlacementService
         return [$room, (int) $containerRow->container_id];
     }
 
+    private function assertCanAccessApartmentBeforeCreate(
+        int $actorAccountId,
+        int $ownerAccountId,
+        string $templateKey,
+        bool $requiresEdit
+    ): void {
+        if ($actorAccountId === $ownerAccountId) {
+            return;
+        }
+
+        $serverId = Server::query()->where('name', 'main')->value('server_id');
+        $roomId = $serverId !== null
+            ? Room::query()
+                ->where('server_id', (int) $serverId)
+                ->where('type', 'apartment')
+                ->where('name', $this->apartmentRoomName($ownerAccountId, $templateKey))
+                ->value('room_id')
+            : null;
+
+        if ($roomId === null) {
+            $this->throwApartmentAccessDenied($requiresEdit);
+        }
+
+        if ($requiresEdit) {
+            $this->assertCanEditApartment($actorAccountId, $ownerAccountId, (int) $roomId);
+
+            return;
+        }
+
+        $this->assertCanViewApartment($actorAccountId, $ownerAccountId, (int) $roomId);
+    }
+
+    private function assertCanViewApartment(int $actorAccountId, int $ownerAccountId, int $roomId): void
+    {
+        if ($actorAccountId === $ownerAccountId) {
+            return;
+        }
+
+        $isMember = RoomMembership::query()
+            ->where('room_id', $roomId)
+            ->where('account_id', $actorAccountId)
+            ->exists();
+        if (! $isMember) {
+            $this->throwApartmentAccessDenied(false);
+        }
+    }
+
     private function assertCanEditApartment(int $actorAccountId, int $ownerAccountId, int $roomId): void
     {
         if ($actorAccountId === $ownerAccountId) {
@@ -369,10 +421,28 @@ class ApartmentPlacementService
         $isMember = RoomMembership::query()
             ->where('room_id', $roomId)
             ->where('account_id', $actorAccountId)
+            ->whereIn('role', self::EDIT_ROLES)
             ->exists();
         if (! $isMember) {
-            throw new ApartmentPlacementException('apartment_edit_forbidden', 'You are not allowed to edit this apartment.', 403);
+            $this->throwApartmentAccessDenied(true);
         }
+    }
+
+    private function throwApartmentAccessDenied(bool $requiresEdit): never
+    {
+        if ($requiresEdit) {
+            throw new ApartmentPlacementException(
+                'apartment_edit_forbidden',
+                'You are not allowed to edit this apartment.',
+                403
+            );
+        }
+
+        throw new ApartmentPlacementException(
+            'apartment_view_forbidden',
+            'You are not allowed to view this apartment.',
+            403
+        );
     }
 
     /**
@@ -515,8 +585,17 @@ class ApartmentPlacementService
             return self::DEFAULT_TEMPLATE_KEY;
         }
         $v = trim($templateKey);
+        if ($v === '') {
+            return self::DEFAULT_TEMPLATE_KEY;
+        }
+        if ($v !== self::DEFAULT_TEMPLATE_KEY) {
+            throw new ApartmentPlacementException(
+                'unsupported_apartment_template',
+                'This apartment template is not supported.'
+            );
+        }
 
-        return $v !== '' ? $v : self::DEFAULT_TEMPLATE_KEY;
+        return $v;
     }
 
     private function normalizeObjectId(mixed $raw): string
@@ -648,4 +727,3 @@ class ApartmentPlacementService
         ];
     }
 }
-

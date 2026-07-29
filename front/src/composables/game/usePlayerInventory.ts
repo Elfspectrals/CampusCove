@@ -106,6 +106,7 @@ export function usePlayerInventory(deps: UsePlayerInventoryDeps): UsePlayerInven
   const cursorItem = ref<{ code: string; fromSlot: number } | null>(null)
 
   let layoutHydrated = false
+  let layoutLoadGeneration = 0
   let saveTimer: ReturnType<typeof setTimeout> | null = null
   let interactionDragged = false
   let pointerPressSlot: number | null = null
@@ -117,7 +118,13 @@ export function usePlayerInventory(deps: UsePlayerInventoryDeps): UsePlayerInven
   }
 
   onScopeDispose(() => {
+    layoutLoadGeneration += 1
     stopHotbarPlacementQtyWatch()
+    if (saveTimer !== null) {
+      clearTimeout(saveTimer)
+      saveTimer = null
+    }
+    layoutHydrated = false
   })
 
   function cancelPlacementPreviewInternal(): void {
@@ -161,11 +168,13 @@ export function usePlayerInventory(deps: UsePlayerInventoryDeps): UsePlayerInven
     if (saveTimer !== null) clearTimeout(saveTimer)
     saveTimer = setTimeout(() => {
       saveTimer = null
+      if (!layoutHydrated) return
       void saveInventoryLayout({
         slots: [...slots.value],
         selectedHotbarIndex: selectedHotbarIndex.value,
-      }).catch((err) => {
-        console.error('[playerInventory] layout save failed', err)
+      }).catch((err: unknown) => {
+        inventoryError.value =
+          err instanceof Error ? `Could not save inventory layout: ${err.message}` : 'Could not save inventory layout.'
       })
     }, DEBOUNCE_MS)
   }
@@ -256,11 +265,26 @@ export function usePlayerInventory(deps: UsePlayerInventoryDeps): UsePlayerInven
   }
 
   async function loadLayoutFromServer(): Promise<void> {
-    const layout = await fetchInventoryLayout()
-    slots.value = [...layout.slots]
-    selectedHotbarIndex.value = layout.selectedHotbarIndex
-    layoutHydrated = true
-    if (ownedItemsHydrated.value) normalizeSlotsAgainstOwnedItems()
+    const generation = ++layoutLoadGeneration
+    layoutHydrated = false
+    if (saveTimer !== null) {
+      clearTimeout(saveTimer)
+      saveTimer = null
+    }
+    try {
+      const layout = await fetchInventoryLayout()
+      if (generation !== layoutLoadGeneration) return
+      slots.value = [...layout.slots]
+      selectedHotbarIndex.value = layout.selectedHotbarIndex
+      layoutHydrated = true
+      inventoryError.value = null
+      if (ownedItemsHydrated.value) normalizeSlotsAgainstOwnedItems()
+    } catch (error: unknown) {
+      if (generation !== layoutLoadGeneration) return
+      const message = error instanceof Error ? error.message : 'Could not load inventory layout.'
+      inventoryError.value = `Could not load inventory layout: ${message}`
+      throw error
+    }
   }
 
   function resetClientStateForCityWorld(): void {

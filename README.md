@@ -80,6 +80,28 @@ npm run dev
 
 Default dev server: **5173**. The Vite config proxies `/api` to `http://localhost:8000`; Socket defaults to `http://localhost:3000`. Override with `VITE_API_URL` / `VITE_SOCKET_URL` only if your URLs differ.
 
+### Proximity voice
+
+Voice is disabled for each player until they explicitly enable it in the game. Signaling uses the authenticated Colyseus room; microphone audio uses WebRTC, does not pass through the Colyseus application server, and is not recorded by CampusCove. Depending on the ICE configuration, WebRTC may send audio directly or through the configured TURN relay.
+
+The local defaults work for same-device or LAN testing. Production deployments should configure restricted TURN credentials in the socket environment, ideally with `VOICE_ICE_TRANSPORT_POLICY=relay` when hiding peer network addresses is required. See `socket/.env.example` for every voice setting. TURN credentials delivered to browsers are visible to those browsers, so prefer short-lived credentials and never commit production secrets.
+
+### Gameplay options and Cove Rush
+
+The in-game Settings panel supports remappable movement, interaction, inventory, apartment rotation, and push-to-talk controls, plus sensitivity, inverted look, FOV, graphics presets, shadows, antialiasing, resolution scale, frame-rate caps, particles, bloom, HDR lighting, and an FPS overlay.
+
+The city’s Cove Rush hub offers a lightweight server-authoritative orb course: play solo for a session best or queue for a nearby 1v1. Both racers receive equal start positions and a shared countdown; checkpoint order, movement, timing, forfeits, and results are validated by the Colyseus room. It has no NPC task or economy reward.
+
+### Tests with Docker
+
+Run backend tests through the dedicated test profile so `RefreshDatabase` can never touch the normal `campus_cove` database:
+
+```bash
+make backend-test
+```
+
+This uses an isolated `campus_cove_test` PostgreSQL service backed by temporary memory. `docker compose run --rm backend composer test` is intentionally not the documented test command because the normal backend service points at the development database.
+
 ---
 
 ## Game map (LobbyMap)

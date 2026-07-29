@@ -90,6 +90,9 @@ class AdminUserController extends Controller
                 'normalized' => $normalized,
             ]);
 
+            DB::table('password_reset_tokens')
+                ->where('email', $validated['email'])
+                ->delete();
             AccountAuthLocal::query()->create([
                 'account_id' => (int) $account->account_id,
                 'email' => (string) $validated['email'],
@@ -137,7 +140,18 @@ class AdminUserController extends Controller
             }
 
             if (array_key_exists('email', $validated)) {
-                $account->localAuth()->update(['email' => (string) $validated['email']]);
+                $localAuth = $account->localAuth;
+                if ($localAuth === null) {
+                    throw ValidationException::withMessages([
+                        'email' => ['This account does not support local email login.'],
+                    ]);
+                }
+
+                $nextEmail = (string) $validated['email'];
+                DB::table('password_reset_tokens')
+                    ->whereIn('email', [(string) $localAuth->email, $nextEmail])
+                    ->delete();
+                $localAuth->update(['email' => $nextEmail]);
             }
 
             if (array_key_exists('is_admin', $validated)) {
@@ -243,10 +257,16 @@ class AdminUserController extends Controller
         ]);
 
         $account = Account::withTrashed()->findOrFail($accountId);
-        $account->localAuth()->update([
-            'password_hash' => Hash::make((string) $validated['password']),
-        ]);
-        $account->tokens()->delete();
+        DB::transaction(function () use ($account, $validated): void {
+            $email = $account->localAuth()->value('email');
+            $account->localAuth()->update([
+                'password_hash' => Hash::make((string) $validated['password']),
+            ]);
+            $account->tokens()->delete();
+            if (is_string($email)) {
+                DB::table('password_reset_tokens')->where('email', $email)->delete();
+            }
+        });
 
         return response()->json([
             'message' => 'Password reset successfully.',

@@ -9,8 +9,6 @@ use App\Models\ItemDef;
  */
 final class StarterCosmeticGrantService
 {
-    private const FREE_BODY_PREVIEW_IMAGE = '/storage/skins/previews/placeholderSkin.jpg';
-
     /** @var array<string, string> */
     private const FREE_BODY_MODEL_BY_CODE = [
         'COS_WEAR_BODY_DEFAULT' => '/models/CharacterDefault.glb',
@@ -70,7 +68,7 @@ final class StarterCosmeticGrantService
     private function ensureFreeBodyDefinitionsConfigured(): void
     {
         foreach (self::FREE_BODY_CODES as $code) {
-            ItemDef::query()->updateOrCreate(
+            ItemDef::query()->firstOrCreate(
                 ['code' => $code],
                 [
                     'name' => match ($code) {
@@ -85,7 +83,7 @@ final class StarterCosmeticGrantService
                     'bind' => 'bound',
                     'max_stack' => 99,
                     'cosmetic_slot' => 'body',
-                    'preview_image' => self::FREE_BODY_PREVIEW_IMAGE,
+                    'preview_image' => null,
                     'model_glb' => self::FREE_BODY_MODEL_BY_CODE[$code],
                 ]
             );

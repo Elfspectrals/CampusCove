@@ -9,7 +9,7 @@ import {
   CITY_BUILDING_DOOR_POS,
 } from './gameRoomConstants'
 import { createGltfLoader } from './gltfLoaderFactory'
-import { getGraphicsQuality } from './graphicsQuality'
+import { getGraphicsQuality, usesLowDetailRoomAssets } from './graphicsQuality'
 import {
   addApartmentFallbackLights,
   configureRoomMeshShadows,
@@ -20,11 +20,11 @@ import {
 const CITY_SKY_COLOR = 0x9fc3e8
 
 function lobbyMapPathForQuality(): string {
-  return getGraphicsQuality() === 'low' ? '/maps/LobbyMap.low.glb' : '/maps/LobbyMap.glb'
+  return usesLowDetailRoomAssets() ? '/maps/LobbyMap.low.glb' : '/maps/LobbyMap.glb'
 }
 
 function apartmentMapPathForQuality(): string {
-  return getGraphicsQuality() === 'low' ? '/maps/ApartmentInterior.low.glb' : '/maps/ApartmentInterior.glb'
+  return usesLowDetailRoomAssets() ? '/maps/ApartmentInterior.low.glb' : '/maps/ApartmentInterior.glb'
 }
 
 function addLobbyLighting(group: THREE.Group): void {

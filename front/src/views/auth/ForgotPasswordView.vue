@@ -12,8 +12,8 @@ async function submit() {
   success.value = ''
   loading.value = true
   try {
-    await authApi.forgotPassword(email.value)
-    success.value = 'If an account exists with that email, you’ll receive a reset link.'
+    const response = await authApi.forgotPassword(email.value)
+    success.value = response.message
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Something went wrong'
   } finally {
@@ -23,8 +23,8 @@ async function submit() {
 </script>
 
 <template>
-  <div class="mx-auto flex min-h-[calc(100dvh-8rem)] w-full max-w-[420px] flex-col justify-center px-4 py-10">
-    <div class="rounded-2xl border border-slate-200 bg-white p-8 shadow-lg">
+  <div class="flex min-h-screen w-full flex-col items-center justify-center bg-gradient-to-br from-slate-950 via-[#11162b] to-violet-950 px-4 py-10">
+    <div class="w-full max-w-md rounded-2xl border border-white/15 bg-white p-6 shadow-2xl shadow-black/40 sm:p-8">
       <h2 class="m-0 mb-1 text-2xl font-bold text-slate-900">Reset password</h2>
       <p class="mb-6 text-sm text-slate-600">We’ll email you a link if an account exists.</p>
 
@@ -38,7 +38,7 @@ async function submit() {
             placeholder="you@example.com"
             required
             autocomplete="email"
-            class="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-[15px] text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+            class="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
           />
         </div>
         <p v-if="error" class="m-0 text-sm text-red-600">{{ error }}</p>
@@ -46,7 +46,7 @@ async function submit() {
         <button
           type="submit"
           :disabled="loading"
-          class="mt-1 w-full rounded-lg border-0 bg-gradient-to-r from-purple-600 to-fuchsia-500 px-4 py-3.5 text-[15px] font-semibold text-white transition-opacity hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+          class="mt-1 w-full rounded-lg border-0 bg-gradient-to-r from-purple-600 to-fuchsia-500 px-4 py-3.5 text-base font-semibold text-white transition-opacity hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {{ loading ? 'Sending…' : 'Send reset link' }}
         </button>

@@ -182,7 +182,7 @@ class CharacterCosmeticApiTest extends TestCase
         $this->assertSame(1, $owned['quantity']);
     }
 
-    public function test_starter_body_item_defs_use_front_origin_model_paths(): void
+    public function test_starter_body_item_defs_use_front_origin_model_paths_without_missing_previews(): void
     {
         $account = $this->registerAndCreditWallet(10_000, 'coins');
         $token = $account['token'];
@@ -203,7 +203,7 @@ class CharacterCosmeticApiTest extends TestCase
         $previewImage = DB::table('item_defs')
             ->where('code', 'COS_WEAR_BODY_DEFAULT')
             ->value('preview_image');
-        $this->assertSame('/storage/skins/previews/placeholderSkin.jpg', $previewImage);
+        $this->assertNull($previewImage);
 
         $def = DB::table('item_defs')->where('code', 'COS_WEAR_BODY_DEFAULT')->first();
         $this->assertNotNull($def);
@@ -219,10 +219,7 @@ class CharacterCosmeticApiTest extends TestCase
             'Authorization' => 'Bearer '.$token,
         ]);
         $response->assertOk();
-        $this->assertStringContainsString(
-            '/api/assets/public/skins/previews/placeholderSkin.jpg',
-            (string) $response->json('slots.body.preview_image')
-        );
+        $this->assertNull($response->json('slots.body.preview_image'));
         $this->assertSame(
             '/models/CharacterDefault.glb',
             $response->json('slots.body.model_glb')

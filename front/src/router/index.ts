@@ -1,33 +1,65 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { getStoredAuth, isAdminUser, validateStoredAuth } from '../api/auth'
-import AdminInventoriesView from '../views/admin/AdminInventoriesView.vue'
-import AdminShopView from '../views/admin/AdminShopView.vue'
-import AdminUsersView from '../views/admin/AdminUsersView.vue'
-import ForgotPasswordView from '../views/auth/ForgotPasswordView.vue'
-import FriendsView from '../views/FriendsView.vue'
-import GameView from '../views/GameView.vue'
-import HomeView from '../views/HomeView.vue'
-import LockerView from '../views/LockerView.vue'
-import ItemShopView from '../views/ItemShopView.vue'
-import LandingView from '../views/LandingView.vue'
-import LoginView from '../views/auth/LoginView.vue'
-import RegisterView from '../views/auth/RegisterView.vue'
+
+const AdminInventoriesView = () => import('../views/admin/AdminInventoriesView.vue')
+const AdminShopView = () => import('../views/admin/AdminShopView.vue')
+const AdminUsersView = () => import('../views/admin/AdminUsersView.vue')
+const ForgotPasswordView = () => import('../views/auth/ForgotPasswordView.vue')
+const FriendsView = () => import('../views/FriendsView.vue')
+const GameView = () => import('../views/GameView.vue')
+const HomeView = () => import('../views/HomeView.vue')
+const LockerView = () => import('../views/LockerView.vue')
+const ItemShopView = () => import('../views/ItemShopView.vue')
+const LandingView = () => import('../views/LandingView.vue')
+const LoginView = () => import('../views/auth/LoginView.vue')
+const NotFoundView = () => import('../views/NotFoundView.vue')
+const RegisterView = () => import('../views/auth/RegisterView.vue')
+const ResetPasswordView = () => import('../views/auth/ResetPasswordView.vue')
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
+  scrollBehavior(_to, _from, savedPosition) {
+    return savedPosition ?? { top: 0 }
+  },
   routes: [
-    { path: '/', name: 'landing', component: LandingView, meta: { guest: true, title: 'Welcome' } },
-    { path: '/login', name: 'login', component: LoginView, meta: { guest: true, title: 'Sign in' } },
-    { path: '/register', name: 'register', component: RegisterView, meta: { guest: true, title: 'Register' } },
+    {
+      path: '/',
+      name: 'landing',
+      component: LandingView,
+      meta: { guest: true, title: 'Virtual campus', standalone: true, fullBleed: true },
+    },
+    {
+      path: '/login',
+      name: 'login',
+      component: LoginView,
+      meta: { guest: true, title: 'Sign in', standalone: true, fullBleed: true },
+    },
+    {
+      path: '/register',
+      name: 'register',
+      component: RegisterView,
+      meta: { guest: true, title: 'Register', standalone: true, fullBleed: true },
+    },
     {
       path: '/forgot-password',
       name: 'forgot-password',
       component: ForgotPasswordView,
-      meta: { guest: true, title: 'Reset password' },
+      meta: { guest: true, title: 'Reset password', standalone: true, fullBleed: true },
+    },
+    {
+      path: '/reset-password',
+      name: 'reset-password',
+      component: ResetPasswordView,
+      meta: { guest: true, title: 'Choose a new password', standalone: true, fullBleed: true },
     },
     { path: '/item-shop', name: 'item-shop', redirect: { name: 'shop' } },
-    { path: '/shop', name: 'shop', component: ItemShopView, meta: { title: 'Shop' } },
-    { path: '/shop-skin', name: 'shop-skin', component: ItemShopView, meta: { title: 'Shop Skin' } },
+    { path: '/shop', name: 'shop', component: ItemShopView, meta: { title: 'Shop', fullBleed: true } },
+    {
+      path: '/shop-skin',
+      name: 'shop-skin',
+      component: ItemShopView,
+      meta: { title: 'Shop Skin', fullBleed: true },
+    },
     { path: '/home', name: 'home', component: HomeView, meta: { requiresAuth: true, title: 'Profile' } },
     { path: '/locker', name: 'locker', component: LockerView, meta: { requiresAuth: true, title: 'Locker' } },
     { path: '/inventory', name: 'legacy-inventory', redirect: { name: 'locker' }, meta: { requiresAuth: true } },
@@ -41,6 +73,12 @@ const router = createRouter({
       name: 'admin-inventories',
       component: AdminInventoriesView,
       meta: { requiresAdmin: true, title: 'Admin — Inventories' },
+    },
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'not-found',
+      component: NotFoundView,
+      meta: { title: 'Page not found', standalone: true, fullBleed: true },
     },
   ],
 })
@@ -70,6 +108,11 @@ router.beforeEach(async (to) => {
     return { name: 'home' }
   }
   return true
+})
+
+router.afterEach((to) => {
+  const title = typeof to.meta.title === 'string' ? to.meta.title : ''
+  document.title = title ? `${title} · CampusCove` : 'CampusCove'
 })
 
 export default router

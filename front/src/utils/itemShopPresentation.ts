@@ -9,6 +9,32 @@ export function priceBadge(option: ShopItemCurrencyOption): string {
   return `${sym} ${option.price.toLocaleString()}`
 }
 
+const RARITY_LABELS = ['Common', 'Uncommon', 'Rare', 'Epic', 'Legendary'] as const
+
+export function rarityLabel(rarity: number): string {
+  if (!Number.isInteger(rarity) || rarity < 0) return 'Unknown'
+  return RARITY_LABELS[Math.min(rarity, RARITY_LABELS.length - 1)] ?? 'Unknown'
+}
+
+export function rarityToneClasses(rarity: number): string {
+  if (rarity >= 4) return 'border-amber-300 text-amber-200'
+  if (rarity === 3) return 'border-fuchsia-300 text-fuchsia-200'
+  if (rarity === 2) return 'border-cyan-300 text-cyan-200'
+  if (rarity === 1) return 'border-emerald-300 text-emerald-200'
+  return 'border-slate-300/60 text-slate-200'
+}
+
+export function kindLabel(item: ShopItem): string {
+  if (item.kind === 'apartment_asset' || item.kind === 'furniture') return 'Apartment item'
+  if (item.kind === 'cosmetic') return 'Character cosmetic'
+  if (item.kind === 'consumable') return 'Consumable'
+  return 'Collectible'
+}
+
+export function optionAvailable(option: ShopItemCurrencyOption): boolean {
+  return option.stock_remaining === null || option.stock_remaining > 0
+}
+
 export function cardToneClasses(item: ShopItem): string {
   const hasPremium = item.options.some((option) => option.currency === 'premium')
   const hasCoins = item.options.some((option) => option.currency === 'coins')

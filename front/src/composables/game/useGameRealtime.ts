@@ -12,6 +12,7 @@ import {
   type CosmeticColors,
 } from '../../api/characterCosmetics'
 import { getStoredAuth } from '../../api/auth'
+import { normalizeApiAssetUrl } from '../../api/url'
 import { createTintedCharacterFromUrl } from '../../avatar/glbCharacter'
 import { buildCompositeAvatar, disposeObject3D } from '../../avatar/compositeAvatar'
 import { APARTMENT_SPAWN } from '../../game/gameRoomConstants'
@@ -24,6 +25,10 @@ import type {
   RemoteUserPayload,
   RoomInitPayload,
 } from '../../types/gameRealtime'
+
+const REMOTE_AVATAR_EYE_HEIGHT = 1.6
+const REMOTE_POSITION_SMOOTHING = 12
+const REMOTE_TELEPORT_DISTANCE_SQ = 400
 
 function toWsUrl(rawUrl: string): string {
   if (rawUrl.startsWith('https://')) return `wss://${rawUrl.slice('https://'.length)}`
@@ -46,11 +51,27 @@ function parseBodyTintColors(raw: Record<string, string> | null | undefined): Co
 }
 
 function parseBodyModelGlb(raw: unknown): string | null {
-  return typeof raw === 'string' && raw.trim().length > 0 ? raw.trim() : null
+  return normalizeApiAssetUrl(typeof raw === 'string' ? raw : null)
+}
+
+function parseFinitePosition(raw: unknown): { x: number; y: number; z: number } | null {
+  if (typeof raw !== 'object' || raw === null) return null
+  const payload = raw as Record<string, unknown>
+  if (
+    typeof payload.x !== 'number' ||
+    !Number.isFinite(payload.x) ||
+    typeof payload.y !== 'number' ||
+    !Number.isFinite(payload.y) ||
+    typeof payload.z !== 'number' ||
+    !Number.isFinite(payload.z)
+  ) {
+    return null
+  }
+  return { x: payload.x, y: payload.y, z: payload.z }
 }
 
 function placeAvatar(group: THREE.Group, x: number, y: number, z: number) {
-  group.position.set(x, y, z)
+  group.position.set(x, y - REMOTE_AVATAR_EYE_HEIGHT, z)
 }
 
 export interface GameRealtimeDeps {
@@ -112,6 +133,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
 
   let previousQuantityByCode: Record<string, number> = {}
   let isInitialInventoryLoad = true
+  let currentApartmentOwnerId: number | null = null
 
   function finishApartmentTransition(): void {
     deps.transitioningApartment.value = false
@@ -142,15 +164,20 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
 
   function isRemoteVisible(zone: 'city' | 'apartment', apartmentOwnerId: number | null): boolean {
     if (deps.currentRoomLabel.value === 'city') return zone === 'city'
-    return zone === 'apartment' && apartmentOwnerId === getStoredAuth()?.user.account_id
+    return zone === 'apartment' && apartmentOwnerId === currentApartmentOwnerId
   }
 
-  function removeSceneAvatarDuplicates(sessionId: string, userId: string) {
+  function removeSceneAvatarDuplicates(
+    sessionId: string,
+    userId: string,
+    keep: THREE.Object3D | null = null,
+  ) {
     const scene = deps.getScene()
     if (!scene) return
 
     const toRemove: THREE.Object3D[] = []
     for (const child of scene.children) {
+      if (child === keep) continue
       if (!(child instanceof THREE.Group)) continue
       const tag = child.userData as { isRemoteAvatar?: boolean; sessionId?: string; userId?: string }
       if (!tag.isRemoteAvatar) continue
@@ -166,10 +193,12 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
 
   function removeOtherUser(sessionId: string) {
     const scene = deps.getScene()
+    nextRenderToken(renderTokenBySessionId, sessionId)
+    pendingAppearanceUpdates.delete(sessionId)
     const entry = otherUsers.value.get(sessionId)
     if (!entry) return
     if (scene) {
-      removeSceneAvatarDuplicates(sessionId, entry.userId)
+      removeSceneAvatarDuplicates(sessionId, entry.userId, entry.group)
       scene.remove(entry.group)
     }
     disposeObject3D(entry.group)
@@ -177,8 +206,6 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     if (sessionByUserId.get(entry.userId) === sessionId) {
       sessionByUserId.delete(entry.userId)
     }
-    pendingAppearanceUpdates.delete(sessionId)
-    renderTokenBySessionId.delete(sessionId)
   }
 
   function removeOtherUsersByUserIdExcept(userId: string, keepSessionId: string) {
@@ -299,13 +326,13 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       return
     }
     removeOtherUsersByUserIdExcept(latestEntry.userId, sessionId)
-    removeSceneAvatarDuplicates(sessionId, latestEntry.userId)
+    removeSceneAvatarDuplicates(sessionId, latestEntry.userId, latestEntry.group)
     group.userData.isRemoteAvatar = true
     group.userData.sessionId = sessionId
     group.userData.userId = latestEntry.userId
+    group.position.copy(latestEntry.group.position)
     scene.remove(latestEntry.group)
     disposeObject3D(latestEntry.group)
-    placeAvatar(group, latestEntry.x, latestEntry.y, latestEntry.z)
     scene.add(group)
     otherUsers.value.set(sessionId, {
       ...latestEntry,
@@ -319,6 +346,31 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     for (const id of [...otherUsers.value.keys()]) {
       removeOtherUser(id)
     }
+    sessionByUserId.clear()
+    pendingAppearanceUpdates.clear()
+    for (const [userId, token] of upsertTokenByUserId) {
+      upsertTokenByUserId.set(userId, token + 1)
+    }
+    for (const [sessionId, token] of renderTokenBySessionId) {
+      renderTokenBySessionId.set(sessionId, token + 1)
+    }
+  }
+
+  function tickRemoteUsers(dt: number): void {
+    const alpha = 1 - Math.exp(-REMOTE_POSITION_SMOOTHING * Math.min(Math.max(dt, 0), 0.1))
+    for (const entry of otherUsers.value.values()) {
+      const targetY = entry.y - REMOTE_AVATAR_EYE_HEIGHT
+      const dx = entry.x - entry.group.position.x
+      const dy = targetY - entry.group.position.y
+      const dz = entry.z - entry.group.position.z
+      if (dx * dx + dy * dy + dz * dz >= REMOTE_TELEPORT_DISTANCE_SQ) {
+        entry.group.position.set(entry.x, targetY, entry.z)
+        continue
+      }
+      entry.group.position.x += dx * alpha
+      entry.group.position.y += dy * alpha
+      entry.group.position.z += dz * alpha
+    }
   }
 
   function bindRoomEvents(room: Room) {
@@ -327,6 +379,8 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       deps.apartment.clearApartmentObjects()
       deps.roomMessage.value = null
       deps.currentRoomLabel.value = payload.me.zone
+      currentApartmentOwnerId =
+        payload.me.zone === 'apartment' ? payload.me.apartmentOwnerId : null
       deps.setRoomEnvironment(payload.me.zone)
       deps.myPosition.x = payload.me.x
       deps.myPosition.y = payload.me.y
@@ -355,7 +409,15 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       entry.x = data.x
       entry.y = data.y
       entry.z = data.z
-      entry.group.position.set(data.x, data.y, data.z)
+    })
+
+    room.onMessage('position_corrected', (data: unknown) => {
+      const position = parseFinitePosition(data)
+      if (!position) return
+      deps.myPosition.x = position.x
+      deps.myPosition.y = position.y
+      deps.myPosition.z = position.z
+      resolveCamera()?.position.set(position.x, position.y, position.z)
     })
 
     room.onMessage(
@@ -387,6 +449,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       }) => {
         if (data.sessionId === room.sessionId) {
           deps.currentRoomLabel.value = data.zone
+          currentApartmentOwnerId = data.zone === 'apartment' ? data.apartmentOwnerId : null
           deps.setRoomEnvironment(data.zone)
           deps.myPosition.x = data.x
           deps.myPosition.y = data.y
@@ -410,7 +473,6 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
         entry.x = data.x
         entry.y = data.y
         entry.z = data.z
-        entry.group.position.set(data.x, data.y, data.z)
         if (!isRemoteVisible(entry.zone, entry.apartmentOwnerId)) {
           removeOtherUser(data.sessionId)
         }
@@ -421,6 +483,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       previousQuantityByCode = {}
       isInitialInventoryLoad = true
       deps.currentRoomLabel.value = 'apartment'
+      currentApartmentOwnerId = payload.ownerAccountId
       deps.setRoomEnvironment('apartment')
       deps.myPosition.x = APARTMENT_SPAWN.x
       deps.myPosition.y = APARTMENT_SPAWN.y
@@ -519,6 +582,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       deps.apartment.detachForRoomSwitch()
 
       deps.currentRoomLabel.value = 'city'
+      currentApartmentOwnerId = null
       const nextRoom: Room = await colyseusClient.joinOrCreate('city', roomOptions)
       deps.setRoomEnvironment('city')
       deps.gameRoomRef.value = nextRoom
@@ -560,6 +624,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
   return {
     connectRealtime,
     clearRemoteUsers,
+    tickRemoteUsers,
     refreshMyAppearance: deps.refreshMyAppearance,
   }
 }

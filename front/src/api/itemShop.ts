@@ -16,6 +16,8 @@ export interface ShopItemCurrencyOption {
   public_id: string
   currency: ShopCurrency
   price: number
+  stock_remaining: number | null
+  is_unique_per_account: boolean
 }
 
 export interface ShopItem {
@@ -28,6 +30,8 @@ export interface ShopItem {
   preview_image: string | null
   model_glb: string | null
   kind: ShopItemKind
+  rarity: number
+  max_stack: number
   options: ShopItemCurrencyOption[]
 }
 
@@ -74,12 +78,27 @@ function normalizeCatalogRow(row: unknown): ShopItem | null {
   const allowPremium = row.allow_premium === true
   const coinsPrice = typeof row.coins_price === 'number' ? row.coins_price : null
   const premiumPrice = typeof row.premium_price === 'number' ? row.premium_price : null
+  if (
+    !(
+      row.stock_remaining === null ||
+      (typeof row.stock_remaining === 'number' &&
+        Number.isInteger(row.stock_remaining) &&
+        row.stock_remaining >= 0)
+    )
+  ) {
+    return null
+  }
+  if (typeof row.is_unique_per_account !== 'boolean') return null
+  const stockRemaining = row.stock_remaining
+  const isUniquePerAccount = row.is_unique_per_account
   if (!isRecord(row.item)) return null
   if (typeof row.item.item_def_id !== 'number') return null
   if (typeof row.item.code !== 'string') return null
   if (typeof row.item.name !== 'string') return null
   const itemKind = parseItemKind(row.item.kind)
   if (itemKind === null) return null
+  if (typeof row.item.rarity !== 'number' || !Number.isInteger(row.item.rarity)) return null
+  if (typeof row.item.max_stack !== 'number' || !Number.isInteger(row.item.max_stack)) return null
   if (!(row.item.description === undefined || row.item.description === null || typeof row.item.description === 'string')) return null
   if (!(row.item.preview_image === undefined || row.item.preview_image === null || typeof row.item.preview_image === 'string')) return null
   if (!(row.item.model_glb === undefined || row.item.model_glb === null || typeof row.item.model_glb === 'string')) return null
@@ -91,6 +110,8 @@ function normalizeCatalogRow(row: unknown): ShopItem | null {
       public_id: row.public_id,
       currency: 'coins',
       price: coinsPrice,
+      stock_remaining: stockRemaining,
+      is_unique_per_account: isUniquePerAccount,
     })
   }
   if (allowPremium && premiumPrice !== null && premiumPrice > 0) {
@@ -99,6 +120,8 @@ function normalizeCatalogRow(row: unknown): ShopItem | null {
       public_id: row.public_id,
       currency: 'premium',
       price: premiumPrice,
+      stock_remaining: stockRemaining,
+      is_unique_per_account: isUniquePerAccount,
     })
   }
   if (options.length === 0 && currency !== null && row.price > 0) {
@@ -107,6 +130,8 @@ function normalizeCatalogRow(row: unknown): ShopItem | null {
       public_id: row.public_id,
       currency,
       price: row.price,
+      stock_remaining: stockRemaining,
+      is_unique_per_account: isUniquePerAccount,
     })
   }
   if (options.length === 0) return null
@@ -121,6 +146,8 @@ function normalizeCatalogRow(row: unknown): ShopItem | null {
     preview_image: normalizeApiAssetUrl(row.item.preview_image),
     model_glb: normalizeApiAssetUrl(row.item.model_glb),
     kind: itemKind,
+    rarity: row.item.rarity,
+    max_stack: row.item.max_stack,
     options,
   }
 }
@@ -138,9 +165,15 @@ function parseCatalog(data: unknown): { items: ShopItem[] } {
       byDef.set(item.item_def_id, item)
       continue
     }
-    const firstOption = item.options[0]
-    if (!firstOption) throw new Error('Invalid catalog item')
-    existing.options.push(firstOption)
+    for (const option of item.options) {
+      const existingIndex = existing.options.findIndex((candidate) => candidate.currency === option.currency)
+      if (existingIndex === -1) {
+        existing.options.push(option)
+      } else {
+        const current = existing.options[existingIndex]
+        if (current && option.price < current.price) existing.options[existingIndex] = option
+      }
+    }
     if (item.shop_catalog_item_id < existing.shop_catalog_item_id) {
       existing.shop_catalog_item_id = item.shop_catalog_item_id
       existing.public_id = item.public_id

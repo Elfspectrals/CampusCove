@@ -11,6 +11,7 @@ use App\Http\Controllers\FriendController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\PlayerInventoryLayoutController;
 use App\Http\Controllers\ShopController;
+use App\Http\Controllers\VoicePolicyController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/health', function () {
@@ -19,7 +20,8 @@ Route::get('/health', function () {
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
-Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->middleware('throttle:5,1');
+Route::post('/reset-password', [AuthController::class, 'resetPassword'])->middleware('throttle:10,1');
 
 Route::get('/shop/items', [ShopController::class, 'index']);
 Route::get('/assets/public/{path}', [AssetController::class, 'publicDisk'])->where('path', '.*');
@@ -34,6 +36,7 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
     Route::post('/friends/accept/{accountId}', [FriendController::class, 'accept']);
     Route::post('/friends/block/{accountId}', [FriendController::class, 'block']);
     Route::delete('/friends/{accountId}', [FriendController::class, 'destroy']);
+    Route::get('/voice/policy', [VoicePolicyController::class, 'show'])->middleware('throttle:30,1');
 
     Route::post('/shop/purchase', [ShopController::class, 'purchase']);
     Route::get('/inventory', [InventoryController::class, 'index']);

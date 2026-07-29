@@ -25,8 +25,8 @@ async function submit() {
 </script>
 
 <template>
-  <div class="flex min-h-[calc(100dvh-8rem)] items-center justify-center px-4 py-10">
-    <div class="w-full max-w-[420px] rounded-2xl border border-slate-200 bg-white p-8 shadow-lg">
+  <div class="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-950 via-[#11162b] to-violet-950 px-4 py-10">
+    <div class="w-full max-w-md rounded-2xl border border-white/15 bg-white p-6 shadow-2xl shadow-black/40 sm:p-8">
       <router-link
         :to="{ name: 'landing' }"
         class="inline-flex items-center gap-1 text-gray-700 hover:text-gray-900 text-sm font-medium mb-6"
@@ -57,7 +57,7 @@ async function submit() {
             placeholder="Enter email"
             required
             autocomplete="email"
-            class="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-[15px] text-gray-900 placeholder:text-gray-400 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+            class="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-base text-gray-900 placeholder:text-gray-400 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
           />
         </div>
         <div>
@@ -69,7 +69,7 @@ async function submit() {
             placeholder="Enter password"
             required
             autocomplete="current-password"
-            class="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-[15px] text-gray-900 placeholder:text-gray-400 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+            class="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-base text-gray-900 placeholder:text-gray-400 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
           />
           <router-link to="/forgot-password" class="block mt-1.5 text-sm text-purple-600 font-medium hover:underline">
             Forgot password?
@@ -81,7 +81,7 @@ async function submit() {
         <button
           type="submit"
           :disabled="loading"
-          class="mt-1 w-full rounded-lg border-0 px-4 py-3.5 text-[15px] font-semibold text-white bg-gradient-to-r from-purple-600 to-fuchsia-500 hover:opacity-95 active:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 transition-opacity"
+          class="mt-1 w-full rounded-lg border-0 px-4 py-3.5 text-base font-semibold text-white bg-gradient-to-r from-purple-600 to-fuchsia-500 hover:opacity-95 active:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 transition-opacity"
         >
           {{ loading ? 'Signing in…' : 'Sign In' }}
         </button>

@@ -10,6 +10,9 @@ const addUsername = ref('')
 const addTag = ref('')
 const addError = ref('')
 const addLoading = ref(false)
+const loadError = ref('')
+const actionError = ref('')
+const actionAccountId = ref<number | null>(null)
 const friendsTab = ref<'all' | 'online' | 'pending'>('all')
 
 const onlineCount = computed(() => friends.value.filter((f) => f.status === 'online' || f.status === 'playing').length)
@@ -27,6 +30,7 @@ onMounted(async () => {
 
 async function loadFriends() {
   friendsLoading.value = true
+  loadError.value = ''
   try {
     const [friendsRes, pendingRes] = await Promise.all([
       friendsApi.getFriends(),
@@ -34,9 +38,8 @@ async function loadFriends() {
     ])
     friends.value = friendsRes.friends
     pending.value = pendingRes.pending
-  } catch {
-    friends.value = []
-    pending.value = []
+  } catch (caught) {
+    loadError.value = caught instanceof Error ? caught.message : 'Could not load friends'
   } finally {
     friendsLoading.value = false
   }
@@ -69,47 +72,67 @@ async function sendFriendRequest() {
 }
 
 async function acceptFriend(accountId: number) {
+  actionError.value = ''
+  actionAccountId.value = accountId
   try {
     await friendsApi.acceptRequest(accountId)
     await loadFriends()
-  } catch {
-    // ignore
+  } catch (caught) {
+    actionError.value = caught instanceof Error ? caught.message : 'Could not accept request'
+  } finally {
+    actionAccountId.value = null
   }
 }
 
 async function declineFriend(accountId: number) {
+  actionError.value = ''
+  actionAccountId.value = accountId
   try {
     await friendsApi.removeFriend(accountId)
     await loadFriends()
-  } catch {
-    // ignore
+  } catch (caught) {
+    actionError.value = caught instanceof Error ? caught.message : 'Could not decline request'
+  } finally {
+    actionAccountId.value = null
   }
 }
 
 async function blockFriend(accountId: number) {
+  actionError.value = ''
+  actionAccountId.value = accountId
   try {
     await friendsApi.blockUser(accountId)
     await loadFriends()
-  } catch {
-    // ignore
+  } catch (caught) {
+    actionError.value = caught instanceof Error ? caught.message : 'Could not block user'
+  } finally {
+    actionAccountId.value = null
   }
 }
 
 async function cancelSentRequest(accountId: number) {
+  actionError.value = ''
+  actionAccountId.value = accountId
   try {
     await friendsApi.removeFriend(accountId)
     await loadFriends()
-  } catch {
-    // ignore
+  } catch (caught) {
+    actionError.value = caught instanceof Error ? caught.message : 'Could not cancel request'
+  } finally {
+    actionAccountId.value = null
   }
 }
 
 async function removeFriend(accountId: number) {
+  actionError.value = ''
+  actionAccountId.value = accountId
   try {
     await friendsApi.removeFriend(accountId)
     await loadFriends()
-  } catch {
-    // ignore
+  } catch (caught) {
+    actionError.value = caught instanceof Error ? caught.message : 'Could not remove friend'
+  } finally {
+    actionAccountId.value = null
   }
 }
 
@@ -133,6 +156,17 @@ function statusLabel(status: string): string {
 
 <template>
   <div class="mx-auto max-w-6xl">
+      <div
+        v-if="loadError"
+        class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800"
+        role="alert"
+      >
+        <span>{{ loadError }}</span>
+        <button type="button" class="font-bold underline underline-offset-2" @click="loadFriends">Try again</button>
+      </div>
+      <p v-if="actionError" class="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800" role="alert">
+        {{ actionError }}
+      </p>
       <!-- Add friend: username + handle (same as on HomeView profile) -->
       <div class="bg-white rounded-2xl p-6 mb-6 shadow-sm">
         <h2 class="text-lg font-bold text-slate-800 mb-4">Add Friend</h2>
@@ -222,7 +256,7 @@ function statusLabel(status: string): string {
                 <div
                   v-for="p in incomingPending"
                   :key="p.account_id"
-                  class="flex items-center gap-4 p-4 rounded-lg bg-slate-50 hover:bg-slate-100"
+                  class="flex flex-wrap items-center gap-4 rounded-lg bg-slate-50 p-4 hover:bg-slate-100 sm:flex-nowrap"
                 >
                   <div class="w-12 h-12 rounded-full bg-gradient-to-br from-[#DA62C4] to-[#A744E3] flex items-center justify-center text-white font-bold text-lg shrink-0">
                     {{ friendInitial(p.display_name) }}
@@ -231,24 +265,27 @@ function statusLabel(status: string): string {
                     <p class="m-0 font-semibold text-slate-800 text-base">{{ p.display_name }}</p>
                     <p class="m-0 text-sm text-slate-500">Wants to be your friend</p>
                   </div>
-                  <div class="flex gap-2 shrink-0">
+                  <div class="flex shrink-0 flex-wrap gap-2">
                     <button
                       type="button"
-                      class="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500"
+                      class="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500 disabled:cursor-wait disabled:opacity-50"
+                      :disabled="actionAccountId !== null"
                       @click="acceptFriend(p.account_id)"
                     >
                       Accept
                     </button>
                     <button
                       type="button"
-                      class="rounded-lg bg-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-300"
+                      class="rounded-lg bg-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-300 disabled:cursor-wait disabled:opacity-50"
+                      :disabled="actionAccountId !== null"
                       @click="declineFriend(p.account_id)"
                     >
                       Decline
                     </button>
                     <button
                       type="button"
-                      class="rounded-lg bg-red-100 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-200"
+                      class="rounded-lg bg-red-100 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-200 disabled:cursor-wait disabled:opacity-50"
+                      :disabled="actionAccountId !== null"
                       @click="blockFriend(p.account_id)"
                     >
                       Block
@@ -263,7 +300,7 @@ function statusLabel(status: string): string {
                 <div
                   v-for="p in outgoingPending"
                   :key="p.account_id"
-                  class="flex items-center gap-4 p-4 rounded-lg bg-slate-50 hover:bg-slate-100"
+                  class="flex flex-wrap items-center gap-4 rounded-lg bg-slate-50 p-4 hover:bg-slate-100 sm:flex-nowrap"
                 >
                   <div class="w-12 h-12 rounded-full bg-gradient-to-br from-[#DA62C4] to-[#A744E3] flex items-center justify-center text-white font-bold text-lg shrink-0">
                     {{ friendInitial(p.display_name) }}
@@ -274,7 +311,8 @@ function statusLabel(status: string): string {
                   </div>
                   <button
                     type="button"
-                    class="rounded-lg bg-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-300 shrink-0"
+                    class="shrink-0 rounded-lg bg-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-300 disabled:cursor-wait disabled:opacity-50"
+                    :disabled="actionAccountId !== null"
                     @click="cancelSentRequest(p.account_id)"
                   >
                     Cancel
@@ -312,8 +350,9 @@ function statusLabel(status: string): string {
               </div>
               <button
                 type="button"
-                class="shrink-0 p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity"
+                class="shrink-0 rounded-lg p-2 text-slate-400 opacity-100 transition-opacity hover:bg-red-50 hover:text-red-600 disabled:cursor-wait disabled:opacity-50 sm:opacity-0 sm:group-hover:opacity-100"
                 title="Remove friend"
+                :disabled="actionAccountId !== null"
                 @click="removeFriend(f.account_id)"
               >
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

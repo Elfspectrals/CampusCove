@@ -5,13 +5,13 @@ import {
   supportsPointLightShadows,
   supportsRoomMeshShadows,
 } from './graphicsQuality'
+import type { GraphicsSettings } from './gameSettings'
 
 /** CC0 — Kloppenheim 06 by Poly Haven (https://polyhaven.com/a/kloppenheim_06) */
 export const SHARED_HDRI_PATH = '/env/kloppenheim_06_1k.hdr'
 
 const MAX_GLB_LIGHT_INTENSITY = 50
 const MIN_GLB_LIGHT_INTENSITY = 0.001
-const SHADOW_CAST_MIN_MESH_DIM = 0.25
 
 const ENV_MAP_INTENSITY: Record<'city' | 'apartment', number> = {
   city: 0.92,
@@ -20,7 +20,7 @@ const ENV_MAP_INTENSITY: Record<'city' | 'apartment', number> = {
 
 let cachedEnvMap: THREE.Texture | null = null
 let envLoadPromise: Promise<THREE.Texture> | null = null
-let pmremGenerator: THREE.PMREMGenerator | null = null
+let cancelPendingEnvironmentLoad: (() => void) | null = null
 
 export async function loadSharedEnvironmentMap(renderer: THREE.WebGLRenderer): Promise<THREE.Texture> {
   if (!supportsEnvironmentMap()) {
@@ -34,21 +34,49 @@ export async function loadSharedEnvironmentMap(renderer: THREE.WebGLRenderer): P
   }
 
   envLoadPromise = new Promise<THREE.Texture>((resolve, reject) => {
-    pmremGenerator = new THREE.PMREMGenerator(renderer)
-    pmremGenerator.compileEquirectangularShader()
+    const generator = new THREE.PMREMGenerator(renderer)
+    let cancelled = false
+    let settled = false
+    generator.compileEquirectangularShader()
+    cancelPendingEnvironmentLoad = () => {
+      if (settled) return
+      cancelled = true
+      settled = true
+      generator.dispose()
+      reject(new Error('Environment map load was cancelled'))
+    }
 
     new RGBELoader().load(
       SHARED_HDRI_PATH,
       (texture) => {
-        texture.mapping = THREE.EquirectangularReflectionMapping
-        const envMap = pmremGenerator!.fromEquirectangular(texture).texture
-        texture.dispose()
-        cachedEnvMap = envMap
-        resolve(envMap)
+        if (cancelled) {
+          texture.dispose()
+          return
+        }
+        try {
+          texture.mapping = THREE.EquirectangularReflectionMapping
+          const envMap = generator.fromEquirectangular(texture).texture
+          cachedEnvMap = envMap
+          settled = true
+          cancelPendingEnvironmentLoad = null
+          resolve(envMap)
+        } catch (error) {
+          envLoadPromise = null
+          settled = true
+          cancelPendingEnvironmentLoad = null
+          reject(error)
+        } finally {
+          texture.dispose()
+          generator.dispose()
+        }
       },
       undefined,
       (error) => {
+        if (cancelled) return
         envLoadPromise = null
+        settled = true
+        cancelPendingEnvironmentLoad = null
+        generator.dispose()
         reject(error)
       },
     )
@@ -66,11 +94,11 @@ export function clearSharedEnvironment(scene: THREE.Scene): void {
 }
 
 export function disposeSharedEnvironment(): void {
+  cancelPendingEnvironmentLoad?.()
+  cancelPendingEnvironmentLoad = null
   cachedEnvMap?.dispose()
   cachedEnvMap = null
   envLoadPromise = null
-  pmremGenerator?.dispose()
-  pmremGenerator = null
 }
 
 export function normalizeRoomMaterials(root: THREE.Object3D, kind: 'city' | 'apartment'): void {
@@ -136,8 +164,6 @@ export function sanitizeGltfLights(root: THREE.Object3D): boolean {
 
 export function configureRoomMeshShadows(root: THREE.Object3D): void {
   const enabled = supportsRoomMeshShadows()
-  const box = new THREE.Box3()
-  const size = new THREE.Vector3()
 
   root.traverse((obj) => {
     if (!(obj instanceof THREE.Mesh)) {
@@ -150,11 +176,71 @@ export function configureRoomMeshShadows(root: THREE.Object3D): void {
     }
 
     obj.receiveShadow = true
-    box.setFromObject(obj)
-    box.getSize(size)
-    const maxDim = Math.max(size.x, size.y, size.z)
-    obj.castShadow = maxDim >= SHADOW_CAST_MIN_MESH_DIM
+    // Static room geometry is normally baked and can be extremely large. Dynamic
+    // avatars and apartment props opt into casting at their creation sites.
+    obj.castShadow = false
   })
+}
+
+export interface DirectionalShadowRig {
+  readonly target: THREE.Object3D
+  follow(position: Readonly<{ x: number; y: number; z: number }>): void
+  dispose(): void
+}
+
+/**
+ * Configures a compact directional-light shadow volume around the player instead of
+ * Three's origin-centred default. Call `follow` from the normal simulation RAF.
+ */
+export function configureDirectionalShadowRig(
+  scene: THREE.Scene,
+  light: THREE.DirectionalLight,
+  graphics: GraphicsSettings,
+  room: 'city' | 'apartment',
+): DirectionalShadowRig {
+  const target = new THREE.Object3D()
+  target.name = 'DirectionalShadowTarget'
+  scene.add(target)
+  light.target = target
+  light.castShadow = graphics.shadows !== 'off'
+  light.shadow.mapSize.set(
+    graphics.preset === 'high' ? 1024 : 512,
+    graphics.preset === 'high' ? 1024 : 512,
+  )
+
+  const extent = room === 'city' ? 24 : 14
+  const shadowCamera = light.shadow.camera
+  shadowCamera.left = -extent
+  shadowCamera.right = extent
+  shadowCamera.top = extent
+  shadowCamera.bottom = -extent
+  shadowCamera.near = 0.5
+  shadowCamera.far = room === 'city' ? 90 : 55
+  shadowCamera.updateProjectionMatrix()
+  light.shadow.bias = -0.00015
+  light.shadow.normalBias = 0.025
+
+  const lightOffset = room === 'city'
+    ? new THREE.Vector3(18, 34, 14)
+    : new THREE.Vector3(10, 20, 8)
+  const texelWorldSize = (extent * 2) / light.shadow.mapSize.width
+
+  function follow(position: Readonly<{ x: number; y: number; z: number }>): void {
+    const x = Math.round(position.x / texelWorldSize) * texelWorldSize
+    const z = Math.round(position.z / texelWorldSize) * texelWorldSize
+    target.position.set(x, Math.max(0, position.y - 1), z)
+    light.position.set(x + lightOffset.x, target.position.y + lightOffset.y, z + lightOffset.z)
+    target.updateMatrixWorld()
+  }
+
+  function dispose(): void {
+    target.removeFromParent()
+    if (light.target === target) {
+      light.target = new THREE.Object3D()
+    }
+  }
+
+  return { target, follow, dispose }
 }
 
 export function addApartmentFallbackLights(group: THREE.Group): void {

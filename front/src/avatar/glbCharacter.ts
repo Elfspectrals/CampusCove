@@ -114,12 +114,14 @@ function computeMeshBounds(root: THREE.Object3D): THREE.Box3 | null {
 export function cloneCharacterWithUniqueMaterials(source: THREE.Object3D): THREE.Group {
   const c = source.clone(true) as THREE.Group
   c.traverse((obj) => {
-    if (obj instanceof THREE.Mesh && obj.material) {
-      if (Array.isArray(obj.material)) {
-        obj.material = obj.material.map((m) => m.clone())
-      } else {
-        obj.material = obj.material.clone()
-      }
+    if (!(obj instanceof THREE.Mesh)) return
+    obj.castShadow = true
+    obj.receiveShadow = false
+    if (!obj.material) return
+    if (Array.isArray(obj.material)) {
+      obj.material = obj.material.map((m) => m.clone())
+    } else {
+      obj.material = obj.material.clone()
     }
   })
   return c

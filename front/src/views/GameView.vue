@@ -11,33 +11,59 @@ import {
 } from '../api/characterCosmetics'
 import { getStoredAuth, clearAuth } from '../api/auth'
 import { buildFirstPersonHands, disposeObject3D } from '../avatar/compositeAvatar'
-import { matchesRotateCCW, matchesRotateCW } from '../config/keybindings'
+import {
+  actionBindingLabel,
+  matchesAction,
+  movementBindingSummary,
+} from '../config/keybindings'
 import GameDoorHints from '../components/game/GameDoorHints.vue'
 import GameHudToolbar from '../components/game/GameHudToolbar.vue'
 import GameInteractionPrompt from '../components/game/GameInteractionPrompt.vue'
+import GameLobbyActivityHud from '../components/game/GameLobbyActivityHud.vue'
+import GameLobbyActivityPanel from '../components/game/GameLobbyActivityPanel.vue'
 import GamePlacementHud from '../components/game/GamePlacementHud.vue'
 import GamePlayerHotbar from '../components/game/GamePlayerHotbar.vue'
 import GamePlayerInventoryPanel from '../components/game/GamePlayerInventoryPanel.vue'
 import GamePointerLockOverlay from '../components/game/GamePointerLockOverlay.vue'
 import GameRoomMessageBanner from '../components/game/GameRoomMessageBanner.vue'
+import GameSettingsPanel from '../components/game/GameSettingsPanel.vue'
+import GameVoiceControls from '../components/game/GameVoiceControls.vue'
 import { useApartmentObjects } from '../composables/game/useApartmentObjects'
 import { useApartmentPlacement } from '../composables/game/useApartmentPlacement'
 import { useGameMovement } from '../composables/game/useGameMovement'
+import { useLobbyActivities } from '../composables/game/useLobbyActivities'
+import { useProximityVoice } from '../composables/game/useProximityVoice'
 import {
   buildWorldCollisionFromUrl,
+  disposeWorldCollision,
   getWorldCollisionStats,
   toggleCollisionDebug,
 } from '../composables/game/useWorldCollision'
 import { useGameRealtime } from '../composables/game/useGameRealtime'
 import { usePlayerInventory } from '../composables/game/usePlayerInventory'
-import { getGraphicsQuality, supportsEnvironmentMap, toggleGraphicsQuality } from '../game/graphicsQuality'
+import {
+  createGameRenderer,
+  type GameRendererPipeline,
+} from '../game/gameRenderer'
+import {
+  cloneGameSettings,
+  getGameSettings,
+  type GameSettings,
+} from '../game/gameSettings'
+import {
+  createRoomEffects,
+  type RoomEffectsHandle,
+} from '../game/roomEffects'
 import { applySceneAtmosphere, loadApartmentEnvironment, loadLobbyEnvironment } from '../game/roomEnvironments'
 import {
   applySharedEnvironment,
   clearSharedEnvironment,
+  configureDirectionalShadowRig,
   configureGlobalSceneLights,
+  configureRoomMeshShadows,
   disposeSharedEnvironment,
   loadSharedEnvironmentMap,
+  type DirectionalShadowRig,
 } from '../game/sceneLighting'
 import { APARTMENT_DOOR_POS, CITY_BUILDING_DOOR_POS, CITY_SPAWN } from '../game/gameRoomConstants'
 
@@ -56,7 +82,17 @@ const transitioningApartment = ref(false)
 const wasPointerLockedAtTransitionStart = ref(false)
 const refreshMyAppearance = ref<(() => void) | null>(null)
 const doorPromptPos = ref<{ x: number; y: number; key: string; action: string } | null>(null)
+const activityPromptPos = ref<{ x: number; y: number; key: string; action: string } | null>(null)
 const doorProjectionVec = new THREE.Vector3()
+const activityProjectionVec = new THREE.Vector3()
+const settingsOpen = ref(false)
+const gameSettings = ref<GameSettings>(cloneGameSettings(getGameSettings()))
+const rendererStats = ref({
+  fps: 0,
+  drawCalls: 0,
+  triangles: 0,
+  usingPostprocessing: false,
+})
 
 const realtimeHttpUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000'
 const gameRoomRef = shallowRef<Room | null>(null)
@@ -70,9 +106,17 @@ const direction = new THREE.Vector3(0, 0, -1)
 let scene: THREE.Scene
 let camera: THREE.PerspectiveCamera
 let renderer: THREE.WebGLRenderer
+let rendererPipeline: GameRendererPipeline | null = null
 let roomEnvironment: THREE.Group | null = null
+let roomEffects: RoomEffectsHandle | null = null
+let directionalLight: THREE.DirectionalLight | null = null
+let shadowRig: DirectionalShadowRig | null = null
 let roomEnvironmentLoadToken = 0
+let sharedEnvironmentLoadToken = 0
+let lastRendererStatsUpdate = 0
 let fpHands: THREE.Group | null = null
+let gameActive = false
+let tickRemoteUsers: (dt: number) => void = () => {}
 
 let apartmentPlacementRef: ReturnType<typeof useApartmentPlacement> | null = null
 
@@ -174,13 +218,134 @@ const placementPreviewActive = computed(
     apartmentPlacement.currentState.value.kind === 'preview_existing',
 )
 
-const graphicsQuality = ref(getGraphicsQuality())
-const graphicsQualityLabel = computed(() => (graphicsQuality.value === 'low' ? 'Low' : 'High'))
+const movementSummary = computed(() =>
+  movementBindingSummary(gameSettings.value.controls),
+)
+const interactKeyLabel = computed(() =>
+  actionBindingLabel('interact', gameSettings.value.controls),
+)
+const inventoryKeyLabel = computed(() =>
+  actionBindingLabel('inventory', gameSettings.value.controls),
+)
+const rotateCwKeyLabel = computed(() =>
+  actionBindingLabel('rotateCW', gameSettings.value.controls),
+)
+const rotateCcwKeyLabel = computed(() =>
+  actionBindingLabel('rotateCCW', gameSettings.value.controls),
+)
+const pushToTalkKeyLabel = computed(() =>
+  actionBindingLabel('pushToTalk', gameSettings.value.controls),
+)
+const graphicsPresetLabel = computed(() => {
+  const preset = gameSettings.value.graphics.preset
+  return `${preset.slice(0, 1).toUpperCase()}${preset.slice(1)}`
+})
 
-function onToggleGraphicsQuality(event: MouseEvent): void {
-  event.stopPropagation()
-  toggleGraphicsQuality()
-  window.location.reload()
+const lobbyActivities = useLobbyActivities({
+  getScene: () => scene,
+  getRoom: () => gameRoomRef.value,
+  myPosition,
+  currentRoomLabel,
+  getParticleLevel: () => gameSettings.value.graphics.particles,
+})
+const {
+  config: activityConfig,
+  nearHub: nearActivityHub,
+  panelOpen: activityPanelOpen,
+  runState: activityRunState,
+  queueState: activityQueueState,
+  resultState: activityResultState,
+  activityError,
+} = lobbyActivities
+
+const proximityVoice = useProximityVoice({
+  gameRoomRef,
+  getCamera: () => camera,
+  matchesPushToTalk: (event) =>
+    matchesAction(event, 'pushToTalk', gameSettings.value.controls),
+})
+const {
+  supported: voiceSupported,
+  enabled: voiceEnabled,
+  requestingPermission: voiceRequestingPermission,
+  micMuted: voiceMicMuted,
+  deafened: voiceDeafened,
+  pushToTalkActive,
+  error: voiceError,
+  peerViews: voicePeerViews,
+  statusLabel: voiceStatusLabel,
+} = proximityVoice
+
+const gameInputBlocked = computed(
+  () =>
+    settingsOpen.value ||
+    activityPanelOpen.value ||
+    transitioningApartment.value ||
+    switchingRoom.value,
+)
+const activityTranslationBlocked = computed(
+  () => activityRunState.value?.phase === 'countdown',
+)
+
+watch(
+  gameRoomRef,
+  (room) => {
+    proximityVoice.bindRoom(room)
+    if (room) lobbyActivities.bindRoom(room)
+  },
+  { flush: 'sync' },
+)
+
+watch(
+  [settingsOpen, activityPanelOpen],
+  ([isSettingsOpen, isActivityPanelOpen]) => {
+    if (!isSettingsOpen && !isActivityPanelOpen) return
+    proximityVoice.releasePushToTalk()
+    if (document.pointerLockElement) document.exitPointerLock()
+  },
+)
+
+watch(activityResultState, (result) => {
+  if (!result) return
+  proximityVoice.releasePushToTalk()
+  if (document.pointerLockElement) document.exitPointerLock()
+})
+
+function openSettings(): void {
+  proximityVoice.releasePushToTalk()
+  settingsOpen.value = true
+}
+
+function applyGameSettings(next: GameSettings): void {
+  gameSettings.value = cloneGameSettings(next)
+  if (camera) {
+    camera.fov = gameSettings.value.controls.fov
+    camera.updateProjectionMatrix()
+  }
+  const result = rendererPipeline?.applyLiveGraphicsSettings(
+    gameSettings.value.graphics,
+  )
+  configureCurrentRoomVisuals(currentRoomLabel.value)
+  syncSharedEnvironmentLighting()
+  if (result?.requiresReload) {
+    roomMessage.value =
+      'Settings saved. Use “Apply & reload” to finish antialiasing, post-processing, or map-detail changes.'
+  }
+}
+
+function acceptReloadSettings(next: GameSettings): void {
+  gameSettings.value = cloneGameSettings(next)
+}
+
+function startSoloActivity(): void {
+  if (!lobbyActivities.startSolo()) return
+  requestPointerLock()
+}
+
+function queueDuelActivity(): void {
+  if (!lobbyActivities.queueDuel()) return
+  lobbyActivities.closePanel()
+  requestPointerLock()
 }
 
 function hexStringToNumber(hex: string): number {
@@ -199,7 +364,27 @@ async function loadCosmeticsState(): Promise<CharacterCosmeticsState> {
 }
 
 function handleExtraKeyDown(e: KeyboardEvent): boolean {
-  if (e.code === 'KeyC' && !e.repeat) {
+  if (
+    !gameInputBlocked.value &&
+    proximityVoice.onPushToTalkKeyDown(e)
+  ) {
+    return true
+  }
+  if (
+    !gameInputBlocked.value &&
+    matchesAction(e, 'interact', gameSettings.value.controls) &&
+    !e.repeat &&
+    lobbyActivities.handleInteract()
+  ) {
+    return true
+  }
+  if (
+    import.meta.env.DEV &&
+    e.code === 'KeyC' &&
+    e.ctrlKey &&
+    e.altKey &&
+    !e.repeat
+  ) {
     const on = toggleCollisionDebug(scene)
     const s = getWorldCollisionStats()
     console.info(
@@ -215,14 +400,20 @@ function handleExtraKeyDown(e: KeyboardEvent): boolean {
     }
     return false
   }
-  if (matchesRotateCW(e) && !e.repeat) {
+  if (
+    matchesAction(e, 'rotateCW', gameSettings.value.controls) &&
+    !e.repeat
+  ) {
     if (apartmentPlacement.currentState.value.kind !== 'idle') {
       apartmentPlacement.stepRotate(YAW_STEP)
       return true
     }
     return false
   }
-  if (matchesRotateCCW(e) && !e.repeat) {
+  if (
+    matchesAction(e, 'rotateCCW', gameSettings.value.controls) &&
+    !e.repeat
+  ) {
     if (apartmentPlacement.currentState.value.kind !== 'idle') {
       apartmentPlacement.stepRotate(-YAW_STEP)
       return true
@@ -232,6 +423,10 @@ function handleExtraKeyDown(e: KeyboardEvent): boolean {
   return false
 }
 
+function handleExtraKeyUp(e: KeyboardEvent): boolean {
+  return proximityVoice.onPushToTalkKeyUp(e)
+}
+
 function updateDoorPromptScreenPos(): void {
   if (!camera || !canvasRef.value) {
     doorPromptPos.value = null
@@ -239,7 +434,12 @@ function updateDoorPromptScreenPos(): void {
   }
   const inApartment = currentRoomLabel.value === 'apartment'
   const isNear = inApartment ? nearApartmentDoor.value : nearCityDoor.value
-  if (!isNear || inventoryOpen.value) {
+  if (
+    !isNear ||
+    inventoryOpen.value ||
+    settingsOpen.value ||
+    lobbyActivities.panelOpen.value
+  ) {
     doorPromptPos.value = null
     return
   }
@@ -259,12 +459,105 @@ function updateDoorPromptScreenPos(): void {
   doorPromptPos.value = {
     x: sx,
     y: sy,
-    key: 'I',
+    key: interactKeyLabel.value,
     action: inApartment ? 'Exit' : 'Enter',
   }
 }
 
+function updateActivityPromptScreenPos(): void {
+  if (
+    !camera ||
+    !canvasRef.value ||
+    !lobbyActivities.nearHub.value ||
+    lobbyActivities.runState.value !== null ||
+    inventoryOpen.value ||
+    settingsOpen.value ||
+    lobbyActivities.panelOpen.value
+  ) {
+    activityPromptPos.value = null
+    return
+  }
+
+  const prompt = lobbyActivities.hubPromptPosition.value
+  activityProjectionVec.set(prompt.x, prompt.y, prompt.z).project(camera)
+  if (activityProjectionVec.z > 1) {
+    activityPromptPos.value = null
+    return
+  }
+  const rect = canvasRef.value.getBoundingClientRect()
+  activityPromptPos.value = {
+    x: (activityProjectionVec.x * 0.5 + 0.5) * rect.width,
+    y: (-activityProjectionVec.y * 0.5 + 0.5) * rect.height,
+    key: interactKeyLabel.value,
+    action: 'Play Cove Rush',
+  }
+}
+
+function isCurrentRoomLoad(token: number): boolean {
+  return gameActive && token === roomEnvironmentLoadToken
+}
+
+function disposeStaleRoomEnvironment(group: THREE.Group): void {
+  if (!group.userData.isPersistentEnvironment) {
+    disposeObject3D(group)
+  }
+}
+
+function configureCurrentRoomVisuals(
+  kind: 'city' | 'apartment',
+): void {
+  if (!gameActive || !scene) return
+
+  roomEffects?.dispose()
+  roomEffects = createRoomEffects({
+    kind,
+    level: gameSettings.value.graphics.particles,
+  })
+  scene.add(roomEffects.group)
+
+  shadowRig?.dispose()
+  shadowRig =
+    directionalLight === null
+      ? null
+      : configureDirectionalShadowRig(
+          scene,
+          directionalLight,
+          gameSettings.value.graphics,
+          kind,
+        )
+  shadowRig?.follow(myPosition)
+
+  if (roomEnvironment) configureRoomMeshShadows(roomEnvironment)
+}
+
+function syncSharedEnvironmentLighting(): void {
+  if (!gameActive || !scene || !renderer) return
+  const token = ++sharedEnvironmentLoadToken
+  if (!gameSettings.value.graphics.environmentMap) {
+    clearSharedEnvironment(scene)
+    return
+  }
+
+  void loadSharedEnvironmentMap(renderer)
+    .then((envMap) => {
+      if (
+        !gameActive ||
+        token !== sharedEnvironmentLoadToken ||
+        !gameSettings.value.graphics.environmentMap
+      ) {
+        return
+      }
+      applySharedEnvironment(scene, envMap)
+    })
+    .catch((err: unknown) => {
+      if (gameActive && token === sharedEnvironmentLoadToken) {
+        console.warn('[environment] shared lighting load failed', err)
+      }
+    })
+}
+
 function setRoomEnvironment(kind: 'city' | 'apartment') {
+  if (!gameActive) return
   const token = ++roomEnvironmentLoadToken
   if (kind === 'city') {
     apartmentPlacement.setPlayerInsideApartment(false)
@@ -277,35 +570,58 @@ function setRoomEnvironment(kind: 'city' | 'apartment') {
     roomEnvironment = null
   }
   applySceneAtmosphere(scene, kind, renderer)
+  configureCurrentRoomVisuals(kind)
+  const collisionUrl =
+    kind === 'city' ? '/maps/LobbyMap.collision.json?v=4' : '/maps/ApartmentInterior.collision.json?v=4'
+  void buildWorldCollisionFromUrl(collisionUrl).catch((err: unknown) => {
+    if (!isCurrentRoomLoad(token)) return
+    console.warn(`[collision] ${kind} collision failed`, err)
+    roomMessage.value = `Could not load ${kind} collision. Reload the game before moving around.`
+  })
+
   if (kind === 'city') {
-    void loadLobbyEnvironment().then((group) => {
-      if (token !== roomEnvironmentLoadToken) return
-      roomEnvironment = group
-      scene.add(group)
-      void buildWorldCollisionFromUrl('/maps/LobbyMap.collision.json?v=4').catch((err) => {
-        console.warn('[collision] lobby collision failed', err)
+    void loadLobbyEnvironment()
+      .then((group) => {
+        if (!isCurrentRoomLoad(token)) {
+          disposeStaleRoomEnvironment(group)
+          return
+        }
+        roomEnvironment = group
+        scene.add(group)
+        configureRoomMeshShadows(group)
+        nearApartmentDoor.value = false
+        resetClientStateForCityWorld()
+        clearApartmentObjects()
       })
-      nearApartmentDoor.value = false
-      resetClientStateForCityWorld()
-      clearApartmentObjects()
-    })
+      .catch((err: unknown) => {
+        if (!isCurrentRoomLoad(token)) return
+        console.error('[environment] city load failed', err)
+        roomMessage.value = 'Could not load the city environment. Reload to try again.'
+      })
   } else {
-    void loadApartmentEnvironment().then((built) => {
-      if (token !== roomEnvironmentLoadToken) return
-      roomEnvironment = built.group
-      scene.add(roomEnvironment)
-      apartmentPlacement.registerApartmentEnvironment(built)
-      void buildWorldCollisionFromUrl('/maps/ApartmentInterior.collision.json?v=4').catch((err) => {
-        console.warn('[collision] apartment collision failed', err)
+    void loadApartmentEnvironment()
+      .then((built) => {
+        if (!isCurrentRoomLoad(token)) {
+          disposeStaleRoomEnvironment(built.group)
+          return
+        }
+        roomEnvironment = built.group
+        scene.add(roomEnvironment)
+        configureRoomMeshShadows(roomEnvironment)
+        apartmentPlacement.registerApartmentEnvironment(built)
+        nearCityDoor.value = false
+        void apartmentPlacement.init({
+          scene,
+          camera,
+          renderer,
+          colyseusRoom: gameRoomRef,
+        })
       })
-      nearCityDoor.value = false
-      void apartmentPlacement.init({
-        scene,
-        camera,
-        renderer,
-        colyseusRoom: gameRoomRef,
+      .catch((err: unknown) => {
+        if (!isCurrentRoomLoad(token)) return
+        console.error('[environment] apartment load failed', err)
+        roomMessage.value = 'Could not load the apartment environment. Return to the city and try again.'
       })
-    })
   }
 }
 
@@ -318,6 +634,7 @@ const {
   onResize,
   requestPointerLock,
   onVisibilityOrFocus,
+  onWindowBlur,
   startRenderLoop,
   stopRenderLoop,
   onCanvasMouseDown,
@@ -356,16 +673,42 @@ const {
   nearApartmentDoor,
   nearCityDoor,
   handleExtraKeyDown,
+  handleExtraKeyUp,
+  getControlSettings: () => gameSettings.value.controls,
+  inputBlocked: gameInputBlocked,
+  translationBlocked: activityTranslationBlocked,
+  getFpsCap: () => gameSettings.value.graphics.fpsCap,
+  renderFrame: (activeScene, activeCamera) => {
+    rendererPipeline?.render(activeScene, activeCamera)
+  },
+  resizeRenderer: (width, height) => {
+    rendererPipeline?.resize(width, height)
+  },
   onCanvasMouseDown: (e) => {
     apartmentPlacement.onPointerDown(e)
   },
   onCanvasMouseUp: () => undefined,
   onBeforeRender: (dt) => {
+    tickRemoteUsers(dt)
+    lobbyActivities.tick(dt)
+    proximityVoice.tick()
+    roomEffects?.tick(dt, camera)
+    shadowRig?.follow(myPosition)
     positionLabel.value = `${myPosition.x.toFixed(1)}, ${myPosition.y.toFixed(1)}, ${myPosition.z.toFixed(1)}`
     if (currentRoomLabel.value === 'apartment') {
       apartmentPlacement.tick(dt)
     }
     updateDoorPromptScreenPos()
+    updateActivityPromptScreenPos()
+    const now = performance.now()
+    if (
+      gameSettings.value.graphics.showFps &&
+      rendererPipeline &&
+      now - lastRendererStatsUpdate >= 500
+    ) {
+      lastRendererStatsUpdate = now
+      rendererStats.value = rendererPipeline.getStats()
+    }
   },
 })
 
@@ -381,7 +724,7 @@ watch(inventoryOpen, (open) => {
   }
 })
 
-const { connectRealtime, clearRemoteUsers } = useGameRealtime({
+const realtime = useGameRealtime({
   router,
   realtimeHttpUrl,
   gameRoomRef,
@@ -414,8 +757,11 @@ const { connectRealtime, clearRemoteUsers } = useGameRealtime({
     apartmentPlacement.onApartmentActionError()
   },
 })
+const { connectRealtime, clearRemoteUsers } = realtime
+tickRemoteUsers = realtime.tickRemoteUsers
 
 function logout() {
+  proximityVoice.disableVoice()
   clearAuth()
   void gameRoomRef.value?.leave()
   router.push({ name: 'landing' })
@@ -423,24 +769,28 @@ function logout() {
 
 function initThree(accentColor: number) {
   if (!canvasRef.value) return
-  const isLowQuality = getGraphicsQuality() === 'low'
+  const settings = gameSettings.value
+  const isLowQuality = settings.graphics.preset === 'low'
 
   scene = new THREE.Scene()
   const { w, h } = containerSize()
   const aspect = w / h
-  camera = new THREE.PerspectiveCamera(75, aspect, 0.1, isLowQuality ? 300 : 1000)
+  camera = new THREE.PerspectiveCamera(
+    settings.controls.fov,
+    aspect,
+    0.1,
+    isLowQuality ? 300 : 1000,
+  )
   camera.position.set(CITY_SPAWN.x, CITY_SPAWN.y, CITY_SPAWN.z)
+  scene.add(camera)
 
-  renderer = new THREE.WebGLRenderer({ canvas: canvasRef.value, antialias: !isLowQuality })
-  renderer.setSize(w, h)
-  renderer.setPixelRatio(isLowQuality ? 1 : Math.min(window.devicePixelRatio, 2))
-  renderer.outputColorSpace = THREE.SRGBColorSpace
-  renderer.shadowMap.enabled = !isLowQuality
-  if (!isLowQuality) {
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap
-  }
-  renderer.toneMapping = THREE.ACESFilmicToneMapping
-  renderer.toneMappingExposure = 1.05
+  rendererPipeline = createGameRenderer({
+    canvas: canvasRef.value,
+    width: w,
+    height: h,
+    graphics: settings.graphics,
+  })
+  renderer = rendererPipeline.renderer
 
   applySceneAtmosphere(scene, 'city', renderer)
 
@@ -448,21 +798,11 @@ function initThree(accentColor: number) {
   scene.add(ambient)
   const dir = new THREE.DirectionalLight(0xffffff, 1.0)
   dir.position.set(10, 20, 10)
-  if (!isLowQuality) {
-    dir.castShadow = true
-    dir.shadow.mapSize.set(1024, 1024)
-  }
   scene.add(dir)
+  directionalLight = dir
   configureGlobalSceneLights(ambient, dir)
 
-  if (supportsEnvironmentMap()) {
-    void loadSharedEnvironmentMap(renderer).then((envMap) => {
-      applySharedEnvironment(scene, envMap)
-    })
-  } else {
-    clearSharedEnvironment(scene)
-  }
-
+  syncSharedEnvironmentLighting()
   setRoomEnvironment('city')
 
   fpHands = buildFirstPersonHands(accentColor)
@@ -477,21 +817,48 @@ async function bootGame() {
     return
   }
   const state = await loadCosmeticsState()
+  if (!gameActive) return
   const bodyTint = hexStringToNumber(state.colors.body)
   initThree(bodyTint)
   await connectRealtime(state)
-  await loadLayoutFromServer()
+  if (!gameActive) {
+    const room = gameRoomRef.value
+    gameRoomRef.value = null
+    refreshMyAppearance.value = null
+    clearRemoteUsers()
+    await room?.leave()
+    return
+  }
+  try {
+    await loadLayoutFromServer()
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Unknown error'
+    roomMessage.value = `Inventory layout unavailable: ${message}`
+  }
+  if (!gameActive) return
   refreshOwnedItems()
   startRenderLoop()
 }
 
+function handleVisibilityOrFocus(): void {
+  proximityVoice.releasePushToTalk()
+  onVisibilityOrFocus()
+}
+
+function handleWindowBlur(): void {
+  proximityVoice.releasePushToTalk()
+  onWindowBlur()
+}
+
 onMounted(() => {
+  gameActive = true
   void bootGame()
   window.addEventListener('resize', onResize)
-  window.addEventListener('focus', onVisibilityOrFocus)
+  window.addEventListener('focus', handleVisibilityOrFocus)
+  window.addEventListener('blur', handleWindowBlur)
   window.addEventListener('beforeunload', onBeforeUnload)
   window.addEventListener('pagehide', onBeforeUnload)
-  document.addEventListener('visibilitychange', onVisibilityOrFocus)
+  document.addEventListener('visibilitychange', handleVisibilityOrFocus)
   document.addEventListener('pointerlockchange', onPointerLockChange)
   document.addEventListener('keydown', onKeyDown)
   document.addEventListener('keyup', onKeyUp)
@@ -499,29 +866,42 @@ onMounted(() => {
 })
 
 function onBeforeUnload() {
+  proximityVoice.releasePushToTalk()
   void gameRoomRef.value?.leave()
 }
 
 onUnmounted(() => {
+  gameActive = false
+  roomEnvironmentLoadToken += 1
+  sharedEnvironmentLoadToken += 1
   stopRenderLoop()
   window.removeEventListener('resize', onResize)
-  window.removeEventListener('focus', onVisibilityOrFocus)
+  window.removeEventListener('focus', handleVisibilityOrFocus)
+  window.removeEventListener('blur', handleWindowBlur)
   window.removeEventListener('beforeunload', onBeforeUnload)
   window.removeEventListener('pagehide', onBeforeUnload)
-  document.removeEventListener('visibilitychange', onVisibilityOrFocus)
+  document.removeEventListener('visibilitychange', handleVisibilityOrFocus)
   document.removeEventListener('pointerlockchange', onPointerLockChange)
   document.removeEventListener('keydown', onKeyDown)
   document.removeEventListener('keyup', onKeyUp)
   document.removeEventListener('mousemove', onMouseMove)
+  proximityVoice.dispose()
+  lobbyActivities.dispose()
   refreshMyAppearance.value = null
   void gameRoomRef.value?.leave()
+  gameRoomRef.value = null
   clearPersistTimers()
   clearRemoteUsers()
-  apartmentPlacement.dispose()
   clearApartmentObjects()
+  apartmentPlacement.dispose()
+  disposeWorldCollision()
+  roomEffects?.dispose()
+  roomEffects = null
+  shadowRig?.dispose()
+  shadowRig = null
   if (roomEnvironment) {
     scene.remove(roomEnvironment)
-    disposeObject3D(roomEnvironment)
+    disposeStaleRoomEnvironment(roomEnvironment)
     roomEnvironment = null
   }
   if (fpHands) {
@@ -530,7 +910,9 @@ onUnmounted(() => {
     fpHands = null
   }
   disposeSharedEnvironment()
-  renderer?.dispose()
+  rendererPipeline?.dispose()
+  rendererPipeline = null
+  directionalLight = null
 })
 
 const crosshairClass = computed(() => {
@@ -552,10 +934,20 @@ const crosshairClass = computed(() => {
       @contextmenu.prevent
     />
     <div
+      v-show="pointerLocked"
       class="pointer-events-none absolute left-1/2 top-1/2 z-10 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full border transition-colors duration-150"
       :class="crosshairClass"
     />
     <GameRoomMessageBanner v-if="roomMessage" :message="roomMessage" />
+    <GameLobbyActivityHud
+      :state="activityRunState"
+      :queue-state="activityQueueState"
+      :result="activityResultState"
+      :error="activityError"
+      @cancel="lobbyActivities.cancel"
+      @leave="lobbyActivities.cancel"
+      @dismiss="lobbyActivities.dismissResult"
+    />
     <GameHudToolbar
       :current-room-label="currentRoomLabel"
       :apartment-object-count="apartmentObjectCount"
@@ -565,11 +957,19 @@ const crosshairClass = computed(() => {
         v-if="!pointerLocked"
         type="button"
         class="rounded-md border border-white/25 bg-black/45 px-2 py-1 text-xs text-white/90 hover:border-campus-accent hover:text-campus-accent"
-        @click.stop="onToggleGraphicsQuality"
+        @click.stop="openSettings"
         @mousedown.stop
       >
-        Graphics: {{ graphicsQualityLabel }}
+        Settings · {{ graphicsPresetLabel }}
       </button>
+      <span
+        v-if="gameSettings.graphics.showFps"
+        class="rounded-md border border-cyan-300/30 bg-black/55 px-2 py-1 font-mono text-xs text-cyan-100"
+        title="Renderer performance"
+      >
+        {{ Math.round(rendererStats.fps) }} FPS ·
+        {{ rendererStats.drawCalls }} calls
+      </span>
     </GameHudToolbar>
     <GameInteractionPrompt
       v-if="doorPromptPos"
@@ -578,7 +978,19 @@ const crosshairClass = computed(() => {
       :key-label="doorPromptPos.key"
       :action-label="doorPromptPos.action"
     />
-    <GamePlacementHud :visible="placementPreviewActive" :hints="placementHudHints" />
+    <GameInteractionPrompt
+      v-if="activityPromptPos && nearActivityHub"
+      :screen-x="activityPromptPos.x"
+      :screen-y="activityPromptPos.y"
+      :key-label="activityPromptPos.key"
+      :action-label="activityPromptPos.action"
+    />
+    <GamePlacementHud
+      :visible="placementPreviewActive"
+      :hints="placementHudHints"
+      :rotate-cw-label="rotateCwKeyLabel"
+      :rotate-ccw-label="rotateCcwKeyLabel"
+    />
     <GamePlayerHotbar
       :slots="slots"
       :selected-hotbar-index="selectedHotbarIndex"
@@ -616,9 +1028,37 @@ const crosshairClass = computed(() => {
       @pickup-selected-placed-object="pickupSelectedPlacedObject"
       @placed-object-selected="onPlacedObjectSelected"
     />
+    <GameVoiceControls
+      :supported="voiceSupported"
+      :enabled="voiceEnabled"
+      :requesting="voiceRequestingPermission"
+      :mic-muted="voiceMicMuted"
+      :deafened="voiceDeafened"
+      :transmitting="pushToTalkActive"
+      :status-label="voiceStatusLabel"
+      :push-to-talk-label="pushToTalkKeyLabel"
+      :peers="voicePeerViews"
+      :error="voiceError"
+      :expanded="!pointerLocked"
+      @enable="proximityVoice.enableVoice"
+      @disable="proximityVoice.disableVoice()"
+      @toggle-mic="proximityVoice.toggleMicMuted"
+      @toggle-deafen="proximityVoice.toggleDeafened"
+      @toggle-peer-mute="proximityVoice.togglePeerMuted"
+      @refresh-policy="proximityVoice.refreshPolicy"
+    />
     <GamePointerLockOverlay
-      v-show="!pointerLocked && !inventoryOpen && !transitioningApartment && !switchingRoom"
+      v-show="
+        !pointerLocked &&
+        !inventoryOpen &&
+        !transitioningApartment &&
+        !switchingRoom &&
+        !settingsOpen &&
+        !activityPanelOpen
+      "
+      :movement-summary="movementSummary"
       @request-pointer-lock="requestPointerLock"
+      @settings="openSettings"
       @logout="logout"
     />
     <div v-show="pointerLocked" class="absolute right-3 top-3">
@@ -630,12 +1070,29 @@ const crosshairClass = computed(() => {
         Logout
       </button>
     </div>
-    <p
-      v-if="currentRoomLabel === 'apartment' && inventoryOpen && placementPreviewActive"
-      class="pointer-events-none absolute bottom-24 left-3 z-10 max-w-md text-[10px] leading-snug text-white/70 md:left-[22rem]"
-    >
-      R = rotate · Shift+R = reverse · LMB = place / pick · RMB = cancel · Esc / E = cancel
-    </p>
-    <GameDoorHints :inventory-open="inventoryOpen" />
+    <GameDoorHints
+      :inventory-open="inventoryOpen"
+      :inventory-label="inventoryKeyLabel"
+      :interact-label="interactKeyLabel"
+      :push-to-talk-label="pushToTalkKeyLabel"
+    />
+    <GameLobbyActivityPanel
+      :open="activityPanelOpen"
+      :checkpoint-count="activityConfig.checkpointCount"
+      :queue-state="activityQueueState"
+      :run-state="activityRunState"
+      :error="activityError"
+      @close="lobbyActivities.closePanel"
+      @start-solo="startSoloActivity"
+      @queue-duel="queueDuelActivity"
+      @cancel="lobbyActivities.cancel"
+    />
+    <GameSettingsPanel
+      :open="settingsOpen"
+      :settings="gameSettings"
+      @close="settingsOpen = false"
+      @saved="applyGameSettings"
+      @apply-reload="acceptReloadSettings"
+    />
   </div>
 </template>

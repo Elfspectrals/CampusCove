@@ -19,6 +19,14 @@ class AccountHandle extends Model
 
     protected $fillable = ['account_id', 'username', 'tag', 'normalized'];
 
+    protected function casts(): array
+    {
+        return [
+            'account_id' => 'integer',
+            'tag' => 'integer',
+        ];
+    }
+
     public function account(): BelongsTo
     {
         return $this->belongsTo(Account::class, 'account_id', 'account_id');

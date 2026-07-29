@@ -36,8 +36,7 @@ class AdminShopItemController extends Controller
         $query = ShopCatalogItem::query()
             ->select('shop_catalog_items.*')
             ->leftJoin('item_defs', 'item_defs.item_def_id', '=', 'shop_catalog_items.item_def_id')
-            ->with('itemDef')
-            ->distinct();
+            ->with('itemDef');
 
         if (! empty($validated['q'])) {
             $term = $validated['q'];

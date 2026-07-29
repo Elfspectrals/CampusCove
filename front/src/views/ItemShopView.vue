@@ -7,7 +7,15 @@ import LockerCharacterPreview from '../components/locker/LockerCharacterPreview.
 import ItemShopPurchaseConfirmModal from '../components/shop/ItemShopPurchaseConfirmModal.vue'
 import * as itemShopApi from '../api/itemShop'
 import type { ShopCurrency, ShopItem, ShopItemCurrencyOption } from '../api/itemShop'
-import { cardToneClasses, currencyLabel, priceBadge } from '../utils/itemShopPresentation'
+import {
+  cardToneClasses,
+  currencyLabel,
+  kindLabel,
+  optionAvailable,
+  priceBadge,
+  rarityLabel,
+  rarityToneClasses,
+} from '../utils/itemShopPresentation'
 
 const items = ref<ShopItem[]>([])
 const route = useRoute()
@@ -51,6 +59,9 @@ const confirmAfter = computed(() => {
   return cur - confirmOption.value.price
 })
 
+const confirmCanAfford = computed(() => confirmAfter.value === null || confirmAfter.value >= 0)
+const confirmSoldOut = computed(() => confirmOption.value !== null && !optionAvailable(confirmOption.value))
+
 const selectedItem = computed<ShopItem | null>(() => {
   if (filteredItems.value.length === 0) return null
   if (selectedItemDefId.value === null) return filteredItems.value[0] ?? null
@@ -65,7 +76,8 @@ const filteredItems = computed<ShopItem[]>(() => {
 })
 
 const selectedPrimaryOption = computed<ShopItemCurrencyOption | null>(() => {
-  return selectedItem.value?.options[0] ?? null
+  const options = selectedItem.value?.options ?? []
+  return options.find(optionAvailable) ?? options[0] ?? null
 })
 
 const selectedCurrencyText = computed<string>(() => {
@@ -74,18 +86,20 @@ const selectedCurrencyText = computed<string>(() => {
 })
 
 const selectedRarityText = computed<string>(() => {
-  if (!selectedPrimaryOption.value) return 'Common'
-  if (selectedPrimaryOption.value.currency === 'premium') return 'Rare'
-  if (selectedItem.value && selectedItem.value.options.length > 1) return 'Epic'
-  return 'Legendary'
+  return selectedItem.value ? rarityLabel(selectedItem.value.rarity) : 'Unknown'
 })
 
 const selectedRarityClass = computed<string>(() => {
-  if (!selectedPrimaryOption.value) return 'border-white/25 text-white/70'
-  if (selectedPrimaryOption.value.currency === 'premium') return 'border-cyan-300 text-cyan-300'
-  if (selectedItem.value && selectedItem.value.options.length > 1) return 'border-fuchsia-300 text-fuchsia-300'
-  return 'border-orange-300 text-orange-300'
+  return selectedItem.value
+    ? rarityToneClasses(selectedItem.value.rarity)
+    : 'border-white/25 text-white/70'
 })
+
+const selectedKindText = computed(() => (selectedItem.value ? kindLabel(selectedItem.value) : 'Item'))
+
+function isItemSoldOut(item: ShopItem): boolean {
+  return item.options.every((option) => !optionAvailable(option))
+}
 
 function selectItem(item: ShopItem) {
   selectedItemDefId.value = item.item_def_id
@@ -117,8 +131,16 @@ function clearFeedbackForItem(itemDefId: number) {
 
 function openPurchaseConfirm(item: ShopItem) {
   if (!isLoggedIn.value) return
+  const availableOption = item.options.find(optionAvailable)
+  if (!availableOption) {
+    feedbackByItem.value = {
+      ...feedbackByItem.value,
+      [item.item_def_id]: { kind: 'error', text: 'This item is sold out.' },
+    }
+    return
+  }
   confirmItem.value = item
-  confirmCurrency.value = item.options[0]?.currency ?? 'coins'
+  confirmCurrency.value = availableOption.currency
 }
 
 function closePurchaseConfirm() {
@@ -154,9 +176,9 @@ async function confirmPurchase() {
 </script>
 
 <template>
-  <div class="relative min-h-screen overflow-hidden bg-[#181c2c] text-white">
+  <div class="relative min-h-full overflow-hidden bg-[#181c2c] text-white">
     <div class="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,#22273a_0%,#171c2d_30%,#111526_100%)]" />
-    <div class="relative mx-auto flex min-h-screen max-w-[1540px] flex-col lg:flex-row">
+    <div class="relative mx-auto flex min-h-full max-w-[96rem] flex-col lg:flex-row">
       <section class="flex min-h-0 flex-1 flex-col border-b border-cyan-300/35 lg:border-b-0 lg:border-r lg:border-cyan-300/40">
         <header class="h-16 border-b border-slate-400/20 bg-[#5b71994d] px-6 py-3">
           <h1 class="m-0 text-2xl font-black uppercase tracking-[0.08em] text-white/85">
@@ -178,8 +200,8 @@ async function confirmPurchase() {
             </div>
           </div>
 
-          <div v-if="catalogLoading" class="flex min-h-[320px] items-center justify-center text-sm font-semibold text-slate-200">
-            Loading catalog...
+          <div v-if="catalogLoading" class="flex min-h-[20rem] items-center justify-center text-sm font-semibold text-slate-200" role="status">
+            Loading catalog…
           </div>
 
           <div v-else-if="catalogError" class="rounded-md border border-rose-300/50 bg-rose-950/50 p-4 text-rose-100" role="alert">
@@ -190,7 +212,7 @@ async function confirmPurchase() {
             </button>
           </div>
 
-          <div v-else-if="filteredItems.length === 0" class="flex min-h-[320px] items-center justify-center rounded-md border border-slate-200/20 bg-black/20 text-sm font-semibold text-slate-300">
+          <div v-else-if="filteredItems.length === 0" class="flex min-h-[20rem] items-center justify-center rounded-md border border-slate-200/20 bg-black/20 text-sm font-semibold text-slate-300">
             No items in this section yet.
           </div>
 
@@ -228,10 +250,10 @@ async function confirmPurchase() {
                 v-if="isLoggedIn"
                 type="button"
                 class="absolute right-2 top-2 rounded border border-white/60 bg-black/35 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-white hover:bg-black/55"
-                :disabled="purchasingId !== null"
+                :disabled="purchasingId !== null || isItemSoldOut(item)"
                 @click="openPurchaseConfirm(item)"
               >
-                Buy
+                {{ isItemSoldOut(item) ? 'Sold out' : 'Buy' }}
               </button>
               <RouterLink
                 v-else
@@ -245,11 +267,11 @@ async function confirmPurchase() {
         </div>
       </section>
 
-      <aside class="w-full bg-[#15182b] lg:w-[500px]">
+      <aside class="w-full bg-[#15182b] lg:w-[31.25rem] lg:max-w-[42%]">
         <div class="border-b border-cyan-300/80">
           <div
             v-if="selectedItem"
-            class="relative h-[360px] border border-cyan-300/90 bg-[radial-gradient(circle_at_center,_#4cc2ff_0%,_#1e5db7_58%,_#0e2b63_100%)]"
+            class="relative h-[22.5rem] border border-cyan-300/90 bg-[radial-gradient(circle_at_center,_#4cc2ff_0%,_#1e5db7_58%,_#0e2b63_100%)]"
           >
             <template v-if="selectedItem.model_glb">
               <LockerCharacterPreview
@@ -274,18 +296,18 @@ async function confirmPurchase() {
               {{ selectedRarityText }}
             </span>
           </div>
-          <div v-else class="flex h-[360px] items-center justify-center border border-cyan-300/40 text-sm text-white/70">Select an item</div>
+          <div v-else class="flex h-[22.5rem] items-center justify-center border border-cyan-300/40 text-sm text-white/70">Select an item</div>
         </div>
 
         <div class="bg-[#000724f2] p-8">
           <template v-if="selectedItem">
             <h2 class="m-0 text-center text-4xl font-black uppercase tracking-[0.04em] text-white">{{ selectedItem.name }}</h2>
-            <p class="m-0 mt-2 text-center text-sm uppercase tracking-[0.16em] text-white/70">{{ selectedCurrencyText }}</p>
+            <p class="m-0 mt-2 text-center text-sm uppercase tracking-[0.16em] text-white/70">{{ selectedKindText }}</p>
 
             <dl class="mt-6 border-y border-white/10 py-4 text-sm">
               <div class="flex items-center justify-between py-1.5">
-                <dt class="text-white/60">Season</dt>
-                <dd class="font-semibold text-white">Season 1</dd>
+                <dt class="text-white/60">Type</dt>
+                <dd class="font-semibold text-white">{{ selectedKindText }}</dd>
               </div>
               <div class="flex items-center justify-between py-1.5">
                 <dt class="text-white/60">Rarity</dt>
@@ -294,9 +316,15 @@ async function confirmPurchase() {
             </dl>
 
             <ul class="m-0 mt-4 list-none space-y-2 p-0 text-sm">
-              <li v-for="option in selectedItem.options" :key="`selected-option-${option.shop_catalog_item_id}`" class="flex items-center justify-between text-white/85">
+              <li v-for="option in selectedItem.options" :key="`selected-option-${option.shop_catalog_item_id}-${option.currency}`" class="flex items-center justify-between gap-3 text-white/85">
                 <span>{{ currencyLabel(option.currency) }}</span>
-                <span class="font-bold">{{ priceBadge(option) }}</span>
+                <span v-if="optionAvailable(option)" class="text-right font-bold">
+                  {{ priceBadge(option) }}
+                  <small v-if="option.stock_remaining !== null" class="ml-1 font-medium text-white/50">
+                    · {{ option.stock_remaining }} left
+                  </small>
+                </span>
+                <span v-else class="font-bold uppercase tracking-wide text-rose-300">Sold out</span>
               </li>
             </ul>
 
@@ -317,10 +345,10 @@ async function confirmPurchase() {
               v-if="isLoggedIn"
               type="button"
               class="mt-6 w-full border border-cyan-300/90 bg-[radial-gradient(circle_at_center,_#4cc2ff_0%,_#1e5db7_58%,_#0e2b63_100%)] px-4 py-4 text-3xl font-black uppercase tracking-wide text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
-              :disabled="purchasingId !== null"
+              :disabled="purchasingId !== null || isItemSoldOut(selectedItem)"
               @click="openPurchaseConfirm(selectedItem)"
             >
-              {{ purchasingId ? 'Processing…' : 'Buy' }}
+              {{ purchasingId ? 'Processing…' : isItemSoldOut(selectedItem) ? 'Sold out' : 'Buy' }}
             </button>
             <RouterLink
               v-else
@@ -352,6 +380,8 @@ async function confirmPurchase() {
       :confirm-after="confirmAfter"
       :confirm-option="confirmOption"
       :purchasing-id="purchasingId"
+      :can-afford="confirmCanAfford"
+      :sold-out="confirmSoldOut"
       @close="closePurchaseConfirm"
       @confirm="confirmPurchase"
     />

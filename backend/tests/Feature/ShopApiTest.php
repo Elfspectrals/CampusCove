@@ -291,6 +291,75 @@ class ShopApiTest extends TestCase
             ->assertJsonPath('code', 'already_owned');
     }
 
+    public function test_unique_item_cannot_be_purchased_again_after_original_catalog_row_is_soft_deleted(): void
+    {
+        $coinsRow = DB::table('shop_catalog_items')
+            ->where('is_unique_per_account', true)
+            ->where('currency', 'coins')
+            ->first();
+        $this->assertNotNull($coinsRow);
+
+        $premiumCatalogId = (int) DB::table('shop_catalog_items')->insertGetId([
+            'item_def_id' => $coinsRow->item_def_id,
+            'currency' => 'premium',
+            'price' => 5,
+            'allow_coins' => false,
+            'coins_price' => null,
+            'allow_premium' => true,
+            'premium_price' => 5,
+            'is_active' => true,
+            'is_published' => true,
+            'is_unique_per_account' => true,
+            'stock_remaining' => null,
+            'sort_order' => 31,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ], 'shop_catalog_item_id');
+        $premiumRow = DB::table('shop_catalog_items')
+            ->where('shop_catalog_item_id', $premiumCatalogId)
+            ->first();
+        $this->assertNotNull($premiumRow);
+
+        $account = $this->registerAndCreditWallet(50_000, 'coins');
+        $premiumWalletId = (int) DB::table('wallets')->insertGetId([
+            'owner_type' => 'account',
+            'owner_id' => $account['account_id'],
+            'currency' => 'premium',
+            'created_at' => now(),
+        ], 'wallet_id');
+        DB::table('wallet_ledger')->insert([
+            'wallet_id' => $premiumWalletId,
+            'tx_id' => null,
+            'delta' => 100,
+            'reason' => 'test_credit',
+            'created_at' => now(),
+        ]);
+
+        $this->postJson('/api/shop/purchase', [
+            'shop_item_public_id' => $coinsRow->public_id,
+            'quantity' => 1,
+        ], [
+            'Authorization' => 'Bearer '.$account['token'],
+        ])->assertOk();
+
+        DB::table('shop_catalog_items')
+            ->where('shop_catalog_item_id', $coinsRow->shop_catalog_item_id)
+            ->update([
+                'deleted_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+        $this->postJson('/api/shop/purchase', [
+            'shop_item_public_id' => $premiumRow->public_id,
+            'currency' => 'premium',
+            'quantity' => 1,
+        ], [
+            'Authorization' => 'Bearer '.$account['token'],
+        ])
+            ->assertUnprocessable()
+            ->assertJsonPath('code', 'already_owned');
+    }
+
     public function test_stock_limited_item_returns_unavailable_when_exhausted(): void
     {
         $row = DB::table('shop_catalog_items')

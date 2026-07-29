@@ -9,13 +9,20 @@ use App\Services\StarterCosmeticGrantService;
 use App\Services\WalletSummaryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Mail\Message;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Throwable;
 
 class AuthController extends Controller
 {
+    private const PASSWORD_RESET_MESSAGE = 'If an account exists with that email, you will receive a reset link.';
+
     public function __construct(
         private readonly WalletSummaryService $walletSummary,
     ) {
@@ -39,10 +46,12 @@ class AuthController extends Controller
 
         $tag = random_int(0, 9999);
 
-        DB::transaction(function () use ($validated, $normalized, $tag) {
-            Account::create(['status' => 'active']);
-            // PostgreSQL IDENTITY: Eloquent may not set account_id on the model, so fetch it
-            $accountId = Account::orderByDesc('account_id')->value('account_id');
+        $account = DB::transaction(function () use ($validated, $normalized, $tag): Account {
+            $account = Account::create(['status' => 'active']);
+            $accountId = (int) $account->getKey();
+            DB::table('password_reset_tokens')
+                ->where('email', $validated['email'])
+                ->delete();
             AccountHandle::create([
                 'account_id' => $accountId,
                 'username' => $validated['username'],
@@ -55,13 +64,12 @@ class AuthController extends Controller
                 'password_hash' => Hash::make($validated['password']),
                 'email_verified' => false,
             ]);
+            app(StarterCosmeticGrantService::class)->ensureStarterCosmeticsForAccount($accountId);
+
+            return $account;
         });
 
-        $account = Account::whereHas('localAuth', fn ($q) => $q->where('email', $validated['email']))
-            ->with('handle', 'localAuth')
-            ->firstOrFail();
-
-        app(StarterCosmeticGrantService::class)->ensureStarterCosmeticsForAccount((int) $account->account_id);
+        $account->load('handle', 'localAuth');
 
         $account->update(['last_login_at' => now()]);
         $token = $account->createToken('auth')->plainTextToken;
@@ -88,6 +96,14 @@ class AuthController extends Controller
             throw ValidationException::withMessages([
                 'email' => ['The provided credentials are incorrect.'],
             ]);
+        }
+        if ($account->status !== 'active') {
+            $account->tokens()->delete();
+
+            return response()->json([
+                'message' => 'Account is disabled.',
+                'code' => 'account_disabled',
+            ], 403);
         }
         if ($account->banned_at !== null) {
             $account->tokens()->delete();
@@ -120,10 +136,88 @@ class AuthController extends Controller
 
     public function forgotPassword(Request $request): JsonResponse
     {
-        $request->validate(['email' => 'required|email']);
+        $validated = $request->validate(['email' => 'required|email']);
+        $localAuth = AccountAuthLocal::query()
+            ->where('email', $validated['email'])
+            ->first();
 
-        // TODO: send reset link email (e.g. Laravel password reset)
-        return response()->json(['message' => 'If an account exists with that email, you will receive a reset link.']);
+        if ($localAuth !== null) {
+            $token = Str::random(64);
+            DB::table('password_reset_tokens')->updateOrInsert(
+                ['email' => $localAuth->email],
+                [
+                    'token' => hash('sha256', $token),
+                    'created_at' => now(),
+                ],
+            );
+
+            $frontendUrl = rtrim((string) config('app.frontend_url'), '/');
+            $resetUrl = $frontendUrl.'/reset-password?'.http_build_query([
+                'token' => $token,
+                'email' => $localAuth->email,
+            ]);
+            $expiryMinutes = (int) config('auth.passwords.users.expire', 60);
+
+            try {
+                Mail::raw(
+                    "Use this link to reset your CampusCove password:\n\n{$resetUrl}\n\nThis link expires in {$expiryMinutes} minutes.",
+                    function (Message $message) use ($localAuth): void {
+                        $message
+                            ->to((string) $localAuth->email)
+                            ->subject('Reset your CampusCove password');
+                    },
+                );
+            } catch (Throwable $error) {
+                Log::error('auth.password_reset_delivery_failed', [
+                    'account_id' => (int) $localAuth->account_id,
+                    'error' => $error->getMessage(),
+                ]);
+            }
+        }
+
+        return response()->json(['message' => self::PASSWORD_RESET_MESSAGE]);
+    }
+
+    public function resetPassword(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'email' => ['required', 'email'],
+            'token' => ['required', 'string', 'size:64'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        $localAuth = AccountAuthLocal::query()
+            ->where('email', $validated['email'])
+            ->first();
+        $reset = $localAuth !== null
+            ? DB::table('password_reset_tokens')->where('email', $localAuth->email)->first()
+            : null;
+        $expiryMinutes = (int) config('auth.passwords.users.expire', 60);
+        $createdAt = $reset?->created_at !== null ? Carbon::parse($reset->created_at) : null;
+        $isValid = $localAuth !== null
+            && $reset !== null
+            && is_string($reset->token)
+            && hash_equals($reset->token, hash('sha256', $validated['token']))
+            && $createdAt !== null
+            && $createdAt->greaterThanOrEqualTo(now()->subMinutes($expiryMinutes));
+
+        if (! $isValid || $localAuth === null) {
+            throw ValidationException::withMessages([
+                'token' => ['This password reset link is invalid or has expired.'],
+            ]);
+        }
+
+        DB::transaction(function () use ($localAuth, $validated): void {
+            $localAuth->update([
+                'password_hash' => Hash::make($validated['password']),
+            ]);
+            $localAuth->account()->first()?->tokens()->delete();
+            DB::table('password_reset_tokens')->where('email', $localAuth->email)->delete();
+        });
+
+        return response()->json([
+            'message' => 'Password reset successfully. You can now sign in.',
+        ]);
     }
 
     public function user(Request $request): JsonResponse

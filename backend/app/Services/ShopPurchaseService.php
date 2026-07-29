@@ -70,22 +70,31 @@ final class ShopPurchaseService
             $totalDebit = $unitPrice * $quantity;
 
             $accountId = $account->getAuthIdentifier();
-            $wallet = $this->lockAccountWallet((int) $accountId, (string) $currency);
-
-            $balance = $this->walletBalance((int) $wallet->wallet_id);
-            if ($balance < $totalDebit) {
-                throw new ShopPurchaseRejectedException('insufficient_funds', 'Insufficient wallet balance.', 422);
-            }
-
             if ($catalogItem->is_unique_per_account) {
+                DB::table('item_defs')
+                    ->where('item_def_id', $itemDef->item_def_id)
+                    ->lockForUpdate()
+                    ->first();
+
                 $already = AccountShopPurchase::query()
                     ->where('account_id', $accountId)
-                    ->where('shop_catalog_item_id', $catalogItem->shop_catalog_item_id)
                     ->where('is_unique_at_purchase', true)
+                    ->whereHas(
+                        'shopCatalogItem',
+                        fn ($query) => $query
+                            ->withTrashed()
+                            ->where('item_def_id', $itemDef->item_def_id),
+                    )
                     ->exists();
                 if ($already) {
                     throw new ShopPurchaseRejectedException('already_owned', 'You already own this item.', 422);
                 }
+            }
+
+            $wallet = $this->lockAccountWallet((int) $accountId, (string) $currency);
+            $balance = $this->walletBalance((int) $wallet->wallet_id);
+            if ($balance < $totalDebit) {
+                throw new ShopPurchaseRejectedException('insufficient_funds', 'Insufficient wallet balance.', 422);
             }
 
             $tx = EconomyTransaction::query()->create([

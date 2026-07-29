@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Services\StarterCosmeticGrantService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
@@ -77,6 +78,52 @@ class AdminUserInventoryApiTest extends TestCase
             ->assertJsonPath('code', 'account_banned');
     }
 
+    public function test_changing_an_email_invalidates_reset_tokens_before_the_address_can_be_reassigned(): void
+    {
+        $adminToken = $this->registerToken(true);
+        $victim = $this->registerWithCredentials();
+        $rawToken = str_repeat('c', 64);
+        $replacementEmail = 'changed-'.uniqid('', true).'@test.com';
+
+        DB::table('password_reset_tokens')->insert([
+            'email' => $victim['email'],
+            'token' => hash('sha256', $rawToken),
+            'created_at' => now(),
+        ]);
+
+        $this->patchJson('/api/admin/users/'.$victim['account_id'], [
+            'email' => $replacementEmail,
+        ], [
+            'Authorization' => 'Bearer '.$adminToken,
+        ])->assertOk()
+            ->assertJsonPath('user.email', $replacementEmail);
+
+        $this->assertDatabaseMissing('password_reset_tokens', [
+            'email' => $victim['email'],
+        ]);
+
+        $newOwner = $this->postJson('/api/register', [
+            'email' => $victim['email'],
+            'username' => 'reassigned_'.substr(str_replace('.', '', uniqid('', true)), 0, 8),
+            'password' => 'password1x',
+            'password_confirmation' => 'password1x',
+        ]);
+        $newOwner->assertCreated();
+
+        $this->postJson('/api/reset-password', [
+            'email' => $victim['email'],
+            'token' => $rawToken,
+            'password' => 'stolen-password1x',
+            'password_confirmation' => 'stolen-password1x',
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors('token');
+
+        $this->postJson('/api/login', [
+            'email' => $victim['email'],
+            'password' => 'password1x',
+        ])->assertOk();
+    }
+
     public function test_admin_inventory_actions_grant_set_revoke_and_reset(): void
     {
         $adminToken = $this->registerToken(true);
@@ -118,7 +165,69 @@ class AdminUserInventoryApiTest extends TestCase
             'Authorization' => 'Bearer '.$adminToken,
         ]);
         $afterReset->assertOk();
-        $this->assertSame([], $afterReset->json('items'));
+        $actualStarterCodes = collect($afterReset->json('items'))
+            ->pluck('code')
+            ->sort()
+            ->values()
+            ->all();
+        $expectedStarterCodes = collect(StarterCosmeticGrantService::FREE_BODY_CODES)
+            ->sort()
+            ->values()
+            ->all();
+        $this->assertSame($expectedStarterCodes, $actualStarterCodes);
+        $this->assertNull(
+            collect($afterReset->json('items'))->firstWhere('code', 'chair_campus_basic')
+        );
+    }
+
+    public function test_admin_reset_clears_cosmetics_even_without_a_gift_inbox(): void
+    {
+        $adminToken = $this->registerToken(true);
+        $victim = $this->registerWithCredentials();
+        $accountId = (int) $victim['account_id'];
+        $extraCosmeticId = (int) DB::table('item_defs')
+            ->where('code', 'COS_WEAR_HAIR_DEFAULT')
+            ->value('item_def_id');
+
+        $this->assertGreaterThan(0, $extraCosmeticId);
+        $this->assertDatabaseMissing('gift_inboxes', ['account_id' => $accountId]);
+
+        DB::table('account_locker_cosmetics')->insert([
+            'account_id' => $accountId,
+            'item_def_id' => $extraCosmeticId,
+            'quantity' => 1,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::table('account_cosmetic_equipment')->insert([
+            'account_id' => $accountId,
+            'slot' => 'hair',
+            'item_def_id' => $extraCosmeticId,
+            'updated_at' => now(),
+        ]);
+
+        $this->postJson('/api/admin/inventories/'.$accountId.'/reset', [], [
+            'Authorization' => 'Bearer '.$adminToken,
+        ])->assertOk();
+
+        $this->assertDatabaseMissing('account_locker_cosmetics', [
+            'account_id' => $accountId,
+            'item_def_id' => $extraCosmeticId,
+        ]);
+        $this->assertDatabaseMissing('account_cosmetic_equipment', [
+            'account_id' => $accountId,
+            'slot' => 'hair',
+        ]);
+        foreach (StarterCosmeticGrantService::FREE_BODY_CODES as $starterCode) {
+            $starterId = (int) DB::table('item_defs')
+                ->where('code', $starterCode)
+                ->value('item_def_id');
+            $this->assertDatabaseHas('account_locker_cosmetics', [
+                'account_id' => $accountId,
+                'item_def_id' => $starterId,
+                'quantity' => 1,
+            ]);
+        }
     }
 
     private function registerToken(bool $admin = false): string

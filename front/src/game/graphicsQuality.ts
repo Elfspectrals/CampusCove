@@ -1,39 +1,59 @@
-export type GraphicsQuality = 'low' | 'high'
+import {
+  applyGraphicsPreset,
+  getGameSettings,
+  saveGameSettings,
+  type GraphicsPresetId,
+  type GraphicsSettings,
+} from './gameSettings'
 
-const STORAGE_KEY = 'cc_graphics_quality'
+/** Compatibility name retained for existing call sites. */
+export type GraphicsQuality = GraphicsPresetId
+
+export function getGraphicsSettings(): GraphicsSettings {
+  return getGameSettings().graphics
+}
 
 export function getGraphicsQuality(): GraphicsQuality {
-  const stored = localStorage.getItem(STORAGE_KEY)
-  if (stored === 'low' || stored === 'high') {
-    return stored
-  }
-  return 'low'
+  return getGraphicsSettings().preset
 }
 
 export function setGraphicsQuality(quality: GraphicsQuality): void {
-  localStorage.setItem(STORAGE_KEY, quality)
+  const current = getGameSettings()
+  const result = saveGameSettings({
+    ...current,
+    graphics: applyGraphicsPreset(current.graphics, quality),
+  })
+  if (result.issues.length > 0) {
+    console.warn('[graphics-quality] Graphics settings required recovery.', result.issues)
+  }
 }
 
+/** Cycles all user-facing presets while preserving the legacy toggle API. */
 export function toggleGraphicsQuality(): GraphicsQuality {
-  const next: GraphicsQuality = getGraphicsQuality() === 'low' ? 'high' : 'low'
+  const current = getGraphicsQuality()
+  const next: GraphicsQuality = current === 'low' ? 'medium' : current === 'medium' ? 'high' : 'low'
   setGraphicsQuality(next)
   return next
 }
 
+export function usesLowDetailRoomAssets(): boolean {
+  return getGraphicsQuality() === 'low'
+}
+
 export function supportsRoomMeshShadows(): boolean {
-  return getGraphicsQuality() === 'high'
+  return getGraphicsSettings().shadows !== 'off'
 }
 
 export function supportsEnvironmentMap(): boolean {
-  return getGraphicsQuality() === 'high'
+  return getGraphicsSettings().environmentMap
 }
 
-/** Bloom disabled — direct renderer path preserves color accuracy and FPS. */
 export function supportsBloom(): boolean {
-  return false
+  return getGraphicsSettings().postprocessing === 'bloom'
 }
 
-/** Point-light shadows stay off for FPS even on High. */
+/** Restrict expensive local-light shadows to the explicit High preset. */
 export function supportsPointLightShadows(): boolean {
-  return false
+  const graphics = getGraphicsSettings()
+  return graphics.preset === 'high' && graphics.shadows !== 'off'
 }

@@ -16,6 +16,15 @@ class EnsureAccountIsActive
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
 
+        if ($user->status !== 'active') {
+            $user->tokens()->delete();
+
+            return response()->json([
+                'message' => 'Account is disabled.',
+                'code' => 'account_disabled',
+            ], 403);
+        }
+
         if ($user->banned_at !== null) {
             $user->tokens()->delete();
 

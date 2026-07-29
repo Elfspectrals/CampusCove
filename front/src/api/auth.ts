@@ -150,6 +150,30 @@ export async function forgotPassword(email: string): Promise<{ message: string }
   return { message: 'If an account exists with that email, you will receive a reset link.' }
 }
 
+export async function resetPassword(
+  email: string,
+  token: string,
+  password: string,
+  passwordConfirmation: string,
+): Promise<{ message: string }> {
+  const res = await fetch(`${API_BASE}/reset-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({
+      email,
+      token,
+      password,
+      password_confirmation: passwordConfirmation,
+    }),
+  })
+  const data: unknown = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(formatApiError(data))
+  if (!isRecord(data) || typeof data.message !== 'string') {
+    throw new Error('Invalid password reset response')
+  }
+  return { message: data.message }
+}
+
 export async function logout(token: string): Promise<void> {
   await fetch(`${API_BASE}/logout`, {
     method: 'POST',
@@ -265,7 +289,11 @@ export function clearAuth(): void {
   notifyAuthListeners()
 }
 
-/** Returns true if stored token is still valid (API accepts it), false otherwise. Clears auth if invalid or on error. */
+/**
+ * Returns whether the client should keep using the stored session.
+ * Invalid/disabled sessions are cleared, while transient server or network failures fall back
+ * to the cached identity; protected APIs still enforce the token server-side.
+ */
 export async function validateStoredAuth(): Promise<boolean> {
   const auth = getStoredAuth()
   if (!auth?.token) return false
@@ -279,11 +307,15 @@ export async function validateStoredAuth(): Promise<boolean> {
       if (user) mergeStoredUser(user)
       return true
     }
+    if (res.status === 401 || res.status === 403) {
+      clearAuth()
+      return false
+    }
+    return true
   } catch {
-    // Network error or backend down
+    // Preserve the cached session during transient connectivity failures.
+    return true
   }
-  clearAuth()
-  return false
 }
 
 function parseUserEndpointPayload(data: unknown): User | null {

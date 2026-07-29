@@ -21,6 +21,9 @@ class Friendship extends Model
     protected function casts(): array
     {
         return [
+            'account_id_a' => 'integer',
+            'account_id_b' => 'integer',
+            'requested_by' => 'integer',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
         ];

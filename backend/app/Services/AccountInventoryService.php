@@ -209,15 +209,14 @@ final class AccountInventoryService
     {
         DB::transaction(function () use ($accountId): void {
             $gift = GiftInbox::query()->where('account_id', $accountId)->first();
-            if ($gift === null) {
-                return;
+            if ($gift !== null) {
+                $containerId = (int) $gift->container_id;
+                InventoryStack::query()->where('container_id', $containerId)->delete();
+                ItemInstance::query()->where('container_id', $containerId)->delete();
             }
-            $containerId = (int) $gift->container_id;
 
-            InventoryStack::query()->where('container_id', $containerId)->delete();
-            ItemInstance::query()->where('container_id', $containerId)->delete();
-            DB::table('account_locker_cosmetics')->where('account_id', $accountId)->delete();
             DB::table('account_cosmetic_equipment')->where('account_id', $accountId)->delete();
+            DB::table('account_locker_cosmetics')->where('account_id', $accountId)->delete();
         });
     }
 

@@ -59,6 +59,7 @@ const pageTitle = computed(() => {
 })
 
 const fullBleed = computed(() => route.meta.fullBleed === true)
+const standalone = computed(() => route.meta.standalone === true)
 
 const sidebarOpen = ref(false)
 
@@ -131,11 +132,17 @@ watch(
   },
   { immediate: true }
 )
+
+watch(
+  () => route.fullPath,
+  () => closeSidebar(),
+)
 </script>
 
 <template>
   <div class="min-h-screen bg-slate-100">
     <aside
+      v-if="!standalone"
       :class="[
         'fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-white/10 bg-[#191C28] text-white shadow-lg transition-transform duration-200 ease-out md:translate-x-0',
         sidebarOpen ? 'translate-x-0' : '-translate-x-full',
@@ -219,14 +226,15 @@ watch(
     </aside>
 
     <div
-      v-if="sidebarOpen"
+      v-if="sidebarOpen && !standalone"
       class="fixed inset-0 z-30 bg-black/50 md:hidden"
       aria-hidden="true"
       @click="closeSidebar"
     />
 
-    <div class="flex min-h-screen flex-col md:ml-64">
+    <div :class="['flex min-h-screen flex-col', standalone ? '' : 'md:ml-64']">
       <header
+        v-if="!standalone"
         class="sticky top-0 z-50 flex flex-wrap items-center gap-3 border-b border-white/10 bg-slate-800 px-3 py-3 text-white shadow-sm sm:px-4"
       >
         <button
@@ -330,7 +338,11 @@ watch(
       <main
         :class="[
           'min-h-0 flex-1',
-          fullBleed ? 'flex flex-col overflow-hidden' : 'overflow-y-auto px-4 py-6 md:px-6',
+          standalone
+            ? 'flex min-h-screen flex-col overflow-hidden'
+            : fullBleed
+              ? 'flex flex-col overflow-hidden'
+              : 'overflow-y-auto px-4 py-6 md:px-6',
         ]"
       >
         <router-view class="min-h-0 flex-1" />

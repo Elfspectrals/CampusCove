@@ -59,10 +59,14 @@ const stats: WorldCollisionStats = {
 }
 
 let world: World | null = null
-let initPromise: Promise<void> | null = null
+let rapierInitPromise: Promise<void> | null = null
 let builtUrl: string | null = null
+let requestedUrl: string | null = null
 let buildInFlight: Promise<void> | null = null
+let buildAbortController: AbortController | null = null
+let buildGeneration = 0
 let collidersReady = false
+let collisionRequired = false
 let loadedCuboids: CollisionCuboidJson[] = []
 let loadedTrimeshes: CollisionTrimeshJson[] = []
 let debugGroup: THREE.Group | null = null
@@ -72,6 +76,7 @@ let playerBody: RAPIER.RigidBody | null = null
 let playerCollider: Collider | null = null
 
 const desiredDelta = new RAPIER.Vector3(0, 0, 0)
+const playerTranslation = new RAPIER.Vector3(0, CAPSULE_CENTER_Y, 0)
 
 function resetStats(): void {
   stats.cuboids = 0
@@ -118,6 +123,7 @@ function addFixedTrimesh(w: World, vertices: number[], indices: number[]): void 
 function addBorderWalls(
   w: World,
   bounds: { minX: number; maxX: number; minZ: number; maxZ: number },
+  targetStats: WorldCollisionStats,
 ): void {
   const centerX = (bounds.minX + bounds.maxX) * 0.5
   const centerZ = (bounds.minZ + bounds.maxZ) * 0.5
@@ -164,33 +170,37 @@ function addBorderWalls(
 
   for (const c of configs) {
     addFixedCuboid(w, c.cx, c.cy, c.cz, c.hx, c.hy, c.hz, 0, 0, 0, 1)
-    stats.borderWalls += 1
+    targetStats.borderWalls += 1
   }
 }
 
-function ensureCharacterController(): void {
-  if (!world || playerCollider) return
+function ensureRapierInitialized(): Promise<void> {
+  if (!rapierInitPromise) {
+    rapierInitPromise = (async () => {
+      await RAPIER.init()
+    })().catch((error: unknown) => {
+      rapierInitPromise = null
+      throw error
+    })
+  }
+  return rapierInitPromise
+}
 
-  playerBody = world.createRigidBody(RAPIER.RigidBodyDesc.kinematicPositionBased().lockRotations())
+function createCollisionRuntime() {
+  const nextWorld = new RAPIER.World(new RAPIER.Vector3(0, 0, 0))
+  const nextPlayerBody = nextWorld.createRigidBody(RAPIER.RigidBodyDesc.kinematicPositionBased().lockRotations())
   const colliderDesc = RAPIER.ColliderDesc.capsule(CAPSULE_HALF_HEIGHT, CAPSULE_RADIUS).setActiveCollisionTypes(
     RAPIER.ActiveCollisionTypes.KINEMATIC_FIXED,
   )
-  playerCollider = world.createCollider(colliderDesc, playerBody)
-  characterController = world.createCharacterController(CONTROLLER_OFFSET)
-  characterController.setSlideEnabled(true)
-}
-
-async function ensureWorld(): Promise<World> {
-  if (world) return world
-  if (!initPromise) {
-    initPromise = (async () => {
-      await RAPIER.init()
-      world = new RAPIER.World(new RAPIER.Vector3(0, 0, 0))
-      ensureCharacterController()
-    })()
+  const nextPlayerCollider = nextWorld.createCollider(colliderDesc, nextPlayerBody)
+  const nextCharacterController = nextWorld.createCharacterController(CONTROLLER_OFFSET)
+  nextCharacterController.setSlideEnabled(true)
+  return {
+    world: nextWorld,
+    playerBody: nextPlayerBody,
+    playerCollider: nextPlayerCollider,
+    characterController: nextCharacterController,
   }
-  await initPromise
-  return world!
 }
 
 function disposeWorld(): void {
@@ -198,7 +208,6 @@ function disposeWorld(): void {
     world.free()
   }
   world = null
-  initPromise = null
   playerBody = null
   playerCollider = null
   characterController = null
@@ -266,34 +275,62 @@ function rebuildDebugGroup(): void {
   if (parent) parent.add(debugGroup)
 }
 
-async function buildFromCollisionData(url: string, data: CollisionFileJson): Promise<void> {
-  disposeWorld()
-  const w = await ensureWorld()
-  resetStats()
-  collidersReady = false
-  stats.sourceUrl = url
-  stats.mode = data.mode ?? null
-  loadedCuboids = data.cuboids ?? []
-  loadedTrimeshes = data.trimeshes ?? []
+async function buildFromCollisionData(
+  url: string,
+  data: CollisionFileJson,
+  generation: number,
+): Promise<boolean> {
+  await ensureRapierInitialized()
+  if (generation !== buildGeneration) return false
 
-  for (const c of loadedCuboids) {
-    addFixedCuboid(w, c.cx, c.cy, c.cz, c.hx, c.hy, c.hz, c.qx, c.qy, c.qz, c.qw)
-    stats.cuboids += 1
+  const runtime = createCollisionRuntime()
+  let runtimeCommitted = false
+  const nextCuboids = data.cuboids ?? []
+  const nextTrimeshes = data.trimeshes ?? []
+  const nextStats: WorldCollisionStats = {
+    cuboids: 0,
+    trimeshes: 0,
+    trimeshTris: 0,
+    borderWalls: 0,
+    sourceUrl: url,
+    mode: data.mode ?? null,
   }
 
-  for (const t of loadedTrimeshes) {
-    addFixedTrimesh(w, t.vertices, t.indices)
-    stats.trimeshes += 1
-    stats.trimeshTris += Math.floor((t.indices?.length ?? 0) / 3)
-  }
+  try {
+    for (const c of nextCuboids) {
+      addFixedCuboid(runtime.world, c.cx, c.cy, c.cz, c.hx, c.hy, c.hz, c.qx, c.qy, c.qz, c.qw)
+      nextStats.cuboids += 1
+    }
 
-  if (data.borders && data.bounds) {
-    addBorderWalls(w, data.bounds)
-  }
+    for (const t of nextTrimeshes) {
+      addFixedTrimesh(runtime.world, t.vertices, t.indices)
+      nextStats.trimeshes += 1
+      nextStats.trimeshTris += Math.floor((t.indices?.length ?? 0) / 3)
+    }
 
-  w.step()
-  collidersReady = true
-  if (debugGroup) rebuildDebugGroup()
+    if (data.borders && data.bounds) {
+      addBorderWalls(runtime.world, data.bounds, nextStats)
+    }
+
+    runtime.world.step()
+    if (generation !== buildGeneration) return false
+
+    disposeWorld()
+    world = runtime.world
+    playerBody = runtime.playerBody
+    playerCollider = runtime.playerCollider
+    characterController = runtime.characterController
+    runtimeCommitted = true
+    loadedCuboids = nextCuboids
+    loadedTrimeshes = nextTrimeshes
+    Object.assign(stats, nextStats)
+    builtUrl = url
+    collidersReady = true
+    if (debugGroup) rebuildDebugGroup()
+    return true
+  } finally {
+    if (!runtimeCommitted) runtime.world.free()
+  }
 }
 
 /**
@@ -301,34 +338,70 @@ async function buildFromCollisionData(url: string, data: CollisionFileJson): Pro
  * `make optimize` / `map-optimize` / `apartment-optimize`) into the Rapier world.
  */
 export function buildWorldCollisionFromUrl(url: string): Promise<void> {
+  collisionRequired = true
   if (builtUrl === url && collidersReady) {
     return Promise.resolve()
   }
-  if (builtUrl === url && buildInFlight) {
+  if (requestedUrl === url && buildInFlight) {
     return buildInFlight
   }
 
-  builtUrl = url
-  buildInFlight = (async () => {
-    const res = await fetch(url)
+  const generation = ++buildGeneration
+  requestedUrl = url
+  collidersReady = false
+  buildAbortController?.abort()
+  const abortController = new AbortController()
+  buildAbortController = abortController
+
+  const task = (async () => {
+    const res = await fetch(url, { signal: abortController.signal })
     if (!res.ok) {
       throw new Error(`Failed to load collision file ${url}: ${res.status}`)
     }
     const data = (await res.json()) as CollisionFileJson
-    await buildFromCollisionData(url, data)
-    console.info(
-      `[collision] loaded ${url}: ${stats.cuboids} cuboids, ${stats.trimeshes} trimeshes (${stats.trimeshTris} tris), ${stats.borderWalls} borders, mode=${stats.mode ?? 'n/a'}`,
-    )
+    if (generation !== buildGeneration) return
+    const committed = await buildFromCollisionData(url, data, generation)
+    if (committed) {
+      console.info(
+        `[collision] loaded ${url}: ${stats.cuboids} cuboids, ${stats.trimeshes} trimeshes (${stats.trimeshTris} tris), ${stats.borderWalls} borders, mode=${stats.mode ?? 'n/a'}`,
+      )
+    }
   })()
-    .catch((err) => {
-      builtUrl = null
-      collidersReady = false
+    .catch((err: unknown) => {
+      if (generation !== buildGeneration || abortController.signal.aborted) return
+      requestedUrl = null
       throw err
     })
     .finally(() => {
+      if (generation !== buildGeneration) return
+      requestedUrl = null
       buildInFlight = null
+      if (buildAbortController === abortController) {
+        buildAbortController = null
+      }
     })
-  return buildInFlight
+  buildInFlight = task
+  return task
+}
+
+/** Prevent pending room loads from committing after a room switch or component teardown. */
+export function invalidateWorldCollisionLoads(): void {
+  buildGeneration += 1
+  buildAbortController?.abort()
+  buildAbortController = null
+  requestedUrl = null
+  buildInFlight = null
+  collidersReady = false
+}
+
+/** Release the active collision world and invalidate all pending loads. */
+export function disposeWorldCollision(): void {
+  invalidateWorldCollisionLoads()
+  clearDebugGroup()
+  disposeWorld()
+  collisionRequired = false
+  builtUrl = null
+  resetStats()
 }
 
 export function getWorldCollisionStats(): Readonly<WorldCollisionStats> {
@@ -372,10 +445,13 @@ export function resolveWorldMovement(
     !playerCollider ||
     !playerCollider.isValid()
   ) {
-    return fallback
+    return collisionRequired ? { x: current.x, z: current.z } : fallback
   }
 
-  playerBody.setTranslation(new RAPIER.Vector3(current.x, CAPSULE_CENTER_Y, current.z), true)
+  playerTranslation.x = current.x
+  playerTranslation.y = CAPSULE_CENTER_Y
+  playerTranslation.z = current.z
+  playerBody.setTranslation(playerTranslation, true)
   world.propagateModifiedBodyPositionsToColliders()
 
   desiredDelta.x = dx

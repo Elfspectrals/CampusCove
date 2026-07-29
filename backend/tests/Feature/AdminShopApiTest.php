@@ -140,7 +140,7 @@ class AdminShopApiTest extends TestCase
             'kind' => 'cosmetic',
             'cosmetic_slot' => 'body',
             'prices' => ['coins' => 150],
-            'preview_image_file' => UploadedFile::fake()->image('preview.png'),
+            'preview_image_file' => UploadedFile::fake()->create('preview.png', 64, 'image/png'),
             'model_glb_file' => UploadedFile::fake()->create('skin.glb', 64, 'model/gltf-binary'),
         ], [
             'Authorization' => 'Bearer '.$token,
@@ -148,8 +148,8 @@ class AdminShopApiTest extends TestCase
         ]);
 
         $response->assertCreated();
-        $this->assertStringContainsString('/storage/skins/previews/', (string) $response->json('item.item.preview_image'));
-        $this->assertStringContainsString('/storage/skins/models/', (string) $response->json('item.item.model_glb'));
+        $this->assertStringContainsString('/api/assets/public/skins/previews/', (string) $response->json('item.item.preview_image'));
+        $this->assertStringContainsString('/api/assets/public/skins/models/', (string) $response->json('item.item.model_glb'));
         $this->assertStringStartsWith('http', (string) $response->json('item.item.preview_image'));
         $this->assertStringStartsWith('http', (string) $response->json('item.item.model_glb'));
     }

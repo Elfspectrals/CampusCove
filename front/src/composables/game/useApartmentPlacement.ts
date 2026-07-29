@@ -626,7 +626,7 @@ export function useApartmentPlacement(ctx: ApartmentPlacementInit) {
     currentState.value = { kind: 'preview_new', itemDef, ownedCountRef }
     userYawTarget = 0
     userYawSmoothed = 0
-    hudHints.value = ['LMB place · RMB cancel · R rotate · Shift+R reverse · Esc / E cancel']
+    hudHints.value = ['Choose a valid spot, then place the item.']
     crosshairTint.value = 'valid'
     const sc = ctx.getScene()
     if (sc) {
@@ -662,7 +662,7 @@ export function useApartmentPlacement(ctx: ApartmentPlacementInit) {
       userYawTarget = new THREE.Euler().setFromQuaternion(sourceMesh.quaternion, 'YXZ').y
       userYawSmoothed = userYawTarget
       buildGhostFromMesh(sourceMesh)
-      hudHints.value = ['LMB commit move · RMB cancel · R rotate · Shift+R reverse · Esc / E cancel']
+      hudHints.value = ['Move the selected item to a valid spot.']
       crosshairTint.value = 'valid'
       const sc = ctx.getScene()
       if (sc) {

@@ -1,13 +1,23 @@
+import { formatApiError, getStoredAuth } from './auth'
+
 const API_BASE = import.meta.env.VITE_API_URL || '/api'
 
 function getAuthHeaders(): HeadersInit {
-  const raw = localStorage.getItem('campus_cove_auth')
-  const auth = raw ? (JSON.parse(raw) as { token: string }) : null
+  const auth = getStoredAuth()
   return {
     Accept: 'application/json',
     'Content-Type': 'application/json',
     ...(auth?.token ? { Authorization: `Bearer ${auth.token}` } : {}),
   }
+}
+
+async function parseResponse<T>(res: Response, fallbackMessage: string): Promise<T> {
+  const data: unknown = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    const message = formatApiError(data)
+    throw new Error(message === 'Request failed' ? fallbackMessage : message)
+  }
+  return data as T
 }
 
 export interface Friend {
@@ -26,14 +36,12 @@ export interface PendingFriend {
 
 export async function getFriends(): Promise<{ friends: Friend[] }> {
   const res = await fetch(`${API_BASE}/friends`, { headers: getAuthHeaders() })
-  if (!res.ok) throw new Error('Failed to load friends')
-  return res.json()
+  return parseResponse(res, 'Failed to load friends')
 }
 
 export async function getPending(): Promise<{ pending: PendingFriend[] }> {
   const res = await fetch(`${API_BASE}/friends/pending`, { headers: getAuthHeaders() })
-  if (!res.ok) throw new Error('Failed to load pending')
-  return res.json()
+  return parseResponse(res, 'Failed to load pending requests')
 }
 
 export async function sendRequest(username: string, tag: number): Promise<{ message: string }> {
@@ -42,12 +50,7 @@ export async function sendRequest(username: string, tag: number): Promise<{ mess
     headers: getAuthHeaders(),
     body: JSON.stringify({ username, tag }),
   })
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}))
-    const msg = data.errors?.username?.[0] ?? data.errors?.tag?.[0] ?? data.message ?? 'Failed to send request'
-    throw new Error(msg)
-  }
-  return res.json()
+  return parseResponse(res, 'Failed to send request')
 }
 
 export async function acceptRequest(accountId: number): Promise<{ message: string }> {
@@ -55,8 +58,7 @@ export async function acceptRequest(accountId: number): Promise<{ message: strin
     method: 'POST',
     headers: getAuthHeaders(),
   })
-  if (!res.ok) throw new Error('Failed to accept')
-  return res.json()
+  return parseResponse(res, 'Failed to accept request')
 }
 
 export async function blockUser(accountId: number): Promise<{ message: string }> {
@@ -64,8 +66,7 @@ export async function blockUser(accountId: number): Promise<{ message: string }>
     method: 'POST',
     headers: getAuthHeaders(),
   })
-  if (!res.ok) throw new Error('Failed to block')
-  return res.json()
+  return parseResponse(res, 'Failed to block user')
 }
 
 export async function removeFriend(accountId: number): Promise<{ message: string }> {
@@ -73,6 +74,5 @@ export async function removeFriend(accountId: number): Promise<{ message: string
     method: 'DELETE',
     headers: getAuthHeaders(),
   })
-  if (!res.ok) throw new Error('Failed to remove')
-  return res.json()
+  return parseResponse(res, 'Failed to remove friend')
 }
