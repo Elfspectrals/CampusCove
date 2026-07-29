@@ -19,3 +19,21 @@ export function toggleGraphicsQuality(): GraphicsQuality {
   setGraphicsQuality(next)
   return next
 }
+
+export function supportsRoomMeshShadows(): boolean {
+  return getGraphicsQuality() === 'high'
+}
+
+export function supportsEnvironmentMap(): boolean {
+  return getGraphicsQuality() === 'high'
+}
+
+/** Bloom disabled — direct renderer path preserves color accuracy and FPS. */
+export function supportsBloom(): boolean {
+  return false
+}
+
+/** Point-light shadows stay off for FPS even on High. */
+export function supportsPointLightShadows(): boolean {
+  return false
+}

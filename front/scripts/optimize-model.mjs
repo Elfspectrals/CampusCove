@@ -116,9 +116,21 @@ export function load${name}(): Promise<THREE.Group> {
 `
 
 writeFileSync(outputTs, loaderSource)
+
+const collision = spawnSync('node', ['scripts/extract-collision.mjs', outputGlb], {
+  stdio: 'inherit',
+  shell: true,
+  cwd: frontDir,
+})
+if (collision.status !== 0) {
+  console.error('extract-collision failed')
+  process.exit(collision.status ?? 1)
+}
+
 console.log(`\nDone.`)
-console.log(`  Model:  public/models/${name}.glb`)
-console.log(`  Loader: src/game/models/${name}.ts`)
+console.log(`  Model:      public/models/${name}.glb`)
+console.log(`  Collision:  public/models/${name}.collision.json`)
+console.log(`  Loader:     src/game/models/${name}.ts`)
 console.log(`\nUsage:`)
 console.log(`  import { load${name} } from '../game/models/${name}'`)
 console.log(`  const model = await load${name}()`)
