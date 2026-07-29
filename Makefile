@@ -43,14 +43,18 @@ typecheck: ## Type-check the front (vue-tsc)
 # ---------------------------------------------------------------- 3D assets
 
 # Usage: make optimize MODEL=path/to/model.glb [NAME=MyModel]
-optimize: ## Optimize a .glb/.gltf into front/public/models/ + generate a TS loader (MODEL=..., NAME=...)
+# Also writes Name.collision.json (Rapier cuboids) next to the GLB.
+optimize: ## Optimize a .glb/.gltf into front/public/models/ + TS loader + collision JSON
 	cd front && npm run optimize -- $(MODEL) $(NAME)
 
-map-optimize: ## Rebuild LobbyMap.glb + LobbyMap.low.glb from map-src/LobbyMap/
+map-optimize: ## Rebuild LobbyMap GLBs + LobbyMap.collision.json
 	cd front && npm run map:optimize
 
-apartment-optimize: ## Rebuild ApartmentInterior.glb + .low from map-src/Appartment/
+apartment-optimize: ## Rebuild ApartmentInterior GLBs + ApartmentInterior.collision.json
 	cd front && npm run apartment:optimize
+
+collision-extract: ## Extract collision JSON from an existing GLB (MODEL=public/maps/Foo.glb)
+	cd front && npm run collision:extract -- $(MODEL)
 
 # ---------------------------------------------------------------- backend (Laravel)
 
@@ -74,4 +78,4 @@ socket-install: ## Install socket server dependencies
 socket-start: ## Run the socket server locally (port 3000)
 	cd socket && npm start
 
-.PHONY: help up up-build down rebuild-socket logs front-install front-dev front-build typecheck optimize map-optimize apartment-optimize backend-install backend-serve migrate seed socket-install socket-start
+.PHONY: help up up-build down rebuild-socket logs front-install front-dev front-build typecheck optimize map-optimize apartment-optimize collision-extract backend-install backend-serve migrate seed socket-install socket-start

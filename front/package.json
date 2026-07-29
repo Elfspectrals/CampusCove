@@ -10,8 +10,9 @@
     "heroku-postbuild": "npm run build",
     "start": "serve -s dist -l ${PORT:-3000}",
     "optimize": "node scripts/optimize-model.mjs",
-    "map:optimize": "node scripts/fix-map-materials.mjs && npx --yes @gltf-transform/cli optimize ../map-src/LobbyMap/LobbyMap.fixed.gltf public/maps/LobbyMap.glb --compress draco --texture-compress webp --texture-size 1024 && npx --yes @gltf-transform/cli optimize ../map-src/LobbyMap/LobbyMap.fixed.gltf public/maps/LobbyMap.low.glb --compress draco --texture-compress webp --texture-size 512 --simplify-ratio 0.5 --simplify-error 0.001",
-    "apartment:optimize": "npx --yes @gltf-transform/cli optimize ../map-src/Appartment/Stylized_Interior_Appartment_1.glb public/maps/ApartmentInterior.glb --compress draco --texture-compress webp --texture-size 1024 && npx --yes @gltf-transform/cli optimize ../map-src/Appartment/Stylized_Interior_Appartment_1.glb public/maps/ApartmentInterior.low.glb --compress draco --texture-compress webp --texture-size 512 --simplify-ratio 0.5 --simplify-error 0.001"
+    "collision:extract": "node scripts/extract-collision.mjs",
+    "map:optimize": "node scripts/fix-map-materials.mjs && npx --yes @gltf-transform/cli optimize ../map-src/LobbyMap/LobbyMap.fixed.gltf public/maps/LobbyMap.glb --compress draco --texture-compress webp --texture-size 1024 && npx --yes @gltf-transform/cli optimize ../map-src/LobbyMap/LobbyMap.fixed.gltf public/maps/LobbyMap.low.glb --compress draco --texture-compress webp --texture-size 512 --simplify-ratio 0.5 --simplify-error 0.001 && node scripts/extract-collision.mjs public/maps/LobbyMap.glb",
+    "apartment:optimize": "npx --yes @gltf-transform/cli optimize ../map-src/Appartment/Stylized_Interior_Appartment_1.glb public/maps/ApartmentInterior.glb --compress draco --texture-compress webp --texture-size 1024 && npx --yes @gltf-transform/cli optimize ../map-src/Appartment/Stylized_Interior_Appartment_1.glb public/maps/ApartmentInterior.low.glb --compress draco --texture-compress webp --texture-size 512 --simplify-ratio 0.5 --simplify-error 0.001 && node scripts/extract-collision.mjs public/maps/ApartmentInterior.glb"
   },
   "dependencies": {
     "@colyseus/sdk": "^0.17.41",
@@ -22,11 +23,14 @@
     "vue-router": "^4.5.0"
   },
   "devDependencies": {
+    "@gltf-transform/core": "^4.4.2",
+    "@gltf-transform/extensions": "^4.4.2",
     "@types/node": "^24.10.1",
     "@types/three": "^0.183.1",
     "@vitejs/plugin-vue": "^6.0.1",
     "@vue/tsconfig": "^0.8.1",
     "autoprefixer": "^10.4.20",
+    "draco3dgltf": "^1.5.7",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.16",
     "typescript": "~5.9.3",

@@ -93,11 +93,11 @@ cd front
 npm run map:optimize
 ```
 
-This regenerates `front/public/maps/LobbyMap.glb` (Draco geometry compression, WebP textures capped at 1024 px, GPU instancing).
+This regenerates `front/public/maps/LobbyMap.glb` (Draco geometry compression, WebP textures capped at 1024 px, GPU instancing) **and** `LobbyMap.collision.json` (walk collision for Rapier).
 
 ### Apartment interior
 
-Source: `map-src/Appartment/Stylized_Interior_Appartment_1.glb` (gitignored). Optimized outputs: `front/public/maps/ApartmentInterior.glb` (+ `.low`).
+Source: `map-src/Appartment/Stylized_Interior_Appartment_1.glb` (gitignored). Optimized outputs: `front/public/maps/ApartmentInterior.glb` (+ `.low`) **and** `ApartmentInterior.collision.json`.
 
 ```bash
 cd front
@@ -105,7 +105,18 @@ npm run apartment:optimize
 # or: make apartment-optimize
 ```
 
-Enter your apartment from the lobby at **SM_Opera_A** (Press **I**). Others stay in the city zone.
+Enter your apartment from the lobby near Opera (Press **I**). Others stay in the city zone. Walls and furniture use the collision sidecar so you no longer walk through them.
+
+### Collision sidecars (any asset)
+
+`make optimize`, `map-optimize`, and `apartment-optimize` all run `extract-collision.mjs`, which writes a `.collision.json` next to the GLB (footprint cuboids for walls + furniture; decorative meshes skipped).
+
+```bash
+# From an already-optimized GLB only:
+make collision-extract MODEL=public/maps/ApartmentInterior.glb
+# or:
+cd front && npm run collision:extract -- public/models/ChairCampusBasic.glb
+```
 
 ---
 

@@ -107,14 +107,9 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     if (!deps.inventoryOpen.value) {
       if (forward) velocity.add(direction.clone().multiplyScalar(forward * moveSpeed * dt))
       if (right) velocity.add(rightVec.clone().multiplyScalar(right * moveSpeed * dt))
-      if (deps.currentRoomLabel.value === 'apartment') {
-        myPosition.x += velocity.x
-        myPosition.z += velocity.z
-      } else {
-        const resolved = resolveWorldMovement(myPosition, velocity.x, velocity.z)
-        myPosition.x = resolved.x
-        myPosition.z = resolved.z
-      }
+      const resolved = resolveWorldMovement(myPosition, velocity.x, velocity.z)
+      myPosition.x = resolved.x
+      myPosition.z = resolved.z
     }
     myPosition.y = 1.6
     updateDoorProximity()

@@ -23,7 +23,11 @@ import GameRoomMessageBanner from '../components/game/GameRoomMessageBanner.vue'
 import { useApartmentObjects } from '../composables/game/useApartmentObjects'
 import { useApartmentPlacement } from '../composables/game/useApartmentPlacement'
 import { useGameMovement } from '../composables/game/useGameMovement'
-import { buildWorldCollisionFromGroup } from '../composables/game/useWorldCollision'
+import {
+  buildWorldCollisionFromUrl,
+  getWorldCollisionStats,
+  toggleCollisionDebug,
+} from '../composables/game/useWorldCollision'
 import { useGameRealtime } from '../composables/game/useGameRealtime'
 import { usePlayerInventory } from '../composables/game/usePlayerInventory'
 import { getGraphicsQuality, supportsEnvironmentMap, toggleGraphicsQuality } from '../game/graphicsQuality'
@@ -195,6 +199,14 @@ async function loadCosmeticsState(): Promise<CharacterCosmeticsState> {
 }
 
 function handleExtraKeyDown(e: KeyboardEvent): boolean {
+  if (e.code === 'KeyC' && !e.repeat) {
+    const on = toggleCollisionDebug(scene)
+    const s = getWorldCollisionStats()
+    console.info(
+      `[collision] debug ${on ? 'ON' : 'OFF'} — ${s.cuboids} cuboids, mode=${s.mode ?? 'n/a'}`,
+    )
+    return true
+  }
   if (currentRoomLabel.value !== 'apartment') return false
   if (e.code === 'Escape' && !e.repeat) {
     if (apartmentPlacement.currentState.value.kind !== 'idle') {
@@ -270,7 +282,9 @@ function setRoomEnvironment(kind: 'city' | 'apartment') {
       if (token !== roomEnvironmentLoadToken) return
       roomEnvironment = group
       scene.add(group)
-      void buildWorldCollisionFromGroup(group)
+      void buildWorldCollisionFromUrl('/maps/LobbyMap.collision.json?v=4').catch((err) => {
+        console.warn('[collision] lobby collision failed', err)
+      })
       nearApartmentDoor.value = false
       resetClientStateForCityWorld()
       clearApartmentObjects()
@@ -281,6 +295,9 @@ function setRoomEnvironment(kind: 'city' | 'apartment') {
       roomEnvironment = built.group
       scene.add(roomEnvironment)
       apartmentPlacement.registerApartmentEnvironment(built)
+      void buildWorldCollisionFromUrl('/maps/ApartmentInterior.collision.json?v=4').catch((err) => {
+        console.warn('[collision] apartment collision failed', err)
+      })
       nearCityDoor.value = false
       void apartmentPlacement.init({
         scene,
