@@ -26,8 +26,15 @@ import { useGameMovement } from '../composables/game/useGameMovement'
 import { buildWorldCollisionFromGroup } from '../composables/game/useWorldCollision'
 import { useGameRealtime } from '../composables/game/useGameRealtime'
 import { usePlayerInventory } from '../composables/game/usePlayerInventory'
-import { getGraphicsQuality, toggleGraphicsQuality } from '../game/graphicsQuality'
+import { getGraphicsQuality, supportsEnvironmentMap, toggleGraphicsQuality } from '../game/graphicsQuality'
 import { applySceneAtmosphere, loadApartmentEnvironment, loadLobbyEnvironment } from '../game/roomEnvironments'
+import {
+  applySharedEnvironment,
+  clearSharedEnvironment,
+  configureGlobalSceneLights,
+  disposeSharedEnvironment,
+  loadSharedEnvironmentMap,
+} from '../game/sceneLighting'
 import { APARTMENT_DOOR_POS, CITY_BUILDING_DOOR_POS, CITY_SPAWN } from '../game/gameRoomConstants'
 
 const YAW_STEP = Math.PI / 12
@@ -257,7 +264,7 @@ function setRoomEnvironment(kind: 'city' | 'apartment') {
     }
     roomEnvironment = null
   }
-  applySceneAtmosphere(scene, kind)
+  applySceneAtmosphere(scene, kind, renderer)
   if (kind === 'city') {
     void loadLobbyEnvironment().then((group) => {
       if (token !== roomEnvironmentLoadToken) return
@@ -402,8 +409,6 @@ function initThree(accentColor: number) {
   const isLowQuality = getGraphicsQuality() === 'low'
 
   scene = new THREE.Scene()
-  applySceneAtmosphere(scene, 'city')
-
   const { w, h } = containerSize()
   const aspect = w / h
   camera = new THREE.PerspectiveCamera(75, aspect, 0.1, isLowQuality ? 300 : 1000)
@@ -412,22 +417,34 @@ function initThree(accentColor: number) {
   renderer = new THREE.WebGLRenderer({ canvas: canvasRef.value, antialias: !isLowQuality })
   renderer.setSize(w, h)
   renderer.setPixelRatio(isLowQuality ? 1 : Math.min(window.devicePixelRatio, 2))
+  renderer.outputColorSpace = THREE.SRGBColorSpace
   renderer.shadowMap.enabled = !isLowQuality
   if (!isLowQuality) {
     renderer.shadowMap.type = THREE.PCFSoftShadowMap
   }
   renderer.toneMapping = THREE.ACESFilmicToneMapping
-  renderer.toneMappingExposure = 1.15
+  renderer.toneMappingExposure = 1.05
 
-  const ambient = new THREE.AmbientLight(0x404060, 0.6)
+  applySceneAtmosphere(scene, 'city', renderer)
+
+  const ambient = new THREE.AmbientLight(0xb0a89e, 0.15)
   scene.add(ambient)
-  const dir = new THREE.DirectionalLight(0xffffff, 1.4)
+  const dir = new THREE.DirectionalLight(0xffffff, 1.0)
   dir.position.set(10, 20, 10)
   if (!isLowQuality) {
     dir.castShadow = true
     dir.shadow.mapSize.set(1024, 1024)
   }
   scene.add(dir)
+  configureGlobalSceneLights(ambient, dir)
+
+  if (supportsEnvironmentMap()) {
+    void loadSharedEnvironmentMap(renderer).then((envMap) => {
+      applySharedEnvironment(scene, envMap)
+    })
+  } else {
+    clearSharedEnvironment(scene)
+  }
 
   setRoomEnvironment('city')
 
@@ -495,6 +512,7 @@ onUnmounted(() => {
     disposeObject3D(fpHands)
     fpHands = null
   }
+  disposeSharedEnvironment()
   renderer?.dispose()
 })
 

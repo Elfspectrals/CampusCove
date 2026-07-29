@@ -10,6 +10,12 @@ import {
 } from './gameRoomConstants'
 import { createGltfLoader } from './gltfLoaderFactory'
 import { getGraphicsQuality } from './graphicsQuality'
+import {
+  addApartmentFallbackLights,
+  configureRoomMeshShadows,
+  normalizeRoomMaterials,
+  sanitizeGltfLights,
+} from './sceneLighting'
 
 const CITY_SKY_COLOR = 0x9fc3e8
 
@@ -22,7 +28,12 @@ function apartmentMapPathForQuality(): string {
 }
 
 function addLobbyLighting(group: THREE.Group): void {
-  const hemi = new THREE.HemisphereLight(0xcfe5ff, 0x8a7f70, 1.0)
+  if (getGraphicsQuality() === 'low') {
+    const hemi = new THREE.HemisphereLight(0xe8e4df, 0x8a8278, 0.3)
+    group.add(hemi)
+    return
+  }
+  const hemi = new THREE.HemisphereLight(0xcfe5ff, 0x8a7f70, 0.35)
   group.add(hemi)
 }
 
@@ -30,19 +41,9 @@ let cachedLobbyEnvironment: THREE.Group | null = null
 let lobbyEnvironmentLoadPromise: Promise<THREE.Group> | null = null
 
 function prepareLobbyGroup(root: THREE.Group): THREE.Group {
-  const toRemove: THREE.Object3D[] = []
-  root.traverse((obj) => {
-    if (obj instanceof THREE.Light || obj instanceof THREE.Camera) {
-      toRemove.push(obj)
-    }
-    if (obj instanceof THREE.Mesh) {
-      obj.castShadow = false
-      obj.receiveShadow = false
-    }
-  })
-  for (const obj of toRemove) {
-    obj.removeFromParent()
-  }
+  sanitizeGltfLights(root)
+  configureRoomMeshShadows(root)
+  normalizeRoomMaterials(root, 'city')
   addLobbyLighting(root)
   root.userData.isRoomEnvironment = true
   root.userData.isPersistentEnvironment = true
@@ -78,14 +79,24 @@ export function loadLobbyEnvironment(): Promise<THREE.Group> {
   return lobbyEnvironmentLoadPromise
 }
 
-export function applySceneAtmosphere(scene: THREE.Scene, kind: 'city' | 'apartment'): void {
+export function applySceneAtmosphere(
+  scene: THREE.Scene,
+  kind: 'city' | 'apartment',
+  renderer?: THREE.WebGLRenderer,
+): void {
   if (kind === 'city') {
     scene.background = new THREE.Color(CITY_SKY_COLOR)
     const fogFar = getGraphicsQuality() === 'low' ? 120 : 250
     scene.fog = new THREE.Fog(CITY_SKY_COLOR, 30, fogFar)
+    if (renderer) {
+      renderer.toneMappingExposure = 1.05
+    }
   } else {
-    scene.background = new THREE.Color(0x3a342f)
-    scene.fog = new THREE.Fog(0x3a342f, 6, 40)
+    scene.background = new THREE.Color(0x1a1816)
+    scene.fog = new THREE.Fog(0x1a1816, 28, 95)
+    if (renderer) {
+      renderer.toneMappingExposure = 1.1
+    }
   }
 }
 
@@ -126,7 +137,12 @@ export interface ApartmentEnvironmentBuildResult {
 }
 
 function addApartmentLighting(group: THREE.Group): void {
-  const hemi = new THREE.HemisphereLight(0xfff5e6, 0x6b5344, 0.65)
+  if (getGraphicsQuality() === 'low') {
+    const hemi = new THREE.HemisphereLight(0xf0ebe4, 0x6b5344, 0.22)
+    group.add(hemi)
+    return
+  }
+  const hemi = new THREE.HemisphereLight(0xfff5e6, 0x6b5344, 0.25)
   group.add(hemi)
 }
 
@@ -149,22 +165,15 @@ function addApartmentExitDoor(group: THREE.Group): void {
 }
 
 function prepareApartmentGroup(root: THREE.Group): ApartmentEnvironmentBuildResult {
-  const toRemove: THREE.Object3D[] = []
-  root.traverse((obj) => {
-    if (obj instanceof THREE.Light || obj instanceof THREE.Camera) {
-      toRemove.push(obj)
-    }
-    if (obj instanceof THREE.Mesh) {
-      obj.castShadow = false
-      obj.receiveShadow = false
-    }
-  })
-  for (const obj of toRemove) {
-    obj.removeFromParent()
-  }
+  const hasGltfLights = sanitizeGltfLights(root)
+  configureRoomMeshShadows(root)
+  normalizeRoomMaterials(root, 'apartment')
   tagApartmentFloor(root)
   addApartmentExitDoor(root)
   addApartmentLighting(root)
+  if (!hasGltfLights) {
+    addApartmentFallbackLights(root)
+  }
   root.userData.isRoomEnvironment = true
   root.userData.isPersistentEnvironment = true
   return { group: root }
