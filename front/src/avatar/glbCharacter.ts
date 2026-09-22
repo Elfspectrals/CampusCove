@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { createGltfLoader } from '../game/gltfLoaderFactory'
 import type { CosmeticColors } from '../api/characterCosmetics'
 import { DEFAULT_SLOT_COLORS, SLOT_ORDER } from '../api/characterCosmetics'
 
@@ -15,7 +15,7 @@ export async function loadCharacterTemplate(): Promise<THREE.Group | null> {
   if (templateRoot) return templateRoot
 
   try {
-    const loader = new GLTFLoader()
+    const loader = createGltfLoader()
     const url = new URL('../assets/models/low_poly_character.glb', import.meta.url).href
     const gltf = await loader.loadAsync(url)
     const root = gltf.scene as THREE.Group
@@ -36,7 +36,7 @@ async function loadCharacterModelByUrl(url: string): Promise<THREE.Group | null>
 
   const task = (async () => {
     try {
-      const loader = new GLTFLoader()
+      const loader = createGltfLoader()
       const gltf = await loader.loadAsync(normalized)
       const root = gltf.scene as THREE.Group
       normalizeCharacterScale(root)

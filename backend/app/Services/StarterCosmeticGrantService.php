@@ -13,9 +13,9 @@ final class StarterCosmeticGrantService
 
     /** @var array<string, string> */
     private const FREE_BODY_MODEL_BY_CODE = [
-        'COS_WEAR_BODY_DEFAULT' => '/storage/skins/models/low_poly_character.glb',
-        'COS_WEAR_BODY_ADVENTURER' => '/storage/skins/models/low_poly_adventurer.glb',
-        'COS_WEAR_BODY_SWORDSMAN' => '/storage/skins/models/low_poly_character_swordsman.glb',
+        'COS_WEAR_BODY_DEFAULT' => '/models/CharacterDefault.glb',
+        'COS_WEAR_BODY_ADVENTURER' => '/models/CharacterAdventurer.glb',
+        'COS_WEAR_BODY_SWORDSMAN' => '/models/CharacterSwordsman.glb',
     ];
 
     /** @var list<string> */

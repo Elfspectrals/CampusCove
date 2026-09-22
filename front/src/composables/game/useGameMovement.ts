@@ -9,6 +9,7 @@ import {
   APARTMENT_HALF_EXTENT,
 } from '../../game/gameRoomConstants'
 import { findNearestHousingUnit, type HousingUnitSnapshot } from '../../game/housingCubes'
+import { resolveWorldMovement } from './useWorldCollision'
 
 export interface UseGameMovementDeps {
   pointerLocked?: Ref<boolean>
@@ -74,6 +75,22 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     myPosition.z = Math.max(-lim, Math.min(lim, myPosition.z))
   }
 
+  function updateDoorProximity() {
+    if (deps.currentRoomLabel.value === 'apartment') {
+      clampMyPositionToApartment()
+      const dx = myPosition.x - APARTMENT_DOOR_POS.x
+      const dz = myPosition.z - APARTMENT_DOOR_POS.z
+      deps.nearApartmentDoor.value = dx * dx + dz * dz <= APARTMENT_DOOR_RADIUS * APARTMENT_DOOR_RADIUS
+      deps.nearCityDoor.value = false
+      deps.nearbyHousingUnit.value = null
+    } else {
+      deps.nearApartmentDoor.value = false
+      const nearest = findNearestHousingUnit(myPosition.x, myPosition.z, deps.housingUnits.value)
+      deps.nearbyHousingUnit.value = nearest
+      deps.nearCityDoor.value = nearest !== null
+    }
+  }
+
   function updateMovement(dt: number) {
     const camera = deps.getCamera()
     const room = deps.gameRoomRef.value
@@ -92,22 +109,12 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     if (!deps.inventoryOpen.value) {
       if (forward) velocity.add(direction.clone().multiplyScalar(forward * moveSpeed * dt))
       if (right) velocity.add(rightVec.clone().multiplyScalar(right * moveSpeed * dt))
-      myPosition.x += velocity.x
-      myPosition.z += velocity.z
+      const resolved = resolveWorldMovement(myPosition, velocity.x, velocity.z)
+      myPosition.x = resolved.x
+      myPosition.z = resolved.z
     }
     myPosition.y = 1.6
-    if (deps.currentRoomLabel.value === 'apartment') {
-      clampMyPositionToApartment()
-      const dx = myPosition.x - APARTMENT_DOOR_POS.x
-      const dz = myPosition.z - APARTMENT_DOOR_POS.z
-      deps.nearApartmentDoor.value = dx * dx + dz * dz <= APARTMENT_DOOR_RADIUS * APARTMENT_DOOR_RADIUS
-      deps.nearCityDoor.value = false
-    } else {
-      deps.nearApartmentDoor.value = false
-      const nearest = findNearestHousingUnit(myPosition.x, myPosition.z, deps.housingUnits.value)
-      deps.nearbyHousingUnit.value = nearest
-      deps.nearCityDoor.value = nearest !== null
-    }
+    updateDoorProximity()
     camera.position.set(myPosition.x, myPosition.y, myPosition.z)
     camera.rotation.order = 'YXZ'
     camera.rotation.y = yaw
@@ -124,7 +131,12 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     const now = performance.now()
     const dt = (now - lastTime) / 1000
     lastTime = now
-    if (pointerLocked.value) updateMovement(dt)
+    if (pointerLocked.value) {
+      updateMovement(dt)
+    } else {
+      // Keep door prompts / Enter zone accurate even without pointer lock.
+      updateDoorProximity()
+    }
     deps.onBeforeRender?.(dt)
     const renderer = deps.getRenderer()
     const scene = deps.getScene()
@@ -184,6 +196,9 @@ export function useGameMovement(deps: UseGameMovementDeps) {
       return
     }
     if (e.code === KEY_BINDINGS.interact) {
+      // Recompute proximity on the key press itself so Enter works even if the
+      // last movement frame was skipped (pointer unlock, lag, etc.).
+      updateDoorProximity()
       if (deps.currentRoomLabel.value === 'apartment' && deps.nearApartmentDoor.value) {
         void deps.onNearApartmentDoorInteract()
         return

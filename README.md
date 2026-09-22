@@ -1,6 +1,6 @@
 # CampusCove
 
-Docker. À la racine du repo.
+Docker. À la racine du repo. `make help` liste tout.
 
 ## Lancer
 
@@ -18,6 +18,7 @@ make up
 ```bash
 make down
 make logs
+make up-build
 ```
 
 ## Make
@@ -33,6 +34,8 @@ make logs
 | `make set-money ACCOUNT=1 CURRENCY=coins SUM=2000` | Solde (id ou email) |
 | `make fill-outfit ACCOUNT=1` | Starter wearables + outfit |
 | `make test` | Tests backend |
-| `make socket-rebuild` | Rebuild Colyseus (pas de volume) |
+| `make rebuild-socket` | Rebuild Colyseus (pas de volume) |
+| `make map-optimize` | LobbyMap GLB + collision |
+| `make apartment-optimize` | Appart GLB + collision |
 
 `CURRENCY` : `coins` ou `premium`. Relog après `set-admin`.

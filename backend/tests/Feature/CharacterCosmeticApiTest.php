@@ -182,7 +182,7 @@ class CharacterCosmeticApiTest extends TestCase
         $this->assertSame(1, $owned['quantity']);
     }
 
-    public function test_starter_body_item_defs_are_kept_with_storage_asset_paths(): void
+    public function test_starter_body_item_defs_use_front_origin_model_paths(): void
     {
         $account = $this->registerAndCreditWallet(10_000, 'coins');
         $token = $account['token'];
@@ -196,14 +196,24 @@ class CharacterCosmeticApiTest extends TestCase
             ->pluck('model_glb', 'code')
             ->all();
 
-        $this->assertSame('/storage/skins/models/low_poly_character.glb', $rows['COS_WEAR_BODY_DEFAULT'] ?? null);
-        $this->assertSame('/storage/skins/models/low_poly_adventurer.glb', $rows['COS_WEAR_BODY_ADVENTURER'] ?? null);
-        $this->assertSame('/storage/skins/models/low_poly_character_swordsman.glb', $rows['COS_WEAR_BODY_SWORDSMAN'] ?? null);
+        $this->assertSame('/models/CharacterDefault.glb', $rows['COS_WEAR_BODY_DEFAULT'] ?? null);
+        $this->assertSame('/models/CharacterAdventurer.glb', $rows['COS_WEAR_BODY_ADVENTURER'] ?? null);
+        $this->assertSame('/models/CharacterSwordsman.glb', $rows['COS_WEAR_BODY_SWORDSMAN'] ?? null);
 
         $previewImage = DB::table('item_defs')
             ->where('code', 'COS_WEAR_BODY_DEFAULT')
             ->value('preview_image');
         $this->assertSame('/storage/skins/previews/placeholderSkin.jpg', $previewImage);
+
+        $def = DB::table('item_defs')->where('code', 'COS_WEAR_BODY_DEFAULT')->first();
+        $this->assertNotNull($def);
+        $this->putJson('/api/character/cosmetics', [
+            'slots' => [
+                'body' => (int) $def->item_def_id,
+            ],
+        ], [
+            'Authorization' => 'Bearer '.$token,
+        ])->assertOk();
 
         $response = $this->getJson('/api/character/cosmetics', [
             'Authorization' => 'Bearer '.$token,
@@ -213,9 +223,9 @@ class CharacterCosmeticApiTest extends TestCase
             '/api/assets/public/skins/previews/placeholderSkin.jpg',
             (string) $response->json('slots.body.preview_image')
         );
-        $this->assertStringContainsString(
-            '/api/assets/public/skins/models/low_poly_character.glb',
-            (string) $response->json('slots.body.model_glb')
+        $this->assertSame(
+            '/models/CharacterDefault.glb',
+            $response->json('slots.body.model_glb')
         );
     }
 

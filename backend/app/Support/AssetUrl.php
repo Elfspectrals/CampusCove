@@ -34,6 +34,10 @@ final class AssetUrl
             return url('/api/assets/public/'.$relative);
         }
 
+        if (str_starts_with($trimmed, '/models/')) {
+            return $trimmed;
+        }
+
         $normalized = '/'.ltrim($trimmed, '/');
 
         return url($normalized);
