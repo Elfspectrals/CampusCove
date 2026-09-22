@@ -46,6 +46,8 @@ function prepareLobbyGroup(root: THREE.Group): THREE.Group {
   addLobbyLighting(root)
   root.userData.isRoomEnvironment = true
   root.userData.isPersistentEnvironment = true
+  root.userData.isLobbyMapParis = true
+  root.name = 'LobbyMapParis'
   return root
 }
 
@@ -100,18 +102,55 @@ export function applySceneAtmosphere(
 }
 
 export function buildCityEnvironment(): THREE.Group {
+  return buildHousingLobbyEnvironment()
+}
+
+/** Simple /game housing MVP lobby — flat floor + grid. No LobbyMap.glb. */
+export function buildHousingLobbyEnvironment(): THREE.Group {
   const g = new THREE.Group()
+  g.name = 'HousingLobbyEnvironment'
   g.userData.isRoomEnvironment = true
-  const floorGeo = new THREE.PlaneGeometry(50, 50)
-  const floorMat = new THREE.MeshStandardMaterial({ color: 0x16213e })
+  g.userData.isHousingLobby = true
+  const floorGeo = new THREE.PlaneGeometry(60, 60)
+  const floorMat = new THREE.MeshStandardMaterial({ color: 0x1a1f2e })
   const floor = new THREE.Mesh(floorGeo, floorMat)
   floor.rotation.x = -Math.PI / 2
   floor.receiveShadow = true
   g.add(floor)
-  const grid = new THREE.GridHelper(50, 50, 0x0f3460, 0x0f3460)
+  const grid = new THREE.GridHelper(60, 60, 0x3d7ea6, 0x243044)
   grid.position.y = 0.01
   g.add(grid)
   return g
+}
+
+/** Remove any previous city/apartment/LobbyMap roots left on the scene (HMR / route leftovers). */
+export function stripRoomEnvironmentsFromScene(scene: THREE.Scene): void {
+  const toRemove: THREE.Object3D[] = []
+  for (const child of scene.children) {
+    if (
+      child.userData?.isRoomEnvironment === true ||
+      child.userData?.isPersistentEnvironment === true ||
+      child.userData?.isHousingLobby === true ||
+      child.userData?.isLobbyMapParis === true ||
+      child.name === 'HousingLobbyEnvironment' ||
+      child.name === 'LobbyMapParis'
+    ) {
+      toRemove.push(child)
+    }
+  }
+  for (const obj of toRemove) {
+    scene.remove(obj)
+    if (!obj.userData?.isPersistentEnvironment && !obj.userData?.isLobbyMapParis) {
+      obj.traverse((node) => {
+        if (node instanceof THREE.Mesh) {
+          node.geometry?.dispose()
+          const mat = node.material
+          if (Array.isArray(mat)) mat.forEach((m) => m.dispose())
+          else mat?.dispose()
+        }
+      })
+    }
+  }
 }
 
 /** Result from apartment environment builders for scene + placement raycast/collider registration. */

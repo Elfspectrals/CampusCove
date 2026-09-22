@@ -300,6 +300,16 @@ async function buildFromCollisionData(url: string, data: CollisionFileJson): Pro
  * Load a sidecar `.collision.json` (produced by `npm run collision:extract` /
  * `make optimize` / `map-optimize` / `apartment-optimize`) into the Rapier world.
  */
+export function clearWorldCollision(): void {
+  disposeWorld()
+  builtUrl = null
+  buildInFlight = null
+  loadedCuboids = []
+  loadedTrimeshes = []
+  resetStats()
+  clearDebugGroup()
+}
+
 export function buildWorldCollisionFromUrl(url: string): Promise<void> {
   if (builtUrl === url && collidersReady) {
     return Promise.resolve()

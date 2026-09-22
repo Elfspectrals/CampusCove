@@ -26,6 +26,7 @@ import { useApartmentPlacement } from '../composables/game/useApartmentPlacement
 import { useGameMovement } from '../composables/game/useGameMovement'
 import {
   buildWorldCollisionFromUrl,
+  clearWorldCollision,
   getWorldCollisionStats,
   toggleCollisionDebug,
 } from '../composables/game/useWorldCollision'
@@ -38,7 +39,7 @@ import {
   useCityHousing,
 } from '../composables/game/useCityHousing'
 import { getGraphicsQuality, supportsEnvironmentMap, toggleGraphicsQuality } from '../game/graphicsQuality'
-import { applySceneAtmosphere, loadApartmentEnvironment, loadLobbyEnvironment } from '../game/roomEnvironments'
+import { applySceneAtmosphere, buildHousingLobbyEnvironment, loadApartmentEnvironment, stripRoomEnvironmentsFromScene } from '../game/roomEnvironments'
 import {
   applySharedEnvironment,
   clearSharedEnvironment,
@@ -46,7 +47,7 @@ import {
   disposeSharedEnvironment,
   loadSharedEnvironmentMap,
 } from '../game/sceneLighting'
-import { APARTMENT_DOOR_POS, CITY_SPAWN } from '../game/gameRoomConstants'
+import { APARTMENT_DOOR_POS, HOUSING_LOBBY_SPAWN } from '../game/gameRoomConstants'
 import { housingCubeInteractPosition, syncHousingCubes } from '../game/housingCubes'
 
 const YAW_STEP = Math.PI / 12
@@ -73,9 +74,9 @@ const doorProjectionVec = new THREE.Vector3()
 const realtimeHttpUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000'
 const gameRoomRef = shallowRef<Room | null>(null)
 
-const myPosition = { x: CITY_SPAWN.x, y: CITY_SPAWN.y, z: CITY_SPAWN.z }
+const myPosition = { x: HOUSING_LOBBY_SPAWN.x, y: HOUSING_LOBBY_SPAWN.y, z: HOUSING_LOBBY_SPAWN.z }
 const positionLabel = ref(
-  `${CITY_SPAWN.x.toFixed(1)}, ${CITY_SPAWN.y.toFixed(1)}, ${CITY_SPAWN.z.toFixed(1)}`,
+  `${HOUSING_LOBBY_SPAWN.x.toFixed(1)}, ${HOUSING_LOBBY_SPAWN.y.toFixed(1)}, ${HOUSING_LOBBY_SPAWN.z.toFixed(1)}`,
 )
 const direction = new THREE.Vector3(0, 0, -1)
 
@@ -415,25 +416,26 @@ function setRoomEnvironment(kind: 'city' | 'apartment') {
   if (kind === 'city') {
     canEditApartment.value = false
     visitedApartmentOwnerId.value = null
-    void loadLobbyEnvironment().then((group) => {
-      if (token !== roomEnvironmentLoadToken) return
-      roomEnvironment = group
-      if (!housingCubesGroup) {
-        housingCubesGroup = new THREE.Group()
-        housingCubesGroup.name = 'HousingCubes'
-      }
-      if (housingCubesGroup.parent !== group) {
-        group.add(housingCubesGroup)
-      }
-      syncCityHousingCubes()
-      scene.add(group)
-      void buildWorldCollisionFromUrl('/maps/LobbyMap.collision.json?v=4').catch((err) => {
-        console.warn('[collision] lobby collision failed', err)
-      })
-      nearApartmentDoor.value = false
-      resetClientStateForCityWorld()
-      clearApartmentObjects()
-    })
+    stripRoomEnvironmentsFromScene(scene)
+    const group = buildHousingLobbyEnvironment()
+    roomEnvironment = group
+    if (!housingCubesGroup) {
+      housingCubesGroup = new THREE.Group()
+      housingCubesGroup.name = 'HousingCubes'
+    }
+    if (housingCubesGroup.parent !== group) {
+      group.add(housingCubesGroup)
+    }
+    syncCityHousingCubes()
+    scene.add(group)
+    // LobbyMap lives only on /map-paris — never on /game.
+    clearWorldCollision()
+    myPosition.x = HOUSING_LOBBY_SPAWN.x
+    myPosition.y = HOUSING_LOBBY_SPAWN.y
+    myPosition.z = HOUSING_LOBBY_SPAWN.z
+    nearApartmentDoor.value = false
+    resetClientStateForCityWorld()
+    clearApartmentObjects()
   } else {
     void loadApartmentEnvironment().then((built) => {
       if (token !== roomEnvironmentLoadToken) return
@@ -576,7 +578,7 @@ function initThree(accentColor: number) {
   const { w, h } = containerSize()
   const aspect = w / h
   camera = new THREE.PerspectiveCamera(75, aspect, 0.1, isLowQuality ? 300 : 1000)
-  camera.position.set(CITY_SPAWN.x, CITY_SPAWN.y, CITY_SPAWN.z)
+  camera.position.set(HOUSING_LOBBY_SPAWN.x, HOUSING_LOBBY_SPAWN.y, HOUSING_LOBBY_SPAWN.z)
 
   renderer = new THREE.WebGLRenderer({ canvas: canvasRef.value, antialias: !isLowQuality })
   renderer.setSize(w, h)
