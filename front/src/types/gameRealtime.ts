@@ -15,15 +15,35 @@ export interface RemoteUserPayload {
   bodyModelGlb?: string | null
 }
 
+export interface HousingUnitPayload {
+  unit_id: number
+  public_id: string
+  offer_type: string
+  price_coins: number
+  rent_duration_hours: number
+  pos_x: number
+  pos_y: number
+  pos_z: number
+  size: number
+  base_color_hex: string
+  status: string
+  occupant_account_id: number | null
+  lease_expires_at: string | null
+  room_public_id: string | null
+  template_key: string
+}
+
 export interface RoomInitPayload {
   me: RemoteUserPayload
   users: RemoteUserPayload[]
+  housingUnits?: HousingUnitPayload[]
 }
 
 export interface ApartmentInitPayload {
   ownerAccountId: number
   templateKey: string
   name: string
+  canEdit: boolean
   objects: ApartmentObjectPayload[]
 }
 

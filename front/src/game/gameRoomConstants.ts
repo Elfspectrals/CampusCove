@@ -16,6 +16,9 @@ export const APARTMENT_DOOR_POS = { x: 0, z: APARTMENT_HALF_EXTENT - 0.45 }
 export const CITY_BUILDING_DOOR_RADIUS = 2.2
 export const CITY_BUILDING_DOOR_POS = { x: 0, z: 8 }
 
+/** Extra XZ reach beyond half cube size for housing interact prompts. */
+export const HOUSING_CUBE_INTERACT_RADIUS_PAD = 1.4
+
 export const TRANSFORM_PERSIST_THROTTLE_MS = 150
 export const TRANSFORM_EPSILON_POSITION = 0.01
 export const TRANSFORM_EPSILON_ROTATION = 0.01

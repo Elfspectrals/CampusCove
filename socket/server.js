@@ -123,6 +123,8 @@ class PresenceRoom extends Room {
     this.byAccountId = new Map()
     this.apartmentCacheByOwner = new Map()
     this.inventoryCacheByAccount = new Map()
+    this.housingUnits = []
+    this.housingUnitsFetchedAt = null
     this.onMessage('move', (client, payload) => this.onMove(client, payload))
     this.onMessage('appearance', (client, payload) => this.onAppearance(client, payload))
     this.onMessage('enter_apartment', async (client, payload) => this.onEnterApartment(client, payload))
@@ -133,6 +135,7 @@ class PresenceRoom extends Room {
     this.onMessage('apartment_transform_request', async (client, payload) => this.onApartmentTransformRequest(client, payload))
     this.onMessage('apartment_pickup_request', async (client, payload) => this.onApartmentPickupRequest(client, payload))
     this.onMessage('apartment_inventory_request', async (client) => this.onApartmentInventoryRequest(client))
+    this.onMessage('housing_refresh', async (client) => this.onHousingRefresh(client))
   }
 
   async onAuth(_client, options) {
@@ -207,6 +210,38 @@ class PresenceRoom extends Room {
     }
   }
 
+  cityVisibilityOrigin() {
+    return { zone: 'city', apartmentOwnerId: null }
+  }
+
+  async fetchHousingUnits(token) {
+    const data = await callBackendJson(token, '/housing/units', 'GET')
+    this.housingUnits = Array.isArray(data?.units) ? data.units : []
+    this.housingUnitsFetchedAt = Date.now()
+    return {
+      units: this.housingUnits,
+      my_unit: data?.my_unit ?? null
+    }
+  }
+
+  broadcastHousingUnitsSync() {
+    const payload = { units: this.housingUnits }
+    this.forEachVisibleClient(this.cityVisibilityOrigin(), (targetClient) => {
+      targetClient.send('housing_units_sync', payload)
+    })
+  }
+
+  async onHousingRefresh(client) {
+    const player = this.players.get(client.sessionId)
+    if (!player?.token) return
+    try {
+      await this.fetchHousingUnits(player.token)
+      this.broadcastHousingUnitsSync()
+    } catch (error) {
+      console.warn('[colyseus] housing_refresh failed:', error instanceof Error ? error.message : error)
+    }
+  }
+
   async getApartmentCache(ownerAccountId, templateKey) {
     const cacheKey = `${ownerAccountId}:${templateKey}`
     const existing = this.apartmentCacheByOwner.get(cacheKey)
@@ -276,6 +311,13 @@ class PresenceRoom extends Room {
     const player = this.buildPlayer(client, options)
     this.players.set(client.sessionId, player)
     this.byAccountId.set(accountId, client.sessionId)
+    if (player.token) {
+      try {
+        await this.fetchHousingUnits(player.token)
+      } catch (error) {
+        console.warn('[colyseus] fetchHousingUnits on join failed:', error instanceof Error ? error.message : error)
+      }
+    }
     client.send('init', {
       me: this.publicPlayer(player),
       users: [...this.players.values()]
@@ -333,19 +375,24 @@ class PresenceRoom extends Room {
       return
     }
     let apartment
+    let canEdit = false
     try {
       const response = await callBackendJson(player.token, '/apartments/state', 'POST', {
         owner_account_id: ownerAccountId,
         template_key: templateKey
       })
       const state = response?.apartment ?? {}
+      const resolvedTemplateKey = typeof state.template_key === 'string' && state.template_key.trim().length > 0
+        ? state.template_key.trim()
+        : templateKey
+      canEdit = state.can_edit === true
       apartment = {
         ownerAccountId,
-        templateKey,
+        templateKey: resolvedTemplateKey,
         name: 'Apartment',
         objects: new Map((Array.isArray(state.objects) ? state.objects : []).map((obj) => [obj.objectId, obj]))
       }
-      this.apartmentCacheByOwner.set(this.apartmentCacheKey(ownerAccountId, templateKey), apartment)
+      this.apartmentCacheByOwner.set(this.apartmentCacheKey(ownerAccountId, resolvedTemplateKey), apartment)
     } catch (error) {
       client.send('apartment_error', {
         message: error instanceof Error ? error.message : 'Could not enter apartment',
@@ -355,7 +402,7 @@ class PresenceRoom extends Room {
     }
     player.zone = 'apartment'
     player.apartmentOwnerId = ownerAccountId
-    player.apartmentTemplateKey = templateKey
+    player.apartmentTemplateKey = apartment.templateKey
     player.x = 0
     player.y = 1.6
     player.z = 4
@@ -363,6 +410,7 @@ class PresenceRoom extends Room {
       ownerAccountId: apartment.ownerAccountId,
       templateKey: apartment.templateKey,
       name: apartment.name,
+      canEdit,
       objects: [...apartment.objects.values()]
     })
     await this.onApartmentInventoryRequest(client)
@@ -393,6 +441,7 @@ class PresenceRoom extends Room {
       y: player.y,
       z: player.z
     })
+    client.send('housing_units_sync', { units: this.housingUnits })
   }
 
   async onDecorateUpsert(client, payload) {
@@ -509,6 +558,10 @@ class CityRoom extends PresenceRoom {
       kind: 'city',
       maxPlayers: CITY_MAX_PLAYERS
     }
+  }
+
+  getInitExtrasFor() {
+    return { housingUnits: this.housingUnits }
   }
 }
 

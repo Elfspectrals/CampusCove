@@ -182,6 +182,7 @@ export interface ApartmentPlacementInit {
   currentRoomLabel: Ref<'city' | 'apartment'>
   pointerLocked: Ref<boolean>
   getApartmentInventoryOpen: () => boolean
+  canEditApartment: Ref<boolean>
   persistApartmentTransformForMesh: (mesh: THREE.Mesh, force: boolean) => void
   refreshApartmentInventory: () => void
 }
@@ -610,7 +611,7 @@ export function useApartmentPlacement(ctx: ApartmentPlacementInit) {
   }
 
   function startPreviewNew(itemDef: ApartmentPlacementItemDef, ownedCountRef: Ref<number>): void {
-    if (ctx.currentRoomLabel.value !== 'apartment') return
+    if (ctx.currentRoomLabel.value !== 'apartment' || !ctx.canEditApartment.value) return
     cancelPreview()
     if (ownedCountRef.value <= 0) return
     tearDownOwnedWatch()
@@ -648,7 +649,7 @@ export function useApartmentPlacement(ctx: ApartmentPlacementInit) {
   }
 
   function startPreviewExisting(objectId: string, sourceMesh: THREE.Mesh): void {
-    if (ctx.currentRoomLabel.value !== 'apartment') return
+    if (ctx.currentRoomLabel.value !== 'apartment' || !ctx.canEditApartment.value) return
     cancelPreview()
     void ensureWorld().then(() => {
       internalUnregisterProp(objectId)
@@ -893,6 +894,7 @@ export function useApartmentPlacement(ctx: ApartmentPlacementInit) {
   }
 
   function tryCommitPreview(): void {
+    if (!ctx.canEditApartment.value) return
     const st = currentState.value
     if (st.kind === 'idle' || !ghostContent) return
     if (!currentValidity.value) {
@@ -940,12 +942,13 @@ export function useApartmentPlacement(ctx: ApartmentPlacementInit) {
   }
 
   function tryPickIdle(objectId: string, mesh: THREE.Mesh): void {
+    if (!ctx.canEditApartment.value) return
     if (currentState.value.kind !== 'idle') return
     startPreviewExisting(objectId, mesh)
   }
 
   function onPointerDown(e: MouseEvent): void {
-    if (ctx.currentRoomLabel.value !== 'apartment' || !ctx.pointerLocked.value) return
+    if (ctx.currentRoomLabel.value !== 'apartment' || !ctx.canEditApartment.value || !ctx.pointerLocked.value) return
     if (ctx.getApartmentInventoryOpen()) return
     if (e.button === 2) {
       e.preventDefault()

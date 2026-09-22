@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Account;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
@@ -84,7 +85,8 @@ class ApartmentPlacementApiTest extends TestCase
             'Authorization' => 'Bearer '.$guest['token'],
         ])->assertOk();
 
-        $this->patchJson('/api/apartments/transform', [
+        $outsiderAccount = Account::query()->findOrFail($outsider['account_id']);
+        $this->actingAs($outsiderAccount, 'sanctum')->patchJson('/api/apartments/transform', [
             'owner_account_id' => $owner['account_id'],
             'template_key' => 'starter_loft',
             'objectId' => 'spawn_test_obj_1',
@@ -94,16 +96,13 @@ class ApartmentPlacementApiTest extends TestCase
             'rotX' => 0,
             'rotY' => 0,
             'rotZ' => 0,
-        ], [
-            'Authorization' => 'Bearer '.$outsider['token'],
         ])->assertStatus(403)->assertJsonPath('code', 'apartment_edit_forbidden');
 
-        $this->postJson('/api/apartments/pickup', [
+        $ownerAccount = Account::query()->findOrFail($owner['account_id']);
+        $this->actingAs($ownerAccount, 'sanctum')->postJson('/api/apartments/pickup', [
             'owner_account_id' => $owner['account_id'],
             'template_key' => 'starter_loft',
             'objectId' => 'spawn_test_obj_1',
-        ], [
-            'Authorization' => 'Bearer '.$owner['token'],
         ])->assertOk();
 
         $ownedAfterPickup = $this->getJson('/api/apartments/assets', [

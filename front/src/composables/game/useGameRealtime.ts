@@ -19,6 +19,7 @@ import type {
   ApartmentInitPayload,
   ApartmentInventoryItem,
   ApartmentObjectPayload,
+  HousingUnitPayload,
   OtherUser,
   PendingAppearanceUpdate,
   RemoteUserPayload,
@@ -97,6 +98,10 @@ export interface GameRealtimeDeps {
 
   setRoomEnvironment: (kind: 'city' | 'apartment') => void
   onApartmentActionErrorBanner?: () => void
+
+  canEditApartment: Ref<boolean>
+  visitedApartmentOwnerId: Ref<number | null>
+  onHousingUnitsSync?: (units: HousingUnitPayload[]) => void
 }
 
 /** Colyseus room wiring, remote avatars, and server message bindings. */
@@ -142,7 +147,59 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
 
   function isRemoteVisible(zone: 'city' | 'apartment', apartmentOwnerId: number | null): boolean {
     if (deps.currentRoomLabel.value === 'city') return zone === 'city'
-    return zone === 'apartment' && apartmentOwnerId === getStoredAuth()?.user.account_id
+    const visitedOwner = deps.visitedApartmentOwnerId.value
+    const ownerMatch =
+      apartmentOwnerId !== null &&
+      apartmentOwnerId === (visitedOwner ?? getStoredAuth()?.user.account_id ?? null)
+    return zone === 'apartment' && ownerMatch
+  }
+
+  function parseHousingUnitsFromMessage(raw: unknown): HousingUnitPayload[] | null {
+    if (!Array.isArray(raw)) return null
+    const out: HousingUnitPayload[] = []
+    for (const row of raw) {
+      if (typeof row !== 'object' || row === null) continue
+      const rec = row as Record<string, unknown>
+      if (typeof rec.unit_id !== 'number') continue
+      if (typeof rec.public_id !== 'string') continue
+      if (typeof rec.offer_type !== 'string') continue
+      if (typeof rec.price_coins !== 'number') continue
+      if (typeof rec.rent_duration_hours !== 'number') continue
+      if (typeof rec.pos_x !== 'number') continue
+      if (typeof rec.pos_y !== 'number') continue
+      if (typeof rec.pos_z !== 'number') continue
+      if (typeof rec.size !== 'number') continue
+      if (typeof rec.base_color_hex !== 'string') continue
+      if (typeof rec.status !== 'string') continue
+      if (!(rec.occupant_account_id === null || typeof rec.occupant_account_id === 'number')) continue
+      if (!(rec.lease_expires_at === null || typeof rec.lease_expires_at === 'string')) continue
+      if (!(rec.room_public_id === null || typeof rec.room_public_id === 'string')) continue
+      if (typeof rec.template_key !== 'string') continue
+      out.push({
+        unit_id: rec.unit_id,
+        public_id: rec.public_id,
+        offer_type: rec.offer_type,
+        price_coins: rec.price_coins,
+        rent_duration_hours: rec.rent_duration_hours,
+        pos_x: rec.pos_x,
+        pos_y: rec.pos_y,
+        pos_z: rec.pos_z,
+        size: rec.size,
+        base_color_hex: rec.base_color_hex,
+        status: rec.status,
+        occupant_account_id: rec.occupant_account_id,
+        lease_expires_at: rec.lease_expires_at,
+        room_public_id: rec.room_public_id,
+        template_key: rec.template_key,
+      })
+    }
+    return out
+  }
+
+  function syncHousingUnits(raw: unknown): void {
+    const units = parseHousingUnitsFromMessage(raw)
+    if (units === null) return
+    deps.onHousingUnitsSync?.(units)
   }
 
   function removeSceneAvatarDuplicates(sessionId: string, userId: string) {
@@ -338,6 +395,14 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
         if (u.sessionId === room.sessionId) return
         void upsertOtherUser(u.sessionId, u)
       })
+
+      if (payload.housingUnits !== undefined) {
+        syncHousingUnits(payload.housingUnits)
+      }
+    })
+
+    room.onMessage('housing_units_sync', (data: { units?: unknown }) => {
+      syncHousingUnits(data.units)
     })
 
     room.onMessage('user_joined', (data: RemoteUserPayload) => {
@@ -398,6 +463,8 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
             }
           }
           if (data.zone === 'city') {
+            deps.canEditApartment.value = false
+            deps.visitedApartmentOwnerId.value = null
             deps.apartment.clearApartmentObjects()
             finishApartmentTransition()
           }
@@ -420,6 +487,8 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('apartment_init', (payload: ApartmentInitPayload) => {
       previousQuantityByCode = {}
       isInitialInventoryLoad = true
+      deps.canEditApartment.value = payload.canEdit === true
+      deps.visitedApartmentOwnerId.value = payload.ownerAccountId
       deps.currentRoomLabel.value = 'apartment'
       deps.setRoomEnvironment('apartment')
       deps.myPosition.x = APARTMENT_SPAWN.x

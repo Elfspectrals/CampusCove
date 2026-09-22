@@ -32,7 +32,24 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 DO $$ BEGIN
-  CREATE TYPE tx_type AS ENUM ('shop_purchase', 'market_sale', 'trade', 'gift', 'admin_adjust');
+  CREATE TYPE tx_type AS ENUM (
+    'shop_purchase',
+    'market_sale',
+    'trade',
+    'gift',
+    'admin_adjust',
+    'housing_buy',
+    'housing_rent',
+    'housing_renew'
+  );
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  CREATE TYPE housing_offer_type AS ENUM ('buy', 'rent');
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  CREATE TYPE housing_unit_status AS ENUM ('vacant', 'occupied');
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 DO $$ BEGIN
@@ -404,6 +421,36 @@ CREATE TABLE IF NOT EXISTS rooms (
 
 CREATE UNIQUE INDEX IF NOT EXISTS ux_rooms_public_id ON rooms(public_id);
 CREATE INDEX IF NOT EXISTS ix_rooms_server_type ON rooms(server_id, type);
+
+CREATE TABLE IF NOT EXISTS housing_units (
+  unit_id BIGSERIAL PRIMARY KEY,
+  public_id UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
+  offer_type housing_offer_type NOT NULL,
+  price_coins INTEGER NOT NULL CHECK (price_coins > 0),
+  rent_duration_hours INTEGER NOT NULL DEFAULT 24 CHECK (rent_duration_hours > 0),
+  pos_x DOUBLE PRECISION NOT NULL,
+  pos_y DOUBLE PRECISION NOT NULL,
+  pos_z DOUBLE PRECISION NOT NULL,
+  size DOUBLE PRECISION NOT NULL DEFAULT 2.5,
+  base_color_hex VARCHAR(7) NOT NULL,
+  status housing_unit_status NOT NULL DEFAULT 'vacant',
+  occupant_account_id BIGINT NULL REFERENCES accounts(account_id) ON DELETE SET NULL,
+  lease_expires_at TIMESTAMPTZ NULL,
+  room_id BIGINT NULL REFERENCES rooms(room_id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT housing_units_buy_no_lease CHECK (
+    offer_type <> 'buy' OR lease_expires_at IS NULL
+  ),
+  CONSTRAINT housing_units_occupied_consistency CHECK (
+    (status = 'occupied' AND occupant_account_id IS NOT NULL)
+    OR (status = 'vacant' AND occupant_account_id IS NULL AND lease_expires_at IS NULL)
+  )
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS housing_units_occupant_account_id_unique
+  ON housing_units (occupant_account_id)
+  WHERE occupant_account_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS ix_rooms_owner ON rooms(owner_character_id);
 
 CREATE TABLE IF NOT EXISTS room_furniture_containers (

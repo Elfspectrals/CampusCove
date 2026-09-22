@@ -1,6 +1,8 @@
 <?php
 
+use App\Exceptions\HousingRejectedException;
 use App\Exceptions\ShopPurchaseRejectedException;
+use Illuminate\Console\Scheduling\Schedule;
 use App\Http\Middleware\EnsureAccountIsActive;
 use App\Http\Middleware\EnsureAccountIsAdmin;
 use Illuminate\Foundation\Application;
@@ -23,6 +25,9 @@ $allowedOrigins = is_string($envAllowedOrigins) && $envAllowedOrigins !== ''
     : $defaultAllowedOrigins;
 
 return Application::configure(basePath: dirname(__DIR__))
+    ->withSchedule(function (Schedule $schedule): void {
+        $schedule->command('housing:expire-leases')->everyMinute();
+    })
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
         api: __DIR__.'/../routes/api.php',
@@ -44,6 +49,16 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions) use ($allowedOrigins): void {
         $exceptions->renderable(function (ShopPurchaseRejectedException $e, \Illuminate\Http\Request $request) {
+            if ($request->is('api/*')) {
+                return response()->json([
+                    'message' => $e->getMessage(),
+                    'code' => $e->errorCode,
+                ], $e->httpStatus);
+            }
+
+            return null;
+        });
+        $exceptions->renderable(function (HousingRejectedException $e, \Illuminate\Http\Request $request) {
             if ($request->is('api/*')) {
                 return response()->json([
                     'message' => $e->getMessage(),

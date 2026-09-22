@@ -4,7 +4,6 @@ import {
   APARTMENT_HALF_EXTENT,
   APARTMENT_ROOM_HEIGHT,
   APARTMENT_WALL_THICKNESS,
-  CITY_BUILDING_DOOR_POS,
 } from './gameRoomConstants'
 
 export function applySceneAtmosphere(scene: THREE.Scene, kind: 'city' | 'apartment'): void {
@@ -29,22 +28,6 @@ export function buildCityEnvironment(): THREE.Group {
   const grid = new THREE.GridHelper(50, 50, 0x0f3460, 0x0f3460)
   grid.position.y = 0.01
   g.add(grid)
-  const buildingBody = new THREE.Mesh(
-    new THREE.BoxGeometry(5, 4, 5),
-    new THREE.MeshStandardMaterial({ color: 0x34455f }),
-  )
-  buildingBody.position.set(CITY_BUILDING_DOOR_POS.x, 2, CITY_BUILDING_DOOR_POS.z + 2.6)
-  buildingBody.castShadow = true
-  buildingBody.receiveShadow = true
-  g.add(buildingBody)
-  const buildingDoor = new THREE.Mesh(
-    new THREE.BoxGeometry(1.4, 2.2, 0.16),
-    new THREE.MeshStandardMaterial({ color: 0x2a1f1a }),
-  )
-  buildingDoor.position.set(CITY_BUILDING_DOOR_POS.x, 1.1, CITY_BUILDING_DOOR_POS.z)
-  buildingDoor.castShadow = true
-  buildingDoor.receiveShadow = true
-  g.add(buildingDoor)
   return g
 }
 

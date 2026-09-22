@@ -4,6 +4,7 @@ defineProps<{
   screenY: number
   keyLabel: string
   actionLabel: string
+  detailLabel?: string
 }>()
 </script>
 
@@ -23,10 +24,18 @@ defineProps<{
           <span class="text-base font-bold leading-none text-white">{{ keyLabel }}</span>
         </div>
       </div>
-      <div
-        class="mt-1.5 rounded bg-black/65 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-white/95"
-      >
-        {{ actionLabel }}
+      <div class="mt-1.5 flex flex-col items-center gap-0.5">
+        <div
+          class="rounded bg-black/65 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-white/95"
+        >
+          {{ actionLabel }}
+        </div>
+        <div
+          v-if="detailLabel"
+          class="max-w-[10rem] rounded bg-black/55 px-2 py-0.5 text-center text-[9px] font-normal normal-case tracking-normal text-white/80"
+        >
+          {{ detailLabel }}
+        </div>
       </div>
     </div>
   </div>
