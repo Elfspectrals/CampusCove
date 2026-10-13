@@ -72,6 +72,12 @@ function resetStats(): void {
   stats.skippedHeight = 0
 }
 
+/** Invisible helper meshes (e.g. the apartment exit-door trigger) must not block movement. */
+function isInvisibleMarker(mesh: THREE.Mesh): boolean {
+  const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
+  return mats.every((m) => !m.visible)
+}
+
 function shouldSkipByName(obj: THREE.Object3D): boolean {
   let current: THREE.Object3D | null = obj
   while (current) {
@@ -351,7 +357,7 @@ async function buildCollidersFromGroup(group: THREE.Object3D): Promise<void> {
     }
 
     if (!(obj instanceof THREE.Mesh)) return
-    if (shouldSkipByName(obj)) {
+    if (shouldSkipByName(obj) || isInvisibleMarker(obj)) {
       stats.skippedDecorative += 1
       return
     }

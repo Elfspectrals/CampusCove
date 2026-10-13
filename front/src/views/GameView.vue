@@ -273,6 +273,7 @@ function setRoomEnvironment(kind: 'city' | 'apartment') {
       if (token !== roomEnvironmentLoadToken) return
       roomEnvironment = built.group
       scene.add(roomEnvironment)
+      void buildWorldCollisionFromGroup(built.group)
       apartmentPlacement.registerApartmentEnvironment(built)
       nearCityDoor.value = false
       void apartmentPlacement.init({

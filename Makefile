@@ -49,7 +49,7 @@ optimize: ## Optimize a .glb/.gltf into front/public/models/ + generate a TS loa
 map-optimize: ## Rebuild LobbyMap.glb + LobbyMap.low.glb from map-src/LobbyMap/
 	cd front && npm run map:optimize
 
-apartment-optimize: ## Rebuild ApartmentInterior.glb + .low from map-src/Appartment/
+apartment-optimize: ## Rebuild CampusApartmentInterior.glb (+ .low) and CampusApartmentExterior.glb from map-src/CampusApartment/
 	cd front && npm run apartment:optimize
 
 # ---------------------------------------------------------------- backend (Laravel)

@@ -97,7 +97,7 @@ This regenerates `front/public/maps/LobbyMap.glb` (Draco geometry compression, W
 
 ### Apartment interior
 
-Source: `map-src/Appartment/Stylized_Interior_Appartment_1.glb` (gitignored). Optimized outputs: `front/public/maps/ApartmentInterior.glb` (+ `.low`).
+Built in Blender from scripts in `map-src/CampusApartment/` (gitignored): `build_interior.py`, `build_exterior.py` (helpers in `apt_lib.py`, generated textures in `textures/`). Export the `APT_Interior` and `APT_Exterior` collections to `CampusApartmentInterior.glb` / `CampusApartmentExterior.glb` in that folder, then run:
 
 ```bash
 cd front
@@ -105,7 +105,13 @@ npm run apartment:optimize
 # or: make apartment-optimize
 ```
 
-Enter your apartment from the lobby at **SM_Opera_A** (Press **I**). Others stay in the city zone.
+Outputs: `front/public/maps/CampusApartmentInterior.glb` (+ `.low`) and `front/public/maps/CampusApartmentExterior.glb`. The exterior is added to the city when LobbyMap loads; its node transforms already place it west of the Opera. The interior keeps per-object nodes (`--join false`) so `House_Floor_*` floors stay tagged and walls/furniture collide.
+
+Enter your apartment from the lobby at the **Campus Cove** building's front door (Press **I**). Others stay in the city zone.
+
+### New Nation showroom (`/NewNation`)
+
+A 3D plaza that previews every shop item on a pedestal (apartment assets on the inner ring, skins and other items on the outer booths). Click an item, or use ←/→, to fly to it and buy. Four walk-in model apartments ring the plaza (Cozy Classic, Scandi Loft, Neon Studio, Terracotta Sun). Use **Walk around** (WASD, drag or Q/E to turn, N/B for the next or previous home), the home buttons, or the minimap to visit them. The style variants are built by running `map-src/CampusApartment/build_interior.py` with a `THEME` (see the overrides block in that script) and exported as `CampusApartmentInterior_<theme>.glb`. Source: `map-src/NewNation/build_newnation.py` (gitignored). After exporting the `NN_Map` collection to `map-src/NewNation/NewNation.glb`, run `npm run newnation:optimize` in `front/`. Display slot positions are written by the Blender build to `front/public/maps/NewNation.slots.json`, because gltf-transform strips empty nodes.
 
 ---
 
