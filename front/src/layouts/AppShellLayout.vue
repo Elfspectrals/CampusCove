@@ -101,6 +101,7 @@ const defaultNavItems = computed(() =>
     !isLoggedIn.value ? { name: 'landing', icon: '🏠', label: 'Home' } : { name: 'home', icon: '🏠', label: 'Home' },
     { name: 'shop', icon: '🛒', label: 'Shop' },
     { name: 'shop-skin', icon: '🧥', label: 'Shop Skin' },
+    { name: 'new-nation', icon: '🌐', label: 'New Nation' },
     ...(isLoggedIn.value
       ? [
           { name: 'locker', icon: '🎒', label: 'Locker' },

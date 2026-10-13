@@ -1,0 +1,278 @@
+{
+  "version": 2,
+  "slots": [
+    {
+      "name": "Slot_A_00",
+      "group": "apartment",
+      "position": [
+        -3.061,
+        0.71,
+        -7.391
+      ]
+    },
+    {
+      "name": "Slot_A_01",
+      "group": "apartment",
+      "position": [
+        -7.391,
+        0.71,
+        -3.061
+      ]
+    },
+    {
+      "name": "Slot_A_02",
+      "group": "apartment",
+      "position": [
+        -7.391,
+        0.71,
+        3.061
+      ]
+    },
+    {
+      "name": "Slot_A_03",
+      "group": "apartment",
+      "position": [
+        -3.061,
+        0.71,
+        7.391
+      ]
+    },
+    {
+      "name": "Slot_A_04",
+      "group": "apartment",
+      "position": [
+        3.061,
+        0.71,
+        7.391
+      ]
+    },
+    {
+      "name": "Slot_A_05",
+      "group": "apartment",
+      "position": [
+        7.391,
+        0.71,
+        3.061
+      ]
+    },
+    {
+      "name": "Slot_A_06",
+      "group": "apartment",
+      "position": [
+        7.391,
+        0.71,
+        -3.061
+      ]
+    },
+    {
+      "name": "Slot_A_07",
+      "group": "apartment",
+      "position": [
+        3.061,
+        0.71,
+        -7.391
+      ]
+    },
+    {
+      "name": "Slot_S_00",
+      "group": "skin",
+      "position": [
+        -3.623,
+        0.45,
+        -13.523
+      ]
+    },
+    {
+      "name": "Slot_S_01",
+      "group": "skin",
+      "position": [
+        -9.899,
+        0.45,
+        -9.899
+      ]
+    },
+    {
+      "name": "Slot_S_02",
+      "group": "skin",
+      "position": [
+        -13.523,
+        0.45,
+        -3.623
+      ]
+    },
+    {
+      "name": "Slot_S_03",
+      "group": "skin",
+      "position": [
+        -13.523,
+        0.45,
+        3.623
+      ]
+    },
+    {
+      "name": "Slot_S_04",
+      "group": "skin",
+      "position": [
+        -9.899,
+        0.45,
+        9.899
+      ]
+    },
+    {
+      "name": "Slot_S_05",
+      "group": "skin",
+      "position": [
+        -3.623,
+        0.45,
+        13.523
+      ]
+    },
+    {
+      "name": "Slot_S_06",
+      "group": "skin",
+      "position": [
+        3.623,
+        0.45,
+        13.523
+      ]
+    },
+    {
+      "name": "Slot_S_07",
+      "group": "skin",
+      "position": [
+        9.899,
+        0.45,
+        9.899
+      ]
+    },
+    {
+      "name": "Slot_S_08",
+      "group": "skin",
+      "position": [
+        13.523,
+        0.45,
+        3.623
+      ]
+    },
+    {
+      "name": "Slot_S_09",
+      "group": "skin",
+      "position": [
+        13.523,
+        0.45,
+        -3.623
+      ]
+    },
+    {
+      "name": "Slot_S_10",
+      "group": "skin",
+      "position": [
+        9.899,
+        0.45,
+        -9.899
+      ]
+    },
+    {
+      "name": "Slot_S_11",
+      "group": "skin",
+      "position": [
+        3.623,
+        0.45,
+        -13.523
+      ]
+    }
+  ],
+  "apartments": [
+    {
+      "id": "classic",
+      "name": "Cozy Classic",
+      "url": "/maps/CampusApartmentInterior.glb",
+      "angle": 0.0,
+      "position": [
+        -2.74,
+        0,
+        -39.0
+      ],
+      "rotationY": -1.5708,
+      "doorStand": [
+        0.0,
+        1.6,
+        -30.5
+      ],
+      "doorYaw": -0.0
+    },
+    {
+      "id": "scandi",
+      "name": "Scandi Loft",
+      "url": "/maps/CampusApartmentInterior_scandi.glb",
+      "angle": -1.5708,
+      "position": [
+        39.0,
+        0,
+        -2.74
+      ],
+      "rotationY": -3.14159,
+      "doorStand": [
+        30.5,
+        1.6,
+        -0.0
+      ],
+      "doorYaw": -1.5708
+    },
+    {
+      "id": "neon",
+      "name": "Neon Studio",
+      "url": "/maps/CampusApartmentInterior_neon.glb",
+      "angle": 3.14159,
+      "position": [
+        2.74,
+        0,
+        39.0
+      ],
+      "rotationY": 1.5708,
+      "doorStand": [
+        -0.0,
+        1.6,
+        30.5
+      ],
+      "doorYaw": 3.14159
+    },
+    {
+      "id": "terracotta",
+      "name": "Terracotta Sun",
+      "url": "/maps/CampusApartmentInterior_terracotta.glb",
+      "angle": 1.5708,
+      "position": [
+        -39.0,
+        0,
+        2.74
+      ],
+      "rotationY": 0.0,
+      "doorStand": [
+        -30.5,
+        1.6,
+        -0.0
+      ],
+      "doorYaw": 1.5708
+    }
+  ],
+  "footprintNorth": [
+    -8.94,
+    -48.2,
+    3.46,
+    -33.8
+  ],
+  "hideNodes": [
+    "Sky_Backdrop_N",
+    "Sky_Backdrop_S",
+    "Sky_Backdrop_W",
+    "Door_Entrance",
+    "Door_Entrance_Handle",
+    "Door_Entrance_Sign"
+  ],
+  "walkSpawn": [
+    0,
+    1.6,
+    17.5
+  ]
+}

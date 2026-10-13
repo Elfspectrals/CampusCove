@@ -25,7 +25,7 @@ import { useApartmentObjects } from '../composables/game/useApartmentObjects'
 import { useApartmentPlacement } from '../composables/game/useApartmentPlacement'
 import { useGameMovement } from '../composables/game/useGameMovement'
 import {
-  buildWorldCollisionFromUrl,
+  buildWorldCollisionFromObject,
   clearWorldCollision,
   getWorldCollisionStats,
   toggleCollisionDebug,
@@ -442,7 +442,8 @@ function setRoomEnvironment(kind: 'city' | 'apartment') {
       roomEnvironment = built.group
       scene.add(roomEnvironment)
       apartmentPlacement.registerApartmentEnvironment(built)
-      void buildWorldCollisionFromUrl('/maps/ApartmentInterior.collision.json?v=4').catch((err) => {
+      // CampusApartmentInterior.glb has no .collision.json sidecar: collide with the model itself.
+      void buildWorldCollisionFromObject('apartment:campus-interior', built.group).catch((err) => {
         console.warn('[collision] apartment collision failed', err)
       })
       nearCityDoor.value = false

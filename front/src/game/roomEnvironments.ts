@@ -23,8 +23,11 @@ function lobbyMapPathForQuality(): string {
 }
 
 function apartmentMapPathForQuality(): string {
-  return getGraphicsQuality() === 'low' ? '/maps/ApartmentInterior.low.glb' : '/maps/ApartmentInterior.glb'
+  return getGraphicsQuality() === 'low' ? '/maps/CampusApartmentInterior.low.glb' : '/maps/CampusApartmentInterior.glb'
 }
+
+/** Apartment building placed in the city; node transforms already position it in LobbyMap space. */
+const APARTMENT_EXTERIOR_PATH = '/maps/CampusApartmentExterior.glb'
 
 function addLobbyLighting(group: THREE.Group): void {
   if (getGraphicsQuality() === 'low') {
@@ -62,19 +65,24 @@ export function loadLobbyEnvironment(): Promise<THREE.Group> {
       dracoLoader.setDecoderPath('/draco-decoder/')
       const loader = new GLTFLoader()
       loader.setDRACOLoader(dracoLoader)
-      loader.load(
-        lobbyMapPathForQuality(),
-        (gltf) => {
+      // The apartment building is optional: the city still loads if it fails.
+      const exterior = loader.loadAsync(APARTMENT_EXTERIOR_PATH).catch((error) => {
+        console.warn('[roomEnvironments] apartment exterior failed to load', error)
+        return null
+      })
+      Promise.all([loader.loadAsync(lobbyMapPathForQuality()), exterior])
+        .then(([gltf, exteriorGltf]) => {
+          if (exteriorGltf) {
+            gltf.scene.add(exteriorGltf.scene)
+          }
           const group = prepareLobbyGroup(gltf.scene)
           cachedLobbyEnvironment = group
           resolve(group)
-        },
-        undefined,
-        (error) => {
+        })
+        .catch((error) => {
           lobbyEnvironmentLoadPromise = null
           reject(error)
-        },
-      )
+        })
     })
   }
   return lobbyEnvironmentLoadPromise

@@ -50,8 +50,11 @@ optimize: ## Optimize a .glb (MODEL=path [NAME=MyModel])
 map-optimize: ## Rebuild LobbyMap GLB + collision
 	cd front && npm run map:optimize
 
-apartment-optimize: ## Rebuild ApartmentInterior GLB + collision
+apartment-optimize: ## Rebuild CampusApartment interior (+ .low) and exterior GLBs from map-src/CampusApartment/
 	cd front && npm run apartment:optimize
+
+newnation-optimize: ## Rebuild the /NewNation showroom map from map-src/NewNation/
+	cd front && npm run newnation:optimize
 
 collision-extract: ## Collision JSON from a GLB (MODEL=public/maps/Foo.glb)
 	cd front && npm run collision:extract -- $(MODEL)
@@ -101,6 +104,6 @@ socket-start: ## Run socket locally (port 3000)
 
 .PHONY: help up up-build down logs rebuild-socket socket-rebuild \
 	front-install front-dev front-build typecheck \
-	optimize map-optimize apartment-optimize collision-extract \
+	optimize map-optimize apartment-optimize newnation-optimize collision-extract \
 	migrate seed seed-shop seed-housing expire-leases set-admin set-money fill-outfit test \
 	backend-install backend-serve socket-install socket-start

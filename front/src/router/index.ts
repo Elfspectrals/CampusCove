@@ -12,6 +12,7 @@ import LockerView from '../views/LockerView.vue'
 import ItemShopView from '../views/ItemShopView.vue'
 import LandingView from '../views/LandingView.vue'
 import LoginView from '../views/auth/LoginView.vue'
+import NewNationView from '../views/NewNationView.vue'
 import RegisterView from '../views/auth/RegisterView.vue'
 
 const router = createRouter({
@@ -29,6 +30,7 @@ const router = createRouter({
     { path: '/item-shop', name: 'item-shop', redirect: { name: 'shop' } },
     { path: '/shop', name: 'shop', component: ItemShopView, meta: { title: 'Shop' } },
     { path: '/shop-skin', name: 'shop-skin', component: ItemShopView, meta: { title: 'Shop Skin' } },
+    { path: '/NewNation', name: 'new-nation', component: NewNationView, meta: { title: 'New Nation', fullBleed: true } },
     { path: '/home', name: 'home', component: HomeView, meta: { requiresAuth: true, title: 'Profile' } },
     { path: '/locker', name: 'locker', component: LockerView, meta: { requiresAuth: true, title: 'Locker' } },
     { path: '/inventory', name: 'legacy-inventory', redirect: { name: 'locker' }, meta: { requiresAuth: true } },
