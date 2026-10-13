@@ -208,7 +208,7 @@ onUnmounted(() => {
     >
       {{ positionLabel }}
     </p>
-    <GameRoomMessageBanner :message="roomMessage" />
+    <GameRoomMessageBanner v-if="roomMessage" :message="roomMessage" />
     <GamePointerLockOverlay
       v-if="!pointerLocked"
       @request-pointer-lock="requestPointerLock"
