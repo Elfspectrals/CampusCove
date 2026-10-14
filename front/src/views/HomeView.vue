@@ -90,14 +90,6 @@ const quickTiles: Array<{ to: string; icon: UiIconName; label: string; hint: str
   { to: '/NewNation', icon: 'globe', label: 'New Nation', hint: 'Season showroom', tone: 'from-coral/40 text-coral' },
 ]
 
-const recentItems = [
-  { name: 'Gaming Chair Pro', rarity: 'epic' },
-  { name: 'Modern Couch', rarity: 'common' },
-  { name: 'Neon Lights', rarity: 'legendary' },
-  { name: 'Indoor Plant', rarity: 'uncommon' },
-  { name: 'LED Strip', rarity: 'rare' },
-  { name: 'Wall Art', rarity: 'uncommon' },
-]
 </script>
 
 <template>
@@ -266,27 +258,5 @@ const recentItems = [
         </div>
       </aside>
     </div>
-
-    <section class="mt-8">
-      <div class="mb-3 flex items-end justify-between">
-        <h2 class="cc-display m-0 text-2xl">Recent items</h2>
-        <RouterLink to="/locker" class="text-sm font-extrabold text-pool hover:underline">Open locker</RouterLink>
-      </div>
-      <div class="flex gap-3 overflow-x-auto pb-3">
-        <div
-          v-for="(item, i) in recentItems"
-          :key="i"
-          :class="['cc-card cc-rarity w-40 shrink-0 cursor-pointer', `cc-rarity-${item.rarity}`]"
-        >
-          <div class="cc-rarity-bg grid h-28 place-items-center">
-            <UiIcon name="box" :size="40" class="text-white/85 drop-shadow-[0_4px_0_rgba(0,0,0,0.3)]" />
-          </div>
-          <div class="px-3 py-2">
-            <p class="m-0 truncate text-sm font-extrabold">{{ item.name }}</p>
-            <p class="cc-rarity-text m-0 text-[11px] font-extrabold uppercase tracking-wider">{{ item.rarity }}</p>
-          </div>
-        </div>
-      </div>
-    </section>
   </div>
 </template>
