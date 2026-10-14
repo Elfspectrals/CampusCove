@@ -1,15 +1,18 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import * as authApi from '../../api/auth'
 import UiAuthCard from '../../components/ui/UiAuthCard.vue'
 import UiIcon from '../../components/ui/UiIcon.vue'
 
 const router = useRouter()
+const route = useRoute()
 const email = ref('')
 const username = ref('')
 const password = ref('')
 const passwordConfirmation = ref('')
+// invite links look like /register?ref=CODE
+const referralCode = ref(typeof route.query.ref === 'string' ? route.query.ref : '')
 const error = ref('')
 const loading = ref(false)
 
@@ -25,7 +28,8 @@ async function submit() {
       email.value,
       username.value,
       password.value,
-      passwordConfirmation.value
+      passwordConfirmation.value,
+      referralCode.value.trim() || undefined
     )
     authApi.storeAuth(res.user, res.token)
     router.push({ name: 'home' })
@@ -95,6 +99,19 @@ async function submit() {
             class="cc-input"
           />
         </div>
+      </div>
+
+      <div>
+        <label for="reg-referral" class="cc-label">Invite code <span class="font-semibold text-mist/80">(optional)</span></label>
+        <input
+          id="reg-referral"
+          v-model="referralCode"
+          type="text"
+          placeholder="AB12CD34"
+          maxlength="12"
+          autocomplete="off"
+          class="cc-input font-mono uppercase"
+        />
       </div>
 
       <p v-if="error" class="cc-alert cc-alert-error m-0" role="alert">

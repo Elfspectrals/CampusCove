@@ -1,4 +1,4 @@
-import { ref, type Ref, type ShallowRef } from 'vue'
+import { ref, toRaw, type Ref, type ShallowRef } from 'vue'
 import type { Router } from 'vue-router'
 import * as THREE from 'three'
 import { Client as ColyseusClient, type Room } from '@colyseus/sdk'
@@ -14,7 +14,7 @@ import {
 import { getStoredAuth } from '../../api/auth'
 import { createTintedCharacterFromUrl } from '../../avatar/glbCharacter'
 import { buildCompositeAvatar, disposeObject3D } from '../../avatar/compositeAvatar'
-import { APARTMENT_SPAWN } from '../../game/gameRoomConstants'
+import { APARTMENT_SPAWN, EYE_HEIGHT } from '../../game/gameRoomConstants'
 import type {
   ApartmentInitPayload,
   ApartmentInventoryItem,
@@ -50,8 +50,22 @@ function parseBodyModelGlb(raw: unknown): string | null {
   return typeof raw === 'string' && raw.trim().length > 0 ? raw.trim() : null
 }
 
-function placeAvatar(group: THREE.Group, x: number, y: number, z: number) {
-  group.position.set(x, y, z)
+/** Skins face +Z while the camera looks towards -Z at yaw 0, hence the half turn. */
+function placeAvatar(group: THREE.Group, x: number, y: number, z: number, ry: number) {
+  group.position.set(x, y - EYE_HEIGHT, z)
+  group.rotation.y = ry + Math.PI
+}
+
+/** Minimum delay between two cosmetics re-checks triggered by window focus. */
+const APPEARANCE_REFRESH_MIN_INTERVAL_MS = 10_000
+
+/** How fast remote avatars catch up with their last known position (1/s; higher = snappier). */
+const REMOTE_SMOOTHING = 12
+/** Beyond this gap (teleport, spawn), remote avatars jump instead of gliding. */
+const REMOTE_SNAP_DISTANCE = 4
+
+function parseYaw(raw: unknown): number {
+  return typeof raw === 'number' && Number.isFinite(raw) ? raw : 0
 }
 
 export interface GameRealtimeDeps {
@@ -302,7 +316,8 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     group.userData.isRemoteAvatar = true
     group.userData.sessionId = sessionId
     group.userData.userId = data.id
-    placeAvatar(group, data.x, data.y, data.z)
+    const ry = parseYaw(data.ry)
+    placeAvatar(group, data.x, data.y, data.z, ry)
     scene.add(group)
     otherUsers.value.set(sessionId, {
       userId: data.id,
@@ -310,6 +325,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       x: data.x,
       y: data.y,
       z: data.z,
+      ry,
       zone: data.zone,
       apartmentOwnerId: data.apartmentOwnerId,
       color: data.color,
@@ -344,9 +360,15 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       removeOtherUser(sessionId)
       return
     }
-    const renderToken = nextRenderToken(renderTokenBySessionId, sessionId)
     const bodyTintColors = parseBodyTintColors(slotHexes)
     const parsedBodyModelGlb = parseBodyModelGlb(bodyModelGlb)
+    if (
+      parsedBodyModelGlb === entry.bodyModelGlb &&
+      bodyTintColors.body === entry.bodyTintColors.body
+    ) {
+      return
+    }
+    const renderToken = nextRenderToken(renderTokenBySessionId, sessionId)
     const glb = await createTintedCharacterFromUrl(parsedBodyModelGlb, bodyTintColors)
     const latestEntry = otherUsers.value.get(sessionId)
     const group = glb ?? buildCompositeAvatar(null, (latestEntry ?? entry).color)
@@ -365,7 +387,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     group.userData.userId = latestEntry.userId
     scene.remove(latestEntry.group)
     disposeObject3D(latestEntry.group)
-    placeAvatar(group, latestEntry.x, latestEntry.y, latestEntry.z)
+    placeAvatar(group, latestEntry.x, latestEntry.y, latestEntry.z, latestEntry.ry)
     scene.add(group)
     otherUsers.value.set(sessionId, {
       ...latestEntry,
@@ -413,7 +435,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       void upsertOtherUser(data.sessionId, data)
     })
 
-    room.onMessage('user_moved', (data: { sessionId: string; x: number; y: number; z: number }) => {
+    room.onMessage('user_moved', (data: { sessionId: string; x: number; y: number; z: number; ry?: number }) => {
       const entry = otherUsers.value.get(data.sessionId)
       if (!entry) return
       if (!isRemoteVisible(entry.zone, entry.apartmentOwnerId)) {
@@ -423,7 +445,16 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       entry.x = data.x
       entry.y = data.y
       entry.z = data.z
-      entry.group.position.set(data.x, data.y, data.z)
+      entry.ry = parseYaw(data.ry ?? entry.ry)
+      // the avatar glides there in tickRemoteAvatars
+    })
+
+    // Players already in the zone we just entered (sent after our own user_zone_changed / apartment_init).
+    room.onMessage('zone_users', (data: { users?: RemoteUserPayload[] }) => {
+      for (const u of data.users ?? []) {
+        if (u.sessionId === room.sessionId) continue
+        void upsertOtherUser(u.sessionId, u)
+      }
     })
 
     room.onMessage(
@@ -455,7 +486,8 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       }) => {
         if (data.sessionId === room.sessionId) {
           deps.currentRoomLabel.value = data.zone
-          deps.setRoomEnvironment(data.zone)
+          // apartment_init already loaded the right interior (it carries the template key)
+          if (data.zone === 'city') deps.setRoomEnvironment('city')
           deps.myPosition.x = data.x
           deps.myPosition.y = data.y
           deps.myPosition.z = data.z
@@ -480,7 +512,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
         entry.x = data.x
         entry.y = data.y
         entry.z = data.z
-        entry.group.position.set(data.x, data.y, data.z)
+        placeAvatar(entry.group, entry.x, entry.y, entry.z, entry.ry)
         if (!isRemoteVisible(entry.zone, entry.apartmentOwnerId)) {
           removeOtherUser(data.sessionId)
         }
@@ -570,8 +602,6 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     const appearance = appearanceIdsFromLoadout(state.slots)
     const roomOptions: Record<string, unknown> = {
       token: auth.token,
-      userId: auth.user.account_id,
-      pseudo: auth.user.display_name || auth.user.username,
       appearance,
       slotHexes: { body: state.colors.body },
       bodyModelGlb: bodyModelGlbFromLoadout(state.slots),
@@ -610,13 +640,29 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       deps.switchingRoom.value = false
     }
 
+    // Runs on every window focus: throttled, and only sent when the look actually changed, since each
+    // 'appearance' message makes every other client rebuild this player's avatar model.
+    let lastRefreshAt = 0
+    let lastSentAppearance = JSON.stringify({
+      body: appearance.body ?? null,
+      hex: state.colors.body,
+      glb: bodyModelGlbFromLoadout(state.slots),
+    })
     const refreshAppearanceFromApi = async () => {
+      const now = Date.now()
+      if (now - lastRefreshAt < APPEARANCE_REFRESH_MIN_INTERVAL_MS) return
+      lastRefreshAt = now
       try {
         const latest = await fetchCharacterCosmetics()
+        const body = appearanceIdsFromLoadout(latest.slots).body
+        const bodyModelGlb = bodyModelGlbFromLoadout(latest.slots)
+        const signature = JSON.stringify({ body: body ?? null, hex: latest.colors.body, glb: bodyModelGlb })
+        if (signature === lastSentAppearance) return
+        lastSentAppearance = signature
         deps.gameRoomRef.value?.send('appearance', {
-          slots: { body: appearanceIdsFromLoadout(latest.slots).body },
+          slots: { body },
           slotHexes: { body: latest.colors.body },
-          bodyModelGlb: bodyModelGlbFromLoadout(latest.slots),
+          bodyModelGlb,
         })
       } catch {
         /** keep previous values if refresh fails */
@@ -629,9 +675,35 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     return true
   }
 
+  /**
+   * Called every frame: moves each remote avatar towards its last received position/yaw, so movement
+   * looks continuous between network updates (sent every 50 ms) instead of jumping.
+   */
+  function tickRemoteAvatars(dt: number) {
+    const t = 1 - Math.exp(-REMOTE_SMOOTHING * dt)
+    for (const entry of toRaw(otherUsers.value).values()) {
+      const group = toRaw(entry.group)
+      const dx = entry.x - group.position.x
+      const dy = entry.y - EYE_HEIGHT - group.position.y
+      const dz = entry.z - group.position.z
+      if (dx * dx + dy * dy + dz * dz > REMOTE_SNAP_DISTANCE * REMOTE_SNAP_DISTANCE) {
+        placeAvatar(group, entry.x, entry.y, entry.z, entry.ry)
+        continue
+      }
+      group.position.x += dx * t
+      group.position.y += dy * t
+      group.position.z += dz * t
+      // shortest way round, so turning from 350° to 10° doesn't spin the long way
+      const target = entry.ry + Math.PI
+      const turn = Math.atan2(Math.sin(target - group.rotation.y), Math.cos(target - group.rotation.y))
+      group.rotation.y += turn * t
+    }
+  }
+
   return {
     connectRealtime,
     clearRemoteUsers,
+    tickRemoteAvatars,
     refreshMyAppearance: deps.refreshMyAppearance,
   }
 }

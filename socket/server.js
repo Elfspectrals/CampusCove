@@ -24,6 +24,18 @@ const DEFAULT_SLOT_HEX = {
   head_accessory: '#7A6B94'
 }
 
+// Players arriving at the same spawn would stand inside each other (and the camera inside a head),
+// so each arrival lands on a random point of a small disc around the spawn.
+function spawnNear(base, radius) {
+  const angle = Math.random() * Math.PI * 2
+  const dist = radius * Math.sqrt(Math.random())
+  return { x: base.x + Math.cos(angle) * dist, y: base.y, z: base.z + Math.sin(angle) * dist }
+}
+
+const CITY_SPAWN_RADIUS = 2
+// house interiors are small: stay close to the door
+const APARTMENT_SPAWN_RADIUS = 0.6
+
 function getColor(index) {
   return COLORS[index % COLORS.length]
 }
@@ -63,39 +75,28 @@ function parseAccountId(raw) {
   return null
 }
 
+// The account id always comes from the backend-validated token, never from client options.
 async function resolveIdentity(options) {
-  const fallbackId = parseAccountId(options?.userId ?? options?.accountId)
-  const fallbackPseudo = typeof options?.pseudo === 'string' && options.pseudo.trim().length > 0
-    ? options.pseudo.trim()
-    : null
   const token = typeof options?.token === 'string' ? options.token.trim() : ''
-  if (!token) {
-    if (fallbackId === null) throw new Error('missing auth token and fallback account id')
-    return { accountId: fallbackId, pseudo: fallbackPseudo ?? `User_${fallbackId}`, token: null }
-  }
-  try {
-    const res = await fetch(`${BACKEND_API_URL}/user`, {
-      headers: {
-        Accept: 'application/json',
-        Authorization: `Bearer ${token}`
-      }
-    })
-    if (!res.ok) {
-      throw new Error(`auth failed (${res.status})`)
+  if (!token) throw new Error('missing auth token')
+  const res = await fetch(`${BACKEND_API_URL}/user`, {
+    headers: {
+      Accept: 'application/json',
+      Authorization: `Bearer ${token}`
     }
-    const data = await res.json()
-    const accountId = parseAccountId(data?.user?.account_id)
-    if (accountId === null) throw new Error('invalid account id in auth payload')
-    const pseudo = typeof data?.user?.display_name === 'string' && data.user.display_name.trim().length > 0
-      ? data.user.display_name.trim()
-      : typeof data?.user?.username === 'string' && data.user.username.trim().length > 0
-        ? data.user.username.trim()
-        : fallbackPseudo ?? `User_${accountId}`
-    return { accountId, pseudo, token }
-  } catch (error) {
-    if (fallbackId === null) throw error
-    return { accountId: fallbackId, pseudo: fallbackPseudo ?? `User_${fallbackId}`, token }
+  })
+  if (!res.ok) {
+    throw new Error(`auth failed (${res.status})`)
   }
+  const data = await res.json()
+  const accountId = parseAccountId(data?.user?.account_id)
+  if (accountId === null) throw new Error('invalid account id in auth payload')
+  const pseudo = typeof data?.user?.display_name === 'string' && data.user.display_name.trim().length > 0
+    ? data.user.display_name.trim()
+    : typeof data?.user?.username === 'string' && data.user.username.trim().length > 0
+      ? data.user.username.trim()
+      : `User_${accountId}`
+  return { accountId, pseudo, token }
 }
 
 async function callBackendJson(token, path, method = 'POST', body = null) {
@@ -160,14 +161,16 @@ class PresenceRoom extends Room {
     const appearance = normalizeAppearanceIds(options?.appearance)
     const slotHexes = normalizeSlotHexes(options?.slotHexes)
     const bodyModelGlb = normalizeBodyModelGlb(options?.bodyModelGlb)
+    const spawn = spawnNear(CITY_SPAWN, CITY_SPAWN_RADIUS)
     return {
       sessionId: client.sessionId,
       accountId,
       pseudo,
       color: getColor(this.players.size),
-      x: CITY_SPAWN.x,
-      y: CITY_SPAWN.y,
-      z: CITY_SPAWN.z,
+      x: spawn.x,
+      y: spawn.y,
+      z: spawn.z,
+      ry: 0,
       zone: 'city',
       apartmentOwnerId: null,
       apartmentTemplateKey: null,
@@ -187,6 +190,7 @@ class PresenceRoom extends Room {
       x: player.x,
       y: player.y,
       z: player.z,
+      ry: player.ry,
       zone: player.zone,
       apartmentOwnerId: player.apartmentOwnerId,
       appearance: { ...player.appearance },
@@ -220,6 +224,34 @@ class PresenceRoom extends Room {
     return { zone: 'city', apartmentOwnerId: null }
   }
 
+  // Zone changes are announced as leave/join so every client keeps an accurate list of visible players:
+  // viewers of the old zone drop the mover, viewers of the new zone spawn them, and the mover gets the
+  // players already there (otherwise players vanished after visiting a house).
+  announceZoneLeave(client, player) {
+    this.forEachVisibleClient(player, (targetClient) => {
+      targetClient.send('user_left', { sessionId: client.sessionId })
+    }, client)
+  }
+
+  announceZoneEnter(client, player) {
+    client.send('user_zone_changed', {
+      sessionId: client.sessionId,
+      zone: player.zone,
+      apartmentOwnerId: player.apartmentOwnerId,
+      x: player.x,
+      y: player.y,
+      z: player.z
+    })
+    this.forEachVisibleClient(player, (targetClient) => {
+      targetClient.send('user_joined', this.publicPlayer(player))
+    }, client)
+    client.send('zone_users', {
+      users: [...this.players.values()]
+        .filter((u) => u.sessionId !== client.sessionId && this.arePlayersVisible(player, u))
+        .map((u) => this.publicPlayer(u))
+    })
+  }
+
   async fetchHousingUnits(token) {
     const data = await callBackendJson(token, '/housing/units', 'GET')
     this.housingUnits = Array.isArray(data?.units) ? data.units : []
@@ -246,29 +278,6 @@ class PresenceRoom extends Room {
     } catch (error) {
       console.warn('[colyseus] housing_refresh failed:', error instanceof Error ? error.message : error)
     }
-  }
-
-  async getApartmentCache(ownerAccountId, templateKey) {
-    const cacheKey = `${ownerAccountId}:${templateKey}`
-    const existing = this.apartmentCacheByOwner.get(cacheKey)
-    if (existing) return existing
-    const tokenPlayer = this.players.get(this.byAccountId.get(ownerAccountId) ?? '')
-    const token = tokenPlayer?.token
-    const response = await callBackendJson(token, '/apartments/state', 'POST', {
-      owner_account_id: ownerAccountId,
-      template_key: templateKey
-    })
-    const apartment = response?.apartment
-    const objects = Array.isArray(apartment?.objects) ? apartment.objects : []
-    const cache = {
-      roomPublicId: typeof apartment?.room_public_id === 'string' ? apartment.room_public_id : '',
-      ownerAccountId,
-      templateKey,
-      name: 'Apartment',
-      objects: new Map(objects.map((obj) => [obj.objectId, obj]))
-    }
-    this.apartmentCacheByOwner.set(cacheKey, cache)
-    return cache
   }
 
   apartmentCacheKey(ownerAccountId, templateKey) {
@@ -342,12 +351,14 @@ class PresenceRoom extends Room {
     player.x = normalizeNumber(payload.x, player.x)
     player.y = normalizeNumber(payload.y, player.y)
     player.z = normalizeNumber(payload.z, player.z)
+    player.ry = normalizeNumber(payload.ry, player.ry)
     this.forEachVisibleClient(player, (targetClient) => {
       targetClient.send('user_moved', {
         sessionId: client.sessionId,
         x: player.x,
         y: player.y,
-        z: player.z
+        z: player.z,
+        ry: player.ry
       })
     }, client)
   }
@@ -356,9 +367,16 @@ class PresenceRoom extends Room {
     const player = this.players.get(client.sessionId)
     if (!player || !payload || typeof payload !== 'object') return
     const slots = payload?.slots ?? payload
-    player.appearance = normalizeAppearanceIds(slots)
-    player.slotHexes = normalizeSlotHexes(payload?.slotHexes ?? {})
-    player.bodyModelGlb = normalizeBodyModelGlb(payload?.bodyModelGlb)
+    const appearance = normalizeAppearanceIds(slots)
+    const slotHexes = normalizeSlotHexes(payload?.slotHexes ?? {})
+    const bodyModelGlb = normalizeBodyModelGlb(payload?.bodyModelGlb)
+    // every broadcast makes each client rebuild this avatar's model: skip no-op updates
+    const unchanged = JSON.stringify([appearance, slotHexes, bodyModelGlb]) ===
+      JSON.stringify([player.appearance, player.slotHexes, player.bodyModelGlb])
+    if (unchanged) return
+    player.appearance = appearance
+    player.slotHexes = slotHexes
+    player.bodyModelGlb = bodyModelGlb
     this.forEachVisibleClient(player, (targetClient) => {
       targetClient.send('appearance_updated', {
         sessionId: client.sessionId,
@@ -406,12 +424,11 @@ class PresenceRoom extends Room {
       })
       return
     }
+    this.announceZoneLeave(client, player)
     player.zone = 'apartment'
     player.apartmentOwnerId = ownerAccountId
     player.apartmentTemplateKey = apartment.templateKey
-    player.x = APARTMENT_SPAWN.x
-    player.y = APARTMENT_SPAWN.y
-    player.z = APARTMENT_SPAWN.z
+    Object.assign(player, spawnNear(APARTMENT_SPAWN, APARTMENT_SPAWN_RADIUS))
     client.send('apartment_init', {
       ownerAccountId: apartment.ownerAccountId,
       templateKey: apartment.templateKey,
@@ -419,34 +436,19 @@ class PresenceRoom extends Room {
       canEdit,
       objects: [...apartment.objects.values()]
     })
+    this.announceZoneEnter(client, player)
     await this.onApartmentInventoryRequest(client)
-    this.broadcast('user_zone_changed', {
-      sessionId: client.sessionId,
-      zone: player.zone,
-      apartmentOwnerId: player.apartmentOwnerId,
-      x: player.x,
-      y: player.y,
-      z: player.z
-    })
   }
 
   onExitApartment(client) {
     const player = this.players.get(client.sessionId)
-    if (!player) return
+    if (!player || player.zone === 'city') return
+    this.announceZoneLeave(client, player)
     player.zone = 'city'
     player.apartmentOwnerId = null
     player.apartmentTemplateKey = null
-    player.x = CITY_APARTMENT_EXIT.x
-    player.y = CITY_APARTMENT_EXIT.y
-    player.z = CITY_APARTMENT_EXIT.z
-    this.broadcast('user_zone_changed', {
-      sessionId: client.sessionId,
-      zone: player.zone,
-      apartmentOwnerId: null,
-      x: player.x,
-      y: player.y,
-      z: player.z
-    })
+    Object.assign(player, spawnNear(CITY_APARTMENT_EXIT, CITY_SPAWN_RADIUS))
+    this.announceZoneEnter(client, player)
     client.send('housing_units_sync', { units: this.housingUnits })
   }
 

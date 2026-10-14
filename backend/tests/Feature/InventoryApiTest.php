@@ -4,11 +4,12 @@ namespace Tests\Feature;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Tests\Concerns\SetsWalletBalance;
 use Tests\TestCase;
 
 class InventoryApiTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, SetsWalletBalance;
 
     protected function setUp(): void
     {
@@ -199,20 +200,7 @@ class InventoryApiTest extends TestCase
         $accountId = (int) $reg->json('user.account_id');
         $token = $reg->json('token');
 
-        $walletId = (int) DB::table('wallets')->insertGetId([
-            'owner_type' => 'account',
-            'owner_id' => $accountId,
-            'currency' => $currency,
-            'created_at' => now(),
-        ], 'wallet_id');
-
-        DB::table('wallet_ledger')->insert([
-            'wallet_id' => $walletId,
-            'tx_id' => null,
-            'delta' => $coins,
-            'reason' => 'test_credit',
-            'created_at' => now(),
-        ]);
+        $this->setWalletBalance($accountId, $currency, $coins);
 
         return ['token' => $token, 'account_id' => $accountId];
     }

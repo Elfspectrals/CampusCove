@@ -67,6 +67,9 @@ final class ShopPurchaseService
             }
 
             [$currency, $unitPrice] = $this->resolvePricing($catalogItem, $selectedCurrency);
+            if ($itemDef->premium_only && $currency !== 'premium') {
+                throw new ShopPurchaseRejectedException('invalid_currency', 'This item can only be bought with premium currency.', 422);
+            }
             $totalDebit = $unitPrice * $quantity;
 
             $accountId = $account->getAuthIdentifier();

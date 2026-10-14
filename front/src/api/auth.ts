@@ -102,7 +102,8 @@ export async function register(
   email: string,
   username: string,
   password: string,
-  password_confirmation: string
+  password_confirmation: string,
+  referral_code?: string
 ): Promise<AuthResponse> {
   const res = await fetch(`${API_BASE}/register`, {
     method: 'POST',
@@ -112,6 +113,7 @@ export async function register(
       username,
       password,
       password_confirmation,
+      ...(referral_code ? { referral_code } : {}),
     }),
   })
   const data: unknown = await res.json().catch(() => ({}))

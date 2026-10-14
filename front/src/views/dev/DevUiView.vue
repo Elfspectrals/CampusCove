@@ -374,10 +374,7 @@ function scrollTo(id: string) {
             <UiIcon name="info" :size="18" /> Welcome to Campus Town
           </div>
           <div class="absolute left-1/2 top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white/90 bg-white/30" />
-          <GameInteractionPrompt :screen-x="520" :screen-y="170" key-label="F" action-label="Enter" detail-label="Loft 04 · rent 200 coins" />
-          <div class="cc-hud absolute bottom-[5.75rem] left-1/2 flex -translate-x-1/2 items-center gap-2 px-3 py-1.5 text-[11px] font-bold text-mist">
-            <span class="cc-keycap">E</span> Inventory <span class="mx-1 h-3 w-0.5 bg-white/15" /> <span class="cc-keycap">C</span> Collision
-          </div>
+          <GameInteractionPrompt :screen-x="520" :screen-y="170" action-label="Enter" detail-label="Loft 04 · rent 200 coins" />
           <div class="cc-hud absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-1.5 p-1.5">
             <div v-for="n in 9" :key="n" :class="['cc-slot h-12 w-12', n === 1 && 'cc-slot-active -translate-y-1']">
               <span class="absolute left-1 top-0.5 font-display text-[11px] text-fog/80">{{ n }}</span>

@@ -9,6 +9,8 @@ export interface RemoteUserPayload {
   x: number
   y: number
   z: number
+  /** Camera yaw (radians), 0 = looking towards -Z. */
+  ry?: number
   zone: 'city' | 'apartment'
   apartmentOwnerId: number | null
   slotHexes?: Record<string, string>
@@ -79,6 +81,7 @@ export interface OtherUser {
   x: number
   y: number
   z: number
+  ry: number
   zone: 'city' | 'apartment'
   apartmentOwnerId: number | null
   color: number

@@ -43,7 +43,7 @@ class ShopSeeder extends Seeder
             self::skin('COS_WEAR_BODY_STREET_RUNNER', 'Street Runner', 'street_runner', 2),
             self::skin('COS_WEAR_BODY_SCHOLAR', 'Scholar', 'scholar', 2),
             self::skin('COS_WEAR_BODY_EXPLORER', 'Explorer', 'explorer', 3),
-            self::skin('COS_WEAR_BODY_NIGHT_OWL', 'Night Owl', 'night_owl', 4),
+            self::skin('COS_WEAR_BODY_NIGHT_OWL', 'Night Owl', 'night_owl', 4, premiumOnly: true),
             [
                 'code' => 'COS_WEAR_HAIR_DEFAULT',
                 'name' => 'Campus Hair (default)',
@@ -173,11 +173,13 @@ class ShopSeeder extends Seeder
                 'stock_remaining' => null,
                 'sort_order' => 40,
             ],
-            // paid skins (one per account); the rarest also sells for premium currency
+            // paid skins (one per account); premium-only skins are never sold for coins
             self::coins('COS_WEAR_BODY_STREET_RUNNER', 400, 50, unique: true),
             self::coins('COS_WEAR_BODY_SCHOLAR', 600, 52, unique: true),
             self::coins('COS_WEAR_BODY_EXPLORER', 800, 54, unique: true),
             array_merge(self::coins('COS_WEAR_BODY_NIGHT_OWL', 1200, 56, unique: true), [
+                'allow_coins' => false,
+                'coins_price' => null,
                 'allow_premium' => true,
                 'premium_price' => 120,
             ]),
@@ -232,7 +234,7 @@ class ShopSeeder extends Seeder
     }
 
     /** @return array<string, mixed> */
-    private static function skin(string $code, string $name, string $assetKey, int $rarity, int $maxStack = 1): array
+    private static function skin(string $code, string $name, string $assetKey, int $rarity, int $maxStack = 1, bool $premiumOnly = false): array
     {
         return [
             'code' => $code,
@@ -240,7 +242,7 @@ class ShopSeeder extends Seeder
             'kind' => 'cosmetic',
             'rarity' => $rarity,
             'tradable' => false,
-            'premium_only' => false,
+            'premium_only' => $premiumOnly,
             'bind' => 'bound',
             'max_stack' => $maxStack,
             'cosmetic_slot' => 'body',

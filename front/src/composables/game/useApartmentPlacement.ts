@@ -947,26 +947,27 @@ export function useApartmentPlacement(ctx: ApartmentPlacementInit) {
     startPreviewExisting(objectId, mesh)
   }
 
-  function onPointerDown(e: MouseEvent): void {
-    if (ctx.currentRoomLabel.value !== 'apartment' || !ctx.canEditApartment.value || !ctx.pointerLocked.value) return
-    if (ctx.getApartmentInventoryOpen()) return
+  /** Returns true when the click was used for placement (so it must not also open a door). */
+  function onPointerDown(e: MouseEvent): boolean {
+    if (ctx.currentRoomLabel.value !== 'apartment' || !ctx.canEditApartment.value || !ctx.pointerLocked.value) return false
+    if (ctx.getApartmentInventoryOpen()) return false
     if (e.button === 2) {
       e.preventDefault()
       cancelPreview()
-      return
+      return true
     }
-    if (e.button !== 0) return
+    if (e.button !== 0) return false
     const st = currentState.value
     if (st.kind !== 'idle') {
       tryCommitPreview()
-      return
+      return true
     }
     const cam = ctx.getCamera()
-    if (!cam) return
+    if (!cam) return false
     const hits = raycastPlacementTargets(cam)
-    if (hits.length === 0) return
+    if (hits.length === 0) return false
     const topHit = hits[0]
-    if (!topHit) return
+    if (!topHit) return false
     let o: THREE.Object3D | null = topHit.object
     while (o) {
       const idUnknown = o.userData.apartmentObjectId
@@ -975,10 +976,11 @@ export function useApartmentPlacement(ctx: ApartmentPlacementInit) {
         if (mesh) {
           tryPickIdle(idUnknown, mesh)
         }
-        return
+        return true
       }
       o = o.parent
     }
+    return false
   }
 
   function dispose(): void {

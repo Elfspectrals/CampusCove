@@ -6,6 +6,12 @@
 export const APARTMENT_SPAWN = { x: 0, y: 1.6, z: 3.7 }
 
 /**
+ * Networked positions are the camera (eye) position; avatar models have their feet at y = 0,
+ * so remote avatars are placed EYE_HEIGHT below the received y.
+ */
+export const EYE_HEIGHT = 1.6
+
+/**
  * /game town spawn — on the plaza, facing the town hall (assets/town/town.layout.json "spawn").
  * Must match socket CITY_SPAWN / CITY_APARTMENT_EXIT.
  */

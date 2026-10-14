@@ -201,6 +201,36 @@ class AdminShopApiTest extends TestCase
             ->assertJsonValidationErrors(['prices']);
     }
 
+    public function test_admin_cannot_give_a_coins_price_to_a_premium_only_item(): void
+    {
+        $token = $this->registerToken(fn (int $id) => $this->setAdminFlag($id));
+        $headers = ['Authorization' => 'Bearer '.$token];
+
+        $this->postJson('/api/admin/shop/items', [
+            'code' => 'premium_only_skin',
+            'name' => 'Premium Only Skin',
+            'kind' => 'cosmetic',
+            'premium_only' => true,
+            'prices' => ['coins' => 500, 'premium' => 50],
+        ], $headers)->assertStatus(422)->assertJsonValidationErrors(['prices.coins']);
+
+        $create = $this->postJson('/api/admin/shop/items', [
+            'code' => 'premium_only_skin',
+            'name' => 'Premium Only Skin',
+            'kind' => 'cosmetic',
+            'premium_only' => true,
+            'prices' => ['premium' => 50],
+        ], $headers);
+        $create->assertCreated();
+        $id = $create->json('item.shop_catalog_item_id');
+
+        $this->patchJson('/api/admin/shop/items/'.$id, [
+            'prices' => ['coins' => 500, 'premium' => 50],
+        ], $headers)->assertStatus(422)->assertJsonValidationErrors(['prices.coins']);
+
+        $this->assertDatabaseHas('shop_catalog_items', ['shop_catalog_item_id' => $id, 'allow_coins' => false]);
+    }
+
     public function test_admin_can_patch_catalog_and_item_fields(): void
     {
         $token = $this->registerToken(fn (int $id) => $this->setAdminFlag($id));

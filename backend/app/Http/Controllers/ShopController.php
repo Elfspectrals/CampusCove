@@ -8,6 +8,7 @@ use App\Http\Resources\ShopPurchaseResource;
 use App\Models\Account;
 use App\Models\ShopCatalogItem;
 use App\Services\ShopPurchaseService;
+use App\Services\ReferralService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -41,7 +42,7 @@ class ShopController extends Controller
         ]);
     }
 
-    public function purchase(Request $request, ShopPurchaseService $shopPurchaseService): JsonResponse
+    public function purchase(Request $request, ShopPurchaseService $shopPurchaseService, ReferralService $referrals): JsonResponse
     {
         $validated = $request->validate([
             'shop_item_public_id' => 'required_without:shop_catalog_item_id|uuid',
@@ -79,6 +80,10 @@ class ShopController extends Controller
 
         $purchase = $result->purchase;
         $purchase->load(['shopCatalogItem.itemDef']);
+
+        if ($purchase->currency === 'coins') {
+            $referrals->checkQualification((int) $account->getAuthIdentifier());
+        }
 
         return response()->json([
             'purchase' => array_merge(
