@@ -15,25 +15,19 @@ defineProps<{
   >
     <div class="flex flex-col items-center">
       <div class="relative flex h-14 w-14 items-center justify-center">
+        <div class="absolute inset-0 animate-ping rounded-2xl border-2 border-sun/70 opacity-60" />
         <div
-          class="absolute inset-0 animate-ping rounded-full border-2 border-campus-accent/70 opacity-60"
-        />
-        <div
-          class="relative flex h-12 w-12 items-center justify-center rounded-full border-2 border-campus-accent bg-black/65 shadow-[0_0_14px_rgba(233,69,96,0.55)] backdrop-blur-sm"
+          class="relative grid h-12 w-12 place-items-center rounded-2xl border-2 border-ink-950 bg-sun font-display text-xl leading-none text-ink-950"
+          style="box-shadow: inset 0 2px 0 rgb(255 255 255 / 0.5), inset 0 -3px 0 rgb(var(--cc-sun-edge)), 0 4px 0 rgb(var(--cc-ink-950)), 0 0 18px rgb(var(--cc-sun) / 0.6)"
         >
-          <span class="text-base font-bold leading-none text-white">{{ keyLabel }}</span>
+          {{ keyLabel }}
         </div>
       </div>
       <div class="mt-1.5 flex flex-col items-center gap-0.5">
-        <div
-          class="rounded bg-black/65 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-white/95"
-        >
+        <div class="cc-hud px-2.5 py-0.5 font-display text-xs uppercase tracking-wider">
           {{ actionLabel }}
         </div>
-        <div
-          v-if="detailLabel"
-          class="max-w-[10rem] rounded bg-black/55 px-2 py-0.5 text-center text-[9px] font-normal normal-case tracking-normal text-white/80"
-        >
+        <div v-if="detailLabel" class="max-w-[11rem] rounded-md bg-ink-950/70 px-2 py-0.5 text-center text-[10px] font-semibold text-mist">
           {{ detailLabel }}
         </div>
       </div>

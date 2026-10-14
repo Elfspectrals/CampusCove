@@ -16,8 +16,8 @@ export function statusLabel(row: AdminShopCatalogRow): string {
 }
 
 export function statusClass(row: AdminShopCatalogRow): string {
-  if (row.deleted_at) return 'bg-slate-300 text-slate-800'
-  if (!row.is_active) return 'bg-amber-100 text-amber-900'
-  if (!row.is_published) return 'bg-violet-100 text-violet-900'
-  return 'bg-emerald-100 text-emerald-900'
+  if (row.deleted_at) return 'opacity-60'
+  if (!row.is_active) return 'cc-chip-sun'
+  if (!row.is_published) return 'cc-chip-grape'
+  return 'cc-chip-mint'
 }

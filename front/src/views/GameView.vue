@@ -17,6 +17,7 @@ import GameDoorHints from '../components/game/GameDoorHints.vue'
 import GameHudToolbar from '../components/game/GameHudToolbar.vue'
 import GameInteractionPrompt from '../components/game/GameInteractionPrompt.vue'
 import GamePlacementHud from '../components/game/GamePlacementHud.vue'
+import UiIcon from '../components/ui/UiIcon.vue'
 import GamePlayerHotbar from '../components/game/GamePlayerHotbar.vue'
 import GamePlayerInventoryPanel from '../components/game/GamePlayerInventoryPanel.vue'
 import GamePointerLockOverlay from '../components/game/GamePointerLockOverlay.vue'
@@ -708,10 +709,10 @@ onUnmounted(() => {
 })
 
 const crosshairClass = computed(() => {
-  if (!placementPreviewActive.value) return 'border-white/90 bg-white/25'
-  if (apartmentPlacement.crosshairTint.value === 'invalid') return 'border-rose-400/80 bg-rose-500/35'
-  if (apartmentPlacement.crosshairTint.value === 'valid') return 'border-emerald-400/80 bg-emerald-400/30'
-  return 'border-white/90 bg-white/25'
+  if (!placementPreviewActive.value) return 'border-white/90 bg-white/30 shadow-[0_0_0_2px_rgb(0_0_0/0.35)]'
+  if (apartmentPlacement.crosshairTint.value === 'invalid') return 'border-coral bg-coral/40 shadow-[0_0_10px_rgb(var(--cc-coral))]'
+  if (apartmentPlacement.crosshairTint.value === 'valid') return 'border-mint bg-mint/40 shadow-[0_0_10px_rgb(var(--cc-mint))]'
+  return 'border-white/90 bg-white/30 shadow-[0_0_0_2px_rgb(0_0_0/0.35)]'
 })
 </script>
 
@@ -726,7 +727,7 @@ const crosshairClass = computed(() => {
       @contextmenu.prevent
     />
     <div
-      class="pointer-events-none absolute left-1/2 top-1/2 z-10 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full border transition-colors duration-150"
+      class="pointer-events-none absolute left-1/2 top-1/2 z-10 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 transition-colors duration-150"
       :class="crosshairClass"
     />
     <GameRoomMessageBanner v-if="roomMessage" :message="roomMessage" />
@@ -738,11 +739,11 @@ const crosshairClass = computed(() => {
       <button
         v-if="!pointerLocked"
         type="button"
-        class="rounded-md border border-white/25 bg-black/45 px-2 py-1 text-xs text-white/90 hover:border-campus-accent hover:text-campus-accent"
+        class="cc-hud inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-extrabold text-fog transition hover:border-sun/70 hover:text-sun"
         @click.stop="onToggleGraphicsQuality"
         @mousedown.stop
       >
-        Graphics: {{ graphicsQualityLabel }}
+        <UiIcon name="monitor" :size="14" /> {{ graphicsQualityLabel }}
       </button>
     </GameHudToolbar>
     <GameInteractionPrompt
@@ -804,18 +805,18 @@ const crosshairClass = computed(() => {
       @request-pointer-lock="requestPointerLock"
       @logout="logout"
     />
-    <div v-show="pointerLocked" class="absolute right-3 top-3">
+    <div v-show="pointerLocked" class="absolute right-3 top-3 z-10">
       <button
         type="button"
-        class="rounded-md border border-white/30 bg-transparent px-3 py-1.5 text-xs text-white/90 hover:border-campus-accent hover:text-campus-accent"
+        class="cc-hud inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-extrabold text-fog transition hover:border-coral/70 hover:text-coral"
         @click="logout"
       >
-        Logout
+        <UiIcon name="logout" :size="14" /> Log out
       </button>
     </div>
     <p
       v-if="currentRoomLabel === 'apartment' && inventoryOpen && placementPreviewActive"
-      class="pointer-events-none absolute bottom-24 left-3 z-10 max-w-md text-[10px] leading-snug text-white/70 md:left-[22rem]"
+      class="cc-hud pointer-events-none absolute bottom-24 left-3 z-[31] max-w-md px-3 py-1.5 text-[11px] font-bold leading-snug text-mist"
     >
       R = rotate · Shift+R = reverse · LMB = place / pick · RMB = cancel · Esc / E = cancel
     </p>

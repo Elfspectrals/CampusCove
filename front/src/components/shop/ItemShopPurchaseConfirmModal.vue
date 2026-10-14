@@ -2,6 +2,8 @@
 import { computed } from 'vue'
 import type { ShopCurrency, ShopItem, ShopItemCurrencyOption } from '../../api/itemShop'
 import { currencyLabel } from '../../utils/itemShopPresentation'
+import UiIcon from '../ui/UiIcon.vue'
+import UiCurrency from '../ui/UiCurrency.vue'
 
 const props = defineProps<{
   item: ShopItem
@@ -23,63 +25,71 @@ const confirmOptions = computed(() => props.item.options ?? [])
 
 <template>
   <div
-    class="fixed inset-0 z-[100] flex items-end justify-center bg-black/50 p-4 sm:items-center"
+    class="cc-backdrop"
     role="dialog"
     aria-modal="true"
     aria-labelledby="purchase-confirm-title"
     @click.self="emit('close')"
   >
-    <div class="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 text-slate-900 shadow-xl">
-      <h2 id="purchase-confirm-title" class="m-0 text-lg font-bold text-slate-900">Confirm purchase</h2>
-      <p class="mt-1 text-sm text-slate-600">{{ item.name }}</p>
+    <div class="cc-modal max-w-md">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <p class="cc-eyebrow">Confirm purchase</p>
+          <h2 id="purchase-confirm-title" class="cc-display m-0 mt-1 text-3xl leading-tight">{{ item.name }}</h2>
+        </div>
+        <button type="button" class="cc-btn cc-btn-ghost cc-btn-sm cc-btn-icon" aria-label="Close" @click="emit('close')">
+          <UiIcon name="x" :size="16" />
+        </button>
+      </div>
 
-      <div class="mt-4">
-        <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Choose currency</p>
+      <div class="mt-5">
+        <p class="cc-label">Pay with</p>
         <div class="grid gap-2 sm:grid-cols-2">
           <label
             v-for="option in confirmOptions"
             :key="`confirm-option-${option.shop_catalog_item_id}`"
-            class="flex cursor-pointer items-center justify-between rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            :class="[
+              'flex cursor-pointer items-center justify-between gap-2 rounded-xl border-2 px-3 py-3 transition',
+              confirmCurrency === option.currency
+                ? option.currency === 'coins' ? 'border-sun bg-sun/10' : 'border-grape bg-grape/10'
+                : 'border-ink-600 bg-ink-950/50 hover:border-ink-500',
+            ]"
           >
-            <span class="flex items-center gap-2">
-              <input v-model="confirmCurrency" :value="option.currency" type="radio" class="h-4 w-4 border-slate-300 text-purple-600 focus:ring-purple-500" />
-              <span>{{ currencyLabel(option.currency) }}</span>
+            <span class="flex items-center gap-2 text-sm font-extrabold">
+              <input v-model="confirmCurrency" :value="option.currency" type="radio" class="cc-check" />
+              {{ currencyLabel(option.currency) }}
             </span>
-            <span class="font-semibold text-slate-900">{{ option.price.toLocaleString() }}</span>
+            <UiCurrency :currency="option.currency" :amount="option.price" :class="option.currency === 'coins' ? 'text-sun' : 'text-grape'" />
           </label>
         </div>
       </div>
 
-      <dl class="mt-4 space-y-2 text-sm">
+      <dl class="mt-5 space-y-2 rounded-xl bg-ink-950/50 p-4 text-sm font-bold">
         <div class="flex justify-between gap-4">
-          <dt class="text-slate-500">Current balance</dt>
-          <dd class="font-semibold text-slate-900">{{ confirmCurrent === null ? '—' : confirmCurrent.toLocaleString() }}</dd>
+          <dt class="text-mist">Current balance</dt>
+          <dd class="m-0">{{ confirmCurrent === null ? '—' : confirmCurrent.toLocaleString() }}</dd>
         </div>
         <div class="flex justify-between gap-4">
-          <dt class="text-slate-500">Item cost</dt>
-          <dd class="font-semibold text-slate-900">{{ confirmOption ? confirmOption.price.toLocaleString() : '—' }}</dd>
+          <dt class="text-mist">Item cost</dt>
+          <dd class="m-0 text-coral">{{ confirmOption ? `−${confirmOption.price.toLocaleString()}` : '—' }}</dd>
         </div>
-        <div class="flex justify-between gap-4 border-t border-slate-200 pt-2">
-          <dt class="text-slate-500">Balance after purchase</dt>
-          <dd class="font-semibold text-slate-900">{{ confirmAfter === null ? '—' : confirmAfter.toLocaleString() }}</dd>
+        <div class="flex justify-between gap-4 border-t-2 border-ink-700 pt-2">
+          <dt class="text-mist">After purchase</dt>
+          <dd :class="['cc-display m-0 text-lg', confirmAfter !== null && confirmAfter < 0 ? 'text-coral' : 'text-mint']">
+            {{ confirmAfter === null ? '—' : confirmAfter.toLocaleString() }}
+          </dd>
         </div>
       </dl>
 
-      <div class="mt-6 flex flex-wrap justify-end gap-2">
+      <div class="mt-6 grid grid-cols-2 gap-3">
+        <button type="button" class="cc-btn cc-btn-ghost" @click="emit('close')">Cancel</button>
         <button
           type="button"
-          class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-          @click="emit('close')"
-        >
-          Cancel
-        </button>
-        <button
-          type="button"
-          class="rounded-lg bg-purple-600 px-4 py-2 text-sm font-bold text-white hover:bg-purple-500 disabled:cursor-not-allowed disabled:opacity-60"
+          class="cc-btn cc-btn-sun"
           :disabled="purchasingId !== null || !confirmOption"
           @click="emit('confirm')"
         >
-          {{ purchasingId === confirmOption?.shop_catalog_item_id ? 'Processing…' : 'Confirm purchase' }}
+          {{ purchasingId === confirmOption?.shop_catalog_item_id ? 'Processing…' : 'Confirm' }}
         </button>
       </div>
     </div>

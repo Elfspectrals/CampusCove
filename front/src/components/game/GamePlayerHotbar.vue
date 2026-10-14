@@ -40,16 +40,14 @@ function onDragStartInner(index: number, rawCode: string, itemByCode: Record<str
 
 <template>
   <div
-    class="pointer-events-auto absolute bottom-4 left-1/2 z-20 flex max-w-[95vw] -translate-x-1/2 gap-1 rounded-md border border-white/25 bg-black/55 p-1 backdrop-blur-sm"
+    class="cc-hud pointer-events-auto absolute bottom-4 left-1/2 z-20 flex max-w-[95vw] -translate-x-1/2 gap-1.5 overflow-x-auto p-1.5"
   >
     <div
       v-for="(rawCode, index) in slots.slice(0, 9)"
       :key="'hb-' + index"
       role="presentation"
-      class="relative h-14 w-14 shrink-0 select-none rounded-md border transition-colors"
-      :class="
-        selectedHotbarIndex === index ? 'border-campus-accent ring-2 ring-campus-accent/60' : 'border-white/20'
-      "
+      class="cc-slot h-14 w-14 shrink-0 select-none"
+      :class="selectedHotbarIndex === index ? 'cc-slot-active -translate-y-1' : ''"
       @pointerdown="emit('pointerDown', index, $event)"
       @pointerup="emit('pointerUp', index, $event)"
       @dragover="emit('dragOver', index, $event)"
@@ -58,7 +56,7 @@ function onDragStartInner(index: number, rawCode: string, itemByCode: Record<str
       @contextmenu.prevent="emit('clearSlot', index)"
     >
       <div
-        class="relative flex h-full w-full cursor-pointer items-stretch rounded-md outline-none ring-0 focus:outline-none"
+        class="relative flex h-full w-full cursor-pointer items-stretch rounded-[10px] outline-none ring-0 focus:outline-none"
         :draggable="!!effectiveCode(rawCode, itemByCode)"
         tabindex="-1"
         @click.stop="emit('selectSlot', index)"
@@ -66,25 +64,25 @@ function onDragStartInner(index: number, rawCode: string, itemByCode: Record<str
       >
         <template v-if="effectiveCode(rawCode, itemByCode)">
           <span
-            class="pointer-events-none absolute left-0.5 top-0.5 z-[1] rounded bg-black/55 px-[3px] text-[10px] text-white/70"
+            class="pointer-events-none absolute left-1 top-0.5 z-[1] font-display text-[11px] text-fog/80 [text-shadow:0_1px_0_rgb(0_0_0)]"
             >{{ index + 1 }}</span
           >
           <img
             v-if="itemByCode[effectiveCode(rawCode, itemByCode)]?.preview_image"
             :src="itemByCode[effectiveCode(rawCode, itemByCode)]?.preview_image ?? ''"
             :alt="itemByCode[effectiveCode(rawCode, itemByCode)]?.name ?? ''"
-            class="pointer-events-none h-full w-full rounded-md object-cover"
+            class="pointer-events-none h-full w-full rounded-[10px] object-cover"
             draggable="false"
           />
           <span
             v-if="quantityFor(effectiveCode(rawCode, itemByCode), itemByCode) > 1"
-            class="pointer-events-none absolute bottom-0.5 right-1 text-[11px] font-bold text-white"
+            class="pointer-events-none absolute bottom-0.5 right-1 font-display text-xs text-fog [text-shadow:0_1px_0_rgb(0_0_0),0_0_4px_rgb(0_0_0)]"
           >
             ×{{ quantityFor(effectiveCode(rawCode, itemByCode), itemByCode) }}
           </span>
         </template>
         <template v-else>
-          <span class="pointer-events-none absolute left-0.5 top-0.5 rounded bg-black/35 px-[3px] text-[10px] text-white/70">{{
+          <span class="pointer-events-none absolute left-1 top-0.5 font-display text-[11px] text-mist/60">{{
             index + 1
           }}</span>
         </template>

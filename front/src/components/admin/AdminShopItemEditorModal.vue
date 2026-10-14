@@ -24,9 +24,9 @@ function closePanel(): void {
 </script>
 
 <template>
-  <div v-if="open" class="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 sm:items-center" @click.self="closePanel">
-    <div class="max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-xl border border-slate-200 bg-white p-5 shadow-xl">
-      <h2 class="m-0 text-lg font-bold text-slate-900">
+  <div v-if="open" class="cc-backdrop" @click.self="closePanel">
+    <div class="cc-modal max-w-3xl">
+      <h2 class="cc-display m-0 text-2xl text-fog">
         {{
           editingId === null
             ? isSkinSection
@@ -37,9 +37,9 @@ function closePanel(): void {
               : 'Edit shop item'
         }}
       </h2>
-      <p class="mt-2 text-sm text-slate-600">
+      <p class="mt-2 text-sm text-mist">
         <template v-if="isSkinSection">
-          Skins are <span class="font-medium text-slate-800">permanent, account-wide</span> cosmetics—unlocked for the whole account when purchased.
+          Skins are <span class="font-bold text-fog">permanent, account-wide</span> cosmetics—unlocked for the whole account when purchased.
         </template>
         <template v-else>
           Shop items are in-game assets (furniture/apartment assets and other non-cosmetics).
@@ -47,36 +47,36 @@ function closePanel(): void {
       </p>
       <p
         v-if="isSkinSection && editingId !== null && formState.kind !== 'cosmetic'"
-        class="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950"
+        class="mt-2 cc-alert cc-alert-warn font-semibold"
       >
         This row is <span class="font-semibold">{{ formState.kind }}</span>, not a cosmetic. Save keeps that item type; new skins created here are always cosmetics.
       </p>
       <form class="mt-4 grid gap-3 md:grid-cols-2" @submit.prevent="emit('submit')">
         <div>
-          <label class="mb-1 block text-sm font-medium text-slate-700">Code</label>
-          <input v-model="formState.code" type="text" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" required />
+          <label class="cc-label">Code</label>
+          <input v-model="formState.code" type="text" class="cc-input cc-input-sm w-full" required />
         </div>
         <div>
-          <label class="mb-1 block text-sm font-medium text-slate-700">Name</label>
-          <input v-model="formState.name" type="text" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" required />
+          <label class="cc-label">Name</label>
+          <input v-model="formState.name" type="text" class="cc-input cc-input-sm w-full" required />
         </div>
         <div>
-          <label class="mb-1 block text-sm font-medium text-slate-700">Rarity</label>
-          <select v-model.number="formState.rarity" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+          <label class="cc-label">Rarity</label>
+          <select v-model.number="formState.rarity" class="cc-input cc-input-sm w-full">
             <option v-for="opt in rarityOptions" :key="`rarity-${opt.value}`" :value="opt.value">{{ opt.label }} ({{ opt.value }})</option>
           </select>
         </div>
         <div v-if="!isSkinSection">
-          <label class="mb-1 block text-sm font-medium text-slate-700">Kind</label>
-          <select v-model="formState.kind" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+          <label class="cc-label">Kind</label>
+          <select v-model="formState.kind" class="cc-input cc-input-sm w-full">
             <option v-for="kind in ITEM_KIND_OPTIONS" :key="`kind-${kind}`" :value="kind">
               {{ kind }}
             </option>
           </select>
         </div>
         <div v-if="isSkinSection">
-          <label class="mb-1 block text-sm font-medium text-slate-700">Cosmetic slot</label>
-          <select v-model="formState.cosmetic_slot" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+          <label class="cc-label">Cosmetic slot</label>
+          <select v-model="formState.cosmetic_slot" class="cc-input cc-input-sm w-full">
             <option value="body">body</option>
             <option value="hair">hair</option>
             <option value="top">top</option>
@@ -86,79 +86,79 @@ function closePanel(): void {
           </select>
         </div>
         <div>
-          <label class="mb-1 block text-sm font-medium text-slate-700">Coins price</label>
-          <input v-model.number="formState.coins_price" type="number" min="1" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+          <label class="cc-label">Coins price</label>
+          <input v-model.number="formState.coins_price" type="number" min="1" class="cc-input cc-input-sm w-full" />
         </div>
         <div>
-          <label class="mb-1 block text-sm font-medium text-slate-700">Premium price</label>
-          <input v-model.number="formState.premium_price" type="number" min="1" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+          <label class="cc-label">Premium price</label>
+          <input v-model.number="formState.premium_price" type="number" min="1" class="cc-input cc-input-sm w-full" />
         </div>
         <div>
-          <label class="mb-1 block text-sm font-medium text-slate-700">Preview image URL</label>
+          <label class="cc-label">Preview image URL</label>
           <input
             v-model="formState.preview_image"
             type="url"
-            class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            class="cc-input cc-input-sm w-full"
             placeholder="/assets/skins/example-preview.png"
           />
         </div>
         <div>
-          <label class="mb-1 block text-sm font-medium text-slate-700">Model GLB URL</label>
+          <label class="cc-label">Model GLB URL</label>
           <input
             v-model="formState.model_glb"
             type="url"
-            class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            class="cc-input cc-input-sm w-full"
             placeholder="/assets/skins/example.glb"
           />
         </div>
         <div>
-          <label class="mb-1 block text-sm font-medium text-slate-700">Preview image file</label>
-          <input type="file" accept="image/png,image/jpeg,image/webp" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" @change="emit('previewFileChange', $event)" />
+          <label class="cc-label">Preview image file</label>
+          <input type="file" accept="image/png,image/jpeg,image/webp" class="cc-input cc-input-sm w-full file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-ink-600 file:px-3 file:py-1 file:font-bold file:text-fog" @change="emit('previewFileChange', $event)" />
         </div>
         <div>
-          <label class="mb-1 block text-sm font-medium text-slate-700">GLB file</label>
-          <input type="file" accept=".glb,model/gltf-binary" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" @change="emit('glbFileChange', $event)" />
+          <label class="cc-label">GLB file</label>
+          <input type="file" accept=".glb,model/gltf-binary" class="cc-input cc-input-sm w-full file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-ink-600 file:px-3 file:py-1 file:font-bold file:text-fog" @change="emit('glbFileChange', $event)" />
         </div>
         <div>
-          <label class="mb-1 block text-sm font-medium text-slate-700">Stock remaining</label>
-          <input v-model.number="formState.stock_remaining" type="number" min="0" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+          <label class="cc-label">Stock remaining</label>
+          <input v-model.number="formState.stock_remaining" type="number" min="0" class="cc-input cc-input-sm w-full" />
         </div>
         <div v-if="!isSkinSection">
-          <label class="mb-1 block text-sm font-medium text-slate-700">Max stack</label>
-          <input v-model.number="formState.max_stack" type="number" min="1" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+          <label class="cc-label">Max stack</label>
+          <input v-model.number="formState.max_stack" type="number" min="1" class="cc-input cc-input-sm w-full" />
         </div>
         <div v-if="!isSkinSection">
-          <label class="mb-1 block text-sm font-medium text-slate-700">Bind mode</label>
-          <select v-model="formState.bind" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+          <label class="cc-label">Bind mode</label>
+          <select v-model="formState.bind" class="cc-input cc-input-sm w-full">
             <option value="none">none</option>
             <option value="bind_on_equip">bind_on_equip</option>
             <option value="bind_on_place">bind_on_place</option>
             <option value="bound">bound</option>
           </select>
         </div>
-        <div class="flex flex-wrap items-center gap-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 md:col-span-2">
-          <label class="flex items-center gap-2 text-sm text-slate-800">
-            <input v-model="formState.tradable" type="checkbox" class="h-4 w-4 rounded border-slate-300" />Tradable
+        <div class="cc-panel-flat flex flex-wrap items-center gap-4 px-3 py-2.5 md:col-span-2">
+          <label class="flex cursor-pointer items-center gap-2 text-sm font-bold text-fog">
+            <input v-model="formState.tradable" type="checkbox" class="cc-check" />Tradable
           </label>
-          <label class="flex items-center gap-2 text-sm text-slate-800">
-            <input v-model="formState.premium_only" type="checkbox" class="h-4 w-4 rounded border-slate-300" />Premium only
+          <label class="flex cursor-pointer items-center gap-2 text-sm font-bold text-fog">
+            <input v-model="formState.premium_only" type="checkbox" class="cc-check" />Premium only
           </label>
-          <label class="flex items-center gap-2 text-sm text-slate-800">
-            <input v-model="formState.is_active" type="checkbox" class="h-4 w-4 rounded border-slate-300" />Active
+          <label class="flex cursor-pointer items-center gap-2 text-sm font-bold text-fog">
+            <input v-model="formState.is_active" type="checkbox" class="cc-check" />Active
           </label>
-          <label class="flex items-center gap-2 text-sm text-slate-800">
-            <input v-model="formState.is_published" type="checkbox" class="h-4 w-4 rounded border-slate-300" />Published
+          <label class="flex cursor-pointer items-center gap-2 text-sm font-bold text-fog">
+            <input v-model="formState.is_published" type="checkbox" class="cc-check" />Published
           </label>
-          <label class="flex items-center gap-2 text-sm text-slate-800">
-            <input v-model="formState.is_unique_per_account" type="checkbox" class="h-4 w-4 rounded border-slate-300" />Unique per account
+          <label class="flex cursor-pointer items-center gap-2 text-sm font-bold text-fog">
+            <input v-model="formState.is_unique_per_account" type="checkbox" class="cc-check" />Unique per account
           </label>
         </div>
-        <p v-if="formError" class="m-0 text-sm text-red-600 md:col-span-2">{{ formError }}</p>
+        <p v-if="formError" class="m-0 text-sm text-coral md:col-span-2">{{ formError }}</p>
         <div class="flex justify-end gap-2 md:col-span-2">
-          <button type="button" class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800" :disabled="formSubmitting" @click="closePanel">
+          <button type="button" class="cc-btn cc-btn-sm cc-btn-ghost" :disabled="formSubmitting" @click="closePanel">
             Cancel
           </button>
-          <button type="submit" class="rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-500 disabled:opacity-60" :disabled="formSubmitting">
+          <button type="submit" class="cc-btn cc-btn-sm cc-btn-sun" :disabled="formSubmitting">
             {{
               formSubmitting ? 'Saving...' : editingId === null ? (isSkinSection ? 'Create skin' : 'Create item') : 'Save changes'
             }}

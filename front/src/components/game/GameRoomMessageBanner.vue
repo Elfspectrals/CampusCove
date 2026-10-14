@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import UiIcon from '../ui/UiIcon.vue'
+
 defineProps<{
   message: string
 }>()
@@ -6,9 +8,10 @@ defineProps<{
 
 <template>
   <div
-    class="pointer-events-auto absolute left-1/2 top-4 z-10 max-w-md -translate-x-1/2 rounded-lg border border-amber-400/50 bg-amber-950/90 px-4 py-2 text-center text-sm text-amber-100"
+    class="cc-hud pointer-events-auto absolute left-1/2 top-4 z-10 flex max-w-md -translate-x-1/2 animate-cc-pop items-center gap-2 border-sun/60 px-4 py-2 text-sm font-bold text-sun"
     role="status"
   >
+    <UiIcon name="info" :size="18" />
     {{ message }}
   </div>
 </template>

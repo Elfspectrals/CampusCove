@@ -43,9 +43,9 @@ const cardAriaLabel = computed<string>(() => {
 })
 
 const dotToneClass = computed<string>(() => {
-  if (props.equipped) return 'bg-[#a855f7]'
-  if (props.isNew) return 'bg-[#fbbf24]'
-  return 'bg-[#3b82f6]'
+  if (props.equipped) return 'bg-grape text-white'
+  if (props.isNew) return 'bg-sun text-ink-950'
+  return 'bg-pool text-ink-950'
 })
 
 function handleImageError(): void {
@@ -57,45 +57,45 @@ function handleImageError(): void {
 
 <template>
   <article
-    class="group relative overflow-hidden rounded-xl border bg-[#050b18] p-0 text-left shadow-[0_12px_24px_rgba(2,6,23,0.65)] transition duration-150"
-    :class="
-      props.selected
-        ? 'border-[#00d4ff] shadow-[0_0_0_1px_rgba(0,212,255,0.6),0_0_20px_rgba(0,212,255,0.38)]'
-        : 'border-[#243348] hover:border-[#3c5f8b]'
-    "
+    :class="[
+      'cc-slot group aspect-square p-0 text-left',
+      props.selected ? 'cc-slot-active' : '',
+      props.equipped && !props.selected ? 'border-grape' : '',
+    ]"
   >
     <button
       type="button"
-      class="relative block w-full text-left"
+      class="relative block h-full w-full text-left"
       :disabled="props.busy || props.isEmpty"
       :aria-label="cardAriaLabel"
+      :aria-pressed="props.selected"
       @click="emit('select')"
     >
-      <div class="relative aspect-square overflow-hidden">
-        <img
-          class="h-full w-full object-cover transition duration-200 group-hover:scale-[1.04]"
-          :class="props.busy ? 'opacity-60' : ''"
-          :src="previewImageSrc"
-          :alt="`${props.item.name} preview`"
-          loading="lazy"
-          @error="handleImageError"
-        />
-        <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-black/15 to-transparent" />
-        <span
-          class="absolute right-2 top-2 h-2.5 w-2.5 rounded-full ring-2 ring-black/35"
-          :class="dotToneClass"
-          :title="props.equipped ? 'Equipped' : props.isNew ? 'New' : 'Owned'"
-        />
-        <span
-          v-if="imageFallbackUsed"
-          class="absolute left-2 top-2 rounded bg-black/65 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.1em] text-slate-100"
-        >
-          Placeholder
-        </span>
-        <p class="absolute inset-x-2 bottom-2 truncate text-[11px] font-black uppercase tracking-[0.08em] text-white">
-          {{ props.item.name }}
-        </p>
-      </div>
+      <img
+        class="h-full w-full object-cover transition duration-200 group-hover:scale-[1.06]"
+        :class="props.busy ? 'opacity-60' : ''"
+        :src="previewImageSrc"
+        :alt="`${props.item.name} preview`"
+        loading="lazy"
+        @error="handleImageError"
+      />
+      <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink-950/90 via-ink-950/10 to-transparent" />
+      <span
+        v-if="props.equipped || props.isNew"
+        class="absolute right-1.5 top-1.5 rounded-md px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider"
+        :class="dotToneClass"
+      >
+        {{ props.equipped ? 'On' : 'New' }}
+      </span>
+      <span
+        v-if="imageFallbackUsed"
+        class="absolute left-1.5 top-1.5 rounded-md bg-ink-950/75 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-mist"
+      >
+        Preview
+      </span>
+      <p class="absolute inset-x-2 bottom-1.5 m-0 truncate font-display text-[13px] tracking-wide text-fog">
+        {{ props.item.name }}
+      </p>
     </button>
   </article>
 </template>

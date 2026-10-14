@@ -7,8 +7,10 @@ defineProps<{
 <template>
   <div
     v-if="!inventoryOpen"
-    class="pointer-events-none absolute bottom-24 left-1/2 z-10 max-w-[min(22rem,calc(100vw-3rem))] -translate-x-1/2 rounded-lg border border-white/30 bg-black/50 px-3 py-1.5 text-center text-[11px] text-white/85"
+    class="cc-hud pointer-events-none absolute bottom-[5.75rem] left-1/2 z-10 flex max-w-[min(26rem,calc(100vw-3rem))] -translate-x-1/2 items-center gap-2 px-3 py-1.5 text-[11px] font-bold text-mist"
   >
-    Press E to open inventory · C to show collision
+    <span class="cc-keycap">E</span> Inventory
+    <span class="mx-1 h-3 w-0.5 bg-white/15" />
+    <span class="cc-keycap">C</span> Collision
   </div>
 </template>

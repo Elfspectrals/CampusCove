@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import * as friendsApi from '../api/friends'
 import type { Friend, PendingFriend } from '../api/friends'
+import UiIcon from '../components/ui/UiIcon.vue'
 
 const friends = ref<Friend[]>([])
 const pending = ref<PendingFriend[]>([])
@@ -118,9 +119,9 @@ function friendInitial(name: string): string {
 }
 
 function statusDotClass(status: string): string {
-  if (status === 'online') return 'bg-green-500'
-  if (status === 'playing') return 'bg-blue-500'
-  return 'bg-gray-500'
+  if (status === 'online') return 'bg-mint'
+  if (status === 'playing') return 'bg-pool'
+  return 'bg-ink-500'
 }
 
 function statusLabel(status: string): string {
@@ -132,197 +133,133 @@ function statusLabel(status: string): string {
 </script>
 
 <template>
-  <div class="mx-auto max-w-6xl">
-      <!-- Add friend: username + handle (same as on HomeView profile) -->
-      <div class="bg-white rounded-2xl p-6 mb-6 shadow-sm">
-        <h2 class="text-lg font-bold text-slate-800 mb-4">Add Friend</h2>
-        <p class="text-sm text-slate-500 mb-4">Ask your friend for their username and handle (the 4-digit number after # on their profile, e.g. <strong>tryme#7559</strong>).</p>
-        <div class="flex flex-wrap gap-3 items-end">
-          <div class="flex-1 min-w-[140px]">
-            <label for="add-username" class="block text-sm font-medium text-slate-700 mb-1">Username</label>
-            <input
-              id="add-username"
-              v-model="addUsername"
-              type="text"
-              placeholder="pseudo"
-              class="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-slate-800 placeholder:text-slate-400 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 focus:outline-none"
-              @keydown.enter="sendFriendRequest"
-            />
-          </div>
-          <div class="w-28">
-            <label for="add-tag" class="block text-sm font-medium text-slate-700 mb-1">Handle</label>
-            <input
-              id="add-tag"
-              v-model="addTag"
-              type="text"
-              inputmode="numeric"
-              placeholder="7559"
-              maxlength="4"
-              class="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-slate-800 placeholder:text-slate-400 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 focus:outline-none"
-              @keydown.enter="sendFriendRequest"
-            />
-          </div>
-          <button
-            type="button"
-            class="rounded-lg bg-gradient-to-r from-[#DA62C4] to-[#A744E3] px-6 py-3 text-white font-semibold hover:opacity-90 disabled:opacity-50 shrink-0"
-            :disabled="addLoading || !addUsername.trim() || !addTag.trim()"
-            @click="sendFriendRequest"
-          >
-            {{ addLoading ? 'Adding...' : 'Add Friend' }}
-          </button>
-        </div>
-        <p v-if="addError" class="m-0 mt-2 text-sm text-red-600">{{ addError }}</p>
+  <div class="mx-auto w-full max-w-5xl">
+    <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <p class="cc-eyebrow">Social</p>
+        <h1 class="cc-title">Friends</h1>
       </div>
-
-      <!-- Tabs: All | Online | Pending -->
-      <div class="flex gap-2 mb-4">
-        <button
-          type="button"
-          :class="[
-            'px-4 py-2 rounded-lg font-medium transition-colors',
-            friendsTab === 'all' ? 'bg-slate-800 text-white' : 'bg-white text-slate-600 hover:bg-slate-50',
-          ]"
-          @click="friendsTab = 'all'"
-        >
-          All ({{ friends.length }})
+      <div class="cc-tabs" role="tablist">
+        <button type="button" role="tab" :aria-selected="friendsTab === 'all'" :class="['cc-tab', friendsTab === 'all' && 'cc-tab-active']" @click="friendsTab = 'all'">
+          All <span class="opacity-70">{{ friends.length }}</span>
         </button>
-        <button
-          type="button"
-          :class="[
-            'px-4 py-2 rounded-lg font-medium transition-colors',
-            friendsTab === 'online' ? 'bg-slate-800 text-white' : 'bg-white text-slate-600 hover:bg-slate-50',
-          ]"
-          @click="friendsTab = 'online'"
-        >
-          Online ({{ onlineCount }})
+        <button type="button" role="tab" :aria-selected="friendsTab === 'online'" :class="['cc-tab', friendsTab === 'online' && 'cc-tab-active']" @click="friendsTab = 'online'">
+          Online <span class="opacity-70">{{ onlineCount }}</span>
         </button>
-        <button
-          type="button"
-          :class="[
-            'px-4 py-2 rounded-lg font-medium transition-colors relative',
-            friendsTab === 'pending' ? 'bg-slate-800 text-white' : 'bg-white text-slate-600 hover:bg-slate-50',
-          ]"
-          @click="friendsTab = 'pending'"
-        >
+        <button type="button" role="tab" :aria-selected="friendsTab === 'pending'" :class="['cc-tab', friendsTab === 'pending' && 'cc-tab-active']" @click="friendsTab = 'pending'">
           Pending
-          <span v-if="incomingPending.length > 0" class="absolute -top-1 -right-1 min-w-[1.25rem] h-5 px-1.5 rounded-full bg-amber-500 text-slate-900 text-xs font-bold flex items-center justify-center">{{ incomingPending.length }}</span>
+          <span v-if="incomingPending.length > 0" class="grid h-5 min-w-5 place-items-center rounded-full bg-coral px-1.5 font-sans text-[11px] font-black text-white">{{ incomingPending.length }}</span>
         </button>
       </div>
+    </div>
 
-      <!-- Content -->
-      <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
-        <!-- Pending tab -->
+    <div class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <!-- list -->
+      <section class="cc-panel min-h-[360px] overflow-hidden">
         <template v-if="friendsTab === 'pending'">
-          <div v-if="friendsLoading" class="p-12 text-center text-slate-500">Loading…</div>
-          <div v-else-if="pending.length === 0" class="p-12 text-center text-slate-500">No pending requests</div>
-          <div v-else class="divide-y divide-slate-100">
+          <div v-if="friendsLoading" class="p-12 text-center font-bold text-mist">Loading…</div>
+          <div v-else-if="pending.length === 0" class="p-12 text-center">
+            <UiIcon name="bell" :size="40" class="mx-auto text-ink-500" />
+            <p class="m-0 mt-3 font-bold text-mist">No pending requests</p>
+          </div>
+          <div v-else>
             <div v-if="incomingPending.length > 0" class="p-4">
-              <h3 class="text-sm font-semibold text-slate-600 uppercase tracking-wide mb-3">Incoming Requests</h3>
-              <div class="space-y-2">
-                <div
-                  v-for="p in incomingPending"
-                  :key="p.account_id"
-                  class="flex items-center gap-4 p-4 rounded-lg bg-slate-50 hover:bg-slate-100"
-                >
-                  <div class="w-12 h-12 rounded-full bg-gradient-to-br from-[#DA62C4] to-[#A744E3] flex items-center justify-center text-white font-bold text-lg shrink-0">
+              <h2 class="cc-eyebrow mb-3 px-1">Incoming requests</h2>
+              <ul class="m-0 list-none space-y-2 p-0">
+                <li v-for="p in incomingPending" :key="p.account_id" class="cc-panel-flat flex flex-wrap items-center gap-4 p-3">
+                  <span class="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-sun to-coral font-display text-xl text-white">
                     {{ friendInitial(p.display_name) }}
+                  </span>
+                  <div class="min-w-0 flex-1">
+                    <p class="m-0 truncate font-extrabold">{{ p.display_name }}</p>
+                    <p class="m-0 text-sm font-semibold text-mist">Wants to be your friend</p>
                   </div>
-                  <div class="flex-1 min-w-0">
-                    <p class="m-0 font-semibold text-slate-800 text-base">{{ p.display_name }}</p>
-                    <p class="m-0 text-sm text-slate-500">Wants to be your friend</p>
+                  <div class="flex gap-2">
+                    <button type="button" class="cc-btn cc-btn-mint cc-btn-sm" @click="acceptFriend(p.account_id)"><UiIcon name="check" :size="16" /> Accept</button>
+                    <button type="button" class="cc-btn cc-btn-ghost cc-btn-sm" @click="declineFriend(p.account_id)">Decline</button>
+                    <button type="button" class="cc-btn cc-btn-coral cc-btn-sm cc-btn-icon" title="Block" aria-label="Block" @click="blockFriend(p.account_id)"><UiIcon name="ban" :size="16" /></button>
                   </div>
-                  <div class="flex gap-2 shrink-0">
-                    <button
-                      type="button"
-                      class="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500"
-                      @click="acceptFriend(p.account_id)"
-                    >
-                      Accept
-                    </button>
-                    <button
-                      type="button"
-                      class="rounded-lg bg-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-300"
-                      @click="declineFriend(p.account_id)"
-                    >
-                      Decline
-                    </button>
-                    <button
-                      type="button"
-                      class="rounded-lg bg-red-100 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-200"
-                      @click="blockFriend(p.account_id)"
-                    >
-                      Block
-                    </button>
-                  </div>
-                </div>
-              </div>
+                </li>
+              </ul>
             </div>
             <div v-if="outgoingPending.length > 0" class="p-4">
-              <h3 class="text-sm font-semibold text-slate-600 uppercase tracking-wide mb-3">Outgoing Requests</h3>
-              <div class="space-y-2">
-                <div
-                  v-for="p in outgoingPending"
-                  :key="p.account_id"
-                  class="flex items-center gap-4 p-4 rounded-lg bg-slate-50 hover:bg-slate-100"
-                >
-                  <div class="w-12 h-12 rounded-full bg-gradient-to-br from-[#DA62C4] to-[#A744E3] flex items-center justify-center text-white font-bold text-lg shrink-0">
+              <h2 class="cc-eyebrow mb-3 px-1">Sent requests</h2>
+              <ul class="m-0 list-none space-y-2 p-0">
+                <li v-for="p in outgoingPending" :key="p.account_id" class="cc-panel-flat flex items-center gap-4 p-3">
+                  <span class="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-ink-700 font-display text-xl text-mist">
                     {{ friendInitial(p.display_name) }}
+                  </span>
+                  <div class="min-w-0 flex-1">
+                    <p class="m-0 truncate font-extrabold">{{ p.display_name }}</p>
+                    <p class="m-0 text-sm font-semibold text-mist">Waiting for reply…</p>
                   </div>
-                  <div class="flex-1 min-w-0">
-                    <p class="m-0 font-semibold text-slate-800 text-base">{{ p.display_name }}</p>
-                    <p class="m-0 text-sm text-slate-500">Pending request</p>
-                  </div>
-                  <button
-                    type="button"
-                    class="rounded-lg bg-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-300 shrink-0"
-                    @click="cancelSentRequest(p.account_id)"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
+                  <button type="button" class="cc-btn cc-btn-ghost cc-btn-sm" @click="cancelSentRequest(p.account_id)">Cancel</button>
+                </li>
+              </ul>
             </div>
           </div>
         </template>
 
-        <!-- All / Online: friend list -->
         <template v-else>
-          <div v-if="friendsLoading" class="p-12 text-center text-slate-500">Loading…</div>
-          <div v-else-if="filteredFriends.length === 0" class="p-12 text-center text-slate-500">
-            {{ friendsTab === 'online' ? 'No friends online' : 'No friends yet. Add some friends to get started!' }}
+          <div v-if="friendsLoading" class="p-12 text-center font-bold text-mist">Loading…</div>
+          <div v-else-if="filteredFriends.length === 0" class="p-12 text-center">
+            <UiIcon name="users" :size="40" class="mx-auto text-ink-500" />
+            <p class="m-0 mt-3 font-bold text-mist">
+              {{ friendsTab === 'online' ? 'No friends online right now' : 'No friends yet. Add someone to get started!' }}
+            </p>
           </div>
-          <div v-else class="divide-y divide-slate-100">
-            <div
-              v-for="f in filteredFriends"
-              :key="f.account_id"
-              class="flex items-center gap-4 p-4 hover:bg-slate-50 group"
-            >
-              <div class="relative shrink-0">
-                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-[#DA62C4] to-[#A744E3] flex items-center justify-center text-white font-bold text-lg">
+          <ul v-else class="m-0 grid list-none gap-2 p-3 sm:grid-cols-2">
+            <li v-for="f in filteredFriends" :key="f.account_id" class="cc-panel-flat group flex items-center gap-3 p-3">
+              <span class="relative shrink-0">
+                <span class="grid h-12 w-12 place-items-center rounded-xl bg-gradient-to-br from-pool to-grape font-display text-xl text-white" :class="f.status === 'offline' ? 'opacity-50 grayscale' : ''">
                   {{ friendInitial(f.display_name) }}
-                </div>
-                <span
-                  :class="['absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white', statusDotClass(f.status)]"
-                  :title="statusLabel(f.status)"
-                />
-              </div>
-              <div class="flex-1 min-w-0">
-                <p class="m-0 font-semibold text-slate-800 text-base">{{ f.display_name }}</p>
-                <p class="m-0 text-sm text-slate-500">{{ statusLabel(f.status) }}</p>
+                </span>
+                <span :class="['absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full border-[3px] border-ink-900', statusDotClass(f.status)]" :title="statusLabel(f.status)" />
+              </span>
+              <div class="min-w-0 flex-1">
+                <p class="m-0 truncate font-extrabold">{{ f.display_name }}</p>
+                <p class="m-0 truncate text-sm font-semibold" :class="f.status === 'playing' ? 'text-pool' : f.status === 'online' ? 'text-mint' : 'text-mist/70'">{{ statusLabel(f.status) }}</p>
               </div>
               <button
                 type="button"
-                class="shrink-0 p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity"
+                class="cc-btn cc-btn-ghost cc-btn-sm cc-btn-icon transition sm:opacity-0 sm:focus-visible:opacity-100 sm:group-hover:opacity-100"
                 title="Remove friend"
+                aria-label="Remove friend"
                 @click="removeFriend(f.account_id)"
               >
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <UiIcon name="x" :size="16" />
               </button>
-            </div>
-          </div>
+            </li>
+          </ul>
         </template>
-      </div>
+      </section>
+
+      <!-- add friend -->
+      <aside class="cc-panel self-start p-5">
+        <span class="mb-3 grid h-12 w-12 place-items-center rounded-xl bg-sun/15 text-sun"><UiIcon name="user-plus" :size="24" /></span>
+        <h2 class="cc-display m-0 text-2xl">Add a friend</h2>
+        
+        <div class="mt-5 flex items-end gap-2">
+          <div class="min-w-0 flex-1">
+            <label for="add-username" class="cc-label">Username</label>
+            <input id="add-username" v-model="addUsername" type="text" placeholder="pseudo" class="cc-input" @keydown.enter="sendFriendRequest" />
+          </div>
+          <span class="pb-3 font-display text-2xl text-mist">#</span>
+          <div class="w-24">
+            <label for="add-tag" class="cc-label">Handle</label>
+            <input id="add-tag" v-model="addTag" type="text" inputmode="numeric" placeholder="7559" maxlength="4" class="cc-input font-mono" @keydown.enter="sendFriendRequest" />
+          </div>
+        </div>
+        <p v-if="addError" class="cc-alert cc-alert-error m-0 mt-3" role="alert"><UiIcon name="alert" :size="18" /> {{ addError }}</p>
+        <button
+          type="button"
+          class="cc-btn cc-btn-sun mt-4 w-full"
+          :disabled="addLoading || !addUsername.trim() || !addTag.trim()"
+          @click="sendFriendRequest"
+        >
+          {{ addLoading ? 'Sending…' : 'Send request' }}
+        </button>
+      </aside>
+    </div>
   </div>
 </template>
