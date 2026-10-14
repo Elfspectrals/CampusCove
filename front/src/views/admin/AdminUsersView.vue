@@ -214,81 +214,81 @@ watch(search, () => {
   <div class="mx-auto flex w-full max-w-7xl flex-col">
     <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <h1 class="m-0 text-2xl font-bold text-slate-900">Admin users</h1>
-        <p class="mt-1 text-sm text-slate-600">Search and manage account status and credentials.</p>
+        <h1 class="cc-display m-0 text-3xl text-fog">Admin users</h1>
+        <p class="mt-1 text-sm text-mist">Search and manage account status and credentials.</p>
       </div>
       <label for="admin-users-search" class="w-full sm:w-80">
-        <span class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">Search</span>
+        <span class="cc-label">Search</span>
         <input
           id="admin-users-search"
           v-model="search"
           type="search"
-          class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+          class="cc-input cc-input-sm w-full"
           placeholder="Username or email"
         />
       </label>
     </div>
 
-    <p v-if="message" class="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">{{ message }}</p>
-    <p v-if="error" class="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900">{{ error }}</p>
+    <p v-if="message" class="mb-4 cc-alert cc-alert-success">{{ message }}</p>
+    <p v-if="error" class="mb-4 cc-alert cc-alert-error">{{ error }}</p>
 
-    <section class="mb-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-      <h2 class="m-0 text-base font-semibold text-slate-900">Create user</h2>
+    <section class="mb-4 cc-panel p-4">
+      <h2 class="cc-display m-0 text-xl text-fog">Create user</h2>
       <form class="mt-3 grid gap-3 md:grid-cols-4" @submit.prevent="submitCreateUser">
-        <input v-model="createUsername" type="text" class="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20" placeholder="Username" />
-        <input v-model="createEmail" type="email" class="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20" placeholder="Email" />
-        <input v-model="createPassword" type="password" minlength="8" class="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20" placeholder="Password (min 8)" />
-        <div class="flex items-center justify-between gap-2 rounded-lg border border-slate-300 px-3 py-2">
-          <label class="flex items-center gap-2 text-sm text-slate-800">
-            <input v-model="createIsAdmin" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-purple-600 focus:ring-purple-500" />
+        <input v-model="createUsername" type="text" class="cc-input cc-input-sm" placeholder="Username" />
+        <input v-model="createEmail" type="email" class="cc-input cc-input-sm" placeholder="Email" />
+        <input v-model="createPassword" type="password" minlength="8" class="cc-input cc-input-sm" placeholder="Password (min 8)" />
+        <div class="cc-panel-flat flex items-center justify-between gap-2 px-3 py-2">
+          <label class="flex cursor-pointer items-center gap-2 text-sm font-bold text-fog">
+            <input v-model="createIsAdmin" type="checkbox" class="cc-check" />
             Admin
           </label>
-          <button type="submit" class="rounded-md bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-purple-500 disabled:opacity-60" :disabled="createSubmitting">
+          <button type="submit" class="cc-btn cc-btn-sm cc-btn-sun" :disabled="createSubmitting">
             {{ createSubmitting ? 'Creating...' : 'Create' }}
           </button>
         </div>
       </form>
     </section>
 
-    <div v-if="loading" class="rounded-xl border border-slate-200 bg-white px-4 py-16 text-center text-sm text-slate-600">Loading users...</div>
-    <div v-else-if="!error && filteredUsers.length === 0" class="rounded-xl border border-slate-200 bg-white px-4 py-16 text-center text-sm text-slate-600">No users found.</div>
-    <div v-else class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+    <div v-if="loading" class="cc-panel-flat px-4 py-16 text-center text-sm font-bold text-mist">Loading users...</div>
+    <div v-else-if="!error && filteredUsers.length === 0" class="cc-panel-flat px-4 py-16 text-center text-sm font-bold text-mist">No users found.</div>
+    <div v-else class="cc-panel overflow-hidden">
       <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-slate-200 text-sm">
-          <thead class="bg-slate-50">
+        <table class="cc-table">
+          <thead>
             <tr>
-              <th class="px-4 py-3 text-left font-semibold text-slate-700">User</th>
-              <th class="px-4 py-3 text-left font-semibold text-slate-700">Email</th>
-              <th class="px-4 py-3 text-left font-semibold text-slate-700">Role</th>
-              <th class="px-4 py-3 text-left font-semibold text-slate-700">Status</th>
-              <th class="px-4 py-3 text-right font-semibold text-slate-700">Actions</th>
+              <th class="px-4 py-3 text-left">User</th>
+              <th class="px-4 py-3 text-left">Email</th>
+              <th class="px-4 py-3 text-left">Role</th>
+              <th class="px-4 py-3 text-left">Status</th>
+              <th class="px-4 py-3 text-right">Actions</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-slate-100">
+          <tbody>
             <tr v-for="user in filteredUsers" :key="user.account_id" class="align-top">
               <td class="px-4 py-3">
-                <p class="m-0 font-semibold text-slate-900">{{ user.username }}</p>
-                <p class="m-0 text-xs text-slate-500">#{{ user.account_id }}</p>
+                <p class="m-0 font-semibold text-fog">{{ user.username }}</p>
+                <p class="m-0 text-xs text-mist">#{{ user.account_id }}</p>
               </td>
-              <td class="px-4 py-3 text-slate-700">{{ user.email }}</td>
+              <td class="px-4 py-3 text-fog/90">{{ user.email }}</td>
               <td class="px-4 py-3">
-                <span class="rounded-full px-2 py-1 text-xs font-semibold" :class="user.is_admin ? 'bg-violet-100 text-violet-900' : 'bg-slate-100 text-slate-700'">
+                <span class="cc-chip" :class="user.is_admin ? 'cc-chip-grape' : ''">
                   {{ user.is_admin ? 'Admin' : 'Player' }}
                 </span>
               </td>
               <td class="px-4 py-3">
-                <span class="rounded-full px-2 py-1 text-xs font-semibold" :class="user.deleted_at ? 'bg-slate-300 text-slate-800' : user.is_banned ? 'bg-rose-100 text-rose-900' : user.is_suspended ? 'bg-amber-100 text-amber-900' : 'bg-emerald-100 text-emerald-900'">
+                <span class="cc-chip" :class="user.deleted_at ? 'opacity-60' : user.is_banned ? 'cc-chip-coral' : user.is_suspended ? 'cc-chip-sun' : 'cc-chip-mint'">
                   {{ user.deleted_at ? 'Soft deleted' : user.is_banned ? 'Banned' : user.is_suspended ? 'Suspended' : 'Active' }}
                 </span>
               </td>
               <td class="px-4 py-3">
                 <div class="flex flex-wrap justify-end gap-2">
-                  <button type="button" class="rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-50" @click="openEdit(user)">
+                  <button type="button" class="cc-btn cc-btn-sm cc-btn-ghost" @click="openEdit(user)">
                     Edit
                   </button>
                   <button
                     type="button"
-                    class="rounded-md border border-amber-300 bg-amber-50 px-2.5 py-1.5 text-xs font-semibold text-amber-900 hover:bg-amber-100 disabled:opacity-60"
+                    class="cc-btn cc-btn-sm cc-btn-ghost text-sun"
                     :disabled="actionSubmittingFor === user.account_id || user.deleted_at !== null"
                     @click="toggleSuspend(user)"
                   >
@@ -296,7 +296,7 @@ watch(search, () => {
                   </button>
                   <button
                     type="button"
-                    class="rounded-md border border-rose-300 bg-rose-50 px-2.5 py-1.5 text-xs font-semibold text-rose-900 hover:bg-rose-100 disabled:opacity-60"
+                    class="cc-btn cc-btn-sm cc-btn-ghost text-coral"
                     :disabled="actionSubmittingFor === user.account_id || user.deleted_at !== null"
                     @click="toggleBan(user)"
                   >
@@ -304,7 +304,7 @@ watch(search, () => {
                   </button>
                   <button
                     type="button"
-                    class="rounded-md border border-red-300 bg-red-50 px-2.5 py-1.5 text-xs font-semibold text-red-900 hover:bg-red-100 disabled:opacity-60"
+                    class="cc-btn cc-btn-sm cc-btn-ghost text-coral"
                     :disabled="actionSubmittingFor === user.account_id || user.deleted_at !== null"
                     @click="softDelete(user)"
                   >
@@ -313,7 +313,7 @@ watch(search, () => {
                   <button
                     v-if="user.deleted_at"
                     type="button"
-                    class="rounded-md border border-emerald-300 bg-emerald-50 px-2.5 py-1.5 text-xs font-semibold text-emerald-900 hover:bg-emerald-100 disabled:opacity-60"
+                    class="cc-btn cc-btn-sm cc-btn-ghost text-mint"
                     :disabled="actionSubmittingFor === user.account_id"
                     @click="restore(user)"
                   >
@@ -327,37 +327,37 @@ watch(search, () => {
       </div>
     </div>
 
-    <div v-if="editTarget" class="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 sm:items-center" @click.self="closeEdit">
-      <div class="w-full max-w-lg rounded-xl border border-slate-200 bg-white p-5 shadow-xl">
-        <h2 class="m-0 text-lg font-bold text-slate-900">Edit {{ editTarget.username }}</h2>
+    <div v-if="editTarget" class="cc-backdrop" @click.self="closeEdit">
+      <div class="cc-modal max-w-lg">
+        <h2 class="cc-display m-0 text-2xl text-fog">Edit {{ editTarget.username }}</h2>
         <form class="mt-4 space-y-3" @submit.prevent="saveUser">
           <div>
-            <label class="mb-1 block text-sm font-medium text-slate-700" for="admin-edit-username">Username</label>
-            <input id="admin-edit-username" v-model="editUsername" type="text" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20" />
+            <label class="cc-label" for="admin-edit-username">Username</label>
+            <input id="admin-edit-username" v-model="editUsername" type="text" class="cc-input cc-input-sm w-full" />
           </div>
           <div>
-            <label class="mb-1 block text-sm font-medium text-slate-700" for="admin-edit-email">Email</label>
-            <input id="admin-edit-email" v-model="editEmail" type="email" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20" />
+            <label class="cc-label" for="admin-edit-email">Email</label>
+            <input id="admin-edit-email" v-model="editEmail" type="email" class="cc-input cc-input-sm w-full" />
           </div>
-          <label class="flex items-center gap-2 text-sm text-slate-800">
-            <input v-model="editAdmin" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-purple-600 focus:ring-purple-500" />
+          <label class="flex cursor-pointer items-center gap-2 text-sm font-bold text-fog">
+            <input v-model="editAdmin" type="checkbox" class="cc-check" />
             Grant admin role
           </label>
 
-          <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
-            <label class="mb-1 block text-sm font-medium text-slate-700" for="admin-edit-password">Reset password</label>
+          <div class="cc-panel-flat p-3">
+            <label class="cc-label" for="admin-edit-password">Reset password</label>
             <div class="flex gap-2">
               <input
                 id="admin-edit-password"
                 v-model="resetPasswordInput"
                 type="password"
                 minlength="8"
-                class="min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+                class="cc-input cc-input-sm min-w-0 flex-1"
                 placeholder="New temporary password"
               />
               <button
                 type="button"
-                class="rounded-md border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-100 disabled:opacity-60"
+                class="cc-btn cc-btn-sm cc-btn-ghost"
                 :disabled="resetSubmitting || resetPasswordInput.trim().length < 8"
                 @click="submitResetPassword"
               >
@@ -367,8 +367,8 @@ watch(search, () => {
           </div>
 
           <div class="flex justify-end gap-2 pt-2">
-            <button type="button" class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50" @click="closeEdit">Close</button>
-            <button type="submit" class="rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-500 disabled:opacity-60" :disabled="editSubmitting">
+            <button type="button" class="cc-btn cc-btn-sm cc-btn-ghost" @click="closeEdit">Close</button>
+            <button type="submit" class="cc-btn cc-btn-sm cc-btn-sun" :disabled="editSubmitting">
               {{ editSubmitting ? 'Saving...' : 'Save' }}
             </button>
           </div>

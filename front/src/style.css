@@ -2,11 +2,342 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * "Cove Nights" design system.
+ * Chunky tactile panels (Habbo), pressable candy buttons (Fall Guys / Brawl Stars),
+ * lobby tabs + rarity cards (Fortnite), tool-panel density (Garry's Mod spawn menu).
+ * Live reference: /dev/ui
+ */
 @layer base {
-  body {
-    @apply m-0 min-h-screen antialiased;
+  :root {
+    /* surfaces — midnight harbor indigo */
+    --cc-ink-950: 8 10 32;
+    --cc-ink-900: 14 17 48;
+    --cc-ink-800: 22 26 68;
+    --cc-ink-700: 32 38 92;
+    --cc-ink-600: 48 56 124;
+    --cc-ink-500: 72 82 160;
+    --cc-fog: 236 239 255;
+    --cc-mist: 150 160 214;
+
+    /* brand candy */
+    --cc-sun: 255 202 58;
+    --cc-sun-edge: 201 120 14;
+    --cc-pool: 64 214 245;
+    --cc-pool-edge: 22 128 176;
+    --cc-mint: 76 227 160;
+    --cc-mint-edge: 24 148 98;
+    --cc-coral: 255 92 122;
+    --cc-coral-edge: 178 40 74;
+    --cc-grape: 168 110 255;
+    --cc-grape-edge: 104 56 196;
+
+    /* rarity ladder */
+    --cc-r-common: 160 170 196;
+    --cc-r-uncommon: 92 214 112;
+    --cc-r-rare: 64 170 255;
+    --cc-r-epic: 190 100 255;
+    --cc-r-legendary: 255 160 48;
+
+    color-scheme: dark;
   }
+
+  html {
+    @apply bg-ink-950;
+  }
+
+  body {
+    @apply m-0 min-h-screen bg-ink-950 font-sans text-fog antialiased;
+  }
+
   #app {
     @apply w-full min-h-screen;
   }
+
+  ::selection {
+    background: rgb(var(--cc-sun) / 0.85);
+    color: rgb(var(--cc-ink-950));
+  }
+
+  :focus-visible {
+    outline: 3px solid rgb(var(--cc-pool));
+    outline-offset: 2px;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--cc-ink-600)) transparent;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
 }
+
+@layer components {
+  /* ---------- world backdrop ---------- */
+  .cc-world {
+    position: relative;
+    isolation: isolate;
+    background:
+      radial-gradient(900px 500px at 12% -10%, rgb(var(--cc-grape) / 0.28), transparent 60%),
+      radial-gradient(800px 520px at 100% 0%, rgb(var(--cc-pool) / 0.18), transparent 60%),
+      radial-gradient(900px 600px at 50% 120%, rgb(var(--cc-coral) / 0.16), transparent 60%),
+      rgb(var(--cc-ink-950));
+  }
+  /* isometric floor tiles, faded towards the top */
+  .cc-world::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image:
+      repeating-linear-gradient(30deg, rgb(255 255 255 / 0.045) 0 1px, transparent 1px 34px),
+      repeating-linear-gradient(150deg, rgb(255 255 255 / 0.045) 0 1px, transparent 1px 34px);
+    mask-image: linear-gradient(to bottom, transparent 0%, black 55%);
+  }
+
+  /* ---------- typography ---------- */
+  .cc-display {
+    @apply font-display tracking-[0.01em];
+    text-shadow: 0 3px 0 rgb(var(--cc-ink-950) / 0.65);
+  }
+  .cc-eyebrow {
+    @apply text-[11px] font-extrabold uppercase tracking-[0.22em] text-mist;
+  }
+  .cc-title {
+    @apply cc-display m-0 text-3xl text-fog sm:text-4xl;
+  }
+
+  /* ---------- panels ---------- */
+  .cc-panel {
+    @apply relative rounded-chunk border-2 border-ink-600/70;
+    background: linear-gradient(180deg, rgb(var(--cc-ink-800)), rgb(var(--cc-ink-900)));
+    box-shadow:
+      inset 0 2px 0 rgb(255 255 255 / 0.07),
+      0 6px 0 rgb(var(--cc-ink-950) / 0.75),
+      0 20px 40px rgb(0 0 0 / 0.35);
+  }
+  .cc-panel-flat {
+    @apply rounded-2xl border-2 border-ink-600/50 bg-ink-900/70;
+    box-shadow: inset 0 2px 0 rgb(255 255 255 / 0.04);
+  }
+  .cc-panel-glass {
+    @apply rounded-chunk border-2 border-white/15 bg-ink-900/75 backdrop-blur-md;
+    box-shadow:
+      inset 0 2px 0 rgb(255 255 255 / 0.08),
+      0 10px 30px rgb(0 0 0 / 0.4);
+  }
+  .cc-panel-header {
+    @apply flex items-center justify-between gap-3 border-b-2 border-ink-600/50 px-5 py-3;
+  }
+
+  /* ---------- pressable candy buttons ---------- */
+  .cc-btn {
+    --btn-bg: var(--cc-ink-600);
+    --btn-edge: var(--cc-ink-800);
+    --btn-fg: var(--cc-fog);
+    @apply relative inline-flex cursor-pointer select-none items-center justify-center gap-2 overflow-hidden whitespace-nowrap rounded-[14px] px-5 py-2.5 font-display text-base tracking-[0.02em] no-underline;
+    color: rgb(var(--btn-fg));
+    background: linear-gradient(180deg, rgb(255 255 255 / 0.18), rgb(255 255 255 / 0) 55%), rgb(var(--btn-bg));
+    border: 2px solid rgb(0 0 0 / 0.28);
+    box-shadow:
+      inset 0 2px 0 rgb(255 255 255 / 0.35),
+      inset 0 -3px 0 rgb(0 0 0 / 0.18),
+      0 4px 0 rgb(var(--btn-edge)),
+      0 8px 14px rgb(0 0 0 / 0.3);
+    transform: translateY(0);
+    transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.15s ease;
+  }
+  .cc-btn:hover:not(:disabled) {
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+  }
+  .cc-btn:active:not(:disabled) {
+    transform: translateY(3px);
+    box-shadow:
+      inset 0 2px 0 rgb(255 255 255 / 0.25),
+      inset 0 -2px 0 rgb(0 0 0 / 0.18),
+      0 1px 0 rgb(var(--btn-edge)),
+      0 3px 6px rgb(0 0 0 / 0.3);
+  }
+  .cc-btn:disabled {
+    @apply cursor-not-allowed opacity-50 saturate-50;
+  }
+  .cc-btn-sun { --btn-bg: var(--cc-sun); --btn-edge: var(--cc-sun-edge); --btn-fg: var(--cc-ink-950); }
+  .cc-btn-pool { --btn-bg: var(--cc-pool); --btn-edge: var(--cc-pool-edge); --btn-fg: var(--cc-ink-950); }
+  .cc-btn-mint { --btn-bg: var(--cc-mint); --btn-edge: var(--cc-mint-edge); --btn-fg: var(--cc-ink-950); }
+  .cc-btn-coral { --btn-bg: var(--cc-coral); --btn-edge: var(--cc-coral-edge); --btn-fg: 255 255 255; }
+  .cc-btn-grape { --btn-bg: var(--cc-grape); --btn-edge: var(--cc-grape-edge); --btn-fg: 255 255 255; }
+  /* use as `cc-btn cc-btn-ghost` */
+  .cc-btn-ghost {
+    background: rgb(var(--cc-ink-800) / 0.6);
+    border-color: rgb(var(--cc-ink-500) / 0.7);
+    box-shadow: inset 0 2px 0 rgb(255 255 255 / 0.06), 0 3px 0 rgb(var(--cc-ink-950) / 0.8);
+  }
+  .cc-btn-ghost:active:not(:disabled) {
+    box-shadow: inset 0 2px 0 rgb(255 255 255 / 0.04), 0 0 0 rgb(var(--cc-ink-950));
+  }
+  .cc-btn-sm { @apply rounded-[11px] px-3 py-1.5 text-sm; }
+  .cc-btn-lg { @apply rounded-[18px] px-8 py-3.5 text-xl; }
+  .cc-btn-xl { @apply rounded-[22px] px-10 py-4 text-3xl; }
+  .cc-btn-icon { @apply px-2.5; }
+  /* glossy sweep for hero CTAs */
+  .cc-btn-shine::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    width: 40%;
+    background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.45), transparent);
+    @apply pointer-events-none animate-cc-shine;
+  }
+
+  /* ---------- form controls ---------- */
+  .cc-label {
+    @apply mb-1.5 block text-xs font-extrabold uppercase tracking-[0.14em] text-mist;
+  }
+  .cc-input {
+    @apply w-full rounded-xl border-2 border-ink-600 bg-ink-950/70 px-4 py-3 text-[15px] font-semibold text-fog placeholder:font-medium placeholder:text-mist/60 transition-colors;
+    box-shadow: inset 0 3px 0 rgb(0 0 0 / 0.25);
+  }
+  .cc-input:hover { @apply border-ink-500; }
+  .cc-input:focus {
+    @apply border-pool outline-none;
+    box-shadow: inset 0 3px 0 rgb(0 0 0 / 0.25), 0 0 0 4px rgb(var(--cc-pool) / 0.18);
+  }
+  .cc-input-sm { @apply rounded-lg px-3 py-2 text-sm; }
+  select.cc-input { @apply cursor-pointer appearance-none pr-9; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2396a0d6' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.75rem center; background-size: 14px; }
+  .cc-check {
+    @apply h-5 w-5 cursor-pointer appearance-none rounded-md border-2 border-ink-500 bg-ink-950/70 transition-colors;
+  }
+  .cc-check:checked {
+    @apply border-mint-edge bg-mint;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23080a20' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12l5 5L20 7'/%3E%3C/svg%3E");
+    background-size: 80%;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+  input[type='radio'].cc-check { @apply rounded-full; }
+
+  /* ---------- tabs ---------- */
+  .cc-tabs {
+    @apply inline-flex flex-wrap gap-1 rounded-2xl border-2 border-ink-600/60 bg-ink-950/60 p-1;
+  }
+  .cc-tab {
+    @apply inline-flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2 font-display text-sm tracking-[0.03em] text-mist transition-colors hover:bg-white/5 hover:text-fog;
+  }
+  .cc-tab-active {
+    @apply bg-sun text-ink-950 hover:bg-sun hover:text-ink-950;
+    box-shadow: inset 0 -3px 0 rgb(var(--cc-sun-edge)), inset 0 2px 0 rgb(255 255 255 / 0.4);
+  }
+
+  /* ---------- chips / badges ---------- */
+  .cc-chip {
+    @apply inline-flex items-center gap-1.5 rounded-full border-2 border-ink-600/70 bg-ink-950/60 px-2.5 py-0.5 text-xs font-extrabold uppercase tracking-wide text-fog;
+  }
+  .cc-chip-sun { @apply border-sun/60 bg-sun/15 text-sun; }
+  .cc-chip-pool { @apply border-pool/60 bg-pool/15 text-pool; }
+  .cc-chip-mint { @apply border-mint/60 bg-mint/15 text-mint; }
+  .cc-chip-coral { @apply border-coral/60 bg-coral/15 text-coral; }
+  .cc-chip-grape { @apply border-grape/60 bg-grape/15 text-grape; }
+  .cc-keycap {
+    @apply inline-flex min-w-[1.6rem] items-center justify-center rounded-md border-2 border-white/25 bg-ink-800 px-1.5 py-0.5 font-mono text-[11px] font-bold text-fog;
+    box-shadow: 0 2px 0 rgb(var(--cc-ink-950));
+  }
+
+  /* ---------- alerts ---------- */
+  .cc-alert {
+    @apply flex items-start gap-3 rounded-xl border-2 px-4 py-3 text-sm font-semibold;
+  }
+  .cc-alert-success { @apply border-mint/50 bg-mint/10 text-mint; }
+  .cc-alert-error { @apply border-coral/50 bg-coral/10 text-coral; }
+  .cc-alert-warn { @apply border-sun/50 bg-sun/10 text-sun; }
+  .cc-alert-info { @apply border-pool/50 bg-pool/10 text-pool; }
+
+  /* ---------- item slot (inventory / hotbar / locker) ---------- */
+  .cc-slot {
+    @apply relative overflow-hidden rounded-xl border-2 border-ink-600/80 bg-ink-950/70 transition;
+    box-shadow: inset 0 3px 0 rgb(0 0 0 / 0.35), inset 0 0 0 1px rgb(255 255 255 / 0.03);
+  }
+  .cc-slot:hover { @apply border-ink-500; }
+  .cc-slot-active {
+    @apply border-sun;
+    box-shadow: inset 0 3px 0 rgb(0 0 0 / 0.35), 0 0 0 3px rgb(var(--cc-sun) / 0.3), 0 0 18px rgb(var(--cc-sun) / 0.35);
+  }
+
+  /* ---------- rarity cards ---------- */
+  .cc-rarity {
+    --r: var(--cc-r-common);
+  }
+  .cc-rarity-bg {
+    background:
+      radial-gradient(circle at 50% 35%, rgb(var(--r) / 0.75), rgb(var(--r) / 0.2) 55%, transparent 80%),
+      linear-gradient(180deg, rgb(var(--r) / 0.35), rgb(var(--cc-ink-950)));
+  }
+  .cc-rarity-border { border-color: rgb(var(--r)); }
+  .cc-rarity-text { color: rgb(var(--r)); }
+  .cc-card {
+    @apply relative overflow-hidden rounded-chunk border-[3px] bg-ink-900 transition duration-150;
+    border-color: rgb(var(--r) / 0.85);
+    box-shadow: 0 5px 0 rgb(var(--cc-ink-950)), 0 14px 28px rgb(0 0 0 / 0.35);
+  }
+  .cc-card:hover {
+    transform: translateY(-3px) rotate(-0.4deg);
+    box-shadow: 0 8px 0 rgb(var(--cc-ink-950)), 0 0 0 3px rgb(var(--r) / 0.35), 0 18px 34px rgb(0 0 0 / 0.4);
+  }
+  .cc-card-selected {
+    box-shadow: 0 5px 0 rgb(var(--cc-ink-950)), 0 0 0 4px rgb(var(--cc-sun)), 0 0 28px rgb(var(--cc-sun) / 0.45);
+  }
+
+  /* ---------- tables (admin) ---------- */
+  .cc-table {
+    @apply min-w-full text-sm;
+  }
+  .cc-table thead th {
+    @apply border-b-2 border-ink-600/60 bg-ink-950/50 px-4 py-3 text-left text-[11px] font-extrabold uppercase tracking-[0.16em] text-mist;
+  }
+  .cc-table tbody td {
+    @apply border-b border-ink-700/60 px-4 py-3 align-middle text-fog/90;
+  }
+  .cc-table tbody tr {
+    @apply transition-colors hover:bg-white/[0.03];
+  }
+
+  /* ---------- progress bar ---------- */
+  .cc-meter {
+    @apply relative h-3 overflow-hidden rounded-full border-2 border-ink-950 bg-ink-950/80;
+  }
+  .cc-meter > span {
+    @apply absolute inset-y-0 left-0 rounded-full;
+    background: linear-gradient(180deg, rgb(255 255 255 / 0.45), transparent 60%), rgb(var(--cc-mint));
+  }
+
+  /* ---------- modal ---------- */
+  .cc-backdrop {
+    @apply fixed inset-0 z-[100] flex items-end justify-center bg-ink-950/75 p-4 backdrop-blur-sm sm:items-center;
+  }
+  .cc-modal {
+    @apply cc-panel max-h-[90vh] w-full animate-cc-pop overflow-y-auto p-6;
+  }
+
+  /* ---------- HUD (in-game overlays) ---------- */
+  .cc-hud {
+    @apply rounded-xl border-2 border-white/15 bg-ink-950/70 text-fog backdrop-blur-md;
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.08), 0 4px 0 rgb(0 0 0 / 0.35);
+  }
+}
+
+/* Rarity tiers are applied through computed class names (`cc-rarity-${tier}`), which
+   Tailwind's content scan cannot see — keep them outside @layer so they always ship. */
+.cc-rarity-common { --r: var(--cc-r-common); }
+.cc-rarity-uncommon { --r: var(--cc-r-uncommon); }
+.cc-rarity-rare { --r: var(--cc-r-rare); }
+.cc-rarity-epic { --r: var(--cc-r-epic); }
+.cc-rarity-legendary { --r: var(--cc-r-legendary); }

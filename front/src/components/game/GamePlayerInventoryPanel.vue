@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { nextTick, onMounted, onUnmounted, ref } from 'vue'
 import type { ApartmentInventoryItem } from '../../types/gameRealtime'
+import UiIcon from '../ui/UiIcon.vue'
 
 const props = defineProps<{
   slots: string[]
@@ -103,12 +104,12 @@ function ghostQty(): number {
   <div
     ref="focusTrap"
     tabindex="-1"
-    class="pointer-events-auto fixed inset-0 z-30 flex items-center justify-center bg-black/70 outline-none"
+    class="pointer-events-auto fixed inset-0 z-30 flex items-center justify-center bg-ink-950/70 p-3 outline-none backdrop-blur-sm"
     @mousemove="onOverlayMove"
   >
     <div
       v-if="cursorItem"
-      class="pointer-events-none fixed z-[49] flex h-14 w-14 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-md border border-campus-accent bg-black/80 shadow-lg ring-2 ring-campus-accent/50"
+      class="cc-slot cc-slot-active pointer-events-none fixed z-[49] h-14 w-14 -translate-x-1/2 -translate-y-1/2 shadow-2xl"
       :style="{ left: `${ghostX}px`, top: `${ghostY}px` }"
       aria-hidden="true"
     >
@@ -116,50 +117,47 @@ function ghostQty(): number {
         v-if="ghostItem()?.preview_image"
         :src="ghostItem()?.preview_image ?? ''"
         :alt="ghostItem()?.name ?? ''"
-        class="h-full w-full rounded-md object-cover opacity-95"
+        class="h-full w-full object-cover opacity-95"
       />
-      <span v-if="ghostQty() > 1" class="absolute bottom-0.5 right-1 text-[11px] font-bold text-white"
+      <span v-if="ghostQty() > 1" class="absolute bottom-0.5 right-1 font-display text-xs text-fog [text-shadow:0_1px_0_rgb(0_0_0)]"
         >×{{ ghostQty() }}</span
       >
     </div>
 
-    <div class="relative w-[640px] max-w-[90vw] rounded-lg border border-white/20 bg-black/85 p-6 text-white">
-      <div class="flex items-start justify-between gap-3">
-        <h2 class="text-lg font-semibold tracking-wide">Inventory</h2>
+    <div class="cc-panel relative w-[680px] max-w-full animate-cc-pop overflow-hidden">
+      <div class="cc-panel-header bg-ink-950/40">
+        <div class="flex items-center gap-3">
+          <span class="grid h-10 w-10 place-items-center rounded-xl bg-pool/15 text-pool"><UiIcon name="backpack" :size="22" /></span>
+          <div>
+            <h2 class="cc-display m-0 text-2xl leading-none">Inventory</h2>
+            <p class="m-0 mt-0.5 text-xs font-bold text-mist">Click or drag items between slots</p>
+          </div>
+        </div>
         <div class="flex items-center gap-2">
-          <button
-            type="button"
-            class="rounded border border-white/25 px-2 py-1 text-xs uppercase tracking-wide hover:border-campus-accent hover:text-campus-accent disabled:opacity-50"
-            :disabled="loading"
-            @click="emit('refresh')"
-          >
-            {{ loading ? 'Loading…' : 'Refresh' }}
+          <button type="button" class="cc-btn cc-btn-ghost cc-btn-sm" :disabled="loading" @click="emit('refresh')">
+            <UiIcon name="refresh" :size="16" /> {{ loading ? 'Loading…' : 'Refresh' }}
           </button>
-          <button
-            type="button"
-            class="rounded border border-white/25 px-2 py-1 text-xs uppercase tracking-wide hover:border-rose-300 hover:text-rose-200"
-            aria-label="Close inventory"
-            @click="emit('close')"
-          >
-            ✕
+          <button type="button" class="cc-btn cc-btn-coral cc-btn-sm cc-btn-icon" aria-label="Close inventory" @click="emit('close')">
+            <UiIcon name="x" :size="16" />
           </button>
         </div>
       </div>
-      <p v-if="cursorItem" class="mt-2 text-center text-xs text-white/70">
-        Holding: {{ cursorItem.code }} — click a slot to place,
-        <span class="font-semibold text-campus-accent">Esc</span> to cancel picking
-      </p>
-      <p v-if="error" class="mt-2 text-xs text-rose-300">{{ error }}</p>
 
-      <div class="my-4 border-t border-white/15 pt-4">
-        <div class="mb-2 text-[11px] uppercase tracking-wide text-white/70">Inventory (click / drag slots)</div>
-        <div class="flex flex-col gap-2">
-          <div v-for="(row, rIdx) in slotRows()" :key="'inv-row-' + rIdx" class="flex gap-1">
+      <div class="p-5">
+        <p v-if="cursorItem" class="cc-alert cc-alert-info m-0 mb-4 text-xs">
+          <UiIcon name="hand" :size="16" />
+          <span>Holding <span class="font-mono">{{ cursorItem.code }}</span> — click a slot to drop it, <span class="cc-keycap">Esc</span> to cancel</span>
+        </p>
+        <p v-if="error" class="cc-alert cc-alert-error m-0 mb-4 text-xs"><UiIcon name="alert" :size="16" /> {{ error }}</p>
+
+        <div class="cc-eyebrow mb-2">Backpack</div>
+        <div class="flex flex-col gap-1.5 overflow-x-auto pb-1">
+          <div v-for="(row, rIdx) in slotRows()" :key="'inv-row-' + rIdx" class="flex gap-1.5">
             <div
               v-for="(cell, cIdx) in row"
               :key="'inv-cell-' + rIdx + '-' + cIdx"
               role="presentation"
-              class="relative h-14 w-14 shrink-0 select-none rounded-md border border-white/20 transition-colors hover:border-white/40"
+              class="cc-slot h-14 w-14 shrink-0 select-none"
               @pointerdown="emit('slotPointerDown', 9 + rIdx * 9 + cIdx, $event)"
               @pointerup="emit('slotPointerUp', 9 + rIdx * 9 + cIdx, $event)"
               @dragover="emit('slotDragOver', 9 + rIdx * 9 + cIdx, $event)"
@@ -168,7 +166,7 @@ function ghostQty(): number {
               @contextmenu.prevent="emit('clearSlot', 9 + rIdx * 9 + cIdx)"
             >
               <div
-                class="relative flex h-full w-full rounded-md outline-none ring-0"
+                class="relative flex h-full w-full outline-none ring-0"
                 tabindex="-1"
                 :draggable="!!effectiveCode(cell)"
                 @dragstart="onDragStartInner(9 + rIdx * 9 + cIdx, cell, $event)"
@@ -178,12 +176,13 @@ function ghostQty(): number {
                     v-if="itemByCode[effectiveCode(cell)]?.preview_image"
                     :src="itemByCode[effectiveCode(cell)]?.preview_image ?? ''"
                     :alt="itemByCode[effectiveCode(cell)]?.name ?? ''"
-                    class="pointer-events-none h-full w-full rounded-md object-cover"
+                    :title="itemByCode[effectiveCode(cell)]?.name ?? ''"
+                    class="pointer-events-none h-full w-full object-cover"
                     draggable="false"
                   />
                   <span
                     v-if="quantityFor(effectiveCode(cell)) > 1"
-                    class="pointer-events-none absolute bottom-0.5 right-1 text-[11px] font-bold text-white"
+                    class="pointer-events-none absolute bottom-0.5 right-1 font-display text-xs text-fog [text-shadow:0_1px_0_rgb(0_0_0),0_0_4px_rgb(0_0_0)]"
                   >
                     ×{{ quantityFor(effectiveCode(cell)) }}
                   </span>
@@ -192,19 +191,15 @@ function ghostQty(): number {
             </div>
           </div>
         </div>
-      </div>
 
-      <div class="border-t border-white/15 pb-4 pt-4">
-        <div class="mb-2 text-[11px] uppercase tracking-wide text-white/70">Hotbar</div>
-        <div class="flex gap-1">
+        <div class="cc-eyebrow mb-2 mt-5">Hotbar</div>
+        <div class="flex gap-1.5 overflow-x-auto rounded-2xl bg-ink-950/50 p-1.5">
           <div
             v-for="(rawCode, index) in slots.slice(0, 9)"
             :key="'pan-hb-' + index"
             role="presentation"
-            class="relative h-14 w-14 shrink-0 select-none rounded-md border transition-colors"
-            :class="
-              selectedHotbarIndex === index ? 'border-campus-accent ring-2 ring-campus-accent/60' : 'border-white/20'
-            "
+            class="cc-slot h-14 w-14 shrink-0 select-none"
+            :class="selectedHotbarIndex === index ? 'cc-slot-active' : ''"
             @pointerdown="emit('slotPointerDown', index, $event)"
             @pointerup="emit('slotPointerUp', index, $event)"
             @dragover="emit('slotDragOver', index, $event)"
@@ -213,57 +208,50 @@ function ghostQty(): number {
             @contextmenu.prevent="emit('clearSlot', index)"
           >
             <div
-              class="relative flex h-full w-full rounded-md outline-none ring-0"
+              class="relative flex h-full w-full outline-none ring-0"
               tabindex="-1"
               :draggable="!!effectiveCode(rawCode)"
               @dragstart="onDragStartInner(index, rawCode, $event)"
             >
-              <span
-                class="pointer-events-none absolute left-0.5 top-0.5 z-[1] rounded bg-black/55 px-[3px] text-[10px] text-white/70"
-                >{{ index + 1 }}</span
-              >
+              <span class="pointer-events-none absolute left-1 top-0.5 z-[1] font-display text-[11px] text-fog/80 [text-shadow:0_1px_0_rgb(0_0_0)]">{{ index + 1 }}</span>
               <template v-if="effectiveCode(rawCode)">
                 <img
                   v-if="itemByCode[effectiveCode(rawCode)]?.preview_image"
                   :src="itemByCode[effectiveCode(rawCode)]?.preview_image ?? ''"
                   :alt="itemByCode[effectiveCode(rawCode)]?.name ?? ''"
-                  class="pointer-events-none h-full w-full rounded-md object-cover"
+                  :title="itemByCode[effectiveCode(rawCode)]?.name ?? ''"
+                  class="pointer-events-none h-full w-full object-cover"
                   draggable="false"
                 />
                 <span
                   v-if="quantityFor(effectiveCode(rawCode)) > 1"
-                  class="pointer-events-none absolute bottom-0.5 right-1 text-[11px] font-bold text-white"
+                  class="pointer-events-none absolute bottom-0.5 right-1 font-display text-xs text-fog [text-shadow:0_1px_0_rgb(0_0_0),0_0_4px_rgb(0_0_0)]"
                   >×{{ quantityFor(effectiveCode(rawCode)) }}</span
                 >
               </template>
             </div>
           </div>
         </div>
-      </div>
 
-      <div
-        v-if="currentRoomLabel === 'apartment' && canEditApartment"
-        class="mt-4 border-t border-white/15 pt-4 text-xs text-white/85"
-      >
-        <div class="mb-2 text-[11px] uppercase tracking-wide text-white/70">Placed objects</div>
-        <select
-          class="mb-2 w-full rounded border border-white/25 bg-black/50 px-2 py-1.5 text-xs text-white"
-          :value="selectedPlacedObjectId"
-          @change="onPlacedSelect"
-        >
-          <option value="">Select placed object</option>
-          <option v-for="objectId in apartmentObjectIds" :key="'placed-' + objectId" :value="objectId">
-            {{ objectId }}
-          </option>
-        </select>
-        <button
-          type="button"
-          class="w-full rounded border border-white/30 bg-black/35 px-2 py-2 text-xs font-semibold hover:border-campus-accent hover:text-campus-accent disabled:opacity-50"
-          :disabled="!selectedPlacedObjectId"
-          @click="emit('pickupSelectedPlacedObject')"
-        >
-          Pickup selected object
-        </button>
+        <div v-if="currentRoomLabel === 'apartment' && canEditApartment" class="mt-5 rounded-2xl border-2 border-ink-600/50 bg-ink-950/40 p-4">
+          <div class="cc-eyebrow mb-2">Placed objects</div>
+          <div class="flex flex-col gap-2 sm:flex-row">
+            <select class="cc-input cc-input-sm flex-1" :value="selectedPlacedObjectId" @change="onPlacedSelect">
+              <option value="">Select placed object</option>
+              <option v-for="objectId in apartmentObjectIds" :key="'placed-' + objectId" :value="objectId">
+                {{ objectId }}
+              </option>
+            </select>
+            <button
+              type="button"
+              class="cc-btn cc-btn-pool cc-btn-sm"
+              :disabled="!selectedPlacedObjectId"
+              @click="emit('pickupSelectedPlacedObject')"
+            >
+              <UiIcon name="hand" :size="16" /> Pick up
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </div>

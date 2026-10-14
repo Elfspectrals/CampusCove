@@ -5,21 +5,19 @@ import { getStoredAuth } from '../api/auth'
 import { useWalletBalances } from '../composables/useWalletBalances'
 import * as friendsApi from '../api/friends'
 import type { Friend } from '../api/friends'
+import UiIcon from '../components/ui/UiIcon.vue'
+import UiCurrency from '../components/ui/UiCurrency.vue'
+import type { UiIconName } from '../components/ui/icons'
 
 const router = useRouter()
-const activeTab = ref<'about' | 'locker' | 'achievements'>('about')
-const friendsPanelOpen = ref(false)
 
 const auth = computed(() => getStoredAuth())
 const wallet = useWalletBalances()
-const coinsDisplay = computed(() =>
-  wallet.value.coins === null ? '—' : wallet.value.coins.toLocaleString()
-)
-const premiumDisplay = computed(() =>
-  wallet.value.premium === null ? '—' : wallet.value.premium.toLocaleString()
-)
 const displayName = computed(() => auth.value?.user?.display_name || auth.value?.user?.username || 'Player')
-const email = computed(() => auth.value?.user?.email ?? '')
+const handle = computed(() => {
+  const u = auth.value?.user
+  return u ? `${u.username}#${String(u.tag).padStart(4, '0')}` : ''
+})
 const initial = computed(() => {
   const n = displayName.value
   return n.length > 0 ? n.charAt(0).toUpperCase() : 'P'
@@ -29,6 +27,10 @@ const friends = ref<Friend[]>([])
 const friendsLoading = ref(false)
 
 const onlineCount = computed(() => friends.value.filter((f) => f.status === 'online' || f.status === 'playing').length)
+const sortedFriends = computed(() => {
+  const rank = (s: string) => (s === 'playing' ? 0 : s === 'online' ? 1 : 2)
+  return [...friends.value].sort((a, b) => rank(a.status) - rank(b.status))
+})
 
 onMounted(async () => {
   await loadFriends()
@@ -51,9 +53,9 @@ function friendInitial(name: string): string {
 }
 
 function statusDotClass(status: string): string {
-  if (status === 'online') return 'bg-green-500'
-  if (status === 'playing') return 'bg-blue-500'
-  return 'bg-gray-500'
+  if (status === 'online') return 'bg-mint'
+  if (status === 'playing') return 'bg-pool'
+  return 'bg-ink-500'
 }
 
 function statusLabel(status: string): string {
@@ -79,242 +81,212 @@ const stats = computed(() => ({
   items: 24,
   achievements: 8,
 }))
+const levelProgress = 62
+
+const quickTiles: Array<{ to: string; icon: UiIconName; label: string; hint: string; tone: string }> = [
+  { to: '/shop', icon: 'chair', label: 'Shop', hint: 'Furniture & decor', tone: 'from-sun/40 text-sun' },
+  { to: '/shop-skin', icon: 'shirt', label: 'Skins', hint: 'New looks', tone: 'from-grape/40 text-grape' },
+  { to: '/locker', icon: 'backpack', label: 'Locker', hint: 'Equip outfits', tone: 'from-pool/40 text-pool' },
+  { to: '/NewNation', icon: 'globe', label: 'New Nation', hint: 'Season showroom', tone: 'from-coral/40 text-coral' },
+]
+
 const recentItems = [
-  { name: 'Gaming Chair Pro', color: 'bg-red-400' },
-  { name: 'Modern Couch', color: 'bg-gray-400' },
-  { name: 'Neon Lights', color: 'bg-pink-400' },
-  { name: 'Indoor Plant', color: 'bg-green-400' },
-  { name: 'LED Strip', color: 'bg-purple-400' },
-  { name: 'Wall Art', color: 'bg-amber-400' },
+  { name: 'Gaming Chair Pro', rarity: 'epic' },
+  { name: 'Modern Couch', rarity: 'common' },
+  { name: 'Neon Lights', rarity: 'legendary' },
+  { name: 'Indoor Plant', rarity: 'uncommon' },
+  { name: 'LED Strip', rarity: 'rare' },
+  { name: 'Wall Art', rarity: 'uncommon' },
 ]
 </script>
 
 <template>
-  <div class="relative">
-      <main class="overflow-auto p-4 md:p-6" :class="{ 'mr-80': friendsPanelOpen }">
-        <div class="rounded-2xl bg-slate-800 text-white p-6 mb-6 flex flex-col md:flex-row md:items-center gap-6">
-          <div class="flex items-center gap-4 flex-1">
-            <div class="w-20 h-20 rounded-full bg-gradient-to-br from-purple-500 to-fuchsia-500 flex items-center justify-center text-3xl font-bold text-white shrink-0">
+  <div class="mx-auto w-full max-w-[1500px]">
+    <div class="grid gap-5 lg:grid-cols-[300px_minmax(0,1fr)_300px]">
+      <!-- player card -->
+      <section class="cc-panel order-2 p-5 lg:order-1">
+        <div class="flex items-center gap-4">
+          <div class="relative">
+            <div class="grid h-20 w-20 place-items-center rounded-2xl bg-gradient-to-br from-grape to-coral font-display text-4xl text-white shadow-[inset_0_-5px_0_rgb(0_0_0/0.25),0_4px_0_rgb(var(--cc-ink-950))]">
               {{ initial }}
             </div>
+            <span class="absolute -bottom-2 -right-2 grid h-8 min-w-8 place-items-center rounded-lg border-2 border-ink-950 bg-sun px-1 font-display text-sm text-ink-950">
+              {{ stats.level }}
+            </span>
+          </div>
+          <div class="min-w-0">
+            <h1 class="cc-display m-0 truncate text-2xl">{{ displayName }}</h1>
+            <p class="m-0 truncate font-mono text-xs text-mist">{{ handle }}</p>
+          </div>
+        </div>
+
+        <div class="mt-5">
+          <div class="mb-1.5 flex justify-between text-xs font-extrabold uppercase tracking-wider">
+            <span class="text-mist">Level {{ stats.level }}</span>
+            <span class="text-mint">{{ levelProgress }}%</span>
+          </div>
+          <div class="cc-meter"><span :style="{ width: `${levelProgress}%` }" /></div>
+        </div>
+
+        <dl class="mt-5 grid grid-cols-2 gap-2">
+          <div class="cc-panel-flat px-3 py-2.5">
+            <dt class="cc-eyebrow">Friends</dt>
+            <dd class="cc-display m-0 text-2xl">{{ stats.friends }}</dd>
+          </div>
+          <div class="cc-panel-flat px-3 py-2.5">
+            <dt class="cc-eyebrow">Items</dt>
+            <dd class="cc-display m-0 text-2xl">{{ stats.items }}</dd>
+          </div>
+          <div class="cc-panel-flat px-3 py-2.5">
+            <dt class="cc-eyebrow">Trophies</dt>
+            <dd class="cc-display m-0 text-2xl">{{ stats.achievements }}</dd>
+          </div>
+          <div class="cc-panel-flat px-3 py-2.5">
+            <dt class="cc-eyebrow">Level</dt>
+            <dd class="cc-display m-0 text-2xl text-sun">{{ stats.level }}</dd>
+          </div>
+        </dl>
+
+        <div class="mt-5 space-y-2 text-sm font-semibold">
+          <div class="flex items-center justify-between">
+            <span class="text-mist">Member since</span><span>{{ memberSince }}</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-mist">Last online</span><span class="text-mint">{{ lastOnline }}</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-mist">Coins</span><UiCurrency currency="coins" :amount="wallet.coins" />
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-mist">Gems</span><UiCurrency currency="premium" :amount="wallet.premium" />
+          </div>
+        </div>
+      </section>
+
+      <!-- play hero + quick tiles -->
+      <section class="order-1 flex min-w-0 flex-col gap-5 lg:order-2">
+        <div class="cc-panel relative min-h-[320px] overflow-hidden p-0 sm:min-h-[380px]">
+          <div
+            class="absolute inset-0"
+            style="
+              background:
+                radial-gradient(600px 300px at 70% 110%, rgb(255 92 122 / 0.55), transparent 65%),
+                radial-gradient(500px 260px at 85% 70%, rgb(255 202 58 / 0.45), transparent 60%),
+                linear-gradient(160deg, rgb(32 38 92), rgb(14 17 48) 60%, rgb(60 30 100));
+            "
+          />
+          <!-- iso town skyline -->
+          <svg class="absolute bottom-0 right-0 h-[85%] w-auto opacity-35 sm:opacity-90" viewBox="0 0 400 260" aria-hidden="true">
+            <g>
+              <path d="M220 120l60-34 60 34-60 34z" fill="rgb(255 202 58)" />
+              <path d="M220 120v80l60 34v-80z" fill="rgb(201 120 14)" />
+              <path d="M340 120v80l-60 34v-80z" fill="rgb(150 80 10)" />
+              <path d="M250 150l14 8v18l-14-8zM300 158l14-8v18l-14 8z" fill="rgb(255 240 190)" />
+              <path d="M120 150l50-28 50 28-50 28z" fill="rgb(64 214 245)" />
+              <path d="M120 150v70l50 28v-70z" fill="rgb(22 128 176)" />
+              <path d="M220 150v70l-50 28v-70z" fill="rgb(16 90 130)" />
+              <path d="M140 175l12 7v14l-12-7z" fill="rgb(220 250 255)" />
+              <path d="M300 60l40-22 40 22-40 22z" fill="rgb(168 110 255)" />
+              <path d="M300 60v120l40 22V82z" fill="rgb(104 56 196)" />
+              <path d="M380 60v120l-40 22V82z" fill="rgb(80 40 160)" />
+              <path d="M312 90l10 6v10l-10-6zM312 120l10 6v10l-10-6z" fill="rgb(235 220 255)" />
+              <path d="M0 260 200 150l200 110z" fill="rgb(8 10 32)" opacity=".55" />
+            </g>
+          </svg>
+          <div class="relative flex h-full flex-col justify-end gap-4 p-6 sm:p-8">
+            <span class="cc-chip cc-chip-mint self-start"><span class="h-2 w-2 rounded-full bg-mint" /> Servers online</span>
             <div>
-              <h2 class="m-0 text-xl font-bold text-white">{{ displayName }}</h2>
-              <p class="m-0 text-sm text-white/70">{{ email }}</p>
-              <div class="flex flex-wrap gap-4 mt-2 text-sm text-white/80">
-                <span>{{ stats.friends }} Friends</span>
-                <span>{{ stats.level }} Level</span>
-                <span>{{ stats.items }} Items</span>
-                <span>{{ stats.achievements }} Achievements</span>
-              </div>
+              <p class="cc-eyebrow text-fog/70">Mode · Campus Town</p>
+              <h2 class="cc-display m-0 mt-1 text-5xl leading-none sm:text-6xl">Ready to play?</h2>
+              <p class="m-0 mt-2 max-w-md text-sm font-semibold text-fog/80">Drop into the town, visit your loft and see who's around.</p>
             </div>
-          </div>
-          <div class="flex border-b border-white/20 -mb-2 md:border-0 md:mb-0 flex gap-1">
-            <button
-              type="button"
-              :class="[
-                'px-4 py-2 text-sm font-semibold rounded-t-lg md:rounded-lg',
-                activeTab === 'about' ? 'bg-amber-500 text-slate-900 md:underline md:decoration-amber-500 md:decoration-2' : 'text-white/80 hover:bg-white/10',
-              ]"
-              @click="activeTab = 'about'"
-            >
-              ABOUT
-            </button>
-            <button
-              type="button"
-              :class="[
-                'px-4 py-2 text-sm font-semibold rounded-t-lg md:rounded-lg',
-                activeTab === 'locker' ? 'bg-amber-500 text-slate-900 md:underline md:decoration-amber-500 md:decoration-2' : 'text-white/80 hover:bg-white/10',
-              ]"
-              @click="activeTab = 'locker'"
-            >
-              LOCKER
-            </button>
-            <button
-              type="button"
-              :class="[
-                'px-4 py-2 text-sm font-semibold rounded-t-lg md:rounded-lg',
-                activeTab === 'achievements' ? 'bg-amber-500 text-slate-900 md:underline md:decoration-amber-500 md:decoration-2' : 'text-white/80 hover:bg-white/10',
-              ]"
-              @click="activeTab = 'achievements'"
-            >
-              ACHIEVEMENTS
+            <button type="button" class="cc-btn cc-btn-sun cc-btn-xl cc-btn-shine self-start" @click="launchGame">
+              <UiIcon name="play" :size="26" fill /> Launch game
             </button>
           </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <div class="rounded-2xl bg-slate-800 text-white p-5">
-            <h3 class="m-0 mb-4 font-bold text-sm tracking-wider">ABOUT</h3>
-            <div class="space-y-3 text-sm">
-              <div>
-                <p class="m-0 text-white/50 text-xs uppercase tracking-wide">MEMBER SINCE</p>
-                <p class="m-0 font-semibold text-white">{{ memberSince }}</p>
-              </div>
-              <div>
-                <p class="m-0 text-white/50 text-xs uppercase tracking-wide">LAST ONLINE</p>
-                <p class="m-0 text-white">{{ lastOnline }}</p>
-              </div>
-              <div>
-                <p class="m-0 text-white/50 text-xs uppercase tracking-wide">COINS</p>
-                <p class="m-0 font-semibold text-white flex items-center gap-2">🪙 {{ coinsDisplay }}</p>
-              </div>
-              <div>
-                <p class="m-0 text-white/50 text-xs uppercase tracking-wide">PREMIUM</p>
-                <p class="m-0 font-semibold text-white flex items-center gap-2">✨ {{ premiumDisplay }}</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="rounded-2xl bg-gradient-to-br from-purple-600 to-fuchsia-500 text-white p-6 flex flex-col items-center justify-center text-center min-h-[180px]">
-            <div class="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center mb-3">
-              <svg class="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M8 5v14l11-7z" />
-              </svg>
-            </div>
-            <h3 class="m-0 mb-1 font-bold text-lg">READY TO PLAY?</h3>
-            <p class="m-0 mb-4 text-sm text-white/90">Jump into your virtual campus</p>
-            <button
-              type="button"
-              class="rounded-lg bg-white px-6 py-2.5 text-base font-bold text-fuchsia-600 hover:bg-white/95 transition-colors"
-              @click="launchGame"
-            >
-              LAUNCH GAME
-            </button>
-          </div>
-
-          <div class="rounded-2xl bg-slate-800 text-white p-5">
-            <h3 class="m-0 mb-4 font-bold text-sm tracking-wider">QUICK ACTIONS</h3>
-            <div class="space-y-2">
-              <RouterLink
-                to="/shop"
-                class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium"
-              >
-                🛒 Visit Shop
-              </RouterLink>
-              <RouterLink
-                to="/shop-skin"
-                class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium"
-              >
-                🧥 Visit Shop Skin
-              </RouterLink>
-              <RouterLink to="/friends" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium">
-                👥 View Friends
-              </RouterLink>
-              <button type="button" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium">
-                🏆 Achievements
-              </button>
-            </div>
-          </div>
+        <div class="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <RouterLink
+            v-for="tile in quickTiles"
+            :key="tile.to"
+            :to="tile.to"
+            class="cc-panel group flex flex-col gap-3 overflow-hidden p-4 transition hover:-translate-y-1"
+          >
+            <span :class="['grid h-12 w-12 place-items-center rounded-xl bg-gradient-to-br to-transparent', tile.tone]">
+              <UiIcon :name="tile.icon" :size="24" />
+            </span>
+            <span>
+              <span class="cc-display block text-xl text-fog">{{ tile.label }}</span>
+              <span class="block text-xs font-bold text-mist">{{ tile.hint }}</span>
+            </span>
+          </RouterLink>
         </div>
+      </section>
 
-        <section>
-          <h3 class="m-0 mb-4 font-bold text-slate-800 text-lg">RECENT ITEMS</h3>
-          <div class="flex gap-4 overflow-x-auto pb-2">
-            <div
-              v-for="(item, i) in recentItems"
-              :key="i"
-              class="shrink-0 w-36 h-36 rounded-xl overflow-hidden bg-slate-200 cursor-pointer group"
-            >
-              <div :class="['w-full h-24', item.color]" />
-              <div class="px-2 py-2 bg-slate-800 text-white text-xs font-medium">
-                {{ item.name }}
-              </div>
-            </div>
+      <!-- friends rail -->
+      <aside class="cc-panel order-3 flex max-h-[640px] flex-col overflow-hidden">
+        <div class="cc-panel-header">
+          <div>
+            <h2 class="cc-display m-0 text-xl">Friends</h2>
+            <p class="m-0 text-xs font-bold text-mist">{{ onlineCount }} of {{ friends.length }} online</p>
           </div>
-        </section>
-      </main>
-
-      <!-- Collapsible Friends Panel (Right Side) -->
-      <aside
-        :class="[
-          'fixed right-0 top-14 bottom-0 z-30 w-80 border-l border-white/10 bg-slate-800 text-white transition-transform duration-300 ease-out flex flex-col transform',
-          friendsPanelOpen ? 'translate-x-0' : 'translate-x-full',
-        ]"
-      >
-        <div class="flex items-center justify-between px-4 py-3 border-b border-white/10 shrink-0">
-          <h2 class="text-lg font-bold">Friends</h2>
-          <div class="flex items-center gap-2">
-            <RouterLink
-              to="/friends"
-              class="p-2 rounded-lg hover:bg-white/10 text-white/70 hover:text-white"
-              title="Manage friends"
-            >
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-              </svg>
-            </RouterLink>
-            <button
-              type="button"
-              class="p-2 rounded-lg hover:bg-white/10"
-              aria-label="Close friends panel"
-              @click="friendsPanelOpen = false"
-            >
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
+          <RouterLink to="/friends" class="cc-btn cc-btn-ghost cc-btn-sm cc-btn-icon" title="Manage friends">
+            <UiIcon name="user-plus" :size="18" />
+          </RouterLink>
         </div>
-
-        <div class="flex-1 overflow-y-auto px-3 py-3 min-h-0">
-          <div v-if="friendsLoading" class="py-8 text-center text-sm text-white/50">Loading friends…</div>
-          <div v-else-if="friends.length === 0" class="py-8 text-center text-sm text-white/50">
-            <p class="mb-2">No friends yet</p>
-            <RouterLink to="/friends" class="text-purple-400 hover:text-purple-300 underline">Add friends</RouterLink>
+        <div class="min-h-0 flex-1 overflow-y-auto p-2">
+          <div v-if="friendsLoading" class="py-10 text-center text-sm font-bold text-mist">Loading friends…</div>
+          <div v-else-if="friends.length === 0" class="px-4 py-10 text-center">
+            <UiIcon name="users" :size="36" class="mx-auto text-ink-500" />
+            <p class="m-0 mt-2 text-sm font-bold text-mist">No friends yet</p>
+            <RouterLink to="/friends" class="cc-btn cc-btn-pool cc-btn-sm mt-4">Add friends</RouterLink>
           </div>
-          <div v-else class="space-y-1">
-            <div
-              v-for="f in friends"
-              :key="f.account_id"
-              class="flex items-center gap-3 p-3 rounded-lg hover:bg-white/5 cursor-pointer group"
-              @click="openChat(f)"
-            >
-              <div class="relative shrink-0">
-                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-[#DA62C4] to-[#A744E3] flex items-center justify-center text-white font-bold text-sm">
-                  {{ friendInitial(f.display_name) }}
-                </div>
-                <span
-                  :class="['absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-slate-800', statusDotClass(f.status)]"
-                  :title="statusLabel(f.status)"
-                />
-              </div>
-              <div class="min-w-0 flex-1">
-                <p class="m-0 font-medium text-white text-sm truncate">{{ f.display_name }}</p>
-                <p class="m-0 text-xs text-white/50 truncate">{{ statusLabel(f.status) }}</p>
-              </div>
+          <ul v-else class="m-0 list-none space-y-1 p-0">
+            <li v-for="f in sortedFriends" :key="f.account_id">
               <button
                 type="button"
-                class="shrink-0 p-1.5 rounded text-white/40 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                title="Message"
-                @click.stop="openChat(f)"
+                class="group flex w-full items-center gap-3 rounded-xl p-2.5 text-left transition hover:bg-white/5"
+                @click="openChat(f)"
               >
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                </svg>
+                <span class="relative shrink-0">
+                  <span class="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-pool to-grape font-display text-white" :class="f.status === 'offline' ? 'opacity-50 grayscale' : ''">
+                    {{ friendInitial(f.display_name) }}
+                  </span>
+                  <span :class="['absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-[3px] border-ink-900', statusDotClass(f.status)]" :title="statusLabel(f.status)" />
+                </span>
+                <span class="min-w-0 flex-1">
+                  <span class="block truncate text-sm font-extrabold text-fog">{{ f.display_name }}</span>
+                  <span class="block truncate text-xs font-semibold" :class="f.status === 'playing' ? 'text-pool' : f.status === 'online' ? 'text-mint' : 'text-mist/70'">{{ statusLabel(f.status) }}</span>
+                </span>
+                <UiIcon name="message" :size="18" class="text-mist opacity-0 transition group-hover:opacity-100" />
               </button>
-            </div>
-          </div>
-        </div>
-
-        <div class="px-3 py-3 border-t border-white/10 shrink-0">
-          <p class="m-0 mb-2 text-xs text-white/50">{{ onlineCount }} of {{ friends.length }} online</p>
+            </li>
+          </ul>
         </div>
       </aside>
+    </div>
 
-      <!-- Toggle button for friends panel -->
-      <button
-        type="button"
-        class="fixed bottom-6 right-6 z-20 w-14 h-14 rounded-full bg-gradient-to-r from-[#DA62C4] to-[#A744E3] text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all flex items-center justify-center"
-        :class="{ 'right-80': friendsPanelOpen }"
-        :title="friendsPanelOpen ? 'Close friends' : 'Open friends'"
-        @click="friendsPanelOpen = !friendsPanelOpen"
-      >
-        <svg v-if="!friendsPanelOpen" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-6.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-        </svg>
-        <svg v-else class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
+    <section class="mt-8">
+      <div class="mb-3 flex items-end justify-between">
+        <h2 class="cc-display m-0 text-2xl">Recent items</h2>
+        <RouterLink to="/locker" class="text-sm font-extrabold text-pool hover:underline">Open locker</RouterLink>
+      </div>
+      <div class="flex gap-3 overflow-x-auto pb-3">
+        <div
+          v-for="(item, i) in recentItems"
+          :key="i"
+          :class="['cc-card cc-rarity w-40 shrink-0 cursor-pointer', `cc-rarity-${item.rarity}`]"
+        >
+          <div class="cc-rarity-bg grid h-28 place-items-center">
+            <UiIcon name="box" :size="40" class="text-white/85 drop-shadow-[0_4px_0_rgba(0,0,0,0.3)]" />
+          </div>
+          <div class="px-3 py-2">
+            <p class="m-0 truncate text-sm font-extrabold">{{ item.name }}</p>
+            <p class="cc-rarity-text m-0 text-[11px] font-extrabold uppercase tracking-wider">{{ item.rarity }}</p>
+          </div>
+        </div>
+      </div>
+    </section>
   </div>
 </template>

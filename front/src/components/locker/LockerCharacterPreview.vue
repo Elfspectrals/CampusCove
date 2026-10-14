@@ -23,7 +23,7 @@ const containerClass = computed<string>(() => {
   if (props.plain) {
     return 'relative h-full w-full overflow-hidden'
   }
-  return 'relative h-full min-h-[320px] w-full overflow-hidden rounded-[12px] border border-[#60A5FA]/30 bg-gradient-to-b from-[#14356F] via-[#102A5C] to-[#0B1F48] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]'
+  return 'cc-panel relative h-full min-h-[320px] w-full overflow-hidden bg-[radial-gradient(circle_at_50%_70%,rgb(var(--cc-grape)/0.45),transparent_60%),linear-gradient(180deg,rgb(var(--cc-ink-700)),rgb(var(--cc-ink-950)))]'
 })
 
 const containerRef = ref<HTMLElement | null>(null)
@@ -280,7 +280,7 @@ function initThree(): void {
 
   const { width, height } = canvasSize()
   scene = new THREE.Scene()
-  scene.background = new THREE.Color(0x0d2248)
+  scene.background = new THREE.Color(0x161a44)
 
   camera = new THREE.PerspectiveCamera(34, width / height, 0.05, 200)
   camera.position.set(0, 1.15, 3.8)
@@ -392,27 +392,27 @@ onUnmounted(() => {
     ref="containerRef"
     :class="containerClass"
   >
-    <div v-if="!props.plain" class="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-cyan-300/12 to-transparent" />
-    <div v-if="!props.plain" class="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/35 to-transparent" />
-    <p v-if="!props.plain" class="pointer-events-none absolute left-3 top-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-200/90">
+    <div v-if="!props.plain" class="pointer-events-none absolute inset-x-0 top-0 z-[1] h-20 bg-gradient-to-b from-ink-950/60 to-transparent" />
+    <div v-if="!props.plain" class="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-24 bg-gradient-to-t from-ink-950/70 to-transparent" />
+    <p v-if="!props.plain" class="cc-eyebrow pointer-events-none absolute left-4 top-4 z-[1]">
       Outfit Preview
     </p>
     <p
       v-if="!props.plain && props.showDragHint && props.interactive"
-      class="pointer-events-none absolute bottom-3 left-3 text-[11px] font-semibold text-slate-300/85"
+      class="pointer-events-none absolute bottom-4 left-4 z-[1] inline-flex items-center gap-1.5 rounded-full bg-ink-950/70 px-3 py-1 text-[11px] font-extrabold text-mist"
     >
-      Drag to rotate
+      ⟲ Drag to rotate
     </p>
     <p
       v-if="!props.plain && loadingModel && !previewError"
-      class="pointer-events-none absolute bottom-3 right-3 rounded-md border border-cyan-200/30 bg-slate-900/55 px-2 py-1 text-[11px] font-semibold text-cyan-100"
+      class="cc-chip cc-chip-pool pointer-events-none absolute bottom-4 right-4 z-[1]"
       role="status"
     >
-      Loading character...
+      Loading character…
     </p>
     <p
       v-if="!props.plain && previewError"
-      class="pointer-events-none absolute bottom-3 right-3 rounded-md border border-rose-300/30 bg-rose-500/20 px-2 py-1 text-[11px] font-semibold text-rose-100"
+      class="cc-chip cc-chip-coral pointer-events-none absolute bottom-4 right-4 z-[1]"
     >
       {{ previewError }}
     </p>

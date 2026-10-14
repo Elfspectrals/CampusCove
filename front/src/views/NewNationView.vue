@@ -4,6 +4,9 @@ import { RouterLink } from 'vue-router'
 import { getStoredAuth } from '../api/auth'
 import * as itemShopApi from '../api/itemShop'
 import type { ShopCurrency, ShopItem, ShopItemCurrencyOption } from '../api/itemShop'
+import UiIcon from '../components/ui/UiIcon.vue'
+import UiCurrency from '../components/ui/UiCurrency.vue'
+import UiLogo from '../components/ui/UiLogo.vue'
 import NewNationMinimap from '../components/newNation/NewNationMinimap.vue'
 import ItemShopPurchaseConfirmModal from '../components/shop/ItemShopPurchaseConfirmModal.vue'
 import { useWalletBalances } from '../composables/useWalletBalances'
@@ -293,10 +296,10 @@ const filterTabs: Array<{ key: Filter; label: string }> = [
 
     <!-- title + filters -->
     <div class="pointer-events-none absolute left-4 top-4 flex max-w-[calc(100%-2rem)] flex-col gap-3 sm:left-6 sm:top-6">
-      <div class="pointer-events-auto rounded-xl border border-cyan-300/50 bg-[#060e28]/80 px-5 py-3 shadow-lg backdrop-blur">
-        <p class="m-0 text-[11px] font-bold uppercase tracking-[0.3em] text-cyan-200">Season showroom</p>
-        <h1 class="m-0 text-2xl font-black uppercase tracking-[0.08em] text-amber-300 sm:text-3xl">New Nation</h1>
-        <p class="m-0 mt-1 text-xs text-white/70">Walk the plaza and preview everything you can buy.</p>
+      <div class="cc-panel-glass pointer-events-auto px-5 py-3.5">
+        <p class="cc-eyebrow m-0 text-pool">Season 1 · Showroom</p>
+        <h1 class="cc-display m-0 text-3xl text-sun sm:text-4xl">New Nation</h1>
+        <p class="m-0 mt-1 text-xs font-semibold text-mist">Walk the plaza and preview everything you can buy.</p>
       </div>
       <div class="pointer-events-auto flex flex-wrap gap-2">
         <button
@@ -304,10 +307,8 @@ const filterTabs: Array<{ key: Filter; label: string }> = [
           :key="tab.key"
           type="button"
           :class="[
-            'rounded-full border px-3 py-1.5 text-xs font-bold uppercase tracking-wide backdrop-blur transition',
-            filter === tab.key
-              ? 'border-amber-300 bg-amber-300 text-slate-900'
-              : 'border-white/40 bg-[#060e28]/70 text-white hover:bg-[#060e28]/90',
+            'cc-btn cc-btn-sm',
+            filter === tab.key ? 'cc-btn-sun' : 'cc-btn-ghost backdrop-blur',
           ]"
           @click="filter = tab.key"
         >
@@ -317,24 +318,25 @@ const filterTabs: Array<{ key: Filter; label: string }> = [
       <div v-if="!mapLoading && !loadError" class="pointer-events-auto flex flex-wrap gap-2">
         <button
           type="button"
-          class="rounded-lg border border-cyan-300/70 bg-[#060e28]/80 px-3 py-2 text-xs font-bold uppercase tracking-wide backdrop-blur transition hover:bg-[#060e28]"
+          class="cc-btn cc-btn-pool cc-btn-sm"
           @click="setWalking(!walking)"
         >
-          {{ walking ? '🛰️ Overview' : '🚶 Walk around' }}
+          <UiIcon :name="walking ? 'eye' : 'walk'" :size="16" />
+          {{ walking ? 'Overview' : 'Walk around' }}
         </button>
         <button
           v-if="walking"
           type="button"
-          class="rounded-lg border border-white/40 bg-[#060e28]/80 px-3 py-2 text-xs font-bold uppercase tracking-wide backdrop-blur transition hover:bg-[#060e28]"
+          class="cc-btn cc-btn-ghost cc-btn-sm backdrop-blur"
           @click="goToPlaza"
         >
-          ⛲ Plaza
+          <UiIcon name="flag" :size="16" /> Plaza
         </button>
       </div>
       <!-- apartment tour -->
       <div
         v-if="!mapLoading && !loadError && apartments.length > 0"
-        class="pointer-events-auto flex max-w-full flex-wrap items-center gap-1.5 rounded-xl border border-amber-300/50 bg-[#060e28]/80 p-1.5 backdrop-blur"
+        class="cc-panel-glass pointer-events-auto flex max-w-full flex-wrap items-center gap-1 p-1.5"
       >
         <button
           type="button"
@@ -342,19 +344,19 @@ const filterTabs: Array<{ key: Filter; label: string }> = [
           aria-label="Previous apartment"
           @click="visitNextApartment(-1)"
         >
-          ◀
+          <UiIcon name="chevron-left" :size="16" />
         </button>
         <button
           v-for="apt in apartments"
           :key="apt.id"
           type="button"
           :class="[
-            'rounded-md px-2.5 py-1.5 text-xs font-bold uppercase tracking-wide transition',
-            currentApartmentId === apt.id ? 'bg-amber-300 text-slate-900' : 'text-white hover:bg-white/10',
+            'rounded-xl px-2.5 py-1.5 font-display text-xs tracking-wide transition',
+            currentApartmentId === apt.id ? 'bg-sun text-ink-950 shadow-[inset_0_-3px_0_rgb(var(--cc-sun-edge))]' : 'text-fog hover:bg-white/10',
           ]"
           @click="visitApartment(apt.id)"
         >
-          🏠 {{ apt.name }}
+          <UiIcon name="home" :size="14" class="mr-1 inline align-[-2px]" />{{ apt.name }}
         </button>
         <button
           type="button"
@@ -362,7 +364,7 @@ const filterTabs: Array<{ key: Filter; label: string }> = [
           aria-label="Next apartment"
           @click="visitNextApartment(1)"
         >
-          ▶
+          <UiIcon name="chevron-right" :size="16" />
         </button>
       </div>
     </div>
@@ -370,10 +372,10 @@ const filterTabs: Array<{ key: Filter; label: string }> = [
     <!-- visiting banner -->
     <div
       v-if="walking && currentApartment"
-      class="pointer-events-none absolute bottom-24 left-4 whitespace-nowrap rounded-full border border-amber-300/70 bg-[#060e28]/85 px-5 py-2 text-center text-sm font-bold shadow-lg"
+      class="cc-hud pointer-events-none absolute bottom-24 left-4 whitespace-nowrap border-sun/60 px-5 py-2 text-center text-sm font-bold"
     >
-      Visiting <span class="text-amber-300">{{ currentApartment.name }}</span>
-      <span class="ml-2 hidden text-xs font-medium text-white/60 md:inline">N / B · next / previous home</span>
+      Visiting <span class="text-sun">{{ currentApartment.name }}</span>
+      <span class="ml-2 hidden text-xs font-bold text-mist md:inline"><span class="cc-keycap">N</span> / <span class="cc-keycap">B</span> next / previous home</span>
     </div>
 
     <!-- minimap + camera rotation -->
@@ -385,7 +387,7 @@ const filterTabs: Array<{ key: Filter; label: string }> = [
       ]"
     >
       <NewNationMinimap :get-state="getMinimapState" @visit="visitApartment" @plaza="goToPlaza" />
-      <div class="flex items-center gap-2 rounded-xl border border-cyan-300/50 bg-[#060e28]/85 p-1.5 backdrop-blur">
+      <div class="cc-hud flex items-center gap-2 p-1.5">
         <button
           type="button"
           class="h-10 w-10 select-none rounded-lg text-lg font-bold hover:bg-white/10 active:bg-white/20"
@@ -396,9 +398,9 @@ const filterTabs: Array<{ key: Filter; label: string }> = [
           @pointerleave="stopTurn"
           @pointercancel="stopTurn"
         >
-          ⟲
+          <UiIcon name="rotate-left" class="mx-auto" />
         </button>
-        <span class="text-[10px] font-bold uppercase tracking-widest text-white/60">Rotate</span>
+        <span class="text-[10px] font-extrabold uppercase tracking-widest text-mist">Rotate</span>
         <button
           type="button"
           class="h-10 w-10 select-none rounded-lg text-lg font-bold hover:bg-white/10 active:bg-white/20"
@@ -409,7 +411,7 @@ const filterTabs: Array<{ key: Filter; label: string }> = [
           @pointerleave="stopTurn"
           @pointercancel="stopTurn"
         >
-          ⟳
+          <UiIcon name="rotate-right" class="mx-auto" />
         </button>
       </div>
     </div>
@@ -422,17 +424,17 @@ const filterTabs: Array<{ key: Filter; label: string }> = [
       </div>
       <div
         v-if="showWalkHint && !mouseLook && !selectedItem"
-        class="pointer-events-none absolute left-1/2 top-1/2 mt-10 -translate-x-1/2 rounded-xl bg-[#060e28]/85 px-5 py-3 text-center text-sm"
+        class="cc-hud pointer-events-none absolute left-1/2 top-1/2 mt-10 -translate-x-1/2 px-5 py-3 text-center text-sm"
       >
         <p class="m-0 font-bold">Drag to look around · click to capture the mouse</p>
-        <p class="m-0 mt-1 text-xs text-white/70">WASD / arrows to move · Q / E to turn · Shift to run · Esc frees the mouse</p>
+        <p class="m-0 mt-1 text-xs font-semibold text-mist">WASD / arrows to move · Q / E to turn · Shift to run · Esc frees the mouse</p>
       </div>
     </template>
 
     <!-- hover hint -->
     <div
       v-if="hoveredItem && hoveredItem.item_def_id !== selectedId"
-      class="pointer-events-none absolute left-1/2 top-16 -translate-x-1/2 rounded-full bg-[#060e28]/85 px-4 py-1.5 text-xs font-semibold"
+      class="cc-hud pointer-events-none absolute left-1/2 top-16 -translate-x-1/2 px-4 py-1.5 text-xs font-extrabold"
     >
       Click to inspect {{ hoveredItem.name }}
     </div>
@@ -440,33 +442,35 @@ const filterTabs: Array<{ key: Filter; label: string }> = [
     <!-- loading / error -->
     <div
       v-if="mapLoading"
-      class="absolute inset-0 flex items-center justify-center bg-[#0b1640]/70 text-sm font-semibold uppercase tracking-widest"
+      class="cc-world absolute inset-0 flex flex-col items-center justify-center gap-4"
     >
-      Building New Nation…
+      <UiLogo size="md" class="animate-cc-float" />
+      <span class="cc-display text-2xl">Building New Nation…</span>
+      <div class="cc-meter w-56"><span class="w-2/3 animate-pulse" /></div>
     </div>
     <div
       v-else-if="loadError"
-      class="absolute left-1/2 top-1/2 w-[min(92%,420px)] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-rose-300/60 bg-rose-950/85 p-5 text-rose-50"
+      class="cc-panel absolute left-1/2 top-1/2 w-[min(92%,420px)] -translate-x-1/2 -translate-y-1/2 border-coral/60 p-6"
       role="alert"
     >
-      <p class="m-0 font-semibold">Could not open New Nation</p>
-      <p class="m-0 mt-1 text-sm text-rose-100/90">{{ loadError }}</p>
-      <button type="button" class="mt-3 rounded-md border border-rose-200/80 px-3 py-1.5 text-xs font-bold uppercase tracking-wide" @click="loadAll">
+      <p class="cc-display m-0 text-2xl text-coral">Could not open New Nation</p>
+      <p class="m-0 mt-1 text-sm font-semibold text-mist">{{ loadError }}</p>
+      <button type="button" class="cc-btn cc-btn-coral cc-btn-sm mt-4" @click="loadAll">
         Try again
       </button>
     </div>
     <div
       v-else-if="catalogError"
-      class="absolute right-4 top-4 w-[min(calc(100%-2rem),320px)] rounded-xl border border-amber-300/60 sm:right-6 sm:top-6 bg-[#060e28]/90 px-4 py-3 text-sm shadow-lg"
+      class="cc-panel-glass absolute right-4 top-4 w-[min(calc(100%-2rem),320px)] border-sun/50 px-4 py-3 text-sm sm:right-6 sm:top-6"
       role="status"
     >
-      <p class="m-0 font-semibold text-amber-200">Shop items are unavailable right now</p>
-      <p class="m-0 mt-0.5 text-xs text-white/70">
+      <p class="m-0 font-extrabold text-sun">Shop items are unavailable right now</p>
+      <p class="m-0 mt-0.5 text-xs font-semibold text-mist">
         You can still walk the plaza and visit the apartments. ({{ catalogError }})
       </p>
       <button
         type="button"
-        class="mt-2 rounded-md border border-amber-200/80 px-3 py-1 text-xs font-bold uppercase tracking-wide disabled:opacity-60"
+        class="cc-btn cc-btn-sun cc-btn-sm mt-3"
         :disabled="catalogLoading"
         @click="retryCatalog"
       >
@@ -475,7 +479,7 @@ const filterTabs: Array<{ key: Filter; label: string }> = [
     </div>
     <div
       v-else-if="!catalogLoading && visibleItems.length === 0"
-      class="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-xl bg-[#060e28]/80 px-5 py-3 text-sm font-semibold"
+      class="cc-hud pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-5 py-3 text-sm font-bold"
     >
       No items in this section yet.
     </div>
@@ -483,38 +487,38 @@ const filterTabs: Array<{ key: Filter; label: string }> = [
     <!-- selected item panel -->
     <aside
       v-if="selectedItem"
-      class="absolute bottom-24 right-4 w-[min(calc(100%-2rem),360px)] rounded-xl border border-cyan-300/60 bg-[#060e28]/90 p-5 shadow-2xl backdrop-blur sm:bottom-auto sm:right-6 sm:top-6"
+      class="cc-panel-glass absolute bottom-24 right-4 w-[min(calc(100%-2rem),360px)] animate-cc-pop p-5 sm:bottom-auto sm:right-6 sm:top-6"
     >
       <div class="flex items-start justify-between gap-3">
         <div>
-          <p class="m-0 text-[11px] font-bold uppercase tracking-[0.2em] text-cyan-200">
+          <p class="cc-eyebrow m-0 text-pool">
             {{ itemGroup(selectedItem) === 'apartment' ? 'Apartment asset' : 'Skin & cosmetic' }}
           </p>
-          <h2 class="m-0 mt-1 text-2xl font-black uppercase leading-tight">{{ selectedItem.name }}</h2>
+          <h2 class="cc-display m-0 mt-1 text-3xl leading-tight">{{ selectedItem.name }}</h2>
         </div>
         <button
           type="button"
-          class="rounded-md border border-white/30 px-2 py-1 text-xs font-bold text-white/80 hover:bg-white/10"
+          class="cc-btn cc-btn-ghost cc-btn-sm cc-btn-icon"
           aria-label="Close and return to overview"
           @click="selectItem(null)"
         >
-          ✕
+          <UiIcon name="x" :size="16" />
         </button>
       </div>
-      <p v-if="selectedItem.description" class="m-0 mt-3 text-sm text-white/75">{{ selectedItem.description }}</p>
+      <p v-if="selectedItem.description" class="m-0 mt-3 text-sm font-semibold text-mist">{{ selectedItem.description }}</p>
 
-      <ul class="m-0 mt-4 list-none space-y-1.5 border-y border-white/10 p-0 py-3 text-sm">
-        <li v-for="option in selectedItem.options" :key="option.shop_catalog_item_id" class="flex items-center justify-between">
-          <span class="text-white/70">{{ currencyLabel(option.currency) }}</span>
-          <span class="font-bold">{{ priceBadge(option) }}</span>
+      <ul class="m-0 mt-4 list-none space-y-1.5 p-0 text-sm">
+        <li v-for="option in selectedItem.options" :key="option.shop_catalog_item_id" class="flex items-center justify-between rounded-xl bg-ink-950/50 px-3 py-2">
+          <span class="font-bold text-mist">{{ currencyLabel(option.currency) }}</span>
+          <UiCurrency :currency="option.currency" :amount="option.price" :class="option.currency === 'coins' ? 'text-sun' : 'text-grape'" />
         </li>
       </ul>
 
       <div
         v-if="feedback && feedback.itemId === selectedItem.item_def_id"
         :class="[
-          'mt-3 rounded-md border px-3 py-2 text-sm',
-          feedback.kind === 'success' ? 'border-emerald-300/50 bg-emerald-500/15 text-emerald-100' : 'border-rose-300/50 bg-rose-500/15 text-rose-100',
+          'cc-alert mt-3',
+          feedback.kind === 'success' ? 'cc-alert-success' : 'cc-alert-error',
         ]"
         role="status"
       >
@@ -524,7 +528,7 @@ const filterTabs: Array<{ key: Filter; label: string }> = [
       <button
         v-if="isLoggedIn"
         type="button"
-        class="mt-4 w-full rounded-lg border border-amber-200 bg-amber-300 px-4 py-3 text-lg font-black uppercase tracking-wide text-slate-900 transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
+        class="cc-btn cc-btn-sun cc-btn-lg cc-btn-shine mt-4 w-full"
         :disabled="purchasingId !== null"
         @click="openPurchaseConfirm(selectedItem)"
       >
@@ -533,13 +537,13 @@ const filterTabs: Array<{ key: Filter; label: string }> = [
       <RouterLink
         v-else
         to="/login"
-        class="mt-4 flex w-full items-center justify-center rounded-lg border border-cyan-300/80 bg-[#02153c] px-4 py-3 text-base font-black uppercase tracking-wide text-cyan-100 hover:bg-[#08245e]"
+        class="cc-btn cc-btn-pool mt-4 w-full"
       >
         Sign in to buy
       </RouterLink>
       <RouterLink
         :to="{ name: itemGroup(selectedItem) === 'apartment' ? 'shop' : 'shop-skin' }"
-        class="mt-2 block text-center text-xs font-semibold text-cyan-200 underline underline-offset-2"
+        class="mt-3 block text-center text-xs font-extrabold text-pool hover:underline"
       >
         Open in the shop
       </RouterLink>
@@ -548,42 +552,42 @@ const filterTabs: Array<{ key: Filter; label: string }> = [
     <!-- bottom item rail -->
     <div
       v-if="!mapLoading && !catalogLoading && visibleItems.length > 0"
-      class="absolute inset-x-0 bottom-0 flex items-center gap-2 bg-gradient-to-t from-[#060e28]/90 to-transparent px-4 pb-4 pt-8"
+      class="absolute inset-x-0 bottom-0 flex items-center gap-2 bg-gradient-to-t from-ink-950/90 to-transparent px-4 pb-4 pt-10"
     >
       <button
         type="button"
-        class="shrink-0 rounded-full border border-white/40 bg-[#060e28]/80 px-3 py-2 text-sm font-bold hover:bg-[#060e28]"
+        class="cc-btn cc-btn-ghost cc-btn-sm cc-btn-icon shrink-0"
         aria-label="Previous item"
         @click="stepSelection(-1)"
       >
-        ◀
+        <UiIcon name="chevron-left" :size="18" />
       </button>
       <ul class="m-0 flex min-w-0 flex-1 list-none gap-2 overflow-x-auto p-0 pb-1">
         <li v-for="item in visibleItems" :key="item.item_def_id" class="shrink-0">
           <button
             type="button"
             :class="[
-              'rounded-lg border px-3 py-2 text-left text-xs transition',
+              'rounded-xl border-2 px-3 py-2 text-left text-xs backdrop-blur transition',
               selectedId === item.item_def_id
-                ? 'border-amber-300 bg-amber-300/20'
-                : 'border-white/25 bg-[#060e28]/75 hover:border-cyan-300/70',
+                ? 'border-sun bg-sun/20 shadow-[0_0_14px_rgb(var(--cc-sun)/0.4)]'
+                : 'border-white/15 bg-ink-950/75 hover:border-pool/70',
             ]"
             @click="selectItem(item.item_def_id)"
           >
-            <span class="block max-w-[160px] truncate font-bold uppercase tracking-wide">{{ item.name }}</span>
-            <span class="block text-cyan-200">{{ item.options[0] ? priceBadge(item.options[0]) : '' }}</span>
+            <span class="block max-w-[160px] truncate font-display text-sm tracking-wide">{{ item.name }}</span>
+            <UiCurrency v-if="item.options[0]" :currency="item.options[0].currency" :amount="item.options[0].price" :size="14" :class="item.options[0].currency === 'coins' ? 'text-sun' : 'text-grape'" />
           </button>
         </li>
       </ul>
       <button
         type="button"
-        class="shrink-0 rounded-full border border-white/40 bg-[#060e28]/80 px-3 py-2 text-sm font-bold hover:bg-[#060e28]"
+        class="cc-btn cc-btn-ghost cc-btn-sm cc-btn-icon shrink-0"
         aria-label="Next item"
         @click="stepSelection(1)"
       >
-        ▶
+        <UiIcon name="chevron-right" :size="18" />
       </button>
-      <p class="m-0 hidden shrink-0 text-[11px] text-white/60 lg:block">
+      <p class="m-0 hidden shrink-0 text-[11px] font-bold text-mist lg:block">
         {{ walking ? 'WASD to walk · Drag or Q/E to turn · N/B next home' : 'Drag to orbit · Q/E to rotate · ←/→ to browse' }}
       </p>
     </div>

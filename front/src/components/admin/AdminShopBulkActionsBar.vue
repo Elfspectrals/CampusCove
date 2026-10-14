@@ -12,11 +12,11 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <section v-if="selectedCount > 0" class="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-purple-200 bg-purple-50 p-3 text-sm">
-    <span class="font-semibold text-purple-900">{{ selectedCount }} selected</span>
+  <section v-if="selectedCount > 0" class="mb-4 flex flex-wrap items-center gap-2 cc-panel-flat border-sun/50 p-3 text-sm">
+    <span class="font-semibold text-sun">{{ selectedCount }} selected</span>
     <button
       type="button"
-      class="rounded-md border border-slate-300 bg-white px-2.5 py-1.5 font-semibold text-slate-800"
+      class="cc-btn cc-btn-sm cc-btn-ghost"
       :disabled="bulkLoading"
       @click="emit('bulk', 'publish')"
     >
@@ -24,7 +24,7 @@ const emit = defineEmits<{
     </button>
     <button
       type="button"
-      class="rounded-md border border-slate-300 bg-white px-2.5 py-1.5 font-semibold text-slate-800"
+      class="cc-btn cc-btn-sm cc-btn-ghost"
       :disabled="bulkLoading"
       @click="emit('bulk', 'unpublish')"
     >
@@ -32,7 +32,7 @@ const emit = defineEmits<{
     </button>
     <button
       type="button"
-      class="rounded-md border border-slate-300 bg-white px-2.5 py-1.5 font-semibold text-slate-800"
+      class="cc-btn cc-btn-sm cc-btn-ghost"
       :disabled="bulkLoading"
       @click="emit('bulk', 'activate')"
     >
@@ -40,7 +40,7 @@ const emit = defineEmits<{
     </button>
     <button
       type="button"
-      class="rounded-md border border-slate-300 bg-white px-2.5 py-1.5 font-semibold text-slate-800"
+      class="cc-btn cc-btn-sm cc-btn-ghost"
       :disabled="bulkLoading"
       @click="emit('bulk', 'deactivate')"
     >
@@ -48,7 +48,7 @@ const emit = defineEmits<{
     </button>
     <button
       type="button"
-      class="rounded-md border border-red-300 bg-red-50 px-2.5 py-1.5 font-semibold text-red-900"
+      class="cc-btn cc-btn-sm cc-btn-ghost text-coral"
       :disabled="bulkLoading"
       @click="emit('bulk', 'soft_delete')"
     >
@@ -56,7 +56,7 @@ const emit = defineEmits<{
     </button>
     <button
       type="button"
-      class="rounded-md border border-emerald-300 bg-emerald-50 px-2.5 py-1.5 font-semibold text-emerald-900"
+      class="cc-btn cc-btn-sm cc-btn-ghost text-mint"
       :disabled="bulkLoading"
       @click="emit('bulk', 'restore')"
     >

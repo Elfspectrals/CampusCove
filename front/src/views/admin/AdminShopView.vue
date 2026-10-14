@@ -416,8 +416,8 @@ watch(isSkinSection, () => {
   <div class="mx-auto flex w-full max-w-7xl flex-col">
     <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
       <div>
-        <h1 class="m-0 text-2xl font-bold text-slate-900">{{ isSkinSection ? 'Admin shop skins' : 'Admin shop items' }}</h1>
-        <p class="mt-1 text-sm text-slate-600">
+        <h1 class="cc-display m-0 text-3xl text-fog">{{ isSkinSection ? 'Admin shop skins' : 'Admin shop items' }}</h1>
+        <p class="mt-1 text-sm text-mist">
           {{
             isSkinSection
               ? 'Manage permanent cosmetic skins sold in the skin shop.'
@@ -425,38 +425,38 @@ watch(isSkinSection, () => {
           }}
         </p>
       </div>
-      <button type="button" class="rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-500" @click="openCreate">
+      <button type="button" class="cc-btn cc-btn-sm cc-btn-sun" @click="openCreate">
         {{ isSkinSection ? 'New skin' : 'New item' }}
       </button>
     </div>
 
     <p
       v-if="pageMessage"
-      class="mb-4 rounded-lg border px-3 py-2 text-sm"
-      :class="pageMessage.kind === 'success' ? 'border-emerald-200 bg-emerald-50 text-emerald-900' : 'border-red-200 bg-red-50 text-red-900'"
+      class="cc-alert mb-4"
+      :class="pageMessage.kind === 'success' ? 'cc-alert-success' : 'cc-alert-error'"
     >
       {{ pageMessage.text }}
     </p>
 
-    <section class="mb-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+    <section class="mb-4 cc-panel p-4">
       <div class="grid gap-3 md:grid-cols-6">
         <input
           v-model="searchInput"
           type="search"
-          class="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2"
+          class="cc-input cc-input-sm md:col-span-2"
           placeholder="Search code or name"
         />
-        <select v-model="filterPublished" class="rounded-lg border border-slate-300 px-3 py-2 text-sm">
+        <select v-model="filterPublished" class="cc-input cc-input-sm">
           <option value="all">Published: All</option>
           <option value="yes">Published only</option>
           <option value="no">Unpublished only</option>
         </select>
-        <select v-model="filterActive" class="rounded-lg border border-slate-300 px-3 py-2 text-sm">
+        <select v-model="filterActive" class="cc-input cc-input-sm">
           <option value="all">Active: All</option>
           <option value="yes">Active only</option>
           <option value="no">Inactive only</option>
         </select>
-        <select v-model="filterKind" class="rounded-lg border border-slate-300 px-3 py-2 text-sm">
+        <select v-model="filterKind" class="cc-input cc-input-sm">
           <option value="all">Kind: {{ isSkinSection ? 'Cosmetic only' : 'All non-cosmetic' }}</option>
           <option v-if="isSkinSection" value="cosmetic">Cosmetic</option>
           <option v-else value="apartment_asset">Apartment asset</option>
@@ -464,19 +464,19 @@ watch(isSkinSection, () => {
           <option value="consumable">Consumable</option>
           <option value="misc">Misc</option>
         </select>
-        <select v-model="filterCurrency" class="rounded-lg border border-slate-300 px-3 py-2 text-sm">
+        <select v-model="filterCurrency" class="cc-input cc-input-sm">
           <option value="all">Currency: All</option>
           <option value="coins">Coins</option>
           <option value="premium">Premium</option>
         </select>
       </div>
       <div class="mt-3 flex flex-wrap items-center gap-3">
-        <select v-model="filterDeleted" class="rounded-lg border border-slate-300 px-3 py-2 text-sm">
+        <select v-model="filterDeleted" class="cc-input cc-input-sm">
           <option value="all">Deleted state: All</option>
           <option value="active">Active records only</option>
           <option value="deleted">Deleted only</option>
         </select>
-        <select v-model.number="perPage" class="rounded-lg border border-slate-300 px-3 py-2 text-sm">
+        <select v-model.number="perPage" class="cc-input cc-input-sm">
           <option :value="10">10 / page</option>
           <option :value="20">20 / page</option>
           <option :value="50">50 / page</option>
@@ -505,12 +505,12 @@ watch(isSkinSection, () => {
       @retry-load="loadRows"
     />
 
-    <div class="mt-4 flex items-center justify-between text-sm text-slate-600">
+    <div class="mt-4 flex items-center justify-between text-sm text-mist">
       <p class="m-0">Showing page {{ meta.current_page }} of {{ meta.last_page }} ({{ meta.total }} total)</p>
       <div class="flex gap-2">
         <button
           type="button"
-          class="rounded-md border border-slate-300 bg-white px-3 py-1.5 font-semibold text-slate-800 disabled:opacity-50"
+          class="cc-btn cc-btn-sm cc-btn-ghost"
           :disabled="meta.current_page <= 1"
           @click="goToPage(meta.current_page - 1)"
         >
@@ -518,7 +518,7 @@ watch(isSkinSection, () => {
         </button>
         <button
           type="button"
-          class="rounded-md border border-slate-300 bg-white px-3 py-1.5 font-semibold text-slate-800 disabled:opacity-50"
+          class="cc-btn cc-btn-sm cc-btn-ghost"
           :disabled="meta.current_page >= meta.last_page"
           @click="goToPage(meta.current_page + 1)"
         >

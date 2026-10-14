@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { RouterLink } from 'vue-router'
 import type { AccountInventoryRow } from '../api/inventory'
+import UiIcon from '../components/ui/UiIcon.vue'
 import LockerCharacterPreview from '../components/locker/LockerCharacterPreview.vue'
 import LockerItemCard from '../components/locker/LockerItemCard.vue'
 import { useLockerInventory } from '../composables/useLockerInventory'
@@ -92,26 +94,37 @@ watch(
 </script>
 
 <template>
-  <div class="relative min-h-screen overflow-hidden bg-[#030b1f] text-white">
-    <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(2,132,199,0.25),transparent_38%),radial-gradient(circle_at_82%_85%,rgba(6,78,146,0.24),transparent_42%),linear-gradient(100deg,#051633_0%,#0a1f4d_50%,#06122a_100%)]" />
-    <div class="pointer-events-none absolute inset-0 opacity-70 [background-image:radial-gradient(circle,_rgba(34,211,238,0.45)_1.1px,transparent_1.1px)] [background-size:140px_140px]" />
+  <div class="mx-auto w-full max-w-[1600px]">
+    <div class="mb-5 flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <p class="cc-eyebrow">Your collection</p>
+        <h1 class="cc-title">Locker</h1>
+      </div>
+      <div class="cc-tabs">
+        <span class="cc-tab cc-tab-active"><UiIcon name="shirt" :size="16" /> Outfits</span>
+        <RouterLink :to="{ name: 'shop-skin' }" class="cc-tab"><UiIcon name="plus" :size="16" /> Get more</RouterLink>
+      </div>
+    </div>
 
-    <div class="relative mx-auto grid min-h-screen max-w-[1500px] grid-cols-1 lg:grid-cols-[1.25fr_0.92fr]">
-      <section class="border-b border-cyan-300/45 p-7 lg:border-b-0 lg:border-r">
-        <h1 class="mb-6 text-4xl font-black uppercase tracking-[0.08em] text-[#00d4ff] drop-shadow-[0_0_18px_rgba(0,212,255,0.45)]">Skins</h1>
-
-        <div v-if="equipMessage" class="mb-3 rounded border border-emerald-300/45 bg-emerald-500/15 px-3 py-2 text-sm font-semibold text-emerald-100" role="status">
-          {{ equipMessage }}
-        </div>
-        <div v-if="equipError || loadError || loadoutError" class="mb-4 rounded border border-rose-300/45 bg-rose-500/15 px-3 py-2 text-sm font-semibold text-rose-100" role="alert">
-          {{ equipError ?? loadError ?? loadoutError }}
+    <div class="grid gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(360px,0.8fr)]">
+      <section class="cc-panel min-w-0 p-5">
+        <div class="mb-4 flex items-center justify-between">
+          <h2 class="cc-display m-0 text-xl">Skins</h2>
+          <span class="cc-chip">{{ gridItems.length }} owned</span>
         </div>
 
-        <div v-if="loading" class="flex min-h-[280px] items-center justify-center rounded-xl border border-dashed border-cyan-200/30 bg-black/30 text-sm font-semibold text-slate-200">
-          Loading locker items...
+        <div v-if="equipMessage" class="cc-alert cc-alert-success mb-3" role="status"><UiIcon name="check" :size="18" /> {{ equipMessage }}</div>
+        <div v-if="equipError || loadError || loadoutError" class="cc-alert cc-alert-error mb-4" role="alert">
+          <UiIcon name="alert" :size="18" /> {{ equipError ?? loadError ?? loadoutError }}
         </div>
-        <div v-else-if="gridItems.length === 0" class="flex min-h-[280px] items-center justify-center rounded-xl border border-dashed border-cyan-200/30 bg-black/30 text-sm font-semibold text-slate-200">
-          No outfit skins in your locker yet.
+
+        <div v-if="loading" class="grid grid-cols-3 gap-3 sm:grid-cols-4 xl:grid-cols-6">
+          <div v-for="n in 12" :key="n" class="aspect-square animate-pulse rounded-xl bg-ink-800/70" />
+        </div>
+        <div v-else-if="gridItems.length === 0" class="cc-panel-flat flex min-h-[280px] flex-col items-center justify-center gap-3 text-center">
+          <UiIcon name="shirt" :size="40" class="text-ink-500" />
+          <p class="m-0 font-bold text-mist">No outfit skins in your locker yet.</p>
+          <RouterLink :to="{ name: 'shop-skin' }" class="cc-btn cc-btn-sun cc-btn-sm">Browse skins</RouterLink>
         </div>
         <div v-else class="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
           <LockerItemCard
@@ -133,30 +146,31 @@ watch(
         </div>
       </section>
 
-      <section class="relative flex flex-col border-cyan-300/45 p-7">
-        <div class="mb-6 flex h-full min-h-[220px] items-center justify-center rounded-xl border border-cyan-300/25 bg-black/20">
+      <section class="flex flex-col gap-4 lg:sticky lg:top-24 lg:self-start">
+        <div class="h-[440px]">
           <LockerCharacterPreview :asset-id="selectedPreviewAssetId" :asset-src="selectedPreviewAssetSrc" />
         </div>
 
-        <div class="space-y-4 rounded-xl border border-cyan-300/25 bg-black/30 p-4">
-          <p class="m-0 text-xs font-bold uppercase tracking-[0.18em] text-cyan-200/80">Selected outfit</p>
-          <p class="m-0 truncate text-2xl font-black uppercase tracking-[0.06em] text-white">
-            {{ selectedEntry?.row.item.name ?? 'No skin selected' }}
-          </p>
-          <p class="m-0 text-sm font-semibold text-slate-200/90">
-            {{ selectedEntry ? `Owned x${selectedEntry.row.quantity}` : 'Select a skin from your locker.' }}
+        <div class="cc-panel p-5">
+          <p class="cc-eyebrow">Selected outfit</p>
+          <div class="mt-1 flex items-center justify-between gap-3">
+            <p class="cc-display m-0 truncate text-3xl">{{ selectedEntry?.row.item.name ?? 'No skin selected' }}</p>
+            <span v-if="selectedEntry && isEquipped(selectedEntry.row)" class="cc-chip cc-chip-grape shrink-0">Equipped</span>
+          </div>
+          <p class="m-0 mt-1 text-sm font-semibold text-mist">
+            {{ selectedEntry ? `Owned ×${selectedEntry.row.quantity}` : 'Select a skin from your locker.' }}
           </p>
           <button
             type="button"
-            class="w-full rounded-lg border border-cyan-300/80 bg-[radial-gradient(circle_at_center,_#4cc2ff_0%,_#1e5db7_58%,_#0e2b63_100%)] px-4 py-3 text-lg font-black uppercase tracking-[0.08em] text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+            :class="['cc-btn cc-btn-lg mt-4 w-full', selectedEntry && isEquipped(selectedEntry.row) ? 'cc-btn-ghost' : 'cc-btn-sun']"
             :disabled="!selectedEntry || !selectedEntry.canEquip || equippingId === selectedEntry.row.id"
             @click="equipSelectedSkin"
           >
             {{
               !selectedEntry
-                ? 'Select Skin'
+                ? 'Select skin'
                 : equippingId === selectedEntry.row.id
-                  ? 'Equipping...'
+                  ? 'Equipping…'
                   : isEquipped(selectedEntry.row)
                     ? 'Equipped'
                     : 'Equip'

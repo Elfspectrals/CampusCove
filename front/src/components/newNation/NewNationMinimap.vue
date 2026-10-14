@@ -75,9 +75,9 @@ function draw() {
       else ctx.lineTo(px, py)
     })
     ctx.closePath()
-    ctx.fillStyle = current ? '#fcd34d' : hovered ? '#a5f3fc' : '#e8e4dc'
+    ctx.fillStyle = current ? '#ffca3a' : hovered ? '#40d6f5' : '#e8e4dc'
     ctx.fill()
-    ctx.strokeStyle = '#0b1640'
+    ctx.strokeStyle = '#080a20'
     ctx.lineWidth = 1
     ctx.stroke()
     // walkway from plaza edge to the door
@@ -95,7 +95,7 @@ function draw() {
   ctx.save()
   ctx.translate(px, py)
   ctx.rotate(-state.player.yaw)
-  ctx.fillStyle = '#f43f5e'
+  ctx.fillStyle = '#ff5c7a'
   ctx.strokeStyle = '#ffffff'
   ctx.lineWidth = 1.5
   ctx.beginPath()
@@ -155,15 +155,15 @@ const hoveredName = () => lastState?.apartments.find((a) => a.id === hoveredId.v
 </script>
 
 <template>
-  <div class="rounded-xl border border-cyan-300/60 bg-[#060e28]/85 p-2 shadow-xl backdrop-blur">
+  <div class="cc-hud p-2">
     <div class="mb-1 flex items-center justify-between px-1">
-      <span class="text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-200">Map</span>
-      <span class="text-[10px] text-white/60">{{ hoveredName() ?? 'Click a home to visit' }}</span>
+      <span class="cc-eyebrow text-[10px] text-pool">Map</span>
+      <span class="text-[10px] font-bold text-mist">{{ hoveredName() ?? 'Click a home to visit' }}</span>
     </div>
     <canvas
       ref="canvasRef"
       :style="{ width: `${SIZE}px`, height: `${SIZE}px` }"
-      class="block rounded-lg"
+      class="block rounded-lg border-2 border-ink-950"
       role="img"
       aria-label="Map of New Nation with the model apartments"
       @click="onClick"
