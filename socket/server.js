@@ -6,12 +6,12 @@ const COLORS = [
 ]
 
 const SLOTS = ['body', 'hair', 'top', 'bottom', 'shoes', 'head_accessory']
-// Must match HOUSING_LOBBY_SPAWN in front/src/game/gameRoomConstants.ts (/game MVP housing lobby)
-const CITY_SPAWN = { x: 0, y: 1.6, z: 5 }
-// Must match APARTMENT_SPAWN in front/src/game/gameRoomConstants.ts (just inside the entrance of CampusApartmentInterior.glb)
-const APARTMENT_SPAWN = { x: 3.8, y: 1.6, z: -1.2 }
-// Must match CITY_APARTMENT_EXIT / HOUSING_LOBBY_SPAWN (return to housing lobby after apartment)
-const CITY_APARTMENT_EXIT = { x: 0, y: 1.6, z: 5 }
+// Must match HOUSING_LOBBY_SPAWN in front/src/game/gameRoomConstants.ts (town plaza, facing the town hall)
+const CITY_SPAWN = { x: 0, y: 1.6, z: 13 }
+// Must match APARTMENT_SPAWN in front/src/game/gameRoomConstants.ts (just inside the door of every house interior)
+const APARTMENT_SPAWN = { x: 0, y: 1.6, z: 3.7 }
+// Must match CITY_APARTMENT_EXIT / HOUSING_LOBBY_SPAWN (back on the town plaza after leaving a house)
+const CITY_APARTMENT_EXIT = { x: 0, y: 1.6, z: 13 }
 const CITY_MAX_PLAYERS = parseInt(process.env.CITY_MAX_PLAYERS || '30', 10)
 const BACKEND_API_URL = (process.env.BACKEND_API_URL || 'http://localhost:8000/api').replace(/\/+$/, '')
 

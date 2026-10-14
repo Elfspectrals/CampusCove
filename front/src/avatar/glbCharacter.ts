@@ -2,13 +2,15 @@ import * as THREE from 'three'
 import { createGltfLoader } from '../game/gltfLoaderFactory'
 import type { CosmeticColors } from '../api/characterCosmetics'
 import { DEFAULT_SLOT_COLORS, SLOT_ORDER } from '../api/characterCosmetics'
+import { DEFAULT_SKIN } from '../game/assets/catalog'
 
 let templateRoot: THREE.Group | null = null
 let loadFailed = false
 const modelCache = new Map<string, Promise<THREE.Group | null>>()
 
 /**
- * Loads `assets/models/low_poly_character.glb` once, centers and scales to ~1.75m tall (feet at y=0).
+ * Loads the default skin (catalog DEFAULT_SKIN, public/assets/skins/campus_classic/model.glb) once,
+ * centers and scales to ~1.75m tall (feet at y=0). Used when a player has no body skin equipped.
  */
 export async function loadCharacterTemplate(): Promise<THREE.Group | null> {
   if (loadFailed) return null
@@ -16,7 +18,7 @@ export async function loadCharacterTemplate(): Promise<THREE.Group | null> {
 
   try {
     const loader = createGltfLoader()
-    const url = new URL('../assets/models/low_poly_character.glb', import.meta.url).href
+    const url = DEFAULT_SKIN.modelUrl
     const gltf = await loader.loadAsync(url)
     const root = gltf.scene as THREE.Group
     normalizeCharacterScale(root)
@@ -127,9 +129,16 @@ export function cloneCharacterWithUniqueMaterials(source: THREE.Object3D): THREE
 
 /**
  * Single-material GLB (Sketchfab export): blend all slot hexes for a balanced tint.
- * When you add per-mesh materials later, map mesh names → slots here.
+ * Multi-material skins (the Blender-built ones in assets/skins/: skin, hair, textured clothes) carry
+ * their own look, so they are left untouched.
  */
 export function applyCosmeticColors(root: THREE.Object3D, colors: CosmeticColors): void {
+  const materials = new Set<string>()
+  root.traverse((obj) => {
+    if (!(obj instanceof THREE.Mesh) || !obj.material) return
+    for (const m of Array.isArray(obj.material) ? obj.material : [obj.material]) materials.add(m.name || m.uuid)
+  })
+  if (materials.size > 1) return
   const blended = blendSlotHexes(colors)
   root.traverse((obj) => {
     if (obj instanceof THREE.Mesh && obj.material) {

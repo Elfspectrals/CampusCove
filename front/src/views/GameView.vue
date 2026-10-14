@@ -25,8 +25,7 @@ import { useApartmentObjects } from '../composables/game/useApartmentObjects'
 import { useApartmentPlacement } from '../composables/game/useApartmentPlacement'
 import { useGameMovement } from '../composables/game/useGameMovement'
 import {
-  buildWorldCollisionFromObject,
-  clearWorldCollision,
+  buildWorldCollisionFromUrl,
   getWorldCollisionStats,
   toggleCollisionDebug,
 } from '../composables/game/useWorldCollision'
@@ -39,7 +38,8 @@ import {
   useCityHousing,
 } from '../composables/game/useCityHousing'
 import { getGraphicsQuality, supportsEnvironmentMap, toggleGraphicsQuality } from '../game/graphicsQuality'
-import { applySceneAtmosphere, buildHousingLobbyEnvironment, loadApartmentEnvironment, stripRoomEnvironmentsFromScene } from '../game/roomEnvironments'
+import { applySceneAtmosphere, loadApartmentEnvironment, loadTownEnvironment, stripRoomEnvironmentsFromScene } from '../game/roomEnvironments'
+import { TOWN } from '../game/assets/catalog'
 import {
   applySharedEnvironment,
   clearSharedEnvironment,
@@ -400,7 +400,13 @@ function updateDoorPromptScreenPos(): void {
   }
 }
 
-function setRoomEnvironment(kind: 'city' | 'apartment') {
+/** House asset key for an apartment template ('housing_<unit_id>'), via the unit's model_key. */
+function houseKeyForTemplate(templateKey: string | undefined): string | null {
+  if (!templateKey) return null
+  return housingUnits.value.find((u) => u.template_key === templateKey)?.model_key ?? null
+}
+
+function setRoomEnvironment(kind: 'city' | 'apartment', templateKey?: string) {
   const token = ++roomEnvironmentLoadToken
   if (kind === 'city') {
     apartmentPlacement.setPlayerInsideApartment(false)
@@ -417,34 +423,43 @@ function setRoomEnvironment(kind: 'city' | 'apartment') {
     canEditApartment.value = false
     visitedApartmentOwnerId.value = null
     stripRoomEnvironmentsFromScene(scene)
-    const group = buildHousingLobbyEnvironment()
-    roomEnvironment = group
-    if (!housingCubesGroup) {
-      housingCubesGroup = new THREE.Group()
-      housingCubesGroup.name = 'HousingCubes'
-    }
-    if (housingCubesGroup.parent !== group) {
-      group.add(housingCubesGroup)
-    }
-    syncCityHousingCubes()
-    scene.add(group)
-    // LobbyMap lives only on /map-paris — never on /game.
-    clearWorldCollision()
     myPosition.x = HOUSING_LOBBY_SPAWN.x
     myPosition.y = HOUSING_LOBBY_SPAWN.y
     myPosition.z = HOUSING_LOBBY_SPAWN.z
     nearApartmentDoor.value = false
     resetClientStateForCityWorld()
     clearApartmentObjects()
+    void buildWorldCollisionFromUrl(TOWN.collisionUrl).catch((err) => {
+      console.warn('[collision] town collision failed', err)
+    })
+    // Town map + the 10 house exteriors (assets/town, assets/houses). Legacy units without a
+    // model_key still get a placeholder cube.
+    void loadTownEnvironment()
+      .then(({ group }) => {
+        if (token !== roomEnvironmentLoadToken) return
+        roomEnvironment = group
+        if (!housingCubesGroup) {
+          housingCubesGroup = new THREE.Group()
+          housingCubesGroup.name = 'HousingCubes'
+        }
+        if (housingCubesGroup.parent !== group) {
+          group.add(housingCubesGroup)
+        }
+        syncCityHousingCubes()
+        scene.add(group)
+      })
+      .catch((err) => {
+        console.error('[town] load failed', err)
+        roomMessage.value = 'Could not load the town.'
+      })
   } else {
-    void loadApartmentEnvironment().then((built) => {
+    void loadApartmentEnvironment(houseKeyForTemplate(templateKey)).then((built) => {
       if (token !== roomEnvironmentLoadToken) return
       roomEnvironment = built.group
       scene.add(roomEnvironment)
       apartmentPlacement.registerApartmentEnvironment(built)
-      // CampusApartmentInterior.glb has no .collision.json sidecar: collide with the model itself.
-      void buildWorldCollisionFromObject('apartment:campus-interior', built.group).catch((err) => {
-        console.warn('[collision] apartment collision failed', err)
+      void buildWorldCollisionFromUrl(built.house.interiorCollisionUrl).catch((err) => {
+        console.warn('[collision] house collision failed', err)
       })
       nearCityDoor.value = false
       void apartmentPlacement.init({

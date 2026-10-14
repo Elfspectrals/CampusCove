@@ -8,33 +8,15 @@ use Illuminate\Support\Facades\DB;
 
 class ShopSeeder extends Seeder
 {
-    private const STARTER_BODY_PREVIEW_IMAGE = '/storage/skins/previews/placeholderSkin.jpg';
-
     public function run(): void
     {
         $defs = [
-            [
-                'code' => 'chair_campus_basic',
-                'name' => 'Campus Basic Chair',
-                'kind' => 'furniture',
-                'rarity' => 1,
-                'tradable' => true,
-                'premium_only' => false,
-                'bind' => 'none',
-                'max_stack' => 1,
-                'model_glb' => '/models/ChairCampusBasic.glb',
-            ],
-            [
-                'code' => 'lamp_study',
-                'name' => 'Study Lamp',
-                'kind' => 'furniture',
-                'rarity' => 2,
-                'tradable' => true,
-                'premium_only' => false,
-                'bind' => 'none',
-                'max_stack' => 5,
-                'model_glb' => '/models/LampStudy.glb',
-            ],
+            // ---- decoration (placeable in a house; assets in front/public/assets/decor/<key>/)
+            self::decor('chair_campus_basic', 'Wooden Chair', 'wooden_chair', 1, 1),
+            self::decor('lamp_study', 'Floor Lamp', 'floor_lamp', 2, 5),
+            self::decor('decor_dining_table', 'Dining Table', 'dining_table', 2, 2),
+            self::decor('decor_potted_plant', 'Potted Plant', 'potted_plant', 1, 10),
+            self::decor('decor_bookshelf', 'Bookshelf', 'bookshelf', 3, 3),
             [
                 'code' => 'emote_wave',
                 'name' => 'Wave Emote',
@@ -55,45 +37,13 @@ class ShopSeeder extends Seeder
                 'bind' => 'none',
                 'max_stack' => 1,
             ],
-            [
-                'code' => 'COS_WEAR_BODY_DEFAULT',
-                'name' => 'Campus Body (default)',
-                'kind' => 'cosmetic',
-                'rarity' => 0,
-                'tradable' => false,
-                'premium_only' => false,
-                'bind' => 'bound',
-                'max_stack' => 99,
-                'cosmetic_slot' => 'body',
-                'preview_image' => self::STARTER_BODY_PREVIEW_IMAGE,
-                'model_glb' => '/models/CharacterDefault.glb',
-            ],
-            [
-                'code' => 'COS_WEAR_BODY_ADVENTURER',
-                'name' => 'Campus Adventurer',
-                'kind' => 'cosmetic',
-                'rarity' => 0,
-                'tradable' => false,
-                'premium_only' => false,
-                'bind' => 'bound',
-                'max_stack' => 99,
-                'cosmetic_slot' => 'body',
-                'preview_image' => self::STARTER_BODY_PREVIEW_IMAGE,
-                'model_glb' => '/models/CharacterAdventurer.glb',
-            ],
-            [
-                'code' => 'COS_WEAR_BODY_SWORDSMAN',
-                'name' => 'Campus Swordsman',
-                'kind' => 'cosmetic',
-                'rarity' => 0,
-                'tradable' => false,
-                'premium_only' => false,
-                'bind' => 'bound',
-                'max_stack' => 99,
-                'cosmetic_slot' => 'body',
-                'preview_image' => self::STARTER_BODY_PREVIEW_IMAGE,
-                'model_glb' => '/models/CharacterSwordsman.glb',
-            ],
+            // ---- skins (body slot; assets in front/public/assets/skins/<key>/). The default one is
+            // granted for free by StarterCosmeticGrantService and is not sold.
+            self::skin('COS_WEAR_BODY_DEFAULT', 'Campus Classic', 'campus_classic', 0, 99),
+            self::skin('COS_WEAR_BODY_STREET_RUNNER', 'Street Runner', 'street_runner', 2),
+            self::skin('COS_WEAR_BODY_SCHOLAR', 'Scholar', 'scholar', 2),
+            self::skin('COS_WEAR_BODY_EXPLORER', 'Explorer', 'explorer', 3),
+            self::skin('COS_WEAR_BODY_NIGHT_OWL', 'Night Owl', 'night_owl', 4),
             [
                 'code' => 'COS_WEAR_HAIR_DEFAULT',
                 'name' => 'Campus Hair (default)',
@@ -158,6 +108,7 @@ class ShopSeeder extends Seeder
                 $itemDefIds[$def['code']] = (int) $existing;
                 if (array_key_exists('cosmetic_slot', $def) || array_key_exists('preview_image', $def) || array_key_exists('model_glb', $def)) {
                     DB::table('item_defs')->where('code', $def['code'])->update(array_filter([
+                        'name' => $def['name'],
                         'cosmetic_slot' => $def['cosmetic_slot'] ?? null,
                         'preview_image' => $def['preview_image'] ?? null,
                         'model_glb' => $def['model_glb'] ?? null,
@@ -192,30 +143,12 @@ class ShopSeeder extends Seeder
         }
 
         $catalogRows = [
-            [
-                'item_def_code' => 'chair_campus_basic',
-                'allow_coins' => true,
-                'coins_price' => 250,
-                'allow_premium' => false,
-                'premium_price' => null,
-                'is_active' => true,
-                'is_published' => true,
-                'is_unique_per_account' => false,
-                'stock_remaining' => null,
-                'sort_order' => 10,
-            ],
-            [
-                'item_def_code' => 'lamp_study',
-                'allow_coins' => true,
-                'coins_price' => 120,
-                'allow_premium' => false,
-                'premium_price' => null,
-                'is_active' => true,
-                'is_published' => true,
-                'is_unique_per_account' => false,
-                'stock_remaining' => 100,
-                'sort_order' => 20,
-            ],
+            // decoration — coins only
+            self::coins('chair_campus_basic', 90, 10),
+            self::coins('lamp_study', 120, 20, stock: 100),
+            self::coins('decor_dining_table', 160, 22),
+            self::coins('decor_potted_plant', 60, 24),
+            self::coins('decor_bookshelf', 220, 26),
             [
                 'item_def_code' => 'emote_wave',
                 'allow_coins' => true,
@@ -240,6 +173,14 @@ class ShopSeeder extends Seeder
                 'stock_remaining' => null,
                 'sort_order' => 40,
             ],
+            // paid skins (one per account); the rarest also sells for premium currency
+            self::coins('COS_WEAR_BODY_STREET_RUNNER', 400, 50, unique: true),
+            self::coins('COS_WEAR_BODY_SCHOLAR', 600, 52, unique: true),
+            self::coins('COS_WEAR_BODY_EXPLORER', 800, 54, unique: true),
+            array_merge(self::coins('COS_WEAR_BODY_NIGHT_OWL', 1200, 56, unique: true), [
+                'allow_premium' => true,
+                'premium_price' => 120,
+            ]),
         ];
 
         foreach ($catalogRows as $catalog) {
@@ -271,5 +212,57 @@ class ShopSeeder extends Seeder
         foreach (DB::table('gift_inboxes')->cursor() as $gi) {
             app(StarterCosmeticGrantService::class)->ensureStarterCosmeticsForAccount((int) $gi->account_id);
         }
+    }
+
+    /** @return array<string, mixed> */
+    private static function decor(string $code, string $name, string $assetKey, int $rarity, int $maxStack): array
+    {
+        return [
+            'code' => $code,
+            'name' => $name,
+            'kind' => 'furniture',
+            'rarity' => $rarity,
+            'tradable' => true,
+            'premium_only' => false,
+            'bind' => 'none',
+            'max_stack' => $maxStack,
+            'preview_image' => "/assets/decor/{$assetKey}/preview.png",
+            'model_glb' => "/assets/decor/{$assetKey}/model.glb",
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    private static function skin(string $code, string $name, string $assetKey, int $rarity, int $maxStack = 1): array
+    {
+        return [
+            'code' => $code,
+            'name' => $name,
+            'kind' => 'cosmetic',
+            'rarity' => $rarity,
+            'tradable' => false,
+            'premium_only' => false,
+            'bind' => 'bound',
+            'max_stack' => $maxStack,
+            'cosmetic_slot' => 'body',
+            'preview_image' => "/assets/skins/{$assetKey}/preview.png",
+            'model_glb' => "/assets/skins/{$assetKey}/model.glb",
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    private static function coins(string $code, int $price, int $sort, ?int $stock = null, bool $unique = false): array
+    {
+        return [
+            'item_def_code' => $code,
+            'allow_coins' => true,
+            'coins_price' => $price,
+            'allow_premium' => false,
+            'premium_price' => null,
+            'is_active' => true,
+            'is_published' => true,
+            'is_unique_per_account' => $unique,
+            'stock_remaining' => $stock,
+            'sort_order' => $sort,
+        ];
     }
 }

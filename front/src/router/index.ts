@@ -6,7 +6,6 @@ import AdminUsersView from '../views/admin/AdminUsersView.vue'
 import ForgotPasswordView from '../views/auth/ForgotPasswordView.vue'
 import FriendsView from '../views/FriendsView.vue'
 import GameView from '../views/GameView.vue'
-import MapParisView from '../views/MapParisView.vue'
 import HomeView from '../views/HomeView.vue'
 import LockerView from '../views/LockerView.vue'
 import ItemShopView from '../views/ItemShopView.vue'
@@ -36,12 +35,6 @@ const router = createRouter({
     { path: '/inventory', name: 'legacy-inventory', redirect: { name: 'locker' }, meta: { requiresAuth: true } },
     { path: '/friends', name: 'friends', component: FriendsView, meta: { requiresAuth: true, title: 'Friends' } },
     { path: '/game', name: 'game', component: GameView, meta: { requiresAuth: true, title: 'Game', fullBleed: true } },
-    {
-      path: '/map-paris',
-      name: 'map-paris',
-      component: MapParisView,
-      meta: { requiresAuth: true, title: 'Map Paris', fullBleed: true },
-    },
 
     { path: '/admin/users', name: 'admin-users', component: AdminUsersView, meta: { requiresAdmin: true, title: 'Admin — Users' } },
     { path: '/admin/shop', name: 'admin-shop', component: AdminShopView, meta: { requiresAdmin: true, title: 'Admin — Shop Items' } },

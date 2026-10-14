@@ -28,25 +28,38 @@ make up-build
 | `make migrate` | Migrations |
 | `make seed` | Shop + housing |
 | `make seed-shop` | Catalogue shop / wearables |
-| `make seed-housing` | 8 cubes ville |
+| `make seed-housing` | 10 maisons de la ville |
 | `make expire-leases` | Reset locations housing expirées |
 | `make set-admin EMAIL=a@b.c` | Droits admin |
 | `make set-money ACCOUNT=1 CURRENCY=coins SUM=2000` | Solde (id ou email) |
 | `make fill-outfit ACCOUNT=1` | Starter wearables + outfit |
 | `make test` | Tests backend |
 | `make rebuild-socket` | Rebuild Colyseus (pas de volume) |
-| `make map-optimize` | LobbyMap GLB + collision |
-| `make apartment-optimize` | Appart GLB + collision |
+| `make assets-optimize` | Assets Blender → `front/public/assets` (+ collisions) |
+| `make newnation-optimize` | Carte du showroom `/NewNation` |
 
 `CURRENCY` : `coins` ou `premium`. Relog après `set-admin`.
 
-## Appartement Campus Cove & New Nation
+## Assets 3D (Blender)
 
-- **Intérieur d'appartement** : `CampusApartmentInterior.glb` (+ `.low`), construit dans Blender (`map-src/CampusApartment/`, ignoré par git). Collision générée au chargement depuis le modèle (pas de `.collision.json`).
-- **Bâtiment Campus Cove** : `CampusApartmentExterior.glb`, ajouté à la carte de Paris (`/map-paris`) à l'ouest de l'Opéra.
-- **`/NewNation`** : showroom 3D des articles de la boutique + quatre appartements témoins visitables (Cozy Classic, Scandi Loft, Neon Studio, Terracotta Sun). Mode marche (WASD, glisser ou Q/E pour tourner, N/B pour changer d'appartement) et mini-carte cliquable. Sources : `map-src/NewNation/`.
+Tous les assets du jeu sont construits dans Blender (via le MCP Blender) par les scripts de `map-src/CampusCove/` (ignoré par git), en low-poly texturé :
+
+| Dossier `front/public/assets/` | Contenu |
+|---|---|
+| `skins/<clé>/` | 5 skins : `campus_classic` (gratuit, par défaut), `street_runner`, `scholar`, `explorer`, `night_owl` (`model.glb`, `preview.png`) |
+| `decor/<clé>/` | 5 objets de déco : `wooden_chair`, `dining_table`, `floor_lamp`, `potted_plant`, `bookshelf` |
+| `houses/house_01…10/` | 10 maisons : `exterior.glb`, `interior.glb` (un intérieur par maison), `interior.collision.json`, `preview.png` |
+| `town/` | La mini-ville (`town.glb`, `town.collision.json`, `town.layout.json` : spawn, position et porte de chaque maison) |
+| `showroom/` | Carte de `/NewNation` |
+
+Le code y accède via le catalogue central `front/src/game/assets/catalog.ts` ; les clés et codes boutique correspondent aux seeders (`ShopSeeder`, `HousingUnitSeeder`, `StarterCosmeticGrantService`).
+
+Reconstruire : lancer `build_skins.py`, `build_decor.py`, `build_houses.py` puis `build_town.py` dans Blender, puis :
 
 ```bash
-make apartment-optimize   # intérieur + extérieur
+make assets-optimize      # compression Draco/WebP + collisions (COL_* → *.collision.json)
 make newnation-optimize   # carte New Nation
 ```
+
+- **`/game`** : la mini-ville avec l'hôtel de ville au centre ; les 10 maisons sont les logements achetables / louables (`housing_units.model_key`).
+- **`/NewNation`** : showroom 3D des articles de la boutique + 4 maisons témoins visitables (Maple Cottage, Mint Villa, Neon Loft, Terracotta Casa). Mode marche (WASD, glisser ou Q/E pour tourner, N/B pour changer de maison) et mini-carte cliquable.

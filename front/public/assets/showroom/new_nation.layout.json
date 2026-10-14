@@ -1,0 +1,297 @@
+{
+  "version": 2,
+  "slots": [
+    {
+      "name": "Slot_A_00",
+      "group": "apartment",
+      "position": [
+        -3.061,
+        0.71,
+        -7.391
+      ]
+    },
+    {
+      "name": "Slot_A_01",
+      "group": "apartment",
+      "position": [
+        -7.391,
+        0.71,
+        -3.061
+      ]
+    },
+    {
+      "name": "Slot_A_02",
+      "group": "apartment",
+      "position": [
+        -7.391,
+        0.71,
+        3.061
+      ]
+    },
+    {
+      "name": "Slot_A_03",
+      "group": "apartment",
+      "position": [
+        -3.061,
+        0.71,
+        7.391
+      ]
+    },
+    {
+      "name": "Slot_A_04",
+      "group": "apartment",
+      "position": [
+        3.061,
+        0.71,
+        7.391
+      ]
+    },
+    {
+      "name": "Slot_A_05",
+      "group": "apartment",
+      "position": [
+        7.391,
+        0.71,
+        3.061
+      ]
+    },
+    {
+      "name": "Slot_A_06",
+      "group": "apartment",
+      "position": [
+        7.391,
+        0.71,
+        -3.061
+      ]
+    },
+    {
+      "name": "Slot_A_07",
+      "group": "apartment",
+      "position": [
+        3.061,
+        0.71,
+        -7.391
+      ]
+    },
+    {
+      "name": "Slot_S_00",
+      "group": "skin",
+      "position": [
+        -3.623,
+        0.45,
+        -13.523
+      ]
+    },
+    {
+      "name": "Slot_S_01",
+      "group": "skin",
+      "position": [
+        -9.899,
+        0.45,
+        -9.899
+      ]
+    },
+    {
+      "name": "Slot_S_02",
+      "group": "skin",
+      "position": [
+        -13.523,
+        0.45,
+        -3.623
+      ]
+    },
+    {
+      "name": "Slot_S_03",
+      "group": "skin",
+      "position": [
+        -13.523,
+        0.45,
+        3.623
+      ]
+    },
+    {
+      "name": "Slot_S_04",
+      "group": "skin",
+      "position": [
+        -9.899,
+        0.45,
+        9.899
+      ]
+    },
+    {
+      "name": "Slot_S_05",
+      "group": "skin",
+      "position": [
+        -3.623,
+        0.45,
+        13.523
+      ]
+    },
+    {
+      "name": "Slot_S_06",
+      "group": "skin",
+      "position": [
+        3.623,
+        0.45,
+        13.523
+      ]
+    },
+    {
+      "name": "Slot_S_07",
+      "group": "skin",
+      "position": [
+        9.899,
+        0.45,
+        9.899
+      ]
+    },
+    {
+      "name": "Slot_S_08",
+      "group": "skin",
+      "position": [
+        13.523,
+        0.45,
+        3.623
+      ]
+    },
+    {
+      "name": "Slot_S_09",
+      "group": "skin",
+      "position": [
+        13.523,
+        0.45,
+        -3.623
+      ]
+    },
+    {
+      "name": "Slot_S_10",
+      "group": "skin",
+      "position": [
+        9.899,
+        0.45,
+        -9.899
+      ]
+    },
+    {
+      "name": "Slot_S_11",
+      "group": "skin",
+      "position": [
+        3.623,
+        0.45,
+        -13.523
+      ]
+    }
+  ],
+  "apartments": [
+    {
+      "id": "house_01",
+      "name": "Maple Cottage",
+      "url": "/assets/houses/house_01/interior.glb",
+      "angle": 0.0,
+      "position": [
+        0.0,
+        0,
+        -39.0
+      ],
+      "rotationY": 0.0,
+      "footprint": [
+        -3.9,
+        -41.1,
+        3.9,
+        -33.8
+      ],
+      "doorStand": [
+        0.0,
+        1.6,
+        -30.5
+      ],
+      "doorYaw": -0.0
+    },
+    {
+      "id": "house_04",
+      "name": "Mint Villa",
+      "url": "/assets/houses/house_04/interior.glb",
+      "angle": -1.5708,
+      "position": [
+        39.0,
+        0,
+        -0.0
+      ],
+      "rotationY": -1.5708,
+      "footprint": [
+        -4.9,
+        -42.6,
+        4.9,
+        -33.8
+      ],
+      "doorStand": [
+        30.5,
+        1.6,
+        -0.0
+      ],
+      "doorYaw": -1.5708
+    },
+    {
+      "id": "house_09",
+      "name": "Neon Loft",
+      "url": "/assets/houses/house_09/interior.glb",
+      "angle": 3.14159,
+      "position": [
+        -0.0,
+        0,
+        39.0
+      ],
+      "rotationY": 3.14159,
+      "footprint": [
+        -5.4,
+        -43.6,
+        5.4,
+        -33.8
+      ],
+      "doorStand": [
+        -0.0,
+        1.6,
+        30.5
+      ],
+      "doorYaw": 3.14159
+    },
+    {
+      "id": "house_07",
+      "name": "Terracotta Casa",
+      "url": "/assets/houses/house_07/interior.glb",
+      "angle": 1.5708,
+      "position": [
+        -39.0,
+        0,
+        -0.0
+      ],
+      "rotationY": 1.5708,
+      "footprint": [
+        -5.4,
+        -42.6,
+        5.4,
+        -33.8
+      ],
+      "doorStand": [
+        -30.5,
+        1.6,
+        -0.0
+      ],
+      "doorYaw": 1.5708
+    }
+  ],
+  "hideNodes": [
+    "Sky_Front",
+    "Sky_Back",
+    "Sky_West",
+    "Sky_East",
+    "Door_Entrance",
+    "Door_Entrance_Handle",
+    "Door_Entrance_Sign"
+  ],
+  "walkSpawn": [
+    0,
+    1.6,
+    17.5
+  ]
+}

@@ -1,0 +1,188 @@
+{
+  "version": 1,
+  "spawn": [
+    0.0,
+    1.6,
+    13.0
+  ],
+  "spawnYaw": 0.0,
+  "townHall": {
+    "position": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "houses": [
+    {
+      "key": "house_01",
+      "name": "Maple Cottage",
+      "position": [
+        10.429,
+        0.0,
+        32.098
+      ],
+      "rotationY": -2.82743,
+      "door": [
+        9.023,
+        1.25,
+        27.771
+      ],
+      "offer": "rent",
+      "price": 90
+    },
+    {
+      "key": "house_02",
+      "name": "Bluebell Bungalow",
+      "position": [
+        27.304,
+        0.0,
+        19.838
+      ],
+      "rotationY": -2.19911,
+      "door": [
+        23.623,
+        1.25,
+        17.163
+      ],
+      "offer": "rent",
+      "price": 110
+    },
+    {
+      "key": "house_03",
+      "name": "Sunny Nook",
+      "position": [
+        34.0,
+        0.0,
+        -0.0
+      ],
+      "rotationY": -1.5708,
+      "door": [
+        29.2,
+        1.25,
+        -0.0
+      ],
+      "offer": "rent",
+      "price": 120
+    },
+    {
+      "key": "house_04",
+      "name": "Mint Villa",
+      "position": [
+        27.911,
+        0.0,
+        -20.279
+      ],
+      "rotationY": -0.94248,
+      "door": [
+        23.623,
+        1.25,
+        -17.163
+      ],
+      "offer": "buy",
+      "price": 1800
+    },
+    {
+      "key": "house_05",
+      "name": "Brick Townhouse",
+      "position": [
+        10.661,
+        0.0,
+        -32.811
+      ],
+      "rotationY": -0.31416,
+      "door": [
+        9.023,
+        1.25,
+        -27.771
+      ],
+      "offer": "buy",
+      "price": 2400
+    },
+    {
+      "key": "house_06",
+      "name": "Rose Cottage",
+      "position": [
+        -10.661,
+        0.0,
+        -32.811
+      ],
+      "rotationY": 0.31416,
+      "door": [
+        -9.023,
+        1.25,
+        -27.771
+      ],
+      "offer": "rent",
+      "price": 160
+    },
+    {
+      "key": "house_07",
+      "name": "Terracotta Casa",
+      "position": [
+        -27.911,
+        0.0,
+        -20.279
+      ],
+      "rotationY": 0.94248,
+      "door": [
+        -23.623,
+        1.25,
+        -17.163
+      ],
+      "offer": "buy",
+      "price": 2800
+    },
+    {
+      "key": "house_08",
+      "name": "Modern Cube",
+      "position": [
+        -34.75,
+        0.0,
+        -0.0
+      ],
+      "rotationY": 1.5708,
+      "door": [
+        -29.2,
+        1.25,
+        -0.0
+      ],
+      "offer": "buy",
+      "price": 3600
+    },
+    {
+      "key": "house_09",
+      "name": "Neon Loft",
+      "position": [
+        -28.316,
+        0.0,
+        20.572
+      ],
+      "rotationY": 2.19911,
+      "door": [
+        -23.623,
+        1.25,
+        17.163
+      ],
+      "offer": "buy",
+      "price": 3200
+    },
+    {
+      "key": "house_10",
+      "name": "Forest Lodge",
+      "position": [
+        -10.816,
+        0.0,
+        33.287
+      ],
+      "rotationY": 2.82743,
+      "door": [
+        -9.023,
+        1.25,
+        27.771
+      ],
+      "offer": "buy",
+      "price": 4000
+    }
+  ]
+}

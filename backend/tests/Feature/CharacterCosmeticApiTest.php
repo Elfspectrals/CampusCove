@@ -190,20 +190,24 @@ class CharacterCosmeticApiTest extends TestCase
         $rows = DB::table('item_defs')
             ->whereIn('code', [
                 'COS_WEAR_BODY_DEFAULT',
-                'COS_WEAR_BODY_ADVENTURER',
-                'COS_WEAR_BODY_SWORDSMAN',
+                'COS_WEAR_BODY_STREET_RUNNER',
+                'COS_WEAR_BODY_SCHOLAR',
+                'COS_WEAR_BODY_EXPLORER',
+                'COS_WEAR_BODY_NIGHT_OWL',
             ])
             ->pluck('model_glb', 'code')
             ->all();
 
-        $this->assertSame('/models/CharacterDefault.glb', $rows['COS_WEAR_BODY_DEFAULT'] ?? null);
-        $this->assertSame('/models/CharacterAdventurer.glb', $rows['COS_WEAR_BODY_ADVENTURER'] ?? null);
-        $this->assertSame('/models/CharacterSwordsman.glb', $rows['COS_WEAR_BODY_SWORDSMAN'] ?? null);
+        $this->assertSame('/assets/skins/campus_classic/model.glb', $rows['COS_WEAR_BODY_DEFAULT'] ?? null);
+        $this->assertSame('/assets/skins/street_runner/model.glb', $rows['COS_WEAR_BODY_STREET_RUNNER'] ?? null);
+        $this->assertSame('/assets/skins/scholar/model.glb', $rows['COS_WEAR_BODY_SCHOLAR'] ?? null);
+        $this->assertSame('/assets/skins/explorer/model.glb', $rows['COS_WEAR_BODY_EXPLORER'] ?? null);
+        $this->assertSame('/assets/skins/night_owl/model.glb', $rows['COS_WEAR_BODY_NIGHT_OWL'] ?? null);
 
         $previewImage = DB::table('item_defs')
             ->where('code', 'COS_WEAR_BODY_DEFAULT')
             ->value('preview_image');
-        $this->assertSame('/storage/skins/previews/placeholderSkin.jpg', $previewImage);
+        $this->assertSame('/assets/skins/campus_classic/preview.png', $previewImage);
 
         $def = DB::table('item_defs')->where('code', 'COS_WEAR_BODY_DEFAULT')->first();
         $this->assertNotNull($def);
@@ -219,14 +223,42 @@ class CharacterCosmeticApiTest extends TestCase
             'Authorization' => 'Bearer '.$token,
         ]);
         $response->assertOk();
-        $this->assertStringContainsString(
-            '/api/assets/public/skins/previews/placeholderSkin.jpg',
-            (string) $response->json('slots.body.preview_image')
+        // front-served assets are passed through untouched (not rewritten to the API host)
+        $this->assertSame(
+            '/assets/skins/campus_classic/preview.png',
+            $response->json('slots.body.preview_image')
         );
         $this->assertSame(
-            '/models/CharacterDefault.glb',
+            '/assets/skins/campus_classic/model.glb',
             $response->json('slots.body.model_glb')
         );
+    }
+
+    public function test_only_the_default_skin_is_free_and_the_others_are_sold(): void
+    {
+        $account = $this->registerAndCreditWallet(0, 'coins');
+
+        $owned = DB::table('account_locker_cosmetics')
+            ->join('item_defs', 'item_defs.item_def_id', '=', 'account_locker_cosmetics.item_def_id')
+            ->where('account_locker_cosmetics.account_id', $account['account_id'])
+            ->where('item_defs.cosmetic_slot', 'body')
+            ->pluck('item_defs.code')
+            ->all();
+        $this->assertSame(['COS_WEAR_BODY_DEFAULT'], $owned);
+
+        $sold = DB::table('shop_catalog_items')
+            ->join('item_defs', 'item_defs.item_def_id', '=', 'shop_catalog_items.item_def_id')
+            ->where('shop_catalog_items.is_active', true)
+            ->where('item_defs.cosmetic_slot', 'body')
+            ->orderBy('item_defs.code')
+            ->pluck('item_defs.code')
+            ->all();
+        $this->assertSame([
+            'COS_WEAR_BODY_EXPLORER',
+            'COS_WEAR_BODY_NIGHT_OWL',
+            'COS_WEAR_BODY_SCHOLAR',
+            'COS_WEAR_BODY_STREET_RUNNER',
+        ], $sold);
     }
 
     /**

@@ -33,6 +33,7 @@ export function parseHousingUnit(raw: unknown): HousingUnitPayload | null {
   if (typeof raw.pos_z !== 'number') return null
   if (typeof raw.size !== 'number') return null
   if (typeof raw.base_color_hex !== 'string') return null
+  if (!(raw.model_key === undefined || raw.model_key === null || typeof raw.model_key === 'string')) return null
   if (typeof raw.status !== 'string') return null
   if (!(raw.occupant_account_id === null || typeof raw.occupant_account_id === 'number')) return null
   if (!(raw.lease_expires_at === null || typeof raw.lease_expires_at === 'string')) return null
@@ -50,6 +51,7 @@ export function parseHousingUnit(raw: unknown): HousingUnitPayload | null {
     pos_z: raw.pos_z,
     size: raw.size,
     base_color_hex: raw.base_color_hex,
+    model_key: typeof raw.model_key === 'string' ? raw.model_key : null,
     status: raw.status,
     occupant_account_id: raw.occupant_account_id,
     lease_expires_at: raw.lease_expires_at,

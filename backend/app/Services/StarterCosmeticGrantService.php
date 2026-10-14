@@ -9,20 +9,22 @@ use App\Models\ItemDef;
  */
 final class StarterCosmeticGrantService
 {
-    private const FREE_BODY_PREVIEW_IMAGE = '/storage/skins/previews/placeholderSkin.jpg';
+    /** Default skin every player owns ("Campus Classic", front/public/assets/skins/campus_classic/). */
+    private const FREE_BODY_PREVIEW_IMAGE = '/assets/skins/campus_classic/preview.png';
 
     /** @var array<string, string> */
     private const FREE_BODY_MODEL_BY_CODE = [
-        'COS_WEAR_BODY_DEFAULT' => '/models/CharacterDefault.glb',
-        'COS_WEAR_BODY_ADVENTURER' => '/models/CharacterAdventurer.glb',
-        'COS_WEAR_BODY_SWORDSMAN' => '/models/CharacterSwordsman.glb',
+        'COS_WEAR_BODY_DEFAULT' => '/assets/skins/campus_classic/model.glb',
     ];
 
-    /** @var list<string> */
+    /**
+     * Free bodies granted to every account. The other skins (Street Runner, Scholar, Explorer,
+     * Night Owl) are sold in the shop — see ShopSeeder.
+     *
+     * @var list<string>
+     */
     public const FREE_BODY_CODES = [
         'COS_WEAR_BODY_DEFAULT',
-        'COS_WEAR_BODY_ADVENTURER',
-        'COS_WEAR_BODY_SWORDSMAN',
     ];
 
     /**
@@ -73,11 +75,7 @@ final class StarterCosmeticGrantService
             ItemDef::query()->updateOrCreate(
                 ['code' => $code],
                 [
-                    'name' => match ($code) {
-                        'COS_WEAR_BODY_ADVENTURER' => 'Campus Adventurer',
-                        'COS_WEAR_BODY_SWORDSMAN' => 'Campus Swordsman',
-                        default => 'Campus Body (default)',
-                    },
+                    'name' => 'Campus Classic',
                     'kind' => 'cosmetic',
                     'rarity' => 0,
                     'tradable' => false,

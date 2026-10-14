@@ -21,6 +21,7 @@ class HousingUnit extends Model
         'pos_z',
         'size',
         'base_color_hex',
+        'model_key',
         'status',
         'occupant_account_id',
         'lease_expires_at',

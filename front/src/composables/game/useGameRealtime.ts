@@ -96,7 +96,8 @@ export interface GameRealtimeDeps {
     removeApartmentObjectMesh: (objectId: string) => void
   }
 
-  setRoomEnvironment: (kind: 'city' | 'apartment') => void
+  /** templateKey: apartment template ('housing_<unit_id>') so the matching house interior loads. */
+  setRoomEnvironment: (kind: 'city' | 'apartment', templateKey?: string) => void
   onApartmentActionErrorBanner?: () => void
 
   canEditApartment: Ref<boolean>
@@ -170,6 +171,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       if (typeof rec.pos_z !== 'number') continue
       if (typeof rec.size !== 'number') continue
       if (typeof rec.base_color_hex !== 'string') continue
+      if (!(rec.model_key === undefined || rec.model_key === null || typeof rec.model_key === 'string')) continue
       if (typeof rec.status !== 'string') continue
       if (!(rec.occupant_account_id === null || typeof rec.occupant_account_id === 'number')) continue
       if (!(rec.lease_expires_at === null || typeof rec.lease_expires_at === 'string')) continue
@@ -186,6 +188,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
         pos_z: rec.pos_z,
         size: rec.size,
         base_color_hex: rec.base_color_hex,
+        model_key: typeof rec.model_key === 'string' ? rec.model_key : null,
         status: rec.status,
         occupant_account_id: rec.occupant_account_id,
         lease_expires_at: rec.lease_expires_at,
@@ -490,7 +493,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       deps.canEditApartment.value = payload.canEdit === true
       deps.visitedApartmentOwnerId.value = payload.ownerAccountId
       deps.currentRoomLabel.value = 'apartment'
-      deps.setRoomEnvironment('apartment')
+      deps.setRoomEnvironment('apartment', payload.templateKey)
       deps.myPosition.x = APARTMENT_SPAWN.x
       deps.myPosition.y = APARTMENT_SPAWN.y
       deps.myPosition.z = APARTMENT_SPAWN.z
