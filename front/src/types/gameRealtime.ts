@@ -26,6 +26,8 @@ export interface HousingUnitPayload {
   pos_z: number
   size: number
   base_color_hex: string
+  /** House asset key (assets/houses/<model_key>/); null for legacy MVP cubes. */
+  model_key: string | null
   status: string
   occupant_account_id: number | null
   lease_expires_at: string | null

@@ -5,6 +5,7 @@ import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment
 import { disposeObject3D } from '../avatar/compositeAvatar'
 import { buildWorldCollisionFromObject, resolveWorldMovement } from '../composables/game/useWorldCollision'
 import { createGltfLoader } from './gltfLoaderFactory'
+import { SHOWROOM } from './assets/catalog'
 
 /**
  * 3D showroom for the /NewNation route: loads the NewNation plaza (built in Blender,
@@ -14,8 +15,8 @@ import { createGltfLoader } from './gltfLoaderFactory'
  * apartments that ring the plaza.
  */
 
-const MAP_PATH = '/maps/NewNation.glb'
-const SLOTS_PATH = '/maps/NewNation.slots.json'
+const MAP_PATH = SHOWROOM.modelUrl
+const SLOTS_PATH = SHOWROOM.layoutUrl
 const SKY_COLOR = 0xa9cbea
 /** Diagonal overview so the entrance gate does not block the plaza. */
 const OVERVIEW_POSITION = new THREE.Vector3(23, 18, 23)
@@ -66,13 +67,13 @@ interface ApartmentDef {
   /** Where walk mode drops you in front of the door, and the yaw that faces it. */
   doorStand: [number, number, number]
   doorYaw: number
+  /** Footprint when placed north [minX, minZ, maxX, maxZ]; the real one is this rotated by `angle`. */
+  footprint: [number, number, number, number]
 }
 
 interface SlotsFile {
   slots: SlotDef[]
   apartments?: ApartmentDef[]
-  /** Footprint of the north apartment [minX, minZ, maxX, maxZ]; others are it rotated by `angle`. */
-  footprintNorth?: [number, number, number, number]
   /** Nodes removed from every interior (closed entrance door, indoor-only sky backdrops). */
   hideNodes?: string[]
   walkSpawn?: [number, number, number]
@@ -223,7 +224,6 @@ export class NewNationShowroom {
   private populateVersion = 0
   private walkSpawn = new THREE.Vector3(0, EYE_HEIGHT, 17.5)
   private apartments: ApartmentDef[] = []
-  private footprintNorth: [number, number, number, number] = [0, 0, 0, 0]
   private currentApartmentId: string | null = null
   /** -1 / 0 / 1 from the on-screen turn buttons (held). */
   private turnInput = 0
@@ -316,7 +316,6 @@ export class NewNationShowroom {
     if (slotsFile.walkSpawn) this.walkSpawn.fromArray(slotsFile.walkSpawn)
     this.map = gltf.scene
     this.worldRoot.add(gltf.scene)
-    if (slotsFile.footprintNorth) this.footprintNorth = slotsFile.footprintNorth
     const hideNodes = slotsFile.hideNodes ?? []
     // Each apartment is optional: the plaza still works if one fails to load.
     const loaded = await Promise.all((slotsFile.apartments ?? []).map((def) =>
@@ -346,7 +345,9 @@ export class NewNationShowroom {
     const hidden = new Set(hideNodes)
     const toRemove: THREE.Object3D[] = []
     root.traverse((obj) => {
-      if (hidden.has(obj.name)) toRemove.push(obj)
+      // Blender may suffix duplicate names (Door_Entrance.008, which three.js turns into
+      // Door_Entrance008): compare the base name
+      if (hidden.has(obj.name.replace(/\.?\d{3,}$/, ''))) toRemove.push(obj)
     })
     for (const obj of toRemove) {
       obj.removeFromParent()
@@ -361,8 +362,8 @@ export class NewNationShowroom {
 
   /** Which apartment (if any) contains the game-space point. */
   private apartmentAt(x: number, z: number): ApartmentDef | null {
-    const [minX, minZ, maxX, maxZ] = this.footprintNorth
     for (const def of this.apartments) {
+      const [minX, minZ, maxX, maxZ] = def.footprint
       // Undo the apartment's rotation to test against the north footprint.
       const [nx, nz] = rotateXZ(x, z, -def.angle)
       if (nx >= minX && nx <= maxX && nz >= minZ && nz <= maxZ) return def
@@ -371,20 +372,22 @@ export class NewNationShowroom {
   }
 
   getMinimapState(): MinimapState {
-    const [minX, minZ, maxX, maxZ] = this.footprintNorth
     const dir = new THREE.Vector3()
     this.camera.getWorldDirection(dir)
     return {
       plazaRadius: PLAZA_RADIUS,
       parkRadius: PARK_RADIUS,
       player: { x: this.camera.position.x, z: this.camera.position.z, yaw: Math.atan2(-dir.x, -dir.z) },
-      apartments: this.apartments.map((def) => ({
-        id: def.id,
-        name: def.name,
-        corners: ([[minX, minZ], [maxX, minZ], [maxX, maxZ], [minX, maxZ]] as Array<[number, number]>)
-          .map(([x, z]) => rotateXZ(x, z, def.angle)),
-        door: [def.doorStand[0], def.doorStand[2]],
-      })),
+      apartments: this.apartments.map((def) => {
+        const [minX, minZ, maxX, maxZ] = def.footprint
+        return {
+          id: def.id,
+          name: def.name,
+          corners: ([[minX, minZ], [maxX, minZ], [maxX, maxZ], [minX, maxZ]] as Array<[number, number]>)
+            .map(([x, z]) => rotateXZ(x, z, def.angle)),
+          door: [def.doorStand[0], def.doorStand[2]] as [number, number],
+        }
+      }),
       currentApartmentId: this.currentApartmentId,
     }
   }

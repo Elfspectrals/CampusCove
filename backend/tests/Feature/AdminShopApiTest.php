@@ -82,7 +82,7 @@ class AdminShopApiTest extends TestCase
             'Authorization' => 'Bearer '.$token,
         ])
             ->assertOk()
-            ->assertJsonPath('data.0.item.name', 'Campus Basic Chair');
+            ->assertJsonPath('data.0.item.name', 'Wooden Chair');
 
         $this->getJson('/api/admin/shop/items?currency=premium', [
             'Authorization' => 'Bearer '.$token,
@@ -122,8 +122,9 @@ class AdminShopApiTest extends TestCase
         $response->assertJsonPath('item.coins_price', 99);
         $response->assertJsonPath('item.allow_premium', true);
         $response->assertJsonPath('item.premium_price', 10);
-        $this->assertSame(url('/assets/skins/admin_test_sofa-preview.png'), $response->json('item.item.preview_image'));
-        $this->assertSame(url('/assets/skins/admin_test_sofa.glb'), $response->json('item.item.model_glb'));
+        // /assets/... is the front's public asset tree (Blender-built GLBs): kept relative, not API-hosted
+        $this->assertSame('/assets/skins/admin_test_sofa-preview.png', $response->json('item.item.preview_image'));
+        $this->assertSame('/assets/skins/admin_test_sofa.glb', $response->json('item.item.model_glb'));
         $this->assertFalse($response->json('item.is_published'));
 
         $this->assertDatabaseHas('item_defs', ['code' => 'admin_test_sofa']);

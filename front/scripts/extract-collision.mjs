@@ -289,6 +289,8 @@ function isThinWallCuboid(c) {
 /** Real blockers only — flat placemats / broken prop AABBs do not count. */
 function isBlockingCuboid(c) {
   if (/^Synth_/i.test(c.name || '')) return true
+  // Authored COL_ / UCX_ boxes are placed on purpose (houses, hedges, town hall): never drop them.
+  if (c.authored) return true
   if (isThinWallCuboid(c)) return true
   if (c.hy < MIN_BLOCK_HY) return false
   if (horizSpan(c) > MAX_SOLID_HALF) return false

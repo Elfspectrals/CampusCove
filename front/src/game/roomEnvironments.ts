@@ -1,12 +1,12 @@
 import * as THREE from 'three'
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
-import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js'
 import {
   APARTMENT_DOOR_POS,
   APARTMENT_HALF_EXTENT,
   APARTMENT_ROOM_HEIGHT,
   APARTMENT_WALL_THICKNESS,
 } from './gameRoomConstants'
+import { DEFAULT_HOUSE, HOUSES, TOWN, findHouse } from './assets/catalog'
+import type { HouseAsset, TownLayout } from './assets/catalog'
 import { createGltfLoader } from './gltfLoaderFactory'
 import { getGraphicsQuality } from './graphicsQuality'
 import {
@@ -18,74 +18,76 @@ import {
 
 const CITY_SKY_COLOR = 0x9fc3e8
 
-function lobbyMapPathForQuality(): string {
-  return getGraphicsQuality() === 'low' ? '/maps/LobbyMap.low.glb' : '/maps/LobbyMap.glb'
-}
-
-function apartmentMapPathForQuality(): string {
-  return getGraphicsQuality() === 'low' ? '/maps/CampusApartmentInterior.low.glb' : '/maps/CampusApartmentInterior.glb'
-}
-
-/** Apartment building placed in the city; node transforms already position it in LobbyMap space. */
-const APARTMENT_EXTERIOR_PATH = '/maps/CampusApartmentExterior.glb'
-
-function addLobbyLighting(group: THREE.Group): void {
+function addTownLighting(group: THREE.Group): void {
   if (getGraphicsQuality() === 'low') {
-    const hemi = new THREE.HemisphereLight(0xe8e4df, 0x8a8278, 0.3)
-    group.add(hemi)
+    group.add(new THREE.HemisphereLight(0xe8e4df, 0x8a8278, 0.3))
     return
   }
-  const hemi = new THREE.HemisphereLight(0xcfe5ff, 0x8a7f70, 0.35)
-  group.add(hemi)
+  group.add(new THREE.HemisphereLight(0xcfe5ff, 0x8a7f70, 0.35))
 }
 
-let cachedLobbyEnvironment: THREE.Group | null = null
-let lobbyEnvironmentLoadPromise: Promise<THREE.Group> | null = null
+// ---------------------------------------------------------------- town (/game city)
 
-function prepareLobbyGroup(root: THREE.Group): THREE.Group {
-  sanitizeGltfLights(root)
-  configureRoomMeshShadows(root)
-  normalizeRoomMaterials(root, 'city')
-  addLobbyLighting(root)
-  root.userData.isRoomEnvironment = true
-  root.userData.isPersistentEnvironment = true
-  root.userData.isLobbyMapParis = true
-  root.name = 'LobbyMapParis'
-  return root
+export interface TownEnvironmentBuildResult {
+  group: THREE.Group
+  layout: TownLayout
 }
 
-/** Loads LobbyMap.glb once; subsequent calls reuse the cached group (never disposed). */
-export function loadLobbyEnvironment(): Promise<THREE.Group> {
-  if (cachedLobbyEnvironment) {
-    return Promise.resolve(cachedLobbyEnvironment)
-  }
-  if (!lobbyEnvironmentLoadPromise) {
-    lobbyEnvironmentLoadPromise = new Promise<THREE.Group>((resolve, reject) => {
-      const dracoLoader = new DRACOLoader()
-      dracoLoader.setDecoderPath('/draco-decoder/')
-      const loader = new GLTFLoader()
-      loader.setDRACOLoader(dracoLoader)
-      // The apartment building is optional: the city still loads if it fails.
-      const exterior = loader.loadAsync(APARTMENT_EXTERIOR_PATH).catch((error) => {
-        console.warn('[roomEnvironments] apartment exterior failed to load', error)
-        return null
-      })
-      Promise.all([loader.loadAsync(lobbyMapPathForQuality()), exterior])
-        .then(([gltf, exteriorGltf]) => {
-          if (exteriorGltf) {
-            gltf.scene.add(exteriorGltf.scene)
-          }
-          const group = prepareLobbyGroup(gltf.scene)
-          cachedLobbyEnvironment = group
-          resolve(group)
-        })
-        .catch((error) => {
-          lobbyEnvironmentLoadPromise = null
-          reject(error)
-        })
+let cachedTown: TownEnvironmentBuildResult | null = null
+let townLoadPromise: Promise<TownEnvironmentBuildResult> | null = null
+
+async function fetchTownLayout(): Promise<TownLayout> {
+  const res = await fetch(TOWN.layoutUrl)
+  if (!res.ok) throw new Error(`Could not load the town layout (${res.status})`)
+  return (await res.json()) as TownLayout
+}
+
+/**
+ * Loads the town once: town.glb (plaza, town hall, roads, props) plus every house exterior placed from
+ * town.layout.json. Collision comes separately from TOWN.collisionUrl. The group is cached, never disposed.
+ */
+export function loadTownEnvironment(): Promise<TownEnvironmentBuildResult> {
+  if (cachedTown) return Promise.resolve(cachedTown)
+  if (!townLoadPromise) {
+    townLoadPromise = (async () => {
+      const loader = createGltfLoader()
+      const [townGltf, layout] = await Promise.all([loader.loadAsync(TOWN.modelUrl), fetchTownLayout()])
+      const root = townGltf.scene
+      root.name = 'CampusTown'
+      // A missing house should not take the whole town down.
+      const houses = await Promise.all(layout.houses.map(async (lot) => {
+        const house = findHouse(lot.key)
+        if (!house) return null
+        try {
+          const gltf = await loader.loadAsync(house.exteriorUrl)
+          const exterior = gltf.scene
+          exterior.name = `HouseExterior_${lot.key}`
+          exterior.position.fromArray(lot.position)
+          exterior.rotation.y = lot.rotationY
+          exterior.userData.houseKey = lot.key
+          return exterior
+        } catch (error) {
+          console.warn('[town] house exterior failed to load', lot.key, error)
+          return null
+        }
+      }))
+      for (const exterior of houses) {
+        if (exterior) root.add(exterior)
+      }
+      sanitizeGltfLights(root)
+      configureRoomMeshShadows(root)
+      normalizeRoomMaterials(root, 'city')
+      addTownLighting(root)
+      root.userData.isRoomEnvironment = true
+      root.userData.isPersistentEnvironment = true
+      cachedTown = { group: root, layout }
+      return cachedTown
+    })().catch((error) => {
+      townLoadPromise = null
+      throw error
     })
   }
-  return lobbyEnvironmentLoadPromise
+  return townLoadPromise
 }
 
 export function applySceneAtmosphere(
@@ -109,46 +111,17 @@ export function applySceneAtmosphere(
   }
 }
 
-export function buildCityEnvironment(): THREE.Group {
-  return buildHousingLobbyEnvironment()
-}
-
-/** Simple /game housing MVP lobby — flat floor + grid. No LobbyMap.glb. */
-export function buildHousingLobbyEnvironment(): THREE.Group {
-  const g = new THREE.Group()
-  g.name = 'HousingLobbyEnvironment'
-  g.userData.isRoomEnvironment = true
-  g.userData.isHousingLobby = true
-  const floorGeo = new THREE.PlaneGeometry(60, 60)
-  const floorMat = new THREE.MeshStandardMaterial({ color: 0x1a1f2e })
-  const floor = new THREE.Mesh(floorGeo, floorMat)
-  floor.rotation.x = -Math.PI / 2
-  floor.receiveShadow = true
-  g.add(floor)
-  const grid = new THREE.GridHelper(60, 60, 0x3d7ea6, 0x243044)
-  grid.position.y = 0.01
-  g.add(grid)
-  return g
-}
-
-/** Remove any previous city/apartment/LobbyMap roots left on the scene (HMR / route leftovers). */
+/** Remove any previous town / house roots left on the scene (HMR / route leftovers). */
 export function stripRoomEnvironmentsFromScene(scene: THREE.Scene): void {
   const toRemove: THREE.Object3D[] = []
   for (const child of scene.children) {
-    if (
-      child.userData?.isRoomEnvironment === true ||
-      child.userData?.isPersistentEnvironment === true ||
-      child.userData?.isHousingLobby === true ||
-      child.userData?.isLobbyMapParis === true ||
-      child.name === 'HousingLobbyEnvironment' ||
-      child.name === 'LobbyMapParis'
-    ) {
+    if (child.userData?.isRoomEnvironment === true || child.userData?.isPersistentEnvironment === true) {
       toRemove.push(child)
     }
   }
   for (const obj of toRemove) {
     scene.remove(obj)
-    if (!obj.userData?.isPersistentEnvironment && !obj.userData?.isLobbyMapParis) {
+    if (!obj.userData?.isPersistentEnvironment) {
       obj.traverse((node) => {
         if (node instanceof THREE.Mesh) {
           node.geometry?.dispose()
@@ -161,19 +134,21 @@ export function stripRoomEnvironmentsFromScene(scene: THREE.Scene): void {
   }
 }
 
+// ---------------------------------------------------------------- house interiors
+
 /** Result from apartment environment builders for scene + placement raycast/collider registration. */
 export interface ApartmentEnvironmentBuildResult {
   group: THREE.Group
+  /** House whose interior this is (assets/houses/<key>/). */
+  house: HouseAsset
 }
 
 function addApartmentLighting(group: THREE.Group): void {
   if (getGraphicsQuality() === 'low') {
-    const hemi = new THREE.HemisphereLight(0xf0ebe4, 0x6b5344, 0.22)
-    group.add(hemi)
+    group.add(new THREE.HemisphereLight(0xf0ebe4, 0x6b5344, 0.22))
     return
   }
-  const hemi = new THREE.HemisphereLight(0xfff5e6, 0x6b5344, 0.25)
-  group.add(hemi)
+  group.add(new THREE.HemisphereLight(0xfff5e6, 0x6b5344, 0.25))
 }
 
 function tagApartmentFloor(root: THREE.Object3D): void {
@@ -194,7 +169,7 @@ function addApartmentExitDoor(group: THREE.Group): void {
   group.add(door)
 }
 
-function prepareApartmentGroup(root: THREE.Group): ApartmentEnvironmentBuildResult {
+function prepareApartmentGroup(root: THREE.Group, house: HouseAsset): ApartmentEnvironmentBuildResult {
   const hasGltfLights = sanitizeGltfLights(root)
   configureRoomMeshShadows(root)
   normalizeRoomMaterials(root, 'apartment')
@@ -204,42 +179,35 @@ function prepareApartmentGroup(root: THREE.Group): ApartmentEnvironmentBuildResu
   if (!hasGltfLights) {
     addApartmentFallbackLights(root)
   }
+  root.name = `HouseInterior_${house.key}`
   root.userData.isRoomEnvironment = true
   root.userData.isPersistentEnvironment = true
-  return { group: root }
+  return { group: root, house }
 }
 
-let cachedApartmentEnvironment: THREE.Group | null = null
-let apartmentEnvironmentLoadPromise: Promise<ApartmentEnvironmentBuildResult> | null = null
+const interiorCache = new Map<string, Promise<ApartmentEnvironmentBuildResult>>()
 
-/** Loads ApartmentInterior.glb once; subsequent calls reuse the cached group (never disposed). */
-export function loadApartmentEnvironment(): Promise<ApartmentEnvironmentBuildResult> {
-  if (cachedApartmentEnvironment) {
-    return Promise.resolve({ group: cachedApartmentEnvironment })
-  }
-  if (!apartmentEnvironmentLoadPromise) {
-    apartmentEnvironmentLoadPromise = new Promise<ApartmentEnvironmentBuildResult>((resolve, reject) => {
-      const loader = createGltfLoader()
-      loader.load(
-        apartmentMapPathForQuality(),
-        (gltf) => {
-          const built = prepareApartmentGroup(gltf.scene)
-          cachedApartmentEnvironment = built.group
-          resolve(built)
-        },
-        undefined,
-        (error) => {
-          apartmentEnvironmentLoadPromise = null
-          reject(error)
-        },
-      )
-    })
-  }
-  return apartmentEnvironmentLoadPromise
+/**
+ * Loads a house interior (assets/houses/<key>/interior.glb) once per house; later calls reuse the
+ * cached group. Unknown / missing keys fall back to DEFAULT_HOUSE. Collision: `house.interiorCollisionUrl`.
+ */
+export function loadApartmentEnvironment(houseKey?: string | null): Promise<ApartmentEnvironmentBuildResult> {
+  const house = findHouse(houseKey) ?? DEFAULT_HOUSE
+  const cached = interiorCache.get(house.key)
+  if (cached) return cached
+  const task = createGltfLoader()
+    .loadAsync(house.interiorUrl)
+    .then((gltf) => prepareApartmentGroup(gltf.scene, house))
+  task.catch(() => interiorCache.delete(house.key))
+  interiorCache.set(house.key, task)
+  return task
 }
+
+/** Every house key that has assets (for preloading / tooling). */
+export const HOUSE_KEYS = HOUSES.map((h) => h.key)
 
 /** Procedural fallback when the GLB is unavailable (unused after `loadApartmentEnvironment` wiring). */
-export function buildApartmentEnvironment(): ApartmentEnvironmentBuildResult {
+export function buildApartmentEnvironment(): Omit<ApartmentEnvironmentBuildResult, 'house'> {
   const g = new THREE.Group()
   g.userData.isRoomEnvironment = true
   const w = APARTMENT_HALF_EXTENT * 2

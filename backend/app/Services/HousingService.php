@@ -412,6 +412,7 @@ final class HousingService
             'pos_z' => (float) $unit->pos_z,
             'size' => (float) $unit->size,
             'base_color_hex' => (string) $unit->base_color_hex,
+            'model_key' => $unit->model_key !== null ? (string) $unit->model_key : null,
             'status' => (string) $unit->status,
             'occupant_account_id' => $unit->occupant_account_id !== null ? (int) $unit->occupant_account_id : null,
             'lease_expires_at' => $unit->lease_expires_at?->toIso8601String(),

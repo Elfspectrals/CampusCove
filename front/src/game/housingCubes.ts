@@ -12,6 +12,8 @@ export interface HousingUnitSnapshot {
   pos_z: number
   size: number
   base_color_hex: string
+  /** House asset key (assets/houses/<model_key>/); null for legacy MVP cubes. */
+  model_key: string | null
   status: string
   occupant_account_id: number | null
   lease_expires_at: string | null
@@ -113,8 +115,12 @@ function disposeMesh(mesh: THREE.Mesh): void {
   else mat.dispose()
 }
 
-/** Reuse meshes by public_id; update pose/color; drop stale units. */
-export function syncHousingCubes(parent: THREE.Group, units: HousingUnitSnapshot[]): void {
+/**
+ * Reuse meshes by public_id; update pose/color; drop stale units. Units with a model_key are real houses
+ * (placed by the town from town.layout.json), so only legacy units without one get a placeholder cube.
+ */
+export function syncHousingCubes(parent: THREE.Group, allUnits: HousingUnitSnapshot[]): void {
+  const units = allUnits.filter((u) => !u.model_key)
   const wanted = new Set(units.map((u) => u.public_id))
   const byId = new Map<string, THREE.Mesh>()
   for (const child of [...parent.children]) {

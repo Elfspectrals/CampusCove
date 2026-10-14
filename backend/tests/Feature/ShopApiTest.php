@@ -48,6 +48,22 @@ class ShopApiTest extends TestCase
         $this->assertGreaterThanOrEqual(1, count($response->json('items')));
     }
 
+    public function test_catalog_sells_the_five_decor_items_with_their_assets(): void
+    {
+        $items = collect($this->getJson('/api/shop/items')->assertOk()->json('items'))
+            ->filter(fn (array $row) => ($row['item']['kind'] ?? null) === 'furniture')
+            ->mapWithKeys(fn (array $row) => [$row['item']['code'] => $row['item']['model_glb']])
+            ->all();
+
+        $this->assertEqualsCanonicalizing([
+            'chair_campus_basic' => '/assets/decor/wooden_chair/model.glb',
+            'lamp_study' => '/assets/decor/floor_lamp/model.glb',
+            'decor_dining_table' => '/assets/decor/dining_table/model.glb',
+            'decor_potted_plant' => '/assets/decor/potted_plant/model.glb',
+            'decor_bookshelf' => '/assets/decor/bookshelf/model.glb',
+        ], $items);
+    }
+
     public function test_shop_catalog_filters_by_currency(): void
     {
         $response = $this->getJson('/api/shop/items?currency=premium');

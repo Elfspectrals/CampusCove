@@ -433,6 +433,8 @@ CREATE TABLE IF NOT EXISTS housing_units (
   pos_z DOUBLE PRECISION NOT NULL,
   size DOUBLE PRECISION NOT NULL DEFAULT 2.5,
   base_color_hex VARCHAR(7) NOT NULL,
+  -- house asset key (front/public/assets/houses/<model_key>/), e.g. 'house_01'
+  model_key VARCHAR(40) NULL UNIQUE,
   status housing_unit_status NOT NULL DEFAULT 'vacant',
   occupant_account_id BIGINT NULL REFERENCES accounts(account_id) ON DELETE SET NULL,
   lease_expires_at TIMESTAMPTZ NULL,

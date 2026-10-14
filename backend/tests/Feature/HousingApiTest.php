@@ -29,7 +29,10 @@ class HousingApiTest extends TestCase
             'Authorization' => 'Bearer '.$buyer['token'],
         ]);
         $list->assertOk();
-        $list->assertJsonCount(8, 'units');
+        $list->assertJsonCount(10, 'units');
+        // every unit is one of the town houses (front/public/assets/houses/<model_key>/)
+        $modelKeys = collect($list->json('units'))->pluck('model_key')->sort()->values()->all();
+        $this->assertSame(array_map(fn (int $i) => sprintf('house_%02d', $i), range(1, 10)), $modelKeys);
         $list->assertJsonPath('my_unit', null);
 
         $buyUnit = HousingUnit::query()->where('offer_type', 'buy')->orderBy('unit_id')->firstOrFail();
@@ -68,7 +71,7 @@ class HousingApiTest extends TestCase
 
         $this->assertDatabaseHas('wallet_ledger', [
             'reason' => 'housing_buy',
-            'delta' => -500,
+            'delta' => -$unit->price_coins,
         ]);
     }
 
@@ -126,7 +129,7 @@ class HousingApiTest extends TestCase
 
         $this->assertDatabaseHas('wallet_ledger', [
             'reason' => 'housing_rent',
-            'delta' => -80,
+            'delta' => -$unit->price_coins,
         ]);
 
         Carbon::setTestNow();
@@ -150,7 +153,7 @@ class HousingApiTest extends TestCase
 
         $this->assertDatabaseHas('wallet_ledger', [
             'reason' => 'housing_renew',
-            'delta' => -80,
+            'delta' => -$unit->price_coins,
         ]);
 
         Carbon::setTestNow();
