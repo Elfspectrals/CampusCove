@@ -39,3 +39,14 @@ make up-build
 | `make apartment-optimize` | Appart GLB + collision |
 
 `CURRENCY` : `coins` ou `premium`. Relog après `set-admin`.
+
+## Appartement Campus Cove & New Nation
+
+- **Intérieur d'appartement** : `CampusApartmentInterior.glb` (+ `.low`), construit dans Blender (`map-src/CampusApartment/`, ignoré par git). Collision générée au chargement depuis le modèle (pas de `.collision.json`).
+- **Bâtiment Campus Cove** : `CampusApartmentExterior.glb`, ajouté à la carte de Paris (`/map-paris`) à l'ouest de l'Opéra.
+- **`/NewNation`** : showroom 3D des articles de la boutique + quatre appartements témoins visitables (Cozy Classic, Scandi Loft, Neon Studio, Terracotta Sun). Mode marche (WASD, glisser ou Q/E pour tourner, N/B pour changer d'appartement) et mini-carte cliquable. Sources : `map-src/NewNation/`.
+
+```bash
+make apartment-optimize   # intérieur + extérieur
+make newnation-optimize   # carte New Nation
+```

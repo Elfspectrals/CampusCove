@@ -341,6 +341,76 @@ export function buildWorldCollisionFromUrl(url: string): Promise<void> {
   return buildInFlight
 }
 
+/** Meshes that never block movement when building collision from a scene object. */
+const OBJECT_SKIP_NAME_RE = /sky|leaf|flower|ivy|vine|grass|fern|rug|carpet/i
+/** Only meshes overlapping the player's walking height can block. */
+const OBJECT_WALK_BAND_MIN_Y = 0.5
+const OBJECT_WALK_BAND_MAX_Y = 3
+
+/**
+ * Build collision straight from a loaded scene object (every visible mesh in the walking band
+ * becomes a world-space trimesh), for models without a `.collision.json` sidecar — e.g. the
+ * Blender-built CampusApartment interiors and the /NewNation showroom. `key` identifies the
+ * source so repeated calls with the same key are no-ops.
+ */
+export function buildWorldCollisionFromObject(key: string, root: THREE.Object3D): Promise<void> {
+  if (builtUrl === key && collidersReady) return Promise.resolve()
+  if (builtUrl === key && buildInFlight) return buildInFlight
+
+  builtUrl = key
+  root.updateMatrixWorld(true)
+  const trimeshes: CollisionTrimeshJson[] = []
+  const bounds = new THREE.Box3()
+  const box = new THREE.Box3()
+  const v = new THREE.Vector3()
+  root.traverse((obj) => {
+    if (!(obj instanceof THREE.Mesh) || obj instanceof THREE.InstancedMesh) return
+    for (let p: THREE.Object3D | null = obj; p; p = p.parent) {
+      if (OBJECT_SKIP_NAME_RE.test(p.name)) return
+    }
+    const mats = Array.isArray(obj.material) ? obj.material : [obj.material]
+    if (mats.every((m) => !m.visible)) return
+    const pos = obj.geometry.getAttribute('position')
+    if (!pos) return
+    if (!obj.geometry.boundingBox) obj.geometry.computeBoundingBox()
+    box.copy(obj.geometry.boundingBox!).applyMatrix4(obj.matrixWorld)
+    if (box.max.y < OBJECT_WALK_BAND_MIN_Y || box.min.y > OBJECT_WALK_BAND_MAX_Y) return
+    const vertices = new Array<number>(pos.count * 3)
+    for (let i = 0; i < pos.count; i++) {
+      v.fromBufferAttribute(pos as THREE.BufferAttribute, i).applyMatrix4(obj.matrixWorld)
+      vertices[i * 3] = v.x
+      vertices[i * 3 + 1] = v.y
+      vertices[i * 3 + 2] = v.z
+    }
+    const index = obj.geometry.index
+    const indices = index ? Array.from(index.array as ArrayLike<number>) : Array.from({ length: pos.count }, (_, i) => i)
+    trimeshes.push({ name: obj.name, vertices, indices })
+    bounds.union(box)
+  })
+
+  const data: CollisionFileJson = {
+    version: 1,
+    source: key,
+    mode: 'object',
+    borders: !bounds.isEmpty(),
+    bounds: bounds.isEmpty()
+      ? null
+      : { minX: bounds.min.x, maxX: bounds.max.x, minZ: bounds.min.z, maxZ: bounds.max.z },
+    cuboids: [],
+    trimeshes,
+  }
+  buildInFlight = buildFromCollisionData(key, data)
+    .catch((err) => {
+      builtUrl = null
+      collidersReady = false
+      throw err
+    })
+    .finally(() => {
+      buildInFlight = null
+    })
+  return buildInFlight
+}
+
 export function getWorldCollisionStats(): Readonly<WorldCollisionStats> {
   return stats
 }
