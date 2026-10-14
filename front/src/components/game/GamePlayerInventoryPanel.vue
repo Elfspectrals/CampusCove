@@ -10,6 +10,7 @@ const props = defineProps<{
   loading: boolean
   error: string | null
   currentRoomLabel: 'city' | 'apartment'
+  canEditApartment: boolean
   selectedPlacedObjectId: string
   apartmentObjectIds: string[]
 }>()
@@ -241,7 +242,7 @@ function ghostQty(): number {
       </div>
 
       <div
-        v-if="currentRoomLabel === 'apartment'"
+        v-if="currentRoomLabel === 'apartment' && canEditApartment"
         class="mt-4 border-t border-white/15 pt-4 text-xs text-white/85"
       >
         <div class="mb-2 text-[11px] uppercase tracking-wide text-white/70">Placed objects</div>

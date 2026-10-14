@@ -10,6 +10,7 @@ import {
   type CharacterCosmeticsState,
 } from '../api/characterCosmetics'
 import { getStoredAuth, clearAuth } from '../api/auth'
+import { buyHousingUnit, fetchHousingUnits, rentHousingUnit, renewHousingUnit } from '../api/housing'
 import { buildFirstPersonHands, disposeObject3D } from '../avatar/compositeAvatar'
 import { matchesRotateCCW, matchesRotateCW } from '../config/keybindings'
 import GameDoorHints from '../components/game/GameDoorHints.vue'
@@ -25,13 +26,20 @@ import { useApartmentPlacement } from '../composables/game/useApartmentPlacement
 import { useGameMovement } from '../composables/game/useGameMovement'
 import {
   buildWorldCollisionFromUrl,
+  clearWorldCollision,
   getWorldCollisionStats,
   toggleCollisionDebug,
 } from '../composables/game/useWorldCollision'
 import { useGameRealtime } from '../composables/game/useGameRealtime'
 import { usePlayerInventory } from '../composables/game/usePlayerInventory'
+import {
+  formatLeaseRemaining,
+  housingActionFor,
+  showRenewForUnit,
+  useCityHousing,
+} from '../composables/game/useCityHousing'
 import { getGraphicsQuality, supportsEnvironmentMap, toggleGraphicsQuality } from '../game/graphicsQuality'
-import { applySceneAtmosphere, loadApartmentEnvironment, loadLobbyEnvironment } from '../game/roomEnvironments'
+import { applySceneAtmosphere, buildHousingLobbyEnvironment, loadApartmentEnvironment, stripRoomEnvironmentsFromScene } from '../game/roomEnvironments'
 import {
   applySharedEnvironment,
   clearSharedEnvironment,
@@ -39,7 +47,8 @@ import {
   disposeSharedEnvironment,
   loadSharedEnvironmentMap,
 } from '../game/sceneLighting'
-import { APARTMENT_DOOR_POS, CITY_BUILDING_DOOR_POS, CITY_SPAWN } from '../game/gameRoomConstants'
+import { APARTMENT_DOOR_POS, HOUSING_LOBBY_SPAWN } from '../game/gameRoomConstants'
+import { housingCubeInteractPosition, syncHousingCubes } from '../game/housingCubes'
 
 const YAW_STEP = Math.PI / 12
 
@@ -50,20 +59,24 @@ const roomMessage = ref<string | null>(null)
 const currentRoomLabel = ref<'city' | 'apartment'>('city')
 const nearApartmentDoor = ref(false)
 const nearCityDoor = ref(false)
+const canEditApartment = ref(false)
+const visitedApartmentOwnerId = ref<number | null>(null)
+const housingClaimInFlight = ref(false)
 const switchingRoom = ref(false)
 const pointerLocked = ref(false)
 const transitioningApartment = ref(false)
 const wasPointerLockedAtTransitionStart = ref(false)
 const refreshMyAppearance = ref<(() => void) | null>(null)
-const doorPromptPos = ref<{ x: number; y: number; key: string; action: string } | null>(null)
+const doorPromptPos = ref<{ x: number; y: number; key: string; action: string; detail?: string } | null>(null)
+const renewPromptPos = ref<{ x: number; y: number } | null>(null)
 const doorProjectionVec = new THREE.Vector3()
 
 const realtimeHttpUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000'
 const gameRoomRef = shallowRef<Room | null>(null)
 
-const myPosition = { x: CITY_SPAWN.x, y: CITY_SPAWN.y, z: CITY_SPAWN.z }
+const myPosition = { x: HOUSING_LOBBY_SPAWN.x, y: HOUSING_LOBBY_SPAWN.y, z: HOUSING_LOBBY_SPAWN.z }
 const positionLabel = ref(
-  `${CITY_SPAWN.x.toFixed(1)}, ${CITY_SPAWN.y.toFixed(1)}, ${CITY_SPAWN.z.toFixed(1)}`,
+  `${HOUSING_LOBBY_SPAWN.x.toFixed(1)}, ${HOUSING_LOBBY_SPAWN.y.toFixed(1)}, ${HOUSING_LOBBY_SPAWN.z.toFixed(1)}`,
 )
 const direction = new THREE.Vector3(0, 0, -1)
 
@@ -71,8 +84,29 @@ let scene: THREE.Scene
 let camera: THREE.PerspectiveCamera
 let renderer: THREE.WebGLRenderer
 let roomEnvironment: THREE.Group | null = null
+let housingCubesGroup: THREE.Group | null = null
 let roomEnvironmentLoadToken = 0
 let fpHands: THREE.Group | null = null
+
+const myAccountId = computed(() => getStoredAuth()?.user.account_id ?? null)
+
+const {
+  units: housingUnits,
+  nearbyUnit: nearbyHousingUnit,
+  applyUnits: applyHousingUnits,
+} = useCityHousing(myAccountId)
+
+function syncCityHousingCubes(): void {
+  if (!housingCubesGroup) return
+  syncHousingCubes(housingCubesGroup, housingUnits.value)
+}
+
+function onHousingUnitsFromServer(units: import('../types/gameRealtime').HousingUnitPayload[]): void {
+  applyHousingUnits(units)
+  if (currentRoomLabel.value === 'city') {
+    syncCityHousingCubes()
+  }
+}
 
 let apartmentPlacementRef: ReturnType<typeof useApartmentPlacement> | null = null
 
@@ -116,6 +150,7 @@ const apartmentPlacement = useApartmentPlacement({
   getApartmentInventoryOpen: () => getInventoryOpen(),
   currentRoomLabel,
   pointerLocked,
+  canEditApartment,
   persistApartmentTransformForMesh,
   refreshApartmentInventory: () => runRefreshApartmentInventory(),
 })
@@ -148,11 +183,12 @@ const {
   toggleInventory,
   closeInventory,
   tryExitApartmentAtDoor,
-  tryEnterApartmentAtDoor,
+  enterApartment,
   pickupToHotbar,
 } = usePlayerInventory({
   gameRoomRef,
   currentRoomLabel,
+  canEditApartment,
   myPosition,
   direction,
   selectedPlacedObjectId,
@@ -198,7 +234,61 @@ async function loadCosmeticsState(): Promise<CharacterCosmeticsState> {
   }
 }
 
+async function tryRenewNearbyRent(): Promise<void> {
+  if (currentRoomLabel.value !== 'city' || housingClaimInFlight.value) return
+  const unit = nearbyHousingUnit.value
+  if (!unit || !showRenewForUnit(unit, myAccountId.value)) return
+  housingClaimInFlight.value = true
+  roomMessage.value = null
+  try {
+    await renewHousingUnit(unit.public_id)
+    gameRoomRef.value?.send('housing_refresh')
+  } catch (err) {
+    roomMessage.value = err instanceof Error ? err.message : 'Could not renew lease.'
+  } finally {
+    housingClaimInFlight.value = false
+  }
+}
+
+async function onNearHousingInteract(): Promise<void> {
+  if (!getStoredAuth() || !gameRoomRef.value || housingClaimInFlight.value) return
+  const unit = nearbyHousingUnit.value
+  if (!unit) return
+  const action = housingActionFor(unit, myAccountId.value)
+  if (!action) return
+
+  if (action === 'buy' || action === 'rent') {
+    housingClaimInFlight.value = true
+    roomMessage.value = null
+    try {
+      if (action === 'buy') {
+        await buyHousingUnit(unit.public_id)
+      } else {
+        await rentHousingUnit(unit.public_id)
+      }
+      gameRoomRef.value.send('housing_refresh')
+    } catch (err) {
+      roomMessage.value = err instanceof Error ? err.message : 'Housing claim failed.'
+    } finally {
+      housingClaimInFlight.value = false
+    }
+    return
+  }
+
+  if (action === 'enter' || action === 'visit') {
+    const ownerId = unit.occupant_account_id
+    if (ownerId === null) return
+    transitioningApartment.value = true
+    wasPointerLockedAtTransitionStart.value = pointerLocked.value
+    void enterApartment(ownerId, unit.template_key)
+  }
+}
+
 function handleExtraKeyDown(e: KeyboardEvent): boolean {
+  if (currentRoomLabel.value === 'city' && e.code === 'KeyU' && !e.repeat) {
+    void tryRenewNearbyRent()
+    return true
+  }
   if (e.code === 'KeyC' && !e.repeat) {
     const on = toggleCollisionDebug(scene)
     const s = getWorldCollisionStats()
@@ -232,35 +322,81 @@ function handleExtraKeyDown(e: KeyboardEvent): boolean {
   return false
 }
 
+function projectWorldToScreen(wx: number, wy: number, wz: number): { x: number; y: number } | null {
+  if (!camera || !canvasRef.value) return null
+  doorProjectionVec.set(wx, wy, wz)
+  doorProjectionVec.project(camera)
+  if (doorProjectionVec.z > 1) return null
+  const rect = canvasRef.value.getBoundingClientRect()
+  return {
+    x: (doorProjectionVec.x * 0.5 + 0.5) * rect.width,
+    y: (-doorProjectionVec.y * 0.5 + 0.5) * rect.height,
+  }
+}
+
 function updateDoorPromptScreenPos(): void {
   if (!camera || !canvasRef.value) {
     doorPromptPos.value = null
+    renewPromptPos.value = null
     return
   }
   const inApartment = currentRoomLabel.value === 'apartment'
   const isNear = inApartment ? nearApartmentDoor.value : nearCityDoor.value
-  if (!isNear || inventoryOpen.value) {
+  if (!isNear || inventoryOpen.value || housingClaimInFlight.value) {
     doorPromptPos.value = null
+    renewPromptPos.value = null
     return
   }
+
   if (inApartment) {
-    doorProjectionVec.set(APARTMENT_DOOR_POS.x, 1.5, APARTMENT_DOOR_POS.z)
-  } else {
-    doorProjectionVec.set(CITY_BUILDING_DOOR_POS.x, 1.8, CITY_BUILDING_DOOR_POS.z)
-  }
-  doorProjectionVec.project(camera)
-  if (doorProjectionVec.z > 1) {
-    doorPromptPos.value = null
+    const screen = projectWorldToScreen(APARTMENT_DOOR_POS.x, 1.5, APARTMENT_DOOR_POS.z)
+    if (!screen) {
+      doorPromptPos.value = null
+      renewPromptPos.value = null
+      return
+    }
+    doorPromptPos.value = { ...screen, key: 'I', action: 'Exit' }
+    renewPromptPos.value = null
     return
   }
-  const rect = canvasRef.value.getBoundingClientRect()
-  const sx = (doorProjectionVec.x * 0.5 + 0.5) * rect.width
-  const sy = (-doorProjectionVec.y * 0.5 + 0.5) * rect.height
-  doorPromptPos.value = {
-    x: sx,
-    y: sy,
-    key: 'I',
-    action: inApartment ? 'Exit' : 'Enter',
+
+  const unit = nearbyHousingUnit.value
+  if (!unit) {
+    doorPromptPos.value = null
+    renewPromptPos.value = null
+    return
+  }
+  const action = housingActionFor(unit, myAccountId.value)
+  const interactPos = housingCubeInteractPosition(unit)
+  const screen = projectWorldToScreen(interactPos.x, interactPos.y, interactPos.z)
+  if (!screen || !action) {
+    doorPromptPos.value = null
+    renewPromptPos.value = null
+    return
+  }
+
+  let actionLabel = 'Enter'
+  let detail: string | undefined
+  if (action === 'buy') {
+    actionLabel = 'Buy'
+    detail = `${unit.price_coins.toLocaleString()} coins`
+  } else if (action === 'rent') {
+    actionLabel = 'Rent'
+    detail = `${unit.price_coins.toLocaleString()} coins · ${unit.rent_duration_hours}h`
+  } else if (action === 'visit') {
+    actionLabel = 'Visit'
+  } else if (action === 'enter') {
+    actionLabel = 'Enter'
+    const leaseDetail = formatLeaseRemaining(unit)
+    if (leaseDetail) detail = leaseDetail
+  }
+
+  doorPromptPos.value = { ...screen, key: 'I', action: actionLabel, detail }
+
+  if (showRenewForUnit(unit, myAccountId.value)) {
+    renewPromptPos.value = { x: screen.x + 72, y: screen.y }
+  } else {
+    renewPromptPos.value = null
   }
 }
 
@@ -278,17 +414,28 @@ function setRoomEnvironment(kind: 'city' | 'apartment') {
   }
   applySceneAtmosphere(scene, kind, renderer)
   if (kind === 'city') {
-    void loadLobbyEnvironment().then((group) => {
-      if (token !== roomEnvironmentLoadToken) return
-      roomEnvironment = group
-      scene.add(group)
-      void buildWorldCollisionFromUrl('/maps/LobbyMap.collision.json?v=4').catch((err) => {
-        console.warn('[collision] lobby collision failed', err)
-      })
-      nearApartmentDoor.value = false
-      resetClientStateForCityWorld()
-      clearApartmentObjects()
-    })
+    canEditApartment.value = false
+    visitedApartmentOwnerId.value = null
+    stripRoomEnvironmentsFromScene(scene)
+    const group = buildHousingLobbyEnvironment()
+    roomEnvironment = group
+    if (!housingCubesGroup) {
+      housingCubesGroup = new THREE.Group()
+      housingCubesGroup.name = 'HousingCubes'
+    }
+    if (housingCubesGroup.parent !== group) {
+      group.add(housingCubesGroup)
+    }
+    syncCityHousingCubes()
+    scene.add(group)
+    // LobbyMap lives only on /map-paris — never on /game.
+    clearWorldCollision()
+    myPosition.x = HOUSING_LOBBY_SPAWN.x
+    myPosition.y = HOUSING_LOBBY_SPAWN.y
+    myPosition.z = HOUSING_LOBBY_SPAWN.z
+    nearApartmentDoor.value = false
+    resetClientStateForCityWorld()
+    clearApartmentObjects()
   } else {
     void loadApartmentEnvironment().then((built) => {
       if (token !== roomEnvironmentLoadToken) return
@@ -343,11 +490,8 @@ const {
     wasPointerLockedAtTransitionStart.value = pointerLocked.value
     await tryExitApartmentAtDoor(nearApartmentDoor.value)
   },
-  onNearCityDoorInteract: () => {
-    if (!getStoredAuth() || !gameRoomRef.value) return
-    transitioningApartment.value = true
-    wasPointerLockedAtTransitionStart.value = pointerLocked.value
-    tryEnterApartmentAtDoor(nearCityDoor.value)
+  onNearHousingInteract: () => {
+    void onNearHousingInteract()
   },
   onToggleInventory: () => toggleInventory(),
   onHotbarDigit: (index: number) => {
@@ -355,6 +499,8 @@ const {
   },
   nearApartmentDoor,
   nearCityDoor,
+  housingUnits,
+  nearbyHousingUnit,
   handleExtraKeyDown,
   onCanvasMouseDown: (e) => {
     apartmentPlacement.onPointerDown(e)
@@ -410,6 +556,9 @@ const { connectRealtime, clearRemoteUsers } = useGameRealtime({
     removeApartmentObjectMesh,
   },
   setRoomEnvironment,
+  canEditApartment,
+  visitedApartmentOwnerId,
+  onHousingUnitsSync: onHousingUnitsFromServer,
   onApartmentActionErrorBanner: () => {
     apartmentPlacement.onApartmentActionError()
   },
@@ -429,7 +578,7 @@ function initThree(accentColor: number) {
   const { w, h } = containerSize()
   const aspect = w / h
   camera = new THREE.PerspectiveCamera(75, aspect, 0.1, isLowQuality ? 300 : 1000)
-  camera.position.set(CITY_SPAWN.x, CITY_SPAWN.y, CITY_SPAWN.z)
+  camera.position.set(HOUSING_LOBBY_SPAWN.x, HOUSING_LOBBY_SPAWN.y, HOUSING_LOBBY_SPAWN.z)
 
   renderer = new THREE.WebGLRenderer({ canvas: canvasRef.value, antialias: !isLowQuality })
   renderer.setSize(w, h)
@@ -480,6 +629,12 @@ async function bootGame() {
   const bodyTint = hexStringToNumber(state.colors.body)
   initThree(bodyTint)
   await connectRealtime(state)
+  try {
+    const housing = await fetchHousingUnits()
+    onHousingUnitsFromServer(housing.units)
+  } catch {
+    /* socket init / housing_units_sync still populate cubes */
+  }
   await loadLayoutFromServer()
   refreshOwnedItems()
   startRenderLoop()
@@ -519,9 +674,12 @@ onUnmounted(() => {
   clearRemoteUsers()
   apartmentPlacement.dispose()
   clearApartmentObjects()
+  housingCubesGroup = null
   if (roomEnvironment) {
     scene.remove(roomEnvironment)
-    disposeObject3D(roomEnvironment)
+    if (!roomEnvironment.userData.isPersistentEnvironment) {
+      disposeObject3D(roomEnvironment)
+    }
     roomEnvironment = null
   }
   if (fpHands) {
@@ -577,6 +735,14 @@ const crosshairClass = computed(() => {
       :screen-y="doorPromptPos.y"
       :key-label="doorPromptPos.key"
       :action-label="doorPromptPos.action"
+      :detail-label="doorPromptPos.detail"
+    />
+    <GameInteractionPrompt
+      v-if="renewPromptPos"
+      :screen-x="renewPromptPos.x"
+      :screen-y="renewPromptPos.y"
+      key-label="U"
+      action-label="Renew"
     />
     <GamePlacementHud :visible="placementPreviewActive" :hints="placementHudHints" />
     <GamePlayerHotbar
@@ -601,6 +767,7 @@ const crosshairClass = computed(() => {
       :loading="inventoryLoading"
       :error="inventoryError"
       :current-room-label="currentRoomLabel"
+      :can-edit-apartment="canEditApartment"
       :apartment-object-ids="apartmentObjectIds"
       :selected-placed-object-id="selectedPlacedObjectId"
       @close="closeInventory"

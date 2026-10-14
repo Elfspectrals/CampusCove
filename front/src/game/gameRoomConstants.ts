@@ -1,11 +1,20 @@
 /** Fixed entry when joining an apartment instance (inward from Door_Frame_A2, +Z toward center). */
 export const APARTMENT_SPAWN = { x: 3.8, y: 1.6, z: -1.2 }
 
-/** City spawn next to the SM_Thuja_81 tree in LobbyMap.glb; socket/server.js hardcodes the same values. */
-export const CITY_SPAWN = { x: -89.6, y: 1.6, z: 22.4 }
+/**
+ * /game housing lobby spawn — in front of the MVP housing cubes (seeded around z=12..18).
+ * Must match socket CITY_SPAWN / CITY_APARTMENT_EXIT.
+ */
+export const HOUSING_LOBBY_SPAWN = { x: 0, y: 1.6, z: 5 }
 
-/** Where you reappear in the city after exiting the apartment (street near Opera). Matches socket CITY_APARTMENT_EXIT. */
-export const CITY_APARTMENT_EXIT = { x: -103.2, y: 1.6, z: 25.0 }
+/** @deprecated Use HOUSING_LOBBY_SPAWN for /game. Kept for socket naming parity. */
+export const CITY_SPAWN = HOUSING_LOBBY_SPAWN
+
+/** Where you reappear in the housing lobby after exiting an apartment. */
+export const CITY_APARTMENT_EXIT = HOUSING_LOBBY_SPAWN
+
+/** /map-paris only — next to SM_Thuja_81 in LobbyMap.glb. */
+export const PARIS_MAP_SPAWN = { x: -89.6, y: 1.6, z: 22.4 }
 
 /** Inner half-size of the apartment GLB (~±12 m); player clamp margin applied in movement. */
 export const APARTMENT_HALF_EXTENT = 12
@@ -24,6 +33,9 @@ export const APARTMENT_DOOR_POS = { x: 4.54, z: -2.74 }
 /** City building entrance — Press I near Opera (player-confirmed street spot). */
 export const CITY_BUILDING_DOOR_POS = { x: -103.2, z: 25.0 }
 export const CITY_BUILDING_DOOR_RADIUS = 6
+
+/** Extra XZ reach beyond half cube size for housing interact prompts. */
+export const HOUSING_CUBE_INTERACT_RADIUS_PAD = 1.4
 
 export const TRANSFORM_PERSIST_THROTTLE_MS = 150
 export const TRANSFORM_EPSILON_POSITION = 0.01

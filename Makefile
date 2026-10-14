@@ -1,37 +1,39 @@
-# CampusCove command hub.
-# Run `make help` (or just `make`) to list all commands.
-# Requires GNU make; on Windows use Git Bash or `choco install make`.
+# CampusCove — `make help`
+# GNU make (Git Bash / `choco install make` on Windows).
 
 .DEFAULT_GOAL := help
 
-# ---------------------------------------------------------------- help
+COMPOSE := docker compose
+ART     := $(COMPOSE) exec -T backend php artisan
 
-help: ## List all available commands
-	@grep -hE '^[a-zA-Z0-9_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-20s %s\n", $$1, $$2}'
+help: ## List commands
+	@grep -hE '^[a-zA-Z0-9_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-22s %s\n", $$1, $$2}'
 
-# ---------------------------------------------------------------- docker (full stack)
+# --- docker ---
 
-up: ## Start the whole stack with Docker (front 5173, api 8000, socket 3000, db 5432)
-	docker compose up -d
+up: ## Start the stack (front 5173, api 8000, socket 3000, db 5432)
+	$(COMPOSE) up -d
 
-up-build: ## Start the stack, rebuilding all images
-	docker compose up -d --build
+up-build: ## Start the stack, rebuilding images
+	$(COMPOSE) up -d --build
 
-down: ## Stop the Docker stack (keeps data volumes)
-	docker compose down
+down: ## Stop the stack (keeps volumes)
+	$(COMPOSE) down
 
-rebuild-socket: ## Rebuild + restart only the socket server (needed after ANY socket/ change)
-	docker compose up -d --build socket
+logs: ## Tail Docker logs
+	$(COMPOSE) logs -f
 
-logs: ## Tail logs of all Docker services
-	docker compose logs -f
+rebuild-socket: ## Rebuild + restart Colyseus (needed after socket/ changes)
+	$(COMPOSE) up -d --build socket
 
-# ---------------------------------------------------------------- front (Vue + Three.js)
+socket-rebuild: rebuild-socket ## Alias of rebuild-socket
+
+# --- front ---
 
 front-install: ## Install front dependencies
 	cd front && npm install
 
-front-dev: ## Run the front dev server locally (http://localhost:5173)
+front-dev: ## Front dev server (http://localhost:5173)
 	cd front && npm run dev
 
 front-build: ## Production build of the front
@@ -40,42 +42,65 @@ front-build: ## Production build of the front
 typecheck: ## Type-check the front (vue-tsc)
 	cd front && npx vue-tsc --noEmit
 
-# ---------------------------------------------------------------- 3D assets
+# --- 3D assets ---
 
-# Usage: make optimize MODEL=path/to/model.glb [NAME=MyModel]
-# Also writes Name.collision.json (Rapier cuboids) next to the GLB.
-optimize: ## Optimize a .glb/.gltf into front/public/models/ + TS loader + collision JSON
+optimize: ## Optimize a .glb (MODEL=path [NAME=MyModel])
 	cd front && npm run optimize -- $(MODEL) $(NAME)
 
-map-optimize: ## Rebuild LobbyMap GLBs + LobbyMap.collision.json
+map-optimize: ## Rebuild LobbyMap GLB + collision
 	cd front && npm run map:optimize
 
-apartment-optimize: ## Rebuild ApartmentInterior GLBs + ApartmentInterior.collision.json
+apartment-optimize: ## Rebuild ApartmentInterior GLB + collision
 	cd front && npm run apartment:optimize
 
-collision-extract: ## Extract collision JSON from an existing GLB (MODEL=public/maps/Foo.glb)
+collision-extract: ## Collision JSON from a GLB (MODEL=public/maps/Foo.glb)
 	cd front && npm run collision:extract -- $(MODEL)
 
-# ---------------------------------------------------------------- backend (Laravel)
+# --- backend (Docker artisan) ---
 
-backend-install: ## Install backend dependencies (Composer)
+migrate: ## Run migrations
+	$(ART) migrate --force
+
+seed: ## Seed shop + housing
+	$(ART) db:seed --force
+
+seed-shop: ## Seed shop catalog / wearables
+	$(ART) db:seed --class=ShopSeeder --force
+
+seed-housing: ## Seed 8 city housing cubes
+	$(ART) db:seed --class=HousingUnitSeeder --force
+
+expire-leases: ## Reset expired housing rentals
+	$(ART) housing:expire-leases
+
+set-admin: ## Grant admin (EMAIL=a@b.c)
+	$(ART) setAdmin $(EMAIL)
+
+set-money: ## Set wallet (ACCOUNT=id|email CURRENCY=coins|premium SUM=2000)
+	$(ART) setMoney $(ACCOUNT) $(CURRENCY) $(SUM)
+
+fill-outfit: ## Starter wearables + outfit (ACCOUNT=id|email)
+	$(ART) fillOutfit $(ACCOUNT)
+
+test: ## Backend tests
+	$(ART) test
+
+backend-install: ## Composer install (local, no Docker)
 	cd backend && composer install
 
-backend-serve: ## Run the Laravel API locally (http://localhost:8000)
+backend-serve: ## Laravel API locally (http://localhost:8000)
 	cd backend && php artisan serve
 
-migrate: ## Run database migrations (inside Docker)
-	docker compose exec -T backend php artisan migrate
+# --- socket (local, no Docker) ---
 
-seed: ## Re-seed shop items + cosmetics (inside Docker)
-	docker compose exec -T backend php artisan db:seed --class=ShopSeeder
-
-# ---------------------------------------------------------------- socket (Colyseus)
-
-socket-install: ## Install socket server dependencies
+socket-install: ## Install socket dependencies
 	cd socket && npm install
 
-socket-start: ## Run the socket server locally (port 3000)
+socket-start: ## Run socket locally (port 3000)
 	cd socket && npm start
 
-.PHONY: help up up-build down rebuild-socket logs front-install front-dev front-build typecheck optimize map-optimize apartment-optimize collision-extract backend-install backend-serve migrate seed socket-install socket-start
+.PHONY: help up up-build down logs rebuild-socket socket-rebuild \
+	front-install front-dev front-build typecheck \
+	optimize map-optimize apartment-optimize collision-extract \
+	migrate seed seed-shop seed-housing expire-leases set-admin set-money fill-outfit test \
+	backend-install backend-serve socket-install socket-start

@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Account;
+use App\Services\HousingService;
 use App\Models\AccountAuthLocal;
 use App\Models\EconomyTransaction;
 use App\Models\Role;
@@ -12,6 +13,13 @@ use App\Services\StarterCosmeticGrantService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
+
+Artisan::command('housing:expire-leases', function () {
+    $count = app(HousingService::class)->expireDueLeases();
+    $this->info("Expired {$count} housing lease(s).");
+
+    return 0;
+})->purpose('Reset housing units whose rent lease has expired');
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());

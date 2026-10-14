@@ -7,9 +7,8 @@ import {
   APARTMENT_DOOR_POS,
   APARTMENT_DOOR_RADIUS,
   APARTMENT_HALF_EXTENT,
-  CITY_BUILDING_DOOR_POS,
-  CITY_BUILDING_DOOR_RADIUS,
 } from '../../game/gameRoomConstants'
+import { findNearestHousingUnit, type HousingUnitSnapshot } from '../../game/housingCubes'
 import { resolveWorldMovement } from './useWorldCollision'
 
 export interface UseGameMovementDeps {
@@ -27,11 +26,13 @@ export interface UseGameMovementDeps {
   getFpHands: () => THREE.Group | null
   refreshMyAppearance: Ref<(() => void) | null>
   onNearApartmentDoorInteract: () => Promise<void>
-  onNearCityDoorInteract: () => void
+  onNearHousingInteract: () => void
   onToggleInventory: () => void
   onHotbarDigit: (index: number) => void
   nearApartmentDoor: Ref<boolean>
   nearCityDoor: Ref<boolean>
+  housingUnits: Ref<HousingUnitSnapshot[]>
+  nearbyHousingUnit: Ref<HousingUnitSnapshot | null>
   /** Return `true` if the event was consumed (placement shortcuts, etc.). */
   handleExtraKeyDown?: (e: KeyboardEvent) => boolean
   onCanvasMouseDown?: (e: MouseEvent) => void
@@ -81,11 +82,12 @@ export function useGameMovement(deps: UseGameMovementDeps) {
       const dz = myPosition.z - APARTMENT_DOOR_POS.z
       deps.nearApartmentDoor.value = dx * dx + dz * dz <= APARTMENT_DOOR_RADIUS * APARTMENT_DOOR_RADIUS
       deps.nearCityDoor.value = false
+      deps.nearbyHousingUnit.value = null
     } else {
       deps.nearApartmentDoor.value = false
-      const dx = myPosition.x - CITY_BUILDING_DOOR_POS.x
-      const dz = myPosition.z - CITY_BUILDING_DOOR_POS.z
-      deps.nearCityDoor.value = dx * dx + dz * dz <= CITY_BUILDING_DOOR_RADIUS * CITY_BUILDING_DOOR_RADIUS
+      const nearest = findNearestHousingUnit(myPosition.x, myPosition.z, deps.housingUnits.value)
+      deps.nearbyHousingUnit.value = nearest
+      deps.nearCityDoor.value = nearest !== null
     }
   }
 
@@ -201,8 +203,8 @@ export function useGameMovement(deps: UseGameMovementDeps) {
         void deps.onNearApartmentDoorInteract()
         return
       }
-      if (deps.currentRoomLabel.value === 'city' && deps.nearCityDoor.value) {
-        deps.onNearCityDoorInteract()
+      if (deps.currentRoomLabel.value === 'city' && deps.nearbyHousingUnit.value) {
+        deps.onNearHousingInteract()
         return
       }
     }

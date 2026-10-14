@@ -8,6 +8,7 @@ use App\Http\Controllers\AssetController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CharacterCosmeticController;
 use App\Http\Controllers\FriendController;
+use App\Http\Controllers\HousingController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\PlayerInventoryLayoutController;
 use App\Http\Controllers\ShopController;
@@ -34,6 +35,11 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
     Route::post('/friends/accept/{accountId}', [FriendController::class, 'accept']);
     Route::post('/friends/block/{accountId}', [FriendController::class, 'block']);
     Route::delete('/friends/{accountId}', [FriendController::class, 'destroy']);
+
+    Route::get('/housing/units', [HousingController::class, 'index']);
+    Route::post('/housing/units/{publicId}/buy', [HousingController::class, 'buy']);
+    Route::post('/housing/units/{publicId}/rent', [HousingController::class, 'rent']);
+    Route::post('/housing/units/{publicId}/renew', [HousingController::class, 'renew']);
 
     Route::post('/shop/purchase', [ShopController::class, 'purchase']);
     Route::get('/inventory', [InventoryController::class, 'index']);

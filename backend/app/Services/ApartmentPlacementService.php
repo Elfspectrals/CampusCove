@@ -24,8 +24,14 @@ class ApartmentPlacementService
      */
     private const PLACEABLE_KINDS = ['apartment_asset', 'furniture'];
 
+    /**
+     * @var list<string>
+     */
+    private const EDIT_ROLES = ['owner', 'co_owner', 'editor'];
+
     public function __construct(
         private readonly AccountInventoryService $inventoryService,
+        private readonly HousingService $housingService,
     ) {
     }
 
@@ -34,6 +40,7 @@ class ApartmentPlacementService
      *   room_public_id:string,
      *   owner_account_id:int,
      *   template_key:string,
+     *   can_edit:bool,
      *   objects:list<array{
      *     objectId:string,
      *     objectKey:string,
@@ -51,16 +58,31 @@ class ApartmentPlacementService
      */
     public function resolveApartmentState(int $actorAccountId, int $ownerAccountId, ?string $templateKey = null): array
     {
+        $this->housingService->expireDueLeases();
         $template = $this->normalizeTemplateKey($templateKey);
-        [$room, ] = $this->resolveOrCreateApartment($ownerAccountId, $template);
-        $this->assertCanEditApartment($actorAccountId, $ownerAccountId, (int) $room->room_id);
+        $canEdit = $this->canEditApartment($actorAccountId, $ownerAccountId, $template);
+
+        if ($canEdit) {
+            [$room, ] = $this->resolveOrCreateApartment($ownerAccountId, $template);
+        } else {
+            if (! $this->canViewApartment($actorAccountId, $ownerAccountId, $template)) {
+                throw new ApartmentPlacementException('apartment_view_forbidden', 'You are not allowed to view this apartment.', 403);
+            }
+            $room = $this->resolveExistingApartment($ownerAccountId, $template);
+        }
 
         return [
             'room_public_id' => (string) $room->public_id,
             'owner_account_id' => $ownerAccountId,
             'template_key' => $template,
+            'can_edit' => $canEdit,
             'objects' => $this->loadRoomObjects((int) $room->room_id),
         ];
+    }
+
+    public function officialTemplateKeyForAccount(int $accountId): string
+    {
+        return $this->housingService->officialTemplateKeyForAccount($accountId);
     }
 
     /**
@@ -366,13 +388,85 @@ class ApartmentPlacementService
         if ($actorAccountId === $ownerAccountId) {
             return;
         }
-        $isMember = RoomMembership::query()
+
+        $role = RoomMembership::query()
+            ->where('room_id', $roomId)
+            ->where('account_id', $actorAccountId)
+            ->value('role');
+
+        if (! is_string($role) || ! in_array($role, self::EDIT_ROLES, true)) {
+            throw new ApartmentPlacementException('apartment_edit_forbidden', 'You are not allowed to edit this apartment.', 403);
+        }
+    }
+
+    private function canEditApartment(int $actorAccountId, int $ownerAccountId, string $templateKey): bool
+    {
+        if ($actorAccountId === $ownerAccountId) {
+            return true;
+        }
+
+        $roomId = $this->findApartmentRoomId($ownerAccountId, $templateKey);
+        if ($roomId === null) {
+            return false;
+        }
+
+        $role = RoomMembership::query()
+            ->where('room_id', $roomId)
+            ->where('account_id', $actorAccountId)
+            ->value('role');
+
+        return is_string($role) && in_array($role, self::EDIT_ROLES, true);
+    }
+
+    private function canViewApartment(int $actorAccountId, int $ownerAccountId, string $templateKey): bool
+    {
+        if ($actorAccountId === $ownerAccountId) {
+            return true;
+        }
+
+        if ($this->housingService->canVisitOwnerApartment($ownerAccountId)) {
+            return true;
+        }
+
+        $roomId = $this->findApartmentRoomId($ownerAccountId, $templateKey);
+        if ($roomId === null) {
+            return false;
+        }
+
+        return RoomMembership::query()
             ->where('room_id', $roomId)
             ->where('account_id', $actorAccountId)
             ->exists();
-        if (! $isMember) {
-            throw new ApartmentPlacementException('apartment_edit_forbidden', 'You are not allowed to edit this apartment.', 403);
+    }
+
+    private function resolveExistingApartment(int $ownerAccountId, string $templateKey): Room
+    {
+        $serverId = $this->resolveDefaultServerId();
+        $roomName = $this->apartmentRoomName($ownerAccountId, $templateKey);
+        $room = Room::query()
+            ->where('server_id', $serverId)
+            ->where('type', 'apartment')
+            ->where('name', $roomName)
+            ->first();
+
+        if ($room === null) {
+            throw new ApartmentPlacementException('apartment_not_found', 'This apartment does not exist.', 404);
         }
+
+        return $room;
+    }
+
+    private function findApartmentRoomId(int $ownerAccountId, string $templateKey): ?int
+    {
+        $serverId = $this->resolveDefaultServerId();
+        $roomName = $this->apartmentRoomName($ownerAccountId, $templateKey);
+        $roomId = Room::query()
+            ->where('server_id', $serverId)
+            ->where('type', 'apartment')
+            ->where('name', $roomName)
+            ->value('room_id');
+
+        return $roomId !== null ? (int) $roomId : null;
     }
 
     /**

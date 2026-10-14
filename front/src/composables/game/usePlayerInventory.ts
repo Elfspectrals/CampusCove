@@ -49,6 +49,7 @@ function parseOwnedItem(raw: unknown): ApartmentInventoryItem | null {
 export interface UsePlayerInventoryDeps {
   gameRoomRef: ShallowRef<Room | null>
   currentRoomLabel: Ref<'city' | 'apartment'>
+  canEditApartment: Ref<boolean>
   myPosition: { x: number; y: number; z: number }
   direction: THREE.Vector3
   selectedPlacedObjectId: Ref<string>
@@ -89,10 +90,9 @@ export interface UsePlayerInventoryResult {
   resetClientStateForCityWorld: () => void
   pickupSelectedPlacedObject: () => void
   onPlacedObjectSelected: (objectId: string) => void
-  enterMyApartment: () => Promise<void>
+  enterApartment: (ownerAccountId: number, templateKey: string) => Promise<void>
   backToCity: () => Promise<void>
   tryExitApartmentAtDoor: (isNearDoor: boolean) => Promise<void>
-  tryEnterApartmentAtDoor: (isNearDoor: boolean) => void
 }
 
 export function usePlayerInventory(deps: UsePlayerInventoryDeps): UsePlayerInventoryResult {
@@ -304,7 +304,7 @@ export function usePlayerInventory(deps: UsePlayerInventoryDeps): UsePlayerInven
     scheduleDebouncedSave()
     const code = slots.value[i] ?? ''
 
-    if (deps.currentRoomLabel.value !== 'apartment') {
+    if (deps.currentRoomLabel.value !== 'apartment' || !deps.canEditApartment.value) {
       cancelPlacementPreviewInternal()
       return
     }
@@ -471,7 +471,7 @@ export function usePlayerInventory(deps: UsePlayerInventoryDeps): UsePlayerInven
   }
 
   function pickupSelectedPlacedObject(): void {
-    if (!deps.gameRoomRef.value || deps.currentRoomLabel.value !== 'apartment') return
+    if (!deps.gameRoomRef.value || deps.currentRoomLabel.value !== 'apartment' || !deps.canEditApartment.value) return
     const objectId = deps.selectedPlacedObjectId.value
     if (!objectId) return
     deps.gameRoomRef.value.send('apartment_pickup_request', { objectId })
@@ -482,15 +482,14 @@ export function usePlayerInventory(deps: UsePlayerInventoryDeps): UsePlayerInven
     deps.attachSelectedPlacedObject()
   }
 
-  async function enterMyApartment(): Promise<void> {
-    const auth = getStoredAuth()
-    if (!auth || !deps.gameRoomRef.value) return
+  async function enterApartment(ownerAccountId: number, templateKey: string): Promise<void> {
+    if (!deps.gameRoomRef.value) return
     inventoryLoading.value = true
     inventoryError.value = null
     closeInventory()
     deps.gameRoomRef.value.send('enter_apartment', {
-      ownerAccountId: auth.user.account_id,
-      templateKey: 'starter_loft',
+      ownerAccountId,
+      templateKey,
     })
   }
 
@@ -502,11 +501,6 @@ export function usePlayerInventory(deps: UsePlayerInventoryDeps): UsePlayerInven
   async function tryExitApartmentAtDoor(isNearDoor: boolean): Promise<void> {
     if (!isNearDoor) return
     await backToCity()
-  }
-
-  function tryEnterApartmentAtDoor(isNearDoor: boolean): void {
-    if (!isNearDoor) return
-    void enterMyApartment()
   }
 
   return {
@@ -540,9 +534,8 @@ export function usePlayerInventory(deps: UsePlayerInventoryDeps): UsePlayerInven
     resetClientStateForCityWorld,
     pickupSelectedPlacedObject,
     onPlacedObjectSelected,
-    enterMyApartment,
+    enterApartment,
     backToCity,
     tryExitApartmentAtDoor,
-    tryEnterApartmentAtDoor,
   }
 }
