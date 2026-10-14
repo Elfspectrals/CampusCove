@@ -5,11 +5,12 @@ namespace Tests\Feature;
 use App\Models\Account;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Tests\Concerns\SetsWalletBalance;
 use Tests\TestCase;
 
 class ApartmentPlacementApiTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, SetsWalletBalance;
 
     public function test_spawn_consumes_one_pickup_restores_one_and_guest_can_edit(): void
     {
@@ -171,22 +172,7 @@ class ApartmentPlacementApiTest extends TestCase
         $accountId = (int) $reg->json('user.account_id');
         $token = (string) $reg->json('token');
 
-        $walletId = (int) DB::table('wallets')->insertGetId([
-            'owner_type' => 'account',
-            'owner_id' => $accountId,
-            'currency' => $currency,
-            'created_at' => now(),
-        ], 'wallet_id');
-
-        if ($coins !== 0) {
-            DB::table('wallet_ledger')->insert([
-                'wallet_id' => $walletId,
-                'tx_id' => null,
-                'delta' => $coins,
-                'reason' => 'test_credit',
-                'created_at' => now(),
-            ]);
-        }
+        $this->setWalletBalance($accountId, $currency, $coins);
 
         return ['token' => $token, 'account_id' => $accountId];
     }

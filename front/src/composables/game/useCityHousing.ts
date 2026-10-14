@@ -26,12 +26,22 @@ export function leaseSoon(unit: HousingUnitSnapshot): boolean {
   return remaining > 0 && remaining <= LEASE_SOON_MS
 }
 
+export function formatRentDuration(hours: number): string {
+  if (hours >= 24 && hours % 24 === 0) {
+    const days = hours / 24
+    return days === 1 ? '1 day' : `${days} days`
+  }
+  return `${hours}h`
+}
+
 export function formatLeaseRemaining(unit: HousingUnitSnapshot): string | null {
   const remaining = leaseRemainingMs(unit)
   if (remaining === null || remaining <= 0) return null
   const totalMin = Math.ceil(remaining / 60_000)
-  const h = Math.floor(totalMin / 60)
+  const d = Math.floor(totalMin / 1440)
+  const h = Math.floor((totalMin % 1440) / 60)
   const m = totalMin % 60
+  if (d > 0) return `Lease: ${d}d ${h}h left`
   if (h > 0) return `Lease: ${h}h ${m}m left`
   return `Lease: ${m}m left`
 }

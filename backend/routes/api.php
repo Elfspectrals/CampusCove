@@ -11,6 +11,7 @@ use App\Http\Controllers\FriendController;
 use App\Http\Controllers\HousingController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\PlayerInventoryLayoutController;
+use App\Http\Controllers\ReferralController;
 use App\Http\Controllers\ShopController;
 use Illuminate\Support\Facades\Route;
 
@@ -35,6 +36,8 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
     Route::post('/friends/accept/{accountId}', [FriendController::class, 'accept']);
     Route::post('/friends/block/{accountId}', [FriendController::class, 'block']);
     Route::delete('/friends/{accountId}', [FriendController::class, 'destroy']);
+
+    Route::get('/referrals', [ReferralController::class, 'show']);
 
     Route::get('/housing/units', [HousingController::class, 'index']);
     Route::post('/housing/units/{publicId}/buy', [HousingController::class, 'buy']);

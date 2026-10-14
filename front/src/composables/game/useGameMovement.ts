@@ -35,7 +35,8 @@ export interface UseGameMovementDeps {
   nearbyHousingUnit: Ref<HousingUnitSnapshot | null>
   /** Return `true` if the event was consumed (placement shortcuts, etc.). */
   handleExtraKeyDown?: (e: KeyboardEvent) => boolean
-  onCanvasMouseDown?: (e: MouseEvent) => void
+  /** Return `true` if the click was consumed (apartment placement), so it doesn't also open a door. */
+  onCanvasMouseDown?: (e: MouseEvent) => boolean | void
   onCanvasMouseUp?: (e: MouseEvent) => void
   /** Called each animation frame after movement. */
   onBeforeRender?: (dt: number) => void
@@ -122,7 +123,7 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     const now = Date.now()
     if (room && now - lastEmit > emitInterval) {
       lastEmit = now
-      room.send('move', { x: myPosition.x, y: myPosition.y, z: myPosition.z })
+      room.send('move', { x: myPosition.x, y: myPosition.y, z: myPosition.z, ry: yaw })
     }
   }
 
@@ -183,8 +184,26 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     mouseY = e.movementY
   }
 
+  /** Enter / rent / buy / exit at the door the player stands next to. Returns true if a door was used. */
+  function tryInteract(): boolean {
+    // Recompute proximity on the input itself so it works even if the last movement frame was
+    // skipped (pointer unlock, lag, etc.).
+    updateDoorProximity()
+    if (deps.currentRoomLabel.value === 'apartment' && deps.nearApartmentDoor.value) {
+      void deps.onNearApartmentDoorInteract()
+      return true
+    }
+    if (deps.currentRoomLabel.value === 'city' && deps.nearbyHousingUnit.value) {
+      deps.onNearHousingInteract()
+      return true
+    }
+    return false
+  }
+
   function onCanvasMouseDown(e: MouseEvent) {
-    deps.onCanvasMouseDown?.(e)
+    if (deps.onCanvasMouseDown?.(e) === true) return
+    // left click on a door; the click that locks the pointer is not an interaction
+    if (e.button === 0 && pointerLocked.value) tryInteract()
   }
 
   function onCanvasMouseUp(e: MouseEvent) {
@@ -195,18 +214,9 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     if (deps.handleExtraKeyDown?.(e)) {
       return
     }
-    if (e.code === KEY_BINDINGS.interact) {
-      // Recompute proximity on the key press itself so Enter works even if the
-      // last movement frame was skipped (pointer unlock, lag, etc.).
-      updateDoorProximity()
-      if (deps.currentRoomLabel.value === 'apartment' && deps.nearApartmentDoor.value) {
-        void deps.onNearApartmentDoorInteract()
-        return
-      }
-      if (deps.currentRoomLabel.value === 'city' && deps.nearbyHousingUnit.value) {
-        deps.onNearHousingInteract()
-        return
-      }
+    // keyboard fallback for the left-click door interaction
+    if (e.code === KEY_BINDINGS.interact && tryInteract()) {
+      return
     }
     if (e.code === KEY_BINDINGS.apartmentInventoryToggle && !e.repeat) {
       deps.onToggleInventory()

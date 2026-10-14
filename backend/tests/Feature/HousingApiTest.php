@@ -9,11 +9,12 @@ use Database\Seeders\HousingUnitSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Tests\Concerns\SetsWalletBalance;
 use Tests\TestCase;
 
 class HousingApiTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, SetsWalletBalance;
 
     protected function setUp(): void
     {
@@ -125,7 +126,7 @@ class HousingApiTest extends TestCase
             'Authorization' => 'Bearer '.$renter['token'],
         ]);
         $response->assertOk();
-        $response->assertJsonPath('unit.lease_expires_at', '2026-09-23T12:00:00+00:00');
+        $response->assertJsonPath('unit.lease_expires_at', '2026-09-29T12:00:00+00:00');
 
         $this->assertDatabaseHas('wallet_ledger', [
             'reason' => 'housing_rent',
@@ -149,7 +150,7 @@ class HousingApiTest extends TestCase
             'Authorization' => 'Bearer '.$renter['token'],
         ]);
         $renew->assertOk();
-        $renew->assertJsonPath('unit.lease_expires_at', '2026-09-24T12:00:00+00:00');
+        $renew->assertJsonPath('unit.lease_expires_at', '2026-10-06T12:00:00+00:00');
 
         $this->assertDatabaseHas('wallet_ledger', [
             'reason' => 'housing_renew',
@@ -176,7 +177,7 @@ class HousingApiTest extends TestCase
             'account_id' => $renter['account_id'],
         ]);
 
-        Carbon::setTestNow(Carbon::parse('2026-09-24 00:00:00 UTC'));
+        Carbon::setTestNow(Carbon::parse('2026-09-30 00:00:00 UTC'));
         $expired = app(HousingService::class)->expireDueLeases();
         $this->assertSame(1, $expired);
 
@@ -244,22 +245,7 @@ class HousingApiTest extends TestCase
         $accountId = (int) $reg->json('user.account_id');
         $token = (string) $reg->json('token');
 
-        $walletId = (int) DB::table('wallets')->insertGetId([
-            'owner_type' => 'account',
-            'owner_id' => $accountId,
-            'currency' => $currency,
-            'created_at' => now(),
-        ], 'wallet_id');
-
-        if ($coins !== 0) {
-            DB::table('wallet_ledger')->insert([
-                'wallet_id' => $walletId,
-                'tx_id' => null,
-                'delta' => $coins,
-                'reason' => 'test_credit',
-                'created_at' => now(),
-            ]);
-        }
+        $this->setWalletBalance($accountId, $currency, $coins);
 
         return ['token' => $token, 'account_id' => $accountId];
     }

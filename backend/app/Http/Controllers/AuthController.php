@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Account;
 use App\Models\AccountAuthLocal;
 use App\Models\AccountHandle;
+use App\Services\ReferralService;
 use App\Services\StarterCosmeticGrantService;
 use App\Services\WalletSummaryService;
+use App\Services\WelcomeBonusService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -27,6 +29,7 @@ class AuthController extends Controller
             'email' => 'required|email|unique:account_auth_local,email',
             'username' => 'required|string|min:3|max:24|regex:/^[a-zA-Z0-9_]+$/',
             'password' => 'required|string|min:8|confirmed',
+            'referral_code' => 'nullable|string|max:12',
         ]);
 
         $normalized = mb_strtolower($validated['username']);
@@ -62,6 +65,8 @@ class AuthController extends Controller
             ->firstOrFail();
 
         app(StarterCosmeticGrantService::class)->ensureStarterCosmeticsForAccount((int) $account->account_id);
+        app(WelcomeBonusService::class)->grantOnce((int) $account->account_id);
+        app(ReferralService::class)->attachReferrer((int) $account->account_id, $validated['referral_code'] ?? null);
 
         $account->update(['last_login_at' => now()]);
         $token = $account->createToken('auth')->plainTextToken;
@@ -108,6 +113,8 @@ class AuthController extends Controller
         }
 
         $account->update(['last_login_at' => now()]);
+        // the account-age condition becomes true with time, without any other event
+        app(ReferralService::class)->checkQualification((int) $account->account_id);
         $account->tokens()->delete();
         $token = $account->createToken('auth')->plainTextToken;
 

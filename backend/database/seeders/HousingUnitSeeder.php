@@ -38,7 +38,7 @@ class HousingUnitSeeder extends Seeder
             $unit->fill([
                 'offer_type' => $offer,
                 'price_coins' => $price,
-                'rent_duration_hours' => 24,
+                'rent_duration_hours' => 168,
                 'pos_x' => $x,
                 'pos_y' => $y,
                 'pos_z' => $z,

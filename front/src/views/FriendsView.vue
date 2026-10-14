@@ -2,6 +2,9 @@
 import { computed, onMounted, ref } from 'vue'
 import * as friendsApi from '../api/friends'
 import type { Friend, PendingFriend } from '../api/friends'
+import * as referralsApi from '../api/referrals'
+import type { ReferralSummary } from '../api/referrals'
+import UiCurrency from '../components/ui/UiCurrency.vue'
 import UiIcon from '../components/ui/UiIcon.vue'
 
 const friends = ref<Friend[]>([])
@@ -12,6 +15,12 @@ const addTag = ref('')
 const addError = ref('')
 const addLoading = ref(false)
 const friendsTab = ref<'all' | 'online' | 'pending'>('all')
+const referral = ref<ReferralSummary | null>(null)
+const copied = ref(false)
+const inviteLink = computed(() =>
+  referral.value ? `${window.location.origin}/register?ref=${encodeURIComponent(referral.value.code)}` : '',
+)
+const requiredDays = computed(() => Math.round((referral.value?.requirements.min_account_age_hours ?? 0) / 24))
 
 const onlineCount = computed(() => friends.value.filter((f) => f.status === 'online' || f.status === 'playing').length)
 const incomingPending = computed(() => pending.value.filter((p) => p.incoming))
@@ -23,8 +32,26 @@ const filteredFriends = computed(() => {
 })
 
 onMounted(async () => {
-  await loadFriends()
+  await Promise.all([loadFriends(), loadReferrals()])
 })
+
+async function loadReferrals() {
+  try {
+    referral.value = await referralsApi.getReferrals()
+  } catch {
+    referral.value = null
+  }
+}
+
+async function copyInviteLink() {
+  try {
+    await navigator.clipboard.writeText(inviteLink.value)
+    copied.value = true
+    setTimeout(() => (copied.value = false), 2000)
+  } catch {
+    // clipboard unavailable: the link stays selectable in the input
+  }
+}
 
 async function loadFriends() {
   friendsLoading.value = true
@@ -234,8 +261,9 @@ function statusLabel(status: string): string {
         </template>
       </section>
 
+      <div class="flex flex-col gap-5 self-start">
       <!-- add friend -->
-      <aside class="cc-panel self-start p-5">
+      <aside class="cc-panel p-5">
         <span class="mb-3 grid h-12 w-12 place-items-center rounded-xl bg-sun/15 text-sun"><UiIcon name="user-plus" :size="24" /></span>
         <h2 class="cc-display m-0 text-2xl">Add a friend</h2>
         
@@ -260,6 +288,41 @@ function statusLabel(status: string): string {
           {{ addLoading ? 'Sending…' : 'Send request' }}
         </button>
       </aside>
+
+      <!-- invite (referral) -->
+      <aside v-if="referral" class="cc-panel p-5">
+        <span class="mb-3 grid h-12 w-12 place-items-center rounded-xl bg-grape/15 text-grape"><UiIcon name="sparkles" :size="24" /></span>
+        <h2 class="cc-display m-0 text-2xl">Invite a friend</h2>
+        <p class="m-0 mt-2 text-sm font-semibold text-mist">
+          You get <UiCurrency currency="coins" :amount="referral.rewards.referrer" :size="14" />, they get
+          <UiCurrency currency="coins" :amount="referral.rewards.referee" :size="14" /> once they have played {{ requiredDays }} days,
+          made {{ referral.requirements.min_other_friends }} other friends and bought an item with coins.
+        </p>
+        <label for="invite-link" class="cc-label mt-4">Your invite link</label>
+        <div class="flex gap-2">
+          <input id="invite-link" :value="inviteLink" readonly class="cc-input min-w-0 flex-1 font-mono text-xs" @focus="($event.target as HTMLInputElement).select()" />
+          <button type="button" class="cc-btn cc-btn-sun cc-btn-sm" @click="copyInviteLink">{{ copied ? 'Copied!' : 'Copy' }}</button>
+        </div>
+        <p class="m-0 mt-2 text-xs font-semibold text-mist/80">Code: <span class="font-mono text-sun">{{ referral.code }}</span></p>
+
+        <ul v-if="referral.referees.length > 0" class="m-0 mt-4 list-none space-y-2 p-0">
+          <li v-for="r in referral.referees" :key="r.account_id" class="cc-panel-flat p-3">
+            <div class="flex items-center justify-between gap-2">
+              <p class="m-0 truncate font-extrabold">{{ r.display_name }}</p>
+              <span v-if="r.qualified" class="flex items-center gap-1 text-sm font-bold text-mint"><UiIcon name="check" :size="14" /> Done</span>
+            </div>
+            <ul v-if="r.progress" class="m-0 mt-1 list-none space-y-0.5 p-0 text-xs font-semibold text-mist">
+              <li :class="r.progress.account_age_ok && 'text-mint'">{{ r.progress.account_age_ok ? '✓' : '·' }} Played {{ requiredDays }} days</li>
+              <li :class="r.progress.other_friends >= referral.requirements.min_other_friends && 'text-mint'">
+                {{ r.progress.other_friends >= referral.requirements.min_other_friends ? '✓' : '·' }}
+                Friends: {{ Math.min(r.progress.other_friends, referral.requirements.min_other_friends) }}/{{ referral.requirements.min_other_friends }}
+              </li>
+              <li :class="r.progress.has_coin_purchase && 'text-mint'">{{ r.progress.has_coin_purchase ? '✓' : '·' }} First coin purchase</li>
+            </ul>
+          </li>
+        </ul>
+      </aside>
+      </div>
     </div>
   </div>
 </template>

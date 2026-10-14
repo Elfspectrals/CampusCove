@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Account;
 use App\Models\AccountHandle;
 use App\Models\Friendship;
+use App\Services\ReferralService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -144,6 +145,10 @@ class FriendController extends Controller
         }
 
         Friendship::where('account_id_a', $a)->where('account_id_b', $b)->update(['status' => 'accepted', 'updated_at' => now()]);
+
+        $referrals = app(ReferralService::class);
+        $referrals->checkQualification($a);
+        $referrals->checkQualification($b);
 
         return response()->json(['message' => 'Friend request accepted.']);
     }

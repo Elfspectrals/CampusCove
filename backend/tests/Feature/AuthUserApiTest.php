@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Services\WelcomeBonusService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
@@ -10,7 +11,7 @@ class AuthUserApiTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_user_endpoint_includes_wallet_summary_with_zero_balances_for_new_account(): void
+    public function test_user_endpoint_includes_wallet_summary_with_welcome_bonus_for_new_account(): void
     {
         $email = 'u'.uniqid('', true).'@test.com';
         $username = 'u'.substr(str_replace('.', '', uniqid('', true)), 0, 10);
@@ -24,7 +25,7 @@ class AuthUserApiTest extends TestCase
         $reg->assertCreated();
         $token = $reg->json('token');
 
-        $reg->assertJsonPath('user.wallet_summary.coins', 0);
+        $reg->assertJsonPath('user.wallet_summary.coins', WelcomeBonusService::AMOUNT);
         $reg->assertJsonPath('user.wallet_summary.premium', 0);
 
         $response = $this->getJson('/api/user', [
@@ -41,7 +42,7 @@ class AuthUserApiTest extends TestCase
                 ],
             ],
         ]);
-        $response->assertJsonPath('user.wallet_summary.coins', 0);
+        $response->assertJsonPath('user.wallet_summary.coins', WelcomeBonusService::AMOUNT);
         $response->assertJsonPath('user.wallet_summary.premium', 0);
     }
 
@@ -69,7 +70,7 @@ class AuthUserApiTest extends TestCase
         ]);
 
         $response->assertOk();
-        $response->assertJsonPath('user.wallet_summary.coins', 7_400);
+        $response->assertJsonPath('user.wallet_summary.coins', 7_400 + WelcomeBonusService::AMOUNT);
         $response->assertJsonPath('user.wallet_summary.premium', 42);
     }
 

@@ -4,11 +4,12 @@ namespace Tests\Feature;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Tests\Concerns\SetsWalletBalance;
 use Tests\TestCase;
 
 class ShopApiTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, SetsWalletBalance;
 
     protected function setUp(): void
     {
@@ -247,6 +248,32 @@ class ShopApiTest extends TestCase
         $response->assertJsonPath('purchase.total_debit', 3);
     }
 
+    public function test_premium_only_skin_is_not_sold_for_coins(): void
+    {
+        $nightOwl = DB::table('shop_catalog_items')
+            ->join('item_defs', 'item_defs.item_def_id', '=', 'shop_catalog_items.item_def_id')
+            ->where('item_defs.code', 'COS_WEAR_BODY_NIGHT_OWL')
+            ->select('shop_catalog_items.*', 'item_defs.premium_only')
+            ->first();
+        $this->assertNotNull($nightOwl);
+        $this->assertTrue((bool) $nightOwl->premium_only);
+        $this->assertFalse((bool) $nightOwl->allow_coins);
+
+        // even if a bad row allows coins, the purchase is refused
+        DB::table('shop_catalog_items')
+            ->where('shop_catalog_item_id', $nightOwl->shop_catalog_item_id)
+            ->update(['allow_coins' => true, 'coins_price' => 1200, 'updated_at' => now()]);
+
+        $account = $this->registerAndCreditWallet(10_000, 'coins');
+        $this->postJson('/api/shop/purchase', [
+            'shop_item_public_id' => $nightOwl->public_id,
+            'currency' => 'coins',
+            'quantity' => 1,
+        ], [
+            'Authorization' => 'Bearer '.$account['token'],
+        ])->assertStatus(422)->assertJsonPath('code', 'invalid_currency');
+    }
+
     public function test_purchase_fails_for_unknown_public_id(): void
     {
         $token = $this->registerAndCreditWallet(5000, 'coins')['token'];
@@ -357,20 +384,7 @@ class ShopApiTest extends TestCase
         $accountId = (int) $reg->json('user.account_id');
         $token = $reg->json('token');
 
-        $walletId = (int) DB::table('wallets')->insertGetId([
-            'owner_type' => 'account',
-            'owner_id' => $accountId,
-            'currency' => $currency,
-            'created_at' => now(),
-        ], 'wallet_id');
-
-        DB::table('wallet_ledger')->insert([
-            'wallet_id' => $walletId,
-            'tx_id' => null,
-            'delta' => $coins,
-            'reason' => 'test_credit',
-            'created_at' => now(),
-        ]);
+        $this->setWalletBalance($accountId, $currency, $coins);
 
         return ['token' => $token, 'account_id' => $accountId];
     }

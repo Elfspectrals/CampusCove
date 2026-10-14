@@ -213,6 +213,7 @@ class AdminShopItemController extends Controller
         ]);
 
         $pricing = $this->normalizedPricing($validated['prices']);
+        $this->assertPremiumOnlyNotSoldForCoins((bool) ($validated['premium_only'] ?? false), $pricing['allow_coins']);
 
         $created = null;
         DB::transaction(function () use ($request, $validated, $pricing, &$created) {
@@ -348,6 +349,12 @@ class AdminShopItemController extends Controller
             if ($catalogFields !== []) {
                 $shopCatalogItem->update($catalogFields);
             }
+
+            $shopCatalogItem->refresh()->load('itemDef');
+            $this->assertPremiumOnlyNotSoldForCoins(
+                (bool) $shopCatalogItem->itemDef?->premium_only,
+                (bool) $shopCatalogItem->allow_coins || $shopCatalogItem->currency === 'coins',
+            );
         });
 
         $shopCatalogItem->refresh()->load('itemDef');
@@ -373,6 +380,18 @@ class AdminShopItemController extends Controller
     private function escapeLikePattern(string $value): string
     {
         return str_replace(['\\', '%', '_'], ['\\\\', '\%', '\_'], $value);
+    }
+
+    /**
+     * Premium-only items (e.g. premium skins) can never be bought with coins.
+     */
+    private function assertPremiumOnlyNotSoldForCoins(bool $premiumOnly, bool $allowCoins): void
+    {
+        if ($premiumOnly && $allowCoins) {
+            throw ValidationException::withMessages([
+                'prices.coins' => ['Premium-only items cannot have a coins price.'],
+            ]);
+        }
     }
 
     /**

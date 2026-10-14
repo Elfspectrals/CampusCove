@@ -10,6 +10,7 @@ const emit = defineEmits<{
 const controls: Array<{ keys: string[]; label: string }> = [
   { keys: ['W', 'A', 'S', 'D'], label: 'Move (ZQSD on AZERTY)' },
   { keys: ['Mouse'], label: 'Look around' },
+  { keys: ['Left click'], label: 'Use a door (enter, rent, buy)' },
   { keys: ['E'], label: 'Inventory' },
   { keys: ['1–9'], label: 'Hotbar slot' },
   { keys: ['Esc'], label: 'Pause / free mouse' },

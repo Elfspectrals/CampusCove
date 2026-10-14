@@ -3,6 +3,7 @@ export const KEY_BINDINGS = {
   moveBack: ['KeyS'],
   moveLeft: ['KeyA', 'KeyQ'],
   moveRight: ['KeyD'],
+  /** Keyboard fallback; doors are used with a left click. */
   interact: 'KeyI',
   apartmentInventoryToggle: 'KeyE',
   /** Rotate placement ghost clockwise (no Shift). */

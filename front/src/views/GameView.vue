@@ -13,7 +13,6 @@ import { getStoredAuth, clearAuth } from '../api/auth'
 import { buyHousingUnit, fetchHousingUnits, rentHousingUnit, renewHousingUnit } from '../api/housing'
 import { buildFirstPersonHands, disposeObject3D } from '../avatar/compositeAvatar'
 import { matchesRotateCCW, matchesRotateCW } from '../config/keybindings'
-import GameDoorHints from '../components/game/GameDoorHints.vue'
 import GameHudToolbar from '../components/game/GameHudToolbar.vue'
 import GameInteractionPrompt from '../components/game/GameInteractionPrompt.vue'
 import GamePlacementHud from '../components/game/GamePlacementHud.vue'
@@ -34,6 +33,7 @@ import { useGameRealtime } from '../composables/game/useGameRealtime'
 import { usePlayerInventory } from '../composables/game/usePlayerInventory'
 import {
   formatLeaseRemaining,
+  formatRentDuration,
   housingActionFor,
   showRenewForUnit,
   useCityHousing,
@@ -68,7 +68,8 @@ const pointerLocked = ref(false)
 const transitioningApartment = ref(false)
 const wasPointerLockedAtTransitionStart = ref(false)
 const refreshMyAppearance = ref<(() => void) | null>(null)
-const doorPromptPos = ref<{ x: number; y: number; key: string; action: string; detail?: string } | null>(null)
+/** Door interaction prompt (left click, or I on the keyboard). */
+const doorPromptPos = ref<{ x: number; y: number; action: string; detail?: string } | null>(null)
 const renewPromptPos = ref<{ x: number; y: number } | null>(null)
 const doorProjectionVec = new THREE.Vector3()
 
@@ -356,7 +357,7 @@ function updateDoorPromptScreenPos(): void {
       renewPromptPos.value = null
       return
     }
-    doorPromptPos.value = { ...screen, key: 'I', action: 'Exit' }
+    doorPromptPos.value = { ...screen, action: 'Exit' }
     renewPromptPos.value = null
     return
   }
@@ -383,7 +384,7 @@ function updateDoorPromptScreenPos(): void {
     detail = `${unit.price_coins.toLocaleString()} coins`
   } else if (action === 'rent') {
     actionLabel = 'Rent'
-    detail = `${unit.price_coins.toLocaleString()} coins · ${unit.rent_duration_hours}h`
+    detail = `${unit.price_coins.toLocaleString()} coins · ${formatRentDuration(unit.rent_duration_hours)}`
   } else if (action === 'visit') {
     actionLabel = 'Visit'
   } else if (action === 'enter') {
@@ -392,7 +393,7 @@ function updateDoorPromptScreenPos(): void {
     if (leaseDetail) detail = leaseDetail
   }
 
-  doorPromptPos.value = { ...screen, key: 'I', action: actionLabel, detail }
+  doorPromptPos.value = { ...screen, action: actionLabel, detail }
 
   if (showRenewForUnit(unit, myAccountId.value)) {
     renewPromptPos.value = { x: screen.x + 72, y: screen.y }
@@ -519,12 +520,11 @@ const {
   housingUnits,
   nearbyHousingUnit,
   handleExtraKeyDown,
-  onCanvasMouseDown: (e) => {
-    apartmentPlacement.onPointerDown(e)
-  },
+  onCanvasMouseDown: (e) => apartmentPlacement.onPointerDown(e),
   onCanvasMouseUp: () => undefined,
   onBeforeRender: (dt) => {
     positionLabel.value = `${myPosition.x.toFixed(1)}, ${myPosition.y.toFixed(1)}, ${myPosition.z.toFixed(1)}`
+    tickRemoteAvatars(dt)
     if (currentRoomLabel.value === 'apartment') {
       apartmentPlacement.tick(dt)
     }
@@ -544,7 +544,7 @@ watch(inventoryOpen, (open) => {
   }
 })
 
-const { connectRealtime, clearRemoteUsers } = useGameRealtime({
+const { connectRealtime, clearRemoteUsers, tickRemoteAvatars } = useGameRealtime({
   router,
   realtimeHttpUrl,
   gameRoomRef,
@@ -750,7 +750,6 @@ const crosshairClass = computed(() => {
       v-if="doorPromptPos"
       :screen-x="doorPromptPos.x"
       :screen-y="doorPromptPos.y"
-      :key-label="doorPromptPos.key"
       :action-label="doorPromptPos.action"
       :detail-label="doorPromptPos.detail"
     />
@@ -820,6 +819,5 @@ const crosshairClass = computed(() => {
     >
       R = rotate · Shift+R = reverse · LMB = place / pick · RMB = cancel · Esc / E = cancel
     </p>
-    <GameDoorHints :inventory-open="inventoryOpen" />
   </div>
 </template>
