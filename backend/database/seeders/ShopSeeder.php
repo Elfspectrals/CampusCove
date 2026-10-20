@@ -190,6 +190,20 @@ class ShopSeeder extends Seeder
 
             $exists = DB::table('shop_catalog_items')->where('item_def_id', $itemDefId)->exists();
             if ($exists) {
+                // The code is the reference for prices / order; is_active, is_published and
+                // stock_remaining stay under the admin's control.
+                DB::table('shop_catalog_items')->where('item_def_id', $itemDefId)->update([
+                    'currency' => $catalog['allow_coins'] ? 'coins' : 'premium',
+                    'price' => $catalog['allow_coins'] ? $catalog['coins_price'] : $catalog['premium_price'],
+                    'allow_coins' => $catalog['allow_coins'],
+                    'coins_price' => $catalog['coins_price'],
+                    'allow_premium' => $catalog['allow_premium'],
+                    'premium_price' => $catalog['premium_price'],
+                    'is_unique_per_account' => $catalog['is_unique_per_account'],
+                    'sort_order' => $catalog['sort_order'],
+                    'updated_at' => now(),
+                ]);
+
                 continue;
             }
 
@@ -211,9 +225,32 @@ class ShopSeeder extends Seeder
             ]);
         }
 
+        $this->removeObsoleteItems(['COS_WEAR_BODY_ADVENTURER', 'COS_WEAR_BODY_SWORDSMAN']);
+
         foreach (DB::table('gift_inboxes')->cursor() as $gi) {
             app(StarterCosmeticGrantService::class)->ensureStarterCosmeticsForAccount((int) $gi->account_id);
         }
+    }
+
+    /**
+     * Drops retired item definitions (old MVP skins) together with every row that references
+     * them: shop listings, lockers, equipped slots, stacks and instances.
+     *
+     * @param  list<string>  $codes
+     */
+    private function removeObsoleteItems(array $codes): void
+    {
+        $ids = DB::table('item_defs')->whereIn('code', $codes)->pluck('item_def_id')->all();
+        if ($ids === []) {
+            return;
+        }
+
+        DB::transaction(function () use ($ids): void {
+            foreach (['shop_catalog_items', 'account_locker_cosmetics', 'account_cosmetic_equipment', 'inventory_stacks', 'item_instances'] as $table) {
+                DB::table($table)->whereIn('item_def_id', $ids)->delete();
+            }
+            DB::table('item_defs')->whereIn('item_def_id', $ids)->delete();
+        });
     }
 
     /** @return array<string, mixed> */
