@@ -1,0 +1,182 @@
+{
+  "version": 1,
+  "key": "tech_hub",
+  "job": "dev",
+  "name": "Tech Hub",
+  "spawn": [
+    0.0,
+    1.6,
+    3.7
+  ],
+  "exit": {
+    "position": [
+      0.0,
+      4.75
+    ],
+    "radius": 1.4
+  },
+  "stations": [
+    {
+      "id": "station_dev_01",
+      "job": "dev",
+      "seat": "seat_dev_01",
+      "desk": "desk_dev_01",
+      "position": [
+        -5.2,
+        0.0,
+        -0.55
+      ],
+      "yaw": 0.0,
+      "lookAt": [
+        -5.2,
+        1.0,
+        -1.5
+      ]
+    },
+    {
+      "id": "station_dev_02",
+      "job": "dev",
+      "seat": "seat_dev_02",
+      "desk": "desk_dev_02",
+      "position": [
+        -1.8,
+        0.0,
+        -0.55
+      ],
+      "yaw": 0.0,
+      "lookAt": [
+        -1.8,
+        1.0,
+        -1.5
+      ]
+    },
+    {
+      "id": "station_dev_03",
+      "job": "dev",
+      "seat": "seat_dev_03",
+      "desk": "desk_dev_03",
+      "position": [
+        1.8,
+        0.0,
+        -0.55
+      ],
+      "yaw": 0.0,
+      "lookAt": [
+        1.8,
+        1.0,
+        -1.5
+      ]
+    },
+    {
+      "id": "station_dev_04",
+      "job": "dev",
+      "seat": "seat_dev_04",
+      "desk": "desk_dev_04",
+      "position": [
+        5.2,
+        0.0,
+        -0.55
+      ],
+      "yaw": 0.0,
+      "lookAt": [
+        5.2,
+        1.0,
+        -1.5
+      ]
+    },
+    {
+      "id": "station_dev_05",
+      "job": "dev",
+      "seat": "seat_dev_05",
+      "desk": "desk_dev_05",
+      "position": [
+        -5.2,
+        0.0,
+        -4.05
+      ],
+      "yaw": 0.0,
+      "lookAt": [
+        -5.2,
+        1.0,
+        -5.0
+      ]
+    },
+    {
+      "id": "station_dev_06",
+      "job": "dev",
+      "seat": "seat_dev_06",
+      "desk": "desk_dev_06",
+      "position": [
+        -1.8,
+        0.0,
+        -4.05
+      ],
+      "yaw": 0.0,
+      "lookAt": [
+        -1.8,
+        1.0,
+        -5.0
+      ]
+    },
+    {
+      "id": "station_dev_07",
+      "job": "dev",
+      "seat": "seat_dev_07",
+      "desk": "desk_dev_07",
+      "position": [
+        1.8,
+        0.0,
+        -4.05
+      ],
+      "yaw": 0.0,
+      "lookAt": [
+        1.8,
+        1.0,
+        -5.0
+      ]
+    },
+    {
+      "id": "station_dev_08",
+      "job": "dev",
+      "seat": "seat_dev_08",
+      "desk": "desk_dev_08",
+      "position": [
+        5.2,
+        0.0,
+        -4.05
+      ],
+      "yaw": 0.0,
+      "lookAt": [
+        5.2,
+        1.0,
+        -5.0
+      ]
+    }
+  ],
+  "seats": [
+    {
+      "id": "seat_meeting_01",
+      "job": null
+    },
+    {
+      "id": "seat_meeting_02",
+      "job": null
+    },
+    {
+      "id": "seat_meeting_03",
+      "job": null
+    },
+    {
+      "id": "seat_meeting_04",
+      "job": null
+    },
+    {
+      "id": "seat_meeting_05",
+      "job": null
+    },
+    {
+      "id": "seat_meeting_06",
+      "job": null
+    }
+  ]
+}

@@ -1,8 +1,16 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import * as THREE from 'three'
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
 import { createGltfLoader } from '../../game/gltfLoaderFactory'
 import { disposeObject3D } from '../../avatar/compositeAvatar'
+import {
+  attachAvatarAnimations,
+  cloneCharacterWithUniqueMaterials,
+  hasSkinnedMesh,
+  setCharacterClips,
+  updateAvatarAnimation,
+} from '../../avatar/glbCharacter'
 import { getPreviewCharacterAssetById } from '../../avatar/previewCharacterAssets'
 
 const props = withDefaults(defineProps<{
@@ -51,6 +59,8 @@ let loadVersion = 0
 
 const loader = createGltfLoader()
 const modelCache = new Map<string, THREE.Group>()
+const clock = new THREE.Clock()
+let envMap: THREE.Texture | null = null
 const selectedAssetSource = computed<string | null>(() => {
   if (props.assetSrc && props.assetSrc.trim() !== '') return props.assetSrc
   if (props.assetId) return getPreviewCharacterAssetById(props.assetId)?.src ?? null
@@ -177,7 +187,10 @@ async function loadPreviewModel(): Promise<void> {
       return
     }
     normalizeAndOrientModel(model)
-    enhanceMaterialVisibility(model)
+    // Rigged premium skins carry their own PBR look (metal, emissive trims): don't flatten it.
+    const rigged = hasSkinnedMesh(model)
+    if (!rigged) enhanceMaterialVisibility(model)
+    applyPreviewLook(rigged)
     model.position.y = 0
     model.traverse((obj) => {
       if (obj instanceof THREE.Mesh) {
@@ -187,6 +200,7 @@ async function loadPreviewModel(): Promise<void> {
     })
     avatarRoot = model
     avatarPivot.add(model)
+    attachAvatarAnimations(model)
     targetRotationY = 0
     currentRotationY = 0
     avatarPivot.rotation.y = 0
@@ -205,20 +219,22 @@ async function loadModelBySource(source: string): Promise<THREE.Group> {
   const gltf = await loader.loadAsync(source)
   const loadedScene = gltf.scene as THREE.Group
   modelCache.set(source, loadedScene)
+  setCharacterClips(loadedScene, gltf.animations)
   return cloneCharacterWithUniqueMaterials(loadedScene)
 }
 
-function cloneCharacterWithUniqueMaterials(source: THREE.Object3D): THREE.Group {
-  const cloned = source.clone(true) as THREE.Group
-  cloned.traverse((obj) => {
-    if (!(obj instanceof THREE.Mesh)) return
-    if (Array.isArray(obj.material)) {
-      obj.material = obj.material.map((material) => material.clone())
-      return
-    }
-    obj.material = obj.material.clone()
-  })
-  return cloned
+/** Premium PBR skins need an environment to reflect (metals are black without one) and filmic tone mapping. */
+function applyPreviewLook(rigged: boolean): void {
+  if (!scene || !renderer) return
+  if (rigged && !envMap) {
+    const pmrem = new THREE.PMREMGenerator(renderer)
+    envMap = pmrem.fromScene(new RoomEnvironment(), 0.04).texture
+    pmrem.dispose()
+  }
+  scene.environment = rigged ? envMap : null
+  scene.environmentIntensity = 0.7
+  renderer.toneMapping = rigged ? THREE.ACESFilmicToneMapping : THREE.NoToneMapping
+  renderer.toneMappingExposure = 1.05
 }
 
 function onPointerDown(event: PointerEvent): void {
@@ -262,6 +278,9 @@ function renderFrame(): void {
 
   currentRotationY += (targetRotationY - currentRotationY) * 0.14
   avatarPivot.rotation.y = currentRotationY
+  // always consume the clock so the first frame after a (re)load isn't a huge delta
+  const dt = clock.getDelta()
+  if (avatarRoot) updateAvatarAnimation(avatarRoot, dt, 0)
 
   renderer.render(scene, camera)
 }
@@ -356,6 +375,8 @@ function teardownThree(): void {
     floorMesh = null
   }
 
+  envMap?.dispose()
+  envMap = null
   renderer?.dispose()
   renderer = null
   camera = null

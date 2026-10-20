@@ -12,6 +12,14 @@ const CITY_SPAWN = { x: 0, y: 1.6, z: 13 }
 const APARTMENT_SPAWN = { x: 0, y: 1.6, z: 3.7 }
 // Must match CITY_APARTMENT_EXIT / HOUSING_LOBBY_SPAWN (back on the town plaza after leaving a house)
 const CITY_APARTMENT_EXIT = { x: 0, y: 1.6, z: 13 }
+// Business-district buildings (free to enter, no DB row). door = world XZ in front of each door; must match
+// `work[].door` in front/public/assets/town/town.layout.json. Leaving a building puts you back there.
+const WORK_DOORS = {
+  tech_hub: { x: -20, z: 53.4 },
+  boutique: { x: 0, z: 53.2 },
+  cafe: { x: 20, z: 51.6 }
+}
+const WORK_EXIT_RADIUS = 0.6
 const CITY_MAX_PLAYERS = parseInt(process.env.CITY_MAX_PLAYERS || '30', 10)
 const BACKEND_API_URL = (process.env.BACKEND_API_URL || 'http://localhost:8000/api').replace(/\/+$/, '')
 
@@ -135,6 +143,7 @@ class PresenceRoom extends Room {
     this.onMessage('move', (client, payload) => this.onMove(client, payload))
     this.onMessage('appearance', (client, payload) => this.onAppearance(client, payload))
     this.onMessage('enter_apartment', async (client, payload) => this.onEnterApartment(client, payload))
+    this.onMessage('enter_work', (client, payload) => this.onEnterWork(client, payload))
     this.onMessage('exit_apartment', (client) => this.onExitApartment(client))
     this.onMessage('decorate_upsert', async (client, payload) => this.onDecorateUpsert(client, payload))
     this.onMessage('decorate_remove', async (client, payload) => this.onDecorateRemove(client, payload))
@@ -174,6 +183,7 @@ class PresenceRoom extends Room {
       zone: 'city',
       apartmentOwnerId: null,
       apartmentTemplateKey: null,
+      workKey: null,
       token: client?.auth?.token ?? null,
       appearance,
       slotHexes,
@@ -193,6 +203,7 @@ class PresenceRoom extends Room {
       ry: player.ry,
       zone: player.zone,
       apartmentOwnerId: player.apartmentOwnerId,
+      workKey: player.workKey,
       appearance: { ...player.appearance },
       slotHexes: { ...player.slotHexes },
       bodyModelGlb: player.bodyModelGlb
@@ -200,6 +211,7 @@ class PresenceRoom extends Room {
   }
 
   visibilityKey(player) {
+    if (player.workKey) return `work:${player.workKey}`
     if (player.zone === 'apartment') {
       return `apartment:${player.apartmentOwnerId ?? 0}`
     }
@@ -238,6 +250,7 @@ class PresenceRoom extends Room {
       sessionId: client.sessionId,
       zone: player.zone,
       apartmentOwnerId: player.apartmentOwnerId,
+      workKey: player.workKey,
       x: player.x,
       y: player.y,
       z: player.z
@@ -440,14 +453,48 @@ class PresenceRoom extends Room {
     await this.onApartmentInventoryRequest(client)
   }
 
+  // Public business-district building: no backend call, anyone can walk in. Players inside the same
+  // building see each other (visibilityKey), zone stays 'apartment' on the wire so the client reuses the house flow.
+  onEnterWork(client, payload) {
+    const player = this.players.get(client.sessionId)
+    if (!player || player.zone !== 'city') return
+    const workKey = typeof payload?.workKey === 'string' ? payload.workKey : ''
+    if (!Object.prototype.hasOwnProperty.call(WORK_DOORS, workKey)) {
+      client.send('apartment_error', { message: 'Unknown building', code: 'unknown_work' })
+      return
+    }
+    this.announceZoneLeave(client, player)
+    player.zone = 'apartment'
+    player.apartmentOwnerId = null
+    player.apartmentTemplateKey = null
+    player.workKey = workKey
+    Object.assign(player, spawnNear(APARTMENT_SPAWN, APARTMENT_SPAWN_RADIUS))
+    client.send('apartment_init', {
+      ownerAccountId: null,
+      templateKey: `work_${workKey}`,
+      workKey,
+      name: workKey,
+      canEdit: false,
+      objects: []
+    })
+    this.announceZoneEnter(client, player)
+  }
+
   onExitApartment(client) {
     const player = this.players.get(client.sessionId)
     if (!player || player.zone === 'city') return
+    const exitWork = player.workKey ? WORK_DOORS[player.workKey] : null
     this.announceZoneLeave(client, player)
     player.zone = 'city'
     player.apartmentOwnerId = null
     player.apartmentTemplateKey = null
-    Object.assign(player, spawnNear(CITY_APARTMENT_EXIT, CITY_SPAWN_RADIUS))
+    player.workKey = null
+    Object.assign(
+      player,
+      exitWork
+        ? spawnNear({ x: exitWork.x, y: 1.6, z: exitWork.z }, WORK_EXIT_RADIUS)
+        : spawnNear(CITY_APARTMENT_EXIT, CITY_SPAWN_RADIUS)
+    )
     this.announceZoneEnter(client, player)
     client.send('housing_units_sync', { units: this.housingUnits })
   }

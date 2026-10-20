@@ -60,4 +60,8 @@ front/*.local
 socket/node_modules
 
 # --- Map sources (raw UE5 exports, optimized via front `npm run map:optimize`) ---
-map-src/
+# Blender build scripts (*.py) are versioned; raw exports (out/, .blend, .glb) are not.
+map-src/*
+!map-src/CampusCove/
+map-src/CampusCove/*
+!map-src/CampusCove/*.py

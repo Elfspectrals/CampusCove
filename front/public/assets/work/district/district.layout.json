@@ -1,0 +1,286 @@
+{
+  "version": 1,
+  "gate": {
+    "x": 0.0,
+    "z": 46.0,
+    "width": 12.2
+  },
+  "bounds": {
+    "minZ": -48.9622,
+    "maxZ": 74.0
+  },
+  "works": [
+    {
+      "key": "tech_hub",
+      "name": "Tech Hub",
+      "job": "dev",
+      "position": [
+        -20.0,
+        0.0,
+        63.0
+      ],
+      "rotationY": 3.141592653589793,
+      "door": [
+        -20.0,
+        1.25,
+        53.4
+      ],
+      "footprint": [
+        16.0,
+        14.0
+      ]
+    },
+    {
+      "key": "boutique",
+      "name": "Boutique",
+      "job": "commerce",
+      "position": [
+        0.0,
+        0.0,
+        62.0
+      ],
+      "rotationY": 3.141592653589793,
+      "door": [
+        0.0,
+        1.25,
+        53.2
+      ],
+      "footprint": [
+        16.0,
+        12.0
+      ]
+    },
+    {
+      "key": "cafe",
+      "name": "Campus Cafe",
+      "job": "resto",
+      "position": [
+        20.0,
+        0.0,
+        62.5
+      ],
+      "rotationY": 3.141592653589793,
+      "door": [
+        20.0,
+        1.25,
+        51.6
+      ],
+      "footprint": [
+        16.0,
+        13.0
+      ]
+    }
+  ],
+  "collision": [
+    {
+      "name": "COL_Work_GatePillarW",
+      "cx": -6.6,
+      "cz": 46.0,
+      "hx": 0.6,
+      "hz": 0.6,
+      "hy": 1.8,
+      "cy": 1.8,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Work_GatePillarE",
+      "cx": 6.6,
+      "cz": 46.0,
+      "hx": 0.6,
+      "hz": 0.6,
+      "hy": 1.8,
+      "cy": 1.8,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Work_DS_AveLamp01",
+      "cx": -3.7,
+      "cz": 26.0,
+      "hx": 0.15,
+      "hz": 0.15,
+      "hy": 1.7,
+      "cy": 1.7,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Work_DS_AveLamp02",
+      "cx": 3.7,
+      "cz": 26.0,
+      "hx": 0.15,
+      "hz": 0.15,
+      "hy": 1.7,
+      "cy": 1.7,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Work_DS_AveLamp03",
+      "cx": -3.7,
+      "cz": 34.0,
+      "hx": 0.15,
+      "hz": 0.15,
+      "hy": 1.7,
+      "cy": 1.7,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Work_DS_AveLamp04",
+      "cx": 3.7,
+      "cz": 34.0,
+      "hx": 0.15,
+      "hz": 0.15,
+      "hy": 1.7,
+      "cy": 1.7,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Work_DS_AveLamp05",
+      "cx": -3.7,
+      "cz": 42.0,
+      "hx": 0.15,
+      "hz": 0.15,
+      "hy": 1.7,
+      "cy": 1.7,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Work_DS_AveLamp06",
+      "cx": 3.7,
+      "cz": 42.0,
+      "hx": 0.15,
+      "hz": 0.15,
+      "hy": 1.7,
+      "cy": 1.7,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Work_DS_PlazaLamp07",
+      "cx": -26.0,
+      "cz": 49.0,
+      "hx": 0.15,
+      "hz": 0.15,
+      "hy": 1.7,
+      "cy": 1.7,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Work_DS_PlazaLamp08",
+      "cx": -10.0,
+      "cz": 49.0,
+      "hx": 0.15,
+      "hz": 0.15,
+      "hy": 1.7,
+      "cy": 1.7,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Work_DS_PlazaLamp09",
+      "cx": 10.0,
+      "cz": 49.0,
+      "hx": 0.15,
+      "hz": 0.15,
+      "hy": 1.7,
+      "cy": 1.7,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Work_DS_PlazaLamp10",
+      "cx": 26.0,
+      "cz": 49.0,
+      "hx": 0.15,
+      "hz": 0.15,
+      "hy": 1.7,
+      "cy": 1.7,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Work_Tree0",
+      "cx": -27.0,
+      "cz": 50.5,
+      "hx": 0.3,
+      "hz": 0.3,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Work_Tree1",
+      "cx": -14.0,
+      "cz": 50.5,
+      "hx": 0.3,
+      "hz": 0.3,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Work_Tree2",
+      "cx": 14.0,
+      "cz": 50.5,
+      "hx": 0.3,
+      "hz": 0.3,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Work_Tree3",
+      "cx": 27.0,
+      "cz": 50.5,
+      "hx": 0.3,
+      "hz": 0.3,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Work_Bench0",
+      "cx": -6.0,
+      "cz": 50.2,
+      "hx": 0.9,
+      "hz": 0.25,
+      "hy": 0.45,
+      "cy": 0.45,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Work_Bench1",
+      "cx": 6.0,
+      "cz": 50.2,
+      "hx": 0.9,
+      "hz": 0.25,
+      "hy": 0.45,
+      "cy": 0.45,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Work_tech_hub",
+      "cx": -20.0,
+      "cz": 63.0,
+      "hx": 8.2,
+      "hz": 7.2,
+      "hy": 3.8,
+      "cy": 3.8,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Work_boutique",
+      "cx": 0.0,
+      "cz": 62.0,
+      "hx": 8.2,
+      "hz": 6.2,
+      "hy": 2.2,
+      "cy": 2.2,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Work_cafe",
+      "cx": 20.0,
+      "cz": 62.5,
+      "hx": 8.2,
+      "hz": 6.7,
+      "hy": 2.2,
+      "cy": 2.2,
+      "yaw": 0.0
+    }
+  ]
+}

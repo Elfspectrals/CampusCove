@@ -9,6 +9,8 @@
     "preview": "vite preview",
     "heroku-postbuild": "npm run build",
     "start": "serve -s dist -l ${PORT:-3000}",
+    "test:unit": "node --test \"src/**/*.test.ts\"",
+    "skins:check": "node scripts/skins/check-skins.mjs",
     "optimize": "node scripts/optimize-model.mjs",
     "collision:extract": "node scripts/extract-collision.mjs",
     "assets:optimize": "node scripts/optimize-assets.mjs",

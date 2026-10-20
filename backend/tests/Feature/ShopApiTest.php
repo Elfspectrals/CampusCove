@@ -248,6 +248,52 @@ class ShopApiTest extends TestCase
         $response->assertJsonPath('purchase.total_debit', 3);
     }
 
+    /** @return array<string, array{0: string, 1: int}> */
+    public static function premiumSkinProvider(): array
+    {
+        return [
+            'neon ronin' => ['COS_WEAR_BODY_NEON_RONIN', 300],
+            'street luxe' => ['COS_WEAR_BODY_STREET_LUXE', 250],
+            'astral oracle' => ['COS_WEAR_BODY_ASTRAL_ORACLE', 350],
+        ];
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('premiumSkinProvider')]
+    public function test_premium_rigged_skins_are_legendary_gem_only_and_unique(string $code, int $gems): void
+    {
+        $row = DB::table('shop_catalog_items')
+            ->join('item_defs', 'item_defs.item_def_id', '=', 'shop_catalog_items.item_def_id')
+            ->where('item_defs.code', $code)
+            ->select('shop_catalog_items.*', 'item_defs.premium_only', 'item_defs.rarity', 'item_defs.cosmetic_slot')
+            ->first();
+
+        $this->assertNotNull($row, "$code is missing from the shop");
+        $this->assertSame(5, (int) $row->rarity);
+        $this->assertSame('body', $row->cosmetic_slot);
+        $this->assertTrue((bool) $row->premium_only);
+        $this->assertFalse((bool) $row->allow_coins);
+        $this->assertNull($row->coins_price);
+        $this->assertTrue((bool) $row->allow_premium);
+        $this->assertSame($gems, (int) $row->premium_price);
+        $this->assertTrue((bool) $row->is_unique_per_account);
+
+        // the public catalog exposes the rarity the front uses for the legendary card
+        $listed = collect($this->getJson('/api/shop/items')->assertOk()->json('items'))
+            ->firstWhere('item.code', $code);
+        $this->assertNotNull($listed);
+        $this->assertSame(5, $listed['item']['rarity']);
+
+        // coins can never buy it
+        $account = $this->registerAndCreditWallet(100_000, 'coins');
+        $this->postJson('/api/shop/purchase', [
+            'shop_item_public_id' => $row->public_id,
+            'currency' => 'coins',
+            'quantity' => 1,
+        ], [
+            'Authorization' => 'Bearer '.$account['token'],
+        ])->assertStatus(422)->assertJsonPath('code', 'invalid_currency');
+    }
+
     public function test_premium_only_skin_is_not_sold_for_coins(): void
     {
         $nightOwl = DB::table('shop_catalog_items')

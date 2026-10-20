@@ -15,7 +15,9 @@
 
 const ROOT = '/assets'
 
-export type SkinKey = 'campus_classic' | 'street_runner' | 'scholar' | 'explorer' | 'night_owl'
+export type SkinKey =
+  | 'campus_classic' | 'street_runner' | 'scholar' | 'explorer' | 'night_owl'
+  | 'neon_ronin' | 'street_luxe' | 'astral_oracle'
 export type DecorKey = 'wooden_chair' | 'dining_table' | 'floor_lamp' | 'potted_plant' | 'bookshelf'
 export type HouseKey =
   | 'house_01' | 'house_02' | 'house_03' | 'house_04' | 'house_05'
@@ -82,6 +84,10 @@ export const SKINS: readonly SkinAsset[] = [
   skin('scholar', 'Scholar', 'COS_WEAR_BODY_SCHOLAR'),
   skin('explorer', 'Explorer', 'COS_WEAR_BODY_EXPLORER'),
   skin('night_owl', 'Night Owl', 'COS_WEAR_BODY_NIGHT_OWL'),
+  // Premium tier: semi-realistic PBR, rigged, with Idle / Walk / Run clips (built in Blender, see front/scripts/skins/).
+  skin('neon_ronin', 'Neon Ronin', 'COS_WEAR_BODY_NEON_RONIN'),
+  skin('street_luxe', 'Street Luxe', 'COS_WEAR_BODY_STREET_LUXE'),
+  skin('astral_oracle', 'Astral Oracle', 'COS_WEAR_BODY_ASTRAL_ORACLE'),
 ]
 
 export const DEFAULT_SKIN: SkinAsset = SKINS.find((s) => s.isDefault)!
@@ -106,6 +112,49 @@ export const HOUSES: readonly HouseAsset[] = [
   house('house_09', 'Neon Loft'),
   house('house_10', 'Forest Lodge'),
 ]
+
+/**
+ * Work buildings of the business district (south of the town, through the hedge gate).
+ * Built by map-src/CampusCove/build_work_*.py → public/assets/work/<key>/ (see docs/ASSETS_STYLE_GUIDE.md §7).
+ * `interior.layout.json` lists the stations (`station_<job>_NN`) that the job gameplay attaches to.
+ */
+export type WorkKey = 'tech_hub' | 'boutique' | 'cafe'
+export type WorkJob = 'dev' | 'commerce' | 'resto'
+
+export interface WorkAsset {
+  key: WorkKey
+  name: string
+  job: WorkJob
+  exteriorUrl: string
+  interiorUrl: string
+  interiorCollisionUrl: string
+  interiorLayoutUrl: string
+  previewUrl: string
+}
+
+const work = (key: WorkKey, name: string, job: WorkJob): WorkAsset => ({
+  key,
+  name,
+  job,
+  exteriorUrl: `${ROOT}/work/${key}/exterior.glb`,
+  interiorUrl: `${ROOT}/work/${key}/interior.glb`,
+  interiorCollisionUrl: `${ROOT}/work/${key}/interior.collision.json`,
+  interiorLayoutUrl: `${ROOT}/work/${key}/interior.layout.json`,
+  previewUrl: `${ROOT}/work/${key}/preview.png`,
+})
+
+export const WORKS: readonly WorkAsset[] = [
+  work('tech_hub', 'Tech Hub', 'dev'),
+  work('boutique', 'Boutique', 'commerce'),
+  work('cafe', 'Campus Cafe', 'resto'),
+]
+
+/** Static scenery of the district (plaza, avenue, gate pillars, lamps); placed from `town.layout.json` → `work`. */
+export const WORK_DISTRICT = { modelUrl: `${ROOT}/work/district/district.glb` } as const
+
+export function findWork(key: string | null | undefined): WorkAsset | null {
+  return WORKS.find((w) => w.key === key) ?? null
+}
 
 /** Used when a house unit has no (or an unknown) model key. */
 export const DEFAULT_HOUSE: HouseAsset = HOUSES[0]!
@@ -148,4 +197,18 @@ export interface TownLayout {
     offer: 'buy' | 'rent'
     price: number
   }>
+  /** Business district buildings (written by front/scripts/apply-work-district.mjs). */
+  work?: Array<{
+    key: WorkKey
+    name: string
+    job: WorkJob
+    /** Game-space centre of the building footprint (y = ground). */
+    position: [number, number, number]
+    rotationY: number
+    /** Interaction point in front of the door (world space). */
+    door: [number, number, number]
+    footprint: [number, number]
+  }>
+  /** Opening in the hedge ring leading to the district. */
+  workGate?: { x: number; z: number; width: number }
 }
