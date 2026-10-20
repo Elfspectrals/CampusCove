@@ -63,6 +63,8 @@ const APPEARANCE_REFRESH_MIN_INTERVAL_MS = 10_000
 const REMOTE_SMOOTHING = 12
 /** Beyond this gap (teleport, spawn), remote avatars jump instead of gliding. */
 const REMOTE_SNAP_DISTANCE = 4
+/** Beyond this distance from the local player a rigged avatar's clips are not advanced (not worth the CPU). */
+const ANIMATION_MAX_DISTANCE = 60
 
 function parseYaw(raw: unknown): number {
   return typeof raw === 'number' && Number.isFinite(raw) ? raw : 0
@@ -698,6 +700,13 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
    * Called every frame: moves each remote avatar towards its last received position/yaw, so movement
    * looks continuous between network updates (sent every 50 ms) instead of jumping.
    */
+  function animateRemoteAvatar(group: THREE.Object3D, dt: number, speed: number) {
+    const dx = group.position.x - deps.myPosition.x
+    const dz = group.position.z - deps.myPosition.z
+    if (dx * dx + dz * dz > ANIMATION_MAX_DISTANCE * ANIMATION_MAX_DISTANCE) return
+    updateAvatarAnimation(group, dt, speed)
+  }
+
   function tickRemoteAvatars(dt: number) {
     const t = 1 - Math.exp(-REMOTE_SMOOTHING * dt)
     for (const entry of toRaw(otherUsers.value).values()) {
@@ -707,7 +716,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       const dz = entry.z - group.position.z
       if (dx * dx + dy * dy + dz * dz > REMOTE_SNAP_DISTANCE * REMOTE_SNAP_DISTANCE) {
         placeAvatar(group, entry.x, entry.y, entry.z, entry.ry)
-        updateAvatarAnimation(group, dt, 0)
+        animateRemoteAvatar(group, dt, 0)
         continue
       }
       const prevX = group.position.x
@@ -721,7 +730,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       group.rotation.y += turn * t
       // rigged skins play Idle / Walk / Run from the speed the smoothing actually produced
       const moved = Math.hypot(group.position.x - prevX, group.position.z - prevZ)
-      updateAvatarAnimation(group, dt, dt > 0 ? moved / dt : 0)
+      animateRemoteAvatar(group, dt, dt > 0 ? moved / dt : 0)
     }
   }
 

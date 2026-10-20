@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { disposeAvatarAnimations } from './glbCharacter'
 
 /** Known wearable codes from backend seed (visual hints for low-poly v1). */
 const DEFAULT_BODY = 'COS_WEAR_BODY_DEFAULT'
@@ -148,9 +149,13 @@ export function buildCompositeAvatar(codes: Partial<AppearanceCodes> | null, acc
 }
 
 export function disposeObject3D(root: THREE.Object3D): void {
+  disposeAvatarAnimations(root)
   root.traverse((obj) => {
+    if ((obj as THREE.SkinnedMesh).isSkinnedMesh) (obj as THREE.SkinnedMesh).skeleton?.dispose()
     if (obj instanceof THREE.Mesh) {
-      obj.geometry.dispose()
+      // rigged-skin clones share geometry / materials with the cached template: only the skeleton is theirs
+      if (!obj.userData.sharedGeometry) obj.geometry.dispose()
+      if (obj.userData.sharedMaterials) return
       const m = obj.material
       if (Array.isArray(m)) m.forEach((x) => x.dispose())
       else m.dispose()

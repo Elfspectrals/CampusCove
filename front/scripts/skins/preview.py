@@ -1,3 +1,6 @@
+if "SKINS_DIR" not in globals():
+    raise RuntimeError("Run these scripts through run.py (blender --background --python front/scripts/skins/run.py): they share state via exec().")
+
 SP_ = SKINS_DIR
 exec(open(SP_ + "produce.py", encoding="utf8").read())
 exec(open(SP_ + "clips.py", encoding="utf8").read())

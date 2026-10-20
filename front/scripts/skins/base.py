@@ -1,3 +1,6 @@
+if "SKINS_DIR" not in globals():
+    raise RuntimeError("Run these scripts through run.py (blender --background --python front/scripts/skins/run.py): they share state via exec().")
+
 exec(open(SKINS_DIR + "lib.py", encoding="utf8").read())
 def S(p, sg):
     return (p[0] * sg, p[1], p[2])

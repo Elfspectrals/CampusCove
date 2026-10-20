@@ -1,3 +1,6 @@
+if "SKINS_DIR" not in globals():
+    raise RuntimeError("Run these scripts through run.py (blender --background --python front/scripts/skins/run.py): they share state via exec().")
+
 def assemble(G, extra, name, coll):
     """G: name -> (Mesh, weighting). Returns (armature, joined mesh)."""
     for o in list(bpy.data.objects):

@@ -2,8 +2,8 @@ import type { ShopCurrency, ShopItem, ShopItemCurrencyOption } from '../api/item
 
 export type ItemRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary'
 
-/** Premium price from which an item is presented as legendary. */
-const LEGENDARY_MIN_GEMS = 250
+/** item_defs.rarity from which an item is presented as legendary (the premium rigged skins are 5). */
+const LEGENDARY_MIN_RARITY = 5
 
 export function currencyLabel(c: ShopCurrency): string {
   return c === 'coins' ? 'Coins' : 'Gems'
@@ -14,12 +14,12 @@ export function priceBadge(option: ShopItemCurrencyOption): string {
 }
 
 /**
- * The public catalog does not expose item rarity yet, so the tier is derived from how
+ * Legendary comes from the stored rarity; below that the tier is derived from how
  * the item is sold: premium-purchasable items read as rarer than coin-only ones.
  */
 export function itemRarity(item: ShopItem): ItemRarity {
-  // top-tier premium items (e.g. the rigged PBR skins, 250+ gems) get the legendary gold card
-  if (item.options.some((option) => option.currency === 'premium' && option.price >= LEGENDARY_MIN_GEMS)) return 'legendary'
+  // the stored rarity wins when the API provides it; otherwise fall back to how the item is sold
+  if (item.rarity !== null && item.rarity >= LEGENDARY_MIN_RARITY) return 'legendary'
   const hasPremium = item.options.some((option) => option.currency === 'premium')
   const hasCoins = item.options.some((option) => option.currency === 'coins')
   if (hasPremium && hasCoins) return 'epic'

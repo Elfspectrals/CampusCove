@@ -1,3 +1,6 @@
+if "SKINS_DIR" not in globals():
+    raise RuntimeError("Run these scripts through run.py (blender --background --python front/scripts/skins/run.py): they share state via exec().")
+
 import math
 S_ = math.sin
 

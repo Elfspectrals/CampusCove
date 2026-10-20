@@ -261,9 +261,12 @@ class CharacterCosmeticApiTest extends TestCase
             ->pluck('item_defs.code')
             ->all();
         $this->assertSame([
+            'COS_WEAR_BODY_ASTRAL_ORACLE',
             'COS_WEAR_BODY_EXPLORER',
+            'COS_WEAR_BODY_NEON_RONIN',
             'COS_WEAR_BODY_NIGHT_OWL',
             'COS_WEAR_BODY_SCHOLAR',
+            'COS_WEAR_BODY_STREET_LUXE',
             'COS_WEAR_BODY_STREET_RUNNER',
         ], $sold);
     }
