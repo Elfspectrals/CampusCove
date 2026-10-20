@@ -6,7 +6,7 @@ import {
   APARTMENT_WALL_THICKNESS,
 } from './gameRoomConstants'
 import { DEFAULT_HOUSE, HOUSES, TOWN, WORK_DISTRICT, findHouse, findWork } from './assets/catalog'
-import type { HouseAsset, TownLayout } from './assets/catalog'
+import type { TownLayout } from './assets/catalog'
 import { createGltfLoader } from './gltfLoaderFactory'
 import { getGraphicsQuality } from './graphicsQuality'
 import {
@@ -164,11 +164,17 @@ export function stripRoomEnvironmentsFromScene(scene: THREE.Scene): void {
 
 // ---------------------------------------------------------------- house interiors
 
+/** What the interior loaders need from a house or work building. */
+interface InteriorAsset {
+  key: string
+  interiorCollisionUrl: string
+}
+
 /** Result from apartment environment builders for scene + placement raycast/collider registration. */
 export interface ApartmentEnvironmentBuildResult {
   group: THREE.Group
   /** House or work building whose interior this is (assets/houses/<key>/ or assets/work/<key>/). */
-  house: Pick<HouseAsset, 'key' | 'interiorCollisionUrl'>
+  house: InteriorAsset
 }
 
 function addApartmentLighting(group: THREE.Group): void {
@@ -199,7 +205,7 @@ function addApartmentExitDoor(group: THREE.Group): void {
 
 function prepareApartmentGroup(
   root: THREE.Group,
-  house: Pick<HouseAsset, 'key' | 'interiorCollisionUrl'>,
+  house: InteriorAsset,
   name = `HouseInterior_${house.key}`,
 ): ApartmentEnvironmentBuildResult {
   const hasGltfLights = sanitizeGltfLights(root)
