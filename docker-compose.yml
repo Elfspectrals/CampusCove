@@ -17,6 +17,11 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    # Mounted + --watch so socket/ changes (spawn points, rooms...) apply without an image rebuild.
+    volumes:
+      - ./socket:/app
+      - socket_node_modules:/app/node_modules
+    command: sh -c "npm install && node --watch server.js"
 
   postgres:
     image: postgres:16-alpine
@@ -58,7 +63,7 @@ services:
     volumes:
       - ./backend:/var/www/html
       - backend_vendor:/var/www/html/vendor
-    command: sh -c "composer install --no-interaction && php artisan key:generate --force && php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=8000"
+    command: sh -c "composer install --no-interaction && php artisan key:generate --force && php artisan migrate --force && php artisan db:seed --class=HousingUnitSeeder --force && php artisan housing:purge-legacy && php artisan serve --host=0.0.0.0 --port=8000"
 
   front:
     build:
@@ -83,3 +88,4 @@ volumes:
   postgres_data:      # DB data – survives down/up
   backend_vendor:     # Composer packages – survives down/up
   front_node_modules: # npm packages – survives down/up
+  socket_node_modules: # npm packages – survives down/up
