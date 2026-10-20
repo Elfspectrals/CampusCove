@@ -16,10 +16,10 @@ import { fileURLToPath } from 'node:url'
 const FRONT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const SRC = resolve(FRONT, '../map-src/CampusCove/out')
 const DEST = resolve(FRONT, 'public/assets')
-const CATEGORIES = ['skins', 'decor', 'houses', 'town']
+const CATEGORIES = ['skins', 'decor', 'houses', 'town', 'work']
 
 /** Texture size per category: characters / props are small on screen, the town is not. */
-const TEXTURE_SIZE = { skins: 512, decor: 512, houses: 1024, town: 1024 }
+const TEXTURE_SIZE = { skins: 512, decor: 512, houses: 1024, town: 1024, work: 1024 }
 
 function run(cmd, args) {
   const r = spawnSync(cmd, args, { cwd: FRONT, stdio: ['ignore', 'pipe', 'pipe'], shell: process.platform === 'win32' })
@@ -52,6 +52,13 @@ function processDir(category, dir, rel) {
     const full = join(dir, file)
     if (statSync(full).isDirectory()) {
       processDir(category, full, join(rel, file))
+      continue
+    }
+    if (category === 'work' && (file === 'preview.png' || file.endsWith('.layout.json'))) {
+      // work buildings ship their preview + station layout next to the GLBs
+      mkdirSync(join(DEST, category, rel), { recursive: true })
+      copyFileSync(full, join(DEST, category, rel, file))
+      console.log(`copy       ${category}/${join(rel, file)}`)
       continue
     }
     if (!file.endsWith('.glb')) continue

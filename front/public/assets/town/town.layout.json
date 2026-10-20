@@ -1,16 +1,16 @@
 {
   "version": 1,
   "spawn": [
-    0.0,
+    0,
     1.6,
-    13.0
+    13
   ],
-  "spawnYaw": 0.0,
+  "spawnYaw": 0,
   "townHall": {
     "position": [
-      0.0,
-      0.0,
-      0.0
+      0,
+      0,
+      0
     ]
   },
   "houses": [
@@ -19,7 +19,7 @@
       "name": "Maple Cottage",
       "position": [
         10.429,
-        0.0,
+        0,
         32.098
       ],
       "rotationY": -2.82743,
@@ -36,7 +36,7 @@
       "name": "Bluebell Bungalow",
       "position": [
         27.304,
-        0.0,
+        0,
         19.838
       ],
       "rotationY": -2.19911,
@@ -52,15 +52,15 @@
       "key": "house_03",
       "name": "Sunny Nook",
       "position": [
-        34.0,
-        0.0,
-        -0.0
+        34,
+        0,
+        0
       ],
       "rotationY": -1.5708,
       "door": [
         29.2,
         1.25,
-        -0.0
+        0
       ],
       "offer": "rent",
       "price": 120
@@ -70,7 +70,7 @@
       "name": "Mint Villa",
       "position": [
         27.911,
-        0.0,
+        0,
         -20.279
       ],
       "rotationY": -0.94248,
@@ -87,7 +87,7 @@
       "name": "Brick Townhouse",
       "position": [
         10.661,
-        0.0,
+        0,
         -32.811
       ],
       "rotationY": -0.31416,
@@ -104,7 +104,7 @@
       "name": "Rose Cottage",
       "position": [
         -10.661,
-        0.0,
+        0,
         -32.811
       ],
       "rotationY": 0.31416,
@@ -121,7 +121,7 @@
       "name": "Terracotta Casa",
       "position": [
         -27.911,
-        0.0,
+        0,
         -20.279
       ],
       "rotationY": 0.94248,
@@ -138,14 +138,14 @@
       "name": "Modern Cube",
       "position": [
         -34.75,
-        0.0,
-        -0.0
+        0,
+        0
       ],
       "rotationY": 1.5708,
       "door": [
         -29.2,
         1.25,
-        -0.0
+        0
       ],
       "offer": "buy",
       "price": 3600
@@ -155,7 +155,7 @@
       "name": "Neon Loft",
       "position": [
         -28.316,
-        0.0,
+        0,
         20.572
       ],
       "rotationY": 2.19911,
@@ -172,7 +172,7 @@
       "name": "Forest Lodge",
       "position": [
         -10.816,
-        0.0,
+        0,
         33.287
       ],
       "rotationY": 2.82743,
@@ -184,5 +184,72 @@
       "offer": "buy",
       "price": 4000
     }
-  ]
+  ],
+  "work": [
+    {
+      "key": "tech_hub",
+      "name": "Tech Hub",
+      "job": "dev",
+      "position": [
+        -20,
+        0,
+        63
+      ],
+      "rotationY": 3.141592653589793,
+      "door": [
+        -20,
+        1.25,
+        53.4
+      ],
+      "footprint": [
+        16,
+        14
+      ]
+    },
+    {
+      "key": "boutique",
+      "name": "Boutique",
+      "job": "commerce",
+      "position": [
+        0,
+        0,
+        62
+      ],
+      "rotationY": 3.141592653589793,
+      "door": [
+        0,
+        1.25,
+        53.2
+      ],
+      "footprint": [
+        16,
+        12
+      ]
+    },
+    {
+      "key": "cafe",
+      "name": "Campus Cafe",
+      "job": "resto",
+      "position": [
+        20,
+        0,
+        62.5
+      ],
+      "rotationY": 3.141592653589793,
+      "door": [
+        20,
+        1.25,
+        51.6
+      ],
+      "footprint": [
+        16,
+        13
+      ]
+    }
+  ],
+  "workGate": {
+    "x": 0,
+    "z": 46,
+    "width": 12.2
+  }
 }
