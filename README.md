@@ -46,7 +46,7 @@ Tous les assets du jeu sont construits dans Blender (via le MCP Blender) par les
 
 | Dossier `front/public/assets/` | Contenu |
 |---|---|
-| `skins/<clé>/` | 5 skins : `campus_classic` (gratuit, par défaut), `street_runner`, `scholar`, `explorer`, `night_owl` (`model.glb`, `preview.png`) |
+| `skins/<clé>/` | 8 skins : `campus_classic` (gratuit, par défaut), `street_runner`, `scholar`, `explorer`, `night_owl` (low-poly statiques) + 3 skins premium semi-réalistes riggés avec clips `Idle`/`Walk`/`Run` : `neon_ronin`, `street_luxe`, `astral_oracle` (sources Blender dans `front/scripts/skins/`) (`model.glb`, `preview.png`) |
 | `decor/<clé>/` | 5 objets de déco : `wooden_chair`, `dining_table`, `floor_lamp`, `potted_plant`, `bookshelf` |
 | `houses/house_01…10/` | 10 maisons : `exterior.glb`, `interior.glb` (un intérieur par maison), `interior.collision.json`, `preview.png` |
 | `work/<clé>/` | Quartier d'affaires : `tech_hub` (dev), `boutique` (commerce), `cafe` (resto) — `exterior.glb`, `interior.glb`, collisions, `interior.layout.json` (postes de travail), `preview.png` ; `work/district/` = décor du quartier. Voir `docs/ASSETS_STYLE_GUIDE.md` §8 |

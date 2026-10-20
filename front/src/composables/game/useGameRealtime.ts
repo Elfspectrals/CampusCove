@@ -12,7 +12,7 @@ import {
   type CosmeticColors,
 } from '../../api/characterCosmetics'
 import { getStoredAuth } from '../../api/auth'
-import { createTintedCharacterFromUrl } from '../../avatar/glbCharacter'
+import { createTintedCharacterFromUrl, updateAvatarAnimation } from '../../avatar/glbCharacter'
 import { buildCompositeAvatar, disposeObject3D } from '../../avatar/compositeAvatar'
 import { APARTMENT_SPAWN, EYE_HEIGHT } from '../../game/gameRoomConstants'
 import type {
@@ -707,8 +707,11 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       const dz = entry.z - group.position.z
       if (dx * dx + dy * dy + dz * dz > REMOTE_SNAP_DISTANCE * REMOTE_SNAP_DISTANCE) {
         placeAvatar(group, entry.x, entry.y, entry.z, entry.ry)
+        updateAvatarAnimation(group, dt, 0)
         continue
       }
+      const prevX = group.position.x
+      const prevZ = group.position.z
       group.position.x += dx * t
       group.position.y += dy * t
       group.position.z += dz * t
@@ -716,6 +719,9 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       const target = entry.ry + Math.PI
       const turn = Math.atan2(Math.sin(target - group.rotation.y), Math.cos(target - group.rotation.y))
       group.rotation.y += turn * t
+      // rigged skins play Idle / Walk / Run from the speed the smoothing actually produced
+      const moved = Math.hypot(group.position.x - prevX, group.position.z - prevZ)
+      updateAvatarAnimation(group, dt, dt > 0 ? moved / dt : 0)
     }
   }
 

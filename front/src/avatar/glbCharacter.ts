@@ -1,8 +1,13 @@
 import * as THREE from 'three'
+import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js'
 import { createGltfLoader } from '../game/gltfLoaderFactory'
 import type { CosmeticColors } from '../api/characterCosmetics'
 import { DEFAULT_SLOT_COLORS, SLOT_ORDER } from '../api/characterCosmetics'
 import { DEFAULT_SKIN } from '../game/assets/catalog'
+
+/** Animation clips per loaded / cloned root (kept out of userData, which three JSON-clones). */
+const clipsByRoot = new WeakMap<THREE.Object3D, THREE.AnimationClip[]>()
+const animStateByRoot = new WeakMap<THREE.Object3D, AvatarAnimState>()
 
 let templateRoot: THREE.Group | null = null
 let loadFailed = false
@@ -21,6 +26,7 @@ export async function loadCharacterTemplate(): Promise<THREE.Group | null> {
     const url = DEFAULT_SKIN.modelUrl
     const gltf = await loader.loadAsync(url)
     const root = gltf.scene as THREE.Group
+    clipsByRoot.set(root, gltf.animations)
     normalizeCharacterScale(root)
     templateRoot = root
     return templateRoot
@@ -41,6 +47,7 @@ async function loadCharacterModelByUrl(url: string): Promise<THREE.Group | null>
       const loader = createGltfLoader()
       const gltf = await loader.loadAsync(normalized)
       const root = gltf.scene as THREE.Group
+      clipsByRoot.set(root, gltf.animations)
       normalizeCharacterScale(root)
       return root
     } catch {
@@ -112,9 +119,19 @@ function computeMeshBounds(root: THREE.Object3D): THREE.Box3 | null {
   return fallback
 }
 
+function hasSkinnedMesh(root: THREE.Object3D): boolean {
+  let found = false
+  root.traverse((obj) => {
+    if ((obj as THREE.SkinnedMesh).isSkinnedMesh) found = true
+  })
+  return found
+}
+
 /** Deep clone with unique materials so each instance can be tinted independently. */
 export function cloneCharacterWithUniqueMaterials(source: THREE.Object3D): THREE.Group {
-  const c = source.clone(true) as THREE.Group
+  // Rigged skins need their own skeleton per instance, otherwise every clone shares (and fights over) one pose.
+  const c = (hasSkinnedMesh(source) ? cloneSkinned(source) : source.clone(true)) as THREE.Group
+  clipsByRoot.set(c, clipsByRoot.get(source) ?? [])
   c.traverse((obj) => {
     if (obj instanceof THREE.Mesh && obj.material) {
       if (Array.isArray(obj.material)) {
@@ -180,6 +197,7 @@ export async function createTintedCharacter(colors: CosmeticColors): Promise<THR
   if (!template) return null
   const instance = cloneCharacterWithUniqueMaterials(template)
   applyCosmeticColors(instance, colors)
+  attachAvatarAnimations(instance)
   return instance
 }
 
@@ -192,5 +210,51 @@ export async function createTintedCharacterFromUrl(
   if (!template) return null
   const instance = cloneCharacterWithUniqueMaterials(template)
   applyCosmeticColors(instance, colors)
+  attachAvatarAnimations(instance)
   return instance
+}
+
+interface AvatarAnimState {
+  mixer: THREE.AnimationMixer
+  actions: Map<string, THREE.AnimationAction>
+  current: THREE.AnimationAction | null
+}
+
+const SPEED_WALK = 0.35
+const SPEED_RUN = 4.5
+const CROSSFADE_S = 0.22
+
+/**
+ * Premium skins ship rigged with "Idle" / "Walk" / "Run" clips. Starts a mixer on the instance (no-op for
+ * the legacy static skins, which have no clips).
+ */
+export function attachAvatarAnimations(root: THREE.Object3D): void {
+  const clips = clipsByRoot.get(root) ?? []
+  if (clips.length === 0) return
+  const mixer = new THREE.AnimationMixer(root)
+  const actions = new Map<string, THREE.AnimationAction>()
+  for (const clip of clips) actions.set(clip.name, mixer.clipAction(clip))
+  const state: AvatarAnimState = { mixer, actions, current: null }
+  animStateByRoot.set(root, state)
+  playClip(state, 'Idle', 1)
+}
+
+function playClip(state: AvatarAnimState, name: string, timeScale: number): void {
+  const next = state.actions.get(name)
+  if (!next) return
+  next.timeScale = timeScale
+  if (state.current === next) return
+  next.reset().setEffectiveWeight(1).play()
+  if (state.current) state.current.crossFadeTo(next, CROSSFADE_S, false)
+  state.current = next
+}
+
+/** Advance the avatar's clips; `speed` is its horizontal speed in m/s (picks Idle / Walk / Run). */
+export function updateAvatarAnimation(root: THREE.Object3D, dt: number, speed: number): void {
+  const state = animStateByRoot.get(root)
+  if (!state) return
+  if (speed > SPEED_RUN) playClip(state, 'Run', 1)
+  else if (speed > SPEED_WALK) playClip(state, 'Walk', Math.max(0.6, Math.min(1.4, speed / 2.5)))
+  else playClip(state, 'Idle', 1)
+  state.mixer.update(dt)
 }

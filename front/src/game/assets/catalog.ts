@@ -15,7 +15,9 @@
 
 const ROOT = '/assets'
 
-export type SkinKey = 'campus_classic' | 'street_runner' | 'scholar' | 'explorer' | 'night_owl'
+export type SkinKey =
+  | 'campus_classic' | 'street_runner' | 'scholar' | 'explorer' | 'night_owl'
+  | 'neon_ronin' | 'street_luxe' | 'astral_oracle'
 export type DecorKey = 'wooden_chair' | 'dining_table' | 'floor_lamp' | 'potted_plant' | 'bookshelf'
 export type HouseKey =
   | 'house_01' | 'house_02' | 'house_03' | 'house_04' | 'house_05'
@@ -82,6 +84,10 @@ export const SKINS: readonly SkinAsset[] = [
   skin('scholar', 'Scholar', 'COS_WEAR_BODY_SCHOLAR'),
   skin('explorer', 'Explorer', 'COS_WEAR_BODY_EXPLORER'),
   skin('night_owl', 'Night Owl', 'COS_WEAR_BODY_NIGHT_OWL'),
+  // Premium tier: semi-realistic PBR, rigged, with Idle / Walk / Run clips (built in Blender, see map-src/skins/).
+  skin('neon_ronin', 'Neon Ronin', 'COS_WEAR_BODY_NEON_RONIN'),
+  skin('street_luxe', 'Street Luxe', 'COS_WEAR_BODY_STREET_LUXE'),
+  skin('astral_oracle', 'Astral Oracle', 'COS_WEAR_BODY_ASTRAL_ORACLE'),
 ]
 
 export const DEFAULT_SKIN: SkinAsset = SKINS.find((s) => s.isDefault)!

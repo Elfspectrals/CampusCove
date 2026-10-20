@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import * as THREE from 'three'
+import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js'
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
 import { createGltfLoader } from '../../game/gltfLoaderFactory'
 import { disposeObject3D } from '../../avatar/compositeAvatar'
 import { getPreviewCharacterAssetById } from '../../avatar/previewCharacterAssets'
@@ -51,6 +53,10 @@ let loadVersion = 0
 
 const loader = createGltfLoader()
 const modelCache = new Map<string, THREE.Group>()
+const clipCache = new Map<string, THREE.AnimationClip[]>()
+const clock = new THREE.Clock()
+let avatarMixer: THREE.AnimationMixer | null = null
+let envMap: THREE.Texture | null = null
 const selectedAssetSource = computed<string | null>(() => {
   if (props.assetSrc && props.assetSrc.trim() !== '') return props.assetSrc
   if (props.assetId) return getPreviewCharacterAssetById(props.assetId)?.src ?? null
@@ -160,6 +166,7 @@ async function loadPreviewModel(): Promise<void> {
   loadingModel.value = true
   previewError.value = null
   if (avatarRoot) {
+    stopAvatarMixer()
     avatarPivot.remove(avatarRoot)
     disposeObject3D(avatarRoot)
     avatarRoot = null
@@ -177,7 +184,10 @@ async function loadPreviewModel(): Promise<void> {
       return
     }
     normalizeAndOrientModel(model)
-    enhanceMaterialVisibility(model)
+    // Rigged premium skins carry their own PBR look (metal, emissive trims): don't flatten it.
+    const rigged = isRigged(model)
+    if (!rigged) enhanceMaterialVisibility(model)
+    applyPreviewLook(rigged)
     model.position.y = 0
     model.traverse((obj) => {
       if (obj instanceof THREE.Mesh) {
@@ -187,6 +197,7 @@ async function loadPreviewModel(): Promise<void> {
     })
     avatarRoot = model
     avatarPivot.add(model)
+    startIdleAnimation(model, modelSource)
     targetRotationY = 0
     currentRotationY = 0
     avatarPivot.rotation.y = 0
@@ -205,11 +216,50 @@ async function loadModelBySource(source: string): Promise<THREE.Group> {
   const gltf = await loader.loadAsync(source)
   const loadedScene = gltf.scene as THREE.Group
   modelCache.set(source, loadedScene)
+  clipCache.set(source, gltf.animations)
   return cloneCharacterWithUniqueMaterials(loadedScene)
 }
 
+function isRigged(root: THREE.Object3D): boolean {
+  let rigged = false
+  root.traverse((obj) => {
+    if ((obj as THREE.SkinnedMesh).isSkinnedMesh) rigged = true
+  })
+  return rigged
+}
+
+/** Premium PBR skins need an environment to reflect (metals are black without one) and filmic tone mapping. */
+function applyPreviewLook(rigged: boolean): void {
+  if (!scene || !renderer) return
+  if (rigged && !envMap) {
+    const pmrem = new THREE.PMREMGenerator(renderer)
+    envMap = pmrem.fromScene(new RoomEnvironment(), 0.04).texture
+    pmrem.dispose()
+  }
+  scene.environment = rigged ? envMap : null
+  scene.environmentIntensity = 0.7
+  renderer.toneMapping = rigged ? THREE.ACESFilmicToneMapping : THREE.NoToneMapping
+  renderer.toneMappingExposure = 1.05
+}
+
+function startIdleAnimation(root: THREE.Object3D, source: string): void {
+  const clips = clipCache.get(source) ?? []
+  const idle = clips.find((c) => c.name === 'Idle')
+  if (!idle) return
+  avatarMixer = new THREE.AnimationMixer(root)
+  avatarMixer.clipAction(idle).play()
+}
+
+function stopAvatarMixer(): void {
+  if (!avatarMixer) return
+  avatarMixer.stopAllAction()
+  if (avatarRoot) avatarMixer.uncacheRoot(avatarRoot)
+  avatarMixer = null
+}
+
 function cloneCharacterWithUniqueMaterials(source: THREE.Object3D): THREE.Group {
-  const cloned = source.clone(true) as THREE.Group
+  // rigged skins need their own skeleton per instance
+  const cloned = (isRigged(source) ? cloneSkinned(source) : source.clone(true)) as THREE.Group
   cloned.traverse((obj) => {
     if (!(obj instanceof THREE.Mesh)) return
     if (Array.isArray(obj.material)) {
@@ -262,6 +312,7 @@ function renderFrame(): void {
 
   currentRotationY += (targetRotationY - currentRotationY) * 0.14
   avatarPivot.rotation.y = currentRotationY
+  avatarMixer?.update(Math.min(clock.getDelta(), 0.1))
 
   renderer.render(scene, camera)
 }
@@ -344,6 +395,7 @@ function teardownThree(): void {
   if (renderer) renderer.setAnimationLoop(null)
 
   if (avatarPivot && avatarRoot) {
+    stopAvatarMixer()
     avatarPivot.remove(avatarRoot)
     disposeObject3D(avatarRoot)
     avatarRoot = null
@@ -356,6 +408,8 @@ function teardownThree(): void {
     floorMesh = null
   }
 
+  envMap?.dispose()
+  envMap = null
   renderer?.dispose()
   renderer = null
   camera = null
