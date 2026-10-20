@@ -39,7 +39,14 @@ import {
   useCityHousing,
 } from '../composables/game/useCityHousing'
 import { getGraphicsQuality, supportsEnvironmentMap, toggleGraphicsQuality } from '../game/graphicsQuality'
-import { applySceneAtmosphere, loadApartmentEnvironment, loadTownEnvironment, stripRoomEnvironmentsFromScene } from '../game/roomEnvironments'
+import {
+  applySceneAtmosphere,
+  loadApartmentEnvironment,
+  loadTownEnvironment,
+  loadWorkEnvironment,
+  stripRoomEnvironmentsFromScene,
+} from '../game/roomEnvironments'
+import type { WorkLot } from '../game/workBuildings'
 import { TOWN } from '../game/assets/catalog'
 import {
   applySharedEnvironment,
@@ -62,6 +69,10 @@ const nearApartmentDoor = ref(false)
 const nearCityDoor = ref(false)
 const canEditApartment = ref(false)
 const visitedApartmentOwnerId = ref<number | null>(null)
+// Business district: buildings from town.layout.json, the one whose door we stand at, the one we are inside.
+const workLots = ref<WorkLot[]>([])
+const nearbyWork = ref<WorkLot | null>(null)
+const visitedWorkKey = ref<string | null>(null)
 const housingClaimInFlight = ref(false)
 const switchingRoom = ref(false)
 const pointerLocked = ref(false)
@@ -286,6 +297,16 @@ async function onNearHousingInteract(): Promise<void> {
   }
 }
 
+/** Work buildings are free and public: no purchase or lease, the server just moves us inside. */
+function onNearWorkInteract(): void {
+  const lot = nearbyWork.value
+  if (!lot || !gameRoomRef.value || transitioningApartment.value) return
+  transitioningApartment.value = true
+  wasPointerLockedAtTransitionStart.value = pointerLocked.value
+  closeInventory()
+  gameRoomRef.value.send('enter_work', { workKey: lot.key })
+}
+
 function handleExtraKeyDown(e: KeyboardEvent): boolean {
   if (currentRoomLabel.value === 'city' && e.code === 'KeyU' && !e.repeat) {
     void tryRenewNearbyRent()
@@ -363,6 +384,13 @@ function updateDoorPromptScreenPos(): void {
   }
 
   const unit = nearbyHousingUnit.value
+  const work = nearbyWork.value
+  if (!unit && work) {
+    const screen = projectWorldToScreen(work.door[0], 1.5, work.door[2])
+    doorPromptPos.value = screen ? { ...screen, action: 'Enter', detail: work.name } : null
+    renewPromptPos.value = null
+    return
+  }
   if (!unit) {
     doorPromptPos.value = null
     renewPromptPos.value = null
@@ -408,7 +436,7 @@ function houseKeyForTemplate(templateKey: string | undefined): string | null {
   return housingUnits.value.find((u) => u.template_key === templateKey)?.model_key ?? null
 }
 
-function setRoomEnvironment(kind: 'city' | 'apartment', templateKey?: string) {
+function setRoomEnvironment(kind: 'city' | 'apartment', templateKey?: string, workKey?: string | null) {
   const token = ++roomEnvironmentLoadToken
   if (kind === 'city') {
     apartmentPlacement.setPlayerInsideApartment(false)
@@ -424,6 +452,7 @@ function setRoomEnvironment(kind: 'city' | 'apartment', templateKey?: string) {
   if (kind === 'city') {
     canEditApartment.value = false
     visitedApartmentOwnerId.value = null
+    visitedWorkKey.value = null
     stripRoomEnvironmentsFromScene(scene)
     myPosition.x = HOUSING_LOBBY_SPAWN.x
     myPosition.y = HOUSING_LOBBY_SPAWN.y
@@ -437,7 +466,8 @@ function setRoomEnvironment(kind: 'city' | 'apartment', templateKey?: string) {
     // Town map + the 10 house exteriors (assets/town, assets/houses). Legacy units without a
     // model_key still get a placeholder cube.
     void loadTownEnvironment()
-      .then(({ group }) => {
+      .then(({ group, layout }) => {
+        workLots.value = layout.work ?? []
         if (token !== roomEnvironmentLoadToken) return
         roomEnvironment = group
         if (!housingCubesGroup) {
@@ -455,7 +485,8 @@ function setRoomEnvironment(kind: 'city' | 'apartment', templateKey?: string) {
         roomMessage.value = 'Could not load the town.'
       })
   } else {
-    void loadApartmentEnvironment(houseKeyForTemplate(templateKey)).then((built) => {
+    const interior = workKey ? loadWorkEnvironment(workKey) : loadApartmentEnvironment(houseKeyForTemplate(templateKey))
+    void interior.then((built) => {
       if (token !== roomEnvironmentLoadToken) return
       roomEnvironment = built.group
       scene.add(roomEnvironment)
@@ -511,6 +542,7 @@ const {
   onNearHousingInteract: () => {
     void onNearHousingInteract()
   },
+  onNearWorkInteract,
   onToggleInventory: () => toggleInventory(),
   onHotbarDigit: (index: number) => {
     selectHotbarIndex(index)
@@ -519,6 +551,8 @@ const {
   nearCityDoor,
   housingUnits,
   nearbyHousingUnit,
+  workLots,
+  nearbyWork,
   handleExtraKeyDown,
   onCanvasMouseDown: (e) => apartmentPlacement.onPointerDown(e),
   onCanvasMouseUp: () => undefined,
@@ -575,6 +609,7 @@ const { connectRealtime, clearRemoteUsers, tickRemoteAvatars } = useGameRealtime
   setRoomEnvironment,
   canEditApartment,
   visitedApartmentOwnerId,
+  visitedWorkKey,
   onHousingUnitsSync: onHousingUnitsFromServer,
   onApartmentActionErrorBanner: () => {
     apartmentPlacement.onApartmentActionError()

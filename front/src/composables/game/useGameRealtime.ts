@@ -111,11 +111,13 @@ export interface GameRealtimeDeps {
   }
 
   /** templateKey: apartment template ('housing_<unit_id>') so the matching house interior loads. */
-  setRoomEnvironment: (kind: 'city' | 'apartment', templateKey?: string) => void
+  setRoomEnvironment: (kind: 'city' | 'apartment', templateKey?: string, workKey?: string | null) => void
   onApartmentActionErrorBanner?: () => void
 
   canEditApartment: Ref<boolean>
   visitedApartmentOwnerId: Ref<number | null>
+  /** Work building we are inside (business district), null in the city or a house. */
+  visitedWorkKey: Ref<string | null>
   onHousingUnitsSync?: (units: HousingUnitPayload[]) => void
 }
 
@@ -160,8 +162,14 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     return typeof cam === 'function' ? cam() : cam
   }
 
-  function isRemoteVisible(zone: 'city' | 'apartment', apartmentOwnerId: number | null): boolean {
+  function isRemoteVisible(
+    zone: 'city' | 'apartment',
+    apartmentOwnerId: number | null,
+    workKey: string | null = null,
+  ): boolean {
     if (deps.currentRoomLabel.value === 'city') return zone === 'city'
+    const myWorkKey = deps.visitedWorkKey.value
+    if (myWorkKey !== null || workKey !== null) return zone === 'apartment' && workKey === myWorkKey
     const visitedOwner = deps.visitedApartmentOwnerId.value
     const ownerMatch =
       apartmentOwnerId !== null &&
@@ -266,7 +274,8 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     const scene = deps.getScene()
     if (!scene) return
 
-    if (!isRemoteVisible(data.zone, data.apartmentOwnerId)) {
+    const workKey = data.workKey ?? null
+    if (!isRemoteVisible(data.zone, data.apartmentOwnerId, workKey)) {
       removeOtherUser(sessionId)
       return
     }
@@ -328,6 +337,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       ry,
       zone: data.zone,
       apartmentOwnerId: data.apartmentOwnerId,
+      workKey,
       color: data.color,
       bodyTintColors,
       bodyModelGlb,
@@ -356,7 +366,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       pendingAppearanceUpdates.set(sessionId, { appearance: _appearance, slotHexes, bodyModelGlb })
       return
     }
-    if (!isRemoteVisible(entry.zone, entry.apartmentOwnerId)) {
+    if (!isRemoteVisible(entry.zone, entry.apartmentOwnerId, entry.workKey)) {
       removeOtherUser(sessionId)
       return
     }
@@ -438,7 +448,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('user_moved', (data: { sessionId: string; x: number; y: number; z: number; ry?: number }) => {
       const entry = otherUsers.value.get(data.sessionId)
       if (!entry) return
-      if (!isRemoteVisible(entry.zone, entry.apartmentOwnerId)) {
+      if (!isRemoteVisible(entry.zone, entry.apartmentOwnerId, entry.workKey)) {
         removeOtherUser(data.sessionId)
         return
       }
@@ -480,6 +490,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
         sessionId: string
         zone: 'city' | 'apartment'
         apartmentOwnerId: number | null
+        workKey?: string | null
         x: number
         y: number
         z: number
@@ -493,13 +504,14 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
           deps.myPosition.z = data.z
           resolveCamera()?.position.set(data.x, data.y, data.z)
           for (const [sid, entry] of [...otherUsers.value.entries()]) {
-            if (!isRemoteVisible(entry.zone, entry.apartmentOwnerId)) {
+            if (!isRemoteVisible(entry.zone, entry.apartmentOwnerId, entry.workKey)) {
               removeOtherUser(sid)
             }
           }
           if (data.zone === 'city') {
             deps.canEditApartment.value = false
             deps.visitedApartmentOwnerId.value = null
+            deps.visitedWorkKey.value = null
             deps.apartment.clearApartmentObjects()
             finishApartmentTransition()
           }
@@ -509,11 +521,12 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
         if (!entry) return
         entry.zone = data.zone
         entry.apartmentOwnerId = data.apartmentOwnerId
+        entry.workKey = data.workKey ?? null
         entry.x = data.x
         entry.y = data.y
         entry.z = data.z
         placeAvatar(entry.group, entry.x, entry.y, entry.z, entry.ry)
-        if (!isRemoteVisible(entry.zone, entry.apartmentOwnerId)) {
+        if (!isRemoteVisible(entry.zone, entry.apartmentOwnerId, entry.workKey)) {
           removeOtherUser(data.sessionId)
         }
       },
@@ -524,21 +537,27 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       isInitialInventoryLoad = true
       deps.canEditApartment.value = payload.canEdit === true
       deps.visitedApartmentOwnerId.value = payload.ownerAccountId
+      deps.visitedWorkKey.value = payload.workKey ?? null
       deps.currentRoomLabel.value = 'apartment'
-      deps.setRoomEnvironment('apartment', payload.templateKey)
+      deps.setRoomEnvironment('apartment', payload.templateKey, payload.workKey ?? null)
       deps.myPosition.x = APARTMENT_SPAWN.x
       deps.myPosition.y = APARTMENT_SPAWN.y
       deps.myPosition.z = APARTMENT_SPAWN.z
       resolveCamera()?.position.set(APARTMENT_SPAWN.x, APARTMENT_SPAWN.y, APARTMENT_SPAWN.z)
       for (const [sid, entry] of [...otherUsers.value.entries()]) {
-        if (!isRemoteVisible(entry.zone, entry.apartmentOwnerId)) {
+        if (!isRemoteVisible(entry.zone, entry.apartmentOwnerId, entry.workKey)) {
           removeOtherUser(sid)
         }
       }
       deps.apartment.ensureApartmentObjectsFromServer(payload.objects)
       deps.apartment.attachSelectedPlacedObject()
-      deps.inventoryLoading.value = true
-      room.send('apartment_inventory_request')
+      if (payload.workKey) {
+        // work buildings have no decoration inventory
+        deps.inventoryLoading.value = false
+      } else {
+        deps.inventoryLoading.value = true
+        room.send('apartment_inventory_request')
+      }
       finishApartmentTransition()
     })
 

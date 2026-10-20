@@ -9,6 +9,7 @@ import {
   APARTMENT_HALF_EXTENT,
 } from '../../game/gameRoomConstants'
 import { findNearestHousingUnit, type HousingUnitSnapshot } from '../../game/housingCubes'
+import { findNearestWorkDoor, type WorkLot } from '../../game/workBuildings'
 import { resolveWorldMovement } from './useWorldCollision'
 
 export interface UseGameMovementDeps {
@@ -27,12 +28,16 @@ export interface UseGameMovementDeps {
   refreshMyAppearance: Ref<(() => void) | null>
   onNearApartmentDoorInteract: () => Promise<void>
   onNearHousingInteract: () => void
+  onNearWorkInteract: () => void
   onToggleInventory: () => void
   onHotbarDigit: (index: number) => void
   nearApartmentDoor: Ref<boolean>
   nearCityDoor: Ref<boolean>
   housingUnits: Ref<HousingUnitSnapshot[]>
   nearbyHousingUnit: Ref<HousingUnitSnapshot | null>
+  /** Business-district buildings of the town (free to enter, no purchase). */
+  workLots: Ref<WorkLot[]>
+  nearbyWork: Ref<WorkLot | null>
   /** Return `true` if the event was consumed (placement shortcuts, etc.). */
   handleExtraKeyDown?: (e: KeyboardEvent) => boolean
   /** Return `true` if the click was consumed (apartment placement), so it doesn't also open a door. */
@@ -84,11 +89,14 @@ export function useGameMovement(deps: UseGameMovementDeps) {
       deps.nearApartmentDoor.value = dx * dx + dz * dz <= APARTMENT_DOOR_RADIUS * APARTMENT_DOOR_RADIUS
       deps.nearCityDoor.value = false
       deps.nearbyHousingUnit.value = null
+      deps.nearbyWork.value = null
     } else {
       deps.nearApartmentDoor.value = false
       const nearest = findNearestHousingUnit(myPosition.x, myPosition.z, deps.housingUnits.value)
       deps.nearbyHousingUnit.value = nearest
-      deps.nearCityDoor.value = nearest !== null
+      const work = nearest ? null : findNearestWorkDoor(myPosition.x, myPosition.z, deps.workLots.value)
+      deps.nearbyWork.value = work
+      deps.nearCityDoor.value = nearest !== null || work !== null
     }
   }
 
@@ -195,6 +203,10 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     }
     if (deps.currentRoomLabel.value === 'city' && deps.nearbyHousingUnit.value) {
       deps.onNearHousingInteract()
+      return true
+    }
+    if (deps.currentRoomLabel.value === 'city' && deps.nearbyWork.value) {
+      deps.onNearWorkInteract()
       return true
     }
     return false
