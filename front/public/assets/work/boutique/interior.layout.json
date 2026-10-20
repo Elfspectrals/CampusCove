@@ -1,0 +1,111 @@
+{
+  "version": 1,
+  "key": "boutique",
+  "job": "commerce",
+  "name": "Boutique",
+  "spawn": [
+    0.0,
+    1.6,
+    3.7
+  ],
+  "exit": {
+    "position": [
+      0.0,
+      4.75
+    ],
+    "radius": 1.4
+  },
+  "stations": [
+    {
+      "id": "station_commerce_01",
+      "job": "commerce",
+      "role": "caisse",
+      "seat": "seat_commerce_01",
+      "desk": "desk_commerce_01",
+      "position": [
+        -4.0,
+        0.0,
+        -5.5
+      ],
+      "yaw": 3.141592653589793,
+      "lookAt": [
+        -4.0,
+        1.0,
+        -3.4
+      ]
+    },
+    {
+      "id": "station_commerce_02",
+      "job": "commerce",
+      "role": "caisse",
+      "seat": "seat_commerce_02",
+      "desk": "desk_commerce_02",
+      "position": [
+        0.0,
+        0.0,
+        -5.5
+      ],
+      "yaw": 3.141592653589793,
+      "lookAt": [
+        0.0,
+        1.0,
+        -3.4
+      ]
+    },
+    {
+      "id": "station_commerce_03",
+      "job": "commerce",
+      "role": "caisse",
+      "seat": "seat_commerce_03",
+      "desk": "desk_commerce_03",
+      "position": [
+        4.0,
+        0.0,
+        -5.5
+      ],
+      "yaw": 3.141592653589793,
+      "lookAt": [
+        4.0,
+        1.0,
+        -3.4
+      ]
+    },
+    {
+      "id": "station_commerce_04",
+      "job": "commerce",
+      "role": "conseiller",
+      "seat": "seat_commerce_04",
+      "desk": "desk_commerce_04",
+      "position": [
+        -4.6,
+        0.0,
+        0.7
+      ],
+      "yaw": 3.141592653589793,
+      "lookAt": [
+        -4.6,
+        1.0,
+        2.5
+      ]
+    },
+    {
+      "id": "station_commerce_05",
+      "job": "commerce",
+      "role": "conseiller",
+      "seat": "seat_commerce_05",
+      "desk": "desk_commerce_05",
+      "position": [
+        4.6,
+        0.0,
+        0.7
+      ],
+      "yaw": 3.141592653589793,
+      "lookAt": [
+        4.6,
+        1.0,
+        2.5
+      ]
+    }
+  ],
+  "seats": []
+}

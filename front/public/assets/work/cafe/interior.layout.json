@@ -1,0 +1,140 @@
+{
+  "version": 1,
+  "key": "cafe",
+  "job": "resto",
+  "name": "Campus Cafe",
+  "spawn": [
+    0.0,
+    1.6,
+    3.7
+  ],
+  "exit": {
+    "position": [
+      0.0,
+      4.75
+    ],
+    "radius": 1.4
+  },
+  "stations": [
+    {
+      "id": "station_resto_01",
+      "job": "resto",
+      "role": "cuisine",
+      "desk": "desk_resto_01",
+      "position": [
+        -5.5,
+        0.0,
+        -7.5
+      ],
+      "yaw": 0.0,
+      "lookAt": [
+        -5.5,
+        1.0,
+        -8.45
+      ]
+    },
+    {
+      "id": "station_resto_02",
+      "job": "resto",
+      "role": "cuisine",
+      "desk": "desk_resto_02",
+      "position": [
+        -3.0,
+        0.0,
+        -7.5
+      ],
+      "yaw": 0.0,
+      "lookAt": [
+        -3.0,
+        1.0,
+        -8.45
+      ]
+    },
+    {
+      "id": "station_resto_03",
+      "job": "resto",
+      "role": "cuisine",
+      "desk": "desk_resto_03",
+      "position": [
+        -0.5,
+        0.0,
+        -7.5
+      ],
+      "yaw": 0.0,
+      "lookAt": [
+        -0.5,
+        1.0,
+        -8.45
+      ]
+    },
+    {
+      "id": "station_resto_06",
+      "job": "resto",
+      "role": "service",
+      "desk": "PassCounter",
+      "position": [
+        -4.2,
+        0.0,
+        -4.5
+      ],
+      "yaw": 0.0,
+      "lookAt": [
+        -4.2,
+        1.0,
+        -5.4
+      ]
+    },
+    {
+      "id": "station_resto_07",
+      "job": "resto",
+      "role": "service",
+      "desk": "PassCounter",
+      "position": [
+        -1.8,
+        0.0,
+        -4.5
+      ],
+      "yaw": 0.0,
+      "lookAt": [
+        -1.8,
+        1.0,
+        -5.4
+      ]
+    },
+    {
+      "id": "station_resto_04",
+      "job": "resto",
+      "role": "barista",
+      "desk": "desk_resto_bar",
+      "position": [
+        6.3,
+        0.0,
+        -3.0
+      ],
+      "yaw": 1.5707963267948966,
+      "lookAt": [
+        5.2,
+        1.0,
+        -3.0
+      ]
+    },
+    {
+      "id": "station_resto_05",
+      "job": "resto",
+      "role": "barista",
+      "desk": "desk_resto_bar",
+      "position": [
+        6.3,
+        0.0,
+        -1.0
+      ],
+      "yaw": 1.5707963267948966,
+      "lookAt": [
+        5.2,
+        1.0,
+        -1.0
+      ]
+    }
+  ],
+  "seats": []
+}

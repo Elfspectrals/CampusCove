@@ -49,6 +49,7 @@ Tous les assets du jeu sont construits dans Blender (via le MCP Blender) par les
 | `skins/<clé>/` | 5 skins : `campus_classic` (gratuit, par défaut), `street_runner`, `scholar`, `explorer`, `night_owl` (`model.glb`, `preview.png`) |
 | `decor/<clé>/` | 5 objets de déco : `wooden_chair`, `dining_table`, `floor_lamp`, `potted_plant`, `bookshelf` |
 | `houses/house_01…10/` | 10 maisons : `exterior.glb`, `interior.glb` (un intérieur par maison), `interior.collision.json`, `preview.png` |
+| `work/<clé>/` | Quartier d'affaires : `tech_hub` (dev), `boutique` (commerce), `cafe` (resto) — `exterior.glb`, `interior.glb`, collisions, `interior.layout.json` (postes de travail), `preview.png` ; `work/district/` = décor du quartier. Voir `docs/ASSETS_STYLE_GUIDE.md` §8 |
 | `town/` | La mini-ville (`town.glb`, `town.collision.json`, `town.layout.json` : spawn, position et porte de chaque maison) |
 | `showroom/` | Carte de `/NewNation` |
 

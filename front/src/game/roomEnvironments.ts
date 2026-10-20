@@ -5,8 +5,8 @@ import {
   APARTMENT_ROOM_HEIGHT,
   APARTMENT_WALL_THICKNESS,
 } from './gameRoomConstants'
-import { DEFAULT_HOUSE, HOUSES, TOWN, findHouse } from './assets/catalog'
-import type { HouseAsset, TownLayout } from './assets/catalog'
+import { DEFAULT_HOUSE, HOUSES, TOWN, WORK_DISTRICT, findHouse, findWork } from './assets/catalog'
+import type { TownLayout } from './assets/catalog'
 import { createGltfLoader } from './gltfLoaderFactory'
 import { getGraphicsQuality } from './graphicsQuality'
 import {
@@ -74,6 +74,34 @@ export function loadTownEnvironment(): Promise<TownEnvironmentBuildResult> {
       for (const exterior of houses) {
         if (exterior) root.add(exterior)
       }
+      // Business district: scenery + one exterior per work building. A failure here must not break the town.
+      const workScenery = await loader.loadAsync(WORK_DISTRICT.modelUrl).then((g) => g.scene).catch((error) => {
+        console.warn('[town] district scenery failed to load', error)
+        return null
+      })
+      if (workScenery) {
+        workScenery.name = 'WorkDistrict'
+        root.add(workScenery)
+      }
+      const works = await Promise.all((layout.work ?? []).map(async (lot) => {
+        const asset = findWork(lot.key)
+        if (!asset) return null
+        try {
+          const gltf = await loader.loadAsync(asset.exteriorUrl)
+          const exterior = gltf.scene
+          exterior.name = `WorkExterior_${lot.key}`
+          exterior.position.fromArray(lot.position)
+          exterior.rotation.y = lot.rotationY
+          exterior.userData.workKey = lot.key
+          return exterior
+        } catch (error) {
+          console.warn('[town] work exterior failed to load', lot.key, error)
+          return null
+        }
+      }))
+      for (const exterior of works) {
+        if (exterior) root.add(exterior)
+      }
       sanitizeGltfLights(root)
       configureRoomMeshShadows(root)
       normalizeRoomMaterials(root, 'city')
@@ -136,11 +164,17 @@ export function stripRoomEnvironmentsFromScene(scene: THREE.Scene): void {
 
 // ---------------------------------------------------------------- house interiors
 
+/** What the interior loaders need from a house or work building. */
+interface InteriorAsset {
+  key: string
+  interiorCollisionUrl: string
+}
+
 /** Result from apartment environment builders for scene + placement raycast/collider registration. */
 export interface ApartmentEnvironmentBuildResult {
   group: THREE.Group
-  /** House whose interior this is (assets/houses/<key>/). */
-  house: HouseAsset
+  /** House or work building whose interior this is (assets/houses/<key>/ or assets/work/<key>/). */
+  house: InteriorAsset
 }
 
 function addApartmentLighting(group: THREE.Group): void {
@@ -169,7 +203,11 @@ function addApartmentExitDoor(group: THREE.Group): void {
   group.add(door)
 }
 
-function prepareApartmentGroup(root: THREE.Group, house: HouseAsset): ApartmentEnvironmentBuildResult {
+function prepareApartmentGroup(
+  root: THREE.Group,
+  house: InteriorAsset,
+  name = `HouseInterior_${house.key}`,
+): ApartmentEnvironmentBuildResult {
   const hasGltfLights = sanitizeGltfLights(root)
   configureRoomMeshShadows(root)
   normalizeRoomMaterials(root, 'apartment')
@@ -179,7 +217,7 @@ function prepareApartmentGroup(root: THREE.Group, house: HouseAsset): ApartmentE
   if (!hasGltfLights) {
     addApartmentFallbackLights(root)
   }
-  root.name = `HouseInterior_${house.key}`
+  root.name = name
   root.userData.isRoomEnvironment = true
   root.userData.isPersistentEnvironment = true
   return { group: root, house }
@@ -200,6 +238,30 @@ export function loadApartmentEnvironment(houseKey?: string | null): Promise<Apar
     .then((gltf) => prepareApartmentGroup(gltf.scene, house))
   task.catch(() => interiorCache.delete(house.key))
   interiorCache.set(house.key, task)
+  return task
+}
+
+/**
+ * Loads a business-district interior (assets/work/<key>/interior.glb). Same entrance contract as the
+ * houses (door at z = +5, spawn APARTMENT_SPAWN), so the exit door trigger is shared.
+ */
+export function loadWorkEnvironment(workKey: string): Promise<ApartmentEnvironmentBuildResult> {
+  const work = findWork(workKey)
+  if (!work) return Promise.reject(new Error(`Unknown work building: ${workKey}`))
+  const cacheKey = `work:${work.key}`
+  const cached = interiorCache.get(cacheKey)
+  if (cached) return cached
+  const task = createGltfLoader()
+    .loadAsync(work.interiorUrl)
+    .then((gltf) =>
+      prepareApartmentGroup(
+        gltf.scene,
+        { key: work.key, interiorCollisionUrl: work.interiorCollisionUrl },
+        `WorkInterior_${work.key}`,
+      ),
+    )
+  task.catch(() => interiorCache.delete(cacheKey))
+  interiorCache.set(cacheKey, task)
   return task
 }
 

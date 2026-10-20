@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "key": "cafe",
+  "name": "Campus Cafe",
+  "footprint": [
+    16.0,
+    13.0
+  ],
+  "doorLocal": [
+    0.0,
+    1.25,
+    10.9
+  ],
+  "collision": [
+    {
+      "cx": 0.0,
+      "cz": 0.0,
+      "hx": 8.2,
+      "hz": 6.7,
+      "hy": 2.2
+    }
+  ]
+}
