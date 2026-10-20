@@ -22,4 +22,4 @@ ENTRYPOINT ["docker-entrypoint.sh"]
 
 EXPOSE 8000
 
-CMD ["sh", "-c", "composer install --no-interaction && php artisan key:generate --force && php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=8000"]
+CMD ["sh", "-c", "composer install --no-interaction && php artisan key:generate --force && php artisan migrate --force && php artisan db:seed --class=ShopSeeder --force && php artisan db:seed --class=HousingUnitSeeder --force && php artisan housing:purge-legacy && php artisan serve --host=0.0.0.0 --port=8000"]
