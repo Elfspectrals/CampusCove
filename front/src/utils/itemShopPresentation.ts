@@ -32,3 +32,8 @@ export function itemRarity(item: ShopItem): ItemRarity {
 export function rarityClass(rarity: ItemRarity): string {
   return `cc-rarity cc-rarity-${rarity}`
 }
+
+/** Furniture / house decoration, as opposed to skins and other cosmetics. */
+export function isApartmentItem(item: Pick<ShopItem, 'kind'>): boolean {
+  return item.kind === 'apartment_asset' || item.kind === 'furniture'
+}
