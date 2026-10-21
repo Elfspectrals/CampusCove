@@ -44,9 +44,6 @@ typecheck: ## Type-check the front (vue-tsc)
 
 # --- 3D assets ---
 
-optimize: ## Optimize a .glb (MODEL=path [NAME=MyModel])
-	cd front && npm run optimize -- $(MODEL) $(NAME)
-
 assets-optimize: ## Optimize Blender exports (map-src/CampusCove/out) into front/public/assets (+ collision JSON)
 	cd front && npm run assets:optimize
 
@@ -106,6 +103,6 @@ socket-start: ## Run socket locally (port 3000)
 
 .PHONY: help up up-build down logs rebuild-socket socket-rebuild \
 	front-install front-dev front-build typecheck \
-	optimize assets-optimize newnation-optimize collision-extract \
+	assets-optimize newnation-optimize collision-extract \
 	migrate seed seed-shop seed-housing purge-legacy-housing fix-housing expire-leases set-admin set-money fill-outfit test \
 	backend-install backend-serve socket-install socket-start
