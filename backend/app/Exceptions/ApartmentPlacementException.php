@@ -2,16 +2,6 @@
 
 namespace App\Exceptions;
 
-use RuntimeException;
-
-class ApartmentPlacementException extends RuntimeException
+final class ApartmentPlacementException extends ApiRejectedException
 {
-    public function __construct(
-        public readonly string $errorCode,
-        string $message,
-        public readonly int $status = 422,
-    ) {
-        parent::__construct($message);
-    }
 }
-

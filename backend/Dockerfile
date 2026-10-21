@@ -5,11 +5,14 @@ RUN apk add --no-cache \
     icu-dev \
     libzip-dev \
     oniguruma-dev \
+    libpng-dev \
+    libjpeg-turbo-dev \
     git \
     unzip \
     $PHPIZE_DEPS \
     && docker-php-ext-configure pdo_pgsql \
-    && docker-php-ext-install -j$(nproc) pdo_pgsql pdo_mysql bcmath intl zip opcache \
+    && docker-php-ext-configure gd --with-jpeg \
+    && docker-php-ext-install -j$(nproc) pdo_pgsql pdo_mysql bcmath intl zip opcache gd \
     && apk del $PHPIZE_DEPS
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer

@@ -118,7 +118,9 @@ class AdminUserInventoryApiTest extends TestCase
             'Authorization' => 'Bearer '.$adminToken,
         ]);
         $afterReset->assertOk();
-        $this->assertSame([], $afterReset->json('items'));
+        // Reset wipes the inventory, then grants the free starter body skin back.
+        $codes = collect($afterReset->json('items'))->pluck('code')->all();
+        $this->assertSame(['COS_WEAR_BODY_DEFAULT'], $codes);
     }
 
     private function registerToken(bool $admin = false): string

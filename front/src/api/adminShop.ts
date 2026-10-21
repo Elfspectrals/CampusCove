@@ -78,8 +78,6 @@ export interface AdminShopItemUpdateBody {
   previewImageFile?: File | null
   modelGlbFile?: File | null
   sort_order?: number
-  currency?: ShopCurrency
-  price?: number
   prices?: Partial<Record<ShopCurrency, number>>
   is_active?: boolean
   is_published?: boolean
@@ -91,8 +89,8 @@ export interface AdminShopListParams {
   search?: string
   currency?: ShopCurrency | 'all'
   kind?: 'furniture' | 'cosmetic' | 'consumable' | 'misc' | 'apartment_asset' | 'all'
-  with_deleted?: boolean
-  only_deleted?: boolean
+  /** Soft-deleted rows: omitted = hide them, 'with' = include, 'only' = only them. */
+  deleted?: 'with' | 'only'
   is_active?: boolean | 'all'
   is_published?: boolean | 'all'
   sort_by?: 'name' | 'code' | 'kind' | 'price' | 'is_active' | 'is_published' | 'updated_at' | 'sort_order'
@@ -224,8 +222,7 @@ function buildListQuery(params: AdminShopListParams): string {
   if (params.search !== undefined && params.search.trim() !== '') q.set('q', params.search.trim())
   if (params.currency !== undefined && params.currency !== 'all') q.set('currency', params.currency)
   if (params.kind !== undefined && params.kind !== 'all') q.set('kind', params.kind)
-  if (params.with_deleted) q.set('with_deleted', '1')
-  if (params.only_deleted) q.set('only_deleted', '1')
+  if (params.deleted) q.set('deleted', params.deleted)
   if (params.is_active !== undefined && params.is_active !== 'all') {
     q.set('is_active', params.is_active ? '1' : '0')
   }
@@ -305,8 +302,6 @@ export async function updateAdminShopItem(
     if (body.cosmetic_slot !== undefined) formData.set('cosmetic_slot', body.cosmetic_slot ?? '')
     if (body.preview_image !== undefined) formData.set('preview_image', body.preview_image ?? '')
     if (body.model_glb !== undefined) formData.set('model_glb', body.model_glb ?? '')
-    if (body.currency !== undefined) formData.set('currency', body.currency)
-    if (body.price !== undefined) formData.set('price', String(body.price))
     if (body.prices?.coins !== undefined) formData.set('prices[coins]', String(body.prices.coins))
     if (body.prices?.premium !== undefined) formData.set('prices[premium]', String(body.prices.premium))
     if (body.is_active !== undefined) formData.set('is_active', body.is_active ? '1' : '0')
@@ -332,8 +327,6 @@ export async function updateAdminShopItem(
     if (body.cosmetic_slot !== undefined) jsonBody.cosmetic_slot = body.cosmetic_slot
     if (body.preview_image !== undefined) jsonBody.preview_image = body.preview_image
     if (body.model_glb !== undefined) jsonBody.model_glb = body.model_glb
-    if (body.currency !== undefined) jsonBody.currency = body.currency
-    if (body.price !== undefined) jsonBody.price = body.price
     if (body.prices !== undefined) jsonBody.prices = body.prices
     if (body.is_active !== undefined) jsonBody.is_active = body.is_active
     if (body.is_published !== undefined) jsonBody.is_published = body.is_published

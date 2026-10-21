@@ -19,7 +19,7 @@ final class CoinRewardService
     public function credit(int $accountId, string $reason, int $amount, array $meta = []): void
     {
         DB::transaction(function () use ($accountId, $reason, $amount, $meta): void {
-            $wallet = $this->lockCoinsWallet($accountId);
+            $wallet = Wallet::lockForAccount($accountId, 'coins');
 
             $tx = EconomyTransaction::query()->create([
                 'server_id' => null,
@@ -42,19 +42,8 @@ final class CoinRewardService
     public function hasReceived(int $accountId, string $reason): bool
     {
         return WalletLedgerEntry::query()
-            ->where('wallet_id', $this->lockCoinsWallet($accountId)->wallet_id)
+            ->where('wallet_id', Wallet::lockForAccount($accountId, 'coins')->wallet_id)
             ->where('reason', $reason)
             ->exists();
-    }
-
-    public function lockCoinsWallet(int $accountId): Wallet
-    {
-        $wallet = Wallet::query()->firstOrCreate([
-            'owner_type' => Wallet::OWNER_TYPE_ACCOUNT,
-            'owner_id' => $accountId,
-            'currency' => 'coins',
-        ]);
-
-        return Wallet::query()->whereKey($wallet->wallet_id)->lockForUpdate()->firstOrFail();
     }
 }

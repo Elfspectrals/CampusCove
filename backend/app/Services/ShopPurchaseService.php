@@ -73,9 +73,9 @@ final class ShopPurchaseService
             $totalDebit = $unitPrice * $quantity;
 
             $accountId = $account->getAuthIdentifier();
-            $wallet = $this->lockAccountWallet((int) $accountId, (string) $currency);
+            $wallet = Wallet::lockForAccount((int) $accountId, (string) $currency);
 
-            $balance = $this->walletBalance((int) $wallet->wallet_id);
+            $balance = $wallet->balance();
             if ($balance < $totalDebit) {
                 throw new ShopPurchaseRejectedException('insufficient_funds', 'Insufficient wallet balance.', 422);
             }
@@ -141,7 +141,7 @@ final class ShopPurchaseService
 
             $this->accountInventoryService->grantPurchasedItems((int) $accountId, $itemDef, $quantity);
 
-            $balanceAfter = $this->walletBalance((int) $wallet->wallet_id);
+            $balanceAfter = $wallet->balance();
 
             $purchase->load(['shopCatalogItem.itemDef']);
 
@@ -149,105 +149,52 @@ final class ShopPurchaseService
         });
     }
 
-    public function walletBalance(int $walletId): int
-    {
-        $sum = WalletLedgerEntry::query()->where('wallet_id', $walletId)->sum('delta');
-
-        return (int) $sum;
-    }
-
-    private function lockAccountWallet(int $accountId, string $currency): Wallet
-    {
-        $wallet = Wallet::query()
-            ->where('owner_type', Wallet::OWNER_TYPE_ACCOUNT)
-            ->where('owner_id', $accountId)
-            ->where('currency', $currency)
-            ->lockForUpdate()
-            ->first();
-
-        if ($wallet !== null) {
-            return $wallet;
-        }
-
-        try {
-            return Wallet::query()->create([
-                'owner_type' => Wallet::OWNER_TYPE_ACCOUNT,
-                'owner_id' => $accountId,
-                'currency' => $currency,
-                'created_at' => now(),
-            ]);
-        } catch (UniqueConstraintViolationException) {
-            // Another concurrent request created the wallet.
-        }
-
-        return Wallet::query()
-            ->where('owner_type', Wallet::OWNER_TYPE_ACCOUNT)
-            ->where('owner_id', $accountId)
-            ->where('currency', $currency)
-            ->lockForUpdate()
-            ->firstOrFail();
-    }
-
     /**
+     * Currency and price of the purchase. Every catalog row enables at least one currency
+     * (ck_shop_catalog_pricing), so allow_coins / allow_premium are the only source of truth.
+     *
      * @return array{0: string, 1: int}
      */
     private function resolvePricing(ShopCatalogItem $catalogItem, ?string $selectedCurrency): array
     {
-        $allowCoins = (bool) $catalogItem->allow_coins;
-        $allowPremium = (bool) $catalogItem->allow_premium;
+        $available = [];
+        if ($catalogItem->allow_coins) {
+            $available[] = 'coins';
+        }
+        if ($catalogItem->allow_premium) {
+            $available[] = 'premium';
+        }
+        if ($available === []) {
+            throw new ShopPurchaseRejectedException('invalid_shop_item', 'Shop item pricing is invalid.', 422);
+        }
 
-        if ($allowCoins || $allowPremium) {
-            $available = [];
-            if ($allowCoins) {
-                $available[] = 'coins';
-            }
-            if ($allowPremium) {
-                $available[] = 'premium';
-            }
-
-            if ($selectedCurrency === null) {
-                if (count($available) > 1) {
-                    throw new ShopPurchaseRejectedException(
-                        'currency_required',
-                        'This item supports multiple currencies. Provide currency in the purchase request.',
-                        422
-                    );
-                }
-                $selectedCurrency = $available[0];
-            }
-
-            if (! in_array($selectedCurrency, $available, true)) {
+        if ($selectedCurrency === null) {
+            if (count($available) > 1) {
                 throw new ShopPurchaseRejectedException(
-                    'invalid_currency',
-                    'Selected currency is not available for this item.',
+                    'currency_required',
+                    'This item supports multiple currencies. Provide currency in the purchase request.',
                     422
                 );
             }
-
-            $price = $selectedCurrency === 'coins'
-                ? (int) $catalogItem->coins_price
-                : (int) $catalogItem->premium_price;
-
-            if ($price <= 0) {
-                throw new ShopPurchaseRejectedException('invalid_shop_item', 'Shop item pricing is invalid.', 422);
-            }
-
-            return [$selectedCurrency, $price];
+            $selectedCurrency = $available[0];
         }
 
-        $legacyCurrency = (string) $catalogItem->currency;
-        $legacyPrice = (int) $catalogItem->price;
-        if ($selectedCurrency !== null && $selectedCurrency !== $legacyCurrency) {
+        if (! in_array($selectedCurrency, $available, true)) {
             throw new ShopPurchaseRejectedException(
                 'invalid_currency',
                 'Selected currency is not available for this item.',
                 422
             );
         }
-        if ($legacyPrice <= 0) {
+
+        $price = $selectedCurrency === 'coins'
+            ? (int) $catalogItem->coins_price
+            : (int) $catalogItem->premium_price;
+
+        if ($price <= 0) {
             throw new ShopPurchaseRejectedException('invalid_shop_item', 'Shop item pricing is invalid.', 422);
         }
 
-        return [$legacyCurrency, $legacyPrice];
+        return [$selectedCurrency, $price];
     }
 }
