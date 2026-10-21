@@ -27,6 +27,8 @@ export interface ShopItem {
   description: string | null
   preview_image: string | null
   model_glb: string | null
+  /** item_defs.rarity (0 = starter … 5 = premium legendary); null when the API omits it. */
+  rarity: number | null
   kind: ShopItemKind
   options: ShopItemCurrencyOption[]
 }
@@ -120,6 +122,7 @@ function normalizeCatalogRow(row: unknown): ShopItem | null {
     description: typeof row.item.description === 'string' ? row.item.description : null,
     preview_image: normalizeApiAssetUrl(row.item.preview_image),
     model_glb: normalizeApiAssetUrl(row.item.model_glb),
+    rarity: typeof row.item.rarity === 'number' ? row.item.rarity : null,
     kind: itemKind,
     options,
   }

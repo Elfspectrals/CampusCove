@@ -195,6 +195,9 @@ class CharacterCosmeticApiTest extends TestCase
                 'COS_WEAR_BODY_SCHOLAR',
                 'COS_WEAR_BODY_EXPLORER',
                 'COS_WEAR_BODY_NIGHT_OWL',
+                'COS_WEAR_BODY_NEON_RONIN',
+                'COS_WEAR_BODY_STREET_LUXE',
+                'COS_WEAR_BODY_ASTRAL_ORACLE',
             ])
             ->pluck('model_glb', 'code')
             ->all();
@@ -204,6 +207,9 @@ class CharacterCosmeticApiTest extends TestCase
         $this->assertSame('/assets/skins/scholar/model.glb', $rows['COS_WEAR_BODY_SCHOLAR'] ?? null);
         $this->assertSame('/assets/skins/explorer/model.glb', $rows['COS_WEAR_BODY_EXPLORER'] ?? null);
         $this->assertSame('/assets/skins/night_owl/model.glb', $rows['COS_WEAR_BODY_NIGHT_OWL'] ?? null);
+        $this->assertSame('/assets/skins/neon_ronin/model.glb', $rows['COS_WEAR_BODY_NEON_RONIN'] ?? null);
+        $this->assertSame('/assets/skins/street_luxe/model.glb', $rows['COS_WEAR_BODY_STREET_LUXE'] ?? null);
+        $this->assertSame('/assets/skins/astral_oracle/model.glb', $rows['COS_WEAR_BODY_ASTRAL_ORACLE'] ?? null);
 
         $previewImage = DB::table('item_defs')
             ->where('code', 'COS_WEAR_BODY_DEFAULT')
@@ -255,9 +261,12 @@ class CharacterCosmeticApiTest extends TestCase
             ->pluck('item_defs.code')
             ->all();
         $this->assertSame([
+            'COS_WEAR_BODY_ASTRAL_ORACLE',
             'COS_WEAR_BODY_EXPLORER',
+            'COS_WEAR_BODY_NEON_RONIN',
             'COS_WEAR_BODY_NIGHT_OWL',
             'COS_WEAR_BODY_SCHOLAR',
+            'COS_WEAR_BODY_STREET_LUXE',
             'COS_WEAR_BODY_STREET_RUNNER',
         ], $sold);
     }

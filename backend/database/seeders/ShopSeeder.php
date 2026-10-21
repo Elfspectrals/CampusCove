@@ -44,6 +44,10 @@ class ShopSeeder extends Seeder
             self::skin('COS_WEAR_BODY_SCHOLAR', 'Scholar', 'scholar', 2),
             self::skin('COS_WEAR_BODY_EXPLORER', 'Explorer', 'explorer', 3),
             self::skin('COS_WEAR_BODY_NIGHT_OWL', 'Night Owl', 'night_owl', 4, premiumOnly: true),
+            // premium tier: semi-realistic, rigged skins (premium currency only)
+            self::skin('COS_WEAR_BODY_NEON_RONIN', 'Neon Ronin', 'neon_ronin', 5, premiumOnly: true),
+            self::skin('COS_WEAR_BODY_STREET_LUXE', 'Street Luxe', 'street_luxe', 5, premiumOnly: true),
+            self::skin('COS_WEAR_BODY_ASTRAL_ORACLE', 'Astral Oracle', 'astral_oracle', 5, premiumOnly: true),
             [
                 'code' => 'COS_WEAR_HAIR_DEFAULT',
                 'name' => 'Campus Hair (default)',
@@ -183,6 +187,9 @@ class ShopSeeder extends Seeder
                 'allow_premium' => true,
                 'premium_price' => 120,
             ]),
+            self::premium('COS_WEAR_BODY_NEON_RONIN', 300, 58),
+            self::premium('COS_WEAR_BODY_STREET_LUXE', 250, 60),
+            self::premium('COS_WEAR_BODY_ASTRAL_ORACLE', 350, 62),
         ];
 
         foreach ($catalogRows as $catalog) {
@@ -286,6 +293,17 @@ class ShopSeeder extends Seeder
             'preview_image' => "/assets/skins/{$assetKey}/preview.png",
             'model_glb' => "/assets/skins/{$assetKey}/model.glb",
         ];
+    }
+
+    /** @return array<string, mixed> */
+    private static function premium(string $code, int $price, int $sort): array
+    {
+        return array_merge(self::coins($code, 0, $sort, unique: true), [
+            'allow_coins' => false,
+            'coins_price' => null,
+            'allow_premium' => true,
+            'premium_price' => $price,
+        ]);
     }
 
     /** @return array<string, mixed> */
