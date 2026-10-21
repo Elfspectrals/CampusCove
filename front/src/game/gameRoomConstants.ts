@@ -31,8 +31,5 @@ export const APARTMENT_DOOR_RADIUS = 1.4
 /** Exit door trigger — just inside Door_Entrance, centred on the front wall of every house interior. */
 export const APARTMENT_DOOR_POS = { x: 0, z: 4.75 }
 
-/** Extra XZ reach beyond half unit size for housing interact prompts (unit position = the house door). */
-export const HOUSING_CUBE_INTERACT_RADIUS_PAD = 1.4
-
 export const TRANSFORM_EPSILON_POSITION = 0.01
 export const TRANSFORM_EPSILON_ROTATION = 0.01

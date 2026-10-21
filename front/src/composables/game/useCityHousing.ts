@@ -1,107 +1,68 @@
-import { computed, ref, type Ref } from 'vue'
-import {
-  findNearestHousingUnit,
-  type HousingUnitSnapshot,
-} from '../../game/housingCubes'
+import { ref, type Ref, type ShallowRef } from 'vue'
+import type { Room } from '@colyseus/sdk'
+import { buyHousingUnit, rentHousingUnit, renewHousingUnit } from '../../api/housing'
+import { canRenewUnit, housingActionFor, type HousingUnit } from '../../game/housing'
 import type { HousingUnitPayload } from '../../types/gameRealtime'
 
-const LEASE_SOON_MS = 6 * 60 * 60 * 1000
-
-export type HousingClientAction = 'buy' | 'rent' | 'enter' | 'visit' | 'renew'
-
-function toSnapshot(unit: HousingUnitPayload): HousingUnitSnapshot {
-  return { ...unit }
+export interface CityHousingDeps {
+  myAccountId: Ref<number | null>
+  gameRoomRef: ShallowRef<Room | null>
+  /** Error banner of the game view. */
+  roomMessage: Ref<string | null>
+  /** Walk into an occupied house (own or someone else's). */
+  enterHouse: (ownerAccountId: number, templateKey: string) => void
 }
 
-function leaseRemainingMs(unit: HousingUnitSnapshot): number | null {
-  if (!unit.lease_expires_at) return null
-  const end = Date.parse(unit.lease_expires_at)
-  if (!Number.isFinite(end)) return null
-  return end - Date.now()
-}
+/** Town houses: synced unit list, the one at the player's door, and the buy / rent / renew / enter actions. */
+export function useCityHousing(deps: CityHousingDeps) {
+  const units = ref<HousingUnit[]>([])
+  const nearbyUnit = ref<HousingUnit | null>(null)
+  const claimInFlight = ref(false)
 
-function leaseSoon(unit: HousingUnitSnapshot): boolean {
-  const remaining = leaseRemainingMs(unit)
-  if (remaining === null) return false
-  return remaining > 0 && remaining <= LEASE_SOON_MS
-}
-
-export function formatRentDuration(hours: number): string {
-  if (hours >= 24 && hours % 24 === 0) {
-    const days = hours / 24
-    return days === 1 ? '1 day' : `${days} days`
-  }
-  return `${hours}h`
-}
-
-export function formatLeaseRemaining(unit: HousingUnitSnapshot): string | null {
-  const remaining = leaseRemainingMs(unit)
-  if (remaining === null || remaining <= 0) return null
-  const totalMin = Math.ceil(remaining / 60_000)
-  const d = Math.floor(totalMin / 1440)
-  const h = Math.floor((totalMin % 1440) / 60)
-  const m = totalMin % 60
-  if (d > 0) return `Lease: ${d}d ${h}h left`
-  if (h > 0) return `Lease: ${h}h ${m}m left`
-  return `Lease: ${m}m left`
-}
-
-export function housingActionFor(
-  unit: HousingUnitSnapshot,
-  accountId: number | null,
-): HousingClientAction | null {
-  const vacant = unit.status === 'vacant'
-  if (vacant) {
-    if (unit.offer_type === 'buy') return 'buy'
-    if (unit.offer_type === 'rent') return 'rent'
-    return null
-  }
-  if (unit.status !== 'occupied' || unit.occupant_account_id === null) return null
-  if (accountId !== null && unit.occupant_account_id === accountId) return 'enter'
-  return 'visit'
-}
-
-export function showRenewForUnit(unit: HousingUnitSnapshot, accountId: number | null): boolean {
-  if (accountId === null || unit.occupant_account_id !== accountId) return false
-  if (unit.offer_type !== 'rent') return false
-  return leaseSoon(unit)
-}
-
-export function useCityHousing(myAccountId: Ref<number | null>) {
-  const units = ref<HousingUnitSnapshot[]>([])
-  const nearbyUnit = ref<HousingUnitSnapshot | null>(null)
-
+  /** Server snapshot (REST or realtime). Units without a house model have nothing to show in the town. */
   function applyUnits(list: HousingUnitPayload[]): void {
-    units.value = list.map(toSnapshot)
-    const pos = nearbyUnit.value
-    if (pos) {
-      const updated = units.value.find((u) => u.public_id === pos.public_id)
-      nearbyUnit.value = updated ?? null
+    units.value = list.filter((u) => u.model_key)
+    const near = nearbyUnit.value
+    if (near) nearbyUnit.value = units.value.find((u) => u.public_id === near.public_id) ?? null
+  }
+
+  /** House asset key for an apartment template ('housing_<unit_id>'), via the unit's model_key. */
+  function houseKeyForTemplate(templateKey: string | undefined): string | null {
+    if (!templateKey) return null
+    return units.value.find((u) => u.template_key === templateKey)?.model_key ?? null
+  }
+
+  async function runClaim(request: () => Promise<unknown>, errorText: string): Promise<void> {
+    claimInFlight.value = true
+    deps.roomMessage.value = null
+    try {
+      await request()
+      deps.gameRoomRef.value?.send('housing_refresh')
+    } catch (err) {
+      deps.roomMessage.value = err instanceof Error ? err.message : errorText
+    } finally {
+      claimInFlight.value = false
     }
   }
 
-  function updateNearest(x: number, z: number): void {
-    nearbyUnit.value = findNearestHousingUnit(x, z, units.value)
+  /** Door interaction: buy / rent a vacant house, or enter / visit an occupied one. */
+  async function interact(): Promise<void> {
+    const unit = nearbyUnit.value
+    if (!unit || !deps.gameRoomRef.value || claimInFlight.value) return
+    const action = housingActionFor(unit, deps.myAccountId.value)
+    if (action === 'buy') await runClaim(() => buyHousingUnit(unit.public_id), 'Housing claim failed.')
+    else if (action === 'rent') await runClaim(() => rentHousingUnit(unit.public_id), 'Housing claim failed.')
+    else if ((action === 'enter' || action === 'visit') && unit.occupant_account_id !== null) {
+      deps.enterHouse(unit.occupant_account_id, unit.template_key)
+    }
   }
 
-  const nearbyAction = computed(() => {
-    const u = nearbyUnit.value
-    if (!u) return null
-    return housingActionFor(u, myAccountId.value)
-  })
-
-  const nearbyShowRenew = computed(() => {
-    const u = nearbyUnit.value
-    if (!u) return false
-    return showRenewForUnit(u, myAccountId.value)
-  })
-
-  return {
-    units,
-    nearbyUnit,
-    nearbyAction,
-    nearbyShowRenew,
-    applyUnits,
-    updateNearest,
+  /** U key: extend the lease of the rented house the player stands at. */
+  async function renewNearby(): Promise<void> {
+    const unit = nearbyUnit.value
+    if (!unit || claimInFlight.value || !canRenewUnit(unit, deps.myAccountId.value)) return
+    await runClaim(() => renewHousingUnit(unit.public_id), 'Could not renew lease.')
   }
+
+  return { units, nearbyUnit, claimInFlight, applyUnits, houseKeyForTemplate, interact, renewNearby }
 }
