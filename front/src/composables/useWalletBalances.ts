@@ -1,5 +1,5 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { getCachedWalletBalances, subscribeAuth } from '../api/auth'
+import { getCachedWalletBalances, subscribeAuth } from '../api/session'
 
 /** Reactive cached wallet balances (updates after purchases / auth changes). */
 export function useWalletBalances() {

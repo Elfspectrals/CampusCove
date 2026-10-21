@@ -1,5 +1,5 @@
 import { ref } from 'vue'
-import { isAdminUser, type User } from '../api/auth'
+import { isAdminUser, type User } from '../api/session'
 
 const STORAGE_KEY = 'campus_cove_admin_mode'
 const adminMode = ref<boolean>(localStorage.getItem(STORAGE_KEY) === '1')

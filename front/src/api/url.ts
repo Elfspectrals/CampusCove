@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_URL || '/api'
+import { API_BASE } from './http'
 
 function parseApiBaseUrl(): URL | null {
   try {

@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { getStoredAuth, isAdminUser, validateStoredAuth } from '../api/auth'
+import { validateStoredAuth } from '../api/auth'
+import { getStoredAuth, isAdminUser } from '../api/session'
 import AdminInventoriesView from '../views/admin/AdminInventoriesView.vue'
 import AdminShopView from '../views/admin/AdminShopView.vue'
 import AdminUsersView from '../views/admin/AdminUsersView.vue'

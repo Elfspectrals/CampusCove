@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
 import { RouterLink } from 'vue-router'
-import { getStoredAuth } from '../api/auth'
+import { getStoredAuth } from '../api/session'
 import * as itemShopApi from '../api/itemShop'
 import type { ShopCurrency, ShopItem, ShopItemCurrencyOption } from '../api/itemShop'
 import UiIcon from '../components/ui/UiIcon.vue'

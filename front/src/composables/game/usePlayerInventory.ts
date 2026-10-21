@@ -10,41 +10,18 @@ import {
 } from 'vue'
 import type { Room } from '@colyseus/sdk'
 import * as THREE from 'three'
-import { getStoredAuth } from '../../api/auth'
 import {
   fetchInventoryLayout,
   saveInventoryLayout,
   defaultPlayerInventoryLayout,
 } from '../../api/playerInventoryLayout'
-import { normalizeApiAssetUrl } from '../../api/url'
+import { fetchApartmentAssets } from '../../api/apartments'
 import type { ApartmentInventoryItem } from '../../types/gameRealtime'
 import type { ApartmentPlacementItemDef } from './useApartmentPlacement'
 
 const SLOT_COUNT = 36
 const HOTBAR_SLOTS = 9
 const DEBOUNCE_MS = 500
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null
-}
-
-function parseOwnedItem(raw: unknown): ApartmentInventoryItem | null {
-  if (!isRecord(raw)) return null
-  if (typeof raw.item_def_id !== 'number') return null
-  if (typeof raw.code !== 'string') return null
-  if (typeof raw.name !== 'string') return null
-  if (typeof raw.kind !== 'string') return null
-  if (typeof raw.quantity !== 'number') return null
-  return {
-    item_def_id: raw.item_def_id,
-    code: raw.code,
-    name: raw.name,
-    kind: raw.kind,
-    quantity: raw.quantity,
-    preview_image: normalizeApiAssetUrl(typeof raw.preview_image === 'string' ? raw.preview_image : null),
-    model_glb: normalizeApiAssetUrl(typeof raw.model_glb === 'string' ? raw.model_glb : null),
-  }
-}
 
 export interface UsePlayerInventoryDeps {
   gameRoomRef: ShallowRef<Room | null>
@@ -210,33 +187,6 @@ export function usePlayerInventory(deps: UsePlayerInventoryDeps): UsePlayerInven
     scheduleDebouncedSave()
   }
 
-  async function fetchApartmentAssetsHttp(): Promise<ApartmentInventoryItem[]> {
-    const auth = getStoredAuth()
-    if (!auth?.token) return []
-    const API_BASE = import.meta.env.VITE_API_URL || '/api'
-    const res = await fetch(`${API_BASE}/apartments/assets`, {
-      headers: {
-        Accept: 'application/json',
-        Authorization: `Bearer ${auth.token}`,
-      },
-    })
-    const data: unknown = await res.json().catch(() => ({}))
-    if (!res.ok) {
-      throw new Error(
-        typeof (data as Record<string, unknown>).message === 'string'
-          ? String((data as Record<string, unknown>).message)
-          : 'Could not load owned items.',
-      )
-    }
-    if (!isRecord(data) || !Array.isArray(data.items)) return []
-    const parsed: ApartmentInventoryItem[] = []
-    for (const row of data.items) {
-      const item = parseOwnedItem(row)
-      if (item) parsed.push(item)
-    }
-    return parsed
-  }
-
   function refreshOwnedItems(): void {
     inventoryError.value = null
     if (deps.gameRoomRef.value && deps.currentRoomLabel.value === 'apartment') {
@@ -245,7 +195,7 @@ export function usePlayerInventory(deps: UsePlayerInventoryDeps): UsePlayerInven
       return
     }
     inventoryLoading.value = true
-    void fetchApartmentAssetsHttp()
+    void fetchApartmentAssets()
       .then((items) => {
         applyServerInventoryPayload(items)
       })

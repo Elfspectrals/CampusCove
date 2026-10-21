@@ -1,13 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_URL || '/api'
-
-function getAuthHeaders(): HeadersInit {
-  const raw = localStorage.getItem('campus_cove_auth')
-  const auth = raw ? (JSON.parse(raw) as { token: string }) : null
-  return {
-    Accept: 'application/json',
-    ...(auth?.token ? { Authorization: `Bearer ${auth.token}` } : {}),
-  }
-}
+import { apiRequest } from './http'
 
 interface RefereeProgress {
   account_age_ok: boolean
@@ -32,7 +23,5 @@ export interface ReferralSummary {
 }
 
 export async function getReferrals(): Promise<ReferralSummary> {
-  const res = await fetch(`${API_BASE}/referrals`, { headers: getAuthHeaders() })
-  if (!res.ok) throw new Error('Failed to load referrals')
-  return res.json()
+  return (await apiRequest('/referrals', { errorMessage: 'Failed to load referrals' })) as ReferralSummary
 }

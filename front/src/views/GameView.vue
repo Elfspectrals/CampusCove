@@ -9,7 +9,7 @@ import {
   fetchCharacterCosmetics,
   type CharacterCosmeticsState,
 } from '../api/characterCosmetics'
-import { getStoredAuth, clearAuth } from '../api/auth'
+import { getStoredAuth, clearAuth } from '../api/session'
 import { buyHousingUnit, fetchHousingUnits, rentHousingUnit, renewHousingUnit } from '../api/housing'
 import { buildFirstPersonHands, disposeObject3D } from '../avatar/compositeAvatar'
 import { matchesRotateCCW, matchesRotateCW } from '../config/keybindings'

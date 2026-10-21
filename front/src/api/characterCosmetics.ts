@@ -1,9 +1,7 @@
 /**
  * Character cosmetic loadout (Laravel `GET/PUT /api/character/cosmetics`, `auth:sanctum`).
  */
-import { formatApiError, getStoredAuth } from './auth'
-
-const API_BASE = import.meta.env.VITE_API_URL || '/api'
+import { apiRequest, isRecord } from './http'
 
 export type CosmeticSlot = 'body' | 'hair' | 'top' | 'bottom' | 'shoes' | 'head_accessory'
 
@@ -53,19 +51,6 @@ export function emptyCosmeticLoadout(): CosmeticLoadout {
 
 export function defaultCosmeticColors(): CosmeticColors {
   return { ...DEFAULT_SLOT_COLORS }
-}
-
-function authJsonHeaders(): HeadersInit {
-  const auth = getStoredAuth()
-  return {
-    Accept: 'application/json',
-    'Content-Type': 'application/json',
-    ...(auth?.token ? { Authorization: `Bearer ${auth.token}` } : {}),
-  }
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null
 }
 
 function normalizeCosmeticSlot(slot: unknown): string | null {
@@ -134,12 +119,7 @@ export function bodyModelGlbFromLoadout(slots: CosmeticLoadout): string | null {
 }
 
 export async function fetchCharacterCosmetics(): Promise<CharacterCosmeticsState> {
-  const res = await fetch(`${API_BASE}/character/cosmetics`, {
-    headers: authJsonHeaders(),
-    cache: 'no-store',
-  })
-  const data: unknown = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(formatApiError(data))
+  const data = await apiRequest('/character/cosmetics')
   return parseCharacterCosmeticsPayload(data)
 }
 
@@ -152,12 +132,6 @@ export async function putCharacterCosmetics(payload: PutCharacterCosmeticsPayloa
   const body: Record<string, unknown> = {}
   if (payload.slots !== undefined) body.slots = payload.slots
   if (payload.colors !== undefined) body.colors = payload.colors
-  const res = await fetch(`${API_BASE}/character/cosmetics`, {
-    method: 'PUT',
-    headers: authJsonHeaders(),
-    body: JSON.stringify(body),
-  })
-  const data: unknown = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(formatApiError(data))
+  const data = await apiRequest('/character/cosmetics', { method: 'PUT', body })
   return parseCharacterCosmeticsPayload(data)
 }

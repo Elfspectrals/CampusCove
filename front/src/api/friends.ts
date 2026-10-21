@@ -1,14 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_URL || '/api'
-
-function getAuthHeaders(): HeadersInit {
-  const raw = localStorage.getItem('campus_cove_auth')
-  const auth = raw ? (JSON.parse(raw) as { token: string }) : null
-  return {
-    Accept: 'application/json',
-    'Content-Type': 'application/json',
-    ...(auth?.token ? { Authorization: `Bearer ${auth.token}` } : {}),
-  }
-}
+import { apiRequest } from './http'
 
 export interface Friend {
   account_id: number
@@ -24,55 +14,43 @@ export interface PendingFriend {
   incoming: boolean
 }
 
+type MessageResponse = { message: string }
+
 export async function getFriends(): Promise<{ friends: Friend[] }> {
-  const res = await fetch(`${API_BASE}/friends`, { headers: getAuthHeaders() })
-  if (!res.ok) throw new Error('Failed to load friends')
-  return res.json()
+  return (await apiRequest('/friends', { errorMessage: 'Failed to load friends' })) as { friends: Friend[] }
 }
 
 export async function getPending(): Promise<{ pending: PendingFriend[] }> {
-  const res = await fetch(`${API_BASE}/friends/pending`, { headers: getAuthHeaders() })
-  if (!res.ok) throw new Error('Failed to load pending')
-  return res.json()
-}
-
-export async function sendRequest(username: string, tag: number): Promise<{ message: string }> {
-  const res = await fetch(`${API_BASE}/friends/request`, {
-    method: 'POST',
-    headers: getAuthHeaders(),
-    body: JSON.stringify({ username, tag }),
-  })
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}))
-    const msg = data.errors?.username?.[0] ?? data.errors?.tag?.[0] ?? data.message ?? 'Failed to send request'
-    throw new Error(msg)
+  return (await apiRequest('/friends/pending', { errorMessage: 'Failed to load pending' })) as {
+    pending: PendingFriend[]
   }
-  return res.json()
 }
 
-export async function acceptRequest(accountId: number): Promise<{ message: string }> {
-  const res = await fetch(`${API_BASE}/friends/accept/${accountId}`, {
+export async function sendRequest(username: string, tag: number): Promise<MessageResponse> {
+  return (await apiRequest('/friends/request', {
     method: 'POST',
-    headers: getAuthHeaders(),
-  })
-  if (!res.ok) throw new Error('Failed to accept')
-  return res.json()
+    body: { username, tag },
+    errorMessage: 'Failed to send request',
+  })) as MessageResponse
 }
 
-export async function blockUser(accountId: number): Promise<{ message: string }> {
-  const res = await fetch(`${API_BASE}/friends/block/${accountId}`, {
+export async function acceptRequest(accountId: number): Promise<MessageResponse> {
+  return (await apiRequest(`/friends/accept/${accountId}`, {
     method: 'POST',
-    headers: getAuthHeaders(),
-  })
-  if (!res.ok) throw new Error('Failed to block')
-  return res.json()
+    errorMessage: 'Failed to accept',
+  })) as MessageResponse
 }
 
-export async function removeFriend(accountId: number): Promise<{ message: string }> {
-  const res = await fetch(`${API_BASE}/friends/${accountId}`, {
+export async function blockUser(accountId: number): Promise<MessageResponse> {
+  return (await apiRequest(`/friends/block/${accountId}`, {
+    method: 'POST',
+    errorMessage: 'Failed to block',
+  })) as MessageResponse
+}
+
+export async function removeFriend(accountId: number): Promise<MessageResponse> {
+  return (await apiRequest(`/friends/${accountId}`, {
     method: 'DELETE',
-    headers: getAuthHeaders(),
-  })
-  if (!res.ok) throw new Error('Failed to remove')
-  return res.json()
+    errorMessage: 'Failed to remove',
+  })) as MessageResponse
 }

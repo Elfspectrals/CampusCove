@@ -11,7 +11,8 @@ import {
   type CharacterCosmeticsState,
   type CosmeticColors,
 } from '../../api/characterCosmetics'
-import { getStoredAuth } from '../../api/auth'
+import { parseHousingUnitList } from '../../api/housing'
+import { getStoredAuth } from '../../api/session'
 import { createTintedCharacterFromUrl, updateAvatarAnimation } from '../../avatar/glbCharacter'
 import { buildCompositeAvatar, disposeObject3D } from '../../avatar/compositeAvatar'
 import { APARTMENT_SPAWN, EYE_HEIGHT } from '../../game/gameRoomConstants'
@@ -179,53 +180,9 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     return zone === 'apartment' && ownerMatch
   }
 
-  function parseHousingUnitsFromMessage(raw: unknown): HousingUnitPayload[] | null {
-    if (!Array.isArray(raw)) return null
-    const out: HousingUnitPayload[] = []
-    for (const row of raw) {
-      if (typeof row !== 'object' || row === null) continue
-      const rec = row as Record<string, unknown>
-      if (typeof rec.unit_id !== 'number') continue
-      if (typeof rec.public_id !== 'string') continue
-      if (typeof rec.offer_type !== 'string') continue
-      if (typeof rec.price_coins !== 'number') continue
-      if (typeof rec.rent_duration_hours !== 'number') continue
-      if (typeof rec.pos_x !== 'number') continue
-      if (typeof rec.pos_y !== 'number') continue
-      if (typeof rec.pos_z !== 'number') continue
-      if (typeof rec.size !== 'number') continue
-      if (typeof rec.base_color_hex !== 'string') continue
-      if (!(rec.model_key === undefined || rec.model_key === null || typeof rec.model_key === 'string')) continue
-      if (typeof rec.status !== 'string') continue
-      if (!(rec.occupant_account_id === null || typeof rec.occupant_account_id === 'number')) continue
-      if (!(rec.lease_expires_at === null || typeof rec.lease_expires_at === 'string')) continue
-      if (!(rec.room_public_id === null || typeof rec.room_public_id === 'string')) continue
-      if (typeof rec.template_key !== 'string') continue
-      out.push({
-        unit_id: rec.unit_id,
-        public_id: rec.public_id,
-        offer_type: rec.offer_type,
-        price_coins: rec.price_coins,
-        rent_duration_hours: rec.rent_duration_hours,
-        pos_x: rec.pos_x,
-        pos_y: rec.pos_y,
-        pos_z: rec.pos_z,
-        size: rec.size,
-        base_color_hex: rec.base_color_hex,
-        model_key: typeof rec.model_key === 'string' ? rec.model_key : null,
-        status: rec.status,
-        occupant_account_id: rec.occupant_account_id,
-        lease_expires_at: rec.lease_expires_at,
-        room_public_id: rec.room_public_id,
-        template_key: rec.template_key,
-      })
-    }
-    return out
-  }
-
   function syncHousingUnits(raw: unknown): void {
-    const units = parseHousingUnitsFromMessage(raw)
-    if (units === null) return
+    if (!Array.isArray(raw)) return
+    const units = parseHousingUnitList(raw)
     deps.onHousingUnitsSync?.(units)
   }
 

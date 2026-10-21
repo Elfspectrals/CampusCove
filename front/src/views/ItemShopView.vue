@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
-import { getStoredAuth } from '../api/auth'
+import { getStoredAuth } from '../api/session'
 import { useWalletBalances } from '../composables/useWalletBalances'
 import LockerCharacterPreview from '../components/locker/LockerCharacterPreview.vue'
 import ItemShopPurchaseConfirmModal from '../components/shop/ItemShopPurchaseConfirmModal.vue'

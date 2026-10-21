@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import * as authApi from '../../api/auth'
+import { storeAuth } from '../../api/session'
 import UiAuthCard from '../../components/ui/UiAuthCard.vue'
 import UiIcon from '../../components/ui/UiIcon.vue'
 
@@ -16,7 +17,7 @@ async function submit() {
   loading.value = true
   try {
     const res = await authApi.login(email.value, password.value)
-    authApi.storeAuth(res.user, res.token)
+    storeAuth(res.user, res.token)
     router.push({ name: 'home' })
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Something went wrong'

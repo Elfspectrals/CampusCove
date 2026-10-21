@@ -1,6 +1,4 @@
-import { formatApiError, getStoredAuth } from './auth'
-
-const API_BASE = import.meta.env.VITE_API_URL || '/api'
+import { apiRequest, isRecord } from './http'
 
 export interface AdminUserRow {
   account_id: number
@@ -29,19 +27,6 @@ export interface AdminUserCreateBody {
   email: string
   password: string
   is_admin?: boolean
-}
-
-function authJsonHeaders(): HeadersInit {
-  const auth = getStoredAuth()
-  return {
-    Accept: 'application/json',
-    'Content-Type': 'application/json',
-    ...(auth?.token ? { Authorization: `Bearer ${auth.token}` } : {}),
-  }
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null
 }
 
 function parseUser(row: unknown): AdminUserRow | null {
@@ -89,119 +74,58 @@ function parseSingleUserPayload(data: unknown): AdminUserRow {
   return user
 }
 
-function buildListQuery(params: AdminUsersListParams): string {
-  const query = new URLSearchParams()
-  if (params.q && params.q.trim() !== '') query.set('q', params.q.trim())
-  if (params.with_deleted === true) query.set('with_deleted', '1')
-  const stringified = query.toString()
-  return stringified === '' ? '' : `?${stringified}`
-}
-
 export async function fetchAdminUsers(params: AdminUsersListParams = {}): Promise<{ users: AdminUserRow[] }> {
-  const res = await fetch(`${API_BASE}/admin/users${buildListQuery(params)}`, {
-    headers: authJsonHeaders(),
+  const data = await apiRequest('/admin/users', {
+    query: { q: params.q?.trim(), with_deleted: params.with_deleted === true ? true : undefined },
   })
-  const data: unknown = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(formatApiError(data))
   return parseUserListPayload(data)
 }
 
 export async function updateAdminUser(accountId: number, body: AdminUserUpdateBody): Promise<AdminUserRow> {
-  const res = await fetch(`${API_BASE}/admin/users/${accountId}`, {
-    method: 'PATCH',
-    headers: authJsonHeaders(),
-    body: JSON.stringify(body),
-  })
-  const data: unknown = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(formatApiError(data))
+  const data = await apiRequest(`/admin/users/${accountId}`, { method: 'PATCH', body })
   return parseSingleUserPayload(data)
 }
 
 export async function createAdminUser(body: AdminUserCreateBody): Promise<AdminUserRow> {
-  const res = await fetch(`${API_BASE}/admin/users`, {
-    method: 'POST',
-    headers: authJsonHeaders(),
-    body: JSON.stringify(body),
-  })
-  const data: unknown = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(formatApiError(data))
+  const data = await apiRequest('/admin/users', { method: 'POST', body })
   return parseSingleUserPayload(data)
 }
 
 export async function resetAdminUserPassword(accountId: number, password: string): Promise<void> {
-  const res = await fetch(`${API_BASE}/admin/users/${accountId}/reset-password`, {
-    method: 'POST',
-    headers: authJsonHeaders(),
-    body: JSON.stringify({ password, password_confirmation: password }),
-  })
-  if (res.ok) return
-  const data: unknown = await res.json().catch(() => ({}))
-  throw new Error(formatApiError(data))
+  await apiRequest(`/admin/users/${accountId}/reset-password`, { method: 'POST', body: { password, password_confirmation: password } })
 }
 
 export async function suspendAdminUser(accountId: number, until: string, reason?: string): Promise<void> {
-  const res = await fetch(`${API_BASE}/admin/users/${accountId}/suspend`, {
+  await apiRequest(`/admin/users/${accountId}/suspend`, {
     method: 'POST',
-    headers: authJsonHeaders(),
-    body: JSON.stringify({
+    body: {
       until,
       ...(reason && reason.trim() !== '' ? { reason: reason.trim() } : {}),
-    }),
+    },
   })
-  if (res.ok) return
-  const data: unknown = await res.json().catch(() => ({}))
-  throw new Error(formatApiError(data))
 }
 
 export async function unsuspendAdminUser(accountId: number): Promise<void> {
-  const res = await fetch(`${API_BASE}/admin/users/${accountId}/unsuspend`, {
-    method: 'POST',
-    headers: authJsonHeaders(),
-  })
-  if (res.ok) return
-  const data: unknown = await res.json().catch(() => ({}))
-  throw new Error(formatApiError(data))
+  await apiRequest(`/admin/users/${accountId}/unsuspend`, { method: 'POST' })
 }
 
 export async function softDeleteAdminUser(accountId: number): Promise<void> {
-  const res = await fetch(`${API_BASE}/admin/users/${accountId}`, {
-    method: 'DELETE',
-    headers: authJsonHeaders(),
-  })
-  if (res.ok) return
-  const data: unknown = await res.json().catch(() => ({}))
-  throw new Error(formatApiError(data))
+  await apiRequest(`/admin/users/${accountId}`, { method: 'DELETE' })
 }
 
 export async function restoreAdminUser(accountId: number): Promise<void> {
-  const res = await fetch(`${API_BASE}/admin/users/${accountId}/restore`, {
-    method: 'POST',
-    headers: authJsonHeaders(),
-  })
-  if (res.ok) return
-  const data: unknown = await res.json().catch(() => ({}))
-  throw new Error(formatApiError(data))
+  await apiRequest(`/admin/users/${accountId}/restore`, { method: 'POST' })
 }
 
 export async function banAdminUser(accountId: number, reason?: string): Promise<void> {
-  const res = await fetch(`${API_BASE}/admin/users/${accountId}/ban`, {
+  await apiRequest(`/admin/users/${accountId}/ban`, {
     method: 'POST',
-    headers: authJsonHeaders(),
-    body: JSON.stringify({
+    body: {
       ...(reason && reason.trim() !== '' ? { reason: reason.trim() } : {}),
-    }),
+    },
   })
-  if (res.ok) return
-  const data: unknown = await res.json().catch(() => ({}))
-  throw new Error(formatApiError(data))
 }
 
 export async function unbanAdminUser(accountId: number): Promise<void> {
-  const res = await fetch(`${API_BASE}/admin/users/${accountId}/unban`, {
-    method: 'POST',
-    headers: authJsonHeaders(),
-  })
-  if (res.ok) return
-  const data: unknown = await res.json().catch(() => ({}))
-  throw new Error(formatApiError(data))
+  await apiRequest(`/admin/users/${accountId}/unban`, { method: 'POST' })
 }
