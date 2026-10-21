@@ -356,12 +356,5 @@ export async function restoreAdminShopItem(shopCatalogItemId: number): Promise<A
 }
 
 export async function bulkAdminShopAction(body: AdminShopBulkActionBody): Promise<void> {
-  await apiRequest('/admin/shop/items/bulk', {
-    method: 'POST',
-    body: {
-      action: body.action,
-      ids: body.ids,
-      shop_catalog_item_ids: body.ids,
-    },
-  })
+  await apiRequest('/admin/shop/items/bulk', { method: 'POST', body: { action: body.action, ids: body.ids } })
 }

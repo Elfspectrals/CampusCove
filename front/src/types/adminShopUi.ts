@@ -67,3 +67,49 @@ export function newShopFormState(skinSection = true): ShopFormState {
     modelGlbFile: null,
   }
 }
+
+function parsePositiveInt(value: number | null): number | null {
+  return value !== null && Number.isInteger(value) && value >= 1 ? value : null
+}
+
+/** Client-side checks before create / update; returns the error to show, or null. */
+export function validateShopForm(form: ShopFormState, skinSection: boolean): string | null {
+  if (form.code.trim() === '') return 'Code is required'
+  if (form.name.trim() === '') return 'Name is required'
+  if (skinSection && form.cosmetic_slot === null) return 'Cosmetic slot is required for skins'
+  if (!skinSection && form.kind === 'cosmetic') return 'Cosmetic items must be created in Admin Shop Skins'
+  const coins = parsePositiveInt(form.coins_price)
+  const premium = parsePositiveInt(form.premium_price)
+  if (coins === null && premium === null) return 'At least one currency price is required'
+  if (form.coins_price !== null && coins === null) return 'Coins price must be a positive integer'
+  if (form.premium_price !== null && premium === null) return 'Premium price must be a positive integer'
+  return null
+}
+
+/** Fields shared by the create and update requests (uploaded files are added by the caller). */
+export function shopFormToBody(form: ShopFormState, skinSection: boolean) {
+  const prices: Partial<Record<'coins' | 'premium', number>> = {}
+  const coins = parsePositiveInt(form.coins_price)
+  const premium = parsePositiveInt(form.premium_price)
+  if (coins !== null) prices.coins = coins
+  if (premium !== null) prices.premium = premium
+  return {
+    code: form.code.trim(),
+    name: form.name.trim(),
+    kind: skinSection ? 'cosmetic' : form.kind,
+    rarity: form.rarity,
+    tradable: form.tradable,
+    premium_only: form.premium_only,
+    bind: form.bind,
+    max_stack: form.max_stack,
+    cosmetic_slot: skinSection ? form.cosmetic_slot : null,
+    preview_image: form.preview_image.trim() || null,
+    model_glb: form.model_glb.trim() || null,
+    prices,
+    is_active: form.is_active,
+    is_published: form.is_published,
+    is_unique_per_account: form.is_unique_per_account,
+    stock_remaining: form.stock_remaining,
+    sort_order: form.sort_order,
+  }
+}

@@ -12,7 +12,6 @@ import {
   restoreAdminShopItem,
   updateAdminShopItem,
   type AdminShopCatalogRow,
-  type AdminShopItemCreateBody,
   type AdminShopItemUpdateBody,
   type AdminShopListMeta,
   type AdminShopListParams,
@@ -28,6 +27,8 @@ import {
   type ShopFormState,
   RARITY_PRESET_OPTIONS,
   newShopFormState,
+  shopFormToBody,
+  validateShopForm,
 } from '../../types/adminShopUi'
 
 const rows = ref<AdminShopCatalogRow[]>([])
@@ -189,98 +190,24 @@ function onGlbFileChange(event: Event): void {
   formState.value.modelGlbFile = target.files?.[0] ?? null
 }
 
-function parsePositiveInt(value: number | null): number | null {
-  if (value === null) return null
-  if (!Number.isInteger(value) || value < 1) return null
-  return value
-}
-
 async function submitForm(): Promise<void> {
   formError.value = null
   const form = formState.value
-  if (form.code.trim() === '') {
-    formError.value = 'Code is required'
+  if (isSkinSection.value) form.kind = 'cosmetic'
+  const invalid = validateShopForm(form, isSkinSection.value)
+  if (invalid) {
+    formError.value = invalid
     return
   }
-  if (form.name.trim() === '') {
-    formError.value = 'Name is required'
-    return
-  }
-  if (isSkinSection.value) {
-    form.kind = 'cosmetic'
-    if (form.cosmetic_slot === null) {
-      formError.value = 'Cosmetic slot is required for skins'
-      return
-    }
-  } else if (form.kind === 'cosmetic') {
-    formError.value = 'Cosmetic items must be created in Admin Shop Skins'
-    return
-  }
-  const coinsPrice = parsePositiveInt(form.coins_price)
-  const premiumPrice = parsePositiveInt(form.premium_price)
-  if (coinsPrice === null && premiumPrice === null) {
-    formError.value = 'At least one currency price is required'
-    return
-  }
-  if (form.coins_price !== null && coinsPrice === null) {
-    formError.value = 'Coins price must be a positive integer'
-    return
-  }
-  if (form.premium_price !== null && premiumPrice === null) {
-    formError.value = 'Premium price must be a positive integer'
-    return
-  }
-
-  const prices: Partial<Record<ShopCurrency, number>> = {}
-  if (coinsPrice !== null) prices.coins = coinsPrice
-  if (premiumPrice !== null) prices.premium = premiumPrice
+  const body = shopFormToBody(form, isSkinSection.value)
 
   formSubmitting.value = true
   try {
     if (editingId.value === null) {
-      const createBody: AdminShopItemCreateBody = {
-        code: form.code.trim(),
-        name: form.name.trim(),
-        kind: isSkinSection.value ? 'cosmetic' : form.kind,
-        rarity: form.rarity,
-        tradable: form.tradable,
-        premium_only: form.premium_only,
-        bind: form.bind,
-        max_stack: form.max_stack,
-        cosmetic_slot: isSkinSection.value ? form.cosmetic_slot : null,
-        preview_image: form.preview_image.trim() || null,
-        model_glb: form.model_glb.trim() || null,
-        prices,
-        previewImageFile: form.previewImageFile,
-        modelGlbFile: form.modelGlbFile,
-        is_active: form.is_active,
-        is_published: form.is_published,
-        is_unique_per_account: form.is_unique_per_account,
-        stock_remaining: form.stock_remaining,
-        sort_order: form.sort_order,
-      }
-      await createAdminShopItem(createBody)
+      await createAdminShopItem({ ...body, previewImageFile: form.previewImageFile, modelGlbFile: form.modelGlbFile })
       pageMessage.value = { kind: 'success', text: isSkinSection.value ? 'Skin created.' : 'Item created.' }
     } else {
-      const updateBody: AdminShopItemUpdateBody = {
-        code: form.code.trim(),
-        name: form.name.trim(),
-        kind: isSkinSection.value ? 'cosmetic' : form.kind,
-        rarity: form.rarity,
-        tradable: form.tradable,
-        premium_only: form.premium_only,
-        bind: form.bind,
-        max_stack: form.max_stack,
-        cosmetic_slot: isSkinSection.value ? form.cosmetic_slot : null,
-        preview_image: form.preview_image.trim() || null,
-        model_glb: form.model_glb.trim() || null,
-        prices,
-        is_active: form.is_active,
-        is_published: form.is_published,
-        is_unique_per_account: form.is_unique_per_account,
-        stock_remaining: form.stock_remaining,
-        sort_order: form.sort_order,
-      }
+      const updateBody: AdminShopItemUpdateBody = { ...body }
       if (form.previewImageFile) updateBody.previewImageFile = form.previewImageFile
       if (form.modelGlbFile) updateBody.modelGlbFile = form.modelGlbFile
       await updateAdminShopItem(editingId.value, updateBody)
@@ -348,29 +275,12 @@ async function restoreRow(row: AdminShopCatalogRow): Promise<void> {
   }
 }
 
-async function fallbackBulkAction(action: BulkAction, ids: number[]): Promise<void> {
-  for (const id of ids) {
-    const row = rows.value.find((entry) => entry.shop_catalog_item_id === id)
-    if (!row) continue
-    if (action === 'publish') await updateAdminShopItem(id, { is_published: true })
-    if (action === 'unpublish') await updateAdminShopItem(id, { is_published: false })
-    if (action === 'activate') await updateAdminShopItem(id, { is_active: true })
-    if (action === 'deactivate') await updateAdminShopItem(id, { is_active: false })
-    if (action === 'soft_delete') await deleteAdminShopItem(id)
-    if (action === 'restore') await restoreAdminShopItem(id)
-  }
-}
-
 async function runBulkAction(action: BulkAction): Promise<void> {
   const ids = [...selectedIds.value]
   if (ids.length === 0) return
   bulkLoading.value = true
   try {
-    try {
-      await bulkAdminShopAction({ action, ids })
-    } catch {
-      await fallbackBulkAction(action, ids)
-    }
+    await bulkAdminShopAction({ action, ids })
     selectedIds.value = []
     pageMessage.value = { kind: 'success', text: `Bulk action "${action}" applied to ${ids.length} ${isSkinSection.value ? 'skin(s)' : 'item(s)'}.` }
     await loadRows()
