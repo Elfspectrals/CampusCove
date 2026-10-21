@@ -258,3 +258,31 @@ node scripts/apply-pond.mjs       # ouvre la haie au nord, retire les 2 arbres d
 `apply-pond.mjs` est idempotent et indépendant d'`apply-work-district.mjs` : chacun ne touche que ses propres boîtes (`COL_Pond_*` / `COL_Work_*`) et sa propre limite (`minZ` / `maxZ`).
 
 Pour déplacer un élément, modifier les constantes en tête de `build_pond.py` (`CZ`, `RX`, `HILLS`, `GAZEBO_C`, `KIOSK`…) puis relancer les trois étapes. Les arbres sont replacés automatiquement autour.
+
+## 10. Objets de pêche (poissons et cannes)
+
+Items tenus ou collectés, pas des décors : un GLB par objet, sans collision ni layout. Script : `map-src/CampusCove/build_fishing_items.py` (Blender via MCP, lancé avec `{"__file__": p}` comme `build_pond.py`).
+
+### Style
+
+Même base que le reste (§1) : low-poly à facettes, textures procédurales 64 px, base color + roughness uniquement. Préfixe de matériaux **`IT_`** (`IT_Fish_<clé>_Body`, `IT_Rod_Gold`…). La rareté se lit à la couleur et à l'éclat, pas à la complexité du maillage :
+
+| Rareté | Poissons / cannes | Traitement |
+|---|---|---|
+| Commune | gardon (`roach`), perche (`perch`) / canne en bois (`wood`) | Couleurs naturelles douces, rugosité 0.55–0.8, pas d'émission |
+| Rare | truite (`trout`), carpe koï (`koi`) / canne dorée (`gold`) | Motifs plus marqués (damier), nageoires roses, rugosité 0.25–0.5 ; canne en or `#e8bd3c`, rugosité 0.3, gemme rouge |
+| Légendaire / premium | arowana doré (`golden_arowana`) / canne premium (`premium`) | Or `#f0b82e` + émission orange sur le poisson ; carbone sombre `#23262e` avec bandes néon cyan/violet émissives sur la canne |
+
+### Budgets et conventions
+
+- Poisson : ~350 triangles, 8 à 10 matériaux max, longueur réelle en mètres (gardon 0,30 m → arowana 0,80 m). Couché sur le ventre, **museau vers +X**, origine centre-bas.
+- Canne : ~500 triangles, debout sur sa crosse (`z` de 0 à 2,2–2,4 m), pointe courbée vers +X, moulinet côté +Y, origine centre-bas (la crosse). Le point de prise en main est à ~0,25 m de l'origine.
+- Vérification `min(y) ∈ [0, 0.03]` avant export (le script lève une erreur sinon).
+- Sortie : `out/items/<fish|rods>/<clé>/{model.glb,preview.png}` puis `npm run assets:optimize -- items` → `front/public/assets/items/<fish|rods>/<clé>/` (GLB Draco, textures WebP 512, preview.png copié).
+- `preview.png` : rendu Blender 512 px, fond transparent, caméra orthographique 3/4 (la canne est inclinée de ~35°). Les cartes d'inventaire/collection sont dessinées dans Figma à partir de ces previews.
+- Ajouter l'entrée correspondante dans `front/src/game/assets/catalog.ts` quand la logique de pêche sera codée (rien n'est branché pour l'instant).
+
+### Rareté et pièces légendaires
+
+- Enum côté front : `Rarity` dans `front/src/game/rarity.ts` (`Common`, `Uncommon`, `Rare`, `Epic`, `Legendary`) avec `RARITY_META` (libellé, couleur, lueur). Les couleurs reprennent les variables `--cc-r-*` de `style.css` ; le showroom `/NewNation` colore l'étiquette 3D, l'anneau au sol, le badge et la bordure du panneau selon ce tier.
+- **Les pièces légendaires font exception au budget de triangles** (arowana ~4 600, canne premium ~2 400) : le but est l'effet « WHOAH ». Elles cumulent matériaux émissifs forts (`emit_strength` dans `make_mat`), anneaux de halo au sol, rayons de lumière et étincelles flottantes. Le `preview.png` des légendaires est rendu en EEVEE (lumière réelle) au lieu de Workbench.

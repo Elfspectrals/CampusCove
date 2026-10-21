@@ -10,16 +10,20 @@ import UiLogo from '../components/ui/UiLogo.vue'
 import NewNationMinimap from '../components/newNation/NewNationMinimap.vue'
 import ItemShopPurchaseConfirmModal from '../components/shop/ItemShopPurchaseConfirmModal.vue'
 import { useWalletBalances } from '../composables/useWalletBalances'
+import { FISHING_PREVIEW_FILTER, FISHING_PREVIEW_ITEMS, isPreviewOnlyItem, previewItemRarity } from '../game/fishingPreviewItems'
+import { RARITY_META, Rarity } from '../game/rarity'
 import { NewNationShowroom } from '../game/newNationShowroom'
 import type { ShowroomApartment, ShowroomGroup, ShowroomItem } from '../game/newNationShowroom'
-import { currencyLabel, priceBadge } from '../utils/itemShopPresentation'
+import { currencyLabel, itemRarity, priceBadge, rarityClass } from '../utils/itemShopPresentation'
 
-type Filter = 'all' | ShowroomGroup
+type Filter = 'all' | ShowroomGroup | typeof FISHING_PREVIEW_FILTER
 
 const containerRef = ref<HTMLElement | null>(null)
 const showroom = shallowRef<NewNationShowroom | null>(null)
 
-const items = ref<ShopItem[]>([])
+const shopItems = ref<ShopItem[]>([])
+/** This whole page is admin-only (router guard), so the unreleased fishing previews are always included. */
+const items = computed<ShopItem[]>(() => [...shopItems.value, ...FISHING_PREVIEW_ITEMS])
 const mapLoading = ref(true)
 const catalogLoading = ref(true)
 /** Map failed to load (blocking). */
@@ -51,7 +55,11 @@ function itemGroup(item: ShopItem): ShowroomGroup {
 }
 
 const visibleItems = computed<ShopItem[]>(() =>
-  filter.value === 'all' ? items.value : items.value.filter((item) => itemGroup(item) === filter.value),
+  filter.value === 'all'
+    ? items.value
+    : filter.value === FISHING_PREVIEW_FILTER
+      ? items.value.filter(isPreviewOnlyItem)
+      : items.value.filter((item) => !isPreviewOnlyItem(item) && itemGroup(item) === filter.value),
 )
 
 const selectedItem = computed<ShopItem | null>(
@@ -64,8 +72,9 @@ const hoveredItem = computed<ShopItem | null>(
 
 const counts = computed(() => ({
   all: items.value.length,
-  apartment: items.value.filter((i) => itemGroup(i) === 'apartment').length,
+  apartment: items.value.filter((i) => !isPreviewOnlyItem(i) && itemGroup(i) === 'apartment').length,
   skin: items.value.filter((i) => itemGroup(i) === 'skin').length,
+  fishing: items.value.filter(isPreviewOnlyItem).length,
 }))
 
 const confirmOption = computed<ShopItemCurrencyOption | null>(() => {
@@ -85,13 +94,18 @@ const confirmAfter = computed(() => {
   return cur - confirmOption.value.price
 })
 
+function rarityOf(item: ShopItem): Rarity {
+  return previewItemRarity(item) ?? itemRarity(item)
+}
+
 function toShowroomItem(item: ShopItem): ShowroomItem {
   const first = item.options[0]
   return {
     id: item.item_def_id,
     name: item.name,
-    priceLabel: first ? priceBadge(first) : '',
+    priceLabel: first ? priceBadge(first) : isPreviewOnlyItem(item) ? 'Admin preview' : '',
     group: itemGroup(item),
+    rarity: rarityOf(item),
     modelUrl: item.model_glb,
     imageUrl: item.preview_image,
   }
@@ -179,11 +193,11 @@ async function fetchCatalog(token: number) {
   catalogError.value = null
   try {
     const res = await itemShopApi.fetchItemShopCatalog()
-    if (token === loadToken) items.value = res.items
+    if (token === loadToken) shopItems.value = res.items
   } catch (e) {
     if (token !== loadToken) return
     catalogError.value = e instanceof Error ? e.message : 'Could not load the shop'
-    items.value = []
+    shopItems.value = []
   }
 }
 
@@ -283,11 +297,12 @@ async function confirmPurchase() {
   }
 }
 
-const filterTabs: Array<{ key: Filter; label: string }> = [
+const filterTabs = computed<Array<{ key: Filter; label: string }>>(() => [
   { key: 'all', label: 'All' },
   { key: 'apartment', label: 'Apartment' },
   { key: 'skin', label: 'Skins & more' },
-]
+  { key: FISHING_PREVIEW_FILTER as Filter, label: 'Fishing' },
+])
 </script>
 
 <template>
@@ -489,8 +504,24 @@ const filterTabs: Array<{ key: Filter; label: string }> = [
       v-if="selectedItem"
       class="cc-panel-glass absolute bottom-24 right-4 w-[min(calc(100%-2rem),360px)] animate-cc-pop p-5 sm:bottom-auto sm:right-6 sm:top-6"
     >
+      <div
+        v-if="selectedItem.preview_image"
+        :class="[rarityClass(rarityOf(selectedItem)), 'cc-rarity-bg cc-rarity-border mb-4 flex h-44 items-center justify-center overflow-hidden rounded-2xl border-2']"
+      >
+        <img
+          :src="selectedItem.preview_image"
+          :alt="selectedItem.name"
+          class="h-full w-full object-contain p-2"
+          loading="lazy"
+          @error="($event.target as HTMLImageElement).style.display = 'none'"
+        />
+      </div>
       <div class="flex items-start justify-between gap-3">
         <div>
+          <span
+            :class="[rarityClass(rarityOf(selectedItem)), 'cc-rarity-text mb-1 inline-block rounded-full border px-2.5 py-0.5 text-[11px] font-extrabold uppercase tracking-widest cc-rarity-border']"
+            :style="rarityOf(selectedItem) === Rarity.Legendary ? { boxShadow: `0 0 14px ${RARITY_META[Rarity.Legendary].glow}` } : undefined"
+          >{{ RARITY_META[rarityOf(selectedItem)].label }}</span>
           <p class="cc-eyebrow m-0 text-pool">
             {{ itemGroup(selectedItem) === 'apartment' ? 'Apartment asset' : 'Skin & cosmetic' }}
           </p>
@@ -525,8 +556,9 @@ const filterTabs: Array<{ key: Filter; label: string }> = [
         {{ feedback.text }}
       </div>
 
+      <p v-if="isPreviewOnlyItem(selectedItem)" class="cc-eyebrow m-0 mt-4 text-grape">Admin preview — not for sale</p>
       <button
-        v-if="isLoggedIn"
+        v-else-if="isLoggedIn"
         type="button"
         class="cc-btn cc-btn-sun cc-btn-lg cc-btn-shine mt-4 w-full"
         :disabled="purchasingId !== null"
@@ -542,6 +574,7 @@ const filterTabs: Array<{ key: Filter; label: string }> = [
         Sign in to buy
       </RouterLink>
       <RouterLink
+        v-if="!isPreviewOnlyItem(selectedItem)"
         :to="{ name: itemGroup(selectedItem) === 'apartment' ? 'shop' : 'shop-skin' }"
         class="mt-3 block text-center text-xs font-extrabold text-pool hover:underline"
       >
@@ -570,7 +603,8 @@ const filterTabs: Array<{ key: Filter; label: string }> = [
               'rounded-xl border-2 px-3 py-2 text-left text-xs backdrop-blur transition',
               selectedId === item.item_def_id
                 ? 'border-sun bg-sun/20 shadow-[0_0_14px_rgb(var(--cc-sun)/0.4)]'
-                : 'border-white/15 bg-ink-950/75 hover:border-pool/70',
+                : 'bg-ink-950/75 hover:border-pool/70',
+              selectedId !== item.item_def_id ? rarityClass(rarityOf(item)) + ' cc-rarity-border' : '',
             ]"
             @click="selectItem(item.item_def_id)"
           >

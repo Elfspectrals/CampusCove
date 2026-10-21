@@ -112,7 +112,6 @@ const defaultNavItems = computed<NavItem[]>(() => [
   ...(isLoggedIn.value ? [{ name: 'locker', icon: 'backpack', label: 'Locker' } as NavItem] : []),
   { name: 'shop', icon: 'chair', label: 'Shop' },
   { name: 'shop-skin', icon: 'shirt', label: 'Skins' },
-  { name: 'new-nation', icon: 'globe', label: 'New Nation' },
   ...(isLoggedIn.value ? [{ name: 'friends', icon: 'users', label: 'Friends' } as NavItem] : []),
 ])
 
@@ -121,6 +120,7 @@ const adminNavItems: NavItem[] = [
   { name: 'admin-shop', icon: 'chair', label: 'Shop Items' },
   { name: 'admin-shop-skin', icon: 'shirt', label: 'Shop Skins' },
   { name: 'admin-inventories', icon: 'backpack', label: 'Inventories' },
+  { name: 'new-nation', icon: 'globe', label: 'New Nation' },
 ]
 
 const navItems = computed(() => (isAdminMode.value ? adminNavItems : defaultNavItems.value))

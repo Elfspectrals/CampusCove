@@ -1,6 +1,7 @@
 import type { ShopCurrency, ShopItem, ShopItemCurrencyOption } from '../api/itemShop'
+import { Rarity } from '../game/rarity'
 
-export type ItemRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary'
+export type ItemRarity = Rarity
 
 /** item_defs.rarity from which an item is presented as legendary (the premium rigged skins are 5). */
 const LEGENDARY_MIN_RARITY = 5
@@ -19,12 +20,12 @@ export function priceBadge(option: ShopItemCurrencyOption): string {
  */
 export function itemRarity(item: ShopItem): ItemRarity {
   // the stored rarity wins when the API provides it; otherwise fall back to how the item is sold
-  if (item.rarity !== null && item.rarity >= LEGENDARY_MIN_RARITY) return 'legendary'
+  if (item.rarity !== null && item.rarity >= LEGENDARY_MIN_RARITY) return Rarity.Legendary
   const hasPremium = item.options.some((option) => option.currency === 'premium')
   const hasCoins = item.options.some((option) => option.currency === 'coins')
-  if (hasPremium && hasCoins) return 'epic'
-  if (hasPremium) return 'rare'
-  return 'uncommon'
+  if (hasPremium && hasCoins) return Rarity.Epic
+  if (hasPremium) return Rarity.Rare
+  return Rarity.Uncommon
 }
 
 /** `cc-rarity-*` classes used by `.cc-card` / `.cc-rarity-bg` (see style.css). */
