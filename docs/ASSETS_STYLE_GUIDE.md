@@ -121,3 +121,140 @@ node scripts/apply-work-district.mjs   # ouvre la haie, retire 2 arbres de l'ave
 - Toujours utiliser `lib_common.py` : origine centre-bas, `check_grounded()` qui bloque l'export si un meuble est sous le sol, export qui n'embarque pas les autres objets de la scène Blender.
 - Un poste doit laisser un couloir libre de ±1,2 m autour de l'axe porte → spawn (`x = 0`), sinon les joueurs apparaissent dans un meuble.
 - Les nœuds vides (empties) ne survivent pas à `gltf-transform optimize` : mettre les points d'interaction dans le JSON de layout.
+
+## 9. Cove Pond (étang de pêche et parc)
+
+Au nord de la ville, derrière une ouverture de 12 m dans la haie (piliers « COVE / POND »), symétrique du quartier d'affaires. On y va à pied par une allée qui part de la route circulaire (`x ∈ [-3, 3]`, `z` de -21 à -48). Le parc occupe tout le croissant entre la haie (`r = 46.6`) et une clôture en bois (`r = 69.6`), limité à `|x| ≤ 46`, soit environ 2 500 m² où l'on peut marcher.
+
+### Style « nature »
+
+Mêmes règles que le reste de la ville (low-poly à facettes, textures procédurales 64 px, préfixe `TW_`), avec une palette plus douce et plus variée :
+
+| Élément | Couleur | Rugosité |
+|---|---|---|
+| Prairie (`TW_PondMeadow` / `TW_PondMeadowLight`) | `#7dbb62` / `#93c96d`, en taches alternées | 1.0 |
+| Collines derrière la clôture (`TW_PondHill`) | `#5f9e55` | 1.0 |
+| Berge sable (`TW_PondSand`) / fond de l'eau (`TW_PondBed`) | `#d9c89a` / `#5d7a5a` | 0.95 |
+| Eau (`TW_PondWater`) | `#4fa9c8`, animée côté front | 0.12 |
+| Sentier (`TW_PondPath`) | `#cdb994` | 0.95 |
+| Feuillages (`TW_LeafPond*`, `TW_PineNeedles`, `TW_WillowLeaf`) | `#3e8546` → `#93c45a`, sapin `#2f6f47`, saule `#8fbf5f` | 0.9 |
+| Cerisiers (`TW_Blossom` / `TW_BlossomLight`) | `#f2a7c3` / `#f8cadb` | 0.85 |
+| Bouleau (`TW_BirchBark`) | `#ece8dc` | 0.8 |
+| Fleurs (`TW_Flower*`) | rose `#f07fa8`, jaune `#f6d04d`, blanc `#f7f4ec`, violet `#a985e0` | 0.7 |
+| Ponton, belvédère, clôture (`TW_JettyPlanks`, `TW_JettyPost`) | `#b08655` motif `planks`, poteaux `#6e4f33` | 0.85 |
+| Toit du belvédère (`TW_GazeboRoof`) | `#8f4f3a` | 0.85 |
+| Panneau de spot / bouée (`TW_FishSpotSign`, `TW_BuoyRed`, `TW_BuoyWhite`) | `#2f8f9d` / `#e0533d` / `#f4f1ea` | 0.6 / 0.5 |
+| Kiosque (`TW_KioskWall` / `TW_KioskRoof`) | `#e8d7b4` / auvent rayé `#3f7f8c` × `#f1ede2` | 0.9 / 0.85 |
+
+Arbres : 5 modèles procéduraux, tous avec des sphères low-poly déformées au hasard pour un aspect organique.
+
+- **Feuillu rond** : tronc conique et 3 à 4 boules de feuillage de teintes différentes.
+- **Sapin** : 3 étages de cônes.
+- **Bouleau** : tronc blanc fin et feuillage haut, vert clair.
+- **Saule** : couronne aplatie et 12 branches tombantes, au bord de l'eau.
+- **Cerisier** : un feuillu rond aux feuilles roses.
+
+Les buissons, les massifs de fleurs et les touffes d'herbe sont dispersés au hasard (graine fixe), en évitant l'eau, les sentiers et le mobilier.
+
+Environ 28 000 triangles après optimisation, dont environ 9 000 pour le terrain.
+
+### Relief
+
+Le terrain est une grille de 1 m (`PD_Terrain`) calculée par `terrain_h(x, z)` dans `build_pond.py` :
+
+- **Collines douces** où l'on marche (jusqu'à 2,6 m, pente maximale d'environ 18°), avec une légère ondulation partout ailleurs.
+- **L'étang au fond d'un creux** : la berge monte d'environ 30 cm entre l'eau et le sentier.
+- **Le lit du ruisseau et de la mare** est creusé au niveau de l'eau.
+- **Derrière la clôture**, une crête de 5 à 7 m couverte de sapins masque le pied du décor de ciel.
+- **Le relief retombe à 0** contre la haie, au portail et aux bords `x = ±47`, pour se raccorder au sol de la ville.
+
+Le sol de la ville (`Ground`) est un grand disque d'un seul tenant qu'on ne peut pas creuser : le terrain ne descend donc jamais sous `y = 0`. L'eau est à `y = 0.045`, au-dessus d'un fond à `0.015`.
+
+**La hauteur du joueur suit le relief.** `pond.layout.json` contient `heightmap` (`x0, z0, cell, cols, rows, heights[]`, grille de 1 m de `x = -48` à `48` et de `z = -76` à `-4`). Ce sont les hauteurs où l'on marche : le terrain, plus le dessus du ponton, du pont et du plancher du belvédère. Côté front :
+
+- `front/src/game/terrainHeight.ts` interpole ces hauteurs (bilinéaire) et renvoie 0 hors de la grille.
+- `useGameMovement.ts` fait `y = 1.6 + terrainHeightAt(x, z)`, en ville seulement. Les avatars des autres joueurs suivent déjà le `y` envoyé au serveur.
+- Les collisions restent des boîtes posées à `y = 0`, assez hautes pour toucher la capsule du joueur quelle que soit la hauteur du sol.
+
+### Eau animée
+
+`front/src/game/pondWater.ts` remplace au chargement le matériau `TW_PondWater` (étang, ruisseau, mare) par une copie animée : des ondulations calculées dans le shader (normales et couleur qui bougent avec le temps), légèrement transparente. Tout se fait dans le fragment shader, parce que `gltf-transform optimize` simplifie les maillages plats et qu'on ne peut donc pas compter sur des sommets intermédiaires pour faire des vagues. Si le matériau n'est pas trouvé, un avertissement s'affiche dans la console et l'eau reste statique.
+
+### Plan (espace de jeu, nord = -Z)
+
+- **Centre**
+  - **Étang** : ellipse centrée en `(0, -58.5)`, rayons 14 × 5,5 m. Lys d'eau, roseaux, 3 canards, une barque amarrée au ponton.
+  - **Boucle de balade** autour de l'étang : 1,6 m de large, rayons intérieurs 17 × 8. Elle porte des bancs tournés vers l'eau et des lampadaires.
+  - **Ponton** : part de la berge sud à `x = 5`, plateforme en T de `z = -55.8` à `-58.3`, plancher à `y = 0.13`.
+- **Aile ouest**
+  - Un bosquet de sapins, de bouleaux et de feuillus.
+  - Le **ruisseau** part de l'étang vers une **mare** (`(-39, -41.5)`, rayons 3,6 × 3). La boucle le franchit sur un pont en bois.
+  - Un sentier, des tables de pique-nique et une couverture.
+- **Aile est**
+  - Une colline avec le **belvédère** (`(35, -55)`, plancher à 2,75 m, une marche à l'entrée, un banc à l'intérieur).
+  - Des cerisiers, des tables de pique-nique et une couverture.
+  - Le **kiosque à appâts** (`(22.5, -51.5)`, comptoir tourné vers l'ouest, futur PNJ sans logique).
+- **Partout**
+  - 13 bancs, 14 lampadaires le long des sentiers (plus 6 dans l'allée), 6 poubelles et un panneau indicateur au portail (« GAZEBO > », « < GROVE »).
+  - Environ 60 arbres dans le parc et 26 sur la crête, des buissons, 18 massifs de fleurs, 160 touffes d'herbe et des rochers.
+
+### Zones de pêche (contrat avec la logique de pêche)
+
+Chaque spot est visible dans le monde : un piquet avec un panneau bleu-vert à côté du joueur, et une bouée rouge et blanche dans l'eau devant lui.
+
+Les données sont dans `town.layout.json` → `pond` (type `TownLayout['pond']` dans `front/src/game/assets/catalog.ts`) :
+
+```jsonc
+"pond": {
+  "gate": { "x": 0, "z": -46, "width": 12.2 },
+  "center": [0, 0, -58.5],
+  "fishingSpots": [
+    { "id": "fish_jetty_01", "kind": "jetty", "position": [3.5, 0.13, -57.7], "yaw": 0, "radius": 1.0, "lookAt": [3.5, 0.045, -60.1] }
+    // fish_jetty_01..03 au bout du ponton
+    // fish_bank_01..05 sur les berges (sud-ouest, est, nord-ouest, nord, nord-est)
+    // fish_mare_01 au bord de la mare
+  ],
+  "kiosk": { "position": [20.2, 0.265, -51.5], "yaw": -1.5708 }
+}
+```
+
+- `position` : là où se tient le joueur, avec `y` = hauteur du sol à cet endroit. `radius` : rayon dans lequel il peut lancer la pêche.
+- `kind` : `jetty`, `bank` ou `mare`. Ça permet par exemple d'avoir des poissons différents dans la mare.
+- `yaw` : orientation du joueur face à l'eau (`0` regarde vers -Z, même convention que les stations des métiers).
+- `lookAt` : position de la bouée, utile pour viser le lancer.
+- `kiosk.position` : là où se tient le joueur devant le comptoir.
+
+### Collisions
+
+Boîtes `COL_Pond_*` dans `town.collision.json` :
+
+- un anneau autour de l'étang, ouvert seulement à l'entrée du ponton ;
+- des garde-fous invisibles autour du ponton, qui reste ouvert visuellement pour pêcher ;
+- le ruisseau, découpé en segments, interrompu au pont dont les barrières prennent le relais ;
+- un anneau autour de la mare ;
+- les barrières et les poteaux du belvédère, en laissant l'entrée ouverte ;
+- la clôture du fond ;
+- les arbres, les buissons, les gros rochers, les bancs, les tables, les poubelles, les lampadaires et le kiosque.
+
+Les extrémités est et ouest sont fermées par les limites du monde (`x = ±46.4`). La limite sud du monde descend à `minZ = -71`.
+
+### Reconstruire
+
+Dans Blender (via MCP), **sur Windows comme sur Mac** :
+
+```python
+p = r"<chemin du repo>/map-src/CampusCove/build_pond.py"
+exec(open(p).read(), {"__file__": p})
+```
+
+Passer `{"__file__": p}` est obligatoire : le script en déduit le dossier de `lib_common.py` et de `out/`, sans chemin écrit en dur. Sans cette variable, il s'arrête avec une erreur explicite. Cette forme marche aussi pour les autres `build_*.py`, qui sinon retombent sur un chemin Windows écrit en dur.
+
+```bash
+cd front
+npm run assets:optimize -- park   # out/park/pond -> public/assets/park/pond (pond.glb, pond.layout.json)
+node scripts/apply-pond.mjs       # ouvre la haie au nord, retire les 2 arbres de l'allée, écrit collisions + town.layout.json
+```
+
+`apply-pond.mjs` est idempotent et indépendant d'`apply-work-district.mjs` : chacun ne touche que ses propres boîtes (`COL_Pond_*` / `COL_Work_*`) et sa propre limite (`minZ` / `maxZ`).
+
+Pour déplacer un élément, modifier les constantes en tête de `build_pond.py` (`CZ`, `RX`, `HILLS`, `GAZEBO_C`, `KIOSK`…) puis relancer les trois étapes. Les arbres sont replacés automatiquement autour.

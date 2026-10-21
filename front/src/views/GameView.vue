@@ -47,6 +47,7 @@ import {
   stripRoomEnvironmentsFromScene,
 } from '../game/roomEnvironments'
 import type { WorkLot } from '../game/workBuildings'
+import type { FishingSpot } from '../game/fishingSpots'
 import { TOWN } from '../game/assets/catalog'
 import {
   applySharedEnvironment,
@@ -73,6 +74,8 @@ const visitedApartmentOwnerId = ref<number | null>(null)
 const workLots = ref<WorkLot[]>([])
 const nearbyWork = ref<WorkLot | null>(null)
 const visitedWorkKey = ref<string | null>(null)
+const fishingSpots = ref<FishingSpot[]>([])
+const nearbyFishingSpot = ref<FishingSpot | null>(null)
 const housingClaimInFlight = ref(false)
 const switchingRoom = ref(false)
 const pointerLocked = ref(false)
@@ -307,6 +310,11 @@ function onNearWorkInteract(): void {
   gameRoomRef.value.send('enter_work', { workKey: lot.key })
 }
 
+function onNearFishingInteract(): void {
+  if (!nearbyFishingSpot.value) return
+  window.alert('implement pechee')
+}
+
 function handleExtraKeyDown(e: KeyboardEvent): boolean {
   if (currentRoomLabel.value === 'city' && e.code === 'KeyU' && !e.repeat) {
     void tryRenewNearbyRent()
@@ -391,6 +399,13 @@ function updateDoorPromptScreenPos(): void {
     renewPromptPos.value = null
     return
   }
+  const fishing = nearbyFishingSpot.value
+  if (!unit && fishing) {
+    const screen = projectWorldToScreen(fishing.lookAt[0], fishing.lookAt[1] + 0.8, fishing.lookAt[2])
+    doorPromptPos.value = screen ? { ...screen, action: 'Fish' } : null
+    renewPromptPos.value = null
+    return
+  }
   if (!unit) {
     doorPromptPos.value = null
     renewPromptPos.value = null
@@ -468,6 +483,7 @@ function setRoomEnvironment(kind: 'city' | 'apartment', templateKey?: string, wo
     void loadTownEnvironment()
       .then(({ group, layout }) => {
         workLots.value = layout.work ?? []
+        fishingSpots.value = layout.pond?.fishingSpots ?? []
         if (token !== roomEnvironmentLoadToken) return
         roomEnvironment = group
         if (!housingCubesGroup) {
@@ -553,6 +569,9 @@ const {
   nearbyHousingUnit,
   workLots,
   nearbyWork,
+  fishingSpots,
+  nearbyFishingSpot,
+  onNearFishingInteract,
   handleExtraKeyDown,
   onCanvasMouseDown: (e) => apartmentPlacement.onPointerDown(e),
   onCanvasMouseUp: () => undefined,

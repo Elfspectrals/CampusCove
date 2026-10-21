@@ -251,5 +251,171 @@
     "x": 0,
     "z": 46,
     "width": 12.2
+  },
+  "pond": {
+    "gate": {
+      "x": 0,
+      "z": -46,
+      "width": 12.2
+    },
+    "center": [
+      0,
+      0,
+      -58.5
+    ],
+    "fishingSpots": [
+      {
+        "id": "fish_jetty_01",
+        "kind": "jetty",
+        "position": [
+          3.5,
+          0.13,
+          -57.7
+        ],
+        "yaw": 0,
+        "radius": 1,
+        "lookAt": [
+          3.5,
+          0.045,
+          -60.1
+        ]
+      },
+      {
+        "id": "fish_jetty_02",
+        "kind": "jetty",
+        "position": [
+          5,
+          0.13,
+          -57.7
+        ],
+        "yaw": 0,
+        "radius": 1,
+        "lookAt": [
+          5,
+          0.045,
+          -60.1
+        ]
+      },
+      {
+        "id": "fish_jetty_03",
+        "kind": "jetty",
+        "position": [
+          6.5,
+          0.13,
+          -57.7
+        ],
+        "yaw": 0,
+        "radius": 1,
+        "lookAt": [
+          6.5,
+          0.045,
+          -60.1
+        ]
+      },
+      {
+        "id": "fish_bank_01",
+        "kind": "bank",
+        "position": [
+          -8.46,
+          0.109,
+          -53.38
+        ],
+        "yaw": -1.0266,
+        "radius": 1,
+        "lookAt": [
+          -6.407,
+          0.045,
+          -54.623
+        ]
+      },
+      {
+        "id": "fish_bank_02",
+        "kind": "bank",
+        "position": [
+          12.082,
+          0.073,
+          -54.915
+        ],
+        "yaw": 1.2824,
+        "radius": 1,
+        "lookAt": [
+          9.782,
+          0.045,
+          -55.598
+        ]
+      },
+      {
+        "id": "fish_bank_03",
+        "kind": "bank",
+        "position": [
+          -8.46,
+          0.124,
+          -63.62
+        ],
+        "yaw": -2.115,
+        "radius": 1,
+        "lookAt": [
+          -6.407,
+          0.045,
+          -62.377
+        ]
+      },
+      {
+        "id": "fish_bank_04",
+        "kind": "bank",
+        "position": [
+          0,
+          0.136,
+          -64.75
+        ],
+        "yaw": -3.1416,
+        "radius": 1,
+        "lookAt": [
+          0,
+          0.045,
+          -62.35
+        ]
+      },
+      {
+        "id": "fish_bank_05",
+        "kind": "bank",
+        "position": [
+          8.46,
+          0.109,
+          -63.62
+        ],
+        "yaw": 2.115,
+        "radius": 1,
+        "lookAt": [
+          6.407,
+          0.045,
+          -62.377
+        ]
+      },
+      {
+        "id": "fish_mare_01",
+        "kind": "mare",
+        "position": [
+          -35.668,
+          0.051,
+          -39.09
+        ],
+        "yaw": 0.9446,
+        "radius": 1,
+        "lookAt": [
+          -37.288,
+          0.045,
+          -40.262
+        ]
+      }
+    ],
+    "kiosk": {
+      "position": [
+        20.2,
+        0.265,
+        -51.5
+      ],
+      "yaw": -1.5708
+    }
   }
 }
