@@ -47,7 +47,6 @@ export interface ApartmentInitPayload {
   ownerAccountId: number | null
   templateKey: string
   workKey?: string | null
-  name: string
   canEdit: boolean
   objects: ApartmentObjectPayload[]
 }
