@@ -87,7 +87,6 @@ const quickTiles: Array<{ to: string; icon: UiIconName; label: string; hint: str
   { to: '/shop', icon: 'chair', label: 'Shop', hint: 'Furniture & decor', tone: 'from-sun/40 text-sun' },
   { to: '/shop-skin', icon: 'shirt', label: 'Skins', hint: 'New looks', tone: 'from-grape/40 text-grape' },
   { to: '/locker', icon: 'backpack', label: 'Locker', hint: 'Equip outfits', tone: 'from-pool/40 text-pool' },
-  { to: '/NewNation', icon: 'globe', label: 'New Nation', hint: 'Season showroom', tone: 'from-coral/40 text-coral' },
 ]
 
 const recentItems = [

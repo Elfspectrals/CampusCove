@@ -6,6 +6,7 @@ import { disposeObject3D } from '../avatar/compositeAvatar'
 import { buildWorldCollisionFromObject, resolveWorldMovement } from '../composables/game/useWorldCollision'
 import { createGltfLoader } from './gltfLoaderFactory'
 import { SHOWROOM } from './assets/catalog'
+import { RARITY_META, Rarity } from './rarity'
 
 /**
  * 3D showroom for the /NewNation route: loads the NewNation plaza (built in Blender,
@@ -46,6 +47,8 @@ export interface ShowroomItem {
   name: string
   priceLabel: string
   group: ShowroomGroup
+  /** Tints the label and the floor ring so players read the tier at a glance. */
+  rarity?: Rarity
   modelUrl: string | null
   imageUrl: string | null
 }
@@ -131,7 +134,8 @@ function makeLabelElement(item: ShowroomItem): HTMLDivElement {
     'padding:4px 10px',
     'border-radius:999px',
     'background:rgba(6,14,40,0.78)',
-    'border:1px solid rgba(103,232,249,0.55)',
+    `border:${item.rarity === Rarity.Legendary ? 2 : 1}px solid ${item.rarity ? RARITY_META[item.rarity].color : 'rgba(103,232,249,0.55)'}`,
+    item.rarity ? `box-shadow:0 0 ${item.rarity === Rarity.Legendary ? 18 : 8}px ${RARITY_META[item.rarity].glow}` : '',
     'color:#fff',
     'font:700 12px/1.25 system-ui,sans-serif',
     'text-align:center',
@@ -143,7 +147,7 @@ function makeLabelElement(item: ShowroomItem): HTMLDivElement {
   name.textContent = item.name
   const price = document.createElement('div')
   price.textContent = item.priceLabel
-  price.style.cssText = 'font-weight:600;font-size:11px;color:#a5f3fc'
+  price.style.cssText = `font-weight:600;font-size:11px;color:${item.rarity ? RARITY_META[item.rarity].color : '#a5f3fc'}`
   el.append(name, price)
   return el
 }
@@ -706,6 +710,7 @@ export class NewNationShowroom {
     label.position.set(0, visualHeight + 0.45, 0)
     root.add(label)
 
+    if (item.rarity) root.add(this.makeRarityRing(item.rarity))
     root.traverse((obj) => {
       if (obj instanceof THREE.Mesh) obj.userData.showroomItemId = item.id
     })
@@ -713,6 +718,24 @@ export class NewNationShowroom {
     this.placed.set(item.id, { item, root, visual, label, slot, spin, bob })
     this.refreshLabelStates()
     if (this.pendingFlyId === item.id) this.select(item.id)
+  }
+
+  /** Glowing floor ring in the tier colour (bigger and brighter for legendary). */
+  private makeRarityRing(rarity: Rarity): THREE.Mesh {
+    const legendary = rarity === Rarity.Legendary
+    const ring = new THREE.Mesh(
+      new THREE.RingGeometry(legendary ? 0.95 : 0.7, legendary ? 1.2 : 0.8, 48),
+      new THREE.MeshBasicMaterial({
+        color: RARITY_META[rarity].color,
+        transparent: true,
+        opacity: legendary ? 0.95 : 0.7,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+      }),
+    )
+    ring.rotation.x = -Math.PI / 2
+    ring.position.y = 0.02
+    return ring
   }
 
   private async loadModel(url: string): Promise<THREE.Group | null> {

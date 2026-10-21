@@ -29,7 +29,7 @@ const router = createRouter({
     { path: '/item-shop', name: 'item-shop', redirect: { name: 'shop' } },
     { path: '/shop', name: 'shop', component: ItemShopView, meta: { title: 'Shop' } },
     { path: '/shop-skin', name: 'shop-skin', component: ItemShopView, meta: { title: 'Shop Skin' } },
-    { path: '/NewNation', name: 'new-nation', component: NewNationView, meta: { title: 'New Nation', fullBleed: true } },
+    { path: '/NewNation', name: 'new-nation', component: NewNationView, meta: { requiresAdmin: true, title: 'Admin — New Nation', fullBleed: true } },
     { path: '/home', name: 'home', component: HomeView, meta: { requiresAuth: true, title: 'Profile' } },
     { path: '/locker', name: 'locker', component: LockerView, meta: { requiresAuth: true, title: 'Locker' } },
     { path: '/inventory', name: 'legacy-inventory', redirect: { name: 'locker' }, meta: { requiresAuth: true } },

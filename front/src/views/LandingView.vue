@@ -28,7 +28,6 @@ const features: Array<{ icon: UiIconName; title: string; body: string; tone: str
       <UiLogo size="sm" />
       <div class="flex items-center gap-2">
         <RouterLink :to="{ name: 'shop' }" class="hidden font-display text-sm uppercase tracking-wide text-mist hover:text-fog sm:inline">Shop</RouterLink>
-        <RouterLink :to="{ name: 'new-nation' }" class="mx-3 hidden font-display text-sm uppercase tracking-wide text-mist hover:text-fog sm:inline">New Nation</RouterLink>
         <button type="button" class="cc-btn cc-btn-ghost cc-btn-sm" @click="signIn">Sign in</button>
       </div>
     </div>

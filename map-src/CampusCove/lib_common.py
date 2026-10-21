@@ -86,7 +86,7 @@ def make_texture(key, base, var=0.06, pattern="noise", size=64, accent=None, see
     return img
 
 
-def make_mat(name, base, rough=0.9, pattern="noise", var=0.05, accent=None, alpha=None, emit=None):
+def make_mat(name, base, rough=0.9, pattern="noise", var=0.05, accent=None, alpha=None, emit=None, emit_strength=1.2):
     """Textured Principled material (image -> base color). `alpha` makes it a blended glass."""
     if name in _mat_cache:
         return _mat_cache[name]
@@ -111,7 +111,7 @@ def make_mat(name, base, rough=0.9, pattern="noise", var=0.05, accent=None, alph
         m.blend_method = "BLEND" if hasattr(m, "blend_method") else m.blend_method
     if emit:
         bsdf.inputs["Emission Color"].default_value = (*_hex(emit), 1.0)
-        bsdf.inputs["Emission Strength"].default_value = 1.2
+        bsdf.inputs["Emission Strength"].default_value = emit_strength
     _mat_cache[name] = m
     return m
 
