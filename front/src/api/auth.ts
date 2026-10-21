@@ -50,7 +50,7 @@ export function isAdminUser(user: User | null | undefined): boolean {
   return user.is_admin === true
 }
 
-export function parseUser(raw: unknown): User | null {
+function parseUser(raw: unknown): User | null {
   if (!isRecord(raw)) return null
   if (typeof raw.account_id !== 'number') return null
   if (!(typeof raw.public_id === 'string' || typeof raw.public_id === 'number')) return null
@@ -249,7 +249,7 @@ export function storeAuth(user: User, token: string): void {
   notifyAuthListeners()
 }
 
-export function mergeStoredUser(updates: Partial<User>): void {
+function mergeStoredUser(updates: Partial<User>): void {
   const auth = getStoredAuth()
   if (!auth) return
   const user: User = {

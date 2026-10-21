@@ -4,7 +4,7 @@ import type { TownLayout } from './assets/catalog'
 export type WorkLot = NonNullable<TownLayout['work']>[number]
 
 /** How close (XZ, metres) to a work building's door point the interact prompt appears. */
-export const WORK_DOOR_INTERACT_RADIUS = 2.2
+const WORK_DOOR_INTERACT_RADIUS = 2.2
 
 export function findNearestWorkDoor(x: number, z: number, lots: readonly WorkLot[]): WorkLot | null {
   let best: WorkLot | null = null

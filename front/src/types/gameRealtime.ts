@@ -99,7 +99,3 @@ export interface PendingAppearanceUpdate {
   slotHexes?: Record<string, string>
   bodyModelGlb?: string | null
 }
-
-export interface TransformDragEvent {
-  value: boolean
-}

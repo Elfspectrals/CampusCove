@@ -10,7 +10,7 @@ const API_BASE = import.meta.env.VITE_API_URL || '/api'
 /** Matches `item_kind` / admin shop kinds; empty means no filter. */
 export type InventoryKindFilter = '' | 'furniture' | 'cosmetic' | 'consumable' | 'misc' | 'apartment_asset'
 
-export interface InventoryItemDef {
+interface InventoryItemDef {
   item_def_id: number
   code: string
   name: string

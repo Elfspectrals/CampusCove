@@ -12,7 +12,7 @@ export const SLOTS: CosmeticSlot[] = ['body', 'hair', 'top', 'bottom', 'shoes', 
 /** Same order as API; used for blending / UI lists. */
 export const SLOT_ORDER: CosmeticSlot[] = [...SLOTS]
 
-export interface EquippedCosmetic {
+interface EquippedCosmetic {
   item_def_id: number
   code: string
   name: string
@@ -124,15 +124,6 @@ export function appearanceIdsFromLoadout(slots: CosmeticLoadout): Record<Cosmeti
   for (const slot of SLOTS) {
     const e = slots[slot]
     out[slot] = e ? e.item_def_id : null
-  }
-  return out
-}
-
-export function appearanceCodesFromLoadout(slots: CosmeticLoadout): Record<CosmeticSlot, string | null> {
-  const out = {} as Record<CosmeticSlot, string | null>
-  for (const slot of SLOTS) {
-    const e = slots[slot]
-    out[slot] = e ? e.code : null
   }
   return out
 }

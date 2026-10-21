@@ -9,7 +9,7 @@ import { normalizeApiAssetUrl } from './url'
 const API_BASE = import.meta.env.VITE_API_URL || '/api'
 
 export type ShopCurrency = 'coins' | 'premium'
-export type ShopItemKind = 'furniture' | 'cosmetic' | 'consumable' | 'misc' | 'apartment_asset'
+type ShopItemKind = 'furniture' | 'cosmetic' | 'consumable' | 'misc' | 'apartment_asset'
 
 export interface ShopItemCurrencyOption {
   shop_catalog_item_id: number

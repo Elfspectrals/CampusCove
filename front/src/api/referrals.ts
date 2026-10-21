@@ -9,14 +9,14 @@ function getAuthHeaders(): HeadersInit {
   }
 }
 
-export interface RefereeProgress {
+interface RefereeProgress {
   account_age_ok: boolean
   other_friends: number
   has_coin_purchase: boolean
   qualified: boolean
 }
 
-export interface Referee {
+interface Referee {
   account_id: number
   display_name: string
   qualified: boolean

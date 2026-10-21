@@ -13,14 +13,14 @@ function toSnapshot(unit: HousingUnitPayload): HousingUnitSnapshot {
   return { ...unit }
 }
 
-export function leaseRemainingMs(unit: HousingUnitSnapshot): number | null {
+function leaseRemainingMs(unit: HousingUnitSnapshot): number | null {
   if (!unit.lease_expires_at) return null
   const end = Date.parse(unit.lease_expires_at)
   if (!Number.isFinite(end)) return null
   return end - Date.now()
 }
 
-export function leaseSoon(unit: HousingUnitSnapshot): boolean {
+function leaseSoon(unit: HousingUnitSnapshot): boolean {
   const remaining = leaseRemainingMs(unit)
   if (remaining === null) return false
   return remaining > 0 && remaining <= LEASE_SOON_MS

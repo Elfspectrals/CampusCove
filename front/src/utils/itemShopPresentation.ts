@@ -1,5 +1,5 @@
 import type { ShopCurrency, ShopItem, ShopItemCurrencyOption } from '../api/itemShop'
-import { Rarity } from '../game/rarity'
+import { Rarity } from '../game/rarity.ts'
 
 export type ItemRarity = Rarity
 

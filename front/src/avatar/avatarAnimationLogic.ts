@@ -8,10 +8,10 @@
 export type AvatarClipName = 'Idle' | 'Walk' | 'Run'
 
 export const WALK_ENTER = 0.5
-export const WALK_EXIT = 0.25
+const WALK_EXIT = 0.25
 export const RUN_ENTER = 5
-export const RUN_EXIT = 3.5
-export const MIN_HOLD_S = 0.18
+const RUN_EXIT = 3.5
+const MIN_HOLD_S = 0.18
 /** Longest frame step fed to the animation system (a background tab can report several seconds). */
 export const MAX_DT_S = 0.1
 const SPEED_SMOOTHING = 14

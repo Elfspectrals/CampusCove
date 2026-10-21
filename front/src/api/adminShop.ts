@@ -9,7 +9,7 @@ const API_BASE = import.meta.env.VITE_API_URL || '/api'
 
 export type ShopCurrency = 'coins' | 'premium'
 
-export interface AdminShopItemNested {
+interface AdminShopItemNested {
   item_def_id: number
   code: string
   name: string

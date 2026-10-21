@@ -3,7 +3,6 @@
  *
  *   public/assets/
  *     skins/<key>/model.glb, preview.png
- *     decor/<key>/model.glb, preview.png
  *     houses/<key>/exterior.glb, interior.glb, interior.collision.json, preview.png
  *     town/town.glb, town.collision.json, town.layout.json
  *     showroom/new_nation.glb, new_nation.layout.json
@@ -18,8 +17,7 @@ const ROOT = '/assets'
 export type SkinKey =
   | 'campus_classic' | 'street_runner' | 'scholar' | 'explorer' | 'night_owl'
   | 'neon_ronin' | 'street_luxe' | 'astral_oracle'
-export type DecorKey = 'wooden_chair' | 'dining_table' | 'floor_lamp' | 'potted_plant' | 'bookshelf'
-export type HouseKey =
+type HouseKey =
   | 'house_01' | 'house_02' | 'house_03' | 'house_04' | 'house_05'
   | 'house_06' | 'house_07' | 'house_08' | 'house_09' | 'house_10'
 
@@ -32,15 +30,6 @@ export interface SkinAsset {
   previewUrl: string
   /** Granted to every player for free and worn by default. */
   isDefault: boolean
-}
-
-export interface DecorAsset {
-  key: DecorKey
-  name: string
-  /** item_defs.code in the shop (furniture, placeable in a house). */
-  shopCode: string
-  modelUrl: string
-  previewUrl: string
 }
 
 export interface HouseAsset {
@@ -59,14 +48,6 @@ const skin = (key: SkinKey, name: string, shopCode: string, isDefault = false): 
   modelUrl: `${ROOT}/skins/${key}/model.glb`,
   previewUrl: `${ROOT}/skins/${key}/preview.png`,
   isDefault,
-})
-
-const decor = (key: DecorKey, name: string): DecorAsset => ({
-  key,
-  name,
-  shopCode: `decor_${key}`,
-  modelUrl: `${ROOT}/decor/${key}/model.glb`,
-  previewUrl: `${ROOT}/decor/${key}/preview.png`,
 })
 
 const house = (key: HouseKey, name: string): HouseAsset => ({
@@ -92,15 +73,7 @@ export const SKINS: readonly SkinAsset[] = [
 
 export const DEFAULT_SKIN: SkinAsset = SKINS.find((s) => s.isDefault)!
 
-export const DECOR: readonly DecorAsset[] = [
-  decor('wooden_chair', 'Wooden Chair'),
-  decor('dining_table', 'Dining Table'),
-  decor('floor_lamp', 'Floor Lamp'),
-  decor('potted_plant', 'Potted Plant'),
-  decor('bookshelf', 'Bookshelf'),
-]
-
-export const HOUSES: readonly HouseAsset[] = [
+const HOUSES: readonly HouseAsset[] = [
   house('house_01', 'Maple Cottage'),
   house('house_02', 'Bluebell Bungalow'),
   house('house_03', 'Sunny Nook'),
@@ -118,8 +91,8 @@ export const HOUSES: readonly HouseAsset[] = [
  * Built by map-src/CampusCove/build_work_*.py → public/assets/work/<key>/ (see docs/ASSETS_STYLE_GUIDE.md §7).
  * `interior.layout.json` lists the stations (`station_<job>_NN`) that the job gameplay attaches to.
  */
-export type WorkKey = 'tech_hub' | 'boutique' | 'cafe'
-export type WorkJob = 'dev' | 'commerce' | 'resto'
+type WorkKey = 'tech_hub' | 'boutique' | 'cafe'
+type WorkJob = 'dev' | 'commerce' | 'resto'
 
 export interface WorkAsset {
   key: WorkKey
@@ -143,7 +116,7 @@ const work = (key: WorkKey, name: string, job: WorkJob): WorkAsset => ({
   previewUrl: `${ROOT}/work/${key}/preview.png`,
 })
 
-export const WORKS: readonly WorkAsset[] = [
+const WORKS: readonly WorkAsset[] = [
   work('tech_hub', 'Tech Hub', 'dev'),
   work('boutique', 'Boutique', 'commerce'),
   work('cafe', 'Campus Cafe', 'resto'),

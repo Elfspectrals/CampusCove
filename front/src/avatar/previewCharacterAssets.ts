@@ -9,7 +9,7 @@ export interface PreviewCharacterAsset {
   previewImageSrc: string
 }
 
-export const PREVIEW_CHARACTER_ASSETS: PreviewCharacterAsset[] = SKINS.map((skin) => ({
+const PREVIEW_CHARACTER_ASSETS: PreviewCharacterAsset[] = SKINS.map((skin) => ({
   id: skin.key,
   label: skin.name,
   src: skin.modelUrl,
