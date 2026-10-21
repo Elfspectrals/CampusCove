@@ -1,7 +1,7 @@
 import { ref, type Ref } from 'vue'
 import * as THREE from 'three'
 import { APARTMENT_DOOR_POS, APARTMENT_DOOR_RADIUS } from '../../game/gameRoomConstants'
-import { findNearestFishingSpot, type FishingSpot } from '../../game/fishingSpots'
+import { findNearestFishingSpot, type FishingSpot } from '../../game/town/fishingSpots'
 import {
   canRenewUnit,
   findNearestHousingUnit,
@@ -9,9 +9,9 @@ import {
   housingInteractPosition,
   housingPromptLabel,
   type HousingUnit,
-} from '../../game/housing'
+} from '../../game/town/housing'
 import type { TownLayout } from '../../game/assets/catalog'
-import { findNearestWorkDoor, type WorkLot } from '../../game/workBuildings'
+import { findNearestWorkDoor, type WorkLot } from '../../game/town/workBuildings'
 
 export interface ScreenPrompt {
   x: number

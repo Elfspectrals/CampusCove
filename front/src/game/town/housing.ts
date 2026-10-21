@@ -3,7 +3,7 @@
  * player can do at a door, and the prompt texts. A unit's position is the interaction point in front of
  * its house door.
  */
-import type { HousingUnitPayload } from '../types/gameRealtime'
+import type { HousingUnitPayload } from '../../types/gameRealtime'
 
 export type HousingUnit = HousingUnitPayload
 

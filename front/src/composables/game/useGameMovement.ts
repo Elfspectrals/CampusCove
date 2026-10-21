@@ -4,7 +4,7 @@ import * as THREE from 'three'
 import { KEY_BINDINGS, matchesAnyMovementKey } from '../../config/keybindings'
 import { APARTMENT_CLAMP_MARGIN, APARTMENT_HALF_EXTENT, EYE_HEIGHT } from '../../game/gameRoomConstants'
 import { resolveWorldMovement } from '../../game/collision/worldCollision'
-import { terrainHeightAt } from '../../game/terrainHeight'
+import { terrainHeightAt } from '../../game/town/terrainHeight'
 
 const MOVE_SPEED = 8
 const MOUSE_SENSITIVITY = 0.002

@@ -4,8 +4,8 @@ import { DEFAULT_HOUSE, POND, TOWN, WORK_DISTRICT, findHouse, findWork } from '.
 import type { TownLayout } from './assets/catalog'
 import { createGltfLoader } from './gltfLoaderFactory'
 import { getGraphicsQuality } from './graphicsQuality'
-import { animatePondWater } from './pondWater'
-import { setTerrainHeightmap, type TerrainHeightmap } from './terrainHeight'
+import { animatePondWater } from './town/pondWater'
+import { setTerrainHeightmap, type TerrainHeightmap } from './town/terrainHeight'
 import {
   addApartmentFallbackLights,
   configureRoomMeshShadows,

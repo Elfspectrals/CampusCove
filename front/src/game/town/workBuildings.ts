@@ -1,4 +1,4 @@
-import type { TownLayout } from './assets/catalog'
+import type { TownLayout } from '../assets/catalog'
 
 /** One business-district building as listed in `town.layout.json` → `work`. */
 export type WorkLot = NonNullable<TownLayout['work']>[number]

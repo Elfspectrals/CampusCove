@@ -1,7 +1,7 @@
 import { ref, type Ref, type ShallowRef } from 'vue'
 import type { Room } from '@colyseus/sdk'
 import { buyHousingUnit, rentHousingUnit, renewHousingUnit } from '../../api/housing'
-import { canRenewUnit, housingActionFor, type HousingUnit } from '../../game/housing'
+import { canRenewUnit, housingActionFor, type HousingUnit } from '../../game/town/housing'
 import type { HousingUnitPayload } from '../../types/gameRealtime'
 
 export interface CityHousingDeps {
