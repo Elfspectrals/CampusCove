@@ -152,6 +152,11 @@ export const WORKS: readonly WorkAsset[] = [
 /** Static scenery of the district (plaza, avenue, gate pillars, lamps); placed from `town.layout.json` → `work`. */
 export const WORK_DISTRICT = { modelUrl: `${ROOT}/work/district/district.glb` } as const
 
+export const POND = {
+  modelUrl: `${ROOT}/park/pond/pond.glb`,
+  layoutUrl: `${ROOT}/park/pond/pond.layout.json`,
+} as const
+
 export function findWork(key: string | null | undefined): WorkAsset | null {
   return WORKS.find((w) => w.key === key) ?? null
 }
@@ -211,4 +216,17 @@ export interface TownLayout {
   }>
   /** Opening in the hedge ring leading to the district. */
   workGate?: { x: number; z: number; width: number }
+  pond?: {
+    gate: { x: number; z: number; width: number }
+    center: [number, number, number]
+    fishingSpots: Array<{
+      id: string
+      kind: 'jetty' | 'bank' | 'mare'
+      position: [number, number, number]
+      yaw: number
+      radius: number
+      lookAt: [number, number, number]
+    }>
+    kiosk: { position: [number, number, number]; yaw: number }
+  }
 }

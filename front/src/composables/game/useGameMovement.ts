@@ -8,7 +8,9 @@ import {
   APARTMENT_DOOR_RADIUS,
   APARTMENT_HALF_EXTENT,
 } from '../../game/gameRoomConstants'
+import { findNearestFishingSpot, type FishingSpot } from '../../game/fishingSpots'
 import { findNearestHousingUnit, type HousingUnitSnapshot } from '../../game/housingCubes'
+import { terrainHeightAt } from '../../game/terrainHeight'
 import { findNearestWorkDoor, type WorkLot } from '../../game/workBuildings'
 import { resolveWorldMovement } from './useWorldCollision'
 
@@ -38,6 +40,9 @@ export interface UseGameMovementDeps {
   /** Business-district buildings of the town (free to enter, no purchase). */
   workLots: Ref<WorkLot[]>
   nearbyWork: Ref<WorkLot | null>
+  fishingSpots: Ref<FishingSpot[]>
+  nearbyFishingSpot: Ref<FishingSpot | null>
+  onNearFishingInteract: () => void
   /** Return `true` if the event was consumed (placement shortcuts, etc.). */
   handleExtraKeyDown?: (e: KeyboardEvent) => boolean
   /** Return `true` if the click was consumed (apartment placement), so it doesn't also open a door. */
@@ -90,13 +95,16 @@ export function useGameMovement(deps: UseGameMovementDeps) {
       deps.nearCityDoor.value = false
       deps.nearbyHousingUnit.value = null
       deps.nearbyWork.value = null
+      deps.nearbyFishingSpot.value = null
     } else {
       deps.nearApartmentDoor.value = false
       const nearest = findNearestHousingUnit(myPosition.x, myPosition.z, deps.housingUnits.value)
       deps.nearbyHousingUnit.value = nearest
       const work = nearest ? null : findNearestWorkDoor(myPosition.x, myPosition.z, deps.workLots.value)
       deps.nearbyWork.value = work
-      deps.nearCityDoor.value = nearest !== null || work !== null
+      const fishing = nearest || work ? null : findNearestFishingSpot(myPosition.x, myPosition.z, deps.fishingSpots.value)
+      deps.nearbyFishingSpot.value = fishing
+      deps.nearCityDoor.value = nearest !== null || work !== null || fishing !== null
     }
   }
 
@@ -122,7 +130,7 @@ export function useGameMovement(deps: UseGameMovementDeps) {
       myPosition.x = resolved.x
       myPosition.z = resolved.z
     }
-    myPosition.y = 1.6
+    myPosition.y = 1.6 + (deps.currentRoomLabel.value === 'city' ? terrainHeightAt(myPosition.x, myPosition.z) : 0)
     updateDoorProximity()
     camera.position.set(myPosition.x, myPosition.y, myPosition.z)
     camera.rotation.order = 'YXZ'
@@ -207,6 +215,10 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     }
     if (deps.currentRoomLabel.value === 'city' && deps.nearbyWork.value) {
       deps.onNearWorkInteract()
+      return true
+    }
+    if (deps.currentRoomLabel.value === 'city' && deps.nearbyFishingSpot.value) {
+      deps.onNearFishingInteract()
       return true
     }
     return false

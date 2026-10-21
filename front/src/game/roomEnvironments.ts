@@ -5,10 +5,12 @@ import {
   APARTMENT_ROOM_HEIGHT,
   APARTMENT_WALL_THICKNESS,
 } from './gameRoomConstants'
-import { DEFAULT_HOUSE, HOUSES, TOWN, WORK_DISTRICT, findHouse, findWork } from './assets/catalog'
+import { DEFAULT_HOUSE, HOUSES, POND, TOWN, WORK_DISTRICT, findHouse, findWork } from './assets/catalog'
 import type { TownLayout } from './assets/catalog'
 import { createGltfLoader } from './gltfLoaderFactory'
 import { getGraphicsQuality } from './graphicsQuality'
+import { animatePondWater } from './pondWater'
+import { setTerrainHeightmap, type TerrainHeightmap } from './terrainHeight'
 import {
   addApartmentFallbackLights,
   configureRoomMeshShadows,
@@ -40,6 +42,12 @@ async function fetchTownLayout(): Promise<TownLayout> {
   const res = await fetch(TOWN.layoutUrl)
   if (!res.ok) throw new Error(`Could not load the town layout (${res.status})`)
   return (await res.json()) as TownLayout
+}
+
+async function fetchPondHeightmap(): Promise<TerrainHeightmap> {
+  const res = await fetch(POND.layoutUrl)
+  if (!res.ok) throw new Error(`Could not load the pond layout (${res.status})`)
+  return ((await res.json()) as { heightmap: TerrainHeightmap }).heightmap
 }
 
 /**
@@ -82,6 +90,20 @@ export function loadTownEnvironment(): Promise<TownEnvironmentBuildResult> {
       if (workScenery) {
         workScenery.name = 'WorkDistrict'
         root.add(workScenery)
+      }
+      const pondScenery = await Promise.all([loader.loadAsync(POND.modelUrl), fetchPondHeightmap()])
+        .then(([gltf, heightmap]) => {
+          setTerrainHeightmap(heightmap)
+          return gltf.scene
+        })
+        .catch((error) => {
+          console.warn('[town] pond scenery failed to load', error)
+          return null
+        })
+      if (pondScenery) {
+        pondScenery.name = 'CovePond'
+        if (animatePondWater(pondScenery) === 0) console.warn('[town] pond water material not found, water stays static')
+        root.add(pondScenery)
       }
       const works = await Promise.all((layout.work ?? []).map(async (lot) => {
         const asset = findWork(lot.key)
