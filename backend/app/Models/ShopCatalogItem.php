@@ -58,30 +58,6 @@ class ShopCatalogItem extends Model
         ];
     }
 
-    public function supportsCurrency(string $currency): bool
-    {
-        if ($currency === 'coins') {
-            return (bool) $this->allow_coins;
-        }
-        if ($currency === 'premium') {
-            return (bool) $this->allow_premium;
-        }
-
-        return false;
-    }
-
-    public function priceForCurrency(string $currency): ?int
-    {
-        if ($currency === 'coins' && $this->allow_coins) {
-            return $this->coins_price;
-        }
-        if ($currency === 'premium' && $this->allow_premium) {
-            return $this->premium_price;
-        }
-
-        return null;
-    }
-
     public function itemDef(): BelongsTo
     {
         return $this->belongsTo(ItemDef::class, 'item_def_id', 'item_def_id');

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Exceptions\ApartmentPlacementException;
+use App\Exceptions\ApiRejectedException;
 use App\Models\Account;
 use App\Services\ApartmentPlacementService;
 use Illuminate\Http\JsonResponse;
@@ -10,8 +10,28 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
+/**
+ * House decoration, called by the realtime server on behalf of a player. Rejections
+ * (ApartmentPlacementException) render themselves as `{ message, code }`.
+ */
 class ApartmentPlacementController extends Controller
 {
+    private const OBJECT_TRANSFORM_RULES = [
+        'variant' => ['nullable', 'string', 'max:160'],
+        'color' => ['nullable', 'string', 'max:20'],
+        'x' => ['required', 'numeric'],
+        'y' => ['required', 'numeric'],
+        'z' => ['required', 'numeric'],
+        'rotX' => ['required', 'numeric'],
+        'rotY' => ['required', 'numeric'],
+        'rotZ' => ['required', 'numeric'],
+    ];
+
+    private const HOUSE_RULES = [
+        'owner_account_id' => ['nullable', 'integer', 'min:1'],
+        'template_key' => ['nullable', 'string', 'max:120'],
+    ];
+
     public function __construct(
         private readonly ApartmentPlacementService $placements,
     ) {
@@ -19,19 +39,14 @@ class ApartmentPlacementController extends Controller
 
     public function inventory(Request $request): JsonResponse
     {
-        /** @var Account $account */
-        $account = $request->user();
-        $accountId = (int) $account->getAuthIdentifier();
+        $accountId = $this->actorId($request);
 
         try {
             $items = $this->placements->listSpawnableAssets($accountId);
-        } catch (ApartmentPlacementException $e) {
-            return $this->placementError($e);
+        } catch (ApiRejectedException $e) {
+            return $e->render();
         } catch (Throwable $e) {
-            Log::error('apartments.assets failed', [
-                'account_id' => $accountId,
-                'error' => $e->getMessage(),
-            ]);
+            Log::error('apartments.assets failed', ['account_id' => $accountId, 'error' => $e->getMessage()]);
 
             return response()->json([
                 'message' => 'Could not load apartment assets.',
@@ -39,21 +54,13 @@ class ApartmentPlacementController extends Controller
             ], 500);
         }
 
-        return response()->json([
-            'items' => $items->values()->all(),
-        ]);
+        return response()->json(['items' => $items->values()->all()]);
     }
 
     public function state(Request $request): JsonResponse
     {
-        $validated = $request->validate([
-            'owner_account_id' => ['nullable', 'integer', 'min:1'],
-            'template_key' => ['nullable', 'string', 'max:120'],
-        ]);
-        /** @var Account $account */
-        $account = $request->user();
-        $actorAccountId = (int) $account->getAuthIdentifier();
-        $ownerAccountId = (int) ($validated['owner_account_id'] ?? $actorAccountId);
+        $validated = $request->validate(self::HOUSE_RULES);
+        [$actorAccountId, $ownerAccountId] = $this->actorAndOwner($request, $validated);
 
         try {
             $state = $this->placements->resolveApartmentState(
@@ -61,8 +68,8 @@ class ApartmentPlacementController extends Controller
                 $ownerAccountId,
                 $validated['template_key'] ?? null
             );
-        } catch (ApartmentPlacementException $e) {
-            return $this->placementError($e);
+        } catch (ApiRejectedException $e) {
+            return $e->render();
         } catch (Throwable $e) {
             Log::error('apartments.state failed', [
                 'actor_account_id' => $actorAccountId,
@@ -77,116 +84,76 @@ class ApartmentPlacementController extends Controller
             ], 500);
         }
 
-        return response()->json([
-            'apartment' => $state,
-        ]);
+        return response()->json(['apartment' => $state]);
     }
 
     public function spawn(Request $request): JsonResponse
     {
-        $validated = $request->validate([
-            'owner_account_id' => ['nullable', 'integer', 'min:1'],
-            'template_key' => ['nullable', 'string', 'max:120'],
+        $validated = $request->validate(self::HOUSE_RULES + [
             'objectId' => ['required', 'string', 'max:160'],
             'objectKey' => ['required', 'string', 'max:160'],
-            'variant' => ['nullable', 'string', 'max:160'],
-            'color' => ['nullable', 'string', 'max:20'],
-            'x' => ['required', 'numeric'],
-            'y' => ['required', 'numeric'],
-            'z' => ['required', 'numeric'],
-            'rotX' => ['required', 'numeric'],
-            'rotY' => ['required', 'numeric'],
-            'rotZ' => ['required', 'numeric'],
-        ]);
-        /** @var Account $account */
-        $account = $request->user();
-        $actorAccountId = (int) $account->getAuthIdentifier();
-        $ownerAccountId = (int) ($validated['owner_account_id'] ?? $actorAccountId);
+        ] + self::OBJECT_TRANSFORM_RULES);
+        [$actorAccountId, $ownerAccountId] = $this->actorAndOwner($request, $validated);
 
-        try {
-            $object = $this->placements->spawnObject(
-                $actorAccountId,
-                $ownerAccountId,
-                $validated['template_key'] ?? null,
-                $validated
-            );
-        } catch (ApartmentPlacementException $e) {
-            return $this->placementError($e);
-        }
+        $object = $this->placements->spawnObject(
+            $actorAccountId,
+            $ownerAccountId,
+            $validated['template_key'] ?? null,
+            $validated
+        );
 
-        return response()->json([
-            'object' => $object,
-        ]);
+        return response()->json(['object' => $object]);
     }
 
     public function transform(Request $request): JsonResponse
     {
-        $validated = $request->validate([
-            'owner_account_id' => ['nullable', 'integer', 'min:1'],
-            'template_key' => ['nullable', 'string', 'max:120'],
+        $validated = $request->validate(self::HOUSE_RULES + [
             'objectId' => ['required', 'string', 'max:160'],
-            'variant' => ['nullable', 'string', 'max:160'],
-            'color' => ['nullable', 'string', 'max:20'],
-            'x' => ['required', 'numeric'],
-            'y' => ['required', 'numeric'],
-            'z' => ['required', 'numeric'],
-            'rotX' => ['required', 'numeric'],
-            'rotY' => ['required', 'numeric'],
-            'rotZ' => ['required', 'numeric'],
-        ]);
-        /** @var Account $account */
-        $account = $request->user();
-        $actorAccountId = (int) $account->getAuthIdentifier();
-        $ownerAccountId = (int) ($validated['owner_account_id'] ?? $actorAccountId);
+        ] + self::OBJECT_TRANSFORM_RULES);
+        [$actorAccountId, $ownerAccountId] = $this->actorAndOwner($request, $validated);
 
-        try {
-            $object = $this->placements->transformObject(
-                $actorAccountId,
-                $ownerAccountId,
-                $validated['template_key'] ?? null,
-                $validated
-            );
-        } catch (ApartmentPlacementException $e) {
-            return $this->placementError($e);
-        }
+        $object = $this->placements->transformObject(
+            $actorAccountId,
+            $ownerAccountId,
+            $validated['template_key'] ?? null,
+            $validated
+        );
 
-        return response()->json([
-            'object' => $object,
-        ]);
+        return response()->json(['object' => $object]);
     }
 
     public function pickup(Request $request): JsonResponse
     {
-        $validated = $request->validate([
-            'owner_account_id' => ['nullable', 'integer', 'min:1'],
-            'template_key' => ['nullable', 'string', 'max:120'],
+        $validated = $request->validate(self::HOUSE_RULES + [
             'objectId' => ['required', 'string', 'max:160'],
         ]);
+        [$actorAccountId, $ownerAccountId] = $this->actorAndOwner($request, $validated);
+
+        return response()->json($this->placements->pickupObject(
+            $actorAccountId,
+            $ownerAccountId,
+            $validated['template_key'] ?? null,
+            (string) $validated['objectId']
+        ));
+    }
+
+    private function actorId(Request $request): int
+    {
         /** @var Account $account */
         $account = $request->user();
-        $actorAccountId = (int) $account->getAuthIdentifier();
-        $ownerAccountId = (int) ($validated['owner_account_id'] ?? $actorAccountId);
 
-        try {
-            $result = $this->placements->pickupObject(
-                $actorAccountId,
-                $ownerAccountId,
-                $validated['template_key'] ?? null,
-                (string) $validated['objectId']
-            );
-        } catch (ApartmentPlacementException $e) {
-            return $this->placementError($e);
-        }
-
-        return response()->json($result);
+        return (int) $account->getAuthIdentifier();
     }
 
-    private function placementError(ApartmentPlacementException $exception): JsonResponse
+    /**
+     * The player making the request and the owner of the house they act in (themselves by default).
+     *
+     * @return array{0: int, 1: int}
+     */
+    private function actorAndOwner(Request $request, array $validated): array
     {
-        return response()->json([
-            'message' => $exception->getMessage(),
-            'code' => $exception->errorCode,
-        ], $exception->status);
+        $actorAccountId = $this->actorId($request);
+
+        return [$actorAccountId, (int) ($validated['owner_account_id'] ?? $actorAccountId)];
     }
 }
-

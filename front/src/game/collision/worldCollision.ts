@@ -1,6 +1,7 @@
 import * as RAPIER from '@dimforge/rapier3d-compat'
 import type { Collider, World } from '@dimforge/rapier3d-compat'
 import * as THREE from 'three'
+import { refreshCollisionDebug } from './collisionDebug'
 
 const CAPSULE_HALF_HEIGHT = 0.55
 const CAPSULE_RADIUS = 0.35
@@ -30,7 +31,7 @@ export interface CollisionTrimeshJson {
   indices: number[]
 }
 
-export interface CollisionFileJson {
+interface CollisionFileJson {
   version: number
   source?: string
   mode?: string
@@ -65,7 +66,6 @@ let buildInFlight: Promise<void> | null = null
 let collidersReady = false
 let loadedCuboids: CollisionCuboidJson[] = []
 let loadedTrimeshes: CollisionTrimeshJson[] = []
-let debugGroup: THREE.Group | null = null
 
 let characterController: RAPIER.KinematicCharacterController | null = null
 let playerBody: RAPIER.RigidBody | null = null
@@ -205,67 +205,6 @@ function disposeWorld(): void {
   collidersReady = false
 }
 
-function clearDebugGroup(): void {
-  if (!debugGroup) return
-  debugGroup.traverse((obj) => {
-    if (obj instanceof THREE.Mesh) {
-      obj.geometry.dispose()
-      const mat = obj.material
-      if (Array.isArray(mat)) mat.forEach((m) => m.dispose())
-      else mat.dispose()
-    }
-  })
-  debugGroup.parent?.remove(debugGroup)
-  debugGroup = null
-}
-
-function rebuildDebugGroup(): void {
-  const parent = debugGroup?.parent ?? null
-  const wasVisible = debugGroup?.visible ?? false
-  clearDebugGroup()
-  debugGroup = new THREE.Group()
-  debugGroup.name = 'CollisionDebug'
-  debugGroup.visible = wasVisible
-
-  for (const c of loadedCuboids) {
-    const isSynth = /^Synth_/i.test(c.name || '')
-    const geom = new THREE.BoxGeometry(c.hx * 2, c.hy * 2, c.hz * 2)
-    const mat = new THREE.MeshBasicMaterial({
-      color: isSynth ? 0x44ff88 : 0xff5533,
-      wireframe: true,
-      transparent: true,
-      opacity: 0.9,
-      depthTest: false,
-      depthWrite: false,
-    })
-    const mesh = new THREE.Mesh(geom, mat)
-    mesh.position.set(c.cx, c.cy, c.cz)
-    mesh.quaternion.set(c.qx, c.qy, c.qz, c.qw)
-    mesh.name = c.name || 'cuboid'
-    debugGroup.add(mesh)
-  }
-
-  for (const t of loadedTrimeshes) {
-    const geom = new THREE.BufferGeometry()
-    geom.setAttribute('position', new THREE.Float32BufferAttribute(t.vertices, 3))
-    geom.setIndex(t.indices)
-    const mat = new THREE.MeshBasicMaterial({
-      color: 0x33aaff,
-      wireframe: true,
-      transparent: true,
-      opacity: 0.95,
-      depthTest: false,
-      depthWrite: false,
-      side: THREE.DoubleSide,
-    })
-    const mesh = new THREE.Mesh(geom, mat)
-    mesh.name = t.name || 'trimesh'
-    debugGroup.add(mesh)
-  }
-
-  if (parent) parent.add(debugGroup)
-}
-
 async function buildFromCollisionData(url: string, data: CollisionFileJson): Promise<void> {
   disposeWorld()
   const w = await ensureWorld()
@@ -293,23 +232,13 @@ async function buildFromCollisionData(url: string, data: CollisionFileJson): Pro
 
   w.step()
   collidersReady = true
-  if (debugGroup) rebuildDebugGroup()
+  refreshCollisionDebug(loadedCuboids, loadedTrimeshes)
 }
 
 /**
- * Load a sidecar `.collision.json` (produced by `npm run collision:extract` /
- * `make optimize` / `map-optimize` / `apartment-optimize`) into the Rapier world.
+ * Load a sidecar `.collision.json` (produced by `npm run collision:extract` / `make assets-optimize`)
+ * into the Rapier world. Calls with the URL already loaded are no-ops.
  */
-export function clearWorldCollision(): void {
-  disposeWorld()
-  builtUrl = null
-  buildInFlight = null
-  loadedCuboids = []
-  loadedTrimeshes = []
-  resetStats()
-  clearDebugGroup()
-}
-
 export function buildWorldCollisionFromUrl(url: string): Promise<void> {
   if (builtUrl === url && collidersReady) {
     return Promise.resolve()
@@ -415,29 +344,6 @@ export function getWorldCollisionStats(): Readonly<WorldCollisionStats> {
   return stats
 }
 
-export function getLoadedCollisionCuboids(): readonly CollisionCuboidJson[] {
-  return loadedCuboids
-}
-
-/** Toggle green/red wireframe cuboids in the scene (C key). Synth platforms are green. */
-export function setCollisionDebugVisible(scene: THREE.Scene, visible: boolean): boolean {
-  if (!visible) {
-    if (debugGroup) debugGroup.visible = false
-    return false
-  }
-  if (!debugGroup || debugGroup.parent !== scene) {
-    rebuildDebugGroup()
-    if (debugGroup) scene.add(debugGroup)
-  }
-  if (debugGroup) debugGroup.visible = true
-  return true
-}
-
-export function toggleCollisionDebug(scene: THREE.Scene): boolean {
-  const next = !(debugGroup?.visible && debugGroup.parent === scene)
-  return setCollisionDebugVisible(scene, next)
-}
-
 export function resolveWorldMovement(
   current: { x: number; y: number; z: number },
   dx: number,
@@ -465,13 +371,4 @@ export function resolveWorldMovement(
 
   const movement = characterController.computedMovement()
   return { x: current.x + movement.x, z: current.z + movement.z }
-}
-
-export function useWorldCollision() {
-  return {
-    buildFromUrl: buildWorldCollisionFromUrl,
-    resolveMovement: resolveWorldMovement,
-    getStats: getWorldCollisionStats,
-    toggleDebug: toggleCollisionDebug,
-  }
 }

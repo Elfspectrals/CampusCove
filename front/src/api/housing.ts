@@ -3,25 +3,11 @@
  * - GET  /housing/units
  * - POST /housing/units/{publicId}/buy|rent|renew
  */
-import { fetchCurrentUser, formatApiError, getStoredAuth } from './auth'
+import { fetchCurrentUser } from './auth'
+import { apiRequest, isRecord } from './http'
 import type { HousingUnitPayload } from '../types/gameRealtime'
 
-const API_BASE = import.meta.env.VITE_API_URL || '/api'
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null
-}
-
-function authJsonHeaders(): HeadersInit {
-  const auth = getStoredAuth()
-  return {
-    Accept: 'application/json',
-    'Content-Type': 'application/json',
-    ...(auth?.token ? { Authorization: `Bearer ${auth.token}` } : {}),
-  }
-}
-
-export function parseHousingUnit(raw: unknown): HousingUnitPayload | null {
+function parseHousingUnit(raw: unknown): HousingUnitPayload | null {
   if (!isRecord(raw)) return null
   if (typeof raw.unit_id !== 'number') return null
   if (typeof raw.public_id !== 'string') return null
@@ -60,7 +46,8 @@ export function parseHousingUnit(raw: unknown): HousingUnitPayload | null {
   }
 }
 
-function parseUnitsList(raw: unknown): HousingUnitPayload[] {
+/** Valid rows of a housing units list (API or realtime `housing_units_sync`); malformed rows are dropped. */
+export function parseHousingUnitList(raw: unknown): HousingUnitPayload[] {
   if (!Array.isArray(raw)) return []
   const out: HousingUnitPayload[] = []
   for (const row of raw) {
@@ -76,13 +63,9 @@ export interface HousingUnitsResponse {
 }
 
 export async function fetchHousingUnits(): Promise<HousingUnitsResponse> {
-  const res = await fetch(`${API_BASE}/housing/units`, {
-    headers: authJsonHeaders(),
-  })
-  const data: unknown = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(formatApiError(data))
+  const data = await apiRequest('/housing/units')
   if (!isRecord(data)) throw new Error('Invalid housing units response')
-  const units = parseUnitsList(data.units)
+  const units = parseHousingUnitList(data.units)
   const myUnitRaw = data.my_unit
   const my_unit = myUnitRaw === null || myUnitRaw === undefined ? null : parseHousingUnit(myUnitRaw)
   if (myUnitRaw !== null && myUnitRaw !== undefined && my_unit === null) {
@@ -96,12 +79,7 @@ async function refreshWalletAfterClaim(): Promise<void> {
 }
 
 async function postHousingAction(publicId: string, action: 'buy' | 'rent' | 'renew'): Promise<HousingUnitPayload> {
-  const res = await fetch(`${API_BASE}/housing/units/${encodeURIComponent(publicId)}/${action}`, {
-    method: 'POST',
-    headers: authJsonHeaders(),
-  })
-  const data: unknown = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(formatApiError(data))
+  const data = await apiRequest(`/housing/units/${encodeURIComponent(publicId)}/${action}`, { method: 'POST' })
   if (!isRecord(data)) throw new Error('Invalid housing response')
   const unit = parseHousingUnit(data.unit)
   if (!unit) throw new Error('Invalid housing response')

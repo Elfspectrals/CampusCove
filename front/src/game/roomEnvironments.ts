@@ -1,16 +1,11 @@
 import * as THREE from 'three'
-import {
-  APARTMENT_DOOR_POS,
-  APARTMENT_HALF_EXTENT,
-  APARTMENT_ROOM_HEIGHT,
-  APARTMENT_WALL_THICKNESS,
-} from './gameRoomConstants'
-import { DEFAULT_HOUSE, HOUSES, POND, TOWN, WORK_DISTRICT, findHouse, findWork } from './assets/catalog'
+import { APARTMENT_DOOR_POS } from './gameRoomConstants'
+import { DEFAULT_HOUSE, POND, TOWN, WORK_DISTRICT, findHouse, findWork } from './assets/catalog'
 import type { TownLayout } from './assets/catalog'
 import { createGltfLoader } from './gltfLoaderFactory'
 import { getGraphicsQuality } from './graphicsQuality'
-import { animatePondWater } from './pondWater'
-import { setTerrainHeightmap, type TerrainHeightmap } from './terrainHeight'
+import { animatePondWater } from './town/pondWater'
+import { setTerrainHeightmap, type TerrainHeightmap } from './town/terrainHeight'
 import {
   addApartmentFallbackLights,
   configureRoomMeshShadows,
@@ -285,48 +280,4 @@ export function loadWorkEnvironment(workKey: string): Promise<ApartmentEnvironme
   task.catch(() => interiorCache.delete(cacheKey))
   interiorCache.set(cacheKey, task)
   return task
-}
-
-/** Every house key that has assets (for preloading / tooling). */
-export const HOUSE_KEYS = HOUSES.map((h) => h.key)
-
-/** Procedural fallback when the GLB is unavailable (unused after `loadApartmentEnvironment` wiring). */
-export function buildApartmentEnvironment(): Omit<ApartmentEnvironmentBuildResult, 'house'> {
-  const g = new THREE.Group()
-  g.userData.isRoomEnvironment = true
-  const w = APARTMENT_HALF_EXTENT * 2
-  const h = APARTMENT_ROOM_HEIGHT
-  const t = APARTMENT_WALL_THICKNESS
-  const floorMat = new THREE.MeshStandardMaterial({ color: 0x6b5344 })
-  const wallMat = new THREE.MeshStandardMaterial({ color: 0xc4b8a8 })
-  const ceilMat = new THREE.MeshStandardMaterial({ color: 0x9a8f82 })
-  const floor = new THREE.Mesh(new THREE.BoxGeometry(w, t, w), floorMat)
-  floor.position.y = -t / 2
-  floor.receiveShadow = true
-  floor.userData.apartmentEnvPart = 'floor'
-  g.add(floor)
-  const ceiling = new THREE.Mesh(new THREE.BoxGeometry(w, t, w), ceilMat)
-  ceiling.position.y = h + t / 2
-  g.add(ceiling)
-  const wallN = new THREE.Mesh(new THREE.BoxGeometry(w, h, t), wallMat)
-  wallN.position.set(0, h / 2, -APARTMENT_HALF_EXTENT)
-  const wallS = new THREE.Mesh(new THREE.BoxGeometry(w, h, t), wallMat)
-  wallS.position.set(0, h / 2, APARTMENT_HALF_EXTENT)
-  const wallW = new THREE.Mesh(new THREE.BoxGeometry(t, h, w), wallMat)
-  wallW.position.set(-APARTMENT_HALF_EXTENT, h / 2, 0)
-  const wallE = new THREE.Mesh(new THREE.BoxGeometry(t, h, w), wallMat)
-  wallE.position.set(APARTMENT_HALF_EXTENT, h / 2, 0)
-  for (const m of [wallN, wallS, wallW, wallE]) {
-    m.castShadow = true
-    m.receiveShadow = true
-    g.add(m)
-  }
-  const door = new THREE.Mesh(
-    new THREE.BoxGeometry(1.2, 2.2, 0.1),
-    new THREE.MeshStandardMaterial({ color: 0x3a2f2a }),
-  )
-  door.position.set(APARTMENT_DOOR_POS.x, 1.1, APARTMENT_DOOR_POS.z)
-  door.userData.isApartmentDoor = true
-  g.add(door)
-  return { group: g }
 }

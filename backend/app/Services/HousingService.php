@@ -15,7 +15,6 @@ use App\Models\RoomMembership;
 use App\Models\Server;
 use App\Models\Wallet;
 use App\Models\WalletLedgerEntry;
-use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -108,14 +107,6 @@ final class HousingService
         ];
     }
 
-    /**
-     * @return list<array<string, mixed>>
-     */
-    public function listUnits(): array
-    {
-        return $this->listUnitsForAccount(null)['units'];
-    }
-
     public function claimBuy(Account $account, string $unitPublicId): HousingUnit
     {
         return $this->claimUnit($account, $unitPublicId, 'buy', 'housing_buy', null);
@@ -201,12 +192,6 @@ final class HousingService
         return $unit->lease_expires_at !== null && $unit->lease_expires_at->isFuture();
     }
 
-    public function isCurrentOccupant(int $accountId, int $ownerAccountId): bool
-    {
-        return $accountId === $ownerAccountId
-            && $this->findOccupiedUnitForAccount($accountId) !== null;
-    }
-
     public function officialTemplateKeyForAccount(int $accountId): string
     {
         $unit = $this->findOccupiedUnitForAccount($accountId);
@@ -274,8 +259,8 @@ final class HousingService
 
     private function debitCoins(int $accountId, int $amount, string $reason, array $meta): void
     {
-        $wallet = $this->lockAccountWallet($accountId, self::CURRENCY);
-        $balance = $this->walletBalance((int) $wallet->wallet_id);
+        $wallet = Wallet::lockForAccount($accountId, self::CURRENCY);
+        $balance = $wallet->balance();
         if ($balance < $amount) {
             throw new HousingRejectedException('insufficient_funds', 'Insufficient wallet balance.', 422);
         }
@@ -295,43 +280,6 @@ final class HousingService
             'delta' => -$amount,
             'reason' => $reason,
         ]);
-    }
-
-    private function lockAccountWallet(int $accountId, string $currency): Wallet
-    {
-        $wallet = Wallet::query()
-            ->where('owner_type', Wallet::OWNER_TYPE_ACCOUNT)
-            ->where('owner_id', $accountId)
-            ->where('currency', $currency)
-            ->lockForUpdate()
-            ->first();
-
-        if ($wallet !== null) {
-            return $wallet;
-        }
-
-        try {
-            return Wallet::query()->create([
-                'owner_type' => Wallet::OWNER_TYPE_ACCOUNT,
-                'owner_id' => $accountId,
-                'currency' => $currency,
-                'created_at' => now(),
-            ]);
-        } catch (UniqueConstraintViolationException) {
-            // Concurrent wallet creation.
-        }
-
-        return Wallet::query()
-            ->where('owner_type', Wallet::OWNER_TYPE_ACCOUNT)
-            ->where('owner_id', $accountId)
-            ->where('currency', $currency)
-            ->lockForUpdate()
-            ->firstOrFail();
-    }
-
-    private function walletBalance(int $walletId): int
-    {
-        return (int) WalletLedgerEntry::query()->where('wallet_id', $walletId)->sum('delta');
     }
 
     private function createApartmentRoom(int $ownerAccountId, string $templateKey): Room

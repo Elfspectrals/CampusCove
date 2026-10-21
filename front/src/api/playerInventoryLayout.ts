@@ -1,28 +1,14 @@
 /**
  * Player inventory hotbar + grid layout persistence (Laravel `/api/inventory/layout`).
  */
-import { formatApiError, getStoredAuth } from './auth'
-
-const API_BASE = import.meta.env.VITE_API_URL || '/api'
+import { apiFetch, apiRequest, isRecord } from './http'
+import { getStoredAuth } from './session'
 
 const SLOT_COUNT = 36
 
 export interface PlayerInventoryLayout {
   slots: string[]
   selectedHotbarIndex: number
-}
-
-function authJsonHeaders(): HeadersInit {
-  const auth = getStoredAuth()
-  return {
-    Accept: 'application/json',
-    'Content-Type': 'application/json',
-    ...(auth?.token ? { Authorization: `Bearer ${auth.token}` } : {}),
-  }
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null
 }
 
 export function defaultPlayerInventoryLayout(): PlayerInventoryLayout {
@@ -68,9 +54,7 @@ function normalizeLayout(layout: PlayerInventoryLayout): PlayerInventoryLayout {
 export async function fetchInventoryLayout(): Promise<PlayerInventoryLayout> {
   const defaults = defaultPlayerInventoryLayout()
   try {
-    const res = await fetch(`${API_BASE}/inventory/layout`, {
-      headers: authJsonHeaders(),
-    })
+    const res = await apiFetch('/inventory/layout')
     const data: unknown = await res.json().catch(() => ({}))
     if (!res.ok) return defaults
     if (!isRecord(data)) return defaults
@@ -93,14 +77,11 @@ export async function saveInventoryLayout(layout: PlayerInventoryLayout): Promis
   const auth = getStoredAuth()
   if (!auth?.token) throw new Error('Not authenticated')
 
-  const res = await fetch(`${API_BASE}/inventory/layout`, {
+  await apiRequest('/inventory/layout', {
     method: 'PUT',
-    headers: authJsonHeaders(),
-    body: JSON.stringify({
+    body: {
       slots: slotsForApiWrite(normalized.slots),
       selected_hotbar_index: normalized.selectedHotbarIndex,
-    }),
+    },
   })
-  const data: unknown = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(formatApiError(data))
 }

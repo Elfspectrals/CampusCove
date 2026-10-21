@@ -1,11 +1,22 @@
 <script setup lang="ts">
+import { getGraphicsQuality, toggleGraphicsQuality } from '../../game/graphicsQuality'
 import UiIcon from '../ui/UiIcon.vue'
 
 defineProps<{
   currentRoomLabel: 'city' | 'apartment'
   apartmentObjectCount: number
   positionLabel: string
+  /** The quality toggle is only clickable while the pointer is free. */
+  showGraphicsToggle: boolean
 }>()
+
+const graphicsQualityLabel = getGraphicsQuality() === 'low' ? 'Low' : 'High'
+
+/** The renderer is configured at creation, so a quality change needs a reload. */
+function onToggleGraphicsQuality(): void {
+  toggleGraphicsQuality()
+  window.location.reload()
+}
 </script>
 
 <template>
@@ -23,6 +34,14 @@ defineProps<{
     >
       <UiIcon name="chair" :size="14" class="text-pool" /> {{ apartmentObjectCount }} objects
     </span>
-    <slot />
+    <button
+      v-if="showGraphicsToggle"
+      type="button"
+      class="cc-hud inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-extrabold text-fog transition hover:border-sun/70 hover:text-sun"
+      @click.stop="onToggleGraphicsQuality"
+      @mousedown.stop
+    >
+      <UiIcon name="monitor" :size="14" /> {{ graphicsQualityLabel }}
+    </button>
   </div>
 </template>

@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
-import { getStoredAuth } from '../api/auth'
-import { useWalletBalances } from '../composables/useWalletBalances'
+import { useShopPurchase } from '../composables/useShopPurchase'
 import LockerCharacterPreview from '../components/locker/LockerCharacterPreview.vue'
 import ItemShopPurchaseConfirmModal from '../components/shop/ItemShopPurchaseConfirmModal.vue'
 import * as itemShopApi from '../api/itemShop'
-import type { ShopCurrency, ShopItem, ShopItemCurrencyOption } from '../api/itemShop'
-import { currencyLabel, itemRarity, rarityClass } from '../utils/itemShopPresentation'
+import type { ShopItem } from '../api/itemShop'
+import { currencyLabel, isApartmentItem, itemRarity, rarityClass } from '../utils/itemShopPresentation'
 import UiIcon from '../components/ui/UiIcon.vue'
 import UiCurrency from '../components/ui/UiCurrency.vue'
 
@@ -15,42 +14,23 @@ const items = ref<ShopItem[]>([])
 const route = useRoute()
 const catalogLoading = ref(true)
 const catalogError = ref<string | null>(null)
-const purchasingId = ref<number | null>(null)
-
-interface ItemFeedback {
-  kind: 'success' | 'error'
-  text: string
-}
-
-const feedbackByItem = ref<Record<number, ItemFeedback>>({})
-
-const auth = computed(() => getStoredAuth())
-const isLoggedIn = computed(() => Boolean(auth.value?.token))
-const balances = useWalletBalances()
-
-const confirmItem = ref<ShopItem | null>(null)
-const confirmCurrency = ref<ShopCurrency>('coins')
+const {
+  isLoggedIn,
+  confirmItem,
+  confirmCurrency,
+  confirmOption,
+  confirmCurrent,
+  confirmAfter,
+  purchasingId,
+  feedbackByItem,
+  openPurchaseConfirm,
+  closePurchaseConfirm,
+  confirmPurchase,
+} = useShopPurchase()
 const selectedItemDefId = ref<number | null>(null)
 
 const currentSection = computed<'character' | 'apartment'>(() => {
   return route.name === 'shop-skin' ? 'character' : 'apartment'
-})
-
-const confirmOption = computed<ShopItemCurrencyOption | null>(() => {
-  const item = confirmItem.value
-  if (!item) return null
-  return item.options.find((opt) => opt.currency === confirmCurrency.value) ?? null
-})
-
-const confirmCurrent = computed(() => {
-  if (!confirmOption.value) return null
-  return confirmOption.value.currency === 'coins' ? balances.value.coins : balances.value.premium
-})
-
-const confirmAfter = computed(() => {
-  const cur = confirmCurrent.value
-  if (cur === null || !confirmOption.value) return null
-  return cur - confirmOption.value.price
 })
 
 const selectedItem = computed<ShopItem | null>(() => {
@@ -60,10 +40,8 @@ const selectedItem = computed<ShopItem | null>(() => {
 })
 
 const filteredItems = computed<ShopItem[]>(() => {
-  if (currentSection.value === 'apartment') {
-    return items.value.filter((item) => item.kind === 'apartment_asset' || item.kind === 'furniture')
-  }
-  return items.value.filter((item) => item.kind !== 'apartment_asset' && item.kind !== 'furniture')
+  const wantApartment = currentSection.value === 'apartment'
+  return items.value.filter((item) => isApartmentItem(item) === wantApartment)
 })
 
 function selectItem(item: ShopItem) {
@@ -85,49 +63,6 @@ async function loadCatalog() {
     items.value = []
   } finally {
     catalogLoading.value = false
-  }
-}
-
-function clearFeedbackForItem(itemDefId: number) {
-  const next = { ...feedbackByItem.value }
-  delete next[itemDefId]
-  feedbackByItem.value = next
-}
-
-function openPurchaseConfirm(item: ShopItem) {
-  if (!isLoggedIn.value) return
-  confirmItem.value = item
-  confirmCurrency.value = item.options[0]?.currency ?? 'coins'
-}
-
-function closePurchaseConfirm() {
-  confirmItem.value = null
-}
-
-async function confirmPurchase() {
-  const item = confirmItem.value
-  const selected = confirmOption.value
-  if (!item || !selected) return
-  clearFeedbackForItem(item.item_def_id)
-  purchasingId.value = selected.shop_catalog_item_id
-  try {
-    const result = await itemShopApi.purchaseShopItem({
-      shop_catalog_item_id: selected.shop_catalog_item_id,
-      currency: selected.currency,
-    })
-    feedbackByItem.value = {
-      ...feedbackByItem.value,
-      [item.item_def_id]: { kind: 'success', text: result.message },
-    }
-    closePurchaseConfirm()
-  } catch (e) {
-    const text = e instanceof Error ? e.message : 'Purchase failed'
-    feedbackByItem.value = {
-      ...feedbackByItem.value,
-      [item.item_def_id]: { kind: 'error', text },
-    }
-  } finally {
-    purchasingId.value = null
   }
 }
 </script>

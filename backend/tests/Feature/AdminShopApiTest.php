@@ -149,8 +149,9 @@ class AdminShopApiTest extends TestCase
         ]);
 
         $response->assertCreated();
-        $this->assertStringContainsString('/storage/skins/previews/', (string) $response->json('item.item.preview_image'));
-        $this->assertStringContainsString('/storage/skins/models/', (string) $response->json('item.item.model_glb'));
+        // Uploads are served by AssetController (/api/assets/public/...).
+        $this->assertStringContainsString('/api/assets/public/skins/previews/', (string) $response->json('item.item.preview_image'));
+        $this->assertStringContainsString('/api/assets/public/skins/models/', (string) $response->json('item.item.model_glb'));
         $this->assertStringStartsWith('http', (string) $response->json('item.item.preview_image'));
         $this->assertStringStartsWith('http', (string) $response->json('item.item.model_glb'));
     }

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
-import { getStoredAuth } from '../api/auth'
+import { getStoredAuth } from '../api/session'
 import { useWalletBalances } from '../composables/useWalletBalances'
 import * as friendsApi from '../api/friends'
 import type { Friend } from '../api/friends'

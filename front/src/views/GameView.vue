@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import * as THREE from 'three'
 import type { Room } from '@colyseus/sdk'
 import {
   defaultCosmeticColors,
@@ -9,132 +8,62 @@ import {
   fetchCharacterCosmetics,
   type CharacterCosmeticsState,
 } from '../api/characterCosmetics'
-import { getStoredAuth, clearAuth } from '../api/auth'
-import { buyHousingUnit, fetchHousingUnits, rentHousingUnit, renewHousingUnit } from '../api/housing'
-import { buildFirstPersonHands, disposeObject3D } from '../avatar/compositeAvatar'
-import { matchesRotateCCW, matchesRotateCW } from '../config/keybindings'
+import { fetchHousingUnits } from '../api/housing'
+import { clearAuth, getStoredAuth } from '../api/session'
 import GameHudToolbar from '../components/game/GameHudToolbar.vue'
 import GameInteractionPrompt from '../components/game/GameInteractionPrompt.vue'
 import GamePlacementHud from '../components/game/GamePlacementHud.vue'
-import UiIcon from '../components/ui/UiIcon.vue'
 import GamePlayerHotbar from '../components/game/GamePlayerHotbar.vue'
 import GamePlayerInventoryPanel from '../components/game/GamePlayerInventoryPanel.vue'
 import GamePointerLockOverlay from '../components/game/GamePointerLockOverlay.vue'
 import GameRoomMessageBanner from '../components/game/GameRoomMessageBanner.vue'
+import UiIcon from '../components/ui/UiIcon.vue'
 import { useApartmentObjects } from '../composables/game/useApartmentObjects'
 import { useApartmentPlacement } from '../composables/game/useApartmentPlacement'
+import { useCityHousing } from '../composables/game/useCityHousing'
 import { useGameMovement } from '../composables/game/useGameMovement'
-import {
-  buildWorldCollisionFromUrl,
-  getWorldCollisionStats,
-  toggleCollisionDebug,
-} from '../composables/game/useWorldCollision'
 import { useGameRealtime } from '../composables/game/useGameRealtime'
+import { useInteractionTargets } from '../composables/game/useInteractionTargets'
 import { usePlayerInventory } from '../composables/game/usePlayerInventory'
-import {
-  formatLeaseRemaining,
-  formatRentDuration,
-  housingActionFor,
-  showRenewForUnit,
-  useCityHousing,
-} from '../composables/game/useCityHousing'
-import { getGraphicsQuality, supportsEnvironmentMap, toggleGraphicsQuality } from '../game/graphicsQuality'
-import {
-  applySceneAtmosphere,
-  loadApartmentEnvironment,
-  loadTownEnvironment,
-  loadWorkEnvironment,
-  stripRoomEnvironmentsFromScene,
-} from '../game/roomEnvironments'
-import type { WorkLot } from '../game/workBuildings'
-import type { FishingSpot } from '../game/fishingSpots'
-import { TOWN } from '../game/assets/catalog'
-import {
-  applySharedEnvironment,
-  clearSharedEnvironment,
-  configureGlobalSceneLights,
-  disposeSharedEnvironment,
-  loadSharedEnvironmentMap,
-} from '../game/sceneLighting'
-import { APARTMENT_DOOR_POS, HOUSING_LOBBY_SPAWN } from '../game/gameRoomConstants'
-import { housingCubeInteractPosition, syncHousingCubes } from '../game/housingCubes'
-
-const YAW_STEP = Math.PI / 12
+import { useRoomEnvironment } from '../composables/game/useRoomEnvironment'
+import { toggleCollisionDebug } from '../game/collision/collisionDebug'
+import { getWorldCollisionStats } from '../game/collision/worldCollision'
+import { HOUSING_LOBBY_SPAWN } from '../game/gameRoomConstants'
+import { createGameScene, disposeGameScene, type GameScene } from '../game/gameScene'
 
 const router = useRouter()
 const containerRef = ref<HTMLElement | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
+
+// ---------------------------------------------------------------- shared game state
+
+const gameRoomRef = shallowRef<Room | null>(null)
 const roomMessage = ref<string | null>(null)
 const currentRoomLabel = ref<'city' | 'apartment'>('city')
-const nearApartmentDoor = ref(false)
-const nearCityDoor = ref(false)
 const canEditApartment = ref(false)
 const visitedApartmentOwnerId = ref<number | null>(null)
-// Business district: buildings from town.layout.json, the one whose door we stand at, the one we are inside.
-const workLots = ref<WorkLot[]>([])
-const nearbyWork = ref<WorkLot | null>(null)
 const visitedWorkKey = ref<string | null>(null)
-const fishingSpots = ref<FishingSpot[]>([])
-const nearbyFishingSpot = ref<FishingSpot | null>(null)
-const housingClaimInFlight = ref(false)
-const switchingRoom = ref(false)
 const pointerLocked = ref(false)
-const transitioningApartment = ref(false)
-const wasPointerLockedAtTransitionStart = ref(false)
 const refreshMyAppearance = ref<(() => void) | null>(null)
-/** Door interaction prompt (left click, or I on the keyboard). */
-const doorPromptPos = ref<{ x: number; y: number; action: string; detail?: string } | null>(null)
-const renewPromptPos = ref<{ x: number; y: number } | null>(null)
-const doorProjectionVec = new THREE.Vector3()
-
-const realtimeHttpUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000'
-const gameRoomRef = shallowRef<Room | null>(null)
-
-const myPosition = { x: HOUSING_LOBBY_SPAWN.x, y: HOUSING_LOBBY_SPAWN.y, z: HOUSING_LOBBY_SPAWN.z }
-const positionLabel = ref(
-  `${HOUSING_LOBBY_SPAWN.x.toFixed(1)}, ${HOUSING_LOBBY_SPAWN.y.toFixed(1)}, ${HOUSING_LOBBY_SPAWN.z.toFixed(1)}`,
-)
-const direction = new THREE.Vector3(0, 0, -1)
-
-let scene: THREE.Scene
-let camera: THREE.PerspectiveCamera
-let renderer: THREE.WebGLRenderer
-let roomEnvironment: THREE.Group | null = null
-let housingCubesGroup: THREE.Group | null = null
-let roomEnvironmentLoadToken = 0
-let fpHands: THREE.Group | null = null
-
 const myAccountId = computed(() => getStoredAuth()?.user.account_id ?? null)
 
-const {
-  units: housingUnits,
-  nearbyUnit: nearbyHousingUnit,
-  applyUnits: applyHousingUnits,
-} = useCityHousing(myAccountId)
+/** Eye position of the local player (plain object: written every frame). */
+const myPosition = { ...HOUSING_LOBBY_SPAWN }
+const formatPosition = () => `${myPosition.x.toFixed(1)}, ${myPosition.y.toFixed(1)}, ${myPosition.z.toFixed(1)}`
+const positionLabel = ref(formatPosition())
 
-function syncCityHousingCubes(): void {
-  if (!housingCubesGroup) return
-  syncHousingCubes(housingCubesGroup, housingUnits.value)
-}
+let game: GameScene | null = null
+const getScene = () => game?.scene
+const getCamera = () => game?.camera
+const getRenderer = () => game?.renderer
 
-function onHousingUnitsFromServer(units: import('../types/gameRealtime').HousingUnitPayload[]): void {
-  applyHousingUnits(units)
-  if (currentRoomLabel.value === 'city') {
-    syncCityHousingCubes()
-  }
-}
-
-let apartmentPlacementRef: ReturnType<typeof useApartmentPlacement> | null = null
-
-let getInventoryOpen: () => boolean = () => false
-let runRefreshApartmentInventory: () => void = () => {}
+// ---------------------------------------------------------------- house decoration
 
 const {
   apartmentObjectCount,
   apartmentObjectIds,
   selectedPlacedObjectId,
   detachForRoomSwitch,
-  clearPersistTimers,
   clearApartmentObjects,
   ensureApartmentObjectsFromServer,
   upsertApartmentObjectFromRemote,
@@ -142,36 +71,29 @@ const {
   persistApartmentTransformForMesh,
   getApartmentObjectMesh,
 } = useApartmentObjects({
-  getScene: () => scene,
+  getScene,
   getGameRoom: () => gameRoomRef.value,
   currentRoomLabel,
-  onApartmentObjectMeshUpserted: (mesh) => {
-    const id = typeof mesh.userData.apartmentObjectId === 'string' ? mesh.userData.apartmentObjectId : ''
-    if (id) apartmentPlacementRef?.registerApartmentProp(id, mesh)
-  },
-  onApartmentObjectMeshRemoved: (objectId) => {
-    apartmentPlacementRef?.unregisterApartmentProp(objectId)
-  },
-  onApartmentObjectRemovedNotify: (objectId) => {
-    apartmentPlacementRef?.notifyPropRemovedFromWorld(objectId)
+  onMeshUpserted: (mesh) => placement.registerApartmentProp(mesh),
+  onMeshRemoved: (objectId) => {
+    placement.unregisterApartmentProp(objectId)
+    placement.notifyPropRemovedFromWorld(objectId)
   },
 })
 
-const apartmentPlacement = useApartmentPlacement({
-  getScene: () => scene,
-  getCamera: () => camera,
-  getRenderer: () => renderer,
+const placement = useApartmentPlacement({
+  getScene,
+  getCamera,
   getColyseusRoom: () => gameRoomRef.value,
   getApartmentObjectMesh,
-  getApartmentInventoryOpen: () => getInventoryOpen(),
+  getApartmentInventoryOpen: () => inventoryOpen.value,
   currentRoomLabel,
   pointerLocked,
   canEditApartment,
   persistApartmentTransformForMesh,
-  refreshApartmentInventory: () => runRefreshApartmentInventory(),
+  refreshApartmentInventory: () => refreshOwnedItems(),
 })
-
-apartmentPlacementRef = apartmentPlacement
+const { crosshairTint, hudHints: placementHudHints, isPreviewing: placementPreviewActive } = placement
 
 const {
   slots,
@@ -198,574 +120,241 @@ const {
   onPlacedObjectSelected,
   toggleInventory,
   closeInventory,
-  tryExitApartmentAtDoor,
-  enterApartment,
   pickupToHotbar,
 } = usePlayerInventory({
   gameRoomRef,
   currentRoomLabel,
   canEditApartment,
-  myPosition,
-  direction,
   selectedPlacedObjectId,
-  attachSelectedPlacedObject: () => undefined,
-  startPlacementPreview: (itemDef, ownedCountRef) => {
-    apartmentPlacement.startPreviewNew(itemDef, ownedCountRef)
-  },
-  cancelPlacementPreview: () => apartmentPlacement.cancelPreview(),
+  startPlacementPreview: (itemDef, ownedCountRef) => placement.startPreviewNew(itemDef, ownedCountRef),
+  cancelPlacementPreview: () => placement.cancelPreview(),
 })
 
-getInventoryOpen = () => inventoryOpen.value
-runRefreshApartmentInventory = refreshOwnedItems
+// ---------------------------------------------------------------- town: houses, doors, environment
 
-const placementHudHints = computed(() => apartmentPlacement.hudHints.value)
+const housing = useCityHousing({
+  myAccountId,
+  gameRoomRef,
+  roomMessage,
+  enterHouse: (ownerAccountId, templateKey) => {
+    closeInventory()
+    realtime.enterHouse(ownerAccountId, templateKey)
+  },
+})
 
-const placementPreviewActive = computed(
-  () =>
-    apartmentPlacement.currentState.value.kind === 'preview_new' ||
-    apartmentPlacement.currentState.value.kind === 'preview_existing',
-)
+const interactions = useInteractionTargets({
+  currentRoomLabel,
+  myPosition,
+  myAccountId,
+  getCamera,
+  canvasRef,
+  promptsHidden: () => inventoryOpen.value || housing.claimInFlight.value,
+  housingUnits: housing.units,
+  nearbyHousingUnit: housing.nearbyUnit,
+  onExitDoor: () => {
+    placement.cancelPreview()
+    realtime.exitBuilding()
+  },
+  onHousingDoor: () => void housing.interact(),
+  onWorkDoor: (lot) => {
+    closeInventory()
+    realtime.enterWork(lot.key)
+  },
+  // Fishing gameplay is not built yet: the spots only show their prompt.
+  onFishingSpot: () => window.alert('implement pechee'),
+})
+const { doorPrompt, renewPrompt } = interactions
 
-const graphicsQuality = ref(getGraphicsQuality())
-const graphicsQualityLabel = computed(() => (graphicsQuality.value === 'low' ? 'Low' : 'High'))
+const environment = useRoomEnvironment({
+  getScene,
+  getRenderer,
+  houseKeyForTemplate: housing.houseKeyForTemplate,
+  onTownLoaded: interactions.setTownLayout,
+  onInteriorLoaded: (built) => placement.registerApartmentEnvironment(built),
+  onError: (message) => {
+    roomMessage.value = message
+  },
+})
 
-function onToggleGraphicsQuality(event: MouseEvent): void {
-  event.stopPropagation()
-  toggleGraphicsQuality()
-  window.location.reload()
-}
-
-function hexStringToNumber(hex: string): number {
-  return parseInt(hex.length === 7 ? hex.slice(1) : hex, 16)
-}
-
-async function loadCosmeticsState(): Promise<CharacterCosmeticsState> {
-  try {
-    return await fetchCharacterCosmetics()
-  } catch {
-    return {
-      slots: emptyCosmeticLoadout(),
-      colors: defaultCosmeticColors(),
-    }
-  }
-}
-
-async function tryRenewNearbyRent(): Promise<void> {
-  if (currentRoomLabel.value !== 'city' || housingClaimInFlight.value) return
-  const unit = nearbyHousingUnit.value
-  if (!unit || !showRenewForUnit(unit, myAccountId.value)) return
-  housingClaimInFlight.value = true
-  roomMessage.value = null
-  try {
-    await renewHousingUnit(unit.public_id)
-    gameRoomRef.value?.send('housing_refresh')
-  } catch (err) {
-    roomMessage.value = err instanceof Error ? err.message : 'Could not renew lease.'
-  } finally {
-    housingClaimInFlight.value = false
-  }
-}
-
-async function onNearHousingInteract(): Promise<void> {
-  if (!getStoredAuth() || !gameRoomRef.value || housingClaimInFlight.value) return
-  const unit = nearbyHousingUnit.value
-  if (!unit) return
-  const action = housingActionFor(unit, myAccountId.value)
-  if (!action) return
-
-  if (action === 'buy' || action === 'rent') {
-    housingClaimInFlight.value = true
-    roomMessage.value = null
-    try {
-      if (action === 'buy') {
-        await buyHousingUnit(unit.public_id)
-      } else {
-        await rentHousingUnit(unit.public_id)
-      }
-      gameRoomRef.value.send('housing_refresh')
-    } catch (err) {
-      roomMessage.value = err instanceof Error ? err.message : 'Housing claim failed.'
-    } finally {
-      housingClaimInFlight.value = false
-    }
-    return
-  }
-
-  if (action === 'enter' || action === 'visit') {
-    const ownerId = unit.occupant_account_id
-    if (ownerId === null) return
-    transitioningApartment.value = true
-    wasPointerLockedAtTransitionStart.value = pointerLocked.value
-    void enterApartment(ownerId, unit.template_key)
-  }
-}
-
-/** Work buildings are free and public: no purchase or lease, the server just moves us inside. */
-function onNearWorkInteract(): void {
-  const lot = nearbyWork.value
-  if (!lot || !gameRoomRef.value || transitioningApartment.value) return
-  transitioningApartment.value = true
-  wasPointerLockedAtTransitionStart.value = pointerLocked.value
-  closeInventory()
-  gameRoomRef.value.send('enter_work', { workKey: lot.key })
-}
-
-function onNearFishingInteract(): void {
-  if (!nearbyFishingSpot.value) return
-  window.alert('implement pechee')
-}
-
-function handleExtraKeyDown(e: KeyboardEvent): boolean {
-  if (currentRoomLabel.value === 'city' && e.code === 'KeyU' && !e.repeat) {
-    void tryRenewNearbyRent()
-    return true
-  }
-  if (e.code === 'KeyC' && !e.repeat) {
-    const on = toggleCollisionDebug(scene)
-    const s = getWorldCollisionStats()
-    console.info(
-      `[collision] debug ${on ? 'ON' : 'OFF'} — ${s.cuboids} cuboids, mode=${s.mode ?? 'n/a'}`,
-    )
-    return true
-  }
-  if (currentRoomLabel.value !== 'apartment') return false
-  if (e.code === 'Escape' && !e.repeat) {
-    if (apartmentPlacement.currentState.value.kind !== 'idle') {
-      apartmentPlacement.cancelPreview()
-      return true
-    }
-    return false
-  }
-  if (matchesRotateCW(e) && !e.repeat) {
-    if (apartmentPlacement.currentState.value.kind !== 'idle') {
-      apartmentPlacement.stepRotate(YAW_STEP)
-      return true
-    }
-    return false
-  }
-  if (matchesRotateCCW(e) && !e.repeat) {
-    if (apartmentPlacement.currentState.value.kind !== 'idle') {
-      apartmentPlacement.stepRotate(-YAW_STEP)
-      return true
-    }
-    return false
-  }
-  return false
-}
-
-function projectWorldToScreen(wx: number, wy: number, wz: number): { x: number; y: number } | null {
-  if (!camera || !canvasRef.value) return null
-  doorProjectionVec.set(wx, wy, wz)
-  doorProjectionVec.project(camera)
-  if (doorProjectionVec.z > 1) return null
-  const rect = canvasRef.value.getBoundingClientRect()
-  return {
-    x: (doorProjectionVec.x * 0.5 + 0.5) * rect.width,
-    y: (-doorProjectionVec.y * 0.5 + 0.5) * rect.height,
-  }
-}
-
-function updateDoorPromptScreenPos(): void {
-  if (!camera || !canvasRef.value) {
-    doorPromptPos.value = null
-    renewPromptPos.value = null
-    return
-  }
-  const inApartment = currentRoomLabel.value === 'apartment'
-  const isNear = inApartment ? nearApartmentDoor.value : nearCityDoor.value
-  if (!isNear || inventoryOpen.value || housingClaimInFlight.value) {
-    doorPromptPos.value = null
-    renewPromptPos.value = null
-    return
-  }
-
-  if (inApartment) {
-    const screen = projectWorldToScreen(APARTMENT_DOOR_POS.x, 1.5, APARTMENT_DOOR_POS.z)
-    if (!screen) {
-      doorPromptPos.value = null
-      renewPromptPos.value = null
-      return
-    }
-    doorPromptPos.value = { ...screen, action: 'Exit' }
-    renewPromptPos.value = null
-    return
-  }
-
-  const unit = nearbyHousingUnit.value
-  const work = nearbyWork.value
-  if (!unit && work) {
-    const screen = projectWorldToScreen(work.door[0], 1.5, work.door[2])
-    doorPromptPos.value = screen ? { ...screen, action: 'Enter', detail: work.name } : null
-    renewPromptPos.value = null
-    return
-  }
-  const fishing = nearbyFishingSpot.value
-  if (!unit && fishing) {
-    const screen = projectWorldToScreen(fishing.lookAt[0], fishing.lookAt[1] + 0.8, fishing.lookAt[2])
-    doorPromptPos.value = screen ? { ...screen, action: 'Fish' } : null
-    renewPromptPos.value = null
-    return
-  }
-  if (!unit) {
-    doorPromptPos.value = null
-    renewPromptPos.value = null
-    return
-  }
-  const action = housingActionFor(unit, myAccountId.value)
-  const interactPos = housingCubeInteractPosition(unit)
-  const screen = projectWorldToScreen(interactPos.x, interactPos.y, interactPos.z)
-  if (!screen || !action) {
-    doorPromptPos.value = null
-    renewPromptPos.value = null
-    return
-  }
-
-  let actionLabel = 'Enter'
-  let detail: string | undefined
-  if (action === 'buy') {
-    actionLabel = 'Buy'
-    detail = `${unit.price_coins.toLocaleString()} coins`
-  } else if (action === 'rent') {
-    actionLabel = 'Rent'
-    detail = `${unit.price_coins.toLocaleString()} coins · ${formatRentDuration(unit.rent_duration_hours)}`
-  } else if (action === 'visit') {
-    actionLabel = 'Visit'
-  } else if (action === 'enter') {
-    actionLabel = 'Enter'
-    const leaseDetail = formatLeaseRemaining(unit)
-    if (leaseDetail) detail = leaseDetail
-  }
-
-  doorPromptPos.value = { ...screen, action: actionLabel, detail }
-
-  if (showRenewForUnit(unit, myAccountId.value)) {
-    renewPromptPos.value = { x: screen.x + 72, y: screen.y }
-  } else {
-    renewPromptPos.value = null
-  }
-}
-
-/** House asset key for an apartment template ('housing_<unit_id>'), via the unit's model_key. */
-function houseKeyForTemplate(templateKey: string | undefined): string | null {
-  if (!templateKey) return null
-  return housingUnits.value.find((u) => u.template_key === templateKey)?.model_key ?? null
-}
-
-function setRoomEnvironment(kind: 'city' | 'apartment', templateKey?: string, workKey?: string | null) {
-  const token = ++roomEnvironmentLoadToken
+/** Back to the town resets everything tied to the building we were in. */
+function setRoomEnvironment(kind: 'city' | 'apartment', templateKey?: string, workKey?: string | null): void {
   if (kind === 'city') {
-    apartmentPlacement.setPlayerInsideApartment(false)
-  }
-  if (roomEnvironment) {
-    scene.remove(roomEnvironment)
-    if (!roomEnvironment.userData.isPersistentEnvironment) {
-      disposeObject3D(roomEnvironment)
-    }
-    roomEnvironment = null
-  }
-  applySceneAtmosphere(scene, kind, renderer)
-  if (kind === 'city') {
+    placement.setPlayerInsideApartment(false)
     canEditApartment.value = false
     visitedApartmentOwnerId.value = null
     visitedWorkKey.value = null
-    stripRoomEnvironmentsFromScene(scene)
-    myPosition.x = HOUSING_LOBBY_SPAWN.x
-    myPosition.y = HOUSING_LOBBY_SPAWN.y
-    myPosition.z = HOUSING_LOBBY_SPAWN.z
-    nearApartmentDoor.value = false
+    Object.assign(myPosition, HOUSING_LOBBY_SPAWN)
     resetClientStateForCityWorld()
     clearApartmentObjects()
-    void buildWorldCollisionFromUrl(TOWN.collisionUrl).catch((err) => {
-      console.warn('[collision] town collision failed', err)
-    })
-    // Town map + the 10 house exteriors (assets/town, assets/houses). Legacy units without a
-    // model_key still get a placeholder cube.
-    void loadTownEnvironment()
-      .then(({ group, layout }) => {
-        workLots.value = layout.work ?? []
-        fishingSpots.value = layout.pond?.fishingSpots ?? []
-        if (token !== roomEnvironmentLoadToken) return
-        roomEnvironment = group
-        if (!housingCubesGroup) {
-          housingCubesGroup = new THREE.Group()
-          housingCubesGroup.name = 'HousingCubes'
-        }
-        if (housingCubesGroup.parent !== group) {
-          group.add(housingCubesGroup)
-        }
-        syncCityHousingCubes()
-        scene.add(group)
-      })
-      .catch((err) => {
-        console.error('[town] load failed', err)
-        roomMessage.value = 'Could not load the town.'
-      })
-  } else {
-    const interior = workKey ? loadWorkEnvironment(workKey) : loadApartmentEnvironment(houseKeyForTemplate(templateKey))
-    void interior.then((built) => {
-      if (token !== roomEnvironmentLoadToken) return
-      roomEnvironment = built.group
-      scene.add(roomEnvironment)
-      apartmentPlacement.registerApartmentEnvironment(built)
-      void buildWorldCollisionFromUrl(built.house.interiorCollisionUrl).catch((err) => {
-        console.warn('[collision] house collision failed', err)
-      })
-      nearCityDoor.value = false
-      void apartmentPlacement.init({
-        scene,
-        camera,
-        renderer,
-        colyseusRoom: gameRoomRef,
-      })
-    })
   }
+  environment.setRoomEnvironment(kind, templateKey, workKey)
 }
 
-const {
-  containerSize,
-  onKeyDown,
-  onKeyUp,
-  onMouseMove,
-  onPointerLockChange,
-  onResize,
-  requestPointerLock,
-  onVisibilityOrFocus,
-  startRenderLoop,
-  stopRenderLoop,
-  onCanvasMouseDown,
-  onCanvasMouseUp,
-} = useGameMovement({
+// ---------------------------------------------------------------- input, loop, realtime
+
+function handleExtraKeyDown(e: KeyboardEvent): boolean {
+  if (e.code === 'KeyU' && !e.repeat && currentRoomLabel.value === 'city') {
+    void housing.renewNearby()
+    return true
+  }
+  if (e.code === 'KeyC' && !e.repeat) {
+    const scene = getScene()
+    if (!scene) return true
+    const on = toggleCollisionDebug(scene)
+    const stats = getWorldCollisionStats()
+    console.info(`[collision] debug ${on ? 'ON' : 'OFF'} — ${stats.cuboids} cuboids, mode=${stats.mode ?? 'n/a'}`)
+    return true
+  }
+  return placement.onKeyDown(e)
+}
+
+const movement = useGameMovement({
   pointerLocked,
   myPosition,
-  direction,
   canvasRef,
   containerRef,
   gameRoomRef,
   currentRoomLabel,
   inventoryOpen,
-  getScene: () => scene,
-  getCamera: () => camera,
-  getRenderer: () => renderer,
-  getFpHands: () => fpHands,
+  getScene,
+  getCamera,
+  getRenderer,
+  getFpHands: () => game?.fpHands ?? null,
   refreshMyAppearance,
-  onNearApartmentDoorInteract: async () => {
-    if (!gameRoomRef.value) return
-    apartmentPlacement.cancelPreview()
-    transitioningApartment.value = true
-    wasPointerLockedAtTransitionStart.value = pointerLocked.value
-    await tryExitApartmentAtDoor(nearApartmentDoor.value)
-  },
-  onNearHousingInteract: () => {
-    void onNearHousingInteract()
-  },
-  onNearWorkInteract,
-  onToggleInventory: () => toggleInventory(),
-  onHotbarDigit: (index: number) => {
-    selectHotbarIndex(index)
-  },
-  nearApartmentDoor,
-  nearCityDoor,
-  housingUnits,
-  nearbyHousingUnit,
-  workLots,
-  nearbyWork,
-  fishingSpots,
-  nearbyFishingSpot,
-  onNearFishingInteract,
+  updateProximity: interactions.updateProximity,
+  tryInteract: interactions.tryInteract,
+  onToggleInventory: toggleInventory,
+  onHotbarDigit: selectHotbarIndex,
   handleExtraKeyDown,
-  onCanvasMouseDown: (e) => apartmentPlacement.onPointerDown(e),
-  onCanvasMouseUp: () => undefined,
+  onCanvasMouseDown: (e) => placement.onPointerDown(e),
   onBeforeRender: (dt) => {
-    positionLabel.value = `${myPosition.x.toFixed(1)}, ${myPosition.y.toFixed(1)}, ${myPosition.z.toFixed(1)}`
-    tickRemoteAvatars(dt)
-    if (currentRoomLabel.value === 'apartment') {
-      apartmentPlacement.tick(dt)
-    }
-    updateDoorPromptScreenPos()
+    positionLabel.value = formatPosition()
+    realtime.tickRemoteAvatars(dt)
+    if (currentRoomLabel.value === 'apartment') placement.tick(dt)
+    interactions.updatePrompts()
   },
 })
+const { requestPointerLock, onCanvasMouseDown } = movement
 
+const realtime = useGameRealtime({
+  router,
+  gameRoomRef,
+  getScene,
+  getCamera,
+  getCanvas: () => canvasRef.value,
+  pointerLocked,
+  requestPointerLock,
+  currentRoomLabel,
+  canEditApartment,
+  visitedApartmentOwnerId,
+  visitedWorkKey,
+  myPosition,
+  roomMessage,
+  refreshMyAppearance,
+  inventory: {
+    loading: inventoryLoading,
+    error: inventoryError,
+    applyServerPayload: applyServerInventoryPayload,
+    pickupCodeToHotbar: pickupToHotbar,
+  },
+  apartment: {
+    selectedPlacedObjectId,
+    detachForRoomSwitch,
+    ensureApartmentObjectsFromServer,
+    clearApartmentObjects,
+    upsertApartmentObjectFromRemote,
+    removeApartmentObjectMesh,
+    onActionError: () => placement.cancelPreview(),
+  },
+  setRoomEnvironment,
+  onHousingUnitsSync: housing.applyUnits,
+})
+const { transitioning, switchingRoom } = realtime
+
+// The inventory panel needs the mouse; closing it goes back to mouse look.
 watch(inventoryOpen, (open) => {
   if (open) {
-    if (document.pointerLockElement) {
-      document.exitPointerLock()
-    }
-    return
-  }
-  if (!document.pointerLockElement) {
+    if (document.pointerLockElement) document.exitPointerLock()
+  } else if (!document.pointerLockElement) {
     requestPointerLock()
   }
 })
 
-const { connectRealtime, clearRemoteUsers, tickRemoteAvatars } = useGameRealtime({
-  router,
-  realtimeHttpUrl,
-  gameRoomRef,
-  getScene: () => scene,
-  camera: () => camera,
-  currentRoomLabel,
-  myPosition,
-  roomMessage,
-  switchingRoom,
-  transitioningApartment,
-  wasPointerLockedAtTransitionStart,
-  refreshMyAppearance,
-  getCanvas: () => canvasRef.value,
-  requestPointerLock,
-  pickupCodeToHotbar: pickupToHotbar,
-  inventoryLoading,
-  inventoryError,
-  applyServerInventoryPayload,
-  selectedPlacedObjectId,
-  apartment: {
-    detachForRoomSwitch,
-    ensureApartmentObjectsFromServer,
-    attachSelectedPlacedObject: () => undefined,
-    clearApartmentObjects,
-    upsertApartmentObjectFromRemote,
-    removeApartmentObjectMesh,
-  },
-  setRoomEnvironment,
-  canEditApartment,
-  visitedApartmentOwnerId,
-  visitedWorkKey,
-  onHousingUnitsSync: onHousingUnitsFromServer,
-  onApartmentActionErrorBanner: () => {
-    apartmentPlacement.onApartmentActionError()
-  },
-})
+// ---------------------------------------------------------------- lifecycle
 
-function logout() {
-  clearAuth()
-  void gameRoomRef.value?.leave()
-  router.push({ name: 'landing' })
+async function loadCosmeticsState(): Promise<CharacterCosmeticsState> {
+  try {
+    return await fetchCharacterCosmetics()
+  } catch {
+    return { slots: emptyCosmeticLoadout(), colors: defaultCosmeticColors() }
+  }
 }
 
-function initThree(accentColor: number) {
-  if (!canvasRef.value) return
-  const isLowQuality = getGraphicsQuality() === 'low'
-
-  scene = new THREE.Scene()
-  const { w, h } = containerSize()
-  const aspect = w / h
-  camera = new THREE.PerspectiveCamera(75, aspect, 0.1, isLowQuality ? 300 : 1000)
-  camera.position.set(HOUSING_LOBBY_SPAWN.x, HOUSING_LOBBY_SPAWN.y, HOUSING_LOBBY_SPAWN.z)
-
-  renderer = new THREE.WebGLRenderer({ canvas: canvasRef.value, antialias: !isLowQuality })
-  renderer.setSize(w, h)
-  renderer.setPixelRatio(isLowQuality ? 1 : Math.min(window.devicePixelRatio, 2))
-  renderer.outputColorSpace = THREE.SRGBColorSpace
-  renderer.shadowMap.enabled = !isLowQuality
-  if (!isLowQuality) {
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap
-  }
-  renderer.toneMapping = THREE.ACESFilmicToneMapping
-  renderer.toneMappingExposure = 1.05
-
-  applySceneAtmosphere(scene, 'city', renderer)
-
-  const ambient = new THREE.AmbientLight(0xb0a89e, 0.15)
-  scene.add(ambient)
-  const dir = new THREE.DirectionalLight(0xffffff, 1.0)
-  dir.position.set(10, 20, 10)
-  if (!isLowQuality) {
-    dir.castShadow = true
-    dir.shadow.mapSize.set(1024, 1024)
-  }
-  scene.add(dir)
-  configureGlobalSceneLights(ambient, dir)
-
-  if (supportsEnvironmentMap()) {
-    void loadSharedEnvironmentMap(renderer).then((envMap) => {
-      applySharedEnvironment(scene, envMap)
-    })
-  } else {
-    clearSharedEnvironment(scene)
-  }
-
-  setRoomEnvironment('city')
-
-  fpHands = buildFirstPersonHands(accentColor)
-  fpHands.visible = false
-  camera.add(fpHands)
-}
+let unmounted = false
 
 async function bootGame() {
-  const auth = getStoredAuth()
-  if (!auth) {
-    router.push({ name: 'landing' })
+  if (!getStoredAuth()) {
+    void router.push({ name: 'landing' })
     return
   }
-  const state = await loadCosmeticsState()
-  const bodyTint = hexStringToNumber(state.colors.body)
-  initThree(bodyTint)
-  await connectRealtime(state)
+  const cosmetics = await loadCosmeticsState()
+  if (unmounted || !canvasRef.value) return
+  const handsColor = parseInt(cosmetics.colors.body.replace('#', ''), 16)
+  game = createGameScene(canvasRef.value, movement.containerSize(), handsColor)
+  setRoomEnvironment('city')
+  await realtime.connectRealtime(cosmetics)
   try {
-    const housing = await fetchHousingUnits()
-    onHousingUnitsFromServer(housing.units)
+    housing.applyUnits((await fetchHousingUnits()).units)
   } catch {
-    /* socket init / housing_units_sync still populate cubes */
+    /* the realtime init / housing_units_sync also deliver the units */
   }
   await loadLayoutFromServer()
   refreshOwnedItems()
-  startRenderLoop()
+  if (!unmounted) movement.startRenderLoop()
 }
+
+function leaveRoom() {
+  void gameRoomRef.value?.leave()
+}
+
+function logout() {
+  clearAuth()
+  leaveRoom()
+  void router.push({ name: 'landing' })
+}
+
+let unbindInput: (() => void) | null = null
 
 onMounted(() => {
   void bootGame()
-  window.addEventListener('resize', onResize)
-  window.addEventListener('focus', onVisibilityOrFocus)
-  window.addEventListener('beforeunload', onBeforeUnload)
-  window.addEventListener('pagehide', onBeforeUnload)
-  document.addEventListener('visibilitychange', onVisibilityOrFocus)
-  document.addEventListener('pointerlockchange', onPointerLockChange)
-  document.addEventListener('keydown', onKeyDown)
-  document.addEventListener('keyup', onKeyUp)
-  document.addEventListener('mousemove', onMouseMove)
+  unbindInput = movement.bindInputListeners()
+  window.addEventListener('beforeunload', leaveRoom)
+  window.addEventListener('pagehide', leaveRoom)
 })
 
-function onBeforeUnload() {
-  void gameRoomRef.value?.leave()
-}
-
 onUnmounted(() => {
-  stopRenderLoop()
-  window.removeEventListener('resize', onResize)
-  window.removeEventListener('focus', onVisibilityOrFocus)
-  window.removeEventListener('beforeunload', onBeforeUnload)
-  window.removeEventListener('pagehide', onBeforeUnload)
-  document.removeEventListener('visibilitychange', onVisibilityOrFocus)
-  document.removeEventListener('pointerlockchange', onPointerLockChange)
-  document.removeEventListener('keydown', onKeyDown)
-  document.removeEventListener('keyup', onKeyUp)
-  document.removeEventListener('mousemove', onMouseMove)
+  unmounted = true
+  movement.stopRenderLoop()
+  unbindInput?.()
+  window.removeEventListener('beforeunload', leaveRoom)
+  window.removeEventListener('pagehide', leaveRoom)
   refreshMyAppearance.value = null
-  void gameRoomRef.value?.leave()
-  clearPersistTimers()
-  clearRemoteUsers()
-  apartmentPlacement.dispose()
+  leaveRoom()
+  realtime.clearRemoteUsers()
+  placement.dispose()
   clearApartmentObjects()
-  housingCubesGroup = null
-  if (roomEnvironment) {
-    scene.remove(roomEnvironment)
-    if (!roomEnvironment.userData.isPersistentEnvironment) {
-      disposeObject3D(roomEnvironment)
-    }
-    roomEnvironment = null
-  }
-  if (fpHands) {
-    camera.remove(fpHands)
-    disposeObject3D(fpHands)
-    fpHands = null
-  }
-  disposeSharedEnvironment()
-  renderer?.dispose()
+  environment.disposeRoomEnvironment()
+  if (game) disposeGameScene(game)
+  game = null
 })
 
 const crosshairClass = computed(() => {
-  if (!placementPreviewActive.value) return 'border-white/90 bg-white/30 shadow-[0_0_0_2px_rgb(0_0_0/0.35)]'
-  if (apartmentPlacement.crosshairTint.value === 'invalid') return 'border-coral bg-coral/40 shadow-[0_0_10px_rgb(var(--cc-coral))]'
-  if (apartmentPlacement.crosshairTint.value === 'valid') return 'border-mint bg-mint/40 shadow-[0_0_10px_rgb(var(--cc-mint))]'
+  if (placementPreviewActive.value && crosshairTint.value === 'invalid') {
+    return 'border-coral bg-coral/40 shadow-[0_0_10px_rgb(var(--cc-coral))]'
+  }
+  if (placementPreviewActive.value && crosshairTint.value === 'valid') {
+    return 'border-mint bg-mint/40 shadow-[0_0_10px_rgb(var(--cc-mint))]'
+  }
   return 'border-white/90 bg-white/30 shadow-[0_0_0_2px_rgb(0_0_0/0.35)]'
 })
 </script>
@@ -777,7 +366,6 @@ const crosshairClass = computed(() => {
       class="block min-h-0 w-full flex-1 cursor-crosshair"
       @click="requestPointerLock"
       @mousedown="onCanvasMouseDown"
-      @mouseup="onCanvasMouseUp"
       @contextmenu.prevent
     />
     <div
@@ -789,28 +377,19 @@ const crosshairClass = computed(() => {
       :current-room-label="currentRoomLabel"
       :apartment-object-count="apartmentObjectCount"
       :position-label="positionLabel"
-    >
-      <button
-        v-if="!pointerLocked"
-        type="button"
-        class="cc-hud inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-extrabold text-fog transition hover:border-sun/70 hover:text-sun"
-        @click.stop="onToggleGraphicsQuality"
-        @mousedown.stop
-      >
-        <UiIcon name="monitor" :size="14" /> {{ graphicsQualityLabel }}
-      </button>
-    </GameHudToolbar>
-    <GameInteractionPrompt
-      v-if="doorPromptPos"
-      :screen-x="doorPromptPos.x"
-      :screen-y="doorPromptPos.y"
-      :action-label="doorPromptPos.action"
-      :detail-label="doorPromptPos.detail"
+      :show-graphics-toggle="!pointerLocked"
     />
     <GameInteractionPrompt
-      v-if="renewPromptPos"
-      :screen-x="renewPromptPos.x"
-      :screen-y="renewPromptPos.y"
+      v-if="doorPrompt"
+      :screen-x="doorPrompt.x"
+      :screen-y="doorPrompt.y"
+      :action-label="doorPrompt.action"
+      :detail-label="doorPrompt.detail"
+    />
+    <GameInteractionPrompt
+      v-if="renewPrompt"
+      :screen-x="renewPrompt.x"
+      :screen-y="renewPrompt.y"
       key-label="U"
       action-label="Renew"
     />
@@ -854,7 +433,7 @@ const crosshairClass = computed(() => {
       @placed-object-selected="onPlacedObjectSelected"
     />
     <GamePointerLockOverlay
-      v-show="!pointerLocked && !inventoryOpen && !transitioningApartment && !switchingRoom"
+      v-show="!pointerLocked && !inventoryOpen && !transitioning && !switchingRoom"
       @request-pointer-lock="requestPointerLock"
       @logout="logout"
     />

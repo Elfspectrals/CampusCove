@@ -2,15 +2,13 @@
  * Account inventory API (Laravel `/api` + `auth:sanctum`).
  * GET /inventory — optional query: `kind`, `q`
  */
-import { formatApiError, getStoredAuth } from './auth'
+import { apiRequest, isRecord } from './http'
 import { normalizeApiAssetUrl } from './url'
-
-const API_BASE = import.meta.env.VITE_API_URL || '/api'
 
 /** Matches `item_kind` / admin shop kinds; empty means no filter. */
 export type InventoryKindFilter = '' | 'furniture' | 'cosmetic' | 'consumable' | 'misc' | 'apartment_asset'
 
-export interface InventoryItemDef {
+interface InventoryItemDef {
   item_def_id: number
   code: string
   name: string
@@ -36,19 +34,6 @@ export interface AccountInventoryRow {
 export interface InventoryListParams {
   kind?: InventoryKindFilter
   q?: string
-}
-
-function authJsonHeaders(): HeadersInit {
-  const auth = getStoredAuth()
-  return {
-    Accept: 'application/json',
-    'Content-Type': 'application/json',
-    ...(auth?.token ? { Authorization: `Bearer ${auth.token}` } : {}),
-  }
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null
 }
 
 function normalizeCosmeticSlot(slot: unknown): string | null {
@@ -120,20 +105,7 @@ function parseListPayload(data: unknown): { items: AccountInventoryRow[] } {
   return { items }
 }
 
-function buildListQuery(params: InventoryListParams): string {
-  const q = new URLSearchParams()
-  if (params.kind !== undefined && params.kind !== '') q.set('kind', params.kind)
-  const search = params.q?.trim()
-  if (search !== undefined && search !== '') q.set('q', search)
-  const s = q.toString()
-  return s ? `?${s}` : ''
-}
-
 export async function fetchAccountInventory(params: InventoryListParams = {}): Promise<{ items: AccountInventoryRow[] }> {
-  const res = await fetch(`${API_BASE}/inventory${buildListQuery(params)}`, {
-    headers: authJsonHeaders(),
-  })
-  const data: unknown = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(formatApiError(data))
+  const data = await apiRequest('/inventory', { query: { kind: params.kind, q: params.q?.trim() } })
   return parseListPayload(data)
 }

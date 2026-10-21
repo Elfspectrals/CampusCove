@@ -1,6 +1,3 @@
-import type { Group } from 'three'
-import type { CosmeticColors } from '../api/characterCosmetics'
-
 export interface RemoteUserPayload {
   sessionId: string
   id: string
@@ -50,7 +47,6 @@ export interface ApartmentInitPayload {
   ownerAccountId: number | null
   templateKey: string
   workKey?: string | null
-  name: string
   canEdit: boolean
   objects: ApartmentObjectPayload[]
 }
@@ -77,29 +73,4 @@ export interface ApartmentInventoryItem {
   quantity: number
   preview_image: string | null
   model_glb: string | null
-}
-
-export interface OtherUser {
-  userId: string
-  group: Group
-  x: number
-  y: number
-  z: number
-  ry: number
-  zone: 'city' | 'apartment'
-  apartmentOwnerId: number | null
-  workKey: string | null
-  color: number
-  bodyTintColors: CosmeticColors
-  bodyModelGlb: string | null
-}
-
-export interface PendingAppearanceUpdate {
-  appearance: Record<string, number | null>
-  slotHexes?: Record<string, string>
-  bodyModelGlb?: string | null
-}
-
-export interface TransformDragEvent {
-  value: boolean
 }

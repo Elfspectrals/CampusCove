@@ -10,8 +10,8 @@
     "heroku-postbuild": "npm run build",
     "start": "serve -s dist -l ${PORT:-3000}",
     "test:unit": "node --test \"src/**/*.test.ts\"",
+    "knip": "knip",
     "skins:check": "node scripts/skins/check-skins.mjs",
-    "optimize": "node scripts/optimize-model.mjs",
     "collision:extract": "node scripts/extract-collision.mjs",
     "assets:optimize": "node scripts/optimize-assets.mjs",
     "newnation:optimize": "npx --yes @gltf-transform/cli optimize ../map-src/NewNation/NewNation.glb public/assets/showroom/new_nation.glb --compress draco --texture-compress webp --texture-size 1024"
@@ -33,6 +33,7 @@
     "@vue/tsconfig": "^0.8.1",
     "autoprefixer": "^10.4.20",
     "draco3dgltf": "^1.5.7",
+    "knip": "^6.42.1",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.16",
     "typescript": "~5.9.3",

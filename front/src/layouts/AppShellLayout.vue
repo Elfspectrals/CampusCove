@@ -1,14 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
-import {
-  clearAuth,
-  getCachedWalletBalances,
-  getStoredAuth,
-  isAdminUser,
-  logout as logoutApi,
-  subscribeAuth,
-} from '../api/auth'
+import { logout as logoutApi } from '../api/auth'
+import { clearAuth, getCachedWalletBalances, getStoredAuth, isAdminUser, subscribeAuth } from '../api/session'
 import { setAdminModeEnabled, syncAdminModeForUser, useAdminMode } from '../composables/useAdminMode'
 import UiIcon from '../components/ui/UiIcon.vue'
 import type { UiIconName } from '../components/ui/icons'

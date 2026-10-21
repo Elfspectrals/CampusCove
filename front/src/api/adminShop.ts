@@ -2,14 +2,12 @@
  * Admin shop API (expects Laravel routes under /api, e.g. auth:sanctum + admin middleware).
  * Endpoints are conventional REST; adjust paths here if your backend uses a different prefix.
  */
-import { formatApiError, getStoredAuth } from './auth'
+import { apiRequest, isRecord } from './http'
 import { normalizeApiAssetUrl } from './url'
-
-const API_BASE = import.meta.env.VITE_API_URL || '/api'
 
 export type ShopCurrency = 'coins' | 'premium'
 
-export interface AdminShopItemNested {
+interface AdminShopItemNested {
   item_def_id: number
   code: string
   name: string
@@ -80,8 +78,6 @@ export interface AdminShopItemUpdateBody {
   previewImageFile?: File | null
   modelGlbFile?: File | null
   sort_order?: number
-  currency?: ShopCurrency
-  price?: number
   prices?: Partial<Record<ShopCurrency, number>>
   is_active?: boolean
   is_published?: boolean
@@ -93,8 +89,8 @@ export interface AdminShopListParams {
   search?: string
   currency?: ShopCurrency | 'all'
   kind?: 'furniture' | 'cosmetic' | 'consumable' | 'misc' | 'apartment_asset' | 'all'
-  with_deleted?: boolean
-  only_deleted?: boolean
+  /** Soft-deleted rows: omitted = hide them, 'with' = include, 'only' = only them. */
+  deleted?: 'with' | 'only'
   is_active?: boolean | 'all'
   is_published?: boolean | 'all'
   sort_by?: 'name' | 'code' | 'kind' | 'price' | 'is_active' | 'is_published' | 'updated_at' | 'sort_order'
@@ -113,25 +109,6 @@ export interface AdminShopListMeta {
 export interface AdminShopBulkActionBody {
   action: 'publish' | 'unpublish' | 'activate' | 'deactivate' | 'soft_delete' | 'restore'
   ids: number[]
-}
-
-function authHeaders(): HeadersInit {
-  const auth = getStoredAuth()
-  return {
-    Accept: 'application/json',
-    ...(auth?.token ? { Authorization: `Bearer ${auth.token}` } : {}),
-  }
-}
-
-function authJsonHeaders(): HeadersInit {
-  return {
-    ...authHeaders(),
-    'Content-Type': 'application/json',
-  }
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null
 }
 
 function isShopCurrency(value: unknown): value is ShopCurrency {
@@ -245,8 +222,7 @@ function buildListQuery(params: AdminShopListParams): string {
   if (params.search !== undefined && params.search.trim() !== '') q.set('q', params.search.trim())
   if (params.currency !== undefined && params.currency !== 'all') q.set('currency', params.currency)
   if (params.kind !== undefined && params.kind !== 'all') q.set('kind', params.kind)
-  if (params.with_deleted) q.set('with_deleted', '1')
-  if (params.only_deleted) q.set('only_deleted', '1')
+  if (params.deleted) q.set('deleted', params.deleted)
   if (params.is_active !== undefined && params.is_active !== 'all') {
     q.set('is_active', params.is_active ? '1' : '0')
   }
@@ -264,11 +240,7 @@ function buildListQuery(params: AdminShopListParams): string {
 export async function fetchAdminShopItems(
   params: AdminShopListParams = {}
 ): Promise<{ items: AdminShopCatalogRow[]; meta: AdminShopListMeta }> {
-  const res = await fetch(`${API_BASE}/admin/shop/items${buildListQuery(params)}`, {
-    headers: authJsonHeaders(),
-  })
-  const data: unknown = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(formatApiError(data))
+  const data = await apiRequest(`/admin/shop/items${buildListQuery(params)}`)
   return parseListPayload(data)
 }
 
@@ -307,13 +279,7 @@ export async function createAdminShopItem(body: AdminShopItemCreateBody): Promis
     formData.set('model_glb_file', body.modelGlbFile)
   }
 
-  const res = await fetch(`${API_BASE}/admin/shop/items`, {
-    method: 'POST',
-    headers: authHeaders(),
-    body: formData,
-  })
-  const data: unknown = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(formatApiError(data))
+  const data = await apiRequest('/admin/shop/items', { method: 'POST', body: formData })
   return parseSinglePayload(data)
 }
 
@@ -322,7 +288,7 @@ export async function updateAdminShopItem(
   body: AdminShopItemUpdateBody
 ): Promise<AdminShopCatalogRow> {
   const usesMultipart = body.previewImageFile !== undefined || body.modelGlbFile !== undefined
-  let res: Response
+  let payload: FormData | Record<string, unknown>
   if (usesMultipart) {
     const formData = new FormData()
     if (body.code !== undefined) formData.set('code', body.code)
@@ -336,8 +302,6 @@ export async function updateAdminShopItem(
     if (body.cosmetic_slot !== undefined) formData.set('cosmetic_slot', body.cosmetic_slot ?? '')
     if (body.preview_image !== undefined) formData.set('preview_image', body.preview_image ?? '')
     if (body.model_glb !== undefined) formData.set('model_glb', body.model_glb ?? '')
-    if (body.currency !== undefined) formData.set('currency', body.currency)
-    if (body.price !== undefined) formData.set('price', String(body.price))
     if (body.prices?.coins !== undefined) formData.set('prices[coins]', String(body.prices.coins))
     if (body.prices?.premium !== undefined) formData.set('prices[premium]', String(body.prices.premium))
     if (body.is_active !== undefined) formData.set('is_active', body.is_active ? '1' : '0')
@@ -349,11 +313,7 @@ export async function updateAdminShopItem(
     if (body.sort_order !== undefined) formData.set('sort_order', String(body.sort_order))
     if (body.previewImageFile) formData.set('preview_image_file', body.previewImageFile)
     if (body.modelGlbFile) formData.set('model_glb_file', body.modelGlbFile)
-    res = await fetch(`${API_BASE}/admin/shop/items/${shopCatalogItemId}`, {
-      method: 'PATCH',
-      headers: authHeaders(),
-      body: formData,
-    })
+    payload = formData
   } else {
     const jsonBody: Record<string, unknown> = {}
     if (body.code !== undefined) jsonBody.code = body.code
@@ -367,56 +327,27 @@ export async function updateAdminShopItem(
     if (body.cosmetic_slot !== undefined) jsonBody.cosmetic_slot = body.cosmetic_slot
     if (body.preview_image !== undefined) jsonBody.preview_image = body.preview_image
     if (body.model_glb !== undefined) jsonBody.model_glb = body.model_glb
-    if (body.currency !== undefined) jsonBody.currency = body.currency
-    if (body.price !== undefined) jsonBody.price = body.price
     if (body.prices !== undefined) jsonBody.prices = body.prices
     if (body.is_active !== undefined) jsonBody.is_active = body.is_active
     if (body.is_published !== undefined) jsonBody.is_published = body.is_published
     if (body.is_unique_per_account !== undefined) jsonBody.is_unique_per_account = body.is_unique_per_account
     if (body.stock_remaining !== undefined) jsonBody.stock_remaining = body.stock_remaining
     if (body.sort_order !== undefined) jsonBody.sort_order = body.sort_order
-    res = await fetch(`${API_BASE}/admin/shop/items/${shopCatalogItemId}`, {
-      method: 'PATCH',
-      headers: authJsonHeaders(),
-      body: JSON.stringify(jsonBody),
-    })
+    payload = jsonBody
   }
-  const data: unknown = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(formatApiError(data))
+  const data = await apiRequest(`/admin/shop/items/${shopCatalogItemId}`, { method: 'PATCH', body: payload })
   return parseSinglePayload(data)
 }
 
 export async function deleteAdminShopItem(shopCatalogItemId: number): Promise<void> {
-  const res = await fetch(`${API_BASE}/admin/shop/items/${shopCatalogItemId}`, {
-    method: 'DELETE',
-    headers: authJsonHeaders(),
-  })
-  if (res.status === 204 || res.status === 200) return
-  const data: unknown = await res.json().catch(() => ({}))
-  throw new Error(formatApiError(data))
+  await apiRequest(`/admin/shop/items/${shopCatalogItemId}`, { method: 'DELETE' })
 }
 
 export async function restoreAdminShopItem(shopCatalogItemId: number): Promise<AdminShopCatalogRow> {
-  const res = await fetch(`${API_BASE}/admin/shop/items/${shopCatalogItemId}/restore`, {
-    method: 'POST',
-    headers: authJsonHeaders(),
-  })
-  const data: unknown = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(formatApiError(data))
+  const data = await apiRequest(`/admin/shop/items/${shopCatalogItemId}/restore`, { method: 'POST' })
   return parseSinglePayload(data)
 }
 
 export async function bulkAdminShopAction(body: AdminShopBulkActionBody): Promise<void> {
-  const res = await fetch(`${API_BASE}/admin/shop/items/bulk`, {
-    method: 'POST',
-    headers: authJsonHeaders(),
-    body: JSON.stringify({
-      action: body.action,
-      ids: body.ids,
-      shop_catalog_item_ids: body.ids,
-    }),
-  })
-  if (res.status === 204 || res.status === 200) return
-  const data: unknown = await res.json().catch(() => ({}))
-  throw new Error(formatApiError(data))
+  await apiRequest('/admin/shop/items/bulk', { method: 'POST', body: { action: body.action, ids: body.ids } })
 }

@@ -1,20 +1,21 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
-import { RouterLink } from 'vue-router'
-import { getStoredAuth } from '../api/auth'
 import * as itemShopApi from '../api/itemShop'
-import type { ShopCurrency, ShopItem, ShopItemCurrencyOption } from '../api/itemShop'
+import type { ShopItem } from '../api/itemShop'
 import UiIcon from '../components/ui/UiIcon.vue'
-import UiCurrency from '../components/ui/UiCurrency.vue'
 import UiLogo from '../components/ui/UiLogo.vue'
+import NewNationApartmentTour from '../components/newNation/NewNationApartmentTour.vue'
+import NewNationItemPanel from '../components/newNation/NewNationItemPanel.vue'
+import NewNationItemRail from '../components/newNation/NewNationItemRail.vue'
 import NewNationMinimap from '../components/newNation/NewNationMinimap.vue'
 import ItemShopPurchaseConfirmModal from '../components/shop/ItemShopPurchaseConfirmModal.vue'
-import { useWalletBalances } from '../composables/useWalletBalances'
+import { useShopPurchase } from '../composables/useShopPurchase'
 import { FISHING_PREVIEW_FILTER, FISHING_PREVIEW_ITEMS, isPreviewOnlyItem, previewItemRarity } from '../game/fishingPreviewItems'
-import { RARITY_META, Rarity } from '../game/rarity'
-import { NewNationShowroom } from '../game/newNationShowroom'
-import type { ShowroomApartment, ShowroomGroup, ShowroomItem } from '../game/newNationShowroom'
-import { currencyLabel, itemRarity, priceBadge, rarityClass } from '../utils/itemShopPresentation'
+import type { Rarity } from '../game/rarity'
+import { NewNationShowroom } from '../game/newNation/NewNationShowroom'
+import type { ShowroomApartment } from '../game/newNation/showroomLayout'
+import type { ShowroomGroup, ShowroomItem } from '../game/newNation/showroomItems'
+import { isApartmentItem, itemRarity, priceBadge } from '../utils/itemShopPresentation'
 
 type Filter = 'all' | ShowroomGroup | typeof FISHING_PREVIEW_FILTER
 
@@ -41,17 +42,22 @@ const currentApartmentId = ref<string | null>(null)
 const showWalkHint = ref(false)
 let walkHintTimer: number | undefined
 
-const auth = computed(() => getStoredAuth())
-const isLoggedIn = computed(() => Boolean(auth.value?.token))
-const balances = useWalletBalances()
-
-const purchasingId = ref<number | null>(null)
-const confirmItem = ref<ShopItem | null>(null)
-const confirmCurrency = ref<ShopCurrency>('coins')
-const feedback = ref<{ itemId: number; kind: 'success' | 'error'; text: string } | null>(null)
+const {
+  isLoggedIn,
+  confirmItem,
+  confirmCurrency,
+  confirmOption,
+  confirmCurrent,
+  confirmAfter,
+  purchasingId,
+  feedbackByItem,
+  openPurchaseConfirm,
+  closePurchaseConfirm,
+  confirmPurchase,
+} = useShopPurchase()
 
 function itemGroup(item: ShopItem): ShowroomGroup {
-  return item.kind === 'apartment_asset' || item.kind === 'furniture' ? 'apartment' : 'skin'
+  return isApartmentItem(item) ? 'apartment' : 'skin'
 }
 
 const visibleItems = computed<ShopItem[]>(() =>
@@ -76,23 +82,6 @@ const counts = computed(() => ({
   skin: items.value.filter((i) => itemGroup(i) === 'skin').length,
   fishing: items.value.filter(isPreviewOnlyItem).length,
 }))
-
-const confirmOption = computed<ShopItemCurrencyOption | null>(() => {
-  const item = confirmItem.value
-  if (!item) return null
-  return item.options.find((opt) => opt.currency === confirmCurrency.value) ?? null
-})
-
-const confirmCurrent = computed(() => {
-  if (!confirmOption.value) return null
-  return confirmOption.value.currency === 'coins' ? balances.value.coins : balances.value.premium
-})
-
-const confirmAfter = computed(() => {
-  const cur = confirmCurrent.value
-  if (cur === null || !confirmOption.value) return null
-  return cur - confirmOption.value.price
-})
 
 function rarityOf(item: ShopItem): Rarity {
   return previewItemRarity(item) ?? itemRarity(item)
@@ -267,36 +256,6 @@ onUnmounted(() => {
   showroom.value = null
 })
 
-function openPurchaseConfirm(item: ShopItem) {
-  if (!isLoggedIn.value) return
-  confirmItem.value = item
-  confirmCurrency.value = item.options[0]?.currency ?? 'coins'
-}
-
-async function confirmPurchase() {
-  const item = confirmItem.value
-  const selected = confirmOption.value
-  if (!item || !selected) return
-  feedback.value = null
-  purchasingId.value = selected.shop_catalog_item_id
-  try {
-    const result = await itemShopApi.purchaseShopItem({
-      shop_catalog_item_id: selected.shop_catalog_item_id,
-      currency: selected.currency,
-    })
-    feedback.value = { itemId: item.item_def_id, kind: 'success', text: result.message }
-    confirmItem.value = null
-  } catch (e) {
-    feedback.value = {
-      itemId: item.item_def_id,
-      kind: 'error',
-      text: e instanceof Error ? e.message : 'Purchase failed',
-    }
-  } finally {
-    purchasingId.value = null
-  }
-}
-
 const filterTabs = computed<Array<{ key: Filter; label: string }>>(() => [
   { key: 'all', label: 'All' },
   { key: 'apartment', label: 'Apartment' },
@@ -348,40 +307,13 @@ const filterTabs = computed<Array<{ key: Filter; label: string }>>(() => [
           <UiIcon name="flag" :size="16" /> Plaza
         </button>
       </div>
-      <!-- apartment tour -->
-      <div
+      <NewNationApartmentTour
         v-if="!mapLoading && !loadError && apartments.length > 0"
-        class="cc-panel-glass pointer-events-auto flex max-w-full flex-wrap items-center gap-1 p-1.5"
-      >
-        <button
-          type="button"
-          class="rounded-md px-2 py-1.5 text-xs font-bold hover:bg-white/10"
-          aria-label="Previous apartment"
-          @click="visitNextApartment(-1)"
-        >
-          <UiIcon name="chevron-left" :size="16" />
-        </button>
-        <button
-          v-for="apt in apartments"
-          :key="apt.id"
-          type="button"
-          :class="[
-            'rounded-xl px-2.5 py-1.5 font-display text-xs tracking-wide transition',
-            currentApartmentId === apt.id ? 'bg-sun text-ink-950 shadow-[inset_0_-3px_0_rgb(var(--cc-sun-edge))]' : 'text-fog hover:bg-white/10',
-          ]"
-          @click="visitApartment(apt.id)"
-        >
-          <UiIcon name="home" :size="14" class="mr-1 inline align-[-2px]" />{{ apt.name }}
-        </button>
-        <button
-          type="button"
-          class="rounded-md px-2 py-1.5 text-xs font-bold hover:bg-white/10"
-          aria-label="Next apartment"
-          @click="visitNextApartment(1)"
-        >
-          <UiIcon name="chevron-right" :size="16" />
-        </button>
-      </div>
+        :apartments="apartments"
+        :current-apartment-id="currentApartmentId"
+        @visit="visitApartment"
+        @step="visitNextApartment"
+      />
     </div>
 
     <!-- visiting banner -->
@@ -499,132 +431,26 @@ const filterTabs = computed<Array<{ key: Filter; label: string }>>(() => [
       No items in this section yet.
     </div>
 
-    <!-- selected item panel -->
-    <aside
+    <NewNationItemPanel
       v-if="selectedItem"
-      class="cc-panel-glass absolute bottom-24 right-4 w-[min(calc(100%-2rem),360px)] animate-cc-pop p-5 sm:bottom-auto sm:right-6 sm:top-6"
-    >
-      <div
-        v-if="selectedItem.preview_image"
-        :class="[rarityClass(rarityOf(selectedItem)), 'cc-rarity-bg cc-rarity-border mb-4 flex h-44 items-center justify-center overflow-hidden rounded-2xl border-2']"
-      >
-        <img
-          :src="selectedItem.preview_image"
-          :alt="selectedItem.name"
-          class="h-full w-full object-contain p-2"
-          loading="lazy"
-          @error="($event.target as HTMLImageElement).style.display = 'none'"
-        />
-      </div>
-      <div class="flex items-start justify-between gap-3">
-        <div>
-          <span
-            :class="[rarityClass(rarityOf(selectedItem)), 'cc-rarity-text mb-1 inline-block rounded-full border px-2.5 py-0.5 text-[11px] font-extrabold uppercase tracking-widest cc-rarity-border']"
-            :style="rarityOf(selectedItem) === Rarity.Legendary ? { boxShadow: `0 0 14px ${RARITY_META[Rarity.Legendary].glow}` } : undefined"
-          >{{ RARITY_META[rarityOf(selectedItem)].label }}</span>
-          <p class="cc-eyebrow m-0 text-pool">
-            {{ itemGroup(selectedItem) === 'apartment' ? 'Apartment asset' : 'Skin & cosmetic' }}
-          </p>
-          <h2 class="cc-display m-0 mt-1 text-3xl leading-tight">{{ selectedItem.name }}</h2>
-        </div>
-        <button
-          type="button"
-          class="cc-btn cc-btn-ghost cc-btn-sm cc-btn-icon"
-          aria-label="Close and return to overview"
-          @click="selectItem(null)"
-        >
-          <UiIcon name="x" :size="16" />
-        </button>
-      </div>
-      <p v-if="selectedItem.description" class="m-0 mt-3 text-sm font-semibold text-mist">{{ selectedItem.description }}</p>
+      :item="selectedItem"
+      :rarity="rarityOf(selectedItem)"
+      :is-logged-in="isLoggedIn"
+      :purchasing="purchasingId !== null"
+      :feedback="feedbackByItem[selectedItem.item_def_id]"
+      @close="selectItem(null)"
+      @buy="openPurchaseConfirm"
+    />
 
-      <ul class="m-0 mt-4 list-none space-y-1.5 p-0 text-sm">
-        <li v-for="option in selectedItem.options" :key="option.shop_catalog_item_id" class="flex items-center justify-between rounded-xl bg-ink-950/50 px-3 py-2">
-          <span class="font-bold text-mist">{{ currencyLabel(option.currency) }}</span>
-          <UiCurrency :currency="option.currency" :amount="option.price" :class="option.currency === 'coins' ? 'text-sun' : 'text-grape'" />
-        </li>
-      </ul>
-
-      <div
-        v-if="feedback && feedback.itemId === selectedItem.item_def_id"
-        :class="[
-          'cc-alert mt-3',
-          feedback.kind === 'success' ? 'cc-alert-success' : 'cc-alert-error',
-        ]"
-        role="status"
-      >
-        {{ feedback.text }}
-      </div>
-
-      <p v-if="isPreviewOnlyItem(selectedItem)" class="cc-eyebrow m-0 mt-4 text-grape">Admin preview — not for sale</p>
-      <button
-        v-else-if="isLoggedIn"
-        type="button"
-        class="cc-btn cc-btn-sun cc-btn-lg cc-btn-shine mt-4 w-full"
-        :disabled="purchasingId !== null"
-        @click="openPurchaseConfirm(selectedItem)"
-      >
-        {{ purchasingId ? 'Processing…' : 'Buy' }}
-      </button>
-      <RouterLink
-        v-else
-        to="/login"
-        class="cc-btn cc-btn-pool mt-4 w-full"
-      >
-        Sign in to buy
-      </RouterLink>
-      <RouterLink
-        v-if="!isPreviewOnlyItem(selectedItem)"
-        :to="{ name: itemGroup(selectedItem) === 'apartment' ? 'shop' : 'shop-skin' }"
-        class="mt-3 block text-center text-xs font-extrabold text-pool hover:underline"
-      >
-        Open in the shop
-      </RouterLink>
-    </aside>
-
-    <!-- bottom item rail -->
-    <div
+    <NewNationItemRail
       v-if="!mapLoading && !catalogLoading && visibleItems.length > 0"
-      class="absolute inset-x-0 bottom-0 flex items-center gap-2 bg-gradient-to-t from-ink-950/90 to-transparent px-4 pb-4 pt-10"
-    >
-      <button
-        type="button"
-        class="cc-btn cc-btn-ghost cc-btn-sm cc-btn-icon shrink-0"
-        aria-label="Previous item"
-        @click="stepSelection(-1)"
-      >
-        <UiIcon name="chevron-left" :size="18" />
-      </button>
-      <ul class="m-0 flex min-w-0 flex-1 list-none gap-2 overflow-x-auto p-0 pb-1">
-        <li v-for="item in visibleItems" :key="item.item_def_id" class="shrink-0">
-          <button
-            type="button"
-            :class="[
-              'rounded-xl border-2 px-3 py-2 text-left text-xs backdrop-blur transition',
-              selectedId === item.item_def_id
-                ? 'border-sun bg-sun/20 shadow-[0_0_14px_rgb(var(--cc-sun)/0.4)]'
-                : 'bg-ink-950/75 hover:border-pool/70',
-              selectedId !== item.item_def_id ? rarityClass(rarityOf(item)) + ' cc-rarity-border' : '',
-            ]"
-            @click="selectItem(item.item_def_id)"
-          >
-            <span class="block max-w-[160px] truncate font-display text-sm tracking-wide">{{ item.name }}</span>
-            <UiCurrency v-if="item.options[0]" :currency="item.options[0].currency" :amount="item.options[0].price" :size="14" :class="item.options[0].currency === 'coins' ? 'text-sun' : 'text-grape'" />
-          </button>
-        </li>
-      </ul>
-      <button
-        type="button"
-        class="cc-btn cc-btn-ghost cc-btn-sm cc-btn-icon shrink-0"
-        aria-label="Next item"
-        @click="stepSelection(1)"
-      >
-        <UiIcon name="chevron-right" :size="18" />
-      </button>
-      <p class="m-0 hidden shrink-0 text-[11px] font-bold text-mist lg:block">
-        {{ walking ? 'WASD to walk · Drag or Q/E to turn · N/B next home' : 'Drag to orbit · Q/E to rotate · ←/→ to browse' }}
-      </p>
-    </div>
+      :items="visibleItems"
+      :selected-id="selectedId"
+      :walking="walking"
+      :rarity-of="rarityOf"
+      @select="selectItem"
+      @step="stepSelection"
+    />
 
     <ItemShopPurchaseConfirmModal
       v-if="confirmItem"
@@ -634,7 +460,7 @@ const filterTabs = computed<Array<{ key: Filter; label: string }>>(() => [
       :confirm-after="confirmAfter"
       :confirm-option="confirmOption"
       :purchasing-id="purchasingId"
-      @close="confirmItem = null"
+      @close="closePurchaseConfirm"
       @confirm="confirmPurchase"
     />
   </div>

@@ -36,8 +36,7 @@ class AdminShopItemController extends Controller
         $query = ShopCatalogItem::query()
             ->select('shop_catalog_items.*')
             ->leftJoin('item_defs', 'item_defs.item_def_id', '=', 'shop_catalog_items.item_def_id')
-            ->with('itemDef')
-            ->distinct();
+            ->with('itemDef');
 
         if (! empty($validated['q'])) {
             $term = $validated['q'];
@@ -283,15 +282,6 @@ class AdminShopItemController extends Controller
             'model_glb' => ['sometimes', 'nullable', 'string', 'max:2048'],
             'preview_image_file' => ['sometimes', 'file', 'image', 'max:5120'],
             'model_glb_file' => ['sometimes', 'file', 'extensions:glb', 'mimetypes:model/gltf-binary,application/octet-stream', 'max:51200'],
-            'currency' => [
-                'sometimes',
-                'string',
-                'in:coins,premium',
-                Rule::unique('shop_catalog_items', 'currency')
-                    ->where('item_def_id', $shopCatalogItem->item_def_id)
-                    ->ignore($shopCatalogItem->shop_catalog_item_id, 'shop_catalog_item_id'),
-            ],
-            'price' => ['sometimes', 'integer', 'min:1'],
             'prices' => ['sometimes', 'array'],
             'prices.coins' => ['nullable', 'integer', 'min:1'],
             'prices.premium' => ['nullable', 'integer', 'min:1'],
@@ -340,11 +330,10 @@ class AdminShopItemController extends Controller
 
             $catalogFields = array_intersect_key(
                 $validated,
-                array_flip(['currency', 'price', 'is_active', 'is_published', 'is_unique_per_account', 'stock_remaining', 'sort_order'])
+                array_flip(['is_active', 'is_published', 'is_unique_per_account', 'stock_remaining', 'sort_order'])
             );
-            $pricePatch = $this->patchPricingFromUpdate($validated);
-            if ($pricePatch !== []) {
-                $catalogFields = array_merge($catalogFields, $pricePatch);
+            if (array_key_exists('prices', $validated)) {
+                $catalogFields = array_merge($catalogFields, $this->normalizedPricing($validated['prices']));
             }
             if ($catalogFields !== []) {
                 $shopCatalogItem->update($catalogFields);
@@ -353,7 +342,7 @@ class AdminShopItemController extends Controller
             $shopCatalogItem->refresh()->load('itemDef');
             $this->assertPremiumOnlyNotSoldForCoins(
                 (bool) $shopCatalogItem->itemDef?->premium_only,
-                (bool) $shopCatalogItem->allow_coins || $shopCatalogItem->currency === 'coins',
+                (bool) $shopCatalogItem->allow_coins,
             );
         });
 
@@ -412,50 +401,14 @@ class AdminShopItemController extends Controller
         $coinsPrice = $allowCoins ? (int) $prices['coins'] : null;
         $premiumPrice = $allowPremium ? (int) $prices['premium'] : null;
 
-        $legacyCurrency = $allowCoins ? 'coins' : 'premium';
-        $legacyPrice = $allowCoins ? $coinsPrice : $premiumPrice;
-
         return [
             'allow_coins' => $allowCoins,
             'coins_price' => $coinsPrice,
             'allow_premium' => $allowPremium,
             'premium_price' => $premiumPrice,
-            'currency' => $legacyCurrency,
-            'price' => (int) $legacyPrice,
-        ];
-    }
-
-    /**
-     * @return array<string, int|string|bool|null>
-     */
-    private function patchPricingFromUpdate(array $validated): array
-    {
-        if (! array_key_exists('prices', $validated)) {
-            return [];
-        }
-
-        $prices = $validated['prices'];
-        $allowCoins = ! empty($prices['coins']);
-        $allowPremium = ! empty($prices['premium']);
-
-        if (! $allowCoins && ! $allowPremium) {
-            throw ValidationException::withMessages([
-                'prices' => ['At least one of prices.coins or prices.premium must be set.'],
-            ]);
-        }
-
-        $coinsPrice = $allowCoins ? (int) $prices['coins'] : null;
-        $premiumPrice = $allowPremium ? (int) $prices['premium'] : null;
-        $legacyCurrency = $allowCoins ? 'coins' : 'premium';
-        $legacyPrice = $allowCoins ? $coinsPrice : $premiumPrice;
-
-        return [
-            'allow_coins' => $allowCoins,
-            'coins_price' => $coinsPrice,
-            'allow_premium' => $allowPremium,
-            'premium_price' => $premiumPrice,
-            'currency' => $legacyCurrency,
-            'price' => (int) $legacyPrice,
+            // Single-currency columns (NOT NULL, unique per item): mirror the first enabled currency.
+            'currency' => $allowCoins ? 'coins' : 'premium',
+            'price' => (int) ($allowCoins ? $coinsPrice : $premiumPrice),
         ];
     }
 

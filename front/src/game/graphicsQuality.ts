@@ -10,7 +10,7 @@ export function getGraphicsQuality(): GraphicsQuality {
   return 'low'
 }
 
-export function setGraphicsQuality(quality: GraphicsQuality): void {
+function setGraphicsQuality(quality: GraphicsQuality): void {
   localStorage.setItem(STORAGE_KEY, quality)
 }
 
@@ -26,11 +26,6 @@ export function supportsRoomMeshShadows(): boolean {
 
 export function supportsEnvironmentMap(): boolean {
   return getGraphicsQuality() === 'high'
-}
-
-/** Bloom disabled — direct renderer path preserves color accuracy and FPS. */
-export function supportsBloom(): boolean {
-  return false
 }
 
 /** Point-light shadows stay off for FPS even on High. */

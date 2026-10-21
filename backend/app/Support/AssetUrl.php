@@ -35,7 +35,7 @@ final class AssetUrl
         }
 
         // Served by the front from its own public/ folder (Blender-built assets), not by the API.
-        if (str_starts_with($trimmed, '/models/') || str_starts_with($trimmed, '/assets/')) {
+        if (str_starts_with($trimmed, '/assets/')) {
             return $trimmed;
         }
 

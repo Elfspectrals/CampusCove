@@ -17,19 +17,13 @@ export const EYE_HEIGHT = 1.6
  */
 export const HOUSING_LOBBY_SPAWN = { x: 0, y: 1.6, z: 13 }
 
-/** @deprecated Use HOUSING_LOBBY_SPAWN for /game. Kept for socket naming parity. */
-export const CITY_SPAWN = HOUSING_LOBBY_SPAWN
-
-/** Where you reappear in the town after leaving a house. */
-export const CITY_APARTMENT_EXIT = HOUSING_LOBBY_SPAWN
-
 /** Outer safety clamp around a house interior (walls collide via interior.collision.json). */
 export const APARTMENT_HALF_EXTENT = 12
 
-/** Vertical interior height (floor y=0 to ceiling); must match `buildApartmentEnvironment`. */
+/** Vertical interior height (floor y=0 to ceiling); used by the placement physics walls. */
 export const APARTMENT_ROOM_HEIGHT = 3
 
-/** Wall / floor / ceiling slab thickness; must match `buildApartmentEnvironment`. */
+/** Wall / floor / ceiling slab thickness; used by the placement physics walls. */
 export const APARTMENT_WALL_THICKNESS = 0.08
 export const APARTMENT_CLAMP_MARGIN = 0.35
 export const APARTMENT_DOOR_RADIUS = 1.4
@@ -37,9 +31,5 @@ export const APARTMENT_DOOR_RADIUS = 1.4
 /** Exit door trigger — just inside Door_Entrance, centred on the front wall of every house interior. */
 export const APARTMENT_DOOR_POS = { x: 0, z: 4.75 }
 
-/** Extra XZ reach beyond half unit size for housing interact prompts (unit position = the house door). */
-export const HOUSING_CUBE_INTERACT_RADIUS_PAD = 1.4
-
-export const TRANSFORM_PERSIST_THROTTLE_MS = 150
 export const TRANSFORM_EPSILON_POSITION = 0.01
 export const TRANSFORM_EPSILON_ROTATION = 0.01

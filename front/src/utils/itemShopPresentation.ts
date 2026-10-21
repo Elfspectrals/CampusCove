@@ -1,5 +1,5 @@
 import type { ShopCurrency, ShopItem, ShopItemCurrencyOption } from '../api/itemShop'
-import { Rarity } from '../game/rarity'
+import { Rarity } from '../game/rarity.ts'
 
 export type ItemRarity = Rarity
 
@@ -31,4 +31,9 @@ export function itemRarity(item: ShopItem): ItemRarity {
 /** `cc-rarity-*` classes used by `.cc-card` / `.cc-rarity-bg` (see style.css). */
 export function rarityClass(rarity: ItemRarity): string {
   return `cc-rarity cc-rarity-${rarity}`
+}
+
+/** Furniture / house decoration, as opposed to skins and other cosmetics. */
+export function isApartmentItem(item: Pick<ShopItem, 'kind'>): boolean {
+  return item.kind === 'apartment_asset' || item.kind === 'furniture'
 }

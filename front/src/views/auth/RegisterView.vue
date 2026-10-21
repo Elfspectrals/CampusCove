@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import * as authApi from '../../api/auth'
+import { storeAuth } from '../../api/session'
 import UiAuthCard from '../../components/ui/UiAuthCard.vue'
 import UiIcon from '../../components/ui/UiIcon.vue'
 
@@ -31,7 +32,7 @@ async function submit() {
       passwordConfirmation.value,
       referralCode.value.trim() || undefined
     )
-    authApi.storeAuth(res.user, res.token)
+    storeAuth(res.user, res.token)
     router.push({ name: 'home' })
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Something went wrong'

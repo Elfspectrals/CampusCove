@@ -18,7 +18,7 @@ const modelCache = new Map<string, Promise<THREE.Group | null>>()
  * Loads the default skin (catalog DEFAULT_SKIN, public/assets/skins/campus_classic/model.glb) once,
  * centers and scales to ~1.75m tall (feet at y=0). Used when a player has no body skin equipped.
  */
-export async function loadCharacterTemplate(): Promise<THREE.Group | null> {
+async function loadCharacterTemplate(): Promise<THREE.Group | null> {
   if (loadFailed) return null
   if (templateRoot) return templateRoot
 
@@ -168,7 +168,7 @@ export function cloneCharacterWithUniqueMaterials(source: THREE.Object3D): THREE
  * Multi-material skins (the Blender-built ones in assets/skins/: skin, hair, textured clothes) carry
  * their own look, so they are left untouched.
  */
-export function applyCosmeticColors(root: THREE.Object3D, colors: CosmeticColors): void {
+function applyCosmeticColors(root: THREE.Object3D, colors: CosmeticColors): void {
   // rigged premium skins share their materials across instances and are never tinted
   if (hasSkinnedMesh(root)) return
   const materials = new Set<string>()
@@ -211,15 +211,6 @@ function blendSlotHexes(colors: CosmeticColors): THREE.Color {
   }
   if (n === 0) return new THREE.Color(0x8b7aa8)
   return new THREE.Color(r / n, g / n, b / n)
-}
-
-export async function createTintedCharacter(colors: CosmeticColors): Promise<THREE.Group | null> {
-  const template = await loadCharacterTemplate()
-  if (!template) return null
-  const instance = cloneCharacterWithUniqueMaterials(template)
-  applyCosmeticColors(instance, colors)
-  attachAvatarAnimations(instance)
-  return instance
 }
 
 export async function createTintedCharacterFromUrl(
@@ -267,11 +258,6 @@ function playClip(state: AvatarAnimState, name: string, timeScale: number): void
   next.reset().setEffectiveWeight(1).play()
   if (state.current) state.current.crossFadeTo(next, CROSSFADE_S, false)
   state.current = next
-}
-
-/** True when the instance has a running mixer (rigged skin). */
-export function hasAvatarAnimations(root: THREE.Object3D): boolean {
-  return animStateByRoot.has(root)
 }
 
 /**

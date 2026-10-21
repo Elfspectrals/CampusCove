@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
-import type { MinimapState } from '../../game/newNationShowroom'
+import type { MinimapState } from '../../game/newNation/showroomLayout'
 
 /**
  * Top-down map of New Nation: plaza, the four model apartments and the player.

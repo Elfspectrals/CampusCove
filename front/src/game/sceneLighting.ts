@@ -7,7 +7,7 @@ import {
 } from './graphicsQuality'
 
 /** CC0 — Kloppenheim 06 by Poly Haven (https://polyhaven.com/a/kloppenheim_06) */
-export const SHARED_HDRI_PATH = '/env/kloppenheim_06_1k.hdr'
+const SHARED_HDRI_PATH = '/env/kloppenheim_06_1k.hdr'
 
 const MAX_GLB_LIGHT_INTENSITY = 50
 const MIN_GLB_LIGHT_INTENSITY = 0.001

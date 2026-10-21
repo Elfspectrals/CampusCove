@@ -14,14 +14,15 @@ export interface ApartmentObjectsDeps {
   getGameRoom: () => Room | null
   currentRoomLabel: Ref<'city' | 'apartment'>
   /** After an apartment anchor mesh is created or updated (placement / remote sync). */
-  onApartmentObjectMeshUpserted?: (mesh: THREE.Mesh) => void
+  onMeshUpserted: (mesh: THREE.Mesh) => void
   /** Before mesh disposal (pickup, room clear, remote delete). */
-  onApartmentObjectMeshRemoved?: (objectId: string) => void
-  /** Optional: placement system cancels preview if object disappears. */
-  onApartmentObjectRemovedNotify?: (objectId: string) => void
+  onMeshRemoved: (objectId: string) => void
 }
 
-/** Remote/other apartment mesh UX + transform persistence for placement commits. */
+/**
+ * Placed props of the house being visited: one 1×1×1 anchor cube per object (the GLB hangs under it and
+ * hides the cube once loaded), kept in sync with the server, plus transform persistence after a move.
+ */
 export function useApartmentObjects(deps: ApartmentObjectsDeps) {
   const apartmentObjectCount = ref(0)
   const apartmentObjectIds = ref<string[]>([])
@@ -100,7 +101,8 @@ export function useApartmentObjects(deps: ApartmentObjectsDeps) {
     setAnchorCubeVisible(anchor, false, colorHex)
   }
 
-  function upsertApartmentObjectMesh(payload: ApartmentObjectPayload, options?: { syncPersistSnapshot?: boolean }) {
+  /** Server-driven upsert (apartment init or broadcast); also the reference transform for persistence dedupe. */
+  function upsertApartmentObjectFromRemote(payload: ApartmentObjectPayload) {
     const scene = deps.getScene()
     if (!scene) return
 
@@ -131,18 +133,15 @@ export function useApartmentObjects(deps: ApartmentObjectsDeps) {
     if (selectedPlacedObjectId.value === '') {
       selectedPlacedObjectId.value = payload.objectId
     }
-    if (options?.syncPersistSnapshot) {
-      lastPersistedByObjectId.set(payload.objectId, payload)
-    }
-    deps.onApartmentObjectMeshUpserted?.(mesh)
+    lastPersistedByObjectId.set(payload.objectId, payload)
+    deps.onMeshUpserted(mesh)
   }
 
   function removeApartmentObjectMesh(objectId: string) {
     const scene = deps.getScene()
     const mesh = apartmentObjects.get(objectId)
     if (!mesh) return
-    deps.onApartmentObjectMeshRemoved?.(objectId)
-    deps.onApartmentObjectRemovedNotify?.(objectId)
+    deps.onMeshRemoved(objectId)
     if (scene) scene.remove(mesh)
     disposeObject3D(mesh)
     apartmentObjects.delete(objectId)
@@ -157,10 +156,7 @@ export function useApartmentObjects(deps: ApartmentObjectsDeps) {
   function clearApartmentObjects() {
     const scene = deps.getScene()
     const ids = [...apartmentObjects.keys()]
-    for (const objectId of ids) {
-      deps.onApartmentObjectMeshRemoved?.(objectId)
-      deps.onApartmentObjectRemovedNotify?.(objectId)
-    }
+    for (const objectId of ids) deps.onMeshRemoved(objectId)
     for (const mesh of apartmentObjects.values()) {
       if (scene) scene.remove(mesh)
       disposeObject3D(mesh)
@@ -224,43 +220,22 @@ export function useApartmentObjects(deps: ApartmentObjectsDeps) {
     lastPersistedByObjectId.set(objectId, payload)
   }
 
-  function schedulePersistAttachedObject(force = false) {
-    void force
-    /** Legacy no-op: TransformControls removed — placement commits send transforms explicitly. */
-  }
-
   function ensureApartmentObjectsFromServer(objects: ApartmentObjectPayload[]) {
     clearApartmentObjects()
     for (const obj of objects) {
-      upsertApartmentObjectMesh(obj, { syncPersistSnapshot: true })
+      upsertApartmentObjectFromRemote(obj)
     }
   }
-
-  function attachSelectedPlacedObject() {
-    /** No-op: legacy TransformControls attachment. */
-  }
-
-  /** Server-driven upserts (broadcast or init). Updates snapshot used for throttle dedupe. */
-  function upsertApartmentObjectFromRemote(payload: ApartmentObjectPayload) {
-    upsertApartmentObjectMesh(payload, { syncPersistSnapshot: true })
-  }
-
-  /** Clear pending persist timer — call on teardown (no-op; kept for GameView API). */
-  function clearPersistTimers() {}
 
   return {
     apartmentObjectCount,
     apartmentObjectIds,
     selectedPlacedObjectId,
     detachForRoomSwitch,
-    clearPersistTimers,
     clearApartmentObjects,
-    upsertApartmentObjectMesh,
     upsertApartmentObjectFromRemote,
     removeApartmentObjectMesh,
     ensureApartmentObjectsFromServer,
-    attachSelectedPlacedObject,
-    schedulePersistAttachedObject,
     persistApartmentTransformForMesh,
     getApartmentObjectMesh,
   }

@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_URL || '/api'
+import { API_BASE } from './http'
 
 function parseApiBaseUrl(): URL | null {
   try {
@@ -13,8 +13,8 @@ function parseApiBaseUrl(): URL | null {
 
 const API_BASE_URL = parseApiBaseUrl()
 
-/** Paths served from the front's own public/ folder (e.g. GLBs from `npm run optimize`), not the API. */
-const FRONT_PUBLIC_PREFIXES = ['/assets/', '/models/', '/maps/']
+/** Paths served from the front's own public/ folder (Blender-built assets), not the API. */
+const FRONT_PUBLIC_PREFIXES = ['/assets/']
 
 export function normalizeApiAssetUrl(path: string | null | undefined): string | null {
   if (typeof path !== 'string') return null

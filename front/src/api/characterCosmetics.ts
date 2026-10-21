@@ -1,9 +1,7 @@
 /**
  * Character cosmetic loadout (Laravel `GET/PUT /api/character/cosmetics`, `auth:sanctum`).
  */
-import { formatApiError, getStoredAuth } from './auth'
-
-const API_BASE = import.meta.env.VITE_API_URL || '/api'
+import { apiRequest, isRecord } from './http'
 
 export type CosmeticSlot = 'body' | 'hair' | 'top' | 'bottom' | 'shoes' | 'head_accessory'
 
@@ -12,7 +10,7 @@ export const SLOTS: CosmeticSlot[] = ['body', 'hair', 'top', 'bottom', 'shoes', 
 /** Same order as API; used for blending / UI lists. */
 export const SLOT_ORDER: CosmeticSlot[] = [...SLOTS]
 
-export interface EquippedCosmetic {
+interface EquippedCosmetic {
   item_def_id: number
   code: string
   name: string
@@ -53,19 +51,6 @@ export function emptyCosmeticLoadout(): CosmeticLoadout {
 
 export function defaultCosmeticColors(): CosmeticColors {
   return { ...DEFAULT_SLOT_COLORS }
-}
-
-function authJsonHeaders(): HeadersInit {
-  const auth = getStoredAuth()
-  return {
-    Accept: 'application/json',
-    'Content-Type': 'application/json',
-    ...(auth?.token ? { Authorization: `Bearer ${auth.token}` } : {}),
-  }
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null
 }
 
 function normalizeCosmeticSlot(slot: unknown): string | null {
@@ -128,27 +113,13 @@ export function appearanceIdsFromLoadout(slots: CosmeticLoadout): Record<Cosmeti
   return out
 }
 
-export function appearanceCodesFromLoadout(slots: CosmeticLoadout): Record<CosmeticSlot, string | null> {
-  const out = {} as Record<CosmeticSlot, string | null>
-  for (const slot of SLOTS) {
-    const e = slots[slot]
-    out[slot] = e ? e.code : null
-  }
-  return out
-}
-
 export function bodyModelGlbFromLoadout(slots: CosmeticLoadout): string | null {
   const value = slots.body?.model_glb
   return typeof value === 'string' && value.length > 0 ? value : null
 }
 
 export async function fetchCharacterCosmetics(): Promise<CharacterCosmeticsState> {
-  const res = await fetch(`${API_BASE}/character/cosmetics`, {
-    headers: authJsonHeaders(),
-    cache: 'no-store',
-  })
-  const data: unknown = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(formatApiError(data))
+  const data = await apiRequest('/character/cosmetics')
   return parseCharacterCosmeticsPayload(data)
 }
 
@@ -161,12 +132,6 @@ export async function putCharacterCosmetics(payload: PutCharacterCosmeticsPayloa
   const body: Record<string, unknown> = {}
   if (payload.slots !== undefined) body.slots = payload.slots
   if (payload.colors !== undefined) body.colors = payload.colors
-  const res = await fetch(`${API_BASE}/character/cosmetics`, {
-    method: 'PUT',
-    headers: authJsonHeaders(),
-    body: JSON.stringify(body),
-  })
-  const data: unknown = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(formatApiError(data))
+  const data = await apiRequest('/character/cosmetics', { method: 'PUT', body })
   return parseCharacterCosmeticsPayload(data)
 }

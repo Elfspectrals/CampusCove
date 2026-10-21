@@ -1,23 +1,19 @@
-import { ref, type Ref, type ShallowRef } from 'vue'
+import type { Ref, ShallowRef } from 'vue'
 import type { Room } from '@colyseus/sdk'
 import * as THREE from 'three'
 import { KEY_BINDINGS, matchesAnyMovementKey } from '../../config/keybindings'
-import {
-  APARTMENT_CLAMP_MARGIN,
-  APARTMENT_DOOR_POS,
-  APARTMENT_DOOR_RADIUS,
-  APARTMENT_HALF_EXTENT,
-} from '../../game/gameRoomConstants'
-import { findNearestFishingSpot, type FishingSpot } from '../../game/fishingSpots'
-import { findNearestHousingUnit, type HousingUnitSnapshot } from '../../game/housingCubes'
-import { terrainHeightAt } from '../../game/terrainHeight'
-import { findNearestWorkDoor, type WorkLot } from '../../game/workBuildings'
-import { resolveWorldMovement } from './useWorldCollision'
+import { APARTMENT_CLAMP_MARGIN, APARTMENT_HALF_EXTENT, EYE_HEIGHT } from '../../game/gameRoomConstants'
+import { resolveWorldMovement } from '../../game/collision/worldCollision'
+import { terrainHeightAt } from '../../game/town/terrainHeight'
+
+const MOVE_SPEED = 8
+const MOUSE_SENSITIVITY = 0.002
+/** Position updates sent to the server at most this often (ms). */
+const EMIT_INTERVAL_MS = 50
 
 export interface UseGameMovementDeps {
-  pointerLocked?: Ref<boolean>
+  pointerLocked: Ref<boolean>
   myPosition: { x: number; y: number; z: number }
-  direction: THREE.Vector3
   canvasRef: Ref<HTMLCanvasElement | null>
   containerRef: Ref<HTMLElement | null>
   gameRoomRef: ShallowRef<Room | null>
@@ -28,116 +24,81 @@ export interface UseGameMovementDeps {
   getRenderer: () => THREE.WebGLRenderer | undefined
   getFpHands: () => THREE.Group | null
   refreshMyAppearance: Ref<(() => void) | null>
-  onNearApartmentDoorInteract: () => Promise<void>
-  onNearHousingInteract: () => void
-  onNearWorkInteract: () => void
+  /** Refresh what the player stands next to (doors, fishing spots). */
+  updateProximity: () => void
+  /** Left click / I: use what the player stands next to. Returns true if something was used. */
+  tryInteract: () => boolean
   onToggleInventory: () => void
   onHotbarDigit: (index: number) => void
-  nearApartmentDoor: Ref<boolean>
-  nearCityDoor: Ref<boolean>
-  housingUnits: Ref<HousingUnitSnapshot[]>
-  nearbyHousingUnit: Ref<HousingUnitSnapshot | null>
-  /** Business-district buildings of the town (free to enter, no purchase). */
-  workLots: Ref<WorkLot[]>
-  nearbyWork: Ref<WorkLot | null>
-  fishingSpots: Ref<FishingSpot[]>
-  nearbyFishingSpot: Ref<FishingSpot | null>
-  onNearFishingInteract: () => void
   /** Return `true` if the event was consumed (placement shortcuts, etc.). */
-  handleExtraKeyDown?: (e: KeyboardEvent) => boolean
+  handleExtraKeyDown: (e: KeyboardEvent) => boolean
   /** Return `true` if the click was consumed (apartment placement), so it doesn't also open a door. */
-  onCanvasMouseDown?: (e: MouseEvent) => boolean | void
-  onCanvasMouseUp?: (e: MouseEvent) => void
-  /** Called each animation frame after movement. */
-  onBeforeRender?: (dt: number) => void
+  onCanvasMouseDown: (e: MouseEvent) => boolean
+  /** Called each animation frame after movement, before rendering. */
+  onBeforeRender: (dt: number) => void
 }
 
+/** First-person controls (WASD/ZQSD + pointer-lock mouse look), position sync, and the render loop. */
 export function useGameMovement(deps: UseGameMovementDeps) {
-  const pointerLockedOwned = ref(false)
-  const pointerLocked = deps.pointerLocked ?? pointerLockedOwned
-
+  const { pointerLocked, myPosition } = deps
   const keys = { forward: false, back: false, left: false, right: false }
-  const myPosition = deps.myPosition
-  const velocity = new THREE.Vector3(0, 0, 0)
-  const direction = deps.direction
-  const moveSpeed = 8
+  const direction = new THREE.Vector3(0, 0, -1)
+  const rightVec = new THREE.Vector3()
   let lastEmit = 0
-  const emitInterval = 50
-
   let mouseX = 0
   let mouseY = 0
   let yaw = 0
   let pitch = 0
-
   let frameId = 0
   let lastTime = performance.now()
 
   function containerSize(): { w: number; h: number } {
     const el = deps.containerRef.value
-    if (el && el.clientWidth > 0 && el.clientHeight > 0) {
-      return { w: el.clientWidth, h: el.clientHeight }
-    }
+    if (el && el.clientWidth > 0 && el.clientHeight > 0) return { w: el.clientWidth, h: el.clientHeight }
     return { w: window.innerWidth, h: window.innerHeight }
   }
 
-  function clampMyPositionToApartment() {
+  /** Outer safety clamp inside a house (walls themselves collide via the interior collision file). */
+  function clampToApartment() {
     const lim = APARTMENT_HALF_EXTENT - APARTMENT_CLAMP_MARGIN
     myPosition.x = Math.max(-lim, Math.min(lim, myPosition.x))
     myPosition.z = Math.max(-lim, Math.min(lim, myPosition.z))
   }
 
-  function updateDoorProximity() {
-    if (deps.currentRoomLabel.value === 'apartment') {
-      clampMyPositionToApartment()
-      const dx = myPosition.x - APARTMENT_DOOR_POS.x
-      const dz = myPosition.z - APARTMENT_DOOR_POS.z
-      deps.nearApartmentDoor.value = dx * dx + dz * dz <= APARTMENT_DOOR_RADIUS * APARTMENT_DOOR_RADIUS
-      deps.nearCityDoor.value = false
-      deps.nearbyHousingUnit.value = null
-      deps.nearbyWork.value = null
-      deps.nearbyFishingSpot.value = null
-    } else {
-      deps.nearApartmentDoor.value = false
-      const nearest = findNearestHousingUnit(myPosition.x, myPosition.z, deps.housingUnits.value)
-      deps.nearbyHousingUnit.value = nearest
-      const work = nearest ? null : findNearestWorkDoor(myPosition.x, myPosition.z, deps.workLots.value)
-      deps.nearbyWork.value = work
-      const fishing = nearest || work ? null : findNearestFishingSpot(myPosition.x, myPosition.z, deps.fishingSpots.value)
-      deps.nearbyFishingSpot.value = fishing
-      deps.nearCityDoor.value = nearest !== null || work !== null || fishing !== null
-    }
-  }
-
   function updateMovement(dt: number) {
     const camera = deps.getCamera()
-    const room = deps.gameRoomRef.value
     if (!camera) return
 
-    const forward = keys.forward ? 1 : keys.back ? -1 : 0
-    const right = keys.right ? 1 : keys.left ? -1 : 0
-    yaw -= mouseX * 0.002
-    pitch -= mouseY * 0.002
+    yaw -= mouseX * MOUSE_SENSITIVITY
+    pitch -= mouseY * MOUSE_SENSITIVITY
     pitch = Math.max(-Math.PI / 2 + 0.1, Math.min(Math.PI / 2 - 0.1, pitch))
     mouseX = 0
     mouseY = 0
-    direction.set(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw)
-    const rightVec = new THREE.Vector3().crossVectors(direction, new THREE.Vector3(0, 1, 0)).normalize()
-    velocity.set(0, 0, 0)
+    direction.set(0, 0, -1).applyAxisAngle(THREE.Object3D.DEFAULT_UP, yaw)
+    rightVec.crossVectors(direction, THREE.Object3D.DEFAULT_UP).normalize()
+
     if (!deps.inventoryOpen.value) {
-      if (forward) velocity.add(direction.clone().multiplyScalar(forward * moveSpeed * dt))
-      if (right) velocity.add(rightVec.clone().multiplyScalar(right * moveSpeed * dt))
-      const resolved = resolveWorldMovement(myPosition, velocity.x, velocity.z)
+      const forward = keys.forward ? 1 : keys.back ? -1 : 0
+      const right = keys.right ? 1 : keys.left ? -1 : 0
+      const step = MOVE_SPEED * dt
+      const dx = direction.x * forward * step + rightVec.x * right * step
+      const dz = direction.z * forward * step + rightVec.z * right * step
+      const resolved = resolveWorldMovement(myPosition, dx, dz)
       myPosition.x = resolved.x
       myPosition.z = resolved.z
     }
-    myPosition.y = 1.6 + (deps.currentRoomLabel.value === 'city' ? terrainHeightAt(myPosition.x, myPosition.z) : 0)
-    updateDoorProximity()
+    const inCity = deps.currentRoomLabel.value === 'city'
+    if (!inCity) clampToApartment()
+    myPosition.y = EYE_HEIGHT + (inCity ? terrainHeightAt(myPosition.x, myPosition.z) : 0)
+
     camera.position.set(myPosition.x, myPosition.y, myPosition.z)
     camera.rotation.order = 'YXZ'
     camera.rotation.y = yaw
     camera.rotation.x = pitch
+
+    const room = deps.gameRoomRef.value
     const now = Date.now()
-    if (room && now - lastEmit > emitInterval) {
+    if (room && now - lastEmit > EMIT_INTERVAL_MS) {
       lastEmit = now
       room.send('move', { x: myPosition.x, y: myPosition.y, z: myPosition.z, ry: yaw })
     }
@@ -148,19 +109,14 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     const now = performance.now()
     const dt = (now - lastTime) / 1000
     lastTime = now
-    if (pointerLocked.value) {
-      updateMovement(dt)
-    } else {
-      // Keep door prompts / Enter zone accurate even without pointer lock.
-      updateDoorProximity()
-    }
-    deps.onBeforeRender?.(dt)
+    // without pointer lock the player stands still, but door prompts must stay accurate
+    if (pointerLocked.value) updateMovement(dt)
+    deps.updateProximity()
+    deps.onBeforeRender(dt)
     const renderer = deps.getRenderer()
     const scene = deps.getScene()
     const camera = deps.getCamera()
-    if (renderer && scene && camera) {
-      renderer.render(scene, camera)
-    }
+    if (renderer && scene && camera) renderer.render(scene, camera)
   }
 
   function startRenderLoop() {
@@ -185,13 +141,13 @@ export function useGameMovement(deps: UseGameMovementDeps) {
   function onPointerLockChange() {
     pointerLocked.value = document.pointerLockElement === deps.canvasRef.value
     const fpHands = deps.getFpHands()
-    if (fpHands) {
-      fpHands.visible = pointerLocked.value
-    }
+    if (fpHands) fpHands.visible = pointerLocked.value
   }
 
+  /** Browsers refuse the lock without a user gesture or when the page is hidden; the overlay stays up then. */
   function requestPointerLock() {
-    deps.canvasRef.value?.requestPointerLock()
+    const canvas = deps.canvasRef.value
+    if (canvas) void Promise.resolve(canvas.requestPointerLock()).catch(() => undefined)
   }
 
   function onMouseMove(e: MouseEvent) {
@@ -200,116 +156,70 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     mouseY = e.movementY
   }
 
-  /** Enter / rent / buy / exit at the door the player stands next to. Returns true if a door was used. */
-  function tryInteract(): boolean {
-    // Recompute proximity on the input itself so it works even if the last movement frame was
-    // skipped (pointer unlock, lag, etc.).
-    updateDoorProximity()
-    if (deps.currentRoomLabel.value === 'apartment' && deps.nearApartmentDoor.value) {
-      void deps.onNearApartmentDoorInteract()
-      return true
-    }
-    if (deps.currentRoomLabel.value === 'city' && deps.nearbyHousingUnit.value) {
-      deps.onNearHousingInteract()
-      return true
-    }
-    if (deps.currentRoomLabel.value === 'city' && deps.nearbyWork.value) {
-      deps.onNearWorkInteract()
-      return true
-    }
-    if (deps.currentRoomLabel.value === 'city' && deps.nearbyFishingSpot.value) {
-      deps.onNearFishingInteract()
-      return true
-    }
-    return false
-  }
-
   function onCanvasMouseDown(e: MouseEvent) {
-    if (deps.onCanvasMouseDown?.(e) === true) return
+    if (deps.onCanvasMouseDown(e)) return
     // left click on a door; the click that locks the pointer is not an interaction
-    if (e.button === 0 && pointerLocked.value) tryInteract()
+    if (e.button === 0 && pointerLocked.value) deps.tryInteract()
   }
 
-  function onCanvasMouseUp(e: MouseEvent) {
-    deps.onCanvasMouseUp?.(e)
+  function setMoveKey(code: string, down: boolean): void {
+    if (matchesAnyMovementKey(code, KEY_BINDINGS.moveForward)) keys.forward = down
+    else if (matchesAnyMovementKey(code, KEY_BINDINGS.moveBack)) keys.back = down
+    else if (matchesAnyMovementKey(code, KEY_BINDINGS.moveLeft)) keys.left = down
+    else if (matchesAnyMovementKey(code, KEY_BINDINGS.moveRight)) keys.right = down
   }
 
   function onKeyDown(e: KeyboardEvent) {
-    if (deps.handleExtraKeyDown?.(e)) {
-      return
-    }
+    if (deps.handleExtraKeyDown(e)) return
     // keyboard fallback for the left-click door interaction
-    if (e.code === KEY_BINDINGS.interact && tryInteract()) {
-      return
-    }
+    if (e.code === KEY_BINDINGS.interact && deps.tryInteract()) return
     if (e.code === KEY_BINDINGS.apartmentInventoryToggle && !e.repeat) {
       deps.onToggleInventory()
       return
     }
-    if (!e.repeat) {
-      const digit = /^Digit([1-9])$/.exec(e.code)
-      if (digit) {
-        const index = Number(digit[1]) - 1
-        deps.onHotbarDigit(index)
-        return
-      }
+    const digit = e.repeat ? null : /^Digit([1-9])$/.exec(e.code)
+    if (digit) {
+      deps.onHotbarDigit(Number(digit[1]) - 1)
+      return
     }
-    switch (e.code) {
-      case KEY_BINDINGS.moveForward[0]:
-      case KEY_BINDINGS.moveForward[1]:
-        keys.forward = true
-        break
-      case KEY_BINDINGS.moveBack[0]:
-        keys.back = true
-        break
-      case KEY_BINDINGS.moveLeft[0]:
-      case KEY_BINDINGS.moveLeft[1]:
-        keys.left = true
-        break
-      case KEY_BINDINGS.moveRight[0]:
-        keys.right = true
-        break
-    }
+    setMoveKey(e.code, true)
   }
 
   function onKeyUp(e: KeyboardEvent) {
-    if (matchesAnyMovementKey(e.code, KEY_BINDINGS.moveForward)) {
-      keys.forward = false
-      return
-    }
-    if (matchesAnyMovementKey(e.code, KEY_BINDINGS.moveBack)) {
-      keys.back = false
-      return
-    }
-    if (matchesAnyMovementKey(e.code, KEY_BINDINGS.moveLeft)) {
-      keys.left = false
-      return
-    }
-    if (matchesAnyMovementKey(e.code, KEY_BINDINGS.moveRight)) {
-      keys.right = false
-    }
+    setMoveKey(e.code, false)
   }
 
   function onVisibilityOrFocus() {
-    if (document.visibilityState !== 'visible') return
-    deps.refreshMyAppearance.value?.()
+    if (document.visibilityState === 'visible') deps.refreshMyAppearance.value?.()
+  }
+
+  /** Window / document listeners for the lifetime of the game view; returns the unbind function. */
+  function bindInputListeners(): () => void {
+    const windowEvents: Array<[string, EventListener]> = [
+      ['resize', onResize],
+      ['focus', onVisibilityOrFocus],
+    ]
+    const documentEvents: Array<[string, EventListener]> = [
+      ['visibilitychange', onVisibilityOrFocus],
+      ['pointerlockchange', onPointerLockChange],
+      ['keydown', onKeyDown as EventListener],
+      ['keyup', onKeyUp as EventListener],
+      ['mousemove', onMouseMove as EventListener],
+    ]
+    for (const [name, fn] of windowEvents) window.addEventListener(name, fn)
+    for (const [name, fn] of documentEvents) document.addEventListener(name, fn)
+    return () => {
+      for (const [name, fn] of windowEvents) window.removeEventListener(name, fn)
+      for (const [name, fn] of documentEvents) document.removeEventListener(name, fn)
+    }
   }
 
   return {
-    pointerLocked,
-    myPosition,
-    direction,
     containerSize,
-    onKeyDown,
-    onKeyUp,
-    onMouseMove,
-    onPointerLockChange,
-    onResize,
     requestPointerLock,
-    onVisibilityOrFocus,
+    onCanvasMouseDown,
     startRenderLoop,
     stopRenderLoop,
-    onCanvasMouseDown,
-    onCanvasMouseUp,
+    bindInputListeners,
   }
 }

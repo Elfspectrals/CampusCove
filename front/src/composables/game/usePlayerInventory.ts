@@ -3,20 +3,17 @@ import {
   onScopeDispose,
   ref,
   watch,
-  type ComputedRef,
   type Ref,
   type ShallowRef,
   type WatchStopHandle,
 } from 'vue'
 import type { Room } from '@colyseus/sdk'
-import * as THREE from 'three'
-import { getStoredAuth } from '../../api/auth'
 import {
   fetchInventoryLayout,
   saveInventoryLayout,
   defaultPlayerInventoryLayout,
 } from '../../api/playerInventoryLayout'
-import { normalizeApiAssetUrl } from '../../api/url'
+import { fetchApartmentAssets } from '../../api/apartments'
 import type { ApartmentInventoryItem } from '../../types/gameRealtime'
 import type { ApartmentPlacementItemDef } from './useApartmentPlacement'
 
@@ -24,78 +21,20 @@ const SLOT_COUNT = 36
 const HOTBAR_SLOTS = 9
 const DEBOUNCE_MS = 500
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null
-}
-
-function parseOwnedItem(raw: unknown): ApartmentInventoryItem | null {
-  if (!isRecord(raw)) return null
-  if (typeof raw.item_def_id !== 'number') return null
-  if (typeof raw.code !== 'string') return null
-  if (typeof raw.name !== 'string') return null
-  if (typeof raw.kind !== 'string') return null
-  if (typeof raw.quantity !== 'number') return null
-  return {
-    item_def_id: raw.item_def_id,
-    code: raw.code,
-    name: raw.name,
-    kind: raw.kind,
-    quantity: raw.quantity,
-    preview_image: normalizeApiAssetUrl(typeof raw.preview_image === 'string' ? raw.preview_image : null),
-    model_glb: normalizeApiAssetUrl(typeof raw.model_glb === 'string' ? raw.model_glb : null),
-  }
-}
-
 export interface UsePlayerInventoryDeps {
   gameRoomRef: ShallowRef<Room | null>
   currentRoomLabel: Ref<'city' | 'apartment'>
   canEditApartment: Ref<boolean>
-  myPosition: { x: number; y: number; z: number }
-  direction: THREE.Vector3
   selectedPlacedObjectId: Ref<string>
-  attachSelectedPlacedObject: () => void
-  startPlacementPreview?: (itemDef: ApartmentPlacementItemDef, ownedCountRef: Ref<number>) => void
-  cancelPlacementPreview?: () => void
+  startPlacementPreview: (itemDef: ApartmentPlacementItemDef, ownedCountRef: Ref<number>) => void
+  cancelPlacementPreview: () => void
 }
 
-export interface UsePlayerInventoryResult {
-  ownedItems: Ref<ApartmentInventoryItem[]>
-  slots: Ref<string[]>
-  selectedHotbarIndex: Ref<number>
-  inventoryOpen: Ref<boolean>
-  inventoryLoading: Ref<boolean>
-  inventoryError: Ref<string | null>
-  cursorItem: Ref<{ code: string; fromSlot: number } | null>
-  itemByCode: ComputedRef<Record<string, ApartmentInventoryItem>>
-  quantityForCode: (code: string) => number
-  selectedHotbarCode: ComputedRef<string>
-  selectedHotbarItem: ComputedRef<ApartmentInventoryItem | null>
-  canSpawnSelectedHotbarItem: ComputedRef<boolean>
-  toggleInventory: () => void
-  closeInventory: () => void
-  selectHotbarIndex: (i: number) => void
-  pickupToHotbar: (code: string) => void
-  onSlotPointerDown: (slotIndex: number, e: PointerEvent) => void
-  onSlotPointerUp: (slotIndex: number, e: PointerEvent) => void
-  onSlotDragStart: (slotIndex: number, e: DragEvent) => void
-  onSlotDragOver: (slotIndex: number, e: DragEvent) => void
-  onSlotDrop: (slotIndex: number, e: DragEvent) => void
-  onSlotDragEnd: () => void
-  /** Put click-picked item back when Esc cancels inside the overlay. */
-  cancelCursorPick: () => void
-  clearSlot: (slotIndex: number) => void
-  refreshOwnedItems: () => void
-  applyServerInventoryPayload: (items: ApartmentInventoryItem[]) => void
-  loadLayoutFromServer: () => Promise<void>
-  resetClientStateForCityWorld: () => void
-  pickupSelectedPlacedObject: () => void
-  onPlacedObjectSelected: (objectId: string) => void
-  enterApartment: (ownerAccountId: number, templateKey: string) => Promise<void>
-  backToCity: () => Promise<void>
-  tryExitApartmentAtDoor: (isNearDoor: boolean) => Promise<void>
-}
-
-export function usePlayerInventory(deps: UsePlayerInventoryDeps): UsePlayerInventoryResult {
+/**
+ * Player inventory: 36 slots (the first 9 are the hotbar) persisted per account, owned decoration items,
+ * click / drag rearranging, and selecting a hotbar item to start placing it in the player's house.
+ */
+export function usePlayerInventory(deps: UsePlayerInventoryDeps) {
   const ownedItems = ref<ApartmentInventoryItem[]>([])
   const ownedItemsHydrated = ref(false)
   const slots = ref<string[]>([...defaultPlayerInventoryLayout().slots])
@@ -122,7 +61,7 @@ export function usePlayerInventory(deps: UsePlayerInventoryDeps): UsePlayerInven
 
   function cancelPlacementPreviewInternal(): void {
     stopHotbarPlacementQtyWatch()
-    deps.cancelPlacementPreview?.()
+    deps.cancelPlacementPreview()
   }
 
   const itemByCode = computed<Record<string, ApartmentInventoryItem>>(() => {
@@ -138,23 +77,6 @@ export function usePlayerInventory(deps: UsePlayerInventoryDeps): UsePlayerInven
     const row = ownedItems.value.find((i) => i.code === code)
     return row?.quantity ?? 0
   }
-
-  const selectedHotbarCode = computed(() => {
-    const i = selectedHotbarIndex.value
-    if (i < 0 || i >= HOTBAR_SLOTS) return ''
-    return slots.value[i] ?? ''
-  })
-
-  const selectedHotbarItem = computed<ApartmentInventoryItem | null>(() => {
-    const c = selectedHotbarCode.value
-    if (!c) return null
-    return itemByCode.value[c] ?? null
-  })
-
-  const canSpawnSelectedHotbarItem = computed(() => {
-    const it = selectedHotbarItem.value
-    return it !== null && it.quantity > 0
-  })
 
   function scheduleDebouncedSave(): void {
     if (!layoutHydrated) return
@@ -210,33 +132,6 @@ export function usePlayerInventory(deps: UsePlayerInventoryDeps): UsePlayerInven
     scheduleDebouncedSave()
   }
 
-  async function fetchApartmentAssetsHttp(): Promise<ApartmentInventoryItem[]> {
-    const auth = getStoredAuth()
-    if (!auth?.token) return []
-    const API_BASE = import.meta.env.VITE_API_URL || '/api'
-    const res = await fetch(`${API_BASE}/apartments/assets`, {
-      headers: {
-        Accept: 'application/json',
-        Authorization: `Bearer ${auth.token}`,
-      },
-    })
-    const data: unknown = await res.json().catch(() => ({}))
-    if (!res.ok) {
-      throw new Error(
-        typeof (data as Record<string, unknown>).message === 'string'
-          ? String((data as Record<string, unknown>).message)
-          : 'Could not load owned items.',
-      )
-    }
-    if (!isRecord(data) || !Array.isArray(data.items)) return []
-    const parsed: ApartmentInventoryItem[] = []
-    for (const row of data.items) {
-      const item = parseOwnedItem(row)
-      if (item) parsed.push(item)
-    }
-    return parsed
-  }
-
   function refreshOwnedItems(): void {
     inventoryError.value = null
     if (deps.gameRoomRef.value && deps.currentRoomLabel.value === 'apartment') {
@@ -245,7 +140,7 @@ export function usePlayerInventory(deps: UsePlayerInventoryDeps): UsePlayerInven
       return
     }
     inventoryLoading.value = true
-    void fetchApartmentAssetsHttp()
+    void fetchApartmentAssets()
       .then((items) => {
         applyServerInventoryPayload(items)
       })
@@ -316,7 +211,7 @@ export function usePlayerInventory(deps: UsePlayerInventoryDeps): UsePlayerInven
     }
 
     const item = ownedItems.value.find((row) => row.code === code && row.quantity > 0)
-    if (!item || !deps.startPlacementPreview) {
+    if (!item) {
       cancelPlacementPreviewInternal()
       closeInventory()
       return
@@ -479,32 +374,9 @@ export function usePlayerInventory(deps: UsePlayerInventoryDeps): UsePlayerInven
 
   function onPlacedObjectSelected(objectId: string): void {
     deps.selectedPlacedObjectId.value = objectId
-    deps.attachSelectedPlacedObject()
-  }
-
-  async function enterApartment(ownerAccountId: number, templateKey: string): Promise<void> {
-    if (!deps.gameRoomRef.value) return
-    inventoryLoading.value = true
-    inventoryError.value = null
-    closeInventory()
-    deps.gameRoomRef.value.send('enter_apartment', {
-      ownerAccountId,
-      templateKey,
-    })
-  }
-
-  async function backToCity(): Promise<void> {
-    if (!deps.gameRoomRef.value) return
-    deps.gameRoomRef.value.send('exit_apartment')
-  }
-
-  async function tryExitApartmentAtDoor(isNearDoor: boolean): Promise<void> {
-    if (!isNearDoor) return
-    await backToCity()
   }
 
   return {
-    ownedItems,
     slots,
     selectedHotbarIndex,
     inventoryOpen,
@@ -512,10 +384,6 @@ export function usePlayerInventory(deps: UsePlayerInventoryDeps): UsePlayerInven
     inventoryError,
     cursorItem,
     itemByCode,
-    quantityForCode,
-    selectedHotbarCode,
-    selectedHotbarItem,
-    canSpawnSelectedHotbarItem,
     toggleInventory,
     closeInventory,
     selectHotbarIndex,
@@ -534,8 +402,5 @@ export function usePlayerInventory(deps: UsePlayerInventoryDeps): UsePlayerInven
     resetClientStateForCityWorld,
     pickupSelectedPlacedObject,
     onPlacedObjectSelected,
-    enterApartment,
-    backToCity,
-    tryExitApartmentAtDoor,
   }
 }

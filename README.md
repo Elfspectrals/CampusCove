@@ -40,9 +40,22 @@ make up-build
 
 `CURRENCY` : `coins` ou `premium`. Relog après `set-admin`.
 
+## Organisation du code
+
+| Dossier | Rôle |
+|---|---|
+| `front/src/api/` | Appels à l'API Laravel. `http.ts` = client unique (`apiRequest`), `session.ts` = token, utilisateur et cache du portefeuille |
+| `front/src/views/` | Pages (une par route). `GameView.vue` ne fait qu'assembler les composables du jeu |
+| `front/src/composables/game/` | Logique du jeu `/game` : mouvement, temps réel (`useGameRealtime` + `useRemoteAvatars`), cibles d'interaction, environnement, maisons, inventaire, placement de meubles |
+| `front/src/game/` | Code Three.js sans Vue : scène (`gameScene.ts`), environnements, `collision/` (Rapier), `placement/` (physique + fantôme), `town/` (maisons, bâtiments, pêche, terrain), `newNation/` (showroom) |
+| `socket/` | Serveur Colyseus : `server.js` (démarrage) + `src/` (`CityRoom`, intérieurs, joueurs, appels backend) |
+| `backend/app/Console/Commands/` | Commandes Artisan (`setAdmin`, `setMoney`, `fillOutfit`, `housing:*`) |
+
+Garde-fous : `cd front && npx knip` (code / exports morts), `make typecheck`, `npm run test:unit`, `make test`.
+
 ## Assets 3D (Blender)
 
-Tous les assets du jeu sont construits dans Blender (via le MCP Blender) par les scripts de `map-src/CampusCove/` (ignoré par git), en low-poly texturé :
+Tous les assets du jeu sont construits dans Blender (via le MCP Blender) par les scripts Python de `map-src/CampusCove/` (seules les sorties `out/` sont ignorées par git), en low-poly texturé :
 
 | Dossier `front/public/assets/` | Contenu |
 |---|---|

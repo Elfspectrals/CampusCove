@@ -3,13 +3,12 @@
  * - GET  /shop/items          — public catalog
  * - POST /shop/purchase       — authenticated (Bearer token)
  */
-import { applyCachedBalanceAfterPurchase, formatApiError, getStoredAuth } from './auth'
+import { apiRequest, isRecord } from './http'
+import { applyCachedBalanceAfterPurchase } from './session'
 import { normalizeApiAssetUrl } from './url'
 
-const API_BASE = import.meta.env.VITE_API_URL || '/api'
-
 export type ShopCurrency = 'coins' | 'premium'
-export type ShopItemKind = 'furniture' | 'cosmetic' | 'consumable' | 'misc' | 'apartment_asset'
+type ShopItemKind = 'furniture' | 'cosmetic' | 'consumable' | 'misc' | 'apartment_asset'
 
 export interface ShopItemCurrencyOption {
   shop_catalog_item_id: number
@@ -39,19 +38,6 @@ export interface PurchaseSuccess {
   balance_after: number
   currency: ShopCurrency
   total_debit: number
-}
-
-function authJsonHeaders(): HeadersInit {
-  const auth = getStoredAuth()
-  return {
-    Accept: 'application/json',
-    'Content-Type': 'application/json',
-    ...(auth?.token ? { Authorization: `Bearer ${auth.token}` } : {}),
-  }
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null
 }
 
 function parseCurrency(value: unknown): ShopCurrency | null {
@@ -160,11 +146,7 @@ function parseCatalog(data: unknown): { items: ShopItem[] } {
 }
 
 export async function fetchItemShopCatalog(): Promise<{ items: ShopItem[] }> {
-  const res = await fetch(`${API_BASE}/shop/items`, {
-    headers: { Accept: 'application/json' },
-  })
-  const data: unknown = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(formatApiError(data))
+  const data = await apiRequest('/shop/items')
   return parseCatalog(data)
 }
 
@@ -175,13 +157,7 @@ export interface PurchaseShopItemBody {
 }
 
 export async function purchaseShopItem(body: PurchaseShopItemBody): Promise<PurchaseSuccess> {
-  const res = await fetch(`${API_BASE}/shop/purchase`, {
-    method: 'POST',
-    headers: authJsonHeaders(),
-    body: JSON.stringify(body),
-  })
-  const data: unknown = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(formatApiError(data))
+  const data = await apiRequest('/shop/purchase', { method: 'POST', body })
   if (!isRecord(data)) throw new Error('Invalid purchase response')
   if (!isRecord(data.purchase)) throw new Error('Invalid purchase response')
 

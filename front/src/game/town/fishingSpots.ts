@@ -1,4 +1,4 @@
-import type { TownLayout } from './assets/catalog'
+import type { TownLayout } from '../assets/catalog'
 
 export type FishingSpot = NonNullable<TownLayout['pond']>['fishingSpots'][number]
 
