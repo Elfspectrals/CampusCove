@@ -27,11 +27,13 @@ const HIDDEN_INTERIOR_NODES = new Set([
   'Door_Entrance_Sign',
 ])
 const OPEN_DOOR_ANGLE = 1.4
+const LIGHTMAP_INTENSITY = Math.PI * 0.65
 const INTERIOR_SHOW_DISTANCE = 20
 const INTERIOR_HIDE_DISTANCE = 26
 
 const buildingFloors: BuildingFloor[] = []
 const placedInteriors: THREE.Group[] = []
+const interiorsByHouse = new Map<string, THREE.Group>()
 
 export function openHouseLots(manifest: WorldManifest): OpenHouseLot[] {
   return houseBuildings(manifest).filter((lot): lot is OpenHouseLot => lot.interiorOffset !== undefined)
@@ -60,7 +62,44 @@ export function placeOpenHouseInterior(interior: THREE.Group, lot: OpenHouseLot)
   placed.visible = false
   placed.add(interior)
   placedInteriors.push(placed)
+  interiorsByHouse.set(lot.key, interior)
   return placed
+}
+
+export function openHouseInterior(houseKey: string): THREE.Group | undefined {
+  return interiorsByHouse.get(houseKey)
+}
+
+export function applyInteriorLightmap(interior: THREE.Object3D, lightmap: THREE.Texture): void {
+  lightmap.flipY = false
+  lightmap.channel = 1
+  lightmap.colorSpace = THREE.NoColorSpace
+  const lightmapped = new Map<THREE.Material, THREE.Material>()
+  const withLightmap = (material: THREE.Material): THREE.Material => {
+    if (!(material instanceof THREE.MeshStandardMaterial)) return material
+    let lit = lightmapped.get(material)
+    if (!lit) {
+      lit = new THREE.MeshBasicMaterial({
+        name: material.name,
+        color: material.color,
+        map: material.map,
+        alphaMap: material.alphaMap,
+        transparent: material.transparent,
+        opacity: material.opacity,
+        alphaTest: material.alphaTest,
+        side: material.side,
+        vertexColors: material.vertexColors,
+        lightMap: lightmap,
+        lightMapIntensity: LIGHTMAP_INTENSITY,
+      })
+      lightmapped.set(material, lit)
+    }
+    return lit
+  }
+  interior.traverse((obj) => {
+    if (!(obj instanceof THREE.Mesh) || !obj.geometry.getAttribute('uv1')) return
+    obj.material = Array.isArray(obj.material) ? obj.material.map(withLightmap) : withLightmap(obj.material)
+  })
 }
 
 export function updateOpenHouseVisibility(x: number, z: number): void {

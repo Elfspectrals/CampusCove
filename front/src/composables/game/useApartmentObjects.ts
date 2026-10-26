@@ -11,6 +11,7 @@ import { disposeObject3D } from '../../avatar/compositeAvatar'
 
 export interface ApartmentObjectsDeps {
   getScene: () => THREE.Scene | undefined
+  getParent?: () => THREE.Object3D | undefined
   getGameRoom: () => Room | null
   currentRoomLabel: Ref<'city' | 'apartment'>
   /** After an apartment anchor mesh is created or updated (placement / remote sync). */
@@ -32,6 +33,10 @@ export function useApartmentObjects(deps: ApartmentObjectsDeps) {
   const apartmentModelTemplateCache = new Map<string, THREE.Object3D>()
   const apartmentModelLoader = createGltfLoader()
   const lastPersistedByObjectId = new Map<string, ApartmentObjectPayload>()
+
+  function getParent(): THREE.Object3D | undefined {
+    return deps.getParent ? deps.getParent() : deps.getScene()
+  }
 
   function detachForRoomSwitch() {
     lastPersistedByObjectId.clear()
@@ -103,8 +108,8 @@ export function useApartmentObjects(deps: ApartmentObjectsDeps) {
 
   /** Server-driven upsert (apartment init or broadcast); also the reference transform for persistence dedupe. */
   function upsertApartmentObjectFromRemote(payload: ApartmentObjectPayload) {
-    const scene = deps.getScene()
-    if (!scene) return
+    const parent = getParent()
+    if (!parent) return
 
     let mesh = apartmentObjects.get(payload.objectId)
     const colorHex =
@@ -117,7 +122,7 @@ export function useApartmentObjects(deps: ApartmentObjectsDeps) {
       mesh.receiveShadow = true
       mesh.userData.apartmentObjectId = payload.objectId
       mesh.userData.apartmentObjectKey = payload.objectKey
-      scene.add(mesh)
+      parent.add(mesh)
       apartmentObjects.set(payload.objectId, mesh)
     }
     mesh.userData.apartmentObjectKey = payload.objectKey
@@ -138,11 +143,10 @@ export function useApartmentObjects(deps: ApartmentObjectsDeps) {
   }
 
   function removeApartmentObjectMesh(objectId: string) {
-    const scene = deps.getScene()
     const mesh = apartmentObjects.get(objectId)
     if (!mesh) return
     deps.onMeshRemoved(objectId)
-    if (scene) scene.remove(mesh)
+    mesh.removeFromParent()
     disposeObject3D(mesh)
     apartmentObjects.delete(objectId)
     apartmentObjectIds.value = apartmentObjectIds.value.filter((id) => id !== objectId)
@@ -154,11 +158,10 @@ export function useApartmentObjects(deps: ApartmentObjectsDeps) {
   }
 
   function clearApartmentObjects() {
-    const scene = deps.getScene()
     const ids = [...apartmentObjects.keys()]
     for (const objectId of ids) deps.onMeshRemoved(objectId)
     for (const mesh of apartmentObjects.values()) {
-      if (scene) scene.remove(mesh)
+      mesh.removeFromParent()
       disposeObject3D(mesh)
     }
     apartmentObjects.clear()

@@ -227,6 +227,29 @@ class HousingApiTest extends TestCase
         ])->assertStatus(403)->assertJsonPath('code', 'apartment_edit_forbidden');
     }
 
+    public function test_house_furniture_lists_occupied_units_only(): void
+    {
+        $owner = $this->registerAndCreditWallet(10_000, 'coins');
+        $visitor = $this->registerAndCreditWallet(0, 'coins');
+        $unit = HousingUnit::query()->where('offer_type', 'buy')->firstOrFail();
+
+        $this->postJson('/api/housing/units/'.$unit->public_id.'/buy', [], [
+            'Authorization' => 'Bearer '.$owner['token'],
+        ])->assertOk();
+        $unit->refresh();
+
+        $response = $this->getJson('/api/apartments/houses', [
+            'Authorization' => 'Bearer '.$visitor['token'],
+        ]);
+
+        $response->assertOk();
+        $response->assertJsonCount(1, 'houses');
+        $response->assertJsonPath('houses.0.template_key', 'housing_'.$unit->unit_id);
+        $response->assertJsonPath('houses.0.model_key', $unit->model_key);
+        $response->assertJsonPath('houses.0.occupant_account_id', $owner['account_id']);
+        $response->assertJsonPath('houses.0.objects', []);
+    }
+
     /**
      * @return array{token: string, account_id: int}
      */

@@ -19,6 +19,7 @@ import GamePointerLockOverlay from '../components/game/GamePointerLockOverlay.vu
 import GameRoomMessageBanner from '../components/game/GameRoomMessageBanner.vue'
 import UiIcon from '../components/ui/UiIcon.vue'
 import { useApartmentObjects } from '../composables/game/useApartmentObjects'
+import { useHouseFurniture } from '../composables/game/useHouseFurniture'
 import { useApartmentPlacement } from '../composables/game/useApartmentPlacement'
 import { useCityHousing } from '../composables/game/useCityHousing'
 import { useGameMovement } from '../composables/game/useGameMovement'
@@ -80,6 +81,7 @@ const {
     placement.notifyPropRemovedFromWorld(objectId)
   },
 })
+const houseFurniture = useHouseFurniture({ getScene })
 
 const placement = useApartmentPlacement({
   getScene,
@@ -169,7 +171,10 @@ const environment = useRoomEnvironment({
   getScene,
   getRenderer,
   houseKeyForTemplate: housing.houseKeyForTemplate,
-  onTownLoaded: interactions.setWorldManifest,
+  onTownLoaded: (manifest) => {
+    interactions.setWorldManifest(manifest)
+    houseFurniture.onTownReady()
+  },
   onInteriorLoaded: (built) => placement.registerApartmentEnvironment(built),
   onError: (message) => {
     roomMessage.value = message
@@ -268,6 +273,7 @@ const realtime = useGameRealtime({
   },
   setRoomEnvironment,
   onHousingUnitsSync: housing.applyUnits,
+  onHouseFurnitureSync: houseFurniture.applyHouses,
 })
 const { transitioning, switchingRoom } = realtime
 
@@ -343,6 +349,7 @@ onUnmounted(() => {
   realtime.clearRemoteUsers()
   placement.dispose()
   clearApartmentObjects()
+  houseFurniture.dispose()
   environment.disposeRoomEnvironment()
   if (game) disposeGameScene(game)
   game = null

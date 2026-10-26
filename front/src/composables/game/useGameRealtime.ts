@@ -15,6 +15,7 @@ import type {
   ApartmentInitPayload,
   ApartmentInventoryItem,
   ApartmentObjectPayload,
+  HouseFurniturePayload,
   HousingUnitPayload,
   RemoteUserPayload,
   RoomInitPayload,
@@ -76,6 +77,7 @@ export interface GameRealtimeDeps {
   /** templateKey: apartment template ('housing_<unit_id>') so the matching house interior loads. */
   setRoomEnvironment: (kind: Zone, templateKey?: string, workKey?: string | null) => void
   onHousingUnitsSync: (units: HousingUnitPayload[]) => void
+  onHouseFurnitureSync: (houses: HouseFurniturePayload[]) => void
 }
 
 /**
@@ -189,9 +191,11 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
         if (u.sessionId !== room.sessionId) void remotes.upsert(u.sessionId, u)
       }
       if (payload.housingUnits !== undefined) syncHousingUnits(payload.housingUnits)
+      if (payload.houseFurniture !== undefined) deps.onHouseFurnitureSync(payload.houseFurniture)
     })
 
     room.onMessage('housing_units_sync', (data: { units?: unknown }) => syncHousingUnits(data.units))
+    room.onMessage('house_furniture_sync', (data: { houses: HouseFurniturePayload[] }) => deps.onHouseFurnitureSync(data.houses))
 
     room.onMessage('user_joined', (data: RemoteUserPayload) => {
       if (data.sessionId !== room.sessionId) void remotes.upsert(data.sessionId, data)

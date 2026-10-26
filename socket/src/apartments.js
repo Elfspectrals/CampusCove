@@ -151,6 +151,7 @@ export async function saveObject(room, client, payload, isSpawn) {
     for (const c of houseViewers(room, house.ownerAccountId, house.templateKey)) {
       c.send('apartment_object_upserted', saved)
     }
+    await room.refreshHouseFurniture(house.player.token)
   } catch (error) {
     client.send('apartment_action_error', errorPayload(error, 'Could not update apartment object', 'apartment_object_error'))
   }
@@ -170,6 +171,7 @@ export async function pickupObject(room, client, payload) {
     for (const c of houseViewers(room, house.ownerAccountId, house.templateKey)) {
       c.send('apartment_object_removed', { objectId })
     }
+    await room.refreshHouseFurniture(house.player.token)
     await sendInventory(room, client)
   } catch (error) {
     client.send('apartment_action_error', errorPayload(error, 'Could not pickup apartment object', 'apartment_pickup_error'))

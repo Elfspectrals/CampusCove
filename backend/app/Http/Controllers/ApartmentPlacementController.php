@@ -57,6 +57,22 @@ class ApartmentPlacementController extends Controller
         return response()->json(['items' => $items->values()->all()]);
     }
 
+    public function houses(): JsonResponse
+    {
+        try {
+            $houses = $this->placements->listOccupiedHouseFurniture();
+        } catch (Throwable $e) {
+            Log::error('apartments.houses failed', ['error' => $e->getMessage()]);
+
+            return response()->json([
+                'message' => 'Could not load house furniture.',
+                'code' => 'apartment_houses_error',
+            ], 500);
+        }
+
+        return response()->json(['houses' => $houses]);
+    }
+
     public function state(Request $request): JsonResponse
     {
         $validated = $request->validate(self::HOUSE_RULES);

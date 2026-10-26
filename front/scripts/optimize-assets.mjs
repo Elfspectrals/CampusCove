@@ -32,11 +32,12 @@ function run(cmd, args) {
   return r.stdout.toString()
 }
 
-function optimizeGlb(input, output, { textureSize, keepNodes }) {
+function optimizeGlb(input, output, { textureSize, keepNodes, keepLightmapUvs }) {
   mkdirSync(dirname(output), { recursive: true })
   const args = ['--yes', '@gltf-transform/cli', 'optimize', input, output,
     '--compress', 'draco', '--texture-compress', 'webp', '--texture-size', String(textureSize)]
   if (keepNodes) args.push('--join', 'false')
+  if (keepLightmapUvs) args.push('--prune-attributes', 'false', '--simplify', 'false')
   run('npx', args)
 }
 
@@ -55,7 +56,8 @@ function processDir(category, dir, rel) {
       processDir(category, full, join(rel, file))
       continue
     }
-    if ((category === 'work' || category === 'park' || category === 'items') && (file === 'preview.png' || file.endsWith('.layout.json'))) {
+    const shipsAsIs = (category === 'work' || category === 'park' || category === 'items') && (file === 'preview.png' || file.endsWith('.layout.json'))
+    if (shipsAsIs || (category === 'houses' && file === 'lightmap.jpg')) {
       // work buildings ship their preview + station layout next to the GLBs
       mkdirSync(join(DEST, category, rel), { recursive: true })
       copyFileSync(full, join(DEST, category, rel, file))
@@ -72,7 +74,8 @@ function processDir(category, dir, rel) {
     }
     const out = join(DEST, category, rel, file)
     const keepNodes = file === 'interior.glb' || (category === 'houses' && file === 'exterior.glb')
-    optimizeGlb(full, out, { textureSize: TEXTURE_SIZE[category], keepNodes })
+    const keepLightmapUvs = category === 'houses' && file === 'interior.glb'
+    optimizeGlb(full, out, { textureSize: TEXTURE_SIZE[category], keepNodes, keepLightmapUvs })
     console.log(`glb        ${category}/${join(rel, file)}  ${(statSync(out).size / 1024).toFixed(0)} KB`)
   }
 }

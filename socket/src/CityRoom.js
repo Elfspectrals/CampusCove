@@ -25,6 +25,7 @@ export class CityRoom extends Room {
     this.players = new Map()
     this.sessionByAccountId = new Map()
     this.housingUnits = []
+    this.houseFurniture = []
 
     this.onMessage('move', (client, payload) => this.onMove(client, payload))
     this.onMessage('appearance', (client, payload) => this.onAppearance(client, payload))
@@ -61,11 +62,13 @@ export class CityRoom extends Room {
     this.sessionByAccountId.set(accountId, client.sessionId)
     if (player.token) {
       await this.fetchHousingUnits(player.token).catch((error) => warn('fetchHousingUnits on join failed', error))
+      await this.fetchHouseFurniture(player.token).catch((error) => warn('fetchHouseFurniture on join failed', error))
     }
     client.send('init', {
       me: publicPlayer(player),
       users: this.visiblePlayersFor(player, client),
-      housingUnits: this.housingUnits
+      housingUnits: this.housingUnits,
+      houseFurniture: this.houseFurniture
     })
     this.forEachVisibleClient(player, (c) => c.send('user_joined', publicPlayer(player)), client)
   }
@@ -156,6 +159,21 @@ export class CityRoom extends Room {
     this.housingUnits = Array.isArray(data?.units) ? data.units : []
   }
 
+  async fetchHouseFurniture(token) {
+    const data = await callBackendJson(token, '/apartments/houses', 'GET')
+    this.houseFurniture = Array.isArray(data?.houses) ? data.houses : []
+  }
+
+  async refreshHouseFurniture(token) {
+    try {
+      await this.fetchHouseFurniture(token)
+      const payload = { houses: this.houseFurniture }
+      this.forEachVisibleClient({ zone: 'city' }, (c) => c.send('house_furniture_sync', payload))
+    } catch (error) {
+      warn('house furniture refresh failed', error)
+    }
+  }
+
   // A player bought / rented / renewed: reload the units and push them to everyone in the town.
   async onHousingRefresh(client) {
     const player = this.players.get(client.sessionId)
@@ -167,5 +185,6 @@ export class CityRoom extends Room {
     } catch (error) {
       warn('housing_refresh failed', error)
     }
+    await this.refreshHouseFurniture(player.token)
   }
 }

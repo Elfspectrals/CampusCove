@@ -40,6 +40,14 @@ export interface RoomInitPayload {
   me: RemoteUserPayload
   users: RemoteUserPayload[]
   housingUnits?: HousingUnitPayload[]
+  houseFurniture?: HouseFurniturePayload[]
+}
+
+export interface HouseFurniturePayload {
+  template_key: string
+  model_key: string | null
+  occupant_account_id: number
+  objects: ApartmentObjectPayload[]
 }
 
 export interface ApartmentInitPayload {

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Exceptions\ApartmentPlacementException;
 use App\Models\Container;
+use App\Models\HousingUnit;
 use App\Models\ItemDef;
 use App\Models\ItemInstance;
 use App\Models\Room;
@@ -78,6 +79,26 @@ class ApartmentPlacementService
             'can_edit' => $canEdit,
             'objects' => $this->loadRoomObjects((int) $room->room_id),
         ];
+    }
+
+    /**
+     * @return list<array{template_key:string, model_key:string|null, occupant_account_id:int, objects:list<array<string, mixed>>}>
+     */
+    public function listOccupiedHouseFurniture(): array
+    {
+        return HousingUnit::query()
+            ->whereNotNull('room_id')
+            ->whereNotNull('occupant_account_id')
+            ->orderBy('unit_id')
+            ->get()
+            ->map(fn (HousingUnit $unit): array => [
+                'template_key' => $unit->templateKey(),
+                'model_key' => $unit->model_key !== null ? (string) $unit->model_key : null,
+                'occupant_account_id' => (int) $unit->occupant_account_id,
+                'objects' => $this->loadRoomObjects((int) $unit->room_id),
+            ])
+            ->values()
+            ->all();
     }
 
     public function officialTemplateKeyForAccount(int $accountId): string

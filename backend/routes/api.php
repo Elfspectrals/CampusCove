@@ -52,6 +52,7 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
     Route::get('/character/cosmetics', [CharacterCosmeticController::class, 'show']);
     Route::put('/character/cosmetics', [CharacterCosmeticController::class, 'update']);
     Route::get('/apartments/assets', [ApartmentPlacementController::class, 'inventory']);
+    Route::get('/apartments/houses', [ApartmentPlacementController::class, 'houses']);
     Route::post('/apartments/state', [ApartmentPlacementController::class, 'state']);
     Route::post('/apartments/spawn', [ApartmentPlacementController::class, 'spawn']);
     Route::patch('/apartments/transform', [ApartmentPlacementController::class, 'transform']);

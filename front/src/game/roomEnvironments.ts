@@ -5,7 +5,7 @@ import { DEFAULT_HOUSE, findHouse, findWork } from './assets/catalog'
 import { createGltfLoader } from './gltfLoaderFactory'
 import { getGraphicsQuality } from './graphicsQuality'
 import { shareTexturesAcrossModels } from './sharedTextures'
-import { openFrontDoor, openHouseLots, placeOpenHouseInterior } from './town/openHouses'
+import { applyInteriorLightmap, openFrontDoor, openHouseLots, placeOpenHouseInterior } from './town/openHouses'
 import { animatePondWater } from './town/pondWater'
 import { setTerrainHeightmap, type TerrainHeightmap } from './town/terrainHeight'
 import { fetchWorldManifest, houseBuildings, workBuildings, type WorldManifest, type WorldZone } from './world/worldManifest'
@@ -110,7 +110,11 @@ export function loadTownEnvironment(): Promise<TownEnvironmentBuildResult> {
         const house = findHouse(lot.key)
         if (!house) return null
         try {
-          const gltf = await loadModelSharingTextures(loader, house.interiorUrl)
+          const [gltf, lightmap] = await Promise.all([
+            loadModelSharingTextures(loader, house.interiorUrl),
+            new THREE.TextureLoader().loadAsync(house.interiorLightmapUrl),
+          ])
+          applyInteriorLightmap(gltf.scene, lightmap)
           return placeOpenHouseInterior(gltf.scene, lot)
         } catch (error) {
           console.warn('[town] open house interior failed to load', lot.key, error)
