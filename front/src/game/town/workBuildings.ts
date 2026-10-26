@@ -1,7 +1,7 @@
-import type { TownLayout } from '../assets/catalog'
+import type { WorkBuilding } from '../world/worldManifest'
 
-/** One business-district building as listed in `town.layout.json` → `work`. */
-export type WorkLot = NonNullable<TownLayout['work']>[number]
+/** One business-district building as listed in `world.manifest.json` → work_district buildings. */
+export type WorkLot = WorkBuilding
 
 /** How close (XZ, metres) to a work building's door point the interact prompt appears. */
 const WORK_DOOR_INTERACT_RADIUS = 2.2

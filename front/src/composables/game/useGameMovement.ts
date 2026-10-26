@@ -5,7 +5,7 @@ import { KEY_BINDINGS, matchesAnyMovementKey } from '../../config/keybindings'
 import { APARTMENT_CLAMP_MARGIN, APARTMENT_HALF_EXTENT, EYE_HEIGHT } from '../../game/gameRoomConstants'
 import { resolveWorldMovement } from '../../game/collision/worldCollision'
 import { terrainHeightAt } from '../../game/town/terrainHeight'
-import { buildingFloorAt } from '../../game/town/openHouses'
+import { buildingFloorAt, updateOpenHouseVisibility } from '../../game/town/openHouses'
 
 const MOVE_SPEED = 8
 const MOUSE_SENSITIVITY = 0.002
@@ -91,6 +91,7 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     const inCity = deps.currentRoomLabel.value === 'city'
     if (!inCity) clampToApartment()
     myPosition.y = EYE_HEIGHT + (inCity ? (buildingFloorAt(myPosition.x, myPosition.z) ?? terrainHeightAt(myPosition.x, myPosition.z)) : 0)
+    if (inCity) updateOpenHouseVisibility(myPosition.x, myPosition.z)
 
     camera.position.set(myPosition.x, myPosition.y, myPosition.z)
     camera.rotation.order = 'YXZ'

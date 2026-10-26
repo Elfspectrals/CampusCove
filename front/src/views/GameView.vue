@@ -169,7 +169,7 @@ const environment = useRoomEnvironment({
   getScene,
   getRenderer,
   houseKeyForTemplate: housing.houseKeyForTemplate,
-  onTownLoaded: interactions.setTownLayout,
+  onTownLoaded: interactions.setWorldManifest,
   onInteriorLoaded: (built) => placement.registerApartmentEnvironment(built),
   onError: (message) => {
     roomMessage.value = message

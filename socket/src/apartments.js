@@ -4,13 +4,12 @@ import { callBackendJson, errorPayload, parseAccountId } from './backend.js'
 import {
   APARTMENT_SPAWN,
   APARTMENT_SPAWN_RADIUS,
-  CITY_SPAWN,
   CITY_SPAWN_RADIUS,
   DEFAULT_TEMPLATE_KEY,
-  WORK_DOORS,
   WORK_EXIT_RADIUS
 } from './config.js'
 import { spawnNear } from './players.js'
+import { citySpawn, workDoor } from './world.js'
 
 function nonEmptyString(raw) {
   return typeof raw === 'string' && raw.trim().length > 0 ? raw.trim() : null
@@ -83,7 +82,7 @@ export function enterWork(room, client, payload) {
   const player = room.players.get(client.sessionId)
   if (!player || player.zone !== 'city') return
   const workKey = typeof payload?.workKey === 'string' ? payload.workKey : ''
-  if (!Object.prototype.hasOwnProperty.call(WORK_DOORS, workKey)) {
+  if (!workDoor(workKey)) {
     client.send('apartment_error', { message: 'Unknown building', code: 'unknown_work' })
     return
   }
@@ -109,16 +108,16 @@ export function enterWork(room, client, payload) {
 export function exitBuilding(room, client) {
   const player = room.players.get(client.sessionId)
   if (!player || player.zone === 'city') return
-  const workDoor = player.workKey ? WORK_DOORS[player.workKey] : null
+  const exitDoor = player.workKey ? workDoor(player.workKey) : null
   room.moveToZone(client, player, () => {
     Object.assign(player, {
       zone: 'city',
       apartmentOwnerId: null,
       apartmentTemplateKey: null,
       workKey: null,
-      ...(workDoor
-        ? spawnNear({ x: workDoor.x, y: 1.6, z: workDoor.z }, WORK_EXIT_RADIUS)
-        : spawnNear(CITY_SPAWN, CITY_SPAWN_RADIUS))
+      ...(exitDoor
+        ? spawnNear({ x: exitDoor.x, y: 1.6, z: exitDoor.z }, WORK_EXIT_RADIUS)
+        : spawnNear(citySpawn(), CITY_SPAWN_RADIUS))
     })
   })
   client.send('housing_units_sync', { units: room.housingUnits })

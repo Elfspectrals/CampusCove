@@ -1,10 +1,10 @@
 import * as THREE from 'three'
 import { disposeObject3D } from '../../avatar/compositeAvatar'
-import { TOWN, findHouse, type TownLayout } from '../assets/catalog'
+import { findHouse } from '../assets/catalog'
 import type { CollisionCuboidJson, CollisionFileJson, CollisionTrimeshJson } from '../collision/worldCollision'
+import { houseBuildings, type HouseBuilding, type WorldManifest } from '../world/worldManifest'
 
-type HouseLot = TownLayout['houses'][number]
-type OpenHouseLot = HouseLot & { interiorOffset: [number, number, number] }
+type OpenHouseLot = HouseBuilding & { interiorOffset: [number, number, number] }
 
 interface BuildingFloor {
   worldToInterior: THREE.Matrix4
@@ -22,11 +22,14 @@ const HIDDEN_INTERIOR_NODES = new Set([
   'Door_Entrance_Sign',
 ])
 const OPEN_DOOR_ANGLE = 1.4
+const INTERIOR_SHOW_DISTANCE = 20
+const INTERIOR_HIDE_DISTANCE = 26
 
 const buildingFloors: BuildingFloor[] = []
+const placedInteriors: THREE.Group[] = []
 
-export function openHouseLots(layout: TownLayout): OpenHouseLot[] {
-  return layout.houses.filter((lot): lot is OpenHouseLot => lot.interiorOffset !== undefined)
+export function openHouseLots(manifest: WorldManifest): OpenHouseLot[] {
+  return houseBuildings(manifest).filter((lot): lot is OpenHouseLot => lot.interiorOffset !== undefined)
 }
 
 export function openFrontDoor(exterior: THREE.Object3D, houseKey: string): void {
@@ -49,8 +52,18 @@ export function placeOpenHouseInterior(interior: THREE.Group, lot: OpenHouseLot)
   placed.name = `OpenHouse_${lot.key}`
   placed.position.fromArray(lot.position)
   placed.rotation.y = lot.rotationY
+  placed.visible = false
   placed.add(interior)
+  placedInteriors.push(placed)
   return placed
+}
+
+export function updateOpenHouseVisibility(x: number, z: number): void {
+  for (const placed of placedInteriors) {
+    const distance = Math.hypot(placed.position.x - x, placed.position.z - z)
+    if (placed.visible && distance > INTERIOR_HIDE_DISTANCE) placed.visible = false
+    else if (!placed.visible && distance < INTERIOR_SHOW_DISTANCE) placed.visible = true
+  }
 }
 
 function interiorToWorld(lot: OpenHouseLot): THREE.Matrix4 {
@@ -59,7 +72,7 @@ function interiorToWorld(lot: OpenHouseLot): THREE.Matrix4 {
     new THREE.Quaternion().setFromAxisAngle(THREE.Object3D.DEFAULT_UP, lot.rotationY),
     new THREE.Vector3(1, 1, 1),
   )
-  return lotMatrix.multiply(new THREE.Matrix4().makeTranslation(...lot.interiorOffset))
+  return lotMatrix.multiply(new THREE.Matrix4().makeTranslation(new THREE.Vector3().fromArray(lot.interiorOffset)))
 }
 
 function transformCuboid(cuboid: CollisionCuboidJson, matrix: THREE.Matrix4): CollisionCuboidJson {
@@ -97,23 +110,25 @@ async function fetchCollision(url: string): Promise<CollisionFileJson> {
   return (await res.json()) as CollisionFileJson
 }
 
-export async function buildTownCollisionData(layout: TownLayout): Promise<CollisionFileJson> {
-  const lots = openHouseLots(layout)
-  const [town, interiors] = await Promise.all([
-    fetchCollision(TOWN.collisionUrl),
+async function composeTownCollisionData(manifest: WorldManifest): Promise<CollisionFileJson> {
+  const lots = openHouseLots(manifest)
+  const zoneCollisionUrls = manifest.zones.flatMap((zone) => (zone.collisionUrl ? [zone.collisionUrl] : []))
+  const [zones, interiors] = await Promise.all([
+    Promise.all(zoneCollisionUrls.map(fetchCollision)),
     Promise.all(lots.map((lot) => {
       const house = findHouse(lot.key)
-      if (!house) throw new Error(`Unknown house in the town layout: ${lot.key}`)
+      if (!house) throw new Error(`Unknown house in the world manifest: ${lot.key}`)
       return fetchCollision(house.interiorCollisionUrl)
     })),
   ])
 
+  const zoneCuboids = zones.flatMap((zone) => zone.cuboids)
   const solidHouses = new Set(lots.map((lot) => `COL_House_${lot.key}`))
-  const cuboids = town.cuboids.filter((cuboid) => !solidHouses.has(cuboid.name ?? ''))
-  if (town.cuboids.length - cuboids.length !== solidHouses.size) {
-    throw new Error(`Town collision is missing one of ${[...solidHouses].join(', ')}`)
+  const cuboids = zoneCuboids.filter((cuboid) => !solidHouses.has(cuboid.name ?? ''))
+  if (zoneCuboids.length - cuboids.length !== solidHouses.size) {
+    throw new Error(`Zone collision is missing one of ${[...solidHouses].join(', ')}`)
   }
-  const trimeshes = [...(town.trimeshes ?? [])]
+  const trimeshes = zones.flatMap((zone) => zone.trimeshes ?? [])
 
   buildingFloors.length = 0
   lots.forEach((lot, i) => {
@@ -129,7 +144,19 @@ export async function buildTownCollisionData(layout: TownLayout): Promise<Collis
     })
   })
 
-  return { ...town, cuboids, trimeshes }
+  return { version: 1, source: 'world.manifest.json', mode: 'composed', borders: true, bounds: manifest.bounds, cuboids, trimeshes }
+}
+
+let townCollision: Promise<CollisionFileJson> | null = null
+
+export function buildTownCollisionData(manifest: WorldManifest): Promise<CollisionFileJson> {
+  if (!townCollision) {
+    townCollision = composeTownCollisionData(manifest).catch((error: unknown) => {
+      townCollision = null
+      throw error
+    })
+  }
+  return townCollision
 }
 
 export function buildingFloorAt(x: number, z: number): number | null {

@@ -6,7 +6,8 @@
 // 1. town.glb          : removes the hedge triangles of the two south segments (the gate, |x| <= 6.05 around z = 46)
 // 2. town.collision.json : drops COL_Hedge_35/36, replaces every COL_Work_* box by the ones in district.layout.json,
 //                          extends the walkable bounds to the district
-// 3. town.layout.json  : writes the `work` array (building placements + door interaction points)
+// 3. world.manifest.json : writes the work_district zone buildings (placements + door interaction points),
+//                          its gate and the world bounds
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -18,7 +19,7 @@ const FRONT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const ASSETS = join(FRONT, 'public/assets')
 const TOWN_GLB = join(ASSETS, 'town/town.glb')
 const TOWN_COL = join(ASSETS, 'town/town.collision.json')
-const TOWN_LAYOUT = join(ASSETS, 'town/town.layout.json')
+const WORLD_MANIFEST = join(ASSETS, 'world.manifest.json')
 const DISTRICT_LAYOUT = join(ASSETS, 'work/district/district.layout.json')
 
 const GATE_HALF_WIDTH = 6.05
@@ -143,9 +144,12 @@ if (col.bounds) {
 writeFileSync(TOWN_COL, JSON.stringify(col))
 console.log(`town.collision.json: ${before} -> ${col.cuboids.length} cuboids, bounds ${JSON.stringify(col.bounds)}`)
 
-// ---------------------------------------------------------------- 3. layout
-const layout = JSON.parse(readFileSync(TOWN_LAYOUT, 'utf8'))
-layout.work = district.works.map((w) => ({
+// ---------------------------------------------------------------- 3. manifest
+const manifest = JSON.parse(readFileSync(WORLD_MANIFEST, 'utf8'))
+const zone = manifest.zones.find((z) => z.key === 'work_district')
+if (!zone) throw new Error('world.manifest.json has no work_district zone')
+zone.buildings = district.works.map((w) => ({
+  kind: 'work',
   key: w.key,
   name: w.name,
   job: w.job,
@@ -154,6 +158,7 @@ layout.work = district.works.map((w) => ({
   door: w.door,
   footprint: w.footprint,
 }))
-layout.workGate = district.gate
-writeFileSync(TOWN_LAYOUT, JSON.stringify(layout, null, 2) + '\n')
-console.log(`town.layout.json: ${layout.work.length} work buildings`)
+zone.gate = district.gate
+manifest.bounds = col.bounds
+writeFileSync(WORLD_MANIFEST, JSON.stringify(manifest, null, 2) + '\n')
+console.log(`world.manifest.json: ${zone.buildings.length} work buildings`)

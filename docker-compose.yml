@@ -9,6 +9,7 @@ services:
     environment:
       PORT: 3000
       BACKEND_API_URL: http://backend:8000/api
+      WORLD_MANIFEST_URL: http://front:5173/assets/world.manifest.json
       DB_HOST: postgres
       DB_PORT: 5432
       DB_DATABASE: campus_cove

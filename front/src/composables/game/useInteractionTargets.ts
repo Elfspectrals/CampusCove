@@ -10,7 +10,7 @@ import {
   housingPromptLabel,
   type HousingUnit,
 } from '../../game/town/housing'
-import type { TownLayout } from '../../game/assets/catalog'
+import { fishingSpots as manifestFishingSpots, workBuildings, type WorldManifest } from '../../game/world/worldManifest'
 import { findNearestWorkDoor, type WorkLot } from '../../game/town/workBuildings'
 
 export interface ScreenPrompt {
@@ -52,10 +52,10 @@ export function useInteractionTargets(deps: InteractionTargetsDeps) {
   const renewPrompt = ref<{ x: number; y: number } | null>(null)
   const projection = new THREE.Vector3()
 
-  /** The town layout lists the work buildings and the pond's fishing spots. */
-  function setTownLayout(layout: TownLayout): void {
-    workLots.value = layout.work ?? []
-    fishingSpots.value = layout.pond?.fishingSpots ?? []
+  /** The world manifest lists the work buildings and the pond's fishing spots. */
+  function setWorldManifest(manifest: WorldManifest): void {
+    workLots.value = workBuildings(manifest)
+    fishingSpots.value = manifestFishingSpots(manifest)
   }
 
   function updateProximity(): void {
@@ -150,7 +150,7 @@ export function useInteractionTargets(deps: InteractionTargetsDeps) {
     nearApartmentDoor,
     doorPrompt,
     renewPrompt,
-    setTownLayout,
+    setWorldManifest,
     updateProximity,
     tryInteract,
     updatePrompts,

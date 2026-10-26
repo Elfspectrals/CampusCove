@@ -1,6 +1,6 @@
-import type { TownLayout } from '../assets/catalog'
+import type { FishingSpot } from '../world/worldManifest'
 
-export type FishingSpot = NonNullable<TownLayout['pond']>['fishingSpots'][number]
+export type { FishingSpot }
 
 export function findNearestFishingSpot(x: number, z: number, spots: readonly FishingSpot[]): FishingSpot | null {
   let best: FishingSpot | null = null

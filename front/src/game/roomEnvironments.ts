@@ -1,14 +1,14 @@
 import * as THREE from 'three'
 import type { GLTF, GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { APARTMENT_DOOR_POS } from './gameRoomConstants'
-import { DEFAULT_HOUSE, POND, TOWN, WORK_DISTRICT, findHouse, findWork } from './assets/catalog'
-import type { TownLayout } from './assets/catalog'
+import { DEFAULT_HOUSE, findHouse, findWork } from './assets/catalog'
 import { createGltfLoader } from './gltfLoaderFactory'
 import { getGraphicsQuality } from './graphicsQuality'
 import { shareTexturesAcrossModels } from './sharedTextures'
 import { openFrontDoor, openHouseLots, placeOpenHouseInterior } from './town/openHouses'
 import { animatePondWater } from './town/pondWater'
 import { setTerrainHeightmap, type TerrainHeightmap } from './town/terrainHeight'
+import { fetchWorldManifest, houseBuildings, workBuildings, type WorldManifest, type WorldZone } from './world/worldManifest'
 import {
   addApartmentFallbackLights,
   configureRoomMeshShadows,
@@ -36,38 +36,57 @@ function addTownLighting(group: THREE.Group): void {
 
 export interface TownEnvironmentBuildResult {
   group: THREE.Group
-  layout: TownLayout
+  manifest: WorldManifest
 }
 
 let cachedTown: TownEnvironmentBuildResult | null = null
 let townLoadPromise: Promise<TownEnvironmentBuildResult> | null = null
 
-async function fetchTownLayout(): Promise<TownLayout> {
-  const res = await fetch(TOWN.layoutUrl)
-  if (!res.ok) throw new Error(`Could not load the town layout (${res.status})`)
-  return (await res.json()) as TownLayout
-}
-
-async function fetchPondHeightmap(): Promise<TerrainHeightmap> {
-  const res = await fetch(POND.layoutUrl)
-  if (!res.ok) throw new Error(`Could not load the pond layout (${res.status})`)
+async function fetchHeightmap(url: string): Promise<TerrainHeightmap> {
+  const res = await fetch(url)
+  if (!res.ok) throw new Error(`Could not load the heightmap ${url} (${res.status})`)
   return ((await res.json()) as { heightmap: TerrainHeightmap }).heightmap
 }
 
+async function loadZoneScenery(loader: GLTFLoader, zone: WorldZone): Promise<THREE.Group> {
+  const [gltf, heightmap] = await Promise.all([
+    loader.loadAsync(zone.modelUrl),
+    zone.heightmapUrl ? fetchHeightmap(zone.heightmapUrl) : null,
+  ])
+  if (heightmap) setTerrainHeightmap(heightmap)
+  const scenery = gltf.scene
+  scenery.name = `Zone_${zone.key}`
+  if (zone.animatedWater && animatePondWater(scenery) === 0) {
+    console.warn(`[world] ${zone.key} water material not found, water stays static`)
+  }
+  return scenery
+}
+
 /**
- * Loads the town once: town.glb (plaza, town hall, roads, props) plus every house exterior placed from
- * town.layout.json. Collision comes separately from TOWN.collisionUrl. The group is cached, never disposed.
+ * Loads the world once from world.manifest.json: every zone's scenery, then the house and work building
+ * exteriors (and the house interiors placed in the world) listed in the zones. Collision is composed
+ * separately (town/openHouses buildTownCollisionData). The group is cached, never disposed.
  */
 export function loadTownEnvironment(): Promise<TownEnvironmentBuildResult> {
   if (cachedTown) return Promise.resolve(cachedTown)
   if (!townLoadPromise) {
     townLoadPromise = (async () => {
       const loader = createGltfLoader()
-      const [townGltf, layout] = await Promise.all([loader.loadAsync(TOWN.modelUrl), fetchTownLayout()])
-      const root = townGltf.scene
-      root.name = 'CampusTown'
+      const manifest = await fetchWorldManifest()
+      const root = new THREE.Group()
+      root.name = 'CampusWorld'
+      const sceneries = await Promise.all(manifest.zones.map((zone) =>
+        loadZoneScenery(loader, zone).catch((error: unknown) => {
+          if (!zone.optional) throw error
+          console.warn('[world] optional zone failed to load', zone.key, error)
+          return null
+        }),
+      ))
+      for (const scenery of sceneries) {
+        if (scenery) root.add(scenery)
+      }
       // A missing house should not take the whole town down.
-      const houses = await Promise.all(layout.houses.map(async (lot) => {
+      const houses = await Promise.all(houseBuildings(manifest).map(async (lot) => {
         const house = findHouse(lot.key)
         if (!house) return null
         try {
@@ -87,7 +106,7 @@ export function loadTownEnvironment(): Promise<TownEnvironmentBuildResult> {
       for (const exterior of houses) {
         if (exterior) root.add(exterior)
       }
-      const openInteriors = await Promise.all(openHouseLots(layout).map(async (lot) => {
+      const openInteriors = await Promise.all(openHouseLots(manifest).map(async (lot) => {
         const house = findHouse(lot.key)
         if (!house) return null
         try {
@@ -101,30 +120,7 @@ export function loadTownEnvironment(): Promise<TownEnvironmentBuildResult> {
       for (const interior of openInteriors) {
         if (interior) root.add(interior)
       }
-      // Business district: scenery + one exterior per work building. A failure here must not break the town.
-      const workScenery = await loader.loadAsync(WORK_DISTRICT.modelUrl).then((g) => g.scene).catch((error) => {
-        console.warn('[town] district scenery failed to load', error)
-        return null
-      })
-      if (workScenery) {
-        workScenery.name = 'WorkDistrict'
-        root.add(workScenery)
-      }
-      const pondScenery = await Promise.all([loader.loadAsync(POND.modelUrl), fetchPondHeightmap()])
-        .then(([gltf, heightmap]) => {
-          setTerrainHeightmap(heightmap)
-          return gltf.scene
-        })
-        .catch((error) => {
-          console.warn('[town] pond scenery failed to load', error)
-          return null
-        })
-      if (pondScenery) {
-        pondScenery.name = 'CovePond'
-        if (animatePondWater(pondScenery) === 0) console.warn('[town] pond water material not found, water stays static')
-        root.add(pondScenery)
-      }
-      const works = await Promise.all((layout.work ?? []).map(async (lot) => {
+      const works = await Promise.all(workBuildings(manifest).map(async (lot) => {
         const asset = findWork(lot.key)
         if (!asset) return null
         try {
@@ -149,7 +145,7 @@ export function loadTownEnvironment(): Promise<TownEnvironmentBuildResult> {
       addTownLighting(root)
       root.userData.isRoomEnvironment = true
       root.userData.isPersistentEnvironment = true
-      cachedTown = { group: root, layout }
+      cachedTown = { group: root, manifest }
       return cachedTown
     })().catch((error) => {
       townLoadPromise = null

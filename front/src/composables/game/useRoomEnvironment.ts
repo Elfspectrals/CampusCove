@@ -1,6 +1,5 @@
 import type * as THREE from 'three'
 import { disposeObject3D } from '../../avatar/compositeAvatar'
-import type { TownLayout } from '../../game/assets/catalog'
 import { buildWorldCollisionFromData, buildWorldCollisionFromUrl } from '../../game/collision/worldCollision'
 import {
   applySceneAtmosphere,
@@ -11,13 +10,14 @@ import {
   type ApartmentEnvironmentBuildResult,
 } from '../../game/roomEnvironments'
 import { buildTownCollisionData } from '../../game/town/openHouses'
+import type { WorldManifest } from '../../game/world/worldManifest'
 
 export interface RoomEnvironmentDeps {
   getScene: () => THREE.Scene | undefined
   getRenderer: () => THREE.WebGLRenderer | undefined
   /** House model key of an apartment template ('housing_<unit_id>'). */
   houseKeyForTemplate: (templateKey: string | undefined) => string | null
-  onTownLoaded: (layout: TownLayout) => void
+  onTownLoaded: (manifest: WorldManifest) => void
   onInteriorLoaded: (built: ApartmentEnvironmentBuildResult) => void
   onError: (message: string) => void
 }
@@ -53,14 +53,14 @@ export function useRoomEnvironment(deps: RoomEnvironmentDeps) {
     if (kind === 'city') {
       stripRoomEnvironmentsFromScene(scene)
       void loadTownEnvironment()
-        .then(({ layout }) => buildTownCollisionData(layout))
+        .then(({ manifest }) => buildTownCollisionData(manifest))
         .then((data) => buildWorldCollisionFromData('town', data))
         .catch((err) => {
           console.warn('[collision] town collision failed', err)
         })
       void loadTownEnvironment()
-        .then(({ group, layout }) => {
-          deps.onTownLoaded(layout)
+        .then(({ group, manifest }) => {
+          deps.onTownLoaded(manifest)
           if (token === loadToken) show(scene, group)
         })
         .catch((err) => {

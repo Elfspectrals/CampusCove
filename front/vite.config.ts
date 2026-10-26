@@ -5,6 +5,7 @@ import vue from '@vitejs/plugin-vue'
 export default defineConfig({
   plugins: [vue()],
   server: {
+    allowedHosts: ['front'],
     proxy: {
       '/api': {
         target: 'http://localhost:8000',

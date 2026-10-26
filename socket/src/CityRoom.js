@@ -1,7 +1,7 @@
 import { Room } from 'colyseus'
 import { enterHouse, enterWork, exitBuilding, pickupObject, saveObject, sendInventory } from './apartments.js'
 import { callBackendJson, parseAccountId, resolveIdentity } from './backend.js'
-import { CITY_MAX_PLAYERS, CITY_SPAWN, CITY_SPAWN_RADIUS } from './config.js'
+import { CITY_MAX_PLAYERS, CITY_SPAWN_RADIUS } from './config.js'
 import {
   createPlayer,
   normalizeAppearanceIds,
@@ -12,6 +12,7 @@ import {
   spawnNear,
   visibilityKey
 } from './players.js'
+import { citySpawn } from './world.js'
 
 function warn(context, error) {
   console.warn(`[colyseus] ${context}:`, error instanceof Error ? error.message : error)
@@ -55,7 +56,7 @@ export class CityRoom extends Room {
       this.clients.find((c) => c.sessionId === staleSessionId)?.leave(4001, 'duplicate session')
       this.players.delete(staleSessionId)
     }
-    const player = createPlayer(client, options, this.players.size, spawnNear(CITY_SPAWN, CITY_SPAWN_RADIUS))
+    const player = createPlayer(client, options, this.players.size, spawnNear(citySpawn(), CITY_SPAWN_RADIUS))
     this.players.set(client.sessionId, player)
     this.sessionByAccountId.set(accountId, client.sessionId)
     if (player.token) {
