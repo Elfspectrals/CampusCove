@@ -22,7 +22,9 @@ export const WORK_EXIT_RADIUS = 0.6
 export const WORK_DOORS = {
   tech_hub: { x: -20, z: 53.4 },
   boutique: { x: 0, z: 53.2 },
-  cafe: { x: 20, z: 51.6 }
+  cafe: { x: 20, z: 51.6 },
+  // Cove Home furniture store (`store.door` in town.layout.json): public too, shares the work-building flow
+  cove_home: { x: 52, z: 51.6 }
 }
 
 // Template used by the backend when a house is entered without one.

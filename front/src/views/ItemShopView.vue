@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { RouterLink, useRoute } from 'vue-router'
+import { RouterLink } from 'vue-router'
 import { useShopPurchase } from '../composables/useShopPurchase'
 import LockerCharacterPreview from '../components/locker/LockerCharacterPreview.vue'
 import ItemShopPurchaseConfirmModal from '../components/shop/ItemShopPurchaseConfirmModal.vue'
@@ -11,7 +11,6 @@ import UiIcon from '../components/ui/UiIcon.vue'
 import UiCurrency from '../components/ui/UiCurrency.vue'
 
 const items = ref<ShopItem[]>([])
-const route = useRoute()
 const catalogLoading = ref(true)
 const catalogError = ref<string | null>(null)
 const {
@@ -29,20 +28,14 @@ const {
 } = useShopPurchase()
 const selectedItemDefId = ref<number | null>(null)
 
-const currentSection = computed<'character' | 'apartment'>(() => {
-  return route.name === 'shop-skin' ? 'character' : 'apartment'
-})
-
 const selectedItem = computed<ShopItem | null>(() => {
   if (filteredItems.value.length === 0) return null
   if (selectedItemDefId.value === null) return filteredItems.value[0] ?? null
   return filteredItems.value.find((item) => item.item_def_id === selectedItemDefId.value) ?? filteredItems.value[0] ?? null
 })
 
-const filteredItems = computed<ShopItem[]>(() => {
-  const wantApartment = currentSection.value === 'apartment'
-  return items.value.filter((item) => isApartmentItem(item) === wantApartment)
-})
+/** Skins only: furniture is bought by walking through the Cove Home store in /game. */
+const filteredItems = computed<ShopItem[]>(() => items.value.filter((item) => !isApartmentItem(item)))
 
 function selectItem(item: ShopItem) {
   selectedItemDefId.value = item.item_def_id
@@ -72,16 +65,15 @@ async function loadCatalog() {
     <div class="mb-5 flex flex-wrap items-end justify-between gap-4">
       <div>
         <p class="cc-eyebrow">Item shop · Season 1</p>
-        <h1 class="cc-title">{{ currentSection === 'character' ? 'Skin Shop' : 'Furniture Shop' }}</h1>
+        <h1 class="cc-title">Skin Shop</h1>
       </div>
-      <nav class="cc-tabs" aria-label="Shop sections">
-        <RouterLink :to="{ name: 'shop' }" :class="['cc-tab', currentSection === 'apartment' && 'cc-tab-active']">
-          <UiIcon name="chair" :size="16" /> Furniture
-        </RouterLink>
-        <RouterLink :to="{ name: 'shop-skin' }" :class="['cc-tab', currentSection === 'character' && 'cc-tab-active']">
-          <UiIcon name="shirt" :size="16" /> Skins
-        </RouterLink>
-      </nav>
+      <RouterLink :to="{ name: 'game' }" class="cc-panel-flat flex items-center gap-3 px-4 py-2.5 transition hover:brightness-110">
+        <UiIcon name="chair" :size="22" class="text-sun" />
+        <span class="text-left">
+          <span class="block font-display text-sm uppercase tracking-wide text-fog">Looking for furniture?</span>
+          <span class="block text-xs font-semibold text-mist">Walk through Cove Home, east of the business district</span>
+        </span>
+      </RouterLink>
     </div>
 
     <div class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_440px]">
@@ -133,7 +125,7 @@ async function loadCatalog() {
                   class="h-full w-full object-cover"
                   loading="lazy"
                 />
-                <UiIcon v-else :name="currentSection === 'character' ? 'shirt' : 'chair'" :size="52" class="text-white/80 drop-shadow-[0_4px_0_rgba(0,0,0,0.3)]" />
+                <UiIcon v-else name="shirt" :size="52" class="text-white/80 drop-shadow-[0_4px_0_rgba(0,0,0,0.3)]" />
                 <span class="cc-rarity-text absolute left-2 top-2 rounded-md bg-ink-950/75 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest">
                   {{ itemRarity(item) }}
                 </span>
@@ -178,7 +170,7 @@ async function loadCatalog() {
               class="h-full w-full object-cover"
             />
             <div v-else class="grid h-full place-items-center">
-              <UiIcon :name="currentSection === 'character' ? 'shirt' : 'chair'" :size="96" class="text-white/80" />
+              <UiIcon name="shirt" :size="96" class="text-white/80" />
             </div>
             <span class="cc-rarity-text cc-rarity-border absolute right-4 top-4 rounded-full border-2 bg-ink-950/75 px-3 py-1 text-xs font-black uppercase tracking-widest">
               {{ itemRarity(selectedItem) }}
@@ -233,13 +225,8 @@ async function loadCatalog() {
               <UiIcon name="login" :size="18" /> Sign in to buy
             </RouterLink>
             <p class="m-0 mt-3 text-center text-xs font-semibold text-mist">
-              <template v-if="currentSection === 'character'">
-                Purchased skins appear in your
-                <RouterLink to="/locker" class="font-extrabold text-pool hover:underline">Locker</RouterLink>.
-              </template>
-              <template v-else>
-                Purchased furniture appears in your in-game apartment inventory.
-              </template>
+              Purchased skins appear in your
+              <RouterLink to="/locker" class="font-extrabold text-pool hover:underline">Locker</RouterLink>.
             </p>
           </div>
         </div>

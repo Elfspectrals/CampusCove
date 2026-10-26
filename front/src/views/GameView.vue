@@ -17,15 +17,20 @@ import GamePlayerHotbar from '../components/game/GamePlayerHotbar.vue'
 import GamePlayerInventoryPanel from '../components/game/GamePlayerInventoryPanel.vue'
 import GamePointerLockOverlay from '../components/game/GamePointerLockOverlay.vue'
 import GameRoomMessageBanner from '../components/game/GameRoomMessageBanner.vue'
+import GameStoreItemCard from '../components/game/GameStoreItemCard.vue'
+import ItemShopPurchaseConfirmModal from '../components/shop/ItemShopPurchaseConfirmModal.vue'
 import UiIcon from '../components/ui/UiIcon.vue'
 import { useApartmentObjects } from '../composables/game/useApartmentObjects'
 import { useApartmentPlacement } from '../composables/game/useApartmentPlacement'
 import { useCityHousing } from '../composables/game/useCityHousing'
+import { useFurnitureStore } from '../composables/game/useFurnitureStore'
 import { useGameMovement } from '../composables/game/useGameMovement'
 import { useGameRealtime } from '../composables/game/useGameRealtime'
 import { useInteractionTargets } from '../composables/game/useInteractionTargets'
 import { usePlayerInventory } from '../composables/game/usePlayerInventory'
 import { useRoomEnvironment } from '../composables/game/useRoomEnvironment'
+import { useShopPurchase } from '../composables/useShopPurchase'
+import { COVE_HOME } from '../game/assets/catalog'
 import { toggleCollisionDebug } from '../game/collision/collisionDebug'
 import { getWorldCollisionStats } from '../game/collision/worldCollision'
 import { HOUSING_LOBBY_SPAWN } from '../game/gameRoomConstants'
@@ -130,6 +135,62 @@ const {
   cancelPlacementPreview: () => placement.cancelPreview(),
 })
 
+// ---------------------------------------------------------------- Cove Home furniture store
+
+const inStore = computed(() => currentRoomLabel.value === 'apartment' && visitedWorkKey.value === COVE_HOME.key)
+const furnitureStore = useFurnitureStore({ inStore: () => inStore.value, getCamera, myPosition })
+const { target: storeTarget, currentDepartment: storeDepartment } = furnitureStore
+const storeShop = useShopPurchase()
+const {
+  confirmItem: storeConfirmItem,
+  confirmCurrency: storeConfirmCurrency,
+  confirmOption: storeConfirmOption,
+  confirmCurrent: storeConfirmCurrent,
+  confirmAfter: storeConfirmAfter,
+  purchasingId: storePurchasingId,
+} = storeShop
+const storeFeedback = ref<{ kind: 'success' | 'error'; text: string } | null>(null)
+let storeFeedbackTimer: ReturnType<typeof setTimeout> | undefined
+
+function showStoreFeedback(feedback: { kind: 'success' | 'error'; text: string }): void {
+  storeFeedback.value = feedback
+  clearTimeout(storeFeedbackTimer)
+  storeFeedbackTimer = setTimeout(() => {
+    storeFeedback.value = null
+  }, 4500)
+}
+
+/** Click on a furniture item in the store: the purchase dialog needs the mouse, so pointer lock is released. */
+function openStorePurchase(): void {
+  const target = storeTarget.value
+  if (!target || storeConfirmItem.value) return
+  if (!target.item) {
+    showStoreFeedback({ kind: 'error', text: `${target.name} is not on sale yet.` })
+    return
+  }
+  if (document.pointerLockElement) document.exitPointerLock()
+  storeShop.openPurchaseConfirm(target.item)
+}
+
+async function confirmStorePurchase(): Promise<void> {
+  const item = storeConfirmItem.value
+  if (!item) return
+  await storeShop.confirmPurchase()
+  const feedback = storeShop.feedbackByItem.value[item.item_def_id]
+  if (!feedback) return
+  if (feedback.kind === 'success') {
+    showStoreFeedback({ kind: 'success', text: `${item.name} is in your inventory. Place it at home (E).` })
+    refreshOwnedItems()
+  } else {
+    showStoreFeedback(feedback)
+  }
+}
+
+// Back to mouse look once the purchase dialog closes.
+watch(storeConfirmItem, (item, previous) => {
+  if (!item && previous && !document.pointerLockElement) requestPointerLock()
+})
+
 // ---------------------------------------------------------------- town: houses, doors, environment
 
 const housing = useCityHousing({
@@ -162,6 +223,13 @@ const interactions = useInteractionTargets({
   },
   // Fishing gameplay is not built yet: the spots only show their prompt.
   onFishingSpot: () => window.alert('implement pechee'),
+  storeTarget: () => {
+    const target = storeTarget.value
+    if (!target) return null
+    const detail = target.coins !== null ? `${target.name} · ${target.coins} coins` : target.name
+    return { position: target.display.tag.position, detail }
+  },
+  onStoreTarget: openStorePurchase,
 })
 const { doorPrompt, renewPrompt } = interactions
 
@@ -170,7 +238,10 @@ const environment = useRoomEnvironment({
   getRenderer,
   houseKeyForTemplate: housing.houseKeyForTemplate,
   onTownLoaded: interactions.setTownLayout,
-  onInteriorLoaded: (built) => placement.registerApartmentEnvironment(built),
+  onInteriorLoaded: (built) => {
+    placement.registerApartmentEnvironment(built)
+    if (built.house.key === COVE_HOME.key) void furnitureStore.attach(built.group)
+  },
   onError: (message) => {
     roomMessage.value = message
   },
@@ -231,8 +302,10 @@ const movement = useGameMovement({
     positionLabel.value = formatPosition()
     realtime.tickRemoteAvatars(dt)
     if (currentRoomLabel.value === 'apartment') placement.tick(dt)
+    furnitureStore.update()
     interactions.updatePrompts()
   },
+  isLargeInterior: () => inStore.value,
 })
 const { requestPointerLock, onCanvasMouseDown } = movement
 
@@ -334,6 +407,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   unmounted = true
+  clearTimeout(storeFeedbackTimer)
   movement.stopRenderLoop()
   unbindInput?.()
   window.removeEventListener('beforeunload', leaveRoom)
@@ -378,6 +452,7 @@ const crosshairClass = computed(() => {
       :apartment-object-count="apartmentObjectCount"
       :position-label="positionLabel"
       :show-graphics-toggle="!pointerLocked"
+      :place-label="inStore ? COVE_HOME.name : undefined"
     />
     <GameInteractionPrompt
       v-if="doorPrompt"
@@ -394,6 +469,20 @@ const crosshairClass = computed(() => {
       action-label="Renew"
     />
     <GamePlacementHud :visible="placementPreviewActive" :hints="placementHudHints" />
+    <div
+      v-if="inStore && storeDepartment && !inventoryOpen"
+      class="cc-hud pointer-events-none absolute left-1/2 top-3 z-10 -translate-x-1/2 px-4 py-1.5 font-display text-xs uppercase tracking-[0.2em] text-fog"
+    >
+      <span class="text-sun">Cove Home</span> · {{ storeDepartment }}
+    </div>
+    <GameStoreItemCard v-if="storeTarget && !inventoryOpen" :target="storeTarget" :feedback="storeFeedback" />
+    <p
+      v-else-if="inStore && storeFeedback && !inventoryOpen"
+      class="cc-hud pointer-events-none absolute bottom-24 right-3 z-20 max-w-xs px-3 py-2 text-xs font-bold"
+      :class="storeFeedback.kind === 'success' ? 'text-mint' : 'text-coral'"
+    >
+      {{ storeFeedback.text }}
+    </p>
     <GamePlayerHotbar
       :slots="slots"
       :selected-hotbar-index="selectedHotbarIndex"
@@ -433,7 +522,7 @@ const crosshairClass = computed(() => {
       @placed-object-selected="onPlacedObjectSelected"
     />
     <GamePointerLockOverlay
-      v-show="!pointerLocked && !inventoryOpen && !transitioning && !switchingRoom"
+      v-show="!pointerLocked && !inventoryOpen && !transitioning && !switchingRoom && !storeConfirmItem"
       @request-pointer-lock="requestPointerLock"
       @logout="logout"
     />
@@ -452,5 +541,17 @@ const crosshairClass = computed(() => {
     >
       R = rotate · Shift+R = reverse · LMB = place / pick · RMB = cancel · Esc / E = cancel
     </p>
+    <ItemShopPurchaseConfirmModal
+      v-if="storeConfirmItem"
+      v-model:confirm-currency="storeConfirmCurrency"
+      class="z-[60]"
+      :item="storeConfirmItem"
+      :confirm-current="storeConfirmCurrent"
+      :confirm-after="storeConfirmAfter"
+      :confirm-option="storeConfirmOption"
+      :purchasing-id="storePurchasingId"
+      @close="storeShop.closePurchaseConfirm"
+      @confirm="confirmStorePurchase"
+    />
   </div>
 </template>

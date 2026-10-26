@@ -36,6 +36,8 @@ export interface UseGameMovementDeps {
   onCanvasMouseDown: (e: MouseEvent) => boolean
   /** Called each animation frame after movement, before rendering. */
   onBeforeRender: (dt: number) => void
+  /** True inside a building bigger than a house (Cove Home): its walls collide, no outer clamp. */
+  isLargeInterior: () => boolean
 }
 
 /** First-person controls (WASD/ZQSD + pointer-lock mouse look), position sync, and the render loop. */
@@ -88,7 +90,7 @@ export function useGameMovement(deps: UseGameMovementDeps) {
       myPosition.z = resolved.z
     }
     const inCity = deps.currentRoomLabel.value === 'city'
-    if (!inCity) clampToApartment()
+    if (!inCity && !deps.isLargeInterior()) clampToApartment()
     myPosition.y = EYE_HEIGHT + (inCity ? terrainHeightAt(myPosition.x, myPosition.z) : 0)
 
     camera.position.set(myPosition.x, myPosition.y, myPosition.z)

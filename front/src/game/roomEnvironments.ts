@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { APARTMENT_DOOR_POS } from './gameRoomConstants'
-import { DEFAULT_HOUSE, POND, TOWN, WORK_DISTRICT, findHouse, findWork } from './assets/catalog'
+import { COVE_HOME, DEFAULT_HOUSE, POND, TOWN, WORK_DISTRICT, findHouse, findWork } from './assets/catalog'
 import type { TownLayout } from './assets/catalog'
 import { createGltfLoader } from './gltfLoaderFactory'
 import { getGraphicsQuality } from './graphicsQuality'
@@ -118,6 +118,24 @@ export function loadTownEnvironment(): Promise<TownEnvironmentBuildResult> {
       }))
       for (const exterior of works) {
         if (exterior) root.add(exterior)
+      }
+      // Cove Home furniture store + its retail park (east of the district plaza).
+      if (layout.store) {
+        const lot = layout.store
+        const [park, store] = await Promise.all([
+          loader.loadAsync(COVE_HOME.parkModelUrl).then((g) => g.scene),
+          loader.loadAsync(COVE_HOME.exteriorUrl).then((g) => g.scene),
+        ]).catch((error) => {
+          console.warn('[town] Cove Home failed to load', error)
+          return [null, null]
+        })
+        if (park && store) {
+          park.name = 'CoveHomePark'
+          store.name = `StoreExterior_${lot.key}`
+          store.position.fromArray(lot.position)
+          store.rotation.y = lot.rotationY
+          root.add(park, store)
+        }
       }
       sanitizeGltfLights(root)
       configureRoomMeshShadows(root)
@@ -263,6 +281,7 @@ export function loadApartmentEnvironment(houseKey?: string | null): Promise<Apar
  * houses (door at z = +5, spawn APARTMENT_SPAWN), so the exit door trigger is shared.
  */
 export function loadWorkEnvironment(workKey: string): Promise<ApartmentEnvironmentBuildResult> {
+  if (workKey === COVE_HOME.key) return loadStoreEnvironment()
   const work = findWork(workKey)
   if (!work) return Promise.reject(new Error(`Unknown work building: ${workKey}`))
   const cacheKey = `work:${work.key}`
@@ -277,6 +296,43 @@ export function loadWorkEnvironment(workKey: string): Promise<ApartmentEnvironme
         `WorkInterior_${work.key}`,
       ),
     )
+  task.catch(() => interiorCache.delete(cacheKey))
+  interiorCache.set(cacheKey, task)
+  return task
+}
+
+/** A warehouse 30 x 55 m with a 6 m ceiling: the house fallback lights (sized for one room) are not enough. */
+function addStoreLighting(group: THREE.Group): void {
+  group.add(new THREE.HemisphereLight(0xfffaf0, 0x8a8478, getGraphicsQuality() === 'low' ? 1.2 : 0.95))
+  if (getGraphicsQuality() === 'low') return
+  // one warm light per room-set stretch along the route (lane W, back aisle, lane E) + the entrance hall
+  const points: Array<[number, number]> = [[-8, -10], [-8, -22], [-8, -33], [-8, -44], [8, -44], [8, -33], [8, -22], [8, -10], [0, 0]]
+  for (const [x, z] of points) {
+    const light = new THREE.PointLight(0xfff1dc, 28, 20, 1.6)
+    light.position.set(x, 4.6, z)
+    group.add(light)
+  }
+}
+
+/**
+ * Loads the Cove Home store interior (assets/store/cove_home/interior.glb). Same entrance contract as the
+ * houses (door at z = +5). The furniture on display is added on top by `useFurnitureStore`.
+ */
+function loadStoreEnvironment(): Promise<ApartmentEnvironmentBuildResult> {
+  const cacheKey = `store:${COVE_HOME.key}`
+  const cached = interiorCache.get(cacheKey)
+  if (cached) return cached
+  const task = createGltfLoader()
+    .loadAsync(COVE_HOME.interiorUrl)
+    .then((gltf) => {
+      const built = prepareApartmentGroup(
+        gltf.scene,
+        { key: COVE_HOME.key, interiorCollisionUrl: COVE_HOME.interiorCollisionUrl },
+        `StoreInterior_${COVE_HOME.key}`,
+      )
+      addStoreLighting(built.group)
+      return built
+    })
   task.catch(() => interiorCache.delete(cacheKey))
   interiorCache.set(cacheKey, task)
   return task

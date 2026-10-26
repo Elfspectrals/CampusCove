@@ -6,8 +6,9 @@ export type WorkLot = NonNullable<TownLayout['work']>[number]
 /** How close (XZ, metres) to a work building's door point the interact prompt appears. */
 const WORK_DOOR_INTERACT_RADIUS = 2.2
 
-export function findNearestWorkDoor(x: number, z: number, lots: readonly WorkLot[]): WorkLot | null {
-  let best: WorkLot | null = null
+/** Nearest building door (work buildings, Cove Home) within reach of (x, z). */
+export function findNearestWorkDoor<T extends { door: [number, number, number] }>(x: number, z: number, lots: readonly T[]): T | null {
+  let best: T | null = null
   let bestDistSq = WORK_DOOR_INTERACT_RADIUS * WORK_DOOR_INTERACT_RADIUS
   for (const lot of lots) {
     const dx = x - lot.door[0]

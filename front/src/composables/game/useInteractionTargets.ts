@@ -32,19 +32,25 @@ export interface InteractionTargetsDeps {
   nearbyHousingUnit: Ref<HousingUnit | null>
   onExitDoor: () => void
   onHousingDoor: () => void
-  onWorkDoor: (lot: WorkLot) => void
+  onWorkDoor: (lot: WorkLot | StoreLot) => void
   onFishingSpot: (spot: FishingSpot) => void
+  /** Inside Cove Home: the item being looked at (its price-tag anchor + prompt text), and buying it. */
+  storeTarget: () => { position: [number, number, number]; detail: string } | null
+  onStoreTarget: () => void
 }
 
+/** The Cove Home store door, entered like a work building. */
+type StoreLot = NonNullable<TownLayout['store']>
+
 /**
- * What the player can interact with where they stand (inside: the exit door; in town: a house door, a work
+ * What the player can interact with where they stand (inside: the exit door, or in Cove Home the item looked at; in town: a house door, a work
  * building door or a fishing spot, in that priority), the left-click / I action on it, and the prompt bubbles
  * projected on screen above it.
  */
 export function useInteractionTargets(deps: InteractionTargetsDeps) {
   const nearApartmentDoor = ref(false)
-  const workLots = ref<WorkLot[]>([])
-  const nearbyWork = ref<WorkLot | null>(null)
+  const workLots = ref<Array<WorkLot | StoreLot>>([])
+  const nearbyWork = ref<WorkLot | StoreLot | null>(null)
   const fishingSpots = ref<FishingSpot[]>([])
   const nearbyFishingSpot = ref<FishingSpot | null>(null)
   const doorPrompt = ref<ScreenPrompt | null>(null)
@@ -54,7 +60,7 @@ export function useInteractionTargets(deps: InteractionTargetsDeps) {
 
   /** The town layout lists the work buildings and the pond's fishing spots. */
   function setTownLayout(layout: TownLayout): void {
-    workLots.value = layout.work ?? []
+    workLots.value = [...(layout.work ?? []), ...(layout.store ? [layout.store] : [])]
     fishingSpots.value = layout.pond?.fishingSpots ?? []
   }
 
@@ -81,8 +87,9 @@ export function useInteractionTargets(deps: InteractionTargetsDeps) {
     // Recompute on the input itself so it works even if the last movement frame was skipped.
     updateProximity()
     if (deps.currentRoomLabel.value === 'apartment') {
-      if (!nearApartmentDoor.value) return false
-      deps.onExitDoor()
+      if (nearApartmentDoor.value) deps.onExitDoor()
+      else if (deps.storeTarget()) deps.onStoreTarget()
+      else return false
       return true
     }
     const work = nearbyWork.value
@@ -111,9 +118,15 @@ export function useInteractionTargets(deps: InteractionTargetsDeps) {
     const none = { prompt: null, renew: null }
     if (deps.promptsHidden()) return none
     if (deps.currentRoomLabel.value === 'apartment') {
-      if (!nearApartmentDoor.value) return none
-      const screen = projectToScreen(APARTMENT_DOOR_POS.x, 1.5, APARTMENT_DOOR_POS.z)
-      return { prompt: screen && { ...screen, action: 'Exit' }, renew: null }
+      if (nearApartmentDoor.value) {
+        const screen = projectToScreen(APARTMENT_DOOR_POS.x, 1.5, APARTMENT_DOOR_POS.z)
+        return { prompt: screen && { ...screen, action: 'Exit' }, renew: null }
+      }
+      const item = deps.storeTarget()
+      if (!item) return none
+      const [tx, ty, tz] = item.position
+      const screen = projectToScreen(tx, ty + 0.55, tz)
+      return { prompt: screen && { ...screen, action: 'Buy', detail: item.detail }, renew: null }
     }
     const unit = deps.nearbyHousingUnit.value
     if (unit) {

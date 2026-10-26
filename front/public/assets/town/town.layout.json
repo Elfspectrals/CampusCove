@@ -417,5 +417,24 @@
       ],
       "yaw": -1.5708
     }
+  },
+  "store": {
+    "key": "cove_home",
+    "name": "Cove Home",
+    "position": [
+      52,
+      0,
+      65
+    ],
+    "rotationY": 3.141592653589793,
+    "door": [
+      52,
+      1.25,
+      51.6
+    ],
+    "footprint": [
+      34,
+      18
+    ]
   }
 }

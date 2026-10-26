@@ -1,7 +1,7 @@
 // Optimizes the Blender exports in map-src/CampusCove/out/ into front/public/assets/.
 //
 //   npm run assets:optimize            (all categories)
-//   npm run assets:optimize -- houses  (one category: skins | decor | houses | town | work | park | items)
+//   npm run assets:optimize -- houses  (one category: skins | decor | houses | town | work | park | items | store)
 //
 // Blender (map-src/CampusCove/build_*.py) writes raw GLBs + *.colsrc.glb collision sources to
 // map-src/CampusCove/out/<category>/<key>/. This script:
@@ -16,10 +16,10 @@ import { fileURLToPath } from 'node:url'
 const FRONT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const SRC = resolve(FRONT, '../map-src/CampusCove/out')
 const DEST = resolve(FRONT, 'public/assets')
-const CATEGORIES = ['skins', 'decor', 'houses', 'town', 'work', 'park', 'items']
+const CATEGORIES = ['skins', 'decor', 'houses', 'town', 'work', 'park', 'items', 'store']
 
 /** Texture size per category: characters / props are small on screen, the town is not. */
-const TEXTURE_SIZE = { skins: 512, decor: 512, houses: 1024, town: 1024, work: 1024, park: 1024, items: 512 }
+const TEXTURE_SIZE = { skins: 512, decor: 512, houses: 1024, town: 1024, work: 1024, park: 1024, items: 512, store: 1024 }
 
 function run(cmd, args) {
   const r = spawnSync(cmd, args, { cwd: FRONT, stdio: ['ignore', 'pipe', 'pipe'], shell: process.platform === 'win32' })
@@ -54,8 +54,8 @@ function processDir(category, dir, rel) {
       processDir(category, full, join(rel, file))
       continue
     }
-    if ((category === 'work' || category === 'park' || category === 'items') && (file === 'preview.png' || file.endsWith('.layout.json'))) {
-      // work buildings ship their preview + station layout next to the GLBs
+    if ((category === 'work' || category === 'park' || category === 'items' || category === 'store') && (file === 'preview.png' || file.endsWith('.layout.json'))) {
+      // work buildings / the store ship their preview + layout next to the GLBs
       mkdirSync(join(DEST, category, rel), { recursive: true })
       copyFileSync(full, join(DEST, category, rel, file))
       console.log(`copy       ${category}/${join(rel, file)}`)
