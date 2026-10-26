@@ -15,6 +15,7 @@ import { findNearestWorkDoor, type WorkLot } from '../../game/town/workBuildings
 export interface ScreenPrompt {
   x: number
   y: number
+  key?: string
   action: string
   detail?: string
 }

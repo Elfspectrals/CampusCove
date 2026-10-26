@@ -61,17 +61,30 @@ export function useCityHousing(deps: CityHousingDeps) {
     }
   }
 
-  /** Door interaction: buy a vacant house, open or close an occupied one, lock or unlock it with the key in hand. */
+  /** Left click at a door: open or close it, or lock it with the key in hand. */
   async function interact(): Promise<void> {
     const unit = nearbyUnit.value
     if (!unit || !deps.gameRoomRef.value || claimInFlight.value) return
     const action = actionFor(unit)
-    if (action === 'buy') await runClaim(() => buyHousingUnit(unit.public_id), 'Housing claim failed.')
-    else if (action === 'open' || action === 'close') deps.gameRoomRef.value.send('door_toggle', { unitId: unit.public_id })
-    else if (action === 'lock' || action === 'unlock') {
-      await runClaim(() => setHouseDoorLocked(unit.public_id, action === 'lock'), 'Could not change the lock.')
-    }
+    if (action === 'open' || action === 'close') deps.gameRoomRef.value.send('door_toggle', { unitId: unit.public_id })
+    else if (action === 'lock') await runClaim(() => setHouseDoorLocked(unit.public_id, true), 'Could not change the lock.')
   }
 
-  return { units, nearbyUnit, claimInFlight, applyUnits, applyOpenDoors, isDoorOpen, actionFor, houseKeyForTemplate, interact }
+  /** Right click at a door with the key in hand: unlock it. Returns true when there was a door to unlock. */
+  function unlock(): boolean {
+    const unit = nearbyUnit.value
+    if (!unit || claimInFlight.value || actionFor(unit) !== 'unlock') return false
+    void runClaim(() => setHouseDoorLocked(unit.public_id, false), 'Could not change the lock.')
+    return true
+  }
+
+  /** F2 at the door of a house for sale: buy it. */
+  function buy(): boolean {
+    const unit = nearbyUnit.value
+    if (!unit || claimInFlight.value || actionFor(unit) !== 'buy') return false
+    void runClaim(() => buyHousingUnit(unit.public_id), 'Housing claim failed.')
+    return true
+  }
+
+  return { units, nearbyUnit, claimInFlight, applyUnits, applyOpenDoors, isDoorOpen, actionFor, houseKeyForTemplate, interact, unlock, buy }
 }

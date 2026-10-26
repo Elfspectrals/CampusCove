@@ -52,15 +52,15 @@ export function housingActionFor(unit: HousingUnit, door: DoorContext): HousingA
   if (unit.status === 'vacant') return unit.offer_type === 'buy' ? 'buy' : null
   const keys = hasHouseKeys(unit, door.myAccountId)
   if (door.holdingHouseKey && keys) return unit.door_locked ? 'unlock' : 'lock'
-  if (door.doorOpen) return 'close'
-  return unit.door_locked && !keys ? 'locked' : 'open'
+  if (unit.door_locked) return 'locked'
+  return door.doorOpen ? 'close' : 'open'
 }
 
-/** Door prompt texts, e.g. { action: 'Buy', detail: '1,800 coins · tax 90/day' }. */
-export function housingPromptLabel(unit: HousingUnit, action: HousingAction): { action: string; detail?: string } {
+/** Door prompt texts, e.g. { key: 'F2', action: 'Buy', detail: '1,800 coins · tax 90/day' }; no key means a left click. */
+export function housingPromptLabel(unit: HousingUnit, action: HousingAction): { key?: string; action: string; detail?: string } {
   switch (action) {
     case 'buy':
-      return { action: 'Buy', detail: `${unit.price_coins.toLocaleString()} coins · tax ${unit.tax_coins.toLocaleString()}/day` }
+      return { key: 'F2', action: 'Buy', detail: `${unit.price_coins.toLocaleString()} coins · tax ${unit.tax_coins.toLocaleString()}/day` }
     case 'open':
       return { action: 'Open' }
     case 'close':
@@ -68,7 +68,7 @@ export function housingPromptLabel(unit: HousingUnit, action: HousingAction): { 
     case 'lock':
       return { action: 'Lock' }
     case 'unlock':
-      return { action: 'Unlock' }
+      return { key: 'RMB', action: 'Unlock' }
     case 'locked':
       return { action: 'Locked' }
   }

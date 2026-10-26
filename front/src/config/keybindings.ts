@@ -7,6 +7,7 @@ export const KEY_BINDINGS = {
   interact: 'KeyI',
   apartmentInventoryToggle: 'KeyE',
   houseKeys: 'KeyK',
+  buyHouse: 'F2',
   /** Rotate placement ghost clockwise (no Shift). */
   rotateCW: 'KeyR',
   /** Same physical key as rotateCW; matcher uses Shift for CCW. */

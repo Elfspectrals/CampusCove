@@ -29,6 +29,7 @@ import { useInteractionTargets } from '../composables/game/useInteractionTargets
 import { usePlayerInventory } from '../composables/game/usePlayerInventory'
 import { useRoomEnvironment } from '../composables/game/useRoomEnvironment'
 import { toggleCollisionDebug } from '../game/collision/collisionDebug'
+import { KEY_BINDINGS } from '../config/keybindings'
 import { getWorldCollisionStats } from '../game/collision/worldCollision'
 import { HOUSING_LOBBY_SPAWN } from '../game/gameRoomConstants'
 import { createGameScene, disposeGameScene, type GameScene } from '../game/gameScene'
@@ -247,6 +248,10 @@ function setRoomEnvironment(kind: 'city' | 'apartment', templateKey?: string, wo
 
 function handleExtraKeyDown(e: KeyboardEvent): boolean {
   if (houseKeys.onKeyDown(e)) return true
+  if (e.code === KEY_BINDINGS.buyHouse && !e.repeat) {
+    e.preventDefault()
+    return housing.buy()
+  }
   if (e.code === 'KeyC' && !e.repeat) {
     const scene = getScene()
     if (!scene) return true
@@ -276,7 +281,7 @@ const movement = useGameMovement({
   onToggleInventory: toggleInventory,
   onHotbarDigit: selectHotbarIndex,
   handleExtraKeyDown,
-  onCanvasMouseDown: (e) => placement.onPointerDown(e),
+  onCanvasMouseDown: (e) => (e.button === 2 && pointerLocked.value && housing.unlock()) || placement.onPointerDown(e),
   onBeforeRender: (dt) => {
     positionLabel.value = formatPosition()
     realtime.tickRemoteAvatars(dt)
@@ -463,6 +468,7 @@ const crosshairClass = computed(() => {
       v-if="doorPrompt"
       :screen-x="doorPrompt.x"
       :screen-y="doorPrompt.y"
+      :key-label="doorPrompt.key"
       :action-label="doorPrompt.action"
       :detail-label="doorPrompt.detail"
     />

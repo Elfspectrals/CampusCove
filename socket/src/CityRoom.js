@@ -5,7 +5,7 @@ import { CITY_MAX_PLAYERS, CITY_SPAWN_RADIUS } from './config.js'
 
 const HOUSING_REFRESH_COOLDOWN_MS = 2000
 const HOUSING_POLL_MS = 60_000
-import { canUseDoor, isWithinDoorReach } from './doors.js'
+import { isWithinDoorReach } from './doors.js'
 import { moveRejection } from './movement.js'
 import {
   createPlayer,
@@ -244,7 +244,7 @@ export class CityRoom extends Room {
     const player = this.players.get(client.sessionId)
     const unit = this.housingUnits.find((u) => u.public_id === payload?.unitId && u.status === 'occupied')
     if (!player || !unit || !isWithinDoorReach(player, unit)) return
-    if (!canUseDoor(unit, player.accountId)) {
+    if (unit.door_locked) {
       client.send('door_error', { message: 'This door is locked.' })
       return
     }
