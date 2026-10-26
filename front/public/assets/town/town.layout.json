@@ -29,7 +29,12 @@
         27.771
       ],
       "offer": "rent",
-      "price": 90
+      "price": 90,
+      "interiorOffset": [
+        0,
+        0.31,
+        -1.47
+      ]
     },
     {
       "key": "house_02",
@@ -46,7 +51,12 @@
         17.163
       ],
       "offer": "rent",
-      "price": 110
+      "price": 110,
+      "interiorOffset": [
+        0,
+        0.31,
+        -1.47
+      ]
     },
     {
       "key": "house_03",
@@ -63,7 +73,12 @@
         0
       ],
       "offer": "rent",
-      "price": 120
+      "price": 120,
+      "interiorOffset": [
+        0,
+        0.31,
+        -1.22
+      ]
     },
     {
       "key": "house_04",
@@ -80,7 +95,12 @@
         -17.163
       ],
       "offer": "buy",
-      "price": 1800
+      "price": 1800,
+      "interiorOffset": [
+        0,
+        0.31,
+        -0.72
+      ]
     },
     {
       "key": "house_05",
@@ -97,7 +117,12 @@
         -27.771
       ],
       "offer": "buy",
-      "price": 2400
+      "price": 2400,
+      "interiorOffset": [
+        0,
+        0.31,
+        -0.72
+      ]
     },
     {
       "key": "house_06",
@@ -114,7 +139,12 @@
         -27.771
       ],
       "offer": "rent",
-      "price": 160
+      "price": 160,
+      "interiorOffset": [
+        0,
+        0.31,
+        -0.72
+      ]
     },
     {
       "key": "house_07",
@@ -131,7 +161,12 @@
         -17.163
       ],
       "offer": "buy",
-      "price": 2800
+      "price": 2800,
+      "interiorOffset": [
+        0,
+        0.31,
+        -0.72
+      ]
     },
     {
       "key": "house_08",
@@ -148,7 +183,12 @@
         0
       ],
       "offer": "buy",
-      "price": 3600
+      "price": 3600,
+      "interiorOffset": [
+        0,
+        0.31,
+        -0.47
+      ]
     },
     {
       "key": "house_09",
@@ -165,7 +205,12 @@
         17.163
       ],
       "offer": "buy",
-      "price": 3200
+      "price": 3200,
+      "interiorOffset": [
+        0,
+        0.31,
+        -0.22
+      ]
     },
     {
       "key": "house_10",
@@ -182,7 +227,12 @@
         27.771
       ],
       "offer": "buy",
-      "price": 4000
+      "price": 4000,
+      "interiorOffset": [
+        0,
+        0.31,
+        -0.22
+      ]
     }
   ],
   "work": [

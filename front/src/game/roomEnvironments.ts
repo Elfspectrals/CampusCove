@@ -1,9 +1,12 @@
 import * as THREE from 'three'
+import type { GLTF, GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { APARTMENT_DOOR_POS } from './gameRoomConstants'
 import { DEFAULT_HOUSE, POND, TOWN, WORK_DISTRICT, findHouse, findWork } from './assets/catalog'
 import type { TownLayout } from './assets/catalog'
 import { createGltfLoader } from './gltfLoaderFactory'
 import { getGraphicsQuality } from './graphicsQuality'
+import { shareTexturesAcrossModels } from './sharedTextures'
+import { openFrontDoor, openHouseLots, placeOpenHouseInterior } from './town/openHouses'
 import { animatePondWater } from './town/pondWater'
 import { setTerrainHeightmap, type TerrainHeightmap } from './town/terrainHeight'
 import {
@@ -14,6 +17,12 @@ import {
 } from './sceneLighting'
 
 const CITY_SKY_COLOR = 0x9fc3e8
+
+async function loadModelSharingTextures(loader: GLTFLoader, url: string): Promise<GLTF> {
+  const gltf = await loader.loadAsync(url)
+  await shareTexturesAcrossModels(gltf)
+  return gltf
+}
 
 function addTownLighting(group: THREE.Group): void {
   if (getGraphicsQuality() === 'low') {
@@ -62,9 +71,10 @@ export function loadTownEnvironment(): Promise<TownEnvironmentBuildResult> {
         const house = findHouse(lot.key)
         if (!house) return null
         try {
-          const gltf = await loader.loadAsync(house.exteriorUrl)
+          const gltf = await loadModelSharingTextures(loader, house.exteriorUrl)
           const exterior = gltf.scene
           exterior.name = `HouseExterior_${lot.key}`
+          if (lot.interiorOffset) openFrontDoor(exterior, lot.key)
           exterior.position.fromArray(lot.position)
           exterior.rotation.y = lot.rotationY
           exterior.userData.houseKey = lot.key
@@ -76,6 +86,20 @@ export function loadTownEnvironment(): Promise<TownEnvironmentBuildResult> {
       }))
       for (const exterior of houses) {
         if (exterior) root.add(exterior)
+      }
+      const openInteriors = await Promise.all(openHouseLots(layout).map(async (lot) => {
+        const house = findHouse(lot.key)
+        if (!house) return null
+        try {
+          const gltf = await loadModelSharingTextures(loader, house.interiorUrl)
+          return placeOpenHouseInterior(gltf.scene, lot)
+        } catch (error) {
+          console.warn('[town] open house interior failed to load', lot.key, error)
+          return null
+        }
+      }))
+      for (const interior of openInteriors) {
+        if (interior) root.add(interior)
       }
       // Business district: scenery + one exterior per work building. A failure here must not break the town.
       const workScenery = await loader.loadAsync(WORK_DISTRICT.modelUrl).then((g) => g.scene).catch((error) => {
@@ -250,8 +274,7 @@ export function loadApartmentEnvironment(houseKey?: string | null): Promise<Apar
   const house = findHouse(houseKey) ?? DEFAULT_HOUSE
   const cached = interiorCache.get(house.key)
   if (cached) return cached
-  const task = createGltfLoader()
-    .loadAsync(house.interiorUrl)
+  const task = loadModelSharingTextures(createGltfLoader(), house.interiorUrl)
     .then((gltf) => prepareApartmentGroup(gltf.scene, house))
   task.catch(() => interiorCache.delete(house.key))
   interiorCache.set(house.key, task)
@@ -268,8 +291,7 @@ export function loadWorkEnvironment(workKey: string): Promise<ApartmentEnvironme
   const cacheKey = `work:${work.key}`
   const cached = interiorCache.get(cacheKey)
   if (cached) return cached
-  const task = createGltfLoader()
-    .loadAsync(work.interiorUrl)
+  const task = loadModelSharingTextures(createGltfLoader(), work.interiorUrl)
     .then((gltf) =>
       prepareApartmentGroup(
         gltf.scene,

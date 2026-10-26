@@ -7,7 +7,8 @@
 // map-src/CampusCove/out/<category>/<key>/. This script:
 //   1. compresses every GLB (Draco geometry, WebP textures) into public/assets/<category>/<key>/
 //   2. turns each *.colsrc.glb into <name>.collision.json with scripts/extract-collision.mjs
-// Interiors keep one node per object (--join false) so House_Floor_* / Door_Entrance names survive.
+// Interiors keep one node per object (--join false) so House_Floor_* / Door_Entrance names survive,
+// and house exteriors keep their `Door` node (map-src/CampusCove/build_house_doors.py).
 import { spawnSync } from 'node:child_process'
 import { copyFileSync, existsSync, mkdirSync, readdirSync, statSync } from 'node:fs'
 import { basename, dirname, join, resolve } from 'node:path'
@@ -70,7 +71,8 @@ function processDir(category, dir, rel) {
       continue
     }
     const out = join(DEST, category, rel, file)
-    optimizeGlb(full, out, { textureSize: TEXTURE_SIZE[category], keepNodes: file === 'interior.glb' })
+    const keepNodes = file === 'interior.glb' || (category === 'houses' && file === 'exterior.glb')
+    optimizeGlb(full, out, { textureSize: TEXTURE_SIZE[category], keepNodes })
     console.log(`glb        ${category}/${join(rel, file)}  ${(statSync(out).size / 1024).toFixed(0)} KB`)
   }
 }

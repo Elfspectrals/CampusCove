@@ -1,7 +1,7 @@
 import type * as THREE from 'three'
 import { disposeObject3D } from '../../avatar/compositeAvatar'
-import { TOWN, type TownLayout } from '../../game/assets/catalog'
-import { buildWorldCollisionFromUrl } from '../../game/collision/worldCollision'
+import type { TownLayout } from '../../game/assets/catalog'
+import { buildWorldCollisionFromData, buildWorldCollisionFromUrl } from '../../game/collision/worldCollision'
 import {
   applySceneAtmosphere,
   loadApartmentEnvironment,
@@ -10,6 +10,7 @@ import {
   stripRoomEnvironmentsFromScene,
   type ApartmentEnvironmentBuildResult,
 } from '../../game/roomEnvironments'
+import { buildTownCollisionData } from '../../game/town/openHouses'
 
 export interface RoomEnvironmentDeps {
   getScene: () => THREE.Scene | undefined
@@ -51,9 +52,12 @@ export function useRoomEnvironment(deps: RoomEnvironmentDeps) {
 
     if (kind === 'city') {
       stripRoomEnvironmentsFromScene(scene)
-      void buildWorldCollisionFromUrl(TOWN.collisionUrl).catch((err) => {
-        console.warn('[collision] town collision failed', err)
-      })
+      void loadTownEnvironment()
+        .then(({ layout }) => buildTownCollisionData(layout))
+        .then((data) => buildWorldCollisionFromData('town', data))
+        .catch((err) => {
+          console.warn('[collision] town collision failed', err)
+        })
       void loadTownEnvironment()
         .then(({ group, layout }) => {
           deps.onTownLoaded(layout)

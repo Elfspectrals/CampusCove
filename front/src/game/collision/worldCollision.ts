@@ -31,7 +31,7 @@ export interface CollisionTrimeshJson {
   indices: number[]
 }
 
-interface CollisionFileJson {
+export interface CollisionFileJson {
   version: number
   source?: string
   mode?: string
@@ -328,6 +328,23 @@ export function buildWorldCollisionFromObject(key: string, root: THREE.Object3D)
     cuboids: [],
     trimeshes,
   }
+  buildInFlight = buildFromCollisionData(key, data)
+    .catch((err) => {
+      builtUrl = null
+      collidersReady = false
+      throw err
+    })
+    .finally(() => {
+      buildInFlight = null
+    })
+  return buildInFlight
+}
+
+export function buildWorldCollisionFromData(key: string, data: CollisionFileJson): Promise<void> {
+  if (builtUrl === key && collidersReady) return Promise.resolve()
+  if (builtUrl === key && buildInFlight) return buildInFlight
+
+  builtUrl = key
   buildInFlight = buildFromCollisionData(key, data)
     .catch((err) => {
       builtUrl = null

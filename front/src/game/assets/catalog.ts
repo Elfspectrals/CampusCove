@@ -174,6 +174,7 @@ export interface TownLayout {
     door: [number, number, number]
     offer: 'buy' | 'rent'
     price: number
+    interiorOffset?: [number, number, number]
   }>
   /** Business district buildings (written by front/scripts/apply-work-district.mjs). */
   work?: Array<{
