@@ -9,6 +9,8 @@ Raw exports go to out/houses/<key>/{interior.glb,lightmap.jpg}, then `npm run as
 Headless only (resets the file for each house):
   /Applications/Blender.app/Contents/MacOS/Blender --background --factory-startup \
     --python map-src/CampusCove/build_house_lightmaps.py [-- house_01 house_02 ...]
+Work interiors (raw builds in out/work/<key>/, baked in place, then `npm run assets:optimize -- work`):
+    --python map-src/CampusCove/build_house_lightmaps.py -- work [cafe boutique tech_hub]
 """
 import os
 import re
@@ -21,6 +23,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ASSETS = os.path.normpath(os.path.join(HERE, "..", "..", "front", "public", "assets", "houses"))
 OUT = os.path.join(HERE, "out", "houses")
 KEYS = [f"house_{i:02d}" for i in range(1, 11)]
+WORK_DIR = os.path.join(HERE, "out", "work")
+WORK_KEYS = ["cafe", "boutique", "tech_hub"]
 
 LIGHTMAP_UV = "Lightmap"
 LIGHTMAP_SIZE = 1024
@@ -30,7 +34,7 @@ BAKE_SAMPLES = 512
 LAMP_POWER_W = 120.0
 LAMP_DROP = 0.2
 SKY_FILL_STRENGTH = 0.35
-UNLIT_NAMES = re.compile(r"^(Sky_|Door_Entrance|Window_.*_Glass)")
+UNLIT_NAMES = re.compile(r"^(Sky_|Door_Entrance|Window_.*_Glass|Walls_.*_Glass|Glass_)")
 
 
 def import_glb(path):
@@ -105,8 +109,8 @@ def bake(meshes, image):
         material.node_tree.nodes.remove(node)
 
 
-def build_interior(key):
-    objects = import_glb(os.path.join(ASSETS, key, "interior.glb"))
+def build_interior(key, source_dir, out_dir):
+    objects = import_glb(os.path.join(source_dir, key, "interior.glb"))
     setup_render()
     lamps = add_lamps(objects)
     meshes = [o for o in objects if o.type == "MESH" and not UNLIT_NAMES.match(o.name)]
@@ -118,9 +122,9 @@ def build_interior(key):
     image = bpy.data.images.new("Lightmap", LIGHTMAP_SIZE, LIGHTMAP_SIZE, float_buffer=True)
     image.colorspace_settings.name = "Non-Color"
     bake(meshes, image)
-    os.makedirs(os.path.join(OUT, key), exist_ok=True)
+    os.makedirs(os.path.join(out_dir, key), exist_ok=True)
     image.file_format = "JPEG"
-    image.save(filepath=os.path.join(OUT, key, "lightmap.jpg"), quality=LIGHTMAP_JPEG_QUALITY)
+    image.save(filepath=os.path.join(out_dir, key, "lightmap.jpg"), quality=LIGHTMAP_JPEG_QUALITY)
 
     for obj in unlit:
         obj.hide_render = False
@@ -131,7 +135,7 @@ def build_interior(key):
     for obj in objects:
         obj.select_set(True)
     bpy.ops.export_scene.gltf(
-        filepath=os.path.join(OUT, key, "interior.glb"),
+        filepath=os.path.join(out_dir, key, "interior.glb"),
         export_format="GLB",
         use_selection=True,
         export_apply=True,
@@ -144,10 +148,14 @@ def build_interior(key):
 
 
 def main():
-    keys = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else KEYS
+    args = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
+    if args[:1] == ["work"]:
+        keys, source_dir, out_dir = args[1:] or WORK_KEYS, WORK_DIR, WORK_DIR
+    else:
+        keys, source_dir, out_dir = args or KEYS, ASSETS, OUT
     for key in keys:
         bpy.ops.wm.read_homefile(use_empty=True)
-        build_interior(key)
+        build_interior(key, source_dir, out_dir)
 
 
 main()

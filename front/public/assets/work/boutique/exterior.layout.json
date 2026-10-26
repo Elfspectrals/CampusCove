@@ -4,19 +4,25 @@
   "name": "Boutique",
   "footprint": [
     16.0,
-    12.0
+    14.81
   ],
+  "footprintCenterZ": -1.4050000000000002,
   "doorLocal": [
     0.0,
     1.25,
     8.8
   ],
+  "interiorOffset": [
+    0.0,
+    0.2,
+    0.595
+  ],
   "collision": [
     {
       "cx": 0.0,
-      "cz": 0.0,
+      "cz": -1.4050000000000002,
       "hx": 8.2,
-      "hz": 6.2,
+      "hz": 7.605,
       "hy": 2.2
     }
   ]

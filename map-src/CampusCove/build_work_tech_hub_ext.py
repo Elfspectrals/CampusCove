@@ -38,44 +38,55 @@ E = {
 objs = []
 hw, hd = W / 2, D / 2
 
-objs.append(L.box(coll, "EX_Plinth", 0, 0, 0.0, W + 0.4, D + 0.4, 0.2, E["found"], bevel=0.02, tile=2.0))
-objs.append(L.box(coll, "EX_GroundFloor", 0, 0, 0.2, W, D, 3.3, E["conc"], tile=2.0))
-objs.append(L.box(coll, "EX_UpperFloor", 0, 0, 3.5, W, D, 3.3, E["panel"], tile=2.0))
-objs.append(L.box(coll, "EX_Band", 0, 0, 3.4, W + 0.2, D + 0.2, 0.18, E["teal"], tile=2.0))
-objs.append(L.box(coll, "EX_RoofSlab", 0, 0, 6.8, W + 0.6, D + 0.6, 0.25, E["roof"], tile=2.0))
-for nm, gx, gz, sx, sz in [("EX_ParapetN", 0, -hd - 0.25, W + 0.6, 0.15), ("EX_ParapetS", 0, hd + 0.25, W + 0.6, 0.15),
-                           ("EX_ParapetW", -hw - 0.25, 0, 0.15, D + 0.6), ("EX_ParapetE", hw + 0.25, 0, 0.15, D + 0.6)]:
+SHELL_H = 3.5
+STOREFRONT = ((-6.9, -1.5), (1.5, 6.9))
+STOREFRONT_Y = (0.4, 2.9)
+SIDE_WIN = ((-6.75, -4.25), (-2.75, -0.25), (1.0, 3.5))
+WIN_Y = (0.9, 2.3)
+shell, interior_offset, zb = L.walk_in_shell(coll, cols, W, hd, SHELL_H, E["conc"], E["glass"],
+                                             [(a, b, *STOREFRONT_Y) for a, b in STOREFRONT], [(a, b, *WIN_Y) for a, b in SIDE_WIN], [(a, b, *WIN_Y) for a, b in SIDE_WIN])
+objs += shell
+DN = hd - zb
+zc = (hd + zb) / 2
+objs.append(L.box(coll, "EX_Plinth", 0, zc, 0.0, W + 0.4, DN + 0.4, 0.2, E["found"], bevel=0.02, tile=2.0))
+objs.append(L.box(coll, "EX_UpperFloor", 0, zc, SHELL_H, W, DN, 6.8 - SHELL_H, E["panel"], tile=2.0))
+objs.append(L.box(coll, "EX_Band", 0, zc, 3.4, W + 0.2, DN + 0.2, 0.18, E["teal"], tile=2.0))
+objs.append(L.box(coll, "EX_RoofSlab", 0, zc, 6.8, W + 0.6, DN + 0.6, 0.25, E["roof"], tile=2.0))
+for nm, gx, gz, sx, sz in [("EX_ParapetN", 0, zb - 0.25, W + 0.6, 0.15), ("EX_ParapetS", 0, hd + 0.25, W + 0.6, 0.15),
+                           ("EX_ParapetW", -hw - 0.25, zc, 0.15, DN + 0.6), ("EX_ParapetE", hw + 0.25, zc, 0.15, DN + 0.6)]:
     objs.append(L.box(coll, nm, gx, gz, 7.05, sx, sz, 0.5, E["panel"]))
 
-# --- front storefront: two glass bays + door
 zf = hd + 0.03
-for side, (x0, x1) in (("L", (-7.5, -1.5)), ("R", (1.5, 7.5))):
+y_lo, y_hi = STOREFRONT_Y[0] + 0.2, STOREFRONT_Y[1] + 0.2
+for side, (x0, x1) in zip("LR", STOREFRONT):
     cx = (x0 + x1) / 2
-    objs.append(L.box(coll, f"EX_Storefront{side}", cx, zf, 0.5, x1 - x0, 0.06, 2.7, E["glass"]))
     for i in range(4):
-        objs.append(L.box(coll, f"EX_Mullion{side}{i}", x0 + i * (x1 - x0) / 3, zf + 0.02, 0.45, 0.1, 0.08, 2.8, E["frame"]))
-    objs.append(L.box(coll, f"EX_StoreTop{side}", cx, zf + 0.02, 3.15, x1 - x0, 0.08, 0.1, E["frame"]))
-    objs.append(L.box(coll, f"EX_StoreBase{side}", cx, zf + 0.02, 0.4, x1 - x0, 0.08, 0.1, E["frame"]))
-objs.append(L.box(coll, "EX_DoorGlass", 0, zf, 0.2, 2.2, 0.06, 2.6, E["door"]))
-for i, x in enumerate((-1.2, 0.0, 1.2)):
-    objs.append(L.box(coll, f"EX_DoorFrame{i}", x, zf + 0.02, 0.2, 0.1, 0.1, 2.7, E["frame"]))
-objs.append(L.box(coll, "EX_DoorHeader", 0, zf + 0.02, 2.85, 2.5, 0.1, 0.12, E["frame"]))
+        objs.append(L.box(coll, f"EX_Mullion{side}{i}", x0 + i * (x1 - x0) / 3, zf + 0.02, y_lo, 0.1, 0.08, y_hi - y_lo, E["frame"]))
+    objs.append(L.box(coll, f"EX_StoreTop{side}", cx, zf + 0.02, y_hi, x1 - x0 + 0.1, 0.08, 0.1, E["frame"]))
+    objs.append(L.box(coll, f"EX_StoreBase{side}", cx, zf + 0.02, y_lo - 0.1, x1 - x0 + 0.1, 0.08, 0.1, E["frame"]))
+objs.append(L.hinged_door(coll, [
+    (0, 0.0, 1.18, 0.06, 2.18, E["door"], 0.0),
+    (0, 0.0, 1.18, 0.08, 0.1, E["frame"], 0.0),
+    (0, 2.08, 1.18, 0.08, 0.1, E["frame"], 0.0),
+    (0.45, 0.95, 0.05, 0.14, 0.05, E["metal"], 0.0),
+], -0.59, hd - 0.1, 0.2))
+for i, x in enumerate((-0.65, 0.65)):
+    objs.append(L.box(coll, f"EX_DoorFrame{i}", x, zf + 0.02, 0.2, 0.1, 0.1, 2.3, E["frame"]))
+objs.append(L.box(coll, "EX_DoorHeader", 0, zf + 0.02, 2.4, 1.4, 0.1, 0.12, E["frame"]))
 
-# --- upper floor windows (continuous band) on 4 sides
+up_len = DN - 1.2
 objs.append(L.box(coll, "EX_WinFront", 0, hd + 0.03, 4.2, 14.8, 0.06, 1.9, E["glass"]))
-objs.append(L.box(coll, "EX_WinBack", 0, -hd - 0.03, 4.2, 14.8, 0.06, 1.9, E["glass"]))
-objs.append(L.box(coll, "EX_WinW", -hw - 0.03, 0, 4.2, 0.06, 12.8, 1.9, E["glass"]))
-objs.append(L.box(coll, "EX_WinE", hw + 0.03, 0, 4.2, 0.06, 12.8, 1.9, E["glass"]))
+objs.append(L.box(coll, "EX_WinBack", 0, zb - 0.03, 4.2, 14.8, 0.06, 1.9, E["glass"]))
+objs.append(L.box(coll, "EX_WinW", -hw - 0.03, zc, 4.2, 0.06, up_len, 1.9, E["glass"]))
+objs.append(L.box(coll, "EX_WinE", hw + 0.03, zc, 4.2, 0.06, up_len, 1.9, E["glass"]))
 for i in range(6):
     x = -7.4 + i * (14.8 / 5)
     objs.append(L.box(coll, f"EX_UpMullionF{i}", x, hd + 0.05, 4.15, 0.1, 0.06, 2.0, E["frame"]))
-    objs.append(L.box(coll, f"EX_UpMullionB{i}", x, -hd - 0.05, 4.15, 0.1, 0.06, 2.0, E["frame"]))
+    objs.append(L.box(coll, f"EX_UpMullionB{i}", x, zb - 0.05, 4.15, 0.1, 0.06, 2.0, E["frame"]))
 for i in range(5):
-    z = -6.2 + i * (12.4 / 4)
+    z = zc - up_len / 2 + i * (up_len / 4)
     objs.append(L.box(coll, f"EX_UpMullionW{i}", -hw - 0.05, z, 4.15, 0.06, 0.1, 2.0, E["frame"]))
     objs.append(L.box(coll, f"EX_UpMullionE{i}", hw + 0.05, z, 4.15, 0.06, 0.1, 2.0, E["frame"]))
-for side, sx in (("W", -hw - 0.03), ("E", hw + 0.03)):
-    objs.append(L.box(coll, f"EX_GFWin{side}", sx, 0, 0.9, 0.06, 9.0, 1.6, E["glass"]))
 
 # --- awning, posts, steps, sign
 objs.append(L.box(coll, "EX_Awning", 0, hd + 1.1, 3.0, 4.6, 2.2, 0.14, E["teal"], bevel=0.02))
@@ -87,23 +98,23 @@ objs.append(L.text_mesh(coll, "EX_SignText", "TECH HUB", 0, hd + 0.16, 3.72, 0.5
 
 # --- roof props
 for i, (ax, az) in enumerate([(-4.5, -3.0), (4.0, 2.5)]):
-    objs.append(L.box(coll, f"EX_AC_{i}", ax, az, 7.05, 2.0, 1.4, 0.9, E["metal"], bevel=0.04))
-objs.append(L.cyl(coll, "EX_Antenna", 5.5, -4.5, 7.05, 0.07, 3.6, E["metal"], seg=6))
-objs.append(L.cone(coll, "EX_Dish", 5.5, -4.5, 8.7, 0.1, 0.6, 0.3, E["metal"], seg=8))
+    objs.append(L.box(coll, f"EX_AC_{i}", ax, zc + az, 7.05, 2.0, 1.4, 0.9, E["metal"], bevel=0.04))
+objs.append(L.cyl(coll, "EX_Antenna", 5.5, zc - 4.5, 7.05, 0.07, 3.6, E["metal"], seg=6))
+objs.append(L.cone(coll, "EX_Dish", 5.5, zc - 4.5, 8.7, 0.1, 0.6, 0.3, E["metal"], seg=8))
 
 # --- entrance plants
 for sx in (-3.4, 3.4):
     objs.append(L.cyl(coll, f"EX_PlantPot{'L' if sx < 0 else 'R'}", sx, hd + 1.3, 0.12, 0.35, 0.5, E["pot"], seg=8))
     objs.append(L.cone(coll, f"EX_PlantLeaf{'L' if sx < 0 else 'R'}", sx, hd + 1.3, 0.62, 0.5, 0.05, 1.0, E["leaf"], seg=7))
 
-cols.add("TechHub_Body", 0, 0, 0.0, W + 0.4, D + 0.4, 7.6)
-bad = L.check_grounded(objs, allow=("EX_Band", "EX_Roof", "EX_Parapet", "EX_Upper", "EX_Win", "EX_UpMullion", "EX_Store", "EX_Mullion", "EX_Door", "EX_Awning", "EX_Sign", "EX_AC_", "EX_Antenna", "EX_Dish", "EX_Plant", "EX_GroundFloor", "EX_GFWin"))
+bad = L.check_grounded(objs, allow=("EX_Shell", "EX_Band", "EX_Roof", "EX_Parapet", "EX_Upper", "EX_Win", "EX_UpMullion", "EX_Store", "EX_Mullion", "Door", "EX_Door", "EX_Awning", "EX_Sign", "EX_AC_", "EX_Antenna", "EX_Dish", "EX_Plant"))
 print("EXTERIOR grounded violations:", bad)
 assert not bad, bad
 L.export_glb(os.path.join(OUT, "exterior.glb"), objs)
 L.export_glb(os.path.join(OUT, "exterior.colsrc.glb"), objs + cols.items)
 L.write_json(os.path.join(OUT, "exterior.layout.json"), {
-    "version": 1, "key": KEY, "name": "Tech Hub", "footprint": [W, D], "doorLocal": [0.0, 1.25, hd + 2.6],
-    "collision": [{"cx": 0.0, "cz": 0.0, "hx": W / 2 + 0.2, "hz": D / 2 + 0.2, "hy": 3.8}],
+    "version": 1, "key": KEY, "name": "Tech Hub", "footprint": [W, DN], "footprintCenterZ": zc, "doorLocal": [0.0, 1.25, hd + 2.6],
+    "interiorOffset": [round(c, 4) for c in interior_offset],
+    "collision": [{"cx": 0.0, "cz": zc, "hx": W / 2 + 0.2, "hz": DN / 2 + 0.2, "hy": 3.8}],
 })
-print("exterior objects:", len(objs))
+print("exterior objects:", len(objs), "interiorOffset", interior_offset, "depth", DN)

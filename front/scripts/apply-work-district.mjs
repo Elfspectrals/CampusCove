@@ -157,6 +157,7 @@ zone.buildings = district.works.map((w) => ({
   rotationY: w.rotationY,
   door: w.door,
   footprint: w.footprint,
+  interiorOffset: w.interiorOffset,
 }))
 zone.gate = district.gate
 manifest.bounds = col.bounds
