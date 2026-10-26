@@ -96,6 +96,11 @@ CampusCove skills win on any conflict. Sources and licenses: `.claude/skills/_th
 | First-person camera behaviour | `camera-systems` |
 | New actions / keys, accessibility of controls | `input-systems` |
 | Laying out a new zone or building, landmarks, flow | `level-design` |
+| Vue SFCs, composables, reactivity (keep 3D objects out of it) | `vue` |
+| `vite.config.ts`, env vars, asset imports, build (Vite 7 here) | `vite` |
+| Room lifecycle, reconnection after a drop, anti-cheat principles | `colyseus-multiplayer` (with `socket-message`) |
+| Aiming / raycast picking, hover, placement drag | `threejs-interaction` |
+| Weighted drops, rarity rolls, pity timers, seeded randomness | `procedural-gen` (rolls run server-side) |
 
 ## 6. Ship
 

@@ -53,6 +53,9 @@ One Colyseus room, `CityRoom` (`socket/src/CityRoom.js`), holds the town **and**
 4. Apply corrections from the server (`position_correction`) instead of fighting them; clamp frame `dt` so a
    background tab does not produce a rejected jump.
 
+For room lifecycle, reconnection (`onDrop` / `allowReconnection`, not implemented yet) and general anti-cheat
+principles, see the vendored `colyseus-multiplayer` skill; its CampusCove note says which of its APIs match 0.17.
+
 ## Verify
 
 Two browser tabs with two different accounts (one session per account: a second tab of the same account
