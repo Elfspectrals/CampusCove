@@ -112,6 +112,11 @@ export function createPlacementPhysics() {
   const propMeshById = new Map<string, THREE.Mesh>()
   /** Props registered before the world finished initialising. */
   const pendingMeshes: THREE.Mesh[] = []
+  let roomFrame: THREE.Object3D | null = null
+
+  function setRoomFrame(frame: THREE.Object3D): void {
+    roomFrame = frame
+  }
 
   function isReady(): boolean {
     return world !== null
@@ -193,7 +198,12 @@ export function createPlacementPhysics() {
     ghost.updateMatrixWorld(true)
     const { halfExtents, centerLocal } = computePlacementLocalAabb(ghost)
     const centerWorld = centerLocal.clone().applyMatrix4(ghost.matrixWorld)
-    const q = ghost.quaternion
+    const q = ghost.getWorldQuaternion(new THREE.Quaternion())
+    if (roomFrame) {
+      roomFrame.updateMatrixWorld(true)
+      roomFrame.worldToLocal(centerWorld)
+      q.premultiply(roomFrame.getWorldQuaternion(new THREE.Quaternion()).invert())
+    }
     let hit = false
     world.step()
     world.intersectionsWithShape(
@@ -229,5 +239,5 @@ export function createPlacementPhysics() {
     initPromise = null
   }
 
-  return { isReady, ensureReady, registerProp, unregisterProp, syncProps, ghostIntersects, dispose }
+  return { isReady, ensureReady, setRoomFrame, registerProp, unregisterProp, syncProps, ghostIntersects, dispose }
 }

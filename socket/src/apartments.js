@@ -1,27 +1,14 @@
-// Interiors: entering / leaving houses and work buildings, and decorating a house. Houses are backed by
-// the Laravel API (ownership, placed objects, inventory); work buildings are public and have no DB row.
-import { callBackendJson, errorPayload, parseAccountId } from './backend.js'
+// Interiors: entering / leaving work buildings, and decorating one's own house from the town. Houses are
+// backed by the Laravel API (ownership, placed objects, inventory); work buildings are public and have no DB row.
+import { callBackendJson, errorPayload } from './backend.js'
 import {
   APARTMENT_SPAWN,
   APARTMENT_SPAWN_RADIUS,
   CITY_SPAWN_RADIUS,
-  DEFAULT_TEMPLATE_KEY,
   WORK_EXIT_RADIUS
 } from './config.js'
 import { spawnNear } from './players.js'
 import { citySpawn, workDoor } from './world.js'
-
-function nonEmptyString(raw) {
-  return typeof raw === 'string' && raw.trim().length > 0 ? raw.trim() : null
-}
-
-// Clients currently inside this house.
-function houseViewers(room, ownerAccountId, templateKey) {
-  return room.clients.filter((c) => {
-    const p = room.players.get(c.sessionId)
-    return p?.zone === 'apartment' && p.apartmentOwnerId === ownerAccountId && p.apartmentTemplateKey === templateKey
-  })
-}
 
 export async function sendInventory(room, client) {
   const player = room.players.get(client.sessionId)
@@ -36,44 +23,6 @@ export async function sendInventory(room, client) {
   } catch (error) {
     client.send('apartment_inventory_error', errorPayload(error, 'Inventory request failed', 'inventory_error'))
   }
-}
-
-export async function enterHouse(room, client, payload) {
-  const player = room.players.get(client.sessionId)
-  if (!player) return
-  if (!player.token) {
-    client.send('apartment_error', { message: 'Missing auth token', code: 'missing_token' })
-    return
-  }
-  const ownerAccountId = parseAccountId(payload?.ownerAccountId) ?? player.accountId
-  const requestedTemplate = nonEmptyString(payload?.templateKey) ?? DEFAULT_TEMPLATE_KEY
-  let state
-  try {
-    const response = await callBackendJson(player.token, '/apartments/state', 'POST', {
-      owner_account_id: ownerAccountId,
-      template_key: requestedTemplate
-    })
-    state = response?.apartment ?? {}
-  } catch (error) {
-    client.send('apartment_error', errorPayload(error, 'Could not enter apartment', 'apartment_enter_error'))
-    return
-  }
-  const templateKey = nonEmptyString(state.template_key) ?? requestedTemplate
-  room.moveToZone(client, player, () => {
-    Object.assign(player, {
-      zone: 'apartment',
-      apartmentOwnerId: ownerAccountId,
-      apartmentTemplateKey: templateKey,
-      ...spawnNear(APARTMENT_SPAWN, APARTMENT_SPAWN_RADIUS)
-    })
-    client.send('apartment_init', {
-      ownerAccountId,
-      templateKey,
-      canEdit: state.can_edit === true,
-      objects: Array.isArray(state.objects) ? state.objects : []
-    })
-  })
-  await sendInventory(room, client)
 }
 
 // Public business-district building: no backend call, anyone can walk in. The zone stays 'apartment' on
@@ -123,18 +72,16 @@ export function exitBuilding(room, client) {
   client.send('housing_units_sync', { units: room.housingUnits })
 }
 
-// The house being decorated by this player, or null if they cannot act on one.
+// The house being decorated by this player: their own house, decorated from the town. Null if they have none.
 function decoratedHouse(room, client) {
   const player = room.players.get(client.sessionId)
-  if (!player || player.zone !== 'apartment' || !player.apartmentOwnerId || !player.token) return null
-  return {
-    player,
-    ownerAccountId: player.apartmentOwnerId,
-    templateKey: player.apartmentTemplateKey ?? DEFAULT_TEMPLATE_KEY
-  }
+  if (!player || player.zone !== 'city' || !player.token) return null
+  const unit = room.housingUnits.find((u) => u.occupant_account_id === player.accountId)
+  if (!unit?.template_key) return null
+  return { player, ownerAccountId: player.accountId, templateKey: unit.template_key }
 }
 
-// Place a new item (spawn) or move a placed one (transform); every viewer gets the saved object.
+// Place a new item (spawn) or move a placed one (transform); the town gets the updated house furniture.
 export async function saveObject(room, client, payload, isSpawn) {
   const house = decoratedHouse(room, client)
   const objectId = typeof payload?.objectId === 'string' ? payload.objectId.trim() : ''
@@ -148,9 +95,6 @@ export async function saveObject(room, client, payload, isSpawn) {
     )
     const saved = response?.object
     if (!saved || typeof saved.objectId !== 'string') return
-    for (const c of houseViewers(room, house.ownerAccountId, house.templateKey)) {
-      c.send('apartment_object_upserted', saved)
-    }
     await room.refreshHouseFurniture(house.player.token)
   } catch (error) {
     client.send('apartment_action_error', errorPayload(error, 'Could not update apartment object', 'apartment_object_error'))
@@ -168,9 +112,6 @@ export async function pickupObject(room, client, payload) {
       template_key: house.templateKey,
       objectId
     })
-    for (const c of houseViewers(room, house.ownerAccountId, house.templateKey)) {
-      c.send('apartment_object_removed', { objectId })
-    }
     await room.refreshHouseFurniture(house.player.token)
     await sendInventory(room, client)
   } catch (error) {

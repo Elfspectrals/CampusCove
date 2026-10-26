@@ -14,6 +14,3 @@ export const CITY_SPAWN_RADIUS = 2
 // house interiors are small: stay close to the door
 export const APARTMENT_SPAWN_RADIUS = 0.6
 export const WORK_EXIT_RADIUS = 0.6
-
-// Template used by the backend when a house is entered without one.
-export const DEFAULT_TEMPLATE_KEY = 'starter_loft'

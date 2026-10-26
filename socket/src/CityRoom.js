@@ -1,5 +1,5 @@
 import { Room } from 'colyseus'
-import { enterHouse, enterWork, exitBuilding, pickupObject, saveObject, sendInventory } from './apartments.js'
+import { enterWork, exitBuilding, pickupObject, saveObject, sendInventory } from './apartments.js'
 import { callBackendJson, parseAccountId, resolveIdentity } from './backend.js'
 import { CITY_MAX_PLAYERS, CITY_SPAWN_RADIUS } from './config.js'
 import {
@@ -30,7 +30,6 @@ export class CityRoom extends Room {
     this.onMessage('move', (client, payload) => this.onMove(client, payload))
     this.onMessage('appearance', (client, payload) => this.onAppearance(client, payload))
     this.onMessage('housing_refresh', (client) => this.onHousingRefresh(client))
-    this.onMessage('enter_apartment', (client, payload) => enterHouse(this, client, payload))
     this.onMessage('enter_work', (client, payload) => enterWork(this, client, payload))
     this.onMessage('exit_apartment', (client) => exitBuilding(this, client))
     this.onMessage('apartment_spawn_request', (client, payload) => saveObject(this, client, payload, true))

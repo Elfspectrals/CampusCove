@@ -9,11 +9,9 @@ export interface CityHousingDeps {
   gameRoomRef: ShallowRef<Room | null>
   /** Error banner of the game view. */
   roomMessage: Ref<string | null>
-  /** Walk into an occupied house (own or someone else's). */
-  enterHouse: (ownerAccountId: number, templateKey: string) => void
 }
 
-/** Town houses: synced unit list, the one at the player's door, and the buy / rent / renew / enter actions. */
+/** Town houses: synced unit list, the one at the player's door, and the buy / rent / renew actions. */
 export function useCityHousing(deps: CityHousingDeps) {
   const units = ref<HousingUnit[]>([])
   const nearbyUnit = ref<HousingUnit | null>(null)
@@ -45,16 +43,13 @@ export function useCityHousing(deps: CityHousingDeps) {
     }
   }
 
-  /** Door interaction: buy / rent a vacant house, or enter / visit an occupied one. */
+  /** Door interaction: buy / rent a vacant house. Occupied houses are entered on foot. */
   async function interact(): Promise<void> {
     const unit = nearbyUnit.value
     if (!unit || !deps.gameRoomRef.value || claimInFlight.value) return
-    const action = housingActionFor(unit, deps.myAccountId.value)
+    const action = housingActionFor(unit)
     if (action === 'buy') await runClaim(() => buyHousingUnit(unit.public_id), 'Housing claim failed.')
     else if (action === 'rent') await runClaim(() => rentHousingUnit(unit.public_id), 'Housing claim failed.')
-    else if ((action === 'enter' || action === 'visit') && unit.occupant_account_id !== null) {
-      deps.enterHouse(unit.occupant_account_id, unit.template_key)
-    }
   }
 
   /** U key: extend the lease of the rented house the player stands at. */

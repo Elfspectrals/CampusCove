@@ -117,14 +117,12 @@ export function useInteractionTargets(deps: InteractionTargetsDeps) {
     }
     const unit = deps.nearbyHousingUnit.value
     if (unit) {
-      const action = housingActionFor(unit, deps.myAccountId.value)
+      const action = housingActionFor(unit)
       const pos = housingInteractPosition(unit)
       const screen = projectToScreen(pos.x, pos.y, pos.z)
-      if (!screen || !action) return none
-      return {
-        prompt: { ...screen, ...housingPromptLabel(unit, action) },
-        renew: canRenewUnit(unit, deps.myAccountId.value) ? { x: screen.x + 72, y: screen.y } : null,
-      }
+      if (!screen) return none
+      const renew = canRenewUnit(unit, deps.myAccountId.value) ? { x: screen.x + 72, y: screen.y } : null
+      return { prompt: action && { ...screen, ...housingPromptLabel(unit, action) }, renew }
     }
     const work = nearbyWork.value
     if (work) {

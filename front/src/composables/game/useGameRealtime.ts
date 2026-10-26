@@ -136,13 +136,6 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     }, 0)
   }
 
-  function enterHouse(ownerAccountId: number, templateKey: string): void {
-    const room = deps.gameRoomRef.value
-    if (!room) return
-    beginTransition()
-    room.send('enter_apartment', { ownerAccountId, templateKey })
-  }
-
   /** Work buildings are free and public: no purchase or lease, the server just moves us inside. */
   function enterWork(workKey: string): void {
     const room = deps.gameRoomRef.value
@@ -385,7 +378,6 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     connectRealtime,
     switchingRoom,
     transitioning,
-    enterHouse,
     enterWork,
     exitBuilding,
     clearRemoteUsers: remotes.clear,

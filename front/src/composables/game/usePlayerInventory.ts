@@ -24,7 +24,7 @@ const DEBOUNCE_MS = 500
 export interface UsePlayerInventoryDeps {
   gameRoomRef: ShallowRef<Room | null>
   currentRoomLabel: Ref<'city' | 'apartment'>
-  canEditApartment: Ref<boolean>
+  canDecorate: Ref<boolean>
   selectedPlacedObjectId: Ref<string>
   startPlacementPreview: (itemDef: ApartmentPlacementItemDef, ownedCountRef: Ref<number>) => void
   cancelPlacementPreview: () => void
@@ -199,7 +199,7 @@ export function usePlayerInventory(deps: UsePlayerInventoryDeps) {
     scheduleDebouncedSave()
     const code = slots.value[i] ?? ''
 
-    if (deps.currentRoomLabel.value !== 'apartment' || !deps.canEditApartment.value) {
+    if (!deps.canDecorate.value) {
       cancelPlacementPreviewInternal()
       return
     }
@@ -366,7 +366,7 @@ export function usePlayerInventory(deps: UsePlayerInventoryDeps) {
   }
 
   function pickupSelectedPlacedObject(): void {
-    if (!deps.gameRoomRef.value || deps.currentRoomLabel.value !== 'apartment' || !deps.canEditApartment.value) return
+    if (!deps.gameRoomRef.value || !deps.canDecorate.value) return
     const objectId = deps.selectedPlacedObjectId.value
     if (!objectId) return
     deps.gameRoomRef.value.send('apartment_pickup_request', { objectId })

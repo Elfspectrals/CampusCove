@@ -31,6 +31,8 @@ import { toggleCollisionDebug } from '../game/collision/collisionDebug'
 import { getWorldCollisionStats } from '../game/collision/worldCollision'
 import { HOUSING_LOBBY_SPAWN } from '../game/gameRoomConstants'
 import { createGameScene, disposeGameScene, type GameScene } from '../game/gameScene'
+import { findHouse } from '../game/assets/catalog'
+import { houseKeyAt, openHouseInterior } from '../game/town/openHouses'
 
 const router = useRouter()
 const containerRef = ref<HTMLElement | null>(null)
@@ -47,6 +49,13 @@ const visitedWorkKey = ref<string | null>(null)
 const pointerLocked = ref(false)
 const refreshMyAppearance = ref<(() => void) | null>(null)
 const myAccountId = computed(() => getStoredAuth()?.user.account_id ?? null)
+const currentHouseKey = ref<string | null>(null)
+const ownHouseKey = computed(
+  () => housing.units.value.find((u) => u.occupant_account_id === myAccountId.value)?.model_key ?? null,
+)
+const canDecorate = computed(
+  () => currentRoomLabel.value === 'city' && ownHouseKey.value !== null && currentHouseKey.value === ownHouseKey.value,
+)
 
 /** Eye position of the local player (plain object: written every frame). */
 const myPosition = { ...HOUSING_LOBBY_SPAWN }
@@ -73,15 +82,20 @@ const {
   getApartmentObjectMesh,
 } = useApartmentObjects({
   getScene,
+  getParent: () => (ownHouseKey.value ? openHouseInterior(ownHouseKey.value) : undefined),
   getGameRoom: () => gameRoomRef.value,
-  currentRoomLabel,
+  canDecorate,
   onMeshUpserted: (mesh) => placement.registerApartmentProp(mesh),
   onMeshRemoved: (objectId) => {
     placement.unregisterApartmentProp(objectId)
     placement.notifyPropRemovedFromWorld(objectId)
   },
 })
-const houseFurniture = useHouseFurniture({ getScene })
+const houseFurniture = useHouseFurniture({
+  getScene,
+  ownHouseKey: () => ownHouseKey.value,
+  ownHouseObjects: { ensureApartmentObjectsFromServer, clearApartmentObjects },
+})
 
 const placement = useApartmentPlacement({
   getScene,
@@ -89,9 +103,8 @@ const placement = useApartmentPlacement({
   getColyseusRoom: () => gameRoomRef.value,
   getApartmentObjectMesh,
   getApartmentInventoryOpen: () => inventoryOpen.value,
-  currentRoomLabel,
+  canDecorate,
   pointerLocked,
-  canEditApartment,
   persistApartmentTransformForMesh,
   refreshApartmentInventory: () => refreshOwnedItems(),
 })
@@ -126,7 +139,7 @@ const {
 } = usePlayerInventory({
   gameRoomRef,
   currentRoomLabel,
-  canEditApartment,
+  canDecorate,
   selectedPlacedObjectId,
   startPlacementPreview: (itemDef, ownedCountRef) => placement.startPreviewNew(itemDef, ownedCountRef),
   cancelPlacementPreview: () => placement.cancelPreview(),
@@ -138,10 +151,6 @@ const housing = useCityHousing({
   myAccountId,
   gameRoomRef,
   roomMessage,
-  enterHouse: (ownerAccountId, templateKey) => {
-    closeInventory()
-    realtime.enterHouse(ownerAccountId, templateKey)
-  },
 })
 
 const interactions = useInteractionTargets({
@@ -191,6 +200,7 @@ function setRoomEnvironment(kind: 'city' | 'apartment', templateKey?: string, wo
     Object.assign(myPosition, HOUSING_LOBBY_SPAWN)
     resetClientStateForCityWorld()
     clearApartmentObjects()
+    houseFurniture.refresh()
   }
   environment.setRoomEnvironment(kind, templateKey, workKey)
 }
@@ -235,7 +245,8 @@ const movement = useGameMovement({
   onBeforeRender: (dt) => {
     positionLabel.value = formatPosition()
     realtime.tickRemoteAvatars(dt)
-    if (currentRoomLabel.value === 'apartment') placement.tick(dt)
+    currentHouseKey.value = currentRoomLabel.value === 'city' ? houseKeyAt(myPosition.x, myPosition.z) : null
+    if (canDecorate.value) placement.tick(dt)
     interactions.updatePrompts()
   },
 })
@@ -284,6 +295,27 @@ watch(inventoryOpen, (open) => {
   } else if (!document.pointerLockElement) {
     requestPointerLock()
   }
+})
+
+watch(ownHouseKey, () => houseFurniture.refresh())
+
+watch(canDecorate, (inside) => {
+  const houseKey = ownHouseKey.value
+  const interior = houseKey ? openHouseInterior(houseKey) : undefined
+  const house = houseKey ? findHouse(houseKey) : null
+  if (!inside || !interior || !house) {
+    placement.setPlayerInsideApartment(false)
+    return
+  }
+  placement.registerApartmentEnvironment({
+    group: interior,
+    house: { key: house.key, interiorCollisionUrl: house.interiorCollisionUrl },
+  })
+  for (const objectId of apartmentObjectIds.value) {
+    const mesh = getApartmentObjectMesh(objectId)
+    if (mesh) placement.registerApartmentProp(mesh)
+  }
+  refreshOwnedItems()
 })
 
 // ---------------------------------------------------------------- lifecycle
@@ -422,8 +454,7 @@ const crosshairClass = computed(() => {
       :cursor-item="cursorItem"
       :loading="inventoryLoading"
       :error="inventoryError"
-      :current-room-label="currentRoomLabel"
-      :can-edit-apartment="canEditApartment"
+      :can-edit-apartment="canDecorate"
       :apartment-object-ids="apartmentObjectIds"
       :selected-placed-object-id="selectedPlacedObjectId"
       @close="closeInventory"
@@ -454,7 +485,7 @@ const crosshairClass = computed(() => {
       </button>
     </div>
     <p
-      v-if="currentRoomLabel === 'apartment' && inventoryOpen && placementPreviewActive"
+      v-if="canDecorate && inventoryOpen && placementPreviewActive"
       class="cc-hud pointer-events-none absolute bottom-24 left-3 z-[31] max-w-md px-3 py-1.5 text-[11px] font-bold leading-snug text-mist"
     >
       R = rotate · Shift+R = reverse · LMB = place / pick · RMB = cancel · Esc / E = cancel

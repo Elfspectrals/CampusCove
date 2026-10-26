@@ -12,6 +12,7 @@ import { houseBuildings, type HouseBuilding, type WorldManifest } from '../world
 type OpenHouseLot = HouseBuilding & { interiorOffset: [number, number, number] }
 
 interface BuildingFloor {
+  houseKey: string
   worldToInterior: THREE.Matrix4
   bounds: NonNullable<CollisionFileJson['bounds']>
   y: number
@@ -176,6 +177,7 @@ async function composeTownCollisionData(manifest: WorldManifest): Promise<Collis
     cuboids.push(...interior.cuboids.map((cuboid) => transformCuboid(cuboid, matrix)))
     trimeshes.push(...(interior.trimeshes ?? []).map((trimesh) => transformTrimesh(trimesh, matrix)))
     buildingFloors.push({
+      houseKey: lot.key,
       worldToInterior: matrix.clone().invert(),
       bounds: interior.bounds,
       y: lot.position[1] + lot.interiorOffset[1],
@@ -197,12 +199,20 @@ export function buildTownCollisionData(manifest: WorldManifest): Promise<Collisi
   return townCollision
 }
 
-export function buildingFloorAt(x: number, z: number): number | null {
+function floorAt(x: number, z: number): BuildingFloor | null {
   const p = new THREE.Vector3()
   for (const floor of buildingFloors) {
     p.set(x, 0, z).applyMatrix4(floor.worldToInterior)
     const { minX, maxX, minZ, maxZ } = floor.bounds
-    if (p.x >= minX && p.x <= maxX && p.z >= minZ && p.z <= maxZ) return floor.y
+    if (p.x >= minX && p.x <= maxX && p.z >= minZ && p.z <= maxZ) return floor
   }
   return null
+}
+
+export function buildingFloorAt(x: number, z: number): number | null {
+  return floorAt(x, z)?.y ?? null
+}
+
+export function houseKeyAt(x: number, z: number): string | null {
+  return floorAt(x, z)?.houseKey ?? null
 }

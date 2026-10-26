@@ -10,7 +10,6 @@ const props = defineProps<{
   cursorItem: { code: string; fromSlot: number } | null
   loading: boolean
   error: string | null
-  currentRoomLabel: 'city' | 'apartment'
   canEditApartment: boolean
   selectedPlacedObjectId: string
   apartmentObjectIds: string[]
@@ -233,7 +232,7 @@ function ghostQty(): number {
           </div>
         </div>
 
-        <div v-if="currentRoomLabel === 'apartment' && canEditApartment" class="mt-5 rounded-2xl border-2 border-ink-600/50 bg-ink-950/40 p-4">
+        <div v-if="canEditApartment" class="mt-5 rounded-2xl border-2 border-ink-600/50 bg-ink-950/40 p-4">
           <div class="cc-eyebrow mb-2">Placed objects</div>
           <div class="flex flex-col gap-2 sm:flex-row">
             <select class="cc-input cc-input-sm flex-1" :value="selectedPlacedObjectId" @change="onPlacedSelect">

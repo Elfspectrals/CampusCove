@@ -4,9 +4,15 @@ import { openHouseInterior } from '../../game/town/openHouses'
 import type { HouseFurniturePayload } from '../../types/gameRealtime'
 import { useApartmentObjects } from './useApartmentObjects'
 
-type HouseObjects = ReturnType<typeof useApartmentObjects>
+type HouseObjects = Pick<ReturnType<typeof useApartmentObjects>, 'ensureApartmentObjectsFromServer' | 'clearApartmentObjects'>
 
-export function useHouseFurniture(deps: { getScene: () => THREE.Scene | undefined }) {
+export interface HouseFurnitureDeps {
+  getScene: () => THREE.Scene | undefined
+  ownHouseKey: () => string | null
+  ownHouseObjects: HouseObjects
+}
+
+export function useHouseFurniture(deps: HouseFurnitureDeps) {
   const objectsByHouse = new Map<string, HouseObjects>()
   let latestHouses: HouseFurniturePayload[] = []
   let townReady = false
@@ -18,7 +24,7 @@ export function useHouseFurniture(deps: { getScene: () => THREE.Scene | undefine
       getScene: deps.getScene,
       getParent: () => openHouseInterior(houseKey),
       getGameRoom: () => null,
-      currentRoomLabel: ref('city'),
+      canDecorate: ref(false),
       onMeshUpserted: () => undefined,
       onMeshRemoved: () => undefined,
     })
@@ -27,20 +33,28 @@ export function useHouseFurniture(deps: { getScene: () => THREE.Scene | undefine
   }
 
   function render(): void {
+    if (!townReady) return
+    const ownKey = deps.ownHouseKey()
     const furnished = new Set<string>()
+    let ownObjects: HouseFurniturePayload['objects'] = []
     for (const house of latestHouses) {
       if (!house.model_key) continue
+      if (house.model_key === ownKey) {
+        ownObjects = house.objects
+        continue
+      }
       furnished.add(house.model_key)
       objectsFor(house.model_key).ensureApartmentObjectsFromServer(house.objects)
     }
     for (const [houseKey, objects] of objectsByHouse) {
       if (!furnished.has(houseKey)) objects.clearApartmentObjects()
     }
+    if (ownKey) deps.ownHouseObjects.ensureApartmentObjectsFromServer(ownObjects)
   }
 
   function applyHouses(houses: HouseFurniturePayload[]): void {
     latestHouses = houses
-    if (townReady) render()
+    render()
   }
 
   function onTownReady(): void {
@@ -55,5 +69,5 @@ export function useHouseFurniture(deps: { getScene: () => THREE.Scene | undefine
     townReady = false
   }
 
-  return { applyHouses, onTownReady, dispose }
+  return { applyHouses, onTownReady, refresh: render, dispose }
 }

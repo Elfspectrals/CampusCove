@@ -13,7 +13,7 @@ export interface ApartmentObjectsDeps {
   getScene: () => THREE.Scene | undefined
   getParent?: () => THREE.Object3D | undefined
   getGameRoom: () => Room | null
-  currentRoomLabel: Ref<'city' | 'apartment'>
+  canDecorate: Ref<boolean>
   /** After an apartment anchor mesh is created or updated (placement / remote sync). */
   onMeshUpserted: (mesh: THREE.Mesh) => void
   /** Before mesh disposal (pickup, room clear, remote delete). */
@@ -210,7 +210,7 @@ export function useApartmentObjects(deps: ApartmentObjectsDeps) {
 
   function persistApartmentTransformForMesh(mesh: THREE.Mesh, force: boolean) {
     const room = deps.getGameRoom()
-    if (!room || deps.currentRoomLabel.value !== 'apartment') return
+    if (!room || !deps.canDecorate.value) return
     const objectId = typeof mesh.userData.apartmentObjectId === 'string' ? mesh.userData.apartmentObjectId : ''
     const objectKey = typeof mesh.userData.apartmentObjectKey === 'string' ? mesh.userData.apartmentObjectKey : ''
     if (!objectId || !objectKey) return

@@ -34,10 +34,9 @@ export interface ApartmentPlacementDeps {
   getCamera: () => THREE.PerspectiveCamera | undefined
   getColyseusRoom: () => Room | null
   getApartmentObjectMesh: (objectId: string) => THREE.Mesh | undefined
-  currentRoomLabel: Ref<'city' | 'apartment'>
+  canDecorate: Ref<boolean>
   pointerLocked: Ref<boolean>
   getApartmentInventoryOpen: () => boolean
-  canEditApartment: Ref<boolean>
   persistApartmentTransformForMesh: (mesh: THREE.Mesh, force: boolean) => void
   refreshApartmentInventory: () => void
 }
@@ -90,7 +89,7 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
   let supportPropId = ''
 
   function ensureWorld(): Promise<void> {
-    if (deps.currentRoomLabel.value !== 'apartment' || !roomCollision) return Promise.resolve()
+    if (!deps.canDecorate.value || !roomCollision) return Promise.resolve()
     return roomCollision.then((room) => (room ? physics.ensureReady(room) : undefined))
   }
 
@@ -144,7 +143,7 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
   }
 
   function startPreviewNew(itemDef: ApartmentPlacementItemDef, ownedCountRef: Ref<number>): void {
-    if (deps.currentRoomLabel.value !== 'apartment' || !deps.canEditApartment.value) return
+    if (!deps.canDecorate.value) return
     cancelPreview()
     if (ownedCountRef.value <= 0) return
     watchStopOwned = watch(ownedCountRef, (q) => {
@@ -157,13 +156,13 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
   }
 
   function startPreviewExisting(objectId: string, sourceMesh: THREE.Mesh): void {
-    if (deps.currentRoomLabel.value !== 'apartment' || !deps.canEditApartment.value) return
+    if (!deps.canDecorate.value) return
     cancelPreview()
     void ensureWorld().then(() => {
       physics.unregisterProp(objectId)
       sourceMesh.visible = false
       currentState.value = { kind: 'preview_existing', objectId, sourceMesh }
-      userYawTarget = new THREE.Euler().setFromQuaternion(sourceMesh.quaternion, 'YXZ').y
+      userYawTarget = new THREE.Euler().setFromQuaternion(sourceMesh.getWorldQuaternion(new THREE.Quaternion()), 'YXZ').y
       userYawSmoothed = userYawTarget
       loadGhostVisual({
         objectKey: String(sourceMesh.userData.apartmentObjectKey ?? 'unknown'),
@@ -179,6 +178,7 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
 
   function registerApartmentEnvironment(build: ApartmentEnvironmentBuildResult): void {
     apartmentEnvGroup = build.group
+    physics.setRoomFrame(build.group)
     roomCollision = fetchCollisionFile(build.house.interiorCollisionUrl).catch((error: unknown) => {
       console.error('[placement] room collision failed to load, overlaps are not checked', error)
       return null
@@ -196,12 +196,12 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
   }
 
   function registerApartmentProp(mesh: THREE.Mesh): void {
-    if (deps.currentRoomLabel.value !== 'apartment') return
+    if (!deps.canDecorate.value) return
     void ensureWorld().then(() => physics.registerProp(mesh))
   }
 
   function unregisterApartmentProp(objectId: string): void {
-    if (deps.currentRoomLabel.value !== 'apartment') {
+    if (!deps.canDecorate.value) {
       physics.unregisterProp(objectId)
       return
     }
@@ -228,7 +228,17 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
     }
     raycaster.setFromCamera(ndcCenter, camera)
     raycaster.far = RAYCAST_MAX
-    return raycaster.intersectObjects(targets, true)
+    return raycaster.intersectObjects(targets, true).filter((hit) => !movingId || propIdOfHit(hit.object) !== movingId)
+  }
+
+  /** Ghost pose (world) expressed in the room frame, the space placed props are stored in. */
+  function ghostPoseInRoom(): { position: THREE.Vector3; quaternion: THREE.Quaternion } {
+    const position = ghost.root.position.clone()
+    const quaternion = ghost.root.quaternion.clone()
+    if (!apartmentEnvGroup) return { position, quaternion }
+    apartmentEnvGroup.updateMatrixWorld(true)
+    const roomToWorld = apartmentEnvGroup.getWorldQuaternion(new THREE.Quaternion())
+    return { position: apartmentEnvGroup.worldToLocal(position), quaternion: roomToWorld.invert().multiply(quaternion) }
   }
 
   /** Pose that lays the ghost flat against the hit surface, pushed out so its box does not sink into it. */
@@ -259,7 +269,7 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
     ghost.tickFeedback(dt, smoothPos)
     const st = currentState.value
     const movingId = st.kind === 'preview_existing' ? st.objectId : ''
-    if (deps.currentRoomLabel.value === 'apartment') physics.syncProps(movingId)
+    if (deps.canDecorate.value) physics.syncProps(movingId)
 
     if (st.kind === 'idle' || !ghost.hasContent()) return
     const cam = deps.getCamera()
@@ -296,7 +306,7 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
 
   /** Esc cancels, R / Shift+R rotate by 15°. Returns true when the key was used. */
   function onKeyDown(e: KeyboardEvent): boolean {
-    if (deps.currentRoomLabel.value !== 'apartment' || e.repeat || currentState.value.kind === 'idle') return false
+    if (!deps.canDecorate.value || e.repeat || currentState.value.kind === 'idle') return false
     if (e.code === 'Escape') cancelPreview()
     else if (matchesRotateCW(e)) userYawTarget += YAW_STEP
     else if (matchesRotateCCW(e)) userYawTarget -= YAW_STEP
@@ -305,7 +315,7 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
   }
 
   function tryCommitPreview(): void {
-    if (!deps.canEditApartment.value) return
+    if (!deps.canDecorate.value) return
     const st = currentState.value
     if (st.kind === 'idle' || !ghost.hasContent()) return
     if (!currentValidity.value) {
@@ -313,18 +323,19 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
       return
     }
     const room = deps.getColyseusRoom()
-    if (!room || deps.currentRoomLabel.value !== 'apartment') return
+    if (!room || !deps.canDecorate.value) return
 
+    const pose = ghostPoseInRoom()
     if (st.kind === 'preview_new') {
-      const euler = new THREE.Euler().setFromQuaternion(ghost.root.quaternion, 'XYZ')
+      const euler = new THREE.Euler().setFromQuaternion(pose.quaternion, 'XYZ')
       room.send('apartment_spawn_request', {
         objectId: crypto.randomUUID(),
         objectKey: st.itemDef.objectKey,
         variant: st.itemDef.variant ?? 'default',
         color: st.itemDef.defaultColor ?? DEFAULT_GHOST_COLOR,
-        x: ghost.root.position.x,
-        y: ghost.root.position.y - 0.5,
-        z: ghost.root.position.z,
+        x: pose.position.x,
+        y: pose.position.y - 0.5,
+        z: pose.position.z,
         rotX: euler.x,
         rotY: euler.y,
         rotZ: euler.z,
@@ -335,8 +346,8 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
     }
 
     const mesh = st.sourceMesh
-    mesh.position.copy(ghost.root.position)
-    mesh.quaternion.copy(ghost.root.quaternion)
+    mesh.position.copy(pose.position)
+    mesh.quaternion.copy(pose.quaternion)
     mesh.visible = true
     toIdle()
     deps.persistApartmentTransformForMesh(mesh, true)
@@ -345,7 +356,7 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
 
   /** Returns true when the click was used for placement (so it must not also open a door). */
   function onPointerDown(e: MouseEvent): boolean {
-    if (deps.currentRoomLabel.value !== 'apartment' || !deps.canEditApartment.value || !deps.pointerLocked.value) {
+    if (!deps.canDecorate.value || !deps.pointerLocked.value) {
       return false
     }
     if (deps.getApartmentInventoryOpen()) return false
