@@ -130,6 +130,7 @@ class HousingApiTest extends TestCase
         $response->assertJsonPath('unit.tax_due_at', '2026-09-23T12:00:00+00:00');
         $response->assertJsonPath('unit.tax_coins', (int) ceil($unit->price_coins * 0.05));
         $response->assertJsonPath('unit.occupant_name', $owner['username']);
+        $response->assertJsonPath('unit.interior_bounds', $unit->interior_bounds);
 
         Carbon::setTestNow();
     }

@@ -64,6 +64,8 @@ export function createPlayer(client, options, colorIndex, spawn) {
     color: COLORS[colorIndex % COLORS.length],
     ...spawn,
     ry: 0,
+    lastMoveAt: Date.now(),
+    lastHousingRefreshAt: 0,
     // 'city', or 'apartment' for any interior (a house, or a work building when workKey is set)
     zone: 'city',
     apartmentOwnerId: null,

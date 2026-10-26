@@ -8,6 +8,7 @@ import { terrainHeightAt } from '../../game/town/terrainHeight'
 import { buildingFloorAt, updateOpenHouseVisibility } from '../../game/town/openHouses'
 
 const MOVE_SPEED = 8
+const MAX_FRAME_DT = 0.1
 const MOUSE_SENSITIVITY = 0.002
 /** Position updates sent to the server at most this often (ms). */
 const EMIT_INTERVAL_MS = 50
@@ -109,7 +110,7 @@ export function useGameMovement(deps: UseGameMovementDeps) {
   function animate() {
     frameId = requestAnimationFrame(animate)
     const now = performance.now()
-    const dt = (now - lastTime) / 1000
+    const dt = Math.min((now - lastTime) / 1000, MAX_FRAME_DT)
     lastTime = now
     // without pointer lock the player stands still, but door prompts must stay accurate
     if (pointerLocked.value) updateMovement(dt)

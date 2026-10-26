@@ -192,6 +192,9 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('housing_units_sync', (data: { units?: unknown }) => syncHousingUnits(data.units))
     room.onMessage('house_furniture_sync', (data: { houses: HouseFurniturePayload[] }) => deps.onHouseFurnitureSync(data.houses))
     room.onMessage('doors_sync', (data: { openDoors: string[] }) => deps.onDoorsSync(data.openDoors))
+    room.onMessage('position_correction', (data: { x: number; y: number; z: number }) => {
+      setMyPosition(data.x, data.y, data.z)
+    })
     room.onMessage('door_error', (data: { message: string }) => {
       deps.roomMessage.value = data.message
     })

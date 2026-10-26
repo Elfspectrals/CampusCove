@@ -2,7 +2,11 @@ import { Room } from 'colyseus'
 import { enterWork, exitBuilding, pickupObject, saveObject, sendInventory, setDecoratedHouse } from './apartments.js'
 import { callBackendJson, parseAccountId, resolveIdentity } from './backend.js'
 import { CITY_MAX_PLAYERS, CITY_SPAWN_RADIUS } from './config.js'
+
+const HOUSING_REFRESH_COOLDOWN_MS = 2000
+const HOUSING_POLL_MS = 60_000
 import { canUseDoor, isWithinDoorReach } from './doors.js'
+import { moveRejection } from './movement.js'
 import {
   createPlayer,
   normalizeAppearanceIds,
@@ -40,6 +44,7 @@ export class CityRoom extends Room {
     this.onMessage('apartment_transform_request', (client, payload) => saveObject(this, client, payload, false))
     this.onMessage('apartment_pickup_request', (client, payload) => pickupObject(this, client, payload))
     this.onMessage('apartment_inventory_request', (client) => sendInventory(this, client))
+    this.clock.setInterval(() => void this.pollHousingUnits(), HOUSING_POLL_MS)
   }
 
   async onAuth(_client, options) {
@@ -111,6 +116,7 @@ export class CityRoom extends Room {
   moveToZone(client, player, change) {
     this.forEachVisibleClient(player, (c) => c.send('user_left', { sessionId: client.sessionId }), client)
     change()
+    player.lastMoveAt = Date.now()
     client.send('user_zone_changed', {
       sessionId: client.sessionId,
       zone: player.zone,
@@ -129,10 +135,22 @@ export class CityRoom extends Room {
   onMove(client, payload) {
     const player = this.players.get(client.sessionId)
     if (!player || !payload || typeof payload !== 'object') return
-    player.x = normalizeNumber(payload.x, player.x)
+    const x = normalizeNumber(payload.x, player.x)
+    const z = normalizeNumber(payload.z, player.z)
+    const now = Date.now()
+    if (player.zone === 'city' && moveRejection(this, player, x, z, now) !== null) {
+      client.send('position_correction', { x: player.x, y: player.y, z: player.z })
+      return
+    }
+    player.x = x
     player.y = normalizeNumber(payload.y, player.y)
-    player.z = normalizeNumber(payload.z, player.z)
+    player.z = z
     player.ry = normalizeNumber(payload.ry, player.ry)
+    player.lastMoveAt = now
+    this.broadcastMove(client, player)
+  }
+
+  broadcastMove(client, player) {
     const { x, y, z, ry } = player
     this.forEachVisibleClient(player, (c) => c.send('user_moved', { sessionId: client.sessionId, x, y, z, ry }), client)
   }
@@ -162,10 +180,25 @@ export class CityRoom extends Room {
     const data = await callBackendJson(token, '/housing/units', 'GET')
     const previous = new Map(this.housingUnits.map((u) => [u.public_id, u]))
     this.housingUnits = Array.isArray(data?.units) ? data.units : []
+    const justLocked = this.housingUnits.filter((u) => u.door_locked === true && previous.get(u.public_id)?.door_locked !== true)
     for (const unitId of this.openDoors) {
       const unit = this.housingUnits.find((u) => u.public_id === unitId)
-      const justLocked = unit?.door_locked === true && previous.get(unitId)?.door_locked !== true
-      if (!unit || unit.status !== 'occupied' || justLocked) this.openDoors.delete(unitId)
+      if (!unit || unit.status !== 'occupied' || justLocked.includes(unit)) this.openDoors.delete(unitId)
+    }
+  }
+
+  async pollHousingUnits() {
+    const token = [...this.players.values()].find((p) => p.token)?.token
+    if (!token) return
+    try {
+      const before = JSON.stringify(this.housingUnits)
+      await this.fetchHousingUnits(token)
+      if (JSON.stringify(this.housingUnits) === before) return
+      const payload = { units: this.housingUnits }
+      this.forEachVisibleClient({ zone: 'city' }, (c) => c.send('housing_units_sync', payload))
+      this.broadcastDoors()
+    } catch (error) {
+      warn('housing poll failed', error)
     }
   }
 
@@ -188,6 +221,9 @@ export class CityRoom extends Room {
   async onHousingRefresh(client) {
     const player = this.players.get(client.sessionId)
     if (!player?.token) return
+    const now = Date.now()
+    if (now - player.lastHousingRefreshAt < HOUSING_REFRESH_COOLDOWN_MS) return
+    player.lastHousingRefreshAt = now
     try {
       await this.fetchHousingUnits(player.token)
       const payload = { units: this.housingUnits }
