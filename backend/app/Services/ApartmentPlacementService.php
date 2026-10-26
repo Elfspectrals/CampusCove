@@ -18,7 +18,9 @@ use Illuminate\Support\Facades\DB;
 
 class ApartmentPlacementService
 {
-    private const DEFAULT_TEMPLATE_KEY = 'starter_loft';
+    private const ROOM_HEIGHT = 3.0;
+
+    private const FLOOR_TOLERANCE = 0.01;
 
     /**
      * @var list<string>
@@ -60,7 +62,7 @@ class ApartmentPlacementService
     public function resolveApartmentState(int $actorAccountId, int $ownerAccountId, ?string $templateKey = null): array
     {
         $this->housingService->expireDueLeases();
-        $template = $this->normalizeTemplateKey($templateKey);
+        $template = $this->occupiedHouse($ownerAccountId, $templateKey)->templateKey();
         $canEdit = $this->canEditApartment($actorAccountId, $ownerAccountId, $template);
 
         if ($canEdit) {
@@ -167,9 +169,10 @@ class ApartmentPlacementService
         ?string $templateKey,
         array $payload
     ): array {
-        $template = $this->normalizeTemplateKey($templateKey);
+        $house = $this->occupiedHouse($ownerAccountId, $templateKey);
+        $template = $house->templateKey();
 
-        return DB::transaction(function () use ($actorAccountId, $ownerAccountId, $template, $payload): array {
+        return DB::transaction(function () use ($actorAccountId, $ownerAccountId, $house, $template, $payload): array {
             [$room, $roomContainerId] = $this->resolveOrCreateApartment($ownerAccountId, $template);
             $roomId = (int) $room->room_id;
             $this->assertCanEditApartment($actorAccountId, $ownerAccountId, $roomId);
@@ -195,6 +198,7 @@ class ApartmentPlacementService
                 $roomContainerId
             );
             $position = $this->normalizeTransform($payload);
+            $this->assertInsideHouse($house, $position);
             $variant = $this->normalizeNullableString($payload['variant'] ?? null);
             $color = $this->normalizeNullableColor($payload['color'] ?? null);
             $state = [
@@ -263,9 +267,10 @@ class ApartmentPlacementService
         ?string $templateKey,
         array $payload
     ): array {
-        $template = $this->normalizeTemplateKey($templateKey);
+        $house = $this->occupiedHouse($ownerAccountId, $templateKey);
+        $template = $house->templateKey();
 
-        return DB::transaction(function () use ($actorAccountId, $ownerAccountId, $template, $payload): array {
+        return DB::transaction(function () use ($actorAccountId, $ownerAccountId, $house, $template, $payload): array {
             [$room, ] = $this->resolveOrCreateApartment($ownerAccountId, $template);
             $roomId = (int) $room->room_id;
             $this->assertCanEditApartment($actorAccountId, $ownerAccountId, $roomId);
@@ -282,6 +287,7 @@ class ApartmentPlacementService
                 ? $itemDef->model_glb
                 : null;
             $position = $this->normalizeTransform($payload);
+            $this->assertInsideHouse($house, $position);
             $variant = array_key_exists('variant', $payload)
                 ? $this->normalizeNullableString($payload['variant'])
                 : $this->normalizeNullableString($state['variant'] ?? null);
@@ -314,7 +320,7 @@ class ApartmentPlacementService
         ?string $templateKey,
         string $objectId
     ): array {
-        $template = $this->normalizeTemplateKey($templateKey);
+        $template = $this->occupiedHouse($ownerAccountId, $templateKey)->templateKey();
 
         return DB::transaction(function () use ($actorAccountId, $ownerAccountId, $template, $objectId): array {
             [$room, ] = $this->resolveOrCreateApartment($ownerAccountId, $template);
@@ -624,14 +630,35 @@ class ApartmentPlacementService
         return 'apartment:'.$ownerAccountId.':'.$templateKey;
     }
 
-    private function normalizeTemplateKey(?string $templateKey): string
+    private function occupiedHouse(int $ownerAccountId, ?string $templateKey): HousingUnit
     {
-        if (! is_string($templateKey)) {
-            return self::DEFAULT_TEMPLATE_KEY;
+        $house = $this->housingService->findOccupiedUnitForAccount($ownerAccountId);
+        if ($house === null) {
+            throw new ApartmentPlacementException('no_house', 'This player does not own a house.', 404);
         }
-        $v = trim($templateKey);
+        $requested = is_string($templateKey) ? trim($templateKey) : '';
+        if ($requested !== '' && $requested !== $house->templateKey()) {
+            throw new ApartmentPlacementException('template_mismatch', 'This is not the house of this player.', 422);
+        }
 
-        return $v !== '' ? $v : self::DEFAULT_TEMPLATE_KEY;
+        return $house;
+    }
+
+    /**
+     * @param array{x:float,y:float,z:float,rotX:float,rotY:float,rotZ:float} $position
+     */
+    private function assertInsideHouse(HousingUnit $house, array $position): void
+    {
+        $bounds = $house->interior_bounds;
+        if (! is_array($bounds)) {
+            throw new ApartmentPlacementException('house_bounds_missing', 'This house has no interior bounds.', 500);
+        }
+        $inside = $position['x'] >= $bounds['minX'] && $position['x'] <= $bounds['maxX']
+            && $position['z'] >= $bounds['minZ'] && $position['z'] <= $bounds['maxZ']
+            && $position['y'] >= -self::FLOOR_TOLERANCE && $position['y'] <= self::ROOM_HEIGHT;
+        if (! $inside) {
+            throw new ApartmentPlacementException('out_of_bounds', 'Furniture must stay inside the house.', 422);
+        }
     }
 
     private function normalizeObjectId(mixed $raw): string

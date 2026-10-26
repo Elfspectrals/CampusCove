@@ -24,6 +24,7 @@ class HousingUnit extends Model
         'model_key',
         'status',
         'occupant_account_id',
+        'interior_bounds',
         'lease_expires_at',
         'room_id',
     ];
@@ -41,6 +42,7 @@ class HousingUnit extends Model
             'occupant_account_id' => 'integer',
             'room_id' => 'integer',
             'lease_expires_at' => 'datetime',
+            'interior_bounds' => 'array',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
         ];

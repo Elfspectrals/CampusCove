@@ -28,6 +28,20 @@ class HousingUnitSeeder extends Seeder
         ['house_10', 'buy', 4000, -9.023, 1.25, 27.771, '#8A5A3A'],   // Forest Lodge
     ];
 
+    /** @var array<string, array{minX:float,maxX:float,minZ:float,maxZ:float}> */
+    private const INTERIOR_BOUNDS = [
+        'house_01' => ['minX' => -4.1, 'maxX' => 3.9, 'minZ' => -2.1, 'maxZ' => 5.4],
+        'house_02' => ['minX' => -4.6, 'maxX' => 4.4, 'minZ' => -2.1, 'maxZ' => 5.4],
+        'house_03' => ['minX' => -4.35, 'maxX' => 4.15, 'minZ' => -2.6, 'maxZ' => 5.4],
+        'house_04' => ['minX' => -4.9, 'maxX' => 4.9, 'minZ' => -3.6, 'maxZ' => 5.2],
+        'house_05' => ['minX' => -4.4, 'maxX' => 4.4, 'minZ' => -3.6, 'maxZ' => 5.2],
+        'house_06' => ['minX' => -4.65, 'maxX' => 4.65, 'minZ' => -3.6, 'maxZ' => 5.2],
+        'house_07' => ['minX' => -5.4, 'maxX' => 5.4, 'minZ' => -3.6, 'maxZ' => 5.2],
+        'house_08' => ['minX' => -5.65, 'maxX' => 5.65, 'minZ' => -4.1, 'maxZ' => 5.2],
+        'house_09' => ['minX' => -5.4, 'maxX' => 5.4, 'minZ' => -4.6, 'maxZ' => 5.2],
+        'house_10' => ['minX' => -5.9, 'maxX' => 5.9, 'minZ' => -4.6, 'maxZ' => 5.2],
+    ];
+
     public function run(): void
     {
         // Legacy MVP cubes (no model_key) are replaced by the houses; occupied ones are left alone.
@@ -44,6 +58,7 @@ class HousingUnitSeeder extends Seeder
                 'pos_z' => $z,
                 'size' => 2.5,
                 'base_color_hex' => $color,
+                'interior_bounds' => self::INTERIOR_BOUNDS[$key],
             ]);
             if (! $unit->exists) {
                 $unit->status = 'vacant';

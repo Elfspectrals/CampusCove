@@ -6,12 +6,14 @@ import { createPlacementGhost, DEFAULT_GHOST_COLOR } from '../../game/placement/
 import { fetchCollisionFile, type CollisionFileJson } from '../../game/collision/worldCollision'
 import { apartmentObjectIdOf, createPlacementPhysics } from '../../game/placement/placementPhysics'
 import type { ApartmentEnvironmentBuildResult } from '../../game/roomEnvironments'
+import { APARTMENT_ROOM_HEIGHT } from '../../game/gameRoomConstants'
 
 const POS_SMOOTH_PER_FRAME = 0.35
 const YAW_SMOOTH_PER_FRAME = 0.25
 const ROT_TAU_S = 0.028
 const RAYCAST_MAX = 24
 const YAW_STEP = Math.PI / 12
+const FLOOR_TOLERANCE = 0.01
 
 const UP = new THREE.Vector3(0, 1, 0)
 const DOWN = new THREE.Vector3(0, -1, 0)
@@ -74,6 +76,7 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
   const ghost = createPlacementGhost()
   let apartmentEnvGroup: THREE.Group | null = null
   let roomCollision: Promise<CollisionFileJson | null> | null = null
+  let roomBounds: CollisionFileJson['bounds'] = null
   let watchStopOwned: WatchStopHandle | null = null
 
   const raycaster = new THREE.Raycaster()
@@ -183,6 +186,9 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
       console.error('[placement] room collision failed to load, overlaps are not checked', error)
       return null
     })
+    void roomCollision.then((room) => {
+      roomBounds = room?.bounds ?? null
+    })
     void ensureWorld()
   }
 
@@ -193,6 +199,7 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
     physics.dispose()
     apartmentEnvGroup = null
     roomCollision = null
+    roomBounds = null
   }
 
   function registerApartmentProp(mesh: THREE.Mesh): void {
@@ -229,6 +236,14 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
     raycaster.setFromCamera(ndcCenter, camera)
     raycaster.far = RAYCAST_MAX
     return raycaster.intersectObjects(targets, true).filter((hit) => !movingId || propIdOfHit(hit.object) !== movingId)
+  }
+
+  function ghostInsideRoom(): boolean {
+    if (!roomBounds) return true
+    const { x, y, z } = ghostPoseInRoom().position
+    const base = y - 0.5
+    return x >= roomBounds.minX && x <= roomBounds.maxX && z >= roomBounds.minZ && z <= roomBounds.maxZ
+      && base >= -FLOOR_TOLERANCE && base <= APARTMENT_ROOM_HEIGHT
   }
 
   /** Ghost pose (world) expressed in the room frame, the space placed props are stored in. */
@@ -294,7 +309,7 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
     ghost.applyShake()
 
     const ignored = new Set([movingId, supportPropId].filter(Boolean))
-    const valid = !physics.ghostIntersects(ghost.root, ignored)
+    const valid = ghostInsideRoom() && !physics.ghostIntersects(ghost.root, ignored)
     if (ghost.setValid(valid)) {
       currentValidity.value = valid
       crosshairTint.value = valid ? 'valid' : 'invalid'
@@ -386,6 +401,7 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
     physics.dispose()
     apartmentEnvGroup = null
     roomCollision = null
+    roomBounds = null
   }
 
   return {

@@ -91,7 +91,7 @@ export async function saveObject(room, client, payload, isSpawn) {
       house.player.token,
       isSpawn ? '/apartments/spawn' : '/apartments/transform',
       isSpawn ? 'POST' : 'PATCH',
-      { owner_account_id: house.ownerAccountId, template_key: house.templateKey, ...payload }
+      { ...payload, owner_account_id: house.ownerAccountId, template_key: house.templateKey }
     )
     const saved = response?.object
     if (!saved || typeof saved.objectId !== 'string') return
