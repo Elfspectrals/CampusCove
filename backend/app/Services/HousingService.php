@@ -134,6 +134,69 @@ final class HousingService
         return $this->claimUnit($account, $unitPublicId, 'buy', 'housing_buy');
     }
 
+    public function giveKeys(Account $owner, int $targetAccountId): HousingUnit
+    {
+        $unit = $this->ownedUnitForKeys($owner, $targetAccountId);
+        if (! Account::query()->whereKey($targetAccountId)->exists()) {
+            throw new HousingRejectedException('account_not_found', 'This player does not exist.', 404);
+        }
+        DB::statement(
+            '
+            INSERT INTO room_memberships (room_id, account_id, role, created_at)
+            VALUES (?, ?, ?, NOW())
+            ON CONFLICT (room_id, account_id)
+            DO UPDATE SET role = EXCLUDED.role
+            ',
+            [(int) $unit->room_id, $targetAccountId, 'co_owner']
+        );
+
+        return $unit->fresh(['room']);
+    }
+
+    public function takeKeys(Account $owner, int $targetAccountId): HousingUnit
+    {
+        $unit = $this->ownedUnitForKeys($owner, $targetAccountId);
+        RoomMembership::query()
+            ->where('room_id', (int) $unit->room_id)
+            ->where('account_id', $targetAccountId)
+            ->where('role', 'co_owner')
+            ->delete();
+
+        return $unit->fresh(['room']);
+    }
+
+    /**
+     * @return list<int>
+     */
+    public function keyHolderIds(HousingUnit $unit): array
+    {
+        if ($unit->room_id === null) {
+            return [];
+        }
+
+        return RoomMembership::query()
+            ->where('room_id', (int) $unit->room_id)
+            ->where('role', 'co_owner')
+            ->orderBy('account_id')
+            ->pluck('account_id')
+            ->map(fn ($id): int => (int) $id)
+            ->all();
+    }
+
+    private function ownedUnitForKeys(Account $owner, int $targetAccountId): HousingUnit
+    {
+        $ownerId = (int) $owner->getAuthIdentifier();
+        $unit = $this->findOccupiedUnitForAccount($ownerId);
+        if ($unit === null || $unit->room_id === null) {
+            throw new HousingRejectedException('no_house', 'You do not own a house.', 404);
+        }
+        if ($targetAccountId === $ownerId) {
+            throw new HousingRejectedException('cannot_key_self', 'You already own this house.', 422);
+        }
+
+        return $unit;
+    }
+
     public function findOccupiedUnitForAccount(int $accountId): ?HousingUnit
     {
         return HousingUnit::query()
@@ -329,6 +392,7 @@ final class HousingService
             'tax_due_at' => $unit->tax_due_at?->toIso8601String(),
             'room_public_id' => $unit->room !== null ? (string) $unit->room->public_id : null,
             'template_key' => $unit->templateKey(),
+            'key_holder_account_ids' => $this->keyHolderIds($unit),
         ];
     }
 }

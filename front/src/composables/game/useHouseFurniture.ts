@@ -8,8 +8,8 @@ type HouseObjects = Pick<ReturnType<typeof useApartmentObjects>, 'ensureApartmen
 
 export interface HouseFurnitureDeps {
   getScene: () => THREE.Scene | undefined
-  ownHouseKey: () => string | null
-  ownHouseObjects: HouseObjects
+  editableHouseKey: () => string | null
+  editableHouseObjects: HouseObjects
 }
 
 export function useHouseFurniture(deps: HouseFurnitureDeps) {
@@ -34,13 +34,13 @@ export function useHouseFurniture(deps: HouseFurnitureDeps) {
 
   function render(): void {
     if (!townReady) return
-    const ownKey = deps.ownHouseKey()
+    const editableKey = deps.editableHouseKey()
     const furnished = new Set<string>()
-    let ownObjects: HouseFurniturePayload['objects'] = []
+    let editableObjects: HouseFurniturePayload['objects'] = []
     for (const house of latestHouses) {
       if (!house.model_key) continue
-      if (house.model_key === ownKey) {
-        ownObjects = house.objects
+      if (house.model_key === editableKey) {
+        editableObjects = house.objects
         continue
       }
       furnished.add(house.model_key)
@@ -49,7 +49,7 @@ export function useHouseFurniture(deps: HouseFurnitureDeps) {
     for (const [houseKey, objects] of objectsByHouse) {
       if (!furnished.has(houseKey)) objects.clearApartmentObjects()
     }
-    if (ownKey) deps.ownHouseObjects.ensureApartmentObjectsFromServer(ownObjects)
+    if (editableKey) deps.editableHouseObjects.ensureApartmentObjectsFromServer(editableObjects)
   }
 
   function applyHouses(houses: HouseFurniturePayload[]): void {

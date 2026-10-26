@@ -20,6 +20,7 @@ import GameRoomMessageBanner from '../components/game/GameRoomMessageBanner.vue'
 import UiIcon from '../components/ui/UiIcon.vue'
 import { useApartmentObjects } from '../composables/game/useApartmentObjects'
 import { useHouseFurniture } from '../composables/game/useHouseFurniture'
+import { useHouseKeys } from '../composables/game/useHouseKeys'
 import { useApartmentPlacement } from '../composables/game/useApartmentPlacement'
 import { useCityHousing } from '../composables/game/useCityHousing'
 import { useGameMovement } from '../composables/game/useGameMovement'
@@ -50,12 +51,14 @@ const pointerLocked = ref(false)
 const refreshMyAppearance = ref<(() => void) | null>(null)
 const myAccountId = computed(() => getStoredAuth()?.user.account_id ?? null)
 const currentHouseKey = ref<string | null>(null)
-const ownHouseKey = computed(
-  () => housing.units.value.find((u) => u.occupant_account_id === myAccountId.value)?.model_key ?? null,
-)
-const canDecorate = computed(
-  () => currentRoomLabel.value === 'city' && ownHouseKey.value !== null && currentHouseKey.value === ownHouseKey.value,
-)
+const editableHouseKey = computed(() => {
+  const houseKey = currentHouseKey.value
+  const me = myAccountId.value
+  if (!houseKey || me === null) return null
+  const unit = housing.units.value.find((u) => u.model_key === houseKey)
+  return unit && (unit.occupant_account_id === me || unit.key_holder_account_ids.includes(me)) ? houseKey : null
+})
+const canDecorate = computed(() => editableHouseKey.value !== null)
 
 /** Eye position of the local player (plain object: written every frame). */
 const myPosition = { ...HOUSING_LOBBY_SPAWN }
@@ -82,7 +85,7 @@ const {
   getApartmentObjectMesh,
 } = useApartmentObjects({
   getScene,
-  getParent: () => (ownHouseKey.value ? openHouseInterior(ownHouseKey.value) : undefined),
+  getParent: () => (editableHouseKey.value ? openHouseInterior(editableHouseKey.value) : undefined),
   getGameRoom: () => gameRoomRef.value,
   canDecorate,
   onMeshUpserted: (mesh) => placement.registerApartmentProp(mesh),
@@ -93,8 +96,8 @@ const {
 })
 const houseFurniture = useHouseFurniture({
   getScene,
-  ownHouseKey: () => ownHouseKey.value,
-  ownHouseObjects: { ensureApartmentObjectsFromServer, clearApartmentObjects },
+  editableHouseKey: () => editableHouseKey.value,
+  editableHouseObjects: { ensureApartmentObjectsFromServer, clearApartmentObjects },
 })
 
 const placement = useApartmentPlacement({
@@ -175,6 +178,17 @@ const interactions = useInteractionTargets({
 })
 const { doorPrompt } = interactions
 
+const houseKeys = useHouseKeys({
+  getScene,
+  getCamera,
+  canvasRef,
+  gameRoomRef,
+  roomMessage,
+  myHouse: () => housing.units.value.find((u) => u.occupant_account_id === myAccountId.value) ?? null,
+  promptsHidden: () => inventoryOpen.value || currentRoomLabel.value !== 'city',
+})
+const { keyPrompt } = houseKeys
+
 const environment = useRoomEnvironment({
   getScene,
   getRenderer,
@@ -207,6 +221,7 @@ function setRoomEnvironment(kind: 'city' | 'apartment', templateKey?: string, wo
 // ---------------------------------------------------------------- input, loop, realtime
 
 function handleExtraKeyDown(e: KeyboardEvent): boolean {
+  if (houseKeys.onKeyDown(e)) return true
   if (e.code === 'KeyC' && !e.repeat) {
     const scene = getScene()
     if (!scene) return true
@@ -243,6 +258,7 @@ const movement = useGameMovement({
     currentHouseKey.value = currentRoomLabel.value === 'city' ? houseKeyAt(myPosition.x, myPosition.z) : null
     if (canDecorate.value) placement.tick(dt)
     interactions.updatePrompts()
+    houseKeys.updateKeyPrompt()
   },
 })
 const { requestPointerLock, onCanvasMouseDown } = movement
@@ -292,16 +308,14 @@ watch(inventoryOpen, (open) => {
   }
 })
 
-watch(ownHouseKey, () => houseFurniture.refresh())
-
-watch(canDecorate, (inside) => {
-  const houseKey = ownHouseKey.value
+watch(editableHouseKey, (houseKey) => {
+  houseFurniture.refresh()
+  const unit = houseKey ? housing.units.value.find((u) => u.model_key === houseKey) : undefined
+  gameRoomRef.value?.send('decorate_house', { templateKey: unit?.template_key ?? null })
+  placement.setPlayerInsideApartment(false)
   const interior = houseKey ? openHouseInterior(houseKey) : undefined
   const house = houseKey ? findHouse(houseKey) : null
-  if (!inside || !interior || !house) {
-    placement.setPlayerInsideApartment(false)
-    return
-  }
+  if (!interior || !house) return
   placement.registerApartmentEnvironment({
     group: interior,
     house: { key: house.key, interiorCollisionUrl: house.interiorCollisionUrl },
@@ -419,6 +433,14 @@ const crosshairClass = computed(() => {
       :screen-y="doorPrompt.y"
       :action-label="doorPrompt.action"
       :detail-label="doorPrompt.detail"
+    />
+    <GameInteractionPrompt
+      v-if="keyPrompt"
+      :screen-x="keyPrompt.x"
+      :screen-y="keyPrompt.y"
+      key-label="K"
+      :action-label="keyPrompt.action"
+      :detail-label="keyPrompt.detail"
     />
     <GamePlacementHud :visible="placementPreviewActive" :hints="placementHudHints" />
     <GamePlayerHotbar

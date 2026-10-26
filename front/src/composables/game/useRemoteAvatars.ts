@@ -26,6 +26,7 @@ export interface RemoteLocation {
 
 interface RemoteAvatar extends RemoteLocation {
   userId: string
+  pseudo: string
   group: THREE.Group
   /** Last position / yaw received; the group glides towards it in `tick`. */
   x: number
@@ -90,10 +91,11 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     return next
   }
 
-  function tagAvatar(group: THREE.Group, sessionId: string, userId: string): void {
+  function tagAvatar(group: THREE.Group, sessionId: string, userId: string, pseudo: string): void {
     group.userData.isRemoteAvatar = true
     group.userData.sessionId = sessionId
     group.userData.userId = userId
+    group.userData.pseudo = pseudo
   }
 
   /** Drop any avatar group left in the scene for this session or user (safety net against duplicates). */
@@ -174,13 +176,14 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     if (latestSessionId && latestSessionId !== sessionId) remove(latestSessionId)
     removeOtherSessionsOf(data.id, sessionId)
     removeSceneDuplicates(sessionId, data.id)
-    tagAvatar(group, sessionId, data.id)
+    tagAvatar(group, sessionId, data.id, data.pseudo)
     const ry = parseYaw(data.ry)
     placeAvatar(group, data.x, data.y, data.z, ry)
     scene.add(group)
     avatars.set(sessionId, {
       ...location,
       userId: data.id,
+      pseudo: data.pseudo,
       group,
       x: data.x,
       y: data.y,
@@ -226,7 +229,7 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     }
     removeOtherSessionsOf(latest.userId, sessionId)
     removeSceneDuplicates(sessionId, latest.userId)
-    tagAvatar(group, sessionId, latest.userId)
+    tagAvatar(group, sessionId, latest.userId, latest.pseudo)
     scene.remove(latest.group)
     disposeObject3D(latest.group)
     placeAvatar(group, latest.x, latest.y, latest.z, latest.ry)

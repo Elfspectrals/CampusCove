@@ -156,6 +156,47 @@ class ApartmentPlacementApiTest extends TestCase
         ])->assertStatus(422)->assertJsonPath('code', 'out_of_bounds');
     }
 
+    public function test_key_holder_decorates_until_the_owner_takes_the_keys_back(): void
+    {
+        $catalog = $this->createApartmentAssetCatalog();
+        $owner = $this->registerAndCreditWallet(10_000, 'coins');
+        $friend = $this->registerAndCreditWallet(10_000, 'coins');
+        $templateKey = $this->buyHouse($owner);
+        $this->postJson('/api/shop/purchase', [
+            'shop_item_public_id' => $catalog->public_id,
+            'quantity' => 2,
+        ], [
+            'Authorization' => 'Bearer '.$friend['token'],
+        ])->assertOk();
+
+        $this->postJson('/api/housing/keys', ['account_id' => $friend['account_id']], [
+            'Authorization' => 'Bearer '.$owner['token'],
+        ])->assertOk()->assertJsonPath('unit.key_holder_account_ids', [$friend['account_id']]);
+
+        $this->postJson('/api/apartments/spawn', $this->spawnPayload($owner['account_id'], $templateKey, 0, 0), [
+            'Authorization' => 'Bearer '.$friend['token'],
+        ])->assertOk();
+
+        $this->deleteJson('/api/housing/keys/'.$friend['account_id'], [], [
+            'Authorization' => 'Bearer '.$owner['token'],
+        ])->assertOk()->assertJsonPath('unit.key_holder_account_ids', []);
+
+        $friendAccount = Account::query()->findOrFail($friend['account_id']);
+        $this->actingAs($friendAccount, 'sanctum')
+            ->postJson('/api/apartments/spawn', $this->spawnPayload($owner['account_id'], $templateKey, 0, 0))
+            ->assertStatus(403)->assertJsonPath('code', 'apartment_edit_forbidden');
+    }
+
+    public function test_owner_cannot_give_keys_to_themselves(): void
+    {
+        $owner = $this->registerAndCreditWallet(10_000, 'coins');
+        $this->buyHouse($owner);
+
+        $this->postJson('/api/housing/keys', ['account_id' => $owner['account_id']], [
+            'Authorization' => 'Bearer '.$owner['token'],
+        ])->assertStatus(422)->assertJsonPath('code', 'cannot_key_self');
+    }
+
     /**
      * @param array{token: string, account_id: int} $owner
      */

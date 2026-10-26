@@ -6,6 +6,7 @@ export const KEY_BINDINGS = {
   /** Keyboard fallback; doors are used with a left click. */
   interact: 'KeyI',
   apartmentInventoryToggle: 'KeyE',
+  houseKeys: 'KeyK',
   /** Rotate placement ghost clockwise (no Shift). */
   rotateCW: 'KeyR',
   /** Same physical key as rotateCW; matcher uses Shift for CCW. */

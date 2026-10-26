@@ -2,6 +2,7 @@
  * Housing API (Laravel routes under /api):
  * - GET  /housing/units
  * - POST /housing/units/{publicId}/buy
+ * - POST /housing/keys, DELETE /housing/keys/{accountId}
  */
 import { fetchCurrentUser } from './auth'
 import { apiRequest, isRecord } from './http'
@@ -25,6 +26,7 @@ function parseHousingUnit(raw: unknown): HousingUnitPayload | null {
   if (!(raw.tax_due_at === null || typeof raw.tax_due_at === 'string')) return null
   if (!(raw.room_public_id === null || typeof raw.room_public_id === 'string')) return null
   if (typeof raw.template_key !== 'string') return null
+  if (!Array.isArray(raw.key_holder_account_ids) || !raw.key_holder_account_ids.every((id) => typeof id === 'number')) return null
 
   return {
     unit_id: raw.unit_id,
@@ -43,6 +45,7 @@ function parseHousingUnit(raw: unknown): HousingUnitPayload | null {
     tax_due_at: raw.tax_due_at,
     room_public_id: raw.room_public_id,
     template_key: raw.template_key,
+    key_holder_account_ids: raw.key_holder_account_ids,
   }
 }
 
@@ -76,6 +79,14 @@ export async function fetchHousingUnits(): Promise<HousingUnitsResponse> {
 
 async function refreshWalletAfterClaim(): Promise<void> {
   await fetchCurrentUser()
+}
+
+export async function giveHouseKeys(accountId: number): Promise<void> {
+  await apiRequest('/housing/keys', { method: 'POST', body: { account_id: accountId } })
+}
+
+export async function takeHouseKeys(accountId: number): Promise<void> {
+  await apiRequest(`/housing/keys/${accountId}`, { method: 'DELETE' })
 }
 
 export async function buyHousingUnit(publicId: string): Promise<HousingUnitPayload> {

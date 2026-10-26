@@ -34,6 +34,7 @@ export interface HousingUnitPayload {
   tax_due_at: string | null
   room_public_id: string | null
   template_key: string
+  key_holder_account_ids: number[]
 }
 
 export interface RoomInitPayload {
