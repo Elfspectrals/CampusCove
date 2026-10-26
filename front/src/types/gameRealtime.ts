@@ -31,6 +31,7 @@ export interface HousingUnitPayload {
   model_key: string | null
   status: string
   occupant_account_id: number | null
+  occupant_name: string | null
   tax_due_at: string | null
   room_public_id: string | null
   template_key: string

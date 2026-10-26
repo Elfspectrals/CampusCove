@@ -23,6 +23,7 @@ function parseHousingUnit(raw: unknown): HousingUnitPayload | null {
   if (!(raw.model_key === undefined || raw.model_key === null || typeof raw.model_key === 'string')) return null
   if (typeof raw.status !== 'string') return null
   if (!(raw.occupant_account_id === null || typeof raw.occupant_account_id === 'number')) return null
+  if (!(raw.occupant_name === null || typeof raw.occupant_name === 'string')) return null
   if (!(raw.tax_due_at === null || typeof raw.tax_due_at === 'string')) return null
   if (!(raw.room_public_id === null || typeof raw.room_public_id === 'string')) return null
   if (typeof raw.template_key !== 'string') return null
@@ -42,6 +43,7 @@ function parseHousingUnit(raw: unknown): HousingUnitPayload | null {
     model_key: typeof raw.model_key === 'string' ? raw.model_key : null,
     status: raw.status,
     occupant_account_id: raw.occupant_account_id,
+    occupant_name: raw.occupant_name,
     tax_due_at: raw.tax_due_at,
     room_public_id: raw.room_public_id,
     template_key: raw.template_key,

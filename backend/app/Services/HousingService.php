@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Exceptions\HousingRejectedException;
 use App\Models\Account;
+use App\Models\AccountHandle;
 use App\Models\Container;
 use App\Models\EconomyTransaction;
 use App\Models\HousingUnit;
@@ -389,6 +390,9 @@ final class HousingService
             'model_key' => $unit->model_key !== null ? (string) $unit->model_key : null,
             'status' => (string) $unit->status,
             'occupant_account_id' => $unit->occupant_account_id !== null ? (int) $unit->occupant_account_id : null,
+            'occupant_name' => $unit->occupant_account_id !== null
+                ? AccountHandle::query()->where('account_id', (int) $unit->occupant_account_id)->value('username')
+                : null,
             'tax_due_at' => $unit->tax_due_at?->toIso8601String(),
             'room_public_id' => $unit->room !== null ? (string) $unit->room->public_id : null,
             'template_key' => $unit->templateKey(),

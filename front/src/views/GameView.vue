@@ -33,6 +33,7 @@ import { getWorldCollisionStats } from '../game/collision/worldCollision'
 import { HOUSING_LOBBY_SPAWN } from '../game/gameRoomConstants'
 import { createGameScene, disposeGameScene, type GameScene } from '../game/gameScene'
 import { findHouse } from '../game/assets/catalog'
+import { createDoorSigns } from '../game/town/doorSigns'
 import { houseKeyAt, openHouseInterior } from '../game/town/openHouses'
 
 const router = useRouter()
@@ -189,6 +190,16 @@ const houseKeys = useHouseKeys({
 })
 const { keyPrompt } = houseKeys
 
+const DOOR_SIGN_REFRESH_MS = 30_000
+const doorSigns = createDoorSigns()
+const refreshDoorSigns = () => doorSigns.update(housing.units.value, myAccountId.value)
+watch(housing.units, refreshDoorSigns)
+const doorSignTimer = window.setInterval(refreshDoorSigns, DOOR_SIGN_REFRESH_MS)
+void document.fonts.ready.then(() => {
+  doorSigns.invalidate()
+  refreshDoorSigns()
+})
+
 const environment = useRoomEnvironment({
   getScene,
   getRenderer,
@@ -259,6 +270,8 @@ const movement = useGameMovement({
     if (canDecorate.value) placement.tick(dt)
     interactions.updatePrompts()
     houseKeys.updateKeyPrompt()
+    if (!doorSigns.group.parent) getScene()?.add(doorSigns.group)
+    doorSigns.group.visible = currentRoomLabel.value === 'city'
   },
 })
 const { requestPointerLock, onCanvasMouseDown } = movement
@@ -391,6 +404,8 @@ onUnmounted(() => {
   placement.dispose()
   clearApartmentObjects()
   houseFurniture.dispose()
+  window.clearInterval(doorSignTimer)
+  doorSigns.dispose()
   environment.disposeRoomEnvironment()
   if (game) disposeGameScene(game)
   game = null

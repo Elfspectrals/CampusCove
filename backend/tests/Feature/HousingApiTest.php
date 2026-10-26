@@ -128,6 +128,7 @@ class HousingApiTest extends TestCase
         $response->assertOk();
         $response->assertJsonPath('unit.tax_due_at', '2026-09-23T12:00:00+00:00');
         $response->assertJsonPath('unit.tax_coins', (int) ceil($unit->price_coins * 0.05));
+        $response->assertJsonPath('unit.occupant_name', $owner['username']);
 
         Carbon::setTestNow();
     }
@@ -241,7 +242,7 @@ class HousingApiTest extends TestCase
     }
 
     /**
-     * @return array{token: string, account_id: int}
+     * @return array{token: string, account_id: int, username: string}
      */
     private function registerAndCreditWallet(int $coins, string $currency): array
     {
@@ -260,6 +261,6 @@ class HousingApiTest extends TestCase
 
         $this->setWalletBalance($accountId, $currency, $coins);
 
-        return ['token' => $token, 'account_id' => $accountId];
+        return ['token' => $token, 'account_id' => $accountId, 'username' => $username];
     }
 }
