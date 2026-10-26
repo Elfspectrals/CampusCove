@@ -3,6 +3,7 @@ import { computed, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import type { Room } from '@colyseus/sdk'
 import {
+  bodyModelGlbFromLoadout,
   defaultCosmeticColors,
   emptyCosmeticLoadout,
   fetchCharacterCosmetics,
@@ -33,6 +34,7 @@ import { KEY_BINDINGS } from '../config/keybindings'
 import { getWorldCollisionStats } from '../game/collision/worldCollision'
 import { HOUSING_LOBBY_SPAWN } from '../game/gameRoomConstants'
 import { createGameScene, disposeGameScene, type GameScene } from '../game/gameScene'
+import { createFirstPersonArms } from '../game/firstPersonArms'
 import { createHeldItem } from '../game/heldItem'
 import { findHouse } from '../game/assets/catalog'
 import { createDoorSigns } from '../game/town/doorSigns'
@@ -176,7 +178,13 @@ const interactions = useInteractionTargets({
     placement.cancelPreview()
     realtime.exitBuilding()
   },
-  onHousingDoor: () => void housing.interact(),
+  onHousingDoor: () => {
+    const unit = housing.nearbyUnit.value
+    const action = unit ? housing.actionFor(unit) : null
+    if (action === 'open' || action === 'close') arms?.use('door')
+    else if (action === 'lock') arms?.use('key')
+    void housing.interact()
+  },
   onWorkDoor: (lot) => {
     closeInventory()
     realtime.enterWork(lot.key)
@@ -199,6 +207,8 @@ const houseKeys = useHouseKeys({
 const { keyPrompt } = houseKeys
 
 const heldItem = createHeldItem()
+let arms: ReturnType<typeof createFirstPersonArms> | null = null
+watch(() => selectedItem.value?.code ?? null, () => arms?.equip())
 
 function isHouseDoorOpen(houseKey: string): boolean {
   const unit = housing.units.value.find((u) => u.model_key === houseKey)
@@ -281,7 +291,13 @@ const movement = useGameMovement({
   onToggleInventory: toggleInventory,
   onHotbarDigit: selectHotbarIndex,
   handleExtraKeyDown,
-  onCanvasMouseDown: (e) => (e.button === 2 && pointerLocked.value && housing.unlock()) || placement.onPointerDown(e),
+  onCanvasMouseDown: (e) => {
+    if (e.button === 2 && pointerLocked.value && housing.unlock()) {
+      arms?.use('key')
+      return true
+    }
+    return placement.onPointerDown(e)
+  },
   onBeforeRender: (dt) => {
     positionLabel.value = formatPosition()
     realtime.tickRemoteAvatars(dt)
@@ -290,7 +306,8 @@ const movement = useGameMovement({
     interactions.updatePrompts()
     houseKeys.updateKeyPrompt()
     if (currentRoomLabel.value === 'city') updateFrontDoors(dt, isHouseDoorOpen)
-    heldItem.update(game?.fpHands ?? null, selectedItem.value?.kind === 'tool' ? selectedItem.value.model_glb : null)
+    arms?.update(dt, myPosition)
+    heldItem.update(arms?.rightHand() ?? null, selectedItem.value?.kind === 'tool' ? selectedItem.value.model_glb : null)
     if (!doorSigns.group.parent) getScene()?.add(doorSigns.group)
     doorSigns.group.visible = currentRoomLabel.value === 'city'
   },
@@ -331,6 +348,7 @@ const realtime = useGameRealtime({
   onHousingUnitsSync: housing.applyUnits,
   onHouseFurnitureSync: houseFurniture.applyHouses,
   onDoorsSync: housing.applyOpenDoors,
+  onMyBodyModel: (bodyModelGlb) => arms?.setSkin(bodyModelGlb),
 })
 const { transitioning, switchingRoom } = realtime
 
@@ -381,8 +399,9 @@ async function bootGame() {
   }
   const cosmetics = await loadCosmeticsState()
   if (unmounted || !canvasRef.value) return
-  const handsColor = parseInt(cosmetics.colors.body.replace('#', ''), 16)
-  game = createGameScene(canvasRef.value, movement.containerSize(), handsColor)
+  game = createGameScene(canvasRef.value, movement.containerSize())
+  arms = createFirstPersonArms(game.fpHands)
+  arms.setSkin(bodyModelGlbFromLoadout(cosmetics.slots))
   setRoomEnvironment('city')
   await realtime.connectRealtime(cosmetics)
   try {
@@ -428,6 +447,7 @@ onUnmounted(() => {
   houseFurniture.dispose()
   window.clearInterval(doorSignTimer)
   doorSigns.dispose()
+  arms?.dispose()
   environment.disposeRoomEnvironment()
   if (game) disposeGameScene(game)
   game = null

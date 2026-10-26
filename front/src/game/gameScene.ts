@@ -1,6 +1,6 @@
 /** Renderer, camera and global lights of the /game view, configured for the current graphics quality. */
 import * as THREE from 'three'
-import { buildFirstPersonHands, disposeObject3D } from '../avatar/compositeAvatar'
+import { disposeObject3D } from '../avatar/compositeAvatar'
 import { HOUSING_LOBBY_SPAWN } from './gameRoomConstants'
 import { getGraphicsQuality, supportsEnvironmentMap } from './graphicsQuality'
 import { applySceneAtmosphere } from './roomEnvironments'
@@ -16,15 +16,13 @@ export interface GameScene {
   scene: THREE.Scene
   camera: THREE.PerspectiveCamera
   renderer: THREE.WebGLRenderer
-  /** First-person hands parented to the camera, shown while the pointer is locked. */
+  /** Holds the first-person arms (firstPersonArms.ts), parented to the camera, shown while the pointer is locked. */
   fpHands: THREE.Group
 }
 
 export function createGameScene(
   canvas: HTMLCanvasElement,
   size: { w: number; h: number },
-  /** Tint of the first-person hands (the player's body colour). */
-  handsColor: number,
 ): GameScene {
   const isLowQuality = getGraphicsQuality() === 'low'
 
@@ -60,7 +58,8 @@ export function createGameScene(
     clearSharedEnvironment(scene)
   }
 
-  const fpHands = buildFirstPersonHands(handsColor)
+  const fpHands = new THREE.Group()
+  fpHands.name = 'FirstPersonArms'
   fpHands.visible = false
   camera.add(fpHands)
   scene.add(camera)

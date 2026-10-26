@@ -2,7 +2,7 @@
  * Central catalog of every 3D asset served from `public/assets/`.
  *
  *   public/assets/
- *     skins/<key>/model.glb, preview.png
+ *     skins/<key>/model.glb, preview.png, fp_arms.glb
  *     houses/<key>/exterior.glb, interior.glb, interior.collision.json, preview.png
  *     town/town.glb, town.collision.json, town.layout.json
  *     showroom/new_nation.glb, new_nation.layout.json
@@ -28,6 +28,7 @@ export interface SkinAsset {
   shopCode: string
   modelUrl: string
   previewUrl: string
+  fpArmsUrl: string
   /** Granted to every player for free and worn by default. */
   isDefault: boolean
 }
@@ -48,6 +49,7 @@ const skin = (key: SkinKey, name: string, shopCode: string, isDefault = false): 
   shopCode,
   modelUrl: `${ROOT}/skins/${key}/model.glb`,
   previewUrl: `${ROOT}/skins/${key}/preview.png`,
+  fpArmsUrl: `${ROOT}/skins/${key}/fp_arms.glb`,
   isDefault,
 })
 

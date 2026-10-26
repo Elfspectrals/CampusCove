@@ -79,6 +79,7 @@ export interface GameRealtimeDeps {
   onHousingUnitsSync: (units: HousingUnitPayload[]) => void
   onHouseFurnitureSync: (houses: HouseFurniturePayload[]) => void
   onDoorsSync: (openDoorIds: string[]) => void
+  onMyBodyModel: (bodyModelGlb: string | null) => void
 }
 
 /**
@@ -333,6 +334,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
           const signature = signatureOf(latest)
           if (signature === lastSentSignature) return
           lastSentSignature = signature
+          deps.onMyBodyModel(bodyModelGlbFromLoadout(latest.slots))
           deps.gameRoomRef.value?.send('appearance', {
             slots: { body: appearanceIdsFromLoadout(latest.slots).body },
             slotHexes: { body: latest.colors.body },

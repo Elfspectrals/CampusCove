@@ -246,7 +246,7 @@ def check_grounded(objs, tol=0.03, allow=()):
 
 
 # ---------------------------------------------------------------- export
-def export_glb(path, objs):
+def export_glb(path, objs, **gltf_options):
     """Export only `objs`. Selection in the user's other scenes is saved, cleared, then restored."""
     import contextlib
     import io
@@ -275,6 +275,7 @@ def export_glb(path, objs):
             export_materials="EXPORT",
             export_cameras=False,
             export_lights=False,
+            **gltf_options,
         )
     for o in objs:
         o.select_set(False, view_layer=vl)

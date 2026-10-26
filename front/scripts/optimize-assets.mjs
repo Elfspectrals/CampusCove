@@ -73,7 +73,7 @@ function processDir(category, dir, rel) {
       continue
     }
     const out = join(DEST, category, rel, file)
-    const keepNodes = file === 'interior.glb' || (category === 'houses' && file === 'exterior.glb')
+    const keepNodes = file === 'interior.glb' || file === 'fp_arms.glb' || (category === 'houses' && file === 'exterior.glb')
     const keepLightmapUvs = category === 'houses' && file === 'interior.glb'
     optimizeGlb(full, out, { textureSize: TEXTURE_SIZE[category], keepNodes, keepLightmapUvs })
     console.log(`glb        ${category}/${join(rel, file)}  ${(statSync(out).size / 1024).toFixed(0)} KB`)

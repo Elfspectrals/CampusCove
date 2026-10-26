@@ -1,14 +1,14 @@
 import * as THREE from 'three'
 import { createGltfLoader } from './gltfLoaderFactory'
 
-const HELD_ITEM_POSITION = new THREE.Vector3(0.42, -0.14, -0.6)
-const HELD_ITEM_ROTATION = new THREE.Euler(Math.PI / 2 - 0.35, 0, Math.PI / 4, 'ZYX')
-const HELD_ITEM_SCALE = 2.6
+const HELD_ITEM_POSITION = new THREE.Vector3(-0.01, 0.045, -0.06)
+const HELD_ITEM_ROTATION = new THREE.Euler(0.6708, 0, 1.3208, 'ZYX')
+const HELD_ITEM_SCALE = 1.15
 
 export function createHeldItem() {
   const loader = createGltfLoader()
   const models = new Map<string, Promise<THREE.Object3D>>()
-  let hands: THREE.Group | null = null
+  let hands: THREE.Object3D | null = null
   let modelUrl: string | null = null
   let shown: THREE.Object3D | null = null
 
@@ -26,7 +26,7 @@ export function createHeldItem() {
     return model
   }
 
-  function update(nextHands: THREE.Group | null, nextModelUrl: string | null): void {
+  function update(nextHands: THREE.Object3D | null, nextModelUrl: string | null): void {
     if (nextHands === hands && nextModelUrl === modelUrl) return
     hands = nextHands
     modelUrl = nextModelUrl
