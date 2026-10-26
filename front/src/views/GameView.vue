@@ -156,7 +156,6 @@ const housing = useCityHousing({
 const interactions = useInteractionTargets({
   currentRoomLabel,
   myPosition,
-  myAccountId,
   getCamera,
   canvasRef,
   promptsHidden: () => inventoryOpen.value || housing.claimInFlight.value,
@@ -174,7 +173,7 @@ const interactions = useInteractionTargets({
   // Fishing gameplay is not built yet: the spots only show their prompt.
   onFishingSpot: () => window.alert('implement pechee'),
 })
-const { doorPrompt, renewPrompt } = interactions
+const { doorPrompt } = interactions
 
 const environment = useRoomEnvironment({
   getScene,
@@ -208,10 +207,6 @@ function setRoomEnvironment(kind: 'city' | 'apartment', templateKey?: string, wo
 // ---------------------------------------------------------------- input, loop, realtime
 
 function handleExtraKeyDown(e: KeyboardEvent): boolean {
-  if (e.code === 'KeyU' && !e.repeat && currentRoomLabel.value === 'city') {
-    void housing.renewNearby()
-    return true
-  }
   if (e.code === 'KeyC' && !e.repeat) {
     const scene = getScene()
     if (!scene) return true
@@ -424,13 +419,6 @@ const crosshairClass = computed(() => {
       :screen-y="doorPrompt.y"
       :action-label="doorPrompt.action"
       :detail-label="doorPrompt.detail"
-    />
-    <GameInteractionPrompt
-      v-if="renewPrompt"
-      :screen-x="renewPrompt.x"
-      :screen-y="renewPrompt.y"
-      key-label="U"
-      action-label="Renew"
     />
     <GamePlacementHud :visible="placementPreviewActive" :hints="placementHudHints" />
     <GamePlayerHotbar

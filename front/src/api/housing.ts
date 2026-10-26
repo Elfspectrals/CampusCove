@@ -1,7 +1,7 @@
 /**
  * Housing API (Laravel routes under /api):
  * - GET  /housing/units
- * - POST /housing/units/{publicId}/buy|rent|renew
+ * - POST /housing/units/{publicId}/buy
  */
 import { fetchCurrentUser } from './auth'
 import { apiRequest, isRecord } from './http'
@@ -13,7 +13,7 @@ function parseHousingUnit(raw: unknown): HousingUnitPayload | null {
   if (typeof raw.public_id !== 'string') return null
   if (typeof raw.offer_type !== 'string') return null
   if (typeof raw.price_coins !== 'number') return null
-  if (typeof raw.rent_duration_hours !== 'number') return null
+  if (typeof raw.tax_coins !== 'number') return null
   if (typeof raw.pos_x !== 'number') return null
   if (typeof raw.pos_y !== 'number') return null
   if (typeof raw.pos_z !== 'number') return null
@@ -22,7 +22,7 @@ function parseHousingUnit(raw: unknown): HousingUnitPayload | null {
   if (!(raw.model_key === undefined || raw.model_key === null || typeof raw.model_key === 'string')) return null
   if (typeof raw.status !== 'string') return null
   if (!(raw.occupant_account_id === null || typeof raw.occupant_account_id === 'number')) return null
-  if (!(raw.lease_expires_at === null || typeof raw.lease_expires_at === 'string')) return null
+  if (!(raw.tax_due_at === null || typeof raw.tax_due_at === 'string')) return null
   if (!(raw.room_public_id === null || typeof raw.room_public_id === 'string')) return null
   if (typeof raw.template_key !== 'string') return null
 
@@ -31,7 +31,7 @@ function parseHousingUnit(raw: unknown): HousingUnitPayload | null {
     public_id: raw.public_id,
     offer_type: raw.offer_type,
     price_coins: raw.price_coins,
-    rent_duration_hours: raw.rent_duration_hours,
+    tax_coins: raw.tax_coins,
     pos_x: raw.pos_x,
     pos_y: raw.pos_y,
     pos_z: raw.pos_z,
@@ -40,7 +40,7 @@ function parseHousingUnit(raw: unknown): HousingUnitPayload | null {
     model_key: typeof raw.model_key === 'string' ? raw.model_key : null,
     status: raw.status,
     occupant_account_id: raw.occupant_account_id,
-    lease_expires_at: raw.lease_expires_at,
+    tax_due_at: raw.tax_due_at,
     room_public_id: raw.room_public_id,
     template_key: raw.template_key,
   }
@@ -78,8 +78,8 @@ async function refreshWalletAfterClaim(): Promise<void> {
   await fetchCurrentUser()
 }
 
-async function postHousingAction(publicId: string, action: 'buy' | 'rent' | 'renew'): Promise<HousingUnitPayload> {
-  const data = await apiRequest(`/housing/units/${encodeURIComponent(publicId)}/${action}`, { method: 'POST' })
+export async function buyHousingUnit(publicId: string): Promise<HousingUnitPayload> {
+  const data = await apiRequest(`/housing/units/${encodeURIComponent(publicId)}/buy`, { method: 'POST' })
   if (!isRecord(data)) throw new Error('Invalid housing response')
   const unit = parseHousingUnit(data.unit)
   if (!unit) throw new Error('Invalid housing response')
@@ -87,14 +87,3 @@ async function postHousingAction(publicId: string, action: 'buy' | 'rent' | 'ren
   return unit
 }
 
-export async function buyHousingUnit(publicId: string): Promise<HousingUnitPayload> {
-  return postHousingAction(publicId, 'buy')
-}
-
-export async function rentHousingUnit(publicId: string): Promise<HousingUnitPayload> {
-  return postHousingAction(publicId, 'rent')
-}
-
-export async function renewHousingUnit(publicId: string): Promise<HousingUnitPayload> {
-  return postHousingAction(publicId, 'renew')
-}

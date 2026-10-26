@@ -1,7 +1,7 @@
 import { ref, type Ref, type ShallowRef } from 'vue'
 import type { Room } from '@colyseus/sdk'
-import { buyHousingUnit, rentHousingUnit, renewHousingUnit } from '../../api/housing'
-import { canRenewUnit, housingActionFor, type HousingUnit } from '../../game/town/housing'
+import { buyHousingUnit } from '../../api/housing'
+import { housingActionFor, type HousingUnit } from '../../game/town/housing'
 import type { HousingUnitPayload } from '../../types/gameRealtime'
 
 export interface CityHousingDeps {
@@ -11,7 +11,7 @@ export interface CityHousingDeps {
   roomMessage: Ref<string | null>
 }
 
-/** Town houses: synced unit list, the one at the player's door, and the buy / rent / renew actions. */
+/** Town houses: synced unit list, the one at the player's door, and the buy action. */
 export function useCityHousing(deps: CityHousingDeps) {
   const units = ref<HousingUnit[]>([])
   const nearbyUnit = ref<HousingUnit | null>(null)
@@ -43,21 +43,13 @@ export function useCityHousing(deps: CityHousingDeps) {
     }
   }
 
-  /** Door interaction: buy / rent a vacant house. Occupied houses are entered on foot. */
+  /** Door interaction: buy a vacant house. Occupied houses are entered on foot. */
   async function interact(): Promise<void> {
     const unit = nearbyUnit.value
     if (!unit || !deps.gameRoomRef.value || claimInFlight.value) return
     const action = housingActionFor(unit)
     if (action === 'buy') await runClaim(() => buyHousingUnit(unit.public_id), 'Housing claim failed.')
-    else if (action === 'rent') await runClaim(() => rentHousingUnit(unit.public_id), 'Housing claim failed.')
   }
 
-  /** U key: extend the lease of the rented house the player stands at. */
-  async function renewNearby(): Promise<void> {
-    const unit = nearbyUnit.value
-    if (!unit || claimInFlight.value || !canRenewUnit(unit, deps.myAccountId.value)) return
-    await runClaim(() => renewHousingUnit(unit.public_id), 'Could not renew lease.')
-  }
-
-  return { units, nearbyUnit, claimInFlight, applyUnits, houseKeyForTemplate, interact, renewNearby }
+  return { units, nearbyUnit, claimInFlight, applyUnits, houseKeyForTemplate, interact }
 }

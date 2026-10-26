@@ -35,26 +35,4 @@ class HousingController extends Controller
             'unit' => $this->housing->serializeUnit($unit),
         ]);
     }
-
-    public function rent(Request $request, string $publicId): JsonResponse
-    {
-        /** @var Account $account */
-        $account = $request->user();
-        $unit = $this->housing->claimRent($account, $publicId);
-
-        return response()->json([
-            'unit' => $this->housing->serializeUnit($unit),
-        ]);
-    }
-
-    public function renew(Request $request, string $publicId): JsonResponse
-    {
-        /** @var Account $account */
-        $account = $request->user();
-        $unit = $this->housing->renewRent($account, $publicId);
-
-        return response()->json([
-            'unit' => $this->housing->serializeUnit($unit),
-        ]);
-    }
 }

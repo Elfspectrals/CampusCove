@@ -29,7 +29,7 @@ make up-build
 | `make seed` | Shop + housing |
 | `make seed-shop` | Catalogue shop / wearables |
 | `make seed-housing` | 10 maisons de la ville |
-| `make expire-leases` | Reset locations housing expirées |
+| `make collect-taxes` | Prélève les taxes des maisons, saisit les impayées |
 | `make set-admin EMAIL=a@b.c` | Droits admin |
 | `make set-money ACCOUNT=1 CURRENCY=coins SUM=2000` | Solde (id ou email) |
 | `make fill-outfit ACCOUNT=1` | Starter wearables + outfit |

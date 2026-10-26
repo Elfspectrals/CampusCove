@@ -16,12 +16,12 @@ class HousingUnitSeeder extends Seeder
 {
     /** @var list<array{0:string,1:string,2:int,3:float,4:float,5:float,6:string}> key, offer, price, x, y, z, colour */
     private const HOUSES = [
-        ['house_01', 'rent', 90, 9.023, 1.25, 27.771, '#E8E4DA'],     // Maple Cottage
-        ['house_02', 'rent', 110, 23.623, 1.25, 17.163, '#78A0C4'],   // Bluebell Bungalow
-        ['house_03', 'rent', 120, 29.2, 1.25, 0.0, '#E8C878'],        // Sunny Nook
+        ['house_01', 'buy', 1200, 9.023, 1.25, 27.771, '#E8E4DA'],     // Maple Cottage
+        ['house_02', 'buy', 1400, 23.623, 1.25, 17.163, '#78A0C4'],   // Bluebell Bungalow
+        ['house_03', 'buy', 1500, 29.2, 1.25, 0.0, '#E8C878'],        // Sunny Nook
         ['house_04', 'buy', 1800, 23.623, 1.25, -17.163, '#96C8AA'],  // Mint Villa
         ['house_05', 'buy', 2400, 9.023, 1.25, -27.771, '#9C4834'],   // Brick Townhouse
-        ['house_06', 'rent', 160, -9.023, 1.25, -27.771, '#D69696'],  // Rose Cottage
+        ['house_06', 'buy', 2000, -9.023, 1.25, -27.771, '#D69696'],  // Rose Cottage
         ['house_07', 'buy', 2800, -23.623, 1.25, -17.163, '#CE7858'], // Terracotta Casa
         ['house_08', 'buy', 3600, -29.2, 1.25, 0.0, '#F0F0EE'],       // Modern Cube
         ['house_09', 'buy', 3200, -23.623, 1.25, 17.163, '#3A3C48'],  // Neon Loft

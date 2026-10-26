@@ -41,8 +41,6 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
 
     Route::get('/housing/units', [HousingController::class, 'index']);
     Route::post('/housing/units/{publicId}/buy', [HousingController::class, 'buy']);
-    Route::post('/housing/units/{publicId}/rent', [HousingController::class, 'rent']);
-    Route::post('/housing/units/{publicId}/renew', [HousingController::class, 'renew']);
 
     Route::post('/shop/purchase', [ShopController::class, 'purchase']);
     Route::get('/inventory', [InventoryController::class, 'index']);

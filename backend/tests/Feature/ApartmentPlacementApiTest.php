@@ -81,7 +81,7 @@ class ApartmentPlacementApiTest extends TestCase
             'objectId' => 'spawn_test_obj_1',
             'x' => 1.5,
             'y' => 0,
-            'z' => -2.5,
+            'z' => -1.5,
             'rotX' => 0,
             'rotY' => 0.5,
             'rotZ' => 0,

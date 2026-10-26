@@ -21,7 +21,7 @@ export interface HousingUnitPayload {
   public_id: string
   offer_type: string
   price_coins: number
-  rent_duration_hours: number
+  tax_coins: number
   pos_x: number
   pos_y: number
   pos_z: number
@@ -31,7 +31,7 @@ export interface HousingUnitPayload {
   model_key: string | null
   status: string
   occupant_account_id: number | null
-  lease_expires_at: string | null
+  tax_due_at: string | null
   room_public_id: string | null
   template_key: string
 }

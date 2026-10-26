@@ -61,7 +61,7 @@ class ApartmentPlacementService
      */
     public function resolveApartmentState(int $actorAccountId, int $ownerAccountId, ?string $templateKey = null): array
     {
-        $this->housingService->expireDueLeases();
+        $this->housingService->collectDueTaxes();
         $template = $this->occupiedHouse($ownerAccountId, $templateKey)->templateKey();
         $canEdit = $this->canEditApartment($actorAccountId, $ownerAccountId, $template);
 

@@ -116,75 +116,65 @@ class HousingApiTest extends TestCase
         ])->assertStatus(422)->assertJsonPath('code', 'already_owns_unit');
     }
 
-    public function test_rent_success_sets_lease_expiry(): void
+    public function test_buy_schedules_the_daily_tax(): void
     {
         Carbon::setTestNow(Carbon::parse('2026-09-22 12:00:00 UTC'));
-        $renter = $this->registerAndCreditWallet(10_000, 'coins');
-        $unit = HousingUnit::query()->where('offer_type', 'rent')->firstOrFail();
+        $owner = $this->registerAndCreditWallet(10_000, 'coins');
+        $unit = HousingUnit::query()->where('offer_type', 'buy')->firstOrFail();
 
-        $response = $this->postJson('/api/housing/units/'.$unit->public_id.'/rent', [], [
-            'Authorization' => 'Bearer '.$renter['token'],
+        $response = $this->postJson('/api/housing/units/'.$unit->public_id.'/buy', [], [
+            'Authorization' => 'Bearer '.$owner['token'],
         ]);
         $response->assertOk();
-        $response->assertJsonPath('unit.lease_expires_at', '2026-09-29T12:00:00+00:00');
-
-        $this->assertDatabaseHas('wallet_ledger', [
-            'reason' => 'housing_rent',
-            'delta' => -$unit->price_coins,
-        ]);
+        $response->assertJsonPath('unit.tax_due_at', '2026-09-23T12:00:00+00:00');
+        $response->assertJsonPath('unit.tax_coins', (int) ceil($unit->price_coins * 0.05));
 
         Carbon::setTestNow();
     }
 
-    public function test_renew_extends_lease_and_debits(): void
+    public function test_collect_due_taxes_debits_the_owner_and_moves_the_due_date(): void
     {
         Carbon::setTestNow(Carbon::parse('2026-09-22 12:00:00 UTC'));
-        $renter = $this->registerAndCreditWallet(10_000, 'coins');
-        $unit = HousingUnit::query()->where('offer_type', 'rent')->firstOrFail();
+        $unit = HousingUnit::query()->where('offer_type', 'buy')->firstOrFail();
+        $tax = (int) ceil($unit->price_coins * 0.05);
+        $owner = $this->registerAndCreditWallet($unit->price_coins + 2 * $tax, 'coins');
 
-        $this->postJson('/api/housing/units/'.$unit->public_id.'/rent', [], [
-            'Authorization' => 'Bearer '.$renter['token'],
+        $this->postJson('/api/housing/units/'.$unit->public_id.'/buy', [], [
+            'Authorization' => 'Bearer '.$owner['token'],
         ])->assertOk();
 
-        $renew = $this->postJson('/api/housing/units/'.$unit->public_id.'/renew', [], [
-            'Authorization' => 'Bearer '.$renter['token'],
-        ]);
-        $renew->assertOk();
-        $renew->assertJsonPath('unit.lease_expires_at', '2026-10-06T12:00:00+00:00');
+        Carbon::setTestNow(Carbon::parse('2026-09-24 13:00:00 UTC'));
+        $seized = app(HousingService::class)->collectDueTaxes();
 
-        $this->assertDatabaseHas('wallet_ledger', [
-            'reason' => 'housing_renew',
-            'delta' => -$unit->price_coins,
-        ]);
+        $this->assertSame(0, $seized);
+        $unit->refresh();
+        $this->assertSame('occupied', $unit->status);
+        $this->assertSame('2026-09-25T12:00:00+00:00', $unit->tax_due_at?->toIso8601String());
+        $this->assertSame(2, DB::table('wallet_ledger')->where('reason', 'housing_tax')->where('delta', -$tax)->count());
 
         Carbon::setTestNow();
     }
 
-    public function test_expire_due_leases_resets_unit_and_room(): void
+    public function test_unpaid_tax_seizes_the_house_and_deletes_its_room(): void
     {
         Carbon::setTestNow(Carbon::parse('2026-09-22 12:00:00 UTC'));
-        $renter = $this->registerAndCreditWallet(10_000, 'coins');
-        $unit = HousingUnit::query()->where('offer_type', 'rent')->firstOrFail();
+        $unit = HousingUnit::query()->where('offer_type', 'buy')->firstOrFail();
+        $owner = $this->registerAndCreditWallet($unit->price_coins, 'coins');
 
-        $this->postJson('/api/housing/units/'.$unit->public_id.'/rent', [], [
-            'Authorization' => 'Bearer '.$renter['token'],
+        $this->postJson('/api/housing/units/'.$unit->public_id.'/buy', [], [
+            'Authorization' => 'Bearer '.$owner['token'],
         ])->assertOk();
-
         $unit->refresh();
         $roomId = (int) $unit->room_id;
-        $this->assertDatabaseHas('room_memberships', [
-            'room_id' => $roomId,
-            'account_id' => $renter['account_id'],
-        ]);
 
-        Carbon::setTestNow(Carbon::parse('2026-09-30 00:00:00 UTC'));
-        $expired = app(HousingService::class)->expireDueLeases();
-        $this->assertSame(1, $expired);
+        Carbon::setTestNow(Carbon::parse('2026-09-23 12:00:01 UTC'));
+        $seized = app(HousingService::class)->collectDueTaxes();
 
+        $this->assertSame(1, $seized);
         $unit->refresh();
         $this->assertSame('vacant', $unit->status);
         $this->assertNull($unit->occupant_account_id);
-        $this->assertNull($unit->lease_expires_at);
+        $this->assertNull($unit->tax_due_at);
         $this->assertNull($unit->room_id);
         $this->assertDatabaseMissing('rooms', ['room_id' => $roomId]);
         $this->assertDatabaseMissing('room_memberships', ['room_id' => $roomId]);

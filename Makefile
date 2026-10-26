@@ -72,8 +72,8 @@ purge-legacy-housing: ## Delete legacy housing cubes + their rooms/furniture (OC
 
 fix-housing: seed-housing purge-legacy-housing ## Seed the 10 town houses + purge old cubes (OCCUPIED=1 to include occupied ones)
 
-expire-leases: ## Reset expired housing rentals
-	$(ART) housing:expire-leases
+collect-taxes: ## Collect due house taxes, seize unpaid houses
+	$(ART) housing:collect-taxes
 
 set-admin: ## Grant admin (EMAIL=a@b.c)
 	$(ART) setAdmin $(EMAIL)
@@ -104,5 +104,5 @@ socket-start: ## Run socket locally (port 3000)
 .PHONY: help up up-build down logs rebuild-socket socket-rebuild \
 	front-install front-dev front-build typecheck \
 	assets-optimize newnation-optimize collision-extract \
-	migrate seed seed-shop seed-housing purge-legacy-housing fix-housing expire-leases set-admin set-money fill-outfit test \
+	migrate seed seed-shop seed-housing purge-legacy-housing fix-housing collect-taxes set-admin set-money fill-outfit test \
 	backend-install backend-serve socket-install socket-start
