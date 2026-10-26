@@ -1,12 +1,7 @@
 // Interiors: entering / leaving work buildings, and decorating one's own house from the town. Houses are
 // backed by the Laravel API (ownership, placed objects, inventory); work buildings are public and have no DB row.
 import { callBackendJson, errorPayload } from './backend.js'
-import {
-  APARTMENT_SPAWN,
-  APARTMENT_SPAWN_RADIUS,
-  CITY_SPAWN_RADIUS,
-  WORK_EXIT_RADIUS
-} from './config.js'
+import { CITY_SPAWN_RADIUS, WORK_EXIT_RADIUS } from './config.js'
 import { spawnNear } from './players.js'
 import { citySpawn, workDoor } from './world.js'
 
@@ -23,34 +18,6 @@ export async function sendInventory(room, client) {
   } catch (error) {
     client.send('apartment_inventory_error', errorPayload(error, 'Inventory request failed', 'inventory_error'))
   }
-}
-
-// Public business-district building: no backend call, anyone can walk in. The zone stays 'apartment' on
-// the wire so the client reuses the house flow; visibility is per building (players.visibilityKey).
-export function enterWork(room, client, payload) {
-  const player = room.players.get(client.sessionId)
-  if (!player || player.zone !== 'city') return
-  const workKey = typeof payload?.workKey === 'string' ? payload.workKey : ''
-  if (!workDoor(workKey)) {
-    client.send('apartment_error', { message: 'Unknown building', code: 'unknown_work' })
-    return
-  }
-  room.moveToZone(client, player, () => {
-    Object.assign(player, {
-      zone: 'apartment',
-      apartmentOwnerId: null,
-      apartmentTemplateKey: null,
-      workKey,
-      ...spawnNear(APARTMENT_SPAWN, APARTMENT_SPAWN_RADIUS)
-    })
-    client.send('apartment_init', {
-      ownerAccountId: null,
-      templateKey: `work_${workKey}`,
-      workKey,
-      canEdit: false,
-      objects: []
-    })
-  })
 }
 
 // Back to the town: in front of the work building's door, or on the plaza after a house.

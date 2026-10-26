@@ -1,11 +1,11 @@
 import { Room } from 'colyseus'
-import { enterWork, exitBuilding, pickupObject, saveObject, sendInventory, setDecoratedHouse } from './apartments.js'
+import { exitBuilding, pickupObject, saveObject, sendInventory, setDecoratedHouse } from './apartments.js'
 import { callBackendJson, parseAccountId, resolveIdentity } from './backend.js'
 import { CITY_MAX_PLAYERS, CITY_SPAWN_RADIUS } from './config.js'
 
 const HOUSING_REFRESH_COOLDOWN_MS = 2000
 const HOUSING_POLL_MS = 60_000
-import { isWithinDoorReach } from './doors.js'
+import { isWithinDoorReach, isWithinReach, workDoorId } from './doors.js'
 import { moveRejection } from './movement.js'
 import {
   createPlayer,
@@ -17,7 +17,7 @@ import {
   spawnNear,
   visibilityKey
 } from './players.js'
-import { citySpawn } from './world.js'
+import { citySpawn, workDoor } from './world.js'
 
 function warn(context, error) {
   console.warn(`[colyseus] ${context}:`, error instanceof Error ? error.message : error)
@@ -37,7 +37,6 @@ export class CityRoom extends Room {
     this.onMessage('appearance', (client, payload) => this.onAppearance(client, payload))
     this.onMessage('housing_refresh', (client) => this.onHousingRefresh(client))
     this.onMessage('door_toggle', (client, payload) => this.onDoorToggle(client, payload))
-    this.onMessage('enter_work', (client, payload) => enterWork(this, client, payload))
     this.onMessage('exit_apartment', (client) => exitBuilding(this, client))
     this.onMessage('decorate_house', (client, payload) => setDecoratedHouse(this, client, payload))
     this.onMessage('apartment_spawn_request', (client, payload) => saveObject(this, client, payload, true))
@@ -182,6 +181,7 @@ export class CityRoom extends Room {
     this.housingUnits = Array.isArray(data?.units) ? data.units : []
     const justLocked = this.housingUnits.filter((u) => u.door_locked === true && previous.get(u.public_id)?.door_locked !== true)
     for (const unitId of this.openDoors) {
+      if (unitId.startsWith(workDoorId(''))) continue
       const unit = this.housingUnits.find((u) => u.public_id === unitId)
       if (!unit || unit.status !== 'occupied' || justLocked.includes(unit)) this.openDoors.delete(unitId)
     }
@@ -242,14 +242,24 @@ export class CityRoom extends Room {
 
   onDoorToggle(client, payload) {
     const player = this.players.get(client.sessionId)
+    if (typeof payload?.workKey === 'string') {
+      const door = workDoor(payload.workKey)
+      if (!player || player.zone !== 'city' || !door || !isWithinReach(player, door.x, door.z)) return
+      this.toggleDoor(workDoorId(payload.workKey))
+      return
+    }
     const unit = this.housingUnits.find((u) => u.public_id === payload?.unitId && u.status === 'occupied')
     if (!player || !unit || !isWithinDoorReach(player, unit)) return
     if (unit.door_locked) {
       client.send('door_error', { message: 'This door is locked.' })
       return
     }
-    if (this.openDoors.has(unit.public_id)) this.openDoors.delete(unit.public_id)
-    else this.openDoors.add(unit.public_id)
+    this.toggleDoor(unit.public_id)
+  }
+
+  toggleDoor(doorId) {
+    if (this.openDoors.has(doorId)) this.openDoors.delete(doorId)
+    else this.openDoors.add(doorId)
     this.broadcastDoors()
   }
 }

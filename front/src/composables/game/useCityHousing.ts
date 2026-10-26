@@ -34,6 +34,10 @@ export function useCityHousing(deps: CityHousingDeps) {
     return unit.status === 'vacant' || openDoorIds.value.has(unit.public_id)
   }
 
+  function isWorkDoorOpen(workKey: string): boolean {
+    return openDoorIds.value.has(`work:${workKey}`)
+  }
+
   function actionFor(unit: HousingUnit): HousingAction | null {
     return housingActionFor(unit, {
       myAccountId: deps.myAccountId.value,
@@ -86,5 +90,5 @@ export function useCityHousing(deps: CityHousingDeps) {
     return true
   }
 
-  return { units, nearbyUnit, claimInFlight, applyUnits, applyOpenDoors, isDoorOpen, actionFor, houseKeyForTemplate, interact, unlock, buy }
+  return { units, nearbyUnit, claimInFlight, applyUnits, applyOpenDoors, isDoorOpen, isWorkDoorOpen, actionFor, houseKeyForTemplate, interact, unlock, buy }
 }

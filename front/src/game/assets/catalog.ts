@@ -103,8 +103,10 @@ export interface WorkAsset {
   name: string
   job: WorkJob
   exteriorUrl: string
+  exteriorCollisionUrl: string
   interiorUrl: string
   interiorCollisionUrl: string
+  interiorLightmapUrl: string
   interiorLayoutUrl: string
   previewUrl: string
 }
@@ -114,8 +116,10 @@ const work = (key: WorkKey, name: string, job: WorkJob): WorkAsset => ({
   name,
   job,
   exteriorUrl: `${ROOT}/work/${key}/exterior.glb`,
+  exteriorCollisionUrl: `${ROOT}/work/${key}/exterior.collision.json`,
   interiorUrl: `${ROOT}/work/${key}/interior.glb`,
   interiorCollisionUrl: `${ROOT}/work/${key}/interior.collision.json`,
+  interiorLightmapUrl: `${ROOT}/work/${key}/lightmap.jpg`,
   interiorLayoutUrl: `${ROOT}/work/${key}/interior.layout.json`,
   previewUrl: `${ROOT}/work/${key}/preview.png`,
 })

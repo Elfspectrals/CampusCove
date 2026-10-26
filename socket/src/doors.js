@@ -1,7 +1,15 @@
 const DOOR_REACH = 3
 
+export function isWithinReach(player, x, z) {
+  return Math.hypot(player.x - x, player.z - z) <= DOOR_REACH
+}
+
 export function isWithinDoorReach(player, unit) {
-  return Math.hypot(player.x - unit.pos_x, player.z - unit.pos_z) <= DOOR_REACH
+  return isWithinReach(player, unit.pos_x, unit.pos_z)
+}
+
+export function workDoorId(workKey) {
+  return `work:${workKey}`
 }
 
 export function canUseDoor(unit, accountId) {

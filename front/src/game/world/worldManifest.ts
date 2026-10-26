@@ -30,6 +30,7 @@ export interface WorkBuilding {
   rotationY: number
   door: Vec3
   footprint: [number, number]
+  interiorOffset?: Vec3
 }
 
 type Building = HouseBuilding | WorkBuilding

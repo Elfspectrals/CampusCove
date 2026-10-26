@@ -36,7 +36,7 @@ import { HOUSING_LOBBY_SPAWN } from '../game/gameRoomConstants'
 import { createGameScene, disposeGameScene, type GameScene } from '../game/gameScene'
 import { createFirstPersonArms } from '../game/firstPersonArms'
 import { createHeldItem } from '../game/heldItem'
-import { findHouse } from '../game/assets/catalog'
+import { findHouse, findWork } from '../game/assets/catalog'
 import { createDoorSigns } from '../game/town/doorSigns'
 import { houseKeyAt, openHouseInterior, updateFrontDoors } from '../game/town/openHouses'
 
@@ -174,6 +174,7 @@ const interactions = useInteractionTargets({
   housingUnits: housing.units,
   nearbyHousingUnit: housing.nearbyUnit,
   housingActionFor: housing.actionFor,
+  isWorkDoorOpen: (lot) => housing.isWorkDoorOpen(lot.key),
   onExitDoor: () => {
     placement.cancelPreview()
     realtime.exitBuilding()
@@ -186,8 +187,8 @@ const interactions = useInteractionTargets({
     void housing.interact()
   },
   onWorkDoor: (lot) => {
-    closeInventory()
-    realtime.enterWork(lot.key)
+    arms?.use('door')
+    gameRoomRef.value?.send('door_toggle', { workKey: lot.key })
   },
   // Fishing gameplay is not built yet: the spots only show their prompt.
   onFishingSpot: () => window.alert('implement pechee'),
@@ -210,9 +211,10 @@ const heldItem = createHeldItem()
 let arms: ReturnType<typeof createFirstPersonArms> | null = null
 watch(() => selectedItem.value?.code ?? null, () => arms?.equip())
 
-function isHouseDoorOpen(houseKey: string): boolean {
-  const unit = housing.units.value.find((u) => u.model_key === houseKey)
-  return unit ? housing.isDoorOpen(unit) : true
+function isBuildingDoorOpen(buildingKey: string): boolean {
+  const unit = housing.units.value.find((u) => u.model_key === buildingKey)
+  if (unit) return housing.isDoorOpen(unit)
+  return findWork(buildingKey) ? housing.isWorkDoorOpen(buildingKey) : true
 }
 
 const DOOR_SIGN_REFRESH_MS = 30_000
@@ -305,7 +307,7 @@ const movement = useGameMovement({
     if (canDecorate.value) placement.tick(dt)
     interactions.updatePrompts()
     houseKeys.updateKeyPrompt()
-    if (currentRoomLabel.value === 'city') updateFrontDoors(dt, isHouseDoorOpen)
+    if (currentRoomLabel.value === 'city') updateFrontDoors(dt, isBuildingDoorOpen)
     arms?.update(dt, myPosition)
     heldItem.update(arms?.rightHand() ?? null, selectedItem.value?.kind === 'tool' ? selectedItem.value.model_glb : null)
     if (!doorSigns.group.parent) getScene()?.add(doorSigns.group)

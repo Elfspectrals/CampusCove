@@ -40,7 +40,7 @@ shell, interior_offset, zb = L.walk_in_shell(coll_e, cols_e, W, hd, SHELL_H, E["
 xo += shell
 DN = hd - zb
 zc = (hd + zb) / 2
-xo.append(L.box(coll_e, "EX_Plinth", 0, zc, 0.0, W + 0.4, DN + 0.4, 0.2, E["found"], bevel=0.02, tile=2.0))
+xo.append(L.box(coll_e, "EX_Plinth", 0, zc, 0.0, W + 0.4, DN + 0.4, 0.19, E["found"], bevel=0.02, tile=2.0))
 xo.append(L.box(coll_e, "EX_Walls", 0, zc, SHELL_H, W, DN, 4.4 - SHELL_H, E["wall"], tile=2.0))
 xo += L.perimeter(coll_e, "EX_StoneBase", W + 0.12, hd + 0.06, zb - 0.06, 0.2, 0.9, 0.26, E["stone"], front_gaps=[(-0.75, 0.75)])
 xo.append(L.gable_roof(coll_e, "EX_Roof", 0, zc, 4.4, W + 1.2, DN + 1.2, 3.0, E["roof"], ridge_axis="x"))
@@ -86,7 +86,7 @@ assert not bad, bad
 L.export_glb(os.path.join(OUT, "exterior.glb"), xo)
 L.export_glb(os.path.join(OUT, "exterior.colsrc.glb"), xo + cols_e.items)
 L.write_json(os.path.join(OUT, "exterior.layout.json"), {
-    "version": 1, "key": KEY, "name": "Campus Cafe", "footprint": [W, DN], "footprintCenterZ": zc, "doorLocal": [0.0, 1.25, hd + 4.4],
+    "version": 1, "key": KEY, "name": "Campus Cafe", "footprint": [W, DN], "footprintCenterZ": zc, "doorLocal": [0.0, 1.25, hd],
     "interiorOffset": [round(c, 4) for c in interior_offset],
     "collision": [{"cx": 0.0, "cz": zc, "hx": W / 2 + 0.2, "hz": DN / 2 + 0.2, "hy": 2.2}],
 })

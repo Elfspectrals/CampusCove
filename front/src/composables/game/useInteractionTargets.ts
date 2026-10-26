@@ -30,6 +30,7 @@ export interface InteractionTargetsDeps {
   housingUnits: Ref<HousingUnit[]>
   nearbyHousingUnit: Ref<HousingUnit | null>
   housingActionFor: (unit: HousingUnit) => HousingAction | null
+  isWorkDoorOpen: (lot: WorkLot) => boolean
   onExitDoor: () => void
   onHousingDoor: () => void
   onWorkDoor: (lot: WorkLot) => void
@@ -122,7 +123,7 @@ export function useInteractionTargets(deps: InteractionTargetsDeps) {
     const work = nearbyWork.value
     if (work) {
       const screen = projectToScreen(work.door[0], 1.5, work.door[2])
-      return screen && { ...screen, action: 'Enter', detail: work.name }
+      return screen && { ...screen, action: deps.isWorkDoorOpen(work) ? 'Close' : 'Open', detail: work.name }
     }
     const spot = nearbyFishingSpot.value
     if (spot) {

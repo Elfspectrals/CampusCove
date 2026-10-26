@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { disposeObject3D } from '../../avatar/compositeAvatar'
-import { findHouse } from '../assets/catalog'
+import { findHouse, findWork } from '../assets/catalog'
 import {
   fetchCollisionFile,
   setDoorBlocker,
@@ -8,9 +8,12 @@ import {
   type CollisionFileJson,
   type CollisionTrimeshJson,
 } from '../collision/worldCollision'
-import { houseBuildings, type HouseBuilding, type WorldManifest } from '../world/worldManifest'
+import { houseBuildings, workBuildings, type HouseBuilding, type WorkBuilding, type WorldManifest } from '../world/worldManifest'
 
-type OpenHouseLot = HouseBuilding & { interiorOffset: [number, number, number] }
+type InteriorOffset = { interiorOffset: [number, number, number] }
+type OpenHouseLot = HouseBuilding & InteriorOffset
+type OpenWorkLot = WorkBuilding & InteriorOffset
+type OpenLot = OpenHouseLot | OpenWorkLot
 
 interface BuildingFloor {
   houseKey: string
@@ -48,6 +51,16 @@ const frontDoors = new Map<string, FrontDoor>()
 
 export function openHouseLots(manifest: WorldManifest): OpenHouseLot[] {
   return houseBuildings(manifest).filter((lot): lot is OpenHouseLot => lot.interiorOffset !== undefined)
+}
+
+export function openWorkLots(manifest: WorldManifest): OpenWorkLot[] {
+  return workBuildings(manifest).filter((lot): lot is OpenWorkLot => lot.interiorOffset !== undefined)
+}
+
+function interiorAssetOf(lot: OpenLot): { interiorUrl: string; interiorCollisionUrl: string; interiorLightmapUrl: string } {
+  const asset = lot.kind === 'house' ? findHouse(lot.key) : findWork(lot.key)
+  if (!asset) throw new Error(`Unknown ${lot.kind} in the world manifest: ${lot.key}`)
+  return asset
 }
 
 export function registerFrontDoor(exterior: THREE.Object3D, houseKey: string): void {
@@ -102,7 +115,7 @@ export function updateFrontDoors(dt: number, isDoorOpen: (houseKey: string) => b
   }
 }
 
-export function placeOpenHouseInterior(interior: THREE.Group, lot: OpenHouseLot): THREE.Group {
+export function placeOpenHouseInterior(interior: THREE.Group, lot: OpenLot): THREE.Group {
   const hidden: THREE.Object3D[] = []
   interior.traverse((obj) => {
     if (HIDDEN_INTERIOR_NODES.has(obj.name.replace(/\.?\d{3,}$/, ''))) hidden.push(obj)
@@ -167,13 +180,16 @@ export function updateOpenHouseVisibility(x: number, z: number): void {
   }
 }
 
-function interiorToWorld(lot: OpenHouseLot): THREE.Matrix4 {
-  const lotMatrix = new THREE.Matrix4().compose(
+function lotToWorld(lot: OpenLot): THREE.Matrix4 {
+  return new THREE.Matrix4().compose(
     new THREE.Vector3().fromArray(lot.position),
     new THREE.Quaternion().setFromAxisAngle(THREE.Object3D.DEFAULT_UP, lot.rotationY),
     new THREE.Vector3(1, 1, 1),
   )
-  return lotMatrix.multiply(new THREE.Matrix4().makeTranslation(new THREE.Vector3().fromArray(lot.interiorOffset)))
+}
+
+function interiorToWorld(lot: OpenLot): THREE.Matrix4 {
+  return lotToWorld(lot).multiply(new THREE.Matrix4().makeTranslation(new THREE.Vector3().fromArray(lot.interiorOffset)))
 }
 
 function transformCuboid(cuboid: CollisionCuboidJson, matrix: THREE.Matrix4): CollisionCuboidJson {
@@ -206,19 +222,21 @@ function transformTrimesh(trimesh: CollisionTrimeshJson, matrix: THREE.Matrix4):
 }
 
 async function composeTownCollisionData(manifest: WorldManifest): Promise<CollisionFileJson> {
-  const lots = openHouseLots(manifest)
+  const workLots = openWorkLots(manifest)
+  const lots: OpenLot[] = [...openHouseLots(manifest), ...workLots]
   const zoneCollisionUrls = manifest.zones.flatMap((zone) => (zone.collisionUrl ? [zone.collisionUrl] : []))
-  const [zones, interiors] = await Promise.all([
+  const [zones, interiors, workShells] = await Promise.all([
     Promise.all(zoneCollisionUrls.map(fetchCollisionFile)),
-    Promise.all(lots.map((lot) => {
-      const house = findHouse(lot.key)
-      if (!house) throw new Error(`Unknown house in the world manifest: ${lot.key}`)
-      return fetchCollisionFile(house.interiorCollisionUrl)
+    Promise.all(lots.map((lot) => fetchCollisionFile(interiorAssetOf(lot).interiorCollisionUrl))),
+    Promise.all(workLots.map((lot) => {
+      const work = findWork(lot.key)
+      if (!work) throw new Error(`Unknown work building in the world manifest: ${lot.key}`)
+      return fetchCollisionFile(work.exteriorCollisionUrl)
     })),
   ])
 
   const zoneCuboids = zones.flatMap((zone) => zone.cuboids)
-  const solidHouses = new Set(lots.map((lot) => `COL_House_${lot.key}`))
+  const solidHouses = new Set(lots.map((lot) => (lot.kind === 'house' ? `COL_House_${lot.key}` : `COL_Work_${lot.key}`)))
   const cuboids = zoneCuboids.filter((cuboid) => !solidHouses.has(cuboid.name ?? ''))
   if (zoneCuboids.length - cuboids.length !== solidHouses.size) {
     throw new Error(`Zone collision is missing one of ${[...solidHouses].join(', ')}`)
@@ -238,6 +256,10 @@ async function composeTownCollisionData(manifest: WorldManifest): Promise<Collis
       bounds: interior.bounds,
       y: lot.position[1] + lot.interiorOffset[1],
     })
+  })
+  workLots.forEach((lot, i) => {
+    const matrix = lotToWorld(lot)
+    cuboids.push(...workShells[i]!.cuboids.map((cuboid) => transformCuboid(cuboid, matrix)))
   })
 
   return { version: 1, source: 'world.manifest.json', mode: 'composed', borders: true, bounds: manifest.bounds, cuboids, trimeshes }

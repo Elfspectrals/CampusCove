@@ -48,7 +48,7 @@ shell, interior_offset, zb = L.walk_in_shell(coll, cols, W, hd, SHELL_H, E["conc
 objs += shell
 DN = hd - zb
 zc = (hd + zb) / 2
-objs.append(L.box(coll, "EX_Plinth", 0, zc, 0.0, W + 0.4, DN + 0.4, 0.2, E["found"], bevel=0.02, tile=2.0))
+objs.append(L.box(coll, "EX_Plinth", 0, zc, 0.0, W + 0.4, DN + 0.4, 0.19, E["found"], bevel=0.02, tile=2.0))
 objs.append(L.box(coll, "EX_UpperFloor", 0, zc, SHELL_H, W, DN, 6.8 - SHELL_H, E["panel"], tile=2.0))
 objs.append(L.box(coll, "EX_Band", 0, zc, 3.4, W + 0.2, DN + 0.2, 0.18, E["teal"], tile=2.0))
 objs.append(L.box(coll, "EX_RoofSlab", 0, zc, 6.8, W + 0.6, DN + 0.6, 0.25, E["roof"], tile=2.0))
@@ -113,7 +113,7 @@ assert not bad, bad
 L.export_glb(os.path.join(OUT, "exterior.glb"), objs)
 L.export_glb(os.path.join(OUT, "exterior.colsrc.glb"), objs + cols.items)
 L.write_json(os.path.join(OUT, "exterior.layout.json"), {
-    "version": 1, "key": KEY, "name": "Tech Hub", "footprint": [W, DN], "footprintCenterZ": zc, "doorLocal": [0.0, 1.25, hd + 2.6],
+    "version": 1, "key": KEY, "name": "Tech Hub", "footprint": [W, DN], "footprintCenterZ": zc, "doorLocal": [0.0, 1.25, hd],
     "interiorOffset": [round(c, 4) for c in interior_offset],
     "collision": [{"cx": 0.0, "cz": zc, "hx": W / 2 + 0.2, "hz": DN / 2 + 0.2, "hy": 3.8}],
 })

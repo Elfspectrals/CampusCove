@@ -138,14 +138,6 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     }, 0)
   }
 
-  /** Work buildings are free and public: no purchase or lease, the server just moves us inside. */
-  function enterWork(workKey: string): void {
-    const room = deps.gameRoomRef.value
-    if (!room || transitioning.value) return
-    beginTransition()
-    room.send('enter_work', { workKey })
-  }
-
   function exitBuilding(): void {
     const room = deps.gameRoomRef.value
     if (!room) return
@@ -389,7 +381,6 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     connectRealtime,
     switchingRoom,
     transitioning,
-    enterWork,
     exitBuilding,
     clearRemoteUsers: remotes.clear,
     tickRemoteAvatars: remotes.tick,

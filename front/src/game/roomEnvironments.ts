@@ -5,7 +5,7 @@ import { DEFAULT_HOUSE, findHouse, findWork } from './assets/catalog'
 import { createGltfLoader } from './gltfLoaderFactory'
 import { getGraphicsQuality } from './graphicsQuality'
 import { shareTexturesAcrossModels } from './sharedTextures'
-import { applyInteriorLightmap, openHouseLots, placeOpenHouseInterior, registerFrontDoor } from './town/openHouses'
+import { applyInteriorLightmap, openHouseLots, openWorkLots, placeOpenHouseInterior, registerFrontDoor } from './town/openHouses'
 import { animatePondWater } from './town/pondWater'
 import { setTerrainHeightmap, type TerrainHeightmap } from './town/terrainHeight'
 import { fetchWorldManifest, houseBuildings, workBuildings, type WorldManifest, type WorldZone } from './world/worldManifest'
@@ -106,13 +106,16 @@ export function loadTownEnvironment(): Promise<TownEnvironmentBuildResult> {
       for (const exterior of houses) {
         if (exterior) root.add(exterior)
       }
-      const openInteriors = await Promise.all(openHouseLots(manifest).map(async (lot) => {
-        const house = findHouse(lot.key)
-        if (!house) return null
+      const interiorSources = [
+        ...openHouseLots(manifest).map((lot) => ({ lot, asset: findHouse(lot.key) })),
+        ...openWorkLots(manifest).map((lot) => ({ lot, asset: findWork(lot.key) })),
+      ]
+      const openInteriors = await Promise.all(interiorSources.map(async ({ lot, asset }) => {
+        if (!asset) return null
         try {
           const [gltf, lightmap] = await Promise.all([
-            loadModelSharingTextures(loader, house.interiorUrl),
-            new THREE.TextureLoader().loadAsync(house.interiorLightmapUrl),
+            loadModelSharingTextures(loader, asset.interiorUrl),
+            new THREE.TextureLoader().loadAsync(asset.interiorLightmapUrl),
           ])
           applyInteriorLightmap(gltf.scene, lightmap)
           return placeOpenHouseInterior(gltf.scene, lot)
@@ -131,6 +134,7 @@ export function loadTownEnvironment(): Promise<TownEnvironmentBuildResult> {
           const gltf = await loader.loadAsync(asset.exteriorUrl)
           const exterior = gltf.scene
           exterior.name = `WorkExterior_${lot.key}`
+          if (lot.interiorOffset) registerFrontDoor(exterior, lot.key)
           exterior.position.fromArray(lot.position)
           exterior.rotation.y = lot.rotationY
           exterior.userData.workKey = lot.key
