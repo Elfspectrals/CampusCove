@@ -78,6 +78,7 @@ export interface GameRealtimeDeps {
   setRoomEnvironment: (kind: Zone, templateKey?: string, workKey?: string | null) => void
   onHousingUnitsSync: (units: HousingUnitPayload[]) => void
   onHouseFurnitureSync: (houses: HouseFurniturePayload[]) => void
+  onDoorsSync: (openDoorIds: string[]) => void
 }
 
 /**
@@ -185,10 +186,15 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       }
       if (payload.housingUnits !== undefined) syncHousingUnits(payload.housingUnits)
       if (payload.houseFurniture !== undefined) deps.onHouseFurnitureSync(payload.houseFurniture)
+      if (payload.openDoors !== undefined) deps.onDoorsSync(payload.openDoors)
     })
 
     room.onMessage('housing_units_sync', (data: { units?: unknown }) => syncHousingUnits(data.units))
     room.onMessage('house_furniture_sync', (data: { houses: HouseFurniturePayload[] }) => deps.onHouseFurnitureSync(data.houses))
+    room.onMessage('doors_sync', (data: { openDoors: string[] }) => deps.onDoorsSync(data.openDoors))
+    room.onMessage('door_error', (data: { message: string }) => {
+      deps.roomMessage.value = data.message
+    })
 
     room.onMessage('user_joined', (data: RemoteUserPayload) => {
       if (data.sessionId !== room.sessionId) void remotes.upsert(data.sessionId, data)

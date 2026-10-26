@@ -44,6 +44,16 @@ class HousingController extends Controller
         return response()->json(['unit' => $this->housing->serializeUnit($unit)]);
     }
 
+    public function setDoorLocked(Request $request, string $publicId): JsonResponse
+    {
+        $validated = $request->validate(['locked' => ['required', 'boolean']]);
+        /** @var Account $account */
+        $account = $request->user();
+        $unit = $this->housing->setDoorLocked($account, $publicId, (bool) $validated['locked']);
+
+        return response()->json(['unit' => $this->housing->serializeUnit($unit)]);
+    }
+
     public function buy(Request $request, string $publicId): JsonResponse
     {
         /** @var Account $account */

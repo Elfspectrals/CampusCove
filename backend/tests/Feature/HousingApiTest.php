@@ -305,6 +305,55 @@ class HousingApiTest extends TestCase
         Carbon::setTestNow();
     }
 
+    public function test_owner_and_key_holders_lock_the_door_but_strangers_cannot(): void
+    {
+        $owner = $this->registerAndCreditWallet(10_000, 'coins');
+        $friend = $this->registerAndCreditWallet(0, 'coins');
+        $stranger = $this->registerAndCreditWallet(0, 'coins');
+        $unit = HousingUnit::query()->where('offer_type', 'buy')->firstOrFail();
+        $this->postJson('/api/housing/units/'.$unit->public_id.'/buy', [], [
+            'Authorization' => 'Bearer '.$owner['token'],
+        ])->assertOk()->assertJsonPath('unit.door_locked', false);
+        $this->postJson('/api/housing/keys', ['account_id' => $friend['account_id']], [
+            'Authorization' => 'Bearer '.$owner['token'],
+        ])->assertOk();
+
+        $this->putJson('/api/housing/units/'.$unit->public_id.'/door', ['locked' => true], [
+            'Authorization' => 'Bearer '.$owner['token'],
+        ])->assertOk()->assertJsonPath('unit.door_locked', true);
+
+        $this->app['auth']->forgetGuards();
+        $this->putJson('/api/housing/units/'.$unit->public_id.'/door', ['locked' => false], [
+            'Authorization' => 'Bearer '.$friend['token'],
+        ])->assertOk()->assertJsonPath('unit.door_locked', false);
+
+        $this->app['auth']->forgetGuards();
+        $this->putJson('/api/housing/units/'.$unit->public_id.'/door', ['locked' => true], [
+            'Authorization' => 'Bearer '.$stranger['token'],
+        ])->assertStatus(403)->assertJsonPath('code', 'no_house_key');
+        $this->assertFalse($unit->fresh()->door_locked);
+    }
+
+    public function test_seizure_unlocks_the_door(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-09-22 12:00:00 UTC'));
+        $unit = HousingUnit::query()->where('offer_type', 'buy')->firstOrFail();
+        $owner = $this->registerAndCreditWallet($unit->price_coins, 'coins');
+        $this->postJson('/api/housing/units/'.$unit->public_id.'/buy', [], [
+            'Authorization' => 'Bearer '.$owner['token'],
+        ])->assertOk();
+        $this->putJson('/api/housing/units/'.$unit->public_id.'/door', ['locked' => true], [
+            'Authorization' => 'Bearer '.$owner['token'],
+        ])->assertOk();
+
+        Carbon::setTestNow(Carbon::parse('2026-09-23 12:00:01 UTC'));
+        $this->assertSame(1, app(HousingService::class)->collectDueTaxes());
+
+        $this->assertFalse($unit->fresh()->door_locked);
+
+        Carbon::setTestNow();
+    }
+
     /**
      * @param  array{token: string, account_id: int, username: string}  $player
      */

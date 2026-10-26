@@ -107,6 +107,7 @@ final class HousingService
             'occupant_account_id' => null,
             'lease_expires_at' => null,
             'tax_due_at' => null,
+            'door_locked' => false,
             'room_id' => null,
             'updated_at' => now(),
         ]);
@@ -184,6 +185,22 @@ final class HousingService
                 $this->inventoryService->revokeItem($targetAccountId, $this->houseKey(), 1);
             }
         });
+
+        return $unit->fresh(['room']);
+    }
+
+    public function setDoorLocked(Account $account, string $unitPublicId, bool $locked): HousingUnit
+    {
+        $accountId = (int) $account->getAuthIdentifier();
+        $unit = HousingUnit::query()->where('public_id', $unitPublicId)->first();
+        if ($unit === null) {
+            throw new HousingRejectedException('unit_not_found', 'Housing unit not found.', 404);
+        }
+        $isOwner = $unit->status === 'occupied' && (int) $unit->occupant_account_id === $accountId;
+        if (! $isOwner && ! in_array($accountId, $this->keyHolderIds($unit), true)) {
+            throw new HousingRejectedException('no_house_key', 'You do not have the keys to this house.', 403);
+        }
+        $unit->update(['door_locked' => $locked, 'updated_at' => now()]);
 
         return $unit->fresh(['room']);
     }
@@ -422,6 +439,7 @@ final class HousingService
                 ? AccountHandle::query()->where('account_id', (int) $unit->occupant_account_id)->value('username')
                 : null,
             'tax_due_at' => $unit->tax_due_at?->toIso8601String(),
+            'door_locked' => (bool) $unit->door_locked,
             'room_public_id' => $unit->room !== null ? (string) $unit->room->public_id : null,
             'template_key' => $unit->templateKey(),
             'key_holder_account_ids' => $this->keyHolderIds($unit),

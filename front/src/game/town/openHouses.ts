@@ -3,6 +3,7 @@ import { disposeObject3D } from '../../avatar/compositeAvatar'
 import { findHouse } from '../assets/catalog'
 import {
   fetchCollisionFile,
+  setDoorBlocker,
   type CollisionCuboidJson,
   type CollisionFileJson,
   type CollisionTrimeshJson,
@@ -28,6 +29,8 @@ const HIDDEN_INTERIOR_NODES = new Set([
   'Door_Entrance_Sign',
 ])
 const OPEN_DOOR_ANGLE = 1.4
+const DOOR_SWING_SPEED = 3
+const DOOR_BLOCKER_MIN_HALF = 0.08
 const LIGHTMAP_INTENSITY = Math.PI * 0.65
 const INTERIOR_SHOW_DISTANCE = 20
 const INTERIOR_HIDE_DISTANCE = 26
@@ -36,14 +39,67 @@ const buildingFloors: BuildingFloor[] = []
 const placedInteriors: THREE.Group[] = []
 const interiorsByHouse = new Map<string, THREE.Group>()
 
+interface FrontDoor {
+  node: THREE.Object3D
+  blocker: CollisionCuboidJson | null
+}
+
+const frontDoors = new Map<string, FrontDoor>()
+
 export function openHouseLots(manifest: WorldManifest): OpenHouseLot[] {
   return houseBuildings(manifest).filter((lot): lot is OpenHouseLot => lot.interiorOffset !== undefined)
 }
 
-export function openFrontDoor(exterior: THREE.Object3D, houseKey: string): void {
+export function registerFrontDoor(exterior: THREE.Object3D, houseKey: string): void {
   const door = exterior.getObjectByName('Door')
   if (!door) throw new Error(`House ${houseKey} has no Door node`)
   door.rotation.y = OPEN_DOOR_ANGLE
+  frontDoors.set(houseKey, { node: door, blocker: null })
+}
+
+function closedDoorBlocker(door: THREE.Object3D): CollisionCuboidJson {
+  const swing = door.rotation.y
+  door.rotation.y = 0
+  door.updateWorldMatrix(true, true)
+  const worldToDoor = door.matrixWorld.clone().invert()
+  const box = new THREE.Box3()
+  door.traverse((obj) => {
+    if (!(obj instanceof THREE.Mesh)) return
+    obj.geometry.computeBoundingBox()
+    box.union(obj.geometry.boundingBox!.clone().applyMatrix4(worldToDoor.clone().multiply(obj.matrixWorld)))
+  })
+  if (box.isEmpty()) throw new Error(`Door ${door.name} has no mesh`)
+  const center = box.getCenter(new THREE.Vector3()).applyMatrix4(door.matrixWorld)
+  const half = box.getSize(new THREE.Vector3()).multiply(door.getWorldScale(new THREE.Vector3())).multiplyScalar(0.5)
+  const rotation = door.getWorldQuaternion(new THREE.Quaternion())
+  door.rotation.y = swing
+  door.updateWorldMatrix(false, true)
+  return {
+    name: `Door_${door.name}`,
+    cx: center.x,
+    cy: center.y,
+    cz: center.z,
+    hx: Math.max(half.x, DOOR_BLOCKER_MIN_HALF),
+    hy: Math.max(half.y, DOOR_BLOCKER_MIN_HALF),
+    hz: Math.max(half.z, DOOR_BLOCKER_MIN_HALF),
+    qx: rotation.x,
+    qy: rotation.y,
+    qz: rotation.z,
+    qw: rotation.w,
+  }
+}
+
+export function updateFrontDoors(dt: number, isDoorOpen: (houseKey: string) => boolean): void {
+  for (const [houseKey, door] of frontDoors) {
+    if (!door.node.parent) continue
+    const open = isDoorOpen(houseKey)
+    door.blocker ??= closedDoorBlocker(door.node)
+    setDoorBlocker(houseKey, open ? null : door.blocker)
+    const target = open ? OPEN_DOOR_ANGLE : 0
+    const step = DOOR_SWING_SPEED * dt
+    const delta = target - door.node.rotation.y
+    door.node.rotation.y = Math.abs(delta) <= step ? target : door.node.rotation.y + Math.sign(delta) * step
+  }
 }
 
 export function placeOpenHouseInterior(interior: THREE.Group, lot: OpenHouseLot): THREE.Group {

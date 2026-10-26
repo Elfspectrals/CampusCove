@@ -3,6 +3,7 @@
  * - GET  /housing/units
  * - POST /housing/units/{publicId}/buy
  * - POST /housing/keys, DELETE /housing/keys/{accountId}
+ * - PUT  /housing/units/{publicId}/door
  */
 import { fetchCurrentUser } from './auth'
 import { apiRequest, isRecord } from './http'
@@ -25,6 +26,7 @@ function parseHousingUnit(raw: unknown): HousingUnitPayload | null {
   if (!(raw.occupant_account_id === null || typeof raw.occupant_account_id === 'number')) return null
   if (!(raw.occupant_name === null || typeof raw.occupant_name === 'string')) return null
   if (!(raw.tax_due_at === null || typeof raw.tax_due_at === 'string')) return null
+  if (typeof raw.door_locked !== 'boolean') return null
   if (!(raw.room_public_id === null || typeof raw.room_public_id === 'string')) return null
   if (typeof raw.template_key !== 'string') return null
   if (!Array.isArray(raw.key_holder_account_ids) || !raw.key_holder_account_ids.every((id) => typeof id === 'number')) return null
@@ -45,6 +47,7 @@ function parseHousingUnit(raw: unknown): HousingUnitPayload | null {
     occupant_account_id: raw.occupant_account_id,
     occupant_name: raw.occupant_name,
     tax_due_at: raw.tax_due_at,
+    door_locked: raw.door_locked,
     room_public_id: raw.room_public_id,
     template_key: raw.template_key,
     key_holder_account_ids: raw.key_holder_account_ids,
@@ -89,6 +92,10 @@ export async function giveHouseKeys(accountId: number): Promise<void> {
 
 export async function takeHouseKeys(accountId: number): Promise<void> {
   await apiRequest(`/housing/keys/${accountId}`, { method: 'DELETE' })
+}
+
+export async function setHouseDoorLocked(publicId: string, locked: boolean): Promise<void> {
+  await apiRequest(`/housing/units/${encodeURIComponent(publicId)}/door`, { method: 'PUT', body: { locked } })
 }
 
 export async function buyHousingUnit(publicId: string): Promise<HousingUnitPayload> {

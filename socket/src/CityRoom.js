@@ -2,6 +2,7 @@ import { Room } from 'colyseus'
 import { enterWork, exitBuilding, pickupObject, saveObject, sendInventory, setDecoratedHouse } from './apartments.js'
 import { callBackendJson, parseAccountId, resolveIdentity } from './backend.js'
 import { CITY_MAX_PLAYERS, CITY_SPAWN_RADIUS } from './config.js'
+import { canUseDoor, isWithinDoorReach } from './doors.js'
 import {
   createPlayer,
   normalizeAppearanceIds,
@@ -26,10 +27,12 @@ export class CityRoom extends Room {
     this.sessionByAccountId = new Map()
     this.housingUnits = []
     this.houseFurniture = []
+    this.openDoors = new Set()
 
     this.onMessage('move', (client, payload) => this.onMove(client, payload))
     this.onMessage('appearance', (client, payload) => this.onAppearance(client, payload))
     this.onMessage('housing_refresh', (client) => this.onHousingRefresh(client))
+    this.onMessage('door_toggle', (client, payload) => this.onDoorToggle(client, payload))
     this.onMessage('enter_work', (client, payload) => enterWork(this, client, payload))
     this.onMessage('exit_apartment', (client) => exitBuilding(this, client))
     this.onMessage('decorate_house', (client, payload) => setDecoratedHouse(this, client, payload))
@@ -68,7 +71,8 @@ export class CityRoom extends Room {
       me: publicPlayer(player),
       users: this.visiblePlayersFor(player, client),
       housingUnits: this.housingUnits,
-      houseFurniture: this.houseFurniture
+      houseFurniture: this.houseFurniture,
+      openDoors: [...this.openDoors]
     })
     this.forEachVisibleClient(player, (c) => c.send('user_joined', publicPlayer(player)), client)
   }
@@ -156,7 +160,13 @@ export class CityRoom extends Room {
 
   async fetchHousingUnits(token) {
     const data = await callBackendJson(token, '/housing/units', 'GET')
+    const previous = new Map(this.housingUnits.map((u) => [u.public_id, u]))
     this.housingUnits = Array.isArray(data?.units) ? data.units : []
+    for (const unitId of this.openDoors) {
+      const unit = this.housingUnits.find((u) => u.public_id === unitId)
+      const justLocked = unit?.door_locked === true && previous.get(unitId)?.door_locked !== true
+      if (!unit || unit.status !== 'occupied' || justLocked) this.openDoors.delete(unitId)
+    }
   }
 
   async fetchHouseFurniture(token) {
@@ -182,9 +192,28 @@ export class CityRoom extends Room {
       await this.fetchHousingUnits(player.token)
       const payload = { units: this.housingUnits }
       this.forEachVisibleClient({ zone: 'city' }, (c) => c.send('housing_units_sync', payload))
+      this.broadcastDoors()
     } catch (error) {
       warn('housing_refresh failed', error)
     }
     await this.refreshHouseFurniture(player.token)
+  }
+
+  broadcastDoors() {
+    const payload = { openDoors: [...this.openDoors] }
+    this.forEachVisibleClient({ zone: 'city' }, (c) => c.send('doors_sync', payload))
+  }
+
+  onDoorToggle(client, payload) {
+    const player = this.players.get(client.sessionId)
+    const unit = this.housingUnits.find((u) => u.public_id === payload?.unitId && u.status === 'occupied')
+    if (!player || !unit || !isWithinDoorReach(player, unit)) return
+    if (!canUseDoor(unit, player.accountId)) {
+      client.send('door_error', { message: 'This door is locked.' })
+      return
+    }
+    if (this.openDoors.has(unit.public_id)) this.openDoors.delete(unit.public_id)
+    else this.openDoors.add(unit.public_id)
+    this.broadcastDoors()
   }
 }

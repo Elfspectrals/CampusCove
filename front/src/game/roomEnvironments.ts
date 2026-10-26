@@ -5,7 +5,7 @@ import { DEFAULT_HOUSE, findHouse, findWork } from './assets/catalog'
 import { createGltfLoader } from './gltfLoaderFactory'
 import { getGraphicsQuality } from './graphicsQuality'
 import { shareTexturesAcrossModels } from './sharedTextures'
-import { applyInteriorLightmap, openFrontDoor, openHouseLots, placeOpenHouseInterior } from './town/openHouses'
+import { applyInteriorLightmap, openHouseLots, placeOpenHouseInterior, registerFrontDoor } from './town/openHouses'
 import { animatePondWater } from './town/pondWater'
 import { setTerrainHeightmap, type TerrainHeightmap } from './town/terrainHeight'
 import { fetchWorldManifest, houseBuildings, workBuildings, type WorldManifest, type WorldZone } from './world/worldManifest'
@@ -93,7 +93,7 @@ export function loadTownEnvironment(): Promise<TownEnvironmentBuildResult> {
           const gltf = await loadModelSharingTextures(loader, house.exteriorUrl)
           const exterior = gltf.scene
           exterior.name = `HouseExterior_${lot.key}`
-          if (lot.interiorOffset) openFrontDoor(exterior, lot.key)
+          if (lot.interiorOffset) registerFrontDoor(exterior, lot.key)
           exterior.position.fromArray(lot.position)
           exterior.rotation.y = lot.rotationY
           exterior.userData.houseKey = lot.key

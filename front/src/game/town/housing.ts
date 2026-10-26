@@ -7,7 +7,13 @@ import type { HousingUnitPayload } from '../../types/gameRealtime'
 
 export type HousingUnit = HousingUnitPayload
 
-export type HousingAction = 'buy'
+export type HousingAction = 'buy' | 'open' | 'close' | 'lock' | 'unlock' | 'locked'
+
+export interface DoorContext {
+  myAccountId: number | null
+  doorOpen: boolean
+  holdingHouseKey: boolean
+}
 
 /** Extra XZ reach beyond half the unit size for the door prompt. */
 const INTERACT_RADIUS_PAD = 1.4
@@ -37,9 +43,17 @@ export function housingInteractPosition(unit: HousingUnit): { x: number; y: numb
   return { x: unit.pos_x, y: unit.pos_y + unitSize(unit) / 2 + 0.35, z: unit.pos_z }
 }
 
-export function housingActionFor(unit: HousingUnit): HousingAction | null {
-  if (unit.status !== 'vacant') return null
-  return unit.offer_type === 'buy' ? 'buy' : null
+function hasHouseKeys(unit: HousingUnit, accountId: number | null): boolean {
+  if (accountId === null || unit.status !== 'occupied') return false
+  return unit.occupant_account_id === accountId || unit.key_holder_account_ids.includes(accountId)
+}
+
+export function housingActionFor(unit: HousingUnit, door: DoorContext): HousingAction | null {
+  if (unit.status === 'vacant') return unit.offer_type === 'buy' ? 'buy' : null
+  const keys = hasHouseKeys(unit, door.myAccountId)
+  if (door.holdingHouseKey && keys) return unit.door_locked ? 'unlock' : 'lock'
+  if (door.doorOpen) return 'close'
+  return unit.door_locked && !keys ? 'locked' : 'open'
 }
 
 /** Door prompt texts, e.g. { action: 'Buy', detail: '1,800 coins · tax 90/day' }. */
@@ -47,5 +61,15 @@ export function housingPromptLabel(unit: HousingUnit, action: HousingAction): { 
   switch (action) {
     case 'buy':
       return { action: 'Buy', detail: `${unit.price_coins.toLocaleString()} coins · tax ${unit.tax_coins.toLocaleString()}/day` }
+    case 'open':
+      return { action: 'Open' }
+    case 'close':
+      return { action: 'Close' }
+    case 'lock':
+      return { action: 'Lock' }
+    case 'unlock':
+      return { action: 'Unlock' }
+    case 'locked':
+      return { action: 'Locked' }
   }
 }

@@ -33,6 +33,7 @@ export interface HousingUnitPayload {
   occupant_account_id: number | null
   occupant_name: string | null
   tax_due_at: string | null
+  door_locked: boolean
   room_public_id: string | null
   template_key: string
   key_holder_account_ids: number[]
@@ -43,6 +44,7 @@ export interface RoomInitPayload {
   users: RemoteUserPayload[]
   housingUnits?: HousingUnitPayload[]
   houseFurniture?: HouseFurniturePayload[]
+  openDoors?: string[]
 }
 
 export interface HouseFurniturePayload {

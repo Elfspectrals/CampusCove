@@ -70,6 +70,7 @@ let loadedTrimeshes: CollisionTrimeshJson[] = []
 let characterController: RAPIER.KinematicCharacterController | null = null
 let playerBody: RAPIER.RigidBody | null = null
 let playerCollider: Collider | null = null
+const doorBlockers = new Map<string, RAPIER.RigidBody>()
 
 const desiredDelta = new RAPIER.Vector3(0, 0, 0)
 
@@ -96,13 +97,14 @@ function addFixedCuboid(
   qy: number,
   qz: number,
   qw: number,
-): void {
+): RAPIER.RigidBody {
   const body = w.createRigidBody(
     RAPIER.RigidBodyDesc.fixed()
       .setTranslation(cx, cy, cz)
       .setRotation(new RAPIER.Quaternion(qx, qy, qz, qw)),
   )
   w.createCollider(RAPIER.ColliderDesc.cuboid(hx, hy, hz), body)
+  return body
 }
 
 function addFixedTrimesh(w: World, vertices: number[], indices: number[]): void {
@@ -203,6 +205,7 @@ function disposeWorld(): void {
   playerCollider = null
   characterController = null
   collidersReady = false
+  doorBlockers.clear()
 }
 
 async function buildFromCollisionData(url: string, data: CollisionFileJson): Promise<void> {
@@ -359,6 +362,21 @@ export function buildWorldCollisionFromData(key: string, data: CollisionFileJson
       buildInFlight = null
     })
   return buildInFlight
+}
+
+export function setDoorBlocker(key: string, cuboid: CollisionCuboidJson | null): void {
+  if (!world || !collidersReady) return
+  const existing = doorBlockers.get(key)
+  if (cuboid === null) {
+    if (!existing) return
+    world.removeRigidBody(existing)
+    doorBlockers.delete(key)
+  } else {
+    if (existing) return
+    const c = cuboid
+    doorBlockers.set(key, addFixedCuboid(world, c.cx, c.cy, c.cz, c.hx, c.hy, c.hz, c.qx, c.qy, c.qz, c.qw))
+  }
+  world.step()
 }
 
 export function getWorldCollisionStats(): Readonly<WorldCollisionStats> {

@@ -35,7 +35,7 @@ import { createGameScene, disposeGameScene, type GameScene } from '../game/gameS
 import { createHeldItem } from '../game/heldItem'
 import { findHouse } from '../game/assets/catalog'
 import { createDoorSigns } from '../game/town/doorSigns'
-import { houseKeyAt, openHouseInterior } from '../game/town/openHouses'
+import { houseKeyAt, openHouseInterior, updateFrontDoors } from '../game/town/openHouses'
 
 const router = useRouter()
 const containerRef = ref<HTMLElement | null>(null)
@@ -153,10 +153,13 @@ const {
 
 // ---------------------------------------------------------------- town: houses, doors, environment
 
+const holdingHouseKey = () => selectedItem.value?.code === 'house_key'
+
 const housing = useCityHousing({
   myAccountId,
   gameRoomRef,
   roomMessage,
+  holdingHouseKey,
 })
 
 const interactions = useInteractionTargets({
@@ -167,6 +170,7 @@ const interactions = useInteractionTargets({
   promptsHidden: () => inventoryOpen.value || housing.claimInFlight.value,
   housingUnits: housing.units,
   nearbyHousingUnit: housing.nearbyUnit,
+  housingActionFor: housing.actionFor,
   onExitDoor: () => {
     placement.cancelPreview()
     realtime.exitBuilding()
@@ -188,12 +192,17 @@ const houseKeys = useHouseKeys({
   gameRoomRef,
   roomMessage,
   myHouse: () => housing.units.value.find((u) => u.occupant_account_id === myAccountId.value) ?? null,
-  holdingHouseKey: () => selectedItem.value?.code === 'house_key',
+  holdingHouseKey,
   promptsHidden: () => inventoryOpen.value || currentRoomLabel.value !== 'city',
 })
 const { keyPrompt } = houseKeys
 
 const heldItem = createHeldItem()
+
+function isHouseDoorOpen(houseKey: string): boolean {
+  const unit = housing.units.value.find((u) => u.model_key === houseKey)
+  return unit ? housing.isDoorOpen(unit) : true
+}
 
 const DOOR_SIGN_REFRESH_MS = 30_000
 const doorSigns = createDoorSigns()
@@ -275,6 +284,7 @@ const movement = useGameMovement({
     if (canDecorate.value) placement.tick(dt)
     interactions.updatePrompts()
     houseKeys.updateKeyPrompt()
+    if (currentRoomLabel.value === 'city') updateFrontDoors(dt, isHouseDoorOpen)
     heldItem.update(game?.fpHands ?? null, selectedItem.value?.kind === 'tool' ? selectedItem.value.model_glb : null)
     if (!doorSigns.group.parent) getScene()?.add(doorSigns.group)
     doorSigns.group.visible = currentRoomLabel.value === 'city'
@@ -315,6 +325,7 @@ const realtime = useGameRealtime({
   setRoomEnvironment,
   onHousingUnitsSync: housing.applyUnits,
   onHouseFurnitureSync: houseFurniture.applyHouses,
+  onDoorsSync: housing.applyOpenDoors,
 })
 const { transitioning, switchingRoom } = realtime
 

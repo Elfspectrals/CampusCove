@@ -4,9 +4,9 @@ import { APARTMENT_DOOR_POS, APARTMENT_DOOR_RADIUS } from '../../game/gameRoomCo
 import { findNearestFishingSpot, type FishingSpot } from '../../game/town/fishingSpots'
 import {
   findNearestHousingUnit,
-  housingActionFor,
   housingInteractPosition,
   housingPromptLabel,
+  type HousingAction,
   type HousingUnit,
 } from '../../game/town/housing'
 import { fishingSpots as manifestFishingSpots, workBuildings, type WorldManifest } from '../../game/world/worldManifest'
@@ -28,6 +28,7 @@ export interface InteractionTargetsDeps {
   promptsHidden: () => boolean
   housingUnits: Ref<HousingUnit[]>
   nearbyHousingUnit: Ref<HousingUnit | null>
+  housingActionFor: (unit: HousingUnit) => HousingAction | null
   onExitDoor: () => void
   onHousingDoor: () => void
   onWorkDoor: (lot: WorkLot) => void
@@ -112,7 +113,7 @@ export function useInteractionTargets(deps: InteractionTargetsDeps) {
     }
     const unit = deps.nearbyHousingUnit.value
     if (unit) {
-      const action = housingActionFor(unit)
+      const action = deps.housingActionFor(unit)
       const pos = housingInteractPosition(unit)
       const screen = projectToScreen(pos.x, pos.y, pos.z)
       return screen && action && { ...screen, ...housingPromptLabel(unit, action) }
