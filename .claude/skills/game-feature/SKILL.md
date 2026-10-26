@@ -77,7 +77,27 @@ The host has Node 22.13, which cannot run `.ts` tests without `--experimental-st
 (`node:test` + `node:assert/strict`, see `src/avatar/avatarAnimationLogic.test.ts`). Report any gate you could
 not run.
 
-## 5. Ship
+## 5. Reference skills (vendored, advisory)
+
+General know-how from three open-source skill packs, each with a CampusCove note at the top (r170 gaps, which
+project file owns the concern). Load the matching one when the task needs depth; this skill and the other
+CampusCove skills win on any conflict. Sources and licenses: `.claude/skills/_third-party/README.md`.
+
+| Need | Skill |
+|---|---|
+| Slow frames, draw calls, VRAM, shader stalls | `threejs-performance` |
+| Something broken or blank, before guessing a fix | `threejs-debug-profiler` (then `playtest-game` to reproduce) |
+| GLTF/Draco/texture loading, cloning, disposal | `threejs-loaders` |
+| Inspecting or tuning compression (via `optimize-assets.mjs` only) | `threejs-asset-pipeline` |
+| Lights, shadows, environment, lightmaps | `threejs-lighting` |
+| Color spaces, UV channels, texture memory | `threejs-textures` |
+| Mixer, clips, crossfades, bones (avatars, first-person arms) | `threejs-animation` |
+| Feedback on doors, keys, purchases, catches, hotbar | `game-feel` |
+| First-person camera behaviour | `camera-systems` |
+| New actions / keys, accessibility of controls | `input-systems` |
+| Laying out a new zone or building, landmarks, flow | `level-design` |
+
+## 6. Ship
 
 - One commit per playable slice; assets and code for the same slice can be split as `phase Na (assets)` /
   `phase Nb` like `847dd37` / `9e0922e`.
