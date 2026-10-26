@@ -32,6 +32,7 @@ import { toggleCollisionDebug } from '../game/collision/collisionDebug'
 import { getWorldCollisionStats } from '../game/collision/worldCollision'
 import { HOUSING_LOBBY_SPAWN } from '../game/gameRoomConstants'
 import { createGameScene, disposeGameScene, type GameScene } from '../game/gameScene'
+import { createHeldItem } from '../game/heldItem'
 import { findHouse } from '../game/assets/catalog'
 import { createDoorSigns } from '../game/town/doorSigns'
 import { houseKeyAt, openHouseInterior } from '../game/town/openHouses'
@@ -122,6 +123,7 @@ const {
   inventoryError,
   cursorItem,
   itemByCode,
+  selectedItem,
   resetClientStateForCityWorld,
   selectHotbarIndex,
   onSlotPointerDown,
@@ -186,9 +188,12 @@ const houseKeys = useHouseKeys({
   gameRoomRef,
   roomMessage,
   myHouse: () => housing.units.value.find((u) => u.occupant_account_id === myAccountId.value) ?? null,
+  holdingHouseKey: () => selectedItem.value?.code === 'house_key',
   promptsHidden: () => inventoryOpen.value || currentRoomLabel.value !== 'city',
 })
 const { keyPrompt } = houseKeys
+
+const heldItem = createHeldItem()
 
 const DOOR_SIGN_REFRESH_MS = 30_000
 const doorSigns = createDoorSigns()
@@ -270,6 +275,7 @@ const movement = useGameMovement({
     if (canDecorate.value) placement.tick(dt)
     interactions.updatePrompts()
     houseKeys.updateKeyPrompt()
+    heldItem.update(game?.fpHands ?? null, selectedItem.value?.kind === 'tool' ? selectedItem.value.model_glb : null)
     if (!doorSigns.group.parent) getScene()?.add(doorSigns.group)
     doorSigns.group.visible = currentRoomLabel.value === 'city'
   },

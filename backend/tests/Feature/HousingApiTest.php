@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Account;
 use App\Models\HousingUnit;
+use App\Services\ApartmentPlacementService;
 use App\Services\HousingService;
 use Database\Seeders\HousingUnitSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -239,6 +240,81 @@ class HousingApiTest extends TestCase
         $response->assertJsonPath('houses.0.model_key', $unit->model_key);
         $response->assertJsonPath('houses.0.occupant_account_id', $owner['account_id']);
         $response->assertJsonPath('houses.0.objects', []);
+    }
+
+    public function test_buying_gives_the_owner_a_house_key(): void
+    {
+        $owner = $this->registerAndCreditWallet(10_000, 'coins');
+        $unit = HousingUnit::query()->where('offer_type', 'buy')->firstOrFail();
+
+        $this->assertSame(0, $this->houseKeyQuantity($owner));
+        $this->postJson('/api/housing/units/'.$unit->public_id.'/buy', [], [
+            'Authorization' => 'Bearer '.$owner['token'],
+        ])->assertOk();
+
+        $key = collect($this->getJson('/api/apartments/assets', [
+            'Authorization' => 'Bearer '.$owner['token'],
+        ])->assertOk()->json('items'))->firstWhere('code', 'house_key');
+        $this->assertNotNull($key);
+        $this->assertSame('tool', $key['kind']);
+        $this->assertSame(1, (int) $key['quantity']);
+    }
+
+    public function test_key_holders_get_a_key_copy_until_the_owner_takes_the_keys_back(): void
+    {
+        $owner = $this->registerAndCreditWallet(10_000, 'coins');
+        $friend = $this->registerAndCreditWallet(0, 'coins');
+        $unit = HousingUnit::query()->where('offer_type', 'buy')->firstOrFail();
+        $this->postJson('/api/housing/units/'.$unit->public_id.'/buy', [], [
+            'Authorization' => 'Bearer '.$owner['token'],
+        ])->assertOk();
+
+        foreach ([1, 2] as $attempt) {
+            $this->postJson('/api/housing/keys', ['account_id' => $friend['account_id']], [
+                'Authorization' => 'Bearer '.$owner['token'],
+            ])->assertOk();
+        }
+        $this->assertSame(1, $this->houseKeyQuantity($friend));
+
+        $this->deleteJson('/api/housing/keys/'.$friend['account_id'], [], [
+            'Authorization' => 'Bearer '.$owner['token'],
+        ])->assertOk();
+        $this->assertSame(0, $this->houseKeyQuantity($friend));
+        $this->assertSame(1, $this->houseKeyQuantity($owner));
+    }
+
+    public function test_seizure_takes_the_keys_from_the_owner_and_the_key_holders(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-09-22 12:00:00 UTC'));
+        $unit = HousingUnit::query()->where('offer_type', 'buy')->firstOrFail();
+        $owner = $this->registerAndCreditWallet($unit->price_coins, 'coins');
+        $friend = $this->registerAndCreditWallet(0, 'coins');
+        $this->postJson('/api/housing/units/'.$unit->public_id.'/buy', [], [
+            'Authorization' => 'Bearer '.$owner['token'],
+        ])->assertOk();
+        $this->postJson('/api/housing/keys', ['account_id' => $friend['account_id']], [
+            'Authorization' => 'Bearer '.$owner['token'],
+        ])->assertOk();
+
+        Carbon::setTestNow(Carbon::parse('2026-09-23 12:00:01 UTC'));
+        $this->assertSame(1, app(HousingService::class)->collectDueTaxes());
+
+        $this->assertSame(0, $this->houseKeyQuantity($owner));
+        $this->assertSame(0, $this->houseKeyQuantity($friend));
+
+        Carbon::setTestNow();
+    }
+
+    /**
+     * @param  array{token: string, account_id: int, username: string}  $player
+     */
+    private function houseKeyQuantity(array $player): int
+    {
+        $key = app(ApartmentPlacementService::class)
+            ->listSpawnableAssets($player['account_id'])
+            ->firstWhere('code', 'house_key');
+
+        return $key === null ? 0 : (int) $key['quantity'];
     }
 
     /**

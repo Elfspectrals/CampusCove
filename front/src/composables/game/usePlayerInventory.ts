@@ -72,6 +72,11 @@ export function usePlayerInventory(deps: UsePlayerInventoryDeps) {
     return m
   })
 
+  const selectedItem = computed<ApartmentInventoryItem | null>(() => {
+    const item = itemByCode.value[slots.value[selectedHotbarIndex.value] ?? '']
+    return item && item.quantity > 0 ? item : null
+  })
+
   function quantityForCode(code: string): number {
     if (!code) return 0
     const row = ownedItems.value.find((i) => i.code === code)
@@ -199,7 +204,7 @@ export function usePlayerInventory(deps: UsePlayerInventoryDeps) {
     scheduleDebouncedSave()
     const code = slots.value[i] ?? ''
 
-    if (!deps.canDecorate.value) {
+    if (!deps.canDecorate.value || itemByCode.value[code]?.kind === 'tool') {
       cancelPlacementPreviewInternal()
       return
     }
@@ -384,6 +389,7 @@ export function usePlayerInventory(deps: UsePlayerInventoryDeps) {
     inventoryError,
     cursorItem,
     itemByCode,
+    selectedItem,
     toggleInventory,
     closeInventory,
     selectHotbarIndex,

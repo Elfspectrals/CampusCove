@@ -15,6 +15,7 @@ export interface HouseKeysDeps {
   gameRoomRef: ShallowRef<Room | null>
   roomMessage: Ref<string | null>
   myHouse: () => HousingUnit | null
+  holdingHouseKey: () => boolean
   promptsHidden: () => boolean
 }
 
@@ -49,7 +50,7 @@ export function useHouseKeys(deps: HouseKeysDeps) {
   function findTarget(): KeyTarget | null {
     const scene = deps.getScene()
     const camera = deps.getCamera()
-    if (!scene || !camera || !deps.myHouse()) return null
+    if (!scene || !camera || !deps.myHouse() || !deps.holdingHouseKey()) return null
     const avatars = scene.children.filter((c) => c.userData.isRemoteAvatar === true && c.visible)
     if (avatars.length === 0) return null
     raycaster.setFromCamera(center, camera)

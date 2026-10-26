@@ -8,6 +8,7 @@ use App\Models\AccountHandle;
 use App\Models\Container;
 use App\Models\EconomyTransaction;
 use App\Models\HousingUnit;
+use App\Models\ItemDef;
 use App\Models\ItemInstance;
 use App\Models\Room;
 use App\Models\RoomFurniture;
@@ -25,6 +26,10 @@ final class HousingService
     private const TAX_RATE = 0.05;
 
     private const TAX_PERIOD_HOURS = 24;
+
+    private const HOUSE_KEY_CODE = 'house_key';
+
+    public function __construct(private readonly AccountInventoryService $inventoryService) {}
 
     public function collectDueTaxes(): int
     {
@@ -81,7 +86,13 @@ final class HousingService
     public function resetExpiredUnit(HousingUnit $unit): void
     {
         $roomId = $unit->room_id !== null ? (int) $unit->room_id : null;
+        if ($unit->occupant_account_id !== null) {
+            $this->inventoryService->revokeItem((int) $unit->occupant_account_id, $this->houseKey(), 1);
+        }
         if ($roomId !== null) {
+            foreach ($this->keyHolderIds($unit) as $keyHolderId) {
+                $this->inventoryService->revokeItem($keyHolderId, $this->houseKey(), 1);
+            }
             $containerId = RoomFurnitureContainer::query()->where('room_id', $roomId)->value('container_id');
             RoomFurniture::query()->where('room_id', $roomId)->delete();
             if ($containerId !== null) {
@@ -141,15 +152,21 @@ final class HousingService
         if (! Account::query()->whereKey($targetAccountId)->exists()) {
             throw new HousingRejectedException('account_not_found', 'This player does not exist.', 404);
         }
-        DB::statement(
-            '
-            INSERT INTO room_memberships (room_id, account_id, role, created_at)
-            VALUES (?, ?, ?, NOW())
-            ON CONFLICT (room_id, account_id)
-            DO UPDATE SET role = EXCLUDED.role
-            ',
-            [(int) $unit->room_id, $targetAccountId, 'co_owner']
-        );
+        if (in_array($targetAccountId, $this->keyHolderIds($unit), true)) {
+            return $unit->fresh(['room']);
+        }
+        DB::transaction(function () use ($unit, $targetAccountId): void {
+            DB::statement(
+                '
+                INSERT INTO room_memberships (room_id, account_id, role, created_at)
+                VALUES (?, ?, ?, NOW())
+                ON CONFLICT (room_id, account_id)
+                DO UPDATE SET role = EXCLUDED.role
+                ',
+                [(int) $unit->room_id, $targetAccountId, 'co_owner']
+            );
+            $this->inventoryService->grantItem($targetAccountId, $this->houseKey(), 1);
+        });
 
         return $unit->fresh(['room']);
     }
@@ -157,11 +174,16 @@ final class HousingService
     public function takeKeys(Account $owner, int $targetAccountId): HousingUnit
     {
         $unit = $this->ownedUnitForKeys($owner, $targetAccountId);
-        RoomMembership::query()
-            ->where('room_id', (int) $unit->room_id)
-            ->where('account_id', $targetAccountId)
-            ->where('role', 'co_owner')
-            ->delete();
+        DB::transaction(function () use ($unit, $targetAccountId): void {
+            $removed = RoomMembership::query()
+                ->where('room_id', (int) $unit->room_id)
+                ->where('account_id', $targetAccountId)
+                ->where('role', 'co_owner')
+                ->delete();
+            if ($removed > 0) {
+                $this->inventoryService->revokeItem($targetAccountId, $this->houseKey(), 1);
+            }
+        });
 
         return $unit->fresh(['room']);
     }
@@ -279,9 +301,15 @@ final class HousingService
                 'room_id' => (int) $room->room_id,
                 'updated_at' => now(),
             ]);
+            $this->inventoryService->grantItem($accountId, $this->houseKey(), 1);
 
             return $unit->fresh(['room']);
         });
+    }
+
+    private function houseKey(): ItemDef
+    {
+        return ItemDef::query()->where('code', self::HOUSE_KEY_CODE)->firstOrFail();
     }
 
     private function debitCoins(int $accountId, int $amount, string $reason, array $meta): void

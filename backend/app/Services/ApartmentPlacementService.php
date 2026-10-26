@@ -27,6 +27,8 @@ class ApartmentPlacementService
      */
     private const PLACEABLE_KINDS = ['apartment_asset', 'furniture'];
 
+    private const HOTBAR_KINDS = [...self::PLACEABLE_KINDS, 'tool'];
+
     /**
      * @var list<string>
      */
@@ -123,7 +125,7 @@ class ApartmentPlacementService
     {
         return $this->inventoryService
             ->aggregatedItemsForAccount($accountId, null, null)
-            ->filter(fn (object $row): bool => in_array((string) $row->kind, self::PLACEABLE_KINDS, true) && (int) $row->quantity > 0)
+            ->filter(fn (object $row): bool => in_array((string) $row->kind, self::HOTBAR_KINDS, true) && (int) $row->quantity > 0)
             ->map(fn (object $row): array => [
                 'item_def_id' => (int) $row->item_def_id,
                 'code' => (string) $row->code,

@@ -63,6 +63,7 @@ export function createGameScene(
   const fpHands = buildFirstPersonHands(handsColor)
   fpHands.visible = false
   camera.add(fpHands)
+  scene.add(camera)
 
   return { scene, camera, renderer, fpHands }
 }
