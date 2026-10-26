@@ -1,7 +1,12 @@
 import * as THREE from 'three'
 import { disposeObject3D } from '../../avatar/compositeAvatar'
 import { findHouse } from '../assets/catalog'
-import type { CollisionCuboidJson, CollisionFileJson, CollisionTrimeshJson } from '../collision/worldCollision'
+import {
+  fetchCollisionFile,
+  type CollisionCuboidJson,
+  type CollisionFileJson,
+  type CollisionTrimeshJson,
+} from '../collision/worldCollision'
 import { houseBuildings, type HouseBuilding, type WorldManifest } from '../world/worldManifest'
 
 type OpenHouseLot = HouseBuilding & { interiorOffset: [number, number, number] }
@@ -104,21 +109,15 @@ function transformTrimesh(trimesh: CollisionTrimeshJson, matrix: THREE.Matrix4):
   return { ...trimesh, vertices }
 }
 
-async function fetchCollision(url: string): Promise<CollisionFileJson> {
-  const res = await fetch(url)
-  if (!res.ok) throw new Error(`Could not load collision ${url} (${res.status})`)
-  return (await res.json()) as CollisionFileJson
-}
-
 async function composeTownCollisionData(manifest: WorldManifest): Promise<CollisionFileJson> {
   const lots = openHouseLots(manifest)
   const zoneCollisionUrls = manifest.zones.flatMap((zone) => (zone.collisionUrl ? [zone.collisionUrl] : []))
   const [zones, interiors] = await Promise.all([
-    Promise.all(zoneCollisionUrls.map(fetchCollision)),
+    Promise.all(zoneCollisionUrls.map(fetchCollisionFile)),
     Promise.all(lots.map((lot) => {
       const house = findHouse(lot.key)
       if (!house) throw new Error(`Unknown house in the world manifest: ${lot.key}`)
-      return fetchCollision(house.interiorCollisionUrl)
+      return fetchCollisionFile(house.interiorCollisionUrl)
     })),
   ])
 

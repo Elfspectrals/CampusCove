@@ -3,6 +3,7 @@ import type { Room } from '@colyseus/sdk'
 import * as THREE from 'three'
 import { matchesRotateCCW, matchesRotateCW } from '../../config/keybindings'
 import { createPlacementGhost, DEFAULT_GHOST_COLOR } from '../../game/placement/placementGhost'
+import { fetchCollisionFile, type CollisionFileJson } from '../../game/collision/worldCollision'
 import { apartmentObjectIdOf, createPlacementPhysics } from '../../game/placement/placementPhysics'
 import type { ApartmentEnvironmentBuildResult } from '../../game/roomEnvironments'
 
@@ -73,6 +74,7 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
   const physics = createPlacementPhysics()
   const ghost = createPlacementGhost()
   let apartmentEnvGroup: THREE.Group | null = null
+  let roomCollision: Promise<CollisionFileJson | null> | null = null
   let watchStopOwned: WatchStopHandle | null = null
 
   const raycaster = new THREE.Raycaster()
@@ -88,7 +90,8 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
   let supportPropId = ''
 
   function ensureWorld(): Promise<void> {
-    return deps.currentRoomLabel.value === 'apartment' ? physics.ensureReady() : Promise.resolve()
+    if (deps.currentRoomLabel.value !== 'apartment' || !roomCollision) return Promise.resolve()
+    return roomCollision.then((room) => (room ? physics.ensureReady(room) : undefined))
   }
 
   function tearDownOwnedWatch(): void {
@@ -176,6 +179,10 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
 
   function registerApartmentEnvironment(build: ApartmentEnvironmentBuildResult): void {
     apartmentEnvGroup = build.group
+    roomCollision = fetchCollisionFile(build.house.interiorCollisionUrl).catch((error: unknown) => {
+      console.error('[placement] room collision failed to load, overlaps are not checked', error)
+      return null
+    })
     void ensureWorld()
   }
 
@@ -185,6 +192,7 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
     tearDownOwnedWatch()
     physics.dispose()
     apartmentEnvGroup = null
+    roomCollision = null
   }
 
   function registerApartmentProp(mesh: THREE.Mesh): void {
@@ -366,6 +374,7 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
     tearDownOwnedWatch()
     physics.dispose()
     apartmentEnvGroup = null
+    roomCollision = null
   }
 
   return {

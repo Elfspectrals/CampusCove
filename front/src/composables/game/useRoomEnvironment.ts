@@ -56,7 +56,8 @@ export function useRoomEnvironment(deps: RoomEnvironmentDeps) {
         .then(({ manifest }) => buildTownCollisionData(manifest))
         .then((data) => buildWorldCollisionFromData('town', data))
         .catch((err) => {
-          console.warn('[collision] town collision failed', err)
+          console.error('[collision] town collision failed', err)
+          deps.onError('Could not load the town collision: movement is disabled.')
         })
       void loadTownEnvironment()
         .then(({ group, manifest }) => {
@@ -76,7 +77,8 @@ export function useRoomEnvironment(deps: RoomEnvironmentDeps) {
         if (token !== loadToken) return
         show(scene, built.group)
         void buildWorldCollisionFromUrl(built.house.interiorCollisionUrl).catch((err) => {
-          console.warn('[collision] interior collision failed', err)
+          console.error('[collision] interior collision failed', err)
+          deps.onError('Could not load this building collision: movement is disabled.')
         })
         deps.onInteriorLoaded(built)
       })

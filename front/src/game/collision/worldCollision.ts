@@ -235,6 +235,14 @@ async function buildFromCollisionData(url: string, data: CollisionFileJson): Pro
   refreshCollisionDebug(loadedCuboids, loadedTrimeshes)
 }
 
+export async function fetchCollisionFile(url: string): Promise<CollisionFileJson> {
+  const res = await fetch(url)
+  if (!res.ok) {
+    throw new Error(`Failed to load collision file ${url}: ${res.status}`)
+  }
+  return (await res.json()) as CollisionFileJson
+}
+
 /**
  * Load a sidecar `.collision.json` (produced by `npm run collision:extract` / `make assets-optimize`)
  * into the Rapier world. Calls with the URL already loaded are no-ops.
@@ -249,11 +257,7 @@ export function buildWorldCollisionFromUrl(url: string): Promise<void> {
 
   builtUrl = url
   buildInFlight = (async () => {
-    const res = await fetch(url)
-    if (!res.ok) {
-      throw new Error(`Failed to load collision file ${url}: ${res.status}`)
-    }
-    const data = (await res.json()) as CollisionFileJson
+    const data = await fetchCollisionFile(url)
     await buildFromCollisionData(url, data)
     console.info(
       `[collision] loaded ${url}: ${stats.cuboids} cuboids, ${stats.trimeshes} trimeshes (${stats.trimeshTris} tris), ${stats.borderWalls} borders, mode=${stats.mode ?? 'n/a'}`,
@@ -366,7 +370,7 @@ export function resolveWorldMovement(
   dx: number,
   dz: number,
 ): { x: number; z: number } {
-  const fallback = { x: current.x + dx, z: current.z + dz }
+  const blocked = { x: current.x, z: current.z }
   if (
     !collidersReady ||
     !world ||
@@ -375,7 +379,7 @@ export function resolveWorldMovement(
     !playerCollider ||
     !playerCollider.isValid()
   ) {
-    return fallback
+    return blocked
   }
 
   playerBody.setTranslation(new RAPIER.Vector3(current.x, CAPSULE_CENTER_Y, current.z), true)
