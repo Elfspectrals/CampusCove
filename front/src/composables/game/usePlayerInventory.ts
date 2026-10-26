@@ -114,6 +114,10 @@ export function usePlayerInventory(deps: UsePlayerInventoryDeps) {
       slots.value = next
       scheduleDebouncedSave()
     }
+    if (!layoutHydrated) return
+    for (const item of ownedItems.value) {
+      if (item.quantity > 0) pickupToHotbar(item.code)
+    }
   }
 
   function swapSlots(from: number, to: number): void {
