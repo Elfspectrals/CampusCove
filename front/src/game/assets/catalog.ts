@@ -6,6 +6,9 @@
  *     houses/<key>/exterior.glb, interior.glb, interior.collision.json, preview.png
  *     town/town.glb, town.collision.json, town.layout.json
  *     showroom/new_nation.glb, new_nation.layout.json
+ *     decor/<key>/model.glb, preview.png               (furniture, sold in the Cove Home store)
+ *     store/cove_home/exterior.glb, interior.glb, interior.collision.json, interior.layout.json
+ *     store/park/park.glb, park.layout.json
  *
  * Sources: Blender build scripts in `map-src/CampusCove/` (+ `map-src/NewNation/` for the showroom),
  * optimized with `npm run assets:optimize`. Keys / shop codes must match the backend seeders
@@ -132,6 +135,54 @@ const WORKS: readonly WorkAsset[] = [
 
 export function findWork(key: string | null | undefined): WorkAsset | null {
   return WORKS.find((w) => w.key === key) ?? null
+}
+
+/**
+ * Cove Home, the furniture store east of the business-district plaza: furniture is bought by walking its
+ * showroom (no web shop). Built by map-src/CampusCove/build_store.py + build_store_ext.py → public/assets/store/.
+ * Entered like a work building (socket `enter_work`, key `cove_home`). `interior.layout.json` lists the displays
+ * (decor model + price tag per shop code), see `StoreLayout`.
+ */
+export const COVE_HOME = {
+  key: 'cove_home',
+  name: 'Cove Home',
+  exteriorUrl: `${ROOT}/store/cove_home/exterior.glb`,
+  interiorUrl: `${ROOT}/store/cove_home/interior.glb`,
+  interiorCollisionUrl: `${ROOT}/store/cove_home/interior.collision.json`,
+  interiorLayoutUrl: `${ROOT}/store/cove_home/interior.layout.json`,
+  /** Retail park scenery around the store (plaza extension, hedges, pylon sign), in town space. */
+  parkModelUrl: `${ROOT}/store/park/park.glb`,
+} as const
+
+/** Furniture model shown in the store and placed in houses: public/assets/decor/<key>/model.glb. */
+export function decorModelUrl(key: string): string {
+  return `${ROOT}/decor/${key}/model.glb`
+}
+
+/** Shape of `store/cove_home/interior.layout.json` (written by build_store.py). */
+export interface StoreLayout {
+  version: number
+  key: string
+  name: string
+  bounds: { minX: number; maxX: number; minZ: number; maxZ: number }
+  departments: Array<{ id: string; label: string; color: string; sign: [number, number, number] }>
+  displays: StoreDisplay[]
+}
+
+export interface StoreDisplay {
+  /** decor asset key (public/assets/decor/<key>/). */
+  key: string
+  /** item_defs.code of the item sold here. */
+  code: string
+  department: string
+  description: string
+  /** Where the model stands (y > 0: on a plinth) and its yaw (rotation.y; the model's front faces the route). */
+  position: [number, number, number]
+  yaw: number
+  /** Model bounding size [w, h, d] in metres. */
+  size: [number, number, number]
+  /** Price-tag board (centre) at the edge of the route. */
+  tag: { position: [number, number, number]; yaw: number }
 }
 
 export const SHOWROOM = {

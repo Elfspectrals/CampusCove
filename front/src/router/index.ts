@@ -27,7 +27,8 @@ const router = createRouter({
       component: ForgotPasswordView,
       meta: { guest: true, title: 'Reset password' },
     },
-    { path: '/shop', name: 'shop', component: ItemShopView, meta: { title: 'Shop' } },
+    // Furniture is sold in the Cove Home store inside /game; the old furniture shop URL lands on the skins.
+    { path: '/shop', name: 'shop', redirect: { name: 'shop-skin' } },
     { path: '/shop-skin', name: 'shop-skin', component: ItemShopView, meta: { title: 'Shop Skin' } },
     { path: '/NewNation', name: 'new-nation', component: NewNationView, meta: { requiresAdmin: true, title: 'Admin — New Nation', fullBleed: true } },
     { path: '/home', name: 'home', component: HomeView, meta: { requiresAuth: true, title: 'Profile' } },

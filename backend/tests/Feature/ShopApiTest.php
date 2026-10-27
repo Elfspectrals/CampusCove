@@ -49,20 +49,26 @@ class ShopApiTest extends TestCase
         $this->assertGreaterThanOrEqual(1, count($response->json('items')));
     }
 
-    public function test_catalog_sells_the_five_decor_items_with_their_assets(): void
+    public function test_catalog_sells_the_cove_home_decor_items_with_their_assets(): void
     {
         $items = collect($this->getJson('/api/shop/items')->assertOk()->json('items'))
             ->filter(fn (array $row) => ($row['item']['kind'] ?? null) === 'furniture')
             ->mapWithKeys(fn (array $row) => [$row['item']['code'] => $row['item']['model_glb']])
             ->all();
 
-        $this->assertEqualsCanonicalizing([
+        $this->assertCount(50, $items);
+        foreach ([
             'chair_campus_basic' => '/assets/decor/wooden_chair/model.glb',
             'lamp_study' => '/assets/decor/floor_lamp/model.glb',
             'decor_dining_table' => '/assets/decor/dining_table/model.glb',
             'decor_potted_plant' => '/assets/decor/potted_plant/model.glb',
             'decor_bookshelf' => '/assets/decor/bookshelf/model.glb',
-        ], $items);
+        ] as $code => $model) {
+            $this->assertSame($model, $items[$code] ?? null, $code);
+        }
+        foreach ($items as $code => $model) {
+            $this->assertMatchesRegularExpression('#^/assets/decor/[a-z0-9_]+/model\.glb$#', (string) $model, $code);
+        }
     }
 
     public function test_shop_catalog_filters_by_currency(): void
