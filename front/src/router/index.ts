@@ -46,6 +46,12 @@ const router = createRouter({
       component: AdminInventoriesView,
       meta: { requiresAdmin: true, title: 'Admin — Inventories' },
     },
+    {
+      path: '/admin/planner',
+      name: 'admin-planner',
+      component: () => import('../views/admin/AdminWorldPlannerView.vue'),
+      meta: { requiresAdmin: true, title: 'Admin — World Planner' },
+    },
   ],
 })
 
