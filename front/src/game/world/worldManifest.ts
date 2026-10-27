@@ -73,6 +73,8 @@ export interface WorldManifest {
   spawnYaw: number
   bounds: WorldBounds
   zones: WorldZone[]
+  /** Free drinking fountains ([x, 0, z], put on the terrain), written by scripts/apply-fountains.mjs. */
+  fountains?: Vec3[]
 }
 
 const WORLD_MANIFEST_URL = '/assets/world.manifest.json'

@@ -50,6 +50,8 @@ class InventoryController extends Controller
                 'preview_image' => AssetUrl::normalize($row->preview_image ?? null),
                 'model_glb' => AssetUrl::normalize($row->model_glb ?? null),
                 'quantity' => $row->quantity,
+                'portions' => $row->portions,
+                'portions_left' => $row->portions !== null ? $row->portions - $row->portions_used : null,
             ])->values()->all(),
         ]);
     }

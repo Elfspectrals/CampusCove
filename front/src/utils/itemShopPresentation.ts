@@ -37,3 +37,8 @@ export function rarityClass(rarity: ItemRarity): string {
 export function isApartmentItem(item: Pick<ShopItem, 'kind'>): boolean {
   return item.kind === 'apartment_asset' || item.kind === 'furniture'
 }
+
+/** Food and drinks are only sold in /game (Campus Cafe counter), never in the web shop. */
+export function isFoodItem(item: Pick<ShopItem, 'kind'>): boolean {
+  return item.kind === 'consumable'
+}

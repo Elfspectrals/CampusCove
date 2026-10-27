@@ -35,6 +35,8 @@ export interface UseGameMovementDeps {
   handleExtraKeyDown: (e: KeyboardEvent) => boolean
   /** Return `true` if the click was consumed (apartment placement), so it doesn't also open a door. */
   onCanvasMouseDown: (e: MouseEvent) => boolean
+  /** Walking speed multiplier (survival: slower when starving, faster after a coffee, 0 when passed out). */
+  speedFactor: () => number
   /** Called each animation frame after movement, before rendering. */
   onBeforeRender: (dt: number) => void
 }
@@ -74,7 +76,7 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     if (!deps.inventoryOpen.value) {
       const forward = keys.forward ? 1 : keys.back ? -1 : 0
       const right = keys.right ? 1 : keys.left ? -1 : 0
-      const step = MOVE_SPEED * dt
+      const step = MOVE_SPEED * deps.speedFactor() * dt
       const dx = direction.x * forward * step + rightVec.x * right * step
       const dz = direction.z * forward * step + rightVec.z * right * step
       const resolved = resolveWorldMovement(myPosition, dx, dz)

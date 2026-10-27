@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Services\StarterCosmeticGrantService;
+use App\Support\FoodCatalog;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -160,12 +161,19 @@ class ShopSeeder extends Seeder
                 'cosmetic_slot' => 'head_accessory',
             ],
         ];
+        // ---- food and drinks (eaten from the hotbar; sold at the Campus Cafe counter)
+        foreach (FoodCatalog::items() as $food) {
+            $defs[] = self::food($food);
+        }
 
         $itemDefIds = [];
         foreach ($defs as $def) {
             $existing = DB::table('item_defs')->where('code', $def['code'])->value('item_def_id');
             if ($existing !== null) {
                 $itemDefIds[$def['code']] = (int) $existing;
+                if (array_key_exists('portions', $def)) {
+                    DB::table('item_defs')->where('code', $def['code'])->update(self::foodColumns($def));
+                }
                 if (array_key_exists('cosmetic_slot', $def) || array_key_exists('preview_image', $def) || array_key_exists('model_glb', $def)) {
                     DB::table('item_defs')->where('code', $def['code'])->update(array_filter([
                         'name' => $def['name'],
@@ -197,6 +205,9 @@ class ShopSeeder extends Seeder
             }
             if (array_key_exists('model_glb', $def)) {
                 $insert['model_glb'] = $def['model_glb'];
+            }
+            if (array_key_exists('portions', $def)) {
+                $insert = array_merge($insert, self::foodColumns($def));
             }
 
             $itemDefIds[$def['code']] = (int) DB::table('item_defs')->insertGetId($insert, 'item_def_id');
@@ -293,6 +304,11 @@ class ShopSeeder extends Seeder
             self::premium('COS_WEAR_BODY_STREET_LUXE', 250, 60),
             self::premium('COS_WEAR_BODY_ASTRAL_ORACLE', 350, 62),
         ];
+        foreach (FoodCatalog::items() as $i => $food) {
+            if ($food['price'] !== null) {
+                $catalogRows[] = self::coins($food['code'], $food['price'], 200 + $i);
+            }
+        }
 
         foreach ($catalogRows as $catalog) {
             $itemDefId = $itemDefIds[$catalog['item_def_code']];
@@ -376,6 +392,46 @@ class ShopSeeder extends Seeder
             'max_stack' => $maxStack,
             'preview_image' => "/assets/decor/{$assetKey}/preview.png",
             'model_glb' => "/assets/decor/{$assetKey}/model.glb",
+        ];
+    }
+
+    /**
+     * @param array{code: string, name: string, asset: string, portions: int, hunger: int, thirst: int, health: int, effect: string|null, price: int|null} $food
+     * @return array<string, mixed>
+     */
+    private static function food(array $food): array
+    {
+        return [
+            'code' => $food['code'],
+            'name' => $food['name'],
+            'kind' => 'consumable',
+            'rarity' => 1,
+            'tradable' => true,
+            'premium_only' => false,
+            'bind' => 'none',
+            'max_stack' => 20,
+            'preview_image' => "/assets/items/food/{$food['asset']}/preview.png",
+            'model_glb' => "/assets/items/food/{$food['asset']}/model.glb",
+            'portions' => $food['portions'],
+            'hunger_per_portion' => $food['hunger'],
+            'thirst_per_portion' => $food['thirst'],
+            'health_per_portion' => $food['health'],
+            'consume_effect' => $food['effect'],
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $def
+     * @return array<string, mixed>
+     */
+    private static function foodColumns(array $def): array
+    {
+        return [
+            'portions' => $def['portions'],
+            'hunger_per_portion' => $def['hunger_per_portion'],
+            'thirst_per_portion' => $def['thirst_per_portion'],
+            'health_per_portion' => $def['health_per_portion'],
+            'consume_effect' => $def['consume_effect'],
         ];
     }
 

@@ -1,11 +1,12 @@
 import { canUseDoor } from './doors.js'
+import { SPEED_BOOST_FACTOR } from './survivalStats.js'
 import { worldBounds, worldHouse } from './world.js'
 
 const MAX_SPEED = 8 * 1.25
 const MAX_MOVE_BUDGET_SECONDS = 1
 const MOVE_MARGIN = 1.5
 
-function toInterior(house, x, z) {
+export function toInterior(house, x, z) {
   const dx = x - house.position.x
   const dz = z - house.position.z
   const cos = Math.cos(house.rotationY)
@@ -16,7 +17,7 @@ function toInterior(house, x, z) {
   }
 }
 
-function unitAt(units, x, z) {
+export function unitAt(units, x, z) {
   for (const unit of units) {
     const house = unit.model_key ? worldHouse(unit.model_key) : null
     const bounds = unit.interior_bounds
@@ -34,8 +35,10 @@ function isLockedFor(room, unit, player) {
 export function moveRejection(room, player, x, z, now) {
   const b = worldBounds()
   if (x < b.minX || x > b.maxX || z < b.minZ || z > b.maxZ) return 'out_of_world'
+  if (now < player.knockedOutUntil) return 'knocked_out'
   const elapsed = Math.min((now - player.lastMoveAt) / 1000, MAX_MOVE_BUDGET_SECONDS)
-  if (Math.hypot(x - player.x, z - player.z) > MAX_SPEED * elapsed + MOVE_MARGIN) return 'too_fast'
+  const maxSpeed = now < player.speedBoostUntil ? MAX_SPEED * SPEED_BOOST_FACTOR : MAX_SPEED
+  if (Math.hypot(x - player.x, z - player.z) > maxSpeed * elapsed + MOVE_MARGIN) return 'too_fast'
   const from = unitAt(room.housingUnits, player.x, player.z)
   const to = unitAt(room.housingUnits, x, z)
   if (from === to) return null

@@ -10,6 +10,10 @@ services:
       PORT: 3000
       BACKEND_API_URL: http://backend:8000/api
       WORLD_MANIFEST_URL: http://front:5173/assets/world.manifest.json
+      # Guards the API routes only the realtime server may call (survival stats); same value as the backend's.
+      REALTIME_SHARED_SECRET: ${REALTIME_SHARED_SECRET:-campuscove-dev-realtime-secret}
+      # >1 speeds hunger / thirst up for playtests (SURVIVAL_TIME_SCALE=120 empties hunger in 12 min).
+      SURVIVAL_TIME_SCALE: ${SURVIVAL_TIME_SCALE:-1}
       DB_HOST: postgres
       DB_PORT: 5432
       DB_DATABASE: campus_cove
@@ -50,6 +54,7 @@ services:
       APP_ENV: local
       APP_DEBUG: "true"
       APP_URL: http://localhost:8000
+      REALTIME_SHARED_SECRET: ${REALTIME_SHARED_SECRET:-campuscove-dev-realtime-secret}
       DB_CONNECTION: pgsql
       DB_HOST: postgres
       DB_PORT: 5432

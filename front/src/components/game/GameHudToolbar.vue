@@ -8,7 +8,11 @@ defineProps<{
   showGraphicsToggle: boolean
   /** Name of the public building the player is in (e.g. "Cove Home"), instead of "Campus Town". */
   placeLabel?: string
+  /** Survival screen effects (vignettes, blur) toned down. */
+  reducedEffects: boolean
 }>()
+
+const emit = defineEmits<{ toggleReducedEffects: [] }>()
 
 const graphicsQualityLabel = getGraphicsQuality() === 'low' ? 'Low' : 'High'
 
@@ -36,6 +40,16 @@ function onToggleGraphicsQuality(): void {
       @mousedown.stop
     >
       <UiIcon name="monitor" :size="14" /> {{ graphicsQualityLabel }}
+    </button>
+    <button
+      v-if="showGraphicsToggle"
+      type="button"
+      class="cc-hud inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-extrabold text-fog transition hover:border-sun/70 hover:text-sun"
+      title="Screen effects when hungry, thirsty or hurt"
+      @click.stop="emit('toggleReducedEffects')"
+      @mousedown.stop
+    >
+      <UiIcon name="eye" :size="14" /> Effects: {{ reducedEffects ? 'Reduced' : 'Full' }}
     </button>
   </div>
 </template>

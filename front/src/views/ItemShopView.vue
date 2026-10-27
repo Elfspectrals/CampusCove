@@ -6,7 +6,7 @@ import LockerCharacterPreview from '../components/locker/LockerCharacterPreview.
 import ItemShopPurchaseConfirmModal from '../components/shop/ItemShopPurchaseConfirmModal.vue'
 import * as itemShopApi from '../api/itemShop'
 import type { ShopItem } from '../api/itemShop'
-import { currencyLabel, isApartmentItem, itemRarity, rarityClass } from '../utils/itemShopPresentation'
+import { currencyLabel, isApartmentItem, isFoodItem, itemRarity, rarityClass } from '../utils/itemShopPresentation'
 import UiIcon from '../components/ui/UiIcon.vue'
 import UiCurrency from '../components/ui/UiCurrency.vue'
 
@@ -35,7 +35,7 @@ const selectedItem = computed<ShopItem | null>(() => {
 })
 
 /** Skins only: furniture is bought by walking through the Cove Home store in /game. */
-const filteredItems = computed<ShopItem[]>(() => items.value.filter((item) => !isApartmentItem(item)))
+const filteredItems = computed<ShopItem[]>(() => items.value.filter((item) => !isApartmentItem(item) && !isFoodItem(item)))
 
 function selectItem(item: ShopItem) {
   selectedItemDefId.value = item.item_def_id

@@ -15,6 +15,7 @@ function parseWorld(manifest) {
   if (!Array.isArray(manifest?.zones)) throw new Error('world manifest: missing zones')
   const workDoors = new Map()
   const houses = new Map()
+  const fountains = (manifest.fountains ?? []).map((raw, i) => parseVec3(raw, `fountain ${i}`))
   for (const zone of manifest.zones) {
     for (const building of zone.buildings ?? []) {
       if (building.kind === 'house' && building.interiorOffset) {
@@ -31,7 +32,7 @@ function parseWorld(manifest) {
   }
   const b = manifest.bounds
   if (![b?.minX, b?.maxX, b?.minZ, b?.maxZ].every(Number.isFinite)) throw new Error('world manifest: invalid bounds')
-  return { citySpawn: parseVec3(manifest.spawn, 'spawn'), workDoors, houses, bounds: b }
+  return { citySpawn: parseVec3(manifest.spawn, 'spawn'), workDoors, houses, fountains, bounds: b }
 }
 
 export async function loadWorld() {
@@ -68,6 +69,10 @@ export function workDoor(workKey) {
 
 export function worldBounds() {
   return loadedWorld().bounds
+}
+
+export function worldFountains() {
+  return loadedWorld().fountains
 }
 
 export function worldHouse(houseKey) {

@@ -16,6 +16,16 @@ import {
   publicPlayer,
   spawnNear
 } from './players.js'
+import {
+  SURVIVAL_TICK_MS,
+  loadSurvival,
+  onConsume,
+  onCook,
+  onDrinkFountain,
+  onSurvivalMove,
+  saveSurvival,
+  tickSurvival
+} from './survival.js'
 import { citySpawn, workDoor } from './world.js'
 
 function warn(context, error) {
@@ -40,7 +50,11 @@ export class CityRoom extends Room {
     this.onMessage('apartment_spawn_request', (client, payload) => saveObject(this, client, payload, true))
     this.onMessage('apartment_transform_request', (client, payload) => saveObject(this, client, payload, false))
     this.onMessage('apartment_pickup_request', (client, payload) => pickupObject(this, client, payload))
+    this.onMessage('consume', (client, payload) => void onConsume(this, client, payload))
+    this.onMessage('drink_fountain', (client) => onDrinkFountain(this, client))
+    this.onMessage('cook', (client, payload) => void onCook(this, client, payload))
     this.clock.setInterval(() => void this.pollHousingUnits(), HOUSING_POLL_MS)
+    this.clock.setInterval(() => tickSurvival(this, SURVIVAL_TICK_MS / 1000), SURVIVAL_TICK_MS)
   }
 
   async onAuth(_client, options) {
@@ -59,7 +73,10 @@ export class CityRoom extends Room {
     const staleSessionId = this.sessionByAccountId.get(accountId)
     if (staleSessionId && staleSessionId !== client.sessionId) {
       this.clients.find((c) => c.sessionId === staleSessionId)?.leave(4001, 'duplicate session')
+      const stale = this.players.get(staleSessionId)
       this.players.delete(staleSessionId)
+      // saved before this session loads them
+      if (stale) await saveSurvival(stale)
     }
     const player = createPlayer(client, options, this.players.size, spawnNear(citySpawn(), CITY_SPAWN_RADIUS))
     this.players.set(client.sessionId, player)
@@ -76,12 +93,14 @@ export class CityRoom extends Room {
       openDoors: [...this.openDoors]
     })
     this.forEachClient((c) => c.send('user_joined', publicPlayer(player)), client)
+    if (player.token) await loadSurvival(client, player)
   }
 
   onLeave(client) {
     const player = this.players.get(client.sessionId)
     this.players.delete(client.sessionId)
     if (!player) return
+    void saveSurvival(player)
     if (this.sessionByAccountId.get(player.accountId) === client.sessionId) {
       this.sessionByAccountId.delete(player.accountId)
     }
@@ -113,12 +132,14 @@ export class CityRoom extends Room {
       client.send('position_correction', { x: player.x, y: player.y, z: player.z })
       return
     }
+    const previousY = player.y
     player.x = x
     player.y = normalizeNumber(payload.y, player.y)
     player.z = z
     player.ry = normalizeNumber(payload.ry, player.ry)
     player.lastMoveAt = now
     this.broadcastMove(client, player)
+    onSurvivalMove(this, client, player, previousY)
   }
 
   broadcastMove(client, player) {

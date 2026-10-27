@@ -72,4 +72,7 @@ export interface ApartmentInventoryItem {
   quantity: number
   preview_image: string | null
   model_glb: string | null
+  /** Food / drinks: bites per item and bites left on the item being eaten (4/4 -> 3/4 ...). */
+  portions?: number | null
+  portions_left?: number | null
 }

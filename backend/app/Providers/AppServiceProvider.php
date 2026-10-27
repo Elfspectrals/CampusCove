@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Auth\AccountUserProvider;
 use App\Models\Account;
+use Illuminate\Foundation\Console\ServeCommand;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\ServiceProvider;
 
@@ -14,7 +15,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // `artisan serve` (Docker dev) only forwards a few env vars to its PHP workers; docker-compose sets this one.
+        ServeCommand::$passthroughVariables[] = 'REALTIME_SHARED_SECRET';
     }
 
     /**

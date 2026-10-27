@@ -18,6 +18,8 @@ function parseOwnedItem(raw: unknown): ApartmentInventoryItem | null {
     quantity: raw.quantity,
     preview_image: normalizeApiAssetUrl(typeof raw.preview_image === 'string' ? raw.preview_image : null),
     model_glb: normalizeApiAssetUrl(typeof raw.model_glb === 'string' ? raw.model_glb : null),
+    portions: typeof raw.portions === 'number' ? raw.portions : null,
+    portions_left: typeof raw.portions_left === 'number' ? raw.portions_left : null,
   }
 }
 

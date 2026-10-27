@@ -3,6 +3,7 @@
 use Illuminate\Console\Scheduling\Schedule;
 use App\Http\Middleware\EnsureAccountIsActive;
 use App\Http\Middleware\EnsureAccountIsAdmin;
+use App\Http\Middleware\EnsureRealtimeServer;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -42,6 +43,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin' => EnsureAccountIsAdmin::class,
             'account.active' => EnsureAccountIsActive::class,
+            'realtime' => EnsureRealtimeServer::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) use ($allowedOrigins): void {

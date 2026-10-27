@@ -29,6 +29,14 @@ class ItemDefResource extends JsonResource
             'cosmetic_slot' => $this->cosmetic_slot,
             'preview_image' => AssetUrl::normalize($this->preview_image),
             'model_glb' => AssetUrl::normalize($this->model_glb),
+            // food and drinks: what one portion restores (shown on the Campus Cafe menu)
+            'food' => $this->portions !== null ? [
+                'portions' => $this->portions,
+                'hunger' => $this->hunger_per_portion,
+                'thirst' => $this->thirst_per_portion,
+                'health' => $this->health_per_portion,
+                'effect' => $this->consume_effect,
+            ] : null,
         ];
     }
 }

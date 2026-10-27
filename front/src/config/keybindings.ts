@@ -8,6 +8,10 @@ export const KEY_BINDINGS = {
   apartmentInventoryToggle: 'KeyE',
   houseKeys: 'KeyK',
   buyHouse: 'F2',
+  /** Hold to raise the left wrist and read the survival watch. */
+  survivalWatch: 'KeyT',
+  /** With raw food in hand, at a stove or a barbecue. */
+  cook: 'KeyF',
   /** Rotate placement ghost clockwise (no Shift). */
   rotateCW: 'KeyR',
   /** Same physical key as rotateCW; matcher uses Shift for CCW. */

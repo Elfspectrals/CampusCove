@@ -11,6 +11,7 @@ export function createHeldItem() {
   let hands: THREE.Object3D | null = null
   let modelUrl: string | null = null
   let shown: THREE.Object3D | null = null
+  let scale = 1
 
   function load(url: string): Promise<THREE.Object3D> {
     let model = models.get(url)
@@ -26,7 +27,12 @@ export function createHeldItem() {
     return model
   }
 
-  function update(nextHands: THREE.Object3D | null, nextModelUrl: string | null): void {
+  /** `nextScale` shrinks a half-eaten food item (portions left / portions). */
+  function update(nextHands: THREE.Object3D | null, nextModelUrl: string | null, nextScale = 1): void {
+    if (nextScale !== scale) {
+      scale = nextScale
+      shown?.scale.setScalar(HELD_ITEM_SCALE * scale)
+    }
     if (nextHands === hands && nextModelUrl === modelUrl) return
     hands = nextHands
     modelUrl = nextModelUrl
@@ -38,6 +44,7 @@ export function createHeldItem() {
     load(wantedUrl)
       .then((model) => {
         if (hands !== wantedHands || modelUrl !== wantedUrl) return
+        model.scale.setScalar(HELD_ITEM_SCALE * scale)
         wantedHands.add(model)
         shown = model
       })

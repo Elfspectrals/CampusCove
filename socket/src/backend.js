@@ -1,6 +1,6 @@
 // Laravel API calls made on behalf of a player (their bearer token): the API stays authoritative for
 // identity, apartments, inventory and housing.
-import { BACKEND_API_URL } from './config.js'
+import { BACKEND_API_URL, REALTIME_SHARED_SECRET } from './config.js'
 
 export function parseAccountId(raw) {
   if (typeof raw === 'number' && Number.isInteger(raw) && raw > 0) return raw
@@ -31,7 +31,7 @@ export async function resolveIdentity(options) {
 }
 
 // JSON request; rejects with the API's message (and `code`) on a non-2xx answer.
-export async function callBackendJson(token, path, method = 'POST', body = null) {
+export async function callBackendJson(token, path, method = 'POST', body = null, extraHeaders = {}) {
   if (!token || typeof token !== 'string' || token.trim().length === 0) {
     throw new Error('missing auth token')
   }
@@ -40,7 +40,8 @@ export async function callBackendJson(token, path, method = 'POST', body = null)
     headers: {
       Accept: 'application/json',
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`
+      Authorization: `Bearer ${token}`,
+      ...extraHeaders
     },
     body: body !== null ? JSON.stringify(body) : undefined
   })
@@ -51,6 +52,11 @@ export async function callBackendJson(token, path, method = 'POST', body = null)
     throw err
   }
   return data
+}
+
+// Same call on a route reserved to this server (the API checks the shared secret).
+export function callRealtimeBackend(token, path, method = 'POST', body = null) {
+  return callBackendJson(token, path, method, body, { 'X-Realtime-Secret': REALTIME_SHARED_SECRET })
 }
 
 // Error payload sent back to the client for a failed backend call.

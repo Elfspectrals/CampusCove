@@ -202,7 +202,9 @@ export function usePlayerInventory(deps: UsePlayerInventoryDeps) {
     scheduleDebouncedSave()
     const code = slots.value[i] ?? ''
 
-    if (itemByCode.value[code]?.kind === 'tool') {
+    // held in hand (key, food): never placed as furniture
+    const kind = itemByCode.value[code]?.kind
+    if (kind === 'tool' || kind === 'consumable') {
       cancelPlacementPreviewInternal()
       return
     }

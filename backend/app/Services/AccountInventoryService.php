@@ -288,6 +288,8 @@ final class AccountInventoryService
      *   cosmetic_slot: string|null,
      *   preview_image: string|null,
      *   model_glb: string|null,
+     *   portions: int|null,
+     *   portions_used: int,
      *   quantity: int
      * }>
      */
@@ -304,7 +306,7 @@ final class AccountInventoryService
                 ->join('item_defs as d', 'd.item_def_id', '=', 's.item_def_id')
                 ->where('s.container_id', $containerId)
                 ->where('d.kind', '!=', 'cosmetic')
-                ->selectRaw('d.item_def_id, d.code, d.name, d.kind, d.rarity, d.tradable, d.premium_only, d.bind, d.max_stack, d.cosmetic_slot, d.preview_image, d.model_glb, s.quantity::int as quantity');
+                ->selectRaw('d.item_def_id, d.code, d.name, d.kind, d.rarity, d.tradable, d.premium_only, d.bind, d.max_stack, d.cosmetic_slot, d.preview_image, d.model_glb, d.portions, s.portions_used::int as portions_used, s.quantity::int as quantity');
 
             $instanceRows = DB::table('item_instances as i')
                 ->join('item_defs as d', 'd.item_def_id', '=', 'i.item_def_id')
@@ -324,8 +326,9 @@ final class AccountInventoryService
                     'd.cosmetic_slot',
                     'd.preview_image',
                     'd.model_glb',
+                    'd.portions',
                 ])
-                ->selectRaw('d.item_def_id, d.code, d.name, d.kind, d.rarity, d.tradable, d.premium_only, d.bind, d.max_stack, d.cosmetic_slot, d.preview_image, d.model_glb, COUNT(*)::int as quantity');
+                ->selectRaw('d.item_def_id, d.code, d.name, d.kind, d.rarity, d.tradable, d.premium_only, d.bind, d.max_stack, d.cosmetic_slot, d.preview_image, d.model_glb, d.portions, 0 as portions_used, COUNT(*)::int as quantity');
 
             if ($kind !== null && $kind !== '') {
                 $stackRows->where('d.kind', $kind);
@@ -355,7 +358,7 @@ final class AccountInventoryService
             ->join('item_defs as d', 'd.item_def_id', '=', 'alc.item_def_id')
             ->where('alc.account_id', $accountId)
             ->where('d.kind', 'cosmetic')
-            ->selectRaw('d.item_def_id, d.code, d.name, d.kind, d.rarity, d.tradable, d.premium_only, d.bind, d.max_stack, d.cosmetic_slot, d.preview_image, d.model_glb, alc.quantity::int as quantity');
+            ->selectRaw('d.item_def_id, d.code, d.name, d.kind, d.rarity, d.tradable, d.premium_only, d.bind, d.max_stack, d.cosmetic_slot, d.preview_image, d.model_glb, d.portions, 0 as portions_used, alc.quantity::int as quantity');
 
         if ($kind !== null && $kind !== '') {
             $lockerRows->where('d.kind', $kind);
@@ -390,6 +393,8 @@ final class AccountInventoryService
                     'cosmetic_slot' => $first->cosmetic_slot ?? null,
                     'preview_image' => $first->preview_image ?? null,
                     'model_glb' => $first->model_glb ?? null,
+                    'portions' => $first->portions,
+                    'portions_used' => (int) $group->max(fn (object $row): int => $row->portions_used),
                     'quantity' => $qty,
                 ];
             })
@@ -411,6 +416,8 @@ final class AccountInventoryService
             'cosmetic_slot' => isset($row->cosmetic_slot) && $row->cosmetic_slot !== null ? (string) $row->cosmetic_slot : null,
             'preview_image' => isset($row->preview_image) && $row->preview_image !== null ? (string) $row->preview_image : null,
             'model_glb' => isset($row->model_glb) && $row->model_glb !== null ? (string) $row->model_glb : null,
+            'portions' => isset($row->portions) && $row->portions !== null ? (int) $row->portions : null,
+            'portions_used' => (int) ($row->portions_used ?? 0),
             'quantity' => (int) $row->quantity,
         ];
     }

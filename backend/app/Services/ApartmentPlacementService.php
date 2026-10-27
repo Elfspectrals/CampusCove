@@ -27,7 +27,7 @@ class ApartmentPlacementService
      */
     private const PLACEABLE_KINDS = ['apartment_asset', 'furniture'];
 
-    private const HOTBAR_KINDS = [...self::PLACEABLE_KINDS, 'tool'];
+    private const HOTBAR_KINDS = [...self::PLACEABLE_KINDS, 'tool', 'consumable'];
 
     /**
      * @var list<string>
@@ -134,6 +134,8 @@ class ApartmentPlacementService
                 'quantity' => (int) $row->quantity,
                 'preview_image' => isset($row->preview_image) ? (string) $row->preview_image : null,
                 'model_glb' => isset($row->model_glb) ? (string) $row->model_glb : null,
+                'portions' => $row->portions,
+                'portions_left' => $row->portions !== null ? $row->portions - $row->portions_used : null,
             ])
             ->values();
     }

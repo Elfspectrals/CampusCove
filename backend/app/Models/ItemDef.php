@@ -27,6 +27,11 @@ class ItemDef extends Model
         'cosmetic_slot',
         'preview_image',
         'model_glb',
+        'portions',
+        'hunger_per_portion',
+        'thirst_per_portion',
+        'health_per_portion',
+        'consume_effect',
     ];
 
     protected function casts(): array
@@ -37,6 +42,10 @@ class ItemDef extends Model
             'premium_only' => 'boolean',
             'rarity' => 'integer',
             'max_stack' => 'integer',
+            'portions' => 'integer',
+            'hunger_per_portion' => 'integer',
+            'thirst_per_portion' => 'integer',
+            'health_per_portion' => 'integer',
         ];
     }
 

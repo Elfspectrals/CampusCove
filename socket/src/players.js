@@ -66,6 +66,15 @@ export function createPlayer(client, options, colorIndex, spawn) {
     ry: 0,
     lastMoveAt: Date.now(),
     lastHousingRefreshAt: 0,
+    // survival (src/survival.js): gauges are loaded from the API right after the join
+    stats: null,
+    statsDirty: false,
+    lastStatsSavedAt: Date.now(),
+    lastConsumeAt: 0,
+    lastSipAt: 0,
+    fallPeakY: spawn.y,
+    knockedOutUntil: 0,
+    speedBoostUntil: 0,
     appearance: normalizeAppearanceIds(options?.appearance),
     slotHexes: normalizeSlotHexes(options?.slotHexes),
     bodyModelGlb: normalizeBodyModelGlb(options?.bodyModelGlb)

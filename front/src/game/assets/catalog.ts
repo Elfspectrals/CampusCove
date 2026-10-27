@@ -154,6 +154,10 @@ export const COVE_HOME = {
   interiorLayoutUrl: `${ROOT}/store/cove_home/interior.layout.json`,
 } as const
 
+/** Survival (map-src/CampusCove/build_food_items.py): the first-person wrist watch and the town drinking fountain. */
+export const SURVIVAL_WATCH_URL = `${ROOT}/items/tools/watch/model.glb`
+export const DRINKING_FOUNTAIN_URL = `${ROOT}/park/drinking_fountain/model.glb`
+
 /** Furniture model shown in the store and placed in houses: public/assets/decor/<key>/model.glb. */
 export function decorModelUrl(key: string): string {
   return `${ROOT}/decor/${key}/model.glb`

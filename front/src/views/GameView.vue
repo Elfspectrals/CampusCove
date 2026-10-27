@@ -18,10 +18,13 @@ import GamePlayerHotbar from '../components/game/GamePlayerHotbar.vue'
 import GamePlayerInventoryPanel from '../components/game/GamePlayerInventoryPanel.vue'
 import GamePointerLockOverlay from '../components/game/GamePointerLockOverlay.vue'
 import GameStoreItemCard from '../components/game/GameStoreItemCard.vue'
+import GameCafeMenu from '../components/game/GameCafeMenu.vue'
+import GameSurvivalEffects from '../components/game/GameSurvivalEffects.vue'
 import ItemShopPurchaseConfirmModal from '../components/shop/ItemShopPurchaseConfirmModal.vue'
 import GameRoomMessageBanner from '../components/game/GameRoomMessageBanner.vue'
 import UiIcon from '../components/ui/UiIcon.vue'
 import { useApartmentObjects } from '../composables/game/useApartmentObjects'
+import { useCafeCounter } from '../composables/game/useCafeCounter'
 import { useFurnitureStore } from '../composables/game/useFurnitureStore'
 import { useHouseFurniture } from '../composables/game/useHouseFurniture'
 import { useHouseKeys } from '../composables/game/useHouseKeys'
@@ -32,6 +35,7 @@ import { useGameRealtime } from '../composables/game/useGameRealtime'
 import { useInteractionTargets } from '../composables/game/useInteractionTargets'
 import { usePlayerInventory } from '../composables/game/usePlayerInventory'
 import { useRoomEnvironment } from '../composables/game/useRoomEnvironment'
+import { useSurvival } from '../composables/game/useSurvival'
 import { useShopPurchase } from '../composables/useShopPurchase'
 import { toggleCollisionDebug } from '../game/collision/collisionDebug'
 import { KEY_BINDINGS } from '../config/keybindings'
@@ -265,6 +269,76 @@ const heldItem = createHeldItem()
 let arms: ReturnType<typeof createFirstPersonArms> | null = null
 watch(() => selectedItem.value?.code ?? null, () => arms?.equip())
 
+/** Model shown in the right hand: tools and food (a half-eaten item is drawn smaller). */
+function heldModel(): { url: string | null; scale: number } {
+  const item = selectedItem.value
+  if (!item || (item.kind !== 'tool' && item.kind !== 'consumable')) return { url: null, scale: 1 }
+  const eaten = item.portions && item.portions_left ? item.portions_left / item.portions : 1
+  return { url: item.model_glb, scale: 0.55 + 0.45 * eaten }
+}
+
+// ---------------------------------------------------------------- survival: hunger, thirst, health
+
+const survival = useSurvival({
+  gameRoomRef,
+  getScene,
+  getCamera,
+  canvasRef,
+  getFpHands: () => game?.fpHands ?? null,
+  getArms: () => arms,
+  myPosition,
+  pointerLocked,
+  selectedItem,
+  refreshInventory: () => refreshOwnedItems(),
+  teleport: (x, y, z) => {
+    Object.assign(myPosition, { x, y, z })
+    getCamera()?.position.set(x, y, z)
+  },
+  promptsHidden: () => inventoryOpen.value,
+})
+const {
+  prompt: survivalPrompt,
+  effects: survivalEffects,
+  damageFlash,
+  knockedOut,
+  hospitalBill,
+  message: survivalMessage,
+  reducedEffects,
+} = survival
+
+const cafe = useCafeCounter({
+  myPosition,
+  getCamera,
+  canvasRef,
+  promptsHidden: () => inventoryOpen.value,
+  refreshInventory: () => refreshOwnedItems(),
+})
+const {
+  prompt: cafePrompt,
+  menuOpen: cafeMenuOpen,
+  menu: cafeMenu,
+  loading: cafeLoading,
+  buyingId: cafeBuyingId,
+  feedback: cafeFeedback,
+} = cafe
+// Back to mouse look once the menu closes.
+watch(cafeMenuOpen, (open) => {
+  if (!open && !document.pointerLockElement) requestPointerLock()
+})
+
+/** One-line hint above the hotbar for the food in hand. */
+const heldFoodHint = computed(() => {
+  const item = survival.heldConsumable()
+  if (!item || !pointerLocked.value) return null
+  const cook = item.code === 'food_fish_raw' ? ' · F at a stove / BBQ: cook' : ''
+  return `Click: eat ${item.name}${cook}`
+})
+
+const canvasFilter = computed(() => {
+  const desaturation = survivalEffects.value?.desaturation ?? 0
+  return desaturation > 0 ? { filter: `saturate(${(1 - desaturation).toFixed(2)})` } : undefined
+})
+
 function isBuildingDoorOpen(buildingKey: string): boolean {
   const unit = housing.units.value.find((u) => u.model_key === buildingKey)
   if (unit) return housing.isDoorOpen(unit)
@@ -286,6 +360,7 @@ const environment = useRoomEnvironment({
   getRenderer,
   onTownLoaded: (manifest) => {
     interactions.setWorldManifest(manifest)
+    survival.onTownLoaded(manifest)
     houseFurniture.onTownReady()
     const store = openHouseInterior(COVE_HOME.key)
     if (store) void furnitureStore.attach(store)
@@ -309,6 +384,7 @@ function loadTown(): void {
 
 function handleExtraKeyDown(e: KeyboardEvent): boolean {
   if (houseKeys.onKeyDown(e)) return true
+  if (survival.onKeyDown(e)) return true
   if (e.code === KEY_BINDINGS.buyHouse && !e.repeat) {
     e.preventDefault()
     return housing.buy()
@@ -346,8 +422,12 @@ const movement = useGameMovement({
       arms?.use('key')
       return true
     }
-    return placement.onPointerDown(e)
+    if (placement.onPointerDown(e)) return true
+    // doors and shops first, then the cafe counter, then what is held in hand (food, fountain sips)
+    if (e.button === 0 && pointerLocked.value) return interactions.tryInteract() || cafe.tryOpen() || survival.onPrimaryDown()
+    return false
   },
+  speedFactor: () => survival.speedFactor(),
   onBeforeRender: (dt) => {
     positionLabel.value = formatPosition()
     realtime.tickRemoteAvatars(dt)
@@ -358,7 +438,10 @@ const movement = useGameMovement({
     houseKeys.updateKeyPrompt()
     updateFrontDoors(dt, isBuildingDoorOpen)
     arms?.update(dt, myPosition)
-    heldItem.update(arms?.rightHand() ?? null, selectedItem.value?.kind === 'tool' ? selectedItem.value.model_glb : null)
+    const held = heldModel()
+    heldItem.update(arms?.rightHand() ?? null, held.url, held.scale)
+    survival.tick(dt)
+    cafe.updatePrompt()
     if (!doorSigns.group.parent) getScene()?.add(doorSigns.group)
   },
 })
@@ -464,10 +547,12 @@ function logout() {
 }
 
 let unbindInput: (() => void) | null = null
+let unbindSurvivalInput: (() => void) | null = null
 
 onMounted(() => {
   void bootGame()
   unbindInput = movement.bindInputListeners()
+  unbindSurvivalInput = survival.bindInputListeners()
   window.addEventListener('beforeunload', leaveRoom)
   window.addEventListener('pagehide', leaveRoom)
 })
@@ -476,6 +561,8 @@ onUnmounted(() => {
   unmounted = true
   movement.stopRenderLoop()
   unbindInput?.()
+  unbindSurvivalInput?.()
+  survival.dispose()
   window.removeEventListener('beforeunload', leaveRoom)
   window.removeEventListener('pagehide', leaveRoom)
   refreshMyAppearance.value = null
@@ -508,6 +595,7 @@ const crosshairClass = computed(() => {
     <canvas
       ref="canvasRef"
       class="block min-h-0 w-full flex-1 cursor-crosshair"
+      :style="canvasFilter"
       @click="requestPointerLock"
       @mousedown="onCanvasMouseDown"
       @contextmenu.prevent
@@ -516,11 +604,20 @@ const crosshairClass = computed(() => {
       class="pointer-events-none absolute left-1/2 top-1/2 z-10 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 transition-colors duration-150"
       :class="crosshairClass"
     />
+    <GameSurvivalEffects
+      :effects="survivalEffects"
+      :damage-flash="damageFlash"
+      :knocked-out="knockedOut"
+      :hospital-bill="hospitalBill"
+      :message="survivalMessage"
+    />
     <GameRoomMessageBanner v-if="roomMessage" :message="roomMessage" />
     <GameHudToolbar
       :position-label="positionLabel"
       :show-graphics-toggle="!pointerLocked"
       :place-label="inStore ? COVE_HOME.name : undefined"
+      :reduced-effects="reducedEffects"
+      @toggle-reduced-effects="survival.toggleReducedEffects"
     />
     <GameInteractionPrompt
       v-if="doorPrompt"
@@ -538,6 +635,27 @@ const crosshairClass = computed(() => {
       :action-label="keyPrompt.action"
       :detail-label="keyPrompt.detail"
     />
+    <GameInteractionPrompt
+      v-if="survivalPrompt && !doorPrompt"
+      :screen-x="survivalPrompt.x"
+      :screen-y="survivalPrompt.y"
+      :key-label="survivalPrompt.key"
+      :action-label="survivalPrompt.action"
+      :detail-label="survivalPrompt.detail"
+    />
+    <GameInteractionPrompt
+      v-if="cafePrompt && !doorPrompt"
+      :screen-x="cafePrompt.x"
+      :screen-y="cafePrompt.y"
+      :action-label="cafePrompt.action"
+      :detail-label="cafePrompt.detail"
+    />
+    <p
+      v-if="heldFoodHint && !inventoryOpen"
+      class="cc-hud pointer-events-none absolute bottom-[88px] left-1/2 z-20 -translate-x-1/2 px-3 py-1 text-[11px] font-bold text-fog"
+    >
+      {{ heldFoodHint }}
+    </p>
     <GamePlacementHud :visible="placementPreviewActive" :hints="placementHudHints" />
     <div
       v-if="inStore && storeDepartment && !inventoryOpen"
@@ -591,7 +709,7 @@ const crosshairClass = computed(() => {
       @placed-object-selected="onPlacedObjectSelected"
     />
     <GamePointerLockOverlay
-      v-show="!pointerLocked && !inventoryOpen && !switchingRoom"
+      v-show="!pointerLocked && !inventoryOpen && !switchingRoom && !cafeMenuOpen"
       @request-pointer-lock="requestPointerLock"
       @logout="logout"
     />
@@ -610,6 +728,15 @@ const crosshairClass = computed(() => {
     >
       R = rotate · Shift+R = reverse · LMB = place / pick · RMB = cancel · Esc / E = cancel
     </p>
+    <GameCafeMenu
+      v-if="cafeMenuOpen"
+      :items="cafeMenu"
+      :loading="cafeLoading"
+      :buying-id="cafeBuyingId"
+      :feedback="cafeFeedback"
+      @buy="cafe.buy"
+      @close="cafe.close"
+    />
     <ItemShopPurchaseConfirmModal
       v-if="storeConfirmItem"
       v-model:confirm-currency="storeConfirmCurrency"

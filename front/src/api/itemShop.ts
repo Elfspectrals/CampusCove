@@ -30,6 +30,28 @@ export interface ShopItem {
   rarity: number | null
   kind: ShopItemKind
   options: ShopItemCurrencyOption[]
+  /** Food and drinks: what one portion restores. */
+  food?: ShopItemFood | null
+}
+
+export interface ShopItemFood {
+  portions: number
+  hunger: number
+  thirst: number
+  health: number
+  effect: string | null
+}
+
+function parseFood(value: unknown): ShopItemFood | null {
+  if (!isRecord(value) || typeof value.portions !== 'number') return null
+  const num = (v: unknown) => (typeof v === 'number' ? v : 0)
+  return {
+    portions: value.portions,
+    hunger: num(value.hunger),
+    thirst: num(value.thirst),
+    health: num(value.health),
+    effect: typeof value.effect === 'string' ? value.effect : null,
+  }
 }
 
 export interface PurchaseSuccess {
@@ -111,6 +133,7 @@ function normalizeCatalogRow(row: unknown): ShopItem | null {
     rarity: typeof row.item.rarity === 'number' ? row.item.rarity : null,
     kind: itemKind,
     options,
+    food: parseFood(row.item.food),
   }
 }
 
