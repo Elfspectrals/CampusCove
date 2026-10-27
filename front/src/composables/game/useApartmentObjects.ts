@@ -25,7 +25,6 @@ export interface ApartmentObjectsDeps {
  * hides the cube once loaded), kept in sync with the server, plus transform persistence after a move.
  */
 export function useApartmentObjects(deps: ApartmentObjectsDeps) {
-  const apartmentObjectCount = ref(0)
   const apartmentObjectIds = ref<string[]>([])
   const selectedPlacedObjectId = ref('')
 
@@ -134,27 +133,11 @@ export function useApartmentObjects(deps: ApartmentObjectsDeps) {
     if (!apartmentObjectIds.value.includes(payload.objectId)) {
       apartmentObjectIds.value.push(payload.objectId)
     }
-    apartmentObjectCount.value = apartmentObjectIds.value.length
     if (selectedPlacedObjectId.value === '') {
       selectedPlacedObjectId.value = payload.objectId
     }
     lastPersistedByObjectId.set(payload.objectId, payload)
     deps.onMeshUpserted(mesh)
-  }
-
-  function removeApartmentObjectMesh(objectId: string) {
-    const mesh = apartmentObjects.get(objectId)
-    if (!mesh) return
-    deps.onMeshRemoved(objectId)
-    mesh.removeFromParent()
-    disposeObject3D(mesh)
-    apartmentObjects.delete(objectId)
-    apartmentObjectIds.value = apartmentObjectIds.value.filter((id) => id !== objectId)
-    apartmentObjectCount.value = apartmentObjectIds.value.length
-    lastPersistedByObjectId.delete(objectId)
-    if (selectedPlacedObjectId.value === objectId) {
-      selectedPlacedObjectId.value = apartmentObjectIds.value[0] ?? ''
-    }
   }
 
   function clearApartmentObjects() {
@@ -166,7 +149,6 @@ export function useApartmentObjects(deps: ApartmentObjectsDeps) {
     }
     apartmentObjects.clear()
     apartmentObjectIds.value = []
-    apartmentObjectCount.value = 0
     selectedPlacedObjectId.value = ''
     lastPersistedByObjectId.clear()
   }
@@ -231,13 +213,10 @@ export function useApartmentObjects(deps: ApartmentObjectsDeps) {
   }
 
   return {
-    apartmentObjectCount,
     apartmentObjectIds,
     selectedPlacedObjectId,
     detachForRoomSwitch,
     clearApartmentObjects,
-    upsertApartmentObjectFromRemote,
-    removeApartmentObjectMesh,
     ensureApartmentObjectsFromServer,
     persistApartmentTransformForMesh,
     getApartmentObjectMesh,

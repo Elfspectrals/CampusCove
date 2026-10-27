@@ -246,37 +246,6 @@ export async function fetchCollisionFile(url: string): Promise<CollisionFileJson
   return (await res.json()) as CollisionFileJson
 }
 
-/**
- * Load a sidecar `.collision.json` (produced by `npm run collision:extract` / `make assets-optimize`)
- * into the Rapier world. Calls with the URL already loaded are no-ops.
- */
-export function buildWorldCollisionFromUrl(url: string): Promise<void> {
-  if (builtUrl === url && collidersReady) {
-    return Promise.resolve()
-  }
-  if (builtUrl === url && buildInFlight) {
-    return buildInFlight
-  }
-
-  builtUrl = url
-  buildInFlight = (async () => {
-    const data = await fetchCollisionFile(url)
-    await buildFromCollisionData(url, data)
-    console.info(
-      `[collision] loaded ${url}: ${stats.cuboids} cuboids, ${stats.trimeshes} trimeshes (${stats.trimeshTris} tris), ${stats.borderWalls} borders, mode=${stats.mode ?? 'n/a'}`,
-    )
-  })()
-    .catch((err) => {
-      builtUrl = null
-      collidersReady = false
-      throw err
-    })
-    .finally(() => {
-      buildInFlight = null
-    })
-  return buildInFlight
-}
-
 /** Meshes that never block movement when building collision from a scene object. */
 const OBJECT_SKIP_NAME_RE = /sky|leaf|flower|ivy|vine|grass|fern|rug|carpet/i
 /** Only meshes overlapping the player's walking height can block. */

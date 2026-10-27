@@ -66,11 +66,6 @@ export function createPlayer(client, options, colorIndex, spawn) {
     ry: 0,
     lastMoveAt: Date.now(),
     lastHousingRefreshAt: 0,
-    // 'city', or 'apartment' for any interior (a house, or a work building when workKey is set)
-    zone: 'city',
-    apartmentOwnerId: null,
-    apartmentTemplateKey: null,
-    workKey: null,
     appearance: normalizeAppearanceIds(options?.appearance),
     slotHexes: normalizeSlotHexes(options?.slotHexes),
     bodyModelGlb: normalizeBodyModelGlb(options?.bodyModelGlb)
@@ -87,18 +82,8 @@ export function publicPlayer(player) {
     y: player.y,
     z: player.z,
     ry: player.ry,
-    zone: player.zone,
-    apartmentOwnerId: player.apartmentOwnerId,
-    workKey: player.workKey,
     appearance: { ...player.appearance },
     slotHexes: { ...player.slotHexes },
     bodyModelGlb: player.bodyModelGlb
   }
-}
-
-// Players see each other only when they are in the same place: the town, one house, or one work building.
-export function visibilityKey(player) {
-  if (player.workKey) return `work:${player.workKey}`
-  if (player.zone === 'apartment') return `apartment:${player.apartmentOwnerId ?? 0}`
-  return 'city'
 }

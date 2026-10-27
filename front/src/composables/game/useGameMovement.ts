@@ -2,7 +2,7 @@ import type { Ref, ShallowRef } from 'vue'
 import type { Room } from '@colyseus/sdk'
 import * as THREE from 'three'
 import { KEY_BINDINGS, matchesAnyMovementKey } from '../../config/keybindings'
-import { APARTMENT_CLAMP_MARGIN, APARTMENT_HALF_EXTENT, EYE_HEIGHT } from '../../game/gameRoomConstants'
+import { EYE_HEIGHT } from '../../game/gameRoomConstants'
 import { resolveWorldMovement } from '../../game/collision/worldCollision'
 import { terrainHeightAt } from '../../game/town/terrainHeight'
 import { buildingFloorAt, updateOpenHouseVisibility } from '../../game/town/openHouses'
@@ -19,7 +19,6 @@ export interface UseGameMovementDeps {
   canvasRef: Ref<HTMLCanvasElement | null>
   containerRef: Ref<HTMLElement | null>
   gameRoomRef: ShallowRef<Room | null>
-  currentRoomLabel: Ref<'city' | 'apartment'>
   inventoryOpen: Ref<boolean>
   getScene: () => THREE.Scene | undefined
   getCamera: () => THREE.PerspectiveCamera | undefined
@@ -60,13 +59,6 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     return { w: window.innerWidth, h: window.innerHeight }
   }
 
-  /** Outer safety clamp inside a house (walls themselves collide via the interior collision file). */
-  function clampToApartment() {
-    const lim = APARTMENT_HALF_EXTENT - APARTMENT_CLAMP_MARGIN
-    myPosition.x = Math.max(-lim, Math.min(lim, myPosition.x))
-    myPosition.z = Math.max(-lim, Math.min(lim, myPosition.z))
-  }
-
   function updateMovement(dt: number) {
     const camera = deps.getCamera()
     if (!camera) return
@@ -89,10 +81,8 @@ export function useGameMovement(deps: UseGameMovementDeps) {
       myPosition.x = resolved.x
       myPosition.z = resolved.z
     }
-    const inCity = deps.currentRoomLabel.value === 'city'
-    if (!inCity) clampToApartment()
-    myPosition.y = EYE_HEIGHT + (inCity ? (buildingFloorAt(myPosition.x, myPosition.z) ?? terrainHeightAt(myPosition.x, myPosition.z)) : 0)
-    if (inCity) updateOpenHouseVisibility(myPosition.x, myPosition.z)
+    myPosition.y = EYE_HEIGHT + (buildingFloorAt(myPosition.x, myPosition.z) ?? terrainHeightAt(myPosition.x, myPosition.z))
+    updateOpenHouseVisibility(myPosition.x, myPosition.z)
 
     camera.position.set(myPosition.x, myPosition.y, myPosition.z)
     camera.rotation.order = 'YXZ'

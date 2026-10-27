@@ -23,7 +23,6 @@ const DEBOUNCE_MS = 500
 
 export interface UsePlayerInventoryDeps {
   gameRoomRef: ShallowRef<Room | null>
-  currentRoomLabel: Ref<'city' | 'apartment'>
   canDecorate: Ref<boolean>
   selectedPlacedObjectId: Ref<string>
   startPlacementPreview: (itemDef: ApartmentPlacementItemDef, ownedCountRef: Ref<number>) => void
@@ -143,11 +142,6 @@ export function usePlayerInventory(deps: UsePlayerInventoryDeps) {
 
   function refreshOwnedItems(): void {
     inventoryError.value = null
-    if (deps.gameRoomRef.value && deps.currentRoomLabel.value === 'apartment') {
-      inventoryLoading.value = true
-      deps.gameRoomRef.value.send('apartment_inventory_request')
-      return
-    }
     inventoryLoading.value = true
     void fetchApartmentAssets()
       .then((items) => {

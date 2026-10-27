@@ -1,7 +1,6 @@
 import * as THREE from 'three'
 import type { GLTF, GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
-import { APARTMENT_DOOR_POS } from './gameRoomConstants'
-import { DEFAULT_HOUSE, findHouse, findWork } from './assets/catalog'
+import { findHouse, findWork } from './assets/catalog'
 import { createGltfLoader } from './gltfLoaderFactory'
 import { getGraphicsQuality } from './graphicsQuality'
 import { shareTexturesAcrossModels } from './sharedTextures'
@@ -10,7 +9,6 @@ import { animatePondWater } from './town/pondWater'
 import { setTerrainHeightmap, type TerrainHeightmap } from './town/terrainHeight'
 import { fetchWorldManifest, houseBuildings, workBuildings, type WorldManifest, type WorldZone } from './world/worldManifest'
 import {
-  addApartmentFallbackLights,
   configureRoomMeshShadows,
   normalizeRoomMaterials,
   sanitizeGltfLights,
@@ -163,24 +161,12 @@ export function loadTownEnvironment(): Promise<TownEnvironmentBuildResult> {
   return townLoadPromise
 }
 
-export function applySceneAtmosphere(
-  scene: THREE.Scene,
-  kind: 'city' | 'apartment',
-  renderer?: THREE.WebGLRenderer,
-): void {
-  if (kind === 'city') {
-    scene.background = new THREE.Color(CITY_SKY_COLOR)
-    const fogFar = getGraphicsQuality() === 'low' ? 120 : 250
-    scene.fog = new THREE.Fog(CITY_SKY_COLOR, 30, fogFar)
-    if (renderer) {
-      renderer.toneMappingExposure = 1.05
-    }
-  } else {
-    scene.background = new THREE.Color(0x1a1816)
-    scene.fog = new THREE.Fog(0x1a1816, 28, 95)
-    if (renderer) {
-      renderer.toneMappingExposure = 1.1
-    }
+export function applySceneAtmosphere(scene: THREE.Scene, renderer?: THREE.WebGLRenderer): void {
+  scene.background = new THREE.Color(CITY_SKY_COLOR)
+  const fogFar = getGraphicsQuality() === 'low' ? 120 : 250
+  scene.fog = new THREE.Fog(CITY_SKY_COLOR, 30, fogFar)
+  if (renderer) {
+    renderer.toneMappingExposure = 1.05
   }
 }
 
@@ -220,90 +206,4 @@ export interface ApartmentEnvironmentBuildResult {
   group: THREE.Group
   /** House or work building whose interior this is (assets/houses/<key>/ or assets/work/<key>/). */
   house: InteriorAsset
-}
-
-function addApartmentLighting(group: THREE.Group): void {
-  if (getGraphicsQuality() === 'low') {
-    group.add(new THREE.HemisphereLight(0xf0ebe4, 0x6b5344, 0.22))
-    return
-  }
-  group.add(new THREE.HemisphereLight(0xfff5e6, 0x6b5344, 0.25))
-}
-
-function tagApartmentFloor(root: THREE.Object3D): void {
-  root.traverse((obj) => {
-    if (/House_Floor/i.test(obj.name)) {
-      obj.userData.apartmentEnvPart = 'floor'
-    }
-  })
-}
-
-function addApartmentExitDoor(group: THREE.Group): void {
-  const door = new THREE.Mesh(
-    new THREE.BoxGeometry(1.2, 2.2, 0.1),
-    new THREE.MeshBasicMaterial({ visible: false }),
-  )
-  door.position.set(APARTMENT_DOOR_POS.x, 1.1, APARTMENT_DOOR_POS.z)
-  door.userData.isApartmentDoor = true
-  group.add(door)
-}
-
-function prepareApartmentGroup(
-  root: THREE.Group,
-  house: InteriorAsset,
-  name = `HouseInterior_${house.key}`,
-): ApartmentEnvironmentBuildResult {
-  const hasGltfLights = sanitizeGltfLights(root)
-  configureRoomMeshShadows(root)
-  normalizeRoomMaterials(root, 'apartment')
-  tagApartmentFloor(root)
-  addApartmentExitDoor(root)
-  addApartmentLighting(root)
-  if (!hasGltfLights) {
-    addApartmentFallbackLights(root)
-  }
-  root.name = name
-  root.userData.isRoomEnvironment = true
-  root.userData.isPersistentEnvironment = true
-  return { group: root, house }
-}
-
-const interiorCache = new Map<string, Promise<ApartmentEnvironmentBuildResult>>()
-
-/**
- * Loads a house interior (assets/houses/<key>/interior.glb) once per house; later calls reuse the
- * cached group. Unknown / missing keys fall back to DEFAULT_HOUSE. Collision: `house.interiorCollisionUrl`.
- */
-export function loadApartmentEnvironment(houseKey?: string | null): Promise<ApartmentEnvironmentBuildResult> {
-  const house = findHouse(houseKey) ?? DEFAULT_HOUSE
-  const cached = interiorCache.get(house.key)
-  if (cached) return cached
-  const task = loadModelSharingTextures(createGltfLoader(), house.interiorUrl)
-    .then((gltf) => prepareApartmentGroup(gltf.scene, house))
-  task.catch(() => interiorCache.delete(house.key))
-  interiorCache.set(house.key, task)
-  return task
-}
-
-/**
- * Loads a business-district interior (assets/work/<key>/interior.glb). Same entrance contract as the
- * houses (door at z = +5, spawn APARTMENT_SPAWN), so the exit door trigger is shared.
- */
-export function loadWorkEnvironment(workKey: string): Promise<ApartmentEnvironmentBuildResult> {
-  const work = findWork(workKey)
-  if (!work) return Promise.reject(new Error(`Unknown work building: ${workKey}`))
-  const cacheKey = `work:${work.key}`
-  const cached = interiorCache.get(cacheKey)
-  if (cached) return cached
-  const task = loadModelSharingTextures(createGltfLoader(), work.interiorUrl)
-    .then((gltf) =>
-      prepareApartmentGroup(
-        gltf.scene,
-        { key: work.key, interiorCollisionUrl: work.interiorCollisionUrl },
-        `WorkInterior_${work.key}`,
-      ),
-    )
-  task.catch(() => interiorCache.delete(cacheKey))
-  interiorCache.set(cacheKey, task)
-  return task
 }

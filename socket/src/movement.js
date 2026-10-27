@@ -16,7 +16,7 @@ function toInterior(house, x, z) {
   }
 }
 
-export function unitAt(units, x, z) {
+function unitAt(units, x, z) {
   for (const unit of units) {
     const house = unit.model_key ? worldHouse(unit.model_key) : null
     const bounds = unit.interior_bounds

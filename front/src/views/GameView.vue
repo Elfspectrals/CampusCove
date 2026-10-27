@@ -48,10 +48,6 @@ const canvasRef = ref<HTMLCanvasElement | null>(null)
 
 const gameRoomRef = shallowRef<Room | null>(null)
 const roomMessage = ref<string | null>(null)
-const currentRoomLabel = ref<'city' | 'apartment'>('city')
-const canEditApartment = ref(false)
-const visitedApartmentOwnerId = ref<number | null>(null)
-const visitedWorkKey = ref<string | null>(null)
 const pointerLocked = ref(false)
 const refreshMyAppearance = ref<(() => void) | null>(null)
 const myAccountId = computed(() => getStoredAuth()?.user.account_id ?? null)
@@ -78,14 +74,11 @@ const getRenderer = () => game?.renderer
 // ---------------------------------------------------------------- house decoration
 
 const {
-  apartmentObjectCount,
   apartmentObjectIds,
   selectedPlacedObjectId,
   detachForRoomSwitch,
   clearApartmentObjects,
   ensureApartmentObjectsFromServer,
-  upsertApartmentObjectFromRemote,
-  removeApartmentObjectMesh,
   persistApartmentTransformForMesh,
   getApartmentObjectMesh,
 } = useApartmentObjects({
@@ -147,7 +140,6 @@ const {
   pickupToHotbar,
 } = usePlayerInventory({
   gameRoomRef,
-  currentRoomLabel,
   canDecorate,
   selectedPlacedObjectId,
   startPlacementPreview: (itemDef, ownedCountRef) => placement.startPreviewNew(itemDef, ownedCountRef),
@@ -166,7 +158,6 @@ const housing = useCityHousing({
 })
 
 const interactions = useInteractionTargets({
-  currentRoomLabel,
   myPosition,
   getCamera,
   canvasRef,
@@ -175,10 +166,6 @@ const interactions = useInteractionTargets({
   nearbyHousingUnit: housing.nearbyUnit,
   housingActionFor: housing.actionFor,
   isWorkDoorOpen: (lot) => housing.isWorkDoorOpen(lot.key),
-  onExitDoor: () => {
-    placement.cancelPreview()
-    realtime.exitBuilding()
-  },
   onHousingDoor: () => {
     const unit = housing.nearbyUnit.value
     const action = unit ? housing.actionFor(unit) : null
@@ -203,7 +190,7 @@ const houseKeys = useHouseKeys({
   roomMessage,
   myHouse: () => housing.units.value.find((u) => u.occupant_account_id === myAccountId.value) ?? null,
   holdingHouseKey,
-  promptsHidden: () => inventoryOpen.value || currentRoomLabel.value !== 'city',
+  promptsHidden: () => inventoryOpen.value,
 })
 const { keyPrompt } = houseKeys
 
@@ -230,30 +217,23 @@ void document.fonts.ready.then(() => {
 const environment = useRoomEnvironment({
   getScene,
   getRenderer,
-  houseKeyForTemplate: housing.houseKeyForTemplate,
   onTownLoaded: (manifest) => {
     interactions.setWorldManifest(manifest)
     houseFurniture.onTownReady()
   },
-  onInteriorLoaded: (built) => placement.registerApartmentEnvironment(built),
   onError: (message) => {
     roomMessage.value = message
   },
 })
 
-/** Back to the town resets everything tied to the building we were in. */
-function setRoomEnvironment(kind: 'city' | 'apartment', templateKey?: string, workKey?: string | null): void {
-  if (kind === 'city') {
-    placement.setPlayerInsideApartment(false)
-    canEditApartment.value = false
-    visitedApartmentOwnerId.value = null
-    visitedWorkKey.value = null
-    Object.assign(myPosition, HOUSING_LOBBY_SPAWN)
-    resetClientStateForCityWorld()
-    clearApartmentObjects()
-    houseFurniture.refresh()
-  }
-  environment.setRoomEnvironment(kind, templateKey, workKey)
+/** (Re)joining the town resets the decoration and inventory state. */
+function loadTown(): void {
+  placement.setPlayerInsideApartment(false)
+  Object.assign(myPosition, HOUSING_LOBBY_SPAWN)
+  resetClientStateForCityWorld()
+  clearApartmentObjects()
+  houseFurniture.refresh()
+  environment.loadTown()
 }
 
 // ---------------------------------------------------------------- input, loop, realtime
@@ -281,7 +261,6 @@ const movement = useGameMovement({
   canvasRef,
   containerRef,
   gameRoomRef,
-  currentRoomLabel,
   inventoryOpen,
   getScene,
   getCamera,
@@ -303,15 +282,14 @@ const movement = useGameMovement({
   onBeforeRender: (dt) => {
     positionLabel.value = formatPosition()
     realtime.tickRemoteAvatars(dt)
-    currentHouseKey.value = currentRoomLabel.value === 'city' ? houseKeyAt(myPosition.x, myPosition.z) : null
+    currentHouseKey.value = houseKeyAt(myPosition.x, myPosition.z)
     if (canDecorate.value) placement.tick(dt)
     interactions.updatePrompts()
     houseKeys.updateKeyPrompt()
-    if (currentRoomLabel.value === 'city') updateFrontDoors(dt, isBuildingDoorOpen)
+    updateFrontDoors(dt, isBuildingDoorOpen)
     arms?.update(dt, myPosition)
     heldItem.update(arms?.rightHand() ?? null, selectedItem.value?.kind === 'tool' ? selectedItem.value.model_glb : null)
     if (!doorSigns.group.parent) getScene()?.add(doorSigns.group)
-    doorSigns.group.visible = currentRoomLabel.value === 'city'
   },
 })
 const { requestPointerLock, onCanvasMouseDown } = movement
@@ -321,13 +299,6 @@ const realtime = useGameRealtime({
   gameRoomRef,
   getScene,
   getCamera,
-  getCanvas: () => canvasRef.value,
-  pointerLocked,
-  requestPointerLock,
-  currentRoomLabel,
-  canEditApartment,
-  visitedApartmentOwnerId,
-  visitedWorkKey,
   myPosition,
   roomMessage,
   refreshMyAppearance,
@@ -338,21 +309,17 @@ const realtime = useGameRealtime({
     pickupCodeToHotbar: pickupToHotbar,
   },
   apartment: {
-    selectedPlacedObjectId,
     detachForRoomSwitch,
-    ensureApartmentObjectsFromServer,
     clearApartmentObjects,
-    upsertApartmentObjectFromRemote,
-    removeApartmentObjectMesh,
     onActionError: () => placement.cancelPreview(),
   },
-  setRoomEnvironment,
+  loadTown,
   onHousingUnitsSync: housing.applyUnits,
   onHouseFurnitureSync: houseFurniture.applyHouses,
   onDoorsSync: housing.applyOpenDoors,
   onMyBodyModel: (bodyModelGlb) => arms?.setSkin(bodyModelGlb),
 })
-const { transitioning, switchingRoom } = realtime
+const { switchingRoom } = realtime
 
 // The inventory panel needs the mouse; closing it goes back to mouse look.
 watch(inventoryOpen, (open) => {
@@ -404,7 +371,7 @@ async function bootGame() {
   game = createGameScene(canvasRef.value, movement.containerSize())
   arms = createFirstPersonArms(game.fpHands)
   arms.setSkin(bodyModelGlbFromLoadout(cosmetics.slots))
-  setRoomEnvironment('city')
+  loadTown()
   await realtime.connectRealtime(cosmetics)
   try {
     housing.applyUnits((await fetchHousingUnits()).units)
@@ -481,8 +448,6 @@ const crosshairClass = computed(() => {
     />
     <GameRoomMessageBanner v-if="roomMessage" :message="roomMessage" />
     <GameHudToolbar
-      :current-room-label="currentRoomLabel"
-      :apartment-object-count="apartmentObjectCount"
       :position-label="positionLabel"
       :show-graphics-toggle="!pointerLocked"
     />
@@ -541,7 +506,7 @@ const crosshairClass = computed(() => {
       @placed-object-selected="onPlacedObjectSelected"
     />
     <GamePointerLockOverlay
-      v-show="!pointerLocked && !inventoryOpen && !transitioning && !switchingRoom"
+      v-show="!pointerLocked && !inventoryOpen && !switchingRoom"
       @request-pointer-lock="requestPointerLock"
       @logout="logout"
     />

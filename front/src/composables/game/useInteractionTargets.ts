@@ -1,6 +1,5 @@
 import { ref, type Ref } from 'vue'
 import * as THREE from 'three'
-import { APARTMENT_DOOR_POS, APARTMENT_DOOR_RADIUS } from '../../game/gameRoomConstants'
 import { findNearestFishingSpot, type FishingSpot } from '../../game/town/fishingSpots'
 import {
   findNearestHousingUnit,
@@ -21,7 +20,6 @@ export interface ScreenPrompt {
 }
 
 export interface InteractionTargetsDeps {
-  currentRoomLabel: Ref<'city' | 'apartment'>
   myPosition: { x: number; y: number; z: number }
   getCamera: () => THREE.Camera | undefined
   canvasRef: Ref<HTMLCanvasElement | null>
@@ -31,19 +29,16 @@ export interface InteractionTargetsDeps {
   nearbyHousingUnit: Ref<HousingUnit | null>
   housingActionFor: (unit: HousingUnit) => HousingAction | null
   isWorkDoorOpen: (lot: WorkLot) => boolean
-  onExitDoor: () => void
   onHousingDoor: () => void
   onWorkDoor: (lot: WorkLot) => void
   onFishingSpot: (spot: FishingSpot) => void
 }
 
 /**
- * What the player can interact with where they stand (inside: the exit door; in town: a house door, a work
- * building door or a fishing spot, in that priority), the left-click / I action on it, and the prompt bubbles
- * projected on screen above it.
+ * What the player can interact with where they stand (a house door, a work building door or a fishing spot, in
+ * that priority), the left-click / I action on it, and the prompt bubbles projected on screen above it.
  */
 export function useInteractionTargets(deps: InteractionTargetsDeps) {
-  const nearApartmentDoor = ref(false)
   const workLots = ref<WorkLot[]>([])
   const nearbyWork = ref<WorkLot | null>(null)
   const fishingSpots = ref<FishingSpot[]>([])
@@ -59,16 +54,6 @@ export function useInteractionTargets(deps: InteractionTargetsDeps) {
 
   function updateProximity(): void {
     const { x, z } = deps.myPosition
-    if (deps.currentRoomLabel.value === 'apartment') {
-      const dx = x - APARTMENT_DOOR_POS.x
-      const dz = z - APARTMENT_DOOR_POS.z
-      nearApartmentDoor.value = dx * dx + dz * dz <= APARTMENT_DOOR_RADIUS * APARTMENT_DOOR_RADIUS
-      deps.nearbyHousingUnit.value = null
-      nearbyWork.value = null
-      nearbyFishingSpot.value = null
-      return
-    }
-    nearApartmentDoor.value = false
     const unit = findNearestHousingUnit(x, z, deps.housingUnits.value)
     deps.nearbyHousingUnit.value = unit
     nearbyWork.value = unit ? null : findNearestWorkDoor(x, z, workLots.value)
@@ -79,11 +64,6 @@ export function useInteractionTargets(deps: InteractionTargetsDeps) {
   function tryInteract(): boolean {
     // Recompute on the input itself so it works even if the last movement frame was skipped.
     updateProximity()
-    if (deps.currentRoomLabel.value === 'apartment') {
-      if (!nearApartmentDoor.value) return false
-      deps.onExitDoor()
-      return true
-    }
     const work = nearbyWork.value
     const spot = nearbyFishingSpot.value
     if (deps.nearbyHousingUnit.value) deps.onHousingDoor()
@@ -108,11 +88,6 @@ export function useInteractionTargets(deps: InteractionTargetsDeps) {
 
   function currentPrompt(): ScreenPrompt | null {
     if (deps.promptsHidden()) return null
-    if (deps.currentRoomLabel.value === 'apartment') {
-      if (!nearApartmentDoor.value) return null
-      const screen = projectToScreen(APARTMENT_DOOR_POS.x, 1.5, APARTMENT_DOOR_POS.z)
-      return screen && { ...screen, action: 'Exit' }
-    }
     const unit = deps.nearbyHousingUnit.value
     if (unit) {
       const action = deps.housingActionFor(unit)
@@ -139,7 +114,6 @@ export function useInteractionTargets(deps: InteractionTargetsDeps) {
   }
 
   return {
-    nearApartmentDoor,
     doorPrompt,
     setWorldManifest,
     updateProximity,

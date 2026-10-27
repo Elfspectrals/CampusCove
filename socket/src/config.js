@@ -1,4 +1,3 @@
-// Spawn points inside buildings. They mirror front/src/game/gameRoomConstants.ts: change both sides together.
 // The town spawn and the building doors come from the front's world.manifest.json (src/world.js).
 
 export const PORT = parseInt(process.env.PORT || '3000', 10)
@@ -8,4 +7,3 @@ export const BACKEND_API_URL = (process.env.BACKEND_API_URL || 'http://localhost
 // Players arriving at the same spawn would stand inside each other (and the camera inside a head),
 // so each arrival lands on a random point of a small disc around the spawn.
 export const CITY_SPAWN_RADIUS = 2
-export const WORK_EXIT_RADIUS = 0.6

@@ -39,7 +39,7 @@ export function createGameScene(
   renderer.toneMapping = THREE.ACESFilmicToneMapping
   renderer.toneMappingExposure = 1.05
 
-  applySceneAtmosphere(scene, 'city', renderer)
+  applySceneAtmosphere(scene, renderer)
 
   const ambient = new THREE.AmbientLight(0xb0a89e, 0.15)
   scene.add(ambient)

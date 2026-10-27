@@ -16,15 +16,7 @@ const REMOTE_SNAP_DISTANCE = 4
 /** Beyond this distance from the local player a rigged avatar's clips are not advanced (not worth the CPU). */
 const ANIMATION_MAX_DISTANCE = 60
 
-type Zone = 'city' | 'apartment'
-
-export interface RemoteLocation {
-  zone: Zone
-  apartmentOwnerId: number | null
-  workKey: string | null
-}
-
-interface RemoteAvatar extends RemoteLocation {
+interface RemoteAvatar {
   userId: string
   pseudo: string
   group: THREE.Group
@@ -46,8 +38,6 @@ interface AppearanceUpdate {
 export interface RemoteAvatarsDeps {
   getScene: () => THREE.Scene | undefined
   myPosition: { x: number; y: number; z: number }
-  /** Whether a player at that location is in the same place as us. */
-  isVisible: (location: RemoteLocation) => boolean
 }
 
 function parseBodyTintColors(raw: Record<string, string> | null | undefined): CosmeticColors {
@@ -141,12 +131,6 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
   async function upsert(sessionId: string, data: RemoteUserPayload) {
     const scene = deps.getScene()
     if (!scene) return
-    const location: RemoteLocation = { zone: data.zone, apartmentOwnerId: data.apartmentOwnerId, workKey: data.workKey ?? null }
-    if (!deps.isVisible(location)) {
-      remove(sessionId)
-      return
-    }
-
     const renderToken = nextRenderToken(sessionId)
     const token = (upsertTokenByUserId.get(data.id) ?? 0) + 1
     upsertTokenByUserId.set(data.id, token)
@@ -181,7 +165,6 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     placeAvatar(group, data.x, data.y, data.z, ry)
     scene.add(group)
     avatars.set(sessionId, {
-      ...location,
       userId: data.id,
       pseudo: data.pseudo,
       group,
@@ -211,10 +194,6 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
       pendingAppearance.set(sessionId, update)
       return
     }
-    if (!deps.isVisible(entry)) {
-      remove(sessionId)
-      return
-    }
     const bodyTintColors = parseBodyTintColors(update.slotHexes)
     const bodyModelGlb = parseBodyModelGlb(update.bodyModelGlb)
     if (bodyModelGlb === entry.bodyModelGlb && bodyTintColors.body === entry.bodyTintColors.body) return
@@ -241,30 +220,10 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
   function setTarget(sessionId: string, x: number, y: number, z: number, ry: number | undefined) {
     const entry = avatars.get(sessionId)
     if (!entry) return
-    if (!deps.isVisible(entry)) {
-      remove(sessionId)
-      return
-    }
     entry.x = x
     entry.y = y
     entry.z = z
     entry.ry = parseYaw(ry ?? entry.ry)
-  }
-
-  /** The player went through a door: teleport, and hide them if they are no longer where we are. */
-  function moveToZone(sessionId: string, location: RemoteLocation, x: number, y: number, z: number) {
-    const entry = avatars.get(sessionId)
-    if (!entry) return
-    Object.assign(entry, location, { x, y, z })
-    placeAvatar(entry.group, x, y, z, entry.ry)
-    if (!deps.isVisible(entry)) remove(sessionId)
-  }
-
-  /** After we changed place: drop everyone not in the new one. */
-  function pruneInvisible() {
-    for (const [sid, entry] of [...avatars.entries()]) {
-      if (!deps.isVisible(entry)) remove(sid)
-    }
   }
 
   function clear() {
@@ -309,5 +268,5 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     }
   }
 
-  return { upsert, updateAppearance, setTarget, moveToZone, pruneInvisible, remove, clear, tick }
+  return { upsert, updateAppearance, setTarget, remove, clear, tick }
 }

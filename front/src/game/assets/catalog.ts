@@ -134,9 +134,6 @@ export function findWork(key: string | null | undefined): WorkAsset | null {
   return WORKS.find((w) => w.key === key) ?? null
 }
 
-/** Used when a house unit has no (or an unknown) model key. */
-export const DEFAULT_HOUSE: HouseAsset = HOUSES[0]!
-
 export const SHOWROOM = {
   modelUrl: `${ROOT}/showroom/new_nation.glb`,
   layoutUrl: `${ROOT}/showroom/new_nation.layout.json`,

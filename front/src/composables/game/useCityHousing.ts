@@ -46,12 +46,6 @@ export function useCityHousing(deps: CityHousingDeps) {
     })
   }
 
-  /** House asset key for an apartment template ('housing_<unit_id>'), via the unit's model_key. */
-  function houseKeyForTemplate(templateKey: string | undefined): string | null {
-    if (!templateKey) return null
-    return units.value.find((u) => u.template_key === templateKey)?.model_key ?? null
-  }
-
   async function runClaim(request: () => Promise<unknown>, errorText: string): Promise<void> {
     claimInFlight.value = true
     deps.roomMessage.value = null
@@ -90,5 +84,5 @@ export function useCityHousing(deps: CityHousingDeps) {
     return true
   }
 
-  return { units, nearbyUnit, claimInFlight, applyUnits, applyOpenDoors, isDoorOpen, isWorkDoorOpen, actionFor, houseKeyForTemplate, interact, unlock, buy }
+  return { units, nearbyUnit, claimInFlight, applyUnits, applyOpenDoors, isDoorOpen, isWorkDoorOpen, actionFor, interact, unlock, buy }
 }

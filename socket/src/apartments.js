@@ -1,11 +1,7 @@
-// Interiors: entering / leaving work buildings, and decorating one's own house from the town. Houses are
-// backed by the Laravel API (ownership, placed objects, inventory); work buildings are public and have no DB row.
+// Decorating one's own house from the town, backed by the Laravel API (ownership, placed objects, inventory).
 import { callBackendJson, errorPayload } from './backend.js'
-import { CITY_SPAWN_RADIUS, WORK_EXIT_RADIUS } from './config.js'
-import { spawnNear } from './players.js'
-import { citySpawn, workDoor } from './world.js'
 
-export async function sendInventory(room, client) {
+async function sendInventory(room, client) {
   const player = room.players.get(client.sessionId)
   if (!player) return
   if (!player.token) {
@@ -18,25 +14,6 @@ export async function sendInventory(room, client) {
   } catch (error) {
     client.send('apartment_inventory_error', errorPayload(error, 'Inventory request failed', 'inventory_error'))
   }
-}
-
-// Back to the town: in front of the work building's door, or on the plaza after a house.
-export function exitBuilding(room, client) {
-  const player = room.players.get(client.sessionId)
-  if (!player || player.zone === 'city') return
-  const exitDoor = player.workKey ? workDoor(player.workKey) : null
-  room.moveToZone(client, player, () => {
-    Object.assign(player, {
-      zone: 'city',
-      apartmentOwnerId: null,
-      apartmentTemplateKey: null,
-      workKey: null,
-      ...(exitDoor
-        ? spawnNear({ x: exitDoor.x, y: 1.6, z: exitDoor.z }, WORK_EXIT_RADIUS)
-        : spawnNear(citySpawn(), CITY_SPAWN_RADIUS))
-    })
-  })
-  client.send('housing_units_sync', { units: room.housingUnits })
 }
 
 function canDecorate(unit, accountId) {
@@ -59,7 +36,7 @@ function rejectDecoration(client) {
 // The house being decorated by this player, decorated from the town, on behalf of its owner. Null if none.
 function decoratedHouse(room, client) {
   const player = room.players.get(client.sessionId)
-  if (!player || player.zone !== 'city' || !player.token || !player.decoratedTemplateKey) return null
+  if (!player || !player.token || !player.decoratedTemplateKey) return null
   const unit = room.housingUnits.find((u) => u.template_key === player.decoratedTemplateKey)
   if (!unit || unit.occupant_account_id === null || !canDecorate(unit, player.accountId)) return null
   return { player, ownerAccountId: unit.occupant_account_id, templateKey: unit.template_key }

@@ -8,10 +8,6 @@ export interface RemoteUserPayload {
   z: number
   /** Camera yaw (radians), 0 = looking towards -Z. */
   ry?: number
-  zone: 'city' | 'apartment'
-  apartmentOwnerId: number | null
-  /** Set while inside a business-district building (zone is then 'apartment', owner null). */
-  workKey?: string | null
   slotHexes?: Record<string, string>
   bodyModelGlb?: string | null
 }
@@ -51,15 +47,6 @@ export interface HouseFurniturePayload {
   template_key: string
   model_key: string | null
   occupant_account_id: number
-  objects: ApartmentObjectPayload[]
-}
-
-export interface ApartmentInitPayload {
-  /** null for work buildings (free to enter, nobody owns them). */
-  ownerAccountId: number | null
-  templateKey: string
-  workKey?: string | null
-  canEdit: boolean
   objects: ApartmentObjectPayload[]
 }
 

@@ -157,24 +157,6 @@ export function configureRoomMeshShadows(root: THREE.Object3D): void {
   })
 }
 
-export function addApartmentFallbackLights(group: THREE.Group): void {
-  const box = new THREE.Box3().setFromObject(group)
-  const center = box.getCenter(new THREE.Vector3())
-  const roomSize = box.getSize(new THREE.Vector3())
-
-  const warmKey = new THREE.PointLight(0xffd4a8, 10, 16, 2)
-  warmKey.position.set(center.x + roomSize.x * 0.06, 2.35, center.z + roomSize.z * 0.04)
-  group.add(warmKey)
-
-  const windowFill = new THREE.PointLight(0xe8eef5, 4.5, 20, 2)
-  windowFill.position.set(center.x - roomSize.x * 0.22, 2.05, center.z - roomSize.z * 0.18)
-  group.add(windowFill)
-
-  const ceilingFill = new THREE.PointLight(0xfff5eb, 2, 22, 2)
-  ceilingFill.position.set(center.x, 2.85, center.z)
-  group.add(ceilingFill)
-}
-
 export function configureGlobalSceneLights(
   ambient: THREE.AmbientLight,
   directional: THREE.DirectionalLight,

@@ -1,5 +1,5 @@
 import { Room } from 'colyseus'
-import { exitBuilding, pickupObject, saveObject, sendInventory, setDecoratedHouse } from './apartments.js'
+import { pickupObject, saveObject, setDecoratedHouse } from './apartments.js'
 import { callBackendJson, parseAccountId, resolveIdentity } from './backend.js'
 import { CITY_MAX_PLAYERS, CITY_SPAWN_RADIUS } from './config.js'
 
@@ -14,8 +14,7 @@ import {
   normalizeNumber,
   normalizeSlotHexes,
   publicPlayer,
-  spawnNear,
-  visibilityKey
+  spawnNear
 } from './players.js'
 import { citySpawn, workDoor } from './world.js'
 
@@ -23,7 +22,7 @@ function warn(context, error) {
   console.warn(`[colyseus] ${context}:`, error instanceof Error ? error.message : error)
 }
 
-// The town and every interior share one room: zones only decide who sees whom.
+// One room for the whole world: the town and every building interior.
 export class CityRoom extends Room {
   onCreate() {
     this.maxClients = CITY_MAX_PLAYERS
@@ -37,12 +36,10 @@ export class CityRoom extends Room {
     this.onMessage('appearance', (client, payload) => this.onAppearance(client, payload))
     this.onMessage('housing_refresh', (client) => this.onHousingRefresh(client))
     this.onMessage('door_toggle', (client, payload) => this.onDoorToggle(client, payload))
-    this.onMessage('exit_apartment', (client) => exitBuilding(this, client))
     this.onMessage('decorate_house', (client, payload) => setDecoratedHouse(this, client, payload))
     this.onMessage('apartment_spawn_request', (client, payload) => saveObject(this, client, payload, true))
     this.onMessage('apartment_transform_request', (client, payload) => saveObject(this, client, payload, false))
     this.onMessage('apartment_pickup_request', (client, payload) => pickupObject(this, client, payload))
-    this.onMessage('apartment_inventory_request', (client) => sendInventory(this, client))
     this.clock.setInterval(() => void this.pollHousingUnits(), HOUSING_POLL_MS)
   }
 
@@ -73,12 +70,12 @@ export class CityRoom extends Room {
     }
     client.send('init', {
       me: publicPlayer(player),
-      users: this.visiblePlayersFor(player, client),
+      users: this.otherPlayers(client),
       housingUnits: this.housingUnits,
       houseFurniture: this.houseFurniture,
       openDoors: [...this.openDoors]
     })
-    this.forEachVisibleClient(player, (c) => c.send('user_joined', publicPlayer(player)), client)
+    this.forEachClient((c) => c.send('user_joined', publicPlayer(player)), client)
   }
 
   onLeave(client) {
@@ -93,40 +90,15 @@ export class CityRoom extends Room {
 
   // ------------------------------------------------------------ visibility
 
-  forEachVisibleClient(origin, callback, exceptClient) {
-    const key = visibilityKey(origin)
+  forEachClient(callback, exceptClient) {
     for (const c of this.clients) {
       if (exceptClient && c.sessionId === exceptClient.sessionId) continue
-      const target = this.players.get(c.sessionId)
-      if (target && visibilityKey(target) === key) callback(c, target)
+      if (this.players.has(c.sessionId)) callback(c)
     }
   }
 
-  visiblePlayersFor(player, client) {
-    const key = visibilityKey(player)
-    return [...this.players.values()]
-      .filter((u) => u.sessionId !== client.sessionId && visibilityKey(u) === key)
-      .map(publicPlayer)
-  }
-
-  // Zone changes are announced as leave/join so every client keeps an accurate list of visible players:
-  // viewers of the old zone drop the mover, viewers of the new zone spawn them, and the mover gets the
-  // players already there. `change` updates the player (and may message the mover) in between.
-  moveToZone(client, player, change) {
-    this.forEachVisibleClient(player, (c) => c.send('user_left', { sessionId: client.sessionId }), client)
-    change()
-    player.lastMoveAt = Date.now()
-    client.send('user_zone_changed', {
-      sessionId: client.sessionId,
-      zone: player.zone,
-      apartmentOwnerId: player.apartmentOwnerId,
-      workKey: player.workKey,
-      x: player.x,
-      y: player.y,
-      z: player.z
-    })
-    this.forEachVisibleClient(player, (c) => c.send('user_joined', publicPlayer(player)), client)
-    client.send('zone_users', { users: this.visiblePlayersFor(player, client) })
+  otherPlayers(client) {
+    return [...this.players.values()].filter((u) => u.sessionId !== client.sessionId).map(publicPlayer)
   }
 
   // ------------------------------------------------------------ presence
@@ -137,7 +109,7 @@ export class CityRoom extends Room {
     const x = normalizeNumber(payload.x, player.x)
     const z = normalizeNumber(payload.z, player.z)
     const now = Date.now()
-    if (player.zone === 'city' && moveRejection(this, player, x, z, now) !== null) {
+    if (moveRejection(this, player, x, z, now) !== null) {
       client.send('position_correction', { x: player.x, y: player.y, z: player.z })
       return
     }
@@ -151,7 +123,7 @@ export class CityRoom extends Room {
 
   broadcastMove(client, player) {
     const { x, y, z, ry } = player
-    this.forEachVisibleClient(player, (c) => c.send('user_moved', { sessionId: client.sessionId, x, y, z, ry }), client)
+    this.forEachClient((c) => c.send('user_moved', { sessionId: client.sessionId, x, y, z, ry }), client)
   }
 
   onAppearance(client, payload) {
@@ -165,7 +137,7 @@ export class CityRoom extends Room {
       JSON.stringify([player.appearance, player.slotHexes, player.bodyModelGlb])
     if (unchanged) return
     Object.assign(player, { appearance, slotHexes, bodyModelGlb })
-    this.forEachVisibleClient(player, (c) => c.send('appearance_updated', {
+    this.forEachClient((c) => c.send('appearance_updated', {
       sessionId: client.sessionId,
       appearance: { ...appearance },
       slotHexes: { ...slotHexes },
@@ -195,7 +167,7 @@ export class CityRoom extends Room {
       await this.fetchHousingUnits(token)
       if (JSON.stringify(this.housingUnits) === before) return
       const payload = { units: this.housingUnits }
-      this.forEachVisibleClient({ zone: 'city' }, (c) => c.send('housing_units_sync', payload))
+      this.forEachClient((c) => c.send('housing_units_sync', payload))
       this.broadcastDoors()
     } catch (error) {
       warn('housing poll failed', error)
@@ -211,7 +183,7 @@ export class CityRoom extends Room {
     try {
       await this.fetchHouseFurniture(token)
       const payload = { houses: this.houseFurniture }
-      this.forEachVisibleClient({ zone: 'city' }, (c) => c.send('house_furniture_sync', payload))
+      this.forEachClient((c) => c.send('house_furniture_sync', payload))
     } catch (error) {
       warn('house furniture refresh failed', error)
     }
@@ -227,7 +199,7 @@ export class CityRoom extends Room {
     try {
       await this.fetchHousingUnits(player.token)
       const payload = { units: this.housingUnits }
-      this.forEachVisibleClient({ zone: 'city' }, (c) => c.send('housing_units_sync', payload))
+      this.forEachClient((c) => c.send('housing_units_sync', payload))
       this.broadcastDoors()
     } catch (error) {
       warn('housing_refresh failed', error)
@@ -237,14 +209,14 @@ export class CityRoom extends Room {
 
   broadcastDoors() {
     const payload = { openDoors: [...this.openDoors] }
-    this.forEachVisibleClient({ zone: 'city' }, (c) => c.send('doors_sync', payload))
+    this.forEachClient((c) => c.send('doors_sync', payload))
   }
 
   onDoorToggle(client, payload) {
     const player = this.players.get(client.sessionId)
     if (typeof payload?.workKey === 'string') {
       const door = workDoor(payload.workKey)
-      if (!player || player.zone !== 'city' || !door || !isWithinReach(player, door.x, door.z)) return
+      if (!player || !door || !isWithinReach(player, door.x, door.z)) return
       this.toggleDoor(workDoorId(payload.workKey))
       return
     }
