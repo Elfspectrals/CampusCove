@@ -104,7 +104,6 @@ interface NavItem {
 const defaultNavItems = computed<NavItem[]>(() => [
   isLoggedIn.value ? { name: 'home', icon: 'home', label: 'Lobby' } : { name: 'landing', icon: 'home', label: 'Home' },
   ...(isLoggedIn.value ? [{ name: 'locker', icon: 'backpack', label: 'Locker' } as NavItem] : []),
-  { name: 'shop', icon: 'chair', label: 'Shop' },
   { name: 'shop-skin', icon: 'shirt', label: 'Skins' },
   ...(isLoggedIn.value ? [{ name: 'friends', icon: 'users', label: 'Friends' } as NavItem] : []),
 ])
@@ -114,6 +113,7 @@ const adminNavItems: NavItem[] = [
   { name: 'admin-shop', icon: 'chair', label: 'Shop Items' },
   { name: 'admin-shop-skin', icon: 'shirt', label: 'Shop Skins' },
   { name: 'admin-inventories', icon: 'backpack', label: 'Inventories' },
+  { name: 'admin-planner', icon: 'map', label: 'World Planner' },
   { name: 'new-nation', icon: 'globe', label: 'New Nation' },
 ]
 
@@ -181,7 +181,7 @@ watch(
 
         <template v-if="isLoggedIn">
           <div class="hidden items-center gap-2 md:flex">
-            <RouterLink :to="{ name: 'shop' }" title="Coins" class="transition hover:brightness-110">
+            <RouterLink :to="{ name: 'game' }" title="Coins: spend them on furniture at Cove Home" class="transition hover:brightness-110">
               <UiCurrency currency="coins" :amount="balances.coins" pill />
             </RouterLink>
             <RouterLink :to="{ name: 'shop-skin' }" title="Premium gems" class="transition hover:brightness-110">

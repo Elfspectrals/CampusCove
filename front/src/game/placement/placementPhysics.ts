@@ -5,12 +5,8 @@
 import * as RAPIER from '@dimforge/rapier3d-compat'
 import type { Collider, World } from '@dimforge/rapier3d-compat'
 import * as THREE from 'three'
-import {
-  APARTMENT_DOOR_POS,
-  APARTMENT_HALF_EXTENT,
-  APARTMENT_ROOM_HEIGHT,
-  APARTMENT_WALL_THICKNESS,
-} from '../gameRoomConstants'
+import type { CollisionFileJson } from '../collision/worldCollision'
+import { APARTMENT_DOOR_POS, APARTMENT_ROOM_HEIGHT, APARTMENT_WALL_THICKNESS } from '../gameRoomConstants'
 
 interface PropPhysicsUserData {
   kind: 'apartmentPlacementProp'
@@ -86,23 +82,26 @@ function addStaticBox(
   subkind: StaticPhysicsUserData['subkind'],
   [x, y, z]: [number, number, number],
   [hx, hy, hz]: [number, number, number],
+  rotation = new RAPIER.Quaternion(0, 0, 0, 1),
 ): void {
-  const body = w.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(x, y, z))
+  const body = w.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(x, y, z).setRotation(rotation))
   const userData: StaticPhysicsUserData = { kind: 'apartmentPlacementStatic', subkind }
   body.userData = userData as unknown
   w.createCollider(RAPIER.ColliderDesc.cuboid(hx, hy, hz), body)
 }
 
-function addApartmentStaticColliders(w: World): void {
-  const e = APARTMENT_HALF_EXTENT
+function addRoomStaticColliders(w: World, room: CollisionFileJson): void {
+  if (!room.bounds) throw new Error(`Room collision ${room.source ?? ''} has no bounds`)
+  const { minX, maxX, minZ, maxZ } = room.bounds
+  const center: [number, number] = [(minX + maxX) / 2, (minZ + maxZ) / 2]
+  const half: [number, number] = [(maxX - minX) / 2, (maxZ - minZ) / 2]
   const h = APARTMENT_ROOM_HEIGHT
   const t = APARTMENT_WALL_THICKNESS
-  addStaticBox(w, 'floor', [0, -t / 2, 0], [e, t / 2, e])
-  addStaticBox(w, 'ceiling', [0, h + t / 2, 0], [e, t / 2, e])
-  addStaticBox(w, 'wall', [0, h / 2, -e], [e, h / 2, t / 2])
-  addStaticBox(w, 'wall', [0, h / 2, e], [e, h / 2, t / 2])
-  addStaticBox(w, 'wall', [-e, h / 2, 0], [t / 2, h / 2, e])
-  addStaticBox(w, 'wall', [e, h / 2, 0], [t / 2, h / 2, e])
+  addStaticBox(w, 'floor', [center[0], -t / 2, center[1]], [half[0], t / 2, half[1]])
+  addStaticBox(w, 'ceiling', [center[0], h + t / 2, center[1]], [half[0], t / 2, half[1]])
+  for (const c of room.cuboids) {
+    addStaticBox(w, 'wall', [c.cx, c.cy, c.cz], [c.hx, c.hy, c.hz], new RAPIER.Quaternion(c.qx, c.qy, c.qz, c.qw))
+  }
   addStaticBox(w, 'door', [APARTMENT_DOOR_POS.x, 1.1, APARTMENT_DOOR_POS.z], [0.6, 1.1, 0.05])
 }
 
@@ -113,18 +112,23 @@ export function createPlacementPhysics() {
   const propMeshById = new Map<string, THREE.Mesh>()
   /** Props registered before the world finished initialising. */
   const pendingMeshes: THREE.Mesh[] = []
+  let roomFrame: THREE.Object3D | null = null
+
+  function setRoomFrame(frame: THREE.Object3D): void {
+    roomFrame = frame
+  }
 
   function isReady(): boolean {
     return world !== null
   }
 
-  async function ensureReady(): Promise<void> {
+  async function ensureReady(room: CollisionFileJson): Promise<void> {
     if (world) return
     if (!initPromise) {
       initPromise = (async () => {
         await RAPIER.init()
         const w = new RAPIER.World(new RAPIER.Vector3(0, 0, 0))
-        addApartmentStaticColliders(w)
+        addRoomStaticColliders(w, room)
         world = w
         const pending = pendingMeshes.splice(0)
         for (const m of pending) registerProp(m)
@@ -194,9 +198,14 @@ export function createPlacementPhysics() {
     ghost.updateMatrixWorld(true)
     const { halfExtents, centerLocal } = computePlacementLocalAabb(ghost)
     const centerWorld = centerLocal.clone().applyMatrix4(ghost.matrixWorld)
-    const q = ghost.quaternion
+    const q = ghost.getWorldQuaternion(new THREE.Quaternion())
+    if (roomFrame) {
+      roomFrame.updateMatrixWorld(true)
+      roomFrame.worldToLocal(centerWorld)
+      q.premultiply(roomFrame.getWorldQuaternion(new THREE.Quaternion()).invert())
+    }
     let hit = false
-    world.propagateModifiedBodyPositionsToColliders()
+    world.step()
     world.intersectionsWithShape(
       new RAPIER.Vector3(centerWorld.x, centerWorld.y, centerWorld.z),
       new RAPIER.Quaternion(q.x, q.y, q.z, q.w),
@@ -230,5 +239,5 @@ export function createPlacementPhysics() {
     initPromise = null
   }
 
-  return { isReady, ensureReady, registerProp, unregisterProp, syncProps, ghostIntersects, dispose }
+  return { isReady, ensureReady, setRoomFrame, registerProp, unregisterProp, syncProps, ghostIntersects, dispose }
 }

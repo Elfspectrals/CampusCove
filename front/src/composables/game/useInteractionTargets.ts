@@ -1,75 +1,70 @@
 import { ref, type Ref } from 'vue'
 import * as THREE from 'three'
-import { APARTMENT_DOOR_POS, APARTMENT_DOOR_RADIUS } from '../../game/gameRoomConstants'
 import { findNearestFishingSpot, type FishingSpot } from '../../game/town/fishingSpots'
 import {
-  canRenewUnit,
   findNearestHousingUnit,
-  housingActionFor,
   housingInteractPosition,
   housingPromptLabel,
+  type HousingAction,
   type HousingUnit,
 } from '../../game/town/housing'
-import type { TownLayout } from '../../game/assets/catalog'
+import {
+  fishingSpots as manifestFishingSpots,
+  storeBuildings,
+  workBuildings,
+  type StoreBuilding,
+  type WorldManifest,
+} from '../../game/world/worldManifest'
 import { findNearestWorkDoor, type WorkLot } from '../../game/town/workBuildings'
 
 export interface ScreenPrompt {
   x: number
   y: number
+  key?: string
   action: string
   detail?: string
 }
 
 export interface InteractionTargetsDeps {
-  currentRoomLabel: Ref<'city' | 'apartment'>
   myPosition: { x: number; y: number; z: number }
-  myAccountId: Ref<number | null>
   getCamera: () => THREE.Camera | undefined
   canvasRef: Ref<HTMLCanvasElement | null>
   /** Prompts are hidden while one of these is true (inventory open, housing request running). */
   promptsHidden: () => boolean
   housingUnits: Ref<HousingUnit[]>
   nearbyHousingUnit: Ref<HousingUnit | null>
-  onExitDoor: () => void
+  housingActionFor: (unit: HousingUnit) => HousingAction | null
+  isWorkDoorOpen: (lot: PublicLot) => boolean
   onHousingDoor: () => void
-  onWorkDoor: (lot: WorkLot) => void
+  onWorkDoor: (lot: PublicLot) => void
   onFishingSpot: (spot: FishingSpot) => void
+  /** Inside Cove Home: the item being looked at (its price-tag anchor + prompt text), and buying it. */
+  storeTarget: () => { position: [number, number, number]; detail: string } | null
+  onStoreTarget: () => void
 }
 
+type PublicLot = WorkLot | StoreBuilding
+
 /**
- * What the player can interact with where they stand (inside: the exit door; in town: a house door, a work
- * building door or a fishing spot, in that priority), the left-click / I action on it, and the prompt bubbles
- * projected on screen above it.
+ * What the player can interact with where they stand (a house door, a work building door or a fishing spot, in
+ * that priority), the left-click / I action on it, and the prompt bubbles projected on screen above it.
  */
 export function useInteractionTargets(deps: InteractionTargetsDeps) {
-  const nearApartmentDoor = ref(false)
-  const workLots = ref<WorkLot[]>([])
-  const nearbyWork = ref<WorkLot | null>(null)
+  const workLots = ref<PublicLot[]>([])
+  const nearbyWork = ref<PublicLot | null>(null)
   const fishingSpots = ref<FishingSpot[]>([])
   const nearbyFishingSpot = ref<FishingSpot | null>(null)
   const doorPrompt = ref<ScreenPrompt | null>(null)
-  /** Second bubble next to a rented house whose lease ends soon (U key). */
-  const renewPrompt = ref<{ x: number; y: number } | null>(null)
   const projection = new THREE.Vector3()
 
-  /** The town layout lists the work buildings and the pond's fishing spots. */
-  function setTownLayout(layout: TownLayout): void {
-    workLots.value = layout.work ?? []
-    fishingSpots.value = layout.pond?.fishingSpots ?? []
+  /** The world manifest lists the work buildings and the pond's fishing spots. */
+  function setWorldManifest(manifest: WorldManifest): void {
+    workLots.value = [...workBuildings(manifest), ...storeBuildings(manifest)]
+    fishingSpots.value = manifestFishingSpots(manifest)
   }
 
   function updateProximity(): void {
     const { x, z } = deps.myPosition
-    if (deps.currentRoomLabel.value === 'apartment') {
-      const dx = x - APARTMENT_DOOR_POS.x
-      const dz = z - APARTMENT_DOOR_POS.z
-      nearApartmentDoor.value = dx * dx + dz * dz <= APARTMENT_DOOR_RADIUS * APARTMENT_DOOR_RADIUS
-      deps.nearbyHousingUnit.value = null
-      nearbyWork.value = null
-      nearbyFishingSpot.value = null
-      return
-    }
-    nearApartmentDoor.value = false
     const unit = findNearestHousingUnit(x, z, deps.housingUnits.value)
     deps.nearbyHousingUnit.value = unit
     nearbyWork.value = unit ? null : findNearestWorkDoor(x, z, workLots.value)
@@ -80,9 +75,8 @@ export function useInteractionTargets(deps: InteractionTargetsDeps) {
   function tryInteract(): boolean {
     // Recompute on the input itself so it works even if the last movement frame was skipped.
     updateProximity()
-    if (deps.currentRoomLabel.value === 'apartment') {
-      if (!nearApartmentDoor.value) return false
-      deps.onExitDoor()
+    if (deps.storeTarget()) {
+      deps.onStoreTarget()
       return true
     }
     const work = nearbyWork.value
@@ -107,50 +101,42 @@ export function useInteractionTargets(deps: InteractionTargetsDeps) {
     }
   }
 
-  function currentPrompt(): { prompt: ScreenPrompt | null; renew: { x: number; y: number } | null } {
-    const none = { prompt: null, renew: null }
-    if (deps.promptsHidden()) return none
-    if (deps.currentRoomLabel.value === 'apartment') {
-      if (!nearApartmentDoor.value) return none
-      const screen = projectToScreen(APARTMENT_DOOR_POS.x, 1.5, APARTMENT_DOOR_POS.z)
-      return { prompt: screen && { ...screen, action: 'Exit' }, renew: null }
+  function currentPrompt(): ScreenPrompt | null {
+    if (deps.promptsHidden()) return null
+    const item = deps.storeTarget()
+    if (item) {
+      const [tx, ty, tz] = item.position
+      const screen = projectToScreen(tx, ty + 0.55, tz)
+      return screen && { ...screen, action: 'Buy', detail: item.detail }
     }
     const unit = deps.nearbyHousingUnit.value
     if (unit) {
-      const action = housingActionFor(unit, deps.myAccountId.value)
+      const action = deps.housingActionFor(unit)
       const pos = housingInteractPosition(unit)
       const screen = projectToScreen(pos.x, pos.y, pos.z)
-      if (!screen || !action) return none
-      return {
-        prompt: { ...screen, ...housingPromptLabel(unit, action) },
-        renew: canRenewUnit(unit, deps.myAccountId.value) ? { x: screen.x + 72, y: screen.y } : null,
-      }
+      return screen && action && { ...screen, ...housingPromptLabel(unit, action) }
     }
     const work = nearbyWork.value
     if (work) {
       const screen = projectToScreen(work.door[0], 1.5, work.door[2])
-      return { prompt: screen && { ...screen, action: 'Enter', detail: work.name }, renew: null }
+      return screen && { ...screen, action: deps.isWorkDoorOpen(work) ? 'Close' : 'Open', detail: work.name }
     }
     const spot = nearbyFishingSpot.value
     if (spot) {
       const screen = projectToScreen(spot.lookAt[0], spot.lookAt[1] + 0.8, spot.lookAt[2])
-      return { prompt: screen && { ...screen, action: 'Fish' }, renew: null }
+      return screen && { ...screen, action: 'Fish' }
     }
-    return none
+    return null
   }
 
   /** Every frame, after the camera moved. */
   function updatePrompts(): void {
-    const { prompt, renew } = currentPrompt()
-    doorPrompt.value = prompt
-    renewPrompt.value = renew
+    doorPrompt.value = currentPrompt()
   }
 
   return {
-    nearApartmentDoor,
     doorPrompt,
-    renewPrompt,
-    setTownLayout,
+    setWorldManifest,
     updateProximity,
     tryInteract,
     updatePrompts,

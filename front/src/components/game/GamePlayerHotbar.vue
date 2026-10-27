@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ApartmentInventoryItem } from '../../types/gameRealtime'
+import GamePortionBar from './GamePortionBar.vue'
 
 defineProps<{
   slots: string[]
@@ -76,10 +77,15 @@ function onDragStartInner(index: number, rawCode: string, itemByCode: Record<str
           />
           <span
             v-if="quantityFor(effectiveCode(rawCode, itemByCode), itemByCode) > 1"
-            class="pointer-events-none absolute bottom-0.5 right-1 font-display text-xs text-fog [text-shadow:0_1px_0_rgb(0_0_0),0_0_4px_rgb(0_0_0)]"
+            class="pointer-events-none absolute right-1 font-display text-xs text-fog [text-shadow:0_1px_0_rgb(0_0_0),0_0_4px_rgb(0_0_0)]"
+            :class="itemByCode[effectiveCode(rawCode, itemByCode)]?.portions ? 'top-0.5' : 'bottom-0.5'"
           >
             ×{{ quantityFor(effectiveCode(rawCode, itemByCode), itemByCode) }}
           </span>
+          <GamePortionBar
+            :portions="itemByCode[effectiveCode(rawCode, itemByCode)]?.portions"
+            :portions-left="itemByCode[effectiveCode(rawCode, itemByCode)]?.portions_left"
+          />
         </template>
         <template v-else>
           <span class="pointer-events-none absolute left-1 top-0.5 font-display text-[11px] text-mist/60">{{

@@ -31,7 +31,7 @@ export interface CollisionTrimeshJson {
   indices: number[]
 }
 
-interface CollisionFileJson {
+export interface CollisionFileJson {
   version: number
   source?: string
   mode?: string
@@ -70,6 +70,10 @@ let loadedTrimeshes: CollisionTrimeshJson[] = []
 let characterController: RAPIER.KinematicCharacterController | null = null
 let playerBody: RAPIER.RigidBody | null = null
 let playerCollider: Collider | null = null
+const doorBlockers = new Map<string, RAPIER.RigidBody>()
+/** Placed furniture boxes, kept across rebuilds of the world (the bodies are re-created from these). */
+const propBlockerShapes = new Map<string, CollisionCuboidJson>()
+const propBlockers = new Map<string, RAPIER.RigidBody>()
 
 const desiredDelta = new RAPIER.Vector3(0, 0, 0)
 
@@ -96,13 +100,14 @@ function addFixedCuboid(
   qy: number,
   qz: number,
   qw: number,
-): void {
+): RAPIER.RigidBody {
   const body = w.createRigidBody(
     RAPIER.RigidBodyDesc.fixed()
       .setTranslation(cx, cy, cz)
       .setRotation(new RAPIER.Quaternion(qx, qy, qz, qw)),
   )
   w.createCollider(RAPIER.ColliderDesc.cuboid(hx, hy, hz), body)
+  return body
 }
 
 function addFixedTrimesh(w: World, vertices: number[], indices: number[]): void {
@@ -203,6 +208,8 @@ function disposeWorld(): void {
   playerCollider = null
   characterController = null
   collidersReady = false
+  doorBlockers.clear()
+  propBlockers.clear()
 }
 
 async function buildFromCollisionData(url: string, data: CollisionFileJson): Promise<void> {
@@ -230,44 +237,21 @@ async function buildFromCollisionData(url: string, data: CollisionFileJson): Pro
     addBorderWalls(w, data.bounds)
   }
 
+  for (const [key, c] of propBlockerShapes) {
+    propBlockers.set(key, addFixedCuboid(w, c.cx, c.cy, c.cz, c.hx, c.hy, c.hz, c.qx, c.qy, c.qz, c.qw))
+  }
+
   w.step()
   collidersReady = true
   refreshCollisionDebug(loadedCuboids, loadedTrimeshes)
 }
 
-/**
- * Load a sidecar `.collision.json` (produced by `npm run collision:extract` / `make assets-optimize`)
- * into the Rapier world. Calls with the URL already loaded are no-ops.
- */
-export function buildWorldCollisionFromUrl(url: string): Promise<void> {
-  if (builtUrl === url && collidersReady) {
-    return Promise.resolve()
+export async function fetchCollisionFile(url: string): Promise<CollisionFileJson> {
+  const res = await fetch(url)
+  if (!res.ok) {
+    throw new Error(`Failed to load collision file ${url}: ${res.status}`)
   }
-  if (builtUrl === url && buildInFlight) {
-    return buildInFlight
-  }
-
-  builtUrl = url
-  buildInFlight = (async () => {
-    const res = await fetch(url)
-    if (!res.ok) {
-      throw new Error(`Failed to load collision file ${url}: ${res.status}`)
-    }
-    const data = (await res.json()) as CollisionFileJson
-    await buildFromCollisionData(url, data)
-    console.info(
-      `[collision] loaded ${url}: ${stats.cuboids} cuboids, ${stats.trimeshes} trimeshes (${stats.trimeshTris} tris), ${stats.borderWalls} borders, mode=${stats.mode ?? 'n/a'}`,
-    )
-  })()
-    .catch((err) => {
-      builtUrl = null
-      collidersReady = false
-      throw err
-    })
-    .finally(() => {
-      buildInFlight = null
-    })
-  return buildInFlight
+  return (await res.json()) as CollisionFileJson
 }
 
 /** Meshes that never block movement when building collision from a scene object. */
@@ -340,6 +324,63 @@ export function buildWorldCollisionFromObject(key: string, root: THREE.Object3D)
   return buildInFlight
 }
 
+export function buildWorldCollisionFromData(key: string, data: CollisionFileJson): Promise<void> {
+  if (builtUrl === key && collidersReady) return Promise.resolve()
+  if (builtUrl === key && buildInFlight) return buildInFlight
+
+  builtUrl = key
+  buildInFlight = buildFromCollisionData(key, data)
+    .catch((err) => {
+      builtUrl = null
+      collidersReady = false
+      throw err
+    })
+    .finally(() => {
+      buildInFlight = null
+    })
+  return buildInFlight
+}
+
+export function setDoorBlocker(key: string, cuboid: CollisionCuboidJson | null): void {
+  if (!world || !collidersReady) return
+  const existing = doorBlockers.get(key)
+  if (cuboid === null) {
+    if (!existing) return
+    world.removeRigidBody(existing)
+    doorBlockers.delete(key)
+  } else {
+    if (existing) return
+    const c = cuboid
+    doorBlockers.set(key, addFixedCuboid(world, c.cx, c.cy, c.cz, c.hx, c.hy, c.hz, c.qx, c.qy, c.qz, c.qw))
+  }
+  world.step()
+}
+
+/** Block the player with a placed piece of furniture (`null` removes it, e.g. picked up or being moved). */
+export function setPropBlocker(key: string, cuboid: CollisionCuboidJson | null): void {
+  const existing = propBlockers.get(key)
+  if (existing && world) world.removeRigidBody(existing)
+  propBlockers.delete(key)
+  if (cuboid === null) propBlockerShapes.delete(key)
+  else propBlockerShapes.set(key, cuboid)
+  if (!world || !collidersReady) return
+  if (cuboid) {
+    const c = cuboid
+    propBlockers.set(key, addFixedCuboid(world, c.cx, c.cy, c.cz, c.hx, c.hy, c.hz, c.qx, c.qy, c.qz, c.qw))
+  }
+  world.step()
+}
+
+/** Would this box overlap the player's capsule where it last stood? */
+export function cuboidOverlapsPlayer(c: CollisionCuboidJson): boolean {
+  if (!playerCollider || !playerCollider.isValid()) return false
+  return playerCollider.intersectsShape(
+    new RAPIER.Cuboid(c.hx, c.hy, c.hz),
+    new RAPIER.Vector3(c.cx, c.cy, c.cz),
+    new RAPIER.Quaternion(c.qx, c.qy, c.qz, c.qw),
+  )
+}
+
 export function getWorldCollisionStats(): Readonly<WorldCollisionStats> {
   return stats
 }
@@ -349,7 +390,7 @@ export function resolveWorldMovement(
   dx: number,
   dz: number,
 ): { x: number; z: number } {
-  const fallback = { x: current.x + dx, z: current.z + dz }
+  const blocked = { x: current.x, z: current.z }
   if (
     !collidersReady ||
     !world ||
@@ -358,7 +399,7 @@ export function resolveWorldMovement(
     !playerCollider ||
     !playerCollider.isValid()
   ) {
-    return fallback
+    return blocked
   }
 
   playerBody.setTranslation(new RAPIER.Vector3(current.x, CAPSULE_CENTER_Y, current.z), true)

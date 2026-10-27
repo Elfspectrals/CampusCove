@@ -1,13 +1,14 @@
 // Optimizes the Blender exports in map-src/CampusCove/out/ into front/public/assets/.
 //
 //   npm run assets:optimize            (all categories)
-//   npm run assets:optimize -- houses  (one category: skins | decor | houses | town | work | park | items)
+//   npm run assets:optimize -- houses  (one category: skins | decor | houses | town | work | park | items | store)
 //
 // Blender (map-src/CampusCove/build_*.py) writes raw GLBs + *.colsrc.glb collision sources to
 // map-src/CampusCove/out/<category>/<key>/. This script:
 //   1. compresses every GLB (Draco geometry, WebP textures) into public/assets/<category>/<key>/
 //   2. turns each *.colsrc.glb into <name>.collision.json with scripts/extract-collision.mjs
-// Interiors keep one node per object (--join false) so House_Floor_* / Door_Entrance names survive.
+// Interiors keep one node per object (--join false) so House_Floor_* / Door_Entrance names survive,
+// and house exteriors keep their `Door` node (map-src/CampusCove/build_house_doors.py).
 import { spawnSync } from 'node:child_process'
 import { copyFileSync, existsSync, mkdirSync, readdirSync, statSync } from 'node:fs'
 import { basename, dirname, join, resolve } from 'node:path'
@@ -16,10 +17,10 @@ import { fileURLToPath } from 'node:url'
 const FRONT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const SRC = resolve(FRONT, '../map-src/CampusCove/out')
 const DEST = resolve(FRONT, 'public/assets')
-const CATEGORIES = ['skins', 'decor', 'houses', 'town', 'work', 'park', 'items']
+const CATEGORIES = ['skins', 'decor', 'houses', 'town', 'work', 'park', 'items', 'store']
 
 /** Texture size per category: characters / props are small on screen, the town is not. */
-const TEXTURE_SIZE = { skins: 512, decor: 512, houses: 1024, town: 1024, work: 1024, park: 1024, items: 512 }
+const TEXTURE_SIZE = { skins: 512, decor: 512, houses: 1024, town: 1024, work: 1024, park: 1024, items: 512, store: 1024 }
 
 function run(cmd, args) {
   const r = spawnSync(cmd, args, { cwd: FRONT, stdio: ['ignore', 'pipe', 'pipe'], shell: process.platform === 'win32' })
@@ -31,11 +32,12 @@ function run(cmd, args) {
   return r.stdout.toString()
 }
 
-function optimizeGlb(input, output, { textureSize, keepNodes }) {
+function optimizeGlb(input, output, { textureSize, keepNodes, keepLightmapUvs }) {
   mkdirSync(dirname(output), { recursive: true })
   const args = ['--yes', '@gltf-transform/cli', 'optimize', input, output,
     '--compress', 'draco', '--texture-compress', 'webp', '--texture-size', String(textureSize)]
   if (keepNodes) args.push('--join', 'false')
+  if (keepLightmapUvs) args.push('--prune-attributes', 'false', '--simplify', 'false')
   run('npx', args)
 }
 
@@ -54,8 +56,9 @@ function processDir(category, dir, rel) {
       processDir(category, full, join(rel, file))
       continue
     }
-    if ((category === 'work' || category === 'park' || category === 'items') && (file === 'preview.png' || file.endsWith('.layout.json'))) {
-      // work buildings ship their preview + station layout next to the GLBs
+    const shipsAsIs = (category === 'work' || category === 'park' || category === 'items' || category === 'store') && (file === 'preview.png' || file.endsWith('.layout.json'))
+    if (shipsAsIs || ((category === 'houses' || category === 'work' || category === 'store') && file === 'lightmap.jpg')) {
+      // work buildings / the store ship their preview + layout next to the GLBs
       mkdirSync(join(DEST, category, rel), { recursive: true })
       copyFileSync(full, join(DEST, category, rel, file))
       console.log(`copy       ${category}/${join(rel, file)}`)
@@ -70,7 +73,10 @@ function processDir(category, dir, rel) {
       continue
     }
     const out = join(DEST, category, rel, file)
-    optimizeGlb(full, out, { textureSize: TEXTURE_SIZE[category], keepNodes: file === 'interior.glb' })
+    const walkIn = category === 'houses' || category === 'work' || category === 'store'
+    const keepNodes = file === 'interior.glb' || file === 'fp_arms.glb' || (walkIn && file === 'exterior.glb')
+    const keepLightmapUvs = walkIn && file === 'interior.glb'
+    optimizeGlb(full, out, { textureSize: TEXTURE_SIZE[category], keepNodes, keepLightmapUvs })
     console.log(`glb        ${category}/${join(rel, file)}  ${(statSync(out).size / 1024).toFixed(0)} KB`)
   }
 }

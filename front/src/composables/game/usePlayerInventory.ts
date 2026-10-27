@@ -23,8 +23,7 @@ const DEBOUNCE_MS = 500
 
 export interface UsePlayerInventoryDeps {
   gameRoomRef: ShallowRef<Room | null>
-  currentRoomLabel: Ref<'city' | 'apartment'>
-  canEditApartment: Ref<boolean>
+  canDecorate: Ref<boolean>
   selectedPlacedObjectId: Ref<string>
   startPlacementPreview: (itemDef: ApartmentPlacementItemDef, ownedCountRef: Ref<number>) => void
   cancelPlacementPreview: () => void
@@ -72,6 +71,11 @@ export function usePlayerInventory(deps: UsePlayerInventoryDeps) {
     return m
   })
 
+  const selectedItem = computed<ApartmentInventoryItem | null>(() => {
+    const item = itemByCode.value[slots.value[selectedHotbarIndex.value] ?? '']
+    return item && item.quantity > 0 ? item : null
+  })
+
   function quantityForCode(code: string): number {
     if (!code) return 0
     const row = ownedItems.value.find((i) => i.code === code)
@@ -109,6 +113,10 @@ export function usePlayerInventory(deps: UsePlayerInventoryDeps) {
       slots.value = next
       scheduleDebouncedSave()
     }
+    if (!layoutHydrated) return
+    for (const item of ownedItems.value) {
+      if (item.quantity > 0) pickupToHotbar(item.code)
+    }
   }
 
   function swapSlots(from: number, to: number): void {
@@ -134,11 +142,6 @@ export function usePlayerInventory(deps: UsePlayerInventoryDeps) {
 
   function refreshOwnedItems(): void {
     inventoryError.value = null
-    if (deps.gameRoomRef.value && deps.currentRoomLabel.value === 'apartment') {
-      inventoryLoading.value = true
-      deps.gameRoomRef.value.send('apartment_inventory_request')
-      return
-    }
     inventoryLoading.value = true
     void fetchApartmentAssets()
       .then((items) => {
@@ -199,7 +202,9 @@ export function usePlayerInventory(deps: UsePlayerInventoryDeps) {
     scheduleDebouncedSave()
     const code = slots.value[i] ?? ''
 
-    if (deps.currentRoomLabel.value !== 'apartment' || !deps.canEditApartment.value) {
+    // held in hand (key, food): never placed as furniture
+    const kind = itemByCode.value[code]?.kind
+    if (kind === 'tool' || kind === 'consumable') {
       cancelPlacementPreviewInternal()
       return
     }
@@ -366,7 +371,7 @@ export function usePlayerInventory(deps: UsePlayerInventoryDeps) {
   }
 
   function pickupSelectedPlacedObject(): void {
-    if (!deps.gameRoomRef.value || deps.currentRoomLabel.value !== 'apartment' || !deps.canEditApartment.value) return
+    if (!deps.gameRoomRef.value || !deps.canDecorate.value) return
     const objectId = deps.selectedPlacedObjectId.value
     if (!objectId) return
     deps.gameRoomRef.value.send('apartment_pickup_request', { objectId })
@@ -384,6 +389,7 @@ export function usePlayerInventory(deps: UsePlayerInventoryDeps) {
     inventoryError,
     cursorItem,
     itemByCode,
+    selectedItem,
     toggleInventory,
     closeInventory,
     selectHotbarIndex,

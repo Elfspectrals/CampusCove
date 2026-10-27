@@ -62,7 +62,7 @@ objs.append(L.box(coll, "Ceiling", 0, (Z0 + 5.2) / 2, H, 14.4, 14.4 + 0.0, 0.1, 
 # walls (door on front wall, windows on front/sides)
 win = 0.9, 2.3
 objs += L.wall(coll, "Walls_Front", "x", 5.1, T, X0 - T, X1 + T, H, M["wall"],
-               openings=[(-5.5, -2.5, *win), (-0.6, 0.6, 0.0, 2.2), (2.5, 5.5, *win)], cols=cols, glass=M["glass"], col_tag="Wall_Front")
+               openings=[(-6.9, -1.5, 0.4, 2.9), (-0.6, 0.6, 0.0, 2.2), (1.5, 6.9, 0.4, 2.9)], cols=cols, glass=M["glass"], col_tag="Wall_Front")
 objs += L.wall(coll, "Walls_Back", "x", Z0 - 0.1, T, X0 - T, X1 + T, H, M["wall"], cols=cols, col_tag="Wall_Back")
 objs += L.wall(coll, "Walls_W", "z", X0 - 0.1, T, Z0, 5.2, H, M["wall"],
                openings=[(-6.75, -4.25, *win), (-2.75, -0.25, *win), (1.0, 3.5, *win)], cols=cols, glass=M["glass"], col_tag="Wall_W")

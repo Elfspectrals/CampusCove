@@ -2,6 +2,7 @@
 import { nextTick, onMounted, onUnmounted, ref } from 'vue'
 import type { ApartmentInventoryItem } from '../../types/gameRealtime'
 import UiIcon from '../ui/UiIcon.vue'
+import GamePortionBar from './GamePortionBar.vue'
 
 const props = defineProps<{
   slots: string[]
@@ -10,7 +11,6 @@ const props = defineProps<{
   cursorItem: { code: string; fromSlot: number } | null
   loading: boolean
   error: string | null
-  currentRoomLabel: 'city' | 'apartment'
   canEditApartment: boolean
   selectedPlacedObjectId: string
   apartmentObjectIds: string[]
@@ -182,10 +182,15 @@ function ghostQty(): number {
                   />
                   <span
                     v-if="quantityFor(effectiveCode(cell)) > 1"
-                    class="pointer-events-none absolute bottom-0.5 right-1 font-display text-xs text-fog [text-shadow:0_1px_0_rgb(0_0_0),0_0_4px_rgb(0_0_0)]"
+                    class="pointer-events-none absolute right-1 font-display text-xs text-fog [text-shadow:0_1px_0_rgb(0_0_0),0_0_4px_rgb(0_0_0)]"
+                    :class="itemByCode[effectiveCode(cell)]?.portions ? 'top-0.5' : 'bottom-0.5'"
                   >
                     ×{{ quantityFor(effectiveCode(cell)) }}
                   </span>
+                  <GamePortionBar
+                    :portions="itemByCode[effectiveCode(cell)]?.portions"
+                    :portions-left="itemByCode[effectiveCode(cell)]?.portions_left"
+                  />
                 </template>
               </div>
             </div>
@@ -225,15 +230,20 @@ function ghostQty(): number {
                 />
                 <span
                   v-if="quantityFor(effectiveCode(rawCode)) > 1"
-                  class="pointer-events-none absolute bottom-0.5 right-1 font-display text-xs text-fog [text-shadow:0_1px_0_rgb(0_0_0),0_0_4px_rgb(0_0_0)]"
+                  class="pointer-events-none absolute right-1 font-display text-xs text-fog [text-shadow:0_1px_0_rgb(0_0_0),0_0_4px_rgb(0_0_0)]"
+                  :class="itemByCode[effectiveCode(rawCode)]?.portions ? 'top-0.5' : 'bottom-0.5'"
                   >×{{ quantityFor(effectiveCode(rawCode)) }}</span
                 >
+                <GamePortionBar
+                  :portions="itemByCode[effectiveCode(rawCode)]?.portions"
+                  :portions-left="itemByCode[effectiveCode(rawCode)]?.portions_left"
+                />
               </template>
             </div>
           </div>
         </div>
 
-        <div v-if="currentRoomLabel === 'apartment' && canEditApartment" class="mt-5 rounded-2xl border-2 border-ink-600/50 bg-ink-950/40 p-4">
+        <div v-if="canEditApartment" class="mt-5 rounded-2xl border-2 border-ink-600/50 bg-ink-950/40 p-4">
           <div class="cc-eyebrow mb-2">Placed objects</div>
           <div class="flex flex-col gap-2 sm:flex-row">
             <select class="cc-input cc-input-sm flex-1" :value="selectedPlacedObjectId" @change="onPlacedSelect">

@@ -3,6 +3,7 @@
 use Illuminate\Console\Scheduling\Schedule;
 use App\Http\Middleware\EnsureAccountIsActive;
 use App\Http\Middleware\EnsureAccountIsAdmin;
+use App\Http\Middleware\EnsureRealtimeServer;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -24,7 +25,7 @@ $allowedOrigins = is_string($envAllowedOrigins) && $envAllowedOrigins !== ''
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withSchedule(function (Schedule $schedule): void {
-        $schedule->command('housing:expire-leases')->everyMinute();
+        $schedule->command('housing:collect-taxes')->everyMinute();
     })
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
@@ -42,6 +43,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin' => EnsureAccountIsAdmin::class,
             'account.active' => EnsureAccountIsActive::class,
+            'realtime' => EnsureRealtimeServer::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) use ($allowedOrigins): void {

@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Services\StarterCosmeticGrantService;
+use App\Support\FoodCatalog;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -11,12 +12,68 @@ class ShopSeeder extends Seeder
     public function run(): void
     {
         $defs = [
-            // ---- decoration (placeable in a house; assets in front/public/assets/decor/<key>/)
+            // ---- decoration (placeable in a house; assets in front/public/assets/decor/<key>/). Bought in the
+            // Cove Home store (/game, east of the business district): its layout lists the same codes.
             self::decor('chair_campus_basic', 'Wooden Chair', 'wooden_chair', 1, 1),
             self::decor('lamp_study', 'Floor Lamp', 'floor_lamp', 2, 5),
             self::decor('decor_dining_table', 'Dining Table', 'dining_table', 2, 2),
             self::decor('decor_potted_plant', 'Potted Plant', 'potted_plant', 1, 10),
             self::decor('decor_bookshelf', 'Bookshelf', 'bookshelf', 3, 3),
+            // ---- Cove Home range (sold in the Cove Home store; map-src/CampusCove/build_furniture.py)
+            // living
+            self::decor('decor_sofa_classic', 'Hamno Sofa', 'sofa_classic', 2, 2),
+            self::decor('decor_sofa_corner', 'Vik Corner Sofa', 'sofa_corner', 3, 1),
+            self::decor('decor_armchair_lounge', 'Lumi Armchair', 'armchair_lounge', 2, 4),
+            self::decor('decor_coffee_table_round', 'Rund Coffee Table', 'coffee_table_round', 1, 2),
+            self::decor('decor_tv_bench', 'Skarm TV Bench', 'tv_bench', 2, 1),
+            self::decor('decor_side_table', 'Lilla Side Table', 'side_table', 1, 4),
+            self::decor('decor_pouf_knit', 'Mjuk Pouf', 'pouf_knit', 1, 6),
+            self::decor('decor_rug_round', 'Solrund Rug', 'rug_round', 1, 4),
+            self::decor('decor_floor_lamp_arc', 'Bage Arc Lamp', 'floor_lamp_arc', 2, 3),
+            // bedroom
+            self::decor('decor_bed_double', 'Dromma Double Bed', 'bed_double', 2, 1),
+            self::decor('decor_bed_single', 'Vila Single Bed', 'bed_single', 1, 2),
+            self::decor('decor_nightstand', 'Natt Nightstand', 'nightstand', 1, 4),
+            self::decor('decor_wardrobe', 'Garde Wardrobe', 'wardrobe', 2, 2),
+            self::decor('decor_dresser', 'Lada Dresser', 'dresser', 1, 2),
+            self::decor('decor_mirror_standing', 'Spegel Mirror', 'mirror_standing', 1, 3),
+            // kitchen
+            self::decor('decor_bar_stool', 'Hog Bar Stool', 'bar_stool', 1, 8),
+            self::decor('decor_kitchen_counter', 'Kok Counter', 'kitchen_counter', 2, 4),
+            self::decor('decor_fridge_retro', 'Kyl Retro Fridge', 'fridge_retro', 3, 1),
+            self::decor('decor_stove_oven', 'Varme Stove', 'stove_oven', 2, 1),
+            self::decor('decor_round_dining_table', 'Cirkel Dining Table', 'round_dining_table', 1, 2),
+            self::decor('decor_dining_bench', 'Bank Bench', 'dining_bench', 1, 4),
+            // office
+            self::decor('decor_desk_study', 'Plugga Desk', 'desk_study', 1, 2),
+            self::decor('decor_office_chair', 'Snurra Office Chair', 'office_chair', 1, 4),
+            self::decor('decor_filing_cabinet', 'Arkiv Cabinet', 'filing_cabinet', 1, 4),
+            self::decor('decor_desk_lamp', 'Ljus Desk Lamp', 'desk_lamp', 1, 6),
+            self::decor('decor_computer_setup', 'Dator Battlestation', 'computer_setup', 3, 1),
+            // bathroom
+            self::decor('decor_bathtub', 'Bada Bathtub', 'bathtub', 2, 1),
+            self::decor('decor_sink_vanity', 'Tvatt Vanity', 'sink_vanity', 1, 2),
+            self::decor('decor_toilet', 'Toa Toilet', 'toilet', 1, 2),
+            self::decor('decor_towel_rack', 'Handduk Towel Rack', 'towel_rack', 1, 4),
+            // kids
+            self::decor('decor_bunk_bed', 'Klattra Bunk Bed', 'bunk_bed', 3, 1),
+            self::decor('decor_toy_chest', 'Leka Toy Chest', 'toy_chest', 1, 4),
+            self::decor('decor_bean_bag', 'Sacko Bean Bag', 'bean_bag', 1, 6),
+            self::decor('decor_arcade_cabinet', 'Pixel Arcade', 'arcade_cabinet', 4, 1),
+            // storage
+            self::decor('decor_cube_shelf', 'Kub Shelf', 'cube_shelf', 1, 3),
+            self::decor('decor_coat_rack', 'Rock Coat Stand', 'coat_rack', 1, 4),
+            // plants
+            self::decor('decor_cactus', 'Taggig Cactus', 'cactus', 1, 10),
+            self::decor('decor_monstera', 'Monstera Plant', 'monstera', 2, 6),
+            self::decor('decor_vase_tulips', 'Tulpan Vase', 'vase_tulips', 1, 10),
+            self::decor('decor_globe', 'Varld Globe', 'globe', 1, 4),
+            self::decor('decor_aquarium', 'Akvarium Tank', 'aquarium', 3, 1),
+            // outdoor
+            self::decor('decor_garden_bench', 'Park Garden Bench', 'garden_bench', 1, 3),
+            self::decor('decor_parasol', 'Sol Parasol', 'parasol', 1, 3),
+            self::decor('decor_bbq_grill', 'Grilla BBQ', 'bbq_grill', 2, 2),
+            self::decor('decor_sun_lounger', 'Slappna Sun Lounger', 'sun_lounger', 1, 4),
             [
                 'code' => 'emote_wave',
                 'name' => 'Wave Emote',
@@ -104,12 +161,19 @@ class ShopSeeder extends Seeder
                 'cosmetic_slot' => 'head_accessory',
             ],
         ];
+        // ---- food and drinks (eaten from the hotbar; sold at the Campus Cafe counter)
+        foreach (FoodCatalog::items() as $food) {
+            $defs[] = self::food($food);
+        }
 
         $itemDefIds = [];
         foreach ($defs as $def) {
             $existing = DB::table('item_defs')->where('code', $def['code'])->value('item_def_id');
             if ($existing !== null) {
                 $itemDefIds[$def['code']] = (int) $existing;
+                if (array_key_exists('portions', $def)) {
+                    DB::table('item_defs')->where('code', $def['code'])->update(self::foodColumns($def));
+                }
                 if (array_key_exists('cosmetic_slot', $def) || array_key_exists('preview_image', $def) || array_key_exists('model_glb', $def)) {
                     DB::table('item_defs')->where('code', $def['code'])->update(array_filter([
                         'name' => $def['name'],
@@ -142,6 +206,9 @@ class ShopSeeder extends Seeder
             if (array_key_exists('model_glb', $def)) {
                 $insert['model_glb'] = $def['model_glb'];
             }
+            if (array_key_exists('portions', $def)) {
+                $insert = array_merge($insert, self::foodColumns($def));
+            }
 
             $itemDefIds[$def['code']] = (int) DB::table('item_defs')->insertGetId($insert, 'item_def_id');
         }
@@ -153,6 +220,52 @@ class ShopSeeder extends Seeder
             self::coins('decor_dining_table', 160, 22),
             self::coins('decor_potted_plant', 60, 24),
             self::coins('decor_bookshelf', 220, 26),
+            // Cove Home range — coins only, bought in the store (sort follows the showroom departments)
+            self::coins('decor_sofa_classic', 450, 100),
+            self::coins('decor_sofa_corner', 780, 101),
+            self::coins('decor_armchair_lounge', 260, 102),
+            self::coins('decor_coffee_table_round', 140, 103),
+            self::coins('decor_tv_bench', 320, 104),
+            self::coins('decor_side_table', 80, 105),
+            self::coins('decor_pouf_knit', 60, 106),
+            self::coins('decor_rug_round', 90, 107),
+            self::coins('decor_floor_lamp_arc', 210, 108),
+            self::coins('decor_bed_double', 520, 109),
+            self::coins('decor_bed_single', 300, 110),
+            self::coins('decor_nightstand', 90, 111),
+            self::coins('decor_wardrobe', 380, 112),
+            self::coins('decor_dresser', 240, 113),
+            self::coins('decor_mirror_standing', 120, 114),
+            self::coins('decor_bar_stool', 70, 115),
+            self::coins('decor_kitchen_counter', 300, 116),
+            self::coins('decor_fridge_retro', 420, 117),
+            self::coins('decor_stove_oven', 360, 118),
+            self::coins('decor_round_dining_table', 190, 119),
+            self::coins('decor_dining_bench', 110, 120),
+            self::coins('decor_desk_study', 200, 121),
+            self::coins('decor_office_chair', 160, 122),
+            self::coins('decor_filing_cabinet', 100, 123),
+            self::coins('decor_desk_lamp', 50, 124),
+            self::coins('decor_computer_setup', 480, 125),
+            self::coins('decor_bathtub', 400, 126),
+            self::coins('decor_sink_vanity', 220, 127),
+            self::coins('decor_toilet', 150, 128),
+            self::coins('decor_towel_rack', 45, 129),
+            self::coins('decor_bunk_bed', 560, 130),
+            self::coins('decor_toy_chest', 85, 131),
+            self::coins('decor_bean_bag', 95, 132),
+            self::coins('decor_arcade_cabinet', 900, 133),
+            self::coins('decor_cube_shelf', 150, 134),
+            self::coins('decor_coat_rack', 65, 135),
+            self::coins('decor_cactus', 35, 136),
+            self::coins('decor_monstera', 120, 137),
+            self::coins('decor_vase_tulips', 40, 138),
+            self::coins('decor_globe', 75, 139),
+            self::coins('decor_aquarium', 340, 140),
+            self::coins('decor_garden_bench', 170, 141),
+            self::coins('decor_parasol', 130, 142),
+            self::coins('decor_bbq_grill', 230, 143),
+            self::coins('decor_sun_lounger', 190, 144),
             [
                 'item_def_code' => 'emote_wave',
                 'allow_coins' => true,
@@ -191,6 +304,11 @@ class ShopSeeder extends Seeder
             self::premium('COS_WEAR_BODY_STREET_LUXE', 250, 60),
             self::premium('COS_WEAR_BODY_ASTRAL_ORACLE', 350, 62),
         ];
+        foreach (FoodCatalog::items() as $i => $food) {
+            if ($food['price'] !== null) {
+                $catalogRows[] = self::coins($food['code'], $food['price'], 200 + $i);
+            }
+        }
 
         foreach ($catalogRows as $catalog) {
             $itemDefId = $itemDefIds[$catalog['item_def_code']];
@@ -274,6 +392,46 @@ class ShopSeeder extends Seeder
             'max_stack' => $maxStack,
             'preview_image' => "/assets/decor/{$assetKey}/preview.png",
             'model_glb' => "/assets/decor/{$assetKey}/model.glb",
+        ];
+    }
+
+    /**
+     * @param array{code: string, name: string, asset: string, portions: int, hunger: int, thirst: int, health: int, effect: string|null, price: int|null} $food
+     * @return array<string, mixed>
+     */
+    private static function food(array $food): array
+    {
+        return [
+            'code' => $food['code'],
+            'name' => $food['name'],
+            'kind' => 'consumable',
+            'rarity' => 1,
+            'tradable' => true,
+            'premium_only' => false,
+            'bind' => 'none',
+            'max_stack' => 20,
+            'preview_image' => "/assets/items/food/{$food['asset']}/preview.png",
+            'model_glb' => "/assets/items/food/{$food['asset']}/model.glb",
+            'portions' => $food['portions'],
+            'hunger_per_portion' => $food['hunger'],
+            'thirst_per_portion' => $food['thirst'],
+            'health_per_portion' => $food['health'],
+            'consume_effect' => $food['effect'],
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $def
+     * @return array<string, mixed>
+     */
+    private static function foodColumns(array $def): array
+    {
+        return [
+            'portions' => $def['portions'],
+            'hunger_per_portion' => $def['hunger_per_portion'],
+            'thirst_per_portion' => $def['thirst_per_portion'],
+            'health_per_portion' => $def['health_per_portion'],
+            'consume_effect' => $def['consume_effect'],
         ];
     }
 

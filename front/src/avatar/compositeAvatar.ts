@@ -162,20 +162,3 @@ export function disposeObject3D(root: THREE.Object3D): void {
     }
   })
 }
-
-/** Simple FPS-style hands parented to camera (local space). */
-export function buildFirstPersonHands(accentColor: number): THREE.Group {
-  const g = new THREE.Group()
-  const mat = new THREE.MeshStandardMaterial({
-    color: accentColor,
-    roughness: 0.7,
-    metalness: 0.1,
-  })
-  const geo = new THREE.BoxGeometry(0.12, 0.12, 0.38)
-  const left = new THREE.Mesh(geo, mat)
-  left.position.set(0.38, -0.28, -0.55)
-  const right = new THREE.Mesh(geo.clone(), mat)
-  right.position.set(-0.38, -0.28, -0.55)
-  g.add(left, right)
-  return g
-}

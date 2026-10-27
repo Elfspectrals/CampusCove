@@ -16,16 +16,30 @@ class HousingUnitSeeder extends Seeder
 {
     /** @var list<array{0:string,1:string,2:int,3:float,4:float,5:float,6:string}> key, offer, price, x, y, z, colour */
     private const HOUSES = [
-        ['house_01', 'rent', 90, 9.023, 1.25, 27.771, '#E8E4DA'],     // Maple Cottage
-        ['house_02', 'rent', 110, 23.623, 1.25, 17.163, '#78A0C4'],   // Bluebell Bungalow
-        ['house_03', 'rent', 120, 29.2, 1.25, 0.0, '#E8C878'],        // Sunny Nook
+        ['house_01', 'buy', 1200, 9.023, 1.25, 27.771, '#E8E4DA'],     // Maple Cottage
+        ['house_02', 'buy', 1400, 23.623, 1.25, 17.163, '#78A0C4'],   // Bluebell Bungalow
+        ['house_03', 'buy', 1500, 29.2, 1.25, 0.0, '#E8C878'],        // Sunny Nook
         ['house_04', 'buy', 1800, 23.623, 1.25, -17.163, '#96C8AA'],  // Mint Villa
         ['house_05', 'buy', 2400, 9.023, 1.25, -27.771, '#9C4834'],   // Brick Townhouse
-        ['house_06', 'rent', 160, -9.023, 1.25, -27.771, '#D69696'],  // Rose Cottage
+        ['house_06', 'buy', 2000, -9.023, 1.25, -27.771, '#D69696'],  // Rose Cottage
         ['house_07', 'buy', 2800, -23.623, 1.25, -17.163, '#CE7858'], // Terracotta Casa
         ['house_08', 'buy', 3600, -29.2, 1.25, 0.0, '#F0F0EE'],       // Modern Cube
         ['house_09', 'buy', 3200, -23.623, 1.25, 17.163, '#3A3C48'],  // Neon Loft
         ['house_10', 'buy', 4000, -9.023, 1.25, 27.771, '#8A5A3A'],   // Forest Lodge
+    ];
+
+    /** @var array<string, array{minX:float,maxX:float,minZ:float,maxZ:float}> */
+    private const INTERIOR_BOUNDS = [
+        'house_01' => ['minX' => -4.1, 'maxX' => 3.9, 'minZ' => -2.1, 'maxZ' => 5.4],
+        'house_02' => ['minX' => -4.6, 'maxX' => 4.4, 'minZ' => -2.1, 'maxZ' => 5.4],
+        'house_03' => ['minX' => -4.35, 'maxX' => 4.15, 'minZ' => -2.6, 'maxZ' => 5.4],
+        'house_04' => ['minX' => -4.9, 'maxX' => 4.9, 'minZ' => -3.6, 'maxZ' => 5.2],
+        'house_05' => ['minX' => -4.4, 'maxX' => 4.4, 'minZ' => -3.6, 'maxZ' => 5.2],
+        'house_06' => ['minX' => -4.65, 'maxX' => 4.65, 'minZ' => -3.6, 'maxZ' => 5.2],
+        'house_07' => ['minX' => -5.4, 'maxX' => 5.4, 'minZ' => -3.6, 'maxZ' => 5.2],
+        'house_08' => ['minX' => -5.65, 'maxX' => 5.65, 'minZ' => -4.1, 'maxZ' => 5.2],
+        'house_09' => ['minX' => -5.4, 'maxX' => 5.4, 'minZ' => -4.6, 'maxZ' => 5.2],
+        'house_10' => ['minX' => -5.9, 'maxX' => 5.9, 'minZ' => -4.6, 'maxZ' => 5.2],
     ];
 
     public function run(): void
@@ -44,6 +58,7 @@ class HousingUnitSeeder extends Seeder
                 'pos_z' => $z,
                 'size' => 2.5,
                 'base_color_hex' => $color,
+                'interior_bounds' => self::INTERIOR_BOUNDS[$key],
             ]);
             if (! $unit->exists) {
                 $unit->status = 'vacant';

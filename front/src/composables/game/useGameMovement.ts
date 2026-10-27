@@ -2,11 +2,13 @@ import type { Ref, ShallowRef } from 'vue'
 import type { Room } from '@colyseus/sdk'
 import * as THREE from 'three'
 import { KEY_BINDINGS, matchesAnyMovementKey } from '../../config/keybindings'
-import { APARTMENT_CLAMP_MARGIN, APARTMENT_HALF_EXTENT, EYE_HEIGHT } from '../../game/gameRoomConstants'
+import { EYE_HEIGHT } from '../../game/gameRoomConstants'
 import { resolveWorldMovement } from '../../game/collision/worldCollision'
 import { terrainHeightAt } from '../../game/town/terrainHeight'
+import { buildingFloorAt, updateOpenHouseVisibility } from '../../game/town/openHouses'
 
 const MOVE_SPEED = 8
+const MAX_FRAME_DT = 0.1
 const MOUSE_SENSITIVITY = 0.002
 /** Position updates sent to the server at most this often (ms). */
 const EMIT_INTERVAL_MS = 50
@@ -17,7 +19,6 @@ export interface UseGameMovementDeps {
   canvasRef: Ref<HTMLCanvasElement | null>
   containerRef: Ref<HTMLElement | null>
   gameRoomRef: ShallowRef<Room | null>
-  currentRoomLabel: Ref<'city' | 'apartment'>
   inventoryOpen: Ref<boolean>
   getScene: () => THREE.Scene | undefined
   getCamera: () => THREE.PerspectiveCamera | undefined
@@ -34,6 +35,8 @@ export interface UseGameMovementDeps {
   handleExtraKeyDown: (e: KeyboardEvent) => boolean
   /** Return `true` if the click was consumed (apartment placement), so it doesn't also open a door. */
   onCanvasMouseDown: (e: MouseEvent) => boolean
+  /** Walking speed multiplier (survival: slower when starving, faster after a coffee, 0 when passed out). */
+  speedFactor: () => number
   /** Called each animation frame after movement, before rendering. */
   onBeforeRender: (dt: number) => void
 }
@@ -58,13 +61,6 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     return { w: window.innerWidth, h: window.innerHeight }
   }
 
-  /** Outer safety clamp inside a house (walls themselves collide via the interior collision file). */
-  function clampToApartment() {
-    const lim = APARTMENT_HALF_EXTENT - APARTMENT_CLAMP_MARGIN
-    myPosition.x = Math.max(-lim, Math.min(lim, myPosition.x))
-    myPosition.z = Math.max(-lim, Math.min(lim, myPosition.z))
-  }
-
   function updateMovement(dt: number) {
     const camera = deps.getCamera()
     if (!camera) return
@@ -80,16 +76,15 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     if (!deps.inventoryOpen.value) {
       const forward = keys.forward ? 1 : keys.back ? -1 : 0
       const right = keys.right ? 1 : keys.left ? -1 : 0
-      const step = MOVE_SPEED * dt
+      const step = MOVE_SPEED * deps.speedFactor() * dt
       const dx = direction.x * forward * step + rightVec.x * right * step
       const dz = direction.z * forward * step + rightVec.z * right * step
       const resolved = resolveWorldMovement(myPosition, dx, dz)
       myPosition.x = resolved.x
       myPosition.z = resolved.z
     }
-    const inCity = deps.currentRoomLabel.value === 'city'
-    if (!inCity) clampToApartment()
-    myPosition.y = EYE_HEIGHT + (inCity ? terrainHeightAt(myPosition.x, myPosition.z) : 0)
+    myPosition.y = EYE_HEIGHT + (buildingFloorAt(myPosition.x, myPosition.z) ?? terrainHeightAt(myPosition.x, myPosition.z))
+    updateOpenHouseVisibility(myPosition.x, myPosition.z)
 
     camera.position.set(myPosition.x, myPosition.y, myPosition.z)
     camera.rotation.order = 'YXZ'
@@ -107,7 +102,7 @@ export function useGameMovement(deps: UseGameMovementDeps) {
   function animate() {
     frameId = requestAnimationFrame(animate)
     const now = performance.now()
-    const dt = (now - lastTime) / 1000
+    const dt = Math.min((now - lastTime) / 1000, MAX_FRAME_DT)
     lastTime = now
     // without pointer lock the player stands still, but door prompts must stay accurate
     if (pointerLocked.value) updateMovement(dt)

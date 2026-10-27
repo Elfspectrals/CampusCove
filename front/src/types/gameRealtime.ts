@@ -8,10 +8,6 @@ export interface RemoteUserPayload {
   z: number
   /** Camera yaw (radians), 0 = looking towards -Z. */
   ry?: number
-  zone: 'city' | 'apartment'
-  apartmentOwnerId: number | null
-  /** Set while inside a business-district building (zone is then 'apartment', owner null). */
-  workKey?: string | null
   slotHexes?: Record<string, string>
   bodyModelGlb?: string | null
 }
@@ -21,7 +17,7 @@ export interface HousingUnitPayload {
   public_id: string
   offer_type: string
   price_coins: number
-  rent_duration_hours: number
+  tax_coins: number
   pos_x: number
   pos_y: number
   pos_z: number
@@ -31,23 +27,26 @@ export interface HousingUnitPayload {
   model_key: string | null
   status: string
   occupant_account_id: number | null
-  lease_expires_at: string | null
+  occupant_name: string | null
+  tax_due_at: string | null
+  door_locked: boolean
   room_public_id: string | null
   template_key: string
+  key_holder_account_ids: number[]
 }
 
 export interface RoomInitPayload {
   me: RemoteUserPayload
   users: RemoteUserPayload[]
   housingUnits?: HousingUnitPayload[]
+  houseFurniture?: HouseFurniturePayload[]
+  openDoors?: string[]
 }
 
-export interface ApartmentInitPayload {
-  /** null for work buildings (free to enter, nobody owns them). */
-  ownerAccountId: number | null
-  templateKey: string
-  workKey?: string | null
-  canEdit: boolean
+export interface HouseFurniturePayload {
+  template_key: string
+  model_key: string | null
+  occupant_account_id: number
   objects: ApartmentObjectPayload[]
 }
 
@@ -73,4 +72,7 @@ export interface ApartmentInventoryItem {
   quantity: number
   preview_image: string | null
   model_glb: string | null
+  /** Food / drinks: bites per item and bites left on the item being eaten (4/4 -> 3/4 ...). */
+  portions?: number | null
+  portions_left?: number | null
 }

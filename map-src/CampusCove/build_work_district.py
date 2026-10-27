@@ -126,10 +126,11 @@ for p in placements:
         # interaction point in front of the door, in world space (local +Z -> world -Z)
         "door": [round(p["x"] - dl[0], 3), dl[1], round(z - dl[2], 3)],
         "footprint": ext["footprint"],
+        "interiorOffset": ext["interiorOffset"],
     })
     # building body collision (yaw pi keeps an axis-aligned box)
     c = ext["collision"][0]
-    add_col(f"COL_Work_{p['key']}", p["x"], z, c["hx"] * 2, c["hz"] * 2, c["hy"] * 2)
+    add_col(f"COL_Work_{p['key']}", p["x"] - c["cx"], z - c["cz"], c["hx"] * 2, c["hz"] * 2, c["hy"] * 2)
 
 L.export_glb(os.path.join(OUT, "district.glb"), objs)
 L.write_json(os.path.join(OUT, "district.layout.json"), {

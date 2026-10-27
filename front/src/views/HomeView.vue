@@ -84,7 +84,7 @@ const stats = computed(() => ({
 const levelProgress = 62
 
 const quickTiles: Array<{ to: string; icon: UiIconName; label: string; hint: string; tone: string }> = [
-  { to: '/shop', icon: 'chair', label: 'Shop', hint: 'Furniture & decor', tone: 'from-sun/40 text-sun' },
+  { to: '/game', icon: 'chair', label: 'Cove Home', hint: 'Furniture store in town', tone: 'from-sun/40 text-sun' },
   { to: '/shop-skin', icon: 'shirt', label: 'Skins', hint: 'New looks', tone: 'from-grape/40 text-grape' },
   { to: '/locker', icon: 'backpack', label: 'Locker', hint: 'Equip outfits', tone: 'from-pool/40 text-pool' },
 ]

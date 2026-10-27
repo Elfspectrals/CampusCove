@@ -33,7 +33,7 @@ M["screen"] = L.make_mat("IN_Screen", "#2a6ed8", 0.3, "stripes", 0.03, accent="#
 M["carton"] = L.make_mat("IN_Carton", "#b98c5a", 0.9, "stripes", 0.04, accent="#a47a4c")
 goods = [L.make_mat(f"IN_Goods{i}", c, 0.7, "noise", 0.05) for i, c in enumerate(["#e0675a", "#4aa3df", "#f2c14e", "#6cc08b", "#a678de", "#f08a4b"])]
 cloth = [L.make_mat(f"IN_Cloth{i}", c, 0.95, "stripes", 0.04, accent=a) for i, (c, a) in enumerate([("#4aa3df", "#3a8fc9"), ("#e0675a", "#c9564a"), ("#f2c14e", "#dcab3a"), ("#6cc08b", "#58ab76")])]
-objs = L.interior_shell(coll, cols, M, M["accent"])
+objs = L.interior_shell(coll, cols, M, M["accent"], win_front=((-6.9, -1.6), (1.6, 6.9)), win_front_y=(0.8, 2.9))
 
 # ---- partition + stockroom (z < -7.2), door gap at x 5.0..6.2
 objs += L.wall(coll, "Walls_Stock", "x", -7.3, 0.15, -7.0, 7.0, H, M["wall"], openings=[(5.0, 6.2, 0.0, 2.2)], cols=cols, col_tag="Wall_Stock")

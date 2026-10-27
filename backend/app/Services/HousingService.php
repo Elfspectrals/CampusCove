@@ -4,9 +4,11 @@ namespace App\Services;
 
 use App\Exceptions\HousingRejectedException;
 use App\Models\Account;
+use App\Models\AccountHandle;
 use App\Models\Container;
 use App\Models\EconomyTransaction;
 use App\Models\HousingUnit;
+use App\Models\ItemDef;
 use App\Models\ItemInstance;
 use App\Models\Room;
 use App\Models\RoomFurniture;
@@ -15,51 +17,82 @@ use App\Models\RoomMembership;
 use App\Models\Server;
 use App\Models\Wallet;
 use App\Models\WalletLedgerEntry;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 final class HousingService
 {
     private const CURRENCY = 'coins';
 
-    public function expireDueLeases(): int
+    private const TAX_RATE = 0.05;
+
+    private const TAX_PERIOD_HOURS = 24;
+
+    private const HOUSE_KEY_CODE = 'house_key';
+
+    public function __construct(private readonly AccountInventoryService $inventoryService) {}
+
+    public function collectDueTaxes(): int
     {
-        $expired = 0;
+        $seized = 0;
         $dueIds = HousingUnit::query()
             ->where('status', 'occupied')
-            ->where('offer_type', 'rent')
-            ->whereNotNull('lease_expires_at')
-            ->where('lease_expires_at', '<=', now())
+            ->where(fn ($query) => $query->whereNull('tax_due_at')->orWhere('tax_due_at', '<=', now()))
             ->pluck('unit_id');
 
         foreach ($dueIds as $unitId) {
-            DB::transaction(function () use ($unitId, &$expired): void {
+            DB::transaction(function () use ($unitId, &$seized): void {
                 /** @var HousingUnit|null $unit */
                 $unit = HousingUnit::query()
                     ->where('unit_id', $unitId)
                     ->lockForUpdate()
                     ->first();
-                if ($unit === null || $unit->status !== 'occupied') {
+                if ($unit === null || $unit->status !== 'occupied' || $unit->occupant_account_id === null) {
                     return;
                 }
-                if ($unit->offer_type !== 'rent' || $unit->lease_expires_at === null) {
+                if ($unit->tax_due_at === null) {
+                    $unit->update(['tax_due_at' => now()->addHours(self::TAX_PERIOD_HOURS), 'updated_at' => now()]);
+
                     return;
                 }
-                if ($unit->lease_expires_at->isFuture()) {
-                    return;
+                $ownerId = (int) $unit->occupant_account_id;
+                $tax = $this->taxFor($unit);
+                $dueAt = $unit->tax_due_at->copy();
+                while ($dueAt->lte(now())) {
+                    if (Wallet::lockForAccount($ownerId, self::CURRENCY)->balance() < $tax) {
+                        $this->resetExpiredUnit($unit);
+                        $seized++;
+
+                        return;
+                    }
+                    $this->debitCoins($ownerId, $tax, 'housing_tax', [
+                        'housing_unit_id' => $unit->unit_id,
+                        'housing_unit_public_id' => $unit->public_id,
+                        'due_at' => $dueAt->toIso8601String(),
+                    ]);
+                    $dueAt->addHours(self::TAX_PERIOD_HOURS);
                 }
-                $this->resetExpiredUnit($unit);
-                $expired++;
+                $unit->update(['tax_due_at' => $dueAt, 'updated_at' => now()]);
             });
         }
 
-        return $expired;
+        return $seized;
+    }
+
+    public function taxFor(HousingUnit $unit): int
+    {
+        return (int) ceil($unit->price_coins * self::TAX_RATE);
     }
 
     public function resetExpiredUnit(HousingUnit $unit): void
     {
         $roomId = $unit->room_id !== null ? (int) $unit->room_id : null;
+        if ($unit->occupant_account_id !== null) {
+            $this->inventoryService->revokeItem((int) $unit->occupant_account_id, $this->houseKey(), 1);
+        }
         if ($roomId !== null) {
+            foreach ($this->keyHolderIds($unit) as $keyHolderId) {
+                $this->inventoryService->revokeItem($keyHolderId, $this->houseKey(), 1);
+            }
             $containerId = RoomFurnitureContainer::query()->where('room_id', $roomId)->value('container_id');
             RoomFurniture::query()->where('room_id', $roomId)->delete();
             if ($containerId !== null) {
@@ -73,6 +106,8 @@ final class HousingService
             'status' => 'vacant',
             'occupant_account_id' => null,
             'lease_expires_at' => null,
+            'tax_due_at' => null,
+            'door_locked' => false,
             'room_id' => null,
             'updated_at' => now(),
         ]);
@@ -83,7 +118,7 @@ final class HousingService
      */
     public function listUnitsForAccount(?int $accountId): array
     {
-        $this->expireDueLeases();
+        $this->collectDueTaxes();
 
         $units = HousingUnit::query()
             ->with('room')
@@ -109,61 +144,97 @@ final class HousingService
 
     public function claimBuy(Account $account, string $unitPublicId): HousingUnit
     {
-        return $this->claimUnit($account, $unitPublicId, 'buy', 'housing_buy', null);
+        return $this->claimUnit($account, $unitPublicId, 'buy', 'housing_buy');
     }
 
-    public function claimRent(Account $account, string $unitPublicId): HousingUnit
+    public function giveKeys(Account $owner, int $targetAccountId): HousingUnit
     {
-        return $this->claimUnit($account, $unitPublicId, 'rent', 'housing_rent', function (HousingUnit $unit): Carbon {
-            return now()->addHours((int) $unit->rent_duration_hours);
+        $unit = $this->ownedUnitForKeys($owner, $targetAccountId);
+        if (! Account::query()->whereKey($targetAccountId)->exists()) {
+            throw new HousingRejectedException('account_not_found', 'This player does not exist.', 404);
+        }
+        if (in_array($targetAccountId, $this->keyHolderIds($unit), true)) {
+            return $unit->fresh(['room']);
+        }
+        DB::transaction(function () use ($unit, $targetAccountId): void {
+            DB::statement(
+                '
+                INSERT INTO room_memberships (room_id, account_id, role, created_at)
+                VALUES (?, ?, ?, NOW())
+                ON CONFLICT (room_id, account_id)
+                DO UPDATE SET role = EXCLUDED.role
+                ',
+                [(int) $unit->room_id, $targetAccountId, 'co_owner']
+            );
+            $this->inventoryService->grantItem($targetAccountId, $this->houseKey(), 1);
         });
+
+        return $unit->fresh(['room']);
     }
 
-    public function renewRent(Account $account, string $unitPublicId): HousingUnit
+    public function takeKeys(Account $owner, int $targetAccountId): HousingUnit
+    {
+        $unit = $this->ownedUnitForKeys($owner, $targetAccountId);
+        DB::transaction(function () use ($unit, $targetAccountId): void {
+            $removed = RoomMembership::query()
+                ->where('room_id', (int) $unit->room_id)
+                ->where('account_id', $targetAccountId)
+                ->where('role', 'co_owner')
+                ->delete();
+            if ($removed > 0) {
+                $this->inventoryService->revokeItem($targetAccountId, $this->houseKey(), 1);
+            }
+        });
+
+        return $unit->fresh(['room']);
+    }
+
+    public function setDoorLocked(Account $account, string $unitPublicId, bool $locked): HousingUnit
     {
         $accountId = (int) $account->getAuthIdentifier();
+        $unit = HousingUnit::query()->where('public_id', $unitPublicId)->first();
+        if ($unit === null) {
+            throw new HousingRejectedException('unit_not_found', 'Housing unit not found.', 404);
+        }
+        $isOwner = $unit->status === 'occupied' && (int) $unit->occupant_account_id === $accountId;
+        if (! $isOwner && ! in_array($accountId, $this->keyHolderIds($unit), true)) {
+            throw new HousingRejectedException('no_house_key', 'You do not have the keys to this house.', 403);
+        }
+        $unit->update(['door_locked' => $locked, 'updated_at' => now()]);
 
-        return DB::transaction(function () use ($account, $accountId, $unitPublicId): HousingUnit {
-            $this->expireDueLeases();
+        return $unit->fresh(['room']);
+    }
 
-            /** @var HousingUnit|null $unit */
-            $unit = HousingUnit::query()
-                ->where('public_id', $unitPublicId)
-                ->lockForUpdate()
-                ->first();
+    /**
+     * @return list<int>
+     */
+    public function keyHolderIds(HousingUnit $unit): array
+    {
+        if ($unit->room_id === null) {
+            return [];
+        }
 
-            if ($unit === null) {
-                throw new HousingRejectedException('unit_not_found', 'Housing unit not found.', 404);
-            }
+        return RoomMembership::query()
+            ->where('room_id', (int) $unit->room_id)
+            ->where('role', 'co_owner')
+            ->orderBy('account_id')
+            ->pluck('account_id')
+            ->map(fn ($id): int => (int) $id)
+            ->all();
+    }
 
-            if ($unit->offer_type !== 'rent') {
-                throw new HousingRejectedException('not_rentable', 'This unit is not available for rent.', 422);
-            }
+    private function ownedUnitForKeys(Account $owner, int $targetAccountId): HousingUnit
+    {
+        $ownerId = (int) $owner->getAuthIdentifier();
+        $unit = $this->findOccupiedUnitForAccount($ownerId);
+        if ($unit === null || $unit->room_id === null) {
+            throw new HousingRejectedException('no_house', 'You do not own a house.', 404);
+        }
+        if ($targetAccountId === $ownerId) {
+            throw new HousingRejectedException('cannot_key_self', 'You already own this house.', 422);
+        }
 
-            if ($unit->status !== 'occupied' || (int) $unit->occupant_account_id !== $accountId) {
-                throw new HousingRejectedException('not_occupant', 'You are not the occupant of this unit.', 422);
-            }
-
-            if ($unit->lease_expires_at === null || $unit->lease_expires_at->lte(now())) {
-                $this->resetExpiredUnit($unit->fresh());
-                throw new HousingRejectedException('lease_expired', 'Your lease has expired. Claim the unit again.', 422);
-            }
-
-            $this->debitCoins($accountId, (int) $unit->price_coins, 'housing_renew', [
-                'housing_unit_id' => $unit->unit_id,
-                'housing_unit_public_id' => $unit->public_id,
-            ]);
-
-            $base = $unit->lease_expires_at;
-            $unit->update([
-                'lease_expires_at' => $base->copy()->addHours((int) $unit->rent_duration_hours),
-                'updated_at' => now(),
-            ]);
-
-            $unit->load('room');
-
-            return $unit->fresh(['room']);
-        });
+        return $unit;
     }
 
     public function findOccupiedUnitForAccount(int $accountId): ?HousingUnit
@@ -199,20 +270,16 @@ final class HousingService
         return $unit !== null ? $unit->templateKey() : 'starter_loft';
     }
 
-    /**
-     * @param callable(HousingUnit): Carbon|null $leaseResolver
-     */
     private function claimUnit(
         Account $account,
         string $unitPublicId,
         string $expectedOffer,
-        string $txType,
-        ?callable $leaseResolver
+        string $txType
     ): HousingUnit {
         $accountId = (int) $account->getAuthIdentifier();
 
-        return DB::transaction(function () use ($accountId, $unitPublicId, $expectedOffer, $txType, $leaseResolver): HousingUnit {
-            $this->expireDueLeases();
+        return DB::transaction(function () use ($accountId, $unitPublicId, $expectedOffer, $txType): HousingUnit {
+            $this->collectDueTaxes();
 
             /** @var HousingUnit|null $unit */
             $unit = HousingUnit::query()
@@ -243,18 +310,23 @@ final class HousingService
 
             $room = $this->createApartmentRoom($accountId, $unit->templateKey());
 
-            $leaseExpiresAt = $leaseResolver !== null ? $leaseResolver($unit) : null;
-
             $unit->update([
                 'status' => 'occupied',
                 'occupant_account_id' => $accountId,
-                'lease_expires_at' => $leaseExpiresAt,
+                'lease_expires_at' => null,
+                'tax_due_at' => now()->addHours(self::TAX_PERIOD_HOURS),
                 'room_id' => (int) $room->room_id,
                 'updated_at' => now(),
             ]);
+            $this->inventoryService->grantItem($accountId, $this->houseKey(), 1);
 
             return $unit->fresh(['room']);
         });
+    }
+
+    private function houseKey(): ItemDef
+    {
+        return ItemDef::query()->where('code', self::HOUSE_KEY_CODE)->firstOrFail();
     }
 
     private function debitCoins(int $accountId, int $amount, string $reason, array $meta): void
@@ -354,7 +426,7 @@ final class HousingService
             'public_id' => (string) $unit->public_id,
             'offer_type' => (string) $unit->offer_type,
             'price_coins' => (int) $unit->price_coins,
-            'rent_duration_hours' => (int) $unit->rent_duration_hours,
+            'tax_coins' => $this->taxFor($unit),
             'pos_x' => (float) $unit->pos_x,
             'pos_y' => (float) $unit->pos_y,
             'pos_z' => (float) $unit->pos_z,
@@ -363,9 +435,15 @@ final class HousingService
             'model_key' => $unit->model_key !== null ? (string) $unit->model_key : null,
             'status' => (string) $unit->status,
             'occupant_account_id' => $unit->occupant_account_id !== null ? (int) $unit->occupant_account_id : null,
-            'lease_expires_at' => $unit->lease_expires_at?->toIso8601String(),
+            'occupant_name' => $unit->occupant_account_id !== null
+                ? AccountHandle::query()->where('account_id', (int) $unit->occupant_account_id)->value('username')
+                : null,
+            'tax_due_at' => $unit->tax_due_at?->toIso8601String(),
+            'door_locked' => (bool) $unit->door_locked,
+            'interior_bounds' => $unit->interior_bounds,
             'room_public_id' => $unit->room !== null ? (string) $unit->room->public_id : null,
             'template_key' => $unit->templateKey(),
+            'key_holder_account_ids' => $this->keyHolderIds($unit),
         ];
     }
 }

@@ -15,7 +15,7 @@ import type { Rarity } from '../game/rarity'
 import { NewNationShowroom } from '../game/newNation/NewNationShowroom'
 import type { ShowroomApartment } from '../game/newNation/showroomLayout'
 import type { ShowroomGroup, ShowroomItem } from '../game/newNation/showroomItems'
-import { isApartmentItem, itemRarity, priceBadge } from '../utils/itemShopPresentation'
+import { isApartmentItem, isFoodItem, itemRarity, priceBadge } from '../utils/itemShopPresentation'
 
 type Filter = 'all' | ShowroomGroup | typeof FISHING_PREVIEW_FILTER
 
@@ -182,7 +182,7 @@ async function fetchCatalog(token: number) {
   catalogError.value = null
   try {
     const res = await itemShopApi.fetchItemShopCatalog()
-    if (token === loadToken) shopItems.value = res.items
+    if (token === loadToken) shopItems.value = res.items.filter((item) => !isFoodItem(item))
   } catch (e) {
     if (token !== loadToken) return
     catalogError.value = e instanceof Error ? e.message : 'Could not load the shop'

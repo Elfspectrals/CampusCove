@@ -13,6 +13,7 @@ use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\PlayerInventoryLayoutController;
 use App\Http\Controllers\ReferralController;
 use App\Http\Controllers\ShopController;
+use App\Http\Controllers\SurvivalController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/health', function () {
@@ -41,8 +42,17 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
 
     Route::get('/housing/units', [HousingController::class, 'index']);
     Route::post('/housing/units/{publicId}/buy', [HousingController::class, 'buy']);
-    Route::post('/housing/units/{publicId}/rent', [HousingController::class, 'rent']);
-    Route::post('/housing/units/{publicId}/renew', [HousingController::class, 'renew']);
+    Route::post('/housing/keys', [HousingController::class, 'giveKeys']);
+    Route::put('/housing/units/{publicId}/door', [HousingController::class, 'setDoorLocked']);
+    Route::delete('/housing/keys/{accountId}', [HousingController::class, 'takeKeys'])->whereNumber('accountId');
+
+    Route::get('/survival', [SurvivalController::class, 'show']);
+    Route::middleware('realtime')->group(function () {
+        Route::put('/survival', [SurvivalController::class, 'update']);
+        Route::post('/survival/consume', [SurvivalController::class, 'consume']);
+        Route::post('/survival/cook', [SurvivalController::class, 'cook']);
+        Route::post('/survival/hospital', [SurvivalController::class, 'hospital']);
+    });
 
     Route::post('/shop/purchase', [ShopController::class, 'purchase']);
     Route::get('/inventory', [InventoryController::class, 'index']);
@@ -52,6 +62,7 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
     Route::get('/character/cosmetics', [CharacterCosmeticController::class, 'show']);
     Route::put('/character/cosmetics', [CharacterCosmeticController::class, 'update']);
     Route::get('/apartments/assets', [ApartmentPlacementController::class, 'inventory']);
+    Route::get('/apartments/houses', [ApartmentPlacementController::class, 'houses']);
     Route::post('/apartments/state', [ApartmentPlacementController::class, 'state']);
     Route::post('/apartments/spawn', [ApartmentPlacementController::class, 'spawn']);
     Route::patch('/apartments/transform', [ApartmentPlacementController::class, 'transform']);

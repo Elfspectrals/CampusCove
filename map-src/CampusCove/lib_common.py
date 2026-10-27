@@ -14,7 +14,7 @@ import json
 import math
 import os
 import random
-from mathutils import Vector
+from mathutils import Matrix, Vector
 
 OUT_ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "out"))
 
@@ -246,7 +246,7 @@ def check_grounded(objs, tol=0.03, allow=()):
 
 
 # ---------------------------------------------------------------- export
-def export_glb(path, objs):
+def export_glb(path, objs, **gltf_options):
     """Export only `objs`. Selection in the user's other scenes is saved, cleared, then restored."""
     import contextlib
     import io
@@ -275,6 +275,7 @@ def export_glb(path, objs):
             export_materials="EXPORT",
             export_cameras=False,
             export_lights=False,
+            **gltf_options,
         )
     for o in objs:
         o.select_set(False, view_layer=vl)
@@ -454,7 +455,8 @@ def std_mats(wall="#eceae4", floor=("#c9b08a", "planks", "#a98b64")):
 
 
 def interior_shell(coll, cols, M, accent_mat, H=3.0, win_front=((-5.5, -2.5), (2.5, 5.5)), win_w=((-6.75, -4.25), (-2.75, -0.25), (1.0, 3.5)),
-                   win_e=((-6.75, -4.25), (-2.75, -0.25), (1.0, 3.5)), light_pts=((-4, -6), (0, -6), (4, -6), (-4, -1.5), (0, -1.5), (4, -1.5), (-4, 3), (4, 3))):
+                   win_e=((-6.75, -4.25), (-2.75, -0.25), (1.0, 3.5)), light_pts=((-4, -6), (0, -6), (4, -6), (-4, -1.5), (0, -1.5), (4, -1.5), (-4, 3), (4, 3)),
+                   win_front_y=(0.9, 2.3)):
     """Floor, ceiling, 4 walls (door at x=0 on the front wall z=5.1), door, doormat, accent stripe, ceiling lights, sky."""
     X0, X1, Z0, Z1, T = -7.0, 7.0, -9.0, 5.0, 0.2
     win = (0.9, 2.3)
@@ -462,7 +464,7 @@ def interior_shell(coll, cols, M, accent_mat, H=3.0, win_front=((-5.5, -2.5), (2
     objs.append(box(coll, "House_Floor_Main", 0, (Z0 + Z1) / 2, -0.1, X1 - X0, Z1 - Z0, 0.1, M["floor"], tile=2.0))
     objs.append(box(coll, "Ceiling", 0, (Z0 + 5.2) / 2, H, 14.4, 14.4, 0.1, M["ceil"], tile=2.0))
     objs += wall(coll, "Walls_Front", "x", 5.1, T, X0 - T, X1 + T, H, M["wall"],
-                 openings=[(a, bb, *win) for a, bb in win_front] + [(-0.6, 0.6, 0.0, 2.2)], cols=cols, glass=M["glass"], col_tag="Wall_Front")
+                 openings=[(a, bb, *win_front_y) for a, bb in win_front] + [(-0.6, 0.6, 0.0, 2.2)], cols=cols, glass=M["glass"], col_tag="Wall_Front")
     objs += wall(coll, "Walls_Back", "x", Z0 - 0.1, T, X0 - T, X1 + T, H, M["wall"], cols=cols, col_tag="Wall_Back")
     objs += wall(coll, "Walls_W", "z", X0 - 0.1, T, Z0, 5.2, H, M["wall"], openings=[(a, bb, *win) for a, bb in win_w], cols=cols, glass=M["glass"], col_tag="Wall_W")
     objs += wall(coll, "Walls_E", "z", X1 + 0.1, T, Z0, 5.2, H, M["wall"], openings=[(a, bb, *win) for a, bb in win_e], cols=cols, glass=M["glass"], col_tag="Wall_E")
@@ -476,6 +478,57 @@ def interior_shell(coll, cols, M, accent_mat, H=3.0, win_front=((-5.5, -2.5), (2
     for nm, gx, gz, sx, sz in [("Sky_Back", 0, -13, 32, 0.05), ("Sky_Front", 0, 14, 32, 0.05), ("Sky_West", -12, 2, 0.05, 32), ("Sky_East", 12, 2, 0.05, 32)]:
         objs.append(box(coll, nm, gx, gz, -3.0, sx, sz, 9.0, M["sky"]))
     return objs
+
+
+INTERIOR_FRONT_OUTER_Z = 5.2
+INTERIOR_BACK_OUTER_Z = -9.2
+INTERIOR_FLOOR_Y = 0.2
+SHELL_THICKNESS = 0.2
+SHELL_GAP = 0.005
+DOOR_OPENING = (-0.6, 0.6, 0.0, 2.2)
+
+
+def walk_in_shell(coll, cols, W, zf, H, mat, glass, front, west, east, interior_back=INTERIOR_BACK_OUTER_Z):
+    t = SHELL_THICKNESS
+    oz = zf - t - SHELL_GAP - INTERIOR_FRONT_OUTER_Z
+    zb = oz + interior_back - SHELL_GAP - t
+    fy = INTERIOR_FLOOR_Y
+    lift = lambda y: y + fy if y > 0.01 else 0.0
+    front_ops = [(a, bb, lift(y0), y1 + fy) for a, bb, y0, y1 in [*front, DOOR_OPENING]]
+    side = lambda ops: [(a + oz, bb + oz, y0 + fy, y1 + fy) for a, bb, y0, y1 in ops]
+    hw = W / 2
+    objs = []
+    objs += wall(coll, "EX_ShellFront", "x", zf - t / 2, t, -hw, hw, H, mat, openings=front_ops, cols=cols, glass=glass, col_tag="Shell_Front")
+    objs += wall(coll, "EX_ShellBack", "x", zb + t / 2, t, -hw, hw, H, mat, cols=cols, col_tag="Shell_Back")
+    objs += wall(coll, "EX_ShellW", "z", -hw + t / 2, t, zb + t, zf - t, H, mat, openings=side(west), cols=cols, glass=glass, col_tag="Shell_W")
+    objs += wall(coll, "EX_ShellE", "z", hw - t / 2, t, zb + t, zf - t, H, mat, openings=side(east), cols=cols, glass=glass, col_tag="Shell_E")
+    return objs, (0.0, fy, oz), zb
+
+
+def perimeter(coll, name, W, zf, zb, y0, h, thick, mat, front_gaps=(), tile=1.0):
+    hw = W / 2
+    objs = []
+    cur, idx = -hw, 0
+    for a, bb in sorted(front_gaps):
+        if a - cur > 0.01:
+            objs.append(box(coll, f"{name}_Front{idx}", (cur + a) / 2, zf - thick / 2, y0, a - cur, thick, h, mat, tile=tile))
+        cur, idx = bb, idx + 1
+    objs.append(box(coll, f"{name}_Front{idx}", (cur + hw) / 2, zf - thick / 2, y0, hw - cur, thick, h, mat, tile=tile))
+    objs.append(box(coll, f"{name}_Back", 0, zb + thick / 2, y0, W, thick, h, mat, tile=tile))
+    for side, x in (("W", -hw + thick / 2), ("E", hw - thick / 2)):
+        objs.append(box(coll, f"{name}_{side}", x, (zf + zb) / 2, y0, thick, zf - zb - 2 * thick, h, mat, tile=tile))
+    return objs
+
+
+def hinged_door(coll, parts, hinge_x, zf, y0):
+    stale = bpy.data.objects.get("Door")
+    if stale:
+        stale.name = "Door_stale"
+    door = join(coll, "Door", [box(coll, f"Door_{i}", gx, zf, y0 + py, sx, sz, h, m, bevel=bv) for i, (gx, py, sx, sz, h, m, bv) in enumerate(parts)])
+    pivot = Vector(b(hinge_x, zf, y0))
+    door.data.transform(Matrix.Translation(door.location - pivot))
+    door.location = pivot
+    return door
 
 
 def chair_parts(M, seat, back=None):

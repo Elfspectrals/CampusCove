@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Account;
 use App\Models\HousingUnit;
+use App\Services\ApartmentPlacementService;
 use App\Services\HousingService;
 use Database\Seeders\HousingUnitSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -116,75 +117,67 @@ class HousingApiTest extends TestCase
         ])->assertStatus(422)->assertJsonPath('code', 'already_owns_unit');
     }
 
-    public function test_rent_success_sets_lease_expiry(): void
+    public function test_buy_schedules_the_daily_tax(): void
     {
         Carbon::setTestNow(Carbon::parse('2026-09-22 12:00:00 UTC'));
-        $renter = $this->registerAndCreditWallet(10_000, 'coins');
-        $unit = HousingUnit::query()->where('offer_type', 'rent')->firstOrFail();
+        $owner = $this->registerAndCreditWallet(10_000, 'coins');
+        $unit = HousingUnit::query()->where('offer_type', 'buy')->firstOrFail();
 
-        $response = $this->postJson('/api/housing/units/'.$unit->public_id.'/rent', [], [
-            'Authorization' => 'Bearer '.$renter['token'],
+        $response = $this->postJson('/api/housing/units/'.$unit->public_id.'/buy', [], [
+            'Authorization' => 'Bearer '.$owner['token'],
         ]);
         $response->assertOk();
-        $response->assertJsonPath('unit.lease_expires_at', '2026-09-29T12:00:00+00:00');
-
-        $this->assertDatabaseHas('wallet_ledger', [
-            'reason' => 'housing_rent',
-            'delta' => -$unit->price_coins,
-        ]);
+        $response->assertJsonPath('unit.tax_due_at', '2026-09-23T12:00:00+00:00');
+        $response->assertJsonPath('unit.tax_coins', (int) ceil($unit->price_coins * 0.05));
+        $response->assertJsonPath('unit.occupant_name', $owner['username']);
+        $response->assertJsonPath('unit.interior_bounds', $unit->interior_bounds);
 
         Carbon::setTestNow();
     }
 
-    public function test_renew_extends_lease_and_debits(): void
+    public function test_collect_due_taxes_debits_the_owner_and_moves_the_due_date(): void
     {
         Carbon::setTestNow(Carbon::parse('2026-09-22 12:00:00 UTC'));
-        $renter = $this->registerAndCreditWallet(10_000, 'coins');
-        $unit = HousingUnit::query()->where('offer_type', 'rent')->firstOrFail();
+        $unit = HousingUnit::query()->where('offer_type', 'buy')->firstOrFail();
+        $tax = (int) ceil($unit->price_coins * 0.05);
+        $owner = $this->registerAndCreditWallet($unit->price_coins + 2 * $tax, 'coins');
 
-        $this->postJson('/api/housing/units/'.$unit->public_id.'/rent', [], [
-            'Authorization' => 'Bearer '.$renter['token'],
+        $this->postJson('/api/housing/units/'.$unit->public_id.'/buy', [], [
+            'Authorization' => 'Bearer '.$owner['token'],
         ])->assertOk();
 
-        $renew = $this->postJson('/api/housing/units/'.$unit->public_id.'/renew', [], [
-            'Authorization' => 'Bearer '.$renter['token'],
-        ]);
-        $renew->assertOk();
-        $renew->assertJsonPath('unit.lease_expires_at', '2026-10-06T12:00:00+00:00');
+        Carbon::setTestNow(Carbon::parse('2026-09-24 13:00:00 UTC'));
+        $seized = app(HousingService::class)->collectDueTaxes();
 
-        $this->assertDatabaseHas('wallet_ledger', [
-            'reason' => 'housing_renew',
-            'delta' => -$unit->price_coins,
-        ]);
+        $this->assertSame(0, $seized);
+        $unit->refresh();
+        $this->assertSame('occupied', $unit->status);
+        $this->assertSame('2026-09-25T12:00:00+00:00', $unit->tax_due_at?->toIso8601String());
+        $this->assertSame(2, DB::table('wallet_ledger')->where('reason', 'housing_tax')->where('delta', -$tax)->count());
 
         Carbon::setTestNow();
     }
 
-    public function test_expire_due_leases_resets_unit_and_room(): void
+    public function test_unpaid_tax_seizes_the_house_and_deletes_its_room(): void
     {
         Carbon::setTestNow(Carbon::parse('2026-09-22 12:00:00 UTC'));
-        $renter = $this->registerAndCreditWallet(10_000, 'coins');
-        $unit = HousingUnit::query()->where('offer_type', 'rent')->firstOrFail();
+        $unit = HousingUnit::query()->where('offer_type', 'buy')->firstOrFail();
+        $owner = $this->registerAndCreditWallet($unit->price_coins, 'coins');
 
-        $this->postJson('/api/housing/units/'.$unit->public_id.'/rent', [], [
-            'Authorization' => 'Bearer '.$renter['token'],
+        $this->postJson('/api/housing/units/'.$unit->public_id.'/buy', [], [
+            'Authorization' => 'Bearer '.$owner['token'],
         ])->assertOk();
-
         $unit->refresh();
         $roomId = (int) $unit->room_id;
-        $this->assertDatabaseHas('room_memberships', [
-            'room_id' => $roomId,
-            'account_id' => $renter['account_id'],
-        ]);
 
-        Carbon::setTestNow(Carbon::parse('2026-09-30 00:00:00 UTC'));
-        $expired = app(HousingService::class)->expireDueLeases();
-        $this->assertSame(1, $expired);
+        Carbon::setTestNow(Carbon::parse('2026-09-23 12:00:01 UTC'));
+        $seized = app(HousingService::class)->collectDueTaxes();
 
+        $this->assertSame(1, $seized);
         $unit->refresh();
         $this->assertSame('vacant', $unit->status);
         $this->assertNull($unit->occupant_account_id);
-        $this->assertNull($unit->lease_expires_at);
+        $this->assertNull($unit->tax_due_at);
         $this->assertNull($unit->room_id);
         $this->assertDatabaseMissing('rooms', ['room_id' => $roomId]);
         $this->assertDatabaseMissing('room_memberships', ['room_id' => $roomId]);
@@ -227,8 +220,155 @@ class HousingApiTest extends TestCase
         ])->assertStatus(403)->assertJsonPath('code', 'apartment_edit_forbidden');
     }
 
+    public function test_house_furniture_lists_occupied_units_only(): void
+    {
+        $owner = $this->registerAndCreditWallet(10_000, 'coins');
+        $visitor = $this->registerAndCreditWallet(0, 'coins');
+        $unit = HousingUnit::query()->where('offer_type', 'buy')->firstOrFail();
+
+        $this->postJson('/api/housing/units/'.$unit->public_id.'/buy', [], [
+            'Authorization' => 'Bearer '.$owner['token'],
+        ])->assertOk();
+        $unit->refresh();
+
+        $response = $this->getJson('/api/apartments/houses', [
+            'Authorization' => 'Bearer '.$visitor['token'],
+        ]);
+
+        $response->assertOk();
+        $response->assertJsonCount(1, 'houses');
+        $response->assertJsonPath('houses.0.template_key', 'housing_'.$unit->unit_id);
+        $response->assertJsonPath('houses.0.model_key', $unit->model_key);
+        $response->assertJsonPath('houses.0.occupant_account_id', $owner['account_id']);
+        $response->assertJsonPath('houses.0.objects', []);
+    }
+
+    public function test_buying_gives_the_owner_a_house_key(): void
+    {
+        $owner = $this->registerAndCreditWallet(10_000, 'coins');
+        $unit = HousingUnit::query()->where('offer_type', 'buy')->firstOrFail();
+
+        $this->assertSame(0, $this->houseKeyQuantity($owner));
+        $this->postJson('/api/housing/units/'.$unit->public_id.'/buy', [], [
+            'Authorization' => 'Bearer '.$owner['token'],
+        ])->assertOk();
+
+        $key = collect($this->getJson('/api/apartments/assets', [
+            'Authorization' => 'Bearer '.$owner['token'],
+        ])->assertOk()->json('items'))->firstWhere('code', 'house_key');
+        $this->assertNotNull($key);
+        $this->assertSame('tool', $key['kind']);
+        $this->assertSame(1, (int) $key['quantity']);
+    }
+
+    public function test_key_holders_get_a_key_copy_until_the_owner_takes_the_keys_back(): void
+    {
+        $owner = $this->registerAndCreditWallet(10_000, 'coins');
+        $friend = $this->registerAndCreditWallet(0, 'coins');
+        $unit = HousingUnit::query()->where('offer_type', 'buy')->firstOrFail();
+        $this->postJson('/api/housing/units/'.$unit->public_id.'/buy', [], [
+            'Authorization' => 'Bearer '.$owner['token'],
+        ])->assertOk();
+
+        foreach ([1, 2] as $attempt) {
+            $this->postJson('/api/housing/keys', ['account_id' => $friend['account_id']], [
+                'Authorization' => 'Bearer '.$owner['token'],
+            ])->assertOk();
+        }
+        $this->assertSame(1, $this->houseKeyQuantity($friend));
+
+        $this->deleteJson('/api/housing/keys/'.$friend['account_id'], [], [
+            'Authorization' => 'Bearer '.$owner['token'],
+        ])->assertOk();
+        $this->assertSame(0, $this->houseKeyQuantity($friend));
+        $this->assertSame(1, $this->houseKeyQuantity($owner));
+    }
+
+    public function test_seizure_takes_the_keys_from_the_owner_and_the_key_holders(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-09-22 12:00:00 UTC'));
+        $unit = HousingUnit::query()->where('offer_type', 'buy')->firstOrFail();
+        $owner = $this->registerAndCreditWallet($unit->price_coins, 'coins');
+        $friend = $this->registerAndCreditWallet(0, 'coins');
+        $this->postJson('/api/housing/units/'.$unit->public_id.'/buy', [], [
+            'Authorization' => 'Bearer '.$owner['token'],
+        ])->assertOk();
+        $this->postJson('/api/housing/keys', ['account_id' => $friend['account_id']], [
+            'Authorization' => 'Bearer '.$owner['token'],
+        ])->assertOk();
+
+        Carbon::setTestNow(Carbon::parse('2026-09-23 12:00:01 UTC'));
+        $this->assertSame(1, app(HousingService::class)->collectDueTaxes());
+
+        $this->assertSame(0, $this->houseKeyQuantity($owner));
+        $this->assertSame(0, $this->houseKeyQuantity($friend));
+
+        Carbon::setTestNow();
+    }
+
+    public function test_owner_and_key_holders_lock_the_door_but_strangers_cannot(): void
+    {
+        $owner = $this->registerAndCreditWallet(10_000, 'coins');
+        $friend = $this->registerAndCreditWallet(0, 'coins');
+        $stranger = $this->registerAndCreditWallet(0, 'coins');
+        $unit = HousingUnit::query()->where('offer_type', 'buy')->firstOrFail();
+        $this->postJson('/api/housing/units/'.$unit->public_id.'/buy', [], [
+            'Authorization' => 'Bearer '.$owner['token'],
+        ])->assertOk()->assertJsonPath('unit.door_locked', false);
+        $this->postJson('/api/housing/keys', ['account_id' => $friend['account_id']], [
+            'Authorization' => 'Bearer '.$owner['token'],
+        ])->assertOk();
+
+        $this->putJson('/api/housing/units/'.$unit->public_id.'/door', ['locked' => true], [
+            'Authorization' => 'Bearer '.$owner['token'],
+        ])->assertOk()->assertJsonPath('unit.door_locked', true);
+
+        $this->app['auth']->forgetGuards();
+        $this->putJson('/api/housing/units/'.$unit->public_id.'/door', ['locked' => false], [
+            'Authorization' => 'Bearer '.$friend['token'],
+        ])->assertOk()->assertJsonPath('unit.door_locked', false);
+
+        $this->app['auth']->forgetGuards();
+        $this->putJson('/api/housing/units/'.$unit->public_id.'/door', ['locked' => true], [
+            'Authorization' => 'Bearer '.$stranger['token'],
+        ])->assertStatus(403)->assertJsonPath('code', 'no_house_key');
+        $this->assertFalse($unit->fresh()->door_locked);
+    }
+
+    public function test_seizure_unlocks_the_door(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-09-22 12:00:00 UTC'));
+        $unit = HousingUnit::query()->where('offer_type', 'buy')->firstOrFail();
+        $owner = $this->registerAndCreditWallet($unit->price_coins, 'coins');
+        $this->postJson('/api/housing/units/'.$unit->public_id.'/buy', [], [
+            'Authorization' => 'Bearer '.$owner['token'],
+        ])->assertOk();
+        $this->putJson('/api/housing/units/'.$unit->public_id.'/door', ['locked' => true], [
+            'Authorization' => 'Bearer '.$owner['token'],
+        ])->assertOk();
+
+        Carbon::setTestNow(Carbon::parse('2026-09-23 12:00:01 UTC'));
+        $this->assertSame(1, app(HousingService::class)->collectDueTaxes());
+
+        $this->assertFalse($unit->fresh()->door_locked);
+
+        Carbon::setTestNow();
+    }
+
     /**
-     * @return array{token: string, account_id: int}
+     * @param  array{token: string, account_id: int, username: string}  $player
+     */
+    private function houseKeyQuantity(array $player): int
+    {
+        $key = app(ApartmentPlacementService::class)
+            ->listSpawnableAssets($player['account_id'])
+            ->firstWhere('code', 'house_key');
+
+        return $key === null ? 0 : (int) $key['quantity'];
+    }
+
+    /**
+     * @return array{token: string, account_id: int, username: string}
      */
     private function registerAndCreditWallet(int $coins, string $currency): array
     {
@@ -247,6 +387,6 @@ class HousingApiTest extends TestCase
 
         $this->setWalletBalance($accountId, $currency, $coins);
 
-        return ['token' => $token, 'account_id' => $accountId];
+        return ['token' => $token, 'account_id' => $accountId, 'username' => $username];
     }
 }

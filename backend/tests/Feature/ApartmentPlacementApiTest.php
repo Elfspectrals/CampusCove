@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\Account;
+use App\Models\HousingUnit;
+use Database\Seeders\HousingUnitSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\Concerns\SetsWalletBalance;
@@ -18,6 +20,7 @@ class ApartmentPlacementApiTest extends TestCase
         $owner = $this->registerAndCreditWallet(10_000, 'coins');
         $guest = $this->registerAndCreditWallet(0, 'coins');
         $outsider = $this->registerAndCreditWallet(0, 'coins');
+        $templateKey = $this->buyHouse($owner);
 
         $this->postJson('/api/shop/purchase', [
             'shop_item_public_id' => $catalog->public_id,
@@ -36,7 +39,7 @@ class ApartmentPlacementApiTest extends TestCase
 
         $spawn = $this->postJson('/api/apartments/spawn', [
             'owner_account_id' => $owner['account_id'],
-            'template_key' => 'starter_loft',
+            'template_key' => $templateKey,
             'objectId' => 'spawn_test_obj_1',
             'objectKey' => 'apartment_sofa_test',
             'variant' => 'default',
@@ -62,7 +65,7 @@ class ApartmentPlacementApiTest extends TestCase
         $this->assertSame(1, (int) $assetAfterSpawn['quantity']);
 
         $roomId = (int) DB::table('rooms')
-            ->where('name', 'apartment:'.$owner['account_id'].':starter_loft')
+            ->where('name', 'apartment:'.$owner['account_id'].':'.$templateKey)
             ->value('room_id');
         $this->assertGreaterThan(0, $roomId);
         DB::table('room_memberships')->insert([
@@ -74,11 +77,11 @@ class ApartmentPlacementApiTest extends TestCase
 
         $this->patchJson('/api/apartments/transform', [
             'owner_account_id' => $owner['account_id'],
-            'template_key' => 'starter_loft',
+            'template_key' => $templateKey,
             'objectId' => 'spawn_test_obj_1',
             'x' => 1.5,
             'y' => 0,
-            'z' => -2.5,
+            'z' => -1.5,
             'rotX' => 0,
             'rotY' => 0.5,
             'rotZ' => 0,
@@ -89,7 +92,7 @@ class ApartmentPlacementApiTest extends TestCase
         $outsiderAccount = Account::query()->findOrFail($outsider['account_id']);
         $this->actingAs($outsiderAccount, 'sanctum')->patchJson('/api/apartments/transform', [
             'owner_account_id' => $owner['account_id'],
-            'template_key' => 'starter_loft',
+            'template_key' => $templateKey,
             'objectId' => 'spawn_test_obj_1',
             'x' => 2,
             'y' => 0,
@@ -102,7 +105,7 @@ class ApartmentPlacementApiTest extends TestCase
         $ownerAccount = Account::query()->findOrFail($owner['account_id']);
         $this->actingAs($ownerAccount, 'sanctum')->postJson('/api/apartments/pickup', [
             'owner_account_id' => $owner['account_id'],
-            'template_key' => 'starter_loft',
+            'template_key' => $templateKey,
             'objectId' => 'spawn_test_obj_1',
         ])->assertOk();
 
@@ -113,6 +116,120 @@ class ApartmentPlacementApiTest extends TestCase
         $assetAfterPickup = collect($ownedAfterPickup->json('items'))->firstWhere('code', 'apartment_sofa_test');
         $this->assertNotNull($assetAfterPickup);
         $this->assertSame(2, (int) $assetAfterPickup['quantity']);
+    }
+
+    public function test_owner_without_house_cannot_decorate(): void
+    {
+        $this->createApartmentAssetCatalog();
+        $owner = $this->registerAndCreditWallet(10_000, 'coins');
+
+        $this->postJson('/api/apartments/spawn', $this->spawnPayload($owner['account_id'], 'starter_loft', 0, 0), [
+            'Authorization' => 'Bearer '.$owner['token'],
+        ])->assertStatus(404)->assertJsonPath('code', 'no_house');
+    }
+
+    public function test_decorating_another_template_is_rejected(): void
+    {
+        $this->createApartmentAssetCatalog();
+        $owner = $this->registerAndCreditWallet(10_000, 'coins');
+        $this->buyHouse($owner);
+
+        $this->postJson('/api/apartments/spawn', $this->spawnPayload($owner['account_id'], 'starter_loft', 0, 0), [
+            'Authorization' => 'Bearer '.$owner['token'],
+        ])->assertStatus(422)->assertJsonPath('code', 'template_mismatch');
+    }
+
+    public function test_furniture_outside_the_house_is_rejected(): void
+    {
+        $catalog = $this->createApartmentAssetCatalog();
+        $owner = $this->registerAndCreditWallet(10_000, 'coins');
+        $templateKey = $this->buyHouse($owner);
+        $this->postJson('/api/shop/purchase', [
+            'shop_item_public_id' => $catalog->public_id,
+            'quantity' => 1,
+        ], [
+            'Authorization' => 'Bearer '.$owner['token'],
+        ])->assertOk();
+
+        $this->postJson('/api/apartments/spawn', $this->spawnPayload($owner['account_id'], $templateKey, 40, 0), [
+            'Authorization' => 'Bearer '.$owner['token'],
+        ])->assertStatus(422)->assertJsonPath('code', 'out_of_bounds');
+    }
+
+    public function test_key_holder_decorates_until_the_owner_takes_the_keys_back(): void
+    {
+        $catalog = $this->createApartmentAssetCatalog();
+        $owner = $this->registerAndCreditWallet(10_000, 'coins');
+        $friend = $this->registerAndCreditWallet(10_000, 'coins');
+        $templateKey = $this->buyHouse($owner);
+        $this->postJson('/api/shop/purchase', [
+            'shop_item_public_id' => $catalog->public_id,
+            'quantity' => 2,
+        ], [
+            'Authorization' => 'Bearer '.$friend['token'],
+        ])->assertOk();
+
+        $this->postJson('/api/housing/keys', ['account_id' => $friend['account_id']], [
+            'Authorization' => 'Bearer '.$owner['token'],
+        ])->assertOk()->assertJsonPath('unit.key_holder_account_ids', [$friend['account_id']]);
+
+        $this->postJson('/api/apartments/spawn', $this->spawnPayload($owner['account_id'], $templateKey, 0, 0), [
+            'Authorization' => 'Bearer '.$friend['token'],
+        ])->assertOk();
+
+        $this->deleteJson('/api/housing/keys/'.$friend['account_id'], [], [
+            'Authorization' => 'Bearer '.$owner['token'],
+        ])->assertOk()->assertJsonPath('unit.key_holder_account_ids', []);
+
+        $friendAccount = Account::query()->findOrFail($friend['account_id']);
+        $this->actingAs($friendAccount, 'sanctum')
+            ->postJson('/api/apartments/spawn', $this->spawnPayload($owner['account_id'], $templateKey, 0, 0))
+            ->assertStatus(403)->assertJsonPath('code', 'apartment_edit_forbidden');
+    }
+
+    public function test_owner_cannot_give_keys_to_themselves(): void
+    {
+        $owner = $this->registerAndCreditWallet(10_000, 'coins');
+        $this->buyHouse($owner);
+
+        $this->postJson('/api/housing/keys', ['account_id' => $owner['account_id']], [
+            'Authorization' => 'Bearer '.$owner['token'],
+        ])->assertStatus(422)->assertJsonPath('code', 'cannot_key_self');
+    }
+
+    /**
+     * @param array{token: string, account_id: int} $owner
+     */
+    private function buyHouse(array $owner): string
+    {
+        $this->seed(HousingUnitSeeder::class);
+        $unit = HousingUnit::query()->where('offer_type', 'buy')->orderBy('unit_id')->firstOrFail();
+        $this->postJson('/api/housing/units/'.$unit->public_id.'/buy', [], [
+            'Authorization' => 'Bearer '.$owner['token'],
+        ])->assertOk();
+
+        return 'housing_'.$unit->unit_id;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function spawnPayload(int $ownerAccountId, string $templateKey, float $x, float $z): array
+    {
+        return [
+            'owner_account_id' => $ownerAccountId,
+            'template_key' => $templateKey,
+            'objectId' => 'spawn_'.uniqid(),
+            'objectKey' => 'apartment_sofa_test',
+            'variant' => 'default',
+            'color' => '#8B7AA8',
+            'x' => $x,
+            'y' => 0,
+            'z' => $z,
+            'rotX' => 0,
+            'rotY' => 0,
+            'rotZ' => 0,
+        ];
     }
 
     private function createApartmentAssetCatalog(): object

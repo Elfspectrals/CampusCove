@@ -3,14 +3,20 @@ import type { Room } from '@colyseus/sdk'
 import * as THREE from 'three'
 import { matchesRotateCCW, matchesRotateCW } from '../../config/keybindings'
 import { createPlacementGhost, DEFAULT_GHOST_COLOR } from '../../game/placement/placementGhost'
+import { cuboidOverlapsPlayer, fetchCollisionFile, type CollisionFileJson } from '../../game/collision/worldCollision'
+import { propCuboidOf, syncPropBlocker } from '../../game/collision/propBlocker'
 import { apartmentObjectIdOf, createPlacementPhysics } from '../../game/placement/placementPhysics'
 import type { ApartmentEnvironmentBuildResult } from '../../game/roomEnvironments'
+import { APARTMENT_ROOM_HEIGHT } from '../../game/gameRoomConstants'
 
 const POS_SMOOTH_PER_FRAME = 0.35
 const YAW_SMOOTH_PER_FRAME = 0.25
 const ROT_TAU_S = 0.028
 const RAYCAST_MAX = 24
 const YAW_STEP = Math.PI / 12
+const FLOOR_TOLERANCE = 0.01
+const PLACE_HINT = 'LMB place · RMB cancel · R rotate · Shift+R reverse · Esc / E cancel'
+const NOT_HERE_HINT = 'Furniture can only be placed in a house you own or hold a key to'
 
 const UP = new THREE.Vector3(0, 1, 0)
 const DOWN = new THREE.Vector3(0, -1, 0)
@@ -33,10 +39,9 @@ export interface ApartmentPlacementDeps {
   getCamera: () => THREE.PerspectiveCamera | undefined
   getColyseusRoom: () => Room | null
   getApartmentObjectMesh: (objectId: string) => THREE.Mesh | undefined
-  currentRoomLabel: Ref<'city' | 'apartment'>
+  canDecorate: Ref<boolean>
   pointerLocked: Ref<boolean>
   getApartmentInventoryOpen: () => boolean
-  canEditApartment: Ref<boolean>
   persistApartmentTransformForMesh: (mesh: THREE.Mesh, force: boolean) => void
   refreshApartmentInventory: () => void
 }
@@ -73,6 +78,8 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
   const physics = createPlacementPhysics()
   const ghost = createPlacementGhost()
   let apartmentEnvGroup: THREE.Group | null = null
+  let roomCollision: Promise<CollisionFileJson | null> | null = null
+  let roomBounds: CollisionFileJson['bounds'] = null
   let watchStopOwned: WatchStopHandle | null = null
 
   const raycaster = new THREE.Raycaster()
@@ -88,7 +95,8 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
   let supportPropId = ''
 
   function ensureWorld(): Promise<void> {
-    return deps.currentRoomLabel.value === 'apartment' ? physics.ensureReady() : Promise.resolve()
+    if (!deps.canDecorate.value || !roomCollision) return Promise.resolve()
+    return roomCollision.then((room) => (room ? physics.ensureReady(room) : undefined))
   }
 
   function tearDownOwnedWatch(): void {
@@ -113,6 +121,7 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
     const st = currentState.value
     if (st.kind === 'preview_existing') {
       st.sourceMesh.visible = true
+      syncPropBlocker(st.objectId, st.sourceMesh)
       void ensureWorld().then(() => physics.registerProp(st.sourceMesh))
     }
     toIdle()
@@ -140,27 +149,28 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
     void ghost.upgradeToModel(modelUrl, color, () => currentState.value === wanted)
   }
 
+  /** Also outside a decoratable house: the ghost then stays red, so the player sees what they hold. */
   function startPreviewNew(itemDef: ApartmentPlacementItemDef, ownedCountRef: Ref<number>): void {
-    if (deps.currentRoomLabel.value !== 'apartment' || !deps.canEditApartment.value) return
     cancelPreview()
     if (ownedCountRef.value <= 0) return
     watchStopOwned = watch(ownedCountRef, (q) => {
       if (currentState.value.kind === 'preview_new' && q <= 0) cancelPreview()
     })
     currentState.value = { kind: 'preview_new', itemDef, ownedCountRef }
-    showGhost('LMB place · RMB cancel · R rotate · Shift+R reverse · Esc / E cancel')
+    showGhost(deps.canDecorate.value ? PLACE_HINT : NOT_HERE_HINT)
     loadGhostVisual(itemDef)
     void ensureWorld()
   }
 
   function startPreviewExisting(objectId: string, sourceMesh: THREE.Mesh): void {
-    if (deps.currentRoomLabel.value !== 'apartment' || !deps.canEditApartment.value) return
+    if (!deps.canDecorate.value) return
     cancelPreview()
     void ensureWorld().then(() => {
       physics.unregisterProp(objectId)
       sourceMesh.visible = false
+      syncPropBlocker(objectId, null)
       currentState.value = { kind: 'preview_existing', objectId, sourceMesh }
-      userYawTarget = new THREE.Euler().setFromQuaternion(sourceMesh.quaternion, 'YXZ').y
+      userYawTarget = new THREE.Euler().setFromQuaternion(sourceMesh.getWorldQuaternion(new THREE.Quaternion()), 'YXZ').y
       userYawSmoothed = userYawTarget
       loadGhostVisual({
         objectKey: String(sourceMesh.userData.apartmentObjectKey ?? 'unknown'),
@@ -176,24 +186,35 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
 
   function registerApartmentEnvironment(build: ApartmentEnvironmentBuildResult): void {
     apartmentEnvGroup = build.group
+    physics.setRoomFrame(build.group)
+    roomCollision = fetchCollisionFile(build.house.interiorCollisionUrl).catch((error: unknown) => {
+      console.error('[placement] room collision failed to load, overlaps are not checked', error)
+      return null
+    })
+    void roomCollision.then((room) => {
+      roomBounds = room?.bounds ?? null
+    })
     void ensureWorld()
   }
 
+  /** Leaving the house: a prop being moved goes back, a new item stays in hand (its ghost turns red). */
   function setPlayerInsideApartment(inside: boolean): void {
     if (inside) return
-    cancelPreview()
+    if (currentState.value.kind === 'preview_existing') cancelPreview()
     tearDownOwnedWatch()
     physics.dispose()
     apartmentEnvGroup = null
+    roomCollision = null
+    roomBounds = null
   }
 
   function registerApartmentProp(mesh: THREE.Mesh): void {
-    if (deps.currentRoomLabel.value !== 'apartment') return
+    if (!deps.canDecorate.value) return
     void ensureWorld().then(() => physics.registerProp(mesh))
   }
 
   function unregisterApartmentProp(objectId: string): void {
-    if (deps.currentRoomLabel.value !== 'apartment') {
+    if (!deps.canDecorate.value) {
       physics.unregisterProp(objectId)
       return
     }
@@ -220,7 +241,25 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
     }
     raycaster.setFromCamera(ndcCenter, camera)
     raycaster.far = RAYCAST_MAX
-    return raycaster.intersectObjects(targets, true)
+    return raycaster.intersectObjects(targets, true).filter((hit) => !movingId || propIdOfHit(hit.object) !== movingId)
+  }
+
+  function ghostInsideRoom(): boolean {
+    if (!roomBounds) return true
+    const { x, y, z } = ghostPoseInRoom().position
+    const base = y - 0.5
+    return x >= roomBounds.minX && x <= roomBounds.maxX && z >= roomBounds.minZ && z <= roomBounds.maxZ
+      && base >= -FLOOR_TOLERANCE && base <= APARTMENT_ROOM_HEIGHT
+  }
+
+  /** Ghost pose (world) expressed in the room frame, the space placed props are stored in. */
+  function ghostPoseInRoom(): { position: THREE.Vector3; quaternion: THREE.Quaternion } {
+    const position = ghost.root.position.clone()
+    const quaternion = ghost.root.quaternion.clone()
+    if (!apartmentEnvGroup) return { position, quaternion }
+    apartmentEnvGroup.updateMatrixWorld(true)
+    const roomToWorld = apartmentEnvGroup.getWorldQuaternion(new THREE.Quaternion())
+    return { position: apartmentEnvGroup.worldToLocal(position), quaternion: roomToWorld.invert().multiply(quaternion) }
   }
 
   /** Pose that lays the ghost flat against the hit surface, pushed out so its box does not sink into it. */
@@ -247,11 +286,17 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
     if (Number.isFinite(minAlong)) targetPos.addScaledVector(n, -minAlong + 0.002)
   }
 
+  /** Placed furniture blocks the player, so it must not be dropped onto them. */
+  function ghostOverlapsPlayer(): boolean {
+    const box = propCuboidOf(ghost.root)
+    return box !== null && cuboidOverlapsPlayer(box)
+  }
+
   function tick(dt: number): void {
     ghost.tickFeedback(dt, smoothPos)
     const st = currentState.value
     const movingId = st.kind === 'preview_existing' ? st.objectId : ''
-    if (deps.currentRoomLabel.value === 'apartment') physics.syncProps(movingId)
+    if (deps.canDecorate.value) physics.syncProps(movingId)
 
     if (st.kind === 'idle' || !ghost.hasContent()) return
     const cam = deps.getCamera()
@@ -276,7 +321,12 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
     ghost.applyShake()
 
     const ignored = new Set([movingId, supportPropId].filter(Boolean))
-    const valid = !physics.ghostIntersects(ghost.root, ignored)
+    const valid = deps.canDecorate.value && ghostInsideRoom() && !physics.ghostIntersects(ghost.root, ignored)
+      && !ghostOverlapsPlayer()
+    if (st.kind === 'preview_new') {
+      const hint = deps.canDecorate.value ? PLACE_HINT : NOT_HERE_HINT
+      if (hudHints.value[0] !== hint) hudHints.value = [hint]
+    }
     if (ghost.setValid(valid)) {
       currentValidity.value = valid
       crosshairTint.value = valid ? 'valid' : 'invalid'
@@ -288,7 +338,7 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
 
   /** Esc cancels, R / Shift+R rotate by 15°. Returns true when the key was used. */
   function onKeyDown(e: KeyboardEvent): boolean {
-    if (deps.currentRoomLabel.value !== 'apartment' || e.repeat || currentState.value.kind === 'idle') return false
+    if (e.repeat || currentState.value.kind === 'idle') return false
     if (e.code === 'Escape') cancelPreview()
     else if (matchesRotateCW(e)) userYawTarget += YAW_STEP
     else if (matchesRotateCCW(e)) userYawTarget -= YAW_STEP
@@ -297,26 +347,26 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
   }
 
   function tryCommitPreview(): void {
-    if (!deps.canEditApartment.value) return
     const st = currentState.value
     if (st.kind === 'idle' || !ghost.hasContent()) return
-    if (!currentValidity.value) {
+    if (!currentValidity.value || !deps.canDecorate.value) {
       ghost.deny()
       return
     }
     const room = deps.getColyseusRoom()
-    if (!room || deps.currentRoomLabel.value !== 'apartment') return
+    if (!room || !deps.canDecorate.value) return
 
+    const pose = ghostPoseInRoom()
     if (st.kind === 'preview_new') {
-      const euler = new THREE.Euler().setFromQuaternion(ghost.root.quaternion, 'XYZ')
+      const euler = new THREE.Euler().setFromQuaternion(pose.quaternion, 'XYZ')
       room.send('apartment_spawn_request', {
         objectId: crypto.randomUUID(),
         objectKey: st.itemDef.objectKey,
         variant: st.itemDef.variant ?? 'default',
         color: st.itemDef.defaultColor ?? DEFAULT_GHOST_COLOR,
-        x: ghost.root.position.x,
-        y: ghost.root.position.y - 0.5,
-        z: ghost.root.position.z,
+        x: pose.position.x,
+        y: pose.position.y - 0.5,
+        z: pose.position.z,
         rotX: euler.x,
         rotY: euler.y,
         rotZ: euler.z,
@@ -327,20 +377,19 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
     }
 
     const mesh = st.sourceMesh
-    mesh.position.copy(ghost.root.position)
-    mesh.quaternion.copy(ghost.root.quaternion)
+    mesh.position.copy(pose.position)
+    mesh.quaternion.copy(pose.quaternion)
     mesh.visible = true
     toIdle()
+    syncPropBlocker(st.objectId, mesh)
     deps.persistApartmentTransformForMesh(mesh, true)
     void ensureWorld().then(() => physics.registerProp(mesh))
   }
 
   /** Returns true when the click was used for placement (so it must not also open a door). */
   function onPointerDown(e: MouseEvent): boolean {
-    if (deps.currentRoomLabel.value !== 'apartment' || !deps.canEditApartment.value || !deps.pointerLocked.value) {
-      return false
-    }
-    if (deps.getApartmentInventoryOpen()) return false
+    if (!deps.pointerLocked.value || deps.getApartmentInventoryOpen()) return false
+    if (!deps.canDecorate.value && currentState.value.kind === 'idle') return false
     if (e.button === 2) {
       e.preventDefault()
       cancelPreview()
@@ -366,6 +415,8 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
     tearDownOwnedWatch()
     physics.dispose()
     apartmentEnvGroup = null
+    roomCollision = null
+    roomBounds = null
   }
 
   return {

@@ -21,6 +21,7 @@ class InventoryStack extends Model
         'item_def_id',
         'container_id',
         'quantity',
+        'portions_used',
     ];
 
     protected function casts(): array
@@ -31,6 +32,7 @@ class InventoryStack extends Model
             'item_def_id' => 'integer',
             'container_id' => 'integer',
             'quantity' => 'integer',
+            'portions_used' => 'integer',
         ];
     }
 

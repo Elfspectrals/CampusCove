@@ -8,11 +8,13 @@ import {
 } from '../../game/gameRoomConstants'
 import type { ApartmentObjectPayload } from '../../types/gameRealtime'
 import { disposeObject3D } from '../../avatar/compositeAvatar'
+import { syncPropBlocker } from '../../game/collision/propBlocker'
 
 export interface ApartmentObjectsDeps {
   getScene: () => THREE.Scene | undefined
+  getParent?: () => THREE.Object3D | undefined
   getGameRoom: () => Room | null
-  currentRoomLabel: Ref<'city' | 'apartment'>
+  canDecorate: Ref<boolean>
   /** After an apartment anchor mesh is created or updated (placement / remote sync). */
   onMeshUpserted: (mesh: THREE.Mesh) => void
   /** Before mesh disposal (pickup, room clear, remote delete). */
@@ -24,7 +26,6 @@ export interface ApartmentObjectsDeps {
  * hides the cube once loaded), kept in sync with the server, plus transform persistence after a move.
  */
 export function useApartmentObjects(deps: ApartmentObjectsDeps) {
-  const apartmentObjectCount = ref(0)
   const apartmentObjectIds = ref<string[]>([])
   const selectedPlacedObjectId = ref('')
 
@@ -32,6 +33,10 @@ export function useApartmentObjects(deps: ApartmentObjectsDeps) {
   const apartmentModelTemplateCache = new Map<string, THREE.Object3D>()
   const apartmentModelLoader = createGltfLoader()
   const lastPersistedByObjectId = new Map<string, ApartmentObjectPayload>()
+
+  function getParent(): THREE.Object3D | undefined {
+    return deps.getParent ? deps.getParent() : deps.getScene()
+  }
 
   function detachForRoomSwitch() {
     lastPersistedByObjectId.clear()
@@ -99,12 +104,15 @@ export function useApartmentObjects(deps: ApartmentObjectsDeps) {
     visual.position.set(0, -0.5, 0)
     anchor.add(visual)
     setAnchorCubeVisible(anchor, false, colorHex)
+    // the model's own box replaces the anchor cube's
+    const objectId = anchor.userData.apartmentObjectId as string
+    if (apartmentObjects.get(objectId) === anchor) syncPropBlocker(objectId, anchor)
   }
 
   /** Server-driven upsert (apartment init or broadcast); also the reference transform for persistence dedupe. */
   function upsertApartmentObjectFromRemote(payload: ApartmentObjectPayload) {
-    const scene = deps.getScene()
-    if (!scene) return
+    const parent = getParent()
+    if (!parent) return
 
     let mesh = apartmentObjects.get(payload.objectId)
     const colorHex =
@@ -117,7 +125,7 @@ export function useApartmentObjects(deps: ApartmentObjectsDeps) {
       mesh.receiveShadow = true
       mesh.userData.apartmentObjectId = payload.objectId
       mesh.userData.apartmentObjectKey = payload.objectKey
-      scene.add(mesh)
+      parent.add(mesh)
       apartmentObjects.set(payload.objectId, mesh)
     }
     mesh.userData.apartmentObjectKey = payload.objectKey
@@ -129,41 +137,26 @@ export function useApartmentObjects(deps: ApartmentObjectsDeps) {
     if (!apartmentObjectIds.value.includes(payload.objectId)) {
       apartmentObjectIds.value.push(payload.objectId)
     }
-    apartmentObjectCount.value = apartmentObjectIds.value.length
     if (selectedPlacedObjectId.value === '') {
       selectedPlacedObjectId.value = payload.objectId
     }
     lastPersistedByObjectId.set(payload.objectId, payload)
+    syncPropBlocker(payload.objectId, mesh)
     deps.onMeshUpserted(mesh)
   }
 
-  function removeApartmentObjectMesh(objectId: string) {
-    const scene = deps.getScene()
-    const mesh = apartmentObjects.get(objectId)
-    if (!mesh) return
-    deps.onMeshRemoved(objectId)
-    if (scene) scene.remove(mesh)
-    disposeObject3D(mesh)
-    apartmentObjects.delete(objectId)
-    apartmentObjectIds.value = apartmentObjectIds.value.filter((id) => id !== objectId)
-    apartmentObjectCount.value = apartmentObjectIds.value.length
-    lastPersistedByObjectId.delete(objectId)
-    if (selectedPlacedObjectId.value === objectId) {
-      selectedPlacedObjectId.value = apartmentObjectIds.value[0] ?? ''
-    }
-  }
-
   function clearApartmentObjects() {
-    const scene = deps.getScene()
     const ids = [...apartmentObjects.keys()]
-    for (const objectId of ids) deps.onMeshRemoved(objectId)
+    for (const objectId of ids) {
+      deps.onMeshRemoved(objectId)
+      syncPropBlocker(objectId, null)
+    }
     for (const mesh of apartmentObjects.values()) {
-      if (scene) scene.remove(mesh)
+      mesh.removeFromParent()
       disposeObject3D(mesh)
     }
     apartmentObjects.clear()
     apartmentObjectIds.value = []
-    apartmentObjectCount.value = 0
     selectedPlacedObjectId.value = ''
     lastPersistedByObjectId.clear()
   }
@@ -207,7 +200,7 @@ export function useApartmentObjects(deps: ApartmentObjectsDeps) {
 
   function persistApartmentTransformForMesh(mesh: THREE.Mesh, force: boolean) {
     const room = deps.getGameRoom()
-    if (!room || deps.currentRoomLabel.value !== 'apartment') return
+    if (!room || !deps.canDecorate.value) return
     const objectId = typeof mesh.userData.apartmentObjectId === 'string' ? mesh.userData.apartmentObjectId : ''
     const objectKey = typeof mesh.userData.apartmentObjectKey === 'string' ? mesh.userData.apartmentObjectKey : ''
     if (!objectId || !objectKey) return
@@ -228,13 +221,10 @@ export function useApartmentObjects(deps: ApartmentObjectsDeps) {
   }
 
   return {
-    apartmentObjectCount,
     apartmentObjectIds,
     selectedPlacedObjectId,
     detachForRoomSwitch,
     clearApartmentObjects,
-    upsertApartmentObjectFromRemote,
-    removeApartmentObjectMesh,
     ensureApartmentObjectsFromServer,
     persistApartmentTransformForMesh,
     getApartmentObjectMesh,

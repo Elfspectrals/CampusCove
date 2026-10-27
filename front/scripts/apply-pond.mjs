@@ -9,7 +9,7 @@ const FRONT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const ASSETS = join(FRONT, 'public/assets')
 const TOWN_GLB = join(ASSETS, 'town/town.glb')
 const TOWN_COL = join(ASSETS, 'town/town.collision.json')
-const TOWN_LAYOUT = join(ASSETS, 'town/town.layout.json')
+const WORLD_MANIFEST = join(ASSETS, 'world.manifest.json')
 const POND_LAYOUT = join(ASSETS, 'park/pond/pond.layout.json')
 
 const GATE_HALF_WIDTH = 6.05
@@ -111,12 +111,15 @@ if (col.bounds) {
 writeFileSync(TOWN_COL, JSON.stringify(col))
 console.log(`town.collision.json: ${before} -> ${col.cuboids.length} cuboids, bounds ${JSON.stringify(col.bounds)}`)
 
-const layout = JSON.parse(readFileSync(TOWN_LAYOUT, 'utf8'))
-layout.pond = {
+const manifest = JSON.parse(readFileSync(WORLD_MANIFEST, 'utf8'))
+const zone = manifest.zones.find((z) => z.key === 'pond')
+if (!zone) throw new Error('world.manifest.json has no pond zone')
+Object.assign(zone, {
   gate: pond.gate,
   center: pond.center,
   fishingSpots: pond.fishingSpots,
   kiosk: pond.kiosk,
-}
-writeFileSync(TOWN_LAYOUT, JSON.stringify(layout, null, 2) + '\n')
-console.log(`town.layout.json: pond with ${layout.pond.fishingSpots.length} fishing spots`)
+})
+manifest.bounds = col.bounds
+writeFileSync(WORLD_MANIFEST, JSON.stringify(manifest, null, 2) + '\n')
+console.log(`world.manifest.json: pond with ${zone.fishingSpots.length} fishing spots`)

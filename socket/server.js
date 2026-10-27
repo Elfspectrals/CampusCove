@@ -3,8 +3,10 @@
 import { Server, WebSocketTransport } from 'colyseus'
 import { CITY_MAX_PLAYERS, PORT } from './src/config.js'
 import { CityRoom } from './src/CityRoom.js'
+import { loadWorld } from './src/world.js'
 
 async function boot() {
+  await loadWorld()
   const gameServer = new Server({ transport: new WebSocketTransport() })
   gameServer.define('city', CityRoom)
   await gameServer.listen(PORT)

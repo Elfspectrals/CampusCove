@@ -24,7 +24,10 @@ class HousingUnit extends Model
         'model_key',
         'status',
         'occupant_account_id',
+        'interior_bounds',
         'lease_expires_at',
+        'tax_due_at',
+        'door_locked',
         'room_id',
     ];
 
@@ -41,6 +44,9 @@ class HousingUnit extends Model
             'occupant_account_id' => 'integer',
             'room_id' => 'integer',
             'lease_expires_at' => 'datetime',
+            'tax_due_at' => 'datetime',
+            'door_locked' => 'boolean',
+            'interior_bounds' => 'array',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
         ];

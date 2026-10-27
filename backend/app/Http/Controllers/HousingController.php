@@ -25,33 +25,40 @@ class HousingController extends Controller
         return response()->json($payload);
     }
 
+    public function giveKeys(Request $request): JsonResponse
+    {
+        $validated = $request->validate(['account_id' => ['required', 'integer', 'min:1']]);
+        /** @var Account $account */
+        $account = $request->user();
+        $unit = $this->housing->giveKeys($account, (int) $validated['account_id']);
+
+        return response()->json(['unit' => $this->housing->serializeUnit($unit)]);
+    }
+
+    public function takeKeys(Request $request, int $accountId): JsonResponse
+    {
+        /** @var Account $account */
+        $account = $request->user();
+        $unit = $this->housing->takeKeys($account, $accountId);
+
+        return response()->json(['unit' => $this->housing->serializeUnit($unit)]);
+    }
+
+    public function setDoorLocked(Request $request, string $publicId): JsonResponse
+    {
+        $validated = $request->validate(['locked' => ['required', 'boolean']]);
+        /** @var Account $account */
+        $account = $request->user();
+        $unit = $this->housing->setDoorLocked($account, $publicId, (bool) $validated['locked']);
+
+        return response()->json(['unit' => $this->housing->serializeUnit($unit)]);
+    }
+
     public function buy(Request $request, string $publicId): JsonResponse
     {
         /** @var Account $account */
         $account = $request->user();
         $unit = $this->housing->claimBuy($account, $publicId);
-
-        return response()->json([
-            'unit' => $this->housing->serializeUnit($unit),
-        ]);
-    }
-
-    public function rent(Request $request, string $publicId): JsonResponse
-    {
-        /** @var Account $account */
-        $account = $request->user();
-        $unit = $this->housing->claimRent($account, $publicId);
-
-        return response()->json([
-            'unit' => $this->housing->serializeUnit($unit),
-        ]);
-    }
-
-    public function renew(Request $request, string $publicId): JsonResponse
-    {
-        /** @var Account $account */
-        $account = $request->user();
-        $unit = $this->housing->renewRent($account, $publicId);
 
         return response()->json([
             'unit' => $this->housing->serializeUnit($unit),

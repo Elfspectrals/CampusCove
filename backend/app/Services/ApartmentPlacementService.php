@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Exceptions\ApartmentPlacementException;
 use App\Models\Container;
+use App\Models\HousingUnit;
 use App\Models\ItemDef;
 use App\Models\ItemInstance;
 use App\Models\Room;
@@ -17,12 +18,16 @@ use Illuminate\Support\Facades\DB;
 
 class ApartmentPlacementService
 {
-    private const DEFAULT_TEMPLATE_KEY = 'starter_loft';
+    private const ROOM_HEIGHT = 3.0;
+
+    private const FLOOR_TOLERANCE = 0.01;
 
     /**
      * @var list<string>
      */
     private const PLACEABLE_KINDS = ['apartment_asset', 'furniture'];
+
+    private const HOTBAR_KINDS = [...self::PLACEABLE_KINDS, 'tool', 'consumable'];
 
     /**
      * @var list<string>
@@ -58,8 +63,8 @@ class ApartmentPlacementService
      */
     public function resolveApartmentState(int $actorAccountId, int $ownerAccountId, ?string $templateKey = null): array
     {
-        $this->housingService->expireDueLeases();
-        $template = $this->normalizeTemplateKey($templateKey);
+        $this->housingService->collectDueTaxes();
+        $template = $this->occupiedHouse($ownerAccountId, $templateKey)->templateKey();
         $canEdit = $this->canEditApartment($actorAccountId, $ownerAccountId, $template);
 
         if ($canEdit) {
@@ -78,6 +83,26 @@ class ApartmentPlacementService
             'can_edit' => $canEdit,
             'objects' => $this->loadRoomObjects((int) $room->room_id),
         ];
+    }
+
+    /**
+     * @return list<array{template_key:string, model_key:string|null, occupant_account_id:int, objects:list<array<string, mixed>>}>
+     */
+    public function listOccupiedHouseFurniture(): array
+    {
+        return HousingUnit::query()
+            ->whereNotNull('room_id')
+            ->whereNotNull('occupant_account_id')
+            ->orderBy('unit_id')
+            ->get()
+            ->map(fn (HousingUnit $unit): array => [
+                'template_key' => $unit->templateKey(),
+                'model_key' => $unit->model_key !== null ? (string) $unit->model_key : null,
+                'occupant_account_id' => (int) $unit->occupant_account_id,
+                'objects' => $this->loadRoomObjects((int) $unit->room_id),
+            ])
+            ->values()
+            ->all();
     }
 
     public function officialTemplateKeyForAccount(int $accountId): string
@@ -100,7 +125,7 @@ class ApartmentPlacementService
     {
         return $this->inventoryService
             ->aggregatedItemsForAccount($accountId, null, null)
-            ->filter(fn (object $row): bool => in_array((string) $row->kind, self::PLACEABLE_KINDS, true) && (int) $row->quantity > 0)
+            ->filter(fn (object $row): bool => in_array((string) $row->kind, self::HOTBAR_KINDS, true) && (int) $row->quantity > 0)
             ->map(fn (object $row): array => [
                 'item_def_id' => (int) $row->item_def_id,
                 'code' => (string) $row->code,
@@ -109,6 +134,8 @@ class ApartmentPlacementService
                 'quantity' => (int) $row->quantity,
                 'preview_image' => isset($row->preview_image) ? (string) $row->preview_image : null,
                 'model_glb' => isset($row->model_glb) ? (string) $row->model_glb : null,
+                'portions' => $row->portions,
+                'portions_left' => $row->portions !== null ? $row->portions - $row->portions_used : null,
             ])
             ->values();
     }
@@ -146,9 +173,10 @@ class ApartmentPlacementService
         ?string $templateKey,
         array $payload
     ): array {
-        $template = $this->normalizeTemplateKey($templateKey);
+        $house = $this->occupiedHouse($ownerAccountId, $templateKey);
+        $template = $house->templateKey();
 
-        return DB::transaction(function () use ($actorAccountId, $ownerAccountId, $template, $payload): array {
+        return DB::transaction(function () use ($actorAccountId, $ownerAccountId, $house, $template, $payload): array {
             [$room, $roomContainerId] = $this->resolveOrCreateApartment($ownerAccountId, $template);
             $roomId = (int) $room->room_id;
             $this->assertCanEditApartment($actorAccountId, $ownerAccountId, $roomId);
@@ -174,6 +202,7 @@ class ApartmentPlacementService
                 $roomContainerId
             );
             $position = $this->normalizeTransform($payload);
+            $this->assertInsideHouse($house, $position);
             $variant = $this->normalizeNullableString($payload['variant'] ?? null);
             $color = $this->normalizeNullableColor($payload['color'] ?? null);
             $state = [
@@ -242,9 +271,10 @@ class ApartmentPlacementService
         ?string $templateKey,
         array $payload
     ): array {
-        $template = $this->normalizeTemplateKey($templateKey);
+        $house = $this->occupiedHouse($ownerAccountId, $templateKey);
+        $template = $house->templateKey();
 
-        return DB::transaction(function () use ($actorAccountId, $ownerAccountId, $template, $payload): array {
+        return DB::transaction(function () use ($actorAccountId, $ownerAccountId, $house, $template, $payload): array {
             [$room, ] = $this->resolveOrCreateApartment($ownerAccountId, $template);
             $roomId = (int) $room->room_id;
             $this->assertCanEditApartment($actorAccountId, $ownerAccountId, $roomId);
@@ -261,6 +291,7 @@ class ApartmentPlacementService
                 ? $itemDef->model_glb
                 : null;
             $position = $this->normalizeTransform($payload);
+            $this->assertInsideHouse($house, $position);
             $variant = array_key_exists('variant', $payload)
                 ? $this->normalizeNullableString($payload['variant'])
                 : $this->normalizeNullableString($state['variant'] ?? null);
@@ -293,7 +324,7 @@ class ApartmentPlacementService
         ?string $templateKey,
         string $objectId
     ): array {
-        $template = $this->normalizeTemplateKey($templateKey);
+        $template = $this->occupiedHouse($ownerAccountId, $templateKey)->templateKey();
 
         return DB::transaction(function () use ($actorAccountId, $ownerAccountId, $template, $objectId): array {
             [$room, ] = $this->resolveOrCreateApartment($ownerAccountId, $template);
@@ -603,14 +634,35 @@ class ApartmentPlacementService
         return 'apartment:'.$ownerAccountId.':'.$templateKey;
     }
 
-    private function normalizeTemplateKey(?string $templateKey): string
+    private function occupiedHouse(int $ownerAccountId, ?string $templateKey): HousingUnit
     {
-        if (! is_string($templateKey)) {
-            return self::DEFAULT_TEMPLATE_KEY;
+        $house = $this->housingService->findOccupiedUnitForAccount($ownerAccountId);
+        if ($house === null) {
+            throw new ApartmentPlacementException('no_house', 'This player does not own a house.', 404);
         }
-        $v = trim($templateKey);
+        $requested = is_string($templateKey) ? trim($templateKey) : '';
+        if ($requested !== '' && $requested !== $house->templateKey()) {
+            throw new ApartmentPlacementException('template_mismatch', 'This is not the house of this player.', 422);
+        }
 
-        return $v !== '' ? $v : self::DEFAULT_TEMPLATE_KEY;
+        return $house;
+    }
+
+    /**
+     * @param array{x:float,y:float,z:float,rotX:float,rotY:float,rotZ:float} $position
+     */
+    private function assertInsideHouse(HousingUnit $house, array $position): void
+    {
+        $bounds = $house->interior_bounds;
+        if (! is_array($bounds)) {
+            throw new ApartmentPlacementException('house_bounds_missing', 'This house has no interior bounds.', 500);
+        }
+        $inside = $position['x'] >= $bounds['minX'] && $position['x'] <= $bounds['maxX']
+            && $position['z'] >= $bounds['minZ'] && $position['z'] <= $bounds['maxZ']
+            && $position['y'] >= -self::FLOOR_TOLERANCE && $position['y'] <= self::ROOM_HEIGHT;
+        if (! $inside) {
+            throw new ApartmentPlacementException('out_of_bounds', 'Furniture must stay inside the house.', 422);
+        }
     }
 
     private function normalizeObjectId(mixed $raw): string
