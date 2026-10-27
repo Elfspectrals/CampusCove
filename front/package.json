@@ -15,6 +15,7 @@
     "collision:extract": "node scripts/extract-collision.mjs",
     "assets:optimize": "node scripts/optimize-assets.mjs",
     "store:apply": "node scripts/apply-store.mjs",
+    "world:bounds": "node scripts/apply-world-bounds.mjs",
     "newnation:optimize": "npx --yes @gltf-transform/cli optimize ../map-src/NewNation/NewNation.glb public/assets/showroom/new_nation.glb --compress draco --texture-compress webp --texture-size 1024"
   },
   "dependencies": {

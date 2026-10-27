@@ -286,3 +286,21 @@ Même base que le reste (§1) : low-poly à facettes, textures procédurales 64 
 
 - Enum côté front : `Rarity` dans `front/src/game/rarity.ts` (`Common`, `Uncommon`, `Rare`, `Epic`, `Legendary`) avec `RARITY_META` (libellé, couleur, lueur). Les couleurs reprennent les variables `--cc-r-*` de `style.css` ; le showroom `/NewNation` colore l'étiquette 3D, l'anneau au sol, le badge et la bordure du panneau selon ce tier.
 - **Les pièces légendaires font exception au budget de triangles** (arowana ~4 600, canne premium ~2 400) : le but est l'effet « WHOAH ». Elles cumulent matériaux émissifs forts (`emit_strength` dans `make_mat`), anneaux de halo au sol, rayons de lumière et étincelles flottantes. Le `preview.png` des légendaires est rendu en EEVEE (lumière réelle) au lieu de Workbench.
+
+## 11. Taille du monde (limites jouables)
+
+- Les limites du monde sont un seul rectangle `bounds`, écrit dans `town.collision.json` **et** `world.manifest.json`. Le jeu pose ses murs invisibles dessus, le serveur socket refuse les positions en dehors (`out_of_world`), et le planificateur `/admin/planner` les dessine.
+- Le monde fait **1 km × 1 km** (de −500 à +500 m sur X et Z autour de la place), pour que les futures zones tiennent dedans sans retoucher la bordure.
+- L'anneau d'horizon (`Sky_Ring`) et le disque de sol (`Ground`) de `town.glb` sont recentrés et agrandis sur ces limites. Au-delà du brouillard (250 m, 120 m en qualité basse) ils se fondent dans la couleur du ciel : le bord du monde se lit comme une brume.
+- Les scripts `apply-*.mjs` ne font que **agrandir** les limites (`min` / `max`), donc les relancer ne réduit jamais le monde.
+
+```bash
+cd front
+npm run world:bounds          # carré de ±500 m (défaut)
+npm run world:bounds -- 800   # autre demi-taille, en mètres
+docker restart campuscove-socket   # le socket relit world.manifest.json au démarrage
+```
+
+La place est entourée d'une haie, ouverte seulement au nord (étang) et au sud (quartier d'affaires) : une nouvelle zone a besoin de sa propre ouverture dans la haie, comme `apply-pond.mjs` / `apply-work-district.mjs`.
+
+**Attention :** le côté est du parc de l'étang n'a qu'une clôture décorative sans collision (`PD_Fence*`, x ≈ 46). Tant que le monde s'arrêtait à x = 75,5 le mur de bordure fermait ce côté ; avec le monde de 1 km, on peut sortir par l'étang (vers x 48, z −37) et marcher dans la plaine vide autour. Une clôture avec collision est à ajouter avant d'ouvrir le jeu au public si on ne veut pas que les joueurs s'y promènent.

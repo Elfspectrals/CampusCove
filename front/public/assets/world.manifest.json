@@ -7,10 +7,10 @@
   ],
   "spawnYaw": 0,
   "bounds": {
-    "minX": -46.4015,
-    "maxX": 75.5,
-    "minZ": -71,
-    "maxZ": 118.31
+    "minX": -500,
+    "maxX": 500,
+    "minZ": -500,
+    "maxZ": 500
   },
   "zones": [
     {
