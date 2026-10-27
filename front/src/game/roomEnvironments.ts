@@ -1,13 +1,13 @@
 import * as THREE from 'three'
 import type { GLTF, GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
-import { findHouse, findWork } from './assets/catalog'
+import { COVE_HOME, findHouse, findWork } from './assets/catalog'
 import { createGltfLoader } from './gltfLoaderFactory'
 import { getGraphicsQuality } from './graphicsQuality'
 import { shareTexturesAcrossModels } from './sharedTextures'
-import { applyInteriorLightmap, openHouseLots, openWorkLots, placeOpenHouseInterior, registerFrontDoor } from './town/openHouses'
+import { applyInteriorLightmap, openHouseLots, openStoreLots, openWorkLots, placeOpenHouseInterior, registerFrontDoor } from './town/openHouses'
 import { animatePondWater } from './town/pondWater'
 import { setTerrainHeightmap, type TerrainHeightmap } from './town/terrainHeight'
-import { fetchWorldManifest, houseBuildings, workBuildings, type WorldManifest, type WorldZone } from './world/worldManifest'
+import { fetchWorldManifest, houseBuildings, storeBuildings, workBuildings, type WorldManifest, type WorldZone } from './world/worldManifest'
 import {
   configureRoomMeshShadows,
   normalizeRoomMaterials,
@@ -107,6 +107,7 @@ export function loadTownEnvironment(): Promise<TownEnvironmentBuildResult> {
       const interiorSources = [
         ...openHouseLots(manifest).map((lot) => ({ lot, asset: findHouse(lot.key) })),
         ...openWorkLots(manifest).map((lot) => ({ lot, asset: findWork(lot.key) })),
+        ...openStoreLots(manifest).map((lot) => ({ lot, asset: COVE_HOME })),
       ]
       const openInteriors = await Promise.all(interiorSources.map(async ({ lot, asset }) => {
         if (!asset) return null
@@ -143,6 +144,23 @@ export function loadTownEnvironment(): Promise<TownEnvironmentBuildResult> {
         }
       }))
       for (const exterior of works) {
+        if (exterior) root.add(exterior)
+      }
+      const stores = await Promise.all(storeBuildings(manifest).map(async (lot) => {
+        try {
+          const gltf = await loader.loadAsync(COVE_HOME.exteriorUrl)
+          const exterior = gltf.scene
+          exterior.name = `StoreExterior_${lot.key}`
+          if (lot.interiorOffset) registerFrontDoor(exterior, lot.key)
+          exterior.position.fromArray(lot.position)
+          exterior.rotation.y = lot.rotationY
+          return exterior
+        } catch (error) {
+          console.warn('[town] store exterior failed to load', lot.key, error)
+          return null
+        }
+      }))
+      for (const exterior of stores) {
         if (exterior) root.add(exterior)
       }
       sanitizeGltfLights(root)

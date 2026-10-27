@@ -47,7 +47,7 @@ typecheck: ## Type-check the front (vue-tsc)
 assets-optimize: ## Optimize Blender exports (map-src/CampusCove/out) into front/public/assets (+ collision JSON)
 	cd front && npm run assets:optimize
 
-store-apply: ## Wire the Cove Home store into the town (collision + town.layout.json), after assets-optimize
+store-apply: ## Wire the Cove Home store into the town (collision + world.manifest.json), after assets-optimize
 	cd front && npm run store:apply
 
 newnation-optimize: ## Rebuild the /NewNation showroom map from map-src/NewNation/

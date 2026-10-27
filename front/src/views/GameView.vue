@@ -17,9 +17,12 @@ import GamePlacementHud from '../components/game/GamePlacementHud.vue'
 import GamePlayerHotbar from '../components/game/GamePlayerHotbar.vue'
 import GamePlayerInventoryPanel from '../components/game/GamePlayerInventoryPanel.vue'
 import GamePointerLockOverlay from '../components/game/GamePointerLockOverlay.vue'
+import GameStoreItemCard from '../components/game/GameStoreItemCard.vue'
+import ItemShopPurchaseConfirmModal from '../components/shop/ItemShopPurchaseConfirmModal.vue'
 import GameRoomMessageBanner from '../components/game/GameRoomMessageBanner.vue'
 import UiIcon from '../components/ui/UiIcon.vue'
 import { useApartmentObjects } from '../composables/game/useApartmentObjects'
+import { useFurnitureStore } from '../composables/game/useFurnitureStore'
 import { useHouseFurniture } from '../composables/game/useHouseFurniture'
 import { useHouseKeys } from '../composables/game/useHouseKeys'
 import { useApartmentPlacement } from '../composables/game/useApartmentPlacement'
@@ -29,6 +32,7 @@ import { useGameRealtime } from '../composables/game/useGameRealtime'
 import { useInteractionTargets } from '../composables/game/useInteractionTargets'
 import { usePlayerInventory } from '../composables/game/usePlayerInventory'
 import { useRoomEnvironment } from '../composables/game/useRoomEnvironment'
+import { useShopPurchase } from '../composables/useShopPurchase'
 import { toggleCollisionDebug } from '../game/collision/collisionDebug'
 import { KEY_BINDINGS } from '../config/keybindings'
 import { getWorldCollisionStats } from '../game/collision/worldCollision'
@@ -36,7 +40,7 @@ import { HOUSING_LOBBY_SPAWN } from '../game/gameRoomConstants'
 import { createGameScene, disposeGameScene, type GameScene } from '../game/gameScene'
 import { createFirstPersonArms } from '../game/firstPersonArms'
 import { createHeldItem } from '../game/heldItem'
-import { findHouse, findWork } from '../game/assets/catalog'
+import { COVE_HOME, findHouse, findWork } from '../game/assets/catalog'
 import { createDoorSigns } from '../game/town/doorSigns'
 import { houseKeyAt, openHouseInterior, updateFrontDoors } from '../game/town/openHouses'
 
@@ -146,6 +150,62 @@ const {
   cancelPlacementPreview: () => placement.cancelPreview(),
 })
 
+// ---------------------------------------------------------------- Cove Home furniture store
+
+const inStore = computed(() => currentHouseKey.value === COVE_HOME.key)
+const furnitureStore = useFurnitureStore({ inStore: () => inStore.value, getCamera, myPosition })
+const { target: storeTarget, currentDepartment: storeDepartment } = furnitureStore
+const storeShop = useShopPurchase()
+const {
+  confirmItem: storeConfirmItem,
+  confirmCurrency: storeConfirmCurrency,
+  confirmOption: storeConfirmOption,
+  confirmCurrent: storeConfirmCurrent,
+  confirmAfter: storeConfirmAfter,
+  purchasingId: storePurchasingId,
+} = storeShop
+const storeFeedback = ref<{ kind: 'success' | 'error'; text: string } | null>(null)
+let storeFeedbackTimer: ReturnType<typeof setTimeout> | undefined
+
+function showStoreFeedback(feedback: { kind: 'success' | 'error'; text: string }): void {
+  storeFeedback.value = feedback
+  clearTimeout(storeFeedbackTimer)
+  storeFeedbackTimer = setTimeout(() => {
+    storeFeedback.value = null
+  }, 4500)
+}
+
+/** Click on a furniture item in the store: the purchase dialog needs the mouse, so pointer lock is released. */
+function openStorePurchase(): void {
+  const target = storeTarget.value
+  if (!target || storeConfirmItem.value) return
+  if (!target.item) {
+    showStoreFeedback({ kind: 'error', text: `${target.name} is not on sale yet.` })
+    return
+  }
+  if (document.pointerLockElement) document.exitPointerLock()
+  storeShop.openPurchaseConfirm(target.item)
+}
+
+async function confirmStorePurchase(): Promise<void> {
+  const item = storeConfirmItem.value
+  if (!item) return
+  await storeShop.confirmPurchase()
+  const feedback = storeShop.feedbackByItem.value[item.item_def_id]
+  if (!feedback) return
+  if (feedback.kind === 'success') {
+    showStoreFeedback({ kind: 'success', text: `${item.name} is in your inventory. Place it at home (E).` })
+    refreshOwnedItems()
+  } else {
+    showStoreFeedback(feedback)
+  }
+}
+
+// Back to mouse look once the purchase dialog closes.
+watch(storeConfirmItem, (item, previous) => {
+  if (!item && previous && !document.pointerLockElement) requestPointerLock()
+})
+
 // ---------------------------------------------------------------- town: houses, doors, environment
 
 const holdingHouseKey = () => selectedItem.value?.code === 'house_key'
@@ -179,6 +239,13 @@ const interactions = useInteractionTargets({
   },
   // Fishing gameplay is not built yet: the spots only show their prompt.
   onFishingSpot: () => window.alert('implement pechee'),
+  storeTarget: () => {
+    const target = storeTarget.value
+    if (!target) return null
+    const detail = target.coins !== null ? `${target.name} · ${target.coins} coins` : target.name
+    return { position: target.tagPosition, detail }
+  },
+  onStoreTarget: openStorePurchase,
 })
 const { doorPrompt } = interactions
 
@@ -201,7 +268,7 @@ watch(() => selectedItem.value?.code ?? null, () => arms?.equip())
 function isBuildingDoorOpen(buildingKey: string): boolean {
   const unit = housing.units.value.find((u) => u.model_key === buildingKey)
   if (unit) return housing.isDoorOpen(unit)
-  return findWork(buildingKey) ? housing.isWorkDoorOpen(buildingKey) : true
+  return findWork(buildingKey) || buildingKey === COVE_HOME.key ? housing.isWorkDoorOpen(buildingKey) : true
 }
 
 const DOOR_SIGN_REFRESH_MS = 30_000
@@ -220,6 +287,8 @@ const environment = useRoomEnvironment({
   onTownLoaded: (manifest) => {
     interactions.setWorldManifest(manifest)
     houseFurniture.onTownReady()
+    const store = openHouseInterior(COVE_HOME.key)
+    if (store) void furnitureStore.attach(store)
   },
   onError: (message) => {
     roomMessage.value = message
@@ -284,6 +353,7 @@ const movement = useGameMovement({
     realtime.tickRemoteAvatars(dt)
     currentHouseKey.value = houseKeyAt(myPosition.x, myPosition.z)
     if (canDecorate.value) placement.tick(dt)
+    furnitureStore.update()
     interactions.updatePrompts()
     houseKeys.updateKeyPrompt()
     updateFrontDoors(dt, isBuildingDoorOpen)
@@ -450,6 +520,7 @@ const crosshairClass = computed(() => {
     <GameHudToolbar
       :position-label="positionLabel"
       :show-graphics-toggle="!pointerLocked"
+      :place-label="inStore ? COVE_HOME.name : undefined"
     />
     <GameInteractionPrompt
       v-if="doorPrompt"
@@ -468,6 +539,20 @@ const crosshairClass = computed(() => {
       :detail-label="keyPrompt.detail"
     />
     <GamePlacementHud :visible="placementPreviewActive" :hints="placementHudHints" />
+    <div
+      v-if="inStore && storeDepartment && !inventoryOpen"
+      class="cc-hud pointer-events-none absolute left-1/2 top-3 z-10 -translate-x-1/2 px-4 py-1.5 font-display text-xs uppercase tracking-[0.2em] text-fog"
+    >
+      <span class="text-sun">Cove Home</span> · {{ storeDepartment }}
+    </div>
+    <GameStoreItemCard v-if="storeTarget && !inventoryOpen" :target="storeTarget" :feedback="storeFeedback" />
+    <p
+      v-else-if="inStore && storeFeedback && !inventoryOpen"
+      class="cc-hud pointer-events-none absolute bottom-24 right-3 z-20 max-w-xs px-3 py-2 text-xs font-bold"
+      :class="storeFeedback.kind === 'success' ? 'text-mint' : 'text-coral'"
+    >
+      {{ storeFeedback.text }}
+    </p>
     <GamePlayerHotbar
       :slots="slots"
       :selected-hotbar-index="selectedHotbarIndex"
@@ -525,5 +610,17 @@ const crosshairClass = computed(() => {
     >
       R = rotate · Shift+R = reverse · LMB = place / pick · RMB = cancel · Esc / E = cancel
     </p>
+    <ItemShopPurchaseConfirmModal
+      v-if="storeConfirmItem"
+      v-model:confirm-currency="storeConfirmCurrency"
+      class="z-[60]"
+      :item="storeConfirmItem"
+      :confirm-current="storeConfirmCurrent"
+      :confirm-after="storeConfirmAfter"
+      :confirm-option="storeConfirmOption"
+      :purchasing-id="storePurchasingId"
+      @close="storeShop.closePurchaseConfirm"
+      @confirm="confirmStorePurchase"
+    />
   </div>
 </template>

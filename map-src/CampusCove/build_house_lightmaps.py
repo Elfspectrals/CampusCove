@@ -11,6 +11,8 @@ Headless only (resets the file for each house):
     --python map-src/CampusCove/build_house_lightmaps.py [-- house_01 house_02 ...]
 Work interiors (raw builds in out/work/<key>/, baked in place, then `npm run assets:optimize -- work`):
     --python map-src/CampusCove/build_house_lightmaps.py -- work [cafe boutique tech_hub]
+Cove Home (raw build in out/store/cove_home/, baked in place, then `npm run assets:optimize -- store`):
+    --python map-src/CampusCove/build_house_lightmaps.py -- store
 """
 import os
 import re
@@ -25,6 +27,12 @@ OUT = os.path.join(HERE, "out", "houses")
 KEYS = [f"house_{i:02d}" for i in range(1, 11)]
 WORK_DIR = os.path.join(HERE, "out", "work")
 WORK_KEYS = ["cafe", "boutique", "tech_hub"]
+STORE_OUT = os.path.join(HERE, "out", "store")
+STORE_KEYS = ["cove_home"]
+STORE_LAMP_POWER_W = 320.0
+STORE_LIGHTMAP_SIZE = 2048
+NOT_A_LAMP = re.compile(r"Beam|Wire")
+LIGHT_PANEL_LINK = 1.6
 
 LIGHTMAP_UV = "Lightmap"
 LIGHTMAP_SIZE = 1024
@@ -34,7 +42,7 @@ BAKE_SAMPLES = 512
 LAMP_POWER_W = 120.0
 LAMP_DROP = 0.2
 SKY_FILL_STRENGTH = 0.35
-UNLIT_NAMES = re.compile(r"^(Sky_|Door_Entrance|Window_.*_Glass|Walls_.*_Glass|Glass_)")
+UNLIT_NAMES = re.compile(r"^(Sky_|Door_Entrance|Window_.*_Glass|Walls_.*_Glass|Glass_|Store_IN_Glass)")
 
 
 def import_glb(path):
@@ -56,20 +64,42 @@ def setup_render():
     scene.world = world
 
 
-def add_lamps(objects):
-    lamps = [o for o in objects if o.name.startswith("Light_")]
-    if not lamps:
-        raise RuntimeError("interior has no Light_* node to bake")
-    for lamp in lamps:
-        center = sum((lamp.matrix_world @ v.co for v in lamp.data.vertices), Vector()) / len(lamp.data.vertices)
-        data = bpy.data.lights.new(f"Bake_{lamp.name}", type="POINT")
-        data.energy = LAMP_POWER_W
+def panel_centers(panel):
+    faces = [(panel.matrix_world @ p.center) for p in panel.data.polygons]
+    parent = list(range(len(faces)))
+
+    def root(i):
+        while parent[i] != i:
+            parent[i] = parent[parent[i]]
+            i = parent[i]
+        return i
+
+    for i, a in enumerate(faces):
+        for j in range(i + 1, len(faces)):
+            if (a - faces[j]).length < LIGHT_PANEL_LINK:
+                parent[root(i)] = root(j)
+    groups = {}
+    for i, c in enumerate(faces):
+        groups.setdefault(root(i), []).append(c)
+    return [sum(g, Vector()) / len(g) for g in groups.values()]
+
+
+def add_lamps(objects, power):
+    lamps = [o for o in objects if o.name.startswith("Light_") and not NOT_A_LAMP.search(o.name)]
+    centers = [sum((lamp.matrix_world @ v.co for v in lamp.data.vertices), Vector()) / len(lamp.data.vertices) for lamp in lamps]
+    for panel in (o for o in objects if o.type == "MESH" and "LightPanel" in o.name):
+        centers += panel_centers(panel)
+    if not centers:
+        raise RuntimeError("interior has no Light_* node or LightPanel mesh to bake")
+    for i, center in enumerate(centers):
+        data = bpy.data.lights.new(f"Bake_Lamp{i:02d}", type="POINT")
+        data.energy = power
         data.color = (1.0, 0.9, 0.78)
         data.shadow_soft_size = 0.25
-        light = bpy.data.objects.new(f"Bake_{lamp.name}", data)
+        light = bpy.data.objects.new(f"Bake_Lamp{i:02d}", data)
         light.location = (center.x, center.y, center.z - LAMP_DROP)
         bpy.context.scene.collection.objects.link(light)
-    return len(lamps)
+    return len(centers)
 
 
 def pack_lightmap_uvs(meshes):
@@ -109,17 +139,17 @@ def bake(meshes, image):
         material.node_tree.nodes.remove(node)
 
 
-def build_interior(key, source_dir, out_dir):
+def build_interior(key, source_dir, out_dir, lamp_power=LAMP_POWER_W, lightmap_size=LIGHTMAP_SIZE):
     objects = import_glb(os.path.join(source_dir, key, "interior.glb"))
     setup_render()
-    lamps = add_lamps(objects)
+    lamps = add_lamps(objects, lamp_power)
     meshes = [o for o in objects if o.type == "MESH" and not UNLIT_NAMES.match(o.name)]
     unlit = [o for o in objects if o.type == "MESH" and UNLIT_NAMES.match(o.name)]
     for obj in unlit:
         obj.hide_render = True
     pack_lightmap_uvs(meshes)
 
-    image = bpy.data.images.new("Lightmap", LIGHTMAP_SIZE, LIGHTMAP_SIZE, float_buffer=True)
+    image = bpy.data.images.new("Lightmap", lightmap_size, lightmap_size, float_buffer=True)
     image.colorspace_settings.name = "Non-Color"
     bake(meshes, image)
     os.makedirs(os.path.join(out_dir, key), exist_ok=True)
@@ -149,13 +179,17 @@ def build_interior(key, source_dir, out_dir):
 
 def main():
     args = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
+    options = {}
     if args[:1] == ["work"]:
         keys, source_dir, out_dir = args[1:] or WORK_KEYS, WORK_DIR, WORK_DIR
+    elif args[:1] == ["store"]:
+        keys, source_dir, out_dir = args[1:] or STORE_KEYS, STORE_OUT, STORE_OUT
+        options = {"lamp_power": STORE_LAMP_POWER_W, "lightmap_size": STORE_LIGHTMAP_SIZE}
     else:
         keys, source_dir, out_dir = args or KEYS, ASSETS, OUT
     for key in keys:
         bpy.ops.wm.read_homefile(use_empty=True)
-        build_interior(key, source_dir, out_dir)
+        build_interior(key, source_dir, out_dir, **options)
 
 
 main()

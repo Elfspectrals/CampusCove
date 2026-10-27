@@ -57,7 +57,7 @@ function processDir(category, dir, rel) {
       continue
     }
     const shipsAsIs = (category === 'work' || category === 'park' || category === 'items' || category === 'store') && (file === 'preview.png' || file.endsWith('.layout.json'))
-    if (shipsAsIs || ((category === 'houses' || category === 'work') && file === 'lightmap.jpg')) {
+    if (shipsAsIs || ((category === 'houses' || category === 'work' || category === 'store') && file === 'lightmap.jpg')) {
       // work buildings / the store ship their preview + layout next to the GLBs
       mkdirSync(join(DEST, category, rel), { recursive: true })
       copyFileSync(full, join(DEST, category, rel, file))
@@ -73,7 +73,7 @@ function processDir(category, dir, rel) {
       continue
     }
     const out = join(DEST, category, rel, file)
-    const walkIn = category === 'houses' || category === 'work'
+    const walkIn = category === 'houses' || category === 'work' || category === 'store'
     const keepNodes = file === 'interior.glb' || file === 'fp_arms.glb' || (walkIn && file === 'exterior.glb')
     const keepLightmapUvs = walkIn && file === 'interior.glb'
     optimizeGlb(full, out, { textureSize: TEXTURE_SIZE[category], keepNodes, keepLightmapUvs })

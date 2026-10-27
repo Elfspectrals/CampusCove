@@ -36,7 +36,7 @@ make up-build
 | `make test` | Tests backend |
 | `make rebuild-socket` | Rebuild Colyseus (pas de volume) |
 | `make assets-optimize` | Assets Blender → `front/public/assets` (+ collisions) |
-| `make store-apply` | Branche le magasin Cove Home dans la ville (collisions + `town.layout.json`) |
+| `make store-apply` | Branche le magasin Cove Home dans la ville (collisions + zone `retail_park` de `world.manifest.json`) |
 | `make newnation-optimize` | Carte du showroom `/NewNation` |
 
 `CURRENCY` : `coins` ou `premium`. Relog après `set-admin`.
@@ -74,12 +74,12 @@ Reconstruire : lancer `build_skins.py`, `build_decor.py`, `build_furniture.py`, 
 
 ```bash
 make assets-optimize      # compression Draco/WebP + collisions (COL_* → *.collision.json)
-make store-apply          # magasin Cove Home → town.collision.json + town.layout.json
+make store-apply          # magasin Cove Home → town.collision.json + world.manifest.json
 make newnation-optimize   # carte New Nation
 make seed-shop            # les 50 meubles (codes decor_*) dans le catalogue
 ```
 
 **Acheter des meubles** : il n'y a plus de boutique web pour les meubles (onglet retiré de la nav, `/shop` redirige vers les skins). On les achète dans `/game` en entrant dans **Cove Home** : parcours fléché au sol (salon → chambre → cuisine → bureau → enfants → salle de bain → rangement → plantes → extérieur → caisses), chaque meuble est exposé avec son étiquette prix ; viser un meuble affiche sa fiche, clic gauche (ou `I`) pour l'acheter. Les modèles exposés sont les mêmes `decor/<clé>/model.glb` que ceux posés dans les maisons (`useFurnitureStore`).
 
-- **`/game`** : la mini-ville avec l'hôtel de ville au centre ; les 10 maisons sont les logements achetables / louables (`housing_units.model_key`). Le magasin Cove Home est au bout est de la place du quartier d'affaires (porte `cove_home` dans `socket/src/config.js` → `WORK_DOORS`).
+- **`/game`** : la mini-ville avec l'hôtel de ville au centre ; les 10 maisons sont les logements achetables / louables (`housing_units.model_key`). Le magasin Cove Home est au bout est de la place du quartier d'affaires : on y entre à pied par sa porte publique (bâtiment `store` de la zone `retail_park` du manifeste).
 - **`/NewNation`** : showroom 3D des articles de la boutique + 4 maisons témoins visitables (Maple Cottage, Mint Villa, Neon Loft, Terracotta Casa). Mode marche (WASD, glisser ou Q/E pour tourner, N/B pour changer de maison) et mini-carte cliquable.

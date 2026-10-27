@@ -140,18 +140,18 @@ export function findWork(key: string | null | undefined): WorkAsset | null {
 /**
  * Cove Home, the furniture store east of the business-district plaza: furniture is bought by walking its
  * showroom (no web shop). Built by map-src/CampusCove/build_store.py + build_store_ext.py → public/assets/store/.
- * Entered like a work building (socket `enter_work`, key `cove_home`). `interior.layout.json` lists the displays
- * (decor model + price tag per shop code), see `StoreLayout`.
+ * Walked into like the work buildings (public door, never locked; world.manifest.json zone `retail_park`).
+ * `interior.layout.json` lists the displays (decor model + price tag per shop code), see `StoreLayout`.
  */
 export const COVE_HOME = {
   key: 'cove_home',
   name: 'Cove Home',
   exteriorUrl: `${ROOT}/store/cove_home/exterior.glb`,
+  exteriorCollisionUrl: `${ROOT}/store/cove_home/exterior.collision.json`,
   interiorUrl: `${ROOT}/store/cove_home/interior.glb`,
   interiorCollisionUrl: `${ROOT}/store/cove_home/interior.collision.json`,
+  interiorLightmapUrl: `${ROOT}/store/cove_home/lightmap.jpg`,
   interiorLayoutUrl: `${ROOT}/store/cove_home/interior.layout.json`,
-  /** Retail park scenery around the store (plaza extension, hedges, pylon sign), in town space. */
-  parkModelUrl: `${ROOT}/store/park/park.glb`,
 } as const
 
 /** Furniture model shown in the store and placed in houses: public/assets/decor/<key>/model.glb. */

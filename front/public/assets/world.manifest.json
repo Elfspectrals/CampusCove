@@ -8,9 +8,9 @@
   "spawnYaw": 0,
   "bounds": {
     "minX": -46.4015,
-    "maxX": 46.4015,
+    "maxX": 75.5,
     "minZ": -71,
-    "maxZ": 74
+    "maxZ": 118.31
   },
   "zones": [
     {
@@ -535,6 +535,44 @@
         ],
         "yaw": -1.5708
       }
+    },
+    {
+      "key": "retail_park",
+      "optional": true,
+      "bounds": {
+        "minX": 29.3,
+        "maxX": 75.5,
+        "minZ": 47,
+        "maxZ": 118.31
+      },
+      "modelUrl": "/assets/store/park/park.glb",
+      "buildings": [
+        {
+          "kind": "store",
+          "key": "cove_home",
+          "name": "Cove Home",
+          "position": [
+            52,
+            0,
+            65
+          ],
+          "rotationY": 3.141592653589793,
+          "door": [
+            52,
+            1.25,
+            56
+          ],
+          "footprint": [
+            34,
+            55.81000000000001
+          ],
+          "interiorOffset": [
+            0,
+            0.2,
+            3.595
+          ]
+        }
+      ]
     }
   ]
 }

@@ -364,10 +364,13 @@ assert not bad, bad
 
 # fewer draw calls: one object per material (collision boxes stay separate)
 by_mat = {}
+merged = []
 for o in objs:
+    if o.name.startswith(("Door_Entrance", "Sky_")):
+        merged.append(o)
+        continue
     m = o.data.materials[0].name if o.type == "MESH" and o.data.materials else "none"
     by_mat.setdefault(m, []).append(o)
-merged = []
 for m, group in by_mat.items():
     merged.append(L.join(coll, f"Store_{m}", group) if len(group) > 1 else group[0])
 

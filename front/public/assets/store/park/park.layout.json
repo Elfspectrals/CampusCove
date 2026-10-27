@@ -1,7 +1,8 @@
 {
   "version": 1,
   "bounds": {
-    "maxX": 75.5
+    "maxX": 75.5,
+    "maxZ": 118.31
   },
   "store": {
     "key": "cove_home",
@@ -15,11 +16,16 @@
     "door": [
       52.0,
       1.25,
-      51.6
+      56.0
     ],
     "footprint": [
       34.0,
-      18.0
+      55.81000000000001
+    ],
+    "interiorOffset": [
+      0.0,
+      0.2,
+      3.595
     ]
   },
   "collision": [
@@ -46,9 +52,39 @@
     {
       "name": "COL_Store_SP_HedgeEast",
       "cx": 74.9,
-      "cz": 60.85,
+      "cz": 82.755,
       "hx": 0.45,
-      "hz": 13.15,
+      "hz": 35.055,
+      "hy": 0.8,
+      "cy": 0.8,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Store_SP_HedgeBack",
+      "cx": 52.75,
+      "cz": 117.81,
+      "hx": 22.15,
+      "hz": 0.45,
+      "hy": 0.8,
+      "cy": 0.8,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Store_SP_HedgeWestBack",
+      "cx": 30.6,
+      "cz": 87.405,
+      "hx": 0.45,
+      "hz": 30.405,
+      "hy": 0.8,
+      "cy": 0.8,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Store_SP_HedgeDistrictBack",
+      "cx": -7.9,
+      "cz": 74.2,
+      "hx": 38.5,
+      "hz": 0.45,
       "hy": 0.8,
       "cy": 0.8,
       "yaw": 0.0
@@ -124,20 +160,20 @@
       "yaw": 0.0
     },
     {
-      "name": "COL_Store_Body",
-      "cx": 52.0,
-      "cz": 65.0,
-      "hx": 17.2,
-      "hz": 9.2,
-      "hy": 4.25,
-      "cy": 4.25,
+      "name": "COL_Store_VestSide-1",
+      "cx": 55.0,
+      "cz": 54.4,
+      "hx": 0.15,
+      "hz": 1.6,
+      "hy": 1.9,
+      "cy": 1.9,
       "yaw": 0.0
     },
     {
-      "name": "COL_Store_Vestibule",
-      "cx": 52.0,
+      "name": "COL_Store_VestSide+1",
+      "cx": 49.0,
       "cz": 54.4,
-      "hx": 3.2,
+      "hx": 0.15,
       "hz": 1.6,
       "hy": 1.9,
       "cy": 1.9,

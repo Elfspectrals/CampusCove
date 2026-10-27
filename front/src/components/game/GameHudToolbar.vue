@@ -6,6 +6,8 @@ defineProps<{
   positionLabel: string
   /** The quality toggle is only clickable while the pointer is free. */
   showGraphicsToggle: boolean
+  /** Name of the public building the player is in (e.g. "Cove Home"), instead of "Campus Town". */
+  placeLabel?: string
 }>()
 
 const graphicsQualityLabel = getGraphicsQuality() === 'low' ? 'Low' : 'High'
@@ -21,7 +23,7 @@ function onToggleGraphicsQuality(): void {
   <div class="pointer-events-auto absolute left-3 top-3 z-10 flex flex-wrap items-center gap-2">
     <span class="cc-hud inline-flex items-center gap-2 px-3 py-1.5 font-display text-sm tracking-wide">
       <UiIcon name="map" :size="16" class="text-sun" />
-      Campus Town
+      {{ placeLabel ?? 'Campus Town' }}
     </span>
     <span class="cc-hud px-2.5 py-1.5 font-mono text-[11px] text-mist" title="Player world coordinates">
       XYZ {{ positionLabel }}

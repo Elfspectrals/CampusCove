@@ -14,6 +14,8 @@ export interface StoreTarget {
   name: string
   departmentLabel: string
   coins: number | null
+  /** World position of the price tag (prompt anchor). */
+  tagPosition: [number, number, number]
 }
 
 export interface FurnitureStoreDeps {
@@ -32,8 +34,9 @@ const CLOSE_ANGLE = 0.7
 interface DisplayRuntime {
   display: StoreDisplay
   tag: ReturnType<typeof createPriceTag>
-  /** Look-at point (middle of the model). */
+  /** Look-at point (middle of the model), world space. */
   center: THREE.Vector3
+  tagPosition: [number, number, number]
 }
 
 function prettyName(key: string): string {
@@ -120,14 +123,25 @@ export function useFurnitureStore(deps: FurnitureStoreDeps) {
     const displays = new THREE.Group()
     displays.name = 'StoreDisplays'
     group.add(displays)
+    const tags: ReturnType<typeof createPriceTag>[] = []
     for (const display of storeLayout.displays) {
       const tag = createPriceTag(tagContent(display))
+      tags.push(tag)
       tag.object.position.fromArray(display.tag.position)
       tag.object.rotation.y = display.tag.yaw
       displays.add(tag.object)
-      const [x, y, z] = display.position
-      runtimes.push({ display, tag, center: new THREE.Vector3(x, y + display.size[1] / 2, z) })
     }
+    group.updateWorldMatrix(true, true)
+    storeLayout.displays.forEach((display, i) => {
+      const [x, y, z] = display.position
+      const tag = tags[i]!
+      runtimes.push({
+        display,
+        tag,
+        center: new THREE.Vector3(x, y + display.size[1] / 2, z).applyMatrix4(group.matrixWorld),
+        tagPosition: tag.object.getWorldPosition(new THREE.Vector3()).toArray(),
+      })
+    })
     await Promise.all(storeLayout.displays.map((d) => placeModel(displays, d)))
   }
 
@@ -146,6 +160,7 @@ export function useFurnitureStore(deps: FurnitureStoreDeps) {
       name: item?.name ?? prettyName(next.display.key),
       departmentLabel: departmentLabels.value.get(next.display.department) ?? next.display.department,
       coins: coinsPrice(item),
+      tagPosition: next.tagPosition,
     }
   }
 

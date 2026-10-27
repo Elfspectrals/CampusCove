@@ -33,7 +33,18 @@ export interface WorkBuilding {
   interiorOffset?: Vec3
 }
 
-type Building = HouseBuilding | WorkBuilding
+export interface StoreBuilding {
+  kind: 'store'
+  key: 'cove_home'
+  name: string
+  position: Vec3
+  rotationY: number
+  door: Vec3
+  footprint: [number, number]
+  interiorOffset?: Vec3
+}
+
+type Building = HouseBuilding | WorkBuilding | StoreBuilding
 
 export interface FishingSpot {
   id: string
@@ -82,6 +93,10 @@ export function houseBuildings(manifest: WorldManifest): HouseBuilding[] {
 
 export function workBuildings(manifest: WorldManifest): WorkBuilding[] {
   return buildings(manifest).filter((b): b is WorkBuilding => b.kind === 'work')
+}
+
+export function storeBuildings(manifest: WorldManifest): StoreBuilding[] {
+  return buildings(manifest).filter((b): b is StoreBuilding => b.kind === 'store')
 }
 
 export function fishingSpots(manifest: WorldManifest): FishingSpot[] {

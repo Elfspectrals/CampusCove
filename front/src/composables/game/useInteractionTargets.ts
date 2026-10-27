@@ -8,7 +8,13 @@ import {
   type HousingAction,
   type HousingUnit,
 } from '../../game/town/housing'
-import { fishingSpots as manifestFishingSpots, workBuildings, type WorldManifest } from '../../game/world/worldManifest'
+import {
+  fishingSpots as manifestFishingSpots,
+  storeBuildings,
+  workBuildings,
+  type StoreBuilding,
+  type WorldManifest,
+} from '../../game/world/worldManifest'
 import { findNearestWorkDoor, type WorkLot } from '../../game/town/workBuildings'
 
 export interface ScreenPrompt {
@@ -28,19 +34,24 @@ export interface InteractionTargetsDeps {
   housingUnits: Ref<HousingUnit[]>
   nearbyHousingUnit: Ref<HousingUnit | null>
   housingActionFor: (unit: HousingUnit) => HousingAction | null
-  isWorkDoorOpen: (lot: WorkLot) => boolean
+  isWorkDoorOpen: (lot: PublicLot) => boolean
   onHousingDoor: () => void
-  onWorkDoor: (lot: WorkLot) => void
+  onWorkDoor: (lot: PublicLot) => void
   onFishingSpot: (spot: FishingSpot) => void
+  /** Inside Cove Home: the item being looked at (its price-tag anchor + prompt text), and buying it. */
+  storeTarget: () => { position: [number, number, number]; detail: string } | null
+  onStoreTarget: () => void
 }
+
+type PublicLot = WorkLot | StoreBuilding
 
 /**
  * What the player can interact with where they stand (a house door, a work building door or a fishing spot, in
  * that priority), the left-click / I action on it, and the prompt bubbles projected on screen above it.
  */
 export function useInteractionTargets(deps: InteractionTargetsDeps) {
-  const workLots = ref<WorkLot[]>([])
-  const nearbyWork = ref<WorkLot | null>(null)
+  const workLots = ref<PublicLot[]>([])
+  const nearbyWork = ref<PublicLot | null>(null)
   const fishingSpots = ref<FishingSpot[]>([])
   const nearbyFishingSpot = ref<FishingSpot | null>(null)
   const doorPrompt = ref<ScreenPrompt | null>(null)
@@ -48,7 +59,7 @@ export function useInteractionTargets(deps: InteractionTargetsDeps) {
 
   /** The world manifest lists the work buildings and the pond's fishing spots. */
   function setWorldManifest(manifest: WorldManifest): void {
-    workLots.value = workBuildings(manifest)
+    workLots.value = [...workBuildings(manifest), ...storeBuildings(manifest)]
     fishingSpots.value = manifestFishingSpots(manifest)
   }
 
@@ -64,6 +75,10 @@ export function useInteractionTargets(deps: InteractionTargetsDeps) {
   function tryInteract(): boolean {
     // Recompute on the input itself so it works even if the last movement frame was skipped.
     updateProximity()
+    if (deps.storeTarget()) {
+      deps.onStoreTarget()
+      return true
+    }
     const work = nearbyWork.value
     const spot = nearbyFishingSpot.value
     if (deps.nearbyHousingUnit.value) deps.onHousingDoor()
@@ -88,6 +103,12 @@ export function useInteractionTargets(deps: InteractionTargetsDeps) {
 
   function currentPrompt(): ScreenPrompt | null {
     if (deps.promptsHidden()) return null
+    const item = deps.storeTarget()
+    if (item) {
+      const [tx, ty, tz] = item.position
+      const screen = projectToScreen(tx, ty + 0.55, tz)
+      return screen && { ...screen, action: 'Buy', detail: item.detail }
+    }
     const unit = deps.nearbyHousingUnit.value
     if (unit) {
       const action = deps.housingActionFor(unit)

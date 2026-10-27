@@ -24,7 +24,7 @@ function parseWorld(manifest) {
           interiorOffset: parseVec3(building.interiorOffset, `interiorOffset of ${building.key}`)
         })
       }
-      if (building.kind !== 'work') continue
+      if (building.kind !== 'work' && building.kind !== 'store') continue
       const door = parseVec3(building.door, `door of ${building.key}`)
       workDoors.set(building.key, { x: door.x, z: door.z })
     }
@@ -42,7 +42,7 @@ export async function loadWorld() {
       const res = await fetch(WORLD_MANIFEST_URL)
       if (!res.ok) throw new Error(`${WORLD_MANIFEST_URL} answered ${res.status}`)
       world = parseWorld(await res.json())
-      console.log(`[world] manifest loaded from ${WORLD_MANIFEST_URL}: ${world.workDoors.size} work buildings, ${world.houses.size} houses`)
+      console.log(`[world] manifest loaded from ${WORLD_MANIFEST_URL}: ${world.workDoors.size} public buildings, ${world.houses.size} houses`)
       return
     } catch (error) {
       lastError = error

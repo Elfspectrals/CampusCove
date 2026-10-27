@@ -25,6 +25,7 @@ KEY = "cove_home"
 OUT = os.path.join(L.OUT_ROOT, "store", KEY)
 OUT_PARK = os.path.join(L.OUT_ROOT, "store", "park")
 W, D, HB = 34.0, 18.0, 8.5
+INTERIOR_BACK_OUTER_Z = -50.2
 hw, hd = W / 2, D / 2
 STORE_POS = (52.0, 65.0)
 VEST_D = 3.2  # glass entrance vestibule depth
@@ -46,10 +47,19 @@ E = {
     "red": L.make_mat("EX_CartRed", "#d9473a", 0.6, "noise", 0.02),
 }
 xo = []
-xo.append(L.box(coll, "EX_Plinth", 0, 0, 0.0, W + 0.4, D + 0.4, 0.2, E["found"], bevel=0.02, tile=2.0))
-xo.append(L.box(coll, "EX_Walls", 0, 0, 0.2, W, D, HB - 0.2, E["blue"], tile=1.5))
-xo.append(L.box(coll, "EX_Band", 0, 0, HB - 1.1, W + 0.12, D + 0.12, 0.8, E["yellow"], tile=2.0))
-xo.append(L.box(coll, "EX_Roof", 0, 0, HB, W + 0.5, D + 0.5, 0.3, E["roof"], tile=3.0))
+cols_e = L.Collisions(coll)
+SHELL_H = 6.4
+WINDOWS = ((-12.0, -3.0), (3.0, 12.0))
+WIN_Y = (0.9, 3.6)
+shell, interior_offset, zb = L.walk_in_shell(coll, cols_e, W, hd, SHELL_H, E["blue"], E["glass"],
+                                             [(a, b, *WIN_Y) for a, b in WINDOWS], [], [], interior_back=INTERIOR_BACK_OUTER_Z)
+xo += shell
+DN = hd - zb
+zc = (hd + zb) / 2
+xo.append(L.box(coll, "EX_Plinth", 0, zc, 0.0, W + 0.4, DN + 0.4, 0.19, E["found"], bevel=0.02, tile=2.0))
+xo.append(L.box(coll, "EX_Walls", 0, zc, SHELL_H, W, DN, HB - SHELL_H, E["blue"], tile=1.5))
+xo.append(L.box(coll, "EX_Band", 0, zc, HB - 1.1, W + 0.12, DN + 0.12, 0.8, E["yellow"], tile=2.0))
+xo.append(L.box(coll, "EX_Roof", 0, zc, HB, W + 0.5, DN + 0.5, 0.3, E["roof"], tile=3.0))
 # front lettering + logo badge
 xo.append(L.text_mesh(coll, "EX_SignText", "COVE HOME", 3.0, hd + 0.06, 4.0, 2.4, 0.12, E["sign"]))
 xo.append(L.box(coll, "EX_LogoBadge", -12.3, hd + 0.05, 3.8, 3.0, 0.1, 3.0, E["yellow"], bevel=0.1))
@@ -57,19 +67,22 @@ xo.append(L.text_mesh(coll, "EX_LogoText", "CH", -12.3, hd + 0.12, 4.55, 1.5, 0.
 # entrance vestibule (glass box with a yellow frame) + canopy
 zf = hd + VEST_D
 xo.append(L.box(coll, "EX_VestFloor", 0, hd + VEST_D / 2, 0.0, 7.0, VEST_D, 0.22, E["found"]))
-xo.append(L.box(coll, "EX_VestFront", 0, zf, 0.2, 6.0, 0.08, 3.4, E["glass"]))
 for sx in (-1, 1):
     xo.append(L.box(coll, f"EX_VestSide{sx:+d}", sx * 3.0, hd + VEST_D / 2, 0.2, 0.08, VEST_D, 3.4, E["glass"]))
     xo.append(L.box(coll, f"EX_VestPost{sx:+d}", sx * 3.0, zf, 0.2, 0.25, 0.25, 3.6, E["yellow"]))
 xo.append(L.box(coll, "EX_VestTop", 0, hd + VEST_D / 2, 3.6, 6.5, VEST_D + 0.3, 0.3, E["yellow"]))
 xo.append(L.box(coll, "EX_Canopy", 0, zf + 1.0, 3.9, 9.0, 2.6, 0.2, E["blue"]))
-xo.append(L.box(coll, "EX_DoorGlass", 0, zf + 0.05, 0.2, 2.4, 0.06, 2.6, E["frame"]))
-xo.append(L.box(coll, "EX_DoorPane", 0, zf + 0.09, 0.3, 2.2, 0.04, 2.4, E["glass"]))
-# glazing either side of the entrance
-for sx in (-1, 1):
-    cx = sx * 8.0
-    xo.append(L.box(coll, f"EX_Window{sx:+d}", cx, hd + 0.04, 0.4, 7.0, 0.06, 2.6, E["glass"]))
-    xo.append(L.box(coll, f"EX_WindowFrame{sx:+d}", cx, hd + 0.06, 3.0, 7.2, 0.08, 0.15, E["frame"]))
+xo.append(L.hinged_door(coll, [
+    (0, 0.0, 1.18, 0.06, 2.18, E["glass"], 0.0),
+    (0, 0.0, 1.18, 0.08, 0.1, E["frame"], 0.0),
+    (0, 2.08, 1.18, 0.08, 0.1, E["frame"], 0.0),
+    (0.45, 0.95, 0.05, 0.14, 0.05, E["metal"], 0.0),
+], -0.59, hd - 0.1, 0.2))
+xo.append(L.box(coll, "EX_DoorFrame", 0, hd + 0.04, 2.4, 1.44, 0.1, 0.12, E["frame"]))
+for i, (x0, x1) in enumerate(WINDOWS):
+    cx = (x0 + x1) / 2
+    xo.append(L.box(coll, f"EX_WindowTop{i}", cx, hd + 0.06, WIN_Y[1] + 0.2, x1 - x0 + 0.2, 0.08, 0.15, E["frame"]))
+    xo.append(L.box(coll, f"EX_WindowSill{i}", cx, hd + 0.06, WIN_Y[0] + 0.05, x1 - x0 + 0.2, 0.12, 0.15, E["frame"]))
 # cart shelter (east of the door)
 xo.append(L.box(coll, "EX_CartRoof", 11.5, hd + 3.0, 2.4, 5.0, 2.4, 0.12, E["yellow"]))
 for px in (9.2, 13.8):
@@ -84,11 +97,12 @@ for i in range(6):
 for i, gx in enumerate((-16.0, -14.6, -13.2)):
     xo.append(L.cyl(coll, f"EX_FlagPole{i}", gx, hd + 6.0, 0.0, 0.06, 7.5, E["white"], seg=6))
     xo.append(L.box(coll, f"EX_Flag{i}", gx + 0.75, hd + 6.0, 5.9, 1.4, 0.03, 1.0, E["yellow"] if i % 2 == 0 else E["blue"]))
-bad = L.check_grounded(xo, allow=("EX_Walls", "EX_Band", "EX_Roof", "EX_Sign", "EX_Logo", "EX_Vest", "EX_Canopy", "EX_Door", "EX_Window", "EX_CartRoof", "EX_Flag"))
+bad = L.check_grounded(xo, allow=("EX_Shell", "EX_Walls", "EX_Band", "EX_Roof", "EX_Sign", "EX_Logo", "EX_Vest", "EX_Canopy", "Door", "EX_Door", "EX_Window", "EX_CartRoof", "EX_Flag"))
 print("EXTERIOR grounded violations:", bad)
 assert not bad, bad
 L.export_glb(os.path.join(OUT, "exterior.glb"), xo)
-door_local = [0.0, 1.25, round(zf + 1.2, 3)]
+L.export_glb(os.path.join(OUT, "exterior.colsrc.glb"), xo + cols_e.items)
+door_local = [0.0, 1.25, hd]
 L.snapshot(sc, os.path.join(OUT, "preview.png"), (-18, 7, hd + 26), (0, 3.5, 0), lens=28, res=(768, 512))
 
 # ================================================================ RETAIL PARK (world frame)
@@ -116,7 +130,8 @@ def add_col(name, gx, gz, sx, sz, h):
     col.append({"name": name, "cx": round(gx, 3), "cz": round(gz, 3), "hx": round(sx / 2, 3), "hz": round(sz / 2, 3), "hy": round(h / 2, 3), "cy": round(h / 2, 3), "yaw": 0.0})
 
 
-po.append(L.box(pc, "SP_Grass", 52.0, 61.0, 0.0, 46.0, 28.0, 0.02, P["grass"], tile=2.0))
+PARK_MAX_Z = STORE_POS[1] - zb + 6.0
+po.append(L.box(pc, "SP_Grass", 52.0, (47.0 + PARK_MAX_Z) / 2, 0.0, 46.0, PARK_MAX_Z - 47.0, 0.02, P["grass"], tile=2.0))
 po.append(L.box(pc, "SP_Plaza", 51.9, 52.0, 0.0, 45.2, 8.0, 0.04, P["paving"], tile=2.0))
 po.append(L.box(pc, "SP_CurbN", 51.9, 48.0, 0.0, 45.2, 0.3, 0.1, P["curb"]))
 po.append(L.box(pc, "SP_CurbE", 74.4, 52.0, 0.0, 0.3, 8.0, 0.1, P["curb"]))
@@ -136,7 +151,10 @@ def hedge(name, x0, z0, x1, z1):
 
 hedge("SP_HedgeWest", 30.6, 33.8, 30.6, 47.7)
 hedge("SP_HedgeNorth", 30.6, 47.7, 74.9, 47.7)
-hedge("SP_HedgeEast", 74.9, 47.7, 74.9, 74.0)
+hedge("SP_HedgeEast", 74.9, 47.7, 74.9, PARK_MAX_Z)
+hedge("SP_HedgeBack", 30.6, PARK_MAX_Z, 74.9, PARK_MAX_Z)
+hedge("SP_HedgeWestBack", 30.6, 57.0, 30.6, PARK_MAX_Z)
+hedge("SP_HedgeDistrictBack", -46.4, 74.2, 30.6, 74.2)
 
 # lamps + trees along the plaza
 for i, gx in enumerate((37.0, 46.0, 58.0, 67.0)):
@@ -165,23 +183,23 @@ bad = L.check_grounded(po, allow=("SP_Grass", "SP_Plaza", "SP_Curb", "SP_Bay", "
 print("PARK grounded violations:", bad)
 assert not bad, bad
 
-# store body collision (rotation pi keeps it axis aligned) + vestibule
 sx, sz = STORE_POS
-add_col("COL_Store_Body", sx, sz, W + 0.4, D + 0.4, HB)
-add_col("COL_Store_Vestibule", sx, sz - hd - VEST_D / 2, 6.4, VEST_D, 3.8)
+for side in (-1, 1):
+    add_col(f"COL_Store_VestSide{side:+d}", sx - side * 3.0, sz - hd - VEST_D / 2, 0.3, VEST_D, 3.8)
 add_col("COL_Store_CartShelter", sx - 11.5, sz - hd - 3.0, 5.0, 2.4, 2.4)
 add_col("COL_Store_Flags", sx + 14.6, sz - hd - 6.0, 3.2, 0.4, 7.5)
 
 L.export_glb(os.path.join(OUT_PARK, "park.glb"), po)
 L.write_json(os.path.join(OUT_PARK, "park.layout.json"), {
     "version": 1,
-    "bounds": {"maxX": 75.5},
+    "bounds": {"maxX": 75.5, "maxZ": round(PARK_MAX_Z + 0.5, 3)},
     "store": {
         "key": KEY, "name": "Cove Home",
         "position": [sx, 0.0, sz], "rotationY": math.pi,
         # local +Z -> world -Z
         "door": [round(sx - door_local[0], 3), door_local[1], round(sz - door_local[2], 3)],
-        "footprint": [W, D],
+        "footprint": [W, DN],
+        "interiorOffset": [round(c, 4) for c in interior_offset],
     },
     "collision": col,
 })

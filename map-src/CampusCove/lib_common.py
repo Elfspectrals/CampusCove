@@ -488,10 +488,10 @@ SHELL_GAP = 0.005
 DOOR_OPENING = (-0.6, 0.6, 0.0, 2.2)
 
 
-def walk_in_shell(coll, cols, W, zf, H, mat, glass, front, west, east):
+def walk_in_shell(coll, cols, W, zf, H, mat, glass, front, west, east, interior_back=INTERIOR_BACK_OUTER_Z):
     t = SHELL_THICKNESS
     oz = zf - t - SHELL_GAP - INTERIOR_FRONT_OUTER_Z
-    zb = oz + INTERIOR_BACK_OUTER_Z - SHELL_GAP - t
+    zb = oz + interior_back - SHELL_GAP - t
     fy = INTERIOR_FLOOR_Y
     lift = lambda y: y + fy if y > 0.01 else 0.0
     front_ops = [(a, bb, lift(y0), y1 + fy) for a, bb, y0, y1 in [*front, DOOR_OPENING]]
