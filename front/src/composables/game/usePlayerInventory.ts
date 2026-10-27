@@ -202,7 +202,7 @@ export function usePlayerInventory(deps: UsePlayerInventoryDeps) {
     scheduleDebouncedSave()
     const code = slots.value[i] ?? ''
 
-    if (!deps.canDecorate.value || itemByCode.value[code]?.kind === 'tool') {
+    if (itemByCode.value[code]?.kind === 'tool') {
       cancelPlacementPreviewInternal()
       return
     }

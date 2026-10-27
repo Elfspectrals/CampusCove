@@ -352,7 +352,7 @@ const movement = useGameMovement({
     positionLabel.value = formatPosition()
     realtime.tickRemoteAvatars(dt)
     currentHouseKey.value = houseKeyAt(myPosition.x, myPosition.z)
-    if (canDecorate.value) placement.tick(dt)
+    placement.tick(dt)
     furnitureStore.update()
     interactions.updatePrompts()
     houseKeys.updateKeyPrompt()

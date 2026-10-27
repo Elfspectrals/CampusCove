@@ -71,6 +71,9 @@ let characterController: RAPIER.KinematicCharacterController | null = null
 let playerBody: RAPIER.RigidBody | null = null
 let playerCollider: Collider | null = null
 const doorBlockers = new Map<string, RAPIER.RigidBody>()
+/** Placed furniture boxes, kept across rebuilds of the world (the bodies are re-created from these). */
+const propBlockerShapes = new Map<string, CollisionCuboidJson>()
+const propBlockers = new Map<string, RAPIER.RigidBody>()
 
 const desiredDelta = new RAPIER.Vector3(0, 0, 0)
 
@@ -206,6 +209,7 @@ function disposeWorld(): void {
   characterController = null
   collidersReady = false
   doorBlockers.clear()
+  propBlockers.clear()
 }
 
 async function buildFromCollisionData(url: string, data: CollisionFileJson): Promise<void> {
@@ -231,6 +235,10 @@ async function buildFromCollisionData(url: string, data: CollisionFileJson): Pro
 
   if (data.borders && data.bounds) {
     addBorderWalls(w, data.bounds)
+  }
+
+  for (const [key, c] of propBlockerShapes) {
+    propBlockers.set(key, addFixedCuboid(w, c.cx, c.cy, c.cz, c.hx, c.hy, c.hz, c.qx, c.qy, c.qz, c.qw))
   }
 
   w.step()
@@ -346,6 +354,31 @@ export function setDoorBlocker(key: string, cuboid: CollisionCuboidJson | null):
     doorBlockers.set(key, addFixedCuboid(world, c.cx, c.cy, c.cz, c.hx, c.hy, c.hz, c.qx, c.qy, c.qz, c.qw))
   }
   world.step()
+}
+
+/** Block the player with a placed piece of furniture (`null` removes it, e.g. picked up or being moved). */
+export function setPropBlocker(key: string, cuboid: CollisionCuboidJson | null): void {
+  const existing = propBlockers.get(key)
+  if (existing && world) world.removeRigidBody(existing)
+  propBlockers.delete(key)
+  if (cuboid === null) propBlockerShapes.delete(key)
+  else propBlockerShapes.set(key, cuboid)
+  if (!world || !collidersReady) return
+  if (cuboid) {
+    const c = cuboid
+    propBlockers.set(key, addFixedCuboid(world, c.cx, c.cy, c.cz, c.hx, c.hy, c.hz, c.qx, c.qy, c.qz, c.qw))
+  }
+  world.step()
+}
+
+/** Would this box overlap the player's capsule where it last stood? */
+export function cuboidOverlapsPlayer(c: CollisionCuboidJson): boolean {
+  if (!playerCollider || !playerCollider.isValid()) return false
+  return playerCollider.intersectsShape(
+    new RAPIER.Cuboid(c.hx, c.hy, c.hz),
+    new RAPIER.Vector3(c.cx, c.cy, c.cz),
+    new RAPIER.Quaternion(c.qx, c.qy, c.qz, c.qw),
+  )
 }
 
 export function getWorldCollisionStats(): Readonly<WorldCollisionStats> {

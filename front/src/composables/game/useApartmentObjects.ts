@@ -8,6 +8,7 @@ import {
 } from '../../game/gameRoomConstants'
 import type { ApartmentObjectPayload } from '../../types/gameRealtime'
 import { disposeObject3D } from '../../avatar/compositeAvatar'
+import { syncPropBlocker } from '../../game/collision/propBlocker'
 
 export interface ApartmentObjectsDeps {
   getScene: () => THREE.Scene | undefined
@@ -103,6 +104,9 @@ export function useApartmentObjects(deps: ApartmentObjectsDeps) {
     visual.position.set(0, -0.5, 0)
     anchor.add(visual)
     setAnchorCubeVisible(anchor, false, colorHex)
+    // the model's own box replaces the anchor cube's
+    const objectId = anchor.userData.apartmentObjectId as string
+    if (apartmentObjects.get(objectId) === anchor) syncPropBlocker(objectId, anchor)
   }
 
   /** Server-driven upsert (apartment init or broadcast); also the reference transform for persistence dedupe. */
@@ -137,12 +141,16 @@ export function useApartmentObjects(deps: ApartmentObjectsDeps) {
       selectedPlacedObjectId.value = payload.objectId
     }
     lastPersistedByObjectId.set(payload.objectId, payload)
+    syncPropBlocker(payload.objectId, mesh)
     deps.onMeshUpserted(mesh)
   }
 
   function clearApartmentObjects() {
     const ids = [...apartmentObjects.keys()]
-    for (const objectId of ids) deps.onMeshRemoved(objectId)
+    for (const objectId of ids) {
+      deps.onMeshRemoved(objectId)
+      syncPropBlocker(objectId, null)
+    }
     for (const mesh of apartmentObjects.values()) {
       mesh.removeFromParent()
       disposeObject3D(mesh)

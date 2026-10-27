@@ -3,7 +3,8 @@ import type { Room } from '@colyseus/sdk'
 import * as THREE from 'three'
 import { matchesRotateCCW, matchesRotateCW } from '../../config/keybindings'
 import { createPlacementGhost, DEFAULT_GHOST_COLOR } from '../../game/placement/placementGhost'
-import { fetchCollisionFile, type CollisionFileJson } from '../../game/collision/worldCollision'
+import { cuboidOverlapsPlayer, fetchCollisionFile, type CollisionFileJson } from '../../game/collision/worldCollision'
+import { propCuboidOf, syncPropBlocker } from '../../game/collision/propBlocker'
 import { apartmentObjectIdOf, createPlacementPhysics } from '../../game/placement/placementPhysics'
 import type { ApartmentEnvironmentBuildResult } from '../../game/roomEnvironments'
 import { APARTMENT_ROOM_HEIGHT } from '../../game/gameRoomConstants'
@@ -14,6 +15,8 @@ const ROT_TAU_S = 0.028
 const RAYCAST_MAX = 24
 const YAW_STEP = Math.PI / 12
 const FLOOR_TOLERANCE = 0.01
+const PLACE_HINT = 'LMB place · RMB cancel · R rotate · Shift+R reverse · Esc / E cancel'
+const NOT_HERE_HINT = 'Furniture can only be placed in a house you own or hold a key to'
 
 const UP = new THREE.Vector3(0, 1, 0)
 const DOWN = new THREE.Vector3(0, -1, 0)
@@ -118,6 +121,7 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
     const st = currentState.value
     if (st.kind === 'preview_existing') {
       st.sourceMesh.visible = true
+      syncPropBlocker(st.objectId, st.sourceMesh)
       void ensureWorld().then(() => physics.registerProp(st.sourceMesh))
     }
     toIdle()
@@ -145,15 +149,15 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
     void ghost.upgradeToModel(modelUrl, color, () => currentState.value === wanted)
   }
 
+  /** Also outside a decoratable house: the ghost then stays red, so the player sees what they hold. */
   function startPreviewNew(itemDef: ApartmentPlacementItemDef, ownedCountRef: Ref<number>): void {
-    if (!deps.canDecorate.value) return
     cancelPreview()
     if (ownedCountRef.value <= 0) return
     watchStopOwned = watch(ownedCountRef, (q) => {
       if (currentState.value.kind === 'preview_new' && q <= 0) cancelPreview()
     })
     currentState.value = { kind: 'preview_new', itemDef, ownedCountRef }
-    showGhost('LMB place · RMB cancel · R rotate · Shift+R reverse · Esc / E cancel')
+    showGhost(deps.canDecorate.value ? PLACE_HINT : NOT_HERE_HINT)
     loadGhostVisual(itemDef)
     void ensureWorld()
   }
@@ -164,6 +168,7 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
     void ensureWorld().then(() => {
       physics.unregisterProp(objectId)
       sourceMesh.visible = false
+      syncPropBlocker(objectId, null)
       currentState.value = { kind: 'preview_existing', objectId, sourceMesh }
       userYawTarget = new THREE.Euler().setFromQuaternion(sourceMesh.getWorldQuaternion(new THREE.Quaternion()), 'YXZ').y
       userYawSmoothed = userYawTarget
@@ -192,9 +197,10 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
     void ensureWorld()
   }
 
+  /** Leaving the house: a prop being moved goes back, a new item stays in hand (its ghost turns red). */
   function setPlayerInsideApartment(inside: boolean): void {
     if (inside) return
-    cancelPreview()
+    if (currentState.value.kind === 'preview_existing') cancelPreview()
     tearDownOwnedWatch()
     physics.dispose()
     apartmentEnvGroup = null
@@ -280,6 +286,12 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
     if (Number.isFinite(minAlong)) targetPos.addScaledVector(n, -minAlong + 0.002)
   }
 
+  /** Placed furniture blocks the player, so it must not be dropped onto them. */
+  function ghostOverlapsPlayer(): boolean {
+    const box = propCuboidOf(ghost.root)
+    return box !== null && cuboidOverlapsPlayer(box)
+  }
+
   function tick(dt: number): void {
     ghost.tickFeedback(dt, smoothPos)
     const st = currentState.value
@@ -309,7 +321,12 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
     ghost.applyShake()
 
     const ignored = new Set([movingId, supportPropId].filter(Boolean))
-    const valid = ghostInsideRoom() && !physics.ghostIntersects(ghost.root, ignored)
+    const valid = deps.canDecorate.value && ghostInsideRoom() && !physics.ghostIntersects(ghost.root, ignored)
+      && !ghostOverlapsPlayer()
+    if (st.kind === 'preview_new') {
+      const hint = deps.canDecorate.value ? PLACE_HINT : NOT_HERE_HINT
+      if (hudHints.value[0] !== hint) hudHints.value = [hint]
+    }
     if (ghost.setValid(valid)) {
       currentValidity.value = valid
       crosshairTint.value = valid ? 'valid' : 'invalid'
@@ -321,7 +338,7 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
 
   /** Esc cancels, R / Shift+R rotate by 15°. Returns true when the key was used. */
   function onKeyDown(e: KeyboardEvent): boolean {
-    if (!deps.canDecorate.value || e.repeat || currentState.value.kind === 'idle') return false
+    if (e.repeat || currentState.value.kind === 'idle') return false
     if (e.code === 'Escape') cancelPreview()
     else if (matchesRotateCW(e)) userYawTarget += YAW_STEP
     else if (matchesRotateCCW(e)) userYawTarget -= YAW_STEP
@@ -330,10 +347,9 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
   }
 
   function tryCommitPreview(): void {
-    if (!deps.canDecorate.value) return
     const st = currentState.value
     if (st.kind === 'idle' || !ghost.hasContent()) return
-    if (!currentValidity.value) {
+    if (!currentValidity.value || !deps.canDecorate.value) {
       ghost.deny()
       return
     }
@@ -365,16 +381,15 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
     mesh.quaternion.copy(pose.quaternion)
     mesh.visible = true
     toIdle()
+    syncPropBlocker(st.objectId, mesh)
     deps.persistApartmentTransformForMesh(mesh, true)
     void ensureWorld().then(() => physics.registerProp(mesh))
   }
 
   /** Returns true when the click was used for placement (so it must not also open a door). */
   function onPointerDown(e: MouseEvent): boolean {
-    if (!deps.canDecorate.value || !deps.pointerLocked.value) {
-      return false
-    }
-    if (deps.getApartmentInventoryOpen()) return false
+    if (!deps.pointerLocked.value || deps.getApartmentInventoryOpen()) return false
+    if (!deps.canDecorate.value && currentState.value.kind === 'idle') return false
     if (e.button === 2) {
       e.preventDefault()
       cancelPreview()
