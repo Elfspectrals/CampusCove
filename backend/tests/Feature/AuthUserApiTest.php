@@ -21,6 +21,8 @@ class AuthUserApiTest extends TestCase
             'username' => $username,
             'password' => 'password1x',
             'password_confirmation' => 'password1x',
+            'accepted_terms' => true,
+            'age_confirmed' => true,
         ]);
         $reg->assertCreated();
         $token = $reg->json('token');
@@ -56,6 +58,8 @@ class AuthUserApiTest extends TestCase
             'username' => $username,
             'password' => 'password1x',
             'password_confirmation' => 'password1x',
+            'accepted_terms' => true,
+            'age_confirmed' => true,
         ]);
         $reg->assertCreated();
         $accountId = (int) $reg->json('user.account_id');
@@ -89,6 +93,8 @@ class AuthUserApiTest extends TestCase
             'username' => $username,
             'password' => 'password1x',
             'password_confirmation' => 'password1x',
+            'accepted_terms' => true,
+            'age_confirmed' => true,
         ]);
         $reg->assertCreated();
         $accountId = (int) $reg->json('user.account_id');

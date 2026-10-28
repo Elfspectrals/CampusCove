@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
+import { useI18n } from 'vue-i18n'
+import { localizedTo } from '../../i18n/routes'
+import type { Locale } from '../../seo/site'
 import UiTitleScreen from './UiTitleScreen.vue'
 import UiLogo from './UiLogo.vue'
 import UiIcon from './UiIcon.vue'
@@ -8,6 +11,7 @@ defineProps<{
   title: string
   subtitle?: string
 }>()
+const { t, locale } = useI18n()
 </script>
 
 <template>
@@ -15,8 +19,8 @@ defineProps<{
     <div class="flex flex-1 items-center justify-center px-4 py-10">
       <div class="w-full max-w-[440px] animate-cc-pop">
         <div class="mb-6 flex items-center justify-between">
-          <RouterLink :to="{ name: 'landing' }" class="cc-btn cc-btn-ghost cc-btn-sm">
-            <UiIcon name="chevron-left" :size="16" /> Back
+          <RouterLink :to="localizedTo('landing', locale as Locale)" class="cc-btn cc-btn-ghost cc-btn-sm">
+            <UiIcon name="chevron-left" :size="16" /> {{ t('auth.back') }}
           </RouterLink>
           <UiLogo size="sm" />
         </div>

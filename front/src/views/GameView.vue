@@ -17,6 +17,7 @@ import GamePlacementHud from '../components/game/GamePlacementHud.vue'
 import GamePlayerHotbar from '../components/game/GamePlayerHotbar.vue'
 import GamePlayerInventoryPanel from '../components/game/GamePlayerInventoryPanel.vue'
 import GamePointerLockOverlay from '../components/game/GamePointerLockOverlay.vue'
+import GameSettingsDialog from '../components/game/GameSettingsDialog.vue'
 import GameStoreItemCard from '../components/game/GameStoreItemCard.vue'
 import GameCafeMenu from '../components/game/GameCafeMenu.vue'
 import GameSurvivalEffects from '../components/game/GameSurvivalEffects.vue'
@@ -38,7 +39,7 @@ import { useRoomEnvironment } from '../composables/game/useRoomEnvironment'
 import { useSurvival } from '../composables/game/useSurvival'
 import { useShopPurchase } from '../composables/useShopPurchase'
 import { toggleCollisionDebug } from '../game/collision/collisionDebug'
-import { KEY_BINDINGS } from '../config/keybindings'
+import { actionKeyLabels, matches } from '../config/keybindings'
 import { getWorldCollisionStats } from '../game/collision/worldCollision'
 import { HOUSING_LOBBY_SPAWN } from '../game/gameRoomConstants'
 import { createGameScene, disposeGameScene, type GameScene } from '../game/gameScene'
@@ -83,6 +84,7 @@ const getRenderer = () => game?.renderer
 
 const {
   apartmentObjectIds,
+  apartmentObjectKeys,
   selectedPlacedObjectId,
   detachForRoomSwitch,
   clearApartmentObjects,
@@ -326,11 +328,22 @@ watch(cafeMenuOpen, (open) => {
   if (!open && !document.pointerLockElement) requestPointerLock()
 })
 
+/** Key settings opened from the pause screen. */
+const settingsOpen = ref(false)
+
+/** Placement controls with the player's own keys. */
+const placementHelp = computed(() => {
+  const rotate = actionKeyLabels('rotate')[0] ?? '?'
+  const inv = actionKeyLabels('inventory')[0]
+  return `${rotate} = rotate · Shift+${rotate} = reverse · LMB = place / pick · RMB = cancel · Esc${inv ? ` / ${inv}` : ''} = cancel`
+})
+
 /** One-line hint above the hotbar for the food in hand. */
 const heldFoodHint = computed(() => {
   const item = survival.heldConsumable()
   if (!item || !pointerLocked.value) return null
-  const cook = item.code === 'food_fish_raw' ? ' · F at a stove / BBQ: cook' : ''
+  const cookKey = actionKeyLabels('cook')[0]
+  const cook = item.code === 'food_fish_raw' && cookKey ? ` · ${cookKey} at a stove / BBQ: cook` : ''
   return `Click: eat ${item.name}${cook}`
 })
 
@@ -385,11 +398,12 @@ function loadTown(): void {
 function handleExtraKeyDown(e: KeyboardEvent): boolean {
   if (houseKeys.onKeyDown(e)) return true
   if (survival.onKeyDown(e)) return true
-  if (e.code === KEY_BINDINGS.buyHouse && !e.repeat) {
+  if (matches('buyHouse', e.code) && !e.repeat) {
     e.preventDefault()
     return housing.buy()
   }
-  if (e.code === 'KeyC' && !e.repeat) {
+  // collision overlay: a developer tool, kept off in production so it never steals a player's key
+  if (import.meta.env.DEV && e.code === 'KeyC' && !e.repeat) {
     const scene = getScene()
     if (!scene) return true
     const on = toggleCollisionDebug(scene)
@@ -694,7 +708,7 @@ const crosshairClass = computed(() => {
       :error="inventoryError"
       :can-edit-apartment="canDecorate"
       :apartment-object-ids="apartmentObjectIds"
-      :selected-placed-object-id="selectedPlacedObjectId"
+      :apartment-object-keys="apartmentObjectKeys"
       @close="closeInventory"
       @refresh="refreshOwnedItems"
       @cancel-cursor="cancelCursorPick"
@@ -705,14 +719,15 @@ const crosshairClass = computed(() => {
       @slot-drop="onSlotDrop"
       @slot-drag-end="onSlotDragEnd"
       @clear-slot="clearSlot"
-      @pickup-selected-placed-object="pickupSelectedPlacedObject"
-      @placed-object-selected="onPlacedObjectSelected"
+      @pickup-placed-object="(id: string) => { onPlacedObjectSelected(id); pickupSelectedPlacedObject() }"
     />
     <GamePointerLockOverlay
-      v-show="!pointerLocked && !inventoryOpen && !switchingRoom && !cafeMenuOpen"
+      v-show="!pointerLocked && !inventoryOpen && !switchingRoom && !cafeMenuOpen && !settingsOpen"
       @request-pointer-lock="requestPointerLock"
+      @open-settings="settingsOpen = true"
       @logout="logout"
     />
+    <GameSettingsDialog v-if="settingsOpen" @close="settingsOpen = false" />
     <div v-show="pointerLocked" class="absolute right-3 top-3 z-10">
       <button
         type="button"
@@ -726,7 +741,7 @@ const crosshairClass = computed(() => {
       v-if="canDecorate && inventoryOpen && placementPreviewActive"
       class="cc-hud pointer-events-none absolute bottom-24 left-3 z-[31] max-w-md px-3 py-1.5 text-[11px] font-bold leading-snug text-mist"
     >
-      R = rotate · Shift+R = reverse · LMB = place / pick · RMB = cancel · Esc / E = cancel
+      {{ placementHelp }}
     </p>
     <GameCafeMenu
       v-if="cafeMenuOpen"

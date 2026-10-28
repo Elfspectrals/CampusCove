@@ -2,7 +2,7 @@ import { computed, ref, watch, type Ref, type ShallowRef } from 'vue'
 import type { Room } from '@colyseus/sdk'
 import * as THREE from 'three'
 import { applyCachedBalanceAfterPurchase } from '../../api/session'
-import { KEY_BINDINGS } from '../../config/keybindings'
+import { matches } from '../../config/keybindings'
 import { createBiteParticles } from '../../game/biteParticles'
 import { screenEffects, walkSpeedFactor, type SurvivalStats } from '../../game/survival'
 import { createSurvivalWatch } from '../../game/survivalWatch'
@@ -179,11 +179,11 @@ export function useSurvival(deps: SurvivalDeps) {
   }
 
   function onKeyDown(e: KeyboardEvent): boolean {
-    if (e.code === KEY_BINDINGS.survivalWatch) {
+    if (matches('survivalWatch', e.code)) {
       if (!knockedOut.value) deps.getArms()?.raiseWatch(true)
       return true
     }
-    if (e.code === KEY_BINDINGS.cook && !e.repeat) {
+    if (matches('cook', e.code) && !e.repeat) {
       const item = heldConsumable()
       if (!item || !COOKABLE.has(item.code)) return false
       deps.gameRoomRef.value?.send('cook', { code: item.code })
@@ -193,7 +193,7 @@ export function useSurvival(deps: SurvivalDeps) {
   }
 
   function onKeyUp(e: KeyboardEvent): void {
-    if (e.code === KEY_BINDINGS.survivalWatch) deps.getArms()?.raiseWatch(false)
+    if (matches('survivalWatch', e.code)) deps.getArms()?.raiseWatch(false)
   }
 
   function bindInputListeners(): () => void {

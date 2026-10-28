@@ -64,7 +64,7 @@ class AdminUserController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'username' => ['required', 'string', 'min:3', 'max:24', 'regex:/^[a-zA-Z0-9_]+$/'],
+            'username' => ['required', ...AccountHandle::usernameRules()],
             'email' => ['required', 'email', 'unique:account_auth_local,email'],
             'password' => ['required', 'string', 'min:8'],
             'is_admin' => ['nullable', 'boolean'],
@@ -110,7 +110,7 @@ class AdminUserController extends Controller
         $account = Account::withTrashed()->with(['handle', 'localAuth'])->findOrFail($accountId);
 
         $validated = $request->validate([
-            'username' => ['sometimes', 'string', 'min:3', 'max:24', 'regex:/^[a-zA-Z0-9_]+$/'],
+            'username' => ['sometimes', ...AccountHandle::usernameRules()],
             'email' => [
                 'sometimes',
                 'email',

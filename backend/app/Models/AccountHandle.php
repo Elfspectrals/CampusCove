@@ -24,6 +24,24 @@ class AccountHandle extends Model
         return $this->belongsTo(Account::class, 'account_id', 'account_id');
     }
 
+    /**
+     * Usernames are free text (any language, spaces, emoji), at least 3 characters, unique case-insensitively.
+     * Only invisible / control characters are refused (\p{C}): they would allow look-alike or blank names.
+     * 255 is a safety net against abuse, not a product limit.
+     *
+     * @return list<string>
+     */
+    public static function usernameRules(): array
+    {
+        return ['string', 'min:3', 'max:255', 'regex:/^[^\p{C}]+$/u'];
+    }
+
+    /** Trims and collapses inner whitespace, so "  Léa   M " and "Léa M" are the same name. */
+    public static function cleanUsername(mixed $value): mixed
+    {
+        return is_string($value) ? (preg_replace('/\s+/u', ' ', trim($value)) ?? $value) : $value;
+    }
+
     /** Display name: username#tag (e.g. John#0420) */
     public function getDisplayNameAttribute(): string
     {

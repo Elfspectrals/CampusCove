@@ -66,10 +66,31 @@ export function apiFetch(path: string, options: ApiRequestOptions = {}): Promise
   })
 }
 
-/** Request that resolves with the parsed JSON body (`{}` when empty) and throws the API's message on failure. */
+/** API failure: `message` is the first error, `fieldErrors` the first message per field of a 422 validation error. */
+export class ApiError extends Error {
+  readonly status: number
+  readonly fieldErrors: Record<string, string>
+
+  constructor(message: string, status: number, fieldErrors: Record<string, string> = {}) {
+    super(message)
+    this.status = status
+    this.fieldErrors = fieldErrors
+  }
+}
+
+function fieldErrorsOf(data: unknown): Record<string, string> {
+  const out: Record<string, string> = {}
+  if (!isRecord(data) || !isRecord(data.errors)) return out
+  for (const [field, v] of Object.entries(data.errors)) {
+    if (Array.isArray(v) && typeof v[0] === 'string') out[field] = v[0]
+  }
+  return out
+}
+
+/** Request that resolves with the parsed JSON body (`{}` when empty) and throws an ApiError on failure. */
 export async function apiRequest(path: string, options: ApiRequestOptions = {}): Promise<unknown> {
   const res = await apiFetch(path, options)
   const data: unknown = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(formatApiError(data, options.errorMessage))
+  if (!res.ok) throw new ApiError(formatApiError(data, options.errorMessage), res.status, fieldErrorsOf(data))
   return data
 }

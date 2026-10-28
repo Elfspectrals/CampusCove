@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { nextTick, onMounted, onUnmounted, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
+import { actionKeyLabels } from '../../config/keybindings'
 import type { ApartmentInventoryItem } from '../../types/gameRealtime'
 import UiIcon from '../ui/UiIcon.vue'
 import GamePortionBar from './GamePortionBar.vue'
@@ -12,8 +13,9 @@ const props = defineProps<{
   loading: boolean
   error: string | null
   canEditApartment: boolean
-  selectedPlacedObjectId: string
   apartmentObjectIds: string[]
+  /** objectKey (item code) of each placed object */
+  apartmentObjectKeys: Record<string, string>
 }>()
 
 const emit = defineEmits<{
@@ -27,9 +29,21 @@ const emit = defineEmits<{
   slotDrop: [index: number, e: DragEvent]
   slotDragEnd: []
   clearSlot: [index: number]
-  pickupSelectedPlacedObject: []
-  placedObjectSelected: [objectId: string]
+  pickupPlacedObject: [objectId: string]
 }>()
+
+/** Furniture placed in this house, by name ("Chair campus basic"), numbered when the same item is placed twice. */
+const placedObjects = computed(() => {
+  const seen = new Map<string, number>()
+  return props.apartmentObjectIds.map((id) => {
+    const code = props.apartmentObjectKeys[id] ?? ''
+    const base = props.itemByCode[code]?.name ?? (code ? code.replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase()) : 'Furniture')
+    const n = (seen.get(base) ?? 0) + 1
+    seen.set(base, n)
+    return { id, label: n > 1 ? `${base} (${n})` : base }
+  })
+})
+const putAwayKey = computed(() => actionKeyLabels('putAway')[0] ?? '')
 
 const ghostX = ref(0)
 const ghostY = ref(0)
@@ -58,11 +72,6 @@ function quantityFor(slotCode: string): number {
   return props.itemByCode[slotCode]?.quantity ?? 0
 }
 
-function onPlacedSelect(event: Event): void {
-  const target = event.target
-  if (!(target instanceof HTMLSelectElement)) return
-  emit('placedObjectSelected', target.value)
-}
 
 function onDragStartInner(index: number, rawCode: string, e: DragEvent): void {
   if (!effectiveCode(rawCode)) {
@@ -244,23 +253,19 @@ function ghostQty(): number {
         </div>
 
         <div v-if="canEditApartment" class="mt-5 rounded-2xl border-2 border-ink-600/50 bg-ink-950/40 p-4">
-          <div class="cc-eyebrow mb-2">Placed objects</div>
-          <div class="flex flex-col gap-2 sm:flex-row">
-            <select class="cc-input cc-input-sm flex-1" :value="selectedPlacedObjectId" @change="onPlacedSelect">
-              <option value="">Select placed object</option>
-              <option v-for="objectId in apartmentObjectIds" :key="'placed-' + objectId" :value="objectId">
-                {{ objectId }}
-              </option>
-            </select>
-            <button
-              type="button"
-              class="cc-btn cc-btn-pool cc-btn-sm"
-              :disabled="!selectedPlacedObjectId"
-              @click="emit('pickupSelectedPlacedObject')"
-            >
-              <UiIcon name="hand" :size="16" /> Pick up
-            </button>
-          </div>
+          <div class="cc-eyebrow mb-1">Placed in this house</div>
+          <p class="m-0 mb-3 text-xs font-semibold text-mist">
+            Click a piece of furniture in the room to move it<template v-if="putAwayKey">, then <span class="cc-keycap">{{ putAwayKey }}</span> to put it back here</template>.
+          </p>
+          <p v-if="placedObjects.length === 0" class="m-0 text-sm font-semibold text-mist">Nothing placed yet.</p>
+          <ul v-else class="m-0 flex max-h-48 list-none flex-col gap-1.5 overflow-y-auto p-0">
+            <li v-for="o in placedObjects" :key="o.id" class="flex items-center justify-between gap-3 rounded-xl bg-ink-900/70 px-3 py-1.5">
+              <span class="min-w-0 truncate text-sm font-bold text-fog">{{ o.label }}</span>
+              <button type="button" class="cc-btn cc-btn-pool cc-btn-sm shrink-0" @click="emit('pickupPlacedObject', o.id)">
+                <UiIcon name="hand" :size="16" /> Put back
+              </button>
+            </li>
+          </ul>
         </div>
       </div>
     </div>

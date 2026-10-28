@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AccountPrivacyController;
 use App\Http\Controllers\AdminInventoryController;
 use App\Http\Controllers\AdminShopItemController;
 use App\Http\Controllers\AdminUserController;
@@ -11,6 +12,7 @@ use App\Http\Controllers\FriendController;
 use App\Http\Controllers\HousingController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\PlayerInventoryLayoutController;
+use App\Http\Controllers\PlayerReportController;
 use App\Http\Controllers\ReferralController;
 use App\Http\Controllers\ShopController;
 use App\Http\Controllers\SurvivalController;
@@ -20,9 +22,13 @@ Route::get('/health', function () {
     return response()->json(['status' => 'ok', 'app' => 'CampusCove API']);
 });
 
-Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
-Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+// brute-force / spam protection: per IP, per minute
+Route::middleware('throttle:10,1')->group(function () {
+    Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+    Route::post('/reset-password', [AuthController::class, 'resetPassword']);
+});
 
 Route::get('/shop/items', [ShopController::class, 'index']);
 Route::get('/assets/public/{path}', [AssetController::class, 'publicDisk'])->where('path', '.*');
@@ -30,6 +36,11 @@ Route::get('/assets/public/{path}', [AssetController::class, 'publicDisk'])->whe
 Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
     Route::get('/user', [AuthController::class, 'user']);
     Route::post('/logout', [AuthController::class, 'logout']);
+
+    Route::get('/account/export', [AccountPrivacyController::class, 'export'])->middleware('throttle:5,1');
+    Route::delete('/account', [AccountPrivacyController::class, 'destroy'])->middleware('throttle:5,1');
+    Route::post('/account/terms', [AccountPrivacyController::class, 'acceptTerms']);
+    Route::post('/reports', [PlayerReportController::class, 'store'])->middleware('throttle:10,1');
 
     Route::get('/friends', [FriendController::class, 'index']);
     Route::get('/friends/pending', [FriendController::class, 'pending']);
@@ -69,6 +80,9 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
     Route::post('/apartments/pickup', [ApartmentPlacementController::class, 'pickup']);
 
     Route::middleware('admin')->prefix('admin')->group(function () {
+        Route::get('/reports', [PlayerReportController::class, 'index']);
+        Route::patch('/reports/{id}', [PlayerReportController::class, 'update'])->whereNumber('id');
+
         Route::prefix('users')->group(function () {
             Route::get('/', [AdminUserController::class, 'index']);
             Route::get('/{accountId}', [AdminUserController::class, 'show']);

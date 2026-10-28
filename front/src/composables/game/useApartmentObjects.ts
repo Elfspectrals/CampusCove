@@ -27,6 +27,8 @@ export interface ApartmentObjectsDeps {
  */
 export function useApartmentObjects(deps: ApartmentObjectsDeps) {
   const apartmentObjectIds = ref<string[]>([])
+  /** Item code (objectKey) of each placed object, to show its name instead of its id. */
+  const apartmentObjectKeys = ref<Record<string, string>>({})
   const selectedPlacedObjectId = ref('')
 
   const apartmentObjects = new Map<string, THREE.Mesh>()
@@ -137,6 +139,7 @@ export function useApartmentObjects(deps: ApartmentObjectsDeps) {
     if (!apartmentObjectIds.value.includes(payload.objectId)) {
       apartmentObjectIds.value.push(payload.objectId)
     }
+    apartmentObjectKeys.value = { ...apartmentObjectKeys.value, [payload.objectId]: payload.objectKey }
     if (selectedPlacedObjectId.value === '') {
       selectedPlacedObjectId.value = payload.objectId
     }
@@ -157,6 +160,7 @@ export function useApartmentObjects(deps: ApartmentObjectsDeps) {
     }
     apartmentObjects.clear()
     apartmentObjectIds.value = []
+    apartmentObjectKeys.value = {}
     selectedPlacedObjectId.value = ''
     lastPersistedByObjectId.clear()
   }
@@ -222,6 +226,7 @@ export function useApartmentObjects(deps: ApartmentObjectsDeps) {
 
   return {
     apartmentObjectIds,
+    apartmentObjectKeys,
     selectedPlacedObjectId,
     detachForRoomSwitch,
     clearApartmentObjects,

@@ -2,7 +2,7 @@ import { ref, type Ref, type ShallowRef } from 'vue'
 import type { Room } from '@colyseus/sdk'
 import * as THREE from 'three'
 import { giveHouseKeys, takeHouseKeys } from '../../api/housing'
-import { KEY_BINDINGS } from '../../config/keybindings'
+import { matches } from '../../config/keybindings'
 import type { HousingUnit } from '../../game/town/housing'
 
 const KEY_REACH = 4
@@ -107,7 +107,7 @@ export function useHouseKeys(deps: HouseKeysDeps) {
   }
 
   function onKeyDown(e: KeyboardEvent): boolean {
-    if (e.code !== KEY_BINDINGS.houseKeys || e.repeat || !target) return false
+    if (!matches('houseKeys', e.code) || e.repeat || !target) return false
     void toggleKeys()
     return true
   }
