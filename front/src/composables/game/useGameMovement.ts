@@ -5,7 +5,7 @@ import { KEY_BINDINGS, matchesAnyMovementKey } from '../../config/keybindings'
 import { EYE_HEIGHT } from '../../game/gameRoomConstants'
 import { resolveWorldMovement } from '../../game/collision/worldCollision'
 import { terrainHeightAt } from '../../game/town/terrainHeight'
-import { buildingFloorAt, updateOpenHouseVisibility } from '../../game/town/openHouses'
+import { buildingFloorAt, capsuleLiftInBuilding, updateOpenHouseVisibility } from '../../game/town/openHouses'
 
 const MOVE_SPEED = 8
 const MAX_FRAME_DT = 0.1
@@ -73,17 +73,19 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     direction.set(0, 0, -1).applyAxisAngle(THREE.Object3D.DEFAULT_UP, yaw)
     rightVec.crossVectors(direction, THREE.Object3D.DEFAULT_UP).normalize()
 
+    const feetY = myPosition.y - EYE_HEIGHT
     if (!deps.inventoryOpen.value) {
       const forward = keys.forward ? 1 : keys.back ? -1 : 0
       const right = keys.right ? 1 : keys.left ? -1 : 0
       const step = MOVE_SPEED * deps.speedFactor() * dt
       const dx = direction.x * forward * step + rightVec.x * right * step
       const dz = direction.z * forward * step + rightVec.z * right * step
-      const resolved = resolveWorldMovement(myPosition, dx, dz)
+      const liftY = capsuleLiftInBuilding(myPosition.x, myPosition.z, feetY)
+      const resolved = resolveWorldMovement(myPosition, dx, dz, liftY)
       myPosition.x = resolved.x
       myPosition.z = resolved.z
     }
-    myPosition.y = EYE_HEIGHT + (buildingFloorAt(myPosition.x, myPosition.z) ?? terrainHeightAt(myPosition.x, myPosition.z))
+    myPosition.y = EYE_HEIGHT + (buildingFloorAt(myPosition.x, myPosition.z, feetY) ?? terrainHeightAt(myPosition.x, myPosition.z))
     updateOpenHouseVisibility(myPosition.x, myPosition.z)
 
     camera.position.set(myPosition.x, myPosition.y, myPosition.z)

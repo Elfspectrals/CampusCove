@@ -42,6 +42,7 @@ export interface HouseAsset {
   exteriorUrl: string
   interiorUrl: string
   interiorCollisionUrl: string
+  interiorLayoutUrl: string
   interiorLightmapUrl: string
   previewUrl: string
 }
@@ -62,6 +63,7 @@ const house = (key: HouseKey, name: string): HouseAsset => ({
   exteriorUrl: `${ROOT}/houses/${key}/exterior.glb`,
   interiorUrl: `${ROOT}/houses/${key}/interior.glb`,
   interiorCollisionUrl: `${ROOT}/houses/${key}/interior.collision.json`,
+  interiorLayoutUrl: `${ROOT}/houses/${key}/interior.layout.json`,
   interiorLightmapUrl: `${ROOT}/houses/${key}/lightmap.jpg`,
   previewUrl: `${ROOT}/houses/${key}/preview.png`,
 })

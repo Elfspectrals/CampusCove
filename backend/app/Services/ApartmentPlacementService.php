@@ -659,7 +659,7 @@ class ApartmentPlacementService
         }
         $inside = $position['x'] >= $bounds['minX'] && $position['x'] <= $bounds['maxX']
             && $position['z'] >= $bounds['minZ'] && $position['z'] <= $bounds['maxZ']
-            && $position['y'] >= -self::FLOOR_TOLERANCE && $position['y'] <= self::ROOM_HEIGHT;
+            && $position['y'] >= -self::FLOOR_TOLERANCE && $position['y'] <= ($bounds['maxY'] ?? self::ROOM_HEIGHT);
         if (! $inside) {
             throw new ApartmentPlacementException('out_of_bounds', 'Furniture must stay inside the house.', 422);
         }

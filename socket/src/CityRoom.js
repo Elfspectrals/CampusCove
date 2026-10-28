@@ -133,13 +133,14 @@ export class CityRoom extends Room {
       return
     }
     const previousY = player.y
+    const distXZ = Math.hypot(x - player.x, z - player.z)
     player.x = x
     player.y = normalizeNumber(payload.y, player.y)
     player.z = z
     player.ry = normalizeNumber(payload.ry, player.ry)
     player.lastMoveAt = now
     this.broadcastMove(client, player)
-    onSurvivalMove(this, client, player, previousY)
+    onSurvivalMove(this, client, player, previousY, distXZ)
   }
 
   broadcastMove(client, player) {

@@ -42,7 +42,7 @@ function optimizeGlb(input, output, { textureSize, keepNodes, keepLightmapUvs })
 }
 
 function extractCollision(colsrc, outputJson) {
-  run('node', ['scripts/extract-collision.mjs', colsrc])
+  process.stdout.write(run('node', ['scripts/extract-collision.mjs', colsrc]))
   // the extractor writes <colsrc basename>.collision.json next to its input
   const produced = join(dirname(colsrc), `${basename(colsrc, '.glb')}.collision.json`)
   mkdirSync(dirname(outputJson), { recursive: true })
@@ -56,7 +56,8 @@ function processDir(category, dir, rel) {
       processDir(category, full, join(rel, file))
       continue
     }
-    const shipsAsIs = (category === 'work' || category === 'park' || category === 'items' || category === 'store') && (file === 'preview.png' || file.endsWith('.layout.json'))
+    const shipsAsIs = ((category === 'work' || category === 'park' || category === 'items' || category === 'store') && (file === 'preview.png' || file.endsWith('.layout.json')))
+      || (category === 'houses' && file.endsWith('.layout.json'))
     if (shipsAsIs || ((category === 'houses' || category === 'work' || category === 'store') && file === 'lightmap.jpg')) {
       // work buildings / the store ship their preview + layout next to the GLBs
       mkdirSync(join(DEST, category, rel), { recursive: true })

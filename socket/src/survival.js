@@ -10,6 +10,7 @@ import {
   applyPortion,
   fallDamage,
   fountainSip,
+  isWalkingDescent,
   normalizeStats,
   respawnStats,
   tickStats
@@ -25,6 +26,8 @@ const SIP_COOLDOWN_MS = 600
 const FOUNTAIN_SIP_THIRST = 25
 const FOUNTAIN_REACH = 2.2
 const COOKER_REACH = 2.5
+const COOKER_HEIGHT_REACH = 1.5
+const EYE_HEIGHT = 1.6
 const COOKER_KEYS = ['decor_stove_oven', 'decor_bbq_grill']
 const CODE_PATTERN = /^[a-z0-9_]{1,64}$/
 // Fountain budget per account (survivalStats.fountainSip), kept across reconnects; time scale speeds it up in playtests.
@@ -117,7 +120,9 @@ function knockOut(room, client, player) {
 }
 
 /** Called for every accepted move: tracks the highest point of a fall and hurts on landing. */
-export function onSurvivalMove(room, client, player, previousY) {
+export function onSurvivalMove(room, client, player, previousY, distXZ) {
+  const drop = previousY - player.y
+  if (isWalkingDescent(drop, distXZ)) player.fallPeakY -= drop
   if (player.y >= previousY - 0.01) {
     const damage = fallDamage(player.fallPeakY, previousY)
     player.fallPeakY = player.y
@@ -182,7 +187,9 @@ function isNearCooker(room, player) {
   const furniture = room.houseFurniture.find((h) => h.model_key === unit.model_key)
   if (!house || !furniture) return false
   const p = toInterior(house, player.x, player.z)
-  return furniture.objects.some((o) => COOKER_KEYS.includes(o.objectKey) && Math.hypot(o.x - p.x, o.z - p.z) <= COOKER_REACH)
+  const feetY = player.y - EYE_HEIGHT - house.position.y - house.interiorOffset.y
+  return furniture.objects.some((o) => COOKER_KEYS.includes(o.objectKey) && Math.hypot(o.x - p.x, o.z - p.z) <= COOKER_REACH
+    && Math.abs(o.y - feetY) <= COOKER_HEIGHT_REACH)
 }
 
 /** Cooks the raw item held in hand on a stove or a barbecue placed in the house the player stands in. */

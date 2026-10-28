@@ -6,7 +6,8 @@ import * as RAPIER from '@dimforge/rapier3d-compat'
 import type { Collider, World } from '@dimforge/rapier3d-compat'
 import * as THREE from 'three'
 import type { CollisionFileJson } from '../collision/worldCollision'
-import { APARTMENT_DOOR_POS, APARTMENT_ROOM_HEIGHT, APARTMENT_WALL_THICKNESS } from '../gameRoomConstants'
+import { APARTMENT_DOOR_POS, APARTMENT_WALL_THICKNESS } from '../gameRoomConstants'
+import type { HouseLayout, LevelRect } from '../town/houseLevels'
 
 interface PropPhysicsUserData {
   kind: 'apartmentPlacementProp'
@@ -15,7 +16,7 @@ interface PropPhysicsUserData {
 
 interface StaticPhysicsUserData {
   kind: 'apartmentPlacementStatic'
-  subkind: 'floor' | 'ceiling' | 'wall' | 'door'
+  subkind: 'floor' | 'ceiling' | 'wall' | 'door' | 'stair'
 }
 
 function isPropPhysicsUserData(v: unknown): v is PropPhysicsUserData {
@@ -90,15 +91,25 @@ function addStaticBox(
   w.createCollider(RAPIER.ColliderDesc.cuboid(hx, hy, hz), body)
 }
 
-function addRoomStaticColliders(w: World, room: CollisionFileJson): void {
+function addRectBox(w: World, subkind: StaticPhysicsUserData['subkind'], rect: LevelRect, bottom: number, top: number): void {
+  const { minX, maxX, minZ, maxZ } = rect
+  addStaticBox(
+    w,
+    subkind,
+    [(minX + maxX) / 2, (bottom + top) / 2, (minZ + maxZ) / 2],
+    [(maxX - minX) / 2, (top - bottom) / 2, (maxZ - minZ) / 2],
+  )
+}
+
+function addRoomStaticColliders(w: World, room: CollisionFileJson, layout: HouseLayout): void {
   if (!room.bounds) throw new Error(`Room collision ${room.source ?? ''} has no bounds`)
-  const { minX, maxX, minZ, maxZ } = room.bounds
-  const center: [number, number] = [(minX + maxX) / 2, (minZ + maxZ) / 2]
-  const half: [number, number] = [(maxX - minX) / 2, (maxZ - minZ) / 2]
-  const h = APARTMENT_ROOM_HEIGHT
   const t = APARTMENT_WALL_THICKNESS
-  addStaticBox(w, 'floor', [center[0], -t / 2, center[1]], [half[0], t / 2, half[1]])
-  addStaticBox(w, 'ceiling', [center[0], h + t / 2, center[1]], [half[0], t / 2, half[1]])
+  addRectBox(w, 'floor', room.bounds, -t, 0)
+  layout.levels.forEach((level, i) => {
+    const ceilingY = level.y + level.height
+    for (const rect of (layout.levels[i + 1] ?? level).rects) addRectBox(w, 'ceiling', rect, ceilingY, ceilingY + t)
+  })
+  for (const stair of layout.stairs) addRectBox(w, 'stair', stair, Math.min(stair.y0, stair.y1), Math.max(stair.y0, stair.y1))
   for (const c of room.cuboids) {
     addStaticBox(w, 'wall', [c.cx, c.cy, c.cz], [c.hx, c.hy, c.hz], new RAPIER.Quaternion(c.qx, c.qy, c.qz, c.qw))
   }
@@ -122,13 +133,13 @@ export function createPlacementPhysics() {
     return world !== null
   }
 
-  async function ensureReady(room: CollisionFileJson): Promise<void> {
+  async function ensureReady(room: CollisionFileJson, layout: HouseLayout): Promise<void> {
     if (world) return
     if (!initPromise) {
       initPromise = (async () => {
         await RAPIER.init()
         const w = new RAPIER.World(new RAPIER.Vector3(0, 0, 0))
-        addRoomStaticColliders(w, room)
+        addRoomStaticColliders(w, room, layout)
         world = w
         const pending = pendingMeshes.splice(0)
         for (const m of pending) registerProp(m)

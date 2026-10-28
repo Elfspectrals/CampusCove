@@ -7,6 +7,7 @@ import {
   fallDamage,
   fountainSip,
   fullStats,
+  isWalkingDescent,
   normalizeStats,
   respawnStats,
   tickStats
@@ -46,6 +47,12 @@ test('a portion restores its values, raw food also hurts', () => {
 test('falls above 3 m hurt', () => {
   assert.equal(fallDamage(5, 2.5), 0)
   assert.equal(fallDamage(8, 1), 48)
+})
+
+test('a stair or a slope is a walking descent, a ledge is not', () => {
+  assert.equal(isWalkingDescent(0.26, 0.4), true)
+  assert.equal(isWalkingDescent(3, 0.3), false)
+  assert.equal(isWalkingDescent(0, 0.4), false)
 })
 
 test('respawn and normalisation', () => {

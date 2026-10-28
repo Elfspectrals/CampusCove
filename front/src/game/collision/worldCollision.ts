@@ -389,6 +389,7 @@ export function resolveWorldMovement(
   current: { x: number; y: number; z: number },
   dx: number,
   dz: number,
+  liftY = 0,
 ): { x: number; z: number } {
   const blocked = { x: current.x, z: current.z }
   if (
@@ -402,7 +403,7 @@ export function resolveWorldMovement(
     return blocked
   }
 
-  playerBody.setTranslation(new RAPIER.Vector3(current.x, CAPSULE_CENTER_Y, current.z), true)
+  playerBody.setTranslation(new RAPIER.Vector3(current.x, CAPSULE_CENTER_Y + liftY, current.z), true)
   world.propagateModifiedBodyPositionsToColliders()
 
   desiredDelta.x = dx

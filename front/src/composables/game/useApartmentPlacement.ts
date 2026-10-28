@@ -7,7 +7,8 @@ import { cuboidOverlapsPlayer, fetchCollisionFile, type CollisionFileJson } from
 import { propCuboidOf, syncPropBlocker } from '../../game/collision/propBlocker'
 import { apartmentObjectIdOf, createPlacementPhysics } from '../../game/placement/placementPhysics'
 import type { ApartmentEnvironmentBuildResult } from '../../game/roomEnvironments'
-import { APARTMENT_ROOM_HEIGHT } from '../../game/gameRoomConstants'
+import { houseLayout } from '../../game/town/openHouses'
+import { levelAt, type HouseLayout } from '../../game/town/houseLevels'
 
 const POS_SMOOTH_PER_FRAME = 0.35
 const YAW_SMOOTH_PER_FRAME = 0.25
@@ -80,6 +81,7 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
   let apartmentEnvGroup: THREE.Group | null = null
   let roomCollision: Promise<CollisionFileJson | null> | null = null
   let roomBounds: CollisionFileJson['bounds'] = null
+  let roomLayout: HouseLayout | null = null
   let watchStopOwned: WatchStopHandle | null = null
 
   const raycaster = new THREE.Raycaster()
@@ -96,7 +98,8 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
 
   function ensureWorld(): Promise<void> {
     if (!deps.canDecorate.value || !roomCollision) return Promise.resolve()
-    return roomCollision.then((room) => (room ? physics.ensureReady(room) : undefined))
+    const layout = roomLayout
+    return roomCollision.then((room) => (room && layout ? physics.ensureReady(room, layout) : undefined))
   }
 
   function tearDownOwnedWatch(): void {
@@ -187,6 +190,7 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
   function registerApartmentEnvironment(build: ApartmentEnvironmentBuildResult): void {
     apartmentEnvGroup = build.group
     physics.setRoomFrame(build.group)
+    roomLayout = houseLayout(build.house.key)
     roomCollision = fetchCollisionFile(build.house.interiorCollisionUrl).catch((error: unknown) => {
       console.error('[placement] room collision failed to load, overlaps are not checked', error)
       return null
@@ -206,6 +210,7 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
     apartmentEnvGroup = null
     roomCollision = null
     roomBounds = null
+    roomLayout = null
   }
 
   function registerApartmentProp(mesh: THREE.Mesh): void {
@@ -245,11 +250,12 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
   }
 
   function ghostInsideRoom(): boolean {
-    if (!roomBounds) return true
+    if (!roomBounds || !roomLayout) return true
     const { x, y, z } = ghostPoseInRoom().position
     const base = y - 0.5
+    const level = levelAt(roomLayout, x, z, base, FLOOR_TOLERANCE)
     return x >= roomBounds.minX && x <= roomBounds.maxX && z >= roomBounds.minZ && z <= roomBounds.maxZ
-      && base >= -FLOOR_TOLERANCE && base <= APARTMENT_ROOM_HEIGHT
+      && level !== null && base <= level.y + level.height
   }
 
   /** Ghost pose (world) expressed in the room frame, the space placed props are stored in. */
@@ -417,6 +423,7 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
     apartmentEnvGroup = null
     roomCollision = null
     roomBounds = null
+    roomLayout = null
   }
 
   return {

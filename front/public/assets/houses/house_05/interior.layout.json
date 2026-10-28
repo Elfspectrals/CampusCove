@@ -1,0 +1,56 @@
+{
+  "version": 1,
+  "key": "house_05",
+  "levels": [
+    {
+      "id": "L0",
+      "y": 0.0,
+      "height": 2.8,
+      "rects": [
+        {
+          "minX": -5.595,
+          "maxX": 5.595,
+          "minZ": -4.4,
+          "maxZ": 5.2
+        }
+      ]
+    },
+    {
+      "id": "L1",
+      "y": 3.0,
+      "height": 2.6,
+      "rects": [
+        {
+          "minX": -4.395,
+          "maxX": 5.595,
+          "minZ": -4.4,
+          "maxZ": 5.0
+        },
+        {
+          "minX": -5.595,
+          "maxX": -4.395,
+          "minZ": -4.4,
+          "maxZ": -0.6
+        },
+        {
+          "minX": -5.595,
+          "maxX": -4.395,
+          "minZ": 4.0,
+          "maxZ": 5.0
+        }
+      ]
+    }
+  ],
+  "stairs": [
+    {
+      "name": "Stair_Main",
+      "minX": -5.595,
+      "maxX": -4.395,
+      "minZ": -0.6,
+      "maxZ": 4.0,
+      "y0": 0.0,
+      "y1": 3.0,
+      "rise": "-z"
+    }
+  ]
+}

@@ -15,6 +15,7 @@ const REGEN_PER_S = MAX_STAT / 900
 
 const FALL_SAFE_HEIGHT = 3
 const FALL_DAMAGE_PER_METRE = 12
+const WALKING_DESCENT_SLOPE = 1
 
 export const RESPAWN_HEALTH = 50
 export const RESPAWN_MIN_GAUGE = 30
@@ -69,6 +70,10 @@ export function applyPortion(stats, portion) {
 export function fallDamage(peakY, y) {
   const drop = peakY - y
   return drop > FALL_SAFE_HEIGHT ? (drop - FALL_SAFE_HEIGHT) * FALL_DAMAGE_PER_METRE : 0
+}
+
+export function isWalkingDescent(drop, distXZ) {
+  return drop > 0 && drop <= distXZ * WALKING_DESCENT_SLOPE
 }
 
 /** Gauges after passing out: back on their feet with half health and a little food in the belly. */
