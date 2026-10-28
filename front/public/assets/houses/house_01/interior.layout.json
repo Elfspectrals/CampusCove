@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "key": "house_01",
+  "levels": [
+    {
+      "id": "L0",
+      "y": 0.0,
+      "height": 2.8,
+      "rects": [
+        {
+          "minX": -6.195,
+          "maxX": 6.195,
+          "minZ": -4.8,
+          "maxZ": 5.2
+        }
+      ]
+    }
+  ],
+  "stairs": []
+}

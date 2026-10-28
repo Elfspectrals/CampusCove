@@ -6,7 +6,7 @@
 // Every authored collision mesh (named COL_ / UCX_ / Collision*) becomes a world-space cuboid in the
 // player's walking band. Clusters of seats / small props whose tabletop has no collision box get a
 // synthetic platform so the player cannot walk through the furniture.
-import { writeFileSync, existsSync } from 'node:fs'
+import { readFileSync, writeFileSync, existsSync } from 'node:fs'
 import { basename, dirname, extname, join, resolve } from 'node:path'
 import { NodeIO } from '@gltf-transform/core'
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions'
@@ -40,6 +40,28 @@ const inputPath = resolve(process.cwd(), inputArg)
 if (!existsSync(inputPath)) {
   console.error(`Not found: ${inputPath}`)
   process.exit(1)
+}
+
+function readHouseLevels(colsrcPath) {
+  const layoutPath = join(dirname(colsrcPath), `${basename(colsrcPath).replace(/\.colsrc\.glb$/, '')}.layout.json`)
+  if (!existsSync(layoutPath)) return null
+  const layout = JSON.parse(readFileSync(layoutPath, 'utf8'))
+  if (!Array.isArray(layout.levels)) return null
+  if (!layout.levels.every((level) => Number.isFinite(level.y))) throw new Error(`${layoutPath}: every level needs a numeric y`)
+  return layout.levels
+}
+
+const houseLevels = readHouseLevels(inputPath)
+
+function inWalkBand(bottom, top) {
+  if (!houseLevels) return top >= WALK_BAND_MIN_Y && bottom <= WALK_BAND_MAX_Y
+  return houseLevels.some((level) => top >= level.y + WALK_BAND_MIN_Y && bottom <= level.y + WALK_BAND_MAX_Y)
+}
+
+function levelBaseOf(c) {
+  if (!houseLevels) return 0
+  const bottom = c.cy - c.hy
+  return Math.max(0, ...houseLevels.map((level) => level.y).filter((y) => y <= bottom + WALK_BAND_MIN_Y))
 }
 
 function mat4Identity() {
@@ -264,10 +286,10 @@ function pushCuboid(cuboids, name, worldMat, localCenter, localHalf) {
   const cz = t[2] + oz
   let top = cy + hy
   let bottom = cy - hy
-  if (top < WALK_BAND_MIN_Y || bottom > WALK_BAND_MAX_Y) return false
+  if (!inWalkBand(bottom, top)) return false
 
   // Clamp absurd vertical extents so KCC stays stable
-  if (hy > 4) {
+  if (hy > 4 && !houseLevels) {
     const mid = Math.min(Math.max(cy, 0.9), 1.2)
     hy = Math.min(hy, 2.2)
     cy = mid
@@ -380,7 +402,13 @@ function clusterIndices(items, linkDist) {
   return [...groups.values()]
 }
 
+function clusterPerLevel(items, linkDist) {
+  const bases = [...new Set(items.map(levelBaseOf))]
+  return bases.flatMap((base) => clusterIndices(items.filter((c) => levelBaseOf(c) === base), linkDist))
+}
+
 function pushPlatform(cuboids, members, name) {
+  const base = levelBaseOf(members[0])
   let minX = Infinity
   let maxX = -Infinity
   let minZ = Infinity
@@ -420,11 +448,11 @@ function pushPlatform(cuboids, members, name) {
     minZ = cz - hz
     maxZ = cz + hz
   }
-  if (areaCoveredBySolid(cuboids, minX, maxX, minZ, maxZ)) return false
+  if (areaCoveredBySolid(cuboids.filter((c) => levelBaseOf(c) === base), minX, maxX, minZ, maxZ)) return false
   cuboids.push({
     name,
     cx: round4((minX + maxX) / 2),
-    cy: PLATFORM_CY,
+    cy: round4(PLATFORM_CY + base),
     cz: round4((minZ + maxZ) / 2),
     hx: round4(hx),
     hy: PLATFORM_HY,
@@ -444,13 +472,13 @@ function pushPlatform(cuboids, members, name) {
 function synthesizeFurniturePlatforms(cuboids) {
   let added = 0
   const seats = cuboids.filter(isSeatNamed)
-  for (const group of clusterIndices(seats, CLUSTER_LINK_DIST)) {
+  for (const group of clusterPerLevel(seats, CLUSTER_LINK_DIST)) {
     if (group.length < 2) continue
     if (pushPlatform(cuboids, group, `Synth_SeatCluster_${added}`)) added++
   }
 
   const props = cuboids.filter(isSurfaceMarker)
-  for (const group of clusterIndices(props, PROP_LINK_DIST)) {
+  for (const group of clusterPerLevel(props, PROP_LINK_DIST)) {
     if (group.length < 3) continue
     let minX = Infinity
     let maxX = -Infinity
@@ -546,3 +574,9 @@ writeFileSync(outPath, JSON.stringify(out))
 console.log(
   `collision: ${cuboids.length} cuboids (authored=${authoredCount}, synth=${synthAdded}), skipped=${skipped}, borders=${borders} → ${outPath}`,
 )
+if (houseLevels) {
+  for (const level of houseLevels) {
+    const count = cuboids.filter((c) => c.cy + c.hy >= level.y + WALK_BAND_MIN_Y && c.cy - c.hy <= level.y + WALK_BAND_MAX_Y).length
+    console.log(`collision: level ${level.id ?? level.y} (y ${level.y}): ${count} cuboids`)
+  }
+}

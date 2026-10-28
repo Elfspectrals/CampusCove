@@ -14,6 +14,7 @@ Work interiors (raw builds in out/work/<key>/, baked in place, then `npm run ass
 Cove Home (raw build in out/store/cove_home/, baked in place, then `npm run assets:optimize -- store`):
     --python map-src/CampusCove/build_house_lightmaps.py -- store
 """
+import json
 import os
 import re
 import sys
@@ -36,6 +37,7 @@ LIGHT_PANEL_LINK = 1.6
 
 LIGHTMAP_UV = "Lightmap"
 LIGHTMAP_SIZE = 1024
+MULTI_LEVEL_LIGHTMAP_SIZE = 2048
 LIGHTMAP_JPEG_QUALITY = 85
 LIGHTMAP_MARGIN_DIV = 0.3
 BAKE_SAMPLES = 512
@@ -177,6 +179,15 @@ def build_interior(key, source_dir, out_dir, lamp_power=LAMP_POWER_W, lightmap_s
     print(f"LIGHTMAP {key}: {len(meshes)} meshes, {lamps} lamps")
 
 
+def house_options(key):
+    layout = os.path.join(OUT, key, "interior.layout.json")
+    if os.path.exists(layout):
+        with open(layout, encoding="utf-8") as f:
+            if len(json.load(f)["levels"]) > 1:
+                return {"lightmap_size": MULTI_LEVEL_LIGHTMAP_SIZE}
+    return {}
+
+
 def main():
     args = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     options = {}
@@ -189,7 +200,7 @@ def main():
         keys, source_dir, out_dir = args or KEYS, ASSETS, OUT
     for key in keys:
         bpy.ops.wm.read_homefile(use_empty=True)
-        build_interior(key, source_dir, out_dir, **options)
+        build_interior(key, source_dir, out_dir, **(options or house_options(key)))
 
 
 main()

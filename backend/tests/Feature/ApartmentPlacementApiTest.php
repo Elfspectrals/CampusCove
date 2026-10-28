@@ -156,6 +156,51 @@ class ApartmentPlacementApiTest extends TestCase
         ])->assertStatus(422)->assertJsonPath('code', 'out_of_bounds');
     }
 
+    public function test_upstairs_furniture_is_accepted_up_to_the_house_max_y(): void
+    {
+        $catalog = $this->createApartmentAssetCatalog();
+        $owner = $this->registerAndCreditWallet(10_000, 'coins');
+        $templateKey = $this->buyHouse($owner);
+        $this->postJson('/api/shop/purchase', [
+            'shop_item_public_id' => $catalog->public_id,
+            'quantity' => 2,
+        ], [
+            'Authorization' => 'Bearer '.$owner['token'],
+        ])->assertOk();
+        $unit = $this->boughtUnit($owner);
+        $unit->interior_bounds = [...$unit->interior_bounds, 'maxY' => 5.6];
+        $unit->save();
+
+        $this->postJson('/api/apartments/spawn', $this->spawnPayload($owner['account_id'], $templateKey, 0, 0, 3.0), [
+            'Authorization' => 'Bearer '.$owner['token'],
+        ])->assertOk();
+        $this->postJson('/api/apartments/spawn', $this->spawnPayload($owner['account_id'], $templateKey, 0, 0, 5.7), [
+            'Authorization' => 'Bearer '.$owner['token'],
+        ])->assertStatus(422)->assertJsonPath('code', 'out_of_bounds');
+    }
+
+    public function test_furniture_above_a_single_storey_house_is_rejected(): void
+    {
+        $catalog = $this->createApartmentAssetCatalog();
+        $owner = $this->registerAndCreditWallet(10_000, 'coins');
+        $templateKey = $this->buyHouse($owner);
+        $this->postJson('/api/shop/purchase', [
+            'shop_item_public_id' => $catalog->public_id,
+            'quantity' => 1,
+        ], [
+            'Authorization' => 'Bearer '.$owner['token'],
+        ])->assertOk();
+        $unit = $this->boughtUnit($owner);
+        $bounds = $unit->interior_bounds;
+        unset($bounds['maxY']);
+        $unit->interior_bounds = $bounds;
+        $unit->save();
+
+        $this->postJson('/api/apartments/spawn', $this->spawnPayload($owner['account_id'], $templateKey, 0, 0, 3.1), [
+            'Authorization' => 'Bearer '.$owner['token'],
+        ])->assertStatus(422)->assertJsonPath('code', 'out_of_bounds');
+    }
+
     public function test_key_holder_decorates_until_the_owner_takes_the_keys_back(): void
     {
         $catalog = $this->createApartmentAssetCatalog();
@@ -212,9 +257,17 @@ class ApartmentPlacementApiTest extends TestCase
     }
 
     /**
+     * @param array{token: string, account_id: int} $owner
+     */
+    private function boughtUnit(array $owner): HousingUnit
+    {
+        return HousingUnit::query()->where('occupant_account_id', $owner['account_id'])->firstOrFail();
+    }
+
+    /**
      * @return array<string, mixed>
      */
-    private function spawnPayload(int $ownerAccountId, string $templateKey, float $x, float $z): array
+    private function spawnPayload(int $ownerAccountId, string $templateKey, float $x, float $z, float $y = 0): array
     {
         return [
             'owner_account_id' => $ownerAccountId,
@@ -224,7 +277,7 @@ class ApartmentPlacementApiTest extends TestCase
             'variant' => 'default',
             'color' => '#8B7AA8',
             'x' => $x,
-            'y' => 0,
+            'y' => $y,
             'z' => $z,
             'rotX' => 0,
             'rotY' => 0,

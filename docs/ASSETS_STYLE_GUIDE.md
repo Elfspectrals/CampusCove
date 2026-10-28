@@ -38,6 +38,22 @@ Source : `front/src/game/gameRoomConstants.ts` (doit rester synchro avec `socket
 - **Collisions** : meshes `COL_<Nom>` (boîtes simples) dans le fichier source, extraits par `front/scripts/extract-collision.mjs` vers `interior.collision.json`. Ne jamais dépendre des collisions auto.
 - Ajouter une entrée dans `front/src/game/assets/catalog.ts` et `ShopSeeder` / seeders concernés quand un asset est lié au backend.
 
+### Étages et escaliers des maisons (`interior.layout.json`)
+
+Chaque maison livre `houses/<key>/interior.layout.json` à côté de `interior.collision.json` (même repère : intérieur local, sol du rez-de-chaussée à `y = 0`). Sans ce fichier, le jeu suppose un seul niveau couvrant les `bounds` de la collision, hauteur 3, sans escalier.
+
+```json
+{ "version": 1, "key": "house_05",
+  "levels": [ { "id": "L0", "y": 0, "height": 2.8, "rects": [{ "minX": -5.9, "maxX": 5.9, "minZ": -4.6, "maxZ": 5.0 }] },
+              { "id": "L1", "y": 3, "height": 2.6, "rects": [ ... ] } ],
+  "stairs": [ { "name": "Stair_Main", "minX": -5.9, "maxX": -4.7, "minZ": -0.6, "maxZ": 4.0, "y0": 0, "y1": 3, "rise": "-z" } ] }
+```
+
+- **Niveaux** : `y` = sol du niveau, `height` = hauteur sous plafond (limite de pose des meubles), `rects` = surfaces marchables. Les rects d'un étage excluent la trémie de l'escalier et restent dans l'emprise du rez-de-chaussée. Maison de plain-pied : un seul niveau, `stairs: []`.
+- **Escaliers** : le rect est la surface marchable (la géométrie de l'escalier n'est que visuelle). `rise` (`-z`, `+z`, `-x`, `+x`) = sens de la montée ; la hauteur passe de `y0` au pied à `y1` en tête. Le joueur monte sur une surface jusqu'à 1 m au-dessus de ses pieds (`STEP_UP`, `front/src/game/town/houseLevels.ts`).
+- **Collisions** : pas de dalle de sol ni de plafond. Murs découpés par niveau (rez 0 → 2.8, étage 3.0 → 5.6). Le grand côté ouvert de l'escalier a une boîte pleine hauteur (0 → 5.6) ; à l'étage, une rambarde (3.0 → 4.1) ferme la trémie côté pied ; au rez, une boîte (0 → 2.8) ferme la tête pour qu'on ne passe pas sous l'escalier. Cuisine et salle de bain fixes au rez. Avec un layout, `extract-collision.mjs` garde les boîtes qui touchent la bande `[y + 0.25, y + 2.0]` d'au moins un niveau et ne rabote plus les boîtes hautes.
+- `bounds` de la collision reste l'union XZ de la maison. Côté backend, `interior_bounds.maxY` (optionnel, défaut 3) borne la hauteur de pose.
+
 ## 5. Arborescence et export
 
 ```

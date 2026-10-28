@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { disposeObject3D } from '../../avatar/compositeAvatar'
 import { COVE_HOME, findHouse, findWork } from '../assets/catalog'
+import { APARTMENT_ROOM_HEIGHT } from '../gameRoomConstants'
 import {
   fetchCollisionFile,
   setDoorBlocker,
@@ -17,6 +18,7 @@ import {
   type WorkBuilding,
   type WorldManifest,
 } from '../world/worldManifest'
+import { parseHouseLayout, singleLevelLayout, surfaceHeight, type HouseLayout } from './houseLevels'
 
 type InteriorOffset = { interiorOffset: [number, number, number] }
 type OpenHouseLot = HouseBuilding & InteriorOffset
@@ -29,7 +31,8 @@ interface BuildingFloor {
   houseKey: string
   worldToInterior: THREE.Matrix4
   bounds: NonNullable<CollisionFileJson['bounds']>
-  y: number
+  baseY: number
+  layout: HouseLayout
 }
 
 const HIDDEN_INTERIOR_NODES = new Set([
@@ -237,14 +240,29 @@ function transformTrimesh(trimesh: CollisionTrimeshJson, matrix: THREE.Matrix4):
   return { ...trimesh, vertices }
 }
 
+async function fetchHouseLayout(lot: OpenLot): Promise<HouseLayout | null> {
+  const house = lot.kind === 'house' ? findHouse(lot.key) : null
+  if (!house) return null
+  const res = await fetch(house.interiorLayoutUrl)
+  const isJson = res.headers.get('content-type')?.includes('json') ?? false
+  if (res.status === 404 || (res.ok && !isJson)) return null
+  if (!res.ok) throw new Error(`Failed to load house layout ${house.interiorLayoutUrl}: ${res.status}`)
+  return parseHouseLayout(await res.json(), lot.key)
+}
+
+function boundsReach(bounds: NonNullable<CollisionFileJson['bounds']>, [ox, , oz]: [number, number, number]): number {
+  return Math.max(...[bounds.minX, bounds.maxX].flatMap((x) => [bounds.minZ, bounds.maxZ].map((z) => Math.hypot(x + ox, z + oz))))
+}
+
 async function composeTownCollisionData(manifest: WorldManifest): Promise<CollisionFileJson> {
   const workLots = openWorkLots(manifest)
   const shellLots: ShellLot[] = [...workLots, ...openStoreLots(manifest)]
   const lots: OpenLot[] = [...openHouseLots(manifest), ...shellLots]
   const zoneCollisionUrls = manifest.zones.flatMap((zone) => (zone.collisionUrl ? [zone.collisionUrl] : []))
-  const [zones, interiors, shells] = await Promise.all([
+  const [zones, interiors, layouts, shells] = await Promise.all([
     Promise.all(zoneCollisionUrls.map(fetchCollisionFile)),
     Promise.all(lots.map((lot) => fetchCollisionFile(interiorAssetOf(lot).interiorCollisionUrl))),
+    Promise.all(lots.map(fetchHouseLayout)),
     Promise.all(shellLots.map((lot) => {
       const building = lot.kind === 'work' ? findWork(lot.key) : COVE_HOME
       if (!building) throw new Error(`Unknown building in the world manifest: ${lot.key}`)
@@ -274,8 +292,11 @@ async function composeTownCollisionData(manifest: WorldManifest): Promise<Collis
       houseKey: lot.key,
       worldToInterior: matrix.clone().invert(),
       bounds: interior.bounds,
-      y: lot.position[1] + lot.interiorOffset[1],
+      baseY: lot.position[1] + lot.interiorOffset[1],
+      layout: layouts[i] ?? singleLevelLayout(lot.key, interior.bounds, APARTMENT_ROOM_HEIGHT),
     })
+    const placed = lot.kind === 'house' ? interiorsByHouse.get(lot.key)?.parent : null
+    if (placed) placed.userData.visibilityReach = boundsReach(interior.bounds, lot.interiorOffset)
   })
   shellLots.forEach((lot, i) => {
     const matrix = lotToWorld(lot)
@@ -297,20 +318,34 @@ export function buildTownCollisionData(manifest: WorldManifest): Promise<Collisi
   return townCollision
 }
 
-function floorAt(x: number, z: number): BuildingFloor | null {
+function floorAt(x: number, z: number): { floor: BuildingFloor; local: THREE.Vector3 } | null {
   const p = new THREE.Vector3()
   for (const floor of buildingFloors) {
     p.set(x, 0, z).applyMatrix4(floor.worldToInterior)
     const { minX, maxX, minZ, maxZ } = floor.bounds
-    if (p.x >= minX && p.x <= maxX && p.z >= minZ && p.z <= maxZ) return floor
+    if (p.x >= minX && p.x <= maxX && p.z >= minZ && p.z <= maxZ) return { floor, local: p }
   }
   return null
 }
 
-export function buildingFloorAt(x: number, z: number): number | null {
-  return floorAt(x, z)?.y ?? null
+export function buildingFloorAt(x: number, z: number, feetY: number): number | null {
+  const found = floorAt(x, z)
+  if (!found) return null
+  const { floor, local } = found
+  const surface = surfaceHeight(floor.layout, local.x, local.z, feetY - floor.baseY)
+  return surface === null ? null : floor.baseY + surface
+}
+
+export function capsuleLiftInBuilding(x: number, z: number, feetY: number): number {
+  return floorAt(x, z) ? Math.max(0, feetY) : 0
+}
+
+export function houseLayout(houseKey: string): HouseLayout {
+  const floor = buildingFloors.find((f) => f.houseKey === houseKey)
+  if (!floor) throw new Error(`House ${houseKey} has no composed collision yet`)
+  return floor.layout
 }
 
 export function houseKeyAt(x: number, z: number): string | null {
-  return floorAt(x, z)?.houseKey ?? null
+  return floorAt(x, z)?.floor.houseKey ?? null
 }
