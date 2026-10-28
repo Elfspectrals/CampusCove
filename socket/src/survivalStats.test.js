@@ -1,17 +1,27 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { applyPortion, fallDamage, fullStats, normalizeStats, respawnStats, tickStats } from './survivalStats.js'
+import {
+  FOUNTAIN_COOLDOWN_MS,
+  FOUNTAIN_SIPS_PER_USE,
+  applyPortion,
+  fallDamage,
+  fountainSip,
+  fullStats,
+  normalizeStats,
+  respawnStats,
+  tickStats
+} from './survivalStats.js'
 
-test('gauges empty in a day of play (hunger) and 16 hours (thirst)', () => {
-  const afterHalfDay = tickStats(fullStats(), 12 * 3600).stats
-  assert.ok(Math.abs(afterHalfDay.hunger - 50) < 1e-9)
-  assert.ok(Math.abs(afterHalfDay.thirst - 25) < 1e-9)
+test('hunger empties in 40 minutes of play, thirst in 30', () => {
+  const after20Min = tickStats(fullStats(), 20 * 60).stats
+  assert.ok(Math.abs(after20Min.hunger - 50) < 1e-9)
+  assert.ok(Math.abs(after20Min.thirst - 100 / 3) < 1e-9)
 })
 
 test('time scale only speeds up hunger and thirst', () => {
-  const { stats } = tickStats({ health: 50, hunger: 100, thirst: 100 }, 60, 120)
-  assert.ok(stats.hunger < 100 - 8)
-  assert.ok(stats.health > 50, 'still regenerating while both gauges are high')
+  const { stats, damage } = tickStats({ health: 50, hunger: 100, thirst: 100 }, 60, 10)
+  assert.ok(Math.abs(stats.hunger - 75) < 1e-9)
+  assert.equal(damage, 0)
 })
 
 test('an empty gauge hurts, two hurt twice as much', () => {
@@ -41,4 +51,19 @@ test('falls above 3 m hurt', () => {
 test('respawn and normalisation', () => {
   assert.deepEqual(respawnStats({ health: 0, hunger: 0, thirst: 70 }), { health: 50, hunger: 30, thirst: 70 })
   assert.deepEqual(normalizeStats({ health: 140, hunger: 'x', thirst: -2 }), { health: 100, hunger: 100, thirst: 0 })
+})
+
+test('the fountains run dry for a player after a drink, then refill', () => {
+  let state = null
+  for (let i = 0; i < FOUNTAIN_SIPS_PER_USE; i++) {
+    const sip = fountainSip(state, 1000 + i)
+    assert.equal(sip.allowed, true)
+    state = sip.state
+  }
+  const readyAt = 1000 + FOUNTAIN_SIPS_PER_USE - 1 + FOUNTAIN_COOLDOWN_MS
+  assert.equal(state.readyAt, readyAt)
+  assert.equal(fountainSip(state, readyAt - 1).allowed, false)
+  const again = fountainSip(state, readyAt)
+  assert.equal(again.allowed, true)
+  assert.equal(again.state.readyAt, readyAt + FOUNTAIN_COOLDOWN_MS)
 })

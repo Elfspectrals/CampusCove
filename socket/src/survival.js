@@ -1,12 +1,15 @@
 // Hunger, thirst and health of the connected players. The live values are kept here (the rules are in
 // survivalStats.js); the API stores them, owns the food items and bills the hospital (callRealtimeBackend).
 import { callRealtimeBackend, errorPayload } from './backend.js'
-import { SURVIVAL_TIME_SCALE } from './config.js'
+import { CITY_SPAWN_RADIUS, SURVIVAL_TIME_SCALE } from './config.js'
 import { toInterior, unitAt } from './movement.js'
+import { spawnNear } from './players.js'
 import {
+  FOUNTAIN_COOLDOWN_MS,
   SPEED_BOOST_MS,
   applyPortion,
   fallDamage,
+  fountainSip,
   normalizeStats,
   respawnStats,
   tickStats
@@ -16,14 +19,17 @@ import { citySpawn, worldFountains, worldHouse } from './world.js'
 export const SURVIVAL_TICK_MS = 2000
 const SAVE_EVERY_MS = 60_000
 const KNOCKOUT_MS = 6000
-// A bite takes the front's eating animation (~1 s); a fountain sip is shorter, you keep holding the click.
+// A bite takes the front's eating animation (~1 s).
 const CONSUME_COOLDOWN_MS = 900
 const SIP_COOLDOWN_MS = 600
-const FOUNTAIN_SIP_THIRST = 4
+const FOUNTAIN_SIP_THIRST = 25
 const FOUNTAIN_REACH = 2.2
 const COOKER_REACH = 2.5
 const COOKER_KEYS = ['decor_stove_oven', 'decor_bbq_grill']
 const CODE_PATTERN = /^[a-z0-9_]{1,64}$/
+// Fountain budget per account (survivalStats.fountainSip), kept across reconnects; time scale speeds it up in playtests.
+const fountainBudgets = new Map()
+const FOUNTAIN_COOLDOWN = FOUNTAIN_COOLDOWN_MS / SURVIVAL_TIME_SCALE
 
 function warn(context, error) {
   console.warn(`[survival] ${context}:`, error instanceof Error ? error.message : error)
@@ -87,17 +93,20 @@ function hurt(room, client, player, amount, cause) {
   if (player.stats.health <= 0) knockOut(room, client, player)
 }
 
-/** Health reached 0: the player passes out, pays the hospital and wakes up at home (or at the town spawn). */
+/** Health reached 0: the player passes out, pays the hospital and wakes up at the town spawn. */
 function knockOut(room, client, player) {
   player.knockedOutUntil = Date.now() + KNOCKOUT_MS
   player.speedBoostUntil = 0
   client.send('survival_knocked_out', { durationMs: KNOCKOUT_MS })
   callRealtimeBackend(player.token, '/survival/hospital', 'POST')
-    .then((data) => client.send('survival_hospital_bill', { billed: Number(data?.billed) || 0 }))
+    .then((data) => client.send('survival_hospital_bill', {
+      billed: Number(data?.billed) || 0,
+      balanceAfter: typeof data?.balance_after === 'number' ? data.balance_after : null
+    }))
     .catch((error) => warn('hospital bill failed', error))
   room.clock.setTimeout(() => {
     if (room.players.get(client.sessionId) !== player) return
-    const spawn = respawnPoint(room, player)
+    const spawn = spawnNear(citySpawn(), CITY_SPAWN_RADIUS)
     Object.assign(player, spawn, { fallPeakY: spawn.y, lastMoveAt: Date.now(), knockedOutUntil: 0 })
     setStats(player, respawnStats(player.stats))
     client.send('survival_respawn', { ...spawn })
@@ -105,12 +114,6 @@ function knockOut(room, client, player) {
     room.broadcastMove(client, player)
     void saveSurvival(player)
   }, KNOCKOUT_MS)
-}
-
-function respawnPoint(room, player) {
-  const home = room.housingUnits.find((u) => u.status === 'occupied' && u.occupant_account_id === player.accountId)
-  const spawn = citySpawn()
-  return home ? { x: home.pos_x, y: spawn.y, z: home.pos_z } : { ...spawn }
 }
 
 /** Called for every accepted move: tracks the highest point of a fall and hurts on landing. */
@@ -147,14 +150,14 @@ export async function onConsume(room, client, payload) {
     })
     sendStats(client, player)
     const action = (portion.thirst ?? 0) > (portion.hunger ?? 0) ? 'drink' : 'eat'
-    room.forEachClient((c) => c.send('user_action', { sessionId: client.sessionId, action }), client)
+    room.forEachClient((c) => c.send('user_action', { sessionId: client.sessionId, action, code }), client)
     if (player.stats.health <= 0) knockOut(room, client, player)
   } catch (error) {
     client.send('survival_error', errorPayload(error, 'You cannot eat this.', 'consume_failed'))
   }
 }
 
-/** A sip at a town drinking fountain (free, slow). */
+/** A drink at a town drinking fountain (free, then a 30 min cooldown on every fountain). */
 export function onDrinkFountain(room, client) {
   const player = room.players.get(client.sessionId)
   const now = Date.now()
@@ -162,9 +165,14 @@ export function onDrinkFountain(room, client) {
   const near = worldFountains().some((f) => Math.hypot(player.x - f.x, player.z - f.z) <= FOUNTAIN_REACH)
   if (!near) return
   player.lastSipAt = now
+  const key = player.accountId ?? client.sessionId
+  const sip = fountainSip(fountainBudgets.get(key), now, FOUNTAIN_COOLDOWN)
+  fountainBudgets.set(key, sip.state)
+  if (sip.readyAt > now) client.send('fountain_cooldown', { remainingMs: sip.readyAt - now })
+  if (!sip.allowed) return
   setStats(player, applyPortion(player.stats, { thirst: FOUNTAIN_SIP_THIRST }))
   sendStats(client, player)
-  room.forEachClient((c) => c.send('user_action', { sessionId: client.sessionId, action: 'drink' }), client)
+  room.forEachClient((c) => c.send('user_action', { sessionId: client.sessionId, action: 'drink', code: null }), client)
 }
 
 function isNearCooker(room, player) {

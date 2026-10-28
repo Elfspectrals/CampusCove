@@ -50,7 +50,7 @@ const heartbeat = computed(() => `${(props.effects?.heartbeatPeriod ?? 1).toFixe
     <Transition name="cc-ko">
       <div v-if="knockedOut" class="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/90 text-center">
         <p class="font-display text-2xl tracking-wide text-fog">You passed out…</p>
-        <p class="text-sm text-mist">You'll wake up at home, a bit weak.</p>
+        <p class="text-sm text-mist">You'll wake up at the town spawn, a bit weak.</p>
         <p v-if="hospitalBill !== null" class="text-xs font-bold text-coral">
           {{ hospitalBill > 0 ? `Hospital bill: ${hospitalBill} coins` : 'The hospital waived the bill.' }}
         </p>
