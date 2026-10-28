@@ -45,6 +45,19 @@ services:
       timeout: 5s
       retries: 5
 
+  postgres-test-db:
+    image: postgres:16-alpine
+    container_name: campuscove-test-db-init
+    environment:
+      PGHOST: postgres
+      PGUSER: postgres
+      PGPASSWORD: secret
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+    command: sh -c "psql -tAc \"SELECT 1 FROM pg_database WHERE datname = 'campus_cove_test'\" | grep -q 1 || psql -c 'CREATE DATABASE campus_cove_test'"
+
   backend:
     build:
       context: ./backend
