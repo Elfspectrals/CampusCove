@@ -16,6 +16,7 @@ import type {
   HousingUnitPayload,
   RemoteUserPayload,
   RoomInitPayload,
+  UserActionPayload,
 } from '../../types/gameRealtime'
 import { useRemoteAvatars } from './useRemoteAvatars'
 
@@ -141,6 +142,12 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     )
 
     room.onMessage('user_left', (data: { sessionId: string }) => remotes.remove(data.sessionId))
+
+    room.onMessage('user_action', (data: UserActionPayload) => {
+      if (data.sessionId !== room.sessionId && (data.action === 'eat' || data.action === 'drink')) {
+        remotes.showAction(data.sessionId, data.action, typeof data.code === 'string' ? data.code : null)
+      }
+    })
 
     room.onMessage('apartment_inventory', (data: { items: ApartmentInventoryItem[] }) => {
       onInventory(Array.isArray(data.items) ? data.items : [])

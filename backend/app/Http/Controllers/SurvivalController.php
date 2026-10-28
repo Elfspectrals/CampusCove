@@ -54,7 +54,7 @@ class SurvivalController extends Controller
     /** Realtime server only. */
     public function hospital(Request $request): JsonResponse
     {
-        return response()->json(['billed' => $this->survival->billHospital($this->accountId($request))]);
+        return response()->json($this->survival->billHospital($this->accountId($request)));
     }
 
     private function accountId(Request $request): int

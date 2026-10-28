@@ -4,8 +4,9 @@
 export const MAX_STAT = 100
 
 // Time for a full gauge to empty while the player is online (no decay offline, everywhere in the world).
-const HUNGER_EMPTY_S = 24 * 3600
-const THIRST_EMPTY_S = 16 * 3600
+// DarkRP's hunger mod empties in ~10 min; a social RP session wants a meal and a drink every half hour or so.
+const HUNGER_EMPTY_S = 40 * 60
+const THIRST_EMPTY_S = 30 * 60
 // An empty gauge hurts: 10 minutes from full health with one empty gauge, 5 with both.
 const STARVATION_DAMAGE_PER_S = MAX_STAT / 600
 // Both gauges at or above REGEN_THRESHOLD heal back to full in 15 minutes.
@@ -77,4 +78,21 @@ export function respawnStats(stats) {
     hunger: Math.max(stats.hunger, RESPAWN_MIN_GAUGE),
     thirst: Math.max(stats.thirst, RESPAWN_MIN_GAUGE)
   }
+}
+
+// The town fountains are a free top-up, not a way to skip buying drinks: one drink, then every fountain is dry
+// for that player for FOUNTAIN_COOLDOWN_MS (thirst empties in 30 min, so drinks still have to be bought).
+export const FOUNTAIN_SIPS_PER_USE = 1
+export const FOUNTAIN_COOLDOWN_MS = 30 * 60_000
+
+/**
+ * One fountain sip against the player's budget `state` ({ sips, readyAt } or null).
+ * Returns { allowed, state, readyAt }: readyAt > now while the fountains are dry for this player.
+ */
+export function fountainSip(state, now, cooldownMs = FOUNTAIN_COOLDOWN_MS) {
+  const current = state && state.readyAt > 0 && now >= state.readyAt ? null : state
+  if (current && current.readyAt > now) return { allowed: false, state: current, readyAt: current.readyAt }
+  const sips = (current?.sips ?? 0) + 1
+  const next = sips >= FOUNTAIN_SIPS_PER_USE ? { sips: 0, readyAt: now + cooldownMs } : { sips, readyAt: 0 }
+  return { allowed: true, state: next, readyAt: next.readyAt }
 }

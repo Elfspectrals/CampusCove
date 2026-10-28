@@ -158,6 +158,11 @@ export const COVE_HOME = {
 export const SURVIVAL_WATCH_URL = `${ROOT}/items/tools/watch/model.glb`
 export const DRINKING_FOUNTAIN_URL = `${ROOT}/park/drinking_fountain/model.glb`
 
+/** Preview picture of a food item: code `food_<key>` -> items/food/<key>/preview.png (backend FoodCatalog). */
+export function foodPreviewUrl(code: string): string {
+  return `${ROOT}/items/food/${code.replace(/^food_/, '')}/preview.png`
+}
+
 /** Furniture model shown in the store and placed in houses: public/assets/decor/<key>/model.glb. */
 export function decorModelUrl(key: string): string {
   return `${ROOT}/decor/${key}/model.glb`

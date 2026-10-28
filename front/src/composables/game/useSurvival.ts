@@ -1,6 +1,7 @@
 import { computed, ref, watch, type Ref, type ShallowRef } from 'vue'
 import type { Room } from '@colyseus/sdk'
 import * as THREE from 'three'
+import { applyCachedBalanceAfterPurchase } from '../../api/session'
 import { KEY_BINDINGS } from '../../config/keybindings'
 import { createBiteParticles } from '../../game/biteParticles'
 import { screenEffects, walkSpeedFactor, type SurvivalStats } from '../../game/survival'
@@ -12,8 +13,6 @@ import type { ScreenPrompt } from './useInteractionTargets'
 
 /** Raw items that can be cooked (backend FoodCatalog::COOKING). */
 const COOKABLE = new Set(['food_fish_raw'])
-/** A fountain sip every this often while the click is held (the server allows one per 600 ms). */
-const SIP_EVERY_MS = 650
 const REDUCED_EFFECTS_KEY = 'cc.reducedEffects'
 
 type Arms = {
@@ -66,7 +65,8 @@ export function useSurvival(deps: SurvivalDeps) {
   const watchHud = createSurvivalWatch()
   let particles: ReturnType<typeof createBiteParticles> | null = null
   let fountains: ReturnType<typeof createFountains> | null = null
-  let sipTimer: number | undefined
+  /** Local time when the fountains give water again (server: survivalStats.fountainSip). */
+  let fountainReadyAt = 0
   let messageTimer: number | undefined
   const projection = new THREE.Vector3()
 
@@ -100,15 +100,19 @@ export function useSurvival(deps: SurvivalDeps) {
       say('Cooked! It is in your inventory.')
       deps.refreshInventory()
     })
+    room.onMessage('fountain_cooldown', (data: { remainingMs: number }) => {
+      fountainReadyAt = Date.now() + data.remainingMs
+    })
     room.onMessage('survival_error', (data: { message?: string }) => say(data.message ?? 'Not possible.'))
     room.onMessage('survival_knocked_out', () => {
       knockedOut.value = true
       hospitalBill.value = null
-      stopSipping()
       deps.getArms()?.raiseWatch(false)
     })
-    room.onMessage('survival_hospital_bill', (data: { billed: number }) => {
+    room.onMessage('survival_hospital_bill', (data: { billed: number; balanceAfter: number | null }) => {
       hospitalBill.value = data.billed
+      // the wallet in the header reads this cache
+      if (typeof data.balanceAfter === 'number') applyCachedBalanceAfterPurchase('coins', data.balanceAfter)
     })
     room.onMessage('survival_respawn', (data: { x: number; y: number; z: number }) => {
       deps.teleport(data.x, data.y, data.z)
@@ -139,28 +143,29 @@ export function useSurvival(deps: SurvivalDeps) {
     return fountains?.nearest(deps.myPosition.x, deps.myPosition.z) ?? null
   }
 
+  const fountainDry = () => Date.now() < fountainReadyAt
+
+  function formatWait(ms: number): string {
+    const s = Math.ceil(ms / 1000)
+    return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
+  }
+
   function sip(): void {
-    if (!nearFountain() || knockedOut.value) {
-      stopSipping()
-      return
-    }
+    if (!nearFountain() || knockedOut.value || fountainDry()) return
     deps.gameRoomRef.value?.send('drink_fountain')
     deps.getArms()?.eat()
     particles?.burst('drink')
-  }
-
-  function stopSipping(): void {
-    window.clearInterval(sipTimer)
-    sipTimer = undefined
   }
 
   /** Left click (nothing else to interact with): returns true when it was used here. */
   function onPrimaryDown(): boolean {
     if (!deps.pointerLocked.value || knockedOut.value) return false
     if (nearFountain()) {
+      if (fountainDry()) {
+        say(`You already drank. Fountains are available again in ${formatWait(fountainReadyAt - Date.now())}.`)
+        return true
+      }
       sip()
-      stopSipping()
-      sipTimer = window.setInterval(sip, SIP_EVERY_MS)
       return true
     }
     const item = heldConsumable()
@@ -191,16 +196,10 @@ export function useSurvival(deps: SurvivalDeps) {
     if (e.code === KEY_BINDINGS.survivalWatch) deps.getArms()?.raiseWatch(false)
   }
 
-  function onMouseUp(e: MouseEvent): void {
-    if (e.button === 0) stopSipping()
-  }
-
   function bindInputListeners(): () => void {
     document.addEventListener('keyup', onKeyUp)
-    document.addEventListener('mouseup', onMouseUp)
     return () => {
       document.removeEventListener('keyup', onKeyUp)
-      document.removeEventListener('mouseup', onMouseUp)
     }
   }
 
@@ -221,7 +220,9 @@ export function useSurvival(deps: SurvivalDeps) {
     const fountain = nearFountain()
     if (fountain) {
       const screen = projectToScreen(fountain.x, fountain.y + 1.25, fountain.z)
-      return screen && { ...screen, key: 'Hold', action: 'Drink', detail: 'Drinking fountain' }
+      if (!screen) return null
+      if (fountainDry()) return { ...screen, action: 'Drinking fountain', detail: `Available in ${formatWait(fountainReadyAt - Date.now())}` }
+      return { ...screen, action: 'Drink', detail: 'Drinking fountain' }
     }
     return null
   }
@@ -251,7 +252,6 @@ export function useSurvival(deps: SurvivalDeps) {
   }
 
   function dispose(): void {
-    stopSipping()
     window.clearTimeout(messageTimer)
     watchHud.dispose()
     particles?.dispose()

@@ -125,7 +125,8 @@ class SurvivalApiTest extends TestCase
 
         $this->postJson('/api/survival/hospital', [], $this->auth($rich['token'], self::SECRET))
             ->assertOk()
-            ->assertJsonPath('billed', SurvivalService::HOSPITAL_FEE);
+            ->assertJsonPath('billed', SurvivalService::HOSPITAL_FEE)
+            ->assertJsonPath('balance_after', 500 - SurvivalService::HOSPITAL_FEE);
         $this->postJson('/api/survival/hospital', [], $this->auth($poor['token'], self::SECRET))
             ->assertJsonPath('billed', 15);
         $this->postJson('/api/survival/hospital', [], $this->auth($poor['token'], self::SECRET))

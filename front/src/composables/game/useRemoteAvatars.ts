@@ -6,6 +6,7 @@ import {
 } from '../../api/characterCosmetics'
 import { buildCompositeAvatar, disposeObject3D } from '../../avatar/compositeAvatar'
 import { createTintedCharacterFromUrl, updateAvatarAnimation } from '../../avatar/glbCharacter'
+import { createActionBubble, type AvatarAction } from '../../game/actionBubble'
 import { EYE_HEIGHT } from '../../game/gameRoomConstants'
 import type { RemoteUserPayload } from '../../types/gameRealtime'
 
@@ -74,6 +75,8 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
   const pendingAppearance = new Map<string, AppearanceUpdate>()
   const upsertTokenByUserId = new Map<string, number>()
   const renderTokenBySessionId = new Map<string, number>()
+  /** Eat / drink bubbles over other players' heads (they live on the avatar group). */
+  let bubbles: Array<ReturnType<typeof createActionBubble>> = []
 
   function nextRenderToken(sessionId: string): number {
     const next = (renderTokenBySessionId.get(sessionId) ?? 0) + 1
@@ -226,6 +229,13 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     entry.ry = parseYaw(ry ?? entry.ry)
   }
 
+  /** Another player ate or drank (socket `user_action`): a bubble with the food pops over their head. */
+  function showAction(sessionId: string, action: AvatarAction, code: string | null) {
+    const entry = avatars.get(sessionId)
+    if (!entry) return
+    bubbles.push(createActionBubble(entry.group, action, code))
+  }
+
   function clear() {
     for (const id of [...avatars.keys()]) remove(id)
   }
@@ -242,6 +252,7 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
    * continuous between network updates (sent every 50 ms) instead of jumping.
    */
   function tick(dt: number) {
+    if (bubbles.length > 0) bubbles = bubbles.filter((b) => b.update(dt))
     const t = 1 - Math.exp(-REMOTE_SMOOTHING * dt)
     for (const entry of avatars.values()) {
       const group = entry.group
@@ -268,5 +279,5 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     }
   }
 
-  return { upsert, updateAppearance, setTarget, remove, clear, tick }
+  return { upsert, updateAppearance, setTarget, showAction, remove, clear, tick }
 }

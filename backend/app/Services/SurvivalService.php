@@ -125,14 +125,19 @@ final class SurvivalService
         return ['code' => $cookedCode];
     }
 
-    /** Charges the hospital fee, or whatever the player has left. Returns the amount billed. */
-    public function billHospital(int $accountId): int
+    /**
+     * Charges the hospital fee, or whatever the player has left.
+     *
+     * @return array{billed: int, balance_after: int}
+     */
+    public function billHospital(int $accountId): array
     {
-        return DB::transaction(function () use ($accountId): int {
+        return DB::transaction(function () use ($accountId): array {
             $wallet = Wallet::lockForAccount($accountId, 'coins');
-            $amount = min(self::HOSPITAL_FEE, max(0, $wallet->balance()));
+            $balance = $wallet->balance();
+            $amount = min(self::HOSPITAL_FEE, max(0, $balance));
             if ($amount === 0) {
-                return 0;
+                return ['billed' => 0, 'balance_after' => $balance];
             }
             $tx = EconomyTransaction::query()->create([
                 'server_id' => null,
@@ -149,7 +154,7 @@ final class SurvivalService
                 'reason' => 'hospital_bill',
             ]);
 
-            return $amount;
+            return ['billed' => $amount, 'balance_after' => $balance - $amount];
         });
     }
 
