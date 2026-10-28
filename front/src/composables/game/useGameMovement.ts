@@ -1,7 +1,9 @@
 import type { Ref, ShallowRef } from 'vue'
 import type { Room } from '@colyseus/sdk'
 import * as THREE from 'three'
-import { KEY_BINDINGS, matchesAnyMovementKey } from '../../config/keybindings'
+import { matches, type BindableAction } from '../../config/keybindings'
+
+const HOTBAR_ACTIONS: BindableAction[] = ['hotbar1', 'hotbar2', 'hotbar3', 'hotbar4', 'hotbar5', 'hotbar6', 'hotbar7', 'hotbar8', 'hotbar9']
 import { EYE_HEIGHT } from '../../game/gameRoomConstants'
 import { resolveWorldMovement } from '../../game/collision/worldCollision'
 import { terrainHeightAt } from '../../game/town/terrainHeight'
@@ -158,23 +160,23 @@ export function useGameMovement(deps: UseGameMovementDeps) {
   }
 
   function setMoveKey(code: string, down: boolean): void {
-    if (matchesAnyMovementKey(code, KEY_BINDINGS.moveForward)) keys.forward = down
-    else if (matchesAnyMovementKey(code, KEY_BINDINGS.moveBack)) keys.back = down
-    else if (matchesAnyMovementKey(code, KEY_BINDINGS.moveLeft)) keys.left = down
-    else if (matchesAnyMovementKey(code, KEY_BINDINGS.moveRight)) keys.right = down
+    if (matches('moveForward', code)) keys.forward = down
+    else if (matches('moveBack', code)) keys.back = down
+    else if (matches('moveLeft', code)) keys.left = down
+    else if (matches('moveRight', code)) keys.right = down
   }
 
   function onKeyDown(e: KeyboardEvent) {
     if (deps.handleExtraKeyDown(e)) return
     // keyboard fallback for the left-click door interaction
-    if (e.code === KEY_BINDINGS.interact && deps.tryInteract()) return
-    if (e.code === KEY_BINDINGS.apartmentInventoryToggle && !e.repeat) {
+    if (matches('interact', e.code) && deps.tryInteract()) return
+    if (matches('inventory', e.code) && !e.repeat) {
       deps.onToggleInventory()
       return
     }
-    const digit = e.repeat ? null : /^Digit([1-9])$/.exec(e.code)
-    if (digit) {
-      deps.onHotbarDigit(Number(digit[1]) - 1)
+    const slot = e.repeat ? -1 : HOTBAR_ACTIONS.findIndex((a) => matches(a, e.code))
+    if (slot >= 0) {
+      deps.onHotbarDigit(slot)
       return
     }
     setMoveKey(e.code, true)

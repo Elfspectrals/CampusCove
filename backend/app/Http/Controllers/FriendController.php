@@ -80,7 +80,7 @@ class FriendController extends Controller
     public function request(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'username' => 'required|string|min:3|max:24',
+            'username' => 'required|string|min:3|max:255',
             'tag' => 'required|integer|min:0|max:9999',
         ]);
         $normalized = mb_strtolower($validated['username']);

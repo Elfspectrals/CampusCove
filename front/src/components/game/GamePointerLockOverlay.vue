@@ -1,21 +1,29 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { actionKeyLabels, bindings, keyLabel } from '../../config/keybindings'
 import UiIcon from '../ui/UiIcon.vue'
 import UiLogo from '../ui/UiLogo.vue'
 
 const emit = defineEmits<{
   requestPointerLock: []
+  openSettings: []
   logout: []
 }>()
 
-const controls: Array<{ keys: string[]; label: string }> = [
-  { keys: ['W', 'A', 'S', 'D'], label: 'Move (ZQSD on AZERTY)' },
-  { keys: ['Mouse'], label: 'Look around' },
-  { keys: ['Left click'], label: 'Use a door, eat / drink what you hold' },
-  { keys: ['T'], label: 'Hold to look at your watch (health, hunger, thirst)' },
-  { keys: ['E'], label: 'Inventory' },
-  { keys: ['1–9'], label: 'Hotbar slot' },
-  { keys: ['Esc'], label: 'Pause / free mouse' },
-]
+/** The player's own keys (Settings), first key of each action. */
+const controls = computed<Array<{ keys: string[]; label: string }>>(() => {
+  const first = (a: Parameters<typeof actionKeyLabels>[0]) => actionKeyLabels(a).slice(0, 1)
+  const hotbar = [bindings.hotbar1[0], bindings.hotbar9[0]].filter((k): k is string => !!k).map(keyLabel)
+  return [
+    { keys: [...first('moveForward'), ...first('moveLeft'), ...first('moveBack'), ...first('moveRight')], label: 'Move' },
+    { keys: ['Mouse'], label: 'Look around' },
+    { keys: ['Left click'], label: 'Use a door, eat / drink what you hold' },
+    { keys: first('survivalWatch'), label: 'Hold to look at your watch (health, hunger, thirst)' },
+    { keys: first('inventory'), label: 'Inventory' },
+    { keys: hotbar.length === 2 ? [`${hotbar[0]}–${hotbar[1]}`] : hotbar, label: 'Hotbar slot' },
+    { keys: ['Esc'], label: 'Pause / free mouse' },
+  ]
+})
 </script>
 
 <template>
@@ -38,9 +46,14 @@ const controls: Array<{ keys: string[]; label: string }> = [
           </li>
         </ul>
 
-        <button type="button" class="cc-btn cc-btn-ghost cc-btn-sm mt-5" @click="emit('logout')">
-          <UiIcon name="logout" :size="16" /> Log out
-        </button>
+        <div class="mt-5 flex flex-wrap justify-center gap-2">
+          <button type="button" class="cc-btn cc-btn-ghost cc-btn-sm" @click="emit('openSettings')">
+            <UiIcon name="settings" :size="16" /> Settings
+          </button>
+          <button type="button" class="cc-btn cc-btn-ghost cc-btn-sm" @click="emit('logout')">
+            <UiIcon name="logout" :size="16" /> Log out
+          </button>
+        </div>
       </div>
     </div>
   </div>

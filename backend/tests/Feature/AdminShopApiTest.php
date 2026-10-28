@@ -388,6 +388,8 @@ class AdminShopApiTest extends TestCase
             'username' => $username,
             'password' => 'password1x',
             'password_confirmation' => 'password1x',
+            'accepted_terms' => true,
+            'age_confirmed' => true,
         ]);
         $reg->assertCreated();
         $accountId = (int) $reg->json('user.account_id');

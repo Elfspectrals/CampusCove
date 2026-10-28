@@ -26,6 +26,7 @@ $allowedOrigins = is_string($envAllowedOrigins) && $envAllowedOrigins !== ''
 return Application::configure(basePath: dirname(__DIR__))
     ->withSchedule(function (Schedule $schedule): void {
         $schedule->command('housing:collect-taxes')->everyMinute();
+        $schedule->command('accounts:purge-inactive')->dailyAt('04:00');
     })
     ->withRouting(
         web: __DIR__.'/../routes/web.php',

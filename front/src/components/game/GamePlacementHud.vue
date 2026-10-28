@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { actionKeyLabels } from '../../config/keybindings'
+
+const rotateKey = computed(() => actionKeyLabels('rotate')[0] ?? '?')
 defineProps<{
   visible: boolean
   hints: string[]
@@ -17,8 +21,8 @@ defineProps<{
       <div class="mt-2 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-[11px] font-bold text-mist">
         <span class="cc-keycap">LMB</span><span>place / pick</span>
         <span class="cc-keycap">RMB</span><span>cancel</span>
-        <span class="cc-keycap">R</span><span>rotate</span>
-        <span class="cc-keycap">⇧ R</span><span>reverse</span>
+        <span class="cc-keycap">{{ rotateKey }}</span><span>rotate</span>
+        <span class="cc-keycap">⇧ {{ rotateKey }}</span><span>reverse</span>
       </div>
     </div>
   </div>

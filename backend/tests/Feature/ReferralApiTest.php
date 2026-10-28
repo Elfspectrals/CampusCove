@@ -102,6 +102,8 @@ class ReferralApiTest extends TestCase
             'username' => 'u'.Str::lower(Str::random(12)),
             'password' => 'password1x',
             'password_confirmation' => 'password1x',
+            'accepted_terms' => true,
+            'age_confirmed' => true,
         ];
         if ($referralCode !== null) {
             $payload['referral_code'] = $referralCode;

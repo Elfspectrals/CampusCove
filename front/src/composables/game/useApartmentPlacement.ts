@@ -1,7 +1,7 @@
 import { computed, ref, shallowRef, watch, type Ref, type WatchStopHandle } from 'vue'
 import type { Room } from '@colyseus/sdk'
 import * as THREE from 'three'
-import { matchesRotateCCW, matchesRotateCW } from '../../config/keybindings'
+import { actionKeyLabels, matches, matchesRotateCCW, matchesRotateCW } from '../../config/keybindings'
 import { createPlacementGhost, DEFAULT_GHOST_COLOR } from '../../game/placement/placementGhost'
 import { cuboidOverlapsPlayer, fetchCollisionFile, type CollisionFileJson } from '../../game/collision/worldCollision'
 import { propCuboidOf, syncPropBlocker } from '../../game/collision/propBlocker'
@@ -15,7 +15,19 @@ const ROT_TAU_S = 0.028
 const RAYCAST_MAX = 24
 const YAW_STEP = Math.PI / 12
 const FLOOR_TOLERANCE = 0.01
-const PLACE_HINT = 'LMB place · RMB cancel · R rotate · Shift+R reverse · Esc / E cancel'
+/** Placement hints with the player's own keys (Settings). */
+function rotateHint(): string {
+  const r = actionKeyLabels('rotate')[0]
+  const inv = actionKeyLabels('inventory')[0]
+  return `${r ? `${r} rotate · Shift+${r} reverse · ` : ''}Esc${inv ? ` / ${inv}` : ''} cancel`
+}
+function placeHint(): string {
+  return `LMB place · RMB cancel · ${rotateHint()}`
+}
+function moveHint(): string {
+  const put = actionKeyLabels('putAway')[0]
+  return `LMB commit move · ${put ? `${put} put back in inventory · ` : ''}RMB cancel · ${rotateHint()}`
+}
 const NOT_HERE_HINT = 'Furniture can only be placed in a house you own or hold a key to'
 
 const UP = new THREE.Vector3(0, 1, 0)
@@ -157,7 +169,7 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
       if (currentState.value.kind === 'preview_new' && q <= 0) cancelPreview()
     })
     currentState.value = { kind: 'preview_new', itemDef, ownedCountRef }
-    showGhost(deps.canDecorate.value ? PLACE_HINT : NOT_HERE_HINT)
+    showGhost(deps.canDecorate.value ? placeHint() : NOT_HERE_HINT)
     loadGhostVisual(itemDef)
     void ensureWorld()
   }
@@ -178,7 +190,7 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
           ? sourceMesh.userData.apartmentObjectModelGlb
           : undefined,
       })
-      showGhost('LMB commit move · RMB cancel · R rotate · Shift+R reverse · Esc / E cancel')
+      showGhost(moveHint())
     })
   }
 
@@ -324,7 +336,7 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
     const valid = deps.canDecorate.value && ghostInsideRoom() && !physics.ghostIntersects(ghost.root, ignored)
       && !ghostOverlapsPlayer()
     if (st.kind === 'preview_new') {
-      const hint = deps.canDecorate.value ? PLACE_HINT : NOT_HERE_HINT
+      const hint = deps.canDecorate.value ? placeHint() : NOT_HERE_HINT
       if (hudHints.value[0] !== hint) hudHints.value = [hint]
     }
     if (ghost.setValid(valid)) {
@@ -340,10 +352,20 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
   function onKeyDown(e: KeyboardEvent): boolean {
     if (e.repeat || currentState.value.kind === 'idle') return false
     if (e.code === 'Escape') cancelPreview()
+    else if (matches('putAway', e.code) && currentState.value.kind === 'preview_existing') putAwayMoving()
     else if (matchesRotateCW(e)) userYawTarget += YAW_STEP
     else if (matchesRotateCCW(e)) userYawTarget -= YAW_STEP
     else return false
     return true
+  }
+
+  /** The piece being moved goes back to the owner's inventory; the server then removes it from the house. */
+  function putAwayMoving(): void {
+    const st = currentState.value
+    const room = deps.getColyseusRoom()
+    if (st.kind !== 'preview_existing' || !room || !deps.canDecorate.value) return
+    room.send('apartment_pickup_request', { objectId: st.objectId })
+    cancelPreview()
   }
 
   function tryCommitPreview(): void {

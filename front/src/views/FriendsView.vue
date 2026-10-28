@@ -6,6 +6,7 @@ import * as referralsApi from '../api/referrals'
 import type { ReferralSummary } from '../api/referrals'
 import UiCurrency from '../components/ui/UiCurrency.vue'
 import UiIcon from '../components/ui/UiIcon.vue'
+import ReportPlayerDialog from '../components/site/ReportPlayerDialog.vue'
 
 const friends = ref<Friend[]>([])
 const pending = ref<PendingFriend[]>([])
@@ -17,6 +18,7 @@ const addLoading = ref(false)
 const friendsTab = ref<'all' | 'online' | 'pending'>('all')
 const referral = ref<ReferralSummary | null>(null)
 const copied = ref(false)
+const reporting = ref<{ accountId: number; name: string } | null>(null)
 const inviteLink = computed(() =>
   referral.value ? `${window.location.origin}/register?ref=${encodeURIComponent(referral.value.code)}` : '',
 )
@@ -205,6 +207,7 @@ function statusLabel(status: string): string {
                     <button type="button" class="cc-btn cc-btn-mint cc-btn-sm" @click="acceptFriend(p.account_id)"><UiIcon name="check" :size="16" /> Accept</button>
                     <button type="button" class="cc-btn cc-btn-ghost cc-btn-sm" @click="declineFriend(p.account_id)">Decline</button>
                     <button type="button" class="cc-btn cc-btn-coral cc-btn-sm cc-btn-icon" title="Block" aria-label="Block" @click="blockFriend(p.account_id)"><UiIcon name="ban" :size="16" /></button>
+                    <button type="button" class="cc-btn cc-btn-ghost cc-btn-sm cc-btn-icon" :title="$t('report.action')" :aria-label="$t('report.action')" @click="reporting = { accountId: p.account_id, name: p.display_name }"><UiIcon name="flag" :size="16" /></button>
                   </div>
                 </li>
               </ul>
@@ -250,6 +253,15 @@ function statusLabel(status: string): string {
               <button
                 type="button"
                 class="cc-btn cc-btn-ghost cc-btn-sm cc-btn-icon transition sm:opacity-0 sm:focus-visible:opacity-100 sm:group-hover:opacity-100"
+                :title="$t('report.action')"
+                :aria-label="$t('report.action')"
+                @click="reporting = { accountId: f.account_id, name: f.display_name }"
+              >
+                <UiIcon name="flag" :size="16" />
+              </button>
+              <button
+                type="button"
+                class="cc-btn cc-btn-ghost cc-btn-sm cc-btn-icon transition sm:opacity-0 sm:focus-visible:opacity-100 sm:group-hover:opacity-100"
                 title="Remove friend"
                 aria-label="Remove friend"
                 @click="removeFriend(f.account_id)"
@@ -270,7 +282,7 @@ function statusLabel(status: string): string {
         <div class="mt-5 flex items-end gap-2">
           <div class="min-w-0 flex-1">
             <label for="add-username" class="cc-label">Username</label>
-            <input id="add-username" v-model="addUsername" type="text" placeholder="pseudo" class="cc-input" @keydown.enter="sendFriendRequest" />
+            <input id="add-username" v-model="addUsername" type="text" placeholder="pseudo…" spellcheck="false" autocapitalize="off" autocomplete="off" class="cc-input" @keydown.enter="sendFriendRequest" />
           </div>
           <span class="pb-3 font-display text-2xl text-mist">#</span>
           <div class="w-24">
@@ -324,5 +336,6 @@ function statusLabel(status: string): string {
       </aside>
       </div>
     </div>
+    <ReportPlayerDialog v-if="reporting" :account-id="reporting.accountId" :name="reporting.name" @close="reporting = null" />
   </div>
 </template>
