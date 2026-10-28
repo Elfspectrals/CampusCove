@@ -1,0 +1,5 @@
+# TODO(publisher): replace the placeholder contact before going public.
+Contact: mailto:contact@campuscove.example
+Expires: 2027-10-28T00:00:00.000Z
+Preferred-Languages: fr, en
+Policy: https://campus-cove.vercel.app/legal/legal-notice

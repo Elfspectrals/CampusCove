@@ -7,6 +7,7 @@ import * as friendsApi from '../api/friends'
 import type { Friend } from '../api/friends'
 import UiIcon from '../components/ui/UiIcon.vue'
 import UiCurrency from '../components/ui/UiCurrency.vue'
+import PrivacyPanel from '../components/site/PrivacyPanel.vue'
 import type { UiIconName } from '../components/ui/icons'
 
 const router = useRouter()
@@ -287,5 +288,9 @@ const recentItems = [
         </div>
       </div>
     </section>
+
+    <div class="mt-8 max-w-md">
+      <PrivacyPanel />
+    </div>
   </div>
 </template>

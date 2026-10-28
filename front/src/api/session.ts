@@ -23,6 +23,10 @@ export interface User {
   roles?: string[]
   /** Wallet summary from API user payload. */
   wallet_summary?: { coins: number; premium: number }
+  /** False when the terms / privacy policy changed since the player accepted them (TermsUpdateDialog asks again). */
+  terms_current?: boolean
+  /** Consent to e-mail news, withdrawable from the profile (PrivacyPanel). */
+  marketing_opt_in?: boolean
 }
 
 export function isAdminUser(user: User | null | undefined): boolean {
@@ -64,6 +68,8 @@ export function parseUser(raw: unknown): User | null {
   if (roles !== undefined) user.roles = roles
   const walletSummary = parseWalletSummary(raw.wallet_summary)
   if (walletSummary !== null) user.wallet_summary = walletSummary
+  if (typeof raw.terms_current === 'boolean') user.terms_current = raw.terms_current
+  if (typeof raw.marketing_opt_in === 'boolean') user.marketing_opt_in = raw.marketing_opt_in
   return user
 }
 

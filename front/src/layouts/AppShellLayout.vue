@@ -8,9 +8,16 @@ import UiIcon from '../components/ui/UiIcon.vue'
 import type { UiIconName } from '../components/ui/icons'
 import UiCurrency from '../components/ui/UiCurrency.vue'
 import UiLogo from '../components/ui/UiLogo.vue'
+import ConsentManager from '../components/site/ConsentManager.vue'
+import TermsUpdateDialog from '../components/site/TermsUpdateDialog.vue'
+import SiteFooter from '../components/site/SiteFooter.vue'
+import { useI18n } from 'vue-i18n'
+import { localizedName } from '../i18n/routes'
+import type { Locale } from '../seo/site'
 
 const router = useRouter()
 const route = useRoute()
+const { t, locale } = useI18n()
 
 const shellTick = ref(0)
 let unsubAuth: (() => void) | undefined
@@ -56,7 +63,7 @@ const userSubtitle = computed(() => {
 
 const fullBleed = computed(() => route.meta.fullBleed === true)
 /** Title-screen pages (landing / auth) render their own hero and skip the lobby bar chrome. */
-const bareRoute = computed(() => ['landing', 'login', 'register', 'forgot-password'].includes(String(route.name)))
+const bareRoute = computed(() => ['landing', 'fr-landing', 'login', 'register', 'forgot-password'].includes(String(route.name)))
 
 const drawerOpen = ref(false)
 const profileOpen = ref(false)
@@ -101,12 +108,18 @@ interface NavItem {
   label: string
 }
 
-const defaultNavItems = computed<NavItem[]>(() => [
-  isLoggedIn.value ? { name: 'home', icon: 'home', label: 'Lobby' } : { name: 'landing', icon: 'home', label: 'Home' },
-  ...(isLoggedIn.value ? [{ name: 'locker', icon: 'backpack', label: 'Locker' } as NavItem] : []),
-  { name: 'shop-skin', icon: 'shirt', label: 'Skins' },
-  ...(isLoggedIn.value ? [{ name: 'friends', icon: 'users', label: 'Friends' } as NavItem] : []),
-])
+const defaultNavItems = computed<NavItem[]>(() => {
+  const loc = locale.value as Locale
+  return [
+    isLoggedIn.value
+      ? { name: 'home', icon: 'home', label: t('nav.lobby') }
+      : { name: localizedName('landing', loc), icon: 'home', label: t('nav.home') },
+    ...(isLoggedIn.value ? [{ name: 'locker', icon: 'backpack', label: t('nav.locker') } as NavItem] : []),
+    { name: localizedName('shop-skin', loc), icon: 'shirt', label: t('nav.skins') },
+    ...(isLoggedIn.value ? [{ name: 'friends', icon: 'users', label: t('nav.friends') } as NavItem] : []),
+    { name: localizedName('how-to-play', loc), icon: 'sparkles', label: t('nav.howToPlay') },
+  ]
+})
 
 const adminNavItems: NavItem[] = [
   { name: 'admin-users', icon: 'user', label: 'Users' },
@@ -136,6 +149,9 @@ watch(
 
 <template>
   <div class="cc-world flex min-h-screen flex-col">
+    <a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[200] focus:rounded-lg focus:bg-sun focus:px-4 focus:py-2 focus:font-extrabold focus:text-ink-950">
+      {{ t('a11y.skip') }}
+    </a>
     <header
       v-if="!bareRoute"
       class="sticky top-0 z-50 border-b-2 border-ink-600/60 bg-ink-900/90 backdrop-blur-md"
@@ -302,6 +318,8 @@ watch(
     </Transition>
 
     <main
+      id="main"
+      tabindex="-1"
       :class="[
         'min-h-0 flex-1',
         fullBleed ? 'flex flex-col overflow-hidden' : bareRoute ? '' : 'px-3 py-6 sm:px-5 md:py-8',
@@ -309,5 +327,8 @@ watch(
     >
       <router-view class="min-h-0 flex-1" />
     </main>
+    <SiteFooter v-if="!fullBleed" />
+    <ConsentManager />
+    <TermsUpdateDialog v-if="auth?.user.terms_current === false" @logout="logout" />
   </div>
 </template>

@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
+import { useI18n } from 'vue-i18n'
+import { marketing } from '../content/marketing'
+import type { Locale } from '../seo/site'
 import { useShopPurchase } from '../composables/useShopPurchase'
 import LockerCharacterPreview from '../components/locker/LockerCharacterPreview.vue'
 import ItemShopPurchaseConfirmModal from '../components/shop/ItemShopPurchaseConfirmModal.vue'
@@ -58,6 +61,10 @@ async function loadCatalog() {
     catalogLoading.value = false
   }
 }
+
+// intro text shared with the build prerender (seo/render.ts), so crawlers and players read the same thing
+const { locale } = useI18n()
+const shopCopy = computed(() => marketing[locale.value as Locale].shop)
 </script>
 
 <template>
@@ -65,7 +72,8 @@ async function loadCatalog() {
     <div class="mb-5 flex flex-wrap items-end justify-between gap-4">
       <div>
         <p class="cc-eyebrow">Item shop · Season 1</p>
-        <h1 class="cc-title">Skin Shop</h1>
+        <h1 class="cc-title">{{ shopCopy.title }}</h1>
+        <p class="m-0 mt-1 max-w-2xl text-sm font-semibold text-mist">{{ shopCopy.lead }}</p>
       </div>
       <RouterLink :to="{ name: 'game' }" class="cc-panel-flat flex items-center gap-3 px-4 py-2.5 transition hover:brightness-110">
         <UiIcon name="chair" :size="22" class="text-sun" />
@@ -245,5 +253,14 @@ async function loadCatalog() {
       @close="closePurchaseConfirm"
       @confirm="confirmPurchase"
     />
+    <details class="cc-panel-flat mt-6 px-4 py-3">
+      <summary class="cursor-pointer font-display text-sm uppercase tracking-wide text-fog">{{ shopCopy.aboutTitle }}</summary>
+      <div class="mt-3 grid gap-4 sm:grid-cols-2">
+        <section v-for="s in shopCopy.sections" :key="s.title">
+          <h2 class="m-0 text-base font-extrabold">{{ s.title }}</h2>
+          <p class="m-0 mt-1 text-sm font-semibold text-mist">{{ s.body }}</p>
+        </section>
+      </div>
+    </details>
   </div>
 </template>

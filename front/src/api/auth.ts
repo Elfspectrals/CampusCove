@@ -21,12 +21,13 @@ export async function register(
   username: string,
   password: string,
   password_confirmation: string,
-  referral_code?: string,
+  referral_code: string | undefined,
+  consents: { accepted_terms: boolean; age_confirmed: boolean; marketing_opt_in: boolean },
 ): Promise<AuthResponse> {
   const data = await apiRequest('/register', {
     method: 'POST',
     token: null,
-    body: { email, username, password, password_confirmation, ...(referral_code ? { referral_code } : {}) },
+    body: { email, username, password, password_confirmation, ...consents, ...(referral_code ? { referral_code } : {}) },
   })
   return parseAuthPayload(data, 'Invalid registration response')
 }
@@ -40,6 +41,16 @@ export async function forgotPassword(email: string): Promise<{ message: string }
   const data = await apiRequest('/forgot-password', { method: 'POST', token: null, body: { email } })
   if (isRecord(data) && typeof data.message === 'string') return { message: data.message }
   return { message: 'If an account exists with that email, you will receive a reset link.' }
+}
+
+/** Sets a new password with the one-time token from the reset e-mail. */
+export async function resetPassword(token: string, password: string, passwordConfirmation: string): Promise<void> {
+  await apiRequest('/reset-password', {
+    method: 'POST',
+    token: null,
+    body: { token, password, password_confirmation: passwordConfirmation },
+    errorMessage: 'This reset link is invalid or has expired.',
+  })
 }
 
 export async function logout(token: string): Promise<void> {

@@ -31,6 +31,14 @@ class Account extends Model implements AuthenticatableContract
         'banned_at',
         'ban_reason',
         'deleted_at',
+        // without it every login update was dropped and the inactivity purge counted from the sign-up date
+        'last_login_at',
+        'terms_version',
+        'terms_accepted_at',
+        'age_confirmed_at',
+        'marketing_opt_in',
+        'anonymized_at',
+        'inactivity_warned_at',
     ];
 
     protected $hidden = [];
@@ -45,6 +53,11 @@ class Account extends Model implements AuthenticatableContract
             'suspended_until' => 'datetime',
             'banned_at' => 'datetime',
             'deleted_at' => 'datetime',
+            'terms_accepted_at' => 'datetime',
+            'age_confirmed_at' => 'datetime',
+            'marketing_opt_in' => 'boolean',
+            'anonymized_at' => 'datetime',
+            'inactivity_warned_at' => 'datetime',
         ];
     }
 

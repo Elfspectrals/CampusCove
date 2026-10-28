@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Account;
 use App\Models\AccountAuthLocal;
 use App\Models\AccountHandle;
+use App\Services\AccountMailer;
 use App\Services\ReferralService;
 use App\Services\StarterCosmeticGrantService;
 use App\Services\WalletSummaryService;
@@ -14,10 +15,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
+    /** Version of the terms / privacy policy in force; keep in sync with SITE.legalVersion in the front (asked again at login when it changes). */
+    public const TERMS_VERSION = '2026-10-28';
+
     public function __construct(
         private readonly WalletSummaryService $walletSummary,
     ) {
@@ -30,6 +35,10 @@ class AuthController extends Controller
             'username' => 'required|string|min:3|max:24|regex:/^[a-zA-Z0-9_]+$/',
             'password' => 'required|string|min:8|confirmed',
             'referral_code' => 'nullable|string|max:12',
+            // GDPR proof of consent + minimum age (15, French digital majority)
+            'accepted_terms' => 'accepted',
+            'age_confirmed' => 'accepted',
+            'marketing_opt_in' => 'nullable|boolean',
         ]);
 
         $normalized = mb_strtolower($validated['username']);
@@ -43,7 +52,13 @@ class AuthController extends Controller
         $tag = random_int(0, 9999);
 
         DB::transaction(function () use ($validated, $normalized, $tag) {
-            Account::create(['status' => 'active']);
+            Account::create([
+                'status' => 'active',
+                'terms_version' => self::TERMS_VERSION,
+                'terms_accepted_at' => now(),
+                'age_confirmed_at' => now(),
+                'marketing_opt_in' => (bool) ($validated['marketing_opt_in'] ?? false),
+            ]);
             // PostgreSQL IDENTITY: Eloquent may not set account_id on the model, so fetch it
             $accountId = Account::orderByDesc('account_id')->value('account_id');
             AccountHandle::create([
@@ -112,7 +127,8 @@ class AuthController extends Controller
             ], 403);
         }
 
-        $account->update(['last_login_at' => now()]);
+        // a login cancels a pending inactivity notice (AccountPrivacyService::purgeInactive)
+        $account->update(['last_login_at' => now(), 'inactivity_warned_at' => null]);
         // the account-age condition becomes true with time, without any other event
         app(ReferralService::class)->checkQualification((int) $account->account_id);
         $account->tokens()->delete();
@@ -125,12 +141,58 @@ class AuthController extends Controller
         ]);
     }
 
-    public function forgotPassword(Request $request): JsonResponse
-    {
-        $request->validate(['email' => 'required|email']);
+    /** Minutes a password reset link stays valid. */
+    public const RESET_TOKEN_MINUTES = 60;
 
-        // TODO: send reset link email (e.g. Laravel password reset)
+    /**
+     * E-mails a one-time reset link. Only the SHA-256 of the token is stored, and the link carries the token alone
+     * (no e-mail address in the URL). The answer is the same whether the account exists or not.
+     */
+    public function forgotPassword(Request $request, AccountMailer $mailer): JsonResponse
+    {
+        $validated = $request->validate(['email' => 'required|email']);
+        $auth = AccountAuthLocal::where('email', $validated['email'])->first();
+        $account = $auth ? Account::find($auth->account_id) : null;
+
+        if ($auth && $account && $account->anonymized_at === null && $account->banned_at === null) {
+            $token = Str::random(64);
+            DB::table('password_reset_tokens')->updateOrInsert(
+                ['email' => $auth->email],
+                ['token' => hash('sha256', $token), 'created_at' => now()],
+            );
+            $link = rtrim((string) config('app.frontend_url'), '/').'/reset-password?token='.$token;
+            $minutes = self::RESET_TOKEN_MINUTES;
+            $mailer->send(
+                (int) $auth->account_id,
+                'Réinitialisation du mot de passe / Password reset',
+                "Pour choisir un nouveau mot de passe, ouvre ce lien (valable {$minutes} minutes) : {$link}\nSi tu n’es pas à l’origine de cette demande, ignore cet e-mail.",
+                "To choose a new password, open this link (valid for {$minutes} minutes): {$link}\nIf you did not ask for this, ignore this e-mail.",
+            );
+        }
+
         return response()->json(['message' => 'If an account exists with that email, you will receive a reset link.']);
+    }
+
+    /** Sets a new password from a reset link, then signs every session out. */
+    public function resetPassword(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'token' => 'required|string|size:64',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+        $row = DB::table('password_reset_tokens')->where('token', hash('sha256', $validated['token']))->first();
+        $valid = $row !== null && $row->created_at !== null
+            && now()->subMinutes(self::RESET_TOKEN_MINUTES)->lessThan($row->created_at);
+        if (! $valid) {
+            throw ValidationException::withMessages(['token' => ['This reset link is invalid or has expired.']]);
+        }
+
+        $auth = AccountAuthLocal::where('email', $row->email)->firstOrFail();
+        $auth->update(['password_hash' => Hash::make($validated['password'])]);
+        DB::table('password_reset_tokens')->where('email', $row->email)->delete();
+        Account::find($auth->account_id)?->tokens()->delete();
+
+        return response()->json(['message' => 'Password updated. You can sign in.']);
     }
 
     public function user(Request $request): JsonResponse
@@ -166,6 +228,9 @@ class AuthController extends Controller
             'is_admin' => $isAdmin,
             'suspended_until' => $account->suspended_until?->toIso8601String(),
             'banned_at' => $account->banned_at?->toIso8601String(),
+            // false when the terms / privacy policy changed since the player accepted them: the front asks again
+            'terms_current' => $account->terms_version === self::TERMS_VERSION,
+            'marketing_opt_in' => (bool) $account->marketing_opt_in,
             'wallet_summary' => $this->walletSummary->forAccountId((int) $account->account_id),
         ];
     }
