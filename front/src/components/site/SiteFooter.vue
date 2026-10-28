@@ -35,7 +35,7 @@ function switchLocale(next: Locale) {
       <div class="max-w-xs">
         <UiLogo size="sm" />
         <p class="m-0 mt-2 font-semibold text-mist">{{ t('footer.tagline') }}</p>
-        <p class="m-0 mt-2 text-xs font-semibold text-mist/70">© {{ year }} {{ SITE.name }}</p>
+        <p class="m-0 mt-2 text-xs font-semibold text-mist">© {{ year }} {{ SITE.name }}</p>
       </div>
 
       <nav :aria-label="t('footer.legal')">

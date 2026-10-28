@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
+import { useDialogFocus } from '../../composables/useDialogFocus'
 import type { ShopCurrency, ShopItem, ShopItemCurrencyOption } from '../../api/itemShop'
 import { currencyLabel } from '../../utils/itemShopPresentation'
 import UiIcon from '../ui/UiIcon.vue'
@@ -21,10 +22,13 @@ const emit = defineEmits<{
 }>()
 
 const confirmOptions = computed(() => props.item.options ?? [])
+const dialogEl = ref<HTMLElement | null>(null)
+useDialogFocus(dialogEl, { onEscape: () => emit('close') })
 </script>
 
 <template>
   <div
+    ref="dialogEl"
     class="cc-backdrop"
     role="dialog"
     aria-modal="true"

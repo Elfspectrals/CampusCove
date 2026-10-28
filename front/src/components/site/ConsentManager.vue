@@ -6,10 +6,14 @@ import { useI18n } from 'vue-i18n'
 import { localizedTo } from '../../i18n/routes'
 import type { Locale } from '../../seo/site'
 import { CONSENT_CATEGORIES, saveConsent, useConsent } from '../../privacy/consent'
+import { useDialogFocus } from '../../composables/useDialogFocus'
 
 const { t, locale } = useI18n()
 const { bannerVisible, dialogOpen, choices } = useConsent()
 const analytics = ref(choices.value.analytics)
+const dialogEl = ref<HTMLElement | null>(null)
+// the banner is not modal; only the "Manage cookies" dialog takes focus
+useDialogFocus(dialogEl, { active: () => dialogOpen.value, onEscape: () => (dialogOpen.value = false) })
 
 watch(dialogOpen, (open) => {
   if (open) analytics.value = choices.value.analytics
@@ -33,11 +37,11 @@ function saveChoices() {
     :class="dialogOpen ? 'inset-y-0 items-center bg-ink-950/70' : ''"
   >
     <section
+      ref="dialogEl"
       class="cc-panel w-full max-w-lg p-5"
       role="dialog"
       :aria-modal="dialogOpen ? 'true' : undefined"
       aria-labelledby="consent-title"
-      @keydown.esc="dialogOpen = false"
     >
       <h2 id="consent-title" class="cc-display m-0 text-xl">{{ t('consent.title') }}</h2>
       <p class="m-0 mt-2 text-sm font-semibold text-mist">{{ t('consent.intro') }}</p>

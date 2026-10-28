@@ -4,6 +4,7 @@ import { ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { acceptCurrentTerms } from '../../api/account'
+import { useDialogFocus } from '../../composables/useDialogFocus'
 import { mergeStoredUser } from '../../api/session'
 import { localizedTo } from '../../i18n/routes'
 import type { Locale } from '../../seo/site'
@@ -13,6 +14,9 @@ const emit = defineEmits<{ logout: [] }>()
 const { t, locale } = useI18n()
 const saving = ref(false)
 const error = ref('')
+// no Escape: the player must accept or log out
+const dialogEl = ref<HTMLElement | null>(null)
+useDialogFocus(dialogEl)
 
 async function accept() {
   saving.value = true
@@ -30,7 +34,7 @@ async function accept() {
 
 <template>
   <div class="fixed inset-0 z-[110] flex items-center justify-center bg-ink-950/70 p-3 sm:p-5">
-    <section class="cc-panel w-full max-w-lg p-5" role="dialog" aria-modal="true" aria-labelledby="terms-update-title">
+    <section ref="dialogEl" class="cc-panel w-full max-w-lg p-5" role="dialog" aria-modal="true" aria-labelledby="terms-update-title">
       <h2 id="terms-update-title" class="cc-display m-0 text-xl">{{ t('termsUpdate.title') }}</h2>
       <i18n-t keypath="termsUpdate.body" tag="p" scope="global" class="m-0 mt-2 text-sm font-semibold text-mist">
         <template #terms>

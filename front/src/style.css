@@ -174,8 +174,9 @@
   .cc-btn-sun { --btn-bg: var(--cc-sun); --btn-edge: var(--cc-sun-edge); --btn-fg: var(--cc-ink-950); }
   .cc-btn-pool { --btn-bg: var(--cc-pool); --btn-edge: var(--cc-pool-edge); --btn-fg: var(--cc-ink-950); }
   .cc-btn-mint { --btn-bg: var(--cc-mint); --btn-edge: var(--cc-mint-edge); --btn-fg: var(--cc-ink-950); }
-  .cc-btn-coral { --btn-bg: var(--cc-coral); --btn-edge: var(--cc-coral-edge); --btn-fg: 255 255 255; }
-  .cc-btn-grape { --btn-bg: var(--cc-grape); --btn-edge: var(--cc-grape-edge); --btn-fg: 255 255 255; }
+  /* dark text: white on coral / grape is below the WCAG AA 4.5:1 contrast (2.6 and 3.3) */
+  .cc-btn-coral { --btn-bg: var(--cc-coral); --btn-edge: var(--cc-coral-edge); --btn-fg: var(--cc-ink-950); }
+  .cc-btn-grape { --btn-bg: var(--cc-grape); --btn-edge: var(--cc-grape-edge); --btn-fg: var(--cc-ink-950); }
   /* use as `cc-btn cc-btn-ghost` */
   .cc-btn-ghost {
     background: rgb(var(--cc-ink-800) / 0.6);

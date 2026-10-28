@@ -69,6 +69,8 @@ async function submit() {
           maxlength="24"
           pattern="[a-zA-Z0-9_]+"
           autocomplete="username"
+          spellcheck="false"
+          autocapitalize="off"
           title="Letters, numbers and underscore only (3–24 characters)"
           class="cc-input"
         />
@@ -80,6 +82,7 @@ async function submit() {
           id="reg-email"
           v-model="email"
           type="email"
+          spellcheck="false"
           placeholder="you@campus.com"
           required
           autocomplete="email"

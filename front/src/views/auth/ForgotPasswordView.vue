@@ -33,6 +33,7 @@ async function submit() {
           id="forgot-email"
           v-model="email"
           type="email"
+          spellcheck="false"
           placeholder="you@campus.com"
           required
           autocomplete="email"

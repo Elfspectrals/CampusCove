@@ -36,6 +36,7 @@ async function submit() {
           id="login-email"
           v-model="email"
           type="email"
+          spellcheck="false"
           placeholder="you@campus.com"
           required
           autocomplete="email"

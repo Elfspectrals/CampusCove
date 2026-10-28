@@ -88,7 +88,7 @@ function onDragStartInner(index: number, rawCode: string, itemByCode: Record<str
           />
         </template>
         <template v-else>
-          <span class="pointer-events-none absolute left-1 top-0.5 font-display text-[11px] text-mist/60">{{
+          <span class="pointer-events-none absolute left-1 top-0.5 font-display text-[11px] text-mist">{{
             index + 1
           }}</span>
         </template>

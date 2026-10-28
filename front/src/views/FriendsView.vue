@@ -282,7 +282,7 @@ function statusLabel(status: string): string {
         <div class="mt-5 flex items-end gap-2">
           <div class="min-w-0 flex-1">
             <label for="add-username" class="cc-label">Username</label>
-            <input id="add-username" v-model="addUsername" type="text" placeholder="pseudo" class="cc-input" @keydown.enter="sendFriendRequest" />
+            <input id="add-username" v-model="addUsername" type="text" placeholder="pseudo…" spellcheck="false" autocapitalize="off" autocomplete="off" class="cc-input" @keydown.enter="sendFriendRequest" />
           </div>
           <span class="pb-3 font-display text-2xl text-mist">#</span>
           <div class="w-24">

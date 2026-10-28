@@ -3,6 +3,7 @@
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { REPORT_REASONS, reportPlayer, type ReportReason } from '../../api/account'
+import { useDialogFocus } from '../../composables/useDialogFocus'
 import UiIcon from '../ui/UiIcon.vue'
 
 const props = defineProps<{ accountId: number; name: string }>()
@@ -14,6 +15,8 @@ const details = ref('')
 const sending = ref(false)
 const sent = ref(false)
 const error = ref('')
+const dialogEl = ref<HTMLElement | null>(null)
+useDialogFocus(dialogEl, { onEscape: () => emit('close') })
 
 async function send() {
   sending.value = true
@@ -31,7 +34,7 @@ async function send() {
 
 <template>
   <div class="fixed inset-0 z-[90] grid place-items-center bg-ink-950/70 p-4" @click.self="emit('close')">
-    <section class="cc-panel w-full max-w-md p-5" role="dialog" aria-modal="true" aria-labelledby="report-title" @keydown.esc="emit('close')">
+    <section ref="dialogEl" class="cc-panel w-full max-w-md p-5" role="dialog" aria-modal="true" aria-labelledby="report-title">
       <h2 id="report-title" class="cc-display m-0 text-xl">{{ t('report.title', { name }) }}</h2>
       <p v-if="sent" class="cc-alert m-0 mt-4" role="status"><UiIcon name="check" :size="18" /> {{ t('report.sent') }}</p>
       <form v-else class="mt-4 flex flex-col gap-3" @submit.prevent="send">
