@@ -6,7 +6,8 @@ import { seoPrerender } from './build/seoPrerender'
 export default defineConfig({
   plugins: [vue(), seoPrerender()],
   server: {
-    allowedHosts: ['front'],
+    // `.trycloudflare.com`: quick Cloudflare tunnel to share a local build with testers.
+    allowedHosts: ['front', '.trycloudflare.com'],
     proxy: {
       '/api': {
         target: 'http://localhost:8000',
