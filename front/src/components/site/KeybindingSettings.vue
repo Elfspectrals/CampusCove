@@ -1,16 +1,19 @@
 <script setup lang="ts">
 /**
- * Rebind the game controls: click a key, press the new one (Esc cancels, Delete / Backspace removes it).
+ * Rebind the game controls: click a key, press the new one or a mouse button for interact / punch
+ * (Esc cancels, Delete / Backspace removes it).
  * Used on the Settings page and in the game's pause screen. Bindings live in config/keybindings.ts.
  */
 import { onBeforeUnmount, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   KEYS_PER_ACTION,
+  MOUSE_BINDABLE_ACTIONS,
   RESERVED_KEYS,
   bindings,
   clearBinding,
   keyLabel,
+  mouseButtonCode,
   resetBindings,
   setBinding,
   type BindableAction,
@@ -21,7 +24,7 @@ const { t } = useI18n()
 
 const GROUPS: Array<{ id: 'move' | 'actions' | 'hotbar'; actions: BindableAction[] }> = [
   { id: 'move', actions: ['moveForward', 'moveBack', 'moveLeft', 'moveRight'] },
-  { id: 'actions', actions: ['interact', 'inventory', 'survivalWatch', 'cook', 'houseKeys', 'buyHouse', 'rotate', 'putAway'] },
+  { id: 'actions', actions: ['interact', 'punch', 'inventory', 'survivalWatch', 'cook', 'houseKeys', 'buyHouse', 'rotate', 'putAway'] },
   { id: 'hotbar', actions: ['hotbar1', 'hotbar2', 'hotbar3', 'hotbar4', 'hotbar5', 'hotbar6', 'hotbar7', 'hotbar8', 'hotbar9'] },
 ]
 
@@ -41,11 +44,13 @@ function listen(action: BindableAction, slot: number) {
   notice.value = ''
   listening.value = { action, slot }
   window.addEventListener('keydown', onCapture, true)
+  window.addEventListener('mousedown', onMouseCapture, true)
 }
 
 function stop() {
   listening.value = null
   window.removeEventListener('keydown', onCapture, true)
+  window.removeEventListener('mousedown', onMouseCapture, true)
 }
 
 // capture phase on window: runs before the game's own keydown handlers, which never see this key
@@ -63,8 +68,27 @@ function onCapture(e: KeyboardEvent) {
     notice.value = t('settings.reserved')
     return
   }
-  const movedFrom = setBinding(target.action, target.slot, e.code)
-  notice.value = movedFrom ? t('settings.moved', { key: keyLabel(e.code), action: actionName(movedFrom) }) : ''
+  bind(target, e.code)
+}
+
+// the click that started listening is already over (mousedown comes before click), so this is the next button
+function onMouseCapture(e: MouseEvent) {
+  const target = listening.value
+  if (!target) return
+  e.preventDefault()
+  e.stopImmediatePropagation()
+  // the context menu opens after a right button press: keep it closed
+  if (e.button === 2) window.addEventListener('contextmenu', (ev) => ev.preventDefault(), { capture: true, once: true })
+  if (!MOUSE_BINDABLE_ACTIONS.includes(target.action)) {
+    notice.value = t('settings.mouseOnly')
+    return stop()
+  }
+  bind(target, mouseButtonCode(e.button))
+}
+
+function bind(target: { action: BindableAction; slot: number }, code: string) {
+  const movedFrom = setBinding(target.action, target.slot, code)
+  notice.value = movedFrom ? t('settings.moved', { key: keyLabel(code), action: actionName(movedFrom) }) : ''
   stop()
 }
 

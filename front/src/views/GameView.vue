@@ -16,7 +16,7 @@ import GameHudToolbar from '../components/game/GameHudToolbar.vue'
 import GameInteractionPrompt from '../components/game/GameInteractionPrompt.vue'
 import GamePlacementHud from '../components/game/GamePlacementHud.vue'
 import GamePlayerHotbar from '../components/game/GamePlayerHotbar.vue'
-import GameStaminaBar from '../components/game/GameStaminaBar.vue'
+import GameVitals from '../components/game/GameVitals.vue'
 import GamePlayerInventoryPanel from '../components/game/GamePlayerInventoryPanel.vue'
 import GamePointerLockOverlay from '../components/game/GamePointerLockOverlay.vue'
 import GameSettingsDialog from '../components/game/GameSettingsDialog.vue'
@@ -43,7 +43,7 @@ import { useSurvival } from '../composables/game/useSurvival'
 import { usePunch } from '../composables/game/usePunch'
 import { useShopPurchase } from '../composables/useShopPurchase'
 import { toggleCollisionDebug } from '../game/collision/collisionDebug'
-import { actionKeyLabels, matches } from '../config/keybindings'
+import { actionKeyLabels, matches, mouseButtonCode } from '../config/keybindings'
 import { getWorldCollisionStats } from '../game/collision/worldCollision'
 import { HOUSING_LOBBY_SPAWN } from '../game/gameRoomConstants'
 import { createGameScene, disposeGameScene, type GameScene } from '../game/gameScene'
@@ -431,9 +431,32 @@ function loadTown(): void {
 
 // ---------------------------------------------------------------- input, loop, realtime
 
+/**
+ * The interact action (right click / G by default, like Minecraft's "use"): unlock with the key in hand, doors and
+ * shops, the cafe counter, the clinic desk, then what is held in hand (food, fountain sips).
+ */
+function useAction(): void {
+  if (housing.unlock()) arms?.use('key')
+  else void (interactions.tryInteract() || cafe.tryOpen() || clinic.tryInteract() || survival.onPrimaryDown())
+}
+
+/** Interact and punch may be bound to keys or mouse buttons; returns true when `code` was one of them. */
+function runUseOrPunch(code: string, repeat: boolean): boolean {
+  if (matches('punch', code)) {
+    if (!repeat) punch.tryPunch()
+    return true
+  }
+  if (matches('interact', code)) {
+    if (!repeat) useAction()
+    return true
+  }
+  return false
+}
+
 function handleExtraKeyDown(e: KeyboardEvent): boolean {
   if (houseKeys.onKeyDown(e)) return true
   if (survival.onKeyDown(e)) return true
+  if (runUseOrPunch(e.code, e.repeat)) return true
   if (matches('buyHouse', e.code) && !e.repeat) {
     e.preventDefault()
     return housing.buy()
@@ -463,21 +486,13 @@ const movement = useGameMovement({
   getFpHands: () => game?.fpHands ?? null,
   refreshMyAppearance,
   updateProximity: interactions.updateProximity,
-  tryInteract: interactions.tryInteract,
   onToggleInventory: toggleInventory,
   onHotbarDigit: selectHotbarIndex,
   handleExtraKeyDown,
   onCanvasMouseDown: (e) => {
-    if (e.button === 2 && pointerLocked.value && housing.unlock()) {
-      arms?.use('key')
-      return true
-    }
+    // furniture placement keeps its own clicks (left: pick / place, right: cancel)
     if (placement.onPointerDown(e)) return true
-    // doors and shops first, then the cafe counter and the clinic, then what is held in hand (food, fountain sips), then a punch
-    if (e.button === 0 && pointerLocked.value) {
-      return interactions.tryInteract() || cafe.tryOpen() || clinic.tryInteract() || survival.onPrimaryDown() || punch.tryPunch()
-    }
-    return false
+    return pointerLocked.value && runUseOrPunch(mouseButtonCode(e.button), false)
   },
   speedFactor: () => survival.speedFactor(),
   onBeforeRender: (dt) => {
@@ -758,7 +773,13 @@ const crosshairClass = computed(() => {
     >
       {{ storeFeedback.text }}
     </p>
-    <GameStaminaBar v-if="!inventoryOpen" :stamina="stamina" :reduced-effects="reducedEffects" />
+    <GameVitals
+      v-if="!inventoryOpen"
+      :health="survival.stats.value?.health ?? null"
+      :heal-until="survival.healUntil.value"
+      :stamina="stamina"
+      :reduced-effects="reducedEffects"
+    />
     <GamePlayerHotbar
       :slots="slots"
       :selected-hotbar-index="selectedHotbarIndex"

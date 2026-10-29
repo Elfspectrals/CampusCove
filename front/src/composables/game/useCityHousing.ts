@@ -59,7 +59,7 @@ export function useCityHousing(deps: CityHousingDeps) {
     }
   }
 
-  /** Left click at a door: open or close it, or lock it with the key in hand. */
+  /** Interact at a door: open or close it, or lock it with the key in hand. */
   async function interact(): Promise<void> {
     const unit = nearbyUnit.value
     if (!unit || !deps.gameRoomRef.value || claimInFlight.value) return
@@ -68,7 +68,7 @@ export function useCityHousing(deps: CityHousingDeps) {
     else if (action === 'lock') await runClaim(() => setHouseDoorLocked(unit.public_id, true), 'Could not change the lock.')
   }
 
-  /** Right click at a door with the key in hand: unlock it. Returns true when there was a door to unlock. */
+  /** Interact at a locked door with the key in hand: unlock it. Returns true when there was a door to unlock. */
   function unlock(): boolean {
     const unit = nearbyUnit.value
     if (!unit || claimInFlight.value || actionFor(unit) !== 'unlock') return false

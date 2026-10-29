@@ -89,7 +89,7 @@ export function useSurvival(deps: SurvivalDeps) {
       stats.value = { health: data.health, hunger: data.hunger, thirst: data.thirst }
       boostUntil.value = data.speedBoostUntil ?? 0
       healUntil.value = data.healUntil ?? 0
-      watchHud.setStats(stats.value, boostUntil.value, healUntil.value)
+      watchHud.setStats(stats.value, boostUntil.value)
       deps.onStamina(data.stamina)
     })
     room.onMessage('survival_damage', () => {
@@ -175,7 +175,7 @@ export function useSurvival(deps: SurvivalDeps) {
     particles?.burst('drink')
   }
 
-  /** Left click (nothing else to interact with): returns true when it was used here. */
+  /** Interact (nothing else in front): returns true when it was used here. */
   function onPrimaryDown(): boolean {
     if (!deps.pointerLocked.value || knockedOut.value || recovery.value) return false
     if (nearFountain()) {
@@ -294,6 +294,7 @@ export function useSurvival(deps: SurvivalDeps) {
 
   return {
     stats,
+    healUntil,
     effects,
     knockedOut,
     hospitalBill,

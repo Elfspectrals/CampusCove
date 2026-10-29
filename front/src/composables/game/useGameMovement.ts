@@ -31,8 +31,6 @@ export interface UseGameMovementDeps {
   refreshMyAppearance: Ref<(() => void) | null>
   /** Refresh what the player stands next to (doors, fishing spots). */
   updateProximity: () => void
-  /** Left click / I: use what the player stands next to. Returns true if something was used. */
-  tryInteract: () => boolean
   onToggleInventory: () => void
   onHotbarDigit: (index: number) => void
   /** Return `true` if the event was consumed (placement shortcuts, etc.). */
@@ -200,9 +198,7 @@ export function useGameMovement(deps: UseGameMovementDeps) {
   }
 
   function onCanvasMouseDown(e: MouseEvent) {
-    if (deps.onCanvasMouseDown(e)) return
-    // left click on a door; the click that locks the pointer is not an interaction
-    if (e.button === 0 && pointerLocked.value) deps.tryInteract()
+    deps.onCanvasMouseDown(e)
   }
 
   function setMoveKey(code: string, down: boolean): void {
@@ -214,8 +210,6 @@ export function useGameMovement(deps: UseGameMovementDeps) {
 
   function onKeyDown(e: KeyboardEvent) {
     if (deps.handleExtraKeyDown(e)) return
-    // keyboard fallback for the left-click door interaction
-    if (matches('interact', e.code) && deps.tryInteract()) return
     if (matches('inventory', e.code) && !e.repeat) {
       deps.onToggleInventory()
       return

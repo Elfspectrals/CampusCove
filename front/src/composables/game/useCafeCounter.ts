@@ -53,7 +53,7 @@ export function useCafeCounter(deps: CafeCounterDeps) {
     }
   }
 
-  /** Left click at the bar. Returns true when the player stands at the counter. */
+  /** Interact at the bar. Returns true when the player stands at the counter. */
   function tryOpen(): boolean {
     if (!isNearCounter()) return false
     if (document.pointerLockElement) document.exitPointerLock()

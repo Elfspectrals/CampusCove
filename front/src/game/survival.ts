@@ -69,9 +69,9 @@ export function isLow(value: number): boolean {
   return value < LOW_GAUGE
 }
 
-/** The most urgent low gauge, for the watch buzz; null when all are fine. */
-export function mostUrgentGauge(stats: SurvivalStats): GaugeKey | null {
-  const low = (['health', 'thirst', 'hunger'] as const).filter((k) => isLow(stats[k]))
+/** The most urgent low gauge among `keys`, for the watch buzz; null when all are fine. */
+export function mostUrgentGauge(stats: SurvivalStats, keys: readonly GaugeKey[] = ['health', 'thirst', 'hunger']): GaugeKey | null {
+  const low = keys.filter((k) => isLow(stats[k]))
   if (low.length === 0) return null
   return low.reduce((a, b) => (stats[b] < stats[a] ? b : a))
 }

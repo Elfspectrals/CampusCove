@@ -4,7 +4,8 @@ import { createGltfLoader } from './gltfLoaderFactory'
 import { GAUGE_COLORS, isLow, mostUrgentGauge, type GaugeKey, type SurvivalStats } from './survival'
 
 /**
- * The wrist watch on the first-person left arm: the survival HUD lives on its screen (no 2D gauges). Its `Screen`
+ * The wrist watch on the first-person left arm: hunger and thirst live on its screen (health and stamina are the
+ * 2D bars above the hotbar, GameVitals.vue). Its `Screen`
  * node gets a live canvas texture; the player raises the wrist (arms.raiseWatch) to read it. A low gauge blinks
  * and the whole watch buzzes from time to time, so it is noticed even with the arm down.
  * Model: map-src/CampusCove/build_food_items.py (items/tools/watch).
@@ -28,19 +29,12 @@ const REDRAW_S = 0.25
 const BUZZ_EVERY_S = 6
 const BUZZ_S = 0.5
 
+const WATCH_GAUGES: readonly GaugeKey[] = ['thirst', 'hunger']
+
 const ROWS: Array<{ key: GaugeKey; glyph: (ctx: CanvasRenderingContext2D, x: number, y: number) => void }> = [
-  { key: 'health', glyph: drawHeart },
   { key: 'hunger', glyph: drawDrumstick },
   { key: 'thirst', glyph: drawDrop },
 ]
-
-function drawHeart(ctx: CanvasRenderingContext2D, x: number, y: number): void {
-  ctx.beginPath()
-  ctx.moveTo(x, y + 6)
-  ctx.bezierCurveTo(x - 12, y - 3, x - 5, y - 12, x, y - 5)
-  ctx.bezierCurveTo(x + 5, y - 12, x + 12, y - 3, x, y + 6)
-  ctx.fill()
-}
 
 function drawDrumstick(ctx: CanvasRenderingContext2D, x: number, y: number): void {
   ctx.beginPath()
@@ -81,7 +75,6 @@ export function createSurvivalWatch() {
   let hand: THREE.Object3D | null = null
   let stats: SurvivalStats | null = null
   let boostUntil = 0
-  let healUntil = 0
   let time = 0
   let sinceDraw = REDRAW_S
   let sinceBuzz = 0
@@ -122,7 +115,7 @@ export function createSurvivalWatch() {
     const blinkOff = Math.floor(time * 3) % 2 === 1
     ROWS.forEach(({ key, glyph }, i) => {
       const value = stats![key]
-      const y = 26 + i * 40
+      const y = 40 + i * 48
       const low = isLow(value)
       ctx.fillStyle = low && blinkOff ? '#3a3648' : GAUGE_COLORS[key]
       glyph(ctx, 18, y)
@@ -141,12 +134,6 @@ export function createSurvivalWatch() {
       ctx.textAlign = 'left'
       ctx.fillText(`â˜• ${Math.ceil((boostUntil - Date.now()) / 1000)}s`, 6, CANVAS_H - 6)
     }
-    if (Date.now() < healUntil) {
-      ctx.fillStyle = GAUGE_COLORS.health
-      ctx.font = 'bold 11px sans-serif'
-      ctx.textAlign = 'right'
-      ctx.fillText(`+ ${Math.ceil((healUntil - Date.now()) / 1000)}s`, CANVAS_W - 6, CANVAS_H - 6)
-    }
   }
 
   function update(dt: number, nextHand: THREE.Object3D | null): void {
@@ -164,7 +151,7 @@ export function createSurvivalWatch() {
     if (!model) return
     // buzz: a short shake when a gauge is low, so it is noticed with the arm down
     sinceBuzz += dt
-    const urgent = stats ? mostUrgentGauge(stats) : null
+    const urgent = stats ? mostUrgentGauge(stats, WATCH_GAUGES) : null
     if (sinceBuzz >= BUZZ_EVERY_S) sinceBuzz = urgent ? 0 : BUZZ_EVERY_S
     const buzzing = urgent !== null && sinceBuzz < BUZZ_S
     model.position.copy(WATCH_MOUNT.position)
@@ -175,10 +162,9 @@ export function createSurvivalWatch() {
 
   return {
     update,
-    setStats: (next: SurvivalStats, nextBoostUntil: number, nextHealUntil: number) => {
+    setStats: (next: SurvivalStats, nextBoostUntil: number) => {
       stats = next
       boostUntil = nextBoostUntil
-      healUntil = nextHealUntil
       sinceDraw = REDRAW_S
     },
     dispose: () => {

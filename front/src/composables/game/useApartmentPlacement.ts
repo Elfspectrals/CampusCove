@@ -418,7 +418,8 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
   function onPointerDown(e: MouseEvent): boolean {
     if (!deps.pointerLocked.value || deps.getApartmentInventoryOpen()) return false
     if (!deps.canDecorate.value && currentState.value.kind === 'idle') return false
-    if (e.button === 2) {
+    // right click cancels a move in progress; otherwise it stays the interact button (doors, eating)
+    if (e.button === 2 && currentState.value.kind !== 'idle') {
       e.preventDefault()
       cancelPreview()
       return true

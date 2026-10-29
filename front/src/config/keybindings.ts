@@ -1,5 +1,6 @@
 /**
- * Game controls as named actions, bound to physical keys (`KeyboardEvent.code`, so WASD stays in place on AZERTY).
+ * Game controls as named actions, bound to physical keys (`KeyboardEvent.code`, so WASD stays in place on AZERTY)
+ * or, for interact and punch, to mouse buttons (`MouseLeft`, `MouseRight`, ... see mouseButtonCode).
  * Players can rebind every action from Settings (KeybindingSettings.vue); their bindings are saved in this browser
  * (`cc_keybindings`, listed on the cookies page). Gameplay asks `matches(action, e.code)`, never a raw key.
  */
@@ -11,6 +12,7 @@ const BINDABLE_ACTIONS = [
   'moveLeft',
   'moveRight',
   'interact',
+  'punch',
   'inventory',
   'survivalWatch',
   'cook',
@@ -38,8 +40,10 @@ const DEFAULT_BINDINGS: Readonly<Record<BindableAction, readonly string[]>> = {
   moveBack: ['KeyS'],
   moveLeft: ['KeyA', 'KeyQ'],
   moveRight: ['KeyD'],
-  /** Keyboard fallback; doors are used with a left click. */
-  interact: ['KeyI'],
+  /** Use, like Minecraft: doors (lock / unlock with the key in hand), shops, cafe, clinic, then eat / drink what is held. */
+  interact: ['MouseRight', 'KeyG'],
+  /** Attack, like Minecraft. */
+  punch: ['MouseLeft', 'KeyV'],
   inventory: ['KeyE'],
   /** Hold to raise the left wrist and read the survival watch. */
   survivalWatch: ['KeyT'],
@@ -66,6 +70,20 @@ const DEFAULT_BINDINGS: Readonly<Record<BindableAction, readonly string[]>> = {
 /** Never bindable: Escape pauses the game and frees the mouse, Shift is the "reverse" modifier of rotate. */
 export const RESERVED_KEYS: readonly string[] = ['Escape', 'ShiftLeft', 'ShiftRight']
 
+/** The only actions a mouse button can be bound to (the others are read from the keyboard). */
+export const MOUSE_BINDABLE_ACTIONS: readonly BindableAction[] = ['interact', 'punch']
+
+const MOUSE_BUTTONS = ['MouseLeft', 'MouseMiddle', 'MouseRight']
+
+/** Binding code of a mouse button (`MouseEvent.button`), e.g. 0 → 'MouseLeft', 3 → 'Mouse4'. */
+export function mouseButtonCode(button: number): string {
+  return MOUSE_BUTTONS[button] ?? `Mouse${button + 1}`
+}
+
+function isMouseCode(code: string): boolean {
+  return code.startsWith('Mouse')
+}
+
 const STORAGE_KEY = 'cc_keybindings'
 
 function defaults(): Record<BindableAction, string[]> {
@@ -79,7 +97,7 @@ function load(): Record<BindableAction, string[]> {
     if (saved && typeof saved === 'object') {
       for (const a of BINDABLE_ACTIONS) {
         const keys = (saved as Record<string, unknown>)[a]
-        if (Array.isArray(keys)) out[a] = keys.filter((k): k is string => typeof k === 'string' && !RESERVED_KEYS.includes(k)).slice(0, KEYS_PER_ACTION)
+        if (Array.isArray(keys)) out[a] = keys.filter((k): k is string => typeof k === 'string' && isBindable(a, k)).slice(0, KEYS_PER_ACTION)
       }
     }
   } catch {
@@ -99,6 +117,10 @@ function save() {
   }
 }
 
+function isBindable(action: BindableAction, code: string): boolean {
+  return !RESERVED_KEYS.includes(code) && (!isMouseCode(code) || MOUSE_BINDABLE_ACTIONS.includes(action))
+}
+
 export function matches(action: BindableAction, code: string): boolean {
   return bindings[action].includes(code)
 }
@@ -114,7 +136,7 @@ function actionFor(code: string): BindableAction | null {
  * screen can say so.
  */
 export function setBinding(action: BindableAction, slot: number, code: string): BindableAction | null {
-  if (RESERVED_KEYS.includes(code)) return null
+  if (!isBindable(action, code)) return null
   const previous = actionFor(code)
   if (previous && previous !== action) bindings[previous] = bindings[previous].filter((k) => k !== code)
   const keys = [...bindings[action]]
@@ -164,6 +186,9 @@ void keyboardApi
   .catch(() => undefined)
 
 const NAMED_KEYS: Record<string, string> = {
+  MouseLeft: 'L-Click',
+  MouseMiddle: 'M-Click',
+  MouseRight: 'R-Click',
   Space: 'Space',
   Enter: 'Enter',
   Tab: 'Tab',
@@ -188,6 +213,8 @@ export function keyLabel(code: string): string {
   const fromLayout = layoutLabels.get(code)
   if (fromLayout) return fromLayout
   if (NAMED_KEYS[code]) return NAMED_KEYS[code]
+  const mouse = /^Mouse(\d+)$/.exec(code)
+  if (mouse) return `Mouse ${mouse[1]}`
   const m = /^(?:Key|Digit|Numpad)(.+)$/.exec(code)
   return m ? (code.startsWith('Numpad') ? `Num ${m[1]}` : m[1]!) : code
 }
