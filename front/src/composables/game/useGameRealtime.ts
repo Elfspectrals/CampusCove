@@ -13,6 +13,7 @@ import { getStoredAuth } from '../../api/session'
 import type { SfxName } from '../../game/sfx'
 import type {
   ApartmentInventoryItem,
+  DoorSoundPayload,
   HouseFurniturePayload,
   HousingUnitPayload,
   PunchTiredPayload,
@@ -64,6 +65,7 @@ export interface GameRealtimeDeps {
   onHousingUnitsSync: (units: HousingUnitPayload[]) => void
   onHouseFurnitureSync: (houses: HouseFurniturePayload[]) => void
   onDoorsSync: (openDoorIds: string[]) => void
+  onDoorSound: (data: DoorSoundPayload) => void
   onMyBodyModel: (bodyModelGlb: string | null) => void
   onPunched: (data: UserPunchedPayload, mySessionId: string) => void
   onPunchTired: (data: PunchTiredPayload) => void
@@ -127,6 +129,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('housing_units_sync', (data: { units?: unknown }) => syncHousingUnits(data.units))
     room.onMessage('house_furniture_sync', (data: { houses: HouseFurniturePayload[] }) => deps.onHouseFurnitureSync(data.houses))
     room.onMessage('doors_sync', (data: { openDoors: string[] }) => deps.onDoorsSync(data.openDoors))
+    room.onMessage('door_sound', (data: DoorSoundPayload) => deps.onDoorSound(data))
     room.onMessage('position_correction', (data: { x: number; y: number; z: number }) => {
       setMyPosition(data.x, data.y, data.z)
     })
