@@ -140,7 +140,7 @@ node scripts/apply-work-district.mjs   # ouvre la haie, retire 2 arbres de l'ave
 
 ## 9. Cove Pond (étang de pêche et parc)
 
-Au nord de la ville, derrière une ouverture de 12 m dans la haie (piliers « COVE / POND »), symétrique du quartier d'affaires. On y va à pied par une allée qui part de la route circulaire (`x ∈ [-3, 3]`, `z` de -21 à -48). Le parc occupe tout le croissant entre la haie (`r = 46.6`) et une clôture en bois (`r = 69.6`), limité à `|x| ≤ 46`, soit environ 2 500 m² où l'on peut marcher.
+Au nord de la ville, derrière une ouverture de 12 m dans la haie (piliers « COVE / POND »), symétrique du quartier d'affaires. On y va à pied par une allée qui part de la route circulaire (`x ∈ [-3, 3]`, `z` de -21 à -58). Le parc occupe tout le croissant entre la haie (`r = 46.6`) et une clôture en bois (`r = 79.6`), limité à `|x| ≤ 46`, soit environ 3 500 m² où l'on peut marcher.
 
 ### Style « nature »
 
@@ -186,7 +186,7 @@ Le terrain est une grille de 1 m (`PD_Terrain`) calculée par `terrain_h(x, z)` 
 
 Le sol de la ville (`Ground`) est un grand disque d'un seul tenant qu'on ne peut pas creuser : le terrain ne descend donc jamais sous `y = 0`. L'eau est à `y = 0.045`, au-dessus d'un fond à `0.015`.
 
-**La hauteur du joueur suit le relief.** `pond.layout.json` contient `heightmap` (`x0, z0, cell, cols, rows, heights[]`, grille de 1 m de `x = -48` à `48` et de `z = -76` à `-4`). Ce sont les hauteurs où l'on marche : le terrain, plus le dessus du ponton, du pont et du plancher du belvédère. Côté front :
+**La hauteur du joueur suit le relief.** `pond.layout.json` contient `heightmap` (`x0, z0, cell, cols, rows, heights[]`, grille de 1 m de `x = -48` à `48` et de `z = -86` à `-4`). Ce sont les hauteurs où l'on marche : le terrain, plus le dessus du ponton, du pont et du plancher du belvédère. Côté front :
 
 - `front/src/game/terrainHeight.ts` interpole ces hauteurs (bilinéaire) et renvoie 0 hors de la grille.
 - `useGameMovement.ts` fait `y = 1.6 + terrainHeightAt(x, z)`, en ville seulement. Les avatars des autres joueurs suivent déjà le `y` envoyé au serveur.
@@ -199,19 +199,19 @@ Le sol de la ville (`Ground`) est un grand disque d'un seul tenant qu'on ne peut
 ### Plan (espace de jeu, nord = -Z)
 
 - **Centre**
-  - **Étang** : ellipse centrée en `(0, -58.5)`, rayons 14 × 5,5 m. Lys d'eau, roseaux, 3 canards, une barque amarrée au ponton.
+  - **Étang** : ellipse centrée en `(0, -68.5)`, rayons 14 × 5,5 m. Lys d'eau, roseaux, 3 canards, une barque amarrée au ponton.
   - **Boucle de balade** autour de l'étang : 1,6 m de large, rayons intérieurs 17 × 8. Elle porte des bancs tournés vers l'eau et des lampadaires.
-  - **Ponton** : part de la berge sud à `x = 5`, plateforme en T de `z = -55.8` à `-58.3`, plancher à `y = 0.13`.
+  - **Ponton** : part de la berge sud à `x = 5`, plateforme en T de `z = -65.8` à `-68.3`, plancher à `y = 0.13`.
 - **Aile ouest**
   - Un bosquet de sapins, de bouleaux et de feuillus.
-  - Le **ruisseau** part de l'étang vers une **mare** (`(-39, -41.5)`, rayons 3,6 × 3). La boucle le franchit sur un pont en bois.
+  - Le **ruisseau** part de l'étang vers une **mare** (`(-39, -51.5)`, rayons 3,6 × 3). La boucle le franchit sur un pont en bois.
   - Un sentier, des tables de pique-nique et une couverture.
 - **Aile est**
-  - Une colline avec le **belvédère** (`(35, -55)`, plancher à 2,75 m, une marche à l'entrée, un banc à l'intérieur).
+  - Une colline avec le **belvédère** (`(35, -65)`, plancher à 2,75 m, une marche à l'entrée, un banc à l'intérieur).
   - Des cerisiers, des tables de pique-nique et une couverture.
-  - Le **kiosque à appâts** (`(22.5, -51.5)`, comptoir tourné vers l'ouest, futur PNJ sans logique).
+  - Le **kiosque à appâts** (`(22.5, -61.5)`, comptoir tourné vers l'ouest, futur PNJ sans logique).
 - **Partout**
-  - 13 bancs, 14 lampadaires le long des sentiers (plus 6 dans l'allée), 6 poubelles et un panneau indicateur au portail (« GAZEBO > », « < GROVE »).
+  - 13 bancs, 14 lampadaires le long des sentiers (plus 8 dans l'allée), 6 poubelles et un panneau indicateur au portail (« GAZEBO > », « < GROVE »).
   - Environ 60 arbres dans le parc et 26 sur la crête, des buissons, 18 massifs de fleurs, 160 touffes d'herbe et des rochers.
 
 ### Zones de pêche (contrat avec la logique de pêche)
@@ -223,14 +223,14 @@ Les données sont dans `town.layout.json` → `pond` (type `TownLayout['pond']` 
 ```jsonc
 "pond": {
   "gate": { "x": 0, "z": -46, "width": 12.2 },
-  "center": [0, 0, -58.5],
+  "center": [0, 0, -68.5],
   "fishingSpots": [
-    { "id": "fish_jetty_01", "kind": "jetty", "position": [3.5, 0.13, -57.7], "yaw": 0, "radius": 1.0, "lookAt": [3.5, 0.045, -60.1] }
+    { "id": "fish_jetty_01", "kind": "jetty", "position": [3.5, 0.13, -67.7], "yaw": 0, "radius": 1.0, "lookAt": [3.5, 0.045, -70.1] }
     // fish_jetty_01..03 au bout du ponton
     // fish_bank_01..05 sur les berges (sud-ouest, est, nord-ouest, nord, nord-est)
     // fish_mare_01 au bord de la mare
   ],
-  "kiosk": { "position": [20.2, 0.265, -51.5], "yaw": -1.5708 }
+  "kiosk": { "position": [20.2, 0.346, -61.5], "yaw": -1.5708 }
 }
 ```
 
@@ -252,7 +252,7 @@ Boîtes `COL_Pond_*` dans `town.collision.json` :
 - la clôture du fond ;
 - les arbres, les buissons, les gros rochers, les bancs, les tables, les poubelles, les lampadaires et le kiosque.
 
-Les extrémités est et ouest sont fermées par les limites du monde (`x = ±46.4`). La limite sud du monde descend à `minZ = -71`.
+Les extrémités est et ouest sont fermées par les limites du monde (`x = ±46.4`). La limite sud du monde descend à `minZ = -81`.
 
 ### Reconstruire
 
