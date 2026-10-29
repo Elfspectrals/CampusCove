@@ -2,7 +2,7 @@
   "version": 1,
   "bounds": {
     "maxX": 75.5,
-    "maxZ": 118.31
+    "maxZ": 128.31
   },
   "store": {
     "key": "cove_home",
@@ -10,13 +10,13 @@
     "position": [
       52.0,
       0.0,
-      65.0
+      75.0
     ],
     "rotationY": 3.141592653589793,
     "door": [
       52.0,
       1.25,
-      56.0
+      66.0
     ],
     "footprint": [
       34.0,
@@ -32,9 +32,9 @@
     {
       "name": "COL_Store_SP_HedgeWest",
       "cx": 30.6,
-      "cz": 40.75,
+      "cz": 45.75,
       "hx": 0.45,
-      "hz": 6.95,
+      "hz": 11.95,
       "hy": 0.8,
       "cy": 0.8,
       "yaw": 0.0
@@ -42,7 +42,7 @@
     {
       "name": "COL_Store_SP_HedgeNorth",
       "cx": 52.75,
-      "cz": 47.7,
+      "cz": 57.7,
       "hx": 22.15,
       "hz": 0.45,
       "hy": 0.8,
@@ -52,7 +52,7 @@
     {
       "name": "COL_Store_SP_HedgeEast",
       "cx": 74.9,
-      "cz": 82.755,
+      "cz": 92.755,
       "hx": 0.45,
       "hz": 35.055,
       "hy": 0.8,
@@ -62,7 +62,7 @@
     {
       "name": "COL_Store_SP_HedgeBack",
       "cx": 52.75,
-      "cz": 117.81,
+      "cz": 127.81,
       "hx": 22.15,
       "hz": 0.45,
       "hy": 0.8,
@@ -72,7 +72,7 @@
     {
       "name": "COL_Store_SP_HedgeWestBack",
       "cx": 30.6,
-      "cz": 87.405,
+      "cz": 97.405,
       "hx": 0.45,
       "hz": 30.405,
       "hy": 0.8,
@@ -82,7 +82,7 @@
     {
       "name": "COL_Store_SP_HedgeDistrictBack",
       "cx": -7.9,
-      "cz": 74.2,
+      "cz": 84.2,
       "hx": 38.5,
       "hz": 0.45,
       "hy": 0.8,
@@ -92,7 +92,7 @@
     {
       "name": "COL_Store_Lamp0",
       "cx": 37.0,
-      "cz": 49.0,
+      "cz": 59.0,
       "hx": 0.15,
       "hz": 0.15,
       "hy": 1.7,
@@ -102,7 +102,7 @@
     {
       "name": "COL_Store_Lamp1",
       "cx": 46.0,
-      "cz": 49.0,
+      "cz": 59.0,
       "hx": 0.15,
       "hz": 0.15,
       "hy": 1.7,
@@ -112,7 +112,7 @@
     {
       "name": "COL_Store_Lamp2",
       "cx": 58.0,
-      "cz": 49.0,
+      "cz": 59.0,
       "hx": 0.15,
       "hz": 0.15,
       "hy": 1.7,
@@ -122,7 +122,7 @@
     {
       "name": "COL_Store_Lamp3",
       "cx": 67.0,
-      "cz": 49.0,
+      "cz": 59.0,
       "hx": 0.15,
       "hz": 0.15,
       "hy": 1.7,
@@ -132,7 +132,7 @@
     {
       "name": "COL_Store_Tree0",
       "cx": 72.0,
-      "cz": 50.5,
+      "cz": 60.5,
       "hx": 0.3,
       "hz": 0.3,
       "hy": 1.5,
@@ -142,7 +142,7 @@
     {
       "name": "COL_Store_Pylon",
       "cx": 33.5,
-      "cz": 50.6,
+      "cz": 60.6,
       "hx": 0.5,
       "hz": 0.5,
       "hy": 4.5,
@@ -151,8 +151,8 @@
     },
     {
       "name": "COL_Store_WaySign",
-      "cx": 12.5,
-      "cz": 49.2,
+      "cx": 5.5,
+      "cz": 54.5,
       "hx": 1.3,
       "hz": 0.15,
       "hy": 1.2,
@@ -162,7 +162,7 @@
     {
       "name": "COL_Store_VestSide-1",
       "cx": 55.0,
-      "cz": 54.4,
+      "cz": 64.4,
       "hx": 0.15,
       "hz": 1.6,
       "hy": 1.9,
@@ -172,7 +172,7 @@
     {
       "name": "COL_Store_VestSide+1",
       "cx": 49.0,
-      "cz": 54.4,
+      "cz": 64.4,
       "hx": 0.15,
       "hz": 1.6,
       "hy": 1.9,
@@ -182,7 +182,7 @@
     {
       "name": "COL_Store_CartShelter",
       "cx": 40.5,
-      "cz": 53.0,
+      "cz": 63.0,
       "hx": 2.5,
       "hz": 1.2,
       "hy": 1.2,
@@ -192,7 +192,7 @@
     {
       "name": "COL_Store_Flags",
       "cx": 66.6,
-      "cz": 50.0,
+      "cz": 60.0,
       "hx": 1.6,
       "hz": 0.2,
       "hy": 3.75,

@@ -15,7 +15,7 @@ const CLINIC_INTERIOR = join(ASSETS, 'work/clinic/interior.glb')
 
 const GATE_COLLIDERS = new Set(['COL_Hedge_25', 'COL_Hedge_26', 'COL_Tree_7_0', 'COL_Tree_7_1'])
 const GATE_TREES = [[-31.3849, 10.1976], [-36.1401, 11.7426]]
-const TREE_RADIUS = 1.8
+const TREE_RADIUS = 2.4
 const HEDGE_RING_MIN_RADIUS = 40
 const KEEP_NODES = /^(Ground|Sky_Ring|Plaza|Plaza_Curb|Road|TownHall|Fountain|Path_|HedgeRing)/i
 

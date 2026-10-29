@@ -18,9 +18,9 @@ const WORLD_MANIFEST = join(ASSETS, 'world.manifest.json')
 // One near the spawn, one on the business-district plaza, one by the pond kiosk, one at the retail park.
 const FOUNTAINS = [
   [3, 16],
-  [8, 52],
-  [12, -50],
-  [30, 55],
+  [8, 62],
+  [12, -60],
+  [30, 65],
 ]
 const HALF_SIZE = 0.25
 const HEIGHT = 1.0

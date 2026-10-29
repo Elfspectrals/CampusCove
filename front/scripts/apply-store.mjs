@@ -60,7 +60,7 @@ const manifest = JSON.parse(readFileSync(WORLD_MANIFEST, 'utf8'))
 const zone = {
   key: 'retail_park',
   optional: true,
-  bounds: { minX: 29.3, maxX: park.bounds.maxX, minZ: 47, maxZ: park.bounds.maxZ },
+  bounds: { minX: 29.3, maxX: park.bounds.maxX, minZ: 57, maxZ: park.bounds.maxZ },
   modelUrl: '/assets/store/park/park.glb',
   buildings: [{ kind: 'store', ...park.store }],
 }

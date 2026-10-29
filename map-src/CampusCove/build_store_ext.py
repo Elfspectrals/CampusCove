@@ -2,10 +2,10 @@
 (or alone): exec(open(<this file>).read()).
 
 Town placement (game xz, same origin as town.glb):
-  plaza extension : x 29.3 -> 74.5, z 48 -> 56 (continues the district plaza, see build_work_district.py)
-  store           : centre (52, 65), rotation pi (door on the plaza, facing the town), footprint 34 x 18
-  fences          : hedges along x=30.6 (ring -> plaza), z=47.7 (north edge) and x=74.5 (east edge) close the new area
-  pylon sign      : (33.5, 50.6); wayfinding sign on the district plaza at (12.5, 49.2)
+  plaza extension : x 29.3 -> 74.5, z 58 -> 66 (continues the district plaza, see build_work_district.py)
+  store           : centre (52, 75), rotation pi (door on the plaza, facing the town), footprint 34 x 18
+  fences          : hedges along x=30.6 (ring -> plaza), z=57.7 (north edge) and x=74.5 (east edge) close the new area
+  pylon sign      : (33.5, 60.6); wayfinding sign beside the district avenue at (5.5, 54.5)
 Outputs: out/store/cove_home/{exterior.glb, preview.png}, out/store/park/{park.glb, park.layout.json}
 front/scripts/apply-store.mjs merges park.layout.json into the town collision + town.layout.json (`store`).
 """
@@ -27,7 +27,9 @@ OUT_PARK = os.path.join(L.OUT_ROOT, "store", "park")
 W, D, HB = 34.0, 18.0, 8.5
 INTERIOR_BACK_OUTER_Z = -50.2
 hw, hd = W / 2, D / 2
-STORE_POS = (52.0, 65.0)
+PUSH = 10.0
+PARK_MIN_Z = 47.0 + PUSH
+STORE_POS = (52.0, 65.0 + PUSH)
 VEST_D = 3.2  # glass entrance vestibule depth
 
 # ================================================================ EXTERIOR (local frame, door on +Z)
@@ -131,15 +133,15 @@ def add_col(name, gx, gz, sx, sz, h):
 
 
 PARK_MAX_Z = STORE_POS[1] - zb + 6.0
-po.append(L.box(pc, "SP_Grass", 52.0, (47.0 + PARK_MAX_Z) / 2, 0.0, 46.0, PARK_MAX_Z - 47.0, 0.02, P["grass"], tile=2.0))
-po.append(L.box(pc, "SP_Plaza", 51.9, 52.0, 0.0, 45.2, 8.0, 0.04, P["paving"], tile=2.0))
-po.append(L.box(pc, "SP_CurbN", 51.9, 48.0, 0.0, 45.2, 0.3, 0.1, P["curb"]))
-po.append(L.box(pc, "SP_CurbE", 74.4, 52.0, 0.0, 0.3, 8.0, 0.1, P["curb"]))
+po.append(L.box(pc, "SP_Grass", 52.0, (PARK_MIN_Z + PARK_MAX_Z) / 2, 0.0, 46.0, PARK_MAX_Z - PARK_MIN_Z, 0.02, P["grass"], tile=2.0))
+po.append(L.box(pc, "SP_Plaza", 51.9, 52.0 + PUSH, 0.0, 45.2, 8.0, 0.04, P["paving"], tile=2.0))
+po.append(L.box(pc, "SP_CurbN", 51.9, 48.0 + PUSH, 0.0, 45.2, 0.3, 0.1, P["curb"]))
+po.append(L.box(pc, "SP_CurbE", 74.4, 52.0 + PUSH, 0.0, 0.3, 8.0, 0.1, P["curb"]))
 # parking-style bay lines on the plaza (pure decoration)
 for i, gx in enumerate(range(40, 72, 3)):
     if 46 <= gx <= 58:
         continue  # keep the entrance clear
-    po.append(L.box(pc, f"SP_Bay{i:02d}", gx, 51.0, 0.04, 0.12, 4.0, 0.005, P["line"]))
+    po.append(L.box(pc, f"SP_Bay{i:02d}", gx, 51.0 + PUSH, 0.04, 0.12, 4.0, 0.005, P["line"]))
 
 
 def hedge(name, x0, z0, x1, z1):
@@ -149,35 +151,36 @@ def hedge(name, x0, z0, x1, z1):
     add_col("COL_Store_" + name, cx, cz, sx, sz, 1.6)
 
 
-hedge("SP_HedgeWest", 30.6, 33.8, 30.6, 47.7)
-hedge("SP_HedgeNorth", 30.6, 47.7, 74.9, 47.7)
-hedge("SP_HedgeEast", 74.9, 47.7, 74.9, PARK_MAX_Z)
+hedge("SP_HedgeWest", 30.6, 33.8, 30.6, 47.7 + PUSH)
+hedge("SP_HedgeNorth", 30.6, 47.7 + PUSH, 74.9, 47.7 + PUSH)
+hedge("SP_HedgeEast", 74.9, 47.7 + PUSH, 74.9, PARK_MAX_Z)
 hedge("SP_HedgeBack", 30.6, PARK_MAX_Z, 74.9, PARK_MAX_Z)
-hedge("SP_HedgeWestBack", 30.6, 57.0, 30.6, PARK_MAX_Z)
-hedge("SP_HedgeDistrictBack", -46.4, 74.2, 30.6, 74.2)
+hedge("SP_HedgeWestBack", 30.6, 57.0 + PUSH, 30.6, PARK_MAX_Z)
+hedge("SP_HedgeDistrictBack", -46.4, 74.2 + PUSH, 30.6, 74.2 + PUSH)
 
 # lamps + trees along the plaza
 for i, gx in enumerate((37.0, 46.0, 58.0, 67.0)):
-    po.append(L.cyl(pc, f"SP_Lamp{i}_Pole", gx, 49.0, 0.0, 0.07, 3.2, P["metal"], seg=6))
-    po.append(L.box(pc, f"SP_Lamp{i}_Head", gx, 49.0, 3.2, 0.5, 0.5, 0.3, P["lamp"], bevel=0.03))
-    add_col(f"COL_Store_Lamp{i}", gx, 49.0, 0.3, 0.3, 3.4)
+    po.append(L.cyl(pc, f"SP_Lamp{i}_Pole", gx, 49.0 + PUSH, 0.0, 0.07, 3.2, P["metal"], seg=6))
+    po.append(L.box(pc, f"SP_Lamp{i}_Head", gx, 49.0 + PUSH, 3.2, 0.5, 0.5, 0.3, P["lamp"], bevel=0.03))
+    add_col(f"COL_Store_Lamp{i}", gx, 49.0 + PUSH, 0.3, 0.3, 3.4)
 for i, gx in enumerate((72.0,)):
-    po.append(L.cyl(pc, f"SP_TreeTrunk{i}", gx, 50.5, 0.0, 0.22, 1.6, P["trunk"], seg=6))
-    po.append(L.cone(pc, f"SP_TreeA{i}", gx, 50.5, 1.4, 1.5, 0.3, 2.2, P["leaf"], seg=7))
-    add_col(f"COL_Store_Tree{i}", gx, 50.5, 0.6, 0.6, 3.0)
+    po.append(L.cyl(pc, f"SP_TreeTrunk{i}", gx, 50.5 + PUSH, 0.0, 0.22, 1.6, P["trunk"], seg=6))
+    po.append(L.cone(pc, f"SP_TreeA{i}", gx, 50.5 + PUSH, 1.4, 1.5, 0.3, 2.2, P["leaf"], seg=7))
+    add_col(f"COL_Store_Tree{i}", gx, 50.5 + PUSH, 0.6, 0.6, 3.0)
 
 # pylon sign, visible from the district
-po.append(L.box(pc, "SP_PylonPost", 33.5, 50.6, 0.0, 0.8, 0.8, 7.0, P["blue"]))
-po.append(L.box(pc, "SP_PylonBoard", 33.5, 50.6, 7.0, 5.2, 0.6, 2.0, P["blue"], bevel=0.05))
+po.append(L.box(pc, "SP_PylonPost", 33.5, 50.6 + PUSH, 0.0, 0.8, 0.8, 7.0, P["blue"]))
+po.append(L.box(pc, "SP_PylonBoard", 33.5, 50.6 + PUSH, 7.0, 5.2, 0.6, 2.0, P["blue"], bevel=0.05))
 for facing, dz in (("+z", 0.31), ("-z", -0.31)):
-    po.append(L.text_mesh(pc, f"SP_PylonText{facing}", "COVE HOME", 33.5, 50.6 + dz, 7.45, 0.95, 0.05, P["sign"], facing=facing))
-add_col("COL_Store_Pylon", 33.5, 50.6, 1.0, 1.0, 9.0)
+    po.append(L.text_mesh(pc, f"SP_PylonText{facing}", "COVE HOME", 33.5, 50.6 + PUSH + dz, 7.45, 0.95, 0.05, P["sign"], facing=facing))
+add_col("COL_Store_Pylon", 33.5, 50.6 + PUSH, 1.0, 1.0, 9.0)
 # wayfinding sign on the district plaza, read by players coming through the hedge gate (they walk towards +Z)
-po.append(L.box(pc, "SP_WayPostL", 11.4, 49.2, 0.0, 0.12, 0.12, 2.4, P["metal"]))
-po.append(L.box(pc, "SP_WayPostR", 13.6, 49.2, 0.0, 0.12, 0.12, 2.4, P["metal"]))
-po.append(L.box(pc, "SP_WayBoard", 12.5, 49.2, 1.6, 2.6, 0.1, 0.7, P["blue"]))
-po.append(L.text_mesh(pc, "SP_WayText", "<  COVE HOME", 12.5, 49.14, 1.75, 0.34, 0.03, P["sign"], facing="-z"))
-add_col("COL_Store_WaySign", 12.5, 49.2, 2.6, 0.3, 2.4)
+way_x, way_z = 5.5, 54.5
+po.append(L.box(pc, "SP_WayPostL", way_x - 1.1, way_z, 0.0, 0.12, 0.12, 2.4, P["metal"]))
+po.append(L.box(pc, "SP_WayPostR", way_x + 1.1, way_z, 0.0, 0.12, 0.12, 2.4, P["metal"]))
+po.append(L.box(pc, "SP_WayBoard", way_x, way_z, 1.6, 2.6, 0.1, 0.7, P["blue"]))
+po.append(L.text_mesh(pc, "SP_WayText", "<  COVE HOME", way_x, way_z - 0.06, 1.75, 0.34, 0.03, P["sign"], facing="-z"))
+add_col("COL_Store_WaySign", way_x, way_z, 2.6, 0.3, 2.4)
 
 bad = L.check_grounded(po, allow=("SP_Grass", "SP_Plaza", "SP_Curb", "SP_Bay", "SP_Lamp", "SP_Tree", "SP_Pylon", "SP_Way", "SP_Hedge"))
 print("PARK grounded violations:", bad)
