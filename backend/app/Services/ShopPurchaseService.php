@@ -150,6 +150,50 @@ final class ShopPurchaseService
     }
 
     /**
+     * @param  list<int>  $shopCatalogItemIds
+     * @return list<ShopPurchaseResult>
+     */
+    public function checkoutWithCoins(Account $account, array $shopCatalogItemIds): array
+    {
+        if ($shopCatalogItemIds === []) {
+            throw new ShopPurchaseRejectedException('empty_basket', 'Your basket is empty.', 422);
+        }
+        if (count(array_unique($shopCatalogItemIds)) !== count($shopCatalogItemIds)) {
+            throw new ShopPurchaseRejectedException('duplicate_item', 'The same item is in your basket more than once.', 422);
+        }
+
+        return DB::transaction(function () use ($account, $shopCatalogItemIds): array {
+            $catalogItems = ShopCatalogItem::query()
+                ->whereIn('shop_catalog_item_id', $shopCatalogItemIds)
+                ->orderBy('shop_catalog_item_id')
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('shop_catalog_item_id');
+
+            if ($catalogItems->count() !== count($shopCatalogItemIds)) {
+                throw new ShopPurchaseRejectedException('invalid_shop_item', 'Shop item not found.', 404);
+            }
+
+            $totalDebit = $catalogItems->sum(fn (ShopCatalogItem $catalogItem): int => $this->resolvePricing($catalogItem, 'coins')[1]);
+
+            $wallet = Wallet::lockForAccount((int) $account->getAuthIdentifier(), 'coins');
+            if ($wallet->balance() < $totalDebit) {
+                throw new ShopPurchaseRejectedException('not_enough_coins', 'Not enough coins for this basket.', 422);
+            }
+
+            return array_map(
+                fn (int $shopCatalogItemId): ShopPurchaseResult => $this->purchaseByCatalogPublicId(
+                    $account,
+                    (string) $catalogItems[$shopCatalogItemId]->public_id,
+                    1,
+                    'coins'
+                ),
+                $shopCatalogItemIds
+            );
+        });
+    }
+
+    /**
      * Currency and price of the purchase. Every catalog row enables at least one currency
      * (ck_shop_catalog_pricing), so allow_coins / allow_premium are the only source of truth.
      *

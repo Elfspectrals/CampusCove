@@ -202,7 +202,7 @@ class CharacterCosmeticApiTest extends TestCase
             ->pluck('model_glb', 'code')
             ->all();
 
-        $this->assertSame('/assets/skins/campus_classic/model.glb', $rows['COS_WEAR_BODY_DEFAULT'] ?? null);
+        $this->assertSame('/assets/wear/base/model.glb', $rows['COS_WEAR_BODY_DEFAULT'] ?? null);
         $this->assertSame('/assets/skins/street_runner/model.glb', $rows['COS_WEAR_BODY_STREET_RUNNER'] ?? null);
         $this->assertSame('/assets/skins/scholar/model.glb', $rows['COS_WEAR_BODY_SCHOLAR'] ?? null);
         $this->assertSame('/assets/skins/explorer/model.glb', $rows['COS_WEAR_BODY_EXPLORER'] ?? null);
@@ -236,7 +236,7 @@ class CharacterCosmeticApiTest extends TestCase
             $response->json('slots.body.preview_image')
         );
         $this->assertSame(
-            '/assets/skins/campus_classic/model.glb',
+            '/assets/wear/base/model.glb',
             $response->json('slots.body.model_glb')
         );
     }
@@ -269,6 +269,67 @@ class CharacterCosmeticApiTest extends TestCase
             'COS_WEAR_BODY_STREET_LUXE',
             'COS_WEAR_BODY_STREET_RUNNER',
         ], $sold);
+    }
+
+    public function test_equipping_a_headset_takes_off_the_hair_and_hair_takes_off_the_headset(): void
+    {
+        ['token' => $token] = $this->registerAndCreditWallet(10_000, 'coins');
+        $headers = ['Authorization' => 'Bearer '.$token];
+        $hair = $this->buyWearable('COS_WEAR_HAIR_SHORT', $headers);
+        $headset = $this->buyWearable('COS_WEAR_HEAD_ACCESSORY_GAMER', $headers);
+
+        $this->putJson('/api/character/cosmetics', ['slots' => ['hair' => $hair]], $headers)
+            ->assertOk()
+            ->assertJsonPath('slots.hair.code', 'COS_WEAR_HAIR_SHORT');
+
+        $this->putJson('/api/character/cosmetics', ['slots' => ['head_accessory' => $headset]], $headers)
+            ->assertOk()
+            ->assertJsonPath('slots.head_accessory.code', 'COS_WEAR_HEAD_ACCESSORY_GAMER')
+            ->assertJsonPath('slots.hair', null);
+
+        $this->putJson('/api/character/cosmetics', ['slots' => ['hair' => $hair]], $headers)
+            ->assertOk()
+            ->assertJsonPath('slots.hair.code', 'COS_WEAR_HAIR_SHORT')
+            ->assertJsonPath('slots.head_accessory', null);
+
+        $this->putJson('/api/character/cosmetics', ['slots' => ['hair' => null, 'head_accessory' => null]], $headers)
+            ->assertOk()
+            ->assertJsonPath('slots.hair', null)
+            ->assertJsonPath('slots.head_accessory', null);
+    }
+
+    public function test_hair_and_headset_cannot_be_equipped_together(): void
+    {
+        ['token' => $token] = $this->registerAndCreditWallet(10_000, 'coins');
+        $headers = ['Authorization' => 'Bearer '.$token];
+        $hair = $this->buyWearable('COS_WEAR_HAIR_SHORT', $headers);
+        $headset = $this->buyWearable('COS_WEAR_HEAD_ACCESSORY_GAMER', $headers);
+
+        $this->putJson('/api/character/cosmetics', ['slots' => ['hair' => $hair, 'head_accessory' => $headset]], $headers)
+            ->assertStatus(422)
+            ->assertJsonPath('message', 'hair_headset_exclusive');
+
+        $this->getJson('/api/character/cosmetics', $headers)
+            ->assertOk()
+            ->assertJsonPath('slots.hair', null)
+            ->assertJsonPath('slots.head_accessory', null);
+    }
+
+    /**
+     * @param  array<string, string>  $headers
+     */
+    private function buyWearable(string $code, array $headers): int
+    {
+        $catalog = DB::table('shop_catalog_items')
+            ->join('item_defs', 'item_defs.item_def_id', '=', 'shop_catalog_items.item_def_id')
+            ->where('item_defs.code', $code)
+            ->select('shop_catalog_items.public_id', 'item_defs.item_def_id')
+            ->first();
+        $this->assertNotNull($catalog, $code);
+
+        $this->postJson('/api/shop/purchase', ['shop_item_public_id' => $catalog->public_id], $headers)->assertOk();
+
+        return (int) $catalog->item_def_id;
     }
 
     /**
