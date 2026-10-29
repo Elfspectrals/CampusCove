@@ -90,6 +90,11 @@ final class ShopPurchaseService
                     throw new ShopPurchaseRejectedException('already_owned', 'You already own this item.', 422);
                 }
             }
+            // Cove Threads clothes are not unique forever (they are lost when passing out), only one at a time.
+            if ($itemDef->kind === 'cosmetic' && (int) $itemDef->max_stack === 1
+                && $this->accountInventoryService->accountHasPositiveQuantity($accountId, (int) $itemDef->item_def_id)) {
+                throw new ShopPurchaseRejectedException('already_owned', 'You already own this item.', 422);
+            }
 
             $tx = EconomyTransaction::query()->create([
                 'server_id' => null,

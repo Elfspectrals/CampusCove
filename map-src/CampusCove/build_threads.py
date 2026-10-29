@@ -274,6 +274,8 @@ add(L.furn(coll, "Counter", counter_x, counter_z, 0.0, [
 cols.add("Counter", counter_x, counter_z, 0.0, 4.2, 1.1, 1.1)
 add(L.box(coll, "Counter_SignBoard", counter_x, counter_z - 0.3, 2.6, 2.6, 0.08, 0.7, M["red"]))
 text("Counter_SignText", "PAY HERE", counter_x, counter_z - 0.24, 2.75, 0.4, M["sign"], 0.0)
+# the clerk is a modular character spawned by the front (useClothingStore), standing behind the till
+CLERK = {"position": [round(counter_x - 1.2, 3), 0.0, round(counter_z - 1.05, 3)], "yaw": 0.0}
 for gx in (-13.8, 13.8):
     add(L.plant(coll, M, f"Plant_{int(gx)}", gx, 4.2))
     cols.add(f"Plant_{int(gx)}", gx, 4.2, 0.0, 0.5, 0.5, 1.3)
@@ -308,7 +310,7 @@ L.write_json(os.path.join(OUT, "interior.layout.json"), {
     "version": 2, "key": KEY, "name": NAME, "spawn": [0.0, 1.6, 3.7],
     "exit": {"position": [0.0, 4.75], "radius": 1.4},
     "bounds": {"minX": X0, "maxX": X1, "minZ": Z0, "maxZ": Z1},
-    "counter": [counter_x, 1.15, counter_z + 1.2],
+    "counter": [counter_x, 1.15, counter_z + 1.2], "clerk": CLERK,
     "departments": dept_info, "displays": displays, "outfits": outfits, "mirror": MIRROR,
 })
 tris = sum(len(p.vertices) - 2 for o in merged if o.type == "MESH" for p in o.data.polygons)

@@ -13,6 +13,9 @@ final class AccountCosmeticService
     /** @var list<string> */
     public const SLOTS = ['body', 'hair', 'top', 'bottom', 'shoes', 'head_accessory'];
 
+    /** Clothes (Cove Threads): every slot but the body skin. */
+    public const CLOTHING_SLOTS = ['hair', 'top', 'bottom', 'shoes', 'head_accessory'];
+
     /** @var array<string, string> */
     public const DEFAULT_HEX_BY_SLOT = [
         'body' => '#8B7AA8',

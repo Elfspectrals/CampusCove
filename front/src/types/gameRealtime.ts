@@ -101,4 +101,6 @@ export interface ApartmentInventoryItem {
   /** Food / drinks: bites per item and bites left on the item being eaten (4/4 -> 3/4 ...). */
   portions?: number | null
   portions_left?: number | null
+  /** Clothes: the wear slot (hair, top, ...); unworn clothes live in the backpack. */
+  cosmetic_slot?: string | null
 }

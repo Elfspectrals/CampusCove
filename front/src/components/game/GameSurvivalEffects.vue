@@ -7,6 +7,7 @@ const props = defineProps<{
   damageFlash: number
   knockedOut: boolean
   hospitalBill: number | null
+  lostBelongings: boolean
   message: string | null
   recovering: number | null
   reducedEffects: boolean
@@ -56,6 +57,7 @@ const heartbeat = computed(() => `${(props.effects?.heartbeatPeriod ?? 1).toFixe
         <p v-if="hospitalBill !== null" class="text-xs font-bold text-coral">
           {{ hospitalBill > 0 ? `Hospital bill: ${hospitalBill} coins` : 'The hospital waived the bill.' }}
         </p>
+        <p v-if="lostBelongings" class="text-xs text-mist">Your inventory and your clothes were lost.</p>
       </div>
     </Transition>
     <div

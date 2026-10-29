@@ -51,10 +51,13 @@ class SurvivalController extends Controller
         return response()->json(['cooked' => $this->survival->cook($this->accountId($request), $validated['code'])]);
     }
 
-    /** Realtime server only. */
+    /** Realtime server only: the player passed out, so they pay the hospital and lose their belongings. */
     public function hospital(Request $request): JsonResponse
     {
-        return response()->json($this->survival->billHospital($this->accountId($request)));
+        $accountId = $this->accountId($request);
+        $bill = $this->survival->billHospital($accountId);
+
+        return response()->json([...$bill, 'lost' => $this->survival->loseBelongings($accountId)]);
     }
 
     public function clinicHeal(Request $request): JsonResponse

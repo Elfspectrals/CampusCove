@@ -181,6 +181,8 @@ export const COVE_THREADS = {
   interiorCollisionUrl: `${ROOT}/store/cove_threads/interior.collision.json`,
   interiorLightmapUrl: `${ROOT}/store/cove_threads/lightmap.jpg`,
   interiorLayoutUrl: `${ROOT}/store/cove_threads/interior.layout.json`,
+  /** map-src/CampusCove/build_threads_music.py */
+  musicUrl: `${ROOT}/music/cove_threads.mp3`,
 } as const
 
 export type StoreKey = typeof COVE_HOME.key | typeof COVE_THREADS.key

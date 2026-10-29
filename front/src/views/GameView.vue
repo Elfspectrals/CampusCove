@@ -53,7 +53,9 @@ import { createGameScene, disposeGameScene, type GameScene } from '../game/gameS
 import { createFirstPersonArms } from '../game/firstPersonArms'
 import { createHeldItem } from '../game/heldItem'
 import { COVE_HOME, COVE_THREADS, findHouse, findStore, findWork } from '../game/assets/catalog'
+import type { GearSlot } from '../game/wardrobeSlots'
 import { createSfx } from '../game/sfx'
+import { createAmbientLoop } from '../game/ambientLoop'
 import { MAX_STAMINA } from '../game/stamina'
 import { createDoorSigns } from '../game/town/doorSigns'
 import { frontDoorNode, houseKeyAt, openHouseInterior, rattleFrontDoor, updateFrontDoors } from '../game/town/openHouses'
@@ -89,6 +91,7 @@ let game: GameScene | null = null
 const getScene = () => game?.scene
 const getCamera = () => game?.camera
 const sfx = createSfx(getCamera)
+const threadsMusic = createAmbientLoop(COVE_THREADS.musicUrl, 0.18, sfx.listener)
 const getRenderer = () => game?.renderer
 
 // ---------------------------------------------------------------- house decoration
@@ -159,12 +162,17 @@ const {
   toggleInventory,
   closeInventory,
   pickupToHotbar,
+  placeInSlot,
+  releaseCursor,
+  draggingCode,
 } = usePlayerInventory({
   gameRoomRef,
   canDecorate,
   selectedPlacedObjectId,
   startPlacementPreview: (itemDef, ownedCountRef) => placement.startPreviewNew(itemDef, ownedCountRef),
   cancelPlacementPreview: () => placement.cancelPreview(),
+  onGearDrop: (gear, slotIndex) => void wardrobeRef.value?.takeOff(gear as GearSlot, slotIndex),
+  onQuickWear: (slotIndex) => void wardrobeRef.value?.wearFromSlot(slotIndex),
 })
 
 // ---------------------------------------------------------------- Cove Home furniture store
@@ -189,6 +197,16 @@ const myCosmetics = shallowRef<CharacterCosmeticsState | null>(null)
 function onWardrobeChanged(state: CharacterCosmeticsState): void {
   myCosmetics.value = state
   realtime.sendMyAppearance(state)
+}
+
+const wardrobeRef = ref<InstanceType<typeof GameWardrobe> | null>(null)
+
+/** Worn clothes leave the backpack; the piece taken off goes back where the player put it. */
+function onOutfit(change: { state: CharacterCosmeticsState; returnedCode: string | null; toSlot: number | null; wornCode: string | null; consumedCursor: boolean }): void {
+  onWardrobeChanged(change.state)
+  if (change.consumedCursor) releaseCursor()
+  if (change.returnedCode && change.toSlot !== null) placeInSlot(change.returnedCode, change.toSlot, change.wornCode)
+  refreshOwnedItems()
 }
 const {
   target: clothesTarget,
@@ -339,6 +357,14 @@ const survival = useSurvival({
   pointerLocked,
   selectedItem,
   refreshInventory: () => refreshOwnedItems(),
+  onBelongingsLost: (clothes) => {
+    refreshOwnedItems()
+    if (!clothes) return
+    void clothingStore.refreshOwned()
+    void fetchCharacterCosmetics().then(onWardrobeChanged).catch(() => {
+      /* the look catches up on the next window focus */
+    })
+  },
   teleport: (x, y, z) => {
     Object.assign(myPosition, { x, y, z })
     getCamera()?.position.set(x, y, z)
@@ -353,6 +379,7 @@ const {
   damageFlash,
   knockedOut,
   hospitalBill,
+  lostBelongings,
   message: survivalMessage,
   reducedEffects,
   recovering,
@@ -570,6 +597,7 @@ const movement = useGameMovement({
     placement.tick(dt)
     furnitureStore.update()
     clothingStore.update(dt)
+    threadsMusic.update(dt, inThreads.value)
     interactions.updatePrompts()
     houseKeys.updateKeyPrompt()
     updateFrontDoors(dt, isBuildingDoorOpen)
@@ -742,6 +770,7 @@ onUnmounted(() => {
   window.clearInterval(doorSignTimer)
   doorSigns.dispose()
   arms?.dispose()
+  threadsMusic.dispose()
   sfx.dispose()
   environment.disposeRoomEnvironment()
   if (game) disposeGameScene(game)
@@ -779,6 +808,7 @@ const crosshairClass = computed(() => {
       :damage-flash="damageFlash"
       :knocked-out="knockedOut"
       :hospital-bill="hospitalBill"
+      :lost-belongings="lostBelongings"
       :message="survivalMessage"
       :recovering="recovering"
       :reduced-effects="reducedEffects"
@@ -900,7 +930,14 @@ const crosshairClass = computed(() => {
       @clear-slot="clearSlot"
       @pickup-placed-object="(id: string) => { onPlacedObjectSelected(id); pickupSelectedPlacedObject() }"
     >
-      <GameWardrobe @changed="onWardrobeChanged" />
+      <GameWardrobe
+        ref="wardrobeRef"
+        :slots="slots"
+        :item-by-code="itemByCode"
+        :held-code="cursorItem?.code ?? draggingCode"
+        :cursor-from-slot="cursorItem?.fromSlot ?? null"
+        @outfit="onOutfit"
+      />
     </GamePlayerInventoryPanel>
     <GamePointerLockOverlay
       v-show="pauseMenuOpen && !pauseDismissed"

@@ -9,6 +9,7 @@ import { updateAvatarAnimation } from '../../avatar/glbCharacter'
 import { createModularCharacter } from '../../avatar/modularCharacter'
 import { WEAR_SLOTS, wearSignature, type WearModels, type WearSlot } from '../../avatar/modularCharacterLogic'
 import { COVE_THREADS } from '../../game/assets/catalog'
+import { setPropBlocker } from '../../game/collision/worldCollision'
 import { EYE_HEIGHT } from '../../game/gameRoomConstants'
 import { openHouseInterior } from '../../game/town/openHouses'
 import { createPriceTag, type PriceTagContent } from '../../game/store/priceTag'
@@ -45,6 +46,7 @@ interface ThreadsMirror {
 
 interface ThreadsLayout {
   counter: Vec3
+  clerk: { position: Vec3; yaw: number }
   departments: Array<{ id: string; label: string }>
   displays: ThreadsDisplay[]
   outfits: ThreadsOutfit[]
@@ -86,6 +88,19 @@ const COUNTER_REACH = 2.2
 const SHOP_FILL = 0.45
 const MIRROR_LAYER = 1
 const MIRROR_RANGE = 12
+const CLERK_OUTFIT: PieceRef[] = [
+  { slot: 'hair', key: 'ponytail' },
+  { slot: 'top', key: 'tee' },
+  { slot: 'bottom', key: 'joggers' },
+  { slot: 'shoes', key: 'sneakers' },
+]
+/** Store red (build_threads.py IN_ThreadsRed): the clerk wears the brand colour. */
+const CLERK_COLORS = { ...DEFAULT_SLOT_COLORS, top: '#d8322b', bottom: '#3b3f4a' }
+const CLERK_HEAD_HEIGHT = 2
+/** The clerk turns towards a customer closer than this, never further than CLERK_MAX_TURN off the counter. */
+const CLERK_NOTICE_RANGE = 6
+const CLERK_MAX_TURN = 1.1
+const CLERK_TURN_SPEED = 3
 
 function wearModelUrl(slot: WearSlot, key: string): string {
   return `/assets/wear/${slot}/${key}/model.glb`
@@ -144,6 +159,10 @@ export function useClothingStore(deps: ClothingStoreDeps) {
   let attachedTo: THREE.Group | null = null
   let wasInStore = false
   let mirror: Reflector | null = null
+  let clerk: THREE.Group | null = null
+  let clerkYaw = 0
+  const clerkHead = new THREE.Vector3()
+  const toCustomer = new THREE.Vector3()
   const mirrorAt = new THREE.Vector3()
   let self: THREE.Group | null = null
   let selfOutfit = ''
@@ -227,6 +246,7 @@ export function useClothingStore(deps: ClothingStoreDeps) {
     group.add(displays)
     group.updateWorldMatrix(true, true)
     addMirror(group, displays, loaded.mirror)
+    void addClerk(group, displays, loaded.clerk)
     for (const d of loaded.displays) addRuntime(group, displays, [{ slot: d.slot, key: d.key }], d.department, d.center, d.tag)
     for (const o of loaded.outfits) addRuntime(group, displays, o.pieces, null, o.center, o.tag)
     await Promise.all([
@@ -252,6 +272,37 @@ export function useClothingStore(deps: ClothingStoreDeps) {
     }
     displays.add(mirror)
     mirrorAt.fromArray(spec.position).applyMatrix4(group.matrixWorld)
+  }
+
+  /** The shop assistant behind the till, like the clinic nurse: rings up the basket, blocks the way and watches customers. */
+  async function addClerk(group: THREE.Group, displays: THREE.Group, spot: ThreadsLayout['clerk']): Promise<void> {
+    const character = await createModularCharacter(outfitModels(CLERK_OUTFIT), CLERK_COLORS, DEFAULT_SLOT_COLORS)
+    brightenForShop(character)
+    character.name = 'ThreadsClerk'
+    character.position.fromArray(spot.position)
+    character.rotation.y = spot.yaw
+    clerkYaw = spot.yaw
+    displays.add(character)
+    clerk = character
+    group.updateWorldMatrix(true, true)
+    clerkHead.set(spot.position[0], spot.position[1] + CLERK_HEAD_HEIGHT, spot.position[2]).applyMatrix4(group.matrixWorld)
+    const feet = new THREE.Vector3().fromArray(spot.position).applyMatrix4(group.matrixWorld)
+    const q = group.getWorldQuaternion(new THREE.Quaternion())
+    setPropBlocker('threads_clerk', { cx: feet.x, cy: feet.y + 0.9, cz: feet.z, hx: 0.3, hy: 0.9, hz: 0.3, qx: q.x, qy: q.y, qz: q.z, qw: q.w })
+  }
+
+  function updateClerk(dt: number, inside: boolean): void {
+    if (!clerk?.parent || !inside) return
+    const customer = clerk.parent.worldToLocal(toCustomer.set(deps.myPosition.x, 0, deps.myPosition.z))
+    const dx = customer.x - clerk.position.x
+    const dz = customer.z - clerk.position.z
+    let goal = clerkYaw
+    if (Math.hypot(dx, dz) < CLERK_NOTICE_RANGE) {
+      const offset = THREE.MathUtils.euclideanModulo(Math.atan2(dx, dz) - clerkYaw + Math.PI, Math.PI * 2) - Math.PI
+      goal = clerkYaw + THREE.MathUtils.clamp(offset, -CLERK_MAX_TURN, CLERK_MAX_TURN)
+    }
+    clerk.rotation.y = THREE.MathUtils.damp(clerk.rotation.y, goal, CLERK_TURN_SPEED, dt)
+    updateAvatarAnimation(clerk, dt, 0)
   }
 
   async function ensureSelf(): Promise<void> {
@@ -321,6 +372,7 @@ export function useClothingStore(deps: ClothingStoreDeps) {
     wasInStore = inside
     const camera = deps.getCamera()
     updateMirror(dt, inside, camera)
+    updateClerk(dt, inside)
     if (!inside || !camera || runtimes.length === 0) {
       if (current) setTarget(null)
       return
@@ -393,7 +445,7 @@ export function useClothingStore(deps: ClothingStoreDeps) {
   }
 
   function updatePrompt(): void {
-    const at = deps.inStore() && !deps.promptsHidden() && !checkoutOpen.value && isNearCounter() ? counter : null
+    const at = deps.inStore() && !deps.promptsHidden() && !checkoutOpen.value && isNearCounter() ? (clerk ? clerkHead : counter) : null
     const camera = deps.getCamera()
     const canvas = deps.canvasRef.value
     if (!at || !camera || !canvas || projection.copy(at).project(camera).z > 1) {
@@ -405,7 +457,7 @@ export function useClothingStore(deps: ClothingStoreDeps) {
       x: (projection.x * 0.5 + 0.5) * rect.width,
       y: (-projection.y * 0.5 + 0.5) * rect.height,
       action: 'Pay',
-      detail: basket.value.length > 0 ? `${basket.value.length} item(s) · ${basketTotal.value} coins` : 'Basket is empty',
+      detail: basket.value.length > 0 ? `Clerk · ${basket.value.length} item(s) · ${basketTotal.value} coins` : 'Clerk · basket is empty',
     }
   }
 
@@ -424,6 +476,7 @@ export function useClothingStore(deps: ClothingStoreDeps) {
     tryOpenCheckout,
     pay,
     removeFromBasket,
+    refreshOwned: refreshCatalogAndOwned,
     closeCheckout: () => {
       checkoutOpen.value = false
     },

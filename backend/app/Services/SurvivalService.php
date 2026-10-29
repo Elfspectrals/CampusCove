@@ -4,8 +4,10 @@ namespace App\Services;
 
 use App\Exceptions\SurvivalRejectedException;
 use App\Models\EconomyTransaction;
+use App\Models\GiftInbox;
 use App\Models\InventoryStack;
 use App\Models\ItemDef;
+use App\Models\ItemInstance;
 use App\Models\Wallet;
 use App\Models\WalletLedgerEntry;
 use App\Support\FoodCatalog;
@@ -13,7 +15,8 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * Hunger, thirst and health. The realtime server owns the live values (decay, damage, regeneration) and saves
- * them here; this service only stores them, eats one portion of a food item and bills the hospital.
+ * them here; this service only stores them, eats one portion of a food item, bills the hospital and takes away what
+ * a player loses when they pass out.
  */
 final class SurvivalService
 {
@@ -23,6 +26,9 @@ final class SurvivalService
     public const HOSPITAL_FEE = 40;
 
     public const CLINIC_HEAL_FEE = 30;
+
+    /** Inventory kinds dropped when a player passes out (keys, titles and apartments stay). */
+    private const LOST_KINDS = ['consumable', 'furniture'];
 
     public function __construct(private readonly AccountInventoryService $inventory)
     {
@@ -157,6 +163,48 @@ final class SurvivalService
             ]);
 
             return ['billed' => $amount, 'balance_after' => $balance - $amount];
+        });
+    }
+
+    /**
+     * Passing out costs the player their inventory: food, unplaced furniture and every Cove Threads piece of clothing,
+     * worn or not. Placed furniture, house keys, coins and skins stay.
+     *
+     * @return array{items: int, clothes: int}
+     */
+    public function loseBelongings(int $accountId): array
+    {
+        return DB::transaction(function () use ($accountId): array {
+            $items = 0;
+            $gift = GiftInbox::query()->where('account_id', $accountId)->first();
+            if ($gift !== null) {
+                $lostDefs = ItemDef::query()->whereIn('kind', self::LOST_KINDS)->pluck('item_def_id');
+                $items += InventoryStack::query()
+                    ->where('container_id', $gift->container_id)
+                    ->whereIn('item_def_id', $lostDefs)
+                    ->delete();
+                $items += ItemInstance::query()
+                    ->where('container_id', $gift->container_id)
+                    ->whereIn('item_def_id', $lostDefs)
+                    ->delete();
+            }
+
+            // Cove Threads clothes are lost too; body skins (incl. premium ones) and the free defaults are not
+            $clothes = ItemDef::query()
+                ->where('kind', 'cosmetic')
+                ->whereIn('cosmetic_slot', AccountCosmeticService::CLOTHING_SLOTS)
+                ->whereNotIn('code', StarterCosmeticGrantService::STARTER_CODES)
+                ->pluck('item_def_id');
+            DB::table('account_cosmetic_equipment')
+                ->where('account_id', $accountId)
+                ->whereIn('item_def_id', $clothes)
+                ->delete();
+            $lostClothes = DB::table('account_locker_cosmetics')
+                ->where('account_id', $accountId)
+                ->whereIn('item_def_id', $clothes)
+                ->delete();
+
+            return ['items' => $items, 'clothes' => $lostClothes];
         });
     }
 

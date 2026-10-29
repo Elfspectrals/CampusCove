@@ -298,6 +298,24 @@ class CharacterCosmeticApiTest extends TestCase
             ->assertJsonPath('slots.head_accessory', null);
     }
 
+    public function test_clothes_not_worn_are_in_the_backpack(): void
+    {
+        ['token' => $token] = $this->registerAndCreditWallet(10_000, 'coins');
+        $headers = ['Authorization' => 'Bearer '.$token];
+        $tee = $this->buyWearable('COS_WEAR_TOP_TEE', $headers);
+        $this->buyWearable('COS_WEAR_SHOES_BOOTS', $headers);
+        $backpack = fn (): array => collect($this->getJson('/api/apartments/assets', $headers)->assertOk()->json('items'))
+            ->pluck('cosmetic_slot', 'code')
+            ->all();
+
+        $this->assertSame(['COS_WEAR_TOP_TEE' => 'top', 'COS_WEAR_SHOES_BOOTS' => 'shoes'], array_intersect_key($backpack(), ['COS_WEAR_TOP_TEE' => 1, 'COS_WEAR_SHOES_BOOTS' => 1]));
+        $this->assertArrayNotHasKey('COS_WEAR_BODY_DEFAULT', $backpack());
+
+        $this->putJson('/api/character/cosmetics', ['slots' => ['top' => $tee]], $headers)->assertOk();
+        $this->assertArrayNotHasKey('COS_WEAR_TOP_TEE', $backpack());
+        $this->assertArrayHasKey('COS_WEAR_SHOES_BOOTS', $backpack());
+    }
+
     public function test_hair_and_headset_cannot_be_equipped_together(): void
     {
         ['token' => $token] = $this->registerAndCreditWallet(10_000, 'coins');

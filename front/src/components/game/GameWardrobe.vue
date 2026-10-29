@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
+import { onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import * as THREE from 'three'
 import {
   DEFAULT_SLOT_COLORS,
@@ -8,46 +8,57 @@ import {
   wearModelsFromLoadout,
   type CharacterCosmeticsState,
   type CosmeticSlot,
+  type PutCharacterCosmeticsPayload,
 } from '../../api/characterCosmetics'
-import { fetchAccountInventory, type AccountInventoryRow } from '../../api/inventory'
 import { disposeObject3D } from '../../avatar/compositeAvatar'
 import { updateAvatarAnimation } from '../../avatar/glbCharacter'
 import { createModularCharacter } from '../../avatar/modularCharacter'
 import { wearSignature } from '../../avatar/modularCharacterLogic'
+import { GEAR_SLOTS, gearSlotOf, unequipPayload, type GearSlot } from '../../game/wardrobeSlots'
+import type { ApartmentInventoryItem } from '../../types/gameRealtime'
 
-type WardrobeTab = 'head' | 'top' | 'bottom' | 'shoes'
+/**
+ * Equipment slots next to the character preview, Minecraft armour style: clothes live in the backpack and are
+ * dragged (or picked up and clicked) onto their slot to be worn; dragging a worn piece onto a backpack slot takes
+ * it off. The parent keeps the backpack in sync through `outfit`.
+ */
+const props = defineProps<{
+  slots: string[]
+  itemByCode: Record<string, ApartmentInventoryItem>
+  /** Item held on the cursor (click-to-pick) or being dragged out of an inventory slot. */
+  heldCode: string | null
+  cursorFromSlot: number | null
+}>()
 
-const TABS: Array<{ id: WardrobeTab; label: string; slots: CosmeticSlot[] }> = [
-  { id: 'head', label: 'Head', slots: ['hair', 'head_accessory'] },
-  { id: 'top', label: 'Top', slots: ['top'] },
-  { id: 'bottom', label: 'Pants', slots: ['bottom'] },
-  { id: 'shoes', label: 'Shoes', slots: ['shoes'] },
-]
-
-const emit = defineEmits<{ changed: [state: CharacterCosmeticsState] }>()
+const emit = defineEmits<{
+  outfit: [change: { state: CharacterCosmeticsState; returnedCode: string | null; toSlot: number | null; wornCode: string | null; consumedCursor: boolean }]
+}>()
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const state = shallowRef<CharacterCosmeticsState | null>(null)
-const owned = ref<AccountInventoryRow[]>([])
-const tab = ref<WardrobeTab>('top')
 const saving = ref(false)
 const error = ref<string | null>(null)
+const hoverGear = ref<GearSlot | null>(null)
+/** A worn piece being dragged out of its equipment slot. */
+let draggingGear: GearSlot | null = null
 
-const tabSlots = computed(() => TABS.find((t) => t.id === tab.value)!.slots)
-const pieces = computed(() =>
-  owned.value.filter((row) => row.item.cosmetic_slot && tabSlots.value.includes(row.item.cosmetic_slot as CosmeticSlot) && row.item.model_glb),
-)
-
-function equippedIn(slots: CosmeticSlot[]): string {
+function equippedIn(gear: GearSlot) {
   const s = state.value
-  if (!s) return '…'
-  const names = slots.map((slot) => s.slots[slot]?.name).filter(Boolean)
-  return names.length > 0 ? names.join(', ') : 'Nothing'
+  if (!s) return null
+  for (const slot of GEAR_SLOTS.find((g) => g.id === gear)!.slots) {
+    const item = s.slots[slot]
+    if (item?.model_glb) return item
+  }
+  return null
 }
 
-function isEquipped(row: AccountInventoryRow): boolean {
-  const slot = row.item.cosmetic_slot as CosmeticSlot
-  return state.value?.slots[slot]?.item_def_id === row.item.item_def_id
+function clothesFor(code: string | null): ApartmentInventoryItem | null {
+  const item = code ? props.itemByCode[code] : undefined
+  return item && item.kind === 'cosmetic' && gearSlotOf(item.cosmetic_slot) ? item : null
+}
+
+function fits(gear: GearSlot): boolean {
+  return gearSlotOf(clothesFor(props.heldCode)?.cosmetic_slot) === gear
 }
 
 let renderer: THREE.WebGLRenderer | null = null
@@ -96,15 +107,18 @@ function loop(time: number): void {
   renderer?.render(scene, camera)
 }
 
-async function equip(row: AccountInventoryRow): Promise<void> {
+async function save(
+  slots: PutCharacterCosmeticsPayload['slots'],
+  returned: { code: string | null; toSlot: number | null; wornCode: string | null },
+  consumedCursor: boolean,
+): Promise<void> {
   if (saving.value) return
-  const slot = row.item.cosmetic_slot as CosmeticSlot
   saving.value = true
   error.value = null
   try {
-    const next = await putCharacterCosmetics({ slots: { [slot]: isEquipped(row) ? null : row.item.item_def_id } })
+    const next = await putCharacterCosmetics({ slots })
     state.value = next
-    emit('changed', next)
+    emit('outfit', { state: next, returnedCode: returned.code, toSlot: returned.toSlot, wornCode: returned.wornCode, consumedCursor })
     await showOutfit(next)
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Could not change your outfit.'
@@ -112,6 +126,60 @@ async function equip(row: AccountInventoryRow): Promise<void> {
     saving.value = false
   }
 }
+
+/** Wears a backpack piece; whatever was in its slot goes back where the piece came from. */
+function wear(item: ApartmentInventoryItem, fromSlot: number | null, consumedCursor: boolean): Promise<void> {
+  const gear = gearSlotOf(item.cosmetic_slot)!
+  return save({ [item.cosmetic_slot as CosmeticSlot]: item.item_def_id }, { code: equippedIn(gear)?.code ?? null, toSlot: fromSlot, wornCode: item.code }, consumedCursor)
+}
+
+/** Takes a worn piece off into the backpack (a given slot, or the first free one). */
+function takeOff(gear: GearSlot, toSlot: number | null = null): Promise<void> {
+  const worn = equippedIn(gear)
+  return worn ? save(unequipPayload(gear), { code: worn.code, toSlot, wornCode: null }, false) : Promise.resolve()
+}
+
+/** Shift-click in the inventory: wears the piece, the one it replaces takes its cell. */
+function wearFromSlot(slotIndex: number): Promise<void> {
+  const item = clothesFor(props.slots[slotIndex] ?? null)
+  return item ? wear(item, slotIndex, false) : Promise.resolve()
+}
+
+function onGearClick(gear: GearSlot, e: MouseEvent): void {
+  // shift-click always takes the piece off, even with something on the cursor
+  if (props.heldCode && props.cursorFromSlot !== null && !e.shiftKey) {
+    const held = clothesFor(props.heldCode)
+    if (!held) error.value = 'Only clothes can be worn.'
+    else if (!fits(gear)) error.value = `${held.name} goes in the ${GEAR_SLOTS.find((g) => g.id === gearSlotOf(held.cosmetic_slot))!.label} slot.`
+    else void wear(held, props.cursorFromSlot, true)
+    return
+  }
+  void takeOff(gear)
+}
+
+function onGearDragStart(e: DragEvent, gear: GearSlot): void {
+  if (!equippedIn(gear) || saving.value) {
+    e.preventDefault()
+    return
+  }
+  draggingGear = gear
+  e.dataTransfer?.setData('text/plain', `gear:${gear}`)
+}
+
+function onGearDragOver(e: DragEvent, gear: GearSlot): void {
+  if (draggingGear || !fits(gear)) return
+  e.preventDefault()
+  hoverGear.value = gear
+}
+
+function onGearDrop(e: DragEvent, gear: GearSlot): void {
+  hoverGear.value = null
+  const from = Number.parseInt(e.dataTransfer?.getData('text/plain') ?? '', 10)
+  const item = Number.isFinite(from) ? clothesFor(props.slots[from] ?? null) : null
+  if (item && gearSlotOf(item.cosmetic_slot) === gear) void wear(item, from, false)
+}
+
+defineExpose({ takeOff, wearFromSlot })
 
 function onPointerDown(e: PointerEvent): void {
   dragX = e.clientX
@@ -131,12 +199,11 @@ onMounted(async () => {
   renderer.outputColorSpace = THREE.SRGBColorSpace
   frame = requestAnimationFrame(loop)
   try {
-    const [cosmetics, inventory] = await Promise.all([fetchCharacterCosmetics(), fetchAccountInventory({ kind: 'cosmetic' })])
+    const cosmetics = await fetchCharacterCosmetics()
     state.value = cosmetics
-    owned.value = inventory.items
     await showOutfit(cosmetics)
   } catch (e) {
-    error.value = e instanceof Error ? e.message : 'Could not load your wardrobe.'
+    error.value = e instanceof Error ? e.message : 'Could not load your outfit.'
   }
 })
 
@@ -148,7 +215,34 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <section class="mb-5 flex gap-4" aria-label="Wardrobe">
+  <section class="mb-5 flex items-start gap-3" aria-label="Wardrobe">
+    <div class="flex shrink-0 flex-col gap-1.5" aria-label="Equipment">
+      <button
+        v-for="g in GEAR_SLOTS"
+        :key="g.id"
+        type="button"
+        class="cc-slot h-[69px] w-[69px]"
+        :class="[hoverGear === g.id ? 'cc-slot-active' : fits(g.id) ? 'border-sun/70' : '', clothesFor(heldCode) && !fits(g.id) ? 'opacity-40' : '']"
+        :title="equippedIn(g.id) ? `${equippedIn(g.id)!.name} (click or drag to the backpack to take off)` : `${g.label}: drop clothes here`"
+        :draggable="!!equippedIn(g.id) && !saving"
+        :disabled="saving"
+        @click="onGearClick(g.id, $event)"
+        @dragstart="onGearDragStart($event, g.id)"
+        @dragend="draggingGear = null"
+        @dragover="onGearDragOver($event, g.id)"
+        @dragleave="hoverGear = null"
+        @drop.prevent="onGearDrop($event, g.id)"
+      >
+        <img
+          v-if="equippedIn(g.id)"
+          :src="equippedIn(g.id)!.preview_image ?? ''"
+          :alt="equippedIn(g.id)!.name"
+          class="pointer-events-none h-full w-full object-cover"
+          draggable="false"
+        />
+        <span v-else class="font-display text-[11px] uppercase tracking-wide text-ink-500">{{ g.label }}</span>
+      </button>
+    </div>
     <canvas
       ref="canvasRef"
       width="220"
@@ -159,37 +253,6 @@ onUnmounted(() => {
       @pointerup="dragX = null"
       @pointercancel="dragX = null"
     />
-    <div class="min-w-0 flex-1">
-      <div class="cc-eyebrow mb-2">Wardrobe</div>
-      <div class="mb-3 grid grid-cols-4 gap-1.5">
-        <button
-          v-for="t in TABS"
-          :key="t.id"
-          type="button"
-          class="cc-slot flex h-14 flex-col items-center justify-center px-1 text-center"
-          :class="tab === t.id ? 'cc-slot-active' : ''"
-          @click="tab = t.id"
-        >
-          <span class="font-display text-xs text-fog">{{ t.label }}</span>
-          <span class="w-full truncate text-[10px] font-bold text-mist">{{ equippedIn(t.slots) }}</span>
-        </button>
-      </div>
-      <p v-if="error" class="cc-alert cc-alert-error m-0 mb-2 text-xs">{{ error }}</p>
-      <p v-if="pieces.length === 0" class="m-0 text-xs font-bold text-mist">Nothing here yet. Cove Threads, on the road to the clinic, sells clothes.</p>
-      <div v-else class="flex flex-wrap gap-1.5">
-        <button
-          v-for="row in pieces"
-          :key="row.item.item_def_id"
-          type="button"
-          class="cc-slot h-14 w-14 shrink-0"
-          :class="isEquipped(row) ? 'cc-slot-active' : ''"
-          :title="isEquipped(row) ? `${row.item.name} (click to take off)` : row.item.name"
-          :disabled="saving"
-          @click="equip(row)"
-        >
-          <img :src="row.item.preview_image ?? ''" :alt="row.item.name" class="h-full w-full object-cover" draggable="false" />
-        </button>
-      </div>
-    </div>
+    <p v-if="error" class="cc-alert cc-alert-error m-0 min-w-0 flex-1 text-xs">{{ error }}</p>
   </section>
 </template>
