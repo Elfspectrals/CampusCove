@@ -453,7 +453,33 @@ function runUseOrPunch(code: string, repeat: boolean): boolean {
   return false
 }
 
+/**
+ * Esc frees the mouse and shows the pause menu (the browser does that). A second Esc can't take the
+ * pointer back (browsers don't count Escape as a gesture), so it hides the menu and a click resumes.
+ */
+const pauseDismissed = ref(false)
+let unlockedAt = 0
+watch(pointerLocked, (locked) => {
+  pauseDismissed.value = false
+  if (!locked) unlockedAt = performance.now()
+})
+const pauseMenuOpen = computed(
+  () =>
+    !pointerLocked.value &&
+    !inventoryOpen.value &&
+    !switchingRoom.value &&
+    !cafeMenuOpen.value &&
+    !clinicMenuOpen.value &&
+    !settingsOpen.value,
+)
+
 function handleExtraKeyDown(e: KeyboardEvent): boolean {
+  // some browsers also deliver the Esc that released the lock: ignore it, or the menu would flash away
+  // defaultPrevented: the inventory / cafe menu already used this Esc to close themselves
+  if (e.code === 'Escape' && !e.repeat && !e.defaultPrevented && pauseMenuOpen.value && !placementPreviewActive.value) {
+    if (performance.now() - unlockedAt > 250) pauseDismissed.value = !pauseDismissed.value
+    return true
+  }
   if (houseKeys.onKeyDown(e)) return true
   if (survival.onKeyDown(e)) return true
   if (runUseOrPunch(e.code, e.repeat)) return true
@@ -818,11 +844,17 @@ const crosshairClass = computed(() => {
       @pickup-placed-object="(id: string) => { onPlacedObjectSelected(id); pickupSelectedPlacedObject() }"
     />
     <GamePointerLockOverlay
-      v-show="!pointerLocked && !inventoryOpen && !switchingRoom && !cafeMenuOpen && !clinicMenuOpen && !settingsOpen"
+      v-show="pauseMenuOpen && !pauseDismissed"
       @request-pointer-lock="requestPointerLock"
       @open-settings="settingsOpen = true"
       @logout="logout"
     />
+    <p
+      v-if="pauseMenuOpen && pauseDismissed"
+      class="cc-hud pointer-events-none absolute left-1/2 top-1/2 z-20 -translate-x-1/2 -translate-y-1/2 px-4 py-2 font-display text-sm uppercase tracking-[0.18em] text-fog"
+    >
+      Click to play · <span class="text-mist">Esc menu</span>
+    </p>
     <GameSettingsDialog v-if="settingsOpen" @close="settingsOpen = false" />
     <div v-show="pointerLocked" class="absolute right-3 top-3 z-10">
       <button
