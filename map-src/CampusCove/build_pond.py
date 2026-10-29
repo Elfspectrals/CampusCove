@@ -136,9 +136,17 @@ def walk_h(x, z):
     return h
 
 
-def ground(gx, gz, rad=0.3):
+def ground_samples(gx, gz, rad):
     pts = [(gx, gz)] + [(gx + rad * math.cos(a), gz + rad * math.sin(a)) for a in (0, 1.57, 3.14, 4.71)]
-    return min(terrain_h(px, pz) for px, pz in pts)
+    return [terrain_h(px, pz) for px, pz in pts]
+
+
+def ground(gx, gz, rad=0.3):
+    return min(ground_samples(gx, gz, rad))
+
+
+def ground_top(gx, gz, rad):
+    return max(ground_samples(gx, gz, rad))
 
 
 gazebo_floor = round(max(terrain_h(GAZEBO_C[0] + rr * math.cos(a), GAZEBO_C[1] + rr * math.sin(a)) for rr in (0.0, GAZEBO_R / 2, GAZEBO_R)
@@ -400,26 +408,29 @@ def lamp(name, gx, gz):
 
 
 def bench(name, gx, gz, rot):
-    y = ground(gx, gz, 0.8)
+    low, y = ground(gx, gz, 0.8), ground_top(gx, gz, 0.8)
+    leg_h = y + 0.42 - low
     objs.append(L.furn(coll, name, gx, gz, rot, [(0, 0, y + 0.42, 1.8, 0.5, 0.06, P["wood"], 0.01), (0, 0.22, y + 0.48, 1.8, 0.06, 0.45, P["wood"], 0.01),
-                                                  (-0.8, 0, y, 0.08, 0.45, 0.42, P["metal"]), (0.8, 0, y, 0.08, 0.45, 0.42, P["metal"])]))
+                                                  (-0.8, 0, low, 0.08, 0.45, leg_h, P["metal"]), (0.8, 0, low, 0.08, 0.45, leg_h, P["metal"])]))
     add_col(f"COL_Pond_{name}", gx, gz, 1.8, 0.5, 0.9, rot)
     placed.append((gx, gz, 1.0))
 
 
 def bin_(name, gx, gz):
-    objs.append(L.cyl(coll, name, gx, gz, ground(gx, gz, 0.2), 0.22, 0.75, P["metal"], seg=8))
+    low = ground(gx, gz, 0.2)
+    objs.append(L.cyl(coll, name, gx, gz, low, 0.22, ground_top(gx, gz, 0.2) + 0.75 - low, P["metal"], seg=8))
     add_col(f"COL_Pond_{name}", gx, gz, 0.45, 0.45, 0.8)
 
 
 def picnic(name, gx, gz, rot):
-    y = ground(gx, gz, 1.0)
+    low, y = ground(gx, gz, 1.0), ground_top(gx, gz, 1.0)
+    rise = y - low
     objs.append(L.furn(coll, name, gx, gz, rot, [
         (0, 0, y + 0.72, 1.9, 0.8, 0.06, P["wood"], 0.01),
-        (-0.75, 0, y, 0.08, 0.7, 0.72, P["post"]), (0.75, 0, y, 0.08, 0.7, 0.72, P["post"]),
+        (-0.75, 0, low, 0.08, 0.7, 0.72 + rise, P["post"]), (0.75, 0, low, 0.08, 0.7, 0.72 + rise, P["post"]),
         (0, -0.7, y + 0.42, 1.9, 0.3, 0.05, P["wood"], 0.01), (0, 0.7, y + 0.42, 1.9, 0.3, 0.05, P["wood"], 0.01),
-        (-0.75, -0.7, y, 0.06, 0.06, 0.42, P["post"]), (0.75, -0.7, y, 0.06, 0.06, 0.42, P["post"]),
-        (-0.75, 0.7, y, 0.06, 0.06, 0.42, P["post"]), (0.75, 0.7, y, 0.06, 0.06, 0.42, P["post"]),
+        (-0.75, -0.7, low, 0.06, 0.06, 0.42 + rise, P["post"]), (0.75, -0.7, low, 0.06, 0.06, 0.42 + rise, P["post"]),
+        (-0.75, 0.7, low, 0.06, 0.06, 0.42 + rise, P["post"]), (0.75, 0.7, low, 0.06, 0.06, 0.42 + rise, P["post"]),
     ]))
     add_col(f"COL_Pond_{name}", gx, gz, 1.9, 1.8, 0.9, rot)
     placed.append((gx, gz, 1.6))
@@ -518,7 +529,7 @@ for k, (label, dx) in enumerate((("GAZEBO >", 0.55), ("< GROVE", -0.55))):
     hy = sp_y + 1.95 - k * 0.45
     objs.append(L.box(coll, f"PD_SignpostBoard{k}", sp_x + dx, sp_z, hy, 1.25, 0.06, 0.32, P["deck"]))
     objs.append(L.text_mesh(coll, f"PD_SignpostText{k}", label, sp_x + dx, sp_z + 0.04, hy + 0.08, 0.17, 0.015, P["sign"], facing="+z"))
-add_col("COL_Pond_Signpost", sp_x, sp_z, 0.3, 0.3, 2.4)
+add_col("COL_Pond_Signpost", sp_x, sp_z, 2.4, 0.3, 2.4)
 placed.append((sp_x, sp_z, 0.8))
 
 EDGE_RX, EDGE_RZ = RX - 0.2, RZ - 0.2
