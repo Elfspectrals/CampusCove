@@ -13,7 +13,7 @@ You are an expert in **real-time multiplayer** with **Colyseus** (client and Nod
 
 ## CampusCove context
 
-- **Realtime server**: `socket/server.js` — Colyseus rooms (`city` and `apartment`), room messages for `move`, `appearance`, and apartment decoration persistence (`decorate_upsert`, `decorate_remove`, `invite_guest`).
+- **Realtime server**: `socket/server.ts` — Colyseus rooms (`city` and `apartment`), room messages for `move`, `appearance`, and apartment decoration persistence (`decorate_upsert`, `decorate_remove`, `invite_guest`).
 - **Client**: `front/src/views/GameView.vue` — `colyseus.js`, `THREE` scene, throttled movement sends (`emitInterval`), maps `sessionId` → meshes for remote players.
 - **Env**: `VITE_SOCKET_URL` (Docker defaults in `docker-compose.yml`). Local socket: port **3000**.
 

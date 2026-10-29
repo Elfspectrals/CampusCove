@@ -5,7 +5,8 @@ import { createGltfLoader } from './gltfLoaderFactory'
 const WALK_SPEED = 0.5
 const BASE_FADE_S = 0.2
 const ONE_SHOT_FADE_S = 0.06
-const ONE_SHOT_CLIPS = ['Equip', 'UseDoor', 'UseKey'] as const
+const PUNCH_FADE_S = 0.02
+const ONE_SHOT_CLIPS = ['Equip', 'UseDoor', 'UseKey', 'Punch', 'PunchL'] as const
 
 /**
  * A procedural arm pose, in camera space (the arms root sits at the camera): where the hand goes, which way the
@@ -61,6 +62,8 @@ export function createFirstPersonArms(container: THREE.Group) {
   let watchTarget = 0
   let watchWeight = 0
   let eatT = -1
+  let frozenFor = 0
+  let leftPunchNext = false
   const poseQuat = new THREE.Quaternion()
   const roll = new THREE.Quaternion()
   const poseArm = new THREE.Vector3()
@@ -82,12 +85,12 @@ export function createFirstPersonArms(container: THREE.Group) {
     base = next
   }
 
-  function playOnce(name: (typeof ONE_SHOT_CLIPS)[number]): void {
+  function playOnce(name: (typeof ONE_SHOT_CLIPS)[number], fadeS = ONE_SHOT_FADE_S): void {
     if (!mixer) return
     const next = action(name)
     oneShot?.stop()
-    next.reset().fadeIn(ONE_SHOT_FADE_S).play()
-    base?.fadeOut(ONE_SHOT_FADE_S)
+    next.reset().fadeIn(fadeS).play()
+    base?.fadeOut(fadeS)
     oneShot = next
   }
 
@@ -144,7 +147,8 @@ export function createFirstPersonArms(container: THREE.Group) {
     const speed = dt > 0 ? Math.hypot(position.x - lastPosition.x, position.z - lastPosition.z) / dt : 0
     lastPosition.set(position.x, 0, position.z)
     if (!oneShot) playBase(speed > WALK_SPEED ? 'Walk' : 'Idle')
-    mixer.update(dt)
+    if (frozenFor > 0) frozenFor -= dt
+    else mixer.update(dt)
     applyPoses(dt)
   }
 
@@ -203,6 +207,13 @@ export function createFirstPersonArms(container: THREE.Group) {
     isEating: () => eatT >= 0,
     equip: () => playOnce('Equip'),
     use: (kind: ArmsUse) => playOnce(kind === 'door' ? 'UseDoor' : 'UseKey'),
+    punch: () => {
+      playOnce(leftPunchNext ? 'PunchL' : 'Punch', PUNCH_FADE_S)
+      leftPunchNext = !leftPunchNext
+    },
+    hitStop: (seconds: number) => {
+      frozenFor = seconds
+    },
     dispose: clear,
   }
 }

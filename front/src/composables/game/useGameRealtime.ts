@@ -10,15 +10,19 @@ import {
 } from '../../api/characterCosmetics'
 import { parseHousingUnitList } from '../../api/housing'
 import { getStoredAuth } from '../../api/session'
+import type { SfxName } from '../../game/sfx'
 import type {
   ApartmentInventoryItem,
   HouseFurniturePayload,
   HousingUnitPayload,
+  PunchTiredPayload,
   RemoteUserPayload,
   RoomInitPayload,
   UserActionPayload,
+  UserPunchedPayload,
 } from '../../types/gameRealtime'
 import { useRemoteAvatars } from './useRemoteAvatars'
+import { PUNCH_DAMAGE } from '../../game/punch'
 
 const REALTIME_HTTP_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000'
 
@@ -61,6 +65,10 @@ export interface GameRealtimeDeps {
   onHouseFurnitureSync: (houses: HouseFurniturePayload[]) => void
   onDoorsSync: (openDoorIds: string[]) => void
   onMyBodyModel: (bodyModelGlb: string | null) => void
+  onPunched: (data: UserPunchedPayload, mySessionId: string) => void
+  onPunchTired: (data: PunchTiredPayload) => void
+  playSoundOn: (name: SfxName, object: THREE.Object3D, delayS: number) => void
+  punchHitTiming: (data: UserPunchedPayload, mySessionId: string) => { delay: number; hitStop: number }
 }
 
 /** Colyseus 'city' room: connection, server message bindings and other players' avatars. */
@@ -71,7 +79,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
   let previousQuantityByCode: Record<string, number> = {}
   let isInitialInventoryLoad = true
 
-  const remotes = useRemoteAvatars({ getScene: deps.getScene, myPosition: deps.myPosition })
+  const remotes = useRemoteAvatars({ getScene: deps.getScene, myPosition: deps.myPosition, playSoundOn: deps.playSoundOn })
 
   function setMyPosition(x: number, y: number, z: number): void {
     deps.myPosition.x = x
@@ -148,6 +156,22 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
         remotes.showAction(data.sessionId, data.action, typeof data.code === 'string' ? data.code : null)
       }
     })
+
+    room.onMessage('user_punched', (data: UserPunchedPayload) => {
+      if (data.sessionId !== room.sessionId) remotes.showPunch(data.sessionId)
+      if (data.targetSessionId && data.targetSessionId !== room.sessionId) {
+        remotes.showHit(
+          data.targetSessionId,
+          data.dirX,
+          data.dirZ,
+          data.damage ?? PUNCH_DAMAGE,
+          deps.punchHitTiming(data, room.sessionId),
+        )
+      }
+      deps.onPunched(data, room.sessionId)
+    })
+
+    room.onMessage('punch_tired', (data: PunchTiredPayload) => deps.onPunchTired(data))
 
     room.onMessage('apartment_inventory', (data: { items: ApartmentInventoryItem[] }) => {
       onInventory(Array.isArray(data.items) ? data.items : [])

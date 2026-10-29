@@ -1,0 +1,116 @@
+// Shared shapes of the realtime server. Room helpers take a GameRoom (not CityRoom) so tests can pass fakes.
+
+export interface Vec3 {
+  x: number
+  y: number
+  z: number
+}
+
+export interface Bounds {
+  minX: number
+  maxX: number
+  minZ: number
+  maxZ: number
+}
+
+export interface Stats {
+  health: number
+  hunger: number
+  thirst: number
+}
+
+export interface HealOverTime {
+  until: number
+  perMs: number
+  healedUntil: number
+}
+
+export type AppearanceSlot = 'body' | 'hair' | 'top' | 'bottom' | 'shoes' | 'head_accessory'
+
+export interface Identity {
+  accountId: number
+  pseudo: string
+  token: string
+}
+
+export interface Player extends Vec3 {
+  sessionId: string
+  accountId: number
+  pseudo: string
+  token: string | null
+  color: number
+  ry: number
+  lastMoveAt: number
+  lastHousingRefreshAt: number
+  stats: Stats | null
+  statsDirty: boolean
+  lastStatsSavedAt: number
+  lastConsumeAt: number
+  lastSipAt: number
+  lastPunchAt: number
+  stamina: number
+  fallPeakY: number
+  knockedOutUntil: number
+  speedBoostUntil: number
+  healOverTime: HealOverTime | null
+  lastClinicHealAt: number
+  clinicHealPending: boolean
+  clinicBedId: string | null
+  decoratedTemplateKey?: string | null
+  appearance: Record<AppearanceSlot, number | null>
+  slotHexes: Record<AppearanceSlot, string>
+  bodyModelGlb: string | null
+}
+
+/** A house as the Laravel API lists it (GET /housing/units). */
+export interface HousingUnit {
+  public_id: string
+  template_key: string
+  model_key?: string | null
+  status: string
+  door_locked: boolean
+  occupant_account_id: number | null
+  key_holder_account_ids?: number[]
+  pos_x: number
+  pos_z: number
+  interior_bounds?: Bounds | null
+}
+
+export interface FurnitureObject {
+  objectKey: string
+  x: number
+  y: number
+  z: number
+}
+
+/** The objects placed in one house (GET /apartments/houses). */
+export interface HouseFurniture {
+  model_key: string
+  objects: FurnitureObject[]
+}
+
+export interface ClinicBedOccupant {
+  sessionId: string | null
+  usedAt: number
+}
+
+/** Untrusted message payload sent by a client: every field must be checked before use. */
+export type ClientPayload = { readonly [key: string]: unknown } | null | undefined
+
+export interface GameClient {
+  sessionId: string
+  send(type: string, payload?: unknown): void
+}
+
+export interface GameRoom {
+  players: Map<string, Player>
+  housingUnits: HousingUnit[]
+  houseFurniture: HouseFurniture[]
+  openDoors: Set<string>
+  clinicBeds: Map<string, ClinicBedOccupant>
+  clients: readonly GameClient[]
+  clock: { setTimeout(handler: () => void, ms: number): unknown }
+  forEachClient(callback: (client: GameClient) => void, exceptClient?: GameClient): void
+  broadcastMove(client: GameClient, player: Player): void
+  refreshHouseFurniture(token: string): Promise<void>
+}

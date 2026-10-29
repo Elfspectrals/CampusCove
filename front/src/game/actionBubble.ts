@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { foodPreviewUrl } from './assets/catalog'
+import { consumablePreviewUrl } from './assets/catalog'
 
 /** Height of the bubble above the avatar's feet (metres), and how far it rises while it fades. */
 const BUBBLE_Y = 2.25
@@ -63,7 +63,7 @@ function bubbleTexture(action: AvatarAction, code: string | null): THREE.CanvasT
       ctx.restore()
       texture.needsUpdate = true
     }
-    img.src = foodPreviewUrl(code)
+    img.src = consumablePreviewUrl(code)
   } else {
     drawDrop(ctx)
   }

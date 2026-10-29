@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { bindings, clearBinding, keyLabel, matches, matchesRotateCCW, matchesRotateCW, resetBindings, setBinding } from './keybindings.ts'
+import { bindings, clearBinding, keyLabel, matches, matchesRotateCCW, matchesRotateCW, mouseButtonCode, resetBindings, setBinding } from './keybindings.ts'
 
 test('default bindings cover QWERTY and AZERTY movement', () => {
   resetBindings()
@@ -48,4 +48,21 @@ test('key labels', () => {
   assert.equal(keyLabel('Digit3'), '3')
   assert.equal(keyLabel('Numpad5'), 'Num 5')
   assert.equal(keyLabel('ArrowUp'), '↑')
+})
+
+test('right click uses and left click punches by default, like Minecraft', () => {
+  resetBindings()
+  assert.ok(matches('interact', mouseButtonCode(2)))
+  assert.ok(matches('punch', mouseButtonCode(0)))
+  assert.equal(keyLabel(mouseButtonCode(2)), 'R-Click')
+  assert.equal(keyLabel(mouseButtonCode(4)), 'Mouse 5')
+})
+
+test('mouse buttons only bind to interact and punch, and can be swapped', () => {
+  resetBindings()
+  assert.equal(setBinding('inventory', 0, 'MouseLeft'), null)
+  assert.ok(!matches('inventory', 'MouseLeft'))
+  assert.equal(setBinding('interact', 0, 'MouseLeft'), 'punch')
+  assert.ok(matches('interact', 'MouseLeft') && !matches('punch', 'MouseLeft'))
+  resetBindings()
 })

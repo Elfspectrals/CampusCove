@@ -1,4 +1,4 @@
-// The town spawn and the building doors come from the front's world.manifest.json (src/world.js).
+// The town spawn and the building doors come from the front's world.manifest.json (src/world.ts).
 
 export const PORT = parseInt(process.env.PORT || '3000', 10)
 export const CITY_MAX_PLAYERS = parseInt(process.env.CITY_MAX_PLAYERS || '30', 10)

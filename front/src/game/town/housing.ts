@@ -56,7 +56,7 @@ export function housingActionFor(unit: HousingUnit, door: DoorContext): HousingA
   return door.doorOpen ? 'close' : 'open'
 }
 
-/** Door prompt texts, e.g. { key: 'F2', action: 'Buy', detail: '1,800 coins · tax 90/day' }; no key means a left click. */
+/** Door prompt texts, e.g. { key: 'F2', action: 'Buy', detail: '1,800 coins · tax 90/day' }; no key means the interact binding. */
 export function housingPromptLabel(unit: HousingUnit, action: HousingAction): { key?: string; action: string; detail?: string } {
   switch (action) {
     case 'buy':
@@ -68,7 +68,7 @@ export function housingPromptLabel(unit: HousingUnit, action: HousingAction): { 
     case 'lock':
       return { action: 'Lock' }
     case 'unlock':
-      return { key: 'RMB', action: 'Unlock' }
+      return { action: 'Unlock' }
     case 'locked':
       return { action: 'Locked' }
   }

@@ -4,6 +4,7 @@ import * as THREE from 'three'
 import { applyCachedBalanceAfterPurchase } from '../../api/session'
 import { matches } from '../../config/keybindings'
 import { createBiteParticles } from '../../game/biteParticles'
+import { lookAngles, recoveryProgress } from '../../game/clinic'
 import { screenEffects, walkSpeedFactor, type SurvivalStats } from '../../game/survival'
 import { createSurvivalWatch } from '../../game/survivalWatch'
 import { createFountains } from '../../game/town/fountains'
@@ -35,7 +36,9 @@ export interface SurvivalDeps {
   refreshInventory: () => void
   /** Moves the local player (respawn after passing out). */
   teleport: (x: number, y: number, z: number) => void
+  setLook: (yaw: number, pitch: number) => void
   promptsHidden: () => boolean
+  onStamina: (stamina: number) => void
 }
 
 function readReducedEffects(): boolean {
@@ -53,6 +56,7 @@ function readReducedEffects(): boolean {
 export function useSurvival(deps: SurvivalDeps) {
   const stats = ref<SurvivalStats | null>(null)
   const boostUntil = ref(0)
+  const healUntil = ref(0)
   const knockedOut = ref(false)
   const hospitalBill = ref<number | null>(null)
   /** Bumped on every hit, so the damage flash replays. */
@@ -60,6 +64,8 @@ export function useSurvival(deps: SurvivalDeps) {
   const message = ref<string | null>(null)
   const reducedEffects = ref(readReducedEffects())
   const prompt = ref<ScreenPrompt | null>(null)
+  const recovery = ref<{ startedAt: number; durationMs: number; bed: [number, number, number] | null } | null>(null)
+  const recovering = ref<number | null>(null)
   const effects = computed(() => (stats.value ? screenEffects(stats.value, reducedEffects.value) : null))
 
   const watchHud = createSurvivalWatch()
@@ -79,10 +85,12 @@ export function useSurvival(deps: SurvivalDeps) {
   // ------------------------------------------------------------ server messages
 
   function bindRoom(room: Room): void {
-    room.onMessage('survival', (data: SurvivalStats & { speedBoostUntil?: number }) => {
+    room.onMessage('survival', (data: SurvivalStats & { speedBoostUntil?: number; healUntil?: number | null; stamina: number }) => {
       stats.value = { health: data.health, hunger: data.hunger, thirst: data.thirst }
       boostUntil.value = data.speedBoostUntil ?? 0
+      healUntil.value = data.healUntil ?? 0
       watchHud.setStats(stats.value, boostUntil.value)
+      deps.onStamina(data.stamina)
     })
     room.onMessage('survival_damage', () => {
       damageFlash.value++
@@ -93,6 +101,8 @@ export function useSurvival(deps: SurvivalDeps) {
         say('That was raw… your stomach hurts.')
       } else if (data.effect === 'speed_boost') {
         say('Caffeine boost: you walk faster for a minute.')
+      } else if (data.effect === 'heal_over_time') {
+        say('Painkillers taken: your health comes back over time.')
       }
       deps.refreshInventory()
     })
@@ -114,10 +124,18 @@ export function useSurvival(deps: SurvivalDeps) {
       // the wallet in the header reads this cache
       if (typeof data.balanceAfter === 'number') applyCachedBalanceAfterPurchase('coins', data.balanceAfter)
     })
-    room.onMessage('survival_respawn', (data: { x: number; y: number; z: number }) => {
-      deps.teleport(data.x, data.y, data.z)
-      knockedOut.value = false
-    })
+    room.onMessage(
+      'survival_respawn',
+      (data: { x: number; y: number; z: number; yaw: number; bed: [number, number, number] | null; recoveringMs: number }) => {
+        deps.teleport(data.x, data.y, data.z)
+        deps.setLook(data.yaw, 0)
+        knockedOut.value = false
+        if (data.recoveringMs > 0) {
+          recovery.value = { startedAt: Date.now(), durationMs: data.recoveringMs, bed: data.bed }
+          recovering.value = 0
+        }
+      },
+    )
   }
 
   watch(deps.gameRoomRef, (room) => {
@@ -151,15 +169,15 @@ export function useSurvival(deps: SurvivalDeps) {
   }
 
   function sip(): void {
-    if (!nearFountain() || knockedOut.value || fountainDry()) return
+    if (!nearFountain() || knockedOut.value || recovery.value || fountainDry()) return
     deps.gameRoomRef.value?.send('drink_fountain')
     deps.getArms()?.eat()
     particles?.burst('drink')
   }
 
-  /** Left click (nothing else to interact with): returns true when it was used here. */
+  /** Interact (nothing else in front): returns true when it was used here. */
   function onPrimaryDown(): boolean {
-    if (!deps.pointerLocked.value || knockedOut.value) return false
+    if (!deps.pointerLocked.value || knockedOut.value || recovery.value) return false
     if (nearFountain()) {
       if (fountainDry()) {
         say(`You already drank. Fountains are available again in ${formatWait(fountainReadyAt - Date.now())}.`)
@@ -216,7 +234,7 @@ export function useSurvival(deps: SurvivalDeps) {
   }
 
   function currentPrompt(): ScreenPrompt | null {
-    if (deps.promptsHidden() || knockedOut.value) return null
+    if (deps.promptsHidden() || knockedOut.value || recovery.value) return null
     const fountain = nearFountain()
     if (fountain) {
       const screen = projectToScreen(fountain.x, fountain.y + 1.25, fountain.z)
@@ -234,11 +252,27 @@ export function useSurvival(deps: SurvivalDeps) {
     if (!particles && fpHands) particles = createBiteParticles(fpHands)
     particles?.update(dt)
     prompt.value = currentPrompt()
+    tickRecovery()
+  }
+
+  function tickRecovery(): void {
+    const current = recovery.value
+    if (!current) return
+    const progress = recoveryProgress(current.startedAt, current.durationMs, Date.now())
+    if (progress >= 1) {
+      recovery.value = null
+      recovering.value = null
+      return
+    }
+    recovering.value = progress
+    if (!current.bed) return
+    const look = lookAngles(deps.myPosition, current.bed)
+    deps.setLook(look.yaw, look.pitch)
   }
 
   /** Walking speed multiplier for useGameMovement (0 while passed out). */
   function speedFactor(): number {
-    if (knockedOut.value) return 0
+    if (knockedOut.value || recovery.value) return 0
     return stats.value ? walkSpeedFactor(stats.value, Date.now() < boostUntil.value) : 1
   }
 
@@ -260,6 +294,7 @@ export function useSurvival(deps: SurvivalDeps) {
 
   return {
     stats,
+    healUntil,
     effects,
     knockedOut,
     hospitalBill,
@@ -267,6 +302,8 @@ export function useSurvival(deps: SurvivalDeps) {
     message,
     prompt,
     reducedEffects,
+    recovering,
+    say,
     heldConsumable,
     onTownLoaded,
     onPrimaryDown,

@@ -1,12 +1,22 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { bindings, keyLabel as labelOf } from '../../config/keybindings'
+
 defineProps<{
   screenX: number
   screenY: number
-  /** Keyboard key shown in the cap; omitted when the action is a left click. */
+  /** Keyboard key shown in the cap; omitted when the action is the interact binding (right click by default). */
   keyLabel?: string
   actionLabel: string
   detailLabel?: string
 }>()
+
+/** The player's first interact binding: a mouse icon for a left / right click, else the key's label. */
+const interact = computed(() => {
+  const code = bindings.interact[0]
+  if (code === 'MouseLeft' || code === 'MouseRight') return { mouse: code === 'MouseLeft' ? ('left' as const) : ('right' as const) }
+  return { label: code ? labelOf(code) : '?' }
+})
 </script>
 
 <template>
@@ -22,10 +32,20 @@ defineProps<{
           style="box-shadow: inset 0 2px 0 rgb(255 255 255 / 0.5), inset 0 -3px 0 rgb(var(--cc-sun-edge)), 0 4px 0 rgb(var(--cc-ink-950)), 0 0 18px rgb(var(--cc-sun) / 0.6)"
         >
           <template v-if="keyLabel">{{ keyLabel }}</template>
-          <!-- mouse with the left button filled: "left click" -->
-          <svg v-else width="22" height="28" viewBox="0 0 22 28" fill="none" aria-label="Left click" role="img">
+          <template v-else-if="interact.label">{{ interact.label }}</template>
+          <!-- mouse with the bound button filled: "left click" / "right click" -->
+          <svg
+            v-else
+            width="22"
+            height="28"
+            viewBox="0 0 22 28"
+            fill="none"
+            :aria-label="interact.mouse === 'left' ? 'Left click' : 'Right click'"
+            role="img"
+          >
             <rect x="1.5" y="1.5" width="19" height="25" rx="9.5" stroke="currentColor" stroke-width="2.5" />
-            <path d="M11 1.5 A9.5 9.5 0 0 0 1.5 11 V12 H11 Z" fill="currentColor" />
+            <path v-if="interact.mouse === 'left'" d="M11 1.5 A9.5 9.5 0 0 0 1.5 11 V12 H11 Z" fill="currentColor" />
+            <path v-else d="M11 1.5 A9.5 9.5 0 0 1 20.5 11 V12 H11 Z" fill="currentColor" />
             <path d="M1.5 12 H20.5 M11 1.5 V12" stroke="currentColor" stroke-width="2" />
           </svg>
         </div>

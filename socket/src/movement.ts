@@ -1,12 +1,15 @@
-import { canUseDoor } from './doors.js'
-import { SPEED_BOOST_FACTOR } from './survivalStats.js'
-import { worldBounds, worldHouse } from './world.js'
+import { canUseDoor } from './doors.ts'
+import { SPEED_BOOST_FACTOR } from './survivalStats.ts'
+import type { GameRoom, HousingUnit, Player } from './types.ts'
+import { type WorldHouse, worldBounds, worldHouse } from './world.ts'
 
 const MAX_SPEED = 8 * 1.25
 const MAX_MOVE_BUDGET_SECONDS = 1
 const MOVE_MARGIN = 1.5
 
-export function toInterior(house, x, z) {
+export type MoveRejection = 'out_of_world' | 'knocked_out' | 'too_fast' | 'locked_in' | 'locked_house'
+
+export function toInterior(house: WorldHouse, x: number, z: number): { x: number, z: number } {
   const dx = x - house.position.x
   const dz = z - house.position.z
   const cos = Math.cos(house.rotationY)
@@ -17,7 +20,7 @@ export function toInterior(house, x, z) {
   }
 }
 
-export function unitAt(units, x, z) {
+export function unitAt(units: HousingUnit[], x: number, z: number): HousingUnit | null {
   for (const unit of units) {
     const house = unit.model_key ? worldHouse(unit.model_key) : null
     const bounds = unit.interior_bounds
@@ -28,11 +31,11 @@ export function unitAt(units, x, z) {
   return null
 }
 
-function isLockedFor(room, unit, player) {
+function isLockedFor(room: GameRoom, unit: HousingUnit, player: Player): boolean {
   return unit.door_locked && !room.openDoors.has(unit.public_id) && !canUseDoor(unit, player.accountId)
 }
 
-export function moveRejection(room, player, x, z, now) {
+export function moveRejection(room: GameRoom, player: Player, x: number, z: number, now: number): MoveRejection | null {
   const b = worldBounds()
   if (x < b.minX || x > b.maxX || z < b.minZ || z > b.maxZ) return 'out_of_world'
   if (now < player.knockedOutUntil) return 'knocked_out'

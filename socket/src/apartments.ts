@@ -1,7 +1,8 @@
 // Decorating one's own house from the town, backed by the Laravel API (ownership, placed objects, inventory).
-import { callBackendJson, errorPayload } from './backend.js'
+import { callBackendJson, errorPayload } from './backend.ts'
+import type { ClientPayload, GameClient, GameRoom, HousingUnit, Player } from './types.ts'
 
-async function sendInventory(room, client) {
+async function sendInventory(room: GameRoom, client: GameClient): Promise<void> {
   const player = room.players.get(client.sessionId)
   if (!player) return
   if (!player.token) {
@@ -16,12 +17,12 @@ async function sendInventory(room, client) {
   }
 }
 
-function canDecorate(unit, accountId) {
+function canDecorate(unit: HousingUnit, accountId: number): boolean {
   return unit.occupant_account_id === accountId || (unit.key_holder_account_ids ?? []).includes(accountId)
 }
 
 // The client says which house it stands in (null when it leaves); only its owner or a key holder may decorate it.
-export function setDecoratedHouse(room, client, payload) {
+export function setDecoratedHouse(room: GameRoom, client: GameClient, payload: ClientPayload): void {
   const player = room.players.get(client.sessionId)
   if (!player) return
   const templateKey = typeof payload?.templateKey === 'string' ? payload.templateKey : null
@@ -29,21 +30,27 @@ export function setDecoratedHouse(room, client, payload) {
   player.decoratedTemplateKey = unit && canDecorate(unit, player.accountId) ? templateKey : null
 }
 
-function rejectDecoration(client) {
+function rejectDecoration(client: GameClient): void {
   client.send('apartment_action_error', { message: 'You cannot decorate this house.', code: 'not_decorating' })
 }
 
+interface DecoratedHouse {
+  player: Player & { token: string }
+  ownerAccountId: number
+  templateKey: string
+}
+
 // The house being decorated by this player, decorated from the town, on behalf of its owner. Null if none.
-function decoratedHouse(room, client) {
+function decoratedHouse(room: GameRoom, client: GameClient): DecoratedHouse | null {
   const player = room.players.get(client.sessionId)
   if (!player || !player.token || !player.decoratedTemplateKey) return null
   const unit = room.housingUnits.find((u) => u.template_key === player.decoratedTemplateKey)
   if (!unit || unit.occupant_account_id === null || !canDecorate(unit, player.accountId)) return null
-  return { player, ownerAccountId: unit.occupant_account_id, templateKey: unit.template_key }
+  return { player: player as DecoratedHouse['player'], ownerAccountId: unit.occupant_account_id, templateKey: unit.template_key }
 }
 
 // Place a new item (spawn) or move a placed one (transform); the town gets the updated house furniture.
-export async function saveObject(room, client, payload, isSpawn) {
+export async function saveObject(room: GameRoom, client: GameClient, payload: ClientPayload, isSpawn: boolean): Promise<void> {
   const house = decoratedHouse(room, client)
   const objectId = typeof payload?.objectId === 'string' ? payload.objectId.trim() : ''
   if (!house) return rejectDecoration(client)
@@ -64,7 +71,7 @@ export async function saveObject(room, client, payload, isSpawn) {
 }
 
 // Put a placed item back into the owner's inventory.
-export async function pickupObject(room, client, payload) {
+export async function pickupObject(room: GameRoom, client: GameClient, payload: ClientPayload): Promise<void> {
   const house = decoratedHouse(room, client)
   const objectId = typeof payload?.objectId === 'string' ? payload.objectId : ''
   if (!house) return rejectDecoration(client)

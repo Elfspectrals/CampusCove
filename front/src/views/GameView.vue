@@ -11,10 +11,12 @@ import {
 } from '../api/characterCosmetics'
 import { fetchHousingUnits } from '../api/housing'
 import { clearAuth, getStoredAuth } from '../api/session'
+import GameHitMarker from '../components/game/GameHitMarker.vue'
 import GameHudToolbar from '../components/game/GameHudToolbar.vue'
 import GameInteractionPrompt from '../components/game/GameInteractionPrompt.vue'
 import GamePlacementHud from '../components/game/GamePlacementHud.vue'
 import GamePlayerHotbar from '../components/game/GamePlayerHotbar.vue'
+import GameVitals from '../components/game/GameVitals.vue'
 import GamePlayerInventoryPanel from '../components/game/GamePlayerInventoryPanel.vue'
 import GamePointerLockOverlay from '../components/game/GamePointerLockOverlay.vue'
 import GameSettingsDialog from '../components/game/GameSettingsDialog.vue'
@@ -26,6 +28,7 @@ import GameRoomMessageBanner from '../components/game/GameRoomMessageBanner.vue'
 import UiIcon from '../components/ui/UiIcon.vue'
 import { useApartmentObjects } from '../composables/game/useApartmentObjects'
 import { useCafeCounter } from '../composables/game/useCafeCounter'
+import { useClinic } from '../composables/game/useClinic'
 import { useFurnitureStore } from '../composables/game/useFurnitureStore'
 import { useHouseFurniture } from '../composables/game/useHouseFurniture'
 import { useHouseKeys } from '../composables/game/useHouseKeys'
@@ -37,17 +40,21 @@ import { useInteractionTargets } from '../composables/game/useInteractionTargets
 import { usePlayerInventory } from '../composables/game/usePlayerInventory'
 import { useRoomEnvironment } from '../composables/game/useRoomEnvironment'
 import { useSurvival } from '../composables/game/useSurvival'
+import { usePunch } from '../composables/game/usePunch'
 import { useShopPurchase } from '../composables/useShopPurchase'
 import { toggleCollisionDebug } from '../game/collision/collisionDebug'
-import { actionKeyLabels, matches } from '../config/keybindings'
+import { actionKeyLabels, matches, mouseButtonCode } from '../config/keybindings'
 import { getWorldCollisionStats } from '../game/collision/worldCollision'
 import { HOUSING_LOBBY_SPAWN } from '../game/gameRoomConstants'
 import { createGameScene, disposeGameScene, type GameScene } from '../game/gameScene'
 import { createFirstPersonArms } from '../game/firstPersonArms'
 import { createHeldItem } from '../game/heldItem'
 import { COVE_HOME, findHouse, findWork } from '../game/assets/catalog'
+import { createSfx } from '../game/sfx'
+import { MAX_STAMINA } from '../game/stamina'
 import { createDoorSigns } from '../game/town/doorSigns'
 import { houseKeyAt, openHouseInterior, updateFrontDoors } from '../game/town/openHouses'
+import { isMedicalItem } from '../utils/itemShopPresentation'
 
 const router = useRouter()
 const containerRef = ref<HTMLElement | null>(null)
@@ -78,6 +85,7 @@ const positionLabel = ref(formatPosition())
 let game: GameScene | null = null
 const getScene = () => game?.scene
 const getCamera = () => game?.camera
+const sfx = createSfx(getCamera)
 const getRenderer = () => game?.renderer
 
 // ---------------------------------------------------------------- house decoration
@@ -281,6 +289,7 @@ function heldModel(): { url: string | null; scale: number } {
 
 // ---------------------------------------------------------------- survival: hunger, thirst, health
 
+const stamina = ref(MAX_STAMINA)
 const survival = useSurvival({
   gameRoomRef,
   getScene,
@@ -296,7 +305,9 @@ const survival = useSurvival({
     Object.assign(myPosition, { x, y, z })
     getCamera()?.position.set(x, y, z)
   },
+  setLook: (yaw, pitch) => movement.setLook(yaw, pitch),
   promptsHidden: () => inventoryOpen.value,
+  onStamina: (value) => punch.syncStamina(value),
 })
 const {
   prompt: survivalPrompt,
@@ -306,6 +317,7 @@ const {
   hospitalBill,
   message: survivalMessage,
   reducedEffects,
+  recovering,
 } = survival
 
 const cafe = useCafeCounter({
@@ -328,6 +340,28 @@ watch(cafeMenuOpen, (open) => {
   if (!open && !document.pointerLockElement) requestPointerLock()
 })
 
+const clinic = useClinic({
+  myPosition,
+  getCamera,
+  canvasRef,
+  gameRoomRef,
+  promptsHidden: () => inventoryOpen.value,
+  refreshInventory: () => refreshOwnedItems(),
+  health: () => survival.stats.value?.health ?? null,
+  say: survival.say,
+})
+const {
+  prompt: clinicPrompt,
+  menuOpen: clinicMenuOpen,
+  menu: clinicMenu,
+  loading: clinicLoading,
+  buyingId: clinicBuyingId,
+  feedback: clinicFeedback,
+} = clinic
+watch(clinicMenuOpen, (open) => {
+  if (!open && !document.pointerLockElement) requestPointerLock()
+})
+
 /** Key settings opened from the pause screen. */
 const settingsOpen = ref(false)
 
@@ -344,7 +378,8 @@ const heldFoodHint = computed(() => {
   if (!item || !pointerLocked.value) return null
   const cookKey = actionKeyLabels('cook')[0]
   const cook = item.code === 'food_fish_raw' && cookKey ? ` · ${cookKey} at a stove / BBQ: cook` : ''
-  return `Click: eat ${item.name}${cook}`
+  const verb = isMedicalItem(item) ? 'use' : 'eat'
+  return `Click: ${verb} ${item.name}${cook}`
 })
 
 const canvasFilter = computed(() => {
@@ -374,6 +409,7 @@ const environment = useRoomEnvironment({
   onTownLoaded: (manifest) => {
     interactions.setWorldManifest(manifest)
     survival.onTownLoaded(manifest)
+    clinic.onTownLoaded(manifest)
     houseFurniture.onTownReady()
     const store = openHouseInterior(COVE_HOME.key)
     if (store) void furnitureStore.attach(store)
@@ -395,9 +431,32 @@ function loadTown(): void {
 
 // ---------------------------------------------------------------- input, loop, realtime
 
+/**
+ * The interact action (right click / G by default, like Minecraft's "use"): unlock with the key in hand, doors and
+ * shops, the cafe counter, the clinic desk, then what is held in hand (food, fountain sips).
+ */
+function useAction(): void {
+  if (housing.unlock()) arms?.use('key')
+  else void (interactions.tryInteract() || cafe.tryOpen() || clinic.tryInteract() || survival.onPrimaryDown())
+}
+
+/** Interact and punch may be bound to keys or mouse buttons; returns true when `code` was one of them. */
+function runUseOrPunch(code: string, repeat: boolean): boolean {
+  if (matches('punch', code)) {
+    if (!repeat) punch.tryPunch()
+    return true
+  }
+  if (matches('interact', code)) {
+    if (!repeat) useAction()
+    return true
+  }
+  return false
+}
+
 function handleExtraKeyDown(e: KeyboardEvent): boolean {
   if (houseKeys.onKeyDown(e)) return true
   if (survival.onKeyDown(e)) return true
+  if (runUseOrPunch(e.code, e.repeat)) return true
   if (matches('buyHouse', e.code) && !e.repeat) {
     e.preventDefault()
     return housing.buy()
@@ -427,19 +486,13 @@ const movement = useGameMovement({
   getFpHands: () => game?.fpHands ?? null,
   refreshMyAppearance,
   updateProximity: interactions.updateProximity,
-  tryInteract: interactions.tryInteract,
   onToggleInventory: toggleInventory,
   onHotbarDigit: selectHotbarIndex,
   handleExtraKeyDown,
   onCanvasMouseDown: (e) => {
-    if (e.button === 2 && pointerLocked.value && housing.unlock()) {
-      arms?.use('key')
-      return true
-    }
+    // furniture placement keeps its own clicks (left: pick / place, right: cancel)
     if (placement.onPointerDown(e)) return true
-    // doors and shops first, then the cafe counter, then what is held in hand (food, fountain sips)
-    if (e.button === 0 && pointerLocked.value) return interactions.tryInteract() || cafe.tryOpen() || survival.onPrimaryDown()
-    return false
+    return pointerLocked.value && runUseOrPunch(mouseButtonCode(e.button), false)
   },
   speedFactor: () => survival.speedFactor(),
   onBeforeRender: (dt) => {
@@ -455,11 +508,31 @@ const movement = useGameMovement({
     const held = heldModel()
     heldItem.update(arms?.rightHand() ?? null, held.url, held.scale)
     survival.tick(dt)
+    stamina.value = punch.staminaNow()
     cafe.updatePrompt()
+    clinic.updatePrompt()
     if (!doorSigns.group.parent) getScene()?.add(doorSigns.group)
   },
 })
 const { requestPointerLock, onCanvasMouseDown } = movement
+
+const punch = usePunch({
+  gameRoomRef,
+  getScene,
+  getCamera,
+  getArms: () => arms,
+  myPosition,
+  pointerLocked,
+  knockedOut: computed(() => knockedOut.value || recovering.value !== null),
+  reducedEffects,
+  shakeCamera: movement.shakeCamera,
+  kickCamera: movement.kickCamera,
+  freezeCamera: movement.freezeCamera,
+  joltCamera: movement.joltCamera,
+  knockBack: movement.knockBack,
+  playSound: sfx.play,
+})
+const { hitMarker } = punch
 
 const realtime = useGameRealtime({
   router,
@@ -485,6 +558,10 @@ const realtime = useGameRealtime({
   onHouseFurnitureSync: houseFurniture.applyHouses,
   onDoorsSync: housing.applyOpenDoors,
   onMyBodyModel: (bodyModelGlb) => arms?.setSkin(bodyModelGlb),
+  onPunched: punch.onPunched,
+  onPunchTired: punch.onTired,
+  playSoundOn: sfx.playOn,
+  punchHitTiming: punch.remoteHitTimingFor,
 })
 const { switchingRoom } = realtime
 
@@ -588,6 +665,7 @@ onUnmounted(() => {
   window.clearInterval(doorSignTimer)
   doorSigns.dispose()
   arms?.dispose()
+  sfx.dispose()
   environment.disposeRoomEnvironment()
   if (game) disposeGameScene(game)
   game = null
@@ -618,12 +696,15 @@ const crosshairClass = computed(() => {
       class="pointer-events-none absolute left-1/2 top-1/2 z-10 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 transition-colors duration-150"
       :class="crosshairClass"
     />
+    <GameHitMarker :marker="hitMarker" />
     <GameSurvivalEffects
       :effects="survivalEffects"
       :damage-flash="damageFlash"
       :knocked-out="knockedOut"
       :hospital-bill="hospitalBill"
       :message="survivalMessage"
+      :recovering="recovering"
+      :reduced-effects="reducedEffects"
     />
     <GameRoomMessageBanner v-if="roomMessage" :message="roomMessage" />
     <GameHudToolbar
@@ -664,6 +745,13 @@ const crosshairClass = computed(() => {
       :action-label="cafePrompt.action"
       :detail-label="cafePrompt.detail"
     />
+    <GameInteractionPrompt
+      v-if="clinicPrompt && !doorPrompt"
+      :screen-x="clinicPrompt.x"
+      :screen-y="clinicPrompt.y"
+      :action-label="clinicPrompt.action"
+      :detail-label="clinicPrompt.detail"
+    />
     <p
       v-if="heldFoodHint && !inventoryOpen"
       class="cc-hud pointer-events-none absolute bottom-[88px] left-1/2 z-20 -translate-x-1/2 px-3 py-1 text-[11px] font-bold text-fog"
@@ -685,6 +773,13 @@ const crosshairClass = computed(() => {
     >
       {{ storeFeedback.text }}
     </p>
+    <GameVitals
+      v-if="!inventoryOpen"
+      :health="survival.stats.value?.health ?? null"
+      :heal-until="survival.healUntil.value"
+      :stamina="stamina"
+      :reduced-effects="reducedEffects"
+    />
     <GamePlayerHotbar
       :slots="slots"
       :selected-hotbar-index="selectedHotbarIndex"
@@ -722,7 +817,7 @@ const crosshairClass = computed(() => {
       @pickup-placed-object="(id: string) => { onPlacedObjectSelected(id); pickupSelectedPlacedObject() }"
     />
     <GamePointerLockOverlay
-      v-show="!pointerLocked && !inventoryOpen && !switchingRoom && !cafeMenuOpen && !settingsOpen"
+      v-show="!pointerLocked && !inventoryOpen && !switchingRoom && !cafeMenuOpen && !clinicMenuOpen && !settingsOpen"
       @request-pointer-lock="requestPointerLock"
       @open-settings="settingsOpen = true"
       @logout="logout"
@@ -745,12 +840,23 @@ const crosshairClass = computed(() => {
     </p>
     <GameCafeMenu
       v-if="cafeMenuOpen"
+      title="Campus Cafe"
       :items="cafeMenu"
       :loading="cafeLoading"
       :buying-id="cafeBuyingId"
       :feedback="cafeFeedback"
       @buy="cafe.buy"
       @close="cafe.close"
+    />
+    <GameCafeMenu
+      v-if="clinicMenuOpen"
+      title="Cove Clinic"
+      :items="clinicMenu"
+      :loading="clinicLoading"
+      :buying-id="clinicBuyingId"
+      :feedback="clinicFeedback"
+      @buy="clinic.buy"
+      @close="clinic.close"
     />
     <ItemShopPurchaseConfirmModal
       v-if="storeConfirmItem"

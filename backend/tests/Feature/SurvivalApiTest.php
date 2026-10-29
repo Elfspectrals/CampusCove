@@ -136,6 +136,61 @@ class SurvivalApiTest extends TestCase
         $this->assertSame(0, $this->balance($poor['account_id']));
     }
 
+    public function test_clinic_heal_charges_the_fixed_fee(): void
+    {
+        $player = $this->registerAndCreditWallet(100, 'coins');
+
+        $this->postJson('/api/survival/clinic-heal', [], $this->auth($player['token'], self::SECRET))
+            ->assertOk()
+            ->assertExactJson([
+                'billed' => SurvivalService::CLINIC_HEAL_FEE,
+                'balance_after' => 100 - SurvivalService::CLINIC_HEAL_FEE,
+            ]);
+
+        $this->assertSame(100 - SurvivalService::CLINIC_HEAL_FEE, $this->balance($player['account_id']));
+        $this->assertSame(1, DB::table('transactions')->where('type', 'clinic_heal')->where('created_by_account_id', $player['account_id'])->count());
+    }
+
+    public function test_clinic_heal_is_refused_without_enough_coins(): void
+    {
+        $player = $this->registerAndCreditWallet(SurvivalService::CLINIC_HEAL_FEE - 1, 'coins');
+
+        $this->postJson('/api/survival/clinic-heal', [], $this->auth($player['token'], self::SECRET))
+            ->assertStatus(422)
+            ->assertJsonPath('code', 'insufficient_funds');
+
+        $this->assertSame(SurvivalService::CLINIC_HEAL_FEE - 1, $this->balance($player['account_id']));
+        $this->assertSame(0, DB::table('transactions')->where('type', 'clinic_heal')->count());
+    }
+
+    public function test_clinic_heal_needs_the_realtime_server(): void
+    {
+        $player = $this->registerAndCreditWallet(100, 'coins');
+
+        $this->postJson('/api/survival/clinic-heal', [], $this->auth($player['token']))
+            ->assertForbidden()
+            ->assertJsonPath('code', 'realtime_only');
+
+        $this->assertSame(100, $this->balance($player['account_id']));
+    }
+
+    public function test_medical_items_heal_when_consumed(): void
+    {
+        $player = $this->registerAndCreditWallet(100, 'coins');
+        $headers = $this->auth($player['token'], self::SECRET);
+        $expected = ['med_bandage' => [15, null], 'med_painkillers' => [30, 'heal_over_time'], 'med_medkit' => [60, null]];
+
+        foreach ($expected as $code => [$health, $effect]) {
+            $this->grant($player['account_id'], $code, 1);
+            $this->postJson('/api/survival/consume', ['code' => $code], $headers)
+                ->assertOk()
+                ->assertJsonPath('consumed.health', $health)
+                ->assertJsonPath('consumed.effect', $effect)
+                ->assertJsonPath('consumed.quantity', 0);
+            $this->assertSame('/assets/items/medical/'.substr($code, 4).'/model.glb', ItemDef::query()->where('code', $code)->value('model_glb'));
+        }
+    }
+
     public function test_food_is_sold_for_coins(): void
     {
         $player = $this->registerAndCreditWallet(100, 'coins');

@@ -1,6 +1,6 @@
 /**
  * Hunger, thirst and health as the player sees them. The realtime server owns the values (socket/src/
- * survivalStats.js); this file only turns them into visuals: watch colours, screen effects, walking speed.
+ * survivalStats.ts); this file only turns them into visuals: watch colours, screen effects, walking speed.
  */
 
 export interface SurvivalStats {
@@ -17,7 +17,7 @@ const LOW_GAUGE = 25
 const CRITICAL_GAUGE = 10
 
 const SLOW_WALK_FACTOR = 0.8
-/** Same as SPEED_BOOST_FACTOR in socket/src/survivalStats.js (the server allows it while the boost lasts). */
+/** Same as SPEED_BOOST_FACTOR in socket/src/survivalStats.ts (the server allows it while the boost lasts). */
 export const SPEED_BOOST_FACTOR = 1.3
 
 export type GaugeKey = keyof SurvivalStats
@@ -69,9 +69,9 @@ export function isLow(value: number): boolean {
   return value < LOW_GAUGE
 }
 
-/** The most urgent low gauge, for the watch buzz; null when all are fine. */
-export function mostUrgentGauge(stats: SurvivalStats): GaugeKey | null {
-  const low = (['health', 'thirst', 'hunger'] as const).filter((k) => isLow(stats[k]))
+/** The most urgent low gauge among `keys`, for the watch buzz; null when all are fine. */
+export function mostUrgentGauge(stats: SurvivalStats, keys: readonly GaugeKey[] = ['health', 'thirst', 'hunger']): GaugeKey | null {
+  const low = keys.filter((k) => isLow(stats[k]))
   if (low.length === 0) return null
   return low.reduce((a, b) => (stats[b] < stats[a] ? b : a))
 }

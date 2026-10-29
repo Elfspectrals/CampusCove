@@ -57,6 +57,11 @@ class SurvivalController extends Controller
         return response()->json($this->survival->billHospital($this->accountId($request)));
     }
 
+    public function clinicHeal(Request $request): JsonResponse
+    {
+        return response()->json($this->survival->payClinicHeal($this->accountId($request)));
+    }
+
     private function accountId(Request $request): int
     {
         return (int) $request->user()->getAuthIdentifier();

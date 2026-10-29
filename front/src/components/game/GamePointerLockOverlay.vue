@@ -17,8 +17,9 @@ const controls = computed<Array<{ keys: string[]; label: string }>>(() => {
   return [
     { keys: [...first('moveForward'), ...first('moveLeft'), ...first('moveBack'), ...first('moveRight')], label: 'Move' },
     { keys: ['Mouse'], label: 'Look around' },
-    { keys: ['Left click'], label: 'Use a door, eat / drink what you hold' },
-    { keys: first('survivalWatch'), label: 'Hold to look at your watch (health, hunger, thirst)' },
+    { keys: first('interact'), label: 'Use: doors, shops, cafe, clinic, eat / drink' },
+    { keys: first('punch'), label: 'Punch' },
+    { keys: first('survivalWatch'), label: 'Hold to look at your watch (hunger, thirst)' },
     { keys: first('inventory'), label: 'Inventory' },
     { keys: hotbar.length === 2 ? [`${hotbar[0]}–${hotbar[1]}`] : hotbar, label: 'Hotbar slot' },
     { keys: ['Esc'], label: 'Pause / free mouse' },

@@ -1,9 +1,9 @@
 // Colyseus realtime server: a single 'city' room (town + house / work building interiors).
 // Economy, ownership and inventory stay authoritative in the Laravel API (src/backend.js).
 import { Server, WebSocketTransport } from 'colyseus'
-import { CITY_MAX_PLAYERS, PORT } from './src/config.js'
-import { CityRoom } from './src/CityRoom.js'
-import { loadWorld } from './src/world.js'
+import { CITY_MAX_PLAYERS, PORT } from './src/config.ts'
+import { CityRoom } from './src/CityRoom.ts'
+import { loadWorld } from './src/world.ts'
 
 async function boot() {
   await loadWorld()

@@ -1,12 +1,13 @@
-import { Room } from 'colyseus'
-import { pickupObject, saveObject, setDecoratedHouse } from './apartments.js'
-import { callBackendJson, parseAccountId, resolveIdentity } from './backend.js'
-import { CITY_MAX_PLAYERS, CITY_SPAWN_RADIUS } from './config.js'
+import { type Client, Room } from 'colyseus'
+import { pickupObject, saveObject, setDecoratedHouse } from './apartments.ts'
+import { type Json, callBackendJson, parseAccountId, resolveIdentity } from './backend.ts'
+import { CITY_MAX_PLAYERS, CITY_SPAWN_RADIUS } from './config.ts'
 
 const HOUSING_REFRESH_COOLDOWN_MS = 2000
 const HOUSING_POLL_MS = 60_000
-import { isWithinDoorReach, isWithinReach, workDoorId } from './doors.js'
-import { moveRejection } from './movement.js'
+import { isWithinDoorReach, isWithinReach, workDoorId } from './doors.ts'
+import { moveRejection } from './movement.ts'
+import { onPunch } from './punch.ts'
 import {
   createPlayer,
   normalizeAppearanceIds,
@@ -15,49 +16,65 @@ import {
   normalizeSlotHexes,
   publicPlayer,
   spawnNear
-} from './players.js'
+} from './players.ts'
 import {
   SURVIVAL_TICK_MS,
   loadSurvival,
   onConsume,
+  onClinicHeal,
   onCook,
   onDrinkFountain,
   onSurvivalMove,
+  releaseClinicBed,
   saveSurvival,
   tickSurvival
-} from './survival.js'
-import { citySpawn, workDoor } from './world.js'
+} from './survival.ts'
+import type {
+  ClientPayload,
+  ClinicBedOccupant,
+  GameClient,
+  GameRoom,
+  HouseFurniture,
+  HousingUnit,
+  Identity,
+  Player
+} from './types.ts'
+import { citySpawn, workDoor } from './world.ts'
 
-function warn(context, error) {
+function warn(context: string, error: unknown): void {
   console.warn(`[colyseus] ${context}:`, error instanceof Error ? error.message : error)
 }
 
 // One room for the whole world: the town and every building interior.
-export class CityRoom extends Room {
+export class CityRoom extends Room implements GameRoom {
+  players = new Map<string, Player>()
+  sessionByAccountId = new Map<number, string>()
+  housingUnits: HousingUnit[] = []
+  houseFurniture: HouseFurniture[] = []
+  openDoors = new Set<string>()
+  clinicBeds = new Map<string, ClinicBedOccupant>()
+
   onCreate() {
     this.maxClients = CITY_MAX_PLAYERS
-    this.players = new Map()
-    this.sessionByAccountId = new Map()
-    this.housingUnits = []
-    this.houseFurniture = []
-    this.openDoors = new Set()
 
-    this.onMessage('move', (client, payload) => this.onMove(client, payload))
-    this.onMessage('appearance', (client, payload) => this.onAppearance(client, payload))
+    this.onMessage('move', (client, payload: ClientPayload) => this.onMove(client, payload))
+    this.onMessage('appearance', (client, payload: ClientPayload) => this.onAppearance(client, payload))
     this.onMessage('housing_refresh', (client) => this.onHousingRefresh(client))
-    this.onMessage('door_toggle', (client, payload) => this.onDoorToggle(client, payload))
-    this.onMessage('decorate_house', (client, payload) => setDecoratedHouse(this, client, payload))
-    this.onMessage('apartment_spawn_request', (client, payload) => saveObject(this, client, payload, true))
-    this.onMessage('apartment_transform_request', (client, payload) => saveObject(this, client, payload, false))
-    this.onMessage('apartment_pickup_request', (client, payload) => pickupObject(this, client, payload))
-    this.onMessage('consume', (client, payload) => void onConsume(this, client, payload))
+    this.onMessage('door_toggle', (client, payload: ClientPayload) => this.onDoorToggle(client, payload))
+    this.onMessage('decorate_house', (client, payload: ClientPayload) => setDecoratedHouse(this, client, payload))
+    this.onMessage('apartment_spawn_request', (client, payload: ClientPayload) => saveObject(this, client, payload, true))
+    this.onMessage('apartment_transform_request', (client, payload: ClientPayload) => saveObject(this, client, payload, false))
+    this.onMessage('apartment_pickup_request', (client, payload: ClientPayload) => pickupObject(this, client, payload))
+    this.onMessage('consume', (client, payload: ClientPayload) => void onConsume(this, client, payload))
     this.onMessage('drink_fountain', (client) => onDrinkFountain(this, client))
-    this.onMessage('cook', (client, payload) => void onCook(this, client, payload))
+    this.onMessage('cook', (client, payload: ClientPayload) => void onCook(this, client, payload))
+    this.onMessage('clinic_heal', (client) => void onClinicHeal(this, client))
+    this.onMessage('punch', (client, payload: ClientPayload) => onPunch(this, client, payload))
     this.clock.setInterval(() => void this.pollHousingUnits(), HOUSING_POLL_MS)
     this.clock.setInterval(() => tickSurvival(this, SURVIVAL_TICK_MS / 1000), SURVIVAL_TICK_MS)
   }
 
-  async onAuth(_client, options) {
+  async onAuth(_client: Client, options: Json): Promise<Identity> {
     try {
       return await resolveIdentity(options)
     } catch (err) {
@@ -66,7 +83,7 @@ export class CityRoom extends Room {
     }
   }
 
-  async onJoin(client, options) {
+  async onJoin(client: Client, options: Json) {
     const accountId = parseAccountId(client.auth?.accountId)
     if (accountId === null) throw new Error('invalid account id')
     // One session per account: a new tab replaces the old one.
@@ -96,10 +113,11 @@ export class CityRoom extends Room {
     if (player.token) await loadSurvival(client, player)
   }
 
-  onLeave(client) {
+  onLeave(client: Client) {
     const player = this.players.get(client.sessionId)
     this.players.delete(client.sessionId)
     if (!player) return
+    releaseClinicBed(this, player)
     void saveSurvival(player)
     if (this.sessionByAccountId.get(player.accountId) === client.sessionId) {
       this.sessionByAccountId.delete(player.accountId)
@@ -109,20 +127,20 @@ export class CityRoom extends Room {
 
   // ------------------------------------------------------------ visibility
 
-  forEachClient(callback, exceptClient) {
+  forEachClient(callback: (client: Client) => void, exceptClient?: GameClient): void {
     for (const c of this.clients) {
       if (exceptClient && c.sessionId === exceptClient.sessionId) continue
       if (this.players.has(c.sessionId)) callback(c)
     }
   }
 
-  otherPlayers(client) {
+  otherPlayers(client: GameClient) {
     return [...this.players.values()].filter((u) => u.sessionId !== client.sessionId).map(publicPlayer)
   }
 
   // ------------------------------------------------------------ presence
 
-  onMove(client, payload) {
+  onMove(client: Client, payload: ClientPayload): void {
     const player = this.players.get(client.sessionId)
     if (!player || !payload || typeof payload !== 'object') return
     const x = normalizeNumber(payload.x, player.x)
@@ -143,12 +161,12 @@ export class CityRoom extends Room {
     onSurvivalMove(this, client, player, previousY, distXZ)
   }
 
-  broadcastMove(client, player) {
+  broadcastMove(client: GameClient, player: Player): void {
     const { x, y, z, ry } = player
     this.forEachClient((c) => c.send('user_moved', { sessionId: client.sessionId, x, y, z, ry }), client)
   }
 
-  onAppearance(client, payload) {
+  onAppearance(client: Client, payload: ClientPayload): void {
     const player = this.players.get(client.sessionId)
     if (!player || !payload || typeof payload !== 'object') return
     const appearance = normalizeAppearanceIds(payload.slots ?? payload)
@@ -169,7 +187,7 @@ export class CityRoom extends Room {
 
   // ------------------------------------------------------------ housing
 
-  async fetchHousingUnits(token) {
+  async fetchHousingUnits(token: string): Promise<void> {
     const data = await callBackendJson(token, '/housing/units', 'GET')
     const previous = new Map(this.housingUnits.map((u) => [u.public_id, u]))
     this.housingUnits = Array.isArray(data?.units) ? data.units : []
@@ -181,7 +199,7 @@ export class CityRoom extends Room {
     }
   }
 
-  async pollHousingUnits() {
+  async pollHousingUnits(): Promise<void> {
     const token = [...this.players.values()].find((p) => p.token)?.token
     if (!token) return
     try {
@@ -196,12 +214,12 @@ export class CityRoom extends Room {
     }
   }
 
-  async fetchHouseFurniture(token) {
+  async fetchHouseFurniture(token: string): Promise<void> {
     const data = await callBackendJson(token, '/apartments/houses', 'GET')
     this.houseFurniture = Array.isArray(data?.houses) ? data.houses : []
   }
 
-  async refreshHouseFurniture(token) {
+  async refreshHouseFurniture(token: string): Promise<void> {
     try {
       await this.fetchHouseFurniture(token)
       const payload = { houses: this.houseFurniture }
@@ -212,7 +230,7 @@ export class CityRoom extends Room {
   }
 
   // A player bought / rented / renewed: reload the units and push them to everyone in the town.
-  async onHousingRefresh(client) {
+  async onHousingRefresh(client: Client): Promise<void> {
     const player = this.players.get(client.sessionId)
     if (!player?.token) return
     const now = Date.now()
@@ -229,12 +247,12 @@ export class CityRoom extends Room {
     await this.refreshHouseFurniture(player.token)
   }
 
-  broadcastDoors() {
+  broadcastDoors(): void {
     const payload = { openDoors: [...this.openDoors] }
     this.forEachClient((c) => c.send('doors_sync', payload))
   }
 
-  onDoorToggle(client, payload) {
+  onDoorToggle(client: Client, payload: ClientPayload): void {
     const player = this.players.get(client.sessionId)
     if (typeof payload?.workKey === 'string') {
       const door = workDoor(payload.workKey)
@@ -251,7 +269,7 @@ export class CityRoom extends Room {
     this.toggleDoor(unit.public_id)
   }
 
-  toggleDoor(doorId) {
+  toggleDoor(doorId: string): void {
     if (this.openDoors.has(doorId)) this.openDoors.delete(doorId)
     else this.openDoors.add(doorId)
     this.broadcastDoors()

@@ -573,6 +573,50 @@
           ]
         }
       ]
+    },
+    {
+      "key": "clinic",
+      "optional": true,
+      "bounds": {
+        "minX": -134,
+        "maxX": -44.6,
+        "minZ": -6,
+        "maxZ": 30
+      },
+      "modelUrl": "/assets/park/clinic_site/clinic_site.glb",
+      "gate": {
+        "x": -44.6,
+        "z": 12,
+        "width": 11
+      },
+      "buildings": [
+        {
+          "kind": "work",
+          "key": "clinic",
+          "name": "Cove Clinic",
+          "job": "medic",
+          "position": [
+            -112,
+            0,
+            12
+          ],
+          "rotationY": 1.5707963267948966,
+          "door": [
+            -105.5,
+            1.25,
+            12
+          ],
+          "footprint": [
+            16,
+            14.81
+          ],
+          "interiorOffset": [
+            0,
+            0.2,
+            1.095
+          ]
+        }
+      ]
     }
   ],
   "fountains": [
@@ -596,5 +640,61 @@
       0,
       55
     ]
-  ]
+  ],
+  "clinic": {
+    "nurse": [
+      -110.955,
+      0.2,
+      16.6
+    ],
+    "pharmacy": [
+      -109.905,
+      0.2,
+      7.4
+    ],
+    "beds": [
+      {
+        "id": "bed_01",
+        "position": [
+          -116.905,
+          1.8,
+          16.6
+        ],
+        "bed": [
+          -118.755,
+          0.85,
+          16.6
+        ],
+        "yaw": 4.7124
+      },
+      {
+        "id": "bed_02",
+        "position": [
+          -116.905,
+          1.8,
+          12
+        ],
+        "bed": [
+          -118.755,
+          0.85,
+          12
+        ],
+        "yaw": 4.7124
+      },
+      {
+        "id": "bed_03",
+        "position": [
+          -116.905,
+          1.8,
+          7.4
+        ],
+        "bed": [
+          -118.755,
+          0.85,
+          7.4
+        ],
+        "yaw": 4.7124
+      }
+    ]
+  }
 }

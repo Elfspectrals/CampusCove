@@ -63,6 +63,7 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
         Route::post('/survival/consume', [SurvivalController::class, 'consume']);
         Route::post('/survival/cook', [SurvivalController::class, 'cook']);
         Route::post('/survival/hospital', [SurvivalController::class, 'hospital']);
+        Route::post('/survival/clinic-heal', [SurvivalController::class, 'clinicHeal']);
     });
 
     Route::post('/shop/purchase', [ShopController::class, 'purchase']);

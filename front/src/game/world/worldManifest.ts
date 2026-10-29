@@ -67,6 +67,19 @@ export interface WorldZone {
   fishingSpots?: FishingSpot[]
 }
 
+interface ClinicBed {
+  id: string
+  position: Vec3
+  bed: Vec3
+  yaw: number
+}
+
+interface ClinicLayout {
+  nurse: Vec3
+  pharmacy: Vec3
+  beds: ClinicBed[]
+}
+
 export interface WorldManifest {
   version: number
   spawn: Vec3
@@ -75,6 +88,7 @@ export interface WorldManifest {
   zones: WorldZone[]
   /** Free drinking fountains ([x, 0, z], put on the terrain), written by scripts/apply-fountains.mjs. */
   fountains?: Vec3[]
+  clinic?: ClinicLayout
 }
 
 const WORLD_MANIFEST_URL = '/assets/world.manifest.json'
