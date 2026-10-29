@@ -20,9 +20,11 @@ import {
   SURVIVAL_TICK_MS,
   loadSurvival,
   onConsume,
+  onClinicHeal,
   onCook,
   onDrinkFountain,
   onSurvivalMove,
+  releaseClinicBed,
   saveSurvival,
   tickSurvival
 } from './survival.js'
@@ -41,6 +43,7 @@ export class CityRoom extends Room {
     this.housingUnits = []
     this.houseFurniture = []
     this.openDoors = new Set()
+    this.clinicBeds = new Map()
 
     this.onMessage('move', (client, payload) => this.onMove(client, payload))
     this.onMessage('appearance', (client, payload) => this.onAppearance(client, payload))
@@ -53,6 +56,7 @@ export class CityRoom extends Room {
     this.onMessage('consume', (client, payload) => void onConsume(this, client, payload))
     this.onMessage('drink_fountain', (client) => onDrinkFountain(this, client))
     this.onMessage('cook', (client, payload) => void onCook(this, client, payload))
+    this.onMessage('clinic_heal', (client) => void onClinicHeal(this, client))
     this.clock.setInterval(() => void this.pollHousingUnits(), HOUSING_POLL_MS)
     this.clock.setInterval(() => tickSurvival(this, SURVIVAL_TICK_MS / 1000), SURVIVAL_TICK_MS)
   }
@@ -100,6 +104,7 @@ export class CityRoom extends Room {
     const player = this.players.get(client.sessionId)
     this.players.delete(client.sessionId)
     if (!player) return
+    releaseClinicBed(this, player)
     void saveSurvival(player)
     if (this.sessionByAccountId.get(player.accountId) === client.sessionId) {
       this.sessionByAccountId.delete(player.accountId)

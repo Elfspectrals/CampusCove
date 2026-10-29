@@ -11,6 +11,26 @@ function parseVec3(raw, what) {
   return { x: raw[0], y: raw[1], z: raw[2] }
 }
 
+function parseClinic(raw) {
+  if (raw === undefined) return null
+  if (!Array.isArray(raw?.beds) || raw.beds.length === 0) throw new Error('world manifest: clinic has no beds')
+  return {
+    nurse: parseVec3(raw.nurse, 'clinic nurse'),
+    pharmacy: parseVec3(raw.pharmacy, 'clinic pharmacy'),
+    beds: raw.beds.map((bed, i) => {
+      if (typeof bed?.id !== 'string' || !Number.isFinite(bed.yaw)) {
+        throw new Error(`world manifest: invalid clinic bed ${i} ${JSON.stringify(bed)}`)
+      }
+      return {
+        id: bed.id,
+        position: parseVec3(bed.position, `position of clinic bed ${bed.id}`),
+        bed: parseVec3(bed.bed, `bed of clinic bed ${bed.id}`),
+        yaw: bed.yaw
+      }
+    })
+  }
+}
+
 function parseWorld(manifest) {
   if (!Array.isArray(manifest?.zones)) throw new Error('world manifest: missing zones')
   const workDoors = new Map()
@@ -32,7 +52,14 @@ function parseWorld(manifest) {
   }
   const b = manifest.bounds
   if (![b?.minX, b?.maxX, b?.minZ, b?.maxZ].every(Number.isFinite)) throw new Error('world manifest: invalid bounds')
-  return { citySpawn: parseVec3(manifest.spawn, 'spawn'), workDoors, houses, fountains, bounds: b }
+  return {
+    citySpawn: parseVec3(manifest.spawn, 'spawn'),
+    workDoors,
+    houses,
+    fountains,
+    bounds: b,
+    clinic: parseClinic(manifest.clinic)
+  }
 }
 
 export async function loadWorld() {
@@ -77,4 +104,8 @@ export function worldFountains() {
 
 export function worldHouse(houseKey) {
   return loadedWorld().houses.get(houseKey) ?? null
+}
+
+export function worldClinic() {
+  return loadedWorld().clinic
 }

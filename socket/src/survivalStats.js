@@ -24,6 +24,8 @@ export const FOOD_POISONING_DAMAGE = 8
 export const SPEED_BOOST_MS = 60_000
 export const SPEED_BOOST_FACTOR = 1.3
 
+export const HEAL_OVER_TIME_MS = 30_000
+
 export function fullStats() {
   return { health: MAX_STAT, hunger: MAX_STAT, thirst: MAX_STAT }
 }
@@ -59,11 +61,33 @@ export function tickStats(stats, dtSeconds, timeScale = 1) {
 /** Effects of one portion (from the API's `consumed` payload) applied to the stats. */
 export function applyPortion(stats, portion) {
   const poisoned = portion.effect === 'food_poisoning'
+  const instantHealth = portion.effect === 'heal_over_time' ? 0 : (portion.health ?? 0)
   return {
-    health: clamp(stats.health + (portion.health ?? 0) - (poisoned ? FOOD_POISONING_DAMAGE : 0)),
+    health: clamp(stats.health + instantHealth - (poisoned ? FOOD_POISONING_DAMAGE : 0)),
     hunger: clamp(stats.hunger + (portion.hunger ?? 0)),
     thirst: clamp(stats.thirst + (portion.thirst ?? 0))
   }
+}
+
+export function startHealOverTime(now, amount) {
+  return { until: now + HEAL_OVER_TIME_MS, perMs: amount / HEAL_OVER_TIME_MS, healedUntil: now }
+}
+
+export function tickHealOverTime(stats, healOverTime, now) {
+  if (!healOverTime) return { stats, healOverTime: null }
+  const healedUntil = Math.min(now, healOverTime.until)
+  const health = clamp(stats.health + healOverTime.perMs * Math.max(0, healedUntil - healOverTime.healedUntil))
+  return {
+    stats: { ...stats, health },
+    healOverTime: now >= healOverTime.until ? null : { ...healOverTime, healedUntil }
+  }
+}
+
+export function pickBed(beds, occupants) {
+  const usedAt = (bed) => occupants.get(bed.id)?.usedAt ?? 0
+  const free = beds.filter((bed) => !occupants.get(bed.id)?.sessionId)
+  const candidates = free.length > 0 ? free : beds
+  return candidates.reduce((best, bed) => (usedAt(bed) < usedAt(best) ? bed : best))
 }
 
 /** Damage when landing after falling from `peakY` down to `y` (client-reported heights). */

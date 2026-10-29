@@ -75,6 +75,10 @@ export function createPlayer(client, options, colorIndex, spawn) {
     fallPeakY: spawn.y,
     knockedOutUntil: 0,
     speedBoostUntil: 0,
+    healOverTime: null,
+    lastClinicHealAt: 0,
+    clinicHealPending: false,
+    clinicBedId: null,
     appearance: normalizeAppearanceIds(options?.appearance),
     slotHexes: normalizeSlotHexes(options?.slotHexes),
     bodyModelGlb: normalizeBodyModelGlb(options?.bodyModelGlb)

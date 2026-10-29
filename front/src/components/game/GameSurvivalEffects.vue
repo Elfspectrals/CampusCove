@@ -8,6 +8,8 @@ const props = defineProps<{
   knockedOut: boolean
   hospitalBill: number | null
   message: string | null
+  recovering: number | null
+  reducedEffects: boolean
 }>()
 
 const heartbeat = computed(() => `${(props.effects?.heartbeatPeriod ?? 1).toFixed(2)}s`)
@@ -50,12 +52,28 @@ const heartbeat = computed(() => `${(props.effects?.heartbeatPeriod ?? 1).toFixe
     <Transition name="cc-ko">
       <div v-if="knockedOut" class="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/90 text-center">
         <p class="font-display text-2xl tracking-wide text-fog">You passed out…</p>
-        <p class="text-sm text-mist">You'll wake up at the town spawn, a bit weak.</p>
+        <p class="text-sm text-mist">You'll wake up at Cove Clinic, a bit weak.</p>
         <p v-if="hospitalBill !== null" class="text-xs font-bold text-coral">
           {{ hospitalBill > 0 ? `Hospital bill: ${hospitalBill} coins` : 'The hospital waived the bill.' }}
         </p>
       </div>
     </Transition>
+    <div
+      v-if="recovering !== null"
+      class="absolute inset-0 flex flex-col items-center justify-end gap-2 pb-28 text-center"
+      :class="reducedEffects ? '' : 'bg-gradient-to-t from-black/70 via-black/20 to-transparent'"
+    >
+      <p class="font-display text-xl tracking-wide text-fog">Recovering at Cove Clinic…</p>
+      <div
+        class="h-2 w-[min(320px,70vw)] overflow-hidden rounded-full bg-ink-950/60"
+        role="progressbar"
+        :aria-valuenow="Math.round(recovering * 100)"
+        aria-valuemin="0"
+        aria-valuemax="100"
+      >
+        <div class="h-full rounded-full bg-mint" :style="{ width: `${recovering * 100}%` }" />
+      </div>
+    </div>
     <p
       v-if="message && !knockedOut"
       class="cc-hud absolute bottom-24 left-1/2 max-w-sm -translate-x-1/2 px-3 py-1.5 text-center text-xs font-bold text-fog"

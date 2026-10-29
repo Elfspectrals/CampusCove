@@ -81,6 +81,7 @@ export function createSurvivalWatch() {
   let hand: THREE.Object3D | null = null
   let stats: SurvivalStats | null = null
   let boostUntil = 0
+  let healUntil = 0
   let time = 0
   let sinceDraw = REDRAW_S
   let sinceBuzz = 0
@@ -140,6 +141,12 @@ export function createSurvivalWatch() {
       ctx.textAlign = 'left'
       ctx.fillText(`â˜• ${Math.ceil((boostUntil - Date.now()) / 1000)}s`, 6, CANVAS_H - 6)
     }
+    if (Date.now() < healUntil) {
+      ctx.fillStyle = GAUGE_COLORS.health
+      ctx.font = 'bold 11px sans-serif'
+      ctx.textAlign = 'right'
+      ctx.fillText(`+ ${Math.ceil((healUntil - Date.now()) / 1000)}s`, CANVAS_W - 6, CANVAS_H - 6)
+    }
   }
 
   function update(dt: number, nextHand: THREE.Object3D | null): void {
@@ -168,9 +175,10 @@ export function createSurvivalWatch() {
 
   return {
     update,
-    setStats: (next: SurvivalStats, nextBoostUntil: number) => {
+    setStats: (next: SurvivalStats, nextBoostUntil: number, nextHealUntil: number) => {
       stats = next
       boostUntil = nextBoostUntil
+      healUntil = nextHealUntil
       sinceDraw = REDRAW_S
     },
     dispose: () => {

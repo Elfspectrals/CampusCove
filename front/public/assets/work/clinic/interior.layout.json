@@ -1,0 +1,110 @@
+{
+  "version": 1,
+  "key": "clinic",
+  "name": "Cove Clinic",
+  "spawn": [
+    0.0,
+    1.6,
+    3.7
+  ],
+  "exit": {
+    "position": [
+      0.0,
+      4.75
+    ],
+    "radius": 1.4
+  },
+  "stations": [
+    {
+      "id": "station_clinic_nurse",
+      "role": "consultation",
+      "desk": "nurse_desk",
+      "position": [
+        -4.6,
+        0.0,
+        2.1
+      ],
+      "yaw": 0.0,
+      "lookAt": [
+        -4.6,
+        1.5,
+        -0.05
+      ]
+    },
+    {
+      "id": "station_clinic_pharmacy",
+      "role": "pharmacy",
+      "desk": "pharmacy_counter",
+      "position": [
+        4.6,
+        0.0,
+        2.1
+      ],
+      "yaw": 0.0,
+      "lookAt": [
+        4.6,
+        1.0,
+        1.0
+      ]
+    }
+  ],
+  "npcs": {
+    "nurse": [
+      -4.6,
+      0.0,
+      -0.05
+    ]
+  },
+  "counters": {
+    "pharmacy": [
+      4.6,
+      0.0,
+      1.0
+    ]
+  },
+  "beds": [
+    {
+      "id": "bed_01",
+      "bed": [
+        -4.6,
+        0.0,
+        -7.85
+      ],
+      "position": [
+        -4.6,
+        0.0,
+        -6.0
+      ],
+      "yaw": 3.141592653589793
+    },
+    {
+      "id": "bed_02",
+      "bed": [
+        0.0,
+        0.0,
+        -7.85
+      ],
+      "position": [
+        0.0,
+        0.0,
+        -6.0
+      ],
+      "yaw": 3.141592653589793
+    },
+    {
+      "id": "bed_03",
+      "bed": [
+        4.6,
+        0.0,
+        -7.85
+      ],
+      "position": [
+        4.6,
+        0.0,
+        -6.0
+      ],
+      "yaw": 3.141592653589793
+    }
+  ],
+  "seats": []
+}

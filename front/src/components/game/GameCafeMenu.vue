@@ -4,6 +4,7 @@ import UiCurrency from '../ui/UiCurrency.vue'
 import UiIcon from '../ui/UiIcon.vue'
 
 defineProps<{
+  title: string
   items: ShopItem[]
   loading: boolean
   buyingId: number | null
@@ -24,15 +25,16 @@ function restores(food: ShopItemFood | null | undefined): Array<{ label: string;
   if (food.thirst > 0) out.push({ label: `+${food.thirst * food.portions} thirst`, tone: 'text-pool' })
   if (food.health > 0) out.push({ label: `+${food.health * food.portions} health`, tone: 'text-coral' })
   if (food.effect === 'speed_boost') out.push({ label: 'speed boost', tone: 'text-mint' })
+  if (food.effect === 'heal_over_time') out.push({ label: 'heals over time', tone: 'text-coral' })
   return out
 }
 </script>
 
 <template>
   <div class="absolute inset-0 z-[40] flex items-center justify-center bg-black/40" @mousedown.self="emit('close')">
-    <section class="cc-hud w-[min(440px,92vw)] animate-cc-pop overflow-hidden p-0" aria-label="Campus Cafe menu">
+    <section class="cc-hud w-[min(440px,92vw)] animate-cc-pop overflow-hidden p-0" :aria-label="`${title} menu`">
       <header class="flex items-center justify-between bg-sun px-4 py-2 text-ink-950">
-        <span class="font-display text-sm uppercase tracking-[0.18em]">Campus Cafe · Menu</span>
+        <span class="font-display text-sm uppercase tracking-[0.18em]">{{ title }} · Menu</span>
         <button type="button" class="inline-flex items-center" aria-label="Close the menu" @click="emit('close')">
           <UiIcon name="x" :size="18" />
         </button>

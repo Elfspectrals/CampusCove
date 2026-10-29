@@ -22,6 +22,8 @@ final class SurvivalService
     /** Coins charged when a player passes out (capped at their balance, so it never fails). */
     public const HOSPITAL_FEE = 40;
 
+    public const CLINIC_HEAL_FEE = 30;
+
     public function __construct(private readonly AccountInventoryService $inventory)
     {
     }
@@ -155,6 +157,34 @@ final class SurvivalService
             ]);
 
             return ['billed' => $amount, 'balance_after' => $balance - $amount];
+        });
+    }
+
+    /** @return array{billed: int, balance_after: int} */
+    public function payClinicHeal(int $accountId): array
+    {
+        return DB::transaction(function () use ($accountId): array {
+            $wallet = Wallet::lockForAccount($accountId, 'coins');
+            $balance = $wallet->balance();
+            if ($balance < self::CLINIC_HEAL_FEE) {
+                throw new SurvivalRejectedException('insufficient_funds', 'Insufficient wallet balance.');
+            }
+            $tx = EconomyTransaction::query()->create([
+                'server_id' => null,
+                'type' => 'clinic_heal',
+                'status' => 'committed',
+                'created_by_account_id' => $accountId,
+                'committed_at' => now(),
+                'meta_json' => ['amount' => self::CLINIC_HEAL_FEE],
+            ]);
+            WalletLedgerEntry::query()->create([
+                'wallet_id' => $wallet->wallet_id,
+                'tx_id' => $tx->tx_id,
+                'delta' => -self::CLINIC_HEAL_FEE,
+                'reason' => 'clinic_heal',
+            ]);
+
+            return ['billed' => self::CLINIC_HEAL_FEE, 'balance_after' => $balance - self::CLINIC_HEAL_FEE];
         });
     }
 

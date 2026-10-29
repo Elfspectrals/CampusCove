@@ -6,20 +6,28 @@ import { toInterior, unitAt } from './movement.js'
 import { spawnNear } from './players.js'
 import {
   FOUNTAIN_COOLDOWN_MS,
+  MAX_STAT,
   SPEED_BOOST_MS,
   applyPortion,
   fallDamage,
   fountainSip,
   isWalkingDescent,
   normalizeStats,
+  pickBed,
   respawnStats,
+  startHealOverTime,
+  tickHealOverTime,
   tickStats
 } from './survivalStats.js'
-import { citySpawn, worldFountains, worldHouse } from './world.js'
+import { citySpawn, worldClinic, worldFountains, worldHouse } from './world.js'
 
 export const SURVIVAL_TICK_MS = 2000
 const SAVE_EVERY_MS = 60_000
 const KNOCKOUT_MS = 6000
+const RECOVERY_MS = 5000
+const CLINIC_HEAL_COOLDOWN_MS = 2000
+const NURSE_REACH = 2.5
+const NURSE_HEIGHT_REACH = 1.5
 // A bite takes the front's eating animation (~1 s).
 const CONSUME_COOLDOWN_MS = 900
 const SIP_COOLDOWN_MS = 600
@@ -40,7 +48,13 @@ function warn(context, error) {
 
 function sendStats(client, player) {
   const { health, hunger, thirst } = player.stats
-  client.send('survival', { health, hunger, thirst, speedBoostUntil: player.speedBoostUntil })
+  client.send('survival', {
+    health,
+    hunger,
+    thirst,
+    speedBoostUntil: player.speedBoostUntil,
+    healUntil: player.healOverTime?.until ?? null
+  })
 }
 
 function setStats(player, stats) {
@@ -79,7 +93,9 @@ export function tickSurvival(room, dtSeconds) {
   room.forEachClient((client) => {
     const player = room.players.get(client.sessionId)
     if (!player?.stats || now < player.knockedOutUntil) return
-    const { stats, damage } = tickStats(player.stats, dtSeconds, SURVIVAL_TIME_SCALE)
+    const { stats: decayed, damage } = tickStats(player.stats, dtSeconds, SURVIVAL_TIME_SCALE)
+    const { stats, healOverTime } = tickHealOverTime(decayed, player.healOverTime, now)
+    player.healOverTime = healOverTime
     setStats(player, stats)
     if (damage > 0) client.send('survival_damage', { amount: damage, cause: stats.hunger === 0 ? 'hunger' : 'thirst' })
     sendStats(client, player)
@@ -96,10 +112,11 @@ function hurt(room, client, player, amount, cause) {
   if (player.stats.health <= 0) knockOut(room, client, player)
 }
 
-/** Health reached 0: the player passes out, pays the hospital and wakes up at the town spawn. */
+/** Health reached 0: the player passes out, pays the hospital and wakes up beside a clinic bed (the town spawn without a clinic). */
 function knockOut(room, client, player) {
   player.knockedOutUntil = Date.now() + KNOCKOUT_MS
   player.speedBoostUntil = 0
+  player.healOverTime = null
   client.send('survival_knocked_out', { durationMs: KNOCKOUT_MS })
   callRealtimeBackend(player.token, '/survival/hospital', 'POST')
     .then((data) => client.send('survival_hospital_bill', {
@@ -109,14 +126,43 @@ function knockOut(room, client, player) {
     .catch((error) => warn('hospital bill failed', error))
   room.clock.setTimeout(() => {
     if (room.players.get(client.sessionId) !== player) return
-    const spawn = spawnNear(citySpawn(), CITY_SPAWN_RADIUS)
-    Object.assign(player, spawn, { fallPeakY: spawn.y, lastMoveAt: Date.now(), knockedOutUntil: 0 })
+    const bed = claimClinicBed(room, player)
+    const spawn = bed ? { ...bed.position, ry: bed.yaw } : spawnNear(citySpawn(), CITY_SPAWN_RADIUS)
+    const recoveringMs = bed ? RECOVERY_MS : 0
+    Object.assign(player, spawn, {
+      fallPeakY: spawn.y,
+      lastMoveAt: Date.now(),
+      knockedOutUntil: bed ? Date.now() + recoveringMs : 0
+    })
     setStats(player, respawnStats(player.stats))
-    client.send('survival_respawn', { ...spawn })
+    client.send('survival_respawn', {
+      x: player.x,
+      y: player.y,
+      z: player.z,
+      yaw: player.ry,
+      bed: bed ? [bed.bed.x, bed.bed.y, bed.bed.z] : null,
+      recoveringMs
+    })
     sendStats(client, player)
     room.broadcastMove(client, player)
     void saveSurvival(player)
+    if (bed) room.clock.setTimeout(() => releaseClinicBed(room, player), recoveringMs)
   }, KNOCKOUT_MS)
+}
+
+function claimClinicBed(room, player) {
+  const clinic = worldClinic()
+  if (!clinic) return null
+  const bed = pickBed(clinic.beds, room.clinicBeds)
+  room.clinicBeds.set(bed.id, { sessionId: player.sessionId, usedAt: Date.now() })
+  player.clinicBedId = bed.id
+  return bed
+}
+
+export function releaseClinicBed(room, player) {
+  const occupant = room.clinicBeds.get(player.clinicBedId)
+  if (occupant?.sessionId === player.sessionId) occupant.sessionId = null
+  player.clinicBedId = null
 }
 
 /** Called for every accepted move: tracks the highest point of a fall and hurts on landing. */
@@ -145,7 +191,13 @@ export async function onConsume(room, client, payload) {
   try {
     const data = await callRealtimeBackend(player.token, '/survival/consume', 'POST', { code })
     const portion = data?.consumed ?? {}
-    setStats(player, applyPortion(player.stats, portion))
+    let stats = applyPortion(player.stats, portion)
+    if (portion.effect === 'heal_over_time') {
+      const doseAt = Date.now()
+      stats = tickHealOverTime(stats, player.healOverTime, doseAt).stats
+      player.healOverTime = startHealOverTime(doseAt, portion.health ?? 0)
+    }
+    setStats(player, stats)
     if (portion.effect === 'speed_boost') player.speedBoostUntil = Date.now() + SPEED_BOOST_MS
     client.send('survival_consumed', {
       code,
@@ -206,5 +258,44 @@ export async function onCook(room, client, payload) {
     client.send('survival_cooked', { code, cookedCode: data?.cooked?.code ?? null })
   } catch (error) {
     client.send('survival_error', errorPayload(error, 'Cooking failed.', 'cook_failed'))
+  }
+}
+
+function isNearNurse(player) {
+  const nurse = worldClinic()?.nurse
+  if (!nurse) return false
+  return Math.hypot(player.x - nurse.x, player.z - nurse.z) <= NURSE_REACH
+    && Math.abs(player.y - EYE_HEIGHT - nurse.y) <= NURSE_HEIGHT_REACH
+}
+
+export async function onClinicHeal(room, client) {
+  const player = room.players.get(client.sessionId)
+  const now = Date.now()
+  if (!player?.stats || !player.token || now < player.knockedOutUntil || player.clinicHealPending) return
+  if (now - player.lastClinicHealAt < CLINIC_HEAL_COOLDOWN_MS) return
+  player.lastClinicHealAt = now
+  if (!isNearNurse(player)) {
+    client.send('survival_error', { message: 'Talk to the nurse at the clinic desk.', code: 'no_nurse' })
+    return
+  }
+  if (player.stats.health >= MAX_STAT) {
+    client.send('survival_error', { message: 'You are already in good health.', code: 'already_healthy' })
+    return
+  }
+  player.clinicHealPending = true
+  try {
+    const data = await callRealtimeBackend(player.token, '/survival/clinic-heal', 'POST')
+    player.healOverTime = null
+    setStats(player, { ...player.stats, health: MAX_STAT })
+    client.send('clinic_healed', {
+      billed: Number(data?.billed) || 0,
+      balanceAfter: typeof data?.balance_after === 'number' ? data.balance_after : null
+    })
+    sendStats(client, player)
+    void saveSurvival(player)
+  } catch (error) {
+    client.send('survival_error', errorPayload(error, 'The clinic could not heal you.', 'clinic_heal_failed'))
+  } finally {
+    player.clinicHealPending = false
   }
 }

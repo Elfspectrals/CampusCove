@@ -42,3 +42,7 @@ export function isApartmentItem(item: Pick<ShopItem, 'kind'>): boolean {
 export function isFoodItem(item: Pick<ShopItem, 'kind'>): boolean {
   return item.kind === 'consumable'
 }
+
+export function isMedicalItem(item: { kind: string; code: string }): boolean {
+  return item.kind === 'consumable' && item.code.startsWith('med_')
+}

@@ -127,6 +127,16 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     cancelAnimationFrame(frameId)
   }
 
+  function setLook(nextYaw: number, nextPitch: number) {
+    yaw = nextYaw
+    pitch = nextPitch
+    const camera = deps.getCamera()
+    if (!camera) return
+    camera.rotation.order = 'YXZ'
+    camera.rotation.y = yaw
+    camera.rotation.x = pitch
+  }
+
   function onResize() {
     const camera = deps.getCamera()
     const renderer = deps.getRenderer()
@@ -216,6 +226,7 @@ export function useGameMovement(deps: UseGameMovementDeps) {
   return {
     containerSize,
     requestPointerLock,
+    setLook,
     onCanvasMouseDown,
     startRenderLoop,
     stopRenderLoop,

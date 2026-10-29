@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { itemRarity } from './itemShopPresentation.ts'
+import { isFoodItem, isMedicalItem, itemRarity } from './itemShopPresentation.ts'
 import type { ShopItem } from '../api/itemShop.ts'
 
 function item(rarity: number | null, currencies: Array<'coins' | 'premium'>): ShopItem {
@@ -26,4 +26,13 @@ test('falls back to the sales-mode tiers when rarity is missing', () => {
   assert.equal(itemRarity(item(null, ['coins'])), 'uncommon')
   assert.equal(itemRarity(item(null, ['premium'])), 'rare')
   assert.equal(itemRarity(item(null, ['coins', 'premium'])), 'epic')
+})
+
+test('med_ consumables are medical items and stay hidden from the web shop like food', () => {
+  const consumable = (code: string) => ({ kind: 'consumable' as const, code })
+  assert.equal(isFoodItem(consumable('food_cookie')), true)
+  assert.equal(isFoodItem(consumable('med_bandage')), true)
+  assert.equal(isMedicalItem(consumable('med_bandage')), true)
+  assert.equal(isMedicalItem(consumable('food_cookie')), false)
+  assert.equal(isMedicalItem({ kind: 'furniture', code: 'med_bandage' }), false)
 })

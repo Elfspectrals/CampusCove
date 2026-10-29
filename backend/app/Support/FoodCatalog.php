@@ -13,6 +13,8 @@ final class FoodCatalog
 
     public const EFFECT_FOOD_POISONING = 'food_poisoning';
 
+    public const EFFECT_HEAL_OVER_TIME = 'heal_over_time';
+
     /** Raw item => what cooking it on a stove or a barbecue gives. */
     public const COOKING = [
         'food_fish_raw' => 'food_fish_grilled',
@@ -20,7 +22,7 @@ final class FoodCatalog
 
     /**
      * @return list<array{code: string, name: string, asset: string, portions: int, hunger: int, thirst: int,
-     *   health: int, effect: string|null, price: int|null}>
+     *   health: int, effect: string|null, price: int|null, group: string}>
      */
     public static function items(): array
     {
@@ -33,12 +35,15 @@ final class FoodCatalog
             self::item('food_cookie', 'Cookie', 'cookie', 1, 6, 0, 0, null, 5),
             self::item('food_fish_raw', 'Raw Fish', 'fish_raw', 2, 5, 0, 0, self::EFFECT_FOOD_POISONING, null),
             self::item('food_fish_grilled', 'Grilled Fish', 'fish_grilled', 4, 12, 0, 3, null, null),
+            self::item('med_bandage', 'Bandage', 'bandage', 1, 0, 0, 15, null, 10, 'medical'),
+            self::item('med_painkillers', 'Painkillers', 'painkillers', 1, 0, 0, 30, self::EFFECT_HEAL_OVER_TIME, 20, 'medical'),
+            self::item('med_medkit', 'Medkit', 'medkit', 1, 0, 0, 60, null, 50, 'medical'),
         ];
     }
 
-    /** @return array{code: string, name: string, asset: string, portions: int, hunger: int, thirst: int, health: int, effect: string|null, price: int|null} */
-    private static function item(string $code, string $name, string $asset, int $portions, int $hunger, int $thirst, int $health, ?string $effect, ?int $price): array
+    /** @return array{code: string, name: string, asset: string, portions: int, hunger: int, thirst: int, health: int, effect: string|null, price: int|null, group: string} */
+    private static function item(string $code, string $name, string $asset, int $portions, int $hunger, int $thirst, int $health, ?string $effect, ?int $price, string $group = 'food'): array
     {
-        return compact('code', 'name', 'asset', 'portions', 'hunger', 'thirst', 'health', 'effect', 'price');
+        return compact('code', 'name', 'asset', 'portions', 'hunger', 'thirst', 'health', 'effect', 'price', 'group');
     }
 }

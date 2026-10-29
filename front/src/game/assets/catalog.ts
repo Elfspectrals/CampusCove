@@ -100,8 +100,8 @@ const HOUSES: readonly HouseAsset[] = [
  * Built by map-src/CampusCove/build_work_*.py → public/assets/work/<key>/ (see docs/ASSETS_STYLE_GUIDE.md §7).
  * `interior.layout.json` lists the stations (`station_<job>_NN`) that the job gameplay attaches to.
  */
-export type WorkKey = 'tech_hub' | 'boutique' | 'cafe'
-export type WorkJob = 'dev' | 'commerce' | 'resto'
+export type WorkKey = 'tech_hub' | 'boutique' | 'cafe' | 'clinic'
+export type WorkJob = 'dev' | 'commerce' | 'resto' | 'medic'
 
 export interface WorkAsset {
   key: WorkKey
@@ -133,6 +133,7 @@ const WORKS: readonly WorkAsset[] = [
   work('tech_hub', 'Tech Hub', 'dev'),
   work('boutique', 'Boutique', 'commerce'),
   work('cafe', 'Campus Cafe', 'resto'),
+  work('clinic', 'Cove Clinic', 'medic'),
 ]
 
 export function findWork(key: string | null | undefined): WorkAsset | null {
@@ -160,9 +161,20 @@ export const COVE_HOME = {
 export const SURVIVAL_WATCH_URL = `${ROOT}/items/tools/watch/model.glb`
 export const DRINKING_FOUNTAIN_URL = `${ROOT}/park/drinking_fountain/model.glb`
 
-/** Preview picture of a food item: code `food_<key>` -> items/food/<key>/preview.png (backend FoodCatalog). */
-export function foodPreviewUrl(code: string): string {
-  return `${ROOT}/items/food/${code.replace(/^food_/, '')}/preview.png`
+const CONSUMABLE_FOLDERS: ReadonlyArray<[prefix: string, folder: string]> = [
+  ['food_', 'food'],
+  ['med_', 'medical'],
+]
+
+/**
+ * Preview picture of a consumable (backend FoodCatalog): `food_<key>` -> items/food/<key>/preview.png,
+ * `med_<key>` -> items/medical/<key>/preview.png.
+ */
+export function consumablePreviewUrl(code: string): string {
+  const match = CONSUMABLE_FOLDERS.find(([prefix]) => code.startsWith(prefix))
+  if (!match) throw new Error(`No preview folder for consumable code "${code}"`)
+  const [prefix, folder] = match
+  return `${ROOT}/items/${folder}/${code.slice(prefix.length)}/preview.png`
 }
 
 /** Furniture model shown in the store and placed in houses: public/assets/decor/<key>/model.glb. */

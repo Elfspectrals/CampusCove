@@ -396,7 +396,7 @@ class ShopSeeder extends Seeder
     }
 
     /**
-     * @param array{code: string, name: string, asset: string, portions: int, hunger: int, thirst: int, health: int, effect: string|null, price: int|null} $food
+     * @param array{code: string, name: string, asset: string, portions: int, hunger: int, thirst: int, health: int, effect: string|null, price: int|null, group: string} $food
      * @return array<string, mixed>
      */
     private static function food(array $food): array
@@ -410,8 +410,8 @@ class ShopSeeder extends Seeder
             'premium_only' => false,
             'bind' => 'none',
             'max_stack' => 20,
-            'preview_image' => "/assets/items/food/{$food['asset']}/preview.png",
-            'model_glb' => "/assets/items/food/{$food['asset']}/model.glb",
+            'preview_image' => "/assets/items/{$food['group']}/{$food['asset']}/preview.png",
+            'model_glb' => "/assets/items/{$food['group']}/{$food['asset']}/model.glb",
             'portions' => $food['portions'],
             'hunger_per_portion' => $food['hunger'],
             'thirst_per_portion' => $food['thirst'],
