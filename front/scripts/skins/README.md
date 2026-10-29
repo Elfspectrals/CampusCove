@@ -31,3 +31,28 @@ Checks: `npm run skins:check` (from `front/`) verifies the committed GLBs — Dr
 The generators are deterministic (fixed random seed), so rerunning `run.py` reproduces the committed files up to
 Blender-version float noise. The scripts share state through `exec()` globals set by `run.py`; running a single
 file on its own raises an explicit error.
+
+## Wearable pieces (base body + clothes)
+
+`run_wear.py` builds the modular character into `public/assets/wear/`: one base body in underwear on the same
+21-bone rig (`base/model.glb`, Idle/Walk/Run, one skinned mesh per body region tagged `extras.region`) and the
+pieces worn over it (`<slot>/<key>/model.glb` + `preview.png`, slots `hair`, `head_accessory`, `top`, `bottom`,
+`shoes`). A piece carries no clip: the game rebinds it to the base skeleton by bone name, and hides the body
+regions listed in its `extras.hides`. Pieces are weighted from the nearest body vertices so they follow the body.
+
+| File | Role |
+| --- | --- |
+| `base_body.py` | base body regions + underwear |
+| `wear.py` | the pieces, their materials (`W_<slot>_<key>_Main` is the tintable one) and the weight transfer |
+| `wear_preview.py` | 256 px preview per piece |
+| `run_wear.py` | entry point |
+
+```
+blender --background --factory-startup --python front/scripts/skins/run_wear.py -- previews
+blender --background --factory-startup --python-expr "p='map-src/CampusCove/build_fp_arms.py'; exec(open(p).read(), {'__file__': p, 'WEAR_TOPS': []})"
+npm run assets:optimize -- wear                                           # first-person arms per top
+npm run wear:check
+```
+
+The first-person arms come from the base body plus the equipped top (`wear/top/<key>/fp_arms.glb`, bare arms in
+`wear/bare/fp_arms.glb`).

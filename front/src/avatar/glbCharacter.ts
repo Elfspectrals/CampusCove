@@ -1,65 +1,12 @@
 import * as THREE from 'three'
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js'
-import { createGltfLoader } from '../game/gltfLoaderFactory'
-import type { CosmeticColors } from '../api/characterCosmetics'
-import { DEFAULT_SLOT_COLORS, SLOT_ORDER } from '../api/characterCosmetics'
-import { DEFAULT_SKIN } from '../game/assets/catalog'
 import { AvatarClipSelector, clampDt } from './avatarAnimationLogic'
 
 /** Animation clips per loaded / cloned root (kept out of userData, which three JSON-clones). */
 const clipsByRoot = new WeakMap<THREE.Object3D, THREE.AnimationClip[]>()
 const animStateByRoot = new WeakMap<THREE.Object3D, AvatarAnimState>()
 
-let templateRoot: THREE.Group | null = null
-let loadFailed = false
-const modelCache = new Map<string, Promise<THREE.Group | null>>()
-
-/**
- * Loads the default skin (catalog DEFAULT_SKIN, public/assets/skins/campus_classic/model.glb) once,
- * centers and scales to ~1.75m tall (feet at y=0). Used when a player has no body skin equipped.
- */
-async function loadCharacterTemplate(): Promise<THREE.Group | null> {
-  if (loadFailed) return null
-  if (templateRoot) return templateRoot
-
-  try {
-    const loader = createGltfLoader()
-    const url = DEFAULT_SKIN.modelUrl
-    const gltf = await loader.loadAsync(url)
-    const root = gltf.scene as THREE.Group
-    clipsByRoot.set(root, gltf.animations)
-    normalizeCharacterScale(root)
-    templateRoot = root
-    return templateRoot
-  } catch {
-    loadFailed = true
-    return null
-  }
-}
-
-async function loadCharacterModelByUrl(url: string): Promise<THREE.Group | null> {
-  const normalized = url.trim()
-  if (normalized.length === 0) return null
-  const existing = modelCache.get(normalized)
-  if (existing) return existing
-
-  const task = (async () => {
-    try {
-      const loader = createGltfLoader()
-      const gltf = await loader.loadAsync(normalized)
-      const root = gltf.scene as THREE.Group
-      clipsByRoot.set(root, gltf.animations)
-      normalizeCharacterScale(root)
-      return root
-    } catch {
-      return null
-    }
-  })()
-  modelCache.set(normalized, task)
-  return task
-}
-
-function normalizeCharacterScale(root: THREE.Object3D): void {
+export function normalizeCharacterScale(root: THREE.Object3D): void {
   const targetH = 1.75
   root.updateMatrixWorld(true)
 
@@ -161,69 +108,6 @@ export function cloneCharacterWithUniqueMaterials(source: THREE.Object3D): THREE
     }
   })
   return c
-}
-
-/**
- * Single-material GLB (Sketchfab export): blend all slot hexes for a balanced tint.
- * Multi-material skins (the Blender-built ones in assets/skins/: skin, hair, textured clothes) carry
- * their own look, so they are left untouched.
- */
-function applyCosmeticColors(root: THREE.Object3D, colors: CosmeticColors): void {
-  // rigged premium skins share their materials across instances and are never tinted
-  if (hasSkinnedMesh(root)) return
-  const materials = new Set<string>()
-  root.traverse((obj) => {
-    if (!(obj instanceof THREE.Mesh) || !obj.material) return
-    for (const m of Array.isArray(obj.material) ? obj.material : [obj.material]) materials.add(m.name || m.uuid)
-  })
-  if (materials.size > 1) return
-  const blended = blendSlotHexes(colors)
-  root.traverse((obj) => {
-    if (obj instanceof THREE.Mesh && obj.material) {
-      const apply = (m: THREE.Material) => {
-        if (m instanceof THREE.MeshStandardMaterial || m instanceof THREE.MeshPhysicalMaterial) {
-          m.color.copy(blended)
-          m.needsUpdate = true
-        }
-      }
-      if (Array.isArray(obj.material)) {
-        obj.material.forEach(apply)
-      } else {
-        apply(obj.material)
-      }
-    }
-  })
-}
-
-function blendSlotHexes(colors: CosmeticColors): THREE.Color {
-  const out = new THREE.Color()
-  let r = 0
-  let g = 0
-  let b = 0
-  let n = 0
-  for (const slot of SLOT_ORDER) {
-    const hex = colors[slot] ?? DEFAULT_SLOT_COLORS[slot]
-    out.set(hex)
-    r += out.r
-    g += out.g
-    b += out.b
-    n += 1
-  }
-  if (n === 0) return new THREE.Color(0x8b7aa8)
-  return new THREE.Color(r / n, g / n, b / n)
-}
-
-export async function createTintedCharacterFromUrl(
-  modelUrl: string | null | undefined,
-  colors: CosmeticColors,
-): Promise<THREE.Group | null> {
-  const normalized = typeof modelUrl === 'string' ? modelUrl.trim() : ''
-  const template = normalized.length > 0 ? await loadCharacterModelByUrl(normalized) : await loadCharacterTemplate()
-  if (!template) return null
-  const instance = cloneCharacterWithUniqueMaterials(template)
-  applyCosmeticColors(instance, colors)
-  attachAvatarAnimations(instance)
-  return instance
 }
 
 interface AvatarAnimState {

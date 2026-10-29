@@ -121,7 +121,10 @@ export function hurt(room: GameRoom, client: GameClient, player: Player, amount:
   if (player.stats.health <= 0) knockOut(room, client, player)
 }
 
-/** Health reached 0: the player passes out, pays the hospital and wakes up beside a clinic bed (the town spawn without a clinic). */
+/**
+ * Health reached 0: the player passes out, pays the hospital, loses their inventory and clothes (API) and wakes up
+ * beside a clinic bed (the town spawn without a clinic).
+ */
 function knockOut(room: GameRoom, client: GameClient, player: Player): void {
   player.knockedOutUntil = Date.now() + KNOCKOUT_MS
   player.speedBoostUntil = 0
@@ -130,7 +133,9 @@ function knockOut(room: GameRoom, client: GameClient, player: Player): void {
   callRealtimeBackend(player.token, '/survival/hospital', 'POST')
     .then((data) => client.send('survival_hospital_bill', {
       billed: Number(data?.billed) || 0,
-      balanceAfter: typeof data?.balance_after === 'number' ? data.balance_after : null
+      balanceAfter: typeof data?.balance_after === 'number' ? data.balance_after : null,
+      lostItems: Number(data?.lost?.items) || 0,
+      lostClothes: Number(data?.lost?.clothes) || 0
     }))
     .catch((error) => warn('hospital bill failed', error))
   room.clock.setTimeout(() => {

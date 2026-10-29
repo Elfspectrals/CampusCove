@@ -2,7 +2,7 @@
 export const messages = {
   en: {
     a11y: { skip: 'Skip to main content' },
-    nav: { home: 'Home', lobby: 'Lobby', locker: 'Locker', skins: 'Skins', friends: 'Friends', settings: 'Settings', play: 'Play', signIn: 'Sign in', shop: 'Shop' },
+    nav: { home: 'Home', lobby: 'Lobby', skins: 'Skins', friends: 'Friends', settings: 'Settings', play: 'Play', signIn: 'Sign in', shop: 'Shop' },
     landing: { playFree: 'Play free', haveAccount: 'I have an account' },
     footer: {
       tagline: 'A free multiplayer 3D campus — non-commercial school project.',
@@ -161,7 +161,7 @@ export const messages = {
   },
   fr: {
     a11y: { skip: 'Aller au contenu principal' },
-    nav: { home: 'Accueil', lobby: 'Lobby', locker: 'Casier', skins: 'Skins', friends: 'Amis', settings: 'Paramètres', play: 'Jouer', signIn: 'Connexion', shop: 'Boutique' },
+    nav: { home: 'Accueil', lobby: 'Lobby', skins: 'Skins', friends: 'Amis', settings: 'Paramètres', play: 'Jouer', signIn: 'Connexion', shop: 'Boutique' },
     landing: { playFree: 'Jouer gratuitement', haveAccount: 'J’ai déjà un compte' },
     footer: {
       tagline: 'Un campus 3D multijoueur gratuit — projet scolaire non commercial.',

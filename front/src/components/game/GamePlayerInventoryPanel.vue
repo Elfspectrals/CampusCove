@@ -153,6 +153,7 @@ function ghostQty(): number {
       </div>
 
       <div class="p-5">
+        <slot />
         <p v-if="cursorItem" class="cc-alert cc-alert-info m-0 mb-4 text-xs">
           <UiIcon name="hand" :size="16" />
           <span>Holding <span class="font-mono">{{ cursorItem.code }}</span> — click a slot to drop it, <span class="cc-keycap">Esc</span> to cancel</span>

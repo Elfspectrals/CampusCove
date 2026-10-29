@@ -6,8 +6,10 @@ import {
   appearanceIdsFromLoadout,
   bodyModelGlbFromLoadout,
   fetchCharacterCosmetics,
+  wearModelsFromLoadout,
   type CharacterCosmeticsState,
 } from '../../api/characterCosmetics'
+import type { WearModels } from '../../avatar/modularCharacterLogic'
 import { parseHousingUnitList } from '../../api/housing'
 import { getStoredAuth } from '../../api/session'
 import type { SfxName } from '../../game/sfx'
@@ -66,7 +68,7 @@ export interface GameRealtimeDeps {
   onHouseFurnitureSync: (houses: HouseFurniturePayload[]) => void
   onDoorsSync: (openDoorIds: string[]) => void
   onDoorSound: (data: DoorSoundPayload) => void
-  onMyBodyModel: (bodyModelGlb: string | null) => void
+  onMyOutfit: (models: WearModels) => void
   onPunched: (data: UserPunchedPayload, mySessionId: string) => void
   onPunchTired: (data: PunchTiredPayload) => void
   playSoundOn: (name: SfxName, object: THREE.Object3D, delayS: number) => void
@@ -147,7 +149,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
 
     room.onMessage(
       'appearance_updated',
-      (data: { sessionId: string; slotHexes?: Record<string, string>; bodyModelGlb?: string | null }) => {
+      (data: { sessionId: string; slotHexes?: Record<string, string>; bodyModelGlb?: string | null; slotModels?: Record<string, string | null> }) => {
         if (data.sessionId !== room.sessionId) void remotes.updateAppearance(data.sessionId, data)
       },
     )
@@ -197,35 +199,39 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
 
   // ------------------------------------------------------------ connection
 
+  let lastSentSignature: string | null = null
+
+  function appearancePayload(state: CharacterCosmeticsState) {
+    return {
+      slots: appearanceIdsFromLoadout(state.slots),
+      slotHexes: { ...state.colors },
+      bodyModelGlb: bodyModelGlbFromLoadout(state.slots),
+      slotModels: wearModelsFromLoadout(state.slots),
+    }
+  }
+
+  function sendMyAppearance(state: CharacterCosmeticsState): void {
+    const payload = appearancePayload(state)
+    const signature = JSON.stringify(payload)
+    if (signature === lastSentSignature) return
+    lastSentSignature = signature
+    deps.onMyOutfit(payload.slotModels)
+    deps.gameRoomRef.value?.send('appearance', payload)
+  }
+
   /**
-   * Window focus re-checks the equipped skin (it may have changed in the locker): throttled, and only sent when
+   * Window focus re-checks the equipped outfit (it may have changed in the locker): throttled, and only sent when
    * the look actually changed, since each 'appearance' message makes every other client rebuild our avatar.
    */
   function installAppearanceRefresh(state: CharacterCosmeticsState): void {
-    const signatureOf = (s: CharacterCosmeticsState) =>
-      JSON.stringify({
-        body: appearanceIdsFromLoadout(s.slots).body ?? null,
-        hex: s.colors.body,
-        glb: bodyModelGlbFromLoadout(s.slots),
-      })
     let lastRefreshAt = 0
-    let lastSentSignature = signatureOf(state)
+    lastSentSignature = JSON.stringify(appearancePayload(state))
     deps.refreshMyAppearance.value = () => {
       const now = Date.now()
       if (now - lastRefreshAt < APPEARANCE_REFRESH_MIN_INTERVAL_MS) return
       lastRefreshAt = now
       void fetchCharacterCosmetics()
-        .then((latest) => {
-          const signature = signatureOf(latest)
-          if (signature === lastSentSignature) return
-          lastSentSignature = signature
-          deps.onMyBodyModel(bodyModelGlbFromLoadout(latest.slots))
-          deps.gameRoomRef.value?.send('appearance', {
-            slots: { body: appearanceIdsFromLoadout(latest.slots).body },
-            slotHexes: { body: latest.colors.body },
-            bodyModelGlb: bodyModelGlbFromLoadout(latest.slots),
-          })
-        })
+        .then(sendMyAppearance)
         .catch(() => {
           /* keep previous values if refresh fails */
         })
@@ -251,9 +257,8 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       deps.apartment.detachForRoomSwitch()
       const room: Room = await colyseusClient.joinOrCreate('city', {
         token: auth.token,
+        ...appearancePayload(state),
         appearance: appearanceIdsFromLoadout(state.slots),
-        slotHexes: { body: state.colors.body },
-        bodyModelGlb: bodyModelGlbFromLoadout(state.slots),
       })
       deps.loadTown()
       deps.gameRoomRef.value = room
@@ -271,6 +276,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
 
   return {
     connectRealtime,
+    sendMyAppearance,
     switchingRoom,
     clearRemoteUsers: remotes.clear,
     tickRemoteAvatars: remotes.tick,

@@ -27,6 +27,10 @@ export interface UsePlayerInventoryDeps {
   selectedPlacedObjectId: Ref<string>
   startPlacementPreview: (itemDef: ApartmentPlacementItemDef, ownedCountRef: Ref<number>) => void
   cancelPlacementPreview: () => void
+  /** A worn piece of clothing dragged from an equipment slot (`gear:<slot>`) onto an inventory slot. */
+  onGearDrop: (gear: string, slotIndex: number) => void
+  /** Shift-click on a piece of clothing in an inventory slot. */
+  onQuickWear: (slotIndex: number) => void
 }
 
 /**
@@ -42,6 +46,8 @@ export function usePlayerInventory(deps: UsePlayerInventoryDeps) {
   const inventoryLoading = ref(false)
   const inventoryError = ref<string | null>(null)
   const cursorItem = ref<{ code: string; fromSlot: number } | null>(null)
+  /** Item being dragged out of a slot (the equipment slots light up for clothes). */
+  const draggingCode = ref<string | null>(null)
 
   let layoutHydrated = false
   let saveTimer: ReturnType<typeof setTimeout> | null = null
@@ -202,9 +208,9 @@ export function usePlayerInventory(deps: UsePlayerInventoryDeps) {
     scheduleDebouncedSave()
     const code = slots.value[i] ?? ''
 
-    // held in hand (key, food): never placed as furniture
+    // held in hand (key, food) or worn (clothes): never placed as furniture
     const kind = itemByCode.value[code]?.kind
-    if (kind === 'tool' || kind === 'consumable') {
+    if (kind === 'tool' || kind === 'consumable' || kind === 'cosmetic') {
       cancelPlacementPreviewInternal()
       return
     }
@@ -243,11 +249,32 @@ export function usePlayerInventory(deps: UsePlayerInventoryDeps) {
 
     const next = [...slots.value]
     const emptyHb = next.findIndex((c, idx) => idx < HOTBAR_SLOTS && c === '')
-    const target = emptyHb >= 0 ? emptyHb : next.findIndex((c, idx) => idx >= HOTBAR_SLOTS && c === '')
+    const emptyBackpack = next.findIndex((c, idx) => idx >= HOTBAR_SLOTS && c === '')
+    // clothes go to the backpack, the rest to the hotbar first
+    const clothes = itemByCode.value[clean]?.kind === 'cosmetic'
+    const target = clothes ? (emptyBackpack >= 0 ? emptyBackpack : emptyHb) : emptyHb >= 0 ? emptyHb : emptyBackpack
     if (target < 0) return
     next[target] = clean
     slots.value = next
     scheduleDebouncedSave()
+  }
+
+  /**
+   * Puts a piece of clothing taken off back where the player dropped it (kept once the inventory refreshes): an empty
+   * slot, or the one still showing `replacing`, the piece just put on in its place.
+   */
+  function placeInSlot(code: string, slotIndex: number, replacing: string | null = null): void {
+    const current = slots.value[slotIndex]
+    if (slotIndex < 0 || slotIndex >= SLOT_COUNT || (current && current !== replacing)) return
+    const next = [...slots.value]
+    next[slotIndex] = code
+    slots.value = next
+    scheduleDebouncedSave()
+  }
+
+  /** The held item left the inventory (worn): drop the cursor without putting it back. */
+  function releaseCursor(): void {
+    cursorItem.value = null
   }
 
   function onSlotPointerDown(slotIndex: number, e: PointerEvent): void {
@@ -314,6 +341,12 @@ export function usePlayerInventory(deps: UsePlayerInventoryDeps) {
     const code = slotVisualCode(slotIndex)
     if (!code || !sameCell) return
 
+    // shift-click on clothes: wear them straight away
+    if (e.shiftKey && itemByCode.value[code]?.kind === 'cosmetic') {
+      deps.onQuickWear(slotIndex)
+      return
+    }
+
     cursorItem.value = { code, fromSlot: slotIndex }
     const next = [...slots.value]
     next[slotIndex] = ''
@@ -328,6 +361,7 @@ export function usePlayerInventory(deps: UsePlayerInventoryDeps) {
       return
     }
     interactionDragged = true
+    draggingCode.value = code
     e.dataTransfer?.setData('text/plain', String(slotIndex))
     if (e.dataTransfer) {
       e.dataTransfer.effectAllowed = 'move'
@@ -344,12 +378,17 @@ export function usePlayerInventory(deps: UsePlayerInventoryDeps) {
   function onSlotDrop(slotIndex: number, e: DragEvent): void {
     e.preventDefault()
     const raw = e.dataTransfer?.getData('text/plain') ?? ''
+    if (raw.startsWith('gear:')) {
+      deps.onGearDrop(raw.slice(5), slotIndex)
+      return
+    }
     const from = Number.parseInt(raw, 10)
     if (!Number.isFinite(from)) return
     swapSlots(from, slotIndex)
   }
 
   function onSlotDragEnd(): void {
+    draggingCode.value = null
     queueMicrotask(() => {
       interactionDragged = false
     })
@@ -388,12 +427,15 @@ export function usePlayerInventory(deps: UsePlayerInventoryDeps) {
     inventoryLoading,
     inventoryError,
     cursorItem,
+    draggingCode,
     itemByCode,
     selectedItem,
     toggleInventory,
     closeInventory,
     selectHotbarIndex,
     pickupToHotbar,
+    placeInSlot,
+    releaseCursor,
     onSlotPointerDown,
     onSlotPointerUp,
     onSlotDragStart,

@@ -34,6 +34,8 @@ export interface SurvivalDeps {
   pointerLocked: Ref<boolean>
   selectedItem: Ref<ApartmentInventoryItem | null>
   refreshInventory: () => void
+  /** Passing out took the inventory and the clothes (backend SurvivalService::loseBelongings). */
+  onBelongingsLost: (clothes: boolean) => void
   /** Moves the local player (respawn after passing out). */
   teleport: (x: number, y: number, z: number) => void
   setLook: (yaw: number, pitch: number) => void
@@ -59,6 +61,7 @@ export function useSurvival(deps: SurvivalDeps) {
   const healUntil = ref(0)
   const knockedOut = ref(false)
   const hospitalBill = ref<number | null>(null)
+  const lostBelongings = ref(false)
   /** Bumped on every hit, so the damage flash replays. */
   const damageFlash = ref(0)
   const message = ref<string | null>(null)
@@ -117,12 +120,17 @@ export function useSurvival(deps: SurvivalDeps) {
     room.onMessage('survival_knocked_out', () => {
       knockedOut.value = true
       hospitalBill.value = null
+      lostBelongings.value = false
       deps.getArms()?.raiseWatch(false)
     })
-    room.onMessage('survival_hospital_bill', (data: { billed: number; balanceAfter: number | null }) => {
+    room.onMessage('survival_hospital_bill', (data: { billed: number; balanceAfter: number | null; lostItems: number; lostClothes: number }) => {
       hospitalBill.value = data.billed
       // the wallet in the header reads this cache
       if (typeof data.balanceAfter === 'number') applyCachedBalanceAfterPurchase('coins', data.balanceAfter)
+      if (data.lostItems > 0 || data.lostClothes > 0) {
+        lostBelongings.value = true
+        deps.onBelongingsLost(data.lostClothes > 0)
+      }
     })
     room.onMessage(
       'survival_respawn',
@@ -298,6 +306,7 @@ export function useSurvival(deps: SurvivalDeps) {
     effects,
     knockedOut,
     hospitalBill,
+    lostBelongings,
     damageFlash,
     message,
     prompt,

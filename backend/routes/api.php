@@ -67,6 +67,7 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
     });
 
     Route::post('/shop/purchase', [ShopController::class, 'purchase']);
+    Route::post('/shop/checkout', [ShopController::class, 'checkout']);
     Route::get('/inventory', [InventoryController::class, 'index']);
     Route::get('/inventory/layout', [PlayerInventoryLayoutController::class, 'show']);
     Route::put('/inventory/layout', [PlayerInventoryLayoutController::class, 'update']);

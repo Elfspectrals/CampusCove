@@ -20,6 +20,7 @@ function parseOwnedItem(raw: unknown): ApartmentInventoryItem | null {
     model_glb: normalizeApiAssetUrl(typeof raw.model_glb === 'string' ? raw.model_glb : null),
     portions: typeof raw.portions === 'number' ? raw.portions : null,
     portions_left: typeof raw.portions_left === 'number' ? raw.portions_left : null,
+    cosmetic_slot: typeof raw.cosmetic_slot === 'string' ? raw.cosmetic_slot : null,
   }
 }
 

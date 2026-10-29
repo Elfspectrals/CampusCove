@@ -21,7 +21,6 @@ const GameView = () => import('../views/GameView.vue')
 const HomeView = () => import('../views/HomeView.vue')
 const ItemShopView = () => import('../views/ItemShopView.vue')
 const LegalView = () => import('../views/LegalView.vue')
-const LockerView = () => import('../views/LockerView.vue')
 const NewNationView = () => import('../views/NewNationView.vue')
 const NotFoundView = () => import('../views/NotFoundView.vue')
 const SettingsView = () => import('../views/SettingsView.vue')
@@ -60,7 +59,6 @@ const router = createRouter({
     { path: '/shop', name: 'shop', redirect: { name: 'shop-skin' } },
     { path: '/NewNation', name: 'new-nation', component: NewNationView, meta: { requiresAdmin: true, title: 'Admin — New Nation', fullBleed: true } },
     { path: '/home', name: 'home', component: HomeView, meta: { requiresAuth: true, title: 'Profile' } },
-    { path: '/locker', name: 'locker', component: LockerView, meta: { requiresAuth: true, title: 'Locker' } },
     { path: '/friends', name: 'friends', component: FriendsView, meta: { requiresAuth: true, title: 'Friends' } },
     { path: '/settings', name: 'settings', component: SettingsView, meta: { title: 'Settings' } },
     { path: '/game', name: 'game', component: GameView, meta: { requiresAuth: true, title: 'Game', fullBleed: true, immersive: true } },

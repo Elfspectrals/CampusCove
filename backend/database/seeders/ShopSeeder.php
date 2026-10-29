@@ -96,7 +96,9 @@ class ShopSeeder extends Seeder
             ],
             // ---- skins (body slot; assets in front/public/assets/skins/<key>/). The default one is
             // granted for free by StarterCosmeticGrantService and is not sold.
-            self::skin('COS_WEAR_BODY_DEFAULT', 'Campus Classic', 'campus_classic', 0, 99),
+            array_merge(self::skin('COS_WEAR_BODY_DEFAULT', 'Campus Classic', 'campus_classic', 0, 99), [
+                'model_glb' => '/assets/wear/base/model.glb',
+            ]),
             self::skin('COS_WEAR_BODY_STREET_RUNNER', 'Street Runner', 'street_runner', 2),
             self::skin('COS_WEAR_BODY_SCHOLAR', 'Scholar', 'scholar', 2),
             self::skin('COS_WEAR_BODY_EXPLORER', 'Explorer', 'explorer', 3),
@@ -115,6 +117,8 @@ class ShopSeeder extends Seeder
                 'bind' => 'bound',
                 'max_stack' => 99,
                 'cosmetic_slot' => 'hair',
+                'preview_image' => '/assets/wear/hair/basic/preview.png',
+                'model_glb' => '/assets/wear/hair/basic/model.glb',
             ],
             [
                 'code' => 'COS_WEAR_TOP_DEFAULT',
@@ -126,6 +130,8 @@ class ShopSeeder extends Seeder
                 'bind' => 'bound',
                 'max_stack' => 99,
                 'cosmetic_slot' => 'top',
+                'preview_image' => '/assets/wear/top/basic/preview.png',
+                'model_glb' => '/assets/wear/top/basic/model.glb',
             ],
             [
                 'code' => 'COS_WEAR_BOTTOM_DEFAULT',
@@ -137,6 +143,8 @@ class ShopSeeder extends Seeder
                 'bind' => 'bound',
                 'max_stack' => 99,
                 'cosmetic_slot' => 'bottom',
+                'preview_image' => '/assets/wear/bottom/basic/preview.png',
+                'model_glb' => '/assets/wear/bottom/basic/model.glb',
             ],
             [
                 'code' => 'COS_WEAR_SHOES_DEFAULT',
@@ -148,6 +156,8 @@ class ShopSeeder extends Seeder
                 'bind' => 'bound',
                 'max_stack' => 99,
                 'cosmetic_slot' => 'shoes',
+                'preview_image' => '/assets/wear/shoes/basic/preview.png',
+                'model_glb' => '/assets/wear/shoes/basic/model.glb',
             ],
             [
                 'code' => 'COS_WEAR_HEAD_EMPTY',
@@ -160,6 +170,31 @@ class ShopSeeder extends Seeder
                 'max_stack' => 99,
                 'cosmetic_slot' => 'head_accessory',
             ],
+            self::wear('hair', 'short', 'Short Cut', 1),
+            self::wear('hair', 'long', 'Long Hair', 1),
+            self::wear('hair', 'curly', 'Curly Hair', 2),
+            self::wear('hair', 'buzz', 'Buzz Cut', 1),
+            self::wear('hair', 'ponytail', 'Ponytail', 2),
+            self::wear('head_accessory', 'gamer', 'Gamer Headset', 2),
+            self::wear('head_accessory', 'studio', 'Studio Headset', 3),
+            self::wear('head_accessory', 'cat_ear', 'Cat-Ear Headset', 3),
+            self::wear('head_accessory', 'neon', 'Neon Headset', 4),
+            self::wear('head_accessory', 'pilot', 'Pilot Headset', 4),
+            self::wear('top', 'tee', 'Classic Tee', 1),
+            self::wear('top', 'hoodie', 'Zip Hoodie', 2),
+            self::wear('top', 'varsity', 'Varsity Jacket', 3),
+            self::wear('top', 'sweater', 'Knit Sweater', 2),
+            self::wear('top', 'tank', 'Tank Top', 1),
+            self::wear('bottom', 'jeans', 'Blue Jeans', 1),
+            self::wear('bottom', 'joggers', 'Joggers', 1),
+            self::wear('bottom', 'cargo', 'Cargo Pants', 2),
+            self::wear('bottom', 'shorts', 'Shorts', 1),
+            self::wear('bottom', 'skirt', 'Pleated Skirt', 2),
+            self::wear('shoes', 'sneakers', 'Sneakers', 1),
+            self::wear('shoes', 'high_tops', 'High-Tops', 2),
+            self::wear('shoes', 'boots', 'Boots', 3),
+            self::wear('shoes', 'slides', 'Slides', 1),
+            self::wear('shoes', 'runners', 'Runners', 2),
         ];
         // ---- food and drinks (eaten from the hotbar; sold at the Campus Cafe counter)
         foreach (FoodCatalog::items() as $food) {
@@ -303,6 +338,31 @@ class ShopSeeder extends Seeder
             self::premium('COS_WEAR_BODY_NEON_RONIN', 300, 58),
             self::premium('COS_WEAR_BODY_STREET_LUXE', 250, 60),
             self::premium('COS_WEAR_BODY_ASTRAL_ORACLE', 350, 62),
+            self::coins('COS_WEAR_HAIR_SHORT', 80, 300),
+            self::coins('COS_WEAR_HAIR_LONG', 120, 301),
+            self::coins('COS_WEAR_HAIR_CURLY', 150, 302),
+            self::coins('COS_WEAR_HAIR_BUZZ', 60, 303),
+            self::coins('COS_WEAR_HAIR_PONYTAIL', 130, 304),
+            self::coins('COS_WEAR_HEAD_ACCESSORY_GAMER', 200, 305),
+            self::coins('COS_WEAR_HEAD_ACCESSORY_STUDIO', 280, 306),
+            self::coins('COS_WEAR_HEAD_ACCESSORY_CAT_EAR', 320, 307),
+            self::coins('COS_WEAR_HEAD_ACCESSORY_NEON', 400, 308),
+            self::coins('COS_WEAR_HEAD_ACCESSORY_PILOT', 360, 309),
+            self::coins('COS_WEAR_TOP_TEE', 60, 310),
+            self::coins('COS_WEAR_TOP_HOODIE', 180, 311),
+            self::coins('COS_WEAR_TOP_VARSITY', 350, 312),
+            self::coins('COS_WEAR_TOP_SWEATER', 220, 313),
+            self::coins('COS_WEAR_TOP_TANK', 70, 314),
+            self::coins('COS_WEAR_BOTTOM_JEANS', 120, 315),
+            self::coins('COS_WEAR_BOTTOM_JOGGERS', 100, 316),
+            self::coins('COS_WEAR_BOTTOM_CARGO', 160, 317),
+            self::coins('COS_WEAR_BOTTOM_SHORTS', 70, 318),
+            self::coins('COS_WEAR_BOTTOM_SKIRT', 140, 319),
+            self::coins('COS_WEAR_SHOES_SNEAKERS', 150, 320),
+            self::coins('COS_WEAR_SHOES_HIGH_TOPS', 220, 321),
+            self::coins('COS_WEAR_SHOES_BOOTS', 300, 322),
+            self::coins('COS_WEAR_SHOES_SLIDES', 60, 323),
+            self::coins('COS_WEAR_SHOES_RUNNERS', 250, 324),
         ];
         foreach (FoodCatalog::items() as $i => $food) {
             if ($food['price'] !== null) {
@@ -450,6 +510,24 @@ class ShopSeeder extends Seeder
             'cosmetic_slot' => 'body',
             'preview_image' => "/assets/skins/{$assetKey}/preview.png",
             'model_glb' => "/assets/skins/{$assetKey}/model.glb",
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    private static function wear(string $slot, string $key, string $name, int $rarity): array
+    {
+        return [
+            'code' => 'COS_WEAR_'.strtoupper($slot).'_'.strtoupper($key),
+            'name' => $name,
+            'kind' => 'cosmetic',
+            'rarity' => $rarity,
+            'tradable' => false,
+            'premium_only' => false,
+            'bind' => 'bound',
+            'max_stack' => 1,
+            'cosmetic_slot' => $slot,
+            'preview_image' => "/assets/wear/{$slot}/{$key}/preview.png",
+            'model_glb' => "/assets/wear/{$slot}/{$key}/model.glb",
         ];
     }
 

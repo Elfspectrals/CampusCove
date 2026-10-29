@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { disposeObject3D } from '../../avatar/compositeAvatar'
-import { COVE_HOME, findHouse, findWork } from '../assets/catalog'
+import { findHouse, findStore, findWork } from '../assets/catalog'
 import { APARTMENT_ROOM_HEIGHT } from '../gameRoomConstants'
 import {
   fetchCollisionFile,
@@ -83,7 +83,7 @@ export function openStoreLots(manifest: WorldManifest): OpenStoreLot[] {
 }
 
 function interiorAssetOf(lot: OpenLot): { interiorUrl: string; interiorCollisionUrl: string; interiorLightmapUrl: string } {
-  const asset = lot.kind === 'house' ? findHouse(lot.key) : lot.kind === 'work' ? findWork(lot.key) : COVE_HOME
+  const asset = lot.kind === 'house' ? findHouse(lot.key) : lot.kind === 'work' ? findWork(lot.key) : findStore(lot.key)
   if (!asset) throw new Error(`Unknown ${lot.kind} in the world manifest: ${lot.key}`)
   return asset
 }
@@ -287,7 +287,7 @@ async function composeTownCollisionData(manifest: WorldManifest): Promise<Collis
     Promise.all(lots.map((lot) => fetchCollisionFile(interiorAssetOf(lot).interiorCollisionUrl))),
     Promise.all(lots.map(fetchHouseLayout)),
     Promise.all(shellLots.map((lot) => {
-      const building = lot.kind === 'work' ? findWork(lot.key) : COVE_HOME
+      const building = lot.kind === 'work' ? findWork(lot.key) : findStore(lot.key)
       if (!building) throw new Error(`Unknown building in the world manifest: ${lot.key}`)
       return fetchCollisionFile(building.exteriorCollisionUrl)
     })),

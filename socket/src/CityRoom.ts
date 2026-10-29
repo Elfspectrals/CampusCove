@@ -22,6 +22,7 @@ import {
   normalizeBodyModelGlb,
   normalizeNumber,
   normalizeSlotHexes,
+  normalizeSlotModels,
   publicPlayer,
   spawnNear
 } from './players.ts'
@@ -184,16 +185,18 @@ export class CityRoom extends Room implements GameRoom {
     const appearance = normalizeAppearanceIds(payload.slots ?? payload)
     const slotHexes = normalizeSlotHexes(payload.slotHexes ?? {})
     const bodyModelGlb = normalizeBodyModelGlb(payload.bodyModelGlb)
+    const slotModels = normalizeSlotModels(payload.slotModels)
     // every broadcast makes each client rebuild this avatar's model: skip no-op updates
-    const unchanged = JSON.stringify([appearance, slotHexes, bodyModelGlb]) ===
-      JSON.stringify([player.appearance, player.slotHexes, player.bodyModelGlb])
+    const unchanged = JSON.stringify([appearance, slotHexes, bodyModelGlb, slotModels]) ===
+      JSON.stringify([player.appearance, player.slotHexes, player.bodyModelGlb, player.slotModels])
     if (unchanged) return
-    Object.assign(player, { appearance, slotHexes, bodyModelGlb })
+    Object.assign(player, { appearance, slotHexes, bodyModelGlb, slotModels })
     this.forEachClient((c) => c.send('appearance_updated', {
       sessionId: client.sessionId,
       appearance: { ...appearance },
       slotHexes: { ...slotHexes },
-      bodyModelGlb
+      bodyModelGlb,
+      slotModels: { ...slotModels }
     }))
   }
 

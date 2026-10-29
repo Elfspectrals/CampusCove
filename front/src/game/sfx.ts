@@ -94,5 +94,5 @@ export function createSfx(getCamera: () => THREE.Camera | undefined) {
     listener = null
   }
 
-  return { play, playOn, dispose }
+  return { play, playOn, dispose, listener: ready }
 }

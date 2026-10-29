@@ -123,9 +123,12 @@ class ApartmentPlacementService
      */
     public function listSpawnableAssets(int $accountId): Collection
     {
+        $worn = DB::table('account_cosmetic_equipment')->where('account_id', $accountId)->pluck('item_def_id')->map(fn ($id): int => (int) $id)->all();
+
         return $this->inventoryService
             ->aggregatedItemsForAccount($accountId, null, null)
-            ->filter(fn (object $row): bool => in_array((string) $row->kind, self::HOTBAR_KINDS, true) && (int) $row->quantity > 0)
+            ->filter(fn (object $row): bool => (int) $row->quantity > 0
+                && (in_array((string) $row->kind, self::HOTBAR_KINDS, true) || $this->isBackpackClothing($row, $worn)))
             ->map(fn (object $row): array => [
                 'item_def_id' => (int) $row->item_def_id,
                 'code' => (string) $row->code,
@@ -136,8 +139,22 @@ class ApartmentPlacementService
                 'model_glb' => isset($row->model_glb) ? (string) $row->model_glb : null,
                 'portions' => $row->portions,
                 'portions_left' => $row->portions !== null ? $row->portions - $row->portions_used : null,
+                'cosmetic_slot' => $row->cosmetic_slot ?? null,
             ])
             ->values();
+    }
+
+    /**
+     * Clothes the player owns but does not wear sit in the backpack; worn ones are in the equipment slots.
+     *
+     * @param  list<int>  $worn
+     */
+    private function isBackpackClothing(object $row, array $worn): bool
+    {
+        return $row->kind === 'cosmetic'
+            && in_array($row->cosmetic_slot ?? null, AccountCosmeticService::CLOTHING_SLOTS, true)
+            && ($row->model_glb ?? null) !== null
+            && ! in_array((int) $row->item_def_id, $worn, true);
     }
 
     /**

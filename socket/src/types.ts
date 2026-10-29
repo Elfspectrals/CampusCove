@@ -26,6 +26,7 @@ export interface HealOverTime {
 }
 
 export type AppearanceSlot = 'body' | 'hair' | 'top' | 'bottom' | 'shoes' | 'head_accessory'
+export type WearSlot = Exclude<AppearanceSlot, 'body'>
 
 export interface Identity {
   accountId: number
@@ -63,6 +64,7 @@ export interface Player extends Vec3 {
   appearance: Record<AppearanceSlot, number | null>
   slotHexes: Record<AppearanceSlot, string>
   bodyModelGlb: string | null
+  slotModels: Record<WearSlot, string | null>
 }
 
 /** A house as the Laravel API lists it (GET /housing/units). */

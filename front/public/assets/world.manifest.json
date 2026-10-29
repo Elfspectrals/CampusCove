@@ -617,6 +617,44 @@
           ]
         }
       ]
+    },
+    {
+      "key": "fashion",
+      "optional": true,
+      "bounds": {
+        "minX": -106.5,
+        "maxX": -69.5,
+        "minZ": 13.3,
+        "maxZ": 61.81
+      },
+      "modelUrl": "/assets/store/threads_site/threads_site.glb",
+      "buildings": [
+        {
+          "kind": "store",
+          "key": "cove_threads",
+          "name": "Cove Threads",
+          "position": [
+            -88,
+            0,
+            37.5
+          ],
+          "rotationY": 3.141592653589793,
+          "door": [
+            -88,
+            1.25,
+            33
+          ],
+          "footprint": [
+            31,
+            26.81
+          ],
+          "interiorOffset": [
+            0,
+            0.2,
+            -0.905
+          ]
+        }
+      ]
     }
   ],
   "fountains": [

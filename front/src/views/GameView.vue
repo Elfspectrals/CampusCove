@@ -3,7 +3,7 @@ import { computed, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import type { Room } from '@colyseus/sdk'
 import {
-  bodyModelGlbFromLoadout,
+  wearModelsFromLoadout,
   defaultCosmeticColors,
   emptyCosmeticLoadout,
   fetchCharacterCosmetics,
@@ -22,6 +22,8 @@ import GamePointerLockOverlay from '../components/game/GamePointerLockOverlay.vu
 import GameSettingsDialog from '../components/game/GameSettingsDialog.vue'
 import GameStoreItemCard from '../components/game/GameStoreItemCard.vue'
 import GameCafeMenu from '../components/game/GameCafeMenu.vue'
+import GameBasketCheckout from '../components/game/GameBasketCheckout.vue'
+import GameWardrobe from '../components/game/GameWardrobe.vue'
 import GameSurvivalEffects from '../components/game/GameSurvivalEffects.vue'
 import ItemShopPurchaseConfirmModal from '../components/shop/ItemShopPurchaseConfirmModal.vue'
 import GameRoomMessageBanner from '../components/game/GameRoomMessageBanner.vue'
@@ -30,6 +32,7 @@ import { useApartmentObjects } from '../composables/game/useApartmentObjects'
 import { useCafeCounter } from '../composables/game/useCafeCounter'
 import { useClinic } from '../composables/game/useClinic'
 import { useFurnitureStore } from '../composables/game/useFurnitureStore'
+import { useClothingStore } from '../composables/game/useClothingStore'
 import { useHouseFurniture } from '../composables/game/useHouseFurniture'
 import { useHouseKeys } from '../composables/game/useHouseKeys'
 import { useApartmentPlacement } from '../composables/game/useApartmentPlacement'
@@ -49,8 +52,10 @@ import { HOUSING_LOBBY_SPAWN } from '../game/gameRoomConstants'
 import { createGameScene, disposeGameScene, type GameScene } from '../game/gameScene'
 import { createFirstPersonArms } from '../game/firstPersonArms'
 import { createHeldItem } from '../game/heldItem'
-import { COVE_HOME, findHouse, findWork } from '../game/assets/catalog'
+import { COVE_HOME, COVE_THREADS, findHouse, findStore, findWork } from '../game/assets/catalog'
+import type { GearSlot } from '../game/wardrobeSlots'
 import { createSfx } from '../game/sfx'
+import { createAmbientLoop } from '../game/ambientLoop'
 import { MAX_STAMINA } from '../game/stamina'
 import { createDoorSigns } from '../game/town/doorSigns'
 import { frontDoorNode, houseKeyAt, openHouseInterior, rattleFrontDoor, updateFrontDoors } from '../game/town/openHouses'
@@ -86,6 +91,7 @@ let game: GameScene | null = null
 const getScene = () => game?.scene
 const getCamera = () => game?.camera
 const sfx = createSfx(getCamera)
+const threadsMusic = createAmbientLoop(COVE_THREADS.musicUrl, 0.18, sfx.listener)
 const getRenderer = () => game?.renderer
 
 // ---------------------------------------------------------------- house decoration
@@ -156,12 +162,17 @@ const {
   toggleInventory,
   closeInventory,
   pickupToHotbar,
+  placeInSlot,
+  releaseCursor,
+  draggingCode,
 } = usePlayerInventory({
   gameRoomRef,
   canDecorate,
   selectedPlacedObjectId,
   startPlacementPreview: (itemDef, ownedCountRef) => placement.startPreviewNew(itemDef, ownedCountRef),
   cancelPlacementPreview: () => placement.cancelPreview(),
+  onGearDrop: (gear, slotIndex) => void wardrobeRef.value?.takeOff(gear as GearSlot, slotIndex),
+  onQuickWear: (slotIndex) => void wardrobeRef.value?.wearFromSlot(slotIndex),
 })
 
 // ---------------------------------------------------------------- Cove Home furniture store
@@ -169,6 +180,46 @@ const {
 const inStore = computed(() => currentHouseKey.value === COVE_HOME.key)
 const furnitureStore = useFurnitureStore({ inStore: () => inStore.value, getCamera, myPosition })
 const { target: storeTarget, currentDepartment: storeDepartment } = furnitureStore
+const inThreads = computed(() => currentHouseKey.value === COVE_THREADS.key)
+const clothingStore = useClothingStore({
+  inStore: () => inThreads.value,
+  getCamera,
+  canvasRef,
+  myPosition,
+  promptsHidden: () => inventoryOpen.value,
+  onPurchased: () => refreshOwnedItems(),
+  getScene,
+  getFpHands: () => game?.fpHands ?? null,
+  myOutfit: () => myCosmetics.value,
+})
+const myCosmetics = shallowRef<CharacterCosmeticsState | null>(null)
+
+function onWardrobeChanged(state: CharacterCosmeticsState): void {
+  myCosmetics.value = state
+  realtime.sendMyAppearance(state)
+}
+
+const wardrobeRef = ref<InstanceType<typeof GameWardrobe> | null>(null)
+
+/** Worn clothes leave the backpack; the piece taken off goes back where the player put it. */
+function onOutfit(change: { state: CharacterCosmeticsState; returnedCode: string | null; toSlot: number | null; wornCode: string | null; consumedCursor: boolean }): void {
+  onWardrobeChanged(change.state)
+  if (change.consumedCursor) releaseCursor()
+  if (change.returnedCode && change.toSlot !== null) placeInSlot(change.returnedCode, change.toSlot, change.wornCode)
+  refreshOwnedItems()
+}
+const {
+  target: clothesTarget,
+  basket: clothesBasket,
+  basketTotal: clothesBasketTotal,
+  checkoutOpen: clothesCheckoutOpen,
+  paying: clothesPaying,
+  feedback: clothesFeedback,
+  counterPrompt: clothesCounterPrompt,
+} = clothingStore
+watch(clothesCheckoutOpen, (open) => {
+  if (!open && !document.pointerLockElement) requestPointerLock()
+})
 const storeShop = useShopPurchase()
 const {
   confirmItem: storeConfirmItem,
@@ -254,12 +305,17 @@ const interactions = useInteractionTargets({
   // Fishing gameplay is not built yet: the spots only show their prompt.
   onFishingSpot: () => window.alert('implement pechee'),
   storeTarget: () => {
+    const clothes = clothesTarget.value
+    if (clothes) {
+      const action = clothes.owned ? 'owned' : clothes.inBasket ? 'in basket' : clothes.coins !== null ? `${clothes.coins} coins` : 'not on sale'
+      return { position: clothes.tagPosition, detail: `${clothes.name} · ${action}` }
+    }
     const target = storeTarget.value
     if (!target) return null
     const detail = target.coins !== null ? `${target.name} · ${target.coins} coins` : target.name
     return { position: target.tagPosition, detail }
   },
-  onStoreTarget: openStorePurchase,
+  onStoreTarget: () => (clothesTarget.value ? clothingStore.toggleTarget() : openStorePurchase()),
 })
 const { doorPrompt } = interactions
 
@@ -301,6 +357,14 @@ const survival = useSurvival({
   pointerLocked,
   selectedItem,
   refreshInventory: () => refreshOwnedItems(),
+  onBelongingsLost: (clothes) => {
+    refreshOwnedItems()
+    if (!clothes) return
+    void clothingStore.refreshOwned()
+    void fetchCharacterCosmetics().then(onWardrobeChanged).catch(() => {
+      /* the look catches up on the next window focus */
+    })
+  },
   teleport: (x, y, z) => {
     Object.assign(myPosition, { x, y, z })
     getCamera()?.position.set(x, y, z)
@@ -315,6 +379,7 @@ const {
   damageFlash,
   knockedOut,
   hospitalBill,
+  lostBelongings,
   message: survivalMessage,
   reducedEffects,
   recovering,
@@ -390,7 +455,7 @@ const canvasFilter = computed(() => {
 function isBuildingDoorOpen(buildingKey: string): boolean {
   const unit = housing.units.value.find((u) => u.model_key === buildingKey)
   if (unit) return housing.isDoorOpen(unit)
-  return findWork(buildingKey) || buildingKey === COVE_HOME.key ? housing.isWorkDoorOpen(buildingKey) : true
+  return findWork(buildingKey) || findStore(buildingKey) ? housing.isWorkDoorOpen(buildingKey) : true
 }
 
 const DOOR_SIGN_REFRESH_MS = 30_000
@@ -413,6 +478,8 @@ const environment = useRoomEnvironment({
     houseFurniture.onTownReady()
     const store = openHouseInterior(COVE_HOME.key)
     if (store) void furnitureStore.attach(store)
+    const threads = openHouseInterior(COVE_THREADS.key)
+    if (threads) void clothingStore.attach(threads)
   },
   onError: (message) => {
     roomMessage.value = message
@@ -437,7 +504,7 @@ function loadTown(): void {
  */
 function useAction(): void {
   if (housing.unlock()) arms?.use('key')
-  else void (interactions.tryInteract() || cafe.tryOpen() || clinic.tryInteract() || survival.onPrimaryDown())
+  else void (interactions.tryInteract() || clothingStore.tryOpenCheckout() || cafe.tryOpen() || clinic.tryInteract() || survival.onPrimaryDown())
 }
 
 /** Interact and punch may be bound to keys or mouse buttons; returns true when `code` was one of them. */
@@ -470,6 +537,7 @@ const pauseMenuOpen = computed(
     !switchingRoom.value &&
     !cafeMenuOpen.value &&
     !clinicMenuOpen.value &&
+    !clothesCheckoutOpen.value &&
     !settingsOpen.value,
 )
 
@@ -530,6 +598,8 @@ const movement = useGameMovement({
     currentHouseKey.value = houseKeyAt(myPosition.x, myPosition.z)
     placement.tick(dt)
     furnitureStore.update()
+    clothingStore.update(dt)
+    threadsMusic.update(dt, inThreads.value)
     interactions.updatePrompts()
     houseKeys.updateKeyPrompt()
     updateFrontDoors(dt, isBuildingDoorOpen)
@@ -539,6 +609,7 @@ const movement = useGameMovement({
     survival.tick(dt)
     stamina.value = punch.staminaNow()
     cafe.updatePrompt()
+    clothingStore.updatePrompt()
     clinic.updatePrompt()
     if (!doorSigns.group.parent) getScene()?.add(doorSigns.group)
   },
@@ -592,7 +663,7 @@ const realtime = useGameRealtime({
     sfx.playOn(`door_${sound}`, node)
     if (sound === 'rattle') rattleFrontDoor(door)
   },
-  onMyBodyModel: (bodyModelGlb) => arms?.setSkin(bodyModelGlb),
+  onMyOutfit: (models) => arms?.setTop(models.top),
   onPunched: punch.onPunched,
   onPunchTired: punch.onTired,
   playSoundOn: sfx.playOn,
@@ -646,10 +717,11 @@ async function bootGame() {
     return
   }
   const cosmetics = await loadCosmeticsState()
+  myCosmetics.value = cosmetics
   if (unmounted || !canvasRef.value) return
   game = createGameScene(canvasRef.value, movement.containerSize())
   arms = createFirstPersonArms(game.fpHands)
-  arms.setSkin(bodyModelGlbFromLoadout(cosmetics.slots))
+  arms.setTop(wearModelsFromLoadout(cosmetics.slots).top)
   loadTown()
   await realtime.connectRealtime(cosmetics)
   try {
@@ -700,6 +772,7 @@ onUnmounted(() => {
   window.clearInterval(doorSignTimer)
   doorSigns.dispose()
   arms?.dispose()
+  threadsMusic.dispose()
   sfx.dispose()
   environment.disposeRoomEnvironment()
   if (game) disposeGameScene(game)
@@ -737,6 +810,7 @@ const crosshairClass = computed(() => {
       :damage-flash="damageFlash"
       :knocked-out="knockedOut"
       :hospital-bill="hospitalBill"
+      :lost-belongings="lostBelongings"
       :message="survivalMessage"
       :recovering="recovering"
       :reduced-effects="reducedEffects"
@@ -772,6 +846,13 @@ const crosshairClass = computed(() => {
       :key-label="survivalPrompt.key"
       :action-label="survivalPrompt.action"
       :detail-label="survivalPrompt.detail"
+    />
+    <GameInteractionPrompt
+      v-if="clothesCounterPrompt && !doorPrompt"
+      :screen-x="clothesCounterPrompt.x"
+      :screen-y="clothesCounterPrompt.y"
+      :action-label="clothesCounterPrompt.action"
+      :detail-label="clothesCounterPrompt.detail"
     />
     <GameInteractionPrompt
       v-if="cafePrompt && !doorPrompt"
@@ -850,7 +931,16 @@ const crosshairClass = computed(() => {
       @slot-drag-end="onSlotDragEnd"
       @clear-slot="clearSlot"
       @pickup-placed-object="(id: string) => { onPlacedObjectSelected(id); pickupSelectedPlacedObject() }"
-    />
+    >
+      <GameWardrobe
+        ref="wardrobeRef"
+        :slots="slots"
+        :item-by-code="itemByCode"
+        :held-code="cursorItem?.code ?? draggingCode"
+        :cursor-from-slot="cursorItem?.fromSlot ?? null"
+        @outfit="onOutfit"
+      />
+    </GamePlayerInventoryPanel>
     <GamePointerLockOverlay
       v-show="pauseMenuOpen && !pauseDismissed"
       @request-pointer-lock="requestPointerLock"
@@ -879,6 +969,30 @@ const crosshairClass = computed(() => {
     >
       {{ placementHelp }}
     </p>
+    <div
+      v-if="inThreads && !inventoryOpen"
+      class="cc-hud pointer-events-none absolute left-1/2 top-3 z-10 -translate-x-1/2 px-4 py-1.5 font-display text-xs uppercase tracking-[0.2em] text-fog"
+    >
+      <span class="text-sun">Cove Threads</span> · Basket {{ clothesBasket.length }} · {{ clothesBasketTotal }} coins
+    </div>
+    <p
+      v-if="inThreads && clothesFeedback && !inventoryOpen && !clothesCheckoutOpen"
+      class="cc-hud pointer-events-none absolute bottom-24 right-3 z-20 max-w-xs px-3 py-2 text-xs font-bold"
+      :class="clothesFeedback.kind === 'success' ? 'text-mint' : 'text-coral'"
+    >
+      {{ clothesFeedback.text }}
+    </p>
+    <GameBasketCheckout
+      v-if="clothesCheckoutOpen"
+      title="Cove Threads"
+      :items="clothesBasket"
+      :total="clothesBasketTotal"
+      :paying="clothesPaying"
+      :feedback="clothesFeedback"
+      @pay="clothingStore.pay"
+      @remove="clothingStore.removeFromBasket"
+      @close="clothingStore.closeCheckout"
+    />
     <GameCafeMenu
       v-if="cafeMenuOpen"
       title="Campus Cafe"

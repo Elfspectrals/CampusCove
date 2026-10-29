@@ -5,7 +5,9 @@ import {
   type CosmeticColors,
 } from '../../api/characterCosmetics'
 import { buildCompositeAvatar, disposeObject3D } from '../../avatar/compositeAvatar'
-import { createTintedCharacterFromUrl, updateAvatarAnimation } from '../../avatar/glbCharacter'
+import { updateAvatarAnimation } from '../../avatar/glbCharacter'
+import { createModularCharacter } from '../../avatar/modularCharacter'
+import { WEAR_SLOTS, wearSignature, type WearModels } from '../../avatar/modularCharacterLogic'
 import { createActionBubble, type AvatarAction } from '../../game/actionBubble'
 import { EYE_HEIGHT } from '../../game/gameRoomConstants'
 import {
@@ -42,8 +44,7 @@ interface RemoteAvatar {
   z: number
   ry: number
   color: number
-  bodyTintColors: CosmeticColors
-  bodyModelGlb: string | null
+  outfit: string
   punchPose: PunchPose
   punchOffsetX: number
   punchOffsetZ: number
@@ -53,7 +54,7 @@ interface RemoteAvatar {
 
 interface AppearanceUpdate {
   slotHexes?: Record<string, string>
-  bodyModelGlb?: string | null
+  slotModels?: Record<string, string | null>
 }
 
 export interface RemoteAvatarsDeps {
@@ -62,16 +63,22 @@ export interface RemoteAvatarsDeps {
   playSoundOn: (name: SfxName, object: THREE.Object3D, delayS: number) => void
 }
 
-function parseBodyTintColors(raw: Record<string, string> | null | undefined): CosmeticColors {
-  const bodyHex =
-    raw && typeof raw.body === 'string' && /^#[0-9A-Fa-f]{6}$/.test(raw.body) ? raw.body : DEFAULT_SLOT_COLORS.body
+function parseSlotHexes(raw: Record<string, string> | null | undefined): CosmeticColors {
   const out = { ...DEFAULT_SLOT_COLORS }
-  for (const s of SLOTS) out[s] = bodyHex
+  for (const s of SLOTS) {
+    const hex = raw?.[s]
+    if (typeof hex === 'string' && /^#[0-9A-Fa-f]{6}$/.test(hex)) out[s] = hex
+  }
   return out
 }
 
-function parseBodyModelGlb(raw: unknown): string | null {
-  return typeof raw === 'string' && raw.trim().length > 0 ? raw.trim() : null
+function parseSlotModels(raw: Record<string, string | null> | null | undefined): WearModels {
+  const out = {} as WearModels
+  for (const s of WEAR_SLOTS) {
+    const url = raw?.[s]
+    out[s] = typeof url === 'string' && url.length > 0 ? url : null
+  }
+  return out
 }
 
 function parseYaw(raw: unknown): number {
@@ -153,9 +160,13 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     }
   }
 
-  async function loadModel(bodyModelGlb: string | null, tint: CosmeticColors, fallbackColor: number) {
-    const glb = await createTintedCharacterFromUrl(bodyModelGlb, tint)
-    return glb ?? buildCompositeAvatar(null, fallbackColor)
+  async function loadModel(models: WearModels, colors: CosmeticColors, fallbackColor: number) {
+    try {
+      return await createModularCharacter(models, colors, DEFAULT_SLOT_COLORS)
+    } catch (err) {
+      console.error('[avatars] outfit failed to load, showing the placeholder avatar', models, err)
+      return buildCompositeAvatar(null, fallbackColor)
+    }
   }
 
   async function upsert(sessionId: string, data: RemoteUserPayload) {
@@ -179,9 +190,9 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
       pendingAppearance.delete(sessionId)
     }
 
-    const bodyTintColors = parseBodyTintColors(data.slotHexes)
-    const bodyModelGlb = parseBodyModelGlb(data.bodyModelGlb)
-    const group = await loadModel(bodyModelGlb, bodyTintColors, data.color)
+    const colors = parseSlotHexes(data.slotHexes)
+    const models = parseSlotModels(data.slotModels)
+    const group = await loadModel(models, colors, data.color)
     if (upsertTokenByUserId.get(data.id) !== token || renderTokenBySessionId.get(sessionId) !== renderToken) {
       disposeObject3D(group)
       return
@@ -204,8 +215,7 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
       z: data.z,
       ry,
       color: data.color,
-      bodyTintColors,
-      bodyModelGlb,
+      outfit: wearSignature(models, colors),
       punchPose: idlePunchPose(),
       punchOffsetX: 0,
       punchOffsetZ: 0,
@@ -221,7 +231,7 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     }
   }
 
-  /** Rebuild the avatar model when the player changed skin or tint. */
+  /** Rebuild the avatar model when the player changed outfit or tint. */
   async function updateAppearance(sessionId: string, update: AppearanceUpdate) {
     const scene = deps.getScene()
     if (!scene) return
@@ -230,14 +240,14 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
       pendingAppearance.set(sessionId, update)
       return
     }
-    const bodyTintColors = parseBodyTintColors(update.slotHexes)
-    const bodyModelGlb = parseBodyModelGlb(update.bodyModelGlb)
-    if (bodyModelGlb === entry.bodyModelGlb && bodyTintColors.body === entry.bodyTintColors.body) return
+    const colors = parseSlotHexes(update.slotHexes)
+    const models = parseSlotModels(update.slotModels)
+    const outfit = wearSignature(models, colors)
+    if (outfit === entry.outfit) return
 
     const renderToken = nextRenderToken(sessionId)
-    const loaded = await createTintedCharacterFromUrl(bodyModelGlb, bodyTintColors)
+    const group = await loadModel(models, colors, entry.color)
     const latest = avatars.get(sessionId)
-    const group = loaded ?? buildCompositeAvatar(null, (latest ?? entry).color)
     if (!latest || renderTokenBySessionId.get(sessionId) !== renderToken) {
       disposeObject3D(group)
       return
@@ -250,7 +260,7 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     disposeObject3D(latest.group)
     placeAvatar(group, latest.x, latest.y, latest.z, latest.ry)
     scene.add(group)
-    avatars.set(sessionId, { ...latest, group, bodyTintColors, bodyModelGlb, punchOffsetX: 0, punchOffsetZ: 0 })
+    avatars.set(sessionId, { ...latest, group, outfit, punchOffsetX: 0, punchOffsetZ: 0 })
   }
 
   /** New network position; the avatar glides there in `tick`. */

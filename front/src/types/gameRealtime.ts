@@ -10,6 +10,7 @@ export interface RemoteUserPayload {
   ry?: number
   slotHexes?: Record<string, string>
   bodyModelGlb?: string | null
+  slotModels?: Record<string, string | null>
 }
 
 /** Another player ate or drank (socket/src/survival.ts); `code` is the food item, null for a fountain sip. */
@@ -100,4 +101,6 @@ export interface ApartmentInventoryItem {
   /** Food / drinks: bites per item and bites left on the item being eaten (4/4 -> 3/4 ...). */
   portions?: number | null
   portions_left?: number | null
+  /** Clothes: the wear slot (hair, top, ...); unworn clothes live in the backpack. */
+  cosmetic_slot?: string | null
 }

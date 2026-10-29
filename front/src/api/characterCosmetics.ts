@@ -1,14 +1,12 @@
 /**
  * Character cosmetic loadout (Laravel `GET/PUT /api/character/cosmetics`, `auth:sanctum`).
  */
+import { WEAR_SLOTS, type WearModels } from '../avatar/modularCharacterLogic'
 import { apiRequest, isRecord } from './http'
 
 export type CosmeticSlot = 'body' | 'hair' | 'top' | 'bottom' | 'shoes' | 'head_accessory'
 
 export const SLOTS: CosmeticSlot[] = ['body', 'hair', 'top', 'bottom', 'shoes', 'head_accessory']
-
-/** Same order as API; used for blending / UI lists. */
-export const SLOT_ORDER: CosmeticSlot[] = [...SLOTS]
 
 interface EquippedCosmetic {
   item_def_id: number
@@ -116,6 +114,15 @@ export function appearanceIdsFromLoadout(slots: CosmeticLoadout): Record<Cosmeti
 export function bodyModelGlbFromLoadout(slots: CosmeticLoadout): string | null {
   const value = slots.body?.model_glb
   return typeof value === 'string' && value.length > 0 ? value : null
+}
+
+export function wearModelsFromLoadout(slots: CosmeticLoadout): WearModels {
+  const out = {} as WearModels
+  for (const slot of WEAR_SLOTS) {
+    const value = slots[slot]?.model_glb
+    out[slot] = typeof value === 'string' && value.length > 0 ? value : null
+  }
+  return out
 }
 
 export async function fetchCharacterCosmetics(): Promise<CharacterCosmeticsState> {
