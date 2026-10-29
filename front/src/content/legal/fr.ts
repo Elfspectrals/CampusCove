@@ -146,7 +146,7 @@ export const legalFr: LegalDocs = {
           'campus_cove_wallet_balances — cache de vos soldes pour l’affichage — jusqu’à la déconnexion.',
           'cc_locale — langue choisie — jusqu’à suppression.',
           'cc_consent — vos choix en matière de traceurs — 6 mois.',
-          'cc_graphics_quality, cc.reducedEffects — réglages graphiques et d’accessibilité du jeu — jusqu’à suppression.',
+          'cc_graphics_quality, cc.reducedEffects, cc.comfort — réglages graphiques et d’accessibilité du jeu — jusqu’à suppression.',
           'cc_keybindings — tes touches personnalisées (Paramètres) — jusqu’à suppression ou remise par défaut.',
           'campus_cove_admin_mode, cc.admin.worldPlanner.v1 — outils d’administration (comptes administrateurs uniquement).',
         ],

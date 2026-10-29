@@ -8,7 +8,8 @@ const eye = { x: 0, y: 1.6, z: 0 }
 test('aiming at the nurse needs reach and the crosshair on her', () => {
   assert.equal(isAimingAtNurse(eye, { x: 0, y: 0, z: -1 }, nurse), true)
   assert.equal(isAimingAtNurse(eye, { x: 1, y: 0, z: 0 }, nurse), false)
-  assert.equal(isAimingAtNurse({ x: 0, y: 1.6, z: 3 }, { x: 0, y: 0, z: -1 }, nurse), false)
+  assert.equal(isAimingAtNurse({ x: 0, y: 1.6, z: 1.2 }, { x: 0, y: 0, z: -1 }, nurse), true)
+  assert.equal(isAimingAtNurse({ x: 0, y: 1.6, z: 2 }, { x: 0, y: 0, z: -1 }, nurse), false)
   assert.equal(isAimingAtNurse({ x: 0, y: 5, z: 0 }, { x: 0, y: -1, z: -1 }, nurse), false)
 })
 

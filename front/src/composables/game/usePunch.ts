@@ -5,7 +5,7 @@ import { EYE_HEIGHT } from '../../game/gameRoomConstants'
 import { PUNCH_COOLDOWN_MS, PUNCH_IMPACT_S, pickPunchTarget, type PunchCandidate } from '../../game/punch'
 import { HIT_STOP_S, VICTIM_HIT_STOP_S, confirmsFromServer, remoteHitTiming, untilImpactS } from '../../game/punchFeel'
 import type { SfxName } from '../../game/sfx'
-import { FULL_STAMINA, snapStamina, spendPunchStamina, staminaAt, type StaminaState } from '../../game/stamina'
+import { FULL_STAMINA, justRanOut, snapStamina, spendJumpStamina, spendPunchStamina, spendSprintStamina, staminaAt, type StaminaState } from '../../game/stamina'
 import type { PunchTiredPayload, UserPunchedPayload } from '../../types/gameRealtime'
 
 const ATTACKER_SHAKE = 0.45
@@ -14,7 +14,8 @@ const VICTIM_SHAKE = 0.6
 const VICTIM_JOLT = 1
 const KNOCKBACK_DISTANCE = 0.6
 const TIRED_SHAKE = 0.25
-const BREATH_COOLDOWN_MS = 700
+/** The breathing clip lasts ~0.7 s: never two on top of each other, nor one right after another. */
+const BREATH_COOLDOWN_MS = 1200
 
 export type HitMarkerKind = 'hit' | 'whiff'
 
@@ -49,7 +50,7 @@ export function usePunch(deps: PunchDeps) {
   let markerId = 0
   const hitMarker = ref<{ kind: HitMarkerKind; id: number } | null>(null)
   let staminaState: StaminaState = FULL_STAMINA
-  let lastBreathAt = 0
+  let lastBreathAt = -Infinity
 
   function candidates(): PunchCandidate[] {
     const scene = deps.getScene()
@@ -75,13 +76,10 @@ export function usePunch(deps: PunchDeps) {
     const spent = spendPunchStamina(staminaState, now, targetSessionId !== null)
     if (!spent) {
       if (!deps.reducedEffects.value) deps.shakeCamera(TIRED_SHAKE)
-      if (now - lastBreathAt >= BREATH_COOLDOWN_MS) {
-        lastBreathAt = now
-        deps.playSound('breath')
-      }
+      tired()
       return true
     }
-    staminaState = spent
+    spend(spent)
     lastPunchAt = now
     deps.getArms()?.punch()
     deps.playSound('whoosh')
@@ -156,5 +154,44 @@ export function usePunch(deps: PunchDeps) {
     return staminaAt(staminaState, Date.now())
   }
 
-  return { tryPunch, onPunched, onTired, syncStamina, staminaNow, remoteHitTimingFor, hitMarker }
+  function outOfBreath(): void {
+    const now = Date.now()
+    if (now - lastBreathAt < BREATH_COOLDOWN_MS) return
+    lastBreathAt = now
+    deps.playSound('out_of_breath')
+  }
+
+  /** Apply a spend; emptying the bar makes the player breathe hard. */
+  function spend(next: StaminaState): void {
+    const before = staminaAt(staminaState, next.spentAt)
+    staminaState = next
+    if (justRanOut(before, next.stamina)) outOfBreath()
+  }
+
+  /** An action refused for lack of stamina. */
+  function tired(): void {
+    outOfBreath()
+  }
+
+  /** Space: pays the jump from the same bar as punches; out of breath otherwise. */
+  function trySpendJump(): boolean {
+    const spent = spendJumpStamina(staminaState, Date.now())
+    if (!spent) {
+      tired()
+      return false
+    }
+    spend(spent)
+    deps.gameRoomRef.value?.send('jump')
+    return true
+  }
+
+  /** One frame of Shift held while moving; false = too tired, walk instead. */
+  function trySpendSprint(dt: number, wasSprinting: boolean): boolean {
+    const spent = spendSprintStamina(staminaState, Date.now(), dt, wasSprinting)
+    if (!spent) return false
+    spend(spent)
+    return true
+  }
+
+  return { tryPunch, onPunched, onTired, syncStamina, staminaNow, trySpendJump, trySpendSprint, remoteHitTimingFor, hitMarker }
 }

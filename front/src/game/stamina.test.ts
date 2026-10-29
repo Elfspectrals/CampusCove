@@ -2,12 +2,16 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import {
   FULL_STAMINA,
+  JUMP_STAMINA_COST,
   MAX_STAMINA,
   PUNCH_STAMINA_COST,
   STAMINA_REGEN_DELAY_MS,
   isTired,
+  justRanOut,
   snapStamina,
+  spendJumpStamina,
   spendPunchStamina,
+  spendSprintStamina,
   staminaAt,
 } from './stamina.ts'
 
@@ -43,4 +47,25 @@ test('a miss empties a full gauge in three punches', () => {
   let state = FULL_STAMINA
   for (let i = 1; i <= 3; i++) state = spendPunchStamina(state, 10_000 + i * 100, false) ?? state
   assert.equal(state.stamina, 0)
+})
+
+test('a jump costs stamina and is refused when the bar is too low', () => {
+  const spent = spendJumpStamina(FULL_STAMINA, 1000)
+  assert.deepEqual(spent, { stamina: MAX_STAMINA - JUMP_STAMINA_COST, spentAt: 1000 })
+  assert.equal(spendJumpStamina({ stamina: JUMP_STAMINA_COST - 1, spentAt: 1000 }, 1000), null)
+})
+
+test('sprinting drains per second and keeps going down to 0 once started', () => {
+  const spent = spendSprintStamina(FULL_STAMINA, 1000, 1, false)
+  assert.deepEqual(spent, { stamina: 82, spentAt: 1000 })
+  assert.equal(spendSprintStamina({ stamina: 5, spentAt: 1000 }, 1000, 0.1, false), null)
+  assert.deepEqual(spendSprintStamina({ stamina: 1, spentAt: 1000 }, 1000, 0.1, true), { stamina: 0, spentAt: 1000 })
+  assert.equal(spendSprintStamina({ stamina: 0, spentAt: 1000 }, 1000, 0.1, true), null)
+})
+
+test('running out is only reported on the spend that empties the bar', () => {
+  assert.equal(justRanOut(30, 0), true)
+  assert.equal(justRanOut(12, 4), true)
+  assert.equal(justRanOut(40, 20), false)
+  assert.equal(justRanOut(3, 0), false)
 })

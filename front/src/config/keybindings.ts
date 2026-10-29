@@ -11,6 +11,7 @@ const BINDABLE_ACTIONS = [
   'moveBack',
   'moveLeft',
   'moveRight',
+  'jump',
   'interact',
   'punch',
   'inventory',
@@ -40,6 +41,8 @@ const DEFAULT_BINDINGS: Readonly<Record<BindableAction, readonly string[]>> = {
   moveBack: ['KeyS'],
   moveLeft: ['KeyA', 'KeyQ'],
   moveRight: ['KeyD'],
+  /** Costs stamina. Sprint is Shift (held), not bindable since Shift is reserved. */
+  jump: ['Space'],
   /** Use, like Minecraft: doors (lock / unlock with the key in hand), shops, cafe, clinic, then eat / drink what is held. */
   interact: ['MouseRight', 'KeyG'],
   /** Attack, like Minecraft. */
@@ -67,7 +70,7 @@ const DEFAULT_BINDINGS: Readonly<Record<BindableAction, readonly string[]>> = {
   hotbar9: ['Digit9'],
 }
 
-/** Never bindable: Escape pauses the game and frees the mouse, Shift is the "reverse" modifier of rotate. */
+/** Never bindable: Escape pauses the game and frees the mouse, Shift is sprint and the "reverse" modifier of rotate. */
 export const RESERVED_KEYS: readonly string[] = ['Escape', 'ShiftLeft', 'ShiftRight']
 
 /** The only actions a mouse button can be bound to (the others are read from the keyboard). */

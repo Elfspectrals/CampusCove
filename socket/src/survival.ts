@@ -30,7 +30,8 @@ const SAVE_EVERY_MS = 60_000
 const KNOCKOUT_MS = 6000
 const RECOVERY_MS = 5000
 const CLINIC_HEAL_COOLDOWN_MS = 2000
-const NURSE_REACH = 2.5
+/** Must match front/src/game/clinic.ts (plus a little lag margin). */
+const NURSE_REACH = 4
 const NURSE_HEIGHT_REACH = 1.5
 // A bite takes the front's eating animation (~1 s).
 const CONSUME_COOLDOWN_MS = 900
@@ -61,7 +62,7 @@ function sendStats(client: GameClient, player: Player): void {
     thirst,
     speedBoostUntil: player.speedBoostUntil,
     healUntil: player.healOverTime?.until ?? null,
-    stamina: staminaAt(player.stamina, player.lastPunchAt, Date.now())
+    stamina: staminaAt(player.stamina, player.staminaSpentAt, Date.now())
   })
 }
 

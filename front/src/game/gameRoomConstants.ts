@@ -4,6 +4,10 @@
  */
 export const EYE_HEIGHT = 1.6
 
+/** Ground speeds in m/s. Must match MAX_WALK_SPEED / MAX_SPRINT_SPEED in socket/src/movement.ts (minus their margin). */
+export const WALK_SPEED = 5
+export const SPRINT_SPEED = 8.5
+
 /**
  * /game town spawn — on the plaza, facing the town hall (assets/town/town.layout.json "spawn").
  * Must match socket CITY_SPAWN / CITY_APARTMENT_EXIT.

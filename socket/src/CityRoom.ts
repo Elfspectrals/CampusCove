@@ -14,7 +14,7 @@ import {
   lockChanges,
   workDoorId
 } from './doors.ts'
-import { moveRejection } from './movement.ts'
+import { moveRejection, onJump, spendSprintStamina } from './movement.ts'
 import { onPunch } from './punch.ts'
 import {
   createPlayer,
@@ -78,6 +78,7 @@ export class CityRoom extends Room implements GameRoom {
     this.onMessage('drink_fountain', (client) => onDrinkFountain(this, client))
     this.onMessage('cook', (client, payload: ClientPayload) => void onCook(this, client, payload))
     this.onMessage('clinic_heal', (client) => void onClinicHeal(this, client))
+    this.onMessage('jump', (client) => onJump(this.players.get(client.sessionId), Date.now()))
     this.onMessage('punch', (client, payload: ClientPayload) => onPunch(this, client, payload))
     this.clock.setInterval(() => void this.pollHousingUnits(), HOUSING_POLL_MS)
     this.clock.setInterval(() => tickSurvival(this, SURVIVAL_TICK_MS / 1000), SURVIVAL_TICK_MS)
@@ -155,7 +156,8 @@ export class CityRoom extends Room implements GameRoom {
     const x = normalizeNumber(payload.x, player.x)
     const z = normalizeNumber(payload.z, player.z)
     const now = Date.now()
-    if (moveRejection(this, player, x, z, now) !== null) {
+    const sprinting = payload.sprint === true
+    if (moveRejection(this, player, x, z, now, sprinting) !== null) {
       client.send('position_correction', { x: player.x, y: player.y, z: player.z })
       return
     }
@@ -165,6 +167,7 @@ export class CityRoom extends Room implements GameRoom {
     player.y = normalizeNumber(payload.y, player.y)
     player.z = z
     player.ry = normalizeNumber(payload.ry, player.ry)
+    if (sprinting && distXZ > 0) spendSprintStamina(player, now - player.lastMoveAt, now)
     player.lastMoveAt = now
     this.broadcastMove(client, player)
     onSurvivalMove(this, client, player, previousY, distXZ)
