@@ -15,8 +15,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        // `artisan serve` (Docker dev) only forwards a few env vars to its PHP workers; docker-compose sets this one.
+        // `artisan serve` (Docker dev) only forwards a few env vars to its PHP workers; docker-compose sets these.
         ServeCommand::$passthroughVariables[] = 'REALTIME_SHARED_SECRET';
+        ServeCommand::$passthroughVariables[] = 'REALTIME_INTERNAL_URL';
     }
 
     /**

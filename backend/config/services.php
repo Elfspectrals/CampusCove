@@ -28,9 +28,11 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
-    // Shared with the Colyseus server (socket/): guards the routes only it may call (survival stats).
+    // Shared with the Colyseus server (socket/): guards the routes only it may call (survival stats), and the
+    // socket's own /internal routes the API calls when an admin changes housing.
     'realtime' => [
         'secret' => env('REALTIME_SHARED_SECRET', ''),
+        'url' => env('REALTIME_INTERNAL_URL', ''),
     ],
 
     'slack' => [

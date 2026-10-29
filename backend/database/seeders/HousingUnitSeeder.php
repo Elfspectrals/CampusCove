@@ -51,7 +51,6 @@ class HousingUnitSeeder extends Seeder
             $unit = HousingUnit::query()->firstOrNew(['model_key' => $key]);
             $unit->fill([
                 'offer_type' => $offer,
-                'price_coins' => $price,
                 'rent_duration_hours' => 168,
                 'pos_x' => $x,
                 'pos_y' => $y,
@@ -60,8 +59,10 @@ class HousingUnitSeeder extends Seeder
                 'base_color_hex' => $color,
                 'interior_bounds' => self::INTERIOR_BOUNDS[$key],
             ]);
+            // Runs at every docker boot: the price is only seeded once, then admins own it (/admin/housing).
             if (! $unit->exists) {
                 $unit->status = 'vacant';
+                $unit->price_coins = $price;
             }
             $unit->save();
         }

@@ -78,8 +78,13 @@ final class HousingService
         return $seized;
     }
 
+    /** Daily property tax: the admin-set amount, else a share of the purchase price. */
     public function taxFor(HousingUnit $unit): int
     {
+        if ($unit->tax_coins !== null) {
+            return (int) $unit->tax_coins;
+        }
+
         return (int) ceil($unit->price_coins * self::TAX_RATE);
     }
 
@@ -175,18 +180,27 @@ final class HousingService
     public function takeKeys(Account $owner, int $targetAccountId): HousingUnit
     {
         $unit = $this->ownedUnitForKeys($owner, $targetAccountId);
-        DB::transaction(function () use ($unit, $targetAccountId): void {
-            $removed = RoomMembership::query()
-                ->where('room_id', (int) $unit->room_id)
-                ->where('account_id', $targetAccountId)
-                ->where('role', 'co_owner')
-                ->delete();
-            if ($removed > 0) {
-                $this->inventoryService->revokeItem($targetAccountId, $this->houseKey(), 1);
-            }
-        });
+        DB::transaction(fn () => $this->revokeKeyHolder($unit, $targetAccountId));
 
         return $unit->fresh(['room']);
+    }
+
+    /** Removes a key holder and takes their key back; false when they did not hold this house's keys. */
+    public function revokeKeyHolder(HousingUnit $unit, int $targetAccountId): bool
+    {
+        if ($unit->room_id === null) {
+            return false;
+        }
+        $removed = RoomMembership::query()
+            ->where('room_id', (int) $unit->room_id)
+            ->where('account_id', $targetAccountId)
+            ->where('role', 'co_owner')
+            ->delete();
+        if ($removed > 0) {
+            $this->inventoryService->revokeItem($targetAccountId, $this->houseKey(), 1);
+        }
+
+        return $removed > 0;
     }
 
     public function setDoorLocked(Account $account, string $unitPublicId, bool $locked): HousingUnit

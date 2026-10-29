@@ -230,6 +230,13 @@ export class CityRoom extends Room implements GameRoom {
     }
   }
 
+  // The API changed housing outside the game (admin page): reload units and furniture now (src/internal.ts).
+  async onHousingChanged(): Promise<void> {
+    await this.pollHousingUnits()
+    const token = [...this.players.values()].find((p) => p.token)?.token
+    if (token) await this.refreshHouseFurniture(token)
+  }
+
   async fetchHouseFurniture(token: string): Promise<void> {
     const data = await callBackendJson(token, '/apartments/houses', 'GET')
     this.houseFurniture = Array.isArray(data?.houses) ? data.houses : []
