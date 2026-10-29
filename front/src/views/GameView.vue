@@ -710,14 +710,14 @@ const crosshairClass = computed(() => {
 </script>
 
 <template>
-  <div ref="containerRef" class="relative flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden">
+  <!-- right click is a game button (use / cancel / clear slot): no browser menu anywhere in the game -->
+  <div ref="containerRef" class="relative flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden" @contextmenu.prevent>
     <canvas
       ref="canvasRef"
       class="block min-h-0 w-full flex-1 cursor-crosshair"
       :style="canvasFilter"
       @click="requestPointerLock"
       @mousedown="onCanvasMouseDown"
-      @contextmenu.prevent
     />
     <div
       class="pointer-events-none absolute left-1/2 top-1/2 z-10 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 transition-colors duration-150"
