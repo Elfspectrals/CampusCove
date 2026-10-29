@@ -42,6 +42,11 @@ front-build: ## Production build of the front
 typecheck: ## Type-check the front (vue-tsc)
 	cd front && npx vue-tsc --noEmit
 
+share-local: ## Public link to the local stack for playtesters (needs make up + cloudflared; Ctrl+C stops)
+	cd front && node scripts/share-local.mjs
+
+sharelocal: share-local ## Alias of share-local
+
 # --- 3D assets ---
 
 assets-optimize: ## Optimize Blender exports (map-src/CampusCove/out) into front/public/assets (+ collision JSON)
@@ -105,7 +110,7 @@ socket-start: ## Run socket locally (port 3000)
 	cd socket && npm start
 
 .PHONY: help up up-build down logs rebuild-socket socket-rebuild \
-	front-install front-dev front-build typecheck \
+	front-install front-dev front-build typecheck share-local sharelocal \
 	assets-optimize store-apply newnation-optimize collision-extract \
 	migrate seed seed-shop seed-housing purge-legacy-housing fix-housing collect-taxes set-admin set-money fill-outfit test \
 	backend-install backend-serve socket-install socket-start
