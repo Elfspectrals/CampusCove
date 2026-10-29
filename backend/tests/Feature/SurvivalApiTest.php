@@ -63,6 +63,7 @@ class SurvivalApiTest extends TestCase
 
         $first = $this->postJson('/api/survival/consume', ['code' => 'food_sandwich'], $headers)->assertOk();
         $first->assertJsonPath('consumed.hunger', 12)
+            ->assertJsonPath('consumed.alcohol', 0)
             ->assertJsonPath('consumed.quantity', 2)
             ->assertJsonPath('consumed.portions', 4)
             ->assertJsonPath('consumed.portions_left', 3);
@@ -235,6 +236,24 @@ class SurvivalApiTest extends TestCase
                 ->assertJsonPath('consumed.effect', $effect)
                 ->assertJsonPath('consumed.quantity', 0);
             $this->assertSame('/assets/items/medical/'.substr($code, 4).'/model.glb', ItemDef::query()->where('code', $code)->value('model_glb'));
+        }
+    }
+
+    public function test_drinking_alcohol_reports_it_per_portion(): void
+    {
+        $player = $this->registerAndCreditWallet(100, 'coins');
+        $headers = $this->auth($player['token'], self::SECRET);
+        $expected = ['drink_stout' => [8, 8, 3], 'drink_lager' => [7, 8, 3], 'drink_red_wine' => [10, 4, 2], 'drink_whisky' => [25, 0, 1], 'drink_vodka' => [25, 0, 1]];
+
+        foreach ($expected as $code => [$alcohol, $thirst, $portions]) {
+            $this->grant($player['account_id'], $code, 1);
+            $this->postJson('/api/survival/consume', ['code' => $code], $headers)
+                ->assertOk()
+                ->assertJsonPath('consumed.alcohol', $alcohol)
+                ->assertJsonPath('consumed.thirst', $thirst)
+                ->assertJsonPath('consumed.hunger', 0)
+                ->assertJsonPath('consumed.portions', $portions);
+            $this->assertSame('/assets/items/drinks/'.substr($code, 6).'/model.glb', ItemDef::query()->where('code', $code)->value('model_glb'));
         }
     }
 

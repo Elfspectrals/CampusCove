@@ -14,6 +14,7 @@ use App\Http\Controllers\HousingController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\PlayerInventoryLayoutController;
 use App\Http\Controllers\PlayerReportController;
+use App\Http\Controllers\PubController;
 use App\Http\Controllers\ReferralController;
 use App\Http\Controllers\ShopController;
 use App\Http\Controllers\SurvivalController;
@@ -66,6 +67,10 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
         Route::post('/survival/cook', [SurvivalController::class, 'cook']);
         Route::post('/survival/hospital', [SurvivalController::class, 'hospital']);
         Route::post('/survival/clinic-heal', [SurvivalController::class, 'clinicHeal']);
+        Route::post('/survival/hangover', [SurvivalController::class, 'hangover']);
+        Route::post('/pub/order', [PubController::class, 'order']);
+        Route::post('/pub/play', [PubController::class, 'play']);
+        Route::post('/pub/reward', [PubController::class, 'reward']);
         Route::post('/trades/execute', [TradeController::class, 'execute']);
     });
     Route::get('/trades/offerable', [TradeController::class, 'offerable']);
