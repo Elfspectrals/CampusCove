@@ -7,6 +7,7 @@ use App\Http\Resources\ShopCatalogItemResource;
 use App\Http\Resources\ShopPurchaseResource;
 use App\Models\Account;
 use App\Models\ShopCatalogItem;
+use App\Services\ShopPurchaseResult;
 use App\Services\ShopPurchaseService;
 use App\Services\ReferralService;
 use Illuminate\Http\JsonResponse;
@@ -90,6 +91,35 @@ class ShopController extends Controller
                 (new ShopPurchaseResource($purchase))->toArray($request),
                 ['balance_after' => $result->balanceAfter]
             ),
+        ]);
+    }
+
+    public function checkout(Request $request, ShopPurchaseService $shopPurchaseService, ReferralService $referrals): JsonResponse
+    {
+        $validated = $request->validate([
+            'items' => 'present|array',
+            'items.*.shop_catalog_item_id' => 'required|integer|min:1',
+            'currency' => 'required|string|in:coins',
+        ]);
+
+        /** @var Account $account */
+        $account = $request->user();
+
+        $results = $shopPurchaseService->checkoutWithCoins(
+            $account,
+            array_map(fn (array $line): int => (int) $line['shop_catalog_item_id'], $validated['items'])
+        );
+
+        $referrals->checkQualification((int) $account->getAuthIdentifier());
+
+        $purchases = array_map(fn (ShopPurchaseResult $result): array => array_merge(
+            (new ShopPurchaseResource($result->purchase))->toArray($request),
+            ['balance_after' => $result->balanceAfter]
+        ), $results);
+
+        return response()->json([
+            'purchases' => $purchases,
+            'balance_after' => $results[array_key_last($results)]->balanceAfter,
         ]);
     }
 }

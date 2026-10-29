@@ -23,6 +23,8 @@ final class AccountCosmeticService
         'head_accessory' => '#7A6B94',
     ];
 
+    private const NO_HEAD_ACCESSORY_CODE = 'COS_WEAR_HEAD_EMPTY';
+
     /**
      * @return array<string, string>
      */
@@ -222,6 +224,16 @@ final class AccountCosmeticService
                     throw new InvalidArgumentException('not_owned');
                 }
 
+                if ($slot === 'head_accessory' && $def->code !== self::NO_HEAD_ACCESSORY_CODE) {
+                    if (($slots['hair'] ?? null) !== null) {
+                        throw new InvalidArgumentException('hair_headset_exclusive');
+                    }
+                    $this->unequipSlot($accountId, 'hair');
+                }
+                if ($slot === 'hair' && ! array_key_exists('head_accessory', $slots)) {
+                    $this->unequipSlot($accountId, 'head_accessory');
+                }
+
                 DB::table('account_cosmetic_equipment')->updateOrInsert(
                     ['account_id' => $accountId, 'slot' => $slot],
                     ['item_def_id' => $value, 'updated_at' => now()]
@@ -261,6 +273,14 @@ final class AccountCosmeticService
         }
 
         return $this->setLoadout($accountId, $slots);
+    }
+
+    private function unequipSlot(int $accountId, string $slot): void
+    {
+        DB::table('account_cosmetic_equipment')
+            ->where('account_id', $accountId)
+            ->where('slot', $slot)
+            ->delete();
     }
 
     private function accountOwnsItemDef(int $accountId, int $itemDefId): bool

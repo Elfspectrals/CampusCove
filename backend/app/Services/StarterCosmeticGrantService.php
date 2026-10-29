@@ -14,7 +14,7 @@ final class StarterCosmeticGrantService
 
     /** @var array<string, string> */
     private const FREE_BODY_MODEL_BY_CODE = [
-        'COS_WEAR_BODY_DEFAULT' => '/assets/skins/campus_classic/model.glb',
+        'COS_WEAR_BODY_DEFAULT' => '/assets/wear/base/model.glb',
     ];
 
     /**
