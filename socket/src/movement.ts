@@ -1,8 +1,8 @@
 import { canUseDoor } from './doors.ts'
 import { drainStamina, JUMP_STAMINA_COST, SPRINT_STAMINA_PER_S } from './stamina.ts'
 import { SPEED_BOOST_FACTOR } from './survivalStats.ts'
-import type { GameRoom, HousingUnit, Player } from './types.ts'
-import { type WorldHouse, worldBounds, worldHouse } from './world.ts'
+import type { Bounds, GameRoom, HousingUnit, Player } from './types.ts'
+import { type WorldHouse, worldBounds, worldHouse, worldPub } from './world.ts'
 
 /** Must match WALK_SPEED / SPRINT_SPEED in front/src/game/gameRoomConstants.ts, plus a 25% margin. */
 const MAX_WALK_SPEED = 5 * 1.25
@@ -10,7 +10,7 @@ const MAX_SPRINT_SPEED = 8.5 * 1.25
 const MAX_MOVE_BUDGET_SECONDS = 1
 const MOVE_MARGIN = 1.5
 
-export type MoveRejection = 'out_of_world' | 'knocked_out' | 'too_fast' | 'locked_in' | 'locked_house'
+export type MoveRejection = 'out_of_world' | 'knocked_out' | 'too_fast' | 'locked_in' | 'locked_house' | 'secret_room_closed'
 
 export function toInterior(house: WorldHouse, x: number, z: number): { x: number, z: number } {
   const dx = x - house.position.x
@@ -34,6 +34,16 @@ export function unitAt(units: HousingUnit[], x: number, z: number): HousingUnit 
   return null
 }
 
+function inBounds(bounds: Bounds, x: number, z: number): boolean {
+  return x >= bounds.minX && x <= bounds.maxX && z >= bounds.minZ && z <= bounds.maxZ
+}
+
+function entersClosedSecretRoom(player: Player, x: number, z: number, now: number): boolean {
+  const room = worldPub()?.secretRoom
+  if (!room || now <= player.pubSecretUntil) return false
+  return inBounds(room, x, z) && !inBounds(room, player.x, player.z)
+}
+
 function isLockedFor(room: GameRoom, unit: HousingUnit, player: Player): boolean {
   return unit.door_locked && !room.openDoors.has(unit.public_id) && !canUseDoor(unit, player.accountId)
 }
@@ -46,6 +56,7 @@ export function moveRejection(room: GameRoom, player: Player, x: number, z: numb
   const baseSpeed = sprinting ? MAX_SPRINT_SPEED : MAX_WALK_SPEED
   const maxSpeed = now < player.speedBoostUntil ? baseSpeed * SPEED_BOOST_FACTOR : baseSpeed
   if (Math.hypot(x - player.x, z - player.z) > maxSpeed * elapsed + MOVE_MARGIN) return 'too_fast'
+  if (entersClosedSecretRoom(player, x, z, now)) return 'secret_room_closed'
   const from = unitAt(room.housingUnits, player.x, player.z)
   const to = unitAt(room.housingUnits, x, z)
   if (from === to) return null

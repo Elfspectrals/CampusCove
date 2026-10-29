@@ -24,6 +24,28 @@ export interface WorldClinic {
   beds: ClinicBed[]
 }
 
+export interface PubSeat {
+  id: string
+  kind: string
+  position: Vec3
+  yaw: number
+}
+
+export interface WorldPub {
+  bartender: Vec3
+  bartenderYaw: number
+  bouncer: Vec3
+  counter: Vec3
+  taps: Vec3
+  serve: Vec3
+  bell: Vec3
+  secretDoor: { position: Vec3, yaw: number }
+  secretRoom: Bounds
+  seats: Map<string, PubSeat>
+  darts: { board: Vec3, boardYaw: number, oche: Vec3 }
+  shots: { plank: Vec3, yaw: number, player: Vec3 }
+}
+
 interface World {
   citySpawn: Vec3
   workDoors: Map<string, { x: number, z: number }>
@@ -31,6 +53,8 @@ interface World {
   fountains: Vec3[]
   bounds: Bounds
   clinic: WorldClinic | null
+  pub: WorldPub | null
+  pubZone: Bounds | null
 }
 
 let world: World | null = null
@@ -62,6 +86,69 @@ function parseClinic(raw: Json): WorldClinic | null {
   }
 }
 
+function parseYaw(raw: Json, what: string): number {
+  if (!Number.isFinite(raw)) throw new Error(`world manifest: invalid ${what} ${JSON.stringify(raw)}`)
+  return raw
+}
+
+function parseBounds(raw: Json, what: string): Bounds {
+  if (![raw?.minX, raw?.maxX, raw?.minZ, raw?.maxZ].every(Number.isFinite)) {
+    throw new Error(`world manifest: invalid ${what} ${JSON.stringify(raw)}`)
+  }
+  return { minX: raw.minX, maxX: raw.maxX, minZ: raw.minZ, maxZ: raw.maxZ }
+}
+
+function parsePub(raw: Json): WorldPub | null {
+  if (raw === undefined || raw === null) return null
+  if (!Array.isArray(raw?.seats) || raw.seats.length === 0) throw new Error('world manifest: pub has no seats')
+  const seats = new Map<string, PubSeat>()
+  raw.seats.forEach((seat: Json, i: number) => {
+    if (typeof seat?.id !== 'string' || typeof seat?.kind !== 'string') {
+      throw new Error(`world manifest: invalid pub seat ${i} ${JSON.stringify(seat)}`)
+    }
+    seats.set(seat.id, {
+      id: seat.id,
+      kind: seat.kind,
+      position: parseVec3(seat.position, `position of pub seat ${seat.id}`),
+      yaw: parseYaw(seat.yaw, `yaw of pub seat ${seat.id}`)
+    })
+  })
+  return {
+    bartender: parseVec3(raw.bartender, 'pub bartender'),
+    bartenderYaw: parseYaw(raw.bartenderYaw, 'pub bartenderYaw'),
+    bouncer: parseVec3(raw.bouncer, 'pub bouncer'),
+    counter: parseVec3(raw.counter, 'pub counter'),
+    taps: parseVec3(raw.taps, 'pub taps'),
+    serve: parseVec3(raw.serve, 'pub serve'),
+    bell: parseVec3(raw.bell, 'pub bell'),
+    secretDoor: {
+      position: parseVec3(raw.secretDoor?.position, 'pub secretDoor position'),
+      yaw: parseYaw(raw.secretDoor?.yaw, 'pub secretDoor yaw')
+    },
+    secretRoom: parseBounds(raw.secretRoom, 'pub secretRoom'),
+    seats,
+    darts: {
+      board: parseVec3(raw.darts?.board, 'pub darts board'),
+      boardYaw: parseYaw(raw.darts?.boardYaw, 'pub darts boardYaw'),
+      oche: parseVec3(raw.darts?.oche, 'pub darts oche')
+    },
+    shots: {
+      plank: parseVec3(raw.shots?.plank, 'pub shots plank'),
+      yaw: parseYaw(raw.shots?.yaw, 'pub shots yaw'),
+      player: parseVec3(raw.shots?.player, 'pub shots player')
+    }
+  }
+}
+
+function parsePubZone(zones: Json[], pub: WorldPub | null): Bounds | null {
+  const zone = zones.find((z) => z?.key === 'pub')
+  if (!zone) {
+    if (pub) throw new Error('world manifest: pub section without a pub zone')
+    return null
+  }
+  return parseBounds(zone.bounds, 'pub zone bounds')
+}
+
 function parseWorld(manifest: Json): World {
   if (!Array.isArray(manifest?.zones)) throw new Error('world manifest: missing zones')
   const workDoors: World['workDoors'] = new Map()
@@ -83,13 +170,16 @@ function parseWorld(manifest: Json): World {
   }
   const b = manifest.bounds
   if (![b?.minX, b?.maxX, b?.minZ, b?.maxZ].every(Number.isFinite)) throw new Error('world manifest: invalid bounds')
+  const pub = parsePub(manifest.pub)
   return {
     citySpawn: parseVec3(manifest.spawn, 'spawn'),
     workDoors,
     houses,
     fountains,
     bounds: b,
-    clinic: parseClinic(manifest.clinic)
+    clinic: parseClinic(manifest.clinic),
+    pub,
+    pubZone: parsePubZone(manifest.zones, pub)
   }
 }
 
@@ -140,4 +230,12 @@ export function worldHouse(houseKey: string): WorldHouse | null {
 
 export function worldClinic(): WorldClinic | null {
   return loadedWorld().clinic
+}
+
+export function worldPub(): WorldPub | null {
+  return loadedWorld().pub
+}
+
+export function worldPubZone(): Bounds | null {
+  return loadedWorld().pubZone
 }
