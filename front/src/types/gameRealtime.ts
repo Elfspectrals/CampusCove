@@ -10,6 +10,7 @@ export interface RemoteUserPayload {
   ry?: number
   slotHexes?: Record<string, string>
   bodyModelGlb?: string | null
+  slotModels?: Record<string, string | null>
 }
 
 /** Another player ate or drank (socket/src/survival.ts); `code` is the food item, null for a fountain sip. */

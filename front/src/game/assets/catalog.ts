@@ -9,6 +9,8 @@
  *     decor/<key>/model.glb, preview.png               (furniture, sold in the Cove Home store)
  *     store/cove_home/exterior.glb, interior.glb, interior.collision.json, interior.layout.json
  *     store/park/park.glb, park.layout.json
+ *     store/cove_threads/..., store/threads_site/threads_site.glb   (clothing store, same files as cove_home)
+ *     wear/base/model.glb, wear/<slot>/<key>/model.glb, preview.png, wear/top/<key>/fp_arms.glb
  *
  * Sources: Blender build scripts in `map-src/CampusCove/` (+ `map-src/NewNation/` for the showroom),
  * optimized with `npm run assets:optimize`. Keys / shop codes must match the backend seeders
@@ -81,6 +83,21 @@ export const SKINS: readonly SkinAsset[] = [
 ]
 
 export const DEFAULT_SKIN: SkinAsset = SKINS.find((s) => s.isDefault)!
+
+type WearTopKey = 'basic' | 'tee' | 'tank' | 'hoodie' | 'varsity' | 'sweater'
+
+const WEAR_TOPS: readonly WearTopKey[] = ['basic', 'tee', 'tank', 'hoodie', 'varsity', 'sweater']
+
+export const WEAR_BASE_MODEL_URL = `${ROOT}/wear/base/model.glb`
+
+const WEAR_BARE_FP_ARMS_URL = `${ROOT}/wear/bare/fp_arms.glb`
+
+export function wearTopFpArmsUrl(topModelUrl: string | null): string {
+  if (topModelUrl === null) return WEAR_BARE_FP_ARMS_URL
+  const key = WEAR_TOPS.find((k) => `${ROOT}/wear/top/${k}/model.glb` === topModelUrl)
+  if (!key) throw new Error(`No first-person arms for the top model ${topModelUrl}`)
+  return `${ROOT}/wear/top/${key}/fp_arms.glb`
+}
 
 const HOUSES: readonly HouseAsset[] = [
   house('house_01', 'Maple Cottage'),
@@ -156,6 +173,23 @@ export const COVE_HOME = {
   interiorLightmapUrl: `${ROOT}/store/cove_home/lightmap.jpg`,
   interiorLayoutUrl: `${ROOT}/store/cove_home/interior.layout.json`,
 } as const
+
+export const COVE_THREADS = {
+  key: 'cove_threads',
+  name: 'Cove Threads',
+  exteriorUrl: `${ROOT}/store/cove_threads/exterior.glb`,
+  exteriorCollisionUrl: `${ROOT}/store/cove_threads/exterior.collision.json`,
+  interiorUrl: `${ROOT}/store/cove_threads/interior.glb`,
+  interiorCollisionUrl: `${ROOT}/store/cove_threads/interior.collision.json`,
+  interiorLightmapUrl: `${ROOT}/store/cove_threads/lightmap.jpg`,
+  interiorLayoutUrl: `${ROOT}/store/cove_threads/interior.layout.json`,
+} as const
+
+export type StoreKey = typeof COVE_HOME.key | typeof COVE_THREADS.key
+
+export function findStore(key: string | null | undefined): typeof COVE_HOME | typeof COVE_THREADS | null {
+  return [COVE_HOME, COVE_THREADS].find((s) => s.key === key) ?? null
+}
 
 /** Survival (map-src/CampusCove/build_food_items.py): the first-person wrist watch and the town drinking fountain. */
 export const SURVIVAL_WATCH_URL = `${ROOT}/items/tools/watch/model.glb`

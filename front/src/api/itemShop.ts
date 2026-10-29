@@ -208,3 +208,13 @@ export async function purchaseShopItem(body: PurchaseShopItemBody): Promise<Purc
     total_debit: totalDebit,
   }
 }
+
+export async function checkoutShopBasket(shopCatalogItemIds: number[]): Promise<{ balanceAfter: number }> {
+  const data = await apiRequest('/shop/checkout', {
+    method: 'POST',
+    body: { currency: 'coins', items: shopCatalogItemIds.map((id) => ({ shop_catalog_item_id: id })) },
+  })
+  if (!isRecord(data) || typeof data.balance_after !== 'number') throw new Error('Invalid checkout response')
+  applyCachedBalanceAfterPurchase('coins', data.balance_after)
+  return { balanceAfter: data.balance_after }
+}

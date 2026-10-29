@@ -2,7 +2,7 @@
 import type { Client } from 'colyseus'
 import type { Json } from './backend.ts'
 import { MAX_STAMINA } from './stamina.ts'
-import type { AppearanceSlot, Player, Vec3 } from './types.ts'
+import type { AppearanceSlot, Player, Vec3, WearSlot } from './types.ts'
 
 const COLORS = [
   0xe94560, 0x0f3460, 0x533483, 0x00d9ff, 0x00ff88,
@@ -48,6 +48,17 @@ export function normalizeBodyModelGlb(raw: unknown): string | null {
   return trimmed.length > 0 ? trimmed : null
 }
 
+const WEAR_SLOTS: readonly WearSlot[] = ['hair', 'head_accessory', 'top', 'bottom', 'shoes']
+
+export function normalizeSlotModels(raw: unknown): Record<WearSlot, string | null> {
+  const out = {} as Record<WearSlot, string | null>
+  for (const s of WEAR_SLOTS) {
+    const v = hasOwn(raw, s) ? raw[s] : null
+    out[s] = typeof v === 'string' && new RegExp(`^/assets/wear/${s}/[a-z_]+/model\\.glb$`).test(v) ? v : null
+  }
+  return out
+}
+
 export function normalizeNumber(raw: unknown, fallback: number): number {
   return typeof raw === 'number' && Number.isFinite(raw) ? raw : fallback
 }
@@ -87,7 +98,8 @@ export function createPlayer(client: Client, options: Json, colorIndex: number, 
     clinicBedId: null,
     appearance: normalizeAppearanceIds(options?.appearance),
     slotHexes: normalizeSlotHexes(options?.slotHexes),
-    bodyModelGlb: normalizeBodyModelGlb(options?.bodyModelGlb)
+    bodyModelGlb: normalizeBodyModelGlb(options?.bodyModelGlb),
+    slotModels: normalizeSlotModels(options?.slotModels)
   }
 }
 
@@ -103,6 +115,7 @@ export function publicPlayer(player: Player) {
     ry: player.ry,
     appearance: { ...player.appearance },
     slotHexes: { ...player.slotHexes },
-    bodyModelGlb: player.bodyModelGlb
+    bodyModelGlb: player.bodyModelGlb,
+    slotModels: { ...player.slotModels }
   }
 }

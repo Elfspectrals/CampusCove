@@ -20,6 +20,8 @@ SKINS_DIR = os.path.normpath(os.path.join(HERE, "..", "..", "front", "public", "
 ONLY = globals().get("ONLY_SKINS")
 PREVIEW_DIR = globals().get("PREVIEW_DIR")
 KEEP_SCENES = globals().get("KEEP_SCENES", False)
+WEAR_DIR = os.path.normpath(os.path.join(HERE, "..", "..", "front", "public", "assets", "wear"))
+WEAR_TOPS = globals().get("WEAR_TOPS")
 
 ELBOW_Z = 1.22
 STATIC_WRIST_Z = 0.985
@@ -40,6 +42,32 @@ def import_skin(key):
     imported = [o for o in bpy.data.objects if o not in before]
     body = max((o for o in imported if o.type == "MESH"), key=lambda o: len(o.data.vertices))
     return body, imported
+
+
+def import_glb(path):
+    before = set(bpy.data.objects)
+    with contextlib.redirect_stdout(io.StringIO()):
+        bpy.ops.import_scene.gltf(filepath=path)
+    return [o for o in bpy.data.objects if o not in before]
+
+
+def import_wear(top):
+    imported = import_glb(os.path.join(WEAR_DIR, "base", "model.glb"))
+    hides = set()
+    if top:
+        imported += import_glb(os.path.join(WEAR_DIR, "top", top, "model.glb"))
+        piece = next(o for o in imported if o.type == "MESH" and "slot" in o)
+        hides = set(filter(None, piece["hides"].split(",")))
+    meshes = [o for o in imported if o.type == "MESH" and o.get("region") not in hides]
+    others = [o for o in imported if o not in meshes]
+    for o in bpy.context.view_layer.objects:
+        o.select_set(False)
+    for o in meshes:
+        o.select_set(True)
+    bpy.context.view_layer.objects.active = meshes[0]
+    bpy.ops.object.join()
+    body = bpy.context.view_layer.objects.active
+    return body, others + [body]
 
 
 def main_group(vert, names):
@@ -215,10 +243,10 @@ def animate(arm, hand):
     ])
 
 
-def build(key):
+def build(key, load=import_skin, out_rel=("skins",)):
     sc = L.new_build_scene("FP_" + key)
     sc.render.fps = FPS
-    body, imported = import_skin(key)
+    body, imported = load(key)
     materials = [s.material for s in body.material_slots]
     coll = bpy.data.collections.new("FPArms_" + key)
     sc.collection.children.link(coll)
@@ -236,7 +264,7 @@ def build(key):
         vl.update()
     animate(arm, hand)
     objs = [root, *arm.values(), *hand.values(), *[o for o in coll.objects if o.type == "MESH"]]
-    out_dir = os.path.join(L.OUT_ROOT, "skins", key)
+    out_dir = os.path.join(L.OUT_ROOT, *out_rel, key)
     L.export_glb(os.path.join(out_dir, "fp_arms.glb"), objs, export_animations=True, export_animation_mode="NLA_TRACKS",
                  export_force_sampling=True, export_frame_range=False)
     if PREVIEW_DIR:
@@ -270,5 +298,10 @@ def render_preview(sc, path):
         bpy.ops.render.render(write_still=True)
 
 
-keys = ONLY or sorted(k for k in os.listdir(SKINS_DIR) if os.path.isfile(os.path.join(SKINS_DIR, k, "model.glb")))
-print([build(k) for k in keys])
+if WEAR_TOPS is not None:
+    tops = WEAR_TOPS or sorted(k for k in os.listdir(os.path.join(WEAR_DIR, "top")) if os.path.isfile(os.path.join(WEAR_DIR, "top", k, "model.glb")))
+    print([build(t, load=import_wear, out_rel=("wear", "top")) for t in tops])
+    print(build("bare", load=lambda _key: import_wear(None), out_rel=("wear",)))
+else:
+    keys = ONLY or sorted(k for k in os.listdir(SKINS_DIR) if os.path.isfile(os.path.join(SKINS_DIR, k, "model.glb")))
+    print([build(k) for k in keys])

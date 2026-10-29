@@ -1,7 +1,7 @@
 // Optimizes the Blender exports in map-src/CampusCove/out/ into front/public/assets/.
 //
 //   npm run assets:optimize            (all categories)
-//   npm run assets:optimize -- houses  (one category: skins | decor | houses | town | work | park | items | store)
+//   npm run assets:optimize -- houses  (one category: skins | decor | houses | town | work | park | items | store | wear)
 //
 // Blender (map-src/CampusCove/build_*.py) writes raw GLBs + *.colsrc.glb collision sources to
 // map-src/CampusCove/out/<category>/<key>/. This script:
@@ -17,10 +17,10 @@ import { fileURLToPath } from 'node:url'
 const FRONT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const SRC = resolve(FRONT, '../map-src/CampusCove/out')
 const DEST = resolve(FRONT, 'public/assets')
-const CATEGORIES = ['skins', 'decor', 'houses', 'town', 'work', 'park', 'items', 'store']
+const CATEGORIES = ['skins', 'decor', 'houses', 'town', 'work', 'park', 'items', 'store', 'wear']
 
 /** Texture size per category: characters / props are small on screen, the town is not. */
-const TEXTURE_SIZE = { skins: 512, decor: 512, houses: 1024, town: 1024, work: 1024, park: 1024, items: 512, store: 1024 }
+const TEXTURE_SIZE = { skins: 512, decor: 512, houses: 1024, town: 1024, work: 1024, park: 1024, items: 512, store: 1024, wear: 512 }
 
 function run(cmd, args) {
   const r = spawnSync(cmd, args, { cwd: FRONT, stdio: ['ignore', 'pipe', 'pipe'], shell: process.platform === 'win32' })

@@ -3,7 +3,7 @@ import { computed, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import type { Room } from '@colyseus/sdk'
 import {
-  bodyModelGlbFromLoadout,
+  wearModelsFromLoadout,
   defaultCosmeticColors,
   emptyCosmeticLoadout,
   fetchCharacterCosmetics,
@@ -22,6 +22,8 @@ import GamePointerLockOverlay from '../components/game/GamePointerLockOverlay.vu
 import GameSettingsDialog from '../components/game/GameSettingsDialog.vue'
 import GameStoreItemCard from '../components/game/GameStoreItemCard.vue'
 import GameCafeMenu from '../components/game/GameCafeMenu.vue'
+import GameBasketCheckout from '../components/game/GameBasketCheckout.vue'
+import GameWardrobe from '../components/game/GameWardrobe.vue'
 import GameSurvivalEffects from '../components/game/GameSurvivalEffects.vue'
 import ItemShopPurchaseConfirmModal from '../components/shop/ItemShopPurchaseConfirmModal.vue'
 import GameRoomMessageBanner from '../components/game/GameRoomMessageBanner.vue'
@@ -30,6 +32,7 @@ import { useApartmentObjects } from '../composables/game/useApartmentObjects'
 import { useCafeCounter } from '../composables/game/useCafeCounter'
 import { useClinic } from '../composables/game/useClinic'
 import { useFurnitureStore } from '../composables/game/useFurnitureStore'
+import { useClothingStore } from '../composables/game/useClothingStore'
 import { useHouseFurniture } from '../composables/game/useHouseFurniture'
 import { useHouseKeys } from '../composables/game/useHouseKeys'
 import { useApartmentPlacement } from '../composables/game/useApartmentPlacement'
@@ -49,7 +52,7 @@ import { HOUSING_LOBBY_SPAWN } from '../game/gameRoomConstants'
 import { createGameScene, disposeGameScene, type GameScene } from '../game/gameScene'
 import { createFirstPersonArms } from '../game/firstPersonArms'
 import { createHeldItem } from '../game/heldItem'
-import { COVE_HOME, findHouse, findWork } from '../game/assets/catalog'
+import { COVE_HOME, COVE_THREADS, findHouse, findStore, findWork } from '../game/assets/catalog'
 import { createSfx } from '../game/sfx'
 import { MAX_STAMINA } from '../game/stamina'
 import { createDoorSigns } from '../game/town/doorSigns'
@@ -169,6 +172,27 @@ const {
 const inStore = computed(() => currentHouseKey.value === COVE_HOME.key)
 const furnitureStore = useFurnitureStore({ inStore: () => inStore.value, getCamera, myPosition })
 const { target: storeTarget, currentDepartment: storeDepartment } = furnitureStore
+const inThreads = computed(() => currentHouseKey.value === COVE_THREADS.key)
+const clothingStore = useClothingStore({
+  inStore: () => inThreads.value,
+  getCamera,
+  canvasRef,
+  myPosition,
+  promptsHidden: () => inventoryOpen.value,
+  onPurchased: () => refreshOwnedItems(),
+})
+const {
+  target: clothesTarget,
+  basket: clothesBasket,
+  basketTotal: clothesBasketTotal,
+  checkoutOpen: clothesCheckoutOpen,
+  paying: clothesPaying,
+  feedback: clothesFeedback,
+  counterPrompt: clothesCounterPrompt,
+} = clothingStore
+watch(clothesCheckoutOpen, (open) => {
+  if (!open && !document.pointerLockElement) requestPointerLock()
+})
 const storeShop = useShopPurchase()
 const {
   confirmItem: storeConfirmItem,
@@ -254,12 +278,17 @@ const interactions = useInteractionTargets({
   // Fishing gameplay is not built yet: the spots only show their prompt.
   onFishingSpot: () => window.alert('implement pechee'),
   storeTarget: () => {
+    const clothes = clothesTarget.value
+    if (clothes) {
+      const action = clothes.owned ? 'owned' : clothes.inBasket ? 'in basket' : clothes.coins !== null ? `${clothes.coins} coins` : 'not on sale'
+      return { position: clothes.tagPosition, detail: `${clothes.name} · ${action}` }
+    }
     const target = storeTarget.value
     if (!target) return null
     const detail = target.coins !== null ? `${target.name} · ${target.coins} coins` : target.name
     return { position: target.tagPosition, detail }
   },
-  onStoreTarget: openStorePurchase,
+  onStoreTarget: () => (clothesTarget.value ? clothingStore.toggleTarget() : openStorePurchase()),
 })
 const { doorPrompt } = interactions
 
@@ -390,7 +419,7 @@ const canvasFilter = computed(() => {
 function isBuildingDoorOpen(buildingKey: string): boolean {
   const unit = housing.units.value.find((u) => u.model_key === buildingKey)
   if (unit) return housing.isDoorOpen(unit)
-  return findWork(buildingKey) || buildingKey === COVE_HOME.key ? housing.isWorkDoorOpen(buildingKey) : true
+  return findWork(buildingKey) || findStore(buildingKey) ? housing.isWorkDoorOpen(buildingKey) : true
 }
 
 const DOOR_SIGN_REFRESH_MS = 30_000
@@ -413,6 +442,8 @@ const environment = useRoomEnvironment({
     houseFurniture.onTownReady()
     const store = openHouseInterior(COVE_HOME.key)
     if (store) void furnitureStore.attach(store)
+    const threads = openHouseInterior(COVE_THREADS.key)
+    if (threads) void clothingStore.attach(threads)
   },
   onError: (message) => {
     roomMessage.value = message
@@ -437,7 +468,7 @@ function loadTown(): void {
  */
 function useAction(): void {
   if (housing.unlock()) arms?.use('key')
-  else void (interactions.tryInteract() || cafe.tryOpen() || clinic.tryInteract() || survival.onPrimaryDown())
+  else void (interactions.tryInteract() || clothingStore.tryOpenCheckout() || cafe.tryOpen() || clinic.tryInteract() || survival.onPrimaryDown())
 }
 
 /** Interact and punch may be bound to keys or mouse buttons; returns true when `code` was one of them. */
@@ -501,6 +532,7 @@ const movement = useGameMovement({
     currentHouseKey.value = houseKeyAt(myPosition.x, myPosition.z)
     placement.tick(dt)
     furnitureStore.update()
+    clothingStore.update()
     interactions.updatePrompts()
     houseKeys.updateKeyPrompt()
     updateFrontDoors(dt, isBuildingDoorOpen)
@@ -510,6 +542,7 @@ const movement = useGameMovement({
     survival.tick(dt)
     stamina.value = punch.staminaNow()
     cafe.updatePrompt()
+    clothingStore.updatePrompt()
     clinic.updatePrompt()
     if (!doorSigns.group.parent) getScene()?.add(doorSigns.group)
   },
@@ -557,7 +590,7 @@ const realtime = useGameRealtime({
   onHousingUnitsSync: housing.applyUnits,
   onHouseFurnitureSync: houseFurniture.applyHouses,
   onDoorsSync: housing.applyOpenDoors,
-  onMyBodyModel: (bodyModelGlb) => arms?.setSkin(bodyModelGlb),
+  onMyOutfit: (models) => arms?.setTop(models.top),
   onPunched: punch.onPunched,
   onPunchTired: punch.onTired,
   playSoundOn: sfx.playOn,
@@ -614,7 +647,7 @@ async function bootGame() {
   if (unmounted || !canvasRef.value) return
   game = createGameScene(canvasRef.value, movement.containerSize())
   arms = createFirstPersonArms(game.fpHands)
-  arms.setSkin(bodyModelGlbFromLoadout(cosmetics.slots))
+  arms.setTop(wearModelsFromLoadout(cosmetics.slots).top)
   loadTown()
   await realtime.connectRealtime(cosmetics)
   try {
@@ -739,6 +772,13 @@ const crosshairClass = computed(() => {
       :detail-label="survivalPrompt.detail"
     />
     <GameInteractionPrompt
+      v-if="clothesCounterPrompt && !doorPrompt"
+      :screen-x="clothesCounterPrompt.x"
+      :screen-y="clothesCounterPrompt.y"
+      :action-label="clothesCounterPrompt.action"
+      :detail-label="clothesCounterPrompt.detail"
+    />
+    <GameInteractionPrompt
       v-if="cafePrompt && !doorPrompt"
       :screen-x="cafePrompt.x"
       :screen-y="cafePrompt.y"
@@ -815,9 +855,11 @@ const crosshairClass = computed(() => {
       @slot-drag-end="onSlotDragEnd"
       @clear-slot="clearSlot"
       @pickup-placed-object="(id: string) => { onPlacedObjectSelected(id); pickupSelectedPlacedObject() }"
-    />
+    >
+      <GameWardrobe @changed="realtime.sendMyAppearance" />
+    </GamePlayerInventoryPanel>
     <GamePointerLockOverlay
-      v-show="!pointerLocked && !inventoryOpen && !switchingRoom && !cafeMenuOpen && !clinicMenuOpen && !settingsOpen"
+      v-show="!pointerLocked && !inventoryOpen && !switchingRoom && !cafeMenuOpen && !clinicMenuOpen && !clothesCheckoutOpen && !settingsOpen"
       @request-pointer-lock="requestPointerLock"
       @open-settings="settingsOpen = true"
       @logout="logout"
@@ -838,6 +880,30 @@ const crosshairClass = computed(() => {
     >
       {{ placementHelp }}
     </p>
+    <div
+      v-if="inThreads && !inventoryOpen"
+      class="cc-hud pointer-events-none absolute left-1/2 top-3 z-10 -translate-x-1/2 px-4 py-1.5 font-display text-xs uppercase tracking-[0.2em] text-fog"
+    >
+      <span class="text-sun">Cove Threads</span> · Basket {{ clothesBasket.length }} · {{ clothesBasketTotal }} coins
+    </div>
+    <p
+      v-if="inThreads && clothesFeedback && !inventoryOpen && !clothesCheckoutOpen"
+      class="cc-hud pointer-events-none absolute bottom-24 right-3 z-20 max-w-xs px-3 py-2 text-xs font-bold"
+      :class="clothesFeedback.kind === 'success' ? 'text-mint' : 'text-coral'"
+    >
+      {{ clothesFeedback.text }}
+    </p>
+    <GameBasketCheckout
+      v-if="clothesCheckoutOpen"
+      title="Cove Threads"
+      :items="clothesBasket"
+      :total="clothesBasketTotal"
+      :paying="clothesPaying"
+      :feedback="clothesFeedback"
+      @pay="clothingStore.pay"
+      @remove="clothingStore.removeFromBasket"
+      @close="clothingStore.closeCheckout"
+    />
     <GameCafeMenu
       v-if="cafeMenuOpen"
       title="Campus Cafe"

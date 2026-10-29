@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { DEFAULT_SKIN, SKINS } from './assets/catalog'
+import { wearTopFpArmsUrl } from './assets/catalog'
 import { createGltfLoader } from './gltfLoaderFactory'
 
 const WALK_SPEED = 0.5
@@ -38,12 +38,6 @@ const WRIST_BACK_LOCAL = new THREE.Vector3(0, 1, 0)
 
 export type ArmsUse = 'door' | 'key'
 
-function fpArmsUrlFor(bodyModelGlb: string | null): string {
-  const skin = bodyModelGlb === null ? DEFAULT_SKIN : SKINS.find((s) => s.modelUrl === bodyModelGlb)
-  if (!skin) throw new Error(`No first-person arms for the skin model ${bodyModelGlb}`)
-  return skin.fpArmsUrl
-}
-
 function smooth(t: number): number {
   return t * t * (3 - 2 * t)
 }
@@ -51,7 +45,7 @@ function smooth(t: number): number {
 export function createFirstPersonArms(container: THREE.Group) {
   const loader = createGltfLoader()
   const lastPosition = new THREE.Vector3()
-  let skinModel: string | null | undefined
+  let topModel: string | null | undefined
   let loadToken = 0
   let model: THREE.Object3D | null = null
   let ownMeshes: THREE.Mesh[] = []
@@ -116,10 +110,10 @@ export function createFirstPersonArms(container: THREE.Group) {
     oneShot = null
   }
 
-  function setSkin(bodyModelGlb: string | null): void {
-    if (bodyModelGlb === skinModel) return
-    skinModel = bodyModelGlb
-    const url = fpArmsUrlFor(bodyModelGlb)
+  function setTop(topModelGlb: string | null): void {
+    if (topModelGlb === topModel) return
+    topModel = topModelGlb
+    const url = wearTopFpArmsUrl(topModelGlb)
     const token = ++loadToken
     loader
       .loadAsync(url)
@@ -191,7 +185,7 @@ export function createFirstPersonArms(container: THREE.Group) {
   }
 
   return {
-    setSkin,
+    setTop,
     update,
     rightHand,
     leftHand,

@@ -1,4 +1,4 @@
-import type { HouseKey, WorkJob, WorkKey } from '../assets/catalog'
+import type { HouseKey, StoreKey, WorkJob, WorkKey } from '../assets/catalog'
 
 type Vec3 = [number, number, number]
 
@@ -35,7 +35,7 @@ export interface WorkBuilding {
 
 export interface StoreBuilding {
   kind: 'store'
-  key: 'cove_home'
+  key: StoreKey
   name: string
   position: Vec3
   rotationY: number

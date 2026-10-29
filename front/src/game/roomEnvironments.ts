@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import type { GLTF, GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
-import { COVE_HOME, findHouse, findWork } from './assets/catalog'
+import { findHouse, findStore, findWork } from './assets/catalog'
 import { createGltfLoader } from './gltfLoaderFactory'
 import { getGraphicsQuality } from './graphicsQuality'
 import { shareTexturesAcrossModels } from './sharedTextures'
@@ -107,7 +107,7 @@ export function loadTownEnvironment(): Promise<TownEnvironmentBuildResult> {
       const interiorSources = [
         ...openHouseLots(manifest).map((lot) => ({ lot, asset: findHouse(lot.key) })),
         ...openWorkLots(manifest).map((lot) => ({ lot, asset: findWork(lot.key) })),
-        ...openStoreLots(manifest).map((lot) => ({ lot, asset: COVE_HOME })),
+        ...openStoreLots(manifest).map((lot) => ({ lot, asset: findStore(lot.key) })),
       ]
       const openInteriors = await Promise.all(interiorSources.map(async ({ lot, asset }) => {
         if (!asset) return null
@@ -147,8 +147,10 @@ export function loadTownEnvironment(): Promise<TownEnvironmentBuildResult> {
         if (exterior) root.add(exterior)
       }
       const stores = await Promise.all(storeBuildings(manifest).map(async (lot) => {
+        const asset = findStore(lot.key)
+        if (!asset) return null
         try {
-          const gltf = await loader.loadAsync(COVE_HOME.exteriorUrl)
+          const gltf = await loader.loadAsync(asset.exteriorUrl)
           const exterior = gltf.scene
           exterior.name = `StoreExterior_${lot.key}`
           if (lot.interiorOffset) registerFrontDoor(exterior, lot.key)

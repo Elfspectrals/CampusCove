@@ -12,6 +12,7 @@
     "test:unit": "node --experimental-strip-types --test \"src/**/*.test.ts\"",
     "knip": "knip",
     "skins:check": "node scripts/skins/check-skins.mjs",
+    "wear:check": "node scripts/skins/check-wear.mjs",
     "collision:extract": "node scripts/extract-collision.mjs",
     "assets:optimize": "node scripts/optimize-assets.mjs",
     "store:apply": "node scripts/apply-store.mjs",
