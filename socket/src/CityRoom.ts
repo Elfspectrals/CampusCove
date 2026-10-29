@@ -38,6 +38,17 @@ import {
   saveSurvival,
   tickSurvival
 } from './survival.ts'
+import {
+  type Trade,
+  checkTradeDistance,
+  onTradeCancel,
+  onTradeConfirm,
+  onTradeLeave,
+  onTradeNearby,
+  onTradeOffer,
+  onTradeRequest,
+  onTradeRespond
+} from './trade.ts'
 import type {
   ClientPayload,
   ClinicBedOccupant,
@@ -62,6 +73,7 @@ export class CityRoom extends Room implements GameRoom {
   houseFurniture: HouseFurniture[] = []
   openDoors = new Set<string>()
   clinicBeds = new Map<string, ClinicBedOccupant>()
+  trades = new Map<string, Trade>()
 
   onCreate() {
     this.maxClients = CITY_MAX_PLAYERS
@@ -81,6 +93,12 @@ export class CityRoom extends Room implements GameRoom {
     this.onMessage('clinic_heal', (client) => void onClinicHeal(this, client))
     this.onMessage('jump', (client) => onJump(this.players.get(client.sessionId), Date.now()))
     this.onMessage('punch', (client, payload: ClientPayload) => onPunch(this, client, payload))
+    this.onMessage('trade_nearby', (client) => onTradeNearby(this, client))
+    this.onMessage('trade_request', (client, payload: ClientPayload) => onTradeRequest(this, client, payload))
+    this.onMessage('trade_respond', (client, payload: ClientPayload) => onTradeRespond(this, client, payload))
+    this.onMessage('trade_offer', (client, payload: ClientPayload) => void onTradeOffer(this, client, payload))
+    this.onMessage('trade_confirm', (client, payload: ClientPayload) => void onTradeConfirm(this, client, payload))
+    this.onMessage('trade_cancel', (client, payload: ClientPayload) => onTradeCancel(this, client, payload))
     this.clock.setInterval(() => void this.pollHousingUnits(), HOUSING_POLL_MS)
     this.clock.setInterval(() => tickSurvival(this, SURVIVAL_TICK_MS / 1000), SURVIVAL_TICK_MS)
   }
@@ -102,6 +120,7 @@ export class CityRoom extends Room implements GameRoom {
     if (staleSessionId && staleSessionId !== client.sessionId) {
       this.clients.find((c) => c.sessionId === staleSessionId)?.leave(4001, 'duplicate session')
       const stale = this.players.get(staleSessionId)
+      if (stale) onTradeLeave(this, stale)
       this.players.delete(staleSessionId)
       // saved before this session loads them
       if (stale) await saveSurvival(stale)
@@ -129,6 +148,7 @@ export class CityRoom extends Room implements GameRoom {
     this.players.delete(client.sessionId)
     if (!player) return
     releaseClinicBed(this, player)
+    onTradeLeave(this, player)
     void saveSurvival(player)
     if (this.sessionByAccountId.get(player.accountId) === client.sessionId) {
       this.sessionByAccountId.delete(player.accountId)
@@ -171,6 +191,7 @@ export class CityRoom extends Room implements GameRoom {
     if (sprinting && distXZ > 0) spendSprintStamina(player, now - player.lastMoveAt, now)
     player.lastMoveAt = now
     this.broadcastMove(client, player)
+    checkTradeDistance(this, player)
     onSurvivalMove(this, client, player, previousY, distXZ)
   }
 

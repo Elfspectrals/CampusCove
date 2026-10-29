@@ -60,6 +60,9 @@ export interface Player extends Vec3 {
   lastClinicHealAt: number
   clinicHealPending: boolean
   clinicBedId: string | null
+  /** Trade in progress (src/trade.ts), from the request until it completes or closes. */
+  tradeId: string | null
+  lastTradeRequestAt: number
   decoratedTemplateKey?: string | null
   appearance: Record<AppearanceSlot, number | null>
   slotHexes: Record<AppearanceSlot, string>

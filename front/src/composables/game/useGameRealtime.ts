@@ -21,6 +21,13 @@ import type {
   PunchTiredPayload,
   RemoteUserPayload,
   RoomInitPayload,
+  TradeClosedPayload,
+  TradeCompletedPayload,
+  TradeErrorPayload,
+  TradeNearbyPlayer,
+  TradePendingPayload,
+  TradeRequestedPayload,
+  TradeStatePayload,
   UserActionPayload,
   UserPunchedPayload,
 } from '../../types/gameRealtime'
@@ -73,6 +80,16 @@ export interface GameRealtimeDeps {
   onPunchTired: (data: PunchTiredPayload) => void
   playSoundOn: (name: SfxName, object: THREE.Object3D, delayS: number) => void
   punchHitTiming: (data: UserPunchedPayload, mySessionId: string) => { delay: number; hitStop: number }
+  /** Player trades (useTrade). */
+  trade: {
+    onNearby: (players: TradeNearbyPlayer[]) => void
+    onRequested: (data: TradeRequestedPayload) => void
+    onPending: (data: TradePendingPayload) => void
+    onState: (data: TradeStatePayload) => void
+    onClosed: (data: TradeClosedPayload) => void
+    onCompleted: (data: TradeCompletedPayload) => void
+    onError: (data: TradeErrorPayload) => void
+  }
 }
 
 /** Colyseus 'city' room: connection, server message bindings and other players' avatars. */
@@ -177,6 +194,14 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     })
 
     room.onMessage('punch_tired', (data: PunchTiredPayload) => deps.onPunchTired(data))
+
+    room.onMessage('trade_nearby', (data: { players: TradeNearbyPlayer[] }) => deps.trade.onNearby(Array.isArray(data.players) ? data.players : []))
+    room.onMessage('trade_requested', (data: TradeRequestedPayload) => deps.trade.onRequested(data))
+    room.onMessage('trade_pending', (data: TradePendingPayload) => deps.trade.onPending(data))
+    room.onMessage('trade_state', (data: TradeStatePayload) => deps.trade.onState(data))
+    room.onMessage('trade_closed', (data: TradeClosedPayload) => deps.trade.onClosed(data))
+    room.onMessage('trade_completed', (data: TradeCompletedPayload) => deps.trade.onCompleted(data))
+    room.onMessage('trade_error', (data: TradeErrorPayload) => deps.trade.onError(data))
 
     room.onMessage('apartment_inventory', (data: { items: ApartmentInventoryItem[] }) => {
       onInventory(Array.isArray(data.items) ? data.items : [])

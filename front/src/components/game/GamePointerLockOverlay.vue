@@ -21,7 +21,7 @@ const controls = computed<Array<{ keys: string[]; label: string }>>(() => {
     { keys: ['Shift'], label: 'Hold to sprint (stamina)' },
     { keys: first('interact'), label: 'Use: doors, shops, cafe, clinic, eat / drink' },
     { keys: first('punch'), label: 'Punch' },
-    { keys: first('survivalWatch'), label: 'Hold to look at your watch (hunger, thirst)' },
+    { keys: first('survivalWatch'), label: 'Watch: hold to read (hunger, thirst), tap to trade' },
     { keys: first('inventory'), label: 'Inventory' },
     { keys: [...(hotbar.length === 2 ? [`${hotbar[0]}–${hotbar[1]}`] : hotbar), 'Wheel'], label: 'Hotbar slot' },
     { keys: ['Esc'], label: 'Pause / free mouse' },

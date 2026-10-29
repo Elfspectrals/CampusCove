@@ -15,6 +15,8 @@ import type { ScreenPrompt } from './useInteractionTargets'
 /** Raw items that can be cooked (backend FoodCatalog::COOKING). */
 const COOKABLE = new Set(['food_fish_raw'])
 const REDUCED_EFFECTS_KEY = 'cc.reducedEffects'
+/** A press of the watch key shorter than this is a tap: it opens the watch apps instead of just raising the wrist. */
+const WATCH_TAP_MS = 250
 
 type Arms = {
   leftHand: () => THREE.Object3D | null
@@ -41,6 +43,8 @@ export interface SurvivalDeps {
   setLook: (yaw: number, pitch: number) => void
   promptsHidden: () => boolean
   onStamina: (stamina: number) => void
+  /** Quick tap on the watch key: open the watch apps (trade, ...). */
+  onWatchTap: () => void
 }
 
 function readReducedEffects(): boolean {
@@ -207,6 +211,7 @@ export function useSurvival(deps: SurvivalDeps) {
   function onKeyDown(e: KeyboardEvent): boolean {
     if (matches('survivalWatch', e.code)) {
       if (!knockedOut.value) deps.getArms()?.raiseWatch(true)
+      if (!e.repeat) watchPressedAt = performance.now()
       return true
     }
     if (matches('cook', e.code) && !e.repeat) {
@@ -218,8 +223,14 @@ export function useSurvival(deps: SurvivalDeps) {
     return false
   }
 
+  let watchPressedAt: number | null = null
+
   function onKeyUp(e: KeyboardEvent): void {
-    if (matches('survivalWatch', e.code)) deps.getArms()?.raiseWatch(false)
+    if (!matches('survivalWatch', e.code)) return
+    deps.getArms()?.raiseWatch(false)
+    const tapped = watchPressedAt !== null && performance.now() - watchPressedAt < WATCH_TAP_MS
+    watchPressedAt = null
+    if (tapped && !knockedOut.value) deps.onWatchTap()
   }
 
   function bindInputListeners(): () => void {

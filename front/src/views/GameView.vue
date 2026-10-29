@@ -10,7 +10,7 @@ import {
   type CharacterCosmeticsState,
 } from '../api/characterCosmetics'
 import { fetchHousingUnits } from '../api/housing'
-import { clearAuth, getStoredAuth } from '../api/session'
+import { applyCachedBalanceAfterPurchase, clearAuth, getStoredAuth } from '../api/session'
 import GameHitMarker from '../components/game/GameHitMarker.vue'
 import GameHudToolbar from '../components/game/GameHudToolbar.vue'
 import GameInteractionPrompt from '../components/game/GameInteractionPrompt.vue'
@@ -25,6 +25,8 @@ import GameCafeMenu from '../components/game/GameCafeMenu.vue'
 import GameBasketCheckout from '../components/game/GameBasketCheckout.vue'
 import GameWardrobe from '../components/game/GameWardrobe.vue'
 import GameSurvivalEffects from '../components/game/GameSurvivalEffects.vue'
+import GameTradeWindow from '../components/game/GameTradeWindow.vue'
+import GameWatchMenu from '../components/game/GameWatchMenu.vue'
 import ItemShopPurchaseConfirmModal from '../components/shop/ItemShopPurchaseConfirmModal.vue'
 import GameRoomMessageBanner from '../components/game/GameRoomMessageBanner.vue'
 import UiIcon from '../components/ui/UiIcon.vue'
@@ -43,6 +45,7 @@ import { useInteractionTargets } from '../composables/game/useInteractionTargets
 import { usePlayerInventory } from '../composables/game/usePlayerInventory'
 import { useRoomEnvironment } from '../composables/game/useRoomEnvironment'
 import { useSurvival } from '../composables/game/useSurvival'
+import { useTrade } from '../composables/game/useTrade'
 import { usePunch } from '../composables/game/usePunch'
 import { useShopPurchase } from '../composables/useShopPurchase'
 import { toggleCollisionDebug } from '../game/collision/collisionDebug'
@@ -343,6 +346,40 @@ function heldModel(): { url: string | null; scale: number } {
   return { url: item.model_glb, scale: 0.55 + 0.45 * eaten }
 }
 
+// ---------------------------------------------------------------- watch apps: player trades
+
+const trade = useTrade({
+  gameRoomRef,
+  refreshInventory: () => refreshOwnedItems(),
+  onCoins: (balance) => applyCachedBalanceAfterPurchase('coins', balance),
+  onClothesChanged: () => {
+    void clothingStore.refreshOwned()
+    void fetchCharacterCosmetics().then(onWardrobeChanged).catch(() => {
+      /* the look catches up on the next window focus */
+    })
+  },
+  say: (text) => survival.say(text),
+})
+const {
+  menuOpen: watchMenuOpen,
+  windowOpen: tradeWindowOpen,
+  nearby: tradeNearby,
+  incoming: tradeIncoming,
+  outgoing: tradeOutgoing,
+  state: tradeState,
+  offerable: tradeOfferable,
+  offerableError: tradeOfferableError,
+  draft: tradeDraft,
+  error: tradeError,
+  syncing: tradeSyncing,
+} = trade
+const tradeUiOpen = computed(() => watchMenuOpen.value || tradeWindowOpen.value)
+// Back to mouse look once the watch and the trade window are closed.
+watch(tradeUiOpen, (open) => {
+  if (!open && !document.pointerLockElement) requestPointerLock()
+})
+const watchKey = computed(() => actionKeyLabels('survivalWatch')[0] ?? 'T')
+
 // ---------------------------------------------------------------- survival: hunger, thirst, health
 
 const stamina = ref(MAX_STAMINA)
@@ -372,6 +409,9 @@ const survival = useSurvival({
   setLook: (yaw, pitch) => movement.setLook(yaw, pitch),
   promptsHidden: () => inventoryOpen.value,
   onStamina: (value) => punch.syncStamina(value),
+  onWatchTap: () => {
+    if (pointerLocked.value && !inventoryOpen.value) trade.openMenu()
+  },
 })
 const {
   prompt: survivalPrompt,
@@ -538,10 +578,13 @@ const pauseMenuOpen = computed(
     !cafeMenuOpen.value &&
     !clinicMenuOpen.value &&
     !clothesCheckoutOpen.value &&
+    !tradeUiOpen.value &&
     !settingsOpen.value,
 )
 
 function handleExtraKeyDown(e: KeyboardEvent): boolean {
+  // the watch and the trade window take the keyboard (coins field, Esc): no game key behind them
+  if (tradeUiOpen.value) return true
   // some browsers also deliver the Esc that released the lock: ignore it, or the menu would flash away
   // defaultPrevented: the inventory / cafe menu already used this Esc to close themselves
   if (e.code === 'Escape' && !e.repeat && !e.defaultPrevented && pauseMenuOpen.value && !placementPreviewActive.value) {
@@ -668,6 +711,7 @@ const realtime = useGameRealtime({
   onPunchTired: punch.onTired,
   playSoundOn: sfx.playOn,
   punchHitTiming: punch.remoteHitTimingFor,
+  trade: trade.handlers,
 })
 const { switchingRoom } = realtime
 
@@ -992,6 +1036,38 @@ const crosshairClass = computed(() => {
       @pay="clothingStore.pay"
       @remove="clothingStore.removeFromBasket"
       @close="clothingStore.closeCheckout"
+    />
+    <p
+      v-if="tradeIncoming && !watchMenuOpen"
+      class="cc-hud pointer-events-none absolute left-1/2 top-16 z-20 -translate-x-1/2 animate-cc-pop px-4 py-2 text-sm font-bold text-fog"
+      role="status"
+    >
+      <span class="text-sun">{{ tradeIncoming.fromPseudo }}</span> wants to trade · tap
+      <span class="text-sun">{{ watchKey }}</span> to answer
+    </p>
+    <GameWatchMenu
+      v-if="watchMenuOpen"
+      :nearby="tradeNearby"
+      :incoming="tradeIncoming"
+      :outgoing="tradeOutgoing"
+      :error="tradeError"
+      @request="trade.request"
+      @respond="trade.respond"
+      @cancel="trade.cancel"
+      @close="trade.closeMenu"
+    />
+    <GameTradeWindow
+      v-if="tradeWindowOpen && tradeState"
+      :state="tradeState"
+      :offerable="tradeOfferable"
+      :offerable-error="tradeOfferableError"
+      :draft="tradeDraft"
+      :syncing="tradeSyncing"
+      :error="tradeError"
+      @coins="trade.setCoins"
+      @item="trade.setItem"
+      @confirm="trade.confirm"
+      @cancel="trade.cancel"
     />
     <GameCafeMenu
       v-if="cafeMenuOpen"
