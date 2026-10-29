@@ -194,6 +194,46 @@
       "yaw": 0.0
     },
     {
+      "name": "COL_Clinic_Tree6",
+      "cx": -58,
+      "cz": 7.7,
+      "hx": 0.3,
+      "hz": 0.3,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Clinic_Tree7",
+      "cx": -70,
+      "cz": 16.3,
+      "hx": 0.3,
+      "hz": 0.3,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Clinic_Tree8",
+      "cx": -82,
+      "cz": 7.7,
+      "hx": 0.3,
+      "hz": 0.3,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Clinic_Tree9",
+      "cx": -94,
+      "cz": 16.3,
+      "hx": 0.3,
+      "hz": 0.3,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
       "name": "COL_Clinic_WaySign",
       "cx": -47.6,
       "cz": 9.3,

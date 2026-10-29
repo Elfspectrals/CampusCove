@@ -75,7 +75,12 @@ for i, gx in enumerate(range(-52, -100, -12)):
     so.append(L.box(coll, f"CS_Lamp{i}_Head", gx, gz, 3.2, 0.5, 0.5, 0.3, P["lamp"], bevel=0.03))
     add_col(f"COL_Clinic_Lamp{i}", gx, gz, 0.3, 0.3, 3.4)
 
-for i, (gx, gz) in enumerate(((-100.5, 3.0), (-100.5, 21.0), (-126.0, -2.0), (-126.0, 26.0), (-70.0, 5.5), (-82.0, 19.0))):
+trees = [(-100.5, 3.0), (-100.5, 21.0), (-126.0, -2.0), (-126.0, 26.0), (-70.0, 5.5), (-82.0, 19.0)]
+for i, gx in enumerate(range(-58, -100, -12)):
+    gz = GATE["z"] - (PATH_W / 2 + 3.0) * (1 if i % 2 == 0 else -1)
+    if all(math.hypot(gx - tx, gz - tz) > 4.0 for tx, tz in trees):
+        trees.append((gx, gz))
+for i, (gx, gz) in enumerate(trees):
     so.append(L.cyl(coll, f"CS_TreeTrunk{i}", gx, gz, 0.0, 0.22, 1.6, P["trunk"], seg=6))
     so.append(L.cone(coll, f"CS_TreeA{i}", gx, gz, 1.4, 1.6, 0.3, 2.4, P["leaf"], seg=7))
     add_col(f"COL_Clinic_Tree{i}", gx, gz, 0.6, 0.6, 3.0)
