@@ -5,7 +5,15 @@ import { CITY_MAX_PLAYERS, CITY_SPAWN_RADIUS } from './config.ts'
 
 const HOUSING_REFRESH_COOLDOWN_MS = 2000
 const HOUSING_POLL_MS = 60_000
-import { isWithinDoorReach, isWithinReach, workDoorId } from './doors.ts'
+import {
+  DOOR_RATTLE_COOLDOWN_MS,
+  type DoorSound,
+  hearsDoor,
+  isWithinDoorReach,
+  isWithinReach,
+  lockChanges,
+  workDoorId
+} from './doors.ts'
 import { moveRejection } from './movement.ts'
 import { onPunch } from './punch.ts'
 import {
@@ -62,6 +70,7 @@ export class CityRoom extends Room implements GameRoom {
     this.onMessage('appearance', (client, payload: ClientPayload) => this.onAppearance(client, payload))
     this.onMessage('housing_refresh', (client) => this.onHousingRefresh(client))
     this.onMessage('door_toggle', (client, payload: ClientPayload) => this.onDoorToggle(client, payload))
+    this.onMessage('door_rattle', (client, payload: ClientPayload) => this.onDoorRattle(client, payload))
     this.onMessage('decorate_house', (client, payload: ClientPayload) => setDecoratedHouse(this, client, payload))
     this.onMessage('apartment_spawn_request', (client, payload: ClientPayload) => saveObject(this, client, payload, true))
     this.onMessage('apartment_transform_request', (client, payload: ClientPayload) => saveObject(this, client, payload, false))
@@ -194,6 +203,7 @@ export class CityRoom extends Room implements GameRoom {
     const data = await callBackendJson(token, '/housing/units', 'GET')
     const previous = new Map(this.housingUnits.map((u) => [u.public_id, u]))
     this.housingUnits = Array.isArray(data?.units) ? data.units : []
+    for (const { unit, sound } of lockChanges([...previous.values()], this.housingUnits)) this.sendHouseDoorSound(unit, sound)
     const justLocked = this.housingUnits.filter((u) => u.door_locked === true && previous.get(u.public_id)?.door_locked !== true)
     for (const unitId of this.openDoors) {
       if (unitId.startsWith(workDoorId(''))) continue
@@ -260,7 +270,8 @@ export class CityRoom extends Room implements GameRoom {
     if (typeof payload?.workKey === 'string') {
       const door = workDoor(payload.workKey)
       if (!player || !door || !isWithinReach(player, door.x, door.z)) return
-      this.toggleDoor(workDoorId(payload.workKey))
+      const open = this.toggleDoor(workDoorId(payload.workKey))
+      this.sendDoorSound(payload.workKey, door.x, door.z, open ? 'open' : 'close')
       return
     }
     const unit = this.housingUnits.find((u) => u.public_id === payload?.unitId && u.status === 'occupied')
@@ -269,12 +280,40 @@ export class CityRoom extends Room implements GameRoom {
       client.send('door_error', { message: 'This door is locked.' })
       return
     }
-    this.toggleDoor(unit.public_id)
+    const open = this.toggleDoor(unit.public_id)
+    this.sendHouseDoorSound(unit, open ? 'open' : 'close')
   }
 
-  toggleDoor(doorId: string): void {
-    if (this.openDoors.has(doorId)) this.openDoors.delete(doorId)
-    else this.openDoors.add(doorId)
+  // Someone tries the handle of a locked door: nearby players hear (and see) it rattle.
+  onDoorRattle(client: Client, payload: ClientPayload): void {
+    const player = this.players.get(client.sessionId)
+    const unit = this.housingUnits.find((u) => u.public_id === payload?.unitId && u.status === 'occupied')
+    if (!player || !unit?.door_locked || !isWithinDoorReach(player, unit)) return
+    const now = Date.now()
+    if (now - player.lastDoorRattleAt < DOOR_RATTLE_COOLDOWN_MS) return
+    player.lastDoorRattleAt = now
+    this.sendHouseDoorSound(unit, 'rattle')
+  }
+
+  /** Returns whether the door is now open. */
+  toggleDoor(doorId: string): boolean {
+    const open = !this.openDoors.has(doorId)
+    if (open) this.openDoors.add(doorId)
+    else this.openDoors.delete(doorId)
     this.broadcastDoors()
+    return open
+  }
+
+  sendHouseDoorSound(unit: HousingUnit, sound: DoorSound): void {
+    if (unit.model_key) this.sendDoorSound(unit.model_key, unit.pos_x, unit.pos_z, sound)
+  }
+
+  /** `door` is the building key (house model key or work key): the client plays the sound on that building's door. */
+  sendDoorSound(door: string, x: number, z: number, sound: DoorSound): void {
+    const payload = { door, sound }
+    this.forEachClient((c) => {
+      const listener = this.players.get(c.sessionId)
+      if (listener && hearsDoor(listener, x, z)) c.send('door_sound', payload)
+    })
   }
 }

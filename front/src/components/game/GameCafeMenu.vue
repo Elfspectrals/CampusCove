@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { onMounted, onUnmounted } from 'vue'
 import type { ShopItem, ShopItemFood } from '../../api/itemShop'
 import UiCurrency from '../ui/UiCurrency.vue'
 import UiIcon from '../ui/UiIcon.vue'
@@ -12,6 +13,15 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{ buy: [item: ShopItem]; close: [] }>()
+
+function onKey(e: KeyboardEvent): void {
+  if (e.key !== 'Escape') return
+  emit('close')
+  e.preventDefault()
+}
+
+onMounted(() => window.addEventListener('keydown', onKey, true))
+onUnmounted(() => window.removeEventListener('keydown', onKey, true))
 
 function coins(item: ShopItem): number {
   return item.options.find((o) => o.currency === 'coins')?.price ?? 0

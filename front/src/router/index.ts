@@ -61,7 +61,7 @@ const router = createRouter({
     { path: '/home', name: 'home', component: HomeView, meta: { requiresAuth: true, title: 'Profile' } },
     { path: '/friends', name: 'friends', component: FriendsView, meta: { requiresAuth: true, title: 'Friends' } },
     { path: '/settings', name: 'settings', component: SettingsView, meta: { title: 'Settings' } },
-    { path: '/game', name: 'game', component: GameView, meta: { requiresAuth: true, title: 'Game', fullBleed: true } },
+    { path: '/game', name: 'game', component: GameView, meta: { requiresAuth: true, title: 'Game', fullBleed: true, immersive: true } },
     { path: '/dev/ui', name: 'dev-ui', component: () => import('../views/dev/DevUiView.vue'), meta: { title: 'Design system' } },
 
     { path: '/admin/users', name: 'admin-users', component: AdminUsersView, meta: { requiresAdmin: true, title: 'Admin — Users' } },

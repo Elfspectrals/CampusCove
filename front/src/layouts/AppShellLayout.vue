@@ -62,6 +62,8 @@ const userSubtitle = computed(() => {
 })
 
 const fullBleed = computed(() => route.meta.fullBleed === true)
+/** The game owns the whole window: no header, no page scroll. */
+const immersive = computed(() => route.meta.immersive === true)
 /** Title-screen pages (landing / auth) render their own hero and skip the lobby bar chrome. */
 const bareRoute = computed(() => ['landing', 'fr-landing', 'login', 'register', 'forgot-password'].includes(String(route.name)))
 
@@ -147,12 +149,12 @@ watch(
 </script>
 
 <template>
-  <div class="cc-world flex min-h-screen flex-col">
-    <a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[200] focus:rounded-lg focus:bg-sun focus:px-4 focus:py-2 focus:font-extrabold focus:text-ink-950">
+  <div class="cc-world flex flex-col" :class="immersive ? 'h-dvh overflow-hidden' : 'min-h-screen'">
+    <a v-if="!immersive" href="#main" class="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[200] focus:rounded-lg focus:bg-sun focus:px-4 focus:py-2 focus:font-extrabold focus:text-ink-950">
       {{ t('a11y.skip') }}
     </a>
     <header
-      v-if="!bareRoute"
+      v-if="!bareRoute && !immersive"
       class="sticky top-0 z-50 border-b-2 border-ink-600/60 bg-ink-900/90 backdrop-blur-md"
       :class="isAdminMode ? 'shadow-[inset_0_3px_0_rgb(var(--cc-coral))]' : 'shadow-[0_4px_0_rgb(var(--cc-ink-950)/0.6)]'"
     >
