@@ -522,6 +522,8 @@ const movement = useGameMovement({
     return pointerLocked.value && runUseOrPunch(mouseButtonCode(e.button), false)
   },
   speedFactor: () => survival.speedFactor(),
+  trySpendJump: () => punch.trySpendJump(),
+  trySpendSprint: (dt, wasSprinting) => punch.trySpendSprint(dt, wasSprinting),
   onBeforeRender: (dt) => {
     positionLabel.value = formatPosition()
     realtime.tickRemoteAvatars(dt)

@@ -19,7 +19,8 @@ const doorUrls = (name: string, count: number) => Array.from({ length: count }, 
 const SOUNDS = {
   whoosh: { urls: ['/assets/sfx/punch/whoosh_1.mp3', '/assets/sfx/punch/whoosh_2.mp3', '/assets/sfx/punch/whoosh_3.mp3'], volume: 0.6 },
   impact: { urls: ['/assets/sfx/punch/impact_1.mp3', '/assets/sfx/punch/impact_2.mp3', '/assets/sfx/punch/impact_3.mp3'], volume: 1 },
-  breath: { urls: ['/assets/sfx/punch/breath_1.mp3'], volume: 0.35 },
+  /** Stamina just ran out, or a punch, jump or sprint was refused for lack of it. */
+  out_of_breath: { urls: ['/assets/sfx/breath/heavy_breathing.mp3'], volume: 1 },
   door_open: { urls: doorUrls('open', 2), volume: 0.7, ...DOOR_RANGE },
   door_close: { urls: doorUrls('close', 2), volume: 0.9, ...DOOR_RANGE },
   door_lock: { urls: doorUrls('lock', 2), volume: 0.9, ...DOOR_RANGE },

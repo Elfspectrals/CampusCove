@@ -80,8 +80,9 @@ export function useClinic(deps: ClinicDeps) {
   }
 
   function tryInteract(): boolean {
-    if (isAimingNurse() && canConsult()) {
-      deps.gameRoomRef.value?.send('clinic_heal')
+    if (isAimingNurse()) {
+      if (canConsult()) deps.gameRoomRef.value?.send('clinic_heal')
+      else deps.say('The nurse checks you over: you are in full health, nothing to treat.')
       return true
     }
     if (!isNearPharmacy()) return false
@@ -123,10 +124,11 @@ export function useClinic(deps: ClinicDeps) {
 
   function currentPrompt(): ScreenPrompt | null {
     if (!layout || deps.promptsHidden() || menuOpen.value) return null
-    if (isAimingNurse() && canConsult()) {
+    if (isAimingNurse()) {
       const [nx, ny, nz] = layout.nurse
       const screen = projectToScreen(nx, ny + NURSE_PROMPT_HEIGHT, nz)
-      return screen && { ...screen, action: 'Consultation', detail: `${CONSULTATION_COINS} coins (full heal)` }
+      const detail = canConsult() ? `${CONSULTATION_COINS} coins (full heal)` : 'You are in full health'
+      return screen && { ...screen, action: 'Consultation', detail }
     }
     if (isNearPharmacy()) {
       const [px, py, pz] = layout.pharmacy

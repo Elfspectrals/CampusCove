@@ -38,12 +38,13 @@ export function onPunch(room: GameRoom, client: GameClient, payload: ClientPaylo
   const targetSessionId = typeof payload?.targetSessionId === 'string' ? payload.targetSessionId : null
   const target = targetSessionId ? room.players.get(targetSessionId) : null
   const hit = canHit(room, attacker, target, now)
-  const stamina = spendPunchStamina(attacker.stamina, attacker.lastPunchAt, now, hit)
+  const stamina = spendPunchStamina(attacker.stamina, attacker.staminaSpentAt, now, hit)
   if (stamina === null) {
-    client.send('punch_tired', { stamina: staminaAt(attacker.stamina, attacker.lastPunchAt, now) })
+    client.send('punch_tired', { stamina: staminaAt(attacker.stamina, attacker.staminaSpentAt, now) })
     return
   }
   attacker.stamina = stamina
+  attacker.staminaSpentAt = now
   attacker.lastPunchAt = now
   const dir = hit ? punchDirection(attacker, target) : null
   const message = {

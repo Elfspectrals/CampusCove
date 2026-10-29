@@ -50,6 +50,8 @@ export interface Player extends Vec3 {
   lastSipAt: number
   lastPunchAt: number
   stamina: number
+  /** Last time stamina was spent (punch, jump, sprint); regen starts after STAMINA_REGEN_DELAY_MS. */
+  staminaSpentAt: number
   fallPeakY: number
   knockedOutUntil: number
   speedBoostUntil: number

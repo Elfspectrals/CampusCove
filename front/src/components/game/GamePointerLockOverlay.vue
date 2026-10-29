@@ -17,6 +17,8 @@ const controls = computed<Array<{ keys: string[]; label: string }>>(() => {
   return [
     { keys: [...first('moveForward'), ...first('moveLeft'), ...first('moveBack'), ...first('moveRight')], label: 'Move' },
     { keys: ['Mouse'], label: 'Look around' },
+    { keys: first('jump'), label: 'Jump (stamina)' },
+    { keys: ['Shift'], label: 'Hold to sprint (stamina)' },
     { keys: first('interact'), label: 'Use: doors, shops, cafe, clinic, eat / drink' },
     { keys: first('punch'), label: 'Punch' },
     { keys: first('survivalWatch'), label: 'Hold to look at your watch (hunger, thirst)' },

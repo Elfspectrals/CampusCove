@@ -23,7 +23,8 @@ function fakePlayer(sessionId: string, x: number, z: number, ry = 0): Player {
     stats: { health: 100, hunger: 100, thirst: 100 },
     knockedOutUntil: 0,
     lastPunchAt: 0,
-    stamina: MAX_STAMINA
+    stamina: MAX_STAMINA,
+    staminaSpentAt: 0
   } as Player
 }
 
@@ -142,6 +143,7 @@ test('a tired player cannot punch and is told so', () => {
   const target = fakePlayer('b', 0, -1.5)
   attacker.stamina = 0
   attacker.lastPunchAt = Date.now() - 900
+  attacker.staminaSpentAt = attacker.lastPunchAt
   const room = fakeRoom(attacker, target)
   punch(room, { targetSessionId: 'b' })
   assert.equal(target.stats?.health, 100)

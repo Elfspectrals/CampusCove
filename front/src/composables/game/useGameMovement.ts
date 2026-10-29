@@ -4,14 +4,18 @@ import * as THREE from 'three'
 import { matches, type BindableAction } from '../../config/keybindings'
 
 const HOTBAR_ACTIONS: BindableAction[] = ['hotbar1', 'hotbar2', 'hotbar3', 'hotbar4', 'hotbar5', 'hotbar6', 'hotbar7', 'hotbar8', 'hotbar9']
-import { EYE_HEIGHT } from '../../game/gameRoomConstants'
+import { EYE_HEIGHT, SPRINT_SPEED, WALK_SPEED } from '../../game/gameRoomConstants'
 import { resolveWorldMovement } from '../../game/collision/worldCollision'
 import { terrainHeightAt } from '../../game/town/terrainHeight'
 import { buildingFloorAt, capsuleLiftInBuilding, updateOpenHouseVisibility } from '../../game/town/openHouses'
 import { createCameraShake, createKnockback } from '../../game/punch'
 import { advanceHitStop, cameraJolt, idleHitStop, punchKick, scheduleHitStop } from '../../game/punchFeel'
+import { cameraMotionScale, createStepSmoother, verticalFovFor } from '../../game/comfort'
+import { comfortSettings } from './useComfortSettings'
 
-const MOVE_SPEED = 8
+/** Takeoff speed and gravity (m/s, m/s²): a ~0.95 m hop that lasts ~0.6 s. */
+const JUMP_VELOCITY = 6.5
+const GRAVITY = 22
 const MAX_FRAME_DT = 0.1
 const MOUSE_SENSITIVITY = 0.002
 /** Position updates sent to the server at most this often (ms). */
@@ -41,6 +45,10 @@ export interface UseGameMovementDeps {
   onCanvasMouseDown: (e: MouseEvent) => boolean
   /** Walking speed multiplier (survival: slower when starving, faster after a coffee, 0 when passed out). */
   speedFactor: () => number
+  /** Space pressed on the ground: pay the jump in stamina; false = too tired, no jump. */
+  trySpendJump: () => boolean
+  /** Shift held while moving, each frame: pay the sprint in stamina; false = walk. */
+  trySpendSprint: (dt: number, wasSprinting: boolean) => boolean
   /** Called each animation frame after movement, before rendering. */
   onBeforeRender: (dt: number) => void
 }
@@ -48,7 +56,12 @@ export interface UseGameMovementDeps {
 /** First-person controls (WASD/ZQSD + pointer-lock mouse look), position sync, and the render loop. */
 export function useGameMovement(deps: UseGameMovementDeps) {
   const { pointerLocked, myPosition } = deps
-  const keys = { forward: false, back: false, left: false, right: false }
+  const keys = { forward: false, back: false, left: false, right: false, sprint: false }
+  let sprinting = false
+  let jumpRequested = false
+  /** Height of the feet above the ground while jumping, and its vertical speed. */
+  let airY = 0
+  let airVelocity = 0
   const direction = new THREE.Vector3(0, 0, -1)
   const rightVec = new THREE.Vector3()
   let lastEmit = 0
@@ -61,8 +74,9 @@ export function useGameMovement(deps: UseGameMovementDeps) {
   const cameraShake = createCameraShake()
   const cameraHitStop = idleHitStop()
   let kickT = Infinity
-  let kickFov = 0
   let shake = { pitch: 0, roll: 0 }
+  /** Eases the camera over stair steps / floor snaps; myPosition.y itself stays exact. */
+  const eyeSmoother = createStepSmoother()
   const knockback = createKnockback()
 
   function containerSize(): { w: number; h: number } {
@@ -83,13 +97,16 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     direction.set(0, 0, -1).applyAxisAngle(THREE.Object3D.DEFAULT_UP, yaw)
     rightVec.crossVectors(direction, THREE.Object3D.DEFAULT_UP).normalize()
 
-    const feetY = myPosition.y - EYE_HEIGHT
+    const feetY = myPosition.y - EYE_HEIGHT - airY
     const push = knockback.step(dt)
     if (!deps.inventoryOpen.value) {
       const forward = keys.forward ? 1 : keys.back ? -1 : 0
       const right = keys.right ? 1 : keys.left ? -1 : 0
       const speedFactor = deps.speedFactor()
-      const step = MOVE_SPEED * speedFactor * dt
+      const moving = (forward !== 0 || right !== 0) && speedFactor > 0
+      sprinting = keys.sprint && moving && deps.trySpendSprint(dt, sprinting)
+      if (jumpRequested && airY === 0 && speedFactor > 0 && deps.trySpendJump()) airVelocity = JUMP_VELOCITY
+      const step = (sprinting ? SPRINT_SPEED : WALK_SPEED) * speedFactor * dt
       const pushFactor = speedFactor > 0 ? 1 : 0
       const dx = direction.x * forward * step + rightVec.x * right * step + push.dx * pushFactor
       const dz = direction.z * forward * step + rightVec.z * right * step + push.dz * pushFactor
@@ -97,22 +114,32 @@ export function useGameMovement(deps: UseGameMovementDeps) {
       const resolved = resolveWorldMovement(myPosition, dx, dz, liftY)
       myPosition.x = resolved.x
       myPosition.z = resolved.z
+    } else {
+      sprinting = false
     }
-    myPosition.y = EYE_HEIGHT + (buildingFloorAt(myPosition.x, myPosition.z, feetY) ?? terrainHeightAt(myPosition.x, myPosition.z))
+    jumpRequested = false
+    if (airY > 0 || airVelocity > 0) {
+      airVelocity -= GRAVITY * dt
+      airY = Math.max(0, airY + airVelocity * dt)
+      if (airY === 0) airVelocity = 0
+    }
+    myPosition.y = EYE_HEIGHT + airY + (buildingFloorAt(myPosition.x, myPosition.z, feetY) ?? terrainHeightAt(myPosition.x, myPosition.z))
     updateOpenHouseVisibility(myPosition.x, myPosition.z)
 
-    camera.position.set(myPosition.x, myPosition.y, myPosition.z)
+    camera.position.set(myPosition.x, eyeSmoother.update(myPosition.y, dt), myPosition.z)
     camera.rotation.order = 'YXZ'
     const cameraDt = advanceHitStop(cameraHitStop, dt)
     kickT += cameraDt
     if (cameraDt > 0) shake = cameraShake.update(cameraDt)
     const kick = punchKick(kickT)
+    // comfort: shake / roll / fov kick scaled down (or off), fov from the settings
+    const motion = cameraMotionScale(comfortSettings.reduceCameraMotion)
     camera.rotation.y = yaw
-    camera.rotation.x = pitch + shake.pitch + kick.pitch
-    camera.rotation.z = shake.roll
-    if (kick.fov !== kickFov) {
-      camera.fov += kick.fov - kickFov
-      kickFov = kick.fov
+    camera.rotation.x = pitch + (shake.pitch + kick.pitch) * motion.shake
+    camera.rotation.z = shake.roll * motion.roll
+    const fov = verticalFovFor(comfortSettings.fov, camera.aspect) + kick.fov * motion.fovKick
+    if (fov !== camera.fov) {
+      camera.fov = fov
       camera.updateProjectionMatrix()
     }
 
@@ -120,7 +147,7 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     const now = Date.now()
     if (room && now - lastEmit > EMIT_INTERVAL_MS) {
       lastEmit = now
-      room.send('move', { x: myPosition.x, y: myPosition.y, z: myPosition.z, ry: yaw })
+      room.send('move', { x: myPosition.x, y: myPosition.y, z: myPosition.z, ry: yaw, sprint: sprinting })
     }
   }
 
@@ -195,8 +222,9 @@ export function useGameMovement(deps: UseGameMovementDeps) {
 
   function onMouseMove(e: MouseEvent) {
     if (!pointerLocked.value) return
-    mouseX = e.movementX
-    mouseY = e.movementY
+    // add up: several mousemove events can arrive in one frame, keeping only the last made the look judder
+    mouseX += e.movementX
+    mouseY += e.movementY
   }
 
   function onCanvasMouseDown(e: MouseEvent) {
@@ -204,7 +232,8 @@ export function useGameMovement(deps: UseGameMovementDeps) {
   }
 
   function setMoveKey(code: string, down: boolean): void {
-    if (matches('moveForward', code)) keys.forward = down
+    if (code === 'ShiftLeft' || code === 'ShiftRight') keys.sprint = down
+    else if (matches('moveForward', code)) keys.forward = down
     else if (matches('moveBack', code)) keys.back = down
     else if (matches('moveLeft', code)) keys.left = down
     else if (matches('moveRight', code)) keys.right = down
@@ -219,6 +248,12 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     const slot = e.repeat ? -1 : HOTBAR_ACTIONS.findIndex((a) => matches(a, e.code))
     if (slot >= 0) {
       deps.onHotbarDigit(slot)
+      return
+    }
+    if (matches('jump', e.code)) {
+      // Space would otherwise press a focused button or scroll the page
+      e.preventDefault()
+      if (!e.repeat && pointerLocked.value) jumpRequested = true
       return
     }
     setMoveKey(e.code, true)

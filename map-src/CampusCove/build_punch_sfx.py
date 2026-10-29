@@ -9,7 +9,6 @@ OUT = os.path.normpath(os.path.join(HERE, "..", "..", "front", "public", "assets
 SOUNDS = [
     ("whoosh", "fit/whoosh.short/bamboo_swish", 0.28, (1, 2, 3)),
     ("impact", "fit/land.light/fingertip_book", 0.3, (1, 2, 3)),
-    ("breath", "reverse_swell/breath", 0.6, (1,)),
 ]
 
 

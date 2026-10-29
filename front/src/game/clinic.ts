@@ -3,10 +3,11 @@ import { EYE_HEIGHT } from './gameRoomConstants.ts'
 type Point = { x: number; y: number; z: number }
 type Vec3 = [number, number, number]
 
-const NURSE_REACH = 2.5
+/** The desk keeps players ~1.9 m from the nurse; leave room to stand back or at a desk corner. Must match socket/src/survival.ts. */
+const NURSE_REACH = 3.5
 const NURSE_HEIGHT_REACH = 1.5
 const NURSE_CHEST_HEIGHT = 1.2
-const NURSE_AIM_ANGLE = 0.45
+const NURSE_AIM_ANGLE = 0.6
 
 export function isAimingAtNurse(eye: Point, forward: Point, nurse: Vec3): boolean {
   const [nx, ny, nz] = nurse

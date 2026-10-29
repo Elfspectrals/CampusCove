@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import {
+  drainStamina,
   MAX_STAMINA,
   PUNCH_STAMINA_COST,
   STAMINA_REGEN_DELAY_MS,
@@ -48,4 +49,11 @@ test('three misses in a row empty a full gauge', () => {
   }
   assert.equal(stamina, 0)
   assert.equal(spendPunchStamina(stamina ?? 0, spentAt, spentAt + 100, false), null)
+})
+
+test('jumps and sprinting drain from the regenerated value, never below 0', () => {
+  assert.equal(drainStamina(40, 1000, 1000, 12), 28)
+  assert.equal(drainStamina(40, 1000, 1000 + STAMINA_REGEN_DELAY_MS + 1000, 12), 53)
+  assert.equal(drainStamina(5, 1000, 1000, 12), 0)
+  assert.equal(drainStamina(MAX_STAMINA, 0, 1000, 0), MAX_STAMINA)
 })

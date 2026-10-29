@@ -1,6 +1,8 @@
 export const MAX_STAMINA = 100
 export const PUNCH_STAMINA_COST = 20
 export const WHIFF_STAMINA_COST = 34
+export const JUMP_STAMINA_COST = 12
+export const SPRINT_STAMINA_PER_S = 18
 export const STAMINA_REGEN_PER_S = 25
 export const STAMINA_REGEN_DELAY_MS = 600
 
@@ -13,4 +15,9 @@ export function spendPunchStamina(stamina: number, spentAt: number, now: number,
   const current = staminaAt(stamina, spentAt, now)
   if (current < PUNCH_STAMINA_COST) return null
   return Math.max(0, current - (hit ? PUNCH_STAMINA_COST : WHIFF_STAMINA_COST))
+}
+
+/** Jumps and sprinting never get refused here (the client already gates them): they only drain, down to 0. */
+export function drainStamina(stamina: number, spentAt: number, now: number, amount: number): number {
+  return Math.max(0, staminaAt(stamina, spentAt, now) - amount)
 }

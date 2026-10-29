@@ -128,7 +128,7 @@ export const legalEn: LegalDocs = {
           'campus_cove_wallet_balances — cached balances for display — until logout.',
           'cc_locale — chosen language — until cleared.',
           'cc_consent — your tracker choices — 6 months.',
-          'cc_graphics_quality, cc.reducedEffects — game graphics and accessibility settings — until cleared.',
+          'cc_graphics_quality, cc.reducedEffects, cc.comfort — game graphics and accessibility settings — until cleared.',
           'cc_keybindings — your custom keys (Settings) — until deleted or reset to default.',
           'campus_cove_admin_mode, cc.admin.worldPlanner.v1 — admin tools (admin accounts only).',
         ],
