@@ -1,11 +1,17 @@
 export const PUNCH_REACH = 2
 export const PUNCH_COOLDOWN_MS = 800
 export const PUNCH_IMPACT_S = 5 / 30
+export const PUNCH_DAMAGE = 8
 const PUNCH_FACING_COS = 0.5
 const PUNCH_HEIGHT_REACH = 1
 const SHAKE_DECAY = 2.2
 const SHAKE_MAX_PITCH = 0.035
 const SHAKE_MAX_ROLL = 0.05
+const SHAKE_PITCH_RATE = 24
+const SHAKE_ROLL_RATE = 19
+const JOLT_RISE_S = 0.03
+const JOLT_DECAY = 14
+const JOLT_S = 0.35
 const KNOCKBACK_DECAY = 9
 
 export interface PunchCandidate {
@@ -38,22 +44,38 @@ export function pickPunchTarget(
   return best
 }
 
+function joltWeight(t: number): number {
+  if (t < 0 || t >= JOLT_S) return 0
+  if (t < JOLT_RISE_S) return Math.sin((t / JOLT_RISE_S) * (Math.PI / 2))
+  return Math.exp(-JOLT_DECAY * (t - JOLT_RISE_S))
+}
+
 export function createCameraShake() {
   let trauma = 0
   let time = 0
+  let joltT = JOLT_S
+  let joltPitch = 0
+  let joltRoll = 0
 
   return {
     add(amount: number): void {
       trauma = Math.min(1, trauma + amount)
     },
+    jolt(pitch: number, roll: number): void {
+      joltPitch = pitch
+      joltRoll = roll
+      joltT = 0
+    },
     update(dt: number): { pitch: number; roll: number } {
-      if (trauma <= 0) return { pitch: 0, roll: 0 }
+      joltT += dt
+      const jolt = joltWeight(joltT)
+      if (trauma <= 0) return { pitch: joltPitch * jolt, roll: joltRoll * jolt }
       trauma = Math.max(0, trauma - SHAKE_DECAY * dt)
       time += dt
       const strength = trauma * trauma
       return {
-        pitch: SHAKE_MAX_PITCH * strength * Math.sin(time * 37),
-        roll: SHAKE_MAX_ROLL * strength * Math.sin(time * 29 + 1),
+        pitch: SHAKE_MAX_PITCH * strength * Math.sin(time * SHAKE_PITCH_RATE) + joltPitch * jolt,
+        roll: SHAKE_MAX_ROLL * strength * Math.sin(time * SHAKE_ROLL_RATE + 1) + joltRoll * jolt,
       }
     },
   }

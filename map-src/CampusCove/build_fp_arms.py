@@ -10,8 +10,7 @@ import bmesh
 if "__file__" not in globals():
     raise RuntimeError('Run with exec(open(p).read(), {"__file__": p}) so the script can find lib_common.py')
 HERE = os.path.dirname(os.path.abspath(__file__))
-if HERE not in sys.path:
-    sys.path.insert(0, HERE)
+sys.path.insert(0, HERE)
 import lib_common as L
 importlib.reload(L)
 import bpy
@@ -132,17 +131,45 @@ def empty(coll, name, parent, location, rotation=None):
     return ob
 
 
+def action_fcurves(action):
+    if hasattr(action, "fcurves"):
+        return list(action.fcurves)
+    return [fc for layer in action.layers for strip in layer.strips for bag in strip.channelbags for fc in bag.fcurves]
+
+
+def mirrored(keys):
+    return [(frame, (-dloc[0], dloc[1], dloc[2]), (drot[0], -drot[1], -drot[2]), *rest) for frame, dloc, drot, *rest in keys]
+
+
+PUNCH_KEYS = [
+    (1, (0, 0, 0), (0, 0, 0)),
+    (3, (0.04, -0.12, -0.04), (0.22, 0, 0.14)),
+    (4, (0.04, -0.12, -0.04), (0.22, 0, 0.14), "snap"),
+    (6, (-0.11, 0.31, 0.19), (-0.5, 0.02, -0.09)),
+    (7, (-0.1, 0.27, 0.18), (-0.44, 0.02, -0.08)),
+    (8, (-0.1, 0.27, 0.18), (-0.44, 0.02, -0.08)),
+    (13, (0, 0, 0), (0, 0, 0)),
+]
+
+
 def keyframes(obj, clip, keys):
     rest_loc = obj.location.copy()
     rest_rot = obj.rotation_euler.copy()
     obj.animation_data_create()
     obj.animation_data.action = None
-    for frame, dloc, drot in keys:
+    snaps = set()
+    for frame, dloc, drot, *interpolation in keys:
         obj.location = rest_loc + Vector(dloc)
         obj.rotation_euler = Euler((rest_rot.x + drot[0], rest_rot.y + drot[1], rest_rot.z + drot[2]))
         obj.keyframe_insert("location", frame=frame)
         obj.keyframe_insert("rotation_euler", frame=frame)
+        if interpolation:
+            snaps.add(frame)
     action = obj.animation_data.action
+    for fcurve in action_fcurves(action):
+        for point in fcurve.keyframe_points:
+            if point.co.x in snaps:
+                point.interpolation = "LINEAR"
     action.name = f"{clip}_{obj.name}"
     track = obj.animation_data.nla_tracks.new()
     track.name = clip
@@ -177,13 +204,8 @@ def animate(arm, hand):
         (14, (-0.03, 0.13, 0.04), (0.1, 0, 0)),
         (19, (0, 0, 0), (0, 0, 0)),
     ])
-    keyframes(arm["R"], "Punch", [
-        (1, (0, 0, 0), (0, 0, 0)),
-        (3, (0.03, -0.08, -0.03), (0.15, 0, 0.1)),
-        (6, (-0.1, 0.27, 0.18), (-0.44, 0.02, -0.08)),
-        (8, (-0.1, 0.25, 0.17), (-0.42, 0.02, -0.08)),
-        (16, (0, 0, 0), (0, 0, 0)),
-    ])
+    keyframes(arm["R"], "Punch", PUNCH_KEYS)
+    keyframes(arm["L"], "PunchL", mirrored(PUNCH_KEYS))
     keyframes(hand["R"], "UseKey", [
         (1, (0, 0, 0), (0, 0, 0)),
         (6, (0, 0, 0), (0, 0, 0)),

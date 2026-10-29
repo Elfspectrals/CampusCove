@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { PUNCH_DAMAGE, onPunch } from './punch.js'
+import { MAX_STAMINA, PUNCH_STAMINA_COST, WHIFF_STAMINA_COST } from './stamina.js'
 
 function fakeClient(sessionId) {
   const sent = []
@@ -16,7 +17,8 @@ function fakePlayer(sessionId, x, z, ry = 0) {
     ry,
     stats: { health: 100, hunger: 100, thirst: 100 },
     knockedOutUntil: 0,
-    lastPunchAt: 0
+    lastPunchAt: 0,
+    stamina: MAX_STAMINA
   }
 }
 
@@ -111,4 +113,35 @@ test('a forged payload does not hurt anyone', () => {
   punch(room, { targetSessionId: 42 })
   assert.equal(attacker.stats.health, 100)
   assert.equal(target.stats.health, 100)
+})
+
+test('a miss costs more stamina than a hit', () => {
+  const attacker = fakePlayer('a', 0, 0)
+  const target = fakePlayer('b', 0, -4)
+  const room = fakeRoom(attacker, target)
+  punch(room, { targetSessionId: 'b' })
+  assert.equal(attacker.stamina, MAX_STAMINA - WHIFF_STAMINA_COST)
+})
+
+test('a hit costs the punch stamina', () => {
+  const attacker = fakePlayer('a', 0, 0)
+  const target = fakePlayer('b', 0, -1.5)
+  const room = fakeRoom(attacker, target)
+  punch(room, { targetSessionId: 'b' })
+  assert.equal(target.stats.health < 100, true)
+  assert.equal(attacker.stamina, MAX_STAMINA - PUNCH_STAMINA_COST)
+})
+
+test('a tired player cannot punch and is told so', () => {
+  const attacker = fakePlayer('a', 0, 0)
+  const target = fakePlayer('b', 0, -1.5)
+  attacker.stamina = 0
+  attacker.lastPunchAt = Date.now() - 900
+  const room = fakeRoom(attacker, target)
+  punch(room, { targetSessionId: 'b' })
+  assert.equal(target.stats.health, 100)
+  assert.equal(received(room.clients[2], 'user_punched').length, 0)
+  const [refusal] = received(room.clients[0], 'punch_tired')
+  assert.ok(refusal.stamina < PUNCH_STAMINA_COST)
+  assert.equal(received(room.clients[1], 'punch_tired').length, 0)
 })

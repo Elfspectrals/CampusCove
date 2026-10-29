@@ -24,6 +24,11 @@ export interface UserPunchedPayload {
   targetSessionId: string | null
   dirX: number
   dirZ: number
+  damage?: number
+}
+
+export interface PunchTiredPayload {
+  stamina: number
 }
 
 export interface HousingUnitPayload {

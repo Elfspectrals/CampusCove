@@ -10,14 +10,19 @@ import { createActionBubble, type AvatarAction } from '../../game/actionBubble'
 import { EYE_HEIGHT } from '../../game/gameRoomConstants'
 import {
   advancePunchPose,
+  createDamageNumber,
+  createHitFlash,
   createPunchImpact,
   idlePunchPose,
+  jabLeftArm,
   jabRightArm,
   punchPoseOffset,
   startRecoil,
   startSwing,
   type PunchPose,
 } from '../../game/remotePunch'
+import { advanceHitStop, idleHitStop, scheduleHitStop, type HitStop } from '../../game/punchFeel'
+import type { SfxName } from '../../game/sfx'
 import type { RemoteUserPayload } from '../../types/gameRealtime'
 
 /** How fast remote avatars catch up with their last known position (1/s; higher = snappier). */
@@ -42,6 +47,8 @@ interface RemoteAvatar {
   punchPose: PunchPose
   punchOffsetX: number
   punchOffsetZ: number
+  hitStop: HitStop
+  jabCount: number
 }
 
 interface AppearanceUpdate {
@@ -52,6 +59,7 @@ interface AppearanceUpdate {
 export interface RemoteAvatarsDeps {
   getScene: () => THREE.Scene | undefined
   myPosition: { x: number; y: number; z: number }
+  playSoundOn: (name: SfxName, object: THREE.Object3D, delayS: number) => void
 }
 
 function parseBodyTintColors(raw: Record<string, string> | null | undefined): CosmeticColors {
@@ -91,6 +99,8 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
   /** Eat / drink bubbles over other players' heads (they live on the avatar group). */
   let bubbles: Array<ReturnType<typeof createActionBubble>> = []
   let impacts: Array<ReturnType<typeof createPunchImpact>> = []
+  let flashes: Array<ReturnType<typeof createHitFlash>> = []
+  let damageNumbers: Array<ReturnType<typeof createDamageNumber>> = []
 
   function nextRenderToken(sessionId: string): number {
     const next = (renderTokenBySessionId.get(sessionId) ?? 0) + 1
@@ -116,6 +126,7 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     })
     for (const obj of stale) {
       scene.remove(obj)
+      endFlashOf(obj)
       disposeObject3D(obj)
     }
   }
@@ -128,6 +139,7 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
       removeSceneDuplicates(sessionId, entry.userId)
       scene.remove(entry.group)
     }
+    endFlashOf(entry.group)
     disposeObject3D(entry.group)
     avatars.delete(sessionId)
     if (sessionByUserId.get(entry.userId) === sessionId) sessionByUserId.delete(entry.userId)
@@ -160,6 +172,7 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     const existing = avatars.get(sessionId)
     if (existing) {
       scene.remove(existing.group)
+      endFlashOf(existing.group)
       disposeObject3D(existing.group)
       avatars.delete(sessionId)
       if (sessionByUserId.get(existing.userId) === sessionId) sessionByUserId.delete(existing.userId)
@@ -196,6 +209,8 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
       punchPose: idlePunchPose(),
       punchOffsetX: 0,
       punchOffsetZ: 0,
+      hitStop: idleHitStop(),
+      jabCount: 0,
     })
     sessionByUserId.set(data.id, sessionId)
 
@@ -231,6 +246,7 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     removeSceneDuplicates(sessionId, latest.userId)
     tagAvatar(group, sessionId, latest.userId, latest.pseudo)
     scene.remove(latest.group)
+    endFlashOf(latest.group)
     disposeObject3D(latest.group)
     placeAvatar(group, latest.x, latest.y, latest.z, latest.ry)
     scene.add(group)
@@ -256,14 +272,25 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
 
   function showPunch(sessionId: string) {
     const entry = avatars.get(sessionId)
-    if (entry) startSwing(entry.punchPose)
+    if (!entry) return
+    entry.jabCount += 1
+    startSwing(entry.punchPose)
+    deps.playSoundOn('whoosh', entry.group, 0)
   }
 
-  function showHit(sessionId: string, dirX: number, dirZ: number) {
+  function showHit(sessionId: string, dirX: number, dirZ: number, damage: number, timing: { delay: number; hitStop: number }) {
     const entry = avatars.get(sessionId)
     if (!entry) return
-    startRecoil(entry.punchPose, dirX, dirZ)
-    impacts.push(createPunchImpact(entry.group, dirX, dirZ))
+    startRecoil(entry.punchPose, dirX, dirZ, timing.delay)
+    scheduleHitStop(entry.hitStop, timing.delay, timing.hitStop)
+    impacts.push(createPunchImpact(entry.group, dirX, dirZ, timing.delay))
+    flashes.push(createHitFlash(entry.group, timing.delay))
+    damageNumbers.push(createDamageNumber(entry.group, damage, timing.delay))
+    deps.playSoundOn('impact', entry.group, timing.delay)
+  }
+
+  function endFlashOf(group: THREE.Object3D) {
+    for (const flash of flashes) if (flash.avatar === group) flash.end()
   }
 
   function applyPunchPose(entry: RemoteAvatar, dt: number, animated: boolean) {
@@ -275,7 +302,7 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     entry.group.rotation.z = pose.leanZ
     entry.punchOffsetX = pose.x
     entry.punchOffsetZ = pose.z
-    if (animated) jabRightArm(entry.group, pose.swing)
+    if (animated) (entry.jabCount % 2 === 0 ? jabLeftArm : jabRightArm)(entry.group, pose.swing)
   }
 
   function clear() {
@@ -297,6 +324,8 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
   function tick(dt: number) {
     if (bubbles.length > 0) bubbles = bubbles.filter((b) => b.update(dt))
     if (impacts.length > 0) impacts = impacts.filter((i) => i.update(dt))
+    if (flashes.length > 0) flashes = flashes.filter((f) => f.update(dt))
+    if (damageNumbers.length > 0) damageNumbers = damageNumbers.filter((d) => d.update(dt))
     const t = 1 - Math.exp(-REMOTE_SMOOTHING * dt)
     for (const entry of avatars.values()) {
       const group = entry.group
@@ -307,7 +336,8 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
       const dz = entry.z - group.position.z
       if (dx * dx + dy * dy + dz * dz > REMOTE_SNAP_DISTANCE * REMOTE_SNAP_DISTANCE) {
         placeAvatar(group, entry.x, entry.y, entry.z, entry.ry)
-        applyPunchPose(entry, dt, animate(group, dt, 0))
+        const poseDt = advanceHitStop(entry.hitStop, dt)
+        applyPunchPose(entry, poseDt, animate(group, poseDt, 0))
         continue
       }
       const prevX = group.position.x
@@ -321,7 +351,8 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
       group.rotation.y += turn * t
       // rigged skins play Idle / Walk / Run from the speed the smoothing actually produced
       const moved = Math.hypot(group.position.x - prevX, group.position.z - prevZ)
-      applyPunchPose(entry, dt, animate(group, dt, dt > 0 ? moved / dt : 0))
+      const poseDt = advanceHitStop(entry.hitStop, dt)
+      applyPunchPose(entry, poseDt, animate(group, poseDt, dt > 0 ? moved / dt : 0))
     }
   }
 

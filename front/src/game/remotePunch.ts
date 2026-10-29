@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { PUNCH_IMPACT_S } from './punch'
+import { easeOutBack } from './punchFeel'
 
 const SWING_S = 0.45
 const RECOIL_RISE_S = 0.05
@@ -9,11 +10,18 @@ const LUNGE_LEAN = 0.18
 const RECOIL_DISTANCE = 0.3
 const RECOIL_TILT = 0.22
 const JAB_LIFT = 0.15
-const IMPACT_LIFETIME_S = 0.3
+const IMPACT_LIFETIME_S = 0.35
+const IMPACT_POP_S = 0.12
 const IMPACT_Y = 1.25
 const IMPACT_TOWARDS_ATTACKER = 0.35
-const IMPACT_SIZE = 0.75
+const IMPACT_SIZE = 1.1
 const CANVAS = 128
+const FLASH_S = 0.08
+const DAMAGE_LIFETIME_S = 0.8
+const DAMAGE_POP_S = 0.15
+const DAMAGE_Y = 1.95
+const DAMAGE_RISE = 0.5
+const DAMAGE_SIZE = 0.45
 
 function smooth(t: number): number {
   return t * t * (3 - 2 * t)
@@ -46,8 +54,8 @@ export function startSwing(pose: PunchPose): void {
   pose.swingT = 0
 }
 
-export function startRecoil(pose: PunchPose, dirX: number, dirZ: number): void {
-  pose.recoilT = -PUNCH_IMPACT_S
+export function startRecoil(pose: PunchPose, dirX: number, dirZ: number, delay: number): void {
+  pose.recoilT = -delay
   pose.recoilX = dirX
   pose.recoilZ = dirZ
 }
@@ -96,14 +104,22 @@ function aimBone(from: THREE.Object3D, to: THREE.Object3D, direction: THREE.Vect
 
 const jabDirection = new THREE.Vector3()
 
-export function jabRightArm(avatar: THREE.Object3D, weight: number): void {
-  const upper = avatar.getObjectByName('UpperArmR')
-  const lower = avatar.getObjectByName('LowerArmR')
-  const hand = avatar.getObjectByName('HandR')
+function jabArm(avatar: THREE.Object3D, side: 'L' | 'R', weight: number): void {
+  const upper = avatar.getObjectByName(`UpperArm${side}`)
+  const lower = avatar.getObjectByName(`LowerArm${side}`)
+  const hand = avatar.getObjectByName(`Hand${side}`)
   if (!upper || !lower || !hand || weight <= 0) return
   jabDirection.set(Math.sin(avatar.rotation.y), JAB_LIFT, Math.cos(avatar.rotation.y)).normalize()
   aimBone(upper, lower, jabDirection, weight)
   aimBone(lower, hand, jabDirection, weight)
+}
+
+export function jabRightArm(avatar: THREE.Object3D, weight: number): void {
+  jabArm(avatar, 'R', weight)
+}
+
+export function jabLeftArm(avatar: THREE.Object3D, weight: number): void {
+  jabArm(avatar, 'L', weight)
 }
 
 let impactTexture: THREE.CanvasTexture | null = null
@@ -131,7 +147,7 @@ function starTexture(): THREE.CanvasTexture {
   return impactTexture
 }
 
-export function createPunchImpact(avatar: THREE.Object3D, dirX: number, dirZ: number) {
+export function createPunchImpact(avatar: THREE.Object3D, dirX: number, dirZ: number, delay: number) {
   const material = new THREE.SpriteMaterial({ map: starTexture(), transparent: true, depthWrite: false })
   const sprite = new THREE.Sprite(material)
   sprite.renderOrder = 5
@@ -140,7 +156,7 @@ export function createPunchImpact(avatar: THREE.Object3D, dirX: number, dirZ: nu
   const yaw = avatar.rotation.y
   const towardsX = -(Math.cos(yaw) * dirX - Math.sin(yaw) * dirZ) * IMPACT_TOWARDS_ATTACKER
   const towardsZ = -(Math.sin(yaw) * dirX + Math.cos(yaw) * dirZ) * IMPACT_TOWARDS_ATTACKER
-  let age = -PUNCH_IMPACT_S
+  let age = -delay
 
   function update(dt: number): boolean {
     age += dt
@@ -153,10 +169,99 @@ export function createPunchImpact(avatar: THREE.Object3D, dirX: number, dirZ: nu
     const t = age / IMPACT_LIFETIME_S
     const parentScale = avatar.scale.y || 1
     sprite.visible = true
-    sprite.scale.setScalar((IMPACT_SIZE * (0.6 + 0.6 * Math.sin(Math.min(1, t * 3) * (Math.PI / 2)))) / parentScale)
+    sprite.scale.setScalar((IMPACT_SIZE * easeOutBack(age / IMPACT_POP_S)) / parentScale)
     sprite.position.set(towardsX / parentScale, IMPACT_Y / parentScale, towardsZ / parentScale)
     material.rotation = t * 0.8
     material.opacity = 1 - smooth(t)
+    return true
+  }
+
+  return { update }
+}
+
+let flashMaterial: THREE.MeshBasicMaterial | null = null
+
+function whiteFlashMaterial(): THREE.MeshBasicMaterial {
+  if (!flashMaterial) flashMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false })
+  return flashMaterial
+}
+
+export function createHitFlash(avatar: THREE.Object3D, delay: number) {
+  const originals = new Map<THREE.Mesh, THREE.Material | THREE.Material[]>()
+  let age = -delay
+  let started = false
+
+  function end(): void {
+    for (const [mesh, material] of originals) mesh.material = material
+    originals.clear()
+  }
+
+  function update(dt: number): boolean {
+    age += dt
+    if (age >= FLASH_S) {
+      end()
+      return false
+    }
+    if (age < 0 || started) return true
+    started = true
+    avatar.traverse((obj) => {
+      if (!(obj instanceof THREE.Mesh)) return
+      originals.set(obj, obj.material)
+      obj.material = whiteFlashMaterial()
+    })
+    return true
+  }
+
+  return { avatar, update, end }
+}
+
+const damageTextures = new Map<string, THREE.CanvasTexture>()
+
+function damageTexture(text: string): THREE.CanvasTexture {
+  const cached = damageTextures.get(text)
+  if (cached) return cached
+  const canvas = document.createElement('canvas')
+  canvas.width = CANVAS * 2
+  canvas.height = CANVAS
+  const ctx = canvas.getContext('2d')!
+  ctx.font = `88px "Lilita One", sans-serif`
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.lineJoin = 'round'
+  ctx.lineWidth = 14
+  ctx.strokeStyle = '#a32d2d'
+  ctx.strokeText(text, CANVAS, CANVAS / 2)
+  ctx.fillStyle = '#ffffff'
+  ctx.fillText(text, CANVAS, CANVAS / 2)
+  const texture = new THREE.CanvasTexture(canvas)
+  texture.colorSpace = THREE.SRGBColorSpace
+  damageTextures.set(text, texture)
+  return texture
+}
+
+export function createDamageNumber(avatar: THREE.Object3D, damage: number, delay: number) {
+  const material = new THREE.SpriteMaterial({ map: damageTexture(`-${damage}`), transparent: true, depthWrite: false })
+  const sprite = new THREE.Sprite(material)
+  sprite.renderOrder = 6
+  sprite.visible = false
+  avatar.add(sprite)
+  let age = -delay
+
+  function update(dt: number): boolean {
+    age += dt
+    if (age >= DAMAGE_LIFETIME_S) {
+      sprite.removeFromParent()
+      material.dispose()
+      return false
+    }
+    if (age < 0) return true
+    const t = age / DAMAGE_LIFETIME_S
+    const parentScale = avatar.scale.y || 1
+    const size = (DAMAGE_SIZE * easeOutBack(age / DAMAGE_POP_S)) / parentScale
+    sprite.visible = true
+    sprite.scale.set(size * 2, size, 1)
+    sprite.position.set(0, (DAMAGE_Y + DAMAGE_RISE * smooth(t)) / parentScale, 0)
+    material.opacity = t < 0.6 ? 1 : 1 - (t - 0.6) / 0.4
     return true
   }
 

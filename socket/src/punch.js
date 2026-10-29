@@ -1,5 +1,6 @@
 import { unitAt } from './movement.js'
 import { hurt } from './survival.js'
+import { spendPunchStamina, staminaAt } from './stamina.js'
 
 export const PUNCH_DAMAGE = 8
 const PUNCH_COOLDOWN_MS = 800
@@ -33,10 +34,16 @@ export function onPunch(room, client, payload) {
   const attacker = room.players.get(client.sessionId)
   const now = Date.now()
   if (!attacker || !canPunchNow(attacker, now)) return
-  attacker.lastPunchAt = now
   const targetSessionId = typeof payload?.targetSessionId === 'string' ? payload.targetSessionId : null
   const target = targetSessionId ? room.players.get(targetSessionId) : null
   const hit = canHit(room, attacker, target, now)
+  const stamina = spendPunchStamina(attacker.stamina, attacker.lastPunchAt, now, hit)
+  if (stamina === null) {
+    client.send('punch_tired', { stamina: staminaAt(attacker.stamina, attacker.lastPunchAt, now) })
+    return
+  }
+  attacker.stamina = stamina
+  attacker.lastPunchAt = now
   const dir = hit ? punchDirection(attacker, target) : null
   const message = {
     sessionId: client.sessionId,

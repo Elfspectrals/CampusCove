@@ -11,10 +11,12 @@ import {
 } from '../api/characterCosmetics'
 import { fetchHousingUnits } from '../api/housing'
 import { clearAuth, getStoredAuth } from '../api/session'
+import GameHitMarker from '../components/game/GameHitMarker.vue'
 import GameHudToolbar from '../components/game/GameHudToolbar.vue'
 import GameInteractionPrompt from '../components/game/GameInteractionPrompt.vue'
 import GamePlacementHud from '../components/game/GamePlacementHud.vue'
 import GamePlayerHotbar from '../components/game/GamePlayerHotbar.vue'
+import GameStaminaBar from '../components/game/GameStaminaBar.vue'
 import GamePlayerInventoryPanel from '../components/game/GamePlayerInventoryPanel.vue'
 import GamePointerLockOverlay from '../components/game/GamePointerLockOverlay.vue'
 import GameSettingsDialog from '../components/game/GameSettingsDialog.vue'
@@ -48,6 +50,8 @@ import { createGameScene, disposeGameScene, type GameScene } from '../game/gameS
 import { createFirstPersonArms } from '../game/firstPersonArms'
 import { createHeldItem } from '../game/heldItem'
 import { COVE_HOME, findHouse, findWork } from '../game/assets/catalog'
+import { createSfx } from '../game/sfx'
+import { MAX_STAMINA } from '../game/stamina'
 import { createDoorSigns } from '../game/town/doorSigns'
 import { houseKeyAt, openHouseInterior, updateFrontDoors } from '../game/town/openHouses'
 import { isMedicalItem } from '../utils/itemShopPresentation'
@@ -81,6 +85,7 @@ const positionLabel = ref(formatPosition())
 let game: GameScene | null = null
 const getScene = () => game?.scene
 const getCamera = () => game?.camera
+const sfx = createSfx(getCamera)
 const getRenderer = () => game?.renderer
 
 // ---------------------------------------------------------------- house decoration
@@ -284,6 +289,7 @@ function heldModel(): { url: string | null; scale: number } {
 
 // ---------------------------------------------------------------- survival: hunger, thirst, health
 
+const stamina = ref(MAX_STAMINA)
 const survival = useSurvival({
   gameRoomRef,
   getScene,
@@ -301,6 +307,7 @@ const survival = useSurvival({
   },
   setLook: (yaw, pitch) => movement.setLook(yaw, pitch),
   promptsHidden: () => inventoryOpen.value,
+  onStamina: (value) => punch.syncStamina(value),
 })
 const {
   prompt: survivalPrompt,
@@ -486,6 +493,7 @@ const movement = useGameMovement({
     const held = heldModel()
     heldItem.update(arms?.rightHand() ?? null, held.url, held.scale)
     survival.tick(dt)
+    stamina.value = punch.staminaNow()
     cafe.updatePrompt()
     clinic.updatePrompt()
     if (!doorSigns.group.parent) getScene()?.add(doorSigns.group)
@@ -503,8 +511,13 @@ const punch = usePunch({
   knockedOut: computed(() => knockedOut.value || recovering.value !== null),
   reducedEffects,
   shakeCamera: movement.shakeCamera,
+  kickCamera: movement.kickCamera,
+  freezeCamera: movement.freezeCamera,
+  joltCamera: movement.joltCamera,
   knockBack: movement.knockBack,
+  playSound: sfx.play,
 })
+const { hitMarker } = punch
 
 const realtime = useGameRealtime({
   router,
@@ -531,6 +544,9 @@ const realtime = useGameRealtime({
   onDoorsSync: housing.applyOpenDoors,
   onMyBodyModel: (bodyModelGlb) => arms?.setSkin(bodyModelGlb),
   onPunched: punch.onPunched,
+  onPunchTired: punch.onTired,
+  playSoundOn: sfx.playOn,
+  punchHitTiming: punch.remoteHitTimingFor,
 })
 const { switchingRoom } = realtime
 
@@ -634,6 +650,7 @@ onUnmounted(() => {
   window.clearInterval(doorSignTimer)
   doorSigns.dispose()
   arms?.dispose()
+  sfx.dispose()
   environment.disposeRoomEnvironment()
   if (game) disposeGameScene(game)
   game = null
@@ -664,6 +681,7 @@ const crosshairClass = computed(() => {
       class="pointer-events-none absolute left-1/2 top-1/2 z-10 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 transition-colors duration-150"
       :class="crosshairClass"
     />
+    <GameHitMarker :marker="hitMarker" />
     <GameSurvivalEffects
       :effects="survivalEffects"
       :damage-flash="damageFlash"
@@ -740,6 +758,7 @@ const crosshairClass = computed(() => {
     >
       {{ storeFeedback.text }}
     </p>
+    <GameStaminaBar v-if="!inventoryOpen" :stamina="stamina" :reduced-effects="reducedEffects" />
     <GamePlayerHotbar
       :slots="slots"
       :selected-hotbar-index="selectedHotbarIndex"

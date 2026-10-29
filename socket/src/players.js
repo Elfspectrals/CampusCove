@@ -1,4 +1,5 @@
 // Player state kept by the room, and what other clients get to see of it.
+import { MAX_STAMINA } from './stamina.js'
 
 const COLORS = [
   0xe94560, 0x0f3460, 0x533483, 0x00d9ff, 0x00ff88,
@@ -73,6 +74,7 @@ export function createPlayer(client, options, colorIndex, spawn) {
     lastConsumeAt: 0,
     lastSipAt: 0,
     lastPunchAt: 0,
+    stamina: MAX_STAMINA,
     fallPeakY: spawn.y,
     knockedOutUntil: 0,
     speedBoostUntil: 0,

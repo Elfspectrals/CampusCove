@@ -38,6 +38,7 @@ export interface SurvivalDeps {
   teleport: (x: number, y: number, z: number) => void
   setLook: (yaw: number, pitch: number) => void
   promptsHidden: () => boolean
+  onStamina: (stamina: number) => void
 }
 
 function readReducedEffects(): boolean {
@@ -84,11 +85,12 @@ export function useSurvival(deps: SurvivalDeps) {
   // ------------------------------------------------------------ server messages
 
   function bindRoom(room: Room): void {
-    room.onMessage('survival', (data: SurvivalStats & { speedBoostUntil?: number; healUntil?: number | null }) => {
+    room.onMessage('survival', (data: SurvivalStats & { speedBoostUntil?: number; healUntil?: number | null; stamina: number }) => {
       stats.value = { health: data.health, hunger: data.hunger, thirst: data.thirst }
       boostUntil.value = data.speedBoostUntil ?? 0
       healUntil.value = data.healUntil ?? 0
       watchHud.setStats(stats.value, boostUntil.value, healUntil.value)
+      deps.onStamina(data.stamina)
     })
     room.onMessage('survival_damage', () => {
       damageFlash.value++

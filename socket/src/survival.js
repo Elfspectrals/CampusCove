@@ -4,6 +4,7 @@ import { callRealtimeBackend, errorPayload } from './backend.js'
 import { CITY_SPAWN_RADIUS, SURVIVAL_TIME_SCALE } from './config.js'
 import { toInterior, unitAt } from './movement.js'
 import { spawnNear } from './players.js'
+import { staminaAt } from './stamina.js'
 import {
   FOUNTAIN_COOLDOWN_MS,
   MAX_STAT,
@@ -53,7 +54,8 @@ function sendStats(client, player) {
     hunger,
     thirst,
     speedBoostUntil: player.speedBoostUntil,
-    healUntil: player.healOverTime?.until ?? null
+    healUntil: player.healOverTime?.until ?? null,
+    stamina: staminaAt(player.stamina, player.lastPunchAt, Date.now())
   })
 }
 

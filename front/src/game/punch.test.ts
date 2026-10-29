@@ -35,6 +35,26 @@ test('the camera shake fades back to rest', () => {
   assert.deepEqual(shake.update(1 / 60), { pitch: 0, roll: 0 })
 })
 
+test('a camera jolt kicks in at once then fades back to rest', () => {
+  const shake = createCameraShake()
+  shake.jolt(0.05, -0.06)
+  const first = shake.update(0.03)
+  assert.ok(Math.abs(first.pitch - 0.05) < 1e-9 && Math.abs(first.roll + 0.06) < 1e-9)
+  const later = shake.update(0.1)
+  assert.ok(later.pitch > 0 && later.pitch < first.pitch)
+  for (let i = 0; i < 30; i++) shake.update(1 / 60)
+  const rest = shake.update(1 / 60)
+  assert.equal(Math.abs(rest.pitch) + Math.abs(rest.roll), 0)
+})
+
+test('a camera shake does not move while no time passes', () => {
+  const shake = createCameraShake()
+  shake.add(0.5)
+  shake.jolt(0.05, 0)
+  const moving = shake.update(1 / 60)
+  assert.deepEqual(shake.update(0), moving)
+})
+
 test('a knockback travels its distance then stops', () => {
   const knockback = createKnockback()
   knockback.push(3, 4, 0.6)

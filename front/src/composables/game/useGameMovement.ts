@@ -9,6 +9,7 @@ import { resolveWorldMovement } from '../../game/collision/worldCollision'
 import { terrainHeightAt } from '../../game/town/terrainHeight'
 import { buildingFloorAt, capsuleLiftInBuilding, updateOpenHouseVisibility } from '../../game/town/openHouses'
 import { createCameraShake, createKnockback } from '../../game/punch'
+import { advanceHitStop, cameraJolt, idleHitStop, punchKick, scheduleHitStop } from '../../game/punchFeel'
 
 const MOVE_SPEED = 8
 const MAX_FRAME_DT = 0.1
@@ -58,6 +59,10 @@ export function useGameMovement(deps: UseGameMovementDeps) {
   let frameId = 0
   let lastTime = performance.now()
   const cameraShake = createCameraShake()
+  const cameraHitStop = idleHitStop()
+  let kickT = Infinity
+  let kickFov = 0
+  let shake = { pitch: 0, roll: 0 }
   const knockback = createKnockback()
 
   function containerSize(): { w: number; h: number } {
@@ -98,10 +103,18 @@ export function useGameMovement(deps: UseGameMovementDeps) {
 
     camera.position.set(myPosition.x, myPosition.y, myPosition.z)
     camera.rotation.order = 'YXZ'
-    const shake = cameraShake.update(dt)
+    const cameraDt = advanceHitStop(cameraHitStop, dt)
+    kickT += cameraDt
+    if (cameraDt > 0) shake = cameraShake.update(cameraDt)
+    const kick = punchKick(kickT)
     camera.rotation.y = yaw
-    camera.rotation.x = pitch + shake.pitch
+    camera.rotation.x = pitch + shake.pitch + kick.pitch
     camera.rotation.z = shake.roll
+    if (kick.fov !== kickFov) {
+      camera.fov += kick.fov - kickFov
+      kickFov = kick.fov
+      camera.updateProjectionMatrix()
+    }
 
     const room = deps.gameRoomRef.value
     const now = Date.now()
@@ -143,6 +156,19 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     camera.rotation.order = 'YXZ'
     camera.rotation.y = yaw
     camera.rotation.x = pitch
+  }
+
+  function kickCamera(): void {
+    kickT = 0
+  }
+
+  function freezeCamera(seconds: number): void {
+    scheduleHitStop(cameraHitStop, 0, seconds)
+  }
+
+  function joltCamera(dirX: number, dirZ: number, strength: number): void {
+    const jolt = cameraJolt(dirX, dirZ, yaw, strength)
+    cameraShake.jolt(jolt.pitch, jolt.roll)
   }
 
   function onResize() {
@@ -240,6 +266,9 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     stopRenderLoop,
     bindInputListeners,
     shakeCamera: cameraShake.add,
+    kickCamera,
+    freezeCamera,
+    joltCamera,
     knockBack: knockback.push,
   }
 }
