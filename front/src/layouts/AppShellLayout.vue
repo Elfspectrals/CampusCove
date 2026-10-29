@@ -114,7 +114,6 @@ const defaultNavItems = computed<NavItem[]>(() => {
     isLoggedIn.value
       ? { name: 'home', icon: 'home', label: t('nav.lobby') }
       : { name: localizedName('landing', loc), icon: 'home', label: t('nav.home') },
-    ...(isLoggedIn.value ? [{ name: 'locker', icon: 'backpack', label: t('nav.locker') } as NavItem] : []),
     { name: localizedName('shop-skin', loc), icon: 'shirt', label: t('nav.skins') },
     ...(isLoggedIn.value ? [{ name: 'friends', icon: 'users', label: t('nav.friends') } as NavItem] : []),
     { name: 'settings', icon: 'settings', label: t('nav.settings') },
@@ -249,9 +248,6 @@ watch(
               </div>
               <RouterLink :to="{ name: 'home' }" role="menuitem" class="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-bold text-fog hover:bg-white/5">
                 <UiIcon name="user" :size="18" /> Profile
-              </RouterLink>
-              <RouterLink :to="{ name: 'locker' }" role="menuitem" class="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-bold text-fog hover:bg-white/5">
-                <UiIcon name="backpack" :size="18" /> Locker
               </RouterLink>
               <button
                 v-if="showAdmin"

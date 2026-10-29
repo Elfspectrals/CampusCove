@@ -1,6 +1,7 @@
 import importlib
 import math
 import os
+import random
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__)) if "__file__" in globals() else os.getcwd()
@@ -15,38 +16,58 @@ NAME = "Cove Threads"
 OUT = os.path.join(L.OUT_ROOT, "store", KEY)
 H = 5.0
 X0, X1, Z0, Z1 = -15.0, 15.0, -21.0, 5.0
-PLINTH_H = 0.22
-TAG_AHEAD = 1.15
+BODY_SCALE = 0.936
+BODY_LIFT = 0.009
+RAIL_Y = 1.95
+TAG_Y = 0.72
+SHELF_Y = 1.05
+TABLE_Y = 0.9
+HEAD_Y = 1.55
 
 DEPARTMENTS = {
-    "hair": ("HAIR", "#f4b3c8", ["short", "long", "curly", "buzz", "ponytail"]),
-    "head_accessory": ("HEADSETS", "#b9b2d8", ["gamer", "studio", "cat_ear", "neon", "pilot"]),
-    "top": ("TOPS", "#a7d8c0", ["tee", "tank", "hoodie", "varsity", "sweater"]),
-    "bottom": ("PANTS", "#9fd3e6", ["jeans", "joggers", "cargo", "shorts", "skirt"]),
-    "shoes": ("SHOES", "#f5d25e", ["sneakers", "high_tops", "boots", "slides", "runners"]),
+    "hair": "HAIR",
+    "head_accessory": "HEADSETS",
+    "top": "TOPS",
+    "bottom": "PANTS",
+    "shoes": "SHOES",
 }
-ROWS = {
-    "hair": dict(start=(-13.4, -1.5), step=(0, -2.0), facing=(1, 0)),
-    "head_accessory": dict(start=(-13.4, -11.5), step=(0, -2.0), facing=(1, 0)),
-    "top": dict(start=(-8.0, -19.4), step=(4.0, 0), facing=(0, 1)),
-    "bottom": dict(start=(13.4, -19.5), step=(0, 2.0), facing=(-1, 0)),
-    "shoes": dict(start=(13.4, -9.5), step=(0, 2.0), facing=(-1, 0)),
+ITEMS = {
+    "hair": ["short", "long", "curly", "buzz", "ponytail"],
+    "head_accessory": ["gamer", "studio", "cat_ear", "neon", "pilot"],
+    "top": ["tee", "tank", "hoodie", "varsity", "sweater"],
+    "bottom": ["jeans", "joggers", "cargo", "shorts", "skirt"],
+    "shoes": ["sneakers", "high_tops", "boots", "slides", "runners"],
 }
+PIECE_TOP = {"top": 1.707, "bottom": 1.05}
+OUTFITS = [
+    [("hair", "curly"), ("top", "hoodie"), ("bottom", "jeans"), ("shoes", "sneakers")],
+    [("head_accessory", "cat_ear"), ("top", "tank"), ("bottom", "skirt"), ("shoes", "boots")],
+    [("hair", "ponytail"), ("top", "varsity"), ("bottom", "joggers"), ("shoes", "high_tops")],
+    [("head_accessory", "gamer"), ("top", "tee"), ("bottom", "cargo"), ("shoes", "runners")],
+]
+
+
+def root_y_for_top(top_in_body, world_top):
+    return round(world_top - top_in_body * BODY_SCALE - BODY_LIFT, 3)
+
 
 sc = L.new_build_scene("STORE_" + KEY + "_interior")
 coll = bpy.data.collections.new("Interior")
 sc.collection.children.link(coll)
 cols = L.Collisions(coll)
-M = L.std_mats(wall="#fbf4ef", floor=("#e9dccb", "planks", "#d8c7b0"))
-M["accent"] = L.make_mat("IN_ThreadsTeal", "#2f6f63", 0.7, "noise", 0.02)
-M["pink"] = L.make_mat("IN_ThreadsPink", "#f4b3c8", 0.8, "noise", 0.02)
+M = L.std_mats(wall="#fbfaf7", floor=("#d9b98f", "planks", "#c7a57a"))
+M["shelf"] = L.make_mat("IN_ThreadsShelf", "#f6f4ef", 0.5, "noise", 0.01)
+M["wood"] = L.make_mat("IN_ThreadsWood", "#d8b282", 0.6, "planks", 0.03, accent="#c49c6c")
+M["rail"] = L.make_mat("IN_ThreadsRail", "#b9bec6", 0.3, "noise", 0.02)
+M["red"] = L.make_mat("IN_ThreadsRed", "#d8322b", 0.6, "noise", 0.01)
+M["redglow"] = L.make_mat("IN_ThreadsRedGlow", "#ff3b30", 0.4, "noise", 0.0, emit="#ff3b30", emit_strength=1.0)
 M["sign"] = L.make_mat("IN_ThreadsSignGlow", "#ffffff", 0.4, "noise", 0.0, emit="#ffffff", emit_strength=1.0)
-M["plinth"] = L.make_mat("IN_ThreadsPlinth", "#f6f3ee", 0.5, "noise", 0.01)
-M["rail"] = L.make_mat("IN_ThreadsRail", "#c9a23f", 0.3, "noise", 0.02)
-M["mirror"] = L.make_mat("IN_ThreadsMirror", "#dfe9ef", 0.05, "noise", 0.0)
-M["rug"] = L.make_mat("IN_ThreadsRug", "#efe3d3", 1.0, "stripes", 0.03, accent="#e3d3bf")
-FOLDED = [L.make_mat(f"IN_ThreadsFolded{i}", c, 0.9, "noise", 0.03) for i, c in enumerate(("#8a7ab8", "#4d6fa3", "#e7c98f", "#c46b4f", "#2f6f63", "#f2f0ea"))]
-DM = {slot: L.make_mat(f"IN_Dept_{slot}", color, 0.9, "noise", 0.02) for slot, (_, color, _) in DEPARTMENTS.items()}
+M["lightbox"] = L.make_mat("IN_ThreadsLightbox", "#fdfcf8", 0.4, "noise", 0.0, emit="#fffaf0", emit_strength=0.8)
+M["form"] = L.make_mat("IN_ThreadsForm", "#f2efe9", 0.4, "noise", 0.01)
+M["platform"] = L.make_mat("IN_ThreadsPlatform", "#fbfaf7", 0.45, "noise", 0.01)
+STACK_COLORS = ("#e9e4da", "#f0b8a8", "#d8322b", "#2b3a67", "#4d6fa3", "#e7c98f", "#2f6f63", "#8a7ab8", "#c9d86b", "#5a5f68", "#f4b3c8", "#f2f0ea")
+STACK = [L.make_mat(f"IN_ThreadsStack{i}", c, 0.9, "stripes", 0.03, accent=c) for i, c in enumerate(STACK_COLORS)]
+rng = random.Random(11)
 
 objs = []
 
@@ -71,8 +92,30 @@ def text(name, body, gx, gz, y0, size, mat, yaw):
     return add(o)
 
 
-def facing_yaw(fx, fz):
-    return math.atan2(fx, fz)
+def stacks(name, cx, cz, w, d, y0, row, along_x):
+    n = max(1, int(w / 0.42))
+    for i in range(n):
+        h = 0.16 + 0.05 * rng.randint(0, 3)
+        off = -w / 2 + (i + 0.5) * w / n
+        gx, gz = (cx + off, cz) if along_x else (cx, cz + off)
+        add(L.box(coll, f"{name}_{i}", gx, gz, y0, 0.36 if along_x else d, d if along_x else 0.36, h, STACK[(i // 2 + row * 3) % len(STACK)]))
+
+
+def shelving_wall(name, cx, cz, length, along_x, levels=6):
+    depth = 0.42
+    px, pz = (cx, cz + depth / 2) if along_x else (cx + depth / 2, cz)
+    sx, sz = (length, depth) if along_x else (depth, length)
+    bx, bz = (cx, cz + 0.02) if along_x else (cx + 0.02, cz)
+    add(L.box(coll, f"{name}_Back", bx, bz, 0.0, length if along_x else 0.04, 0.04 if along_x else length, 2.7, M["shelf"]))
+    for lv in range(levels):
+        y = 0.12 + lv * 0.44
+        add(L.box(coll, f"{name}_Board{lv}", px, pz, y, sx, sz, 0.03, M["shelf"]))
+        stacks(f"{name}_Stack{lv}", px, pz, length - 0.1, depth - 0.08, y + 0.03, lv, along_x)
+    posts = int(length / 1.2)
+    for k in range(posts + 1):
+        o_ = -length / 2 + k * length / posts
+        add(L.box(coll, f"{name}_Post{k}", px + (o_ if along_x else 0), pz + (0 if along_x else o_), 0.0, 0.04 if along_x else depth, depth if along_x else 0.04, 2.7, M["shelf"]))
+    cols.add(name, px, pz, 0.0, sx, sz, 2.7)
 
 
 rect("House_Floor_Threads", X0 - 0.2, Z0 - 0.2, X1 + 0.2, Z1 + 0.2, -0.1, 0.1, M["floor"], tile=3.0)
@@ -84,96 +127,167 @@ objs += L.wall(coll, "Walls_Back", "x", Z0 - 0.1, 0.2, X0 - 0.2, X1 + 0.2, H, M[
 objs += L.wall(coll, "Walls_W", "z", X0 - 0.1, 0.2, Z0, Z1 + 0.2, H, M["wall"], cols=cols, col_tag="Wall_W")
 objs += L.wall(coll, "Walls_E", "z", X1 + 0.1, 0.2, Z0, Z1 + 0.2, H, M["wall"], cols=cols, col_tag="Wall_E")
 add(L.box(coll, "Door_Entrance", 0, 5.1, 0.01, 1.18, 0.06, 2.18, M["glass"], bevel=0.02))
-add(L.box(coll, "Door_Entrance_Frame", 0, 5.06, 2.2, 1.4, 0.1, 0.12, M["accent"]))
+add(L.box(coll, "Door_Entrance_Frame", 0, 5.06, 2.2, 1.4, 0.1, 0.12, M["red"]))
 add(L.box(coll, "Entry_Doormat", 0, 4.4, 0.0, 2.0, 1.0, 0.012, M["mat"]))
 add(L.box(coll, "Sky_Front", 0, 16, -3.0, 60, 0.05, 14.0, M["sky"]))
-for nm, a, b2, axis, fixed in [("N", X0, X1, "x", Z0 + 0.03), ("W", Z0, Z1, "z", X0 + 0.03), ("E", Z0, Z1, "z", X1 - 0.03)]:
-    if axis == "x":
-        add(L.box(coll, f"Wall_Stripe{nm}", (a + b2) / 2, fixed, 3.7, b2 - a, 0.04, 0.25, M["accent"]))
-    else:
-        add(L.box(coll, f"Wall_Stripe{nm}", fixed, (a + b2) / 2, 3.7, 0.04, b2 - a, 0.25, M["accent"]))
-text("Wall_Logo", NAME.upper(), 0, Z0 + 0.06, 3.0, 0.9, M["accent"], 0.0)
 
 displays = []
 dept_info = []
-for slot, (label, _color, keys) in DEPARTMENTS.items():
-    row = ROWS[slot]
-    (sx0, sz0), (dx, dz), (fx, fz) = row["start"], row["step"], row["facing"]
-    yaw = facing_yaw(fx, fz)
-    first = (sx0, sz0)
-    last = (sx0 + dx * 4, sz0 + dz * 4)
-    pad = 1.1
-    if fx:
-        wx = sx0 - fx * 1.25
-        rect(f"Dept_{slot}_Panel", wx - 0.03, min(first[1], last[1]) - pad, wx + 0.03, max(first[1], last[1]) + pad, 0.0, 3.4, DM[slot])
-        rect(f"Dept_{slot}_Rug", sx0 - 0.9, min(first[1], last[1]) - pad, sx0 + 0.9, max(first[1], last[1]) + pad, 0.0, 0.01, M["rug"])
-    else:
-        wz = sz0 - fz * 1.25
-        rect(f"Dept_{slot}_Panel", min(first[0], last[0]) - pad * 1.6, wz - 0.03, max(first[0], last[0]) + pad * 1.6, wz + 0.03, 0.0, 3.4, DM[slot])
-        rect(f"Dept_{slot}_Rug", min(first[0], last[0]) - pad * 1.6, sz0 - 0.9, max(first[0], last[0]) + pad * 1.6, sz0 + 0.9, 0.0, 0.01, M["rug"])
-    mid = ((first[0] + last[0]) / 2, (first[1] + last[1]) / 2)
-    sgx, sgz = mid[0] - fx * 1.2, mid[1] - fz * 1.2
-    add(L.box(coll, f"Sign_{slot}_Board", sgx, sgz, 3.6, 3.4 if fz else 0.1, 0.1 if fz else 3.4, 0.8, DM[slot]))
-    text(f"Sign_{slot}_Text", label, sgx + fx * 0.07, sgz + fz * 0.07, 3.82, 0.4, M["accent"], yaw)
-    dept_info.append({"id": slot, "label": label, "color": DEPARTMENTS[slot][1], "sign": [round(sgx, 3), 4.0, round(sgz, 3)]})
+
+
+def tag_at(gx, gz, yaw, y=TAG_Y):
+    return {"position": [round(gx, 3), y, round(gz, 3)], "yaw": round(yaw, 4)}
+
+
+def wall_sign(slot, gx, gz, yaw, along_x):
+    add(L.box(coll, f"Sign_{slot}_Board", gx, gz, 3.25, 2.6 if along_x else 0.06, 0.06 if along_x else 2.6, 0.6, M["red"]))
+    fx, fz = math.sin(yaw), math.cos(yaw)
+    text(f"Sign_{slot}_Text", DEPARTMENTS[slot], gx + fx * 0.04, gz + fz * 0.04, 3.4, 0.36, M["sign"], yaw)
+    dept_info.append({"id": slot, "label": DEPARTMENTS[slot], "sign": [round(gx, 3), 3.55, round(gz, 3)]})
+
+
+def hanging_rail(slot, x_start, z_wall):
+    keys = ITEMS[slot]
+    z = z_wall + 0.42
+    x_end = x_start + 1.25 * (len(keys) - 1)
+    for sx_ in (x_start - 0.75, x_end + 0.75):
+        add(L.box(coll, f"Rail_{slot}_Bracket{int(sx_ * 10)}", sx_, z_wall + 0.25, RAIL_Y + 0.02, 0.04, 0.5, 0.04, M["rail"]))
+    add(L.box(coll, f"Rail_{slot}_Bar", (x_start + x_end) / 2, z, RAIL_Y, x_end - x_start + 1.6, 0.03, 0.03, M["rail"]))
+    add(L.box(coll, f"Rail_{slot}_Light", (x_start + x_end) / 2, z_wall + 0.03, 0.0, x_end - x_start + 1.8, 0.05, 2.7, M["lightbox"]))
+    wall_sign(slot, (x_start + x_end) / 2, z_wall + 0.06, 0.0, True)
     for i, key in enumerate(keys):
-        gx, gz = sx0 + dx * i, sz0 + dz * i
-        add(L.cyl(coll, f"Plinth_{slot}_{key}", gx, gz, 0.0, 0.42, PLINTH_H, M["plinth"], seg=16))
-        cols.add(f"Plinth_{slot}_{key}", gx, gz, 0.0, 0.84, 0.84, 1.9)
-        tx, tz = gx + fx * TAG_AHEAD, gz + fz * TAG_AHEAD
-        add(L.cyl(coll, f"TagPost_{slot}_{key}", tx, tz, 0.0, 0.025, 1.05, M["metal"], seg=6))
-        add(L.cyl(coll, f"TagFoot_{slot}_{key}", tx, tz, 0.0, 0.16, 0.03, M["metal"], seg=10))
+        gx = x_start + i * 1.25
+        add(L.box(coll, f"Hanger_{slot}_{key}", gx, z, RAIL_Y - 0.06, 0.03, 0.03, 0.09, M["rail"]))
+        top = PIECE_TOP[slot]
+        y = root_y_for_top(top, RAIL_Y - 0.08)
         displays.append({
             "slot": slot, "key": key, "department": slot,
-            "position": [round(gx, 3), PLINTH_H, round(gz, 3)], "yaw": round(yaw, 4), "size": [0.6, 1.95, 0.5],
-            "tag": {"position": [round(tx, 3), 1.32, round(tz, 3)], "yaw": round(yaw, 4)},
+            "position": [round(gx, 3), y, round(z, 3)], "yaw": 0.0,
+            "center": [round(gx, 3), round(RAIL_Y - 0.45, 3), round(z, 3)],
+            "tag": tag_at(gx, z_wall + 0.1, 0.0),
         })
+    cols.add(f"Rail_{slot}", (x_start + x_end) / 2, z_wall + 0.45, 0.0, x_end - x_start + 1.8, 0.9, 2.2)
 
-for i, (gx, gz) in enumerate(((-4.5, -8.0), (4.5, -8.0))):
-    parts = [(px, 0, 0.0, 0.06, 0.06, 1.6, M["rail"]) for px in (-1.2, 1.2)]
-    parts.append((0, 0, 1.55, 2.5, 0.05, 0.05, M["rail"]))
-    for k in range(9):
-        parts.append((-1.0 + k * 0.25, 0, 0.75, 0.05, 0.5, 0.75, FOLDED[(k + i) % len(FOLDED)], 0.01))
-    for pz in (-0.3, 0.3):
-        parts.append((0, pz, 0.0, 2.6, 0.06, 0.04, M["rail"]))
-    add(L.furn(coll, f"Rack_{i}", gx, gz, 0.0, parts))
-    cols.add(f"Rack_{i}", gx, gz, 0.0, 2.7, 0.7, 1.7)
-add(L.cyl(coll, "Table_Center", 0.0, -8.0, 0.0, 1.1, 0.85, M["oak"], seg=20))
-for k in range(5):
-    a = 2 * math.pi * k / 5
-    add(L.box(coll, f"Table_Folded{k}", 0.6 * math.cos(a), -8.0 + 0.6 * math.sin(a), 0.85, 0.4, 0.3, 0.06 + 0.04 * (k % 3), FOLDED[k], bevel=0.01))
-cols.add("Table_Center", 0.0, -8.0, 0.0, 2.2, 2.2, 0.9)
-for i, gx in enumerate((-3.0, 3.0)):
-    add(L.furn(coll, f"Mirror_{i}", gx, -14.5, 0.0, [
-        (0, 0, 0.0, 1.2, 0.12, 0.1, M["rail"]),
-        (0, 0, 0.1, 1.0, 0.05, 2.0, M["mirror"]),
-        (0, 0.04, 0.1, 1.1, 0.04, 2.1, M["rail"]),
-    ]))
-    cols.add(f"Mirror_{i}", gx, -14.5, 0.0, 1.2, 0.3, 2.2)
-add(L.furn(coll, "Bench_Center", 0.0, -14.0, 0.0, [(0, 0, 0.0, 2.0, 0.6, 0.42, M["pink"], 0.04)]))
-cols.add("Bench_Center", 0.0, -14.0, 0.0, 2.0, 0.6, 0.45)
+
+def shoe_wall(x_wall, z_start):
+    keys = ITEMS["shoes"]
+    x = x_wall + 0.25
+    z_end = z_start + 1.25 * (len(keys) - 1)
+    zc = (z_start + z_end) / 2
+    length = z_end - z_start + 1.4
+    for lv, y in enumerate((0.35, SHELF_Y - 0.03, 1.75)):
+        add(L.box(coll, f"ShoeShelf_{lv}", x, zc, y, 0.5, length, 0.03, M["wood"]))
+    for k, zz in enumerate((zc - length / 2, zc + length / 2)):
+        add(L.box(coll, f"ShoeShelf_Side{k}", x, zz, 0.0, 0.5, 0.04, 2.2, M["wood"]))
+    add(L.box(coll, "ShoeShelf_Back", x_wall + 0.03, zc, 0.0, 0.05, length, 2.2, M["lightbox"]))
+    wall_sign("shoes", x_wall + 0.06, zc, math.pi / 2, False)
+    for i, key in enumerate(keys):
+        gz = z_start + i * 1.25
+        displays.append({
+            "slot": "shoes", "key": key, "department": "shoes",
+            "position": [round(x, 3), round(SHELF_Y - BODY_LIFT, 3), round(gz, 3)], "yaw": round(math.pi / 2, 4),
+            "center": [round(x, 3), round(SHELF_Y + 0.12, 3), round(gz, 3)],
+            "tag": tag_at(x_wall + 0.1, gz, math.pi / 2),
+        })
+    cols.add("ShoeShelf", x, zc, 0.0, 0.55, length, 2.2)
+
+
+def head_table(slot, x_wall, z_start):
+    keys = ITEMS[slot]
+    x = x_wall - 0.55
+    z_end = z_start + 1.2 * (len(keys) - 1)
+    zc = (z_start + z_end) / 2
+    length = z_end - z_start + 1.2
+    add(L.box(coll, f"HeadTable_{slot}_Top", x, zc, TABLE_Y - 0.04, 0.8, length, 0.04, M["wood"]))
+    add(L.box(coll, f"HeadTable_{slot}_Body", x, zc, 0.0, 0.7, length - 0.1, TABLE_Y - 0.04, M["shelf"]))
+    wall_sign(slot, x_wall - 0.06, zc, -math.pi / 2, False)
+    for i, key in enumerate(keys):
+        gz = z_start + i * 1.2
+        add(L.cyl(coll, f"HeadForm_{slot}_{key}_Neck", x, gz, TABLE_Y, 0.045, HEAD_Y - TABLE_Y - 0.08, M["form"], seg=10))
+        add(L.box(coll, f"HeadForm_{slot}_{key}_Base", x, gz, TABLE_Y, 0.2, 0.2, 0.03, M["form"], bevel=0.01))
+        head = add(L.box(coll, f"HeadForm_{slot}_{key}_Head", x, gz, HEAD_Y - 0.1, 0.16, 0.18, 0.21, M["form"], bevel=0.07))
+        displays.append({
+            "slot": slot, "key": key, "department": slot,
+            "position": [round(x, 3), round(HEAD_Y - 1.745 * BODY_SCALE - BODY_LIFT, 3), round(gz, 3)], "yaw": round(-math.pi / 2, 4),
+            "center": [round(x, 3), HEAD_Y, round(gz, 3)],
+            "tag": tag_at(x - 0.42, gz, -math.pi / 2, y=0.62),
+        })
+    cols.add(f"HeadTable_{slot}", x, zc, 0.0, 0.8, length, 1.7)
+
+
+hanging_rail("top", -10.0, Z0)
+hanging_rail("bottom", 5.0, Z0)
+shoe_wall(X0, -15.0)
+head_table("hair", X1, -16.0)
+head_table("head_accessory", X1, -8.0)
+
+shelving_wall("FoldWall_Back", 0.0, Z0, 3.2, True)
+add(L.box(coll, "FoldWall_Back_Banner", 0.0, Z0 + 0.08, 3.0, 3.6, 0.05, 0.8, M["red"]))
+text("FoldWall_Back_BannerText", NAME.upper(), 0.0, Z0 + 0.12, 3.2, 0.42, M["sign"], 0.0)
+shelving_wall("FoldWall_W", X0, -4.0, 5.0, False)
+add(L.box(coll, "FoldWall_W_Promo", X0 + 0.06, -4.0, 2.9, 0.06, 3.0, 0.9, M["red"]))
+text("FoldWall_W_PromoText", "NEW SEASON", X0 + 0.11, -4.0, 3.15, 0.38, M["sign"], math.pi / 2)
+
+for tier, (r, y0, h) in enumerate(((1.7, 0.0, 0.5), (1.2, 0.5, 0.35), (0.7, 0.85, 0.3))):
+    add(L.cyl(coll, f"RoundTable_Tier{tier}", 0.0, -9.0, y0, r, h, M["shelf"] if tier != 1 else M["wood"], seg=28))
+    ring_r = r - 0.2
+    count = int(2 * math.pi * ring_r / 0.45)
+    for k in range(count):
+        a = 2 * math.pi * k / count
+        add(L.box(coll, f"RoundTable_Stack{tier}_{k}", ring_r * math.cos(a), -9.0 + ring_r * math.sin(a), y0 + h, 0.34, 0.3, 0.12 + 0.04 * (k % 3), STACK[(k + tier * 4) % len(STACK)], rot=-a))
+cols.add("RoundTable", 0.0, -9.0, 0.0, 3.4, 3.4, 1.3)
+
+for i, gx in enumerate((-5.0, 5.0)):
+    add(L.box(coll, f"Cube_{i}_Body", gx, -14.0, 0.0, 1.4, 1.4, 1.0, M["lightbox"], bevel=0.02))
+    add(L.box(coll, f"Cube_{i}_Top", gx, -14.0, 1.0, 1.5, 1.5, 0.04, M["shelf"]))
+    for k in range(4):
+        add(L.box(coll, f"Cube_{i}_Stack{k}", gx - 0.45 + k * 0.3, -14.0, 1.04, 0.26, 0.34, 0.14 + 0.05 * (k % 2), STACK[(k + 2 + i * 5) % len(STACK)]))
+    cols.add(f"Cube_{i}", gx, -14.0, 0.0, 1.5, 1.5, 1.1)
+
+MIRROR = {"position": [round(X0 + 0.09, 3), 1.27, -7.9], "yaw": round(math.pi / 2, 4), "size": [1.3, 2.1]}
+add(L.box(coll, "Mirror_Frame", X0 + 0.04, -7.9, 0.12, 0.06, 1.5, 2.3, M["wood"], bevel=0.02))
+add(L.box(coll, "Mirror_Base", X0 + 0.15, -7.9, 0.0, 0.25, 1.6, 0.12, M["wood"]))
+
+PLAT = (-8.0, 0.0)
+add(L.cyl(coll, "Mannequin_Platform", PLAT[0], PLAT[1], 0.0, 2.4, 0.14, M["platform"], seg=32))
+cols.add("Mannequin_Platform", PLAT[0], PLAT[1], 0.0, 4.4, 2.6, 1.9)
+outfits = []
+for i, pieces in enumerate(OUTFITS):
+    a = math.radians(-40 + i * 26.7)
+    gx, gz = PLAT[0] + 1.6 * math.sin(a), PLAT[1] - 0.4 + 0.5 * math.cos(a)
+    outfits.append({
+        "pieces": [{"slot": s, "key": k} for s, k in pieces],
+        "position": [round(gx, 3), 0.14, round(gz, 3)], "yaw": round(math.radians(10 - i * 7), 4),
+        "center": [round(gx, 3), 1.1, round(gz, 3)],
+        "tag": tag_at(gx, gz + 0.75, 0.0, y=0.4),
+    })
+    add(L.cyl(coll, f"Mannequin_TagPost{i}", gx, gz + 0.75, 0.14, 0.02, 0.18, M["rail"], seg=6))
 
 counter_x, counter_z = 8.5, 0.5
 add(L.furn(coll, "Counter", counter_x, counter_z, 0.0, [
-    (0, 0, 0.0, 4.0, 1.0, 1.0, M["accent"], 0.02),
-    (0, 0, 1.0, 4.2, 1.1, 0.06, M["oak"], 0.01),
+    (0, 0, 0.0, 4.0, 1.0, 1.0, M["shelf"], 0.02),
+    (0, 0, 1.0, 4.2, 1.1, 0.06, M["wood"], 0.01),
+    (0, -0.52, 0.2, 4.0, 0.04, 0.6, M["red"]),
     (-1.2, -0.1, 1.06, 0.45, 0.35, 0.3, M["black"], 0.01),
-    (0.8, 0.0, 1.06, 0.7, 0.5, 0.12, FOLDED[3], 0.01),
+    (0.8, 0.0, 1.06, 0.7, 0.5, 0.12, STACK[4], 0.01),
 ]))
 cols.add("Counter", counter_x, counter_z, 0.0, 4.2, 1.1, 1.1)
-add(L.box(coll, "Counter_SignBoard", counter_x, counter_z - 0.3, 2.6, 2.6, 0.08, 0.7, M["pink"]))
-text("Counter_SignText", "PAY HERE", counter_x, counter_z - 0.24, 2.75, 0.4, M["accent"], 0.0)
+add(L.box(coll, "Counter_SignBoard", counter_x, counter_z - 0.3, 2.6, 2.6, 0.08, 0.7, M["red"]))
+text("Counter_SignText", "PAY HERE", counter_x, counter_z - 0.24, 2.75, 0.4, M["sign"], 0.0)
 for gx in (-13.8, 13.8):
     add(L.plant(coll, M, f"Plant_{int(gx)}", gx, 4.2))
     cols.add(f"Plant_{int(gx)}", gx, 4.2, 0.0, 0.5, 0.5, 1.3)
 
+add(L.cyl(coll, "Ceiling_Cove", 0.0, -9.0, H - 0.35, 3.2, 0.2, M["ceil"], seg=32))
+add(L.cyl(coll, "Light_Cove", 0.0, -9.0, H - 0.4, 2.8, 0.05, M["lamp"], seg=32))
 li = 0
-for gx in (-9.0, -3.0, 3.0, 9.0):
-    for gz in (-17.0, -11.0, -5.0, 1.0):
-        add(L.box(coll, f"Light_{li:02d}", gx, gz, H - 0.1, 1.6, 1.6, 0.08, M["lamp"]))
+for gx in (-10.0, -5.0, 5.0, 10.0):
+    for gz in (-17.0, -12.0, -6.0, -1.0, 3.0):
+        add(L.cyl(coll, f"Light_{li:02d}", gx, gz, H - 0.06, 0.35, 0.05, M["lamp"], seg=12))
         li += 1
 
-bad = L.check_grounded(objs, allow=L.ALLOW_INTERIOR + ("Ceiling", "Sign_", "Counter_Sign", "Dept_", "Wall_Logo", "Table_Folded"))
+bad = L.check_grounded(objs, allow=L.ALLOW_INTERIOR + ("Ceiling", "Sign_", "Counter_Sign", "Rail_", "Hanger_", "ShoeShelf_", "HeadTable_", "HeadForm_",
+                                                      "FoldWall_", "RoundTable_", "Cube_", "Mannequin_TagPost", "Mirror_Frame"))
 print("THREADS grounded violations:", bad)
 assert not bad, bad
 
@@ -191,11 +305,11 @@ for m, group in by_mat.items():
 L.export_glb(os.path.join(OUT, "interior.glb"), merged)
 L.export_glb(os.path.join(OUT, "interior.colsrc.glb"), merged + cols.items)
 L.write_json(os.path.join(OUT, "interior.layout.json"), {
-    "version": 1, "key": KEY, "name": NAME, "spawn": [0.0, 1.6, 3.7],
+    "version": 2, "key": KEY, "name": NAME, "spawn": [0.0, 1.6, 3.7],
     "exit": {"position": [0.0, 4.75], "radius": 1.4},
     "bounds": {"minX": X0, "maxX": X1, "minZ": Z0, "maxZ": Z1},
     "counter": [counter_x, 1.15, counter_z + 1.2],
-    "departments": dept_info, "displays": displays,
+    "departments": dept_info, "displays": displays, "outfits": outfits, "mirror": MIRROR,
 })
 tris = sum(len(p.vertices) - 2 for o in merged if o.type == "MESH" for p in o.data.polygons)
-print("threads interior:", len(objs), "objects ->", len(merged), "nodes,", tris, "tris,", len(cols.items), "collision boxes,", len(displays), "displays")
+print("threads interior:", len(objs), "objects ->", len(merged), "nodes,", tris, "tris,", len(cols.items), "collision boxes,", len(displays), "displays,", len(outfits), "outfits")

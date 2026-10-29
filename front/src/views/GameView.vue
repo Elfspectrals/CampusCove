@@ -180,7 +180,16 @@ const clothingStore = useClothingStore({
   myPosition,
   promptsHidden: () => inventoryOpen.value,
   onPurchased: () => refreshOwnedItems(),
+  getScene,
+  getFpHands: () => game?.fpHands ?? null,
+  myOutfit: () => myCosmetics.value,
 })
+const myCosmetics = shallowRef<CharacterCosmeticsState | null>(null)
+
+function onWardrobeChanged(state: CharacterCosmeticsState): void {
+  myCosmetics.value = state
+  realtime.sendMyAppearance(state)
+}
 const {
   target: clothesTarget,
   basket: clothesBasket,
@@ -532,7 +541,7 @@ const movement = useGameMovement({
     currentHouseKey.value = houseKeyAt(myPosition.x, myPosition.z)
     placement.tick(dt)
     furnitureStore.update()
-    clothingStore.update()
+    clothingStore.update(dt)
     interactions.updatePrompts()
     houseKeys.updateKeyPrompt()
     updateFrontDoors(dt, isBuildingDoorOpen)
@@ -644,6 +653,7 @@ async function bootGame() {
     return
   }
   const cosmetics = await loadCosmeticsState()
+  myCosmetics.value = cosmetics
   if (unmounted || !canvasRef.value) return
   game = createGameScene(canvasRef.value, movement.containerSize())
   arms = createFirstPersonArms(game.fpHands)
@@ -856,7 +866,7 @@ const crosshairClass = computed(() => {
       @clear-slot="clearSlot"
       @pickup-placed-object="(id: string) => { onPlacedObjectSelected(id); pickupSelectedPlacedObject() }"
     >
-      <GameWardrobe @changed="realtime.sendMyAppearance" />
+      <GameWardrobe @changed="onWardrobeChanged" />
     </GamePlayerInventoryPanel>
     <GamePointerLockOverlay
       v-show="!pointerLocked && !inventoryOpen && !switchingRoom && !cafeMenuOpen && !clinicMenuOpen && !clothesCheckoutOpen && !settingsOpen"

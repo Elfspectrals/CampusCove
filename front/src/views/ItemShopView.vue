@@ -233,8 +233,7 @@ const shopCopy = computed(() => marketing[locale.value as Locale].shop)
               <UiIcon name="login" :size="18" /> Sign in to buy
             </RouterLink>
             <p class="m-0 mt-3 text-center text-xs font-semibold text-mist">
-              Purchased skins appear in your
-              <RouterLink to="/locker" class="font-extrabold text-pool hover:underline">Locker</RouterLink>.
+              Purchased skins appear in your in-game wardrobe (inventory).
             </p>
           </div>
         </div>

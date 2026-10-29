@@ -6,7 +6,7 @@ import { apiRequest, isRecord } from './http'
 import { normalizeApiAssetUrl } from './url'
 
 /** Matches `item_kind` / admin shop kinds; empty means no filter. */
-export type InventoryKindFilter = '' | 'furniture' | 'cosmetic' | 'consumable' | 'misc' | 'apartment_asset'
+type InventoryKindFilter = '' | 'furniture' | 'cosmetic' | 'consumable' | 'misc' | 'apartment_asset'
 
 interface InventoryItemDef {
   item_def_id: number

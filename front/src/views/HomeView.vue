@@ -86,7 +86,6 @@ const levelProgress = 62
 
 const quickTiles: Array<{ to: string; icon: UiIconName; label: string; hint: string; tone: string }> = [
   { to: '/shop-skin', icon: 'shirt', label: 'Skins', hint: 'New looks', tone: 'from-grape/40 text-grape' },
-  { to: '/locker', icon: 'backpack', label: 'Locker', hint: 'Equip outfits', tone: 'from-pool/40 text-pool' },
 ]
 
 

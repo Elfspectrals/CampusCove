@@ -82,8 +82,6 @@ export const SKINS: readonly SkinAsset[] = [
   skin('astral_oracle', 'Astral Oracle', 'COS_WEAR_BODY_ASTRAL_ORACLE'),
 ]
 
-export const DEFAULT_SKIN: SkinAsset = SKINS.find((s) => s.isDefault)!
-
 type WearTopKey = 'basic' | 'tee' | 'tank' | 'hoodie' | 'varsity' | 'sweater'
 
 const WEAR_TOPS: readonly WearTopKey[] = ['basic', 'tee', 'tank', 'hoodie', 'varsity', 'sweater']
@@ -249,10 +247,4 @@ export const SHOWROOM = {
 
 export function findHouse(key: string | null | undefined): HouseAsset | null {
   return HOUSES.find((h) => h.key === key) ?? null
-}
-
-export function findSkinByCode(code: string | null | undefined): SkinAsset | null {
-  if (!code) return null
-  const normalized = code.trim().toUpperCase()
-  return SKINS.find((s) => s.shopCode === normalized) ?? null
 }
