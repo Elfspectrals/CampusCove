@@ -25,3 +25,15 @@ export const APARTMENT_DOOR_POS = { x: 0, z: 4.75 }
 
 export const TRANSFORM_EPSILON_POSITION = 0.01
 export const TRANSFORM_EPSILON_ROTATION = 0.01
+
+/** The Salty Shamrock: mirrors of socket/src/pubConstants.ts (docs/PUB.md §5). */
+export const SEAT_REACH = 2.5
+export const COUNTER_REACH = 2.6
+export const BARTENDER_REACH = 3.6
+export const POUR_MS = 3000
+export const SECRET_OPEN_MS = 20_000
+export const RACE_MAX_PROGRESS_PER_S = 0.125
+export const DARTS_MAX_OFFSET_CM = 25
+export const INTOXICATION_MAX = 100
+export const TIPSY_AT = 30
+export const DRUNK_AT = 60

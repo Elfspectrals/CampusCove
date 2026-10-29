@@ -80,6 +80,32 @@ interface ClinicLayout {
   beds: ClinicBed[]
 }
 
+type PubSeatKind = 'stool' | 'chair' | 'bench' | 'armchair' | 'sofa' | 'garden'
+
+export interface PubSeat {
+  id: string
+  kind: PubSeatKind
+  /** Top of the seat (where the hips rest); `yaw` is the sitting direction (0 = towards -Z). */
+  position: Vec3
+  yaw: number
+}
+
+/** The Salty Shamrock's points of interest in world coordinates (docs/PUB.md §3, written by scripts/apply-pub.mjs). */
+export interface PubLayout {
+  bartender: Vec3
+  bartenderYaw: number
+  bouncer: Vec3
+  counter: Vec3
+  taps: Vec3
+  serve: Vec3
+  bell: Vec3
+  secretDoor: { position: Vec3; yaw: number }
+  secretRoom: WorldBounds
+  seats: PubSeat[]
+  darts: { board: Vec3; boardYaw: number; oche: Vec3 }
+  shots: { plank: Vec3; yaw: number; player: Vec3 }
+}
+
 export interface WorldManifest {
   version: number
   spawn: Vec3
@@ -89,6 +115,7 @@ export interface WorldManifest {
   /** Free drinking fountains ([x, 0, z], put on the terrain), written by scripts/apply-fountains.mjs. */
   fountains?: Vec3[]
   clinic?: ClinicLayout
+  pub?: PubLayout
 }
 
 const WORLD_MANIFEST_URL = '/assets/world.manifest.json'

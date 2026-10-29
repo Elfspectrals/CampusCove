@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { ScreenEffects } from '../../game/survival'
+import type { KnockoutCause } from '../../composables/game/useSurvival'
 
 const props = defineProps<{
   effects: ScreenEffects | null
   damageFlash: number
   knockedOut: boolean
+  /** Starvation / wounds, or a drunken black-out: changes the black screen texts. */
+  cause: KnockoutCause
   hospitalBill: number | null
   lostBelongings: boolean
   message: string | null
@@ -14,6 +17,13 @@ const props = defineProps<{
 }>()
 
 const heartbeat = computed(() => `${(props.effects?.heartbeatPeriod ?? 1).toFixed(2)}s`)
+
+const blackout = computed(() => props.cause === 'alcohol')
+const billText = computed(() => {
+  if (props.hospitalBill === null) return null
+  if (props.hospitalBill <= 0) return 'The hospital waived the bill.'
+  return blackout.value ? `Bill: ${props.hospitalBill} coins` : `Hospital bill: ${props.hospitalBill} coins`
+})
 </script>
 
 <template>
@@ -52,11 +62,11 @@ const heartbeat = computed(() => `${(props.effects?.heartbeatPeriod ?? 1).toFixe
     />
     <Transition name="cc-ko">
       <div v-if="knockedOut" class="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/90 text-center">
-        <p class="font-display text-2xl tracking-wide text-fog">You passed out…</p>
-        <p class="text-sm text-mist">You'll wake up at Cove Clinic, a bit weak.</p>
-        <p v-if="hospitalBill !== null" class="text-xs font-bold text-coral">
-          {{ hospitalBill > 0 ? `Hospital bill: ${hospitalBill} coins` : 'The hospital waived the bill.' }}
+        <p class="font-display text-2xl tracking-wide text-fog">{{ blackout ? 'You blacked out…' : 'You passed out…' }}</p>
+        <p class="text-sm text-mist">
+          {{ blackout ? 'You wake up at Cove Clinic with a headache.' : "You'll wake up at Cove Clinic, a bit weak." }}
         </p>
+        <p v-if="billText" class="text-xs font-bold text-coral">{{ billText }}</p>
         <p v-if="lostBelongings" class="text-xs text-mist">Your inventory and your clothes were lost.</p>
       </div>
     </Transition>

@@ -43,9 +43,14 @@ export interface SurvivalDeps {
   setLook: (yaw: number, pitch: number) => void
   promptsHidden: () => boolean
   onStamina: (stamina: number) => void
+  /** Alcohol level 0..100 pushed with the survival stats (useIntoxication). */
+  onIntoxication: (intoxication: number) => void
   /** Quick tap on the watch key: open the watch apps (trade, ...). */
   onWatchTap: () => void
 }
+
+/** Why the player went down: starvation / wounds, or a drunken black-out (socket/src/survival.ts). */
+export type KnockoutCause = 'health' | 'alcohol'
 
 function readReducedEffects(): boolean {
   try {
@@ -64,6 +69,7 @@ export function useSurvival(deps: SurvivalDeps) {
   const boostUntil = ref(0)
   const healUntil = ref(0)
   const knockedOut = ref(false)
+  const knockoutCause = ref<KnockoutCause>('health')
   const hospitalBill = ref<number | null>(null)
   const lostBelongings = ref(false)
   /** Bumped on every hit, so the damage flash replays. */
@@ -92,13 +98,17 @@ export function useSurvival(deps: SurvivalDeps) {
   // ------------------------------------------------------------ server messages
 
   function bindRoom(room: Room): void {
-    room.onMessage('survival', (data: SurvivalStats & { speedBoostUntil?: number; healUntil?: number | null; stamina: number }) => {
-      stats.value = { health: data.health, hunger: data.hunger, thirst: data.thirst }
-      boostUntil.value = data.speedBoostUntil ?? 0
-      healUntil.value = data.healUntil ?? 0
-      watchHud.setStats(stats.value, boostUntil.value)
-      deps.onStamina(data.stamina)
-    })
+    room.onMessage(
+      'survival',
+      (data: SurvivalStats & { speedBoostUntil?: number; healUntil?: number | null; stamina: number; intoxication?: number }) => {
+        stats.value = { health: data.health, hunger: data.hunger, thirst: data.thirst }
+        boostUntil.value = data.speedBoostUntil ?? 0
+        healUntil.value = data.healUntil ?? 0
+        watchHud.setStats(stats.value, boostUntil.value)
+        deps.onStamina(data.stamina)
+        deps.onIntoxication(data.intoxication ?? 0)
+      },
+    )
     room.onMessage('survival_damage', () => {
       damageFlash.value++
     })
@@ -121,8 +131,9 @@ export function useSurvival(deps: SurvivalDeps) {
       fountainReadyAt = Date.now() + data.remainingMs
     })
     room.onMessage('survival_error', (data: { message?: string }) => say(data.message ?? 'Not possible.'))
-    room.onMessage('survival_knocked_out', () => {
+    room.onMessage('survival_knocked_out', (data: { cause?: KnockoutCause }) => {
       knockedOut.value = true
+      knockoutCause.value = data.cause ?? 'health'
       hospitalBill.value = null
       lostBelongings.value = false
       deps.getArms()?.raiseWatch(false)
@@ -316,6 +327,7 @@ export function useSurvival(deps: SurvivalDeps) {
     healUntil,
     effects,
     knockedOut,
+    knockoutCause,
     hospitalBill,
     lostBelongings,
     damageFlash,

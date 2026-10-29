@@ -54,6 +54,9 @@ const INTERIOR_HIDE_DISTANCE = 26
 const buildingFloors: BuildingFloor[] = []
 const placedInteriors: THREE.Group[] = []
 const interiorsByHouse = new Map<string, THREE.Group>()
+/** Interior colliders the gameplay switches on and off (the pub's staff door), kept out of the static world. */
+const TOGGLED_INTERIOR_COLLIDERS = new Set(['COL_Door_Secret'])
+const toggledColliders = new Map<string, CollisionCuboidJson>()
 
 interface FrontDoor {
   node: THREE.Object3D
@@ -309,7 +312,11 @@ async function composeTownCollisionData(manifest: WorldManifest): Promise<Collis
     const interior = interiors[i]!
     if (!interior.bounds) throw new Error(`House ${lot.key} interior collision has no bounds`)
     const matrix = interiorToWorld(lot)
-    cuboids.push(...interior.cuboids.map((cuboid) => transformCuboid(cuboid, matrix)))
+    for (const cuboid of interior.cuboids) {
+      const placed = transformCuboid(cuboid, matrix)
+      if (TOGGLED_INTERIOR_COLLIDERS.has(cuboid.name ?? '')) toggledColliders.set(`${lot.key}/${cuboid.name}`, placed)
+      else cuboids.push(placed)
+    }
     trimeshes.push(...(interior.trimeshes ?? []).map((trimesh) => transformTrimesh(trimesh, matrix)))
     buildingFloors.push({
       houseKey: lot.key,
@@ -327,6 +334,14 @@ async function composeTownCollisionData(manifest: WorldManifest): Promise<Collis
   })
 
   return { version: 1, source: 'world.manifest.json', mode: 'composed', borders: true, bounds: manifest.bounds, cuboids, trimeshes }
+}
+
+/** Block or free one of the toggled interior colliders of a building; a no-op until the collision is composed. */
+export function setInteriorColliderBlocked(lotKey: string, colliderName: string, blocked: boolean): void {
+  const key = `${lotKey}/${colliderName}`
+  const cuboid = toggledColliders.get(key)
+  if (!cuboid) return
+  setDoorBlocker(key, blocked ? cuboid : null)
 }
 
 let townCollision: Promise<CollisionFileJson> | null = null
