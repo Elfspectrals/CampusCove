@@ -2,13 +2,20 @@
   "name": "campuscove-socket",
   "version": "1.0.0",
   "type": "module",
-  "main": "server.js",
+  "main": "server.ts",
   "scripts": {
-    "start": "node server.js",
-    "test": "node --test src/*.test.js"
+    "start": "tsx server.ts",
+    "dev": "tsx watch server.ts",
+    "test": "tsx --test src/*.test.ts",
+    "typecheck": "tsc"
   },
   "dependencies": {
     "@colyseus/schema": "^4.0.20",
-    "colyseus": "^0.17.10"
+    "colyseus": "^0.17.10",
+    "tsx": "^4.23.15"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.43",
+    "typescript": "^5.9.3"
   }
 }

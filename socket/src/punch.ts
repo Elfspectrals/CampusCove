@@ -1,6 +1,7 @@
-import { unitAt } from './movement.js'
-import { hurt } from './survival.js'
-import { spendPunchStamina, staminaAt } from './stamina.js'
+import { unitAt } from './movement.ts'
+import { hurt } from './survival.ts'
+import { spendPunchStamina, staminaAt } from './stamina.ts'
+import type { ClientPayload, GameClient, GameRoom, Player } from './types.ts'
 
 export const PUNCH_DAMAGE = 8
 const PUNCH_COOLDOWN_MS = 800
@@ -9,19 +10,19 @@ const PUNCH_REACH = 2.5
 const PUNCH_HEIGHT_REACH = 1
 const PUNCH_FACING_COS = 0.3
 
-export function canPunchNow(attacker, now) {
+export function canPunchNow(attacker: Player, now: number): boolean {
   return Boolean(attacker.stats) && now >= attacker.knockedOutUntil
     && now - attacker.lastPunchAt >= PUNCH_COOLDOWN_MS - COOLDOWN_JITTER_MS
 }
 
-export function punchDirection(attacker, target) {
+export function punchDirection(attacker: Player, target: Player): { x: number, z: number, dist: number } | null {
   const dx = target.x - attacker.x
   const dz = target.z - attacker.z
   const dist = Math.hypot(dx, dz)
   return dist > 0 ? { x: dx / dist, z: dz / dist, dist } : null
 }
 
-export function canHit(room, attacker, target, now) {
+export function canHit(room: GameRoom, attacker: Player, target: Player | null | undefined, now: number): target is Player {
   if (!target?.stats || target === attacker || now < target.knockedOutUntil) return false
   const dir = punchDirection(attacker, target)
   if (!dir || dir.dist > PUNCH_REACH || Math.abs(target.y - attacker.y) > PUNCH_HEIGHT_REACH) return false
@@ -30,7 +31,7 @@ export function canHit(room, attacker, target, now) {
   return unitAt(room.housingUnits, attacker.x, attacker.z) === unitAt(room.housingUnits, target.x, target.z)
 }
 
-export function onPunch(room, client, payload) {
+export function onPunch(room: GameRoom, client: GameClient, payload: ClientPayload): void {
   const attacker = room.players.get(client.sessionId)
   const now = Date.now()
   if (!attacker || !canPunchNow(attacker, now)) return

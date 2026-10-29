@@ -40,7 +40,7 @@ Verify                                          -> skill: playtest-game
 |---|---|
 | New 3D model / building / tool / skin part | `map-src/CampusCove/build_<thing>.py` (blender-asset) |
 | Asset URL | `front/src/game/assets/catalog.ts` (one typed entry, keys = seeder codes) |
-| Placement in the world (position, door, bounds, interiorOffset) | `front/public/assets/world.manifest.json`, written by `front/scripts/apply-*.mjs` or the district build, read by `game/world/worldManifest.ts` **and** `socket/src/world.js` |
+| Placement in the world (position, door, bounds, interiorOffset) | `front/public/assets/world.manifest.json`, written by `front/scripts/apply-*.mjs` or the district build, read by `game/world/worldManifest.ts` **and** `socket/src/world.ts` |
 | Something the player can aim at / walk up to | `composables/game/useInteractionTargets.ts` (priority order is documented in its header) + prompt label |
 | Key | `front/src/config/keybindings.ts` (`KEY_BINDINGS`), handled in `GameView.vue` `onKeyDown` or the owning composable's `onKeyDown` |
 | Held item / tool in hand | `game/heldItem.ts` + `game/firstPersonArms.ts` (arms clips: Idle, Walk, Equip, UseDoor, UseKey) |
@@ -49,7 +49,7 @@ Verify                                          -> skill: playtest-game
 | Constants shared with the socket | `front/src/game/gameRoomConstants.ts` — must stay in sync with `socket/src/` |
 
 Never let the client decide something the server can check: the socket re-checks reach, speed, locks
-(`socket/src/movement.js`, `doors.js`) and the API re-checks ownership and money.
+(`socket/src/movement.ts`, `doors.ts`) and the API re-checks ownership and money.
 
 ## 3. Build order
 

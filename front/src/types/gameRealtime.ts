@@ -12,7 +12,7 @@ export interface RemoteUserPayload {
   bodyModelGlb?: string | null
 }
 
-/** Another player ate or drank (socket/src/survival.js); `code` is the food item, null for a fountain sip. */
+/** Another player ate or drank (socket/src/survival.ts); `code` is the food item, null for a fountain sip. */
 export interface UserActionPayload {
   sessionId: string
   action: 'eat' | 'drink'

@@ -1,14 +1,17 @@
 // Player state kept by the room, and what other clients get to see of it.
-import { MAX_STAMINA } from './stamina.js'
+import type { Client } from 'colyseus'
+import type { Json } from './backend.ts'
+import { MAX_STAMINA } from './stamina.ts'
+import type { AppearanceSlot, Player, Vec3 } from './types.ts'
 
 const COLORS = [
   0xe94560, 0x0f3460, 0x533483, 0x00d9ff, 0x00ff88,
   0xffaa00, 0xff3366, 0x9d4edd, 0x06ffa5, 0xff6b35
 ]
 
-const SLOTS = ['body', 'hair', 'top', 'bottom', 'shoes', 'head_accessory']
+const SLOTS: readonly AppearanceSlot[] = ['body', 'hair', 'top', 'bottom', 'shoes', 'head_accessory']
 
-const DEFAULT_SLOT_HEX = {
+const DEFAULT_SLOT_HEX: Record<AppearanceSlot, string> = {
   body: '#8B7AA8',
   hair: '#6B5B95',
   top: '#9B8ABF',
@@ -17,12 +20,12 @@ const DEFAULT_SLOT_HEX = {
   head_accessory: '#7A6B94'
 }
 
-function hasOwn(obj, key) {
+function hasOwn(obj: unknown, key: string): obj is Record<string, unknown> {
   return !!obj && Object.prototype.hasOwnProperty.call(obj, key)
 }
 
-export function normalizeAppearanceIds(raw) {
-  const out = {}
+export function normalizeAppearanceIds(raw: unknown): Record<AppearanceSlot, number | null> {
+  const out = {} as Record<AppearanceSlot, number | null>
   for (const s of SLOTS) {
     const v = hasOwn(raw, s) ? raw[s] : null
     out[s] = typeof v === 'number' && Number.isFinite(v) ? v : null
@@ -30,8 +33,8 @@ export function normalizeAppearanceIds(raw) {
   return out
 }
 
-export function normalizeSlotHexes(raw) {
-  const out = {}
+export function normalizeSlotHexes(raw: unknown): Record<AppearanceSlot, string> {
+  const out = {} as Record<AppearanceSlot, string>
   for (const s of SLOTS) {
     const v = hasOwn(raw, s) ? raw[s] : null
     out[s] = typeof v === 'string' && /^#[0-9A-Fa-f]{6}$/.test(v) ? v : DEFAULT_SLOT_HEX[s]
@@ -39,24 +42,24 @@ export function normalizeSlotHexes(raw) {
   return out
 }
 
-export function normalizeBodyModelGlb(raw) {
+export function normalizeBodyModelGlb(raw: unknown): string | null {
   if (typeof raw !== 'string') return null
   const trimmed = raw.trim()
   return trimmed.length > 0 ? trimmed : null
 }
 
-export function normalizeNumber(raw, fallback) {
+export function normalizeNumber(raw: unknown, fallback: number): number {
   return typeof raw === 'number' && Number.isFinite(raw) ? raw : fallback
 }
 
 // Random point on a small disc around `base`, so simultaneous arrivals do not overlap.
-export function spawnNear(base, radius) {
+export function spawnNear(base: Vec3, radius: number): Vec3 {
   const angle = Math.random() * Math.PI * 2
   const dist = radius * Math.sqrt(Math.random())
   return { x: base.x + Math.cos(angle) * dist, y: base.y, z: base.z + Math.sin(angle) * dist }
 }
 
-export function createPlayer(client, options, colorIndex, spawn) {
+export function createPlayer(client: Client, options: Json, colorIndex: number, spawn: Vec3): Player {
   return {
     sessionId: client.sessionId,
     accountId: client.auth?.accountId,
@@ -67,7 +70,7 @@ export function createPlayer(client, options, colorIndex, spawn) {
     ry: 0,
     lastMoveAt: Date.now(),
     lastHousingRefreshAt: 0,
-    // survival (src/survival.js): gauges are loaded from the API right after the join
+    // survival (src/survival.ts): gauges are loaded from the API right after the join
     stats: null,
     statsDirty: false,
     lastStatsSavedAt: Date.now(),
@@ -88,7 +91,7 @@ export function createPlayer(client, options, colorIndex, spawn) {
   }
 }
 
-export function publicPlayer(player) {
+export function publicPlayer(player: Player) {
   return {
     sessionId: player.sessionId,
     id: String(player.accountId),

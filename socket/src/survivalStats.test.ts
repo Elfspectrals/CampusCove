@@ -15,7 +15,7 @@ import {
   startHealOverTime,
   tickHealOverTime,
   tickStats
-} from './survivalStats.js'
+} from './survivalStats.ts'
 
 test('hunger empties in 40 minutes of play, thirst in 30', () => {
   const after20Min = tickStats(fullStats(), 20 * 60).stats
@@ -72,6 +72,7 @@ test('the fountains run dry for a player after a drink, then refill', () => {
     state = sip.state
   }
   const readyAt = 1000 + FOUNTAIN_SIPS_PER_USE - 1 + FOUNTAIN_COOLDOWN_MS
+  assert.ok(state)
   assert.equal(state.readyAt, readyAt)
   assert.equal(fountainSip(state, readyAt - 1).allowed, false)
   const again = fountainSip(state, readyAt)

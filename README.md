@@ -49,7 +49,7 @@ make up-build
 | `front/src/views/` | Pages (une par route). `GameView.vue` ne fait qu'assembler les composables du jeu |
 | `front/src/composables/game/` | Logique du jeu `/game` : mouvement, temps réel (`useGameRealtime` + `useRemoteAvatars`), cibles d'interaction, environnement, maisons, inventaire, placement de meubles |
 | `front/src/game/` | Code Three.js sans Vue : scène (`gameScene.ts`), environnements, `collision/` (Rapier), `placement/` (physique + fantôme), `town/` (maisons, bâtiments, pêche, terrain), `newNation/` (showroom) |
-| `socket/` | Serveur Colyseus : `server.js` (démarrage) + `src/` (`CityRoom`, intérieurs, joueurs, appels backend) |
+| `socket/` | Serveur Colyseus : `server.ts` (démarrage) + `src/` (`CityRoom`, intérieurs, joueurs, appels backend) |
 | `backend/app/Console/Commands/` | Commandes Artisan (`setAdmin`, `setMoney`, `fillOutfit`, `housing:*`) |
 
 Garde-fous : `cd front && npx knip` (code / exports morts), `make typecheck`, `npm run test:unit`, `make test`.

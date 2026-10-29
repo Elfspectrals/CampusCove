@@ -30,9 +30,9 @@
 | Mouvement intérieur | Clamp `APARTMENT_HALF_EXTENT = 12` autour de l'origine | `front/src/composables/game/useGameMovement.ts` |
 | Placement | Physique de placement = boîte de ±12 m (`addApartmentStaticColliders`), pas les murs réels | `front/src/game/placement/placementPhysics.ts` |
 | Éclairage intérieur | Aucun GLB n'a de lumière : chaque intérieur reçoit 3 `PointLight` (portée 16–22 m) + 1 `HemisphereLight` | `front/src/game/sceneLighting.ts` |
-| Réseau | Une room Colyseus (`CITY_MAX_PLAYERS`, 30 par défaut, variable d'env), visibilité par zone : `city`, `apartment:<ownerId>`, `work:<key>` | `socket/src/CityRoom.js`, `socket/src/players.js` |
-| Mouvement serveur | `onMove` accepte toute position (seul `Number.isFinite` est vérifié) | `socket/src/CityRoom.js` |
-| Constantes serveur | Spawns et `WORK_DOORS` dupliqués en dur | `socket/src/config.js` |
+| Réseau | Une room Colyseus (`CITY_MAX_PLAYERS`, 30 par défaut, variable d'env), visibilité par zone : `city`, `apartment:<ownerId>`, `work:<key>` | `socket/src/CityRoom.ts`, `socket/src/players.ts` |
+| Mouvement serveur | `onMove` accepte toute position (seul `Number.isFinite` est vérifié) | `socket/src/CityRoom.ts` |
+| Constantes serveur | Spawns et `WORK_DOORS` dupliqués en dur | `socket/src/config.ts` |
 | Logement | 10 logements, un par maison, positionnés au point de porte. Une maison par compte, imposée par le service (`already_owns_unit`), pas par la base | `HousingUnitSeeder.php`, `HousingService.php` |
 | Meubles | Room nommée `apartment:<owner>:<template>` : liée au **locataire**, pas à la maison. `template_key` libre, sans contrôle | `ApartmentPlacementService.php` |
 | Fin de bail | Cron Laravel chaque minute. `resetExpiredUnit` **supprime** meubles, `ItemInstance`, memberships et Room | `HousingService.php`, `bootstrap/app.php` |
@@ -40,7 +40,7 @@
 
 ### Trou de sécurité existant (indépendant de l'open world)
 
-`saveObject` envoie `{ owner_account_id, template_key, ...payload }` (`socket/src/apartments.js:148`) : le payload client, étalé en dernier, **écrase** le propriétaire et le template. Un client peut écrire dans une autre Room que celle de la maison où il se trouve. À corriger en premier, dans un correctif séparé : payload étalé avant les champs serveur.
+`saveObject` envoie `{ owner_account_id, template_key, ...payload }` (`socket/src/apartments.ts:148`) : le payload client, étalé en dernier, **écrase** le propriétaire et le template. Un client peut écrire dans une autre Room que celle de la maison où il se trouve. À corriger en premier, dans un correctif séparé : payload étalé avant les champs serveur.
 
 ---
 
@@ -109,7 +109,7 @@ Prérequis de tout le reste.
 
 ## 5. Phase 1 — Manifeste de monde
 
-Un fichier `world.manifest.json` remplace la liste codée en dur dans `loadTownEnvironment`. Il est lu **par le client et par le serveur temps réel** (empreintes, portes, bornes), ce qui supprime les doublons de `socket/src/config.js`.
+Un fichier `world.manifest.json` remplace la liste codée en dur dans `loadTownEnvironment`. Il est lu **par le client et par le serveur temps réel** (empreintes, portes, bornes), ce qui supprime les doublons de `socket/src/config.ts`.
 
 | Champ | Rôle |
 |-------|------|

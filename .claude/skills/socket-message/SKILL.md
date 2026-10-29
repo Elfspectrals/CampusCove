@@ -5,19 +5,19 @@ description: Add or change real-time multiplayer behaviour in CampusCove's Colys
 
 # CampusCove real-time message
 
-One Colyseus room, `CityRoom` (`socket/src/CityRoom.js`), holds the town **and** every interior: a player's
-`zone` (`city`, `apartment`, `work:<key>`) only decides who sees whom (`players.js` `visibilityKey`,
+One Colyseus room, `CityRoom` (`socket/src/CityRoom.ts`), holds the town **and** every interior: a player's
+`zone` (`city`, `apartment`, `work:<key>`) only decides who sees whom (`players.ts` `visibilityKey`,
 `forEachVisibleClient`). The socket is plain ESM JavaScript (no TypeScript), 2-space, no semicolons.
 
 | File | Owns |
 |---|---|
-| `CityRoom.js` | `onMessage` registry (all in `onCreate`), join/leave, move, doors, housing polling |
-| `players.js` | player record, `publicPlayer`, input normalizers (`normalizeNumber`, ...) |
-| `movement.js` | `moveRejection`: speed, world bounds, locked houses → `position_correction` |
-| `doors.js` | reach (`DOOR_REACH = 3`), `canUseDoor`, door ids (`work:<key>` / unit public id) |
-| `world.js` | parses `world.manifest.json` at boot (spawn, bounds, houses, work doors) |
-| `apartments.js` | furniture placement, forwarded to the API |
-| `backend.js` | `callBackendJson(token, path, method, body)`, `errorPayload` |
+| `CityRoom.ts` | `onMessage` registry (all in `onCreate`), join/leave, move, doors, housing polling |
+| `players.ts` | player record, `publicPlayer`, input normalizers (`normalizeNumber`, ...) |
+| `movement.ts` | `moveRejection`: speed, world bounds, locked houses → `position_correction` |
+| `doors.ts` | reach (`DOOR_REACH = 3`), `canUseDoor`, door ids (`work:<key>` / unit public id) |
+| `world.ts` | parses `world.manifest.json` at boot (spawn, bounds, houses, work doors) |
+| `apartments.ts` | furniture placement, forwarded to the API |
+| `backend.ts` | `callBackendJson(token, path, method, body)`, `errorPayload` |
 
 ## Server side
 
@@ -36,7 +36,7 @@ One Colyseus room, `CityRoom` (`socket/src/CityRoom.js`), holds the town **and**
    sender) or `{ zone: 'city' }` for town-wide state. Send full small state (`doors_sync` sends the whole set)
    rather than deltas unless the payload is large. Skip no-op broadcasts.
 6. Anything that must also be known by the front (positions, door points) belongs in `world.manifest.json`,
-   not hard-coded in `config.js`.
+   not hard-coded in `config.ts`.
 
 `socket/` is mounted with `node --watch`: saving restarts the server (all players reconnect). Only
 `package.json` changes need `make rebuild-socket`. Logs: `docker logs -f campuscove-socket`.

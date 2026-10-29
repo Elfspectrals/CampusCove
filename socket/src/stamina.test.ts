@@ -6,7 +6,7 @@ import {
   STAMINA_REGEN_DELAY_MS,
   spendPunchStamina,
   staminaAt
-} from './stamina.js'
+} from './stamina.ts'
 
 test('stamina does not regenerate during the delay after a punch', () => {
   assert.equal(staminaAt(40, 1000, 1000 + STAMINA_REGEN_DELAY_MS), 40)
@@ -27,25 +27,25 @@ test('a punch is refused below one punch of stamina', () => {
 })
 
 test('five punches in a row empty a full gauge, the sixth is refused', () => {
-  let stamina = MAX_STAMINA
+  let stamina: number | null = MAX_STAMINA
   let spentAt = 0
   for (let i = 1; i <= 5; i++) {
     const now = 10_000 + i * 100
-    stamina = spendPunchStamina(stamina, spentAt, now, true)
+    stamina = spendPunchStamina(stamina ?? 0, spentAt, now, true)
     spentAt = now
   }
   assert.equal(stamina, 0)
-  assert.equal(spendPunchStamina(stamina, spentAt, spentAt + 100, true), null)
+  assert.equal(spendPunchStamina(stamina ?? 0, spentAt, spentAt + 100, true), null)
 })
 
 test('three misses in a row empty a full gauge', () => {
-  let stamina = MAX_STAMINA
+  let stamina: number | null = MAX_STAMINA
   let spentAt = 0
   for (let i = 1; i <= 3; i++) {
     const now = 10_000 + i * 100
-    stamina = spendPunchStamina(stamina, spentAt, now, false)
+    stamina = spendPunchStamina(stamina ?? 0, spentAt, now, false)
     spentAt = now
   }
   assert.equal(stamina, 0)
-  assert.equal(spendPunchStamina(stamina, spentAt, spentAt + 100, false), null)
+  assert.equal(spendPunchStamina(stamina ?? 0, spentAt, spentAt + 100, false), null)
 })

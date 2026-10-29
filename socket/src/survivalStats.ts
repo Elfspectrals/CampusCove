@@ -1,5 +1,6 @@
-// Hunger / thirst / health rules, without Colyseus so they can be unit-tested (survivalStats.test.js).
+// Hunger / thirst / health rules, without Colyseus so they can be unit-tested (survivalStats.test.ts).
 // Values go from 0 to 100. Front mirror (for display only): front/src/game/survival.ts.
+import type { ClinicBedOccupant, HealOverTime, Stats } from './types.ts'
 
 export const MAX_STAT = 100
 
@@ -26,16 +27,29 @@ export const SPEED_BOOST_FACTOR = 1.3
 
 export const HEAL_OVER_TIME_MS = 30_000
 
-export function fullStats() {
+/** One portion of a food item, from the API's `consumed` payload. */
+export interface Portion {
+  health?: number
+  hunger?: number
+  thirst?: number
+  effect?: string | null
+}
+
+export interface FountainState {
+  sips: number
+  readyAt: number
+}
+
+export function fullStats(): Stats {
   return { health: MAX_STAT, hunger: MAX_STAT, thirst: MAX_STAT }
 }
 
-function clamp(value) {
+function clamp(value: number): number {
   return Math.max(0, Math.min(MAX_STAT, value))
 }
 
-export function normalizeStats(raw) {
-  const read = (v) => (typeof v === 'number' && Number.isFinite(v) ? clamp(v) : MAX_STAT)
+export function normalizeStats(raw: { health?: unknown, hunger?: unknown, thirst?: unknown } | null | undefined): Stats {
+  const read = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? clamp(v) : MAX_STAT)
   return { health: read(raw?.health), hunger: read(raw?.hunger), thirst: read(raw?.thirst) }
 }
 
@@ -43,7 +57,7 @@ export function normalizeStats(raw) {
  * Advances the gauges by `dtSeconds`. `timeScale` > 1 only speeds up hunger and thirst (playtests).
  * Returns the new stats and the health lost to starvation / dehydration (0 when none).
  */
-export function tickStats(stats, dtSeconds, timeScale = 1) {
+export function tickStats(stats: Stats, dtSeconds: number, timeScale = 1): { stats: Stats, damage: number } {
   const hunger = clamp(stats.hunger - (MAX_STAT / HUNGER_EMPTY_S) * dtSeconds * timeScale)
   const thirst = clamp(stats.thirst - (MAX_STAT / THIRST_EMPTY_S) * dtSeconds * timeScale)
   const emptyGauges = (hunger === 0 ? 1 : 0) + (thirst === 0 ? 1 : 0)
@@ -59,7 +73,7 @@ export function tickStats(stats, dtSeconds, timeScale = 1) {
 }
 
 /** Effects of one portion (from the API's `consumed` payload) applied to the stats. */
-export function applyPortion(stats, portion) {
+export function applyPortion(stats: Stats, portion: Portion): Stats {
   const poisoned = portion.effect === 'food_poisoning'
   const instantHealth = portion.effect === 'heal_over_time' ? 0 : (portion.health ?? 0)
   return {
@@ -69,11 +83,11 @@ export function applyPortion(stats, portion) {
   }
 }
 
-export function startHealOverTime(now, amount) {
+export function startHealOverTime(now: number, amount: number): HealOverTime {
   return { until: now + HEAL_OVER_TIME_MS, perMs: amount / HEAL_OVER_TIME_MS, healedUntil: now }
 }
 
-export function tickHealOverTime(stats, healOverTime, now) {
+export function tickHealOverTime(stats: Stats, healOverTime: HealOverTime | null, now: number): { stats: Stats, healOverTime: HealOverTime | null } {
   if (!healOverTime) return { stats, healOverTime: null }
   const healedUntil = Math.min(now, healOverTime.until)
   const health = clamp(stats.health + healOverTime.perMs * Math.max(0, healedUntil - healOverTime.healedUntil))
@@ -83,25 +97,25 @@ export function tickHealOverTime(stats, healOverTime, now) {
   }
 }
 
-export function pickBed(beds, occupants) {
-  const usedAt = (bed) => occupants.get(bed.id)?.usedAt ?? 0
+export function pickBed<B extends { id: string }>(beds: B[], occupants: Map<string, ClinicBedOccupant>): B {
+  const usedAt = (bed: B) => occupants.get(bed.id)?.usedAt ?? 0
   const free = beds.filter((bed) => !occupants.get(bed.id)?.sessionId)
   const candidates = free.length > 0 ? free : beds
   return candidates.reduce((best, bed) => (usedAt(bed) < usedAt(best) ? bed : best))
 }
 
 /** Damage when landing after falling from `peakY` down to `y` (client-reported heights). */
-export function fallDamage(peakY, y) {
+export function fallDamage(peakY: number, y: number): number {
   const drop = peakY - y
   return drop > FALL_SAFE_HEIGHT ? (drop - FALL_SAFE_HEIGHT) * FALL_DAMAGE_PER_METRE : 0
 }
 
-export function isWalkingDescent(drop, distXZ) {
+export function isWalkingDescent(drop: number, distXZ: number): boolean {
   return drop > 0 && drop <= distXZ * WALKING_DESCENT_SLOPE
 }
 
 /** Gauges after passing out: back on their feet with half health and a little food in the belly. */
-export function respawnStats(stats) {
+export function respawnStats(stats: Stats): Stats {
   return {
     health: RESPAWN_HEALTH,
     hunger: Math.max(stats.hunger, RESPAWN_MIN_GAUGE),
@@ -118,7 +132,11 @@ export const FOUNTAIN_COOLDOWN_MS = 30 * 60_000
  * One fountain sip against the player's budget `state` ({ sips, readyAt } or null).
  * Returns { allowed, state, readyAt }: readyAt > now while the fountains are dry for this player.
  */
-export function fountainSip(state, now, cooldownMs = FOUNTAIN_COOLDOWN_MS) {
+export function fountainSip(
+  state: FountainState | null | undefined,
+  now: number,
+  cooldownMs = FOUNTAIN_COOLDOWN_MS
+): { allowed: boolean, state: FountainState, readyAt: number } {
   const current = state && state.readyAt > 0 && now >= state.readyAt ? null : state
   if (current && current.readyAt > now) return { allowed: false, state: current, readyAt: current.readyAt }
   const sips = (current?.sips ?? 0) + 1

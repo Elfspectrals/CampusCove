@@ -1,5 +1,9 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import type { GameClient, GameRoom, Player } from './types.ts'
+
+interface Sent { type: string, payload: any }
+type FakeClient = GameClient & { sent: Sent[] }
 
 process.env.WORLD_MANIFEST_URL = 'http://world.test/world.manifest.json'
 
@@ -13,30 +17,30 @@ const manifest = {
     beds: [{ id: 'bed_01', position: [38, 1.8, 4], bed: [38, 0.7, 5], yaw: 0 }]
   }
 }
-globalThis.fetch = async (url) => {
+globalThis.fetch = async (url: string | URL | Request) => {
   if (String(url) === process.env.WORLD_MANIFEST_URL) return new Response(JSON.stringify(manifest))
   if (String(url).endsWith('/survival/clinic-heal')) return new Response(JSON.stringify({ billed: 30, balance_after: 70 }))
   if (String(url).endsWith('/survival')) return new Response(JSON.stringify({}))
   return new Response(JSON.stringify({ cooked: { code: 'fish_cooked' } }))
 }
 
-const { loadWorld } = await import('./world.js')
-const { onClinicHeal, onCook, onSurvivalMove } = await import('./survival.js')
+const { loadWorld } = await import('./world.ts')
+const { onClinicHeal, onCook, onSurvivalMove } = await import('./survival.ts')
 await loadWorld()
 
-function fakeClient() {
-  const sent = []
-  return { sessionId: 's1', sent, send: (type, payload) => sent.push({ type, payload }) }
+function fakeClient(): FakeClient {
+  const sent: Sent[] = []
+  return { sessionId: 's1', sent, send: (type, payload) => void sent.push({ type, payload }) }
 }
 
-function walkingPlayer(y) {
-  return { y, fallPeakY: y, stats: { health: 100, hunger: 100, thirst: 100 }, knockedOutUntil: 0 }
+function walkingPlayer(y: number): Player {
+  return { y, fallPeakY: y, stats: { health: 100, hunger: 100, thirst: 100 }, knockedOutUntil: 0 } as Player
 }
 
-function moveTo(client, player, y, distXZ) {
+function moveTo(client: FakeClient, player: Player, y: number, distXZ: number) {
   const previousY = player.y
   player.y = y
-  onSurvivalMove({}, client, player, previousY, distXZ)
+  onSurvivalMove({} as GameRoom, client, player, previousY, distXZ)
 }
 
 test('walking down a 3.2 m stair does not hurt', () => {
@@ -56,18 +60,18 @@ test('dropping off a ledge still hurts', () => {
   assert.equal(client.sent.find((m) => m.type === 'survival_damage')?.payload.cause, 'fall')
 })
 
-function cookingRoom(cookerY) {
+function cookingRoom(cookerY: number): GameRoom {
   return {
     housingUnits: [{ model_key: 'house_05', interior_bounds: { minX: -6, maxX: 6, minZ: -5, maxZ: 5 } }],
     houseFurniture: [{ model_key: 'house_05', objects: [{ objectKey: 'decor_stove_oven', x: 1, y: cookerY, z: 0 }] }],
     players: new Map(),
     forEachClient: () => undefined
-  }
+  } as unknown as GameRoom
 }
 
-async function cookAt(room, eyeY) {
+async function cookAt(room: GameRoom, eyeY: number) {
   const client = fakeClient()
-  room.players.set(client.sessionId, { token: 't', x: 20, y: eyeY, z: 0, knockedOutUntil: 0 })
+  room.players.set(client.sessionId, { token: 't', x: 20, y: eyeY, z: 0, knockedOutUntil: 0 } as Player)
   await onCook(room, client, { code: 'fish_raw' })
   return client.sent
 }
@@ -82,17 +86,17 @@ test('a stove on the ground floor is out of reach from the floor above', async (
   assert.equal(sent[0]?.payload.code, 'no_cooker')
 })
 
-async function healAt(x, eyeY, health) {
+async function healAt(x: number, eyeY: number, health: number) {
   const client = fakeClient()
-  const player = { token: 't', x, y: eyeY, z: 0, knockedOutUntil: 0, lastClinicHealAt: 0, stats: { health, hunger: 50, thirst: 50 } }
-  await onClinicHeal({ players: new Map([[client.sessionId, player]]) }, client, undefined)
+  const player = { token: 't', x, y: eyeY, z: 0, knockedOutUntil: 0, lastClinicHealAt: 0, stats: { health, hunger: 50, thirst: 50 } } as Player
+  await onClinicHeal({ players: new Map([[client.sessionId, player]]) } as GameRoom, client)
   return { sent: client.sent, player }
 }
 
 test('the nurse heals a hurt player standing at the desk to full health', async () => {
   const { sent, player } = await healAt(41, 0.2 + 1.6, 40)
   assert.deepEqual(sent[0], { type: 'clinic_healed', payload: { billed: 30, balanceAfter: 70 } })
-  assert.equal(player.stats.health, 100)
+  assert.equal(player.stats?.health, 100)
 })
 
 test('the nurse is out of reach from afar or from another floor', async () => {

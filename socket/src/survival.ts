@@ -1,13 +1,15 @@
 // Hunger, thirst and health of the connected players. The live values are kept here (the rules are in
-// survivalStats.js); the API stores them, owns the food items and bills the hospital (callRealtimeBackend).
-import { callRealtimeBackend, errorPayload } from './backend.js'
-import { CITY_SPAWN_RADIUS, SURVIVAL_TIME_SCALE } from './config.js'
-import { toInterior, unitAt } from './movement.js'
-import { spawnNear } from './players.js'
-import { staminaAt } from './stamina.js'
+// survivalStats.ts); the API stores them, owns the food items and bills the hospital (callRealtimeBackend).
+import { callRealtimeBackend, errorPayload } from './backend.ts'
+import { CITY_SPAWN_RADIUS, SURVIVAL_TIME_SCALE } from './config.ts'
+import { toInterior, unitAt } from './movement.ts'
+import { spawnNear } from './players.ts'
+import { staminaAt } from './stamina.ts'
 import {
   FOUNTAIN_COOLDOWN_MS,
+  type FountainState,
   MAX_STAT,
+  type Portion,
   SPEED_BOOST_MS,
   applyPortion,
   fallDamage,
@@ -19,8 +21,9 @@ import {
   startHealOverTime,
   tickHealOverTime,
   tickStats
-} from './survivalStats.js'
-import { citySpawn, worldClinic, worldFountains, worldHouse } from './world.js'
+} from './survivalStats.ts'
+import type { ClientPayload, GameClient, GameRoom, Player, Stats } from './types.ts'
+import { type ClinicBed, citySpawn, worldClinic, worldFountains, worldHouse } from './world.ts'
 
 export const SURVIVAL_TICK_MS = 2000
 const SAVE_EVERY_MS = 60_000
@@ -40,14 +43,17 @@ const EYE_HEIGHT = 1.6
 const COOKER_KEYS = ['decor_stove_oven', 'decor_bbq_grill']
 const CODE_PATTERN = /^[a-z0-9_]{1,64}$/
 // Fountain budget per account (survivalStats.fountainSip), kept across reconnects; time scale speeds it up in playtests.
-const fountainBudgets = new Map()
+const fountainBudgets = new Map<number | string, FountainState>()
 const FOUNTAIN_COOLDOWN = FOUNTAIN_COOLDOWN_MS / SURVIVAL_TIME_SCALE
 
-function warn(context, error) {
+export type DamageCause = 'hunger' | 'thirst' | 'fall' | 'punch'
+
+function warn(context: string, error: unknown): void {
   console.warn(`[survival] ${context}:`, error instanceof Error ? error.message : error)
 }
 
-function sendStats(client, player) {
+function sendStats(client: GameClient, player: Player): void {
+  if (!player.stats) return
   const { health, hunger, thirst } = player.stats
   client.send('survival', {
     health,
@@ -59,13 +65,13 @@ function sendStats(client, player) {
   })
 }
 
-function setStats(player, stats) {
+function setStats(player: Player, stats: Stats): void {
   player.stats = stats
   player.statsDirty = true
 }
 
 /** Right after the join: last saved gauges (a player who left while knocked out comes back on their feet). */
-export async function loadSurvival(client, player) {
+export async function loadSurvival(client: GameClient, player: Player): Promise<void> {
   let stats = normalizeStats(null)
   try {
     const data = await callRealtimeBackend(player.token, '/survival', 'GET')
@@ -78,7 +84,7 @@ export async function loadSurvival(client, player) {
   sendStats(client, player)
 }
 
-export async function saveSurvival(player) {
+export async function saveSurvival(player: Player): Promise<void> {
   if (!player.stats || !player.statsDirty || !player.token) return
   player.statsDirty = false
   player.lastStatsSavedAt = Date.now()
@@ -90,7 +96,7 @@ export async function saveSurvival(player) {
   }
 }
 
-export function tickSurvival(room, dtSeconds) {
+export function tickSurvival(room: GameRoom, dtSeconds: number): void {
   const now = Date.now()
   room.forEachClient((client) => {
     const player = room.players.get(client.sessionId)
@@ -106,7 +112,7 @@ export function tickSurvival(room, dtSeconds) {
   })
 }
 
-export function hurt(room, client, player, amount, cause) {
+export function hurt(room: GameRoom, client: GameClient, player: Player, amount: number, cause: DamageCause): void {
   if (!player.stats || amount <= 0 || Date.now() < player.knockedOutUntil) return
   setStats(player, { ...player.stats, health: Math.max(0, player.stats.health - amount) })
   client.send('survival_damage', { amount, cause })
@@ -115,7 +121,7 @@ export function hurt(room, client, player, amount, cause) {
 }
 
 /** Health reached 0: the player passes out, pays the hospital and wakes up beside a clinic bed (the town spawn without a clinic). */
-function knockOut(room, client, player) {
+function knockOut(room: GameRoom, client: GameClient, player: Player): void {
   player.knockedOutUntil = Date.now() + KNOCKOUT_MS
   player.speedBoostUntil = 0
   player.healOverTime = null
@@ -127,7 +133,7 @@ function knockOut(room, client, player) {
     }))
     .catch((error) => warn('hospital bill failed', error))
   room.clock.setTimeout(() => {
-    if (room.players.get(client.sessionId) !== player) return
+    if (room.players.get(client.sessionId) !== player || !player.stats) return
     const bed = claimClinicBed(room, player)
     const spawn = bed ? { ...bed.position, ry: bed.yaw } : spawnNear(citySpawn(), CITY_SPAWN_RADIUS)
     const recoveringMs = bed ? RECOVERY_MS : 0
@@ -152,7 +158,7 @@ function knockOut(room, client, player) {
   }, KNOCKOUT_MS)
 }
 
-function claimClinicBed(room, player) {
+function claimClinicBed(room: GameRoom, player: Player): ClinicBed | null {
   const clinic = worldClinic()
   if (!clinic) return null
   const bed = pickBed(clinic.beds, room.clinicBeds)
@@ -161,14 +167,14 @@ function claimClinicBed(room, player) {
   return bed
 }
 
-export function releaseClinicBed(room, player) {
-  const occupant = room.clinicBeds.get(player.clinicBedId)
+export function releaseClinicBed(room: GameRoom, player: Player): void {
+  const occupant = player.clinicBedId ? room.clinicBeds.get(player.clinicBedId) : undefined
   if (occupant?.sessionId === player.sessionId) occupant.sessionId = null
   player.clinicBedId = null
 }
 
 /** Called for every accepted move: tracks the highest point of a fall and hurts on landing. */
-export function onSurvivalMove(room, client, player, previousY, distXZ) {
+export function onSurvivalMove(room: GameRoom, client: GameClient, player: Player, previousY: number, distXZ: number): void {
   const drop = previousY - player.y
   if (isWalkingDescent(drop, distXZ)) player.fallPeakY -= drop
   if (player.y >= previousY - 0.01) {
@@ -178,13 +184,13 @@ export function onSurvivalMove(room, client, player, previousY, distXZ) {
   }
 }
 
-function readCode(payload) {
+function readCode(payload: ClientPayload): string | null {
   const code = typeof payload?.code === 'string' ? payload.code.trim() : ''
   return CODE_PATTERN.test(code) ? code : null
 }
 
 /** One bite / sip of the item held in the hotbar. */
-export async function onConsume(room, client, payload) {
+export async function onConsume(room: GameRoom, client: GameClient, payload: ClientPayload): Promise<void> {
   const player = room.players.get(client.sessionId)
   const code = readCode(payload)
   const now = Date.now()
@@ -192,7 +198,7 @@ export async function onConsume(room, client, payload) {
   player.lastConsumeAt = now
   try {
     const data = await callRealtimeBackend(player.token, '/survival/consume', 'POST', { code })
-    const portion = data?.consumed ?? {}
+    const portion: Portion & { quantity?: unknown, portions_left?: unknown } = data?.consumed ?? {}
     let stats = applyPortion(player.stats, portion)
     if (portion.effect === 'heal_over_time') {
       const doseAt = Date.now()
@@ -217,7 +223,7 @@ export async function onConsume(room, client, payload) {
 }
 
 /** A drink at a town drinking fountain (free, then a 30 min cooldown on every fountain). */
-export function onDrinkFountain(room, client) {
+export function onDrinkFountain(room: GameRoom, client: GameClient): void {
   const player = room.players.get(client.sessionId)
   const now = Date.now()
   if (!player?.stats || now < player.knockedOutUntil || now - player.lastSipAt < SIP_COOLDOWN_MS) return
@@ -234,7 +240,7 @@ export function onDrinkFountain(room, client) {
   room.forEachClient((c) => c.send('user_action', { sessionId: client.sessionId, action: 'drink', code: null }), client)
 }
 
-function isNearCooker(room, player) {
+function isNearCooker(room: GameRoom, player: Player): boolean {
   const unit = unitAt(room.housingUnits, player.x, player.z)
   if (!unit?.model_key) return false
   const house = worldHouse(unit.model_key)
@@ -247,7 +253,7 @@ function isNearCooker(room, player) {
 }
 
 /** Cooks the raw item held in hand on a stove or a barbecue placed in the house the player stands in. */
-export async function onCook(room, client, payload) {
+export async function onCook(room: GameRoom, client: GameClient, payload: ClientPayload): Promise<void> {
   const player = room.players.get(client.sessionId)
   const code = readCode(payload)
   if (!player?.token || !code || Date.now() < player.knockedOutUntil) return
@@ -263,14 +269,14 @@ export async function onCook(room, client, payload) {
   }
 }
 
-function isNearNurse(player) {
+function isNearNurse(player: Player): boolean {
   const nurse = worldClinic()?.nurse
   if (!nurse) return false
   return Math.hypot(player.x - nurse.x, player.z - nurse.z) <= NURSE_REACH
     && Math.abs(player.y - EYE_HEIGHT - nurse.y) <= NURSE_HEIGHT_REACH
 }
 
-export async function onClinicHeal(room, client) {
+export async function onClinicHeal(room: GameRoom, client: GameClient): Promise<void> {
   const player = room.players.get(client.sessionId)
   const now = Date.now()
   if (!player?.stats || !player.token || now < player.knockedOutUntil || player.clinicHealPending) return
