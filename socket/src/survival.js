@@ -88,7 +88,7 @@ export function tickSurvival(room, dtSeconds) {
   })
 }
 
-function hurt(room, client, player, amount, cause) {
+export function hurt(room, client, player, amount, cause) {
   if (!player.stats || amount <= 0 || Date.now() < player.knockedOutUntil) return
   setStats(player, { ...player.stats, health: Math.max(0, player.stats.health - amount) })
   client.send('survival_damage', { amount, cause })

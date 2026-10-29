@@ -19,6 +19,13 @@ export interface UserActionPayload {
   code: string | null
 }
 
+export interface UserPunchedPayload {
+  sessionId: string
+  targetSessionId: string | null
+  dirX: number
+  dirZ: number
+}
+
 export interface HousingUnitPayload {
   unit_id: number
   public_id: string

@@ -7,6 +7,7 @@ const HOUSING_REFRESH_COOLDOWN_MS = 2000
 const HOUSING_POLL_MS = 60_000
 import { isWithinDoorReach, isWithinReach, workDoorId } from './doors.js'
 import { moveRejection } from './movement.js'
+import { onPunch } from './punch.js'
 import {
   createPlayer,
   normalizeAppearanceIds,
@@ -53,6 +54,7 @@ export class CityRoom extends Room {
     this.onMessage('consume', (client, payload) => void onConsume(this, client, payload))
     this.onMessage('drink_fountain', (client) => onDrinkFountain(this, client))
     this.onMessage('cook', (client, payload) => void onCook(this, client, payload))
+    this.onMessage('punch', (client, payload) => onPunch(this, client, payload))
     this.clock.setInterval(() => void this.pollHousingUnits(), HOUSING_POLL_MS)
     this.clock.setInterval(() => tickSurvival(this, SURVIVAL_TICK_MS / 1000), SURVIVAL_TICK_MS)
   }

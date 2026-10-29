@@ -37,6 +37,7 @@ import { useInteractionTargets } from '../composables/game/useInteractionTargets
 import { usePlayerInventory } from '../composables/game/usePlayerInventory'
 import { useRoomEnvironment } from '../composables/game/useRoomEnvironment'
 import { useSurvival } from '../composables/game/useSurvival'
+import { usePunch } from '../composables/game/usePunch'
 import { useShopPurchase } from '../composables/useShopPurchase'
 import { toggleCollisionDebug } from '../game/collision/collisionDebug'
 import { actionKeyLabels, matches } from '../config/keybindings'
@@ -437,8 +438,10 @@ const movement = useGameMovement({
       return true
     }
     if (placement.onPointerDown(e)) return true
-    // doors and shops first, then the cafe counter, then what is held in hand (food, fountain sips)
-    if (e.button === 0 && pointerLocked.value) return interactions.tryInteract() || cafe.tryOpen() || survival.onPrimaryDown()
+    // doors and shops first, then the cafe counter, then what is held in hand (food, fountain sips), then a punch
+    if (e.button === 0 && pointerLocked.value) {
+      return interactions.tryInteract() || cafe.tryOpen() || survival.onPrimaryDown() || punch.tryPunch()
+    }
     return false
   },
   speedFactor: () => survival.speedFactor(),
@@ -460,6 +463,19 @@ const movement = useGameMovement({
   },
 })
 const { requestPointerLock, onCanvasMouseDown } = movement
+
+const punch = usePunch({
+  gameRoomRef,
+  getScene,
+  getCamera,
+  getArms: () => arms,
+  myPosition,
+  pointerLocked,
+  knockedOut,
+  reducedEffects,
+  shakeCamera: movement.shakeCamera,
+  knockBack: movement.knockBack,
+})
 
 const realtime = useGameRealtime({
   router,
@@ -485,6 +501,7 @@ const realtime = useGameRealtime({
   onHouseFurnitureSync: houseFurniture.applyHouses,
   onDoorsSync: housing.applyOpenDoors,
   onMyBodyModel: (bodyModelGlb) => arms?.setSkin(bodyModelGlb),
+  onPunched: punch.onPunched,
 })
 const { switchingRoom } = realtime
 
