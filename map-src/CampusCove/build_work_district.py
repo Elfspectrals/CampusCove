@@ -3,8 +3,8 @@ Authored directly in WORLD game space (same origin as town.glb). Run inside Blen
 
 Layout (game xz):
   hedge gate        : opening x in [-6.1, 6.1] at z ~ 46 (segments COL_Hedge_35/36 are removed by front/scripts/open-town-gate.mjs)
-  avenue            : x in [-3, 3], z 22 -> 52 (paving over the grass)
-  plaza             : x in [-29, 29], z 48 -> 56 (buildings' doors face it, door line z = 56)
+  avenue            : x in [-3, 3], z 22 -> 62 (paving over the grass)
+  plaza             : x in [-29, 29], z 58 -> 66 (buildings' doors face it, door line z = 66)
   buildings         : tech_hub x=-20, boutique x=0, cafe x=+20 (rotation pi: door faces -Z, towards the town)
 Outputs: out/work/district/district.glb, district.layout.json (collision boxes + building placements)
 """
@@ -23,7 +23,8 @@ import bpy
 
 KEY = "district"
 OUT = os.path.join(L.OUT_ROOT, "work", KEY)
-DOOR_Z = 56.0
+PUSH = 10.0
+DOOR_Z = 56.0 + PUSH
 
 sc = L.new_build_scene("WORK_" + KEY)
 coll = bpy.data.collections.new("District")
@@ -51,14 +52,15 @@ def add_col(name, gx, gz, sx, sz, h, yaw=0.0):
 
 
 # --- ground surfaces (slightly above the town ground at y ~ -0.005)
-objs.append(L.box(coll, "DS_Plaza", 0, 52.0, 0.0, 58.0, 8.0, 0.04, D["paving"], tile=2.0))
-objs.append(L.box(coll, "DS_Avenue", 0, 37.0, 0.0, 6.0, 30.0, 0.03, D["avenue"], tile=2.0))
+objs.append(L.box(coll, "DS_Plaza", 0, 52.0 + PUSH, 0.0, 58.0, 8.0, 0.04, D["paving"], tile=2.0))
+objs.append(L.box(coll, "DS_Avenue", 0, 37.0 + PUSH / 2, 0.0, 6.0, 30.0 + PUSH, 0.03, D["avenue"], tile=2.0))
 objs.append(L.box(coll, "DS_GateApron", 0, 47.0, 0.0, 14.0, 6.0, 0.035, D["avenue"], tile=2.0))
-for nm, gx, gz, sx, sz in [("DS_CurbPlazaN", 0, 48.0, 58.2, 0.3), ("DS_CurbPlazaE", 29.1, 52.0, 0.3, 8.0), ("DS_CurbPlazaW", -29.1, 52.0, 0.3, 8.0),
-                           ("DS_CurbAvenueE", 3.15, 33.0, 0.3, 22.0), ("DS_CurbAvenueW", -3.15, 33.0, 0.3, 22.0)]:
+for nm, gx, gz, sx, sz in [("DS_CurbPlazaN", 0, 48.0 + PUSH, 58.2, 0.3), ("DS_CurbPlazaE", 29.1, 52.0 + PUSH, 0.3, 8.0), ("DS_CurbPlazaW", -29.1, 52.0 + PUSH, 0.3, 8.0),
+                           ("DS_CurbAvenueE", 3.15, 33.0, 0.3, 22.0), ("DS_CurbAvenueW", -3.15, 33.0, 0.3, 22.0),
+                           ("DS_CurbAvenueOuterE", 3.15, 54.0, 0.3, PUSH - 2.0), ("DS_CurbAvenueOuterW", -3.15, 54.0, 0.3, PUSH - 2.0)]:
     objs.append(L.box(coll, nm, gx, gz, 0.0, sx, sz, 0.1, D["curb"], tile=1.0))
 # grass beyond the plaza (behind the buildings) so the district does not float on the town grass edge
-objs.append(L.box(coll, "DS_GrassBack", 0, 66.0, 0.0, 60.0, 14.0, 0.02, D["grass"], tile=2.0))
+objs.append(L.box(coll, "DS_GrassBack", 0, 66.0 + PUSH, 0.0, 60.0, 14.0, 0.02, D["grass"], tile=2.0))
 
 
 # --- gate pillars (flank the 12.2 m hedge opening) + signs
@@ -73,8 +75,8 @@ def pillar(side, gx):
 pillar("W", -6.6)
 pillar("E", 6.6)
 for tag, gx, body in (("W", -6.6, "DISTRICT"), ("E", 6.6, "BUSINESS")):
-    objs.append(L.box(coll, f"DS_GateSign{tag}", gx, 45.45, 1.3, 1.9, 0.12, 0.6, D["sign"]))
-    objs.append(L.text_mesh(coll, f"DS_GateSignText{tag}", body, gx, 45.37, 1.38, 0.3, 0.03, D["signtxt"], facing="-z"))
+    objs.append(L.box(coll, f"DS_GateSign{tag}", gx, 45.45, 2.0, 1.9, 0.12, 0.6, D["sign"]))
+    objs.append(L.text_mesh(coll, f"DS_GateSignText{tag}", body, gx, 45.37, 2.08, 0.3, 0.03, D["signtxt"], facing="-z"))
 
 
 # --- lamps along the avenue and the plaza
@@ -85,25 +87,25 @@ def lamp(name, gx, gz):
 
 
 n = 0
-for gz in (26.0, 34.0, 42.0):
+for gz in (26.0, 34.0, 42.0, 42.0 + PUSH):
     for sx in (-3.7, 3.7):
         n += 1
         lamp(f"DS_AveLamp{n:02d}", sx, gz)
 for gx in (-26.0, -10.0, 10.0, 26.0):
     n += 1
-    lamp(f"DS_PlazaLamp{n:02d}", gx, 49.0)
+    lamp(f"DS_PlazaLamp{n:02d}", gx, 49.0 + PUSH)
 
 # --- trees + benches on the plaza
 for i, gx in enumerate((-27.0, -14.0, 14.0, 27.0)):
-    objs.append(L.cyl(coll, f"DS_TreeTrunk{i}", gx, 50.5, 0.0, 0.22, 1.6, D["trunk"], seg=6))
-    objs.append(L.cone(coll, f"DS_TreeA{i}", gx, 50.5, 1.4, 1.5, 0.3, 2.2, D["leaf"], seg=7))
-    objs.append(L.cone(coll, f"DS_TreeB{i}", gx, 50.5, 2.9, 1.1, 0.05, 1.8, D["leaf"], seg=7))
-    add_col(f"COL_Work_Tree{i}", gx, 50.5, 0.6, 0.6, 3.0)
+    objs.append(L.cyl(coll, f"DS_TreeTrunk{i}", gx, 50.5 + PUSH, 0.0, 0.22, 1.6, D["trunk"], seg=6))
+    objs.append(L.cone(coll, f"DS_TreeA{i}", gx, 50.5 + PUSH, 1.4, 1.5, 0.3, 2.2, D["leaf"], seg=7))
+    objs.append(L.cone(coll, f"DS_TreeB{i}", gx, 50.5 + PUSH, 2.9, 1.1, 0.05, 1.8, D["leaf"], seg=7))
+    add_col(f"COL_Work_Tree{i}", gx, 50.5 + PUSH, 0.6, 0.6, 3.0)
 for i, gx in enumerate((-6.0, 6.0)):
-    bench = L.furn(coll, f"DS_Bench{i}", gx, 50.2, math.pi, [(0, 0, 0.42, 1.8, 0.5, 0.06, D["wood"], 0.01), (0, 0.22, 0.48, 1.8, 0.06, 0.45, D["wood"], 0.01),
+    bench = L.furn(coll, f"DS_Bench{i}", gx, 50.2 + PUSH, math.pi, [(0, 0, 0.42, 1.8, 0.5, 0.06, D["wood"], 0.01), (0, 0.22, 0.48, 1.8, 0.06, 0.45, D["wood"], 0.01),
                                                           (-0.8, 0, 0.0, 0.08, 0.45, 0.42, D["metal"]), (0.8, 0, 0.0, 0.08, 0.45, 0.42, D["metal"])])
     objs.append(bench)
-    add_col(f"COL_Work_Bench{i}", gx, 50.2, 1.8, 0.5, 0.9)
+    add_col(f"COL_Work_Bench{i}", gx, 50.2 + PUSH, 1.8, 0.5, 0.9)
 
 bad = L.check_grounded(objs, allow=("DS_Gate", "DS_Plaza", "DS_Avenue", "DS_Curb", "DS_Grass", "DS_Tree", "DS_AveLamp", "DS_PlazaLamp"))
 print("DISTRICT grounded violations:", bad)
@@ -135,7 +137,7 @@ for p in placements:
 L.export_glb(os.path.join(OUT, "district.glb"), objs)
 L.write_json(os.path.join(OUT, "district.layout.json"), {
     "version": 1, "gate": {"x": 0.0, "z": 46.0, "width": 12.2},
-    "bounds": {"minZ": -48.9622, "maxZ": 74.0},
+    "bounds": {"minZ": -48.9622, "maxZ": 74.0 + PUSH},
     "works": works, "collision": col,
 })
 print("district objects:", len(objs), "collision boxes:", len(col), "works:", [(w["key"], w["position"], w["door"]) for w in works])

@@ -19,21 +19,22 @@ import bpy
 KEY = "pond"
 OUT = os.path.join(L.OUT_ROOT, "park", KEY)
 
-HEDGE_R, FENCE_R, SKY_R = 46.6, 69.6, 74.8
+PUSH = 10.0
+HEDGE_R, FENCE_R, SKY_R = 46.6, 69.6 + PUSH, 74.8 + PUSH
 PARK_X = 46.0
 BED_H, WATER_TOP = 0.015, 0.045
-CZ, RX, RZ = -58.5, 14.0, 5.5
+CZ, RX, RZ = -58.5 - PUSH, 14.0, 5.5
 LOOP_RX, LOOP_RZ, PATH_W = 17.0, 8.0, 1.6
-JETTY_X, JETTY_HW, JETTY_Z0, JETTY_Z1, DECK_TOP = 5.0, 1.1, -52.6, -55.8, 0.13
-PLATFORM_X0, PLATFORM_X1, PLATFORM_Z1 = 2.5, 7.5, -58.3
-MARE_C, MARE_RX, MARE_RZ = (-39.0, -41.5), 3.6, 3.0
+JETTY_X, JETTY_HW, JETTY_Z0, JETTY_Z1, DECK_TOP = 5.0, 1.1, -52.6 - PUSH, -55.8 - PUSH, 0.13
+PLATFORM_X0, PLATFORM_X1, PLATFORM_Z1 = 2.5, 7.5, -58.3 - PUSH
+MARE_C, MARE_RX, MARE_RZ = (-39.0, -41.5 - PUSH), 3.6, 3.0
 CREEK_HW = 1.0
-BRIDGE_C, BRIDGE_HW, BRIDGE_HL, BRIDGE_TOP = (-17.8, -59.5), 1.0, 2.0, 0.35
-GAZEBO_C, GAZEBO_R = (35.0, -55.0), 2.9
-KIOSK = (22.5, -51.5)
-GRID_X0, GRID_Z0, GRID_COLS, GRID_ROWS = -48.0, -76.0, 97, 73
-HILLS = [(35.0, -55.0, 2.6, 4.8), (-27.0, -64.0, 1.9, 4.0), (14.0, -66.5, 1.0, 3.0), (-12.0, -67.0, 0.9, 3.0),
-         (40.0, -37.0, 1.1, 3.5), (-41.0, -35.0, 1.2, 3.2), (25.0, -45.5, 0.8, 3.0), (-24.0, -46.0, 0.7, 3.0)]
+BRIDGE_C, BRIDGE_HW, BRIDGE_HL, BRIDGE_TOP = (-17.8, -59.5 - PUSH), 1.0, 2.0, 0.35
+GAZEBO_C, GAZEBO_R = (35.0, -55.0 - PUSH), 2.9
+KIOSK = (22.5, -51.5 - PUSH)
+GRID_X0, GRID_Z0, GRID_COLS, GRID_ROWS = -48.0, -76.0 - PUSH, 97, 73 + int(PUSH)
+HILLS = [(hx, hz - PUSH, h, sd) for hx, hz, h, sd in [(35.0, -55.0, 2.6, 4.8), (-27.0, -64.0, 1.9, 4.0), (14.0, -66.5, 1.0, 3.0), (-12.0, -67.0, 0.9, 3.0),
+                                                  (40.0, -37.0, 1.1, 3.5), (-41.0, -35.0, 1.2, 3.2), (25.0, -45.5, 0.8, 3.0), (-24.0, -46.0, 0.7, 3.0)]]
 rnd = random.Random(7)
 
 
@@ -69,6 +70,10 @@ def resample(pts, step):
     return out
 
 
+def pushed(pts):
+    return [(x, z - PUSH) for x, z in pts]
+
+
 def ellipse(cx, cz, rx, rz, t):
     return cx + rx * math.cos(t), cz + rz * math.sin(t)
 
@@ -85,11 +90,11 @@ def min_dist(pts, x, z):
     return min(math.hypot(px - x, pz - z) for px, pz in pts)
 
 
-CREEK = resample(chaikin([(-13.0, -59.1), (-20.0, -59.8), (-26.0, -58.5), (-31.0, -55.0), (-35.0, -50.0), (-38.0, -45.5), (-38.8, -43.8)]), 0.7)
+CREEK = resample(chaikin(pushed([(-13.0, -59.1), (-20.0, -59.8), (-26.0, -58.5), (-31.0, -55.0), (-35.0, -50.0), (-38.0, -45.5), (-38.8, -43.8)])), 0.7)
 LOOP = [ellipse(0.0, CZ, LOOP_RX + PATH_W / 2, LOOP_RZ + PATH_W / 2, 2 * math.pi * i / 120) for i in range(120)]
-TRAIL_E = resample(chaikin([(18.6, -58.5), (24.0, -57.0), (29.0, -54.0), (31.0, -50.0), (34.0, -45.0), (38.0, -39.0), (41.0, -32.0), (42.5, -23.5)]), 0.7)
-TRAIL_W = resample(chaikin([(-17.5, -55.2), (-23.0, -51.5), (-28.0, -47.5), (-32.0, -42.0), (-35.0, -36.0), (-38.5, -30.0), (-41.0, -25.5), (-42.5, -22.8)]), 0.7)
-SPUR = resample(chaikin([(31.0, -50.0), (32.6, -52.3), (33.2, -53.2)], 2), 0.7)
+TRAIL_E = resample(chaikin(pushed([(18.6, -58.5), (24.0, -57.0), (29.0, -54.0), (31.0, -50.0), (34.0, -45.0), (38.0, -39.0), (41.0, -32.0)]) + [(42.5, -23.5)]), 0.7)
+TRAIL_W = resample(chaikin(pushed([(-17.5, -55.2), (-23.0, -51.5), (-28.0, -47.5), (-32.0, -42.0), (-35.0, -36.0), (-38.5, -30.0), (-41.0, -25.5)]) + [(-42.5, -22.8)]), 0.7)
+SPUR = resample(chaikin(pushed([(31.0, -50.0), (32.6, -52.3), (33.2, -53.2)]), 2), 0.7)
 PATHS = LOOP + TRAIL_E + TRAIL_W + SPUR
 
 
@@ -98,18 +103,18 @@ def terrain_h(x, z):
     th = math.atan2(x, -z)
     ax = abs(x)
     edge_fade = 1.0 - ss(46.6, 47.5, ax)
-    gate = (1.0 - ss(7.5, 10.0, ax)) * ss(-52.5, -50.0, z)
+    gate = (1.0 - ss(7.5, 10.0, ax)) * ss(-52.5 - PUSH, -50.0 - PUSH, z)
     hedge = ss(47.2, 50.5, r) * (1.0 - gate)
     hills = sum(h * math.exp(-((x - hx) ** 2 + (z - hz) ** 2) / (2 * s * s)) for hx, hz, h, s in HILLS)
     und = max(0.0, 0.12 + 0.22 * math.sin(x * 0.21 + 0.7) * math.sin(z * 0.17 + 1.9) + 0.1 * math.sin(x * 0.47 + z * 0.31))
-    ridge = ss(68.8, 74.0, r) * (5.0 + 1.4 * math.sin(th * 9.0) + 0.8 * math.sin(th * 23.0 + 1.3))
+    ridge = ss(68.8 + PUSH, 74.0 + PUSH, r) * (5.0 + 1.4 * math.sin(th * 9.0) + 0.8 * math.sin(th * 23.0 + 1.3))
     berm = 1.6 * ss(45.4, 46.5, ax) * hedge
     h = (hedge * (hills + und) + ridge + berm) * edge_fade
     e = pond_e(x, z)
     if e < 1.9:
         hp = BED_H + 0.3 * ss(1.0, 1.3, e)
         h = hp + ss(1.0, 1.9, e) * (h - hp)
-    dc = min_dist(CREEK, x, z) if -45.0 < x < -10.0 and -64.0 < z < -40.0 else 99.0
+    dc = min_dist(CREEK, x, z) if -45.0 < x < -10.0 and -64.0 - PUSH < z < -40.0 - PUSH else 99.0
     if dc < 2.4:
         h = BED_H + (h - BED_H) * ss(0.75, 2.4, dc)
     em = mare_e(x, z)
@@ -276,7 +281,7 @@ def clear_of(x, z, rad, paths=2.0, spacing=0.7):
     r = math.hypot(x, z)
     if not (HEDGE_R + 1.6 + rad <= r <= FENCE_R - 0.6 - rad) or abs(x) > PARK_X - 0.8 - rad:
         return False
-    if (abs(x) < 8.5 and z > -51.0) or pond_e(x, z) < 1.25 + rad / RZ or mare_e(x, z) < 1.25 + rad / MARE_RZ:
+    if (abs(x) < 8.5 and z > -51.0 - PUSH) or pond_e(x, z) < 1.25 + rad / RZ or mare_e(x, z) < 1.25 + rad / MARE_RZ:
         return False
     if min_dist(CREEK, x, z) < CREEK_HW + 1.0 + rad or min_dist(PATHS, x, z) < paths + rad:
         return False
@@ -469,7 +474,7 @@ for j in range(GRID_ROWS - 1):
             quad.append(verts[key])
         f = bm.faces.new(quad)
         e, em = pond_e(cx, cz), mare_e(cx, cz)
-        dc = min_dist(CREEK, cx, cz) if -45.0 < cx < -10.0 and -64.0 < cz < -40.0 else 99.0
+        dc = min_dist(CREEK, cx, cz) if -45.0 < cx < -10.0 and -64.0 - PUSH < cz < -40.0 - PUSH else 99.0
         if e < 1.0 or em < 1.0 or dc < 0.9:
             f.material_index = 4
         elif e < 1.28 or em < 1.35 or dc < 1.7:
@@ -497,10 +502,11 @@ ribbon("PD_PathLoop", LOOP, PATH_W, P["path"], closed=True)
 ribbon("PD_PathEast", TRAIL_E, PATH_W, P["path"], lift=0.035)
 ribbon("PD_PathWest", TRAIL_W, PATH_W, P["path"], lift=0.035)
 ribbon("PD_PathGazebo", SPUR, 1.3, P["path"], lift=0.036)
-objs.append(L.box(coll, "PD_Avenue", 0, -34.5, 0.0, 6.0, 27.0, 0.03, P["avenue"], tile=2.0))
+objs.append(L.box(coll, "PD_Avenue", 0, -34.5 - PUSH / 2, 0.0, 6.0, 27.0 + PUSH, 0.03, P["avenue"], tile=2.0))
 objs.append(L.box(coll, "PD_GateApron", 0, -46.8, 0.0, 14.0, 5.6, 0.035, P["avenue"], tile=2.0))
 for nm, gx in (("PD_CurbAvenueE", 3.15), ("PD_CurbAvenueW", -3.15)):
     objs.append(L.box(coll, nm, gx, -33.0, 0.0, 0.3, 22.0, 0.1, P["curb"]))
+    objs.append(L.box(coll, nm + "Outer", gx, -50.0 - PUSH / 2, 0.0, 0.3, PUSH - 2.0, 0.1, P["curb"]))
 objs.append(L.box(coll, "PD_KioskPad", KIOSK[0] - 2.3, KIOSK[1], ground(KIOSK[0] - 2.3, KIOSK[1], 1.4), 2.8, 2.6, 0.06, P["path"], tile=2.0))
 
 
@@ -514,15 +520,15 @@ def pillar(tag, gx):
 pillar("W", -6.6)
 pillar("E", 6.6)
 for tag, gx, body in (("W", -6.6, "COVE"), ("E", 6.6, "POND")):
-    objs.append(L.box(coll, f"PD_GateSign{tag}", gx, -45.45, 1.3, 1.9, 0.12, 0.6, P["sign"]))
-    objs.append(L.text_mesh(coll, f"PD_GateSignText{tag}", body, gx, -45.37, 1.38, 0.3, 0.03, P["signtxt"], facing="+z"))
+    objs.append(L.box(coll, f"PD_GateSign{tag}", gx, -45.45, 2.0, 1.9, 0.12, 0.6, P["sign"]))
+    objs.append(L.text_mesh(coll, f"PD_GateSignText{tag}", body, gx, -45.37, 2.08, 0.3, 0.03, P["signtxt"], facing="+z"))
 n = 0
-for gz in (-26.0, -34.0, -42.0):
+for gz in (-26.0, -34.0, -42.0, -42.0 - PUSH):
     for sx in (-3.7, 3.7):
         n += 1
         lamp(f"PD_AveLamp{n:02d}", sx, gz)
 
-sp_x, sp_z = 9.2, -48.6
+sp_x, sp_z = 9.2, -48.6 - PUSH
 sp_y = ground(sp_x, sp_z, 0.2)
 objs.append(L.box(coll, "PD_SignpostPole", sp_x, sp_z, sp_y, 0.14, 0.14, 2.4, P["post"]))
 for k, (label, dx) in enumerate((("GAZEBO >", 0.55), ("< GROVE", -0.55))):
@@ -558,7 +564,7 @@ deck_y = DECK_TOP - 0.07
 objs.append(L.box(coll, "PD_JettyWalk", JETTY_X, (JETTY_Z0 + JETTY_Z1) / 2, deck_y, JETTY_HW * 2, abs(JETTY_Z1 - JETTY_Z0), 0.07, P["deck"], tile=1.0))
 objs.append(L.box(coll, "PD_JettyPlatform", (PLATFORM_X0 + PLATFORM_X1) / 2, (JETTY_Z1 + PLATFORM_Z1) / 2, deck_y, PLATFORM_X1 - PLATFORM_X0,
                   abs(PLATFORM_Z1 - JETTY_Z1), 0.07, P["deck"], tile=1.0))
-for i, (px, pz) in enumerate([(JETTY_X - JETTY_HW, -54.0), (JETTY_X + JETTY_HW, -54.0), (PLATFORM_X0, JETTY_Z1), (PLATFORM_X1, JETTY_Z1),
+for i, (px, pz) in enumerate([(JETTY_X - JETTY_HW, -54.0 - PUSH), (JETTY_X + JETTY_HW, -54.0 - PUSH), (PLATFORM_X0, JETTY_Z1), (PLATFORM_X1, JETTY_Z1),
                               (PLATFORM_X0, PLATFORM_Z1), (PLATFORM_X1, PLATFORM_Z1)]):
     objs.append(L.cyl(coll, f"PD_JettyPost{i}", px, pz, BED_H, 0.09, 0.6, P["post"], seg=6))
 rail_len = abs(JETTY_Z1 - jetty_bank_z) + 0.3
@@ -678,9 +684,9 @@ for trail, picks, side in ((TRAIL_E, (0.2, 0.45, 0.75, 0.97), -1), (TRAIL_W, (0.
         b += 1
 bench("PD_BenchGazebo", gx0 + 1.6 * math.cos(entry + math.pi), gz0 - 1.6 * math.sin(entry + math.pi), L.yaw_towards(gx0 + 1.6 * math.cos(entry + math.pi), gz0 - 1.6 * math.sin(entry + math.pi), gx0, gz0))
 
-for i, (tx, tz, rot) in enumerate([(32.5, -39.5, 0.4), (35.8, -34.0, -0.3), (-28.8, -40.5, -0.5), (-25.0, -43.5, 0.2)]):
+for i, (tx, tz, rot) in enumerate([(32.5, -39.5 - PUSH, 0.4), (35.8, -34.0 - PUSH, -0.3), (-28.8, -40.5 - PUSH, -0.5), (-25.0, -43.5 - PUSH, 0.2)]):
     picnic(f"PD_Picnic{i}", tx, tz, rot)
-for i, (tx, tz, rot) in enumerate([(30.4, -41.6, 0.4), (-26.6, -41.2, 0.2)]):
+for i, (tx, tz, rot) in enumerate([(30.4, -41.6 - PUSH, 0.4), (-26.6, -41.2 - PUSH, 0.2)]):
     objs.append(L.box(coll, f"PD_Blanket{i}", tx, tz, ground(tx, tz, 0.8) + 0.005, 1.6, 1.2, 0.02, P["blanket"], rot=rot, tile=0.5))
 
 for t in (200.0, 340.0):
@@ -700,13 +706,13 @@ def mix(kinds):
 
 
 counts = {}
-counts["grove"] = scatter((-34.0, -46.0, 13.0), 22, 0.8, mix([("pine", 0.4), ("birch", 0.35), ("round", 0.25)]))
-counts["west_end"] = scatter((-40.0, -27.0, 7.0), 6, 0.8, mix([("round", 0.5), ("birch", 0.5)]))
-counts["gazebo_hill"] = scatter((31.0, -58.0, 8.0), 7, 0.8, mix([("round", 0.6), ("blossom", 0.4)]))
-counts["east_meadow"] = scatter((38.0, -40.0, 9.0), 8, 0.8, mix([("round", 0.5), ("blossom", 0.5)]))
-counts["east_end"] = scatter((41.5, -26.0, 6.0), 4, 0.8, mix([("round", 1.0)]))
-counts["south_strip"] = scatter((0.0, -50.0, 26.0), 10, 0.8, mix([("round", 0.6), ("blossom", 0.25), ("birch", 0.15)]))
-counts["north_strip"] = scatter((0.0, -67.5, 22.0), 6, 0.6, mix([("round", 0.5), ("pine", 0.5)]))
+counts["grove"] = scatter((-34.0, -46.0 - PUSH, 13.0), 22, 0.8, mix([("pine", 0.4), ("birch", 0.35), ("round", 0.25)]))
+counts["west_end"] = scatter((-40.0, -27.0 - PUSH, 7.0), 6, 0.8, mix([("round", 0.5), ("birch", 0.5)]))
+counts["gazebo_hill"] = scatter((31.0, -58.0 - PUSH, 8.0), 7, 0.8, mix([("round", 0.6), ("blossom", 0.4)]))
+counts["east_meadow"] = scatter((38.0, -40.0 - PUSH, 9.0), 8, 0.8, mix([("round", 0.5), ("blossom", 0.5)]))
+counts["east_end"] = scatter((41.5, -26.0 - PUSH, 6.0), 4, 0.8, mix([("round", 1.0)]))
+counts["south_strip"] = scatter((0.0, -50.0 - PUSH, 26.0), 10, 0.8, mix([("round", 0.6), ("blossom", 0.25), ("birch", 0.15)]))
+counts["north_strip"] = scatter((0.0, -67.5 - PUSH, 22.0), 6, 0.6, mix([("round", 0.5), ("pine", 0.5)]))
 
 
 def ridge_ok(x, z, rad, _paths, spacing):
@@ -714,11 +720,11 @@ def ridge_ok(x, z, rad, _paths, spacing):
     return FENCE_R + 1.2 <= r <= SKY_R - 1.0 and abs(x) < 45.5 and all(math.hypot(x - px, z - pz) >= spacing for px, pz, _ in placed)
 
 
-counts["ridge"] = scatter((0.0, -60.0, 50.0), 34, 1.0, lambda x, z: (tree_pine(x, z, rnd.uniform(1.1, 1.7), collide=False) if rnd.random() < 0.7
+counts["ridge"] = scatter((0.0, -60.0 - PUSH, 50.0), 34, 1.0, lambda x, z: (tree_pine(x, z, rnd.uniform(1.1, 1.7), collide=False) if rnd.random() < 0.7
                                                                    else tree_round(x, z, rnd.uniform(1.1, 1.5), collide=False)),
                           spacing=3.0, check=ridge_ok, tries=3000)
-counts["bushes"] = scatter((0.0, -52.0, 50.0), 26, 0.7, bush, paths=1.6, spacing=0.3, tries=3000)
-counts["flowers"] = scatter((0.0, -52.0, 50.0), 16, 0.9, flower_patch, paths=1.0, spacing=0.1, tries=4000)
+counts["bushes"] = scatter((0.0, -52.0 - PUSH, 50.0), 26, 0.7, bush, paths=1.6, spacing=0.3, tries=3000)
+counts["flowers"] = scatter((0.0, -52.0 - PUSH, 50.0), 16, 0.9, flower_patch, paths=1.0, spacing=0.1, tries=4000)
 for fx, fz in ((-9.5, -47.8), (11.8, -47.9)):
     flower_patch(fx, fz, n=16, spread=1.0)
 
@@ -754,7 +760,7 @@ for i, (ci, side) in enumerate(((6, 1), (14, -1), (22, 1), (30, -1), (38, 1), (4
         continue
     (px, pz), _, (nx, nz) = path_frame(CREEK, ci)
     rock(f"PD_RockCreek{i:02d}", px + nx * side * 1.25, pz + nz * side * 1.25, rnd.uniform(0.25, 0.45), mat="rock2")
-counts["big_rocks"] = scatter((0.0, -55.0, 48.0), 7, 0.7, lambda x, z: rock(f"PD_RockBig{len(placed):03d}", x, z, rnd.uniform(0.6, 0.9), collide=True, mat=rnd.choice(("rock", "rock2"))),
+counts["big_rocks"] = scatter((0.0, -55.0 - PUSH, 48.0), 7, 0.7, lambda x, z: rock(f"PD_RockBig{len(placed):03d}", x, z, rnd.uniform(0.6, 0.9), collide=True, mat=rnd.choice(("rock", "rock2"))),
                               tries=2000)
 
 reed_spots = [("pond", t) for t in (10.0, 55.0, 150.0, 170.0, 195.0, 215.0, 250.0, 285.0, 320.0, 345.0)] + [("mare", t) for t in (110.0, 200.0, 290.0)]
@@ -777,14 +783,15 @@ for c, ci in enumerate(range(4, len(CREEK) - 4, 9)):
         objs.append(L.cyl(coll, f"PD_CreekReed{c:02d}_{kk}", px + nx * side * (0.85 + 0.1 * kk) + 0.15 * kk, pz + nz * side * (0.85 + 0.1 * kk), BED_H, 0.025,
                           0.8 + 0.1 * kk, P["reed"], seg=4))
 
-lily = [(-7.0, -56.0, 0.45), (-5.6, -57.2, 0.32), (-9.5, -61.0, 0.5), (-3.0, -62.0, 0.4), (9.5, -60.5, 0.45), (10.6, -59.2, 0.3), (-1.0, -59.8, 0.38),
-        (1.5, -62.5, 0.42), (-11.0, -58.2, 0.35), (12.0, -57.6, 0.4), (MARE_C[0] - 1.2, MARE_C[1] - 0.5, 0.35), (MARE_C[0] + 0.8, MARE_C[1] + 0.9, 0.3)]
+lily = [(lx, lz - PUSH, r) for lx, lz, r in [(-7.0, -56.0, 0.45), (-5.6, -57.2, 0.32), (-9.5, -61.0, 0.5), (-3.0, -62.0, 0.4), (9.5, -60.5, 0.45), (10.6, -59.2, 0.3),
+                                           (-1.0, -59.8, 0.38), (1.5, -62.5, 0.42), (-11.0, -58.2, 0.35), (12.0, -57.6, 0.4)]] \
+    + [(MARE_C[0] - 1.2, MARE_C[1] - 0.5, 0.35), (MARE_C[0] + 0.8, MARE_C[1] + 0.9, 0.3)]
 for i, (lx, lz, r) in enumerate(lily):
     objs.append(L.cyl(coll, f"PD_Lily{i:02d}", lx, lz, WATER_TOP + 0.001, r, 0.012, P["lily"], seg=7))
     if i % 3 == 0:
         objs.append(L.cone(coll, f"PD_LilyFlower{i:02d}", lx + 0.1, lz, WATER_TOP + 0.013, 0.12, 0.04, 0.1, P["fl_pink"], seg=5))
 
-for i, (dx, dz, dyaw) in enumerate([(-4.0, -60.5, 0.6), (-3.1, -61.2, 0.9), (8.0, -61.8, -1.2)]):
+for i, (dx, dz, dyaw) in enumerate([(-4.0, -60.5 - PUSH, 0.6), (-3.1, -61.2 - PUSH, 0.9), (8.0, -61.8 - PUSH, -1.2)]):
     body = blob(f"PD_Duck{i}_Body", dx, dz, WATER_TOP - 0.04, 0.2, P["duck"], sy=0.6, jitter=0.05)
     body.scale = (1.0, 1.4, 1.0)
     body.rotation_euler = (0, 0, dyaw)
@@ -793,7 +800,7 @@ for i, (dx, dz, dyaw) in enumerate([(-4.0, -60.5, 0.6), (-3.1, -61.2, 0.9), (8.0
     beak = L.box(coll, f"PD_Duck{i}_Beak", dx + fx * 0.31, dz + fz * 0.31, WATER_TOP + 0.17, 0.06, 0.09, 0.03, P["beak"], rot=dyaw)
     objs.append(beak)
 
-objs.append(L.furn(coll, "PD_Rowboat", PLATFORM_X1 + 1.0, -56.9, 0.15, [
+objs.append(L.furn(coll, "PD_Rowboat", PLATFORM_X1 + 1.0, -56.9 - PUSH, 0.15, [
     (0, 0, WATER_TOP - 0.06, 1.0, 2.6, 0.32, P["boat"], 0.08),
     (0, 0, WATER_TOP + 0.2, 0.86, 2.3, 0.02, P["deck"]),
     (0, -0.5, WATER_TOP + 0.14, 0.9, 0.22, 0.1, P["wood"]),
@@ -830,7 +837,7 @@ with open(os.path.join(OUT, "pond.layout.json"), "w", encoding="utf-8") as fh:
     json.dump({
         "version": 2,
         "gate": {"x": 0.0, "z": -46.0, "width": 12.2},
-        "bounds": {"minZ": -71.0},
+        "bounds": {"minZ": -71.0 - PUSH},
         "center": [0.0, 0.0, CZ],
         "fishingSpots": spots,
         "kiosk": {"position": [round(kiosk_stand[0], 3), round(walk_h(*kiosk_stand), 3), kiosk_stand[1]], "yaw": round(kiosk_yaw, 4)},
