@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AccountPrivacyController;
+use App\Http\Controllers\AdminHousingController;
 use App\Http\Controllers\AdminInventoryController;
 use App\Http\Controllers\AdminShopItemController;
 use App\Http\Controllers\AdminUserController;
@@ -106,6 +107,14 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
             Route::put('/items/{shop_catalog_item}', [AdminShopItemController::class, 'update']);
             Route::patch('/items/{shop_catalog_item}', [AdminShopItemController::class, 'update']);
             Route::delete('/items/{shop_catalog_item}', [AdminShopItemController::class, 'destroy']);
+        });
+
+        Route::prefix('housing')->group(function () {
+            Route::get('/units', [AdminHousingController::class, 'index']);
+            Route::patch('/units/{publicId}', [AdminHousingController::class, 'update']);
+            Route::delete('/units/{publicId}/owner', [AdminHousingController::class, 'kickOwner']);
+            Route::delete('/units/{publicId}/key-holders/{accountId}', [AdminHousingController::class, 'kickKeyHolder'])
+                ->whereNumber('accountId');
         });
 
         Route::prefix('inventories')->group(function () {

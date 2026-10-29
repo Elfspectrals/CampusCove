@@ -68,6 +68,8 @@ services:
       APP_DEBUG: "true"
       APP_URL: http://localhost:8000
       REALTIME_SHARED_SECRET: ${REALTIME_SHARED_SECRET:-campuscove-dev-realtime-secret}
+      # The socket's /internal routes: admin housing changes reach players in the game at once.
+      REALTIME_INTERNAL_URL: http://socket:3000
       DB_CONNECTION: pgsql
       DB_HOST: postgres
       DB_PORT: 5432

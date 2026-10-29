@@ -198,6 +198,7 @@ Préfixe : `/api` · Auth : `Authorization: Bearer {token}` (Sanctum).
 - `users` (CRUD + suspend / ban / reset)
 - `shop/items` (CRUD + bulk)
 - `inventories` (grant / revoke / set-quantity / equip / reset)
+- `housing/units` (prix d'achat, taxe journalière, propriétaire et détenteurs de clés ; expulsion du propriétaire ou retrait des clés, journalisés dans `staff_audit_logs` et poussés au socket via `POST /internal/housing-changed`)
 
 ---
 
@@ -222,7 +223,7 @@ Préfixe : `/api` · Auth : `Authorization: Bearer {token}` (Sanctum).
 | `/locker` | Casier & équipement | Joueur |
 | `/friends` | Amis | Joueur |
 | `/game` | Jeu 3D plein écran | Joueur |
-| `/admin/users`, `/admin/shop`, `/admin/inventories` | Back-office | Admin |
+| `/admin/users`, `/admin/shop`, `/admin/inventories`, `/admin/housing` | Back-office | Admin |
 
 > Layout commun `AppShellLayout` (sidebar + portefeuille + bascule admin), sauf `GameView` en plein écran.
 

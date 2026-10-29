@@ -15,6 +15,7 @@ class HousingUnit extends Model
         'public_id',
         'offer_type',
         'price_coins',
+        'tax_coins',
         'rent_duration_hours',
         'pos_x',
         'pos_y',
@@ -36,6 +37,7 @@ class HousingUnit extends Model
         return [
             'unit_id' => 'integer',
             'price_coins' => 'integer',
+            'tax_coins' => 'integer',
             'rent_duration_hours' => 'integer',
             'pos_x' => 'float',
             'pos_y' => 'float',
