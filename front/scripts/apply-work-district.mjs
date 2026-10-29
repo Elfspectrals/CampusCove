@@ -26,6 +26,7 @@ const GATE_HALF_WIDTH = 6.05
 const GATE_Z_MIN = 43.5
 const GATE_Z_MAX = 48.5
 const GATE_HEDGES = new Set(['COL_Hedge_35', 'COL_Hedge_36', 'COL_Tree_9_0', 'COL_Tree_9_1'])
+const WORK_COLLIDERS_OWNED_ELSEWHERE = new Set(['COL_Work_clinic'])
 
 if (!existsSync(DISTRICT_LAYOUT)) {
   console.error(`Missing ${DISTRICT_LAYOUT} - run "npm run assets:optimize -- work" first.`)
@@ -122,7 +123,7 @@ if (removed > 0 || removedTrees > 0) {
 // ---------------------------------------------------------------- 2. collision
 const col = JSON.parse(readFileSync(TOWN_COL, 'utf8'))
 const before = col.cuboids.length
-col.cuboids = col.cuboids.filter((c) => !GATE_HEDGES.has(c.name) && !c.name.startsWith('COL_Work_'))
+col.cuboids = col.cuboids.filter((c) => !GATE_HEDGES.has(c.name) && (!c.name.startsWith('COL_Work_') || WORK_COLLIDERS_OWNED_ELSEWHERE.has(c.name)))
 for (const c of district.collision) {
   col.cuboids.push({
     name: c.name,

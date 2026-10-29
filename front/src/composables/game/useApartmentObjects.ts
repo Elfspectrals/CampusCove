@@ -9,6 +9,9 @@ import {
 import type { ApartmentObjectPayload } from '../../types/gameRealtime'
 import { disposeObject3D } from '../../avatar/compositeAvatar'
 import { syncPropBlocker } from '../../game/collision/propBlocker'
+import { fetchCollisionFile, type CollisionCuboidJson } from '../../game/collision/worldCollision'
+
+const DECOR_MODEL_URL_RE = /^(.*\/assets\/decor\/[^/]+\/)model\.glb$/
 
 export interface ApartmentObjectsDeps {
   getScene: () => THREE.Scene | undefined
@@ -68,13 +71,28 @@ export function useApartmentObjects(deps: ApartmentObjectsDeps) {
     }
   }
 
+  async function loadDecorCollisionCuboids(modelUrl: string): Promise<CollisionCuboidJson[] | null> {
+    if (!DECOR_MODEL_URL_RE.test(modelUrl)) return null
+    const collisionUrl = modelUrl.replace(DECOR_MODEL_URL_RE, '$1collision.json')
+    try {
+      return (await fetchCollisionFile(collisionUrl)).cuboids
+    } catch (error) {
+      console.warn(`[apartment] ${collisionUrl} unavailable, falling back to the model's bounding box`, error)
+      return null
+    }
+  }
+
   async function loadApartmentModelTemplate(url: string): Promise<THREE.Object3D | null> {
     const cached = apartmentModelTemplateCache.get(url)
     if (cached) return cached
     try {
-      const gltf = await new Promise<{ scene: THREE.Object3D }>((resolve, reject) => {
-        apartmentModelLoader.load(url, resolve, undefined, reject)
-      })
+      const [gltf, collisionCuboids] = await Promise.all([
+        new Promise<{ scene: THREE.Object3D }>((resolve, reject) => {
+          apartmentModelLoader.load(url, resolve, undefined, reject)
+        }),
+        loadDecorCollisionCuboids(url),
+      ])
+      if (collisionCuboids) gltf.scene.userData.collisionCuboids = collisionCuboids
       apartmentModelTemplateCache.set(url, gltf.scene)
       return gltf.scene
     } catch {

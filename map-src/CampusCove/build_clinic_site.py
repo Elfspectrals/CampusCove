@@ -12,7 +12,8 @@ import lib_common as L
 importlib.reload(L)
 import bpy
 
-CLINIC_POS = (-112.0, 12.0)
+PUSH = 10.0
+CLINIC_POS = (-112.0 - PUSH, 12.0)
 CLINIC_YAW = math.pi / 2
 GATE = {"x": -44.6, "z": 12.0, "width": 11.0}
 PATH_W = 2.6
@@ -61,7 +62,7 @@ def add_col(name, gx, gz, sx, sz, h):
     col.append({"name": name, "cx": round(gx, 3), "cz": round(gz, 3), "hx": round(sx / 2, 3), "hz": round(sz / 2, 3), "hy": round(h / 2, 3), "cy": round(h / 2, 3), "yaw": 0.0})
 
 
-LAWN = (-134.0, -98.0, -6.0, 30.0)
+LAWN = (-134.0 - PUSH, -98.0 - PUSH, -6.0, 30.0)
 so.append(L.box(coll, "CS_Lawn", (LAWN[0] + LAWN[1]) / 2, (LAWN[2] + LAWN[3]) / 2, 0.0, LAWN[1] - LAWN[0], LAWN[3] - LAWN[2], 0.02, P["grass"], tile=2.0))
 path_x0, path_x1 = step_end_x - 0.2, GATE["x"] - 0.5
 so.append(L.box(coll, "CS_Path", (path_x0 + path_x1) / 2, GATE["z"], 0.0, path_x1 - path_x0, PATH_W, 0.04, P["paving"], tile=2.0))
@@ -69,13 +70,18 @@ for side, dz in (("N", -PATH_W / 2 - 0.1), ("S", PATH_W / 2 + 0.1)):
     so.append(L.box(coll, f"CS_Curb{side}", (path_x0 + path_x1) / 2, GATE["z"] + dz, 0.0, path_x1 - path_x0, 0.2, 0.08, P["curb"]))
 so.append(L.box(coll, "CS_Forecourt", step_end_x + 3.0, GATE["z"], 0.0, 6.0, 9.0, 0.035, P["paving"], tile=2.0))
 
-for i, gx in enumerate(range(-52, -100, -12)):
+for i, gx in enumerate(range(-52, int(-100 - PUSH), -12)):
     gz = GATE["z"] + (PATH_W / 2 + 0.8) * (1 if i % 2 == 0 else -1)
     so.append(L.cyl(coll, f"CS_Lamp{i}_Pole", gx, gz, 0.0, 0.07, 3.2, P["metal"], seg=6))
     so.append(L.box(coll, f"CS_Lamp{i}_Head", gx, gz, 3.2, 0.5, 0.5, 0.3, P["lamp"], bevel=0.03))
     add_col(f"COL_Clinic_Lamp{i}", gx, gz, 0.3, 0.3, 3.4)
 
-for i, (gx, gz) in enumerate(((-100.5, 3.0), (-100.5, 21.0), (-126.0, -2.0), (-126.0, 26.0), (-70.0, 5.5), (-82.0, 19.0))):
+trees = [(-100.5 - PUSH, 3.0), (-100.5 - PUSH, 21.0), (-126.0 - PUSH, -2.0), (-126.0 - PUSH, 26.0), (-70.0, 5.5), (-82.0, 19.0)]
+for i, gx in enumerate(range(-58, int(-100 - PUSH), -12)):
+    gz = GATE["z"] - (PATH_W / 2 + 3.0) * (1 if i % 2 == 0 else -1)
+    if all(math.hypot(gx - tx, gz - tz) > 4.0 for tx, tz in trees):
+        trees.append((gx, gz))
+for i, (gx, gz) in enumerate(trees):
     so.append(L.cyl(coll, f"CS_TreeTrunk{i}", gx, gz, 0.0, 0.22, 1.6, P["trunk"], seg=6))
     so.append(L.cone(coll, f"CS_TreeA{i}", gx, gz, 1.4, 1.6, 0.3, 2.4, P["leaf"], seg=7))
     add_col(f"COL_Clinic_Tree{i}", gx, gz, 0.6, 0.6, 3.0)

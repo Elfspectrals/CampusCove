@@ -57,13 +57,40 @@ function isFlatProp(mesh: THREE.Mesh, cuboid: CollisionCuboidJson): boolean {
   return height < FLAT_PROP_MAX_HEIGHT
 }
 
+const blockerCountByObjectId = new Map<string, number>()
+
+function modelCuboidsOf(root: THREE.Object3D): CollisionCuboidJson[] | null {
+  const visual = root.children.find((c) => c.userData.isApartmentVisual === true)
+  const local = visual?.userData.collisionCuboids as CollisionCuboidJson[] | undefined
+  if (!visual || !local) return null
+  root.updateMatrixWorld(true)
+  const scale = visual.getWorldScale(new THREE.Vector3())
+  const q = visual.getWorldQuaternion(new THREE.Quaternion())
+  return local.map((c) => {
+    const center = new THREE.Vector3(c.cx, c.cy, c.cz).applyMatrix4(visual.matrixWorld)
+    return { name: c.name, cx: center.x, cy: center.y, cz: center.z, hx: c.hx * scale.x, hy: c.hy * scale.y, hz: c.hz * scale.z, qx: q.x, qy: q.y, qz: q.z, qw: q.w }
+  })
+}
+
+function setObjectBlockers(objectId: string, cuboids: CollisionCuboidJson[]): void {
+  const previous = blockerCountByObjectId.get(objectId) ?? 0
+  for (let i = cuboids.length; i < previous; i++) setPropBlocker(`prop:${objectId}#${i}`, null)
+  cuboids.forEach((c, i) => setPropBlocker(`prop:${objectId}#${i}`, c))
+  if (cuboids.length > 0) blockerCountByObjectId.set(objectId, cuboids.length)
+  else blockerCountByObjectId.delete(objectId)
+}
+
 /** Make a placed prop block the player where it now stands, or stop blocking once it is hidden / gone. */
 export function syncPropBlocker(objectId: string, mesh: THREE.Mesh | null): void {
-  const key = `prop:${objectId}`
   if (!mesh || !mesh.visible || !mesh.parent) {
-    setPropBlocker(key, null)
+    setObjectBlockers(objectId, [])
+    return
+  }
+  const modelCuboids = modelCuboidsOf(mesh)
+  if (modelCuboids) {
+    setObjectBlockers(objectId, modelCuboids)
     return
   }
   const cuboid = propCuboidOf(mesh)
-  setPropBlocker(key, cuboid && !isFlatProp(mesh, cuboid) ? cuboid : null)
+  setObjectBlockers(objectId, cuboid && !isFlatProp(mesh, cuboid) ? [cuboid] : [])
 }
