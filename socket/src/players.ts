@@ -70,6 +70,7 @@ export function createPlayer(client: Client, options: Json, colorIndex: number, 
     ry: 0,
     lastMoveAt: Date.now(),
     lastHousingRefreshAt: 0,
+    lastDoorRattleAt: 0,
     // survival (src/survival.ts): gauges are loaded from the API right after the join
     stats: null,
     statsDirty: false,

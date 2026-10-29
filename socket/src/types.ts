@@ -42,6 +42,7 @@ export interface Player extends Vec3 {
   ry: number
   lastMoveAt: number
   lastHousingRefreshAt: number
+  lastDoorRattleAt: number
   stats: Stats | null
   statsDirty: boolean
   lastStatsSavedAt: number

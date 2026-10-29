@@ -58,7 +58,15 @@ const interiorsByHouse = new Map<string, THREE.Group>()
 interface FrontDoor {
   node: THREE.Object3D
   blocker: CollisionCuboidJson | null
+  /** Open / close angle; the rattle jiggle is added on top of it. */
+  swing: number
+  /** Seconds left of a rattle (someone tried the handle of the locked door). */
+  rattleLeft: number
 }
+
+const RATTLE_SECONDS = 0.35
+const RATTLE_ANGLE = 0.025
+const RATTLE_HZ = 18
 
 const frontDoors = new Map<string, FrontDoor>()
 
@@ -84,7 +92,18 @@ export function registerFrontDoor(exterior: THREE.Object3D, houseKey: string): v
   const door = exterior.getObjectByName('Door')
   if (!door) throw new Error(`House ${houseKey} has no Door node`)
   door.rotation.y = OPEN_DOOR_ANGLE
-  frontDoors.set(houseKey, { node: door, blocker: null })
+  frontDoors.set(houseKey, { node: door, blocker: null, swing: OPEN_DOOR_ANGLE, rattleLeft: 0 })
+}
+
+/** The swinging door of a building (house model key or work key), to play its sounds on. */
+export function frontDoorNode(buildingKey: string): THREE.Object3D | null {
+  const door = frontDoors.get(buildingKey)
+  return door?.node.parent ? door.node : null
+}
+
+export function rattleFrontDoor(buildingKey: string): void {
+  const door = frontDoors.get(buildingKey)
+  if (door) door.rattleLeft = RATTLE_SECONDS
 }
 
 function closedDoorBlocker(door: THREE.Object3D): CollisionCuboidJson {
@@ -127,8 +146,12 @@ export function updateFrontDoors(dt: number, isDoorOpen: (houseKey: string) => b
     setDoorBlocker(houseKey, open ? null : door.blocker)
     const target = open ? OPEN_DOOR_ANGLE : 0
     const step = DOOR_SWING_SPEED * dt
-    const delta = target - door.node.rotation.y
-    door.node.rotation.y = Math.abs(delta) <= step ? target : door.node.rotation.y + Math.sign(delta) * step
+    const delta = target - door.swing
+    door.swing = Math.abs(delta) <= step ? target : door.swing + Math.sign(delta) * step
+    door.rattleLeft = Math.max(0, door.rattleLeft - dt)
+    // a decaying shake against the frame: the latch holds, so it only moves a hair
+    const fade = door.rattleLeft / RATTLE_SECONDS
+    door.node.rotation.y = door.swing + Math.sin(door.rattleLeft * RATTLE_HZ * Math.PI * 2) * RATTLE_ANGLE * fade
   }
 }
 

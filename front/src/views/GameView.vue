@@ -53,7 +53,7 @@ import { COVE_HOME, findHouse, findWork } from '../game/assets/catalog'
 import { createSfx } from '../game/sfx'
 import { MAX_STAMINA } from '../game/stamina'
 import { createDoorSigns } from '../game/town/doorSigns'
-import { houseKeyAt, openHouseInterior, updateFrontDoors } from '../game/town/openHouses'
+import { frontDoorNode, houseKeyAt, openHouseInterior, rattleFrontDoor, updateFrontDoors } from '../game/town/openHouses'
 import { isMedicalItem } from '../utils/itemShopPresentation'
 
 const router = useRouter()
@@ -243,7 +243,7 @@ const interactions = useInteractionTargets({
   onHousingDoor: () => {
     const unit = housing.nearbyUnit.value
     const action = unit ? housing.actionFor(unit) : null
-    if (action === 'open' || action === 'close') arms?.use('door')
+    if (action === 'open' || action === 'close' || action === 'locked') arms?.use('door')
     else if (action === 'lock') arms?.use('key')
     void housing.interact()
   },
@@ -557,6 +557,12 @@ const realtime = useGameRealtime({
   onHousingUnitsSync: housing.applyUnits,
   onHouseFurnitureSync: houseFurniture.applyHouses,
   onDoorsSync: housing.applyOpenDoors,
+  onDoorSound: ({ door, sound }) => {
+    const node = frontDoorNode(door)
+    if (!node) return
+    sfx.playOn(`door_${sound}`, node)
+    if (sound === 'rattle') rattleFrontDoor(door)
+  },
   onMyBodyModel: (bodyModelGlb) => arms?.setSkin(bodyModelGlb),
   onPunched: punch.onPunched,
   onPunchTired: punch.onTired,
