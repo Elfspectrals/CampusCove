@@ -104,3 +104,70 @@ export interface ApartmentInventoryItem {
   /** Clothes: the wear slot (hair, top, ...); unworn clothes live in the backpack. */
   cosmetic_slot?: string | null
 }
+
+// ---------------------------------------------------------------- trades (socket/src/trade.ts)
+
+/** 'trade_nearby': players listed by the watch's Trade app, nearest first. */
+export interface TradeNearbyPlayer {
+  sessionId: string
+  pseudo: string
+  distance: number
+  /** Close enough to be asked right now. */
+  inReach: boolean
+  busy: boolean
+}
+
+interface TradeItemPayload {
+  code: string
+  name: string
+  kind: string
+  quantity: number
+  previewImage: string | null
+}
+
+export interface TradeOfferPayload {
+  coins: number
+  items: TradeItemPayload[]
+}
+
+/** 'trade_state': the open trade as this player sees it. Confirm with the `revision` shown. */
+export interface TradeStatePayload {
+  tradeId: string
+  status: 'requested' | 'open' | 'executing'
+  revision: number
+  me: { offer: TradeOfferPayload; confirmed: boolean }
+  partner: { sessionId: string; pseudo: string; offer: TradeOfferPayload; confirmed: boolean }
+}
+
+export interface TradeRequestedPayload {
+  tradeId: string
+  fromSessionId: string
+  fromPseudo: string
+}
+
+export interface TradePendingPayload {
+  tradeId: string
+  toSessionId: string
+  toPseudo: string
+}
+
+export type TradeCloseReason = 'declined' | 'cancelled' | 'expired' | 'too_far' | 'left'
+
+export interface TradeClosedPayload {
+  tradeId: string
+  reason: TradeCloseReason
+  /** This player is the one who cancelled / declined. */
+  byMe: boolean
+}
+
+/** 'trade_completed': `coins` is the new balance (null if unknown), `received` what the partner gave. */
+export interface TradeCompletedPayload {
+  tradeId: string
+  coins: number | null
+  received: TradeOfferPayload
+}
+
+export interface TradeErrorPayload {
+  message: string
+  code: string
+}

@@ -521,9 +521,10 @@ class ShopSeeder extends Seeder
             'name' => $name,
             'kind' => 'cosmetic',
             'rarity' => $rarity,
-            'tradable' => false,
+            // players can trade them (TradeService); body skins and the starter outfit stay bound
+            'tradable' => true,
             'premium_only' => false,
-            'bind' => 'bound',
+            'bind' => 'none',
             'max_stack' => 1,
             'cosmetic_slot' => $slot,
             'preview_image' => "/assets/wear/{$slot}/{$key}/preview.png",

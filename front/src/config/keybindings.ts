@@ -48,7 +48,7 @@ const DEFAULT_BINDINGS: Readonly<Record<BindableAction, readonly string[]>> = {
   /** Attack, like Minecraft. */
   punch: ['MouseLeft', 'KeyV'],
   inventory: ['KeyE'],
-  /** Hold to raise the left wrist and read the survival watch. */
+  /** Hold to raise the left wrist and read the survival watch; tap to open the watch apps (trade). */
   survivalWatch: ['KeyT'],
   /** With raw food in hand, at a stove or a barbecue. */
   cook: ['KeyF'],

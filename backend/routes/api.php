@@ -17,6 +17,7 @@ use App\Http\Controllers\PlayerReportController;
 use App\Http\Controllers\ReferralController;
 use App\Http\Controllers\ShopController;
 use App\Http\Controllers\SurvivalController;
+use App\Http\Controllers\TradeController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/health', function () {
@@ -65,7 +66,9 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
         Route::post('/survival/cook', [SurvivalController::class, 'cook']);
         Route::post('/survival/hospital', [SurvivalController::class, 'hospital']);
         Route::post('/survival/clinic-heal', [SurvivalController::class, 'clinicHeal']);
+        Route::post('/trades/execute', [TradeController::class, 'execute']);
     });
+    Route::get('/trades/offerable', [TradeController::class, 'offerable']);
 
     Route::post('/shop/purchase', [ShopController::class, 'purchase']);
     Route::post('/shop/checkout', [ShopController::class, 'checkout']);
