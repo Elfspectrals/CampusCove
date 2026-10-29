@@ -25,7 +25,7 @@ const rnd = () => crypto.getRandomValues(new Uint32Array(2)).join('').slice(0, 1
 const u = 'pt_' + rnd().slice(0, 6), p = rnd() + 'Aa!'
 const r = await fetch('http://localhost:8000/api/register', { method: 'POST',
   headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
-  body: JSON.stringify({ email: u + '@campuscove.test', username: u, password: p, password_confirmation: p }) })
+  body: JSON.stringify({ email: u + '@campuscove.test', username: u, password: p, password_confirmation: p, accepted_terms: true, age_confirmed: true }) })
 const d = await r.json()
 if (r.ok) localStorage.setItem('campus_cove_auth', JSON.stringify({ user: d.user, token: d.token }))
 ;({ status: r.status, account_id: d.user?.account_id })
