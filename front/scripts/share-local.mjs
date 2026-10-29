@@ -50,15 +50,18 @@ async function isUp(url) {
  * A fresh quick-tunnel hostname takes a few seconds to exist. Asking the OS too early makes Windows cache the
  * NXDOMAIN for minutes, so poll a public resolver first and only then touch the URL.
  */
-async function waitForDns(url, timeoutMs = 90_000) {
+async function waitForDns(url, timeoutMs = 180_000) {
   const resolver = new Resolver()
   resolver.setServers(['1.1.1.1', '8.8.8.8'])
-  const deadline = Date.now() + timeoutMs
-  while (Date.now() < deadline) {
+  const started = Date.now()
+  process.stdout.write(`  ${url}\n  waiting for Cloudflare DNS (often ~1 min)`)
+  while (Date.now() - started < timeoutMs) {
     try {
       await resolver.resolve4(new URL(url).hostname)
+      process.stdout.write(` ok (${Math.round((Date.now() - started) / 1000)} s)\n`)
       return
     } catch {
+      process.stdout.write('.')
       await sleep(2000)
     }
   }
@@ -110,7 +113,6 @@ console.log('→ Tunnel for the socket (3000)…')
 const socketTunnel = await openTunnel(3000)
 await waitForDns(socketTunnel)
 await waitUntilUp(socketTunnel, 'Socket tunnel')
-console.log(`  ${socketTunnel}`)
 
 console.log('→ Building the front…')
 // VITE_API_URL unset: the build falls back to same-origin /api, proxied by vite preview.
