@@ -8,6 +8,7 @@ import { EYE_HEIGHT } from '../../game/gameRoomConstants'
 import { resolveWorldMovement } from '../../game/collision/worldCollision'
 import { terrainHeightAt } from '../../game/town/terrainHeight'
 import { buildingFloorAt, capsuleLiftInBuilding, updateOpenHouseVisibility } from '../../game/town/openHouses'
+import { createCameraShake, createKnockback } from '../../game/punch'
 
 const MOVE_SPEED = 8
 const MAX_FRAME_DT = 0.1
@@ -56,6 +57,8 @@ export function useGameMovement(deps: UseGameMovementDeps) {
   let pitch = 0
   let frameId = 0
   let lastTime = performance.now()
+  const cameraShake = createCameraShake()
+  const knockback = createKnockback()
 
   function containerSize(): { w: number; h: number } {
     const el = deps.containerRef.value
@@ -76,12 +79,15 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     rightVec.crossVectors(direction, THREE.Object3D.DEFAULT_UP).normalize()
 
     const feetY = myPosition.y - EYE_HEIGHT
+    const push = knockback.step(dt)
     if (!deps.inventoryOpen.value) {
       const forward = keys.forward ? 1 : keys.back ? -1 : 0
       const right = keys.right ? 1 : keys.left ? -1 : 0
-      const step = MOVE_SPEED * deps.speedFactor() * dt
-      const dx = direction.x * forward * step + rightVec.x * right * step
-      const dz = direction.z * forward * step + rightVec.z * right * step
+      const speedFactor = deps.speedFactor()
+      const step = MOVE_SPEED * speedFactor * dt
+      const pushFactor = speedFactor > 0 ? 1 : 0
+      const dx = direction.x * forward * step + rightVec.x * right * step + push.dx * pushFactor
+      const dz = direction.z * forward * step + rightVec.z * right * step + push.dz * pushFactor
       const liftY = capsuleLiftInBuilding(myPosition.x, myPosition.z, feetY)
       const resolved = resolveWorldMovement(myPosition, dx, dz, liftY)
       myPosition.x = resolved.x
@@ -92,8 +98,10 @@ export function useGameMovement(deps: UseGameMovementDeps) {
 
     camera.position.set(myPosition.x, myPosition.y, myPosition.z)
     camera.rotation.order = 'YXZ'
+    const shake = cameraShake.update(dt)
     camera.rotation.y = yaw
-    camera.rotation.x = pitch
+    camera.rotation.x = pitch + shake.pitch
+    camera.rotation.z = shake.roll
 
     const room = deps.gameRoomRef.value
     const now = Date.now()
@@ -231,5 +239,7 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     startRenderLoop,
     stopRenderLoop,
     bindInputListeners,
+    shakeCamera: cameraShake.add,
+    knockBack: knockback.push,
   }
 }

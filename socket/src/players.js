@@ -72,6 +72,7 @@ export function createPlayer(client, options, colorIndex, spawn) {
     lastStatsSavedAt: Date.now(),
     lastConsumeAt: 0,
     lastSipAt: 0,
+    lastPunchAt: 0,
     fallPeakY: spawn.y,
     knockedOutUntil: 0,
     speedBoostUntil: 0,

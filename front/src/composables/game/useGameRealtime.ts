@@ -17,6 +17,7 @@ import type {
   RemoteUserPayload,
   RoomInitPayload,
   UserActionPayload,
+  UserPunchedPayload,
 } from '../../types/gameRealtime'
 import { useRemoteAvatars } from './useRemoteAvatars'
 
@@ -61,6 +62,7 @@ export interface GameRealtimeDeps {
   onHouseFurnitureSync: (houses: HouseFurniturePayload[]) => void
   onDoorsSync: (openDoorIds: string[]) => void
   onMyBodyModel: (bodyModelGlb: string | null) => void
+  onPunched: (data: UserPunchedPayload, mySessionId: string) => void
 }
 
 /** Colyseus 'city' room: connection, server message bindings and other players' avatars. */
@@ -147,6 +149,14 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       if (data.sessionId !== room.sessionId && (data.action === 'eat' || data.action === 'drink')) {
         remotes.showAction(data.sessionId, data.action, typeof data.code === 'string' ? data.code : null)
       }
+    })
+
+    room.onMessage('user_punched', (data: UserPunchedPayload) => {
+      if (data.sessionId !== room.sessionId) remotes.showPunch(data.sessionId)
+      if (data.targetSessionId && data.targetSessionId !== room.sessionId) {
+        remotes.showHit(data.targetSessionId, data.dirX, data.dirZ)
+      }
+      deps.onPunched(data, room.sessionId)
     })
 
     room.onMessage('apartment_inventory', (data: { items: ApartmentInventoryItem[] }) => {
