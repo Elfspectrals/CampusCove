@@ -31,9 +31,21 @@ def oracle_extras(ph, P, energy, speed):
         P.rz(nm, 360.0 * ph)
         P.move(nm, 0, 0, 0.03 * S_(2 * math.pi * ph * (1 if k == 1 else 1) + i * 2.1))
 
+def pose_sit(extras=None):
+    def f(ph, P):
+        P.move('Hips', 0, 0, -0.45)
+        P.rx('Spine', 4); P.rx('Head', -3)
+        for side in ('.L', '.R'):
+            P.rx('UpperLeg' + side, -88); P.rx('LowerLeg' + side, 88)
+            P.rx('UpperArm' + side, -30); P.rx('LowerArm' + side, -25); P.rx('Hand' + side, -15)
+        if extras:
+            extras(ph, P, 0.0, 1.0)
+    return f
+
 def make_clips(extras):
     return {
         "Idle": (60, gait_idle(None, extras)),
         "Walk": (30, gait_walk(extras)),
         "Run": (20, gait_run(extras)),
+        "Sit": (60, pose_sit(extras)),
     }

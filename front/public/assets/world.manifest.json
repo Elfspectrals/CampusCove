@@ -655,6 +655,50 @@
           ]
         }
       ]
+    },
+    {
+      "key": "pub",
+      "optional": true,
+      "bounds": {
+        "minX": 28,
+        "maxX": 114,
+        "minZ": -152,
+        "maxZ": -70
+      },
+      "modelUrl": "/assets/park/pub_site/pub_site.glb",
+      "gate": {
+        "x": 31.419,
+        "z": -73.137,
+        "width": 4.084
+      },
+      "buildings": [
+        {
+          "kind": "work",
+          "key": "pub",
+          "name": "The Salty Shamrock",
+          "job": "barman",
+          "position": [
+            90,
+            0,
+            -130
+          ],
+          "rotationY": 0,
+          "door": [
+            90,
+            1.25,
+            -123.5
+          ],
+          "footprint": [
+            21,
+            20.810000000000002
+          ],
+          "interiorOffset": [
+            0,
+            0.2,
+            1.095
+          ]
+        }
+      ]
     }
   ],
   "fountains": [
@@ -734,5 +778,680 @@
         "yaw": 4.7124
       }
     ]
+  },
+  "pub": {
+    "bartender": [
+      98.3,
+      0.2,
+      -133.505
+    ],
+    "bartenderYaw": 1.5708,
+    "bouncer": [
+      94,
+      0.2,
+      -138.305
+    ],
+    "counter": [
+      98.5,
+      0.2,
+      -129.005
+    ],
+    "taps": [
+      97.3,
+      1.25,
+      -133.505
+    ],
+    "serve": [
+      96.7,
+      1.25,
+      -133.505
+    ],
+    "bell": [
+      98.5,
+      2.1,
+      -129.905
+    ],
+    "secretDoor": {
+      "position": [
+        94,
+        0.2,
+        -139.405
+      ],
+      "yaw": 3.1416
+    },
+    "secretRoom": {
+      "minX": 92.1,
+      "maxX": 100,
+      "minZ": -143.905,
+      "maxZ": -139.505
+    },
+    "seats": [
+      {
+        "id": "stool_01",
+        "kind": "stool",
+        "position": [
+          96.05,
+          0.92,
+          -131.105
+        ],
+        "yaw": 4.7124
+      },
+      {
+        "id": "stool_02",
+        "kind": "stool",
+        "position": [
+          96.05,
+          0.92,
+          -132.105
+        ],
+        "yaw": 4.7124
+      },
+      {
+        "id": "stool_03",
+        "kind": "stool",
+        "position": [
+          96.05,
+          0.92,
+          -133.105
+        ],
+        "yaw": 4.7124
+      },
+      {
+        "id": "stool_04",
+        "kind": "stool",
+        "position": [
+          96.05,
+          0.92,
+          -134.105
+        ],
+        "yaw": 4.7124
+      },
+      {
+        "id": "stool_05",
+        "kind": "stool",
+        "position": [
+          96.05,
+          0.92,
+          -135.105
+        ],
+        "yaw": 4.7124
+      },
+      {
+        "id": "stool_06",
+        "kind": "stool",
+        "position": [
+          96.05,
+          0.92,
+          -136.105
+        ],
+        "yaw": 4.7124
+      },
+      {
+        "id": "armchair_01",
+        "kind": "armchair",
+        "position": [
+          81.6,
+          0.62,
+          -131.205
+        ],
+        "yaw": 0
+      },
+      {
+        "id": "armchair_02",
+        "kind": "armchair",
+        "position": [
+          81.6,
+          0.62,
+          -134.605
+        ],
+        "yaw": 3.1416
+      },
+      {
+        "id": "bench_01",
+        "kind": "bench",
+        "position": [
+          81,
+          0.65,
+          -136.155
+        ],
+        "yaw": 0
+      },
+      {
+        "id": "bench_02",
+        "kind": "bench",
+        "position": [
+          81,
+          0.65,
+          -137.655
+        ],
+        "yaw": 3.1416
+      },
+      {
+        "id": "bench_03",
+        "kind": "bench",
+        "position": [
+          81,
+          0.65,
+          -138.455
+        ],
+        "yaw": 0
+      },
+      {
+        "id": "bench_04",
+        "kind": "bench",
+        "position": [
+          81,
+          0.65,
+          -139.955
+        ],
+        "yaw": 3.1416
+      },
+      {
+        "id": "bench_05",
+        "kind": "bench",
+        "position": [
+          82.25,
+          0.65,
+          -124.805
+        ],
+        "yaw": 4.7124
+      },
+      {
+        "id": "bench_06",
+        "kind": "bench",
+        "position": [
+          83.75,
+          0.65,
+          -124.805
+        ],
+        "yaw": 1.5708
+      },
+      {
+        "id": "bench_07",
+        "kind": "bench",
+        "position": [
+          85.65,
+          0.65,
+          -124.805
+        ],
+        "yaw": 4.7124
+      },
+      {
+        "id": "bench_08",
+        "kind": "bench",
+        "position": [
+          87.15,
+          0.65,
+          -124.805
+        ],
+        "yaw": 1.5708
+      },
+      {
+        "id": "chair_01",
+        "kind": "chair",
+        "position": [
+          83.8,
+          0.65,
+          -127.185
+        ],
+        "yaw": 0
+      },
+      {
+        "id": "chair_02",
+        "kind": "chair",
+        "position": [
+          83.8,
+          0.65,
+          -128.625
+        ],
+        "yaw": 3.1416
+      },
+      {
+        "id": "chair_03",
+        "kind": "chair",
+        "position": [
+          84.52,
+          0.65,
+          -127.905
+        ],
+        "yaw": 1.5708
+      },
+      {
+        "id": "chair_04",
+        "kind": "chair",
+        "position": [
+          83.08,
+          0.65,
+          -127.905
+        ],
+        "yaw": 4.7124
+      },
+      {
+        "id": "chair_05",
+        "kind": "chair",
+        "position": [
+          87.4,
+          0.65,
+          -128.185
+        ],
+        "yaw": 0
+      },
+      {
+        "id": "chair_06",
+        "kind": "chair",
+        "position": [
+          87.4,
+          0.65,
+          -129.625
+        ],
+        "yaw": 3.1416
+      },
+      {
+        "id": "chair_07",
+        "kind": "chair",
+        "position": [
+          88.12,
+          0.65,
+          -128.905
+        ],
+        "yaw": 1.5708
+      },
+      {
+        "id": "chair_08",
+        "kind": "chair",
+        "position": [
+          86.68,
+          0.65,
+          -128.905
+        ],
+        "yaw": 4.7124
+      },
+      {
+        "id": "chair_09",
+        "kind": "chair",
+        "position": [
+          92.6,
+          0.65,
+          -126.785
+        ],
+        "yaw": 0
+      },
+      {
+        "id": "chair_10",
+        "kind": "chair",
+        "position": [
+          92.6,
+          0.65,
+          -128.225
+        ],
+        "yaw": 3.1416
+      },
+      {
+        "id": "chair_11",
+        "kind": "chair",
+        "position": [
+          93.32,
+          0.65,
+          -127.505
+        ],
+        "yaw": 1.5708
+      },
+      {
+        "id": "chair_12",
+        "kind": "chair",
+        "position": [
+          91.88,
+          0.65,
+          -127.505
+        ],
+        "yaw": 4.7124
+      },
+      {
+        "id": "chair_13",
+        "kind": "chair",
+        "position": [
+          83.6,
+          0.65,
+          -131.385
+        ],
+        "yaw": 0
+      },
+      {
+        "id": "chair_14",
+        "kind": "chair",
+        "position": [
+          83.6,
+          0.65,
+          -132.825
+        ],
+        "yaw": 3.1416
+      },
+      {
+        "id": "chair_15",
+        "kind": "chair",
+        "position": [
+          84.32,
+          0.65,
+          -132.105
+        ],
+        "yaw": 1.5708
+      },
+      {
+        "id": "chair_16",
+        "kind": "chair",
+        "position": [
+          82.88,
+          0.65,
+          -132.105
+        ],
+        "yaw": 4.7124
+      },
+      {
+        "id": "chair_17",
+        "kind": "chair",
+        "position": [
+          89.2,
+          0.65,
+          -130.985
+        ],
+        "yaw": 0
+      },
+      {
+        "id": "chair_18",
+        "kind": "chair",
+        "position": [
+          89.2,
+          0.65,
+          -132.425
+        ],
+        "yaw": 3.1416
+      },
+      {
+        "id": "chair_19",
+        "kind": "chair",
+        "position": [
+          89.92,
+          0.65,
+          -131.705
+        ],
+        "yaw": 1.5708
+      },
+      {
+        "id": "chair_20",
+        "kind": "chair",
+        "position": [
+          88.48,
+          0.65,
+          -131.705
+        ],
+        "yaw": 4.7124
+      },
+      {
+        "id": "chair_21",
+        "kind": "chair",
+        "position": [
+          93.4,
+          0.65,
+          -131.785
+        ],
+        "yaw": 0
+      },
+      {
+        "id": "chair_22",
+        "kind": "chair",
+        "position": [
+          93.4,
+          0.65,
+          -133.225
+        ],
+        "yaw": 3.1416
+      },
+      {
+        "id": "chair_23",
+        "kind": "chair",
+        "position": [
+          94.12,
+          0.65,
+          -132.505
+        ],
+        "yaw": 1.5708
+      },
+      {
+        "id": "chair_24",
+        "kind": "chair",
+        "position": [
+          92.68,
+          0.65,
+          -132.505
+        ],
+        "yaw": 4.7124
+      },
+      {
+        "id": "chair_25",
+        "kind": "chair",
+        "position": [
+          84,
+          0.65,
+          -135.585
+        ],
+        "yaw": 0
+      },
+      {
+        "id": "chair_26",
+        "kind": "chair",
+        "position": [
+          84,
+          0.65,
+          -137.025
+        ],
+        "yaw": 3.1416
+      },
+      {
+        "id": "chair_27",
+        "kind": "chair",
+        "position": [
+          84.72,
+          0.65,
+          -136.305
+        ],
+        "yaw": 1.5708
+      },
+      {
+        "id": "chair_28",
+        "kind": "chair",
+        "position": [
+          83.28,
+          0.65,
+          -136.305
+        ],
+        "yaw": 4.7124
+      },
+      {
+        "id": "chair_29",
+        "kind": "chair",
+        "position": [
+          88.8,
+          0.65,
+          -135.785
+        ],
+        "yaw": 0
+      },
+      {
+        "id": "chair_30",
+        "kind": "chair",
+        "position": [
+          88.8,
+          0.65,
+          -137.225
+        ],
+        "yaw": 3.1416
+      },
+      {
+        "id": "chair_31",
+        "kind": "chair",
+        "position": [
+          89.52,
+          0.65,
+          -136.505
+        ],
+        "yaw": 1.5708
+      },
+      {
+        "id": "chair_32",
+        "kind": "chair",
+        "position": [
+          88.08,
+          0.65,
+          -136.505
+        ],
+        "yaw": 4.7124
+      },
+      {
+        "id": "sofa_01",
+        "kind": "sofa",
+        "position": [
+          93,
+          0.62,
+          -143.155
+        ],
+        "yaw": 3.1416
+      },
+      {
+        "id": "sofa_02",
+        "kind": "sofa",
+        "position": [
+          93.8,
+          0.62,
+          -143.155
+        ],
+        "yaw": 3.1416
+      },
+      {
+        "id": "sofa_03",
+        "kind": "sofa",
+        "position": [
+          92.6,
+          0.62,
+          -141.505
+        ],
+        "yaw": 4.7124
+      },
+      {
+        "id": "sofa_04",
+        "kind": "sofa",
+        "position": [
+          92.6,
+          0.62,
+          -140.705
+        ],
+        "yaw": 4.7124
+      },
+      {
+        "id": "garden_01",
+        "kind": "garden",
+        "position": [
+          90.26,
+          0.45,
+          -119.158
+        ],
+        "yaw": 3.4916
+      },
+      {
+        "id": "garden_02",
+        "kind": "garden",
+        "position": [
+          90.74,
+          0.45,
+          -117.842
+        ],
+        "yaw": 0.35
+      },
+      {
+        "id": "garden_03",
+        "kind": "garden",
+        "position": [
+          97.673,
+          0.45,
+          -119.178
+        ],
+        "yaw": 2.8916
+      },
+      {
+        "id": "garden_04",
+        "kind": "garden",
+        "position": [
+          97.327,
+          0.45,
+          -117.822
+        ],
+        "yaw": 6.0332
+      },
+      {
+        "id": "garden_05",
+        "kind": "garden",
+        "position": [
+          90.707,
+          0.45,
+          -113.669
+        ],
+        "yaw": 2.8416
+      },
+      {
+        "id": "garden_06",
+        "kind": "garden",
+        "position": [
+          90.293,
+          0.45,
+          -112.331
+        ],
+        "yaw": 5.9832
+      },
+      {
+        "id": "garden_07",
+        "kind": "garden",
+        "position": [
+          97.361,
+          0.45,
+          -113.686
+        ],
+        "yaw": 3.3416
+      },
+      {
+        "id": "garden_08",
+        "kind": "garden",
+        "position": [
+          97.639,
+          0.45,
+          -112.314
+        ],
+        "yaw": 0.2
+      }
+    ],
+    "darts": {
+      "board": [
+        89.8,
+        1.93,
+        -143.855
+      ],
+      "boardYaw": 3.1416,
+      "oche": [
+        89.8,
+        0.2,
+        -141.485
+      ]
+    },
+    "shots": {
+      "plank": [
+        96.5,
+        1.25,
+        -124.125
+      ],
+      "yaw": 3.1416,
+      "player": [
+        96.5,
+        0.2,
+        -124.805
+      ]
+    }
   }
 }

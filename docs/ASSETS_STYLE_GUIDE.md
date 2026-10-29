@@ -320,3 +320,76 @@ docker restart campuscove-socket   # le socket relit world.manifest.json au dém
 La place est entourée d'une haie, ouverte seulement au nord (étang) et au sud (quartier d'affaires) : une nouvelle zone a besoin de sa propre ouverture dans la haie, comme `apply-pond.mjs` / `apply-work-district.mjs`.
 
 **Attention :** le côté est du parc de l'étang n'a qu'une clôture décorative sans collision (`PD_Fence*`, x ≈ 46). Tant que le monde s'arrêtait à x = 75,5 le mur de bordure fermait ce côté ; avec le monde de 1 km, on peut sortir par l'étang (vers x 48, z −37) et marcher dans la plaine vide autour. Une clôture avec collision est à ajouter avant d'ouvrir le jeu au public si on ne veut pas que les joueurs s'y promènent.
+
+## 12. The Salty Shamrock (pub irlandais)
+
+Au-delà de la clôture du Cove Pond, côté est : une porte dans la clôture (`x ≈ 31.4`, `z ≈ -73.1`, deux piliers de
+pierre à lanterne, panneau « THE SALTY SHAMROCK > ») ouvre sur un chemin décoré de 77 m qui serpente jusqu'au pub posé
+en `(90, -130)`, porte au sud en `(90, 1.25, -123.5)` (`rotationY = 0`). Contrat détaillé : `docs/PUB.md`.
+
+### Scripts et sorties
+
+| Script | Sorties |
+|---|---|
+| `build_drink_items.py` | `items/drinks/{stout,lager,red_wine,whisky,vodka}/{model.glb,preview.png}` (88 à 288 triangles, `IT_Drink_*`) |
+| `build_pub.py` (+ `build_pub_ext.py` exécuté à la fin) | `work/pub/{interior,exterior}.glb`, `*.colsrc.glb`, `*.layout.json`, `preview.png` |
+| `build_house_lightmaps.py -- work pub` | `work/pub/lightmap.jpg` (headless, Cycles) |
+| `build_pond.py` | porte est, encoche dans la crête, sentier `PD_PathPub`, `pubGate` dans `pond.layout.json` |
+| `build_pub_site.py` | `park/pub_site/{pub_site.glb,pub_site.layout.json}` (chemin, ruisseau et pont, jardin à bière, `points` en coordonnées monde) |
+| `build_pub_sfx.py` | `sfx/pub/{glass_down,dart_hit,clink}.mp3` (Earshot ; pas de son de versement ni d'ambiance dans la banque) |
+| `front/scripts/apply-pub.mjs` | collisions `COL_Pub_*` + `COL_Work_pub` dans `town.collision.json`, zone `pub` et `manifest.pub` dans `world.manifest.json` |
+
+```bash
+# Blender headless (le Blender interactif via MCP est très lent sur les rendus EEVEE des previews)
+B=/Applications/Blender.app/Contents/MacOS/Blender
+$B --background --factory-startup --python-expr "p='map-src/CampusCove/build_drink_items.py'; exec(open(p).read(), {'__file__': p})"
+$B --background --factory-startup --python-expr "p='map-src/CampusCove/build_pub.py'; exec(open(p).read(), {'__file__': p})"
+$B --background --factory-startup --python map-src/CampusCove/build_house_lightmaps.py -- work pub
+$B --background --factory-startup --python-expr "p='map-src/CampusCove/build_pond.py'; exec(open(p).read(), {'__file__': p})"
+$B --background --factory-startup --python-expr "p='map-src/CampusCove/build_pub_site.py'; exec(open(p).read(), {'__file__': p})"
+cd front
+npm run assets:optimize -- items && npm run assets:optimize -- work && npm run assets:optimize -- park
+node scripts/apply-pond.mjs && node scripts/apply-pub.mjs
+```
+
+### Intérieur (`work/pub`, 20 × 20 m, ≈ 12 000 triangles, 52 sièges)
+
+- Coque sur mesure : `x ∈ [-10, 10]`, `z ∈ [-15, 5]`, plafond 3 m avec poutres (`Ceiling_Beam*`), pierre `IN_pub_Stone`,
+  lambris vert bouteille, sol planches sombres, dalles sous le bar et à l'entrée. Fanions vert-blanc-orange sous deux
+  poutres.
+- **Bar en L** contre le mur est (`Bar_Long` x = 7, z de -8 à -1 ; `Bar_Short` z = -1, x de 7 à 10), acajou à panneaux
+  verts et rails laiton, `Tap_01..03` sur le dessus, `Bell` au-dessus du petit côté, arrière-bar miroir avec lettrage
+  doré, bouteilles et deux fûts. Six tabourets `seat_stool_01..06` côté client (x = 6.05), `NPC_Bartender` derrière.
+- **Cheminée** en pierre sur le mur ouest (z = -4), feu émissif (`Light_Fire`), harpe laiton sur blason, deux fauteuils
+  `seat_armchair_*` et une table basse à chope.
+- Quatre **box** (deux sur le mur ouest, deux sous les fenêtres avant) : `seat_bench_01..08`. Huit tables rondes avec
+  quatre chaises `seat_chair_01..32` et une lampe Tiffany chacune (`Light_Tiffany*`), deux piliers de pierre à bannière
+  celtique (anneaux entrelacés `Wall_*Knot*`), tableaux encadrés, bois de cerf au-dessus de la porte.
+- Fond : toilettes « LADS » / « LASSES » (`x ∈ [-10, -2.4]`, `z ∈ [-15, -11.5]`, cabines, vasques, miroirs, portes
+  ouvertes), recoin fléchettes (`Dartboard`, bull à 1.73 m, oche à 2.37 m), salon caché (`x ∈ [2.1, 10]`,
+  `z ∈ [-15, -10.6]`) derrière `Door_Secret` (`COL_Door_Secret`) et `NPC_Bouncer` : lumière rouge, velours, scène
+  à barre, néon cœur, seau à champagne, `seat_sofa_01..04`.
+- Planche à shots `ShotPlank` + `Shot_01..10` sur la tablette du mur avant (x = 6.5). Après `gltf-transform optimize`
+  les `Shot_NN` ne sont plus enfants de la planche (la hiérarchie est aplatie) mais gardent leur nom et leur position.
+- Le lettrage passe par `low_text()` (résolution de courbe 1, sans extrusion) : `text_mesh` coûte ~150 triangles par
+  lettre.
+
+### Extérieur et site
+
+- Façade pierre claire `EX_pub_Stone`, toit d'ardoise à deux pentes avec pignons de pierre et cheminée, bandeau vert
+  foncé à lettrage doré, enseigne au trèfle, lanternes, bancs, tonneaux fleuris, tableau noir (≈ 2 300 triangles).
+- Site (`TW_Pub*`, ≈ 12 500 triangles, 134 boîtes de collision) : chemin en gravier large de 2.4 m, lanternes en fer,
+  murets de pierre sèche, tonneaux, deux panneaux, bancs, statue de lutin au pot d'or, ruisseau (matériau `TW_PondWater`)
+  franchi par une passerelle basse (0.1 m : le site n'a pas de heightmap), sorbiers et chênes, puis le jardin à bière
+  (`x ∈ [87, 103]`, `z ∈ [-121.5, -110.5]`) : dallage, haies, quatre tables de pique-nique (`seat_garden_01..08`),
+  parasols, guirlandes lumineuses sur six poteaux.
+- `pub_site.layout.json` : `bounds` (28 → 114, -152 → -70), `gate` (lu dans `pond.layout.json.pubGate`), `pub`,
+  `points` (section 3 de `interior.layout.json` en monde : positions + `interiorOffset`, yaws + `rotationY`, bornes du
+  salon tournées), `collision`.
+
+### Pose assise
+
+`front/scripts/skins/clips.py` : clip `Sit` (60 images, pose fixe : hanches -0.45 m, cuisses horizontales, genoux à 90°,
+mains sur les cuisses) ajouté à `make_clips`, donc présent dans les trois skins et dans `wear/base/model.glb`.
+Reconstruire : `blender --background --python front/scripts/skins/run.py` puis
+`blender --background --factory-startup --python front/scripts/skins/run_wear.py`, et `npm run skins:check`.
