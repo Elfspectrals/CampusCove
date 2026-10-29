@@ -33,6 +33,8 @@ export interface UseGameMovementDeps {
   updateProximity: () => void
   onToggleInventory: () => void
   onHotbarDigit: (index: number) => void
+  /** Mouse wheel over the game: +1 = next hotbar slot, -1 = previous (wraps). */
+  onHotbarScroll: (step: 1 | -1) => void
   /** Return `true` if the event was consumed (placement shortcuts, etc.). */
   handleExtraKeyDown: (e: KeyboardEvent) => boolean
   /** Return `true` if the click was consumed (apartment placement), so it doesn't also open a door. */
@@ -222,6 +224,18 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     setMoveKey(e.code, true)
   }
 
+  /** Trackpads send many tiny deltas; add them up so one notch of a mouse wheel = one slot. */
+  let wheelAccum = 0
+  function onWheel(e: WheelEvent) {
+    if (!pointerLocked.value || deps.inventoryOpen.value) return
+    e.preventDefault()
+    // deltaMode 1 = lines, 2 = pages; normalize to pixels
+    wheelAccum += e.deltaY * (e.deltaMode === 1 ? 33 : e.deltaMode === 2 ? 400 : 1)
+    if (Math.abs(wheelAccum) < 50) return
+    deps.onHotbarScroll(wheelAccum > 0 ? 1 : -1)
+    wheelAccum = 0
+  }
+
   function onKeyUp(e: KeyboardEvent) {
     setMoveKey(e.code, false)
   }
@@ -245,7 +259,10 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     ]
     for (const [name, fn] of windowEvents) window.addEventListener(name, fn)
     for (const [name, fn] of documentEvents) document.addEventListener(name, fn)
+    // not passive: preventDefault keeps the wheel from scrolling anything behind the game
+    document.addEventListener('wheel', onWheel, { passive: false })
     return () => {
+      document.removeEventListener('wheel', onWheel)
       for (const [name, fn] of windowEvents) window.removeEventListener(name, fn)
       for (const [name, fn] of documentEvents) document.removeEventListener(name, fn)
     }
