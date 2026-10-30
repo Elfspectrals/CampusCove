@@ -816,7 +816,7 @@ function runUseOrPunch(code: string, repeat: boolean): boolean {
 /**
  * Esc frees the mouse and shows the pause menu (the browser does that). Esc again closes it and the game
  * goes on: the lock is asked right away, but browsers don't count Escape as a gesture (and refuse a lock
- * for ~1 s after an Esc), so until a click or a key gets it back the player can still walk, just not look.
+ * for ~1 s after an Esc), so the player stands still until a click or a key gets it back.
  * See game/pauseMenu.ts.
  */
 const pauseDismissed = ref(false)
@@ -872,7 +872,7 @@ function handleExtraKeyDown(e: KeyboardEvent): boolean {
     toggleEscapeMenu(e)
     return true
   }
-  // a key is a gesture: take the pointer back, and let the key do its job (walk, hotbar...)
+  // a key is a gesture: take the pointer back (the player only moves once the lock is back)
   if (resumedWithoutLock.value) retryPointerLock()
   if (houseKeys.onKeyDown(e)) return true
   if (survival.onKeyDown(e)) return true
@@ -917,7 +917,6 @@ const movement = useGameMovement({
   },
   speedFactor: () => survival.speedFactor() * intoxication.walkFactor(),
   movementLocked: () => seats.seated.value,
-  playingWithoutLock: () => resumedWithoutLock.value,
   afterCameraPlaced: intoxication.applyToCamera,
   trySpendJump: () => punch.trySpendJump(),
   trySpendSprint: (dt, wasSprinting) => punch.trySpendSprint(dt, wasSprinting),
