@@ -5,12 +5,14 @@ import { fetchItemShopCatalog, type ShopItem } from '../../api/itemShop'
 import { consumableModelUrl } from '../../game/assets/catalog'
 import { BARTENDER_REACH, COUNTER_REACH, SECRET_OPEN_MS } from '../../game/gameRoomConstants'
 import { createBartenderPour } from '../../game/pub/bartenderPour'
-import { isAimingAtNpc } from '../../game/pub/npcAim'
+import { createBouncerStep } from '../../game/pub/bouncerStep'
+import { isAimingAtNpc, standsOnFloor } from '../../game/pub/npcAim'
 import { createSecretDoor } from '../../game/pub/secretDoor'
 import { openHouseInterior } from '../../game/town/openHouses'
 import type { PubLayout, WorldManifest } from '../../game/world/worldManifest'
 import type {
   PubBellPayload,
+  PubBouncerBlockPayload,
   PubErrorPayload,
   PubPouringPayload,
   PubSecretDoorPayload,
@@ -26,8 +28,12 @@ const COUNTER_PROMPT_HEIGHT = 1.15
 const NPC_PROMPT_HEIGHT = 2
 const GLASS_PROMPT_HEIGHT = 0.35
 const BOUNCER_GREETING = 'You look lost, friend.'
-const BOUNCER_YES = "Second door on the left. Don't tell."
+const BOUNCER_YES = "Mind the stairs. Don't tell."
 const BOUNCER_NO = 'Never heard of it.'
+/** Players this close (m) to the bouncer hear him turn someone away. */
+const BOUNCER_HEARING = 6
+/** Camera jolt of the player he pushes back (scaled by the comfort settings like a punch's). */
+const BOUNCER_PUSH_JOLT = 0.5
 
 export type OrderVia = 'counter' | 'bartender'
 
@@ -45,6 +51,8 @@ export interface PubDeps {
   say: (text: string) => void
   /** The server refused a pub action (useSeats drops a pending `sit`). */
   onError: () => void
+  /** A short camera jolt along (dirX, dirZ); the caller honours the comfort / reduced-effects settings. */
+  nudgeCamera: (dirX: number, dirZ: number, strength: number) => void
 }
 
 /**
@@ -64,6 +72,7 @@ export function usePub(deps: PubDeps) {
   let layout: PubLayout | null = null
   let pour: ReturnType<typeof createBartenderPour> | null = null
   let secretDoor: ReturnType<typeof createSecretDoor> | null = null
+  let bouncerStep: ReturnType<typeof createBouncerStep> | null = null
   let staffDoorOpen = false
   const forward = new THREE.Vector3()
   const projection = new THREE.Vector3()
@@ -77,6 +86,7 @@ export function usePub(deps: PubDeps) {
     pour?.dispose()
     pour = null
     secretDoor = null
+    bouncerStep = null
     const interior = openHouseInterior(PUB_KEY)
     if (!layout || !interior) return
     pour = createBartenderPour(interior, layout)
@@ -86,11 +96,18 @@ export function usePub(deps: PubDeps) {
     } catch (err) {
       console.error('[pub] staff door unavailable', err)
     }
+    try {
+      bouncerStep = createBouncerStep(interior)
+    } catch (err) {
+      console.error('[pub] bouncer unavailable', err)
+    }
   }
 
   // ------------------------------------------------------------ reach
 
+  /** Within `reach` (XZ) of a point of the bar, standing on the bar floor (not in the cellar under it). */
   function near(point: [number, number, number], reach: number): boolean {
+    if (!layout || !standsOnFloor(deps.myPosition.y, layout.counter[1])) return false
     return Math.hypot(point[0] - deps.myPosition.x, point[2] - deps.myPosition.z) <= reach
   }
 
@@ -199,6 +216,22 @@ export function usePub(deps: PubDeps) {
     secretDoor?.setOpen(data.open)
   }
 
+  /** The bouncer turned someone away from the cellar stair: he steps into the doorway, the pushed player feels it. */
+  function onBouncerBlock(data: PubBouncerBlockPayload, me: string): void {
+    bouncerStep?.block()
+    if (!layout) return
+    const [bx, , bz] = layout.bouncer
+    const dx = deps.myPosition.x - bx
+    const dz = deps.myPosition.z - bz
+    if (data.sessionId === me) {
+      deps.nudgeCamera(dx, dz, BOUNCER_PUSH_JOLT)
+      if (secretOpen.value) secretReply.value = data.line
+    } else if (Math.hypot(dx, dz) > BOUNCER_HEARING || !standsOnFloor(deps.myPosition.y, layout.bouncer[1])) {
+      return
+    }
+    deps.say(`Bouncer: "${data.line}"`)
+  }
+
   function ring(): void {
     deps.gameRoomRef.value?.send('pub_bell')
   }
@@ -213,6 +246,7 @@ export function usePub(deps: PubDeps) {
   function tick(dt: number): void {
     pour?.update(dt)
     secretDoor?.update(dt)
+    bouncerStep?.update(dt)
   }
 
   function projectToScreen(x: number, y: number, z: number): { x: number; y: number } | null {
@@ -301,6 +335,6 @@ export function usePub(deps: PubDeps) {
     closeSecret,
     tick,
     source,
-    handlers: { onPouring, onServed, onError, onSecretResult, onSecretDoor, onBell },
+    handlers: { onPouring, onServed, onError, onSecretResult, onSecretDoor, onBouncerBlock, onBell },
   }
 }

@@ -210,6 +210,16 @@ export interface PubSecretDoorPayload {
   open: boolean
 }
 
+/**
+ * 'pub_bouncer_block': someone tried to slip past the bouncer into the cellar without the phrase (whole pub,
+ * the blocked player included; that player also gets a `position_correction` pushing them back).
+ */
+export interface PubBouncerBlockPayload {
+  sessionId: string
+  accountId: number
+  line: string
+}
+
 export interface PubBellPayload {
   sessionId: string
 }

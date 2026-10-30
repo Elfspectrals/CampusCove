@@ -1,7 +1,10 @@
-import { SEAT_REACH } from '../gameRoomConstants.ts'
+import { EYE_HEIGHT, SEAT_REACH } from '../gameRoomConstants.ts'
 import type { PubSeat } from '../world/worldManifest.ts'
 
-type Point = { x: number; z: number }
+type Point = { x: number; y: number; z: number }
+
+/** A seat top at most this far (m) above or below the feet is on the player's floor (not the cellar's). */
+const SEAT_HEIGHT_REACH = 1.5
 
 /** The seated eye sits this high above the seat top (socket: y = seat.y - 0.72 + 1.6). */
 export const SEATED_EYE_ABOVE_SEAT = 0.88
@@ -13,7 +16,7 @@ export function nearestFreeSeat(position: Point, seats: readonly PubSeat[], occu
   let best: PubSeat | null = null
   let bestDistance = SEAT_REACH
   for (const seat of seats) {
-    if (occupied.has(seat.id)) continue
+    if (occupied.has(seat.id) || Math.abs(seat.position[1] - (position.y - EYE_HEIGHT)) > SEAT_HEIGHT_REACH) continue
     const distance = Math.hypot(seat.position[0] - position.x, seat.position[2] - position.z)
     if (distance <= bestDistance) {
       bestDistance = distance

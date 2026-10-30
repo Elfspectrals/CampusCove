@@ -331,6 +331,9 @@ const pub = usePub({
   selectHotbarItem,
   say: (text) => survival.say(text),
   onError: () => seats.onPubError(),
+  nudgeCamera: (dirX, dirZ, strength) => {
+    if (!reducedEffects.value) movement.joltCamera(dirX, dirZ, strength)
+  },
 })
 const {
   menuOpen: pubMenuOpen,

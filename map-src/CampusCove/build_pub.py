@@ -2,8 +2,9 @@
 
 Interior (house contract): x [-10, 10], z [-15, 5], door at z=+5.1, rooms towards -Z (docs/PUB.md, section 2).
 East: L-shaped bar (Tap_01..03, Bell, 6 stools), back bar with bottles and casks. West: fireplace with two armchairs,
-booths. Centre: round tables, two stone pillars. Back: LADS / LASSES toilets, darts nook (Dartboard), hidden lounge
-behind Door_Secret guarded by NPC_Bouncer. Shot plank (ShotPlank, Shot_01..10) on the front ledge.
+booths. Centre: round tables, two stone pillars. Back: LADS / LASSES toilets, darts nook (Dartboard), a plain CELLAR door
+(Door_Secret) guarded by NPC_Bouncer: a landing and a straight stair down to the hidden velvet lounge in the cellar (floor y = BY, levels/stairs
+in the layout like the two-storey houses). Shot plank (ShotPlank, Shot_01..10) on the front ledge.
 Outputs: out/work/pub/{interior.glb, interior.colsrc.glb, interior.layout.json}, then build_pub_ext.py.
 Lightmap: Blender --background --factory-startup --python build_house_lightmaps.py -- work pub
 """
@@ -40,10 +41,18 @@ BELL = (8.5, 1.9, -1.0)
 COUNTER = (8.5, 0.0, -0.1)
 BARTENDER = (8.3, 0.0, -4.6)
 BARTENDER_YAW = math.pi / 2
-BOUNCER = (4.0, 0.0, -9.4)
+BOUNCER = (4.0, 0.0, -9.05)
 SECRET_WALL_Z = -10.5
 SECRET_DOOR_X = (3.55, 4.45)
+KEGS_X = (5.85, 6.55)
+CRATES = (2.27, -10.15)
 SECRET_ROOM = {"minX": 2.1, "maxX": 10.0, "minZ": -15.0, "maxZ": -10.6}
+# cellar under the back of the pub, reached by a straight stair behind Door_Secret (descends towards +x along the back wall)
+BY, BH = -3.2, 2.8
+BASEMENT = {"minX": -10.0, "maxX": 10.0, "minZ": -15.0, "maxZ": -4.0}
+STAIR_X0, STAIR_X1 = 3.6, 8.6
+PART_Z = -13.42
+STAIR_STEPS = 16
 TOILET_WALL_Z = -11.5
 TOILET_MID_X = -6.2
 TOILET_EAST_X = -2.4
@@ -77,10 +86,7 @@ M["globe"] = L.make_mat("IN_pub_Globe", "#fff7ea", 0.4, "noise", 0.0, emit="#fff
 M["fire"] = L.make_mat("IN_pub_Fire", "#ff7a1a", 0.6, "noise", 0.05, emit="#ff8c2a", emit_strength=2.0)
 M["flame"] = L.make_mat("IN_pub_Flame", "#ffc14a", 0.6, "noise", 0.05, emit="#ffc14a", emit_strength=2.0)
 M["ember"] = L.make_mat("IN_pub_Ember", "#2a1a12", 0.9, "noise", 0.04)
-M["velvet"] = L.make_mat("IN_pub_Velvet", "#8b1a2b", 0.95, "noise", 0.04)
-M["redlight"] = L.make_mat("IN_pub_RedLight", "#ff3b3b", 0.5, "noise", 0.0, emit="#ff2a2a", emit_strength=1.4)
-M["neon"] = L.make_mat("IN_pub_NeonPink", "#ff4fa3", 0.4, "noise", 0.0, emit="#ff4fa3", emit_strength=1.6)
-M["carpet"] = L.make_mat("IN_pub_Carpet", "#5c1522", 1.0, "noise", 0.04)
+M["brick"] = L.make_mat("IN_pub_CellarBrick", "#7a3f2c", 0.95, "tiles", 0.08, accent="#5a2c1e")
 M["rug"] = L.make_mat("IN_pub_Rug", "#7a3b2a", 1.0, "stripes", 0.04, accent="#c9a24a")
 M["white"] = L.make_mat("IN_pub_White", "#f4f1ea", 0.5, "noise", 0.01)
 M["tile"] = L.make_mat("IN_pub_Tile", "#eef0ec", 0.3, "tiles", 0.02, accent="#cfd4cc")
@@ -116,11 +122,13 @@ def norm_yaw(yaw):
     return round(yaw % TWO_PI, 4)
 
 
-def seat(kind, gx, gz, yaw, parts):
+def seat(kind, gx, gz, yaw, parts, y0=0.0):
     n = sum(1 for s in seats if s["kind"] == kind) + 1
     sid = f"{kind}_{n:02d}"
-    add(L.furn(coll, f"seat_{sid}", gx, gz, yaw, parts))
-    seats.append({"id": sid, "kind": kind, "position": [round(gx, 3), SEAT_Y[kind], round(gz, 3)], "yaw": norm_yaw(yaw)})
+    o = add(L.furn(coll, f"seat_{sid}", gx, gz, yaw, parts))
+    o.location.z += y0
+    seats.append({"id": sid, "kind": kind, "position": [round(gx, 3), round(y0 + SEAT_Y[kind], 3), round(gz, 3)], "yaw": norm_yaw(yaw)})
+    return o
 
 
 def mesh_obj(name, bm, mat, loc, tile=1.0):
@@ -211,28 +219,27 @@ def low_text(coll_, name, body, gx, gz, y0, size, extrude, mat, yaw=0.0):
 
 def chair_parts(seat_mat):
     return [(0, 0, 0.4, 0.42, 0.42, 0.05, seat_mat), (0, 0.19, 0.45, 0.42, 0.04, 0.5, M["mahogany"]),
-            (-0.18, 0, 0.0, 0.04, 0.36, 0.4, M["mahogany"]), (0.18, 0, 0.0, 0.04, 0.36, 0.4, M["mahogany"])]
+            (0, 0.02, 0.0, 0.34, 0.32, 0.4, M["mahogany"])]
 
 
 ARMCHAIR = [(0, 0, 0.0, 0.6, 0.55, 0.14, M["mahogany"]), (0, 0.05, 0.14, 0.7, 0.65, 0.28, M["brownleather"]),
             (0, 0.33, 0.42, 0.7, 0.16, 0.5, M["brownleather"]), (-0.33, 0, 0.14, 0.12, 0.65, 0.5, M["brownleather"]),
             (0.33, 0, 0.14, 0.12, 0.65, 0.5, M["brownleather"])]
 BENCH = [(0, 0, 0.0, 1.15, 0.45, 0.39, M["mahogany"]), (0, 0, 0.39, 1.2, 0.5, 0.06, M["leather"]), (0, 0.23, 0.45, 1.2, 0.06, 0.62, M["leather"])]
-SOFA = [(0, 0, 0.0, 0.76, 0.66, 0.2, M["mahogany"]), (0, 0, 0.2, 0.8, 0.7, 0.22, M["velvet"]), (0, 0.3, 0.42, 0.8, 0.12, 0.5, M["velvet"])]
 
 
 def stool(gx, gz, yaw):
     n = sum(1 for s in seats if s["kind"] == "stool") + 1
     sid = f"stool_{n:02d}"
-    parts = [L.cyl(coll, "s_base", gx, gz, 0.0, 0.2, 0.03, M["chrome"], seg=8), L.cyl(coll, "s_pole", gx, gz, 0.03, 0.03, 0.63, M["chrome"], seg=5),
-             L.cyl(coll, "s_seat", gx, gz, 0.66, 0.19, 0.06, M["leather"], seg=8)]
+    parts = [L.cyl(coll, "s_base", gx, gz, 0.0, 0.2, 0.03, M["chrome"], seg=6), L.cyl(coll, "s_pole", gx, gz, 0.03, 0.03, 0.63, M["chrome"], seg=5),
+             L.cyl(coll, "s_seat", gx, gz, 0.66, 0.19, 0.06, M["leather"], seg=6)]
     joined(f"seat_{sid}", parts)
     seats.append({"id": sid, "kind": "stool", "position": [gx, SEAT_Y["stool"], gz], "yaw": norm_yaw(yaw)})
 
 
 def round_table(name, gx, gz):
-    parts = [L.cyl(coll, "t_base", gx, gz, 0.0, 0.3, 0.04, M["mahogany"], seg=8), L.cyl(coll, "t_col", gx, gz, 0.04, 0.06, 0.68, M["mahogany"], seg=6),
-             L.cyl(coll, "t_top", gx, gz, 0.72, 0.45, 0.04, M["mahogany"], seg=10)]
+    parts = [L.cyl(coll, "t_base", gx, gz, 0.0, 0.3, 0.04, M["mahogany"], seg=6), L.cyl(coll, "t_col", gx, gz, 0.04, 0.06, 0.68, M["mahogany"], seg=4),
+             L.cyl(coll, "t_top", gx, gz, 0.72, 0.45, 0.04, M["mahogany"], seg=8)]
     joined(name, parts)
     cols.add(name, gx, gz, 0.0, 0.9, 0.9, 0.76)
 
@@ -242,13 +249,20 @@ def tankard(name, gx, gz, y0):
 
 
 def pint(name, gx, gz, y0):
-    joined(name, [L.cyl(coll, "p_glass", gx, gz, y0, 0.036, 0.15, M["glassgreen"], seg=6), L.cyl(coll, "p_liquid", gx, gz, y0 + 0.004, 0.032, 0.11, M["ember"], seg=6),
-                  L.cyl(coll, "p_foam", gx, gz, y0 + 0.114, 0.034, 0.03, M["white"], seg=6)])
+    joined(name, [L.cyl(coll, "p_liquid", gx, gz, y0, 0.034, 0.12, M["ember"], seg=6), L.cyl(coll, "p_foam", gx, gz, y0 + 0.12, 0.035, 0.03, M["white"], seg=6)])
+
+
+def pennant(name, gx, gz, y_top, w, h, mat):
+    """Single triangle flag in the x/y plane (double-sided material), point down."""
+    bm = bmesh.new()
+    vs = [bm.verts.new((-w / 2, 0.0, 0.0)), bm.verts.new((w / 2, 0.0, 0.0)), bm.verts.new((0.0, 0.0, -h))]
+    bm.faces.new(vs)
+    return mesh_obj(name, bm, mat, L.b(gx, gz, y_top))
 
 
 def tiffany(name, gx, gz):
-    parts = [L.cyl(coll, "l_rod", gx, gz, 2.45, 0.012, 0.55, M["beam"], seg=5), L.cone(coll, "l_shade", gx, gz, 2.2, 0.34, 0.08, 0.26, M["tiffany"], seg=8),
-             L.cyl(coll, "l_bulb", gx, gz, 2.16, 0.06, 0.09, M["bulb"], seg=6)]
+    parts = [L.cyl(coll, "l_rod", gx, gz, 2.45, 0.012, 0.55, M["beam"], seg=3), L.cone(coll, "l_shade", gx, gz, 2.2, 0.34, 0.08, 0.26, M["tiffany"], seg=8),
+             L.box(coll, "l_bulb", gx, gz, 2.16, 0.1, 0.1, 0.06, M["bulb"])]
     joined(name, parts)
 
 
@@ -273,15 +287,15 @@ def knot_panel(name, gx, gz, y0, rot, size=0.8):
         add(o)
 
 
-def barrel(name, gx, gz, y0, r, length, lying=True):
+def barrel(name, gx, gz, y0, r, length, lying=True, seg=10):
     if lying:
         parts = [lying_cyl("b_body", gx, gz, y0 + r, r, length, M["oak"], seg=8)]
         for k, dz in enumerate((-length * 0.32, length * 0.32)):
             parts.append(lying_cyl(f"b_hoop{k}", gx, gz + dz, y0 + r, r + 0.012, 0.06, M["pewter"], seg=8))
     else:
-        parts = [L.cyl(coll, "b_body", gx, gz, y0, r, length, M["oak"], seg=10)]
+        parts = [L.cyl(coll, "b_body", gx, gz, y0, r, length, M["oak"], seg=seg)]
         for k, dy in enumerate((length * 0.18, length * 0.82)):
-            parts.append(L.cyl(coll, f"b_hoop{k}", gx, gz, y0 + dy - 0.03, r + 0.012, 0.06, M["pewter"], seg=10))
+            parts.append(L.cyl(coll, f"b_hoop{k}", gx, gz, y0 + dy - 0.03, r + 0.012, 0.06, M["pewter"], seg=seg))
     return joined(name, parts)
 
 
@@ -294,7 +308,10 @@ def person(name, gx, gz, rot, trousers, torso, arms, head_extra):
 
 
 # ---------------------------------------------------------------- shell
-add(L.box(coll, "House_Floor_Main", 0, (Z0 + Z1) / 2, -0.1, X1 - X0, Z1 - Z0, 0.1, M["floor"], tile=2.0))
+# ground floor slab with the stairwell cut out (the stair corridor x STAIR_X0..X1, z Z0..PART_Z is open to the cellar)
+add(L.box(coll, "House_Floor_Main", 0, (PART_Z + Z1) / 2, -0.1, X1 - X0, Z1 - PART_Z, 0.1, M["floor"], tile=2.0))
+add(L.box(coll, "House_Floor_MainBackW", (X0 + STAIR_X0) / 2, (Z0 + PART_Z) / 2, -0.1, STAIR_X0 - X0, PART_Z - Z0, 0.1, M["floor"], tile=2.0))
+add(L.box(coll, "House_Floor_MainBackE", (STAIR_X1 + X1) / 2, (Z0 + PART_Z) / 2, -0.1, X1 - STAIR_X1, PART_Z - Z0, 0.1, M["floor"], tile=2.0))
 add(L.box(coll, "House_Floor_Flagstone", 8.0, -4.2, 0.0, 4.0, 8.8, 0.012, M["flag"], tile=1.5))
 add(L.box(coll, "House_Floor_Entry", 0, 3.6, 0.0, 5.0, 2.8, 0.012, M["flag"], tile=1.5))
 add(L.box(coll, "Ceiling", 0, (Z0 + Z1 + 0.2) / 2, H, X1 - X0 + 0.4, Z1 - Z0 + 0.4, 0.1, M["beam"], tile=2.0))
@@ -322,7 +339,7 @@ for i, bz in enumerate((3.0, 0.5, -2.0, -4.5, -7.0, -9.5, -12.0)):
 add(L.box(coll, "Ceiling_Ridge", 0, (Z0 + Z1) / 2, H - 0.3, 0.3, Z1 - Z0, 0.3, M["beam"], tile=2.0))
 for k in range(11):
     for j, bz in enumerate((3.0, -7.0)):
-        add(L.box(coll, f"Bunting_{j}{k:02d}", X0 + 1.0 + k * 1.8, bz + 0.16, H - 0.55, 0.24, 0.012, 0.32, M["bunting"][(k + j) % 3]))
+        add(pennant(f"Bunting_{j}{k:02d}", X0 + 1.0 + k * 1.8, bz + 0.16, H - 0.23, 0.24, 0.32, M["bunting"][(k + j) % 3]))
 
 # ---------------------------------------------------------------- bar (east)
 bar_len = BAR_Z1 - BAR_Z0
@@ -346,7 +363,7 @@ for i, tz in enumerate(TAP_Z, start=1):
 pint("Bar_Pint01", BAR_X - 0.15, -2.3, BAR_TOP)
 pint("Bar_Pint02", BAR_X - 0.1, -6.9, BAR_TOP)
 tankard("Bar_Tankard", 9.2, BAR_Z1 + 0.1, BAR_TOP)
-add(L.furn(coll, "Bar_Till", 8.1, BAR_Z1, 0.0, [(0, 0, BAR_TOP, 0.4, 0.34, 0.16, M["black"], 0.01), (0, -0.1, BAR_TOP + 0.16, 0.3, 0.02, 0.14, M["board"])]))
+add(L.furn(coll, "Bar_Till", 8.1, BAR_Z1, 0.0, [(0, 0, BAR_TOP, 0.4, 0.34, 0.16, M["black"]), (0, -0.1, BAR_TOP + 0.16, 0.3, 0.02, 0.14, M["board"])]))
 joined("Bell", [L.box(coll, "bell_rod", *BELL[::2], 2.1, 0.03, 0.03, H - 2.1 - 0.28, M["metal"]), L.cone(coll, "bell_body", *BELL[::2], 1.84, 0.15, 0.06, 0.26, M["brass"], seg=10),
                 L.cyl(coll, "bell_clapper", *BELL[::2], 1.78, 0.025, 0.1, M["brass"], seg=6)])
 for i, sz_ in enumerate(STOOL_Z):
@@ -363,7 +380,7 @@ bottle_mats = (M["amber"], M["bottlegreen"], M["bottleclear"], M["amber"])
 for row, y in enumerate((1.33, 1.78)):
     for k in range(7):
         bz = back_cz - back_len / 2 + 0.6 + k * 0.76 + 0.15 * (row % 2)
-        joined(f"Bottle_{row}{k:02d}", [L.cyl(coll, "bt_body", 9.8, bz, y, 0.035, 0.24, bottle_mats[(k + row) % 4], seg=5), L.cyl(coll, "bt_neck", 9.8, bz, y + 0.24, 0.014, 0.08, bottle_mats[(k + row) % 4], seg=5)])
+        joined(f"Bottle_{row}{k:02d}", [L.cyl(coll, "bt_body", 9.8, bz, y, 0.035, 0.24, bottle_mats[(k + row) % 4], seg=4), L.cyl(coll, "bt_neck", 9.8, bz, y + 0.24, 0.014, 0.08, bottle_mats[(k + row) % 4], seg=4)])
 barrel("BackBar_Cask01", 9.75, -2.4, 1.0, 0.14, 0.36)
 barrel("BackBar_Cask02", 9.75, -7.0, 1.0, 0.14, 0.36)
 for i, gz in enumerate((-2.5, -4.5, -6.5)):
@@ -412,20 +429,20 @@ seat("armchair", X0 + 1.6, FIRE_Z + 1.7, 0.0, ARMCHAIR)
 seat("armchair", X0 + 1.6, FIRE_Z - 1.7, math.pi, ARMCHAIR)
 cols.add("Armchair_01", X0 + 1.6, FIRE_Z + 1.7, 0.0, 0.7, 0.7, 0.9)
 cols.add("Armchair_02", X0 + 1.6, FIRE_Z - 1.7, 0.0, 0.7, 0.7, 0.9)
-add(L.furn(coll, "LowTable", X0 + 1.9, FIRE_Z, 0.0, [(0, 0, 0.0, 0.8, 0.5, 0.42, M["mahogany"], 0.01), (0, 0, 0.42, 0.9, 0.6, 0.04, M["mahogany"], 0.01)]))
+add(L.furn(coll, "LowTable", X0 + 1.9, FIRE_Z, 0.0, [(0, 0, 0.0, 0.8, 0.5, 0.42, M["mahogany"]), (0, 0, 0.42, 0.9, 0.6, 0.04, M["mahogany"])]))
 cols.add("LowTable", X0 + 1.9, FIRE_Z, 0.0, 0.9, 0.6, 0.46)
 tankard("LowTable_Tankard", X0 + 1.9, FIRE_Z + 0.1, 0.46)
 knot_panel("Wall_KnotFire", X0 + 0.03, 1.0, 1.5, -math.pi / 2, 0.7)
 
 # ---------------------------------------------------------------- booths (west wall + front wall)
 for k, bz in enumerate((-8.0, -10.3), start=1):
-    add(L.furn(coll, f"BoothTable_W{k}", X0 + 1.0, bz, 0.0, [(0, 0, 0.0, 0.14, 0.14, 0.7, M["mahogany"]), (0, 0, 0.0, 0.7, 0.5, 0.04, M["mahogany"]), (0, 0, 0.7, 1.3, 0.7, 0.05, M["mahogany"], 0.01)]))
+    add(L.furn(coll, f"BoothTable_W{k}", X0 + 1.0, bz, 0.0, [(0, 0, 0.0, 0.14, 0.14, 0.7, M["mahogany"]), (0, 0, 0.0, 0.7, 0.5, 0.04, M["mahogany"]), (0, 0, 0.7, 1.3, 0.7, 0.05, M["mahogany"])]))
     seat("bench", X0 + 1.0, bz + 0.75, 0.0, BENCH)
     seat("bench", X0 + 1.0, bz - 0.75, math.pi, BENCH)
     cols.add(f"Booth_W{k}", X0 + 0.7, bz, 0.0, 1.4, 2.1, 1.1)
     add(L.box(coll, f"Wall_BoothLamp_W{k}", X0 + 0.08, bz, 1.5, 0.12, 0.3, 0.2, M["tiffany"]))
 for k, bx in enumerate((-7.0, -3.6), start=1):
-    add(L.furn(coll, f"BoothTable_F{k}", bx, Z1 - 0.9, 0.0, [(0, 0, 0.0, 0.14, 0.14, 0.7, M["mahogany"]), (0, 0, 0.0, 0.5, 0.7, 0.04, M["mahogany"]), (0, 0, 0.7, 0.7, 1.3, 0.05, M["mahogany"], 0.01)]))
+    add(L.furn(coll, f"BoothTable_F{k}", bx, Z1 - 0.9, 0.0, [(0, 0, 0.0, 0.14, 0.14, 0.7, M["mahogany"]), (0, 0, 0.0, 0.5, 0.7, 0.04, M["mahogany"]), (0, 0, 0.7, 0.7, 1.3, 0.05, M["mahogany"])]))
     seat("bench", bx - 0.75, Z1 - 0.9, -math.pi / 2, BENCH)
     seat("bench", bx + 0.75, Z1 - 0.9, math.pi / 2, BENCH)
     cols.add(f"Booth_F{k}", bx, Z1 - 0.7, 0.0, 2.1, 1.4, 1.1)
@@ -447,13 +464,13 @@ for k, (px, pz) in enumerate(PILLARS, start=1):
     add(L.box(coll, f"Wall_Pillar{k}", px, pz, 0.0, 0.5, 0.5, H, M["stone"], tile=1.0))
     cols.add(f"Pillar{k}", px, pz, 0.0, 0.5, 0.5, H)
     add(L.box(coll, f"Wall_PillarBanner{k}", px, pz + 0.27, 0.9, 0.36, 0.02, 1.5, M["green"]))
-    knot_panel(f"Wall_PillarKnot{k}", px, pz + 0.3, 1.35, math.pi, 0.3)
+    add(L.box(coll, f"Wall_PillarKnot{k}", px, pz + 0.3, 1.35, 0.3, 0.04, 0.3, M["green"], rot=math.pi))
     add(L.box(coll, f"Wall_PillarBanner{k}B", px, pz - 0.27, 0.9, 0.36, 0.02, 1.5, M["green"]))
     add(L.box(coll, f"Wall_PillarBanner{k}Stripe", px, pz - 0.28, 1.2, 0.26, 0.01, 0.9, M["brass"]))
-barrel("Barrel_Entry01", -1.9, 3.9, 0.0, 0.32, 0.9, lying=False)
+barrel("Barrel_Entry01", -1.9, 3.9, 0.0, 0.32, 0.9, lying=False, seg=8)
 cols.add("Barrel_Entry01", -1.9, 3.9, 0.0, 0.7, 0.7, 0.95)
 tankard("Barrel_Entry01_Tankard", -1.9, 3.9, 0.9)
-barrel("Barrel_Entry02", 1.9, 3.9, 0.0, 0.32, 0.9, lying=False)
+barrel("Barrel_Entry02", 1.9, 3.9, 0.0, 0.32, 0.9, lying=False, seg=8)
 cols.add("Barrel_Entry02", 1.9, 3.9, 0.0, 0.7, 0.7, 0.95)
 pint("Barrel_Entry02_Pint", 1.9, 3.9, 0.9)
 add(L.box(coll, "Light_Entry", 0, 4.3, H - 0.35, 0.5, 0.5, 0.06, M["bulb"]))
@@ -496,11 +513,11 @@ for room, (rx0, rx1) in enumerate(((X0, TOILET_MID_X - 0.075), (TOILET_MID_X + 0
         cx = rx0 + 0.55 + k * 1.0
         add(L.box(coll, f"Toilet{tag}_Part{k}", cx + 0.5, Z0 + 0.65, 0.0, 0.04, 1.3, 1.9, M["plaster"]))
         add(L.box(coll, f"Toilet{tag}_Door{k}", cx, Z0 + 1.3, 0.05, 0.84, 0.03, 1.8, M["green"], rot=0.35 if k else -0.35))
-        joined(f"Toilet{tag}_Bowl{k}", [L.cyl(coll, "tb_bowl", cx, Z0 + 0.45, 0.0, 0.18, 0.4, M["white"], seg=8), L.box(coll, "tb_tank", cx, Z0 + 0.18, 0.4, 0.4, 0.18, 0.4, M["white"], bevel=0.01)])
+        joined(f"Toilet{tag}_Bowl{k}", [L.cyl(coll, "tb_bowl", cx, Z0 + 0.45, 0.0, 0.18, 0.4, M["white"], seg=8), L.box(coll, "tb_tank", cx, Z0 + 0.18, 0.4, 0.4, 0.18, 0.4, M["white"])])
         cols.add(f"Toilet{tag}_Cubicle{k}", cx, Z0 + 0.65, 0.0, 1.0, 1.3, 1.9)
     add(L.box(coll, f"Toilet{tag}_Part2", rx0 + 0.05, Z0 + 0.65, 0.0, 0.04, 1.3, 1.9, M["plaster"]))
     vx = rx1 - 0.3
-    add(L.furn(coll, f"Toilet{tag}_Vanity", vx, -12.4, 0.0, [(0, 0, 0.0, 0.5, 1.4, 0.85, M["mahogany"], 0.01), (0, 0, 0.85, 0.55, 1.45, 0.04, M["marble"], 0.01)]))
+    add(L.furn(coll, f"Toilet{tag}_Vanity", vx, -12.4, 0.0, [(0, 0, 0.0, 0.5, 1.4, 0.85, M["mahogany"]), (0, 0, 0.85, 0.55, 1.45, 0.04, M["marble"])]))
     cols.add(f"Toilet{tag}_Vanity", vx, -12.4, 0.0, 0.55, 1.45, 0.9)
     for k, dz in enumerate((-0.35, 0.35)):
         add(L.cyl(coll, f"Toilet{tag}_Basin{k}", vx, -12.4 + dz, 0.89, 0.17, 0.1, M["white"], seg=10))
@@ -525,56 +542,184 @@ for k in range(4):
     add(L.box(coll, f"Wall_DartChalk{k}", 1.15 + 0.17 * k, Z0 + 0.07, 1.6, 0.06, 0.01, 0.35, M["white"]))
 knot_panel("Wall_KnotDarts", -1.7, Z0 + 0.03, 1.4, math.pi, 0.6)
 
-# ---------------------------------------------------------------- hidden lounge (back east)
+# ---------------------------------------------------------------- cellar door (back east): storeroom look, the stair enclosure behind it
 objs += L.wall(coll, "Walls_Secret", "x", SECRET_WALL_Z, 0.2, SECRET_ROOM["minX"] - 0.1, X1 + 0.1, H, M["plaster"],
                openings=[(SECRET_DOOR_X[0], SECRET_DOOR_X[1], 0.0, 2.1)], cols=cols, col_tag="Wall_Secret")
 objs += L.wall(coll, "Walls_SecretWest", "z", SECRET_ROOM["minX"] - 0.1, 0.2, Z0 - 0.1, SECRET_WALL_Z - 0.1, H, M["plaster"], cols=cols, col_tag="Wall_SecretWest")
 door_cx = (SECRET_DOOR_X[0] + SECRET_DOOR_X[1]) / 2
-secret_door = L.hinged_door(coll, [(door_cx, 0.01, 0.88, 0.06, 2.08, M["green"], 0.02), (door_cx + 0.33, 0.98, 0.04, 0.12, 0.04, M["brass"], 0.0),
-                                   (door_cx, 1.5, 0.5, 0.02, 0.16, M["brass"], 0.0)], SECRET_DOOR_X[0], SECRET_WALL_Z, 0.0)
+secret_door = L.hinged_door(coll, [(door_cx, 0.01, 0.88, 0.06, 2.08, M["beam"], 0.02), (door_cx + 0.33, 0.98, 0.04, 0.12, 0.04, M["pewter"], 0.0),
+                                   (door_cx, 1.5, 0.6, 0.02, 0.06, M["pewter"], 0.0), (door_cx, 0.5, 0.6, 0.02, 0.06, M["pewter"], 0.0)], SECRET_DOOR_X[0], SECRET_WALL_Z, 0.0)
 secret_door.name = "Door_Secret"
 secret_door.data.name = "Door_Secret"
 add(secret_door)
 cols.add("Door_Secret", door_cx, SECRET_WALL_Z, 0.0, SECRET_DOOR_X[1] - SECRET_DOOR_X[0], 0.2, 2.1)
-add(low_text(coll, "Wall_SecretSign", "STAFF ONLY", door_cx, SECRET_WALL_Z + 0.11, 2.2, 0.12, 0.0, M["white"]))
-add(L.box(coll, "Wall_SecretSignPlate", door_cx, SECRET_WALL_Z + 0.105, 2.15, 0.9, 0.01, 0.25, M["black"]))
+add(L.box(coll, "Wall_SecretSignPlate", door_cx, SECRET_WALL_Z + 0.105, 2.15, 0.8, 0.012, 0.24, M["oak"]))
+add(low_text(coll, "Wall_SecretSign", "CELLAR", door_cx, SECRET_WALL_Z + 0.113, 2.2, 0.13, 0.0, M["ember"]))
 person("NPC_Bouncer", BOUNCER[0], BOUNCER[2], math.pi, M["suit"],
        [(0, 0, 0.82, 0.56, 0.3, 0.62, M["suit"], 0.04), (0, -0.15, 0.95, 0.16, 0.02, 0.45, M["shirt"])],
        [(-0.36, -0.05, 0.84, 0.14, 0.16, 0.58, M["suit"]), (0.36, -0.05, 0.84, 0.14, 0.16, 0.58, M["suit"])],
        [(0, -0.12, 1.59, 0.26, 0.02, 0.06, M["black"]), (0.15, -0.02, 1.58, 0.03, 0.03, 0.04, M["black"])])
-lounge_x0, lounge_x1 = SECRET_ROOM["minX"], SECRET_ROOM["maxX"]
-lounge_z0, lounge_z1 = Z0, SECRET_WALL_Z - 0.1
-add(L.box(coll, "House_Floor_Lounge", (lounge_x0 + lounge_x1) / 2, (lounge_z0 + lounge_z1) / 2, 0.0, lounge_x1 - lounge_x0, lounge_z1 - lounge_z0, 0.012, M["carpet"], tile=2.0))
-for k, gx in enumerate((4.0, 8.0)):
-    add(L.box(coll, f"Light_Lounge{k:02d}", gx, -12.8, H - 0.06, 0.8, 0.8, 0.05, M["redlight"]))
-for k, cx in enumerate((3.0, 4.6, 7.4, 9.0)):
-    add(L.box(coll, f"Curtain_Lounge{k}", cx, Z0 + 0.12, 0.02, 1.5, 0.12, H - 0.1, M["velvet"]))
-add(L.box(coll, "Curtain_LoungeEast", X1 - 0.12, -12.2, 0.02, 0.12, 1.8, H - 0.1, M["velvet"]))
-seat("sofa", 3.0, Z0 + 0.75, math.pi, SOFA)
-seat("sofa", 3.8, Z0 + 0.75, math.pi, SOFA)
-seat("sofa", lounge_x0 + 0.5, -12.6, -math.pi / 2, SOFA)
-seat("sofa", lounge_x0 + 0.5, -11.8, -math.pi / 2, SOFA)
-cols.add("Sofa_Back", 3.4, Z0 + 0.75, 0.0, 1.7, 0.75, 0.9)
-cols.add("Sofa_West", lounge_x0 + 0.5, -12.2, 0.0, 0.75, 1.7, 0.9)
-add(L.furn(coll, "Lounge_Table", 3.4, Z0 + 1.7, 0.0, [(0, 0, 0.0, 0.5, 0.5, 0.42, M["black"], 0.01), (0, 0, 0.42, 0.7, 0.7, 0.04, M["mirror"], 0.01)]))
-cols.add("Lounge_Table", 3.4, Z0 + 1.7, 0.0, 0.7, 0.7, 0.46)
-joined("Lounge_Bucket", [L.cyl(coll, "lb_bucket", 3.4, Z0 + 1.7, 0.46, 0.14, 0.22, M["chrome"], seg=10), L.cyl(coll, "lb_bottle", 3.46, Z0 + 1.66, 0.6, 0.04, 0.26, M["bottlegreen"], seg=6),
-                         L.box(coll, "lb_foil", 3.46, Z0 + 1.66, 0.86, 0.06, 0.06, 0.05, M["brass"])])
-add(L.box(coll, "Lounge_Stage", 8.0, -12.4, 0.0, 2.4, 2.4, 0.3, M["black"], bevel=0.02))
-cols.add("Lounge_Stage", 8.0, -12.4, 0.0, 2.4, 2.4, 0.3)
-add(L.box(coll, "Lounge_StageTrim", 8.0, -12.4, 0.29, 2.44, 2.44, 0.02, M["neon"]))
-add(L.cyl(coll, "Lounge_Pole", 8.0, -12.4, 0.3, 0.035, H - 0.3, M["chrome"], seg=8))
-cols.add("Lounge_Pole", 8.0, -12.4, 0.0, 0.2, 0.2, H)
-heart_x, heart_y = 6.0, 1.9
-neon = [facing_disc("n_lobeL", heart_x - 0.17, Z0 + 0.06, heart_y + 0.12, 0.17, 0.04, M["neon"], seg=12), facing_disc("n_lobeR", heart_x + 0.17, Z0 + 0.06, heart_y + 0.12, 0.17, 0.04, M["neon"], seg=12),
-        L.box(coll, "n_tip", heart_x - 0.127, Z0 + 0.08, heart_y - 0.177, 0.36, 0.04, 0.36, M["neon"])]
+# kept >= 1.1 m from the bouncer's collider on both sides so the doorway stays walkable
+for k, kx in enumerate(KEGS_X, start=1):
+    barrel(f"Cellar_Keg{k:02d}", kx, SECRET_WALL_Z + 0.42, 0.0, 0.27, 0.62, lying=False, seg=8)
+cols.add("Cellar_Kegs", sum(KEGS_X) / 2, SECRET_WALL_Z + 0.42, 0.0, KEGS_X[1] - KEGS_X[0] + 0.6, 0.6, 0.65)
+add(L.box(coll, "Cellar_Crate01", CRATES[0], CRATES[1], 0.0, 0.5, 0.46, 0.44, M["oak"]))
+add(L.box(coll, "Cellar_Crate02", CRATES[0] - 0.02, CRATES[1], 0.44, 0.4, 0.4, 0.36, M["beam"]))
+cols.add("Cellar_Crates", CRATES[0], CRATES[1], 0.0, 0.52, 0.48, 0.8)
+
+# stair enclosure (the old SECRET_ROOM): top landing x 2.1..STAIR_X0 behind the door, stair corridor along the back wall
+stair_run = (STAIR_X1 - STAIR_X0) / STAIR_STEPS
+stair_rise = -BY / STAIR_STEPS
+stair_zc = (Z0 + PART_Z - 0.16) / 2
+stair_w = (PART_Z - 0.16) - Z0
+for i in range(STAIR_STEPS):
+    xs = STAIR_X0 + i * stair_run
+    top = -i * stair_rise
+    add(L.box(coll, f"Stair_Step{i:02d}", xs + stair_run / 2, stair_zc, BY, stair_run + 0.005, stair_w, top - BY, M["beam"]))
+stair_len = math.hypot(STAIR_X1 - STAIR_X0, -BY)
+stair_angle = math.atan2(-BY, STAIR_X1 - STAIR_X0)
+for nm, rz in (("Stair_Handrail", PART_Z - 0.22), ("Stair_HandrailBack", Z0 + 0.06)):
+    o = add(L.box(coll, nm, 0, 0, 0, stair_len, 0.05, 0.05, M["brass"] if nm == "Stair_Handrail" else M["beam"]))
+    o.rotation_euler = (0, stair_angle, 0)
+    o.location = L.b((STAIR_X0 + STAIR_X1) / 2, rz, BY / 2 + 0.9)
+# partition between the stair and the landing / cellar: full height over the flight, ground floor only over the cellar landing
+add(L.box(coll, "Walls_StairPart", (STAIR_X0 + STAIR_X1) / 2, PART_Z - 0.08, 0.0, STAIR_X1 - STAIR_X0, 0.16, H, M["plaster"], tile=2.0))
+add(L.box(coll, "Walls_StairPartCellar", (STAIR_X0 + STAIR_X1) / 2, PART_Z - 0.08, BY, STAIR_X1 - STAIR_X0, 0.16, -BY, M["brick"], tile=2.0))
+cols.add("Stair_Side", (STAIR_X0 + STAIR_X1) / 2, PART_Z - 0.08, BY, STAIR_X1 - STAIR_X0, 0.16, H - BY)
+add(L.box(coll, "Walls_StairPartE", (STAIR_X1 + X1) / 2, PART_Z - 0.08, 0.0, X1 - STAIR_X1, 0.16, H, M["plaster"], tile=2.0))
+cols.add("Stair_SideE", (STAIR_X1 + X1) / 2, PART_Z - 0.08, 0.0, X1 - STAIR_X1, 0.16, H)
+add(L.box(coll, "Walls_StairPartLintel", (STAIR_X1 + X1) / 2, PART_Z - 0.08, BY + BH, X1 - STAIR_X1, 0.16, -BY - BH, M["brick"]))
+cols.add("Stair_Under", STAIR_X0 - 0.05, stair_zc, BY, 0.1, stair_w, BH - 0.2)
+add(L.box(coll, "Light_StairTop", (2.1 + STAIR_X0) / 2, -14.2, H - 0.06, 0.4, 0.4, 0.05, M["bulb"]))
+add(L.box(coll, "Light_StairFoot", X1 - 0.7, -14.3, BY + BH - 0.06, 0.4, 0.4, 0.05, M["bulb"]))
+# storeroom bits on the landing
+add(L.furn(coll, "Cellar_Shelf", 7.2, SECRET_WALL_Z - 0.35, 0.0, [(0, 0, 0.0, 2.4, 0.45, 0.04, M["beam"]), (-1.15, 0, 0.0, 0.06, 0.45, 1.9, M["beam"]), (1.15, 0, 0.0, 0.06, 0.45, 1.9, M["beam"]),
+                                                                   (0, 0, 0.9, 2.4, 0.45, 0.04, M["beam"]), (0, 0, 1.8, 2.4, 0.45, 0.04, M["beam"]),
+                                                                   (-0.6, 0, 0.04, 0.6, 0.4, 0.4, M["oak"]), (0.5, 0, 0.94, 0.8, 0.4, 0.3, M["oak"])]))
+cols.add("Cellar_Shelf", 7.2, SECRET_WALL_Z - 0.35, 0.0, 2.4, 0.5, 1.95)
+add(L.box(coll, "Cellar_Crate03", 9.4, -11.6, 0.0, 0.6, 0.6, 0.5, M["oak"]))
+cols.add("Cellar_Crate03", 9.4, -11.6, 0.0, 0.6, 0.6, 0.5)
+
+# ---------------------------------------------------------------- the cellar: the hidden velvet lounge (floor y = BY, ceiling BY + BH)
+bobjs = []
+
+
+def badd(o):
+    bobjs.append(o)
+    return add(o)
+
+
+def bfurn(name, gx, gz, rot, parts):
+    o = L.furn(coll, name, gx, gz, rot, parts)
+    o.location.z += BY
+    return badd(o)
+
+
+def bjoined(name, parts):
+    o = joined(name, parts)
+    bobjs.append(o)
+    return o
+
+
+bx0, bx1, bz0, bz1 = BASEMENT["minX"], BASEMENT["maxX"], BASEMENT["minZ"], BASEMENT["maxZ"]
+M["velvet"] = L.make_mat("IN_pub_Velvet", "#8b1a2b", 0.95, "noise", 0.04)
+M["redlight"] = L.make_mat("IN_pub_RedLight", "#ff3b3b", 0.5, "noise", 0.0, emit="#ff2a2a", emit_strength=1.4)
+M["neon"] = L.make_mat("IN_pub_NeonPink", "#ff4fa3", 0.4, "noise", 0.0, emit="#ff4fa3", emit_strength=1.6)
+M["carpet"] = L.make_mat("IN_pub_Carpet", "#5c1522", 1.0, "noise", 0.04)
+SOFA = [(0, 0, 0.0, 0.76, 0.66, 0.2, M["mahogany"]), (0, 0, 0.2, 0.8, 0.7, 0.22, M["velvet"]), (0, 0.3, 0.42, 0.8, 0.12, 0.5, M["velvet"])]
+
+# shell: carpet, brick walls, dark beamed ceiling, brick pillars
+badd(L.box(coll, "House_Floor_Cellar", (bx0 + STAIR_X0) / 2, (bz0 + bz1) / 2, BY - 0.1, STAIR_X0 - bx0, bz1 - bz0, 0.1, M["carpet"], tile=2.0))
+badd(L.box(coll, "House_Floor_CellarE", (STAIR_X0 + bx1) / 2, (PART_Z + bz1) / 2, BY - 0.1, bx1 - STAIR_X0, bz1 - PART_Z, 0.1, M["carpet"], tile=2.0))
+badd(L.box(coll, "House_Floor_CellarFoot", (STAIR_X1 + bx1) / 2, (bz0 + PART_Z) / 2, BY - 0.1, bx1 - STAIR_X1, PART_Z - bz0, 0.1, M["flag"], tile=1.5))
+for nm, cx, cz, sx, sz in (("Ceiling_Cellar", (bx0 + STAIR_X0) / 2, (bz0 + bz1) / 2, STAIR_X0 - bx0, bz1 - bz0),
+                           ("Ceiling_CellarE", (STAIR_X0 + bx1) / 2, (PART_Z + bz1) / 2, bx1 - STAIR_X0, bz1 - PART_Z),
+                           ("Ceiling_CellarFoot", (STAIR_X1 + bx1) / 2, (bz0 + PART_Z) / 2, bx1 - STAIR_X1, PART_Z - bz0)):
+    badd(L.box(coll, nm, cx, cz, BY + BH, sx, sz, 0.1, M["beam"], tile=2.0))
+for nm, axis, fixed, a0, a1 in (("Walls_CellarW", "z", bx0 - 0.1, bz0 - 0.2, bz1 + 0.2), ("Walls_CellarE", "z", bx1 + 0.1, bz0 - 0.2, bz1 + 0.2),
+                                ("Walls_CellarS", "x", bz0 - 0.1, bx0, bx1), ("Walls_CellarN", "x", bz1 + 0.1, bx0, bx1)):
+    mid = (a0 + a1) / 2
+    if axis == "x":
+        badd(L.box(coll, nm, mid, fixed, BY, a1 - a0, 0.2, -BY, M["brick"], tile=2.0))
+        cols.add(nm.replace("Walls_", "Wall_"), mid, fixed, BY, a1 - a0, 0.2, -BY)
+    else:
+        badd(L.box(coll, nm, fixed, mid, BY, 0.2, a1 - a0, -BY, M["brick"], tile=2.0))
+        cols.add(nm.replace("Walls_", "Wall_"), fixed, mid, BY, 0.2, a1 - a0, -BY)
+for k, (px, pz) in enumerate(((0.6, -9.5), (5.6, -8.0)), start=1):
+    badd(L.box(coll, f"Walls_CellarPillar{k}", px, pz, BY, 0.45, 0.45, BH, M["brick"], tile=1.0))
+    cols.add(f"CellarPillar{k}", px, pz, BY, 0.45, 0.45, BH)
+
+# velvet curtains along the walls (the stage wall is fully draped)
+CURTAIN_H = BH - 0.1
+for k in range(5):
+    badd(L.box(coll, f"Curtain_LoungeS{k}", -9.2 + k * 1.6, bz0 + 0.12, BY + 0.02, 1.5, 0.12, CURTAIN_H, M["velvet"]))
+for k, cz in enumerate((-12.2, -9.2, -6.2)):
+    badd(L.box(coll, f"Curtain_LoungeW{k}", bx0 + 0.12, cz, BY + 0.02, 0.12, 1.8, CURTAIN_H, M["velvet"]))
+for k, cx in enumerate((-8.0, -4.0, 0.0, 3.4, 7.0)):
+    badd(L.box(coll, f"Curtain_LoungeN{k}", cx, bz1 - 0.12, BY + 0.02, 1.8, 0.12, CURTAIN_H, M["velvet"]))
+badd(L.box(coll, "Curtain_LoungeE", bx1 - 0.12, -5.2, BY + 0.02, 0.12, 1.6, CURTAIN_H, M["velvet"]))
+badd(L.box(coll, "Curtain_LoungeSE", 1.6, bz0 + 0.12, BY + 0.02, 1.6, 0.12, CURTAIN_H, M["velvet"]))
+
+# the stage against the draped south wall: neon-pink trim, chrome pole, neon heart above it
+STAGE_X, STAGE_Z = -6.0, -13.4
+badd(L.box(coll, "Lounge_Stage", STAGE_X, STAGE_Z, BY, 2.4, 2.4, 0.3, M["black"], bevel=0.02))
+cols.add("Lounge_Stage", STAGE_X, STAGE_Z, BY, 2.4, 2.4, 0.3)
+badd(L.box(coll, "Lounge_StageTrim", STAGE_X, STAGE_Z, BY + 0.29, 2.44, 2.44, 0.02, M["neon"]))
+badd(L.cyl(coll, "Lounge_Pole", STAGE_X, STAGE_Z, BY + 0.3, 0.035, BH - 0.3, M["chrome"], seg=8))
+cols.add("Lounge_Pole", STAGE_X, STAGE_Z, BY, 0.2, 0.2, BH)
+heart_x, heart_y = STAGE_X, BY + 1.9
+neon = [facing_disc("n_lobeL", heart_x - 0.17, bz0 + 0.26, heart_y + 0.12, 0.17, 0.04, M["neon"], seg=12), facing_disc("n_lobeR", heart_x + 0.17, bz0 + 0.26, heart_y + 0.12, 0.17, 0.04, M["neon"], seg=12),
+        L.box(coll, "n_tip", heart_x - 0.127, bz0 + 0.28, heart_y - 0.177, 0.36, 0.04, 0.36, M["neon"])]
 neon[2].rotation_euler = (0, math.pi / 4, 0)
-joined("Light_NeonHeart", neon)
+bjoined("Light_NeonHeart", neon)
+
+# the four velvet sofas (sofa_01..04) as two loveseats in a loose horseshoe facing the stage, mirror table + champagne between
+for k, (px, pz) in enumerate(((-8.0, -10.6), (-4.0, -10.6)), start=1):
+    yaw = L.yaw_towards(px, pz, STAGE_X, STAGE_Z)
+    c, s = math.cos(yaw), math.sin(yaw)
+    for lx in (-0.4, 0.4):
+        bobjs.append(seat("sofa", px + lx * c, pz - lx * s, yaw, SOFA, y0=BY))
+    cols.add(f"Lounge_Loveseat{k}", px, pz, BY, 1.65, 0.75, 0.9, rot=yaw)
+tb_x, tb_z = STAGE_X, -10.5
+bfurn("Lounge_Table", tb_x, tb_z, 0.0, [(0, 0, 0.0, 0.5, 0.5, 0.42, M["black"], 0.01), (0, 0, 0.42, 0.7, 0.7, 0.04, M["mirror"], 0.01)])
+cols.add("Lounge_Table", tb_x, tb_z, BY, 0.7, 0.7, 0.46)
+bjoined("Lounge_Bucket", [L.cyl(coll, "lb_bucket", tb_x, tb_z, BY + 0.46, 0.14, 0.22, M["chrome"], seg=10),
+                          L.cyl(coll, "lb_bottle", tb_x + 0.06, tb_z - 0.04, BY + 0.6, 0.04, 0.26, M["bottlegreen"], seg=6),
+                          L.box(coll, "lb_foil", tb_x + 0.06, tb_z - 0.04, BY + 0.86, 0.06, 0.06, 0.05, M["brass"])])
+for k, (tx, tz) in enumerate(((-9.3, -9.4), (-2.7, -9.4)), start=1):
+    bfurn(f"Lounge_LowTable{k}", tx, tz, 0.0, [(0, 0, 0.0, 0.3, 0.3, 0.4, M["black"]), (0, 0, 0.4, 0.6, 0.6, 0.04, M["mirror"])])
+    cols.add(f"Lounge_LowTable{k}", tx, tz, BY, 0.6, 0.6, 0.44)
+
+# small velvet bar corner on the east wall
+cb_x, cb_z0, cb_z1 = 9.35, -10.6, -7.0
+bfurn("Lounge_Bar", cb_x - 0.6, (cb_z0 + cb_z1) / 2, 0.0, [(0, 0, 0.0, 0.6, cb_z1 - cb_z0, 1.0, M["mahogany"]), (0, 0, 1.0, 0.76, cb_z1 - cb_z0 + 0.1, 0.05, M["mahogany"]),
+                                                           (-0.31, 0, 0.0, 0.02, cb_z1 - cb_z0, 1.0, M["velvet"]), (-0.37, 0, 0.84, 0.04, cb_z1 - cb_z0, 0.04, M["brass"])])
+cols.add("Lounge_Bar", cb_x - 0.6, (cb_z0 + cb_z1) / 2, BY, 0.8, cb_z1 - cb_z0 + 0.1, 1.05)
+badd(L.box(coll, "Wall_LoungeBackBar", bx1 - 0.06, (cb_z0 + cb_z1) / 2, BY + 0.9, 0.08, cb_z1 - cb_z0, 1.5, M["mahogany"]))
+badd(L.box(coll, "Wall_LoungeBackBarShelf", bx1 - 0.2, (cb_z0 + cb_z1) / 2, BY + 1.5, 0.22, cb_z1 - cb_z0 - 0.2, 0.04, M["brass"]))
+for k in range(3):
+    bz = cb_z0 + 0.8 + k * 1.0
+    m = bottle_mats[k % 4]
+    bjoined(f"Lounge_Bottle{k}", [L.cyl(coll, "cb_body", bx1 - 0.2, bz, BY + 1.54, 0.035, 0.22, m, seg=5), L.cyl(coll, "cb_neck", bx1 - 0.2, bz, BY + 1.76, 0.014, 0.07, m, seg=5)])
+
+# red ceiling light panels everywhere so the whole room glows red (Light_* nodes for the bake)
+for k, (lx, lz) in enumerate(((-7.6, -13.4), (-4.4, -13.4), (-8.0, -10.0), (-4.0, -10.0), (-8.0, -6.0), (-4.0, -6.0),
+                               (-0.6, -12.2), (-0.6, -6.6), (2.8, -11.0), (3.4, -6.0), (7.2, -10.6), (7.6, -5.6))):
+    badd(L.box(coll, f"Light_Lounge{k:02d}", lx, lz, BY + BH - 0.06, 0.8, 0.8, 0.05, M["redlight"]))
 
 # ---------------------------------------------------------------- export
-bad = L.check_grounded(objs, allow=L.ALLOW_INTERIOR + ("Ceiling_", "Bunting_", "Tap_", "Bell", "Bottle_", "BackBar_", "Bar_Pint", "Bar_Tankard", "Bar_Till",
-                                                     "ShotPlank", "Shot_", "Ledge_", "Hearth_", "Dartboard", "Curtain_", "Lounge_Bucket", "Lounge_StageTrim",
-                                                     "Lounge_Pole", "Toilet", "Table_", "BoothTable_", "Barrel_Entry01_", "Barrel_Entry02_", "LowTable_Tankard", "Rug_"))
+bnames = {o.name for o in bobjs}
+bad = L.check_grounded([o for o in objs if o.name not in bnames],
+                       allow=L.ALLOW_INTERIOR + ("Ceiling_", "Bunting_", "Tap_", "Bell", "Bottle_", "BackBar_", "Bar_Pint", "Bar_Tankard", "Bar_Till",
+                                                 "ShotPlank", "Shot_", "Ledge_", "Hearth_", "Dartboard", "Curtain_", "Stair_", "Cellar_Crate02",
+                                                 "Toilet", "Table_", "BoothTable_", "Barrel_Entry01_", "Barrel_Entry02_", "LowTable_Tankard", "Rug_"))
+B_ALLOW = L.ALLOW_INTERIOR + ("Ceiling_", "Curtain_", "Lounge_StageTrim", "Lounge_Pole", "Lounge_Bucket", "Lounge_Bottle")
+for o in bobjs:
+    if o.type != "MESH" or o.name.startswith(B_ALLOW):
+        continue
+    low = min((o.matrix_world @ Vector(c)).z for c in o.bound_box) - BY
+    if low < -0.001 or low > 0.03:
+        bad.append((o.name, round(low, 3)))
 print("INTERIOR grounded violations:", bad)
 assert not bad, bad
 assert len(seats) >= 30, len(seats)
@@ -592,6 +737,14 @@ L.write_json(os.path.join(OUT, "interior.layout.json"), {
     "bell": list(BELL),
     "secretDoor": {"position": [door_cx, 0.0, SECRET_WALL_Z], "yaw": round(math.pi, 4)},
     "secretRoom": SECRET_ROOM,
+    "basement": {**BASEMENT, "floorY": BY},
+    "levels": [
+        {"id": "L0", "y": 0.0, "height": H, "rects": [{"minX": X0, "maxX": X1, "minZ": PART_Z, "maxZ": Z1}, {"minX": X0, "maxX": STAIR_X0, "minZ": Z0, "maxZ": PART_Z}]},
+        {"id": "B1", "y": BY, "height": BH, "rects": [{"minX": BASEMENT["minX"], "maxX": BASEMENT["maxX"], "minZ": PART_Z, "maxZ": BASEMENT["maxZ"]},
+                                                      {"minX": BASEMENT["minX"], "maxX": STAIR_X0, "minZ": BASEMENT["minZ"], "maxZ": PART_Z},
+                                                      {"minX": STAIR_X1, "maxX": BASEMENT["maxX"], "minZ": BASEMENT["minZ"], "maxZ": PART_Z}]},
+    ],
+    "stairs": [{"name": "Stair_Cellar", "minX": STAIR_X0, "maxX": STAIR_X1, "minZ": Z0, "maxZ": round(PART_Z - 0.16, 3), "y0": BY, "y1": 0.0, "rise": "-x"}],
     "seats": seats,
     "darts": {"board": list(BOARD), "boardYaw": round(math.pi, 4), "oche": [BOARD[0], 0.0, round(oche_z, 3)]},
     "shots": {"plank": list(PLANK), "yaw": round(math.pi, 4), "player": shots_player},

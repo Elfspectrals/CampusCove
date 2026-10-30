@@ -1,6 +1,7 @@
 import { computed, ref, watch, type Ref, type ShallowRef } from 'vue'
 import type { Room } from '@colyseus/sdk'
 import * as THREE from 'three'
+import { standsOnFloor } from '../../game/pub/npcAim'
 import { isStool } from '../../game/pub/seats'
 import type { PubLayout, PubSeat, WorldManifest } from '../../game/world/worldManifest'
 import type {
@@ -212,7 +213,9 @@ export function usePubGames(deps: PubGamesDeps) {
 
   // ------------------------------------------------------------ prompts
 
+  /** `point` is a spot on the bar floor; the cellar right under it does not count. */
   function near(point: [number, number, number], reach: number): boolean {
+    if (!standsOnFloor(deps.myPosition.y, point[1])) return false
     return Math.hypot(point[0] - deps.myPosition.x, point[2] - deps.myPosition.z) <= reach
   }
 

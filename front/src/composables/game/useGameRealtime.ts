@@ -19,6 +19,7 @@ import type {
   HouseFurniturePayload,
   HousingUnitPayload,
   PubBellPayload,
+  PubBouncerBlockPayload,
   PubDartsEndPayload,
   PubDartsLobbyPayload,
   PubDartsStatePayload,
@@ -118,6 +119,7 @@ export interface GameRealtimeDeps {
     onError: (data: PubErrorPayload) => void
     onSecretResult: (data: PubSecretResultPayload) => void
     onSecretDoor: (data: PubSecretDoorPayload) => void
+    onBouncerBlock: (data: PubBouncerBlockPayload, mySessionId: string) => void
     onBell: (data: PubBellPayload) => void
   }
   /** Drink Fast, Meter Shot and Darts (usePubGames). */
@@ -258,6 +260,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('pub_error', (data: PubErrorPayload) => deps.pub.onError(data))
     room.onMessage('pub_secret_result', (data: PubSecretResultPayload) => deps.pub.onSecretResult(data))
     room.onMessage('pub_secret_door', (data: PubSecretDoorPayload) => deps.pub.onSecretDoor(data))
+    room.onMessage('pub_bouncer_block', (data: PubBouncerBlockPayload) => deps.pub.onBouncerBlock(data, room.sessionId))
     room.onMessage('pub_bell', (data: PubBellPayload) => deps.pub.onBell(data))
     room.onMessage('pub_race_lobby', (data: PubRaceLobbyPayload) => deps.pubGames.onRaceLobby(data))
     room.onMessage('pub_race_start', (data: PubRaceStartPayload) => deps.pubGames.onRaceStart(data))

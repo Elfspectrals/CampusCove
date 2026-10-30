@@ -4,6 +4,8 @@ type Point = { x: number; y: number; z: number }
 type Vec3 = [number, number, number]
 
 const NPC_HEIGHT_REACH = 1.5
+/** Feet this close (m) to a floor stand on it: the bar and the cellar under it are told apart. */
+const FLOOR_REACH = 1.5
 const NPC_CHEST_HEIGHT = 1.2
 const NPC_AIM_ANGLE = 0.6
 
@@ -18,4 +20,9 @@ export function isAimingAtNpc(eye: Point, forward: Point, npc: Vec3, reach: numb
   const facing = Math.hypot(forward.x, forward.y, forward.z)
   const cos = (dx * forward.x + dy * forward.y + dz * forward.z) / (toNpc * facing)
   return Math.acos(Math.min(1, Math.max(-1, cos))) <= NPC_AIM_ANGLE
+}
+
+/** The player whose eye is at `eyeY` stands on the floor at `floorY` (not in the cellar below it, nor upstairs). */
+export function standsOnFloor(eyeY: number, floorY: number): boolean {
+  return Math.abs(eyeY - EYE_HEIGHT - floorY) <= FLOOR_REACH
 }

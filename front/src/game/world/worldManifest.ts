@@ -101,6 +101,8 @@ export interface PubLayout {
   bell: Vec3
   secretDoor: { position: Vec3; yaw: number }
   secretRoom: WorldBounds
+  /** The cellar lounge down the stair behind the staff door; `floorY` is its floor (world), below the bar's. */
+  basement?: WorldBounds & { floorY: number }
   seats: PubSeat[]
   darts: { board: Vec3; boardYaw: number; oche: Vec3 }
   shots: { plank: Vec3; yaw: number; player: Vec3 }

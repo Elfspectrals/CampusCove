@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { isAimingAtNpc } from './npcAim.ts'
+import { isAimingAtNpc, standsOnFloor } from './npcAim.ts'
 
 const bartender: [number, number, number] = [0, 0, -2]
 const eye = { x: 0, y: 1.6, z: 0 }
@@ -12,4 +12,11 @@ test('aiming at an NPC needs the reach and the crosshair on them', () => {
   assert.equal(isAimingAtNpc({ x: 0, y: 1.6, z: 0.5 }, ahead, bartender, 2.6), true)
   assert.equal(isAimingAtNpc({ x: 0, y: 1.6, z: 0.7 }, ahead, bartender, 2.6), false)
   assert.equal(isAimingAtNpc({ x: 0, y: 5, z: 0 }, { x: 0, y: -1, z: -1 }, bartender, 2.6), false)
+})
+
+test('the bar floor and the cellar under it are told apart', () => {
+  assert.equal(standsOnFloor(0.2 + 1.6, 0.2), true)
+  assert.equal(standsOnFloor(0.2 + 1.6 + 0.95, 0.2), true)
+  assert.equal(standsOnFloor(-3 + 1.6, 0.2), false)
+  assert.equal(standsOnFloor(-3 + 1.6, -3), true)
 })

@@ -88,7 +88,7 @@ const billText = computed(() => {
     </div>
     <p
       v-if="message && !knockedOut"
-      class="cc-hud absolute bottom-24 left-1/2 max-w-sm -translate-x-1/2 px-3 py-1.5 text-center text-xs font-bold text-fog"
+      class="cc-hud absolute bottom-[148px] left-1/2 max-w-sm -translate-x-1/2 px-3 py-1.5 text-center text-xs font-bold text-fog"
     >
       {{ message }}
     </p>

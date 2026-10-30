@@ -18,7 +18,7 @@ import {
   type WorkBuilding,
   type WorldManifest,
 } from '../world/worldManifest'
-import { parseHouseLayout, singleLevelLayout, surfaceHeight, type HouseLayout } from './houseLevels'
+import { capsuleLift, parseHouseLayout, singleLevelLayout, surfaceHeight, type HouseLayout, type LevelRect } from './houseLevels'
 
 type InteriorOffset = { interiorOffset: [number, number, number] }
 type OpenHouseLot = HouseBuilding & InteriorOffset
@@ -266,14 +266,32 @@ function transformTrimesh(trimesh: CollisionTrimeshJson, matrix: THREE.Matrix4):
   return { ...trimesh, vertices }
 }
 
+/**
+ * The walkable levels and stairs of an interior. Houses must have them once their layout exists; work and store
+ * interiors share the `interior.layout.json` with their stations, so only a layout that has `levels` counts
+ * (the pub's cellar stair); otherwise the building is one level over its collision bounds.
+ */
 async function fetchHouseLayout(lot: OpenLot): Promise<HouseLayout | null> {
-  const house = lot.kind === 'house' ? findHouse(lot.key) : null
-  if (!house) return null
-  const res = await fetch(house.interiorLayoutUrl)
+  const asset = lot.kind === 'house' ? findHouse(lot.key) : lot.kind === 'work' ? findWork(lot.key) : findStore(lot.key)
+  if (!asset) return null
+  const res = await fetch(asset.interiorLayoutUrl)
   const isJson = res.headers.get('content-type')?.includes('json') ?? false
   if (res.status === 404 || (res.ok && !isJson)) return null
-  if (!res.ok) throw new Error(`Failed to load house layout ${house.interiorLayoutUrl}: ${res.status}`)
-  return parseHouseLayout(await res.json(), lot.key)
+  if (!res.ok) throw new Error(`Failed to load house layout ${asset.interiorLayoutUrl}: ${res.status}`)
+  const raw: unknown = await res.json()
+  if (lot.kind !== 'house' && !Array.isArray((raw as { levels?: unknown } | null)?.levels)) return null
+  return parseHouseLayout(raw, lot.key)
+}
+
+/** The collision bounds grown to every level and stair of the layout (a cellar may reach past the ground floor). */
+function walkableBounds(bounds: LevelRect, layout: HouseLayout | null): LevelRect {
+  const rects = [bounds, ...(layout?.levels.flatMap((level) => level.rects) ?? []), ...(layout?.stairs ?? [])]
+  return {
+    minX: Math.min(...rects.map((r) => r.minX)),
+    maxX: Math.max(...rects.map((r) => r.maxX)),
+    minZ: Math.min(...rects.map((r) => r.minZ)),
+    maxZ: Math.max(...rects.map((r) => r.maxZ)),
+  }
 }
 
 function boundsReach(bounds: NonNullable<CollisionFileJson['bounds']>, [ox, , oz]: [number, number, number]): number {
@@ -318,12 +336,13 @@ async function composeTownCollisionData(manifest: WorldManifest): Promise<Collis
       else cuboids.push(placed)
     }
     trimeshes.push(...(interior.trimeshes ?? []).map((trimesh) => transformTrimesh(trimesh, matrix)))
+    const layout = layouts[i] ?? null
     buildingFloors.push({
       houseKey: lot.key,
       worldToInterior: matrix.clone().invert(),
-      bounds: interior.bounds,
+      bounds: walkableBounds(interior.bounds, layout),
       baseY: lot.position[1] + lot.interiorOffset[1],
-      layout: layouts[i] ?? singleLevelLayout(lot.key, interior.bounds, APARTMENT_ROOM_HEIGHT),
+      layout: layout ?? singleLevelLayout(lot.key, interior.bounds, APARTMENT_ROOM_HEIGHT),
     })
     const placed = lot.kind === 'house' ? interiorsByHouse.get(lot.key)?.parent : null
     if (placed) placed.userData.visibilityReach = boundsReach(interior.bounds, lot.interiorOffset)
@@ -375,7 +394,8 @@ export function buildingFloorAt(x: number, z: number, feetY: number): number | n
 }
 
 export function capsuleLiftInBuilding(x: number, z: number, feetY: number): number {
-  return floorAt(x, z) ? Math.max(0, feetY) : 0
+  const found = floorAt(x, z)
+  return found ? capsuleLift(found.floor.layout, found.floor.baseY, feetY) : 0
 }
 
 export function houseLayout(houseKey: string): HouseLayout {

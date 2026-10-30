@@ -106,6 +106,9 @@ export function useSeats(deps: SeatsDeps) {
     deps.gameRoomRef.value?.send('stand')
     pendingSeatId = null
     mySeat.value = null
+    // Back where we sat down from: a booth seat sits inside its bench collider, standing in place would trap us.
+    if (standingAt) deps.teleport(standingAt.x, standingAt.y, standingAt.z)
+    standingAt = null
     return true
   }
 

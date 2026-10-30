@@ -68,6 +68,8 @@ export interface Player extends Vec3 {
   pubSecretUntil: number
   pubShots: PubShots | null
   lastPubBellAt: number
+  /** Last pub_bouncer_block broadcast for this player (rate limit). */
+  lastBouncerBlockAt: number
   decoratedTemplateKey?: string | null
   appearance: Record<AppearanceSlot, number | null>
   slotHexes: Record<AppearanceSlot, string>

@@ -179,11 +179,11 @@ def build_interior(key, source_dir, out_dir, lamp_power=LAMP_POWER_W, lightmap_s
     print(f"LIGHTMAP {key}: {len(meshes)} meshes, {lamps} lamps")
 
 
-def house_options(key):
-    layout = os.path.join(OUT, key, "interior.layout.json")
+def house_options(key, out_dir=OUT):
+    layout = os.path.join(out_dir, key, "interior.layout.json")
     if os.path.exists(layout):
         with open(layout, encoding="utf-8") as f:
-            if len(json.load(f)["levels"]) > 1:
+            if len(json.load(f).get("levels", [])) > 1:
                 return {"lightmap_size": MULTI_LEVEL_LIGHTMAP_SIZE}
     return {}
 
@@ -200,7 +200,7 @@ def main():
         keys, source_dir, out_dir = args or KEYS, ASSETS, OUT
     for key in keys:
         bpy.ops.wm.read_homefile(use_empty=True)
-        build_interior(key, source_dir, out_dir, **(options or house_options(key)))
+        build_interior(key, source_dir, out_dir, **(options or house_options(key, out_dir)))
 
 
 main()

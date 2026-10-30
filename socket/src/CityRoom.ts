@@ -15,7 +15,7 @@ import {
   workDoorId
 } from './doors.ts'
 import { moveRejection, onJump, spendSprintStamina } from './movement.ts'
-import { onPubBell, onPubOrder, onPubSecret, onSit } from './pub.ts'
+import { blockAtSecretDoor, onPubBell, onPubOrder, onPubSecret, onSit } from './pub.ts'
 import {
   leavePub,
   onDartsJoin,
@@ -208,18 +208,24 @@ export class CityRoom extends Room implements GameRoom {
     const player = this.players.get(client.sessionId)
     if (!player || !payload || typeof payload !== 'object') return
     const x = normalizeNumber(payload.x, player.x)
+    const y = normalizeNumber(payload.y, player.y)
     const z = normalizeNumber(payload.z, player.z)
     const now = Date.now()
     const sprinting = payload.sprint === true
     if (player.seatId) standUp(this, player)
-    if (moveRejection(this, player, x, z, now, sprinting) !== null) {
+    const rejection = moveRejection(this, player, x, y, z, now, sprinting)
+    if (rejection === 'secret_room_closed') {
+      blockAtSecretDoor(this, client, player, now)
+      return
+    }
+    if (rejection !== null) {
       client.send('position_correction', { x: player.x, y: player.y, z: player.z })
       return
     }
     const previousY = player.y
     const distXZ = Math.hypot(x - player.x, z - player.z)
     player.x = x
-    player.y = normalizeNumber(payload.y, player.y)
+    player.y = y
     player.z = z
     player.ry = normalizeNumber(payload.ry, player.ry)
     if (sprinting && distXZ > 0) spendSprintStamina(player, now - player.lastMoveAt, now)

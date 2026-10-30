@@ -7,7 +7,7 @@ Décisions produit (validées le 29/10/2026) :
 
 - Grand pub au fond, **au-delà de la clôture du Cove Pond, côté est** (loin du centre) ; un chemin décoré y mène depuis
   une nouvelle porte dans la clôture du parc. On y va pour l'ambiance : feu de cheminée, bar en L, tables, box, recoin
-  fléchettes, « mètre de shots », toilettes, jardin à bière, et un salon caché derrière le videur.
+  fléchettes, « mètre de shots », toilettes, jardin à bière, et un salon caché au sous-sol, derrière le videur.
 - Boissons alcoolisées (stout, lager, vin rouge, whisky, vodka) avec un verre différent chacune. Commande au comptoir
   (instantané) ou au barman PNJ (il tire la pinte ~3 s, le verre glisse jusqu'au point de service, on le ramasse).
 - Ivresse (0..100) côté serveur : pompette ≥ 30 (léger tangage), ivre ≥ 60 (fort tangage, flou, marche ralentie
@@ -18,8 +18,14 @@ Décisions produit (validées le 29/10/2026) :
   avec tangage, 3 fléchettes chacun, chacun son tour, meilleur total). Récompenses en coins par l'API.
 - S'asseoir sur n'importe quel siège du pub (tabourets, chaises, banquettes, fauteuils, bancs du jardin), visible par
   les autres joueurs.
-- Salon caché : parler au videur ouvre une boîte de dialogue avec un champ texte ; la phrase « Paris wiener » ouvre la
-  porte du personnel 20 s. Dedans : lumière rouge, velours, petite scène avec barre, néon cœur, seau à champagne.
+- Cabaret caché : une porte banale « CELLAR » (fûts et caisses à côté) gardée par le videur. Lui parler ouvre une
+  boîte de dialogue avec un champ texte ; la phrase de la semaine (aujourd'hui « Paris wiener ») ouvre la porte 20 s.
+  Derrière : palier, réserve, puis un escalier droit le long du mur du fond qui descend au sous-sol (sol 3,2 m
+  plus bas). Dedans : le salon rouge d'origine agrandi, moquette rouge
+  sombre, rideaux de velours, douze panneaux de lumière rouge, scène à liseré néon rose avec barre chromée (décor),
+  néon cœur, deux causeuses en velours face à la scène, table miroir et seau à champagne, petit bar en acajou.
+- Sans la phrase, passer la porte ouverte par un autre joueur ne marche pas : le videur s'interpose, repousse le
+  joueur ~1 m devant lui et lance « Not without the word, pal. »
   Suggestif, jamais explicite.
 
 ## 1. Fichiers et propriétaires
@@ -75,7 +81,10 @@ Noms de nœuds que le code lit :
   "serve": [x, 1.05, z],             // où le verre plein attend d'être ramassé (dessus du bar, côté client)
   "bell": [x, 1.9, z],
   "secretDoor": { "position": [x, 0, z], "yaw": 0.0 },
-  "secretRoom": { "minX": .., "maxX": .., "minZ": .., "maxZ": .. },   // pièce cachée, en local
+  "secretRoom": { "minX": .., "maxX": .., "minZ": .., "maxZ": .. },   // enclos palier + escalier, en local
+  "basement": { "minX": .., "maxX": .., "minZ": .., "maxZ": .., "floorY": -3.2 },   // cave, en local
+  "levels": [ { "id": "L0", "y": 0, ... }, { "id": "B1", "y": -3.2, ... } ],   // même format que les maisons à étage
+  "stairs": [ { "name": "Stair_Cellar", ..., "y0": -3.2, "y1": 0, "rise": "-x" } ],
   "seats": [ { "id": "stool_01", "kind": "stool", "position": [x, 0.72, z], "yaw": 1.5708 }, ... ],
   "darts": { "board": [x, 1.73, z], "boardYaw": 0.0, "oche": [x, 0, z] },
   "shots": { "plank": [x, 1.05, z], "yaw": 0.0, "player": [x, 0, z] }
@@ -143,6 +152,7 @@ l'horizontale, genoux pliés à 90°, mains sur les cuisses), généré pour les
   "counter": [x, y, z], "taps": [x, y, z], "serve": [x, y, z], "bell": [x, y, z],
   "secretDoor": { "position": [x, y, z], "yaw": 0.0 },
   "secretRoom": { "minX": .., "maxX": .., "minZ": .., "maxZ": .. },
+  "basement": { "minX": .., "maxX": .., "minZ": .., "maxZ": .., "floorY": y },   // optionnel
   "seats": [ { "id": "stool_01", "kind": "stool", "position": [x, y, z], "yaw": 0.0 }, ... ],
   "darts": { "board": [x, y, z], "boardYaw": 0.0, "oche": [x, y, z] },
   "shots": { "plank": [x, y, z], "yaw": 0.0, "player": [x, y, z] }
@@ -204,7 +214,7 @@ Constantes (`socket/src/pubConstants.ts`, miroir côté front dans `gameRoomCons
 | `COUNTER_REACH` / `BOUNCER_REACH` | 2.6 m |
 | `BARTENDER_REACH` | 3.6 m (tous les tabourets du bar restent à portée du barman) |
 | `POUR_MS` | 3000 |
-| `SECRET_PHRASE` | `paris wiener` (comparaison après `trim`, minuscules, espaces multiples réduits) |
+| `SECRET_PHRASES` | `['paris wiener']`, rotation hebdomadaire (comparaison après `trim`, minuscules, espaces multiples réduits) |
 | `SECRET_OPEN_MS` | 20 000 |
 | `INTOXICATION_MAX` | 100 ; black-out à ≥ 100, retombe à `HANGOVER_INTOXICATION` = 30 au réveil |
 | `INTOXICATION_DECAY_PER_S` | 1/6 (× `SURVIVAL_TIME_SCALE`) |
@@ -242,6 +252,7 @@ Constantes (`socket/src/pubConstants.ts`, miroir côté front dans `gameRoomCons
 | `pub_error` | `{ message, code }` (`errorPayload`) | joueur |
 | `pub_secret_result` | `{ ok, untilMs? }` | joueur |
 | `pub_secret_door` | `{ open }` | zone |
+| `pub_bouncer_block` | `{ sessionId, accountId, line }` | zone (joueur repoussé inclus) |
 | `pub_bell` | `{ sessionId }` | zone |
 | `pub_race_lobby` | `{ hostSessionId, players: string[], startsAt }` | zone |
 | `pub_race_start` | `{ seed, players: string[] }` | zone |
@@ -258,8 +269,15 @@ Constantes (`socket/src/pubConstants.ts`, miroir côté front dans `gameRoomCons
   = même séquence que `knockOut` (KO 6 s, réveil dans un lit de la clinique, 5 s de récupération) mais appelle
   `POST /survival/hangover` et remet `intoxication` à 30. Les jeux et commandes en cours sont abandonnés.
 - Un joueur assis qui bouge, se fait KO ou quitte la salle libère son siège et abandonne la course Drink Fast.
-- `moveRejection` refuse d'**entrer** dans `pub.secretRoom` (bornes monde) si `now > pubSecretUntil` ; en sortir
-  est toujours permis.
+- Volume secret = `pub.secretRoom` (XZ, toute hauteur) ∪ `pub.basement` quand les pieds sont à plus de 1 m sous le
+  sol du bar (hauteur de seuil de `secretDoor`). `moveRejection` refuse d'**entrer** dans ce volume si
+  `now > pubSecretUntil` ; en sortir (remonter l'escalier) est toujours permis. Un refus repousse le joueur ~1 m
+  devant le videur (`position_correction`) et diffuse `pub_bouncer_block` (au plus une fois toutes les 2 s par joueur).
+- Toutes les portées du pub (comptoir, cloche, videur, jeux, sièges) vérifient aussi la hauteur : rien ne traverse
+  le plancher entre le bar et la cave.
+- Phrase : `currentSecretPhrase(now)` prend `SECRET_PHRASES[semaines depuis le lundi 2024-01-01 00:00 UTC % n]`.
+  La liste ne contient que `paris wiener` pour l'instant ; ajouter des phrases suffit à les faire tourner chaque
+  semaine (indices cachés dans le pub : à faire).
 - Récompenses : le socket appelle `POST /pub/reward` avec le token de chaque joueur concerné, puis diffuse le
   résultat. L'alcool des jeux (`alcohol` renvoyé par `/pub/play`) est ajouté à la fin de la partie, pas au début.
 - `dartsScore(x, y)` (cm depuis le centre, y vers le haut) : bull 50 si `r ≤ 0.635`, 25 si `r ≤ 1.59`, triple si
@@ -306,7 +324,7 @@ Constantes (`socket/src/pubConstants.ts`, miroir côté front dans `gameRoomCons
   le barman pivote vers `taps`, un verre (modèle de la boisson) apparaît sur `taps` et se remplit (échelle y du
   liquide) pendant `durationMs`, puis glisse vers `serve` ; à `pub_served` le verre attend sur `serve`, prompt
   « Pick up » → le verre disparaît et le hotbar sélectionne l'article ; `GamePubSecretDialog.vue` : dialogue du
-  videur (« You look lost, friend. ») avec champ texte, réponse `pub_secret_result` (« Second door on the left. Don't
+  videur (« You look lost, friend. ») avec champ texte, réponse `pub_secret_result` (« Mind the stairs. Don't
   tell. » / « Never heard of it. ») ; `pub_secret_door` ouvre/ferme `Door_Secret` et sa collision.
 - `useIntoxication` (A) : lit `intoxication` du message `survival`, applique le roulis/balancement à la caméra
   (dans la boucle de `useGameMovement`, après le placement), `GameDrunkEffects.vue` (flou radial, double image

@@ -61,7 +61,9 @@ function inWalkBand(bottom, top) {
 function levelBaseOf(c) {
   if (!houseLevels) return 0
   const bottom = c.cy - c.hy
-  return Math.max(0, ...houseLevels.map((level) => level.y).filter((y) => y <= bottom + WALK_BAND_MIN_Y))
+  // lowest level when below everything (0 unless a level sits below ground, e.g. a cellar)
+  const lowest = Math.min(0, ...houseLevels.map((level) => level.y))
+  return Math.max(lowest, ...houseLevels.map((level) => level.y).filter((y) => y <= bottom + WALK_BAND_MIN_Y))
 }
 
 function mat4Identity() {

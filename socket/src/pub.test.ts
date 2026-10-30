@@ -24,10 +24,12 @@ const manifest = {
     counter: [90, 0, -135], taps: [90, 1.05, -137], serve: [91, 1.05, -136], bell: [92, 1.9, -137],
     secretDoor: { position: [102, 0, -142], yaw: 0 },
     secretRoom: { minX: 100, maxX: 108, minZ: -150, maxZ: -143 },
+    basement: { minX: 86, maxX: 108, minZ: -150, maxZ: -130, floorY: -3 },
     seats: [
       { id: 'stool_01', kind: 'stool', position: [88, 0.72, -134], yaw: 0 },
       { id: 'stool_02', kind: 'stool', position: [89.5, 0.72, -134], yaw: 0 },
-      { id: 'chair_01', kind: 'chair', position: [80, 0.45, -128], yaw: 1.57 }
+      { id: 'chair_01', kind: 'chair', position: [80, 0.45, -128], yaw: 1.57 },
+      { id: 'sofa_01', kind: 'sofa', position: [90, -2.55, -140], yaw: 0 }
     ],
     darts: { board: [84, 1.73, -142], boardYaw: 0, oche: [84, 0, -139.6] },
     shots: { plank: [95, 1.05, -136], yaw: 0, player: [95, 0, -135] }
@@ -45,10 +47,14 @@ globalThis.fetch = async (url: string | URL | Request) => {
 
 const { loadWorld, worldPub } = await import('./world.ts')
 const { moveRejection } = await import('./movement.ts')
-const { normalizeSecretPhrase, onPubSecret, onSit, closeSecretDoorWhenExpired } = await import('./pub.ts')
+const {
+  normalizeSecretPhrase, onPubSecret, onSit, closeSecretDoorWhenExpired, currentSecretPhrase, inSecretVolume, blockAtSecretDoor
+} = await import('./pub.ts')
 const { onStand } = await import('./pubGames.ts')
 const { tickSurvival } = await import('./survival.ts')
-const { HANGOVER_INTOXICATION, INTOXICATION_DECAY_PER_S, SECRET_OPEN_MS } = await import('./pubConstants.ts')
+const {
+  HANGOVER_INTOXICATION, INTOXICATION_DECAY_PER_S, SECRET_OPEN_MS, SECRET_PHRASE_EPOCH_MS, WEEK_MS, BOUNCER_BLOCK_COOLDOWN_MS
+} = await import('./pubConstants.ts')
 await loadWorld()
 
 function fakeClient(sessionId: string): FakeClient {
@@ -77,6 +83,7 @@ function fakePlayer(sessionId: string, x: number, z: number): Player {
     pubSecretUntil: 0,
     pubShots: null,
     lastPubBellAt: 0,
+    lastBouncerBlockAt: 0,
     clinicBedId: null
   } as Player
 }
@@ -105,9 +112,10 @@ function received(client: FakeClient, type: string) {
 test('the manifest pub is parsed with its seats by id', () => {
   const pub = worldPub()
   assert.ok(pub)
-  assert.equal(pub.seats.size, 3)
+  assert.equal(pub.seats.size, 4)
   assert.deepEqual(pub.seats.get('chair_01')?.position, { x: 80, y: 0.45, z: -128 })
   assert.deepEqual(pub.secretRoom, { minX: 100, maxX: 108, minZ: -150, maxZ: -143 })
+  assert.deepEqual(pub.basement, { minX: 86, maxX: 108, minZ: -150, maxZ: -130, floorY: -3 })
   assert.deepEqual(pub.darts.oche, { x: 84, y: 0, z: -139.6 })
 })
 
@@ -204,9 +212,30 @@ test('the staff door stays open while someone is still inside the room', () => {
   assert.equal(room.pub.secretOpen, false)
 })
 
+test('a close check that fires just before access runs out rechecks instead of leaving the door open', () => {
+  const me = fakePlayer('me', 99, -141)
+  const { room, clients, timers } = fakeRoom(me)
+  const now = 100_000
+  onPubSecret(room, clients[0], { phrase: 'paris wiener' }, now)
+  const before = timers.length
+  closeSecretDoorWhenExpired(room, now + SECRET_OPEN_MS - 3)
+  assert.equal(room.pub.secretOpen, true)
+  assert.equal(timers.length, before + 1)
+  closeSecretDoorWhenExpired(room, now + SECRET_OPEN_MS + 1)
+  assert.equal(room.pub.secretOpen, false)
+})
+
 test('the bouncer only listens up close', () => {
   const me = fakePlayer('me', 90, -130)
   const { room, clients } = fakeRoom(me)
+  onPubSecret(room, clients[0], { phrase: 'paris wiener' })
+  assert.deepEqual(received(clients[0], 'pub_error').map((e) => e.code), ['pub_too_far'])
+})
+
+test('nobody in the basement reaches the bouncer through the bar floor', () => {
+  const down = fakePlayer('down', 100, -141)
+  down.y = BASEMENT_EYE_Y
+  const { room, clients } = fakeRoom(down)
   onPubSecret(room, clients[0], { phrase: 'paris wiener' })
   assert.deepEqual(received(clients[0], 'pub_error').map((e) => e.code), ['pub_too_far'])
 })
@@ -216,13 +245,105 @@ test('entering the hidden lounge is refused once the password expired, leaving i
   const { room } = fakeRoom(me)
   const now = 50_000
   me.lastMoveAt = now - 500
-  assert.equal(moveRejection(room, me, 101, -146, now), 'secret_room_closed')
+  assert.equal(moveRejection(room, me, 101, 1.6, -146, now), 'secret_room_closed')
   me.pubSecretUntil = now + 1000
-  assert.equal(moveRejection(room, me, 101, -146, now), null)
+  assert.equal(moveRejection(room, me, 101, 1.6, -146, now), null)
   me.x = 101
   me.pubSecretUntil = 0
-  assert.equal(moveRejection(room, me, 103, -146, now), null)
-  assert.equal(moveRejection(room, me, 99, -146, now), null)
+  assert.equal(moveRejection(room, me, 103, 1.6, -146, now), null)
+  assert.equal(moveRejection(room, me, 99, 1.6, -146, now), null)
+})
+
+const BASEMENT_EYE_Y = -3 + 1.6
+
+test('the phrase of the week counts whole weeks from a Monday 00:00 UTC epoch', () => {
+  const phrases = ['a', 'b', 'c']
+  assert.equal(new Date(SECRET_PHRASE_EPOCH_MS).getUTCDay(), 1)
+  assert.equal(currentSecretPhrase(SECRET_PHRASE_EPOCH_MS, phrases), 'a')
+  assert.equal(currentSecretPhrase(SECRET_PHRASE_EPOCH_MS + WEEK_MS - 1, phrases), 'a')
+  assert.equal(currentSecretPhrase(SECRET_PHRASE_EPOCH_MS + WEEK_MS, phrases), 'b')
+  assert.equal(currentSecretPhrase(SECRET_PHRASE_EPOCH_MS + 5 * WEEK_MS, phrases), 'c')
+  assert.equal(currentSecretPhrase(SECRET_PHRASE_EPOCH_MS - 1, phrases), 'c')
+  assert.equal(currentSecretPhrase(Date.UTC(2026, 9, 30)), 'paris wiener')
+})
+
+test('the secret volume is the stair enclosure at any height plus the basement below the bar floor', () => {
+  const pub = worldPub()!
+  assert.equal(inSecretVolume(pub, 104, 1.6, -146), true)
+  assert.equal(inSecretVolume(pub, 104, -1, -146), true)
+  assert.equal(inSecretVolume(pub, 90, BASEMENT_EYE_Y, -140), true)
+  assert.equal(inSecretVolume(pub, 90, 1.6, -140), false)
+  assert.equal(inSecretVolume(pub, 90, 0.7, -140), false)
+  assert.equal(inSecretVolume(pub, 90, 0.5, -140), true)
+  assert.equal(inSecretVolume(pub, 80, BASEMENT_EYE_Y, -140), false)
+  assert.equal(inSecretVolume({ ...pub, basement: null }, 90, BASEMENT_EYE_Y, -140), false)
+})
+
+test('the basement cannot be entered from outside without the word, but anyone inside can walk up and out', () => {
+  const me = fakePlayer('me', 90, -140)
+  const { room } = fakeRoom(me)
+  const now = 50_000
+  me.lastMoveAt = now - 500
+  assert.equal(moveRejection(room, me, 90.5, 1.6, -140, now), null)
+  assert.equal(moveRejection(room, me, 90.5, BASEMENT_EYE_Y, -140, now), 'secret_room_closed')
+
+  Object.assign(me, { x: 92, y: BASEMENT_EYE_Y, z: -146 })
+  assert.equal(moveRejection(room, me, 93, BASEMENT_EYE_Y, -146, now), null)
+  Object.assign(me, { x: 99.5, y: -0.5, z: -146 })
+  assert.equal(moveRejection(room, me, 100.5, 0.5, -146, now), null)
+  Object.assign(me, { x: 101, y: 1.6, z: -143.2 })
+  assert.equal(moveRejection(room, me, 101, 1.6, -142.5, now), null)
+})
+
+test('the bouncer pushes a gatecrasher back in front of him and speaks at most every 2 s', () => {
+  const me = fakePlayer('me', 100.5, -142.5)
+  const watcher = fakePlayer('watcher', 90, -135)
+  const { room, clients } = fakeRoom(me, watcher)
+  const [cMe, cWatcher] = clients
+  const now = 80_000
+
+  blockAtSecretDoor(room, cMe, me, now)
+  assert.deepEqual(received(cMe, 'position_correction'), [{ x: 99, y: 1.6, z: -142 }])
+  assert.deepEqual([me.x, me.y, me.z, me.lastMoveAt], [99, 1.6, -142, now])
+  const line = { sessionId: 'me', accountId: 1, line: 'Not without the word, pal.' }
+  assert.deepEqual(received(cWatcher, 'pub_bouncer_block'), [line])
+  assert.deepEqual(received(cMe, 'pub_bouncer_block'), [line])
+
+  blockAtSecretDoor(room, cMe, me, now + BOUNCER_BLOCK_COOLDOWN_MS - 1)
+  assert.equal(received(cMe, 'position_correction').length, 2)
+  assert.equal(received(cWatcher, 'pub_bouncer_block').length, 1)
+  blockAtSecretDoor(room, cMe, me, now + BOUNCER_BLOCK_COOLDOWN_MS)
+  assert.equal(received(cWatcher, 'pub_bouncer_block').length, 2)
+})
+
+test('the staff door stays open while someone is still down in the basement', () => {
+  const me = fakePlayer('me', 99, -141)
+  const below = fakePlayer('below', 90, -140)
+  below.y = BASEMENT_EYE_Y
+  const { room, clients } = fakeRoom(me, below)
+  const now = 100_000
+  onPubSecret(room, clients[0], { phrase: 'paris wiener' }, now)
+  closeSecretDoorWhenExpired(room, now + SECRET_OPEN_MS + 1)
+  assert.equal(room.pub.secretOpen, true)
+  below.y = 1.6
+  closeSecretDoorWhenExpired(room, now + SECRET_OPEN_MS + 2)
+  assert.equal(room.pub.secretOpen, false)
+})
+
+test('seats are out of reach through the floor between the bar and the basement', () => {
+  const up = fakePlayer('up', 90, -139)
+  const down = fakePlayer('down', 88, -133.5)
+  down.y = BASEMENT_EYE_Y
+  const { room, clients } = fakeRoom(up, down)
+  const [cUp, cDown] = clients
+  onSit(room, cUp, { seatId: 'sofa_01' })
+  onSit(room, cDown, { seatId: 'stool_01' })
+  assert.deepEqual(received(cUp, 'pub_error').map((e) => e.code), ['seat_too_far'])
+  assert.deepEqual(received(cDown, 'pub_error').map((e) => e.code), ['seat_too_far'])
+
+  Object.assign(down, { x: 90, z: -139 })
+  onSit(room, cDown, { seatId: 'sofa_01' })
+  assert.equal(down.seatId, 'sofa_01')
 })
 
 test('intoxication sobers up with the survival tick and is reported in the survival message', () => {

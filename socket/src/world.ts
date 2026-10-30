@@ -31,6 +31,11 @@ export interface PubSeat {
   yaw: number
 }
 
+export interface PubBasement extends Bounds {
+  /** Feet height of the basement floor. */
+  floorY: number
+}
+
 export interface WorldPub {
   bartender: Vec3
   bartenderYaw: number
@@ -40,7 +45,10 @@ export interface WorldPub {
   serve: Vec3
   bell: Vec3
   secretDoor: { position: Vec3, yaw: number }
+  /** XZ box of the stair enclosure behind the cellar door, ground floor (any y counts as inside). */
   secretRoom: Bounds
+  /** The hidden lounge below the bar, in world coords; null on manifests without a basement. */
+  basement: PubBasement | null
   seats: Map<string, PubSeat>
   darts: { board: Vec3, boardYaw: number, oche: Vec3 }
   shots: { plank: Vec3, yaw: number, player: Vec3 }
@@ -98,6 +106,12 @@ function parseBounds(raw: Json, what: string): Bounds {
   return { minX: raw.minX, maxX: raw.maxX, minZ: raw.minZ, maxZ: raw.maxZ }
 }
 
+function parseBasement(raw: Json): PubBasement | null {
+  if (raw === undefined || raw === null) return null
+  if (!Number.isFinite(raw?.floorY)) throw new Error(`world manifest: invalid pub basement floorY ${JSON.stringify(raw)}`)
+  return { ...parseBounds(raw, 'pub basement'), floorY: raw.floorY }
+}
+
 function parsePub(raw: Json): WorldPub | null {
   if (raw === undefined || raw === null) return null
   if (!Array.isArray(raw?.seats) || raw.seats.length === 0) throw new Error('world manifest: pub has no seats')
@@ -126,6 +140,7 @@ function parsePub(raw: Json): WorldPub | null {
       yaw: parseYaw(raw.secretDoor?.yaw, 'pub secretDoor yaw')
     },
     secretRoom: parseBounds(raw.secretRoom, 'pub secretRoom'),
+    basement: parseBasement(raw.basement),
     seats,
     darts: {
       board: parseVec3(raw.darts?.board, 'pub darts board'),
