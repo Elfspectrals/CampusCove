@@ -655,6 +655,102 @@
           ]
         }
       ]
+    },
+    {
+      "key": "mall",
+      "optional": true,
+      "bounds": {
+        "minX": -420,
+        "maxX": -144,
+        "minZ": -135,
+        "maxZ": 135
+      },
+      "modelUrl": "/assets/store/mall/mall.glb",
+      "collisionUrl": "/assets/store/mall/mall.collision.json",
+      "layoutUrl": "/assets/store/mall/mall.layout.json",
+      "animatedWater": true,
+      "gate": {
+        "x": -160,
+        "z": 0,
+        "width": 16
+      },
+      "buildings": [
+        {
+          "kind": "store",
+          "key": "northline",
+          "name": "Northline",
+          "position": [
+            -236,
+            0,
+            82.5
+          ],
+          "rotationY": 3.141592653589793,
+          "door": [
+            -236,
+            1.25,
+            78
+          ],
+          "footprint": [
+            32,
+            30.81
+          ],
+          "interiorOffset": [
+            0,
+            0.2,
+            -0.905
+          ]
+        },
+        {
+          "kind": "store",
+          "key": "hearth_hollow",
+          "name": "Hearth & Hollow",
+          "position": [
+            -250,
+            0,
+            -82.5
+          ],
+          "rotationY": 0,
+          "door": [
+            -250,
+            1.25,
+            -78
+          ],
+          "footprint": [
+            30,
+            30.81
+          ],
+          "interiorOffset": [
+            0,
+            0.2,
+            -0.905
+          ]
+        },
+        {
+          "kind": "store",
+          "key": "greencart",
+          "name": "GreenCart",
+          "position": [
+            -340,
+            0,
+            -82.5
+          ],
+          "rotationY": 0,
+          "door": [
+            -340,
+            1.25,
+            -78
+          ],
+          "footprint": [
+            40,
+            36.81
+          ],
+          "interiorOffset": [
+            0,
+            0.2,
+            -0.905
+          ]
+        }
+      ]
     }
   ],
   "fountains": [

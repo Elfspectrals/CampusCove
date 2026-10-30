@@ -320,3 +320,51 @@ docker restart campuscove-socket   # le socket relit world.manifest.json au dém
 La place est entourée d'une haie, ouverte seulement au nord (étang) et au sud (quartier d'affaires) : une nouvelle zone a besoin de sa propre ouverture dans la haie, comme `apply-pond.mjs` / `apply-work-district.mjs`.
 
 **Attention :** le côté est du parc de l'étang n'a qu'une clôture décorative sans collision (`PD_Fence*`, x ≈ 46). Tant que le monde s'arrêtait à x = 75,5 le mur de bordure fermait ce côté ; avec le monde de 1 km, on peut sortir par l'étang (vers x 48, z −37) et marcher dans la plaine vide autour. Une clôture avec collision est à ajouter avant d'ouvrir le jeu au public si on ne veut pas que les joueurs s'y promènent.
+
+## 13. Cove Parkview Mall (centre commercial)
+
+À l'ouest, au-delà de la Cove Clinic : un anneau de plazas (`x ∈ [-380, -160]`, `z ∈ [-90, 90]`) autour du Leisure Park,
+deux niveaux dans l'Entrance Plaza, Paradise Plaza et Wonderland Plaza, coulisses (couloirs de service, quai, entrepôt,
+salle de sécurité, toit-terrasse), parvis et chemin depuis le parvis de la clinique. Trois enseignes ouvertes en V1 :
+Northline (vêtements), Hearth & Hollow (déco), GreenCart (supermarché). Contrat détaillé : `docs/MALL.md`.
+
+### Scripts et sorties
+
+| Script | Sorties |
+|---|---|
+| `build_northline.py`, `build_hearth.py`, `build_greencart.py` | `store/<clé>/{interior,exterior}.glb`, `*.colsrc.glb`, `*.layout.json`, `preview.png` (intérieurs 10 600 / 11 000 / 22 000 triangles, coques ≤ 3 000) |
+| `build_house_lightmaps.py -- store northline hearth_hollow greencart` | `store/<clé>/lightmap.jpg` (headless, Cycles) ; les lampes sont les nœuds `Light_*` ou les mailles dont le matériau contient `LightPanel` |
+| `build_mall.py` (lit les `exterior.layout.json` des trois enseignes) | `store/mall/{mall.glb, mall.colsrc.glb, mall.layout.json}` (≈ 88 000 triangles, 1 370 boîtes `COL_Mall_*`, 124 cellules, 8 rampes) |
+| `front/scripts/apply-mall.mjs` | zone `mall` de `world.manifest.json` (`collisionUrl`, `layoutUrl`, porte d'entrée, les trois bâtiments `store`) |
+
+```bash
+B=/Applications/Blender.app/Contents/MacOS/Blender
+for s in build_northline build_hearth build_greencart build_mall; do
+  $B --background --factory-startup --python-expr "p='map-src/CampusCove/$s.py'; exec(open(p).read(), {'__file__': p})"
+done
+$B --background --factory-startup --python map-src/CampusCove/build_house_lightmaps.py -- store northline hearth_hollow greencart
+cd front && npm run assets:optimize -- store && node scripts/apply-mall.mjs
+docker restart campuscove-socket
+```
+
+**Attention :** `assets:optimize -- store` réécrit aussi `cove_home/`, `cove_threads/`, `park/` et `threads_site/` depuis
+`out/store/` ; si ces exports locaux ne sont pas à jour, restaurer les fichiers versionnés (`git checkout -- front/public/assets/store/{cove_home,cove_threads,park,threads_site}`).
+
+### Structure (`build_mall.py`)
+
+- Aile de 40 m : couloir de service 2,5 m + cellules extérieures 9,5 m (front à `z = ∓78` / `x = ∓368`) + allée 16 m +
+  cellules intérieures 12 m côté parc (front à `z = ∓62` / `x = -352` et `-188`). Les quatre coins sont des cours ouvertes.
+- Cellule : murs latéraux et mur du fond, pilastres, mur bas + vitrine (ou palissade « UNDER RENOVATION » avec
+  échafaudage), bandeau `TW_MallCat_<catégorie>` avec le nom en lettrage plat (`resolution_u = 1`, sans extrusion),
+  panneau « OPENING SOON » au rez. Passage « STAFF ONLY » = cellule de 1,6 m vers le couloir de service.
+- Étage : dalle `y` 5,6 → 6,0 sur les cellules + balcon de 5 m, vide de 6 m au milieu, garde-corps vitrés avec COL,
+  piliers, escalators = rampes `wedge()` de 1,4 × 10,4 m avec balustrades pleines (du sol au garde-corps, sinon
+  l'extracteur les perd), palier de 2 m ; `levels` / `stairs` **en coordonnées monde** dans `mall.layout.json`, lus par
+  le front (`buildingFloorAt`) et par `extract-collision.mjs` (bandes de marche L0 / L1 / L2).
+- Toits : dalle sur les rangées de cellules, fermes ouvertes au-dessus du vide ; dalle basse à 7,6 m sur North Plaza et
+  Food Court (avec panneaux lumineux émissifs), rien sur Al Fresca.
+- Parc : pelouse, allées en croix et anneau, tour de l'horloge, bassin, plaque d'égout, ~40 arbres (`blob()`
+  icosphères déformées), bancs, lampadaires, massifs.
+- Ancres : la façade de la coque (`walk_in_shell`) est au nu du front des cellules ; le mur extérieur, le couloir et les
+  cellules sont interrompus sur sa largeur et un retour de mur ferme l'anneau ; le corps dépasse hors de l'anneau sur
+  un tablier de service.

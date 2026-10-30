@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "key": "northline",
+  "name": "Northline",
+  "footprint": [
+    32.0,
+    30.81
+  ],
+  "footprintCenterZ": -10.905,
+  "doorLocal": [
+    0.0,
+    1.25,
+    4.5
+  ],
+  "interiorOffset": [
+    0.0,
+    0.2,
+    -0.905
+  ],
+  "collision": [
+    {
+      "cx": 0.0,
+      "cz": -10.905,
+      "hx": 16.2,
+      "hz": 15.605,
+      "hy": 2.75
+    }
+  ]
+}

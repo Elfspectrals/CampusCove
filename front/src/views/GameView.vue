@@ -3,6 +3,7 @@ import { computed, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import type { Room } from '@colyseus/sdk'
 import {
+  DEFAULT_SLOT_COLORS,
   wearModelsFromLoadout,
   defaultCosmeticColors,
   emptyCosmeticLoadout,
@@ -55,7 +56,7 @@ import { HOUSING_LOBBY_SPAWN } from '../game/gameRoomConstants'
 import { createGameScene, disposeGameScene, type GameScene } from '../game/gameScene'
 import { createFirstPersonArms } from '../game/firstPersonArms'
 import { createHeldItem } from '../game/heldItem'
-import { COVE_HOME, COVE_THREADS, findHouse, findStore, findWork } from '../game/assets/catalog'
+import { COVE_HOME, COVE_THREADS, GREENCART, HEARTH_HOLLOW, NORTHLINE, consumableModelUrl, decorModelUrl, findHouse, findStore, findWork } from '../game/assets/catalog'
 import type { GearSlot } from '../game/wardrobeSlots'
 import { createSfx } from '../game/sfx'
 import { createAmbientLoop } from '../game/ambientLoop'
@@ -178,14 +179,34 @@ const {
   onQuickWear: (slotIndex) => void wardrobeRef.value?.wearFromSlot(slotIndex),
 })
 
-// ---------------------------------------------------------------- Cove Home furniture store
+// ---------------------------------------------------------------- stores: Cove Home, the mall's Hearth & Hollow and GreenCart (click to buy), Cove Threads and Northline (basket)
 
 const inStore = computed(() => currentHouseKey.value === COVE_HOME.key)
 const furnitureStore = useFurnitureStore({ inStore: () => inStore.value, getCamera, myPosition })
-const { target: storeTarget, currentDepartment: storeDepartment } = furnitureStore
+const hearthStore = useFurnitureStore({
+  inStore: () => currentHouseKey.value === HEARTH_HOLLOW.key,
+  getCamera,
+  myPosition,
+  store: { interiorLayoutUrl: HEARTH_HOLLOW.interiorLayoutUrl, modelUrl: (display) => decorModelUrl(display.key) },
+})
+const greencartStore = useFurnitureStore({
+  inStore: () => currentHouseKey.value === GREENCART.key,
+  getCamera,
+  myPosition,
+  store: { interiorLayoutUrl: GREENCART.interiorLayoutUrl, modelUrl: (display) => consumableModelUrl(display.code) },
+})
+const furnitureStores = [
+  { key: COVE_HOME.key, brand: COVE_HOME.name, store: furnitureStore },
+  { key: HEARTH_HOLLOW.key, brand: HEARTH_HOLLOW.name, store: hearthStore },
+  { key: GREENCART.key, brand: GREENCART.name, store: greencartStore },
+]
+const activeFurniture = computed(() => furnitureStores.find((s) => s.key === currentHouseKey.value) ?? null)
+const storeBrand = computed(() => activeFurniture.value?.brand ?? COVE_HOME.name)
+const storeTarget = computed(() => activeFurniture.value?.store.target.value ?? null)
+const storeDepartment = computed(() => activeFurniture.value?.store.currentDepartment.value ?? null)
 const inThreads = computed(() => currentHouseKey.value === COVE_THREADS.key)
-const clothingStore = useClothingStore({
-  inStore: () => inThreads.value,
+const inNorthline = computed(() => currentHouseKey.value === NORTHLINE.key)
+const clothingDeps = {
   getCamera,
   canvasRef,
   myPosition,
@@ -194,7 +215,16 @@ const clothingStore = useClothingStore({
   getScene,
   getFpHands: () => game?.fpHands ?? null,
   myOutfit: () => myCosmetics.value,
+}
+const clothingStore = useClothingStore({ ...clothingDeps, inStore: () => inThreads.value })
+const northlineStore = useClothingStore({
+  ...clothingDeps,
+  inStore: () => inNorthline.value,
+  store: { key: NORTHLINE.key, interiorLayoutUrl: NORTHLINE.interiorLayoutUrl, clerkColors: { ...DEFAULT_SLOT_COLORS, top: '#1b1d22', bottom: '#f4f2ee' } },
 })
+const clothingStores = [clothingStore, northlineStore]
+const activeClothing = computed(() => (inThreads.value ? clothingStore : inNorthline.value ? northlineStore : null))
+const clothesTitle = computed(() => (inNorthline.value ? NORTHLINE.name : COVE_THREADS.name))
 const myCosmetics = shallowRef<CharacterCosmeticsState | null>(null)
 
 function onWardrobeChanged(state: CharacterCosmeticsState): void {
@@ -211,15 +241,13 @@ function onOutfit(change: { state: CharacterCosmeticsState; returnedCode: string
   if (change.returnedCode && change.toSlot !== null) placeInSlot(change.returnedCode, change.toSlot, change.wornCode)
   refreshOwnedItems()
 }
-const {
-  target: clothesTarget,
-  basket: clothesBasket,
-  basketTotal: clothesBasketTotal,
-  checkoutOpen: clothesCheckoutOpen,
-  paying: clothesPaying,
-  feedback: clothesFeedback,
-  counterPrompt: clothesCounterPrompt,
-} = clothingStore
+const clothesTarget = computed(() => activeClothing.value?.target.value ?? null)
+const clothesBasket = computed(() => activeClothing.value?.basket.value ?? [])
+const clothesBasketTotal = computed(() => activeClothing.value?.basketTotal.value ?? 0)
+const clothesCheckoutOpen = computed(() => clothingStores.some((s) => s.checkoutOpen.value))
+const clothesPaying = computed(() => activeClothing.value?.paying.value ?? false)
+const clothesFeedback = computed(() => activeClothing.value?.feedback.value ?? null)
+const clothesCounterPrompt = computed(() => activeClothing.value?.counterPrompt.value ?? null)
 watch(clothesCheckoutOpen, (open) => {
   if (!open && !document.pointerLockElement) requestPointerLock()
 })
@@ -318,7 +346,7 @@ const interactions = useInteractionTargets({
     const detail = target.coins !== null ? `${target.name} · ${target.coins} coins` : target.name
     return { position: target.tagPosition, detail }
   },
-  onStoreTarget: () => (clothesTarget.value ? clothingStore.toggleTarget() : openStorePurchase()),
+  onStoreTarget: () => (clothesTarget.value ? activeClothing.value?.toggleTarget() : openStorePurchase()),
 })
 const { doorPrompt } = interactions
 
@@ -353,7 +381,7 @@ const trade = useTrade({
   refreshInventory: () => refreshOwnedItems(),
   onCoins: (balance) => applyCachedBalanceAfterPurchase('coins', balance),
   onClothesChanged: () => {
-    void clothingStore.refreshOwned()
+    for (const store of clothingStores) void store.refreshOwned()
     void fetchCharacterCosmetics().then(onWardrobeChanged).catch(() => {
       /* the look catches up on the next window focus */
     })
@@ -397,7 +425,7 @@ const survival = useSurvival({
   onBelongingsLost: (clothes) => {
     refreshOwnedItems()
     if (!clothes) return
-    void clothingStore.refreshOwned()
+    for (const store of clothingStores) void store.refreshOwned()
     void fetchCharacterCosmetics().then(onWardrobeChanged).catch(() => {
       /* the look catches up on the next window focus */
     })
@@ -516,10 +544,14 @@ const environment = useRoomEnvironment({
     survival.onTownLoaded(manifest)
     clinic.onTownLoaded(manifest)
     houseFurniture.onTownReady()
-    const store = openHouseInterior(COVE_HOME.key)
-    if (store) void furnitureStore.attach(store)
-    const threads = openHouseInterior(COVE_THREADS.key)
-    if (threads) void clothingStore.attach(threads)
+    for (const { key, store } of furnitureStores) {
+      const interior = openHouseInterior(key)
+      if (interior) void store.attach(interior)
+    }
+    for (const [key, store] of [[COVE_THREADS.key, clothingStore], [NORTHLINE.key, northlineStore]] as const) {
+      const interior = openHouseInterior(key)
+      if (interior) void store.attach(interior)
+    }
   },
   onError: (message) => {
     roomMessage.value = message
@@ -544,7 +576,7 @@ function loadTown(): void {
  */
 function useAction(): void {
   if (housing.unlock()) arms?.use('key')
-  else void (interactions.tryInteract() || clothingStore.tryOpenCheckout() || cafe.tryOpen() || clinic.tryInteract() || survival.onPrimaryDown())
+  else void (interactions.tryInteract() || clothingStores.some((s) => s.tryOpenCheckout()) || cafe.tryOpen() || clinic.tryInteract() || survival.onPrimaryDown())
 }
 
 /** Interact and punch may be bound to keys or mouse buttons; returns true when `code` was one of them. */
@@ -640,8 +672,8 @@ const movement = useGameMovement({
     realtime.tickRemoteAvatars(dt)
     currentHouseKey.value = houseKeyAt(myPosition.x, myPosition.z)
     placement.tick(dt)
-    furnitureStore.update()
-    clothingStore.update(dt)
+    for (const { store } of furnitureStores) store.update()
+    for (const store of clothingStores) store.update(dt)
     threadsMusic.update(dt, inThreads.value)
     interactions.updatePrompts()
     houseKeys.updateKeyPrompt()
@@ -652,7 +684,7 @@ const movement = useGameMovement({
     survival.tick(dt)
     stamina.value = punch.staminaNow()
     cafe.updatePrompt()
-    clothingStore.updatePrompt()
+    for (const store of clothingStores) store.updatePrompt()
     clinic.updatePrompt()
     if (!doorSigns.group.parent) getScene()?.add(doorSigns.group)
   },
@@ -863,7 +895,7 @@ const crosshairClass = computed(() => {
     <GameHudToolbar
       :position-label="positionLabel"
       :show-graphics-toggle="!pointerLocked"
-      :place-label="inStore ? COVE_HOME.name : undefined"
+      :place-label="activeFurniture?.brand"
       :reduced-effects="reducedEffects"
       @toggle-reduced-effects="survival.toggleReducedEffects"
     />
@@ -920,14 +952,14 @@ const crosshairClass = computed(() => {
     </p>
     <GamePlacementHud :visible="placementPreviewActive" :hints="placementHudHints" />
     <div
-      v-if="inStore && storeDepartment && !inventoryOpen"
+      v-if="activeFurniture && storeDepartment && !inventoryOpen"
       class="cc-hud pointer-events-none absolute left-1/2 top-3 z-10 -translate-x-1/2 px-4 py-1.5 font-display text-xs uppercase tracking-[0.2em] text-fog"
     >
-      <span class="text-sun">Cove Home</span> · {{ storeDepartment }}
+      <span class="text-sun">{{ storeBrand }}</span> · {{ storeDepartment }}
     </div>
-    <GameStoreItemCard v-if="storeTarget && !inventoryOpen" :target="storeTarget" :feedback="storeFeedback" />
+    <GameStoreItemCard v-if="storeTarget && !inventoryOpen" :target="storeTarget" :feedback="storeFeedback" :brand="storeBrand" />
     <p
-      v-else-if="inStore && storeFeedback && !inventoryOpen"
+      v-else-if="activeFurniture && storeFeedback && !inventoryOpen"
       class="cc-hud pointer-events-none absolute bottom-24 right-3 z-20 max-w-xs px-3 py-2 text-xs font-bold"
       :class="storeFeedback.kind === 'success' ? 'text-mint' : 'text-coral'"
     >
@@ -1014,13 +1046,13 @@ const crosshairClass = computed(() => {
       {{ placementHelp }}
     </p>
     <div
-      v-if="inThreads && !inventoryOpen"
+      v-if="activeClothing && !inventoryOpen"
       class="cc-hud pointer-events-none absolute left-1/2 top-3 z-10 -translate-x-1/2 px-4 py-1.5 font-display text-xs uppercase tracking-[0.2em] text-fog"
     >
-      <span class="text-sun">Cove Threads</span> · Basket {{ clothesBasket.length }} · {{ clothesBasketTotal }} coins
+      <span class="text-sun">{{ clothesTitle }}</span> · Basket {{ clothesBasket.length }} · {{ clothesBasketTotal }} coins
     </div>
     <p
-      v-if="inThreads && clothesFeedback && !inventoryOpen && !clothesCheckoutOpen"
+      v-if="activeClothing && clothesFeedback && !inventoryOpen && !clothesCheckoutOpen"
       class="cc-hud pointer-events-none absolute bottom-24 right-3 z-20 max-w-xs px-3 py-2 text-xs font-bold"
       :class="clothesFeedback.kind === 'success' ? 'text-mint' : 'text-coral'"
     >
@@ -1028,14 +1060,14 @@ const crosshairClass = computed(() => {
     </p>
     <GameBasketCheckout
       v-if="clothesCheckoutOpen"
-      title="Cove Threads"
+      :title="clothesTitle"
       :items="clothesBasket"
       :total="clothesBasketTotal"
       :paying="clothesPaying"
       :feedback="clothesFeedback"
-      @pay="clothingStore.pay"
-      @remove="clothingStore.removeFromBasket"
-      @close="clothingStore.closeCheckout"
+      @pay="activeClothing?.pay()"
+      @remove="(item) => activeClothing?.removeFromBasket(item)"
+      @close="activeClothing?.closeCheckout()"
     />
     <p
       v-if="tradeIncoming && !watchMenuOpen"

@@ -185,10 +185,32 @@ export const COVE_THREADS = {
   musicUrl: `${ROOT}/music/cove_threads.mp3`,
 } as const
 
-export type StoreKey = typeof COVE_HOME.key | typeof COVE_THREADS.key
+/**
+ * The Cove Parkview Mall anchors (docs/MALL.md), west of the clinic: Northline sells clothes with the Cove Threads
+ * layout contract, Hearth & Hollow sells decor and GreenCart sells food with the Cove Home contract. Built by
+ * map-src/CampusCove/build_{northline,hearth,greencart}.py → public/assets/store/<key>/ (same files as cove_home).
+ */
+const mallStore = <K extends string>(key: K, name: string) => ({
+  key,
+  name,
+  exteriorUrl: `${ROOT}/store/${key}/exterior.glb`,
+  exteriorCollisionUrl: `${ROOT}/store/${key}/exterior.collision.json`,
+  interiorUrl: `${ROOT}/store/${key}/interior.glb`,
+  interiorCollisionUrl: `${ROOT}/store/${key}/interior.collision.json`,
+  interiorLightmapUrl: `${ROOT}/store/${key}/lightmap.jpg`,
+  interiorLayoutUrl: `${ROOT}/store/${key}/interior.layout.json`,
+}) as const
 
-export function findStore(key: string | null | undefined): typeof COVE_HOME | typeof COVE_THREADS | null {
-  return [COVE_HOME, COVE_THREADS].find((s) => s.key === key) ?? null
+export const NORTHLINE = mallStore('northline', 'Northline')
+export const HEARTH_HOLLOW = mallStore('hearth_hollow', 'Hearth & Hollow')
+export const GREENCART = mallStore('greencart', 'GreenCart')
+
+const STORES = [COVE_HOME, COVE_THREADS, NORTHLINE, HEARTH_HOLLOW, GREENCART] as const
+
+export type StoreKey = (typeof STORES)[number]['key']
+
+export function findStore(key: string | null | undefined): (typeof STORES)[number] | null {
+  return STORES.find((s) => s.key === key) ?? null
 }
 
 /** Survival (map-src/CampusCove/build_food_items.py): the first-person wrist watch and the town drinking fountain. */
@@ -209,6 +231,11 @@ export function consumablePreviewUrl(code: string): string {
   if (!match) throw new Error(`No preview folder for consumable code "${code}"`)
   const [prefix, folder] = match
   return `${ROOT}/items/${folder}/${code.slice(prefix.length)}/preview.png`
+}
+
+/** The model of a consumable, shown on GreenCart's shelves: next to its preview. */
+export function consumableModelUrl(code: string): string {
+  return consumablePreviewUrl(code).replace(/preview\.png$/, 'model.glb')
 }
 
 /** Furniture model shown in the store and placed in houses: public/assets/decor/<key>/model.glb. */

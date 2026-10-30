@@ -19,11 +19,21 @@ export interface StoreTarget {
 }
 
 export interface FurnitureStoreDeps {
-  /** True while the player is inside Cove Home. */
+  /** True while the player is inside this store. */
   inStore: () => boolean
   getCamera: () => THREE.Camera | undefined
   myPosition: { x: number; y: number; z: number }
+  /** The store this instance serves; Cove Home (decor models) when omitted. */
+  store?: FurnitureStoreSpec
 }
+
+interface FurnitureStoreSpec {
+  interiorLayoutUrl: string
+  /** GLB shown on the display spot (a decor piece, a food item...). */
+  modelUrl: (display: StoreDisplay) => string
+}
+
+const COVE_HOME_SPEC: FurnitureStoreSpec = { interiorLayoutUrl: COVE_HOME.interiorLayoutUrl, modelUrl: (display) => decorModelUrl(display.key) }
 
 /** Furthest (XZ, metres) an item can be picked from, and the widest angle off the crosshair. */
 const PICK_DISTANCE = 4.2
@@ -50,6 +60,7 @@ function prettyName(key: string): string {
  */
 export function useFurnitureStore(deps: FurnitureStoreDeps) {
   const loader = createGltfLoader()
+  const store = deps.store ?? COVE_HOME_SPEC
   const layout = shallowRef<StoreLayout | null>(null)
   const catalogByCode = shallowRef<Map<string, ShopItem>>(new Map())
   const target = shallowRef<StoreTarget | null>(null)
@@ -64,7 +75,7 @@ export function useFurnitureStore(deps: FurnitureStoreDeps) {
 
   async function loadLayout(): Promise<StoreLayout> {
     if (layout.value) return layout.value
-    const res = await fetch(COVE_HOME.interiorLayoutUrl)
+    const res = await fetch(store.interiorLayoutUrl)
     if (!res.ok) throw new Error(`Could not load the store layout (${res.status})`)
     layout.value = (await res.json()) as StoreLayout
     return layout.value
@@ -95,7 +106,7 @@ export function useFurnitureStore(deps: FurnitureStoreDeps) {
 
   async function placeModel(group: THREE.Group, display: StoreDisplay): Promise<void> {
     try {
-      const gltf = await loader.loadAsync(decorModelUrl(display.key))
+      const gltf = await loader.loadAsync(store.modelUrl(display))
       const model = gltf.scene
       model.name = `StoreDisplay_${display.key}`
       model.position.fromArray(display.position)

@@ -1,0 +1,855 @@
+{
+  "version": 2,
+  "key": "northline",
+  "name": "Northline",
+  "spawn": [
+    0.0,
+    1.6,
+    3.7
+  ],
+  "exit": {
+    "position": [
+      0.0,
+      4.75
+    ],
+    "radius": 1.4
+  },
+  "bounds": {
+    "minX": -16.0,
+    "maxX": 16.0,
+    "minZ": -25.0,
+    "maxZ": 5.0
+  },
+  "counter": [
+    9.5,
+    1.15,
+    2.2
+  ],
+  "clerk": {
+    "position": [
+      8.2,
+      0.0,
+      -0.05
+    ],
+    "yaw": 0.0
+  },
+  "departments": [
+    {
+      "id": "top",
+      "label": "TOPS",
+      "sign": [
+        -10.0,
+        3.5,
+        -24.94
+      ]
+    },
+    {
+      "id": "bottom",
+      "label": "BOTTOMS",
+      "sign": [
+        10.0,
+        3.5,
+        -24.94
+      ]
+    },
+    {
+      "id": "shoes",
+      "label": "FOOTWEAR",
+      "sign": [
+        -15.94,
+        3.5,
+        -16.5
+      ]
+    },
+    {
+      "id": "hair",
+      "label": "HAIR STUDIO",
+      "sign": [
+        15.94,
+        3.5,
+        -18.6
+      ]
+    },
+    {
+      "id": "head_accessory",
+      "label": "ACCESSORIES",
+      "sign": [
+        15.94,
+        3.5,
+        -9.6
+      ]
+    }
+  ],
+  "displays": [
+    {
+      "slot": "top",
+      "key": "tee",
+      "department": "top",
+      "position": [
+        -12.5,
+        0.263,
+        -24.58
+      ],
+      "yaw": 0.0,
+      "center": [
+        -12.5,
+        1.5,
+        -24.58
+      ],
+      "tag": {
+        "position": [
+          -12.5,
+          0.72,
+          -24.9
+        ],
+        "yaw": 0.0
+      }
+    },
+    {
+      "slot": "top",
+      "key": "tank",
+      "department": "top",
+      "position": [
+        -11.25,
+        0.263,
+        -24.58
+      ],
+      "yaw": 0.0,
+      "center": [
+        -11.25,
+        1.5,
+        -24.58
+      ],
+      "tag": {
+        "position": [
+          -11.25,
+          0.72,
+          -24.9
+        ],
+        "yaw": 0.0
+      }
+    },
+    {
+      "slot": "top",
+      "key": "hoodie",
+      "department": "top",
+      "position": [
+        -10.0,
+        0.263,
+        -24.58
+      ],
+      "yaw": 0.0,
+      "center": [
+        -10.0,
+        1.5,
+        -24.58
+      ],
+      "tag": {
+        "position": [
+          -10.0,
+          0.72,
+          -24.9
+        ],
+        "yaw": 0.0
+      }
+    },
+    {
+      "slot": "top",
+      "key": "varsity",
+      "department": "top",
+      "position": [
+        -8.75,
+        0.263,
+        -24.58
+      ],
+      "yaw": 0.0,
+      "center": [
+        -8.75,
+        1.5,
+        -24.58
+      ],
+      "tag": {
+        "position": [
+          -8.75,
+          0.72,
+          -24.9
+        ],
+        "yaw": 0.0
+      }
+    },
+    {
+      "slot": "top",
+      "key": "sweater",
+      "department": "top",
+      "position": [
+        -7.5,
+        0.263,
+        -24.58
+      ],
+      "yaw": 0.0,
+      "center": [
+        -7.5,
+        1.5,
+        -24.58
+      ],
+      "tag": {
+        "position": [
+          -7.5,
+          0.72,
+          -24.9
+        ],
+        "yaw": 0.0
+      }
+    },
+    {
+      "slot": "bottom",
+      "key": "jeans",
+      "department": "bottom",
+      "position": [
+        7.5,
+        0.878,
+        -24.58
+      ],
+      "yaw": 0.0,
+      "center": [
+        7.5,
+        1.5,
+        -24.58
+      ],
+      "tag": {
+        "position": [
+          7.5,
+          0.72,
+          -24.9
+        ],
+        "yaw": 0.0
+      }
+    },
+    {
+      "slot": "bottom",
+      "key": "joggers",
+      "department": "bottom",
+      "position": [
+        8.75,
+        0.878,
+        -24.58
+      ],
+      "yaw": 0.0,
+      "center": [
+        8.75,
+        1.5,
+        -24.58
+      ],
+      "tag": {
+        "position": [
+          8.75,
+          0.72,
+          -24.9
+        ],
+        "yaw": 0.0
+      }
+    },
+    {
+      "slot": "bottom",
+      "key": "cargo",
+      "department": "bottom",
+      "position": [
+        10.0,
+        0.878,
+        -24.58
+      ],
+      "yaw": 0.0,
+      "center": [
+        10.0,
+        1.5,
+        -24.58
+      ],
+      "tag": {
+        "position": [
+          10.0,
+          0.72,
+          -24.9
+        ],
+        "yaw": 0.0
+      }
+    },
+    {
+      "slot": "bottom",
+      "key": "shorts",
+      "department": "bottom",
+      "position": [
+        11.25,
+        0.878,
+        -24.58
+      ],
+      "yaw": 0.0,
+      "center": [
+        11.25,
+        1.5,
+        -24.58
+      ],
+      "tag": {
+        "position": [
+          11.25,
+          0.72,
+          -24.9
+        ],
+        "yaw": 0.0
+      }
+    },
+    {
+      "slot": "bottom",
+      "key": "skirt",
+      "department": "bottom",
+      "position": [
+        12.5,
+        0.878,
+        -24.58
+      ],
+      "yaw": 0.0,
+      "center": [
+        12.5,
+        1.5,
+        -24.58
+      ],
+      "tag": {
+        "position": [
+          12.5,
+          0.72,
+          -24.9
+        ],
+        "yaw": 0.0
+      }
+    },
+    {
+      "slot": "shoes",
+      "key": "sneakers",
+      "department": "shoes",
+      "position": [
+        -15.75,
+        1.041,
+        -19.0
+      ],
+      "yaw": 1.5708,
+      "center": [
+        -15.75,
+        1.17,
+        -19.0
+      ],
+      "tag": {
+        "position": [
+          -15.9,
+          0.72,
+          -19.0
+        ],
+        "yaw": 1.5708
+      }
+    },
+    {
+      "slot": "shoes",
+      "key": "high_tops",
+      "department": "shoes",
+      "position": [
+        -15.75,
+        1.041,
+        -17.75
+      ],
+      "yaw": 1.5708,
+      "center": [
+        -15.75,
+        1.17,
+        -17.75
+      ],
+      "tag": {
+        "position": [
+          -15.9,
+          0.72,
+          -17.75
+        ],
+        "yaw": 1.5708
+      }
+    },
+    {
+      "slot": "shoes",
+      "key": "boots",
+      "department": "shoes",
+      "position": [
+        -15.75,
+        1.041,
+        -16.5
+      ],
+      "yaw": 1.5708,
+      "center": [
+        -15.75,
+        1.17,
+        -16.5
+      ],
+      "tag": {
+        "position": [
+          -15.9,
+          0.72,
+          -16.5
+        ],
+        "yaw": 1.5708
+      }
+    },
+    {
+      "slot": "shoes",
+      "key": "slides",
+      "department": "shoes",
+      "position": [
+        -15.75,
+        1.041,
+        -15.25
+      ],
+      "yaw": 1.5708,
+      "center": [
+        -15.75,
+        1.17,
+        -15.25
+      ],
+      "tag": {
+        "position": [
+          -15.9,
+          0.72,
+          -15.25
+        ],
+        "yaw": 1.5708
+      }
+    },
+    {
+      "slot": "shoes",
+      "key": "runners",
+      "department": "shoes",
+      "position": [
+        -15.75,
+        1.041,
+        -14.0
+      ],
+      "yaw": 1.5708,
+      "center": [
+        -15.75,
+        1.17,
+        -14.0
+      ],
+      "tag": {
+        "position": [
+          -15.9,
+          0.72,
+          -14.0
+        ],
+        "yaw": 1.5708
+      }
+    },
+    {
+      "slot": "hair",
+      "key": "short",
+      "department": "hair",
+      "position": [
+        15.45,
+        -0.092,
+        -21.0
+      ],
+      "yaw": -1.5708,
+      "center": [
+        15.45,
+        1.55,
+        -21.0
+      ],
+      "tag": {
+        "position": [
+          15.03,
+          0.62,
+          -21.0
+        ],
+        "yaw": -1.5708
+      }
+    },
+    {
+      "slot": "hair",
+      "key": "long",
+      "department": "hair",
+      "position": [
+        15.45,
+        -0.092,
+        -19.8
+      ],
+      "yaw": -1.5708,
+      "center": [
+        15.45,
+        1.55,
+        -19.8
+      ],
+      "tag": {
+        "position": [
+          15.03,
+          0.62,
+          -19.8
+        ],
+        "yaw": -1.5708
+      }
+    },
+    {
+      "slot": "hair",
+      "key": "curly",
+      "department": "hair",
+      "position": [
+        15.45,
+        -0.092,
+        -18.6
+      ],
+      "yaw": -1.5708,
+      "center": [
+        15.45,
+        1.55,
+        -18.6
+      ],
+      "tag": {
+        "position": [
+          15.03,
+          0.62,
+          -18.6
+        ],
+        "yaw": -1.5708
+      }
+    },
+    {
+      "slot": "hair",
+      "key": "buzz",
+      "department": "hair",
+      "position": [
+        15.45,
+        -0.092,
+        -17.4
+      ],
+      "yaw": -1.5708,
+      "center": [
+        15.45,
+        1.55,
+        -17.4
+      ],
+      "tag": {
+        "position": [
+          15.03,
+          0.62,
+          -17.4
+        ],
+        "yaw": -1.5708
+      }
+    },
+    {
+      "slot": "hair",
+      "key": "ponytail",
+      "department": "hair",
+      "position": [
+        15.45,
+        -0.092,
+        -16.2
+      ],
+      "yaw": -1.5708,
+      "center": [
+        15.45,
+        1.55,
+        -16.2
+      ],
+      "tag": {
+        "position": [
+          15.03,
+          0.62,
+          -16.2
+        ],
+        "yaw": -1.5708
+      }
+    },
+    {
+      "slot": "head_accessory",
+      "key": "gamer",
+      "department": "head_accessory",
+      "position": [
+        15.45,
+        -0.092,
+        -12.0
+      ],
+      "yaw": -1.5708,
+      "center": [
+        15.45,
+        1.55,
+        -12.0
+      ],
+      "tag": {
+        "position": [
+          15.03,
+          0.62,
+          -12.0
+        ],
+        "yaw": -1.5708
+      }
+    },
+    {
+      "slot": "head_accessory",
+      "key": "studio",
+      "department": "head_accessory",
+      "position": [
+        15.45,
+        -0.092,
+        -10.8
+      ],
+      "yaw": -1.5708,
+      "center": [
+        15.45,
+        1.55,
+        -10.8
+      ],
+      "tag": {
+        "position": [
+          15.03,
+          0.62,
+          -10.8
+        ],
+        "yaw": -1.5708
+      }
+    },
+    {
+      "slot": "head_accessory",
+      "key": "cat_ear",
+      "department": "head_accessory",
+      "position": [
+        15.45,
+        -0.092,
+        -9.6
+      ],
+      "yaw": -1.5708,
+      "center": [
+        15.45,
+        1.55,
+        -9.6
+      ],
+      "tag": {
+        "position": [
+          15.03,
+          0.62,
+          -9.6
+        ],
+        "yaw": -1.5708
+      }
+    },
+    {
+      "slot": "head_accessory",
+      "key": "neon",
+      "department": "head_accessory",
+      "position": [
+        15.45,
+        -0.092,
+        -8.4
+      ],
+      "yaw": -1.5708,
+      "center": [
+        15.45,
+        1.55,
+        -8.4
+      ],
+      "tag": {
+        "position": [
+          15.03,
+          0.62,
+          -8.4
+        ],
+        "yaw": -1.5708
+      }
+    },
+    {
+      "slot": "head_accessory",
+      "key": "pilot",
+      "department": "head_accessory",
+      "position": [
+        15.45,
+        -0.092,
+        -7.2
+      ],
+      "yaw": -1.5708,
+      "center": [
+        15.45,
+        1.55,
+        -7.2
+      ],
+      "tag": {
+        "position": [
+          15.03,
+          0.62,
+          -7.2
+        ],
+        "yaw": -1.5708
+      }
+    }
+  ],
+  "outfits": [
+    {
+      "pieces": [
+        {
+          "slot": "hair",
+          "key": "long"
+        },
+        {
+          "slot": "top",
+          "key": "sweater"
+        },
+        {
+          "slot": "bottom",
+          "key": "skirt"
+        },
+        {
+          "slot": "shoes",
+          "key": "boots"
+        }
+      ],
+      "position": [
+        -9.593,
+        0.14,
+        0.483
+      ],
+      "yaw": 0.1745,
+      "center": [
+        -9.593,
+        1.1,
+        0.483
+      ],
+      "tag": {
+        "position": [
+          -9.593,
+          0.4,
+          1.233
+        ],
+        "yaw": 0.0
+      }
+    },
+    {
+      "pieces": [
+        {
+          "slot": "hair",
+          "key": "short"
+        },
+        {
+          "slot": "top",
+          "key": "varsity"
+        },
+        {
+          "slot": "bottom",
+          "key": "jeans"
+        },
+        {
+          "slot": "shoes",
+          "key": "high_tops"
+        }
+      ],
+      "position": [
+        -8.891,
+        0.14,
+        0.587
+      ],
+      "yaw": 0.0524,
+      "center": [
+        -8.891,
+        1.1,
+        0.587
+      ],
+      "tag": {
+        "position": [
+          -8.891,
+          0.4,
+          1.337
+        ],
+        "yaw": 0.0
+      }
+    },
+    {
+      "pieces": [
+        {
+          "slot": "head_accessory",
+          "key": "studio"
+        },
+        {
+          "slot": "top",
+          "key": "hoodie"
+        },
+        {
+          "slot": "bottom",
+          "key": "cargo"
+        },
+        {
+          "slot": "shoes",
+          "key": "runners"
+        }
+      ],
+      "position": [
+        -8.106,
+        0.14,
+        0.586
+      ],
+      "yaw": -0.0698,
+      "center": [
+        -8.106,
+        1.1,
+        0.586
+      ],
+      "tag": {
+        "position": [
+          -8.106,
+          0.4,
+          1.336
+        ],
+        "yaw": 0.0
+      }
+    },
+    {
+      "pieces": [
+        {
+          "slot": "hair",
+          "key": "buzz"
+        },
+        {
+          "slot": "top",
+          "key": "tee"
+        },
+        {
+          "slot": "bottom",
+          "key": "shorts"
+        },
+        {
+          "slot": "shoes",
+          "key": "slides"
+        }
+      ],
+      "position": [
+        -7.405,
+        0.14,
+        0.482
+      ],
+      "yaw": -0.192,
+      "center": [
+        -7.405,
+        1.1,
+        0.482
+      ],
+      "tag": {
+        "position": [
+          -7.405,
+          0.4,
+          1.232
+        ],
+        "yaw": 0.0
+      }
+    }
+  ],
+  "mirror": {
+    "position": [
+      -15.91,
+      1.27,
+      -8.5
+    ],
+    "yaw": 1.5708,
+    "size": [
+      1.4,
+      2.2
+    ]
+  }
+}

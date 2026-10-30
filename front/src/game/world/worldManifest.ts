@@ -61,6 +61,8 @@ export interface WorldZone {
   modelUrl: string
   optional?: boolean
   collisionUrl?: string
+  /** Walkable levels and stairs of the zone's own structure, in world coordinates (the mall's balconies and escalators). */
+  layoutUrl?: string
   heightmapUrl?: string
   animatedWater?: boolean
   buildings?: Building[]

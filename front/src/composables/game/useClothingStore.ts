@@ -1,7 +1,7 @@
 import { computed, ref, shallowRef, type Ref } from 'vue'
 import * as THREE from 'three'
 import { Reflector } from 'three/examples/jsm/objects/Reflector.js'
-import { DEFAULT_SLOT_COLORS, wearModelsFromLoadout, type CharacterCosmeticsState } from '../../api/characterCosmetics'
+import { DEFAULT_SLOT_COLORS, wearModelsFromLoadout, type CharacterCosmeticsState, type CosmeticColors } from '../../api/characterCosmetics'
 import { fetchAccountInventory } from '../../api/inventory'
 import { checkoutShopBasket, fetchItemShopCatalog, type ShopItem } from '../../api/itemShop'
 import { disposeObject3D } from '../../avatar/compositeAvatar'
@@ -72,6 +72,15 @@ export interface ClothingStoreDeps {
   getScene: () => THREE.Scene | undefined
   getFpHands: () => THREE.Object3D | null
   myOutfit: () => CharacterCosmeticsState | null
+  /** The store this instance serves; Cove Threads when omitted. */
+  store?: ClothingStoreSpec
+}
+
+interface ClothingStoreSpec {
+  key: string
+  interiorLayoutUrl: string
+  /** What the clerk wears: the brand colours. */
+  clerkColors: CosmeticColors
 }
 
 interface Runtime {
@@ -140,6 +149,7 @@ function hideBody(character: THREE.Object3D): void {
 }
 
 export function useClothingStore(deps: ClothingStoreDeps) {
+  const store: ClothingStoreSpec = deps.store ?? { key: COVE_THREADS.key, interiorLayoutUrl: COVE_THREADS.interiorLayoutUrl, clerkColors: CLERK_COLORS }
   const layout = shallowRef<ThreadsLayout | null>(null)
   const itemByModel = shallowRef<Map<string, ShopItem>>(new Map())
   const owned = ref<Set<number>>(new Set())
@@ -236,8 +246,8 @@ export function useClothingStore(deps: ClothingStoreDeps) {
   async function attach(group: THREE.Group): Promise<void> {
     if (attachedTo === group) return
     attachedTo = group
-    const res = await fetch(COVE_THREADS.interiorLayoutUrl)
-    if (!res.ok) throw new Error(`Could not load the Cove Threads layout (${res.status})`)
+    const res = await fetch(store.interiorLayoutUrl)
+    if (!res.ok) throw new Error(`Could not load the ${store.key} layout (${res.status})`)
     const loaded = (await res.json()) as ThreadsLayout
     layout.value = loaded
     await refreshCatalogAndOwned()
@@ -276,7 +286,7 @@ export function useClothingStore(deps: ClothingStoreDeps) {
 
   /** The shop assistant behind the till, like the clinic nurse: rings up the basket, blocks the way and watches customers. */
   async function addClerk(group: THREE.Group, displays: THREE.Group, spot: ThreadsLayout['clerk']): Promise<void> {
-    const character = await createModularCharacter(outfitModels(CLERK_OUTFIT), CLERK_COLORS, DEFAULT_SLOT_COLORS)
+    const character = await createModularCharacter(outfitModels(CLERK_OUTFIT), store.clerkColors, DEFAULT_SLOT_COLORS)
     brightenForShop(character)
     character.name = 'ThreadsClerk'
     character.position.fromArray(spot.position)
@@ -288,7 +298,7 @@ export function useClothingStore(deps: ClothingStoreDeps) {
     clerkHead.set(spot.position[0], spot.position[1] + CLERK_HEAD_HEIGHT, spot.position[2]).applyMatrix4(group.matrixWorld)
     const feet = new THREE.Vector3().fromArray(spot.position).applyMatrix4(group.matrixWorld)
     const q = group.getWorldQuaternion(new THREE.Quaternion())
-    setPropBlocker('threads_clerk', { cx: feet.x, cy: feet.y + 0.9, cz: feet.z, hx: 0.3, hy: 0.9, hz: 0.3, qx: q.x, qy: q.y, qz: q.z, qw: q.w })
+    setPropBlocker(`${store.key}_clerk`, { cx: feet.x, cy: feet.y + 0.9, cz: feet.z, hx: 0.3, hy: 0.9, hz: 0.3, qx: q.x, qy: q.y, qz: q.z, qw: q.w })
   }
 
   function updateClerk(dt: number, inside: boolean): void {
@@ -355,7 +365,7 @@ export function useClothingStore(deps: ClothingStoreDeps) {
   }
 
   function counterPosition(): THREE.Vector3 | null {
-    const interior = openHouseInterior(COVE_THREADS.key)
+    const interior = openHouseInterior(store.key)
     if (!interior || !layout.value) return null
     interior.updateWorldMatrix(true, false)
     return counter.fromArray(layout.value.counter).applyMatrix4(interior.matrixWorld)

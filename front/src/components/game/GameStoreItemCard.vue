@@ -8,6 +8,8 @@ const props = defineProps<{
   target: StoreTarget
   /** Result of the last purchase in the store ("Added to your inventory", or an error). */
   feedback: { kind: 'success' | 'error'; text: string } | null
+  /** Store name in the header; Cove Home when omitted. */
+  brand?: string
 }>()
 
 const previewSrc = computed(() => props.target.item?.preview_image ?? `/assets/decor/${props.target.display.key}/preview.png`)
@@ -25,7 +27,7 @@ const rarity = computed(() => (props.target.item ? itemRarity(props.target.item)
     aria-live="polite"
   >
     <div class="flex items-center justify-between bg-sun px-3 py-1.5 text-ink-950">
-      <span class="font-display text-[11px] uppercase tracking-[0.18em]">Cove Home · {{ target.departmentLabel }}</span>
+      <span class="font-display text-[11px] uppercase tracking-[0.18em]">{{ brand ?? 'Cove Home' }} · {{ target.departmentLabel }}</span>
       <span v-if="rarity" class="text-[10px] font-black uppercase tracking-widest opacity-70">{{ rarity }}</span>
     </div>
     <div class="flex gap-3 p-3">

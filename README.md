@@ -63,6 +63,7 @@ Tous les assets du jeu sont construits dans Blender (via le MCP Blender) par les
 | `skins/<clé>/` | 8 skins : `campus_classic` (gratuit, par défaut), `street_runner`, `scholar`, `explorer`, `night_owl` (low-poly statiques) + 3 skins premium semi-réalistes riggés avec clips `Idle`/`Walk`/`Run` : `neon_ronin`, `street_luxe`, `astral_oracle` (sources Blender dans `front/scripts/skins/`) (`model.glb`, `preview.png`) |
 | `decor/<clé>/` | 50 meubles / objets de déco (`model.glb`, `preview.png`) : les 5 d'origine (`wooden_chair`, `dining_table`, `floor_lamp`, `potted_plant`, `bookshelf`, `build_decor.py`) + la gamme Cove Home (45 pièces, `build_furniture.py`, liste `FURNITURE`) |
 | `store/` | Magasin de meubles **Cove Home** (style IKEA) au bout est de la place du quartier d'affaires : `cove_home/` (`exterior.glb`, `interior.glb`, collisions, `interior.layout.json` = 9 rayons + 50 présentoirs avec code boutique et position de l'étiquette prix), `park/` (parvis, haies, totem, `park.layout.json`) |
+| `store/mall/`, `store/{northline,hearth_hollow,greencart}/` | **Cove Parkview Mall**, le centre commercial à l'ouest de la clinique (`mall.glb`, `mall.collision.json`, `mall.layout.json` = plazas, 124 cellules avec catégorie et statut, niveaux et escalators) et ses trois enseignes ouvertes : Northline (vêtements), Hearth & Hollow (déco), GreenCart (supermarché). Voir `docs/MALL.md` et `docs/ASSETS_STYLE_GUIDE.md` §13 |
 | `houses/house_01…10/` | 10 maisons : `exterior.glb`, `interior.glb` (un intérieur par maison), `interior.collision.json`, `preview.png` |
 | `work/<clé>/` | Quartier d'affaires : `tech_hub` (dev), `boutique` (commerce), `cafe` (resto) — `exterior.glb`, `interior.glb`, collisions, `interior.layout.json` (postes de travail), `preview.png` ; `work/district/` = décor du quartier. Voir `docs/ASSETS_STYLE_GUIDE.md` §8 |
 | `town/` | La mini-ville (`town.glb`, `town.collision.json`, `town.layout.json` : spawn, position et porte de chaque maison) |
@@ -75,6 +76,7 @@ Reconstruire : lancer `build_skins.py`, `build_decor.py`, `build_furniture.py`, 
 ```bash
 make assets-optimize      # compression Draco/WebP + collisions (COL_* → *.collision.json)
 make store-apply          # magasin Cove Home → town.collision.json + world.manifest.json
+cd front && node scripts/apply-mall.mjs   # centre commercial → zone `mall` de world.manifest.json
 make newnation-optimize   # carte New Nation
 make seed-shop            # les 50 meubles (codes decor_*) dans le catalogue
 ```

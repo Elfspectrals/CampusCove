@@ -1,0 +1,752 @@
+{
+  "version": 1,
+  "key": "hearth_hollow",
+  "name": "Hearth & Hollow",
+  "spawn": [
+    0.0,
+    1.6,
+    3.7
+  ],
+  "exit": {
+    "position": [
+      0.0,
+      4.75
+    ],
+    "radius": 1.4
+  },
+  "bounds": {
+    "minX": -15.0,
+    "maxX": 15.0,
+    "minZ": -25.0,
+    "maxZ": 5.0
+  },
+  "departments": [
+    {
+      "id": "living",
+      "label": "LIVING",
+      "color": "#c47c4c",
+      "sign": [
+        -8.5,
+        3.3,
+        -9.0
+      ]
+    },
+    {
+      "id": "light_plants",
+      "label": "LIGHT & PLANTS",
+      "color": "#7fb24a",
+      "sign": [
+        0.0,
+        3.3,
+        -3.0
+      ]
+    },
+    {
+      "id": "shelving",
+      "label": "SHELVES & MIRRORS",
+      "color": "#9b7653",
+      "sign": [
+        8.5,
+        3.3,
+        -9.0
+      ]
+    },
+    {
+      "id": "kitchen_bath",
+      "label": "KITCHEN & BATH",
+      "color": "#3aa89a",
+      "sign": [
+        -7.0,
+        3.3,
+        -19.0
+      ]
+    },
+    {
+      "id": "outdoor",
+      "label": "OUTDOOR",
+      "color": "#5b8fd9",
+      "sign": [
+        7.0,
+        3.3,
+        -19.0
+      ]
+    }
+  ],
+  "displays": [
+    {
+      "key": "armchair_lounge",
+      "code": "decor_armchair_lounge",
+      "department": "living",
+      "description": "Mustard lounge armchair on oak legs.",
+      "position": [
+        -8.5,
+        0.0,
+        -6.4
+      ],
+      "yaw": 6.2832,
+      "size": [
+        0.88,
+        0.96,
+        0.73
+      ],
+      "tag": {
+        "position": [
+          -8.5,
+          1.32,
+          -5.66
+        ],
+        "yaw": 6.2832
+      }
+    },
+    {
+      "key": "coffee_table_round",
+      "code": "decor_coffee_table_round",
+      "department": "living",
+      "description": "Round oak coffee table with a lower shelf.",
+      "position": [
+        -11.271,
+        0.0,
+        -7.7
+      ],
+      "yaw": 5.151,
+      "size": [
+        0.9,
+        0.53,
+        0.9
+      ],
+      "tag": {
+        "position": [
+          -11.8,
+          1.32,
+          -7.094
+        ],
+        "yaw": 5.236
+      }
+    },
+    {
+      "key": "pouf_knit",
+      "code": "decor_pouf_knit",
+      "department": "living",
+      "description": "Chunky knitted pouf, cream.",
+      "position": [
+        -11.271,
+        0.0,
+        -10.3
+      ],
+      "yaw": 4.2738,
+      "size": [
+        0.6,
+        0.43,
+        0.6
+      ],
+      "tag": {
+        "position": [
+          -11.671,
+          1.32,
+          -10.831
+        ],
+        "yaw": 4.1888
+      }
+    },
+    {
+      "key": "rug_round",
+      "code": "decor_rug_round",
+      "department": "living",
+      "description": "Round sunny rug, 1.8 m.",
+      "position": [
+        -8.5,
+        0.0,
+        -11.6
+      ],
+      "yaw": 3.1416,
+      "size": [
+        1.8,
+        0.02,
+        1.8
+      ],
+      "tag": {
+        "position": [
+          -8.5,
+          1.32,
+          -12.8
+        ],
+        "yaw": 3.1416
+      }
+    },
+    {
+      "key": "side_table",
+      "code": "decor_side_table",
+      "department": "living",
+      "description": "Small white side table with a drawer.",
+      "position": [
+        -5.729,
+        0.4,
+        -10.3
+      ],
+      "yaw": 2.0094,
+      "size": [
+        0.45,
+        0.69,
+        0.45
+      ],
+      "tag": {
+        "position": [
+          -5.394,
+          1.32,
+          -10.793
+        ],
+        "yaw": 2.0944
+      }
+    },
+    {
+      "key": "floor_lamp_arc",
+      "code": "decor_floor_lamp_arc",
+      "department": "living",
+      "description": "Brass arc lamp that reaches over the sofa.",
+      "position": [
+        -5.729,
+        0.0,
+        -7.7
+      ],
+      "yaw": 1.1322,
+      "size": [
+        1.42,
+        2.22,
+        0.48
+      ],
+      "tag": {
+        "position": [
+          -4.974,
+          1.32,
+          -6.964
+        ],
+        "yaw": 1.0472
+      }
+    },
+    {
+      "key": "desk_lamp",
+      "code": "decor_desk_lamp",
+      "department": "light_plants",
+      "description": "Adjustable work lamp.",
+      "position": [
+        -0.7,
+        0.78,
+        -3.0
+      ],
+      "yaw": 0.0,
+      "size": [
+        0.43,
+        0.47,
+        0.18
+      ],
+      "tag": {
+        "position": [
+          -0.7,
+          1.22,
+          -2.25
+        ],
+        "yaw": 0.0
+      }
+    },
+    {
+      "key": "cactus",
+      "code": "decor_cactus",
+      "department": "light_plants",
+      "description": "Easy-going cactus in a pot.",
+      "position": [
+        0.0,
+        0.78,
+        -3.0
+      ],
+      "yaw": 0.0,
+      "size": [
+        0.28,
+        0.74,
+        0.28
+      ],
+      "tag": {
+        "position": [
+          0.0,
+          1.22,
+          -2.25
+        ],
+        "yaw": 0.0
+      }
+    },
+    {
+      "key": "vase_tulips",
+      "code": "decor_vase_tulips",
+      "department": "light_plants",
+      "description": "Glass vase with tulips.",
+      "position": [
+        0.7,
+        0.78,
+        -3.0
+      ],
+      "yaw": 0.0,
+      "size": [
+        0.18,
+        0.57,
+        0.18
+      ],
+      "tag": {
+        "position": [
+          0.7,
+          1.22,
+          -2.25
+        ],
+        "yaw": 0.0
+      }
+    },
+    {
+      "key": "floor_lamp",
+      "code": "lamp_study",
+      "department": "light_plants",
+      "description": "Brass floor lamp with a warm shade.",
+      "position": [
+        0.0,
+        0.0,
+        -0.8
+      ],
+      "yaw": 0.0,
+      "size": [
+        0.49,
+        1.74,
+        0.49
+      ],
+      "tag": {
+        "position": [
+          0.0,
+          1.32,
+          -0.255
+        ],
+        "yaw": 0.0
+      }
+    },
+    {
+      "key": "monstera",
+      "code": "decor_monstera",
+      "department": "light_plants",
+      "description": "Big leafy monstera, 1.4 m.",
+      "position": [
+        -2.598,
+        0.0,
+        -4.1
+      ],
+      "yaw": 4.3119,
+      "size": [
+        1.16,
+        1.42,
+        1.14
+      ],
+      "tag": {
+        "position": [
+          -3.205,
+          1.32,
+          -4.851
+        ],
+        "yaw": 4.1888
+      }
+    },
+    {
+      "key": "potted_plant",
+      "code": "decor_potted_plant",
+      "department": "light_plants",
+      "description": "Leafy plant in a terracotta pot.",
+      "position": [
+        2.598,
+        0.0,
+        -4.1
+      ],
+      "yaw": 1.9713,
+      "size": [
+        0.56,
+        1.36,
+        0.56
+      ],
+      "tag": {
+        "position": [
+          2.946,
+          1.32,
+          -4.701
+        ],
+        "yaw": 2.0944
+      }
+    },
+    {
+      "key": "globe",
+      "code": "decor_globe",
+      "department": "shelving",
+      "description": "Desk globe on a wooden stand.",
+      "position": [
+        8.5,
+        0.78,
+        -9.0
+      ],
+      "yaw": 0.0,
+      "size": [
+        0.39,
+        0.58,
+        0.35
+      ],
+      "tag": {
+        "position": [
+          8.5,
+          1.22,
+          -8.25
+        ],
+        "yaw": 0.0
+      }
+    },
+    {
+      "key": "bookshelf",
+      "code": "decor_bookshelf",
+      "department": "shelving",
+      "description": "Four-shelf bookcase, books included.",
+      "position": [
+        8.5,
+        0.0,
+        -6.4
+      ],
+      "yaw": 6.2832,
+      "size": [
+        1.0,
+        1.8,
+        0.34
+      ],
+      "tag": {
+        "position": [
+          8.5,
+          1.32,
+          -5.6
+        ],
+        "yaw": 6.2832
+      }
+    },
+    {
+      "key": "cube_shelf",
+      "code": "decor_cube_shelf",
+      "department": "shelving",
+      "description": "4x4 cube shelf with storage boxes.",
+      "position": [
+        5.457,
+        0.0,
+        -8.197
+      ],
+      "yaw": 4.9705,
+      "size": [
+        1.51,
+        1.51,
+        0.39
+      ],
+      "tag": {
+        "position": [
+          4.503,
+          1.32,
+          -7.701
+        ],
+        "yaw": 5.0265
+      }
+    },
+    {
+      "key": "coat_rack",
+      "code": "decor_coat_rack",
+      "department": "shelving",
+      "description": "Coat stand with hooks and a hat.",
+      "position": [
+        6.619,
+        0.0,
+        -11.103
+      ],
+      "yaw": 3.8712,
+      "size": [
+        0.49,
+        1.85,
+        0.44
+      ],
+      "tag": {
+        "position": [
+          6.521,
+          1.32,
+          -11.724
+        ],
+        "yaw": 3.7699
+      }
+    },
+    {
+      "key": "mirror_standing",
+      "code": "decor_mirror_standing",
+      "department": "shelving",
+      "description": "Full-length standing mirror.",
+      "position": [
+        10.381,
+        0.0,
+        -11.103
+      ],
+      "yaw": 2.412,
+      "size": [
+        0.6,
+        1.65,
+        0.54
+      ],
+      "tag": {
+        "position": [
+          10.511,
+          1.32,
+          -11.768
+        ],
+        "yaw": 2.5133
+      }
+    },
+    {
+      "key": "nightstand",
+      "code": "decor_nightstand",
+      "department": "shelving",
+      "description": "Two-drawer nightstand with a little lamp.",
+      "position": [
+        11.543,
+        0.4,
+        -8.197
+      ],
+      "yaw": 1.3127,
+      "size": [
+        0.47,
+        0.85,
+        0.45
+      ],
+      "tag": {
+        "position": [
+          12.002,
+          1.32,
+          -7.862
+        ],
+        "yaw": 1.2566
+      }
+    },
+    {
+      "key": "bar_stool",
+      "code": "decor_bar_stool",
+      "department": "kitchen_bath",
+      "description": "Tall stool with a round oak seat.",
+      "position": [
+        -7.0,
+        0.4,
+        -16.6
+      ],
+      "yaw": 6.2832,
+      "size": [
+        0.37,
+        0.76,
+        0.38
+      ],
+      "tag": {
+        "position": [
+          -7.0,
+          1.32,
+          -16.11
+        ],
+        "yaw": 6.2832
+      }
+    },
+    {
+      "key": "dining_bench",
+      "code": "decor_dining_bench",
+      "department": "kitchen_bath",
+      "description": "Solid oak bench for the dining table.",
+      "position": [
+        -9.853,
+        0.0,
+        -18.258
+      ],
+      "yaw": 4.9667,
+      "size": [
+        1.4,
+        0.47,
+        0.36
+      ],
+      "tag": {
+        "position": [
+          -10.755,
+          1.32,
+          -17.78
+        ],
+        "yaw": 5.0265
+      }
+    },
+    {
+      "key": "wooden_chair",
+      "code": "chair_campus_basic",
+      "department": "kitchen_bath",
+      "description": "Solid wood chair with a teal cushion.",
+      "position": [
+        -8.763,
+        0.0,
+        -20.942
+      ],
+      "yaw": 3.8789,
+      "size": [
+        0.46,
+        1.0,
+        0.44
+      ],
+      "tag": {
+        "position": [
+          -8.853,
+          1.32,
+          -21.551
+        ],
+        "yaw": 3.7699
+      }
+    },
+    {
+      "key": "towel_rack",
+      "code": "decor_towel_rack",
+      "department": "kitchen_bath",
+      "description": "Ladder towel rack with towels.",
+      "position": [
+        -5.237,
+        0.0,
+        -20.942
+      ],
+      "yaw": 2.4043,
+      "size": [
+        0.48,
+        1.53,
+        0.31
+      ],
+      "tag": {
+        "position": [
+          -5.141,
+          1.32,
+          -21.559
+        ],
+        "yaw": 2.5133
+      }
+    },
+    {
+      "key": "aquarium",
+      "code": "decor_aquarium",
+      "department": "kitchen_bath",
+      "description": "Aquarium on a cabinet, fish included.",
+      "position": [
+        -4.147,
+        0.0,
+        -18.258
+      ],
+      "yaw": 1.3165,
+      "size": [
+        1,
+        1.32,
+        0.42
+      ],
+      "tag": {
+        "position": [
+          -3.435,
+          1.32,
+          -17.842
+        ],
+        "yaw": 1.2566
+      }
+    },
+    {
+      "key": "garden_bench",
+      "code": "decor_garden_bench",
+      "department": "outdoor",
+      "description": "Slatted garden bench.",
+      "position": [
+        7.0,
+        0.0,
+        -16.6
+      ],
+      "yaw": 6.2832,
+      "size": [
+        1.5,
+        0.91,
+        0.56
+      ],
+      "tag": {
+        "position": [
+          7.0,
+          1.32,
+          -15.55
+        ],
+        "yaw": 6.2832
+      }
+    },
+    {
+      "key": "parasol",
+      "code": "decor_parasol",
+      "department": "outdoor",
+      "description": "Striped parasol on a heavy base.",
+      "position": [
+        3.6,
+        0.0,
+        -19.0
+      ],
+      "yaw": 4.7124,
+      "size": [
+        2.6,
+        2.4,
+        2.6
+      ],
+      "tag": {
+        "position": [
+          3.05,
+          1.32,
+          -19.0
+        ],
+        "yaw": 4.7124
+      }
+    },
+    {
+      "key": "sun_lounger",
+      "code": "decor_sun_lounger",
+      "department": "outdoor",
+      "description": "Reclining sun lounger.",
+      "position": [
+        7.0,
+        0.0,
+        -21.4
+      ],
+      "yaw": 3.1416,
+      "size": [
+        0.65,
+        0.8,
+        1.83
+      ],
+      "tag": {
+        "position": [
+          7.0,
+          1.32,
+          -22.615
+        ],
+        "yaw": 3.1416
+      }
+    },
+    {
+      "key": "bbq_grill",
+      "code": "decor_bbq_grill",
+      "department": "outdoor",
+      "description": "Kettle barbecue on three legs.",
+      "position": [
+        10.4,
+        0.0,
+        -19.0
+      ],
+      "yaw": 1.5708,
+      "size": [
+        0.6,
+        1.05,
+        0.6
+      ],
+      "tag": {
+        "position": [
+          11.0,
+          1.32,
+          -19.0
+        ],
+        "yaw": 1.5708
+      }
+    }
+  ]
+}

@@ -1,0 +1,3429 @@
+{
+  "version": 1,
+  "key": "mall",
+  "name": "Cove Parkview Mall",
+  "bounds": {
+    "minX": -420.0,
+    "maxX": -144.0,
+    "minZ": -135.0,
+    "maxZ": 135.0
+  },
+  "entrance": {
+    "position": [
+      -160.0,
+      0.0,
+      0.0
+    ],
+    "yaw": -1.5707963267948966,
+    "width": 16.0
+  },
+  "levels": [
+    {
+      "id": "L0",
+      "y": 0.0,
+      "height": 6.0,
+      "rects": [
+        {
+          "minX": -420.0,
+          "maxX": -144.0,
+          "minZ": -135.0,
+          "maxZ": 135.0
+        }
+      ]
+    },
+    {
+      "id": "L1",
+      "y": 6.0,
+      "height": 4.8,
+      "rects": [
+        {
+          "minX": -177.0,
+          "maxX": -172.0,
+          "minZ": -50.0,
+          "maxZ": 50.0
+        },
+        {
+          "minX": -188.0,
+          "maxX": -183.0,
+          "minZ": -50.0,
+          "maxZ": 50.0
+        },
+        {
+          "minX": -178.4,
+          "maxX": -177.0,
+          "minZ": -38.6,
+          "maxZ": -36.6
+        },
+        {
+          "minX": -183.0,
+          "maxX": -181.6,
+          "minZ": 36.6,
+          "maxZ": 38.6
+        },
+        {
+          "minX": -300.0,
+          "maxX": -200.0,
+          "minZ": -78.0,
+          "maxZ": -73.0
+        },
+        {
+          "minX": -300.0,
+          "maxX": -200.0,
+          "minZ": -67.0,
+          "maxZ": -62.0
+        },
+        {
+          "minX": -288.6,
+          "maxX": -286.6,
+          "minZ": -73.0,
+          "maxZ": -71.6
+        },
+        {
+          "minX": -213.4,
+          "maxX": -211.4,
+          "minZ": -68.4,
+          "maxZ": -67.0
+        },
+        {
+          "minX": -368.0,
+          "maxX": -363.0,
+          "minZ": -50.0,
+          "maxZ": 50.0
+        },
+        {
+          "minX": -357.0,
+          "maxX": -352.0,
+          "minZ": -50.0,
+          "maxZ": 50.0
+        },
+        {
+          "minX": -363.0,
+          "maxX": -361.6,
+          "minZ": -38.6,
+          "maxZ": -36.6
+        },
+        {
+          "minX": -358.4,
+          "maxX": -357.0,
+          "minZ": 36.6,
+          "maxZ": 38.6
+        },
+        {
+          "minX": -176.0,
+          "maxX": -173.0,
+          "minZ": -89.6,
+          "maxZ": -86.6
+        }
+      ]
+    },
+    {
+      "id": "L2",
+      "y": 11.6,
+      "height": 4.0,
+      "rects": [
+        {
+          "minX": -200.0,
+          "maxX": -160.0,
+          "minZ": -90.0,
+          "maxZ": -78.0
+        }
+      ]
+    }
+  ],
+  "stairs": [
+    {
+      "name": "Esc_EA",
+      "minX": -178.4,
+      "maxX": -177.0,
+      "minZ": -49.0,
+      "maxZ": -38.6,
+      "y0": 0.0,
+      "y1": 6.0,
+      "rise": "+z"
+    },
+    {
+      "name": "Esc_EB",
+      "minX": -183.0,
+      "maxX": -181.6,
+      "minZ": 38.6,
+      "maxZ": 49.0,
+      "y0": 0.0,
+      "y1": 6.0,
+      "rise": "-z"
+    },
+    {
+      "name": "Esc_PA",
+      "minX": -299.0,
+      "maxX": -288.6,
+      "minZ": -73.0,
+      "maxZ": -71.6,
+      "y0": 0.0,
+      "y1": 6.0,
+      "rise": "+x"
+    },
+    {
+      "name": "Esc_PB",
+      "minX": -211.4,
+      "maxX": -201.0,
+      "minZ": -68.4,
+      "maxZ": -67.0,
+      "y0": 0.0,
+      "y1": 6.0,
+      "rise": "-x"
+    },
+    {
+      "name": "Esc_WA",
+      "minX": -363.0,
+      "maxX": -361.6,
+      "minZ": -49.0,
+      "maxZ": -38.6,
+      "y0": 0.0,
+      "y1": 6.0,
+      "rise": "+z"
+    },
+    {
+      "name": "Esc_WB",
+      "minX": -358.4,
+      "maxX": -357.0,
+      "minZ": 38.6,
+      "maxZ": 49.0,
+      "y0": 0.0,
+      "y1": 6.0,
+      "rise": "-z"
+    },
+    {
+      "name": "Stair_roof_a",
+      "minX": -173.0,
+      "maxX": -162.0,
+      "minZ": -89.6,
+      "maxZ": -88.2,
+      "y0": 0.0,
+      "y1": 6.0,
+      "rise": "-x"
+    },
+    {
+      "name": "Stair_roof_b",
+      "minX": -173.0,
+      "maxX": -162.0,
+      "minZ": -88.0,
+      "maxZ": -86.6,
+      "y0": 6.0,
+      "y1": 11.6,
+      "rise": "+x"
+    }
+  ],
+  "plazas": [
+    {
+      "id": "entrance",
+      "name": "Entrance Plaza",
+      "bounds": {
+        "minX": -200,
+        "maxX": -160,
+        "minZ": -50,
+        "maxZ": 50
+      },
+      "floors": 2,
+      "roof": "truss",
+      "outdoor": false
+    },
+    {
+      "id": "paradise",
+      "name": "Paradise Plaza",
+      "bounds": {
+        "minX": -300,
+        "maxX": -160,
+        "minZ": -90,
+        "maxZ": -50
+      },
+      "floors": 2,
+      "roof": "truss",
+      "outdoor": false
+    },
+    {
+      "id": "north_plaza",
+      "name": "North Plaza",
+      "bounds": {
+        "minX": -380,
+        "maxX": -300,
+        "minZ": -90,
+        "maxZ": -50
+      },
+      "floors": 1,
+      "roof": "slab",
+      "outdoor": false
+    },
+    {
+      "id": "wonderland",
+      "name": "Wonderland Plaza",
+      "bounds": {
+        "minX": -380,
+        "maxX": -340,
+        "minZ": -50,
+        "maxZ": 50
+      },
+      "floors": 2,
+      "roof": "truss",
+      "outdoor": false
+    },
+    {
+      "id": "food_court",
+      "name": "Food Court",
+      "bounds": {
+        "minX": -380,
+        "maxX": -300,
+        "minZ": 50,
+        "maxZ": 90
+      },
+      "floors": 1,
+      "roof": "slab",
+      "outdoor": false
+    },
+    {
+      "id": "al_fresca",
+      "name": "Al Fresca Plaza",
+      "bounds": {
+        "minX": -300,
+        "maxX": -160,
+        "minZ": 50,
+        "maxZ": 90
+      },
+      "floors": 1,
+      "roof": "none",
+      "outdoor": true
+    },
+    {
+      "id": "leisure_park",
+      "name": "Leisure Park",
+      "bounds": {
+        "minX": -340.0,
+        "maxX": -200.0,
+        "minZ": -50.0,
+        "maxZ": 50.0
+      },
+      "floors": 0,
+      "roof": "none",
+      "outdoor": true
+    }
+  ],
+  "cells": [
+    {
+      "id": "N01",
+      "plaza": "north_plaza",
+      "level": 0,
+      "row": "N_out_a",
+      "category": "hardware",
+      "label": "HARDWARE",
+      "name": "Crispin's Hardware",
+      "status": "planned",
+      "bounds": {
+        "minX": -377.5,
+        "maxX": -360.5,
+        "minZ": -87.5,
+        "maxZ": -78.0
+      },
+      "front": {
+        "x": -369.0,
+        "y": 0.0,
+        "z": -77.0,
+        "yaw": 0.0
+      },
+      "width": 17.0,
+      "depth": 9.5
+    },
+    {
+      "id": "N02",
+      "plaza": "north_plaza",
+      "level": 0,
+      "row": "N_out_b",
+      "category": "services",
+      "label": "MALL SERVICES",
+      "name": "Staff",
+      "status": "passage",
+      "bounds": {
+        "minX": -319.5,
+        "maxX": -317.9,
+        "minZ": -87.5,
+        "maxZ": -78.0
+      },
+      "front": {
+        "x": -318.7,
+        "y": 0.0,
+        "z": -77.0,
+        "yaw": 0.0
+      },
+      "width": 1.6,
+      "depth": 9.5
+    },
+    {
+      "id": "N03",
+      "plaza": "north_plaza",
+      "level": 0,
+      "row": "N_out_b",
+      "category": "pet",
+      "label": "PET SHOP",
+      "name": "Unit N12",
+      "status": "construction",
+      "bounds": {
+        "minX": -317.9,
+        "maxX": -265.5,
+        "minZ": -87.5,
+        "maxZ": -78.0
+      },
+      "front": {
+        "x": -291.7,
+        "y": 0.0,
+        "z": -77.0,
+        "yaw": 0.0
+      },
+      "width": 52.4,
+      "depth": 9.5
+    },
+    {
+      "id": "P01",
+      "plaza": "paradise",
+      "level": 0,
+      "row": "N_out_c",
+      "category": "cinema",
+      "label": "CINEMA",
+      "name": "Starlight Cinema",
+      "status": "planned",
+      "bounds": {
+        "minX": -234.5,
+        "maxX": -228.75,
+        "minZ": -87.5,
+        "maxZ": -78.0
+      },
+      "front": {
+        "x": -231.625,
+        "y": 0.0,
+        "z": -77.0,
+        "yaw": 0.0
+      },
+      "width": 5.75,
+      "depth": 9.5
+    },
+    {
+      "id": "P02",
+      "plaza": "paradise",
+      "level": 0,
+      "row": "N_out_c",
+      "category": "books",
+      "label": "BOOKSTORE",
+      "name": "Page Turner Books",
+      "status": "planned",
+      "bounds": {
+        "minX": -228.75,
+        "maxX": -223.0,
+        "minZ": -87.5,
+        "maxZ": -78.0
+      },
+      "front": {
+        "x": -225.875,
+        "y": 0.0,
+        "z": -77.0,
+        "yaw": 0.0
+      },
+      "width": 5.75,
+      "depth": 9.5
+    },
+    {
+      "id": "P03",
+      "plaza": "paradise",
+      "level": 0,
+      "row": "N_out_c",
+      "category": "music",
+      "label": "MUSIC & RECORDS",
+      "name": "Vinyl Vault",
+      "status": "planned",
+      "bounds": {
+        "minX": -223.0,
+        "maxX": -217.25,
+        "minZ": -87.5,
+        "maxZ": -78.0
+      },
+      "front": {
+        "x": -220.125,
+        "y": 0.0,
+        "z": -77.0,
+        "yaw": 0.0
+      },
+      "width": 5.75,
+      "depth": 9.5
+    },
+    {
+      "id": "P04",
+      "plaza": "paradise",
+      "level": 0,
+      "row": "N_out_d",
+      "category": "toys",
+      "label": "TOY STORE",
+      "name": "Kokoro Toys",
+      "status": "planned",
+      "bounds": {
+        "minX": -217.25,
+        "maxX": -211.5,
+        "minZ": -87.5,
+        "maxZ": -78.0
+      },
+      "front": {
+        "x": -214.375,
+        "y": 0.0,
+        "z": -77.0,
+        "yaw": 0.0
+      },
+      "width": 5.75,
+      "depth": 9.5
+    },
+    {
+      "id": "P05",
+      "plaza": "paradise",
+      "level": 0,
+      "row": "N_out_d",
+      "category": "electronics",
+      "label": "ELECTRONICS",
+      "name": "Volt Electronics",
+      "status": "planned",
+      "bounds": {
+        "minX": -211.5,
+        "maxX": -205.75,
+        "minZ": -87.5,
+        "maxZ": -78.0
+      },
+      "front": {
+        "x": -208.625,
+        "y": 0.0,
+        "z": -77.0,
+        "yaw": 0.0
+      },
+      "width": 5.75,
+      "depth": 9.5
+    },
+    {
+      "id": "P06",
+      "plaza": "paradise",
+      "level": 0,
+      "row": "N_out_d",
+      "category": "camera",
+      "label": "CAMERA SHOP",
+      "name": "Shutter Speed Cameras",
+      "status": "planned",
+      "bounds": {
+        "minX": -205.75,
+        "maxX": -200.0,
+        "minZ": -87.5,
+        "maxZ": -78.0
+      },
+      "front": {
+        "x": -202.875,
+        "y": 0.0,
+        "z": -77.0,
+        "yaw": 0.0
+      },
+      "width": 5.75,
+      "depth": 9.5
+    },
+    {
+      "id": "N04",
+      "plaza": "north_plaza",
+      "level": 0,
+      "row": "N_in_a",
+      "category": "pharmacy",
+      "label": "PHARMACY",
+      "name": "Unit N20",
+      "status": "construction",
+      "bounds": {
+        "minX": -340.0,
+        "maxX": -320.0,
+        "minZ": -62.0,
+        "maxZ": -50.0
+      },
+      "front": {
+        "x": -330.0,
+        "y": 0.0,
+        "z": -63.0,
+        "yaw": 3.1416
+      },
+      "width": 20.0,
+      "depth": 12.0
+    },
+    {
+      "id": "N05",
+      "plaza": "north_plaza",
+      "level": 0,
+      "row": "N_in_a",
+      "category": "services",
+      "label": "MALL SERVICES",
+      "name": "Unit N21",
+      "status": "construction",
+      "bounds": {
+        "minX": -320.0,
+        "maxX": -300.0,
+        "minZ": -62.0,
+        "maxZ": -50.0
+      },
+      "front": {
+        "x": -310.0,
+        "y": 0.0,
+        "z": -63.0,
+        "yaw": 3.1416
+      },
+      "width": 20.0,
+      "depth": 12.0
+    },
+    {
+      "id": "P07",
+      "plaza": "paradise",
+      "level": 0,
+      "row": "N_in_b",
+      "category": "clothing_kids",
+      "label": "KIDS' CLOTHING",
+      "name": "Tiny Tots",
+      "status": "planned",
+      "bounds": {
+        "minX": -300.0,
+        "maxX": -288.25,
+        "minZ": -62.0,
+        "maxZ": -50.0
+      },
+      "front": {
+        "x": -294.125,
+        "y": 0.0,
+        "z": -63.0,
+        "yaw": 3.1416
+      },
+      "width": 11.75,
+      "depth": 12.0
+    },
+    {
+      "id": "P08",
+      "plaza": "paradise",
+      "level": 0,
+      "row": "N_in_b",
+      "category": "cosmetics",
+      "label": "COSMETICS",
+      "name": "Blush Bar",
+      "status": "planned",
+      "bounds": {
+        "minX": -288.25,
+        "maxX": -276.5,
+        "minZ": -62.0,
+        "maxZ": -50.0
+      },
+      "front": {
+        "x": -282.375,
+        "y": 0.0,
+        "z": -63.0,
+        "yaw": 3.1416
+      },
+      "width": 11.75,
+      "depth": 12.0
+    },
+    {
+      "id": "P09",
+      "plaza": "paradise",
+      "level": 0,
+      "row": "N_in_b",
+      "category": "jewelry",
+      "label": "JEWELRY",
+      "name": "Gilt & Glow",
+      "status": "planned",
+      "bounds": {
+        "minX": -276.5,
+        "maxX": -264.75,
+        "minZ": -62.0,
+        "maxZ": -50.0
+      },
+      "front": {
+        "x": -270.625,
+        "y": 0.0,
+        "z": -63.0,
+        "yaw": 3.1416
+      },
+      "width": 11.75,
+      "depth": 12.0
+    },
+    {
+      "id": "P10",
+      "plaza": "paradise",
+      "level": 0,
+      "row": "N_in_b",
+      "category": "phones",
+      "label": "PHONES & GADGETS",
+      "name": "Pocket Gadgets",
+      "status": "planned",
+      "bounds": {
+        "minX": -264.75,
+        "maxX": -253.0,
+        "minZ": -62.0,
+        "maxZ": -50.0
+      },
+      "front": {
+        "x": -258.875,
+        "y": 0.0,
+        "z": -63.0,
+        "yaw": 3.1416
+      },
+      "width": 11.75,
+      "depth": 12.0
+    },
+    {
+      "id": "P11",
+      "plaza": "paradise",
+      "level": 0,
+      "row": "N_in_c",
+      "category": "clothing_women",
+      "label": "WOMEN'S FASHION",
+      "name": "Velvet Lane",
+      "status": "planned",
+      "bounds": {
+        "minX": -247.0,
+        "maxX": -235.25,
+        "minZ": -62.0,
+        "maxZ": -50.0
+      },
+      "front": {
+        "x": -241.125,
+        "y": 0.0,
+        "z": -63.0,
+        "yaw": 3.1416
+      },
+      "width": 11.75,
+      "depth": 12.0
+    },
+    {
+      "id": "P12",
+      "plaza": "paradise",
+      "level": 0,
+      "row": "N_in_c",
+      "category": "clothing_men",
+      "label": "MEN'S FASHION",
+      "name": "Brickroad Men's",
+      "status": "planned",
+      "bounds": {
+        "minX": -235.25,
+        "maxX": -223.5,
+        "minZ": -62.0,
+        "maxZ": -50.0
+      },
+      "front": {
+        "x": -229.375,
+        "y": 0.0,
+        "z": -63.0,
+        "yaw": 3.1416
+      },
+      "width": 11.75,
+      "depth": 12.0
+    },
+    {
+      "id": "P13",
+      "plaza": "paradise",
+      "level": 0,
+      "row": "N_in_c",
+      "category": "shoes",
+      "label": "SHOES",
+      "name": "Sole Society",
+      "status": "planned",
+      "bounds": {
+        "minX": -223.5,
+        "maxX": -211.75,
+        "minZ": -62.0,
+        "maxZ": -50.0
+      },
+      "front": {
+        "x": -217.625,
+        "y": 0.0,
+        "z": -63.0,
+        "yaw": 3.1416
+      },
+      "width": 11.75,
+      "depth": 12.0
+    },
+    {
+      "id": "P14",
+      "plaza": "paradise",
+      "level": 0,
+      "row": "N_in_c",
+      "category": "gifts",
+      "label": "GIFTS & ANTIQUES",
+      "name": "Curio Cabinet",
+      "status": "planned",
+      "bounds": {
+        "minX": -211.75,
+        "maxX": -200.0,
+        "minZ": -62.0,
+        "maxZ": -50.0
+      },
+      "front": {
+        "x": -205.875,
+        "y": 0.0,
+        "z": -63.0,
+        "yaw": 3.1416
+      },
+      "width": 11.75,
+      "depth": 12.0
+    },
+    {
+      "id": "F01",
+      "plaza": "food_court",
+      "level": 0,
+      "row": "S_out_a",
+      "category": "fast_food",
+      "label": "FAST FOOD",
+      "name": "Burger Barony",
+      "status": "planned",
+      "bounds": {
+        "minX": -377.5,
+        "maxX": -362.32,
+        "minZ": 78.0,
+        "maxZ": 87.5
+      },
+      "front": {
+        "x": -369.91,
+        "y": 0.0,
+        "z": 77.0,
+        "yaw": 3.1416
+      },
+      "width": 15.18,
+      "depth": 9.5
+    },
+    {
+      "id": "F02",
+      "plaza": "food_court",
+      "level": 0,
+      "row": "S_out_a",
+      "category": "restaurant",
+      "label": "RESTAURANT",
+      "name": "Mamma Lucia's",
+      "status": "planned",
+      "bounds": {
+        "minX": -362.32,
+        "maxX": -347.14,
+        "minZ": 78.0,
+        "maxZ": 87.5
+      },
+      "front": {
+        "x": -354.73,
+        "y": 0.0,
+        "z": 77.0,
+        "yaw": 3.1416
+      },
+      "width": 15.18,
+      "depth": 9.5
+    },
+    {
+      "id": "F03",
+      "plaza": "food_court",
+      "level": 0,
+      "row": "S_out_a",
+      "category": "fast_food",
+      "label": "FAST FOOD",
+      "name": "Taco Tempo",
+      "status": "planned",
+      "bounds": {
+        "minX": -347.14,
+        "maxX": -331.96,
+        "minZ": 78.0,
+        "maxZ": 87.5
+      },
+      "front": {
+        "x": -339.55,
+        "y": 0.0,
+        "z": 77.0,
+        "yaw": 3.1416
+      },
+      "width": 15.18,
+      "depth": 9.5
+    },
+    {
+      "id": "F04",
+      "plaza": "food_court",
+      "level": 0,
+      "row": "S_out_a",
+      "category": "fast_food",
+      "label": "FAST FOOD",
+      "name": "Wok This Way",
+      "status": "planned",
+      "bounds": {
+        "minX": -331.96,
+        "maxX": -316.78,
+        "minZ": 78.0,
+        "maxZ": 87.5
+      },
+      "front": {
+        "x": -324.37,
+        "y": 0.0,
+        "z": 77.0,
+        "yaw": 3.1416
+      },
+      "width": 15.18,
+      "depth": 9.5
+    },
+    {
+      "id": "F05",
+      "plaza": "food_court",
+      "level": 0,
+      "row": "S_out_a",
+      "category": "fast_food",
+      "label": "FAST FOOD",
+      "name": "Dough Re Mi Pizza",
+      "status": "planned",
+      "bounds": {
+        "minX": -316.78,
+        "maxX": -301.6,
+        "minZ": 78.0,
+        "maxZ": 87.5
+      },
+      "front": {
+        "x": -309.19,
+        "y": 0.0,
+        "z": 77.0,
+        "yaw": 3.1416
+      },
+      "width": 15.18,
+      "depth": 9.5
+    },
+    {
+      "id": "F06",
+      "plaza": "food_court",
+      "level": 0,
+      "row": "S_out_a",
+      "category": "services",
+      "label": "MALL SERVICES",
+      "name": "Staff",
+      "status": "passage",
+      "bounds": {
+        "minX": -301.6,
+        "maxX": -300.0,
+        "minZ": 78.0,
+        "maxZ": 87.5
+      },
+      "front": {
+        "x": -300.8,
+        "y": 0.0,
+        "z": 77.0,
+        "yaw": 3.1416
+      },
+      "width": 1.6,
+      "depth": 9.5
+    },
+    {
+      "id": "A01",
+      "plaza": "al_fresca",
+      "level": 0,
+      "row": "S_out_b",
+      "category": "sports",
+      "label": "SPORTING GOODS",
+      "name": "Summit Sports",
+      "status": "planned",
+      "bounds": {
+        "minX": -300.0,
+        "maxX": -284.167,
+        "minZ": 78.0,
+        "maxZ": 87.5
+      },
+      "front": {
+        "x": -292.083,
+        "y": 0.0,
+        "z": 77.0,
+        "yaw": 3.1416
+      },
+      "width": 15.833,
+      "depth": 9.5
+    },
+    {
+      "id": "A02",
+      "plaza": "al_fresca",
+      "level": 0,
+      "row": "S_out_b",
+      "category": "gym",
+      "label": "GYM",
+      "name": "Pulse Gym",
+      "status": "planned",
+      "bounds": {
+        "minX": -284.167,
+        "maxX": -268.333,
+        "minZ": 78.0,
+        "maxZ": 87.5
+      },
+      "front": {
+        "x": -276.25,
+        "y": 0.0,
+        "z": 77.0,
+        "yaw": 3.1416
+      },
+      "width": 15.833,
+      "depth": 9.5
+    },
+    {
+      "id": "A03",
+      "plaza": "al_fresca",
+      "level": 0,
+      "row": "S_out_b",
+      "category": "eyewear",
+      "label": "EYEWEAR",
+      "name": "Spectacle Eyewear",
+      "status": "planned",
+      "bounds": {
+        "minX": -268.333,
+        "maxX": -252.5,
+        "minZ": 78.0,
+        "maxZ": 87.5
+      },
+      "front": {
+        "x": -260.417,
+        "y": 0.0,
+        "z": 77.0,
+        "yaw": 3.1416
+      },
+      "width": 15.833,
+      "depth": 9.5
+    },
+    {
+      "id": "A04",
+      "plaza": "al_fresca",
+      "level": 0,
+      "row": "S_out_c",
+      "category": "clothing_women",
+      "label": "WOMEN'S FASHION",
+      "name": "Mae & Fern",
+      "status": "planned",
+      "bounds": {
+        "minX": -219.5,
+        "maxX": -201.133,
+        "minZ": 78.0,
+        "maxZ": 87.5
+      },
+      "front": {
+        "x": -210.317,
+        "y": 0.0,
+        "z": 77.0,
+        "yaw": 3.1416
+      },
+      "width": 18.367,
+      "depth": 9.5
+    },
+    {
+      "id": "A05",
+      "plaza": "al_fresca",
+      "level": 0,
+      "row": "S_out_c",
+      "category": "clothing_men",
+      "label": "MEN'S FASHION",
+      "name": "Gentleman's Quarter",
+      "status": "planned",
+      "bounds": {
+        "minX": -201.133,
+        "maxX": -182.767,
+        "minZ": 78.0,
+        "maxZ": 87.5
+      },
+      "front": {
+        "x": -191.95,
+        "y": 0.0,
+        "z": 77.0,
+        "yaw": 3.1416
+      },
+      "width": 18.367,
+      "depth": 9.5
+    },
+    {
+      "id": "A06",
+      "plaza": "al_fresca",
+      "level": 0,
+      "row": "S_out_c",
+      "category": "pet",
+      "label": "PET SHOP",
+      "name": "Paws & Claws",
+      "status": "planned",
+      "bounds": {
+        "minX": -182.767,
+        "maxX": -164.4,
+        "minZ": 78.0,
+        "maxZ": 87.5
+      },
+      "front": {
+        "x": -173.583,
+        "y": 0.0,
+        "z": 77.0,
+        "yaw": 3.1416
+      },
+      "width": 18.367,
+      "depth": 9.5
+    },
+    {
+      "id": "A07",
+      "plaza": "al_fresca",
+      "level": 0,
+      "row": "S_out_c",
+      "category": "services",
+      "label": "MALL SERVICES",
+      "name": "Staff",
+      "status": "passage",
+      "bounds": {
+        "minX": -164.4,
+        "maxX": -162.8,
+        "minZ": 78.0,
+        "maxZ": 87.5
+      },
+      "front": {
+        "x": -163.6,
+        "y": 0.0,
+        "z": 77.0,
+        "yaw": 3.1416
+      },
+      "width": 1.6,
+      "depth": 9.5
+    },
+    {
+      "id": "F07",
+      "plaza": "food_court",
+      "level": 0,
+      "row": "S_in_a",
+      "category": "cafe",
+      "label": "COFFEE SHOP",
+      "name": "Bean There",
+      "status": "planned",
+      "bounds": {
+        "minX": -340.0,
+        "maxX": -326.667,
+        "minZ": 50.0,
+        "maxZ": 62.0
+      },
+      "front": {
+        "x": -333.333,
+        "y": 0.0,
+        "z": 63.0,
+        "yaw": 0.0
+      },
+      "width": 13.333,
+      "depth": 12.0
+    },
+    {
+      "id": "F08",
+      "plaza": "food_court",
+      "level": 0,
+      "row": "S_in_a",
+      "category": "ice_cream",
+      "label": "ICE CREAM",
+      "name": "Scoop Dreams",
+      "status": "planned",
+      "bounds": {
+        "minX": -326.667,
+        "maxX": -313.333,
+        "minZ": 50.0,
+        "maxZ": 62.0
+      },
+      "front": {
+        "x": -320.0,
+        "y": 0.0,
+        "z": 63.0,
+        "yaw": 0.0
+      },
+      "width": 13.333,
+      "depth": 12.0
+    },
+    {
+      "id": "F09",
+      "plaza": "food_court",
+      "level": 0,
+      "row": "S_in_a",
+      "category": "bakery",
+      "label": "BAKERY",
+      "name": "Golden Crust",
+      "status": "planned",
+      "bounds": {
+        "minX": -313.333,
+        "maxX": -300.0,
+        "minZ": 50.0,
+        "maxZ": 62.0
+      },
+      "front": {
+        "x": -306.667,
+        "y": 0.0,
+        "z": 63.0,
+        "yaw": 0.0
+      },
+      "width": 13.333,
+      "depth": 12.0
+    },
+    {
+      "id": "A08",
+      "plaza": "al_fresca",
+      "level": 0,
+      "row": "S_in_b",
+      "category": "home_decor",
+      "label": "HOME & DECOR",
+      "name": "Casa Verde",
+      "status": "planned",
+      "bounds": {
+        "minX": -300.0,
+        "maxX": -288.25,
+        "minZ": 50.0,
+        "maxZ": 62.0
+      },
+      "front": {
+        "x": -294.125,
+        "y": 0.0,
+        "z": 63.0,
+        "yaw": 0.0
+      },
+      "width": 11.75,
+      "depth": 12.0
+    },
+    {
+      "id": "A09",
+      "plaza": "al_fresca",
+      "level": 0,
+      "row": "S_in_b",
+      "category": "jewelry",
+      "label": "JEWELRY",
+      "name": "Rivermouth Jewels",
+      "status": "planned",
+      "bounds": {
+        "minX": -288.25,
+        "maxX": -276.5,
+        "minZ": 50.0,
+        "maxZ": 62.0
+      },
+      "front": {
+        "x": -282.375,
+        "y": 0.0,
+        "z": 63.0,
+        "yaw": 0.0
+      },
+      "width": 11.75,
+      "depth": 12.0
+    },
+    {
+      "id": "A10",
+      "plaza": "al_fresca",
+      "level": 0,
+      "row": "S_in_b",
+      "category": "clothing_sport",
+      "label": "SPORTSWEAR",
+      "name": "Stride Runners",
+      "status": "planned",
+      "bounds": {
+        "minX": -276.5,
+        "maxX": -264.75,
+        "minZ": 50.0,
+        "maxZ": 62.0
+      },
+      "front": {
+        "x": -270.625,
+        "y": 0.0,
+        "z": 63.0,
+        "yaw": 0.0
+      },
+      "width": 11.75,
+      "depth": 12.0
+    },
+    {
+      "id": "A11",
+      "plaza": "al_fresca",
+      "level": 0,
+      "row": "S_in_b",
+      "category": "camera",
+      "label": "CAMERA SHOP",
+      "name": "Lens & Light",
+      "status": "planned",
+      "bounds": {
+        "minX": -264.75,
+        "maxX": -253.0,
+        "minZ": 50.0,
+        "maxZ": 62.0
+      },
+      "front": {
+        "x": -258.875,
+        "y": 0.0,
+        "z": 63.0,
+        "yaw": 0.0
+      },
+      "width": 11.75,
+      "depth": 12.0
+    },
+    {
+      "id": "A12",
+      "plaza": "al_fresca",
+      "level": 0,
+      "row": "S_in_c",
+      "category": "clothing_kids",
+      "label": "KIDS' CLOTHING",
+      "name": "Harbor Lane Kids",
+      "status": "planned",
+      "bounds": {
+        "minX": -247.0,
+        "maxX": -235.25,
+        "minZ": 50.0,
+        "maxZ": 62.0
+      },
+      "front": {
+        "x": -241.125,
+        "y": 0.0,
+        "z": 63.0,
+        "yaw": 0.0
+      },
+      "width": 11.75,
+      "depth": 12.0
+    },
+    {
+      "id": "A13",
+      "plaza": "al_fresca",
+      "level": 0,
+      "row": "S_in_c",
+      "category": "restaurant",
+      "label": "RESTAURANT",
+      "name": "Saffron Table",
+      "status": "planned",
+      "bounds": {
+        "minX": -235.25,
+        "maxX": -223.5,
+        "minZ": 50.0,
+        "maxZ": 62.0
+      },
+      "front": {
+        "x": -229.375,
+        "y": 0.0,
+        "z": 63.0,
+        "yaw": 0.0
+      },
+      "width": 11.75,
+      "depth": 12.0
+    },
+    {
+      "id": "A14",
+      "plaza": "al_fresca",
+      "level": 0,
+      "row": "S_in_c",
+      "category": "books",
+      "label": "BOOKSTORE",
+      "name": "Chapter Two Books",
+      "status": "planned",
+      "bounds": {
+        "minX": -223.5,
+        "maxX": -211.75,
+        "minZ": 50.0,
+        "maxZ": 62.0
+      },
+      "front": {
+        "x": -217.625,
+        "y": 0.0,
+        "z": 63.0,
+        "yaw": 0.0
+      },
+      "width": 11.75,
+      "depth": 12.0
+    },
+    {
+      "id": "A15",
+      "plaza": "al_fresca",
+      "level": 0,
+      "row": "S_in_c",
+      "category": "clothing_luxury",
+      "label": "LUXURY BOUTIQUE",
+      "name": "Pearl Street",
+      "status": "planned",
+      "bounds": {
+        "minX": -211.75,
+        "maxX": -200.0,
+        "minZ": 50.0,
+        "maxZ": 62.0
+      },
+      "front": {
+        "x": -205.875,
+        "y": 0.0,
+        "z": 63.0,
+        "yaw": 0.0
+      },
+      "width": 11.75,
+      "depth": 12.0
+    },
+    {
+      "id": "W01",
+      "plaza": "wonderland",
+      "level": 0,
+      "row": "W_out_a",
+      "category": "services",
+      "label": "MALL SERVICES",
+      "name": "Staff",
+      "status": "passage",
+      "bounds": {
+        "minX": -377.5,
+        "maxX": -368.0,
+        "minZ": -78.0,
+        "maxZ": -76.4
+      },
+      "front": {
+        "x": -367.0,
+        "y": 0.0,
+        "z": -77.2,
+        "yaw": 1.5708
+      },
+      "width": 1.6,
+      "depth": 9.5
+    },
+    {
+      "id": "W02",
+      "plaza": "wonderland",
+      "level": 0,
+      "row": "W_out_a",
+      "category": "arcade",
+      "label": "ARCADE",
+      "name": "Pixel Palace Arcade",
+      "status": "planned",
+      "bounds": {
+        "minX": -377.5,
+        "maxX": -368.0,
+        "minZ": -76.4,
+        "maxZ": -57.3
+      },
+      "front": {
+        "x": -367.0,
+        "y": 0.0,
+        "z": -66.85,
+        "yaw": 1.5708
+      },
+      "width": 19.1,
+      "depth": 9.5
+    },
+    {
+      "id": "W03",
+      "plaza": "wonderland",
+      "level": 0,
+      "row": "W_out_a",
+      "category": "clothing_kids",
+      "label": "KIDS' CLOTHING",
+      "name": "Kiddo Corner",
+      "status": "planned",
+      "bounds": {
+        "minX": -377.5,
+        "maxX": -368.0,
+        "minZ": -57.3,
+        "maxZ": -38.2
+      },
+      "front": {
+        "x": -367.0,
+        "y": 0.0,
+        "z": -47.75,
+        "yaw": 1.5708
+      },
+      "width": 19.1,
+      "depth": 9.5
+    },
+    {
+      "id": "W04",
+      "plaza": "wonderland",
+      "level": 0,
+      "row": "W_out_a",
+      "category": "toys",
+      "label": "TOY STORE",
+      "name": "Rocket Toys",
+      "status": "planned",
+      "bounds": {
+        "minX": -377.5,
+        "maxX": -368.0,
+        "minZ": -38.2,
+        "maxZ": -19.1
+      },
+      "front": {
+        "x": -367.0,
+        "y": 0.0,
+        "z": -28.65,
+        "yaw": 1.5708
+      },
+      "width": 19.1,
+      "depth": 9.5
+    },
+    {
+      "id": "W05",
+      "plaza": "wonderland",
+      "level": 0,
+      "row": "W_out_a",
+      "category": "sports",
+      "label": "SPORTING GOODS",
+      "name": "Homerunner Sports",
+      "status": "planned",
+      "bounds": {
+        "minX": -377.5,
+        "maxX": -368.0,
+        "minZ": -19.1,
+        "maxZ": 0.0
+      },
+      "front": {
+        "x": -367.0,
+        "y": 0.0,
+        "z": -9.55,
+        "yaw": 1.5708
+      },
+      "width": 19.1,
+      "depth": 9.5
+    },
+    {
+      "id": "W06",
+      "plaza": "wonderland",
+      "level": 0,
+      "row": "W_out_b",
+      "category": "ice_cream",
+      "label": "ICE CREAM",
+      "name": "Candy Cloud",
+      "status": "planned",
+      "bounds": {
+        "minX": -377.5,
+        "maxX": -368.0,
+        "minZ": 0.0,
+        "maxZ": 25.467
+      },
+      "front": {
+        "x": -367.0,
+        "y": 0.0,
+        "z": 12.733,
+        "yaw": 1.5708
+      },
+      "width": 25.467,
+      "depth": 9.5
+    },
+    {
+      "id": "W07",
+      "plaza": "wonderland",
+      "level": 0,
+      "row": "W_out_b",
+      "category": "eyewear",
+      "label": "EYEWEAR",
+      "name": "Little Lens",
+      "status": "planned",
+      "bounds": {
+        "minX": -377.5,
+        "maxX": -368.0,
+        "minZ": 25.467,
+        "maxZ": 50.933
+      },
+      "front": {
+        "x": -367.0,
+        "y": 0.0,
+        "z": 38.2,
+        "yaw": 1.5708
+      },
+      "width": 25.467,
+      "depth": 9.5
+    },
+    {
+      "id": "W08",
+      "plaza": "wonderland",
+      "level": 0,
+      "row": "W_out_b",
+      "category": "electronics",
+      "label": "ELECTRONICS",
+      "name": "Playbox Games",
+      "status": "planned",
+      "bounds": {
+        "minX": -377.5,
+        "maxX": -368.0,
+        "minZ": 50.933,
+        "maxZ": 76.4
+      },
+      "front": {
+        "x": -367.0,
+        "y": 0.0,
+        "z": 63.667,
+        "yaw": 1.5708
+      },
+      "width": 25.467,
+      "depth": 9.5
+    },
+    {
+      "id": "W09",
+      "plaza": "wonderland",
+      "level": 0,
+      "row": "W_out_b",
+      "category": "services",
+      "label": "MALL SERVICES",
+      "name": "Staff",
+      "status": "passage",
+      "bounds": {
+        "minX": -377.5,
+        "maxX": -368.0,
+        "minZ": 76.4,
+        "maxZ": 78.0
+      },
+      "front": {
+        "x": -367.0,
+        "y": 0.0,
+        "z": 77.2,
+        "yaw": 1.5708
+      },
+      "width": 1.6,
+      "depth": 9.5
+    },
+    {
+      "id": "W10",
+      "plaza": "wonderland",
+      "level": 0,
+      "row": "W_in_a",
+      "category": "jewelry",
+      "label": "JEWELRY",
+      "name": "Wonder Jewels",
+      "status": "planned",
+      "bounds": {
+        "minX": -352.0,
+        "maxX": -340.0,
+        "minZ": -50.0,
+        "maxZ": -38.25
+      },
+      "front": {
+        "x": -353.0,
+        "y": 0.0,
+        "z": -44.125,
+        "yaw": -1.5708
+      },
+      "width": 11.75,
+      "depth": 12.0
+    },
+    {
+      "id": "W11",
+      "plaza": "wonderland",
+      "level": 0,
+      "row": "W_in_a",
+      "category": "clothing_women",
+      "label": "WOMEN'S FASHION",
+      "name": "Casual Corner",
+      "status": "planned",
+      "bounds": {
+        "minX": -352.0,
+        "maxX": -340.0,
+        "minZ": -38.25,
+        "maxZ": -26.5
+      },
+      "front": {
+        "x": -353.0,
+        "y": 0.0,
+        "z": -32.375,
+        "yaw": -1.5708
+      },
+      "width": 11.75,
+      "depth": 12.0
+    },
+    {
+      "id": "W12",
+      "plaza": "wonderland",
+      "level": 0,
+      "row": "W_in_a",
+      "category": "clothing_women",
+      "label": "WOMEN'S FASHION",
+      "name": "Fanfare Fashion",
+      "status": "planned",
+      "bounds": {
+        "minX": -352.0,
+        "maxX": -340.0,
+        "minZ": -26.5,
+        "maxZ": -14.75
+      },
+      "front": {
+        "x": -353.0,
+        "y": 0.0,
+        "z": -20.625,
+        "yaw": -1.5708
+      },
+      "width": 11.75,
+      "depth": 12.0
+    },
+    {
+      "id": "W13",
+      "plaza": "wonderland",
+      "level": 0,
+      "row": "W_in_a",
+      "category": "shoes",
+      "label": "SHOES",
+      "name": "Shoes of a Lifetime",
+      "status": "planned",
+      "bounds": {
+        "minX": -352.0,
+        "maxX": -340.0,
+        "minZ": -14.75,
+        "maxZ": -3.0
+      },
+      "front": {
+        "x": -353.0,
+        "y": 0.0,
+        "z": -8.875,
+        "yaw": -1.5708
+      },
+      "width": 11.75,
+      "depth": 12.0
+    },
+    {
+      "id": "W14",
+      "plaza": "wonderland",
+      "level": 0,
+      "row": "W_in_b",
+      "category": "clothing_men",
+      "label": "MEN'S FASHION",
+      "name": "Modern Gent",
+      "status": "planned",
+      "bounds": {
+        "minX": -352.0,
+        "maxX": -340.0,
+        "minZ": 3.0,
+        "maxZ": 14.75
+      },
+      "front": {
+        "x": -353.0,
+        "y": 0.0,
+        "z": 8.875,
+        "yaw": -1.5708
+      },
+      "width": 11.75,
+      "depth": 12.0
+    },
+    {
+      "id": "W15",
+      "plaza": "wonderland",
+      "level": 0,
+      "row": "W_in_b",
+      "category": "clothing_sport",
+      "label": "SPORTSWEAR",
+      "name": "Run Like Wind",
+      "status": "planned",
+      "bounds": {
+        "minX": -352.0,
+        "maxX": -340.0,
+        "minZ": 14.75,
+        "maxZ": 26.5
+      },
+      "front": {
+        "x": -353.0,
+        "y": 0.0,
+        "z": 20.625,
+        "yaw": -1.5708
+      },
+      "width": 11.75,
+      "depth": 12.0
+    },
+    {
+      "id": "W16",
+      "plaza": "wonderland",
+      "level": 0,
+      "row": "W_in_b",
+      "category": "gifts",
+      "label": "GIFTS & ANTIQUES",
+      "name": "Petal & Pot",
+      "status": "planned",
+      "bounds": {
+        "minX": -352.0,
+        "maxX": -340.0,
+        "minZ": 26.5,
+        "maxZ": 38.25
+      },
+      "front": {
+        "x": -353.0,
+        "y": 0.0,
+        "z": 32.375,
+        "yaw": -1.5708
+      },
+      "width": 11.75,
+      "depth": 12.0
+    },
+    {
+      "id": "W17",
+      "plaza": "wonderland",
+      "level": 0,
+      "row": "W_in_b",
+      "category": "books",
+      "label": "BOOKSTORE",
+      "name": "Sir Read-a-lot",
+      "status": "planned",
+      "bounds": {
+        "minX": -352.0,
+        "maxX": -340.0,
+        "minZ": 38.25,
+        "maxZ": 50.0
+      },
+      "front": {
+        "x": -353.0,
+        "y": 0.0,
+        "z": 44.125,
+        "yaw": -1.5708
+      },
+      "width": 11.75,
+      "depth": 12.0
+    },
+    {
+      "id": "E01",
+      "plaza": "entrance",
+      "level": 0,
+      "row": "E_out_a",
+      "category": "clothing_women",
+      "label": "WOMEN'S FASHION",
+      "name": "Refined Class",
+      "status": "planned",
+      "bounds": {
+        "minX": -172.0,
+        "maxX": -160.0,
+        "minZ": -78.0,
+        "maxZ": -60.5
+      },
+      "front": {
+        "x": -173.0,
+        "y": 0.0,
+        "z": -69.25,
+        "yaw": -1.5708
+      },
+      "width": 17.5,
+      "depth": 12.0
+    },
+    {
+      "id": "E02",
+      "plaza": "entrance",
+      "level": 0,
+      "row": "E_out_a",
+      "category": "clothing_men",
+      "label": "MEN'S FASHION",
+      "name": "The Distinguished Man",
+      "status": "planned",
+      "bounds": {
+        "minX": -172.0,
+        "maxX": -160.0,
+        "minZ": -60.5,
+        "maxZ": -43.0
+      },
+      "front": {
+        "x": -173.0,
+        "y": 0.0,
+        "z": -51.75,
+        "yaw": -1.5708
+      },
+      "width": 17.5,
+      "depth": 12.0
+    },
+    {
+      "id": "E03",
+      "plaza": "entrance",
+      "level": 0,
+      "row": "E_out_a",
+      "category": "clothing_women",
+      "label": "WOMEN'S FASHION",
+      "name": "Fashion Fiesta",
+      "status": "planned",
+      "bounds": {
+        "minX": -172.0,
+        "maxX": -160.0,
+        "minZ": -43.0,
+        "maxZ": -25.5
+      },
+      "front": {
+        "x": -173.0,
+        "y": 0.0,
+        "z": -34.25,
+        "yaw": -1.5708
+      },
+      "width": 17.5,
+      "depth": 12.0
+    },
+    {
+      "id": "E04",
+      "plaza": "entrance",
+      "level": 0,
+      "row": "E_out_a",
+      "category": "clothing_kids",
+      "label": "KIDS' CLOTHING",
+      "name": "Space Kids",
+      "status": "planned",
+      "bounds": {
+        "minX": -172.0,
+        "maxX": -160.0,
+        "minZ": -25.5,
+        "maxZ": -8.0
+      },
+      "front": {
+        "x": -173.0,
+        "y": 0.0,
+        "z": -16.75,
+        "yaw": -1.5708
+      },
+      "width": 17.5,
+      "depth": 12.0
+    },
+    {
+      "id": "E05",
+      "plaza": "entrance",
+      "level": 0,
+      "row": "E_out_b",
+      "category": "shoes",
+      "label": "SHOES",
+      "name": "Rafael's Shoes",
+      "status": "planned",
+      "bounds": {
+        "minX": -172.0,
+        "maxX": -160.0,
+        "minZ": 8.0,
+        "maxZ": 25.5
+      },
+      "front": {
+        "x": -173.0,
+        "y": 0.0,
+        "z": 16.75,
+        "yaw": -1.5708
+      },
+      "width": 17.5,
+      "depth": 12.0
+    },
+    {
+      "id": "E06",
+      "plaza": "entrance",
+      "level": 0,
+      "row": "E_out_b",
+      "category": "books",
+      "label": "BOOKSTORE",
+      "name": "Everyone Luvs Books",
+      "status": "planned",
+      "bounds": {
+        "minX": -172.0,
+        "maxX": -160.0,
+        "minZ": 25.5,
+        "maxZ": 43.0
+      },
+      "front": {
+        "x": -173.0,
+        "y": 0.0,
+        "z": 34.25,
+        "yaw": -1.5708
+      },
+      "width": 17.5,
+      "depth": 12.0
+    },
+    {
+      "id": "E07",
+      "plaza": "entrance",
+      "level": 0,
+      "row": "E_out_b",
+      "category": "jewelry",
+      "label": "JEWELRY",
+      "name": "Special Gifts",
+      "status": "planned",
+      "bounds": {
+        "minX": -172.0,
+        "maxX": -160.0,
+        "minZ": 43.0,
+        "maxZ": 60.5
+      },
+      "front": {
+        "x": -173.0,
+        "y": 0.0,
+        "z": 51.75,
+        "yaw": -1.5708
+      },
+      "width": 17.5,
+      "depth": 12.0
+    },
+    {
+      "id": "E08",
+      "plaza": "entrance",
+      "level": 0,
+      "row": "E_out_b",
+      "category": "eyewear",
+      "label": "EYEWEAR",
+      "name": "Outta Sight Optics",
+      "status": "planned",
+      "bounds": {
+        "minX": -172.0,
+        "maxX": -160.0,
+        "minZ": 60.5,
+        "maxZ": 78.0
+      },
+      "front": {
+        "x": -173.0,
+        "y": 0.0,
+        "z": 69.25,
+        "yaw": -1.5708
+      },
+      "width": 17.5,
+      "depth": 12.0
+    },
+    {
+      "id": "E09",
+      "plaza": "entrance",
+      "level": 0,
+      "row": "E_in_a",
+      "category": "services",
+      "label": "MALL SERVICES",
+      "name": "Mall Services",
+      "status": "planned",
+      "bounds": {
+        "minX": -200.0,
+        "maxX": -188.0,
+        "minZ": -50.0,
+        "maxZ": -38.25
+      },
+      "front": {
+        "x": -187.0,
+        "y": 0.0,
+        "z": -44.125,
+        "yaw": 1.5708
+      },
+      "width": 11.75,
+      "depth": 12.0
+    },
+    {
+      "id": "E10",
+      "plaza": "entrance",
+      "level": 0,
+      "row": "E_in_a",
+      "category": "jewelry",
+      "label": "JEWELRY",
+      "name": "Emerald Row",
+      "status": "planned",
+      "bounds": {
+        "minX": -200.0,
+        "maxX": -188.0,
+        "minZ": -38.25,
+        "maxZ": -26.5
+      },
+      "front": {
+        "x": -187.0,
+        "y": 0.0,
+        "z": -32.375,
+        "yaw": 1.5708
+      },
+      "width": 11.75,
+      "depth": 12.0
+    },
+    {
+      "id": "E11",
+      "plaza": "entrance",
+      "level": 0,
+      "row": "E_in_a",
+      "category": "clothing_kids",
+      "label": "KIDS' CLOTHING",
+      "name": "Jamming Juvenile",
+      "status": "planned",
+      "bounds": {
+        "minX": -200.0,
+        "maxX": -188.0,
+        "minZ": -26.5,
+        "maxZ": -14.75
+      },
+      "front": {
+        "x": -187.0,
+        "y": 0.0,
+        "z": -20.625,
+        "yaw": 1.5708
+      },
+      "width": 11.75,
+      "depth": 12.0
+    },
+    {
+      "id": "E12",
+      "plaza": "entrance",
+      "level": 0,
+      "row": "E_in_a",
+      "category": "electronics",
+      "label": "ELECTRONICS",
+      "name": "Robsaka Digital",
+      "status": "planned",
+      "bounds": {
+        "minX": -200.0,
+        "maxX": -188.0,
+        "minZ": -14.75,
+        "maxZ": -3.0
+      },
+      "front": {
+        "x": -187.0,
+        "y": 0.0,
+        "z": -8.875,
+        "yaw": 1.5708
+      },
+      "width": 11.75,
+      "depth": 12.0
+    },
+    {
+      "id": "E13",
+      "plaza": "entrance",
+      "level": 0,
+      "row": "E_in_b",
+      "category": "clothing_men",
+      "label": "MEN'S FASHION",
+      "name": "Wallington's",
+      "status": "planned",
+      "bounds": {
+        "minX": -200.0,
+        "maxX": -188.0,
+        "minZ": 3.0,
+        "maxZ": 14.75
+      },
+      "front": {
+        "x": -187.0,
+        "y": 0.0,
+        "z": 8.875,
+        "yaw": 1.5708
+      },
+      "width": 11.75,
+      "depth": 12.0
+    },
+    {
+      "id": "E14",
+      "plaza": "entrance",
+      "level": 0,
+      "row": "E_in_b",
+      "category": "clothing_women",
+      "label": "WOMEN'S FASHION",
+      "name": "Ladies' Space",
+      "status": "planned",
+      "bounds": {
+        "minX": -200.0,
+        "maxX": -188.0,
+        "minZ": 14.75,
+        "maxZ": 26.5
+      },
+      "front": {
+        "x": -187.0,
+        "y": 0.0,
+        "z": 20.625,
+        "yaw": 1.5708
+      },
+      "width": 11.75,
+      "depth": 12.0
+    },
+    {
+      "id": "E15",
+      "plaza": "entrance",
+      "level": 0,
+      "row": "E_in_b",
+      "category": "shoes",
+      "label": "SHOES",
+      "name": "The Shoehorn",
+      "status": "planned",
+      "bounds": {
+        "minX": -200.0,
+        "maxX": -188.0,
+        "minZ": 26.5,
+        "maxZ": 38.25
+      },
+      "front": {
+        "x": -187.0,
+        "y": 0.0,
+        "z": 32.375,
+        "yaw": 1.5708
+      },
+      "width": 11.75,
+      "depth": 12.0
+    },
+    {
+      "id": "E16",
+      "plaza": "entrance",
+      "level": 0,
+      "row": "E_in_b",
+      "category": "clothing_luxury",
+      "label": "LUXURY BOUTIQUE",
+      "name": "Kathy's Boutique",
+      "status": "planned",
+      "bounds": {
+        "minX": -200.0,
+        "maxX": -188.0,
+        "minZ": 38.25,
+        "maxZ": 50.0
+      },
+      "front": {
+        "x": -187.0,
+        "y": 0.0,
+        "z": 44.125,
+        "yaw": 1.5708
+      },
+      "width": 11.75,
+      "depth": 12.0
+    },
+    {
+      "id": "E17",
+      "plaza": "entrance",
+      "level": 1,
+      "row": "E1_out",
+      "category": "clothing_women",
+      "label": "WOMEN'S FASHION",
+      "name": "Lady About Town",
+      "status": "planned",
+      "bounds": {
+        "minX": -172.0,
+        "maxX": -160.0,
+        "minZ": -50.0,
+        "maxZ": -37.5
+      },
+      "front": {
+        "x": -173.0,
+        "y": 6.0,
+        "z": -43.75,
+        "yaw": -1.5708
+      },
+      "width": 12.5,
+      "depth": 12.0
+    },
+    {
+      "id": "E18",
+      "plaza": "entrance",
+      "level": 1,
+      "row": "E1_out",
+      "category": "jewelry",
+      "label": "JEWELRY",
+      "name": "Marriage Makers",
+      "status": "planned",
+      "bounds": {
+        "minX": -172.0,
+        "maxX": -160.0,
+        "minZ": -37.5,
+        "maxZ": -25.0
+      },
+      "front": {
+        "x": -173.0,
+        "y": 6.0,
+        "z": -31.25,
+        "yaw": -1.5708
+      },
+      "width": 12.5,
+      "depth": 12.0
+    },
+    {
+      "id": "E19",
+      "plaza": "entrance",
+      "level": 1,
+      "row": "E1_out",
+      "category": "cafe",
+      "label": "COFFEE SHOP",
+      "name": "Roastmaster Cafe",
+      "status": "planned",
+      "bounds": {
+        "minX": -172.0,
+        "maxX": -160.0,
+        "minZ": -25.0,
+        "maxZ": -12.5
+      },
+      "front": {
+        "x": -173.0,
+        "y": 6.0,
+        "z": -18.75,
+        "yaw": -1.5708
+      },
+      "width": 12.5,
+      "depth": 12.0
+    },
+    {
+      "id": "E20",
+      "plaza": "entrance",
+      "level": 1,
+      "row": "E1_out",
+      "category": "clothing_men",
+      "label": "MEN'S FASHION",
+      "name": "Tucci's of Rome",
+      "status": "planned",
+      "bounds": {
+        "minX": -172.0,
+        "maxX": -160.0,
+        "minZ": -12.5,
+        "maxZ": 0.0
+      },
+      "front": {
+        "x": -173.0,
+        "y": 6.0,
+        "z": -6.25,
+        "yaw": -1.5708
+      },
+      "width": 12.5,
+      "depth": 12.0
+    },
+    {
+      "id": "E21",
+      "plaza": "entrance",
+      "level": 1,
+      "row": "E1_out",
+      "category": "clothing_men",
+      "label": "MEN'S FASHION",
+      "name": "Modern Businessman",
+      "status": "planned",
+      "bounds": {
+        "minX": -172.0,
+        "maxX": -160.0,
+        "minZ": 0.0,
+        "maxZ": 12.5
+      },
+      "front": {
+        "x": -173.0,
+        "y": 6.0,
+        "z": 6.25,
+        "yaw": -1.5708
+      },
+      "width": 12.5,
+      "depth": 12.0
+    },
+    {
+      "id": "E22",
+      "plaza": "entrance",
+      "level": 1,
+      "row": "E1_out",
+      "category": "shoes",
+      "label": "SHOES",
+      "name": "Kicks For Her",
+      "status": "planned",
+      "bounds": {
+        "minX": -172.0,
+        "maxX": -160.0,
+        "minZ": 12.5,
+        "maxZ": 25.0
+      },
+      "front": {
+        "x": -173.0,
+        "y": 6.0,
+        "z": 18.75,
+        "yaw": -1.5708
+      },
+      "width": 12.5,
+      "depth": 12.0
+    },
+    {
+      "id": "E23",
+      "plaza": "entrance",
+      "level": 1,
+      "row": "E1_out",
+      "category": "cosmetics",
+      "label": "COSMETICS",
+      "name": "Estelle's Cosmetics",
+      "status": "planned",
+      "bounds": {
+        "minX": -172.0,
+        "maxX": -160.0,
+        "minZ": 25.0,
+        "maxZ": 37.5
+      },
+      "front": {
+        "x": -173.0,
+        "y": 6.0,
+        "z": 31.25,
+        "yaw": -1.5708
+      },
+      "width": 12.5,
+      "depth": 12.0
+    },
+    {
+      "id": "E24",
+      "plaza": "entrance",
+      "level": 1,
+      "row": "E1_out",
+      "category": "books",
+      "label": "BOOKSTORE",
+      "name": "The Sinister Read",
+      "status": "planned",
+      "bounds": {
+        "minX": -172.0,
+        "maxX": -160.0,
+        "minZ": 37.5,
+        "maxZ": 50.0
+      },
+      "front": {
+        "x": -173.0,
+        "y": 6.0,
+        "z": 43.75,
+        "yaw": -1.5708
+      },
+      "width": 12.5,
+      "depth": 12.0
+    },
+    {
+      "id": "E25",
+      "plaza": "entrance",
+      "level": 1,
+      "row": "E1_in",
+      "category": "clothing_women",
+      "label": "WOMEN'S FASHION",
+      "name": "Women's Lib",
+      "status": "planned",
+      "bounds": {
+        "minX": -200.0,
+        "maxX": -188.0,
+        "minZ": -50.0,
+        "maxZ": -37.5
+      },
+      "front": {
+        "x": -187.0,
+        "y": 6.0,
+        "z": -43.75,
+        "yaw": 1.5708
+      },
+      "width": 12.5,
+      "depth": 12.0
+    },
+    {
+      "id": "E26",
+      "plaza": "entrance",
+      "level": 1,
+      "row": "E1_in",
+      "category": "jewelry",
+      "label": "JEWELRY",
+      "name": "Springtree Jewels",
+      "status": "planned",
+      "bounds": {
+        "minX": -200.0,
+        "maxX": -188.0,
+        "minZ": -37.5,
+        "maxZ": -25.0
+      },
+      "front": {
+        "x": -187.0,
+        "y": 6.0,
+        "z": -31.25,
+        "yaw": 1.5708
+      },
+      "width": 12.5,
+      "depth": 12.0
+    },
+    {
+      "id": "E27",
+      "plaza": "entrance",
+      "level": 1,
+      "row": "E1_in",
+      "category": "sports",
+      "label": "SPORTING GOODS",
+      "name": "Shooting Star Sports",
+      "status": "planned",
+      "bounds": {
+        "minX": -200.0,
+        "maxX": -188.0,
+        "minZ": -25.0,
+        "maxZ": -12.5
+      },
+      "front": {
+        "x": -187.0,
+        "y": 6.0,
+        "z": -18.75,
+        "yaw": 1.5708
+      },
+      "width": 12.5,
+      "depth": 12.0
+    },
+    {
+      "id": "E28",
+      "plaza": "entrance",
+      "level": 1,
+      "row": "E1_in",
+      "category": "clothing_men",
+      "label": "MEN'S FASHION",
+      "name": "In the Closet",
+      "status": "planned",
+      "bounds": {
+        "minX": -200.0,
+        "maxX": -188.0,
+        "minZ": -12.5,
+        "maxZ": 0.0
+      },
+      "front": {
+        "x": -187.0,
+        "y": 6.0,
+        "z": -6.25,
+        "yaw": 1.5708
+      },
+      "width": 12.5,
+      "depth": 12.0
+    },
+    {
+      "id": "E29",
+      "plaza": "entrance",
+      "level": 1,
+      "row": "E1_in",
+      "category": "gifts",
+      "label": "GIFTS & ANTIQUES",
+      "name": "Ned's Knicknackery",
+      "status": "planned",
+      "bounds": {
+        "minX": -200.0,
+        "maxX": -188.0,
+        "minZ": 0.0,
+        "maxZ": 12.5
+      },
+      "front": {
+        "x": -187.0,
+        "y": 6.0,
+        "z": 6.25,
+        "yaw": 1.5708
+      },
+      "width": 12.5,
+      "depth": 12.0
+    },
+    {
+      "id": "E30",
+      "plaza": "entrance",
+      "level": 1,
+      "row": "E1_in",
+      "category": "clothing_women",
+      "label": "WOMEN'S FASHION",
+      "name": "Gromin's",
+      "status": "planned",
+      "bounds": {
+        "minX": -200.0,
+        "maxX": -188.0,
+        "minZ": 12.5,
+        "maxZ": 25.0
+      },
+      "front": {
+        "x": -187.0,
+        "y": 6.0,
+        "z": 18.75,
+        "yaw": 1.5708
+      },
+      "width": 12.5,
+      "depth": 12.0
+    },
+    {
+      "id": "E31",
+      "plaza": "entrance",
+      "level": 1,
+      "row": "E1_in",
+      "category": "clothing_men",
+      "label": "MEN'S FASHION",
+      "name": "Men's Storehouse",
+      "status": "planned",
+      "bounds": {
+        "minX": -200.0,
+        "maxX": -188.0,
+        "minZ": 25.0,
+        "maxZ": 37.5
+      },
+      "front": {
+        "x": -187.0,
+        "y": 6.0,
+        "z": 31.25,
+        "yaw": 1.5708
+      },
+      "width": 12.5,
+      "depth": 12.0
+    },
+    {
+      "id": "E32",
+      "plaza": "entrance",
+      "level": 1,
+      "row": "E1_in",
+      "category": "services",
+      "label": "MALL SERVICES",
+      "name": "Security Office",
+      "status": "planned",
+      "bounds": {
+        "minX": -200.0,
+        "maxX": -188.0,
+        "minZ": 37.5,
+        "maxZ": 50.0
+      },
+      "front": {
+        "x": -187.0,
+        "y": 6.0,
+        "z": 43.75,
+        "yaw": 1.5708
+      },
+      "width": 12.5,
+      "depth": 12.0
+    },
+    {
+      "id": "P15",
+      "plaza": "paradise",
+      "level": 1,
+      "row": "P1_out",
+      "category": "cinema",
+      "label": "CINEMA",
+      "name": "Colby's Movieland Lounge",
+      "status": "planned",
+      "bounds": {
+        "minX": -300.0,
+        "maxX": -287.5,
+        "minZ": -87.5,
+        "maxZ": -78.0
+      },
+      "front": {
+        "x": -293.75,
+        "y": 6.0,
+        "z": -77.0,
+        "yaw": 0.0
+      },
+      "width": 12.5,
+      "depth": 9.5
+    },
+    {
+      "id": "P16",
+      "plaza": "paradise",
+      "level": 1,
+      "row": "P1_out",
+      "category": "books",
+      "label": "BOOKSTORE",
+      "name": "Bachman's Bookporium",
+      "status": "planned",
+      "bounds": {
+        "minX": -287.5,
+        "maxX": -275.0,
+        "minZ": -87.5,
+        "maxZ": -78.0
+      },
+      "front": {
+        "x": -281.25,
+        "y": 6.0,
+        "z": -77.0,
+        "yaw": 0.0
+      },
+      "width": 12.5,
+      "depth": 9.5
+    },
+    {
+      "id": "P17",
+      "plaza": "paradise",
+      "level": 1,
+      "row": "P1_out",
+      "category": "music",
+      "label": "MUSIC & RECORDS",
+      "name": "TuneMakers",
+      "status": "planned",
+      "bounds": {
+        "minX": -275.0,
+        "maxX": -262.5,
+        "minZ": -87.5,
+        "maxZ": -78.0
+      },
+      "front": {
+        "x": -268.75,
+        "y": 6.0,
+        "z": -77.0,
+        "yaw": 0.0
+      },
+      "width": 12.5,
+      "depth": 9.5
+    },
+    {
+      "id": "P18",
+      "plaza": "paradise",
+      "level": 1,
+      "row": "P1_out",
+      "category": "camera",
+      "label": "CAMERA SHOP",
+      "name": "Cam's Cameras",
+      "status": "planned",
+      "bounds": {
+        "minX": -262.5,
+        "maxX": -250.0,
+        "minZ": -87.5,
+        "maxZ": -78.0
+      },
+      "front": {
+        "x": -256.25,
+        "y": 6.0,
+        "z": -77.0,
+        "yaw": 0.0
+      },
+      "width": 12.5,
+      "depth": 9.5
+    },
+    {
+      "id": "P19",
+      "plaza": "paradise",
+      "level": 1,
+      "row": "P1_out",
+      "category": "jewelry",
+      "label": "JEWELRY",
+      "name": "Josh's Jewels",
+      "status": "planned",
+      "bounds": {
+        "minX": -250.0,
+        "maxX": -237.5,
+        "minZ": -87.5,
+        "maxZ": -78.0
+      },
+      "front": {
+        "x": -243.75,
+        "y": 6.0,
+        "z": -77.0,
+        "yaw": 0.0
+      },
+      "width": 12.5,
+      "depth": 9.5
+    },
+    {
+      "id": "P20",
+      "plaza": "paradise",
+      "level": 1,
+      "row": "P1_out",
+      "category": "eyewear",
+      "label": "EYEWEAR",
+      "name": "Universe of Optics",
+      "status": "planned",
+      "bounds": {
+        "minX": -237.5,
+        "maxX": -225.0,
+        "minZ": -87.5,
+        "maxZ": -78.0
+      },
+      "front": {
+        "x": -231.25,
+        "y": 6.0,
+        "z": -77.0,
+        "yaw": 0.0
+      },
+      "width": 12.5,
+      "depth": 9.5
+    },
+    {
+      "id": "P21",
+      "plaza": "paradise",
+      "level": 1,
+      "row": "P1_out",
+      "category": "clothing_men",
+      "label": "MEN'S FASHION",
+      "name": "Cantonbury's",
+      "status": "planned",
+      "bounds": {
+        "minX": -225.0,
+        "maxX": -212.5,
+        "minZ": -87.5,
+        "maxZ": -78.0
+      },
+      "front": {
+        "x": -218.75,
+        "y": 6.0,
+        "z": -77.0,
+        "yaw": 0.0
+      },
+      "width": 12.5,
+      "depth": 9.5
+    },
+    {
+      "id": "P22",
+      "plaza": "paradise",
+      "level": 1,
+      "row": "P1_out",
+      "category": "sports",
+      "label": "SPORTING GOODS",
+      "name": "Sportrance",
+      "status": "planned",
+      "bounds": {
+        "minX": -212.5,
+        "maxX": -200.0,
+        "minZ": -87.5,
+        "maxZ": -78.0
+      },
+      "front": {
+        "x": -206.25,
+        "y": 6.0,
+        "z": -77.0,
+        "yaw": 0.0
+      },
+      "width": 12.5,
+      "depth": 9.5
+    },
+    {
+      "id": "P23",
+      "plaza": "paradise",
+      "level": 1,
+      "row": "P1_in",
+      "category": "books",
+      "label": "BOOKSTORE",
+      "name": "Contemporary Reading",
+      "status": "planned",
+      "bounds": {
+        "minX": -300.0,
+        "maxX": -287.5,
+        "minZ": -62.0,
+        "maxZ": -50.0
+      },
+      "front": {
+        "x": -293.75,
+        "y": 6.0,
+        "z": -63.0,
+        "yaw": 3.1416
+      },
+      "width": 12.5,
+      "depth": 12.0
+    },
+    {
+      "id": "P24",
+      "plaza": "paradise",
+      "level": 1,
+      "row": "P1_in",
+      "category": "shoes",
+      "label": "SHOES",
+      "name": "Shoekin's",
+      "status": "planned",
+      "bounds": {
+        "minX": -287.5,
+        "maxX": -275.0,
+        "minZ": -62.0,
+        "maxZ": -50.0
+      },
+      "front": {
+        "x": -281.25,
+        "y": 6.0,
+        "z": -63.0,
+        "yaw": 3.1416
+      },
+      "width": 12.5,
+      "depth": 12.0
+    },
+    {
+      "id": "P25",
+      "plaza": "paradise",
+      "level": 1,
+      "row": "P1_in",
+      "category": "clothing_kids",
+      "label": "KIDS' CLOTHING",
+      "name": "Kid's Choice",
+      "status": "planned",
+      "bounds": {
+        "minX": -275.0,
+        "maxX": -262.5,
+        "minZ": -62.0,
+        "maxZ": -50.0
+      },
+      "front": {
+        "x": -268.75,
+        "y": 6.0,
+        "z": -63.0,
+        "yaw": 3.1416
+      },
+      "width": 12.5,
+      "depth": 12.0
+    },
+    {
+      "id": "P26",
+      "plaza": "paradise",
+      "level": 1,
+      "row": "P1_in",
+      "category": "toys",
+      "label": "TOY STORE",
+      "name": "Child's Play",
+      "status": "planned",
+      "bounds": {
+        "minX": -262.5,
+        "maxX": -250.0,
+        "minZ": -62.0,
+        "maxZ": -50.0
+      },
+      "front": {
+        "x": -256.25,
+        "y": 6.0,
+        "z": -63.0,
+        "yaw": 3.1416
+      },
+      "width": 12.5,
+      "depth": 12.0
+    },
+    {
+      "id": "P27",
+      "plaza": "paradise",
+      "level": 1,
+      "row": "P1_in",
+      "category": "music",
+      "label": "MUSIC & RECORDS",
+      "name": "Players Music",
+      "status": "planned",
+      "bounds": {
+        "minX": -250.0,
+        "maxX": -237.5,
+        "minZ": -62.0,
+        "maxZ": -50.0
+      },
+      "front": {
+        "x": -243.75,
+        "y": 6.0,
+        "z": -63.0,
+        "yaw": 3.1416
+      },
+      "width": 12.5,
+      "depth": 12.0
+    },
+    {
+      "id": "P28",
+      "plaza": "paradise",
+      "level": 1,
+      "row": "P1_in",
+      "category": "fast_food",
+      "label": "FAST FOOD",
+      "name": "Jill's Sandwiches",
+      "status": "planned",
+      "bounds": {
+        "minX": -237.5,
+        "maxX": -225.0,
+        "minZ": -62.0,
+        "maxZ": -50.0
+      },
+      "front": {
+        "x": -231.25,
+        "y": 6.0,
+        "z": -63.0,
+        "yaw": 3.1416
+      },
+      "width": 12.5,
+      "depth": 12.0
+    },
+    {
+      "id": "P29",
+      "plaza": "paradise",
+      "level": 1,
+      "row": "P1_in",
+      "category": "music",
+      "label": "MUSIC & RECORDS",
+      "name": "Entertainment Isle",
+      "status": "planned",
+      "bounds": {
+        "minX": -225.0,
+        "maxX": -212.5,
+        "minZ": -62.0,
+        "maxZ": -50.0
+      },
+      "front": {
+        "x": -218.75,
+        "y": 6.0,
+        "z": -63.0,
+        "yaw": 3.1416
+      },
+      "width": 12.5,
+      "depth": 12.0
+    },
+    {
+      "id": "P30",
+      "plaza": "paradise",
+      "level": 1,
+      "row": "P1_in",
+      "category": "clothing_kids",
+      "label": "KIDS' CLOTHING",
+      "name": "Tyke n' Tots",
+      "status": "planned",
+      "bounds": {
+        "minX": -212.5,
+        "maxX": -200.0,
+        "minZ": -62.0,
+        "maxZ": -50.0
+      },
+      "front": {
+        "x": -206.25,
+        "y": 6.0,
+        "z": -63.0,
+        "yaw": 3.1416
+      },
+      "width": 12.5,
+      "depth": 12.0
+    },
+    {
+      "id": "W18",
+      "plaza": "wonderland",
+      "level": 1,
+      "row": "W1_out",
+      "category": "clothing_kids",
+      "label": "KIDS' CLOTHING",
+      "name": "Small Fry Duds",
+      "status": "planned",
+      "bounds": {
+        "minX": -377.5,
+        "maxX": -368.0,
+        "minZ": -50.0,
+        "maxZ": -37.5
+      },
+      "front": {
+        "x": -367.0,
+        "y": 6.0,
+        "z": -43.75,
+        "yaw": 1.5708
+      },
+      "width": 12.5,
+      "depth": 9.5
+    },
+    {
+      "id": "W19",
+      "plaza": "wonderland",
+      "level": 1,
+      "row": "W1_out",
+      "category": "clothing_kids",
+      "label": "KIDS' CLOTHING",
+      "name": "Scuffs and Scrapes",
+      "status": "planned",
+      "bounds": {
+        "minX": -377.5,
+        "maxX": -368.0,
+        "minZ": -37.5,
+        "maxZ": -25.0
+      },
+      "front": {
+        "x": -367.0,
+        "y": 6.0,
+        "z": -31.25,
+        "yaw": 1.5708
+      },
+      "width": 12.5,
+      "depth": 9.5
+    },
+    {
+      "id": "W20",
+      "plaza": "wonderland",
+      "level": 1,
+      "row": "W1_out",
+      "category": "cosmetics",
+      "label": "COSMETICS",
+      "name": "Beautification",
+      "status": "planned",
+      "bounds": {
+        "minX": -377.5,
+        "maxX": -368.0,
+        "minZ": -25.0,
+        "maxZ": -12.5
+      },
+      "front": {
+        "x": -367.0,
+        "y": 6.0,
+        "z": -18.75,
+        "yaw": 1.5708
+      },
+      "width": 12.5,
+      "depth": 9.5
+    },
+    {
+      "id": "W21",
+      "plaza": "wonderland",
+      "level": 1,
+      "row": "W1_out",
+      "category": "jewelry",
+      "label": "JEWELRY",
+      "name": "Fine Cut Jewels",
+      "status": "planned",
+      "bounds": {
+        "minX": -377.5,
+        "maxX": -368.0,
+        "minZ": -12.5,
+        "maxZ": 0.0
+      },
+      "front": {
+        "x": -367.0,
+        "y": 6.0,
+        "z": -6.25,
+        "yaw": 1.5708
+      },
+      "width": 12.5,
+      "depth": 9.5
+    },
+    {
+      "id": "W22",
+      "plaza": "wonderland",
+      "level": 1,
+      "row": "W1_out",
+      "category": "eyewear",
+      "label": "EYEWEAR",
+      "name": "The Lens Zen",
+      "status": "planned",
+      "bounds": {
+        "minX": -377.5,
+        "maxX": -368.0,
+        "minZ": 0.0,
+        "maxZ": 12.5
+      },
+      "front": {
+        "x": -367.0,
+        "y": 6.0,
+        "z": 6.25,
+        "yaw": 1.5708
+      },
+      "width": 12.5,
+      "depth": 9.5
+    },
+    {
+      "id": "W23",
+      "plaza": "wonderland",
+      "level": 1,
+      "row": "W1_out",
+      "category": "camera",
+      "label": "CAMERA SHOP",
+      "name": "Philo's Photos",
+      "status": "planned",
+      "bounds": {
+        "minX": -377.5,
+        "maxX": -368.0,
+        "minZ": 12.5,
+        "maxZ": 25.0
+      },
+      "front": {
+        "x": -367.0,
+        "y": 6.0,
+        "z": 18.75,
+        "yaw": 1.5708
+      },
+      "width": 12.5,
+      "depth": 9.5
+    },
+    {
+      "id": "W24",
+      "plaza": "wonderland",
+      "level": 1,
+      "row": "W1_out",
+      "category": "clothing_women",
+      "label": "WOMEN'S FASHION",
+      "name": "Lovely Fashion House",
+      "status": "planned",
+      "bounds": {
+        "minX": -377.5,
+        "maxX": -368.0,
+        "minZ": 25.0,
+        "maxZ": 37.5
+      },
+      "front": {
+        "x": -367.0,
+        "y": 6.0,
+        "z": 31.25,
+        "yaw": 1.5708
+      },
+      "width": 12.5,
+      "depth": 9.5
+    },
+    {
+      "id": "W25",
+      "plaza": "wonderland",
+      "level": 1,
+      "row": "W1_out",
+      "category": "sports",
+      "label": "SPORTING GOODS",
+      "name": "Kokonutz Sports",
+      "status": "planned",
+      "bounds": {
+        "minX": -377.5,
+        "maxX": -368.0,
+        "minZ": 37.5,
+        "maxZ": 50.0
+      },
+      "front": {
+        "x": -367.0,
+        "y": 6.0,
+        "z": 43.75,
+        "yaw": 1.5708
+      },
+      "width": 12.5,
+      "depth": 9.5
+    },
+    {
+      "id": "W26",
+      "plaza": "wonderland",
+      "level": 1,
+      "row": "W1_in",
+      "category": "clothing_luxury",
+      "label": "LUXURY BOUTIQUE",
+      "name": "Contemporary Purses",
+      "status": "planned",
+      "bounds": {
+        "minX": -352.0,
+        "maxX": -340.0,
+        "minZ": -50.0,
+        "maxZ": -37.5
+      },
+      "front": {
+        "x": -353.0,
+        "y": 6.0,
+        "z": -43.75,
+        "yaw": -1.5708
+      },
+      "width": 12.5,
+      "depth": 12.0
+    },
+    {
+      "id": "W27",
+      "plaza": "wonderland",
+      "level": 1,
+      "row": "W1_in",
+      "category": "clothing_women",
+      "label": "WOMEN'S FASHION",
+      "name": "Casual Gals",
+      "status": "planned",
+      "bounds": {
+        "minX": -352.0,
+        "maxX": -340.0,
+        "minZ": -37.5,
+        "maxZ": -25.0
+      },
+      "front": {
+        "x": -353.0,
+        "y": 6.0,
+        "z": -31.25,
+        "yaw": -1.5708
+      },
+      "width": 12.5,
+      "depth": 12.0
+    },
+    {
+      "id": "W28",
+      "plaza": "wonderland",
+      "level": 1,
+      "row": "W1_in",
+      "category": "sports",
+      "label": "SPORTING GOODS",
+      "name": "Homerunner's",
+      "status": "planned",
+      "bounds": {
+        "minX": -352.0,
+        "maxX": -340.0,
+        "minZ": -25.0,
+        "maxZ": -12.5
+      },
+      "front": {
+        "x": -353.0,
+        "y": 6.0,
+        "z": -18.75,
+        "yaw": -1.5708
+      },
+      "width": 12.5,
+      "depth": 12.0
+    },
+    {
+      "id": "W29",
+      "plaza": "wonderland",
+      "level": 1,
+      "row": "W1_in",
+      "category": "books",
+      "label": "BOOKSTORE",
+      "name": "Sir Book-a-lot",
+      "status": "planned",
+      "bounds": {
+        "minX": -352.0,
+        "maxX": -340.0,
+        "minZ": -12.5,
+        "maxZ": 0.0
+      },
+      "front": {
+        "x": -353.0,
+        "y": 6.0,
+        "z": -6.25,
+        "yaw": -1.5708
+      },
+      "width": 12.5,
+      "depth": 12.0
+    },
+    {
+      "id": "W30",
+      "plaza": "wonderland",
+      "level": 1,
+      "row": "W1_in",
+      "category": "gym",
+      "label": "GYM",
+      "name": "Flexin' Fitness",
+      "status": "planned",
+      "bounds": {
+        "minX": -352.0,
+        "maxX": -340.0,
+        "minZ": 0.0,
+        "maxZ": 12.5
+      },
+      "front": {
+        "x": -353.0,
+        "y": 6.0,
+        "z": 6.25,
+        "yaw": -1.5708
+      },
+      "width": 12.5,
+      "depth": 12.0
+    },
+    {
+      "id": "W31",
+      "plaza": "wonderland",
+      "level": 1,
+      "row": "W1_in",
+      "category": "clothing_men",
+      "label": "MEN'S FASHION",
+      "name": "Weber's Garments",
+      "status": "planned",
+      "bounds": {
+        "minX": -352.0,
+        "maxX": -340.0,
+        "minZ": 12.5,
+        "maxZ": 25.0
+      },
+      "front": {
+        "x": -353.0,
+        "y": 6.0,
+        "z": 18.75,
+        "yaw": -1.5708
+      },
+      "width": 12.5,
+      "depth": 12.0
+    },
+    {
+      "id": "W32",
+      "plaza": "wonderland",
+      "level": 1,
+      "row": "W1_in",
+      "category": "clothing_women",
+      "label": "WOMEN'S FASHION",
+      "name": "Brand New U",
+      "status": "planned",
+      "bounds": {
+        "minX": -352.0,
+        "maxX": -340.0,
+        "minZ": 25.0,
+        "maxZ": 37.5
+      },
+      "front": {
+        "x": -353.0,
+        "y": 6.0,
+        "z": 31.25,
+        "yaw": -1.5708
+      },
+      "width": 12.5,
+      "depth": 12.0
+    },
+    {
+      "id": "W33",
+      "plaza": "wonderland",
+      "level": 1,
+      "row": "W1_in",
+      "category": "eyewear",
+      "label": "EYEWEAR",
+      "name": "Eyes Like Us",
+      "status": "planned",
+      "bounds": {
+        "minX": -352.0,
+        "maxX": -340.0,
+        "minZ": 37.5,
+        "maxZ": 50.0
+      },
+      "front": {
+        "x": -353.0,
+        "y": 6.0,
+        "z": 43.75,
+        "yaw": -1.5708
+      },
+      "width": 12.5,
+      "depth": 12.0
+    }
+  ],
+  "stores": [
+    {
+      "key": "northline",
+      "name": "Northline",
+      "category": "clothing_department",
+      "plaza": "al_fresca",
+      "position": [
+        -236.0,
+        0.0,
+        82.5
+      ],
+      "rotationY": 3.141592653589793
+    },
+    {
+      "key": "hearth_hollow",
+      "name": "Hearth & Hollow",
+      "category": "home_decor",
+      "plaza": "paradise",
+      "position": [
+        -250.0,
+        0.0,
+        -82.5
+      ],
+      "rotationY": 0.0
+    },
+    {
+      "key": "greencart",
+      "name": "GreenCart",
+      "category": "grocery",
+      "plaza": "north_plaza",
+      "position": [
+        -340.0,
+        0.0,
+        -82.5
+      ],
+      "rotationY": 0.0
+    }
+  ],
+  "links": [
+    {
+      "from": "entrance",
+      "to": "paradise",
+      "via": "court_ne"
+    },
+    {
+      "from": "entrance",
+      "to": "al_fresca",
+      "via": "court_se"
+    },
+    {
+      "from": "paradise",
+      "to": "north_plaza",
+      "via": "walkway"
+    },
+    {
+      "from": "north_plaza",
+      "to": "wonderland",
+      "via": "court_nw"
+    },
+    {
+      "from": "wonderland",
+      "to": "food_court",
+      "via": "court_sw"
+    },
+    {
+      "from": "food_court",
+      "to": "al_fresca",
+      "via": "walkway"
+    },
+    {
+      "from": "leisure_park",
+      "to": "paradise",
+      "via": "park_exit_n"
+    },
+    {
+      "from": "leisure_park",
+      "to": "al_fresca",
+      "via": "park_exit_s"
+    },
+    {
+      "from": "leisure_park",
+      "to": "wonderland",
+      "via": "park_exit_w"
+    },
+    {
+      "from": "leisure_park",
+      "to": "entrance",
+      "via": "park_exit_e"
+    },
+    {
+      "from": "entrance",
+      "to": "forecourt",
+      "via": "main_entrance"
+    }
+  ],
+  "backstage": {
+    "serviceCorridors": [
+      {
+        "minX": -380.0,
+        "maxX": -160.0,
+        "minZ": -90.0,
+        "maxZ": -87.5
+      },
+      {
+        "minX": -380.0,
+        "maxX": -160.0,
+        "minZ": 87.5,
+        "maxZ": 90.0
+      },
+      {
+        "minX": -380.0,
+        "maxX": -377.5,
+        "minZ": -90.0,
+        "maxZ": 90.0
+      }
+    ],
+    "warehouse": {
+      "minX": -188.0,
+      "maxX": -160.0,
+      "minZ": -90.0,
+      "maxZ": -78.0
+    },
+    "securityRoom": {
+      "minX": -200.0,
+      "maxX": -188.0,
+      "minZ": -90.0,
+      "maxZ": -78.0
+    },
+    "loadingDock": {
+      "minX": -302.0,
+      "maxX": -280.0,
+      "minZ": -94.5,
+      "maxZ": -90.0
+    },
+    "roofTerrace": {
+      "minX": -200.0,
+      "maxX": -160.0,
+      "minZ": -90.0,
+      "maxZ": -78.0,
+      "y": 11.6
+    },
+    "roofAccess": "Stair_roof_a"
+  }
+}
