@@ -16,7 +16,6 @@ const IMPACT_Y = 1.25
 const IMPACT_TOWARDS_ATTACKER = 0.35
 const IMPACT_SIZE = 1.1
 const CANVAS = 128
-const FLASH_S = 0.08
 const DAMAGE_LIFETIME_S = 0.8
 const DAMAGE_POP_S = 0.15
 const DAMAGE_Y = 1.95
@@ -178,42 +177,6 @@ export function createPunchImpact(avatar: THREE.Object3D, dirX: number, dirZ: nu
   }
 
   return { update }
-}
-
-let flashMaterial: THREE.MeshBasicMaterial | null = null
-
-function whiteFlashMaterial(): THREE.MeshBasicMaterial {
-  if (!flashMaterial) flashMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false })
-  return flashMaterial
-}
-
-export function createHitFlash(avatar: THREE.Object3D, delay: number) {
-  const originals = new Map<THREE.Mesh, THREE.Material | THREE.Material[]>()
-  let age = -delay
-  let started = false
-
-  function end(): void {
-    for (const [mesh, material] of originals) mesh.material = material
-    originals.clear()
-  }
-
-  function update(dt: number): boolean {
-    age += dt
-    if (age >= FLASH_S) {
-      end()
-      return false
-    }
-    if (age < 0 || started) return true
-    started = true
-    avatar.traverse((obj) => {
-      if (!(obj instanceof THREE.Mesh)) return
-      originals.set(obj, obj.material)
-      obj.material = whiteFlashMaterial()
-    })
-    return true
-  }
-
-  return { avatar, update, end }
 }
 
 const damageTextures = new Map<string, THREE.CanvasTexture>()
