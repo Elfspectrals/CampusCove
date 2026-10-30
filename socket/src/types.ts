@@ -116,6 +116,7 @@ export interface PubRacer {
   finishedAt: number | null
   forfeited: boolean
   alcohol: number
+  spills: number
 }
 
 export interface PubRace {
@@ -148,10 +149,21 @@ export interface DartsGame {
   turnSeq: number
 }
 
+/** A Drink Fast challenge sent from one seated player to another, waiting for an answer. */
+export interface PubChallenge {
+  from: string
+  to: string
+  expiresAt: number
+}
+
 export interface PubState {
   secretOpen: boolean
   race: PubRace | null
   darts: DartsGame | null
+  /** Pending Drink Fast challenges, keyed by the challenger's sessionId. */
+  challenges: Map<string, PubChallenge>
+  /** Last challenge sent per challenger (rate limit), pruned as it goes. */
+  challengeSentAt: Map<string, number>
 }
 
 export interface ClinicBedOccupant {

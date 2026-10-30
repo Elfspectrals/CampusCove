@@ -26,6 +26,8 @@ import GamePubMenu from '../components/game/GamePubMenu.vue'
 import GamePubSecretDialog from '../components/game/GamePubSecretDialog.vue'
 import GameDrunkEffects from '../components/game/GameDrunkEffects.vue'
 import GameDrinkFast from '../components/game/GameDrinkFast.vue'
+import GamePubChallenge from '../components/game/GamePubChallenge.vue'
+import GamePubRaceBoard from '../components/game/GamePubRaceBoard.vue'
 import GameMeterShot from '../components/game/GameMeterShot.vue'
 import GameDarts from '../components/game/GameDarts.vue'
 import GameBasketCheckout from '../components/game/GameBasketCheckout.vue'
@@ -51,6 +53,7 @@ import { useInteractionTargets } from '../composables/game/useInteractionTargets
 import { useIntoxication } from '../composables/game/useIntoxication'
 import { usePlayerInventory } from '../composables/game/usePlayerInventory'
 import { usePub } from '../composables/game/usePub'
+import { usePubChallenge } from '../composables/game/usePubChallenge'
 import { usePubGames } from '../composables/game/usePubGames'
 import { useRoomEnvironment } from '../composables/game/useRoomEnvironment'
 import { useSeats } from '../composables/game/useSeats'
@@ -330,7 +333,10 @@ const pub = usePub({
   refreshInventory: () => refreshOwnedItems(),
   selectHotbarItem,
   say: (text) => survival.say(text),
-  onError: () => seats.onPubError(),
+  onError: (code) => {
+    seats.onPubError()
+    return pubChallenge.onError(code)
+  },
   nudgeCamera: (dirX, dirZ, strength) => {
     if (!reducedEffects.value) movement.joltCamera(dirX, dirZ, strength)
   },
@@ -357,6 +363,7 @@ const pubGames = usePubGames({
   holdingConsumable: () => survival.heldConsumable() !== null,
   pseudoOf: (sessionId) => (sessionId === gameRoomRef.value?.sessionId ? getStoredAuth()?.user.display_name ?? 'You' : realtime.remotePseudo(sessionId) ?? '…'),
   say: (text) => survival.say(text),
+  setRacePint: (sessionId, progress) => realtime.setRemoteRacePint(sessionId, progress),
 })
 const {
   race: pubRace,
@@ -367,7 +374,28 @@ const {
   dartsOpen: pubDartsOpen,
   dartsPlayers: pubDartsPlayers,
   uiOpen: pubGamesOpen,
+  board: pubRaceBoard,
 } = pubGames
+
+const pubChallenge = usePubChallenge({
+  getScene,
+  getCamera,
+  canvasRef,
+  gameRoomRef,
+  promptsHidden: () => inventoryOpen.value || !canUsePub(),
+  mySeat: () => seats.mySeat.value,
+  seatOf: seats.seatOf,
+  busy: () => pubRace.value !== null || pubGamesOpen.value,
+  holdingConsumable: () => survival.heldConsumable() !== null,
+  pseudoOf: (sessionId) => realtime.remotePseudo(sessionId) ?? '…',
+  say: (text) => survival.say(text),
+})
+const { incoming: pubChallengeIncoming, outgoing: pubChallengeOutgoing } = pubChallenge
+
+function closePubRace(): void {
+  pubGames.closeRace()
+  pubChallenge.clear()
+}
 const pubUiOpen = computed(() => pubMenuOpen.value || pubSecretOpen.value || pubGamesOpen.value)
 // Back to mouse look once the menu, the bouncer or a game screen closes.
 watch(pubUiOpen, (open) => {
@@ -408,7 +436,7 @@ const interactions = useInteractionTargets({
     return { position: target.tagPosition, detail }
   },
   onStoreTarget: () => (clothesTarget.value ? clothingStore.toggleTarget() : openStorePurchase()),
-  sources: [pub.source, pubGames.source, seats.source],
+  sources: [pub.source, pubChallenge.source, pubGames.source, seats.source],
 })
 const { doorPrompt } = interactions
 
@@ -687,6 +715,8 @@ function handleExtraKeyDown(e: KeyboardEvent): boolean {
   if (tradeUiOpen.value) return true
   // the bouncer's text field and the pub games (Space holds the pint) take the keyboard too
   if (pubSecretOpen.value || pubGamesOpen.value) return true
+  // Y / N answer a Drink Fast challenge
+  if (pubChallenge.onKeyDown(e)) return true
   // seated at the pub: a step or a jump stands the player up instead of moving
   if (seats.onKeyDown(e)) return true
   // some browsers also deliver the Esc that released the lock: ignore it, or the menu would flash away
@@ -761,6 +791,7 @@ const movement = useGameMovement({
     clothingStore.updatePrompt()
     clinic.updatePrompt()
     pub.tick(dt)
+    pubGames.tick()
     if (!doorSigns.group.parent) getScene()?.add(doorSigns.group)
   },
 })
@@ -822,6 +853,7 @@ const realtime = useGameRealtime({
   seats: { seatPose: seats.seatPose, onSeated: seats.onSeated },
   pub: pub.handlers,
   pubGames: pubGames.handlers,
+  pubChallenge: pubChallenge.handlers,
 })
 const { switchingRoom } = realtime
 
@@ -1225,8 +1257,18 @@ const crosshairClass = computed(() => {
       :players="pubRacePlayers"
       :starts-at="pubRace.startsAt"
       :finished="pubRace.finished"
+      :results="pubRace.results"
+      :reduced-effects="reducedEffects"
       @progress="pubGames.sendRaceProgress"
-      @close="pubGames.closeRace"
+      @close="closePubRace"
+    />
+    <GamePubRaceBoard v-if="pubRaceBoard" :board="pubRaceBoard" />
+    <GamePubChallenge
+      v-if="!pubGamesOpen"
+      :incoming="pubChallengeIncoming"
+      :outgoing="pubChallengeOutgoing"
+      @accept="pubChallenge.accept"
+      @decline="pubChallenge.decline"
     />
     <GameMeterShot
       v-if="pubShots"

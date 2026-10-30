@@ -97,7 +97,7 @@ function fakeRoom(...players: Player[]) {
     housingUnits: [],
     clinicBeds: new Map(),
     seats: new Map<string, string>(),
-    pub: { secretOpen: false, race: null, darts: null },
+    pub: { secretOpen: false, race: null, darts: null, challenges: new Map(), challengeSentAt: new Map() },
     forEachClient: (fn: (c: GameClient) => void, except?: GameClient) => clients.filter((c) => c !== except).forEach(fn),
     broadcastMove: () => undefined,
     clock: { setTimeout: (fn: () => void) => void timers.push(fn) }

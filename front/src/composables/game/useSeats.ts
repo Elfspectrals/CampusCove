@@ -61,6 +61,11 @@ export function useSeats(deps: SeatsDeps) {
     return { x, y, z, yaw: seat.yaw }
   }
 
+  /** The seat another player (or this one) sits on, from the `user_seated` broadcasts. */
+  function seatOf(sessionId: string): PubSeat | null {
+    return seatById(seatBySession.get(sessionId))
+  }
+
   function refreshOccupied(): void {
     occupied.value = new Set(seatBySession.values())
   }
@@ -143,5 +148,5 @@ export function useSeats(deps: SeatsDeps) {
 
   const source: InteractionSource = { prompt, interact: sit }
 
-  return { seated, mySeat, onTownLoaded, seatPose, onSeated, onPubError, stand, onKeyDown, source }
+  return { seated, mySeat, onTownLoaded, seatPose, seatOf, onSeated, onPubError, stand, onKeyDown, source }
 }

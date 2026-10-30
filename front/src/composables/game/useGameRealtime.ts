@@ -25,6 +25,10 @@ import type {
   PubDartsStatePayload,
   PubErrorPayload,
   PubPouringPayload,
+  PubRaceChallengeCancelledPayload,
+  PubRaceChallengedPayload,
+  PubRaceChallengeResultPayload,
+  PubRaceChallengeSentPayload,
   PubRaceEndPayload,
   PubRaceLobbyPayload,
   PubRaceStartPayload,
@@ -133,6 +137,13 @@ export interface GameRealtimeDeps {
     onDartsLobby: (data: PubDartsLobbyPayload) => void
     onDartsState: (data: PubDartsStatePayload) => void
     onDartsEnd: (data: PubDartsEndPayload) => void
+  }
+  /** Drink Fast challenges between two seated players (usePubChallenge). */
+  pubChallenge: {
+    onChallenged: (data: PubRaceChallengedPayload) => void
+    onSent: (data: PubRaceChallengeSentPayload) => void
+    onResult: (data: PubRaceChallengeResultPayload) => void
+    onCancelled: (data: PubRaceChallengeCancelledPayload) => void
   }
 }
 
@@ -266,6 +277,10 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('pub_race_start', (data: PubRaceStartPayload) => deps.pubGames.onRaceStart(data))
     room.onMessage('pub_race_state', (data: PubRaceStatePayload) => deps.pubGames.onRaceState(data))
     room.onMessage('pub_race_end', (data: PubRaceEndPayload) => deps.pubGames.onRaceEnd(data))
+    room.onMessage('pub_race_challenged', (data: PubRaceChallengedPayload) => deps.pubChallenge.onChallenged(data))
+    room.onMessage('pub_race_challenge_sent', (data: PubRaceChallengeSentPayload) => deps.pubChallenge.onSent(data))
+    room.onMessage('pub_race_challenge_result', (data: PubRaceChallengeResultPayload) => deps.pubChallenge.onResult(data))
+    room.onMessage('pub_race_challenge_cancelled', (data: PubRaceChallengeCancelledPayload) => deps.pubChallenge.onCancelled(data))
     room.onMessage('pub_shots_ready', (data: PubShotsReadyPayload) => deps.pubGames.onShotsReady(data))
     room.onMessage('pub_shots_result', (data: PubShotsResultPayload) => deps.pubGames.onShotsResult(data))
     room.onMessage('pub_darts_lobby', (data: PubDartsLobbyPayload) => deps.pubGames.onDartsLobby(data))
@@ -375,5 +390,6 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     clearRemoteUsers: remotes.clear,
     tickRemoteAvatars: remotes.tick,
     remotePseudo: remotes.pseudoOf,
+    setRemoteRacePint: remotes.setRacePint,
   }
 }

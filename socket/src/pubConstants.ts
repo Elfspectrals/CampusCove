@@ -22,7 +22,17 @@ export const INTOXICATION_DECAY_PER_S = 1 / 6
 export const RACE_LOBBY_MS = 5000
 export const RACE_TIMEOUT_MS = 45_000
 export const RACE_MAX_PROGRESS_PER_S = 0.125
+/** Each spill reported by a racer adds this to their final time (front gameRoomConstants keeps the same value). */
+export const RACE_SPILL_PENALTY_MS = 2000
+export const RACE_MAX_SPILLS = 99
 export const RACE_PROGRESS_MIN_INTERVAL_MS = 200
+/** Drink Fast challenges: XZ reach and same-floor tolerance between the two stools. */
+export const CHALLENGE_REACH = 4
+export const CHALLENGE_FLOOR_TOLERANCE = 1.5
+export const CHALLENGE_TTL_MS = 15_000
+export const CHALLENGE_COOLDOWN_MS = 5000
+/** Countdown of a race opened by an accepted challenge (instead of RACE_LOBBY_MS). */
+export const CHALLENGE_COUNTDOWN_MS = 3000
 
 export const SHOTS_MIN_MS = 1500
 

@@ -27,6 +27,8 @@ export const DRINK_FAST_BANDS: readonly DrinkFastBand[] = [
 ]
 
 export const SLIPPERY_S = 0.6
+/** Above the top band the glass is tipped too far: one spill each time the cursor crosses this line. */
+export const SPILL_ABOVE = Math.max(...DRINK_FAST_BANDS.map((band) => band.to))
 const SLIPPERY_CONTROL = 0.35
 
 const GRAVITY = 0.8
@@ -45,6 +47,7 @@ export interface DrinkFastState {
   y: number
   progress: number
   zone: DrinkFastZone
+  spills: number
 }
 
 export function createDrinkFastSim(seed: number) {
@@ -60,6 +63,8 @@ export function createDrinkFastSim(seed: number) {
   let time = 0
   let progress = 0
   let slipperyLeft = 0
+  let spills = 0
+  let spilling = false
 
   function gust(): number {
     const slot = Math.floor(time / GUST_SLOT_S)
@@ -86,13 +91,16 @@ export function createDrinkFastSim(seed: number) {
       time += dt
 
       const band = drinkFastBand(y)
+      if (y > SPILL_ABOVE && !spilling) spills++
+      if (y > SPILL_ABOVE) spilling = true
+      else if (band) spilling = false
       if (!band) slipperyLeft = SLIPPERY_S
       else slipperyLeft = Math.max(0, slipperyLeft - dt)
 
       const slippery = !band || slipperyLeft > 0
       if (!slippery && progress < 1) progress = Math.min(1, progress + band.ratePerS * dt)
 
-      return { y, progress, zone: slippery ? 'slippery' : band.zone }
+      return { y, progress, zone: slippery ? 'slippery' : band.zone, spills }
     },
   }
 }

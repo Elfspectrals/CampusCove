@@ -4,6 +4,7 @@ import { RACE_MAX_PROGRESS_PER_S } from '../gameRoomConstants.ts'
 import {
   DRINK_FAST_BANDS,
   SLIPPERY_S,
+  SPILL_ABOVE,
   createDrinkFastSim,
   drinkFastBand,
   seededRandom,
@@ -132,4 +133,13 @@ test('the perturbations are part of the seed, not of the player', () => {
     const sb = b.step(DT, i % 2 === 0)
     assert.equal(sa.y, sb.y)
   }
+})
+
+test('tipping the glass above the bands counts one spill per crossing, holding it low never spills', () => {
+  const low = run(7, 600, () => false)
+  assert.equal(low.at(-1)!.spills, 0)
+  const high = run(7, 600, () => true)
+  const crossings = high.filter((state, i) => state.y > SPILL_ABOVE && (i === 0 || high[i - 1].y <= SPILL_ABOVE)).length
+  assert.ok(high.at(-1)!.spills >= 1)
+  assert.ok(high.at(-1)!.spills <= crossings)
 })
