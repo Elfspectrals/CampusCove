@@ -4,6 +4,8 @@ import { callRealtimeBackend, errorPayload } from './backend.ts'
 import { CITY_SPAWN_RADIUS, SURVIVAL_TIME_SCALE } from './config.ts'
 import { toInterior, unitAt } from './movement.ts'
 import { spawnNear } from './players.ts'
+import { HANGOVER_INTOXICATION, INTOXICATION_MAX } from './pubConstants.ts'
+import { leavePub } from './pubGames.ts'
 import { staminaAt } from './stamina.ts'
 import {
   FOUNTAIN_COOLDOWN_MS,
@@ -11,7 +13,9 @@ import {
   MAX_STAT,
   type Portion,
   SPEED_BOOST_MS,
+  addIntoxication,
   applyPortion,
+  decayIntoxication,
   fallDamage,
   fountainSip,
   isWalkingDescent,
@@ -48,6 +52,7 @@ const fountainBudgets = new Map<number | string, FountainState>()
 const FOUNTAIN_COOLDOWN = FOUNTAIN_COOLDOWN_MS / SURVIVAL_TIME_SCALE
 
 export type DamageCause = 'hunger' | 'thirst' | 'fall' | 'punch'
+export type KnockOutCause = 'health' | 'alcohol'
 
 function warn(context: string, error: unknown): void {
   console.warn(`[survival] ${context}:`, error instanceof Error ? error.message : error)
@@ -62,7 +67,8 @@ function sendStats(client: GameClient, player: Player): void {
     thirst,
     speedBoostUntil: player.speedBoostUntil,
     healUntil: player.healOverTime?.until ?? null,
-    stamina: staminaAt(player.stamina, player.staminaSpentAt, Date.now())
+    stamina: staminaAt(player.stamina, player.staminaSpentAt, Date.now()),
+    intoxication: player.intoxication
   })
 }
 
@@ -105,10 +111,13 @@ export function tickSurvival(room: GameRoom, dtSeconds: number): void {
     const { stats: decayed, damage } = tickStats(player.stats, dtSeconds, SURVIVAL_TIME_SCALE)
     const { stats, healOverTime } = tickHealOverTime(decayed, player.healOverTime, now)
     player.healOverTime = healOverTime
+    const blackingOut = player.intoxication >= INTOXICATION_MAX
+    player.intoxication = decayIntoxication(player.intoxication, dtSeconds, SURVIVAL_TIME_SCALE)
     setStats(player, stats)
     if (damage > 0) client.send('survival_damage', { amount: damage, cause: stats.hunger === 0 ? 'hunger' : 'thirst' })
     sendStats(client, player)
-    if (stats.health <= 0) knockOut(room, client, player)
+    if (stats.health <= 0) knockOut(room, client, player, 'health')
+    else if (blackingOut) blackOut(room, client, player)
     else if (now - player.lastStatsSavedAt >= SAVE_EVERY_MS) void saveSurvival(player)
   })
 }
@@ -118,20 +127,26 @@ export function hurt(room: GameRoom, client: GameClient, player: Player, amount:
   setStats(player, { ...player.stats, health: Math.max(0, player.stats.health - amount) })
   client.send('survival_damage', { amount, cause })
   sendStats(client, player)
-  if (player.stats.health <= 0) knockOut(room, client, player)
+  if (player.stats.health <= 0) knockOut(room, client, player, 'health')
+}
+
+function blackOut(room: GameRoom, client: GameClient, player: Player): void {
+  knockOut(room, client, player, 'alcohol')
 }
 
 /**
  * Health reached 0: the player passes out, pays the hospital, loses their inventory and clothes (API) and wakes up
  * beside a clinic bed (the town spawn without a clinic).
  */
-function knockOut(room: GameRoom, client: GameClient, player: Player): void {
+function knockOut(room: GameRoom, client: GameClient, player: Player, cause: KnockOutCause): void {
   player.knockedOutUntil = Date.now() + KNOCKOUT_MS
   player.speedBoostUntil = 0
   player.healOverTime = null
-  client.send('survival_knocked_out', { durationMs: KNOCKOUT_MS })
-  callRealtimeBackend(player.token, '/survival/hospital', 'POST')
+  leavePub(room, player)
+  client.send('survival_knocked_out', { durationMs: KNOCKOUT_MS, cause })
+  callRealtimeBackend(player.token, cause === 'alcohol' ? '/survival/hangover' : '/survival/hospital', 'POST')
     .then((data) => client.send('survival_hospital_bill', {
+      cause,
       billed: Number(data?.billed) || 0,
       balanceAfter: typeof data?.balance_after === 'number' ? data.balance_after : null,
       lostItems: Number(data?.lost?.items) || 0,
@@ -146,7 +161,8 @@ function knockOut(room: GameRoom, client: GameClient, player: Player): void {
     Object.assign(player, spawn, {
       fallPeakY: spawn.y,
       lastMoveAt: Date.now(),
-      knockedOutUntil: bed ? Date.now() + recoveringMs : 0
+      knockedOutUntil: bed ? Date.now() + recoveringMs : 0,
+      intoxication: cause === 'alcohol' ? HANGOVER_INTOXICATION : player.intoxication
     })
     setStats(player, respawnStats(player.stats))
     client.send('survival_respawn', {
@@ -206,6 +222,7 @@ export async function onConsume(room: GameRoom, client: GameClient, payload: Cli
     const data = await callRealtimeBackend(player.token, '/survival/consume', 'POST', { code })
     const portion: Portion & { quantity?: unknown, portions_left?: unknown } = data?.consumed ?? {}
     let stats = applyPortion(player.stats, portion)
+    player.intoxication = addIntoxication(player.intoxication, Number(portion.alcohol) || 0)
     if (portion.effect === 'heal_over_time') {
       const doseAt = Date.now()
       stats = tickHealOverTime(stats, player.healOverTime, doseAt).stats
@@ -222,7 +239,8 @@ export async function onConsume(room: GameRoom, client: GameClient, payload: Cli
     sendStats(client, player)
     const action = (portion.thirst ?? 0) > (portion.hunger ?? 0) ? 'drink' : 'eat'
     room.forEachClient((c) => c.send('user_action', { sessionId: client.sessionId, action, code }), client)
-    if (player.stats.health <= 0) knockOut(room, client, player)
+    if (player.stats.health <= 0) knockOut(room, client, player, 'health')
+    else if (player.intoxication >= INTOXICATION_MAX) blackOut(room, client, player)
   } catch (error) {
     client.send('survival_error', errorPayload(error, 'You cannot eat this.', 'consume_failed'))
   }

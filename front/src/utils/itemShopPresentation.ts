@@ -46,3 +46,8 @@ export function isFoodItem(item: Pick<ShopItem, 'kind'>): boolean {
 export function isMedicalItem(item: { kind: string; code: string }): boolean {
   return item.kind === 'consumable' && item.code.startsWith('med_')
 }
+
+/** Pub drinks (backend FoodCatalog group `drinks`): sold at The Salty Shamrock only, never at the Campus Cafe. */
+export function isAlcoholItem(item: { code: string }): boolean {
+  return item.code.startsWith('drink_')
+}

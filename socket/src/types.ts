@@ -63,6 +63,13 @@ export interface Player extends Vec3 {
   /** Trade in progress (src/trade.ts), from the request until it completes or closes. */
   tradeId: string | null
   lastTradeRequestAt: number
+  seatId: string | null
+  intoxication: number
+  pubSecretUntil: number
+  pubShots: PubShots | null
+  lastPubBellAt: number
+  /** Last pub_bouncer_block broadcast for this player (rate limit). */
+  lastBouncerBlockAt: number
   decoratedTemplateKey?: string | null
   appearance: Record<AppearanceSlot, number | null>
   slotHexes: Record<AppearanceSlot, string>
@@ -97,6 +104,56 @@ export interface HouseFurniture {
   objects: FurnitureObject[]
 }
 
+export interface PubShots {
+  startedAt: number
+  seed: number
+  alcohol: number
+}
+
+export interface PubRacer {
+  progress: number
+  lastProgressAt: number
+  finishedAt: number | null
+  forfeited: boolean
+  alcohol: number
+}
+
+export interface PubRace {
+  hostSessionId: string
+  seed: number
+  startsAt: number
+  startedAt: number | null
+  racers: Map<string, PubRacer>
+  lastStateAt: number
+}
+
+export interface DartsThrow {
+  x: number
+  y: number
+  score: number
+}
+
+export interface DartsPlayer {
+  sessionId: string
+  darts: DartsThrow[]
+  alcohol: number
+}
+
+export interface DartsGame {
+  startsAt: number
+  started: boolean
+  players: DartsPlayer[]
+  turn: number
+  turnEndsAt: number
+  turnSeq: number
+}
+
+export interface PubState {
+  secretOpen: boolean
+  race: PubRace | null
+  darts: DartsGame | null
+}
+
 export interface ClinicBedOccupant {
   sessionId: string | null
   usedAt: number
@@ -116,6 +173,8 @@ export interface GameRoom {
   houseFurniture: HouseFurniture[]
   openDoors: Set<string>
   clinicBeds: Map<string, ClinicBedOccupant>
+  seats: Map<string, string>
+  pub: PubState
   clients: readonly GameClient[]
   clock: { setTimeout(handler: () => void, ms: number): unknown }
   forEachClient(callback: (client: GameClient) => void, exceptClient?: GameClient): void

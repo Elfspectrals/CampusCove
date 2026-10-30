@@ -27,6 +27,8 @@ final class SurvivalService
 
     public const CLINIC_HEAL_FEE = 30;
 
+    public const HANGOVER_FEE = 40;
+
     /** Inventory kinds dropped when a player passes out (keys, titles and apartments stay). */
     private const LOST_KINDS = ['consumable', 'furniture'];
 
@@ -65,7 +67,7 @@ final class SurvivalService
     /**
      * Eats one portion of the top item of the player's stack: the stack loses one item once every portion is gone.
      *
-     * @return array{code: string, hunger: int, thirst: int, health: int, effect: string|null, quantity: int, portions: int, portions_left: int}
+     * @return array{code: string, hunger: int, thirst: int, health: int, alcohol: int, effect: string|null, quantity: int, portions: int, portions_left: int}
      */
     public function consume(int $accountId, string $code): array
     {
@@ -98,6 +100,7 @@ final class SurvivalService
                 'hunger' => (int) $def->hunger_per_portion,
                 'thirst' => (int) $def->thirst_per_portion,
                 'health' => (int) $def->health_per_portion,
+                'alcohol' => (int) $def->alcohol_per_portion,
                 'effect' => $def->consume_effect,
                 'quantity' => $quantity,
                 'portions' => $portions,
@@ -205,6 +208,35 @@ final class SurvivalService
                 ->delete();
 
             return ['items' => $items, 'clothes' => $lostClothes];
+        });
+    }
+
+    /** @return array{billed: int, balance_after: int} */
+    public function billHangover(int $accountId): array
+    {
+        return DB::transaction(function () use ($accountId): array {
+            $wallet = Wallet::lockForAccount($accountId, 'coins');
+            $balance = $wallet->balance();
+            $amount = min(self::HANGOVER_FEE, max(0, $balance));
+            if ($amount === 0) {
+                return ['billed' => 0, 'balance_after' => $balance];
+            }
+            $tx = EconomyTransaction::query()->create([
+                'server_id' => null,
+                'type' => 'hangover',
+                'status' => 'committed',
+                'created_by_account_id' => $accountId,
+                'committed_at' => now(),
+                'meta_json' => ['amount' => $amount],
+            ]);
+            WalletLedgerEntry::query()->create([
+                'wallet_id' => $wallet->wallet_id,
+                'tx_id' => $tx->tx_id,
+                'delta' => -$amount,
+                'reason' => 'hangover',
+            ]);
+
+            return ['billed' => $amount, 'balance_after' => $balance - $amount];
         });
     }
 

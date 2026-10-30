@@ -115,9 +115,11 @@ interface AvatarAnimState {
   actions: Map<string, THREE.AnimationAction>
   current: THREE.AnimationAction | null
   selector: AvatarClipSelector
+  seated: boolean
 }
 
 const CROSSFADE_S = 0.22
+const SIT_CLIP = 'Sit'
 
 /**
  * Premium skins ship rigged with "Idle" / "Walk" / "Run" clips. Starts a mixer on the instance (no-op for
@@ -129,9 +131,20 @@ export function attachAvatarAnimations(root: THREE.Object3D): void {
   const mixer = new THREE.AnimationMixer(root)
   const actions = new Map<string, THREE.AnimationAction>()
   for (const clip of clips) actions.set(clip.name, mixer.clipAction(clip))
-  const state: AvatarAnimState = { mixer, actions, current: null, selector: new AvatarClipSelector() }
+  const state: AvatarAnimState = { mixer, actions, current: null, selector: new AvatarClipSelector(), seated: false }
   animStateByRoot.set(root, state)
   playClip(state, 'Idle', 1)
+}
+
+/**
+ * Sit the avatar down (pub seats) or stand it up. Returns true when the skin has a `Sit` clip and plays it;
+ * static or older skins keep Idle and the caller lowers them instead.
+ */
+export function setAvatarSeated(root: THREE.Object3D, seated: boolean): boolean {
+  const state = animStateByRoot.get(root)
+  if (!state) return false
+  state.seated = seated && state.actions.has(SIT_CLIP)
+  return state.seated
 }
 
 function playClip(state: AvatarAnimState, name: string, timeScale: number): void {
@@ -151,8 +164,12 @@ function playClip(state: AvatarAnimState, name: string, timeScale: number): void
 export function updateAvatarAnimation(root: THREE.Object3D, dt: number, speed: number): void {
   const state = animStateByRoot.get(root)
   if (!state) return
-  const { clip, timeScale } = state.selector.update(dt, speed)
-  playClip(state, clip, timeScale)
+  if (state.seated) {
+    playClip(state, SIT_CLIP, 1)
+  } else {
+    const { clip, timeScale } = state.selector.update(dt, speed)
+    playClip(state, clip, timeScale)
+  }
   state.mixer.update(clampDt(dt))
 }
 

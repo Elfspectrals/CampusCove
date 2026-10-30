@@ -22,7 +22,7 @@ final class FoodCatalog
 
     /**
      * @return list<array{code: string, name: string, asset: string, portions: int, hunger: int, thirst: int,
-     *   health: int, effect: string|null, price: int|null, group: string}>
+     *   health: int, effect: string|null, price: int|null, group: string, alcohol: int}>
      */
     public static function items(): array
     {
@@ -38,12 +38,17 @@ final class FoodCatalog
             self::item('med_bandage', 'Bandage', 'bandage', 1, 0, 0, 15, null, 10, 'medical'),
             self::item('med_painkillers', 'Painkillers', 'painkillers', 1, 0, 0, 30, self::EFFECT_HEAL_OVER_TIME, 20, 'medical'),
             self::item('med_medkit', 'Medkit', 'medkit', 1, 0, 0, 60, null, 50, 'medical'),
+            self::item('drink_stout', 'Pint of Stout', 'stout', 3, 0, 8, 0, null, 25, 'drinks', 8),
+            self::item('drink_lager', 'Pint of Lager', 'lager', 3, 0, 8, 0, null, 22, 'drinks', 7),
+            self::item('drink_red_wine', 'Red Wine', 'red_wine', 2, 0, 4, 0, null, 30, 'drinks', 10),
+            self::item('drink_whisky', 'Whisky', 'whisky', 1, 0, 0, 0, null, 40, 'drinks', 25),
+            self::item('drink_vodka', 'Vodka Shot', 'vodka', 1, 0, 0, 0, null, 35, 'drinks', 25),
         ];
     }
 
-    /** @return array{code: string, name: string, asset: string, portions: int, hunger: int, thirst: int, health: int, effect: string|null, price: int|null, group: string} */
-    private static function item(string $code, string $name, string $asset, int $portions, int $hunger, int $thirst, int $health, ?string $effect, ?int $price, string $group = 'food'): array
+    /** @return array{code: string, name: string, asset: string, portions: int, hunger: int, thirst: int, health: int, effect: string|null, price: int|null, group: string, alcohol: int} */
+    private static function item(string $code, string $name, string $asset, int $portions, int $hunger, int $thirst, int $health, ?string $effect, ?int $price, string $group = 'food', int $alcohol = 0): array
     {
-        return compact('code', 'name', 'asset', 'portions', 'hunger', 'thirst', 'health', 'effect', 'price', 'group');
+        return compact('code', 'name', 'asset', 'portions', 'hunger', 'thirst', 'health', 'effect', 'price', 'group', 'alcohol');
     }
 }

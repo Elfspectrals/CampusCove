@@ -11,6 +11,14 @@ export interface RemoteUserPayload {
   slotHexes?: Record<string, string>
   bodyModelGlb?: string | null
   slotModels?: Record<string, string | null>
+  /** Pub seat the player sits on (socket/src/pub.ts), null or absent when standing. */
+  seatId?: string | null
+}
+
+/** 'user_seated': a visible player sat down on a pub seat, or stood up (`seatId` null). */
+export interface UserSeatedPayload {
+  sessionId: string
+  seatId: string | null
 }
 
 /** Another player ate or drank (socket/src/survival.ts); `code` is the food item, null for a fountain sip. */
@@ -61,6 +69,7 @@ export interface RoomInitPayload {
   housingUnits?: HousingUnitPayload[]
   houseFurniture?: HouseFurniturePayload[]
   openDoors?: string[]
+  pubSecretOpen?: boolean
 }
 
 /** 'door_sound': only sent to players within 5 m of the door. `door` is the building key (house model key or work key). */
@@ -170,4 +179,107 @@ export interface TradeCompletedPayload {
 export interface TradeErrorPayload {
   message: string
   code: string
+}
+
+// ---------------------------------------------------------------- The Salty Shamrock (socket/src/pub.ts, pubGames.ts)
+
+/** 'pub_pouring': the barman pulls a drink for `sessionId`; the glass fills for `durationMs` (zone, sender included). */
+export interface PubPouringPayload {
+  sessionId: string
+  code: string
+  durationMs: number
+}
+
+/** 'pub_served': this player's drink waits on the bar. */
+export interface PubServedPayload {
+  code: string
+}
+
+export interface PubErrorPayload {
+  message: string
+  code: string
+}
+
+/** 'pub_secret_result': the bouncer's answer; `untilMs` is the server clock time when this player's access to the staff door expires. */
+export interface PubSecretResultPayload {
+  ok: boolean
+  untilMs?: number
+}
+
+export interface PubSecretDoorPayload {
+  open: boolean
+}
+
+/**
+ * 'pub_bouncer_block': someone tried to slip past the bouncer into the cellar without the phrase (whole pub,
+ * the blocked player included; that player also gets a `position_correction` pushing them back).
+ */
+export interface PubBouncerBlockPayload {
+  sessionId: string
+  accountId: number
+  line: string
+}
+
+export interface PubBellPayload {
+  sessionId: string
+}
+
+export interface PubRewardPayload {
+  sessionId: string
+  coins: number
+}
+
+/** 'pub_race_lobby': a Drink Fast race gathers at the bar until `startsAt` (ms epoch). */
+export interface PubRaceLobbyPayload {
+  hostSessionId: string
+  players: string[]
+  startsAt: number
+}
+
+export interface PubRaceStartPayload {
+  seed: number
+  players: string[]
+}
+
+export interface PubRaceStatePayload {
+  players: Array<{ sessionId: string; progress: number }>
+}
+
+export interface PubRaceEndPayload {
+  ranking: Array<{ sessionId: string; ms: number }>
+  rewards: PubRewardPayload[]
+}
+
+/** 'pub_shots_ready': the Meter Shot round is paid; `startedAt` is the server clock (ms epoch). */
+export interface PubShotsReadyPayload {
+  seed: number
+  startedAt: number
+}
+
+export interface PubShotsResultPayload {
+  ms: number
+  coins: number
+}
+
+export interface PubDartsLobbyPayload {
+  players: string[]
+  startsAt: number
+}
+
+export interface PubDartPayload {
+  x: number
+  y: number
+  score: number
+}
+
+export interface PubDartsStatePayload {
+  players: Array<{ sessionId: string; darts: PubDartPayload[]; total: number }>
+  turn: string | null
+  throwsLeft: number
+  turnEndsAt: number
+}
+
+export interface PubDartsEndPayload {
+  ranking: Array<{ sessionId: string; total: number }>
+  rewards: PubRewardPayload[]
 }

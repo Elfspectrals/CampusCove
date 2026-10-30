@@ -2,7 +2,7 @@ import { ref, type Ref } from 'vue'
 import * as THREE from 'three'
 import { fetchItemShopCatalog, purchaseShopItem, type ShopItem } from '../../api/itemShop'
 import { openHouseInterior } from '../../game/town/openHouses'
-import { isFoodItem, isMedicalItem } from '../../utils/itemShopPresentation'
+import { isAlcoholItem, isFoodItem, isMedicalItem } from '../../utils/itemShopPresentation'
 import type { ScreenPrompt } from './useInteractionTargets'
 
 const CAFE_KEY = 'cafe'
@@ -45,7 +45,9 @@ export function useCafeCounter(deps: CafeCounterDeps) {
     loading.value = true
     try {
       const { items } = await fetchItemShopCatalog()
-      menu.value = items.filter((item) => isFoodItem(item) && !isMedicalItem(item) && item.options.some((o) => o.currency === 'coins'))
+      menu.value = items.filter(
+        (item) => isFoodItem(item) && !isMedicalItem(item) && !isAlcoholItem(item) && item.options.some((o) => o.currency === 'coins'),
+      )
     } catch {
       feedback.value = { kind: 'error', text: 'The menu could not be loaded.' }
     } finally {

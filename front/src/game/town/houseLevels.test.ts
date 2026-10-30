@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { STEP_UP, levelAt, parseHouseLayout, singleLevelLayout, surfaceHeight } from './houseLevels.ts'
+import { STEP_UP, capsuleLift, levelAt, parseHouseLayout, singleLevelLayout, surfaceHeight } from './houseLevels.ts'
 
 const twoStoreys = parseHouseLayout({
   version: 1,
@@ -67,4 +67,68 @@ test('an invalid layout is rejected', () => {
     levels: [{ id: 'L0', y: 0, height: 3, rects: [{ minX: 0, maxX: 1, minZ: 0, maxZ: 1 }] }],
     stairs: [{ minX: 0, maxX: 1, minZ: 0, maxZ: 1, y0: 0, y1: 3, rise: 'up' }],
   }, 'house_02'), /invalid rise/)
+})
+
+// The pub: the ground floor with a hole for the cellar stair, a basement 3.2 m below, a stair going down along -z.
+const pubWithCellar = parseHouseLayout({
+  version: 1,
+  key: 'pub',
+  levels: [
+    { id: 'L0', y: 0, height: 3.4, rects: [
+      { minX: -10, maxX: 10, minZ: -10, maxZ: 5 },
+      { minX: -10, maxX: 3.4, minZ: -16, maxZ: -10 },
+      { minX: 4.6, maxX: 10, minZ: -16, maxZ: -10 },
+    ] },
+    { id: 'B1', y: -3.2, height: 2.6, rects: [{ minX: -2, maxX: 10, minZ: -22, maxZ: -14 }] },
+  ],
+  stairs: [{ name: 'Stair_Cellar', minX: 3.4, maxX: 4.6, minZ: -16, maxZ: -10, y0: 0, y1: -3.2, rise: '-z' }],
+}, 'pub')
+
+const CELLAR_X = 4
+
+test('a level below the entrance floor is told apart by the feet height', () => {
+  assert.equal(surfaceHeight(pubWithCellar, 0, -15, 0), 0)
+  assert.equal(surfaceHeight(pubWithCellar, 0, -15, -3.2), -3.2)
+  assert.equal(surfaceHeight(pubWithCellar, 0, -20, -3.2), -3.2)
+})
+
+test('a stair going down drops from its head to its foot', () => {
+  assert.equal(surfaceHeight(pubWithCellar, CELLAR_X, -10, 0), 0)
+  assert.ok(Math.abs(surfaceHeight(pubWithCellar, CELLAR_X, -13, -1.5)! - -1.6) < 1e-9)
+  assert.equal(surfaceHeight(pubWithCellar, CELLAR_X, -16, -3.1), -3.2)
+})
+
+test('walking down the cellar stair in small steps reaches the basement, and back up', () => {
+  const step = (z: number, feet: number): number => {
+    const surface = surfaceHeight(pubWithCellar, CELLAR_X, z, feet)
+    assert.notEqual(surface, null, `no surface at z=${z}`)
+    return surface!
+  }
+  let feet = 0
+  for (let z = -9; z >= -20; z -= 0.1) feet = step(z, feet)
+  assert.ok(Math.abs(feet - -3.2) < 1e-9)
+  for (let z = -20; z <= -9; z += 0.1) feet = step(z, feet)
+  assert.equal(feet, 0)
+})
+
+test('the feet never sink through the ground floor into the cellar below it', () => {
+  let feet = 0
+  for (let z = -9; z >= -16; z -= 0.1) feet = surfaceHeight(pubWithCellar, 0, z, feet)!
+  assert.equal(feet, 0)
+  for (let x = 0; x <= 3.3; x += 0.1) feet = surfaceHeight(pubWithCellar, x, -15, feet)!
+  assert.equal(feet, 0)
+})
+
+test('the basement under a point is found below the entrance floor', () => {
+  assert.equal(levelAt(pubWithCellar, 0, -15, -3.2, 0.01)?.id, 'B1')
+  assert.equal(levelAt(pubWithCellar, 0, -15, 0, 0.01)?.id, 'L0')
+  assert.equal(levelAt(pubWithCellar, 0, -20, 0, 0.01)?.id, 'B1')
+})
+
+test('the collision capsule follows the feet down into the cellar, never below its floor', () => {
+  assert.equal(capsuleLift(pubWithCellar, 0.2, 0.2), 0.2)
+  assert.ok(Math.abs(capsuleLift(pubWithCellar, 0.2, -3) - -3) < 1e-9)
+  assert.ok(Math.abs(capsuleLift(pubWithCellar, 0.2, -5) - -3) < 1e-9)
+  assert.equal(capsuleLift(twoStoreys, 0.2, 3.2), 3.2)
+  assert.equal(capsuleLift(twoStoreys, 0.2, 0), 0.2)
 })

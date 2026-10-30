@@ -51,6 +51,10 @@ export interface UseGameMovementDeps {
   trySpendSprint: (dt: number, wasSprinting: boolean) => boolean
   /** Called each animation frame after movement, before rendering. */
   onBeforeRender: (dt: number) => void
+  /** Seated on a pub seat: the mouse still looks around, but the body stays put and no `move` is sent. */
+  movementLocked?: () => boolean
+  /** Runs once the camera is placed each frame, for extra camera motion (drunken sway). */
+  afterCameraPlaced?: (camera: THREE.PerspectiveCamera, dt: number) => void
 }
 
 /** First-person controls (WASD/ZQSD + pointer-lock mouse look), position sync, and the render loop. */
@@ -99,7 +103,8 @@ export function useGameMovement(deps: UseGameMovementDeps) {
 
     const feetY = myPosition.y - EYE_HEIGHT - airY
     const push = knockback.step(dt)
-    if (!deps.inventoryOpen.value) {
+    const locked = deps.movementLocked?.() ?? false
+    if (!deps.inventoryOpen.value && !locked) {
       const forward = keys.forward ? 1 : keys.back ? -1 : 0
       const right = keys.right ? 1 : keys.left ? -1 : 0
       const speedFactor = deps.speedFactor()
@@ -118,12 +123,14 @@ export function useGameMovement(deps: UseGameMovementDeps) {
       sprinting = false
     }
     jumpRequested = false
-    if (airY > 0 || airVelocity > 0) {
-      airVelocity -= GRAVITY * dt
-      airY = Math.max(0, airY + airVelocity * dt)
-      if (airY === 0) airVelocity = 0
+    if (!locked) {
+      if (airY > 0 || airVelocity > 0) {
+        airVelocity -= GRAVITY * dt
+        airY = Math.max(0, airY + airVelocity * dt)
+        if (airY === 0) airVelocity = 0
+      }
+      myPosition.y = EYE_HEIGHT + airY + (buildingFloorAt(myPosition.x, myPosition.z, feetY) ?? terrainHeightAt(myPosition.x, myPosition.z))
     }
-    myPosition.y = EYE_HEIGHT + airY + (buildingFloorAt(myPosition.x, myPosition.z, feetY) ?? terrainHeightAt(myPosition.x, myPosition.z))
     updateOpenHouseVisibility(myPosition.x, myPosition.z)
 
     camera.position.set(myPosition.x, eyeSmoother.update(myPosition.y, dt), myPosition.z)
@@ -142,10 +149,11 @@ export function useGameMovement(deps: UseGameMovementDeps) {
       camera.fov = fov
       camera.updateProjectionMatrix()
     }
+    deps.afterCameraPlaced?.(camera, dt)
 
     const room = deps.gameRoomRef.value
     const now = Date.now()
-    if (room && now - lastEmit > EMIT_INTERVAL_MS) {
+    if (room && !locked && now - lastEmit > EMIT_INTERVAL_MS) {
       lastEmit = now
       room.send('move', { x: myPosition.x, y: myPosition.y, z: myPosition.z, ry: yaw, sprint: sprinting })
     }

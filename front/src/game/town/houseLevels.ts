@@ -113,3 +113,11 @@ export function levelAt(layout: HouseLayout, x: number, z: number, y: number, to
   }
   return found
 }
+
+/**
+ * Height of the collision capsule in a building whose entrance floor is at `baseY` (world): it follows the feet so
+ * each level meets its own walls, down to the lowest level (a cellar sits below the street, so it goes negative).
+ */
+export function capsuleLift(layout: HouseLayout, baseY: number, feetY: number): number {
+  return Math.max(baseY + Math.min(0, ...layout.levels.map((level) => level.y)), feetY)
+}
