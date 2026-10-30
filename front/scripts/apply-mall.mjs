@@ -136,6 +136,7 @@ const zone = {
   collisionUrl: '/assets/store/mall/mall.collision.json',
   layoutUrl: '/assets/store/mall/mall.layout.json',
   animatedWater: true,
+  music: { url: '/assets/music/cove_mall.mp3', bounds: mall.music },
   gate: { x: mall.entrance.position[0], z: mall.entrance.position[2], width: mall.entrance.width },
   buildings: mall.stores.map(anchorBuilding),
 }

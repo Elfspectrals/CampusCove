@@ -263,6 +263,9 @@ export interface StoreLayout {
   bounds: { minX: number; maxX: number; minZ: number; maxZ: number }
   departments: Array<{ id: string; label: string; color: string; sign: [number, number, number] }>
   displays: StoreDisplay[]
+  /** Stores that sell through a basket: where the customer stands to pay, and the cashier behind it. */
+  counter?: [number, number, number]
+  clerk?: { position: [number, number, number]; yaw: number }
 }
 
 export interface StoreDisplay {
@@ -277,6 +280,8 @@ export interface StoreDisplay {
   yaw: number
   /** Model bounding size [w, h, d] in metres. */
   size: [number, number, number]
+  /** Copies lined up on the spot as [columns, rows] (small goods on a shelf); one model when omitted. */
+  stack?: [number, number]
   /** Price-tag board (centre) at the edge of the route. */
   tag: { position: [number, number, number]; yaw: number }
 }

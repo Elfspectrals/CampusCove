@@ -84,6 +84,7 @@ import {
   findStore,
   findWork,
 } from '../game/assets/catalog'
+import type { WorldBounds } from '../game/world/worldManifest'
 import type { GearSlot } from '../game/wardrobeSlots'
 import { createSfx } from '../game/sfx'
 import { createAmbientLoop } from '../game/ambientLoop'
@@ -123,6 +124,14 @@ const getScene = () => game?.scene
 const getCamera = () => game?.camera
 const sfx = createSfx(getCamera)
 const threadsMusic = createAmbientLoop(COVE_THREADS.musicUrl, 0.18, sfx.listener)
+/** The mall walkways' music (world manifest zone `music`), started once the town is loaded. */
+let zoneMusic: ReturnType<typeof createAmbientLoop> | null = null
+let zoneMusicBounds: WorldBounds | null = null
+let zoneMusicKey: string | null = null
+
+function insideBounds(bounds: WorldBounds | null, at: { x: number; z: number }): boolean {
+  return bounds !== null && at.x >= bounds.minX && at.x <= bounds.maxX && at.z >= bounds.minZ && at.z <= bounds.maxZ
+}
 const getRenderer = () => game?.renderer
 
 // ---------------------------------------------------------------- house decoration
@@ -206,33 +215,57 @@ const {
   onQuickWear: (slotIndex) => void wardrobeRef.value?.wearFromSlot(slotIndex),
 })
 
-// ---------------------------------------------------------------- stores: Cove Home, the mall's Hearth & Hollow and GreenCart (click to buy), Cove Threads and Northline (basket)
+// ---------------------------------------------------------------- stores: Cove Home (click to buy), the mall's shops (basket paid at the cashier), Cove Threads, Northline and Summit (basket)
 
 const inStore = computed(() => currentHouseKey.value === COVE_HOME.key)
 const furnitureStore = useFurnitureStore({ inStore: () => inStore.value, getCamera, myPosition })
-const hearthStore = useFurnitureStore({
-  inStore: () => currentHouseKey.value === HEARTH_HOLLOW.key,
+/** The mall stores sell through a basket: the cashier prompt needs the canvas, paying refreshes the inventory. */
+const mallStoreDeps = {
   getCamera,
   myPosition,
-  store: { interiorLayoutUrl: HEARTH_HOLLOW.interiorLayoutUrl, modelUrl: (display) => decorModelUrl(display.key) },
+  canvasRef,
+  promptsHidden: () => inventoryOpen.value,
+  onPurchased: () => refreshOwnedItems(),
+}
+const hearthStore = useFurnitureStore({
+  ...mallStoreDeps,
+  inStore: () => currentHouseKey.value === HEARTH_HOLLOW.key,
+  store: {
+    key: HEARTH_HOLLOW.key,
+    interiorLayoutUrl: HEARTH_HOLLOW.interiorLayoutUrl,
+    modelUrl: (display) => decorModelUrl(display.key),
+    clerkColors: { ...DEFAULT_SLOT_COLORS, top: '#c47c4c', bottom: '#3b3f4a' },
+  },
 })
 const greencartStore = useFurnitureStore({
+  ...mallStoreDeps,
   inStore: () => currentHouseKey.value === GREENCART.key,
-  getCamera,
-  myPosition,
-  store: { interiorLayoutUrl: GREENCART.interiorLayoutUrl, modelUrl: (display) => consumableModelUrl(display.code) },
+  store: {
+    key: GREENCART.key,
+    interiorLayoutUrl: GREENCART.interiorLayoutUrl,
+    modelUrl: (display) => consumableModelUrl(display.code),
+    clerkColors: { ...DEFAULT_SLOT_COLORS, top: '#3c9a3c', bottom: '#2a2e35' },
+  },
 })
 const crispinsStore = useFurnitureStore({
+  ...mallStoreDeps,
   inStore: () => currentHouseKey.value === CRISPINS_HARDWARE.key,
-  getCamera,
-  myPosition,
-  store: { interiorLayoutUrl: CRISPINS_HARDWARE.interiorLayoutUrl, modelUrl: (display) => decorModelUrl(display.key) },
+  store: {
+    key: CRISPINS_HARDWARE.key,
+    interiorLayoutUrl: CRISPINS_HARDWARE.interiorLayoutUrl,
+    modelUrl: (display) => decorModelUrl(display.key),
+    clerkColors: { ...DEFAULT_SLOT_COLORS, top: '#e07a2e', bottom: '#2f3338' },
+  },
 })
 const candyStore = useFurnitureStore({
+  ...mallStoreDeps,
   inStore: () => currentHouseKey.value === CANDY_CLOUD.key,
-  getCamera,
-  myPosition,
-  store: { interiorLayoutUrl: CANDY_CLOUD.interiorLayoutUrl, modelUrl: (display) => consumableModelUrl(display.code) },
+  store: {
+    key: CANDY_CLOUD.key,
+    interiorLayoutUrl: CANDY_CLOUD.interiorLayoutUrl,
+    modelUrl: (display) => consumableModelUrl(display.code),
+    clerkColors: { ...DEFAULT_SLOT_COLORS, top: '#f4b3c8', bottom: '#38a3c9' },
+  },
 })
 const furnitureStores = [
   { key: COVE_HOME.key, brand: COVE_HOME.name, store: furnitureStore },
@@ -276,7 +309,6 @@ const clothingEntries = [
 const clothingStores = clothingEntries.map((entry) => entry.store)
 const activeClothingEntry = computed(() => clothingEntries.find((entry) => entry.key === currentHouseKey.value) ?? null)
 const activeClothing = computed(() => activeClothingEntry.value?.store ?? null)
-const clothesTitle = computed(() => activeClothingEntry.value?.name ?? COVE_THREADS.name)
 const myCosmetics = shallowRef<CharacterCosmeticsState | null>(null)
 
 function onWardrobeChanged(state: CharacterCosmeticsState): void {
@@ -294,13 +326,16 @@ function onOutfit(change: { state: CharacterCosmeticsState; returnedCode: string
   refreshOwnedItems()
 }
 const clothesTarget = computed(() => activeClothing.value?.target.value ?? null)
-const clothesBasket = computed(() => activeClothing.value?.basket.value ?? [])
-const clothesBasketTotal = computed(() => activeClothing.value?.basketTotal.value ?? 0)
-const clothesCheckoutOpen = computed(() => clothingStores.some((s) => s.checkoutOpen.value))
-const clothesPaying = computed(() => activeClothing.value?.paying.value ?? false)
-const clothesFeedback = computed(() => activeClothing.value?.feedback.value ?? null)
-const clothesCounterPrompt = computed(() => activeClothing.value?.counterPrompt.value ?? null)
-watch(clothesCheckoutOpen, (open) => {
+/** The store whose basket the HUD shows: a clothing store, or a mall store that pays at its counter. */
+const basketStore = computed(() => activeClothing.value ?? (activeFurniture.value?.store.hasCounter.value ? activeFurniture.value.store : null))
+const basketTitle = computed(() => activeClothingEntry.value?.name ?? activeFurniture.value?.brand ?? COVE_THREADS.name)
+const basketItems = computed(() => basketStore.value?.basket.value ?? [])
+const basketTotal = computed(() => basketStore.value?.basketTotal.value ?? 0)
+const checkoutOpen = computed(() => clothingStores.some((s) => s.checkoutOpen.value) || furnitureStores.some((s) => s.store.checkoutOpen.value))
+const basketPaying = computed(() => basketStore.value?.paying.value ?? false)
+const basketFeedback = computed(() => basketStore.value?.feedback.value ?? null)
+const counterPrompt = computed(() => basketStore.value?.counterPrompt.value ?? null)
+watch(checkoutOpen, (open) => {
   if (!open && !document.pointerLockElement) requestPointerLock()
 })
 const storeShop = useShopPurchase()
@@ -499,10 +534,15 @@ const interactions = useInteractionTargets({
     }
     const target = storeTarget.value
     if (!target) return null
-    const detail = target.coins !== null ? `${target.name} · ${target.coins} coins` : target.name
-    return { position: target.tagPosition, detail }
+    const price = target.coins !== null ? `${target.name} · ${target.coins} coins` : target.name
+    if (!activeFurniture.value?.store.hasCounter.value) return { position: target.tagPosition, detail: price }
+    return { position: target.tagPosition, detail: target.inBasket ? `${price} · in basket` : price, action: target.inBasket ? 'Remove' : 'Add' }
   },
-  onStoreTarget: () => (clothesTarget.value ? activeClothing.value?.toggleTarget() : openStorePurchase()),
+  onStoreTarget: () => {
+    if (clothesTarget.value) activeClothing.value?.toggleTarget()
+    else if (activeFurniture.value?.store.hasCounter.value) activeFurniture.value.store.toggleTarget()
+    else openStorePurchase()
+  },
   sources: [pub.source, pubChallenge.source, pubGames.source, seats.source],
 })
 const { doorPrompt } = interactions
@@ -704,6 +744,12 @@ const environment = useRoomEnvironment({
   getRenderer,
   onTownLoaded: (manifest) => {
     interactions.setWorldManifest(manifest)
+    const musicZone = manifest.zones.find((zone) => zone.music)
+    if (musicZone?.music && !zoneMusic) {
+      zoneMusic = createAmbientLoop(musicZone.music.url, 0.14, sfx.listener)
+      zoneMusicBounds = musicZone.music.bounds
+      zoneMusicKey = musicZone.key
+    }
     survival.onTownLoaded(manifest)
     clinic.onTownLoaded(manifest)
     seats.onTownLoaded(manifest)
@@ -742,7 +788,15 @@ function loadTown(): void {
  */
 function useAction(): void {
   if (housing.unlock()) arms?.use('key')
-  else void (interactions.tryInteract() || clothingStores.some((s) => s.tryOpenCheckout()) || cafe.tryOpen() || clinic.tryInteract() || survival.onPrimaryDown())
+  else
+    void (
+      interactions.tryInteract() ||
+      clothingStores.some((s) => s.tryOpenCheckout()) ||
+      furnitureStores.some((s) => s.store.tryOpenCheckout()) ||
+      cafe.tryOpen() ||
+      clinic.tryInteract() ||
+      survival.onPrimaryDown()
+    )
 }
 
 /** Interact and punch may be bound to keys or mouse buttons; returns true when `code` was one of them. */
@@ -775,7 +829,7 @@ const pauseMenuOpen = computed(
     !switchingRoom.value &&
     !cafeMenuOpen.value &&
     !clinicMenuOpen.value &&
-    !clothesCheckoutOpen.value &&
+    !checkoutOpen.value &&
     !tradeUiOpen.value &&
     !pubUiOpen.value &&
     !settingsOpen.value,
@@ -847,9 +901,10 @@ const movement = useGameMovement({
     realtime.tickRemoteAvatars(dt)
     currentHouseKey.value = houseKeyAt(myPosition.x, myPosition.z)
     placement.tick(dt)
-    for (const { store } of furnitureStores) store.update()
+    for (const { store } of furnitureStores) store.update(dt)
     for (const store of clothingStores) store.update(dt)
     threadsMusic.update(dt, inThreads.value)
+    zoneMusic?.update(dt, (currentHouseKey.value === null || currentHouseKey.value === zoneMusicKey) && insideBounds(zoneMusicBounds, myPosition))
     interactions.updatePrompts()
     houseKeys.updateKeyPrompt()
     updateFrontDoors(dt, isBuildingDoorOpen)
@@ -860,6 +915,7 @@ const movement = useGameMovement({
     stamina.value = punch.staminaNow()
     cafe.updatePrompt()
     for (const store of clothingStores) store.updatePrompt()
+    for (const { store } of furnitureStores) store.updatePrompt()
     clinic.updatePrompt()
     pub.tick(dt)
     pubGames.tick()
@@ -1030,6 +1086,7 @@ onUnmounted(() => {
   doorSigns.dispose()
   arms?.dispose()
   threadsMusic.dispose()
+  zoneMusic?.dispose()
   sfx.dispose()
   environment.disposeRoomEnvironment()
   if (game) disposeGameScene(game)
@@ -1107,11 +1164,11 @@ const crosshairClass = computed(() => {
       :detail-label="survivalPrompt.detail"
     />
     <GameInteractionPrompt
-      v-if="clothesCounterPrompt && !doorPrompt"
-      :screen-x="clothesCounterPrompt.x"
-      :screen-y="clothesCounterPrompt.y"
-      :action-label="clothesCounterPrompt.action"
-      :detail-label="clothesCounterPrompt.detail"
+      v-if="counterPrompt && !doorPrompt"
+      :screen-x="counterPrompt.x"
+      :screen-y="counterPrompt.y"
+      :action-label="counterPrompt.action"
+      :detail-label="counterPrompt.detail"
     />
     <GameInteractionPrompt
       v-if="cafePrompt && !doorPrompt"
@@ -1140,7 +1197,13 @@ const crosshairClass = computed(() => {
     >
       <span class="text-sun">{{ storeBrand }}</span> · {{ storeDepartment }}
     </div>
-    <GameStoreItemCard v-if="storeTarget && !inventoryOpen" :target="storeTarget" :feedback="storeFeedback" :brand="storeBrand" />
+    <GameStoreItemCard
+      v-if="storeTarget && !inventoryOpen"
+      :target="storeTarget"
+      :feedback="storeFeedback"
+      :brand="storeBrand"
+      :basket="activeFurniture?.store.hasCounter.value"
+    />
     <p
       v-else-if="activeFurniture && storeFeedback && !inventoryOpen"
       class="cc-hud pointer-events-none absolute bottom-24 right-3 z-20 max-w-xs px-3 py-2 text-xs font-bold"
@@ -1229,28 +1292,28 @@ const crosshairClass = computed(() => {
       {{ placementHelp }}
     </p>
     <div
-      v-if="activeClothing && !inventoryOpen"
+      v-if="basketStore && !inventoryOpen"
       class="cc-hud pointer-events-none absolute left-1/2 top-3 z-10 -translate-x-1/2 px-4 py-1.5 font-display text-xs uppercase tracking-[0.2em] text-fog"
     >
-      <span class="text-sun">{{ clothesTitle }}</span> · Basket {{ clothesBasket.length }} · {{ clothesBasketTotal }} coins
+      <span class="text-sun">{{ basketTitle }}</span> · Basket {{ basketItems.length }} · {{ basketTotal }} coins
     </div>
     <p
-      v-if="activeClothing && clothesFeedback && !inventoryOpen && !clothesCheckoutOpen"
+      v-if="basketStore && basketFeedback && !inventoryOpen && !checkoutOpen && !storeTarget"
       class="cc-hud pointer-events-none absolute bottom-24 right-3 z-20 max-w-xs px-3 py-2 text-xs font-bold"
-      :class="clothesFeedback.kind === 'success' ? 'text-mint' : 'text-coral'"
+      :class="basketFeedback.kind === 'success' ? 'text-mint' : 'text-coral'"
     >
-      {{ clothesFeedback.text }}
+      {{ basketFeedback.text }}
     </p>
     <GameBasketCheckout
-      v-if="clothesCheckoutOpen"
-      :title="clothesTitle"
-      :items="clothesBasket"
-      :total="clothesBasketTotal"
-      :paying="clothesPaying"
-      :feedback="clothesFeedback"
-      @pay="activeClothing?.pay()"
-      @remove="(item) => activeClothing?.removeFromBasket(item)"
-      @close="activeClothing?.closeCheckout()"
+      v-if="checkoutOpen"
+      :title="basketTitle"
+      :items="basketItems"
+      :total="basketTotal"
+      :paying="basketPaying"
+      :feedback="basketFeedback"
+      @pay="basketStore?.pay()"
+      @remove="(item) => basketStore?.removeFromBasket(item)"
+      @close="basketStore?.closeCheckout()"
     />
     <p
       v-if="tradeIncoming && !watchMenuOpen"

@@ -135,11 +135,13 @@ def hanging_sign(dep, gx, gz, yaw, width=3.0, y=3.6):
     dept_info.append({"id": dep, "label": label, "color": DEPARTMENTS[dep][1], "sign": [round(gx, 3), y + 0.3, round(gz, 3)]})
 
 
-def food_display(key, dep, gx, gy, gz, yaw, tag_x, tag_z, tag_y=1.32):
+def food_display(key, dep, gx, gy, gz, yaw, tag_x, tag_z, tag_y=1.32, stack=(1, 1)):
+    """One food on sale; `stack` = (columns, rows) of copies the front lines up on the spot, so a 10 cm cookie
+    reads as a filled shelf facing instead of a lone crumb."""
     code, name, blurb, size = FOODS[key]
     add(L.cyl(coll, f"TagPost_{key}", tag_x, tag_z, 0.0, 0.02, tag_y - 0.25, M["cart"], seg=6))
     displays.append({"key": key, "code": code, "department": dep, "description": blurb,
-                     "position": [round(gx, 3), round(gy, 3), round(gz, 3)], "yaw": round(yaw, 4), "size": size,
+                     "position": [round(gx, 3), round(gy, 3), round(gz, 3)], "yaw": round(yaw, 4), "size": size, "stack": list(stack),
                      "tag": {"position": [round(tag_x, 3), tag_y, round(tag_z, 3)], "yaw": round(yaw, 4)}})
 
 
@@ -304,8 +306,8 @@ for i, gx in enumerate((10.0, 12.0)):
     add(L.box(coll, f"Bakery_Oven{i}", gx, Z0 + 0.6, 0.0, 1.6, 1.0, 2.0, M["cart"], bevel=0.02))
     add(L.box(coll, f"Bakery_OvenDoor{i}", gx, Z0 + 0.08, 0.7, 1.2, 0.04, 0.8, M["fridge"]))
 cols.add("Bakery_Ovens", 11.0, Z0 + 0.6, 0.0, 3.8, 1.0, 2.0)
-food_display("croissant", "bakery", 13.4, 1.05, -21.0, -math.pi / 2, 12.7, -21.0, tag_y=1.3)
-food_display("cookie", "bakery", 13.4, 1.05, -25.0, -math.pi / 2, 12.7, -25.0, tag_y=1.3)
+food_display("croissant", "bakery", 13.4, 1.05, -21.0, -math.pi / 2, 12.7, -21.0, tag_y=1.3, stack=(3, 2))
+food_display("cookie", "bakery", 13.4, 1.05, -25.0, -math.pi / 2, 12.7, -25.0, tag_y=1.3, stack=(4, 3))
 
 # ---------------------------------------------------------------- fish & meat (back centre), dairy (back west + west wall)
 hanging_sign("fresh", 0.0, -27.0, 0.0, width=3.0)
@@ -318,7 +320,7 @@ cols.add("Fresh_Counter", 0.0, -28.5, 0.0, 10.0, 1.2, 1.7)
 hanging_sign("dairy", -13.0, -27.0, 0.0, width=3.4)
 wall_fridge("Fridge_Dairy", -19.0, Z0 + 0.1, -8.0, Z0 + 0.9, True)
 wall_fridge("Fridge_West", X0 + 0.1, -26.0, X0 + 0.9, -14.0, False)
-food_display("sandwich", "dairy", X0 + 0.75, 0.98, -20.0, math.pi / 2, X0 + 1.4, -20.0, tag_y=1.3)
+food_display("sandwich", "dairy", X0 + 0.75, 0.98, -20.0, math.pi / 2, X0 + 1.4, -20.0, tag_y=1.3, stack=(3, 2))
 hanging_sign("frozen", -17.0, -8.0, math.pi / 2, width=3.0)
 for i in range(4):
     add(L.box(coll, f"Freezer_{i}", X0 + 1.1, -10.5 + i * 2.0, 0.0, 1.8, 1.7, 0.9, M["white"], bevel=0.02))
@@ -335,9 +337,9 @@ for i, dep in enumerate(GONDOLAS):
     text(f"AisleSign_{dep}_Text", DEPARTMENTS[dep][0], gx, GZ1 + 2.36, 3.62, 0.24, M["sign"], 0.0)
     dept_info.append({"id": dep, "label": DEPARTMENTS[dep][0], "color": DEPARTMENTS[dep][1], "sign": [round(gx, 3), 3.75, round(GZ1 + 2.4, 3)]})
 # the sold foods on their shelves (the matching slot is marked taken)
-food_display("coffee", "breakfast", -15.3, SHELF_YS[2] + 0.03, -17.0, -math.pi / 2, -15.9, -17.0, tag_y=1.0)
-food_display("water_bottle", "drinks", -10.7, SHELF_YS[1] + 0.03, -16.0, math.pi / 2, -10.1, -16.0, tag_y=1.0)
-food_display("orange_juice", "drinks", -10.7, SHELF_YS[1] + 0.03, -18.0, math.pi / 2, -10.1, -18.0, tag_y=1.0)
+food_display("coffee", "breakfast", -15.3, SHELF_YS[2] + 0.03, -17.0, -math.pi / 2, -15.9, -17.0, tag_y=1.0, stack=(4, 2))
+food_display("water_bottle", "drinks", -10.7, SHELF_YS[1] + 0.03, -16.0, math.pi / 2, -10.1, -16.0, tag_y=1.0, stack=(5, 2))
+food_display("orange_juice", "drinks", -10.7, SHELF_YS[1] + 0.03, -18.0, math.pi / 2, -10.1, -18.0, tag_y=1.0, stack=(5, 2))
 for d in displays:
     if d["department"] not in GONDOLAS:
         continue
@@ -378,6 +380,8 @@ L.write_json(os.path.join(OUT, "interior.layout.json"), {
     "exit": {"position": [0.0, 4.75], "radius": 1.4},
     "bounds": {"minX": X0, "maxX": X1, "minZ": Z0, "maxZ": Z1},
     "departments": dept_info, "displays": displays, "slots": slots,
+    "counter": [-12.0, 1.0, 2.6],
+    "clerk": {"position": [-10.0, 0.0, 2.6], "yaw": round(-math.pi / 2, 4)},
 })
 tris = sum(len(p.vertices) - 2 for o in merged if o.type == "MESH" for p in o.data.polygons)
 print("greencart interior:", len(objs), "objects ->", len(merged), "nodes,", tris, "tris,", len(cols.items), "collision boxes,", len(displays), "displays,", len(slots), "slots")

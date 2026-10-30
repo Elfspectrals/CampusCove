@@ -8,6 +8,12 @@
     "minZ": -135.0,
     "maxZ": 135.0
   },
+  "music": {
+    "minX": -382.0,
+    "maxX": -144.0,
+    "minZ": -92.0,
+    "maxZ": 92.0
+  },
   "entrance": {
     "position": [
       -160.0,
@@ -400,17 +406,89 @@
       "status": "construction",
       "bounds": {
         "minX": -317.9,
+        "maxX": -304.8,
+        "minZ": -87.5,
+        "maxZ": -78.0
+      },
+      "front": {
+        "x": -311.35,
+        "y": 0.0,
+        "z": -77.0,
+        "yaw": 0.0
+      },
+      "width": 13.1,
+      "depth": 9.5
+    },
+    {
+      "id": "N04",
+      "plaza": "north_plaza",
+      "level": 0,
+      "row": "N_out_b",
+      "category": "services",
+      "label": "MALL SERVICES",
+      "name": "Quick Cuts",
+      "status": "planned",
+      "bounds": {
+        "minX": -304.8,
+        "maxX": -291.7,
+        "minZ": -87.5,
+        "maxZ": -78.0
+      },
+      "front": {
+        "x": -298.25,
+        "y": 0.0,
+        "z": -77.0,
+        "yaw": 0.0
+      },
+      "width": 13.1,
+      "depth": 9.5
+    },
+    {
+      "id": "N05",
+      "plaza": "north_plaza",
+      "level": 0,
+      "row": "N_out_b",
+      "category": "cafe",
+      "label": "COFFEE SHOP",
+      "name": "Fresh Press Juice",
+      "status": "planned",
+      "bounds": {
+        "minX": -291.7,
+        "maxX": -278.6,
+        "minZ": -87.5,
+        "maxZ": -78.0
+      },
+      "front": {
+        "x": -285.15,
+        "y": 0.0,
+        "z": -77.0,
+        "yaw": 0.0
+      },
+      "width": 13.1,
+      "depth": 9.5
+    },
+    {
+      "id": "N06",
+      "plaza": "north_plaza",
+      "level": 0,
+      "row": "N_out_b",
+      "category": "gifts",
+      "label": "GIFTS & ANTIQUES",
+      "name": "Paper Trail",
+      "status": "planned",
+      "bounds": {
+        "minX": -278.6,
         "maxX": -265.5,
         "minZ": -87.5,
         "maxZ": -78.0
       },
       "front": {
-        "x": -291.7,
+        "x": -272.05,
         "y": 0.0,
         "z": -77.0,
         "yaw": 0.0
       },
-      "width": 52.4,
+      "width": 13.1,
       "depth": 9.5
     },
     {
@@ -558,14 +636,14 @@
       "depth": 9.5
     },
     {
-      "id": "N04",
+      "id": "N07",
       "plaza": "north_plaza",
       "level": 0,
       "row": "N_in_a",
       "category": "pharmacy",
       "label": "PHARMACY",
-      "name": "Unit N20",
-      "status": "construction",
+      "name": "Cove Pharmacy",
+      "status": "planned",
       "bounds": {
         "minX": -340.0,
         "maxX": -320.0,
@@ -582,7 +660,7 @@
       "depth": 12.0
     },
     {
-      "id": "N05",
+      "id": "N08",
       "plaza": "north_plaza",
       "level": 0,
       "row": "N_in_a",
@@ -616,17 +694,17 @@
       "status": "planned",
       "bounds": {
         "minX": -300.0,
-        "maxX": -288.25,
+        "maxX": -288.75,
         "minZ": -62.0,
         "maxZ": -50.0
       },
       "front": {
-        "x": -294.125,
+        "x": -294.375,
         "y": 0.0,
         "z": -63.0,
         "yaw": 3.1416
       },
-      "width": 11.75,
+      "width": 11.25,
       "depth": 12.0
     },
     {
@@ -639,18 +717,18 @@
       "name": "Blush Bar",
       "status": "planned",
       "bounds": {
-        "minX": -288.25,
-        "maxX": -276.5,
+        "minX": -288.75,
+        "maxX": -277.5,
         "minZ": -62.0,
         "maxZ": -50.0
       },
       "front": {
-        "x": -282.375,
+        "x": -283.125,
         "y": 0.0,
         "z": -63.0,
         "yaw": 3.1416
       },
-      "width": 11.75,
+      "width": 11.25,
       "depth": 12.0
     },
     {
@@ -663,18 +741,18 @@
       "name": "Gilt & Glow",
       "status": "planned",
       "bounds": {
-        "minX": -276.5,
-        "maxX": -264.75,
+        "minX": -277.5,
+        "maxX": -266.25,
         "minZ": -62.0,
         "maxZ": -50.0
       },
       "front": {
-        "x": -270.625,
+        "x": -271.875,
         "y": 0.0,
         "z": -63.0,
         "yaw": 3.1416
       },
-      "width": 11.75,
+      "width": 11.25,
       "depth": 12.0
     },
     {
@@ -687,18 +765,18 @@
       "name": "Pocket Gadgets",
       "status": "planned",
       "bounds": {
-        "minX": -264.75,
-        "maxX": -253.0,
+        "minX": -266.25,
+        "maxX": -255.0,
         "minZ": -62.0,
         "maxZ": -50.0
       },
       "front": {
-        "x": -258.875,
+        "x": -260.625,
         "y": 0.0,
         "z": -63.0,
         "yaw": 3.1416
       },
-      "width": 11.75,
+      "width": 11.25,
       "depth": 12.0
     },
     {
@@ -711,18 +789,18 @@
       "name": "Velvet Lane",
       "status": "planned",
       "bounds": {
-        "minX": -247.0,
-        "maxX": -235.25,
+        "minX": -245.0,
+        "maxX": -233.75,
         "minZ": -62.0,
         "maxZ": -50.0
       },
       "front": {
-        "x": -241.125,
+        "x": -239.375,
         "y": 0.0,
         "z": -63.0,
         "yaw": 3.1416
       },
-      "width": 11.75,
+      "width": 11.25,
       "depth": 12.0
     },
     {
@@ -735,18 +813,18 @@
       "name": "Brickroad Men's",
       "status": "planned",
       "bounds": {
-        "minX": -235.25,
-        "maxX": -223.5,
+        "minX": -233.75,
+        "maxX": -222.5,
         "minZ": -62.0,
         "maxZ": -50.0
       },
       "front": {
-        "x": -229.375,
+        "x": -228.125,
         "y": 0.0,
         "z": -63.0,
         "yaw": 3.1416
       },
-      "width": 11.75,
+      "width": 11.25,
       "depth": 12.0
     },
     {
@@ -759,18 +837,18 @@
       "name": "Sole Society",
       "status": "planned",
       "bounds": {
-        "minX": -223.5,
-        "maxX": -211.75,
+        "minX": -222.5,
+        "maxX": -211.25,
         "minZ": -62.0,
         "maxZ": -50.0
       },
       "front": {
-        "x": -217.625,
+        "x": -216.875,
         "y": 0.0,
         "z": -63.0,
         "yaw": 3.1416
       },
-      "width": 11.75,
+      "width": 11.25,
       "depth": 12.0
     },
     {
@@ -783,18 +861,18 @@
       "name": "Curio Cabinet",
       "status": "planned",
       "bounds": {
-        "minX": -211.75,
+        "minX": -211.25,
         "maxX": -200.0,
         "minZ": -62.0,
         "maxZ": -50.0
       },
       "front": {
-        "x": -205.875,
+        "x": -205.625,
         "y": 0.0,
         "z": -63.0,
         "yaw": 3.1416
       },
-      "width": 11.75,
+      "width": 11.25,
       "depth": 12.0
     },
     {
@@ -807,18 +885,18 @@
       "name": "Burger Barony",
       "status": "planned",
       "bounds": {
-        "minX": -377.5,
-        "maxX": -362.32,
+        "minX": -368.0,
+        "maxX": -354.72,
         "minZ": 78.0,
         "maxZ": 87.5
       },
       "front": {
-        "x": -369.91,
+        "x": -361.36,
         "y": 0.0,
         "z": 77.0,
         "yaw": 3.1416
       },
-      "width": 15.18,
+      "width": 13.28,
       "depth": 9.5
     },
     {
@@ -831,18 +909,18 @@
       "name": "Mamma Lucia's",
       "status": "planned",
       "bounds": {
-        "minX": -362.32,
-        "maxX": -347.14,
+        "minX": -354.72,
+        "maxX": -341.44,
         "minZ": 78.0,
         "maxZ": 87.5
       },
       "front": {
-        "x": -354.73,
+        "x": -348.08,
         "y": 0.0,
         "z": 77.0,
         "yaw": 3.1416
       },
-      "width": 15.18,
+      "width": 13.28,
       "depth": 9.5
     },
     {
@@ -855,18 +933,18 @@
       "name": "Taco Tempo",
       "status": "planned",
       "bounds": {
-        "minX": -347.14,
-        "maxX": -331.96,
+        "minX": -341.44,
+        "maxX": -328.16,
         "minZ": 78.0,
         "maxZ": 87.5
       },
       "front": {
-        "x": -339.55,
+        "x": -334.8,
         "y": 0.0,
         "z": 77.0,
         "yaw": 3.1416
       },
-      "width": 15.18,
+      "width": 13.28,
       "depth": 9.5
     },
     {
@@ -879,18 +957,18 @@
       "name": "Wok This Way",
       "status": "planned",
       "bounds": {
-        "minX": -331.96,
-        "maxX": -316.78,
+        "minX": -328.16,
+        "maxX": -314.88,
         "minZ": 78.0,
         "maxZ": 87.5
       },
       "front": {
-        "x": -324.37,
+        "x": -321.52,
         "y": 0.0,
         "z": 77.0,
         "yaw": 3.1416
       },
-      "width": 15.18,
+      "width": 13.28,
       "depth": 9.5
     },
     {
@@ -903,18 +981,18 @@
       "name": "Dough Re Mi Pizza",
       "status": "planned",
       "bounds": {
-        "minX": -316.78,
+        "minX": -314.88,
         "maxX": -301.6,
         "minZ": 78.0,
         "maxZ": 87.5
       },
       "front": {
-        "x": -309.19,
+        "x": -308.24,
         "y": 0.0,
         "z": 77.0,
         "yaw": 3.1416
       },
-      "width": 15.18,
+      "width": 13.28,
       "depth": 9.5
     },
     {
@@ -1001,17 +1079,17 @@
       "status": "planned",
       "bounds": {
         "minX": -219.5,
-        "maxX": -201.133,
+        "maxX": -204.2,
         "minZ": 78.0,
         "maxZ": 87.5
       },
       "front": {
-        "x": -210.317,
+        "x": -211.85,
         "y": 0.0,
         "z": 77.0,
         "yaw": 3.1416
       },
-      "width": 18.367,
+      "width": 15.3,
       "depth": 9.5
     },
     {
@@ -1024,18 +1102,18 @@
       "name": "Gentleman's Quarter",
       "status": "planned",
       "bounds": {
-        "minX": -201.133,
-        "maxX": -182.767,
+        "minX": -204.2,
+        "maxX": -188.9,
         "minZ": 78.0,
         "maxZ": 87.5
       },
       "front": {
-        "x": -191.95,
+        "x": -196.55,
         "y": 0.0,
         "z": 77.0,
         "yaw": 3.1416
       },
-      "width": 18.367,
+      "width": 15.3,
       "depth": 9.5
     },
     {
@@ -1048,18 +1126,18 @@
       "name": "Paws & Claws",
       "status": "planned",
       "bounds": {
-        "minX": -182.767,
-        "maxX": -164.4,
+        "minX": -188.9,
+        "maxX": -173.6,
         "minZ": 78.0,
         "maxZ": 87.5
       },
       "front": {
-        "x": -173.583,
+        "x": -181.25,
         "y": 0.0,
         "z": 77.0,
         "yaw": 3.1416
       },
-      "width": 18.367,
+      "width": 15.3,
       "depth": 9.5
     },
     {
@@ -1072,13 +1150,13 @@
       "name": "Staff",
       "status": "passage",
       "bounds": {
-        "minX": -164.4,
-        "maxX": -162.8,
+        "minX": -173.6,
+        "maxX": -172.0,
         "minZ": 78.0,
         "maxZ": 87.5
       },
       "front": {
-        "x": -163.6,
+        "x": -172.8,
         "y": 0.0,
         "z": 77.0,
         "yaw": 3.1416
@@ -1169,17 +1247,17 @@
       "status": "planned",
       "bounds": {
         "minX": -300.0,
-        "maxX": -288.25,
+        "maxX": -288.75,
         "minZ": 50.0,
         "maxZ": 62.0
       },
       "front": {
-        "x": -294.125,
+        "x": -294.375,
         "y": 0.0,
         "z": 63.0,
         "yaw": 0.0
       },
-      "width": 11.75,
+      "width": 11.25,
       "depth": 12.0
     },
     {
@@ -1192,18 +1270,18 @@
       "name": "Rivermouth Jewels",
       "status": "planned",
       "bounds": {
-        "minX": -288.25,
-        "maxX": -276.5,
+        "minX": -288.75,
+        "maxX": -277.5,
         "minZ": 50.0,
         "maxZ": 62.0
       },
       "front": {
-        "x": -282.375,
+        "x": -283.125,
         "y": 0.0,
         "z": 63.0,
         "yaw": 0.0
       },
-      "width": 11.75,
+      "width": 11.25,
       "depth": 12.0
     },
     {
@@ -1216,18 +1294,18 @@
       "name": "Stride Runners",
       "status": "planned",
       "bounds": {
-        "minX": -276.5,
-        "maxX": -264.75,
+        "minX": -277.5,
+        "maxX": -266.25,
         "minZ": 50.0,
         "maxZ": 62.0
       },
       "front": {
-        "x": -270.625,
+        "x": -271.875,
         "y": 0.0,
         "z": 63.0,
         "yaw": 0.0
       },
-      "width": 11.75,
+      "width": 11.25,
       "depth": 12.0
     },
     {
@@ -1240,18 +1318,18 @@
       "name": "Lens & Light",
       "status": "planned",
       "bounds": {
-        "minX": -264.75,
-        "maxX": -253.0,
+        "minX": -266.25,
+        "maxX": -255.0,
         "minZ": 50.0,
         "maxZ": 62.0
       },
       "front": {
-        "x": -258.875,
+        "x": -260.625,
         "y": 0.0,
         "z": 63.0,
         "yaw": 0.0
       },
-      "width": 11.75,
+      "width": 11.25,
       "depth": 12.0
     },
     {
@@ -1264,18 +1342,18 @@
       "name": "Harbor Lane Kids",
       "status": "planned",
       "bounds": {
-        "minX": -247.0,
-        "maxX": -235.25,
+        "minX": -245.0,
+        "maxX": -233.75,
         "minZ": 50.0,
         "maxZ": 62.0
       },
       "front": {
-        "x": -241.125,
+        "x": -239.375,
         "y": 0.0,
         "z": 63.0,
         "yaw": 0.0
       },
-      "width": 11.75,
+      "width": 11.25,
       "depth": 12.0
     },
     {
@@ -1288,18 +1366,18 @@
       "name": "Saffron Table",
       "status": "planned",
       "bounds": {
-        "minX": -235.25,
-        "maxX": -223.5,
+        "minX": -233.75,
+        "maxX": -222.5,
         "minZ": 50.0,
         "maxZ": 62.0
       },
       "front": {
-        "x": -229.375,
+        "x": -228.125,
         "y": 0.0,
         "z": 63.0,
         "yaw": 0.0
       },
-      "width": 11.75,
+      "width": 11.25,
       "depth": 12.0
     },
     {
@@ -1312,18 +1390,18 @@
       "name": "Chapter Two Books",
       "status": "planned",
       "bounds": {
-        "minX": -223.5,
-        "maxX": -211.75,
+        "minX": -222.5,
+        "maxX": -211.25,
         "minZ": 50.0,
         "maxZ": 62.0
       },
       "front": {
-        "x": -217.625,
+        "x": -216.875,
         "y": 0.0,
         "z": 63.0,
         "yaw": 0.0
       },
-      "width": 11.75,
+      "width": 11.25,
       "depth": 12.0
     },
     {
@@ -1336,46 +1414,22 @@
       "name": "Pearl Street",
       "status": "planned",
       "bounds": {
-        "minX": -211.75,
+        "minX": -211.25,
         "maxX": -200.0,
         "minZ": 50.0,
         "maxZ": 62.0
       },
       "front": {
-        "x": -205.875,
+        "x": -205.625,
         "y": 0.0,
         "z": 63.0,
         "yaw": 0.0
       },
-      "width": 11.75,
+      "width": 11.25,
       "depth": 12.0
     },
     {
       "id": "W01",
-      "plaza": "wonderland",
-      "level": 0,
-      "row": "W_out_a",
-      "category": "services",
-      "label": "MALL SERVICES",
-      "name": "Staff",
-      "status": "passage",
-      "bounds": {
-        "minX": -377.5,
-        "maxX": -368.0,
-        "minZ": -78.0,
-        "maxZ": -76.4
-      },
-      "front": {
-        "x": -367.0,
-        "y": 0.0,
-        "z": -77.2,
-        "yaw": 1.5708
-      },
-      "width": 1.6,
-      "depth": 9.5
-    },
-    {
-      "id": "W02",
       "plaza": "wonderland",
       "level": 0,
       "row": "W_out_a",
@@ -1386,16 +1440,40 @@
       "bounds": {
         "minX": -377.5,
         "maxX": -368.0,
-        "minZ": -76.4,
-        "maxZ": -57.3
+        "minZ": -68.0,
+        "maxZ": -51.4
       },
       "front": {
         "x": -367.0,
         "y": 0.0,
-        "z": -66.85,
+        "z": -59.7,
         "yaw": 1.5708
       },
-      "width": 19.1,
+      "width": 16.6,
+      "depth": 9.5
+    },
+    {
+      "id": "W02",
+      "plaza": "wonderland",
+      "level": 0,
+      "row": "W_out_a",
+      "category": "services",
+      "label": "MALL SERVICES",
+      "name": "Staff",
+      "status": "passage",
+      "bounds": {
+        "minX": -377.5,
+        "maxX": -368.0,
+        "minZ": -51.4,
+        "maxZ": -49.8
+      },
+      "front": {
+        "x": -367.0,
+        "y": 0.0,
+        "z": -50.6,
+        "yaw": 1.5708
+      },
+      "width": 1.6,
       "depth": 9.5
     },
     {
@@ -1410,16 +1488,16 @@
       "bounds": {
         "minX": -377.5,
         "maxX": -368.0,
-        "minZ": -57.3,
-        "maxZ": -38.2
+        "minZ": -49.8,
+        "maxZ": -33.2
       },
       "front": {
         "x": -367.0,
         "y": 0.0,
-        "z": -47.75,
+        "z": -41.5,
         "yaw": 1.5708
       },
-      "width": 19.1,
+      "width": 16.6,
       "depth": 9.5
     },
     {
@@ -1434,16 +1512,16 @@
       "bounds": {
         "minX": -377.5,
         "maxX": -368.0,
-        "minZ": -38.2,
-        "maxZ": -19.1
+        "minZ": -33.2,
+        "maxZ": -16.6
       },
       "front": {
         "x": -367.0,
         "y": 0.0,
-        "z": -28.65,
+        "z": -24.9,
         "yaw": 1.5708
       },
-      "width": 19.1,
+      "width": 16.6,
       "depth": 9.5
     },
     {
@@ -1458,16 +1536,16 @@
       "bounds": {
         "minX": -377.5,
         "maxX": -368.0,
-        "minZ": -19.1,
+        "minZ": -16.6,
         "maxZ": 0.0
       },
       "front": {
         "x": -367.0,
         "y": 0.0,
-        "z": -9.55,
+        "z": -8.3,
         "yaw": 1.5708
       },
-      "width": 19.1,
+      "width": 16.6,
       "depth": 9.5
     },
     {
@@ -1580,15 +1658,15 @@
         "minX": -352.0,
         "maxX": -340.0,
         "minZ": -50.0,
-        "maxZ": -38.25
+        "maxZ": -38.75
       },
       "front": {
         "x": -353.0,
         "y": 0.0,
-        "z": -44.125,
+        "z": -44.375,
         "yaw": -1.5708
       },
-      "width": 11.75,
+      "width": 11.25,
       "depth": 12.0
     },
     {
@@ -1603,16 +1681,16 @@
       "bounds": {
         "minX": -352.0,
         "maxX": -340.0,
-        "minZ": -38.25,
-        "maxZ": -26.5
+        "minZ": -38.75,
+        "maxZ": -27.5
       },
       "front": {
         "x": -353.0,
         "y": 0.0,
-        "z": -32.375,
+        "z": -33.125,
         "yaw": -1.5708
       },
-      "width": 11.75,
+      "width": 11.25,
       "depth": 12.0
     },
     {
@@ -1627,16 +1705,16 @@
       "bounds": {
         "minX": -352.0,
         "maxX": -340.0,
-        "minZ": -26.5,
-        "maxZ": -14.75
+        "minZ": -27.5,
+        "maxZ": -16.25
       },
       "front": {
         "x": -353.0,
         "y": 0.0,
-        "z": -20.625,
+        "z": -21.875,
         "yaw": -1.5708
       },
-      "width": 11.75,
+      "width": 11.25,
       "depth": 12.0
     },
     {
@@ -1651,16 +1729,16 @@
       "bounds": {
         "minX": -352.0,
         "maxX": -340.0,
-        "minZ": -14.75,
-        "maxZ": -3.0
+        "minZ": -16.25,
+        "maxZ": -5.0
       },
       "front": {
         "x": -353.0,
         "y": 0.0,
-        "z": -8.875,
+        "z": -10.625,
         "yaw": -1.5708
       },
-      "width": 11.75,
+      "width": 11.25,
       "depth": 12.0
     },
     {
@@ -1675,16 +1753,16 @@
       "bounds": {
         "minX": -352.0,
         "maxX": -340.0,
-        "minZ": 3.0,
-        "maxZ": 14.75
+        "minZ": 5.0,
+        "maxZ": 16.25
       },
       "front": {
         "x": -353.0,
         "y": 0.0,
-        "z": 8.875,
+        "z": 10.625,
         "yaw": -1.5708
       },
-      "width": 11.75,
+      "width": 11.25,
       "depth": 12.0
     },
     {
@@ -1699,16 +1777,16 @@
       "bounds": {
         "minX": -352.0,
         "maxX": -340.0,
-        "minZ": 14.75,
-        "maxZ": 26.5
+        "minZ": 16.25,
+        "maxZ": 27.5
       },
       "front": {
         "x": -353.0,
         "y": 0.0,
-        "z": 20.625,
+        "z": 21.875,
         "yaw": -1.5708
       },
-      "width": 11.75,
+      "width": 11.25,
       "depth": 12.0
     },
     {
@@ -1723,16 +1801,16 @@
       "bounds": {
         "minX": -352.0,
         "maxX": -340.0,
-        "minZ": 26.5,
-        "maxZ": 38.25
+        "minZ": 27.5,
+        "maxZ": 38.75
       },
       "front": {
         "x": -353.0,
         "y": 0.0,
-        "z": 32.375,
+        "z": 33.125,
         "yaw": -1.5708
       },
-      "width": 11.75,
+      "width": 11.25,
       "depth": 12.0
     },
     {
@@ -1747,16 +1825,16 @@
       "bounds": {
         "minX": -352.0,
         "maxX": -340.0,
-        "minZ": 38.25,
+        "minZ": 38.75,
         "maxZ": 50.0
       },
       "front": {
         "x": -353.0,
         "y": 0.0,
-        "z": 44.125,
+        "z": 44.375,
         "yaw": -1.5708
       },
-      "width": 11.75,
+      "width": 11.25,
       "depth": 12.0
     },
     {
@@ -1956,30 +2034,6 @@
       "plaza": "entrance",
       "level": 0,
       "row": "E_in_a",
-      "category": "services",
-      "label": "MALL SERVICES",
-      "name": "Mall Services",
-      "status": "planned",
-      "bounds": {
-        "minX": -200.0,
-        "maxX": -188.0,
-        "minZ": -50.0,
-        "maxZ": -38.25
-      },
-      "front": {
-        "x": -187.0,
-        "y": 0.0,
-        "z": -44.125,
-        "yaw": 1.5708
-      },
-      "width": 11.75,
-      "depth": 12.0
-    },
-    {
-      "id": "E10",
-      "plaza": "entrance",
-      "level": 0,
-      "row": "E_in_a",
       "category": "jewelry",
       "label": "JEWELRY",
       "name": "Emerald Row",
@@ -1987,20 +2041,20 @@
       "bounds": {
         "minX": -200.0,
         "maxX": -188.0,
-        "minZ": -38.25,
-        "maxZ": -26.5
+        "minZ": -50.0,
+        "maxZ": -38.75
       },
       "front": {
         "x": -187.0,
         "y": 0.0,
-        "z": -32.375,
+        "z": -44.375,
         "yaw": 1.5708
       },
-      "width": 11.75,
+      "width": 11.25,
       "depth": 12.0
     },
     {
-      "id": "E11",
+      "id": "E10",
       "plaza": "entrance",
       "level": 0,
       "row": "E_in_a",
@@ -2011,20 +2065,20 @@
       "bounds": {
         "minX": -200.0,
         "maxX": -188.0,
-        "minZ": -26.5,
-        "maxZ": -14.75
+        "minZ": -38.75,
+        "maxZ": -27.5
       },
       "front": {
         "x": -187.0,
         "y": 0.0,
-        "z": -20.625,
+        "z": -33.125,
         "yaw": 1.5708
       },
-      "width": 11.75,
+      "width": 11.25,
       "depth": 12.0
     },
     {
-      "id": "E12",
+      "id": "E11",
       "plaza": "entrance",
       "level": 0,
       "row": "E_in_a",
@@ -2035,16 +2089,40 @@
       "bounds": {
         "minX": -200.0,
         "maxX": -188.0,
-        "minZ": -14.75,
-        "maxZ": -3.0
+        "minZ": -27.5,
+        "maxZ": -16.25
       },
       "front": {
         "x": -187.0,
         "y": 0.0,
-        "z": -8.875,
+        "z": -21.875,
         "yaw": 1.5708
       },
-      "width": 11.75,
+      "width": 11.25,
+      "depth": 12.0
+    },
+    {
+      "id": "E12",
+      "plaza": "entrance",
+      "level": 0,
+      "row": "E_in_a",
+      "category": "services",
+      "label": "MALL SERVICES",
+      "name": "Mall Services",
+      "status": "planned",
+      "bounds": {
+        "minX": -200.0,
+        "maxX": -188.0,
+        "minZ": -16.25,
+        "maxZ": -5.0
+      },
+      "front": {
+        "x": -187.0,
+        "y": 0.0,
+        "z": -10.625,
+        "yaw": 1.5708
+      },
+      "width": 11.25,
       "depth": 12.0
     },
     {
@@ -2059,16 +2137,16 @@
       "bounds": {
         "minX": -200.0,
         "maxX": -188.0,
-        "minZ": 3.0,
-        "maxZ": 14.75
+        "minZ": 5.0,
+        "maxZ": 16.25
       },
       "front": {
         "x": -187.0,
         "y": 0.0,
-        "z": 8.875,
+        "z": 10.625,
         "yaw": 1.5708
       },
-      "width": 11.75,
+      "width": 11.25,
       "depth": 12.0
     },
     {
@@ -2083,16 +2161,16 @@
       "bounds": {
         "minX": -200.0,
         "maxX": -188.0,
-        "minZ": 14.75,
-        "maxZ": 26.5
+        "minZ": 16.25,
+        "maxZ": 27.5
       },
       "front": {
         "x": -187.0,
         "y": 0.0,
-        "z": 20.625,
+        "z": 21.875,
         "yaw": 1.5708
       },
-      "width": 11.75,
+      "width": 11.25,
       "depth": 12.0
     },
     {
@@ -2107,16 +2185,16 @@
       "bounds": {
         "minX": -200.0,
         "maxX": -188.0,
-        "minZ": 26.5,
-        "maxZ": 38.25
+        "minZ": 27.5,
+        "maxZ": 38.75
       },
       "front": {
         "x": -187.0,
         "y": 0.0,
-        "z": 32.375,
+        "z": 33.125,
         "yaw": 1.5708
       },
-      "width": 11.75,
+      "width": 11.25,
       "depth": 12.0
     },
     {
@@ -2131,16 +2209,16 @@
       "bounds": {
         "minX": -200.0,
         "maxX": -188.0,
-        "minZ": 38.25,
+        "minZ": 38.75,
         "maxZ": 50.0
       },
       "front": {
         "x": -187.0,
         "y": 0.0,
-        "z": 44.125,
+        "z": 44.375,
         "yaw": 1.5708
       },
-      "width": 11.75,
+      "width": 11.25,
       "depth": 12.0
     },
     {

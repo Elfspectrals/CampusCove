@@ -713,6 +713,15 @@
       "collisionUrl": "/assets/store/mall/mall.collision.json",
       "layoutUrl": "/assets/store/mall/mall.layout.json",
       "animatedWater": true,
+      "music": {
+        "url": "/assets/music/cove_mall.mp3",
+        "bounds": {
+          "minX": -382,
+          "maxX": -144,
+          "minZ": -92,
+          "maxZ": 92
+        }
+      },
       "gate": {
         "x": -160,
         "z": 0,

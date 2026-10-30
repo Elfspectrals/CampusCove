@@ -311,6 +311,8 @@ L.write_json(os.path.join(OUT, "interior.layout.json"), {
     "exit": {"position": [0.0, 4.75], "radius": 1.4},
     "bounds": {"minX": X0, "maxX": X1, "minZ": Z0, "maxZ": Z1},
     "departments": dept_info, "displays": displays,
+    "counter": [counter_x, 1.15, round(counter_z - 0.8, 3)],
+    "clerk": {"position": [counter_x, 0.0, round(counter_z + 0.8, 3)], "yaw": round(math.pi, 4)},
 })
 tris = sum(len(p.vertices) - 2 for o in merged if o.type == "MESH" for p in o.data.polygons)
 print("hearth interior:", len(objs), "objects ->", len(merged), "nodes,", tris, "tris,", len(cols.items), "collision boxes,", len(displays), "displays")

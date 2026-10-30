@@ -42,7 +42,7 @@ WALL_T = 0.3
 RAMP_RUN = 10.4
 RAMP_W = 1.4
 LANDING = 2.0
-EXIT_W = 6.0
+EXIT_W = 10.0
 ENTRANCE_HW = 8.0
 TWO_PI = 2 * math.pi
 rnd = random.Random(7)
@@ -82,11 +82,11 @@ CELL_STORES = {"Crispin's Hardware": "crispins_hardware", "Candy Cloud": "candy_
 ROWS = {
     # north wing, outer row (front z = -78), west -> east, split by GreenCart, the dock passage, Hearth & Hollow and the warehouse
     "N_out_a": ("north_plaza", [("Crispin's Hardware", "hardware", O_)]),
-    "N_out_b": ("north_plaza", [("Staff", "services", S_), ("Unit N12", "pet", C_)]),
+    "N_out_b": ("north_plaza", [("Staff", "services", S_), ("Unit N12", "pet", C_), ("Quick Cuts", "services", P_), ("Fresh Press Juice", "cafe", P_), ("Paper Trail", "gifts", P_)]),
     "N_out_c": ("paradise", [("Starlight Cinema", "cinema", P_), ("Page Turner Books", "books", P_), ("Vinyl Vault", "music", P_)]),
     "N_out_d": ("paradise", [("Kokoro Toys", "toys", P_), ("Volt Electronics", "electronics", P_), ("Shutter Speed Cameras", "camera", P_)]),
     # north wing, inner row (front z = -62), west -> east, park exit in the middle of Paradise
-    "N_in_a": ("north_plaza", [("Unit N20", "pharmacy", C_), ("Unit N21", "services", C_)]),
+    "N_in_a": ("north_plaza", [("Cove Pharmacy", "pharmacy", P_), ("Unit N21", "services", C_)]),
     "N_in_b": ("paradise", [("Tiny Tots", "clothing_kids", P_), ("Blush Bar", "cosmetics", P_), ("Gilt & Glow", "jewelry", P_), ("Pocket Gadgets", "phones", P_)]),
     "N_in_c": ("paradise", [("Velvet Lane", "clothing_women", P_), ("Brickroad Men's", "clothing_men", P_), ("Sole Society", "shoes", P_), ("Curio Cabinet", "gifts", P_)]),
     # south wing, outer row (front z = 78): food court counters, then Al Fresca split by Northline
@@ -98,14 +98,14 @@ ROWS = {
     "S_in_b": ("al_fresca", [("Casa Verde", "home_decor", P_), ("Rivermouth Jewels", "jewelry", P_), ("Stride Runners", "clothing_sport", P_), ("Lens & Light", "camera", P_)]),
     "S_in_c": ("al_fresca", [("Harbor Lane Kids", "clothing_kids", P_), ("Saffron Table", "restaurant", P_), ("Chapter Two Books", "books", P_), ("Pearl Street", "clothing_luxury", P_)]),
     # west wing (Wonderland), outer row (front x = -368), north -> south ; inner row (front x = -352) with the park exit
-    "W_out_a": ("wonderland", [("Staff", "services", S_), ("Pixel Palace Arcade", "arcade", P_), ("Kiddo Corner", "clothing_kids", P_), ("Rocket Toys", "toys", P_), ("Homerunner Sports", "sports", P_)]),
+    "W_out_a": ("wonderland", [("Pixel Palace Arcade", "arcade", P_), ("Staff", "services", S_), ("Kiddo Corner", "clothing_kids", P_), ("Rocket Toys", "toys", P_), ("Homerunner Sports", "sports", P_)]),
     "W_out_b": ("wonderland", [("Candy Cloud", "sweets", O_), ("Little Lens", "eyewear", P_), ("Playbox Games", "electronics", P_), ("Staff", "services", S_)]),
     "W_in_a": ("wonderland", [("Wonder Jewels", "jewelry", P_), ("Casual Corner", "clothing_women", P_), ("Fanfare Fashion", "clothing_women", P_), ("Shoes of a Lifetime", "shoes", P_)]),
     "W_in_b": ("wonderland", [("Modern Gent", "clothing_men", P_), ("Run Like Wind", "clothing_sport", P_), ("Petal & Pot", "gifts", P_), ("Sir Read-a-lot", "books", P_)]),
     # east wing (Entrance), outer row (front x = -172) split by the main entrance ; inner row (front x = -188) with the park exit
     "E_out_a": ("entrance", [("Refined Class", "clothing_women", P_), ("The Distinguished Man", "clothing_men", P_), ("Fashion Fiesta", "clothing_women", P_), ("Space Kids", "clothing_kids", P_)]),
     "E_out_b": ("entrance", [("Rafael's Shoes", "shoes", P_), ("Everyone Luvs Books", "books", P_), ("Special Gifts", "jewelry", P_), ("Outta Sight Optics", "eyewear", P_)]),
-    "E_in_a": ("entrance", [("Mall Services", "services", P_), ("Emerald Row", "jewelry", P_), ("Jamming Juvenile", "clothing_kids", P_), ("Robsaka Digital", "electronics", P_)]),
+    "E_in_a": ("entrance", [("Emerald Row", "jewelry", P_), ("Jamming Juvenile", "clothing_kids", P_), ("Robsaka Digital", "electronics", P_), ("Mall Services", "services", P_)]),
     "E_in_b": ("entrance", [("Wallington's", "clothing_men", P_), ("Ladies' Space", "clothing_women", P_), ("The Shoehorn", "shoes", P_), ("Kathy's Boutique", "clothing_luxury", P_)]),
     # upper floors (level 1): Entrance, Paradise (x -300..-200), Wonderland
     "E1_out": ("entrance", [("Lady About Town", "clothing_women", P_), ("Marriage Makers", "jewelry", P_), ("Roastmaster Cafe", "cafe", P_), ("Tucci's of Rome", "clothing_men", P_), ("Modern Businessman", "clothing_men", P_), ("Kicks For Her", "shoes", P_), ("Estelle's Cosmetics", "cosmetics", P_), ("The Sinister Read", "books", P_)]),
@@ -411,6 +411,20 @@ def cell(row_key, plaza, name, category, status, axis, a0, a1, front, back, y0, 
         cell_stores.append({"key": key, "name": name, "category": category, "plaza": plaza, "position": position, "rotationY": round(rot, 6), "cell": cid})
         cells.append({"id": cid, "plaza": plaza, "level": level, "row": row_key, "category": category, "label": label, "name": name, "status": status, "store": key,
                       "bounds": bounds_of(axis, a0, a1, front, back), "front": front_of(axis, mid, front, sign, y0), "width": round(width, 3), "depth": round(depth, 3)})
+        # the store shell is 0.2 m narrower than the cell and lower than CELL_H: fill the slits at its sides, close the
+        # back towards the service corridor and the band between its roof and the slab, like a normal cell does
+        if axis == "x":
+            rect(f"{tag}_Back", a0, min(back, back - sign * WALL_T), a1, max(back, back - sign * WALL_T), y0, CELL_H, P["wall"], col=True)
+            rect(f"{tag}_SideA", a0, min(front, back), a0 + 0.22, max(front, back), y0, CELL_H, P["wall"], col=True)
+            rect(f"{tag}_SideB", a1 - 0.22, min(front, back), a1, max(front, back), y0, CELL_H, P["wall"], col=True)
+            rect(f"{tag}_Ceiling", a0, min(front, back), a1, max(front, back), y0 + CELL_H - 0.1, 0.1, P["slab"])
+            rect(f"{tag}_Band", a0, front - 0.12, a1, front + 0.12, y0 + 4.45, CELL_H - 4.45, P["wall"])
+        else:
+            rect(f"{tag}_Back", min(back, back - sign * WALL_T), a0, max(back, back - sign * WALL_T), a1, y0, CELL_H, P["wall"], col=True)
+            rect(f"{tag}_SideA", min(front, back), a0, max(front, back), a0 + 0.22, y0, CELL_H, P["wall"], col=True)
+            rect(f"{tag}_SideB", min(front, back), a1 - 0.22, max(front, back), a1, y0, CELL_H, P["wall"], col=True)
+            rect(f"{tag}_Ceiling", min(front, back), a0, max(front, back), a1, y0 + CELL_H - 0.1, 0.1, P["slab"])
+            rect(f"{tag}_Band", front - 0.12, a0, front + 0.12, a1, y0 + 4.45, CELL_H - 4.45, P["wall"])
         return
     if status == S_:
         # staff passage: floor, a door frame and the sign; the neighbours' side walls close it
@@ -529,6 +543,10 @@ rect("Floor_South", X0, S_IN, X1, S_OUT, -0.1, 0.1, P["floor"], tile=3.0)
 rect("Floor_West", W_OUT, N_IN, W_IN, S_IN, -0.1, 0.1, P["floor"], tile=3.0)
 rect("Floor_East", E_IN, N_IN, E_OUT, S_IN, -0.1, 0.1, P["floor"], tile=3.0)
 rect("Floor_CourtNW", W_OUT, N_OUT, PARK[0], N_IN, -0.1, 0.1, P["floor"], tile=3.0)
+# the north-west court bites 10 m into the west outer row so the whole Crispin's front (x < W_OUT included) opens on it
+NOTCH = 10.0
+rect("Floor_CourtNW_Notch", X0 + SVC, N_OUT, W_OUT, N_OUT + NOTCH, -0.1, 0.1, P["floor"], tile=3.0)
+rect("Notch_WallW", X0 + SVC - WALL_T, N_OUT, X0 + SVC, N_OUT + NOTCH, 0.0, CELL_H, P["wall"], col=True)
 rect("Floor_CourtSW", W_OUT, S_IN, PARK[0], S_OUT, -0.1, 0.1, P["floor"], tile=3.0)
 rect("Floor_CourtNE", PARK[1], N_OUT, E_OUT, N_IN, -0.1, 0.1, P["floor"], tile=3.0)
 rect("Floor_CourtSE", PARK[1], S_IN, E_OUT, S_OUT, -0.1, 0.1, P["floor"], tile=3.0)
@@ -593,13 +611,16 @@ row("N_out_d", "x", (hh1 + WARE[0]) / 2, WARE[0], N_OUT, Z0 + SVC)
 row("N_in_a", "x", PARK[0], -300.0, N_IN, PARK[2])
 row("N_in_b", "x", -300.0, -250.0 - EXIT_W / 2, N_IN, PARK[2])
 row("N_in_c", "x", -250.0 + EXIT_W / 2, PARK[1], N_IN, PARK[2])
-row("S_out_a", "x", X0 + SVC, -300.0, S_OUT, Z1 - SVC)
+# the south outer rows stop at the west/east walkway lines: the corner pockets behind them stay service space
+row("S_out_a", "x", W_OUT, -300.0, S_OUT, Z1 - SVC)
+rect("Floor_SvcSW", X0 + SVC, S_OUT, W_OUT, Z1 - SVC, -0.1, 0.1, P["service"], tile=3.0)
 row("S_out_b", "x", -300.0, nl0, S_OUT, Z1 - SVC)
-row("S_out_c", "x", nl1, X1 - SVC - 0.3, S_OUT, Z1 - SVC)
+row("S_out_c", "x", nl1, E_OUT, S_OUT, Z1 - SVC)
+rect("Floor_SvcSE", E_OUT, S_OUT, X1 - WALL_T, Z1 - SVC, -0.1, 0.1, P["service"], tile=3.0)
 row("S_in_a", "x", PARK[0], -300.0, S_IN, PARK[3])
 row("S_in_b", "x", -300.0, -250.0 - EXIT_W / 2, S_IN, PARK[3])
 row("S_in_c", "x", -250.0 + EXIT_W / 2, PARK[1], S_IN, PARK[3])
-row("W_out_a", "z", N_OUT, 0.0, W_OUT, X0 + SVC)
+row("W_out_a", "z", N_OUT + NOTCH, 0.0, W_OUT, X0 + SVC)
 row("W_out_b", "z", 0.0, S_OUT, W_OUT, X0 + SVC)
 row("W_in_a", "z", PARK[2], -EXIT_W / 2, W_IN, PARK[0])
 row("W_in_b", "z", EXIT_W / 2, PARK[3], W_IN, PARK[0])
@@ -610,11 +631,11 @@ row("E_in_b", "z", EXIT_W / 2, PARK[3], E_IN, PARK[1])
 # the park exits: arches through the inner rows (the gap is left by the rows; add a lintel and side pilasters)
 for name, x0, z0, x1, z1 in (("ExitN", -250.0 - EXIT_W / 2, PARK[2], -250.0 + EXIT_W / 2, N_IN), ("ExitS", -250.0 - EXIT_W / 2, S_IN, -250.0 + EXIT_W / 2, PARK[3]),
                              ("ExitW", PARK[0], -EXIT_W / 2, W_IN, EXIT_W / 2), ("ExitE", E_IN, -EXIT_W / 2, PARK[1], EXIT_W / 2)):
-    rect(f"{name}_Lintel", x0, z0, x1, z1, 3.6, CELL_H - 3.6, P["band"])
+    rect(f"{name}_Lintel", x0, z0, x1, z1, 4.4, CELL_H - 4.4, P["band"])
     rect(f"{name}_Floor", x0, z0, x1, z1, -0.08, 0.1, P["paving"], tile=2.0)
 exit_signs = (("ExitN", -250.0, N_IN - 0.06, math.pi), ("ExitS", -250.0, S_IN + 0.06, 0.0), ("ExitW", W_IN - 0.06, 0.0, -math.pi / 2), ("ExitE", E_IN + 0.06, 0.0, math.pi / 2))
 for name, gx, gz, yaw in exit_signs:
-    text(f"{name}_Sign", "LEISURE PARK", gx, gz, 3.85, 0.4, P["sign"], yaw)
+    text(f"{name}_Sign", "LEISURE PARK", gx, gz, 4.44, 0.32, P["sign"], yaw)
 
 # main entrance: glass facade between the two outer cell rows, doors, canopy, mall name
 rect("Entrance_Low", X1 - 0.4, -ENTRANCE_HW, X1, ENTRANCE_HW, 0.0, 0.4, P["wall_out"])
@@ -881,13 +902,15 @@ cols.add("Info_Desk", -180.0, 14.0, 0.0, 3.8, 3.8, 1.1)
 for i, gz in enumerate(range(-44, 45, 11)):
     bench(f"Bench_E{i}a", -186.0, gz, math.pi / 2)
     bench(f"Bench_E{i}b", -174.0, gz, -math.pi / 2)
-    planter(f"Planter_E{i}", -180.0, gz + 5.5, 1.2, 1.2)
-    bin_(f"Bin_E{i}", -176.0, gz + 5.5)
+    if abs(gz + 5.5) <= 33.0:
+        planter(f"Planter_E{i}", -180.0, gz + 5.5, 1.2, 1.2)
+        bin_(f"Bin_E{i}", -176.0, gz + 5.5)
 # paradise plaza and north plaza furniture
 for i, gx in enumerate(range(-296, -200, 16)):
-    bench(f"Bench_N{i}a", gx, N_OUT - 2.0, math.pi)
-    bench(f"Bench_N{i}b", gx, N_IN + 2.0, 0.0)
-    planter(f"Planter_N{i}", gx + 8.0, -70.0, 1.2, 1.2)
+    bench(f"Bench_N{i}a", gx, N_OUT + 2.0, math.pi)
+    bench(f"Bench_N{i}b", gx, N_IN - 2.0, 0.0)
+    if gx > -296:
+        planter(f"Planter_N{i}", gx + 8.0, -70.0, 1.2, 1.2)
 for i, gx in enumerate(range(-372, -300, 18)):
     add(L.box(coll, f"Reno_Pallet{i}", gx, -66.0, 0.0, 1.2, 1.0, 0.15, P["pallet"]))
     add(L.box(coll, f"Reno_Bags{i}", gx, -66.0, 0.15, 1.0, 0.8, 0.5, P["carton"], bevel=0.04))
@@ -918,9 +941,7 @@ cols.add("BallPit", -360.0, 15.0, 0.0, 4.0, 4.0, 0.8)
 # food court: communal round tables with chairs, western props, string lights
 tbl = 0
 for gx in range(-370, -302, 8):
-    for gz in (65.0, 71.0, 77.0):
-        if gz == 77.0 and gx % 16 == 0:
-            continue
+    for gz in (65.0, 71.0):
         add(L.cyl(coll, f"FC_Table{tbl}_Top", gx, gz, 0.72, 0.7, 0.05, P["wood"], seg=12))
         add(L.cyl(coll, f"FC_Table{tbl}_Leg", gx, gz, 0.0, 0.08, 0.72, P["dark"], seg=6))
         cols.add(f"FC_Table{tbl}", gx, gz, 0.0, 1.5, 1.5, 0.8)
@@ -965,6 +986,91 @@ for i, gx in enumerate(range(-294, -166, 14)):
     tree("blossom" if i % 2 else "round", gx, 64.0, 0.8)
     lamp(f"AF_Lamp{i}", gx + 7.0, 76.0, 3.6)
     bench(f"AF_Bench{i}", gx + 7.0, 74.5, math.pi)
+# ---------------------------------------------------------------- decor: kiosks, banners, way-finding, greenery, rest islands, sculptures
+def kiosk(name, gx, gz, yaw, label, mat):
+    """An octagonal sales kiosk in the middle of a walkway: desk, four posts, a tent roof and a two-sided sign."""
+    add(L.cyl(coll, f"{name}_Desk", gx, gz, 0.0, 1.4, 1.05, P["wall"], seg=8))
+    add(L.cyl(coll, f"{name}_Top", gx, gz, 1.05, 1.5, 0.06, mat, seg=8))
+    for k in range(4):
+        a = TWO_PI * k / 4 + math.pi / 4 + yaw
+        add(L.cyl(coll, f"{name}_Post{k}", gx + 1.25 * math.cos(a), gz + 1.25 * math.sin(a), 1.11, 0.04, 1.5, P["steel"], seg=5))
+    add(L.cone(coll, f"{name}_Roof", gx, gz, 2.6, 1.9, 0.2, 0.6, mat, seg=8))
+    add(L.box(coll, f"{name}_Sign", gx, gz, 2.12, 2.2, 0.08, 0.42, P["dark"], rot=yaw))
+    fx, fz = math.sin(yaw), math.cos(yaw)
+    text(f"{name}_Text", label, gx + fx * 0.06, gz + fz * 0.06, 2.2, 0.26, P["sign"], yaw)
+    text(f"{name}_TextB", label, gx - fx * 0.06, gz - fz * 0.06, 2.2, 0.26, P["sign"], yaw + math.pi)
+    cols.add(name, gx, gz, 0.0, 3.0, 3.0, 1.1)
+
+
+def banner(name, gx, gz, yaw, mat, label):
+    """A cloth banner hung from a balcony edge, the store name on the walkway side."""
+    add(L.box(coll, f"{name}_Bar", gx, gz, 5.5, 1.3, 0.06, 0.06, P["steel"], rot=yaw))
+    add(L.box(coll, f"{name}_Cloth", gx, gz, 3.3, 1.1, 0.04, 2.2, mat, rot=yaw))
+    fx, fz = math.sin(yaw), math.cos(yaw)
+    text(f"{name}_Text", label, gx + fx * 0.03, gz + fz * 0.03, 4.15, 0.22, P["sign"], yaw)
+
+
+def way_sign(name, body, gx, gz, yaw):
+    """A hanging direction board at a walkway junction, readable when arriving."""
+    add(L.box(coll, f"{name}_Board", gx, gz, 3.9, 3.4, 0.08, 0.6, P["band"], rot=yaw))
+    fx, fz = math.sin(yaw), math.cos(yaw)
+    text(f"{name}_Text", body, gx + fx * 0.06, gz + fz * 0.06, 4.05, 0.3, P["sign"], yaw)
+    for o_ in (-1.5, 1.5):
+        add(L.cyl(coll, f"{name}_Wire{int(o_ * 10)}", gx + o_ * math.cos(yaw), gz - o_ * math.sin(yaw), 4.5, 0.012, 1.1, P["steel"], seg=4))
+
+
+def sculpture(name, gx, gz):
+    """Stacked, slightly turned blocks on a stone drum: the corner courts' landmark."""
+    add(L.cyl(coll, f"{name}_Base", gx, gz, 0.0, 1.6, 0.5, P["stone"], seg=12))
+    y = 0.5
+    for k, (ox, oz, s, h, mat) in enumerate(((0.0, 0.0, 1.1, 1.3, P["band"]), (0.3, -0.2, 0.8, 1.0, P["red"]), (-0.25, 0.25, 0.6, 0.9, P["yellow"]), (0.1, 0.1, 0.4, 0.8, P["blue"]))):
+        add(L.box(coll, f"{name}_Cube{k}", gx + ox, gz + oz, y, s, s, h, mat, rot=0.4 * k, bevel=0.02))
+        y += h
+    cols.add(name, gx, gz, 0.0, 3.2, 3.2, 1.2)
+
+
+for name, gx, gz, yaw, label, mat in (("Kiosk_IceCream", -180.0, -33.0, 0.0, "ICE CREAM", P["pink"]), ("Kiosk_News", -180.0, 33.0, math.pi, "COVE NEWS", P["blue"]),
+                                       ("Kiosk_Pretzel", -280.0, -70.0, math.pi / 2, "PRETZELS", P["yellow"]), ("Kiosk_Phones", -232.0, -70.0, -math.pi / 2, "PHONE CASES", P["band"]),
+                                       ("Kiosk_Juice", -270.0, 70.0, math.pi / 2, "FRESH JUICE", P["red"]), ("Kiosk_Gelato", -195.0, 70.0, -math.pi / 2, "GELATO", P["pink"]),
+                                       ("Kiosk_Balloons", -360.0, 36.0, 0.0, "BALLOONS", P["yellow"]), ("Kiosk_Coffee", -345.0, -70.0, math.pi / 2, "COFFEE CART", P["wood"])):
+    kiosk(name, gx, gz, yaw, label, mat)
+# banners under the three upper-level balconies, every 24 m, clear of the escalators at the wing ends and of the pillars
+BANNER_LABELS = ("NORTHLINE", "HEARTH & HOLLOW", "GREENCART", "CANDY CLOUD", "CRISPIN'S", "SUMMIT SPORTS", "SALE", "NEW SEASON")
+BANNER_MATS = (P["band"], P["red"], P["blue"], P["yellow"], P["pink"])
+bn = 0
+for key, axis, a0, a1, edges in (("E", "z", PARK[2], PARK[3], ((E_OUT - BAL, -math.pi / 2, 0.7), (E_IN + BAL, math.pi / 2, -0.7))),
+                                  ("P", "x", P_UP[0], P_UP[1], ((N_OUT + BAL, 0.0, -0.7), (N_IN - BAL, math.pi, 0.7))),
+                                  ("W", "z", PARK[2], PARK[3], ((W_OUT + BAL, math.pi / 2, -0.7), (W_IN - BAL, -math.pi / 2, 0.7)))):
+    for edge, yaw, inward in edges:
+        for p in range(int(a0) + 14, int(a1) - 13, 24):
+            if key == "W" and edge < -360.0 and 0.0 <= p <= 26.0:
+                continue
+            gx, gz = (p, edge) if axis == "x" else (edge, p)
+            banner(f"Banner_{key}_{bn}", gx, gz, yaw, BANNER_MATS[bn % len(BANNER_MATS)], BANNER_LABELS[bn % len(BANNER_LABELS)])
+            bn += 1
+        # flower boxes on the balcony floor, 0.7 m inside the edge (`inward`), between the banners
+        for p in range(int(a0) + 26, int(a1) - 13, 24):
+            gx, gz = (p, edge + inward) if axis == "x" else (edge + inward, p)
+            add(L.box(coll, f"Planter_Bal_{key}_{p}_Box", gx, gz, L1_Y, 1.2 if axis == "x" else 0.4, 0.4 if axis == "x" else 1.2, 0.4, P["band"], bevel=0.02))
+            add(L.box(coll, f"Planter_Bal_{key}_{p}_Flower", gx, gz, L1_Y + 0.4, 1.0 if axis == "x" else 0.3, 0.3 if axis == "x" else 1.0, 0.18, rnd.choice((P["flower"], P["flower2"], P["pink"])), bevel=0.04))
+way_sign("Way_North", "PARADISE PLAZA · NORTH PLAZA", -183.0, -56.0, 0.0)
+way_sign("Way_South", "AL FRESCA · FOOD COURT", -183.0, 56.0, math.pi)
+way_sign("Way_West", "NORTH PLAZA · WONDERLAND", -300.0, -70.0, math.pi / 2)
+way_sign("Way_East", "AL FRESCA · ENTRANCE", -300.0, 70.0, -math.pi / 2)
+# greenery: potted trees along the Wonderland walkway and in the north-west court, bins by the Paradise planters
+for gz in (-42.0, -30.0, -18.0, 18.0, 30.0, 42.0):
+    planter(f"Planter_W{int(gz)}", -353.2, gz, 1.6, 1.6, flowers=False)
+    tree("round", -353.2, gz, 0.7)
+planter("Planter_CourtNW", -360.0, -70.0, 2.0, 2.0, flowers=False)
+tree("blossom", -360.0, -70.0, 0.8)
+for i, gx in enumerate(range(-280, -200, 16)):
+    bin_(f"Bin_N{i}", gx + 9.4, -70.0)
+# rest islands in the Wonderland walkway, landmarks in the two east courts
+for gz in (-24.0, 24.0, -46.0, 46.0):
+    bench(f"Bench_W{int(gz)}", -366.0, gz, math.pi / 2)
+    bin_(f"Bin_W{int(gz)}", -366.0, gz + 2.5)
+sculpture("Sculpture_NE", -180.0, -70.0)
+sculpture("Sculpture_SE", -180.0, 70.0)
 # park-side elevation: a cornice band and climbing plants on the backs of the inner rows
 for name, x0, z0, x1, z1 in (("ParkWallN", PARK[0], PARK[2] - 0.35, PARK[1], PARK[2] - 0.05), ("ParkWallS", PARK[0], PARK[3] + 0.05, PARK[1], PARK[3] + 0.35),
                              ("ParkWallW", PARK[0] - 0.35, PARK[2], PARK[0] - 0.05, PARK[3]), ("ParkWallE", PARK[1] + 0.05, PARK[2], PARK[1] + 0.35, PARK[3])):
@@ -981,6 +1087,8 @@ for i in range(14):
 CX, CZ = (px0 + px1) / 2, 0.0
 rect("Park_PathNS", CX - 2.0, pz0, CX + 2.0, pz1, -0.005, 0.02, P["path"], tile=2.0)
 rect("Park_PathEW", px0, CZ - 2.0, px1, CZ + 2.0, -0.005, 0.02, P["path"], tile=2.0)
+rect("Park_PathExitN", -252.0, pz0, -248.0, -11.0, -0.005, 0.02, P["path"], tile=2.0)
+rect("Park_PathExitS", -252.0, 11.0, -248.0, pz1, -0.005, 0.02, P["path"], tile=2.0)
 add(L.cyl(coll, "Park_Plaza", CX, CZ, 0.0, 12.0, 0.02, P["paving"], seg=28))
 add(L.cyl(coll, "Park_Ring", CX, CZ, 0.0, 24.0, 0.012, P["path"], seg=36))
 add(L.cyl(coll, "Park_RingInner", CX, CZ, 0.0, 21.0, 0.015, P["grass"], seg=36))
@@ -1016,14 +1124,14 @@ for k in range(18):
         bin_(f"Park_Bin{k}", gx, gz)
 for k in range(44):
     gx, gz = rnd.uniform(px0 + 4, px1 - 4), rnd.uniform(pz0 + 4, pz1 - 4)
-    if abs(gx - CX) < 4.0 or abs(gz - CZ) < 4.0 or 19.0 < math.hypot(gx - CX, gz - CZ) < 26.0 or math.hypot(gx - CX, gz - CZ) < 13.0:
+    if abs(gx - CX) < 4.0 or abs(gz - CZ) < 4.0 or abs(gx + 250.0) < 4.0 or 19.0 < math.hypot(gx - CX, gz - CZ) < 26.0 or math.hypot(gx - CX, gz - CZ) < 13.0:
         continue
     if math.hypot(gx - (CX - 30.0), gz - (CZ - 22.0)) < 10.0:
         continue
     tree(rnd.choice(("round", "round", "pine", "blossom")), gx, gz, rnd.uniform(0.9, 1.3))
 for k in range(10):
     gx, gz = rnd.uniform(px0 + 6, px1 - 6), rnd.uniform(pz0 + 6, pz1 - 6)
-    if abs(gx - CX) < 4.0 or abs(gz - CZ) < 4.0 or math.hypot(gx - CX, gz - CZ) < 14.0:
+    if abs(gx - CX) < 4.0 or abs(gz - CZ) < 4.0 or abs(gx + 250.0) < 4.0 or math.hypot(gx - CX, gz - CZ) < 14.0:
         continue
     for j in range(8):
         add(L.cyl(coll, f"Park_Flower{k}_{j}", gx + rnd.uniform(-1.0, 1.0), gz + rnd.uniform(-1.0, 1.0), 0.0, 0.12, rnd.uniform(0.25, 0.45),
@@ -1135,7 +1243,7 @@ for a in ANCHORS:
 bad = L.check_grounded(objs, allow=("Floor", "Roof", "Slab", "Svc_", "Outer_", "Return_", "Lintel_", "Cell_", "Exit", "Entrance_", "Rail_", "Esc_",
                                    "Pillar_", "BalLight_", "Truss_", "Ware_", "Sec_", "Stair_", "Sign_", "Directory_", "Info_", "Play_", "Carousel_",
                                    "BallPit", "FC_", "AF_", "ParkWall", "Park_", "Clock_", "Fore_", "Path_", "Apron_", "Dock_", "Reno_", "MT_", "Bench_",
-                                   "Planter_", "Bin_", "Lamp", "Bulb", "Plinth", "RoofLight_", "SvcLight_", "Avenue_", "Parking_", "Car", "Bus_"))
+                                   "Planter_", "Bin_", "Lamp", "Bulb", "Plinth", "RoofLight_", "SvcLight_", "Avenue_", "Parking_", "Car", "Bus_", "Kiosk_", "Banner_", "Way_", "Sculpture_"))
 print("MALL grounded violations:", bad[:10], len(bad))
 
 by_mat = {}
@@ -1155,6 +1263,7 @@ levels = [
 layout = {
     "version": 1, "key": "mall", "name": "Cove Parkview Mall",
     "bounds": {"minX": X0 - 40.0, "maxX": HEDGE_GATE["x"] + 2.0, "minZ": Z0 - 45.0, "maxZ": Z1 + 45.0},
+    "music": {"minX": X0 - 2.0, "maxX": FORE[1] + 2.0, "minZ": Z0 - 2.0, "maxZ": Z1 + 2.0},
     "entrance": {"position": [X1, 0.0, 0.0], "yaw": -math.pi / 2, "width": 2 * ENTRANCE_HW},
     "hedgeGate": HEDGE_GATE,
     "avenue": {"points": [[round(x, 3), round(z, 3)] for x, z in AVENUE], "roadWidth": ROAD_W, "parking": {"minX": PX0, "maxX": PX1, "minZ": PZ0, "maxZ": PZ1}},

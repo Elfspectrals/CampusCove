@@ -46,7 +46,7 @@ export interface InteractionTargetsDeps {
   onWorkDoor: (lot: PublicLot) => void
   onFishingSpot: (spot: FishingSpot) => void
   /** Inside Cove Home: the item being looked at (its price-tag anchor + prompt text), and buying it. */
-  storeTarget: () => { position: [number, number, number]; detail: string } | null
+  storeTarget: () => { position: [number, number, number]; detail: string; action?: string } | null
   onStoreTarget: () => void
   /** Lower-priority targets (pub counters, seats, games), in priority order. */
   sources?: InteractionSource[]
@@ -116,7 +116,7 @@ export function useInteractionTargets(deps: InteractionTargetsDeps) {
     if (item) {
       const [tx, ty, tz] = item.position
       const screen = projectToScreen(tx, ty + 0.55, tz)
-      return screen && { ...screen, action: 'Buy', detail: item.detail }
+      return screen && { ...screen, action: item.action ?? 'Buy', detail: item.detail }
     }
     const unit = deps.nearbyHousingUnit.value
     if (unit) {

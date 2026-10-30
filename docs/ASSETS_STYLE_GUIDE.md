@@ -446,6 +446,21 @@ docker restart campuscove-socket
   un tablier de service.
 - Boutiques en cellule (statut `open` dans `ROWS`) : la cellule ne construit rien, le bâtiment `store` prend sa place
   (`CELL_STORES`, positions dans `stores[]`) ; largeur de coque = cellule − 0,4 m pour ne pas toucher les cloisons
-  voisines, profondeur ≤ 9,5 m (11,6 m pour Crispin's qui absorbe le bout ouest du couloir de service).
+  voisines, profondeur ≤ 9,5 m (11,6 m pour Crispin's qui absorbe le bout ouest du couloir de service). La cellule
+  construit quand même ses cloisons (0,22 m, elles bouchent les fentes de 0,2 m), son mur du fond, son plafond et un
+  bandeau de 4,45 m à `CELL_H` au nu du front : la coque (4,5 m) se raccorde ainsi au reste du centre.
+- Coins de l'anneau : une rangée extérieure ne doit pas dépasser la ligne d'allée de la rangée perpendiculaire, sinon
+  ses premières cellules donnent sur la cloison de l'autre rangée. Au sud, `S_out_a` part de `W_OUT` et `S_out_c`
+  s'arrête à `E_OUT` (poches de service `Floor_SvcSW/SE` derrière) ; au nord-ouest, la cour mord de `NOTCH` (10 m)
+  dans `W_out_a` pour dégager tout le front de Crispin's ; au nord-est l'entrepôt sert de tampon.
+- Décor : rien à moins de 3 m d'un pied d'escalator (les bacs de l'Entrance s'arrêtent à `|z| ≤ 33`, pas de bac
+  Paradise à x = −288), aucune bannière devant une cellule ouverte, 4 m libres devant les comptoirs du food court.
+- Décor (section `decor` de `build_mall.py`) : kiosques octogonaux (`kiosk`, 8, collision 3 × 3), bannières sous les
+  balcons des trois ailes à étage (`banner`, tous les 24 m, hors escalators), bacs fleuris sur les balcons, panneaux
+  de fléchage suspendus aux carrefours (`way_sign`), arbres en pot dans l'allée Wonderland et la cour nord-ouest, bancs
+  et poubelles, sculptures dans les cours est (`sculpture`). Préfixes à ajouter à `check_grounded` : `Kiosk_`, `Banner_`,
+  `Way_`, `Sculpture_`.
+- Intérieurs à caisse : `interior.layout.json` porte `counter` (point où le client se tient) et `clerk`
+  (`position`, `yaw` : 0 regarde +Z, π regarde −Z) ; les présentoirs de petits produits ont `stack: [colonnes, rangées]`.
 - Accès : porte nord-ouest `(-44.6, -12)` + avenue (`AVENUE`, 7 m + trottoirs 1,8 m), parking `PX0..PZ1` et abribus,
   tous dans `mall.glb` ; seule la découpe de la haie est faite par `apply-mall.mjs`.

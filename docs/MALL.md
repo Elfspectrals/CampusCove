@@ -21,6 +21,15 @@ Décisions produit (validées le 30/10/2026) :
   **Candy Cloud** (Wonderland, bonbons en bocaux cliquables ; la barbe à papa et la pomme d'amour donnent le
   `speed_boost`, jamais vendus au Campus Cafe) et **Summit Sports** (Al Fresca, deux cellules fusionnées : veste et
   pantalon de survêtement, maillot, brassière, short de basket, legging ; panier et caisse comme Northline).
+- **V1.2 (30/10/2026)** : les quatre boutiques du centre qui vendaient au clic (Hearth & Hollow, GreenCart, Crispin's,
+  Candy Cloud) passent au **panier payé à la caisse** auprès d'un **caissier** PNJ (Cove Home garde l'achat immédiat) ;
+  les petits produits sont présentés en **piles** (`stack`) pour être visibles ; les coques des boutiques en cellule
+  sont raccordées au reste du centre ; **musique d'ambiance** dans les allées ; décor (kiosques, bannières, fléchage,
+  jardinières et arbres en pot, bancs, sculptures). Audit d'architecte du même jour : les rangées extérieures sud
+  s'arrêtent aux lignes d'allée ouest et est (plus de cellule murée par la rangée perpendiculaire, comme Crispin's au
+  nord-ouest), bancs du nord replacés dans l'allée, bacs et bannières écartés des pieds d'escalators et de la vitrine
+  Candy Cloud, chemins du parc reliés aux portes nord et sud, arches du parc de 10 × 4,4 m, palissade N12 découpée en
+  quatre cellules dont trois vitrées, pharmacie ouvrable, Mall Services au pied de l'entrée.
 - Aucune vente côté serveur n'est spécifique au centre : le catalogue `/shop/items` est global, chaque boutique n'est
   qu'une vue filtrée (vêtements par URL de modèle, meubles et nourriture par code). Pas d'alcool ni de médicaments au
   supermarché (le pub et la clinique restent les seuls points de vente).
@@ -169,6 +178,7 @@ position, yaw, code: null}`) pour les futurs produits.
                   "collisionUrl": "/assets/store/mall/mall.collision.json",
                   "layoutUrl": "/assets/store/mall/mall.layout.json",
                   "animatedWater": true,
+                  "music": { "url": "/assets/music/cove_mall.mp3", "bounds": {...} },
                   "gate": { "x": -160, "z": 0, "width": 16 },
                   "buildings": [ { "kind": "store", "key": "northline", "name": "Northline", "position": [..],
                                    "rotationY": .., "door": [..], "footprint": [..], "interiorOffset": [..] }, ... ] } ]
@@ -178,6 +188,8 @@ position, yaw, code: null}`) pour les futurs produits.
 boutiques en cellule), `footprint`/`interiorOffset`/porte de chaque `store/<key>/exterior.layout.json`. Les collisions du
 centre viennent de son propre `collisionUrl` (pas de fusion dans `town.collision.json`) ; le script découpe seulement
 la porte nord-ouest dans `town.glb` / `town.collision.json` (`hedgeGate`). Les bornes du monde (±500 m) ne bougent pas.
+`music.bounds` vient de `mall.layout.json.music` (anneau + parvis) ; la boucle `music/cove_mall.mp3` est rendue par
+`map-src/CampusCove/build_mall_music.py` (synthèse Python + ffmpeg, comme `build_threads_music.py`).
 Après le script : `make seed-shop` (18 articles) et `docker restart campuscove-socket`.
 
 ## 4. Front
@@ -187,8 +199,19 @@ Après le script : `make seed-shop` (18 articles) et `docker restart campuscove-
 - `worldManifest.ts` : `WorldZone.layoutUrl?` ; `openHouses.ts` : une zone avec `layoutUrl` dont le fichier a des
   `levels` devient un `BuildingFloor` (matrice identité, `bounds` = bornes de la zone, `baseY` 0), ajouté **après** les
   intérieurs pour que `houseKeyAt` rende la boutique quand on est dedans et `mall` dans les allées.
-- `useFurnitureStore(deps)` : `deps.store?` = `{ key, name, interiorLayoutUrl, modelUrl(display) }` (défaut Cove Home) ;
-  instancié trois fois dans `GameView.vue` (Cove Home, Hearth & Hollow, GreenCart). `GameStoreItemCard` reçoit `brand`.
+- `useFurnitureStore(deps)` : `deps.store?` = `{ key, interiorLayoutUrl, modelUrl(display), clerkColors? }` (défaut Cove
+  Home) ; instancié cinq fois dans `GameView.vue` (Cove Home, Hearth & Hollow, GreenCart, Crispin's, Candy Cloud).
+  Quand le `interior.layout.json` a `counter` (point client) et `clerk` (`position`, `yaw`), la boutique vend au
+  **panier** : `toggleTarget()` au clic (un exemplaire par article, un second clic le repose : `/shop/checkout` refuse
+  deux fois le même article), `tryOpenCheckout()` à la caisse (`COUNTER_REACH`
+  2,2 m), `pay()` via `POST /shop/checkout`, invite « Pay » sur la tête du caissier (`updatePrompt`, `deps.canvasRef`) ;
+  sans `counter`, achat immédiat (Cove Home). Un affichage avec `stack: [colonnes, rangées]` est cloné en grille
+  (`STACK_GAP` 2 cm). `GameStoreItemCard` reçoit `brand` et `basket`. Le caissier (tenue, couleurs de l'enseigne,
+  bloqueur `<key>_clerk`, regard vers le client) est `game/store/storeClerk.ts`, partagé avec `useClothingStore`.
+- `GameView.vue` : `basketStore` = la boutique de vêtements active ou la boutique du centre à caisse ; le bandeau
+  « Basket », l'invite caisse, `GameBasketCheckout` et le retour sont communs (`basketTitle`, `basketItems`,
+  `checkoutOpen`…). `zoneMusic` joue la musique de la zone du manifeste qui en déclare une (`music`) tant que le joueur
+  est dans ses bornes et hors bâtiment.
 - `useClothingStore(deps)` : `deps.store?` = `{ key, interiorLayoutUrl, clerkColors }` (défaut Cove Threads) ; le
   bloqueur du vendeur est `<key>_clerk`. Instancié trois fois (Cove Threads, Northline, Summit Sports) ; la vue affiche
   le panier et la caisse de celle où se trouve le joueur (`clothingEntries`).

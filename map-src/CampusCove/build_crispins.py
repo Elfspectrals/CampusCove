@@ -229,6 +229,8 @@ L.write_json(os.path.join(OUT, "interior.layout.json"), {
     "exit": {"position": [0.0, 4.75], "radius": 1.4},
     "bounds": {"minX": X0, "maxX": X1, "minZ": Z0, "maxZ": Z1},
     "departments": dept_info, "displays": displays,
+    "counter": [4.5, 1.15, 1.5],
+    "clerk": {"position": [4.5, 0.0, 3.6], "yaw": round(math.pi, 4)},
 })
 tris = sum(len(p.vertices) - 2 for o in merged if o.type == "MESH" for p in o.data.polygons)
 print("crispins interior:", len(objs), "objects ->", len(merged), "nodes,", tris, "tris,", len(cols.items), "collision boxes,", len(displays), "displays")

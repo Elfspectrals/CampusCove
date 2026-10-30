@@ -10,6 +10,8 @@ const props = defineProps<{
   feedback: { kind: 'success' | 'error'; text: string } | null
   /** Store name in the header; Cove Home when omitted. */
   brand?: string
+  /** The store sells through a basket paid at the counter (a click adds a copy) instead of buying at once. */
+  basket?: boolean
 }>()
 
 const previewSrc = computed(() => props.target.item?.preview_image ?? `/assets/decor/${props.target.display.key}/preview.png`)
@@ -18,6 +20,10 @@ const dimensions = computed(() => {
   return `${w.toFixed(1)} × ${d.toFixed(1)} × ${h.toFixed(1)} m`
 })
 const rarity = computed(() => (props.target.item ? itemRarity(props.target.item) : null))
+const actionLabel = computed(() => {
+  if (!props.basket) return 'Click to buy'
+  return props.target.inBasket ? 'In basket · click to put back' : 'Click to add to basket'
+})
 </script>
 
 <template>
@@ -41,7 +47,7 @@ const rarity = computed(() => (props.target.item ? itemRarity(props.target.item)
     <div class="flex items-center justify-between border-t-2 border-ink-950/60 bg-ink-950/50 px-3 py-2">
       <UiCurrency v-if="target.coins !== null" currency="coins" :amount="target.coins" :size="20" class="text-lg text-sun" />
       <span v-else class="text-sm font-bold text-mist">Not on sale yet</span>
-      <span v-if="target.item" class="text-[11px] font-extrabold uppercase tracking-wider text-fog">Click to buy</span>
+      <span v-if="target.item" class="text-[11px] font-extrabold uppercase tracking-wider text-fog">{{ actionLabel }}</span>
     </div>
     <p
       v-if="feedback"

@@ -118,11 +118,13 @@ def jar(name, gx, gz, y, r, h, fill):
     add(L.cyl(coll, f"{name}_Lid", gx, gz, y + h, r + 0.01, 0.04, M["chrome"], seg=10))
 
 
-def display(key, gx, gy, gz, yaw, tag_x, tag_z, tag_y=1.3):
+def display(key, gx, gy, gz, yaw, tag_x, tag_z, tag_y=1.3, stack=(1, 1)):
+    """One sweet on sale; `stack` = (columns, rows) of copies the front lines up on the spot so the small
+    models read as a filled shelf."""
     code, dep, blurb, size = SWEETS[key]
     add(L.cyl(coll, f"TagPost_{key}", tag_x, tag_z, 0.0, 0.02, tag_y - 0.25, M["tag"], seg=6))
     displays.append({"key": key, "code": code, "department": dep, "description": blurb,
-                     "position": [round(gx, 3), round(gy, 3), round(gz, 3)], "yaw": round(yaw, 4), "size": size,
+                     "position": [round(gx, 3), round(gy, 3), round(gz, 3)], "yaw": round(yaw, 4), "size": size, "stack": list(stack),
                      "tag": {"position": [round(tag_x, 3), tag_y, round(tag_z, 3)], "yaw": round(yaw, 4)}})
 
 
@@ -171,8 +173,8 @@ for k in range(6):
     add(L.box(coll, f"PickMix_Fill{k}", gx, gz, 0.9, 0.5, 0.4, 0.18, FILLS[k % len(FILLS)], rot=-a))
 add(L.cyl(coll, "PickMix_Post", 0.0, 0.5, 0.9, 0.05, 1.6, M["stripe2"], seg=8))
 cols.add("PickMix", 0.0, 0.5, 0.0, 3.4, 3.4, 1.2)
-display("candy_bag", 0.0, 0.9, -0.9, 0.0, 0.0, -1.6)
-display("licorice", -1.2, 0.9, 1.2, math.pi / 2, -1.9, 1.5, tag_y=1.3)
+display("candy_bag", 0.0, 0.9, -0.9, 0.0, 0.0, -1.6, stack=(4, 2))
+display("licorice", -1.2, 0.9, 1.2, math.pi / 2, -1.9, 1.5, tag_y=1.3, stack=(3, 2))
 # lollipop tree (west)
 add(L.cyl(coll, "LollyTree_Base", -8.0, -1.0, 0.0, 0.5, 0.1, M["cream"], seg=12))
 add(L.cyl(coll, "LollyTree_Trunk", -8.0, -1.0, 0.1, 0.06, 1.6, M["stripe"], seg=8))
@@ -182,16 +184,16 @@ for k in range(10):
     add(L.cyl(coll, f"LollyTree_Stick{k}", -8.0 + r * math.cos(a), -1.0 + r * math.sin(a), 1.0 + 0.2 * (k % 3), 0.008, 0.3, M["cream"], seg=4))
     add(L.cyl(coll, f"LollyTree_Head{k}", -8.0 + r * math.cos(a), -1.0 + r * math.sin(a), 1.3 + 0.2 * (k % 3), 0.07, 0.02, FILLS[k % len(FILLS)], seg=10))
 cols.add("LollyTree", -8.0, -1.0, 0.0, 1.6, 1.6, 2.0)
-display("lollipop", -8.0, 1.7, -1.0, 0.0, -8.0, -0.1, tag_y=1.2)
+display("lollipop", -8.0, 1.7, -1.0, 0.0, -8.0, -0.1, tag_y=1.2, stack=(3, 1))
 # fair treats: cotton candy machine and the candy apple tray (east)
 add(L.furn(coll, "CottonMachine", 7.5, -1.5, 0.0, [(0, 0, 0.0, 1.0, 1.0, 0.85, M["machine"], 0.03), (0, 0, 0.85, 1.1, 1.1, 0.08, M["chrome"], 0.02), (0, 0, 0.93, 0.9, 0.9, 0.25, M["jar"], 0.02)]))
 cols.add("CottonMachine", 7.5, -1.5, 0.0, 1.1, 1.1, 1.3)
-display("cotton_candy", 7.5, 0.93, -1.5, 0.0, 7.5, -0.7, tag_y=1.35)
+display("cotton_candy", 7.5, 0.93, -1.5, 0.0, 7.5, -0.7, tag_y=1.35, stack=(2, 1))
 add(L.furn(coll, "AppleTray", 9.8, 1.0, 0.0, [(0, 0, 0.0, 1.0, 0.7, 0.85, M["cream"], 0.02), (0, 0, 0.85, 1.1, 0.8, 0.05, M["chrome"], 0.01)]))
 cols.add("AppleTray", 9.8, 1.0, 0.0, 1.1, 0.8, 1.0)
 for k in range(6):
     add(L.cyl(coll, f"AppleTray_Apple{k}", 9.5 + (k % 3) * 0.3, 0.8 + (k // 3) * 0.35, 0.9, 0.06, 0.12, FILLS[0], seg=8))
-display("candy_apple", 9.4, 0.9, 1.3, 0.0, 9.4, 1.6, tag_y=1.3)
+display("candy_apple", 9.4, 0.9, 1.3, 0.0, 9.4, 1.6, tag_y=1.3, stack=(3, 2))
 # counter with register and the gum rack
 add(L.furn(coll, "Counter", -5.0, 3.0, 0.0, [
     (0, 0, 0.0, 3.4, 0.9, 0.95, M["pink"], 0.03),
@@ -203,7 +205,7 @@ add(L.box(coll, "Awning", -5.0, 2.6, 2.6, 4.0, 1.6, 0.1, M["stripe"]))
 add(L.box(coll, "Counter_SignBoard", -5.0, 2.65, 2.2, 2.2, 0.08, 0.5, M["mint"], bevel=0.03))
 text("Counter_SignText", "PAY HERE", -5.0, 2.71, 2.32, 0.28, M["sign"], 0.0)
 add(L.box(coll, "GumRack", -3.8, 3.0, 1.01, 0.5, 0.4, 0.5, M["cream"]))
-display("bubble_gum", -3.8, 1.51, 3.0, 0.0, -3.4, 3.6, tag_y=1.25)
+display("bubble_gum", -3.8, 1.51, 3.0, 0.0, -3.4, 3.6, tag_y=1.25, stack=(3, 2))
 for i, dep in enumerate(("pickmix", "lollipops", "fair", "counter")):
     hanging_sign(dep, (0.0, -8.0, 8.5, -5.0)[i], (-2.4, -2.6, -2.8, 0.8)[i], 0.0)
 
@@ -229,6 +231,8 @@ L.write_json(os.path.join(OUT, "interior.layout.json"), {
     "exit": {"position": [0.0, 4.75], "radius": 1.4},
     "bounds": {"minX": X0, "maxX": X1, "minZ": Z0, "maxZ": Z1},
     "departments": dept_info, "displays": displays,
+    "counter": [-5.0, 1.15, 2.0],
+    "clerk": {"position": [-5.3, 0.0, 4.0], "yaw": round(math.pi, 4)},
 })
 tris = sum(len(p.vertices) - 2 for o in merged if o.type == "MESH" for p in o.data.polygons)
 print("candy interior:", len(objs), "objects ->", len(merged), "nodes,", tris, "tris,", len(cols.items), "collision boxes,", len(displays), "displays")
