@@ -231,7 +231,9 @@ export function usePubGames(deps: PubGamesDeps) {
     send('pub_shots_done', { ms })
   }
 
+  /** Closing mid-run (Esc, ×, a click outside) forfeits it on the server, so the plank can be played again at once. */
   function closeShots(): void {
+    if (shots.value && shots.value.result === null) send('pub_shots_leave')
     shots.value = null
   }
 
@@ -267,7 +269,9 @@ export function usePubGames(deps: PubGamesDeps) {
     send('pub_darts_throw', { x, y })
   }
 
+  /** Closing before the end leaves the game on the server too: otherwise its next broadcast reopens the screen. */
   function closeDarts(): void {
+    if (dartsOpen.value && darts.value?.ranking === null) send('pub_darts_leave')
     darts.value = null
   }
 

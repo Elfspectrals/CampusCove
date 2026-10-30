@@ -46,6 +46,7 @@ const {
   clampRaceProgress,
   endRace,
   onDartsJoin,
+  onDartsLeave,
   onDartsThrow,
   onRaceChallenge,
   onRaceChallengeReply,
@@ -54,6 +55,7 @@ const {
   onRaceOpen,
   onRaceProgress,
   onShotsDone,
+  onShotsLeave,
   onShotsStart,
   onStand,
   rewardPlacement,
@@ -300,6 +302,44 @@ test('Meter Shot refuses a start away from the plank and an implausible time', a
   await onShotsDone(room, clients[0], { ms: 1000 }, startedAt + 9000)
   assert.deepEqual(received(clients[0], 'pub_error').map((e) => e.code), ['pub_too_far', 'shots_implausible'])
   assert.equal(me.intoxication, 0)
+})
+
+test('closing the Meter Shot screen mid-run forfeits it, so the plank can be played again at once', async () => {
+  const me = fakePlayer('me', 95, -134)
+  const { room, clients } = fakeRoom(me)
+  const [cMe] = clients
+  await onShotsStart(room, cMe, 1000)
+  onShotsLeave(room, cMe)
+  assert.equal(me.pubShots, null)
+  await onShotsStart(room, cMe, 2000)
+  assert.deepEqual(received(cMe, 'pub_error').map((e) => e.code), [])
+  assert.equal(received(cMe, 'pub_shots_ready').length, 2)
+  assert.equal(me.intoxication, 0)
+})
+
+test('closing the darts screen leaves the game: out of the lobby, or the turn passes to the next player', async () => {
+  const a = fakePlayer('a', 84, -139)
+  const b = fakePlayer('b', 84.5, -139)
+  const { room, clients } = fakeRoom(a, b)
+  const [ca, cb] = clients
+  const t0 = 500_000
+  await onDartsJoin(room, ca, t0)
+  await onDartsJoin(room, cb, t0)
+  onDartsLeave(room, cb)
+  assert.deepEqual(received(ca, 'pub_darts_lobby').at(-1).players, ['a'])
+  await onDartsJoin(room, cb, t0 + 1000)
+  const game = room.pub.darts!
+  startDarts(room, game, t0 + DARTS_LOBBY_MS)
+  assert.equal(received(cb, 'pub_darts_state').at(-1).turn, 'a')
+  onDartsLeave(room, ca)
+  const state = received(cb, 'pub_darts_state').at(-1)
+  assert.equal(state.turn, 'b')
+  assert.deepEqual(state.players.map((p: { sessionId: string }) => p.sessionId), ['b'])
+  onDartsLeave(room, cb)
+  assert.equal(room.pub.darts, null)
+  await onDartsJoin(room, ca, t0 + DARTS_LOBBY_MS + 1000)
+  assert.deepEqual(received(ca, 'pub_error').map((e) => e.code), [])
+  assert.notEqual(room.pub.darts, null)
 })
 
 test('Darts: lobby, three darts each in turn, a timed-out turn loses its darts, best total wins', async () => {

@@ -445,6 +445,12 @@ export async function onShotsStart(room: GameRoom, client: GameClient, now = Dat
   client.send('pub_shots_ready', { seed: shots.seed, startedAt: shots.startedAt })
 }
 
+/** The player closed the Meter Shot screen mid-game: the run is forfeited, so a new one can be started at once. */
+export function onShotsLeave(room: GameRoom, client: GameClient): void {
+  const player = room.players.get(client.sessionId)
+  if (player) player.pubShots = null
+}
+
 export function shotsPlausible(ms: number, elapsedMs: number): boolean {
   return Number.isFinite(ms) && ms >= SHOTS_MIN_MS && ms >= elapsedMs - SHOTS_EARLY_TOLERANCE_MS && ms <= elapsedMs + SHOTS_LATE_TOLERANCE_MS
 }
@@ -620,6 +626,12 @@ function removeDartsPlayer(room: GameRoom, game: DartsGame, sessionId: string): 
     armTurn(room, game, Date.now())
   }
   broadcastDartsState(room, game)
+}
+
+/** The player closed the darts screen: out of the game (their turn passes), so the screen does not come back. */
+export function onDartsLeave(room: GameRoom, client: GameClient): void {
+  const player = room.players.get(client.sessionId)
+  if (player) leaveDarts(room, player)
 }
 
 export function leaveDarts(room: GameRoom, player: Player): void {
