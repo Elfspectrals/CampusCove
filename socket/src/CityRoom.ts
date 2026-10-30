@@ -20,7 +20,10 @@ import {
   leavePub,
   onDartsJoin,
   onDartsThrow,
+  onRaceChallenge,
+  onRaceChallengeReply,
   onRaceJoin,
+  onRaceLeave,
   onRaceOpen,
   onRaceProgress,
   onShotsDone,
@@ -89,7 +92,7 @@ export class CityRoom extends Room implements GameRoom {
   clinicBeds = new Map<string, ClinicBedOccupant>()
   trades = new Map<string, Trade>()
   seats = new Map<string, string>()
-  pub: PubState = { secretOpen: false, race: null, darts: null }
+  pub: PubState = { secretOpen: false, race: null, darts: null, challenges: new Map(), challengeSentAt: new Map() }
 
   onCreate() {
     this.maxClients = CITY_MAX_PLAYERS
@@ -122,6 +125,9 @@ export class CityRoom extends Room implements GameRoom {
     this.onMessage('pub_bell', (client) => onPubBell(this, client))
     this.onMessage('pub_race_open', (client) => void onRaceOpen(this, client))
     this.onMessage('pub_race_join', (client) => void onRaceJoin(this, client))
+    this.onMessage('pub_race_leave', (client) => onRaceLeave(this, client))
+    this.onMessage('pub_race_challenge', (client, payload: ClientPayload) => onRaceChallenge(this, client, payload))
+    this.onMessage('pub_race_challenge_reply', (client, payload: ClientPayload) => void onRaceChallengeReply(this, client, payload))
     this.onMessage('pub_race_progress', (client, payload: ClientPayload) => onRaceProgress(this, client, payload))
     this.onMessage('pub_shots_start', (client) => void onShotsStart(this, client))
     this.onMessage('pub_shots_done', (client, payload: ClientPayload) => void onShotsDone(this, client, payload))

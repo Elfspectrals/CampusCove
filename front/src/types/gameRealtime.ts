@@ -241,13 +241,39 @@ export interface PubRaceStartPayload {
   players: string[]
 }
 
+/** Sent right away when a racer's `spills` go up, otherwise at most every RACE_STATE_MIN_INTERVAL_MS. */
 export interface PubRaceStatePayload {
-  players: Array<{ sessionId: string; progress: number }>
+  players: Array<{ sessionId: string; progress: number; spills?: number }>
 }
 
 export interface PubRaceEndPayload {
-  ranking: Array<{ sessionId: string; ms: number }>
+  /** `ms` already includes the spill penalty. */
+  ranking: Array<{ sessionId: string; ms: number; spills: number }>
   rewards: PubRewardPayload[]
+}
+
+/** 'pub_race_challenged': `fromSessionId` challenges this player to Drink Fast until `expiresAt` (ms epoch). */
+export interface PubRaceChallengedPayload {
+  fromSessionId: string
+  expiresAt: number
+}
+
+/** 'pub_race_challenge_sent': the challenge reached `toSessionId`, who has until `expiresAt` to answer. */
+export interface PubRaceChallengeSentPayload {
+  toSessionId: string
+  expiresAt: number
+}
+
+/** 'pub_race_challenge_result': the challenger learns the answer (on accept a normal race lobby follows). */
+export interface PubRaceChallengeResultPayload {
+  toSessionId: string
+  accepted: boolean
+  reason?: 'declined' | 'expired' | 'busy' | 'cancelled'
+}
+
+/** 'pub_race_challenge_cancelled': the challenge this player received is gone (challenger stood up, left...). */
+export interface PubRaceChallengeCancelledPayload {
+  fromSessionId: string
 }
 
 /** 'pub_shots_ready': the Meter Shot round is paid; `startedAt` is the server clock (ms epoch). */

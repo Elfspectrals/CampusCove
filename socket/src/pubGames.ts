@@ -2,6 +2,11 @@ import { callRealtimeBackend, errorPayload } from './backend.ts'
 import { dartsScore } from './darts.ts'
 import { forEachPubClient, isWithinPubReach, releaseSeat, sendPubError } from './pub.ts'
 import {
+  CHALLENGE_COOLDOWN_MS,
+  CHALLENGE_COUNTDOWN_MS,
+  CHALLENGE_FLOOR_TOLERANCE,
+  CHALLENGE_REACH,
+  CHALLENGE_TTL_MS,
   DARTS_LOBBY_MS,
   DARTS_MAX_OFFSET_CM,
   DARTS_MAX_PLAYERS,
@@ -9,12 +14,14 @@ import {
   DARTS_TURN_MS,
   RACE_LOBBY_MS,
   RACE_MAX_PROGRESS_PER_S,
+  RACE_MAX_SPILLS,
+  RACE_SPILL_PENALTY_MS,
   RACE_PROGRESS_MIN_INTERVAL_MS,
   RACE_TIMEOUT_MS,
   SHOTS_MIN_MS
 } from './pubConstants.ts'
 import { addIntoxication } from './survivalStats.ts'
-import type { ClientPayload, DartsGame, DartsPlayer, GameClient, GameRoom, Player, PubRace, PubRacer } from './types.ts'
+import type { ClientPayload, DartsGame, DartsPlayer, GameClient, GameRoom, Player, PubChallenge, PubRace, PubRacer } from './types.ts'
 import { worldPub } from './world.ts'
 
 const RACE_STATE_MIN_INTERVAL_MS = 200
@@ -80,6 +87,7 @@ export function rewardPlacement(rank: number, participants: number): number {
 export function standUp(room: GameRoom, player: Player): void {
   releaseSeat(room, player)
   forfeitRace(room, player)
+  cancelChallengesOf(room, player.sessionId)
 }
 
 export function onStand(room: GameRoom, client: GameClient): void {
@@ -104,7 +112,38 @@ function broadcastRaceLobby(room: GameRoom, race: PubRace): void {
 }
 
 function newRacer(now: number): PubRacer {
-  return { progress: 0, lastProgressAt: now, finishedAt: null, forfeited: false, alcohol: 0 }
+  return { progress: 0, lastProgressAt: now, finishedAt: null, forfeited: false, alcohol: 0, spills: 0 }
+}
+
+function newRace(room: GameRoom, hostSessionId: string, racerIds: string[], countdownMs: number, now: number): PubRace {
+  const race: PubRace = {
+    hostSessionId,
+    seed: newSeed(),
+    startsAt: now + countdownMs,
+    startedAt: null,
+    racers: new Map(racerIds.map((id) => [id, newRacer(now)])),
+    lastStateAt: 0
+  }
+  room.pub.race = race
+  room.clock.setTimeout(() => startRace(room, race, Date.now()), countdownMs)
+  return race
+}
+
+/** Re-reads room.pub.race after an await (TypeScript keeps the pre-await narrowing). */
+function isCurrentRace(room: GameRoom, race: PubRace): boolean {
+  return room.pub.race === race
+}
+
+/** Drops a racer whose entry could not be paid; false when nobody is left (the race is cancelled). */
+function dropUnpaidRacer(room: GameRoom, race: PubRace, sessionId: string): boolean {
+  race.racers.delete(sessionId)
+  const nextHost = race.racers.keys().next().value
+  if (nextHost === undefined) {
+    room.pub.race = null
+    return false
+  }
+  if (race.hostSessionId === sessionId) race.hostSessionId = nextHost
+  return true
 }
 
 export async function onRaceOpen(room: GameRoom, client: GameClient, now = Date.now()): Promise<void> {
@@ -118,28 +157,14 @@ export async function onRaceOpen(room: GameRoom, client: GameClient, now = Date.
     sendPubError(client, 'A race is already on.', 'race_in_progress')
     return
   }
-  const race: PubRace = {
-    hostSessionId: player.sessionId,
-    seed: newSeed(),
-    startsAt: now + RACE_LOBBY_MS,
-    startedAt: null,
-    racers: new Map([[player.sessionId, newRacer(now)]]),
-    lastStateAt: 0
-  }
-  room.pub.race = race
-  room.clock.setTimeout(() => startRace(room, race, Date.now()), RACE_LOBBY_MS)
+  const race = newRace(room, player.sessionId, [player.sessionId], RACE_LOBBY_MS, now)
   const alcohol = await payEntry(client, player, 'drink_fast')
-  if (room.pub.race !== race) return
+  if (!isCurrentRace(room, race)) return
   if (alcohol === null) {
-    race.racers.delete(player.sessionId)
-    const nextHost = race.racers.keys().next().value
-    if (nextHost === undefined) {
-      room.pub.race = null
-      return
-    }
-    race.hostSessionId = nextHost
+    if (!dropUnpaidRacer(room, race, player.sessionId)) return
   } else {
-    race.racers.get(player.sessionId)!.alcohol = alcohol
+    const racer = race.racers.get(player.sessionId)
+    if (racer) racer.alcohol = alcohol
   }
   broadcastRaceLobby(room, race)
 }
@@ -207,6 +232,9 @@ export function onRaceProgress(room: GameRoom, client: GameClient, payload: Clie
   const requested = payload?.progress
   if (typeof requested !== 'number' || !Number.isFinite(requested)) return
   if (now - racer.lastProgressAt < RACE_PROGRESS_MIN_INTERVAL_MS) return
+  const spills = payload?.spills
+  const spillsBefore = racer.spills
+  if (typeof spills === 'number' && Number.isInteger(spills)) racer.spills = Math.min(RACE_MAX_SPILLS, Math.max(racer.spills, spills))
   racer.progress = clampRaceProgress(racer.progress, requested, (now - racer.lastProgressAt) / 1000)
   racer.lastProgressAt = now
   if (racer.progress >= 1) racer.finishedAt = now
@@ -214,21 +242,23 @@ export function onRaceProgress(room: GameRoom, client: GameClient, payload: Clie
     void endRace(room, race)
     return
   }
-  if (now - race.lastStateAt >= RACE_STATE_MIN_INTERVAL_MS) broadcastRaceState(room, race, now)
+  // A new spill goes out at once so the others see it; plain progress stays throttled.
+  if (racer.spills > spillsBefore || now - race.lastStateAt >= RACE_STATE_MIN_INTERVAL_MS) broadcastRaceState(room, race, now)
 }
 
 function broadcastRaceState(room: GameRoom, race: PubRace, now: number): void {
   race.lastStateAt = now
-  const payload = { players: activeRacers(race).map(([sessionId, r]) => ({ sessionId, progress: r.progress })) }
+  const payload = { players: activeRacers(race).map(([sessionId, r]) => ({ sessionId, progress: r.progress, spills: r.spills })) }
   forEachPubClient(room, (c) => c.send('pub_race_state', payload))
 }
 
-export function raceRanking(race: PubRace): Array<{ sessionId: string, ms: number }> {
+/** Finishers by drinking time plus RACE_SPILL_PENALTY_MS per spill, fastest first. */
+export function raceRanking(race: PubRace): Array<{ sessionId: string, ms: number, spills: number }> {
   const startedAt = race.startedAt ?? 0
   return activeRacers(race)
     .filter(([, r]) => r.finishedAt !== null)
-    .sort(([, a], [, b]) => a.finishedAt! - b.finishedAt!)
-    .map(([sessionId, r]) => ({ sessionId, ms: r.finishedAt! - startedAt }))
+    .map(([sessionId, r]) => ({ sessionId, ms: r.finishedAt! - startedAt + r.spills * RACE_SPILL_PENALTY_MS, spills: r.spills }))
+    .sort((a, b) => a.ms - b.ms)
 }
 
 export async function endRace(room: GameRoom, race: PubRace): Promise<void> {
@@ -245,6 +275,12 @@ export async function endRace(room: GameRoom, race: PubRace): Promise<void> {
   forEachPubClient(room, (c) => c.send('pub_race_end', payload))
 }
 
+/** The player closed the race screen: out of the race, so a new one can be opened right away. */
+export function onRaceLeave(room: GameRoom, client: GameClient): void {
+  const player = room.players.get(client.sessionId)
+  if (player) forfeitRace(room, player)
+}
+
 export function forfeitRace(room: GameRoom, player: Player): void {
   const race = room.pub.race
   const racer = race?.racers.get(player.sessionId)
@@ -259,6 +295,128 @@ export function forfeitRace(room: GameRoom, player: Player): void {
   racer.forfeited = true
   const active = activeRacers(race)
   if (active.length === 0 || active.every(([, r]) => r.finishedAt !== null)) void endRace(room, race)
+}
+
+
+// ------------------------------------------------------------ Drink Fast challenges
+
+function hasPendingChallenge(room: GameRoom, sessionId: string): boolean {
+  for (const c of room.pub.challenges.values()) if (c.from === sessionId || c.to === sessionId) return true
+  return false
+}
+
+function withinChallengeReach(a: Player, b: Player): boolean {
+  // y is eye height for both, so the eye difference is the feet difference.
+  return Math.hypot(a.x - b.x, a.z - b.z) <= CHALLENGE_REACH && Math.abs(a.y - b.y) <= CHALLENGE_FLOOR_TOLERANCE
+}
+
+function challengeCoolingDown(room: GameRoom, sessionId: string, now: number): boolean {
+  const last = room.pub.challengeSentAt.get(sessionId)
+  return last !== undefined && now - last < CHALLENGE_COOLDOWN_MS
+}
+
+function noteChallengeSent(room: GameRoom, sessionId: string, now: number): void {
+  for (const [id, at] of room.pub.challengeSentAt) if (now - at >= CHALLENGE_COOLDOWN_MS) room.pub.challengeSentAt.delete(id)
+  room.pub.challengeSentAt.set(sessionId, now)
+}
+
+export function onRaceChallenge(room: GameRoom, client: GameClient, payload: ClientPayload, now = Date.now()): void {
+  const player = room.players.get(client.sessionId)
+  if (!player?.token || now < player.knockedOutUntil) return
+  const targetId = payload?.targetSessionId
+  if (typeof targetId !== 'string') return
+  if (challengeCoolingDown(room, player.sessionId, now)) {
+    sendPubError(client, 'Wait a moment before challenging again.', 'challenge_cooldown')
+    return
+  }
+  if (!isOnStool(player)) {
+    sendPubError(client, 'Sit on a bar stool to challenge someone.', 'challenge_not_on_stool')
+    return
+  }
+  if (room.pub.race) {
+    sendPubError(client, 'A race is already on.', 'race_in_progress')
+    return
+  }
+  const target = targetId === player.sessionId ? undefined : room.players.get(targetId)
+  if (!target || !isOnStool(target) || now < target.knockedOutUntil) {
+    sendPubError(client, 'They cannot take a challenge right now.', 'challenge_target_unavailable')
+    return
+  }
+  if (!withinChallengeReach(player, target)) {
+    sendPubError(client, 'They are too far away to challenge.', 'challenge_too_far')
+    return
+  }
+  if (hasPendingChallenge(room, player.sessionId) || hasPendingChallenge(room, target.sessionId)) {
+    sendPubError(client, 'A challenge is already waiting for an answer.', 'challenge_pending')
+    return
+  }
+  const challenge: PubChallenge = { from: player.sessionId, to: target.sessionId, expiresAt: now + CHALLENGE_TTL_MS }
+  room.pub.challenges.set(player.sessionId, challenge)
+  noteChallengeSent(room, player.sessionId, now)
+  clientOf(room, target.sessionId)?.send('pub_race_challenged', { fromSessionId: player.sessionId, expiresAt: challenge.expiresAt })
+  client.send('pub_race_challenge_sent', { toSessionId: target.sessionId, expiresAt: challenge.expiresAt })
+  room.clock.setTimeout(() => expireChallenge(room, challenge), CHALLENGE_TTL_MS)
+}
+
+function expireChallenge(room: GameRoom, challenge: PubChallenge): void {
+  if (room.pub.challenges.get(challenge.from) !== challenge) return
+  room.pub.challenges.delete(challenge.from)
+  clientOf(room, challenge.from)?.send('pub_race_challenge_result', { toSessionId: challenge.to, accepted: false, reason: 'expired' })
+  clientOf(room, challenge.to)?.send('pub_race_challenge_cancelled', { fromSessionId: challenge.from })
+}
+
+/** The player stood up, left or blacked out: drop their pending challenges and tell the other side. */
+function cancelChallengesOf(room: GameRoom, sessionId: string): void {
+  for (const challenge of [...room.pub.challenges.values()]) {
+    if (challenge.from === sessionId) {
+      room.pub.challenges.delete(challenge.from)
+      clientOf(room, challenge.to)?.send('pub_race_challenge_cancelled', { fromSessionId: challenge.from })
+    } else if (challenge.to === sessionId) {
+      room.pub.challenges.delete(challenge.from)
+      clientOf(room, challenge.from)?.send('pub_race_challenge_result', { toSessionId: challenge.to, accepted: false, reason: 'cancelled' })
+    }
+  }
+}
+
+export async function onRaceChallengeReply(room: GameRoom, client: GameClient, payload: ClientPayload, now = Date.now()): Promise<void> {
+  const fromId = payload?.fromSessionId
+  if (typeof fromId !== 'string' || typeof payload?.accept !== 'boolean') return
+  const challenge = room.pub.challenges.get(fromId)
+  if (!challenge || challenge.to !== client.sessionId) return
+  room.pub.challenges.delete(fromId)
+  const challengerClient = clientOf(room, challenge.from)
+  if (!payload.accept) {
+    challengerClient?.send('pub_race_challenge_result', { toSessionId: challenge.to, accepted: false, reason: 'declined' })
+    return
+  }
+  const challenger = room.players.get(challenge.from)
+  const target = room.players.get(challenge.to)
+  const playable = (p: Player | undefined): p is Player => !!p?.token && isOnStool(p) && now >= p.knockedOutUntil
+  if (room.pub.race || !playable(challenger) || !playable(target) || !challengerClient) {
+    challengerClient?.send('pub_race_challenge_result', { toSessionId: challenge.to, accepted: false, reason: 'busy' })
+    if (room.pub.race) sendPubError(client, 'A race is already on.', 'race_in_progress')
+    else sendPubError(client, 'Your challenger cannot race right now.', 'challenge_target_unavailable')
+    return
+  }
+  const race = newRace(room, challenger.sessionId, [challenger.sessionId, target.sessionId], CHALLENGE_COUNTDOWN_MS, now)
+  challengerClient.send('pub_race_challenge_result', { toSessionId: challenge.to, accepted: true })
+  const paid = await Promise.all([
+    payEntry(challengerClient, challenger, 'drink_fast'),
+    payEntry(client, target, 'drink_fast')
+  ])
+  if (!isCurrentRace(room, race)) return
+  const ids = [challenger.sessionId, target.sessionId]
+  for (let i = 0; i < ids.length; i++) {
+    const racer = race.racers.get(ids[i])
+    if (!racer) continue
+    const alcohol = paid[i]
+    if (alcohol === null) {
+      if (!dropUnpaidRacer(room, race, ids[i])) return
+    } else {
+      racer.alcohol = alcohol
+    }
+  }
+  broadcastRaceLobby(room, race)
 }
 
 

@@ -89,7 +89,8 @@ const boneWorld = new THREE.Quaternion()
 const parentWorld = new THREE.Quaternion()
 const target = new THREE.Quaternion()
 
-function aimBone(from: THREE.Object3D, to: THREE.Object3D, direction: THREE.Vector3, weight: number): void {
+/** Turns the bone `from` (towards its child `to`) to point along the world `direction`, blended by `weight`. */
+export function aimBone(from: THREE.Object3D, to: THREE.Object3D, direction: THREE.Vector3, weight: number): void {
   if (!from.parent) return
   from.getWorldPosition(shoulder)
   to.getWorldPosition(joint)

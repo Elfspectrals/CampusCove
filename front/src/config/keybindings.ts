@@ -21,6 +21,8 @@ const BINDABLE_ACTIONS = [
   'buyHouse',
   'rotate',
   'putAway',
+  'acceptChallenge',
+  'declineChallenge',
   'hotbar1',
   'hotbar2',
   'hotbar3',
@@ -59,6 +61,9 @@ const DEFAULT_BINDINGS: Readonly<Record<BindableAction, readonly string[]>> = {
   rotate: ['KeyR'],
   /** While moving a placed piece of furniture: put it back in the inventory. */
   putAway: ['KeyX'],
+  /** A Drink Fast challenge from another player at the bar: Y(es) / N(o). */
+  acceptChallenge: ['KeyY'],
+  declineChallenge: ['KeyN'],
   hotbar1: ['Digit1'],
   hotbar2: ['Digit2'],
   hotbar3: ['Digit3'],
