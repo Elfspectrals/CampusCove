@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "key": "summit_sports",
+  "name": "Summit Sports",
+  "footprint": [
+    31.27,
+    9.31
+  ],
+  "footprintCenterZ": -0.155,
+  "doorLocal": [
+    0.0,
+    1.25,
+    4.5
+  ],
+  "interiorOffset": [
+    0.0,
+    0.2,
+    -0.905
+  ],
+  "collision": [
+    {
+      "cx": 0.0,
+      "cz": -0.155,
+      "hx": 15.834999999999999,
+      "hz": 4.855,
+      "hy": 2.45
+    }
+  ]
+}

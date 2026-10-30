@@ -16,6 +16,11 @@ Décisions produit (validées le 30/10/2026) :
   Threads et Cove Home restent où elles sont.
 - Toutes les autres cellules sont décrites dans `mall.layout.json` (`cells[]` : catégorie, nom, statut `planned` ou
   `construction`) pour être ouvertes plus tard sans toucher à la structure.
+- **V1.1 (30/10/2026)** : trois cellules ouvrent avec six articles neufs chacune, tous achetables : **Crispin's
+  Hardware** (North Plaza, déco posable : établi, escabeau, caisse à outils, palette de peinture, brouette, rayonnage),
+  **Candy Cloud** (Wonderland, bonbons en bocaux cliquables ; la barbe à papa et la pomme d'amour donnent le
+  `speed_boost`, jamais vendus au Campus Cafe) et **Summit Sports** (Al Fresca, deux cellules fusionnées : veste et
+  pantalon de survêtement, maillot, brassière, short de basket, legging ; panier et caisse comme Northline).
 - Aucune vente côté serveur n'est spécifique au centre : le catalogue `/shop/items` est global, chaque boutique n'est
   qu'une vue filtrée (vêtements par URL de modèle, meubles et nourriture par code). Pas d'alcool ni de médicaments au
   supermarché (le pub et la clinique restent les seuls points de vente).
@@ -73,8 +78,15 @@ Coulisses : couloir de service `STAFF ONLY` derrière les cellules extérieures 
 ancres), portes depuis les cours des coins, quai de livraison avec rideau métallique sur le mur nord (x ≈ -300), entrepôt
 + salle de sécurité dans le coin nord-est (x [-200, -160], z [-90, -78]), accès au toit.
 
-Parvis : dallage `x ∈ [-160, -146]`, `z ∈ [-14, 14]`, totem « COVE PARKVIEW MALL », bancs, bacs ; chemin de 3 m depuis
-le parvis de la clinique (passe au sud du bâtiment) avec lampadaires et panneau « MALL > ».
+Parvis : dallage `x ∈ [-160, -146]`, `z ∈ [-14, 14]`, totem « COVE PARKVIEW MALL », bancs, bacs.
+
+Accès (depuis le 30/10/2026, remplace le chemin qui longeait la clinique) : une **porte nord-ouest dans la haie de la
+ville** en `(-44.6, -12)` (symétrique de la porte de la clinique, `hedgeGate` dans `mall.layout.json`, découpée par
+`apply-mall.mjs` comme `apply-clinic.mjs` : triangles `HedgeRing` et boîtes `COL_Hedge_*` dans la largeur, l'arbre dans
+l'axe) et une **avenue** de 7 m avec trottoirs, bordures, lignes, lampadaires, arbres et bancs jusqu'au parvis
+(`(-44.6, -12) → (-118, -12) → (-146, -8)`), un totem à la porte, un **parking** au nord de l'avenue
+(`x ∈ [-140, -100]`, `z ∈ [-34, -19]`, places peintes, sept voitures) et un **abribus** face au parvis. Les niveaux
+`L0` couvrent l'avenue et le parking (sol à 0) ; les bornes de la zone s'étendent jusqu'à `x = -42.6`.
 
 ### `mall.layout.json`
 
@@ -103,12 +115,28 @@ le parvis de la clinique (passe au sud du bâtiment) avec lampadaires et panneau
   à côté de `mall.colsrc.glb` pour garder les boîtes de l'étage et du toit.
 - `cells[].front.yaw` : direction regardée depuis l'allée vers la vitrine (0 = vers -Z, convention des stations).
 - `cells[].status` ∈ `planned` (vitrine vide, panneau « OPENING SOON »), `construction` (palissade, échafaudage),
-  `open` (réservé : une cellule ouverte devient un bâtiment `store`, voir `stores[]`).
+  `open` (la cellule ne porte aucune géométrie : un bâtiment `store` la remplace, `cells[].store` donne sa clé et
+  `stores[]` sa position, calculée par `build_mall.py` : façade au nu du front, porte vers l'allée ; `CELL_STORES` y
+  associe nom de cellule et clé). Une cellule peut valoir deux largeurs (4e élément du tuple dans `ROWS`).
 - Catégories (`cells[].category`, étiquette `label`) : `clothing_women`, `clothing_men`, `clothing_kids`,
   `clothing_luxury`, `clothing_sport`, `shoes`, `eyewear`, `jewelry`, `cosmetics`, `sports`, `toys`, `books`, `music`,
   `electronics`, `camera`, `phones`, `gifts`, `home_decor`, `hardware`, `pharmacy`, `pet`, `gym`, `arcade`, `cinema`,
   `restaurant`, `fast_food`, `cafe`, `ice_cream`, `bakery`, `play`, `services` ; ancres : `clothing_department`,
   `home_decor`, `grocery`.
+
+### Boutiques en cellule (`build_crispins.py`, `build_candy_cloud.py`, `build_summit.py`)
+
+| Clé | Cellule | Coque | Contrat | Articles (codes) |
+|---|---|---|---|---|
+| `crispins_hardware` | `N_out_a` (x [-377.5, -360.5], absorbe le bout ouest du couloir de service) | 16,6 × 11,6, H 4,2 | Cove Home, `decor/<key>` | `decor_workbench`, `decor_stepladder`, `decor_toolbox`, `decor_paint_cans`, `decor_wheelbarrow`, `decor_metal_shelving` (`build_hardware_items.py`, tailles dans `out/decor/hardware.manifest.json`, `preview.png` écrit directement dans `front/public/assets/decor/<key>/`, puis `node scripts/apply-decor-collision.mjs` pour le `collision.json` de chaque pièce) |
+| `candy_cloud` | `W_out_b` première cellule (z [0, 25.5]) | 25,1 × 9,3, H 4,2 | Cove Home, `items/sweets/<key>` | `candy_cotton`, `candy_lollipop`, `candy_bag`, `candy_licorice`, `candy_gum`, `candy_apple` (`build_sweets_items.py`, `FoodCatalog` groupe `sweets`) |
+| `summit_sports` | `S_out_b` deux premières cellules (x [-300, -268.3]) | 31,3 × 9,3, H 4,2 | Cove Threads v2 | `COS_WEAR_TOP_{TRACK_JACKET,JERSEY,SPORTS_BRA}`, `COS_WEAR_BOTTOM_{TRACK_PANTS,BASKETBALL_SHORTS,LEGGINGS}` (`front/scripts/skins/wear.py`, `fp_arms` par haut) |
+
+Les pièces Summit sont des entrées de `WEAR` dans `wear.py` (formes paramétriques `build_top` / `build_bottom`) ;
+`run_wear.py` reconstruit **toutes** les pièces (bruit flottant sur les fichiers existants : restaurer les pièces
+non modifiées avec `git checkout -- front/public/assets/wear`), puis `build_fp_arms.py` avec
+`WEAR_TOPS = ['track_jacket', 'jersey', 'sports_bra']`, `npm run assets:optimize -- wear`, `npm run wear:check`
+(`check-wear.mjs` liste les clés).
 
 ### Intérieurs des trois enseignes (repère local : sol y = 0, porte en z ≈ +5, salles vers -Z)
 
@@ -146,9 +174,11 @@ position, yaw, code: null}`) pour les futurs produits.
                                    "rotationY": .., "door": [..], "footprint": [..], "interiorOffset": [..] }, ... ] } ]
 ```
 
-Écrit par `front/scripts/apply-mall.mjs` (idempotent) : `position`/`rotationY` viennent de `mall.layout.json.stores[]`,
-`footprint`/`interiorOffset`/porte de chaque `store/<key>/exterior.layout.json`. Les collisions du centre viennent de son
-propre `collisionUrl` (pas de fusion dans `town.collision.json`) ; les bornes du monde (±500 m) ne bougent pas.
+Écrit par `front/scripts/apply-mall.mjs` (idempotent) : `position`/`rotationY` viennent de `mall.layout.json.stores[]` (ancres et
+boutiques en cellule), `footprint`/`interiorOffset`/porte de chaque `store/<key>/exterior.layout.json`. Les collisions du
+centre viennent de son propre `collisionUrl` (pas de fusion dans `town.collision.json`) ; le script découpe seulement
+la porte nord-ouest dans `town.glb` / `town.collision.json` (`hedgeGate`). Les bornes du monde (±500 m) ne bougent pas.
+Après le script : `make seed-shop` (18 articles) et `docker restart campuscove-socket`.
 
 ## 4. Front
 
@@ -160,8 +190,10 @@ propre `collisionUrl` (pas de fusion dans `town.collision.json`) ; les bornes du
 - `useFurnitureStore(deps)` : `deps.store?` = `{ key, name, interiorLayoutUrl, modelUrl(display) }` (défaut Cove Home) ;
   instancié trois fois dans `GameView.vue` (Cove Home, Hearth & Hollow, GreenCart). `GameStoreItemCard` reçoit `brand`.
 - `useClothingStore(deps)` : `deps.store?` = `{ key, interiorLayoutUrl, clerkColors }` (défaut Cove Threads) ; le
-  bloqueur du vendeur est `<key>_clerk`. Instancié deux fois (Cove Threads, Northline) ; la vue affiche le panier et la
-  caisse de celle où se trouve le joueur.
+  bloqueur du vendeur est `<key>_clerk`. Instancié trois fois (Cove Threads, Northline, Summit Sports) ; la vue affiche
+  le panier et la caisse de celle où se trouve le joueur (`clothingEntries`).
+- `useFurnitureStore` est aussi instancié pour Crispin's Hardware (`decorModelUrl`) et Candy Cloud
+  (`consumableModelUrl`, préfixe `candy_` → dossier `items/sweets`) ; `isSweetItem` exclut les bonbons du menu du café.
 
 ## 5. Ordre et vérification
 

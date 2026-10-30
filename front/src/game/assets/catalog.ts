@@ -204,8 +204,12 @@ const mallStore = <K extends string>(key: K, name: string) => ({
 export const NORTHLINE = mallStore('northline', 'Northline')
 export const HEARTH_HOLLOW = mallStore('hearth_hollow', 'Hearth & Hollow')
 export const GREENCART = mallStore('greencart', 'GreenCart')
+/** The shops that took over a mall cell: hardware (decor), sweets (consumables) and sportswear (wear pieces). */
+export const CRISPINS_HARDWARE = mallStore('crispins_hardware', "Crispin's Hardware")
+export const CANDY_CLOUD = mallStore('candy_cloud', 'Candy Cloud')
+export const SUMMIT_SPORTS = mallStore('summit_sports', 'Summit Sports')
 
-const STORES = [COVE_HOME, COVE_THREADS, NORTHLINE, HEARTH_HOLLOW, GREENCART] as const
+const STORES = [COVE_HOME, COVE_THREADS, NORTHLINE, HEARTH_HOLLOW, GREENCART, CRISPINS_HARDWARE, CANDY_CLOUD, SUMMIT_SPORTS] as const
 
 export type StoreKey = (typeof STORES)[number]['key']
 
@@ -219,6 +223,7 @@ export const DRINKING_FOUNTAIN_URL = `${ROOT}/park/drinking_fountain/model.glb`
 
 const CONSUMABLE_FOLDERS: ReadonlyArray<[prefix: string, folder: string]> = [
   ['food_', 'food'],
+  ['candy_', 'sweets'],
   ['med_', 'medical'],
 ]
 

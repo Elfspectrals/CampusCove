@@ -70,15 +70,18 @@ CATS = {
     "hardware": ("HARDWARE", "#e07a2e"), "pharmacy": ("PHARMACY", "#3aa89a"), "pet": ("PET SHOP", "#7fb24a"), "gym": ("GYM", "#d94f4f"),
     "arcade": ("ARCADE", "#b73cc9"), "cinema": ("CINEMA", "#8b1e3f"), "restaurant": ("RESTAURANT", "#b8472f"), "fast_food": ("FAST FOOD", "#f0b429"),
     "cafe": ("COFFEE SHOP", "#6b4a2b"), "ice_cream": ("ICE CREAM", "#f7a1c4"), "bakery": ("BAKERY", "#d8a860"), "play": ("KIDS PLAY AREA", "#f2c230"),
-    "services": ("MALL SERVICES", "#5d6670"), "grocery": ("SUPERMARKET", "#3c9a3c"), "clothing_department": ("DEPARTMENT STORE", "#1b1d22"),
+    "services": ("MALL SERVICES", "#5d6670"), "sweets": ("SWEETS & CANDY", "#f7a1c4"), "grocery": ("SUPERMARKET", "#3c9a3c"), "clothing_department": ("DEPARTMENT STORE", "#1b1d22"),
 }
 P_ = "planned"
 C_ = "construction"
 S_ = "passage"
+O_ = "open"
+# cells that are real walk-in stores (built by their own script, placed by apply-mall.mjs): name -> store key
+CELL_STORES = {"Crispin's Hardware": "crispins_hardware", "Candy Cloud": "candy_cloud", "Summit Sports": "summit_sports"}
 # rows: (plaza, list of (name, category, status)); the generator spreads the cells evenly over each segment
 ROWS = {
     # north wing, outer row (front z = -78), west -> east, split by GreenCart, the dock passage, Hearth & Hollow and the warehouse
-    "N_out_a": ("north_plaza", [("Crispin's Hardware", "hardware", P_)]),
+    "N_out_a": ("north_plaza", [("Crispin's Hardware", "hardware", O_)]),
     "N_out_b": ("north_plaza", [("Staff", "services", S_), ("Unit N12", "pet", C_)]),
     "N_out_c": ("paradise", [("Starlight Cinema", "cinema", P_), ("Page Turner Books", "books", P_), ("Vinyl Vault", "music", P_)]),
     "N_out_d": ("paradise", [("Kokoro Toys", "toys", P_), ("Volt Electronics", "electronics", P_), ("Shutter Speed Cameras", "camera", P_)]),
@@ -88,7 +91,7 @@ ROWS = {
     "N_in_c": ("paradise", [("Velvet Lane", "clothing_women", P_), ("Brickroad Men's", "clothing_men", P_), ("Sole Society", "shoes", P_), ("Curio Cabinet", "gifts", P_)]),
     # south wing, outer row (front z = 78): food court counters, then Al Fresca split by Northline
     "S_out_a": ("food_court", [("Burger Barony", "fast_food", P_), ("Mamma Lucia's", "restaurant", P_), ("Taco Tempo", "fast_food", P_), ("Wok This Way", "fast_food", P_), ("Dough Re Mi Pizza", "fast_food", P_), ("Staff", "services", S_)]),
-    "S_out_b": ("al_fresca", [("Summit Sports", "sports", P_), ("Pulse Gym", "gym", P_), ("Spectacle Eyewear", "eyewear", P_)]),
+    "S_out_b": ("al_fresca", [("Summit Sports", "clothing_sport", O_, 2.0), ("Spectacle Eyewear", "eyewear", P_)]),
     "S_out_c": ("al_fresca", [("Mae & Fern", "clothing_women", P_), ("Gentleman's Quarter", "clothing_men", P_), ("Paws & Claws", "pet", P_), ("Staff", "services", S_)]),
     # south wing, inner row (front z = 62): food court sweets, then Al Fresca with the park gate
     "S_in_a": ("food_court", [("Bean There", "cafe", P_), ("Scoop Dreams", "ice_cream", P_), ("Golden Crust", "bakery", P_)]),
@@ -96,7 +99,7 @@ ROWS = {
     "S_in_c": ("al_fresca", [("Harbor Lane Kids", "clothing_kids", P_), ("Saffron Table", "restaurant", P_), ("Chapter Two Books", "books", P_), ("Pearl Street", "clothing_luxury", P_)]),
     # west wing (Wonderland), outer row (front x = -368), north -> south ; inner row (front x = -352) with the park exit
     "W_out_a": ("wonderland", [("Staff", "services", S_), ("Pixel Palace Arcade", "arcade", P_), ("Kiddo Corner", "clothing_kids", P_), ("Rocket Toys", "toys", P_), ("Homerunner Sports", "sports", P_)]),
-    "W_out_b": ("wonderland", [("Candy Cloud", "ice_cream", P_), ("Little Lens", "eyewear", P_), ("Playbox Games", "electronics", P_), ("Staff", "services", S_)]),
+    "W_out_b": ("wonderland", [("Candy Cloud", "sweets", O_), ("Little Lens", "eyewear", P_), ("Playbox Games", "electronics", P_), ("Staff", "services", S_)]),
     "W_in_a": ("wonderland", [("Wonder Jewels", "jewelry", P_), ("Casual Corner", "clothing_women", P_), ("Fanfare Fashion", "clothing_women", P_), ("Shoes of a Lifetime", "shoes", P_)]),
     "W_in_b": ("wonderland", [("Modern Gent", "clothing_men", P_), ("Run Like Wind", "clothing_sport", P_), ("Petal & Pot", "gifts", P_), ("Sir Read-a-lot", "books", P_)]),
     # east wing (Entrance), outer row (front x = -172) split by the main entrance ; inner row (front x = -188) with the park exit
@@ -379,6 +382,7 @@ def railing(name, axis, fixed, a0, a1, y0, gaps=()):
 
 # ---------------------------------------------------------------- cells
 cells = []
+cell_stores = []
 cell_n = {}
 
 
@@ -397,6 +401,17 @@ def cell(row_key, plaza, name, category, status, axis, a0, a1, front, back, y0, 
     width = a1 - a0
     tag = f"Cell_{cid}"
     label, _ = CATS[category]
+    if status == O_:
+        key = CELL_STORES[name]
+        door_offset = front + sign * 4.5
+        if axis == "x":
+            position, rot = [round(mid, 3), 0.0, round(door_offset, 3)], (0.0 if sign < 0 else math.pi)
+        else:
+            position, rot = [round(door_offset, 3), 0.0, round(mid, 3)], (math.pi / 2 if sign < 0 else -math.pi / 2)
+        cell_stores.append({"key": key, "name": name, "category": category, "plaza": plaza, "position": position, "rotationY": round(rot, 6), "cell": cid})
+        cells.append({"id": cid, "plaza": plaza, "level": level, "row": row_key, "category": category, "label": label, "name": name, "status": status, "store": key,
+                      "bounds": bounds_of(axis, a0, a1, front, back), "front": front_of(axis, mid, front, sign, y0), "width": round(width, 3), "depth": round(depth, 3)})
+        return
     if status == S_:
         # staff passage: floor, a door frame and the sign; the neighbours' side walls close it
         if axis == "x":
@@ -483,14 +498,14 @@ def front_of(axis, mid, front, sign, y0):
 
 
 def row(row_key, axis, a0, a1, front, back, y0=0.0, level=0):
+    """Cells share the segment by weight (default 1.0, a 4th tuple element widens one); staff passages are 1.6 m."""
     plaza, items = ROWS[row_key]
-    widths = [1.6 if st == S_ else 1.0 for _, _, st in items]
-    free = (a1 - a0) - sum(w for w in widths if w == 1.6)
-    n_std = sum(1 for w in widths if w == 1.0)
-    std = free / n_std if n_std else 0
+    items = [it if len(it) == 4 else (*it, 1.0) for it in items]
+    free = (a1 - a0) - sum(1.6 for it in items if it[2] == S_)
+    weight = sum(it[3] for it in items if it[2] != S_)
     cur = a0
-    for (name, category, status), w in zip(items, widths):
-        width = w if w == 1.6 else std
+    for name, category, status, w in items:
+        width = 1.6 if status == S_ else free * w / weight
         cell(row_key, plaza, name, category, status, axis, cur, cur + width, front, back, y0, level)
         cur += width
 
@@ -524,7 +539,7 @@ for a in ANCHORS:
         rect(f"Floor_Fore_{a['key']}", lo, Z0, hi, N_OUT, -0.1, 0.1, P["floor"], tile=3.0)
     else:
         rect(f"Floor_Fore_{a['key']}", lo, S_OUT, hi, Z1, -0.09, 0.1, P["street"], tile=2.0)
-rect("Floor_SvcN", X0, Z0, X1, Z0 + SVC, -0.1, 0.1, P["service"], tile=3.0)
+rect("Floor_SvcN", gc1, Z0, X1, Z0 + SVC, -0.1, 0.1, P["service"], tile=3.0)
 rect("Floor_SvcS", X0, Z1 - SVC, X1, Z1, -0.1, 0.1, P["service"], tile=3.0)
 rect("Floor_SvcW", X0, Z0, X0 + SVC, Z1, -0.1, 0.1, P["service"], tile=3.0)
 rect("Floor_Ware", WARE[0], WARE[2], WARE[1], WARE[3], -0.1, 0.1, P["service"], tile=3.0)
@@ -551,11 +566,12 @@ for a in ANCHORS:
 
 # service corridor inner walls (between corridor and cells backs are the cells' own back walls); dock and corridor lights
 for i, gx in enumerate(range(int(X0) + 6, int(X1), 12)):
-    add(L.box(coll, f"SvcLight_N{i}", gx, Z0 + SVC / 2, CELL_H - 0.08, 1.2, 0.3, 0.06, P["panel"]))
+    if gx > gc1:
+        add(L.box(coll, f"SvcLight_N{i}", gx, Z0 + SVC / 2, CELL_H - 0.08, 1.2, 0.3, 0.06, P["panel"]))
     add(L.box(coll, f"SvcLight_S{i}", gx, Z1 - SVC / 2, CELL_H - 0.08, 1.2, 0.3, 0.06, P["panel"]))
 for i, gz in enumerate(range(int(Z0) + 6, int(Z1), 12)):
     add(L.box(coll, f"SvcLight_W{i}", X0 + SVC / 2, gz, CELL_H - 0.08, 0.3, 1.2, 0.06, P["panel"]))
-rect("Svc_Ceiling_N", X0, Z0, X1, Z0 + SVC, CELL_H, 0.2, P["slab"])
+rect("Svc_Ceiling_N", gc1, Z0, X1, Z0 + SVC, CELL_H, 0.2, P["slab"])
 rect("Svc_Ceiling_S", X0, Z1 - SVC, X1, Z1, CELL_H, 0.2, P["slab"])
 rect("Svc_Ceiling_W", X0, Z0, X0 + SVC, Z1, CELL_H, 0.2, P["slab"])
 # loading dock: roll-up door in the north wall, platform and ramp outside, dumpster, bollards
@@ -1032,23 +1048,80 @@ cols.add("Fore_Totem", X1 + 12.5, -6.0, 0.0, 0.8, 2.6, 7.0)
 for i in range(4):
     add(L.box(coll, f"Fore_BikeRack{i}", X1 + 10.0 + i * 0.8, 9.0, 0.0, 0.08, 1.2, 0.8, P["metal"]))
 cols.add("Fore_BikeRacks", X1 + 11.2, 9.0, 0.0, 3.2, 1.3, 0.8)
-# the path: forecourt -> (-144, 2) -> clinic forecourt (-110, 7.5), passing south of the clinic
-PATH_PTS = [(FORE[1], 0.0), (-144.0, 0.5), (-130.0, 0.5), (-118.0, 1.5), (-111.0, 6.0)]
-for i, ((ax, az), (bx, bz)) in enumerate(zip(PATH_PTS, PATH_PTS[1:])):
+# the avenue: from a new gate in the town hedge (north-west, mirror of the clinic gate) straight to the forecourt,
+# with sidewalks, lamps, trees, a parking lot and a bus shelter; apply-mall.mjs cuts the hedge at HEDGE_GATE
+HEDGE_GATE = {"x": -44.6, "z": -12.0, "width": 11.0}
+AVENUE = [(HEDGE_GATE["x"] - 0.5, HEDGE_GATE["z"]), (-118.0, -12.0), (FORE[1] + 0.4, -8.0)]
+ROAD_W, WALK_W = 7.0, 1.8
+for i, ((ax, az), (bx, bz)) in enumerate(zip(AVENUE, AVENUE[1:])):
     cx, cz = (ax + bx) / 2, (az + bz) / 2
-    length = math.hypot(bx - ax, bz - az) + 0.6
+    seg = math.hypot(bx - ax, bz - az)
+    dx, dz = (bx - ax) / seg, (bz - az) / seg
+    nx, nz = -dz, dx
     yaw = -math.atan2(bz - az, bx - ax)
-    add(L.box(coll, f"Path_Seg{i}", cx, cz, 0.0, length, 3.0, 0.04, P["paving"], rot=yaw, tile=2.0))
+    add(L.box(coll, f"Avenue_Road{i}", cx, cz, 0.0, seg + 0.8, ROAD_W, 0.03, P["service"], rot=yaw, tile=3.0))
     for side in (-1, 1):
-        add(L.box(coll, f"Path_Curb{i}_{side + 1}", cx + side * 1.6 * math.sin(yaw), cz + side * 1.6 * math.cos(yaw), 0.0, length, 0.2, 0.08, P["stone"], rot=yaw))
-for i, gx in enumerate(range(-142, -112, 8)):
-    lamp(f"Path_Lamp{i}", gx, 4.2 if i % 2 else -1.2, 3.4)
-sign_x, sign_z = -114.0, 4.5
-add(L.box(coll, "Path_WayPost", sign_x, sign_z, 0.0, 0.14, 0.14, 2.3, P["steel"]))
-add(L.box(coll, "Path_WayBoard", sign_x, sign_z, 1.5, 0.12, 2.4, 0.8, P["band"]))
-text("Path_WayText", "CLINIC AHEAD", sign_x - 0.07, sign_z, 1.68, 0.3, P["sign"], -math.pi / 2)
-text("Path_WayTextB", "MALL AHEAD", sign_x + 0.07, sign_z, 1.68, 0.3, P["sign"], math.pi / 2)
-cols.add("Path_WaySign", sign_x, sign_z, 0.0, 0.3, 2.4, 2.3)
+        off = ROAD_W / 2 + WALK_W / 2
+        add(L.box(coll, f"Avenue_Walk{i}_{side + 1}", cx + side * nx * off, cz + side * nz * off, 0.0, seg + 0.8, WALK_W, 0.1, P["paving"], rot=yaw, tile=2.0))
+        add(L.box(coll, f"Avenue_Curb{i}_{side + 1}", cx + side * nx * (ROAD_W / 2 + 0.08), cz + side * nz * (ROAD_W / 2 + 0.08), 0.0, seg + 0.8, 0.16, 0.12, P["stone"], rot=yaw))
+    for k in range(int(seg / 6)):
+        t = 3.0 + k * 6.0
+        add(L.box(coll, f"Avenue_Dash{i}_{k}", ax + dx * t, az + dz * t, 0.03, 2.0, 0.14, 0.01, P["soon"], rot=yaw))
+    for k, t in enumerate(range(6, int(seg) - 3, 12)):
+        side = 1 if k % 2 else -1
+        off = ROAD_W / 2 + WALK_W + 0.7
+        lamp(f"Avenue_Lamp{i}_{k}", ax + dx * t + side * nx * off, az + dz * t + side * nz * off, 4.0)
+        if 10 < t < seg - 10:
+            tree("round" if k % 3 else "pine", ax + dx * (t + 6) - side * nx * (off + 1.5), az + dz * (t + 6) - side * nz * (off + 1.5), 1.0)
+    for k, t in enumerate(range(18, int(seg) - 6, 24)):
+        bench(f"Avenue_Bench{i}_{k}", ax + dx * t + nx * (ROAD_W / 2 + WALK_W + 0.4), az + dz * t + nz * (ROAD_W / 2 + WALK_W + 0.4), yaw + math.pi)
+        bin_(f"Avenue_Bin{i}_{k}", ax + dx * (t + 2.2) + nx * (ROAD_W / 2 + WALK_W + 0.4), az + dz * (t + 2.2) + nz * (ROAD_W / 2 + WALK_W + 0.4))
+# gate totem, readable from the town and from the avenue
+tx, tz = HEDGE_GATE["x"] - 3.0, HEDGE_GATE["z"] - ROAD_W / 2 - WALK_W - 1.6
+add(L.box(coll, "Avenue_TotemPost", tx, tz, 0.0, 0.4, 0.4, 5.0, P["band"]))
+add(L.box(coll, "Avenue_TotemBoard", tx, tz, 2.6, 0.5, 3.4, 1.6, P["dark"]))
+text("Avenue_TotemText", "COVE PARKVIEW MALL", tx + 0.26, tz, 3.4, 0.36, P["neon"], math.pi / 2)
+text("Avenue_TotemText2", "< 2 MIN WALK", tx + 0.26, tz, 2.85, 0.3, P["sign"], math.pi / 2)
+text("Avenue_TotemTextB", "COVE PARKVIEW MALL", tx - 0.26, tz, 3.4, 0.36, P["neon"], -math.pi / 2)
+text("Avenue_TotemText2B", "TOWN >", tx - 0.26, tz, 2.85, 0.3, P["sign"], -math.pi / 2)
+cols.add("Avenue_Totem", tx, tz, 0.0, 0.6, 3.6, 5.0)
+# parking lot north of the avenue, next to the forecourt
+PX0, PX1, PZ0, PZ1 = -140.0, -100.0, -34.0, -19.0
+rect("Parking_Asphalt", PX0, PZ0, PX1, PZ1, -0.09, 0.1, P["service"], tile=3.0)
+rect("Parking_Entry", -124.0, PZ1, -116.0, -12.0 - ROAD_W / 2, -0.09, 0.1, P["service"], tile=3.0)
+rect("Parking_Kerb", PX0, PZ0 - 0.3, PX1, PZ0, 0.0, 0.14, P["stone"], col=True)
+for k in range(15):
+    x = PX0 + 1.0 + k * 2.7
+    rect(f"Parking_LineN{k}", x - 0.06, PZ0 + 0.3, x + 0.06, PZ0 + 5.3, 0.01, 0.01, P["soon"])
+    rect(f"Parking_LineS{k}", x - 0.06, PZ1 - 5.3, x + 0.06, PZ1 - 0.3, 0.01, 0.01, P["soon"])
+CAR_COLORS = (P["red"], P["blue"], P["yellow"], P["dark"], P["wall"], P["pink"], P["band"])
+for k, (bay, north) in enumerate(((1, True), (3, True), (6, True), (9, False), (11, True), (2, False), (13, False))):
+    gx = PX0 + 1.0 + bay * 2.7 + 1.35
+    gz = PZ0 + 2.8 if north else PZ1 - 2.8
+    body = CAR_COLORS[k % len(CAR_COLORS)]
+    add(L.box(coll, f"Car{k}_Body", gx, gz, 0.3, 1.8, 4.2, 0.6, body, bevel=0.06))
+    add(L.box(coll, f"Car{k}_Cabin", gx, gz + (0.2 if north else -0.2), 0.9, 1.6, 2.0, 0.6, P["glass"], bevel=0.08))
+    for wx, wz in ((-0.85, -1.3), (0.85, -1.3), (-0.85, 1.3), (0.85, 1.3)):
+        w = add(L.cyl(coll, f"Car{k}_Wheel{int(wx * 10)}{int(wz * 10)}", gx + wx, gz + wz, 0.3, 0.3, 0.22, P["dark"], seg=10))
+        w.rotation_euler = (0.0, math.pi / 2, 0.0)
+    cols.add(f"Car{k}", gx, gz, 0.0, 2.0, 4.4, 1.5)
+add(L.box(coll, "Parking_SignPost", PX1 + 1.0, PZ1 - 1.0, 0.0, 0.12, 0.12, 2.6, P["steel"]))
+add(L.box(coll, "Parking_SignBoard", PX1 + 1.0, PZ1 - 1.0, 2.0, 0.08, 0.9, 0.9, P["blue"]))
+text("Parking_SignText", "P", PX1 + 1.05, PZ1 - 1.0, 2.15, 0.6, P["sign"], math.pi / 2)
+cols.add("Parking_Sign", PX1 + 1.0, PZ1 - 1.0, 0.0, 0.3, 1.0, 2.6)
+# bus shelter at the end of the avenue, facing the forecourt
+BUS = (FORE[1] + 4.0, -12.0 - ROAD_W / 2 - WALK_W - 1.8)
+add(L.box(coll, "Bus_Roof", BUS[0], BUS[1], 2.5, 4.4, 1.6, 0.12, P["dark"]))
+add(L.box(coll, "Bus_Back", BUS[0], BUS[1] - 0.7, 0.0, 4.2, 0.06, 2.5, P["glass"]))
+cols.add("Bus_Back", BUS[0], BUS[1] - 0.7, 0.0, 4.2, 0.1, 2.5)
+for gx in (BUS[0] - 2.1, BUS[0] + 2.1):
+    add(L.box(coll, f"Bus_Side{int(gx)}", gx, BUS[1], 0.0, 0.06, 1.5, 2.5, P["glass"]))
+    cols.add(f"Bus_Side{int(gx)}", gx, BUS[1], 0.0, 0.1, 1.5, 2.5)
+bench("Bus_Bench", BUS[0], BUS[1] - 0.3, 0.0)
+add(L.box(coll, "Bus_SignBoard", BUS[0] + 2.4, BUS[1] + 0.6, 2.0, 0.6, 0.06, 0.6, P["yellow"]))
+add(L.box(coll, "Bus_SignPost", BUS[0] + 2.4, BUS[1] + 0.6, 0.0, 0.08, 0.08, 2.0, P["steel"]))
+text("Bus_SignText", "BUS", BUS[0] + 2.4, BUS[1] + 0.64, 2.15, 0.3, P["dark"], 0.0)
+cols.add("Bus_Sign", BUS[0] + 2.4, BUS[1] + 0.6, 0.0, 0.6, 0.2, 2.6)
 # the area behind the anchors: paving around their bodies and a few trees
 for a in ANCHORS:
     lo, hi = a["x"] - a["w"] / 2 - 6.0, a["x"] + a["w"] / 2 + 6.0
@@ -1062,7 +1135,7 @@ for a in ANCHORS:
 bad = L.check_grounded(objs, allow=("Floor", "Roof", "Slab", "Svc_", "Outer_", "Return_", "Lintel_", "Cell_", "Exit", "Entrance_", "Rail_", "Esc_",
                                    "Pillar_", "BalLight_", "Truss_", "Ware_", "Sec_", "Stair_", "Sign_", "Directory_", "Info_", "Play_", "Carousel_",
                                    "BallPit", "FC_", "AF_", "ParkWall", "Park_", "Clock_", "Fore_", "Path_", "Apron_", "Dock_", "Reno_", "MT_", "Bench_",
-                                   "Planter_", "Bin_", "Lamp", "Bulb", "Plinth", "RoofLight_", "SvcLight_"))
+                                   "Planter_", "Bin_", "Lamp", "Bulb", "Plinth", "RoofLight_", "SvcLight_", "Avenue_", "Parking_", "Car", "Bus_"))
 print("MALL grounded violations:", bad[:10], len(bad))
 
 by_mat = {}
@@ -1074,21 +1147,24 @@ for m, group in by_mat.items():
     merged.append(L.join(coll, f"Mall_{m}", group) if len(group) > 1 else group[0])
 
 levels = [
-    {"id": "L0", "y": 0.0, "height": L1_Y, "rects": [{"minX": X0 - 40.0, "maxX": X1 + 16.0, "minZ": Z0 - 45.0, "maxZ": Z1 + 45.0}]},
+    {"id": "L0", "y": 0.0, "height": L1_Y, "rects": [{"minX": X0 - 40.0, "maxX": X1 + 16.0, "minZ": Z0 - 45.0, "maxZ": Z1 + 45.0},
+                                                       {"minX": X1 + 14.0, "maxX": HEDGE_GATE["x"] + 1.0, "minZ": PZ0 - 2.0, "maxZ": -4.0}]},
     {"id": "L1", "y": L1_Y, "height": CELL_H, "rects": [{k: round(v, 3) for k, v in r.items()} for r in l1_rects]},
     {"id": "L2", "y": ROOF2, "height": 4.0, "rects": [{k: round(v, 3) for k, v in r.items()} for r in l2_rects]},
 ]
 layout = {
     "version": 1, "key": "mall", "name": "Cove Parkview Mall",
-    "bounds": {"minX": X0 - 40.0, "maxX": -144.0, "minZ": Z0 - 45.0, "maxZ": Z1 + 45.0},
+    "bounds": {"minX": X0 - 40.0, "maxX": HEDGE_GATE["x"] + 2.0, "minZ": Z0 - 45.0, "maxZ": Z1 + 45.0},
     "entrance": {"position": [X1, 0.0, 0.0], "yaw": -math.pi / 2, "width": 2 * ENTRANCE_HW},
+    "hedgeGate": HEDGE_GATE,
+    "avenue": {"points": [[round(x, 3), round(z, 3)] for x, z in AVENUE], "roadWidth": ROAD_W, "parking": {"minX": PX0, "maxX": PX1, "minZ": PZ0, "maxZ": PZ1}},
     "levels": levels,
     "stairs": [{k: (round(v, 3) if isinstance(v, float) else v) for k, v in s.items()} for s in stairs],
     "plazas": [{"id": k, "name": v["name"], "bounds": {"minX": v["bounds"][0], "maxX": v["bounds"][1], "minZ": v["bounds"][2], "maxZ": v["bounds"][3]},
                 "floors": v["floors"], "roof": v["roof"], "outdoor": v["outdoor"]} for k, v in PLAZAS.items()],
     "cells": cells,
     "stores": [{"key": a["key"], "name": a["name"], "category": a["category"], "plaza": a["plaza"],
-                "position": [a["x"], 0.0, round(a["z"], 3)], "rotationY": a["rotationY"]} for a in ANCHORS],
+                "position": [a["x"], 0.0, round(a["z"], 3)], "rotationY": a["rotationY"]} for a in ANCHORS] + cell_stores,
     "links": LINKS,
     "backstage": {
         "serviceCorridors": [{"minX": X0, "maxX": X1, "minZ": Z0, "maxZ": Z0 + SVC}, {"minX": X0, "maxX": X1, "minZ": Z1 - SVC, "maxZ": Z1}, {"minX": X0, "maxX": X0 + SVC, "minZ": Z0, "maxZ": Z1}],
@@ -1107,4 +1183,4 @@ L.snapshot(sc, os.path.join(OUT, "preview_plaza.png"), (-180.0, 1.7, 40.0), (-18
 L.snapshot(sc, os.path.join(OUT, "preview_park.png"), (-205.0, 1.7, 2.0), (-270.0, 6.0, 0.0), lens=20, res=(960, 640))
 L.snapshot(sc, os.path.join(OUT, "preview_aerial.png"), (-120.0, 140.0, 160.0), (-270.0, 0.0, 0.0), lens=24, res=(960, 640))
 tris = sum(len(p.vertices) - 2 for o in merged if o.type == "MESH" for p in o.data.polygons)
-print("mall:", len(objs), "objects ->", len(merged), "nodes,", tris, "tris,", len(cols.items), "collision boxes,", len(cells), "cells,", len(stairs), "stairs,", texts, "texts")
+print("mall:", len(objs), "objects ->", len(merged), "nodes,", tris, "tris,", len(cols.items), "collision boxes,", len(cells), "cells,", len(stairs), "stairs,", texts, "texts,", len(cell_stores), "cell stores", [c["position"] for c in cell_stores])

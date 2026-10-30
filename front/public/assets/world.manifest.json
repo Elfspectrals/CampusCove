@@ -661,7 +661,7 @@
       "optional": true,
       "bounds": {
         "minX": -420,
-        "maxX": -144,
+        "maxX": -42.6,
         "minZ": -135,
         "maxZ": 135
       },
@@ -743,6 +743,81 @@
           "footprint": [
             40,
             36.81
+          ],
+          "interiorOffset": [
+            0,
+            0.2,
+            -0.905
+          ]
+        },
+        {
+          "kind": "store",
+          "key": "crispins_hardware",
+          "name": "Crispin's Hardware",
+          "position": [
+            -369,
+            0,
+            -82.5
+          ],
+          "rotationY": 0,
+          "door": [
+            -369,
+            1.25,
+            -78
+          ],
+          "footprint": [
+            16.6,
+            11.61
+          ],
+          "interiorOffset": [
+            0,
+            0.2,
+            -0.905
+          ]
+        },
+        {
+          "kind": "store",
+          "key": "summit_sports",
+          "name": "Summit Sports",
+          "position": [
+            -284.167,
+            0,
+            82.5
+          ],
+          "rotationY": 3.141593,
+          "door": [
+            -284.167,
+            1.25,
+            78
+          ],
+          "footprint": [
+            31.27,
+            9.31
+          ],
+          "interiorOffset": [
+            0,
+            0.2,
+            -0.905
+          ]
+        },
+        {
+          "kind": "store",
+          "key": "candy_cloud",
+          "name": "Candy Cloud",
+          "position": [
+            -372.5,
+            0,
+            12.733
+          ],
+          "rotationY": 1.570796,
+          "door": [
+            -368,
+            1.25,
+            12.733
+          ],
+          "footprint": [
+            25.07,
+            9.31
           ],
           "interiorOffset": [
             0,

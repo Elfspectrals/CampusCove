@@ -4,7 +4,7 @@
   "name": "Cove Parkview Mall",
   "bounds": {
     "minX": -420.0,
-    "maxX": -144.0,
+    "maxX": -42.6,
     "minZ": -135.0,
     "maxZ": 135.0
   },
@@ -17,6 +17,34 @@
     "yaw": -1.5707963267948966,
     "width": 16.0
   },
+  "hedgeGate": {
+    "x": -44.6,
+    "z": -12.0,
+    "width": 11.0
+  },
+  "avenue": {
+    "points": [
+      [
+        -45.1,
+        -12.0
+      ],
+      [
+        -118.0,
+        -12.0
+      ],
+      [
+        -145.6,
+        -8.0
+      ]
+    ],
+    "roadWidth": 7.0,
+    "parking": {
+      "minX": -140.0,
+      "maxX": -100.0,
+      "minZ": -34.0,
+      "maxZ": -19.0
+    }
+  },
   "levels": [
     {
       "id": "L0",
@@ -28,6 +56,12 @@
           "maxX": -144.0,
           "minZ": -135.0,
           "maxZ": 135.0
+        },
+        {
+          "minX": -146.0,
+          "maxX": -43.6,
+          "minZ": -36.0,
+          "maxZ": -4.0
         }
       ]
     },
@@ -314,7 +348,8 @@
       "category": "hardware",
       "label": "HARDWARE",
       "name": "Crispin's Hardware",
-      "status": "planned",
+      "status": "open",
+      "store": "crispins_hardware",
       "bounds": {
         "minX": -377.5,
         "maxX": -360.5,
@@ -911,51 +946,28 @@
       "plaza": "al_fresca",
       "level": 0,
       "row": "S_out_b",
-      "category": "sports",
-      "label": "SPORTING GOODS",
+      "category": "clothing_sport",
+      "label": "SPORTSWEAR",
       "name": "Summit Sports",
-      "status": "planned",
+      "status": "open",
+      "store": "summit_sports",
       "bounds": {
         "minX": -300.0,
-        "maxX": -284.167,
-        "minZ": 78.0,
-        "maxZ": 87.5
-      },
-      "front": {
-        "x": -292.083,
-        "y": 0.0,
-        "z": 77.0,
-        "yaw": 3.1416
-      },
-      "width": 15.833,
-      "depth": 9.5
-    },
-    {
-      "id": "A02",
-      "plaza": "al_fresca",
-      "level": 0,
-      "row": "S_out_b",
-      "category": "gym",
-      "label": "GYM",
-      "name": "Pulse Gym",
-      "status": "planned",
-      "bounds": {
-        "minX": -284.167,
         "maxX": -268.333,
         "minZ": 78.0,
         "maxZ": 87.5
       },
       "front": {
-        "x": -276.25,
+        "x": -284.167,
         "y": 0.0,
         "z": 77.0,
         "yaw": 3.1416
       },
-      "width": 15.833,
+      "width": 31.667,
       "depth": 9.5
     },
     {
-      "id": "A03",
+      "id": "A02",
       "plaza": "al_fresca",
       "level": 0,
       "row": "S_out_b",
@@ -979,7 +991,7 @@
       "depth": 9.5
     },
     {
-      "id": "A04",
+      "id": "A03",
       "plaza": "al_fresca",
       "level": 0,
       "row": "S_out_c",
@@ -1003,7 +1015,7 @@
       "depth": 9.5
     },
     {
-      "id": "A05",
+      "id": "A04",
       "plaza": "al_fresca",
       "level": 0,
       "row": "S_out_c",
@@ -1027,7 +1039,7 @@
       "depth": 9.5
     },
     {
-      "id": "A06",
+      "id": "A05",
       "plaza": "al_fresca",
       "level": 0,
       "row": "S_out_c",
@@ -1051,7 +1063,7 @@
       "depth": 9.5
     },
     {
-      "id": "A07",
+      "id": "A06",
       "plaza": "al_fresca",
       "level": 0,
       "row": "S_out_c",
@@ -1147,7 +1159,7 @@
       "depth": 12.0
     },
     {
-      "id": "A08",
+      "id": "A07",
       "plaza": "al_fresca",
       "level": 0,
       "row": "S_in_b",
@@ -1171,7 +1183,7 @@
       "depth": 12.0
     },
     {
-      "id": "A09",
+      "id": "A08",
       "plaza": "al_fresca",
       "level": 0,
       "row": "S_in_b",
@@ -1195,7 +1207,7 @@
       "depth": 12.0
     },
     {
-      "id": "A10",
+      "id": "A09",
       "plaza": "al_fresca",
       "level": 0,
       "row": "S_in_b",
@@ -1219,7 +1231,7 @@
       "depth": 12.0
     },
     {
-      "id": "A11",
+      "id": "A10",
       "plaza": "al_fresca",
       "level": 0,
       "row": "S_in_b",
@@ -1243,7 +1255,7 @@
       "depth": 12.0
     },
     {
-      "id": "A12",
+      "id": "A11",
       "plaza": "al_fresca",
       "level": 0,
       "row": "S_in_c",
@@ -1267,7 +1279,7 @@
       "depth": 12.0
     },
     {
-      "id": "A13",
+      "id": "A12",
       "plaza": "al_fresca",
       "level": 0,
       "row": "S_in_c",
@@ -1291,7 +1303,7 @@
       "depth": 12.0
     },
     {
-      "id": "A14",
+      "id": "A13",
       "plaza": "al_fresca",
       "level": 0,
       "row": "S_in_c",
@@ -1315,7 +1327,7 @@
       "depth": 12.0
     },
     {
-      "id": "A15",
+      "id": "A14",
       "plaza": "al_fresca",
       "level": 0,
       "row": "S_in_c",
@@ -1463,10 +1475,11 @@
       "plaza": "wonderland",
       "level": 0,
       "row": "W_out_b",
-      "category": "ice_cream",
-      "label": "ICE CREAM",
+      "category": "sweets",
+      "label": "SWEETS & CANDY",
       "name": "Candy Cloud",
-      "status": "planned",
+      "status": "open",
+      "store": "candy_cloud",
       "bounds": {
         "minX": -377.5,
         "maxX": -368.0,
@@ -3319,6 +3332,45 @@
         -82.5
       ],
       "rotationY": 0.0
+    },
+    {
+      "key": "crispins_hardware",
+      "name": "Crispin's Hardware",
+      "category": "hardware",
+      "plaza": "north_plaza",
+      "position": [
+        -369.0,
+        0.0,
+        -82.5
+      ],
+      "rotationY": 0.0,
+      "cell": "N01"
+    },
+    {
+      "key": "summit_sports",
+      "name": "Summit Sports",
+      "category": "clothing_sport",
+      "plaza": "al_fresca",
+      "position": [
+        -284.167,
+        0.0,
+        82.5
+      ],
+      "rotationY": 3.141593,
+      "cell": "A01"
+    },
+    {
+      "key": "candy_cloud",
+      "name": "Candy Cloud",
+      "category": "sweets",
+      "plaza": "wonderland",
+      "position": [
+        -372.5,
+        0.0,
+        12.733
+      ],
+      "rotationY": 1.570796,
+      "cell": "W06"
     }
   ],
   "links": [

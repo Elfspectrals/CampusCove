@@ -56,7 +56,21 @@ import { HOUSING_LOBBY_SPAWN } from '../game/gameRoomConstants'
 import { createGameScene, disposeGameScene, type GameScene } from '../game/gameScene'
 import { createFirstPersonArms } from '../game/firstPersonArms'
 import { createHeldItem } from '../game/heldItem'
-import { COVE_HOME, COVE_THREADS, GREENCART, HEARTH_HOLLOW, NORTHLINE, consumableModelUrl, decorModelUrl, findHouse, findStore, findWork } from '../game/assets/catalog'
+import {
+  CANDY_CLOUD,
+  COVE_HOME,
+  COVE_THREADS,
+  CRISPINS_HARDWARE,
+  GREENCART,
+  HEARTH_HOLLOW,
+  NORTHLINE,
+  SUMMIT_SPORTS,
+  consumableModelUrl,
+  decorModelUrl,
+  findHouse,
+  findStore,
+  findWork,
+} from '../game/assets/catalog'
 import type { GearSlot } from '../game/wardrobeSlots'
 import { createSfx } from '../game/sfx'
 import { createAmbientLoop } from '../game/ambientLoop'
@@ -195,10 +209,24 @@ const greencartStore = useFurnitureStore({
   myPosition,
   store: { interiorLayoutUrl: GREENCART.interiorLayoutUrl, modelUrl: (display) => consumableModelUrl(display.code) },
 })
+const crispinsStore = useFurnitureStore({
+  inStore: () => currentHouseKey.value === CRISPINS_HARDWARE.key,
+  getCamera,
+  myPosition,
+  store: { interiorLayoutUrl: CRISPINS_HARDWARE.interiorLayoutUrl, modelUrl: (display) => decorModelUrl(display.key) },
+})
+const candyStore = useFurnitureStore({
+  inStore: () => currentHouseKey.value === CANDY_CLOUD.key,
+  getCamera,
+  myPosition,
+  store: { interiorLayoutUrl: CANDY_CLOUD.interiorLayoutUrl, modelUrl: (display) => consumableModelUrl(display.code) },
+})
 const furnitureStores = [
   { key: COVE_HOME.key, brand: COVE_HOME.name, store: furnitureStore },
   { key: HEARTH_HOLLOW.key, brand: HEARTH_HOLLOW.name, store: hearthStore },
   { key: GREENCART.key, brand: GREENCART.name, store: greencartStore },
+  { key: CRISPINS_HARDWARE.key, brand: CRISPINS_HARDWARE.name, store: crispinsStore },
+  { key: CANDY_CLOUD.key, brand: CANDY_CLOUD.name, store: candyStore },
 ]
 const activeFurniture = computed(() => furnitureStores.find((s) => s.key === currentHouseKey.value) ?? null)
 const storeBrand = computed(() => activeFurniture.value?.brand ?? COVE_HOME.name)
@@ -222,9 +250,20 @@ const northlineStore = useClothingStore({
   inStore: () => inNorthline.value,
   store: { key: NORTHLINE.key, interiorLayoutUrl: NORTHLINE.interiorLayoutUrl, clerkColors: { ...DEFAULT_SLOT_COLORS, top: '#1b1d22', bottom: '#f4f2ee' } },
 })
-const clothingStores = [clothingStore, northlineStore]
-const activeClothing = computed(() => (inThreads.value ? clothingStore : inNorthline.value ? northlineStore : null))
-const clothesTitle = computed(() => (inNorthline.value ? NORTHLINE.name : COVE_THREADS.name))
+const summitStore = useClothingStore({
+  ...clothingDeps,
+  inStore: () => currentHouseKey.value === SUMMIT_SPORTS.key,
+  store: { key: SUMMIT_SPORTS.key, interiorLayoutUrl: SUMMIT_SPORTS.interiorLayoutUrl, clerkColors: { ...DEFAULT_SLOT_COLORS, top: '#1b1d22', bottom: '#f0b429' } },
+})
+const clothingEntries = [
+  { key: COVE_THREADS.key, name: COVE_THREADS.name, store: clothingStore },
+  { key: NORTHLINE.key, name: NORTHLINE.name, store: northlineStore },
+  { key: SUMMIT_SPORTS.key, name: SUMMIT_SPORTS.name, store: summitStore },
+]
+const clothingStores = clothingEntries.map((entry) => entry.store)
+const activeClothingEntry = computed(() => clothingEntries.find((entry) => entry.key === currentHouseKey.value) ?? null)
+const activeClothing = computed(() => activeClothingEntry.value?.store ?? null)
+const clothesTitle = computed(() => activeClothingEntry.value?.name ?? COVE_THREADS.name)
 const myCosmetics = shallowRef<CharacterCosmeticsState | null>(null)
 
 function onWardrobeChanged(state: CharacterCosmeticsState): void {
@@ -548,7 +587,7 @@ const environment = useRoomEnvironment({
       const interior = openHouseInterior(key)
       if (interior) void store.attach(interior)
     }
-    for (const [key, store] of [[COVE_THREADS.key, clothingStore], [NORTHLINE.key, northlineStore]] as const) {
+    for (const { key, store } of clothingEntries) {
       const interior = openHouseInterior(key)
       if (interior) void store.attach(interior)
     }

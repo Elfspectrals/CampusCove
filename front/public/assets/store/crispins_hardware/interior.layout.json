@@ -1,0 +1,217 @@
+{
+  "version": 1,
+  "key": "crispins_hardware",
+  "name": "Crispin's Hardware",
+  "spawn": [
+    0.0,
+    1.6,
+    3.7
+  ],
+  "exit": {
+    "position": [
+      0.0,
+      4.75
+    ],
+    "radius": 1.4
+  },
+  "bounds": {
+    "minX": -7.8,
+    "maxX": 7.8,
+    "minZ": -5.8,
+    "maxZ": 5.0
+  },
+  "departments": [
+    {
+      "id": "tools",
+      "label": "TOOLS",
+      "color": "#e07a2e",
+      "sign": [
+        -5.5,
+        3.3,
+        -1.0
+      ]
+    },
+    {
+      "id": "paint",
+      "label": "PAINT",
+      "color": "#1f5fae",
+      "sign": [
+        0.0,
+        3.3,
+        -3.5
+      ]
+    },
+    {
+      "id": "garden",
+      "label": "GARDEN",
+      "color": "#3c7a3c",
+      "sign": [
+        5.5,
+        3.3,
+        -1.0
+      ]
+    },
+    {
+      "id": "storage",
+      "label": "STORAGE",
+      "color": "#5d6670",
+      "sign": [
+        3.0,
+        3.3,
+        -4.5
+      ]
+    }
+  ],
+  "displays": [
+    {
+      "key": "workbench",
+      "code": "decor_workbench",
+      "department": "tools",
+      "description": "Solid workbench with a vice and a tool rail.",
+      "position": [
+        -6.3,
+        0.0,
+        -1.5
+      ],
+      "yaw": 1.5708,
+      "size": [
+        1.6,
+        1.12,
+        0.73
+      ],
+      "tag": {
+        "position": [
+          -5.05,
+          1.32,
+          -1.5
+        ],
+        "yaw": 1.5708
+      }
+    },
+    {
+      "key": "stepladder",
+      "code": "decor_stepladder",
+      "department": "tools",
+      "description": "Aluminium stepladder with a safety platform.",
+      "position": [
+        -6.5,
+        0.0,
+        -4.4
+      ],
+      "yaw": 1.5708,
+      "size": [
+        0.5,
+        1.74,
+        0.6
+      ],
+      "tag": {
+        "position": [
+          -5.75,
+          1.32,
+          -4.4
+        ],
+        "yaw": 1.5708
+      }
+    },
+    {
+      "key": "toolbox",
+      "code": "decor_toolbox",
+      "department": "tools",
+      "description": "Red steel toolbox, latches included.",
+      "position": [
+        -2.5,
+        0.9,
+        -1.0
+      ],
+      "yaw": 0.0,
+      "size": [
+        0.52,
+        0.33,
+        0.26
+      ],
+      "tag": {
+        "position": [
+          -2.5,
+          1.32,
+          -0.29
+        ],
+        "yaw": 0.0
+      }
+    },
+    {
+      "key": "paint_cans",
+      "code": "decor_paint_cans",
+      "department": "paint",
+      "description": "Pallet of paint cans in four colours.",
+      "position": [
+        1.5,
+        0.0,
+        -4.5
+      ],
+      "yaw": 0.0,
+      "size": [
+        0.8,
+        0.7,
+        0.8
+      ],
+      "tag": {
+        "position": [
+          1.5,
+          1.32,
+          -3.65
+        ],
+        "yaw": 0.0
+      }
+    },
+    {
+      "key": "wheelbarrow",
+      "code": "decor_wheelbarrow",
+      "department": "garden",
+      "description": "Green garden wheelbarrow on a rubber wheel.",
+      "position": [
+        5.8,
+        0.0,
+        -1.6
+      ],
+      "yaw": -1.5708,
+      "size": [
+        0.6,
+        0.67,
+        1.44
+      ],
+      "tag": {
+        "position": [
+          4.63,
+          1.32,
+          -1.6
+        ],
+        "yaw": -1.5708
+      }
+    },
+    {
+      "key": "metal_shelving",
+      "code": "decor_metal_shelving",
+      "department": "storage",
+      "description": "Orange warehouse shelving, boxes included.",
+      "position": [
+        5.6,
+        0.0,
+        -5.2
+      ],
+      "yaw": 0.0,
+      "size": [
+        1.81,
+        1.8,
+        0.51
+      ],
+      "tag": {
+        "position": [
+          5.6,
+          1.32,
+          -3.845
+        ],
+        "yaw": 0.0
+      }
+    }
+  ]
+}

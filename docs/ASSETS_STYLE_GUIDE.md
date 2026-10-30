@@ -335,7 +335,10 @@ Northline (vêtements), Hearth & Hollow (déco), GreenCart (supermarché). Contr
 | `build_northline.py`, `build_hearth.py`, `build_greencart.py` | `store/<clé>/{interior,exterior}.glb`, `*.colsrc.glb`, `*.layout.json`, `preview.png` (intérieurs 10 600 / 11 000 / 22 000 triangles, coques ≤ 3 000) |
 | `build_house_lightmaps.py -- store northline hearth_hollow greencart` | `store/<clé>/lightmap.jpg` (headless, Cycles) ; les lampes sont les nœuds `Light_*` ou les mailles dont le matériau contient `LightPanel` |
 | `build_mall.py` (lit les `exterior.layout.json` des trois enseignes) | `store/mall/{mall.glb, mall.colsrc.glb, mall.layout.json}` (≈ 88 000 triangles, 1 370 boîtes `COL_Mall_*`, 124 cellules, 8 rampes) |
-| `front/scripts/apply-mall.mjs` | zone `mall` de `world.manifest.json` (`collisionUrl`, `layoutUrl`, porte d'entrée, les trois bâtiments `store`) |
+| `build_hardware_items.py`, `build_sweets_items.py` | `decor/{workbench,stepladder,toolbox,paint_cans,wheelbarrow,metal_shelving}/`, `items/sweets/{cotton_candy,lollipop,candy_bag,licorice,bubble_gum,candy_apple}/` (`model.glb`, `preview.png`, 50 à 630 triangles) + `out/decor/hardware.manifest.json` |
+| `front/scripts/skins/wear.py` (+ `run_wear.py`, `build_fp_arms.py`) | `wear/top/{track_jacket,jersey,sports_bra}/`, `wear/bottom/{track_pants,basketball_shorts,leggings}/` (Summit Sports) |
+| `build_crispins.py`, `build_candy_cloud.py`, `build_summit.py` | `store/<clé>/…` comme les ancres, coques de 16,6 / 25,1 / 31,3 m au nu des cellules (3 900 / 11 800 / 3 000 triangles) |
+| `front/scripts/apply-mall.mjs` | zone `mall` de `world.manifest.json` (`collisionUrl`, `layoutUrl`, porte d'entrée, les six bâtiments `store`) ; porte nord-ouest dans `town.glb` / `town.collision.json` |
 
 ```bash
 B=/Applications/Blender.app/Contents/MacOS/Blender
@@ -368,3 +371,8 @@ docker restart campuscove-socket
 - Ancres : la façade de la coque (`walk_in_shell`) est au nu du front des cellules ; le mur extérieur, le couloir et les
   cellules sont interrompus sur sa largeur et un retour de mur ferme l'anneau ; le corps dépasse hors de l'anneau sur
   un tablier de service.
+- Boutiques en cellule (statut `open` dans `ROWS`) : la cellule ne construit rien, le bâtiment `store` prend sa place
+  (`CELL_STORES`, positions dans `stores[]`) ; largeur de coque = cellule − 0,4 m pour ne pas toucher les cloisons
+  voisines, profondeur ≤ 9,5 m (11,6 m pour Crispin's qui absorbe le bout ouest du couloir de service).
+- Accès : porte nord-ouest `(-44.6, -12)` + avenue (`AVENUE`, 7 m + trottoirs 1,8 m), parking `PX0..PZ1` et abribus,
+  tous dans `mall.glb` ; seule la découpe de la haie est faite par `apply-mall.mjs`.

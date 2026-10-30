@@ -10,8 +10,8 @@ const REGIONS = ['head', 'chest', 'hips', 'upper_arms', 'forearms', 'hands', 'th
 const PIECES = {
   hair: ['basic', 'short', 'long', 'curly', 'buzz', 'ponytail'],
   head_accessory: ['gamer', 'studio', 'cat_ear', 'neon', 'pilot'],
-  top: ['basic', 'tee', 'tank', 'hoodie', 'varsity', 'sweater'],
-  bottom: ['basic', 'jeans', 'joggers', 'cargo', 'shorts', 'skirt'],
+  top: ['basic', 'tee', 'tank', 'hoodie', 'varsity', 'sweater', 'track_jacket', 'jersey', 'sports_bra'],
+  bottom: ['basic', 'jeans', 'joggers', 'cargo', 'shorts', 'skirt', 'track_pants', 'basketball_shorts', 'leggings'],
   shoes: ['basic', 'sneakers', 'high_tops', 'boots', 'slides', 'runners'],
 }
 const REQUIRED_CLIPS = ['Idle', 'Walk', 'Run']

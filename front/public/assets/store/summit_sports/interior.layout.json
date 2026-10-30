@@ -1,0 +1,294 @@
+{
+  "version": 2,
+  "key": "summit_sports",
+  "name": "Summit Sports",
+  "spawn": [
+    0.0,
+    1.6,
+    3.7
+  ],
+  "exit": {
+    "position": [
+      0.0,
+      4.75
+    ],
+    "radius": 1.4
+  },
+  "bounds": {
+    "minX": -15.1,
+    "maxX": 15.1,
+    "minZ": -3.5,
+    "maxZ": 5.0
+  },
+  "counter": [
+    10.0,
+    1.15,
+    4.300000000000001
+  ],
+  "clerk": {
+    "position": [
+      8.9,
+      0.0,
+      2.25
+    ],
+    "yaw": 0.0
+  },
+  "departments": [
+    {
+      "id": "top",
+      "label": "PERFORMANCE TOPS",
+      "sign": [
+        -10.75,
+        3.3,
+        -3.44
+      ]
+    },
+    {
+      "id": "bottom",
+      "label": "TRAINING BOTTOMS",
+      "sign": [
+        9.75,
+        3.3,
+        -3.44
+      ]
+    }
+  ],
+  "displays": [
+    {
+      "slot": "top",
+      "key": "track_jacket",
+      "department": "top",
+      "position": [
+        -12.0,
+        0.263,
+        -3.08
+      ],
+      "yaw": 0.0,
+      "center": [
+        -12.0,
+        1.5,
+        -3.08
+      ],
+      "tag": {
+        "position": [
+          -12.0,
+          0.72,
+          -3.4
+        ],
+        "yaw": 0.0
+      }
+    },
+    {
+      "slot": "top",
+      "key": "jersey",
+      "department": "top",
+      "position": [
+        -10.75,
+        0.263,
+        -3.08
+      ],
+      "yaw": 0.0,
+      "center": [
+        -10.75,
+        1.5,
+        -3.08
+      ],
+      "tag": {
+        "position": [
+          -10.75,
+          0.72,
+          -3.4
+        ],
+        "yaw": 0.0
+      }
+    },
+    {
+      "slot": "top",
+      "key": "sports_bra",
+      "department": "top",
+      "position": [
+        -9.5,
+        0.263,
+        -3.08
+      ],
+      "yaw": 0.0,
+      "center": [
+        -9.5,
+        1.5,
+        -3.08
+      ],
+      "tag": {
+        "position": [
+          -9.5,
+          0.72,
+          -3.4
+        ],
+        "yaw": 0.0
+      }
+    },
+    {
+      "slot": "bottom",
+      "key": "track_pants",
+      "department": "bottom",
+      "position": [
+        8.5,
+        0.878,
+        -3.08
+      ],
+      "yaw": 0.0,
+      "center": [
+        8.5,
+        1.5,
+        -3.08
+      ],
+      "tag": {
+        "position": [
+          8.5,
+          0.72,
+          -3.4
+        ],
+        "yaw": 0.0
+      }
+    },
+    {
+      "slot": "bottom",
+      "key": "basketball_shorts",
+      "department": "bottom",
+      "position": [
+        9.75,
+        0.878,
+        -3.08
+      ],
+      "yaw": 0.0,
+      "center": [
+        9.75,
+        1.5,
+        -3.08
+      ],
+      "tag": {
+        "position": [
+          9.75,
+          0.72,
+          -3.4
+        ],
+        "yaw": 0.0
+      }
+    },
+    {
+      "slot": "bottom",
+      "key": "leggings",
+      "department": "bottom",
+      "position": [
+        11.0,
+        0.878,
+        -3.08
+      ],
+      "yaw": 0.0,
+      "center": [
+        11.0,
+        1.5,
+        -3.08
+      ],
+      "tag": {
+        "position": [
+          11.0,
+          0.72,
+          -3.4
+        ],
+        "yaw": 0.0
+      }
+    }
+  ],
+  "outfits": [
+    {
+      "pieces": [
+        {
+          "slot": "hair",
+          "key": "short"
+        },
+        {
+          "slot": "top",
+          "key": "track_jacket"
+        },
+        {
+          "slot": "bottom",
+          "key": "track_pants"
+        },
+        {
+          "slot": "shoes",
+          "key": "runners"
+        }
+      ],
+      "position": [
+        -0.8,
+        0.14,
+        -0.5
+      ],
+      "yaw": 0.12,
+      "center": [
+        -0.8,
+        1.1,
+        -0.5
+      ],
+      "tag": {
+        "position": [
+          -0.8,
+          0.4,
+          0.25
+        ],
+        "yaw": 0.0
+      }
+    },
+    {
+      "pieces": [
+        {
+          "slot": "hair",
+          "key": "buzz"
+        },
+        {
+          "slot": "top",
+          "key": "jersey"
+        },
+        {
+          "slot": "bottom",
+          "key": "basketball_shorts"
+        },
+        {
+          "slot": "shoes",
+          "key": "high_tops"
+        }
+      ],
+      "position": [
+        0.8,
+        0.14,
+        -0.5
+      ],
+      "yaw": -0.12,
+      "center": [
+        0.8,
+        1.1,
+        -0.5
+      ],
+      "tag": {
+        "position": [
+          0.8,
+          0.4,
+          0.25
+        ],
+        "yaw": 0.0
+      }
+    }
+  ],
+  "mirror": {
+    "position": [
+      -15.01,
+      1.27,
+      -1.0
+    ],
+    "yaw": 1.5708,
+    "size": [
+      1.4,
+      2.2
+    ]
+  }
+}
