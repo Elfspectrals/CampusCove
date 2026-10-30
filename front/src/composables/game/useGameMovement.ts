@@ -53,6 +53,8 @@ export interface UseGameMovementDeps {
   onBeforeRender: (dt: number) => void
   /** Seated on a pub seat: the mouse still looks around, but the body stays put and no `move` is sent. */
   movementLocked?: () => boolean
+  /** Pause menu closed with Esc before the browser gave the pointer back: keys still move, the mouse doesn't look. */
+  playingWithoutLock?: () => boolean
   /** Runs once the camera is placed each frame, for extra camera motion (drunken sway). */
   afterCameraPlaced?: (camera: THREE.PerspectiveCamera, dt: number) => void
 }
@@ -164,14 +166,18 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     const now = performance.now()
     const dt = Math.min((now - lastTime) / 1000, MAX_FRAME_DT)
     lastTime = now
-    // without pointer lock the player stands still, but door prompts must stay accurate
-    if (pointerLocked.value) updateMovement(dt)
+    // without pointer lock the player stands still (unless the menu was closed with Esc), but door prompts must stay accurate
+    if (playing()) updateMovement(dt)
     deps.updateProximity()
     deps.onBeforeRender(dt)
     const renderer = deps.getRenderer()
     const scene = deps.getScene()
     const camera = deps.getCamera()
     if (renderer && scene && camera) renderer.render(scene, camera)
+  }
+
+  function playing(): boolean {
+    return pointerLocked.value || (deps.playingWithoutLock?.() ?? false)
   }
 
   function startRenderLoop() {
@@ -261,7 +267,7 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     if (matches('jump', e.code)) {
       // Space would otherwise press a focused button or scroll the page
       e.preventDefault()
-      if (!e.repeat && pointerLocked.value) jumpRequested = true
+      if (!e.repeat && playing()) jumpRequested = true
       return
     }
     setMoveKey(e.code, true)
