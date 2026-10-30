@@ -30,6 +30,21 @@ PLATFORM_X0, PLATFORM_X1, PLATFORM_Z1 = 2.5, 7.5, -58.3 - PUSH
 MARE_C, MARE_RX, MARE_RZ = (-39.0, -41.5 - PUSH), 3.6, 3.0
 CREEK_HW = 1.0
 BRIDGE_C, BRIDGE_HW, BRIDGE_HL, BRIDGE_TOP = (-17.8, -59.5 - PUSH), 1.0, 2.0, 0.35
+FENCE_N = int(round(2 * math.asin(PARK_X / FENCE_R) * FENCE_R / 2.4))
+FENCE_TH0 = -math.asin(PARK_X / FENCE_R)
+
+
+def fence_post(i):
+    th = FENCE_TH0 + 2 * abs(FENCE_TH0) * i / FENCE_N
+    return FENCE_R * math.sin(th), -FENCE_R * math.cos(th)
+
+
+PUB_GATE_I = round((math.asin(32.0 / FENCE_R) - FENCE_TH0) * FENCE_N / (2 * abs(FENCE_TH0)))
+PUB_GATE = fence_post(PUB_GATE_I)
+PUB_GATE_PILLARS = (fence_post(PUB_GATE_I - 1), fence_post(PUB_GATE_I + 1))
+PUB_GATE_TH = math.atan2(PUB_GATE[0], -PUB_GATE[1])
+PUB_GATE_U = (math.sin(PUB_GATE_TH), -math.cos(PUB_GATE_TH))
+PUB_GATE_HW = 3.0
 GAZEBO_C, GAZEBO_R = (35.0, -55.0 - PUSH), 2.9
 KIOSK = (22.5, -51.5 - PUSH)
 GRID_X0, GRID_Z0, GRID_COLS, GRID_ROWS = -48.0, -76.0 - PUSH, 97, 73 + int(PUSH)
@@ -95,7 +110,20 @@ LOOP = [ellipse(0.0, CZ, LOOP_RX + PATH_W / 2, LOOP_RZ + PATH_W / 2, 2 * math.pi
 TRAIL_E = resample(chaikin(pushed([(18.6, -58.5), (24.0, -57.0), (29.0, -54.0), (31.0, -50.0), (34.0, -45.0), (38.0, -39.0), (41.0, -32.0)]) + [(42.5, -23.5)]), 0.7)
 TRAIL_W = resample(chaikin(pushed([(-17.5, -55.2), (-23.0, -51.5), (-28.0, -47.5), (-32.0, -42.0), (-35.0, -36.0), (-38.5, -30.0), (-41.0, -25.5)]) + [(-42.5, -22.8)]), 0.7)
 SPUR = resample(chaikin(pushed([(31.0, -50.0), (32.6, -52.3), (33.2, -53.2)]), 2), 0.7)
-PATHS = LOOP + TRAIL_E + TRAIL_W + SPUR
+PUB_SPUR = resample(chaikin([(LOOP_RX + PATH_W / 2 - 0.3, CZ), (22.0, CZ - 1.0), (26.0, CZ - 2.4), (29.5, CZ - 3.9), PUB_GATE,
+                             (PUB_GATE[0] + 2.0 * PUB_GATE_U[0], PUB_GATE[1] + 2.0 * PUB_GATE_U[1])]), 0.7)
+PATHS = LOOP + TRAIL_E + TRAIL_W + SPUR + PUB_SPUR
+
+
+def pub_gate_cut(x, z):
+    along = x * PUB_GATE_U[0] + z * PUB_GATE_U[1]
+    across = abs(x * PUB_GATE_U[1] - z * PUB_GATE_U[0])
+    return (1.0 - ss(PUB_GATE_HW - 0.4, PUB_GATE_HW + 3.0, across)) * ss(FENCE_R - 14.0, FENCE_R - 6.0, along)
+
+
+def in_pub_corridor(x, z, margin=0.0):
+    along = x * PUB_GATE_U[0] + z * PUB_GATE_U[1]
+    return along > FENCE_R - 12.0 and abs(x * PUB_GATE_U[1] - z * PUB_GATE_U[0]) < PUB_GATE_HW + 0.5 + margin
 
 
 def terrain_h(x, z):
@@ -109,7 +137,7 @@ def terrain_h(x, z):
     und = max(0.0, 0.12 + 0.22 * math.sin(x * 0.21 + 0.7) * math.sin(z * 0.17 + 1.9) + 0.1 * math.sin(x * 0.47 + z * 0.31))
     ridge = ss(68.8 + PUSH, 74.0 + PUSH, r) * (5.0 + 1.4 * math.sin(th * 9.0) + 0.8 * math.sin(th * 23.0 + 1.3))
     berm = 1.6 * ss(45.4, 46.5, ax) * hedge
-    h = (hedge * (hills + und) + ridge + berm) * edge_fade
+    h = (hedge * (hills + und) + ridge + berm) * edge_fade * (1.0 - pub_gate_cut(x, z))
     e = pond_e(x, z)
     if e < 1.9:
         hp = BED_H + 0.3 * ss(1.0, 1.3, e)
@@ -286,6 +314,8 @@ def clear_of(x, z, rad, paths=2.0, spacing=0.7):
     if min_dist(CREEK, x, z) < CREEK_HW + 1.0 + rad or min_dist(PATHS, x, z) < paths + rad:
         return False
     if math.hypot(x - GAZEBO_C[0], z - GAZEBO_C[1]) < GAZEBO_R + 1.2 + rad or math.hypot(x - KIOSK[0], z - KIOSK[1]) < 3.0 + rad:
+        return False
+    if in_pub_corridor(x, z, rad):
         return False
     return all(math.hypot(x - px, z - pz) >= spacing + rad + pr for px, pz, pr in placed)
 
@@ -502,6 +532,7 @@ ribbon("PD_PathLoop", LOOP, PATH_W, P["path"], closed=True)
 ribbon("PD_PathEast", TRAIL_E, PATH_W, P["path"], lift=0.035)
 ribbon("PD_PathWest", TRAIL_W, PATH_W, P["path"], lift=0.035)
 ribbon("PD_PathGazebo", SPUR, 1.3, P["path"], lift=0.036)
+ribbon("PD_PathPub", PUB_SPUR, PATH_W, P["path"], lift=0.037)
 objs.append(L.box(coll, "PD_Avenue", 0, -34.5 - PUSH / 2, 0.0, 6.0, 27.0 + PUSH, 0.03, P["avenue"], tile=2.0))
 objs.append(L.box(coll, "PD_GateApron", 0, -46.8, 0.0, 14.0, 5.6, 0.035, P["avenue"], tile=2.0))
 for nm, gx in (("PD_CurbAvenueE", 3.15), ("PD_CurbAvenueW", -3.15)):
@@ -708,7 +739,7 @@ def mix(kinds):
 counts = {}
 counts["grove"] = scatter((-34.0, -46.0 - PUSH, 13.0), 22, 0.8, mix([("pine", 0.4), ("birch", 0.35), ("round", 0.25)]))
 counts["west_end"] = scatter((-40.0, -27.0 - PUSH, 7.0), 6, 0.8, mix([("round", 0.5), ("birch", 0.5)]))
-counts["gazebo_hill"] = scatter((31.0, -58.0 - PUSH, 8.0), 7, 0.8, mix([("round", 0.6), ("blossom", 0.4)]))
+counts["gazebo_hill"] = scatter((27.0, -53.0 - PUSH, 7.0), 7, 0.8, mix([("round", 0.6), ("blossom", 0.4)]))
 counts["east_meadow"] = scatter((38.0, -40.0 - PUSH, 9.0), 8, 0.8, mix([("round", 0.5), ("blossom", 0.5)]))
 counts["east_end"] = scatter((41.5, -26.0 - PUSH, 6.0), 4, 0.8, mix([("round", 1.0)]))
 counts["south_strip"] = scatter((0.0, -50.0 - PUSH, 26.0), 10, 0.8, mix([("round", 0.6), ("blossom", 0.25), ("birch", 0.15)]))
@@ -717,7 +748,8 @@ counts["north_strip"] = scatter((0.0, -67.5 - PUSH, 22.0), 6, 0.6, mix([("round"
 
 def ridge_ok(x, z, rad, _paths, spacing):
     r = math.hypot(x, z)
-    return FENCE_R + 1.2 <= r <= SKY_R - 1.0 and abs(x) < 45.5 and all(math.hypot(x - px, z - pz) >= spacing for px, pz, _ in placed)
+    return FENCE_R + 1.2 <= r <= SKY_R - 1.0 and abs(x) < 45.5 and not in_pub_corridor(x, z, rad) \
+        and all(math.hypot(x - px, z - pz) >= spacing for px, pz, _ in placed)
 
 
 counts["ridge"] = scatter((0.0, -60.0 - PUSH, 50.0), 34, 1.0, lambda x, z: (tree_pine(x, z, rnd.uniform(1.1, 1.7), collide=False) if rnd.random() < 0.7
@@ -732,7 +764,8 @@ for fx, fz in ((-9.5, -47.8), (11.8, -47.9)):
 def tuft_ok(x, z, rad, _p, _s):
     r = math.hypot(x, z)
     return HEDGE_R + 1.0 <= r <= FENCE_R - 0.4 and abs(x) < PARK_X - 0.5 and min_dist(PATHS, x, z) > 1.1 and pond_e(x, z) > 1.05 \
-        and mare_e(x, z) > 1.05 and min_dist(CREEK, x, z) > 1.1 and math.hypot(x - GAZEBO_C[0], z - GAZEBO_C[1]) > GAZEBO_R + 0.3
+        and mare_e(x, z) > 1.05 and min_dist(CREEK, x, z) > 1.1 and math.hypot(x - GAZEBO_C[0], z - GAZEBO_C[1]) > GAZEBO_R + 0.3 \
+        and not in_pub_corridor(x, z)
 
 
 tufts = 0
@@ -807,9 +840,7 @@ objs.append(L.furn(coll, "PD_Rowboat", PLATFORM_X1 + 1.0, -56.9 - PUSH, 0.15, [
     (0, 0.5, WATER_TOP + 0.14, 0.9, 0.22, 0.1, P["wood"]),
 ]))
 
-fence_n = int(round(2 * math.asin(PARK_X / FENCE_R) * FENCE_R / 2.4))
-th0 = -math.asin(PARK_X / FENCE_R)
-fence_pts = [(FENCE_R * math.sin(th0 + 2 * abs(th0) * i / fence_n), -FENCE_R * math.cos(th0 + 2 * abs(th0) * i / fence_n)) for i in range(fence_n + 1)]
+fence_pts = [fence_post(i) for i in range(FENCE_N + 1)]
 side_z_end = -math.sqrt(HEDGE_R ** 2 - PARK_X ** 2)
 arc_end_z = fence_pts[0][1]
 for sgn in (-1, 1):
@@ -819,9 +850,14 @@ for sgn in (-1, 1):
         fence_pts = list(reversed(side)) + fence_pts
     else:
         fence_pts = fence_pts + side
+in_gate = lambda fx, fz: math.hypot(fx - PUB_GATE[0], fz - PUB_GATE[1]) < 1.0
 for i, (fx, fz) in enumerate(fence_pts):
+    if in_gate(fx, fz):
+        continue
     objs.append(L.box(coll, f"PD_FencePost{i:03d}", fx, fz, ground(fx, fz, 0.1) - 0.05, 0.12, 0.12, 1.15, P["post"]))
 for i, ((x0, z0), (x1, z1)) in enumerate(zip(fence_pts, fence_pts[1:])):
+    if in_gate(x0, z0) or in_gate(x1, z1):
+        continue
     yaw = math.atan2(-(z1 - z0), x1 - x0)
     ln = math.hypot(x1 - x0, z1 - z0)
     base = (ground(x0, z0, 0.05) + ground(x1, z1, 0.05)) / 2
@@ -830,6 +866,23 @@ for i, ((x0, z0), (x1, z1)) in enumerate(zip(fence_pts, fence_pts[1:])):
     if math.hypot(x0, z0) > FENCE_R - 0.5 and math.hypot(x1, z1) > FENCE_R - 0.5:
         add_col(f"COL_Pond_Fence{i:03d}", (x0 + x1) / 2, (z0 + z1) / 2, ln + 0.3, 0.4, 1.2, yaw)
 
+for tag, (gx, gz) in zip("WE", PUB_GATE_PILLARS):
+    gy = ground(gx, gz, 0.4) - 0.05
+    objs.append(L.box(coll, f"PD_PubGatePillar{tag}", gx, gz, gy, 0.7, 0.7, 2.2, P["stone"], rot=PUB_GATE_TH, bevel=0.03, tile=1.0))
+    objs.append(L.box(coll, f"PD_PubGateCap{tag}", gx, gz, gy + 2.2, 0.9, 0.9, 0.16, P["stone"], rot=PUB_GATE_TH, bevel=0.03))
+    objs.append(L.box(coll, f"PD_PubGateLamp{tag}", gx, gz, gy + 2.36, 0.4, 0.4, 0.4, P["lamp"], rot=PUB_GATE_TH, bevel=0.04))
+    add_col(f"COL_Pond_PubGatePillar{tag}", gx, gz, 0.9, 0.9, 2.6, PUB_GATE_TH)
+pub_sign = (PUB_GATE[0] - 3.2 * PUB_GATE_U[0] + 2.0 * PUB_GATE_U[1], PUB_GATE[1] - 3.2 * PUB_GATE_U[1] - 2.0 * PUB_GATE_U[0])
+pub_sign_y = ground(*pub_sign, 0.2)
+objs.append(L.box(coll, "PD_PubSignPole", pub_sign[0], pub_sign[1], pub_sign_y, 0.14, 0.14, 2.4, P["post"]))
+objs.append(L.box(coll, "PD_PubSignBoard", pub_sign[0], pub_sign[1], pub_sign_y + 1.75, 2.2, 0.06, 0.34, P["deck"], rot=-PUB_GATE_TH))
+pub_sign_text = L.text_mesh(coll, "PD_PubSignText", "THE SALTY SHAMROCK >", pub_sign[0] - 0.04 * PUB_GATE_U[0], pub_sign[1] - 0.04 * PUB_GATE_U[1], pub_sign_y + 1.83, 0.17, 0.015,
+                            P["sign"], facing="+z")
+pub_sign_text.rotation_euler = (math.pi / 2, 0, -PUB_GATE_TH)
+objs.append(pub_sign_text)
+add_col("COL_Pond_PubSign", pub_sign[0], pub_sign[1], 2.2, 0.3, 2.4, -PUB_GATE_TH)
+placed.append((pub_sign[0], pub_sign[1], 1.0))
+
 L.export_glb(os.path.join(OUT, "pond.glb"), objs)
 heights = [round(walk_h(GRID_X0 + i, GRID_Z0 + j), 3) for j in range(GRID_ROWS) for i in range(GRID_COLS)]
 os.makedirs(OUT, exist_ok=True)
@@ -837,6 +890,7 @@ with open(os.path.join(OUT, "pond.layout.json"), "w", encoding="utf-8") as fh:
     json.dump({
         "version": 2,
         "gate": {"x": 0.0, "z": -46.0, "width": 12.2},
+        "pubGate": {"x": round(PUB_GATE[0], 3), "z": round(PUB_GATE[1], 3), "width": round(math.dist(*PUB_GATE_PILLARS) - 0.7, 3), "yaw": round(PUB_GATE_TH, 4)},
         "bounds": {"minZ": -71.0 - PUSH},
         "center": [0.0, 0.0, CZ],
         "fishingSpots": spots,

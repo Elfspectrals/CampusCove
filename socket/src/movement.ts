@@ -1,8 +1,9 @@
 import { canUseDoor } from './doors.ts'
+import { inSecretVolume } from './pub.ts'
 import { drainStamina, JUMP_STAMINA_COST, SPRINT_STAMINA_PER_S } from './stamina.ts'
 import { SPEED_BOOST_FACTOR } from './survivalStats.ts'
 import type { GameRoom, HousingUnit, Player } from './types.ts'
-import { type WorldHouse, worldBounds, worldHouse } from './world.ts'
+import { type WorldHouse, worldBounds, worldHouse, worldPub } from './world.ts'
 
 /** Must match WALK_SPEED / SPRINT_SPEED in front/src/game/gameRoomConstants.ts, plus a 25% margin. */
 const MAX_WALK_SPEED = 5 * 1.25
@@ -10,7 +11,7 @@ const MAX_SPRINT_SPEED = 8.5 * 1.25
 const MAX_MOVE_BUDGET_SECONDS = 1
 const MOVE_MARGIN = 1.5
 
-export type MoveRejection = 'out_of_world' | 'knocked_out' | 'too_fast' | 'locked_in' | 'locked_house'
+export type MoveRejection = 'out_of_world' | 'knocked_out' | 'too_fast' | 'locked_in' | 'locked_house' | 'secret_room_closed'
 
 export function toInterior(house: WorldHouse, x: number, z: number): { x: number, z: number } {
   const dx = x - house.position.x
@@ -34,11 +35,19 @@ export function unitAt(units: HousingUnit[], x: number, z: number): HousingUnit 
   return null
 }
 
+/** Gate only the way in: whoever is already inside (stair or basement) can always walk around and out. */
+function entersClosedSecretRoom(player: Player, x: number, y: number, z: number, now: number): boolean {
+  const pub = worldPub()
+  if (!pub || now <= player.pubSecretUntil) return false
+  return inSecretVolume(pub, x, y, z) && !inSecretVolume(pub, player.x, player.y, player.z)
+}
+
 function isLockedFor(room: GameRoom, unit: HousingUnit, player: Player): boolean {
   return unit.door_locked && !room.openDoors.has(unit.public_id) && !canUseDoor(unit, player.accountId)
 }
 
-export function moveRejection(room: GameRoom, player: Player, x: number, z: number, now: number, sprinting = false): MoveRejection | null {
+/** `y` is the eye height the move message carries (feet + 1.6), like player.y. */
+export function moveRejection(room: GameRoom, player: Player, x: number, y: number, z: number, now: number, sprinting = false): MoveRejection | null {
   const b = worldBounds()
   if (x < b.minX || x > b.maxX || z < b.minZ || z > b.maxZ) return 'out_of_world'
   if (now < player.knockedOutUntil) return 'knocked_out'
@@ -46,6 +55,7 @@ export function moveRejection(room: GameRoom, player: Player, x: number, z: numb
   const baseSpeed = sprinting ? MAX_SPRINT_SPEED : MAX_WALK_SPEED
   const maxSpeed = now < player.speedBoostUntil ? baseSpeed * SPEED_BOOST_FACTOR : baseSpeed
   if (Math.hypot(x - player.x, z - player.z) > maxSpeed * elapsed + MOVE_MARGIN) return 'too_fast'
+  if (entersClosedSecretRoom(player, x, y, z, now)) return 'secret_room_closed'
   const from = unitAt(room.housingUnits, player.x, player.z)
   const to = unitAt(room.housingUnits, x, z)
   if (from === to) return null

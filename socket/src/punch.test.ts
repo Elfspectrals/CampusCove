@@ -35,6 +35,8 @@ function fakeRoom(attacker: Player, target: Player): FakeRoom {
     clients,
     players,
     housingUnits: [],
+    seats: new Map(),
+    pub: { secretOpen: false, race: null, darts: null, challenges: new Map(), challengeSentAt: new Map() },
     forEachClient: (fn: (c: FakeClient) => void) => clients.forEach(fn),
     clock: { setTimeout: () => undefined }
   } as unknown as FakeRoom

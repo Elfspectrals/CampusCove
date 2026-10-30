@@ -1,5 +1,6 @@
 // Hunger / thirst / health rules, without Colyseus so they can be unit-tested (survivalStats.test.ts).
 // Values go from 0 to 100. Front mirror (for display only): front/src/game/survival.ts.
+import { INTOXICATION_DECAY_PER_S, INTOXICATION_MAX } from './pubConstants.ts'
 import type { ClinicBedOccupant, HealOverTime, Stats } from './types.ts'
 
 export const MAX_STAT = 100
@@ -32,6 +33,7 @@ export interface Portion {
   health?: number
   hunger?: number
   thirst?: number
+  alcohol?: number
   effect?: string | null
 }
 
@@ -81,6 +83,14 @@ export function applyPortion(stats: Stats, portion: Portion): Stats {
     hunger: clamp(stats.hunger + (portion.hunger ?? 0)),
     thirst: clamp(stats.thirst + (portion.thirst ?? 0))
   }
+}
+
+export function addIntoxication(intoxication: number, alcohol: number): number {
+  return Math.max(0, Math.min(INTOXICATION_MAX, intoxication + alcohol))
+}
+
+export function decayIntoxication(intoxication: number, dtSeconds: number, timeScale = 1): number {
+  return Math.max(0, intoxication - INTOXICATION_DECAY_PER_S * dtSeconds * timeScale)
 }
 
 export function startHealOverTime(now: number, amount: number): HealOverTime {

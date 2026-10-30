@@ -23,6 +23,14 @@ import GamePointerLockOverlay from '../components/game/GamePointerLockOverlay.vu
 import GameSettingsDialog from '../components/game/GameSettingsDialog.vue'
 import GameStoreItemCard from '../components/game/GameStoreItemCard.vue'
 import GameCafeMenu from '../components/game/GameCafeMenu.vue'
+import GamePubMenu from '../components/game/GamePubMenu.vue'
+import GamePubSecretDialog from '../components/game/GamePubSecretDialog.vue'
+import GameDrunkEffects from '../components/game/GameDrunkEffects.vue'
+import GameDrinkFast from '../components/game/GameDrinkFast.vue'
+import GamePubChallenge from '../components/game/GamePubChallenge.vue'
+import GamePubRaceBoard from '../components/game/GamePubRaceBoard.vue'
+import GameMeterShot from '../components/game/GameMeterShot.vue'
+import GameDarts from '../components/game/GameDarts.vue'
 import GameBasketCheckout from '../components/game/GameBasketCheckout.vue'
 import GameWardrobe from '../components/game/GameWardrobe.vue'
 import GameSurvivalEffects from '../components/game/GameSurvivalEffects.vue'
@@ -43,8 +51,13 @@ import { useCityHousing } from '../composables/game/useCityHousing'
 import { useGameMovement } from '../composables/game/useGameMovement'
 import { useGameRealtime } from '../composables/game/useGameRealtime'
 import { useInteractionTargets } from '../composables/game/useInteractionTargets'
+import { useIntoxication } from '../composables/game/useIntoxication'
 import { usePlayerInventory } from '../composables/game/usePlayerInventory'
+import { usePub } from '../composables/game/usePub'
+import { usePubChallenge } from '../composables/game/usePubChallenge'
+import { usePubGames } from '../composables/game/usePubGames'
 import { useRoomEnvironment } from '../composables/game/useRoomEnvironment'
+import { useSeats } from '../composables/game/useSeats'
 import { useSurvival } from '../composables/game/useSurvival'
 import { useTrade } from '../composables/game/useTrade'
 import { usePunch } from '../composables/game/usePunch'
@@ -77,7 +90,7 @@ import { createAmbientLoop } from '../game/ambientLoop'
 import { MAX_STAMINA } from '../game/stamina'
 import { createDoorSigns } from '../game/town/doorSigns'
 import { frontDoorNode, houseKeyAt, openHouseInterior, rattleFrontDoor, updateFrontDoors } from '../game/town/openHouses'
-import { isMedicalItem } from '../utils/itemShopPresentation'
+import { isAlcoholItem, isMedicalItem } from '../utils/itemShopPresentation'
 
 const router = useRouter()
 const containerRef = ref<HTMLElement | null>(null)
@@ -352,6 +365,110 @@ const housing = useCityHousing({
   holdingHouseKey,
 })
 
+// ---------------------------------------------------------------- The Salty Shamrock: seats, bar, games
+
+const canUsePub = () => !survival.knockedOut.value && survival.recovering.value === null
+
+const seats = useSeats({
+  myPosition,
+  getCamera,
+  canvasRef,
+  gameRoomRef,
+  promptsHidden: () => inventoryOpen.value,
+  canSit: canUsePub,
+  teleport: (x, y, z) => {
+    Object.assign(myPosition, { x, y, z })
+    getCamera()?.position.set(x, y, z)
+  },
+  setLook: (yaw, pitch) => movement.setLook(yaw, pitch),
+})
+
+/** The drink picked up on the bar goes straight in hand. */
+function selectHotbarItem(code: string): void {
+  pickupToHotbar(code)
+  const slot = slots.value.indexOf(code)
+  if (slot >= 0 && slot < 9) selectHotbarIndex(slot)
+}
+
+const pub = usePub({
+  myPosition,
+  getCamera,
+  canvasRef,
+  gameRoomRef,
+  promptsHidden: () => inventoryOpen.value || !canUsePub(),
+  seated: () => seats.seated.value,
+  refreshInventory: () => refreshOwnedItems(),
+  selectHotbarItem,
+  say: (text) => survival.say(text),
+  onError: (code) => {
+    seats.onPubError()
+    return pubChallenge.onError(code)
+  },
+  nudgeCamera: (dirX, dirZ, strength) => {
+    if (!reducedEffects.value) movement.joltCamera(dirX, dirZ, strength)
+  },
+})
+const {
+  menuOpen: pubMenuOpen,
+  menu: pubMenu,
+  loading: pubLoading,
+  ordering: pubOrdering,
+  feedback: pubFeedback,
+  via: pubVia,
+  secretOpen: pubSecretOpen,
+  secretReply: pubSecretReply,
+  secretPending: pubSecretPending,
+} = pub
+
+const pubGames = usePubGames({
+  myPosition,
+  getCamera,
+  canvasRef,
+  gameRoomRef,
+  promptsHidden: () => inventoryOpen.value || !canUsePub(),
+  mySeat: () => seats.mySeat.value,
+  holdingConsumable: () => survival.heldConsumable() !== null,
+  pseudoOf: (sessionId) => (sessionId === gameRoomRef.value?.sessionId ? getStoredAuth()?.user.display_name ?? 'You' : realtime.remotePseudo(sessionId) ?? '…'),
+  say: (text) => survival.say(text),
+  setRacePint: (sessionId, progress) => realtime.setRemoteRacePint(sessionId, progress),
+})
+const {
+  race: pubRace,
+  raceOpen: pubRaceOpen,
+  racePlayers: pubRacePlayers,
+  shots: pubShots,
+  darts: pubDarts,
+  dartsOpen: pubDartsOpen,
+  dartsPlayers: pubDartsPlayers,
+  uiOpen: pubGamesOpen,
+  board: pubRaceBoard,
+} = pubGames
+
+const pubChallenge = usePubChallenge({
+  getScene,
+  getCamera,
+  canvasRef,
+  gameRoomRef,
+  promptsHidden: () => inventoryOpen.value || !canUsePub(),
+  mySeat: () => seats.mySeat.value,
+  seatOf: seats.seatOf,
+  busy: () => pubRace.value !== null || pubGamesOpen.value,
+  holdingConsumable: () => survival.heldConsumable() !== null,
+  pseudoOf: (sessionId) => realtime.remotePseudo(sessionId) ?? '…',
+  say: (text) => survival.say(text),
+})
+const { incoming: pubChallengeIncoming, outgoing: pubChallengeOutgoing } = pubChallenge
+
+function closePubRace(): void {
+  pubGames.closeRace()
+  pubChallenge.clear()
+}
+const pubUiOpen = computed(() => pubMenuOpen.value || pubSecretOpen.value || pubGamesOpen.value)
+// Back to mouse look once the menu, the bouncer or a game screen closes.
+watch(pubUiOpen, (open) => {
+  if (!open && !document.pointerLockElement) requestPointerLock()
+})
+
 const interactions = useInteractionTargets({
   myPosition,
   getCamera,
@@ -386,6 +503,7 @@ const interactions = useInteractionTargets({
     return { position: target.tagPosition, detail }
   },
   onStoreTarget: () => (clothesTarget.value ? activeClothing.value?.toggleTarget() : openStorePurchase()),
+  sources: [pub.source, pubChallenge.source, pubGames.source, seats.source],
 })
 const { doorPrompt } = interactions
 
@@ -476,6 +594,7 @@ const survival = useSurvival({
   setLook: (yaw, pitch) => movement.setLook(yaw, pitch),
   promptsHidden: () => inventoryOpen.value,
   onStamina: (value) => punch.syncStamina(value),
+  onIntoxication: (value) => intoxication.set(value),
   onWatchTap: () => {
     if (pointerLocked.value && !inventoryOpen.value) trade.openMenu()
   },
@@ -485,12 +604,16 @@ const {
   effects: survivalEffects,
   damageFlash,
   knockedOut,
+  knockoutCause,
   hospitalBill,
   lostBelongings,
   message: survivalMessage,
   reducedEffects,
   recovering,
 } = survival
+
+const intoxication = useIntoxication({ reducedEffects })
+const { effects: drunkEffects, canvasFilter: drunkCanvasFilter } = intoxication
 
 const cafe = useCafeCounter({
   myPosition,
@@ -550,13 +673,14 @@ const heldFoodHint = computed(() => {
   if (!item || !pointerLocked.value) return null
   const cookKey = actionKeyLabels('cook')[0]
   const cook = item.code === 'food_fish_raw' && cookKey ? ` · ${cookKey} at a stove / BBQ: cook` : ''
-  const verb = isMedicalItem(item) ? 'use' : 'eat'
+  const verb = isMedicalItem(item) ? 'use' : isAlcoholItem(item) ? 'drink' : 'eat'
   return `Click: ${verb} ${item.name}${cook}`
 })
 
 const canvasFilter = computed(() => {
   const desaturation = survivalEffects.value?.desaturation ?? 0
-  return desaturation > 0 ? { filter: `saturate(${(1 - desaturation).toFixed(2)})` } : undefined
+  const filters = [desaturation > 0 ? `saturate(${(1 - desaturation).toFixed(2)})` : '', drunkCanvasFilter.value].filter(Boolean)
+  return filters.length > 0 ? { filter: filters.join(' ') } : undefined
 })
 
 function isBuildingDoorOpen(buildingKey: string): boolean {
@@ -582,6 +706,9 @@ const environment = useRoomEnvironment({
     interactions.setWorldManifest(manifest)
     survival.onTownLoaded(manifest)
     clinic.onTownLoaded(manifest)
+    seats.onTownLoaded(manifest)
+    pub.onTownLoaded(manifest)
+    pubGames.onTownLoaded(manifest)
     houseFurniture.onTownReady()
     for (const { key, store } of furnitureStores) {
       const interior = openHouseInterior(key)
@@ -650,12 +777,19 @@ const pauseMenuOpen = computed(
     !clinicMenuOpen.value &&
     !clothesCheckoutOpen.value &&
     !tradeUiOpen.value &&
+    !pubUiOpen.value &&
     !settingsOpen.value,
 )
 
 function handleExtraKeyDown(e: KeyboardEvent): boolean {
   // the watch and the trade window take the keyboard (coins field, Esc): no game key behind them
   if (tradeUiOpen.value) return true
+  // the bouncer's text field and the pub games (Space holds the pint) take the keyboard too
+  if (pubSecretOpen.value || pubGamesOpen.value) return true
+  // Y / N answer a Drink Fast challenge
+  if (pubChallenge.onKeyDown(e)) return true
+  // seated at the pub: a step or a jump stands the player up instead of moving
+  if (seats.onKeyDown(e)) return true
   // some browsers also deliver the Esc that released the lock: ignore it, or the menu would flash away
   // defaultPrevented: the inventory / cafe menu already used this Esc to close themselves
   if (e.code === 'Escape' && !e.repeat && !e.defaultPrevented && pauseMenuOpen.value && !placementPreviewActive.value) {
@@ -703,7 +837,9 @@ const movement = useGameMovement({
     if (placement.onPointerDown(e)) return true
     return pointerLocked.value && runUseOrPunch(mouseButtonCode(e.button), false)
   },
-  speedFactor: () => survival.speedFactor(),
+  speedFactor: () => survival.speedFactor() * intoxication.walkFactor(),
+  movementLocked: () => seats.seated.value,
+  afterCameraPlaced: intoxication.applyToCamera,
   trySpendJump: () => punch.trySpendJump(),
   trySpendSprint: (dt, wasSprinting) => punch.trySpendSprint(dt, wasSprinting),
   onBeforeRender: (dt) => {
@@ -725,6 +861,8 @@ const movement = useGameMovement({
     cafe.updatePrompt()
     for (const store of clothingStores) store.updatePrompt()
     clinic.updatePrompt()
+    pub.tick(dt)
+    pubGames.tick()
     if (!doorSigns.group.parent) getScene()?.add(doorSigns.group)
   },
 })
@@ -783,6 +921,10 @@ const realtime = useGameRealtime({
   playSoundOn: sfx.playOn,
   punchHitTiming: punch.remoteHitTimingFor,
   trade: trade.handlers,
+  seats: { seatPose: seats.seatPose, onSeated: seats.onSeated },
+  pub: pub.handlers,
+  pubGames: pubGames.handlers,
+  pubChallenge: pubChallenge.handlers,
 })
 const { switchingRoom } = realtime
 
@@ -924,12 +1066,14 @@ const crosshairClass = computed(() => {
       :effects="survivalEffects"
       :damage-flash="damageFlash"
       :knocked-out="knockedOut"
+      :cause="knockoutCause"
       :hospital-bill="hospitalBill"
       :lost-belongings="lostBelongings"
       :message="survivalMessage"
       :recovering="recovering"
       :reduced-effects="reducedEffects"
     />
+    <GameDrunkEffects :effects="drunkEffects" />
     <GameRoomMessageBanner v-if="roomMessage" :message="roomMessage" />
     <GameHudToolbar
       :position-label="positionLabel"
@@ -1159,6 +1303,63 @@ const crosshairClass = computed(() => {
       :feedback="clinicFeedback"
       @buy="clinic.buy"
       @close="clinic.close"
+    />
+    <GamePubMenu
+      v-if="pubMenuOpen"
+      :items="pubMenu"
+      :loading="pubLoading"
+      :ordering="pubOrdering"
+      :feedback="pubFeedback"
+      :via="pubVia"
+      @order="pub.order"
+      @close="pub.close"
+    />
+    <GamePubSecretDialog
+      v-if="pubSecretOpen"
+      :greeting="pub.bouncerGreeting"
+      :reply="pubSecretReply"
+      :pending="pubSecretPending"
+      @whisper="pub.whisper"
+      @close="pub.closeSecret"
+    />
+    <GameDrinkFast
+      v-if="pubRaceOpen && pubRace"
+      :seed="pubRace.seed"
+      :players="pubRacePlayers"
+      :starts-at="pubRace.startsAt"
+      :finished="pubRace.finished"
+      :results="pubRace.results"
+      :reduced-effects="reducedEffects"
+      @progress="pubGames.sendRaceProgress"
+      @close="closePubRace"
+    />
+    <GamePubRaceBoard v-if="pubRaceBoard" :board="pubRaceBoard" />
+    <GamePubChallenge
+      v-if="!pubGamesOpen"
+      :incoming="pubChallengeIncoming"
+      :outgoing="pubChallengeOutgoing"
+      @accept="pubChallenge.accept"
+      @decline="pubChallenge.decline"
+    />
+    <GameMeterShot
+      v-if="pubShots"
+      :seed="pubShots.seed"
+      :started-at="pubShots.startedAt"
+      :result="pubShots.result"
+      @done="pubGames.sendShotsDone"
+      @close="pubGames.closeShots"
+    />
+    <GameDarts
+      v-if="pubDartsOpen && pubDarts"
+      :players="pubDartsPlayers"
+      :turn="pubDarts.turn"
+      :my-session-id="gameRoomRef?.sessionId ?? ''"
+      :throws-left="pubDarts.throwsLeft"
+      :turn-ends-at="pubDarts.turnEndsAt"
+      :intoxication="intoxication.value.value"
+      :ranking="pubDarts.ranking"
+      @throw="pubGames.sendThrow"
+      @close="pubGames.closeDarts"
     />
     <ItemShopPurchaseConfirmModal
       v-if="storeConfirmItem"

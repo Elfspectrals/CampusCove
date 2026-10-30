@@ -15,6 +15,22 @@ import {
   workDoorId
 } from './doors.ts'
 import { moveRejection, onJump, spendSprintStamina } from './movement.ts'
+import { blockAtSecretDoor, onPubBell, onPubOrder, onPubSecret, onSit } from './pub.ts'
+import {
+  leavePub,
+  onDartsJoin,
+  onDartsThrow,
+  onRaceChallenge,
+  onRaceChallengeReply,
+  onRaceJoin,
+  onRaceLeave,
+  onRaceOpen,
+  onRaceProgress,
+  onShotsDone,
+  onShotsStart,
+  onStand,
+  standUp
+} from './pubGames.ts'
 import { onPunch } from './punch.ts'
 import {
   createPlayer,
@@ -57,7 +73,8 @@ import type {
   HouseFurniture,
   HousingUnit,
   Identity,
-  Player
+  Player,
+  PubState
 } from './types.ts'
 import { citySpawn, workDoor } from './world.ts'
 
@@ -74,6 +91,8 @@ export class CityRoom extends Room implements GameRoom {
   openDoors = new Set<string>()
   clinicBeds = new Map<string, ClinicBedOccupant>()
   trades = new Map<string, Trade>()
+  seats = new Map<string, string>()
+  pub: PubState = { secretOpen: false, race: null, darts: null, challenges: new Map(), challengeSentAt: new Map() }
 
   onCreate() {
     this.maxClients = CITY_MAX_PLAYERS
@@ -99,6 +118,21 @@ export class CityRoom extends Room implements GameRoom {
     this.onMessage('trade_offer', (client, payload: ClientPayload) => void onTradeOffer(this, client, payload))
     this.onMessage('trade_confirm', (client, payload: ClientPayload) => void onTradeConfirm(this, client, payload))
     this.onMessage('trade_cancel', (client, payload: ClientPayload) => onTradeCancel(this, client, payload))
+    this.onMessage('sit', (client, payload: ClientPayload) => onSit(this, client, payload))
+    this.onMessage('stand', (client) => onStand(this, client))
+    this.onMessage('pub_order', (client, payload: ClientPayload) => void onPubOrder(this, client, payload))
+    this.onMessage('pub_secret', (client, payload: ClientPayload) => onPubSecret(this, client, payload))
+    this.onMessage('pub_bell', (client) => onPubBell(this, client))
+    this.onMessage('pub_race_open', (client) => void onRaceOpen(this, client))
+    this.onMessage('pub_race_join', (client) => void onRaceJoin(this, client))
+    this.onMessage('pub_race_leave', (client) => onRaceLeave(this, client))
+    this.onMessage('pub_race_challenge', (client, payload: ClientPayload) => onRaceChallenge(this, client, payload))
+    this.onMessage('pub_race_challenge_reply', (client, payload: ClientPayload) => void onRaceChallengeReply(this, client, payload))
+    this.onMessage('pub_race_progress', (client, payload: ClientPayload) => onRaceProgress(this, client, payload))
+    this.onMessage('pub_shots_start', (client) => void onShotsStart(this, client))
+    this.onMessage('pub_shots_done', (client, payload: ClientPayload) => void onShotsDone(this, client, payload))
+    this.onMessage('pub_darts_join', (client) => void onDartsJoin(this, client))
+    this.onMessage('pub_darts_throw', (client, payload: ClientPayload) => onDartsThrow(this, client, payload))
     this.clock.setInterval(() => void this.pollHousingUnits(), HOUSING_POLL_MS)
     this.clock.setInterval(() => tickSurvival(this, SURVIVAL_TICK_MS / 1000), SURVIVAL_TICK_MS)
   }
@@ -120,7 +154,10 @@ export class CityRoom extends Room implements GameRoom {
     if (staleSessionId && staleSessionId !== client.sessionId) {
       this.clients.find((c) => c.sessionId === staleSessionId)?.leave(4001, 'duplicate session')
       const stale = this.players.get(staleSessionId)
-      if (stale) onTradeLeave(this, stale)
+      if (stale) {
+        onTradeLeave(this, stale)
+        leavePub(this, stale)
+      }
       this.players.delete(staleSessionId)
       // saved before this session loads them
       if (stale) await saveSurvival(stale)
@@ -137,7 +174,8 @@ export class CityRoom extends Room implements GameRoom {
       users: this.otherPlayers(client),
       housingUnits: this.housingUnits,
       houseFurniture: this.houseFurniture,
-      openDoors: [...this.openDoors]
+      openDoors: [...this.openDoors],
+      pubSecretOpen: this.pub.secretOpen
     })
     this.forEachClient((c) => c.send('user_joined', publicPlayer(player)), client)
     if (player.token) await loadSurvival(client, player)
@@ -149,6 +187,7 @@ export class CityRoom extends Room implements GameRoom {
     if (!player) return
     releaseClinicBed(this, player)
     onTradeLeave(this, player)
+    leavePub(this, player)
     void saveSurvival(player)
     if (this.sessionByAccountId.get(player.accountId) === client.sessionId) {
       this.sessionByAccountId.delete(player.accountId)
@@ -175,17 +214,24 @@ export class CityRoom extends Room implements GameRoom {
     const player = this.players.get(client.sessionId)
     if (!player || !payload || typeof payload !== 'object') return
     const x = normalizeNumber(payload.x, player.x)
+    const y = normalizeNumber(payload.y, player.y)
     const z = normalizeNumber(payload.z, player.z)
     const now = Date.now()
     const sprinting = payload.sprint === true
-    if (moveRejection(this, player, x, z, now, sprinting) !== null) {
+    if (player.seatId) standUp(this, player)
+    const rejection = moveRejection(this, player, x, y, z, now, sprinting)
+    if (rejection === 'secret_room_closed') {
+      blockAtSecretDoor(this, client, player, now)
+      return
+    }
+    if (rejection !== null) {
       client.send('position_correction', { x: player.x, y: player.y, z: player.z })
       return
     }
     const previousY = player.y
     const distXZ = Math.hypot(x - player.x, z - player.z)
     player.x = x
-    player.y = normalizeNumber(payload.y, player.y)
+    player.y = y
     player.z = z
     player.ry = normalizeNumber(payload.ry, player.ry)
     if (sprinting && distXZ > 0) spendSprintStamina(player, now - player.lastMoveAt, now)

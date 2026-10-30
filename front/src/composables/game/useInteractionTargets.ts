@@ -25,6 +25,13 @@ export interface ScreenPrompt {
   detail?: string
 }
 
+/** Something else the player can use where they stand, checked after the doors in the order given. */
+export interface InteractionSource {
+  prompt: () => ScreenPrompt | null
+  /** Returns true when it used the interaction. */
+  interact: () => boolean
+}
+
 export interface InteractionTargetsDeps {
   myPosition: { x: number; y: number; z: number }
   getCamera: () => THREE.Camera | undefined
@@ -41,6 +48,8 @@ export interface InteractionTargetsDeps {
   /** Inside Cove Home: the item being looked at (its price-tag anchor + prompt text), and buying it. */
   storeTarget: () => { position: [number, number, number]; detail: string } | null
   onStoreTarget: () => void
+  /** Lower-priority targets (pub counters, seats, games), in priority order. */
+  sources?: InteractionSource[]
 }
 
 type PublicLot = WorkLot | StoreBuilding
@@ -84,7 +93,7 @@ export function useInteractionTargets(deps: InteractionTargetsDeps) {
     if (deps.nearbyHousingUnit.value) deps.onHousingDoor()
     else if (work) deps.onWorkDoor(work)
     else if (spot) deps.onFishingSpot(spot)
-    else return false
+    else return (deps.sources ?? []).some((source) => source.interact())
     return true
   }
 
@@ -125,6 +134,10 @@ export function useInteractionTargets(deps: InteractionTargetsDeps) {
     if (spot) {
       const screen = projectToScreen(spot.lookAt[0], spot.lookAt[1] + 0.8, spot.lookAt[2])
       return screen && { ...screen, action: 'Fish' }
+    }
+    for (const source of deps.sources ?? []) {
+      const prompt = source.prompt()
+      if (prompt) return prompt
     }
     return null
   }

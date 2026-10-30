@@ -115,8 +115,8 @@ const HOUSES: readonly HouseAsset[] = [
  * Built by map-src/CampusCove/build_work_*.py → public/assets/work/<key>/ (see docs/ASSETS_STYLE_GUIDE.md §7).
  * `interior.layout.json` lists the stations (`station_<job>_NN`) that the job gameplay attaches to.
  */
-export type WorkKey = 'tech_hub' | 'boutique' | 'cafe' | 'clinic'
-export type WorkJob = 'dev' | 'commerce' | 'resto' | 'medic'
+export type WorkKey = 'tech_hub' | 'boutique' | 'cafe' | 'clinic' | 'pub'
+export type WorkJob = 'dev' | 'commerce' | 'resto' | 'medic' | 'barman'
 
 export interface WorkAsset {
   key: WorkKey
@@ -149,6 +149,7 @@ const WORKS: readonly WorkAsset[] = [
   work('boutique', 'Boutique', 'commerce'),
   work('cafe', 'Campus Cafe', 'resto'),
   work('clinic', 'Cove Clinic', 'medic'),
+  work('pub', 'The Salty Shamrock', 'barman'),
 ]
 
 export function findWork(key: string | null | undefined): WorkAsset | null {
@@ -225,22 +226,28 @@ const CONSUMABLE_FOLDERS: ReadonlyArray<[prefix: string, folder: string]> = [
   ['food_', 'food'],
   ['candy_', 'sweets'],
   ['med_', 'medical'],
+  ['drink_', 'drinks'],
 ]
+
+function consumableFolder(code: string): string {
+  const match = CONSUMABLE_FOLDERS.find(([prefix]) => code.startsWith(prefix))
+  if (!match) throw new Error(`No asset folder for consumable code "${code}"`)
+  const [prefix, folder] = match
+  return `${ROOT}/items/${folder}/${code.slice(prefix.length)}`
+}
 
 /**
  * Preview picture of a consumable (backend FoodCatalog): `food_<key>` -> items/food/<key>/preview.png,
- * `med_<key>` -> items/medical/<key>/preview.png.
+ * `candy_<key>` -> items/sweets/<key>/preview.png, `med_<key>` -> items/medical/<key>/preview.png,
+ * `drink_<key>` -> items/drinks/<key>/preview.png.
  */
 export function consumablePreviewUrl(code: string): string {
-  const match = CONSUMABLE_FOLDERS.find(([prefix]) => code.startsWith(prefix))
-  if (!match) throw new Error(`No preview folder for consumable code "${code}"`)
-  const [prefix, folder] = match
-  return `${ROOT}/items/${folder}/${code.slice(prefix.length)}/preview.png`
+  return `${consumableFolder(code)}/preview.png`
 }
 
-/** The model of a consumable, shown on GreenCart's shelves: next to its preview. */
+/** The model of a consumable: on the GreenCart and Candy Cloud shelves, and on the pub bar while the barman pours it. */
 export function consumableModelUrl(code: string): string {
-  return consumablePreviewUrl(code).replace(/preview\.png$/, 'model.glb')
+  return `${consumableFolder(code)}/model.glb`
 }
 
 /** Furniture model shown in the store and placed in houses: public/assets/decor/<key>/model.glb. */

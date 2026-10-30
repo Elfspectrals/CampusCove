@@ -18,6 +18,26 @@ import type {
   DoorSoundPayload,
   HouseFurniturePayload,
   HousingUnitPayload,
+  PubBellPayload,
+  PubBouncerBlockPayload,
+  PubDartsEndPayload,
+  PubDartsLobbyPayload,
+  PubDartsStatePayload,
+  PubErrorPayload,
+  PubPouringPayload,
+  PubRaceChallengeCancelledPayload,
+  PubRaceChallengedPayload,
+  PubRaceChallengeResultPayload,
+  PubRaceChallengeSentPayload,
+  PubRaceEndPayload,
+  PubRaceLobbyPayload,
+  PubRaceStartPayload,
+  PubRaceStatePayload,
+  PubSecretDoorPayload,
+  PubSecretResultPayload,
+  PubServedPayload,
+  PubShotsReadyPayload,
+  PubShotsResultPayload,
   PunchTiredPayload,
   RemoteUserPayload,
   RoomInitPayload,
@@ -30,8 +50,9 @@ import type {
   TradeStatePayload,
   UserActionPayload,
   UserPunchedPayload,
+  UserSeatedPayload,
 } from '../../types/gameRealtime'
-import { useRemoteAvatars } from './useRemoteAvatars'
+import { useRemoteAvatars, type SeatPose } from './useRemoteAvatars'
 import { PUNCH_DAMAGE } from '../../game/punch'
 
 const REALTIME_HTTP_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000'
@@ -90,6 +111,40 @@ export interface GameRealtimeDeps {
     onCompleted: (data: TradeCompletedPayload) => void
     onError: (data: TradeErrorPayload) => void
   }
+  /** Pub seats (useSeats): where a seat is, and this player's own seat changes. */
+  seats: {
+    seatPose: (seatId: string | null | undefined) => SeatPose | null
+    onSeated: (data: UserSeatedPayload, mySessionId: string) => void
+  }
+  /** The Salty Shamrock bar (usePub). */
+  pub: {
+    onPouring: (data: PubPouringPayload, mySessionId: string) => void
+    onServed: (data: PubServedPayload) => void
+    onError: (data: PubErrorPayload) => void
+    onSecretResult: (data: PubSecretResultPayload) => void
+    onSecretDoor: (data: PubSecretDoorPayload) => void
+    onBouncerBlock: (data: PubBouncerBlockPayload, mySessionId: string) => void
+    onBell: (data: PubBellPayload) => void
+  }
+  /** Drink Fast, Meter Shot and Darts (usePubGames). */
+  pubGames: {
+    onRaceLobby: (data: PubRaceLobbyPayload) => void
+    onRaceStart: (data: PubRaceStartPayload) => void
+    onRaceState: (data: PubRaceStatePayload) => void
+    onRaceEnd: (data: PubRaceEndPayload) => void
+    onShotsReady: (data: PubShotsReadyPayload) => void
+    onShotsResult: (data: PubShotsResultPayload) => void
+    onDartsLobby: (data: PubDartsLobbyPayload) => void
+    onDartsState: (data: PubDartsStatePayload) => void
+    onDartsEnd: (data: PubDartsEndPayload) => void
+  }
+  /** Drink Fast challenges between two seated players (usePubChallenge). */
+  pubChallenge: {
+    onChallenged: (data: PubRaceChallengedPayload) => void
+    onSent: (data: PubRaceChallengeSentPayload) => void
+    onResult: (data: PubRaceChallengeResultPayload) => void
+    onCancelled: (data: PubRaceChallengeCancelledPayload) => void
+  }
 }
 
 /** Colyseus 'city' room: connection, server message bindings and other players' avatars. */
@@ -138,11 +193,13 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       deps.loadTown()
       setMyPosition(payload.me.x, payload.me.y, payload.me.z)
       for (const u of payload.users) {
-        if (u.sessionId !== room.sessionId) void remotes.upsert(u.sessionId, u)
+        if (u.sessionId !== room.sessionId) void remotes.upsert(u.sessionId, u, deps.seats.seatPose(u.seatId))
+        deps.seats.onSeated({ sessionId: u.sessionId, seatId: u.seatId ?? null }, room.sessionId)
       }
       if (payload.housingUnits !== undefined) syncHousingUnits(payload.housingUnits)
       if (payload.houseFurniture !== undefined) deps.onHouseFurnitureSync(payload.houseFurniture)
       if (payload.openDoors !== undefined) deps.onDoorsSync(payload.openDoors)
+      deps.pub.onSecretDoor({ open: payload.pubSecretOpen === true })
     })
 
     room.onMessage('housing_units_sync', (data: { units?: unknown }) => syncHousingUnits(data.units))
@@ -157,7 +214,13 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     })
 
     room.onMessage('user_joined', (data: RemoteUserPayload) => {
-      if (data.sessionId !== room.sessionId) void remotes.upsert(data.sessionId, data)
+      if (data.sessionId !== room.sessionId) void remotes.upsert(data.sessionId, data, deps.seats.seatPose(data.seatId))
+      deps.seats.onSeated({ sessionId: data.sessionId, seatId: data.seatId ?? null }, room.sessionId)
+    })
+
+    room.onMessage('user_seated', (data: UserSeatedPayload) => {
+      if (data.sessionId !== room.sessionId) remotes.setSeated(data.sessionId, deps.seats.seatPose(data.seatId))
+      deps.seats.onSeated(data, room.sessionId)
     })
 
     room.onMessage('user_moved', (data: { sessionId: string; x: number; y: number; z: number; ry?: number }) => {
@@ -202,6 +265,27 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('trade_closed', (data: TradeClosedPayload) => deps.trade.onClosed(data))
     room.onMessage('trade_completed', (data: TradeCompletedPayload) => deps.trade.onCompleted(data))
     room.onMessage('trade_error', (data: TradeErrorPayload) => deps.trade.onError(data))
+
+    room.onMessage('pub_pouring', (data: PubPouringPayload) => deps.pub.onPouring(data, room.sessionId))
+    room.onMessage('pub_served', (data: PubServedPayload) => deps.pub.onServed(data))
+    room.onMessage('pub_error', (data: PubErrorPayload) => deps.pub.onError(data))
+    room.onMessage('pub_secret_result', (data: PubSecretResultPayload) => deps.pub.onSecretResult(data))
+    room.onMessage('pub_secret_door', (data: PubSecretDoorPayload) => deps.pub.onSecretDoor(data))
+    room.onMessage('pub_bouncer_block', (data: PubBouncerBlockPayload) => deps.pub.onBouncerBlock(data, room.sessionId))
+    room.onMessage('pub_bell', (data: PubBellPayload) => deps.pub.onBell(data))
+    room.onMessage('pub_race_lobby', (data: PubRaceLobbyPayload) => deps.pubGames.onRaceLobby(data))
+    room.onMessage('pub_race_start', (data: PubRaceStartPayload) => deps.pubGames.onRaceStart(data))
+    room.onMessage('pub_race_state', (data: PubRaceStatePayload) => deps.pubGames.onRaceState(data))
+    room.onMessage('pub_race_end', (data: PubRaceEndPayload) => deps.pubGames.onRaceEnd(data))
+    room.onMessage('pub_race_challenged', (data: PubRaceChallengedPayload) => deps.pubChallenge.onChallenged(data))
+    room.onMessage('pub_race_challenge_sent', (data: PubRaceChallengeSentPayload) => deps.pubChallenge.onSent(data))
+    room.onMessage('pub_race_challenge_result', (data: PubRaceChallengeResultPayload) => deps.pubChallenge.onResult(data))
+    room.onMessage('pub_race_challenge_cancelled', (data: PubRaceChallengeCancelledPayload) => deps.pubChallenge.onCancelled(data))
+    room.onMessage('pub_shots_ready', (data: PubShotsReadyPayload) => deps.pubGames.onShotsReady(data))
+    room.onMessage('pub_shots_result', (data: PubShotsResultPayload) => deps.pubGames.onShotsResult(data))
+    room.onMessage('pub_darts_lobby', (data: PubDartsLobbyPayload) => deps.pubGames.onDartsLobby(data))
+    room.onMessage('pub_darts_state', (data: PubDartsStatePayload) => deps.pubGames.onDartsState(data))
+    room.onMessage('pub_darts_end', (data: PubDartsEndPayload) => deps.pubGames.onDartsEnd(data))
 
     room.onMessage('apartment_inventory', (data: { items: ApartmentInventoryItem[] }) => {
       onInventory(Array.isArray(data.items) ? data.items : [])
@@ -305,5 +389,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     switchingRoom,
     clearRemoteUsers: remotes.clear,
     tickRemoteAvatars: remotes.tick,
+    remotePseudo: remotes.pseudoOf,
+    setRemoteRacePint: remotes.setRacePint,
   }
 }

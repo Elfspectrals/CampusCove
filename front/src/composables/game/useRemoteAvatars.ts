@@ -5,7 +5,7 @@ import {
   type CosmeticColors,
 } from '../../api/characterCosmetics'
 import { buildCompositeAvatar, disposeObject3D } from '../../avatar/compositeAvatar'
-import { updateAvatarAnimation } from '../../avatar/glbCharacter'
+import { setAvatarSeated, updateAvatarAnimation } from '../../avatar/glbCharacter'
 import { createModularCharacter } from '../../avatar/modularCharacter'
 import { WEAR_SLOTS, wearSignature, type WearModels } from '../../avatar/modularCharacterLogic'
 import { createActionBubble, type AvatarAction } from '../../game/actionBubble'
@@ -24,6 +24,8 @@ import {
   type PunchPose,
 } from '../../game/remotePunch'
 import { advanceHitStop, idleHitStop, scheduleHitStop, type HitStop } from '../../game/punchFeel'
+import { createRacePint, type RacePint } from '../../game/pub/racePint'
+import { seatedAvatarFeetY } from '../../game/pub/seats'
 import type { SfxName } from '../../game/sfx'
 import type { RemoteUserPayload } from '../../types/gameRealtime'
 
@@ -50,6 +52,19 @@ interface RemoteAvatar {
   punchOffsetZ: number
   hitStop: HitStop
   jabCount: number
+  /** The pub seat the player sits on; network moves are ignored until they stand up. */
+  seat: SeatPose | null
+  /** Drink Fast: the pint raised while this player races. */
+  racePint: RacePint | null
+  raceProgress: number
+}
+
+/** Where a seated avatar rests: seat top and sitting direction (camera yaw convention). */
+export interface SeatPose {
+  x: number
+  y: number
+  z: number
+  yaw: number
 }
 
 interface AppearanceUpdate {
@@ -147,6 +162,7 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
       scene.remove(entry.group)
     }
     endFlashOf(entry.group)
+    entry.racePint?.dispose()
     disposeObject3D(entry.group)
     avatars.delete(sessionId)
     if (sessionByUserId.get(entry.userId) === sessionId) sessionByUserId.delete(entry.userId)
@@ -169,7 +185,7 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     }
   }
 
-  async function upsert(sessionId: string, data: RemoteUserPayload) {
+  async function upsert(sessionId: string, data: RemoteUserPayload, seat: SeatPose | null = null) {
     const scene = deps.getScene()
     if (!scene) return
     const renderToken = nextRenderToken(sessionId)
@@ -184,6 +200,7 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     if (existing) {
       scene.remove(existing.group)
       endFlashOf(existing.group)
+      existing.racePint?.dispose()
       disposeObject3D(existing.group)
       avatars.delete(sessionId)
       if (sessionByUserId.get(existing.userId) === sessionId) sessionByUserId.delete(existing.userId)
@@ -221,8 +238,12 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
       punchOffsetZ: 0,
       hitStop: idleHitStop(),
       jabCount: 0,
+      seat,
+      racePint: null,
+      raceProgress: 0,
     })
     sessionByUserId.set(data.id, sessionId)
+    if (seat) applySeat(avatars.get(sessionId)!)
 
     const pending = pendingAppearance.get(sessionId)
     if (pending) {
@@ -257,16 +278,44 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     tagAvatar(group, sessionId, latest.userId, latest.pseudo)
     scene.remove(latest.group)
     endFlashOf(latest.group)
+    latest.racePint?.dispose()
     disposeObject3D(latest.group)
     placeAvatar(group, latest.x, latest.y, latest.z, latest.ry)
     scene.add(group)
-    avatars.set(sessionId, { ...latest, group, outfit, punchOffsetX: 0, punchOffsetZ: 0 })
+    const racePint = latest.racePint ? createRacePint(group) : null
+    racePint?.setProgress(latest.raceProgress)
+    const rebuilt = { ...latest, group, outfit, punchOffsetX: 0, punchOffsetZ: 0, racePint }
+    avatars.set(sessionId, rebuilt)
+    applySeat(rebuilt)
   }
 
-  /** New network position; the avatar glides there in `tick`. */
-  function setTarget(sessionId: string, x: number, y: number, z: number, ry: number | undefined) {
+  /** Sit the avatar on its seat (Sit clip, or lowered in Idle for skins without it) or let it stand. */
+  function applySeat(entry: RemoteAvatar) {
+    const sitting = setAvatarSeated(entry.group, entry.seat !== null)
+    const seat = entry.seat
+    if (!seat) return
+    entry.x = seat.x
+    entry.y = seatedAvatarFeetY(seat.y, sitting) + EYE_HEIGHT
+    entry.z = seat.z
+    entry.ry = seat.yaw
+  }
+
+  /** `user_seated`: the player sat down on `seat`, or stood up (null). */
+  function setSeated(sessionId: string, seat: SeatPose | null) {
     const entry = avatars.get(sessionId)
     if (!entry) return
+    entry.seat = seat
+    applySeat(entry)
+  }
+
+  function pseudoOf(sessionId: string): string | null {
+    return avatars.get(sessionId)?.pseudo ?? null
+  }
+
+  /** New network position; the avatar glides there in `tick`. A seated player stays put until they stand. */
+  function setTarget(sessionId: string, x: number, y: number, z: number, ry: number | undefined) {
+    const entry = avatars.get(sessionId)
+    if (!entry || entry.seat) return
     entry.x = x
     entry.y = y
     entry.z = z
@@ -278,6 +327,21 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     const entry = avatars.get(sessionId)
     if (!entry) return
     bubbles.push(createActionBubble(entry.group, action, code))
+  }
+
+  /** Drink Fast: the player races with a pint `progress` drunk (0..1), or puts it down (null). */
+  function setRacePint(sessionId: string, progress: number | null) {
+    const entry = avatars.get(sessionId)
+    if (!entry) return
+    if (progress === null) {
+      entry.racePint?.dispose()
+      entry.racePint = null
+      entry.raceProgress = 0
+      return
+    }
+    entry.racePint ??= createRacePint(entry.group)
+    entry.raceProgress = progress
+    entry.racePint.setProgress(progress)
   }
 
   function showPunch(sessionId: string) {
@@ -313,6 +377,8 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     entry.punchOffsetX = pose.x
     entry.punchOffsetZ = pose.z
     if (animated) (entry.jabCount % 2 === 0 ? jabLeftArm : jabRightArm)(entry.group, pose.swing)
+    // after the clip posed the arm: the racer's pint lifts it again
+    entry.racePint?.update(dt)
   }
 
   function clear() {
@@ -366,5 +432,5 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     }
   }
 
-  return { upsert, updateAppearance, setTarget, showAction, showPunch, showHit, remove, clear, tick }
+  return { upsert, updateAppearance, setTarget, setSeated, setRacePint, pseudoOf, showAction, showPunch, showHit, remove, clear, tick }
 }

@@ -31,6 +31,7 @@ class ItemDef extends Model
         'hunger_per_portion',
         'thirst_per_portion',
         'health_per_portion',
+        'alcohol_per_portion',
         'consume_effect',
     ];
 
@@ -46,6 +47,7 @@ class ItemDef extends Model
             'hunger_per_portion' => 'integer',
             'thirst_per_portion' => 'integer',
             'health_per_portion' => 'integer',
+            'alcohol_per_portion' => 'integer',
         ];
     }
 
