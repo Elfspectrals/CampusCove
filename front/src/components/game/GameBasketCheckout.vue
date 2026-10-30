@@ -28,7 +28,7 @@ function coins(item: ShopItem): number {
         </button>
       </header>
       <p v-if="items.length === 0" class="m-0 px-4 py-6 text-center text-sm text-mist">
-        Your basket is empty. Click a piece on a mannequin to add it.
+        Your basket is empty. Click an item on display to add it.
       </p>
       <ul v-else class="m-0 max-h-[50vh] list-none overflow-y-auto p-2">
         <li v-for="item in items" :key="item.item_def_id" class="flex items-center gap-3 rounded-xl px-2 py-2 hover:bg-ink-950/40">

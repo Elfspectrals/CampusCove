@@ -74,6 +74,13 @@ class ShopSeeder extends Seeder
             self::decor('decor_parasol', 'Sol Parasol', 'parasol', 1, 3),
             self::decor('decor_bbq_grill', 'Grilla BBQ', 'bbq_grill', 2, 2),
             self::decor('decor_sun_lounger', 'Slappna Sun Lounger', 'sun_lounger', 1, 4),
+            // ---- Crispin's Hardware range (sold in the mall's hardware store; map-src/CampusCove/build_hardware_items.py)
+            self::decor('decor_workbench', "Crispin's Workbench", 'workbench', 2, 2),
+            self::decor('decor_stepladder', 'Alu Stepladder', 'stepladder', 1, 2),
+            self::decor('decor_toolbox', 'Red Toolbox', 'toolbox', 1, 4),
+            self::decor('decor_paint_cans', 'Paint Can Pallet', 'paint_cans', 1, 3),
+            self::decor('decor_wheelbarrow', 'Garden Wheelbarrow', 'wheelbarrow', 2, 2),
+            self::decor('decor_metal_shelving', 'Warehouse Shelving', 'metal_shelving', 2, 3),
             [
                 'code' => 'emote_wave',
                 'name' => 'Wave Emote',
@@ -195,6 +202,13 @@ class ShopSeeder extends Seeder
             self::wear('shoes', 'boots', 'Boots', 3),
             self::wear('shoes', 'slides', 'Slides', 1),
             self::wear('shoes', 'runners', 'Runners', 2),
+            // ---- Summit Sports range (front/scripts/skins/wear.py), sold in the mall
+            self::wear('top', 'track_jacket', 'Summit Track Jacket', 2),
+            self::wear('top', 'jersey', 'Summit Jersey', 1),
+            self::wear('top', 'sports_bra', 'Summit Sports Bra', 1),
+            self::wear('bottom', 'track_pants', 'Summit Track Pants', 2),
+            self::wear('bottom', 'basketball_shorts', 'Summit Court Shorts', 1),
+            self::wear('bottom', 'leggings', 'Summit Leggings', 1),
         ];
         // ---- food and drinks (eaten from the hotbar; sold at the Campus Cafe counter)
         foreach (FoodCatalog::items() as $food) {
@@ -363,6 +377,18 @@ class ShopSeeder extends Seeder
             self::coins('COS_WEAR_SHOES_BOOTS', 300, 322),
             self::coins('COS_WEAR_SHOES_SLIDES', 60, 323),
             self::coins('COS_WEAR_SHOES_RUNNERS', 250, 324),
+            self::coins('COS_WEAR_TOP_TRACK_JACKET', 260, 325),
+            self::coins('COS_WEAR_TOP_JERSEY', 110, 326),
+            self::coins('COS_WEAR_TOP_SPORTS_BRA', 80, 327),
+            self::coins('COS_WEAR_BOTTOM_TRACK_PANTS', 150, 328),
+            self::coins('COS_WEAR_BOTTOM_BASKETBALL_SHORTS', 90, 329),
+            self::coins('COS_WEAR_BOTTOM_LEGGINGS', 120, 330),
+            self::coins('decor_workbench', 340, 140),
+            self::coins('decor_stepladder', 140, 141),
+            self::coins('decor_toolbox', 90, 142),
+            self::coins('decor_paint_cans', 110, 143),
+            self::coins('decor_wheelbarrow', 180, 144),
+            self::coins('decor_metal_shelving', 260, 145),
         ];
         foreach (FoodCatalog::items() as $i => $food) {
             if ($food['price'] !== null) {

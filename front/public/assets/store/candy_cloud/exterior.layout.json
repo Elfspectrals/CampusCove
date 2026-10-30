@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "key": "candy_cloud",
+  "name": "Candy Cloud",
+  "footprint": [
+    25.07,
+    9.31
+  ],
+  "footprintCenterZ": -0.155,
+  "doorLocal": [
+    0.0,
+    1.25,
+    4.5
+  ],
+  "interiorOffset": [
+    0.0,
+    0.2,
+    -0.905
+  ],
+  "collision": [
+    {
+      "cx": 0.0,
+      "cz": -0.155,
+      "hx": 12.735,
+      "hz": 4.855,
+      "hy": 2.45
+    }
+  ]
+}

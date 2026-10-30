@@ -2,7 +2,7 @@ import type { HouseKey, StoreKey, WorkJob, WorkKey } from '../assets/catalog'
 
 type Vec3 = [number, number, number]
 
-interface WorldBounds {
+export interface WorldBounds {
   minX: number
   maxX: number
   minZ: number
@@ -61,8 +61,12 @@ export interface WorldZone {
   modelUrl: string
   optional?: boolean
   collisionUrl?: string
+  /** Walkable levels and stairs of the zone's own structure, in world coordinates (the mall's balconies and escalators). */
+  layoutUrl?: string
   heightmapUrl?: string
   animatedWater?: boolean
+  /** Background music of the zone, played while the player walks inside `bounds` and not in a building. */
+  music?: { url: string; bounds: WorldBounds }
   buildings?: Building[]
   fishingSpots?: FishingSpot[]
 }

@@ -47,6 +47,11 @@ export function isMedicalItem(item: { kind: string; code: string }): boolean {
   return item.kind === 'consumable' && item.code.startsWith('med_')
 }
 
+/** Candy Cloud sweets (FoodCatalog group `sweets`): sold at the mall only, never at the Campus Cafe. */
+export function isSweetItem(item: { kind: string; code: string }): boolean {
+  return item.kind === 'consumable' && item.code.startsWith('candy_')
+}
+
 /** Pub drinks (backend FoodCatalog group `drinks`): sold at The Salty Shamrock only, never at the Campus Cafe. */
 export function isAlcoholItem(item: { code: string }): boolean {
   return item.code.startsWith('drink_')

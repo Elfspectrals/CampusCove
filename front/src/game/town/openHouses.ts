@@ -17,6 +17,7 @@ import {
   type StoreBuilding,
   type WorkBuilding,
   type WorldManifest,
+  type WorldZone,
 } from '../world/worldManifest'
 import { capsuleLift, parseHouseLayout, singleLevelLayout, surfaceHeight, type HouseLayout, type LevelRect } from './houseLevels'
 
@@ -294,6 +295,12 @@ function walkableBounds(bounds: LevelRect, layout: HouseLayout | null): LevelRec
   }
 }
 
+async function fetchZoneLayout(zone: WorldZone & { layoutUrl: string }): Promise<HouseLayout> {
+  const res = await fetch(zone.layoutUrl)
+  if (!res.ok) throw new Error(`Failed to load zone layout ${zone.layoutUrl}: ${res.status}`)
+  return parseHouseLayout(await res.json(), zone.key)
+}
+
 function boundsReach(bounds: NonNullable<CollisionFileJson['bounds']>, [ox, , oz]: [number, number, number]): number {
   return Math.max(...[bounds.minX, bounds.maxX].flatMap((x) => [bounds.minZ, bounds.maxZ].map((z) => Math.hypot(x + ox, z + oz))))
 }
@@ -303,7 +310,8 @@ async function composeTownCollisionData(manifest: WorldManifest): Promise<Collis
   const shellLots: ShellLot[] = [...workLots, ...openStoreLots(manifest)]
   const lots: OpenLot[] = [...openHouseLots(manifest), ...shellLots]
   const zoneCollisionUrls = manifest.zones.flatMap((zone) => (zone.collisionUrl ? [zone.collisionUrl] : []))
-  const [zones, interiors, layouts, shells] = await Promise.all([
+  const floorZones = manifest.zones.flatMap((zone) => (zone.layoutUrl ? [{ ...zone, layoutUrl: zone.layoutUrl }] : []))
+  const [zones, interiors, layouts, shells, zoneLayouts] = await Promise.all([
     Promise.all(zoneCollisionUrls.map(fetchCollisionFile)),
     Promise.all(lots.map((lot) => fetchCollisionFile(interiorAssetOf(lot).interiorCollisionUrl))),
     Promise.all(lots.map(fetchHouseLayout)),
@@ -312,6 +320,7 @@ async function composeTownCollisionData(manifest: WorldManifest): Promise<Collis
       if (!building) throw new Error(`Unknown building in the world manifest: ${lot.key}`)
       return fetchCollisionFile(building.exteriorCollisionUrl)
     })),
+    Promise.all(floorZones.map(fetchZoneLayout)),
   ])
 
   const zoneCuboids = zones.flatMap((zone) => zone.cuboids)
@@ -350,6 +359,10 @@ async function composeTownCollisionData(manifest: WorldManifest): Promise<Collis
   shellLots.forEach((lot, i) => {
     const matrix = lotToWorld(lot)
     cuboids.push(...shells[i]!.cuboids.map((cuboid) => transformCuboid(cuboid, matrix)))
+  })
+  // after the interiors, so that inside a mall shop the shop wins and the mall only owns its walkways
+  floorZones.forEach((zone, i) => {
+    buildingFloors.push({ houseKey: zone.key, worldToInterior: new THREE.Matrix4(), bounds: zone.bounds, baseY: 0, layout: zoneLayouts[i]! })
   })
 
   return { version: 1, source: 'world.manifest.json', mode: 'composed', borders: true, bounds: manifest.bounds, cuboids, trimeshes }

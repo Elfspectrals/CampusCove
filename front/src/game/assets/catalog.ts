@@ -186,10 +186,36 @@ export const COVE_THREADS = {
   musicUrl: `${ROOT}/music/cove_threads.mp3`,
 } as const
 
-export type StoreKey = typeof COVE_HOME.key | typeof COVE_THREADS.key
+/**
+ * The Cove Parkview Mall anchors (docs/MALL.md), west of the clinic: Northline sells clothes with the Cove Threads
+ * layout contract, Hearth & Hollow sells decor and GreenCart sells food with the Cove Home contract. Built by
+ * map-src/CampusCove/build_{northline,hearth,greencart}.py → public/assets/store/<key>/ (same files as cove_home).
+ */
+const mallStore = <K extends string>(key: K, name: string) => ({
+  key,
+  name,
+  exteriorUrl: `${ROOT}/store/${key}/exterior.glb`,
+  exteriorCollisionUrl: `${ROOT}/store/${key}/exterior.collision.json`,
+  interiorUrl: `${ROOT}/store/${key}/interior.glb`,
+  interiorCollisionUrl: `${ROOT}/store/${key}/interior.collision.json`,
+  interiorLightmapUrl: `${ROOT}/store/${key}/lightmap.jpg`,
+  interiorLayoutUrl: `${ROOT}/store/${key}/interior.layout.json`,
+}) as const
 
-export function findStore(key: string | null | undefined): typeof COVE_HOME | typeof COVE_THREADS | null {
-  return [COVE_HOME, COVE_THREADS].find((s) => s.key === key) ?? null
+export const NORTHLINE = mallStore('northline', 'Northline')
+export const HEARTH_HOLLOW = mallStore('hearth_hollow', 'Hearth & Hollow')
+export const GREENCART = mallStore('greencart', 'GreenCart')
+/** The shops that took over a mall cell: hardware (decor), sweets (consumables) and sportswear (wear pieces). */
+export const CRISPINS_HARDWARE = mallStore('crispins_hardware', "Crispin's Hardware")
+export const CANDY_CLOUD = mallStore('candy_cloud', 'Candy Cloud')
+export const SUMMIT_SPORTS = mallStore('summit_sports', 'Summit Sports')
+
+const STORES = [COVE_HOME, COVE_THREADS, NORTHLINE, HEARTH_HOLLOW, GREENCART, CRISPINS_HARDWARE, CANDY_CLOUD, SUMMIT_SPORTS] as const
+
+export type StoreKey = (typeof STORES)[number]['key']
+
+export function findStore(key: string | null | undefined): (typeof STORES)[number] | null {
+  return STORES.find((s) => s.key === key) ?? null
 }
 
 /** Survival (map-src/CampusCove/build_food_items.py): the first-person wrist watch and the town drinking fountain. */
@@ -198,6 +224,7 @@ export const DRINKING_FOUNTAIN_URL = `${ROOT}/park/drinking_fountain/model.glb`
 
 const CONSUMABLE_FOLDERS: ReadonlyArray<[prefix: string, folder: string]> = [
   ['food_', 'food'],
+  ['candy_', 'sweets'],
   ['med_', 'medical'],
   ['drink_', 'drinks'],
 ]
@@ -211,13 +238,14 @@ function consumableFolder(code: string): string {
 
 /**
  * Preview picture of a consumable (backend FoodCatalog): `food_<key>` -> items/food/<key>/preview.png,
- * `med_<key>` -> items/medical/<key>/preview.png, `drink_<key>` -> items/drinks/<key>/preview.png.
+ * `candy_<key>` -> items/sweets/<key>/preview.png, `med_<key>` -> items/medical/<key>/preview.png,
+ * `drink_<key>` -> items/drinks/<key>/preview.png.
  */
 export function consumablePreviewUrl(code: string): string {
   return `${consumableFolder(code)}/preview.png`
 }
 
-/** The glass / plate model of a consumable, shown on the pub bar while the barman pours it. */
+/** The model of a consumable: on the GreenCart and Candy Cloud shelves, and on the pub bar while the barman pours it. */
 export function consumableModelUrl(code: string): string {
   return `${consumableFolder(code)}/model.glb`
 }
@@ -235,6 +263,9 @@ export interface StoreLayout {
   bounds: { minX: number; maxX: number; minZ: number; maxZ: number }
   departments: Array<{ id: string; label: string; color: string; sign: [number, number, number] }>
   displays: StoreDisplay[]
+  /** Stores that sell through a basket: where the customer stands to pay, and the cashier behind it. */
+  counter?: [number, number, number]
+  clerk?: { position: [number, number, number]; yaw: number }
 }
 
 export interface StoreDisplay {
@@ -249,6 +280,8 @@ export interface StoreDisplay {
   yaw: number
   /** Model bounding size [w, h, d] in metres. */
   size: [number, number, number]
+  /** Copies lined up on the spot as [columns, rows] (small goods on a shelf); one model when omitted. */
+  stack?: [number, number]
   /** Price-tag board (centre) at the edge of the route. */
   tag: { position: [number, number, number]; yaw: number }
 }

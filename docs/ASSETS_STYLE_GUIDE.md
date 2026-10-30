@@ -393,3 +393,74 @@ node scripts/apply-pond.mjs && node scripts/apply-pub.mjs
 mains sur les cuisses) ajouté à `make_clips`, donc présent dans les trois skins et dans `wear/base/model.glb`.
 Reconstruire : `blender --background --python front/scripts/skins/run.py` puis
 `blender --background --factory-startup --python front/scripts/skins/run_wear.py`, et `npm run skins:check`.
+
+## 13. Cove Parkview Mall (centre commercial)
+
+À l'ouest, au-delà de la Cove Clinic : un anneau de plazas (`x ∈ [-380, -160]`, `z ∈ [-90, 90]`) autour du Leisure Park,
+deux niveaux dans l'Entrance Plaza, Paradise Plaza et Wonderland Plaza, coulisses (couloirs de service, quai, entrepôt,
+salle de sécurité, toit-terrasse), parvis et chemin depuis le parvis de la clinique. Trois enseignes ouvertes en V1 :
+Northline (vêtements), Hearth & Hollow (déco), GreenCart (supermarché). Contrat détaillé : `docs/MALL.md`.
+
+### Scripts et sorties
+
+| Script | Sorties |
+|---|---|
+| `build_northline.py`, `build_hearth.py`, `build_greencart.py` | `store/<clé>/{interior,exterior}.glb`, `*.colsrc.glb`, `*.layout.json`, `preview.png` (intérieurs 10 600 / 11 000 / 22 000 triangles, coques ≤ 3 000) |
+| `build_house_lightmaps.py -- store northline hearth_hollow greencart` | `store/<clé>/lightmap.jpg` (headless, Cycles) ; les lampes sont les nœuds `Light_*` ou les mailles dont le matériau contient `LightPanel` |
+| `build_mall.py` (lit les `exterior.layout.json` des trois enseignes) | `store/mall/{mall.glb, mall.colsrc.glb, mall.layout.json}` (≈ 88 000 triangles, 1 370 boîtes `COL_Mall_*`, 124 cellules, 8 rampes) |
+| `build_hardware_items.py`, `build_sweets_items.py` | `decor/{workbench,stepladder,toolbox,paint_cans,wheelbarrow,metal_shelving}/`, `items/sweets/{cotton_candy,lollipop,candy_bag,licorice,bubble_gum,candy_apple}/` (`model.glb`, `preview.png`, 50 à 630 triangles) + `out/decor/hardware.manifest.json` |
+| `front/scripts/skins/wear.py` (+ `run_wear.py`, `build_fp_arms.py`) | `wear/top/{track_jacket,jersey,sports_bra}/`, `wear/bottom/{track_pants,basketball_shorts,leggings}/` (Summit Sports) |
+| `build_crispins.py`, `build_candy_cloud.py`, `build_summit.py` | `store/<clé>/…` comme les ancres, coques de 16,6 / 25,1 / 31,3 m au nu des cellules (3 900 / 11 800 / 3 000 triangles) |
+| `front/scripts/apply-mall.mjs` | zone `mall` de `world.manifest.json` (`collisionUrl`, `layoutUrl`, porte d'entrée, les six bâtiments `store`) ; porte nord-ouest dans `town.glb` / `town.collision.json` |
+
+```bash
+B=/Applications/Blender.app/Contents/MacOS/Blender
+for s in build_northline build_hearth build_greencart build_mall; do
+  $B --background --factory-startup --python-expr "p='map-src/CampusCove/$s.py'; exec(open(p).read(), {'__file__': p})"
+done
+$B --background --factory-startup --python map-src/CampusCove/build_house_lightmaps.py -- store northline hearth_hollow greencart
+cd front && npm run assets:optimize -- store && node scripts/apply-mall.mjs
+docker restart campuscove-socket
+```
+
+**Attention :** `assets:optimize -- store` réécrit aussi `cove_home/`, `cove_threads/`, `park/` et `threads_site/` depuis
+`out/store/` ; si ces exports locaux ne sont pas à jour, restaurer les fichiers versionnés (`git checkout -- front/public/assets/store/{cove_home,cove_threads,park,threads_site}`).
+
+### Structure (`build_mall.py`)
+
+- Aile de 40 m : couloir de service 2,5 m + cellules extérieures 9,5 m (front à `z = ∓78` / `x = ∓368`) + allée 16 m +
+  cellules intérieures 12 m côté parc (front à `z = ∓62` / `x = -352` et `-188`). Les quatre coins sont des cours ouvertes.
+- Cellule : murs latéraux et mur du fond, pilastres, mur bas + vitrine (ou palissade « UNDER RENOVATION » avec
+  échafaudage), bandeau `TW_MallCat_<catégorie>` avec le nom en lettrage plat (`resolution_u = 1`, sans extrusion),
+  panneau « OPENING SOON » au rez. Passage « STAFF ONLY » = cellule de 1,6 m vers le couloir de service.
+- Étage : dalle `y` 5,6 → 6,0 sur les cellules + balcon de 5 m, vide de 6 m au milieu, garde-corps vitrés avec COL,
+  piliers, escalators = rampes `wedge()` de 1,4 × 10,4 m avec balustrades pleines (du sol au garde-corps, sinon
+  l'extracteur les perd), palier de 2 m ; `levels` / `stairs` **en coordonnées monde** dans `mall.layout.json`, lus par
+  le front (`buildingFloorAt`) et par `extract-collision.mjs` (bandes de marche L0 / L1 / L2).
+- Toits : dalle sur les rangées de cellules, fermes ouvertes au-dessus du vide ; dalle basse à 7,6 m sur North Plaza et
+  Food Court (avec panneaux lumineux émissifs), rien sur Al Fresca.
+- Parc : pelouse, allées en croix et anneau, tour de l'horloge, bassin, plaque d'égout, ~40 arbres (`blob()`
+  icosphères déformées), bancs, lampadaires, massifs.
+- Ancres : la façade de la coque (`walk_in_shell`) est au nu du front des cellules ; le mur extérieur, le couloir et les
+  cellules sont interrompus sur sa largeur et un retour de mur ferme l'anneau ; le corps dépasse hors de l'anneau sur
+  un tablier de service.
+- Boutiques en cellule (statut `open` dans `ROWS`) : la cellule ne construit rien, le bâtiment `store` prend sa place
+  (`CELL_STORES`, positions dans `stores[]`) ; largeur de coque = cellule − 0,4 m pour ne pas toucher les cloisons
+  voisines, profondeur ≤ 9,5 m (11,6 m pour Crispin's qui absorbe le bout ouest du couloir de service). La cellule
+  construit quand même ses cloisons (0,22 m, elles bouchent les fentes de 0,2 m), son mur du fond, son plafond et un
+  bandeau de 4,45 m à `CELL_H` au nu du front : la coque (4,5 m) se raccorde ainsi au reste du centre.
+- Coins de l'anneau : une rangée extérieure ne doit pas dépasser la ligne d'allée de la rangée perpendiculaire, sinon
+  ses premières cellules donnent sur la cloison de l'autre rangée. Au sud, `S_out_a` part de `W_OUT` et `S_out_c`
+  s'arrête à `E_OUT` (poches de service `Floor_SvcSW/SE` derrière) ; au nord-ouest, la cour mord de `NOTCH` (10 m)
+  dans `W_out_a` pour dégager tout le front de Crispin's ; au nord-est l'entrepôt sert de tampon.
+- Décor : rien à moins de 3 m d'un pied d'escalator (les bacs de l'Entrance s'arrêtent à `|z| ≤ 33`, pas de bac
+  Paradise à x = −288), aucune bannière devant une cellule ouverte, 4 m libres devant les comptoirs du food court.
+- Décor (section `decor` de `build_mall.py`) : kiosques octogonaux (`kiosk`, 8, collision 3 × 3), bannières sous les
+  balcons des trois ailes à étage (`banner`, tous les 24 m, hors escalators), bacs fleuris sur les balcons, panneaux
+  de fléchage suspendus aux carrefours (`way_sign`), arbres en pot dans l'allée Wonderland et la cour nord-ouest, bancs
+  et poubelles, sculptures dans les cours est (`sculpture`). Préfixes à ajouter à `check_grounded` : `Kiosk_`, `Banner_`,
+  `Way_`, `Sculpture_`.
+- Intérieurs à caisse : `interior.layout.json` porte `counter` (point où le client se tient) et `clerk`
+  (`position`, `yaw` : 0 regarde +Z, π regarde −Z) ; les présentoirs de petits produits ont `stack: [colonnes, rangées]`.
+- Accès : porte nord-ouest `(-44.6, -12)` + avenue (`AVENUE`, 7 m + trottoirs 1,8 m), parking `PX0..PZ1` et abribus,
+  tous dans `mall.glb` ; seule la découpe de la haie est faite par `apply-mall.mjs`.

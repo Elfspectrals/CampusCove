@@ -3,6 +3,7 @@ import { computed, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import type { Room } from '@colyseus/sdk'
 import {
+  DEFAULT_SLOT_COLORS,
   wearModelsFromLoadout,
   defaultCosmeticColors,
   emptyCosmeticLoadout,
@@ -68,7 +69,22 @@ import { HOUSING_LOBBY_SPAWN } from '../game/gameRoomConstants'
 import { createGameScene, disposeGameScene, type GameScene } from '../game/gameScene'
 import { createFirstPersonArms } from '../game/firstPersonArms'
 import { createHeldItem } from '../game/heldItem'
-import { COVE_HOME, COVE_THREADS, findHouse, findStore, findWork } from '../game/assets/catalog'
+import {
+  CANDY_CLOUD,
+  COVE_HOME,
+  COVE_THREADS,
+  CRISPINS_HARDWARE,
+  GREENCART,
+  HEARTH_HOLLOW,
+  NORTHLINE,
+  SUMMIT_SPORTS,
+  consumableModelUrl,
+  decorModelUrl,
+  findHouse,
+  findStore,
+  findWork,
+} from '../game/assets/catalog'
+import type { WorldBounds } from '../game/world/worldManifest'
 import type { GearSlot } from '../game/wardrobeSlots'
 import { createSfx } from '../game/sfx'
 import { createAmbientLoop } from '../game/ambientLoop'
@@ -108,6 +124,14 @@ const getScene = () => game?.scene
 const getCamera = () => game?.camera
 const sfx = createSfx(getCamera)
 const threadsMusic = createAmbientLoop(COVE_THREADS.musicUrl, 0.18, sfx.listener)
+/** The mall walkways' music (world manifest zone `music`), started once the town is loaded. */
+let zoneMusic: ReturnType<typeof createAmbientLoop> | null = null
+let zoneMusicBounds: WorldBounds | null = null
+let zoneMusicKey: string | null = null
+
+function insideBounds(bounds: WorldBounds | null, at: { x: number; z: number }): boolean {
+  return bounds !== null && at.x >= bounds.minX && at.x <= bounds.maxX && at.z >= bounds.minZ && at.z <= bounds.maxZ
+}
 const getRenderer = () => game?.renderer
 
 // ---------------------------------------------------------------- house decoration
@@ -191,14 +215,72 @@ const {
   onQuickWear: (slotIndex) => void wardrobeRef.value?.wearFromSlot(slotIndex),
 })
 
-// ---------------------------------------------------------------- Cove Home furniture store
+// ---------------------------------------------------------------- stores: Cove Home (click to buy), the mall's shops (basket paid at the cashier), Cove Threads, Northline and Summit (basket)
 
 const inStore = computed(() => currentHouseKey.value === COVE_HOME.key)
 const furnitureStore = useFurnitureStore({ inStore: () => inStore.value, getCamera, myPosition })
-const { target: storeTarget, currentDepartment: storeDepartment } = furnitureStore
+/** The mall stores sell through a basket: the cashier prompt needs the canvas, paying refreshes the inventory. */
+const mallStoreDeps = {
+  getCamera,
+  myPosition,
+  canvasRef,
+  promptsHidden: () => inventoryOpen.value,
+  onPurchased: () => refreshOwnedItems(),
+}
+const hearthStore = useFurnitureStore({
+  ...mallStoreDeps,
+  inStore: () => currentHouseKey.value === HEARTH_HOLLOW.key,
+  store: {
+    key: HEARTH_HOLLOW.key,
+    interiorLayoutUrl: HEARTH_HOLLOW.interiorLayoutUrl,
+    modelUrl: (display) => decorModelUrl(display.key),
+    clerkColors: { ...DEFAULT_SLOT_COLORS, top: '#c47c4c', bottom: '#3b3f4a' },
+  },
+})
+const greencartStore = useFurnitureStore({
+  ...mallStoreDeps,
+  inStore: () => currentHouseKey.value === GREENCART.key,
+  store: {
+    key: GREENCART.key,
+    interiorLayoutUrl: GREENCART.interiorLayoutUrl,
+    modelUrl: (display) => consumableModelUrl(display.code),
+    clerkColors: { ...DEFAULT_SLOT_COLORS, top: '#3c9a3c', bottom: '#2a2e35' },
+  },
+})
+const crispinsStore = useFurnitureStore({
+  ...mallStoreDeps,
+  inStore: () => currentHouseKey.value === CRISPINS_HARDWARE.key,
+  store: {
+    key: CRISPINS_HARDWARE.key,
+    interiorLayoutUrl: CRISPINS_HARDWARE.interiorLayoutUrl,
+    modelUrl: (display) => decorModelUrl(display.key),
+    clerkColors: { ...DEFAULT_SLOT_COLORS, top: '#e07a2e', bottom: '#2f3338' },
+  },
+})
+const candyStore = useFurnitureStore({
+  ...mallStoreDeps,
+  inStore: () => currentHouseKey.value === CANDY_CLOUD.key,
+  store: {
+    key: CANDY_CLOUD.key,
+    interiorLayoutUrl: CANDY_CLOUD.interiorLayoutUrl,
+    modelUrl: (display) => consumableModelUrl(display.code),
+    clerkColors: { ...DEFAULT_SLOT_COLORS, top: '#f4b3c8', bottom: '#38a3c9' },
+  },
+})
+const furnitureStores = [
+  { key: COVE_HOME.key, brand: COVE_HOME.name, store: furnitureStore },
+  { key: HEARTH_HOLLOW.key, brand: HEARTH_HOLLOW.name, store: hearthStore },
+  { key: GREENCART.key, brand: GREENCART.name, store: greencartStore },
+  { key: CRISPINS_HARDWARE.key, brand: CRISPINS_HARDWARE.name, store: crispinsStore },
+  { key: CANDY_CLOUD.key, brand: CANDY_CLOUD.name, store: candyStore },
+]
+const activeFurniture = computed(() => furnitureStores.find((s) => s.key === currentHouseKey.value) ?? null)
+const storeBrand = computed(() => activeFurniture.value?.brand ?? COVE_HOME.name)
+const storeTarget = computed(() => activeFurniture.value?.store.target.value ?? null)
+const storeDepartment = computed(() => activeFurniture.value?.store.currentDepartment.value ?? null)
 const inThreads = computed(() => currentHouseKey.value === COVE_THREADS.key)
-const clothingStore = useClothingStore({
-  inStore: () => inThreads.value,
+const inNorthline = computed(() => currentHouseKey.value === NORTHLINE.key)
+const clothingDeps = {
   getCamera,
   canvasRef,
   myPosition,
@@ -207,7 +289,26 @@ const clothingStore = useClothingStore({
   getScene,
   getFpHands: () => game?.fpHands ?? null,
   myOutfit: () => myCosmetics.value,
+}
+const clothingStore = useClothingStore({ ...clothingDeps, inStore: () => inThreads.value })
+const northlineStore = useClothingStore({
+  ...clothingDeps,
+  inStore: () => inNorthline.value,
+  store: { key: NORTHLINE.key, interiorLayoutUrl: NORTHLINE.interiorLayoutUrl, clerkColors: { ...DEFAULT_SLOT_COLORS, top: '#1b1d22', bottom: '#f4f2ee' } },
 })
+const summitStore = useClothingStore({
+  ...clothingDeps,
+  inStore: () => currentHouseKey.value === SUMMIT_SPORTS.key,
+  store: { key: SUMMIT_SPORTS.key, interiorLayoutUrl: SUMMIT_SPORTS.interiorLayoutUrl, clerkColors: { ...DEFAULT_SLOT_COLORS, top: '#1b1d22', bottom: '#f0b429' } },
+})
+const clothingEntries = [
+  { key: COVE_THREADS.key, name: COVE_THREADS.name, store: clothingStore },
+  { key: NORTHLINE.key, name: NORTHLINE.name, store: northlineStore },
+  { key: SUMMIT_SPORTS.key, name: SUMMIT_SPORTS.name, store: summitStore },
+]
+const clothingStores = clothingEntries.map((entry) => entry.store)
+const activeClothingEntry = computed(() => clothingEntries.find((entry) => entry.key === currentHouseKey.value) ?? null)
+const activeClothing = computed(() => activeClothingEntry.value?.store ?? null)
 const myCosmetics = shallowRef<CharacterCosmeticsState | null>(null)
 
 function onWardrobeChanged(state: CharacterCosmeticsState): void {
@@ -224,16 +325,17 @@ function onOutfit(change: { state: CharacterCosmeticsState; returnedCode: string
   if (change.returnedCode && change.toSlot !== null) placeInSlot(change.returnedCode, change.toSlot, change.wornCode)
   refreshOwnedItems()
 }
-const {
-  target: clothesTarget,
-  basket: clothesBasket,
-  basketTotal: clothesBasketTotal,
-  checkoutOpen: clothesCheckoutOpen,
-  paying: clothesPaying,
-  feedback: clothesFeedback,
-  counterPrompt: clothesCounterPrompt,
-} = clothingStore
-watch(clothesCheckoutOpen, (open) => {
+const clothesTarget = computed(() => activeClothing.value?.target.value ?? null)
+/** The store whose basket the HUD shows: a clothing store, or a mall store that pays at its counter. */
+const basketStore = computed(() => activeClothing.value ?? (activeFurniture.value?.store.hasCounter.value ? activeFurniture.value.store : null))
+const basketTitle = computed(() => activeClothingEntry.value?.name ?? activeFurniture.value?.brand ?? COVE_THREADS.name)
+const basketItems = computed(() => basketStore.value?.basket.value ?? [])
+const basketTotal = computed(() => basketStore.value?.basketTotal.value ?? 0)
+const checkoutOpen = computed(() => clothingStores.some((s) => s.checkoutOpen.value) || furnitureStores.some((s) => s.store.checkoutOpen.value))
+const basketPaying = computed(() => basketStore.value?.paying.value ?? false)
+const basketFeedback = computed(() => basketStore.value?.feedback.value ?? null)
+const counterPrompt = computed(() => basketStore.value?.counterPrompt.value ?? null)
+watch(checkoutOpen, (open) => {
   if (!open && !document.pointerLockElement) requestPointerLock()
 })
 const storeShop = useShopPurchase()
@@ -432,10 +534,15 @@ const interactions = useInteractionTargets({
     }
     const target = storeTarget.value
     if (!target) return null
-    const detail = target.coins !== null ? `${target.name} · ${target.coins} coins` : target.name
-    return { position: target.tagPosition, detail }
+    const price = target.coins !== null ? `${target.name} · ${target.coins} coins` : target.name
+    if (!activeFurniture.value?.store.hasCounter.value) return { position: target.tagPosition, detail: price }
+    return { position: target.tagPosition, detail: target.inBasket ? `${price} · in basket` : price, action: target.inBasket ? 'Remove' : 'Add' }
   },
-  onStoreTarget: () => (clothesTarget.value ? clothingStore.toggleTarget() : openStorePurchase()),
+  onStoreTarget: () => {
+    if (clothesTarget.value) activeClothing.value?.toggleTarget()
+    else if (activeFurniture.value?.store.hasCounter.value) activeFurniture.value.store.toggleTarget()
+    else openStorePurchase()
+  },
   sources: [pub.source, pubChallenge.source, pubGames.source, seats.source],
 })
 const { doorPrompt } = interactions
@@ -471,7 +578,7 @@ const trade = useTrade({
   refreshInventory: () => refreshOwnedItems(),
   onCoins: (balance) => applyCachedBalanceAfterPurchase('coins', balance),
   onClothesChanged: () => {
-    void clothingStore.refreshOwned()
+    for (const store of clothingStores) void store.refreshOwned()
     void fetchCharacterCosmetics().then(onWardrobeChanged).catch(() => {
       /* the look catches up on the next window focus */
     })
@@ -515,7 +622,7 @@ const survival = useSurvival({
   onBelongingsLost: (clothes) => {
     refreshOwnedItems()
     if (!clothes) return
-    void clothingStore.refreshOwned()
+    for (const store of clothingStores) void store.refreshOwned()
     void fetchCharacterCosmetics().then(onWardrobeChanged).catch(() => {
       /* the look catches up on the next window focus */
     })
@@ -637,16 +744,26 @@ const environment = useRoomEnvironment({
   getRenderer,
   onTownLoaded: (manifest) => {
     interactions.setWorldManifest(manifest)
+    const musicZone = manifest.zones.find((zone) => zone.music)
+    if (musicZone?.music && !zoneMusic) {
+      zoneMusic = createAmbientLoop(musicZone.music.url, 0.14, sfx.listener)
+      zoneMusicBounds = musicZone.music.bounds
+      zoneMusicKey = musicZone.key
+    }
     survival.onTownLoaded(manifest)
     clinic.onTownLoaded(manifest)
     seats.onTownLoaded(manifest)
     pub.onTownLoaded(manifest)
     pubGames.onTownLoaded(manifest)
     houseFurniture.onTownReady()
-    const store = openHouseInterior(COVE_HOME.key)
-    if (store) void furnitureStore.attach(store)
-    const threads = openHouseInterior(COVE_THREADS.key)
-    if (threads) void clothingStore.attach(threads)
+    for (const { key, store } of furnitureStores) {
+      const interior = openHouseInterior(key)
+      if (interior) void store.attach(interior)
+    }
+    for (const { key, store } of clothingEntries) {
+      const interior = openHouseInterior(key)
+      if (interior) void store.attach(interior)
+    }
   },
   onError: (message) => {
     roomMessage.value = message
@@ -671,7 +788,15 @@ function loadTown(): void {
  */
 function useAction(): void {
   if (housing.unlock()) arms?.use('key')
-  else void (interactions.tryInteract() || clothingStore.tryOpenCheckout() || cafe.tryOpen() || clinic.tryInteract() || survival.onPrimaryDown())
+  else
+    void (
+      interactions.tryInteract() ||
+      clothingStores.some((s) => s.tryOpenCheckout()) ||
+      furnitureStores.some((s) => s.store.tryOpenCheckout()) ||
+      cafe.tryOpen() ||
+      clinic.tryInteract() ||
+      survival.onPrimaryDown()
+    )
 }
 
 /** Interact and punch may be bound to keys or mouse buttons; returns true when `code` was one of them. */
@@ -704,7 +829,7 @@ const pauseMenuOpen = computed(
     !switchingRoom.value &&
     !cafeMenuOpen.value &&
     !clinicMenuOpen.value &&
-    !clothesCheckoutOpen.value &&
+    !checkoutOpen.value &&
     !tradeUiOpen.value &&
     !pubUiOpen.value &&
     !settingsOpen.value,
@@ -776,9 +901,10 @@ const movement = useGameMovement({
     realtime.tickRemoteAvatars(dt)
     currentHouseKey.value = houseKeyAt(myPosition.x, myPosition.z)
     placement.tick(dt)
-    furnitureStore.update()
-    clothingStore.update(dt)
+    for (const { store } of furnitureStores) store.update(dt)
+    for (const store of clothingStores) store.update(dt)
     threadsMusic.update(dt, inThreads.value)
+    zoneMusic?.update(dt, (currentHouseKey.value === null || currentHouseKey.value === zoneMusicKey) && insideBounds(zoneMusicBounds, myPosition))
     interactions.updatePrompts()
     houseKeys.updateKeyPrompt()
     updateFrontDoors(dt, isBuildingDoorOpen)
@@ -788,7 +914,8 @@ const movement = useGameMovement({
     survival.tick(dt)
     stamina.value = punch.staminaNow()
     cafe.updatePrompt()
-    clothingStore.updatePrompt()
+    for (const store of clothingStores) store.updatePrompt()
+    for (const { store } of furnitureStores) store.updatePrompt()
     clinic.updatePrompt()
     pub.tick(dt)
     pubGames.tick()
@@ -959,6 +1086,7 @@ onUnmounted(() => {
   doorSigns.dispose()
   arms?.dispose()
   threadsMusic.dispose()
+  zoneMusic?.dispose()
   sfx.dispose()
   environment.disposeRoomEnvironment()
   if (game) disposeGameScene(game)
@@ -1007,7 +1135,7 @@ const crosshairClass = computed(() => {
     <GameHudToolbar
       :position-label="positionLabel"
       :show-graphics-toggle="!pointerLocked"
-      :place-label="inStore ? COVE_HOME.name : undefined"
+      :place-label="activeFurniture?.brand"
       :reduced-effects="reducedEffects"
       @toggle-reduced-effects="survival.toggleReducedEffects"
     />
@@ -1036,11 +1164,11 @@ const crosshairClass = computed(() => {
       :detail-label="survivalPrompt.detail"
     />
     <GameInteractionPrompt
-      v-if="clothesCounterPrompt && !doorPrompt"
-      :screen-x="clothesCounterPrompt.x"
-      :screen-y="clothesCounterPrompt.y"
-      :action-label="clothesCounterPrompt.action"
-      :detail-label="clothesCounterPrompt.detail"
+      v-if="counterPrompt && !doorPrompt"
+      :screen-x="counterPrompt.x"
+      :screen-y="counterPrompt.y"
+      :action-label="counterPrompt.action"
+      :detail-label="counterPrompt.detail"
     />
     <GameInteractionPrompt
       v-if="cafePrompt && !doorPrompt"
@@ -1064,14 +1192,20 @@ const crosshairClass = computed(() => {
     </p>
     <GamePlacementHud :visible="placementPreviewActive" :hints="placementHudHints" />
     <div
-      v-if="inStore && storeDepartment && !inventoryOpen"
+      v-if="activeFurniture && storeDepartment && !inventoryOpen"
       class="cc-hud pointer-events-none absolute left-1/2 top-3 z-10 -translate-x-1/2 px-4 py-1.5 font-display text-xs uppercase tracking-[0.2em] text-fog"
     >
-      <span class="text-sun">Cove Home</span> · {{ storeDepartment }}
+      <span class="text-sun">{{ storeBrand }}</span> · {{ storeDepartment }}
     </div>
-    <GameStoreItemCard v-if="storeTarget && !inventoryOpen" :target="storeTarget" :feedback="storeFeedback" />
+    <GameStoreItemCard
+      v-if="storeTarget && !inventoryOpen"
+      :target="storeTarget"
+      :feedback="storeFeedback"
+      :brand="storeBrand"
+      :basket="activeFurniture?.store.hasCounter.value"
+    />
     <p
-      v-else-if="inStore && storeFeedback && !inventoryOpen"
+      v-else-if="activeFurniture && storeFeedback && !inventoryOpen"
       class="cc-hud pointer-events-none absolute bottom-24 right-3 z-20 max-w-xs px-3 py-2 text-xs font-bold"
       :class="storeFeedback.kind === 'success' ? 'text-mint' : 'text-coral'"
     >
@@ -1158,28 +1292,28 @@ const crosshairClass = computed(() => {
       {{ placementHelp }}
     </p>
     <div
-      v-if="inThreads && !inventoryOpen"
+      v-if="basketStore && !inventoryOpen"
       class="cc-hud pointer-events-none absolute left-1/2 top-3 z-10 -translate-x-1/2 px-4 py-1.5 font-display text-xs uppercase tracking-[0.2em] text-fog"
     >
-      <span class="text-sun">Cove Threads</span> · Basket {{ clothesBasket.length }} · {{ clothesBasketTotal }} coins
+      <span class="text-sun">{{ basketTitle }}</span> · Basket {{ basketItems.length }} · {{ basketTotal }} coins
     </div>
     <p
-      v-if="inThreads && clothesFeedback && !inventoryOpen && !clothesCheckoutOpen"
+      v-if="basketStore && basketFeedback && !inventoryOpen && !checkoutOpen && !storeTarget"
       class="cc-hud pointer-events-none absolute bottom-24 right-3 z-20 max-w-xs px-3 py-2 text-xs font-bold"
-      :class="clothesFeedback.kind === 'success' ? 'text-mint' : 'text-coral'"
+      :class="basketFeedback.kind === 'success' ? 'text-mint' : 'text-coral'"
     >
-      {{ clothesFeedback.text }}
+      {{ basketFeedback.text }}
     </p>
     <GameBasketCheckout
-      v-if="clothesCheckoutOpen"
-      title="Cove Threads"
-      :items="clothesBasket"
-      :total="clothesBasketTotal"
-      :paying="clothesPaying"
-      :feedback="clothesFeedback"
-      @pay="clothingStore.pay"
-      @remove="clothingStore.removeFromBasket"
-      @close="clothingStore.closeCheckout"
+      v-if="checkoutOpen"
+      :title="basketTitle"
+      :items="basketItems"
+      :total="basketTotal"
+      :paying="basketPaying"
+      :feedback="basketFeedback"
+      @pay="basketStore?.pay()"
+      @remove="(item) => basketStore?.removeFromBasket(item)"
+      @close="basketStore?.closeCheckout()"
     />
     <p
       v-if="tradeIncoming && !watchMenuOpen"
