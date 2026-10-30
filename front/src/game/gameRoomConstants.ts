@@ -38,7 +38,9 @@ export const RACE_SPILL_PENALTY_MS = 2000
 /** Drink Fast challenge: both players on stools at most this far apart (m, XZ), on the same floor (± tolerance). */
 export const CHALLENGE_REACH = 4
 export const CHALLENGE_FLOOR_TOLERANCE = 1.5
-export const DARTS_MAX_OFFSET_CM = 25
+/** Darts throw meter (same values as socket/src/pubConstants.ts): release at the ideal power for a straight dart. */
+export const DARTS_POWER_IDEAL = 0.76
+export const DARTS_POWER_DEAD_ZONE = 0.05
 export const INTOXICATION_MAX = 100
 export const TIPSY_AT = 30
 export const DRUNK_AT = 60

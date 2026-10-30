@@ -263,8 +263,9 @@ export function usePubGames(deps: PubGamesDeps) {
     deps.say(`Darts: ${alone ? 'game over' : `you finished ${ordinal(place)}`}${coins > 0 ? ` · +${coins} coins` : ''}`)
   }
 
-  function sendThrow(x: number, y: number): void {
-    send('pub_darts_throw', { x, y })
+  /** Aim point (crosshair, drift included) and meter power; the socket decides where the dart lands. */
+  function sendThrow(x: number, y: number, power: number): void {
+    send('pub_darts_throw', { x, y, power })
   }
 
   function closeDarts(): void {

@@ -1,5 +1,5 @@
 import { callRealtimeBackend, errorPayload } from './backend.ts'
-import { dartsScore } from './darts.ts'
+import { dartLanding, dartsScore } from './darts.ts'
 import { forEachPubClient, isWithinPubReach, releaseSeat, sendPubError } from './pub.ts'
 import {
   CHALLENGE_COOLDOWN_MS,
@@ -561,16 +561,20 @@ function advanceTurn(room: GameRoom, game: DartsGame, now: number): void {
   broadcastDartsState(room, game)
 }
 
-export function onDartsThrow(room: GameRoom, client: GameClient, payload: ClientPayload, now = Date.now()): void {
+/** The client sends where its crosshair was and the meter power; the landing and the score are decided here. */
+export function onDartsThrow(room: GameRoom, client: GameClient, payload: ClientPayload, now = Date.now(), random: () => number = Math.random): void {
   const player = room.players.get(client.sessionId)
   const game = room.pub.darts
   if (!player || !game?.started || now < player.knockedOutUntil) return
   const current = game.players[game.turn]
   if (current.sessionId !== player.sessionId || current.darts.length >= DARTS_THROWS) return
-  const x = payload?.x
-  const y = payload?.y
-  if (typeof x !== 'number' || typeof y !== 'number' || !Number.isFinite(x) || !Number.isFinite(y)) return
-  if (Math.abs(x) > DARTS_MAX_OFFSET_CM || Math.abs(y) > DARTS_MAX_OFFSET_CM) return
+  const aimX = payload?.x
+  const aimY = payload?.y
+  const power = payload?.power
+  if (typeof aimX !== 'number' || typeof aimY !== 'number' || typeof power !== 'number') return
+  if (!Number.isFinite(aimX) || !Number.isFinite(aimY) || !Number.isFinite(power)) return
+  if (Math.abs(aimX) > DARTS_MAX_OFFSET_CM || Math.abs(aimY) > DARTS_MAX_OFFSET_CM || power < 0 || power > 1) return
+  const { x, y } = dartLanding(aimX, aimY, power, player.intoxication, random)
   current.darts.push({ x, y, score: dartsScore(x, y) })
   if (current.darts.length >= DARTS_THROWS) {
     advanceTurn(room, game, now)

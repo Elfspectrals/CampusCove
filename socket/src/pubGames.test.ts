@@ -62,7 +62,7 @@ const {
   startDarts,
   startRace
 } = await import('./pubGames.ts')
-const { CHALLENGE_COUNTDOWN_MS, CHALLENGE_TTL_MS, DARTS_LOBBY_MS, DARTS_TURN_MS, RACE_LOBBY_MS, RACE_MAX_PROGRESS_PER_S, RACE_MAX_SPILLS, RACE_SPILL_PENALTY_MS, SHOTS_MIN_MS } = await import('./pubConstants.ts')
+const { CHALLENGE_COUNTDOWN_MS, CHALLENGE_TTL_MS, DARTS_LOBBY_MS, DARTS_POWER_IDEAL, DARTS_TURN_MS, RACE_LOBBY_MS, RACE_MAX_PROGRESS_PER_S, RACE_MAX_SPILLS, RACE_SPILL_PENALTY_MS, SHOTS_MIN_MS } = await import('./pubConstants.ts')
 await loadWorld()
 
 function fakeClient(sessionId: string): FakeClient {
@@ -326,19 +326,21 @@ test('Darts: lobby, three darts each in turn, a timed-out turn loses its darts, 
   assert.equal(state.throwsLeft, 3)
   assert.equal(state.turnEndsAt, start + DARTS_TURN_MS)
 
-  onDartsThrow(room, cb, { x: 0, y: 0 }, start + 100)
-  onDartsThrow(room, ca, { x: 0, y: 30 }, start + 100)
-  onDartsThrow(room, ca, { x: 0, y: 0 }, start + 1000)
-  onDartsThrow(room, ca, { x: 0, y: 10.3 }, start + 2000)
+  // A steady hand: this source makes every server-side scatter draw zero.
+  const still = () => 0.25
+  onDartsThrow(room, cb, { x: 0, y: 0, power: DARTS_POWER_IDEAL }, start + 100, still)
+  onDartsThrow(room, ca, { x: 0, y: 30, power: DARTS_POWER_IDEAL }, start + 100, still)
+  onDartsThrow(room, ca, { x: 0, y: 0, power: DARTS_POWER_IDEAL }, start + 1000, still)
+  onDartsThrow(room, ca, { x: 0, y: 10.3, power: DARTS_POWER_IDEAL }, start + 2000, still)
   state = received(cAway, 'pub_darts_state').at(-1)
   assert.equal(state.turn, 'a')
   assert.equal(state.throwsLeft, 1)
-  onDartsThrow(room, ca, { x: 0, y: -16.5 }, start + 3000)
+  onDartsThrow(room, ca, { x: 0, y: -16.5, power: DARTS_POWER_IDEAL }, start + 3000, still)
   state = received(cAway, 'pub_darts_state').at(-1)
   assert.equal(state.turn, 'b')
   assert.equal(state.players[0].total, 50 + 60 + 6)
 
-  onDartsThrow(room, cb, { x: 5, y: 0 }, start + 4000)
+  onDartsThrow(room, cb, { x: 5, y: 0, power: DARTS_POWER_IDEAL }, start + 4000, still)
   assert.equal(timers.length, 3)
   timers[2]()
   await new Promise((resolve) => setImmediate(resolve))

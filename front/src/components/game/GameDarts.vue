@@ -1,6 +1,19 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
-import { DARTBOARD_CM, DARTBOARD_SECTORS, SECTOR_DEG, aimSway, dartLabel, throwOffset, type DartPoint } from '../../game/pub/darts'
+import { DARTS_POWER_DEAD_ZONE, DARTS_POWER_IDEAL } from '../../game/gameRoomConstants'
+import {
+  DARTBOARD_CM,
+  DARTBOARD_SECTORS,
+  FULL_BREATH,
+  SECTOR_DEG,
+  aimDrift,
+  breathStep,
+  dartLabel,
+  meterPeriodS,
+  meterPower,
+  type BreathState,
+  type DartPoint,
+} from '../../game/pub/darts'
 import UiIcon from '../ui/UiIcon.vue'
 
 type DartsPlayer = { sessionId: string; pseudo: string; darts: { x: number; y: number; score: number }[]; total: number; me: boolean }
@@ -15,13 +28,15 @@ const props = defineProps<{
   ranking: { sessionId: string; total: number }[] | null
 }>()
 
-const emit = defineEmits<{ throw: [x: number, y: number]; close: [] }>()
+const emit = defineEmits<{ throw: [x: number, y: number, power: number]; close: [] }>()
 
 const BOARD_RADIUS_CM = 22.5
 const VIEW = BOARD_RADIUS_CM + 0.5
 const NUMBER_RADIUS_CM = 19.8
 const THROW_PENDING_MS = 1500
 const ARROW_STEP_CM = 1
+const MAX_FRAME_S = 0.1
+const HIT_POP_MS = 1100
 
 const PLAYER_TONES = [
   { dot: 'bg-sun', text: 'text-sun', fill: 'rgb(var(--cc-sun))' },
@@ -65,11 +80,22 @@ const pointer = ref<DartPoint>({ x: 0, y: 0 })
 const now = ref(Date.now())
 const sway = ref<DartPoint>({ x: 0, y: 0 })
 const pending = ref(false)
+const charging = ref(false)
+const power = ref(0)
+const holdingBreath = ref(false)
+const breath = ref<BreathState & { factor: number }>({ ...FULL_BREATH, factor: 1 })
+const hit = ref<{ x: number; y: number; label: string; key: number } | null>(null)
 
 const swaySeed = Math.floor(Math.random() * 0x7fffffff)
 let frame = 0
 let startedAt = 0
+let lastFrameAt = 0
 let pendingTimer = 0
+let hitTimer = 0
+let aimedS = 0
+let chargeStartedAt = 0
+let meterPeriod = meterPeriodS(Math.random, props.intoxication)
+const sweetZone = { from: DARTS_POWER_IDEAL - DARTS_POWER_DEAD_ZONE, to: DARTS_POWER_IDEAL + DARTS_POWER_DEAD_ZONE }
 
 const myTurn = computed(() => props.turn !== null && props.turn === props.mySessionId)
 const canThrow = computed(() => myTurn.value && props.throwsLeft > 0 && !pending.value && props.ranking === null)
@@ -107,9 +133,14 @@ const podium = computed(() =>
 )
 
 function tick(timestamp: number): void {
-  if (!startedAt) startedAt = timestamp
+  if (!startedAt) startedAt = lastFrameAt = timestamp
+  const dt = Math.min(MAX_FRAME_S, (timestamp - lastFrameAt) / 1000)
+  lastFrameAt = timestamp
   now.value = Date.now()
-  sway.value = aimSway((timestamp - startedAt) / 1000, props.intoxication, swaySeed)
+  if (canThrow.value) aimedS += dt
+  breath.value = breathStep(breath.value, holdingBreath.value && canThrow.value, dt, props.intoxication)
+  sway.value = aimDrift({ t: (timestamp - startedAt) / 1000, aimedS, intoxication: props.intoxication, seed: swaySeed, breathFactor: breath.value.factor })
+  if (charging.value) power.value = meterPower((timestamp - chargeStartedAt) / 1000, meterPeriod)
   frame = requestAnimationFrame(tick)
 }
 
@@ -117,19 +148,62 @@ function aimAt(e: MouseEvent): void {
   const svg = board.value
   if (!svg) return
   const rect = svg.getBoundingClientRect()
+  holdingBreath.value = e.shiftKey
   pointer.value = {
     x: ((e.clientX - rect.left) / rect.width) * 2 * VIEW - VIEW,
     y: VIEW - ((e.clientY - rect.top) / rect.height) * 2 * VIEW,
   }
 }
 
-function throwDart(): void {
+function startCharge(): void {
+  if (!canThrow.value || charging.value) return
+  charging.value = true
+  power.value = 0
+  chargeStartedAt = performance.now()
+}
+
+/** Release: the crosshair (drift included) and the meter power go to the server, which adds the hand scatter. */
+function releaseDart(): void {
+  if (!charging.value) return
+  charging.value = false
   if (!canThrow.value) return
-  const { x, y } = throwOffset(crosshair.value, props.intoxication)
+  const { x, y } = crosshair.value
   pending.value = true
   clearTimeout(pendingTimer)
   pendingTimer = window.setTimeout(() => (pending.value = false), THROW_PENDING_MS)
-  emit('throw', x, y)
+  emit('throw', x, y, power.value)
+}
+
+function cancelCharge(): void {
+  charging.value = false
+  power.value = 0
+}
+
+function onBoardMouseDown(e: MouseEvent): void {
+  if (e.button !== 0) return
+  holdingBreath.value = e.shiftKey
+  startCharge()
+}
+
+function onBoardMouseUp(e: MouseEvent): void {
+  if (e.button === 0) releaseDart()
+}
+
+function focusBoard(e: MouseEvent): void {
+  ;(e.currentTarget as HTMLElement | null)?.focus({ preventScroll: true })
+}
+
+function onBoardBlur(): void {
+  holdingBreath.value = false
+  cancelCharge()
+}
+
+function onBoardKeyUp(e: KeyboardEvent): void {
+  if (e.key === 'Shift') holdingBreath.value = false
+  if (e.key === ' ' || e.key === 'Enter') {
+    releaseDart()
+    e.preventDefault()
+  }
 }
 
 watch(
@@ -137,10 +211,33 @@ watch(
   () => {
     pending.value = false
     clearTimeout(pendingTimer)
+    cancelCharge()
+    aimedS = 0
+    meterPeriod = meterPeriodS(Math.random, props.intoxication)
+  },
+)
+
+const dartCounts = new Map<string, number>()
+watch(
+  () => props.players.map((player) => `${player.sessionId}:${player.darts.length}`).join(','),
+  () => {
+    for (const player of props.players) {
+      const before = dartCounts.get(player.sessionId) ?? 0
+      dartCounts.set(player.sessionId, player.darts.length)
+      const dart = player.darts[player.darts.length - 1]
+      if (player.darts.length <= before || !dart) continue
+      hit.value = { x: dart.x, y: dart.y, label: dartLabel(dart.x, dart.y), key: Date.now() }
+      clearTimeout(hitTimer)
+      hitTimer = window.setTimeout(() => (hit.value = null), HIT_POP_MS)
+    }
   },
 )
 
 function onBoardKey(e: KeyboardEvent): void {
+  if (e.key === 'Shift') {
+    holdingBreath.value = true
+    return
+  }
   const moves: Record<string, DartPoint> = {
     ArrowUp: { x: 0, y: ARROW_STEP_CM },
     ArrowDown: { x: 0, y: -ARROW_STEP_CM },
@@ -154,7 +251,7 @@ function onBoardKey(e: KeyboardEvent): void {
     return
   }
   if (e.key === ' ' || e.key === 'Enter') {
-    throwDart()
+    if (!e.repeat) startCharge()
     e.preventDefault()
   }
 }
@@ -174,6 +271,7 @@ onUnmounted(() => {
   window.removeEventListener('keydown', onKey, true)
   cancelAnimationFrame(frame)
   clearTimeout(pendingTimer)
+  clearTimeout(hitTimer)
 })
 </script>
 
@@ -193,11 +291,16 @@ onUnmounted(() => {
           :class="canThrow ? 'cursor-none' : 'cursor-default'"
           role="button"
           tabindex="0"
-          :aria-label="canThrow ? 'Dartboard: click or press Space to throw' : 'Dartboard'"
+          :aria-label="canThrow ? 'Dartboard: hold the mouse button or Space and release to throw, hold Shift to steady' : 'Dartboard'"
           :aria-disabled="!canThrow"
           @mousemove="aimAt"
-          @click="throwDart"
+          @mouseenter="focusBoard"
+          @mousedown="onBoardMouseDown"
+          @mouseup="onBoardMouseUp"
+          @mouseleave="cancelCharge"
           @keydown="onBoardKey"
+          @keyup="onBoardKeyUp"
+          @blur="onBoardBlur"
         >
           <svg ref="board" :viewBox="`${-VIEW} ${-VIEW} ${VIEW * 2} ${VIEW * 2}`" class="block h-auto w-full" aria-hidden="true">
             <circle :r="BOARD_RADIUS_CM" fill="#141210" />
@@ -230,6 +333,23 @@ onUnmounted(() => {
                 <path d="M1.3 -1.3 l0.9 -0.9 l0.4 1.4 l-1.4 -0.4 z" :fill="toneOf(index).fill" stroke="#141210" stroke-width="0.1" />
                 <circle r="0.45" :fill="toneOf(index).fill" stroke="#fff" stroke-width="0.15" />
               </g>
+            </g>
+
+            <g v-if="hit" :key="hit.key" :transform="`translate(${hit.x} ${-hit.y - 2.6})`">
+              <text
+                class="animate-cc-pop"
+                fill="#fff"
+                stroke="#141210"
+                stroke-width="0.5"
+                paint-order="stroke"
+                font-size="3.4"
+                font-weight="800"
+                font-family="Nunito, system-ui, sans-serif"
+                text-anchor="middle"
+                dominant-baseline="central"
+              >
+                {{ hit.label }}
+              </text>
             </g>
 
             <g v-if="canThrow" :transform="`translate(${crosshair.x} ${-crosshair.y})`" stroke="#fff" stroke-width="0.3" stroke-linecap="round">
@@ -291,8 +411,31 @@ onUnmounted(() => {
             </li>
           </ol>
 
+          <div v-if="canThrow" class="flex flex-col gap-2" aria-hidden="true">
+            <div class="flex items-center gap-2">
+              <span class="w-12 text-[11px] uppercase tracking-wider text-mist">Power</span>
+              <div class="relative h-3 flex-1 overflow-hidden rounded-full bg-ink-950/60">
+                <div class="absolute inset-y-0 bg-mint/50" :style="{ left: `${sweetZone.from * 100}%`, width: `${(sweetZone.to - sweetZone.from) * 100}%` }" />
+                <div class="absolute inset-y-0 w-1 -translate-x-1/2 rounded-full bg-sun" :style="{ left: `${power * 100}%` }" />
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="w-12 text-[11px] uppercase tracking-wider text-mist">Breath</span>
+              <div class="relative h-2 flex-1 overflow-hidden rounded-full bg-ink-950/60">
+                <div
+                  class="absolute inset-y-0 left-0 rounded-full"
+                  :class="breath.gasp > 0 ? 'bg-coral' : breath.factor < 1 ? 'bg-pool' : 'bg-mist/60'"
+                  :style="{ width: `${breath.air * 100}%` }"
+                />
+              </div>
+            </div>
+          </div>
+
           <p v-if="!ranking" class="m-0 text-[11px] text-mist">
-            <template v-if="canThrow">Aim with the mouse or the arrow keys, click or press Space to throw. The crosshair sways with every pint you had.</template>
+            <template v-if="canThrow">
+              Aim with the mouse or the arrow keys. Hold the mouse button or Space and let go in the green band: too soft drops low, too hard flies
+              high. Hold Shift to hold your breath, not for too long. The longer you aim and the more pints you had, the more your hand drifts.
+            </template>
             <template v-else-if="pending">Dart in the air…</template>
             <template v-else>Three darts each, best total wins.</template>
           </p>
