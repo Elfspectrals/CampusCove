@@ -33,6 +33,11 @@ export const BARTENDER_REACH = 3.6
 export const POUR_MS = 3000
 export const SECRET_OPEN_MS = 20_000
 export const RACE_MAX_PROGRESS_PER_S = 0.125
+/** Drink Fast: each spill (glass tipped above the bands) adds this to the final time. */
+export const RACE_SPILL_PENALTY_MS = 2000
+/** Drink Fast challenge: both players on stools at most this far apart (m, XZ), on the same floor (± tolerance). */
+export const CHALLENGE_REACH = 4
+export const CHALLENGE_FLOOR_TOLERANCE = 1.5
 export const DARTS_MAX_OFFSET_CM = 25
 export const INTOXICATION_MAX = 100
 export const TIPSY_AT = 30

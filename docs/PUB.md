@@ -14,7 +14,9 @@ Décisions produit (validées le 29/10/2026) :
   visuellement), **black-out à 100** : écran noir « You blacked out… », réveil dans un lit de la Cove Clinic, facture
   de 40 coins, rien de perdu, ivresse remise à 30 (gueule de bois qui se dissipe).
 - Mini-jeux : **Drink Fast** (barre d'équilibre maintien/relâche d'un seul bouton, solo contre le chrono ou course
-  entre les joueurs assis au bar), **Meter Shot** (vider 10 shots le plus vite possible en cliquant), **Darts** (visée
+  entre les joueurs assis au bar, ouverte à tous ou en défiant un voisin de tabouret ; trop pencher le verre le renverse,
+  +2 s par renversement ; chaque pinte se vide côte à côte à l'écran, les autres voient les coureurs lever leur
+  pinte et un tableau des scores au-dessus du bar), **Meter Shot** (vider 10 shots le plus vite possible en cliquant), **Darts** (visée
   avec tangage, 3 fléchettes chacun, chacun son tour, meilleur total). Récompenses en coins par l'API.
 - S'asseoir sur n'importe quel siège du pub (tabourets, chaises, banquettes, fauteuils, bancs du jardin), visible par
   les autres joueurs.
@@ -233,7 +235,10 @@ Constantes (`socket/src/pubConstants.ts`, miroir côté front dans `gameRoomCons
 | `pub_bell` | — | à portée du bar, 10 s de cooldown par joueur ; broadcast zone `pub_bell { sessionId }` |
 | `pub_race_open` | — | assis sur `stool_*`, aucune course en cours dans la salle ; `POST /pub/play` ; crée la course (`startsAt = now + RACE_LOBBY_MS`, `seed`), broadcast zone `pub_race_lobby` |
 | `pub_race_join` | — | course en lobby, assis sur `stool_*` ; `POST /pub/play` ; rebroadcast `pub_race_lobby` |
-| `pub_race_progress` | `{ progress }` | course lancée, joueur inscrit, au plus un toutes les `RACE_PROGRESS_MIN_INTERVAL_MS` ; `progress` borné à `précédent + RACE_MAX_PROGRESS_PER_S × dt` ; ≥ 1 = arrivé |
+| `pub_race_leave` | — | le joueur ferme l'écran de course : forfait immédiat (comme se lever), la course se termine si plus personne ne court |
+| `pub_race_progress` | `{ progress, spills }` | course lancée, joueur inscrit, au plus un toutes les `RACE_PROGRESS_MIN_INTERVAL_MS` ; `progress` borné à `précédent + RACE_MAX_PROGRESS_PER_S × dt` ; ≥ 1 = arrivé ; `spills` (verre trop penché au-dessus des bandes) ne fait que monter, plafonné à `RACE_MAX_SPILLS` ; chaque renversement ajoute `RACE_SPILL_PENALTY_MS` (2 s) au temps final, le classement `pub_race_end` est trié sur ce temps corrigé |
+| `pub_race_challenge` | `{ targetSessionId }` | les deux sur un tabouret, à ≤ `CHALLENGE_REACH` (4 m) au même étage, aucune course ouverte, aucun défi en attente, un défi par joueur toutes les 5 s ; défi valable 15 s ; codes d'erreur `challenge_*` / `race_in_progress` |
+| `pub_race_challenge_reply` | `{ fromSessionId, accept }` | le joueur défié ; accepter ouvre une course à deux (chacun paie l'entrée) avec 3 s de compte à rebours, d'autres joueurs assis peuvent encore rejoindre |
 | `pub_shots_start` | — | à 2,5 m de `shots.player`, pas de partie en cours ; `POST /pub/play` ; `pub_shots_ready { seed, startedAt }` |
 | `pub_shots_done` | `{ ms }` | partie en cours, `ms` plausible (voir constantes) ; ajoute l'alcool, `POST /pub/reward`, `pub_shots_result { ms, coins }`, broadcast `user_action { action: 'drink', code: 'drink_vodka' }` |
 | `pub_darts_join` | — | à 3 m de `darts.oche`, partie en lobby ou aucune, < `DARTS_MAX_PLAYERS` ; `POST /pub/play` ; lobby de `DARTS_LOBBY_MS` après la première inscription |
@@ -256,8 +261,12 @@ Constantes (`socket/src/pubConstants.ts`, miroir côté front dans `gameRoomCons
 | `pub_bell` | `{ sessionId }` | zone |
 | `pub_race_lobby` | `{ hostSessionId, players: string[], startsAt }` | zone |
 | `pub_race_start` | `{ seed, players: string[] }` | zone |
-| `pub_race_state` | `{ players: [{ sessionId, progress }] }` | zone, ≤ 5 Hz |
-| `pub_race_end` | `{ ranking: [{ sessionId, ms }], rewards: [{ sessionId, coins }] }` | zone |
+| `pub_race_state` | `{ players: [{ sessionId, progress, spills }] }` | zone, ≤ 5 Hz, immédiat quand un `spills` monte |
+| `pub_race_end` | `{ ranking: [{ sessionId, ms, spills }], rewards: [{ sessionId, coins }] }` (`ms` pénalités incluses) | zone |
+| `pub_race_challenged` | `{ fromSessionId, expiresAt }` | joueur défié |
+| `pub_race_challenge_sent` | `{ toSessionId, expiresAt }` | joueur qui défie |
+| `pub_race_challenge_result` | `{ toSessionId, accepted, reason?: 'declined' \| 'expired' \| 'busy' \| 'cancelled' }` | joueur qui défie |
+| `pub_race_challenge_cancelled` | `{ fromSessionId }` | joueur défié (expiration, ou le joueur qui défie s'est levé / est parti) |
 | `pub_shots_ready` / `pub_shots_result` | voir ci-dessus | joueur |
 | `pub_darts_lobby` | `{ players: string[], startsAt }` | zone |
 | `pub_darts_state` | `{ players: [{ sessionId, darts: [{ x, y, score }], total }], turn: sessionId \| null, throwsLeft, turnEndsAt }` | zone |

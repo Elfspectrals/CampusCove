@@ -24,7 +24,7 @@ const { t } = useI18n()
 
 const GROUPS: Array<{ id: 'move' | 'actions' | 'hotbar'; actions: BindableAction[] }> = [
   { id: 'move', actions: ['moveForward', 'moveBack', 'moveLeft', 'moveRight', 'jump'] },
-  { id: 'actions', actions: ['interact', 'punch', 'inventory', 'survivalWatch', 'cook', 'houseKeys', 'buyHouse', 'rotate', 'putAway'] },
+  { id: 'actions', actions: ['interact', 'punch', 'inventory', 'survivalWatch', 'cook', 'houseKeys', 'buyHouse', 'rotate', 'putAway', 'acceptChallenge', 'declineChallenge'] },
   { id: 'hotbar', actions: ['hotbar1', 'hotbar2', 'hotbar3', 'hotbar4', 'hotbar5', 'hotbar6', 'hotbar7', 'hotbar8', 'hotbar9'] },
 ]
 

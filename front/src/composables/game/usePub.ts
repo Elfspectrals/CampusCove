@@ -49,8 +49,11 @@ export interface PubDeps {
   /** The drink just picked up goes in hand. */
   selectHotbarItem: (code: string) => void
   say: (text: string) => void
-  /** The server refused a pub action (useSeats drops a pending `sit`). */
-  onError: () => void
+  /**
+   * The server refused a pub action (useSeats drops a pending `sit`, usePubChallenge a pending challenge).
+   * Returns a friendlier line than the server's message for codes it knows, or null.
+   */
+  onError: (code: string) => string | null
   /** A short camera jolt along (dirX, dirZ); the caller honours the comfort / reduced-effects settings. */
   nudgeCamera: (dirX: number, dirZ: number, strength: number) => void
 }
@@ -174,8 +177,7 @@ export function usePub(deps: PubDeps) {
   function onError(data: PubErrorPayload): void {
     ordering.value = null
     secretPending.value = false
-    deps.onError()
-    deps.say(data.message)
+    deps.say(deps.onError(data.code) ?? data.message)
   }
 
   function pickUp(): boolean {

@@ -2,6 +2,7 @@ import { computed, ref, watch, type Ref, type ShallowRef } from 'vue'
 import type { Room } from '@colyseus/sdk'
 import * as THREE from 'three'
 import { standsOnFloor } from '../../game/pub/npcAim'
+import { RESULT_LINGER_MS, canSpectate, ordinal, raceResults, type RaceResultRow } from '../../game/pub/raceBoard'
 import { isStool } from '../../game/pub/seats'
 import type { PubLayout, PubSeat, WorldManifest } from '../../game/world/worldManifest'
 import type {
@@ -26,6 +27,10 @@ const DARTS_THROWS = 3
 const RACE_PROMPT_AHEAD = 0.7
 const RACE_PROMPT_HEIGHT = 0.5
 const GAME_PROMPT_HEIGHT = 1.2
+/** The spectators' scoreboard floats this high over the beer taps. */
+const BOARD_ABOVE_TAPS = 0.75
+/** A race that never sent its end (zone change, lost message) is dropped after this long (socket RACE_TIMEOUT_MS + margin). */
+const RACE_STALE_MS = 50_000
 
 interface Race {
   hostSessionId: string
@@ -33,7 +38,23 @@ interface Race {
   startsAt: number
   seed: number
   progress: Record<string, number>
+  spills: Record<string, number>
   finished: boolean
+  /** Local clock when `pub_race_start` arrived (null in the lobby). */
+  startedAt: number | null
+  /** The server's final order (ms include the spill penalty), once over. */
+  results: RaceResultRow[] | null
+  /** This player closed the race screen mid-race: they watch the rest like any spectator. */
+  left: boolean
+}
+
+/** The floating scoreboard over the bar for players who are not racing. */
+export interface RaceBoard {
+  x: number
+  y: number
+  countdown: number
+  racers: Array<{ sessionId: string; pseudo: string; percent: number; spills: number }>
+  results: Array<RaceResultRow & { pseudo: string }> | null
 }
 
 interface Shots {
@@ -60,10 +81,8 @@ export interface PubGamesDeps {
   holdingConsumable: () => boolean
   pseudoOf: (sessionId: string) => string
   say: (text: string) => void
-}
-
-function ordinal(place: number): string {
-  return place === 1 ? '1st' : place === 2 ? '2nd' : place === 3 ? '3rd' : `${place}th`
+  /** Another racer's avatar lifts a pint drunk to `progress`, or puts it down (null). */
+  setRacePint: (sessionId: string, progress: number | null) => void
 }
 
 /**
@@ -82,7 +101,10 @@ export function usePubGames(deps: PubGamesDeps) {
   const me = () => deps.gameRoomRef.value?.sessionId ?? ''
   const send = (type: string, payload?: unknown) => deps.gameRoomRef.value?.send(type, payload)
 
-  const raceOpen = computed(() => race.value !== null && race.value.players.includes(me()))
+  const raceOpen = computed(() => race.value !== null && !race.value.left && race.value.players.includes(me()))
+  const board = ref<RaceBoard | null>(null)
+  /** The last race's final order, kept a few seconds for the spectators' board. */
+  let lastResults: { rows: RaceResultRow[]; until: number } | null = null
   const dartsOpen = computed(() => darts.value !== null && darts.value.players.some((p) => p.sessionId === me()))
   const shotsOpen = computed(() => shots.value !== null)
   const uiOpen = computed(() => raceOpen.value || shotsOpen.value || dartsOpen.value)
@@ -98,6 +120,7 @@ export function usePubGames(deps: PubGamesDeps) {
       sessionId,
       pseudo: deps.pseudoOf(sessionId),
       progress: current.progress[sessionId] ?? 0,
+      spills: current.spills[sessionId] ?? 0,
       me: sessionId === me(),
     }))
   })
@@ -116,30 +139,58 @@ export function usePubGames(deps: PubGamesDeps) {
 
   // ------------------------------------------------------------ Drink Fast
 
+  /** Puts down every pint the race's avatars hold (end, a new lobby, a stale race). */
+  function lowerPints(current: Race | null): void {
+    for (const sessionId of current?.players ?? []) if (sessionId !== me()) deps.setRacePint(sessionId, null)
+  }
+
   function onRaceLobby(data: PubRaceLobbyPayload): void {
-    race.value = { ...data, seed: race.value?.seed ?? 0, progress: {}, finished: false }
+    const previous = race.value
+    if (previous && previous.startedAt !== null) lowerPints(previous)
+    const sameLobby = previous !== null && previous.startedAt === null && !previous.finished
+    race.value = {
+      ...data,
+      seed: previous?.seed ?? 0,
+      progress: {},
+      spills: {},
+      finished: false,
+      startedAt: null,
+      results: null,
+      left: sameLobby ? previous.left : false,
+    }
   }
 
   function onRaceStart(data: PubRaceStartPayload): void {
     const current = race.value
     if (!current) return
-    race.value = { ...current, seed: data.seed, players: data.players, progress: {} }
+    race.value = { ...current, seed: data.seed, players: data.players, progress: {}, spills: {}, startedAt: Date.now() }
+    for (const sessionId of data.players) if (sessionId !== me()) deps.setRacePint(sessionId, 0)
   }
 
   function onRaceState(data: PubRaceStatePayload): void {
     const current = race.value
     if (!current) return
     const progress = { ...current.progress }
-    for (const player of data.players) progress[player.sessionId] = player.progress
-    race.value = { ...current, progress }
+    const spills = { ...current.spills }
+    for (const player of data.players) {
+      progress[player.sessionId] = player.progress
+      if (typeof player.spills === 'number') spills[player.sessionId] = player.spills
+      if (player.sessionId !== me() && current.startedAt !== null) deps.setRacePint(player.sessionId, player.progress)
+    }
+    race.value = { ...current, progress, spills }
   }
 
   function onRaceEnd(data: PubRaceEndPayload): void {
     const current = race.value
     if (!current) return
-    race.value = { ...current, finished: true }
+    lowerPints(current)
+    const results = raceResults(data.ranking, me())
+    lastResults = { rows: results, until: Date.now() + RESULT_LINGER_MS }
+    const spills = { ...current.spills }
+    for (const entry of data.ranking) spills[entry.sessionId] = entry.spills
+    race.value = { ...current, finished: true, results, spills }
     const place = data.ranking.findIndex((r) => r.sessionId === me()) + 1
-    if (place === 0) {
+    if (place === 0 || current.left) {
       race.value = null
       return
     }
@@ -148,11 +199,20 @@ export function usePubGames(deps: PubGamesDeps) {
     deps.say(`Drink Fast: ${alone ? 'done' : `you finished ${ordinal(place)}`}${coins > 0 ? ` · +${coins} coins` : ''}`)
   }
 
-  function sendRaceProgress(progress: number): void {
-    send('pub_race_progress', { progress })
+  function sendRaceProgress(progress: number, spills: number): void {
+    send('pub_race_progress', { progress, spills })
   }
 
   function closeRace(): void {
+    const current = race.value
+    if (current && !current.finished) {
+      send('pub_race_leave')
+      // still running for the others: keep following it from the bar
+      if (current.startedAt !== null) {
+        race.value = { ...current, left: true }
+        return
+      }
+    }
     race.value = null
   }
 
@@ -236,7 +296,7 @@ export function usePubGames(deps: PubGamesDeps) {
     const [x, y, z] = seat.position
     const at: [number, number, number] = [x - Math.sin(seat.yaw) * RACE_PROMPT_AHEAD, y + RACE_PROMPT_HEIGHT, z - Math.cos(seat.yaw) * RACE_PROMPT_AHEAD]
     if (!current) return { action: 'Drink Fast', detail: 'Race the bar · 20 coins', at, go: () => send('pub_race_open') }
-    if (current.players.includes(me()) || current.finished) return null
+    if ((current.players.includes(me()) && !current.left) || current.finished) return null
     if (Date.now() >= current.startsAt) return null
     return { action: 'Join the race', detail: 'Drink Fast · 20 coins', at, go: () => send('pub_race_join') }
   }
@@ -274,6 +334,43 @@ export function usePubGames(deps: PubGamesDeps) {
 
   const source: InteractionSource = { prompt, interact }
 
+  // ------------------------------------------------------------ spectators' scoreboard
+
+  function boardContent(now: number): Omit<RaceBoard, 'x' | 'y'> | null {
+    const current = race.value
+    if (current && !current.finished) {
+      return {
+        countdown: current.startedAt === null ? Math.max(0, Math.ceil((current.startsAt - now) / 1000)) : 0,
+        racers: current.players
+          .map((sessionId) => ({
+            sessionId,
+            pseudo: deps.pseudoOf(sessionId),
+            percent: Math.round(Math.min(1, current.progress[sessionId] ?? 0) * 100),
+            spills: current.spills[sessionId] ?? 0,
+          }))
+          .sort((a, b) => b.percent - a.percent),
+        results: null,
+      }
+    }
+    if (lastResults && now < lastResults.until) {
+      return { countdown: 0, racers: [], results: lastResults.rows.map((row) => ({ ...row, pseudo: deps.pseudoOf(row.sessionId) })) }
+    }
+    return null
+  }
+
+  /** Every frame: drops a stale race and places the spectators' scoreboard over the bar. */
+  function tick(): void {
+    const now = Date.now()
+    const current = race.value
+    if (current && current.startedAt !== null && !current.finished && now - current.startedAt > RACE_STALE_MS) {
+      lowerPints(current)
+      race.value = null
+    }
+    const content = layout && canSpectate(deps.myPosition, layout.counter, raceOpen.value) ? boardContent(now) : null
+    const screen = content && layout ? projectToScreen(layout.taps[0], layout.taps[1] + BOARD_ABOVE_TAPS, layout.taps[2]) : null
+    board.value = content && screen ? { ...content, ...screen } : null
+  }
+
   return {
     race,
     raceOpen,
@@ -283,6 +380,8 @@ export function usePubGames(deps: PubGamesDeps) {
     dartsOpen,
     dartsPlayers,
     uiOpen,
+    board,
+    tick,
     onTownLoaded,
     sendRaceProgress,
     closeRace,
