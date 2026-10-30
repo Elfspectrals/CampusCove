@@ -115,11 +115,11 @@ class PubApiTest extends TestCase
             'meter_shot 6 s' => ['meter_shot', 0, 6000, 15],
             'meter_shot under 9 s' => ['meter_shot', 0, 8999, 15],
             'meter_shot 9 s' => ['meter_shot', 0, 9000, 0],
-            'darts 1st' => ['darts', 1, 99, 30],
-            'darts 1st with bonus' => ['darts', 1, 100, 50],
+            'darts 1st' => ['darts', 1, 79, 30],
+            'darts 1st with bonus' => ['darts', 1, 80, 50],
             'darts 2nd' => ['darts', 2, 150, 0],
-            'darts solo 60' => ['darts', 0, 60, 10],
-            'darts solo under 60' => ['darts', 0, 59, 0],
+            'darts solo 45' => ['darts', 0, 45, 10],
+            'darts solo under 45' => ['darts', 0, 44, 0],
         ];
     }
 

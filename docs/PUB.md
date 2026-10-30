@@ -200,7 +200,7 @@ points pour Darts) :
 |---|---|
 | `drink_fast` | 1er 40, 2e 15, solo 15 si `score` < 20 000 ms, sinon 0 |
 | `meter_shot` | `score` < 6 000 ms → 30 ; < 9 000 → 15 ; sinon 0 |
-| `darts` | 1er 30 (+20 si `score` ≥ 100) ; solo 10 si `score` ≥ 60 |
+| `darts` | 1er 30 (+20 si `score` ≥ 80) ; solo 10 si `score` ≥ 45 |
 
 Tests `PubApiTest` : commande OK et solde, boisson inconnue, coins insuffisants, droit d'entrée, barème et cooldown,
 facture de gueule de bois sans perte d'objets.

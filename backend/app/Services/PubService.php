@@ -95,8 +95,8 @@ final class PubService
             },
             'meter_shot' => $score < 6000 ? 30 : ($score < 9000 ? 15 : 0),
             'darts' => match ($placement) {
-                1 => 30 + ($score >= 100 ? 20 : 0),
-                0 => $score >= 60 ? 10 : 0,
+                1 => 30 + ($score >= 80 ? 20 : 0),
+                0 => $score >= 45 ? 10 : 0,
                 default => 0,
             },
         };
