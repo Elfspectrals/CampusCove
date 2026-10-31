@@ -13,7 +13,6 @@ import { EYE_HEIGHT } from '../../game/gameRoomConstants'
 import {
   advancePunchPose,
   createDamageNumber,
-  createHitFlash,
   createPunchImpact,
   idlePunchPose,
   jabLeftArm,
@@ -23,6 +22,7 @@ import {
   startSwing,
   type PunchPose,
 } from '../../game/remotePunch'
+import { createHitFlash } from '../../game/hitFlash'
 import { advanceHitStop, idleHitStop, scheduleHitStop, type HitStop } from '../../game/punchFeel'
 import { createRacePint, type RacePint } from '../../game/pub/racePint'
 import { seatedAvatarFeetY } from '../../game/pub/seats'
