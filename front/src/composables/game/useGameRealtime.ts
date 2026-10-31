@@ -14,6 +14,8 @@ import { parseHousingUnitList } from '../../api/housing'
 import { getStoredAuth } from '../../api/session'
 import type { SfxName } from '../../game/sfx'
 import type {
+  AdminMenuPayload,
+  AdminSummonedPayload,
   ApartmentInventoryItem,
   DoorSoundPayload,
   HouseFurniturePayload,
@@ -41,6 +43,7 @@ import type {
   PunchTiredPayload,
   RemoteUserPayload,
   RoomInitPayload,
+  TeleportedPayload,
   TradeClosedPayload,
   TradeCompletedPayload,
   TradeErrorPayload,
@@ -111,6 +114,15 @@ export interface GameRealtimeDeps {
     onCompleted: (data: TradeCompletedPayload) => void
     onError: (data: TradeErrorPayload) => void
   }
+  /** Admin tools on the watch (useAdminWatch). */
+  admin: {
+    onInit: (isAdmin: boolean) => void
+    onMenu: (data: AdminMenuPayload) => void
+    onError: (data: { message: string }) => void
+    onSummoned: (data: AdminSummonedPayload) => void
+  }
+  /** The server moved this player (admin teleport / summon): place the camera and the look. */
+  onTeleported: (data: TeleportedPayload) => void
   /** Pub seats (useSeats): where a seat is, and this player's own seat changes. */
   seats: {
     seatPose: (seatId: string | null | undefined) => SeatPose | null
@@ -200,6 +212,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       if (payload.houseFurniture !== undefined) deps.onHouseFurnitureSync(payload.houseFurniture)
       if (payload.openDoors !== undefined) deps.onDoorsSync(payload.openDoors)
       deps.pub.onSecretDoor({ open: payload.pubSecretOpen === true })
+      deps.admin.onInit(payload.isAdmin === true)
     })
 
     room.onMessage('housing_units_sync', (data: { units?: unknown }) => syncHousingUnits(data.units))
@@ -265,6 +278,10 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('trade_closed', (data: TradeClosedPayload) => deps.trade.onClosed(data))
     room.onMessage('trade_completed', (data: TradeCompletedPayload) => deps.trade.onCompleted(data))
     room.onMessage('trade_error', (data: TradeErrorPayload) => deps.trade.onError(data))
+    room.onMessage('teleported', (data: TeleportedPayload) => deps.onTeleported(data))
+    room.onMessage('admin_menu', (data: AdminMenuPayload) => deps.admin.onMenu(data))
+    room.onMessage('admin_error', (data: { message: string }) => deps.admin.onError(data))
+    room.onMessage('admin_summoned', (data: AdminSummonedPayload) => deps.admin.onSummoned(data))
 
     room.onMessage('pub_pouring', (data: PubPouringPayload) => deps.pub.onPouring(data, room.sessionId))
     room.onMessage('pub_served', (data: PubServedPayload) => deps.pub.onServed(data))

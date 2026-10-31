@@ -60,6 +60,7 @@ import { useRoomEnvironment } from '../composables/game/useRoomEnvironment'
 import { useSeats } from '../composables/game/useSeats'
 import { useSurvival } from '../composables/game/useSurvival'
 import { useTrade } from '../composables/game/useTrade'
+import { useAdminWatch } from '../composables/game/useAdminWatch'
 import { usePunch } from '../composables/game/usePunch'
 import { useShopPurchase } from '../composables/useShopPurchase'
 import { toggleCollisionDebug } from '../game/collision/collisionDebug'
@@ -606,6 +607,19 @@ watch(tradeUiOpen, (open) => {
 })
 const watchKey = computed(() => actionKeyLabels('survivalWatch')[0] ?? 'T')
 
+// ---------------------------------------------------------------- watch apps: admin teleports
+
+const adminWatch = useAdminWatch({ gameRoomRef, say: (text) => survival.say(text) })
+const { isAdmin, menu: adminMenu, error: adminError } = adminWatch
+function adminTeleport(key: string): void {
+  adminWatch.teleport(key)
+  trade.closeMenu()
+}
+function adminSummon(sessionId: string): void {
+  adminWatch.summon(sessionId)
+  adminWatch.load()
+}
+
 // ---------------------------------------------------------------- survival: hunger, thirst, health
 
 const stamina = ref(MAX_STAMINA)
@@ -1001,6 +1015,12 @@ const realtime = useGameRealtime({
   playSoundOn: sfx.playOn,
   punchHitTiming: punch.remoteHitTimingFor,
   trade: trade.handlers,
+  admin: adminWatch.handlers,
+  onTeleported: ({ x, y, z, ry }) => {
+    Object.assign(myPosition, { x, y, z })
+    getCamera()?.position.set(x, y, z)
+    movement.setLook(ry, 0)
+  },
   seats: { seatPose: seats.seatPose, onSeated: seats.onSeated },
   pub: pub.handlers,
   pubGames: pubGames.handlers,
@@ -1354,10 +1374,16 @@ const crosshairClass = computed(() => {
       :incoming="tradeIncoming"
       :outgoing="tradeOutgoing"
       :error="tradeError"
+      :is-admin="isAdmin"
+      :admin-menu="adminMenu"
+      :admin-error="adminError"
       @request="trade.request"
       @respond="trade.respond"
       @cancel="trade.cancel"
       @close="trade.closeMenu"
+      @admin-open="adminWatch.load"
+      @teleport="adminTeleport"
+      @summon="adminSummon"
     />
     <GameTradeWindow
       v-if="tradeWindowOpen && tradeState"
