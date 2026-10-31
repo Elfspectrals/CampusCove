@@ -34,6 +34,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // In production only Caddy can reach PHP: trust its X-Forwarded-* so URLs are https
+        // and the login throttle sees the player's IP, not the proxy's.
+        $middleware->trustProxies(at: '*');
         // Empty inventory slots are sent as "" — keep them as strings for layout validation.
         $middleware->convertEmptyStringsToNull(except: [
             fn (Request $request) => $request->is('api/inventory/layout'),

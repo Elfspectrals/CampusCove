@@ -41,6 +41,33 @@ make up-build
 
 `CURRENCY` : `coins` ou `premium`. Relog après `set-admin`.
 
+## Production
+
+`docker-compose.prod.yml`. Seul Caddy publie des ports (80/443) : front buildé en statique, `/api` → PHP-FPM, `/ws` → Colyseus. Postgres, backend et socket restent sur le réseau interne. Tous les conteneurs tournent sans root.
+
+```bash
+cp .env.prod.example .env.prod   # puis remplir (make prod-key pour APP_KEY)
+make prod-up                     # https://campuscove.localhost (certificat de la CA locale de Caddy)
+make prod-ps
+make prod-down
+```
+
+| Service | Rôle |
+|---|---|
+| `caddy` | HTTPS (Let's Encrypt avec un vrai `DOMAIN`), front, en-têtes de sécurité, proxy `/api` et `/ws` |
+| `migrate` | Une fois par déploiement : migrations + `ShopSeeder` + `HousingUnitSeeder` |
+| `backend` | PHP-FPM, `APP_DEBUG=false`, caches Laravel construits au démarrage |
+| `scheduler` | `schedule:work` : taxes des maisons, purge RGPD |
+| `socket` | Colyseus, `world.manifest.json` embarqué dans l'image |
+| `postgres` | Données (volume `postgres_data`), aucun port publié |
+
+Sur un serveur : utilisateur `deploy` non admin, membre du groupe `docker`, SSH par clé, root désactivé. Depuis sa machine :
+
+```bash
+docker context create cc --docker "host=ssh://deploy@<ip-du-serveur>"
+DOCKER_CONTEXT=cc make prod-up
+```
+
 ## Organisation du code
 
 | Dossier | Rôle |

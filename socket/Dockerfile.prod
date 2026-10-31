@@ -1,0 +1,17 @@
+# Production image: no dev dependencies, no watch mode, runs as the unprivileged `node` user.
+# world.manifest.json comes from the `world` build context (front/public/assets) so the socket
+# always ships the same world as the front of the same release.
+
+FROM node:20-alpine
+ENV NODE_ENV=production
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
+COPY . .
+COPY --from=world world.manifest.json ./world.manifest.json
+ENV WORLD_MANIFEST_URL=/app/world.manifest.json
+USER node
+EXPOSE 3000
+HEALTHCHECK --interval=10s --timeout=3s --retries=5 \
+    CMD wget -qO- http://127.0.0.1:3000/__healthcheck || exit 1
+CMD ["node", "--import", "tsx", "server.ts"]

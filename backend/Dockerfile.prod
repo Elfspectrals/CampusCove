@@ -1,0 +1,37 @@
+# Production image: PHP-FPM only (Caddy serves HTTP and talks FastCGI to port 9000).
+# Code and vendor are baked in, nothing is installed at boot, and it runs as www-data.
+
+FROM composer:2 AS vendor
+WORKDIR /app
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist --no-interaction --ignore-platform-reqs
+COPY . .
+RUN composer dump-autoload --optimize --no-dev --no-scripts
+
+FROM php:8.3-fpm-alpine
+
+RUN apk add --no-cache libpq icu-libs libzip libpng libjpeg-turbo fcgi \
+    && apk add --no-cache --virtual .build-deps $PHPIZE_DEPS libpq-dev icu-dev libzip-dev libpng-dev libjpeg-turbo-dev \
+    && docker-php-ext-configure gd --with-jpeg \
+    && docker-php-ext-install -j$(nproc) pdo_pgsql bcmath intl zip opcache gd \
+    && apk del .build-deps \
+    && cp "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
+
+COPY docker/php.ini $PHP_INI_DIR/conf.d/zz-campuscove.ini
+COPY docker/fpm-pool.conf /usr/local/etc/php-fpm.d/zz-campuscove.conf
+COPY docker/entrypoint.prod.sh /usr/local/bin/entrypoint.prod.sh
+
+WORKDIR /var/www/html
+COPY --from=vendor /app /var/www/html
+RUN php artisan package:discover --ansi \
+    && chmod +x /usr/local/bin/entrypoint.prod.sh \
+    && chown -R www-data:www-data storage bootstrap/cache
+
+USER www-data
+
+EXPOSE 9000
+HEALTHCHECK --interval=10s --timeout=3s --retries=5 \
+    CMD SCRIPT_NAME=/ping SCRIPT_FILENAME=/ping REQUEST_METHOD=GET cgi-fcgi -bind -connect 127.0.0.1:9000 | grep -q pong
+
+ENTRYPOINT ["entrypoint.prod.sh"]
+CMD ["php-fpm"]
