@@ -1,0 +1,83 @@
+# CampusCove production entry point: the only container publishing ports (80/443).
+# DOMAIN=campuscove.localhost gets a certificate from Caddy's local CA; a real domain gets Let's Encrypt.
+
+(laravel) {
+	# Every API request runs public/index.php inside the backend container (PHP-FPM, port 9000).
+	# Laravel routes on REQUEST_URI, which keeps the original /api/... path.
+	root * /var/www/html/public
+	rewrite * /index.php
+	reverse_proxy backend:9000 {
+		transport fastcgi {
+			split .php
+		}
+	}
+}
+
+{$DOMAIN:campuscove.localhost} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=(), browsing-topics=()"
+		Cross-Origin-Opener-Policy "same-origin"
+		Content-Security-Policy "object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; upgrade-insecure-requests"
+		-Server
+	}
+
+	# Backend -> socket notifications only, never from the internet.
+	handle /ws/internal* {
+		respond 404
+	}
+
+	# Colyseus matchmaking and websocket, served at / inside the socket container.
+	handle_path /ws/* {
+		reverse_proxy socket:3000
+	}
+
+	handle /api/* {
+		import laravel
+	}
+
+	handle {
+		root * /srv
+		redir /shop /shop-skin permanent
+		redir /how-to-play / permanent
+		redir /fr/how-to-play /fr permanent
+
+		# Private pages share the app shell; public pages are prerendered .html files.
+		@app path /login /register /forgot-password /reset-password /home /locker /friends /settings /game /NewNation /admin /admin/* /dev /dev/*
+		rewrite @app /app.html
+
+		@noindex path /login /register /forgot-password /reset-password /home /locker /friends /settings /game /NewNation /admin /admin/* /dev /dev/* /app.html /404.html
+		header @noindex X-Robots-Tag "noindex, nofollow"
+
+		# Vite's hashed bundles never change; models, lightmaps and manifests keep their names.
+		@hashed path_regexp ^/assets/.+-[A-Za-z0-9_-]{8}\.(js|css)$
+		header @hashed Cache-Control "public, max-age=31536000, immutable"
+		@html path / *.html
+		header @html Cache-Control "no-cache"
+		header @app Cache-Control "no-cache"
+
+		try_files {path} {path}.html {path}/index.html
+		file_server
+	}
+
+	handle_errors 404 {
+		root * /srv
+		rewrite * /404.html
+		file_server
+	}
+}
+
+# Internal-only listener (not published): the socket calls the API here, by its service name.
+:8080 {
+	handle /api/* {
+		import laravel
+	}
+	handle {
+		respond 404
+	}
+}

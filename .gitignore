@@ -30,6 +30,7 @@ Thumbs.db
 .env.production
 .env.*
 !.env.example
+!.env.prod.example
 
 # --- Backend (Laravel) ---
 backend/vendor

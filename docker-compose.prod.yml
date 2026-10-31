@@ -1,0 +1,127 @@
+# Production stack. Only Caddy publishes ports (80/443); everything else stays on the internal network.
+#   cp .env.prod.example .env.prod   (then fill it in)
+#   make prod-up
+# Remote server: same command through a Docker context, e.g. DOCKER_CONTEXT=cc make prod-up
+
+name: campuscove-prod
+
+x-backend: &backend
+  build:
+    context: ./backend
+    dockerfile: Dockerfile.prod
+  image: campuscove-backend:prod
+  environment:
+    APP_NAME: CampusCove
+    APP_ENV: production
+    APP_DEBUG: "false"
+    APP_KEY: ${APP_KEY:?set APP_KEY in .env.prod (make prod-key)}
+    APP_URL: https://${DOMAIN}
+    FRONTEND_URL: https://${DOMAIN}
+    CORS_ALLOWED_ORIGINS: https://${DOMAIN}
+    LOG_CHANNEL: stderr
+    LOG_LEVEL: ${LOG_LEVEL:-warning}
+    SESSION_SECURE_COOKIE: "true"
+    DB_CONNECTION: pgsql
+    DB_HOST: postgres
+    DB_PORT: 5432
+    DB_DATABASE: campus_cove
+    DB_USERNAME: campuscove
+    DB_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env.prod}
+    REALTIME_SHARED_SECRET: ${REALTIME_SHARED_SECRET:?set REALTIME_SHARED_SECRET in .env.prod}
+    REALTIME_INTERNAL_URL: http://socket:3000
+    MAIL_MAILER: ${MAIL_MAILER:-log}
+    MAIL_HOST: ${MAIL_HOST:-}
+    MAIL_PORT: ${MAIL_PORT:-587}
+    MAIL_USERNAME: ${MAIL_USERNAME:-}
+    MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+    MAIL_FROM_ADDRESS: ${MAIL_FROM_ADDRESS:-noreply@${DOMAIN}}
+    MAIL_FROM_NAME: CampusCove
+  volumes:
+    # Admin uploads (skin previews and models).
+    - backend_storage:/var/www/html/storage/app
+  restart: unless-stopped
+
+services:
+  caddy:
+    build:
+      context: ./front
+      dockerfile: Dockerfile.prod
+      additional_contexts:
+        deploy: ./deploy
+      args:
+        VITE_SITE_URL: https://${DOMAIN}
+    image: campuscove-caddy:prod
+    environment:
+      DOMAIN: ${DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # One-shot per deploy: schema + catalogue (ShopSeeder fills the shop and Cove Home).
+  migrate:
+    <<: *backend
+    command: sh -c "php artisan migrate --force && php artisan db:seed --class=ShopSeeder --force && php artisan db:seed --class=HousingUnitSeeder --force"
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  backend:
+    <<: *backend
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  # Housing taxes every minute, inactive-account purge at 04:00.
+  scheduler:
+    <<: *backend
+    command: php artisan schedule:work
+    healthcheck:
+      disable: true
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  socket:
+    build:
+      context: ./socket
+      dockerfile: Dockerfile.prod
+      additional_contexts:
+        world: ./front/public/assets
+    image: campuscove-socket:prod
+    environment:
+      # Caddy's internal listener: PHP-FPM speaks FastCGI, not HTTP.
+      BACKEND_API_URL: http://caddy:8080/api
+      REALTIME_SHARED_SECRET: ${REALTIME_SHARED_SECRET}
+    depends_on:
+      - caddy
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: campus_cove
+      POSTGRES_USER: campuscove
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U campuscove -d campus_cove"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  backend_storage:
+  caddy_data:
+  caddy_config:

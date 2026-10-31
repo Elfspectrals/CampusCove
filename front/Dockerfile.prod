@@ -1,0 +1,22 @@
+# Production image: the built front served by Caddy, which is also the only public entry point
+# (/api -> PHP-FPM, /ws -> Colyseus). The Caddyfile comes from the `deploy` build context.
+
+FROM node:20-alpine AS build
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+COPY . .
+# Origin used for the sitemap, canonical URLs and robots.txt.
+ARG VITE_SITE_URL
+# Same origin: the API is at /api (http.ts default) and Colyseus behind /ws.
+ARG VITE_SOCKET_URL=/ws
+ENV VITE_SITE_URL=$VITE_SITE_URL VITE_SOCKET_URL=$VITE_SOCKET_URL
+RUN npm run build
+
+FROM caddy:2.10-alpine
+# The caddy binary carries cap_net_bind_service, so an unprivileged user can still bind 80/443.
+RUN addgroup -S caddy && adduser -S -G caddy -H caddy \
+    && chown -R caddy:caddy /data /config
+COPY --from=deploy Caddyfile /etc/caddy/Caddyfile
+COPY --from=build /app/dist /srv
+USER caddy

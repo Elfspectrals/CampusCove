@@ -28,6 +28,25 @@ rebuild-socket: ## Rebuild + restart Colyseus (needed after socket/ changes)
 
 socket-rebuild: rebuild-socket ## Alias of rebuild-socket
 
+# --- production (docker-compose.prod.yml, secrets in .env.prod; DOCKER_CONTEXT=<ctx> for a remote server) ---
+
+PROD := docker compose --env-file .env.prod -f docker-compose.prod.yml
+
+prod-key: ## Print a fresh APP_KEY for .env.prod
+	@docker run --rm php:8.3-cli-alpine php -r "echo 'base64:'.base64_encode(random_bytes(32)).PHP_EOL;"
+
+prod-up: ## Build and start the production stack (Caddy on 80/443, https://$DOMAIN)
+	$(PROD) up -d --build
+
+prod-down: ## Stop the production stack (keeps volumes)
+	$(PROD) down
+
+prod-ps: ## Production containers and their health
+	$(PROD) ps
+
+prod-logs: ## Tail production logs
+	$(PROD) logs -f
+
 # --- front ---
 
 front-install: ## Install front dependencies

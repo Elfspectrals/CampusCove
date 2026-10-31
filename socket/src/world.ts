@@ -1,3 +1,4 @@
+import { readFile } from 'node:fs/promises'
 import type { Json } from './backend.ts'
 import type { Bounds, Vec3 } from './types.ts'
 
@@ -198,14 +199,20 @@ function parseWorld(manifest: Json): World {
   }
 }
 
+// An http(s) URL in dev (the front serves it), a file path in the production image.
+async function readManifest(source: string): Promise<Json> {
+  if (!/^https?:\/\//.test(source)) return JSON.parse(await readFile(source, 'utf8'))
+  const res = await fetch(source)
+  if (!res.ok) throw new Error(`${source} answered ${res.status}`)
+  return res.json()
+}
+
 export async function loadWorld(): Promise<void> {
   if (!WORLD_MANIFEST_URL) throw new Error('WORLD_MANIFEST_URL is not set')
   let lastError: unknown = null
   for (let attempt = 1; attempt <= FETCH_ATTEMPTS; attempt++) {
     try {
-      const res = await fetch(WORLD_MANIFEST_URL)
-      if (!res.ok) throw new Error(`${WORLD_MANIFEST_URL} answered ${res.status}`)
-      const loaded = parseWorld(await res.json())
+      const loaded = parseWorld(await readManifest(WORLD_MANIFEST_URL))
       world = loaded
       console.log(`[world] manifest loaded from ${WORLD_MANIFEST_URL}: ${loaded.workDoors.size} public buildings, ${loaded.houses.size} houses`)
       return
