@@ -25,15 +25,15 @@
   "rewrites": [
     {
       "source": "/:path(login|register|forgot-password|reset-password|home|locker|friends|settings|game|NewNation)",
-      "destination": "/app.html"
+      "destination": "/app"
     },
     {
       "source": "/admin/:rest*",
-      "destination": "/app.html"
+      "destination": "/app"
     },
     {
       "source": "/dev/:rest*",
-      "destination": "/app.html"
+      "destination": "/app"
     }
   ],
   "headers": [
