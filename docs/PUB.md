@@ -243,8 +243,10 @@ Constantes (`socket/src/pubConstants.ts`, miroir côté front dans `gameRoomCons
 | `pub_race_challenge_reply` | `{ fromSessionId, accept }` | le joueur défié ; accepter ouvre une course à deux (chacun paie l'entrée) avec 3 s de compte à rebours, d'autres joueurs assis peuvent encore rejoindre |
 | `pub_shots_start` | — | à 2,5 m de `shots.player`, pas de partie en cours ; `POST /pub/play` ; `pub_shots_ready { seed, startedAt }` |
 | `pub_shots_done` | `{ ms }` | partie en cours, `ms` plausible (voir constantes) ; ajoute l'alcool, `POST /pub/reward`, `pub_shots_result { ms, coins }`, broadcast `user_action { action: 'drink', code: 'drink_vodka' }` |
+| `pub_shots_leave` | — | le joueur ferme l'écran Meter Shot (Échap, ×, clic hors du panneau) avant le résultat : partie abandonnée (`pubShots = null`, ni alcool ni gain), une nouvelle peut être lancée tout de suite |
 | `pub_darts_join` | — | à 3 m de `darts.oche`, partie en lobby ou aucune, < `DARTS_MAX_PLAYERS` ; `POST /pub/play` ; lobby de `DARTS_LOBBY_MS` après la première inscription |
 | `pub_darts_throw` | `{ x, y }` | c'est son tour, il lui reste des fléchettes, `|x|,|y| ≤ DARTS_MAX_OFFSET_CM` (cm depuis le bull) ; score par `dartsScore(x, y)` ; tour suivant ; tour non joué en `DARTS_TURN_MS` = fléchette perdue (0) |
+| `pub_darts_leave` | — | le joueur ferme l'écran de fléchettes avant la fin : retiré du lobby ou de la partie (son tour passe au suivant, ni alcool ni gain) ; sinon le broadcast suivant rouvrirait l'écran |
 
 ### Messages serveur → client
 

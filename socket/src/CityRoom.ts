@@ -19,6 +19,7 @@ import { blockAtSecretDoor, onPubBell, onPubOrder, onPubSecret, onSit } from './
 import {
   leavePub,
   onDartsJoin,
+  onDartsLeave,
   onDartsThrow,
   onRaceChallenge,
   onRaceChallengeReply,
@@ -27,6 +28,7 @@ import {
   onRaceOpen,
   onRaceProgress,
   onShotsDone,
+  onShotsLeave,
   onShotsStart,
   onStand,
   standUp
@@ -131,8 +133,10 @@ export class CityRoom extends Room implements GameRoom {
     this.onMessage('pub_race_progress', (client, payload: ClientPayload) => onRaceProgress(this, client, payload))
     this.onMessage('pub_shots_start', (client) => void onShotsStart(this, client))
     this.onMessage('pub_shots_done', (client, payload: ClientPayload) => void onShotsDone(this, client, payload))
+    this.onMessage('pub_shots_leave', (client) => onShotsLeave(this, client))
     this.onMessage('pub_darts_join', (client) => void onDartsJoin(this, client))
     this.onMessage('pub_darts_throw', (client, payload: ClientPayload) => onDartsThrow(this, client, payload))
+    this.onMessage('pub_darts_leave', (client) => onDartsLeave(this, client))
     this.clock.setInterval(() => void this.pollHousingUnits(), HOUSING_POLL_MS)
     this.clock.setInterval(() => tickSurvival(this, SURVIVAL_TICK_MS / 1000), SURVIVAL_TICK_MS)
   }
