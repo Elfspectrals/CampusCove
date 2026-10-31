@@ -1,8 +1,21 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { DARTS_MAX_OFFSET_CM } from '../gameRoomConstants.ts'
 import { seededRandom } from './drinkFast.ts'
-import { aimSway, dartLabel, dartsScore, sectorAt, swayAmplitudeCm, throwOffset } from './darts.ts'
+import {
+  BREATH_HOLD_S,
+  FULL_BREATH,
+  aimDrift,
+  breathStep,
+  dartLabel,
+  dartsScore,
+  fatigueFactor,
+  meterPeriodS,
+  meterPower,
+  sectorAt,
+  swayAmplitudeCm,
+  valueNoise,
+  type BreathState,
+} from './darts.ts'
 
 function at(radiusCm: number, clockwiseDeg: number): [number, number] {
   const rad = (clockwiseDeg * Math.PI) / 180
@@ -54,55 +67,83 @@ test('labels read like a scoreboard', () => {
   assert.equal(dartLabel(20, 20), 'Miss')
 })
 
-test('the crosshair sways 1.5 cm sober, 6 cm tipsy and 12 cm drunk', () => {
-  assert.equal(swayAmplitudeCm(0), 1.5)
-  assert.equal(swayAmplitudeCm(29), 1.5)
+function drift(t: number, intoxication: number, seed = 5, aimedS = 0, breathFactor = 1) {
+  return aimDrift({ t, aimedS, intoxication, seed, breathFactor })
+}
+
+test('the drift amplitude is 2.4 cm sober, 6 cm tipsy and 12 cm drunk', () => {
+  assert.equal(swayAmplitudeCm(0), 2.4)
+  assert.equal(swayAmplitudeCm(29), 2.4)
   assert.equal(swayAmplitudeCm(30), 6)
   assert.equal(swayAmplitudeCm(45), 9)
   assert.equal(swayAmplitudeCm(60), 12)
   assert.equal(swayAmplitudeCm(100), 12)
+})
 
-  for (const [intoxication, amplitude] of [
-    [0, 1.5],
-    [30, 6],
-    [80, 12],
-  ] as const) {
-    let peak = 0
-    for (let t = 0; t < 30; t += 1 / 60) {
-      const { x, y } = aimSway(t, intoxication, 5)
-      assert.ok(Math.abs(x) <= amplitude + 1e-9 && Math.abs(y) <= amplitude + 1e-9)
-      peak = Math.max(peak, Math.abs(x), Math.abs(y))
-    }
-    assert.ok(peak > amplitude * 0.95, `peak ${peak} for ${intoxication}`)
+test('the drift is smooth, seeded, bounded and does not loop', () => {
+  assert.deepEqual(drift(2.5, 50, 9), drift(2.5, 50, 9))
+  assert.notDeepEqual(drift(2.5, 50, 9), drift(2.5, 50, 10))
+  for (let t = 0; t < 20; t += 1 / 60) {
+    const a = drift(t, 0)
+    const b = drift(t + 1 / 60, 0)
+    assert.ok(Math.hypot(a.x - b.x, a.y - b.y) < 0.6, `jump at ${t}`)
+    assert.ok(Math.abs(a.x) <= 2.4 + 0.25 + 1e-9 && Math.abs(a.y) <= 2.4 + 0.25 + 1e-9)
   }
+  for (let t = 0; t < 50; t += 0.37) assert.ok(Math.abs(valueNoise(3, t)) <= 1)
+  // A sine came back to the same point every period; the noise does not.
+  const samples = Array.from({ length: 8 }, (_, i) => drift(1 + i * 4.1, 0).x.toFixed(3))
+  assert.equal(new Set(samples).size, samples.length)
 })
 
-test('the sway is a smooth function of time, the same for a seed', () => {
-  assert.deepEqual(aimSway(2.5, 50, 9), aimSway(2.5, 50, 9))
-  assert.notDeepEqual(aimSway(2.5, 50, 9), aimSway(2.5, 50, 10))
-  const a = aimSway(1, 50, 9)
-  const b = aimSway(1 + 1 / 60, 50, 9)
-  assert.ok(Math.hypot(a.x - b.x, a.y - b.y) < 0.5)
-})
-
-test('the throw adds a small error, bigger when drunk, reproducible with a seeded source', () => {
-  const aim = { x: 2, y: -3 }
-  assert.deepEqual(throwOffset(aim, 40, seededRandom(77)), throwOffset(aim, 40, seededRandom(77)))
-
-  function spread(intoxication: number): number {
-    const random = seededRandom(123)
+test('drink, fatigue and the breath scale the drift', () => {
+  function rms(intoxication: number, aimedS: number, breathFactor: number): number {
     let sum = 0
-    for (let i = 0; i < 2000; i++) {
-      const { x, y } = throwOffset(aim, intoxication, random)
-      sum += Math.hypot(x - aim.x, y - aim.y)
+    let n = 0
+    for (let t = 0; t < 60; t += 0.05) {
+      const { x, y } = drift(t, intoxication, 11, aimedS, breathFactor)
+      sum += x * x + y * y
+      n++
     }
-    return sum / 2000
+    return Math.sqrt(sum / n)
   }
-  const sober = spread(0)
-  const drunk = spread(100)
-  assert.ok(sober > 0.2 && sober < 0.8, `sober spread ${sober}`)
-  assert.ok(drunk > sober * 3, `drunk spread ${drunk}`)
+  const sober = rms(0, 0, 1)
+  assert.ok(sober > 0.6 && sober < 2.5, `sober rms ${sober}`)
+  assert.ok(rms(80, 0, 1) > sober * 3.5)
+  assert.ok(rms(0, 10, 1) > sober * 1.6)
+  assert.ok(rms(0, 0, 0.3) < sober * 0.5)
+  assert.equal(fatigueFactor(0), 1)
+  assert.equal(fatigueFactor(100), fatigueFactor(6))
+})
 
-  const far = throwOffset({ x: 24.9, y: -24.9 }, 100, seededRandom(1))
-  assert.ok(Math.abs(far.x) <= DARTS_MAX_OFFSET_CM && Math.abs(far.y) <= DARTS_MAX_OFFSET_CM)
+test('holding the breath steadies for a while, then a gasp makes it worse until it recovers', () => {
+  const dt = 1 / 60
+  let state: BreathState = FULL_BREATH
+  let step = breathStep(state, true, dt, 0)
+  assert.ok(step.factor < 0.5)
+  let held = 0
+  while (step.gasp === 0 && held < 10) {
+    state = step
+    step = breathStep(state, true, dt, 0)
+    held += dt
+  }
+  assert.ok(Math.abs(held - BREATH_HOLD_S) < 0.1, `held ${held}`)
+  assert.ok(step.factor > 1)
+  state = step
+  step = breathStep(state, true, 0.5, 0)
+  assert.ok(step.factor > 1, 'cannot hold again while gasping')
+  for (let i = 0; i < 300; i++) step = breathStep(step, false, dt, 0)
+  assert.equal(step.factor, 1)
+  assert.ok(step.air > 0.9)
+  assert.ok(breathStep(FULL_BREATH, true, dt, 100).factor > breathStep(FULL_BREATH, true, dt, 0).factor)
+})
+
+test('the power meter swings 0 → 1 → 0 at a speed that changes every dart and rises when drunk', () => {
+  assert.equal(meterPower(0, 1.5), 0)
+  assert.ok(Math.abs(meterPower(0.75, 1.5) - 1) < 1e-9)
+  assert.ok(meterPower(1.5, 1.5) < 1e-9)
+  const random = seededRandom(4)
+  const periods = Array.from({ length: 5 }, () => meterPeriodS(random, 0))
+  for (const p of periods) assert.ok(p >= 1.4 && p <= 1.8)
+  assert.ok(new Set(periods).size > 1)
+  assert.ok(meterPeriodS(() => 0.5, 100) < meterPeriodS(() => 0.5, 0))
 })

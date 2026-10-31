@@ -17,7 +17,9 @@ Décisions produit (validées le 29/10/2026) :
   entre les joueurs assis au bar, ouverte à tous ou en défiant un voisin de tabouret ; trop pencher le verre le renverse,
   +2 s par renversement ; chaque pinte se vide côte à côte à l'écran, les autres voient les coureurs lever leur
   pinte et un tableau des scores au-dessus du bar), **Meter Shot** (vider 10 shots le plus vite possible en cliquant), **Darts** (visée
-  avec tangage, 3 fléchettes chacun, chacun son tour, meilleur total). Récompenses en coins par l'API.
+  qui dérive sur un bruit aléatoire, plus forte quand on vise longtemps ou qu'on a bu, Maj pour retenir son souffle ;
+  jauge de puissance à relâcher dans la bande verte ; le socket ajoute la dispersion de la main et décide du point
+  d'impact, le client n'envoie que sa visée et sa puissance ; 3 fléchettes chacun, chacun son tour, meilleur total). Récompenses en coins par l'API.
 - S'asseoir sur n'importe quel siège du pub (tabourets, chaises, banquettes, fauteuils, bancs du jardin), visible par
   les autres joueurs.
 - Cabaret caché : une porte banale « CELLAR » (fûts et caisses à côté) gardée par le videur. Lui parler ouvre une
@@ -198,7 +200,7 @@ points pour Darts) :
 |---|---|
 | `drink_fast` | 1er 40, 2e 15, solo 15 si `score` < 20 000 ms, sinon 0 |
 | `meter_shot` | `score` < 6 000 ms → 30 ; < 9 000 → 15 ; sinon 0 |
-| `darts` | 1er 30 (+20 si `score` ≥ 100) ; solo 10 si `score` ≥ 60 |
+| `darts` | 1er 30 (+20 si `score` ≥ 80) ; solo 10 si `score` ≥ 45 |
 
 Tests `PubApiTest` : commande OK et solde, boisson inconnue, coins insuffisants, droit d'entrée, barème et cooldown,
 facture de gueule de bois sans perte d'objets.

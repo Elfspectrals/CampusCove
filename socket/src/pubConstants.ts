@@ -41,3 +41,7 @@ export const DARTS_TURN_MS = 20_000
 export const DARTS_MAX_PLAYERS = 4
 export const DARTS_THROWS = 3
 export const DARTS_MAX_OFFSET_CM = 25
+/** Darts throw meter: release at this power for a straight dart (front gameRoomConstants keeps the same values). */
+export const DARTS_POWER_IDEAL = 0.76
+/** No vertical drop or rise while the power is within this distance of the ideal. */
+export const DARTS_POWER_DEAD_ZONE = 0.05
