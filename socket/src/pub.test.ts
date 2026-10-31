@@ -138,7 +138,25 @@ test('sitting needs a known free seat in reach inside the pub, then teleports on
   assert.deepEqual([me.x, me.z], [88, -134])
   assert.ok(Math.abs(me.y - (0.72 - 0.72 + 1.6)) < 1e-9)
   assert.deepEqual(received(cMe, 'user_seated'), [{ sessionId: 'me', seatId: 'stool_01' }])
-  assert.deepEqual(received(cFar, 'user_seated'), [])
+  // everyone tracks seats, so nobody outside the pub keeps a stale seated avatar
+  assert.deepEqual(received(cFar, 'user_seated'), [{ sessionId: 'me', seatId: 'stool_01' }])
+})
+
+test('a player who blacked out to the clinic still sees the others stand up and walk away', () => {
+  const me = fakePlayer('me', 88, -133)
+  const friend = fakePlayer('friend', 89.5, -133)
+  const { room, clients, timers } = fakeRoom(me, friend)
+  const [cMe, cFriend] = clients
+  onSit(room, cMe, { seatId: 'stool_01' })
+  onSit(room, cFriend, { seatId: 'stool_02' })
+  me.intoxication = 100
+
+  tickSurvival(room, 2)
+  timers.shift()!()
+  assert.deepEqual([me.x, me.z], [-126, 16])
+
+  onStand(room, cFriend)
+  assert.deepEqual(received(cMe, 'user_seated').at(-1), { sessionId: 'friend', seatId: null })
 })
 
 test('an occupied seat is refused and standing frees it for the next player', () => {

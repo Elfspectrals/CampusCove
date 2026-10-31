@@ -106,9 +106,14 @@ export function releaseSeat(room: GameRoom, player: Player): void {
   broadcastSeated(room, player)
 }
 
+/**
+ * Sent to the whole room, not only the pub: clients freeze a seated avatar on its seat and ignore its moves
+ * until this says it stood up, so a player outside the pub (e.g. woken up at the clinic after a blackout) who
+ * missed the stand-up would keep seeing everyone who was seated stuck in the pub.
+ */
 function broadcastSeated(room: GameRoom, player: Player): void {
   const payload = { sessionId: player.sessionId, seatId: player.seatId }
-  forEachPubClient(room, (c) => c.send('user_seated', payload))
+  room.forEachClient((c) => c.send('user_seated', payload))
 }
 
 

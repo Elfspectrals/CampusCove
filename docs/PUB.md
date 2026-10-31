@@ -248,7 +248,7 @@ Constantes (`socket/src/pubConstants.ts`, miroir côté front dans `gameRoomCons
 
 | Message | Payload | Audience |
 |---|---|---|
-| `user_seated` | `{ sessionId, seatId: string \| null }` | visibles (zone) ; `user_joined` porte aussi `seatId` |
+| `user_seated` | `{ sessionId, seatId: string \| null }` | toute la room (un avatar assis ignore ses moves jusqu'au `seatId: null`) ; `user_joined` porte aussi `seatId` |
 | `survival` | gagne `intoxication: number` | joueur |
 | `survival_knocked_out` | gagne `cause: 'health' \| 'alcohol'` | joueur |
 | `survival_hospital_bill` | gagne `cause`, `lostItems`/`lostClothes` = 0 pour l'alcool | joueur |
