@@ -2,11 +2,12 @@
  * Single HTTP client for the Laravel API (`VITE_API_URL`, `/api` by default): JSON in/out, bearer token
  * from the stored session, and Laravel error bodies turned into readable messages.
  */
-import { getStoredAuth, isRecord } from './session'
+import { getStoredAuth, isRecord } from './session.ts'
 
 export { isRecord }
 
-export const API_BASE = import.meta.env.VITE_API_URL || '/api'
+// `?.`: no import.meta.env when the unit tests load this file in Node
+export const API_BASE = import.meta.env?.VITE_API_URL || '/api'
 
 /** Parses Laravel-style JSON error bodies (message + errors bag). */
 function formatApiError(data: unknown, fallback = 'Request failed'): string {

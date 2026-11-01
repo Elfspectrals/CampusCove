@@ -34,6 +34,8 @@ make up-build
 | `make set-money ACCOUNT=1 CURRENCY=coins SUM=2000` | Solde (id ou email) |
 | `make fill-outfit ACCOUNT=1` | Starter wearables + outfit |
 | `make test` | Tests backend |
+| `make stripe-listen` | Événements Stripe de test vers l'API locale (laisser le terminal ouvert) |
+| `make gems-reconcile ORDER=<id>` | Resynchroniser une commande de gems avec Stripe |
 | `make rebuild-socket` | Rebuild Colyseus (pas de volume) |
 | `make assets-optimize` | Assets Blender → `front/public/assets` (+ collisions) |
 | `make store-apply` | Branche le magasin Cove Home dans la ville (collisions + zone `retail_park` de `world.manifest.json`) |
@@ -41,7 +43,63 @@ make up-build
 
 `CURRENCY` : `coins` ou `premium`. Relog après `set-admin`.
 
-**Boutique de gems (démo Stripe, mode test uniquement)** : `/gems`, paiement simulé avec les cartes de test Stripe, aucun argent débité, gems réellement crédités dans le portefeuille premium. Désactivée par défaut (`GEMS_CHECKOUT_MODE=off`), clés de production refusées. `make stripe-listen` (webhooks vers localhost:8000), `make gems-reconcile [ORDER=<id>]`. Voir [docs/STRIPE.md](docs/STRIPE.md).
+## Stripe — boutique de gems (facultatif)
+
+Projet scolaire : les paiements sont simulés avec les cartes de test Stripe, **aucun argent n'est débité**. Les gems sont réellement crédités dans le portefeuille premium du jeu. Les clés de production sont refusées. Sans configuration Stripe, `make up` lance normalement le jeu ; seule la boutique de gems est désactivée.
+
+### Première configuration sur chaque machine
+
+1. Créer un compte Stripe ou utiliser un compte de l'équipe, puis sélectionner un environnement de test dans le Dashboard et récupérer sa clé secrète `sk_test_…`. Les cartes doivent être activées dans les paramètres des moyens de paiement de cet environnement.
+2. Installer la [Stripe CLI](https://docs.stripe.com/cli/install) sur sa machine (Node.js / npm requis pour cette méthode), puis se connecter au même compte et au même environnement de test :
+
+   ```bash
+   npm install -g @stripe/cli
+   stripe login
+   ```
+
+   Sous PowerShell, utiliser `npm.cmd` à la place de `npm` si l'exécution de scripts est bloquée.
+
+3. Dans un premier terminal, à la racine du dépôt, démarrer la transmission des événements et **laisser ce terminal ouvert** :
+
+   ```bash
+   make stripe-listen
+   ```
+
+   Sans `make`, utiliser directement :
+
+   ```bash
+   stripe listen --all-snapshot --forward-to http://localhost:8000/api/stripe/webhook
+   ```
+
+   Copier le secret `whsec_…` affiché dans le terminal.
+
+4. Créer ou compléter `.env` **à la racine du dépôt, à côté de `docker-compose.yml`**. Docker Compose lit ce fichier pour transmettre les variables au backend ; les ajouter uniquement dans `backend/.env` ne suffit pas pour ce lancement :
+
+   ```dotenv
+   GEMS_CHECKOUT_MODE=test
+   STRIPE_SECRET_KEY=sk_test_REMPLACER_PAR_LA_CLE_STRIPE
+   STRIPE_WEBHOOK_SECRET=whsec_REMPLACER_PAR_LE_SECRET_DE_LA_CLI
+   FRONTEND_URL=http://localhost:5173
+   ```
+
+   Remplacer les exemples par les valeurs complètes. Ce fichier est ignoré par Git ; ne pas commiter les clés.
+
+5. Dans un deuxième terminal, à la racine du dépôt, lancer l'application ou appliquer les nouvelles variables :
+
+   ```bash
+   make up
+   docker compose exec -T backend php artisan config:clear
+   ```
+
+   Sans `make`, remplacer `make up` par `docker compose up -d`. Un simple `docker compose restart` ne recharge pas les variables du `.env`.
+
+### Lancements suivants et premier paiement
+
+La configuration est conservée. Lancer `make up`, puis `make stripe-listen` dans un autre terminal à garder ouvert pendant les tests. Stripe CLI s'exécute sur la machine et n'est pas lancé automatiquement par Docker. Actualiser le `.env` et relancer `docker compose up -d backend` si les clés ou le secret webhook changent.
+
+Ouvrir [la boutique locale](http://localhost:5173/gems), se connecter et choisir un pack. Sur Checkout, utiliser la carte `4242 4242 4242 4242`, une expiration future (par exemple `12/34`) et le CVC `123`. Après validation, vérifier le crédit des gems et l'historique ; actualiser la page ne doit pas créditer une deuxième fois.
+
+Si la boutique indique qu'elle est désactivée, vérifier les trois variables `GEMS_CHECKOUT_MODE`, `STRIPE_SECRET_KEY` et `STRIPE_WEBHOOK_SECRET` dans le `.env` racine. Pour les remboursements, les autres cartes de test et le diagnostic des webhooks, voir [docs/STRIPE.md](docs/STRIPE.md) et les [cartes de test officielles](https://docs.stripe.com/testing).
 
 ## Production
 

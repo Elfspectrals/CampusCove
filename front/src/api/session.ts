@@ -124,11 +124,13 @@ export function applyCachedBalanceAfterPurchase(currency: 'coins' | 'premium', b
 
 /**
  * Both balances as the API just returned them (e.g. after a gem order): the cache and the stored user's
- * wallet_summary, so a later mergeStoredUser cannot bring back the old amounts.
+ * wallet_summary, so a later mergeStoredUser cannot bring back the old amounts. Logged out: nothing is written,
+ * a late answer must not bring the cache back.
  */
 export function storeWalletSummary(summary: { coins: number; premium: number }): void {
   const auth = getStoredAuth()
-  if (auth) localStorage.setItem(AUTH_KEY, JSON.stringify({ user: { ...auth.user, wallet_summary: summary }, token: auth.token }))
+  if (!auth) return
+  localStorage.setItem(AUTH_KEY, JSON.stringify({ user: { ...auth.user, wallet_summary: summary }, token: auth.token }))
   setCachedWalletBalances(summary)
   notifyAuthListeners()
 }

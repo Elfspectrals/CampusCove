@@ -109,13 +109,17 @@ class StripeWebhookApiTest extends TestCase
         $this->assertSame(1, StripeWebhookEvent::query()->where('event_id', 'evt_repeated')->count());
     }
 
-    public function test_concurrent_deliveries_cannot_credit_twice(): void
+    /**
+     * Sequential: the same snapshot applied twice in one process. The real race between processes is in
+     * GemDeliveryConcurrencyTest.
+     */
+    public function test_applying_the_same_payment_twice_credits_once(): void
     {
         [$player, $publicId, $sessionId] = $this->paidOrder();
         $session = app(\App\Services\Stripe\StripeGateway::class)->retrieveCheckoutSession($sessionId);
         $fulfillment = app(GemOrderFulfillmentService::class);
 
-        // two workers holding the same Stripe snapshot: the second waits on the order row lock, then sees the delivery
+        // a second worker with the same Stripe snapshot, after the first: it sees the delivery and adds nothing
         $fulfillment->applyCheckoutSession($session);
         $fulfillment->applyCheckoutSession($session);
         $this->assertSame(650, $this->wallet($player['id'])['premium']);

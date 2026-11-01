@@ -175,9 +175,9 @@ final class GemCheckoutService
                     'product_data' => ['name' => $name, 'metadata' => ['pack' => $order->pack_code]],
                 ],
             ]],
-            // cards only; Apple Pay / Google Pay are card wallets that Checkout shows (also in test mode) when the
-            // Stripe account enables them and the device supports them
-            'payment_method_types' => ['card'],
+            // Filter Dashboard-managed payment methods to cards, including eligible Apple Pay / Google Pay wallets.
+            // Stripe no longer accepts the static payment_method_types list when creating Checkout Sessions.
+            'allowed_payment_method_types' => ['card'],
             'submit_type' => 'pay',
             'locale' => $order->locale,
             'expires_at' => $order->checkout_expires_at->getTimestamp(),

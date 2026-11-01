@@ -121,7 +121,8 @@ class GemShopApiTest extends TestCase
         $params = $call['params'];
         $this->assertSame("gem-order-{$order->public_id}", $call['key']);
         $this->assertSame('payment', $params['mode']);
-        $this->assertSame(['card'], $params['payment_method_types']);
+        $this->assertSame(['card'], $params['allowed_payment_method_types']);
+        $this->assertArrayNotHasKey('payment_method_types', $params);
         $this->assertSame((string) $order->public_id, $params['client_reference_id']);
         $this->assertSame(999, $params['line_items'][0]['price_data']['unit_amount']);
         $this->assertSame('eur', $params['line_items'][0]['price_data']['currency']);

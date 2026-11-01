@@ -8,8 +8,8 @@
  *
  * Gems are never added in the browser: the wallet only changes from what the API returns.
  */
-import { apiRequest, isRecord } from './http'
-import { parseWalletSummary, storeWalletSummary } from './session'
+import { apiRequest, isRecord } from './http.ts'
+import { getStoredAuth, parseWalletSummary, storeWalletSummary } from './session.ts'
 
 export type GemOrderStatus = 'creating' | 'open' | 'processing' | 'paid' | 'failed' | 'expired' | 'canceled'
 
@@ -105,9 +105,18 @@ export async function createGemOrder(pack: string, locale: string): Promise<{ or
   return { order: requireOrder(data), checkoutUrl }
 }
 
-/** Real state of the order; the wallet cache is refreshed from the same response. */
+/** The player logged out or switched account while the request was on its way: its answer belongs to nobody now. */
+export class StaleSessionError extends Error {
+  constructor() {
+    super('The session changed during the request')
+  }
+}
+
+/** Real state of the order; the wallet cache is refreshed from the same response, if it is still the same session. */
 export async function fetchGemOrder(publicId: string): Promise<GemOrder> {
-  const data = await apiRequest(`/gems/orders/${encodeURIComponent(publicId)}`, { errorMessage: 'Could not load the order' })
+  const token = getStoredAuth()?.token ?? null
+  const data = await apiRequest(`/gems/orders/${encodeURIComponent(publicId)}`, { token, errorMessage: 'Could not load the order' })
+  if (token === null || getStoredAuth()?.token !== token) throw new StaleSessionError()
   const wallet = isRecord(data) ? parseWalletSummary(data.wallet_summary) : null
   if (wallet) storeWalletSummary(wallet)
   return requireOrder(data)

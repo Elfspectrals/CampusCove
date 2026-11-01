@@ -7,7 +7,7 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { fetchGemOrder, type GemOrder } from '../api/gems'
+import { StaleSessionError, fetchGemOrder, type GemOrder } from '../api/gems'
 import { ApiError } from '../api/http'
 import { localizedName } from '../i18n/routes'
 import type { Locale } from '../seo/site'
@@ -40,6 +40,11 @@ async function check(): Promise<void> {
     order.value = await fetchGemOrder(publicId.value)
     failure.value = null
   } catch (e) {
+    // logged out or another account meanwhile: this order is no longer the session's, stop without showing it
+    if (e instanceof StaleSessionError) {
+      stopped = true
+      return
+    }
     failure.value = e instanceof ApiError && e.status === 404 ? 'notFound' : 'network'
   } finally {
     busy.value = false
@@ -73,6 +78,23 @@ const view = computed(() => {
   switch (phase.value) {
     case 'success':
       return { icon: 'check' as const, tone: 'text-mint', title: t('gems.return.successTitle', { n }), body: t('gems.return.successBody') }
+    case 'partiallyRefunded': {
+      const o = order.value as GemOrder
+      const reversed = Math.min(o.refund.gems_reversed, o.gems)
+      return {
+        icon: 'refresh' as const,
+        tone: 'text-sun',
+        title: t('gems.return.partialTitle'),
+        body: t('gems.return.partialBody', {
+          refunded: formatPrice(o.refund.refunded_cents, o.currency, locale.value),
+          total: formatPrice(o.amount_cents, o.currency, locale.value),
+          reversed: reversed.toLocaleString(locale.value),
+          kept: (o.gems - reversed).toLocaleString(locale.value),
+        }),
+      }
+    }
+    case 'refunded':
+      return { icon: 'refresh' as const, tone: 'text-mist', title: t('gems.return.refundedTitle'), body: t('gems.return.refundedBody', { n }) }
     case 'cancelled':
       return { icon: 'x' as const, tone: 'text-mist', title: t('gems.return.cancelledTitle'), body: t('gems.return.cancelledBody') }
     case 'processing':
@@ -113,7 +135,16 @@ const canCheckAgain = computed(() => failure.value === 'network' || phase.value 
           <dt class="text-mist">{{ t('gems.total') }}</dt>
           <dd class="m-0">{{ formatPrice(order.amount_cents, order.currency, locale) }}</dd>
         </div>
-
+        <template v-if="phase === 'partiallyRefunded' || phase === 'refunded'">
+          <div v-if="order.refund.refunded_cents > 0" class="flex justify-between gap-4">
+            <dt class="text-mist">{{ t('gems.return.refunded') }}</dt>
+            <dd class="m-0">{{ formatPrice(order.refund.refunded_cents, order.currency, locale) }}</dd>
+          </div>
+          <div class="flex justify-between gap-4">
+            <dt class="text-mist">{{ t('gems.return.gemsReversed') }}</dt>
+            <dd class="m-0"><UiCurrency currency="premium" :amount="-Math.min(order.refund.gems_reversed, order.gems)" :size="16" class="text-coral" /></dd>
+          </div>
+        </template>
       </dl>
 
       <div class="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">

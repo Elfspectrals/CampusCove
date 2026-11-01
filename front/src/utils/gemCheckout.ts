@@ -4,16 +4,36 @@
  */
 import type { GemOrder } from '../api/gems'
 
-export type ReturnPhase = 'checking' | 'success' | 'cancelled' | 'processing' | 'failed' | 'expired' | 'timeout'
+export type ReturnPhase =
+  | 'checking'
+  | 'success'
+  | 'partiallyRefunded'
+  | 'refunded'
+  | 'cancelled'
+  | 'processing'
+  | 'failed'
+  | 'expired'
+  | 'timeout'
 
 /** Waits between two status lookups while the webhook may still be on its way (~30 s in total). */
 export const POLL_DELAYS_MS: readonly number[] = [1000, 1500, 2000, 2000, 2500, 3000, 3000, 4000, 5000, 6000]
+
+/**
+ * A paid order stays `paid` after a refund: what changed is how much was given back and how many gems were taken
+ * back (a lost dispute also takes gems back, without a refund).
+ */
+function paidPhase(order: GemOrder): ReturnPhase {
+  const { status, gems_reversed: reversed } = order.refund
+  if (status === 'full' || (order.gems > 0 && reversed >= order.gems)) return 'refunded'
+  if (status === 'partial' || reversed > 0) return 'partiallyRefunded'
+  return 'success'
+}
 
 export function returnPhase(order: GemOrder | null, result: string | null, attempts: number): ReturnPhase {
   if (order === null) return 'checking'
   switch (order.status) {
     case 'paid':
-      return 'success'
+      return paidPhase(order)
     case 'processing':
       return 'processing'
     case 'failed':

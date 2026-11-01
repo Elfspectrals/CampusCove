@@ -36,7 +36,7 @@ Stripe ──POST /api/stripe/webhook (signé)──▶  StripeWebhookService
 - **Catalogue** : `backend/app/Support/GemPackCatalog.php` est la seule source. Le front n'affiche que ce que renvoie `GET /api/gems/packs`. Packs (prix simulés, en centimes, EUR) : `gems_100` 199, `gems_300` 499, `gems_650` 999, `gems_1400` 1 999. Les quantités incluent un éventuel bonus. Chaque commande copie gems, montant et devise, donc modifier un pack ne réécrit pas l'historique.
 - **Client** : il n'envoie que `pack` et `locale`. Le compte, le montant, la devise, les gems et les URLs de retour sont fixés par le serveur. Les champs ajoutés par le navigateur sont ignorés (testé).
 - **Rien n'est envoyé à Stripe sur le joueur** (ni e-mail, ni nom). Seuls la référence de commande (`client_reference_id`, `metadata.gem_order`) et `metadata.demo=true` sont transmis.
-- **Moyens de paiement** : `payment_method_types: ['card']`. Apple Pay / Google Pay sont des portefeuilles de carte, affichés par Checkout s'ils sont activés dans le Dashboard (mode test) et si l'appareil le permet. Google Pay est désactivé par défaut côté Stripe. Pas d'abonnement, de paiement fractionné ni de virement.
+- **Moyens de paiement** : `allowed_payment_method_types: ['card']` filtre les moyens activés dans le Dashboard Stripe pour ne proposer que les cartes. Le paramètre statique `payment_method_types` n'est plus accepté à la création d'une session Checkout par l'API utilisée. Apple Pay / Google Pay sont des portefeuilles de carte, affichés par Checkout s'ils sont activés dans le Dashboard (mode test) et si l'appareil le permet. Pas d'abonnement, de paiement fractionné ni de virement. Activer les cartes dans le même environnement de test que la clé API.
 - **Doubles clics / reprises** : sous verrou du compte, une commande `creating`/`open` du même pack de moins de 20 min est rendue telle quelle. Même commande, même clé d'idempotence, mêmes paramètres, donc même session.
   - Si Stripe est injoignable, la commande reste `creating` et le clic suivant réessaie avec la même clé.
   - Si Stripe refuse (réponse 4xx/5xx mémorisée par son idempotence), la commande passe `canceled` et le clic suivant en crée une nouvelle.
@@ -62,6 +62,8 @@ Stripe ──POST /api/stripe/webhook (signé)──▶  StripeWebhookService
   - index unique `ux_transactions_gem_order_delivery` sur `transactions(meta_json->>'gem_order') WHERE type='premium_purchase'`.
 
   Les événements répétés, plusieurs événements du même paiement, la page de retour et la réconciliation convergent tous vers un seul crédit.
+
+  `GemDeliveryConcurrencyTest` le vérifie avec une vraie course : trois processus PHP, chacun avec sa connexion PostgreSQL, livrent le même paiement en même temps (`tests/Scripts/apply-checkout-session.php`). Le test garde le verrou de la commande jusqu'à ce que les trois l'attendent (`pg_locks`), puis le relâche. Un seul crédit. Sans le `FOR UPDATE`, le test échoue. Limite : il ne couvre que la course sur la livraison (`applyCheckoutSession`), pas celle de deux remboursements, et il reconstruit la base de test (`migrate:fresh`), ce qui le rend plus lent (~4 s).
 - **Webhook rejouable** : seuls l'id, le type, le nombre d'essais et la dernière erreur de chaque événement sont gardés (`stripe_webhook_events`), jamais le payload. L'événement n'est marqué traité qu'**après** l'enregistrement de ses effets. En cas d'erreur, le webhook répond 500 et Stripe réessaie pendant 3 jours. Les événements sans rapport sont acquittés sans effet.
 - **Pas de queue** : le traitement est synchrone dans le webhook, avec deux filets :
   - la page de retour interroge Stripe (au plus toutes les 3 s) ;
@@ -132,7 +134,7 @@ Date d'expiration future quelconque, CVC quelconque. Référence : [docs.stripe.
 | Litige | `4000 0000 0000 0259` | litige `needs_response` enregistré, aucun retrait ; perdu → retrait (§6) |
 | Remboursement qui échoue | `4000 0000 0000 5126` puis remboursement | retrait à la réussite, puis écriture compensatrice `gem_refund_reversal` à l'échec |
 
-Les tests automatisés couvrent les mêmes cas sans clé ni réseau (`tests/Fakes/FakeStripeGateway.php`, signatures HMAC réelles) : `tests/Feature/GemShopApiTest.php`, `tests/Feature/StripeWebhookApiTest.php`, `front/src/utils/gemCheckout.test.ts`.
+Les tests automatisés couvrent les mêmes cas sans clé ni réseau (`tests/Fakes/FakeStripeGateway.php`, signatures HMAC réelles) : `tests/Feature/GemShopApiTest.php`, `tests/Feature/StripeWebhookApiTest.php`, `tests/Feature/GemDeliveryConcurrencyTest.php`, `front/src/utils/gemCheckout.test.ts`, `front/src/api/gems.test.ts` (réponse arrivée après une déconnexion ou un changement de compte : ignorée).
 
 ## 6. Remboursements simulés (Dashboard Stripe, mode test)
 
@@ -141,6 +143,7 @@ Décidés par l'exploitant, sans interface dans CampusCove : Dashboard (mode tes
 - Seuls les remboursements `succeeded` comptent. Un remboursement en attente ne retire rien. Un remboursement compté qui échoue ensuite (`refund.failed`) rend les gems avec une écriture `gem_refund_reversal`.
 - Le retrait est recalculé depuis le **cumul** remboursé, relu via l'API Stripe : `floor(gems × remboursé / montant)`, et le pack entier si tout est remboursé. Seule la **différence** avec `gem_orders.gems_reversed` est écrite (`gem_refund`). C'est insensible aux répétitions et à l'ordre des événements, et un instantané plus ancien n'écrase jamais un plus récent (`stripe_state_version`).
 - Rien n'est supprimé : les écritures d'achat restent, les corrections sont de nouvelles lignes.
+- La page de retour (`returnPhase`, `front/src/utils/gemCheckout.ts`) distingue trois cas sur une commande `paid` : achat confirmé, remboursement partiel (montant remboursé, gems retirés et gems conservés) et remboursement complet (« les gems du pack ont été retirés », jamais « ajoutés »). Un litige perdu qui retire des gems s'affiche de la même façon, selon `refund.gems_reversed`.
 - Si les gems ont été dépensés, le solde premium devient négatif. `ShopPurchaseService` refuse alors toute dépense premium (`premium_debt`, message affiché avec un lien « Obtenir des gems »). Acheter un nouveau pack reste possible. Les skins achetés sont conservés.
 
 **Litiges** : l'état est conservé sur la commande (`dispute_id`, `dispute_status`, `dispute_reason`, `disputed_at`), avec un log `warning` à chaque changement, pour un traitement manuel. Seul un litige **perdu** retire des gems, et `remboursé + perdu` est plafonné au montant payé : un litige et un remboursement ne retirent jamais deux fois la même perte. Pas de moteur de litiges.
