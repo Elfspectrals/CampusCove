@@ -57,6 +57,26 @@ export interface WorldPub {
   shots: { plank: Vec3, yaw: number, player: Vec3 }
 }
 
+/** A work or store building's ground box: `footprint` is [width, depth] around `position`, turned by rotationY. */
+export interface BuildingArea {
+  position: Vec3
+  rotationY: number
+  footprint: [number, number]
+}
+
+/**
+ * A job station (manifest `jobs.stations`, written by front/scripts/apply-jobs.mjs from the work buildings'
+ * interior.layout.json): `seat` is the top of its chair in world coords, `yaw` the direction the worker faces.
+ */
+export interface JobStation {
+  id: string
+  job: string
+  building: string
+  seat: Vec3
+  seatHeight: number
+  yaw: number
+}
+
 /** A place an admin can teleport to from the watch: just outside a public building's door, facing it. */
 export interface TeleportDestination {
   key: string
@@ -72,6 +92,8 @@ interface World {
   citySpawn: Vec3
   destinations: TeleportDestination[]
   workDoors: Map<string, { x: number, z: number }>
+  buildingAreas: Map<string, BuildingArea>
+  jobStations: Map<string, JobStation>
   houses: Map<string, WorldHouse>
   fountains: Vec3[]
   bounds: Bounds
@@ -179,6 +201,38 @@ function parsePubZone(zones: Json[], pub: WorldPub | null): Bounds | null {
   return parseBounds(zone.bounds, 'pub zone bounds')
 }
 
+function parseJobStations(raw: Json, areas: Map<string, BuildingArea>): Map<string, JobStation> {
+  const stations = new Map<string, JobStation>()
+  if (raw === undefined || raw === null) return stations
+  if (!Array.isArray(raw?.stations)) throw new Error('world manifest: jobs without stations')
+  raw.stations.forEach((station: Json, i: number) => {
+    if (typeof station?.id !== 'string' || typeof station?.job !== 'string' || typeof station?.building !== 'string' ||
+      !Number.isFinite(station?.seatHeight) || stations.has(station.id) || !areas.has(station.building)) {
+      throw new Error(`world manifest: invalid job station ${i} ${JSON.stringify(station)}`)
+    }
+    stations.set(station.id, {
+      id: station.id,
+      job: station.job,
+      building: station.building,
+      seat: parseVec3(station.seat, `seat of job station ${station.id}`),
+      seatHeight: station.seatHeight,
+      yaw: parseYaw(station.yaw, `yaw of job station ${station.id}`)
+    })
+  })
+  return stations
+}
+
+/** Whether (x, z) is inside the building's footprint. */
+export function insideBuilding(area: BuildingArea, x: number, z: number): boolean {
+  const dx = x - area.position.x
+  const dz = z - area.position.z
+  const cos = Math.cos(area.rotationY)
+  const sin = Math.sin(area.rotationY)
+  const localX = dx * cos - dz * sin
+  const localZ = dx * sin + dz * cos
+  return Math.abs(localX) <= area.footprint[0] / 2 && Math.abs(localZ) <= area.footprint[1] / 2
+}
+
 /** Steps out of the building through its door; yaw makes the camera (forward = -sin, -cos) look back at the door. */
 export function doorDestination(key: string, name: string, building: Vec3, door: Vec3): TeleportDestination {
   const dx = door.x - building.x
@@ -197,6 +251,7 @@ export function doorDestination(key: string, name: string, building: Vec3, door:
 function parseWorld(manifest: Json): World {
   if (!Array.isArray(manifest?.zones)) throw new Error('world manifest: missing zones')
   const workDoors: World['workDoors'] = new Map()
+  const buildingAreas: World['buildingAreas'] = new Map()
   const houses: World['houses'] = new Map()
   const destinations: TeleportDestination[] = [
     { key: 'spawn', name: 'Town square', position: parseVec3(manifest.spawn, 'spawn'), yaw: Number.isFinite(manifest.spawnYaw) ? manifest.spawnYaw : 0 }
@@ -214,6 +269,14 @@ function parseWorld(manifest: Json): World {
       if (building.kind !== 'work' && building.kind !== 'store') continue
       const door = parseVec3(building.door, `door of ${building.key}`)
       workDoors.set(building.key, { x: door.x, z: door.z })
+      const footprint = building.footprint
+      if (Array.isArray(footprint) && footprint.length === 2 && footprint.every(Number.isFinite)) {
+        buildingAreas.set(building.key, {
+          position: parseVec3(building.position, `position of ${building.key}`),
+          rotationY: Number.isFinite(building.rotationY) ? building.rotationY : 0,
+          footprint: [footprint[0], footprint[1]]
+        })
+      }
       destinations.push(doorDestination(building.key, typeof building.name === 'string' ? building.name : building.key, parseVec3(building.position, `position of ${building.key}`), door))
     }
   }
@@ -224,6 +287,8 @@ function parseWorld(manifest: Json): World {
     citySpawn: parseVec3(manifest.spawn, 'spawn'),
     destinations,
     workDoors,
+    buildingAreas,
+    jobStations: parseJobStations(manifest.jobs, buildingAreas),
     houses,
     fountains,
     bounds: b,
@@ -248,7 +313,7 @@ export async function loadWorld(): Promise<void> {
     try {
       const loaded = parseWorld(await readManifest(WORLD_MANIFEST_URL))
       world = loaded
-      console.log(`[world] manifest loaded from ${WORLD_MANIFEST_URL}: ${loaded.workDoors.size} public buildings, ${loaded.houses.size} houses`)
+      console.log(`[world] manifest loaded from ${WORLD_MANIFEST_URL}: ${loaded.workDoors.size} public buildings, ${loaded.houses.size} houses, ${loaded.jobStations.size} job stations`)
       return
     } catch (error) {
       lastError = error
@@ -274,6 +339,14 @@ export function teleportDestinations(): TeleportDestination[] {
 
 export function workDoor(workKey: string): { x: number, z: number } | null {
   return loadedWorld().workDoors.get(workKey) ?? null
+}
+
+export function buildingArea(key: string): BuildingArea | null {
+  return loadedWorld().buildingAreas.get(key) ?? null
+}
+
+export function jobStation(stationId: string): JobStation | null {
+  return loadedWorld().jobStations.get(stationId) ?? null
 }
 
 export function worldBounds(): Bounds {

@@ -21,7 +21,9 @@ Laravel in `backend/`, run in Docker (no local PHP needed): every artisan call g
 | Errors | throw a subclass of `ApiRejectedException($code, $message, $status)` — renders `{ message, code }`, shown as is by the front and forwarded by the socket |
 
 Product rules (do not "fix"): premium skins never purchasable with coins; furniture is deleted when a house is
-lost on purpose; no IP addresses stored; rewards come from actions, not passive income.
+lost on purpose; no IP addresses stored; rewards come from actions, not passive income — except job salaries
+(decision 2026-11-01): a shift at a job station pays every full period automatically (`JobService`, one payment per
+`(shift_id, period)`, `docs/JOBS.md`).
 
 ## Recipes
 

@@ -1640,5 +1640,145 @@
       "maxZ": -132.905,
       "floorY": -3
     }
+  },
+  "jobs": {
+    "stations": [
+      {
+        "id": "station_dev_01",
+        "job": "dev",
+        "building": "tech_hub",
+        "seat": [
+          -14.8,
+          0.71,
+          71.955
+        ],
+        "seatHeight": 0.51,
+        "yaw": 3.1416,
+        "lookAt": [
+          -14.8,
+          1.2,
+          72.905
+        ]
+      },
+      {
+        "id": "station_dev_02",
+        "job": "dev",
+        "building": "tech_hub",
+        "seat": [
+          -18.2,
+          0.71,
+          71.955
+        ],
+        "seatHeight": 0.51,
+        "yaw": 3.1416,
+        "lookAt": [
+          -18.2,
+          1.2,
+          72.905
+        ]
+      },
+      {
+        "id": "station_dev_03",
+        "job": "dev",
+        "building": "tech_hub",
+        "seat": [
+          -21.8,
+          0.71,
+          71.955
+        ],
+        "seatHeight": 0.51,
+        "yaw": 3.1416,
+        "lookAt": [
+          -21.8,
+          1.2,
+          72.905
+        ]
+      },
+      {
+        "id": "station_dev_04",
+        "job": "dev",
+        "building": "tech_hub",
+        "seat": [
+          -25.2,
+          0.71,
+          71.955
+        ],
+        "seatHeight": 0.51,
+        "yaw": 3.1416,
+        "lookAt": [
+          -25.2,
+          1.2,
+          72.905
+        ]
+      },
+      {
+        "id": "station_dev_05",
+        "job": "dev",
+        "building": "tech_hub",
+        "seat": [
+          -14.8,
+          0.71,
+          75.455
+        ],
+        "seatHeight": 0.51,
+        "yaw": 3.1416,
+        "lookAt": [
+          -14.8,
+          1.2,
+          76.405
+        ]
+      },
+      {
+        "id": "station_dev_06",
+        "job": "dev",
+        "building": "tech_hub",
+        "seat": [
+          -18.2,
+          0.71,
+          75.455
+        ],
+        "seatHeight": 0.51,
+        "yaw": 3.1416,
+        "lookAt": [
+          -18.2,
+          1.2,
+          76.405
+        ]
+      },
+      {
+        "id": "station_dev_07",
+        "job": "dev",
+        "building": "tech_hub",
+        "seat": [
+          -21.8,
+          0.71,
+          75.455
+        ],
+        "seatHeight": 0.51,
+        "yaw": 3.1416,
+        "lookAt": [
+          -21.8,
+          1.2,
+          76.405
+        ]
+      },
+      {
+        "id": "station_dev_08",
+        "job": "dev",
+        "building": "tech_hub",
+        "seat": [
+          -25.2,
+          0.71,
+          75.455
+        ],
+        "seatHeight": 0.51,
+        "yaw": 3.1416,
+        "lookAt": [
+          -25.2,
+          1.2,
+          76.405
+        ]
+      }
+    ]
   }
 }

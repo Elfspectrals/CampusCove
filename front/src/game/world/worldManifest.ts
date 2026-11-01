@@ -112,6 +112,21 @@ export interface PubLayout {
   shots: { plank: Vec3; yaw: number; player: Vec3 }
 }
 
+/**
+ * A job station in world coordinates (docs/JOBS.md, written by scripts/apply-jobs.mjs from the work buildings'
+ * interior.layout.json): `seat` is the top of its chair, `yaw` the direction the worker faces (camera convention),
+ * `lookAt` the screen.
+ */
+export interface JobStation {
+  id: string
+  job: WorkJob
+  building: WorkKey
+  seat: Vec3
+  seatHeight: number
+  yaw: number
+  lookAt: Vec3
+}
+
 export interface WorldManifest {
   version: number
   spawn: Vec3
@@ -122,6 +137,7 @@ export interface WorldManifest {
   fountains?: Vec3[]
   clinic?: ClinicLayout
   pub?: PubLayout
+  jobs?: { stations: JobStation[] }
 }
 
 const WORLD_MANIFEST_URL = '/assets/world.manifest.json'

@@ -20,6 +20,11 @@ import type {
   DoorSoundPayload,
   HouseFurniturePayload,
   HousingUnitPayload,
+  JobEndedPayload,
+  JobErrorPayload,
+  JobPaidPayload,
+  JobPaymentDelayedPayload,
+  JobStartedPayload,
   PubBellPayload,
   PubBouncerBlockPayload,
   PubDartsEndPayload,
@@ -54,6 +59,7 @@ import type {
   UserActionPayload,
   UserPunchedPayload,
   UserSeatedPayload,
+  UserWorkingPayload,
 } from '../../types/gameRealtime'
 import { useRemoteAvatars, type SeatPose } from './useRemoteAvatars'
 import { PUNCH_DAMAGE } from '../../game/punch'
@@ -128,6 +134,18 @@ export interface GameRealtimeDeps {
     seatPose: (seatId: string | null | undefined) => SeatPose | null
     onSeated: (data: UserSeatedPayload, mySessionId: string) => void
   }
+  /** Job desks (useJobs): where a desk is, who works where, and this player's own shift. */
+  jobs: {
+    stationPose: (stationId: string | null | undefined) => SeatPose | null
+    onWorking: (data: UserWorkingPayload) => void
+    forget: (sessionId: string) => void
+    onStarted: (data: JobStartedPayload) => void
+    onPaid: (data: JobPaidPayload) => void
+    onPaymentDelayed: (data: JobPaymentDelayedPayload) => void
+    onEnded: (data: JobEndedPayload) => void
+    onError: (data: JobErrorPayload) => void
+    onRoomLeft: () => void
+  }
   /** The Salty Shamrock bar (usePub). */
   pub: {
     onPouring: (data: PubPouringPayload, mySessionId: string) => void
@@ -178,6 +196,11 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
 
   // ------------------------------------------------------------ server messages
 
+  /** Where a player rests when they arrive: on a pub seat or at a job desk (the avatar sits there). */
+  function restingPose(user: RemoteUserPayload): SeatPose | null {
+    return deps.seats.seatPose(user.seatId) ?? deps.jobs.stationPose(user.stationId)
+  }
+
   function syncHousingUnits(raw: unknown): void {
     if (Array.isArray(raw)) deps.onHousingUnitsSync(parseHousingUnitList(raw))
   }
@@ -205,8 +228,9 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       deps.loadTown()
       setMyPosition(payload.me.x, payload.me.y, payload.me.z)
       for (const u of payload.users) {
-        if (u.sessionId !== room.sessionId) void remotes.upsert(u.sessionId, u, deps.seats.seatPose(u.seatId))
+        if (u.sessionId !== room.sessionId) void remotes.upsert(u.sessionId, u, restingPose(u))
         deps.seats.onSeated({ sessionId: u.sessionId, seatId: u.seatId ?? null }, room.sessionId)
+        deps.jobs.onWorking({ sessionId: u.sessionId, stationId: u.stationId ?? null })
       }
       if (payload.housingUnits !== undefined) syncHousingUnits(payload.housingUnits)
       if (payload.houseFurniture !== undefined) deps.onHouseFurnitureSync(payload.houseFurniture)
@@ -227,14 +251,25 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     })
 
     room.onMessage('user_joined', (data: RemoteUserPayload) => {
-      if (data.sessionId !== room.sessionId) void remotes.upsert(data.sessionId, data, deps.seats.seatPose(data.seatId))
+      if (data.sessionId !== room.sessionId) void remotes.upsert(data.sessionId, data, restingPose(data))
       deps.seats.onSeated({ sessionId: data.sessionId, seatId: data.seatId ?? null }, room.sessionId)
+      deps.jobs.onWorking({ sessionId: data.sessionId, stationId: data.stationId ?? null })
     })
 
     room.onMessage('user_seated', (data: UserSeatedPayload) => {
       if (data.sessionId !== room.sessionId) remotes.setSeated(data.sessionId, deps.seats.seatPose(data.seatId))
       deps.seats.onSeated(data, room.sessionId)
     })
+
+    room.onMessage('user_working', (data: UserWorkingPayload) => {
+      if (data.sessionId !== room.sessionId) remotes.setSeated(data.sessionId, deps.jobs.stationPose(data.stationId))
+      deps.jobs.onWorking(data)
+    })
+    room.onMessage('job_started', (data: JobStartedPayload) => deps.jobs.onStarted(data))
+    room.onMessage('job_paid', (data: JobPaidPayload) => deps.jobs.onPaid(data))
+    room.onMessage('job_payment_delayed', (data: JobPaymentDelayedPayload) => deps.jobs.onPaymentDelayed(data))
+    room.onMessage('job_ended', (data: JobEndedPayload) => deps.jobs.onEnded(data))
+    room.onMessage('job_error', (data: JobErrorPayload) => deps.jobs.onError(data))
 
     room.onMessage('user_moved', (data: { sessionId: string; x: number; y: number; z: number; ry?: number }) => {
       remotes.setTarget(data.sessionId, data.x, data.y, data.z, data.ry)
@@ -247,7 +282,10 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       },
     )
 
-    room.onMessage('user_left', (data: { sessionId: string }) => remotes.remove(data.sessionId))
+    room.onMessage('user_left', (data: { sessionId: string }) => {
+      remotes.remove(data.sessionId)
+      deps.jobs.forget(data.sessionId)
+    })
 
     room.onMessage('user_action', (data: UserActionPayload) => {
       if (data.sessionId !== room.sessionId && (data.action === 'eat' || data.action === 'drink')) {
@@ -319,6 +357,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     })
 
     room.onLeave(() => {
+      deps.jobs.onRoomLeft()
       if (!switchingRoom.value) deps.roomMessage.value = 'Disconnected from realtime room.'
     })
   }

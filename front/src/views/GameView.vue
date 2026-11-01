@@ -13,6 +13,7 @@ import {
 import { fetchHousingUnits } from '../api/housing'
 import { applyCachedBalanceAfterPurchase, clearAuth, getStoredAuth } from '../api/session'
 import GameHitMarker from '../components/game/GameHitMarker.vue'
+import GameJobHud from '../components/game/GameJobHud.vue'
 import GameHudToolbar from '../components/game/GameHudToolbar.vue'
 import GameInteractionPrompt from '../components/game/GameInteractionPrompt.vue'
 import GamePlacementHud from '../components/game/GamePlacementHud.vue'
@@ -52,6 +53,7 @@ import { useGameMovement } from '../composables/game/useGameMovement'
 import { useGameRealtime } from '../composables/game/useGameRealtime'
 import { useInteractionTargets } from '../composables/game/useInteractionTargets'
 import { useIntoxication } from '../composables/game/useIntoxication'
+import { useJobs } from '../composables/game/useJobs'
 import { usePlayerInventory } from '../composables/game/usePlayerInventory'
 import { usePub } from '../composables/game/usePub'
 import { usePubChallenge } from '../composables/game/usePubChallenge'
@@ -420,6 +422,25 @@ const seats = useSeats({
   setLook: (yaw, pitch) => movement.setLook(yaw, pitch),
 })
 
+// ---------------------------------------------------------------- jobs: desks that pay while the player sits there (docs/JOBS.md)
+
+const jobs = useJobs({
+  myPosition,
+  getCamera,
+  canvasRef,
+  gameRoomRef,
+  promptsHidden: () => inventoryOpen.value,
+  canWork: () => canUsePub() && !seats.seated.value && !pubGamesOpen.value,
+  pseudoOf: (sessionId) => realtime.remotePseudo(sessionId) ?? null,
+  teleport: (x, y, z) => {
+    Object.assign(myPosition, { x, y, z })
+    getCamera()?.position.set(x, y, z)
+  },
+  setLook: (yaw, pitch) => movement.setLook(yaw, pitch),
+  say: (text) => survival.say(text),
+})
+const { shift: jobShift, deskTag: jobDeskTag, leaveKey: jobLeaveKey } = jobs
+
 /** The drink picked up on the bar goes straight in hand. */
 function selectHotbarItem(code: string): void {
   pickupToHotbar(code)
@@ -545,7 +566,7 @@ const interactions = useInteractionTargets({
     else if (activeFurniture.value?.store.hasCounter.value) activeFurniture.value.store.toggleTarget()
     else openStorePurchase()
   },
-  sources: [pub.source, pubChallenge.source, pubGames.source, seats.source],
+  sources: [jobs.source, pub.source, pubChallenge.source, pubGames.source, seats.source],
 })
 const { doorPrompt } = interactions
 
@@ -768,6 +789,7 @@ const environment = useRoomEnvironment({
     survival.onTownLoaded(manifest)
     clinic.onTownLoaded(manifest)
     seats.onTownLoaded(manifest)
+    jobs.onTownLoaded(manifest)
     pub.onTownLoaded(manifest)
     pubGames.onTownLoaded(manifest)
     houseFurniture.onTownReady()
@@ -881,6 +903,8 @@ function handleExtraKeyDown(e: KeyboardEvent): boolean {
   if (pubChallenge.onKeyDown(e)) return true
   // seated at the pub: a step or a jump stands the player up instead of moving
   if (seats.onKeyDown(e)) return true
+  // at a job desk: the leave key stands up; walking keys only remind it (no involuntary quit)
+  if (jobs.onKeyDown(e)) return true
   // defaultPrevented: the inventory / cafe menu already used this Esc to close themselves
   if (e.code === 'Escape' && !e.repeat && !e.defaultPrevented && pauseMenuOpen.value && !placementPreviewActive.value) {
     toggleEscapeMenu(e)
@@ -930,7 +954,7 @@ const movement = useGameMovement({
     return pointerLocked.value && runUseOrPunch(mouseButtonCode(e.button), false)
   },
   speedFactor: () => survival.speedFactor() * intoxication.walkFactor(),
-  movementLocked: () => seats.seated.value,
+  movementLocked: () => seats.seated.value || jobs.busy.value,
   afterCameraPlaced: intoxication.applyToCamera,
   trySpendJump: () => punch.trySpendJump(),
   trySpendSprint: (dt, wasSprinting) => punch.trySpendSprint(dt, wasSprinting),
@@ -945,6 +969,7 @@ const movement = useGameMovement({
     zoneMusic?.update(dt, (currentHouseKey.value === null || currentHouseKey.value === zoneMusicKey) && insideBounds(zoneMusicBounds, myPosition))
     interactions.updatePrompts()
     houseKeys.updateKeyPrompt()
+    jobs.updateDeskTag()
     updateFrontDoors(dt, isBuildingDoorOpen)
     arms?.update(dt, myPosition)
     const held = heldModel()
@@ -969,7 +994,8 @@ const punch = usePunch({
   getArms: () => arms,
   myPosition,
   pointerLocked,
-  knockedOut: computed(() => knockedOut.value || recovering.value !== null),
+  // no punching while knocked out, recovering or working at a desk
+  knockedOut: computed(() => knockedOut.value || recovering.value !== null || jobs.busy.value),
   reducedEffects,
   shakeCamera: movement.shakeCamera,
   kickCamera: movement.kickCamera,
@@ -1022,6 +1048,7 @@ const realtime = useGameRealtime({
     movement.setLook(ry, 0)
   },
   seats: { seatPose: seats.seatPose, onSeated: seats.onSeated },
+  jobs: { stationPose: jobs.stationPose, ...jobs.handlers },
   pub: pub.handlers,
   pubGames: pubGames.handlers,
   pubChallenge: pubChallenge.handlers,
@@ -1175,6 +1202,7 @@ const crosshairClass = computed(() => {
       :reduced-effects="reducedEffects"
     />
     <GameDrunkEffects :effects="drunkEffects" />
+    <GameJobHud :shift="jobShift" :desk-tag="jobDeskTag" :leave-key="jobLeaveKey" @leave="jobs.stop" />
     <GameRoomMessageBanner v-if="roomMessage" :message="roomMessage" />
     <GameHudToolbar
       :position-label="positionLabel"

@@ -13,12 +13,73 @@ export interface RemoteUserPayload {
   slotModels?: Record<string, string | null>
   /** Pub seat the player sits on (socket/src/pub.ts), null or absent when standing. */
   seatId?: string | null
+  /** The job desk the player works at (docs/JOBS.md), null when not working. */
+  stationId?: string | null
 }
 
 /** 'user_seated': a visible player sat down on a pub seat, or stood up (`seatId` null). */
 export interface UserSeatedPayload {
   sessionId: string
   seatId: string | null
+}
+
+/** 'user_working': a player started working at a job desk, or left it (`stationId` null). Sent to the whole room. */
+export interface UserWorkingPayload {
+  sessionId: string
+  stationId: string | null
+}
+
+/** 'job_started': the server accepted job_start and sat this player at the desk (socket/src/jobs.ts). */
+export interface JobStartedPayload {
+  stationId: string
+  job: string
+  salaryCoins: number
+  periodMs: number
+  workedMs: number
+  x: number
+  y: number
+  z: number
+  yaw: number
+}
+
+/** 'job_paid': one full period was paid by the API; `earned` is the total of this shift. */
+export interface JobPaidPayload {
+  period: number
+  coins: number
+  earned: number
+  balanceAfter: number | null
+  workedMs: number
+  nextPaymentInMs: number
+}
+
+/** 'job_payment_delayed': the API did not pay a period yet; the server tries again in `retryInMs`. */
+export interface JobPaymentDelayedPayload {
+  period: number
+  retryInMs: number
+}
+
+type JobEndReason =
+  | 'stopped'
+  | 'left_station'
+  | 'disconnected'
+  | 'replaced'
+  | 'knocked_out'
+  | 'teleported'
+  | 'shift_closed'
+  | 'account_inactive'
+
+/** 'job_ended': this player's shift is over (asked, or ended by the server). */
+export interface JobEndedPayload {
+  reason: JobEndReason
+  stationId: string
+  earned: number
+}
+
+/** 'job_error': job_start refused; `occupant` names who works at a taken desk. */
+export interface JobErrorPayload {
+  message: string
+  code: string
+  occupant?: string | null
 }
 
 /** Another player ate or drank (socket/src/survival.ts); `code` is the food item, null for a fountain sip. */

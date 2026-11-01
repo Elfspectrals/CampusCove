@@ -15,10 +15,11 @@ final class CoinRewardService
 {
     /**
      * @param array<string, mixed> $meta
+     * @return int the transaction id (tx_id) of the credit
      */
-    public function credit(int $accountId, string $reason, int $amount, array $meta = []): void
+    public function credit(int $accountId, string $reason, int $amount, array $meta = []): int
     {
-        DB::transaction(function () use ($accountId, $reason, $amount, $meta): void {
+        return DB::transaction(function () use ($accountId, $reason, $amount, $meta): int {
             $wallet = Wallet::lockForAccount($accountId, 'coins');
 
             $tx = EconomyTransaction::query()->create([
@@ -36,6 +37,8 @@ final class CoinRewardService
                 'delta' => $amount,
                 'reason' => $reason,
             ]);
+
+            return (int) $tx->tx_id;
         });
     }
 

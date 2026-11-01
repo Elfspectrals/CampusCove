@@ -15,6 +15,8 @@ import {
   lockChanges,
   workDoorId
 } from './doors.ts'
+import { JOB_TICK_MS } from './jobRules.ts'
+import { endJob, onJobStart, onJobStop, onWorkerMove, tickJobs } from './jobs.ts'
 import { moveRejection, onJump, spendSprintStamina } from './movement.ts'
 import { blockAtSecretDoor, onPubBell, onPubOrder, onPubSecret, onSit } from './pub.ts'
 import {
@@ -76,6 +78,7 @@ import type {
   HouseFurniture,
   HousingUnit,
   Identity,
+  JobShift,
   Player,
   PubState
 } from './types.ts'
@@ -96,6 +99,8 @@ export class CityRoom extends Room implements GameRoom {
   trades = new Map<string, Trade>()
   seats = new Map<string, string>()
   pub: PubState = { secretOpen: false, race: null, darts: null, challenges: new Map(), challengeSentAt: new Map() }
+  jobStations = new Map<string, string>()
+  jobShifts = new Set<JobShift>()
 
   onCreate() {
     this.maxClients = CITY_MAX_PLAYERS
@@ -141,8 +146,11 @@ export class CityRoom extends Room implements GameRoom {
     this.onMessage('admin_open', (client) => onAdminOpen(this, client))
     this.onMessage('admin_teleport', (client, payload: ClientPayload) => onAdminTeleport(this, client, payload))
     this.onMessage('admin_summon', (client, payload: ClientPayload) => onAdminSummon(this, client, payload))
+    this.onMessage('job_start', (client, payload: ClientPayload) => void onJobStart(this, client, payload))
+    this.onMessage('job_stop', (client) => onJobStop(this, client))
     this.clock.setInterval(() => void this.pollHousingUnits(), HOUSING_POLL_MS)
     this.clock.setInterval(() => tickSurvival(this, SURVIVAL_TICK_MS / 1000), SURVIVAL_TICK_MS)
+    this.clock.setInterval(() => tickJobs(this), JOB_TICK_MS)
   }
 
   async onAuth(_client: Client, options: Json): Promise<Identity> {
@@ -165,6 +173,7 @@ export class CityRoom extends Room implements GameRoom {
       if (stale) {
         onTradeLeave(this, stale)
         leavePub(this, stale)
+        endJob(this, stale, 'replaced')
       }
       this.players.delete(staleSessionId)
       // saved before this session loads them
@@ -197,6 +206,7 @@ export class CityRoom extends Room implements GameRoom {
     releaseClinicBed(this, player)
     onTradeLeave(this, player)
     leavePub(this, player)
+    endJob(this, player, 'disconnected')
     void saveSurvival(player)
     if (this.sessionByAccountId.get(player.accountId) === client.sessionId) {
       this.sessionByAccountId.delete(player.accountId)
@@ -227,6 +237,7 @@ export class CityRoom extends Room implements GameRoom {
     const z = normalizeNumber(payload.z, player.z)
     const now = Date.now()
     const sprinting = payload.sprint === true
+    if (player.job && onWorkerMove(this, player, x, z) === 'stays') return
     if (player.seatId) standUp(this, player)
     const rejection = moveRejection(this, player, x, y, z, now, sprinting)
     if (rejection === 'secret_room_closed') {

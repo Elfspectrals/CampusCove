@@ -26,6 +26,9 @@ export const APARTMENT_DOOR_POS = { x: 0, z: 4.75 }
 export const TRANSFORM_EPSILON_POSITION = 0.01
 export const TRANSFORM_EPSILON_ROTATION = 0.01
 
+/** Job desks (docs/JOBS.md): the prompt shows within this distance (m, XZ) of the chair. socket/src/jobRules.ts allows 2.2. */
+export const JOB_STATION_REACH = 2
+
 /** The Salty Shamrock: mirrors of socket/src/pubConstants.ts (docs/PUB.md §5). */
 export const SEAT_REACH = 2.5
 export const COUNTER_REACH = 2.6

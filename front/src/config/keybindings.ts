@@ -23,6 +23,7 @@ const BINDABLE_ACTIONS = [
   'putAway',
   'acceptChallenge',
   'declineChallenge',
+  'leaveJob',
   'hotbar1',
   'hotbar2',
   'hotbar3',
@@ -64,6 +65,8 @@ const DEFAULT_BINDINGS: Readonly<Record<BindableAction, readonly string[]>> = {
   /** A Drink Fast challenge from another player at the bar: Y(es) / N(o). */
   acceptChallenge: ['KeyY'],
   declineChallenge: ['KeyN'],
+  /** At a job desk (docs/JOBS.md): stand up and end the shift. Walking keys do not, so a stray key never quits. */
+  leaveJob: ['KeyJ'],
   hotbar1: ['Digit1'],
   hotbar2: ['Digit2'],
   hotbar3: ['Digit3'],

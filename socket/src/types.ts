@@ -74,6 +74,8 @@ export interface Player extends Vec3 {
   lastPubBellAt: number
   /** Last pub_bouncer_block broadcast for this player (rate limit). */
   lastBouncerBlockAt: number
+  /** Shift at a job station (src/jobs.ts), from the accepted job_start until it ends; shiftId null while the API opens it. */
+  job: JobShift | null
   decoratedTemplateKey?: string | null
   appearance: Record<AppearanceSlot, number | null>
   slotHexes: Record<AppearanceSlot, string>
@@ -170,6 +172,36 @@ export interface PubState {
   challengeSentAt: Map<string, number>
 }
 
+/** A shift at a job station (src/jobs.ts, rules in src/jobRules.ts, docs/JOBS.md). Times are this server's clock. */
+export interface JobShift {
+  sessionId: string
+  accountId: number
+  token: string
+  job: string
+  building: string
+  stationId: string
+  /** Laravel shift id: null until the API opened the shift. */
+  shiftId: number | null
+  salaryCoins: number
+  periodMs: number
+  /** Hunger and thirst drop at this fraction of the normal speed during the shift. */
+  survivalFactor: number
+  startedAt: number
+  /** Time not counted as work: the server stalled (sleep, overload) for longer than JOB_STALL_MS. */
+  pausedMs: number
+  lastTickAt: number
+  /** Next period to pay (1-based). Periods given up after MAX_BACKLOG_PERIODS are skipped. */
+  nextPeriod: number
+  paying: boolean
+  failures: number
+  retryAt: number
+  earned: number
+  forfeitedPeriods: number
+  /** Set once the shift is over: the periods completed before it can still be paid (a few attempts). */
+  endedAt: number | null
+  endReason: string | null
+}
+
 export interface ClinicBedOccupant {
   sessionId: string | null
   usedAt: number
@@ -191,6 +223,10 @@ export interface GameRoom {
   clinicBeds: Map<string, ClinicBedOccupant>
   seats: Map<string, string>
   pub: PubState
+  /** Job station id -> sessionId of the player working there (or about to: the API is opening the shift). */
+  jobStations: Map<string, string>
+  /** Shifts being worked or still settling their last completed periods. */
+  jobShifts: Set<JobShift>
   clients: readonly GameClient[]
   clock: { setTimeout(handler: () => void, ms: number): unknown }
   forEachClient(callback: (client: GameClient) => void, exceptClient?: GameClient): void

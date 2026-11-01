@@ -1,5 +1,6 @@
 // Admin tools on the watch: teleport to a public place, or bring a player next to you. Only accounts the API
 // flags is_admin (GET /user at join) get an answer; everyone else is ignored.
+import { endJob } from './jobs.ts'
 import { leavePub } from './pubGames.ts'
 import { type TradeRoom, checkTradeDistance } from './trade.ts'
 import type { ClientPayload, GameClient, GameRoom, Player, Vec3 } from './types.ts'
@@ -25,6 +26,7 @@ function sendError(client: GameClient, message: string): void {
 /** Moves a player server-side and tells everyone: the player snaps there, the others see them jump (no glide). */
 export function teleportPlayer(room: AdminRoom, player: Player, to: Vec3, yaw: number, now = Date.now()): void {
   leavePub(room, player)
+  endJob(room, player, 'teleported', now)
   Object.assign(player, { x: to.x, y: to.y, z: to.z, ry: yaw, fallPeakY: to.y, lastMoveAt: now })
   const client = room.clients.find((c) => c.sessionId === player.sessionId)
   if (!client) return

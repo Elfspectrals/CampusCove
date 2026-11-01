@@ -5,6 +5,8 @@ import { CITY_SPAWN_RADIUS, SURVIVAL_TIME_SCALE } from './config.ts'
 import { toInterior, unitAt } from './movement.ts'
 import { spawnNear } from './players.ts'
 import { HANGOVER_INTOXICATION, INTOXICATION_MAX } from './pubConstants.ts'
+import { survivalDrainFactor } from './jobRules.ts'
+import { endJob } from './jobs.ts'
 import { leavePub } from './pubGames.ts'
 import { staminaAt } from './stamina.ts'
 import {
@@ -108,7 +110,8 @@ export function tickSurvival(room: GameRoom, dtSeconds: number): void {
   room.forEachClient((client) => {
     const player = room.players.get(client.sessionId)
     if (!player?.stats || now < player.knockedOutUntil) return
-    const { stats: decayed, damage } = tickStats(player.stats, dtSeconds, SURVIVAL_TIME_SCALE)
+    // a shift slows hunger and thirst down (jobRules.survivalDrainFactor); the other rules stay the same
+    const { stats: decayed, damage } = tickStats(player.stats, dtSeconds, SURVIVAL_TIME_SCALE * survivalDrainFactor(player))
     const { stats, healOverTime } = tickHealOverTime(decayed, player.healOverTime, now)
     player.healOverTime = healOverTime
     const blackingOut = player.intoxication >= INTOXICATION_MAX
@@ -143,6 +146,7 @@ function knockOut(room: GameRoom, client: GameClient, player: Player, cause: Kno
   player.speedBoostUntil = 0
   player.healOverTime = null
   leavePub(room, player)
+  endJob(room, player, 'knocked_out')
   client.send('survival_knocked_out', { durationMs: KNOCKOUT_MS, cause })
   callRealtimeBackend(player.token, cause === 'alcohol' ? '/survival/hangover' : '/survival/hospital', 'POST')
     .then((data) => client.send('survival_hospital_bill', {

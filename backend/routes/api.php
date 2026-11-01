@@ -12,6 +12,7 @@ use App\Http\Controllers\CharacterCosmeticController;
 use App\Http\Controllers\FriendController;
 use App\Http\Controllers\HousingController;
 use App\Http\Controllers\InventoryController;
+use App\Http\Controllers\JobController;
 use App\Http\Controllers\PlayerInventoryLayoutController;
 use App\Http\Controllers\PlayerReportController;
 use App\Http\Controllers\PubController;
@@ -72,6 +73,9 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
         Route::post('/pub/play', [PubController::class, 'play']);
         Route::post('/pub/reward', [PubController::class, 'reward']);
         Route::post('/trades/execute', [TradeController::class, 'execute']);
+        Route::post('/jobs/shifts', [JobController::class, 'start']);
+        Route::post('/jobs/shifts/{shiftId}/end', [JobController::class, 'end'])->whereNumber('shiftId');
+        Route::post('/jobs/shifts/{shiftId}/salary', [JobController::class, 'salary'])->whereNumber('shiftId');
     });
     Route::get('/trades/offerable', [TradeController::class, 'offerable']);
 

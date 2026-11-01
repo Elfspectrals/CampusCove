@@ -60,7 +60,7 @@ export async function callBackendJson(
   const data: Json = await res.json().catch(() => ({}))
   if (!res.ok) {
     const message = typeof data?.message === 'string' ? data.message : `backend error ${res.status}`
-    throw Object.assign(new Error(message), { code: typeof data?.code === 'string' ? data.code : 'backend_error' })
+    throw Object.assign(new Error(message), { code: typeof data?.code === 'string' ? data.code : 'backend_error', status: res.status })
   }
   return data
 }

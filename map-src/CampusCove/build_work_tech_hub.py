@@ -83,6 +83,7 @@ for nm, gx, gz, sx, sz in [("Sky_Back", 0, -13, 32, 0.05), ("Sky_Front", 0, 14, 
     objs.append(L.box(coll, nm, gx, gz, -3.0, sx, sz, 9.0, M["sky"]))
 
 # -------- dev stations (2 rows x 4)
+SEAT_TOP = 0.51  # chair seat height above the floor, exported as the stations' seatHeight
 stations = []
 dev_xs = [-5.2, -1.8, 1.8, 5.2]
 rows = [(-1.5, "A"), (-5.0, "B")]
@@ -109,10 +110,10 @@ for (dz, _) in rows:
         ]
         # the user sits on the +z side looking toward -z: monitors at the back (lz<0) with the screen facing +z
         desk = L.furn(coll, f"desk_dev_{tag}", dx, dz, 0.0, parts)
-        # chair
+        # chair: its seat top (SEAT_TOP) is where the job gameplay sits the worker down
         cz = dz + 0.95
         chair_parts = [
-            (0, 0, 0.45, 0.46, 0.46, 0.06, M["fabric"], 0.01),
+            (0, 0, SEAT_TOP - 0.06, 0.46, 0.46, 0.06, M["fabric"], 0.01),
             (0, 0.22, 0.51, 0.44, 0.06, 0.48, M["fabric"], 0.01),
             (0, 0, 0.04, 0.06, 0.06, 0.41, M["metal"]),
             (0, 0, 0.0, 0.52, 0.05, 0.04, M["metal"]),
@@ -123,7 +124,7 @@ for (dz, _) in rows:
         cols.add(f"Desk_dev_{tag}", dx, dz, 0.0, 1.6, 0.8, 0.75)
         stations.append({
             "id": f"station_dev_{tag}", "job": "dev", "seat": f"seat_dev_{tag}", "desk": f"desk_dev_{tag}",
-            "position": [dx, 0.0, cz], "yaw": 0.0, "lookAt": [dx, 1.0, dz],
+            "seatHeight": SEAT_TOP, "position": [dx, 0.0, cz], "yaw": 0.0, "lookAt": [dx, 1.0, dz],
         })
 
 # -------- meeting room (glass), east back corner

@@ -34,7 +34,8 @@ export function canHit(room: GameRoom, attacker: Player, target: Player | null |
 export function onPunch(room: GameRoom, client: GameClient, payload: ClientPayload): void {
   const attacker = room.players.get(client.sessionId)
   const now = Date.now()
-  if (!attacker || !canPunchNow(attacker, now)) return
+  // no punching from a work desk (the front does not send it either)
+  if (!attacker || attacker.job || !canPunchNow(attacker, now)) return
   const targetSessionId = typeof payload?.targetSessionId === 'string' ? payload.targetSessionId : null
   const target = targetSessionId ? room.players.get(targetSessionId) : null
   const hit = canHit(room, attacker, target, now)

@@ -42,6 +42,8 @@ function fakeRoom(...players: Player[]): AdminRoom & { clients: FakeClient[], mo
     seats: new Map(),
     pub: { secretOpen: false, race: null, darts: null, challenges: new Map(), challengeSentAt: new Map() },
     trades: new Map(),
+    jobStations: new Map(),
+    jobShifts: new Set(),
     clock: { setTimeout: () => undefined },
     forEachClient: () => undefined,
     broadcastMove: (client) => void moves.push(client.sessionId),

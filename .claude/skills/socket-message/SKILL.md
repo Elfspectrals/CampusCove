@@ -7,7 +7,8 @@ description: Add or change real-time multiplayer behaviour in CampusCove's Colys
 
 One Colyseus room, `CityRoom` (`socket/src/CityRoom.ts`), holds the town **and** every interior: a player's
 `zone` (`city`, `apartment`, `work:<key>`) only decides who sees whom (`players.ts` `visibilityKey`,
-`forEachVisibleClient`). The socket is plain ESM JavaScript (no TypeScript), 2-space, no semicolons.
+`forEachVisibleClient`). The socket is TypeScript run by `tsx` (ESM, `.ts` imports), 2-space, no semicolons;
+`npm test` (node:test via tsx) and `npx tsc` (typecheck) in `socket/`.
 
 | File | Owns |
 |---|---|
@@ -15,8 +16,9 @@ One Colyseus room, `CityRoom` (`socket/src/CityRoom.ts`), holds the town **and**
 | `players.ts` | player record, `publicPlayer`, input normalizers (`normalizeNumber`, ...) |
 | `movement.ts` | `moveRejection`: speed, world bounds, locked houses → `position_correction` |
 | `doors.ts` | reach (`DOOR_REACH = 3`), `canUseDoor`, door ids (`work:<key>` / unit public id) |
-| `world.ts` | parses `world.manifest.json` at boot (spawn, bounds, houses, work doors) |
+| `world.ts` | parses `world.manifest.json` at boot (spawn, bounds, houses, work doors, job stations) |
 | `apartments.ts` | furniture placement, forwarded to the API |
+| `jobs.ts` / `jobRules.ts` | job desks: taking / leaving a station, the salary of each period (`docs/JOBS.md`) |
 | `backend.ts` | `callBackendJson(token, path, method, body)`, `errorPayload` |
 
 ## Server side

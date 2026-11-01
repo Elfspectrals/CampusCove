@@ -85,6 +85,10 @@ export function onSit(room: GameRoom, client: GameClient, payload: ClientPayload
     sendPubError(client, 'Get closer to the seat.', 'seat_too_far')
     return
   }
+  if (player.job) {
+    sendPubError(client, 'Leave your desk first.', 'working')
+    return
+  }
   const occupant = room.seats.get(seat.id)
   if (occupant && occupant !== player.sessionId) {
     sendPubError(client, 'This seat is taken.', 'seat_taken')

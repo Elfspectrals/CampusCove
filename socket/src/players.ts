@@ -1,6 +1,7 @@
 // Player state kept by the room, and what other clients get to see of it.
 import type { Client } from 'colyseus'
 import type { Json } from './backend.ts'
+import { workingStationId } from './jobRules.ts'
 import { MAX_STAMINA } from './stamina.ts'
 import type { AppearanceSlot, Player, Vec3, WearSlot } from './types.ts'
 
@@ -108,6 +109,7 @@ export function createPlayer(client: Client, options: Json, colorIndex: number, 
     pubShots: null,
     lastPubBellAt: 0,
     lastBouncerBlockAt: 0,
+    job: null,
     appearance: normalizeAppearanceIds(options?.appearance),
     slotHexes: normalizeSlotHexes(options?.slotHexes),
     bodyModelGlb: normalizeBodyModelGlb(options?.bodyModelGlb),
@@ -126,6 +128,7 @@ export function publicPlayer(player: Player) {
     z: player.z,
     ry: player.ry,
     seatId: player.seatId,
+    stationId: workingStationId(player),
     appearance: { ...player.appearance },
     slotHexes: { ...player.slotHexes },
     bodyModelGlb: player.bodyModelGlb,

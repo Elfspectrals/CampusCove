@@ -30,7 +30,8 @@ Verify                                          -> skill: playtest-game
 - Check the product rules that look like bugs but are not (memory: economy decisions):
   premium skins never cost coins; houses are **bought** + daily property tax (no more renting); unpaid tax seizes the
   house; furniture deleted on seizure/expiry is intentional; no IP storage. Coins come from gameplay actions
-  (reuse `CoinRewardService`), not passive income.
+  (reuse `CoinRewardService`), not passive income — **except jobs** (decision 2026-11-01): a player seated at a job
+  station is paid automatically every full period while connected, with no periodic action (`docs/JOBS.md`).
 - Write down the player loop in one sentence ("with the key in hand, left click locks"). If two readings are
   possible, ask the user — they make the design calls.
 

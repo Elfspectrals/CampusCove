@@ -30,6 +30,7 @@ make up-build
 | `make seed-shop` | Catalogue shop / wearables |
 | `make seed-housing` | 10 maisons de la ville |
 | `make collect-taxes` | Prélève les taxes des maisons, saisit les impayées |
+| `make close-stale-shifts` | Clôture les postes de travail orphelins (planifié chaque minute) |
 | `make set-admin EMAIL=a@b.c` | Droits admin |
 | `make set-money ACCOUNT=1 CURRENCY=coins SUM=2000` | Solde (id ou email) |
 | `make fill-outfit ACCOUNT=1` | Starter wearables + outfit |
@@ -37,9 +38,19 @@ make up-build
 | `make rebuild-socket` | Rebuild Colyseus (pas de volume) |
 | `make assets-optimize` | Assets Blender → `front/public/assets` (+ collisions) |
 | `make store-apply` | Branche le magasin Cove Home dans la ville (collisions + zone `retail_park` de `world.manifest.json`) |
+| `make jobs-apply` | Écrit les postes des métiers ouverts dans `world.manifest.json` (`jobs.stations`) |
 | `make newnation-optimize` | Carte du showroom `/NewNation` |
 
 `CURRENCY` : `coins` ou `premium`. Relog après `set-admin`.
+
+## Métiers
+
+Premier métier : **développeur au Tech Hub**. On vise un des 8 ordinateurs, on s'assoit (« Commencer à travailler »)
+et l'on touche **10 coins par minute complète** passée au poste, sans action périodique, tant que la connexion reste
+ouverte ; la faim et la soif baissent quatre fois moins vite. **J** (configurable) ou le bouton du panneau fait quitter
+le poste. Le socket décide qui travaille où et quand une période est complète ; l'API paie chaque période une seule
+fois (`job_salary_payments`, motif `job_salary_dev` dans `wallet_ledger`). Règles, réglages et tests :
+`docs/JOBS.md`.
 
 ## Production
 
@@ -57,7 +68,7 @@ make prod-down
 | `caddy` | HTTPS (Let's Encrypt avec un vrai `DOMAIN`), front, en-têtes de sécurité, proxy `/api` et `/ws` |
 | `migrate` | Une fois par déploiement : migrations + `ShopSeeder` + `HousingUnitSeeder` |
 | `backend` | PHP-FPM, `APP_DEBUG=false`, caches Laravel construits au démarrage |
-| `scheduler` | `schedule:work` : taxes des maisons, purge RGPD |
+| `scheduler` | `schedule:work` : taxes des maisons, postes de travail orphelins, purge RGPD |
 | `socket` | Colyseus, `world.manifest.json` embarqué dans l'image |
 | `postgres` | Données (volume `postgres_data`), aucun port publié |
 

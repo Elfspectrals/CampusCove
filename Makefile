@@ -74,6 +74,9 @@ assets-optimize: ## Optimize Blender exports (map-src/CampusCove/out) into front
 store-apply: ## Wire the Cove Home store into the town (collision + world.manifest.json), after assets-optimize
 	cd front && npm run store:apply
 
+jobs-apply: ## Write the open jobs' desks into world.manifest.json, from the work buildings' interior.layout.json
+	cd front && npm run jobs:apply
+
 newnation-optimize: ## Rebuild the /NewNation showroom map from map-src/NewNation/
 	cd front && npm run newnation:optimize
 
@@ -101,6 +104,9 @@ fix-housing: seed-housing purge-legacy-housing ## Seed the 10 town houses + purg
 
 collect-taxes: ## Collect due house taxes, seize unpaid houses
 	$(ART) housing:collect-taxes
+
+close-stale-shifts: ## Close the job shifts nobody paid for 6 periods (scheduled every minute)
+	$(ART) jobs:close-stale
 
 set-admin: ## Grant admin (EMAIL=a@b.c)
 	$(ART) setAdmin $(EMAIL)
