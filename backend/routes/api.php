@@ -10,6 +10,7 @@ use App\Http\Controllers\AssetController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CharacterCosmeticController;
 use App\Http\Controllers\FriendController;
+use App\Http\Controllers\GemShopController;
 use App\Http\Controllers\HousingController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\PlayerInventoryLayoutController;
@@ -17,6 +18,7 @@ use App\Http\Controllers\PlayerReportController;
 use App\Http\Controllers\PubController;
 use App\Http\Controllers\ReferralController;
 use App\Http\Controllers\ShopController;
+use App\Http\Controllers\StripeWebhookController;
 use App\Http\Controllers\SurvivalController;
 use App\Http\Controllers\TradeController;
 use Illuminate\Support\Facades\Route;
@@ -35,6 +37,9 @@ Route::middleware('throttle:10,1')->group(function () {
 
 Route::get('/shop/items', [ShopController::class, 'index']);
 Route::get('/assets/public/{path}', [AssetController::class, 'publicDisk'])->where('path', '.*');
+
+// Called by Stripe (signed body), never by the browser: no session, no CORS.
+Route::post('/stripe/webhook', StripeWebhookController::class);
 
 Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
     Route::get('/user', [AuthController::class, 'user']);
@@ -77,6 +82,11 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
 
     Route::post('/shop/purchase', [ShopController::class, 'purchase']);
     Route::post('/shop/checkout', [ShopController::class, 'checkout']);
+
+    Route::get('/gems/packs', [GemShopController::class, 'packs']);
+    Route::get('/gems/orders', [GemShopController::class, 'index']);
+    Route::post('/gems/orders', [GemShopController::class, 'store'])->middleware('throttle:10,1');
+    Route::get('/gems/orders/{publicId}', [GemShopController::class, 'show'])->middleware('throttle:60,1');
     Route::get('/inventory', [InventoryController::class, 'index']);
     Route::get('/inventory/layout', [PlayerInventoryLayoutController::class, 'show']);
     Route::put('/inventory/layout', [PlayerInventoryLayoutController::class, 'update']);

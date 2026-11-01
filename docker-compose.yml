@@ -70,6 +70,11 @@ services:
       REALTIME_SHARED_SECRET: ${REALTIME_SHARED_SECRET:-campuscove-dev-realtime-secret}
       # The socket's /internal routes: admin housing changes reach players in the game at once.
       REALTIME_INTERNAL_URL: http://socket:3000
+      # Gem shop demo (docs/STRIPE.md): Stripe test mode only, off unless GEMS_CHECKOUT_MODE=test + test keys in a root .env.
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+      GEMS_CHECKOUT_MODE: ${GEMS_CHECKOUT_MODE:-off}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
       DB_CONNECTION: pgsql
       DB_HOST: postgres
       DB_PORT: 5432

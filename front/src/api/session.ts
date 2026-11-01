@@ -37,7 +37,7 @@ function parseRoles(value: unknown): string[] | undefined {
   return roles.length > 0 ? roles : undefined
 }
 
-function parseWalletSummary(value: unknown): { coins: number; premium: number } | null {
+export function parseWalletSummary(value: unknown): { coins: number; premium: number } | null {
   if (!isRecord(value)) return null
   if (typeof value.coins !== 'number') return null
   if (typeof value.premium !== 'number') return null
@@ -119,6 +119,17 @@ export function getCachedWalletBalances(): CachedWalletBalances {
 export function applyCachedBalanceAfterPurchase(currency: 'coins' | 'premium', balanceAfter: number): void {
   const next: CachedWalletBalances = { ...getCachedWalletBalances(), [currency]: balanceAfter }
   localStorage.setItem(WALLET_BALANCE_KEY, JSON.stringify(next))
+  notifyAuthListeners()
+}
+
+/**
+ * Both balances as the API just returned them (e.g. after a gem order): the cache and the stored user's
+ * wallet_summary, so a later mergeStoredUser cannot bring back the old amounts.
+ */
+export function storeWalletSummary(summary: { coins: number; premium: number }): void {
+  const auth = getStoredAuth()
+  if (auth) localStorage.setItem(AUTH_KEY, JSON.stringify({ user: { ...auth.user, wallet_summary: summary }, token: auth.token }))
+  setCachedWalletBalances(summary)
   notifyAuthListeners()
 }
 

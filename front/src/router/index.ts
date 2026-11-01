@@ -17,6 +17,8 @@ const AdminInventoriesView = () => import('../views/admin/AdminInventoriesView.v
 const AdminShopView = () => import('../views/admin/AdminShopView.vue')
 const AdminUsersView = () => import('../views/admin/AdminUsersView.vue')
 const FriendsView = () => import('../views/FriendsView.vue')
+const GemCheckoutReturnView = () => import('../views/GemCheckoutReturnView.vue')
+const GemShopView = () => import('../views/GemShopView.vue')
 const GameView = () => import('../views/GameView.vue')
 const HomeView = () => import('../views/HomeView.vue')
 const ItemShopView = () => import('../views/ItemShopView.vue')
@@ -60,6 +62,9 @@ const router = createRouter({
     { path: '/NewNation', name: 'new-nation', component: NewNationView, meta: { requiresAdmin: true, title: 'Admin — New Nation', fullBleed: true } },
     { path: '/home', name: 'home', component: HomeView, meta: { requiresAuth: true, title: 'Profile' } },
     { path: '/friends', name: 'friends', component: FriendsView, meta: { requiresAuth: true, title: 'Friends' } },
+    // gem shop + Stripe Checkout return page (private: listed in deploy/Caddyfile and vercel.json, noindex)
+    { path: '/gems', name: 'gems', component: GemShopView, meta: { requiresAuth: true, title: 'Gems' } },
+    { path: '/gems/return', name: 'gems-return', component: GemCheckoutReturnView, meta: { requiresAuth: true, title: 'Payment' } },
     { path: '/settings', name: 'settings', component: SettingsView, meta: { title: 'Settings' } },
     { path: '/game', name: 'game', component: GameView, meta: { requiresAuth: true, title: 'Game', fullBleed: true, immersive: true } },
     { path: '/dev/ui', name: 'dev-ui', component: () => import('../views/dev/DevUiView.vue'), meta: { title: 'Design system' } },

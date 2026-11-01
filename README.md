@@ -41,6 +41,8 @@ make up-build
 
 `CURRENCY` : `coins` ou `premium`. Relog après `set-admin`.
 
+**Boutique de gems (démo Stripe, mode test uniquement)** : `/gems`, paiement simulé avec les cartes de test Stripe, aucun argent débité, gems réellement crédités dans le portefeuille premium. Désactivée par défaut (`GEMS_CHECKOUT_MODE=off`), clés de production refusées. `make stripe-listen` (webhooks vers localhost:8000), `make gems-reconcile [ORDER=<id>]`. Voir [docs/STRIPE.md](docs/STRIPE.md).
+
 ## Production
 
 `docker-compose.prod.yml`. Seul Caddy publie des ports (80/443) : front buildé en statique, `/api` → PHP-FPM, `/ws` → Colyseus. Postgres, backend et socket restent sur le réseau interne. Tous les conteneurs tournent sans root.
@@ -57,7 +59,7 @@ make prod-down
 | `caddy` | HTTPS (Let's Encrypt avec un vrai `DOMAIN`), front, en-têtes de sécurité, proxy `/api` et `/ws` |
 | `migrate` | Une fois par déploiement : migrations + `ShopSeeder` + `HousingUnitSeeder` |
 | `backend` | PHP-FPM, `APP_DEBUG=false`, caches Laravel construits au démarrage |
-| `scheduler` | `schedule:work` : taxes des maisons, purge RGPD |
+| `scheduler` | `schedule:work` : taxes des maisons, purge RGPD, réconciliation des commandes de gems (démo Stripe) |
 | `socket` | Colyseus, `world.manifest.json` embarqué dans l'image |
 | `postgres` | Données (volume `postgres_data`), aucun port publié |
 

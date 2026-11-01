@@ -66,15 +66,20 @@ export function apiFetch(path: string, options: ApiRequestOptions = {}): Promise
   })
 }
 
-/** API failure: `message` is the first error, `fieldErrors` the first message per field of a 422 validation error. */
+/**
+ * API failure: `message` is the first error, `fieldErrors` the first message per field of a 422 validation error,
+ * `code` the business reason of an ApiRejectedException (`premium_debt`, `gems_unavailable`...).
+ */
 export class ApiError extends Error {
   readonly status: number
   readonly fieldErrors: Record<string, string>
+  readonly code: string | null
 
-  constructor(message: string, status: number, fieldErrors: Record<string, string> = {}) {
+  constructor(message: string, status: number, fieldErrors: Record<string, string> = {}, code: string | null = null) {
     super(message)
     this.status = status
     this.fieldErrors = fieldErrors
+    this.code = code
   }
 }
 
@@ -91,6 +96,9 @@ function fieldErrorsOf(data: unknown): Record<string, string> {
 export async function apiRequest(path: string, options: ApiRequestOptions = {}): Promise<unknown> {
   const res = await apiFetch(path, options)
   const data: unknown = await res.json().catch(() => ({}))
-  if (!res.ok) throw new ApiError(formatApiError(data, options.errorMessage), res.status, fieldErrorsOf(data))
+  if (!res.ok) {
+    const code = isRecord(data) && typeof data.code === 'string' ? data.code : null
+    throw new ApiError(formatApiError(data, options.errorMessage), res.status, fieldErrorsOf(data), code)
+  }
   return data
 }

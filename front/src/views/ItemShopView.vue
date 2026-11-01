@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n'
 import { marketing } from '../content/marketing'
 import type { Locale } from '../seo/site'
 import { useShopPurchase } from '../composables/useShopPurchase'
+import { useWalletBalances } from '../composables/useWalletBalances'
 import LockerCharacterPreview from '../components/locker/LockerCharacterPreview.vue'
 import ItemShopPurchaseConfirmModal from '../components/shop/ItemShopPurchaseConfirmModal.vue'
 import * as itemShopApi from '../api/itemShop'
@@ -63,7 +64,8 @@ async function loadCatalog() {
 }
 
 // intro text shared with the build prerender (seo/render.ts), so crawlers and players read the same thing
-const { locale } = useI18n()
+const { t, locale } = useI18n()
+const balances = useWalletBalances()
 const shopCopy = computed(() => marketing[locale.value as Locale].shop)
 </script>
 
@@ -75,13 +77,22 @@ const shopCopy = computed(() => marketing[locale.value as Locale].shop)
         <h1 class="cc-title">{{ shopCopy.title }}</h1>
         <p class="m-0 mt-1 max-w-2xl text-sm font-semibold text-mist">{{ shopCopy.lead }}</p>
       </div>
-      <RouterLink :to="{ name: 'game' }" class="cc-panel-flat flex items-center gap-3 px-4 py-2.5 transition hover:brightness-110">
-        <UiIcon name="chair" :size="22" class="text-sun" />
-        <span class="text-left">
-          <span class="block font-display text-sm uppercase tracking-wide text-fog">Looking for furniture?</span>
-          <span class="block text-xs font-semibold text-mist">Walk through Cove Home, east of the business district</span>
-        </span>
-      </RouterLink>
+      <div class="flex flex-wrap gap-3">
+        <RouterLink v-if="isLoggedIn" :to="{ name: 'gems' }" class="cc-panel-flat flex items-center gap-3 px-4 py-2.5 transition hover:brightness-110">
+          <UiCurrency currency="premium" :size="22" />
+          <span class="text-left">
+            <span class="block font-display text-sm uppercase tracking-wide text-fog">{{ t('gems.getGems') }}</span>
+            <span class="block text-xs font-semibold text-mist"><UiCurrency currency="premium" :amount="balances.premium" :size="12" class="text-grape" /></span>
+          </span>
+        </RouterLink>
+        <RouterLink :to="{ name: 'game' }" class="cc-panel-flat flex items-center gap-3 px-4 py-2.5 transition hover:brightness-110">
+          <UiIcon name="chair" :size="22" class="text-sun" />
+          <span class="text-left">
+            <span class="block font-display text-sm uppercase tracking-wide text-fog">Looking for furniture?</span>
+            <span class="block text-xs font-semibold text-mist">Walk through Cove Home, east of the business district</span>
+          </span>
+        </RouterLink>
+      </div>
     </div>
 
     <div class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_440px]">
@@ -217,7 +228,10 @@ const shopCopy = computed(() => marketing[locale.value as Locale].shop)
               role="status"
             >
               <UiIcon :name="feedbackByItem[selectedItem.item_def_id]?.kind === 'success' ? 'check' : 'alert'" :size="18" />
-              {{ feedbackByItem[selectedItem.item_def_id]?.text }}
+              <span class="flex-1">{{ feedbackByItem[selectedItem.item_def_id]?.text }}</span>
+              <RouterLink v-if="feedbackByItem[selectedItem.item_def_id]?.topUp" :to="{ name: 'gems' }" class="cc-btn cc-btn-grape cc-btn-sm">
+                {{ t('gems.getGems') }}
+              </RouterLink>
             </div>
 
             <button

@@ -80,6 +80,17 @@ newnation-optimize: ## Rebuild the /NewNation showroom map from map-src/NewNatio
 collision-extract: ## Collision JSON from a GLB (MODEL=path/to/Foo.colsrc.glb)
 	cd front && npm run collision:extract -- $(MODEL)
 
+
+# --- gem shop demo (Stripe TEST MODE only, docs/STRIPE.md) ---
+
+STRIPE_EVENTS := checkout.session.completed,checkout.session.async_payment_succeeded,checkout.session.async_payment_failed,checkout.session.expired,charge.refunded,charge.refund.updated,refund.created,refund.updated,refund.failed,charge.dispute.created,charge.dispute.updated,charge.dispute.closed,charge.dispute.funds_withdrawn,charge.dispute.funds_reinstated
+
+stripe-listen: ## Forward Stripe test-mode webhooks to the local API (needs the Stripe CLI, `stripe login`)
+	stripe listen --forward-to localhost:8000/api/stripe/webhook --events $(STRIPE_EVENTS)
+
+gems-reconcile: ## Re-sync gem orders with Stripe (ORDER=<public id> for one order, refunds included)
+	$(ART) gems:reconcile $(if $(ORDER),--order=$(ORDER))
+
 # --- backend (Docker artisan) ---
 
 migrate: ## Run migrations
@@ -132,4 +143,4 @@ socket-start: ## Run socket locally (port 3000)
 	front-install front-dev front-build typecheck share-local sharelocal \
 	assets-optimize store-apply newnation-optimize collision-extract \
 	migrate seed seed-shop seed-housing purge-legacy-housing fix-housing collect-taxes set-admin set-money fill-outfit test \
-	backend-install backend-serve socket-install socket-start
+	backend-install backend-serve socket-install socket-start stripe-listen gems-reconcile
