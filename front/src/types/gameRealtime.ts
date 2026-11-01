@@ -70,6 +70,27 @@ export interface RoomInitPayload {
   houseFurniture?: HouseFurniturePayload[]
   openDoors?: string[]
   pubSecretOpen?: boolean
+  /** The API flags this account is_admin: the watch shows its Admin app (the server re-checks every admin message). */
+  isAdmin?: boolean
+}
+
+/** 'teleported': the server moved this player (admin teleport or summon); snap there and look along `ry`. */
+export interface TeleportedPayload {
+  x: number
+  y: number
+  z: number
+  ry: number
+}
+
+/** 'admin_menu': what the watch's Admin app lists (answer to 'admin_open'). */
+export interface AdminMenuPayload {
+  destinations: { key: string; name: string }[]
+  players: { sessionId: string; pseudo: string; distance: number }[]
+}
+
+/** 'admin_summoned': an admin brought this player next to them. */
+export interface AdminSummonedPayload {
+  byPseudo: string
 }
 
 /** 'door_sound': only sent to players within 5 m of the door. `door` is the building key (house model key or work key). */

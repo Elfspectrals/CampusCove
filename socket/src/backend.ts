@@ -33,7 +33,7 @@ export async function resolveIdentity(options: Json): Promise<Identity> {
   const accountId = parseAccountId(data?.user?.account_id)
   if (accountId === null) throw new Error('invalid account id in auth payload')
   const pseudo = firstNonEmpty(data?.user?.display_name, data?.user?.username) ?? `User_${accountId}`
-  return { accountId, pseudo, token }
+  return { accountId, pseudo, token, isAdmin: data?.user?.is_admin === true }
 }
 
 // JSON request; rejects with the API's message (and `code`) on a non-2xx answer.

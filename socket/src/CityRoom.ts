@@ -1,4 +1,5 @@
 import { type Client, Room } from 'colyseus'
+import { onAdminOpen, onAdminSummon, onAdminTeleport } from './admin.ts'
 import { pickupObject, saveObject, setDecoratedHouse } from './apartments.ts'
 import { type Json, callBackendJson, parseAccountId, resolveIdentity } from './backend.ts'
 import { CITY_MAX_PLAYERS, CITY_SPAWN_RADIUS } from './config.ts'
@@ -137,6 +138,9 @@ export class CityRoom extends Room implements GameRoom {
     this.onMessage('pub_darts_join', (client) => void onDartsJoin(this, client))
     this.onMessage('pub_darts_throw', (client, payload: ClientPayload) => onDartsThrow(this, client, payload))
     this.onMessage('pub_darts_leave', (client) => onDartsLeave(this, client))
+    this.onMessage('admin_open', (client) => onAdminOpen(this, client))
+    this.onMessage('admin_teleport', (client, payload: ClientPayload) => onAdminTeleport(this, client, payload))
+    this.onMessage('admin_summon', (client, payload: ClientPayload) => onAdminSummon(this, client, payload))
     this.clock.setInterval(() => void this.pollHousingUnits(), HOUSING_POLL_MS)
     this.clock.setInterval(() => tickSurvival(this, SURVIVAL_TICK_MS / 1000), SURVIVAL_TICK_MS)
   }
@@ -179,7 +183,8 @@ export class CityRoom extends Room implements GameRoom {
       housingUnits: this.housingUnits,
       houseFurniture: this.houseFurniture,
       openDoors: [...this.openDoors],
-      pubSecretOpen: this.pub.secretOpen
+      pubSecretOpen: this.pub.secretOpen,
+      isAdmin: player.isAdmin
     })
     this.forEachClient((c) => c.send('user_joined', publicPlayer(player)), client)
     if (player.token) await loadSurvival(client, player)

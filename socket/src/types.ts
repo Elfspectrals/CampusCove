@@ -32,6 +32,8 @@ export interface Identity {
   accountId: number
   pseudo: string
   token: string
+  /** GET /user's is_admin: unlocks the watch's admin app (src/admin.ts). */
+  isAdmin: boolean
 }
 
 export interface Player extends Vec3 {
@@ -39,6 +41,7 @@ export interface Player extends Vec3 {
   accountId: number
   pseudo: string
   token: string | null
+  isAdmin: boolean
   color: number
   ry: number
   lastMoveAt: number
@@ -63,6 +66,7 @@ export interface Player extends Vec3 {
   /** Trade in progress (src/trade.ts), from the request until it completes or closes. */
   tradeId: string | null
   lastTradeRequestAt: number
+  lastAdminActionAt: number
   seatId: string | null
   intoxication: number
   pubSecretUntil: number

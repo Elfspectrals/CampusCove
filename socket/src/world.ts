@@ -5,6 +5,8 @@ import type { Bounds, Vec3 } from './types.ts'
 const WORLD_MANIFEST_URL = process.env.WORLD_MANIFEST_URL
 const FETCH_ATTEMPTS = 30
 const RETRY_DELAY_MS = 2000
+/** Player positions carry the eye height (feet + 1.6), like the manifest spawn. */
+const EYE_HEIGHT = 1.6
 
 export interface WorldHouse {
   position: Vec3
@@ -55,8 +57,20 @@ export interface WorldPub {
   shots: { plank: Vec3, yaw: number, player: Vec3 }
 }
 
+/** A place an admin can teleport to from the watch: just outside a public building's door, facing it. */
+export interface TeleportDestination {
+  key: string
+  name: string
+  position: Vec3
+  yaw: number
+}
+
+/** How far in front of the door an admin lands, so they never spawn inside the door frame. */
+const DESTINATION_DOOR_GAP = 2.5
+
 interface World {
   citySpawn: Vec3
+  destinations: TeleportDestination[]
   workDoors: Map<string, { x: number, z: number }>
   houses: Map<string, WorldHouse>
   fountains: Vec3[]
@@ -165,10 +179,28 @@ function parsePubZone(zones: Json[], pub: WorldPub | null): Bounds | null {
   return parseBounds(zone.bounds, 'pub zone bounds')
 }
 
+/** Steps out of the building through its door; yaw makes the camera (forward = -sin, -cos) look back at the door. */
+export function doorDestination(key: string, name: string, building: Vec3, door: Vec3): TeleportDestination {
+  const dx = door.x - building.x
+  const dz = door.z - building.z
+  const length = Math.hypot(dx, dz) || 1
+  const outX = dx / length
+  const outZ = dz / length
+  return {
+    key,
+    name,
+    position: { x: door.x + outX * DESTINATION_DOOR_GAP, y: EYE_HEIGHT, z: door.z + outZ * DESTINATION_DOOR_GAP },
+    yaw: Math.atan2(outX, outZ)
+  }
+}
+
 function parseWorld(manifest: Json): World {
   if (!Array.isArray(manifest?.zones)) throw new Error('world manifest: missing zones')
   const workDoors: World['workDoors'] = new Map()
   const houses: World['houses'] = new Map()
+  const destinations: TeleportDestination[] = [
+    { key: 'spawn', name: 'Town square', position: parseVec3(manifest.spawn, 'spawn'), yaw: Number.isFinite(manifest.spawnYaw) ? manifest.spawnYaw : 0 }
+  ]
   const fountains = (manifest.fountains ?? []).map((raw: Json, i: number) => parseVec3(raw, `fountain ${i}`))
   for (const zone of manifest.zones) {
     for (const building of zone.buildings ?? []) {
@@ -182,6 +214,7 @@ function parseWorld(manifest: Json): World {
       if (building.kind !== 'work' && building.kind !== 'store') continue
       const door = parseVec3(building.door, `door of ${building.key}`)
       workDoors.set(building.key, { x: door.x, z: door.z })
+      destinations.push(doorDestination(building.key, typeof building.name === 'string' ? building.name : building.key, parseVec3(building.position, `position of ${building.key}`), door))
     }
   }
   const b = manifest.bounds
@@ -189,6 +222,7 @@ function parseWorld(manifest: Json): World {
   const pub = parsePub(manifest.pub)
   return {
     citySpawn: parseVec3(manifest.spawn, 'spawn'),
+    destinations,
     workDoors,
     houses,
     fountains,
@@ -232,6 +266,10 @@ function loadedWorld(): World {
 
 export function citySpawn(): Vec3 {
   return loadedWorld().citySpawn
+}
+
+export function teleportDestinations(): TeleportDestination[] {
+  return loadedWorld().destinations
 }
 
 export function workDoor(workKey: string): { x: number, z: number } | null {
