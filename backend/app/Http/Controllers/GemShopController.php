@@ -6,8 +6,8 @@ use App\Models\Account;
 use App\Models\GemOrder;
 use App\Services\GemCheckoutService;
 use App\Services\WalletSummaryService;
-use App\Support\GemPackCatalog;
 use App\Support\GemCheckoutConfig;
+use App\Support\GemPackCatalog;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -20,10 +20,17 @@ class GemShopController extends Controller
 {
     public function __construct(private readonly GemCheckoutService $checkout) {}
 
-    public function packs(GemCheckoutConfig $config): JsonResponse
+    /** `available` says whether *this* player may order, with the same rule as POST /gems/orders. */
+    public function packs(Request $request, GemCheckoutConfig $config): JsonResponse
     {
+        /** @var Account $account */
+        $account = $request->user();
+        $reason = $config->unavailableReason($account);
+
         return response()->json([
-            'available' => $config->checkoutOpen(),
+            'available' => $reason === null,
+            // null | disabled (demo off) | admin_only (production server, reserved to administrators)
+            'unavailable_reason' => $reason,
             // always true: no real sale is open, Stripe only runs in test mode
             'demo' => true,
             'packs' => GemPackCatalog::all(),

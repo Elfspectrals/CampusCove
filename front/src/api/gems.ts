@@ -20,9 +20,13 @@ export interface GemPack {
   currency: string
 }
 
+/** Why this player cannot order: demo off, or a production server where it is reserved to administrators. */
+type GemShopUnavailableReason = 'disabled' | 'admin_only'
+
 export interface GemPackCatalog {
-  /** Demo switched on server side (GEMS_CHECKOUT_MODE=test with Stripe test keys). */
+  /** This player may order (GEMS_CHECKOUT_MODE=test with Stripe test keys, and an admin on a production server). */
   available: boolean
+  unavailableReason: GemShopUnavailableReason | null
   packs: GemPack[]
 }
 
@@ -86,8 +90,11 @@ function requireOrder(data: unknown): GemOrder {
 export async function fetchGemPacks(): Promise<GemPackCatalog> {
   const data = await apiRequest('/gems/packs', { errorMessage: 'Could not load the gem packs' })
   if (!isRecord(data) || !Array.isArray(data.packs)) throw new Error('Invalid gem pack response')
+  const available = data.available === true
+  const reason = data.unavailable_reason === 'admin_only' ? 'admin_only' : 'disabled'
   return {
-    available: data.available === true,
+    available,
+    unavailableReason: available ? null : reason,
     packs: data.packs.map(parsePack).filter((p): p is GemPack => p !== null),
   }
 }

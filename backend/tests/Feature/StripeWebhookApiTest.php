@@ -90,6 +90,32 @@ class StripeWebhookApiTest extends TestCase
         $this->assertSame(1, $this->sentMessages());
     }
 
+    public function test_closing_new_orders_keeps_webhooks_refunds_and_reconciliation_working(): void
+    {
+        // two demo orders paid before new orders were closed for this player
+        [$player, $publicId, $sessionId, $paymentIntentId] = $this->paidOrder();
+        [, $otherId, $otherSessionId] = $this->paidOrder();
+
+        foreach (['admin_only' => 'test', 'disabled' => 'off'] as $reason => $mode) {
+            $this->app['env'] = 'production';
+            config(['services.stripe.checkout_mode' => $mode]);
+            $this->getJson('/api/gems/packs', $this->authAs($player))->assertOk()->assertJsonPath('unavailable_reason', $reason);
+        }
+
+        // the late payment confirmation still credits, the refund still takes back, reconciliation still runs
+        $this->sessionEvent('checkout.session.completed', $sessionId)->assertOk()->assertJsonPath('outcome', 'processed');
+        $this->assertSame(650, $this->wallet($player['id'])['premium']);
+        $this->stripe->refund($paymentIntentId, 999);
+        $this->refundEvent('charge.refunded', $paymentIntentId)->assertOk()->assertJsonPath('outcome', 'processed');
+        $this->assertSame(0, $this->wallet($player['id'])['premium']);
+        $this->assertSame('full', $this->order($publicId)->refundStatus());
+
+        $this->assertSame('open', $this->order($otherId)->status);
+        $this->artisan('gems:reconcile', ['--order' => $otherId])->assertSuccessful();
+        $this->assertSame('paid', $this->order($otherId)->status);
+        $this->assertSame($otherSessionId, $this->order($otherId)->stripe_checkout_session_id);
+    }
+
     public function test_repeated_and_different_events_of_one_payment_credit_once(): void
     {
         [$player, $publicId, $sessionId] = $this->paidOrder();

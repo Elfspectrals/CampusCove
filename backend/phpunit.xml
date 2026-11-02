@@ -30,6 +30,10 @@
         <env name="DB_USERNAME" value="postgres" force="true"/>
         <env name="DB_PASSWORD" value="secret" force="true"/>
         <env name="MAIL_MAILER" value="array"/>
+        <!-- never the developer's Stripe test keys from the root .env: the gem shop tests use tests/Fakes/FakeStripeGateway -->
+        <env name="GEMS_CHECKOUT_MODE" value="off" force="true"/>
+        <env name="STRIPE_SECRET_KEY" value="" force="true"/>
+        <env name="STRIPE_WEBHOOK_SECRET" value="" force="true"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="PULSE_ENABLED" value="false"/>

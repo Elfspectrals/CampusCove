@@ -8,8 +8,8 @@ use App\Models\Account;
 use App\Models\GemOrder;
 use App\Services\Stripe\StripeGateway;
 use App\Services\Stripe\StripeGatewayException;
-use App\Support\GemPackCatalog;
 use App\Support\GemCheckoutConfig;
+use App\Support\GemPackCatalog;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -47,6 +47,9 @@ final class GemCheckoutService
     {
         if (! $this->config->checkoutOpen()) {
             throw new GemPurchaseRejectedException('gems_unavailable', 'The gem shop demo is not available right now.', 503);
+        }
+        if (! $this->config->mayOrder($account)) {
+            throw new GemPurchaseRejectedException('gems_admin_only', 'On this server the gem shop demo is reserved to administrators: test cards would give real game gems.', 403);
         }
         $pack = GemPackCatalog::find($packCode);
         if ($pack === null) {

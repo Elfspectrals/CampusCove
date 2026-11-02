@@ -35,7 +35,7 @@ return [
         'url' => env('REALTIME_INTERNAL_URL', ''),
     ],
 
-    // Gem shop demo (docs/STRIPE.md): Stripe test mode only, production keys are refused (App\Support\GemSalesConfig).
+    // Gem shop demo (docs/STRIPE.md): Stripe test mode only, production keys are refused (App\Support\GemCheckoutConfig).
     'stripe' => [
         // off: no new order | test: demo payments with Stripe test cards, no real money
         'checkout_mode' => env('GEMS_CHECKOUT_MODE', 'off'),

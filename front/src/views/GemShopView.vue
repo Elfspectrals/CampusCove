@@ -137,8 +137,14 @@ function closeModal() {
 
     <div v-else-if="catalog && !catalog.available" class="cc-panel-flat flex flex-col items-center gap-2 px-4 py-10 text-center" role="status">
       <UiCurrency currency="premium" :size="44" />
-      <p class="m-0 font-display text-xl text-fog">{{ t('gems.unavailableTitle') }}</p>
-      <p class="m-0 max-w-lg text-sm font-semibold text-mist">{{ t('gems.unavailableBody') }}</p>
+      <template v-if="catalog.unavailableReason === 'admin_only'">
+        <p class="m-0 font-display text-xl text-fog">{{ t('gems.adminOnlyTitle') }}</p>
+        <p class="m-0 max-w-lg text-sm font-semibold text-mist">{{ t('gems.adminOnlyBody') }}</p>
+      </template>
+      <template v-else>
+        <p class="m-0 font-display text-xl text-fog">{{ t('gems.unavailableTitle') }}</p>
+        <p class="m-0 max-w-lg text-sm font-semibold text-mist">{{ t('gems.unavailableBody') }}</p>
+      </template>
     </div>
 
     <ul v-else-if="catalog" class="m-0 grid list-none grid-cols-1 gap-4 p-0 min-[420px]:grid-cols-2 lg:grid-cols-4">

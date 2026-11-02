@@ -167,6 +167,8 @@ export const messages = {
       demoHint: 'CampusCove is a school project and no real sale is open. Stripe runs in test mode: pay with a Stripe test card, e.g. 4242 4242 4242 4242, any future date, any CVC.',
       unavailableTitle: 'The gem shop demo is off',
       unavailableBody: 'No real-money sale is open: CampusCove is a non-commercial school project. You can still earn coins in game.',
+      adminOnlyTitle: 'The gem shop demo is reserved to administrators here',
+      adminOnlyBody: 'On this shared server, Stripe test cards would hand out real game gems for free, so only administrators can try the demo payment. No real-money sale is open. You can still earn coins in game.',
       debt: 'Your gem balance is negative after a refund. Gem purchases resume once your balance covers the price again; your skins stay yours.',
       packGems: '{n} gems',
       simulatedPrice: 'Simulated price, nothing is charged',
@@ -204,6 +206,7 @@ export const messages = {
         too_many_pending_orders: 'You already have several payments in progress. Finish them or wait a little.',
         terms_outdated: 'Accept the updated terms before buying.',
         throttled: 'Too many attempts. Wait a minute and try again.',
+        gems_admin_only: 'On this server the gem shop demo is reserved to administrators.',
       },
       return: {
         checkingTitle: 'Confirming your payment…',
@@ -403,6 +406,8 @@ export const messages = {
       demoHint: 'CampusCove est un projet scolaire et aucune vente réelle n’est ouverte. Stripe fonctionne en mode test : paie avec une carte de test Stripe, par exemple 4242 4242 4242 4242, une date future et n’importe quel CVC.',
       unavailableTitle: 'La démo de la boutique de gems est désactivée',
       unavailableBody: 'Aucune vente en argent réel n’est ouverte : CampusCove est un projet scolaire non commercial. Tu peux toujours gagner des pièces en jeu.',
+      adminOnlyTitle: 'La démo de la boutique de gems est réservée aux administrateurs ici',
+      adminOnlyBody: 'Sur ce serveur partagé, les cartes de test Stripe donneraient gratuitement de vrais gems du jeu : seuls les administrateurs peuvent essayer le paiement de démonstration. Aucune vente en argent réel n’est ouverte. Tu peux toujours gagner des pièces en jeu.',
       debt: 'Ton solde de gems est négatif après un remboursement. Les achats en gems reprennent dès que ton solde couvre de nouveau le prix ; tes skins restent à toi.',
       packGems: '{n} gems',
       simulatedPrice: 'Prix simulé, rien n’est débité',
@@ -440,6 +445,7 @@ export const messages = {
         too_many_pending_orders: 'Tu as déjà plusieurs paiements en cours. Termine-les ou patiente un peu.',
         terms_outdated: 'Accepte les conditions mises à jour avant d’acheter.',
         throttled: 'Trop de tentatives. Patiente une minute puis réessaie.',
+        gems_admin_only: 'Sur ce serveur, la démo de la boutique de gems est réservée aux administrateurs.',
       },
       return: {
         checkingTitle: 'Confirmation de ton paiement…',

@@ -69,6 +69,81 @@ class GemShopApiTest extends TestCase
         $this->assertSame([], $this->stripe->createCalls);
     }
 
+    public function test_demo_is_off_unless_explicitly_enabled(): void
+    {
+        // config/services.php when GEMS_CHECKOUT_MODE is not set at all (phpunit.xml and Docker set it)
+        $saved = [getenv('GEMS_CHECKOUT_MODE'), $_ENV['GEMS_CHECKOUT_MODE'] ?? null, $_SERVER['GEMS_CHECKOUT_MODE'] ?? null];
+        putenv('GEMS_CHECKOUT_MODE');
+        unset($_ENV['GEMS_CHECKOUT_MODE'], $_SERVER['GEMS_CHECKOUT_MODE']);
+        try {
+            $services = require config_path('services.php');
+        } finally {
+            if ($saved[0] !== false) {
+                putenv("GEMS_CHECKOUT_MODE={$saved[0]}");
+            }
+            if ($saved[1] !== null) {
+                $_ENV['GEMS_CHECKOUT_MODE'] = $saved[1];
+            }
+            if ($saved[2] !== null) {
+                $_SERVER['GEMS_CHECKOUT_MODE'] = $saved[2];
+            }
+        }
+        $this->assertSame('off', $services['stripe']['checkout_mode']);
+
+        // the example file is off too, with empty Stripe secrets
+        $example = (string) file_get_contents(base_path('.env.example'));
+        $this->assertMatchesRegularExpression('/^GEMS_CHECKOUT_MODE=off\r?$/m', $example);
+        $this->assertMatchesRegularExpression('/^STRIPE_SECRET_KEY=\r?$/m', $example);
+        $this->assertMatchesRegularExpression('/^STRIPE_WEBHOOK_SECRET=\r?$/m', $example);
+
+        // test keys alone never open the shop
+        config(['services.stripe.checkout_mode' => $services['stripe']['checkout_mode']]);
+        $player = $this->registerPlayer();
+        $this->getJson('/api/gems/packs', $this->authAs($player))->assertOk()
+            ->assertJsonPath('available', false)
+            ->assertJsonPath('unavailable_reason', 'disabled');
+        $this->orderPack($player)->assertStatus(503)->assertJsonPath('code', 'gems_unavailable');
+    }
+
+    public function test_production_server_reserves_the_demo_to_admins(): void
+    {
+        $player = $this->registerPlayer();
+        $admin = $this->registerPlayer();
+        DB::table('accounts')->where('account_id', $admin['id'])->update(['is_admin' => true]);
+        $this->app['env'] = 'production';
+
+        // a player is told why, and the server refuses the order whatever the browser shows
+        $this->getJson('/api/gems/packs', $this->authAs($player))->assertOk()
+            ->assertJsonPath('available', false)
+            ->assertJsonPath('unavailable_reason', 'admin_only')
+            ->assertJsonCount(4, 'packs');
+        $this->orderPack($player)->assertForbidden()->assertJsonPath('code', 'gems_admin_only');
+        $this->assertSame(0, GemOrder::query()->count());
+        $this->assertSame([], $this->stripe->createCalls);
+
+        // the catalogue says yes exactly when an order is accepted
+        $this->getJson('/api/gems/packs', $this->authAs($admin))->assertOk()
+            ->assertJsonPath('available', true)
+            ->assertJsonPath('unavailable_reason', null);
+        $this->orderPack($admin)->assertCreated()->assertJsonPath('order.status', 'open');
+
+        // demo off in production: nobody, admins included
+        config(['services.stripe.checkout_mode' => 'off']);
+        $this->getJson('/api/gems/packs', $this->authAs($admin))->assertOk()->assertJsonPath('unavailable_reason', 'disabled');
+        $this->orderPack($admin, 'gems_100')->assertStatus(503)->assertJsonPath('code', 'gems_unavailable');
+    }
+
+    public function test_local_and_test_environments_keep_the_demo_open_to_players(): void
+    {
+        foreach (['local', 'testing'] as $env) {
+            $this->app['env'] = $env;
+            $player = $this->registerPlayer();
+
+            $this->getJson('/api/gems/packs', $this->authAs($player))->assertOk()->assertJsonPath('available', true);
+            $this->orderPack($player)->assertCreated();
+        }
+    }
+
     public function test_production_keys_are_refused_everywhere(): void
     {
         config(['services.stripe.secret' => 'sk_live_campuscove_fake']);
