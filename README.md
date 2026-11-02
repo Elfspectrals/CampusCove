@@ -34,7 +34,8 @@ make up-build
 | `make set-money ACCOUNT=1 CURRENCY=coins SUM=2000` | Solde (id ou email) |
 | `make fill-outfit ACCOUNT=1` | Starter wearables + outfit |
 | `make test` | Tests backend |
-| `make stripe-listen` | Événements Stripe de test vers l'API locale (laisser le terminal ouvert) |
+| `make stripe-secret` | Secret webhook `whsec_…` de la Stripe CLI Docker |
+| `make stripe-listen` / `stripe-logs` / `stripe-stop` | Relais des webhooks Stripe de test en arrière-plan : démarrer / suivre les logs / arrêter |
 | `make gems-reconcile ORDER=<id>` | Resynchroniser une commande de gems avec Stripe |
 | `make rebuild-socket` | Rebuild Colyseus (pas de volume) |
 | `make assets-optimize` | Assets Blender → `front/public/assets` (+ collisions) |
@@ -45,61 +46,36 @@ make up-build
 
 ## Stripe — boutique de gems (facultatif)
 
-Projet scolaire : les paiements sont simulés avec les cartes de test Stripe, **aucun argent n'est débité**. Les gems sont réellement crédités dans le portefeuille premium du jeu. Les clés de production sont refusées. Sans configuration Stripe, `make up` lance normalement le jeu ; seule la boutique de gems est désactivée.
+Projet scolaire : paiements simulés avec les cartes de test Stripe, **aucun argent n'est débité**. Les gems sont réellement crédités dans le portefeuille premium du jeu. Les clés de production sont refusées partout. Sans configuration Stripe, `make up` lance le jeu normalement ; seule la boutique de gems est désactivée (`GEMS_CHECKOUT_MODE=off` par défaut).
 
-### Première configuration sur chaque machine
+Rien à installer sur le PC : la Stripe CLI tourne dans Docker (service optionnel `stripe-cli`, profil `stripe`, jamais lancé par `make up`).
 
-1. Créer un compte Stripe ou utiliser un compte de l'équipe, puis sélectionner un environnement de test dans le Dashboard et récupérer sa clé secrète `sk_test_…`. Les cartes doivent être activées dans les paramètres des moyens de paiement de cet environnement.
-2. Installer la [Stripe CLI](https://docs.stripe.com/cli/install) sur sa machine (Node.js / npm requis pour cette méthode), puis se connecter au même compte et au même environnement de test :
+**Première configuration** (à la racine du dépôt) :
 
-   ```bash
-   npm install -g @stripe/cli
-   stripe login
-   ```
-
-   Sous PowerShell, utiliser `npm.cmd` à la place de `npm` si l'exécution de scripts est bloquée.
-
-3. Dans un premier terminal, à la racine du dépôt, démarrer la transmission des événements et **laisser ce terminal ouvert** :
-
-   ```bash
-   make stripe-listen
-   ```
-
-   Sans `make`, utiliser directement :
-
-   ```bash
-   stripe listen --all-snapshot --forward-to http://localhost:8000/api/stripe/webhook
-   ```
-
-   Copier le secret `whsec_…` affiché dans le terminal.
-
-4. Créer ou compléter `.env` **à la racine du dépôt, à côté de `docker-compose.yml`**. Docker Compose lit ce fichier pour transmettre les variables au backend ; les ajouter uniquement dans `backend/.env` ne suffit pas pour ce lancement :
+1. Dans le [Dashboard Stripe](https://dashboard.stripe.com/test/apikeys), en **environnement de test**, copier la clé secrète `sk_test_…`.
+2. Compléter le `.env` **racine** (à côté de `docker-compose.yml`, ignoré par Git ; `backend/.env` ne suffit pas avec Docker) :
 
    ```dotenv
    GEMS_CHECKOUT_MODE=test
-   STRIPE_SECRET_KEY=sk_test_REMPLACER_PAR_LA_CLE_STRIPE
-   STRIPE_WEBHOOK_SECRET=whsec_REMPLACER_PAR_LE_SECRET_DE_LA_CLI
-   FRONTEND_URL=http://localhost:5173
+   STRIPE_SECRET_KEY=sk_test_...
+   STRIPE_WEBHOOK_SECRET=
    ```
 
-   Remplacer les exemples par les valeurs complètes. Ce fichier est ignoré par Git ; ne pas commiter les clés.
-
-5. Dans un deuxième terminal, à la racine du dépôt, lancer l'application ou appliquer les nouvelles variables :
+3. Obtenir le secret webhook de la CLI Docker et le coller dans `STRIPE_WEBHOOK_SECRET=` :
 
    ```bash
-   make up
-   docker compose exec -T backend php artisan config:clear
+   make stripe-secret
    ```
 
-   Sans `make`, remplacer `make up` par `docker compose up -d`. Un simple `docker compose restart` ne recharge pas les variables du `.env`.
+4. Appliquer la configuration au backend : `make up` (recrée le backend avec les nouvelles variables ; `docker compose restart` ne relit pas le `.env`).
+5. Démarrer le relais en arrière-plan : `make stripe-listen`, puis `make stripe-logs` doit afficher `Ready!` (Ctrl+C quitte les logs, pas le relais).
+6. Ouvrir [localhost:5173/gems](http://localhost:5173/gems), choisir un pack et payer avec la carte fictive `4242 4242 4242 4242`, une date future (`12/34`) et le CVC `123`. Les gems arrivent dans le solde ; actualiser ne crédite pas une seconde fois.
 
-### Lancements suivants et premier paiement
+**Lancements suivants** : `make up` puis `make stripe-listen`. `make stripe-stop` arrête le relais seul, `make down` arrête tout.
 
-La configuration est conservée. Lancer `make up`, puis `make stripe-listen` dans un autre terminal à garder ouvert pendant les tests. Stripe CLI s'exécute sur la machine et n'est pas lancé automatiquement par Docker. Actualiser le `.env` et relancer `docker compose up -d backend` si les clés ou le secret webhook changent.
+Sans `make` (PowerShell par exemple) : `docker compose --profile stripe run --rm --no-deps stripe-cli --print-secret`, `docker compose up -d`, `docker compose --profile stripe up -d stripe-cli`, `docker compose --profile stripe logs -f stripe-cli`, `docker compose --profile stripe stop stripe-cli`.
 
-Ouvrir [la boutique locale](http://localhost:5173/gems), se connecter et choisir un pack. Sur Checkout, utiliser la carte `4242 4242 4242 4242`, une expiration future (par exemple `12/34`) et le CVC `123`. Après validation, vérifier le crédit des gems et l'historique ; actualiser la page ne doit pas créditer une deuxième fois.
-
-Si la boutique indique qu'elle est désactivée, vérifier les trois variables `GEMS_CHECKOUT_MODE`, `STRIPE_SECRET_KEY` et `STRIPE_WEBHOOK_SECRET` dans le `.env` racine. Pour les remboursements, les autres cartes de test et le diagnostic des webhooks, voir [docs/STRIPE.md](docs/STRIPE.md) et les [cartes de test officielles](https://docs.stripe.com/testing).
+Détails, restriction aux administrateurs en production, remplacement du secret exposé et diagnostic : [docs/STRIPE.md](docs/STRIPE.md).
 
 ## Production
 
