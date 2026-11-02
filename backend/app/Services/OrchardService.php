@@ -3,9 +3,11 @@
 namespace App\Services;
 
 use App\Exceptions\OrchardRejectedException;
+use App\Models\EconomyTransaction;
 use App\Models\InventoryStack;
 use App\Models\ItemDef;
 use App\Models\Wallet;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 final class OrchardService
@@ -13,6 +15,12 @@ final class OrchardService
     public const APPLE_CODE = 'farm_apple';
 
     public const APPLE_PRICE = 3;
+
+    public const APPLE_PRICE_OVER_DAILY_QUOTA = 1;
+
+    public const DAILY_FULL_PRICE_APPLES = 300;
+
+    public const MIN_PICK_INTERVAL_MS = 2500;
 
     public function __construct(
         private readonly AccountInventoryService $inventory,
@@ -25,11 +33,19 @@ final class OrchardService
         $apple = $this->apple();
 
         return DB::transaction(function () use ($accountId, $apple): array {
+            Wallet::lockForAccount($accountId, 'coins');
+            $lastPickKey = "orchard_last_pick:{$accountId}";
+            $nowMs = now()->getTimestampMs();
+            $lastPickMs = Cache::get($lastPickKey);
+            if ($lastPickMs !== null && $nowMs - $lastPickMs < self::MIN_PICK_INTERVAL_MS) {
+                throw new OrchardRejectedException('pick_too_fast', 'Wait a moment before picking another apple.');
+            }
             $carried = (int) ($this->lockStack($accountId, $apple)?->quantity ?? 0);
             if ($carried >= $apple->max_stack) {
                 throw new OrchardRejectedException('basket_full', "You cannot carry more than {$apple->max_stack} apples.");
             }
             $this->inventory->grantItem($accountId, $apple, 1);
+            Cache::put($lastPickKey, $nowMs, now()->addMinute());
 
             return ['code' => (string) $apple->code, 'quantity' => $carried + 1];
         });
@@ -41,12 +57,15 @@ final class OrchardService
         $apple = $this->apple();
 
         return DB::transaction(function () use ($accountId, $apple, $quantity): array {
+            Wallet::lockForAccount($accountId, 'coins');
             $stack = $this->lockStack($accountId, $apple);
             $whole = $stack !== null ? (int) $stack->quantity - ((int) $stack->portions_used > 0 ? 1 : 0) : 0;
             if ($whole < $quantity) {
                 throw new OrchardRejectedException('not_enough_apples', 'You do not have that many whole apples.');
             }
-            $coins = $quantity * self::APPLE_PRICE;
+            $fullPriceLeft = max(0, self::DAILY_FULL_PRICE_APPLES - $this->applesSoldInLastDay($accountId));
+            $atFullPrice = min($quantity, $fullPriceLeft);
+            $coins = $atFullPrice * self::APPLE_PRICE + ($quantity - $atFullPrice) * self::APPLE_PRICE_OVER_DAILY_QUOTA;
             $this->inventory->revokeItem($accountId, $apple, $quantity);
             $this->coinRewards->credit($accountId, 'orchard_sell', $coins, ['quantity' => $quantity]);
 
@@ -56,6 +75,16 @@ final class OrchardService
                 'balance_after' => Wallet::lockForAccount($accountId, 'coins')->balance(),
             ];
         });
+    }
+
+    private function applesSoldInLastDay(int $accountId): int
+    {
+        return (int) EconomyTransaction::query()
+            ->where('type', 'reward')
+            ->where('created_by_account_id', $accountId)
+            ->where('meta_json->source', 'orchard_sell')
+            ->where('committed_at', '>=', now()->subDay())
+            ->sum(DB::raw("(meta_json->>'quantity')::int"));
     }
 
     private function apple(): ItemDef

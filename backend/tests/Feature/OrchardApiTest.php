@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\ItemDef;
 use App\Services\AccountInventoryService;
+use App\Services\OrchardService;
 use Database\Seeders\ShopSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -29,6 +30,7 @@ class OrchardApiTest extends TestCase
         $headers = $this->auth($player['token'], self::SECRET);
 
         $this->postJson('/api/orchard/pick', [], $headers)->assertOk()->assertExactJson(['code' => 'farm_apple', 'quantity' => 1]);
+        $this->travel(OrchardService::MIN_PICK_INTERVAL_MS)->milliseconds();
         $this->postJson('/api/orchard/pick', [], $headers)->assertOk()->assertExactJson(['code' => 'farm_apple', 'quantity' => 2]);
 
         $apple = $this->hotbarItem($player['token'], 'farm_apple');
@@ -44,11 +46,31 @@ class OrchardApiTest extends TestCase
         $this->grant($player['account_id'], 'farm_apple', 19);
 
         $this->postJson('/api/orchard/pick', [], $headers)->assertOk()->assertJsonPath('quantity', 20);
+        $this->travel(OrchardService::MIN_PICK_INTERVAL_MS)->milliseconds();
         $this->postJson('/api/orchard/pick', [], $headers)
             ->assertStatus(422)
             ->assertJsonPath('code', 'basket_full');
 
         $this->assertSame(20, $this->hotbarItem($player['token'], 'farm_apple')['quantity']);
+    }
+
+    public function test_picks_of_one_account_are_at_least_two_and_a_half_seconds_apart(): void
+    {
+        $player = $this->registerAndCreditWallet(0, 'coins');
+        $other = $this->registerAndCreditWallet(0, 'coins');
+        $this->freezeTime();
+
+        $this->postJson('/api/orchard/pick', [], $this->auth($player['token'], self::SECRET))->assertOk();
+        $this->postJson('/api/orchard/pick', [], $this->auth($other['token'], self::SECRET))->assertOk();
+        $this->travel(OrchardService::MIN_PICK_INTERVAL_MS - 1)->milliseconds();
+        $this->postJson('/api/orchard/pick', [], $this->auth($player['token'], self::SECRET))
+            ->assertStatus(422)
+            ->assertJsonPath('code', 'pick_too_fast');
+        $this->travel(1)->milliseconds();
+        $this->postJson('/api/orchard/pick', [], $this->auth($player['token'], self::SECRET))->assertOk()->assertJsonPath('quantity', 2);
+
+        $this->assertSame(2, $this->hotbarItem($player['token'], 'farm_apple')['quantity']);
+        $this->assertSame(1, $this->hotbarItem($other['token'], 'farm_apple')['quantity']);
     }
 
     public function test_selling_apples_pays_three_coins_each_and_keeps_the_rest(): void
@@ -64,6 +86,36 @@ class OrchardApiTest extends TestCase
         $this->assertSame(2, $this->hotbarItem($player['token'], 'farm_apple')['quantity']);
         $this->assertSame(1, DB::table('transactions')->where('type', 'reward')->where('created_by_account_id', $player['account_id'])->where('meta_json->source', 'orchard_sell')->count());
         $this->assertSame(1, DB::table('wallet_ledger')->where('reason', 'orchard_sell')->where('delta', 15)->count());
+    }
+
+    public function test_apples_past_three_hundred_sold_in_a_day_pay_one_coin_each(): void
+    {
+        $player = $this->registerAndCreditWallet(0, 'coins');
+        $this->grant($player['account_id'], 'farm_apple', 308);
+        $sell = fn (int $quantity) => $this->postJson('/api/orchard/sell', ['quantity' => $quantity], $this->auth($player['token'], self::SECRET))->assertOk();
+
+        $sell(298)->assertJsonPath('coins', 894);
+        $sell(5)->assertJsonPath('coins', 9);
+        $sell(5)->assertExactJson(['sold' => 5, 'coins' => 5, 'balance_after' => 908]);
+
+        $this->assertSame(908, $this->balance($player['account_id']));
+    }
+
+    public function test_the_daily_quota_rolls_over_twenty_four_hours_per_account(): void
+    {
+        $player = $this->registerAndCreditWallet(0, 'coins');
+        $other = $this->registerAndCreditWallet(0, 'coins');
+        $this->grant($player['account_id'], 'farm_apple', 310);
+        $this->grant($other['account_id'], 'farm_apple', 5);
+        $sell = fn (array $who, int $quantity) => $this->postJson('/api/orchard/sell', ['quantity' => $quantity], $this->auth($who['token'], self::SECRET))->assertOk();
+        $this->freezeTime();
+
+        $sell($player, 300)->assertJsonPath('coins', 900);
+        $sell($other, 5)->assertJsonPath('coins', 15);
+        $this->travel(24 * 3600)->seconds();
+        $sell($player, 5)->assertJsonPath('coins', 5);
+        $this->travel(1)->seconds();
+        $sell($player, 5)->assertJsonPath('coins', 15);
     }
 
     public function test_a_bitten_apple_cannot_be_sold(): void
