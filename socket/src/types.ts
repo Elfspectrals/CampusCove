@@ -74,6 +74,7 @@ export interface Player extends Vec3 {
   lastPubBellAt: number
   /** Last pub_bouncer_block broadcast for this player (rate limit). */
   lastBouncerBlockAt: number
+  orchardPick: { tree: number, startedAt: number } | null
   decoratedTemplateKey?: string | null
   appearance: Record<AppearanceSlot, number | null>
   slotHexes: Record<AppearanceSlot, string>

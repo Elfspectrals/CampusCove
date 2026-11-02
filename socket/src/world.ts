@@ -57,6 +57,11 @@ export interface WorldPub {
   shots: { plank: Vec3, yaw: number, player: Vec3 }
 }
 
+export interface WorldOrchard {
+  trees: Vec3[]
+  farmer: Vec3
+}
+
 /** A place an admin can teleport to from the watch: just outside a public building's door, facing it. */
 export interface TeleportDestination {
   key: string
@@ -78,6 +83,7 @@ interface World {
   clinic: WorldClinic | null
   pub: WorldPub | null
   pubZone: Bounds | null
+  orchard: WorldOrchard | null
 }
 
 let world: World | null = null
@@ -125,6 +131,15 @@ function parseBasement(raw: Json): PubBasement | null {
   if (raw === undefined || raw === null) return null
   if (!Number.isFinite(raw?.floorY)) throw new Error(`world manifest: invalid pub basement floorY ${JSON.stringify(raw)}`)
   return { ...parseBounds(raw, 'pub basement'), floorY: raw.floorY }
+}
+
+function parseOrchard(raw: Json): WorldOrchard | null {
+  if (raw === undefined || raw === null) return null
+  if (!Array.isArray(raw.trees) || raw.trees.length === 0) throw new Error('world manifest: orchard has no trees')
+  return {
+    trees: raw.trees.map((tree: Json, i: number) => parseVec3(tree, `orchard tree ${i}`)),
+    farmer: parseVec3(raw.farmer, 'orchard farmer')
+  }
 }
 
 function parsePub(raw: Json): WorldPub | null {
@@ -229,7 +244,8 @@ function parseWorld(manifest: Json): World {
     bounds: b,
     clinic: parseClinic(manifest.clinic),
     pub,
-    pubZone: parsePubZone(manifest.zones, pub)
+    pubZone: parsePubZone(manifest.zones, pub),
+    orchard: parseOrchard(manifest.orchard)
   }
 }
 
@@ -298,4 +314,8 @@ export function worldPub(): WorldPub | null {
 
 export function worldPubZone(): Bounds | null {
   return loadedWorld().pubZone
+}
+
+export function worldOrchard(): WorldOrchard | null {
+  return loadedWorld().orchard
 }
