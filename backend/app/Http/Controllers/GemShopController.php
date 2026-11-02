@@ -37,7 +37,10 @@ class GemShopController extends Controller
         ]);
     }
 
-    /** Creates (or hands back) the order and its Checkout Session; the browser then goes to `checkout_url`. */
+    /**
+     * Creates (or hands back) the order and its Checkout Session; the browser then goes to `checkout_url`.
+     * 202 `checkout_preparing`: another request is creating the session, poll GET /gems/orders/{id} for the URL.
+     */
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -48,6 +51,16 @@ class GemShopController extends Controller
         /** @var Account $account */
         $account = $request->user();
         $result = $this->checkout->start($account, $validated['pack'], $validated['locale'] ?? 'en');
+
+        if ($result['preparing']) {
+            return response()->json([
+                'code' => 'checkout_preparing',
+                'message' => 'The payment page is being prepared.',
+                'order' => $result['order']->toPlayerArray(),
+                'checkout_url' => null,
+                'retry_after_ms' => GemCheckoutService::PREPARING_RETRY_MS,
+            ], 202, ['Retry-After' => (string) max(1, intdiv(GemCheckoutService::PREPARING_RETRY_MS, 1000))]);
+        }
 
         return response()->json([
             'order' => $result['order']->toPlayerArray(),
@@ -79,6 +92,8 @@ class GemShopController extends Controller
 
         return response()->json([
             'order' => $order->toPlayerArray(),
+            // the owner's own payment page while it is open: the shop polls it after a 202 checkout_preparing
+            'checkout_url' => $order->status === GemOrder::STATUS_OPEN ? $order->checkout_url : null,
             'wallet_summary' => $wallets->forAccountId((int) $account->getAuthIdentifier()),
         ]);
     }

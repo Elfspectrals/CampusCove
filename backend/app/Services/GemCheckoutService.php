@@ -21,11 +21,25 @@ use Illuminate\Support\Str;
  * The browser only picks a pack: account, gems, amount, currency and return URLs are decided here. The order row
  * is committed first and the Stripe call made afterwards, outside any transaction, with an idempotency key tied
  * to the order: a double click, a network retry or a second tab gets the same order and the same session.
+ *
+ * Only one request at a time calls Stripe for an order: it takes the order's creation lease (checkout_lease_until)
+ * under the account lock. A request arriving meanwhile gets `preparing` (HTTP 202) and the browser polls the order
+ * until its Checkout URL is there. The lease expires on its own: if the request holding it died, the next one takes
+ * it over with the same idempotency key, so Stripe hands back the same session instead of a second one.
  */
 final class GemCheckoutService
 {
     /** A pending order for the same pack is handed back instead of a new one during this time. */
     private const REUSE_MINUTES = 20;
+
+    /**
+     * How long a request may create the Checkout Session alone. Longer than a normal Stripe call; if a takeover still
+     * overlaps a slow call, Stripe answers 409 for the same key and that is handled as `preparing` too.
+     */
+    private const CREATE_LEASE_SECONDS = 30;
+
+    /** Poll interval suggested to the browser while the session is being created (Retry-After, in ms). */
+    public const PREPARING_RETRY_MS = 1000;
 
     /** Checkout Session lifetime (Stripe accepts 30 min to 24 h; REUSE_MINUTES must leave at least 30). */
     private const SESSION_LIFETIME_MINUTES = 60;
@@ -42,7 +56,11 @@ final class GemCheckoutService
         private readonly GemOrderFulfillmentService $fulfillment,
     ) {}
 
-    /** @return array{order: GemOrder, checkout_url: string, reused: bool} */
+    /**
+     * `preparing`: the session is being created by another request (or Stripe asked to retry), no URL yet.
+     *
+     * @return array{order: GemOrder, checkout_url: ?string, reused: bool, preparing: bool}
+     */
     public function start(Account $account, string $packCode, string $locale): array
     {
         if (! $this->config->checkoutOpen()) {
@@ -61,7 +79,8 @@ final class GemCheckoutService
 
         $accountId = (int) $account->getAuthIdentifier();
 
-        $order = DB::transaction(function () use ($accountId, $pack, $locale, $account): GemOrder {
+        /** @var array{0: GemOrder, 1: bool} $claim [order, whether this request creates its Checkout Session] */
+        $claim = DB::transaction(function () use ($accountId, $pack, $locale, $account): array {
             // one order creation at a time per player: the second click waits here, then reuses the first order
             Account::query()->whereKey($accountId)->lockForUpdate()->first();
 
@@ -73,7 +92,13 @@ final class GemCheckoutService
                 ->latest('id')
                 ->first();
             if ($reusable !== null) {
-                return $reusable;
+                if (! $reusable->needsCheckoutSession() || $reusable->checkoutLeaseActive()) {
+                    return [$reusable, false];
+                }
+                // no session yet and nobody creating it (first try failed, or its request died): this one does
+                $reusable->update(['checkout_lease_until' => now()->addSeconds(self::CREATE_LEASE_SECONDS)]);
+
+                return [$reusable, true];
             }
 
             $pending = GemOrder::query()
@@ -88,7 +113,7 @@ final class GemCheckoutService
             $publicId = (string) Str::uuid();
             $now = now();
 
-            return GemOrder::query()->create([
+            return [GemOrder::query()->create([
                 'public_id' => $publicId,
                 'account_id' => $accountId,
                 'pack_code' => $pack['code'],
@@ -101,30 +126,47 @@ final class GemCheckoutService
                 'locale' => $locale,
                 'idempotency_key' => "gem-order-{$publicId}",
                 'checkout_expires_at' => $now->copy()->addMinutes(self::SESSION_LIFETIME_MINUTES),
+                'checkout_lease_until' => $now->copy()->addSeconds(self::CREATE_LEASE_SECONDS),
                 'terms_version' => (string) $account->terms_version,
-            ])->refresh();
+            ])->refresh(), true];
         });
+        [$order, $creates] = $claim;
 
-        if ($order->status === GemOrder::STATUS_OPEN && $order->checkout_url !== null) {
-            return ['order' => $order, 'checkout_url' => $order->checkout_url, 'reused' => true];
+        if (! $order->needsCheckoutSession()) {
+            return ['order' => $order, 'checkout_url' => $order->checkout_url, 'reused' => true, 'preparing' => false];
+        }
+        if (! $creates) {
+            return ['order' => $order, 'checkout_url' => null, 'reused' => true, 'preparing' => true];
         }
 
         // a `creating` order handed back is the retry of an earlier click (its Stripe call had failed)
         return ['reused' => ! $order->wasRecentlyCreated] + $this->createSession($order);
     }
 
-    /** @return array{order: GemOrder, checkout_url: string} */
+    /** @return array{order: GemOrder, checkout_url: ?string, preparing: bool} */
     private function createSession(GemOrder $order): array
     {
         try {
             $session = $this->stripe->createCheckoutSession($this->sessionParams($order), $order->idempotency_key);
         } catch (StripeGatewayException $e) {
             Log::warning('Stripe Checkout Session not created', ['order' => (string) $order->public_id, 'error' => $e->getMessage()]);
+            // the lease is given back in every case: the next attempt must not wait for it to run out
+            $release = ['checkout_lease_until' => null];
+
+            // Stripe still running a call with this key (a takeover overlapped a slow call) or rate limiting: nothing
+            // is wrong with the order, the browser keeps polling and the next attempt uses the same key
+            if ($e->isTemporaryConflict()) {
+                GemOrder::query()->whereKey($order->id)->update($release + ['last_error' => 'stripe_conflict']);
+
+                return ['order' => $order->refresh(), 'checkout_url' => null, 'preparing' => true];
+            }
+
             // Stripe answered: it replays that answer for this key, so the order is closed and the next click starts
             // a new one. Network failure: the order stays `creating` and the next click retries with the same key.
-            GemOrder::query()->whereKey($order->id)->where('status', GemOrder::STATUS_CREATING)->update($e->stripeAnswered
-                ? ['status' => GemOrder::STATUS_CANCELED, 'canceled_at' => now(), 'last_error' => 'stripe_rejected']
-                : ['last_error' => 'stripe_unreachable']);
+            GemOrder::query()->whereKey($order->id)->update($release + ['last_error' => $e->stripeAnswered ? 'stripe_rejected' : 'stripe_unreachable']);
+            if ($e->stripeAnswered) {
+                GemOrder::query()->whereKey($order->id)->where('status', GemOrder::STATUS_CREATING)->update(['status' => GemOrder::STATUS_CANCELED, 'canceled_at' => now()]);
+            }
 
             throw new GemPurchaseRejectedException('payment_provider_unavailable', 'The payment service is unavailable. Try again in a moment.', 502);
         }
@@ -144,12 +186,13 @@ final class GemCheckoutService
                 $locked->checkout_url = $url;
                 $locked->last_error = null;
             }
+            $locked->checkout_lease_until = null;
             $locked->save();
 
             return $locked;
         });
 
-        return ['order' => $order, 'checkout_url' => $url];
+        return ['order' => $order, 'checkout_url' => $url, 'preparing' => false];
     }
 
     /** @return array<string, mixed> Same order, same parameters: required by Stripe idempotent replays. */

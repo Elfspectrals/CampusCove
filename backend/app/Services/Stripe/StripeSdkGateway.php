@@ -84,7 +84,7 @@ final class StripeSdkGateway implements StripeGateway
             // 409 (same idempotency key still running) and 429 (rate limit) are not saved by Stripe: retrying works
             $answered = $status !== null && ! in_array($status, [409, 429], true);
 
-            throw new StripeGatewayException('Stripe error '.($status ?? '?').': '.($e->getStripeCode() ?? $e->getMessage()), $answered, $e);
+            throw new StripeGatewayException('Stripe error '.($status ?? '?').': '.($e->getStripeCode() ?? $e->getMessage()), $answered, $e, $status);
         }
     }
 }

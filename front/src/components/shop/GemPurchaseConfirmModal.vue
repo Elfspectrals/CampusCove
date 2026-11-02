@@ -15,6 +15,8 @@ const props = defineProps<{
   pack: GemPack
   submitting: boolean
   error: string | null
+  /** `warn`: temporary state (payment page still being prepared), not a failure. */
+  errorTone?: 'error' | 'warn'
 }>()
 
 const emit = defineEmits<{
@@ -70,7 +72,8 @@ useDialogFocus(dialogEl, { onEscape: () => !props.submitting && emit('close') })
         <p class="m-0 text-right text-xs font-semibold text-mist">{{ t('gems.simulatedPrice') }}</p>
       </dl>
 
-      <p v-if="error" class="cc-alert cc-alert-error m-0 mt-3" role="alert"><UiIcon name="alert" :size="18" /> {{ error }}</p>
+      <p v-if="error && errorTone === 'warn'" class="cc-alert cc-alert-warn m-0 mt-3" role="status"><UiIcon name="refresh" :size="18" /> {{ error }}</p>
+      <p v-else-if="error" class="cc-alert cc-alert-error m-0 mt-3" role="alert"><UiIcon name="alert" :size="18" /> {{ error }}</p>
 
       <div class="mt-5 grid gap-3 sm:grid-cols-[auto_1fr]">
         <button type="button" class="cc-btn cc-btn-ghost" :disabled="submitting" @click="emit('close')">{{ t('gems.cancel') }}</button>

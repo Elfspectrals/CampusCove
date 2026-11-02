@@ -8,7 +8,16 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { createGemOrder, fetchGemOrders, fetchGemPacks, type GemOrder, type GemPack, type GemPackCatalog } from '../api/gems'
+import {
+  GemCheckoutPreparingError,
+  StaleSessionError,
+  fetchGemOrders,
+  fetchGemPacks,
+  startGemCheckout,
+  type GemOrder,
+  type GemPack,
+  type GemPackCatalog,
+} from '../api/gems'
 import { ApiError } from '../api/http'
 import { fetchCurrentUser } from '../api/auth'
 import { localizedName } from '../i18n/routes'
@@ -33,6 +42,8 @@ const ordersError = ref<string | null>(null)
 const selectedPack = ref<GemPack | null>(null)
 const submitting = ref(false)
 const orderError = ref<string | null>(null)
+/** `warn`: temporary (payment page still being prepared), not a failure. */
+const orderErrorTone = ref<'error' | 'warn'>('error')
 
 const inDebt = computed(() => (balances.value.premium ?? 0) < 0)
 
@@ -87,13 +98,18 @@ async function confirmOrder() {
   submitting.value = true
   orderError.value = null
   try {
-    const { checkoutUrl } = await createGemOrder(pack.code, locale.value === 'fr' ? 'fr' : 'en')
+    // waits (bounded) while another tab or click of this player is preparing the same payment page
+    const checkoutUrl = await startGemCheckout(pack.code, locale.value === 'fr' ? 'fr' : 'en')
     // stays "submitting" while the browser leaves: no second click on the way to Stripe
     window.location.assign(checkoutUrl)
   } catch (e) {
-    const key = e instanceof ApiError ? `gems.errors.${e.code ?? (e.status === 429 ? 'throttled' : '')}` : ''
-    orderError.value = key && te(key) ? t(key) : e instanceof Error ? e.message : t('gems.return.error')
     submitting.value = false
+    // logged out or another account meanwhile: nothing to show to this session
+    if (e instanceof StaleSessionError) return
+    orderErrorTone.value = e instanceof GemCheckoutPreparingError ? 'warn' : 'error'
+    const key =
+      e instanceof GemCheckoutPreparingError ? 'gems.errors.checkout_preparing' : e instanceof ApiError ? `gems.errors.${e.code ?? (e.status === 429 ? 'throttled' : '')}` : ''
+    orderError.value = key && te(key) ? t(key) : e instanceof Error ? e.message : t('gems.return.error')
   }
 }
 
@@ -181,6 +197,7 @@ function closeModal() {
       :pack="selectedPack"
       :submitting="submitting"
       :error="orderError"
+      :error-tone="orderErrorTone"
       @close="closeModal"
       @confirm="confirmOrder"
     />

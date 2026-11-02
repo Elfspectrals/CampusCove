@@ -48,6 +48,7 @@ class GemOrder extends Model
         'stripe_payment_intent_id',
         'checkout_url',
         'checkout_expires_at',
+        'checkout_lease_until',
         'terms_version',
         'paid_at',
         'delivered_at',
@@ -77,6 +78,7 @@ class GemOrder extends Model
             'amount_cents' => 'integer',
             'livemode' => 'boolean',
             'checkout_expires_at' => 'datetime',
+            'checkout_lease_until' => 'datetime',
             'paid_at' => 'datetime',
             'delivered_at' => 'datetime',
             'delivery_tx_id' => 'integer',
@@ -109,6 +111,18 @@ class GemOrder extends Model
     public function isDelivered(): bool
     {
         return $this->delivered_at !== null;
+    }
+
+    /** Still waiting for its Checkout Session (never created, or created but not saved yet). */
+    public function needsCheckoutSession(): bool
+    {
+        return $this->status === self::STATUS_CREATING || ($this->status === self::STATUS_OPEN && $this->checkout_url === null);
+    }
+
+    /** Another request is creating the Checkout Session right now (GemCheckoutService). */
+    public function checkoutLeaseActive(): bool
+    {
+        return $this->checkout_lease_until !== null && $this->checkout_lease_until->isFuture();
     }
 
     /** none, partial or full: money given back to the player (succeeded refunds only). */

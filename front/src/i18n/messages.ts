@@ -207,6 +207,7 @@ export const messages = {
         terms_outdated: 'Accept the updated terms before buying.',
         throttled: 'Too many attempts. Wait a minute and try again.',
         gems_admin_only: 'On this server the gem shop demo is reserved to administrators.',
+        checkout_preparing: 'Your payment page is still being prepared. Try again in a few seconds: it is the same order, nothing is charged twice.',
       },
       return: {
         checkingTitle: 'Confirming your payment…',
@@ -446,6 +447,7 @@ export const messages = {
         terms_outdated: 'Accepte les conditions mises à jour avant d’acheter.',
         throttled: 'Trop de tentatives. Patiente une minute puis réessaie.',
         gems_admin_only: 'Sur ce serveur, la démo de la boutique de gems est réservée aux administrateurs.',
+        checkout_preparing: 'Ta page de paiement est encore en préparation. Réessaie dans quelques secondes : c’est la même commande, rien n’est débité deux fois.',
       },
       return: {
         checkingTitle: 'Confirmation de ton paiement…',

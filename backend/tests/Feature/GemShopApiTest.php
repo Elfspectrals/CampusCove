@@ -277,6 +277,79 @@ class GemShopApiTest extends TestCase
         $this->assertNotSame($this->stripe->createCalls[0]['key'], $this->stripe->createCalls[1]['key']);
     }
 
+    public function test_a_request_arriving_while_the_session_is_created_is_told_to_wait(): void
+    {
+        $player = $this->registerPlayer();
+        // the first request died at Stripe (process killed): its order keeps the creation lease
+        $this->stripe->failNextCreate = [new \RuntimeException('worker killed')];
+        $this->withoutExceptionHandling();
+        try {
+            $this->orderPack($player);
+            $this->fail('the first request should have died');
+        } catch (\RuntimeException) {
+        }
+        $this->withExceptionHandling();
+        $order = GemOrder::query()->sole();
+        $this->assertSame('creating', $order->status);
+        $this->assertTrue($order->checkoutLeaseActive());
+
+        // a second click meanwhile: no second Stripe call, no second order, a temporary state with the order to poll
+        $this->orderPack($player)->assertStatus(202)
+            ->assertHeader('Retry-After', '1')
+            ->assertJsonPath('code', 'checkout_preparing')
+            ->assertJsonPath('checkout_url', null)
+            ->assertJsonPath('retry_after_ms', 1000)
+            ->assertJsonPath('order.public_id', (string) $order->public_id)
+            ->assertJsonPath('order.status', 'creating');
+        $this->getJson("/api/gems/orders/{$order->public_id}", $this->authAs($player))->assertOk()->assertJsonPath('checkout_url', null);
+        $this->assertCount(1, $this->stripe->createCalls);
+        $this->assertSame(1, GemOrder::query()->count());
+
+        // the lease runs out on its own: the next request takes the creation over, with the same idempotency key
+        $this->travel(31)->seconds();
+        $res = $this->orderPack($player)->assertOk()->assertJsonPath('order.status', 'open');
+        $this->assertCount(2, $this->stripe->createCalls);
+        $this->assertSame($this->stripe->createCalls[0]['key'], $this->stripe->createCalls[1]['key']);
+        $this->assertSame($this->stripe->createCalls[0]['params'], $this->stripe->createCalls[1]['params']);
+        $this->assertNull($order->refresh()->checkout_lease_until);
+
+        // the polling browser finds the payment page on the order
+        $this->getJson("/api/gems/orders/{$order->public_id}", $this->authAs($player))->assertOk()->assertJsonPath('checkout_url', $res->json('checkout_url'));
+        $this->assertSame(1, GemOrder::query()->count());
+    }
+
+    public function test_temporary_stripe_conflict_is_a_wait_not_a_failure(): void
+    {
+        $player = $this->registerPlayer();
+
+        // 409: Stripe still runs a call with this idempotency key; 429: rate limited. Nothing is saved for the key.
+        foreach ([409, 429] as $status) {
+            $this->stripe->failNextCreate = [new StripeGatewayException("Stripe error {$status}", false, null, $status)];
+
+            $this->orderPack($player)->assertStatus(202)->assertJsonPath('code', 'checkout_preparing');
+            $order = GemOrder::query()->sole();
+            $this->assertSame('creating', $order->status);
+            $this->assertSame('stripe_conflict', $order->last_error);
+            // lease given back: the next attempt does not wait for it
+            $this->assertNull($order->checkout_lease_until);
+        }
+
+        $this->orderPack($player)->assertOk()->assertJsonPath('order.status', 'open');
+        $this->assertSame(1, GemOrder::query()->count());
+        $this->assertCount(1, array_unique(array_column($this->stripe->createCalls, 'key')));
+    }
+
+    public function test_open_order_hands_back_its_session_without_calling_stripe(): void
+    {
+        $player = $this->registerPlayer();
+        $first = $this->orderPack($player)->assertCreated();
+        // even with an old lease value left on the row, a saved session is simply handed back
+        GemOrder::query()->update(['checkout_lease_until' => now()->addMinute()]);
+
+        $this->orderPack($player)->assertOk()->assertJsonPath('checkout_url', $first->json('checkout_url'));
+        $this->assertCount(1, $this->stripe->createCalls);
+    }
+
     public function test_pending_orders_per_player_are_capped(): void
     {
         $player = $this->registerPlayer();
