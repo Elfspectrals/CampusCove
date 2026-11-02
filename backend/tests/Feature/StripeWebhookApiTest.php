@@ -116,6 +116,16 @@ class StripeWebhookApiTest extends TestCase
         $this->assertSame($otherSessionId, $this->order($otherId)->stripe_checkout_session_id);
     }
 
+    public function test_stripe_cli_subscribes_to_exactly_the_handled_events(): void
+    {
+        // backend/resources/stripe-webhook-events.txt feeds `stripe listen --events` (docker/stripe-cli/listen.sh)
+        $lines = preg_split('/\R/', (string) file_get_contents(resource_path('stripe-webhook-events.txt')));
+        $listed = array_values(array_filter(array_map(fn (string $l) => trim((string) preg_replace('/#.*/', '', $l)), $lines)));
+
+        $this->assertSame(\App\Services\StripeWebhookService::handledEvents(), $listed);
+        $this->assertSame($listed, array_values(array_unique($listed)));
+    }
+
     public function test_repeated_and_different_events_of_one_payment_credit_once(): void
     {
         [$player, $publicId, $sessionId] = $this->paidOrder();

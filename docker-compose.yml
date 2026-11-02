@@ -109,6 +109,25 @@ services:
       - socket
     command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
 
+  # Optional (profile `stripe`, never started by `make up`): official Stripe CLI relaying the gem shop's test-mode
+  # webhooks to the backend (docs/STRIPE.md). `make stripe-secret` / `make stripe-listen` / `make stripe-logs` /
+  # `make stripe-stop`. Authenticated by STRIPE_SECRET_KEY of the root .env, no `stripe login`; live keys refused.
+  stripe-cli:
+    image: stripe/stripe-cli:v1.55.6
+    profiles: ["stripe"]
+    container_name: campuscove-stripe-cli
+    entrypoint: ["/bin/sh", "/relay/listen.sh"]
+    environment:
+      STRIPE_API_KEY: ${STRIPE_SECRET_KEY:-}
+      # the backend service on the Compose network: `localhost` would be the CLI container itself
+      STRIPE_FORWARD_TO: http://backend:8000/api/stripe/webhook
+    volumes:
+      - ./docker/stripe-cli/listen.sh:/relay/listen.sh:ro
+      - ./backend/resources/stripe-webhook-events.txt:/relay/events.txt:ro
+    depends_on:
+      - backend
+    restart: "no"
+
 # Named volumes persist across `docker compose down` (avoid `docker compose down -v` or data is removed)
 volumes:
   postgres_data:      # DB data – survives down/up

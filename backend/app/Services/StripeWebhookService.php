@@ -41,6 +41,17 @@ final class StripeWebhookService
         'charge.dispute.funds_reinstated',
     ];
 
+    /**
+     * Every event acted upon. Same list as backend/resources/stripe-webhook-events.txt, which the Docker Stripe CLI
+     * subscribes to (StripeWebhookApiTest checks both match).
+     *
+     * @return list<string>
+     */
+    public static function handledEvents(): array
+    {
+        return [...self::CHECKOUT_EVENTS, ...self::PAYMENT_STATE_EVENTS];
+    }
+
     public function __construct(
         private readonly GemCheckoutConfig $config,
         private readonly GemOrderFulfillmentService $fulfillment,
