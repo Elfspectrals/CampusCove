@@ -18,6 +18,7 @@ Personnes concernées : joueurs inscrits (15 ans et plus) ; visiteurs du site po
 | Modération | `player_reports` (dont `details`, `decision_note`), sanctions (`banned_at`, `suspended_until`) | Intérêt légitime (6.1.f) ; DSA art. 16-17 | Signalement supprimé 1 an après décision, `details` effacé à la suppression du compte de l'auteur ; sanction : sa durée | Administrateurs |
 | Sécurité / anti-abus | IP (limitation de débit `throttle`, cache quelques minutes), journaux de l'hébergeur (IP, URL, date) | Intérêt légitime | Minutes pour le cache, 12 mois max pour les journaux | Hébergeurs |
 | Ventes (non ouvertes) | transactions, factures | Obligation légale | 10 ans | Prestataire de paiement |
+| Démo de la boutique de gems (Stripe mode test, aucun argent débité, `docs/STRIPE.md`) | `gem_orders` : référence, pack, montant simulé, statuts et dates, identifiants Stripe de test, version des CGU ; `stripe_webhook_events` : id, type, essais (pas de payload). Ni e-mail transmis à Stripe, ni données de carte, ni IP | Contrat (6.1.b) | Vie du compte ; conservé (sans donnée identifiante) à l'anonymisation pour la cohérence du grand livre | Stripe Payments Europe (page de paiement de test) |
 
 Mesures de sécurité (art. 32) : HTTPS + HSTS, mots de passe hachés (bcrypt), jetons Sanctum révocables (tous révoqués à la connexion et à la suppression), limitation des tentatives (`throttle:10,1` sur l'authentification), mot de passe exigé pour supprimer le compte, en-têtes de sécurité (`front/vercel.json`), accès admin restreint (middleware `admin`).
 
@@ -55,6 +56,7 @@ Les comptes administrateurs sont ceux de l'éditeur et ne sont pas purgés. Gard
 
 - Vercel Inc. (front, USA, Data Privacy Framework + CCT) — DPA : vercel.com/legal/dpa
 - Salesforce, Inc. — Heroku (API, PostgreSQL, serveur Colyseus ; USA, Data Privacy Framework + BCR sous-traitant Salesforce) — DPA : salesforce.com/company/legal/agreements (Data Processing Addendum).
+- Stripe Payments Europe, Limited (Irlande ; transferts possibles vers Stripe, Inc., Data Privacy Framework) — uniquement la page de paiement de **démonstration** en mode test ; seule une référence de commande lui est envoyée. Les clés de production sont refusées par le code.
 - Brevo / Sendinblue SAS (e-mails ; France, données en UE, pas de transfert) — DPA : brevo.com/legal/termsofuse (annexe traitement des données). Configuration : variables `MAIL_*` sur Heroku (relais SMTP `smtp-relay.brevo.com:587`). Tant que `MAIL_MAILER=log`, aucun e-mail ne part et la purge refuse de tourner en production.
 
 ## 6. Traceurs

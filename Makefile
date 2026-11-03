@@ -17,8 +17,8 @@ up: ## Start the stack (front 5173, api 8000, socket 3000, db 5432)
 up-build: ## Start the stack, rebuilding images
 	$(COMPOSE) up -d --build
 
-down: ## Stop the stack (keeps volumes)
-	$(COMPOSE) down
+down: ## Stop the stack (keeps volumes), the optional Stripe CLI relay included
+	$(COMPOSE) --profile stripe down
 
 logs: ## Tail Docker logs
 	$(COMPOSE) logs -f
@@ -80,6 +80,29 @@ newnation-optimize: ## Rebuild the /NewNation showroom map from map-src/NewNatio
 collision-extract: ## Collision JSON from a GLB (MODEL=path/to/Foo.colsrc.glb)
 	cd front && npm run collision:extract -- $(MODEL)
 
+
+# --- gem shop demo (Stripe TEST MODE only, docs/STRIPE.md) ---
+# Stripe CLI in Docker (service stripe-cli, profile stripe): needs STRIPE_SECRET_KEY=sk_test_... in the root .env,
+# no Stripe CLI on the machine. Events: backend/resources/stripe-webhook-events.txt.
+
+STRIPE_CLI := $(COMPOSE) --profile stripe
+
+stripe-secret: ## Print the webhook signing secret of the Docker Stripe CLI (-> STRIPE_WEBHOOK_SECRET in the root .env)
+	$(STRIPE_CLI) run --rm --no-deps stripe-cli --print-secret
+
+stripe-listen: ## Start the Docker Stripe CLI relay in the background (test-mode webhooks -> backend)
+	$(STRIPE_CLI) up -d stripe-cli
+	@echo "Relay started in the background: make stripe-logs (follow), make stripe-stop (stop)."
+
+stripe-logs: ## Follow the Stripe CLI relay logs (Ctrl+C stops following, not the relay)
+	$(STRIPE_CLI) logs -f stripe-cli
+
+stripe-stop: ## Stop the Stripe CLI relay only (the rest of the stack keeps running)
+	$(STRIPE_CLI) stop stripe-cli
+
+gems-reconcile: ## Re-sync gem orders with Stripe (ORDER=<public id> for one order, refunds included)
+	$(ART) gems:reconcile $(if $(ORDER),--order=$(ORDER))
+
 # --- backend (Docker artisan) ---
 
 migrate: ## Run migrations
@@ -132,4 +155,4 @@ socket-start: ## Run socket locally (port 3000)
 	front-install front-dev front-build typecheck share-local sharelocal \
 	assets-optimize store-apply newnation-optimize collision-extract \
 	migrate seed seed-shop seed-housing purge-legacy-housing fix-housing collect-taxes set-admin set-money fill-outfit test \
-	backend-install backend-serve socket-install socket-start
+	backend-install backend-serve socket-install socket-start stripe-secret stripe-listen stripe-logs stripe-stop gems-reconcile

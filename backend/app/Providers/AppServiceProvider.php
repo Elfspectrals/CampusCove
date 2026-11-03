@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use App\Auth\AccountUserProvider;
 use App\Models\Account;
+use App\Services\Stripe\StripeGateway;
+use App\Services\Stripe\StripeSdkGateway;
 use Illuminate\Foundation\Console\ServeCommand;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\ServiceProvider;
@@ -18,6 +20,11 @@ class AppServiceProvider extends ServiceProvider
         // `artisan serve` (Docker dev) only forwards a few env vars to its PHP workers; docker-compose sets these.
         ServeCommand::$passthroughVariables[] = 'REALTIME_SHARED_SECRET';
         ServeCommand::$passthroughVariables[] = 'REALTIME_INTERNAL_URL';
+        foreach (['FRONTEND_URL', 'GEMS_CHECKOUT_MODE', 'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET'] as $var) {
+            ServeCommand::$passthroughVariables[] = $var;
+        }
+
+        $this->app->singleton(StripeGateway::class, StripeSdkGateway::class);
     }
 
     /**

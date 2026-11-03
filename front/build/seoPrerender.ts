@@ -18,7 +18,7 @@ import { LOCALES, SITE, localePrefix, type Locale } from '../src/seo/site'
  * purpose: they are linked from every public page and carry noindex (X-Robots-Tag in vercel.json + meta), which a
  * crawler can only read if robots.txt lets it fetch them.
  */
-const ROBOTS_BLOCKED_PATHS = ['/home', '/locker', '/friends', '/settings', '/game', '/NewNation', '/admin', '/dev']
+const ROBOTS_BLOCKED_PATHS = ['/home', '/locker', '/friends', '/gems', '/settings', '/game', '/NewNation', '/admin', '/dev']
 
 function shellHead(title: string): string {
   return [

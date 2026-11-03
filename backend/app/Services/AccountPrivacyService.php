@@ -12,7 +12,9 @@ use Illuminate\Support\Str;
  * GDPR self-service: export every row tied to an account (art. 15 / 20) and erase an account (art. 17).
  *
  * Erasure anonymizes instead of hard-deleting: wallet ledger and transactions must stay consistent and
- * accounting records are kept (legal obligation), but nothing left can identify the person.
+ * accounting records are kept (legal obligation), but nothing left can identify the person. Gem orders
+ * (gem_orders, exported through their account_id) are such records: kept 10 years, they hold no e-mail, card
+ * data or IP, only the pack, the amount and Stripe references.
  */
 class AccountPrivacyService
 {

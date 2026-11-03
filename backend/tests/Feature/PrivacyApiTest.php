@@ -38,7 +38,7 @@ class PrivacyApiTest extends TestCase
 
         $player = $this->registerPlayer();
         $row = DB::table('accounts')->where('account_id', $player['id'])->first();
-        $this->assertSame('2026-10-28', $row->terms_version);
+        $this->assertSame(\App\Http\Controllers\AuthController::TERMS_VERSION, $row->terms_version);
         $this->assertNotNull($row->terms_accepted_at);
         $this->assertNotNull($row->age_confirmed_at);
     }

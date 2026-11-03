@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { RouterLink } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useDialogFocus } from '../../composables/useDialogFocus'
 import type { ShopCurrency, ShopItem, ShopItemCurrencyOption } from '../../api/itemShop'
 import { currencyLabel } from '../../utils/itemShopPresentation'
@@ -21,6 +23,7 @@ const emit = defineEmits<{
   confirm: []
 }>()
 
+const { t } = useI18n()
 const confirmOptions = computed(() => props.item.options ?? [])
 const dialogEl = ref<HTMLElement | null>(null)
 useDialogFocus(dialogEl, { onEscape: () => emit('close') })
@@ -84,6 +87,12 @@ useDialogFocus(dialogEl, { onEscape: () => emit('close') })
           </dd>
         </div>
       </dl>
+
+      <p v-if="confirmCurrency === 'premium' && confirmAfter !== null && confirmAfter < 0" class="cc-alert cc-alert-warn m-0 mt-4 text-sm" role="status">
+        <UiIcon name="alert" :size="18" />
+        <span class="flex-1">{{ t('gems.notEnough') }}</span>
+        <RouterLink :to="{ name: 'gems' }" class="cc-btn cc-btn-grape cc-btn-sm">{{ t('gems.getGems') }}</RouterLink>
+      </p>
 
       <div class="mt-6 grid grid-cols-2 gap-3">
         <button type="button" class="cc-btn cc-btn-ghost" @click="emit('close')">Cancel</button>

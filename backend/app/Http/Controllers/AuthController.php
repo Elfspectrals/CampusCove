@@ -21,7 +21,7 @@ use Illuminate\Validation\ValidationException;
 class AuthController extends Controller
 {
     /** Version of the terms / privacy policy in force; keep in sync with SITE.legalVersion in the front (asked again at login when it changes). */
-    public const TERMS_VERSION = '2026-10-28';
+    public const TERMS_VERSION = '2026-11-01';
 
     public function __construct(
         private readonly WalletSummaryService $walletSummary,

@@ -53,6 +53,7 @@ export const legalEn: LegalDocs = {
           'Reports and sanctions: report content, players involved, moderation decision — community safety (legitimate interest, art. 6.1.f).',
           'Hosting technical logs (IP address, date, requested page): security and abuse prevention (legitimate interest). Referrals never use IP addresses.',
           'Purchases (if enabled): transaction history and invoices — accounting obligations (legal obligation). Card data is handled only by the payment provider, never by us.',
+          'Gem shop demo (Stripe test mode, no money charged): order reference, pack, simulated amount, date, status of the test payment and of simulated refunds and disputes, Stripe test references — to credit the gems in the game (contract). Nothing about you (e-mail, name) is sent to Stripe; we keep no IP address and no copy of Stripe’s messages.',
         ],
       },
       {
@@ -80,7 +81,7 @@ export const legalEn: LegalDocs = {
       {
         heading: 'Recipients and processors',
         paragraphs: ['Your data is only accessible to the publisher and its technical processors, bound by contract (GDPR art. 28):'],
-        items: [...hosts, `E-mail delivery: ${SITE.mailProvider}.`, 'Fonts: self-hosted, no request is sent to Google.', 'Other players see your username, appearance, in-game position and your home if you invite them.'],
+        items: [...hosts, `E-mail delivery: ${SITE.mailProvider}.`, `Demo payment page (gem shop, test mode only): ${SITE.paymentProvider}. Only an order reference is sent to it; what you type on its test page falls under its own privacy policy.`, 'Fonts: self-hosted, no request is sent to Google.', 'Other players see your username, appearance, in-game position and your home if you invite them.'],
       },
       {
         heading: 'Transfers outside the EU',
@@ -88,6 +89,7 @@ export const legalEn: LegalDocs = {
           'Vercel Inc. is based in the USA and certified under the EU–US Data Privacy Framework (adequacy decision of 10 July 2023), complemented by the European Commission’s standard contractual clauses.',
           'Salesforce, Inc. (Heroku), which hosts the API, the database and the real-time server, is based in the USA: it is certified under the EU–US Data Privacy Framework and applies Salesforce’s Binding Corporate Rules for processors (GDPR art. 45 and 47).',
           'Brevo, which sends the e-mails, is based in France and stores data in the EU: no transfer.',
+          'Stripe Payments Europe, which hosts the demo payment page, is based in Ireland; it may transfer data to Stripe, Inc. (USA), certified under the EU–US Data Privacy Framework.',
         ],
       },
       {
@@ -134,6 +136,12 @@ export const legalEn: LegalDocs = {
         ],
       },
       {
+        heading: 'Demo payment page',
+        paragraphs: [
+          'The gem shop demo takes you to a page hosted by Stripe (checkout.stripe.com), in test mode. Stripe sets there the cookies its page needs for security, under its own privacy policy. No Stripe cookie or script is loaded on CampusCove pages.',
+        ],
+      },
+      {
         heading: 'Manage or delete this data',
         paragraphs: ['You can clear local storage at any time from your browser settings (Site data). You will be logged out and your settings will reset to defaults.'],
       },
@@ -149,6 +157,7 @@ export const legalEn: LegalDocs = {
         paragraphs: [
           `These terms govern access to the online game ${SITE.name}, published by ${P.name}. ${SITE.name} is currently a non-profit school project published by a private individual.`,
           'No real sale takes place within this school project. Should real-money sales ever open, the publisher would first need a professional status (e.g. French micro-entreprise) and those sales would be governed by the Terms of sale, which would then prevail for any purchase.',
+          'The gem shop is a technical demo: payment goes through Stripe test mode with test cards, no money is charged and no sale is made. Gems obtained this way are in-game premium currency like any other (section 5); a simulated refund takes them back from the balance, which can then go negative and block gem purchases until it covers them again.',
         ],
       },
       { heading: '2. Acceptance', paragraphs: ['Creating an account means accepting these terms, the Privacy policy and the Community rules. The accepted version and date are recorded.'] },
@@ -182,7 +191,7 @@ export const legalEn: LegalDocs = {
     title: 'Terms of sale',
     description: `Terms for buying premium currency and digital content on ${SITE.name}: prices, payment, withdrawal right, refunds.`,
     sections: [
-      { heading: 'Current status', paragraphs: [`No real-money sale is open at this time: ${SITE.name} is a non-commercial school project. These terms will apply once purchases open, after the publisher has adopted a professional status and updated the legal notice (company number, address, mediator).`] },
+      { heading: 'Current status', paragraphs: [`No real-money sale is open at this time: ${SITE.name} is a non-commercial school project. These terms will apply once purchases open, after the publisher has adopted a professional status and updated the legal notice (company number, address, mediator).`, 'The current gem shop is only a demo in Stripe test mode: “Demo payment — no money charged”. It is not a sale and these terms do not apply to it.'] },
       { heading: '1. Products', paragraphs: ['Premium currency and digital content (skins, cosmetic items) supplied without a physical medium, usable only in the game, described on their page before purchase.'] },
       { heading: '2. Prices and payment', paragraphs: ['Prices are shown in euros including all taxes. Payment is due when ordering and handled by a secure payment provider; the publisher never sees your card data. The confirmation button reads “Order with obligation to pay”.'] },
       { heading: '3. Delivery', paragraphs: ['Content is credited to your account right after payment is confirmed. An order confirmation is sent by email.'] },

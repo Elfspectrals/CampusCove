@@ -12,7 +12,7 @@ export const SITE = {
    * Launch date of the current legal texts (ISO). Bump with every change of the CGU / CGV / privacy policy, together
    * with AuthController::TERMS_VERSION in the backend: logged-in players are then asked to accept them again.
    */
-  legalVersion: '2026-10-28',
+  legalVersion: '2026-11-01',
   /** Last change of the public marketing pages (home, how to play, skins), used as sitemap lastmod. Bump when editing them. */
   contentUpdated: '2026-10-28',
   publisher: {
@@ -39,6 +39,8 @@ export const SITE = {
   ],
   /** Service sending the account e-mails (password reset, inactivity notice, moderation decisions): MAIL_MAILER in the backend. */
   mailProvider: 'Brevo (Sendinblue SAS), 106 boulevard Haussmann, 75008 Paris, France — données hébergées dans l’Union européenne',
+  /** Demo payment page of the gem shop (Stripe Checkout in test mode only, backend GEMS_CHECKOUT_MODE, docs/STRIPE.md). */
+  paymentProvider: 'Stripe Payments Europe, Limited, 1 Grand Canal Street Lower, Grand Canal Dock, Dublin D02 H210, Irlande — https://stripe.com',
   minimumAge: 15,
   /** Inactive accounts are anonymized after this many months (privacy policy + accounts:purge-inactive). */
   inactiveAccountMonths: 36,

@@ -55,6 +55,7 @@ export const legalFr: LegalDocs = {
           'Signalements et sanctions : contenu du signalement, joueurs concernés, décision de modération — pour la sécurité de la communauté (intérêt légitime, art. 6.1.f).',
           'Journaux techniques de l’hébergeur (adresse IP, date, page demandée) : sécurité et lutte contre les abus (intérêt légitime). Le parrainage n’utilise jamais l’adresse IP.',
           'Achats (si activés) : historique des transactions et factures — obligations comptables (obligation légale). Les données de carte bancaire sont traitées uniquement par le prestataire de paiement, jamais par nous.',
+          'Démonstration de la boutique de gems (mode test de Stripe, aucun argent débité) : référence de commande, pack, montant simulé, date, état du paiement de test, des remboursements et des contestations simulés, références Stripe de test — pour créditer les gems dans le jeu (exécution du contrat). Aucune donnée vous concernant (e-mail, nom) n’est transmise à Stripe ; nous ne conservons ni adresse IP ni copie des messages de Stripe.',
         ],
       },
       {
@@ -89,6 +90,7 @@ export const legalFr: LegalDocs = {
         items: [
           ...hosts,
           `Envoi des e-mails : ${SITE.mailProvider}.`,
+          `Page de paiement de démonstration (boutique de gems, mode test uniquement) : ${SITE.paymentProvider}. Seule une référence de commande lui est transmise ; ce que vous saisissez sur sa page de test relève de sa propre politique de confidentialité.`,
           'Polices de caractères : hébergées sur nos propres serveurs, aucune requête n’est envoyée à Google.',
           'Les autres joueurs voient votre pseudonyme, votre apparence, votre position en jeu et votre logement si vous les y invitez.',
         ],
@@ -99,6 +101,7 @@ export const legalFr: LegalDocs = {
           'Vercel Inc. est établi aux États-Unis et adhère au Data Privacy Framework UE–États-Unis (décision d’adéquation du 10 juillet 2023), complété par des clauses contractuelles types de la Commission européenne.',
           'Salesforce, Inc. (Heroku), qui héberge l’API, la base de données et le serveur temps réel, est établi aux États-Unis : il adhère au Data Privacy Framework UE–États-Unis et applique les règles d’entreprise contraignantes (BCR) de Salesforce pour les sous-traitants (art. 45 et 47 RGPD).',
           'Brevo, qui envoie les e-mails, est établi en France et héberge les données dans l’Union européenne : aucun transfert.',
+          'Stripe Payments Europe, qui héberge la page de paiement de démonstration, est établi en Irlande ; il peut transférer des données à Stripe, Inc. (États-Unis), qui adhère au Data Privacy Framework UE–États-Unis.',
         ],
       },
       {
@@ -152,6 +155,12 @@ export const legalFr: LegalDocs = {
         ],
       },
       {
+        heading: 'Page de paiement de démonstration',
+        paragraphs: [
+          'La démonstration de la boutique de gems vous redirige vers une page hébergée par Stripe (checkout.stripe.com), en mode test. Stripe y dépose les cookies nécessaires à la sécurité de sa page, sous sa propre politique de confidentialité. Aucun cookie ni script Stripe n’est chargé sur les pages de CampusCove.',
+        ],
+      },
+      {
         heading: 'Gérer ou supprimer ces données',
         paragraphs: [
           'Vous pouvez à tout moment effacer le stockage local depuis les paramètres de votre navigateur (Données de site). Vous serez alors déconnecté et vos réglages reviendront aux valeurs par défaut.',
@@ -169,6 +178,7 @@ export const legalFr: LegalDocs = {
         paragraphs: [
           `Les présentes CGU régissent l’accès au jeu en ligne ${SITE.name}, édité par ${P.name}. ${SITE.name} est actuellement un projet scolaire, édité par un particulier, sans but lucratif.`,
           'Aucune vente réelle n’est réalisée dans le cadre de ce projet scolaire. Si des ventes contre de l’argent réel étaient ouvertes un jour, elles nécessiteraient que l’éditeur adopte un statut professionnel (par exemple micro-entreprise) et seraient soumises aux Conditions générales de vente, qui prévaudraient alors pour tout achat.',
+          'La boutique de gems est une démonstration technique : le paiement passe par le mode test de Stripe avec des cartes de test, aucun argent n’est débité et aucune vente n’est conclue. Les gems ainsi obtenus sont de la monnaie premium du jeu comme les autres (article 5) ; un remboursement simulé les retire du solde, qui peut alors devenir négatif et bloquer les achats en gems jusqu’à ce qu’il redevienne suffisant.',
         ],
       },
       {
@@ -230,6 +240,7 @@ export const legalFr: LegalDocs = {
         heading: 'Statut actuel',
         paragraphs: [
           `Aucune vente contre de l’argent réel n’est ouverte à ce jour : ${SITE.name} est un projet scolaire non commercial. Les conditions ci-dessous s’appliqueront dès l’ouverture des achats, qui sera précédée de l’adoption d’un statut professionnel par l’éditeur et de la mise à jour des mentions légales (SIRET, adresse, médiateur).`,
+          'La boutique de gems actuelle n’est qu’une démonstration en mode test de Stripe : « Paiement de démonstration — aucun argent débité ». Elle ne constitue pas une vente et ces conditions ne s’y appliquent pas.',
         ],
       },
       {

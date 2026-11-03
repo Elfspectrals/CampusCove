@@ -48,10 +48,10 @@
 		redir /fr/how-to-play /fr permanent
 
 		# Private pages share the app shell; public pages are prerendered .html files.
-		@app path /login /register /forgot-password /reset-password /home /locker /friends /settings /game /NewNation /admin /admin/* /dev /dev/*
+		@app path /login /register /forgot-password /reset-password /home /locker /friends /gems /gems/* /settings /game /NewNation /admin /admin/* /dev /dev/*
 		rewrite @app /app.html
 
-		@noindex path /login /register /forgot-password /reset-password /home /locker /friends /settings /game /NewNation /admin /admin/* /dev /dev/* /app.html /404.html
+		@noindex path /login /register /forgot-password /reset-password /home /locker /friends /gems /gems/* /settings /game /NewNation /admin /admin/* /dev /dev/* /app.html /404.html
 		header @noindex X-Robots-Tag "noindex, nofollow"
 
 		# Vite's hashed bundles never change; models, lightmaps and manifests keep their names.
