@@ -31,6 +31,7 @@ import GameDrinkFast from '../components/game/GameDrinkFast.vue'
 import GamePubChallenge from '../components/game/GamePubChallenge.vue'
 import GamePubRaceBoard from '../components/game/GamePubRaceBoard.vue'
 import GameMeterShot from '../components/game/GameMeterShot.vue'
+import GameMinimap from '../components/game/GameMinimap.vue'
 import GameDarts from '../components/game/GameDarts.vue'
 import GameBasketCheckout from '../components/game/GameBasketCheckout.vue'
 import GameWardrobe from '../components/game/GameWardrobe.vue'
@@ -53,6 +54,7 @@ import { useGameMovement } from '../composables/game/useGameMovement'
 import { useGameRealtime } from '../composables/game/useGameRealtime'
 import { useInteractionTargets } from '../composables/game/useInteractionTargets'
 import { useIntoxication } from '../composables/game/useIntoxication'
+import { useMinimap } from '../composables/game/useMinimap'
 import { usePlayerInventory } from '../composables/game/usePlayerInventory'
 import { useOrchard } from '../composables/game/useOrchard'
 import { usePub } from '../composables/game/usePub'
@@ -773,6 +775,23 @@ void document.fonts.ready.then(() => {
   refreshDoorSigns()
 })
 
+const minimap = useMinimap({
+  getRenderer,
+  getScene,
+  getCamera,
+  myPosition,
+  homeKey: () => {
+    const me = myAccountId.value
+    return me === null ? null : (housing.units.value.find((u) => u.occupant_account_id === me)?.model_key ?? null)
+  },
+  buildingKey: () => currentHouseKey.value,
+})
+const mapKey = computed(() => actionKeyLabels('map')[0] ?? 'M')
+// Esc frees the mouse and opens the pause menu: the full map gives way to it
+watch(pointerLocked, (locked) => {
+  if (!locked) minimap.fullOpen.value = false
+})
+
 const environment = useRoomEnvironment({
   getScene,
   getRenderer,
@@ -790,6 +809,7 @@ const environment = useRoomEnvironment({
     pub.onTownLoaded(manifest)
     pubGames.onTownLoaded(manifest)
     orchard.onTownLoaded(manifest)
+    minimap.onTownLoaded(manifest)
     houseFurniture.onTownReady()
     for (const { key, store } of furnitureStores) {
       const interior = openHouseInterior(key)
@@ -909,6 +929,7 @@ function handleExtraKeyDown(e: KeyboardEvent): boolean {
   }
   // a key is a gesture: take the pointer back (the player only moves once the lock is back)
   if (resumedWithoutLock.value) retryPointerLock()
+  if (minimap.onKeyDown(e)) return true
   if (houseKeys.onKeyDown(e)) return true
   if (survival.onKeyDown(e)) return true
   if (runUseOrPunch(e.code, e.repeat)) return true
@@ -988,6 +1009,7 @@ const movement = useGameMovement({
     pubGames.tick()
     orchard.tick(dt)
     if (!doorSigns.group.parent) getScene()?.add(doorSigns.group)
+    minimap.tick()
   },
 })
 const { requestPointerLock, onCanvasMouseDown } = movement
@@ -1207,6 +1229,15 @@ const crosshairClass = computed(() => {
     />
     <GameDrunkEffects :effects="drunkEffects" />
     <GameRoomMessageBanner v-if="roomMessage" :message="roomMessage" />
+    <GameMinimap
+      :image="minimap.image.value"
+      :markers="minimap.markers.value"
+      :player="minimap.player"
+      :inside-name="minimap.insideName.value"
+      :full-open="minimap.fullOpen.value"
+      :map-key="mapKey"
+      @close="minimap.fullOpen.value = false"
+    />
     <GameHudToolbar
       :position-label="positionLabel"
       :show-graphics-toggle="!pointerLocked"

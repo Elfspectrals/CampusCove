@@ -28,6 +28,7 @@ export const ICONS = {
   check: 'M5 12.5 10 17.5 19.5 7',
   refresh: 'M20 11a8 8 0 0 0-14.6-4.5L4 8M4 4v4h4M4 13a8 8 0 0 0 14.6 4.5L20 16M20 20v-4h-4',
   map: 'M9 4 3 6.5v13L9 17l6 2.5 6-2.5v-13L15 6.5zM9 4v13M15 6.5v13',
+  briefcase: 'M3 8h18v12H3zM8.5 8V5h7v3M3 13.5h18',
   'rotate-left': 'M4 4v5h5M4.5 13a8 8 0 1 0 2-7.3L4 9',
   'rotate-right': 'M20 4v5h-5M19.5 13a8 8 0 1 1-2-7.3L20 9',
   walk: 'M13 5.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zM10 21l2-6 3 3v3M8 12l2-4 4 1 2 4 2 1M12 15l-2-7',
