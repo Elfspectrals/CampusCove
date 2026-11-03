@@ -10,6 +10,8 @@
 //   sunk     the drawn ground is above the walk height: the player walks inside a slope
 //   floating the walk height is above the drawn ground with no deck under the feet: a climb into the void
 //   conflict two zone heightmaps cover the same point with different heights (the game keeps the higher one)
+//   walk-through a solid surface (step, deck, plinth, ramp) stands 0.15 to MAX_STEP above the walk height with no
+//            collision box: the player walks through it at shin height instead of climbing it or being stopped
 // Exit code 1 when anything is found. Docs: docs/ASSETS_STYLE_GUIDE.md "Relief".
 import { readFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
@@ -26,6 +28,15 @@ const PUBLIC = join(FRONT, 'public')
 const GROUND = /Grass|Meadow|Hill|Sand|PondBed|Path|Paving|Avenue|Asphalt|Cobble|Street|MallFloor$|SoftFloor|OrchardRows|Flagstone|CreekBank|Lawn/
 /** Walkable structures above the ground (jetty, bridges, gazebo floor): the walk height may sit on them. */
 const DECK = /Plank|Deck|Bridge|Step/
+/** Things a player walks through without harm: foliage, flowers, small decals and glows. */
+const SOFT = /Flower|Leaf|Reed|Bush|Blossom|Needle|Pine|Cattail|Lily|Tuft|Hay|Berry|Apple|Duck|Buoy|Line|Glow|Text|Chalk/
+/** Low decor meant to be walked over: small rocks (r <= 0.5 m have no box by design) and the leaf base of flower beds. */
+const LOW_DECOR = /Rock|Hedge/
+const LOW_DECOR_MAX = 0.45
+/** Water surfaces: what stands in the water is out of reach (shoreline colliders). */
+const WATER = /Water/
+/** Capsule radius of the player: a collision box this close stops them before they reach a surface. */
+const PLAYER_RADIUS = 0.3
 /**
  * A deck counts only up to this height above the ground under it: higher upward faces of a deck material are
  * furniture (pub tables are TW_PubDeck at 0.93 m), and the 1 m ramp up to a deck edge may not rise more than this.
@@ -68,6 +79,10 @@ class TriangleGrid {
   }
   /** Heights of every triangle under (x, z). */
   heightsAt(x, z) {
+    return this.surfacesAt(x, z).map((s) => s.h)
+  }
+  /** Height and material of every triangle under (x, z) (the material is the 10th entry of a triangle). */
+  surfacesAt(x, z) {
     const out = []
     for (const t of this.buckets.get(`${Math.floor(x / this.cell)},${Math.floor(z / this.cell)}`) ?? []) {
       const d = (t[5] - t[8]) * (t[0] - t[6]) + (t[6] - t[3]) * (t[2] - t[8])
@@ -75,7 +90,7 @@ class TriangleGrid {
       const a = ((t[5] - t[8]) * (x - t[6]) + (t[6] - t[3]) * (z - t[8])) / d
       const b = ((t[8] - t[2]) * (x - t[6]) + (t[0] - t[6]) * (z - t[8])) / d
       const c = 1 - a - b
-      if (a >= -1e-6 && b >= -1e-6 && c >= -1e-6) out.push(a * t[1] + b * t[4] + c * t[7])
+      if (a >= -1e-6 && b >= -1e-6 && c >= -1e-6) out.push({ h: a * t[1] + b * t[4] + c * t[7], name: t[9] })
     }
     return out
   }
@@ -83,7 +98,36 @@ class TriangleGrid {
 
 const ground = new TriangleGrid()
 const decks = new TriangleGrid()
+const solids = new TriangleGrid()
+const water = new TriangleGrid()
 const unknownUp = new Set()
+
+/** Which grids an upward triangle of this material goes into. */
+function gridsFor(name) {
+  if (GROUND.test(name)) return [ground]
+  if (WATER.test(name)) return [water]
+  if (DECK.test(name)) return [decks, solids]
+  return SOFT.test(name) ? [] : [solids]
+}
+
+const cuboids = [join(PUBLIC, 'assets/town/town.collision.json'), ...manifest.zones.filter((z) => z.collisionUrl).map((z) => join(PUBLIC, z.collisionUrl))]
+  .flatMap((file) => JSON.parse(readFileSync(file, 'utf8')).cuboids)
+
+/**
+ * Outdoors the game keeps the player's capsule at y 0..1.8 whatever the relief (worldCollision.ts, liftY only in
+ * buildings), so any box standing on the ground stops the player within PLAYER_RADIUS of its footprint.
+ */
+function blocked(x, z) {
+  return cuboids.some((c) => {
+    if (c.cy + c.hy < 0.05 || c.cy - c.hy > 1.8) return false
+    const yaw = 2 * Math.atan2(c.qy, c.qw)
+    const dx = x - c.cx
+    const dz = z - c.cz
+    const lx = dx * Math.cos(yaw) - dz * Math.sin(yaw)
+    const lz = dx * Math.sin(yaw) + dz * Math.cos(yaw)
+    return Math.abs(lx) <= c.hx + PLAYER_RADIUS && Math.abs(lz) <= c.hz + PLAYER_RADIUS
+  })
+}
 
 /** Column-major 4x4 product a * b. */
 function mul(a, b) {
@@ -103,15 +147,16 @@ function nodeMatrices(node) {
     t ? t.getElement(i, []) : [0, 0, 0], r ? r.getElement(i, []) : [0, 0, 0, 1], s ? s.getElement(i, []) : [1, 1, 1], new Array(16))))
 }
 
-for (const zone of zones) {
+// every zone GLB, even with a zone filter: zones overlap, and a neighbour's ground counts where it is drawn
+for (const zone of manifest.zones.filter((z) => z.modelUrl)) {
   const doc = await io.read(join(PUBLIC, zone.modelUrl))
   for (const node of doc.getRoot().listNodes()) {
     const mesh = node.getMesh()
     if (!mesh) continue
     for (const m of nodeMatrices(node)) for (const prim of mesh.listPrimitives()) {
       const name = prim.getMaterial()?.getName() ?? ''
-      const target = GROUND.test(name) ? ground : DECK.test(name) ? decks : null
-      if (!target) continue
+      const targets = gridsFor(name)
+      if (targets.length === 0) continue
       const pos = prim.getAttribute('POSITION')
       const idx = prim.getIndices()
       const n = idx ? idx.getCount() : pos.getCount()
@@ -130,7 +175,8 @@ for (const zone of zones) {
         const bx = tri[6] - tri[0], by = tri[7] - tri[1], bz = tri[8] - tri[2]
         const nx = ay * bz - az * by, ny = az * bx - ax * bz, nz = ax * by - ay * bx
         const len = Math.hypot(nx, ny, nz)
-        if (len > 0 && Math.abs(ny) / len > 0.5) target.add(tri)
+        tri.push(name)
+        if (len > 0 && Math.abs(ny) / len > 0.5) for (const target of targets) target.add(tri)
       }
     }
   }
@@ -165,6 +211,23 @@ function stepsOntoDeck(x, z, walk, top) {
   return false
 }
 
+/** Stairs and escalators of building layouts (mall): their walk height comes from buildingFloorAt, not terrain. */
+const stairs = manifest.zones.filter((z) => z.layoutUrl)
+  .flatMap((z) => JSON.parse(readFileSync(join(PUBLIC, z.layoutUrl), 'utf8')).stairs ?? [])
+const onStairs = (x, z) => stairs.some((s) => x >= s.minX && x <= s.maxX && z >= s.minZ && z <= s.maxZ)
+
+/** A raised solid the player walks through: not on stairs, not in water, no box stopping them, not low decor. */
+function walkThrough(x, z, walk) {
+  if (onStairs(x, z) || water.heightsAt(x, z).length > 0 || blocked(x, z)) return null
+  const raised = solids.surfacesAt(x, z)
+    .filter((s) => s.h - walk > TOLERANCE && s.h - walk <= MAX_STEP && !(LOW_DECOR.test(s.name) && s.h - walk <= LOW_DECOR_MAX))
+    .sort((a, b) => b.h - a.h)[0]
+  if (!raised) return null
+  // the 1 m heightmap cell ramping up to a deck edge: the next cell already stands on the deck
+  if (DECK.test(raised.name) && [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dz]) => terrainHeightIn(heightmaps, x + dx, z + dz) >= raised.h - TOLERANCE)) return null
+  return raised
+}
+
 /** Two zone grids covering the same point must agree, or the higher one silently wins in the game. */
 function gridConflict(x, z) {
   const values = gridZones.map((g) => ({ key: g.key, h: heightmapAt(g.map, x, z) })).filter((v) => v.h !== null)
@@ -190,6 +253,7 @@ for (const zone of zones) {
       maxRelief = Math.max(maxRelief, top ?? 0)
       let kind = null
       let err = 0
+      let what = null
       const conflict = gridConflict(x, z)
       if (conflict) {
         kind = `conflict ${conflict.keys}`
@@ -200,12 +264,19 @@ for (const zone of zones) {
       } else if (walk - (top ?? 0) > TOLERANCE && !stepsOntoDeck(x, z, walk, top)) {
         kind = 'floating'
         err = walk - (top ?? 0)
+      } else {
+        const raised = walkThrough(x, z, walk)
+        if (raised) {
+          kind = 'walk-through'
+          err = raised.h - walk
+          what = raised.name
+        }
       }
       if (!kind) continue
       const key = `${kind}:${Math.floor(x / CLUSTER)},${Math.floor(z / CLUSTER)}`
       const c = clusters.get(key) ?? { kind, n: 0, err: 0, x, z, walk, top, overGrid: heightmaps.some((h) => heightmapAt(h, x, z) !== null) }
       c.n++
-      if (err > c.err) Object.assign(c, { err, x, z, walk, top })
+      if (err > c.err) Object.assign(c, { err, x, z, walk, top, what })
       clusters.set(key, c)
     }
   }
@@ -216,7 +287,7 @@ for (const zone of zones) {
       + ` highest ground ${maxRelief.toFixed(2)} m${found.length ? `, ${points} bad points in ${found.length} spots` : ''}`,
   )
   for (const c of found.slice(0, 12)) {
-    const ground = c.top === null ? 'no ground drawn' : `ground ${c.top.toFixed(2)}`
+    const ground = (c.top === null ? 'no ground drawn' : `ground ${c.top.toFixed(2)}`) + (c.what ? `, ${c.what}` : '')
     console.log(`     ${c.kind.padEnd(8)} at (${c.x.toFixed(1)}, ${c.z.toFixed(1)}): walk ${c.walk.toFixed(2)}, ${ground}, off by ${c.err.toFixed(2)} m`
       + ` (${c.n} pts${c.overGrid ? '' : ', no heightmap here'})`)
   }

@@ -18,7 +18,7 @@ You are the topographer of CampusCove, a multiplayer life-sim (Vue 3 + Three.js 
 
 ## Tools you run
 
-- `cd front && npm run topo:check [zone ...]`: samples every zone's drawn ground (upward triangles of the materials in `GROUND` in `front/scripts/check-topography.mjs`) on a 1 m grid and compares it with the walk height. `sunk` = ground above walk height, `floating` = walk height above ground with no deck within 1 m (a deck counts up to `MAX_STEP` above its ground; the ramp to its edge may not rise more), `conflict` = two zone grids disagree on the same point. Exit 1 on failure, 2 on an unknown zone. Never loosen `TOLERANCE` / `MAX_STEP` or widen `DECK` to make a real spot pass: the gazebo once overhung a trench by 1.3 m behind such an excuse. It reads the optimized GLBs, so run it after `npm run assets:optimize`.
+- `cd front && npm run topo:check [zone ...]`: samples every zone's drawn ground (upward triangles of the materials in `GROUND` in `front/scripts/check-topography.mjs`) on a 1 m grid and compares it with the walk height. `sunk` = ground above walk height, `floating` = walk height above ground with no deck within 1 m (a deck counts up to `MAX_STEP` above its ground; the ramp to its edge may not rise more), `conflict` = two zone grids disagree on the same point, `walk-through` = a solid surface 0.15 m to `MAX_STEP` above the walk height with no collision box (the report names the material). Exit 1 on failure, 2 on an unknown zone. Never loosen `TOLERANCE` / `MAX_STEP` or widen `DECK` to make a real spot pass: the gazebo once overhung a trench by 1.3 m behind such an excuse. It reads the optimized GLBs, so run it after `npm run assets:optimize`.
 - `build_pond.py` stops the build on its own if its heightmap leaves the mesh. Copy that guard into any new build that ships a heightmap.
 - In `/game` (dev only), **H** draws every heightmap as a wireframe sheet (blue = 0, red = highest). **C** draws the collision boxes. See skill `playtest-game` for driving the game in the browser pane.
 - Visual proof without walking: render the zone GLBs in Blender headless from the player's eye (1.6 m above the walk height), game (x, y, z) = Blender (x, -z, y).
@@ -26,13 +26,14 @@ You are the topographer of CampusCove, a multiplayer life-sim (Vue 3 + Three.js 
 ## How to work
 
 1. Reproduce: the HUD gives `XYZ`. Run `npm run topo:check` and read the spots near the position. If the check passes but the player reports a bug, the check is wrong: first make it catch the bug (new material in `GROUND` / `DECK`, a tighter tolerance), then fix.
-2. Find the cause in the build script: a height term that does not fade before a neighbour zone, a mesh mask narrower than the heightmap grid, a deck missing from `walk_h`, a new zone whose lawn sits under a slope.
-3. Fix at the source, never by patching heights in the JSON:
+2. A `walk-through` spot is usually a missing collider, not relief: either give the prop a box in its build (`add_col` / `cols.add`), or, when it is meant to be climbed, give the zone walk heights. Small rocks and low flower beds are walked over by design.
+3. Find the cause of relief failures in the build script: a height term that does not fade before a neighbour zone, a mesh mask narrower than the heightmap grid, a deck missing from `walk_h`, a new zone whose lawn sits under a slope.
+4. Fix at the source, never by patching heights in the JSON:
    - relief must fade to 0 before it meets a zone that is flat;
    - the mesh mask and the heightmap come from the same function;
    - a deck the player walks on goes into `walk_h` and uses a material matched by `DECK`.
-4. Rebuild: `"/c/Program Files/Blender Foundation/Blender 5.2/blender.exe" --background --factory-startup --python map-src/CampusCove/build_<zone>.py`, then `cd front && npm run assets:optimize -- <category>`. Check that the gate/spot/kiosk entries of the layout did not move unless intended. Other builds read some layouts (the orchard and pub sites read `out/park/pond/pond.layout.json` for their gates).
-5. Prove it: `npm run topo:check` passes, the counter-test (the old assets fail) when it makes sense, renders or a screenshot from the reported spot, and the front gates (`npx vue-tsc -b`, `node --experimental-strip-types --test "src/**/*.test.ts"`, `npx knip`) when front code changed.
+5. Rebuild: `"/c/Program Files/Blender Foundation/Blender 5.2/blender.exe" --background --factory-startup --python map-src/CampusCove/build_<zone>.py`, then `cd front && npm run assets:optimize -- <category>`, then the zone's `front/scripts/apply-*.mjs` (it copies the layout's collision boxes into `town.collision.json`; skip it and new boxes never reach the game). `apply-*` scripts may rewrite `world.manifest.json` with LF endings only: `git checkout` it when `git diff --ignore-cr-at-eol` shows no content change. Check that the gate/spot/kiosk entries of the layout did not move unless intended. Other builds read some layouts (the orchard and pub sites read `out/park/pond/pond.layout.json` for their gates).
+6. Prove it: `npm run topo:check` passes, the counter-test (the old assets fail) when it makes sense, renders or a screenshot from the reported spot, and the front gates (`npx vue-tsc -b`, `node --experimental-strip-types --test "src/**/*.test.ts"`, `npx knip`) when front code changed.
 
 ## Adding relief to another zone
 

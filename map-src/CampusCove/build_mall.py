@@ -596,6 +596,8 @@ rect("Svc_Ceiling_W", X0, Z0, X0 + SVC, Z1, CELL_H, 0.2, P["slab"])
 rect("Dock_Door", DOCK_X[0], Z0 - 0.02, DOCK_X[1], Z0 + 0.1, 0.0, 3.6, P["shutter"])
 rect("Dock_Platform", DOCK_X[0] - 2.0, Z0 - 4.5, DOCK_X[1] + 2.0, Z0, 0.0, 1.1, P["service"], col=True)
 wedge("Dock_Ramp", DOCK_X[1] + 2.0, Z0 - 4.5, DOCK_X[1] + 8.0, Z0, 0.0, 1.1, "-x", P["service"])
+# solid like the platform: the mall has no heightmap, so the ramp cannot be climbed and players would walk through it
+cols.add("Dock_Ramp", DOCK_X[1] + 5.0, Z0 - 2.25, 0.0, 6.0, 4.5, 1.1)
 for i, gx in enumerate((DOCK_X[0] - 1.0, DOCK_X[1] + 1.0)):
     add(L.cyl(coll, f"Dock_Bollard{i}", gx, Z0 - 5.2, 0.0, 0.12, 0.9, P["yellow"], seg=8))
     cols.add(f"Dock_Bollard{i}", gx, Z0 - 5.2, 0.0, 0.3, 0.3, 0.9)
