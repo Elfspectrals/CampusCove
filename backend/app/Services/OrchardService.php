@@ -51,7 +51,7 @@ final class OrchardService
         });
     }
 
-    /** @return array{sold: int, coins: int, balance_after: int} */
+    /** @return array{sold: int, coins: int, balance_after: int, full_price_left: int} */
     public function sell(int $accountId, int $quantity): array
     {
         $apple = $this->apple();
@@ -73,6 +73,7 @@ final class OrchardService
                 'sold' => $quantity,
                 'coins' => $coins,
                 'balance_after' => Wallet::lockForAccount($accountId, 'coins')->balance(),
+                'full_price_left' => $fullPriceLeft - $atFullPrice,
             ];
         });
     }

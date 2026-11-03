@@ -112,6 +112,12 @@ export interface PubLayout {
   shots: { plank: Vec3; yaw: number; player: Vec3 }
 }
 
+export interface OrchardLayout {
+  trees: Vec3[]
+  farmer: Vec3
+  farmerYaw: number
+}
+
 export interface WorldManifest {
   version: number
   spawn: Vec3
@@ -122,6 +128,7 @@ export interface WorldManifest {
   fountains?: Vec3[]
   clinic?: ClinicLayout
   pub?: PubLayout
+  orchard?: OrchardLayout
 }
 
 const WORLD_MANIFEST_URL = '/assets/world.manifest.json'

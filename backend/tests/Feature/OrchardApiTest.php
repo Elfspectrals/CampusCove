@@ -80,7 +80,7 @@ class OrchardApiTest extends TestCase
 
         $this->postJson('/api/orchard/sell', ['quantity' => 5], $this->auth($player['token'], self::SECRET))
             ->assertOk()
-            ->assertExactJson(['sold' => 5, 'coins' => 15, 'balance_after' => 25]);
+            ->assertExactJson(['sold' => 5, 'coins' => 15, 'balance_after' => 25, 'full_price_left' => 295]);
 
         $this->assertSame(25, $this->balance($player['account_id']));
         $this->assertSame(2, $this->hotbarItem($player['token'], 'farm_apple')['quantity']);
@@ -94,9 +94,9 @@ class OrchardApiTest extends TestCase
         $this->grant($player['account_id'], 'farm_apple', 308);
         $sell = fn (int $quantity) => $this->postJson('/api/orchard/sell', ['quantity' => $quantity], $this->auth($player['token'], self::SECRET))->assertOk();
 
-        $sell(298)->assertJsonPath('coins', 894);
-        $sell(5)->assertJsonPath('coins', 9);
-        $sell(5)->assertExactJson(['sold' => 5, 'coins' => 5, 'balance_after' => 908]);
+        $sell(298)->assertJsonPath('coins', 894)->assertJsonPath('full_price_left', 2);
+        $sell(5)->assertJsonPath('coins', 9)->assertJsonPath('full_price_left', 0);
+        $sell(5)->assertExactJson(['sold' => 5, 'coins' => 5, 'balance_after' => 908, 'full_price_left' => 0]);
 
         $this->assertSame(908, $this->balance($player['account_id']));
     }
@@ -113,9 +113,9 @@ class OrchardApiTest extends TestCase
         $sell($player, 300)->assertJsonPath('coins', 900);
         $sell($other, 5)->assertJsonPath('coins', 15);
         $this->travel(24 * 3600)->seconds();
-        $sell($player, 5)->assertJsonPath('coins', 5);
+        $sell($player, 5)->assertJsonPath('coins', 5)->assertJsonPath('full_price_left', 0);
         $this->travel(1)->seconds();
-        $sell($player, 5)->assertJsonPath('coins', 15);
+        $sell($player, 5)->assertJsonPath('coins', 15)->assertJsonPath('full_price_left', 290);
     }
 
     public function test_a_bitten_apple_cannot_be_sold(): void
@@ -130,7 +130,7 @@ class OrchardApiTest extends TestCase
             ->assertJsonPath('code', 'not_enough_apples');
         $this->postJson('/api/orchard/sell', ['quantity' => 1], $headers)
             ->assertOk()
-            ->assertExactJson(['sold' => 1, 'coins' => 3, 'balance_after' => 3]);
+            ->assertExactJson(['sold' => 1, 'coins' => 3, 'balance_after' => 3, 'full_price_left' => 299]);
 
         $apple = $this->hotbarItem($player['token'], 'farm_apple');
         $this->assertSame(1, $apple['quantity']);
