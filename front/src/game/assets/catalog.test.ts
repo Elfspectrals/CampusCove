@@ -7,6 +7,10 @@ test('food and medical previews resolve to their own folders', () => {
   assert.equal(consumablePreviewUrl('med_painkillers'), '/assets/items/medical/painkillers/preview.png')
 })
 
+test('orchard produce resolves to the farm folder', () => {
+  assert.equal(consumablePreviewUrl('farm_apple'), '/assets/items/farm/apple/preview.png')
+})
+
 test('an unknown consumable code is an explicit error', () => {
   assert.throws(() => consumablePreviewUrl('house_key'), /house_key/)
 })

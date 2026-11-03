@@ -59,15 +59,16 @@ export function brightenForShop(character: THREE.Object3D): void {
  * The shop assistant behind the till, like the clinic nurse: rings up the basket, blocks the way and watches
  * customers. One per store; `colors` are the brand colours of the uniform.
  */
-export function createStoreClerk(storeKey: string, colors: CosmeticColors) {
+export function createStoreClerk(storeKey: string, colors: CosmeticColors, options: { outfit?: ClerkPiece[]; brighten?: boolean } = {}) {
+  const { outfit = CLERK_OUTFIT, brighten = true } = options
   let clerk: THREE.Group | null = null
   let restYaw = 0
   const head = new THREE.Vector3()
   const toCustomer = new THREE.Vector3()
 
   async function attach(group: THREE.Group, displays: THREE.Group, spot: ClerkSpot): Promise<void> {
-    const character = await createModularCharacter(outfitModels(CLERK_OUTFIT), colors, DEFAULT_SLOT_COLORS)
-    brightenForShop(character)
+    const character = await createModularCharacter(outfitModels(outfit), colors, DEFAULT_SLOT_COLORS)
+    if (brighten) brightenForShop(character)
     character.name = 'StoreClerk'
     character.position.fromArray(spot.position)
     character.rotation.y = spot.yaw

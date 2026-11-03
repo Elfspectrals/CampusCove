@@ -13,6 +13,7 @@ use App\Http\Controllers\FriendController;
 use App\Http\Controllers\GemShopController;
 use App\Http\Controllers\HousingController;
 use App\Http\Controllers\InventoryController;
+use App\Http\Controllers\OrchardController;
 use App\Http\Controllers\PlayerInventoryLayoutController;
 use App\Http\Controllers\PlayerReportController;
 use App\Http\Controllers\PubController;
@@ -76,6 +77,8 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
         Route::post('/pub/order', [PubController::class, 'order']);
         Route::post('/pub/play', [PubController::class, 'play']);
         Route::post('/pub/reward', [PubController::class, 'reward']);
+        Route::post('/orchard/pick', [OrchardController::class, 'pick']);
+        Route::post('/orchard/sell', [OrchardController::class, 'sell']);
         Route::post('/trades/execute', [TradeController::class, 'execute']);
     });
     Route::get('/trades/offerable', [TradeController::class, 'offerable']);

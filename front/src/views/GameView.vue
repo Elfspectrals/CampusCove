@@ -23,6 +23,7 @@ import GamePointerLockOverlay from '../components/game/GamePointerLockOverlay.vu
 import GameSettingsDialog from '../components/game/GameSettingsDialog.vue'
 import GameStoreItemCard from '../components/game/GameStoreItemCard.vue'
 import GameCafeMenu from '../components/game/GameCafeMenu.vue'
+import GameOrchardSellMenu from '../components/game/GameOrchardSellMenu.vue'
 import GamePubMenu from '../components/game/GamePubMenu.vue'
 import GamePubSecretDialog from '../components/game/GamePubSecretDialog.vue'
 import GameDrunkEffects from '../components/game/GameDrunkEffects.vue'
@@ -53,6 +54,7 @@ import { useGameRealtime } from '../composables/game/useGameRealtime'
 import { useInteractionTargets } from '../composables/game/useInteractionTargets'
 import { useIntoxication } from '../composables/game/useIntoxication'
 import { usePlayerInventory } from '../composables/game/usePlayerInventory'
+import { useOrchard } from '../composables/game/useOrchard'
 import { usePub } from '../composables/game/usePub'
 import { usePubChallenge } from '../composables/game/usePubChallenge'
 import { usePubGames } from '../composables/game/usePubGames'
@@ -506,6 +508,22 @@ watch(pubUiOpen, (open) => {
   if (!open && !document.pointerLockElement) requestPointerLock()
 })
 
+const orchard = useOrchard({
+  myPosition,
+  getCamera,
+  getScene,
+  canvasRef,
+  gameRoomRef,
+  promptsHidden: () => inventoryOpen.value || !canUsePub(),
+  itemByCode: () => itemByCode.value,
+  refreshInventory: () => refreshOwnedItems(),
+  say: (text) => survival.say(text),
+})
+const { menuOpen: orchardMenuOpen, selling: orchardSelling, feedback: orchardFeedback, pickProgress: orchardPickProgress } = orchard
+watch(orchardMenuOpen, (open) => {
+  if (!open && !document.pointerLockElement) requestPointerLock()
+})
+
 const interactions = useInteractionTargets({
   myPosition,
   getCamera,
@@ -545,7 +563,7 @@ const interactions = useInteractionTargets({
     else if (activeFurniture.value?.store.hasCounter.value) activeFurniture.value.store.toggleTarget()
     else openStorePurchase()
   },
-  sources: [pub.source, pubChallenge.source, pubGames.source, seats.source],
+  sources: [pub.source, pubChallenge.source, pubGames.source, seats.source, orchard.source],
 })
 const { doorPrompt } = interactions
 
@@ -770,6 +788,7 @@ const environment = useRoomEnvironment({
     seats.onTownLoaded(manifest)
     pub.onTownLoaded(manifest)
     pubGames.onTownLoaded(manifest)
+    orchard.onTownLoaded(manifest)
     houseFurniture.onTownReady()
     for (const { key, store } of furnitureStores) {
       const interior = openHouseInterior(key)
@@ -867,6 +886,7 @@ const pauseMenuOpen = computed(
     !checkoutOpen.value &&
     !tradeUiOpen.value &&
     !pubUiOpen.value &&
+    !orchardMenuOpen.value &&
     !settingsOpen.value,
 )
 /** Back in the game with the menu closed, but the browser hasn't given the pointer back yet. */
@@ -957,6 +977,7 @@ const movement = useGameMovement({
     clinic.updatePrompt()
     pub.tick(dt)
     pubGames.tick()
+    orchard.tick(dt)
     if (!doorSigns.group.parent) getScene()?.add(doorSigns.group)
   },
 })
@@ -1024,6 +1045,7 @@ const realtime = useGameRealtime({
   seats: { seatPose: seats.seatPose, onSeated: seats.onSeated },
   pub: pub.handlers,
   pubGames: pubGames.handlers,
+  orchard: orchard.handlers,
   pubChallenge: pubChallenge.handlers,
 })
 const { switchingRoom } = realtime
@@ -1418,6 +1440,29 @@ const crosshairClass = computed(() => {
       @buy="clinic.buy"
       @close="clinic.close"
     />
+    <GameOrchardSellMenu
+      v-if="orchardMenuOpen"
+      :carried="orchard.carried()"
+      :selling="orchardSelling"
+      :feedback="orchardFeedback"
+      @sell="orchard.sell"
+      @close="orchard.close"
+    />
+    <div
+      v-if="orchardPickProgress !== null"
+      class="pointer-events-none absolute bottom-40 left-1/2 flex -translate-x-1/2 flex-col items-center gap-2 text-center"
+    >
+      <p class="m-0 font-display text-sm tracking-wide text-fog">Picking an apple…</p>
+      <div
+        class="h-2 w-[min(240px,60vw)] overflow-hidden rounded-full bg-ink-950/60"
+        role="progressbar"
+        :aria-valuenow="Math.round(orchardPickProgress * 100)"
+        aria-valuemin="0"
+        aria-valuemax="100"
+      >
+        <div class="h-full rounded-full bg-mint" :style="{ width: `${orchardPickProgress * 100}%` }" />
+      </div>
+    </div>
     <GamePubMenu
       v-if="pubMenuOpen"
       :items="pubMenu"
