@@ -127,7 +127,9 @@ ORCHARD_SPUR = resample(chaikin([ellipse(0.0, CZ, LOOP_RX + PATH_W / 2 - 0.3, LO
 def pub_gate_cut(x, z):
     along = x * PUB_GATE_U[0] + z * PUB_GATE_U[1]
     across = abs(x * PUB_GATE_U[1] - z * PUB_GATE_U[0])
-    return (1.0 - ss(PUB_GATE_HW - 0.4, PUB_GATE_HW + 3.0, across)) * ss(FENCE_R - 14.0, FENCE_R - 6.0, along)
+    # the gazebo hill stands right next to the corridor: keep the cut out of it, or the floor overhangs a trench
+    keep_gazebo = ss(GAZEBO_R + 1.0, GAZEBO_R + 3.5, math.hypot(x - GAZEBO_C[0], z - GAZEBO_C[1]))
+    return (1.0 - ss(PUB_GATE_HW - 0.4, PUB_GATE_HW + 3.0, across)) * ss(FENCE_R - 14.0, FENCE_R - 6.0, along) * keep_gazebo
 
 
 def in_pub_corridor(x, z, margin=0.0):

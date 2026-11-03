@@ -1,6 +1,13 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { heightmapAt, terrainHeightIn, type TerrainHeightmap } from './terrainHeight.ts'
+import {
+  clearTerrainHeightmaps,
+  heightmapAt,
+  setTerrainHeightmap,
+  terrainHeightAt,
+  terrainHeightIn,
+  type TerrainHeightmap,
+} from './terrainHeight.ts'
 
 /** 3 x 2 grid from (0, 0), 1 m cells: heights rise along x. */
 const ramp: TerrainHeightmap = { x0: 0, z0: 0, cell: 1, cols: 3, rows: 2, heights: [0, 1, 2, 0, 1, 2] }
@@ -18,6 +25,17 @@ test('two zones keep their own relief and the rest of the map is flat', () => {
   assert.equal(terrainHeightIn([ramp, hill], 11, 11), 4)
   assert.equal(terrainHeightIn([ramp, hill], 50, 50), 0)
   assert.equal(terrainHeightIn([], 1, 1), 0)
+})
+
+test('a reload forgets the relief of a zone that does not come back', () => {
+  setTerrainHeightmap('pond', hill)
+  setTerrainHeightmap('orchard', ramp)
+  assert.equal(terrainHeightAt(11, 11), 4)
+  clearTerrainHeightmaps()
+  setTerrainHeightmap('orchard', ramp)
+  assert.equal(terrainHeightAt(11, 11), 0)
+  assert.equal(terrainHeightAt(1.5, 0.5), 1.5)
+  clearTerrainHeightmaps()
 })
 
 test('where grids overlap the higher ground wins', () => {

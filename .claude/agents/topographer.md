@@ -18,7 +18,7 @@ You are the topographer of CampusCove, a multiplayer life-sim (Vue 3 + Three.js 
 
 ## Tools you run
 
-- `cd front && npm run topo:check [zone ...]`: samples every zone's drawn ground (upward triangles of the materials in `GROUND` in `front/scripts/check-topography.mjs`) on a 1 m grid and compares it with the walk height. `sunk` = ground above walk height, `floating` = walk height above ground with no deck within 1 m. Exit 1 on failure. It reads the optimized GLBs, so run it after `npm run assets:optimize`.
+- `cd front && npm run topo:check [zone ...]`: samples every zone's drawn ground (upward triangles of the materials in `GROUND` in `front/scripts/check-topography.mjs`) on a 1 m grid and compares it with the walk height. `sunk` = ground above walk height, `floating` = walk height above ground with no deck within 1 m (a deck counts up to `MAX_STEP` above its ground; the ramp to its edge may not rise more), `conflict` = two zone grids disagree on the same point. Exit 1 on failure, 2 on an unknown zone. Never loosen `TOLERANCE` / `MAX_STEP` or widen `DECK` to make a real spot pass: the gazebo once overhung a trench by 1.3 m behind such an excuse. It reads the optimized GLBs, so run it after `npm run assets:optimize`.
 - `build_pond.py` stops the build on its own if its heightmap leaves the mesh. Copy that guard into any new build that ships a heightmap.
 - In `/game` (dev only), **H** draws every heightmap as a wireframe sheet (blue = 0, red = highest). **C** draws the collision boxes. See skill `playtest-game` for driving the game in the browser pane.
 - Visual proof without walking: render the zone GLBs in Blender headless from the player's eye (1.6 m above the walk height), game (x, y, z) = Blender (x, -z, y).

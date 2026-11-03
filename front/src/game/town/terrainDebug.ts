@@ -49,12 +49,13 @@ function dispose(): void {
 
 /** Show or hide the overlay; rebuilt on each show so a zone loaded since then appears. Returns the zones shown. */
 export function toggleTerrainDebug(scene: THREE.Scene): string[] | null {
-  if (debugGroup) {
-    dispose()
-    return null
-  }
+  // an overlay left on a previous game scene (left /game and came back) counts as off
+  const wasShown = debugGroup?.parent === scene
+  dispose()
+  if (wasShown) return null
   const maps = terrainHeightmaps()
-  const top = Math.max(1, ...[...maps.values()].flatMap((m) => m.heights))
+  let top = 1
+  for (const map of maps.values()) for (const h of map.heights) top = Math.max(top, h)
   debugGroup = new THREE.Group()
   debugGroup.name = 'TerrainDebug'
   for (const [key, map] of maps) {

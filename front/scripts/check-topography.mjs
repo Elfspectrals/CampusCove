@@ -9,11 +9,12 @@
 // Two failures, each reported as clusters with a position to go and look:
 //   sunk     the drawn ground is above the walk height: the player walks inside a slope
 //   floating the walk height is above the drawn ground with no deck under the feet: a climb into the void
+//   conflict two zone heightmaps cover the same point with different heights (the game keeps the higher one)
 // Exit code 1 when anything is found. Docs: docs/ASSETS_STYLE_GUIDE.md "Relief".
 import { readFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { NodeIO } from '@gltf-transform/core'
+import { MathUtils, NodeIO } from '@gltf-transform/core'
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions'
 import draco3d from 'draco3dgltf'
 import { heightmapAt, terrainHeightIn } from '../src/game/town/terrainHeight.ts'
@@ -25,11 +26,21 @@ const PUBLIC = join(FRONT, 'public')
 const GROUND = /Grass|Meadow|Hill|Sand|PondBed|Path|Paving|Avenue|Asphalt|Cobble|Street|MallFloor$|SoftFloor|OrchardRows|Flagstone|CreekBank|Lawn/
 /** Walkable structures above the ground (jetty, bridges, gazebo floor): the walk height may sit on them. */
 const DECK = /Plank|Deck|Bridge|Step/
+/**
+ * A deck counts only up to this height above the ground under it: higher upward faces of a deck material are
+ * furniture (pub tables are TW_PubDeck at 0.93 m), and the 1 m ramp up to a deck edge may not rise more than this.
+ */
+const MAX_STEP = 0.75
 const TOLERANCE = 0.15
 const CLUSTER = 6
 
 const manifest = JSON.parse(readFileSync(join(PUBLIC, 'assets/world.manifest.json'), 'utf8'))
 const only = process.argv.slice(2)
+const unknown = only.filter((key) => !manifest.zones.some((z) => z.key === key && z.modelUrl))
+if (unknown.length) {
+  console.error(`Unknown zone ${unknown.join(', ')}. Zones: ${manifest.zones.filter((z) => z.modelUrl).map((z) => z.key).join(', ')}`)
+  process.exit(2)
+}
 const zones = manifest.zones.filter((z) => z.modelUrl && (only.length === 0 || only.includes(z.key)))
 
 const io = new NodeIO()
@@ -74,13 +85,30 @@ const ground = new TriangleGrid()
 const decks = new TriangleGrid()
 const unknownUp = new Set()
 
+/** Column-major 4x4 product a * b. */
+function mul(a, b) {
+  const out = new Array(16).fill(0)
+  for (let c = 0; c < 4; c++) for (let r = 0; r < 4; r++) for (let k = 0; k < 4; k++) out[c * 4 + r] += a[k * 4 + r] * b[c * 4 + k]
+  return out
+}
+
+/** World matrices of a node: one, or one per instance when optimize instanced it (EXT_mesh_gpu_instancing). */
+function nodeMatrices(node) {
+  const world = node.getWorldMatrix()
+  const inst = node.getExtension('EXT_mesh_gpu_instancing')
+  if (!inst) return [world]
+  const [t, r, s] = ['TRANSLATION', 'ROTATION', 'SCALE'].map((k) => inst.getAttribute(k))
+  const count = (t ?? r ?? s)?.getCount() ?? 0
+  return Array.from({ length: count }, (_, i) => mul(world, MathUtils.compose(
+    t ? t.getElement(i, []) : [0, 0, 0], r ? r.getElement(i, []) : [0, 0, 0, 1], s ? s.getElement(i, []) : [1, 1, 1], new Array(16))))
+}
+
 for (const zone of zones) {
   const doc = await io.read(join(PUBLIC, zone.modelUrl))
   for (const node of doc.getRoot().listNodes()) {
     const mesh = node.getMesh()
     if (!mesh) continue
-    const m = node.getWorldMatrix()
-    for (const prim of mesh.listPrimitives()) {
+    for (const m of nodeMatrices(node)) for (const prim of mesh.listPrimitives()) {
       const name = prim.getMaterial()?.getName() ?? ''
       const target = GROUND.test(name) ? ground : DECK.test(name) ? decks : null
       if (!target) continue
@@ -109,21 +137,41 @@ for (const zone of zones) {
 }
 if (ground.count === 0) unknownUp.add('no ground material matched: check GROUND in this script')
 
-const heightmaps = []
-for (const zone of manifest.zones.filter((z) => z.heightmapUrl)) {
-  heightmaps.push(JSON.parse(readFileSync(join(PUBLIC, zone.heightmapUrl), 'utf8')).heightmap)
+const gridZones = manifest.zones.filter((z) => z.heightmapUrl)
+  .map((z) => ({ key: z.key, map: JSON.parse(readFileSync(join(PUBLIC, z.heightmapUrl), 'utf8')).heightmap }))
+const heightmaps = gridZones.map((g) => g.map)
+
+function groundAt(x, z) {
+  const tops = ground.heightsAt(x, z)
+  return tops.length ? Math.max(...tops) : null
+}
+
+/** Deck surfaces a player can stand on at (x, z): at most MAX_STEP above the ground there (not table tops). */
+function decksAt(x, z) {
+  const floor = groundAt(x, z) ?? 0
+  return decks.heightsAt(x, z).filter((h) => h - floor <= MAX_STEP)
 }
 
 /**
  * Standing on a deck, or on the 1 m heightmap cell that ramps up to its edge (the grid smears a deck over its
- * neighbour cell, which plays as a step): fine. A raised walk height with no deck that close is a climb into the void.
+ * neighbour cell, which plays as a step no higher than MAX_STEP): fine. Anything else raised is a climb into the void.
  */
-function stepsOntoDeck(x, z, walk) {
-  if (decks.heightsAt(x, z).some((h) => Math.abs(h - walk) <= TOLERANCE)) return true
+function stepsOntoDeck(x, z, walk, top) {
+  if (decksAt(x, z).some((h) => Math.abs(h - walk) <= TOLERANCE)) return true
+  if (walk - (top ?? 0) > MAX_STEP) return false
   for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) {
-    if (decks.heightsAt(x + dx, z + dz).some((h) => h >= walk - TOLERANCE)) return true
+    if (decksAt(x + dx, z + dz).some((h) => h >= walk - TOLERANCE)) return true
   }
   return false
+}
+
+/** Two zone grids covering the same point must agree, or the higher one silently wins in the game. */
+function gridConflict(x, z) {
+  const values = gridZones.map((g) => ({ key: g.key, h: heightmapAt(g.map, x, z) })).filter((v) => v.h !== null)
+  if (values.length < 2) return null
+  values.sort((a, b) => a.h - b.h)
+  const spread = values.at(-1).h - values[0].h
+  return spread > TOLERANCE ? { spread, keys: values.map((v) => v.key).join(' / ') } : null
 }
 
 let failed = false
@@ -137,16 +185,19 @@ for (const zone of zones) {
     for (let z = Math.ceil(b.minZ) + 0.5; z < b.maxZ; z += 1) {
       samples++
       const walk = terrainHeightIn(heightmaps, x, z)
-      const tops = ground.heightsAt(x, z)
-      const top = tops.length ? Math.max(...tops) : null
+      const top = groundAt(x, z)
       if (top !== null) onGround++
       maxRelief = Math.max(maxRelief, top ?? 0)
       let kind = null
       let err = 0
-      if (top !== null && top - walk > TOLERANCE) {
+      const conflict = gridConflict(x, z)
+      if (conflict) {
+        kind = `conflict ${conflict.keys}`
+        err = conflict.spread
+      } else if (top !== null && top - walk > TOLERANCE) {
         kind = 'sunk'
         err = top - walk
-      } else if (walk - (top ?? 0) > TOLERANCE && !stepsOntoDeck(x, z, walk)) {
+      } else if (walk - (top ?? 0) > TOLERANCE && !stepsOntoDeck(x, z, walk, top)) {
         kind = 'floating'
         err = walk - (top ?? 0)
       }

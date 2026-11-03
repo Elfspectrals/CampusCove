@@ -23,6 +23,11 @@ export function setTerrainHeightmap(zoneKey: string, heightmap: TerrainHeightmap
   heightmaps.set(zoneKey, heightmap)
 }
 
+/** Called before the world (re)loads, so a zone that does not load this time leaves no invisible relief behind. */
+export function clearTerrainHeightmaps(): void {
+  heightmaps.clear()
+}
+
 export function terrainHeightmaps(): ReadonlyMap<string, TerrainHeightmap> {
   return heightmaps
 }
@@ -43,7 +48,10 @@ export function heightmapAt(map: TerrainHeightmap, x: number, z: number): number
   return near * (1 - tz) + far * tz
 }
 
-/** Highest walk height of the grids covering (x, z): grids may overlap at a shared edge, both then fade to 0. */
+/**
+ * Highest walk height of the grids covering (x, z). Overlapping grids must agree (both fade to 0 at a shared edge):
+ * `npm run topo:check` reports a `conflict` where they do not, since a dip in one grid would be hidden by the other.
+ */
 export function terrainHeightIn(maps: Iterable<TerrainHeightmap>, x: number, z: number): number {
   let best: number | null = null
   for (const map of maps) {

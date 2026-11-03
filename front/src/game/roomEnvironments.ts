@@ -6,7 +6,7 @@ import { getGraphicsQuality } from './graphicsQuality'
 import { shareTexturesAcrossModels } from './sharedTextures'
 import { applyInteriorLightmap, openHouseLots, openStoreLots, openWorkLots, placeOpenHouseInterior, registerFrontDoor } from './town/openHouses'
 import { animatePondWater } from './town/pondWater'
-import { setTerrainHeightmap, type TerrainHeightmap } from './town/terrainHeight'
+import { clearTerrainHeightmaps, setTerrainHeightmap, type TerrainHeightmap } from './town/terrainHeight'
 import { fetchWorldManifest, houseBuildings, storeBuildings, workBuildings, type WorldManifest, type WorldZone } from './world/worldManifest'
 import {
   configureRoomMeshShadows,
@@ -70,6 +70,7 @@ export function loadTownEnvironment(): Promise<TownEnvironmentBuildResult> {
   if (!townLoadPromise) {
     townLoadPromise = (async () => {
       const loader = createGltfLoader()
+      clearTerrainHeightmaps()
       const manifest = await fetchWorldManifest()
       const root = new THREE.Group()
       root.name = 'CampusWorld'
