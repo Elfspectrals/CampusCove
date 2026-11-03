@@ -136,6 +136,8 @@ for sx in (-1, 1):
           box("FlagStar", (sx * 5.6 + 0.8, fy - 3.43, 7.2), (0.4, 0.02, 0.4), M["flag2"], C)], f"FlagPole_{sx + 1}")
 col_box("TownHall", (0, 0, 4.0), (TH_W + 0.6, TH_D + 0.6, 8.0), CC)
 col_box("TownHall_Portico", (0, fy - 1.3, 3.5), (8.0, 2.6, 7.0), CC)
+# the town has no walk height: the steps are solid, otherwise players walk through them at y = 0
+col_box("TownHall_Steps", (0, fy - 2.7, 0.4), (9.0, 3.0, 0.8), CC)
 for x in (-3.3, -1.1, 1.1, 3.3):
     col_box(f"TH_Column_{x}", (x, fy - 2.2, 3.0), (0.64, 0.64, 6.0), CC)
 for sx in (-1, 1):

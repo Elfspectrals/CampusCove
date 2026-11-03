@@ -293,6 +293,56 @@
       "yaw": 0.0
     },
     {
+      "name": "COL_Orchard_Crate04",
+      "cx": -28.2,
+      "cz": -95.5,
+      "hx": 0.3,
+      "hz": 0.225,
+      "hy": 0.5,
+      "cy": 0.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Orchard_Crate05",
+      "cx": -28.2,
+      "cz": -94.85,
+      "hx": 0.3,
+      "hz": 0.225,
+      "hy": 0.5,
+      "cy": 0.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Orchard_Crate06",
+      "cx": -28.2,
+      "cz": -94.1,
+      "hx": 0.3,
+      "hz": 0.225,
+      "hy": 0.5,
+      "cy": 0.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Orchard_Crate07",
+      "cx": -27.6,
+      "cz": -95.5,
+      "hx": 0.3,
+      "hz": 0.225,
+      "hy": 0.5,
+      "cy": 0.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Orchard_Crate08",
+      "cx": -27.6,
+      "cz": -93.6,
+      "hx": 0.3,
+      "hz": 0.225,
+      "hy": 0.5,
+      "cy": 0.5,
+      "yaw": 0.0
+    },
+    {
       "name": "COL_Orchard_Stall",
       "cx": -29.2,
       "cz": -94.5,
@@ -341,6 +391,26 @@
       "hy": 0.5,
       "cy": 0.5,
       "yaw": -0.3
+    },
+    {
+      "name": "COL_Orchard_Crate11",
+      "cx": -23.0,
+      "cz": -96.5,
+      "hx": 0.3,
+      "hz": 0.225,
+      "hy": 0.5,
+      "cy": 0.5,
+      "yaw": 0.3
+    },
+    {
+      "name": "COL_Orchard_Crate12",
+      "cx": -22.2,
+      "cz": -97.4,
+      "hx": 0.3,
+      "hz": 0.225,
+      "hy": 0.5,
+      "cy": 0.5,
+      "yaw": 0.3
     },
     {
       "name": "COL_Orchard_Pine01",

@@ -26,7 +26,8 @@ const HALF_SIZE = 0.25
 const HEIGHT = 1.0
 
 const col = JSON.parse(readFileSync(TOWN_COL, 'utf8'))
-col.cuboids = col.cuboids.filter((c) => !c.name.startsWith('COL_Fountain_'))
+// only the numbered drinking fountains: COL_Fountain_W / _E are the plaza fountains of build_town.py
+col.cuboids = col.cuboids.filter((c) => !/^COL_Fountain_\d+$/.test(c.name))
 FOUNTAINS.forEach(([x, z], i) => {
   col.cuboids.push({ name: `COL_Fountain_${i}`, cx: x, cy: HEIGHT / 2, cz: z, hx: HALF_SIZE, hy: HEIGHT / 2, hz: HALF_SIZE, qx: 0, qy: 0, qz: 0, qw: 1 })
 })

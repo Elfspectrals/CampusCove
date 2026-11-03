@@ -21,8 +21,17 @@ for (const c of col.cuboids) {
   Object.assign(c, { qx: 0, qy: 0, qz: 0, qw: 1 })
   unrotated++
 }
+// Solid plaza pieces the town has no walk height for (found by npm run topo:check): the two plaza fountains, whose
+// boxes an older apply-fountains.mjs deleted, and the town hall steps (the hall is not open; its portico is solid).
+const PLAZA_SOLIDS = [
+  { name: 'COL_Fountain_W', cx: -10, cy: 0.5, cz: 6, hx: 1.6, hy: 0.5, hz: 1.6 },
+  { name: 'COL_Fountain_E', cx: 10, cy: 0.5, cz: 6, hx: 1.6, hy: 0.5, hz: 1.6 },
+  { name: 'COL_TownHall_Steps', cx: 0, cy: 0.4, cz: 7.7, hx: 4.5, hy: 0.4, hz: 1.5 },
+]
+col.cuboids = col.cuboids.filter((c) => !PLAZA_SOLIDS.some((s) => s.name === c.name))
+for (const s of PLAZA_SOLIDS) col.cuboids.push({ ...s, qx: 0, qy: 0, qz: 0, qw: 1 })
 writeFileSync(TOWN_COL, JSON.stringify(col))
-console.log(`town.collision.json: ${unrotated} mailbox boxes aligned with their unrotated model`)
+console.log(`town.collision.json: ${unrotated} mailbox boxes aligned with their unrotated model, ${PLAZA_SOLIDS.length} plaza solids`)
 
 const benches = col.cuboids.filter((c) => PLAZA_BENCH_COLLIDER_RE.test(c.name))
 if (benches.length === 0) throw new Error(`${TOWN_COL}: no COL_Bench_Plaza_* boxes to locate the plaza benches`)

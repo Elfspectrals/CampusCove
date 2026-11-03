@@ -181,16 +181,28 @@ Le terrain est une grille de 1 m (`PD_Terrain`) calculée par `terrain_h(x, z)` 
 - **Collines douces** où l'on marche (jusqu'à 2,6 m, pente maximale d'environ 18°), avec une légère ondulation partout ailleurs.
 - **L'étang au fond d'un creux** : la berge monte d'environ 30 cm entre l'eau et le sentier.
 - **Le lit du ruisseau et de la mare** est creusé au niveau de l'eau.
-- **Derrière la clôture**, une crête de 5 à 7 m couverte de sapins masque le pied du décor de ciel.
-- **Le relief retombe à 0** contre la haie, au portail et aux bords `x = ±47`, pour se raccorder au sol de la ville.
+- **Derrière la clôture**, une bande de sapins plate. L'ancienne crête de 5 à 7 m a été retirée : le verger et le pub commencent juste derrière, à `y = 0`.
+- **Le relief retombe à 0** contre la haie, au portail, aux bords `x = ±47` et entre la clôture et `OUTER_R` (clôture + 5 m, bord du maillage), pour se raccorder au sol de la ville et des zones voisines.
 
 Le sol de la ville (`Ground`) est un grand disque d'un seul tenant qu'on ne peut pas creuser : le terrain ne descend donc jamais sous `y = 0`. L'eau est à `y = 0.045`, au-dessus d'un fond à `0.015`.
 
 **La hauteur du joueur suit le relief.** `pond.layout.json` contient `heightmap` (`x0, z0, cell, cols, rows, heights[]`, grille de 1 m de `x = -48` à `48` et de `z = -86` à `-4`). Ce sont les hauteurs où l'on marche : le terrain, plus le dessus du ponton, du pont et du plancher du belvédère. Côté front :
 
-- `front/src/game/terrainHeight.ts` interpole ces hauteurs (bilinéaire) et renvoie 0 hors de la grille.
+- `front/src/game/town/terrainHeight.ts` garde une heightmap par zone (`setTerrainHeightmap(clé, grille)`, appelé pour chaque zone qui a un `heightmapUrl`), interpole (bilinéaire) et prend la plus haute grille qui couvre le point ; 0 hors de toute grille. Une deuxième zone avec du relief n'écrase donc plus l'étang.
 - `useGameMovement.ts` fait `y = 1.6 + terrainHeightAt(x, z)`, en ville seulement. Les avatars des autres joueurs suivent déjà le `y` envoyé au serveur.
 - Les collisions restent des boîtes posées à `y = 0`, assez hautes pour toucher la capsule du joueur quelle que soit la hauteur du sol.
+
+**Le build vérifie que la heightmap suit le terrain dessiné.** `on_terrain()` décide à la fois des faces de `PD_Terrain` et de ce contrôle : toute hauteur > 5 cm hors du maillage ou sur son bord fait échouer `build_pond.py` (sinon on monte une pente dans le vide, ou un bord de colline flotte en l'air). Si une nouvelle zone touche l'étang, faire retomber le relief à 0 avant elle plutôt que d'étendre le maillage dessous.
+
+**Contrôle sur toute la carte : `cd front && npm run topo:check [zone ...]`.** Pour chaque zone du manifeste, le script lit le GLB optimisé, garde les triangles tournés vers le haut des matériaux de sol (herbe, prairie, chemins, pavés… liste `GROUND` dans `front/scripts/check-topography.mjs`) et les compare tous les mètres à la hauteur de marche du jeu. Il signale `sunk` (le sol dessiné est au-dessus : on marche dans la pente) et `floating` (on marche au-dessus du sol sans ponton à moins d'un mètre : on monte dans le vide), avec la position à aller voir, et sort en erreur. Les pontons, ponts et planchers (liste `DECK`) peuvent porter le joueur, jusqu'à 0,75 m au-dessus du sol (`MAX_STEP` : plus haut, c'est un meuble, comme les tables du pub) ; la case de 1 m qui monte vers leur bord passe pour une marche, pas plus haute que `MAX_STEP`. Il signale aussi `conflict` quand deux heightmaps de zones couvrent le même point avec des hauteurs différentes (le jeu prend la plus haute, un creux de l'une serait caché). Un nom de zone inconnu fait sortir en erreur.
+
+Il signale enfin `walk-through` : une surface pleine (marche, socle, rampe, caisse, bassin) entre 0,15 m et `MAX_STEP` au-dessus de la hauteur de marche, sans boîte de collision : le joueur la traverse à hauteur des tibias au lieu de monter dessus ou d'être arrêté. Dehors, la capsule du joueur reste à `y = 0..1,8` quel que soit le relief : toute boîte posée au sol l'arrête. Ne comptent pas : le feuillage et les fleurs, le petit décor bas (`Rock`, `Hedge` jusqu'à 0,45 m : les rochers de rayon ≤ 0,5 m n'ont pas de boîte, exprès), ce qui est dans l'eau, les escaliers des layouts (mall, via `buildingFloorAt`), et la case de 1 m qui monte vers le bord d'un ponton. Le rapport donne le matériau en cause. La première passe sur toute la carte a trouvé : les deux fontaines de la place sans collision (`apply-fountains.mjs` effaçait `COL_Fountain_W/E`), la marche basse de la mairie, la rampe du quai de livraison du mall et les caisses du verger.
+
+Après un rebuild de l'étang ou d'un site, relancer son `front/scripts/apply-*.mjs` : c'est lui qui recopie les boîtes du layout dans `town.collision.json` (sinon de nouvelles collisions n'arrivent jamais en jeu). À lancer après `assets:optimize`. Avec les anciens fichiers de l'étang (crête), il trouve 800 points faux sur l'étang, le pub et le verger.
+
+**En jeu (dev seulement), `H`** affiche toutes les heightmaps en grille filaire, du bleu (0) au rouge (point le plus haut) : là où la grille flotte au-dessus du sol ou passe dessous, la marche ne suit pas le terrain. `C` reste l'overlay des collisions.
+
+L'agent `topographer` (`.claude/agents/topographer.md`) connaît ces outils : à appeler pour tout bug de hauteur ou avant d'ajouter du relief à une zone.
 
 ### Eau animée
 

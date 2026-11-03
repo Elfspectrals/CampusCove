@@ -201,6 +201,9 @@ def crate(gx, gz, y0, rot, full=True):
     if full:
         parts.append((0, 0, 0.36, 0.52, 0.37, 0.06, P["apple"], 0.03))
     add(L.furn(coll, f"OS_{n}", gx, gz, rot, parts)).location.z = y0
+    if y0 == 0.0:
+        # a full box at shin height: without a collider players walk through it (npm run topo:check)
+        add_col(n, gx, gz, 0.6, 0.45, 1.0, rot)
 
 
 def lantern(gx, gz):
