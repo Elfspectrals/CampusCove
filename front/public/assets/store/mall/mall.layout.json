@@ -77,14 +77,14 @@
       "height": 4.8,
       "rects": [
         {
-          "minX": -177.0,
-          "maxX": -172.0,
+          "minX": -176.94,
+          "maxX": -172.22,
           "minZ": -50.0,
           "maxZ": 50.0
         },
         {
-          "minX": -188.0,
-          "maxX": -183.0,
+          "minX": -187.78,
+          "maxX": -183.06,
           "minZ": -50.0,
           "maxZ": 50.0
         },
@@ -102,15 +102,15 @@
         },
         {
           "minX": -300.0,
-          "maxX": -200.0,
-          "minZ": -78.0,
-          "maxZ": -73.0
+          "maxX": -200.3,
+          "minZ": -77.78,
+          "maxZ": -73.06
         },
         {
           "minX": -300.0,
-          "maxX": -200.0,
-          "minZ": -67.0,
-          "maxZ": -62.0
+          "maxX": -200.3,
+          "minZ": -66.94,
+          "maxZ": -62.22
         },
         {
           "minX": -288.6,
@@ -125,14 +125,14 @@
           "maxZ": -67.0
         },
         {
-          "minX": -368.0,
-          "maxX": -363.0,
+          "minX": -367.78,
+          "maxX": -363.06,
           "minZ": -50.0,
           "maxZ": 50.0
         },
         {
-          "minX": -357.0,
-          "maxX": -352.0,
+          "minX": -356.94,
+          "maxX": -352.22,
           "minZ": -50.0,
           "maxZ": 50.0
         },
@@ -163,9 +163,9 @@
       "rects": [
         {
           "minX": -200.0,
-          "maxX": -160.0,
-          "minZ": -90.0,
-          "maxZ": -78.0
+          "maxX": -160.3,
+          "minZ": -89.7,
+          "maxZ": -78.3
         }
       ]
     }
@@ -355,21 +355,21 @@
       "label": "HARDWARE",
       "name": "Crispin's Hardware",
       "status": "open",
-      "store": "crispins_hardware",
       "bounds": {
         "minX": -377.5,
-        "maxX": -360.5,
-        "minZ": -87.5,
+        "maxX": -360.0,
+        "minZ": -89.7,
         "maxZ": -78.0
       },
       "front": {
-        "x": -369.0,
+        "x": -368.75,
         "y": 0.0,
         "z": -77.0,
         "yaw": 0.0
       },
-      "width": 17.0,
-      "depth": 9.5
+      "width": 17.5,
+      "depth": 11.7,
+      "store": "crispins_hardware"
     },
     {
       "id": "N02",
@@ -381,13 +381,13 @@
       "name": "Staff",
       "status": "passage",
       "bounds": {
-        "minX": -319.5,
-        "maxX": -317.9,
+        "minX": -320.0,
+        "maxX": -318.4,
         "minZ": -87.5,
         "maxZ": -78.0
       },
       "front": {
-        "x": -318.7,
+        "x": -319.2,
         "y": 0.0,
         "z": -77.0,
         "yaw": 0.0
@@ -405,18 +405,18 @@
       "name": "Unit N12",
       "status": "construction",
       "bounds": {
-        "minX": -317.9,
-        "maxX": -304.8,
+        "minX": -318.4,
+        "maxX": -305.05,
         "minZ": -87.5,
         "maxZ": -78.0
       },
       "front": {
-        "x": -311.35,
+        "x": -311.725,
         "y": 0.0,
         "z": -77.0,
         "yaw": 0.0
       },
-      "width": 13.1,
+      "width": 13.35,
       "depth": 9.5
     },
     {
@@ -429,18 +429,18 @@
       "name": "Quick Cuts",
       "status": "planned",
       "bounds": {
-        "minX": -304.8,
+        "minX": -305.05,
         "maxX": -291.7,
         "minZ": -87.5,
         "maxZ": -78.0
       },
       "front": {
-        "x": -298.25,
+        "x": -298.375,
         "y": 0.0,
         "z": -77.0,
         "yaw": 0.0
       },
-      "width": 13.1,
+      "width": 13.35,
       "depth": 9.5
     },
     {
@@ -454,17 +454,17 @@
       "status": "planned",
       "bounds": {
         "minX": -291.7,
-        "maxX": -278.6,
+        "maxX": -278.35,
         "minZ": -87.5,
         "maxZ": -78.0
       },
       "front": {
-        "x": -285.15,
+        "x": -285.025,
         "y": 0.0,
         "z": -77.0,
         "yaw": 0.0
       },
-      "width": 13.1,
+      "width": 13.35,
       "depth": 9.5
     },
     {
@@ -477,18 +477,18 @@
       "name": "Paper Trail",
       "status": "planned",
       "bounds": {
-        "minX": -278.6,
-        "maxX": -265.5,
+        "minX": -278.35,
+        "maxX": -265.0,
         "minZ": -87.5,
         "maxZ": -78.0
       },
       "front": {
-        "x": -272.05,
+        "x": -271.675,
         "y": 0.0,
         "z": -77.0,
         "yaw": 0.0
       },
-      "width": 13.1,
+      "width": 13.35,
       "depth": 9.5
     },
     {
@@ -501,18 +501,18 @@
       "name": "Starlight Cinema",
       "status": "planned",
       "bounds": {
-        "minX": -234.5,
-        "maxX": -228.75,
+        "minX": -235.0,
+        "maxX": -229.167,
         "minZ": -87.5,
         "maxZ": -78.0
       },
       "front": {
-        "x": -231.625,
+        "x": -232.083,
         "y": 0.0,
         "z": -77.0,
         "yaw": 0.0
       },
-      "width": 5.75,
+      "width": 5.833,
       "depth": 9.5
     },
     {
@@ -525,18 +525,18 @@
       "name": "Page Turner Books",
       "status": "planned",
       "bounds": {
-        "minX": -228.75,
-        "maxX": -223.0,
+        "minX": -229.167,
+        "maxX": -223.333,
         "minZ": -87.5,
         "maxZ": -78.0
       },
       "front": {
-        "x": -225.875,
+        "x": -226.25,
         "y": 0.0,
         "z": -77.0,
         "yaw": 0.0
       },
-      "width": 5.75,
+      "width": 5.833,
       "depth": 9.5
     },
     {
@@ -549,18 +549,18 @@
       "name": "Vinyl Vault",
       "status": "planned",
       "bounds": {
-        "minX": -223.0,
-        "maxX": -217.25,
+        "minX": -223.333,
+        "maxX": -217.5,
         "minZ": -87.5,
         "maxZ": -78.0
       },
       "front": {
-        "x": -220.125,
+        "x": -220.417,
         "y": 0.0,
         "z": -77.0,
         "yaw": 0.0
       },
-      "width": 5.75,
+      "width": 5.833,
       "depth": 9.5
     },
     {
@@ -573,18 +573,18 @@
       "name": "Kokoro Toys",
       "status": "planned",
       "bounds": {
-        "minX": -217.25,
-        "maxX": -211.5,
+        "minX": -217.5,
+        "maxX": -211.667,
         "minZ": -87.5,
         "maxZ": -78.0
       },
       "front": {
-        "x": -214.375,
+        "x": -214.583,
         "y": 0.0,
         "z": -77.0,
         "yaw": 0.0
       },
-      "width": 5.75,
+      "width": 5.833,
       "depth": 9.5
     },
     {
@@ -597,18 +597,18 @@
       "name": "Volt Electronics",
       "status": "planned",
       "bounds": {
-        "minX": -211.5,
-        "maxX": -205.75,
+        "minX": -211.667,
+        "maxX": -205.833,
         "minZ": -87.5,
         "maxZ": -78.0
       },
       "front": {
-        "x": -208.625,
+        "x": -208.75,
         "y": 0.0,
         "z": -77.0,
         "yaw": 0.0
       },
-      "width": 5.75,
+      "width": 5.833,
       "depth": 9.5
     },
     {
@@ -621,18 +621,18 @@
       "name": "Shutter Speed Cameras",
       "status": "planned",
       "bounds": {
-        "minX": -205.75,
+        "minX": -205.833,
         "maxX": -200.0,
         "minZ": -87.5,
         "maxZ": -78.0
       },
       "front": {
-        "x": -202.875,
+        "x": -202.917,
         "y": 0.0,
         "z": -77.0,
         "yaw": 0.0
       },
-      "width": 5.75,
+      "width": 5.833,
       "depth": 9.5
     },
     {
@@ -1028,21 +1028,21 @@
       "label": "SPORTSWEAR",
       "name": "Summit Sports",
       "status": "open",
-      "store": "summit_sports",
       "bounds": {
         "minX": -300.0,
-        "maxX": -268.333,
+        "maxX": -268.0,
         "minZ": 78.0,
         "maxZ": 87.5
       },
       "front": {
-        "x": -284.167,
+        "x": -284.0,
         "y": 0.0,
         "z": 77.0,
         "yaw": 3.1416
       },
-      "width": 31.667,
-      "depth": 9.5
+      "width": 32.0,
+      "depth": 9.5,
+      "store": "summit_sports"
     },
     {
       "id": "A02",
@@ -1054,18 +1054,18 @@
       "name": "Spectacle Eyewear",
       "status": "planned",
       "bounds": {
-        "minX": -268.333,
-        "maxX": -252.5,
+        "minX": -268.0,
+        "maxX": -252.0,
         "minZ": 78.0,
         "maxZ": 87.5
       },
       "front": {
-        "x": -260.417,
+        "x": -260.0,
         "y": 0.0,
         "z": 77.0,
         "yaw": 3.1416
       },
-      "width": 15.833,
+      "width": 16.0,
       "depth": 9.5
     },
     {
@@ -1078,18 +1078,18 @@
       "name": "Mae & Fern",
       "status": "planned",
       "bounds": {
-        "minX": -219.5,
-        "maxX": -204.2,
+        "minX": -220.0,
+        "maxX": -204.533,
         "minZ": 78.0,
         "maxZ": 87.5
       },
       "front": {
-        "x": -211.85,
+        "x": -212.267,
         "y": 0.0,
         "z": 77.0,
         "yaw": 3.1416
       },
-      "width": 15.3,
+      "width": 15.467,
       "depth": 9.5
     },
     {
@@ -1102,18 +1102,18 @@
       "name": "Gentleman's Quarter",
       "status": "planned",
       "bounds": {
-        "minX": -204.2,
-        "maxX": -188.9,
+        "minX": -204.533,
+        "maxX": -189.067,
         "minZ": 78.0,
         "maxZ": 87.5
       },
       "front": {
-        "x": -196.55,
+        "x": -196.8,
         "y": 0.0,
         "z": 77.0,
         "yaw": 3.1416
       },
-      "width": 15.3,
+      "width": 15.467,
       "depth": 9.5
     },
     {
@@ -1126,18 +1126,18 @@
       "name": "Paws & Claws",
       "status": "planned",
       "bounds": {
-        "minX": -188.9,
+        "minX": -189.067,
         "maxX": -173.6,
         "minZ": 78.0,
         "maxZ": 87.5
       },
       "front": {
-        "x": -181.25,
+        "x": -181.333,
         "y": 0.0,
         "z": 77.0,
         "yaw": 3.1416
       },
-      "width": 15.3,
+      "width": 15.467,
       "depth": 9.5
     },
     {
@@ -1557,7 +1557,6 @@
       "label": "SWEETS & CANDY",
       "name": "Candy Cloud",
       "status": "open",
-      "store": "candy_cloud",
       "bounds": {
         "minX": -377.5,
         "maxX": -368.0,
@@ -1571,7 +1570,8 @@
         "yaw": 1.5708
       },
       "width": 25.467,
-      "depth": 9.5
+      "depth": 9.5,
+      "store": "candy_cloud"
     },
     {
       "id": "W07",
@@ -3417,7 +3417,7 @@
       "category": "hardware",
       "plaza": "north_plaza",
       "position": [
-        -369.0,
+        -368.75,
         0.0,
         -82.5
       ],
@@ -3430,7 +3430,7 @@
       "category": "clothing_sport",
       "plaza": "al_fresca",
       "position": [
-        -284.167,
+        -284.0,
         0.0,
         82.5
       ],

@@ -225,6 +225,7 @@ export const DRINKING_FOUNTAIN_URL = `${ROOT}/park/drinking_fountain/model.glb`
 const CONSUMABLE_FOLDERS: ReadonlyArray<[prefix: string, folder: string]> = [
   ['food_', 'food'],
   ['candy_', 'sweets'],
+  ['grocery_', 'grocery'],
   ['med_', 'medical'],
   ['drink_', 'drinks'],
 ]
@@ -238,8 +239,8 @@ function consumableFolder(code: string): string {
 
 /**
  * Preview picture of a consumable (backend FoodCatalog): `food_<key>` -> items/food/<key>/preview.png,
- * `candy_<key>` -> items/sweets/<key>/preview.png, `med_<key>` -> items/medical/<key>/preview.png,
- * `drink_<key>` -> items/drinks/<key>/preview.png.
+ * `candy_<key>` -> items/sweets/<key>/preview.png, `grocery_<key>` -> items/grocery/<key>/preview.png,
+ * `med_<key>` -> items/medical/<key>/preview.png, `drink_<key>` -> items/drinks/<key>/preview.png.
  */
 export function consumablePreviewUrl(code: string): string {
   return `${consumableFolder(code)}/preview.png`

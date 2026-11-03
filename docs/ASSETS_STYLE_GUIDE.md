@@ -407,8 +407,8 @@ Northline (vêtements), Hearth & Hollow (déco), GreenCart (supermarché). Contr
 |---|---|
 | `build_northline.py`, `build_hearth.py`, `build_greencart.py` | `store/<clé>/{interior,exterior}.glb`, `*.colsrc.glb`, `*.layout.json`, `preview.png` (intérieurs 10 600 / 11 000 / 22 000 triangles, coques ≤ 3 000) |
 | `build_house_lightmaps.py -- store northline hearth_hollow greencart` | `store/<clé>/lightmap.jpg` (headless, Cycles) ; les lampes sont les nœuds `Light_*` ou les mailles dont le matériau contient `LightPanel` |
-| `build_mall.py` (lit les `exterior.layout.json` des trois enseignes) | `store/mall/{mall.glb, mall.colsrc.glb, mall.layout.json}` (≈ 88 000 triangles, 1 370 boîtes `COL_Mall_*`, 124 cellules, 8 rampes) |
-| `build_hardware_items.py`, `build_sweets_items.py` | `decor/{workbench,stepladder,toolbox,paint_cans,wheelbarrow,metal_shelving}/`, `items/sweets/{cotton_candy,lollipop,candy_bag,licorice,bubble_gum,candy_apple}/` (`model.glb`, `preview.png`, 50 à 630 triangles) + `out/decor/hardware.manifest.json` |
+| `build_mall.py` (lit les `exterior.layout.json` des trois enseignes) | `store/mall/{mall.glb, mall.colsrc.glb, mall.layout.json}` (≈ 124 000 triangles, 1 258 boîtes `COL_Mall_*`, 126 cellules, 8 rampes ; `mall_lib.py`, `mall_decor.py`, `mall_dressing.py` à côté) |
+| `build_hardware_items.py`, `build_sweets_items.py`, `build_grocery_items.py` | `decor/{workbench,stepladder,toolbox,paint_cans,wheelbarrow,metal_shelving}/`, `items/sweets/{cotton,lollipop,bag,licorice,gum,apple}/`, `items/grocery/{apple,banana,bread,milk,cheese,eggs,cereal,pasta,soda,chips,chocolate,yogurt}/` (`model.glb`, `preview.png`, 48 à 630 triangles ; le dossier d'un consommable = son code sans préfixe) + `out/decor/hardware.manifest.json` |
 | `front/scripts/skins/wear.py` (+ `run_wear.py`, `build_fp_arms.py`) | `wear/top/{track_jacket,jersey,sports_bra}/`, `wear/bottom/{track_pants,basketball_shorts,leggings}/` (Summit Sports) |
 | `build_crispins.py`, `build_candy_cloud.py`, `build_summit.py` | `store/<clé>/…` comme les ancres, coques de 16,6 / 25,1 / 31,3 m au nu des cellules (3 900 / 11 800 / 3 000 triangles) |
 | `front/scripts/apply-mall.mjs` | zone `mall` de `world.manifest.json` (`collisionUrl`, `layoutUrl`, porte d'entrée, les six bâtiments `store`) ; porte nord-ouest dans `town.glb` / `town.collision.json` |
@@ -430,9 +430,22 @@ docker restart campuscove-socket
 
 - Aile de 40 m : couloir de service 2,5 m + cellules extérieures 9,5 m (front à `z = ∓78` / `x = ∓368`) + allée 16 m +
   cellules intérieures 12 m côté parc (front à `z = ∓62` / `x = -352` et `-188`). Les quatre coins sont des cours ouvertes.
-- Cellule : murs latéraux et mur du fond, pilastres, mur bas + vitrine (ou palissade « UNDER RENOVATION » avec
-  échafaudage), bandeau `TW_MallCat_<catégorie>` avec le nom en lettrage plat (`resolution_u = 1`, sans extrusion),
-  panneau « OPENING SOON » au rez. Passage « STAFF ONLY » = cellule de 1,6 m vers le couloir de service.
+- Depuis le 03/11/2026 la structure passe par `mall_lib.Ctx` (registre `lib_kit`) : `ctx.report()` refuse tout recouvrement
+  coplanaire et toute boîte contenue (`docs/BUILD_KIT.md`). Règles appliquées : une cloison `Partition_<rangée>_<i>` et un
+  pilastre par limite de cellules, un mur du fond `Back_<rangée>` par rangée (aucun pour les rangées adossées au mur du
+  parc ou au mur extérieur), plafond de cellule 4,6 → 4,7 sous les arases, bulkhead `Bulkhead_<rangée>` de 4,8 m jusqu'à
+  la dalle (5,6), au toit bas (7,6) ou au toit (11,6), murs du parc `ParkWall_*` bâtis une fois (0 → 11,6, arches en
+  linteau), blocs d'angle `Corner_*` entre les rangées intérieures, retours d'ancres collés aux coques, allèges
+  `Spandrel_*` au-dessus des toits de coque, toits en plaques jusqu'aux arêtes de balcon et fermes seulement sur le
+  vide, toits bas de North Plaza et du Food Court avec pignons, Al Fresca en rue à ciel ouvert (retours Northline
+  0 → 6,4). Les cellules `planned` ont leur fond `_Void` à 3,6 m derrière la vitre, un sol de vitrine, un panneau
+  d'accent et un plafonnier par famille (`mall_dressing.light_mat`) ; l'habillage vient de `mall_dressing`. Écart
+  minimal 2 cm entre deux surfaces parallèles visibles de même sens.
+- Export : les pièces de structure restent des nœuds nommés (`STRUCTURE_NODES`), le décor est fusionné par matériau ;
+  `gltf-transform optimize` fusionne de toute façon `mall.glb` (≈ 124 000 triangles, 1 258 boîtes COL).
+- Cellule : vitrine entre pilastres (mur bas, vitre avec COL, bandeau `TW_MallCat_<catégorie>` avec le nom en lettrage
+  plat, `resolution_u = 1`, sans extrusion), ou palissade « UNDER RENOVATION » avec échafaudage, panneau « OPENING SOON »
+  remonté à 2,55 m. Passage « STAFF ONLY » = cellule de 1,6 m vers le couloir de service (linteau, porte, sol de service).
 - Étage : dalle `y` 5,6 → 6,0 sur les cellules + balcon de 5 m, vide de 6 m au milieu, garde-corps vitrés avec COL,
   piliers, escalators = rampes `wedge()` de 1,4 × 10,4 m avec balustrades pleines (du sol au garde-corps, sinon
   l'extracteur les perd), palier de 2 m ; `levels` / `stairs` **en coordonnées monde** dans `mall.layout.json`, lus par
@@ -455,7 +468,9 @@ docker restart campuscove-socket
   dans `W_out_a` pour dégager tout le front de Crispin's ; au nord-est l'entrepôt sert de tampon.
 - Décor : rien à moins de 3 m d'un pied d'escalator (les bacs de l'Entrance s'arrêtent à `|z| ≤ 33`, pas de bac
   Paradise à x = −288), aucune bannière devant une cellule ouverte, 4 m libres devant les comptoirs du food court.
-- Décor (section `decor` de `build_mall.py`) : kiosques octogonaux (`kiosk`, 8, collision 3 × 3), bannières sous les
+- Décor (`mall_decor.py`, `build(ctx, M)`, zones d'exclusion `ctx.exclude` posées par la structure : escalators ± 3 m,
+  devant les boutiques ouvertes, bandes des comptoirs, axe d'entrée, portes du parc ; `clear()` refuse et liste les
+  objets bloqués) : kiosques octogonaux (`kiosk`, 8, collision 3 × 3), bannières sous les
   balcons des trois ailes à étage (`banner`, tous les 24 m, hors escalators), bacs fleuris sur les balcons, panneaux
   de fléchage suspendus aux carrefours (`way_sign`), arbres en pot dans l'allée Wonderland et la cour nord-ouest, bancs
   et poubelles, sculptures dans les cours est (`sculpture`). Préfixes à ajouter à `check_grounded` : `Kiosk_`, `Banner_`,

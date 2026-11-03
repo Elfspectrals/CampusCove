@@ -30,6 +30,13 @@ Décisions produit (validées le 30/10/2026) :
   nord-ouest), bancs du nord replacés dans l'allée, bacs et bannières écartés des pieds d'escalators et de la vitrine
   Candy Cloud, chemins du parc reliés aux portes nord et sud, arches du parc de 10 × 4,4 m, palissade N12 découpée en
   quatre cellules dont trois vitrées, pharmacie ouvrable, Mall Services au pied de l'entrée.
+- **V1.3 (31/10/2026)** : nettoyage géométrique du centre (recouvrements coplanaires et trous, voir l'audit résumé en §6)
+  sur le **kit modulaire** `lib_kit.py` (`docs/BUILD_KIT.md`) et `mall_lib.py` (contexte partagé, registre des boîtes,
+  zones d'exclusion du décor) ; décor des allées, plazas et du parc dans `mall_decor.py`, habillage des vitrines
+  `planned` et des cellules `construction` dans `mall_dressing.py` ; **GreenCart** vend 12 produits d'épicerie de plus
+  (`FoodCatalog` groupe `grocery`, codes `grocery_*`, dossiers `items/grocery/<clé>`, `build_grocery_items.py`), rayons
+  pleins de faux produits, frigos vitrés creux ; règle d'asset des consommables : **dossier = code sans préfixe**
+  (`candy_cotton` → `items/sweets/cotton`), ce qui a renommé quatre dossiers de bonbons.
 - Aucune vente côté serveur n'est spécifique au centre : le catalogue `/shop/items` est global, chaque boutique n'est
   qu'une vue filtrée (vêtements par URL de modèle, meubles et nourriture par code). Pas d'alcool ni de médicaments au
   supermarché (le pub et la clinique restent les seuls points de vente).
@@ -38,7 +45,7 @@ Décisions produit (validées le 30/10/2026) :
 
 | Couche | Fichiers |
 |---|---|
-| Blender | `map-src/CampusCove/build_mall.py` (structure, parc, coulisses, parvis, chemin, `mall.layout.json`), `build_northline.py`, `build_hearth.py`, `build_greencart.py` (intérieur + coque chacun), `build_house_lightmaps.py -- store northline hearth_hollow greencart` |
+| Blender | `map-src/CampusCove/build_mall.py` (structure, coulisses, parvis, avenue, `mall.layout.json`) + `mall_lib.py` (contexte `Ctx`, helpers, registre `lib_kit`, exclusions) + `mall_decor.py` (allées, plazas, parc) + `mall_dressing.py` (vitrines `planned`, chantiers), `build_northline.py`, `build_hearth.py`, `build_greencart.py` (intérieur + coque chacun), `build_grocery_items.py` (12 produits d'épicerie), `build_house_lightmaps.py -- store northline hearth_hollow greencart` |
 | Outillage | `front/scripts/apply-mall.mjs` (zone `mall` du manifeste), `front/scripts/optimize-assets.mjs` (catégorie `store`) |
 | Front | `game/assets/catalog.ts` (`NORTHLINE`, `HEARTH_HOLLOW`, `GREENCART`, `MALL`), `game/world/worldManifest.ts` (`layoutUrl` de zone), `game/town/openHouses.ts` (niveaux d'une zone), `composables/game/useFurnitureStore.ts` et `useClothingStore.ts` (paramètre `store`), `components/game/GameStoreItemCard.vue` (`brand`), câblage `GameView.vue` |
 | Socket | rien de nouveau : les trois boutiques sont des bâtiments `kind: 'store'` lus par `socket/src/world.ts` (portes publiques) ; redémarrer le conteneur après `apply-mall.mjs` |
@@ -166,10 +173,13 @@ lamelles, étagères d'objets colorés.
 (`items/food/<key>`) et `code` = `food_*` ; `useFurnitureStore` charge `items/food/<key>/model.glb`. Parcours réel de
 supermarché : entrée côté est avec chariots, **fruits et légumes puis boulangerie à l'entrée**, laitier et frais **au fond**,
 boucle périphérique, 6 gondoles double face en grille au centre (`BREAKFAST`, `DRINKS`, `SNACKS`, `PASTA & RICE`,
-`HOUSEHOLD`, `FROZEN`), têtes de gondole promo, batterie de 5 caisses à la sortie (mur avant, côté ouest). Articles vendus
-(ceux du Campus Cafe, sans alcool ni médicaments) : `food_coffee`, `food_orange_juice`, `food_water_bottle`,
-`food_croissant`, `food_sandwich`, `food_cookie`. Les emplacements libres sont listés dans `slots[]` (`{aisle, shelf,
-position, yaw, code: null}`) pour les futurs produits.
+`HOUSEHOLD`, `FROZEN`), têtes de gondole promo, batterie de 5 caisses à la sortie (mur avant, côté ouest). Articles vendus :
+les six du Campus Cafe (`food_coffee`, `food_orange_juice`, `food_water_bottle`, `food_croissant`, `food_sandwich`,
+`food_cookie`) et les douze de l'épicerie (groupe `grocery`, vendus **seulement** ici, jamais au Campus Cafe :
+`isGroceryItem`) : `grocery_apple`, `grocery_banana`, `grocery_bread`, `grocery_milk`, `grocery_cheese`, `grocery_eggs`,
+`grocery_cereal`, `grocery_pasta`, `grocery_soda`, `grocery_chips`, `grocery_chocolate`, `grocery_yogurt` (valeurs dans
+`FoodCatalog`, assets `items/grocery/<clé>` par `build_grocery_items.py`, 48 à 388 triangles). Les emplacements libres
+sont listés dans `slots[]` (`{aisle, shelf, position, yaw, code: null}`) pour les futurs produits.
 
 ## 3. Manifeste de monde
 
@@ -190,7 +200,7 @@ centre viennent de son propre `collisionUrl` (pas de fusion dans `town.collision
 la porte nord-ouest dans `town.glb` / `town.collision.json` (`hedgeGate`). Les bornes du monde (±500 m) ne bougent pas.
 `music.bounds` vient de `mall.layout.json.music` (anneau + parvis) ; la boucle `music/cove_mall.mp3` est rendue par
 `map-src/CampusCove/build_mall_music.py` (synthèse Python + ffmpeg, comme `build_threads_music.py`).
-Après le script : `make seed-shop` (18 articles) et `docker restart campuscove-socket`.
+Après le script : `make seed-shop` (30 articles consommables du centre) et `docker restart campuscove-socket`.
 
 ## 4. Front
 
@@ -215,8 +225,11 @@ Après le script : `make seed-shop` (18 articles) et `docker restart campuscove-
 - `useClothingStore(deps)` : `deps.store?` = `{ key, interiorLayoutUrl, clerkColors }` (défaut Cove Threads) ; le
   bloqueur du vendeur est `<key>_clerk`. Instancié trois fois (Cove Threads, Northline, Summit Sports) ; la vue affiche
   le panier et la caisse de celle où se trouve le joueur (`clothingEntries`).
-- `useFurnitureStore` est aussi instancié pour Crispin's Hardware (`decorModelUrl`) et Candy Cloud
-  (`consumableModelUrl`, préfixe `candy_` → dossier `items/sweets`) ; `isSweetItem` exclut les bonbons du menu du café.
+- `GameView.vue` instancie les boutiques depuis deux tables : `MALL_FURNITURE_STORES` (Hearth & Hollow, GreenCart,
+  Crispin's, Candy Cloud : `spec`, `modelUrl`, `clerkColors`) et `MALL_CLOTHING_STORES` (Northline, Summit Sports).
+  `consumableModelUrl(code)` résout `items/<dossier du groupe>/<code sans préfixe>/model.glb` (`food_` → `food`,
+  `candy_` → `sweets`, `grocery_` → `grocery`, `med_` → `medical`, `drink_` → `drinks`) : le dossier d'un asset
+  consommable **est** le code sans préfixe. `isSweetItem` et `isGroceryItem` excluent bonbons et épicerie du menu du café.
 
 ## 5. Ordre et vérification
 

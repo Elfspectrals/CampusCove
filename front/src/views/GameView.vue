@@ -85,6 +85,7 @@ import {
   findHouse,
   findStore,
   findWork,
+  type StoreDisplay,
 } from '../game/assets/catalog'
 import type { WorldBounds } from '../game/world/worldManifest'
 import type { GearSlot } from '../game/wardrobeSlots'
@@ -219,8 +220,17 @@ const {
 
 // ---------------------------------------------------------------- stores: Cove Home (click to buy), the mall's shops (basket paid at the cashier), Cove Threads, Northline and Summit (basket)
 
-const inStore = computed(() => currentHouseKey.value === COVE_HOME.key)
-const furnitureStore = useFurnitureStore({ inStore: () => inStore.value, getCamera, myPosition })
+const MALL_FURNITURE_STORES = [
+  { spec: HEARTH_HOLLOW, modelUrl: (display: StoreDisplay) => decorModelUrl(display.key), clerkColors: { top: '#c47c4c', bottom: '#3b3f4a' } },
+  { spec: GREENCART, modelUrl: (display: StoreDisplay) => consumableModelUrl(display.code), clerkColors: { top: '#3c9a3c', bottom: '#2a2e35' } },
+  { spec: CRISPINS_HARDWARE, modelUrl: (display: StoreDisplay) => decorModelUrl(display.key), clerkColors: { top: '#e07a2e', bottom: '#2f3338' } },
+  { spec: CANDY_CLOUD, modelUrl: (display: StoreDisplay) => consumableModelUrl(display.code), clerkColors: { top: '#f4b3c8', bottom: '#38a3c9' } },
+]
+const MALL_CLOTHING_STORES = [
+  { spec: NORTHLINE, clerkColors: { top: '#1b1d22', bottom: '#f4f2ee' } },
+  { spec: SUMMIT_SPORTS, clerkColors: { top: '#1b1d22', bottom: '#f0b429' } },
+]
+
 /** The mall stores sell through a basket: the cashier prompt needs the canvas, paying refreshes the inventory. */
 const mallStoreDeps = {
   getCamera,
@@ -229,59 +239,23 @@ const mallStoreDeps = {
   promptsHidden: () => inventoryOpen.value,
   onPurchased: () => refreshOwnedItems(),
 }
-const hearthStore = useFurnitureStore({
-  ...mallStoreDeps,
-  inStore: () => currentHouseKey.value === HEARTH_HOLLOW.key,
-  store: {
-    key: HEARTH_HOLLOW.key,
-    interiorLayoutUrl: HEARTH_HOLLOW.interiorLayoutUrl,
-    modelUrl: (display) => decorModelUrl(display.key),
-    clerkColors: { ...DEFAULT_SLOT_COLORS, top: '#c47c4c', bottom: '#3b3f4a' },
-  },
-})
-const greencartStore = useFurnitureStore({
-  ...mallStoreDeps,
-  inStore: () => currentHouseKey.value === GREENCART.key,
-  store: {
-    key: GREENCART.key,
-    interiorLayoutUrl: GREENCART.interiorLayoutUrl,
-    modelUrl: (display) => consumableModelUrl(display.code),
-    clerkColors: { ...DEFAULT_SLOT_COLORS, top: '#3c9a3c', bottom: '#2a2e35' },
-  },
-})
-const crispinsStore = useFurnitureStore({
-  ...mallStoreDeps,
-  inStore: () => currentHouseKey.value === CRISPINS_HARDWARE.key,
-  store: {
-    key: CRISPINS_HARDWARE.key,
-    interiorLayoutUrl: CRISPINS_HARDWARE.interiorLayoutUrl,
-    modelUrl: (display) => decorModelUrl(display.key),
-    clerkColors: { ...DEFAULT_SLOT_COLORS, top: '#e07a2e', bottom: '#2f3338' },
-  },
-})
-const candyStore = useFurnitureStore({
-  ...mallStoreDeps,
-  inStore: () => currentHouseKey.value === CANDY_CLOUD.key,
-  store: {
-    key: CANDY_CLOUD.key,
-    interiorLayoutUrl: CANDY_CLOUD.interiorLayoutUrl,
-    modelUrl: (display) => consumableModelUrl(display.code),
-    clerkColors: { ...DEFAULT_SLOT_COLORS, top: '#f4b3c8', bottom: '#38a3c9' },
-  },
-})
 const furnitureStores = [
-  { key: COVE_HOME.key, brand: COVE_HOME.name, store: furnitureStore },
-  { key: HEARTH_HOLLOW.key, brand: HEARTH_HOLLOW.name, store: hearthStore },
-  { key: GREENCART.key, brand: GREENCART.name, store: greencartStore },
-  { key: CRISPINS_HARDWARE.key, brand: CRISPINS_HARDWARE.name, store: crispinsStore },
-  { key: CANDY_CLOUD.key, brand: CANDY_CLOUD.name, store: candyStore },
+  { key: COVE_HOME.key, brand: COVE_HOME.name, store: useFurnitureStore({ inStore: () => currentHouseKey.value === COVE_HOME.key, getCamera, myPosition }) },
+  ...MALL_FURNITURE_STORES.map(({ spec, modelUrl, clerkColors }) => ({
+    key: spec.key,
+    brand: spec.name,
+    store: useFurnitureStore({
+      ...mallStoreDeps,
+      inStore: () => currentHouseKey.value === spec.key,
+      store: { key: spec.key, interiorLayoutUrl: spec.interiorLayoutUrl, modelUrl, clerkColors: { ...DEFAULT_SLOT_COLORS, ...clerkColors } },
+    }),
+  })),
 ]
 const activeFurniture = computed(() => furnitureStores.find((s) => s.key === currentHouseKey.value) ?? null)
 const storeBrand = computed(() => activeFurniture.value?.brand ?? COVE_HOME.name)
 const storeTarget = computed(() => activeFurniture.value?.store.target.value ?? null)
 const storeDepartment = computed(() => activeFurniture.value?.store.currentDepartment.value ?? null)
 const inThreads = computed(() => currentHouseKey.value === COVE_THREADS.key)
-const inNorthline = computed(() => currentHouseKey.value === NORTHLINE.key)
 const clothingDeps = {
   getCamera,
   canvasRef,
@@ -292,21 +266,17 @@ const clothingDeps = {
   getFpHands: () => game?.fpHands ?? null,
   myOutfit: () => myCosmetics.value,
 }
-const clothingStore = useClothingStore({ ...clothingDeps, inStore: () => inThreads.value })
-const northlineStore = useClothingStore({
-  ...clothingDeps,
-  inStore: () => inNorthline.value,
-  store: { key: NORTHLINE.key, interiorLayoutUrl: NORTHLINE.interiorLayoutUrl, clerkColors: { ...DEFAULT_SLOT_COLORS, top: '#1b1d22', bottom: '#f4f2ee' } },
-})
-const summitStore = useClothingStore({
-  ...clothingDeps,
-  inStore: () => currentHouseKey.value === SUMMIT_SPORTS.key,
-  store: { key: SUMMIT_SPORTS.key, interiorLayoutUrl: SUMMIT_SPORTS.interiorLayoutUrl, clerkColors: { ...DEFAULT_SLOT_COLORS, top: '#1b1d22', bottom: '#f0b429' } },
-})
 const clothingEntries = [
-  { key: COVE_THREADS.key, name: COVE_THREADS.name, store: clothingStore },
-  { key: NORTHLINE.key, name: NORTHLINE.name, store: northlineStore },
-  { key: SUMMIT_SPORTS.key, name: SUMMIT_SPORTS.name, store: summitStore },
+  { key: COVE_THREADS.key, name: COVE_THREADS.name, store: useClothingStore({ ...clothingDeps, inStore: () => inThreads.value }) },
+  ...MALL_CLOTHING_STORES.map(({ spec, clerkColors }) => ({
+    key: spec.key,
+    name: spec.name,
+    store: useClothingStore({
+      ...clothingDeps,
+      inStore: () => currentHouseKey.value === spec.key,
+      store: { key: spec.key, interiorLayoutUrl: spec.interiorLayoutUrl, clerkColors: { ...DEFAULT_SLOT_COLORS, ...clerkColors } },
+    }),
+  })),
 ]
 const clothingStores = clothingEntries.map((entry) => entry.store)
 const activeClothingEntry = computed(() => clothingEntries.find((entry) => entry.key === currentHouseKey.value) ?? null)

@@ -64,7 +64,7 @@
   ],
   "displays": [
     {
-      "key": "candy_bag",
+      "key": "bag",
       "code": "candy_bag",
       "department": "pickmix",
       "description": "A bag of gummies from the pick & mix.",
@@ -151,7 +151,7 @@
       }
     },
     {
-      "key": "cotton_candy",
+      "key": "cotton",
       "code": "candy_cotton",
       "department": "fair",
       "description": "Spun sugar cloud, freshly made at the machine.",
@@ -180,7 +180,7 @@
       }
     },
     {
-      "key": "candy_apple",
+      "key": "apple",
       "code": "candy_apple",
       "department": "fair",
       "description": "Red candy apple, glossy and crunchy.",
@@ -209,7 +209,7 @@
       }
     },
     {
-      "key": "bubble_gum",
+      "key": "gum",
       "code": "candy_gum",
       "department": "counter",
       "description": "Pack of bubble gum, five sticks.",

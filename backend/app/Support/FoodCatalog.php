@@ -6,7 +6,8 @@ namespace App\Support;
  * Food and drinks (item kind 'consumable'). Values are per portion: an item with 4 portions is eaten in four
  * bites (4/4 -> 3/4 -> ...). Assets: front/public/assets/items/<group>/<asset>/{model.glb,preview.png}
  * (map-src/CampusCove/build_food_items.py, build_sweets_items.py). `price` = coins at the counter that sells the
- * group (Campus Cafe for `food`, Cove Clinic for `medical`, Candy Cloud for `sweets`), null = not sold.
+ * group (Campus Cafe for `food`, Cove Clinic for `medical`, Candy Cloud for `sweets`, GreenCart for `grocery`),
+ * null = not sold.
  */
 final class FoodCatalog
 {
@@ -39,12 +40,24 @@ final class FoodCatalog
             self::item('med_bandage', 'Bandage', 'bandage', 1, 0, 0, 15, null, 10, 'medical'),
             self::item('med_painkillers', 'Painkillers', 'painkillers', 1, 0, 0, 30, self::EFFECT_HEAL_OVER_TIME, 20, 'medical'),
             self::item('med_medkit', 'Medkit', 'medkit', 1, 0, 0, 60, null, 50, 'medical'),
-            self::item('candy_cotton', 'Cotton Candy', 'cotton_candy', 2, 4, 0, 0, self::EFFECT_SPEED_BOOST, 12, 'sweets'),
+            self::item('candy_cotton', 'Cotton Candy', 'cotton', 2, 4, 0, 0, self::EFFECT_SPEED_BOOST, 12, 'sweets'),
             self::item('candy_lollipop', 'Swirl Lollipop', 'lollipop', 1, 3, 0, 0, null, 6, 'sweets'),
-            self::item('candy_bag', 'Gummy Bag', 'candy_bag', 4, 4, 0, 0, null, 14, 'sweets'),
+            self::item('candy_bag', 'Gummy Bag', 'bag', 4, 4, 0, 0, null, 14, 'sweets'),
             self::item('candy_licorice', 'Licorice Twists', 'licorice', 3, 3, 0, 0, null, 9, 'sweets'),
-            self::item('candy_gum', 'Bubble Gum', 'bubble_gum', 5, 1, 0, 0, null, 5, 'sweets'),
-            self::item('candy_apple', 'Candy Apple', 'candy_apple', 2, 6, 0, 0, self::EFFECT_SPEED_BOOST, 15, 'sweets'),
+            self::item('candy_gum', 'Bubble Gum', 'gum', 5, 1, 0, 0, null, 5, 'sweets'),
+            self::item('candy_apple', 'Candy Apple', 'apple', 2, 6, 0, 0, self::EFFECT_SPEED_BOOST, 15, 'sweets'),
+            self::item('grocery_apple', 'Apple', 'apple', 2, 5, 2, 0, null, 6, 'grocery'),
+            self::item('grocery_banana', 'Banana', 'banana', 2, 6, 0, 0, null, 6, 'grocery'),
+            self::item('grocery_bread', 'Sliced Bread', 'bread', 4, 8, 0, 0, null, 14, 'grocery'),
+            self::item('grocery_milk', 'Milk', 'milk', 3, 2, 8, 0, null, 10, 'grocery'),
+            self::item('grocery_cheese', 'Cheese Wedge', 'cheese', 3, 8, 0, 0, null, 16, 'grocery'),
+            self::item('grocery_eggs', 'Half-Dozen Eggs', 'eggs', 3, 7, 0, 1, null, 15, 'grocery'),
+            self::item('grocery_cereal', 'Cereal', 'cereal', 4, 7, 0, 0, null, 18, 'grocery'),
+            self::item('grocery_pasta', 'Pasta', 'pasta', 4, 7, 0, 0, null, 12, 'grocery'),
+            self::item('grocery_soda', 'Soda Can', 'soda', 2, 0, 9, 0, null, 7, 'grocery'),
+            self::item('grocery_chips', 'Chips', 'chips', 3, 5, 0, 0, null, 9, 'grocery'),
+            self::item('grocery_chocolate', 'Chocolate Bar', 'chocolate', 4, 4, 0, 0, null, 10, 'grocery'),
+            self::item('grocery_yogurt', 'Yogurt', 'yogurt', 2, 4, 3, 0, null, 8, 'grocery'),
             self::item('drink_stout', 'Pint of Stout', 'stout', 3, 0, 8, 0, null, 25, 'drinks', 8),
             self::item('drink_lager', 'Pint of Lager', 'lager', 3, 0, 8, 0, null, 22, 'drinks', 7),
             self::item('drink_red_wine', 'Red Wine', 'red_wine', 2, 0, 4, 0, null, 30, 'drinks', 10),

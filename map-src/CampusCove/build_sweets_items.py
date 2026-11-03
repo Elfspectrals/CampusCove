@@ -192,12 +192,12 @@ def candy_apple():
 
 
 SWEETS = {
-    "cotton_candy": cotton_candy,
+    "cotton": cotton_candy,
     "lollipop": lollipop,
-    "candy_bag": candy_bag,
+    "bag": candy_bag,
     "licorice": licorice,
-    "bubble_gum": bubble_gum,
-    "candy_apple": candy_apple,
+    "gum": bubble_gum,
+    "apple": candy_apple,
 }
 results = []
 for key, build in SWEETS.items():
