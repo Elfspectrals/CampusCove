@@ -21,7 +21,8 @@ KEY = "pond"
 OUT = os.path.join(L.OUT_ROOT, "park", KEY)
 
 PUSH = 10.0
-HEDGE_R, FENCE_R, SKY_R = 46.6, 69.6 + PUSH, 74.8 + PUSH
+HEDGE_R, FENCE_R = 46.6, 69.6 + PUSH
+OUTER_R = FENCE_R + 5.0
 PARK_X = 46.0
 BED_H, WATER_TOP = 0.015, 0.045
 CZ, RX, RZ = -58.5 - PUSH, 14.0, 5.5
@@ -148,16 +149,15 @@ def in_orchard_way(x, z, margin):
 
 def terrain_h(x, z):
     r = math.hypot(x, z)
-    th = math.atan2(x, -z)
     ax = abs(x)
-    edge_fade = 1.0 - ss(46.6, 47.5, ax)
+    # The orchard and pub lawns start right past the fence at y = 0, so the relief fades out before OUTER_R.
+    edge_fade = (1.0 - ss(46.6, 47.5, ax)) * (1.0 - ss(FENCE_R + 0.5, OUTER_R - 0.5, r))
     gate = (1.0 - ss(7.5, 10.0, ax)) * ss(-52.5 - PUSH, -50.0 - PUSH, z)
     hedge = ss(47.2, 50.5, r) * (1.0 - gate)
     hills = sum(h * math.exp(-((x - hx) ** 2 + (z - hz) ** 2) / (2 * s * s)) for hx, hz, h, s in HILLS)
     und = max(0.0, 0.12 + 0.22 * math.sin(x * 0.21 + 0.7) * math.sin(z * 0.17 + 1.9) + 0.1 * math.sin(x * 0.47 + z * 0.31))
-    ridge = ss(68.8 + PUSH, 74.0 + PUSH, r) * (5.0 + 1.4 * math.sin(th * 9.0) + 0.8 * math.sin(th * 23.0 + 1.3))
     berm = 1.6 * ss(45.4, 46.5, ax) * hedge
-    h = (hedge * (hills + und) + ridge + berm) * edge_fade * (1.0 - max(pub_gate_cut(x, z), orchard_gate_cut(x, z)))
+    h = (hedge * (hills + und) + berm) * edge_fade * (1.0 - max(pub_gate_cut(x, z), orchard_gate_cut(x, z)))
     e = pond_e(x, z)
     if e < 1.9:
         hp = BED_H + 0.3 * ss(1.0, 1.3, e)
@@ -169,6 +169,11 @@ def terrain_h(x, z):
     if em < 1.8:
         h = BED_H + (h - BED_H) * ss(1.0, 1.8, em)
     return max(h, 0.0)
+
+
+def on_terrain(cx, cz):
+    r = math.hypot(cx, cz)
+    return 46.0 <= r <= OUTER_R and abs(cx) <= 47.5 and cz <= -4.0
 
 
 def in_rect(x, z, cx, cz, hx, hz):
@@ -513,8 +518,7 @@ faces_mat = []
 for j in range(GRID_ROWS - 1):
     for i in range(GRID_COLS - 1):
         cx, cz = GRID_X0 + i + 0.5, GRID_Z0 + j + 0.5
-        r = math.hypot(cx, cz)
-        if r < 46.0 or r > SKY_R or abs(cx) > 47.5 or cz > -4.0:
+        if not on_terrain(cx, cz):
             continue
         quad = []
         for key in ((i, j), (i + 1, j), (i + 1, j + 1), (i, j + 1)):
@@ -529,7 +533,7 @@ for j in range(GRID_ROWS - 1):
             f.material_index = 4
         elif e < 1.28 or em < 1.35 or dc < 1.7:
             f.material_index = 3
-        elif r > FENCE_R + 0.3 or abs(cx) > PARK_X + 0.3:
+        elif abs(cx) > PARK_X + 0.3:
             f.material_index = 2
         elif math.sin(cx * 0.13) * math.sin(cz * 0.11 + 2.0) + 0.3 * math.sin(cx * 0.41 + cz * 0.37) > 0.35:
             f.material_index = 1
@@ -769,12 +773,12 @@ counts["north_strip"] = scatter((0.0, -67.5 - PUSH, 22.0), 6, 0.6, mix([("round"
 
 def ridge_ok(x, z, rad, _paths, spacing):
     r = math.hypot(x, z)
-    return FENCE_R + 1.2 <= r <= SKY_R - 1.0 and abs(x) < 45.5 and not in_pub_corridor(x, z, rad) \
+    return FENCE_R + 1.2 <= r <= OUTER_R - 1.0 and abs(x) < 45.5 and not in_pub_corridor(x, z, rad) \
         and all(math.hypot(x - px, z - pz) >= spacing for px, pz, _ in placed)
 
 
-counts["ridge"] = scatter((0.0, -60.0 - PUSH, 50.0), 34, 1.0, lambda x, z: (tree_pine(x, z, rnd.uniform(1.1, 1.7), collide=False) if rnd.random() < 0.7
-                                                                   else tree_round(x, z, rnd.uniform(1.1, 1.5), collide=False)),
+counts["ridge"] = scatter((0.0, -60.0 - PUSH, 50.0), 34, 1.0, lambda x, z: (tree_pine(x, z, rnd.uniform(1.1, 1.7)) if rnd.random() < 0.7
+                                                                   else tree_round(x, z, rnd.uniform(1.1, 1.5))),
                           spacing=3.0, check=ridge_ok, tries=3000)
 counts["bushes"] = scatter((0.0, -52.0 - PUSH, 50.0), 26, 0.7, bush, paths=1.6, spacing=0.3, tries=3000)
 counts["flowers"] = scatter((0.0, -52.0 - PUSH, 50.0), 16, 0.9, flower_patch, paths=1.0, spacing=0.1, tries=4000)
@@ -928,8 +932,17 @@ orchard_sign_text.rotation_euler = (math.pi / 2, 0, -ORCHARD_GATE_TH)
 objs.append(orchard_sign_text)
 add_col("COL_Pond_OrchardSign", orchard_sign[0], orchard_sign[1], 2.2, 0.3, 2.4, -ORCHARD_GATE_TH)
 
-L.export_glb(os.path.join(OUT, "pond.glb"), objs, use_active_scene=True)
 heights = [round(walk_h(GRID_X0 + i, GRID_Z0 + j), 3) for j in range(GRID_ROWS) for i in range(GRID_COLS)]
+# The heightmap must follow the drawn terrain: off the mesh and on its rim the ground is the neighbours' flat y = 0,
+# so any height there means a slope players climb into the void or a terrain edge floating in the air.
+drawn = {(i + di, j + dj) for (i, j) in [(i, j) for j in range(GRID_ROWS - 1) for i in range(GRID_COLS - 1)
+                                         if on_terrain(GRID_X0 + i + 0.5, GRID_Z0 + j + 0.5)] for di in (0, 1) for dj in (0, 1)}
+inner = {(i, j) for (i, j) in drawn if all((i + di, j + dj) in drawn for di in (-1, 0, 1) for dj in (-1, 0, 1))}
+off_mesh = [(GRID_X0 + i, GRID_Z0 + j, heights[j * GRID_COLS + i]) for j in range(GRID_ROWS) for i in range(GRID_COLS)
+            if (i, j) not in inner and heights[j * GRID_COLS + i] > 0.05 and math.hypot(GRID_X0 + i, GRID_Z0 + j) > 46.0]
+if off_mesh:
+    raise RuntimeError(f"pond heightmap leaves the terrain mesh at {len(off_mesh)} points, e.g. {off_mesh[:5]}")
+L.export_glb(os.path.join(OUT, "pond.glb"), objs, use_active_scene=True)
 os.makedirs(OUT, exist_ok=True)
 with open(os.path.join(OUT, "pond.layout.json"), "w", encoding="utf-8") as fh:
     json.dump({

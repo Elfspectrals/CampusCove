@@ -51,7 +51,7 @@ async function loadZoneScenery(loader: GLTFLoader, zone: WorldZone): Promise<THR
     loader.loadAsync(zone.modelUrl),
     zone.heightmapUrl ? fetchHeightmap(zone.heightmapUrl) : null,
   ])
-  if (heightmap) setTerrainHeightmap(heightmap)
+  if (heightmap) setTerrainHeightmap(zone.key, heightmap)
   const scenery = gltf.scene
   scenery.name = `Zone_${zone.key}`
   if (zone.animatedWater && animatePondWater(scenery) === 0) {

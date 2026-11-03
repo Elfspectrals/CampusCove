@@ -66,6 +66,7 @@ import { useAdminWatch } from '../composables/game/useAdminWatch'
 import { usePunch } from '../composables/game/usePunch'
 import { useShopPurchase } from '../composables/useShopPurchase'
 import { toggleCollisionDebug } from '../game/collision/collisionDebug'
+import { toggleTerrainDebug } from '../game/town/terrainDebug'
 import { actionKeyLabels, matches, mouseButtonCode } from '../config/keybindings'
 import { getWorldCollisionStats } from '../game/collision/worldCollision'
 import { HOUSING_LOBBY_SPAWN } from '../game/gameRoomConstants'
@@ -922,6 +923,14 @@ function handleExtraKeyDown(e: KeyboardEvent): boolean {
     const on = toggleCollisionDebug(scene)
     const stats = getWorldCollisionStats()
     console.info(`[collision] debug ${on ? 'ON' : 'OFF'} — ${stats.cuboids} cuboids, mode=${stats.mode ?? 'n/a'}`)
+    return true
+  }
+  // walk-height overlay, same rule: dev only
+  if (import.meta.env.DEV && e.code === 'KeyH' && !e.repeat) {
+    const scene = getScene()
+    if (!scene) return true
+    const zones = toggleTerrainDebug(scene)
+    console.info(`[terrain] heights ${zones ? `ON — ${zones.join(', ') || 'no heightmap loaded'}` : 'OFF'}`)
     return true
   }
   return placement.onKeyDown(e)
