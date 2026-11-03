@@ -61,7 +61,7 @@ make prod-down
 | `socket` | Colyseus, `world.manifest.json` embarqué dans l'image |
 | `postgres` | Données (volume `postgres_data`), aucun port publié |
 
-Sur Heroku, `backend/Procfile` fait la même chose : la phase `release` lance migrations + seeders avant chaque bascule, et le process `scheduler` remplace le service du même nom (`heroku ps:scale scheduler=1`). L'API a besoin de `APP_KEY`, `REALTIME_SHARED_SECRET` (identique sur l'app socket) et `REALTIME_INTERNAL_URL` (URL de l'app socket).
+Sur Heroku, `backend/Procfile` fait la même chose : la phase `release` lance migrations + seeders avant chaque bascule. Le service `scheduler` est remplacé par l'add-on Heroku Scheduler (pas de dyno permanent) : `php artisan housing:collect-taxes` toutes les 10 minutes, `php artisan accounts:purge-inactive` tous les jours à 04:00 UTC. L'API a besoin de `APP_KEY`, `REALTIME_SHARED_SECRET` (identique sur l'app socket) et `REALTIME_INTERNAL_URL` (URL de l'app socket).
 
 Sur un serveur : utilisateur `deploy` non admin, membre du groupe `docker`, SSH par clé, root désactivé. Depuis sa machine :
 
