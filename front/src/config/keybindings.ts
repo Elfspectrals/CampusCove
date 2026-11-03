@@ -18,6 +18,7 @@ const BINDABLE_ACTIONS = [
   'survivalWatch',
   'cook',
   'houseKeys',
+  'map',
   'buyHouse',
   'rotate',
   'putAway',
@@ -55,6 +56,8 @@ const DEFAULT_BINDINGS: Readonly<Record<BindableAction, readonly string[]>> = {
   /** With raw food in hand, at a stove or a barbecue. */
   cook: ['KeyF'],
   houseKeys: ['KeyK'],
+  /** Opens / closes the full map (the corner map is always on). */
+  map: ['KeyM'],
   /** At the door of a house for sale. */
   buyHouse: ['F2'],
   /** Rotate the placement ghost clockwise; with Shift, counter-clockwise. */
