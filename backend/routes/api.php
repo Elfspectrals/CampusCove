@@ -3,6 +3,7 @@
 use App\Http\Controllers\AccountPrivacyController;
 use App\Http\Controllers\AdminHousingController;
 use App\Http\Controllers\AdminInventoryController;
+use App\Http\Controllers\AdminSecurityController;
 use App\Http\Controllers\AdminShopItemController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\ApartmentPlacementController;
@@ -128,6 +129,15 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
             Route::put('/items/{shop_catalog_item}', [AdminShopItemController::class, 'update']);
             Route::patch('/items/{shop_catalog_item}', [AdminShopItemController::class, 'update']);
             Route::delete('/items/{shop_catalog_item}', [AdminShopItemController::class, 'destroy']);
+        });
+
+        Route::prefix('security')->group(function () {
+            Route::get('/overview', [AdminSecurityController::class, 'overview']);
+            Route::get('/events', [AdminSecurityController::class, 'events']);
+            Route::get('/bans', [AdminSecurityController::class, 'bans']);
+            Route::get('/ips/{ip}', [AdminSecurityController::class, 'showIp']);
+            Route::post('/ips/{ip}/ban', [AdminSecurityController::class, 'ban']);
+            Route::post('/ips/{ip}/unban', [AdminSecurityController::class, 'unban']);
         });
 
         Route::prefix('housing')->group(function () {

@@ -5,12 +5,16 @@ namespace App\Services;
 use App\Models\IpBan;
 use App\Models\IpReputation;
 use App\Models\SecurityEvent;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class IpBanService
 {
     public const SCORE_WINDOW_HOURS = 24;
 
     public const MAX_SCORE = 100;
+
+    public const SUSPECT_SCORE = 50;
 
     public const AUTO_BAN_SCORE = 80;
 
@@ -19,6 +23,12 @@ class IpBanService
     public const SCORE_CAP_WITHOUT_BOT_SIGNAL = self::AUTO_BAN_SCORE - 1;
 
     public const REPUTATION_WEIGHT_PERCENT = 30;
+
+    public const STATUS_BANNED = 'banned';
+
+    public const STATUS_SUSPECT = 'suspect';
+
+    public const STATUS_NORMAL = 'normal';
 
     public const WEIGHTS = [
         SecurityEvent::TYPE_LOGIN_FAILED => 4,
@@ -41,23 +51,39 @@ class IpBanService
 
     public function score(string $ip): int
     {
-        $countsByType = SecurityEvent::query()
-            ->where('ip', $ip)
+        return $this->scores([$ip])[$ip] ?? $this->scoreFrom(collect(), $this->reputationPoints($ip));
+    }
+
+    /**
+     * @param  list<string>|null  $ips
+     * @return array<string, int>
+     */
+    public function scores(?array $ips = null): array
+    {
+        $rows = SecurityEvent::query()
             ->where('created_at', '>', now()->subHours(self::SCORE_WINDOW_HOURS))
-            ->groupBy('type')
-            ->selectRaw('type, COUNT(*) AS events')
-            ->pluck('events', 'type');
+            ->when($ips !== null, fn ($query) => $query->whereIn('ip', $ips))
+            ->groupBy('ip', 'type')
+            ->select('ip', 'type', DB::raw('COUNT(*) AS events'))
+            ->get();
 
-        $score = 0;
-        foreach ($countsByType as $type => $events) {
-            $score += self::WEIGHTS[$type] * $events;
-        }
-        $score += $this->reputationPoints($ip);
-        $score = min($score, self::MAX_SCORE);
+        $confidences = IpReputation::whereIn('ip', $rows->pluck('ip')->unique())->pluck('abuse_confidence', 'ip');
 
-        $hasBotSignal = $countsByType->keys()->intersect(self::BOT_SIGNALS)->isNotEmpty();
+        return $rows->groupBy('ip')
+            ->map(fn (Collection $byType, string $ip) => $this->scoreFrom(
+                $byType->pluck('events', 'type'),
+                $this->pointsFor($confidences[$ip] ?? null),
+            ))
+            ->all();
+    }
 
-        return $hasBotSignal ? $score : min($score, self::SCORE_CAP_WITHOUT_BOT_SIGNAL);
+    public function statusFor(int $score, bool $banned): string
+    {
+        return match (true) {
+            $banned => self::STATUS_BANNED,
+            $score >= self::SUSPECT_SCORE => self::STATUS_SUSPECT,
+            default => self::STATUS_NORMAL,
+        };
     }
 
     public function isBanned(string $ip): bool
@@ -86,15 +112,57 @@ class IpBanService
         $this->abuseIpdb->reportBan($ip);
     }
 
-    public function reputationPoints(string $ip): int
+    public function banManually(string $ip, bool $permanent, int $adminId, bool $report): IpBan
     {
-        $confidence = IpReputation::whereKey($ip)->value('abuse_confidence');
+        $ban = DB::transaction(function () use ($ip, $permanent, $adminId) {
+            $this->unban($ip, $adminId);
 
-        return $confidence === null ? 0 : intdiv($confidence * self::REPUTATION_WEIGHT_PERCENT, 100);
+            return IpBan::create([
+                'ip' => $ip,
+                'reason' => IpBan::REASON_MANUAL,
+                'score' => $this->score($ip),
+                'banned_by_account_id' => $adminId,
+                'expires_at' => $permanent ? null : now()->addHours(self::AUTO_BAN_HOURS),
+            ]);
+        });
+
+        $this->realtime->ipBanned($ip);
+        if ($report) {
+            $this->abuseIpdb->reportBan($ip);
+        }
+
+        return $ban;
     }
 
-    public function unban(string $ip): int
+    public function reputationPoints(string $ip): int
     {
-        return IpBan::active()->where('ip', $ip)->update(['lifted_at' => now()]);
+        return $this->pointsFor(IpReputation::whereKey($ip)->value('abuse_confidence'));
+    }
+
+    public function unban(string $ip, ?int $adminId = null): int
+    {
+        return IpBan::active()->where('ip', $ip)->update([
+            'lifted_at' => now(),
+            'lifted_by_account_id' => $adminId,
+        ]);
+    }
+
+    /** @param Collection<string, int> $countsByType */
+    private function scoreFrom(Collection $countsByType, int $reputationPoints): int
+    {
+        $score = $reputationPoints;
+        foreach ($countsByType as $type => $events) {
+            $score += self::WEIGHTS[$type] * $events;
+        }
+        $score = min($score, self::MAX_SCORE);
+
+        $hasBotSignal = $countsByType->keys()->intersect(self::BOT_SIGNALS)->isNotEmpty();
+
+        return $hasBotSignal ? $score : min($score, self::SCORE_CAP_WITHOUT_BOT_SIGNAL);
+    }
+
+    private function pointsFor(?int $confidence): int
+    {
+        return $confidence === null ? 0 : intdiv($confidence * self::REPUTATION_WEIGHT_PERCENT, 100);
     }
 }
