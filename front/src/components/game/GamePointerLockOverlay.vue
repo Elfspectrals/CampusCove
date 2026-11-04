@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { actionKeyLabels, bindings, keyLabel } from '../../config/keybindings'
 import UiIcon from '../ui/UiIcon.vue'
 import UiLogo from '../ui/UiLogo.vue'
 
@@ -9,24 +7,6 @@ const emit = defineEmits<{
   openSettings: []
   logout: []
 }>()
-
-/** The player's own keys (Settings), first key of each action. */
-const controls = computed<Array<{ keys: string[]; label: string }>>(() => {
-  const first = (a: Parameters<typeof actionKeyLabels>[0]) => actionKeyLabels(a).slice(0, 1)
-  const hotbar = [bindings.hotbar1[0], bindings.hotbar9[0]].filter((k): k is string => !!k).map(keyLabel)
-  return [
-    { keys: [...first('moveForward'), ...first('moveLeft'), ...first('moveBack'), ...first('moveRight')], label: 'Move' },
-    { keys: ['Mouse'], label: 'Look around' },
-    { keys: first('jump'), label: 'Jump (stamina)' },
-    { keys: ['Shift'], label: 'Hold to sprint (stamina)' },
-    { keys: first('interact'), label: 'Use: doors, shops, cafe, clinic, eat / drink' },
-    { keys: first('punch'), label: 'Punch' },
-    { keys: first('survivalWatch'), label: 'Watch: hold to read (hunger, thirst), tap to trade' },
-    { keys: first('inventory'), label: 'Inventory' },
-    { keys: [...(hotbar.length === 2 ? [`${hotbar[0]}–${hotbar[1]}`] : hotbar), 'Wheel'], label: 'Hotbar slot' },
-    { keys: ['Esc'], label: 'Pause / free mouse' },
-  ]
-})
 </script>
 
 <template>
@@ -40,7 +20,6 @@ const controls = computed<Array<{ keys: string[]; label: string }>>(() => {
           <UiIcon name="play" :size="26" fill /> Play
         </button>
 
-      
         <div class="mt-5 flex flex-wrap justify-center gap-2">
           <!-- the game hides the site header, so this is the way back out -->
           <RouterLink :to="{ name: 'home' }" class="cc-btn cc-btn-ghost cc-btn-sm">
