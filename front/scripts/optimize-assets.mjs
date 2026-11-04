@@ -2,6 +2,7 @@
 //
 //   npm run assets:optimize            (all categories)
 //   npm run assets:optimize -- houses  (one category: skins | decor | houses | town | work | park | items | store | wear)
+//   npm run assets:optimize -- store greencart crispins_hardware  (only these folders of the category)
 //
 // Blender (map-src/CampusCove/build_*.py) writes raw GLBs + *.colsrc.glb collision sources to
 // map-src/CampusCove/out/<category>/<key>/. This script:
@@ -83,6 +84,8 @@ function processDir(category, dir, rel) {
 }
 
 const only = process.argv[2]
+/** Optional keys after the category (`-- store greencart crispins_hardware`): only those folders are shipped. */
+const keys = process.argv.slice(3)
 for (const category of CATEGORIES) {
   if (only && only !== category) continue
   const dir = join(SRC, category)
@@ -90,5 +93,12 @@ for (const category of CATEGORIES) {
     console.warn(`skip ${category}: ${dir} not found (run the Blender build first)`)
     continue
   }
-  processDir(category, dir, '')
+  if (keys.length === 0) {
+    processDir(category, dir, '')
+    continue
+  }
+  for (const key of keys) {
+    if (existsSync(join(dir, key))) processDir(category, join(dir, key), key)
+    else console.warn(`skip ${category}/${key}: not built`)
+  }
 }

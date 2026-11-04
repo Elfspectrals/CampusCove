@@ -87,6 +87,13 @@ function isShown(obj: THREE.Object3D, root: THREE.Object3D): boolean {
   return true
 }
 
+/** Glass (a bakery sneeze guard, fridge doors) is aimed through, like the player sees through it. */
+function isSeeThrough(obj: THREE.Object3D): boolean {
+  if (!(obj instanceof THREE.Mesh)) return false
+  const materials: THREE.Material[] = Array.isArray(obj.material) ? obj.material : [obj.material]
+  return materials.every((m) => m.transparent && m.opacity < 0.6)
+}
+
 /** Own copies of the model's materials so lighting one display up leaves the same GLB elsewhere untouched. */
 function ownMaterials(model: THREE.Object3D): THREE.MeshStandardMaterial[] {
   const copies = new Map<THREE.Material, THREE.Material>()
@@ -355,7 +362,7 @@ export function useFurnitureStore(deps: FurnitureStoreDeps) {
     if (!attachedTo) return { display: null, distance: Infinity }
     raycaster.set(eye, direction)
     raycaster.far = PICK_DISTANCE + 1
-    const hit = raycaster.intersectObject(attachedTo, true).find((h) => isShown(h.object, attachedTo!))
+    const hit = raycaster.intersectObject(attachedTo, true).find((h) => isShown(h.object, attachedTo!) && !isSeeThrough(h.object))
     if (!hit) return { display: null, distance: Infinity }
     for (let obj: THREE.Object3D | null = hit.object; obj; obj = obj.parent) {
       const index = obj.userData.storeDisplay
