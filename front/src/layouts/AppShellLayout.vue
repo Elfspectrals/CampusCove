@@ -130,6 +130,7 @@ const adminNavItems: NavItem[] = [
   { name: 'admin-inventories', icon: 'backpack', label: 'Inventories' },
   { name: 'admin-housing', icon: 'home', label: 'Housing' },
   { name: 'admin-planner', icon: 'map', label: 'World Planner' },
+  { name: 'admin-security', icon: 'shield', label: 'Security' },
   { name: 'new-nation', icon: 'globe', label: 'New Nation' },
 ]
 
