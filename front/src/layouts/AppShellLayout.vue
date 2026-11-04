@@ -116,9 +116,8 @@ const defaultNavItems = computed<NavItem[]>(() => {
     isLoggedIn.value
       ? { name: 'home', icon: 'home', label: t('nav.lobby') }
       : { name: localizedName('landing', loc), icon: 'home', label: t('nav.home') },
-    { name: localizedName('shop-skin', loc), icon: 'shirt', label: t('nav.skins') },
     ...(isLoggedIn.value
-      ? [{ name: 'gems', icon: 'gem', label: t('nav.gems') } as NavItem, { name: 'friends', icon: 'users', label: t('nav.friends') } as NavItem]
+      ? [{ name: 'friends', icon: 'users', label: t('nav.friends') } as NavItem]
       : []),
     { name: 'settings', icon: 'settings', label: t('nav.settings') },
   ]

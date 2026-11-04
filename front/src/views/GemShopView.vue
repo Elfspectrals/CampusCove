@@ -6,7 +6,6 @@
  * never here.
  */
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import {
   GemCheckoutPreparingError,
@@ -20,8 +19,6 @@ import {
 } from '../api/gems'
 import { ApiError } from '../api/http'
 import { fetchCurrentUser } from '../api/auth'
-import { localizedName } from '../i18n/routes'
-import type { Locale } from '../seo/site'
 import { useWalletBalances } from '../composables/useWalletBalances'
 import { formatPrice } from '../utils/gemCheckout'
 import GemOrderHistory from '../components/shop/GemOrderHistory.vue'
@@ -135,12 +132,7 @@ function closeModal() {
     <p v-if="inDebt" class="cc-alert cc-alert-warn mb-4" role="status">
       <UiIcon name="alert" :size="18" /> {{ t('gems.debt') }}
     </p>
-    <!-- school project: Stripe test mode only, shown on every visit -->
-    <p class="cc-alert cc-alert-warn mb-4" role="note">
-      <UiIcon name="info" :size="18" />
-      <span><strong class="block font-extrabold">{{ t('gems.demoBanner') }}</strong>{{ t('gems.demoHint') }}</span>
-    </p>
-
+  
     <div v-if="catalogLoading" class="grid grid-cols-2 gap-4 lg:grid-cols-4">
       <div v-for="n in 4" :key="n" class="h-56 animate-pulse rounded-chunk border-2 border-ink-700 bg-ink-800/60" />
     </div>
@@ -151,19 +143,15 @@ function closeModal() {
       <button type="button" class="cc-btn cc-btn-coral cc-btn-sm" @click="loadCatalog">{{ t('gems.retry') }}</button>
     </div>
 
-    <div v-else-if="catalog && !catalog.available" class="cc-panel-flat flex flex-col items-center gap-2 px-4 py-10 text-center" role="status">
-      <UiCurrency currency="premium" :size="44" />
-      <template v-if="catalog.unavailableReason === 'admin_only'">
-        <p class="m-0 font-display text-xl text-fog">{{ t('gems.adminOnlyTitle') }}</p>
-        <p class="m-0 max-w-lg text-sm font-semibold text-mist">{{ t('gems.adminOnlyBody') }}</p>
-      </template>
-      <template v-else>
-        <p class="m-0 font-display text-xl text-fog">{{ t('gems.unavailableTitle') }}</p>
-        <p class="m-0 max-w-lg text-sm font-semibold text-mist">{{ t('gems.unavailableBody') }}</p>
-      </template>
-    </div>
+    <template v-else-if="catalog">
+    <!-- packs stay on show when ordering is off; only the buy buttons are disabled -->
+    <p v-if="!catalog.available" class="cc-alert cc-alert-warn mb-4" role="status">
+      <UiIcon name="info" :size="18" />
+      <span v-if="catalog.unavailableReason === 'admin_only'"><strong class="block font-extrabold">{{ t('gems.adminOnlyTitle') }}</strong>{{ t('gems.adminOnlyBody') }}</span>
+      <span v-else><strong class="block font-extrabold">{{ t('gems.unavailableTitle') }}</strong>{{ t('gems.unavailableBody') }}</span>
+    </p>
 
-    <ul v-else-if="catalog" class="m-0 grid list-none grid-cols-1 gap-4 p-0 min-[420px]:grid-cols-2 lg:grid-cols-4">
+    <ul class="m-0 grid list-none grid-cols-1 gap-4 p-0 min-[420px]:grid-cols-2 lg:grid-cols-4">
       <li v-for="(pack, i) in catalog.packs" :key="pack.code" class="cc-card flex flex-col">
         <div class="relative grid h-32 place-items-center bg-gradient-to-b from-grape/30 to-ink-900/40">
           <UiCurrency currency="premium" :size="48 + i * 10" />
@@ -174,7 +162,8 @@ function closeModal() {
           <p class="m-0 text-xs font-semibold text-mist">{{ t('gems.simulatedPrice') }}</p>
           <button
             type="button"
-            class="cc-btn cc-btn-grape mt-3 w-full"
+            class="cc-btn cc-btn-grape mt-3 w-full disabled:cursor-not-allowed disabled:opacity-50"
+            :disabled="!catalog.available"
             :aria-label="`${t('gems.buy')} — ${t('gems.packGems', { n: pack.gems })} — ${formatPrice(pack.amount_cents, pack.currency, locale)}`"
             @click="choose(pack)"
           >
@@ -183,13 +172,10 @@ function closeModal() {
         </div>
       </li>
     </ul>
+    </template>
 
-    <div class="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto]">
+    <div class="mt-6">
       <GemOrderHistory :orders="orders" :loading="ordersLoading" :error="ordersError" />
-      <RouterLink :to="{ name: localizedName('shop-skin', locale as Locale) }" class="cc-panel-flat flex items-center gap-3 self-start px-4 py-3 transition hover:brightness-110">
-        <UiIcon name="shirt" :size="22" class="text-sun" />
-        <span class="font-display text-sm uppercase tracking-wide text-fog">{{ t('gems.return.toSkins') }}</span>
-      </RouterLink>
     </div>
 
     <GemPurchaseConfirmModal

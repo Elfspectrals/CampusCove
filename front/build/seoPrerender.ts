@@ -52,7 +52,7 @@ function robots(origin: string): string {
   return [
     'User-agent: *',
     'Allow: /',
-    // '$' anchors the match: a bare '/shop' rule would also block the public /shop-skin
+    // '$' anchors the match: a bare '/shop' rule would also block any public page starting with /shop
     ...ROBOTS_BLOCKED_PATHS.map((p) => `Disallow: ${p}$`),
     ...ROBOTS_BLOCKED_PATHS.map((p) => `Disallow: ${p}/`),
     'Disallow: /api/',
@@ -76,7 +76,6 @@ function llms(origin: string): string {
     '## Pages',
     link('en', '', 'Home (EN)'),
     link('fr', '', 'Accueil (FR)'),
-    link('en', '/shop-skin', 'Skin shop'),
     link('en', '/legal/privacy', 'Privacy policy'),
     link('en', '/legal/terms', 'Terms of use'),
     '',

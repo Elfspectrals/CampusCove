@@ -43,7 +43,9 @@
 
 	handle {
 		root * /srv
-		redir /shop /shop-skin permanent
+		redir /shop / permanent
+		redir /shop-skin / permanent
+		redir /fr/shop-skin /fr permanent
 		redir /how-to-play / permanent
 		redir /fr/how-to-play /fr permanent
 
