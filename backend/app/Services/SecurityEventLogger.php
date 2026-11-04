@@ -24,6 +24,10 @@ class SecurityEventLogger
             'detail' => $detail,
         ]);
         $this->bans->banIfOverThreshold($origin->ip);
+        dispatch(function () use ($origin) {
+            app(AbuseIpdbService::class)->refreshReputation($origin->ip);
+            app(IpBanService::class)->banIfOverThreshold($origin->ip);
+        })->afterResponse();
 
         return $event;
     }

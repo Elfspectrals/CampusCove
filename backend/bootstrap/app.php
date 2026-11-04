@@ -6,6 +6,7 @@ use App\Http\Middleware\DetectSuspiciousRequests;
 use App\Http\Middleware\EnsureAccountIsActive;
 use App\Http\Middleware\EnsureAccountIsAdmin;
 use App\Http\Middleware\EnsureRealtimeServer;
+use App\Models\IpReputation;
 use App\Models\SecurityEvent;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -32,7 +33,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('accounts:purge-inactive')->dailyAt('04:00');
         // safety net behind the Stripe webhook; does nothing while Stripe is not configured
         $schedule->command('gems:reconcile')->everyTenMinutes()->withoutOverlapping();
-        $schedule->command('model:prune', ['--model' => [SecurityEvent::class]])->dailyAt('04:30');
+        $schedule->command('model:prune', ['--model' => [SecurityEvent::class, IpReputation::class]])->dailyAt('04:30');
     })
     ->withRouting(
         web: __DIR__.'/../routes/web.php',

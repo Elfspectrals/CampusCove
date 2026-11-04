@@ -43,6 +43,10 @@ return [
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET', ''),
     ],
 
+    'abuseipdb' => [
+        'key' => env('ABUSEIPDB_API_KEY', ''),
+    ],
+
     'cloudflare' => [
         'origin_secret' => env('CLOUDFLARE_ORIGIN_SECRET', ''),
     ],

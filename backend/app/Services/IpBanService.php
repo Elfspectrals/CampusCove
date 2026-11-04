@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\IpBan;
+use App\Models\IpReputation;
 use App\Models\SecurityEvent;
 
 class IpBanService
@@ -16,6 +17,8 @@ class IpBanService
     public const AUTO_BAN_HOURS = 24;
 
     public const SCORE_CAP_WITHOUT_BOT_SIGNAL = self::AUTO_BAN_SCORE - 1;
+
+    public const REPUTATION_WEIGHT_PERCENT = 30;
 
     public const WEIGHTS = [
         SecurityEvent::TYPE_LOGIN_FAILED => 4,
@@ -31,7 +34,10 @@ class IpBanService
         SecurityEvent::TYPE_SCANNER_AGENT,
     ];
 
-    public function __construct(private readonly RealtimeNotifier $realtime) {}
+    public function __construct(
+        private readonly RealtimeNotifier $realtime,
+        private readonly AbuseIpdbService $abuseIpdb,
+    ) {}
 
     public function score(string $ip): int
     {
@@ -46,6 +52,7 @@ class IpBanService
         foreach ($countsByType as $type => $events) {
             $score += self::WEIGHTS[$type] * $events;
         }
+        $score += $this->reputationPoints($ip);
         $score = min($score, self::MAX_SCORE);
 
         $hasBotSignal = $countsByType->keys()->intersect(self::BOT_SIGNALS)->isNotEmpty();
@@ -76,6 +83,14 @@ class IpBanService
             'expires_at' => now()->addHours(self::AUTO_BAN_HOURS),
         ]);
         $this->realtime->ipBanned($ip);
+        $this->abuseIpdb->reportBan($ip);
+    }
+
+    public function reputationPoints(string $ip): int
+    {
+        $confidence = IpReputation::whereKey($ip)->value('abuse_confidence');
+
+        return $confidence === null ? 0 : intdiv($confidence * self::REPUTATION_WEIGHT_PERCENT, 100);
     }
 
     public function unban(string $ip): int

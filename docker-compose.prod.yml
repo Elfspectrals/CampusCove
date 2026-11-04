@@ -40,6 +40,7 @@ x-backend: &backend
     GEMS_CHECKOUT_MODE: ${GEMS_CHECKOUT_MODE:-off}
     STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
     STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+    ABUSEIPDB_API_KEY: ${ABUSEIPDB_API_KEY:-}
   volumes:
     # Admin uploads (skin previews and models).
     - backend_storage:/var/www/html/storage/app
