@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Models\SecurityEvent;
 use App\Services\SecurityEventLogger;
+use App\Support\ClientOrigin;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -21,6 +22,10 @@ class DetectSuspiciousRequests
     public function handle(Request $request, Closure $next): Response
     {
         $response = $next($request);
+
+        if (ClientOrigin::fromRequest($request)->isRealtimeServer) {
+            return $response;
+        }
 
         foreach ($this->detect($request, $response) as $type => $detail) {
             $this->logger->record($request, $type, $detail);

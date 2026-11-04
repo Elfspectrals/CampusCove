@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Console\Scheduling\Schedule;
+use App\Http\Middleware\BlockBannedIps;
 use App\Http\Middleware\DetectSuspiciousRequests;
 use App\Http\Middleware\EnsureAccountIsActive;
 use App\Http\Middleware\EnsureAccountIsAdmin;
@@ -46,6 +47,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->convertEmptyStringsToNull(except: [
             fn (Request $request) => $request->is('api/inventory/layout'),
         ]);
+        $middleware->append(BlockBannedIps::class);
         $middleware->append(DetectSuspiciousRequests::class);
         $middleware->api(prepend: [
             HandleCors::class,

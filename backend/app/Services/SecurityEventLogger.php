@@ -8,11 +8,13 @@ use Illuminate\Http\Request;
 
 class SecurityEventLogger
 {
+    public function __construct(private readonly IpBanService $bans) {}
+
     public function record(Request $request, string $type, ?string $detail = null): SecurityEvent
     {
         $origin = ClientOrigin::fromRequest($request);
 
-        return SecurityEvent::create([
+        $event = SecurityEvent::create([
             'ip' => $origin->ip,
             'country' => $origin->country,
             'type' => $type,
@@ -21,5 +23,8 @@ class SecurityEventLogger
             'user_agent' => $request->userAgent(),
             'detail' => $detail,
         ]);
+        $this->bans->banIfOverThreshold($origin->ip);
+
+        return $event;
     }
 }

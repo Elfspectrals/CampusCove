@@ -1,6 +1,7 @@
 // Laravel API calls made on behalf of a player (their bearer token): the API stays authoritative for
 // identity, apartments, inventory and housing.
-import { BACKEND_API_URL, REALTIME_SHARED_SECRET } from './config.ts'
+import { createHash, timingSafeEqual } from 'node:crypto'
+import { BACKEND_API_URL, CLOUDFLARE_ORIGIN_SECRET, REALTIME_SHARED_SECRET } from './config.ts'
 import type { Identity } from './types.ts'
 
 /** Unvalidated JSON from the API or a client: callers check every field they read. */
@@ -22,18 +23,37 @@ function firstNonEmpty(...values: unknown[]): string | null {
 }
 
 // The account id always comes from the backend-validated token, never from client options.
-export async function resolveIdentity(options: Json): Promise<Identity> {
+export async function resolveIdentity(options: Json, ip: string): Promise<Identity> {
   const token = typeof options?.token === 'string' ? options.token.trim() : ''
   if (!token) throw new Error('missing auth token')
   const res = await fetch(`${BACKEND_API_URL}/user`, {
-    headers: { Accept: 'application/json', Authorization: `Bearer ${token}` }
+    headers: {
+      Accept: 'application/json',
+      Authorization: `Bearer ${token}`,
+      'X-Realtime-Secret': REALTIME_SHARED_SECRET,
+      'X-Realtime-Client-Ip': ip
+    }
   })
   if (!res.ok) throw new Error(`auth failed (${res.status})`)
   const data: Json = await res.json()
   const accountId = parseAccountId(data?.user?.account_id)
   if (accountId === null) throw new Error('invalid account id in auth payload')
   const pseudo = firstNonEmpty(data?.user?.display_name, data?.user?.username) ?? `User_${accountId}`
-  return { accountId, pseudo, token, isAdmin: data?.user?.is_admin === true }
+  return { accountId, pseudo, token, isAdmin: data?.user?.is_admin === true, ip }
+}
+
+const sha256 = (value: string) => createHash('sha256').update(value).digest()
+
+function cameThroughCloudflare(headers: Headers): boolean {
+  const given = headers.get('x-origin-secret')
+  if (!CLOUDFLARE_ORIGIN_SECRET || !given || !headers.has('cf-connecting-ip')) return false
+  return timingSafeEqual(sha256(given), sha256(CLOUDFLARE_ORIGIN_SECRET))
+}
+
+export function clientIp(headers: Headers, peerIp: string | string[]): string {
+  if (cameThroughCloudflare(headers)) return headers.get('cf-connecting-ip') as string
+  const forwarded = (headers.get('x-forwarded-for') ?? '').split(',').map((ip) => ip.trim()).filter(Boolean)
+  return forwarded.at(-1) ?? (Array.isArray(peerIp) ? peerIp[0] : peerIp)
 }
 
 // JSON request; rejects with the API's message (and `code`) on a non-2xx answer.
