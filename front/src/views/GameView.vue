@@ -252,7 +252,7 @@ const furnitureStores = [
     store: useFurnitureStore({
       ...mallStoreDeps,
       inStore: () => currentHouseKey.value === spec.key,
-      store: { key: spec.key, interiorLayoutUrl: spec.interiorLayoutUrl, modelUrl, clerkColors: { ...DEFAULT_SLOT_COLORS, ...clerkColors } },
+      store: { key: spec.key, interiorLayoutUrl: spec.interiorLayoutUrl, modelUrl, clerkColors: { ...DEFAULT_SLOT_COLORS, ...clerkColors }, priceTags: false },
     }),
   })),
 ]

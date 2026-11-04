@@ -44,7 +44,9 @@ BAKE_SAMPLES = 512
 LAMP_POWER_W = 120.0
 LAMP_DROP = 0.2
 SKY_FILL_STRENGTH = 0.35
-UNLIT_NAMES = re.compile(r"^(Sky_|Door_Entrance|Window_.*_Glass|Walls_.*_Glass|Glass_|Store_IN_Glass)")
+# Left out of the bake: see-through glass, and the glowing sign letters of the stores (merged per material into
+# Store_IN_<x>Sign), whose thin faces bake into dark blotches; they keep their own emission instead.
+UNLIT_NAMES = re.compile(r"^(Sky_|Door_Entrance|Window_.*_Glass|Walls_.*_Glass|Glass_|Store_IN_Glass|Store_IN_CartFridge|Store_IN_\w*Sign$)")
 
 
 def import_glb(path):

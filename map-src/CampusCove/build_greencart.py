@@ -242,7 +242,6 @@ def food_display(key, dep, gx, gy, gz, yaw, tag_x, tag_z, tag_y=1.32, stack=(1, 
     """One food on sale; `stack` = (columns, rows) of copies the front lines up on the spot, so a 10 cm cookie
     reads as a filled shelf facing instead of a lone crumb."""
     code, name, blurb, size = FOODS[key]
-    add(L.cyl(coll, f"TagPost_{key}", tag_x, tag_z, 0.0, 0.02, tag_y - 0.25, M["cart"], seg=6))
     displays.append({"key": key, "code": code, "department": dep, "description": blurb,
                      "position": [round(gx, 3), round(gy, 3), round(gz, 3)], "yaw": round(yaw, 4), "size": size, "stack": list(stack),
                      "tag": {"position": [round(tag_x, 3), tag_y, round(tag_z, 3)], "yaw": round(yaw, 4)}})
@@ -355,10 +354,11 @@ def end_cap(dep, gx):
     cols.add(f"Cap_{dep}", gx, gz + 0.05, 0.0, 1.2, 1.1, 1.5)
 
 
-def wall_fridge(name, gx0, gz0, gx1, gz1, face, styles, free=()):
+def wall_fridge(name, gx0, gz0, gx1, gz1, face, styles, free=(), glazed=True):
     """Hollow refrigerated wall unit opening towards `face` (unit vector from the wall into the store): back, sides and
     plinth, three 0.64 m shelves of goods on a plane 0.45 m from the wall, a glass front on its door rails with posts
-    and handles every 0.9 m, a lit header under the lime top band. `free` = (coordinate, half-length, level) windows."""
+    and handles every 0.9 m, a lit header under the lime top band. `free` = (coordinate, half-length, level) windows.
+    `glazed=False` leaves the front open (a dairy chiller): the products on sale are seen and clicked directly."""
     fx, fz = face
     along_x = fx == 0
     length = (gx1 - gx0) if along_x else (gz1 - gz0)
@@ -378,13 +378,14 @@ def wall_fridge(name, gx0, gz0, gx1, gz1, face, styles, free=()):
     fb("Side1", length - 0.06, length, 0.0, 0.8, LOOP_Y, 2.2, M["white"])
     fb("Plinth", 0.06, length - 0.06, 0.06, 0.86, LOOP_Y, 0.12, M["conveyor"])
     fb("DoorSill", 0.06, length - 0.06, 0.80, 0.86, 0.12, 0.30, M["cart"])
-    fb("Glass", 0.06, length - 0.06, 0.80, 0.84, 0.30, 2.00, M["fridge"])
+    if glazed:
+        fb("Glass", 0.06, length - 0.06, 0.80, 0.84, 0.30, 2.00, M["fridge"])
     fb("DoorHead", 0.06, length - 0.06, 0.80, 0.86, 2.00, 2.10, M["cart"])
     fb("Header", 0.06, length - 0.06, 0.06, 0.80, 2.00, 2.20, M["white"])
     fb("Strip", 0.06, length - 0.06, 0.80, 0.83, 2.17, 2.20, M["panel"])
     fb("Top", -0.05, length + 0.05, -0.05, 0.85, 2.20, 2.45, M["lime"])
-    doors = max(1, round((length - 0.12) / 0.9))
-    for j in range(doors + 1):
+    doors = max(1, round((length - 0.12) / 0.9)) if glazed else 0
+    for j in range(doors + 1 if glazed else 0):
         u = 0.09 + j * (length - 0.18) / doors
         fb(f"Post{j}", u - 0.03, u + 0.03, 0.84, 0.90, 0.30, 2.00, M["cart"])
         fb(f"Handle{j}", u - 0.015, u + 0.015, 0.90, 0.93, 1.00, 1.50, M["cart"])
@@ -658,7 +659,7 @@ bin_("Bin_Fresh", -1.0, -26.3, LOOP_Y)
 hanging_sign("dairy", -13.0, -27.0, 0.0, width=3.4)
 wall_fridge("Fridge_Dairy", -19.0, Z0 + 0.1, -8.0, Z0 + 0.9, (0, 1), FRIDGE_STYLES["Fridge_Dairy"])
 wall_fridge("Fridge_West", X0 + 0.1, -26.0, X0 + 0.9, -14.0, (1, 0), FRIDGE_STYLES["Fridge_West"],
-            free=[(z, stack_half(key, stack), lv) for key, lv, z, stack, _ in FRIDGE_WEST_DISPLAYS])
+            free=[(z, stack_half(key, stack), lv) for key, lv, z, stack, _ in FRIDGE_WEST_DISPLAYS], glazed=False)
 for key, lv, gz, stack, tag_z in FRIDGE_WEST_DISPLAYS:
     food_display(key, "dairy", X0 + 0.55, FRIDGE_YS[lv] + 0.03, gz, math.pi / 2, X0 + 1.35, tag_z, tag_y=1.35 if lv < 2 else 1.0, stack=stack)
 open_chiller("Chiller", -16.9, -6.9, -27.5, -26.7)
@@ -676,7 +677,8 @@ for i, dep in enumerate(GONDOLAS):
 for i, dep in enumerate(GONDOLAS):
     gx = -15.0 + i * 4.0
     kbox(f"AisleSign_{dep}", gx, GZ1 + 2.4, 3.5, 2.4, 0.06, 0.5, DM[dep])
-    text(f"AisleSign_{dep}_Text", DEPARTMENTS[dep][0], gx, GZ1 + 2.36, 3.62, 0.24, M["sign"], 0.0)
+    # the board's front face is at GZ1 + 2.43: the text sits just in front of it (it was buried inside the board)
+    text(f"AisleSign_{dep}_Text", DEPARTMENTS[dep][0], gx, GZ1 + 2.45, 3.62, 0.24, M["sign"], 0.0)
     dept_info.append({"id": dep, "label": DEPARTMENTS[dep][0], "color": DEPARTMENTS[dep][1], "sign": [round(gx, 3), 3.75, round(GZ1 + 2.4, 3)]})
 for dep in ("drinks", "pasta", "frozen"):
     gx = -15.0 + GONDOLAS.index(dep) * 4.0
@@ -774,7 +776,8 @@ xo += shell
 DN = hd - zb
 zc = (hd + zb) / 2
 xo.append(L.box(coll2, "EX_Plinth", 0, zc, 0.0, W + 0.3, DN + 0.3, 0.19, E["found"], bevel=0.02, tile=2.0))
-xo.append(L.box(coll2, "EX_Band", 0, zc, HB - 0.5, W, DN, 0.5, E["green"], tile=1.5))
+# the band is a hollow ring on the shell walls: a solid slab put its underside at (or below) the interior ceiling
+xo += L.perimeter(coll2, "EX_Band", W, hd, zb, HB - 0.5, 0.5, L.SHELL_THICKNESS, E["green"], tile=1.5)
 xo.append(L.box(coll2, "EX_Roof", 0, zc, HB, W + 0.4, DN + 0.4, 0.25, E["roof"], tile=3.0))
 xo.append(L.box(coll2, "EX_RoofUnit", -8.0, zc - 6.0, HB + 0.25, 3.0, 2.0, 1.2, E["metal"], bevel=0.03))
 xo.append(L.box(coll2, "EX_Fascia", 0, hd + 0.04, 3.6, W, 0.08, 1.4, E["green"]))

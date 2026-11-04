@@ -54,7 +54,6 @@ M["stripe2"] = L.make_mat("IN_CandyStripeMint", "#9fe0cf", 0.6, "stripes", 0.02,
 M["jar"] = L.make_mat("IN_CandyJar", "#e6f6fb", 0.1, "noise", 0.01, alpha=0.35)
 M["sign"] = L.make_mat("IN_CandySign", "#ffffff", 0.4, "noise", 0.0, emit="#fff1f7", emit_strength=1.0)
 M["cloud"] = L.make_mat("IN_CandyCloud", "#ffffff", 0.9, "noise", 0.02, emit="#ffffff", emit_strength=0.4)
-M["tag"] = L.make_mat("IN_CandyTagPost", "#b8b0c4", 0.5, "noise", 0.02)
 M["machine"] = L.make_mat("IN_CandyMachine", "#d94f8a", 0.4, "noise", 0.02)
 M["chrome"] = L.make_mat("IN_CandyChrome", "#d9dde2", 0.2, "noise", 0.02)
 FILLS = [L.make_mat(f"IN_CandyFill{i}", c, 0.4, "noise", 0.05) for i, c in enumerate(("#e0534f", "#f6d04d", "#79b765", "#38a3c9", "#a985e0", "#f28c28", "#f4b3c8", "#2fa17a"))]
@@ -122,7 +121,6 @@ def display(key, gx, gy, gz, yaw, tag_x, tag_z, tag_y=1.3, stack=(1, 1)):
     """One sweet on sale; `stack` = (columns, rows) of copies the front lines up on the spot so the small
     models read as a filled shelf."""
     code, dep, blurb, size = SWEETS[key]
-    add(L.cyl(coll, f"TagPost_{key}", tag_x, tag_z, 0.0, 0.02, tag_y - 0.25, M["tag"], seg=6))
     displays.append({"key": key, "code": code, "department": dep, "description": blurb,
                      "position": [round(gx, 3), round(gy, 3), round(gz, 3)], "yaw": round(yaw, 4), "size": size, "stack": list(stack),
                      "tag": {"position": [round(tag_x, 3), tag_y, round(tag_z, 3)], "yaw": round(yaw, 4)}})

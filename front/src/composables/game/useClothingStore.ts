@@ -11,6 +11,7 @@ import { wearSignature, type WearSlot } from '../../avatar/modularCharacterLogic
 import { COVE_THREADS } from '../../game/assets/catalog'
 import { EYE_HEIGHT } from '../../game/gameRoomConstants'
 import { openHouseInterior } from '../../game/town/openHouses'
+import { freshDisplayGroup } from '../../game/store/displayGroup'
 import { createPriceTag, type PriceTagContent } from '../../game/store/priceTag'
 import { brightenForShop, createStoreClerk, outfitModels, wearModelUrl } from '../../game/store/storeClerk'
 import type { ScreenPrompt } from './useInteractionTargets'
@@ -209,9 +210,7 @@ export function useClothingStore(deps: ClothingStoreDeps) {
     const loaded = (await res.json()) as ThreadsLayout
     layout.value = loaded
     await refreshCatalogAndOwned()
-    const displays = new THREE.Group()
-    displays.name = 'ThreadsDisplays'
-    group.add(displays)
+    const displays = freshDisplayGroup(group, 'ThreadsDisplays')
     group.updateWorldMatrix(true, true)
     addMirror(group, displays, loaded.mirror)
     void clerk.attach(group, displays, loaded.clerk)

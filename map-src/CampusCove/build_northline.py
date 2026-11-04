@@ -387,7 +387,8 @@ xo += shell
 DN = hd - zb
 zc = (hd + zb) / 2
 xo.append(L.box(coll2, "EX_Plinth", 0, zc, 0.0, W + 0.3, DN + 0.3, 0.19, E["found"], bevel=0.02, tile=2.0))
-xo.append(L.box(coll2, "EX_Band", 0, zc, HB - 0.5, W, DN, 0.5, E["band"], tile=1.5))
+# the band is a hollow ring on the shell walls: a solid slab put its underside at (or below) the interior ceiling
+xo += L.perimeter(coll2, "EX_Band", W, hd, zb, HB - 0.5, 0.5, L.SHELL_THICKNESS, E["band"], tile=1.5)
 xo.append(L.box(coll2, "EX_Roof", 0, zc, HB, W + 0.4, DN + 0.4, 0.25, E["roof"], tile=3.0))
 xo.append(L.box(coll2, "EX_Fascia", 0, hd + 0.04, 3.75, W, 0.08, 1.2, E["band"]))
 xo.append(L.text_mesh(coll2, "EX_SignText", NAME.upper(), 0.0, hd + 0.1, 4.0, 0.8, 0.06, E["sign"]))

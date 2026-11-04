@@ -57,7 +57,6 @@ M["sign"] = L.make_mat("IN_HwSign", "#ffffff", 0.4, "noise", 0.0, emit="#ffffff"
 M["counter"] = L.make_mat("IN_HwCounter", "#4a4f57", 0.5, "noise", 0.03)
 M["lumber"] = L.make_mat("IN_HwLumber", "#d8b78a", 0.8, "planks", 0.05, accent="#c49c6c")
 M["plinth"] = L.make_mat("IN_HwPlinth", "#f2efe8", 0.6, "noise", 0.01)
-M["tag"] = L.make_mat("IN_HwTagPost", "#4a4f57", 0.5, "noise", 0.02)
 CHIPS = [L.make_mat(f"IN_HwChip{i}", c, 0.6, "noise", 0.02) for i, c in enumerate(("#e0533d", "#f6d04d", "#3f7f8c", "#79b765", "#1f5fae", "#a985e0", "#f2a65a", "#f7f4ec", "#2f6f63", "#f07fa8"))]
 TOOLS = [L.make_mat(f"IN_HwTool{i}", c, 0.5, "noise", 0.03) for i, c in enumerate(("#e07a2e", "#2f3338", "#9aa0a8", "#1f5fae", "#f6d04d"))]
 DM = {dep: L.make_mat(f"IN_HwDept_{dep}", c, 0.8, "noise", 0.02) for dep, (_, c) in DEPARTMENTS.items()}
@@ -201,8 +200,6 @@ for key, (dep, blurb, (gx, gz), yaw) in ITEMS.items():
     cols.add(f"Item_{key}", gx, gz, y0, side if yaw in (0.0, math.pi) else d_, d_ if yaw in (0.0, math.pi) else w_, h_)
     fx, fz = math.sin(yaw), math.cos(yaw)
     tx, tz = gx + fx * (side / 2 + 0.45), gz + fz * (side / 2 + 0.45)
-    add(L.cyl(coll, f"TagPost_{key}", tx, tz, 0.0, 0.025, 1.05, M["tag"], seg=6))
-    add(L.cyl(coll, f"TagFoot_{key}", tx, tz, 0.0, 0.16, 0.03, M["tag"], seg=10))
     displays.append({"key": key, "code": "decor_" + key, "department": dep, "description": blurb,
                      "position": [round(gx, 3), y0, round(gz, 3)], "yaw": round(yaw, 4), "size": [w_, h_, d_],
                      "tag": {"position": [round(tx, 3), 1.32, round(tz, 3)], "yaw": round(yaw, 4)}})
@@ -263,7 +260,8 @@ xo += shell
 DN = hd - zb
 zc = (hd + zb) / 2
 xo.append(L.box(coll2, "EX_Plinth", 0, zc, 0.0, W + 0.2, DN + 0.2, 0.19, E["found"], bevel=0.02, tile=2.0))
-xo.append(L.box(coll2, "EX_Band", 0, zc, HB - 0.4, W, DN, 0.4, E["dark"], tile=1.5))
+# the band is a hollow ring on the shell walls: a solid slab put its underside at (or below) the interior ceiling
+xo += L.perimeter(coll2, "EX_Band", W, hd, zb, HB - 0.4, 0.4, L.SHELL_THICKNESS, E["dark"], tile=1.5)
 xo.append(L.box(coll2, "EX_Roof", 0, zc, HB, W + 0.3, DN + 0.3, 0.2, E["roof"], tile=3.0))
 xo.append(L.box(coll2, "EX_Fascia", 0, hd + 0.04, 3.4, W, 0.08, 1.1, E["orange"]))
 xo.append(L.text_mesh(coll2, "EX_SignText", "CRISPIN'S HARDWARE", 0.0, hd + 0.1, 3.65, 0.6, 0.05, E["sign"]))
