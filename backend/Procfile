@@ -1,2 +1,2 @@
-web: heroku-php-apache2 public/
+web: heroku-php-apache2 -C apache_app.conf public/
 release: php artisan migrate --force && php artisan db:seed --class=ShopSeeder --force && php artisan db:seed --class=HousingUnitSeeder --force
