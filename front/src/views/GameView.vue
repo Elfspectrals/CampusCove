@@ -23,6 +23,7 @@ import GamePointerLockOverlay from '../components/game/GamePointerLockOverlay.vu
 import GameSettingsDialog from '../components/game/GameSettingsDialog.vue'
 import GameStoreItemCard from '../components/game/GameStoreItemCard.vue'
 import GameCafeMenu from '../components/game/GameCafeMenu.vue'
+import GameOrchardSellMenu from '../components/game/GameOrchardSellMenu.vue'
 import GamePubMenu from '../components/game/GamePubMenu.vue'
 import GamePubSecretDialog from '../components/game/GamePubSecretDialog.vue'
 import GameDrunkEffects from '../components/game/GameDrunkEffects.vue'
@@ -30,6 +31,7 @@ import GameDrinkFast from '../components/game/GameDrinkFast.vue'
 import GamePubChallenge from '../components/game/GamePubChallenge.vue'
 import GamePubRaceBoard from '../components/game/GamePubRaceBoard.vue'
 import GameMeterShot from '../components/game/GameMeterShot.vue'
+import GameMinimap from '../components/game/GameMinimap.vue'
 import GameDarts from '../components/game/GameDarts.vue'
 import GameBasketCheckout from '../components/game/GameBasketCheckout.vue'
 import GameWardrobe from '../components/game/GameWardrobe.vue'
@@ -52,7 +54,9 @@ import { useGameMovement } from '../composables/game/useGameMovement'
 import { useGameRealtime } from '../composables/game/useGameRealtime'
 import { useInteractionTargets } from '../composables/game/useInteractionTargets'
 import { useIntoxication } from '../composables/game/useIntoxication'
+import { useMinimap } from '../composables/game/useMinimap'
 import { usePlayerInventory } from '../composables/game/usePlayerInventory'
+import { useOrchard } from '../composables/game/useOrchard'
 import { usePub } from '../composables/game/usePub'
 import { usePubChallenge } from '../composables/game/usePubChallenge'
 import { usePubGames } from '../composables/game/usePubGames'
@@ -64,6 +68,7 @@ import { useAdminWatch } from '../composables/game/useAdminWatch'
 import { usePunch } from '../composables/game/usePunch'
 import { useShopPurchase } from '../composables/useShopPurchase'
 import { toggleCollisionDebug } from '../game/collision/collisionDebug'
+import { toggleTerrainDebug } from '../game/town/terrainDebug'
 import { actionKeyLabels, matches, mouseButtonCode } from '../config/keybindings'
 import { getWorldCollisionStats } from '../game/collision/worldCollision'
 import { HOUSING_LOBBY_SPAWN } from '../game/gameRoomConstants'
@@ -476,6 +481,22 @@ watch(pubUiOpen, (open) => {
   if (!open && !document.pointerLockElement) requestPointerLock()
 })
 
+const orchard = useOrchard({
+  myPosition,
+  getCamera,
+  getScene,
+  canvasRef,
+  gameRoomRef,
+  promptsHidden: () => inventoryOpen.value || !canUsePub(),
+  itemByCode: () => itemByCode.value,
+  refreshInventory: () => refreshOwnedItems(),
+  say: (text) => survival.say(text),
+})
+const { menuOpen: orchardMenuOpen, selling: orchardSelling, feedback: orchardFeedback, pickProgress: orchardPickProgress } = orchard
+watch(orchardMenuOpen, (open) => {
+  if (!open && !document.pointerLockElement) requestPointerLock()
+})
+
 const interactions = useInteractionTargets({
   myPosition,
   getCamera,
@@ -515,7 +536,7 @@ const interactions = useInteractionTargets({
     else if (activeFurniture.value?.store.hasCounter.value) activeFurniture.value.store.toggleTarget()
     else openStorePurchase()
   },
-  sources: [pub.source, pubChallenge.source, pubGames.source, seats.source],
+  sources: [pub.source, pubChallenge.source, pubGames.source, seats.source, orchard.source],
 })
 const { doorPrompt } = interactions
 
@@ -724,6 +745,23 @@ void document.fonts.ready.then(() => {
   refreshDoorSigns()
 })
 
+const minimap = useMinimap({
+  getRenderer,
+  getScene,
+  getCamera,
+  myPosition,
+  homeKey: () => {
+    const me = myAccountId.value
+    return me === null ? null : (housing.units.value.find((u) => u.occupant_account_id === me)?.model_key ?? null)
+  },
+  buildingKey: () => currentHouseKey.value,
+})
+const mapKey = computed(() => actionKeyLabels('map')[0] ?? 'M')
+// Esc frees the mouse and opens the pause menu: the full map gives way to it
+watch(pointerLocked, (locked) => {
+  if (!locked) minimap.fullOpen.value = false
+})
+
 const environment = useRoomEnvironment({
   getScene,
   getRenderer,
@@ -740,6 +778,8 @@ const environment = useRoomEnvironment({
     seats.onTownLoaded(manifest)
     pub.onTownLoaded(manifest)
     pubGames.onTownLoaded(manifest)
+    orchard.onTownLoaded(manifest)
+    minimap.onTownLoaded(manifest)
     houseFurniture.onTownReady()
     for (const { key, store } of furnitureStores) {
       const interior = openHouseInterior(key)
@@ -837,6 +877,7 @@ const pauseMenuOpen = computed(
     !checkoutOpen.value &&
     !tradeUiOpen.value &&
     !pubUiOpen.value &&
+    !orchardMenuOpen.value &&
     !settingsOpen.value,
 )
 /** Back in the game with the menu closed, but the browser hasn't given the pointer back yet. */
@@ -858,6 +899,7 @@ function handleExtraKeyDown(e: KeyboardEvent): boolean {
   }
   // a key is a gesture: take the pointer back (the player only moves once the lock is back)
   if (resumedWithoutLock.value) retryPointerLock()
+  if (minimap.onKeyDown(e)) return true
   if (houseKeys.onKeyDown(e)) return true
   if (survival.onKeyDown(e)) return true
   if (runUseOrPunch(e.code, e.repeat)) return true
@@ -872,6 +914,14 @@ function handleExtraKeyDown(e: KeyboardEvent): boolean {
     const on = toggleCollisionDebug(scene)
     const stats = getWorldCollisionStats()
     console.info(`[collision] debug ${on ? 'ON' : 'OFF'} — ${stats.cuboids} cuboids, mode=${stats.mode ?? 'n/a'}`)
+    return true
+  }
+  // walk-height overlay, same rule: dev only
+  if (import.meta.env.DEV && e.code === 'KeyH' && !e.repeat) {
+    const scene = getScene()
+    if (!scene) return true
+    const zones = toggleTerrainDebug(scene)
+    console.info(`[terrain] heights ${zones ? `ON — ${zones.join(', ') || 'no heightmap loaded'}` : 'OFF'}`)
     return true
   }
   return placement.onKeyDown(e)
@@ -927,7 +977,9 @@ const movement = useGameMovement({
     clinic.updatePrompt()
     pub.tick(dt)
     pubGames.tick()
+    orchard.tick(dt)
     if (!doorSigns.group.parent) getScene()?.add(doorSigns.group)
+    minimap.tick()
   },
 })
 const { requestPointerLock, onCanvasMouseDown } = movement
@@ -994,6 +1046,7 @@ const realtime = useGameRealtime({
   seats: { seatPose: seats.seatPose, onSeated: seats.onSeated },
   pub: pub.handlers,
   pubGames: pubGames.handlers,
+  orchard: orchard.handlers,
   pubChallenge: pubChallenge.handlers,
 })
 const { switchingRoom } = realtime
@@ -1146,6 +1199,15 @@ const crosshairClass = computed(() => {
     />
     <GameDrunkEffects :effects="drunkEffects" />
     <GameRoomMessageBanner v-if="roomMessage" :message="roomMessage" />
+    <GameMinimap
+      :image="minimap.image.value"
+      :markers="minimap.markers.value"
+      :player="minimap.player"
+      :inside-name="minimap.insideName.value"
+      :full-open="minimap.fullOpen.value"
+      :map-key="mapKey"
+      @close="minimap.fullOpen.value = false"
+    />
     <GameHudToolbar
       :position-label="positionLabel"
       :show-graphics-toggle="!pointerLocked"
@@ -1388,6 +1450,29 @@ const crosshairClass = computed(() => {
       @buy="clinic.buy"
       @close="clinic.close"
     />
+    <GameOrchardSellMenu
+      v-if="orchardMenuOpen"
+      :carried="orchard.carried()"
+      :selling="orchardSelling"
+      :feedback="orchardFeedback"
+      @sell="orchard.sell"
+      @close="orchard.close"
+    />
+    <div
+      v-if="orchardPickProgress !== null"
+      class="pointer-events-none absolute bottom-40 left-1/2 flex -translate-x-1/2 flex-col items-center gap-2 text-center"
+    >
+      <p class="m-0 font-display text-sm tracking-wide text-fog">Picking an apple…</p>
+      <div
+        class="h-2 w-[min(240px,60vw)] overflow-hidden rounded-full bg-ink-950/60"
+        role="progressbar"
+        :aria-valuenow="Math.round(orchardPickProgress * 100)"
+        aria-valuemin="0"
+        aria-valuemax="100"
+      >
+        <div class="h-full rounded-full bg-mint" :style="{ width: `${orchardPickProgress * 100}%` }" />
+      </div>
+    </div>
     <GamePubMenu
       v-if="pubMenuOpen"
       :items="pubMenu"

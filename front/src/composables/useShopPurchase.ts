@@ -1,4 +1,5 @@
 import { computed, ref } from 'vue'
+import { ApiError } from '../api/http'
 import { purchaseShopItem, type ShopCurrency, type ShopItem, type ShopItemCurrencyOption } from '../api/itemShop'
 import { getStoredAuth } from '../api/session'
 import { useWalletBalances } from './useWalletBalances'
@@ -6,7 +7,11 @@ import { useWalletBalances } from './useWalletBalances'
 interface PurchaseFeedback {
   kind: 'success' | 'error'
   text: string
+  /** Not enough gems (or a negative balance after a refund): the view links to the gem shop. */
+  topUp?: boolean
 }
+
+const TOP_UP_CODES = ['insufficient_funds', 'premium_debt']
 
 /**
  * Buying a shop item: the confirm modal state (item, chosen currency, balance before / after) and the
@@ -67,7 +72,8 @@ export function useShopPurchase() {
       setFeedback(item.item_def_id, { kind: 'success', text: result.message })
       closePurchaseConfirm()
     } catch (e) {
-      setFeedback(item.item_def_id, { kind: 'error', text: e instanceof Error ? e.message : 'Purchase failed' })
+      const topUp = selected.currency === 'premium' && e instanceof ApiError && TOP_UP_CODES.includes(e.code ?? '')
+      setFeedback(item.item_def_id, { kind: 'error', text: e instanceof Error ? e.message : 'Purchase failed', topUp })
     } finally {
       purchasingId.value = null
     }

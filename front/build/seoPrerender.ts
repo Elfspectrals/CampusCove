@@ -18,7 +18,7 @@ import { LOCALES, SITE, localePrefix, type Locale } from '../src/seo/site'
  * purpose: they are linked from every public page and carry noindex (X-Robots-Tag in vercel.json + meta), which a
  * crawler can only read if robots.txt lets it fetch them.
  */
-const ROBOTS_BLOCKED_PATHS = ['/home', '/locker', '/friends', '/settings', '/game', '/NewNation', '/admin', '/dev']
+const ROBOTS_BLOCKED_PATHS = ['/home', '/locker', '/friends', '/gems', '/settings', '/game', '/NewNation', '/admin', '/dev']
 
 function shellHead(title: string): string {
   return [
@@ -52,7 +52,7 @@ function robots(origin: string): string {
   return [
     'User-agent: *',
     'Allow: /',
-    // '$' anchors the match: a bare '/shop' rule would also block the public /shop-skin
+    // '$' anchors the match: a bare '/shop' rule would also block any public page starting with /shop
     ...ROBOTS_BLOCKED_PATHS.map((p) => `Disallow: ${p}$`),
     ...ROBOTS_BLOCKED_PATHS.map((p) => `Disallow: ${p}/`),
     'Disallow: /api/',
@@ -76,7 +76,6 @@ function llms(origin: string): string {
     '## Pages',
     link('en', '', 'Home (EN)'),
     link('fr', '', 'Accueil (FR)'),
-    link('en', '/shop-skin', 'Skin shop'),
     link('en', '/legal/privacy', 'Privacy policy'),
     link('en', '/legal/terms', 'Terms of use'),
     '',

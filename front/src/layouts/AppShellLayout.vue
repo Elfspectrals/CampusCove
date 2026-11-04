@@ -116,8 +116,9 @@ const defaultNavItems = computed<NavItem[]>(() => {
     isLoggedIn.value
       ? { name: 'home', icon: 'home', label: t('nav.lobby') }
       : { name: localizedName('landing', loc), icon: 'home', label: t('nav.home') },
-    { name: localizedName('shop-skin', loc), icon: 'shirt', label: t('nav.skins') },
-    ...(isLoggedIn.value ? [{ name: 'friends', icon: 'users', label: t('nav.friends') } as NavItem] : []),
+    ...(isLoggedIn.value
+      ? [{ name: 'friends', icon: 'users', label: t('nav.friends') } as NavItem]
+      : []),
     { name: 'settings', icon: 'settings', label: t('nav.settings') },
   ]
 })
@@ -202,7 +203,7 @@ watch(
             <RouterLink :to="{ name: 'game' }" title="Coins: spend them on furniture at Cove Home" class="transition hover:brightness-110">
               <UiCurrency currency="coins" :amount="balances.coins" pill />
             </RouterLink>
-            <RouterLink :to="{ name: 'shop-skin' }" title="Premium gems" class="transition hover:brightness-110">
+            <RouterLink :to="{ name: 'gems' }" :title="t('gems.getGems')" :aria-label="`${t('gems.getGems')} (${balances.premium ?? '—'})`" class="transition hover:brightness-110">
               <UiCurrency currency="premium" :amount="balances.premium" pill />
             </RouterLink>
           </div>
@@ -247,7 +248,9 @@ watch(
               </div>
               <div class="mb-2 flex gap-2 px-2 md:hidden">
                 <UiCurrency currency="coins" :amount="balances.coins" pill />
-                <UiCurrency currency="premium" :amount="balances.premium" pill />
+                <RouterLink :to="{ name: 'gems' }" role="menuitem" :aria-label="`${t('gems.getGems')} (${balances.premium ?? '—'})`">
+                  <UiCurrency currency="premium" :amount="balances.premium" pill />
+                </RouterLink>
               </div>
               <RouterLink :to="{ name: 'home' }" role="menuitem" class="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-bold text-fog hover:bg-white/5">
                 <UiIcon name="user" :size="18" /> Profile

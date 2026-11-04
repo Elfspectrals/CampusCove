@@ -330,3 +330,20 @@ export interface PubDartsEndPayload {
   ranking: Array<{ sessionId: string; total: number }>
   rewards: PubRewardPayload[]
 }
+
+export interface OrchardPickedPayload {
+  code: string
+  quantity: number
+}
+
+export interface OrchardSoldPayload {
+  sold: number
+  coins: number
+  balance_after: number
+  full_price_left: number
+}
+
+export interface OrchardErrorPayload {
+  message: string
+  code: string
+}

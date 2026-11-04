@@ -228,6 +228,7 @@ const CONSUMABLE_FOLDERS: ReadonlyArray<[prefix: string, folder: string]> = [
   ['grocery_', 'grocery'],
   ['med_', 'medical'],
   ['drink_', 'drinks'],
+  ['farm_', 'farm'],
 ]
 
 function consumableFolder(code: string): string {

@@ -97,6 +97,13 @@ def build_headset(key, M, m):
         add_ellipsoid(M, m["main"], (-0.05, -0.128, 1.668), (0.016, 0.012, 0.012), seg=8, rings=6)
 
 
+def build_straw_hat(key, M, m):
+    hair_cap(M, m["hair"], puff=0.008)
+    add_cyl(M, m["main"], (0, -0.012, 1.80), (0, -0.012, 1.93), 0.112, 0.098, seg=20, sx=0.92)
+    add_cyl(M, m["main"], (0, -0.012, 1.80), (0, -0.012, 1.812), 0.21, 0.21, seg=24)
+    add_cyl(M, m["accent"], (0, -0.012, 1.812), (0, -0.012, 1.842), 0.1135, 0.111, seg=20, cap=False, sx=0.92)
+
+
 TORSO_PATH = [(0, 0, 0.97), (0, 0, 1.10), (0, 0, 1.28), (0, 0, 1.43), (0, 0, 1.52), (0, 0, 1.585)]
 TORSO_R = [(0.168, 0.118), (0.158, 0.112), (0.19, 0.133), (0.212, 0.141), (0.16, 0.118), (0.085, 0.08)]
 ARM_PATH = [(0.17, 0, 1.50), (0.25, 0, 1.40), (0.34, 0, 1.22), (0.395, 0, 1.10), (0.43, 0, 0.975)]
@@ -121,8 +128,41 @@ def sleeves(M, m, upto, puff=1.0, cuff=None):
             add_sweep(M, cuff, SP([tuple(V(end) - d), end], sg), [(r[0] * puff + 0.004, r[1] * puff + 0.004)] * 2, seg=14, per=1)
 
 
+SHIRT_BUTTONS = [(1.45, -0.152), (1.32, -0.147), (1.19, -0.135), (1.06, -0.124)]
+SHIRT_BANDS = [(1.06, (0.176, 0.124)), (1.20, (0.192, 0.135)), (1.34, (0.217, 0.148))]
+
+
+def plaid_shirt(M, m):
+    torso(M, m["main"], puff=1.07)
+    sleeves(M, m["main"], 4, puff=1.12, cuff=m["accent"])
+    add_sweep(M, m["accent"], [(0, 0, 1.545), (0, 0, 1.60)], [(0.12, 0.105), (0.1, 0.092)], seg=18, per=1)
+    for z, r in SHIRT_BANDS:
+        add_sweep(M, m["accent"], [(0, 0, z), (0, 0, z + 0.018)], [r, r], seg=18, per=1)
+    for z, y in SHIRT_BUTTONS:
+        add_cyl(M, m["accent"], (0, y, z), (0, y - 0.008, z), 0.008, 0.008, seg=6)
+    for sg in (1, -1):
+        add_box(M, m["main"], S((0.09, -0.154, 1.37), sg), (0.07, 0.008, 0.07), bevel=0.004)
+        add_box(M, m["accent"], S((0.09, -0.159, 1.40), sg), (0.074, 0.004, 0.012), bevel=0.0)
+
+
+def work_apron(M, m):
+    add_box(M, m["apron"], (0, -0.16, 1.20), (0.26, 0.01, 0.40), rot=(0.0575, 0, 0), bevel=0.003)
+    add_box(M, m["apron"], (0, -0.165, 0.835), (0.36, 0.01, 0.34), bevel=0.003)
+    add_box(M, m["apron"], (0, -0.173, 0.86), (0.2, 0.006, 0.1), bevel=0.002)
+    add_box(M, m["accent"], (0, -0.177, 0.905), (0.2, 0.003, 0.008), bevel=0.0)
+    for sg in (1, -1):
+        add_sweep(M, m["apron"], SP([(0.12, -0.17, 1.39), (0.115, -0.13, 1.50), (0.11, -0.04, 1.58)], sg), [(0.008, 0.004)] * 3, seg=6, per=2)
+    add_sweep(M, m["apron"], [(-0.11, -0.04, 1.58), (-0.08, 0.08, 1.58), (0, 0.105, 1.58), (0.08, 0.08, 1.58), (0.11, -0.04, 1.58)], [(0.008, 0.004)] * 5, seg=6, per=2)
+    add_sweep(M, m["apron"], [(0.18, -0.165, 1.0), (0.19, 0, 1.0), (0, 0.135, 1.0), (-0.19, 0, 1.0), (-0.18, -0.165, 1.0)], [(0.008, 0.008)] * 5, seg=6, per=2)
+
+
 def build_top(key, M, m):
-    if key in ("basic", "tee"):
+    if key == "plaid_shirt":
+        plaid_shirt(M, m)
+    elif key == "farm_apron":
+        plaid_shirt(M, m)
+        work_apron(M, m)
+    elif key in ("basic", "tee"):
         torso(M, m["main"])
         sleeves(M, m["main"], 1, puff=1.12)
         add_sweep(M, m["accent"], [(0, 0, 1.565), (0, 0, 1.585)], [(0.1, 0.092), (0.088, 0.082)], seg=18, per=1)
@@ -245,6 +285,16 @@ def build_bottom(key, M, m):
         for sg in (1, -1):
             add_box(M, m["accent"], S((0.205, 0.0, 0.62), sg), (0.016, 0.06, 0.26), bevel=0.004)
         add_sweep(M, m["accent"], [(0, 0, 1.02), (0, 0, 1.05)], [(0.176, 0.124), (0.176, 0.124)], seg=18, per=1)
+    elif key == "dungarees":
+        waist(M, m["main"], puff=1.03)
+        legs(M, m["main"], 4, puff=1.08)
+        add_box(M, m["main"], (0, -0.144, 1.16), (0.24, 0.01, 0.32), rot=(0.0575, 0, 0), bevel=0.003)
+        add_box(M, m["main"], (0, -0.151, 1.20), (0.12, 0.006, 0.08), rot=(0.0575, 0, 0), bevel=0.002)
+        add_box(M, m["main"], (0, 0.135, 1.12), (0.26, 0.01, 0.2), rot=(-0.05, 0, 0), bevel=0.003)
+        for sg in (1, -1):
+            add_sweep(M, m["main"], SP([(0.08, -0.153, 1.31), (0.11, -0.148, 1.45), (0.125, -0.06, 1.545), (0.125, 0.06, 1.545), (0.11, 0.138, 1.42), (0.085, 0.14, 1.20)], sg),
+                      [(0.016, 0.005)] * 6, seg=6, per=2)
+            add_box(M, m["accent"], S((0.08, -0.158, 1.30), sg), (0.03, 0.008, 0.025), bevel=0.002)
     elif key == "leggings":
         waist(M, m["main"], puff=0.98)
         legs(M, m["main"], 4, puff=0.98)
@@ -303,6 +353,7 @@ WEAR = {
         "cat_ear": dict(main="f4b3c8", accent="fbe3ea", hides=[]),
         "neon": dict(main="1c1b2a", accent="2e2b4a", extra={"glow": dict(color="6ff3ff", rough=0.3, emit="6ff3ff", estr=1.0)}, hides=[]),
         "pilot": dict(main="5c6340", accent="2a2c22", hides=[]),
+        "straw_hat": dict(main="d8b56a", accent="7a3b2b", builder=build_straw_hat, hides=[]),
     }),
     "top": dict(builder=build_top, bones=TOP_BONES, items={
         "basic": dict(main="6f8fb8", accent="5a789c", hides=["chest"]),
@@ -314,6 +365,8 @@ WEAR = {
         "track_jacket": dict(main="1f2a5a", accent="f2f0ea", extra={"trim": dict(color="f0b429", rough=0.6)}, hides=["chest", "upper_arms", "forearms"]),
         "jersey": dict(main="2fa17a", accent="f2f0ea", hides=["chest"]),
         "sports_bra": dict(main="e0534f", accent="1f2230", hides=["chest"]),
+        "plaid_shirt": dict(main="b5362e", accent="2a2630", hides=["chest", "upper_arms", "forearms"]),
+        "farm_apron": dict(main="b5362e", accent="2a2630", extra={"apron": dict(color="c2a878", rough=0.9)}, hides=["chest", "upper_arms", "forearms"]),
     }),
     "bottom": dict(builder=build_bottom, bones=['Hips', 'Spine', 'UpperLeg.L', 'UpperLeg.R', 'LowerLeg.L', 'LowerLeg.R'], items={
         "basic": dict(main="4b5669", accent="3a4352", hides=["hips", "thighs", "shins"]),
@@ -325,6 +378,7 @@ WEAR = {
         "track_pants": dict(main="1f2a5a", accent="f0b429", hides=["hips", "thighs", "shins"]),
         "basketball_shorts": dict(main="f0b429", accent="1f2230", hides=["hips", "thighs"]),
         "leggings": dict(main="2a2c33", accent="b73cc9", hides=["hips", "thighs", "shins"]),
+        "dungarees": dict(main="41618f", accent="c9a23f", hides=["hips", "thighs", "shins"]),
     }),
     "shoes": dict(builder=build_shoes, bones=['LowerLeg.L', 'LowerLeg.R', 'Foot.L', 'Foot.R', 'Toe.L', 'Toe.R'], items={
         "basic": dict(main="e9e6df", accent="9a9ca4", hides=["feet"]),
@@ -372,7 +426,7 @@ def build_piece(slot, key, coll, arm, body_objs):
     if slot == "head_accessory":
         m["hair"] = mat("W_head_accessory_%s_Hair" % key, "2e2018", rough=0.8)
     M = Mesh("Wear_%s_%s" % (slot, key))
-    spec["builder"](key, M, m)
+    item.get("builder", spec["builder"])(key, M, m)
     ob = M.finish(coll)
     if "rigid" in spec:
         weight_rigid(ob, spec["rigid"])

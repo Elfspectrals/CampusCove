@@ -8,7 +8,17 @@
   "redirects": [
     {
       "source": "/shop",
-      "destination": "/shop-skin",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/shop-skin",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/fr/shop-skin",
+      "destination": "/fr",
       "permanent": true
     },
     {
@@ -24,7 +34,7 @@
   ],
   "rewrites": [
     {
-      "source": "/:path(login|register|forgot-password|reset-password|home|locker|friends|settings|game|NewNation)",
+      "source": "/:path(login|register|forgot-password|reset-password|home|locker|friends|gems|settings|game|NewNation)",
       "destination": "/app"
     },
     {
@@ -33,6 +43,10 @@
     },
     {
       "source": "/dev/:rest*",
+      "destination": "/app"
+    },
+    {
+      "source": "/gems/:rest*",
       "destination": "/app"
     }
   ],
@@ -71,7 +85,7 @@
       ]
     },
     {
-      "source": "/:path(login|register|forgot-password|reset-password|home|locker|friends|settings|game|NewNation|app.html|404.html)",
+      "source": "/:path(login|register|forgot-password|reset-password|home|locker|friends|gems|settings|game|NewNation|app.html|404.html)",
       "headers": [
         {
           "key": "X-Robots-Tag",
@@ -80,7 +94,7 @@
       ]
     },
     {
-      "source": "/(admin|dev)/:rest*",
+      "source": "/(admin|dev|gems)/:rest*",
       "headers": [
         {
           "key": "X-Robots-Tag",

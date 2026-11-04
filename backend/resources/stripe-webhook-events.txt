@@ -1,0 +1,23 @@
+# Stripe events the gem shop demo handles (docs/STRIPE.md §4), one per line.
+# Single list for: the stripe-cli Compose service (--events, docker/stripe-cli/listen.sh), the webhook endpoint to
+# create in the Dashboard, and StripeWebhookService (a test fails if they differ).
+
+# payment and expiration
+checkout.session.completed
+checkout.session.async_payment_succeeded
+checkout.session.async_payment_failed
+checkout.session.expired
+
+# refunds
+charge.refunded
+charge.refund.updated
+refund.created
+refund.updated
+refund.failed
+
+# disputes
+charge.dispute.created
+charge.dispute.updated
+charge.dispute.closed
+charge.dispute.funds_withdrawn
+charge.dispute.funds_reinstated

@@ -46,6 +46,7 @@ final class FoodCatalog
             self::item('candy_licorice', 'Licorice Twists', 'licorice', 3, 3, 0, 0, null, 9, 'sweets'),
             self::item('candy_gum', 'Bubble Gum', 'gum', 5, 1, 0, 0, null, 5, 'sweets'),
             self::item('candy_apple', 'Candy Apple', 'apple', 2, 6, 0, 0, self::EFFECT_SPEED_BOOST, 15, 'sweets'),
+            self::item('farm_apple', 'Fresh Apple', 'apple', 2, 5, 2, 0, null, null, 'farm'),
             self::item('grocery_apple', 'Apple', 'apple', 2, 5, 2, 0, null, 6, 'grocery'),
             self::item('grocery_banana', 'Banana', 'banana', 2, 6, 0, 0, null, 6, 'grocery'),
             self::item('grocery_bread', 'Sliced Bread', 'bread', 4, 8, 0, 0, null, 14, 'grocery'),

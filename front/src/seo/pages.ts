@@ -37,18 +37,6 @@ export const SEO_PAGES: SeoPage[] = [
     priority: 1,
     lastmod: SITE.contentUpdated,
   },
-  {
-    routeName: 'shop-skin',
-    path: '/shop-skin',
-    title: { en: 'Skin shop — outfits and cosmetics | CampusCove', fr: 'Boutique de skins — tenues et cosmétiques | CampusCove' },
-    description: {
-      en: 'Browse every CampusCove skin and cosmetic: five rarities, 3D preview, unlocked with coins earned in game. No real-money purchase.',
-      fr: 'Découvre tous les skins et cosmétiques de CampusCove : cinq raretés, aperçu 3D, déblocage avec les pièces gagnées en jeu. Aucun achat réel.',
-    },
-    changefreq: 'weekly',
-    priority: 0.7,
-    lastmod: SITE.contentUpdated,
-  },
   ...LEGAL_SLUGS.map<SeoPage>((slug) => ({
     routeName: `legal-${slug}`,
     path: `/legal/${slug}`,

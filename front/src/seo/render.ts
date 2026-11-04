@@ -55,7 +55,6 @@ export function bodySnapshot(page: SeoPage, locale: Locale): string {
   const parts: string[] = []
   const nav = [
     `<a href="${href(locale, '')}">${SITE.name}</a>`,
-    `<a href="${href(locale, '/shop-skin')}">${locale === 'fr' ? 'Skins' : 'Skins'}</a>`,
     `<a href="/register">${locale === 'fr' ? 'Jouer gratuitement' : 'Play free'}</a>`,
   ]
   parts.push(`<header><nav>${nav.join(' · ')}</nav></header><main>`)
@@ -63,10 +62,6 @@ export function bodySnapshot(page: SeoPage, locale: Locale): string {
     parts.push(`<h1>${esc(m.heroTitle)}</h1><p>${esc(m.heroLead)}</p>`)
     parts.push(...m.features.map((f) => `<section><h2>${esc(f.title)}</h2><p>${esc(f.body)}</p></section>`))
     parts.push(`<section><h2>${esc(m.faqTitle)}</h2>${m.faq.map((f) => `<h3>${esc(f.q)}</h3><p>${esc(f.a)}</p>`).join('')}</section>`)
-  } else if (page.routeName === 'shop-skin') {
-    parts.push(`<h1>${esc(m.shop.title)}</h1><p>${esc(m.shop.lead)}</p><section><h2>${esc(m.shop.aboutTitle)}</h2>`)
-    parts.push(...m.shop.sections.map((s) => `<h3>${esc(s.title)}</h3><p>${esc(s.body)}</p>`))
-    parts.push('</section>')
   } else if (page.legalSlug) {
     const doc = legal[locale][page.legalSlug]
     parts.push(`<article><h1>${esc(doc.title)}</h1><p>${esc(doc.description)}</p>`)

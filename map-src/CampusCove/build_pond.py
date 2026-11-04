@@ -3,6 +3,7 @@ import json
 import math
 import os
 import random
+import re
 import sys
 
 import bmesh
@@ -20,7 +21,8 @@ KEY = "pond"
 OUT = os.path.join(L.OUT_ROOT, "park", KEY)
 
 PUSH = 10.0
-HEDGE_R, FENCE_R, SKY_R = 46.6, 69.6 + PUSH, 74.8 + PUSH
+HEDGE_R, FENCE_R = 46.6, 69.6 + PUSH
+OUTER_R = FENCE_R + 5.0
 PARK_X = 46.0
 BED_H, WATER_TOP = 0.015, 0.045
 CZ, RX, RZ = -58.5 - PUSH, 14.0, 5.5
@@ -45,6 +47,11 @@ PUB_GATE_PILLARS = (fence_post(PUB_GATE_I - 1), fence_post(PUB_GATE_I + 1))
 PUB_GATE_TH = math.atan2(PUB_GATE[0], -PUB_GATE[1])
 PUB_GATE_U = (math.sin(PUB_GATE_TH), -math.cos(PUB_GATE_TH))
 PUB_GATE_HW = 3.0
+ORCHARD_GATE_I = FENCE_N - PUB_GATE_I
+ORCHARD_GATE = fence_post(ORCHARD_GATE_I)
+ORCHARD_GATE_PILLARS = (fence_post(ORCHARD_GATE_I - 1), fence_post(ORCHARD_GATE_I + 1))
+ORCHARD_GATE_TH = math.atan2(ORCHARD_GATE[0], -ORCHARD_GATE[1])
+ORCHARD_GATE_U = (math.sin(ORCHARD_GATE_TH), -math.cos(ORCHARD_GATE_TH))
 GAZEBO_C, GAZEBO_R = (35.0, -55.0 - PUSH), 2.9
 KIOSK = (22.5, -51.5 - PUSH)
 GRID_X0, GRID_Z0, GRID_COLS, GRID_ROWS = -48.0, -76.0 - PUSH, 97, 73 + int(PUSH)
@@ -113,12 +120,16 @@ SPUR = resample(chaikin(pushed([(31.0, -50.0), (32.6, -52.3), (33.2, -53.2)]), 2
 PUB_SPUR = resample(chaikin([(LOOP_RX + PATH_W / 2 - 0.3, CZ), (22.0, CZ - 1.0), (26.0, CZ - 2.4), (29.5, CZ - 3.9), PUB_GATE,
                              (PUB_GATE[0] + 2.0 * PUB_GATE_U[0], PUB_GATE[1] + 2.0 * PUB_GATE_U[1])]), 0.7)
 PATHS = LOOP + TRAIL_E + TRAIL_W + SPUR + PUB_SPUR
+ORCHARD_SPUR = resample(chaikin([ellipse(0.0, CZ, LOOP_RX + PATH_W / 2 - 0.3, LOOP_RZ + PATH_W / 2 - 0.3, math.pi + 0.66), (-20.0, CZ - 5.9), (-25.5, CZ - 5.8),
+                                 (-29.0, CZ - 5.0), ORCHARD_GATE, (ORCHARD_GATE[0] + 2.0 * ORCHARD_GATE_U[0], ORCHARD_GATE[1] + 2.0 * ORCHARD_GATE_U[1])]), 0.7)
 
 
 def pub_gate_cut(x, z):
     along = x * PUB_GATE_U[0] + z * PUB_GATE_U[1]
     across = abs(x * PUB_GATE_U[1] - z * PUB_GATE_U[0])
-    return (1.0 - ss(PUB_GATE_HW - 0.4, PUB_GATE_HW + 3.0, across)) * ss(FENCE_R - 14.0, FENCE_R - 6.0, along)
+    # the gazebo hill stands right next to the corridor: keep the cut out of it, or the floor overhangs a trench
+    keep_gazebo = ss(GAZEBO_R + 1.0, GAZEBO_R + 3.5, math.hypot(x - GAZEBO_C[0], z - GAZEBO_C[1]))
+    return (1.0 - ss(PUB_GATE_HW - 0.4, PUB_GATE_HW + 3.0, across)) * ss(FENCE_R - 14.0, FENCE_R - 6.0, along) * keep_gazebo
 
 
 def in_pub_corridor(x, z, margin=0.0):
@@ -126,18 +137,29 @@ def in_pub_corridor(x, z, margin=0.0):
     return along > FENCE_R - 12.0 and abs(x * PUB_GATE_U[1] - z * PUB_GATE_U[0]) < PUB_GATE_HW + 0.5 + margin
 
 
+def orchard_gate_cut(x, z):
+    along = x * ORCHARD_GATE_U[0] + z * ORCHARD_GATE_U[1]
+    across = abs(x * ORCHARD_GATE_U[1] - z * ORCHARD_GATE_U[0])
+    return (1.0 - ss(PUB_GATE_HW - 0.4, PUB_GATE_HW + 3.0, across)) * ss(FENCE_R - 14.0, FENCE_R - 6.0, along)
+
+
+def in_orchard_way(x, z, margin):
+    along = x * ORCHARD_GATE_U[0] + z * ORCHARD_GATE_U[1]
+    in_corridor = along > FENCE_R - 12.0 and abs(x * ORCHARD_GATE_U[1] - z * ORCHARD_GATE_U[0]) < PUB_GATE_HW + 0.5 + margin
+    return in_corridor or min_dist(ORCHARD_SPUR, x, z) < PATH_W / 2 + 0.6 + margin
+
+
 def terrain_h(x, z):
     r = math.hypot(x, z)
-    th = math.atan2(x, -z)
     ax = abs(x)
-    edge_fade = 1.0 - ss(46.6, 47.5, ax)
+    # The orchard and pub lawns start right past the fence at y = 0, so the relief fades out before OUTER_R.
+    edge_fade = (1.0 - ss(46.6, 47.5, ax)) * (1.0 - ss(FENCE_R + 0.5, OUTER_R - 0.5, r))
     gate = (1.0 - ss(7.5, 10.0, ax)) * ss(-52.5 - PUSH, -50.0 - PUSH, z)
     hedge = ss(47.2, 50.5, r) * (1.0 - gate)
     hills = sum(h * math.exp(-((x - hx) ** 2 + (z - hz) ** 2) / (2 * s * s)) for hx, hz, h, s in HILLS)
     und = max(0.0, 0.12 + 0.22 * math.sin(x * 0.21 + 0.7) * math.sin(z * 0.17 + 1.9) + 0.1 * math.sin(x * 0.47 + z * 0.31))
-    ridge = ss(68.8 + PUSH, 74.0 + PUSH, r) * (5.0 + 1.4 * math.sin(th * 9.0) + 0.8 * math.sin(th * 23.0 + 1.3))
     berm = 1.6 * ss(45.4, 46.5, ax) * hedge
-    h = (hedge * (hills + und) + ridge + berm) * edge_fade * (1.0 - pub_gate_cut(x, z))
+    h = (hedge * (hills + und) + berm) * edge_fade * (1.0 - max(pub_gate_cut(x, z), orchard_gate_cut(x, z)))
     e = pond_e(x, z)
     if e < 1.9:
         hp = BED_H + 0.3 * ss(1.0, 1.3, e)
@@ -149,6 +171,11 @@ def terrain_h(x, z):
     if em < 1.8:
         h = BED_H + (h - BED_H) * ss(1.0, 1.8, em)
     return max(h, 0.0)
+
+
+def on_terrain(cx, cz):
+    r = math.hypot(cx, cz)
+    return 46.0 <= r <= OUTER_R and abs(cx) <= 47.5 and cz <= -4.0
 
 
 def in_rect(x, z, cx, cz, hx, hz):
@@ -493,8 +520,7 @@ faces_mat = []
 for j in range(GRID_ROWS - 1):
     for i in range(GRID_COLS - 1):
         cx, cz = GRID_X0 + i + 0.5, GRID_Z0 + j + 0.5
-        r = math.hypot(cx, cz)
-        if r < 46.0 or r > SKY_R or abs(cx) > 47.5 or cz > -4.0:
+        if not on_terrain(cx, cz):
             continue
         quad = []
         for key in ((i, j), (i + 1, j), (i + 1, j + 1), (i, j + 1)):
@@ -509,7 +535,7 @@ for j in range(GRID_ROWS - 1):
             f.material_index = 4
         elif e < 1.28 or em < 1.35 or dc < 1.7:
             f.material_index = 3
-        elif r > FENCE_R + 0.3 or abs(cx) > PARK_X + 0.3:
+        elif abs(cx) > PARK_X + 0.3:
             f.material_index = 2
         elif math.sin(cx * 0.13) * math.sin(cz * 0.11 + 2.0) + 0.3 * math.sin(cx * 0.41 + cz * 0.37) > 0.35:
             f.material_index = 1
@@ -533,6 +559,7 @@ ribbon("PD_PathEast", TRAIL_E, PATH_W, P["path"], lift=0.035)
 ribbon("PD_PathWest", TRAIL_W, PATH_W, P["path"], lift=0.035)
 ribbon("PD_PathGazebo", SPUR, 1.3, P["path"], lift=0.036)
 ribbon("PD_PathPub", PUB_SPUR, PATH_W, P["path"], lift=0.037)
+ribbon("PD_PathOrchard", ORCHARD_SPUR, PATH_W, P["path"], lift=0.037)
 objs.append(L.box(coll, "PD_Avenue", 0, -34.5 - PUSH / 2, 0.0, 6.0, 27.0 + PUSH, 0.03, P["avenue"], tile=2.0))
 objs.append(L.box(coll, "PD_GateApron", 0, -46.8, 0.0, 14.0, 5.6, 0.035, P["avenue"], tile=2.0))
 for nm, gx in (("PD_CurbAvenueE", 3.15), ("PD_CurbAvenueW", -3.15)):
@@ -748,12 +775,12 @@ counts["north_strip"] = scatter((0.0, -67.5 - PUSH, 22.0), 6, 0.6, mix([("round"
 
 def ridge_ok(x, z, rad, _paths, spacing):
     r = math.hypot(x, z)
-    return FENCE_R + 1.2 <= r <= SKY_R - 1.0 and abs(x) < 45.5 and not in_pub_corridor(x, z, rad) \
+    return FENCE_R + 1.2 <= r <= OUTER_R - 1.0 and abs(x) < 45.5 and not in_pub_corridor(x, z, rad) \
         and all(math.hypot(x - px, z - pz) >= spacing for px, pz, _ in placed)
 
 
-counts["ridge"] = scatter((0.0, -60.0 - PUSH, 50.0), 34, 1.0, lambda x, z: (tree_pine(x, z, rnd.uniform(1.1, 1.7), collide=False) if rnd.random() < 0.7
-                                                                   else tree_round(x, z, rnd.uniform(1.1, 1.5), collide=False)),
+counts["ridge"] = scatter((0.0, -60.0 - PUSH, 50.0), 34, 1.0, lambda x, z: (tree_pine(x, z, rnd.uniform(1.1, 1.7)) if rnd.random() < 0.7
+                                                                   else tree_round(x, z, rnd.uniform(1.1, 1.5))),
                           spacing=3.0, check=ridge_ok, tries=3000)
 counts["bushes"] = scatter((0.0, -52.0 - PUSH, 50.0), 26, 0.7, bush, paths=1.6, spacing=0.3, tries=3000)
 counts["flowers"] = scatter((0.0, -52.0 - PUSH, 50.0), 16, 0.9, flower_patch, paths=1.0, spacing=0.1, tries=4000)
@@ -850,7 +877,7 @@ for sgn in (-1, 1):
         fence_pts = list(reversed(side)) + fence_pts
     else:
         fence_pts = fence_pts + side
-in_gate = lambda fx, fz: math.hypot(fx - PUB_GATE[0], fz - PUB_GATE[1]) < 1.0
+in_gate = lambda fx, fz: math.hypot(fx - PUB_GATE[0], fz - PUB_GATE[1]) < 1.0 or math.hypot(fx - ORCHARD_GATE[0], fz - ORCHARD_GATE[1]) < 1.0
 for i, (fx, fz) in enumerate(fence_pts):
     if in_gate(fx, fz):
         continue
@@ -883,14 +910,49 @@ objs.append(pub_sign_text)
 add_col("COL_Pond_PubSign", pub_sign[0], pub_sign[1], 2.2, 0.3, 2.4, -PUB_GATE_TH)
 placed.append((pub_sign[0], pub_sign[1], 1.0))
 
-L.export_glb(os.path.join(OUT, "pond.glb"), objs)
+scatter_tag = re.compile(r"^PD_((?:Tree[RPBW]|Bush|Flowers?|Tuft|RockBig)\d{3})")
+blocked = {m.group(1) for o in objs if (m := scatter_tag.match(o.name)) and in_orchard_way(o.location.x, -o.location.y, 0.8)}
+for o in [o for o in objs if (m := scatter_tag.match(o.name)) and m.group(1) in blocked]:
+    objs.remove(o)
+    bpy.data.objects.remove(o)
+col[:] = [c for c in col if c["name"].removeprefix("COL_Pond_").removeprefix("PD_") not in blocked]
+print("orchard way cleared:", sorted(blocked))
+
+for tag, (gx, gz) in zip("WE", ORCHARD_GATE_PILLARS):
+    gy = ground(gx, gz, 0.4) - 0.05
+    objs.append(L.box(coll, f"PD_OrchardGatePillar{tag}", gx, gz, gy, 0.7, 0.7, 2.2, P["stone"], rot=ORCHARD_GATE_TH, bevel=0.03, tile=1.0))
+    objs.append(L.box(coll, f"PD_OrchardGateCap{tag}", gx, gz, gy + 2.2, 0.9, 0.9, 0.16, P["stone"], rot=ORCHARD_GATE_TH, bevel=0.03))
+    objs.append(L.box(coll, f"PD_OrchardGateLamp{tag}", gx, gz, gy + 2.36, 0.4, 0.4, 0.4, P["lamp"], rot=ORCHARD_GATE_TH, bevel=0.04))
+    add_col(f"COL_Pond_OrchardGatePillar{tag}", gx, gz, 0.9, 0.9, 2.6, ORCHARD_GATE_TH)
+orchard_sign = (ORCHARD_GATE[0] - 3.2 * ORCHARD_GATE_U[0] - 2.0 * ORCHARD_GATE_U[1], ORCHARD_GATE[1] - 3.2 * ORCHARD_GATE_U[1] + 2.0 * ORCHARD_GATE_U[0])
+orchard_sign_y = ground(*orchard_sign, 0.2)
+objs.append(L.box(coll, "PD_OrchardSignPole", orchard_sign[0], orchard_sign[1], orchard_sign_y, 0.14, 0.14, 2.4, P["post"]))
+objs.append(L.box(coll, "PD_OrchardSignBoard", orchard_sign[0], orchard_sign[1], orchard_sign_y + 1.75, 2.2, 0.06, 0.34, P["deck"], rot=-ORCHARD_GATE_TH))
+orchard_sign_text = L.text_mesh(coll, "PD_OrchardSignText", "< COVE ORCHARD", orchard_sign[0] - 0.04 * ORCHARD_GATE_U[0], orchard_sign[1] - 0.04 * ORCHARD_GATE_U[1],
+                                orchard_sign_y + 1.83, 0.17, 0.015, P["sign"], facing="+z")
+orchard_sign_text.rotation_euler = (math.pi / 2, 0, -ORCHARD_GATE_TH)
+objs.append(orchard_sign_text)
+add_col("COL_Pond_OrchardSign", orchard_sign[0], orchard_sign[1], 2.2, 0.3, 2.4, -ORCHARD_GATE_TH)
+
 heights = [round(walk_h(GRID_X0 + i, GRID_Z0 + j), 3) for j in range(GRID_ROWS) for i in range(GRID_COLS)]
+# The heightmap must follow the drawn terrain: off the mesh and on its rim the ground is the neighbours' flat y = 0,
+# so any height there means a slope players climb into the void or a terrain edge floating in the air.
+drawn = {(i + di, j + dj) for (i, j) in [(i, j) for j in range(GRID_ROWS - 1) for i in range(GRID_COLS - 1)
+                                         if on_terrain(GRID_X0 + i + 0.5, GRID_Z0 + j + 0.5)] for di in (0, 1) for dj in (0, 1)}
+inner = {(i, j) for (i, j) in drawn if all((i + di, j + dj) in drawn for di in (-1, 0, 1) for dj in (-1, 0, 1))}
+off_mesh = [(GRID_X0 + i, GRID_Z0 + j, heights[j * GRID_COLS + i]) for j in range(GRID_ROWS) for i in range(GRID_COLS)
+            if (i, j) not in inner and heights[j * GRID_COLS + i] > 0.05 and math.hypot(GRID_X0 + i, GRID_Z0 + j) > 46.0]
+if off_mesh:
+    raise RuntimeError(f"pond heightmap leaves the terrain mesh at {len(off_mesh)} points, e.g. {off_mesh[:5]}")
+L.export_glb(os.path.join(OUT, "pond.glb"), objs, use_active_scene=True)
 os.makedirs(OUT, exist_ok=True)
 with open(os.path.join(OUT, "pond.layout.json"), "w", encoding="utf-8") as fh:
     json.dump({
         "version": 2,
         "gate": {"x": 0.0, "z": -46.0, "width": 12.2},
         "pubGate": {"x": round(PUB_GATE[0], 3), "z": round(PUB_GATE[1], 3), "width": round(math.dist(*PUB_GATE_PILLARS) - 0.7, 3), "yaw": round(PUB_GATE_TH, 4)},
+        "orchardGate": {"x": round(ORCHARD_GATE[0], 3), "z": round(ORCHARD_GATE[1], 3), "width": round(math.dist(*ORCHARD_GATE_PILLARS) - 0.7, 3),
+                        "yaw": round(ORCHARD_GATE_TH, 4)},
         "bounds": {"minZ": -71.0 - PUSH},
         "center": [0.0, 0.0, CZ],
         "fishingSpots": spots,

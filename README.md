@@ -34,12 +34,48 @@ make up-build
 | `make set-money ACCOUNT=1 CURRENCY=coins SUM=2000` | Solde (id ou email) |
 | `make fill-outfit ACCOUNT=1` | Starter wearables + outfit |
 | `make test` | Tests backend |
+| `make stripe-secret` | Secret webhook `whsec_…` de la Stripe CLI Docker |
+| `make stripe-listen` / `stripe-logs` / `stripe-stop` | Relais des webhooks Stripe de test en arrière-plan : démarrer / suivre les logs / arrêter |
+| `make gems-reconcile ORDER=<id>` | Resynchroniser une commande de gems avec Stripe |
 | `make rebuild-socket` | Rebuild Colyseus (pas de volume) |
 | `make assets-optimize` | Assets Blender → `front/public/assets` (+ collisions) |
 | `make store-apply` | Branche le magasin Cove Home dans la ville (collisions + zone `retail_park` de `world.manifest.json`) |
 | `make newnation-optimize` | Carte du showroom `/NewNation` |
 
 `CURRENCY` : `coins` ou `premium`. Relog après `set-admin`.
+
+## Stripe — boutique de gems (facultatif)
+
+Projet scolaire : paiements simulés avec les cartes de test Stripe, **aucun argent n'est débité**. Les gems sont réellement crédités dans le portefeuille premium du jeu. Les clés de production sont refusées partout. Sans configuration Stripe, `make up` lance le jeu normalement ; seule la boutique de gems est désactivée (`GEMS_CHECKOUT_MODE=off` par défaut).
+
+Rien à installer sur le PC : la Stripe CLI tourne dans Docker (service optionnel `stripe-cli`, profil `stripe`, jamais lancé par `make up`).
+
+**Première configuration** (à la racine du dépôt) :
+
+1. Dans le [Dashboard Stripe](https://dashboard.stripe.com/test/apikeys), en **environnement de test**, copier la clé secrète `sk_test_…`.
+2. Compléter le `.env` **racine** (à côté de `docker-compose.yml`, ignoré par Git ; `backend/.env` ne suffit pas avec Docker) :
+
+   ```dotenv
+   GEMS_CHECKOUT_MODE=test
+   STRIPE_SECRET_KEY=sk_test_...
+   STRIPE_WEBHOOK_SECRET=
+   ```
+
+3. Obtenir le secret webhook de la CLI Docker et le coller dans `STRIPE_WEBHOOK_SECRET=` :
+
+   ```bash
+   make stripe-secret
+   ```
+
+4. Appliquer la configuration au backend : `make up` (recrée le backend avec les nouvelles variables ; `docker compose restart` ne relit pas le `.env`).
+5. Démarrer le relais en arrière-plan : `make stripe-listen`, puis `make stripe-logs` doit afficher `Ready!` (Ctrl+C quitte les logs, pas le relais).
+6. Ouvrir [localhost:5173/gems](http://localhost:5173/gems), choisir un pack et payer avec la carte fictive `4242 4242 4242 4242`, une date future (`12/34`) et le CVC `123`. Les gems arrivent dans le solde ; actualiser ne crédite pas une seconde fois.
+
+**Lancements suivants** : `make up` puis `make stripe-listen`. `make stripe-stop` arrête le relais seul, `make down` arrête tout.
+
+Sans `make` (PowerShell par exemple) : `docker compose --profile stripe run --rm --no-deps stripe-cli --print-secret`, `docker compose up -d`, `docker compose --profile stripe up -d stripe-cli`, `docker compose --profile stripe logs -f stripe-cli`, `docker compose --profile stripe stop stripe-cli`.
+
+Détails, restriction aux administrateurs en production, remplacement du secret exposé et diagnostic : [docs/STRIPE.md](docs/STRIPE.md).
 
 ## Production
 
@@ -57,9 +93,11 @@ make prod-down
 | `caddy` | HTTPS (Let's Encrypt avec un vrai `DOMAIN`), front, en-têtes de sécurité, proxy `/api` et `/ws` |
 | `migrate` | Une fois par déploiement : migrations + `ShopSeeder` + `HousingUnitSeeder` |
 | `backend` | PHP-FPM, `APP_DEBUG=false`, caches Laravel construits au démarrage |
-| `scheduler` | `schedule:work` : taxes des maisons, purge RGPD |
+| `scheduler` | `schedule:work` : taxes des maisons, purge RGPD, réconciliation des commandes de gems (démo Stripe) |
 | `socket` | Colyseus, `world.manifest.json` embarqué dans l'image |
 | `postgres` | Données (volume `postgres_data`), aucun port publié |
+
+Sur Heroku, `backend/Procfile` fait la même chose : la phase `release` lance migrations + seeders avant chaque bascule. Le service `scheduler` est remplacé par l'add-on Heroku Scheduler (pas de dyno permanent) : `php artisan housing:collect-taxes` toutes les 10 minutes, `php artisan accounts:purge-inactive` tous les jours à 04:00 UTC. L'API a besoin de `APP_KEY`, `REALTIME_SHARED_SECRET` (identique sur l'app socket) et `REALTIME_INTERNAL_URL` (URL de l'app socket).
 
 Sur un serveur : utilisateur `deploy` non admin, membre du groupe `docker`, SSH par clé, root désactivé. Depuis sa machine :
 

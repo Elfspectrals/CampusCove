@@ -36,6 +36,10 @@ x-backend: &backend
     MAIL_PASSWORD: ${MAIL_PASSWORD:-}
     MAIL_FROM_ADDRESS: ${MAIL_FROM_ADDRESS:-noreply@${DOMAIN}}
     MAIL_FROM_NAME: CampusCove
+    # Gem shop demo (docs/STRIPE.md): Stripe test mode only, production keys are refused.
+    GEMS_CHECKOUT_MODE: ${GEMS_CHECKOUT_MODE:-off}
+    STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+    STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
   volumes:
     # Admin uploads (skin previews and models).
     - backend_storage:/var/www/html/storage/app
@@ -80,7 +84,7 @@ services:
       migrate:
         condition: service_completed_successfully
 
-  # Housing taxes every minute, inactive-account purge at 04:00.
+  # Housing taxes every minute, inactive-account purge at 04:00, gem order reconciliation with Stripe every 10 min.
   scheduler:
     <<: *backend
     command: php artisan schedule:work

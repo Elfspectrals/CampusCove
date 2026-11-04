@@ -76,6 +76,10 @@ final class ShopPurchaseService
             $wallet = Wallet::lockForAccount((int) $accountId, (string) $currency);
 
             $balance = $wallet->balance();
+            // a refunded gem pack whose gems were already spent leaves a debt (PremiumGemLedgerService)
+            if ($currency === 'premium' && $balance < 0) {
+                throw new ShopPurchaseRejectedException('premium_debt', 'Your gem balance is negative after a refund. Top up your gems before spending them again.', 422);
+            }
             if ($balance < $totalDebit) {
                 throw new ShopPurchaseRejectedException('insufficient_funds', 'Insufficient wallet balance.', 422);
             }

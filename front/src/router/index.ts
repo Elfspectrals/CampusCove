@@ -17,9 +17,10 @@ const AdminInventoriesView = () => import('../views/admin/AdminInventoriesView.v
 const AdminShopView = () => import('../views/admin/AdminShopView.vue')
 const AdminUsersView = () => import('../views/admin/AdminUsersView.vue')
 const FriendsView = () => import('../views/FriendsView.vue')
+const GemCheckoutReturnView = () => import('../views/GemCheckoutReturnView.vue')
+const GemShopView = () => import('../views/GemShopView.vue')
 const GameView = () => import('../views/GameView.vue')
 const HomeView = () => import('../views/HomeView.vue')
-const ItemShopView = () => import('../views/ItemShopView.vue')
 const LegalView = () => import('../views/LegalView.vue')
 const NewNationView = () => import('../views/NewNationView.vue')
 const NotFoundView = () => import('../views/NotFoundView.vue')
@@ -31,7 +32,6 @@ function publicRoutes(locale: Locale): RouteRecordRaw[] {
   const n = (name: string) => (locale === 'fr' ? `fr-${name}` : name)
   return [
     { path: prefix || '/', name: n('landing'), component: LandingView, meta: { guest: true, title: 'Welcome' } },
-    { path: `${prefix}/shop-skin`, name: n('shop-skin'), component: ItemShopView, meta: { title: 'Shop Skin' } },
     ...LEGAL_SLUGS.map<RouteRecordRaw>((slug) => ({
       path: `${prefix}/legal/${slug}`,
       name: n(`legal-${slug}`),
@@ -55,11 +55,16 @@ const router = createRouter({
       meta: { guest: true, title: 'Reset password' },
     },
     { path: '/reset-password', name: 'reset-password', component: ResetPasswordView, meta: { guest: true, title: 'New password' } },
-    // Furniture is sold in the Cove Home store inside /game; the old furniture shop URL lands on the skins.
-    { path: '/shop', name: 'shop', redirect: { name: 'shop-skin' } },
+    // Furniture and skins are sold in game now: the old shop URLs land on the home page.
+    { path: '/shop', name: 'shop', redirect: '/' },
+    { path: '/shop-skin', redirect: '/' },
+    { path: '/fr/shop-skin', redirect: '/fr' },
     { path: '/NewNation', name: 'new-nation', component: NewNationView, meta: { requiresAdmin: true, title: 'Admin — New Nation', fullBleed: true } },
     { path: '/home', name: 'home', component: HomeView, meta: { requiresAuth: true, title: 'Profile' } },
     { path: '/friends', name: 'friends', component: FriendsView, meta: { requiresAuth: true, title: 'Friends' } },
+    // gem shop + Stripe Checkout return page (private: listed in deploy/Caddyfile and vercel.json, noindex)
+    { path: '/gems', name: 'gems', component: GemShopView, meta: { requiresAuth: true, title: 'Gems' } },
+    { path: '/gems/return', name: 'gems-return', component: GemCheckoutReturnView, meta: { requiresAuth: true, title: 'Payment' } },
     { path: '/settings', name: 'settings', component: SettingsView, meta: { title: 'Settings' } },
     { path: '/game', name: 'game', component: GameView, meta: { requiresAuth: true, title: 'Game', fullBleed: true, immersive: true } },
     { path: '/dev/ui', name: 'dev-ui', component: () => import('../views/dev/DevUiView.vue'), meta: { title: 'Design system' } },

@@ -8,7 +8,6 @@ import type { Friend } from '../api/friends'
 import UiIcon from '../components/ui/UiIcon.vue'
 import UiCurrency from '../components/ui/UiCurrency.vue'
 import PrivacyPanel from '../components/site/PrivacyPanel.vue'
-import type { UiIconName } from '../components/ui/icons'
 
 const router = useRouter()
 
@@ -84,9 +83,6 @@ const stats = computed(() => ({
 }))
 const levelProgress = 62
 
-const quickTiles: Array<{ to: string; icon: UiIconName; label: string; hint: string; tone: string }> = [
-  { to: '/shop-skin', icon: 'shirt', label: 'Skins', hint: 'New looks', tone: 'from-grape/40 text-grape' },
-]
 
 
 </script>
@@ -197,22 +193,6 @@ const quickTiles: Array<{ to: string; icon: UiIconName; label: string; hint: str
           </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-3 md:grid-cols-4">
-          <RouterLink
-            v-for="tile in quickTiles"
-            :key="tile.to"
-            :to="tile.to"
-            class="cc-panel group flex flex-col gap-3 overflow-hidden p-4 transition hover:-translate-y-1"
-          >
-            <span :class="['grid h-12 w-12 place-items-center rounded-xl bg-gradient-to-br to-transparent', tile.tone]">
-              <UiIcon :name="tile.icon" :size="24" />
-            </span>
-            <span>
-              <span class="cc-display block text-xl text-fog">{{ tile.label }}</span>
-              <span class="block text-xs font-bold text-mist">{{ tile.hint }}</span>
-            </span>
-          </RouterLink>
-        </div>
       </section>
 
       <!-- friends rail -->

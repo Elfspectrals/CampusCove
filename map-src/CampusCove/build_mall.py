@@ -373,6 +373,7 @@ rect("Notch_WallW", X0 + SVC, N_OUT, X0 + SVC + WALL_T, N_OUT + NOTCH, 0.0, ROOF
 rect("Dock_Door", DOCK_X[0], Z0 - 0.04, DOCK_X[1], Z0 - 0.02, 0.0, 3.6, P["shutter"])
 rect("Dock_Platform", DOCK_X[0] - 2.0, Z0 - 4.5, DOCK_X[1] + 2.0, Z0 - 0.04, 0.0, 1.1, P["service"], col=True)
 wedge("Dock_Ramp", DOCK_X[1] + 2.0, Z0 - 4.5, DOCK_X[1] + 8.0, Z0 - 0.04, 0.0, 1.1, "-x", P["service"])
+cols.add("Dock_Ramp", DOCK_X[1] + 5.0, Z0 - 2.27, 0.0, 6.0, 4.46, 1.1)
 for i, gx in enumerate((DOCK_X[0] - 1.0, DOCK_X[1] + 1.0)):
     ctx.cyl(f"Dock_Bollard{i}", gx, Z0 - 5.2, 0.0, 0.12, 0.9, P["yellow"], seg=8, col=True)
 box("Dock_Dumpster", DOCK_X[0] - 5.0, Z0 - 2.5, 0.0, 2.4, 1.6, 1.5, P["band"], bevel=0.03, col=True)
