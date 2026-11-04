@@ -93,7 +93,7 @@ class AbuseIpdbService
                 SecurityEvent::TYPE_INJECTION => preg_match(self::SQL_INJECTION, (string) $event->detail)
                     ? [self::CATEGORY_WEB_APP_ATTACK, self::CATEGORY_SQL_INJECTION]
                     : [self::CATEGORY_WEB_APP_ATTACK],
-                SecurityEvent::TYPE_RATE_LIMITED => [],
+                SecurityEvent::TYPE_RATE_LIMITED, SecurityEvent::TYPE_NOT_FOUND => [],
             }];
         }
         $categories = array_values(array_unique($categories));

@@ -34,6 +34,11 @@
         <env name="GEMS_CHECKOUT_MODE" value="off" force="true"/>
         <env name="STRIPE_SECRET_KEY" value="" force="true"/>
         <env name="STRIPE_WEBHOOK_SECRET" value="" force="true"/>
+        <!-- never the dev stack's socket or real security keys: tests fake each call they expect -->
+        <server name="REALTIME_INTERNAL_URL" value="" force="true"/>
+        <server name="ABUSEIPDB_API_KEY" value="" force="true"/>
+        <server name="CLOUDFLARE_API_TOKEN" value="" force="true"/>
+        <server name="CLOUDFLARE_ZONE_ID" value="" force="true"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="PULSE_ENABLED" value="false"/>

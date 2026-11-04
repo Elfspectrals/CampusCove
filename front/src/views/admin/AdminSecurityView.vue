@@ -641,6 +641,7 @@ onBeforeUnmount(() => {
 .type-injection { color: var(--sec-red-soft); }
 .type-probe_path { color: #fac775; }
 .type-rate_limited { color: var(--sec-gold); }
+.type-not_found { color: #b4b2a9; }
 
 .sec-btn {
   display: inline-flex;

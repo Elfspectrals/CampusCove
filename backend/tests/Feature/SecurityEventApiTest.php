@@ -143,4 +143,36 @@ class SecurityEventApiTest extends TestCase
 
         $this->assertSame(['exactly thirty days', 'younger'], SecurityEvent::orderBy('id')->pluck('user_agent')->all());
     }
+
+    public static function notFoundProvider(): array
+    {
+        return [
+            'admin page' => ['/admin', true],
+            'unknown api route' => ['/api/v1/users', true],
+            'backup archive' => ['/backup.zip', true],
+            'known route' => ['/api/health', false],
+            'probe is not counted twice' => ['/.env', false],
+            'favicon' => ['/favicon.ico', false],
+            'apple touch icon' => ['/apple-touch-icon-precomposed.png', false],
+            'sitemap' => ['/sitemap.xml', false],
+            'well-known' => ['/.well-known/security.txt', false],
+        ];
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('notFoundProvider')]
+    public function test_unknown_paths_are_logged(string $path, bool $logged): void
+    {
+        $this->get($path, ['User-Agent' => self::CHROME]);
+
+        $this->assertSame($logged, SecurityEvent::where('type', SecurityEvent::TYPE_NOT_FOUND)->exists());
+    }
+
+    public function test_a_404_from_a_real_route_is_not_logged(): void
+    {
+        \Illuminate\Support\Facades\Route::get('/api/test-missing-model', fn () => abort(404));
+
+        $this->getJson('/api/test-missing-model')->assertNotFound();
+
+        $this->assertFalse(SecurityEvent::exists());
+    }
 }

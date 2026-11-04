@@ -20,6 +20,9 @@ class SecurityEvent extends Model
 
     public const TYPE_INJECTION = 'injection';
 
+    // 404 on a path no route matches (/admin, /api/v1/users, /backup.zip): a scan, or a lost bot.
+    public const TYPE_NOT_FOUND = 'not_found';
+
     public const RETENTION_DAYS = 30;
 
     const UPDATED_AT = null;
