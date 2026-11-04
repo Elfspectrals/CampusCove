@@ -1,7 +1,7 @@
 import { type AuthContext, type Client, Room } from 'colyseus'
 import { onAdminOpen, onAdminSummon, onAdminTeleport } from './admin.ts'
 import { pickupObject, saveObject, setDecoratedHouse } from './apartments.ts'
-import { type Json, callBackendJson, clientIp, parseAccountId, resolveIdentity } from './backend.ts'
+import { type Json, callBackendJson, clientIp, isDirectOrigin, parseAccountId, resolveIdentity } from './backend.ts'
 import { CITY_MAX_PLAYERS, CITY_SPAWN_RADIUS } from './config.ts'
 
 const HOUSING_REFRESH_COOLDOWN_MS = 2000
@@ -151,6 +151,7 @@ export class CityRoom extends Room implements GameRoom {
 
   async onAuth(_client: Client, options: Json, context: AuthContext): Promise<Identity> {
     try {
+      if (isDirectOrigin(context.headers)) throw new Error('direct origin: join through Cloudflare')
       return await resolveIdentity(options, clientIp(context.headers, context.ip))
     } catch (err) {
       warn('onAuth failed', err)

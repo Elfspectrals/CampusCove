@@ -33,14 +33,14 @@ final class ClientOrigin
         return new self(self::lastForwardedIp($request), null);
     }
 
-    private static function cameFromRealtimeServer(Request $request): bool
+    public static function cameFromRealtimeServer(Request $request): bool
     {
         $secret = (string) config('services.realtime.secret');
 
         return $secret !== '' && hash_equals($secret, (string) $request->header('X-Realtime-Secret'));
     }
 
-    private static function cameThroughCloudflare(Request $request): bool
+    public static function cameThroughCloudflare(Request $request): bool
     {
         $secret = (string) config('services.cloudflare.origin_secret');
 

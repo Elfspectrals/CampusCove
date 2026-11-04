@@ -53,6 +53,9 @@ return [
 
     'cloudflare' => [
         'origin_secret' => env('CLOUDFLARE_ORIGIN_SECRET', ''),
+        'enforce_origin' => (bool) env('CLOUDFLARE_ENFORCE_ORIGIN', false),
+        'api_token' => env('CLOUDFLARE_API_TOKEN', ''),
+        'zone_id' => env('CLOUDFLARE_ZONE_ID', ''),
     ],
 
     'slack' => [

@@ -1,7 +1,7 @@
 // Laravel API calls made on behalf of a player (their bearer token): the API stays authoritative for
 // identity, apartments, inventory and housing.
 import { createHash, timingSafeEqual } from 'node:crypto'
-import { BACKEND_API_URL, CLOUDFLARE_ORIGIN_SECRET, REALTIME_SHARED_SECRET } from './config.ts'
+import { BACKEND_API_URL, CLOUDFLARE_ENFORCE_ORIGIN, CLOUDFLARE_ORIGIN_SECRET, REALTIME_SHARED_SECRET } from './config.ts'
 import type { Identity } from './types.ts'
 
 /** Unvalidated JSON from the API or a client: callers check every field they read. */
@@ -50,6 +50,10 @@ function cameThroughCloudflare(headers: Headers): boolean {
   return timingSafeEqual(sha256(given), sha256(CLOUDFLARE_ORIGIN_SECRET))
 }
 
+export function isDirectOrigin(headers: Headers): boolean {
+  return CLOUDFLARE_ENFORCE_ORIGIN && !cameThroughCloudflare(headers)
+}
+
 export function clientIp(headers: Headers, peerIp: string | string[]): string {
   if (cameThroughCloudflare(headers)) return headers.get('cf-connecting-ip') as string
   const forwarded = (headers.get('x-forwarded-for') ?? '').split(',').map((ip) => ip.trim()).filter(Boolean)
@@ -73,6 +77,7 @@ export async function callBackendJson(
       Accept: 'application/json',
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
+      'X-Realtime-Secret': REALTIME_SHARED_SECRET,
       ...extraHeaders
     },
     body: body !== null ? JSON.stringify(body) : undefined

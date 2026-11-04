@@ -23,6 +23,7 @@ class IpBan extends Model
         'expires_at',
         'lifted_at',
         'lifted_by_account_id',
+        'cloudflare_rule_id',
     ];
 
     protected function casts(): array
@@ -35,6 +36,11 @@ class IpBan extends Model
             'lifted_at' => 'datetime',
             'created_at' => 'datetime',
         ];
+    }
+
+    public function isActive(): bool
+    {
+        return $this->lifted_at === null && ($this->expires_at === null || $this->expires_at->isFuture());
     }
 
     public function scopeActive(Builder $query): Builder

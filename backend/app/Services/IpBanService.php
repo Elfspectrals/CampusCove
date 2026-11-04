@@ -47,6 +47,7 @@ class IpBanService
     public function __construct(
         private readonly RealtimeNotifier $realtime,
         private readonly AbuseIpdbService $abuseIpdb,
+        private readonly CloudflareBanSync $cloudflare,
     ) {}
 
     public function score(string $ip): int
@@ -108,6 +109,7 @@ class IpBanService
             'score' => $score,
             'expires_at' => now()->addHours(self::AUTO_BAN_HOURS),
         ]);
+        $this->cloudflare->sync($ip);
         $this->realtime->ipBanned($ip);
         $this->abuseIpdb->reportBan($ip);
     }
@@ -115,7 +117,7 @@ class IpBanService
     public function banManually(string $ip, bool $permanent, int $adminId, bool $report): IpBan
     {
         $ban = DB::transaction(function () use ($ip, $permanent, $adminId) {
-            $this->unban($ip, $adminId);
+            $this->liftActiveBans($ip, $adminId);
 
             return IpBan::create([
                 'ip' => $ip,
@@ -126,6 +128,7 @@ class IpBanService
             ]);
         });
 
+        $this->cloudflare->sync($ip);
         $this->realtime->ipBanned($ip);
         if ($report) {
             $this->abuseIpdb->reportBan($ip);
@@ -140,6 +143,14 @@ class IpBanService
     }
 
     public function unban(string $ip, ?int $adminId = null): int
+    {
+        $lifted = $this->liftActiveBans($ip, $adminId);
+        $this->cloudflare->sync($ip);
+
+        return $lifted;
+    }
+
+    private function liftActiveBans(string $ip, ?int $adminId): int
     {
         return IpBan::active()->where('ip', $ip)->update([
             'lifted_at' => now(),
