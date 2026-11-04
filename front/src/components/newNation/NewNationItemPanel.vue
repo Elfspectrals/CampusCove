@@ -100,12 +100,5 @@ const legendaryGlow = computed(() =>
       {{ purchasing ? 'Processing…' : 'Buy' }}
     </button>
     <RouterLink v-else to="/login" class="cc-btn cc-btn-pool mt-4 w-full">Sign in to buy</RouterLink>
-    <RouterLink
-      v-if="!previewOnly"
-      :to="{ name: isApartmentItem(item) ? 'shop' : 'shop-skin' }"
-      class="mt-3 block text-center text-xs font-extrabold text-pool hover:underline"
-    >
-      Open in the shop
-    </RouterLink>
   </aside>
 </template>

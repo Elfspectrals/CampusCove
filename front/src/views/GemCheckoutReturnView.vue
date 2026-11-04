@@ -9,8 +9,6 @@ import { RouterLink, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { StaleSessionError, fetchGemOrder, type GemOrder } from '../api/gems'
 import { ApiError } from '../api/http'
-import { localizedName } from '../i18n/routes'
-import type { Locale } from '../seo/site'
 import { POLL_DELAYS_MS, formatPrice, returnPhase } from '../utils/gemCheckout'
 import UiCurrency from '../components/ui/UiCurrency.vue'
 import UiIcon from '../components/ui/UiIcon.vue'
@@ -116,7 +114,6 @@ const canCheckAgain = computed(() => failure.value === 'network' || phase.value 
 <template>
   <div class="mx-auto w-full max-w-lg">
     <section class="cc-panel p-6 text-center sm:p-8" aria-labelledby="gem-return-title">
-      <p class="cc-alert cc-alert-warn m-0 mb-5 justify-center text-left" role="note"><UiIcon name="info" :size="18" /> <strong class="font-extrabold">{{ t('gems.demoBanner') }}</strong></p>
       <div role="status" aria-live="polite">
         <div class="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-ink-950/60" :class="view.tone">
           <UiCurrency v-if="phase === 'success' && !failure" currency="premium" :size="40" />
@@ -147,14 +144,14 @@ const canCheckAgain = computed(() => failure.value === 'network' || phase.value 
         </template>
       </dl>
 
-      <div class="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
+      <!-- three labels do not fit on one line of the card: wrap, each button grows to fill its row -->
+      <div class="mt-6 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-center [&>*]:sm:grow">
         <button v-if="canCheckAgain" type="button" class="cc-btn cc-btn-grape" :disabled="busy" @click="checkAgain">
           <UiIcon name="refresh" :size="16" /> {{ t('gems.return.checkAgain') }}
         </button>
         <RouterLink :to="{ name: 'gems' }" class="cc-btn cc-btn-ghost">{{ t('gems.return.backToShop') }}</RouterLink>
         <template v-if="phase === 'success' && !failure">
-          <RouterLink :to="{ name: localizedName('shop-skin', locale as Locale) }" class="cc-btn cc-btn-sun">{{ t('gems.return.toSkins') }}</RouterLink>
-          <RouterLink :to="{ name: 'game' }" class="cc-btn cc-btn-ghost"><UiIcon name="play" :size="16" fill /> {{ t('gems.return.play') }}</RouterLink>
+          <RouterLink :to="{ name: 'game' }" class="cc-btn cc-btn-sun"><UiIcon name="play" :size="16" fill /> {{ t('gems.return.play') }}</RouterLink>
         </template>
       </div>
     </section>

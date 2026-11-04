@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { RouterLink, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { marketing } from '../content/marketing'
-import { localizedTo } from '../i18n/routes'
 import type { Locale } from '../seo/site'
 import UiTitleScreen from '../components/ui/UiTitleScreen.vue'
 import UiLogo from '../components/ui/UiLogo.vue'
@@ -30,9 +29,6 @@ function signIn() {
     <div class="flex items-center justify-between px-4 py-4 sm:px-8">
       <UiLogo size="sm" />
       <nav class="flex items-center gap-2" :aria-label="t('nav.home')">
-        <RouterLink :to="localizedTo('shop-skin', loc)" class="hidden px-2 font-display text-sm uppercase tracking-wide text-mist hover:text-fog sm:inline">
-          {{ t('nav.shop') }}
-        </RouterLink>
         <button type="button" class="cc-btn cc-btn-ghost cc-btn-sm" @click="signIn">{{ t('nav.signIn') }}</button>
       </nav>
     </div>

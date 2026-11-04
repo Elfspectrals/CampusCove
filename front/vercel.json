@@ -8,7 +8,17 @@
   "redirects": [
     {
       "source": "/shop",
-      "destination": "/shop-skin",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/shop-skin",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/fr/shop-skin",
+      "destination": "/fr",
       "permanent": true
     },
     {

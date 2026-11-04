@@ -3,8 +3,10 @@
 
 .DEFAULT_GOAL := help
 
-COMPOSE := docker compose
-ART     := $(COMPOSE) exec -T backend php artisan
+# dev stack reads .env.prod when it exists, the root .env otherwise
+ENV_FILE := $(if $(wildcard .env.prod),.env.prod,.env)
+COMPOSE := docker compose --env-file $(ENV_FILE)
+ART    := $(COMPOSE) exec -T backend php artisan
 
 help: ## List commands
 	@grep -hE '^[a-zA-Z0-9_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-22s %s\n", $$1, $$2}'
@@ -82,12 +84,12 @@ collision-extract: ## Collision JSON from a GLB (MODEL=path/to/Foo.colsrc.glb)
 
 
 # --- gem shop demo (Stripe TEST MODE only, docs/STRIPE.md) ---
-# Stripe CLI in Docker (service stripe-cli, profile stripe): needs STRIPE_SECRET_KEY=sk_test_... in the root .env,
+# Stripe CLI in Docker (service stripe-cli, profile stripe): needs STRIPE_SECRET_KEY=sk_test_... in $(ENV_FILE),
 # no Stripe CLI on the machine. Events: backend/resources/stripe-webhook-events.txt.
 
 STRIPE_CLI := $(COMPOSE) --profile stripe
 
-stripe-secret: ## Print the webhook signing secret of the Docker Stripe CLI (-> STRIPE_WEBHOOK_SECRET in the root .env)
+stripe-secret: ## Print the webhook signing secret of the Docker Stripe CLI (-> STRIPE_WEBHOOK_SECRET in .env.prod, or the root .env)
 	$(STRIPE_CLI) run --rm --no-deps stripe-cli --print-secret
 
 stripe-listen: ## Start the Docker Stripe CLI relay in the background (test-mode webhooks -> backend)

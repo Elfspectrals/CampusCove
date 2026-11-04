@@ -40,15 +40,7 @@ const controls = computed<Array<{ keys: string[]; label: string }>>(() => {
           <UiIcon name="play" :size="26" fill /> Play
         </button>
 
-        <ul class="m-0 mt-6 w-full list-none space-y-2 p-0 text-left">
-          <li v-for="c in controls" :key="c.label" class="flex items-center justify-between gap-3 rounded-xl bg-ink-950/50 px-3 py-2 text-sm font-bold">
-            <span class="text-mist">{{ c.label }}</span>
-            <span class="flex gap-1">
-              <span v-for="k in c.keys" :key="k" class="cc-keycap">{{ k }}</span>
-            </span>
-          </li>
-        </ul>
-
+      
         <div class="mt-5 flex flex-wrap justify-center gap-2">
           <!-- the game hides the site header, so this is the way back out -->
           <RouterLink :to="{ name: 'home' }" class="cc-btn cc-btn-ghost cc-btn-sm">

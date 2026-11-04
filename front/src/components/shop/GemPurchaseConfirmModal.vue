@@ -38,7 +38,6 @@ useDialogFocus(dialogEl, { onEscape: () => !props.submitting && emit('close') })
     role="dialog"
     aria-modal="true"
     aria-labelledby="gem-confirm-title"
-    aria-describedby="gem-confirm-demo"
     @click.self="!submitting && emit('close')"
   >
     <div class="cc-modal max-w-md">
@@ -54,11 +53,6 @@ useDialogFocus(dialogEl, { onEscape: () => !props.submitting && emit('close') })
           <UiIcon name="x" :size="16" />
         </button>
       </div>
-
-      <p id="gem-confirm-demo" class="cc-alert cc-alert-warn m-0 mt-4" role="note">
-        <UiIcon name="info" :size="18" />
-        <span><strong class="block font-extrabold">{{ t('gems.demoBanner') }}</strong>{{ t('gems.demoHint') }}</span>
-      </p>
 
       <dl class="mt-5 space-y-2 rounded-xl bg-ink-950/50 p-4 text-sm font-bold">
         <div class="flex justify-between gap-4">
