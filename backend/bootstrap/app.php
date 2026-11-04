@@ -1,9 +1,11 @@
 <?php
 
 use Illuminate\Console\Scheduling\Schedule;
+use App\Http\Middleware\DetectSuspiciousRequests;
 use App\Http\Middleware\EnsureAccountIsActive;
 use App\Http\Middleware\EnsureAccountIsAdmin;
 use App\Http\Middleware\EnsureRealtimeServer;
+use App\Models\SecurityEvent;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -29,6 +31,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('accounts:purge-inactive')->dailyAt('04:00');
         // safety net behind the Stripe webhook; does nothing while Stripe is not configured
         $schedule->command('gems:reconcile')->everyTenMinutes()->withoutOverlapping();
+        $schedule->command('model:prune', ['--model' => [SecurityEvent::class]])->dailyAt('04:30');
     })
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
@@ -43,6 +46,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->convertEmptyStringsToNull(except: [
             fn (Request $request) => $request->is('api/inventory/layout'),
         ]);
+        $middleware->append(DetectSuspiciousRequests::class);
         $middleware->api(prepend: [
             HandleCors::class,
         ]);

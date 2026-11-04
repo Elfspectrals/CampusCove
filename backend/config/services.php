@@ -43,6 +43,10 @@ return [
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET', ''),
     ],
 
+    'cloudflare' => [
+        'origin_secret' => env('CLOUDFLARE_ORIGIN_SECRET', ''),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),
