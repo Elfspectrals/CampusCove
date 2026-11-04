@@ -2,6 +2,8 @@ import { apiRequest, isRecord } from './http'
 
 export const SECURITY_EVENT_TYPES = ['login_failed', 'rate_limited', 'probe_path', 'injection', 'scanner_agent'] as const
 export type SecurityEventType = (typeof SECURITY_EVENT_TYPES)[number]
+const CVE_SEVERITIES = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'UNKNOWN'] as const
+type CveSeverity = (typeof CVE_SEVERITIES)[number]
 type IpStatus = 'banned' | 'suspect' | 'normal'
 
 interface SecurityTopIp {
@@ -9,6 +11,33 @@ interface SecurityTopIp {
   score: number
   status: IpStatus
   country: string | null
+}
+
+interface SecurityScanInfo {
+  scanned_at: string
+  commit_sha: string
+  ref: string
+}
+
+interface SecurityCveSummary extends SecurityScanInfo {
+  by_severity: Record<CveSeverity, number>
+  total: number
+}
+
+interface SecurityCve {
+  id: number
+  target: string
+  package: string
+  installed_version: string
+  fixed_version: string | null
+  vulnerability_id: string
+  severity: CveSeverity
+  title: string | null
+}
+
+export interface SecurityCveList {
+  scan: SecurityScanInfo | null
+  vulnerabilities: SecurityCve[]
 }
 
 export interface SecurityOverview {
@@ -23,6 +52,7 @@ export interface SecurityOverview {
   top_ips: SecurityTopIp[]
   top_countries: { country: string | null, events: number }[]
   top_paths: { path: string, events: number }[]
+  cves: SecurityCveSummary | null
 }
 
 export interface SecurityEvent {
@@ -171,6 +201,40 @@ function parseIpDetail(value: unknown): SecurityIpDetail {
   }
 }
 
+function isSeverity(value: unknown): value is CveSeverity {
+  return (CVE_SEVERITIES as readonly unknown[]).includes(value)
+}
+
+function parseScanInfo(value: unknown): SecurityScanInfo {
+  if (!isRecord(value)) invalid('scan')
+  return { scanned_at: str(value.scanned_at, 'scan'), commit_sha: str(value.commit_sha, 'scan'), ref: str(value.ref, 'scan') }
+}
+
+function parseCveSummary(value: unknown): SecurityCveSummary | null {
+  if (value === null) return null
+  if (!isRecord(value) || !isRecord(value.by_severity)) invalid('cve summary')
+  const bySeverity = value.by_severity
+  return {
+    ...parseScanInfo(value),
+    by_severity: Object.fromEntries(CVE_SEVERITIES.map((severity) => [severity, num(bySeverity[severity], 'cve summary')])) as Record<CveSeverity, number>,
+    total: num(value.total, 'cve summary'),
+  }
+}
+
+function parseCve(value: unknown): SecurityCve {
+  if (!isRecord(value) || !isSeverity(value.severity)) invalid('cve')
+  return {
+    id: num(value.id, 'cve'),
+    target: str(value.target, 'cve'),
+    package: str(value.package, 'cve'),
+    installed_version: str(value.installed_version, 'cve'),
+    fixed_version: strOrNull(value.fixed_version),
+    vulnerability_id: str(value.vulnerability_id, 'cve'),
+    severity: value.severity,
+    title: strOrNull(value.title),
+  }
+}
+
 function parseOverview(value: unknown): SecurityOverview {
   if (!isRecord(value) || !isRecord(value.by_type_24h)) invalid('overview')
   const byType = value.by_type_24h
@@ -198,11 +262,21 @@ function parseOverview(value: unknown): SecurityOverview {
       if (!isRecord(row)) invalid('path')
       return { path: str(row.path, 'path'), events: num(row.events, 'path') }
     }, 'paths'),
+    cves: parseCveSummary(value.cves),
   }
 }
 
 export async function fetchSecurityOverview(): Promise<SecurityOverview> {
   return parseOverview(await apiRequest('/admin/security/overview'))
+}
+
+export async function fetchSecurityCves(): Promise<SecurityCveList> {
+  const data = await apiRequest('/admin/security/cves')
+  if (!isRecord(data)) invalid('cves')
+  return {
+    scan: data.scan === null ? null : parseScanInfo(data.scan),
+    vulnerabilities: list(data.vulnerabilities, parseCve, 'cves'),
+  }
 }
 
 export async function fetchSecurityEvents(filters: SecurityEventFilters = {}): Promise<SecurityEventPage> {

@@ -3,10 +3,12 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import {
   SECURITY_EVENT_TYPES,
   banSecurityIp,
+  fetchSecurityCves,
   fetchSecurityEvents,
   fetchSecurityIp,
   fetchSecurityOverview,
   unbanSecurityIp,
+  type SecurityCveList,
   type SecurityEvent,
   type SecurityEventType,
   type SecurityIpDetail,
@@ -15,6 +17,8 @@ import {
 import SecurityGlobe, { type GlobeImpact } from '../../components/admin/SecurityGlobe.vue'
 
 const REFRESH_MS = 10_000
+const STALE_SCAN_HOURS = 48
+const HOUR_MS = 3_600_000
 
 const overview = ref<SecurityOverview | null>(null)
 const events = ref<SecurityEvent[]>([])
@@ -25,6 +29,7 @@ const selected = ref<SecurityIpDetail | null>(null)
 const reportBan = ref(false)
 const error = ref<string | null>(null)
 const busy = ref(false)
+const cveList = ref<SecurityCveList | null>(null)
 let refreshing = false
 let timer = 0
 
@@ -36,6 +41,20 @@ const impacts = computed<GlobeImpact[]>(() => {
 })
 
 const hourlyMax = computed(() => Math.max(1, ...(overview.value?.hourly.map((h) => h.events) ?? [])))
+const scanAgeHours = computed(() => {
+  const data = overview.value
+  if (!data?.cves) return null
+  return (Date.parse(data.generated_at) - Date.parse(data.cves.scanned_at)) / HOUR_MS
+})
+const scanIsStale = computed(() => scanAgeHours.value !== null && scanAgeHours.value > STALE_SCAN_HOURS)
+const scanAge = computed(() => {
+  const hours = scanAgeHours.value
+  if (hours === null) return ''
+  if (hours < 1) return 'less than an hour ago'
+  if (hours < STALE_SCAN_HOURS) return `${Math.floor(hours)} h ago`
+  return `${Math.floor(hours / 24)} days ago`
+})
+
 const pathMax = computed(() => Math.max(1, ...(overview.value?.top_paths.map((p) => p.events) ?? [])))
 
 function messageOf(e: unknown): string {
@@ -86,6 +105,18 @@ async function loadMore(): Promise<void> {
 async function changeFilter(): Promise<void> {
   try {
     await loadFeed()
+  } catch (e) {
+    error.value = messageOf(e)
+  }
+}
+
+async function toggleCves(): Promise<void> {
+  if (cveList.value) {
+    cveList.value = null
+    return
+  }
+  try {
+    cveList.value = await fetchSecurityCves()
   } catch (e) {
     error.value = messageOf(e)
   }
@@ -217,10 +248,15 @@ onBeforeUnmount(() => {
             <span class="sec-muted">Suspect IPs</span>
             <strong class="sec-value sec-amber">{{ overview?.suspect_ips ?? '–' }}</strong>
           </div>
-          <div class="sec-card sec-stat">
+          <button type="button" class="sec-card sec-stat sec-stat-button" :aria-expanded="cveList !== null" @click="toggleCves">
             <span class="sec-muted">Open CVEs</span>
-            <strong class="sec-value sec-muted">soon</strong>
-          </div>
+            <template v-if="overview?.cves">
+              <strong class="sec-value" :class="{ 'sec-red': overview.cves.by_severity.CRITICAL > 0 }">{{ overview.cves.total }}</strong>
+              <span class="sec-muted">{{ overview.cves.by_severity.CRITICAL }} critical · {{ overview.cves.by_severity.HIGH }} high</span>
+              <span :class="scanIsStale ? 'sec-amber' : 'sec-muted'">last scan {{ scanAge }}</span>
+            </template>
+            <strong v-else class="sec-value sec-muted">{{ overview ? 'no scan yet' : '–' }}</strong>
+          </button>
         </div>
 
         <section class="sec-card">
@@ -271,6 +307,24 @@ onBeforeUnmount(() => {
         </li>
       </ul>
       <button v-if="nextBeforeId !== null" type="button" class="sec-btn" @click="loadMore">Load more</button>
+    </section>
+
+    <section v-if="cveList" class="sec-card sec-feed" aria-label="Dependency CVEs">
+      <div class="sec-feed-head">
+        <h2 class="sec-subtitle">Dependency CVEs</h2>
+        <span v-if="cveList.scan" class="sec-muted">{{ cveList.scan.ref }} · {{ cveList.scan.commit_sha.slice(0, 7) }} · {{ dateTime(cveList.scan.scanned_at) }}</span>
+      </div>
+      <p v-if="!cveList.scan" class="sec-muted">No Trivy scan received yet.</p>
+      <p v-else-if="cveList.vulnerabilities.length === 0" class="sec-muted">No known vulnerability in the dependencies.</p>
+      <ul class="sec-cves">
+        <li v-for="cve in cveList.vulnerabilities" :key="cve.id">
+          <span class="badge" :class="`sev-${cve.severity}`">{{ cve.severity }}</span>
+          <a class="sec-link" :href="`https://cve.now/${encodeURIComponent(cve.vulnerability_id)}`" target="_blank" rel="noopener noreferrer">{{ cve.vulnerability_id }}</a>
+          <span>{{ cve.package }} {{ cve.installed_version }} → {{ cve.fixed_version ?? 'no fix yet' }}</span>
+          <span class="sec-muted">{{ cve.target }}</span>
+          <span class="sec-muted sec-ellipsis">{{ cve.title }}</span>
+        </li>
+      </ul>
     </section>
 
     <aside v-if="selected" class="sec-panel" aria-label="IP details">
@@ -429,6 +483,41 @@ onBeforeUnmount(() => {
   flex-direction: column;
   gap: 0.25rem;
 }
+
+.sec-stat-button {
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sec-stat-button:hover { border-color: var(--sec-gold-dim); }
+
+.sec-cves {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.sec-cves li {
+  display: grid;
+  grid-template-columns: 5.5rem 10rem minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1.5fr);
+  gap: 0.75rem;
+  align-items: baseline;
+}
+
+@media (max-width: 960px) {
+  .sec-cves li { grid-template-columns: 5.5rem minmax(0, 1fr); }
+}
+
+.sev-CRITICAL { background: #3a1414; color: var(--sec-red-soft); }
+.sev-HIGH { background: #3a2a0c; color: #fac775; }
+.sev-MEDIUM { background: #2a2618; color: var(--sec-gold); }
+.sev-LOW,
+.sev-UNKNOWN { background: #1e1e1a; color: #b4b2a9; }
 
 .sec-value {
   font-size: 1.5rem;

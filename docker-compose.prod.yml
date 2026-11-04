@@ -41,6 +41,7 @@ x-backend: &backend
     STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
     STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
     ABUSEIPDB_API_KEY: ${ABUSEIPDB_API_KEY:-}
+    SECURITY_SCAN_TOKEN: ${SECURITY_SCAN_TOKEN:-}
   volumes:
     # Admin uploads (skin previews and models).
     - backend_storage:/var/www/html/storage/app

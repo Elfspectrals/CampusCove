@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Models\IpBan;
 use App\Models\IpReputation;
 use App\Models\SecurityEvent;
+use App\Models\SecurityScan;
+use App\Models\SecurityVulnerability;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 
@@ -46,6 +48,59 @@ class SecurityDashboardService
             ])->values()->all(),
             'top_countries' => $this->topCountries(),
             'top_paths' => $this->topPaths(),
+            'cves' => $this->cvesSummary(),
+        ];
+    }
+
+    public function cves(): array
+    {
+        $scan = SecurityScan::query()->latest('id')->first();
+        if ($scan === null) {
+            return ['scan' => null, 'vulnerabilities' => []];
+        }
+
+        $severityRank = array_flip(SecurityScan::SEVERITIES);
+
+        return [
+            'scan' => $this->scanPayload($scan),
+            'vulnerabilities' => $scan->vulnerabilities()->orderBy('package')->orderBy('id')->get()
+                ->sortBy(fn (SecurityVulnerability $vulnerability) => $severityRank[$vulnerability->severity])
+                ->map(fn (SecurityVulnerability $vulnerability) => [
+                    'id' => $vulnerability->id,
+                    'target' => $vulnerability->target,
+                    'package' => $vulnerability->package,
+                    'installed_version' => $vulnerability->installed_version,
+                    'fixed_version' => $vulnerability->fixed_version,
+                    'vulnerability_id' => $vulnerability->vulnerability_id,
+                    'severity' => $vulnerability->severity,
+                    'title' => $vulnerability->title,
+                ])
+                ->values()
+                ->all(),
+        ];
+    }
+
+    private function cvesSummary(): ?array
+    {
+        $scan = SecurityScan::query()->latest('id')->first();
+        if ($scan === null) {
+            return null;
+        }
+
+        $counts = $scan->vulnerabilities()->groupBy('severity')->select('severity', DB::raw('COUNT(*) AS vulnerabilities'))->pluck('vulnerabilities', 'severity');
+
+        return $this->scanPayload($scan) + [
+            'by_severity' => collect(SecurityScan::SEVERITIES)->mapWithKeys(fn (string $severity) => [$severity => (int) ($counts[$severity] ?? 0)])->all(),
+            'total' => (int) $counts->sum(),
+        ];
+    }
+
+    private function scanPayload(SecurityScan $scan): array
+    {
+        return [
+            'scanned_at' => $scan->scanned_at->toIso8601String(),
+            'commit_sha' => $scan->commit_sha,
+            'ref' => $scan->ref,
         ];
     }
 

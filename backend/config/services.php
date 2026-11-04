@@ -47,6 +47,10 @@ return [
         'key' => env('ABUSEIPDB_API_KEY', ''),
     ],
 
+    'security_scan' => [
+        'token' => env('SECURITY_SCAN_TOKEN', ''),
+    ],
+
     'cloudflare' => [
         'origin_secret' => env('CLOUDFLARE_ORIGIN_SECRET', ''),
     ],

@@ -42,6 +42,11 @@ class AdminSecurityController extends Controller
         return response()->json($this->dashboard->ip($this->validIp($ip)));
     }
 
+    public function cves(): JsonResponse
+    {
+        return response()->json($this->dashboard->cves());
+    }
+
     public function bans(): JsonResponse
     {
         return response()->json(['bans' => $this->dashboard->activeBans()]);

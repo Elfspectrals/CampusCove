@@ -19,6 +19,7 @@ use App\Http\Controllers\PlayerInventoryLayoutController;
 use App\Http\Controllers\PlayerReportController;
 use App\Http\Controllers\PubController;
 use App\Http\Controllers\ReferralController;
+use App\Http\Controllers\SecurityScanController;
 use App\Http\Controllers\ShopController;
 use App\Http\Controllers\StripeWebhookController;
 use App\Http\Controllers\SurvivalController;
@@ -37,6 +38,7 @@ Route::middleware('throttle:10,1')->group(function () {
     Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 });
 
+Route::post('/security/scans', [SecurityScanController::class, 'store'])->middleware('throttle:10,1');
 Route::get('/shop/items', [ShopController::class, 'index']);
 Route::get('/assets/public/{path}', [AssetController::class, 'publicDisk'])->where('path', '.*');
 
@@ -135,6 +137,7 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
             Route::get('/overview', [AdminSecurityController::class, 'overview']);
             Route::get('/events', [AdminSecurityController::class, 'events']);
             Route::get('/bans', [AdminSecurityController::class, 'bans']);
+            Route::get('/cves', [AdminSecurityController::class, 'cves']);
             Route::get('/ips/{ip}', [AdminSecurityController::class, 'showIp']);
             Route::post('/ips/{ip}/ban', [AdminSecurityController::class, 'ban']);
             Route::post('/ips/{ip}/unban', [AdminSecurityController::class, 'unban']);
