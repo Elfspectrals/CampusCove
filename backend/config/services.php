@@ -43,6 +43,21 @@ return [
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET', ''),
     ],
 
+    'abuseipdb' => [
+        'key' => env('ABUSEIPDB_API_KEY', ''),
+    ],
+
+    'security_scan' => [
+        'token' => env('SECURITY_SCAN_TOKEN', ''),
+    ],
+
+    'cloudflare' => [
+        'origin_secret' => env('CLOUDFLARE_ORIGIN_SECRET', ''),
+        'enforce_origin' => (bool) env('CLOUDFLARE_ENFORCE_ORIGIN', false),
+        'api_token' => env('CLOUDFLARE_API_TOKEN', ''),
+        'zone_id' => env('CLOUDFLARE_ZONE_ID', ''),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

@@ -10,5 +10,10 @@ export const CITY_SPAWN_RADIUS = 2
 
 // Sent as X-Realtime-Secret on the API routes only this server may call (survival stats).
 export const REALTIME_SHARED_SECRET = process.env.REALTIME_SHARED_SECRET || ''
+export const CLOUDFLARE_ORIGIN_SECRET = process.env.CLOUDFLARE_ORIGIN_SECRET || ''
+export const CLOUDFLARE_ENFORCE_ORIGIN = process.env.CLOUDFLARE_ENFORCE_ORIGIN === 'true'
+if (CLOUDFLARE_ENFORCE_ORIGIN && !CLOUDFLARE_ORIGIN_SECRET) {
+  throw new Error('CLOUDFLARE_ENFORCE_ORIGIN is on but CLOUDFLARE_ORIGIN_SECRET is empty')
+}
 // >1 makes hunger and thirst drop faster, for playtests (never in production).
 export const SURVIVAL_TIME_SCALE = Math.max(1, parseFloat(process.env.SURVIVAL_TIME_SCALE || '1') || 1)

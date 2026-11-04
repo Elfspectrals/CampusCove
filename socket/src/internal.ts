@@ -8,6 +8,10 @@ interface HousingAware {
   onHousingChanged(): Promise<void>
 }
 
+interface BanAware {
+  onIpBanned(ip: string): void
+}
+
 const digest = (value: string) => createHash('sha256').update(value).digest()
 
 export function isRealtimeSecret(given: string | null): boolean {
@@ -26,4 +30,16 @@ const housingChanged = createEndpoint('/internal/housing-changed', { method: 'PO
   return Response.json({ ok: true })
 })
 
-export const internalRoutes = createRouter({ housingChanged })
+const ipBanned = createEndpoint('/internal/ip-banned', { method: 'POST' }, async (ctx) => {
+  if (!isRealtimeSecret(ctx.request?.headers.get('x-realtime-secret') ?? null)) throw ctx.error(403)
+  const ip = (ctx.body as { ip?: unknown } | undefined)?.ip
+  if (typeof ip !== 'string' || ip === '') throw ctx.error(422)
+  const rooms = await matchMaker.query({ name: 'city' })
+  for (const cached of rooms) {
+    const room = matchMaker.getLocalRoomById(cached.roomId) as unknown as BanAware | undefined
+    room?.onIpBanned(ip)
+  }
+  return Response.json({ ok: true })
+})
+
+export const internalRoutes = createRouter({ housingChanged, ipBanned })

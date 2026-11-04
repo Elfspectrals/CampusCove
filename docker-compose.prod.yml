@@ -40,6 +40,12 @@ x-backend: &backend
     GEMS_CHECKOUT_MODE: ${GEMS_CHECKOUT_MODE:-off}
     STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
     STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+    ABUSEIPDB_API_KEY: ${ABUSEIPDB_API_KEY:-}
+    SECURITY_SCAN_TOKEN: ${SECURITY_SCAN_TOKEN:-}
+    CLOUDFLARE_ORIGIN_SECRET: ${CLOUDFLARE_ORIGIN_SECRET:-}
+    CLOUDFLARE_ENFORCE_ORIGIN: ${CLOUDFLARE_ENFORCE_ORIGIN:-false}
+    CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN:-}
+    CLOUDFLARE_ZONE_ID: ${CLOUDFLARE_ZONE_ID:-}
   volumes:
     # Admin uploads (skin previews and models).
     - backend_storage:/var/www/html/storage/app
@@ -105,6 +111,8 @@ services:
       # Caddy's internal listener: PHP-FPM speaks FastCGI, not HTTP.
       BACKEND_API_URL: http://caddy:8080/api
       REALTIME_SHARED_SECRET: ${REALTIME_SHARED_SECRET}
+      CLOUDFLARE_ORIGIN_SECRET: ${CLOUDFLARE_ORIGIN_SECRET:-}
+      CLOUDFLARE_ENFORCE_ORIGIN: ${CLOUDFLARE_ENFORCE_ORIGIN:-false}
     depends_on:
       - caddy
     restart: unless-stopped

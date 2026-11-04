@@ -1,0 +1,63 @@
+name: Trivy
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    env:
+      SECURITY_SCAN_URL: ${{ secrets.SECURITY_SCAN_URL }}
+      SECURITY_SCAN_TOKEN: ${{ secrets.SECURITY_SCAN_TOKEN }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln
+          format: json
+          output: trivy.json
+          exit-code: '0'
+
+      - name: Build the dashboard report
+        run: |
+          jq --arg sha "$GITHUB_SHA" --arg ref "$GITHUB_REF" '
+            def present: if (. // "") == "" then null else . end;
+            {
+              commit_sha: $sha,
+              ref: $ref,
+              vulnerabilities: [
+                .Results[]? | .Target as $target | .Vulnerabilities[]? | {
+                  target: $target,
+                  package: .PkgName,
+                  installed_version: .InstalledVersion,
+                  fixed_version: (.FixedVersion | present),
+                  vulnerability_id: .VulnerabilityID,
+                  severity: .Severity,
+                  title: (.Title | present)
+                }
+              ]
+            }' trivy.json > report.json
+          echo "Vulnerabilities found: $(jq '.vulnerabilities | length' report.json)"
+
+      - name: Send the report to the security dashboard
+        if: env.SECURITY_SCAN_URL != ''
+        run: |
+          curl --fail-with-body --silent --show-error -X POST "$SECURITY_SCAN_URL" \
+            -H "X-Scan-Token: $SECURITY_SCAN_TOKEN" \
+            -H 'Content-Type: application/json' \
+            -H 'Accept: application/json' \
+            --data @report.json
+
+      - name: Report not sent
+        if: env.SECURITY_SCAN_URL == ''
+        run: echo "::warning::SECURITY_SCAN_URL is not set, the report was not sent to the dashboard."

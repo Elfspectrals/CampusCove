@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Account;
 use App\Models\AccountAuthLocal;
 use App\Models\AccountHandle;
+use App\Models\SecurityEvent;
 use App\Services\AccountMailer;
 use App\Services\ReferralService;
+use App\Services\SecurityEventLogger;
 use App\Services\StarterCosmeticGrantService;
 use App\Services\WalletSummaryService;
 use App\Services\WelcomeBonusService;
@@ -110,6 +112,7 @@ class AuthController extends Controller
             ->first();
 
         if (! $account || ! Hash::check($validated['password'], $account->localAuth->password_hash)) {
+            app(SecurityEventLogger::class)->record($request, SecurityEvent::TYPE_LOGIN_FAILED, $validated['email']);
             throw ValidationException::withMessages([
                 'email' => ['The provided credentials are incorrect.'],
             ]);

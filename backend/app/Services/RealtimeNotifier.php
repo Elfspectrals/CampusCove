@@ -28,4 +28,21 @@ final class RealtimeNotifier
             Log::warning('realtime housing-changed notify failed: '.$e->getMessage());
         }
     }
+
+    public function ipBanned(string $ip): void
+    {
+        $url = (string) config('services.realtime.url');
+        $secret = (string) config('services.realtime.secret');
+        if ($url === '' || $secret === '') {
+            return;
+        }
+        try {
+            Http::timeout(3)
+                ->withHeaders(['X-Realtime-Secret' => $secret])
+                ->post(rtrim($url, '/').'/internal/ip-banned', ['ip' => $ip])
+                ->throw();
+        } catch (Throwable $e) {
+            Log::warning('realtime ip-banned notify failed: '.$e->getMessage());
+        }
+    }
 }

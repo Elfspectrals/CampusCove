@@ -228,10 +228,11 @@ export function useClothingStore(deps: ClothingStoreDeps) {
     mirror = new Reflector(new THREE.PlaneGeometry(w, h), { textureWidth: 512, textureHeight: 1024, color: 0xc8d0d4 })
     mirror.position.fromArray(spec.position)
     mirror.rotation.y = spec.yaw
-    mirror.camera.layers.enable(MIRROR_LAYER)
     mirror.visible = false
+    const reflector = mirror
     const renderReflection = mirror.onBeforeRender
     mirror.onBeforeRender = (...args) => {
+      reflector.getReflectionCamera(args[2]).layers.enable(MIRROR_LAYER)
       const hands = deps.getFpHands()
       const handsVisible = hands?.visible ?? false
       if (hands) hands.visible = false

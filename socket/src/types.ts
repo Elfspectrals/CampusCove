@@ -34,6 +34,7 @@ export interface Identity {
   token: string
   /** GET /user's is_admin: unlocks the watch's admin app (src/admin.ts). */
   isAdmin: boolean
+  ip: string
 }
 
 export interface Player extends Vec3 {

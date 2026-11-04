@@ -1,7 +1,7 @@
-import { type Client, Room } from 'colyseus'
+import { type AuthContext, type Client, Room } from 'colyseus'
 import { onAdminOpen, onAdminSummon, onAdminTeleport } from './admin.ts'
 import { pickupObject, saveObject, setDecoratedHouse } from './apartments.ts'
-import { type Json, callBackendJson, parseAccountId, resolveIdentity } from './backend.ts'
+import { type Json, callBackendJson, clientIp, isDirectOrigin, parseAccountId, resolveIdentity } from './backend.ts'
 import { CITY_MAX_PLAYERS, CITY_SPAWN_RADIUS } from './config.ts'
 
 const HOUSING_REFRESH_COOLDOWN_MS = 2000
@@ -149,9 +149,10 @@ export class CityRoom extends Room implements GameRoom {
     this.clock.setInterval(() => tickSurvival(this, SURVIVAL_TICK_MS / 1000), SURVIVAL_TICK_MS)
   }
 
-  async onAuth(_client: Client, options: Json): Promise<Identity> {
+  async onAuth(_client: Client, options: Json, context: AuthContext): Promise<Identity> {
     try {
-      return await resolveIdentity(options)
+      if (isDirectOrigin(context.headers)) throw new Error('direct origin: join through Cloudflare')
+      return await resolveIdentity(options, clientIp(context.headers, context.ip))
     } catch (err) {
       warn('onAuth failed', err)
       throw err
@@ -315,6 +316,12 @@ export class CityRoom extends Room implements GameRoom {
     await this.pollHousingUnits()
     const token = [...this.players.values()].find((p) => p.token)?.token
     if (token) await this.refreshHouseFurniture(token)
+  }
+
+  onIpBanned(ip: string): void {
+    for (const client of this.clients) {
+      if (client.auth?.ip === ip) client.leave(4003, 'ip banned')
+    }
   }
 
   async fetchHouseFurniture(token: string): Promise<void> {

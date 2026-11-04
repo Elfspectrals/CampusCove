@@ -41,6 +41,14 @@
 		import laravel
 	}
 
+	@probe {
+		path *.php /.* /wp-* /phpmyadmin* /cgi-bin*
+		not path /.well-known/*
+	}
+	handle @probe {
+		import laravel
+	}
+
 	handle {
 		root * /srv
 		redir /shop / permanent
