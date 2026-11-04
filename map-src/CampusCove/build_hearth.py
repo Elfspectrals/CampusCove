@@ -85,7 +85,6 @@ M["slat"] = L.make_mat("IN_HearthSlat", "#3b3630", 0.7, "noise", 0.02)
 M["bulb"] = L.make_mat("IN_HearthLightPanelBulb", "#fff0cf", 0.4, "noise", 0.0, emit="#ffd98a", emit_strength=1.8)
 M["sign"] = L.make_mat("IN_HearthSign", "#fff7ea", 0.4, "noise", 0.0, emit="#fff1d6", emit_strength=0.9)
 M["black"] = L.make_mat("IN_HearthBlack", "#1d1f24", 0.6, "noise", 0.01)
-M["tag"] = L.make_mat("IN_HearthTagPost", "#4a4f57", 0.5, "noise", 0.02)
 OBJ_COLORS = ("#e0533d", "#f6d04d", "#3f7f8c", "#f07fa8", "#2f6f63", "#1f5fae", "#f2a65a", "#a985e0", "#79b765", "#f7f4ec")
 OBJS = [L.make_mat(f"IN_HearthObj{i}", c, 0.6, "noise", 0.03) for i, c in enumerate(OBJ_COLORS)]
 DM = {dep: L.make_mat(f"IN_HearthDept_{dep}", c, 0.8, "noise", 0.02) for dep, (_, c) in DEPARTMENTS.items()}
@@ -233,7 +232,6 @@ def island(dep, cx, cz, dx, dz):
             gz = cz
             w_, h_, d_ = manifest[key]
             tx, tz = gx, cz + 0.75
-            add(L.cyl(coll, f"TagPost_{key}", tx, tz, 0.0, 0.02, 0.95, M["tag"], seg=6))
             displays.append({"key": key, "code": code_of(key), "department": dep, "description": BLURB[key],
                              "position": [round(gx, 3), TABLE_Y, round(gz, 3)], "yaw": 0.0, "size": [w_, h_, d_],
                              "tag": {"position": [round(tx, 3), 1.22, round(tz, 3)], "yaw": 0.0}})
@@ -254,8 +252,6 @@ def island(dep, cx, cz, dx, dz):
             cols.add(f"Item_{key}", gx, gz, y0, side, side, h_)
         r_tag = math.hypot(gx - cx, gz - cz) + max(cw, cd) / 2 + 0.3
         tx, tz = cx + r_tag * math.cos(a), cz + r_tag * math.sin(a)
-        add(L.cyl(coll, f"TagPost_{key}", tx, tz, 0.0, 0.025, 1.05, M["tag"], seg=6))
-        add(L.cyl(coll, f"TagFoot_{key}", tx, tz, 0.0, 0.16, 0.03, M["tag"], seg=10))
         displays.append({"key": key, "code": code_of(key), "department": dep, "description": BLURB[key],
                          "position": [round(gx, 3), y0, round(gz, 3)], "yaw": round(yaw, 4), "size": [w_, h_, d_],
                          "tag": {"position": [round(tx, 3), 1.32, round(tz, 3)], "yaw": round(facing_yaw(cx - tx, cz - tz) + math.pi, 4)}})
@@ -346,7 +342,8 @@ xo += shell
 DN = hd - zb
 zc = (hd + zb) / 2
 xo.append(L.box(coll2, "EX_Plinth", 0, zc, 0.0, W + 0.3, DN + 0.3, 0.19, E["found"], bevel=0.02, tile=2.0))
-xo.append(L.box(coll2, "EX_Band", 0, zc, HB - 0.5, W, DN, 0.5, E["steel"], tile=1.5))
+# the band is a hollow ring on the shell walls: a solid slab put its underside at (or below) the interior ceiling
+xo += L.perimeter(coll2, "EX_Band", W, hd, zb, HB - 0.5, 0.5, L.SHELL_THICKNESS, E["steel"], tile=1.5)
 xo.append(L.box(coll2, "EX_Roof", 0, zc, HB, W + 0.4, DN + 0.4, 0.25, E["roof"], tile=3.0))
 for s in range(4):
     xo.append(L.box(coll2, f"EX_Shed{s}", 0, zc + DN / 2 - (s + 0.5) * DN / 4, HB + 0.25, W - 1.0, DN / 4 - 0.4, 0.9, E["glass"]))

@@ -808,13 +808,13 @@
           "key": "crispins_hardware",
           "name": "Crispin's Hardware",
           "position": [
-            -369,
+            -368.75,
             0,
             -82.5
           ],
           "rotationY": 0,
           "door": [
-            -369,
+            -368.75,
             1.25,
             -78
           ],
@@ -833,13 +833,13 @@
           "key": "summit_sports",
           "name": "Summit Sports",
           "position": [
-            -284.167,
+            -284,
             0,
             82.5
           ],
           "rotationY": 3.141593,
           "door": [
-            -284.167,
+            -284,
             1.25,
             78
           ],

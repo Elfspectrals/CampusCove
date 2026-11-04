@@ -27,12 +27,12 @@ H = 4.2
 X0, X1, Z0, Z1 = -12.0, 12.0, -3.5, 5.0
 rng = random.Random(61)
 SWEETS = {
-    "cotton_candy": ("candy_cotton", "fair", "Spun sugar cloud, freshly made at the machine.", [0.2, 0.365, 0.155]),
+    "cotton": ("candy_cotton", "fair", "Spun sugar cloud, freshly made at the machine.", [0.2, 0.365, 0.155]),
     "lollipop": ("candy_lollipop", "lollipops", "Swirl lollipop on a stick.", [0.09, 0.21, 0.02]),
-    "candy_bag": ("candy_bag", "pickmix", "A bag of gummies from the pick & mix.", [0.12, 0.168, 0.055]),
+    "bag": ("candy_bag", "pickmix", "A bag of gummies from the pick & mix.", [0.12, 0.168, 0.055]),
     "licorice": ("candy_licorice", "pickmix", "Four twists of black licorice.", [0.057, 0.17, 0.06]),
-    "bubble_gum": ("candy_gum", "counter", "Pack of bubble gum, five sticks.", [0.076, 0.095, 0.023]),
-    "candy_apple": ("candy_apple", "fair", "Red candy apple, glossy and crunchy.", [0.085, 0.218, 0.085]),
+    "gum": ("candy_gum", "counter", "Pack of bubble gum, five sticks.", [0.076, 0.095, 0.023]),
+    "apple": ("candy_apple", "fair", "Red candy apple, glossy and crunchy.", [0.085, 0.218, 0.085]),
 }
 DEPARTMENTS = {
     "pickmix": ("PICK & MIX", "#f7a1c4"),
@@ -54,7 +54,6 @@ M["stripe2"] = L.make_mat("IN_CandyStripeMint", "#9fe0cf", 0.6, "stripes", 0.02,
 M["jar"] = L.make_mat("IN_CandyJar", "#e6f6fb", 0.1, "noise", 0.01, alpha=0.35)
 M["sign"] = L.make_mat("IN_CandySign", "#ffffff", 0.4, "noise", 0.0, emit="#fff1f7", emit_strength=1.0)
 M["cloud"] = L.make_mat("IN_CandyCloud", "#ffffff", 0.9, "noise", 0.02, emit="#ffffff", emit_strength=0.4)
-M["tag"] = L.make_mat("IN_CandyTagPost", "#b8b0c4", 0.5, "noise", 0.02)
 M["machine"] = L.make_mat("IN_CandyMachine", "#d94f8a", 0.4, "noise", 0.02)
 M["chrome"] = L.make_mat("IN_CandyChrome", "#d9dde2", 0.2, "noise", 0.02)
 FILLS = [L.make_mat(f"IN_CandyFill{i}", c, 0.4, "noise", 0.05) for i, c in enumerate(("#e0534f", "#f6d04d", "#79b765", "#38a3c9", "#a985e0", "#f28c28", "#f4b3c8", "#2fa17a"))]
@@ -122,7 +121,6 @@ def display(key, gx, gy, gz, yaw, tag_x, tag_z, tag_y=1.3, stack=(1, 1)):
     """One sweet on sale; `stack` = (columns, rows) of copies the front lines up on the spot so the small
     models read as a filled shelf."""
     code, dep, blurb, size = SWEETS[key]
-    add(L.cyl(coll, f"TagPost_{key}", tag_x, tag_z, 0.0, 0.02, tag_y - 0.25, M["tag"], seg=6))
     displays.append({"key": key, "code": code, "department": dep, "description": blurb,
                      "position": [round(gx, 3), round(gy, 3), round(gz, 3)], "yaw": round(yaw, 4), "size": size, "stack": list(stack),
                      "tag": {"position": [round(tag_x, 3), tag_y, round(tag_z, 3)], "yaw": round(yaw, 4)}})
@@ -173,7 +171,7 @@ for k in range(6):
     add(L.box(coll, f"PickMix_Fill{k}", gx, gz, 0.9, 0.5, 0.4, 0.18, FILLS[k % len(FILLS)], rot=-a))
 add(L.cyl(coll, "PickMix_Post", 0.0, 0.5, 0.9, 0.05, 1.6, M["stripe2"], seg=8))
 cols.add("PickMix", 0.0, 0.5, 0.0, 3.4, 3.4, 1.2)
-display("candy_bag", 0.0, 0.9, -0.9, 0.0, 0.0, -1.6, stack=(4, 2))
+display("bag", 0.0, 0.9, -0.9, 0.0, 0.0, -1.6, stack=(4, 2))
 display("licorice", -1.2, 0.9, 1.2, math.pi / 2, -1.9, 1.5, tag_y=1.3, stack=(3, 2))
 # lollipop tree (west)
 add(L.cyl(coll, "LollyTree_Base", -8.0, -1.0, 0.0, 0.5, 0.1, M["cream"], seg=12))
@@ -188,12 +186,12 @@ display("lollipop", -8.0, 1.7, -1.0, 0.0, -8.0, -0.1, tag_y=1.2, stack=(3, 1))
 # fair treats: cotton candy machine and the candy apple tray (east)
 add(L.furn(coll, "CottonMachine", 7.5, -1.5, 0.0, [(0, 0, 0.0, 1.0, 1.0, 0.85, M["machine"], 0.03), (0, 0, 0.85, 1.1, 1.1, 0.08, M["chrome"], 0.02), (0, 0, 0.93, 0.9, 0.9, 0.25, M["jar"], 0.02)]))
 cols.add("CottonMachine", 7.5, -1.5, 0.0, 1.1, 1.1, 1.3)
-display("cotton_candy", 7.5, 0.93, -1.5, 0.0, 7.5, -0.7, tag_y=1.35, stack=(2, 1))
+display("cotton", 7.5, 0.93, -1.5, 0.0, 7.5, -0.7, tag_y=1.35, stack=(2, 1))
 add(L.furn(coll, "AppleTray", 9.8, 1.0, 0.0, [(0, 0, 0.0, 1.0, 0.7, 0.85, M["cream"], 0.02), (0, 0, 0.85, 1.1, 0.8, 0.05, M["chrome"], 0.01)]))
 cols.add("AppleTray", 9.8, 1.0, 0.0, 1.1, 0.8, 1.0)
 for k in range(6):
     add(L.cyl(coll, f"AppleTray_Apple{k}", 9.5 + (k % 3) * 0.3, 0.8 + (k // 3) * 0.35, 0.9, 0.06, 0.12, FILLS[0], seg=8))
-display("candy_apple", 9.4, 0.9, 1.3, 0.0, 9.4, 1.6, tag_y=1.3, stack=(3, 2))
+display("apple", 9.4, 0.9, 1.3, 0.0, 9.4, 1.6, tag_y=1.3, stack=(3, 2))
 # counter with register and the gum rack
 add(L.furn(coll, "Counter", -5.0, 3.0, 0.0, [
     (0, 0, 0.0, 3.4, 0.9, 0.95, M["pink"], 0.03),
@@ -205,7 +203,7 @@ add(L.box(coll, "Awning", -5.0, 2.6, 2.6, 4.0, 1.6, 0.1, M["stripe"]))
 add(L.box(coll, "Counter_SignBoard", -5.0, 2.65, 2.2, 2.2, 0.08, 0.5, M["mint"], bevel=0.03))
 text("Counter_SignText", "PAY HERE", -5.0, 2.71, 2.32, 0.28, M["sign"], 0.0)
 add(L.box(coll, "GumRack", -3.8, 3.0, 1.01, 0.5, 0.4, 0.5, M["cream"]))
-display("bubble_gum", -3.8, 1.51, 3.0, 0.0, -3.4, 3.6, tag_y=1.25, stack=(3, 2))
+display("gum", -3.8, 1.51, 3.0, 0.0, -3.4, 3.6, tag_y=1.25, stack=(3, 2))
 for i, dep in enumerate(("pickmix", "lollipops", "fair", "counter")):
     hanging_sign(dep, (0.0, -8.0, 8.5, -5.0)[i], (-2.4, -2.6, -2.8, 0.8)[i], 0.0)
 

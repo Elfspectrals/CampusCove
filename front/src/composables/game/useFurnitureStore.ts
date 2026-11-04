@@ -5,6 +5,7 @@ import { checkoutShopBasket, fetchItemShopCatalog, type ShopItem } from '../../a
 import { COVE_HOME, decorModelUrl, type StoreDisplay, type StoreLayout } from '../../game/assets/catalog'
 import { createGltfLoader } from '../../game/gltfLoaderFactory'
 import { configureRoomMeshShadows } from '../../game/sceneLighting'
+import { freshDisplayGroup } from '../../game/store/displayGroup'
 import { createPriceTag, type PriceTagContent } from '../../game/store/priceTag'
 import { createStoreClerk } from '../../game/store/storeClerk'
 import { openHouseInterior } from '../../game/town/openHouses'
@@ -20,7 +21,7 @@ export interface StoreTarget {
   coins: number | null
   /** The item is already in the basket (stores with a counter); a click puts it back. */
   inBasket: boolean
-  /** World position of the price tag (prompt anchor). */
+  /** World position of the prompt: the price tag, or just above the model in a store without tags. */
   tagPosition: [number, number, number]
 }
 
@@ -44,6 +45,8 @@ interface FurnitureStoreSpec {
   modelUrl: (display: StoreDisplay) => string
   /** Uniform colours of the cashier; a store whose layout has a `counter` sells through a basket paid there. */
   clerkColors?: CosmeticColors
+  /** IKEA-style price tag next to each display (Cove Home); the mall stores show the model alone. Default true. */
+  priceTags?: boolean
 }
 
 const COVE_HOME_SPEC: FurnitureStoreSpec = { key: COVE_HOME.key, interiorLayoutUrl: COVE_HOME.interiorLayoutUrl, modelUrl: (display) => decorModelUrl(display.key) }
@@ -53,29 +56,75 @@ const PICK_DISTANCE = 4.2
 const PICK_ANGLE = 0.32
 const CLOSE_DISTANCE = 1.6
 const CLOSE_ANGLE = 0.7
+/** Stores without tags: the crosshair may miss a small item by this much (radians) if nothing hides it. */
+const AIM_SLACK = 0.09
+/** Seconds between two raycasts of the aim (the interior meshes are big merged nodes). */
+const AIM_INTERVAL = 0.08
+/** A hit this close before an item's middle still counts as the item (its own shelf, the copy next to it). */
+const SEE_THROUGH_SLACK = 0.15
 const COUNTER_REACH = 2.2
 const STACK_GAP = 0.02
+const PROMPT_LIFT = 0.18
+const HIGHLIGHT = new THREE.Color(0x3a3a2a)
 
 interface DisplayRuntime {
   display: StoreDisplay
-  tag: ReturnType<typeof createPriceTag>
+  tag: ReturnType<typeof createPriceTag> | null
   /** Look-at point (middle of the model), world space. */
   center: THREE.Vector3
   tagPosition: [number, number, number]
+  /** The display's own material copies (shared by its stacked copies), lit up while it is aimed at. */
+  materials: THREE.MeshStandardMaterial[]
 }
 
 function prettyName(key: string): string {
   return key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
 }
 
+/** Raycasts do not skip hidden nodes (the Sky_ and door nodes an interior hides in the open world). */
+function isShown(obj: THREE.Object3D, root: THREE.Object3D): boolean {
+  for (let o: THREE.Object3D | null = obj; o && o !== root; o = o.parent) if (!o.visible) return false
+  return true
+}
+
+/** Glass (a bakery sneeze guard, fridge doors) is aimed through, like the player sees through it. */
+function isSeeThrough(obj: THREE.Object3D): boolean {
+  if (!(obj instanceof THREE.Mesh)) return false
+  const materials: THREE.Material[] = Array.isArray(obj.material) ? obj.material : [obj.material]
+  return materials.every((m) => m.transparent && m.opacity < 0.6)
+}
+
+/** Own copies of the model's materials so lighting one display up leaves the same GLB elsewhere untouched. */
+function ownMaterials(model: THREE.Object3D): THREE.MeshStandardMaterial[] {
+  const copies = new Map<THREE.Material, THREE.Material>()
+  model.traverse((obj) => {
+    if (!(obj instanceof THREE.Mesh)) return
+    const swap = (m: THREE.Material) => {
+      let copy = copies.get(m)
+      if (!copy) {
+        copy = m.clone()
+        copies.set(m, copy)
+      }
+      return copy
+    }
+    obj.material = Array.isArray(obj.material) ? obj.material.map(swap) : swap(obj.material)
+  })
+  const lit = [...copies.values()].filter((m): m is THREE.MeshStandardMaterial => m instanceof THREE.MeshStandardMaterial)
+  for (const m of lit) m.userData.baseEmissive = m.emissive.clone()
+  return lit
+}
+
 /**
- * Cove Home showroom: puts every furniture model of the store layout on its display spot (the models are the
- * same decor GLBs that get placed in houses), draws an IKEA-style price tag next to each one from the live shop
- * catalogue, and tracks which item the player is looking at so a click can buy it.
+ * A store selling from display spots: puts every model of the store layout on its spot (decor pieces at Cove Home
+ * and the mall's furniture stores, foods at GreenCart and Candy Cloud), and tracks which item the player is
+ * looking at so a click buys it (Cove Home) or puts it in the basket (stores with a counter). Cove Home draws an
+ * IKEA-style price tag next to each piece; the mall stores show the model alone, its name and price come up in the
+ * item card while it is aimed at.
  */
 export function useFurnitureStore(deps: FurnitureStoreDeps) {
   const loader = createGltfLoader()
   const store = deps.store ?? COVE_HOME_SPEC
+  const withTags = store.priceTags ?? true
   const layout = shallowRef<StoreLayout | null>(null)
   const catalogByCode = shallowRef<Map<string, ShopItem>>(new Map())
   const target = shallowRef<StoreTarget | null>(null)
@@ -92,10 +141,13 @@ export function useFurnitureStore(deps: FurnitureStoreDeps) {
   let attachedTo: THREE.Group | null = null
   let attachToken = 0
   let wasInStore = false
+  let aimClock = AIM_INTERVAL
   const forward = new THREE.Vector3()
   const toItem = new THREE.Vector3()
   const counter = new THREE.Vector3()
   const projection = new THREE.Vector3()
+  const eye = new THREE.Vector3()
+  const raycaster = new THREE.Raycaster()
 
   const departmentLabels = computed(() => new Map((layout.value?.departments ?? []).map((d) => [d.id, d.label])))
 
@@ -131,9 +183,11 @@ export function useFurnitureStore(deps: FurnitureStoreDeps) {
   }
 
   /** The model on its spot; a `stack` lines up copies in a grid so small goods read as a filled shelf. */
-  async function placeModel(group: THREE.Group, display: StoreDisplay): Promise<void> {
+  async function placeModel(group: THREE.Group, rt: DisplayRuntime, index: number): Promise<void> {
+    const { display } = rt
     try {
       const gltf = await loader.loadAsync(store.modelUrl(display))
+      rt.materials = ownMaterials(gltf.scene)
       const [cols, rows] = display.stack ?? [1, 1]
       const [w, , d] = display.size
       const [px, py, pz] = display.position
@@ -145,6 +199,7 @@ export function useFurnitureStore(deps: FurnitureStoreDeps) {
           const ox = (i - (cols - 1) / 2) * (w + STACK_GAP)
           const oz = (j - (rows - 1) / 2) * (d + STACK_GAP)
           model.name = `StoreDisplay_${display.key}`
+          model.userData.storeDisplay = index
           model.position.set(px + ox * cos + oz * sin, py, pz - ox * sin + oz * cos)
           model.rotation.y = display.yaw
           configureRoomMeshShadows(model)
@@ -165,40 +220,44 @@ export function useFurnitureStore(deps: FurnitureStoreDeps) {
     const [storeLayout] = await Promise.all([loadLayout(), refreshCatalog()])
     if (token !== attachToken) return
     if (attachedTo === group) {
-      for (const rt of runtimes) rt.tag.update(tagContent(rt.display))
+      for (const rt of runtimes) rt.tag?.update(tagContent(rt.display))
       return
     }
     attachedTo = group
-    const displays = new THREE.Group()
-    displays.name = 'StoreDisplays'
-    group.add(displays)
-    const tags: ReturnType<typeof createPriceTag>[] = []
-    for (const display of storeLayout.displays) {
-      const tag = createPriceTag(tagContent(display))
-      tags.push(tag)
-      tag.object.position.fromArray(display.tag.position)
-      tag.object.rotation.y = display.tag.yaw
-      displays.add(tag.object)
-    }
+    runtimes.length = 0
+    const displays = freshDisplayGroup(group, 'StoreDisplays')
     group.updateWorldMatrix(true, true)
     if (storeLayout.clerk && clerk) void clerk.attach(group, displays, storeLayout.clerk)
-    storeLayout.displays.forEach((display, i) => {
+    for (const display of storeLayout.displays) {
       const [x, y, z] = display.position
-      const tag = tags[i]!
-      runtimes.push({
-        display,
-        tag,
-        center: new THREE.Vector3(x, y + display.size[1] / 2, z).applyMatrix4(group.matrixWorld),
-        tagPosition: tag.object.getWorldPosition(new THREE.Vector3()).toArray(),
-      })
-    })
-    await Promise.all(storeLayout.displays.map((d) => placeModel(displays, d)))
+      const center = new THREE.Vector3(x, y + display.size[1] / 2, z).applyMatrix4(group.matrixWorld)
+      let tag: DisplayRuntime['tag'] = null
+      let tagPosition: [number, number, number]
+      if (withTags) {
+        tag = createPriceTag(tagContent(display))
+        tag.object.position.fromArray(display.tag.position)
+        tag.object.rotation.y = display.tag.yaw
+        displays.add(tag.object)
+        displays.updateWorldMatrix(true, true)
+        tagPosition = tag.object.getWorldPosition(new THREE.Vector3()).toArray()
+      } else {
+        tagPosition = new THREE.Vector3(x, y + display.size[1] + PROMPT_LIFT, z).applyMatrix4(group.matrixWorld).toArray()
+      }
+      runtimes.push({ display, tag, center, tagPosition, materials: [] })
+    }
+    await Promise.all(runtimes.map((rt, i) => placeModel(displays, rt, i)))
   }
 
   function setTarget(next: DisplayRuntime | null): void {
     const current = target.value?.display
     if ((next?.display ?? null) === (current ?? null)) return
-    for (const rt of runtimes) rt.tag.object.scale.setScalar(rt === next ? 1.18 : 1)
+    for (const rt of runtimes) {
+      rt.tag?.object.scale.setScalar(rt === next ? 1.18 : 1)
+      for (const m of rt.materials) {
+        m.emissive.copy(m.userData.baseEmissive as THREE.Color)
+        if (rt === next) m.emissive.add(HIGHLIGHT)
+      }
+    }
     if (!next) {
       target.value = null
       return
@@ -298,7 +357,67 @@ export function useFurnitureStore(deps: FurnitureStoreDeps) {
     }
   }
 
-  /** Every frame: the display closest to the crosshair within reach, and the department around the player. */
+  /** The display whose model the first thing hit along `direction` belongs to (shelves and walls hide what is behind). */
+  function firstHitAlong(direction: THREE.Vector3): { display: DisplayRuntime | null; distance: number } {
+    if (!attachedTo) return { display: null, distance: Infinity }
+    raycaster.set(eye, direction)
+    raycaster.far = PICK_DISTANCE + 1
+    const hit = raycaster.intersectObject(attachedTo, true).find((h) => isShown(h.object, attachedTo!) && !isSeeThrough(h.object))
+    if (!hit) return { display: null, distance: Infinity }
+    for (let obj: THREE.Object3D | null = hit.object; obj; obj = obj.parent) {
+      const index = obj.userData.storeDisplay
+      if (typeof index === 'number') return { display: runtimes[index] ?? null, distance: hit.distance }
+    }
+    return { display: null, distance: hit.distance }
+  }
+
+  /** Stores without tags: the model under the crosshair, else a model just next to it that nothing hides. */
+  function aimedModel(camera: THREE.Camera): DisplayRuntime | null {
+    camera.getWorldPosition(eye)
+    const direct = firstHitAlong(forward).display
+    if (direct) return Math.hypot(direct.center.x - eye.x, direct.center.z - eye.z) <= PICK_DISTANCE ? direct : null
+    let best: DisplayRuntime | null = null
+    let bestAngle = AIM_SLACK
+    for (const rt of runtimes) {
+      if (Math.hypot(rt.center.x - eye.x, rt.center.z - eye.z) > PICK_DISTANCE) continue
+      const angle = forward.angleTo(toItem.subVectors(rt.center, eye))
+      if (angle < bestAngle) {
+        bestAngle = angle
+        best = rt
+      }
+    }
+    if (!best) return null
+    // visible when the ray towards it meets the item itself, or nothing before it (its middle can fall between
+    // two stacked copies); a shelf or a wall in front hides it
+    const reach = toItem.subVectors(best.center, eye).length()
+    const hit = firstHitAlong(toItem.normalize())
+    return hit.display === best || hit.distance >= reach - SEE_THROUGH_SLACK ? best : null
+  }
+
+  /** Stores with tags (Cove Home, big furniture): the display closest to the crosshair within reach. */
+  function nearestToCrosshair(): DisplayRuntime | null {
+    const { x, y, z } = deps.myPosition
+    let best: DisplayRuntime | null = null
+    let bestScore = Infinity
+    for (const rt of runtimes) {
+      const dx = rt.center.x - x
+      const dz = rt.center.z - z
+      const dist = Math.hypot(dx, dz)
+      if (dist > PICK_DISTANCE) continue
+      toItem.set(dx, rt.center.y - y, dz).normalize()
+      const angle = forward.angleTo(toItem)
+      const limit = dist < CLOSE_DISTANCE ? CLOSE_ANGLE : PICK_ANGLE
+      if (angle > limit) continue
+      const score = angle + dist * 0.04
+      if (score < bestScore) {
+        bestScore = score
+        best = rt
+      }
+    }
+    return best
+  }
+
+  /** Every frame: the display the player aims at, and the department around the player. */
   function update(dt = 0): void {
     const inside = deps.inStore()
     if (wasInStore && !inside) {
@@ -314,31 +433,24 @@ export function useFurnitureStore(deps: FurnitureStoreDeps) {
       return
     }
     camera.getWorldDirection(forward)
-    const { x, y, z } = deps.myPosition
-    let best: DisplayRuntime | null = null
-    let bestScore = Infinity
+    if (withTags) setTarget(nearestToCrosshair())
+    else {
+      aimClock += dt
+      if (aimClock >= AIM_INTERVAL) {
+        aimClock = 0
+        setTarget(aimedModel(camera))
+      }
+    }
+    const { x, z } = deps.myPosition
     let nearest: DisplayRuntime | null = null
     let nearestDist = Infinity
     for (const rt of runtimes) {
-      const dx = rt.center.x - x
-      const dz = rt.center.z - z
-      const dist = Math.hypot(dx, dz)
+      const dist = Math.hypot(rt.center.x - x, rt.center.z - z)
       if (dist < nearestDist) {
         nearestDist = dist
         nearest = rt
       }
-      if (dist > PICK_DISTANCE) continue
-      toItem.set(dx, rt.center.y - y, dz).normalize()
-      const angle = forward.angleTo(toItem)
-      const limit = dist < CLOSE_DISTANCE ? CLOSE_ANGLE : PICK_ANGLE
-      if (angle > limit) continue
-      const score = angle + dist * 0.04
-      if (score < bestScore) {
-        bestScore = score
-        best = rt
-      }
     }
-    setTarget(best)
     const dep = nearest && nearestDist < 8 ? nearest.display.department : null
     currentDepartment.value = dep ? departmentLabels.value.get(dep) ?? dep : null
   }
@@ -365,3 +477,4 @@ export function useFurnitureStore(deps: FurnitureStoreDeps) {
     },
   }
 }
+
