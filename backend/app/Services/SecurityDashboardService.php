@@ -213,7 +213,7 @@ class SecurityDashboardService
     private function topPaths(): array
     {
         return $this->recent()
-            ->where('type', SecurityEvent::TYPE_PROBE_PATH)
+            ->whereIn('type', [SecurityEvent::TYPE_PROBE_PATH, SecurityEvent::TYPE_NOT_FOUND])
             ->groupBy('probed_path')
             ->orderByDesc('events')
             ->orderBy('probed_path')

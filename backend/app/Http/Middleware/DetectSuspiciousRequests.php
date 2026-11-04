@@ -15,6 +15,9 @@ class DetectSuspiciousRequests
 
     private const SCANNER_AGENT = '~sqlmap|nikto|nmap|masscan|zgrab|nuclei|gobuster|dirbuster|wpscan|acunetix|nessus|openvas|hydra|ffuf|feroxbuster~i';
 
+    // Files browsers ask for on their own: a 404 on these says nothing about the client.
+    private const BROWSER_DEFAULT = '~^/(favicon\.ico|apple-touch-icon[\w.-]*\.png|robots\.txt|sitemap\.xml|browserconfig\.xml|site\.webmanifest|\.well-known/.*)$~';
+
     private const INJECTION = '~union\s+(all\s+)?select|information_schema|(sleep|benchmark)\s*\(|\'\s*or\s*\'?\d+\'?\s*=\s*\'?\d+|<script|javascript:|onerror\s*=|\.\./|/etc/passwd~i';
 
     public function __construct(private readonly SecurityEventLogger $logger) {}
@@ -52,11 +55,23 @@ class DetectSuspiciousRequests
             $events[SecurityEvent::TYPE_INJECTION] = $injection[0];
         }
 
+        if ($events === [] && $this->isUnknownPath($request, $response, $path)) {
+            $events[SecurityEvent::TYPE_NOT_FOUND] = null;
+        }
+
         if ($response->getStatusCode() === Response::HTTP_TOO_MANY_REQUESTS) {
             $events[SecurityEvent::TYPE_RATE_LIMITED] = null;
         }
 
         return $events;
+    }
+
+    // A 404 with no matched route; a 404 from a real route (a missing model or asset) is the app's own business.
+    private function isUnknownPath(Request $request, Response $response, string $path): bool
+    {
+        return $response->getStatusCode() === Response::HTTP_NOT_FOUND
+            && $request->route() === null
+            && ! preg_match(self::BROWSER_DEFAULT, $path);
     }
 
     private function isProbePath(string $path): bool

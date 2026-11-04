@@ -30,7 +30,9 @@ class IpBanService
 
     public const STATUS_NORMAL = 'normal';
 
+    // not_found is light and no bot signal: a burst of unknown paths makes an IP suspect, never banned.
     public const WEIGHTS = [
+        SecurityEvent::TYPE_NOT_FOUND => 2,
         SecurityEvent::TYPE_LOGIN_FAILED => 4,
         SecurityEvent::TYPE_RATE_LIMITED => 10,
         SecurityEvent::TYPE_PROBE_PATH => 20,

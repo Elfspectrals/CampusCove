@@ -1,6 +1,6 @@
 import { apiRequest, isRecord } from './http'
 
-export const SECURITY_EVENT_TYPES = ['login_failed', 'rate_limited', 'probe_path', 'injection', 'scanner_agent'] as const
+export const SECURITY_EVENT_TYPES = ['not_found', 'login_failed', 'rate_limited', 'probe_path', 'injection', 'scanner_agent'] as const
 export type SecurityEventType = (typeof SECURITY_EVENT_TYPES)[number]
 const CVE_SEVERITIES = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'UNKNOWN'] as const
 type CveSeverity = (typeof CVE_SEVERITIES)[number]

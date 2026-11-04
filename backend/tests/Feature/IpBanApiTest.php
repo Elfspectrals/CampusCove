@@ -59,6 +59,19 @@ class IpBanApiTest extends TestCase
         $this->assertSame(IpBanService::AUTO_BAN_SCORE - 1, $this->score());
     }
 
+    public function test_a_burst_of_unknown_paths_is_suspect_but_never_banned(): void
+    {
+        $this->events(SecurityEvent::TYPE_NOT_FOUND, 25);
+        $this->assertSame(IpBanService::SUSPECT_SCORE, $this->score());
+
+        for ($i = 0; $i < 45; $i++) {
+            $this->get("/scan-{$i}", $this->fromIp());
+        }
+
+        $this->assertSame(IpBanService::AUTO_BAN_SCORE - 1, $this->score());
+        $this->assertFalse(IpBan::exists());
+    }
+
     public function test_one_bot_signal_lifts_the_cap(): void
     {
         $this->events(SecurityEvent::TYPE_LOGIN_FAILED, 19);
