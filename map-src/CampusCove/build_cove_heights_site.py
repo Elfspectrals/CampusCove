@@ -367,7 +367,22 @@ S.hydrangeas(est, "CH_LotA02_HydrangeaE", ox + 4.1, ox + 6.0, front_z + 2.0, HM,
 # placeholder box the open-house loader swaps for the real interior collision (openHouses.ts composeTownCollisionData)
 est.col("HousePlaceholder", ox + 3.7, oz - 1.3, 20.4, 10.6, 6.0)
 est.cols[-1]["name"] = f"COL_House_{VILLA_A02['key']}"
-HOUSES = [VILLA_A02]
+# A-01 Villa Serena (docs/GATED_COMMUNITY.md 7.2c.4): Tuscan, loggia, two-bay garage on a motor court
+VILLA_A01 = {"key": "cove_villa_a01", "name": "Villa Serena", "lot": "A-01", "origin": (122.5, -308.3), "zf": 4.0,
+             "interiorOffset": [0.0, 0.2, -1.405], "price": 26000}
+ax, az = VILLA_A01["origin"]
+S.rect(est, "CH_LotA01_MotorCourt", 130.2, -300.5, 136.5, az + VILLA_A01["zf"], Y["lot"], Y["drive"], M["drive"])  # meets the driveway at x 136.5
+S.rect(est, "CH_LotA01_FrontPath", ax - 0.8, -299.0, ax + 0.8, -301.5, Y["lot"], Y["drive"], M["drive"])        # to the loggia step
+S.street_lamp(est, "CH_LotA01_PostLamp", ax + 1.6, -300.2, M, h=2.6)
+S.hedge_run(est, "CH_LotA01_HedgeW", (117.3, -301.4), (121.1, -301.4), HM, w=0.5)
+S.hedge_run(est, "CH_LotA01_HedgeE", (123.9, -301.4), (127.7, -301.4), HM, w=0.5)
+S.tree(est, "CH_LotA01_Cypress0", 116.2, -302.4, M, "cypress", 0.9)
+S.tree(est, "CH_LotA01_Cypress1", 128.7, -302.4, M, "cypress", 0.9)
+for k, px in enumerate((-5.175, -1.75, 1.75, 5.175)):  # loggia piers stand outside the interior collision
+    est.col(f"LotA01_LoggiaPier{k}", ax + px, az + 6.175, 0.45, 0.45, 3.0)
+est.col("HousePlaceholderA01", ax + 3.7, az - 1.605, 21.4, 11.21, 6.0)
+est.cols[-1]["name"] = f"COL_House_{VILLA_A01['key']}"
+HOUSES = [VILLA_A02, VILLA_A01]
 
 # ================================================================ communal
 # clubhouse & leisure parcel

@@ -1151,3 +1151,140 @@ def render_preview(sc, obj, path):
         o.hide_render = False
     bpy.data.objects.remove(cam, do_unlink=True)
     bpy.data.objects.remove(sun, do_unlink=True)
+
+
+# ---------------------------------------------------------------- shared architectural builders (roofs, arches, rails)
+def _mesh_from(coll, name, bm, mat, tile=1.0, expect=None):
+    """Finish a bmesh into an object at the origin (vertices are already in Blender world coordinates).
+    expect: optional list (one per face) of outward Blender vectors used to orient open meshes."""
+    if expect is None:
+        bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    else:
+        bm.normal_update()
+        for f, want in zip(bm.faces, expect):
+            if f.normal.dot(Vector(want)) < 0:
+                f.normal_flip()
+    bm.normal_update()
+    _box_uv(bm, tile)
+    me = bpy.data.meshes.new(name)
+    bm.to_mesh(me)
+    bm.free()
+    me.materials.append(mat)
+    ob = bpy.data.objects.new(name, me)
+    coll.objects.link(ob)
+    return ob
+
+
+def hip_roof(coll, name, gx, gz, y_drip, sx, sz, rise, thick, mat, tile=0.7):
+    """Closed hip roof over the drip rectangle sx x sz centred on game (gx, gz): four slopes of equal pitch (45 deg hips),
+    the ridge on the longer side at y_drip + rise (a pyramid when sx == sz), a flat soffit `thick` below the drip edge."""
+    x0, x1, z0, z1 = gx - sx / 2, gx + sx / 2, gz - sz / 2, gz + sz / 2
+    bm = bmesh.new()
+    top = [bm.verts.new(b(x, z, y_drip)) for x, z in ((x0, z0), (x1, z0), (x1, z1), (x0, z1))]
+    bot = [bm.verts.new(b(x, z, y_drip - thick)) for x, z in ((x0, z0), (x1, z0), (x1, z1), (x0, z1))]
+    yr = y_drip + rise
+    half = abs(sx - sz) / 2
+    if half < 1e-4:
+        r = bm.verts.new(b(gx, gz, yr))
+        for i in range(4):
+            bm.faces.new((top[i], top[(i + 1) % 4], r))
+    elif sx > sz:
+        r0, r1 = bm.verts.new(b(gx - half, gz, yr)), bm.verts.new(b(gx + half, gz, yr))
+        bm.faces.new((top[0], top[1], r1, r0))
+        bm.faces.new((top[1], top[2], r1))
+        bm.faces.new((top[2], top[3], r0, r1))
+        bm.faces.new((top[3], top[0], r0))
+    else:
+        r0, r1 = bm.verts.new(b(gx, gz - half, yr)), bm.verts.new(b(gx, gz + half, yr))
+        bm.faces.new((top[0], top[1], r0))
+        bm.faces.new((top[1], top[2], r1, r0))
+        bm.faces.new((top[2], top[3], r1))
+        bm.faces.new((top[3], top[0], r0, r1))
+    for i in range(4):
+        bm.faces.new((top[i], bot[i], bot[(i + 1) % 4], top[(i + 1) % 4]))
+    bm.faces.new(list(reversed(bot)))
+    return _mesh_from(coll, name, bm, mat, tile)
+
+
+def beam(coll, name, p0, p1, w, h, mat, tile=1.0):
+    """Box of section w x h oriented from game point p0 = (x, z, y) to p1, centred on the segment (hip caps, timbers)."""
+    a, c = Vector(b(*p0)), Vector(b(*p1))
+    d = c - a
+    me = bpy.data.meshes.new(name)
+    bm = bmesh.new()
+    bmesh.ops.create_cube(bm, size=1.0)
+    for v in bm.verts:
+        v.co.x *= d.length
+        v.co.y *= w
+        v.co.z *= h
+    bm.normal_update()
+    _box_uv(bm, tile)
+    bm.to_mesh(me)
+    bm.free()
+    me.materials.append(mat)
+    ob = bpy.data.objects.new(name, me)
+    ob.location = (a + c) / 2
+    ob.rotation_mode = "QUATERNION"
+    ob.rotation_quaternion = d.to_track_quat("X", "Z")
+    coll.objects.link(ob)
+    return ob
+
+
+def arch_panel(coll, name, axis, fixed, a0, a1, y_spring, rise, y_top, depth, mat, seg=8, tile=1.0):
+    """Segmental arch filling the bay a0..a1 from the springing line up to y_top, `depth` thick across `fixed`
+    (axis 'x': the bay runs along game x at z = fixed; 'z': along game z at x = fixed). The pier ends are not built."""
+    c, f = a1 - a0, rise
+    R = (c * c / 4 + f * f) / (2 * f)
+    um, yc = (a0 + a1) / 2, y_spring + f - R
+    phi0 = math.asin(min(1.0, c / (2 * R)))
+
+    def P(u, y, d):
+        return b(u, fixed + d, y) if axis == "x" else b(fixed + d, u, y)
+
+    out_n = Vector(b(0, 1, 0)) if axis == "x" else Vector(b(1, 0, 0))  # +depth direction in Blender
+    bm = bmesh.new()
+    expect = []
+    arc = []
+    for k in range(seg + 1):
+        phi = -phi0 + 2 * phi0 * k / seg
+        arc.append((um + R * math.sin(phi), yc + R * math.cos(phi)))
+    hd = depth / 2
+    for k in range(seg):
+        (u0, y0), (u1, y1) = arc[k], arc[k + 1]
+        for sgn in (1, -1):
+            q = [bm.verts.new(P(u, y, sgn * hd)) for u, y in ((u0, y0), (u1, y1), (u1, y_top), (u0, y_top))]
+            bm.faces.new(q)
+            expect.append(tuple(out_n * sgn))
+        s = [bm.verts.new(P(u, y, d)) for u, y, d in ((u0, y0, hd), (u1, y1, hd), (u1, y1, -hd), (u0, y0, -hd))]
+        bm.faces.new(s)
+        expect.append((0.0, 0.0, -1.0))
+    t = [bm.verts.new(P(u, y_top, d)) for u, d in ((a0, hd), (a1, hd), (a1, -hd), (a0, -hd))]
+    bm.faces.new(t)
+    expect.append((0.0, 0.0, 1.0))
+    return _mesh_from(coll, name, bm, mat, tile, expect=expect)
+
+
+def railing(coll, name, pts, y0, h, step, mat, post=0.08, bar=0.025):
+    """Metal railing along the game polyline pts [(x, z)]: newel posts at the points, top and bottom rails, square bars
+    every `step`. Returns the objects (visual only)."""
+    out = []
+    for i, (x, z) in enumerate(pts):
+        out.append(box(coll, f"{name}_Post{i}", x, z, y0, post, post, h, mat))
+    for i, ((ax, az), (bx, bz)) in enumerate(zip(pts, pts[1:])):
+        ln = math.hypot(bx - ax, bz - az)
+        rot = math.atan2(-(bz - az), bx - ax)
+        mx, mz = (ax + bx) / 2, (az + bz) / 2
+        out.append(box(coll, f"{name}_Top{i}", mx, mz, y0 + h - 0.05, ln, 0.05, 0.05, mat, rot=rot))
+        out.append(box(coll, f"{name}_Bottom{i}", mx, mz, y0 + 0.12, ln, 0.04, 0.04, mat, rot=rot))
+        n = max(1, int(ln / step))
+        for k in range(1, n):
+            t = k / n
+            out.append(box(coll, f"{name}_Bar{i}_{k:02d}", ax + (bx - ax) * t, az + (bz - az) * t, y0 + 0.12, bar, bar, h - 0.17, mat))
+    return out
+
+
+def rot_uvs90(objs):
+    """Turn the first UV map of each object by 90 degrees (vertical planks from a horizontal-plank texture)."""
+    for o in objs:
+        for d in o.data.uv_layers[0].data:
+            d.uv = (d.uv[1], d.uv[0])
