@@ -911,6 +911,39 @@
         "z": -130,
         "width": 3
       }
+    },
+    {
+      "key": "cove_heights",
+      "optional": true,
+      "bounds": {
+        "minX": 99,
+        "maxX": 261,
+        "minZ": -331,
+        "maxZ": -169.95
+      },
+      "modelUrl": "/assets/park/cove_heights/cove_heights.glb"
+    },
+    {
+      "key": "cove_road",
+      "optional": true,
+      "bounds": {
+        "minX": -43.5,
+        "maxX": 191.55,
+        "minZ": -169.95,
+        "maxZ": -158.05
+      },
+      "modelUrl": "/assets/park/cove_heights/cove_road.glb"
+    },
+    {
+      "key": "cove_road_mall",
+      "optional": true,
+      "bounds": {
+        "minX": -61.45,
+        "maxX": -43.5,
+        "minZ": -169.95,
+        "maxZ": -17.3
+      },
+      "modelUrl": "/assets/park/cove_heights/cove_road_mall.glb"
     }
   ],
   "fountains": [
@@ -11035,5 +11068,357 @@
         -187.128
       ]
     }
-  ]
+  ],
+  "coveHeights": {
+    "spawn": {
+      "x": 180,
+      "z": -196,
+      "yaw": 0
+    },
+    "mainGate": {
+      "x": 180,
+      "z": -190,
+      "yaw": 0
+    },
+    "emergencyGate": {
+      "x": 180,
+      "z": -330,
+      "yaw": 3.141592653589793,
+      "locked": true
+    },
+    "gate": {
+      "residentsOnly": true,
+      "enforced": false,
+      "toggle": [
+        {
+          "name": "COL_Cove_PortalW",
+          "cx": 172.65,
+          "cz": -190,
+          "hx": 0.62,
+          "hz": 0.15,
+          "cy": 1.1,
+          "hy": 1.1,
+          "yaw": 0
+        },
+        {
+          "name": "COL_Cove_BoomEgress",
+          "cx": 176,
+          "cz": -190,
+          "hx": 2,
+          "hz": 0.15,
+          "cy": 0.6,
+          "hy": 0.6,
+          "yaw": 0
+        },
+        {
+          "name": "COL_Cove_BoomVisitor",
+          "cx": 183.75,
+          "cz": -190,
+          "hx": 1.75,
+          "hz": 0.15,
+          "cy": 0.6,
+          "hy": 0.6,
+          "yaw": 0
+        },
+        {
+          "name": "COL_Cove_BoomResident",
+          "cx": 187.85,
+          "cz": -190,
+          "hx": 1.75,
+          "hz": 0.15,
+          "cy": 0.6,
+          "hy": 0.6,
+          "yaw": 0
+        },
+        {
+          "name": "COL_Cove_PortalE",
+          "cx": 190.95,
+          "cz": -190,
+          "hx": 0.62,
+          "hz": 0.15,
+          "cy": 1.1,
+          "hy": 1.1,
+          "yaw": 0
+        }
+      ]
+    },
+    "checkpoint": {
+      "id": "cove_heights_main",
+      "position": [
+        190.95,
+        0,
+        -188
+      ],
+      "yaw": 0,
+      "trigger": {
+        "minX": 189.75,
+        "maxX": 191.55,
+        "minZ": -189.72,
+        "maxZ": -186
+      }
+    },
+    "clubhouseDoor": [
+      180,
+      0,
+      -226.4
+    ],
+    "lots": [
+      {
+        "id": "B-01",
+        "type": "executive",
+        "center": [
+          160,
+          0,
+          -203
+        ],
+        "entry": [
+          165,
+          0,
+          -213
+        ],
+        "entryYaw": 3.1416,
+        "housingKey": "cove_heights:B-01"
+      },
+      {
+        "id": "B-02",
+        "type": "executive",
+        "center": [
+          140,
+          0,
+          -203
+        ],
+        "entry": [
+          140,
+          0,
+          -213
+        ],
+        "entryYaw": 3.1416,
+        "housingKey": "cove_heights:B-02"
+      },
+      {
+        "id": "B-03",
+        "type": "executive",
+        "center": [
+          113,
+          0,
+          -223
+        ],
+        "entry": [
+          123,
+          0,
+          -229.5
+        ],
+        "entryYaw": 1.5708,
+        "housingKey": "cove_heights:B-03"
+      },
+      {
+        "id": "B-04",
+        "type": "executive",
+        "center": [
+          113,
+          0,
+          -243
+        ],
+        "entry": [
+          123,
+          0,
+          -248
+        ],
+        "entryYaw": 1.5708,
+        "housingKey": "cove_heights:B-04"
+      },
+      {
+        "id": "B-05",
+        "type": "executive",
+        "center": [
+          113,
+          0,
+          -263
+        ],
+        "entry": [
+          123,
+          0,
+          -268
+        ],
+        "entryYaw": 1.5708,
+        "housingKey": "cove_heights:B-05"
+      },
+      {
+        "id": "B-06",
+        "type": "executive",
+        "center": [
+          113,
+          0,
+          -283
+        ],
+        "entry": [
+          123,
+          0,
+          -277
+        ],
+        "entryYaw": 1.5708,
+        "housingKey": "cove_heights:B-06"
+      },
+      {
+        "id": "A-01",
+        "type": "villa",
+        "center": [
+          126,
+          0,
+          -313
+        ],
+        "entry": [
+          138,
+          0,
+          -299
+        ],
+        "entryYaw": 0,
+        "housingKey": "cove_heights:A-01"
+      },
+      {
+        "id": "A-02",
+        "type": "villa",
+        "center": [
+          154,
+          0,
+          -313
+        ],
+        "entry": [
+          160,
+          0,
+          -299
+        ],
+        "entryYaw": 0,
+        "housingKey": "cove_heights:A-02"
+      },
+      {
+        "id": "A-03",
+        "type": "villa",
+        "center": [
+          206,
+          0,
+          -313
+        ],
+        "entry": [
+          200,
+          0,
+          -299
+        ],
+        "entryYaw": 0,
+        "housingKey": "cove_heights:A-03"
+      },
+      {
+        "id": "A-04",
+        "type": "villa",
+        "center": [
+          234,
+          0,
+          -313
+        ],
+        "entry": [
+          222,
+          0,
+          -299
+        ],
+        "entryYaw": 0,
+        "housingKey": "cove_heights:A-04"
+      },
+      {
+        "id": "B-07",
+        "type": "executive",
+        "center": [
+          247,
+          0,
+          -283
+        ],
+        "entry": [
+          237,
+          0,
+          -277
+        ],
+        "entryYaw": -1.5708,
+        "housingKey": "cove_heights:B-07"
+      },
+      {
+        "id": "B-08",
+        "type": "executive",
+        "center": [
+          247,
+          0,
+          -263
+        ],
+        "entry": [
+          237,
+          0,
+          -268
+        ],
+        "entryYaw": -1.5708,
+        "housingKey": "cove_heights:B-08"
+      },
+      {
+        "id": "B-09",
+        "type": "executive",
+        "center": [
+          247,
+          0,
+          -243
+        ],
+        "entry": [
+          237,
+          0,
+          -248
+        ],
+        "entryYaw": -1.5708,
+        "housingKey": "cove_heights:B-09"
+      },
+      {
+        "id": "B-10",
+        "type": "executive",
+        "center": [
+          247,
+          0,
+          -223
+        ],
+        "entry": [
+          237,
+          0,
+          -229.5
+        ],
+        "entryYaw": -1.5708,
+        "housingKey": "cove_heights:B-10"
+      },
+      {
+        "id": "B-11",
+        "type": "executive",
+        "center": [
+          224,
+          0,
+          -203
+        ],
+        "entry": [
+          220,
+          0,
+          -213
+        ],
+        "entryYaw": 3.1416,
+        "housingKey": "cove_heights:B-11"
+      },
+      {
+        "id": "B-12",
+        "type": "executive",
+        "center": [
+          204,
+          0,
+          -203
+        ],
+        "entry": [
+          199,
+          0,
+          -213
+        ],
+        "entryYaw": 3.1416,
+        "housingKey": "cove_heights:B-12"
+      }
+    ]
+  }
 }

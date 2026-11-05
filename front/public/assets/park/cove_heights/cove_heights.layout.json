@@ -1,0 +1,1587 @@
+{
+  "version": 1,
+  "zones": {
+    "cove_heights": {
+      "minX": 99.0,
+      "maxX": 261.0,
+      "minZ": -331.0,
+      "maxZ": -169.95
+    },
+    "cove_road": {
+      "minX": -43.5,
+      "maxX": 191.55,
+      "minZ": -169.95,
+      "maxZ": -158.05
+    },
+    "cove_road_mall": {
+      "minX": -61.45,
+      "maxX": -43.5,
+      "minZ": -169.95,
+      "maxZ": -17.3
+    }
+  },
+  "spawn": {
+    "x": 180.0,
+    "z": -196.0,
+    "yaw": 0.0
+  },
+  "mainGate": {
+    "x": 180.0,
+    "z": -190.0,
+    "yaw": 0.0
+  },
+  "emergencyGate": {
+    "x": 180.0,
+    "z": -330.0,
+    "yaw": 3.141592653589793,
+    "locked": true
+  },
+  "gate": {
+    "residentsOnly": true,
+    "enforced": false,
+    "toggle": [
+      {
+        "name": "COL_Cove_PortalW",
+        "cx": 172.65,
+        "cz": -190.0,
+        "hx": 0.62,
+        "hz": 0.15,
+        "cy": 1.1,
+        "hy": 1.1,
+        "yaw": 0.0
+      },
+      {
+        "name": "COL_Cove_BoomEgress",
+        "cx": 176.0,
+        "cz": -190.0,
+        "hx": 2.0,
+        "hz": 0.15,
+        "cy": 0.6,
+        "hy": 0.6,
+        "yaw": 0.0
+      },
+      {
+        "name": "COL_Cove_BoomVisitor",
+        "cx": 183.75,
+        "cz": -190.0,
+        "hx": 1.75,
+        "hz": 0.15,
+        "cy": 0.6,
+        "hy": 0.6,
+        "yaw": 0.0
+      },
+      {
+        "name": "COL_Cove_BoomResident",
+        "cx": 187.85,
+        "cz": -190.0,
+        "hx": 1.75,
+        "hz": 0.15,
+        "cy": 0.6,
+        "hy": 0.6,
+        "yaw": 0.0
+      },
+      {
+        "name": "COL_Cove_PortalE",
+        "cx": 190.95,
+        "cz": -190.0,
+        "hx": 0.62,
+        "hz": 0.15,
+        "cy": 1.1,
+        "hy": 1.1,
+        "yaw": 0.0
+      }
+    ]
+  },
+  "checkpoint": {
+    "id": "cove_heights_main",
+    "position": [
+      190.95,
+      0.0,
+      -188.0
+    ],
+    "yaw": 0.0,
+    "trigger": {
+      "minX": 189.75,
+      "maxX": 191.55,
+      "minZ": -189.72,
+      "maxZ": -186.0
+    }
+  },
+  "guardPoint": [
+    180.0,
+    0.0,
+    -184.5
+  ],
+  "clubhouseDoor": [
+    180.0,
+    0.0,
+    -226.4
+  ],
+  "junction": {
+    "x": -55.5,
+    "z": -17.3,
+    "road": "mall_avenue"
+  },
+  "lots": [
+    {
+      "id": "B-01",
+      "type": "executive",
+      "bounds": {
+        "minX": 150,
+        "maxX": 170,
+        "minZ": -213,
+        "maxZ": -193
+      },
+      "center": [
+        160.0,
+        0.0,
+        -203.0
+      ],
+      "entry": [
+        165.0,
+        0.0,
+        -213.0
+      ],
+      "entryYaw": 3.1416,
+      "faces": "N",
+      "housingKey": "cove_heights:B-01"
+    },
+    {
+      "id": "B-02",
+      "type": "executive",
+      "bounds": {
+        "minX": 130,
+        "maxX": 150,
+        "minZ": -213,
+        "maxZ": -193
+      },
+      "center": [
+        140.0,
+        0.0,
+        -203.0
+      ],
+      "entry": [
+        140.0,
+        0.0,
+        -213.0
+      ],
+      "entryYaw": 3.1416,
+      "faces": "N",
+      "housingKey": "cove_heights:B-02"
+    },
+    {
+      "id": "B-03",
+      "type": "executive",
+      "bounds": {
+        "minX": 103,
+        "maxX": 123,
+        "minZ": -233,
+        "maxZ": -213
+      },
+      "center": [
+        113.0,
+        0.0,
+        -223.0
+      ],
+      "entry": [
+        123.0,
+        0.0,
+        -229.5
+      ],
+      "entryYaw": 1.5708,
+      "faces": "E",
+      "housingKey": "cove_heights:B-03"
+    },
+    {
+      "id": "B-04",
+      "type": "executive",
+      "bounds": {
+        "minX": 103,
+        "maxX": 123,
+        "minZ": -253,
+        "maxZ": -233
+      },
+      "center": [
+        113.0,
+        0.0,
+        -243.0
+      ],
+      "entry": [
+        123.0,
+        0.0,
+        -248.0
+      ],
+      "entryYaw": 1.5708,
+      "faces": "E",
+      "housingKey": "cove_heights:B-04"
+    },
+    {
+      "id": "B-05",
+      "type": "executive",
+      "bounds": {
+        "minX": 103,
+        "maxX": 123,
+        "minZ": -273,
+        "maxZ": -253
+      },
+      "center": [
+        113.0,
+        0.0,
+        -263.0
+      ],
+      "entry": [
+        123.0,
+        0.0,
+        -268.0
+      ],
+      "entryYaw": 1.5708,
+      "faces": "E",
+      "housingKey": "cove_heights:B-05"
+    },
+    {
+      "id": "B-06",
+      "type": "executive",
+      "bounds": {
+        "minX": 103,
+        "maxX": 123,
+        "minZ": -293,
+        "maxZ": -273
+      },
+      "center": [
+        113.0,
+        0.0,
+        -283.0
+      ],
+      "entry": [
+        123.0,
+        0.0,
+        -277.0
+      ],
+      "entryYaw": 1.5708,
+      "faces": "E",
+      "housingKey": "cove_heights:B-06"
+    },
+    {
+      "id": "A-01",
+      "type": "villa",
+      "bounds": {
+        "minX": 112,
+        "maxX": 140,
+        "minZ": -327,
+        "maxZ": -299
+      },
+      "center": [
+        126.0,
+        0.0,
+        -313.0
+      ],
+      "entry": [
+        138.0,
+        0.0,
+        -299.0
+      ],
+      "entryYaw": 0.0,
+      "faces": "S",
+      "housingKey": "cove_heights:A-01"
+    },
+    {
+      "id": "A-02",
+      "type": "villa",
+      "bounds": {
+        "minX": 140,
+        "maxX": 168,
+        "minZ": -327,
+        "maxZ": -299
+      },
+      "center": [
+        154.0,
+        0.0,
+        -313.0
+      ],
+      "entry": [
+        160.0,
+        0.0,
+        -299.0
+      ],
+      "entryYaw": 0.0,
+      "faces": "S",
+      "housingKey": "cove_heights:A-02"
+    },
+    {
+      "id": "A-03",
+      "type": "villa",
+      "bounds": {
+        "minX": 192,
+        "maxX": 220,
+        "minZ": -327,
+        "maxZ": -299
+      },
+      "center": [
+        206.0,
+        0.0,
+        -313.0
+      ],
+      "entry": [
+        200.0,
+        0.0,
+        -299.0
+      ],
+      "entryYaw": 0.0,
+      "faces": "S",
+      "housingKey": "cove_heights:A-03"
+    },
+    {
+      "id": "A-04",
+      "type": "villa",
+      "bounds": {
+        "minX": 220,
+        "maxX": 248,
+        "minZ": -327,
+        "maxZ": -299
+      },
+      "center": [
+        234.0,
+        0.0,
+        -313.0
+      ],
+      "entry": [
+        222.0,
+        0.0,
+        -299.0
+      ],
+      "entryYaw": 0.0,
+      "faces": "S",
+      "housingKey": "cove_heights:A-04"
+    },
+    {
+      "id": "B-07",
+      "type": "executive",
+      "bounds": {
+        "minX": 237,
+        "maxX": 257,
+        "minZ": -293,
+        "maxZ": -273
+      },
+      "center": [
+        247.0,
+        0.0,
+        -283.0
+      ],
+      "entry": [
+        237.0,
+        0.0,
+        -277.0
+      ],
+      "entryYaw": -1.5708,
+      "faces": "W",
+      "housingKey": "cove_heights:B-07"
+    },
+    {
+      "id": "B-08",
+      "type": "executive",
+      "bounds": {
+        "minX": 237,
+        "maxX": 257,
+        "minZ": -273,
+        "maxZ": -253
+      },
+      "center": [
+        247.0,
+        0.0,
+        -263.0
+      ],
+      "entry": [
+        237.0,
+        0.0,
+        -268.0
+      ],
+      "entryYaw": -1.5708,
+      "faces": "W",
+      "housingKey": "cove_heights:B-08"
+    },
+    {
+      "id": "B-09",
+      "type": "executive",
+      "bounds": {
+        "minX": 237,
+        "maxX": 257,
+        "minZ": -253,
+        "maxZ": -233
+      },
+      "center": [
+        247.0,
+        0.0,
+        -243.0
+      ],
+      "entry": [
+        237.0,
+        0.0,
+        -248.0
+      ],
+      "entryYaw": -1.5708,
+      "faces": "W",
+      "housingKey": "cove_heights:B-09"
+    },
+    {
+      "id": "B-10",
+      "type": "executive",
+      "bounds": {
+        "minX": 237,
+        "maxX": 257,
+        "minZ": -233,
+        "maxZ": -213
+      },
+      "center": [
+        247.0,
+        0.0,
+        -223.0
+      ],
+      "entry": [
+        237.0,
+        0.0,
+        -229.5
+      ],
+      "entryYaw": -1.5708,
+      "faces": "W",
+      "housingKey": "cove_heights:B-10"
+    },
+    {
+      "id": "B-11",
+      "type": "executive",
+      "bounds": {
+        "minX": 214,
+        "maxX": 234,
+        "minZ": -213,
+        "maxZ": -193
+      },
+      "center": [
+        224.0,
+        0.0,
+        -203.0
+      ],
+      "entry": [
+        220.0,
+        0.0,
+        -213.0
+      ],
+      "entryYaw": 3.1416,
+      "faces": "N",
+      "housingKey": "cove_heights:B-11"
+    },
+    {
+      "id": "B-12",
+      "type": "executive",
+      "bounds": {
+        "minX": 194,
+        "maxX": 214,
+        "minZ": -213,
+        "maxZ": -193
+      },
+      "center": [
+        204.0,
+        0.0,
+        -203.0
+      ],
+      "entry": [
+        199.0,
+        0.0,
+        -213.0
+      ],
+      "entryYaw": 3.1416,
+      "faces": "N",
+      "housingKey": "cove_heights:B-12"
+    }
+  ],
+  "collision": [
+    {
+      "name": "COL_Cove_WallS_W",
+      "cx": 135.635,
+      "cz": -190.0,
+      "hx": 35.835,
+      "hz": 0.21,
+      "hy": 1.45,
+      "cy": 1.45,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_WallS_E",
+      "cx": 226.165,
+      "cz": -190.0,
+      "hx": 34.035,
+      "hz": 0.21,
+      "hy": 1.45,
+      "cy": 1.45,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_WallN_W",
+      "cx": 137.985,
+      "cz": -330.0,
+      "hx": 38.185,
+      "hz": 0.21,
+      "hy": 1.45,
+      "cy": 1.45,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_WallN_E",
+      "cx": 222.015,
+      "cz": -330.0,
+      "hx": 38.185,
+      "hz": 0.21,
+      "hy": 1.45,
+      "cy": 1.45,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_WallW",
+      "cx": 100.0,
+      "cz": -260.0,
+      "hx": 0.21,
+      "hz": 70.2,
+      "hy": 1.45,
+      "cy": 1.45,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_WallE",
+      "cx": 260.0,
+      "cz": -260.0,
+      "hx": 0.21,
+      "hz": 70.2,
+      "hy": 1.45,
+      "cy": 1.45,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_PierW2",
+      "cx": 171.75,
+      "cz": -190.0,
+      "hx": 0.28,
+      "hz": 0.28,
+      "hy": 1.65,
+      "cy": 1.65,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_PierW1",
+      "cx": 173.55,
+      "cz": -190.0,
+      "hx": 0.28,
+      "hz": 0.28,
+      "hy": 1.65,
+      "cy": 1.65,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_PierE1",
+      "cx": 190.05,
+      "cz": -190.0,
+      "hx": 0.28,
+      "hz": 0.28,
+      "hy": 1.65,
+      "cy": 1.65,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_PierE2",
+      "cx": 191.85,
+      "cz": -190.0,
+      "hx": 0.28,
+      "hz": 0.28,
+      "hy": 1.65,
+      "cy": 1.65,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_BoomEgressPost",
+      "cx": 178.2,
+      "cz": -190.0,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 0.6,
+      "cy": 0.6,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_BoomVisitorPost",
+      "cx": 181.8,
+      "cz": -190.0,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 0.6,
+      "cy": 0.6,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_BoomResidentPost",
+      "cx": 185.8,
+      "cz": -190.0,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 0.6,
+      "cy": 0.6,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_IslandRail",
+      "cx": 180.0,
+      "cz": -190.0,
+      "hx": 1.55,
+      "hz": 0.125,
+      "hy": 0.55,
+      "cy": 0.55,
+      "yaw": -0.0
+    },
+    {
+      "name": "COL_Cove_RfidPedestal",
+      "cx": 185.8,
+      "cz": -188.6,
+      "hx": 0.225,
+      "hz": 0.225,
+      "hy": 0.725,
+      "cy": 0.725,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_Gatehouse",
+      "cx": 180.0,
+      "cz": -184.5,
+      "hx": 1.75,
+      "hz": 2.5,
+      "hy": 1.58,
+      "cy": 1.58,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_MonumentW",
+      "cx": 168.0,
+      "cz": -173.0,
+      "hx": 1.6,
+      "hz": 0.35,
+      "hy": 0.9,
+      "cy": 0.9,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_MonumentE",
+      "cx": 195.6,
+      "cz": -173.0,
+      "hx": 1.6,
+      "hz": 0.35,
+      "hy": 0.9,
+      "cy": 0.9,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_LampGate0",
+      "cx": 180.0,
+      "cz": -173.5,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_LampGate1",
+      "cx": 171.0,
+      "cz": -176.0,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_LampGate2",
+      "cx": 192.6,
+      "cz": -176.0,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_LampGate3",
+      "cx": 180.0,
+      "cz": -196.0,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_LampGate4",
+      "cx": 180.0,
+      "cz": -202.0,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_PierNW",
+      "cx": 176.45,
+      "cz": -330.0,
+      "hx": 0.28,
+      "hz": 0.28,
+      "hy": 1.65,
+      "cy": 1.65,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_PierNE",
+      "cx": 183.55,
+      "cz": -330.0,
+      "hx": 0.28,
+      "hz": 0.28,
+      "hy": 1.65,
+      "cy": 1.65,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_EmergencyGate",
+      "cx": 180.0,
+      "cz": -330.0,
+      "hx": 3.27,
+      "hz": 0.15,
+      "hy": 1.13,
+      "cy": 1.13,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_LotB01_Postbox",
+      "cx": 163.2,
+      "cz": -212.6,
+      "hx": 0.225,
+      "hz": 0.225,
+      "hy": 0.6,
+      "cy": 0.6,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_LotB02_Postbox",
+      "cx": 138.2,
+      "cz": -212.6,
+      "hx": 0.225,
+      "hz": 0.225,
+      "hy": 0.6,
+      "cy": 0.6,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_LotB03_Postbox",
+      "cx": 122.6,
+      "cz": -227.7,
+      "hx": 0.225,
+      "hz": 0.225,
+      "hy": 0.6,
+      "cy": 0.6,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_LotB04_Postbox",
+      "cx": 122.6,
+      "cz": -246.2,
+      "hx": 0.225,
+      "hz": 0.225,
+      "hy": 0.6,
+      "cy": 0.6,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_LotB05_Postbox",
+      "cx": 122.6,
+      "cz": -266.2,
+      "hx": 0.225,
+      "hz": 0.225,
+      "hy": 0.6,
+      "cy": 0.6,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_LotB06_Postbox",
+      "cx": 122.6,
+      "cz": -275.2,
+      "hx": 0.225,
+      "hz": 0.225,
+      "hy": 0.6,
+      "cy": 0.6,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_LotA01_Postbox",
+      "cx": 135.9,
+      "cz": -299.4,
+      "hx": 0.225,
+      "hz": 0.225,
+      "hy": 0.6,
+      "cy": 0.6,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_LotA02_Postbox",
+      "cx": 157.9,
+      "cz": -299.4,
+      "hx": 0.225,
+      "hz": 0.225,
+      "hy": 0.6,
+      "cy": 0.6,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_LotA03_Postbox",
+      "cx": 202.1,
+      "cz": -299.4,
+      "hx": 0.225,
+      "hz": 0.225,
+      "hy": 0.6,
+      "cy": 0.6,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_LotA04_Postbox",
+      "cx": 224.1,
+      "cz": -299.4,
+      "hx": 0.225,
+      "hz": 0.225,
+      "hy": 0.6,
+      "cy": 0.6,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_LotB07_Postbox",
+      "cx": 237.4,
+      "cz": -275.2,
+      "hx": 0.225,
+      "hz": 0.225,
+      "hy": 0.6,
+      "cy": 0.6,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_LotB08_Postbox",
+      "cx": 237.4,
+      "cz": -266.2,
+      "hx": 0.225,
+      "hz": 0.225,
+      "hy": 0.6,
+      "cy": 0.6,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_LotB09_Postbox",
+      "cx": 237.4,
+      "cz": -246.2,
+      "hx": 0.225,
+      "hz": 0.225,
+      "hy": 0.6,
+      "cy": 0.6,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_LotB10_Postbox",
+      "cx": 237.4,
+      "cz": -227.7,
+      "hx": 0.225,
+      "hz": 0.225,
+      "hy": 0.6,
+      "cy": 0.6,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_LotB11_Postbox",
+      "cx": 221.8,
+      "cz": -212.6,
+      "hx": 0.225,
+      "hz": 0.225,
+      "hy": 0.6,
+      "cy": 0.6,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_LotB12_Postbox",
+      "cx": 200.8,
+      "cz": -212.6,
+      "hx": 0.225,
+      "hz": 0.225,
+      "hy": 0.6,
+      "cy": 0.6,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_Clubhouse",
+      "cx": 180.0,
+      "cz": -233.0,
+      "hx": 10.0,
+      "hz": 6.0,
+      "hy": 1.95,
+      "cy": 1.95,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_Fountain",
+      "cx": 180.0,
+      "cz": -269.5,
+      "hx": 2.6,
+      "hz": 2.6,
+      "hy": 0.5,
+      "cy": 0.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_ParkBench0",
+      "cx": 172.8,
+      "cz": -266.0,
+      "hx": 0.25,
+      "hz": 0.85,
+      "hy": 0.45,
+      "cy": 0.45,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_ParkBench1",
+      "cx": 187.2,
+      "cz": -266.0,
+      "hx": 0.25,
+      "hz": 0.85,
+      "hy": 0.45,
+      "cy": 0.45,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_ParkBench2",
+      "cx": 172.8,
+      "cz": -273.0,
+      "hx": 0.25,
+      "hz": 0.85,
+      "hy": 0.45,
+      "cy": 0.45,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_ParkBench3",
+      "cx": 187.2,
+      "cz": -273.0,
+      "hx": 0.25,
+      "hz": 0.85,
+      "hy": 0.45,
+      "cy": 0.45,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_LampPark0",
+      "cx": 165,
+      "cz": -255.6,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_LampPark1",
+      "cx": 195,
+      "cz": -255.6,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_LampPark2",
+      "cx": 165,
+      "cz": -283.6,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_LampPark3",
+      "cx": 195,
+      "cz": -283.6,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_LampPark4",
+      "cx": 142.9,
+      "cz": -262,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_LampPark5",
+      "cx": 142.9,
+      "cz": -277,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_LampPark6",
+      "cx": 217.1,
+      "cz": -262,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_LampPark7",
+      "cx": 217.1,
+      "cz": -277,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_LampLoop00",
+      "cx": 140,
+      "cz": -222.8,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_LampLoop01",
+      "cx": 160,
+      "cz": -222.8,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_LampLoop02",
+      "cx": 200,
+      "cz": -222.8,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_LampLoop03",
+      "cx": 220,
+      "cz": -222.8,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_LampLoop04",
+      "cx": 140,
+      "cz": -289.2,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_LampLoop05",
+      "cx": 160,
+      "cz": -289.2,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_LampLoop06",
+      "cx": 200,
+      "cz": -289.2,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_LampLoop07",
+      "cx": 220,
+      "cz": -289.2,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_LampLoop08",
+      "cx": 132.8,
+      "cz": -236,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_LampLoop09",
+      "cx": 132.8,
+      "cz": -256,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_LampLoop10",
+      "cx": 132.8,
+      "cz": -276,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_LampLoop11",
+      "cx": 227.2,
+      "cz": -236,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_LampLoop12",
+      "cx": 227.2,
+      "cz": -256,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_LampLoop13",
+      "cx": 227.2,
+      "cz": -276,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_LampLane0",
+      "cx": 175.5,
+      "cz": -306.0,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_LampLane1",
+      "cx": 184.5,
+      "cz": -320.0,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_Tree00",
+      "cx": 155,
+      "cz": -263,
+      "hx": 0.25,
+      "hz": 0.25,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_Tree01",
+      "cx": 205,
+      "cz": -263,
+      "hx": 0.263,
+      "hz": 0.263,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_Tree02",
+      "cx": 155,
+      "cz": -277,
+      "hx": 0.237,
+      "hz": 0.237,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_Tree03",
+      "cx": 205,
+      "cz": -277,
+      "hx": 0.25,
+      "hz": 0.25,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_Tree04",
+      "cx": 110,
+      "cz": -199,
+      "hx": 0.275,
+      "hz": 0.275,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_Tree05",
+      "cx": 122,
+      "cz": -201,
+      "hx": 0.237,
+      "hz": 0.237,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_Tree06",
+      "cx": 112,
+      "cz": -208,
+      "hx": 0.25,
+      "hz": 0.25,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_Cypress00",
+      "cx": 107.5,
+      "cz": -305,
+      "hx": 0.25,
+      "hz": 0.25,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_Cypress01",
+      "cx": 107.5,
+      "cz": -315,
+      "hx": 0.25,
+      "hz": 0.25,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_Cypress02",
+      "cx": 252.5,
+      "cz": -305,
+      "hx": 0.25,
+      "hz": 0.25,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_Cypress03",
+      "cx": 252.5,
+      "cz": -315,
+      "hx": 0.25,
+      "hz": 0.25,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_Cypress04",
+      "cx": 165,
+      "cz": -306,
+      "hx": 0.25,
+      "hz": 0.25,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_Cypress05",
+      "cx": 195,
+      "cz": -320,
+      "hx": 0.25,
+      "hz": 0.25,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_Cypress06",
+      "cx": 171,
+      "cz": -320,
+      "hx": 0.25,
+      "hz": 0.25,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_Cypress07",
+      "cx": 189,
+      "cz": -306,
+      "hx": 0.25,
+      "hz": 0.25,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_Cypress08",
+      "cx": 141,
+      "cz": -246.5,
+      "hx": 0.25,
+      "hz": 0.25,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_Cypress09",
+      "cx": 219,
+      "cz": -246.5,
+      "hx": 0.25,
+      "hz": 0.25,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_GardenBench0",
+      "cx": 118.0,
+      "cz": -197.5,
+      "hx": 0.85,
+      "hz": 0.25,
+      "hy": 0.45,
+      "cy": 0.45,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_GardenBench1",
+      "cx": 126.0,
+      "cz": -205.0,
+      "hx": 0.25,
+      "hz": 0.85,
+      "hy": 0.45,
+      "cy": 0.45,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_CoveRoad_CR_LampE00",
+      "cx": -30,
+      "cz": -167.65,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_CoveRoad_CR_LampE01",
+      "cx": -10,
+      "cz": -167.65,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_CoveRoad_CR_LampE02",
+      "cx": 10,
+      "cz": -167.65,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_CoveRoad_CR_LampE03",
+      "cx": 30,
+      "cz": -167.65,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_CoveRoad_CR_LampE04",
+      "cx": 50,
+      "cz": -167.65,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_CoveRoad_CR_LampE05",
+      "cx": 70,
+      "cz": -167.65,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_CoveRoad_CR_LampE06",
+      "cx": 90,
+      "cz": -167.65,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_CoveRoad_CR_LampE07",
+      "cx": 110,
+      "cz": -167.65,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_CoveRoad_CR_LampE08",
+      "cx": 130,
+      "cz": -167.65,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_CoveRoad_CR_LampE09",
+      "cx": 150,
+      "cz": -167.65,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_CoveRoad_CR_LampN00",
+      "cx": -51.85,
+      "cz": -30,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_CoveRoad_CR_LampN01",
+      "cx": -51.85,
+      "cz": -50,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_CoveRoad_CR_LampN02",
+      "cx": -51.85,
+      "cz": -70,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_CoveRoad_CR_LampN03",
+      "cx": -51.85,
+      "cz": -90,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_CoveRoad_CR_LampN04",
+      "cx": -51.85,
+      "cz": -110,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_CoveRoad_CR_LampN05",
+      "cx": -51.85,
+      "cz": -130,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_CoveRoad_CR_LampN06",
+      "cx": -51.85,
+      "cz": -150,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_CoveRoad_CR_Signpost",
+      "cx": -63.0,
+      "cz": -22.0,
+      "hx": 0.15,
+      "hz": 0.15,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    }
+  ]
+}
