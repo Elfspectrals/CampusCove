@@ -905,7 +905,32 @@
         "minZ": -313,
         "maxZ": -151.95
       },
-      "modelUrl": "/assets/park/cove_heights/cove_heights.glb"
+      "modelUrl": "/assets/park/cove_heights/cove_heights.glb",
+      "buildings": [
+        {
+          "kind": "house",
+          "key": "cove_villa_a02",
+          "name": "Colonial Villa",
+          "position": [
+            -281,
+            0,
+            -291.3
+          ],
+          "rotationY": 0,
+          "door": [
+            -281,
+            1.25,
+            -286.5
+          ],
+          "offer": "buy",
+          "price": 20000,
+          "interiorOffset": [
+            0,
+            0.2,
+            -1.405
+          ]
+        }
+      ]
     },
     {
       "key": "cove_road",

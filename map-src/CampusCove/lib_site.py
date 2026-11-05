@@ -354,6 +354,19 @@ def hedge_run(s, name, a, b, M, w=0.5, h=0.40, y0=0.02, mat="hedge_low"):
         s.col(name, (a[0] + b[0]) / 2, (a[1] + b[1]) / 2, ln, w, h + y0, seg_yaw(*a, *b))
 
 
+def hydrangeas(s, name, x0, x1, z, M, n=6):
+    """Hydrangea shrubs along a bed: a green leafy mound crowned with white flower heads (soft decor, walk-through)."""
+    for k in range(n):
+        x = x0 + (x1 - x0) * (k + 0.5) / n + s.rnd.uniform(-0.15, 0.15)
+        zz = z + s.rnd.uniform(-0.15, 0.15)
+        _blob(s, f"{name}_{k}_Leaf", x, zz, 0.02, 0.5, M["boxwood"], sy=0.7, jitter=0.1)
+        for j in range(4):
+            a = TWO_PI * j / 4 + s.rnd.uniform(-0.4, 0.4)
+            r = 0.28 if j else 0.0
+            _blob(s, f"{name}_{k}_Flower{j}", x + r * math.cos(a), zz + r * math.sin(a), 0.42 + (0.1 if j == 0 else 0.0),
+                  s.rnd.uniform(0.17, 0.22), M["hydrangea"], jitter=0.15)
+
+
 def check_disjoint(rects, allowed=()):
     """rects: {name: (x0, z0, x1, z1)}. Returns overlapping pairs (area > 1e-6) that are not in `allowed`."""
     names = sorted(rects)

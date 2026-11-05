@@ -373,25 +373,32 @@ looks into the lot.
 IDs run clockwise in plan from the gate (south-west → west → north → east → south-east). "Faces" is the compass side of the
 lot that fronts the loop.
 
-### 7.2b First house — colonial villa on A-02 [v3 started, built]
+### 7.2b First house — Colonial Villa on A-02 [v3 started, walk-in, for sale]
 
-American colonial (references: white clapboard two-storey with shutters, columned porch, attached garage), assembled by
-`lib_house.colonial_villa()` from the house kit `map-src/CampusCove/lib_house.py` — one builder per piece: `siding_wall`
-(one per storey), `base_band`, `window` (casing, sill, muntins, shutters), `door` (double leaves, transom, crown),
-`garage_door`, `gable_infill`, `shed_roof`, `porch`, `frieze`, `corner_board`, `chimney`, `wall_lantern`, `topiary`,
-`hydrangeas`, then `place()` onto the lot.
+A real house of the game, like the 10 town houses: it can be bought (20 000 coins, daily property tax), entered through its
+hinged front door, furnished from Cove Home, locked and shared with keys. Built by the house generator
+`map-src/CampusCove/build_house_v2.py` (key `cove_villa_a02`, palette `colonial`), which cuts every window in both shells
+(real see-through glass) and builds the interior, the stair and the collision from the same plan; lighting is baked by
+`build_house_lightmaps.py`.
 
 ```
-Origin (front wall centre): plan (154.0, -305.3) — front faces S (+Z), 6.3 m behind the lot front line
-Main block:  13.0 x 10.0 m, 2 storeys (floor line 3.2, eaves 6.0), gable roof ridge along x (+3.4), centre cross gable
-Garage wing: 7.7 x 8.0 m, 1 storey (eaves 3.0), gable roof (+2.3), 4.9 x 2.35 m carriage door on the lot driveway
-Porch:       x -3.5..2.65 local, 2.2 m deep, floor top 0.14 (walkable), 4 columns, shed roof
-Footprint:   13 x 10 + 7.7 x 8 = 191.6 m2 (24 % of the lot, under the 35 % cap)
-Palette:     EX_coveHouse_* — white siding and trim, teal shutters and front door, charcoal shingles, painted brick base
-Extras:      garage apron and front path (TW_CoveCobble), lamp post, boxwood hedges, white hydrangeas, door topiaries
-COL:         main block, garage, chimney, 4 porch columns, 2 topiaries (the porch itself stays walkable)
-Layout:      houses[] = {lot, style, door (world), doorYaw}; closed shell, no interior yet
+Key / name:     cove_villa_a02 / "Colonial Villa" — front/src/game/assets/catalog.ts, HousingUnitSeeder (buy, 20 000)
+Lot point:      plan (150, -309.3) = world (-281, -291.3), rotationY 0 (front looks +Z, south)
+Door point:     world (-281, 1.25, -286.5); interiorOffset [0, 0.2, -1.405]
+Main block:     13.0 x 10.6 m, two storeys (duplex plan: entry + stair, bath, living, kitchen / landing, 3 bedrooms),
+                gable roof + centre cross gable over the door, chimney, front porch with railings
+Garage wing:    `wing` option of the generator, east side, 7.4 x 8.0 m, one storey, walk-in and furnishable: concrete
+                floor, side window, doorway from the living room; street-facing gable roof, closed carriage door (visual)
+Interior bounds (seeder): x -6.295..13.695, z -5.0..5.2, maxY 5.6
+Zone wiring:    `buildings` of the cove_heights zone + the `COL_House_cove_villa_a02` placeholder in town.collision.json
+                (apply-cove-heights.mjs, from cove_heights.layout.json "houses")
+Lot dressing:   garage apron, front path to the porch step, lamp post, boxwood hedge, white hydrangeas (estate GLB)
 ```
+
+Rebuild: `build_house_v2.py` with `HOUSE_KEYS = ["cove_villa_a02"]` → `npm run assets:optimize -- houses cove_villa_a02` →
+`blender --background --factory-startup --python map-src/CampusCove/build_house_lightmaps.py -- cove_villa_a02` → optimize
+again → copy `preview.png` → `make seed`. Known cosmetic gap: the garage doorway reveal shows the outer siding (no jamb
+lining yet).
 
 ### 7.3 Non-lot land around the bands
 
