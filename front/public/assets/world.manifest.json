@@ -2111,5 +2111,17 @@
         "housingKey": "cove_heights:B-12"
       }
     ]
-  }
+  },
+  "adminDestinations": [
+    {
+      "key": "cove_heights_gate",
+      "name": "Cove Heights gate",
+      "position": [
+        -247.25,
+        0,
+        -158
+      ],
+      "yaw": 0
+    }
+  ]
 }

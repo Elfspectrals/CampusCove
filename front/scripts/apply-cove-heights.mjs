@@ -65,6 +65,10 @@ manifest.coveHeights = {
   clubhouseDoor: site.clubhouseDoor,
   lots: site.lots.map(({ id, type, center, entry, entryYaw, housingKey }) => ({ id, type, center, entry, entryYaw, housingKey })),
 }
+// admin watch menu: teleport just outside the main gate, on the visitor lane, looking into the estate (socket world.ts)
+const adminDestinations = (manifest.adminDestinations ?? []).filter((d) => d.key !== 'cove_heights_gate')
+adminDestinations.push({ key: 'cove_heights_gate', name: 'Cove Heights gate', position: site.adminTeleport.position, yaw: site.adminTeleport.yaw })
+manifest.adminDestinations = adminDestinations
 manifest.bounds = col.bounds
 writeFileSync(WORLD_MANIFEST, JSON.stringify(manifest, null, 2) + '\n')
 console.log(`world.manifest.json: zones ${Object.keys(site.zones).join(', ')}, ${site.lots.length} lots, gate enforced=${site.gate.enforced}`)
