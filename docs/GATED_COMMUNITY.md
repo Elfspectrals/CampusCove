@@ -1,8 +1,13 @@
 # Cove Heights — Gated Community Master Plan
 
 > **Civil Architect Document** · CampusCove Open World
-> Version 1.2 · November 2026 (v1 shell built: `build_cove_heights_site.py` + `lib_site.py`)
+> Version 1.3 · November 2026 (v1 shell built: `build_cove_heights_site.py` + `lib_site.py`; estate moved north of the mall)
 > Governed by `.claude/agents/civil-architect.md`. Topography rules: `.claude/agents/topographer.md`. Kit rules: `docs/BUILD_KIT.md`.
+
+> **Plan frame vs world (v1.3).** The estate (§ 2–4 and § 6–14) is drawn in a *plan frame* (wall x 100 → 260,
+> z −330 → −190) and placed in the world by **OFFSET = (−431, +18)**: world = plan + offset, so the wall runs
+> x −331 → −171, z −312 → −172, north of the mall. Cove Road (§ 5) is given in world coordinates.
+> `build_cove_heights_site.py` applies the offset to every estate object, collision box and layout point.
 
 Every value in this document is in **game space** `(x, z)` in metres, `y` up. **North is −Z, east is +X** (`docs/ASSETS_STYLE_GUIDE.md`
 § 9 "Plan", `front/src/game/world/minimap.ts`). Phase tags: **[v1]** = first build pass ("playable shell"), **[v2]** = amenities
@@ -13,7 +18,7 @@ and dressing, **[v3]** = houses and live gameplay. Section 16 sums them up.
 ## 1. Executive Summary
 
 **Zone keys**: `cove_heights` (the estate and its forecourt) and `cove_road` (the connector from the town).
-**Site vision**: an upscale, Mediterranean-style gated estate north-east of the town centre, past The Salty Shamrock: cream plaster
+**Site vision**: an upscale, Mediterranean-style gated estate north of the mall: cream plaster
 walls, terracotta coping and roofs, dark iron gates, a central park and a clubhouse. 16 residential lots (4 estate villas,
 12 executive homes) around one residential loop, a guarded main gate on the town-facing (south) wall, an emergency gate on the
 north wall.
@@ -24,8 +29,8 @@ north wall.
 | Forecourt outside the wall (gate queue, utility node, signs) | x 152 → 197.2, z −190 → −169.95 |
 | `cove_heights` zone bounds | `minX 99, maxX 261, minZ −331, maxZ −169.95` |
 | `cove_road` + `cove_road_mall` zone bounds | see § 5.6 (Cove Road branches off the mall avenue) |
-| Estate centre | (180, −260); ~316 m from the town hall (0, 0) |
-| Walk from the town's west hedge gate to the main gate | ≈ 408 m (avenue 11 m + Cove Road 371 m + boulevard 26 m) |
+| Estate centre | plan (180, −260) = world (−251, −242), north of the mall |
+| Walk from the town's west hedge gate to the main gate | ≈ 347 m (avenue 29 m + Cove Road 292 m + boulevard 26 m) |
 | Ground | flat, `y = 0` (see § 3.3); no heightmap |
 | Resident lots | 16 (A-01…A-04, B-01…B-12), decor plots in v1, stable IDs for HousingService later |
 | Target population | 16–32 players (1–2 per lot) |
@@ -33,9 +38,9 @@ north wall.
 | Blender outputs | `map-src/CampusCove/out/park/cove_heights/` : `cove_heights.glb`, `cove_road.glb`, `cove_road_mall.glb`, `cove_heights.layout.json` (collision boxes inside the layout) |
 | Shipped assets | `front/public/assets/park/cove_heights/` (same names); collisions merged into `town/town.collision.json` by `apply-cove-heights.mjs` |
 
-Neighbours (from `front/public/assets/world.manifest.json`): pub x 28…114, z −152…−70; orchard x −42.6…−2, z −130…−72;
-pond x −48…48, z −85.6…0.25; town x ±46.6, z ±46.6. Nothing else occupies x 46.6…261, z −331…23. Closest approach: Cove Road
-runs 8 m east of the pub bounds (x 122.05 vs 114).
+Neighbours (world, from `front/public/assets/world.manifest.json`): mall x −420…−42.6, z −135…135 (its north buildings
+reach z −128); orchard x −42.6…−2, z −130…−72. Nothing else occupies x −332…−67, z −313…−135; the estate's forecourt road
+(world z −140 → −152) keeps 5 m from the mall zone.
 
 ---
 
@@ -187,58 +192,56 @@ part of the loop (checked in § 7.4).
 
 ---
 
-## 5. Connector Road — Cove Road [v1, built]
+## 5. Connector Road — Cove Road [v1, built] (world coordinates)
 
 Cove Road **branches off the mall avenue** (`build_mall.py`: avenue centreline z = −12, 7 m carriageway, 1.8 m sidewalks,
-from the town's west hedge gate (−44.6, −12) to the mall). The town is not touched: players leave it through the existing
-hedge gate, walk 11 m along the avenue and turn north.
+from the town's west hedge gate (−44.6, −12) to the mall), runs north along the mall's east side and turns west into the
+estate's entry boulevard. Town and mall assets are untouched.
 
 ### 5.1 Junction with the mall avenue
 
-- T-junction on the avenue's north side at **x = −55.5**, between the avenue totem (−47.6, −18.9) and the first north bench
-  / lamp (−63.1, −17.7 / −18.0): Cove Road's reserve (x −61.45 → −49.55) clears both.
-- The avenue is not modified: its north curb and sidewalk stay continuous across the mouth (a continuous-sidewalk crossing,
-  0.10–0.15 m, walk-over). Cove Road starts at the back of that sidewalk, z = −17.3.
-- Signpost `CR_Signpost` at (−63.0, −22.0): "Cove Heights" (north) / "Mall" (west).
+- T-junction on the avenue's north side at **x = −73.2**: the only gap wide enough for the 11.9 m reserve
+  (x −79.15 → −67.25) between `COL_Mall_Tree002` (−81.1, −19.5) and `COL_Avenue_Bin0_0` (−65.3, −17.7). The parking lot
+  (x −140 → −100) and its signpost (−99, −20) stay west of it.
+- The avenue is not modified: its north curb and sidewalk run across the mouth (continuous-sidewalk crossing, 0.10–0.15 m,
+  walk-over). Cove Road starts at the back of that sidewalk, z = −17.3.
+- Signpost `CR_Signpost` at (−65.6, −22.0): "Cove Heights" (north) / "Mall" (west).
 
-### 5.2 Centreline (game x, z)
+### 5.2 Centreline (world x, z)
 
 | Point | Position | Note |
 |-------|----------|------|
-| J0 | (−55.5, −17.3) | back of the avenue's north sidewalk |
-| C1 | (−55.5, −152.0) → (−43.5, −164.0) | fillet R 12 m, centre (−43.5, −152) — north of the orchard (z ≥ −130) and the pond |
-| C2 | (174.0, −164.0) | east leg ends on the boulevard carriageway (x 174), 6 m north of the pub bounds (z −152) |
+| J0 | (−73.2, −17.3) | back of the avenue's north sidewalk |
+| C1 | (−73.2, −134.0) → (−85.2, −146.0) | fillet R 12 m, centre (−85.2, −134), turning west; clear of the mall zone (z ≥ −135) and its north buildings (z ≥ −128) |
+| C2 | (−241.4, −146.0) | west leg ends on the boulevard carriageway's east edge (plan x 189.6) |
 
-Length ≈ 134.7 (north leg) + 18.8 (fillet) + 217.5 (east leg) = **371 m** from the avenue to the boulevard. The north leg
-stays at x ≤ −49.55, outside the pond heightmap (relief 0 for |x| ≥ 47.5).
+Length ≈ 116.7 (north leg) + 18.8 (fillet) + 156.2 (west leg) = **292 m** from the avenue to the boulevard.
 
 ### 5.3 Cross-section
 
 `road` everywhere: 6.0 m carriageway (dashed centre line), 0.15 m curbs, 1.0 m grass verge (top 0.03), 1.8 m sidewalks
 (±5.95 m reserve).
 
-### 5.4 Boulevard junction (replaces the v1.0 forecourt flare)
+### 5.4 Boulevard junction
 
-The east leg meets the entry boulevard square: its asphalt runs to x 174 (boulevard carriageway west edge); its north
-curb/verge/sidewalk stop at x 172.05 where the boulevard west sidewalk starts (z −167 → −214.65); its south
-curb/verge/sidewalk run on to x 191.55 and close the boulevard's south end. The boulevard carriageway starts at z −161.
-Monument signs moved to (168, −173) and (195.6, −173).
+The west leg meets the boulevard's south end from the east: its asphalt runs to the boulevard carriageway east edge; its
+north curb/verge/sidewalk stop at the boulevard east sidewalk (plan x 191.55), which starts at the road's north edge; its
+south curb/verge/sidewalk run on to plan x 172.05 and close the boulevard's south end. The boulevard carriageway starts at
+plan z −161. Monument signs at plan (168, −173) and (195.6, −173).
 
 ### 5.5 Furniture and collisions
 
-- Lamps (`street_lamp`, h 4.0, `COL_CoveRoad_CR_Lamp*` 0.35 × 0.35 × 2.0): north leg east verge (x −51.85) every 20 m from
-  z −30 to −150 (7); east leg north verge (z −167.65) every 20 m from x −30 to 150 (10).
+- Lamps (`street_lamp`, h 4.0, 0.35 × 0.35 × 2.0 COL): north leg east verge (x −69.55) every 20 m from z −30 to −130 (6);
+  west leg south verge (z −142.35) every 20 m from x −95 to −235 (8).
 - Trees along the road: [v2].
 
-### 5.6 Zones
+### 5.6 Zones (world)
 
 | Zone | GLB | Bounds |
 |------|-----|--------|
-| `cove_road_mall` | `cove_road_mall.glb` (north leg + fillet + signpost) | x −61.45 → −43.5, z −169.95 → −17.3 (inside the mall zone's rectangle, along its east edge) |
-| `cove_road` | `cove_road.glb` (east leg) | x −43.5 → 191.55, z −169.95 → −158.05 |
-| `cove_heights` | `cove_heights.glb` (estate, boulevard, forecourt) | x 99 → 261, z −331 → −169.95 |
-
-The three rectangles are disjoint; no other zone is crossed.
+| `cove_road_mall` | `cove_road_mall.glb` (north leg + signpost) | x −79.15 → −67.25, z −134 → −17.3 (inside the mall zone's rectangle) |
+| `cove_road` | `cove_road.glb` (fillet + west leg) | x −258.95 → −67.25, z −151.95 → −134 |
+| `cove_heights` | `cove_heights.glb` (estate, boulevard, forecourt) | x −332 → −170, z −313 → −151.95 |
 
 ---
 
@@ -959,7 +962,7 @@ collision boxes (none on the lanes or portals in v1).
 
 | # | Question | Default assumption |
 |---|----------|--------------------|
-| 1 | `cove_road_mall` lies inside the mall zone's rectangle (its east edge). | Accepted: it is the mall avenue's side road; `cove_road` and `cove_heights` overlap nothing |
+| 1 | `cove_road_mall` lies inside the mall zone's rectangle. | Accepted: it is the mall avenue's side road; `cove_road` and `cove_heights` overlap nothing (1 m sliver of `cove_road` at z −134…−135) |
 | 2 | The avenue's north curb and sidewalk run across the junction mouth (continuous-sidewalk crossing). Cut them in `build_mall.py`? | No for v1: the mall is not rebuilt; walkable as is |
 | 3 | `assets:optimize` joins the nodes of every `park` GLB (`--join` except `interior.glb`), so booms and gate leaves cannot move at runtime. | v1 is static (booms raised, leaves open). v3 needs an un-joined `cove_gate.glb` and a `keepNodes` rule in `front/scripts/optimize-assets.mjs` |
 | 4 | How do lots join housing: `cove_heights:<id>` units in `HousingUnitSeeder.php`, prices, one-house-per-account rule? | Decor in v1; seeded in v3 with the entry point as the door point |
@@ -989,8 +992,9 @@ collision boxes (none on the lanes or portals in v1).
   (35 % of 784 m² = 274 m²; 18 × 17 = 306 m² was over); coverage and FAR separated.
 - **Gate** redesigned: barrier line on the wall, 18 m split-lane queue outside, egress + visitor + resident lanes, two
   pedestrian portals; permanent vs toggleable collisions; pedestrian checkpoint (point + trigger); open in v1.
-- **Cove Road added** (§ 5): T-junction on the mall avenue at x −55.5 → north past the pond and orchard → east north of the
-  pub → boulevard, 371 m; the town is untouched (v1.1 first routed it through a town hedge gap, replaced at the user's request).
+- **Cove Road added** (§ 5): T-junction on the mall avenue at x −73.2 → north along the mall → west into the boulevard,
+  292 m; town and mall untouched.
+- **v1.3: estate moved north of the mall** (OFFSET −431, +18) at the user's request; v1.2 had it north-east of the pub.
 - **Vertical stack** with 2 cm gaps; curbs 0.14 m and sidewalks 0.12 m (below the topo-check tolerance); no sunken pool or
   swale without a heightmap; lot hedges 0.40 m walk-over.
 - **Materials**: invented keys replaced by zone-prefixed `TW_Cove*` / `EX_cove_*` (marked new) whose names match the topo-check

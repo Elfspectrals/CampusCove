@@ -3,8 +3,10 @@
 Outputs: out/park/cove_heights/{cove_heights.glb, cove_road.glb, cove_road_mall.glb, cove_heights.layout.json}.
 Then `npm run assets:optimize -- park cove_heights` and `node scripts/apply-cove-heights.mjs` (from front/).
 
-Cove Road branches off the mall avenue (north side, x = -55.5), runs north past the pond and the orchard, turns east
-north of the pub and ends in the estate's entry boulevard. Every piece comes from the shared builders in lib_site.py.
+The estate sits north of the mall. It is drawn in its plan frame (docs/GATED_COMMUNITY.md § 4-8, wall x 100..260,
+z -330..-190) and moved as a whole by OFFSET; Cove Road is drawn in world coordinates: it branches off the mall avenue
+(north side, x = -73.2), runs north along the mall's east side, turns west north of the mall and ends in the estate's
+entry boulevard from the east. Every piece comes from the shared builders in lib_site.py.
 """
 import importlib
 import math
@@ -29,17 +31,25 @@ OUT = os.path.join(L.OUT_ROOT, "park", "cove_heights")
 WALL = {"x0": 100.0, "x1": 260.0, "z0": -330.0, "z1": -190.0}  # z1 = south wall (town side), z0 = north wall
 LOOP = {"xw": 127.65, "xe": 232.35, "zs": -217.65, "zn": -294.35, "r": 8.0}
 BLVD = {"x0": 174.0, "x1": 189.6, "z_end": -214.65}
-ROAD_Z = -164.0              # Cove Road east leg centreline
-ROAD_X = -55.5               # Cove Road north leg centreline (branch off the mall avenue)
+ROAD_Z = -164.0              # Cove Road leg along the boulevard's south end, plan frame
+OFFSET = (-431.0, 18.0)      # plan frame -> world: estate centred north of the mall (wall x -331..-171, z -312..-172)
+DX, DZ = OFFSET
+ROAD_X = -73.2               # Cove Road north leg centreline: avenue gap between Mall_Tree002 (-81.1) and Avenue_Bin0_0 (-65.3)
 AVENUE_EDGE_Z = -17.3        # back of the mall avenue's north sidewalk (build_mall.py: z -12, road 7, walk 1.8)
-FILLET = (-43.5, -152.0, 12.0)  # centre x, z, centreline radius
-ROAD_END_X = 174.0           # boulevard carriageway west edge
+ROAD_ZW = ROAD_Z + DZ        # west leg centreline in the world (-146)
+FILLET = (ROAD_X - 12.0, ROAD_ZW + 12.0, 12.0)  # centre x, z, centreline radius: north leg turns west
+ROAD_END_X = 189.6 + DX      # boulevard carriageway east edge (world)
 
 ZONES = {
-    "cove_heights": {"minX": 99.0, "maxX": 261.0, "minZ": -331.0, "maxZ": -169.95},
-    "cove_road": {"minX": -43.5, "maxX": 191.55, "minZ": -169.95, "maxZ": -158.05},
-    "cove_road_mall": {"minX": -61.45, "maxX": -43.5, "minZ": -169.95, "maxZ": AVENUE_EDGE_Z},
+    "cove_heights": {"minX": 99.0 + DX, "maxX": 261.0 + DX, "minZ": -331.0 + DZ, "maxZ": -169.95 + DZ},
+    "cove_road": {"minX": 172.05 + DX, "maxX": ROAD_X + 5.95, "minZ": ROAD_ZW - 5.95, "maxZ": FILLET[1]},
+    "cove_road_mall": {"minX": ROAD_X - 5.95, "maxX": ROAD_X + 5.95, "minZ": FILLET[1], "maxZ": AVENUE_EDGE_Z},
 }
+
+
+def W2(x, z):
+    """Plan frame -> world."""
+    return x + DX, z + DZ
 
 Y = {"lawn": 0.02, "lot": 0.04, "asphalt": 0.04, "line": 0.06, "drive": 0.06, "path": 0.06, "track": 0.05, "plaza": 0.08, "walk": 0.12,
      "curb": 0.14, "verge": 0.03}
@@ -135,20 +145,18 @@ def leg(s, name, a, b, bands, cuts=(), end_left=None, end_right=None, end_asphal
 # north leg: from the back of the avenue sidewalk to the fillet (travel north, left = west)
 fx, fz, fr = FILLET
 leg(mall_leg, "CR_NorthLeg", (ROAD_X, AVENUE_EDGE_Z), (ROAD_X, fz), BANDS_ROAD)
-S.road_arc(mall_leg, "CR_Fillet", fx, fz, fr, PI, 1.5 * PI, ROAD_SEC, RM)
 S.dashed_line(mall_leg, "CR_NorthLine", (ROAD_X, AVENUE_EDGE_Z - 2.0), (ROAD_X, fz), 0.12, Y["asphalt"], Y["line"], M["line"])
-# east leg (travel east, left = north): asphalt to the boulevard, north bands stop at its west sidewalk,
+S.road_arc(road, "CR_Fillet", fx, fz, fr, -0.5 * PI, 0.0, ROAD_SEC, RM)
+# west leg (travel west, left = south): asphalt to the boulevard carriageway, north bands stop at its east sidewalk,
 # south bands run on to close the boulevard's south end
-east_a = (fx, ROAD_Z)
-east_len = ROAD_END_X - fx
-leg(road, "CR_EastLeg", east_a, (191.55, ROAD_Z), BANDS_ROAD, end_left=172.05 - fx, end_asphalt=east_len)
-# the south curb stops at the boulevard's east curb line
-S.dashed_line(road, "CR_EastLine", east_a, (170.0, ROAD_Z), 0.12, Y["asphalt"], Y["line"], M["line"])
-for k, z in enumerate(range(-30, -151, -20)):
+west_a = (fx, ROAD_ZW)
+leg(road, "CR_WestLeg", west_a, W2(172.05, ROAD_Z), BANDS_ROAD, end_right=fx - W2(191.55, 0)[0], end_asphalt=fx - ROAD_END_X)
+S.dashed_line(road, "CR_WestLine", west_a, (ROAD_END_X + 4.0, ROAD_ZW), 0.12, Y["asphalt"], Y["line"], M["line"])
+for k, z in enumerate(range(-30, -131, -20)):
     S.street_lamp(mall_leg, f"CR_LampN{k:02d}", ROAD_X + 3.65, z, M)
-for k, x in enumerate(range(-30, 161, 20)):
-    S.street_lamp(road, f"CR_LampE{k:02d}", x, ROAD_Z - 3.65, M)
-S.signpost(mall_leg, "CR_Signpost", ROAD_X - 7.5, -22.0, [("Cove Heights", 0.0), ("Mall", PI / 2)], M)
+for k, x in enumerate(range(-95, -236, -20)):
+    S.street_lamp(road, f"CR_LampW{k:02d}", x, ROAD_ZW + 3.65, M)
+S.signpost(mall_leg, "CR_Signpost", ROAD_X + 7.6, -22.0, [("Cove Heights", 0.0), ("Mall", PI / 2)], M)
 
 # ================================================================ estate ground
 S.rect(est, "CH_SiteLawn", 99.0, -169.95, 261.0, -331.0, 0.0, Y["lawn"], M["lawn"], tile=3.0)
@@ -170,10 +178,11 @@ for nm, a, b in (("S", (224.35, LOOP["zs"]), (135.65, LOOP["zs"])), ("W", (LOOP[
 # ---------------------------------------------------------------- entry boulevard (z -161 -> loop)
 zb0 = ROAD_Z + 3.0  # -161: Cove Road south carriageway edge
 S.rect(est, "CH_BlvdAsphalt", BLVD["x0"], zb0, BLVD["x1"], BLVD["z_end"], 0.0, Y["asphalt"], M["asphalt"])
-S.rect(est, "CH_BlvdWalkW", 172.05, ROAD_Z - 3.0, 173.85, BLVD["z_end"], 0.0, Y["walk"], M["walk"])
-S.rect(est, "CH_BlvdCurbW", 173.85, ROAD_Z - 3.0, 174.0, BLVD["z_end"], 0.0, Y["curb"], M["curb"])
-S.rect(est, "CH_BlvdCurbE", 189.6, zb0, 189.75, BLVD["z_end"], 0.0, Y["curb"], M["curb"])
-S.rect(est, "CH_BlvdWalkE", 189.75, zb0 + 0.15, 191.55, BLVD["z_end"], 0.0, Y["walk"], M["walk"])
+# Cove Road joins from the east: the east edge starts at the road's north edge, the west edge closes on its south bands
+S.rect(est, "CH_BlvdWalkW", 172.05, zb0 + 0.15, 173.85, BLVD["z_end"], 0.0, Y["walk"], M["walk"])
+S.rect(est, "CH_BlvdCurbW", 173.85, zb0, 174.0, BLVD["z_end"], 0.0, Y["curb"], M["curb"])
+S.rect(est, "CH_BlvdCurbE", 189.6, ROAD_Z - 3.0, 189.75, BLVD["z_end"], 0.0, Y["curb"], M["curb"])
+S.rect(est, "CH_BlvdWalkE", 189.75, ROAD_Z - 3.0, 191.55, BLVD["z_end"], 0.0, Y["walk"], M["walk"])
 # island (guardhouse) and divider (resident lane), raised paving inside a curb ring
 for nm, (x0_, z0_, x1_, z1_) in {"S": (178.0, -172.0, 182.0, -172.15), "N": (178.0, -204.85, 182.0, -205.0),
                                  "W": (178.0, -172.15, 178.15, -204.85), "E": (181.85, -172.15, 182.0, -204.85)}.items():
@@ -392,19 +401,42 @@ for s in (est, road, mall_leg):  # furniture that must stand on y = 0 (the known
     g = L.check_grounded(feet)
     assert not g, g
 
+# ---------------------------------------------------------------- plan frame -> world (the estate only; the road is world already)
+for o in est.objs:
+    o.location.x += DX
+    o.location.y -= DZ  # blender y = -game z
+for c in est.cols + GATE_TOGGLE:
+    c["cx"] = round(c["cx"] + DX, 3)
+    c["cz"] = round(c["cz"] + DZ, 3)
+
+
+def wp(x, z):
+    return [round(x + DX, 3), 0.0, round(z + DZ, 3)]
+
+
+for lot in lots_out:
+    b_ = lot["bounds"]
+    lot["bounds"] = {"minX": b_["minX"] + DX, "maxX": b_["maxX"] + DX, "minZ": b_["minZ"] + DZ, "maxZ": b_["maxZ"] + DZ}
+    lot["center"] = wp(lot["center"][0], lot["center"][2])
+    lot["entry"] = wp(lot["entry"][0], lot["entry"][2])
+t_ = CHECKPOINT["trigger"]
+CHECKPOINT["position"] = wp(CHECKPOINT["position"][0], CHECKPOINT["position"][2])
+CHECKPOINT["trigger"] = {"minX": t_["minX"] + DX, "maxX": t_["maxX"] + DX, "minZ": t_["minZ"] + DZ, "maxZ": t_["maxZ"] + DZ}
+
 L.export_glb(os.path.join(OUT, "cove_heights.glb"), est.objs, use_active_scene=True)
 L.export_glb(os.path.join(OUT, "cove_road.glb"), road.objs, use_active_scene=True)
 L.export_glb(os.path.join(OUT, "cove_road_mall.glb"), mall_leg.objs, use_active_scene=True)
 L.write_json(os.path.join(OUT, "cove_heights.layout.json"), {
     "version": 1,
+    "offset": {"x": DX, "z": DZ},
     "zones": ZONES,
-    "spawn": {"x": 180.0, "z": -196.0, "yaw": 0.0},
-    "mainGate": {"x": 180.0, "z": W["z1"], "yaw": 0.0},
-    "emergencyGate": {"x": 180.0, "z": W["z0"], "yaw": PI, "locked": True},
+    "spawn": dict(zip(("x", "z"), W2(180.0, -196.0)), yaw=0.0),
+    "mainGate": dict(zip(("x", "z"), W2(180.0, W["z1"])), yaw=0.0),
+    "emergencyGate": dict(zip(("x", "z"), W2(180.0, W["z0"])), yaw=PI, locked=True),
     "gate": {"residentsOnly": True, "enforced": False, "toggle": GATE_TOGGLE},
     "checkpoint": CHECKPOINT,
-    "guardPoint": [180.0, 0.0, -184.5],
-    "clubhouseDoor": [180.0, 0.0, -226.4],
+    "guardPoint": wp(180.0, -184.5),
+    "clubhouseDoor": wp(180.0, -226.4),
     "junction": {"x": ROAD_X, "z": AVENUE_EDGE_Z, "road": "mall_avenue"},
     "lots": lots_out,
     "collision": est.cols + road.cols + mall_leg.cols,
