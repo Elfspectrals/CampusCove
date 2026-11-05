@@ -468,6 +468,8 @@ L.write_json(os.path.join(OUT, "cove_heights.layout.json"), {
     "gate": {"residentsOnly": True, "enforced": False, "toggle": GATE_TOGGLE},
     "checkpoint": CHECKPOINT,
     "guardPoint": wp(180.0, -184.5),
+    # admin teleport: outside the gate on the visitor lane (plan x 182..185.5), 14 m before the barrier line, looking north
+    "adminTeleport": {"position": wp(183.75, -176.0), "yaw": 0.0},
     "clubhouseDoor": wp(180.0, -226.4),
     "junction": {"x": ROAD_X, "z": AVENUE_EDGE_Z, "road": "mall_avenue"},
     "lots": lots_out,
