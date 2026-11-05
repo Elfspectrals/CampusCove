@@ -373,6 +373,26 @@ looks into the lot.
 IDs run clockwise in plan from the gate (south-west → west → north → east → south-east). "Faces" is the compass side of the
 lot that fronts the loop.
 
+### 7.2b First house — colonial villa on A-02 [v3 started, built]
+
+American colonial (references: white clapboard two-storey with shutters, columned porch, attached garage), assembled by
+`lib_house.colonial_villa()` from the house kit `map-src/CampusCove/lib_house.py` — one builder per piece: `siding_wall`
+(one per storey), `base_band`, `window` (casing, sill, muntins, shutters), `door` (double leaves, transom, crown),
+`garage_door`, `gable_infill`, `shed_roof`, `porch`, `frieze`, `corner_board`, `chimney`, `wall_lantern`, `topiary`,
+`hydrangeas`, then `place()` onto the lot.
+
+```
+Origin (front wall centre): plan (154.0, -305.3) — front faces S (+Z), 6.3 m behind the lot front line
+Main block:  13.0 x 10.0 m, 2 storeys (floor line 3.2, eaves 6.0), gable roof ridge along x (+3.4), centre cross gable
+Garage wing: 7.7 x 8.0 m, 1 storey (eaves 3.0), gable roof (+2.3), 4.9 x 2.35 m carriage door on the lot driveway
+Porch:       x -3.5..2.65 local, 2.2 m deep, floor top 0.14 (walkable), 4 columns, shed roof
+Footprint:   13 x 10 + 7.7 x 8 = 191.6 m2 (24 % of the lot, under the 35 % cap)
+Palette:     EX_coveHouse_* — white siding and trim, teal shutters and front door, charcoal shingles, painted brick base
+Extras:      garage apron and front path (TW_CoveCobble), lamp post, boxwood hedges, white hydrangeas, door topiaries
+COL:         main block, garage, chimney, 4 porch columns, 2 topiaries (the porch itself stays walkable)
+Layout:      houses[] = {lot, style, door (world), doorYaw}; closed shell, no interior yet
+```
+
 ### 7.3 Non-lot land around the bands
 
 | Area | Bounds | Use |
