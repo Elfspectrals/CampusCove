@@ -407,12 +407,15 @@ def snapshot(scene, path, cam_game, look_game, lens=24.0, res=(960, 640), hide_p
     return path
 
 
-def text_mesh(coll, name, body, gx, gz, y0, size, extrude, mat, facing="+z"):
-    """Flat 3D lettering as a real mesh (no font data needed at export). facing: '+z' = readable from game +Z."""
+def text_mesh(coll, name, body, gx, gz, y0, size, extrude, mat, facing="+z", resolution=None):
+    """Flat 3D lettering as a real mesh (no font data needed at export). facing: '+z' = readable from game +Z.
+    resolution: curve resolution of the glyph outlines (Blender default 12); 2-3 keeps small labels cheap."""
     cu = bpy.data.curves.new(name + "_cu", "FONT")
     cu.body = body
     cu.size = size
     cu.extrude = extrude
+    if resolution is not None:
+        cu.resolution_u = resolution
     cu.align_x = "CENTER"
     cu.align_y = "BOTTOM"
     tmp = bpy.data.objects.new(name + "_tmp", cu)
