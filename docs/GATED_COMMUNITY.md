@@ -400,6 +400,302 @@ Rebuild: `build_house_v2.py` with `HOUSE_KEYS = ["cove_villa_a02"]` → `npm run
 again → copy `preview.png` → `make seed`. The garage doorway has a white lining and casings; two-storey
 shells are cut per storey so a ground-floor doorway never meets an upstairs window in the same run.
 
+### 7.2c House programme [v3, design]
+
+The 16 lots get 16 different houses, each a model of its own, like an upscale American gated suburb where the
+Architectural Review Committee (ARC) never lets two neighbours look alike. Every house is a `build_house_v2.py` entry
+(interior contract unchanged: floor y 0, front outer face z 5.2, door at x 0, rooms toward −Z), so variety comes from the
+generator options and palettes, not from hand-modelled one-offs (CLAUDE.md modular rule). Keys: villas `cove_villa_a0N`,
+executive homes `cove_home_b0N`.
+
+#### 7.2c.1 Design guidelines (anti-monotony rules)
+
+Terms: **adjacent** = lots sharing a lot line. **Visible pairs** = lots that see each other across open ground: B-01/B-12
+(boulevard, the gateway pair), A-02/A-03 (emergency lane), B-02/B-03 (SW pocket garden), B-06/A-01 (NW corner),
+A-04/B-07 (NE corner), B-10/B-11 (SE swale). The inner block is communal, so no lot faces another across the loop.
+
+| # | Rule | How it is checked |
+|---|------|-------------------|
+| R1 | **One model per lot.** No model key, plan width or palette is used twice in the estate, mirrored copies included. | `HOUSES` keys and palettes unique |
+| R2 | **Style groups do not touch.** Groups: *Classical* (Colonial, Georgian, French Country), *Vernacular/Coastal* (Cape Cod, Lowcountry, Shingle), *Picturesque* (Tudor, Queen Anne, Craftsman), *Mediterranean* (Tuscan, Mission), *Modern* (Modern Farmhouse, Scandinavian, Prairie, Mid-Century, Contemporary). Adjacent lots and visible pairs belong to different groups. | table 7.2c.2 |
+| R3 | **Colour families.** Body colour belongs to one family: **W** white/cream, **Y** yellow/ochre/sand, **R** red brick, **G** green/sage, **B** blue/grey-blue, **D** dark (charcoal/black), **N** natural wood/tan, **P** pink/lilac, **S** stone/greige. Adjacent lots and visible pairs use different families; no family on more than 4 lots (25 %). Front door colours are all different. | table 7.2c.2 (W 4, N 3, Y 2, D 2, others 1) |
+| R4 | **Roofs.** Adjacent lots differ in primary roof form (side gable `gable_x`, front gable `gable_z`, hip, flat, gambrel, shed). A form used on several lots (side gable: 6) carries a different secondary element each time (cross gable, dormers, gallery, portico, end chimneys, steep half-timbered cross gable). Roof colours of adjacent lots differ. | table 7.2c.2 |
+| R5 | **Massing rhythm.** Each 4-lot band (west, east) has at least one single-storey home and no more than three two-storey homes in a row. The boulevard frontage (B-01, B-12) is the gateway and stays two-storey on both sides. | west 1-2-2-2, east 1-2-1-2 |
+| R6 | **Staggered facades.** Facades of adjacent lots are at least 0.6 m apart in setback (executives alternate 4.0 / 5.0 m, villas 5.0–6.3 m). The gateway pair mirrors on purpose (both 4.0 m). | column *s* in 7.2c.3 |
+| R7 | **Garages never lead.** Garage doors take at most 40 % of the street frontage; the garage face is never in front of the main facade (no "snout houses"); it sits at least 5.0 m behind the front lot line (the driveway length; less only with a paved apron). Adjacent lots use a different garage expression (flush wing, recessed wing, two-bay wing, carport, no garage) or door style (carriage, plank, flush, glass). The two forced garage-to-garage pairs (B-05/B-06, B-07/B-08, driveways paired on the shared line by § 7.2) differ in both wing roof and door style. | 7.2c.2 garage column |
+| R8 | **Entries.** Every house has a different entry type (porch, loggia, portico, gallery, wrap porch, stoop, canopy, pergola). Open porches, loggias and steps may project up to 2.8 m into the front setback and stay ≥ 1.4 m from the front lot line; eaves up to 1.2 m into side setbacks. | generator porch depth |
+| R9 | **Windows.** Shutters only on traditional styles (Classical, Vernacular, Picturesque, Tuscan). Window frame colour (white / black / bronze / wood) differs on adjacent lots. | `frame` palette key |
+| R10 | **Unifying elements** (the estate still reads as one place): standard postbox with the lot ID, 0.40 m lot hedges, cobble driveways, one 2.6 m lot lamp by the front path, warm 2700 K lanterns, house numbers in the same gold lettering. | site build, unchanged per lot |
+| R11 | **Envelope and coverage.** Main block + wing stay inside the § 7.1 envelope; coverage ≤ 35 % (villa) / ≤ 45 % (executive). | 7.2c.3 |
+
+#### 7.2c.2 Lot assignments
+
+Prices: town houses cost 2 400–5 200 coins; executive homes 10 000–15 500 (single-storey 10 000–11 500, two-storey
+12 000–15 500); villas 20 000–32 000. Families and groups as in R2/R3. "+x" / "−x" = side of the garage in the house's own
+frame (+x is on the right seen from the street); "−x" needs a mirrored wing (7.2c.5 #2).
+
+| Lot | Model (key) | Style · group | St. | Roof | Palette idea (body / trim / roof / door) · family | Garage | Signature feature | Price |
+|-----|-------------|---------------|-----|------|-------------------------------------------------|--------|-------------------|-------|
+| A-01 | **Villa Serena** (`cove_villa_a01`) | Tuscan Mediterranean · Med | 2 | hip, terracotta, rise 2.6 | sand-ochre stucco `#e6c495` / cast stone `#efe3cc` / terracotta `#c2643f` / walnut `#5a3a22`, olive shutters, bronze frames · **Y** | two-bay wing +x, flat roof terrace, two plank doors; motor court flared from the driveway | three-arch loggia carrying a wrought-iron balcony with French doors | 26 000 |
+| A-02 | Colonial Villa (`cove_villa_a02`, built) | American Colonial · Classical | 2 | side gable + centred cross gable, charcoal | white clapboard `#f4f2ec` / white / `#3e4248` / teal `#365f63` · **W** | two-bay wing +x, street gable, one carriage door | columned front porch under the cross gable | 20 000 |
+| A-03 | Harbor Shingle House (`cove_villa_a03`) | New England Shingle · Vernacular | 2 | gambrel (side), weathered cedar `#7d7468` | natural cedar shakes `#b8875a` / white `#f7f5ef` / cedar grey / barn red `#8e2f2a`, white frames · **N** | two-bay wing −x, street gable, white carriage doors | wrap-around porch turning the east corner | 28 000 |
+| A-04 | Skyline Residence (`cove_villa_a04`) | Contemporary · Modern | 2 | flat, stepped volumes | graphite render `#4a4d52` + cedar slat panels `#a8774f` + white soffits / black frames / dark deck / oak `#c8a06a` · **D** | two-bay wing −x pushed to the envelope, flat roof terrace; flush aluminium doors; motor court from the edge driveway | garage roof terrace with timber pergola and glass balustrade | 32 000 |
+| B-01 | Tidewater House (`cove_home_b01`) | Lowcountry coastal · Vernacular | 2 | side gable, silver standing seam `#a6abb0` | butter yellow `#f0d98c` / white / silver / haint blue `#8fb8c9` · **Y** | single wing −x, recessed 1.5 m, white carriage door | full-width two-tier gallery (double porch) | 14 000 |
+| B-02 | Maison Lavande (`cove_home_b02`) | French Country · Classical | 2 | steep hip, slate `#5d6670` | greige limestone `#d8d3c8` / cream / slate / French blue `#3f5d73`, blue-grey shutters · **S** | none: the centred driveway becomes a gravel *cour d'honneur* with two lanterns and clipped hornbeam | symmetric five-bay facade with tall French windows | 15 500 |
+| B-03 | Nantucket Cape (`cove_home_b03`) | Cape Cod · Vernacular | 1 | steep side gable (rise 3.6), charcoal `#4b4f55` | grey-blue shingles `#9fb3c2` / white / charcoal / red `#a33a33`, flower boxes · **B** | single wing +x on a cottage, flush, white carriage door (door 0.5 m off the driveway axis, 0.6 m flare) | twin gable dormers | 10 000 |
+| B-04 | Oak Park Prairie (`cove_home_b04`) | Prairie · Modern | 2 | low hip (rise 1.6), 1.2 m flying eaves, bronze `#5e5148` | tan roman brick `#c9a27a` / dark walnut bands `#5a4632` / bronze / walnut, bronze frames · **N** | single wing +x, recessed 1.0 m, low hip, flush walnut door | ribbon window bands under the broad eaves | 13 500 |
+| B-05 | Ashbury Tudor (`cove_home_b05`) | Tudor Revival · Picturesque | 2 | steep side gable + steep off-centre cross gable, slate `#565a5f` | cream render `#efe6d2` + dark oak half-timber `#4a3426` / oak / slate / arched plank door `#6b4a2e` · **W** | single wing +x, flush, steep street gable, oak carriage door with arched lites | half-timbered cross gable with a front brick chimney | 13 000 |
+| B-06 | Nordhaven (`cove_home_b06`) | Scandinavian modern · Modern | 2 | steep front gable (rise 4.0), no eaves, black standing seam `#2e3034` | black-stained battens `#26282b` / black / black / light oak `#c8a06a`, no shutters · **D** | single wing −x, recessed 1.0 m, flat black box, vertical cedar-slat door | glass gable end (full-height gable window) | 12 500 |
+| B-07 | Rosemary Victorian (`cove_home_b07`) | Queen Anne · Picturesque | 2 | steep front gable, slate `#5b5f68` | lilac-blush `#d9b3c4`, fish-scale gable / cream spindles / slate / plum `#6a3550` · **P** | single wing +x, recessed 2.0 m, street gable, cream carriage door | polygonal bay window under the fish-scale gable + spindle porch | 14 500 |
+| B-08 | Casa Mision (`cove_home_b08`) | Spanish Mission · Med | 1 | flat with shaped parapet, red tile pent canopy | white lime stucco `#f3eee4` / dark wood vigas / red tile `#b5543a` / turquoise `#2f8f8a` · **W** | single cottage wing −x, flush, flat parapet, arched plank door | curvilinear *espadaña* parapet with a bell niche | 11 000 |
+| B-09 | Hartwell House (`cove_home_b09`) | Georgian · Classical | 2 | side gable, slate `#4a5058`, twin end chimneys | red brick `#9e4a36` / white `#f4f1e8` / slate / glossy black `#1e2024`, black shutters · **R** | single wing −x, recessed 1.0 m, hip, white carriage door with black hardware | pedimented two-column portico | 15 000 |
+| B-10 | Palm Canyon (`cove_home_b10`) | Mid-Century Modern · Modern | 1 | shed (mono-pitch, rise 1.2) with clerestory | teak vertical siding `#8a5a36` + white panels / white / pebble `#9a9690` / mustard `#e0a23a` · **N** | open carport −x beside the house (2.9 × 6.0 m, slim black posts) on an extended driveway | breeze-block screen wall + clerestory band | 11 500 |
+| B-11 | Arroyo Craftsman (`cove_home_b11`) | Craftsman · Picturesque | 2 | low side gable + front cross gable, 0.9 m eaves, brown `#5a4a3c` | sage-olive `#8f9e78` / cream / brown / stained fir `#8a5a32` · **G** | single wing +x, flush, low street gable, stained door with top lites | tapered columns on stone piers + knee brackets and rafter tails | 12 000 |
+| B-12 | Hollow Creek Farmhouse (`cove_home_b12`) | Modern Farmhouse · Modern | 2 | front gable, black standing seam `#2b2d31` | white board-and-batten `#f5f4f0` / black frames / black / natural oak `#b88a5a` · **W** | single wing +x, recessed 1.0 m, street gable, black carriage door | full-width porch under a black standing-seam porch roof | 14 500 |
+
+Rule check: R2 groups along the bands are west Vern-Mod-Pict-Mod, east Mod-Class-Med-Pict, south Class-Vern | Mod-Pict,
+north Med-Class | Vern-Mod; R3 families west B-N-W-D, east N-R-W-P, south S-Y | W-G, north Y-W | N-D; R4 roofs west
+gable_x-hip-gable_x-gable_z, east shed-gable_x-flat-gable_z, south hip-gable_x | gable_z-gable_x, north hip-gable_x |
+gambrel-flat.
+
+#### 7.2c.3 Fitting the lots
+
+The house is placed by its **lot point** (the generator origin) and `rotationY` (front looks +Z in the house frame).
+In the lot frame, *u* runs along the house's +x and *v* toward the street from the lot centre (executive half-depth 10 m,
+villa 14 m). World plan point = lot centre + (u cos θ + v sin θ, −u sin θ + v cos θ), θ = rotationY: **S-facing 0,
+E-facing π/2, W-facing −π/2, N-facing π**. With ZF = 4.0 everywhere, the facade is at v = v₀ + 4.0, so v₀ = half-depth −
+s − 4.0. *d* = driveway axis offset from the lot centre, along u. A single garage wing is w = 4.0 m (3.6 m clear, 2.6 m
+door); the garage centre sits on the driveway, which bounds the main width: W ≤ min(d, 6) + 6 (executive), W ≤ min(d, 7.3)
++ 7.3 (villa, 7.4 m wing). House depth = 5.61 − `back`.
+
+| Lot | rotY | Garage side | d | Facade setback s | W max | W × back | Wing w × d (recess) | (u₀, v₀) | Footprint | Coverage |
+|-----|------|-------------|---|------------------|-------|----------|----------------------|----------|-----------|----------|
+| A-01 | 0 | +x | 12 | 5.3 | 14.6 | 14.0 × −5.6 | 7.4 × 8.4 (0) | (−3.5, 4.7) | 219.1 | 27.9 % |
+| A-02 | 0 | +x | 6 | 6.3 | 13.3 | 13.0 × −5.0 | 7.4 × 8.0 (0) | (−4.0, 3.7) | 197.1 | 25.1 % |
+| A-03 | 0 | −x | 6 | 6.0 | 13.3 | 13.0 × −6.0 | 7.4 × 8.0 (0) | (4.2, 4.0) | 210.1 | 26.8 % |
+| A-04 | 0 | −x | 12 | 5.0 | 14.6 | 14.0 × −6.4 | 7.4 × 8.0 (0) | (3.4, 5.0) | 227.3 | 29.0 % |
+| B-01 | π | −x | 5 | 4.0 | 11 | 11.0 × −5.6 | 4.0 × 7.0 (1.5) | (2.5, 2.0) | 151.3 | 37.8 % |
+| B-02 | π | none | 0 | 5.0 | 14 | 14.0 × −5.6 | — | (0, 1.0) | 157.0 | 39.3 % |
+| B-03 | π/2 | +x | 6.5 | 5.0 | 12 | 12.0 × −5.0 (1 st.) | 4.0 × 7.0 (0), door at u 6.0 | (−2.0, 1.0) | 155.3 | 38.8 % |
+| B-04 | π/2 | +x | 5 | 4.0 | 11 | 11.0 × −5.0 | 4.0 × 7.0 (1.0) | (−2.5, 2.0) | 144.7 | 36.2 % |
+| B-05 | π/2 | +x | 5 | 5.0 | 11 | 11.0 × −5.4 | 4.0 × 7.0 (0) | (−2.5, 1.0) | 149.1 | 37.3 % |
+| B-06 | π/2 | −x | 6 | 4.0 | 12 | 10.0 × −5.4 | 4.0 × 7.0 (1.0) | (1.0, 2.0) | 138.1 | 34.5 % |
+| B-07 | −π/2 | +x | 6 | 4.0 | 12 | 12.0 × −5.6 | 4.0 × 6.5 (2.0) | (−2.0, 2.0) | 160.5 | 40.1 % |
+| B-08 | −π/2 | −x | 5 | 5.0 | 11 | 11.0 × −5.0 (1 st.) | 4.0 × 7.0 (0) | (2.5, 1.0) | 144.7 | 36.2 % |
+| B-09 | −π/2 | −x | 5 | 4.0 | 11 | 11.0 × −5.6 | 4.0 × 7.0 (1.0) | (2.5, 2.0) | 151.3 | 37.8 % |
+| B-10 | −π/2 | −x (carport) | 6.5 | 5.0 | 13.3 | 13.0 × −5.0 (1 st.) | carport 2.9 × 6.0 | (1.4, 1.0) | 155.3 | 38.8 % |
+| B-11 | π | +x | 4 | 5.0 | 10 | 10.0 × −5.4 | 4.0 × 7.0 (0) | (−3.0, 1.0) | 138.1 | 34.5 % |
+| B-12 | π | +x | 5 | 4.0 | 11 | 11.0 × −5.6 | 4.0 × 7.0 (1.0) | (−2.5, 2.0) | 151.3 | 37.8 % |
+
+Notes: the duplex plan works from W ≈ 9 m; the cottage plan needs **W ≥ 11.0** (its bedroom partition at −xi + 4.4 must
+clear the 1.2 m door), which is why the narrow B-11 lot (d = 4) is two-storey. On A-01 and A-04 the v1 driveway lies
+outside the side setback line (§ 7.1 envelope ends 1 m short of its axis), so the garage is pushed to the envelope edge and
+a paved motor court joins the two. B-10's driveway is extended 6.0 m into the lot under the carport. Every rear face stays
+≥ 3.5 m (executive) / 4.0 m (villa) from the rear line.
+
+#### 7.2c.4 Villa Serena on A-01 [built: cove_villa_a01, for sale 26 000]
+
+**Why A-01.** It is the Colonial's west neighbour and the first house seen from the park's north path. A Tuscan villa
+gives the strongest contrast allowed by R2–R4 (Mediterranean vs Classical, sand-ochre vs white, terracotta hip vs charcoal
+gables, arched loggia vs columned porch, flat roof-terrace garage vs gabled garage) and matches the estate's own identity
+(cream plaster walls, terracotta coping, § 1). It also brings the hip roof, which four more lots and the wing variants reuse.
+
+**Placement**
+
+```
+Lot A-01: x 112–140, z −299 … −327, faces S, envelope x 115–137, z −303.3 … −323
+Lot point:     plan (122.5, −308.3) = world (−308.5, −290.3), rotationY 0
+Facade:        plan z −304.3 (setback 5.3 m; A-02 is at 6.3 → R6 stagger 1.0 m)
+Main block:    plan x 115.5 → 129.5, z −304.3 → −315.51 (14.0 × 11.21)
+Garage wing:   plan x 129.5 → 136.9, z −304.3 → −312.7 (7.4 × 8.4), doors centred at x 131.65 and 134.75
+Loggia:        plan x 117.1 → 127.9, z −304.3 → −301.9, step to −301.5 (projection 2.8 m, 2.5 m left to the lot line)
+Door point:    world (−308.5, 1.25, −285.5)  (= origin + ZF + 0.8, the site build's formula)
+interiorOffset [0, 0.2, −1.405]
+Seeder bounds: minX −6.795, maxX 14.195, minZ −5.6, maxZ 5.2, maxY 5.6 · price 26 000 · colour '#E6C495'
+Coverage:      156.9 + 62.2 = 219.1 m² (27.9 %), GFA 2 × 156.9 + 62.2 = 376 m²
+```
+
+Derived generator values (T 0.2, GAP 0.005, FY 0.2): x_out 6.795, xi 6.595, OZ −1.405, ZB −7.21, DEPTH 11.21, ZC −1.605,
+H_SHELL 6.10, y_eave 6.15. Wing: x 7.0 → 14.4, shell height 3.30; interior xi 13.995, zb −2.59, side window at z 1.205 ± 0.7;
+living → garage doorway at z 2.8 ± 0.5 (unchanged rule). Garage room 7.34 × 7.59 m.
+
+**HOUSES entry** (new keys marked in 7.2c.4 "new options"; everything else exists):
+
+```python
+"cove_villa_a01": dict(name="Villa Serena", W=14.0, ZF=4.0, back=-5.6, floors=2, mirror=False, palette="tuscan",
+                       roof="hip", rise=2.6, cross=None, chimney=(-4.8, -2.0), windows="classic", flowers=False,
+                       porch="loggia",
+                       loggia=dict(w=10.8, d=2.4, pier=0.45, piers=(-5.175, -1.75, 1.75, 5.175), spring=2.25,
+                                   arch_rise=0.55, side_rise=0.45, top=3.0, cornice=0.2, balcony=True),
+                       french_front=True,
+                       wing=dict(w=7.4, d=8.4, roof="flat", doors=2, door_w=2.6, door_h=2.3, door_style="plank")),
+```
+
+**Palette** (`PALETTES["tuscan"]`; the last line holds new optional keys, each falling back to today's fixed material when
+absent, so the 11 existing houses do not change):
+
+```python
+"tuscan": dict(wall="#e6c495", wall_pat="noise", wall_acc="#d4ad7a", trim="#efe3cc", roof="#c2643f", roof_acc="#a5502f",
+               shutter="#5b7046", door="#5a3a22", in_wall="#f5ecdc", in_bed="#eadcc4", floor="#c47a52", floor_acc="#a9643f",
+               floor_pat="tiles", cabinet="#6c7a58", worktop="#ece4d6",
+               frame="#3b3129", ridge="#a5502f", garage="#6e4a2c", garage_panel="#5d3e25", deck="#c97b55",
+               deck_acc="#ad6443", chimney="stucco"),
+```
+
+**Feature map**
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Duplex plan (entry + stair, bath, living, kitchen / landing, 3 bedrooms), W 14, back −5.6 | exists | rooms scale with W and `back`; terracotta tile floors via `floor_pat="tiles"` |
+| Walk-in garage wing on +x, doorway from the living room | exists | w 7.4, d 8.4 are plain values |
+| Window cutting in both shells, glass, interior casings | exists | |
+| `windows="classic"` dressing with shutters | exists | olive shutters from the palette |
+| Chimney | exists | material and hood are new (below) |
+| Hip roof (`roof="hip"`) | **new** | N1 |
+| Palette keys `frame`, `ridge`, `garage`, `garage_panel`, `deck`, `chimney` | **new** | N2 |
+| Loggia porch (`porch="loggia"`) + shared `L.arch_panel` | **new** | N3 |
+| Balcony railing + shared `L.railing` | **new** | N4 |
+| French door at the upstairs front (`french_front`) | **new** | N5 |
+| Wing `roof="flat"` (terrace + parapet), `doors=2`, `door_style="plank"` | **new** | N6 |
+
+**New generator options (geometry, exterior frame: origin at the lot point, front face z = ZF = 4.0, y up)**
+
+*N1 — hip roof.* Shared builder `L.hip_roof(coll, name, gx, gz, y_drip, sx, sz, rise, thick, mat)` in `lib_common.py`:
+a closed prism over the drip rectangle sx × sz centred on (gx, gz). Ridge along the longer side, inset by min(sx, sz)/2 from
+every drip edge (45° hips, equal pitch on all four slopes); ridge length |sx − sz| (0 → pyramid). Top verts: 4 drip corners
+at `y_drip`, 2 ridge ends at `y_drip + rise`; underside: one flat soffit quad at `y_drip − thick`; 4 vertical edge strips.
+16 triangles. The generator's `hip_roof_main` computes, with eave e = `h.get("eave", EAVE)` (0.6) and pitch
+t = rise / (min(W, DEPTH) / 2):
+```
+drip rectangle  sx = W + 2e = 15.2, sz = DEPTH + 2e = 12.41, centre (0, ZC = −1.605)
+y_drip (top)    = y_eave + 0.18 − e·t = 6.15 + 0.18 − 0.6 × 0.4639 = 6.052     (0.18 = top of the gable slabs above their plane)
+ridge           x −1.395 → +1.395 at z ZC, y = y_eave + rise + 0.18 = 8.93 (24.9°)
+soffit          y 5.892 (thick 0.16); the roof top over the wall line is 6.33 > shell top 6.15, the walls end inside the prism
+fascia          4 boxes 0.06 thick, y 5.85 → 6.07, outer face 0.04 beyond the drip edge; front/back runs 15.36 long so their
+                ends stand 0.03 clear of the side runs' faces (MIN_GAP)
+ridge cap       EX_RidgeCap 3.09 × 0.24 × 0.12 on the ridge, E["ridge"]
+hip caps        EX_RidgeHip0..3 = L.beam from each ridge end to its two drip corners, section 0.20 × 0.10, E["ridge"]
+```
+`L.beam(coll, name, p0, p1, w, h, mat)` is a new shared builder (a box oriented from p0 to p1; not grounded, so its
+prefix is allow-listed like the roof slabs); it also serves half-timbering, rafter tails and handrails later.
+No gable vents for hips. Allow-list prefixes: `EX_Roof`, `EX_Ridge`, `EX_Fascia` (existing).
+
+*N2 — palette-driven materials.* In `build_exterior`: `E["frame"]` = `EX_<key>_Frame` from `C["frame"]` (else `E["trim"]`),
+used by `dress()` for JambA, JambB, Mullion and Transom only (head and sill stay trim = cast stone); `E["ridge"]` from
+`C["ridge"]` (else `E["metal"]`) for ridge and hip caps; `E["garage"]`/`E["garage_panel"]` named `EX_<key>_GarageDoor*`
+when the palette has them (else the shared white ones); `E["deck"]` = `EX_<key>_Deck` tiles from `deck`/`deck_acc` (else
+`EX_PorchDeck`); `chimney="stucco"` builds `EX_Chimney` in `E["siding"]`, its cap in `E["trim"]`, plus `EX_ChimneyHood` =
+`L.hip_roof` 1.2 × 1.2, rise 0.3, thick 0.06, `E["roof"]`, on the cap (top 9.30 → cap 9.42 → hood 9.72; the stack rises
+2.1 m above the west slope at x −4.8, z ZC − 2.0).
+
+*N3 — loggia* (`porch="loggia"`, values from `h["loggia"]`):
+```
+floor      EX_LoggiaFloor   x −5.4 → 5.4, z 4.0 → 6.4, y 0 → 0.16, E["deck"]           (same top as the porch deck)
+step       EX_LoggiaStep    x −1.2 → 1.2, z 6.4 → 6.8, y 0 → 0.08, E["step"]
+piers      EX_LoggiaPier0..3 0.45 × 0.45, centres x −5.175 −1.75 1.75 5.175, z 6.175, y 0.16 → 3.0, E["siding"]
+bases      EX_LoggiaPierBase 0.55 × 0.55, y 0.16 → 0.46, E["trim"];  imposts 0.53 × 0.53, y 2.17 → 2.25, E["trim"]
+pilasters  EX_LoggiaPilaster0/1 x ±5.175, z 4.0 → 4.12 (0.45 × 0.12), y 0.16 → 3.0, against the shell face
+front arch L.arch_panel(axis "x", fixed z 6.175, depth 0.45, spring 2.25, rise 0.55, top 3.0, seg 8) for the bays
+           x −4.95 → −1.975, −1.525 → 1.525, 1.975 → 4.95; crowns at 2.80 (R 2.287 / 2.389 / 2.287)
+side arch  same at x ±5.175 (axis "z"), z 4.12 → 5.95, rise 0.45 (crown 2.70)
+keystones  0.22 × 0.47 at each front crown, y 2.70 → 3.00, E["trim"] (0.01 proud of each arch face)
+cornice    EX_LoggiaCornice x −5.5 → 5.5, z 4.0 → 6.5, y 3.0 → 3.2, E["trim"] (soffit of the loggia, edge of the balcony)
+balcony    EX_BalconyDeck x −5.38 → 5.38, z 4.07 → 6.38, y 3.2 → 3.22, E["deck"] (the 3.08–3.24 floor band shows as a skirting)
+```
+Each arch bay frames an opening behind it: the centre bay the door, the side bays the living window (x 2.25–4.85) and the
+west window (x −3.80 to −2.20); the porch lamp at x 1.0 stays inside the centre bay. `L.arch_panel(coll, name, axis,
+fixed, a0, a1, y_spring, rise, y_top, depth, mat, seg=8)` is a new shared builder: segmental arch, radius
+R = (c²/4 + f²) / 2f, centre y = spring + f − R, intrados points at angles −φ₀…φ₀ (φ₀ = asin(c / 2R)); built as `seg`
+vertical strips (front and back quads from the arc up to `y_top`, an intrados soffit quad per strip, one top quad), ≈ 50
+triangles a bay; the ends against the piers are not built. Reused later by B-08 (Mission arcade, espadaña), garden gates and
+the clubhouse. Collision: the four front piers get `COL_` boxes in the **site** build (below); the floor (0.16) and step
+(0.08) are walk-over. With `porch="loggia"` the generator skips the bush pair at ±(porch_w/2 + 0.7) and keeps the pair at
+±(hw − 0.4); `pw` for that test is `loggia.w`.
+
+*N4 — balcony railing.* Shared builder `L.railing(coll, name, pts, y0, h, step, mat, post=0.08, bar=0.025)`: top rail
+0.05 × 0.05 at y0 + h − 0.05, bottom rail at y0 + 0.12, square bars every `step`, newel posts at each point. Here
+`pts = [(−5.35, 4.10), (−5.35, 6.40), (5.35, 6.40), (5.35, 4.10)]`, y0 3.22, h 0.95, step 0.30, `EX_MetalDark`
+(≈ 50 bars). Visual only (the balcony is not walkable in v3). The porch rails of `porch()` can later move to it.
+
+*N5 — French door* (`french_front=True`): in `duplex()` the Bed1 front window (level 1, centred on rmid = 1.33, 2.2 wide →
+x 0.23 → 2.43) is recorded with `kind="french"`, `y=(0.05, 2.30)` (world 3.25 → 5.50, above the balcony deck). Exterior:
+glass is cut as for a window (y0 > 0.01); `dress()` builds jambs, head, mullion and transom in `E["frame"]` and the shutters,
+no sill or flower box. Interior: casings like a doorway (no sill) **plus a blocking box** `COL_Window_<i>_French` filling the
+hole (x 0.23 → 2.43, the wall thickness, y 3.05 → 5.30), because an interior hole has no collision and the player must not
+step out. `kind="french"` is a general option of `Plan.window`.
+
+*N6 — wing variants.* `wing["roof"]`: `"gable_z"` (default, today) or `"flat"`; `wing["doors"]`: 1 (default) or 2;
+`wing["door_style"]`: `"carriage"` (default) or `"plank"`. For Villa Serena (cx = 10.7, doors centred at cx ± 1.55):
+```
+flat roof   EX_WingRoofDeck  x 7.0 → 14.22, z −4.22 → 3.82, y 3.35 → 3.43, E["deck"] (on EX_WingShellTop 3.30 → 3.35)
+parapet     EX_WingParapetF  x 7.0 → 14.22, z 3.82 → 4.08, y 3.30 → 3.85, E["siding"]
+            EX_WingParapetB  x 7.0 → 14.22, z −4.48 → −4.22
+            EX_WingParapetE  x 14.22 → 14.48, z −4.48 → 4.08
+            (faces 0.03 clear of the corner boards: main EX_Corner+1F front face 4.05, wing corner boards x 14.45 / z −4.45)
+caps        EX_WingParapetCapF x 7.0 → 14.18, z 3.78 → 4.12 · CapB x 7.0 → 14.18, z −4.52 → −4.18 · CapE x 14.18 → 14.52,
+            z −4.52 → 4.12 · y 3.85 → 3.91, E["trim"] (front/back caps stop at the east cap: no overlapping top faces)
+            the upstairs east windows (sill 4.10) stay above the caps
+doors       EX_GarageDoor0/1 2.6 × 0.06 × 2.3 at x 9.15 / 12.25, z 4.03, E["garage"] with vertical planks (UVs turned 90°,
+            new helper rot_uvs90); 2 iron straps per door 2.2 × 0.02 × 0.06 at y 0.55 and 1.85, z 4.07, E["metal"];
+            3 casings per door (head door_w + 0.36, jambs 0.18); 0.5 m of siding between the doors
+lanterns    x 7.30 and 14.10 (door edges ± 0.55)
+interior    two Garage_DoorInside boxes at the same x; nothing else changes
+```
+With `roof="flat"` the wing's gable, ridge cap, gable vent and fascia are skipped. Allow-list: `EX_Wing`, `EX_Garage`
+(existing).
+
+Triangle cost of the new parts ≈ 1.6 k (hip 0.1 k, loggia 0.5 k, railing 0.7 k, wing terrace and doors 0.25 k).
+
+**Lot dressing** (`build_cove_heights_site.py`, plan coordinates, same helpers as A-02):
+
+```python
+VILLA_A01 = {"key": "cove_villa_a01", "name": "Villa Serena", "lot": "A-01", "origin": (122.5, -308.3), "zf": 4.0,
+             "interiorOffset": [0.0, 0.2, -1.405], "price": 26000, "garage_doors": ((9.15, 2.6), (12.25, 2.6))}
+# front_z = -304.3
+S.rect(est, "CH_LotA01_MotorCourt", 130.2, -300.5, 136.5, -304.3, Y["lot"], Y["drive"], M["drive"])  # meets the v1 driveway at x 136.5
+S.rect(est, "CH_LotA01_FrontPath", 121.7, -299.0, 123.3, -301.5, Y["lot"], Y["drive"], M["drive"])   # to the loggia step
+S.street_lamp(est, "CH_LotA01_PostLamp", 124.1, -300.2, M, h=2.6)
+S.hedge_run(est, "CH_LotA01_HedgeW", (117.3, -301.4), (121.1, -301.4), HM, w=0.5)
+S.hedge_run(est, "CH_LotA01_HedgeE", (123.9, -301.4), (127.7, -301.4), HM, w=0.5)
+S.tree(est, "CH_LotA01_Cypress0", 116.2, -302.4, M, "cypress", 0.9)
+S.tree(est, "CH_LotA01_Cypress1", 128.7, -302.4, M, "cypress", 0.9)
+for k, px in enumerate((-5.175, -1.75, 1.75, 5.175)):            # loggia piers (the house collision does not cover them)
+    est.col(f"LotA01_LoggiaPier{k}", 122.5 + px, -302.125, 0.45, 0.45, 3.0)
+est.col("HousePlaceholder", 122.5 + 3.7, -308.3 - 1.605, 21.4, 11.21, 6.0)
+est.cols[-1]["name"] = "COL_House_cove_villa_a01"
+HOUSES = [VILLA_A02, VILLA_A01]
+```
+The postbox (135.9, −299.4) stays outside the motor court (z ≤ −300.5).
+
+**Wiring and rebuild.** `catalog.ts` `house('cove_villa_a01', 'Villa Serena')`; `HousingUnitSeeder`
+`['cove_villa_a01', 'buy', 26000, -308.5, 1.25, -285.5, '#E6C495']` and the bounds above; then the § 7.2b sequence with
+`HOUSE_KEYS = ["cove_villa_a01"]`, the site build, `apply-cove-heights.mjs`, `make seed`. Rebuild `cove_villa_a02` once
+after N2/N6 land to confirm the defaults left it byte-for-byte equivalent (same materials, same node names).
+
+#### 7.2c.5 Generator extension wishlist (impact on uniqueness ÷ effort)
+
+| # | Extension | Lots it unlocks | Impact | Effort |
+|---|-----------|-----------------|--------|--------|
+| 1 | Palette-driven exterior materials (N2) + per-house `eave` and `shutters` flags | all | high | XS |
+| 2 | Wing variants: mirrored wing (−x, every `L.box`/`L.b` in `wing_exterior` through `Mirror`, seeder minX from the wing), wing on the cottage plan (doorway in the east living wall), `wing.setback` (recessed front; doorway centre clamped to the wing's depth ± 0.8), `doors` 1/2, `door_style` carriage/plank/flush/glass, wing `roof` gable_z/flat/hip (N6) | 14 lots (all but B-02, B-10) | high | S–M |
+| 3 | Per-house `rotationY` in the site build (`houses[].rotationY`, door point = origin + R(θ)·(0, ZF + 0.8)); today it is hard-wired to 0 | all B lots | required | XS |
+| 4 | Hip roof `L.hip_roof` + `L.beam` caps (N1); pyramid case for chimney hoods and the gazebo | A-01, B-02, B-04, B-09 wing | high | S |
+| 5 | Wall textures in `make_texture`: `battens` (board-and-batten), `shakes` (shingles, fish-scale variant), half-timber overlay with `L.beam` | B-03, B-05, B-06, B-07, B-12, A-03 | high | S each |
+| 6 | Porch kinds: `loggia` + `L.arch_panel` (N3), `portico` (2 columns + pediment), `gallery` (two-tier porch), `wrap` (porch turning a corner), `craftsman` (tapered posts on stone piers) | A-01, B-09, B-01, A-03, B-07, B-11 | high | S–M each |
+| 7 | `kind="french"` windows with blocking collision (N5) + `L.railing` (N4), Juliet and full balconies | A-01, B-01, B-02, B-07, A-04 | medium-high | S |
+| 8 | Front window presets: `symmetric` (centred door, equal bays: B-02, B-09), `ribbon` (B-04), `picture` floor-to-ceiling (B-06 gable, B-10, A-04), `bay` (projecting polygonal bay box, B-07) | 6 lots | medium-high | M |
+| 9 | Roof forms: `shed`/`butterfly` (B-10), `gambrel_x` (A-03), cross gable on `gable_z` (B-07), steep crisp gable via `eave=0` (B-06) | 4 lots | medium | S–M each |
+| 10 | Dormers on a `gable_x` front slope (gable box + mini prism + dressed window, visual) | B-03 (+ option B-12) | medium | M |
+| 11 | Chimney list (twin end chimneys) and chimney materials | B-09, B-05, B-02 | low-medium | XS |
+| 12 | Detail kit with `L.beam`: exposed rafter tails and knee brackets, vigas, half-timbering | B-11, B-08, B-05 | medium | S |
+| 13 | Mission parapet (shaped espadaña panel with a bell niche, from `L.arch_panel`) | B-08 | medium | S |
+| 14 | Carport builder (slim posts + flat slab + fascia) and site-side driveway extension | B-10 | low-medium | S |
+| 15 | Interior plan variants: villa plan (4 bedrooms, ground-floor primary suite), open-plan modern, 3-bed bungalow | all (felt from inside) | high | L |
+| 16 | Walkable balconies / roof terraces (exterior levels), turrets | A-01, A-04, B-07 | low for the effort | L |
+
+Recommended order: 1 → 3 → 2 (mirror + setback first) → 4 → 6 (loggia) → 7, which is exactly what Villa Serena needs, then 5
+and 8, which give the executive homes most of their character.
+
 ### 7.3 Non-lot land around the bands
 
 | Area | Bounds | Use |

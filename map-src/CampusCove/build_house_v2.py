@@ -74,6 +74,13 @@ PALETTES = {
     "colonial": dict(wall="#f4f2ec", wall_pat="planks", wall_acc="#d9d5cb", trim="#fbfaf7", roof="#3e4248", roof_acc="#33363b",
                      shutter="#4d7a7c", door="#365f63", in_wall="#f5f2ea", in_bed="#dfe7e4", floor="#b98a5e", floor_acc="#9c7149",
                      cabinet="#f1efe9", worktop="#3d3f44"),
+    # Tuscan Mediterranean (Cove Heights A-01): sand-ochre stucco, cast-stone trim, terracotta, bronze frames.
+    # Optional keys (frame, ridge, garage, garage_panel, deck, deck_acc, chimney) fall back to the shared materials.
+    "tuscan": dict(wall="#e6c495", wall_pat="noise", wall_acc="#d4ad7a", trim="#efe3cc", roof="#c2643f", roof_acc="#a5502f",
+                   shutter="#5b7046", door="#5a3a22", in_wall="#f5ecdc", in_bed="#eadcc4", floor="#c47a52", floor_acc="#a9643f",
+                   floor_pat="tiles", cabinet="#6c7a58", worktop="#ece4d6",
+                   frame="#3b3129", ridge="#a5502f", garage="#6e4a2c", garage_panel="#5d3e25", deck="#c97b55",
+                   deck_acc="#ad6443", chimney="stucco"),
 }
 
 HOUSES = {
@@ -101,6 +108,15 @@ HOUSES = {
     "cove_villa_a02": dict(name="Colonial Villa", W=13.0, ZF=4.0, back=-5.0, floors=2, mirror=False, palette="colonial", roof="gable_x", rise=3.2,
                            cross=(0.0, 4.0, 2.0), porch="porch", porch_w=7.0, chimney=(-4.6, -1.6), windows="classic", flowers=False,
                            wing=dict(w=7.4, d=8.0, rise=2.2, door_w=4.9, door_h=2.3)),
+    # Cove Heights lot A-01 (docs/GATED_COMMUNITY.md 7.2c.4): Tuscan villa, hip roof, three-arch loggia carrying a balcony,
+    # French door upstairs, flat-roofed two-bay garage wing with plank doors
+    "cove_villa_a01": dict(name="Villa Serena", W=14.0, ZF=4.0, back=-5.6, floors=2, mirror=False, palette="tuscan",
+                           roof="hip", rise=2.6, cross=None, chimney=(-4.8, -2.0), windows="classic", flowers=False,
+                           porch="loggia",
+                           loggia=dict(w=10.8, d=2.4, pier=0.45, piers=(-5.175, -1.75, 1.75, 5.175), spring=2.25,
+                                       arch_rise=0.55, side_rise=0.45, top=3.0, cornice=0.2, balcony=True),
+                           french_front=True,
+                           wing=dict(w=7.4, d=8.4, roof="flat", doors=2, door_w=2.6, door_h=2.3, door_style="plank")),
 }
 
 
@@ -319,7 +335,10 @@ class Plan:
         self.room("Bed3", 1, cx1, xi, zb, b2 - PT / 2, paint="bed")
         self.lights.append(("Corridor", 1, (sx1 + corridor_x) / 2 + 0.3, (top + zf) / 2))
         rmid = (cx1 + xi) / 2
-        self.window("front", *centered(rmid, 2.2), level=1)
+        if self.h.get("french_front"):  # opens onto the loggia balcony (visual only: the hole is blocked)
+            self.window("front", *centered(rmid, 2.2), level=1, y=(0.05, 2.30), kind="french")
+        else:
+            self.window("front", *centered(rmid, 2.2), level=1)
         self.window("front", *centered((-xi + corridor_x) / 2, 1.0), level=1)
         self.window("back", *centered(rmid, 1.8), level=1)
         self.window("back", *centered((-xi + corridor_x) / 2, 1.2), level=1)
@@ -504,7 +523,13 @@ def build_interior(key, h, P):
                 trims.append(B.box(f"Window_{i}_{nm}", along, face, yy, sa, CAS_T, hh, M["trim"]))
             else:
                 trims.append(B.box(f"Window_{i}_{nm}", face, along, yy, CAS_T, sa, hh, M["trim"]))
-        if w["kind"] == "door":
+        if w["kind"] == "french":
+            # an interior hole has no collision: block it so nobody walks out onto the (visual) balcony
+            if side in ("front", "back"):
+                B.col(f"Window_{i}_French", (a + b) / 2, fixed + (T / 2 if side == "front" else -T / 2), y0, b - a, T, y1 - y0)
+            else:
+                B.col(f"Window_{i}_French", fixed + (T / 2 if side == "east" else -T / 2), (a + b) / 2, y0, T, b - a, y1 - y0)
+        if w["kind"] in ("door", "french"):
             continue
         if side in ("front", "back"):
             trims.append(B.box(f"Window_{i}_Sill", (a + b) / 2, sill, y0 - 0.03, b - a + 0.16, SILL_D, 0.03, M["trim"]))
@@ -645,6 +670,14 @@ def build_stair(B, M, P):
     return out
 
 
+def garage_door_xs(g, cx):
+    """Centres (x) of the wing's garage doors around cx: one centred door, or two separated by 0.5 m of wall."""
+    if g.get("doors", 1) == 2:
+        off = g["door_w"] / 2 + 0.25
+        return [cx - off, cx + off]
+    return [cx]
+
+
 def build_garage(B, M, P):
     """Walk-in garage room of the wing: concrete floor (also under the doorway through the main walls), solid walls with a
     side window, ceiling, a skin over the main shell's siding and the inside face of the (closed) garage door."""
@@ -671,7 +704,8 @@ def build_garage(B, M, P):
             B.box("Garage_DoorCasB", face, db + CAS_W / 2, 0.0, CAS_T, CAS_W, DOOR_H + CAS_W, M["trim"]),
             B.box("Garage_DoorCasH", face, (da + db) / 2, DOOR_H, CAS_T, db - da, CAS_W, M["trim"])]
     cx = (x_in + xi) / 2
-    out.append(B.box("Garage_DoorInside", cx, zf - 0.03, 0.0, g["door_w"], 0.04, g["door_h"], M["garage_door"], tile=0.5))
+    for k, dx in enumerate(garage_door_xs(g, cx)):
+        out.append(B.box(f"Garage_DoorInside{k if k else ''}", dx, zf - 0.03, 0.0, g["door_w"], 0.04, g["door_h"], M["garage_door"], tile=0.5))
     for k, (a, b, y0, y1) in enumerate(g["windows"]):
         face = xi - CAS_T / 2
         out += [B.box(f"Garage_Win{k}_CasA", face, a - CAS_W / 2, y0, CAS_T, CAS_W, y1 - y0, M["trim"]),
@@ -704,33 +738,52 @@ def wing_exterior(coll, B, E, h, P, ZF, OZ):
             L.box(coll, "EX_WingShellTop", (x0 + x1) / 2, zc, H, x1 - x0, zf_e - zb_e, 0.05, E["trim"], tile=2.0)]
     for nm, zz in (("F", zf_e - 0.04), ("B", zb_e + 0.04)):
         out.append(L.box(coll, f"EX_WingCorner{nm}", x1 - 0.04, zz, 0.0, 0.18, 0.18, H + 0.05, E["trim"]))
-    # roof: ridge along z over the wing centre; the west slope stops at the main wall, the east one overhangs
-    rise, y_eave = g["rise"], H + 0.05
-    half = (x1 - x0) / 2
     cx = (x0 + x1) / 2
-    angle = math.atan2(rise, half)
-    for nm, sgn, run in (("W", -1, half), ("E", 1, half + EAVE)):
-        h_mid = y_eave + rise * (1 - (run / 2) / half) + 0.1
-        out.append(slab(coll, f"EX_WingRoof{nm}", run / math.cos(angle) + 0.1, g["d"] + 0.9, 0.16, E["roof"], (0, sgn * angle, 0),
-                        L.b(cx + sgn * run / 2, zc, h_mid), tile=0.7))
-    gab = L.gable_roof(coll, "EX_WingGables", cx, zc, y_eave, x1 - x0 - 0.02, g["d"] - 0.02, rise, E["siding"], ridge_axis="z")
-    scale_uvs([gab], 1.0, 3.0)
-    out.append(gab)
-    out.append(L.box(coll, "EX_WingRidgeCap", cx, zc, y_eave + rise + 0.08, 0.22, g["d"] + 0.95, 0.12, E["metal"]))
-    out.append(L.box(coll, "EX_WingGableVent", cx, zf_e + 0.03, y_eave + rise * 0.35, 0.9, 0.04, 0.7, E["shutter"]))
-    out.append(L.box(coll, "EX_WingFascia", cx, zf_e + 0.45, y_eave - 0.12, x1 - x0 + 0.5, 0.08, 0.14, E["trim"]))
-    # closed carriage-style garage door, proud of the front shell
+    if g.get("roof", "gable_z") == "flat":
+        # roof terrace behind a parapet; faces kept 0.03 clear of the corner boards (MIN_GAP)
+        out += [L.box(coll, "EX_WingRoofDeck", (x0 + x1 - 0.18) / 2, zc, H + 0.05, x1 - 0.18 - x0, g["d"] - 0.36, 0.08, E["deck"], tile=1.0),
+                L.box(coll, "EX_WingParapetF", (x0 + x1 - 0.18) / 2, zf_e - 0.05, H, x1 - 0.18 - x0, 0.26, 0.55, E["siding"]),
+                L.box(coll, "EX_WingParapetB", (x0 + x1 - 0.18) / 2, zb_e + 0.05, H, x1 - 0.18 - x0, 0.26, 0.55, E["siding"]),
+                L.box(coll, "EX_WingParapetE", x1 - 0.05, zc, H, 0.26, g["d"] + 0.16, 0.55, E["siding"]),
+                L.box(coll, "EX_WingParapetCapF", (x0 + x1 - 0.22) / 2, zf_e - 0.05, H + 0.55, x1 - 0.22 - x0, 0.34, 0.06, E["trim"]),
+                L.box(coll, "EX_WingParapetCapB", (x0 + x1 - 0.22) / 2, zb_e + 0.05, H + 0.55, x1 - 0.22 - x0, 0.34, 0.06, E["trim"]),
+                L.box(coll, "EX_WingParapetCapE", x1 - 0.05, zc, H + 0.55, 0.34, g["d"] + 0.24, 0.06, E["trim"])]
+    else:
+        # roof: ridge along z over the wing centre; the west slope stops at the main wall, the east one overhangs
+        rise, y_eave = g["rise"], H + 0.05
+        half = (x1 - x0) / 2
+        angle = math.atan2(rise, half)
+        for nm, sgn, run in (("W", -1, half), ("E", 1, half + EAVE)):
+            h_mid = y_eave + rise * (1 - (run / 2) / half) + 0.1
+            out.append(slab(coll, f"EX_WingRoof{nm}", run / math.cos(angle) + 0.1, g["d"] + 0.9, 0.16, E["roof"], (0, sgn * angle, 0),
+                            L.b(cx + sgn * run / 2, zc, h_mid), tile=0.7))
+        gab = L.gable_roof(coll, "EX_WingGables", cx, zc, y_eave, x1 - x0 - 0.02, g["d"] - 0.02, rise, E["siding"], ridge_axis="z")
+        scale_uvs([gab], 1.0, 3.0)
+        out.append(gab)
+        out.append(L.box(coll, "EX_WingRidgeCap", cx, zc, y_eave + rise + 0.08, 0.22, g["d"] + 0.95, 0.12, E["ridge"]))
+        out.append(L.box(coll, "EX_WingGableVent", cx, zf_e + 0.03, y_eave + rise * 0.35, 0.9, 0.04, 0.7, E["shutter"]))
+        out.append(L.box(coll, "EX_WingFascia", cx, zf_e + 0.45, y_eave - 0.12, x1 - x0 + 0.5, 0.08, 0.14, E["trim"]))
+    # closed garage door(s), proud of the front shell: carriage style (panels + lites) or vertical planks with iron straps
     dw, dh = g["door_w"], g["door_h"]
     zd = zf_e + 0.03
-    out.append(L.box(coll, "EX_GarageDoor", cx, zd, 0.05, dw, 0.06, dh, E["garage"]))
-    for r in range(4):
-        for c in range(4):
-            px = cx - dw / 2 + dw * (c + 0.5) / 4
-            mat, y0 = (E["glass_dark"], 0.05 + 3 * dh / 4 + 0.1) if r == 3 else (E["garage_panel"], 0.05 + r * dh / 4 + 0.08)
-            out.append(L.box(coll, f"EX_GarageDoorPanel{r}{c}", px, zd + 0.035, y0, dw / 4 - 0.18, 0.02, dh / 4 - 0.18, mat))
-    for k, (along, yy, sa, hh) in enumerate(((cx, 0.05 + dh, dw + 0.36, 0.18), (cx - dw / 2 - 0.09, 0.05, 0.18, dh), (cx + dw / 2 + 0.09, 0.05, 0.18, dh))):
-        out.append(L.box(coll, f"EX_GarageDoorCasing{k}", along, zd + 0.02, yy, sa, 0.08, hh, E["trim"]))
-    for k, x in enumerate((cx - dw / 2 - 0.55, cx + dw / 2 + 0.55)):
+    xs = garage_door_xs(g, cx)
+    for di, dx in enumerate(xs):
+        sfx = str(di) if len(xs) > 1 else ""
+        slab_o = L.box(coll, f"EX_GarageDoor{sfx}", dx, zd, 0.05, dw, 0.06, dh, E["garage"], tile=0.5)
+        out.append(slab_o)
+        if g.get("door_style", "carriage") == "plank":
+            L.rot_uvs90([slab_o])
+            for k, yy in enumerate((0.55, 1.85)):
+                out.append(L.box(coll, f"EX_GarageDoorStrap{sfx}{k}", dx, zd + 0.04, yy, dw - 0.4, 0.02, 0.06, E["metal"]))
+        else:
+            for r in range(4):
+                for c in range(4):
+                    px = dx - dw / 2 + dw * (c + 0.5) / 4
+                    mat, y0 = (E["glass_dark"], 0.05 + 3 * dh / 4 + 0.1) if r == 3 else (E["garage_panel"], 0.05 + r * dh / 4 + 0.08)
+                    out.append(L.box(coll, f"EX_GarageDoorPanel{sfx}{r}{c}", px, zd + 0.035, y0, dw / 4 - 0.18, 0.02, dh / 4 - 0.18, mat))
+        for k, (along, yy, sa, hh) in enumerate(((dx, 0.05 + dh, dw + 0.36, 0.18), (dx - dw / 2 - 0.09, 0.05, 0.18, dh), (dx + dw / 2 + 0.09, 0.05, 0.18, dh))):
+            out.append(L.box(coll, f"EX_GarageDoorCasing{sfx}{k}", along, zd + 0.02, yy, sa, 0.08, hh, E["trim"]))
+    for k, x in enumerate((xs[0] - dw / 2 - 0.55, xs[-1] + dw / 2 + 0.55)):
         out.append(L.box(coll, f"EX_GarageLamp{k}", x, zf_e + 0.08, 1.95, 0.16, 0.12, 0.28, E["lamp"]))
         out.append(L.box(coll, f"EX_GarageLampCap{k}", x, zf_e + 0.08, 2.23, 0.2, 0.16, 0.04, E["metal"]))
     for i, (a, b, y0, y1) in enumerate(g["windows"]):
@@ -765,6 +818,13 @@ def build_exterior(key, h, P):
         "garage_panel": L.make_mat("EX_GarageDoorPanel", "#e6e3db", 0.7, "noise", 0.02),
         "glass_dark": L.make_mat("EX_GarageDoorLite", "#33434d", 0.15, "noise", 0.03),
     }
+    E["frame"] = L.make_mat(f"EX_{key}_Frame", C["frame"], 0.45, "noise", 0.01) if "frame" in C else E["trim"]
+    E["ridge"] = L.make_mat(f"EX_{key}_Ridge", C["ridge"], 0.8, "tiles", 0.05) if "ridge" in C else E["metal"]
+    if "garage" in C:
+        E["garage"] = L.make_mat(f"EX_{key}_GarageDoor", C["garage"], 0.75, "planks", 0.04, accent=C.get("garage_panel", C["garage"]))
+        E["garage_panel"] = L.make_mat(f"EX_{key}_GarageDoorPanel", C.get("garage_panel", C["garage"]), 0.75, "noise", 0.03)
+    if "deck" in C:
+        E["deck"] = L.make_mat(f"EX_{key}_Deck", C["deck"], 0.85, "tiles", 0.04, accent=C.get("deck_acc", C["deck"]))
     if "neon" in C:
         E["neon"] = L.make_mat(f"EX_{key}_Neon", C["neon"], 0.4, "noise", 0.0, emit=C["neon"], emit_strength=3.0)
         E["neon2"] = L.make_mat(f"EX_{key}_Neon2", C["neon2"], 0.4, "noise", 0.0, emit=C["neon2"], emit_strength=3.0)
@@ -822,6 +882,8 @@ def build_exterior(key, h, P):
         xo += gable_roof_x(coll, B, E, W, DEPTH, ZC, y_eave, h["rise"])
         if h["cross"]:
             xo += cross_gable(coll, B, E, h["cross"], ZF, y_eave)
+    elif h["roof"] == "hip":
+        xo += hip_roof_main(coll, E, h, W, DEPTH, ZC, y_eave, h["rise"])
     elif h["roof"] == "gable_z":
         xo += gable_roof_z(coll, B, E, W, DEPTH, ZC, y_eave, h["rise"], ZF, ZB)
     else:
@@ -829,8 +891,11 @@ def build_exterior(key, h, P):
     if h["chimney"]:
         cx, dz = h["chimney"]
         top = y_eave + (h.get("rise", 0) * 0.75 if h["roof"] != "flat" else 0.6) + 1.2
-        xo.append(B.box("EX_Chimney", cx, ZC + dz, y_eave - 0.3, 0.9, 0.9, top - y_eave + 0.3, E["brick"], bevel=0.02, tile=0.5))
-        xo.append(B.box("EX_ChimneyCap", cx, ZC + dz, top, 1.08, 1.08, 0.12, E["found"]))
+        stucco = C.get("chimney") == "stucco"
+        xo.append(B.box("EX_Chimney", cx, ZC + dz, y_eave - 0.3, 0.9, 0.9, top - y_eave + 0.3, E["siding"] if stucco else E["brick"], bevel=0.02, tile=0.5))
+        xo.append(B.box("EX_ChimneyCap", cx, ZC + dz, top, 1.08, 1.08, 0.12, E["trim"] if stucco else E["found"]))
+        if stucco:  # small hipped hood on the cap
+            xo.append(L.hip_roof(coll, "EX_ChimneyHood", B.x(cx), ZC + dz, top + 0.18, 1.2, 1.2, 0.24, 0.06, E["roof"]))
 
     for i, w in enumerate(P.windows):
         if w["kind"] == "door":
@@ -840,7 +905,8 @@ def build_exterior(key, h, P):
         small = (w["b"] - w["a"]) < 1.0
         args = (w["a"], w["b"], w["y0"] + y, w["y1"] + y)
         if w["side"] == "front":
-            xo += dress(B, E, h, nm, "x", ZF, *args, 1, shutters=True, flower=h["flowers"] and w["level"] == 0 and not small)
+            xo += dress(B, E, h, nm, "x", ZF, *args, 1, shutters=True, flower=h["flowers"] and w["level"] == 0 and not small,
+                        french=w["kind"] == "french")
         elif w["side"] == "back":
             xo += dress(B, E, h, nm, "x", ZB, *args, -1, shutters=not small)
         else:
@@ -861,6 +927,8 @@ def build_exterior(key, h, P):
     xo.append(L.box(coll, "EX_PorchLampCap", 1.0, ZF + 0.08, FY + 2.03, 0.2, 0.16, 0.04, E["metal"]))
     if h["porch"] == "porch":
         xo += porch(coll, E, ZF, h["porch_w"])
+    elif h["porch"] == "loggia":
+        xo += loggia(coll, E, ZF, h["loggia"])
     elif h["porch"] == "canopy":
         xo += canopy(coll, E, ZF)
     else:
@@ -868,13 +936,16 @@ def build_exterior(key, h, P):
     if P.wing:
         xo += wing_exterior(coll, B, E, h, P, ZF, OZ)
     pw = h.get("porch_w", 3.0) if h["porch"] == "porch" else 3.0 if h["porch"] == "canopy" else 7.4
-    for i, (bx_, bz_) in enumerate(((-pw / 2 - 0.7, ZF + 0.6), (pw / 2 + 0.7, ZF + 0.6), (-hw + 0.4, ZF + 0.5), (hw - 0.4, ZF + 0.5))):
+    bushes = ((-pw / 2 - 0.7, ZF + 0.6), (pw / 2 + 0.7, ZF + 0.6), (-hw + 0.4, ZF + 0.5), (hw - 0.4, ZF + 0.5))
+    if h["porch"] == "loggia":  # the loggia covers the inner pair
+        bushes = bushes[2:]
+    for i, (bx_, bz_) in enumerate(bushes):
         xo.append(L.cyl(coll, f"EX_BushBase{i}", bx_, bz_, 0.0, 0.42, 0.35, E["leaf"], seg=7))
         xo.append(L.cone(coll, f"EX_BushTop{i}", bx_, bz_, 0.35, 0.42, 0.12, 0.45, E["leaf"], seg=7))
 
     bad = L.check_grounded(xo, allow=("EX_Shell", "EX_Roof", "EX_Gables", "EX_CrossGable", "EX_Ridge", "EX_Fascia", "EX_Chimney", "EX_GableVent", "EX_Win", "Door",
                                       "EX_Door", "EX_PorchLamp", "EX_PorchPost", "EX_Rail", "EX_Baluster", "EX_PorchRoof", "EX_PorchBeam", "EX_Bush", "EX_Corner",
-                                      "EX_FloorBand", "EX_NeonBand", "EX_Parapet", "EX_Canopy", "EX_Pergola", "EX_RoofVent", "EX_Wing",
+                                      "EX_FloorBand", "EX_NeonBand", "EX_Parapet", "EX_Canopy", "EX_Pergola", "EX_RoofVent", "EX_Wing", "EX_Loggia", "EX_Balcony",
                                       "EX_Garage"))
     assert not bad, bad
     return sc, xo, [0.0, round(FY, 4), round(OZ, 4)], dict(W=W, DEPTH=DEPTH, ZC=ZC, H=H_SHELL)
@@ -956,7 +1027,7 @@ def flat_roof(coll, B, E, W, DEPTH, ZC, H, ZF, ZB):
     return out
 
 
-def dress(B, E, h, name, axis, face, a, b, y0, y1, outward, shutters=True, flower=False):
+def dress(B, E, h, name, axis, face, a, b, y0, y1, outward, shutters=True, flower=False, french=False):
     modern = h["windows"] == "modern"
     FR = 0.06 if modern else 0.1
     yy0, yy1 = y0 + FY, y1 + FY
@@ -969,22 +1040,84 @@ def dress(B, E, h, name, axis, face, a, b, y0, y1, outward, shutters=True, flowe
             return B.box(f"{name}_{nm}", along, d + outward * off, y, sa, depth, hh, mat)
         return B.box(f"{name}_{nm}", d + outward * off, along, y, depth, sa, hh, mat)
 
-    out = [bx("Head", mid, yy1, w + 2 * FR + (0.0 if modern else 0.06), 0.08 if modern else 0.12),
-           bx("Sill", mid, yy0 - 0.07, w + 2 * FR + (0.04 if modern else 0.14), 0.07, depth=0.16, off=0.05),
-           bx("JambA", a - FR / 2, yy0, FR, yy1 - yy0),
-           bx("JambB", b + FR / 2, yy0, FR, yy1 - yy0)]
+    frame = E.get("frame", E["trim"])  # jambs and glazing bars (bronze on the Tuscan villa); head and sill stay trim
+    out = [bx("Head", mid, yy1, w + 2 * FR + (0.0 if modern else 0.06), 0.08 if modern else 0.12)]
+    if not french:  # a French door has no sill
+        out.append(bx("Sill", mid, yy0 - 0.07, w + 2 * FR + (0.04 if modern else 0.14), 0.07, depth=0.16, off=0.05))
+    out += [bx("JambA", a - FR / 2, yy0, FR, yy1 - yy0, mat=frame),
+            bx("JambB", b + FR / 2, yy0, FR, yy1 - yy0, mat=frame)]
     if not modern:
-        out += [bx("Mullion", mid, yy0, 0.05, yy1 - yy0, depth=0.04, off=-0.07),
-                bx("Transom", mid, yy0 + (yy1 - yy0) * 0.62, w, 0.05, depth=0.04, off=-0.07)]
+        out += [bx("Mullion", mid, yy0, 0.05, yy1 - yy0, depth=0.04, off=-0.07, mat=frame),
+                bx("Transom", mid, yy0 + (yy1 - yy0) * 0.62, w, 0.05, depth=0.04, off=-0.07, mat=frame)]
         if shutters and h["palette"] != "scandi":
             sw = min(0.55, w * 0.38)
             out.append(bx("ShutterA", a - FR - sw / 2 - 0.02, yy0, sw, yy1 - yy0, depth=0.04, mat=E["shutter"]))
             out.append(bx("ShutterB", b + FR + sw / 2 + 0.02, yy0, sw, yy1 - yy0, depth=0.04, mat=E["shutter"]))
     elif "neon" in E:
         out.append(bx("Neon", mid, yy0 - 0.12, w + 0.1, 0.04, depth=0.04, mat=E["neon2"], off=0.06))
-    if flower:
+    if flower and not french:
         out.append(bx("FlowerBox", mid, yy0 - 0.38, w, 0.28, depth=0.24, mat=E["box"], off=0.12))
         out.append(bx("Flowers", mid, yy0 - 0.1, w - 0.1, 0.12, depth=0.18, mat=E["flower"], off=0.12))
+    return out
+
+
+def hip_roof_main(coll, E, h, W, DEPTH, ZC, y_eave, rise):
+    """Hipped main roof (docs/GATED_COMMUNITY.md 7.2c.4 N1): equal-pitch slopes, ridge on the long side, fascia boxes,
+    ridge and hip caps."""
+    e = h.get("eave", EAVE)
+    t = rise / (min(W, DEPTH) / 2)
+    sx, sz = W + 2 * e, DEPTH + 2 * e
+    y_drip = y_eave + 0.18 - e * t
+    y_ridge = y_eave + rise + 0.18
+    out = [L.hip_roof(coll, "EX_Roof", 0, ZC, y_drip, sx, sz, y_ridge - y_drip, 0.16, E["roof"])]
+    fy0, fh = y_drip - 0.2, 0.22
+    out += [L.box(coll, "EX_FasciaFront", 0, ZC + sz / 2 + 0.01, fy0, sx + 0.16, 0.06, fh, E["trim"]),
+            L.box(coll, "EX_FasciaBack", 0, ZC - sz / 2 - 0.01, fy0, sx + 0.16, 0.06, fh, E["trim"]),
+            L.box(coll, "EX_FasciaW", -sx / 2 - 0.01, ZC, fy0, 0.06, sz - 0.04, fh, E["trim"]),
+            L.box(coll, "EX_FasciaE", sx / 2 + 0.01, ZC, fy0, 0.06, sz - 0.04, fh, E["trim"])]
+    half = abs(sx - sz) / 2
+    along_x = sx >= sz
+    r0 = (-half, ZC) if along_x else (0.0, ZC - half)
+    r1 = (half, ZC) if along_x else (0.0, ZC + half)
+    if half > 0.01:
+        ln = 2 * half
+        out.append(L.box(coll, "EX_RidgeCap", 0, ZC, y_ridge - 0.02, ln + 0.1 if along_x else 0.24, 0.24 if along_x else ln + 0.1, 0.12, E["ridge"]))
+    corners = [(-sx / 2, ZC - sz / 2), (sx / 2, ZC - sz / 2), (sx / 2, ZC + sz / 2), (-sx / 2, ZC + sz / 2)]
+    for k, (cx_, cz_) in enumerate(corners):
+        rx, rz = (r0 if cx_ < 0 else r1) if along_x else (r0 if cz_ < ZC else r1)
+        out.append(L.beam(coll, f"EX_RidgeHip{k}", (rx, rz, y_ridge + 0.02), (cx_, cz_, y_drip + 0.02), 0.2, 0.1, E["ridge"]))
+    return out
+
+
+def loggia(coll, E, ZF, lg):
+    """Three-arch loggia across the front (N3) carrying a balcony with a wrought-iron railing (N4): tiled floor and step,
+    stucco piers with cast-stone bases and imposts, pilasters, segmental arches with keystones, cornice, balcony deck."""
+    w, d, p = lg["w"], lg["d"], lg["pier"]
+    zp = ZF + d - p / 2
+    top, spring = lg["top"], lg["spring"]
+    out = [L.box(coll, "EX_LoggiaFloor", 0, ZF + d / 2, 0.0, w, d, 0.16, E["deck"], tile=1.0),
+           L.box(coll, "EX_LoggiaStep", 0, ZF + d + 0.2, 0.0, 2.4, 0.4, 0.08, E["step"])]
+    piers = lg["piers"]
+    for k, x in enumerate(piers):
+        out += [L.box(coll, f"EX_LoggiaPier{k}", x, zp, 0.16, p, p, top - 0.16, E["siding"]),
+                L.box(coll, f"EX_LoggiaPierBase{k}", x, zp, 0.16, p + 0.1, p + 0.1, 0.3, E["trim"]),
+                L.box(coll, f"EX_LoggiaPierImpost{k}", x, zp, spring - 0.08, p + 0.08, p + 0.08, 0.08, E["trim"])]
+    for k, x in enumerate((piers[0], piers[-1])):
+        out.append(L.box(coll, f"EX_LoggiaPilaster{k}", x, ZF + 0.06, 0.16, p, 0.12, top - 0.16, E["siding"]))
+    crown = spring + lg["arch_rise"]
+    for k, (pa, pb) in enumerate(zip(piers, piers[1:])):
+        a0, a1 = pa + p / 2, pb - p / 2
+        out.append(L.arch_panel(coll, f"EX_LoggiaArch{k}", "x", zp, a0, a1, spring, lg["arch_rise"], top, p, E["siding"]))
+        out.append(L.box(coll, f"EX_LoggiaKeystone{k}", (a0 + a1) / 2, zp, crown - 0.1, 0.22, p + 0.02, top - crown + 0.1, E["trim"]))
+    for k, x in enumerate((piers[0], piers[-1])):
+        out.append(L.arch_panel(coll, f"EX_LoggiaSideArch{k}", "z", x, ZF + 0.12, zp - p / 2, spring, lg["side_rise"], top, p, E["siding"]))
+    c = lg["cornice"]
+    out.append(L.box(coll, "EX_LoggiaCornice", 0, ZF + (d + 0.1) / 2, top, w + 0.2, d + 0.1, c, E["trim"]))
+    if lg.get("balcony"):
+        out.append(L.box(coll, "EX_BalconyDeck", 0, ZF + 0.07 + (d - 0.09) / 2, top + c, w - 0.04, d - 0.09, 0.02, E["deck"], tile=1.0))
+        hw_ = w / 2 - 0.05
+        out += L.railing(coll, "EX_BalconyRail", [(-hw_, ZF + 0.10), (-hw_, ZF + d), (hw_, ZF + d), (hw_, ZF + 0.10)],
+                         top + c + 0.02, 0.95, 0.30, E["metal"])
     return out
 
 

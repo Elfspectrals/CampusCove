@@ -52,7 +52,7 @@ class AdminHousingApiTest extends TestCase
         $admin = $this->registerAndCreditWallet(0, 'coins', admin: true);
 
         $response = $this->getJson('/api/admin/housing/units', ['Authorization' => 'Bearer '.$admin['token']]);
-        $response->assertOk()->assertJsonCount(11, 'units');
+        $response->assertOk()->assertJsonCount(12, 'units');
         $unit = collect($response->json('units'))->firstWhere('public_id', $this->unit->public_id);
         $this->assertSame('occupied', $unit['status']);
         $this->assertSame(['account_id' => $owner['account_id'], 'username' => $owner['username']], $unit['owner']);
