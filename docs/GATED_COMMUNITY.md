@@ -397,8 +397,8 @@ Lot dressing:   garage apron, front path to the porch step, lamp post, boxwood h
 
 Rebuild: `build_house_v2.py` with `HOUSE_KEYS = ["cove_villa_a02"]` → `npm run assets:optimize -- houses cove_villa_a02` →
 `blender --background --factory-startup --python map-src/CampusCove/build_house_lightmaps.py -- cove_villa_a02` → optimize
-again → copy `preview.png` → `make seed`. Known cosmetic gap: the garage doorway reveal shows the outer siding (no jamb
-lining yet).
+again → copy `preview.png` → `make seed`. The garage doorway has a white lining and casings; two-storey
+shells are cut per storey so a ground-floor doorway never meets an upstairs window in the same run.
 
 ### 7.3 Non-lot land around the bands
 
