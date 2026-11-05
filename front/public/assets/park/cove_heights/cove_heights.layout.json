@@ -506,14 +506,28 @@
   ],
   "houses": [
     {
+      "kind": "house",
+      "key": "cove_villa_a02",
+      "name": "Colonial Villa",
       "lot": "A-02",
-      "style": "colonial_villa",
-      "door": [
-        -277.4,
+      "position": [
+        -281.0,
         0.0,
-        -286.9
+        -291.3
       ],
-      "doorYaw": 0.0
+      "rotationY": 0,
+      "door": [
+        -281.0,
+        1.25,
+        -286.5
+      ],
+      "offer": "buy",
+      "price": 20000,
+      "interiorOffset": [
+        0.0,
+        0.2,
+        -1.405
+      ]
     }
   ],
   "collision": [
@@ -938,103 +952,23 @@
       "yaw": 0.0
     },
     {
-      "name": "COL_Cove_CH_VillaA02_Porch_Col0",
-      "cx": -280.3,
-      "cz": -285.3,
-      "hx": 0.225,
-      "hz": 0.225,
-      "hy": 1.5,
-      "cy": 1.5,
-      "yaw": 0.0
-    },
-    {
-      "name": "COL_Cove_CH_VillaA02_Porch_Col1",
-      "cx": -278.6,
-      "cz": -285.3,
-      "hx": 0.225,
-      "hz": 0.225,
-      "hy": 1.5,
-      "cy": 1.5,
-      "yaw": 0.0
-    },
-    {
-      "name": "COL_Cove_CH_VillaA02_Porch_Col2",
-      "cx": -276.2,
-      "cz": -285.3,
-      "hx": 0.225,
-      "hz": 0.225,
-      "hy": 1.5,
-      "cy": 1.5,
-      "yaw": 0.0
-    },
-    {
-      "name": "COL_Cove_CH_VillaA02_Porch_Col3",
-      "cx": -274.55,
-      "cz": -285.3,
-      "hx": 0.225,
-      "hz": 0.225,
-      "hy": 1.5,
-      "cy": 1.5,
-      "yaw": 0.0
-    },
-    {
-      "name": "COL_Cove_CH_VillaA02_Chimney",
-      "cx": -287.9,
-      "cz": -292.3,
-      "hx": 0.45,
-      "hz": 0.8,
-      "hy": 5.0,
-      "cy": 5.0,
-      "yaw": 0.0
-    },
-    {
-      "name": "COL_Cove_CH_VillaA02_Topiary0",
-      "cx": -279.05,
-      "cz": -286.8,
-      "hx": 0.275,
-      "hz": 0.275,
-      "hy": 0.8,
-      "cy": 0.8,
-      "yaw": 0.0
-    },
-    {
-      "name": "COL_Cove_CH_VillaA02_Topiary1",
-      "cx": -275.75,
-      "cz": -286.8,
-      "hx": 0.275,
-      "hz": 0.275,
-      "hy": 0.8,
-      "cy": 0.8,
-      "yaw": 0.0
-    },
-    {
-      "name": "COL_Cove_CH_VillaA02_Main",
-      "cx": -280.85,
-      "cz": -292.3,
-      "hx": 6.5,
-      "hz": 5.0,
-      "hy": 4.7,
-      "cy": 4.7,
-      "yaw": 0.0
-    },
-    {
-      "name": "COL_Cove_CH_VillaA02_Garage",
-      "cx": -270.5,
-      "cz": -291.3,
-      "hx": 3.85,
-      "hz": 4.0,
-      "hy": 2.65,
-      "cy": 2.65,
-      "yaw": 0.0
-    },
-    {
       "name": "COL_Cove_CH_LotA02_PostLamp",
-      "cx": -278.9,
+      "cx": -282.6,
       "cz": -282.2,
       "hx": 0.175,
       "hz": 0.175,
       "hy": 1.0,
       "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_House_cove_villa_a02",
+      "cx": -277.3,
+      "cz": -292.6,
+      "hx": 10.2,
+      "hz": 5.3,
+      "hy": 3.0,
+      "cy": 3.0,
       "yaw": 0.0
     },
     {

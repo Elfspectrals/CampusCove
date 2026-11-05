@@ -1,5 +1,6 @@
 """Town houses v2: walk-in exterior with real see-through windows + an empty interior (only the kitchen run and the
-bathroom fixtures are built in; the player furnishes the rest from Cove Home). Two-storey houses get a walkable stair.
+bathroom fixtures are built in; the player furnishes the rest from Cove Home). Two-storey houses get a walkable stair;
+`wing` adds a walk-in single-storey garage on the east side (Cove Heights villas).
 
 Exterior and interior are generated from the same opening list, so every window is a real hole in both shells.
 Interior contract (docs/ASSETS_STYLE_GUIDE.md §4): floor y=0, front wall outer face z=5.2, door at x=0, rooms toward -Z.
@@ -69,6 +70,10 @@ PALETTES = {
     "forest": dict(wall="#8a5a3a", wall_pat="planks", wall_acc="#6f472d", trim="#efe6cf", roof="#4d7a56", roof_acc="#3f6647",
                    shutter="#2f5a3a", door="#2f5a3a", in_wall="#f1eadb", in_bed="#dfe6cf", floor="#b07f52", floor_acc="#946640",
                    cabinet="#4f6b4a", worktop="#d9c9a8"),
+    # American colonial (Cove Heights): white clapboard, teal shutters and door, charcoal shingles
+    "colonial": dict(wall="#f4f2ec", wall_pat="planks", wall_acc="#d9d5cb", trim="#fbfaf7", roof="#3e4248", roof_acc="#33363b",
+                     shutter="#4d7a7c", door="#365f63", in_wall="#f5f2ea", in_bed="#dfe7e4", floor="#b98a5e", floor_acc="#9c7149",
+                     cabinet="#f1efe9", worktop="#3d3f44"),
 }
 
 HOUSES = {
@@ -92,6 +97,10 @@ HOUSES = {
                      cross=None, porch="canopy", chimney=None, windows="modern", flowers=False),
     "house_10": dict(name="Forest Lodge", W=14.0, ZF=5.0, back=-6.4, floors=1, mirror=True, palette="forest", roof="gable_x", rise=3.3,
                      cross=(3.6, 4.4, 2.1), porch="porch", porch_w=8.0, chimney=(-4.6, -2.4), windows="classic", flowers=False),
+    # Cove Heights lot A-02 (docs/GATED_COMMUNITY.md 7.2b): two-storey colonial + walk-in double garage wing on the east side
+    "cove_villa_a02": dict(name="Colonial Villa", W=13.0, ZF=4.0, back=-5.0, floors=2, mirror=False, palette="colonial", roof="gable_x", rise=3.2,
+                           cross=(0.0, 4.0, 2.0), porch="porch", porch_w=7.0, chimney=(-4.6, -1.6), windows="classic", flowers=False,
+                           wing=dict(w=7.4, d=8.0, rise=2.2, door_w=4.9, door_h=2.3)),
 }
 
 
@@ -186,6 +195,20 @@ class Plan:
         self.stair = None
         self.kitchen = None
         self.bath = None
+        self.wing = None
+        if h.get("wing"):
+            # walk-in garage beside the east wall, one storey: the room runs from the main shell's outer face to the
+            # wing's own shell, front flush with the main front (same Z_FRONT_OUT contract), `d` deep outside
+            assert h["floors"] == 2 and not h["mirror"], "the garage wing is laid out for the east side of a duplex"
+            wg = h["wing"]
+            hw = self.W / 2
+            x_ext = hw + wg["w"]
+            xo = x_ext - T - GAP
+            zb_g = Z_FRONT_OUT - wg["d"] + 3 * T + 2 * GAP
+            zc = (zb_g + self.zi_f) / 2
+            self.wing = dict(wg, x_in=hw, xi=xo - T, xo=xo, x_ext=x_ext, zb=zb_g, zf=self.zi_f,
+                             windows=[(zc - 0.7, zc + 0.7, 1.0, 2.0)])
+            self.lights.append(("Garage", 0, (hw + xo - T) / 2, zc))
         if h["floors"] == 2:
             self.duplex()
         else:
@@ -197,8 +220,10 @@ class Plan:
         if light:
             self.lights.append((name, level, (x0 + x1) / 2, (z0 + z1) / 2))
 
-    def window(self, side, a, b, level=0, y=WIN):
-        self.windows.append(dict(side=side, a=a, b=b, level=level, y0=y[0], y1=y[1]))
+    def window(self, side, a, b, level=0, y=WIN, kind="window"):
+        """An opening in an outer wall, cut in both shells. kind 'door' = an inner doorway (to the garage wing): no sill,
+        no exterior dressing."""
+        self.windows.append(dict(side=side, a=a, b=b, level=level, y0=y[0], y1=y[1], kind=kind))
 
     def partition(self, name, axis, fixed, a0, a1, level=0, doors=()):
         self.partitions.append(dict(name=name, axis=axis, fixed=fixed, a0=a0, a1=a1, level=level, doors=list(doors)))
@@ -266,8 +291,11 @@ class Plan:
         self.lights += [("Living", 0, cx + 0.4, (kitchen_z + zf) / 2 + 1.2), ("Dining", 0, cx + 0.4, kitchen_z + 0.8),
                         ("Entry", 0, -1.2, zf - 1.6), ("KitchenSink", 0, (bath_x1 + 3.2 + xi) / 2, zb + 1.2)]
         self.living_front_window(sx1 + 0.3)
-        self.window("east", *centered((kitchen_z + zf) / 2 + 0.6, 2.0))
-        self.window("east", *centered(kitchen_z + 0.7, 1.8))
+        if self.wing:
+            self.window("east", *centered(zf - 2.2, 1.0), y=(0.0, DOOR_H), kind="door")  # living -> garage
+        else:
+            self.window("east", *centered((kitchen_z + zf) / 2 + 0.6, 2.0))
+            self.window("east", *centered(kitchen_z + 0.7, 1.8))
         self.window("west", *centered((zb + top) / 2, 0.8), y=(1.5, 2.1))
         k_x0 = bath_x1 + PT / 2 + 0.5
         sink_x = (k_x0 + xi) / 2
@@ -312,6 +340,9 @@ class Plan:
         xi, zf, zb = self.xi, self.zi_f, self.zi_b
         r = lambda x0, x1, z0, z1: dict(zip(("minX", "maxX"), [round(v, 4) for v in sx(x0, x1)]), minZ=round(z0, 4), maxZ=round(z1, 4))
         levels = [dict(id="L0", y=0.0, height=L0_H, rects=[r(-xi, xi, zb, Z_FRONT_OUT)])]
+        if self.wing:
+            g = self.wing
+            levels[0]["rects"].append(r(xi, g["xi"], g["zb"], g["zf"]))
         stairs = []
         if self.stair:
             s = self.stair
@@ -349,6 +380,9 @@ def build_interior(key, h, P):
         "mat": L.make_mat("IN_Doormat", "#3b3b43", 1.0, "stripes", 0.03, accent="#2b2b32"),
         "sky": L.make_mat("IN_SkyBackdrop", "#a9cdee", 1.0, "noise", 0.01),
         "stair": L.make_mat(f"IN_{key}_StairWood", C["floor"], 0.55, "planks", 0.03, accent=C["floor_acc"]),
+        "concrete": L.make_mat("IN_GarageConcrete", "#a9a8a3", 0.85, "noise", 0.05),
+        "garage_wall": L.make_mat("IN_GarageWall", "#e7e5df", 0.9, "noise", 0.03),
+        "garage_door": L.make_mat("IN_GarageDoorInside", "#f2f0ea", 0.7, "stripes", 0.03, accent="#dcd9d1"),
     }
     io = []
     xi, x_out, zf, zb = P.xi, P.x_out, P.zi_f, P.zi_b
@@ -470,6 +504,8 @@ def build_interior(key, h, P):
                 trims.append(B.box(f"Window_{i}_{nm}", along, face, yy, sa, CAS_T, hh, M["trim"]))
             else:
                 trims.append(B.box(f"Window_{i}_{nm}", face, along, yy, CAS_T, sa, hh, M["trim"]))
+        if w["kind"] == "door":
+            continue
         if side in ("front", "back"):
             trims.append(B.box(f"Window_{i}_Sill", (a + b) / 2, sill, y0 - 0.03, b - a + 0.16, SILL_D, 0.03, M["trim"]))
         else:
@@ -480,6 +516,8 @@ def build_interior(key, h, P):
     io += build_bath(B, M, P)
     if P.stair:
         io += build_stair(B, M, P)
+    if P.wing:
+        io += build_garage(B, M, P)
 
     for name, lv, lx, lz in P.lights:
         sfx = f"_L{lv}" if two else ""
@@ -489,10 +527,11 @@ def build_interior(key, h, P):
     io.append(L.box(coll, "Door_Entrance_Handle", 0.42, zf - 0.03, 0.98, 0.04, 0.12, 0.04, M["steel"]))
     io.append(L.box(coll, "Door_Entrance_Sign", 0, zf - 0.01, 2.3, 0.5, 0.02, 0.16, M["sign"]))
     io.append(L.box(coll, "Entry_Doormat", 0, zf - 0.45, 0.0, 1.0, 0.6, 0.012, M["mat"]))
-    for nm, gx, gz, sx, sz in [("Sky_Back", 0, -12, 34, 0.05), ("Sky_Front", 0, 13, 34, 0.05), ("Sky_West", -13, 0, 0.05, 34), ("Sky_East", 13, 0, 0.05, 34)]:
+    sky_e = max(13.0, P.wing["x_ext"] + 1.5) if P.wing else 13.0
+    for nm, gx, gz, sx, sz in [("Sky_Back", 0, -12, 34, 0.05), ("Sky_Front", 0, 13, 34, 0.05), ("Sky_West", -13, 0, 0.05, 34), ("Sky_East", sky_e, 0, 0.05, 34)]:
         io.append(L.box(coll, nm, gx, gz, -3.0, sx, sz, 9.0 + (L1_Y if two else 0.0), M["sky"]))
 
-    bad = L.check_grounded(io, allow=L.ALLOW_INTERIOR + ("Window_", "Trim_", "Kitchen_", "Bath_", "Glass_", "Ceiling", "Stair_"))
+    bad = L.check_grounded(io, allow=L.ALLOW_INTERIOR + ("Window_", "Trim_", "Kitchen_", "Bath_", "Glass_", "Ceiling", "Stair_", "Garage_"))
     assert not bad, bad
     return sc, io, cols, B
 
@@ -606,6 +645,87 @@ def build_stair(B, M, P):
     return out
 
 
+def build_garage(B, M, P):
+    """Walk-in garage room of the wing: concrete floor (also under the doorway through the main walls), solid walls with a
+    side window, ceiling, a skin over the main shell's siding and the inside face of the (closed) garage door."""
+    g = P.wing
+    x_in, xi, xo, zb, zf = g["x_in"], g["xi"], g["xo"], g["zb"], g["zf"]
+    door = next(w for w in P.windows if w["kind"] == "door")
+    out = [B.box("House_Floor_Garage", (P.xi + PT / 2 + xi) / 2, (zb + zf) / 2, -0.1, xi - P.xi - PT / 2, zf - zb, 0.1, M["concrete"], tile=2.0)]
+    out += B.wall("Walls_GarageFront", "x", zf + T / 2, T, x_in, xo, L0_H, M["garage_wall"])
+    out += B.wall("Walls_GarageBack", "x", zb - T / 2, T, x_in, xo, L0_H, M["garage_wall"])
+    out += B.wall("Walls_GarageE", "z", xi + T / 2, T, zb, zf, L0_H, M["garage_wall"], openings=g["windows"])
+    out += B.wall("Walls_GarageSkin", "z", x_in + SKIN / 2, SKIN, zb, zf, L0_H, M["garage_wall"],
+                  openings=[(door["a"], door["b"], 0.0, DOOR_H)], solid=False)
+    out.append(B.box("Ceiling_Garage", (x_in + xo) / 2, (zb + zf) / 2, L0_H, xo - x_in, zf - zb + 2 * T, 0.1, M["ceil"], tile=2.0))
+    cx = (x_in + xi) / 2
+    out.append(B.box("Garage_DoorInside", cx, zf - 0.03, 0.0, g["door_w"], 0.04, g["door_h"], M["garage_door"], tile=0.5))
+    for k, (a, b, y0, y1) in enumerate(g["windows"]):
+        face = xi - CAS_T / 2
+        out += [B.box(f"Garage_Win{k}_CasA", face, a - CAS_W / 2, y0, CAS_T, CAS_W, y1 - y0, M["trim"]),
+                B.box(f"Garage_Win{k}_CasB", face, b + CAS_W / 2, y0, CAS_T, CAS_W, y1 - y0, M["trim"]),
+                B.box(f"Garage_Win{k}_CasH", face, (a + b) / 2, y1, CAS_T, b - a + 2 * CAS_W, CAS_W, M["trim"]),
+                B.box(f"Garage_Win{k}_Sill", xi - SILL_D / 2 + 0.02, (a + b) / 2, y0 - 0.03, SILL_D, b - a + 0.16, 0.03, M["trim"])]
+    return out
+
+
+def wing_exterior(coll, B, E, h, P, ZF, OZ):
+    """Exterior shell of the garage wing (visual only, the interior walls collide): siding walls with the side window cut
+    through, plinth, corner boards, a street-facing gable roof (ridge along z, no overhang against the main house),
+    the closed carriage-style garage door, lanterns."""
+    g = P.wing
+    x0, x1 = g["x_in"], g["x_ext"]
+    zf_e, zb_e = ZF, ZF - g["d"]
+    H = FY + L0_H + 0.3
+    out = []
+    side_ops = [(a + OZ, b + OZ, y0 + FY, y1 + FY) for a, b, y0, y1 in g["windows"]]
+    shell = []
+    shell += B.wall("EX_WingShellFront", "x", zf_e - T / 2, T, x0, x1, H, E["siding"], solid=False)
+    shell += B.wall("EX_WingShellBack", "x", zb_e + T / 2, T, x0, x1, H, E["siding"], solid=False)
+    shell += B.wall("EX_WingShellE", "z", x1 - T / 2, T, zb_e + T, zf_e - T, H, E["siding"], openings=side_ops, solid=False, glass=E["glass"])
+    scale_uvs(shell, 1.0, 3.0)
+    out += shell
+    zc = (zf_e + zb_e) / 2
+    out += [L.box(coll, "EX_WingPlinthFront", (x0 + x1) / 2 + 0.04, zf_e + 0.04, 0.0, x1 - x0 + 0.08, 0.28, FY + 0.05, E["found"]),
+            L.box(coll, "EX_WingPlinthBack", (x0 + x1) / 2 + 0.04, zb_e - 0.04, 0.0, x1 - x0 + 0.08, 0.28, FY + 0.05, E["found"]),
+            L.box(coll, "EX_WingPlinthE", x1 + 0.04, zc, 0.0, 0.28, zf_e - zb_e, FY + 0.05, E["found"]),
+            L.box(coll, "EX_WingShellTop", (x0 + x1) / 2, zc, H, x1 - x0, zf_e - zb_e, 0.05, E["trim"], tile=2.0)]
+    for nm, zz in (("F", zf_e - 0.04), ("B", zb_e + 0.04)):
+        out.append(L.box(coll, f"EX_WingCorner{nm}", x1 - 0.04, zz, 0.0, 0.18, 0.18, H + 0.05, E["trim"]))
+    # roof: ridge along z over the wing centre; the west slope stops at the main wall, the east one overhangs
+    rise, y_eave = g["rise"], H + 0.05
+    half = (x1 - x0) / 2
+    cx = (x0 + x1) / 2
+    angle = math.atan2(rise, half)
+    for nm, sgn, run in (("W", -1, half), ("E", 1, half + EAVE)):
+        h_mid = y_eave + rise * (1 - (run / 2) / half) + 0.1
+        out.append(slab(coll, f"EX_WingRoof{nm}", run / math.cos(angle) + 0.1, g["d"] + 0.9, 0.16, E["roof"], (0, sgn * angle, 0),
+                        L.b(cx + sgn * run / 2, zc, h_mid), tile=0.7))
+    gab = L.gable_roof(coll, "EX_WingGables", cx, zc, y_eave, x1 - x0 - 0.02, g["d"] - 0.02, rise, E["siding"], ridge_axis="z")
+    scale_uvs([gab], 1.0, 3.0)
+    out.append(gab)
+    out.append(L.box(coll, "EX_WingRidgeCap", cx, zc, y_eave + rise + 0.08, 0.22, g["d"] + 0.95, 0.12, E["metal"]))
+    out.append(L.box(coll, "EX_WingGableVent", cx, zf_e + 0.03, y_eave + rise * 0.35, 0.9, 0.04, 0.7, E["shutter"]))
+    out.append(L.box(coll, "EX_WingFascia", cx, zf_e + 0.45, y_eave - 0.12, x1 - x0 + 0.5, 0.08, 0.14, E["trim"]))
+    # closed carriage-style garage door, proud of the front shell
+    dw, dh = g["door_w"], g["door_h"]
+    zd = zf_e + 0.03
+    out.append(L.box(coll, "EX_GarageDoor", cx, zd, 0.05, dw, 0.06, dh, E["garage"]))
+    for r in range(4):
+        for c in range(4):
+            px = cx - dw / 2 + dw * (c + 0.5) / 4
+            mat, y0 = (E["glass_dark"], 0.05 + 3 * dh / 4 + 0.1) if r == 3 else (E["garage_panel"], 0.05 + r * dh / 4 + 0.08)
+            out.append(L.box(coll, f"EX_GarageDoorPanel{r}{c}", px, zd + 0.035, y0, dw / 4 - 0.18, 0.02, dh / 4 - 0.18, mat))
+    for k, (along, yy, sa, hh) in enumerate(((cx, 0.05 + dh, dw + 0.36, 0.18), (cx - dw / 2 - 0.09, 0.05, 0.18, dh), (cx + dw / 2 + 0.09, 0.05, 0.18, dh))):
+        out.append(L.box(coll, f"EX_GarageDoorCasing{k}", along, zd + 0.02, yy, sa, 0.08, hh, E["trim"]))
+    for k, x in enumerate((cx - dw / 2 - 0.55, cx + dw / 2 + 0.55)):
+        out.append(L.box(coll, f"EX_GarageLamp{k}", x, zf_e + 0.08, 1.95, 0.16, 0.12, 0.28, E["lamp"]))
+        out.append(L.box(coll, f"EX_GarageLampCap{k}", x, zf_e + 0.08, 2.23, 0.2, 0.16, 0.04, E["metal"]))
+    for i, (a, b, y0, y1) in enumerate(g["windows"]):
+        out += dress(B, E, h, f"EX_WingWin{i}", "z", x1, a + OZ, b + OZ, y0, y1, 1, shutters=True)
+    return out
+
+
 def build_exterior(key, h, P):
     sc = L.new_build_scene("HOUSE_" + key + "_exterior")
     coll = bpy.data.collections.new("Exterior")
@@ -629,6 +749,9 @@ def build_exterior(key, h, P):
         "leaf": L.make_mat("EX_Bush", "#4f9d54", 0.9, "noise", 0.06),
         "step": L.make_mat("EX_Paving", "#b8b2a6", 0.9, "tiles", 0.03, accent="#a49e92"),
         "wood": L.make_mat("EX_PergolaWood", "#8a6442", 0.7, "planks", 0.03, accent="#6f4f33"),
+        "garage": L.make_mat("EX_GarageDoor", "#f6f4ee", 0.7, "noise", 0.02),
+        "garage_panel": L.make_mat("EX_GarageDoorPanel", "#e6e3db", 0.7, "noise", 0.02),
+        "glass_dark": L.make_mat("EX_GarageDoorLite", "#33434d", 0.15, "noise", 0.03),
     }
     if "neon" in C:
         E["neon"] = L.make_mat(f"EX_{key}_Neon", C["neon"], 0.4, "noise", 0.0, emit=C["neon"], emit_strength=3.0)
@@ -691,6 +814,8 @@ def build_exterior(key, h, P):
         xo.append(B.box("EX_ChimneyCap", cx, ZC + dz, top, 1.08, 1.08, 0.12, E["found"]))
 
     for i, w in enumerate(P.windows):
+        if w["kind"] == "door":
+            continue
         nm = f"EX_Win{i:02d}"
         y = P.levels[w["level"]]["y"]
         small = (w["b"] - w["a"]) < 1.0
@@ -721,6 +846,8 @@ def build_exterior(key, h, P):
         xo += canopy(coll, E, ZF)
     else:
         xo += pergola(coll, E, ZF)
+    if P.wing:
+        xo += wing_exterior(coll, B, E, h, P, ZF, OZ)
     pw = h.get("porch_w", 3.0) if h["porch"] == "porch" else 3.0 if h["porch"] == "canopy" else 7.4
     for i, (bx_, bz_) in enumerate(((-pw / 2 - 0.7, ZF + 0.6), (pw / 2 + 0.7, ZF + 0.6), (-hw + 0.4, ZF + 0.5), (hw - 0.4, ZF + 0.5))):
         xo.append(L.cyl(coll, f"EX_BushBase{i}", bx_, bz_, 0.0, 0.42, 0.35, E["leaf"], seg=7))
@@ -728,7 +855,8 @@ def build_exterior(key, h, P):
 
     bad = L.check_grounded(xo, allow=("EX_Shell", "EX_Roof", "EX_Gables", "EX_CrossGable", "EX_Ridge", "EX_Fascia", "EX_Chimney", "EX_GableVent", "EX_Win", "Door",
                                       "EX_Door", "EX_PorchLamp", "EX_PorchPost", "EX_Rail", "EX_Baluster", "EX_PorchRoof", "EX_PorchBeam", "EX_Bush", "EX_Corner",
-                                      "EX_FloorBand", "EX_NeonBand", "EX_Parapet", "EX_Canopy", "EX_Pergola", "EX_RoofVent"))
+                                      "EX_FloorBand", "EX_NeonBand", "EX_Parapet", "EX_Canopy", "EX_Pergola", "EX_RoofVent", "EX_Wing",
+                                      "EX_Garage"))
     assert not bad, bad
     return sc, xo, [0.0, round(FY, 4), round(OZ, 4)], dict(W=W, DEPTH=DEPTH, ZC=ZC, H=H_SHELL)
 
@@ -937,8 +1065,10 @@ def build(key):
     L.export_glb(os.path.join(out_dir, "interior.glb"), io)
     L.export_glb(os.path.join(out_dir, "interior.colsrc.glb"), io + cols.items)
     L.write_json(os.path.join(out_dir, "interior.layout.json"), P.layout(B))
+    max_x = P.wing["xo"] if P.wing else P.x_out
     print(key, "interior tris", tri_count(io), "exterior tris", tri_count(xo), "interiorOffset", offset,
-          "footprint", [dims["W"], round(dims["DEPTH"], 3)], "footprintCenterZ", round(dims["ZC"], 3))
+          "footprint", [dims["W"], round(dims["DEPTH"], 3)], "footprintCenterZ", round(dims["ZC"], 3),
+          "seeder interior_bounds", dict(minX=round(-P.x_out, 3), maxX=round(max_x, 3), minZ=h["back"], maxZ=Z_FRONT_OUT))
 
 
 for _key in globals().get("HOUSE_KEYS") or list(HOUSES):

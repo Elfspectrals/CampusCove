@@ -22,8 +22,6 @@ import lib_common as L
 importlib.reload(L)
 import lib_site as S
 importlib.reload(S)
-import lib_house as HK
-importlib.reload(HK)
 import bpy
 
 PI = math.pi
@@ -107,24 +105,10 @@ B = {  # building materials (EX_ = exterior architecture)
     "glass": L.make_mat("EX_cove_Glass", "#9cc3d6", 0.1, "noise", 0.02, alpha=0.45),
     "door": L.make_mat("EX_cove_Door", "#6b4a2f", 0.8, "planks", 0.05, accent="#563a24"),
 }
-HM = {  # residential (colonial villa) palette: white clapboard, teal shutters, charcoal roof
-    "siding": L.make_mat("EX_coveHouse_Siding", "#f4f2ec", 0.9, "planks", 0.03, accent="#d9d5cb"),  # horizontal lap lines
-    "brick": L.make_mat("EX_coveHouse_PaintedBrick", "#e8e5de", 0.95, "tiles", 0.04, accent="#d6d2c9"),
-    "trim": L.make_mat("EX_coveHouse_Trim", "#fbfaf7", 0.8, "noise", 0.02),
-    "shutter": L.make_mat("EX_coveHouse_Shutter", "#4d7a7c", 0.8, "stripes", 0.04, accent="#426b6d"),
-    "roof": L.make_mat("EX_coveHouse_RoofShingle", "#3e4248", 0.9, "tiles", 0.06, accent="#33363b"),
-    "glass": L.make_mat("EX_coveHouse_WindowGlass", "#33434d", 0.15, "noise", 0.03),
-    "door": L.make_mat("EX_coveHouse_FrontDoor", "#365f63", 0.6, "noise", 0.03),
-    "door_panel": L.make_mat("EX_coveHouse_FrontDoorPanel", "#2e5357", 0.6, "noise", 0.03),
-    "garage": L.make_mat("EX_coveHouse_GarageDoor", "#f6f4ee", 0.8, "noise", 0.02),
-    "garage_panel": L.make_mat("EX_coveHouse_GaragePanel", "#e6e3db", 0.8, "noise", 0.02),
-    "vent": L.make_mat("EX_coveHouse_GableVent", "#e9e7e0", 0.85, "stripes", 0.08, accent="#c9c6be"),
-    "porch_floor": L.make_mat("EX_coveHouse_PorchPaving", "#bfb6a6", 0.9, "tiles", 0.05, accent="#aaa192"),
-    "chimney": L.make_mat("EX_coveHouse_ChimneyBrick", "#e3e0d8", 0.95, "tiles", 0.05, accent="#cfcbc2"),
-    "planter": L.make_mat("EX_coveHouse_Planter", "#1f2124", 0.6, "noise", 0.03),
+HM = {  # lot landscaping around the houses (the houses themselves come from build_house_v2.py)
     "boxwood": L.make_mat("TW_CoveBoxwoodLeaf", "#3f6f37", 0.9, "noise", 0.07),
     "hydrangea": L.make_mat("TW_CoveHydrangeaFlower", "#f3f1e4", 0.9, "noise", 0.08, accent="#dfe6c8"),
-    "lamp": M["lamp"], "iron": M["iron"], "brass": M["brass"], "trunk": M["trunk"], "hedge_low": M["hedge_low"],
+    "hedge_low": M["hedge_low"],
 }
 
 LOOP_SEC = S.road_section(6.0, 0.15, 0.0, 1.5, Y)
@@ -364,16 +348,26 @@ for lid, typ, x0, x1, z0, z1, face, drv, entry, eyaw, pbox in LOTS:
 for k, (a, b) in enumerate(sorted(hedges)):
     S.hedge_run(est, f"CH_LotHedge{k:02d}", a, b, M)
 
-# ================================================================ houses (v3 started: first villa)
-# A-02 (x 140..168, z -299..-327, front S): facade 6.3 m behind the front line, house centred on the 22 m envelope;
-# the garage door (local x 4.05..8.95) lands on the lot's driveway (x 158.5..161.5).
-VILLA_A02 = (154.0, -305.3)
-door_local, villa_tris = HK.colonial_villa(est, "CH_VillaA02", VILLA_A02, HM)
-S.rect(est, "CH_LotA02_GarageApron", VILLA_A02[0] + 4.05, -304.0, VILLA_A02[0] + 8.95, VILLA_A02[1] + 0.02, 0.0, Y["drive"], M["drive"])
-S.rect(est, "CH_LotA02_FrontPath", VILLA_A02[0] - 1.2, -299.0, VILLA_A02[0] + 0.4, VILLA_A02[1] + 2.2, Y["lot"], Y["drive"], M["drive"])
-S.street_lamp(est, "CH_LotA02_PostLamp", VILLA_A02[0] - 1.9, -300.2, M, h=2.6)
-HOUSES = [{"lot": "A-02", "style": "colonial_villa", "door": [VILLA_A02[0] + door_local[0], VILLA_A02[1] + door_local[1]], "doorYaw": 0.0}]  # yaw: facing the door
-print("villa A-02:", villa_tris, "tris")
+# ================================================================ houses (walk-in, buyable: build_house_v2.py -> assets/houses/<key>/)
+# The house is an open-world `house` building of the cove_heights zone (apply-cove-heights.mjs), not part of this GLB.
+# Its origin = the lot point below; exterior front face at +ZF (4.0), door at x 0, garage wing on +x (local 6.5..13.9).
+# A-02 (x 140..168, z -299..-327, front S): main block x 143.5..156.5, garage door centre x 160.2 on the lot driveway.
+VILLA_A02 = {"key": "cove_villa_a02", "name": "Colonial Villa", "lot": "A-02", "origin": (150.0, -309.3), "zf": 4.0,
+             "interiorOffset": [0.0, 0.2, -1.405],  # printed by build_house_v2.py (FY, ZF - T - GAP - 5.2)
+             "price": 20000, "garage_door": (10.2, 4.9)}
+ox, oz = VILLA_A02["origin"]
+front_z = oz + VILLA_A02["zf"]           # -305.3
+gd_x, gd_w = VILLA_A02["garage_door"]
+S.rect(est, "CH_LotA02_GarageApron", ox + gd_x - gd_w / 2, -304.0, ox + gd_x + gd_w / 2, front_z, 0.0, Y["drive"], M["drive"])
+S.rect(est, "CH_LotA02_FrontPath", ox - 0.8, -299.0, ox + 0.8, front_z + 2.6, Y["lot"], Y["drive"], M["drive"])  # to the porch step
+S.street_lamp(est, "CH_LotA02_PostLamp", ox - 1.6, -300.2, M, h=2.6)
+S.hedge_run(est, "CH_LotA02_HedgeW", (ox - 6.3, front_z + 1.6), (ox - 4.4, front_z + 1.6), HM, w=0.6)
+S.hydrangeas(est, "CH_LotA02_HydrangeaW", ox - 6.2, ox - 4.5, front_z + 2.3, HM, n=3)
+S.hydrangeas(est, "CH_LotA02_HydrangeaE", ox + 4.1, ox + 6.0, front_z + 2.0, HM, n=2)
+# placeholder box the open-house loader swaps for the real interior collision (openHouses.ts composeTownCollisionData)
+est.col("HousePlaceholder", ox + 3.7, oz - 1.3, 20.4, 10.6, 6.0)
+est.cols[-1]["name"] = f"COL_House_{VILLA_A02['key']}"
+HOUSES = [VILLA_A02]
 
 # ================================================================ communal
 # clubhouse & leisure parcel
@@ -473,7 +467,9 @@ L.write_json(os.path.join(OUT, "cove_heights.layout.json"), {
     "clubhouseDoor": wp(180.0, -226.4),
     "junction": {"x": ROAD_X, "z": AVENUE_EDGE_Z, "road": "mall_avenue"},
     "lots": lots_out,
-    "houses": [dict(h, door=wp(*h["door"])) for h in HOUSES],
+    "houses": [{"kind": "house", "key": h["key"], "name": h["name"], "lot": h["lot"], "position": wp(*h["origin"]), "rotationY": 0,
+                "door": [wp(*h["origin"])[0], 1.25, round(h["origin"][1] + h["zf"] + 0.8 + DZ, 3)], "offer": "buy", "price": h["price"],
+                "interiorOffset": h["interiorOffset"]} for h in HOUSES],
     "collision": est.cols + road.cols + mall_leg.cols,
 })
 print("cove_heights:", len(est.objs), "objects,", est.tris(), "tris,", len(est.cols), "COL")

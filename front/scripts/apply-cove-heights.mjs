@@ -22,7 +22,10 @@ const round4 = (n) => Math.round(n * 10000) / 10000
 
 const col = JSON.parse(readFileSync(TOWN_COL, 'utf8'))
 const before = col.cuboids.length
-col.cuboids = col.cuboids.filter((c) => !c.name.startsWith('COL_Cove_') && !c.name.startsWith('COL_CoveRoad_'))
+// COL_House_<key>: the placeholder each walk-in house needs in a zone collision (openHouses.ts swaps it for the interior)
+const houseKeys = new Set((site.houses ?? []).map((h) => h.key))
+col.cuboids = col.cuboids.filter((c) => !c.name.startsWith('COL_Cove_') && !c.name.startsWith('COL_CoveRoad_')
+  && !(c.name.startsWith('COL_House_cove_') || houseKeys.has(c.name.slice('COL_House_'.length))))
 for (const c of site.collision) {
   col.cuboids.push({
     name: c.name,
@@ -50,8 +53,12 @@ writeFileSync(TOWN_COL, JSON.stringify(col))
 console.log(`town.collision.json: ${before} -> ${col.cuboids.length} cuboids`)
 
 const manifest = JSON.parse(readFileSync(WORLD_MANIFEST, 'utf8'))
+// walk-in, buyable houses of the estate (build_house_v2.py assets, HousingUnitSeeder rows with the same key and door)
+const buildings = (site.houses ?? []).map(({ kind, key, name, position, rotationY, door, offer, price, interiorOffset }) =>
+  ({ kind, key, name, position, rotationY, door, offer, price, interiorOffset }))
 for (const [key, bounds] of Object.entries(site.zones)) {
   const zone = { key, optional: true, bounds, modelUrl: `/assets/park/cove_heights/${key}.glb` }
+  if (key === 'cove_heights' && buildings.length) zone.buildings = buildings
   const at = manifest.zones.findIndex((z) => z.key === key)
   if (at >= 0) manifest.zones[at] = zone
   else manifest.zones.push(zone)
@@ -71,4 +78,4 @@ adminDestinations.push({ key: 'cove_heights_gate', name: 'Cove Heights gate', po
 manifest.adminDestinations = adminDestinations
 manifest.bounds = col.bounds
 writeFileSync(WORLD_MANIFEST, JSON.stringify(manifest, null, 2) + '\n')
-console.log(`world.manifest.json: zones ${Object.keys(site.zones).join(', ')}, ${site.lots.length} lots, gate enforced=${site.gate.enforced}`)
+console.log(`world.manifest.json: zones ${Object.keys(site.zones).join(', ')}, ${site.lots.length} lots, houses ${buildings.map((b) => b.key).join(', ') || 'none'}, gate enforced=${site.gate.enforced}`)
