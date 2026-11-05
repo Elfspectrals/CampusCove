@@ -658,6 +658,18 @@ def build_garage(B, M, P):
     out += B.wall("Walls_GarageSkin", "z", x_in + SKIN / 2, SKIN, zb, zf, L0_H, M["garage_wall"],
                   openings=[(door["a"], door["b"], 0.0, DOOR_H)], solid=False)
     out.append(B.box("Ceiling_Garage", (x_in + xo) / 2, (zb + zf) / 2, L0_H, xo - x_in, zf - zb + 2 * T, 0.1, M["ceil"], tile=2.0))
+    # lining of the doorway reveal (main interior wall + gap + exterior shell, ~0.4 m): white jambs and head instead of the
+    # outer siding, plus a casing on the garage face like the living-room side
+    da, db = door["a"], door["b"]
+    lx0, lx1 = P.xi - 0.005, x_in + SKIN + 0.005
+    lw, lc = lx1 - lx0, (lx0 + lx1) / 2
+    out += [B.box("Garage_DoorJambA", lc, da + 0.015, 0.0, lw, 0.03, DOOR_H, M["trim"]),
+            B.box("Garage_DoorJambB", lc, db - 0.015, 0.0, lw, 0.03, DOOR_H, M["trim"]),
+            B.box("Garage_DoorHead", lc, (da + db) / 2, DOOR_H - 0.03, lw, db - da, 0.03, M["trim"])]
+    face = x_in + SKIN + CAS_T / 2
+    out += [B.box("Garage_DoorCasA", face, da - CAS_W / 2, 0.0, CAS_T, CAS_W, DOOR_H + CAS_W, M["trim"]),
+            B.box("Garage_DoorCasB", face, db + CAS_W / 2, 0.0, CAS_T, CAS_W, DOOR_H + CAS_W, M["trim"]),
+            B.box("Garage_DoorCasH", face, (da + db) / 2, DOOR_H, CAS_T, db - da, CAS_W, M["trim"])]
     cx = (x_in + xi) / 2
     out.append(B.box("Garage_DoorInside", cx, zf - 0.03, 0.0, g["door_w"], 0.04, g["door_h"], M["garage_door"], tile=0.5))
     for k, (a, b, y0, y1) in enumerate(g["windows"]):
@@ -771,17 +783,24 @@ def build_exterior(key, h, P):
         return [(a, b, (y0 + y + FY) if (y0 > 0.01 or level) else 0.0, y1 + y + FY) for a, b, y0, y1 in ops]
 
     def side(ops, level):
+        # a doorway (y0 = 0) keeps its sill at the ground, like the entrance in lift(): no glass is put in it
         y = P.levels[level]["y"]
-        return [(a + OZ, b + OZ, y0 + y + FY, y1 + y + FY) for a, b, y0, y1 in ops]
+        return [(a + OZ, b + OZ, (y0 + y + FY) if (y0 > 0.01 or level) else 0.0, y1 + y + FY) for a, b, y0, y1 in ops]
 
     shell = []
+    split = FY + L1_Y if two else H_SHELL  # one shell piece per storey: L.wall cuts holes along the run only
     for nm, axis, fixed, a0, a1, side_name in (("Front", "x", ZF - T / 2, -hw, hw, "front"), ("Back", "x", ZB + T / 2, -hw, hw, "back"),
                                                ("W", "z", -hw + T / 2, ZB + T, ZF - T, "west"), ("E", "z", hw - T / 2, ZB + T, ZF - T, "east")):
         ops = []
         for li in range(len(P.levels)):
             raw = P.outer_openings(side_name, li)
             ops += lift(raw, li) if axis == "x" else side(raw, li)
-        shell += B.wall(f"EX_Shell{nm}", axis, fixed, T, a0, a1, H_SHELL, E["siding"], openings=ops, solid=False, glass=E["glass"])
+        low = [o for o in ops if o[3] <= split + 1e-6]
+        shell += B.wall(f"EX_Shell{nm}", axis, fixed, T, a0, a1, split, E["siding"], openings=low, solid=False, glass=E["glass"])
+        if two:
+            high = [(a, b, y0 - split, y1 - split) for a, b, y0, y1 in ops if y0 >= split - 1e-6]
+            shell += B.wall(f"EX_Shell{nm}_Up", axis, fixed, T, a0, a1, H_SHELL - split, E["siding"], openings=high, solid=False,
+                            glass=E["glass"], y0=split)
     if C["wall_pat"] == "planks":
         scale_uvs(shell, 1.0, 3.0)
     elif C["wall_pat"] == "tiles":
