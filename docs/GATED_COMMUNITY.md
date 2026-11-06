@@ -691,11 +691,41 @@ after N2/N6 land to confirm the defaults left it byte-for-byte equivalent (same 
 | 12 | Detail kit with `L.beam`: exposed rafter tails and knee brackets, vigas, half-timbering | B-11, B-08, B-05 | medium | S |
 | 13 | Mission parapet (shaped espadaña panel with a bell niche, from `L.arch_panel`) | B-08 | medium | S |
 | 14 | Carport builder (slim posts + flat slab + fascia) and site-side driveway extension | B-10 | low-medium | S |
-| 15 | Interior plan variants: villa plan (4 bedrooms, ground-floor primary suite), open-plan modern, 3-bed bungalow | all (felt from inside) | high | L |
+| 15 | Interior plan variants: villa plan [first variant built: estate plan, 7.2d], open-plan modern, 3-bed bungalow | all (felt from inside) | high | L |
 | 16 | Walkable balconies / roof terraces (exterior levels), turrets | A-01, A-04, B-07 | low for the effort | L |
 
 Recommended order: 1 → 3 → 2 (mirror + setback first) → 4 → 6 (loggia) → 7, which is exactly what Villa Serena needs, then 5
 and 8, which give the executive homes most of their character.
+
+### 7.2d Villa interiors: the estate plan and style kits [built for A-01 and A-02]
+
+Item 15 of the wishlist, first variant. The town houses keep their duplex; a villa entry with
+`interior=dict(plan="estate", style=..., stair="west"|"east", ...)` in `build_house_v2.py` gets a luxury plan instead
+(research: [`research/luxury-suburban-houses/REPORT.md`](research/luxury-suburban-houses/REPORT.md) — volume and the
+number of named rooms read as luxury more than finishes). Shell, interior contract, seeder bounds and `interiorOffset`
+are unchanged; the windows follow the rooms, so the facades are regenerated with them.
+
+| Level | Rooms (plan written with the stair west, mirrored when `stair="east"`) |
+|---|---|
+| L0 | Centre hall 3.2 m wide, **double height**, the stair rising away from the door (its top boxed in where it enters the great room); a *side room* behind the stair wall, reached from the great room; an *open room* through a 2.8 m opening; **great room** across the back: family end with fireplace (west), kitchen with island, hood and pendants (east, door to the garage); powder room in the west back corner |
+| L1 | Corridor and **gallery** over the hall (guard + slab-edge band), bedrooms 2 and 3 on the stair side (built-in wardrobes), bath 2 at the back, **primary suite** on the other side: bedroom, walk-in closet, bath with freestanding tub, double vanity, shower and WC |
+
+`layout.json` L1 rects leave out the stair well and the void; collisions: gallery guard, stair side and an under-stair block.
+Fittings are parameterised builders in `map-src/CampusCove/lib_interior.py` (fireplace, island, range hood, wardrobe,
+bookshelves, closet rail, shower, WC, vanity, tub, coffers, beams, tray ceiling, chandelier, balustrade), reused by
+the next villas. Reception rooms and bedrooms stay empty for the player's Cove Home furniture.
+
+| Style kit | Colonial Villa (A-02, `colonial`) | Villa Serena (A-01, `tuscan`) |
+|---|---|---|
+| Plan | stair west; library study (west) + formal dining (east) | stair east; living room (west) + dining off the kitchen (east) |
+| Hall | black-and-white marble checkerboard, wainscoting, brass candle chandelier | stone tiles, plaster arches, wrought-iron chandelier |
+| Walls / ceilings | crown moulding, wainscoting in hall and dining, hunter-green study, navy dining, coffered family ceiling, tray ceiling in the suite | warm plaster, arched openings, dark timber beams in living, great room and suite, terracotta floors |
+| Stair / gallery | mahogany handrail on white spindles, capped newel | iron balusters, dark handrail, iron gallery railing |
+| Fireplace | painted mantel, black firebox, overmantel painting | stone jambs, timber lintel, plaster hood to the ceiling |
+| Kitchen | white shaker cabinets, marble island, stainless hood | olive cabinets, open timber shelves, butcher-block island, plaster hood |
+
+Triangles: interiors ~11.7 k (A-02) and ~10.8 k (A-01), against ~5.2 k for a town house: within the 12 k work-interior
+ceiling, accepted for the premium homes.
 
 ### 7.3 Non-lot land around the bands
 

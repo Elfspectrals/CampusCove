@@ -27,22 +27,28 @@
       "height": 2.6,
       "rects": [
         {
-          "minX": -5.395,
+          "minX": 1.6,
           "maxX": 6.595,
           "minZ": -5.4,
           "maxZ": 5.0
         },
         {
           "minX": -6.595,
-          "maxX": -5.395,
+          "maxX": -1.6,
           "minZ": -5.4,
-          "maxZ": -0.6
+          "maxZ": 5.0
         },
         {
-          "minX": -6.595,
-          "maxX": -5.395,
-          "minZ": 4.0,
-          "maxZ": 5.0
+          "minX": -1.6,
+          "maxX": 1.6,
+          "minZ": -5.4,
+          "maxZ": -0.4
+        },
+        {
+          "minX": -1.6,
+          "maxX": 0.34,
+          "minZ": -0.4,
+          "maxZ": 0.6
         }
       ]
     }
@@ -50,10 +56,10 @@
   "stairs": [
     {
       "name": "Stair_Main",
-      "minX": -6.595,
-      "maxX": -5.395,
-      "minZ": -0.6,
-      "maxZ": 4.0,
+      "minX": 0.34,
+      "maxX": 1.54,
+      "minZ": -0.4,
+      "maxZ": 4.2,
       "y0": 0.0,
       "y1": 3.0,
       "rise": "-z"
