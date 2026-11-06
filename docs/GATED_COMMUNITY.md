@@ -406,7 +406,8 @@ The 16 lots get 16 different houses, each a model of its own, like an upscale Am
 Architectural Review Committee (ARC) never lets two neighbours look alike. Every house is a `build_house_v2.py` entry
 (interior contract unchanged: floor y 0, front outer face z 5.2, door at x 0, rooms toward −Z), so variety comes from the
 generator options and palettes, not from hand-modelled one-offs (CLAUDE.md modular rule). Keys: villas `cove_villa_a0N`,
-executive homes `cove_home_b0N`.
+executive homes `cove_home_b0N`. Sources: the style catalog, floor plans and desirability research in
+[`research/luxury-suburban-houses/REPORT.md`](research/luxury-suburban-houses/REPORT.md) (notes in `notes/`).
 
 #### 7.2c.1 Design guidelines (anti-monotony rules)
 
