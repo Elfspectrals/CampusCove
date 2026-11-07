@@ -2,7 +2,7 @@
 import type { Client } from 'colyseus'
 import type { Json } from './backend.ts'
 import { MAX_STAMINA } from './stamina.ts'
-import type { AppearanceSlot, Player, Vec3, WearSlot } from './types.ts'
+import type { AppearanceSlot, CharacterBuild, CharacterLook, CharacterSex, Player, Vec3, WearSlot } from './types.ts'
 
 const COLORS = [
   0xe94560, 0x0f3460, 0x533483, 0x00d9ff, 0x00ff88,
@@ -59,6 +59,20 @@ export function normalizeSlotModels(raw: unknown): Record<WearSlot, string | nul
   return out
 }
 
+// Same lists as Laravel's CharacterAppearanceService (docs/CHARACTER.md)
+const CHARACTER_SEXES: readonly CharacterSex[] = ['m', 'f']
+const CHARACTER_BUILDS: readonly CharacterBuild[] = ['slim', 'normal', 'broad']
+const CHARACTER_FACE_COUNT = 6
+
+/** The whole look or nothing: one bad field drops it (the client then shows the default body). */
+export function normalizeCharacter(raw: unknown): CharacterLook | null {
+  if (!hasOwn(raw, 'sex') || !hasOwn(raw, 'face') || !hasOwn(raw, 'build')) return null
+  const { sex, face, build } = raw
+  if (!CHARACTER_SEXES.includes(sex as CharacterSex) || !CHARACTER_BUILDS.includes(build as CharacterBuild)) return null
+  if (!Number.isInteger(face) || (face as number) < 1 || (face as number) > CHARACTER_FACE_COUNT) return null
+  return { sex: sex as CharacterSex, face: face as number, build: build as CharacterBuild }
+}
+
 export function normalizeNumber(raw: unknown, fallback: number): number {
   return typeof raw === 'number' && Number.isFinite(raw) ? raw : fallback
 }
@@ -112,7 +126,8 @@ export function createPlayer(client: Client, options: Json, colorIndex: number, 
     appearance: normalizeAppearanceIds(options?.appearance),
     slotHexes: normalizeSlotHexes(options?.slotHexes),
     bodyModelGlb: normalizeBodyModelGlb(options?.bodyModelGlb),
-    slotModels: normalizeSlotModels(options?.slotModels)
+    slotModels: normalizeSlotModels(options?.slotModels),
+    character: normalizeCharacter(options?.character)
   }
 }
 
@@ -130,6 +145,7 @@ export function publicPlayer(player: Player) {
     appearance: { ...player.appearance },
     slotHexes: { ...player.slotHexes },
     bodyModelGlb: player.bodyModelGlb,
-    slotModels: { ...player.slotModels }
+    slotModels: { ...player.slotModels },
+    character: player.character && { ...player.character }
   }
 }
