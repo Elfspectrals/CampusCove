@@ -11,6 +11,8 @@ export interface RemoteUserPayload {
   slotHexes?: Record<string, string>
   bodyModelGlb?: string | null
   slotModels?: Record<string, string | null>
+  /** Body built in the character creator (docs/CHARACTER.md); null or absent = default body. */
+  character?: unknown
   /** Pub seat the player sits on (socket/src/pub.ts), null or absent when standing. */
   seatId?: string | null
 }

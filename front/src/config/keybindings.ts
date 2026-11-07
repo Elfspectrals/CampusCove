@@ -19,6 +19,7 @@ const BINDABLE_ACTIONS = [
   'cook',
   'houseKeys',
   'map',
+  'characterEditor',
   'buyHouse',
   'rotate',
   'putAway',
@@ -58,6 +59,8 @@ const DEFAULT_BINDINGS: Readonly<Record<BindableAction, readonly string[]>> = {
   houseKeys: ['KeyK'],
   /** Opens / closes the full map (the corner map is always on). */
   map: ['KeyM'],
+  /** Opens the character editor (body, face, haircut, colours); free until the barber exists. */
+  characterEditor: ['KeyP'],
   /** At the door of a house for sale. */
   buyHouse: ['F2'],
   /** Rotate the placement ghost clockwise; with Shift, counter-clockwise. */

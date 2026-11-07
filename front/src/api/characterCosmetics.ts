@@ -1,6 +1,7 @@
 /**
  * Character cosmetic loadout (Laravel `GET/PUT /api/character/cosmetics`, `auth:sanctum`).
  */
+import { parseCharacterLook, type CharacterLook } from '../avatar/characterLook'
 import { WEAR_SLOTS, type WearModels } from '../avatar/modularCharacterLogic'
 import { apiRequest, isRecord } from './http'
 
@@ -25,6 +26,8 @@ export type CosmeticColors = Record<CosmeticSlot, string>
 export interface CharacterCosmeticsState {
   slots: CosmeticLoadout
   colors: CosmeticColors
+  /** Body the outfit is built on; null until the player has made a character (docs/CHARACTER.md). */
+  character: CharacterLook | null
 }
 
 export const DEFAULT_SLOT_COLORS: CosmeticColors = {
@@ -99,6 +102,7 @@ function parseCharacterCosmeticsPayload(data: unknown): CharacterCosmeticsState 
   return {
     slots: slots as CosmeticLoadout,
     colors: parseColors(data.colors),
+    character: parseCharacterLook(data.character),
   }
 }
 

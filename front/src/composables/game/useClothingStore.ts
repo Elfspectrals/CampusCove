@@ -247,11 +247,11 @@ export function useClothingStore(deps: ClothingStoreDeps) {
     const scene = deps.getScene()
     if (!state || !scene || selfLoading) return
     const models = wearModelsFromLoadout(state.slots)
-    const signature = wearSignature(models, state.colors)
+    const signature = wearSignature(models, state.colors, state.character)
     if (signature === selfOutfit) return
     selfLoading = true
     try {
-      const next = await createModularCharacter(models, state.colors, DEFAULT_SLOT_COLORS)
+      const next = await createModularCharacter(models, state.colors, DEFAULT_SLOT_COLORS, state.character)
       next.traverse((obj) => obj.layers.set(MIRROR_LAYER))
       next.rotation.order = 'YXZ'
       if (self) {

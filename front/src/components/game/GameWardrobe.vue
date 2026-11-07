@@ -79,10 +79,10 @@ scene.add(sun)
 
 async function showOutfit(s: CharacterCosmeticsState): Promise<void> {
   const models = wearModelsFromLoadout(s.slots)
-  const signature = wearSignature(models, s.colors)
+  const signature = wearSignature(models, s.colors, s.character)
   if (signature === shownOutfit) return
   shownOutfit = signature
-  const next = await createModularCharacter(models, s.colors, DEFAULT_SLOT_COLORS)
+  const next = await createModularCharacter(models, s.colors, DEFAULT_SLOT_COLORS, s.character)
   if (signature !== shownOutfit) {
     disposeObject3D(next)
     return

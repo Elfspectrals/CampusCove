@@ -34,6 +34,7 @@ import GameMeterShot from '../components/game/GameMeterShot.vue'
 import GameMinimap from '../components/game/GameMinimap.vue'
 import GameDarts from '../components/game/GameDarts.vue'
 import GameBasketCheckout from '../components/game/GameBasketCheckout.vue'
+import GameCharacterCreator from '../components/game/GameCharacterCreator.vue'
 import GameWardrobe from '../components/game/GameWardrobe.vue'
 import GameSurvivalEffects from '../components/game/GameSurvivalEffects.vue'
 import GameTradeWindow from '../components/game/GameTradeWindow.vue'
@@ -70,6 +71,8 @@ import { useShopPurchase } from '../composables/useShopPurchase'
 import { toggleCollisionDebug } from '../game/collision/collisionDebug'
 import { toggleTerrainDebug } from '../game/town/terrainDebug'
 import { actionKeyLabels, matches, mouseButtonCode } from '../config/keybindings'
+import { fetchCharacterAppearance } from '../api/characterAppearance'
+import { NEWCOMER_OUTFIT, type CreatorChoice } from '../avatar/characterLook'
 import { getWorldCollisionStats } from '../game/collision/worldCollision'
 import { HOUSING_LOBBY_SPAWN } from '../game/gameRoomConstants'
 import { LOCK_RETRY_MS, isLockReleaseEscape } from '../game/pauseMenu'
@@ -627,8 +630,8 @@ const survival = useSurvival({
   refreshInventory: () => refreshOwnedItems(),
   onBelongingsLost: (clothes) => {
     refreshOwnedItems()
-    if (!clothes) return
-    for (const store of clothingStores) void store.refreshOwned()
+    if (clothes) for (const store of clothingStores) void store.refreshOwned()
+    // waking up at the clinic always puts the newcomer outfit back on: show it to everyone
     void fetchCharacterCosmetics().then(onWardrobeChanged).catch(() => {
       /* the look catches up on the next window focus */
     })
@@ -705,6 +708,54 @@ watch(clinicMenuOpen, (open) => {
 
 /** Key settings opened from the pause screen. */
 const settingsOpen = ref(false)
+
+// ---------------------------------------------------------------- character creator / editor (docs/CHARACTER.md)
+
+/** Open creator: 'create' before the first spawn (the boot waits for it), 'edit' from the character key. */
+const creator = shallowRef<{ mode: 'create' | 'edit'; initial: CreatorChoice | null } | null>(null)
+const creatorKey = computed(() => actionKeyLabels('characterEditor')[0] ?? 'P')
+const creatorOutfit = computed(() =>
+  creator.value?.mode === 'edit' && myCosmetics.value
+    ? wearModelsFromLoadout(myCosmetics.value.slots)
+    : { hair: null, head_accessory: null, ...NEWCOMER_OUTFIT },
+)
+let onCharacterCreated: ((state: CharacterCosmeticsState) => void) | null = null
+
+function waitForCharacter(): Promise<CharacterCosmeticsState> {
+  creator.value = { mode: 'create', initial: null }
+  return new Promise((resolve) => {
+    onCharacterCreated = resolve
+  })
+}
+
+async function openCharacterEditor(): Promise<void> {
+  if (creator.value) return
+  if (document.pointerLockElement) document.exitPointerLock()
+  try {
+    creator.value = { mode: 'edit', initial: (await fetchCharacterAppearance()).choice }
+  } catch {
+    survival.say('Could not open your character. Try again.')
+  }
+}
+
+function onCharacterSaved(state: CharacterCosmeticsState): void {
+  const created = onCharacterCreated
+  onCharacterCreated = null
+  creator.value = null
+  if (created) {
+    created(state)
+    return
+  }
+  onWardrobeChanged(state)
+  for (const store of clothingStores) void store.refreshOwned()
+  requestPointerLock()
+}
+
+function closeCharacterEditor(): void {
+  if (creator.value?.mode !== 'edit') return
+  creator.value = null
+  requestPointerLock()
+}
 
 /** Placement controls with the player's own keys. */
 const placementHelp = computed(() => {
@@ -878,12 +929,15 @@ const pauseMenuOpen = computed(
     !tradeUiOpen.value &&
     !pubUiOpen.value &&
     !orchardMenuOpen.value &&
-    !settingsOpen.value,
+    !settingsOpen.value &&
+    !creator.value,
 )
 /** Back in the game with the menu closed, but the browser hasn't given the pointer back yet. */
 const resumedWithoutLock = computed(() => pauseMenuOpen.value && pauseDismissed.value)
 
 function handleExtraKeyDown(e: KeyboardEvent): boolean {
+  // the character screen owns the keyboard (Esc closes the editor)
+  if (creator.value) return true
   // the watch and the trade window take the keyboard (coins field, Esc): no game key behind them
   if (tradeUiOpen.value) return true
   // the bouncer's text field and the pub games (Space holds the pint) take the keyboard too
@@ -903,6 +957,10 @@ function handleExtraKeyDown(e: KeyboardEvent): boolean {
   if (houseKeys.onKeyDown(e)) return true
   if (survival.onKeyDown(e)) return true
   if (runUseOrPunch(e.code, e.repeat)) return true
+  if (matches('characterEditor', e.code) && !e.repeat) {
+    void openCharacterEditor()
+    return true
+  }
   if (matches('buyHouse', e.code) && !e.repeat) {
     e.preventDefault()
     return housing.buy()
@@ -1081,11 +1139,12 @@ watch(editableHouseKey, (houseKey) => {
 
 // ---------------------------------------------------------------- lifecycle
 
-async function loadCosmeticsState(): Promise<CharacterCosmeticsState> {
+/** null when the API could not be reached: the game still starts, with the default look and no creator. */
+async function loadCosmeticsState(): Promise<CharacterCosmeticsState | null> {
   try {
     return await fetchCharacterCosmetics()
   } catch {
-    return { slots: emptyCosmeticLoadout(), colors: defaultCosmeticColors() }
+    return null
   }
 }
 
@@ -1096,14 +1155,17 @@ async function bootGame() {
     void router.push({ name: 'landing' })
     return
   }
-  const cosmetics = await loadCosmeticsState()
-  myCosmetics.value = cosmetics
+  const loaded = await loadCosmeticsState()
+  // first time in the game: build the character before spawning
+  const cosmetics = loaded && loaded.character === null && !unmounted ? await waitForCharacter() : loaded
+  const state = cosmetics ?? { slots: emptyCosmeticLoadout(), colors: defaultCosmeticColors(), character: null }
+  myCosmetics.value = state
   if (unmounted || !canvasRef.value) return
   game = createGameScene(canvasRef.value, movement.containerSize())
   arms = createFirstPersonArms(game.fpHands)
-  arms.setTop(wearModelsFromLoadout(cosmetics.slots).top)
+  arms.setTop(wearModelsFromLoadout(state.slots).top)
   loadTown()
-  await realtime.connectRealtime(cosmetics)
+  await realtime.connectRealtime(state)
   try {
     housing.applyUnits((await fetchHousingUnits()).units)
   } catch {
@@ -1353,6 +1415,16 @@ const crosshairClass = computed(() => {
       Click to look around
     </p>
     <GameSettingsDialog v-if="settingsOpen" @close="settingsOpen = false" />
+    <GameCharacterCreator
+      v-if="creator"
+      :mode="creator.mode"
+      :initial="creator.initial"
+      :outfit="creatorOutfit"
+      :colors="myCosmetics?.colors ?? defaultCosmeticColors()"
+      :key-label="creatorKey"
+      @saved="onCharacterSaved"
+      @close="closeCharacterEditor"
+    />
     <div v-show="pointerLocked" class="absolute right-3 top-3 z-10">
       <button
         type="button"

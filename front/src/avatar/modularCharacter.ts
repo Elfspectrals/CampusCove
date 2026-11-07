@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { WEAR_BASE_MODEL_URL } from '../game/assets/catalog'
 import { createGltfLoader } from '../game/gltfLoaderFactory'
+import { bodyUrlFor, DEFAULT_LOOK, pieceUrlFor, type CharacterLook } from './characterLook'
 import { attachAvatarAnimations, cloneCharacterWithUniqueMaterials, normalizeCharacterScale, setCharacterClips } from './glbCharacter'
 import { hiddenRegions, tintHexFor, WEAR_SLOTS, type SlotHexes, type WearModels } from './modularCharacterLogic'
 
@@ -63,9 +64,14 @@ function tint(mesh: THREE.Mesh, colors: SlotHexes, defaults: SlotHexes): void {
   mesh.userData.sharedMaterials = false
 }
 
-export async function createModularCharacter(models: WearModels, colors: SlotHexes, defaults: SlotHexes): Promise<THREE.Group> {
-  const pieceUrls = WEAR_SLOTS.map((slot) => models[slot]).filter((url): url is string => url !== null)
-  const [base, ...pieces] = await Promise.all([loadTemplate(WEAR_BASE_MODEL_URL, true), ...pieceUrls.map((url) => loadTemplate(url, false))])
+/**
+ * Builds a player on the body of `look` (sex x build fit, docs/CHARACTER.md): the body and the tops / bottoms of that
+ * fit, and only the chosen face. No look = the reference body with face 1 (store dummies, clerks, players who have not
+ * made a character yet).
+ */
+export async function createModularCharacter(models: WearModels, colors: SlotHexes, defaults: SlotHexes, look: CharacterLook | null = null): Promise<THREE.Group> {
+  const pieceUrls = WEAR_SLOTS.flatMap((slot) => (models[slot] ? [pieceUrlFor(slot, models[slot], look)] : []))
+  const [base, ...pieces] = await Promise.all([loadTemplate(bodyUrlFor(WEAR_BASE_MODEL_URL, look), true), ...pieceUrls.map((url) => loadTemplate(url, false))])
   const instance = cloneCharacterWithUniqueMaterials(base!)
   const body = skinnedMeshes(instance)
   const parent = body[0]?.parent
@@ -73,7 +79,11 @@ export async function createModularCharacter(models: WearModels, colors: SlotHex
   const bones = new Map(body[0]!.skeleton.bones.map((b) => [b.name, b]))
   const worn = pieces.flatMap((piece) => attachPiece(piece, parent, bones))
   const hidden = hiddenRegions(worn.map((m) => m.userData.hides as string | undefined))
-  for (const mesh of body) mesh.visible = !hidden.has(mesh.userData.region as string)
+  const face = (look ?? DEFAULT_LOOK).face
+  for (const mesh of body) {
+    const region = mesh.userData.region as string
+    mesh.visible = region === 'face' ? mesh.userData.face === face : !hidden.has(region)
+  }
   for (const mesh of [...body, ...worn]) tint(mesh, colors, defaults)
   attachAvatarAnimations(instance)
   return instance

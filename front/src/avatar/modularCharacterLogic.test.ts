@@ -21,3 +21,8 @@ test('a chosen colour tints the skin and the main material of its slot only', ()
   assert.equal(tintHexFor('W_head_accessory_cat_ear_Main', colors, DEFAULTS), null)
   assert.equal(tintHexFor('BB_Briefs', colors, DEFAULTS), null)
 })
+
+test('brows and facial hair take the chosen hair colour', () => {
+  assert.equal(tintHexFor('BB_Brow', DEFAULTS, DEFAULTS), null)
+  assert.equal(tintHexFor('BB_Brow', { ...DEFAULTS, hair: '#C08A4E' }, DEFAULTS), '#C08A4E')
+})
