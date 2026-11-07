@@ -2,7 +2,7 @@
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import { actionKeyLabels, matches, mouseButtonCode } from '../../config/keybindings'
 import { RACE_SPILL_PENALTY_MS } from '../../game/gameRoomConstants'
-import { DRINK_FAST_BANDS, SPILL_ABOVE, createDrinkFastSim, type DrinkFastZone } from '../../game/pub/drinkFast'
+import { DRINK_FAST_BANDS, DRINK_FAST_STEP_S, SPILL_ABOVE, createDrinkFastSim, type DrinkFastZone } from '../../game/pub/drinkFast'
 import { formatSeconds, ordinal, readBestTime, recordBestTime, spillPenaltyLabel, type RaceResultRow } from '../../game/pub/raceBoard'
 import UiIcon from '../ui/UiIcon.vue'
 
@@ -16,7 +16,8 @@ const props = defineProps<{
   reducedEffects: boolean
 }>()
 
-const emit = defineEmits<{ progress: [value: number, spills: number]; close: [] }>()
+/** `progress` sends the simulation step reached and every step where the input flipped: the server replays the race from them. */
+const emit = defineEmits<{ progress: [step: number, toggles: number[]]; close: [] }>()
 
 const PROGRESS_EMIT_MS = 250
 const MAX_FRAME_S = 0.05
@@ -47,8 +48,12 @@ let sim = createDrinkFastSim(props.seed)
 let frame = 0
 let lastFrameAt = 0
 let lastEmitAt = 0
-let emittedProgress = 0
-let emittedSpills = 0
+let emittedStep = 0
+/** Fixed-step simulation, identical to the server's replay. */
+let accumulator = 0
+let simStep = 0
+let simHolding = false
+let toggles: number[] = []
 
 const countdown = computed(() => Math.max(0, Math.ceil((props.startsAt - now.value) / 1000)))
 const pintDown = computed(() => progress.value >= 1)
@@ -96,8 +101,11 @@ function reset(): void {
   zone.value = 'sweet'
   progress.value = 0
   spills.value = 0
-  emittedProgress = 0
-  emittedSpills = 0
+  emittedStep = 0
+  accumulator = 0
+  simStep = 0
+  simHolding = false
+  toggles = []
   newBest.value = false
   for (const key of Object.keys(splashes)) delete splashes[key]
 }
@@ -134,19 +142,27 @@ function tick(timestamp: number): void {
   const dt = lastFrameAt ? Math.min(MAX_FRAME_S, (timestamp - lastFrameAt) / 1000) : 0
   lastFrameAt = timestamp
   if (racing.value) {
-    const state = sim.step(dt, holding.value)
-    y.value = state.y
-    zone.value = state.zone
-    progress.value = state.progress
-    spills.value = state.spills
+    accumulator += dt
+    while (accumulator >= DRINK_FAST_STEP_S && progress.value < 1) {
+      accumulator -= DRINK_FAST_STEP_S
+      if (holding.value !== simHolding) {
+        simHolding = holding.value
+        toggles.push(simStep)
+      }
+      const state = sim.step(DRINK_FAST_STEP_S, simHolding)
+      simStep++
+      y.value = state.y
+      zone.value = state.zone
+      progress.value = state.progress
+      spills.value = state.spills
+    }
   }
+  // keep sending once the pint is down: the server only replays as far as its own clock allows
   const pintStillCounted = progress.value >= 1 && !props.finished
-  const changed = progress.value !== emittedProgress || spills.value !== emittedSpills
-  if (!props.finished && (changed || pintStillCounted) && timestamp - lastEmitAt >= PROGRESS_EMIT_MS) {
+  if (!props.finished && (simStep !== emittedStep || pintStillCounted) && timestamp - lastEmitAt >= PROGRESS_EMIT_MS) {
     lastEmitAt = timestamp
-    emittedProgress = progress.value
-    emittedSpills = spills.value
-    emit('progress', progress.value, spills.value)
+    emittedStep = simStep
+    emit('progress', simStep, [...toggles])
   }
   frame = requestAnimationFrame(tick)
 }

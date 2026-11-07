@@ -1,4 +1,5 @@
 // Shared shapes of the realtime server. Room helpers take a GameRoom (not CityRoom) so tests can pass fakes.
+import type { DrinkFastSim } from './drinkFastSim.ts'
 
 export interface Vec3 {
   x: number
@@ -123,6 +124,10 @@ export interface PubRacer {
   forfeited: boolean
   alcohol: number
   spills: number
+  /** Server replay of the balance game, advanced from the steps where the player pressed or released. */
+  sim: DrinkFastSim
+  /** Simulation steps already replayed. */
+  step: number
 }
 
 export interface PubRace {

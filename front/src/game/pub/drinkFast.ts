@@ -11,6 +11,12 @@ export function seededRandom(seed: number): () => number {
   }
 }
 
+/**
+ * Fixed simulation step. The server (socket/src/drinkFastSim.ts) replays the race from the steps where the player
+ * pressed or released, at this same step, so progress and spills are never taken from the client.
+ */
+export const DRINK_FAST_STEP_S = 1 / 60
+
 export type DrinkFastZone = 'sweet' | 'fair' | 'poor' | 'slippery'
 
 interface DrinkFastBand {

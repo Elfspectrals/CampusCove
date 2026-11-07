@@ -134,7 +134,7 @@ export class CityRoom extends Room implements GameRoom {
     this.onMessage('pub_race_challenge_reply', (client, payload: ClientPayload) => void onRaceChallengeReply(this, client, payload))
     this.onMessage('pub_race_progress', (client, payload: ClientPayload) => onRaceProgress(this, client, payload))
     this.onMessage('pub_shots_start', (client) => void onShotsStart(this, client))
-    this.onMessage('pub_shots_done', (client, payload: ClientPayload) => void onShotsDone(this, client, payload))
+    this.onMessage('pub_shots_done', (client) => void onShotsDone(this, client))
     this.onMessage('pub_shots_leave', (client) => onShotsLeave(this, client))
     this.onMessage('pub_darts_join', (client) => void onDartsJoin(this, client))
     this.onMessage('pub_darts_throw', (client, payload: ClientPayload) => onDartsThrow(this, client, payload))
