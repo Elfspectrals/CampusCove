@@ -1,10 +1,17 @@
 # CampusCove project rules
 
-## Modular assets
+Rules are split by topic in `.claude/rules/`. Files without a `paths:` header load in every session. The others load only when you work on a matching file, so a UI task does not drag in database rules.
 
-Every new or rebuilt 3D asset is assembled from reusable pieces, never modelled as one block, so a piece can be reused or sold later without rework.
+| File | Loads | Covers |
+|---|---|---|
+| `global.md` | always | Code principles (KISS, YAGNI, DRY, SoC, SOLID), product voice, git |
+| `roadmap.md` | always | Approved work, its status and the product decisions behind it |
+| `economy.md` | backend services, socket games | Coin sources and sinks, server-owned rewards, decided balance |
+| `backend.md` | `backend/**` | Laravel API, migrations, feature tests |
+| `socket.md` | `socket/**` | Colyseus authority, timing, anti-cheat |
+| `game-front.md` | `front/src/game/**`, game composables and components | Three.js gameplay, HUD, feedback |
+| `ui.md` | Vue pages, layouts, components | Site UI, i18n, responsive |
+| `seo.md` | `front/src/seo/**`, `front/src/content/**` | Titles, descriptions, keyword pages |
+| `assets.md` | `front/scripts/**`, `front/public/assets/**`, `map-src/**` | Modular 3D assets |
 
-- Buildings: walls, floors, roofs, doors, windows, stairs and trims each come from their own parameterised builder (size, material) and stay separate named nodes in the export. A building is a composition of those pieces; the next building reuses the builders instead of copying geometry.
-- Characters and NPCs: an outfit is a set of wear pieces, one per slot, built in `front/scripts/skins/wear.py` and shipped as `public/assets/wear/<slot>/<key>/`, the same format as player clothes. Never bake clothes into an NPC.
-- Props and decor: a piece used in more than one place (lantern, crate, fence segment, sign) is one shared builder (`lib_common.py` or a kit module), not redrawn in each build script.
-- Touching an existing asset: the parts you change follow this rule; the rest is not rewritten unless asked.
+When you start work that is on the roadmap, update its status in `roadmap.md` in the same change. When the user approves new work or takes a product decision, add it there.
