@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { RACE_MAX_PROGRESS_PER_S } from '../gameRoomConstants.ts'
 import {
   DRINK_FAST_BANDS,
+  DRINK_FAST_STEP_S,
   SLIPPERY_S,
   SPILL_ABOVE,
   createDrinkFastSim,
@@ -142,4 +143,15 @@ test('tipping the glass above the bands counts one spill per crossing, holding i
   const crossings = high.filter((state, i) => state.y > SPILL_ABOVE && (i === 0 || high[i - 1].y <= SPILL_ABOVE)).length
   assert.ok(high.at(-1)!.spills >= 1)
   assert.ok(high.at(-1)!.spills <= crossings)
+})
+
+// The same golden run is pinned in socket/src/drinkFastSim.test.ts: the server replays the race from the player's
+// press/release steps, so both simulations must stay identical.
+test('golden run: same seed and inputs give the same glass on client and server', () => {
+  const sim = createDrinkFastSim(20261106)
+  let state = sim.step(0, false)
+  for (let i = 0; i < 1200; i++) state = sim.step(DRINK_FAST_STEP_S, i % 90 < 50)
+  close(state.progress, 0.4375833333333314, 1e-9)
+  assert.equal(state.spills, 2)
+  assert.equal(state.y, 0)
 })

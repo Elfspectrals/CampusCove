@@ -43,7 +43,6 @@ globalThis.fetch = async (url: string | URL | Request, init?: RequestInit) => {
 const { loadWorld } = await import('./world.ts')
 const { onSit } = await import('./pub.ts')
 const {
-  clampRaceProgress,
   endRace,
   onDartsJoin,
   onDartsLeave,
@@ -60,11 +59,12 @@ const {
   onStand,
   rewardPlacement,
   raceRanking,
-  shotsPlausible,
+  shotsTime,
   startDarts,
   startRace
 } = await import('./pubGames.ts')
-const { CHALLENGE_COUNTDOWN_MS, CHALLENGE_TTL_MS, DARTS_LOBBY_MS, DARTS_POWER_IDEAL, DARTS_TURN_MS, RACE_LOBBY_MS, RACE_MAX_PROGRESS_PER_S, RACE_MAX_SPILLS, RACE_SPILL_PENALTY_MS, SHOTS_MIN_MS } = await import('./pubConstants.ts')
+const { CHALLENGE_COUNTDOWN_MS, CHALLENGE_TTL_MS, DARTS_LOBBY_MS, DARTS_POWER_IDEAL, DARTS_TURN_MS, RACE_LOBBY_MS, RACE_SPILL_PENALTY_MS, SHOTS_MIN_MS } = await import('./pubConstants.ts')
+const { DRINK_FAST_STEP_MS, DRINK_FAST_STEP_S, createDrinkFastSim } = await import('./drinkFastSim.ts')
 await loadWorld()
 
 function fakeClient(sessionId: string): FakeClient {
@@ -100,22 +100,95 @@ function received(client: FakeClient, type: string) {
   return client.sent.filter((m) => m.type === type).map((m) => m.payload)
 }
 
-test('race progress is clamped to the fastest possible drinking and never goes backwards', () => {
-  assert.equal(clampRaceProgress(0, 0.05, 1), 0.05)
-  assert.equal(clampRaceProgress(0, 0.9, 1), RACE_MAX_PROGRESS_PER_S)
-  assert.equal(clampRaceProgress(0.5, 0.2, 1), 0.5)
-  assert.equal(clampRaceProgress(0.95, 5, 1), 1)
-  assert.equal(clampRaceProgress(0.3, 0.4, 0), 0.3)
+/** Plays the balance game like a client: holds whenever the glass is below `aim`, records every press/release step. */
+function playDrinkFast(seed: number, aim: number, maxSteps = 45 * 60) {
+  const sim = createDrinkFastSim(seed)
+  const toggles: number[] = []
+  const spillsAt: number[] = []
+  let y = 0.5
+  let holding = false
+  let finishStep: number | null = null
+  for (let step = 0; step < maxSteps && finishStep === null; step++) {
+    if ((y < aim) !== holding) {
+      holding = !holding
+      toggles.push(step)
+    }
+    const state = sim.step(DRINK_FAST_STEP_S, holding)
+    y = state.y
+    spillsAt.push(state.spills)
+    if (state.progress >= 1) finishStep = step + 1
+  }
+  return { toggles, finishStep, spillsAt }
+}
+
+/** What the client sends every 250 ms: the step it reached and every flip so far. */
+function sendDrinkFast(room: GameRoom, client: GameClient, toggles: number[], start: number, untilMs: number): void {
+  for (let t = 250; t <= untilMs; t += 250) {
+    const step = Math.floor(t / DRINK_FAST_STEP_MS)
+    onRaceProgress(room, client, { step, toggles: toggles.filter((s) => s <= step) }, start + t)
+  }
+}
+
+function drinkingMs(finishStep: number): number {
+  return Math.round(finishStep * DRINK_FAST_STEP_MS)
+}
+
+function racer(progress: number, finishedAt: number | null, forfeited = false) {
+  return { progress, lastProgressAt: 0, finishedAt, forfeited, alcohol: 0, spills: 0, sim: createDrinkFastSim(1), step: 0 }
+}
+
+test('progress and spills come from the server replay, never from what the client claims', async () => {
+  const a = fakePlayer('a', 88, -133)
+  const { room, clients } = fakeRoom(a)
+  const [ca] = clients
+  onSit(room, ca, { seatId: 'stool_01' })
+  const t0 = 600_000
+  await onRaceOpen(room, ca, t0)
+  const race = room.pub.race!
+  const start = t0 + RACE_LOBBY_MS
+  startRace(room, race, start)
+  const me = race.racers.get('a')!
+
+  onRaceProgress(room, ca, { progress: 1, spills: 0 }, start + 1000)
+  assert.equal(me.progress, 0)
+
+  const wobbly = playDrinkFast(race.seed, 0.95)
+  const step = Math.floor(3000 / DRINK_FAST_STEP_MS)
+  onRaceProgress(room, ca, { step, toggles: wobbly.toggles.filter((s) => s <= step), progress: 1, spills: 0 }, start + 3000)
+  assert.equal(me.step, step)
+  assert.equal(me.spills, wobbly.spillsAt[step - 1])
+  assert.ok(me.spills > 0, 'aiming at the rim spills')
+  assert.ok(me.progress < 1)
+})
+
+test('the client cannot replay further than the time elapsed on the server', async () => {
+  const a = fakePlayer('a', 88, -133)
+  const { room, clients } = fakeRoom(a)
+  const [ca] = clients
+  onSit(room, ca, { seatId: 'stool_01' })
+  const t0 = 700_000
+  await onRaceOpen(room, ca, t0)
+  const race = room.pub.race!
+  const start = t0 + RACE_LOBBY_MS
+  startRace(room, race, start)
+  const plan = playDrinkFast(race.seed, 0.5)
+  const me = race.racers.get('a')!
+  onRaceProgress(room, ca, { step: plan.finishStep, toggles: plan.toggles }, start + 1000)
+  assert.equal(me.finishedAt, null)
+  const reached = Math.floor(1000 / DRINK_FAST_STEP_MS) + 30
+  assert.equal(me.step, reached)
+  onRaceProgress(room, ca, { step: reached + 10, toggles: [5, 3] }, start + 1500)
+  assert.equal(me.step, reached, 'unordered flips are refused')
 })
 
 test('the ranking orders finishers by arrival and leaves out the others', () => {
   const race: PubRace = {
     hostSessionId: 'a', seed: 1, startsAt: 0, startedAt: 10_000, lastStateAt: 0,
     racers: new Map([
-      ['a', { progress: 1, lastProgressAt: 0, finishedAt: 19_000, forfeited: false, alcohol: 0, spills: 0 }],
-      ['b', { progress: 1, lastProgressAt: 0, finishedAt: 18_000, forfeited: false, alcohol: 0, spills: 0 }],
-      ['c', { progress: 0.4, lastProgressAt: 0, finishedAt: null, forfeited: false, alcohol: 0, spills: 0 }],
-      ['d', { progress: 1, lastProgressAt: 0, finishedAt: 17_000, forfeited: true, alcohol: 0, spills: 0 }]
+      ['a', racer(1, 19_000)],
+      ['b', racer(1, 18_000)],
+      ['c', racer(0.4, null)],
+      ['d', racer(1, 17_000, true)]
     ])
   }
   assert.deepEqual(raceRanking(race), [{ sessionId: 'b', ms: 8000, spills: 0 }, { sessionId: 'a', ms: 9000, spills: 0 }])
@@ -126,7 +199,7 @@ test('the ranking orders finishers by arrival and leaves out the others', () => 
   assert.equal(rewardPlacement(2, 3), 3)
 })
 
-test('a full Drink Fast race: lobby, start, clamped progress, rewards with each token, alcohol at the end', async () => {
+test('a full Drink Fast race: lobby, start, replayed progress, rewards with each token, alcohol at the end', async () => {
   const a = fakePlayer('a', 88, -133)
   const b = fakePlayer('b', 89.5, -133)
   const watcher = fakePlayer('w', 80, -130)
@@ -150,25 +223,27 @@ test('a full Drink Fast race: lobby, start, clamped progress, rewards with each 
   assert.deepEqual(received(cw, 'pub_race_start'), [{ seed: race.seed, players: ['a', 'b'] }])
 
   const start = t0 + RACE_LOBBY_MS
-  onRaceProgress(room, ca, { progress: 1 }, start + 1000)
-  assert.equal(race.racers.get('a')!.progress, RACE_MAX_PROGRESS_PER_S)
-  onRaceProgress(room, ca, { progress: 1 }, start + 1100)
-  assert.equal(race.racers.get('a')!.progress, RACE_MAX_PROGRESS_PER_S)
-  assert.deepEqual(received(cw, 'pub_race_state').at(-1), { players: [{ sessionId: 'a', progress: 0.125, spills: 0 }, { sessionId: 'b', progress: 0, spills: 0 }] })
+  const plans = { a: playDrinkFast(race.seed, 0.5), b: playDrinkFast(race.seed, 0.45) }
+  assert.ok(plans.a.finishStep !== null && plans.b.finishStep !== null)
+  const scoreOf = (p: typeof plans.a) => drinkingMs(p.finishStep!) + p.spillsAt.at(-1)! * RACE_SPILL_PENALTY_MS
+  const expected = (['a', 'b'] as const)
+    .map((id) => ({ sessionId: id, ms: scoreOf(plans[id]), spills: plans[id].spillsAt.at(-1)! }))
+    .sort((x, y) => x.ms - y.ms)
+  assert.notEqual(expected[0].ms, expected[1].ms)
 
-  for (let i = 2; i <= 8; i++) onRaceProgress(room, ca, { progress: 1 }, start + i * 1000)
-  assert.equal(race.racers.get('a')!.finishedAt, start + 8000)
+  const until = drinkingMs(Math.max(plans.a.finishStep!, plans.b.finishStep!)) + 500
+  sendDrinkFast(room, ca, plans.a.toggles, start, until)
+  assert.equal(race.racers.get('a')!.finishedAt, start + drinkingMs(plans.a.finishStep!))
   assert.equal(room.pub.race, race)
-  for (let i = 1; i <= 9; i++) onRaceProgress(room, cb, { progress: 1 }, start + i * 1000)
+  sendDrinkFast(room, cb, plans.b.toggles, start, until)
   await new Promise((resolve) => setImmediate(resolve))
   assert.equal(room.pub.race, null)
   const end = received(cw, 'pub_race_end').at(-1)
-  assert.deepEqual(end.ranking, [{ sessionId: 'a', ms: 8000, spills: 0 }, { sessionId: 'b', ms: 8000, spills: 0 }])
-  assert.deepEqual(end.rewards, [{ sessionId: 'a', coins: 40 }, { sessionId: 'b', coins: 15 }])
-  assert.deepEqual(apiCalls.slice(2).map((c) => [c.token, c.body]), [
-    ['token-a', { game: 'drink_fast', placement: 1, score: 8000 }],
-    ['token-b', { game: 'drink_fast', placement: 2, score: 8000 }]
-  ])
+  assert.deepEqual(end.ranking, expected)
+  assert.deepEqual(end.rewards, [{ sessionId: expected[0].sessionId, coins: 40 }, { sessionId: expected[1].sessionId, coins: 15 }])
+  assert.deepEqual(apiCalls.slice(2).map((c) => [c.token, c.body]), expected.map((row, i) => [
+    `token-${row.sessionId}`, { game: 'drink_fast', placement: i + 1, score: row.ms }
+  ]))
   assert.equal(a.intoxication, 24)
   assert.equal(b.intoxication, 24)
 })
@@ -202,9 +277,11 @@ test('standing up forfeits the race and a lone finisher wins solo', async () => 
   onStand(room, cb)
   assert.equal(race.racers.get('b')!.forfeited, true)
   apiCalls.length = 0
-  for (let i = 1; i <= 8; i++) onRaceProgress(room, ca, { progress: 1 }, t0 + RACE_LOBBY_MS + i * 1000)
+  const plan = playDrinkFast(race.seed, 0.5)
+  sendDrinkFast(room, ca, plan.toggles, t0 + RACE_LOBBY_MS, drinkingMs(plan.finishStep!) + 500)
   await new Promise((resolve) => setImmediate(resolve))
-  assert.deepEqual(apiCalls.map((c) => c.body), [{ game: 'drink_fast', placement: 0, score: 8000 }])
+  const score = drinkingMs(plan.finishStep!) + plan.spillsAt.at(-1)! * RACE_SPILL_PENALTY_MS
+  assert.deepEqual(apiCalls.map((c) => c.body), [{ game: 'drink_fast', placement: 0, score }])
   assert.equal(b.intoxication, 0)
   assert.equal(a.intoxication, 24)
 })
@@ -225,7 +302,7 @@ test('closing the race screen leaves the race, so a new race can be opened at on
   assert.notEqual(room.pub.race, null)
 })
 
-test('spills reported with the progress only go up, are capped, and slow the finish time', async () => {
+test('each spill adds its penalty to the finish time', async () => {
   const a = fakePlayer('a', 88, -133)
   const { room, clients } = fakeRoom(a)
   const [ca] = clients
@@ -233,19 +310,15 @@ test('spills reported with the progress only go up, are capped, and slow the fin
   const t0 = 400_000
   await onRaceOpen(room, ca, t0)
   const race = room.pub.race!
-  startRace(room, race, t0 + RACE_LOBBY_MS)
   const start = t0 + RACE_LOBBY_MS
-  onRaceProgress(room, ca, { progress: 0.1, spills: 2 }, start + 1000)
-  onRaceProgress(room, ca, { progress: 0.2, spills: 1 }, start + 2000)
-  assert.equal(race.racers.get('a')!.spills, 2)
-  onRaceProgress(room, ca, { progress: 0.3, spills: 1e6 }, start + 3000)
-  assert.equal(race.racers.get('a')!.spills, RACE_MAX_SPILLS)
-  race.racers.get('a')!.spills = 2
-  for (let i = 4; i <= 10; i++) onRaceProgress(room, ca, { progress: 1, spills: 2 }, start + i * 1000)
+  startRace(room, race, start)
+  const plan = playDrinkFast(race.seed, 0.6)
+  assert.ok(plan.finishStep !== null)
+  sendDrinkFast(room, ca, plan.toggles, start, drinkingMs(plan.finishStep!) + 500)
   await new Promise((resolve) => setImmediate(resolve))
+  const spills = plan.spillsAt.at(-1)!
   const end = received(ca, 'pub_race_end')[0]
-  const drinkingMs = race.racers.get('a')!.finishedAt! - start
-  assert.deepEqual(end.ranking, [{ sessionId: 'a', ms: drinkingMs + 2 * RACE_SPILL_PENALTY_MS, spills: 2 }])
+  assert.deepEqual(end.ranking, [{ sessionId: 'a', ms: drinkingMs(plan.finishStep!) + spills * RACE_SPILL_PENALTY_MS, spills }])
 })
 
 test('a race nobody finishes ends on its timeout without rewards', async () => {
@@ -262,14 +335,10 @@ test('a race nobody finishes ends on its timeout without rewards', async () => {
   assert.equal(room.pub.race, null)
 })
 
-test('a Meter Shot time is only accepted inside the plausibility window', () => {
-  assert.equal(shotsPlausible(SHOTS_MIN_MS - 1, 2000), false)
-  assert.equal(shotsPlausible(1600, 1600), true)
-  assert.equal(shotsPlausible(2000, 5000), true)
-  assert.equal(shotsPlausible(2000, 5001), false)
-  assert.equal(shotsPlausible(4000, 3500), true)
-  assert.equal(shotsPlausible(4001, 3500), false)
-  assert.equal(shotsPlausible(NaN, 3500), false)
+test('a Meter Shot time is the server clock less the network allowance, and never faster than a human', () => {
+  assert.equal(shotsTime(5250), 5000)
+  assert.equal(shotsTime(SHOTS_MIN_MS + 250), SHOTS_MIN_MS)
+  assert.equal(shotsTime(SHOTS_MIN_MS + 249), null)
 })
 
 test('Meter Shot: paid start, result rewarded, drink seen by the others', async () => {
@@ -282,7 +351,7 @@ test('Meter Shot: paid start, result rewarded, drink seen by the others', async 
   const ready = received(cMe, 'pub_shots_ready')[0]
   assert.equal(ready.seed, me.pubShots?.seed)
   assert.equal(apiCalls[0].body.game, 'meter_shot')
-  await onShotsDone(room, cMe, { ms: 5000 }, ready.startedAt + 5200)
+  await onShotsDone(room, cMe, ready.startedAt + 5250)
   assert.equal(me.pubShots, null)
   assert.equal(me.intoxication, 24)
   assert.deepEqual(apiCalls[1].body, { game: 'meter_shot', placement: 0, score: 5000 })
@@ -290,7 +359,7 @@ test('Meter Shot: paid start, result rewarded, drink seen by the others', async 
   assert.deepEqual(received(cOther, 'user_action'), [{ sessionId: 'me', action: 'drink', code: 'drink_vodka' }])
 })
 
-test('Meter Shot refuses a start away from the plank and an implausible time', async () => {
+test('Meter Shot refuses a start away from the plank and a run faster than a human', async () => {
   const me = fakePlayer('me', 80, -130)
   const { room, clients } = fakeRoom(me)
   await onShotsStart(room, clients[0])
@@ -299,7 +368,7 @@ test('Meter Shot refuses a start away from the plank and an implausible time', a
   me.z = -134
   await onShotsStart(room, clients[0], 1000)
   const { startedAt } = received(clients[0], 'pub_shots_ready')[0]
-  await onShotsDone(room, clients[0], { ms: 1000 }, startedAt + 9000)
+  await onShotsDone(room, clients[0], startedAt + 1000)
   assert.deepEqual(received(clients[0], 'pub_error').map((e) => e.code), ['pub_too_far', 'shots_implausible'])
   assert.equal(me.intoxication, 0)
 })
@@ -408,16 +477,24 @@ test('the race state carries spills, and a new spill skips the state throttle', 
   const race = room.pub.race!
   const start = t0 + RACE_LOBBY_MS
   startRace(room, race, start)
-  onRaceProgress(room, ca, { progress: 0.05, spills: 0 }, start + 1000)
+  const steady = playDrinkFast(race.seed, 0.5)
+  const wobbly = playDrinkFast(race.seed, 0.95)
+  const firstSpill = wobbly.spillsAt.findIndex((n) => n > 0) + 1
+  const t1 = Math.ceil(firstSpill * DRINK_FAST_STEP_MS) + 100
+  assert.equal(steady.spillsAt[Math.floor((t1 + 100) / DRINK_FAST_STEP_MS)], 0, 'the steady racer has not spilled yet')
+  const send = (client: GameClient, plan: typeof steady, t: number) => {
+    const step = Math.floor(t / DRINK_FAST_STEP_MS)
+    onRaceProgress(room, client, { step, toggles: plan.toggles.filter((s) => s <= step) }, start + t)
+  }
+
+  send(ca, steady, t1)
   assert.equal(received(cb, 'pub_race_state').length, 1)
-  onRaceProgress(room, cb, { progress: 0.06, spills: 1 }, start + 1100)
-  assert.equal(received(cb, 'pub_race_state').length, 2)
-  onRaceProgress(room, ca, { progress: 0.07, spills: 1 }, start + 1210)
+  send(cb, wobbly, t1 + 50)
   const states = received(cb, 'pub_race_state')
-  assert.equal(states.length, 3)
-  assert.deepEqual(states.at(-1), { players: [{ sessionId: 'a', progress: 0.07, spills: 1 }, { sessionId: 'b', progress: 0.06, spills: 1 }] })
-  onRaceProgress(room, cb, { progress: 0.08, spills: 1 }, start + 1300)
-  assert.equal(received(cb, 'pub_race_state').length, 3)
+  assert.equal(states.length, 2, 'a spill goes out at once')
+  assert.ok(states.at(-1).players.find((p: any) => p.sessionId === 'b').spills > 0)
+  send(ca, steady, t1 + 100)
+  assert.equal(received(cb, 'pub_race_state').length, 2, 'plain progress stays throttled')
 })
 
 function seatedTrio() {

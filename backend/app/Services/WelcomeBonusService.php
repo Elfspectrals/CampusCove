@@ -5,7 +5,8 @@ namespace App\Services;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Credits new accounts with enough coins to rent a first house (cheapest rent is 90).
+ * Credits new accounts with pocket money for food and a first outfit. It cannot be funnelled to another account:
+ * TradeService refuses to let an account give anything before TradeService::MIN_GIVER_AGE_HOURS.
  */
 final class WelcomeBonusService
 {

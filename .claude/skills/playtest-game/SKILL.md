@@ -15,34 +15,30 @@ make up                                          # if not running
 Front http://localhost:5173 (Vite HMR), API http://localhost:8000/api, socket :3000 (`node --watch`, restarts on
 save), Postgres :5432. New migration → `make migrate`. Seeds → `make seed`.
 
-## 1. Throwaway player (local only)
+## 1. Playtest accounts (local only)
+
+Use the two fixed accounts instead of creating one per session. `make playtest-accounts` creates them on the
+first run and resets them on every later run: admin, full outfit, 5,000 coins, full health / hunger / thirst,
+and older than the 72 h trade limit. E-mails and the password are in
+`backend/database/seeders/PlaytestAccountSeeder.php` (`ACCOUNTS`, `PASSWORD`); read them from there and do not
+repeat the password in chat. Run the reset before each playtest: a player left in the world keeps starving
+between sessions.
 
 Open the pane with `preview_start {url: "http://localhost:5173/"}` (the Docker front is already serving; do not
-start a second Vite). Then run in the page with `javascript_tool`:
+start a second Vite). Then sign in from the page with `javascript_tool`, `EMAIL` and `PASSWORD` taken from the
+seeder:
 
 ```js
-const rnd = () => crypto.getRandomValues(new Uint32Array(2)).join('').slice(0, 12)
-const u = 'pt_' + rnd().slice(0, 6), p = rnd() + 'Aa!'
-const r = await fetch('http://localhost:8000/api/register', { method: 'POST',
+const r = await fetch('http://localhost:8000/api/login', { method: 'POST',
   headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
-  body: JSON.stringify({ email: u + '@campuscove.test', username: u, password: p, password_confirmation: p, accepted_terms: true, age_confirmed: true }) })
+  body: JSON.stringify({ email: EMAIL, password: PASSWORD }) })
 const d = await r.json()
 if (r.ok) localStorage.setItem('campus_cove_auth', JSON.stringify({ user: d.user, token: d.token }))
 ;({ status: r.status, account_id: d.user?.account_id })
 ```
 
-The password is random and thrown away: a new player per session is cheaper than remembering one. Give it
-what the test needs with `make set-money ACCOUNT=<id> CURRENCY=coins SUM=5000`, `make set-admin EMAIL=<u>@campuscove.test`,
-`make fill-outfit ACCOUNT=<id>`. After `set-admin` the stored user is stale; refresh it in the page:
-
-```js
-const a = JSON.parse(localStorage.getItem('campus_cove_auth'))
-const r = await fetch('http://localhost:8000/api/user', { headers: { Accept: 'application/json', Authorization: 'Bearer ' + a.token } })
-a.user = (await r.json()).user
-localStorage.setItem('campus_cove_auth', JSON.stringify(a))
-```
-
-Then `navigate` to `/game` and wait ~5 s for the town to load.
+Then `navigate` to `/game` and wait ~5 s for the town to load. Create a fresh account through `/api/register`
+only when the test is about new accounts (welcome bonus, the 72 h trade rule).
 
 ## 2. Drive the game
 
@@ -57,20 +53,27 @@ document.dispatchEvent(new Event('pointerlockchange'))
 
 Input listeners are on `document`:
 - Walk: `document.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyW' }))` … then `keyup`. Codes are in
-  `config/keybindings.ts` (WASD/ZQSD, I interact, E inventory, K keys, F2 buy, R rotate, Digit1-9 hotbar,
-  **C collision overlay**).
-- Turn: `document.dispatchEvent(new MouseEvent('mousemove', { movementX: 600, movementY: 0 }))` (~90°).
-- Click a door: `mousedown` on the canvas with `button: 0`, or the `I` key.
+  `config/keybindings.ts` (WASD/ZQSD, G or right click interact, left click punch, E inventory, K keys,
+  T watch (Admin teleport), X put away, R rotate, Digit1-9 hotbar, **C collision overlay**).
+- Turn: `document.dispatchEvent(new MouseEvent('mousemove', { movementX: 600, movementY: 0 }))` (~90°); send
+  several small moves rather than one big one.
+- Doors, seats, counters: aim at them and press `G` (interact takes whatever prompt is in the crosshair, so a
+  stool can win over a door). The Play overlay can come back after an interaction: click `Play` and fake the
+  lock again before the next input.
 - Position: the HUD shows `XYZ x, y, z` — read it from the DOM instead of guessing from screenshots.
 
 When the pane is **hidden** (`tabs_context` says so) `requestAnimationFrame` only advances on screenshots:
 hold a key, take 2–3 small screenshots (`scale: 0.3`), then release. Timed `setTimeout` walks do not move.
+Even when shown, the pane can run at ~1 fps (check with a `requestAnimationFrame` counter). Real-time mini-games
+(Drink Fast, Meter Shot) cannot be played well at that rate: drive the socket instead with a small Node script
+using `@colyseus/sdk` from `front/node_modules` and the account's token (join `city`, `admin_teleport`, `move` at
+walking speed, `sit`, then the game's messages), and keep the pane for what the player sees.
 
 ## 3. Two players
 
 Same origin = same localStorage = same account, and one session per account (the second kicks the first,
 code 4001). Put player 2 on the other allowed origin: `tabs_create`, `navigate` to `http://127.0.0.1:5173/`,
-run the register snippet there, then `/game`. Confirm the join with `read_network_requests`
+sign in there as the second playtest account, then `/game`. Confirm the join with `read_network_requests`
 (`urlPattern: "3000"` → `POST /matchmake/joinOrCreate/city 200`). Check that both see the change and a player in
 another zone does not. Close the extra tab after.
 

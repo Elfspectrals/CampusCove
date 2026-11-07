@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\ItemDef;
 use App\Services\AccountInventoryService;
+use App\Services\TradeService;
 use Database\Seeders\ShopSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -81,6 +82,25 @@ class TradeApiTest extends TestCase
         $this->assertSame(1, $this->owned($alice['token'], self::TEE));
         $this->assertSame(0, $this->owned($bob['token'], self::TEE));
         $this->assertSame(1, DB::table('transactions')->where('type', 'trade')->count());
+    }
+
+    public function test_a_new_account_can_receive_but_not_give(): void
+    {
+        $veteran = $this->registerAndCreditWallet(100, 'coins');
+        $newcomer = $this->registerAndCreditWallet(300, 'coins');
+        $this->ageAccount($newcomer['account_id'], TradeService::MIN_GIVER_AGE_HOURS - 1);
+
+        $this->execute($newcomer, $veteran['account_id'], ['coins' => 300, 'items' => []], ['coins' => 0, 'items' => []])
+            ->assertStatus(422)
+            ->assertJsonPath('code', 'trade_account_too_new');
+        $this->execute($veteran, $newcomer['account_id'], ['coins' => 0, 'items' => []], ['coins' => 1, 'items' => []])
+            ->assertStatus(422)
+            ->assertJsonPath('code', 'trade_account_too_new');
+        $this->assertSame(300, $this->balance($newcomer['account_id']));
+
+        $this->execute($veteran, $newcomer['account_id'], ['coins' => 50, 'items' => []], ['coins' => 0, 'items' => []])
+            ->assertOk();
+        $this->assertSame(350, $this->balance($newcomer['account_id']));
     }
 
     public function test_a_player_cannot_trade_with_themselves(): void
@@ -282,7 +302,13 @@ class TradeApiTest extends TestCase
         $token = (string) $reg->json('token');
 
         $this->setWalletBalance($accountId, $currency, $coins);
+        $this->ageAccount($accountId, TradeService::MIN_GIVER_AGE_HOURS + 1);
 
         return ['token' => $token, 'account_id' => $accountId, 'username' => $username];
+    }
+
+    private function ageAccount(int $accountId, int $hours): void
+    {
+        DB::table('accounts')->where('account_id', $accountId)->update(['created_at' => now()->subHours($hours)]);
     }
 }

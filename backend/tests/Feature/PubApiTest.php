@@ -137,6 +137,22 @@ class PubApiTest extends TestCase
         $this->assertSame($coins > 0 ? 1 : 0, DB::table('wallet_ledger')->where('reason', 'pub_reward_'.$game)->where('delta', $coins)->count());
     }
 
+    public function test_no_entry_fee_is_taken_while_the_reward_is_on_cooldown(): void
+    {
+        $player = $this->registerAndCreditWallet(100, 'coins');
+        $headers = $this->auth($player['token'], self::SECRET);
+        $this->postJson('/api/pub/reward', ['game' => 'darts', 'placement' => 1, 'score' => 50], $headers)->assertOk();
+
+        $this->postJson('/api/pub/play', ['game' => 'darts'], $headers)
+            ->assertStatus(429)
+            ->assertJsonPath('code', 'pub_cooldown');
+        $this->postJson('/api/pub/play', ['game' => 'drink_fast'], $headers)->assertOk();
+        $this->assertSame(100 + 30 - 20, $this->balance($player['account_id']));
+
+        $this->travel(PubService::REWARD_COOLDOWN_SECONDS + 1)->seconds();
+        $this->postJson('/api/pub/play', ['game' => 'darts'], $headers)->assertOk();
+    }
+
     public function test_one_reward_per_game_and_per_account_every_sixty_seconds(): void
     {
         $player = $this->registerAndCreditWallet(100, 'coins');

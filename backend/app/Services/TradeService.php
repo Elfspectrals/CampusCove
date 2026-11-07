@@ -24,6 +24,9 @@ final class TradeService
 
     public const MAX_QUANTITY = 999;
 
+    /** A new account can receive in a trade but not give, so fresh accounts cannot funnel their welcome bonus. */
+    public const MIN_GIVER_AGE_HOURS = 72;
+
     public function __construct(
         private readonly AccountInventoryService $inventory,
         private readonly WalletSummaryService $wallets,
@@ -80,6 +83,7 @@ final class TradeService
         if ($myOffer['coins'] === 0 && $myOffer['items'] === [] && $partnerOffer['coins'] === 0 && $partnerOffer['items'] === []) {
             throw new TradeRejectedException('trade_empty', 'Both offers are empty.');
         }
+        $this->assertGiversOldEnough([$accountId => $myOffer, $partnerAccountId => $partnerOffer]);
 
         return DB::transaction(function () use ($accountId, $partnerAccountId, $myOffer, $partnerOffer, $tradeRef): array {
             // same lock order for both players, whoever started the trade: no deadlock between two trades
@@ -173,6 +177,24 @@ final class TradeService
      * @param  list<string>  $codes
      * @return array<string, ItemDef>
      */
+    /**
+     * @param  array<int, array{coins: int, items: array<string, int>}>  $offersByAccount
+     */
+    private function assertGiversOldEnough(array $offersByAccount): void
+    {
+        $givers = array_keys(array_filter($offersByAccount, fn (array $offer): bool => $offer['coins'] > 0 || $offer['items'] !== []));
+        $tooYoung = Account::query()
+            ->whereKey($givers)
+            ->where('created_at', '>', now()->subHours(self::MIN_GIVER_AGE_HOURS))
+            ->exists();
+        if ($tooYoung) {
+            throw new TradeRejectedException(
+                'trade_account_too_new',
+                'Accounts can give coins or items in a trade '.self::MIN_GIVER_AGE_HOURS.' hours after sign-up. They can already receive.',
+            );
+        }
+    }
+
     private function resolveDefs(array $codes): array
     {
         $defs = ItemDef::query()->whereIn('code', array_unique($codes))->get()->keyBy('code')->all();

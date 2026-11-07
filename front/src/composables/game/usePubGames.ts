@@ -199,8 +199,8 @@ export function usePubGames(deps: PubGamesDeps) {
     deps.say(`Drink Fast: ${alone ? 'done' : `you finished ${ordinal(place)}`}${coins > 0 ? ` · +${coins} coins` : ''}`)
   }
 
-  function sendRaceProgress(progress: number, spills: number): void {
-    send('pub_race_progress', { progress, spills })
+  function sendRaceProgress(step: number, toggles: number[]): void {
+    send('pub_race_progress', { step, toggles })
   }
 
   function closeRace(): void {
@@ -227,8 +227,9 @@ export function usePubGames(deps: PubGamesDeps) {
     deps.say(`Meter Shot: ${(data.ms / 1000).toFixed(2)} s${data.coins > 0 ? ` · +${data.coins} coins` : ''}`)
   }
 
-  function sendShotsDone(ms: number): void {
-    send('pub_shots_done', { ms })
+  /** The server times the run on its own clock and sends the official time back in `pub_shots_result`. */
+  function sendShotsDone(): void {
+    send('pub_shots_done', {})
   }
 
   /** Closing mid-run (Esc, ×, a click outside) forfeits it on the server, so the plank can be played again at once. */

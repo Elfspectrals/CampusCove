@@ -51,6 +51,12 @@ final class PubService
         $rules = self::GAMES[$game] ?? throw new PubRejectedException('unknown_game', 'There is no such game at the pub.');
 
         return DB::transaction(function () use ($accountId, $game, $rules): array {
+            // no fee while the reward is on cooldown: the player would pay for a game that cannot pay back
+            $wallet = Wallet::lockForAccount($accountId, 'coins');
+            $secondsLeft = $this->cooldownSecondsLeft($wallet, 'pub_reward_'.$game);
+            if ($secondsLeft > 0) {
+                throw new PubRejectedException('pub_cooldown', "You can play this game again in {$secondsLeft} s.", 429);
+            }
             $balance = $this->debit($accountId, $rules['fee'], 'pub_play', ['game' => $game]);
 
             return ['game' => $game, 'fee' => $rules['fee'], 'alcohol' => $rules['alcohol'], 'balance_after' => $balance];
@@ -68,12 +74,7 @@ final class PubService
 
         return DB::transaction(function () use ($accountId, $game, $placement, $score, $coins, $reason): array {
             $wallet = Wallet::lockForAccount($accountId, 'coins');
-            $rewardedRecently = WalletLedgerEntry::query()
-                ->where('wallet_id', $wallet->wallet_id)
-                ->where('reason', $reason)
-                ->where('created_at', '>=', now()->subSeconds(self::REWARD_COOLDOWN_SECONDS))
-                ->exists();
-            if ($rewardedRecently) {
+            if ($this->cooldownSecondsLeft($wallet, $reason) > 0) {
                 return ['coins' => 0, 'cooldown' => true, 'balance_after' => $wallet->balance()];
             }
             if ($coins > 0) {
@@ -100,6 +101,20 @@ final class PubService
                 default => 0,
             },
         };
+    }
+
+    private function cooldownSecondsLeft(Wallet $wallet, string $rewardReason): int
+    {
+        $lastReward = WalletLedgerEntry::query()
+            ->where('wallet_id', $wallet->wallet_id)
+            ->where('reason', $rewardReason)
+            ->where('created_at', '>=', now()->subSeconds(self::REWARD_COOLDOWN_SECONDS))
+            ->max('created_at');
+        if ($lastReward === null) {
+            return 0;
+        }
+
+        return max(1, (int) ceil(self::REWARD_COOLDOWN_SECONDS - now()->diffInSeconds($lastReward, true)));
     }
 
     /**

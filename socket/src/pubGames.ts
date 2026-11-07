@@ -1,5 +1,6 @@
 import { callRealtimeBackend, errorPayload } from './backend.ts'
 import { dartLanding, dartsScore } from './darts.ts'
+import { DRINK_FAST_STEP_MS, DRINK_FAST_STEP_S, createDrinkFastSim } from './drinkFastSim.ts'
 import { forEachPubClient, isWithinPubReach, releaseSeat, sendPubError } from './pub.ts'
 import {
   CHALLENGE_COOLDOWN_MS,
@@ -13,7 +14,6 @@ import {
   DARTS_THROWS,
   DARTS_TURN_MS,
   RACE_LOBBY_MS,
-  RACE_MAX_PROGRESS_PER_S,
   RACE_MAX_SPILLS,
   RACE_SPILL_PENALTY_MS,
   RACE_PROGRESS_MIN_INTERVAL_MS,
@@ -27,8 +27,10 @@ import { worldPub } from './world.ts'
 const RACE_STATE_MIN_INTERVAL_MS = 200
 const SHOTS_REACH = 2.5
 const SHOTS_ABANDON_MS = 60_000
-const SHOTS_EARLY_TOLERANCE_MS = 3000
-const SHOTS_LATE_TOLERANCE_MS = 500
+/** Steps the client's race clock may run ahead of the server's (its countdown ends on its own clock). */
+const RACE_STEP_LEAD = 30
+const RACE_MAX_TOGGLES = 2000
+const SHOTS_LATENCY_ALLOWANCE_MS = 250
 const DARTS_REACH = 3
 const LOST_DART_CM = DARTS_MAX_OFFSET_CM
 
@@ -111,17 +113,18 @@ function broadcastRaceLobby(room: GameRoom, race: PubRace): void {
   forEachPubClient(room, (c) => c.send('pub_race_lobby', payload))
 }
 
-function newRacer(now: number): PubRacer {
-  return { progress: 0, lastProgressAt: now, finishedAt: null, forfeited: false, alcohol: 0, spills: 0 }
+function newRacer(now: number, seed: number): PubRacer {
+  return { progress: 0, lastProgressAt: now, finishedAt: null, forfeited: false, alcohol: 0, spills: 0, sim: createDrinkFastSim(seed), step: 0 }
 }
 
 function newRace(room: GameRoom, hostSessionId: string, racerIds: string[], countdownMs: number, now: number): PubRace {
+  const seed = newSeed()
   const race: PubRace = {
     hostSessionId,
-    seed: newSeed(),
+    seed,
     startsAt: now + countdownMs,
     startedAt: null,
-    racers: new Map(racerIds.map((id) => [id, newRacer(now)])),
+    racers: new Map(racerIds.map((id) => [id, newRacer(now, seed)])),
     lastStateAt: 0
   }
   room.pub.race = race
@@ -182,7 +185,7 @@ export async function onRaceJoin(room: GameRoom, client: GameClient, now = Date.
     return
   }
   if (race.racers.has(player.sessionId)) return
-  const racer = newRacer(now)
+  const racer = newRacer(now, race.seed)
   race.racers.set(player.sessionId, racer)
   const alcohol = await payEntry(client, player, 'drink_fast')
   if (room.pub.race !== race) return
@@ -215,9 +218,39 @@ function activeRacers(race: PubRace): Array<[string, PubRacer]> {
   return [...race.racers].filter(([, racer]) => !racer.forfeited)
 }
 
-export function clampRaceProgress(previous: number, requested: number, dtSeconds: number): number {
-  const reachable = previous + RACE_MAX_PROGRESS_PER_S * Math.max(0, dtSeconds)
-  return Math.min(1, Math.max(previous, Math.min(requested, reachable)))
+/**
+ * Press/release steps sent by the client: every step since the race started where the input flipped, strictly
+ * increasing. The whole list is re-sent each time (a few hundred numbers at most), so a lost message loses nothing.
+ */
+export function parseToggles(value: unknown, maxStep: number): number[] | null {
+  if (!Array.isArray(value) || value.length > RACE_MAX_TOGGLES) return null
+  let previous = -1
+  for (const step of value) {
+    if (!Number.isInteger(step) || step <= previous || step >= maxStep) return null
+    previous = step
+  }
+  return value as number[]
+}
+
+/**
+ * Replays the racer's balance game from its last replayed step up to `targetStep`. Progress and spills come from
+ * this replay only; the finish time is the simulation time of the step where the pint is down.
+ */
+export function replayRacer(racer: PubRacer, toggles: number[], targetStep: number, startedAt: number): void {
+  let flips = toggles.findIndex((step) => step >= racer.step)
+  if (flips === -1) flips = toggles.length
+  let holding = flips % 2 === 1
+  while (racer.step < targetStep && racer.finishedAt === null) {
+    if (toggles[flips] === racer.step) {
+      holding = !holding
+      flips++
+    }
+    const state = racer.sim.step(DRINK_FAST_STEP_S, holding)
+    racer.step++
+    racer.progress = state.progress
+    racer.spills = Math.min(RACE_MAX_SPILLS, state.spills)
+    if (racer.progress >= 1) racer.finishedAt = startedAt + Math.round(racer.step * DRINK_FAST_STEP_MS)
+  }
 }
 
 export function onRaceProgress(room: GameRoom, client: GameClient, payload: ClientPayload, now = Date.now()): void {
@@ -229,15 +262,17 @@ export function onRaceProgress(room: GameRoom, client: GameClient, payload: Clie
     forfeitRace(room, player)
     return
   }
-  const requested = payload?.progress
-  if (typeof requested !== 'number' || !Number.isFinite(requested)) return
   if (now - racer.lastProgressAt < RACE_PROGRESS_MIN_INTERVAL_MS) return
-  const spills = payload?.spills
+  const requestedStep = payload?.step
+  if (typeof requestedStep !== 'number' || !Number.isInteger(requestedStep) || requestedStep < 0) return
+  // the client may only be late: it cannot replay further than the time elapsed on the server's clock
+  const reachableStep = Math.floor((now - race.startedAt) / DRINK_FAST_STEP_MS) + RACE_STEP_LEAD
+  const targetStep = Math.min(requestedStep, reachableStep)
+  const toggles = parseToggles(payload?.toggles, requestedStep + 1)
+  if (toggles === null) return
   const spillsBefore = racer.spills
-  if (typeof spills === 'number' && Number.isInteger(spills)) racer.spills = Math.min(RACE_MAX_SPILLS, Math.max(racer.spills, spills))
-  racer.progress = clampRaceProgress(racer.progress, requested, (now - racer.lastProgressAt) / 1000)
+  replayRacer(racer, toggles, targetStep, race.startedAt)
   racer.lastProgressAt = now
-  if (racer.progress >= 1) racer.finishedAt = now
   if (activeRacers(race).every(([, r]) => r.finishedAt !== null)) {
     void endRace(room, race)
     return
@@ -451,17 +486,22 @@ export function onShotsLeave(room: GameRoom, client: GameClient): void {
   if (player) player.pubShots = null
 }
 
-export function shotsPlausible(ms: number, elapsedMs: number): boolean {
-  return Number.isFinite(ms) && ms >= SHOTS_MIN_MS && ms >= elapsedMs - SHOTS_EARLY_TOLERANCE_MS && ms <= elapsedMs + SHOTS_LATE_TOLERANCE_MS
+/**
+ * The run's time on the server's clock, less a fixed allowance for the two network trips. The client's own figure
+ * is never used, so a run cannot be reported faster than it was. Null when even that is faster than a human can drink.
+ */
+export function shotsTime(elapsedMs: number): number | null {
+  const ms = Math.round(elapsedMs - SHOTS_LATENCY_ALLOWANCE_MS)
+  return ms >= SHOTS_MIN_MS ? ms : null
 }
 
-export async function onShotsDone(room: GameRoom, client: GameClient, payload: ClientPayload, now = Date.now()): Promise<void> {
+export async function onShotsDone(room: GameRoom, client: GameClient, now = Date.now()): Promise<void> {
   const player = room.players.get(client.sessionId)
   const shots = player?.pubShots
   if (!player || !shots || now < player.knockedOutUntil) return
   player.pubShots = null
-  const ms = typeof payload?.ms === 'number' ? payload.ms : NaN
-  if (!shotsPlausible(ms, now - shots.startedAt)) {
+  const ms = shotsTime(now - shots.startedAt)
+  if (ms === null) {
     sendPubError(client, 'That was not how it went.', 'shots_implausible')
     return
   }
