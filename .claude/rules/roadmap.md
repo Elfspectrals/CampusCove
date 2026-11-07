@@ -43,3 +43,8 @@ Decision (2026-11-06): picking stays simple because it is the first job. Hold to
 
 - Fishing as the second job (reuse the darts power meter or the Drink Fast balance bar; rod and fish models exist).
 - Real mobile version: touch input, mobile HUD, quality tier.
+- Versioned contracts: an OpenAPI spec for the Laravel API and a JSON Schema for socket messages, generated or validated in CI, replacing the hand-written `docs/*.md` contracts.
+
+## Tooling (done)
+
+- [done] Two fixed local playtest accounts (`make playtest-accounts`, `PlaytestAccountSeeder`) instead of a new account per playtest; running it again resets coins, health and admin rights.

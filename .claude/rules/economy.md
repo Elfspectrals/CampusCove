@@ -12,7 +12,10 @@ paths:
 
 # Economy rules
 
-Run the `economist` agent before changing a price, reward, fee, cap or job. Run the `game-designer` agent before adding or reworking a job or mini-game.
+Two agents, two roles:
+
+- `game-designer` designs how the economy works: which jobs and games exist, how they reward, what players spend on and why. Run it before adding or reworking a job, mini-game, reward or sink.
+- `economist` moderates how strong the economy is: it measures money in and out, inflation, time to goals and exploits, and says whether a proposed number is too generous or too stingy. It does not invent features. Run it before shipping a change to a price, reward, fee or cap.
 
 ## Invariants
 

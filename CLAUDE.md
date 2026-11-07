@@ -4,7 +4,7 @@ Rules are split by topic in `.claude/rules/`. Files without a `paths:` header lo
 
 | File | Loads | Covers |
 |---|---|---|
-| `global.md` | always | Code principles (KISS, YAGNI, DRY, SoC, SOLID), product voice, git |
+| `global.md` | always | Code principles (KISS, YAGNI, DRY, SoC, SOLID, composition, idempotence, contracts...), product voice, git |
 | `roadmap.md` | always | Approved work, its status and the product decisions behind it |
 | `economy.md` | backend services, socket games | Coin sources and sinks, server-owned rewards, decided balance |
 | `backend.md` | `backend/**` | Laravel API, migrations, feature tests |
