@@ -7,11 +7,10 @@ use App\Models\AccountAuthLocal;
 use App\Models\AccountHandle;
 use App\Models\SecurityEvent;
 use App\Services\AccountMailer;
+use App\Services\AccountRegistrationService;
 use App\Services\ReferralService;
 use App\Services\SecurityEventLogger;
-use App\Services\StarterCosmeticGrantService;
 use App\Services\WalletSummaryService;
-use App\Services\WelcomeBonusService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -57,37 +56,7 @@ class AuthController extends Controller
             ]);
         }
 
-        $tag = random_int(0, 9999);
-
-        DB::transaction(function () use ($validated, $normalized, $tag) {
-            Account::create([
-                'status' => 'active',
-                'terms_version' => self::TERMS_VERSION,
-                'terms_accepted_at' => now(),
-                'age_confirmed_at' => now(),
-            ]);
-            // PostgreSQL IDENTITY: Eloquent may not set account_id on the model, so fetch it
-            $accountId = Account::orderByDesc('account_id')->value('account_id');
-            AccountHandle::create([
-                'account_id' => $accountId,
-                'username' => $validated['username'],
-                'tag' => $tag,
-                'normalized' => $normalized,
-            ]);
-            AccountAuthLocal::create([
-                'account_id' => $accountId,
-                'email' => $validated['email'],
-                'password_hash' => Hash::make($validated['password']),
-                'email_verified' => false,
-            ]);
-        });
-
-        $account = Account::whereHas('localAuth', fn ($q) => $q->where('email', $validated['email']))
-            ->with('handle', 'localAuth')
-            ->firstOrFail();
-
-        app(StarterCosmeticGrantService::class)->ensureStarterCosmeticsForAccount((int) $account->account_id);
-        app(WelcomeBonusService::class)->grantOnce((int) $account->account_id);
+        $account = app(AccountRegistrationService::class)->register($validated['email'], $validated['username'], $validated['password']);
         app(ReferralService::class)->attachReferrer((int) $account->account_id, $validated['referral_code'] ?? null);
 
         $account->update(['last_login_at' => now()]);

@@ -116,6 +116,9 @@ seed: ## Seed shop + housing
 seed-shop: ## Seed shop catalog / wearables
 	$(ART) db:seed --class=ShopSeeder --force
 
+playtest-accounts: ## Create or reset the two local playtest accounts (credentials in PlaytestAccountSeeder)
+	$(ART) db:seed --class=PlaytestAccountSeeder --force
+
 seed-housing: ## Seed the 10 town houses (housing units)
 	$(ART) db:seed --class=HousingUnitSeeder --force
 
