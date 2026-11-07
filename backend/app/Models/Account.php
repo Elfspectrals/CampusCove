@@ -38,6 +38,10 @@ class Account extends Model implements AuthenticatableContract
         'age_confirmed_at',
         'anonymized_at',
         'inactivity_warned_at',
+        'character_sex',
+        'character_face',
+        'character_build',
+        'character_created_at',
     ];
 
     protected $hidden = [];
@@ -56,6 +60,8 @@ class Account extends Model implements AuthenticatableContract
             'age_confirmed_at' => 'datetime',
             'anonymized_at' => 'datetime',
             'inactivity_warned_at' => 'datetime',
+            'character_face' => 'integer',
+            'character_created_at' => 'datetime',
         ];
     }
 

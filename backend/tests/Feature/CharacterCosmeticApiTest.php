@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Services\StarterCosmeticGrantService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\Concerns\SetsWalletBalance;
@@ -273,9 +274,9 @@ class CharacterCosmeticApiTest extends TestCase
 
     public function test_equipping_a_headset_takes_off_the_hair_and_hair_takes_off_the_headset(): void
     {
-        ['token' => $token] = $this->registerAndCreditWallet(10_000, 'coins');
+        ['token' => $token, 'account_id' => $accountId] = $this->registerAndCreditWallet(10_000, 'coins');
         $headers = ['Authorization' => 'Bearer '.$token];
-        $hair = $this->buyWearable('COS_WEAR_HAIR_SHORT', $headers);
+        $hair = $this->freeHaircut($accountId, 'COS_WEAR_HAIR_SHORT');
         $headset = $this->buyWearable('COS_WEAR_HEAD_ACCESSORY_GAMER', $headers);
 
         $this->putJson('/api/character/cosmetics', ['slots' => ['hair' => $hair]], $headers)
@@ -318,9 +319,9 @@ class CharacterCosmeticApiTest extends TestCase
 
     public function test_hair_and_headset_cannot_be_equipped_together(): void
     {
-        ['token' => $token] = $this->registerAndCreditWallet(10_000, 'coins');
+        ['token' => $token, 'account_id' => $accountId] = $this->registerAndCreditWallet(10_000, 'coins');
         $headers = ['Authorization' => 'Bearer '.$token];
-        $hair = $this->buyWearable('COS_WEAR_HAIR_SHORT', $headers);
+        $hair = $this->freeHaircut($accountId, 'COS_WEAR_HAIR_SHORT');
         $headset = $this->buyWearable('COS_WEAR_HEAD_ACCESSORY_GAMER', $headers);
 
         $this->putJson('/api/character/cosmetics', ['slots' => ['hair' => $hair, 'head_accessory' => $headset]], $headers)
@@ -331,6 +332,14 @@ class CharacterCosmeticApiTest extends TestCase
             ->assertOk()
             ->assertJsonPath('slots.hair', null)
             ->assertJsonPath('slots.head_accessory', null);
+    }
+
+    /** Haircuts are not sold: the character creator gives them (CharacterAppearanceService). */
+    private function freeHaircut(int $accountId, string $code): int
+    {
+        app(StarterCosmeticGrantService::class)->ensureCodesForAccount($accountId, [$code]);
+
+        return (int) DB::table('item_defs')->where('code', $code)->value('item_def_id');
     }
 
     /**
