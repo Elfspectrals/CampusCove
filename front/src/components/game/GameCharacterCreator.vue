@@ -299,22 +299,18 @@ onUnmounted(() => {
             </div>
           </fieldset>
 
-          <fieldset class="m-0 border-0 p-0">
-            <legend class="mb-1.5 text-xs font-extrabold uppercase tracking-wider text-fog">{{ t('character.hairColor') }}</legend>
-            <div class="flex flex-wrap gap-2">
-              <button
-                v-for="(hex, i) in HAIR_COLORS"
-                :key="hex"
-                type="button"
-                class="h-11 w-11 rounded-full border-2 transition-transform"
-                :class="choice.hairColor === hex ? 'scale-110 border-sun' : 'border-ink-500/70'"
-                :style="{ background: hex }"
-                :aria-pressed="choice.hairColor === hex"
-                :aria-label="t('character.colorN', { n: i + 1 })"
-                @click="choice.hairColor = hex"
+          <div>
+            <label for="cc-hair-color" class="mb-1.5 block text-xs font-extrabold uppercase tracking-wider text-fog">{{ t('character.hairColor') }}</label>
+            <div class="flex items-center gap-3">
+              <input
+                id="cc-hair-color"
+                v-model="choice.hairColor"
+                type="color"
+                class="h-11 w-16 cursor-pointer rounded-xl border-2 border-ink-500/70 bg-transparent p-1"
               />
+              <span class="font-mono text-sm uppercase text-mist">{{ choice.hairColor }}</span>
             </div>
-          </fieldset>
+          </div>
 
           <p v-if="mode === 'create'" class="m-0 text-xs text-mist">{{ t('character.newcomerNote') }}</p>
         </div>

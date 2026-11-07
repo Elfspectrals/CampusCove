@@ -33,6 +33,16 @@ function skinnedMeshes(root: THREE.Object3D): THREE.SkinnedMesh[] {
   return out
 }
 
+/**
+ * glTF node extras (region, face, slot, hides). A node with several materials loads as a Group of one SkinnedMesh per
+ * material, and the extras land on that Group, not on the meshes: read them from whichever carries them.
+ */
+function nodeExtras(mesh: THREE.Object3D): Record<string, unknown> {
+  const own = mesh.userData
+  if ('region' in own || 'slot' in own) return own
+  return mesh.parent?.userData ?? {}
+}
+
 function attachPiece(template: THREE.Group, parent: THREE.Object3D, bones: Map<string, THREE.Bone>): THREE.SkinnedMesh[] {
   return skinnedMeshes(template).map((src) => {
     const rebound = src.skeleton.bones.map((b) => {
@@ -42,7 +52,7 @@ function attachPiece(template: THREE.Group, parent: THREE.Object3D, bones: Map<s
     })
     const mesh = new THREE.SkinnedMesh(src.geometry, src.material)
     mesh.name = src.name
-    mesh.userData = { ...src.userData, sharedGeometry: true, sharedMaterials: true }
+    mesh.userData = { ...nodeExtras(src), ...src.userData, sharedGeometry: true, sharedMaterials: true }
     mesh.frustumCulled = false
     mesh.castShadow = true
     parent.add(mesh)
@@ -81,8 +91,9 @@ export async function createModularCharacter(models: WearModels, colors: SlotHex
   const hidden = hiddenRegions(worn.map((m) => m.userData.hides as string | undefined))
   const face = (look ?? DEFAULT_LOOK).face
   for (const mesh of body) {
-    const region = mesh.userData.region as string
-    mesh.visible = region === 'face' ? mesh.userData.face === face : !hidden.has(region)
+    const extras = nodeExtras(mesh)
+    const region = extras.region as string
+    mesh.visible = region === 'face' ? extras.face === face : !hidden.has(region)
   }
   for (const mesh of [...body, ...worn]) tint(mesh, colors, defaults)
   attachAvatarAnimations(instance)

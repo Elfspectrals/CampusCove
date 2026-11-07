@@ -50,6 +50,16 @@ Decision (2026-11-07): every player builds their character the first time they e
 - [done] Death: only the worn clothes bought with coins are destroyed (the wardrobe is kept, decided 2026-11-07) and the player respawns in the newcomer outfit. Gem-bought (real-money) skins and clothes are never lost: they are only taken off and can be put back on. Run the `economist` before shipping, since this adds a clothes sink.
 - [doing] A key (P, rebindable) opens the same editor anywhere in the game, free, everything editable including sex. A paid barber comes later and replaces it.
 - [todo] A full shop skin (Night Owl, Street Runner...) replaces the custom character while it is worn. Not built: the modular avatar ignores the body slot today, so a worn skin does not show in the game.
+- [done] Hair colour is a free colour picker, not a palette (decided 2026-11-08).
+
+Decision (2026-11-08): the first playtest found the characters ugly. Target look: stylized low-poly characters like Just Create Studios' packs (justcreate3d.studio): believable proportions, sculpted faces, hair in clean locks, soft shading. They are a reference for the style only; we build our own with the `front/scripts/skins/` Blender scripts (no bought pack, no copy of their characters). Nothing on this branch is merged before the new characters are in.
+
+- [todo] New stylized base bodies (woman / man) on one shared rig, Idle/Walk/Run/Sit kept; builds and the fit system carried over. Prototype one head and body first and get the look approved from renders before converting the clothes.
+- [todo] Face sliders (morph targets: nose, jaw, eyes, mouth...) replacing the 6 fixed faces. Draco cannot carry morph targets: switch these files to meshopt.
+- [todo] Beard and moustache chosen on their own, tinted with the hair colour.
+- [todo] Eye colour.
+- [todo] Facial expressions and emotes visible to other players.
+- [todo] Hair rebuilt as smooth, clean locks (the current long hair looks jagged); every top, bottom, shoe and accessory refitted to the new bodies.
 
 ## Later
 
