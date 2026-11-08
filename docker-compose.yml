@@ -14,6 +14,8 @@ services:
       REALTIME_SHARED_SECRET: ${REALTIME_SHARED_SECRET:-campuscove-dev-realtime-secret}
       # >1 speeds hunger / thirst up for playtests (SURVIVAL_TIME_SCALE=10 empties hunger in 4 min).
       SURVIVAL_TIME_SCALE: ${SURVIVAL_TIME_SCALE:-1}
+      # Docker on Windows sends no file events through the bind mount: poll, so a `git pull` restarts the server
+      CHOKIDAR_USEPOLLING: "true"
       DB_HOST: postgres
       DB_PORT: 5432
       DB_DATABASE: campus_cove
@@ -99,6 +101,8 @@ services:
     environment:
       VITE_API_URL: http://localhost:8000/api
       VITE_SOCKET_URL: http://localhost:3000
+      # Docker on Windows sends no file events through the bind mount: poll (vite.config.ts), so pulled files are served
+      CHOKIDAR_USEPOLLING: "true"
     ports:
       - "5173:5173"
     volumes:
