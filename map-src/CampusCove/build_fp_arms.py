@@ -24,6 +24,9 @@ WEAR_DIR = os.path.normpath(os.path.join(HERE, "..", "..", "front", "public", "a
 WEAR_TOPS = globals().get("WEAR_TOPS")
 
 ELBOW_Z = 1.22
+# Player clothes (stylized body): only the lower forearm is shown, so the thick forearm does not fill the bottom corners
+# of the screen. The elbow pivot above still comes from ELBOW_Z.
+FOREARM_CUT_Z = 1.1 if WEAR_TOPS is not None else None
 STATIC_WRIST_Z = 0.985
 STATIC_ARM_MIN_X = 0.265
 STATIC_ARM_MAX_DEPTH = 0.08
@@ -132,6 +135,9 @@ def side_faces(body, side):
     wrist_z = max(v.co.z for v in hand_bm.verts)
     wrist_pts = [v.co for v in hand_bm.verts if v.co.z > wrist_z - 0.02]
     wrist = sum(wrist_pts, Vector()) / len(wrist_pts)
+    if FOREARM_CUT_Z is not None:
+        cut = bmesh.ops.bisect_plane(arm_bm, geom=arm_bm.verts[:] + arm_bm.edges[:] + arm_bm.faces[:], plane_co=(0, 0, FOREARM_CUT_Z), plane_no=(0, 0, 1), clear_outer=True)
+        bmesh.ops.holes_fill(arm_bm, edges=[e for e in cut["geom_cut"] if isinstance(e, bmesh.types.BMEdge)], sides=0)
     return arm_bm, hand_bm, elbow, wrist
 
 

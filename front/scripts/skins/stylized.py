@@ -223,13 +223,15 @@ def build_hands(coll, sex):
             tube(bm, wrist + down * 0.02 * k + V3((0, y * k, 0)), knuckles + V3((0, y * 1.2 * k, 0)), 0.012 * k, 0.012 * k)
         for (y, length, r) in ((-0.022, 0.068, 0.0084), (-0.0075, 0.076, 0.0086), (0.0075, 0.072, 0.0082), (0.021, 0.058, 0.0072)):
             base = knuckles + V3((0, y * k, 0))
-            p1 = base + down * length * 0.45 * k + inward * 0.004
-            p2 = p1 + (down * 0.8 + inward * 0.6).normalized() * length * 0.32 * k
-            p3 = p2 + (down * 0.4 + inward * 0.9).normalized() * length * 0.23 * k
+            # relaxed, half-closed hand: each joint bends further towards the palm
+            p1 = base + down * length * 0.4 * k + inward * 0.005
+            p2 = p1 + (down * 0.25 + inward * 1.0).normalized() * length * 0.3 * k
+            p3 = p2 + (down * -0.45 + inward * 0.9).normalized() * length * 0.22 * k
             chain(bm, [base, p1, p2, p3], [r * k, r * 0.95 * k, r * 0.85 * k, r * 0.75 * k])
+        # thumb resting across the front of the curled fingers
         t0 = wrist + down * 0.025 * k + V3((0, -0.02 * k, 0)) + inward * 0.006
-        t1 = t0 + V3((0, -0.022, -0.02)) * k + inward * 0.006
-        t2 = t1 + V3((0, -0.012, -0.022)) * k + inward * 0.004
+        t1 = t0 + V3((0, -0.018, -0.016)) * k + inward * 0.012
+        t2 = t1 + V3((0, -0.002, -0.016)) * k + inward * 0.014
         chain(bm, [t0, t1, t2], [0.013 * k, 0.0105 * k, 0.0085 * k])
     ob = obj_from(bm, "Hands_" + sex, coll)
     remesh(ob, 0.0016)
