@@ -34,6 +34,12 @@ REST_ELBOW = {"R": Vector((0.24, 0.02, -0.3)), "L": Vector((-0.24, 0.02, -0.3))}
 REST_ROTATION = {"R": Euler((math.radians(32), 0, math.radians(20))), "L": Euler((math.radians(32), 0, math.radians(-20)))}
 HANG_TO_FORWARD = Euler((math.radians(90), 0, math.radians(180)), "ZYX").to_matrix().to_4x4()
 
+# First-person proportions, as viewmodels do: the forearm sits closer to the eye than the hand, so it
+# reads huge and the hand tiny. The player's arms get a bigger hand and a slimmer forearm and sleeve.
+FP_HAND_SCALE = 1.45
+FP_FOREARM_SLIM = 0.8
+FP_HAND_RAMP = 0.04
+
 
 def import_skin(key):
     before = set(bpy.data.objects)
@@ -135,6 +141,32 @@ def side_faces(body, side):
     return arm_bm, hand_bm, elbow, wrist
 
 
+def smoothstep(t):
+    t = min(max(t, 0.0), 1.0)
+    return t * t * (3 - 2 * t)
+
+
+def slim_forearm(bm, elbow, wrist):
+    """Pull the forearm toward its axis, FP_FOREARM_SLIM at the elbow easing to full size at the wrist
+    so the cuff still covers the wrist."""
+    axis = wrist - elbow
+    length = axis.length
+    axis.normalize()
+    for v in bm.verts:
+        t = (v.co - elbow).dot(axis)
+        along = elbow + axis * t
+        v.co = along + (v.co - along) * (FP_FOREARM_SLIM + (1 - FP_FOREARM_SLIM) * smoothstep(t / length))
+
+
+def grow_hand(bm, elbow, wrist):
+    """Scale the hand around the wrist, from full size at the wrist ring (no seam) to FP_HAND_SCALE
+    a few centimetres past it."""
+    axis = (wrist - elbow).normalized()
+    for v in bm.verts:
+        offset = v.co - wrist
+        v.co = wrist + offset * (1 + (FP_HAND_SCALE - 1) * smoothstep(offset.dot(axis) / FP_HAND_RAMP))
+
+
 def mesh_object(coll, name, bm, offset, materials):
     bm.transform(HANG_TO_FORWARD @ Matrix.Translation(-offset))
     bm.normal_update()
@@ -189,6 +221,9 @@ PUNCH_FIST_KEYS = [
     (9, (0, 0, 0), (0, 0, 0)),
     (15, (0, 0, 0), (0, 0, 0)),
 ]
+# The fist travels about 25 cm away from the eye, so perspective shrinks it right when it should read
+# biggest; it swells instead through the strike, like viewmodel punches do.
+PUNCH_FIST_SCALE = {1: 1.0, 4: 1.0, 6: 1.3, 9: 1.25, 15: 1.0}
 PUNCH_GUARD_KEYS = [
     (1, (0, 0, 0), (0, 0, 0)),
     (5, (0.03, -0.12, 0.07), (0.3, 0, 0.12)),
@@ -197,7 +232,8 @@ PUNCH_GUARD_KEYS = [
 ]
 
 
-def keyframes(obj, clip, keys):
+def keyframes(obj, clip, keys, scales=None):
+    """keys: (frame, location offset, rotation offset[, "snap"]); scales: optional {frame: uniform scale}."""
     rest_loc = obj.location.copy()
     rest_rot = obj.rotation_euler.copy()
     obj.animation_data_create()
@@ -210,6 +246,9 @@ def keyframes(obj, clip, keys):
         obj.keyframe_insert("rotation_euler", frame=frame)
         if interpolation:
             snaps.add(frame)
+    for frame, scale in (scales or {}).items():
+        obj.scale = (scale,) * 3
+        obj.keyframe_insert("scale", frame=frame)
     action = obj.animation_data.action
     for fcurve in action_fcurves(action):
         for point in fcurve.keyframe_points:
@@ -222,6 +261,7 @@ def keyframes(obj, clip, keys):
     obj.animation_data.action = None
     obj.location = rest_loc
     obj.rotation_euler = rest_rot
+    obj.scale = (1, 1, 1)
 
 
 def loop(n, period_s, fn):
@@ -250,10 +290,10 @@ def animate(arm, hand):
         (19, (0, 0, 0), (0, 0, 0)),
     ])
     keyframes(arm["R"], "Punch", PUNCH_KEYS)
-    keyframes(hand["R"], "Punch", PUNCH_FIST_KEYS)
+    keyframes(hand["R"], "Punch", PUNCH_FIST_KEYS, PUNCH_FIST_SCALE)
     keyframes(arm["L"], "Punch", mirrored(PUNCH_GUARD_KEYS))
     keyframes(arm["L"], "PunchL", mirrored(PUNCH_KEYS))
-    keyframes(hand["L"], "PunchL", mirrored(PUNCH_FIST_KEYS))
+    keyframes(hand["L"], "PunchL", mirrored(PUNCH_FIST_KEYS), PUNCH_FIST_SCALE)
     keyframes(arm["R"], "PunchL", PUNCH_GUARD_KEYS)
     keyframes(hand["R"], "UseKey", [
         (1, (0, 0, 0), (0, 0, 0)),
@@ -264,7 +304,7 @@ def animate(arm, hand):
     ])
 
 
-def build(key, load=import_skin, out_rel=("skins",)):
+def build(key, load=import_skin, out_rel=("skins",), fp_proportions=False):
     sc = L.new_build_scene("FP_" + key)
     sc.render.fps = FPS
     body, imported = load(key)
@@ -275,6 +315,9 @@ def build(key, load=import_skin, out_rel=("skins",)):
     arm, hand = {}, {}
     for side in ("R", "L"):
         arm_bm, hand_bm, elbow, wrist = side_faces(body, side)
+        if fp_proportions:
+            slim_forearm(arm_bm, elbow, wrist)
+            grow_hand(hand_bm, elbow, wrist)
         arm[side] = empty(coll, f"Arm_{side}", root, REST_ELBOW[side], REST_ROTATION[side])
         mesh_object(coll, f"ForeArm_{side}", arm_bm, elbow, materials).parent = arm[side]
         hand[side] = empty(coll, f"Hand_{side}", arm[side], (HANG_TO_FORWARD @ (wrist - elbow).to_4d()).to_3d())
@@ -321,8 +364,8 @@ def render_preview(sc, path):
 
 if WEAR_TOPS is not None:
     tops = WEAR_TOPS or sorted(k for k in os.listdir(os.path.join(WEAR_DIR, "top")) if os.path.isfile(os.path.join(WEAR_DIR, "top", k, "model.glb")))
-    print([build(t, load=import_wear, out_rel=("wear", "top")) for t in tops])
-    print(build("bare", load=lambda _key: import_wear(None), out_rel=("wear",)))
+    print([build(t, load=import_wear, out_rel=("wear", "top"), fp_proportions=True) for t in tops])
+    print(build("bare", load=lambda _key: import_wear(None), out_rel=("wear",), fp_proportions=True))
 else:
     keys = ONLY or sorted(k for k in os.listdir(SKINS_DIR) if os.path.isfile(os.path.join(SKINS_DIR, k, "model.glb")))
     print([build(k) for k in keys])
