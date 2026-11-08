@@ -45,6 +45,9 @@ regions listed in its `extras.hides`. Pieces are weighted from the nearest body 
 | `base_body.py` | base body regions + underwear, and the 6 preset faces per sex |
 | `wear.py` | the pieces, their materials (`W_<slot>_<key>_Main` is the tintable one) and the weight transfer |
 | `fit.py` | body fits: sex x build, one deformation shared by the body and the clothes |
+| `stylized.py` | the stylized character: swept body, hands, simple head, drawn face graphics, haircuts, beard |
+| `stylized_base.py` | turns it into game pieces: reference body skinned and split into regions, a head and six faces per sex, haircut pieces |
+| `run_stylized.py` | review renders of the stylized man and woman (no export) |
 | `wear_preview.py` | 256 px preview per piece |
 | `run_wear.py` | entry point |
 

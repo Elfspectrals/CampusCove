@@ -112,6 +112,11 @@ def deform_to_fit(ob, arm, fit):
             r = co - (a + ab * t)  # offset from the infinite bone line: purely radial, never along the bone
             ease = 1.0 - _smoothstep(FADE_FROM[base], 0.9, t) if base in FADE_FROM else 1.0
             disp += r * ((k - 1) * ease * w)
+        if 0.84 < co.z < 1.15 and abs(co.x) < 0.25:
+            # waist band: every layer here (skin, top hem, waistband) takes the torso profile alone, whatever its
+            # weights, so they scale exactly alike and a waistband never pokes through the top over it
+            disp = V((0.0, 0.0, 0.0))
+            torso_w = 1.0
         if torso_w > 0:
             kx, ky = torso_scale(fit, co.z)
             disp += V((co.x * (kx - 1), co.y * (ky - 1), 0.0)) * min(1.0, torso_w)
