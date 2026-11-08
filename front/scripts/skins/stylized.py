@@ -459,15 +459,19 @@ def build_face(coll, head, sex, face=None, iris="3f2a1d", expression="smile"):
     eye_m = mat("BB_Iris", iris, rough=0.85)
     shine = mat("BB_EyeShine", "ffffff", rough=0.2)
     brow_m = mat("BB_Brow", "3b2618", rough=0.8)
-    mouth_m = mat("BB_Mouth", "4a1f1c", rough=0.6)
+    mouth_m = mat("BB_Mouth", "4a1f1c", rough=0.6) if sex == "m" else mat("BB_MouthF", "93343f", rough=0.5)
     ex, ez, ew, eh, etilt = spec["eye"]
+    if sex == "f":  # bigger eyes read at a distance
+        ew, eh = ew * 1.14, eh * 1.12
     bl, bt, barch, btilt, blift = spec["brow"]
     for sg in (1, -1):
         cx, cz = ex * sg, NOSE_BASE_Z + ez
         L.fill(shape_ring(cx, cz, ew, eh, etilt * sg), eye_m)
         L.fill(shape_ring(cx + 0.0028 * sg, cz + 0.0042, 0.0022, 0.0024), shine, lift=0.0011)
-        if sex == "f":  # lashes: a small flick at the outer corner
-            L.strip([(cx + ew * 0.7 * sg, cz + eh * 0.55), (cx + (ew + 0.004) * sg, cz + eh * 0.85)], [0.0012, 0.0005], eye_m)
+        if sex == "f":  # lash line over the eye and a flick at the outer corner
+            arc = [(cx + ew * 1.08 * math.cos(math.radians(a)) * sg, cz + eh * 1.02 * math.sin(math.radians(a))) for a in range(170, 5, -15)]
+            L.strip(arc, [0.0007] + [0.0011] * (len(arc) - 2) + [0.0014], eye_m, lift=0.0009)
+            L.strip([(cx + ew * 0.95 * sg, cz + eh * 0.35), (cx + (ew + 0.0045) * sg, cz + eh * 0.85)], [0.0013, 0.0005], eye_m, lift=0.0009)
         pts, ws = [], []
         for i in range(7):
             t = i / 6

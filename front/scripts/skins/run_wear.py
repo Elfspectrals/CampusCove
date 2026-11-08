@@ -62,11 +62,13 @@ if "previews" in argv or preview_keys:
 
 if "build" not in argv:
     os.makedirs(OUT_WEAR + "base", exist_ok=True)
+    trees = {}
     for fit in FIT_KEYS:
         sex = fit.split("_")[0]
         own = body_objs + [heads[sex]] + ([woman_top] if sex == "f" else [])
         bodies = own if fit == REFERENCE_FIT else [fitted_copy(o, arm, fit, body_coll) for o in own]
         export_piece_glb(OUT_WEAR + "base/model%s.glb" % fit_url_suffix(fit), [arm] + bodies + faces[sex], animations=True)
+        trees[fit] = body_tree(bodies)
         if fit != REFERENCE_FIT:
             remove_copies(bodies)
     files = len(FIT_KEYS)
@@ -74,9 +76,12 @@ if "build" not in argv:
         d = OUT_WEAR + "%s/%s/" % (slot, key)
         os.makedirs(d, exist_ok=True)
         for fit in (FIT_KEYS if slot in FITTED_SLOTS else (REFERENCE_FIT,)):
-            piece = ob if fit == REFERENCE_FIT else fitted_copy(ob, arm, fit, piece_coll)
+            piece = fitted_copy(ob, arm, fit, piece_coll)
+            if slot in CLEARANCE:
+                pushed = push_out(piece, trees[fit], CLEARANCE[slot])
+                if pushed and fit == REFERENCE_FIT:
+                    print("pushed out", slot, key, pushed, "verts")
             export_piece_glb(d + "model%s.glb" % fit_url_suffix(fit), [arm, piece], animations=False)
-            if piece is not ob:
-                remove_copies([piece])
+            remove_copies([piece])
             files += 1
     print("exported", files, "files into", OUT_WEAR)

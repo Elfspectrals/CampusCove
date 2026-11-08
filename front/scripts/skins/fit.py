@@ -13,8 +13,9 @@ FITTED_SLOTS = ("top", "bottom")
 # (not on which bone a vertex follows) keeps layers in order: a top and the trousers under it get the same scale.
 SEX_TORSO = {
     "m": [],
-    "f": [(0.80, 1.08, 1.04), (0.92, 1.14, 1.06), (1.02, 1.04, 1.0), (1.12, 0.86, 0.94), (1.24, 0.92, 1.0),
-          (1.42, 0.92, 1.0), (1.56, 0.88, 1.0)],
+    # measured on the reference woman vs man: hips +10-12 %, waist -15 %, shoulders and upper chest -8-10 %, neck -25 %
+    "f": [(0.80, 1.1, 1.05), (0.92, 1.18, 1.08), (1.02, 1.06, 1.0), (1.12, 0.82, 0.92), (1.24, 0.9, 1.0),
+          (1.42, 0.9, 1.0), (1.5, 0.86, 1.0), (1.56, 0.8, 1.0)],
 }
 BUILD_TORSO = {
     "slim": [(0.80, 0.9, 0.9), (1.10, 0.85, 0.85), (1.40, 0.88, 0.88), (1.56, 0.9, 0.9)],
@@ -22,13 +23,13 @@ BUILD_TORSO = {
     "broad": [(0.80, 1.1, 1.1), (1.10, 1.2, 1.26), (1.35, 1.2, 1.16), (1.56, 1.14, 1.1)],
 }
 # Limbs: one radial scale per bone (without .L/.R), around the bone axis
-SEX_LIMBS = {"m": {}, "f": {"UpperArm": 0.88, "LowerArm": 0.88, "UpperLeg": 1.05, "LowerLeg": 0.96}}
+SEX_LIMBS = {"m": {}, "f": {"UpperArm": 0.82, "LowerArm": 0.84, "Hand": 0.86, "UpperLeg": 1.06, "LowerLeg": 0.95}}
 BUILD_LIMBS = {
     "slim": {"UpperArm": 0.82, "LowerArm": 0.85, "UpperLeg": 0.88, "LowerLeg": 0.9},
     "normal": {},
     "broad": {"UpperArm": 1.25, "LowerArm": 1.18, "UpperLeg": 1.15, "LowerLeg": 1.1},
 }
-BUST_DEPTH = {"slim": 0.03, "normal": 0.036, "broad": 0.044}
+BUST_DEPTH = {"slim": 0.036, "normal": 0.044, "broad": 0.052}
 TORSO = ("Hips", "Spine", "Chest")
 # limbs ease back to scale 1 toward the wrist / ankle so hands and feet (shared by every fit) still match
 FADE_FROM = {"LowerArm": 0.6, "LowerLeg": 0.55}
@@ -139,3 +140,63 @@ def remove_copies(objs):
         me = o.data
         bpy.data.objects.remove(o, do_unlink=True)
         bpy.data.meshes.remove(me)
+
+
+# ---------------------------------------------------------------- keep clothes outside the body
+
+# Minimum gap to the skin per slot. Tops keep more than bottoms, so where both are pushed the top stays over the
+# waistband instead of sitting at the same depth (which would flicker).
+CLEARANCE = {"top": 0.006, "bottom": 0.003, "shoes": 0.003}
+
+
+def body_tree(objs):
+    """BVH of the body pieces (rest pose, world == local) to measure clothes against."""
+    from mathutils.bvhtree import BVHTree
+    bm = bmesh.new()
+    for o in objs:
+        bm.from_mesh(o.data)
+    bm.normal_update()
+    tree = BVHTree.FromBMesh(bm)
+    bm.free()
+    return tree
+
+
+ACCENT_EXTRA = 0.0025
+
+
+def push_out(ob, tree, clearance):
+    """Moves every vertex that is inside the body, or closer than `clearance`, out along the body normal. Trims and
+    patches (any material but the piece's _Main) keep a little more, so they stay on top of the cloth they sit on."""
+    me = ob.data
+    accent = set()
+    for poly in me.polygons:
+        m = me.materials[poly.material_index] if poly.material_index < len(me.materials) else None
+        if m is not None and not m.name.endswith("_Main"):
+            accent.update(poly.vertices)
+    moved = 0
+    for v in me.vertices:
+        loc, normal, _i, _d = tree.find_nearest(v.co)
+        if loc is None:
+            continue
+        gap = clearance + (ACCENT_EXTRA if v.index in accent else 0.0)
+        if (v.co - loc).dot(normal) < gap:
+            v.co = loc + normal * gap
+            moved += 1
+    if accent:
+        # trims also stay outside the cloth of their own piece (a steep waist can pull them under it)
+        from mathutils.bvhtree import BVHTree
+        bm = bmesh.new()
+        bm.from_mesh(me)
+        bm.faces.ensure_lookup_table()
+        bmesh.ops.delete(bm, geom=[f for f in bm.faces if any(v.index in accent for v in f.verts)], context='FACES')
+        bm.normal_update()
+        if len(bm.faces):
+            cloth = BVHTree.FromBMesh(bm)
+            for i in accent:
+                v = me.vertices[i]
+                loc, normal, _f, dist = cloth.find_nearest(v.co, 0.03)
+                if loc is not None and (v.co - loc).dot(normal) < ACCENT_EXTRA:
+                    v.co = loc + normal * ACCENT_EXTRA
+        bm.free()
+    ob.data.update()
+    return moved

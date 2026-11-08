@@ -46,6 +46,18 @@ const choice = reactive<CreatorChoice>(
     : { sex: 'm', face: 1, build: 'normal', hair: 'basic', skinColor: SKIN_TONES[2], hairColor: HAIR_COLORS[1] },
 )
 const saving = ref(false)
+/** Until the player picks a haircut, switching body picks the usual one for it (long for a woman). */
+let hairPicked = props.initial !== null
+
+function pickSex(sex: CreatorChoice['sex']): void {
+  choice.sex = sex
+  if (!hairPicked) choice.hair = sex === 'f' ? 'long' : 'basic'
+}
+
+function pickHair(hair: CreatorChoice['hair']): void {
+  hairPicked = true
+  choice.hair = hair
+}
 const error = ref<string | null>(null)
 const faces = Array.from({ length: FACE_COUNT }, (_, i) => i + 1)
 
@@ -223,7 +235,7 @@ onUnmounted(() => {
                 class="cc-btn cc-btn-sm min-h-11"
                 :class="choice.sex === s ? 'cc-btn-sun' : 'cc-btn-ghost'"
                 :aria-pressed="choice.sex === s"
-                @click="choice.sex = s"
+                @click="pickSex(s)"
               >
                 {{ t(`character.sexes.${s}`) }}
               </button>
@@ -292,7 +304,7 @@ onUnmounted(() => {
                 class="cc-btn cc-btn-sm min-h-11"
                 :class="choice.hair === h ? 'cc-btn-sun' : 'cc-btn-ghost'"
                 :aria-pressed="choice.hair === h"
-                @click="choice.hair = h"
+                @click="pickHair(h)"
               >
                 {{ t(`character.haircuts.${h}`) }}
               </button>
@@ -307,9 +319,7 @@ onUnmounted(() => {
                 v-model="choice.hairColor"
                 type="color"
                 class="h-11 w-16 cursor-pointer rounded-xl border-2 border-ink-500/70 bg-transparent p-1"
-              />
-              <span class="font-mono text-sm uppercase text-mist">{{ choice.hairColor }}</span>
-            </div>
+              />            </div>
           </div>
 
           <p v-if="mode === 'create'" class="m-0 text-xs text-mist">{{ t('character.newcomerNote') }}</p>
