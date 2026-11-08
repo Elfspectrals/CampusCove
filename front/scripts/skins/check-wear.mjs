@@ -95,6 +95,8 @@ for (const [slot, keys] of Object.entries(PIECES)) {
       const id = `${slot}/${key}/${fileOf(fit)}`
       try {
         statSync(join(WEAR, slot, key, 'preview.png'))
+        // the game loads the first-person arms of whatever top is worn (catalog.ts wearTopFpArmsUrl)
+        if (slot === 'top') statSync(join(WEAR, slot, key, 'fp_arms.glb'))
         const root = (await io.read(join(WEAR, slot, key, fileOf(fit)))).getRoot()
         const nodes = meshNodes(root)
         if (nodes.length !== 1) fail(id, `expected one skinned mesh, found ${nodes.length}`)

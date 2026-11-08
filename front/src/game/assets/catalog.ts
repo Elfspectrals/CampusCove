@@ -82,9 +82,8 @@ export const SKINS: readonly SkinAsset[] = [
   skin('astral_oracle', 'Astral Oracle', 'COS_WEAR_BODY_ASTRAL_ORACLE'),
 ]
 
-type WearTopKey = 'basic' | 'tee' | 'tank' | 'hoodie' | 'varsity' | 'sweater'
-
-const WEAR_TOPS: readonly WearTopKey[] = ['basic', 'tee', 'tank', 'hoodie', 'varsity', 'sweater']
+/** Every top ships its first-person arms next to its model (wear/top/<key>/fp_arms.glb, checked by wear:check). */
+const WEAR_TOP_MODEL = new RegExp(`^${ROOT}/wear/top/([a-z_]+)/model\\.glb$`)
 
 export const WEAR_BASE_MODEL_URL = `${ROOT}/wear/base/model.glb`
 
@@ -92,7 +91,7 @@ const WEAR_BARE_FP_ARMS_URL = `${ROOT}/wear/bare/fp_arms.glb`
 
 export function wearTopFpArmsUrl(topModelUrl: string | null): string {
   if (topModelUrl === null) return WEAR_BARE_FP_ARMS_URL
-  const key = WEAR_TOPS.find((k) => `${ROOT}/wear/top/${k}/model.glb` === topModelUrl)
+  const key = WEAR_TOP_MODEL.exec(topModelUrl)?.[1]
   if (!key) throw new Error(`No first-person arms for the top model ${topModelUrl}`)
   return `${ROOT}/wear/top/${key}/fp_arms.glb`
 }

@@ -322,7 +322,6 @@ onUnmounted(() => {
               />            </div>
           </div>
 
-          <p v-if="mode === 'create'" class="m-0 text-xs text-mist">{{ t('character.newcomerNote') }}</p>
         </div>
 
         <footer class="space-y-2 border-t border-ink-500/40 px-4 py-3">
