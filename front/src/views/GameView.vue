@@ -76,7 +76,7 @@ import { NEWCOMER_OUTFIT, type CreatorChoice } from '../avatar/characterLook'
 import { getWorldCollisionStats } from '../game/collision/worldCollision'
 import { HOUSING_LOBBY_SPAWN } from '../game/gameRoomConstants'
 import { LOCK_RETRY_MS, isLockReleaseEscape } from '../game/pauseMenu'
-import { createGameScene, disposeGameScene, type GameScene } from '../game/gameScene'
+import { createGameScene, disposeGameScene, renderGameFrame, resizeViewmodel, type GameScene } from '../game/gameScene'
 import { createFirstPersonArms } from '../game/firstPersonArms'
 import { createHeldItem } from '../game/heldItem'
 import {
@@ -996,6 +996,12 @@ const movement = useGameMovement({
   getCamera,
   getRenderer,
   getFpHands: () => game?.fpHands ?? null,
+  renderFrame: () => {
+    if (game) renderGameFrame(game)
+  },
+  resizeViewmodel: (w, h) => {
+    if (game) resizeViewmodel(game, w, h)
+  },
   refreshMyAppearance,
   updateProximity: interactions.updateProximity,
   onToggleInventory: toggleInventory,

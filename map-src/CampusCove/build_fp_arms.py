@@ -24,9 +24,6 @@ WEAR_DIR = os.path.normpath(os.path.join(HERE, "..", "..", "front", "public", "a
 WEAR_TOPS = globals().get("WEAR_TOPS")
 
 ELBOW_Z = 1.22
-# Player clothes (stylized body): only the lower forearm is shown, so the thick forearm does not fill the bottom corners
-# of the screen. The elbow pivot above still comes from ELBOW_Z.
-FOREARM_CUT_Z = 1.1 if WEAR_TOPS is not None else None
 STATIC_WRIST_Z = 0.985
 STATIC_ARM_MIN_X = 0.265
 STATIC_ARM_MAX_DEPTH = 0.08
@@ -135,9 +132,6 @@ def side_faces(body, side):
     wrist_z = max(v.co.z for v in hand_bm.verts)
     wrist_pts = [v.co for v in hand_bm.verts if v.co.z > wrist_z - 0.02]
     wrist = sum(wrist_pts, Vector()) / len(wrist_pts)
-    if FOREARM_CUT_Z is not None:
-        cut = bmesh.ops.bisect_plane(arm_bm, geom=arm_bm.verts[:] + arm_bm.edges[:] + arm_bm.faces[:], plane_co=(0, 0, FOREARM_CUT_Z), plane_no=(0, 0, 1), clear_outer=True)
-        bmesh.ops.holes_fill(arm_bm, edges=[e for e in cut["geom_cut"] if isinstance(e, bmesh.types.BMEdge)], sides=0)
     return arm_bm, hand_bm, elbow, wrist
 
 
@@ -175,14 +169,31 @@ def mirrored(keys):
     return [(frame, (-dloc[0], dloc[1], dloc[2]), (drot[0], -drot[1], -drot[2]), *rest) for frame, dloc, drot, *rest in keys]
 
 
+# Jab: 2-frame anticipation (pull back, cock the wrist), a straight snap that lands on frame 6 (= punch.ts
+# PUNCH_IMPACT_S, the hit-stop and the hit test rely on it), a short follow-through past the target, a held beat, then
+# an eased recovery. The elbow stays low and to the side so the forearm crosses the screen to the fist (seen
+# along its length, not end-on); the wrist cocks in the wind-up; the other arm pulls back to guard.
 PUNCH_KEYS = [
     (1, (0, 0, 0), (0, 0, 0)),
-    (3, (0.04, -0.12, -0.04), (0.22, 0, 0.14)),
-    (4, (0.04, -0.12, -0.04), (0.22, 0, 0.14), "snap"),
-    (6, (-0.11, 0.31, 0.19), (-0.5, 0.02, -0.09)),
-    (7, (-0.1, 0.27, 0.18), (-0.44, 0.02, -0.08)),
-    (8, (-0.1, 0.27, 0.18), (-0.44, 0.02, -0.08)),
-    (13, (0, 0, 0), (0, 0, 0)),
+    (3, (0.035, -0.11, -0.05), (0.26, 0, 0.18)),
+    (4, (0.035, -0.11, -0.05), (0.26, 0, 0.18), "snap"),
+    (6, (-0.03, 0.17, 0.08), (-0.15, 0.0, -0.3), "snap"),
+    (7, (-0.035, 0.19, 0.085), (-0.17, 0.0, -0.32)),
+    (9, (-0.03, 0.165, 0.078), (-0.14, 0.0, -0.29)),
+    (15, (0, 0, 0), (0, 0, 0)),
+]
+PUNCH_FIST_KEYS = [
+    (1, (0, 0, 0), (0, 0, 0)),
+    (3, (0, 0, 0), (0, math.radians(18), 0)),
+    (6, (0, 0, 0), (0, 0, 0)),
+    (9, (0, 0, 0), (0, 0, 0)),
+    (15, (0, 0, 0), (0, 0, 0)),
+]
+PUNCH_GUARD_KEYS = [
+    (1, (0, 0, 0), (0, 0, 0)),
+    (5, (0.03, -0.12, 0.07), (0.3, 0, 0.12)),
+    (10, (0.03, -0.12, 0.07), (0.3, 0, 0.12)),
+    (15, (0, 0, 0), (0, 0, 0)),
 ]
 
 
@@ -239,7 +250,11 @@ def animate(arm, hand):
         (19, (0, 0, 0), (0, 0, 0)),
     ])
     keyframes(arm["R"], "Punch", PUNCH_KEYS)
+    keyframes(hand["R"], "Punch", PUNCH_FIST_KEYS)
+    keyframes(arm["L"], "Punch", mirrored(PUNCH_GUARD_KEYS))
     keyframes(arm["L"], "PunchL", mirrored(PUNCH_KEYS))
+    keyframes(hand["L"], "PunchL", mirrored(PUNCH_FIST_KEYS))
+    keyframes(arm["R"], "PunchL", PUNCH_GUARD_KEYS)
     keyframes(hand["R"], "UseKey", [
         (1, (0, 0, 0), (0, 0, 0)),
         (6, (0, 0, 0), (0, 0, 0)),

@@ -32,6 +32,10 @@ export interface UseGameMovementDeps {
   getCamera: () => THREE.PerspectiveCamera | undefined
   getRenderer: () => THREE.WebGLRenderer | undefined
   getFpHands: () => THREE.Group | null
+  /** Draws the world then the first-person arms with their own camera (gameScene.renderGameFrame). */
+  renderFrame: () => void
+  /** Keeps the arms' camera in step with the window size. */
+  resizeViewmodel: (w: number, h: number) => void
   refreshMyAppearance: Ref<(() => void) | null>
   /** Refresh what the player stands next to (doors, fishing spots). */
   updateProximity: () => void
@@ -168,10 +172,7 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     if (pointerLocked.value) updateMovement(dt)
     deps.updateProximity()
     deps.onBeforeRender(dt)
-    const renderer = deps.getRenderer()
-    const scene = deps.getScene()
-    const camera = deps.getCamera()
-    if (renderer && scene && camera) renderer.render(scene, camera)
+    deps.renderFrame()
   }
 
   function startRenderLoop() {
@@ -213,6 +214,7 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     const { w, h } = containerSize()
     camera.aspect = w / h
     camera.updateProjectionMatrix()
+    deps.resizeViewmodel(w, h)
     renderer.setSize(w, h)
   }
 
