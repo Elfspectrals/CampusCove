@@ -47,7 +47,7 @@ Decision (2026-11-06): picking stays simple because it is the first job. Hold to
 
 ## Mall editor (in progress, branch feat-shop-editor)
 
-- [in progress] `/admin/mall-editor`, a UE5-style level editor: templates built per cell size (decor by category, items for sale or as props, NPC extras, one vendor, dressable mannequins), saved as committed JSON by a dev-only endpoint, assigned to free planned cells, opened by a `build_mall.py` rebuild.
+- [in progress] `/admin/editor`, a UE5-style level editor: templates built per cell size (decor by category, items for sale or as props, NPC extras, one vendor, dressable mannequins), saved as committed JSON by a dev-only endpoint, assigned to free planned cells, opened by a `build_mall.py` rebuild.
 
 ## Tooling (done)
 

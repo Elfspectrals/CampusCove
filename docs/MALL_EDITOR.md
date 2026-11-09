@@ -1,14 +1,14 @@
 # Mall Editor — aménager les cellules du centre commercial
 
-`/admin/mall-editor` est un éditeur de niveau dans l'esprit d'Unreal Engine : on compose un **template** (un aménagement de
+`/admin/editor` est un éditeur de niveau dans l'esprit d'Unreal Engine : on compose un **template** (un aménagement de
 boutique : décors, articles en vente, NPC, mannequins, lumières, murs texturés) puis on le pose dans une **cellule libre**
-du Cove Parkview Mall. Le contrat technique (fichiers, repère, rebuild) est dans [MALL.md](MALL.md#templates-de-cellule-adminmall-editor).
+du Cove Parkview Mall. Le contrat technique (fichiers, repère, rebuild) est dans [MALL.md](MALL.md#templates-de-cellule-admineditor).
 
 ## Accès
 
 1. Compte admin : `make set-admin EMAIL=…`, puis se reconnecter.
-2. Lancer le front en local (`make up` ou `npm run dev` dans `front/`) et ouvrir `/admin/mall-editor` (menu admin
-   « Mall Editor »).
+2. Lancer le front en local (`make up` ou `npm run dev` dans `front/`) et ouvrir `/admin/editor` (menu admin
+   « Editor »).
 3. **Sauver et assigner ne marchent qu'en local** : un endpoint réservé au serveur Vite de dev écrit les fichiers dans le
    repo. En production, l'éditeur est en lecture seule (on peut ouvrir et parcourir les templates assignés).
 4. Dans Docker, installer les dépendances du front une fois : `docker compose exec front npm ci` (Tweakpane).

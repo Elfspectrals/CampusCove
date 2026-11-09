@@ -17,7 +17,7 @@ import { parseZoneDecor, parseZoneDecorIndex, zoneDecorJson, type ZoneDecorIndex
 import { parseCrops, type CropTable } from '../src/game/crops/crops.ts'
 import type { WorldManifest } from '../src/game/world/worldManifest.ts'
 
-const ROUTE = '/__mall-editor/'
+const ROUTE = '/__editor/'
 const MAX_BODY_BYTES = 1_000_000
 const LOCAL_HOSTS = ['localhost', '127.0.0.1', '[::1]', 'front']
 

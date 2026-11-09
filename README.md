@@ -120,7 +120,7 @@ DOCKER_CONTEXT=cc make prod-up
 | `socket/` | Serveur Colyseus : `server.ts` (démarrage) + `src/` (`CityRoom`, intérieurs, joueurs, appels backend) |
 | `backend/app/Console/Commands/` | Commandes Artisan (`setAdmin`, `setMoney`, `fillOutfit`, `housing:*`) |
 
-Éditeur de boutiques du mall (`/admin/mall-editor`) : mode d'emploi dans [docs/MALL_EDITOR.md](docs/MALL_EDITOR.md).
+Éditeur de niveau, boutiques du mall et zones du monde ouvert (`/admin/editor`) : mode d'emploi dans [docs/MALL_EDITOR.md](docs/MALL_EDITOR.md).
 
 Garde-fous : `cd front && npx knip` (code / exports morts), `make typecheck`, `npm run test:unit`, `make test`.
 

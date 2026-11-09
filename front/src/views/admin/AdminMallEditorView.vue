@@ -43,7 +43,7 @@ import {
 } from '../../game/mallTemplates/mallTemplate.ts'
 
 const MALL_LAYOUT_URL = '/assets/store/mall/mall.layout.json'
-const EDITOR_API = '/__mall-editor'
+const EDITOR_API = '/__editor'
 const CAN_WRITE = import.meta.env.DEV
 const DEFAULT_NPC_OUTFIT = [
   { slot: 'hair', key: 'ponytail' },
@@ -845,7 +845,7 @@ onUnmounted(() => {
   <div class="h-full w-full overflow-auto bg-ink-950">
   <div class="flex h-full min-h-[680px] w-full min-w-[900px] flex-col text-fog">
     <header class="cc-panel-flat m-2 mb-0 flex flex-wrap items-center gap-3 px-4 py-2">
-      <h1 class="cc-display m-0 text-xl text-sun">Mall Editor</h1>
+      <h1 class="cc-display m-0 text-xl text-sun">Editor</h1>
       <input v-model.trim="template.name" placeholder="Template name" class="cc-input w-44 py-1.5 text-sm" />
       <input
         v-model.trim="template.key"
