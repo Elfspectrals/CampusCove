@@ -28,7 +28,8 @@ const hasVendor = computed(() => outliner.props.some((p) => p.kind === 'npc' && 
 const sold = computed(() => outliner.props.filter((p) => p.kind === 'item' && p.forSale).length)
 
 function label(prop: TemplateProp): string {
-  if (prop.kind === 'npc') return prop.vendor ? 'Vendor' : 'Extra'
+  if (prop.kind === 'npc') return prop.vendor ? 'Cashier' : 'Extra'
+  if (prop.kind === 'field') return `${prop.crop} field`
   if (prop.kind === 'mannequin') return 'Mannequin'
   if (prop.kind === 'light') return prop.light === 'spot' ? 'Spot light' : 'Point light'
   if (prop.kind === 'item') return prop.code
@@ -37,7 +38,7 @@ function label(prop: TemplateProp): string {
 
 function typeOf(prop: TemplateProp): string {
   if (prop.kind === 'item') return prop.forSale ? 'For sale' : 'Prop'
-  return { decor: 'Decor', npc: 'NPC', mannequin: 'Mannequin', light: 'Light' }[prop.kind]
+  return { decor: 'Decor', npc: 'NPC', mannequin: 'Mannequin', light: 'Light', field: 'Field' }[prop.kind]
 }
 </script>
 

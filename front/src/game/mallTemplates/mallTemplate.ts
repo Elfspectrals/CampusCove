@@ -116,7 +116,14 @@ export interface LightProp extends PropBase {
   pitch?: number
 }
 
-export type TemplateProp = DecorProp | ItemProp | NpcProp | MannequinProp | LightProp
+export interface FieldProp extends PropBase {
+  kind: 'field'
+  crop: string
+  size: [number, number]
+  pattern: 'rows' | 'staggered' | 'scattered'
+}
+
+export type TemplateProp = DecorProp | ItemProp | NpcProp | MannequinProp | LightProp | FieldProp
 
 export type Surface = 'left' | 'right' | 'back' | 'floor' | 'ceiling'
 
@@ -335,13 +342,13 @@ function objectAt(value: unknown, path: string, allowed?: readonly string[]): Js
   return value as Json
 }
 
-function stringAt(value: unknown, path: string, pattern?: RegExp): string {
+export function stringAt(value: unknown, path: string, pattern?: RegExp): string {
   if (typeof value !== 'string' || value === '') throw new TemplateError(path, 'expected a non-empty string')
   if (pattern && !pattern.test(value)) throw new TemplateError(path, `"${value}" does not match ${pattern}`)
   return value
 }
 
-function numberAt(value: unknown, path: string): number {
+export function numberAt(value: unknown, path: string): number {
   if (typeof value !== 'number' || !Number.isFinite(value)) throw new TemplateError(path, 'expected a finite number')
   return value
 }
@@ -358,7 +365,7 @@ function scaleAt(value: unknown, path: string): Vec3 {
   return scale
 }
 
-function vec3At(value: unknown, path: string): Vec3 {
+export function vec3At(value: unknown, path: string): Vec3 {
   if (!Array.isArray(value) || value.length !== 3) throw new TemplateError(path, 'expected [x, y, z]')
   return [numberAt(value[0], `${path}[0]`), numberAt(value[1], `${path}[1]`), numberAt(value[2], `${path}[2]`)]
 }

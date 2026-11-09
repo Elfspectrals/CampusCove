@@ -1,25 +1,19 @@
 import { callRealtimeBackend, errorPayload } from './backend.ts'
 import type { ClientPayload, GameClient, GameRoom, Player } from './types.ts'
-import { worldFarm, type WorldField } from './world.ts'
+import { worldCropPlants, type WorldCropPlant } from './world.ts'
 
 export const PICK_MS = 3000
 const PICK_LAG_MARGIN_MS = 250
-const FIELD_MARGIN = 0.5
+const PLANT_REACH = 2
 const EYE_HEIGHT = 1.6
-const GROUND_TOLERANCE = 2
+const POINT_FLOOR_TOLERANCE = 2
 
 function sendFarmError(client: GameClient, message: string, code: string): void {
   client.send('farm_error', { message, code })
 }
 
-function standsIn(player: Player, field: WorldField): boolean {
-  return (
-    player.x >= field.minX - FIELD_MARGIN &&
-    player.x <= field.maxX + FIELD_MARGIN &&
-    player.z >= field.minZ - FIELD_MARGIN &&
-    player.z <= field.maxZ + FIELD_MARGIN &&
-    Math.abs(player.y - EYE_HEIGHT) <= GROUND_TOLERANCE
-  )
+function withinReach(player: Player, plant: WorldCropPlant): boolean {
+  return Math.hypot(player.x - plant.x, player.z - plant.z) <= PLANT_REACH && Math.abs(player.y - EYE_HEIGHT - plant.y) <= POINT_FLOOR_TOLERANCE
 }
 
 function activePlayer(room: GameRoom, client: GameClient, now: number): Player | null {
@@ -31,17 +25,17 @@ function activePlayer(room: GameRoom, client: GameClient, now: number): Player |
 export function onFarmPickStart(room: GameRoom, client: GameClient, payload: ClientPayload, now = Date.now()): void {
   const player = activePlayer(room, client, now)
   if (!player) return
-  const fieldIndex = payload?.field
-  const field = typeof fieldIndex === 'number' && Number.isInteger(fieldIndex) ? worldFarm()?.fields[fieldIndex] : undefined
-  if (typeof fieldIndex !== 'number' || !field) {
-    sendFarmError(client, 'There is no such field.', 'farm_unknown_field')
+  const plantIndex = payload?.plant
+  const plant = typeof plantIndex === 'number' && Number.isInteger(plantIndex) ? worldCropPlants()[plantIndex] : undefined
+  if (typeof plantIndex !== 'number' || !plant) {
+    sendFarmError(client, 'There is no such plant.', 'farm_unknown_plant')
     return
   }
-  if (!standsIn(player, field)) {
-    sendFarmError(client, 'Step into the field first.', 'farm_too_far')
+  if (!withinReach(player, plant)) {
+    sendFarmError(client, 'Get closer to the plant.', 'farm_too_far')
     return
   }
-  player.farmPick = { field: fieldIndex, startedAt: now }
+  player.farmPick = { plant: plantIndex, startedAt: now }
 }
 
 export async function onFarmPick(room: GameRoom, client: GameClient, now = Date.now()): Promise<void> {
@@ -57,13 +51,13 @@ export async function onFarmPick(room: GameRoom, client: GameClient, now = Date.
     sendFarmError(client, 'Keep picking a little longer.', 'farm_too_fast')
     return
   }
-  const field = worldFarm()?.fields[pick.field]
-  if (!field || !standsIn(player, field)) {
-    sendFarmError(client, 'Step into the field first.', 'farm_too_far')
+  const plant = worldCropPlants()[pick.plant]
+  if (!plant || !withinReach(player, plant)) {
+    sendFarmError(client, 'Get closer to the plant.', 'farm_too_far')
     return
   }
   try {
-    client.send('farm_picked', await callRealtimeBackend(player.token, '/farm/pick', 'POST', { crop: field.crop }))
+    client.send('farm_picked', await callRealtimeBackend(player.token, '/farm/pick', 'POST', { crop: plant.crop }))
   } catch (error) {
     console.warn('[farm] pick failed:', error instanceof Error ? error.message : error)
     client.send('farm_error', errorPayload(error, 'The crop slipped from your hand.', 'farm_pick_failed'))

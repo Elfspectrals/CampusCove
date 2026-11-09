@@ -329,7 +329,7 @@ for _ in range(400):
         pine(x, z, rnd.uniform(0.9, 1.25))
         scattered += 1
 
-decor_objs, decor_cols = L.zone_decor(coll, "orchard", "COL_Orchard_")
+decor_objs, decor_cols, crop_plants = L.zone_decor(coll, "orchard", "COL_Orchard_")
 so += decor_objs
 col += decor_cols
 
@@ -345,6 +345,7 @@ L.write_json(os.path.join(OUT, "orchard_site.layout.json"), {
     "gate": GATE,
     "points": {"trees": trees, "farmer": farmer, "farmerYaw": farmer_yaw},
     "collision": col,
+    "crops": crop_plants,
 })
 tris = sum(len(p.vertices) - 2 for o in so if o.type == "MESH" for p in o.data.polygons)
 print("orchard site:", len(so), "objects,", tris, "triangles,", len(col), "collision boxes,", len(trees), "trees, farmer", farmer, farmer_yaw, "gate", GATE)

@@ -13,7 +13,8 @@ import {
   type MallTemplate,
   type TemplateAssignments,
 } from '../src/game/mallTemplates/mallTemplate.ts'
-import { parseZoneDecor, parseZoneDecorIndex, type ZoneDecorIndex } from '../src/game/zoneDecor/zoneDecor.ts'
+import { parseZoneDecor, parseZoneDecorIndex, zoneDecorJson, type ZoneDecorIndex } from '../src/game/zoneDecor/zoneDecor.ts'
+import { parseCrops, type CropTable } from '../src/game/crops/crops.ts'
 import type { WorldManifest } from '../src/game/world/worldManifest.ts'
 
 const ROUTE = '/__mall-editor/'
@@ -99,6 +100,10 @@ function mallTemplatesApi(assets: string) {
   function assertAssetsExist(template: Pick<MallTemplate, 'props' | 'surfaces'>): void {
     const missing = template.props.flatMap((prop) => {
       if (prop.kind === 'decor') return existsSync(join(assets, 'decor', prop.key, 'model.glb')) ? [] : [`${prop.id}: decor/${prop.key}`]
+      if (prop.kind === 'field') {
+        const crop = crops()[prop.crop]
+        return crop && existsSync(join(assets, ...crop.plant.split('/'))) ? [] : [`${prop.id}: plant of ${prop.crop}`]
+      }
       if (prop.kind === 'npc' || prop.kind === 'mannequin') return prop.outfit.filter((p) => !existsSync(join(assets, 'wear', p.slot, p.key, 'model.glb'))).map((p) => `${prop.id}: wear/${p.slot}/${p.key}`)
       return []
     })
@@ -128,6 +133,10 @@ function mallTemplatesApi(assets: string) {
     } catch (error) {
       throw new HttpError(500, `zones/${file}: ${error instanceof Error ? error.message : String(error)}`)
     }
+  }
+
+  function crops(): CropTable {
+    return stored('../crops/crops.json', () => parseCrops(readJson(join(assets, 'crops', 'crops.json'))))
   }
 
   function zoneIndex(): ZoneDecorIndex {
@@ -181,15 +190,18 @@ function mallTemplatesApi(assets: string) {
     if (method === 'GET' && zoneKey) {
       const zone = decoratableZone(zoneKey)
       if (!existsSync(zonePath(zoneKey))) throw new HttpError(404, `zones/${zoneKey}.json is not decorated yet`)
-      return stored(`${zoneKey}.json`, () => parseZoneDecor(readJson(zonePath(zoneKey)), zone))
+      const table = crops()
+      return zoneDecorJson(stored(`${zoneKey}.json`, () => parseZoneDecor(readJson(zonePath(zoneKey)), zone, table)), table)
     }
     if (method === 'PUT' && zoneKey) {
-      const decor = parseZoneDecor(await readBody(req), decoratableZone(zoneKey))
+      const table = crops()
+      const decor = parseZoneDecor(await readBody(req), decoratableZone(zoneKey), table)
       assertAssetsExist(decor)
       const index = zoneIndex()
-      writeJson(zonePath(zoneKey), decor)
+      const json = zoneDecorJson(decor, table)
+      writeJson(zonePath(zoneKey), json)
       if (!index.zones.includes(zoneKey)) writeJson(zoneIndexPath, { version: 1, zones: [...index.zones, zoneKey].sort() })
-      return decor
+      return json
     }
     const cellId = /^assignments\/([A-Z][0-9]{2})$/.exec(path)?.[1]
     if (method === 'PUT' && cellId) {

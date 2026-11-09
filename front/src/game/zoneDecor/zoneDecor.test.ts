@@ -1,6 +1,11 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { bakedProps, parseZoneDecor, parseZoneDecorIndex, runtimeProps, zoneStoreLayout } from './zoneDecor.ts'
+import { readFileSync } from 'node:fs'
+import { parseCrops } from '../crops/crops.ts'
+import { bakedProps, parseZoneDecor as parseWithCrops, parseZoneDecorIndex, runtimeProps, zoneDecorJson, zoneStoreLayout } from './zoneDecor.ts'
+
+const crops = parseCrops(JSON.parse(readFileSync(new URL('../../../public/assets/crops/crops.json', import.meta.url), 'utf8')))
+const parseZoneDecor = (raw: unknown, zone: Parameters<typeof parseWithCrops>[1]) => parseWithCrops(raw, zone, crops)
 
 const orchard = { key: 'orchard', bounds: { minX: -42.6, maxX: -2, minZ: -130, maxZ: -72 } }
 
@@ -72,4 +77,34 @@ test('the index lists each decorated zone once', () => {
   assert.deepEqual(parseZoneDecorIndex({ version: 1, zones: ['orchard', 'farm'] }).zones, ['orchard', 'farm'])
   assert.throws(() => parseZoneDecorIndex({ version: 1, zones: ['orchard', 'orchard'] }), /listed twice/)
   assert.throws(() => parseZoneDecorIndex({ version: 1, zones: ['Orchard'] }), /zone keys/)
+})
+
+const field = { id: 'f1', kind: 'field', crop: 'corn', position: [-20, 0, -100], yaw: 0, scale: [1, 1, 1], size: [8, 12], pattern: 'rows' }
+const withPlants = (props: unknown[]) => zoneDecorJson(decor(props) as Parameters<typeof zoneDecorJson>[0], crops)
+
+test('a field is saved with its plants and baked with the decor', () => {
+  const raw = withPlants([field]) as { props: Array<{ plants: unknown[] }> }
+  assert.equal(raw.props[0]!.plants.length, 78)
+  const parsed = parseZoneDecor(raw, orchard)
+  assert.deepEqual(bakedProps(parsed).map((p) => p.id), ['f1'])
+  assert.deepEqual(runtimeProps(parsed), [])
+})
+
+test('plants that do not match the field are refused', () => {
+  const raw = withPlants([field]) as { props: Array<{ plants: number[][] }> }
+  raw.props[0]!.plants[0]![0]! += 0.5
+  assert.throws(() => parseZoneDecor(raw, orchard), /plants: do not match/)
+  assert.throws(() => parseZoneDecor(decor([field]), orchard), /plants: do not match/)
+})
+
+test('a field stays inside the zone, keeps scale 1 and grows a known crop', () => {
+  assert.throws(() => parseZoneDecor(withPlants([{ ...field, position: [-5, 0, -100] }]), orchard), /reaches outside zone orchard/)
+  assert.throws(() => parseZoneDecor(withPlants([{ ...field, scale: [2, 1, 1] }]), orchard), /keeps scale 1/)
+  assert.throws(() => parseZoneDecor(withPlants([{ ...field, crop: 'rice' }]), orchard), /crop: expected one of corn, potato, cabbage, pumpkin/)
+  assert.throws(() => parseZoneDecor(withPlants([{ ...field, size: [0.5, 12] }]), orchard), /size\[0\]: expected 1 to 60 m/)
+})
+
+test('the game reads fields without the crop table, the plants come from the bake', () => {
+  assert.equal(parseWithCrops(decor([field]), orchard, null).props[0]!.kind, 'field')
+  assert.throws(() => zoneDecorJson(decor([{ ...field, crop: 'rice' }]) as Parameters<typeof zoneDecorJson>[0], crops), /crop: expected one of/)
 })

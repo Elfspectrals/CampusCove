@@ -1,4 +1,5 @@
 import { spawnSync } from 'node:child_process'
+import { readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -27,3 +28,11 @@ const build = join(BUILD_DIR, zone.build)
 run(process.env.BLENDER ?? 'blender', ['--background', '--factory-startup', '--python-exit-code', '1', '--python-expr', `p = ${JSON.stringify(build)}; exec(open(p).read(), {"__file__": p})`])
 run('node', ['scripts/optimize-assets.mjs', zone.category, zone.folder])
 run('node', [join('scripts', zone.apply)])
+
+const manifestPath = join(FRONT, 'public/assets/world.manifest.json')
+const site = JSON.parse(readFileSync(join(FRONT, 'public/assets', zone.category, zone.folder, `${zone.folder}.layout.json`), 'utf8'))
+if (!Array.isArray(site.crops)) throw new Error(`${zone.folder}.layout.json has no crops list, rebuild ${zone.build}`)
+const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'))
+manifest.crops = [...(manifest.crops ?? []).filter((plant) => plant.zone !== key), ...site.crops.map((plant) => ({ zone: key, ...plant }))]
+writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n')
+console.log(`world.manifest.json: ${site.crops.length} crop plants in ${key}`)

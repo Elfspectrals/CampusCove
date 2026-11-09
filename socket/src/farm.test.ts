@@ -11,12 +11,10 @@ const manifest = {
   spawn: [0, 1.6, 13],
   bounds: { minX: -500, maxX: 500, minZ: -500, maxZ: 500 },
   zones: [{ key: 'town', buildings: [] }],
-  farm: {
-    fields: [
-      { crop: 'corn', minX: -40, maxX: -24, minZ: -194, maxZ: -162 },
-      { crop: 'potato', minX: -20, maxX: -5, minZ: -194, maxZ: -162 }
-    ]
-  }
+  crops: [
+    { zone: 'farm', crop: 'corn', position: [-30, 0.03, -170] },
+    { zone: 'farm', crop: 'pumpkin', position: [-10, 0.03, -180] }
+  ]
 }
 
 const apiCalls: Array<{ path: string, body: any }> = []
@@ -55,78 +53,78 @@ function errorCodes(client: FakeClient) {
   return received(client, 'farm_error').map((e) => e.code)
 }
 
-test('holding the pick for 3 s in a field gives one crop of that field', async () => {
-  const corn = setup(-30, -170)
-  onFarmPickStart(corn.room, corn.client, { field: 0 }, 1000)
+test('holding the pick for 3 s at a plant gives one crop of that plant', async () => {
+  const corn = setup(-30, -171)
+  onFarmPickStart(corn.room, corn.client, { plant: 0 }, 1000)
   await onFarmPick(corn.room, corn.client, 1000 + PICK_MS)
   assert.deepEqual(apiCalls, [{ path: '/farm/pick', body: { crop: 'corn' } }])
   assert.deepEqual(received(corn.client, 'farm_picked'), [{ code: 'farm_corn', quantity: 2 }])
 
-  const potato = setup(-10, -180)
-  onFarmPickStart(potato.room, potato.client, { field: 1 }, 0)
-  await onFarmPick(potato.room, potato.client, PICK_MS)
-  assert.deepEqual(apiCalls, [{ path: '/farm/pick', body: { crop: 'potato' } }])
+  const pumpkin = setup(-10, -179)
+  onFarmPickStart(pumpkin.room, pumpkin.client, { plant: 1 }, 0)
+  await onFarmPick(pumpkin.room, pumpkin.client, PICK_MS)
+  assert.deepEqual(apiCalls, [{ path: '/farm/pick', body: { crop: 'pumpkin' } }])
 })
 
-test('the crop comes from the field on the server, not from the client', async () => {
-  const { client, room } = setup(-30, -170)
-  onFarmPickStart(room, client, { field: 0, crop: 'potato' }, 0)
+test('the crop comes from the plant on the server, not from the client', async () => {
+  const { client, room } = setup(-30, -171)
+  onFarmPickStart(room, client, { plant: 0, crop: 'pumpkin' }, 0)
   await onFarmPick(room, client, PICK_MS)
   assert.deepEqual(apiCalls, [{ path: '/farm/pick', body: { crop: 'corn' } }])
 })
 
 test('a pick may land 250 ms early for network lag, not one more', async () => {
-  const { client, room } = setup(-30, -170)
-  onFarmPickStart(room, client, { field: 0 }, 0)
+  const { client, room } = setup(-30, -171)
+  onFarmPickStart(room, client, { plant: 0 }, 0)
   await onFarmPick(room, client, 2749)
   assert.deepEqual(errorCodes(client), ['farm_too_fast'])
 
-  onFarmPickStart(room, client, { field: 0 }, 10_000)
+  onFarmPickStart(room, client, { plant: 0 }, 10_000)
   await onFarmPick(room, client, 12_750)
   assert.equal(received(client, 'farm_picked').length, 1)
 })
 
-test('the player stands in the field, half a metre of edge allowed, at the start and at the end', async () => {
-  const edge = setup(-40.5, -162)
-  onFarmPickStart(edge.room, edge.client, { field: 0 }, 0)
-  assert.deepEqual(edge.player.farmPick, { field: 0, startedAt: 0 })
+test('the plant must be within 2 m when the pick starts and when it ends', async () => {
+  const edge = setup(-30, -168)
+  onFarmPickStart(edge.room, edge.client, { plant: 0 }, 0)
+  assert.deepEqual(edge.player.farmPick, { plant: 0, startedAt: 0 })
 
-  const out = setup(-40.6, -170)
-  onFarmPickStart(out.room, out.client, { field: 0 }, 0)
-  assert.deepEqual(errorCodes(out.client), ['farm_too_far'])
+  const far = setup(-30, -167.9)
+  onFarmPickStart(far.room, far.client, { plant: 0 }, 0)
+  assert.deepEqual(errorCodes(far.client), ['farm_too_far'])
 
-  const left = setup(-30, -170)
-  onFarmPickStart(left.room, left.client, { field: 0 }, 0)
-  left.player.z = -150
+  const left = setup(-30, -171)
+  onFarmPickStart(left.room, left.client, { plant: 0 }, 0)
+  left.player.z = -160
   await onFarmPick(left.room, left.client, PICK_MS)
   assert.deepEqual(errorCodes(left.client), ['farm_too_far'])
   assert.equal(apiCalls.length, 0)
 })
 
-test('only fields of the farm can be picked, and each start gives one pick', async () => {
-  const { player, client, room } = setup(-30, -170)
-  for (const field of [-1, 2, 0.5, '0', null]) onFarmPickStart(room, client, { field }, 0)
-  assert.deepEqual(errorCodes(client), Array(5).fill('farm_unknown_field'))
+test('only plants of the world can be picked, and each start gives one pick', async () => {
+  const { player, client, room } = setup(-30, -171)
+  for (const plant of [-1, 2, 0.5, '0', null]) onFarmPickStart(room, client, { plant }, 0)
+  assert.deepEqual(errorCodes(client), Array(5).fill('farm_unknown_plant'))
   assert.equal(player.farmPick, null)
 
-  onFarmPickStart(room, client, { field: 0 }, 0)
+  onFarmPickStart(room, client, { plant: 0 }, 0)
   await onFarmPick(room, client, PICK_MS)
   await onFarmPick(room, client, 2 * PICK_MS)
   assert.deepEqual(errorCodes(client).slice(5), ['farm_not_picking'])
 })
 
 test('a knocked out player cannot pick', async () => {
-  const { player, client, room } = setup(-30, -170)
+  const { player, client, room } = setup(-30, -171)
   player.knockedOutUntil = 10_000
-  onFarmPickStart(room, client, { field: 0 }, 0)
+  onFarmPickStart(room, client, { plant: 0 }, 0)
   assert.equal(client.sent.length, 0)
   assert.equal(player.farmPick, null)
 })
 
 test('an API refusal reaches the player with its code', async () => {
-  const { client, room } = setup(-30, -170)
+  const { client, room } = setup(-30, -171)
   nextApiError = { status: 422, code: 'basket_full', message: 'You cannot carry more than 20 of those.' }
-  onFarmPickStart(room, client, { field: 0 }, 0)
+  onFarmPickStart(room, client, { plant: 0 }, 0)
   await onFarmPick(room, client, PICK_MS)
   assert.deepEqual(received(client, 'farm_error'), [{ code: 'basket_full', message: 'You cannot carry more than 20 of those.' }])
 })

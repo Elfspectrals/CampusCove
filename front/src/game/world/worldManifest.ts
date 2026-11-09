@@ -118,14 +118,12 @@ export interface OrchardLayout {
   farmerYaw: number
 }
 
-export type Crop = 'corn' | 'potato'
+export type Crop = 'corn' | 'potato' | 'cabbage' | 'pumpkin'
 
-export interface FarmField extends WorldBounds {
+export interface CropPlant {
+  zone: string
   crop: Crop
-}
-
-export interface FarmLayout {
-  fields: FarmField[]
+  position: Vec3
 }
 
 export interface WorldManifest {
@@ -139,7 +137,7 @@ export interface WorldManifest {
   clinic?: ClinicLayout
   pub?: PubLayout
   orchard?: OrchardLayout
-  farm?: FarmLayout
+  crops?: CropPlant[]
 }
 
 const WORLD_MANIFEST_URL = '/assets/world.manifest.json'

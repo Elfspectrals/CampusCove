@@ -62,17 +62,13 @@ export interface WorldOrchard {
   farmer: Vec3
 }
 
-export type Crop = 'corn' | 'potato'
+export type Crop = 'corn' | 'potato' | 'cabbage' | 'pumpkin'
 
-export interface WorldField extends Bounds {
+export interface WorldCropPlant extends Vec3 {
   crop: Crop
 }
 
-export interface WorldFarm {
-  fields: WorldField[]
-}
-
-const CROPS: readonly Crop[] = ['corn', 'potato']
+const CROPS: readonly Crop[] = ['corn', 'potato', 'cabbage', 'pumpkin']
 
 /** A place an admin can teleport to from the watch: just outside a public building's door, facing it. */
 export interface TeleportDestination {
@@ -96,7 +92,7 @@ interface World {
   pub: WorldPub | null
   pubZone: Bounds | null
   orchard: WorldOrchard | null
-  farm: WorldFarm | null
+  cropPlants: WorldCropPlant[]
 }
 
 let world: World | null = null
@@ -155,15 +151,13 @@ function parseOrchard(raw: Json): WorldOrchard | null {
   }
 }
 
-function parseFarm(raw: Json): WorldFarm | null {
-  if (raw === undefined || raw === null) return null
-  if (!Array.isArray(raw.fields) || raw.fields.length === 0) throw new Error('world manifest: farm has no fields')
-  return {
-    fields: raw.fields.map((field: Json, i: number) => {
-      if (!CROPS.includes(field?.crop)) throw new Error(`world manifest: farm field ${i} grows unknown crop ${JSON.stringify(field?.crop)}`)
-      return { ...parseBounds(field, `farm field ${i}`), crop: field.crop }
-    })
-  }
+function parseCropPlants(raw: Json): WorldCropPlant[] {
+  if (raw === undefined || raw === null) return []
+  if (!Array.isArray(raw)) throw new Error('world manifest: crops is not a list')
+  return raw.map((plant: Json, i: number) => {
+    if (!CROPS.includes(plant?.crop)) throw new Error(`world manifest: crop plant ${i} grows unknown crop ${JSON.stringify(plant?.crop)}`)
+    return { ...parseVec3(plant.position, `crop plant ${i}`), crop: plant.crop }
+  })
 }
 
 function parsePub(raw: Json): WorldPub | null {
@@ -270,7 +264,7 @@ function parseWorld(manifest: Json): World {
     pub,
     pubZone: parsePubZone(manifest.zones, pub),
     orchard: parseOrchard(manifest.orchard),
-    farm: parseFarm(manifest.farm)
+    cropPlants: parseCropPlants(manifest.crops)
   }
 }
 
@@ -345,6 +339,6 @@ export function worldOrchard(): WorldOrchard | null {
   return loadedWorld().orchard
 }
 
-export function worldFarm(): WorldFarm | null {
-  return loadedWorld().farm
+export function worldCropPlants(): WorldCropPlant[] {
+  return loadedWorld().cropPlants
 }

@@ -14,6 +14,8 @@ final class FarmService
     public const CROPS = [
         'corn' => 'farm_corn',
         'potato' => 'farm_potato',
+        'cabbage' => 'farm_cabbage',
+        'pumpkin' => 'farm_pumpkin',
     ];
 
     public const MIN_PICK_INTERVAL_MS = 2500;

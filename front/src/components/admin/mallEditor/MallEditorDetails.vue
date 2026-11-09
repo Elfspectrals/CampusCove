@@ -31,6 +31,7 @@ const props = defineProps<{
   vendorTaken: boolean
   preset: CellPreset
   bounds?: WorldBounds
+  cropOptions?: SelectOption[]
   saleCodes: Record<string, string>
   wearSaleCodes: Record<string, string>
   surfaces: MallTemplate['surfaces']
@@ -46,6 +47,11 @@ const emit = defineEmits<{ change: [prop: TemplateProp]; surfaces: [surfaces: No
 
 const NO_PIECE = ''
 const SURFACE_LABELS: Record<Surface, string> = { left: 'Left wall', right: 'Right wall', back: 'Back wall', floor: 'Floor', ceiling: 'Ceiling' }
+const PATTERNS: SelectOption[] = [
+  { value: 'rows', label: 'Rows' },
+  { value: 'staggered', label: 'Staggered' },
+  { value: 'scattered', label: 'Scattered' },
+]
 const POSES: SelectOption[] = [
   { value: 'idle', label: 'Standing' },
   { value: 'sit', label: 'Sitting' },
@@ -55,6 +61,8 @@ interface Numbers {
   location: { x: number; y: number; z: number }
   rotation: number
   scale: { x: number; y: number; z: number }
+  width: number
+  depth: number
   columns: number
   rows: number
   intensity: number
@@ -77,6 +85,8 @@ function numbersOf(prop: TemplateProp): Numbers {
     location: { x: prop.position[0], y: prop.position[1], z: prop.position[2] },
     rotation: Number(((prop.yaw * 180) / Math.PI).toFixed(2)),
     scale: { x: prop.scale[0], y: prop.scale[1], z: prop.scale[2] },
+    width: prop.kind === 'field' ? prop.size[0] : 1,
+    depth: prop.kind === 'field' ? prop.size[1] : 1,
     columns: prop.kind === 'item' ? (prop.stack?.[0] ?? 1) : 1,
     rows: prop.kind === 'item' ? (prop.stack?.[1] ?? 1) : 1,
     intensity: prop.kind === 'light' ? prop.intensity : 1,
@@ -97,6 +107,7 @@ function withNumbers(source: TemplateProp, n: Numbers): TemplateProp {
     const { stack: _, ...rest } = base
     return n.columns > 1 || n.rows > 1 ? { ...rest, stack: [n.columns, n.rows] } : rest
   }
+  if (base.kind === 'field') return { ...base, scale: [1, 1, 1], size: [round(n.width), round(n.depth)] }
   if (base.kind === 'light') {
     const lamp = { ...base, intensity: round(n.intensity), range: round(n.range) }
     return base.light === 'spot' ? { ...lamp, angle: round((n.angle * Math.PI) / 180), pitch: round((n.pitch * Math.PI) / 180) } : lamp
@@ -127,7 +138,10 @@ function build(): void {
       })
   pane.addBinding(numbers, 'rotation', { label: 'Rotation °', min: -180, max: 180, keyScale: 1, pointerScale: 0.5 })
   const axis = { min: 0.05, keyScale: 0.05, pointerScale: 0.005 }
-  if (!(prop.kind === 'npc' && prop.vendor)) pane.addBinding(numbers, 'scale', { label: 'Scale', x: axis, y: axis, z: axis })
+  if (prop.kind === 'field') {
+    pane.addBinding(numbers, 'width', { label: 'Width m', min: 1, max: 60, step: 0.5 })
+    pane.addBinding(numbers, 'depth', { label: 'Depth m', min: 1, max: 60, step: 0.5 })
+  } else if (!(prop.kind === 'npc' && prop.vendor)) pane.addBinding(numbers, 'scale', { label: 'Scale', x: axis, y: axis, z: axis })
   if (prop.kind === 'item' && prop.forSale) {
     pane.addBinding(numbers, 'columns', { label: 'Stack cols', min: 1, max: 10, step: 1 })
     pane.addBinding(numbers, 'rows', { label: 'Stack rows', min: 1, max: 10, step: 1 })
@@ -171,6 +185,7 @@ const decor = computed(() => (props.prop?.kind === 'decor' ? props.prop : null))
 const item = computed(() => (props.prop?.kind === 'item' ? props.prop : null))
 const figure = computed(() => (props.prop?.kind === 'npc' || props.prop?.kind === 'mannequin' ? props.prop : null))
 const light = computed(() => (props.prop?.kind === 'light' ? props.prop : null))
+const field = computed(() => (props.prop?.kind === 'field' ? props.prop : null))
 
 const decorChoices = computed(() => {
   const key = decor.value?.key
@@ -294,6 +309,16 @@ const flatMaterials = computed(() => props.materialOptions.filter((o) => !o.prev
       </template>
       <template v-else>
         <div ref="containerRef" />
+        <div v-if="field" class="flex flex-col gap-1.5 rounded-lg bg-ink-950/50 p-2">
+          <div class="grid grid-cols-[5.5rem_1fr] items-center gap-2">
+            <span class="text-xs text-mist">Crop</span>
+            <EditorSearchSelect :model-value="field.crop" :options="cropOptions ?? []" :searchable="false" @update:model-value="change({ ...field, crop: $event })" />
+          </div>
+          <div class="grid grid-cols-[5.5rem_1fr] items-center gap-2">
+            <span class="text-xs text-mist">Pattern</span>
+            <EditorSearchSelect :model-value="field.pattern" :options="PATTERNS" :searchable="false" @update:model-value="change({ ...field, pattern: $event as typeof field.pattern })" />
+          </div>
+        </div>
         <div v-if="decor" class="flex flex-col gap-1.5 rounded-lg bg-ink-950/50 p-2">
           <div class="grid grid-cols-[5.5rem_1fr] items-center gap-2">
             <span class="text-xs text-mist">Model</span>

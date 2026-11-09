@@ -17,6 +17,7 @@ import random
 from mathutils import Matrix, Vector
 
 OUT_ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "out"))
+FIELD_SOIL = 0.03
 FRONT_ASSETS = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "front", "public", "assets"))
 
 _tex_cache = {}
@@ -577,6 +578,71 @@ def gable_roof(coll, name, gx, gz, y0, sx, sz, h, mat, ridge_axis="x", tile=2.0)
     return ob
 
 
+REF_TEXTURE_SIZE = 256
+
+
+def _bleed_subject(rgb, subject):
+    import numpy as np
+    color = np.where(subject[..., None], rgb, 0.0)
+    filled = subject.astype(np.float32)
+    while not filled.all():
+        total = np.zeros_like(color)
+        count = np.zeros_like(filled)
+        for dy, dx in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            total += np.roll(np.roll(color * filled[..., None], dy, axis=0), dx, axis=1)
+            count += np.roll(np.roll(filled, dy, axis=0), dx, axis=1)
+        grow = (filled == 0) & (count > 0)
+        color[grow] = total[grow] / count[grow][..., None]
+        filled[grow] = 1.0
+    return np.where(filled[..., None] > 0, color, rgb).astype(np.float32)
+
+
+def project_ref_image(objs, image_path, material_name, background_threshold=0.3, highlight_margin=0.12):
+    import numpy as np
+    source = bpy.data.images.load(image_path, check_existing=True)
+    if min(source.size) < REF_TEXTURE_SIZE:
+        raise ValueError(f"{image_path}: {tuple(source.size)} is smaller than {REF_TEXTURE_SIZE} px")
+    step = source.size[0] // REF_TEXTURE_SIZE
+    pixels = np.empty(source.size[0] * source.size[1] * 4, dtype=np.float32)
+    source.pixels.foreach_get(pixels)
+    rgb = np.ascontiguousarray(pixels.reshape(source.size[1], source.size[0], 4)[::step, ::step, :3])
+    height, width = rgb.shape[:2]
+    subject = np.abs(rgb - rgb[2, 2]).sum(axis=-1) > background_threshold
+    rows, cols = np.nonzero(subject)
+    if rows.size == 0:
+        raise ValueError(f"{image_path}: no subject found on the background")
+    px0, px1, py0, py1 = cols.min(), cols.max(), rows.min(), rows.max()
+    lightness = rgb.max(axis=-1)
+    highlight = subject & (lightness > np.percentile(lightness[subject], 85) + highlight_margin)
+    bled = _bleed_subject(rgb, subject & ~highlight)
+    image = bpy.data.images.new(material_name, width, height)
+    image.pixels.foreach_set(np.concatenate([bled, np.ones((height, width, 1), dtype=np.float32)], axis=-1).ravel())
+    image.pack()
+    material = bpy.data.materials.new(material_name)
+    material.use_nodes = True
+    shader = next(n for n in material.node_tree.nodes if n.type == "BSDF_PRINCIPLED")
+    shader.inputs["Roughness"].default_value = 0.8
+    texture = material.node_tree.nodes.new("ShaderNodeTexImage")
+    texture.image = image
+    material.node_tree.links.new(texture.outputs["Color"], shader.inputs["Base Color"])
+    points = {o: [o.matrix_world @ v.co for v in o.data.vertices] for o in objs}
+    every = [p for pts in points.values() for p in pts]
+    x0, x1 = min(p.x for p in every), max(p.x for p in every)
+    z0, z1 = min(p.z for p in every), max(p.z for p in every)
+    for o in objs:
+        mesh = o.data
+        uv = mesh.uv_layers.new(name="RefProjection")
+        mesh.uv_layers.active = uv
+        for loop in mesh.loops:
+            p = points[o][loop.vertex_index]
+            uv.data[loop.index].uv = ((px0 + (p.x - x0) / (x1 - x0) * (px1 - px0)) / width, (py0 + (p.z - z0) / (z1 - z0) * (py1 - py0)) / height)
+        for layer in [layer for layer in mesh.uv_layers if layer.name != uv.name]:
+            mesh.uv_layers.remove(layer)
+        mesh.materials.clear()
+        mesh.materials.append(material)
+    return material
+
+
 def fence_run(coll, name, ax, az, bx, bz, post_mat, rail_mat, spacing=2.5):
     length = math.hypot(bx - ax, bz - az)
     yaw = math.atan2(-(bz - az), bx - ax)
@@ -615,6 +681,53 @@ def _decor_collision(prop, cuboids, col_prefix):
     return out
 
 
+def _crop_prototype(coll, crop_key, crop, cache):
+    if crop_key in cache:
+        return cache[crop_key]
+    before = set(bpy.data.objects)
+    bpy.ops.import_scene.gltf(filepath=os.path.join(FRONT_ASSETS, *crop["plant"].split("/")))
+    imported = [o for o in bpy.data.objects if o not in before]
+    bpy.context.view_layer.update()
+    meshes = [o for o in imported if o.type == "MESH"]
+    if not meshes:
+        raise ValueError(f"{crop['plant']} has no mesh")
+    for o in meshes:
+        world = o.matrix_world.copy()
+        o.parent = None
+        o.matrix_world = world
+        for c in list(o.users_collection):
+            c.objects.unlink(o)
+        coll.objects.link(o)
+    for o in imported:
+        if o.type != "MESH":
+            bpy.data.objects.remove(o, do_unlink=True)
+    proto = join(coll, f"ZD_crop_{crop_key}", meshes) if len(meshes) > 1 else meshes[0]
+    proto.location = (0.0, 0.0, 0.0)
+    proto.rotation_euler = (0.0, 0.0, 0.0)
+    proto.name = proto.data.name = f"ZD_crop_{crop_key}"
+    coll.objects.unlink(proto)
+    cache[crop_key] = proto
+    return proto
+
+
+def _place_field(coll, prop, crops, cache):
+    crop = crops[prop["crop"]]
+    x, y, z = prop["position"]
+    width, depth = prop["size"]
+    soil_mat = make_mat("TW_FieldSoil", "#6e4b32", 1.0, "stripes", 0.05, accent="#5a3c27")
+    objs = [box(coll, f"ZD_{prop['id']}_soil", x, z, y, width, depth, FIELD_SOIL, soil_mat, rot=prop["yaw"], tile=1.5)]
+    proto = _crop_prototype(coll, prop["crop"], crop, cache)
+    plants = []
+    for i, (px, py, pz, pyaw) in enumerate(prop["plants"]):
+        ob = bpy.data.objects.new(f"ZD_{prop['id']}_{i:03d}", proto.data)
+        coll.objects.link(ob)
+        ob.location = b(px, pz, py + FIELD_SOIL)
+        ob.rotation_euler = (0.0, 0.0, pyaw)
+        objs.append(ob)
+        plants.append({"crop": prop["crop"], "position": [px, round(py + FIELD_SOIL, 3), pz]})
+    return objs, plants
+
+
 def _place_decor(coll, prop):
     x, y, z = prop["position"]
     sx, sy, sz = prop["scale"]
@@ -648,14 +761,18 @@ def zone_decor(coll, zone_key, col_prefix):
     if listed != os.path.exists(path):
         raise ValueError(f"zones/index.json and zones/{zone_key}.json disagree: listed {listed}, file {os.path.exists(path)}")
     if not listed:
-        return [], []
+        return [], [], []
     decor = _read_json(path)
     if decor["zone"] != zone_key:
         raise ValueError(f"zones/{zone_key}.json belongs to zone {decor['zone']}")
-    objs, cols = [], []
+    crops = _read_json(os.path.join(FRONT_ASSETS, "crops", "crops.json"))["crops"]
+    objs, cols, plants, prototypes = [], [], [], {}
     for prop in decor["props"]:
-        if prop["kind"] != "decor":
-            continue
-        objs += _place_decor(coll, prop)
-        cols += _decor_collision(prop, _read_json(os.path.join(FRONT_ASSETS, "decor", prop["key"], "collision.json"))["cuboids"], col_prefix)
-    return objs, cols
+        if prop["kind"] == "field":
+            field_objs, field_plants = _place_field(coll, prop, crops, prototypes)
+            objs += field_objs
+            plants += field_plants
+        elif prop["kind"] == "decor":
+            objs += _place_decor(coll, prop)
+            cols += _decor_collision(prop, _read_json(os.path.join(FRONT_ASSETS, "decor", prop["key"], "collision.json"))["cuboids"], col_prefix)
+    return objs, cols, plants

@@ -107,7 +107,8 @@ Le jeu refuse une cellule dont l'assignation ne correspond pas au build (message
 ## Décorer une zone du monde ouvert
 
 Le sélecteur **Zone…** de la barre du haut ouvre une zone de `world.manifest.json` (toutes sauf le mall) : son modèle
-sert de fond, on pose décors, objets vendables, NPC et mannequins en coordonnées monde, posés sur la surface cliquée. Pas
+sert de fond, on pose décors, objets vendables, NPC, mannequins et champs (dossier **Fields**, voir
+[FARM.md](FARM.md#champs-modulaires)) en coordonnées monde, posés sur la surface cliquée. Pas
 de lumière ni de matière personnalisée sur les décors d'une zone. **Test** marche à partir du point visé, dans les
 limites de la zone.
 

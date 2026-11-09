@@ -7,9 +7,13 @@ import { decorModelUrl } from '../assets/catalog'
 import { createGltfLoader } from '../gltfLoaderFactory'
 import { outfitModels } from '../store/storeClerk'
 import { applyLook, type OwnParts } from './templateSurfaces'
-import { itemModelUrl, parseDecorParts, type DecorProp, type MaskedParts, type LightProp, type MannequinProp, type NpcProp, type TemplateProp, type Vec3 } from './mallTemplate.ts'
+import { CROPS_URL, fieldPlantsLocal, parseCrops, type CropTable } from '../crops/crops.ts'
+import { itemModelUrl, parseDecorParts, type DecorProp, type FieldProp, type MaskedParts, type LightProp, type MannequinProp, type NpcProp, type TemplateProp, type Vec3 } from './mallTemplate.ts'
 
 const STACK_GAP = 0.02
+const SOIL_HEIGHT = 0.03
+const SOIL_COLOR = 0x6e4b32
+let cropTable: Promise<CropTable> | null = null
 const loader = createGltfLoader()
 const modelTemplates = new Map<string, Promise<THREE.Object3D>>()
 const decorPartFiles = new Map<string, Promise<Record<string, MaskedParts>>>()
@@ -36,6 +40,7 @@ function propModelUrl(prop: TemplateProp): string | null {
 
 export function propSignature(prop: TemplateProp): string {
   if (prop.kind === 'npc') return JSON.stringify(['npc', prop.body, prop.outfit, prop.pose])
+  if (prop.kind === 'field') return JSON.stringify(['field', prop.id, prop.crop, prop.size, prop.pattern])
   if (prop.kind === 'mannequin') return JSON.stringify(['mannequin', prop.body, prop.outfit])
   if (prop.kind === 'light') return JSON.stringify(['light', prop.light, prop.color, prop.intensity, prop.range, prop.angle, prop.pitch])
   return JSON.stringify([prop.kind, propModelUrl(prop), prop.kind === 'item' ? prop.stack : null, prop.kind === 'decor' ? (prop.materials ?? null) : null])
@@ -178,7 +183,37 @@ async function applyMaterialLooks(model: THREE.Object3D, key: string, looks: Non
   await Promise.all(pending)
 }
 
+export function crops(): Promise<CropTable> {
+  if (!cropTable) {
+    cropTable = fetch(CROPS_URL).then(async (response) => {
+      if (!response.ok) throw new Error(`${CROPS_URL}: HTTP ${response.status}`)
+      return parseCrops(await response.json())
+    })
+    cropTable.catch(() => (cropTable = null))
+  }
+  return cropTable
+}
+
+async function createField(prop: FieldProp): Promise<THREE.Group> {
+  const crop = (await crops())[prop.crop]
+  if (!crop) throw new Error(`no crop ${prop.crop} in ${CROPS_URL}`)
+  const plant = await modelTemplate(`/assets/${crop.plant}`)
+  const group = new THREE.Group()
+  const [width, depth] = prop.size
+  const soil = new THREE.Mesh(new THREE.BoxGeometry(width, SOIL_HEIGHT, depth), new THREE.MeshStandardMaterial({ color: SOIL_COLOR, roughness: 1 }))
+  soil.position.y = SOIL_HEIGHT / 2
+  group.add(soil)
+  for (const [x, , z, yaw] of fieldPlantsLocal(prop, crop)) {
+    const copy = markShared(plant.clone(true))
+    copy.position.set(x, SOIL_HEIGHT, z)
+    copy.rotation.y = yaw
+    group.add(copy)
+  }
+  return group
+}
+
 export async function createPropObject(prop: TemplateProp): Promise<THREE.Object3D> {
+  if (prop.kind === 'field') return createField(prop)
   if (prop.kind === 'light') return createLightObject(prop)
   if (prop.kind === 'npc') return createNpc(prop)
   if (prop.kind === 'mannequin') return createMannequin(prop)

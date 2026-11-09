@@ -34,6 +34,8 @@ class FarmApiTest extends TestCase
         $this->postJson('/api/farm/pick', ['crop' => 'potato'], $headers)->assertOk()->assertExactJson(['code' => 'farm_potato', 'quantity' => 1]);
         $this->travel(FarmService::MIN_PICK_INTERVAL_MS)->milliseconds();
         $this->postJson('/api/farm/pick', ['crop' => 'corn'], $headers)->assertOk()->assertExactJson(['code' => 'farm_corn', 'quantity' => 2]);
+        $this->travel(FarmService::MIN_PICK_INTERVAL_MS)->milliseconds();
+        $this->postJson('/api/farm/pick', ['crop' => 'pumpkin'], $headers)->assertOk()->assertExactJson(['code' => 'farm_pumpkin', 'quantity' => 1]);
 
         $this->assertSame(2, $this->hotbarItem($player['token'], 'farm_corn')['quantity']);
         $this->assertSame(1, $this->hotbarItem($player['token'], 'farm_potato')['quantity']);
@@ -79,10 +81,10 @@ class FarmApiTest extends TestCase
             ->map(fn (array $row) => $row['item']['code'])
             ->all();
 
-        $this->assertNotContains('farm_corn', $codes);
-        $this->assertNotContains('farm_potato', $codes);
-        $this->assertSame('/assets/items/farm/corn/model.glb', ItemDef::query()->where('code', 'farm_corn')->value('model_glb'));
-        $this->assertSame('/assets/items/farm/potato/model.glb', ItemDef::query()->where('code', 'farm_potato')->value('model_glb'));
+        foreach (FarmService::CROPS as $crop => $code) {
+            $this->assertNotContains($code, $codes);
+            $this->assertSame("/assets/items/farm/{$crop}/model.glb", ItemDef::query()->where('code', $code)->value('model_glb'));
+        }
     }
 
     public function test_farm_route_needs_the_realtime_server(): void

@@ -3,13 +3,13 @@ import type { Room } from '@colyseus/sdk'
 import * as THREE from 'three'
 import { matches, mouseButtonCode } from '../../config/keybindings'
 import { recoveryProgress } from '../../game/clinic'
-import { CROP_LABELS, PICK_MS, fieldAt } from '../../game/farm'
-import type { FarmLayout, WorldManifest } from '../../game/world/worldManifest'
+import { CROP_LABELS, PICK_MS, PLANT_KEEP_REACH, PLANT_PROMPT_REACH } from '../../game/farm'
+import { nearestTree, withinReach } from '../../game/orchard'
+import type { CropPlant, WorldManifest } from '../../game/world/worldManifest'
 import type { FarmErrorPayload, FarmPickedPayload } from '../../types/gameRealtime'
 import type { InteractionSource, ScreenPrompt } from './useInteractionTargets'
 
-const PROMPT_AHEAD = 1.4
-const PROMPT_HEIGHT = 0.9
+const PROMPT_HEIGHT = 1.2
 
 export interface FarmDeps {
   myPosition: { x: number; y: number; z: number }
@@ -23,19 +23,20 @@ export interface FarmDeps {
 
 export function useFarm(deps: FarmDeps) {
   const pickProgress = ref<number | null>(null)
-  let layout: FarmLayout | null = null
-  let picking: { field: number; startedAt: number } | null = null
   const pickingCrop = ref<string | null>(null)
   const pickLabel = computed(() => (pickingCrop.value ? `Picking ${pickingCrop.value}…` : ''))
-  const forward = new THREE.Vector3()
+  let plants: CropPlant[] = []
+  let positions: CropPlant['position'][] = []
+  let picking: { plant: number; startedAt: number } | null = null
   const projection = new THREE.Vector3()
 
   function onTownLoaded(manifest: WorldManifest): void {
-    layout = manifest.farm ?? null
+    plants = manifest.crops ?? []
+    positions = plants.map((plant) => plant.position)
   }
 
-  function fieldHere(): number | null {
-    return layout ? fieldAt(layout.fields, deps.myPosition) : null
+  function plantInReach(): number | null {
+    return nearestTree(positions, deps.myPosition, PLANT_PROMPT_REACH)
   }
 
   function cancelPick(): void {
@@ -44,11 +45,11 @@ export function useFarm(deps: FarmDeps) {
     pickProgress.value = null
   }
 
-  function startPick(field: number): void {
-    picking = { field, startedAt: performance.now() }
-    pickingCrop.value = CROP_LABELS[layout!.fields[field]!.crop]
+  function startPick(plant: number): void {
+    picking = { plant, startedAt: performance.now() }
+    pickingCrop.value = CROP_LABELS[plants[plant]!.crop]
     pickProgress.value = 0
-    deps.gameRoomRef.value?.send('farm_pick_start', { field })
+    deps.gameRoomRef.value?.send('farm_pick_start', { plant })
   }
 
   function tick(): void {
@@ -57,9 +58,9 @@ export function useFarm(deps: FarmDeps) {
       cancelPick()
       return
     }
-    if (fieldHere() !== picking.field) {
+    if (!withinReach(positions[picking.plant]!, deps.myPosition, PLANT_KEEP_REACH)) {
       cancelPick()
-      deps.say('You stepped out of the field.')
+      deps.say('You stepped away from the plant.')
       return
     }
     pickProgress.value = recoveryProgress(picking.startedAt, PICK_MS, performance.now())
@@ -93,31 +94,28 @@ export function useFarm(deps: FarmDeps) {
   }
 
   function prompt(): ScreenPrompt | null {
-    if (!layout || deps.promptsHidden() || picking) return null
-    const field = fieldHere()
+    if (deps.promptsHidden() || picking) return null
+    const plant = plantInReach()
     const camera = deps.getCamera()
     const canvas = deps.canvasRef.value
-    if (field === null || !camera || !canvas) return null
-    camera.getWorldDirection(forward)
-    forward.setY(0).normalize()
-    const { x, y, z } = deps.myPosition
-    projection.set(x + forward.x * PROMPT_AHEAD, y - PROMPT_HEIGHT, z + forward.z * PROMPT_AHEAD).project(camera)
+    if (plant === null || !camera || !canvas) return null
+    const [x, y, z] = plants[plant]!.position
+    projection.set(x, y + PROMPT_HEIGHT, z).project(camera)
     if (projection.z > 1) return null
     const rect = canvas.getBoundingClientRect()
     return {
       x: (projection.x * 0.5 + 0.5) * rect.width,
       y: (-projection.y * 0.5 + 0.5) * rect.height,
       action: 'Pick',
-      detail: `Hold 3 s for ${CROP_LABELS[layout.fields[field]!.crop]}`,
+      detail: `Hold 3 s for ${CROP_LABELS[plants[plant]!.crop]}`,
     }
   }
 
   function interact(): boolean {
-    if (!layout) return false
     if (picking) return true
-    const field = fieldHere()
-    if (field === null) return false
-    startPick(field)
+    const plant = plantInReach()
+    if (plant === null) return false
+    startPick(plant)
     return true
   }
 

@@ -52,7 +52,7 @@ async function fetchDecoratedZones(manifest: WorldManifest): Promise<DecoratedZo
     index.zones.map(async (key) => {
       const zone = manifest.zones.find((z) => z.key === key)
       if (!zone) throw new Error(`${ZONE_DECOR_INDEX_URL}: zone ${key} is not in the world manifest`)
-      return { zone, decor: parseZoneDecor(await fetchJson(zoneDecorUrl(key)), zone) }
+      return { zone, decor: parseZoneDecor(await fetchJson(zoneDecorUrl(key)), zone, null) }
     }),
   )
   for (const result of results) if (result.status === 'rejected') console.error('[zones] a zone decor failed to load', result.reason)

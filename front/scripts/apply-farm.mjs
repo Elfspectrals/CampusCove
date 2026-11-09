@@ -51,7 +51,6 @@ const zone = {
 const at = manifest.zones.findIndex((z) => z.key === zone.key)
 if (at >= 0) manifest.zones[at] = zone
 else manifest.zones.push(zone)
-manifest.farm = { fields: site.fields }
 manifest.bounds = col.bounds
 writeFileSync(WORLD_MANIFEST, JSON.stringify(manifest, null, 2) + '\n')
-console.log(`world.manifest.json: farm with ${site.fields.map((f) => f.crop).join(', ')} fields, gate at ${JSON.stringify(site.gate)}`)
+console.log(`world.manifest.json: farm gate at ${JSON.stringify(site.gate)}`)

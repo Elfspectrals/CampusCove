@@ -1,7 +1,5 @@
 import importlib
-import math
 import os
-import random
 import sys
 
 if "__file__" not in globals():
@@ -21,13 +19,7 @@ PATH_W = 2.4
 FENCE_INSET = 0.5
 HOUSE = (-40.0, -142.0, -32.0, -135.0)
 BARN = (-28.0, -152.0, -16.0, -138.0)
-FIELDS = [
-    {"crop": "corn", "minX": -40.0, "maxX": -24.0, "minZ": -194.0, "maxZ": -162.0},
-    {"crop": "potato", "minX": -20.0, "maxX": -5.0, "minZ": -194.0, "maxZ": -162.0},
-]
-FIELD_GAP = 3.0
 OUT = os.path.join(L.OUT_ROOT, "park", "farm_site")
-rnd = random.Random(31)
 
 sc = L.new_build_scene("PARK_farm_site")
 coll = bpy.data.collections.new("FarmSite")
@@ -35,7 +27,6 @@ sc.collection.children.link(coll)
 P = {
     "grass": L.make_mat("TW_GrassFarm", "#8cc266", 1.0, "noise", 0.06),
     "path": L.make_mat("TW_FarmPath", "#c7ad84", 0.95, "noise", 0.07),
-    "soil": L.make_mat("TW_FarmSoil", "#6e4b32", 1.0, "stripes", 0.05, accent="#5a3c27"),
     "post": L.make_mat("TW_FarmPost", "#6e4f33", 0.85, "noise", 0.04),
     "rail": L.make_mat("TW_FarmRail", "#a9825a", 0.85, "planks", 0.05, accent="#86633f"),
     "house": L.make_mat("TW_FarmHouseWall", "#efe3c8", 0.9, "planks", 0.04, accent="#dccfb2"),
@@ -46,13 +37,6 @@ P = {
     "chimney": L.make_mat("TW_FarmChimney", "#9a6b55", 0.9, "tiles", 0.05, accent="#7f5644"),
     "barn": L.make_mat("TW_FarmBarnWall", "#b23a2e", 0.85, "planks", 0.05, accent="#962f25"),
     "barn_roof": L.make_mat("TW_FarmBarnRoof", "#5d5f66", 0.8, "tiles", 0.05, accent="#4a4c52"),
-    "stalk": L.make_mat("TW_FarmCornStalk", "#6f9e3c", 0.9, "noise", 0.05),
-    "corn_leaf": L.make_mat("TW_FarmCornLeaf", "#7fb24a", 0.9, "noise", 0.06),
-    "cob": L.make_mat("TW_FarmCornCob", "#f0c23b", 0.7, "noise", 0.06, accent="#d9a92a"),
-    "tassel": L.make_mat("TW_FarmCornTassel", "#d8c27a", 0.9, "noise", 0.05),
-    "potato_leaf": L.make_mat("TW_FarmPotatoLeaf", "#4f8f3e", 0.9, "noise", 0.07),
-    "mound": L.make_mat("TW_FarmMound", "#7a5538", 1.0, "noise", 0.06),
-    "flower": L.make_mat("TW_FarmPotatoFlower", "#f1ecf7", 0.8, "noise", 0.02),
 }
 so = []
 col = []
@@ -91,55 +75,12 @@ def farm_building(kit, name, rect, h, thick, wall, roof, roof_h, ridge_axis, doo
     kit.gable_roof(f"{name}_Roof", x0 - 0.3, z0 - 0.3, x1 + 0.3, z1 + 0.3, h, roof_h, roof, ridge_axis=ridge_axis)
 
 
-def plant_prototype(name, parts):
-    proto = L.join(coll, name, parts)
-    proto.location = (0.0, 0.0, 0.0)
-    return proto
-
-
-def corn_prototype():
-    parts = [L.cyl(coll, "CornStalk", 0.0, 0.0, 0.0, 0.035, 2.1, P["stalk"], seg=6)]
-    for k, (y, a) in enumerate(((0.5, 0.0), (0.85, 2.1), (1.2, 4.2), (1.55, 1.0))):
-        parts.append(L.box(coll, f"CornLeaf{k}", 0.3 * math.cos(a), -0.3 * math.sin(a), y, 0.6, 0.08, 0.03, P["corn_leaf"], rot=a))
-    parts.append(L.box(coll, "CornCob", 0.07, 0.0, 1.0, 0.09, 0.09, 0.26, P["cob"], bevel=0.03))
-    parts.append(L.cone(coll, "CornTassel", 0.0, 0.0, 2.1, 0.12, 0.01, 0.3, P["tassel"], seg=5))
-    return plant_prototype("FS_CornPlant", parts)
-
-
-def potato_prototype():
-    parts = [L.box(coll, "PotatoMound", 0.0, 0.0, 0.0, 0.55, 0.55, 0.09, P["mound"], bevel=0.04)]
-    for k, (dx, dz, r) in enumerate(((0.0, 0.0, 0.28), (0.18, 0.12, 0.2), (-0.16, -0.1, 0.2))):
-        parts.append(L.cone(coll, f"PotatoLeaf{k}", dx, dz, 0.1, r, 0.06, 0.32, P["potato_leaf"], seg=6))
-    parts.append(L.box(coll, "PotatoFlower", 0.05, 0.02, 0.42, 0.06, 0.06, 0.04, P["flower"]))
-    return plant_prototype("FS_PotatoPlant", parts)
-
-
-def plant_rows(proto, prefix, field, row_step, plant_step, margin):
-    count = 0
-    x = field["minX"] + margin
-    while x <= field["maxX"] - margin + 1e-6:
-        z = field["minZ"] + margin
-        while z <= field["maxZ"] - margin + 1e-6:
-            ob = proto if count == 0 else bpy.data.objects.new(f"{prefix}{count:03d}", proto.data)
-            if count:
-                coll.objects.link(ob)
-            ob.location = L.b(x, z, 0.03)
-            ob.rotation_euler = (0.0, 0.0, rnd.uniform(0.0, 2 * math.pi))
-            s = rnd.uniform(0.9, 1.1)
-            ob.scale = (s, s, s)
-            add(ob)
-            count += 1
-            z += plant_step
-        x += row_step
-    return count
-
-
 add(L.box(coll, "FS_Lawn", (BOUNDS["minX"] + BOUNDS["maxX"]) / 2, (BOUNDS["minZ"] + BOUNDS["maxZ"]) / 2, 0.0, BOUNDS["maxX"] - BOUNDS["minX"],
           BOUNDS["maxZ"] - BOUNDS["minZ"], 0.02, P["grass"], tile=2.0))
 trunk_z = -158.0
 add(L.box(coll, "FS_PathGate", GATE["x"], (BOUNDS["maxZ"] + trunk_z - PATH_W / 2) / 2, 0.02, PATH_W, BOUNDS["maxZ"] - trunk_z + PATH_W / 2, 0.015, P["path"], tile=2.0))
-add(L.box(coll, "FS_PathYard", (FIELDS[0]["minX"] + 2.0 + GATE["x"] - PATH_W / 2) / 2, trunk_z, 0.02, GATE["x"] - PATH_W / 2 - FIELDS[0]["minX"] - 2.0, PATH_W, 0.015,
-          P["path"], tile=2.0))
+yard_west = -38.0
+add(L.box(coll, "FS_PathYard", (yard_west + GATE["x"] - PATH_W / 2) / 2, trunk_z, 0.02, GATE["x"] - PATH_W / 2 - yard_west, PATH_W, 0.015, P["path"], tile=2.0))
 house_door = -36.0
 add(L.box(coll, "FS_PathHouse", house_door, (HOUSE[1] + trunk_z + PATH_W / 2) / 2, 0.02, 1.6, HOUSE[1] - trunk_z - PATH_W / 2, 0.015, P["path"], tile=2.0))
 
@@ -175,27 +116,13 @@ add(L.box(coll, "FS_GateBeam", GATE["x"], z1, 2.4, GATE["width"] + 0.5, 0.16, 0.
 add(L.box(coll, "FS_GateBoard", GATE["x"], z1 + 0.1, 2.6, 2.4, 0.05, 0.4, P["rail"]))
 add(L.text_mesh(coll, "FS_GateText", "COVE FARM", GATE["x"], z1 + 0.14, 2.68, 0.22, 0.01, P["trim"], facing="+z"))
 
-prototypes = {"corn": (corn_prototype(), 1.6, 1.4), "potato": (potato_prototype(), 1.2, 1.0)}
-plants = {}
-for i, field in enumerate(FIELDS):
-    fx0, fx1, fz0, fz1 = field["minX"], field["maxX"], field["minZ"], field["maxZ"]
-    add(L.box(coll, f"FS_Field{i}_Soil", (fx0 + fx1) / 2, (fz0 + fz1) / 2, 0.0, fx1 - fx0, fz1 - fz0, 0.03, P["soil"], tile=1.5))
-    mid = (fx0 + fx1) / 2
-    fence(f"Field{i}_NorthW", fx0 - 0.5, fz1 + 0.5, mid - FIELD_GAP / 2, fz1 + 0.5)
-    fence(f"Field{i}_NorthE", mid + FIELD_GAP / 2, fz1 + 0.5, fx1 + 0.5, fz1 + 0.5)
-    fence(f"Field{i}_East", fx1 + 0.5, fz1 + 0.5, fx1 + 0.5, fz0 - 0.5)
-    fence(f"Field{i}_South", fx1 + 0.5, fz0 - 0.5, fx0 - 0.5, fz0 - 0.5)
-    fence(f"Field{i}_West", fx0 - 0.5, fz0 - 0.5, fx0 - 0.5, fz1 + 0.5)
-    proto, row_step, plant_step = prototypes[field["crop"]]
-    plants[field["crop"]] = plant_rows(proto, f"FS_{field['crop'].capitalize()}", field, row_step, plant_step, 0.8)
-
-decor_objs, decor_cols = L.zone_decor(coll, "farm", "COL_Farm_")
+decor_objs, decor_cols, crop_plants = L.zone_decor(coll, "farm", "COL_Farm_")
 so += decor_objs
 col += decor_cols
 
-bad = L.check_grounded(so, allow=("FS_Path", "FS_Fence", "FS_Lawn", "FS_Field", "FS_GateBeam", "FS_GateBoard", "FS_GateText", "FS_House_Roof", "FS_Barn_Roof",
+bad = L.check_grounded(so, allow=("FS_Path", "FS_Fence", "FS_Lawn", "FS_GateBeam", "FS_GateBoard", "FS_GateText", "FS_House_Roof", "FS_Barn_Roof",
                                   "FS_House_Chimney", "FS_House_Glass", "FS_Barn_Glass", "FS_House_Door", "FS_Barn_Door", "FS_House_Wall", "FS_Barn_Wall",
-                                  "FS_Corn", "FS_Potato", "ZD_"))
+                                  "ZD_"))
 print("FARM grounded violations:", bad)
 assert not bad, bad
 
@@ -204,7 +131,7 @@ L.write_json(os.path.join(OUT, "farm_site.layout.json"), {
     "version": 1,
     "bounds": BOUNDS,
     "gate": GATE,
-    "fields": FIELDS,
     "collision": col,
+    "crops": crop_plants,
 })
-print("farm site:", len(so), "objects,", len(col), "collision boxes,", plants, "gate", GATE)
+print("farm site:", len(so), "objects,", len(col), "collision boxes,", len(crop_plants), "crop plants, gate", GATE)

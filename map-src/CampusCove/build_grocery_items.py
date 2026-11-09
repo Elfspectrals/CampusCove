@@ -427,28 +427,35 @@ def ship(key, parts, group="grocery"):
     return {"key": key, "tris": tris, "mats": len(obj.data.materials), "dims": tuple(round(x, 3) for x in obj.dimensions)}
 
 
-def corn_cob():
-    kernel = L.make_mat("IT_Corn_Kernel", "#f2c53d", 0.55, "noise", 0.08, accent="#dcaa25")
-    husk = L.make_mat("IT_Corn_Husk", "#9cc25a", 0.85, "stripes", 0.06, accent="#86ab48")
-    cob = blob("Cob", (0, 0, 0.11), (0.06, 0.06, 0.2), kernel, seg=10, rings=8)
-    leaves = []
-    for k, a in enumerate((0.0, 2.1, 4.2)):
-        leaf = blob(f"Husk{k}", (0.026 * math.cos(a), 0.026 * math.sin(a), 0.085), (0.035, 0.025, 0.17), husk, seg=6, rings=5)
-        leaves.append(leaf)
-    return [cob, *leaves, tube("Stem", 0.012, 0.01, 0.0, 0.02, husk, seg=6)]
-
-
-def potato():
-    skin = L.make_mat("IT_Potato_Skin", "#b78b55", 0.9, "noise", 0.1, accent="#9a7142")
-    eye = L.make_mat("IT_Potato_Eye", "#7a5634", 0.9, "noise", 0.04)
-    body = blob("Body", (0, 0, 0.032), (0.1, 0.07, 0.064), skin, seg=10, rings=7)
-    eyes = [blob(f"Eye{k}", (x, y, z), (0.008, 0.008, 0.006), eye, seg=5, rings=3) for k, (x, y, z) in enumerate(((0.03, -0.03, 0.05), (-0.025, -0.031, 0.036), (0.0, 0.034, 0.045)))]
-    return [body, *eyes]
+def ai_model(slug, material):
+    def build():
+        before = set(bpy.data.objects)
+        bpy.ops.import_scene.gltf(filepath=os.path.join(L.OUT_ROOT, "ai", slug, "model.glb"))
+        imported = [o for o in bpy.data.objects if o not in before]
+        bpy.context.view_layer.update()
+        meshes = [o for o in imported if o.type == "MESH"]
+        for o in meshes:
+            world = o.matrix_world.copy()
+            o.parent = None
+            o.matrix_world = world
+            for c in list(o.users_collection):
+                c.objects.unlink(o)
+            coll.objects.link(o)
+        for o in imported:
+            if o.type != "MESH":
+                bpy.data.objects.remove(o, do_unlink=True)
+        L.project_ref_image(meshes, os.path.join(L.OUT_ROOT, "ai", slug, "ref.png"), f"IT_Crop_{material}")
+        return meshes
+    return build
 
 
 FARM = {
-    "corn": corn_cob,
-    "potato": potato,
+    "corn": ai_model("a_single_yellow_corn_cob_with_green_husk", "Corn"),
+    "potato": ai_model("a_chunky_thick_brown_potato_tuber_three_", "Potato"),
+    "cabbage": ai_model("a_single_green_cabbage_head_with_outer_l", "Cabbage"),
+    "pumpkin": ai_model("a_single_round_orange_pumpkin_with_a_sho", "Pumpkin"),
+    "corn_plant": ai_model("a_single_tall_corn_plant_with_green_leav", "CornPlant"),
+    "potato_plant": ai_model("a_single_small_potato_plant_leafy_green_", "PotatoPlant"),
 }
 
 GROCERY = {

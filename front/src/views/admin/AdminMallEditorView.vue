@@ -13,7 +13,9 @@ import { decorModelUrl, isConsumableCode } from '../../game/assets/catalog'
 import UiIcon from '../../components/ui/UiIcon.vue'
 import type { UiIconName } from '../../components/ui/icons'
 import { MallEditorScene, type EditorZone, type GizmoMode, type PropTransform } from '../../game/mallEditor/MallEditorScene'
-import { bakedProps, parseZoneDecor, type ZoneDecor } from '../../game/zoneDecor/zoneDecor.ts'
+import { bakedProps, parseZoneDecor, zoneDecorJson, type ZoneDecor } from '../../game/zoneDecor/zoneDecor.ts'
+import { crops as loadCrops } from '../../game/mallTemplates/templateProps'
+import type { CropDef, CropTable } from '../../game/crops/crops.ts'
 import { MALL_TEMPLATE_ASSIGNMENTS_URL, mallTemplateUrl } from '../../game/mallTemplates/mallTemplateFiles'
 import { decorParts, type MaterialSlot } from '../../game/mallTemplates/templateProps'
 import { MATERIALS_URL, TEXTURES_URL } from '../../game/mallTemplates/templateSurfaces'
@@ -128,12 +130,14 @@ const sceneError = ref<string | null>(null)
 const hiddenIds = ref<string[]>([])
 const templateList = ref<Array<{ key: string; name: string; preset: CellPreset }>>([])
 const zoneChoices = ref<ZoneChoice[]>([])
+const cropTable = ref<CropTable>({})
+const cropOptions = computed<SelectOption[]>(() => Object.values(cropTable.value).map((c) => ({ value: c.key, label: c.label })))
 const zoneOptions = computed<SelectOption[]>(() => zoneChoices.value.map((z) => ({ value: z.key, label: z.key, group: z.decorated ? 'Decorated' : 'Bare' })))
 const openZone = ref<ZoneChoice | null>(null)
 const zonePick = ref('')
 const savedBakedDecor = ref('')
 const bakePending = ref(false)
-const placeableEntries = computed(() => (openZone.value ? entries.value.filter((e) => e.folder !== 'light') : entries.value))
+const placeableEntries = computed(() => entries.value.filter((e) => e.folder !== (openZone.value ? 'light' : 'field')))
 const assignments = ref<TemplateAssignments>({ version: 1, cells: {} })
 const savedSnapshot = ref(JSON.stringify(template.value))
 const status = ref<{ kind: 'ok' | 'error'; text: string } | null>(null)
@@ -410,7 +414,7 @@ async function openZoneDecor(key: string): Promise<void> {
   const zone = zoneChoices.value.find((z) => z.key === key)
   if (!zone || !confirmDiscard()) return
   try {
-    const decor: ZoneDecor = zone.decorated ? parseZoneDecor(await readJson(`${EDITOR_API}/zones/${key}`), zone) : { version: 1, zone: key, name: zoneName(key), props: [] }
+    const decor: ZoneDecor = zone.decorated ? parseZoneDecor(await readJson(`${EDITOR_API}/zones/${key}`), zone, cropTable.value) : { version: 1, zone: key, name: zoneName(key), props: [] }
     openZone.value = zone
     resetEditing({ version: 1, key, name: decor.name, preset: { ...template.value.preset }, props: decor.props })
     loadedKey.value = null
@@ -431,8 +435,9 @@ async function openZoneDecor(key: string): Promise<void> {
 async function saveZone(zone: ZoneChoice): Promise<void> {
   try {
     const sent = JSON.stringify(template.value)
-    const decor = parseZoneDecor({ version: 1, zone: zone.key, name: template.value.name, props: template.value.props }, zone)
-    await readJson(`${EDITOR_API}/zones/${zone.key}`, { method: 'PUT', body: JSON.stringify(decor) })
+    const body = zoneDecorJson({ version: 1, zone: zone.key, name: template.value.name, props: template.value.props }, cropTable.value)
+    const decor = parseZoneDecor(body, zone, cropTable.value)
+    await readJson(`${EDITOR_API}/zones/${zone.key}`, { method: 'PUT', body: JSON.stringify(body) })
     savedSnapshot.value = sent
     const baked = JSON.stringify(bakedProps(decor))
     bakePending.value ||= baked !== savedBakedDecor.value
@@ -485,7 +490,7 @@ function applyTransform(id: string, transform: PropTransform): void {
   if (!prop) return
   prop.position = transform.position
   prop.yaw = transform.yaw
-  prop.scale = transform.scale
+  prop.scale = prop.kind === 'field' ? [1, 1, 1] : transform.scale
 }
 
 function sellProp(id: string, on: boolean): void {
@@ -692,6 +697,18 @@ function lightEntry(light: 'point' | 'spot', label: string): PlaceableEntry {
   }
 }
 
+function fieldEntry(crop: CropDef): PlaceableEntry {
+  return {
+    id: `field:${crop.key}`,
+    folder: 'field',
+    group: 'Fields',
+    label: `${crop.label} field`,
+    preview: `/assets/${crop.plant.replace(/model\.glb$/, 'preview.png')}`,
+    modelUrl: null,
+    create: (id, position) => ({ id, kind: 'field', crop: crop.key, position, yaw: 0, scale: [1, 1, 1], size: [8, 12], pattern: 'rows' }),
+  }
+}
+
 function pick(entry: ContentEntry): void {
   const scene = editor.value
   const placeable = entries.value.find((e) => e.id === entry.id)
@@ -773,7 +790,16 @@ async function loadContent(): Promise<void> {
   wearSaleCodes.value = Object.fromEntries([...codesByWear].filter(([, codes]) => codes.length === 1).map(([piece, codes]) => [piece, codes[0]!]))
   contentNotice.value = notices.length ? notices.join(' ') : null
   saleCodes.value = Object.fromEntries([...codesByDecor].filter(([, codes]) => codes.length === 1).map(([key, codes]) => [key, codes[0]!]))
-  entries.value = [...decorKeys.map((key) => decorEntry(key, groupOfDecor(key))), ...goods, NPC_ENTRY, MANNEQUIN_ENTRY, lightEntry('point', 'Point light'), lightEntry('spot', 'Spot light')]
+  cropTable.value = await loadCrops()
+  entries.value = [
+    ...decorKeys.map((key) => decorEntry(key, groupOfDecor(key))),
+    ...goods,
+    NPC_ENTRY,
+    MANNEQUIN_ENTRY,
+    lightEntry('point', 'Point light'),
+    lightEntry('spot', 'Spot light'),
+    ...Object.values(cropTable.value).map(fieldEntry),
+  ]
   const [textures, materials] = await Promise.all([loadTextureOptions(), loadMaterialOptions()])
   textureOptions.value = textures
   materialOptions.value = materials
@@ -910,6 +936,7 @@ onUnmounted(() => {
           :vendor-taken="vendorTaken"
           :preset="template.preset"
           :bounds="openZone?.bounds"
+          :crop-options="cropOptions"
           :sale-codes="saleCodes"
           :wear-sale-codes="wearSaleCodes"
           :surfaces="template.surfaces"

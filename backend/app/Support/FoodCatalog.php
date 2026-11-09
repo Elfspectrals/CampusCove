@@ -49,6 +49,8 @@ final class FoodCatalog
             self::item('farm_apple', 'Fresh Apple', 'apple', 2, 5, 2, 0, null, null, 'farm'),
             self::item('farm_corn', 'Corn Cob', 'corn', 2, 6, 0, 0, null, null, 'farm'),
             self::item('farm_potato', 'Potato', 'potato', 2, 5, 0, 0, null, null, 'farm'),
+            self::item('farm_cabbage', 'Cabbage', 'cabbage', 3, 5, 1, 0, null, null, 'farm'),
+            self::item('farm_pumpkin', 'Pumpkin', 'pumpkin', 4, 7, 1, 0, null, null, 'farm'),
             self::item('grocery_apple', 'Apple', 'apple', 2, 5, 2, 0, null, 6, 'grocery'),
             self::item('grocery_banana', 'Banana', 'banana', 2, 6, 0, 0, null, 6, 'grocery'),
             self::item('grocery_bread', 'Sliced Bread', 'bread', 4, 8, 0, 0, null, 14, 'grocery'),
