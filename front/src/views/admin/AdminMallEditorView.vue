@@ -97,6 +97,50 @@ const assignments = ref<TemplateAssignments>({ version: 1, cells: {} })
 const savedSnapshot = ref(JSON.stringify(template.value))
 const status = ref<{ kind: 'ok' | 'error'; text: string } | null>(null)
 const mapOpen = ref(false)
+const PANELS_KEY = 'cc.admin.mallEditor.panels.v1'
+const PANEL_LIMITS = { aside: [240, 640], outliner: [120, 600], browser: [140, 520] } as const
+type PanelKey = keyof typeof PANEL_LIMITS
+const panels = ref<Record<PanelKey, number>>(readPanels())
+
+function readPanels(): Record<PanelKey, number> {
+  const defaults = { aside: 320, outliner: 256, browser: 224 }
+  try {
+    const stored = JSON.parse(localStorage.getItem(PANELS_KEY) ?? '{}') as Partial<Record<PanelKey, number>>
+    return Object.fromEntries(
+      (Object.keys(defaults) as PanelKey[]).map((key) => {
+        const value = stored[key]
+        const [min, max] = PANEL_LIMITS[key]
+        return [key, typeof value === 'number' && value >= min && value <= max ? value : defaults[key]]
+      }),
+    ) as Record<PanelKey, number>
+  } catch {
+    return defaults
+  }
+}
+
+function startResize(key: PanelKey, event: PointerEvent): void {
+  const handle = event.currentTarget as HTMLElement
+  handle.setPointerCapture(event.pointerId)
+  const start = { x: event.clientX, y: event.clientY, size: panels.value[key] }
+  const [min, max] = PANEL_LIMITS[key]
+  const move = (e: PointerEvent) => {
+    const delta = key === 'aside' ? start.x - e.clientX : key === 'outliner' ? e.clientY - start.y : start.y - e.clientY
+    panels.value = { ...panels.value, [key]: Math.round(Math.min(max, Math.max(min, start.size + delta))) }
+  }
+  const stop = () => {
+    handle.removeEventListener('pointermove', move)
+    handle.removeEventListener('pointerup', stop)
+    handle.removeEventListener('lostpointercapture', stop)
+    try {
+      localStorage.setItem(PANELS_KEY, JSON.stringify(panels.value))
+    } catch (error) {
+      console.warn('[mall editor] panel sizes not saved', error)
+    }
+  }
+  handle.addEventListener('pointermove', move)
+  handle.addEventListener('pointerup', stop)
+  handle.addEventListener('lostpointercapture', stop)
+}
 const targetCell = ref<MallCell | null>(null)
 const plazas = ref<MallPlaza[]>([])
 const mallStores = ref<MallStoreMark[]>([])
@@ -638,7 +682,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="flex h-full min-h-[560px] w-full flex-col bg-ink-950 text-fog">
+  <div class="flex h-full min-h-0 w-full flex-col overflow-hidden bg-ink-950 text-fog">
     <header class="cc-panel-flat m-2 mb-0 flex flex-wrap items-center gap-3 px-4 py-2">
       <h1 class="cc-display m-0 text-xl text-sun">Mall Editor</h1>
       <input v-model.trim="template.name" placeholder="Template name" class="cc-input w-44 py-1.5 text-sm" />
@@ -707,8 +751,10 @@ onUnmounted(() => {
           </label>
         </div>
       </div>
-      <aside class="flex w-80 shrink-0 flex-col gap-2">
-        <MallEditorOutliner class="h-64 shrink-0" :props="template.props" :selected-id="selectedId" :hidden="hiddenIds" @select="selectedId = $event" @toggle-hidden="toggleHidden" />
+      <div class="w-1.5 shrink-0 cursor-col-resize rounded bg-ink-800 hover:bg-pool/60" title="Drag to resize" @pointerdown="startResize('aside', $event)" />
+      <aside class="flex min-h-0 shrink-0 flex-col" :style="{ width: `${panels.aside}px` }">
+        <MallEditorOutliner class="shrink-0" :style="{ height: `${panels.outliner}px` }" :props="template.props" :selected-id="selectedId" :hidden="hiddenIds" @select="selectedId = $event" @toggle-hidden="toggleHidden" />
+        <div class="my-1 h-1.5 shrink-0 cursor-row-resize rounded bg-ink-800 hover:bg-pool/60" title="Drag to resize" @pointerdown="startResize('outliner', $event)" />
         <MallEditorDetails
           class="min-h-0 flex-1"
           :prop="selectedProp"
@@ -745,6 +791,7 @@ onUnmounted(() => {
       @assign="assignFromMap"
       @clear="clearFromMap"
     />
-    <MallEditorContentBrowser class="m-2 mt-0" :entries="entries" :armed-id="armedId" :notice="contentNotice" @pick="pick" />
+    <div class="mx-2 mb-1 h-1.5 shrink-0 cursor-row-resize rounded bg-ink-800 hover:bg-pool/60" title="Drag to resize" @pointerdown="startResize('browser', $event)" />
+    <MallEditorContentBrowser class="m-2 mt-0 shrink-0" :style="{ height: `${panels.browser}px` }" :entries="entries" :armed-id="armedId" :notice="contentNotice" @pick="pick" />
   </div>
 </template>
