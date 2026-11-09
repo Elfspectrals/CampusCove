@@ -42,6 +42,7 @@ make up-build
 | `make store-apply` | Branche le magasin Cove Home dans la ville (collisions + zone `retail_park` de `world.manifest.json`) |
 | `make newnation-optimize` | Carte du showroom `/NewNation` |
 | `make model "a single wooden lantern"` | Prompt → asset 3D IA (local uniquement) |
+| `make texture "a wooden wall stained with blood" [TILE=2.0] [SIZE=1024] [CATEGORY=wood]` | Prompt → texture IA raccordable (mur, sol, plafond) dans `front/public/assets/textures/<key>/` + `categories.json` (local uniquement) |
 
 `CURRENCY` : `coins` ou `premium`. Relog après `set-admin`.
 
