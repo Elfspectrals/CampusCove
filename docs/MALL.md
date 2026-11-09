@@ -234,7 +234,8 @@ Après le script : `make seed-shop` (30 articles consommables du centre) et `doc
 ### Templates de cellule (`/admin/mall-editor`)
 
 Un template est un aménagement posé dans une cellule `planned` du même gabarit (largeur × profondeur) :
-décors, articles vendables, NPC figurants et un vendeur optionnel (comptoir + panier).
+décors, articles vendables, NPC figurants et un vendeur optionnel (comptoir + panier). Mode d'emploi de l'éditeur :
+[MALL_EDITOR.md](MALL_EDITOR.md).
 
 | Fichier | Rôle |
 |---|---|
