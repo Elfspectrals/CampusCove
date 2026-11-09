@@ -246,6 +246,21 @@ export function itemModelUrl(item: Pick<ItemProp, 'key' | 'code'>): string {
   return isConsumableCode(item.code) ? consumableModelUrl(item.code) : decorModelUrl(item.key)
 }
 
+export function withSale(prop: TemplateProp, on: boolean, saleCode: string | undefined): TemplateProp | null {
+  if (prop.kind === 'decor') {
+    if (!on || !saleCode || prop.materials) return null
+    const { materials: _, ...rest } = prop
+    return { ...rest, kind: 'item', code: saleCode, forSale: true }
+  }
+  if (prop.kind !== 'item' || prop.forSale === on) return null
+  const { stack: _, ...rest } = prop
+  if (!on && !isConsumableCode(prop.code)) {
+    const { code: __, forSale: ___, ...plain } = rest
+    return { ...plain, kind: 'decor' }
+  }
+  return { ...rest, forSale: on }
+}
+
 export function templateVendor(template: MallTemplate): NpcProp | null {
   return template.props.find((p): p is NpcProp => p.kind === 'npc' && p.vendor) ?? null
 }
