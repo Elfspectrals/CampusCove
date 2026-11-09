@@ -90,12 +90,6 @@ const router = createRouter({
       component: () => import('../views/admin/AdminWorldPlannerView.vue'),
       meta: { requiresAdmin: true, title: 'Admin — World Planner' },
     },
-    {
-      path: '/admin/test3D',
-      name: 'admin-test3d',
-      component: () => import('../views/admin/AdminTest3DView.vue'),
-      meta: { requiresAdmin: true, title: 'Admin — Test 3D', fullBleed: true },
-    },
     { path: '/:pathMatch(.*)*', name: 'not-found', component: NotFoundView, meta: { title: 'Not found' } },
   ],
   scrollBehavior(to, _from, saved) {

@@ -95,5 +95,6 @@ def main(raw_path, out_path, name, height, target_tris):
     print(f"{name}: {tri_count(o)} tris, {tuple(round(d, 2) for d in o.dimensions)} m -> {out_path}")
 
 
-raw_path, out_path, name, height, target_tris = sys.argv[sys.argv.index("--") + 1:]
-main(raw_path, out_path, name, float(height), int(target_tris))
+if __name__ == "__main__":
+    raw_path, out_path, name, height, target_tris = sys.argv[sys.argv.index("--") + 1:]
+    main(raw_path, out_path, name, float(height), int(target_tris))

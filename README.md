@@ -41,6 +41,7 @@ make up-build
 | `make assets-optimize` | Assets Blender → `front/public/assets` (+ collisions) |
 | `make store-apply` | Branche le magasin Cove Home dans la ville (collisions + zone `retail_park` de `world.manifest.json`) |
 | `make newnation-optimize` | Carte du showroom `/NewNation` |
+| `make model "a single wooden lantern"` | Prompt → asset 3D IA (local uniquement) |
 
 `CURRENCY` : `coins` ou `premium`. Relog après `set-admin`.
 

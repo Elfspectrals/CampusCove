@@ -104,6 +104,9 @@ model: ## * Prompt -> image -> 3D -> cleaned GLB + collision.json in map-src/Cam
 	$(BLENDER) -b --factory-startup -P map-src/CampusCove/clean_ai_mesh.py -- $(CURDIR)/$(AI_OUT)/raw.glb $(CURDIR)/$(AI_OUT)/model.glb $(MODEL_SLUG) $(HEIGHT) $(TRIS)
 	node front/scripts/apply-decor-collision.mjs $(AI_OUT)/model.glb
 
+model-test: ## * Tests of the make model Blender cleanup (headless Blender)
+	$(BLENDER) -b --factory-startup --python-exit-code 1 -P map-src/CampusCove/test_clean_ai_mesh.py
+
 
 # --- gem shop demo (Stripe TEST MODE only, docs/STRIPE.md) ---
 # Stripe CLI in Docker (service stripe-cli, profile stripe): needs STRIPE_SECRET_KEY=sk_test_... in $(ENV_FILE),
@@ -177,6 +180,6 @@ socket-start: ## Run socket locally (port 3000)
 
 .PHONY: help up up-build down logs rebuild-socket socket-rebuild \
 	front-install front-dev front-build typecheck share-local sharelocal \
-	assets-optimize store-apply newnation-optimize collision-extract model \
+	assets-optimize store-apply newnation-optimize collision-extract model model-test \
 	migrate seed seed-shop seed-housing purge-legacy-housing fix-housing collect-taxes set-admin set-money fill-outfit test \
 	backend-install backend-serve socket-install socket-start stripe-secret stripe-listen stripe-logs stripe-stop gems-reconcile
