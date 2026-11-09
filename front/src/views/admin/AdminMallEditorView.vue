@@ -36,6 +36,7 @@ import {
   type TemplateProp,
   type TexturePart,
   type Vec3,
+  withSale,
 } from '../../game/mallTemplates/mallTemplate.ts'
 
 const MALL_LAYOUT_URL = '/assets/store/mall/mall.layout.json'
@@ -87,6 +88,7 @@ const contentNotice = ref<string | null>(null)
 const editorAssets = ref<EditorAssets | null>(null)
 const decorKeyList = ref<string[]>([])
 const saleCodes = ref<Record<string, string>>({})
+const itemPrices = ref<Record<string, number>>({})
 const wearSaleCodes = ref<Record<string, string>>({})
 const textureOptions = ref<SelectOption[]>([])
 const decorGroups = ref<Record<string, string>>({})
@@ -412,6 +414,12 @@ function applyTransform(id: string, transform: PropTransform): void {
   prop.scale = transform.scale
 }
 
+function sellProp(id: string, on: boolean): void {
+  const prop = template.value.props.find((p) => p.id === id)
+  const next = prop && withSale(prop, on, prop.kind === 'decor' ? saleCodes.value[prop.key] : undefined)
+  if (next) replaceProp(next)
+}
+
 function removeProp(id: string): void {
   template.value.props = template.value.props.filter((p) => p.id !== id)
   if (selectedId.value === id) selectedId.value = null
@@ -653,6 +661,10 @@ async function loadContent(): Promise<void> {
   const groupOfDecor = (key: string) => categories.find((c) => c.keys.includes(key))?.label ?? 'Uncategorized'
   const decorKeys = [...new Set([...categories.flatMap((c) => c.keys), ...(assets?.decor ?? [])])]
   const uncategorized = decorKeys.filter((key) => groupOfDecor(key) === 'Uncategorized')
+  itemPrices.value = Object.fromEntries(catalog.items.flatMap((item) => {
+    const coins = item.options.find((o) => o.currency === 'coins')?.price
+    return coins === undefined ? [] : [[item.code, coins]]
+  }))
   const placeable = catalog.items.filter((item) => (item.kind === 'furniture' || item.kind === 'consumable') && item.model_glb)
   const sellable = placeable.map((item) => sellableEntry(item, groupOfDecor)).filter((e): e is PlaceableEntry => e !== null)
   const skipped = placeable.filter((item) => !sellable.some((e) => e.id === `item:${item.code}`)).map((item) => item.code)
@@ -796,7 +808,10 @@ onUnmounted(() => {
           :collapsed="collapsed.outliner"
           @select="selectedId = $event"
           @toggle-hidden="toggleHidden"
+          :sale-codes="saleCodes"
+          :prices="itemPrices"
           @remove="removeProp"
+          @sell="sellProp"
           @toggle="collapsed.outliner = !collapsed.outliner"
         />
         <div v-if="!collapsed.outliner && !collapsed.details" class="my-1 h-1.5 shrink-0 cursor-row-resize rounded bg-ink-800 hover:bg-pool/60" title="Drag to resize" @pointerdown="startResize('outliner', $event)" />

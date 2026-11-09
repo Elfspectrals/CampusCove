@@ -4,7 +4,6 @@ import { Pane } from 'tweakpane'
 import UiIcon from '../../ui/UiIcon.vue'
 import type { MaterialSlot } from '../../../game/mallTemplates/templateProps'
 import { WEAR_SLOTS, type WearSlot } from '../../../avatar/modularCharacterLogic'
-import { isConsumableCode } from '../../../game/assets/catalog'
 import {
   CEILING_HEIGHT,
   SURFACES,
@@ -18,6 +17,7 @@ import {
   type Surface,
   type TemplateProp,
   type TexturePart,
+  withSale,
 } from '../../../game/mallTemplates/mallTemplate.ts'
 import EditorColorPicker from './EditorColorPicker.vue'
 import EditorLookEditor from './EditorLookEditor.vue'
@@ -187,22 +187,10 @@ function setDecorLook(name: string, look: MaterialLook | null): void {
   change(Object.keys(materials).length ? { ...rest, materials } : rest)
 }
 
-function sellDecor(on: boolean): void {
-  const code = decor.value && props.saleCodes[decor.value.key]
-  if (!decor.value || !on || !code || decor.value.materials) return
-  const { materials: _, ...rest } = decor.value
-  change({ ...rest, kind: 'item', code, forSale: true })
-}
-
-function sellItem(on: boolean): void {
-  if (!item.value) return
-  const { stack: _, ...rest } = item.value
-  if (!on && !isConsumableCode(item.value.code)) {
-    const { code: __, forSale: ___, ...plain } = rest
-    change({ ...plain, kind: 'decor' })
-    return
-  }
-  change({ ...rest, forSale: on })
+function sell(on: boolean): void {
+  const source = props.prop
+  const next = source && withSale(source, on, source.kind === 'decor' ? props.saleCodes[source.key] : undefined)
+  if (next) change(next)
 }
 
 const wearChoices = computed(() =>
@@ -306,7 +294,7 @@ const flatMaterials = computed(() => props.materialOptions.filter((o) => !o.prev
             <EditorSearchSelect :model-value="decor.key" :options="decorChoices" @update:model-value="setDecorKey" />
           </div>
           <label class="flex items-center gap-2 text-xs text-mist" :title="!saleCodes[decor.key] ? 'Not in the shop catalogue' : decor.materials ? 'Reset the materials to sell it' : ''">
-            <input type="checkbox" :disabled="!saleCodes[decor.key] || !!decor.materials" :checked="false" @change="sellDecor(($event.target as HTMLInputElement).checked)" />
+            <input type="checkbox" :disabled="!saleCodes[decor.key] || !!decor.materials" :checked="false" @change="sell(($event.target as HTMLInputElement).checked)" />
             For sale
           </label>
         </div>
@@ -328,7 +316,7 @@ const flatMaterials = computed(() => props.materialOptions.filter((o) => !o.prev
         <div v-if="item" class="flex flex-col gap-1.5 rounded-lg bg-ink-950/50 p-2">
           <p class="m-0 text-xs text-mist">Item <span class="font-mono text-fog">{{ item.code }}</span></p>
           <label class="flex items-center gap-2 text-xs text-mist">
-            <input type="checkbox" :checked="item.forSale" @change="sellItem(($event.target as HTMLInputElement).checked)" />
+            <input type="checkbox" :checked="item.forSale" @change="sell(($event.target as HTMLInputElement).checked)" />
             For sale
           </label>
         </div>

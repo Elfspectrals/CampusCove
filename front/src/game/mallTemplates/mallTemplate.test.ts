@@ -15,6 +15,7 @@ import {
   parseTemplateAssignments,
   parseTextureMeta,
   templateStoreLayout,
+  withSale,
   toWorld,
   vendorCounter,
   type MallCell,
@@ -276,4 +277,16 @@ test('every library material has a valid material.json and sits in one category'
   const t = structuredClone(template) as typeof template & { props: Record<string, unknown>[] }
   t.props[0]!.materials = { DC_Oak: { material: 'walnut' } }
   assert.deepEqual((parseMallTemplate(t).props[0] as { materials?: unknown }).materials, { DC_Oak: { material: 'walnut' } })
+})
+
+test('for sale turns a catalogue decor into a sold item and back, consumables stay items', () => {
+  const sofa = { id: 's', kind: 'decor' as const, key: 'sofa_classic', position: [0, 0, -2] as Vec3, yaw: 0, scale: [1, 1, 1] as Vec3 }
+  const sold = withSale(sofa, true, 'decor_sofa_classic')
+  assert.deepEqual(sold, { ...sofa, kind: 'item', code: 'decor_sofa_classic', forSale: true })
+  assert.deepEqual(withSale(sold!, false, undefined), sofa)
+  assert.equal(withSale(sofa, true, undefined), null)
+  assert.equal(withSale({ ...sofa, materials: { DC_Oak: { color: '#000000' } } }, true, 'decor_sofa_classic'), null)
+  const apple = { id: 'a', kind: 'item' as const, key: 'apple', code: 'grocery_apple', forSale: true, stack: [2, 2] as [number, number], position: [0, 0, -2] as Vec3, yaw: 0, scale: [1, 1, 1] as Vec3 }
+  const { stack: _, ...plainApple } = apple
+  assert.deepEqual(withSale(apple, false, undefined), { ...plainApple, forSale: false })
 })
