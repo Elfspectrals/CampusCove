@@ -13,6 +13,8 @@ import {
   type MallTemplate,
   type TemplateAssignments,
 } from '../src/game/mallTemplates/mallTemplate.ts'
+import { parseZoneDecor, parseZoneDecorIndex, type ZoneDecorIndex } from '../src/game/zoneDecor/zoneDecor.ts'
+import type { WorldManifest } from '../src/game/world/worldManifest.ts'
 
 const ROUTE = '/__mall-editor/'
 const MAX_BODY_BYTES = 1_000_000
@@ -63,6 +65,9 @@ function mallTemplatesApi(assets: string) {
   const templatesDir = join(mallDir, 'templates')
   const assignmentsPath = join(mallDir, 'template_assignments.json')
   const templatePath = (key: string) => join(templatesDir, `${key}.json`)
+  const zonesDir = join(assets, 'zones')
+  const zoneIndexPath = join(zonesDir, 'index.json')
+  const zonePath = (key: string) => join(zonesDir, `${key}.json`)
   mkdirSync(templatesDir, { recursive: true })
 
   function storedTemplate(key: string): MallTemplate {
@@ -91,7 +96,7 @@ function mallTemplatesApi(assets: string) {
     return parseTemplateAssignments(readJson(assignmentsPath))
   }
 
-  function assertAssetsExist(template: MallTemplate): void {
+  function assertAssetsExist(template: Pick<MallTemplate, 'props' | 'surfaces'>): void {
     const missing = template.props.flatMap((prop) => {
       if (prop.kind === 'decor') return existsSync(join(assets, 'decor', prop.key, 'model.glb')) ? [] : [`${prop.id}: decor/${prop.key}`]
       if (prop.kind === 'npc' || prop.kind === 'mannequin') return prop.outfit.filter((p) => !existsSync(join(assets, 'wear', p.slot, p.key, 'model.glb'))).map((p) => `${prop.id}: wear/${p.slot}/${p.key}`)
@@ -107,6 +112,33 @@ function mallTemplatesApi(assets: string) {
       ...libraryMaterials.filter(([, key]) => !existsSync(join(assets, 'materials', key, 'material.json'))).map(([where, key]) => `${where}: materials/${key}`),
     ]
     if (missing.length || textures.length) throw new HttpError(400, `missing assets: ${[...missing, ...textures].join(', ')}`)
+  }
+
+  function manifestZones() {
+    return (readJson(join(assets, 'world.manifest.json')) as WorldManifest).zones
+  }
+
+  function decoratableZones() {
+    return manifestZones().filter((zone) => zone.key !== 'mall')
+  }
+
+  function stored<T>(file: string, parse: () => T): T {
+    try {
+      return parse()
+    } catch (error) {
+      throw new HttpError(500, `zones/${file}: ${error instanceof Error ? error.message : String(error)}`)
+    }
+  }
+
+  function zoneIndex(): ZoneDecorIndex {
+    return stored('index.json', () => parseZoneDecorIndex(readJson(zoneIndexPath)))
+  }
+
+  function decoratableZone(key: string) {
+    if (key === 'mall') throw new HttpError(400, 'the mall is decorated cell by cell with templates')
+    const zone = manifestZones().find((z) => z.key === key)
+    if (!zone) throw new HttpError(404, `no zone ${key} in world.manifest.json`)
+    return zone
   }
 
   function cellsHolding(key: string): string[] {
@@ -140,6 +172,24 @@ function mallTemplatesApi(assets: string) {
       if (holding.length > 0) throw new HttpError(409, `${templateKey} still fills ${holding.join(', ')}, clear those cells first`)
       unlinkSync(templatePath(templateKey))
       return { deleted: templateKey }
+    }
+    if (method === 'GET' && path === 'zones') {
+      const decorated = zoneIndex().zones
+      return decoratableZones().map(({ key, bounds, modelUrl, heightmapUrl }) => ({ key, bounds, modelUrl, heightmapUrl, decorated: decorated.includes(key) }))
+    }
+    const zoneKey = /^zones\/([a-z0-9_]+)$/.exec(path)?.[1]
+    if (method === 'GET' && zoneKey) {
+      const zone = decoratableZone(zoneKey)
+      if (!existsSync(zonePath(zoneKey))) throw new HttpError(404, `zones/${zoneKey}.json is not decorated yet`)
+      return stored(`${zoneKey}.json`, () => parseZoneDecor(readJson(zonePath(zoneKey)), zone))
+    }
+    if (method === 'PUT' && zoneKey) {
+      const decor = parseZoneDecor(await readBody(req), decoratableZone(zoneKey))
+      assertAssetsExist(decor)
+      const index = zoneIndex()
+      writeJson(zonePath(zoneKey), decor)
+      if (!index.zones.includes(zoneKey)) writeJson(zoneIndexPath, { version: 1, zones: [...index.zones, zoneKey].sort() })
+      return decor
     }
     const cellId = /^assignments\/([A-Z][0-9]{2})$/.exec(path)?.[1]
     if (method === 'PUT' && cellId) {

@@ -87,7 +87,7 @@ de types. Un article **en vente** garde son aspect : seuls les décors (et les o
 
 ## Vendre
 
-- Un article coché **For sale** se vend dans la cellule. Sans vendeur, un clic l'achète. Avec un NPC **Vendor**, le
+- Un article coché **For sale** se vend dans la cellule. Sans vendeur, un clic l'achète. Avec un NPC **Cashier**, le
   joueur remplit un panier et paie au comptoir devant le vendeur.
 - Pièces de mannequin cochées **for sale** : viser une pièce l'ajoute au panier, **Shift + interagir** ajoute tout le
   look ; une pièce déjà possédée n'est pas ajoutée.
@@ -103,6 +103,27 @@ le mall n'est pas reconstruit :
 3. commiter le template, `template_assignments.json` et les assets du mall.
 
 Le jeu refuse une cellule dont l'assignation ne correspond pas au build (message `rebuild the mall` en console).
+
+## Décorer une zone du monde ouvert
+
+Le sélecteur **Zone…** de la barre du haut ouvre une zone de `world.manifest.json` (toutes sauf le mall) : son modèle
+sert de fond, on pose décors, objets vendables, NPC et mannequins en coordonnées monde, posés sur la surface cliquée. Pas
+de lumière ni de matière personnalisée sur les décors d'une zone. **Test** marche à partir du point visé, dans les
+limites de la zone.
+
+**Save** écrit `front/public/assets/zones/<zone>.json` et l'ajoute à `zones/index.json` (endpoint de dev, comme les
+templates). En jeu :
+
+- NPC, mannequins et objets vendables sont chargés au démarrage de `/game` : recharger la page suffit. Un NPC
+  **Cashier** encaisse le panier tant que le joueur est dans la zone (hors bâtiment et hors cellule du mall).
+- Les décors sont **cuits** dans le GLB de la zone, avec leurs collisions dans `town.collision.json` :
+  `cd front && npm run zone:bake -- <zone>` (Blender headless, `assets:optimize`, `apply-<zone>.mjs`). L'éditeur le
+  rappelle après un Save qui change les décors. Zone cuisable : `orchard` (table `ZONES` de
+  `front/scripts/bake-zone.mjs` ; une nouvelle zone appelle `L.zone_decor()` dans son `build_*_site.py`).
+- Dans le GLB, chaque décor cuit est un nœud `ZD_<id>_<clé>` ; l'éditeur masque ces nœuds du fond pour ne montrer que
+  les décors éditables.
+
+Commiter `zones/`, le GLB et le layout de la zone, `town.collision.json`.
 
 ## Ajouter du contenu
 

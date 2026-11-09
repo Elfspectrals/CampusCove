@@ -12,7 +12,8 @@ import MallMapModal, { type MallPlaza, type MallStoreMark } from '../../componen
 import { decorModelUrl, isConsumableCode } from '../../game/assets/catalog'
 import UiIcon from '../../components/ui/UiIcon.vue'
 import type { UiIconName } from '../../components/ui/icons'
-import { MallEditorScene, type GizmoMode, type PropTransform } from '../../game/mallEditor/MallEditorScene'
+import { MallEditorScene, type EditorZone, type GizmoMode, type PropTransform } from '../../game/mallEditor/MallEditorScene'
+import { bakedProps, parseZoneDecor, type ZoneDecor } from '../../game/zoneDecor/zoneDecor.ts'
 import { MALL_TEMPLATE_ASSIGNMENTS_URL, mallTemplateUrl } from '../../game/mallTemplates/mallTemplateFiles'
 import { decorParts, type MaterialSlot } from '../../game/mallTemplates/templateProps'
 import { MATERIALS_URL, TEXTURES_URL } from '../../game/mallTemplates/templateSurfaces'
@@ -73,6 +74,10 @@ interface EditorAssets {
   wear: Record<WearSlot, string[]>
 }
 
+interface ZoneChoice extends EditorZone {
+  decorated: boolean
+}
+
 interface PlaceableEntry extends ContentEntry {
   modelUrl: string | null
   create: (id: string, position: Vec3) => TemplateProp
@@ -122,6 +127,13 @@ const scaleSnap = ref(0.5)
 const sceneError = ref<string | null>(null)
 const hiddenIds = ref<string[]>([])
 const templateList = ref<Array<{ key: string; name: string; preset: CellPreset }>>([])
+const zoneChoices = ref<ZoneChoice[]>([])
+const zoneOptions = computed<SelectOption[]>(() => zoneChoices.value.map((z) => ({ value: z.key, label: z.key, group: z.decorated ? 'Decorated' : 'Bare' })))
+const openZone = ref<ZoneChoice | null>(null)
+const zonePick = ref('')
+const savedBakedDecor = ref('')
+const bakePending = ref(false)
+const placeableEntries = computed(() => (openZone.value ? entries.value.filter((e) => e.folder !== 'light') : entries.value))
 const assignments = ref<TemplateAssignments>({ version: 1, cells: {} })
 const savedSnapshot = ref(JSON.stringify(template.value))
 const status = ref<{ kind: 'ok' | 'error'; text: string } | null>(null)
@@ -191,6 +203,7 @@ function useCell(cell: MallCell): void {
   const switching = index !== presetIndex.value
   if (switching && template.value.props.length && !window.confirm(`Props are laid out for ${preset.value?.width} × ${preset.value?.depth} m. Switch to ${cell.width} × ${cell.depth} m anyway?`)) return
   presetIndex.value = index
+  leaveZone()
   targetCell.value = cell
   mapOpen.value = false
 }
@@ -215,7 +228,9 @@ watch([editor, () => template.value.props], ([scene, props]) => scene?.syncProps
 watch([editor, selectedId], ([scene, id]) => scene?.select(id))
 watch(
   [editor, () => JSON.stringify([template.value.preset, template.value.surfaces ?? {}])],
-  ([scene]) => scene?.setSurfaces(template.value).catch((error: unknown) => (sceneError.value = errorText(error))),
+  ([scene]) => {
+    if (!openZone.value) scene?.setSurfaces(template.value).catch((error: unknown) => (sceneError.value = errorText(error)))
+  },
 )
 watch([editor, hiddenIds], ([scene, ids]) => scene?.setHidden(ids))
 
@@ -313,7 +328,9 @@ async function readJson<T>(url: string, init?: RequestInit): Promise<T> {
 async function loadLists(): Promise<void> {
   assignments.value = parseTemplateAssignments(await readJson(MALL_TEMPLATE_ASSIGNMENTS_URL))
   if (CAN_WRITE) {
-    templateList.value = await readJson(`${EDITOR_API}/templates`)
+    const [templates, zones] = await Promise.all([readJson<typeof templateList.value>(`${EDITOR_API}/templates`), readJson<ZoneChoice[]>(`${EDITOR_API}/zones`)])
+    templateList.value = templates
+    zoneChoices.value = zones
     return
   }
   const keys = [...new Set(Object.values(assignments.value.cells))]
@@ -338,6 +355,7 @@ function resetEditing(next: MallTemplate): void {
 function newTemplate(): void {
   if (!confirmDiscard()) return
   resetEditing({ version: 1, key: '', name: '', preset: { ...template.value.preset }, props: [] })
+  leaveZone()
   loadedKey.value = null
   targetCell.value = null
   status.value = null
@@ -352,6 +370,7 @@ async function openTemplate(key: string): Promise<void> {
     if (index < 0) throw new Error(`${key}: no planned cell is ${loaded.preset.width}×${loaded.preset.depth} any more`)
     presetIndex.value = index
     resetEditing(loaded)
+    leaveZone()
     loadedKey.value = key
     targetCell.value = cells.value.find((c) => assignments.value.cells[c.id] === key) ?? null
     status.value = { kind: 'ok', text: `Opened ${key}.` }
@@ -370,6 +389,61 @@ async function saveTemplate(): Promise<void> {
     loadedKey.value = valid.key
     await loadLists()
     status.value = { kind: 'ok', text: `Saved templates/${valid.key}.json` }
+  } catch (error) {
+    status.value = { kind: 'error', text: errorText(error) }
+  }
+}
+
+function leaveZone(): void {
+  if (!openZone.value) return
+  openZone.value = null
+  if (preset.value) editor.value?.setPreset(preset.value)
+}
+
+function zoneName(key: string): string {
+  const words = key.split('_').join(' ')
+  return words.charAt(0).toUpperCase() + words.slice(1)
+}
+
+async function openZoneDecor(key: string): Promise<void> {
+  zonePick.value = ''
+  const zone = zoneChoices.value.find((z) => z.key === key)
+  if (!zone || !confirmDiscard()) return
+  try {
+    const decor: ZoneDecor = zone.decorated ? parseZoneDecor(await readJson(`${EDITOR_API}/zones/${key}`), zone) : { version: 1, zone: key, name: zoneName(key), props: [] }
+    openZone.value = zone
+    resetEditing({ version: 1, key, name: decor.name, preset: { ...template.value.preset }, props: decor.props })
+    loadedKey.value = null
+    targetCell.value = null
+    savedBakedDecor.value = JSON.stringify(bakedProps(decor))
+    bakePending.value = false
+    status.value = { kind: 'ok', text: `Opened zone ${key}.` }
+    await editor.value?.setZone(zone)
+  } catch (error) {
+    if (openZone.value?.key === key) {
+      leaveZone()
+      resetEditing({ version: 1, key: '', name: '', preset: { ...template.value.preset }, props: [] })
+    }
+    status.value = { kind: 'error', text: errorText(error) }
+  }
+}
+
+async function saveZone(zone: ZoneChoice): Promise<void> {
+  try {
+    const sent = JSON.stringify(template.value)
+    const decor = parseZoneDecor({ version: 1, zone: zone.key, name: template.value.name, props: template.value.props }, zone)
+    await readJson(`${EDITOR_API}/zones/${zone.key}`, { method: 'PUT', body: JSON.stringify(decor) })
+    savedSnapshot.value = sent
+    const baked = JSON.stringify(bakedProps(decor))
+    bakePending.value ||= baked !== savedBakedDecor.value
+    savedBakedDecor.value = baked
+    await loadLists()
+    status.value = {
+      kind: 'ok',
+      text: bakePending.value
+        ? `Saved zones/${zone.key}.json. Decor changed: run "npm run zone:bake -- ${zone.key}" to bake it into the zone.`
+        : `Saved zones/${zone.key}.json. NPCs and items show in /game after a reload.`,
+    }
   } catch (error) {
     status.value = { kind: 'error', text: errorText(error) }
   }
@@ -441,6 +515,14 @@ function duplicateSelected(): void {
   copy.id = newPropId()
   if (copy.kind === 'npc') copy.vendor = false
   const step = Math.max(translationSnap.value, 0.5)
+  if (openZone.value) {
+    const { minX, maxX } = openZone.value.bounds
+    const x = copy.position[0] + step <= maxX ? copy.position[0] + step : copy.position[0] - step
+    copy.position = [Math.max(minX, x), copy.position[1], copy.position[2]]
+    template.value.props.push(copy)
+    selectedId.value = copy.id
+    return
+  }
   const { halfWidth } = usableArea(template.value.preset)
   const x = copy.position[0] + step <= halfWidth ? copy.position[0] + step : copy.position[0] - step
   copy.position = [Math.max(-halfWidth, x), copy.position[1], copy.position[2]]
@@ -741,18 +823,21 @@ onUnmounted(() => {
       <input v-model.trim="template.name" placeholder="Template name" class="cc-input w-44 py-1.5 text-sm" />
       <input
         v-model.trim="template.key"
+        :disabled="!!openZone"
         placeholder="file_key"
         :class="['cc-input w-36 py-1.5 font-mono text-sm', template.key && !keyValid ? 'border-red-400' : '']"
         title="File name: lowercase letters, digits and _"
       />
-      <button type="button" class="cc-btn cc-btn-sm cc-btn-ghost" title="Choose the shop cell on the mall map" @click="mapOpen = true">
+      <span v-if="openZone" class="cc-btn cc-btn-sm cc-btn-ghost pointer-events-none"><UiIcon name="map" :size="14" /> Zone · {{ openZone.key }}</span>
+      <button v-else type="button" class="cc-btn cc-btn-sm cc-btn-ghost" title="Choose the shop cell on the mall map" @click="mapOpen = true">
         <UiIcon name="map" :size="14" />
         <template v-if="targetCell">{{ targetCell.id }} · {{ targetCell.name }} · </template>{{ preset ? `${preset.width} × ${preset.depth} m` : 'Choose a cell' }}
       </button>
       <div class="ml-auto flex flex-wrap items-center gap-1">
         <button type="button" class="cc-btn cc-btn-sm cc-btn-ghost" @click="newTemplate">New</button>
         <EditorSearchSelect class="w-48" :model-value="openKey" :options="templateChoices" placeholder="Open…" @update:model-value="openTemplate" />
-        <button v-if="CAN_WRITE" type="button" class="cc-btn cc-btn-sm cc-btn-sun" :disabled="!keyValid || !template.name" @click="saveTemplate">
+        <EditorSearchSelect v-if="CAN_WRITE" class="w-40" :model-value="zonePick" :options="zoneOptions" placeholder="Zone…" @update:model-value="openZoneDecor" />
+        <button v-if="CAN_WRITE" type="button" class="cc-btn cc-btn-sm cc-btn-sun" :disabled="!keyValid || !template.name" @click="openZone ? saveZone(openZone) : saveTemplate()">
           Save<span v-if="dirty"> •</span>
         </button>
         <button type="button" class="cc-btn cc-btn-sm cc-btn-mint" :disabled="walking" @click="startWalk"><UiIcon name="play" :size="14" /> Test</button>
@@ -824,6 +909,7 @@ onUnmounted(() => {
           :wear="editorAssets?.wear ?? emptyWear"
           :vendor-taken="vendorTaken"
           :preset="template.preset"
+          :bounds="openZone?.bounds"
           :sale-codes="saleCodes"
           :wear-sale-codes="wearSaleCodes"
           :surfaces="template.surfaces"
@@ -831,7 +917,7 @@ onUnmounted(() => {
           :texture-parts="texturePartsByKey"
           :own-parts="ownParts"
           :material-options="materialOptions"
-          :material-slots="selectedProp?.kind === 'decor' ? (materialSlotsById[selectedProp.id] ?? []) : []"
+          :material-slots="selectedProp?.kind === 'decor' && !openZone ? (materialSlotsById[selectedProp.id] ?? []) : []"
           @change="replaceProp"
           @surfaces="setSurfaces"
         />
@@ -860,7 +946,7 @@ onUnmounted(() => {
       :style="collapsed.browser ? undefined : { height: `${panels.browser}px` }"
       :collapsed="collapsed.browser"
       @toggle="collapsed.browser = !collapsed.browser"
-      :entries="entries" :armed-id="armedId" :notice="contentNotice" @pick="pick" />
+      :entries="placeableEntries" :armed-id="armedId" :notice="contentNotice" @pick="pick" />
   </div>
   </div>
 </template>

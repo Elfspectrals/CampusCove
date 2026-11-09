@@ -15,6 +15,7 @@
     "wear:check": "node scripts/skins/check-wear.mjs",
     "collision:extract": "node scripts/extract-collision.mjs",
     "assets:optimize": "node scripts/optimize-assets.mjs",
+    "zone:bake": "node scripts/bake-zone.mjs",
     "topo:check": "node --experimental-strip-types --no-warnings scripts/check-topography.mjs",
     "store:apply": "node scripts/apply-store.mjs",
     "world:bounds": "node scripts/apply-world-bounds.mjs",

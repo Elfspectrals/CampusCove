@@ -19,6 +19,7 @@ import {
   type TexturePart,
   withSale,
 } from '../../../game/mallTemplates/mallTemplate.ts'
+import type { WorldBounds } from '../../../game/world/worldManifest'
 import EditorColorPicker from './EditorColorPicker.vue'
 import EditorLookEditor from './EditorLookEditor.vue'
 import EditorSearchSelect, { type SelectOption } from './EditorSearchSelect.vue'
@@ -29,6 +30,7 @@ const props = defineProps<{
   wear: Record<WearSlot, string[]>
   vendorTaken: boolean
   preset: CellPreset
+  bounds?: WorldBounds
   saleCodes: Record<string, string>
   wearSaleCodes: Record<string, string>
   surfaces: MallTemplate['surfaces']
@@ -114,12 +116,15 @@ function build(): void {
     if (!syncing && numbers && props.prop) emit('change', withNumbers(props.prop, numbers))
   })
   const { halfWidth, minZ } = usableArea(props.preset)
-  pane.addBinding(numbers, 'location', {
-    label: 'Location',
-    x: { min: -halfWidth, max: halfWidth, keyScale: 0.05, pointerScale: 0.01 },
-    y: { min: 0, ...(prop.kind === 'light' ? { max: CEILING_HEIGHT } : {}), keyScale: 0.05, pointerScale: 0.01 },
-    z: { min: minZ, max: 0, keyScale: 0.05, pointerScale: 0.01 },
-  })
+  const fine = { keyScale: 0.05, pointerScale: 0.01 }
+  pane.addBinding(numbers, 'location', props.bounds
+    ? { label: 'Location', x: { min: props.bounds.minX, max: props.bounds.maxX, ...fine }, y: fine, z: { min: props.bounds.minZ, max: props.bounds.maxZ, ...fine } }
+    : {
+        label: 'Location',
+        x: { min: -halfWidth, max: halfWidth, ...fine },
+        y: { min: 0, ...(prop.kind === 'light' ? { max: CEILING_HEIGHT } : {}), ...fine },
+        z: { min: minZ, max: 0, ...fine },
+      })
   pane.addBinding(numbers, 'rotation', { label: 'Rotation °', min: -180, max: 180, keyScale: 1, pointerScale: 0.5 })
   const axis = { min: 0.05, keyScale: 0.05, pointerScale: 0.005 }
   if (!(prop.kind === 'npc' && prop.vendor)) pane.addBinding(numbers, 'scale', { label: 'Scale', x: axis, y: axis, z: axis })
@@ -138,7 +143,7 @@ function build(): void {
 }
 
 watch(
-  () => (props.prop ? JSON.stringify([props.prop.id, props.prop.kind, props.prop.kind === 'item' && props.prop.forSale, props.prop.kind === 'light' && props.prop.light, props.prop.kind === 'npc' && props.prop.vendor, props.preset, props.collapsed]) : ''),
+  () => (props.prop ? JSON.stringify([props.prop.id, props.prop.kind, props.prop.kind === 'item' && props.prop.forSale, props.prop.kind === 'light' && props.prop.light, props.prop.kind === 'npc' && props.prop.vendor, props.preset, props.bounds, props.collapsed]) : ''),
   build,
   { flush: 'post' },
 )
@@ -269,7 +274,8 @@ const flatMaterials = computed(() => props.materialOptions.filter((o) => !o.prev
       </button>
     </header>
     <div v-if="!collapsed" class="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-2 text-sm" @keydown.stop>
-      <template v-if="!prop">
+      <p v-if="!prop && bounds" class="m-0 px-1 text-xs text-mist">Nothing selected. Select a prop to edit it.</p>
+      <template v-else-if="!prop">
         <p class="m-0 px-1 text-xs text-mist">Nothing selected: the cell's walls, floor and ceiling. Select a prop to edit it.</p>
         <div class="rounded-lg bg-ink-950/50 px-2 py-1">
           <EditorLookEditor
@@ -331,8 +337,8 @@ const flatMaterials = computed(() => props.materialOptions.filter((o) => !o.prev
               <EditorSearchSelect :model-value="figure.pose" :options="POSES" :searchable="false" :disabled="figure.vendor" @update:model-value="change({ ...figure, pose: $event as NpcPose })" />
             </div>
             <label class="flex items-center gap-2 text-xs text-mist">
-              <input type="checkbox" :checked="figure.vendor" :disabled="!figure.vendor && (vendorTaken || !vendorAllowed)" :title="!figure.vendor && !vendorAllowed ? 'A vendor stands (pose standing) at scale 1' : ''" @change="change({ ...figure, vendor: ($event.target as HTMLInputElement).checked })" />
-              Vendor (counter and checkout)
+              <input type="checkbox" :checked="figure.vendor" :disabled="!figure.vendor && (vendorTaken || !vendorAllowed)" :title="!figure.vendor && !vendorAllowed ? 'A cashier stands (pose standing) at scale 1' : ''" @change="change({ ...figure, vendor: ($event.target as HTMLInputElement).checked })" />
+              Cashier (sells the cart)
             </label>
           </template>
           <div class="grid grid-cols-[5.5rem_1fr] items-center gap-2">

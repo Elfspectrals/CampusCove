@@ -471,7 +471,7 @@ export function parseDecorParts(raw: unknown, key: string): Record<string, Maske
   )
 }
 
-function propAt(raw: unknown, path: string): TemplateProp {
+export function propAt(raw: unknown, path: string): TemplateProp {
   const kind = objectAt(raw, path).kind
   if (typeof kind !== 'string' || !Object.keys(KIND_FIELDS).includes(kind)) throw new TemplateError(`${path}.kind`, 'expected decor, item, npc, mannequin or light')
   const prop = objectAt(raw, path, KIND_FIELDS[kind])

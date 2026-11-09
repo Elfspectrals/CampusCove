@@ -58,6 +58,7 @@ import { useMinimap } from '../composables/game/useMinimap'
 import { usePlayerInventory } from '../composables/game/usePlayerInventory'
 import { useOrchard } from '../composables/game/useOrchard'
 import { useMallCellTemplates, type CellStoreEntry } from '../composables/game/useMallCellTemplates'
+import { useZoneDecor } from '../composables/game/useZoneDecor'
 import { usePub } from '../composables/game/usePub'
 import { usePubChallenge } from '../composables/game/usePubChallenge'
 import { usePubGames } from '../composables/game/usePubGames'
@@ -258,7 +259,13 @@ const furnitureStores = shallowReactive<CellStoreEntry[]>([
   })),
 ])
 const mallCellTemplates = useMallCellTemplates({ getScene, storeDeps: mallStoreDeps, addStore: (entry) => furnitureStores.push(entry) })
-const activeFurniture = computed(() => furnitureStores.find((s) => s.key === (mallCellTemplates.currentStoreKey.value ?? currentHouseKey.value)) ?? null)
+const zoneDecor = useZoneDecor({
+  getScene,
+  storeDeps: mallStoreDeps,
+  addStore: (entry) => furnitureStores.push(entry),
+  insideOtherStore: () => mallCellTemplates.currentStoreKey.value !== null || currentHouseKey.value !== null,
+})
+const activeFurniture = computed(() => furnitureStores.find((s) => s.key === (mallCellTemplates.currentStoreKey.value ?? currentHouseKey.value ?? zoneDecor.currentStoreKey.value)) ?? null)
 const storeBrand = computed(() => activeFurniture.value?.brand ?? COVE_HOME.name)
 const storeTarget = computed(() => activeFurniture.value?.store.target.value ?? null)
 const storeDepartment = computed(() => activeFurniture.value?.store.currentDepartment.value ?? null)
@@ -784,6 +791,7 @@ const environment = useRoomEnvironment({
     pubGames.onTownLoaded(manifest)
     orchard.onTownLoaded(manifest)
     mallCellTemplates.onTownLoaded(manifest).catch((error: unknown) => console.error('[mall] cell templates failed to load', error))
+    zoneDecor.onTownLoaded(manifest).catch((error: unknown) => console.error('[zones] zone decor failed to load', error))
     minimap.onTownLoaded(manifest)
     houseFurniture.onTownReady()
     for (const { key, store } of furnitureStores) {
@@ -968,6 +976,7 @@ const movement = useGameMovement({
     currentHouseKey.value = houseKeyAt(myPosition.x, myPosition.z)
     placement.tick(dt)
     mallCellTemplates.tick(dt, myPosition)
+    zoneDecor.tick(dt, myPosition)
     for (const { store } of furnitureStores) store.update(dt)
     for (const store of clothingStores) store.update(dt)
     threadsMusic.update(dt, inThreads.value)

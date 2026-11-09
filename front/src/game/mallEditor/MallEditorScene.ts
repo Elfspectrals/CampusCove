@@ -8,11 +8,19 @@ import { CEILING_HEIGHT, CELL_HEIGHT, usableArea, type CellPreset, type MallTemp
 import { createSurfacePanels, disposeSurfacePanels } from '../mallTemplates/templateSurfaces'
 import { createPropObject, disposeLookMaps, materialSlotsOf, placeProp, propSignature, type MaterialSlot } from '../mallTemplates/templateProps'
 import { createPlacementGhost, DEFAULT_GHOST_COLOR } from '../placement/placementGhost'
+import { createGltfLoader } from '../gltfLoaderFactory'
+import type { WorldBounds } from '../world/worldManifest'
 
 export interface PlacementRequest {
   modelUrl: string | null
   place: (position: Vec3) => void
   cancel: () => void
+}
+
+export interface EditorZone {
+  key: string
+  bounds: WorldBounds
+  modelUrl: string
 }
 
 export type GizmoMode = 'select' | 'translate' | 'rotate' | 'scale'
@@ -39,6 +47,8 @@ const EYE_HEIGHT = 1.6
 const WALK_SPEED = 3.2
 const WALK_MARGIN = 0.25
 const MIN_SCALE = 0.05
+const STEP_UP = 0.6
+const BAKED_DECOR_PREFIX = 'ZD_'
 const FLY_KEYS: Record<string, THREE.Vector3> = {
   KeyW: new THREE.Vector3(0, 0, -1),
   KeyS: new THREE.Vector3(0, 0, 1),
@@ -134,6 +144,9 @@ export class MallEditorScene {
   private readonly floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0)
   private placement: PlacementRequest | null = null
   private preset: CellPreset | null = null
+  private zone: EditorZone | null = null
+  private backdrop: THREE.Object3D | null = null
+  private backdropToken = 0
   private readonly gizmo: TransformControls
   private readonly selectionBox = new THREE.BoxHelper(new THREE.Object3D(), 0xffc94d)
   private selectedId: string | null = null
@@ -321,8 +334,16 @@ export class MallEditorScene {
   }
 
   private clampedTransform(object: THREE.Object3D): PropTransform {
-    const { halfWidth, minZ } = usableArea(this.preset ?? { width: 0, depth: 0 })
     const round = (v: number) => Number(v.toFixed(4))
+    if (this.zone) {
+      const { minX, maxX, minZ, maxZ } = this.zone.bounds
+      return {
+        position: [round(THREE.MathUtils.clamp(object.position.x, minX, maxX)), round(object.position.y), round(THREE.MathUtils.clamp(object.position.z, minZ, maxZ))],
+        yaw: round(object.rotation.y),
+        scale: [round(object.scale.x), round(object.scale.y), round(object.scale.z)],
+      }
+    }
+    const { halfWidth, minZ } = usableArea(this.preset ?? { width: 0, depth: 0 })
     return {
       position: [
         round(THREE.MathUtils.clamp(object.position.x, -halfWidth, halfWidth)),
@@ -372,15 +393,34 @@ export class MallEditorScene {
     return this.placement !== null
   }
 
+  private groundBelow(x: number, fromY: number, z: number): number | null {
+    if (!this.backdrop) return null
+    this.raycaster.set(new THREE.Vector3(x, fromY, z), new THREE.Vector3(0, -1, 0))
+    const hit = this.raycaster.intersectObject(this.backdrop, true)[0]
+    return hit ? Number(hit.point.y.toFixed(4)) : null
+  }
+
   private floorPoint(event: PointerEvent): Vec3 | null {
     const rect = this.renderer.domElement.getBoundingClientRect()
     const ndc = new THREE.Vector2(((event.clientX - rect.left) / rect.width) * 2 - 1, -((event.clientY - rect.top) / rect.height) * 2 + 1)
     this.raycaster.setFromCamera(ndc, this.camera)
+    if (this.zone) return this.zonePoint()
     const hit = this.raycaster.ray.intersectPlane(this.floorPlane, new THREE.Vector3())
     return hit ? [snapTo(hit.x, this.translationSnap), 0, snapTo(hit.z, this.translationSnap)] : null
   }
 
+  private zonePoint(): Vec3 | null {
+    if (!this.backdrop) return null
+    const hit = this.raycaster.intersectObject(this.backdrop, true)[0]
+    if (!hit) return null
+    return [snapTo(hit.point.x, this.translationSnap), Number(hit.point.y.toFixed(4)), snapTo(hit.point.z, this.translationSnap)]
+  }
+
   private insideCell(point: Vec3): boolean {
+    if (this.zone) {
+      const { minX, maxX, minZ, maxZ } = this.zone.bounds
+      return point[0] >= minX && point[0] <= maxX && point[2] >= minZ && point[2] <= maxZ
+    }
     if (!this.preset) return false
     const [x, , z] = point
     const { halfWidth, minZ } = usableArea(this.preset)
@@ -414,12 +454,62 @@ export class MallEditorScene {
     this.scene.add(next)
   }
 
-  setPreset(preset: CellPreset): void {
-    this.preset = preset
-    if (this.shell) {
-      this.scene.remove(this.shell)
-      disposeShell(this.shell)
+  async setZone(zone: EditorZone): Promise<void> {
+    const token = ++this.backdropToken
+    this.preset = null
+    this.zone = zone
+    this.removeShell()
+    this.surfacesToken++
+    if (this.surfaces) {
+      this.scene.remove(this.surfaces)
+      disposeSurfacePanels(this.surfaces)
+      this.surfaces = null
     }
+    this.removeBackdrop()
+    const { minX, maxX, minZ, maxZ } = zone.bounds
+    const reach = Math.max(maxX - minX, maxZ - minZ)
+    this.camera.far = Math.max(200, reach * 4)
+    this.camera.updateProjectionMatrix()
+    this.controls.target.set((minX + maxX) / 2, 0, (minZ + maxZ) / 2)
+    this.camera.position.set(this.controls.target.x + reach * 0.4, reach * 0.6, this.controls.target.z + reach * 0.4)
+    this.controls.update()
+    const gltf = await createGltfLoader().loadAsync(zone.modelUrl)
+    if (token !== this.backdropToken) return disposeObject3D(gltf.scene)
+    gltf.scene.name = `ZoneBackdrop_${zone.key}`
+    const baked: THREE.Object3D[] = []
+    gltf.scene.traverse((node) => {
+      if (node.name.startsWith(BAKED_DECOR_PREFIX)) baked.push(node)
+    })
+    for (const node of baked) {
+      node.removeFromParent()
+      disposeObject3D(node)
+    }
+    this.backdrop = gltf.scene
+    this.scene.add(gltf.scene)
+  }
+
+  private removeBackdrop(): void {
+    if (!this.backdrop) return
+    this.scene.remove(this.backdrop)
+    disposeObject3D(this.backdrop)
+    this.backdrop = null
+  }
+
+  private removeShell(): void {
+    if (!this.shell) return
+    this.scene.remove(this.shell)
+    disposeShell(this.shell)
+    this.shell = null
+  }
+
+  setPreset(preset: CellPreset): void {
+    this.backdropToken++
+    this.removeBackdrop()
+    this.zone = null
+    this.camera.far = 200
+    this.camera.updateProjectionMatrix()
+    this.preset = preset
+    this.removeShell()
     this.shell = buildShell(preset)
     this.scene.add(this.shell)
     const reach = Math.max(preset.width, preset.depth)
@@ -442,7 +532,7 @@ export class MallEditorScene {
       const point = this.floorPoint(event)
       this.ghost.root.visible = point !== null
       if (point) {
-        this.ghostRest.set(point[0], GHOST_LIFT, point[2])
+        this.ghostRest.set(point[0], point[1] + GHOST_LIFT, point[2])
         this.ghost.root.position.copy(this.ghostRest)
         this.ghost.setValid(this.insideCell(point))
       }
@@ -481,8 +571,19 @@ export class MallEditorScene {
     return this.walking
   }
 
+  private aimedGround(): THREE.Vector3 | null {
+    if (!this.backdrop) return null
+    this.raycaster.setFromCamera(new THREE.Vector2(0, 0), this.camera)
+    return this.raycaster.intersectObject(this.backdrop, true)[0]?.point ?? null
+  }
+
   async startWalk(): Promise<boolean> {
-    if (this.walking || !this.preset) return false
+    if (this.walking || (!this.preset && !this.zone)) return false
+    const start = this.zone ? this.aimedGround() : null
+    if (this.zone && !start) {
+      this.onError('Aim the view at the ground of the zone to start walking there.')
+      return false
+    }
     this.cancelPlacing()
     this.cameraBeforeWalk.position.copy(this.camera.position)
     this.cameraBeforeWalk.target.copy(this.controls.target)
@@ -490,7 +591,8 @@ export class MallEditorScene {
     this.controls.enabled = false
     this.gizmo.detach()
     this.selectionBox.visible = false
-    this.camera.position.set(0, EYE_HEIGHT, -WALK_MARGIN)
+    if (start) this.camera.position.set(start.x, start.y + EYE_HEIGHT, start.z)
+    else this.camera.position.set(0, EYE_HEIGHT, -WALK_MARGIN)
     this.camera.rotation.set(0, 0, 0, 'YXZ')
     try {
       await this.renderer.domElement.requestPointerLock()
@@ -531,7 +633,7 @@ export class MallEditorScene {
   }
 
   private walk(dt: number): void {
-    if (!this.preset) return
+    if (!this.preset && !this.zone) return
     const move = new THREE.Vector3()
     for (const code of this.flyKeys) if (FLY_KEYS[code] && FLY_KEYS[code].y === 0) move.add(FLY_KEYS[code])
     if (move.lengthSq() > 0) {
@@ -539,6 +641,15 @@ export class MallEditorScene {
       move.normalize().applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw).multiplyScalar(WALK_SPEED * dt)
       this.camera.position.add(move)
     }
+    if (this.zone) {
+      const { minX, maxX, minZ, maxZ } = this.zone.bounds
+      const x = THREE.MathUtils.clamp(this.camera.position.x, minX + WALK_MARGIN, maxX - WALK_MARGIN)
+      const z = THREE.MathUtils.clamp(this.camera.position.z, minZ + WALK_MARGIN, maxZ - WALK_MARGIN)
+      const ground = this.groundBelow(x, this.camera.position.y - EYE_HEIGHT + STEP_UP, z)
+      this.camera.position.set(x, ground === null ? this.camera.position.y : ground + EYE_HEIGHT, z)
+      return
+    }
+    if (!this.preset) return
     const area = usableArea(this.preset)
     const halfWidth = area.halfWidth - WALK_MARGIN
     this.camera.position.set(
@@ -647,6 +758,7 @@ export class MallEditorScene {
     this.gizmo.dispose()
     this.controls.dispose()
     if (this.shell) disposeShell(this.shell)
+    this.backdropToken++
     if (this.surfaces) disposeSurfacePanels(this.surfaces)
     disposeObject3D(this.scene)
     this.envMap.dispose()

@@ -17,6 +17,7 @@ import random
 from mathutils import Matrix, Vector
 
 OUT_ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "out"))
+FRONT_ASSETS = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "front", "public", "assets"))
 
 _tex_cache = {}
 _mat_cache = {}
@@ -574,3 +575,77 @@ def gable_roof(coll, name, gx, gz, y0, sx, sz, h, mat, ridge_axis="x", tile=2.0)
     ob.location = b(gx, gz, y0)
     coll.objects.link(ob)
     return ob
+
+
+def _read_json(path):
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def _decor_collision(prop, cuboids, col_prefix):
+    x, y, z = prop["position"]
+    sx, sy, sz = prop["scale"]
+    yaw = prop["yaw"]
+    cos, sin = math.cos(yaw), math.sin(yaw)
+    out = []
+    for i, c in enumerate(cuboids):
+        if abs(c["qx"]) > 1e-6 or abs(c["qz"]) > 1e-6:
+            raise ValueError(f"decor/{prop['key']}/collision.json: cuboid {i} is tilted, only yaw is baked")
+        lx, lz = c["cx"] * sx, c["cz"] * sz
+        out.append({
+            "name": f"{col_prefix}ZD_{prop['id']}_{i}",
+            "cx": round(x + lx * cos + lz * sin, 3),
+            "cy": round(y + c["cy"] * sy, 3),
+            "cz": round(z - lx * sin + lz * cos, 3),
+            "hx": round(c["hx"] * sx, 3),
+            "hy": round(c["hy"] * sy, 3),
+            "hz": round(c["hz"] * sz, 3),
+            "yaw": round(yaw + 2 * math.atan2(c["qy"], c["qw"]), 4),
+        })
+    return out
+
+
+def _place_decor(coll, prop):
+    x, y, z = prop["position"]
+    sx, sy, sz = prop["scale"]
+    placement = Matrix.Translation(b(x, z, y)) @ Matrix.Rotation(prop["yaw"], 4, "Z") @ Matrix.Diagonal((sx, sz, sy, 1.0))
+    before = set(bpy.data.objects)
+    bpy.ops.import_scene.gltf(filepath=os.path.join(FRONT_ASSETS, "decor", prop["key"], "model.glb"))
+    imported = [o for o in bpy.data.objects if o not in before]
+    bpy.context.view_layer.update()
+    meshes = [o for o in imported if o.type == "MESH"]
+    if not meshes:
+        raise ValueError(f"decor/{prop['key']}/model.glb has no mesh")
+    worlds = {o: placement @ o.matrix_world for o in meshes}
+    for o in meshes:
+        o.parent = None
+        o.matrix_world = worlds[o]
+        for c in list(o.users_collection):
+            c.objects.unlink(o)
+        coll.objects.link(o)
+    for o in imported:
+        if o.type != "MESH":
+            bpy.data.objects.remove(o, do_unlink=True)
+    for i, o in enumerate(meshes):
+        o.name = f"ZD_{prop['id']}_{prop['key']}" + (f"_{i}" if len(meshes) > 1 else "")
+        o.data.name = o.name
+    return meshes
+
+
+def zone_decor(coll, zone_key, col_prefix):
+    path = os.path.join(FRONT_ASSETS, "zones", f"{zone_key}.json")
+    listed = zone_key in _read_json(os.path.join(FRONT_ASSETS, "zones", "index.json"))["zones"]
+    if listed != os.path.exists(path):
+        raise ValueError(f"zones/index.json and zones/{zone_key}.json disagree: listed {listed}, file {os.path.exists(path)}")
+    if not listed:
+        return [], []
+    decor = _read_json(path)
+    if decor["zone"] != zone_key:
+        raise ValueError(f"zones/{zone_key}.json belongs to zone {decor['zone']}")
+    objs, cols = [], []
+    for prop in decor["props"]:
+        if prop["kind"] != "decor":
+            continue
+        objs += _place_decor(coll, prop)
+        cols += _decor_collision(prop, _read_json(os.path.join(FRONT_ASSETS, "decor", prop["key"], "collision.json"))["cuboids"], col_prefix)
+    return objs, cols

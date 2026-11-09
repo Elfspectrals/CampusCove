@@ -329,8 +329,12 @@ for _ in range(400):
         pine(x, z, rnd.uniform(0.9, 1.25))
         scattered += 1
 
+decor_objs, decor_cols = L.zone_decor(coll, "orchard", "COL_Orchard_")
+so += decor_objs
+col += decor_cols
+
 bad = L.check_grounded(so, allow=("OS_Path", "OS_Lawn", "OS_OrchardFloor", "OS_AppleTree", "OS_Fallen", "OS_Lantern", "OS_FenceRail", "OS_GateArch", "OS_Stall",
-                                  "OS_Crate", "OS_Shed", "OS_Hay", "OS_Pine"))
+                                  "OS_Crate", "OS_Shed", "OS_Hay", "OS_Pine", "ZD_"))
 print("ORCHARD grounded violations:", bad)
 assert not bad, bad
 

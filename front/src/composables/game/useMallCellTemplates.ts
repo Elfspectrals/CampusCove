@@ -77,7 +77,7 @@ function blockerKey(cellId: string, propId: string, index: number): string {
   return `mallcell:${cellId}:${propId}#${index}`
 }
 
-function worldCuboids(object: THREE.Object3D, local: CollisionCuboidJson[]): CollisionCuboidJson[] {
+export function worldCuboids(object: THREE.Object3D, local: CollisionCuboidJson[]): CollisionCuboidJson[] {
   object.updateWorldMatrix(true, false)
   const scale = object.getWorldScale(new THREE.Vector3())
   const q = object.getWorldQuaternion(new THREE.Quaternion())
