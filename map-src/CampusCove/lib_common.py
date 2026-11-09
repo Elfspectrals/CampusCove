@@ -577,6 +577,16 @@ def gable_roof(coll, name, gx, gz, y0, sx, sz, h, mat, ridge_axis="x", tile=2.0)
     return ob
 
 
+def fence_run(coll, name, ax, az, bx, bz, post_mat, rail_mat, spacing=2.5):
+    length = math.hypot(bx - ax, bz - az)
+    yaw = math.atan2(-(bz - az), bx - ax)
+    steps = max(1, round(length / spacing))
+    objs = [box(coll, f"{name}_Post{k:02d}", ax + (bx - ax) * k / steps, az + (bz - az) * k / steps, 0.0, 0.14, 0.14, 1.1, post_mat) for k in range(steps + 1)]
+    objs += [box(coll, f"{name}_Rail{k}", (ax + bx) / 2, (az + bz) / 2, h, length + 0.05, 0.07, 0.09, rail_mat, rot=yaw) for k, h in enumerate((0.45, 0.85))]
+    collision = {"cx": (ax + bx) / 2, "cz": (az + bz) / 2, "sx": length + 0.2, "sz": 0.3, "h": 1.2, "yaw": yaw}
+    return objs, collision
+
+
 def _read_json(path):
     with open(path, encoding="utf-8") as f:
         return json.load(f)

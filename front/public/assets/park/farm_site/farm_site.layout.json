@@ -1,0 +1,622 @@
+{
+  "version": 1,
+  "bounds": {
+    "minX": -42.6,
+    "maxX": -2.0,
+    "minZ": -200.0,
+    "maxZ": -130.0
+  },
+  "gate": {
+    "x": -8.5,
+    "z": -130.0,
+    "width": 3.0
+  },
+  "fields": [
+    {
+      "crop": "corn",
+      "minX": -40.0,
+      "maxX": -24.0,
+      "minZ": -194.0,
+      "maxZ": -162.0
+    },
+    {
+      "crop": "potato",
+      "minX": -20.0,
+      "maxX": -5.0,
+      "minZ": -194.0,
+      "maxZ": -162.0
+    }
+  ],
+  "collision": [
+    {
+      "name": "COL_Farm_House_Corner_-40_-142",
+      "cx": -40.0,
+      "cz": -142.0,
+      "hx": 0.125,
+      "hz": 0.125,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_House_Corner_-32_-142",
+      "cx": -32.0,
+      "cz": -142.0,
+      "hx": 0.125,
+      "hz": 0.125,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_House_Corner_-40_-135",
+      "cx": -40.0,
+      "cz": -135.0,
+      "hx": 0.125,
+      "hz": 0.125,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_House_Corner_-32_-135",
+      "cx": -32.0,
+      "cz": -135.0,
+      "hx": 0.125,
+      "hz": 0.125,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_House_Wall_south_00",
+      "cx": -39.538,
+      "cz": -142.0,
+      "hx": 0.337,
+      "hz": 0.125,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_House_Wall_south_00s",
+      "cx": -38.6,
+      "cz": -142.0,
+      "hx": 0.6,
+      "hz": 0.125,
+      "hy": 0.5,
+      "cy": 0.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_House_Wall_south_00l",
+      "cx": -38.6,
+      "cz": -142.0,
+      "hx": 0.6,
+      "hz": 0.125,
+      "hy": 0.5,
+      "cy": 2.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_House_Wall_south_01",
+      "cx": -37.3,
+      "cz": -142.0,
+      "hx": 0.7,
+      "hz": 0.125,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_House_Wall_south_01l",
+      "cx": -36.0,
+      "cz": -142.0,
+      "hx": 0.6,
+      "hz": 0.125,
+      "hy": 0.45,
+      "cy": 2.55,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_House_Wall_south_02",
+      "cx": -34.7,
+      "cz": -142.0,
+      "hx": 0.7,
+      "hz": 0.125,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_House_Wall_south_02s",
+      "cx": -33.4,
+      "cz": -142.0,
+      "hx": 0.6,
+      "hz": 0.125,
+      "hy": 0.5,
+      "cy": 0.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_House_Wall_south_02l",
+      "cx": -33.4,
+      "cz": -142.0,
+      "hx": 0.6,
+      "hz": 0.125,
+      "hy": 0.5,
+      "cy": 2.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_House_Wall_south_03",
+      "cx": -32.462,
+      "cz": -142.0,
+      "hx": 0.337,
+      "hz": 0.125,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_House_Door_south0_JambA",
+      "cx": -36.56,
+      "cz": -142.0,
+      "hx": 0.04,
+      "hz": 0.155,
+      "hy": 1.05,
+      "cy": 1.05,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_House_Door_south0_JambB",
+      "cx": -35.44,
+      "cz": -142.0,
+      "hx": 0.04,
+      "hz": 0.155,
+      "hy": 1.05,
+      "cy": 1.05,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_House_Door_south0_Leaf",
+      "cx": -36.0,
+      "cz": -142.0,
+      "hx": 0.52,
+      "hz": 0.025,
+      "hy": 0.99,
+      "cy": 0.99,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_House_Wall_north_00",
+      "cx": -36.0,
+      "cz": -135.0,
+      "hx": 3.875,
+      "hz": 0.125,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_House_Wall_west_00",
+      "cx": -40.0,
+      "cz": -140.738,
+      "hx": 0.125,
+      "hz": 1.138,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_House_Wall_west_00s",
+      "cx": -40.0,
+      "cz": -139.0,
+      "hx": 0.125,
+      "hz": 0.6,
+      "hy": 0.5,
+      "cy": 0.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_House_Wall_west_00l",
+      "cx": -40.0,
+      "cz": -139.0,
+      "hx": 0.125,
+      "hz": 0.6,
+      "hy": 0.5,
+      "cy": 2.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_House_Wall_west_01",
+      "cx": -40.0,
+      "cz": -136.762,
+      "hx": 0.125,
+      "hz": 1.638,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_House_Wall_east_00",
+      "cx": -32.0,
+      "cz": -140.738,
+      "hx": 0.125,
+      "hz": 1.138,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_House_Wall_east_00s",
+      "cx": -32.0,
+      "cz": -139.0,
+      "hx": 0.125,
+      "hz": 0.6,
+      "hy": 0.5,
+      "cy": 0.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_House_Wall_east_00l",
+      "cx": -32.0,
+      "cz": -139.0,
+      "hx": 0.125,
+      "hz": 0.6,
+      "hy": 0.5,
+      "cy": 2.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_House_Wall_east_01",
+      "cx": -32.0,
+      "cz": -136.762,
+      "hx": 0.125,
+      "hz": 1.638,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_Barn_Corner_-28_-152",
+      "cx": -28.0,
+      "cz": -152.0,
+      "hx": 0.15,
+      "hz": 0.15,
+      "hy": 2.25,
+      "cy": 2.25,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_Barn_Corner_-16_-152",
+      "cx": -16.0,
+      "cz": -152.0,
+      "hx": 0.15,
+      "hz": 0.15,
+      "hy": 2.25,
+      "cy": 2.25,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_Barn_Corner_-28_-138",
+      "cx": -28.0,
+      "cz": -138.0,
+      "hx": 0.15,
+      "hz": 0.15,
+      "hy": 2.25,
+      "cy": 2.25,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_Barn_Corner_-16_-138",
+      "cx": -16.0,
+      "cz": -138.0,
+      "hx": 0.15,
+      "hz": 0.15,
+      "hy": 2.25,
+      "cy": 2.25,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_Barn_Wall_south_00",
+      "cx": -25.425,
+      "cz": -152.0,
+      "hx": 2.425,
+      "hz": 0.15,
+      "hy": 2.25,
+      "cy": 2.25,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_Barn_Wall_south_00s",
+      "cx": -22.0,
+      "cz": -152.0,
+      "hx": 1.0,
+      "hz": 0.15,
+      "hy": 1.4,
+      "cy": 1.4,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_Barn_Wall_south_00l",
+      "cx": -22.0,
+      "cz": -152.0,
+      "hx": 1.0,
+      "hz": 0.15,
+      "hy": 0.35,
+      "cy": 4.15,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_Barn_Wall_south_01",
+      "cx": -18.575,
+      "cz": -152.0,
+      "hx": 2.425,
+      "hz": 0.15,
+      "hy": 2.25,
+      "cy": 2.25,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_Barn_Wall_north_00",
+      "cx": -25.425,
+      "cz": -138.0,
+      "hx": 2.425,
+      "hz": 0.15,
+      "hy": 2.25,
+      "cy": 2.25,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_Barn_Wall_north_00s",
+      "cx": -22.0,
+      "cz": -138.0,
+      "hx": 1.0,
+      "hz": 0.15,
+      "hy": 1.4,
+      "cy": 1.4,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_Barn_Wall_north_00l",
+      "cx": -22.0,
+      "cz": -138.0,
+      "hx": 1.0,
+      "hz": 0.15,
+      "hy": 0.35,
+      "cy": 4.15,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_Barn_Wall_north_01",
+      "cx": -18.575,
+      "cz": -138.0,
+      "hx": 2.425,
+      "hz": 0.15,
+      "hy": 2.25,
+      "cy": 2.25,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_Barn_Wall_west_00",
+      "cx": -28.0,
+      "cz": -145.0,
+      "hx": 0.15,
+      "hz": 6.85,
+      "hy": 2.25,
+      "cy": 2.25,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_Barn_Wall_east_00",
+      "cx": -16.0,
+      "cz": -149.425,
+      "hx": 0.15,
+      "hz": 2.425,
+      "hy": 2.25,
+      "cy": 2.25,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_Barn_Wall_east_00l",
+      "cx": -16.0,
+      "cz": -145.0,
+      "hx": 0.15,
+      "hz": 2.0,
+      "hy": 0.45,
+      "cy": 4.05,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_Barn_Wall_east_01",
+      "cx": -16.0,
+      "cz": -140.575,
+      "hx": 0.15,
+      "hz": 2.425,
+      "hy": 2.25,
+      "cy": 2.25,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_Barn_Door_east0_JambA",
+      "cx": -16.0,
+      "cz": -146.96,
+      "hx": 0.18,
+      "hz": 0.04,
+      "hy": 1.8,
+      "cy": 1.8,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_Barn_Door_east0_JambB",
+      "cx": -16.0,
+      "cz": -143.04,
+      "hx": 0.18,
+      "hz": 0.04,
+      "hy": 1.8,
+      "cy": 1.8,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_Barn_Door_east0_Leaf",
+      "cx": -16.0,
+      "cz": -145.0,
+      "hx": 0.025,
+      "hz": 1.92,
+      "hy": 1.74,
+      "cy": 1.74,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_FenceNorthW",
+      "cx": -26.05,
+      "cz": -130.5,
+      "hx": 16.15,
+      "hz": 0.15,
+      "hy": 0.6,
+      "cy": 0.6,
+      "yaw": -0.0
+    },
+    {
+      "name": "COL_Farm_FenceNorthE",
+      "cx": -4.75,
+      "cz": -130.5,
+      "hx": 2.35,
+      "hz": 0.15,
+      "hy": 0.6,
+      "cy": 0.6,
+      "yaw": -0.0
+    },
+    {
+      "name": "COL_Farm_FenceEast",
+      "cx": -2.5,
+      "cz": -165.0,
+      "hx": 34.6,
+      "hz": 0.15,
+      "hy": 0.6,
+      "cy": 0.6,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_Farm_FenceSouth",
+      "cx": -22.3,
+      "cz": -199.5,
+      "hx": 19.9,
+      "hz": 0.15,
+      "hy": 0.6,
+      "cy": 0.6,
+      "yaw": -3.1416
+    },
+    {
+      "name": "COL_Farm_FenceWest",
+      "cx": -42.1,
+      "cz": -165.0,
+      "hx": 34.6,
+      "hz": 0.15,
+      "hy": 0.6,
+      "cy": 0.6,
+      "yaw": -1.5708
+    },
+    {
+      "name": "COL_Farm_Field0_NorthW",
+      "cx": -37.0,
+      "cz": -161.5,
+      "hx": 3.6,
+      "hz": 0.15,
+      "hy": 0.6,
+      "cy": 0.6,
+      "yaw": -0.0
+    },
+    {
+      "name": "COL_Farm_Field0_NorthE",
+      "cx": -27.0,
+      "cz": -161.5,
+      "hx": 3.6,
+      "hz": 0.15,
+      "hy": 0.6,
+      "cy": 0.6,
+      "yaw": -0.0
+    },
+    {
+      "name": "COL_Farm_Field0_East",
+      "cx": -23.5,
+      "cz": -178.0,
+      "hx": 16.6,
+      "hz": 0.15,
+      "hy": 0.6,
+      "cy": 0.6,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_Farm_Field0_South",
+      "cx": -32.0,
+      "cz": -194.5,
+      "hx": 8.6,
+      "hz": 0.15,
+      "hy": 0.6,
+      "cy": 0.6,
+      "yaw": -3.1416
+    },
+    {
+      "name": "COL_Farm_Field0_West",
+      "cx": -40.5,
+      "cz": -178.0,
+      "hx": 16.6,
+      "hz": 0.15,
+      "hy": 0.6,
+      "cy": 0.6,
+      "yaw": -1.5708
+    },
+    {
+      "name": "COL_Farm_Field1_NorthW",
+      "cx": -17.25,
+      "cz": -161.5,
+      "hx": 3.35,
+      "hz": 0.15,
+      "hy": 0.6,
+      "cy": 0.6,
+      "yaw": -0.0
+    },
+    {
+      "name": "COL_Farm_Field1_NorthE",
+      "cx": -7.75,
+      "cz": -161.5,
+      "hx": 3.35,
+      "hz": 0.15,
+      "hy": 0.6,
+      "cy": 0.6,
+      "yaw": -0.0
+    },
+    {
+      "name": "COL_Farm_Field1_East",
+      "cx": -4.5,
+      "cz": -178.0,
+      "hx": 16.6,
+      "hz": 0.15,
+      "hy": 0.6,
+      "cy": 0.6,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_Farm_Field1_South",
+      "cx": -12.5,
+      "cz": -194.5,
+      "hx": 8.1,
+      "hz": 0.15,
+      "hy": 0.6,
+      "cy": 0.6,
+      "yaw": -3.1416
+    },
+    {
+      "name": "COL_Farm_Field1_West",
+      "cx": -20.5,
+      "cz": -178.0,
+      "hx": 16.6,
+      "hz": 0.15,
+      "hy": 0.6,
+      "cy": 0.6,
+      "yaw": -1.5708
+    }
+  ]
+}

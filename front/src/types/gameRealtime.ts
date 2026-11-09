@@ -343,6 +343,16 @@ export interface OrchardSoldPayload {
   full_price_left: number
 }
 
+export interface FarmPickedPayload {
+  code: string
+  quantity: number
+}
+
+export interface FarmErrorPayload {
+  message: string
+  code: string
+}
+
 export interface OrchardErrorPayload {
   message: string
   code: string

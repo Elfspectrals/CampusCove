@@ -406,7 +406,7 @@ def preview(obj, path):
     bpy.data.objects.remove(sun, do_unlink=True)
 
 
-def ship(key, parts):
+def ship(key, parts, group="grocery"):
     obj = L.join(coll, key, parts)
     obj.location = (0, 0, 0)
     bpy.context.view_layer.update()
@@ -418,7 +418,7 @@ def ship(key, parts):
         raise RuntimeError(f"{key} is not grounded: {bad}")
     if len(obj.data.materials) > 6:
         raise RuntimeError(f"{key} uses {len(obj.data.materials)} materials (max 6)")
-    out = os.path.join(L.OUT_ROOT, "items", "grocery", key)
+    out = os.path.join(L.OUT_ROOT, "items", group, key)
     os.makedirs(out, exist_ok=True)
     L.export_glb(os.path.join(out, "model.glb"), [obj])
     preview(obj, os.path.join(out, "preview.png"))
@@ -426,6 +426,30 @@ def ship(key, parts):
     obj.location.x += 0.6 * len(results)
     return {"key": key, "tris": tris, "mats": len(obj.data.materials), "dims": tuple(round(x, 3) for x in obj.dimensions)}
 
+
+def corn_cob():
+    kernel = L.make_mat("IT_Corn_Kernel", "#f2c53d", 0.55, "noise", 0.08, accent="#dcaa25")
+    husk = L.make_mat("IT_Corn_Husk", "#9cc25a", 0.85, "stripes", 0.06, accent="#86ab48")
+    cob = blob("Cob", (0, 0, 0.11), (0.06, 0.06, 0.2), kernel, seg=10, rings=8)
+    leaves = []
+    for k, a in enumerate((0.0, 2.1, 4.2)):
+        leaf = blob(f"Husk{k}", (0.026 * math.cos(a), 0.026 * math.sin(a), 0.085), (0.035, 0.025, 0.17), husk, seg=6, rings=5)
+        leaves.append(leaf)
+    return [cob, *leaves, tube("Stem", 0.012, 0.01, 0.0, 0.02, husk, seg=6)]
+
+
+def potato():
+    skin = L.make_mat("IT_Potato_Skin", "#b78b55", 0.9, "noise", 0.1, accent="#9a7142")
+    eye = L.make_mat("IT_Potato_Eye", "#7a5634", 0.9, "noise", 0.04)
+    body = blob("Body", (0, 0, 0.032), (0.1, 0.07, 0.064), skin, seg=10, rings=7)
+    eyes = [blob(f"Eye{k}", (x, y, z), (0.008, 0.008, 0.006), eye, seg=5, rings=3) for k, (x, y, z) in enumerate(((0.03, -0.03, 0.05), (-0.025, -0.031, 0.036), (0.0, 0.034, 0.045)))]
+    return [body, *eyes]
+
+
+FARM = {
+    "corn": corn_cob,
+    "potato": potato,
+}
 
 GROCERY = {
     "apple": apple,
@@ -447,4 +471,8 @@ for key, build in GROCERY.items():
     if ONLY and key not in ONLY:
         continue
     results.append(ship(key, build()))
+for key, build in FARM.items():
+    if ONLY and key not in ONLY:
+        continue
+    results.append(ship(key, build(), "farm"))
 print("GROCERY", results)

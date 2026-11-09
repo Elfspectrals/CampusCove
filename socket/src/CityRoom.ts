@@ -17,6 +17,7 @@ import {
 } from './doors.ts'
 import { moveRejection, onJump, spendSprintStamina } from './movement.ts'
 import { onOrchardPick, onOrchardPickStart, onOrchardSell } from './orchard.ts'
+import { onFarmPick, onFarmPickStart } from './farm.ts'
 import { blockAtSecretDoor, onPubBell, onPubOrder, onPubSecret, onSit } from './pub.ts'
 import {
   leavePub,
@@ -142,6 +143,8 @@ export class CityRoom extends Room implements GameRoom {
     this.onMessage('orchard_pick_start', (client, payload: ClientPayload) => onOrchardPickStart(this, client, payload))
     this.onMessage('orchard_pick', (client) => void onOrchardPick(this, client))
     this.onMessage('orchard_sell', (client, payload: ClientPayload) => void onOrchardSell(this, client, payload))
+    this.onMessage('farm_pick_start', (client, payload: ClientPayload) => onFarmPickStart(this, client, payload))
+    this.onMessage('farm_pick', (client) => void onFarmPick(this, client))
     this.onMessage('admin_open', (client) => onAdminOpen(this, client))
     this.onMessage('admin_teleport', (client, payload: ClientPayload) => onAdminTeleport(this, client, payload))
     this.onMessage('admin_summon', (client, payload: ClientPayload) => onAdminSummon(this, client, payload))

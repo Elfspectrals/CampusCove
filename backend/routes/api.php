@@ -10,6 +10,7 @@ use App\Http\Controllers\ApartmentPlacementController;
 use App\Http\Controllers\AssetController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CharacterCosmeticController;
+use App\Http\Controllers\FarmController;
 use App\Http\Controllers\FriendController;
 use App\Http\Controllers\GemShopController;
 use App\Http\Controllers\HousingController;
@@ -82,6 +83,7 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
         Route::post('/pub/reward', [PubController::class, 'reward']);
         Route::post('/orchard/pick', [OrchardController::class, 'pick']);
         Route::post('/orchard/sell', [OrchardController::class, 'sell']);
+        Route::post('/farm/pick', [FarmController::class, 'pick']);
         Route::post('/trades/execute', [TradeController::class, 'execute']);
     });
     Route::get('/trades/offerable', [TradeController::class, 'offerable']);

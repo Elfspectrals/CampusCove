@@ -895,6 +895,22 @@
         "z": -73.137,
         "width": 4.084
       }
+    },
+    {
+      "key": "farm",
+      "optional": true,
+      "bounds": {
+        "minX": -42.6,
+        "maxX": -2,
+        "minZ": -200,
+        "maxZ": -130
+      },
+      "modelUrl": "/assets/park/farm_site/farm_site.glb",
+      "gate": {
+        "x": -8.5,
+        "z": -130,
+        "width": 3
+      }
     }
   ],
   "fountains": [
@@ -1726,5 +1742,23 @@
       -94.5
     ],
     "farmerYaw": 1.5708
+  },
+  "farm": {
+    "fields": [
+      {
+        "crop": "corn",
+        "minX": -40,
+        "maxX": -24,
+        "minZ": -194,
+        "maxZ": -162
+      },
+      {
+        "crop": "potato",
+        "minX": -20,
+        "maxX": -5,
+        "minZ": -194,
+        "maxZ": -162
+      }
+    ]
   }
 }

@@ -118,7 +118,7 @@ templates). En jeu :
   **Cashier** encaisse le panier tant que le joueur est dans la zone (hors bâtiment et hors cellule du mall).
 - Les décors sont **cuits** dans le GLB de la zone, avec leurs collisions dans `town.collision.json` :
   `cd front && npm run zone:bake -- <zone>` (Blender headless, `assets:optimize`, `apply-<zone>.mjs`). L'éditeur le
-  rappelle après un Save qui change les décors. Zone cuisable : `orchard` (table `ZONES` de
+  rappelle après un Save qui change les décors. Zones cuisables : `orchard`, `farm` (table `ZONES` de
   `front/scripts/bake-zone.mjs` ; une nouvelle zone appelle `L.zone_decor()` dans son `build_*_site.py`).
 - Dans le GLB, chaque décor cuit est un nœud `ZD_<id>_<clé>` ; l'éditeur masque ces nœuds du fond pour ne montrer que
   les décors éditables.

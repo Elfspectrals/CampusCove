@@ -62,6 +62,18 @@ export interface WorldOrchard {
   farmer: Vec3
 }
 
+export type Crop = 'corn' | 'potato'
+
+export interface WorldField extends Bounds {
+  crop: Crop
+}
+
+export interface WorldFarm {
+  fields: WorldField[]
+}
+
+const CROPS: readonly Crop[] = ['corn', 'potato']
+
 /** A place an admin can teleport to from the watch: just outside a public building's door, facing it. */
 export interface TeleportDestination {
   key: string
@@ -84,6 +96,7 @@ interface World {
   pub: WorldPub | null
   pubZone: Bounds | null
   orchard: WorldOrchard | null
+  farm: WorldFarm | null
 }
 
 let world: World | null = null
@@ -139,6 +152,17 @@ function parseOrchard(raw: Json): WorldOrchard | null {
   return {
     trees: raw.trees.map((tree: Json, i: number) => parseVec3(tree, `orchard tree ${i}`)),
     farmer: parseVec3(raw.farmer, 'orchard farmer')
+  }
+}
+
+function parseFarm(raw: Json): WorldFarm | null {
+  if (raw === undefined || raw === null) return null
+  if (!Array.isArray(raw.fields) || raw.fields.length === 0) throw new Error('world manifest: farm has no fields')
+  return {
+    fields: raw.fields.map((field: Json, i: number) => {
+      if (!CROPS.includes(field?.crop)) throw new Error(`world manifest: farm field ${i} grows unknown crop ${JSON.stringify(field?.crop)}`)
+      return { ...parseBounds(field, `farm field ${i}`), crop: field.crop }
+    })
   }
 }
 
@@ -245,7 +269,8 @@ function parseWorld(manifest: Json): World {
     clinic: parseClinic(manifest.clinic),
     pub,
     pubZone: parsePubZone(manifest.zones, pub),
-    orchard: parseOrchard(manifest.orchard)
+    orchard: parseOrchard(manifest.orchard),
+    farm: parseFarm(manifest.farm)
   }
 }
 
@@ -318,4 +343,8 @@ export function worldPubZone(): Bounds | null {
 
 export function worldOrchard(): WorldOrchard | null {
   return loadedWorld().orchard
+}
+
+export function worldFarm(): WorldFarm | null {
+  return loadedWorld().farm
 }

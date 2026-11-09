@@ -6,6 +6,7 @@ const FRONT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const BUILD_DIR = resolve(FRONT, '../map-src/CampusCove')
 const ZONES = {
   orchard: { build: 'build_orchard_site.py', category: 'park', folder: 'orchard_site', apply: 'apply-orchard.mjs' },
+  farm: { build: 'build_farm_site.py', category: 'park', folder: 'farm_site', apply: 'apply-farm.mjs' },
 }
 
 const key = process.argv[2]
