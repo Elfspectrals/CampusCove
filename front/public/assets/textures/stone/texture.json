@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "key": "stone",
+  "label": "Stone",
+  "tileMeters": 2,
+  "maps": {
+    "color": "color.webp"
+  }
+}

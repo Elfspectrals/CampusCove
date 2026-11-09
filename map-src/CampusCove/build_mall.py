@@ -92,6 +92,13 @@ P_ = "planned"
 C_ = "construction"
 S_ = "passage"
 O_ = "open"
+TEMPLATE_ASSIGNMENTS = os.path.normpath(os.path.join(HERE, "..", "..", "front", "public", "assets", "store", "mall", "template_assignments.json"))
+with open(TEMPLATE_ASSIGNMENTS, encoding="utf-8") as f:
+    TEMPLATE_CELLS = json.load(f)["cells"]
+for _key in set(TEMPLATE_CELLS.values()):
+    if not os.path.exists(os.path.join(os.path.dirname(TEMPLATE_ASSIGNMENTS), "templates", f"{_key}.json")):
+        raise RuntimeError(f"template_assignments.json names a missing template: templates/{_key}.json")
+templated = set()
 CELL_STORES = {"Crispin's Hardware": "crispins_hardware", "Candy Cloud": "candy_cloud", "Summit Sports": "summit_sports"}
 ROWS = {
     "N_out_a": ("north_plaza", [("Crispin's Hardware", "hardware", O_)]),
@@ -492,6 +499,25 @@ def planned_front(r, cid, lo_f, hi_f, lo_i, hi_i, category, name):
         r.text(f"{tag}_SoonText", "OPENING SOON", mid, -0.09, y0 + 2.75, 0.26, P["dark"])
 
 
+def template_front(r, cid, lo_f, hi_f, lo_i, hi_i, b0, b1, category, name, bounds):
+    mid = (lo_f + hi_f) / 2
+    y0 = r.y0
+    tag = f"Cell_{cid}"
+    r.rect(f"{tag}_Fascia", lo_f, hi_f, -0.12, 0.12, y0 + 3.4, CELL_H - 3.4, CAT_MATS[category])
+    r.text(f"{tag}_Name", name.upper(), mid, -0.14, y0 + 3.75, 0.42, P["sign"])
+    r.rect(f"{tag}_Light", lo_f + 0.1, hi_f - 0.1, 1.3, 2.3, y0 + 3.25, 0.08, mall_dressing.light_mat(ctx, category))
+    if r.level == 0:
+        r.rect(f"{tag}_Floor", lo_i, hi_i, 0.0, r.depth - PART_T, y0 - 0.1, 0.1, P["floor"], tile=3.0)
+    else:
+        l1_rects.append(dict(bounds))
+    near, far = sorted((r.front, r.front - r.sign * 4.0))
+    if r.axis == "x":
+        ctx.exclude(b0 - 4.0, near, b1 + 4.0, far, f"template cell {cid}")
+    else:
+        ctx.exclude(near, b0 - 4.0, far, b1 + 4.0, f"template cell {cid}")
+    templated.add(cid)
+
+
 def construction_front(r, cid, lo_f, hi_f, name):
     mid = (lo_f + hi_f) / 2
     y0 = r.y0
@@ -598,7 +624,11 @@ def row(row_key, axis, a0, a1, front, back, y0=0.0, level=0, ends=(("part",), ("
                 ceil_hi = b1
             r.rect(f"Cell_{cid}_Ceiling", ceil_lo, ceil_hi, 0.1, r.depth - PART_T - 0.05, y0 + CEIL_LO, CEIL_HI - CEIL_LO, P["slab"])
             frame = frame_for(axis, lo_f, hi_f, front, r.sign, y0, r.depth)
-            if status == P_:
+            if status == P_ and cid in TEMPLATE_CELLS:
+                cell["template"] = TEMPLATE_CELLS[cid]
+                cell["interior"] = bounds_of(axis, lo_i, hi_i, front, front + r.sign * (r.depth - PART_T))
+                template_front(r, cid, lo_f, hi_f, lo_i, hi_i, b0, b1, category, name, cell["bounds"])
+            elif status == P_:
                 planned_front(r, cid, lo_f, hi_f, lo_i, hi_i, category, name)
                 mall_dressing.dress_planned(ctx, cell, frame)
             else:
@@ -938,6 +968,9 @@ for o in objs:
     by_mat.setdefault(m, []).append(o)
 for m, group in by_mat.items():
     merged.append(L.join(coll, f"Mall_{m}", group) if len(group) > 1 else group[0])
+
+if templated != set(TEMPLATE_CELLS):
+    raise RuntimeError(f"template_assignments.json names cells that are not planned: {sorted(set(TEMPLATE_CELLS) - templated)}")
 
 levels = [
     {"id": "L0", "y": 0.0, "height": L1_Y, "rects": [{"minX": X0 - 40.0, "maxX": X1 + 16.0, "minZ": Z0 - 45.0, "maxZ": Z1 + 45.0},

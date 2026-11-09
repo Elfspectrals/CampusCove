@@ -45,6 +45,10 @@ Decision (2026-11-06): picking stays simple because it is the first job. Hold to
 - Real mobile version: touch input, mobile HUD, quality tier.
 - Versioned contracts: an OpenAPI spec for the Laravel API and a JSON Schema for socket messages, generated or validated in CI, replacing the hand-written `docs/*.md` contracts.
 
+## Mall editor (in progress, branch feat-shop-editor)
+
+- [in progress] `/admin/mall-editor`, a UE5-style level editor: templates built per cell size (decor by category, items for sale or as props, NPC extras, one vendor, dressable mannequins), saved as committed JSON by a dev-only endpoint, assigned to free planned cells, opened by a `build_mall.py` rebuild.
+
 ## Tooling (done)
 
 - [done] Two fixed local playtest accounts (`make playtest-accounts`, `PlaytestAccountSeeder`) instead of a new account per playtest; running it again resets coins, health and admin rights.

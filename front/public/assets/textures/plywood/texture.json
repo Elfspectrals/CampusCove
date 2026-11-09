@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "key": "plywood",
+  "label": "Plywood",
+  "tileMeters": 2,
+  "maps": {
+    "color": "color.webp"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "key": "mall_floor",
+  "label": "Mall floor tiles",
+  "tileMeters": 3,
+  "maps": {
+    "color": "color.webp"
+  }
+}

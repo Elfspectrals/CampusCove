@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "categories": [
+    { "id": "seating", "label": "Seating", "keys": ["armchair_lounge", "bar_stool", "bean_bag", "dining_bench", "office_chair", "pouf_knit", "sofa_classic", "sofa_corner", "wooden_chair"] },
+    { "id": "tables", "label": "Tables", "keys": ["coffee_table_round", "desk_study", "dining_table", "round_dining_table", "side_table", "tv_bench"] },
+    { "id": "bedroom", "label": "Bedroom", "keys": ["bed_double", "bed_single", "bunk_bed", "dresser", "mirror_standing", "nightstand", "wardrobe"] },
+    { "id": "storage", "label": "Storage", "keys": ["bookshelf", "coat_rack", "cube_shelf", "filing_cabinet", "metal_shelving", "toy_chest"] },
+    { "id": "lighting", "label": "Lighting", "keys": ["desk_lamp", "floor_lamp", "floor_lamp_arc"] },
+    { "id": "kitchen", "label": "Kitchen", "keys": ["fridge_retro", "kitchen_counter", "stove_oven"] },
+    { "id": "bathroom", "label": "Bathroom", "keys": ["bathtub", "sink_vanity", "toilet", "towel_rack"] },
+    { "id": "plants", "label": "Plants", "keys": ["cactus", "monstera", "potted_plant", "vase_tulips"] },
+    { "id": "fun_tech", "label": "Fun & tech", "keys": ["aquarium", "arcade_cabinet", "computer_setup"] },
+    { "id": "outdoor", "label": "Outdoor", "keys": ["bbq_grill", "garden_bench", "parasol", "sun_lounger"] },
+    { "id": "tools", "label": "Tools", "keys": ["paint_cans", "stepladder", "toolbox", "wheelbarrow", "workbench"] },
+    { "id": "accents", "label": "Accents", "keys": ["globe", "rug_round"] }
+  ]
+}

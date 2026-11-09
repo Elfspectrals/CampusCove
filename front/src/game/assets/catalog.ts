@@ -231,6 +231,10 @@ const CONSUMABLE_FOLDERS: ReadonlyArray<[prefix: string, folder: string]> = [
   ['farm_', 'farm'],
 ]
 
+export function isConsumableCode(code: string): boolean {
+  return CONSUMABLE_FOLDERS.some(([prefix]) => code.startsWith(prefix))
+}
+
 function consumableFolder(code: string): string {
   const match = CONSUMABLE_FOLDERS.find(([prefix]) => code.startsWith(prefix))
   if (!match) throw new Error(`No asset folder for consumable code "${code}"`)
@@ -284,6 +288,8 @@ export interface StoreDisplay {
   size: [number, number, number]
   /** Copies lined up on the spot as [columns, rows] (small goods on a shelf); one model when omitted. */
   stack?: [number, number]
+  scale?: number
+  figure?: { prop: string; slot: string }
   /** Price-tag board (centre) at the edge of the route. */
   tag: { position: [number, number, number]; yaw: number }
 }

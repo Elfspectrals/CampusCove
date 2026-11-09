@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "key": "kitchen_wall",
+  "label": "Kitchen wall",
+  "tileMeters": 2,
+  "maps": {
+    "color": "color.webp"
+  }
+}

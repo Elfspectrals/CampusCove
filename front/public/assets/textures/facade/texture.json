@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "key": "facade",
+  "label": "Facade",
+  "tileMeters": 2,
+  "maps": {
+    "color": "color.webp"
+  }
+}

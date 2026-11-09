@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "key": "brick",
+  "label": "Brick",
+  "tileMeters": 2,
+  "maps": {
+    "color": "color.webp"
+  }
+}

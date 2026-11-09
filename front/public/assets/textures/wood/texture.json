@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "key": "wood",
+  "label": "Wood",
+  "tileMeters": 2,
+  "maps": {
+    "color": "color.webp"
+  }
+}

@@ -231,6 +231,26 @@ Après le script : `make seed-shop` (30 articles consommables du centre) et `doc
   `candy_` → `sweets`, `grocery_` → `grocery`, `med_` → `medical`, `drink_` → `drinks`) : le dossier d'un asset
   consommable **est** le code sans préfixe. `isSweetItem` et `isGroceryItem` excluent bonbons et épicerie du menu du café.
 
+### Templates de cellule (`/admin/mall-editor`)
+
+Un template est un aménagement posé dans une cellule `planned` du même gabarit (largeur × profondeur) :
+décors, articles vendables, NPC figurants et un vendeur optionnel (comptoir + panier).
+
+| Fichier | Rôle |
+|---|---|
+| `store/mall/templates/<clé>.json` | le template, repère cellule : origine au centre de la vitrine au sol, -Z vers le fond, mètres et radians |
+| `store/mall/template_assignments.json` | `{ "cells": { "<id cellule>": "<clé>" } }`, lu par le jeu et par `build_mall.py` |
+
+L'éditeur n'écrit ces fichiers que sur le serveur Vite local (endpoint dev `/__mall-editor/`), en prod il est en
+lecture seule. Après une assignation :
+
+1. relancer `build_mall.py` : les cellules assignées perdent vitrine, mur sombre et habillage, gagnent un sol, et
+   `mall.layout.json` porte `cells[].template` ;
+2. `npm run assets:optimize -- store` puis `node scripts/apply-mall.mjs`, comme au §5 ;
+3. commiter le template, `template_assignments.json` et les assets du mall.
+
+Le jeu refuse une cellule dont l'assignation ne correspond pas au `template` du build (message en console).
+
 ## 5. Ordre et vérification
 
 1. Blender headless (Mac) :

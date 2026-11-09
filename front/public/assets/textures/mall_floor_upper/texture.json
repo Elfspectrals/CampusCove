@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "key": "mall_floor_upper",
+  "label": "Mall upper floor",
+  "tileMeters": 3,
+  "maps": {
+    "color": "color.webp"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "categories": [
+    { "id": "floors", "label": "Floors", "keys": ["mall_floor", "mall_floor_upper", "soft_checker", "store_floor", "kitchen_floor", "bathroom_floor", "living_floor", "floor_tile"] },
+    { "id": "walls", "label": "Walls", "keys": ["mall_wall", "facade", "shutter", "living_wall", "kids_wall", "kitchen_wall", "bedroom_wall", "house_wall"] },
+    { "id": "tiles", "label": "Tiles", "keys": ["bath_tile", "backsplash"] },
+    { "id": "wood", "label": "Wood", "keys": ["wood_floor", "wood", "door_wood", "plywood", "pallet"] },
+    { "id": "stone", "label": "Stone & brick", "keys": ["stone", "paving", "brick", "slab"] },
+    { "id": "ceilings", "label": "Ceilings", "keys": ["store_ceiling"] },
+    { "id": "metal", "label": "Metal", "keys": ["metal", "steel"] }
+  ]
+}

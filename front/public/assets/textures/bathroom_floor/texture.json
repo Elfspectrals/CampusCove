@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "key": "bathroom_floor",
+  "label": "Bathroom floor",
+  "tileMeters": 2,
+  "maps": {
+    "color": "color.webp"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "key": "floor_tile",
+  "label": "Floor tile",
+  "tileMeters": 2,
+  "maps": {
+    "color": "color.webp"
+  }
+}

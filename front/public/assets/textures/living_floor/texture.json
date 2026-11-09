@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "key": "living_floor",
+  "label": "Living room floor",
+  "tileMeters": 2,
+  "maps": {
+    "color": "color.webp"
+  }
+}

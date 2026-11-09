@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "key": "pallet",
+  "label": "Pallet wood",
+  "tileMeters": 2,
+  "maps": {
+    "color": "color.webp"
+  }
+}

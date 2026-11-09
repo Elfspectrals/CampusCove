@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "key": "store_floor",
+  "label": "Store floor",
+  "tileMeters": 2,
+  "maps": {
+    "color": "color.webp"
+  }
+}

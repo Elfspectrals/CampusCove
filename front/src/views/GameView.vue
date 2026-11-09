@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, shallowReactive, shallowRef, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import type { Room } from '@colyseus/sdk'
 import {
@@ -57,6 +57,7 @@ import { useIntoxication } from '../composables/game/useIntoxication'
 import { useMinimap } from '../composables/game/useMinimap'
 import { usePlayerInventory } from '../composables/game/usePlayerInventory'
 import { useOrchard } from '../composables/game/useOrchard'
+import { useMallCellTemplates, type CellStoreEntry } from '../composables/game/useMallCellTemplates'
 import { usePub } from '../composables/game/usePub'
 import { usePubChallenge } from '../composables/game/usePubChallenge'
 import { usePubGames } from '../composables/game/usePubGames'
@@ -244,7 +245,7 @@ const mallStoreDeps = {
   promptsHidden: () => inventoryOpen.value,
   onPurchased: () => refreshOwnedItems(),
 }
-const furnitureStores = [
+const furnitureStores = shallowReactive<CellStoreEntry[]>([
   { key: COVE_HOME.key, brand: COVE_HOME.name, store: useFurnitureStore({ inStore: () => currentHouseKey.value === COVE_HOME.key, getCamera, myPosition }) },
   ...MALL_FURNITURE_STORES.map(({ spec, modelUrl, clerkColors }) => ({
     key: spec.key,
@@ -255,8 +256,9 @@ const furnitureStores = [
       store: { key: spec.key, interiorLayoutUrl: spec.interiorLayoutUrl, modelUrl, clerkColors: { ...DEFAULT_SLOT_COLORS, ...clerkColors }, priceTags: false },
     }),
   })),
-]
-const activeFurniture = computed(() => furnitureStores.find((s) => s.key === currentHouseKey.value) ?? null)
+])
+const mallCellTemplates = useMallCellTemplates({ getScene, storeDeps: mallStoreDeps, addStore: (entry) => furnitureStores.push(entry) })
+const activeFurniture = computed(() => furnitureStores.find((s) => s.key === (mallCellTemplates.currentStoreKey.value ?? currentHouseKey.value)) ?? null)
 const storeBrand = computed(() => activeFurniture.value?.brand ?? COVE_HOME.name)
 const storeTarget = computed(() => activeFurniture.value?.store.target.value ?? null)
 const storeDepartment = computed(() => activeFurniture.value?.store.currentDepartment.value ?? null)
@@ -529,11 +531,13 @@ const interactions = useInteractionTargets({
     if (!target) return null
     const price = target.coins !== null ? `${target.name} · ${target.coins} coins` : target.name
     if (!activeFurniture.value?.store.hasCounter.value) return { position: target.tagPosition, detail: price }
-    return { position: target.tagPosition, detail: target.inBasket ? `${price} · in basket` : price, action: target.inBasket ? 'Remove' : 'Add' }
+    if (target.owned) return { position: target.tagPosition, detail: `${target.name} · already in your wardrobe` }
+    const look = target.display.figure ? ' · Shift: whole look' : ''
+    return { position: target.tagPosition, detail: `${target.inBasket ? `${price} · in basket` : price}${look}`, action: target.inBasket ? 'Remove' : 'Add' }
   },
   onStoreTarget: () => {
     if (clothesTarget.value) activeClothing.value?.toggleTarget()
-    else if (activeFurniture.value?.store.hasCounter.value) activeFurniture.value.store.toggleTarget()
+    else if (activeFurniture.value?.store.hasCounter.value) activeFurniture.value.store.toggleTarget(useWithShift)
     else openStorePurchase()
   },
   sources: [pub.source, pubChallenge.source, pubGames.source, seats.source, orchard.source],
@@ -779,6 +783,7 @@ const environment = useRoomEnvironment({
     pub.onTownLoaded(manifest)
     pubGames.onTownLoaded(manifest)
     orchard.onTownLoaded(manifest)
+    mallCellTemplates.onTownLoaded(manifest).catch((error: unknown) => console.error('[mall] cell templates failed to load', error))
     minimap.onTownLoaded(manifest)
     houseFurniture.onTownReady()
     for (const { key, store } of furnitureStores) {
@@ -825,12 +830,15 @@ function useAction(): void {
 }
 
 /** Interact and punch may be bound to keys or mouse buttons; returns true when `code` was one of them. */
-function runUseOrPunch(code: string, repeat: boolean): boolean {
+let useWithShift = false
+
+function runUseOrPunch(code: string, repeat: boolean, shift: boolean): boolean {
   if (matches('punch', code)) {
     if (!repeat) punch.tryPunch()
     return true
   }
   if (matches('interact', code)) {
+    useWithShift = shift
     if (!repeat) useAction()
     return true
   }
@@ -902,7 +910,7 @@ function handleExtraKeyDown(e: KeyboardEvent): boolean {
   if (minimap.onKeyDown(e)) return true
   if (houseKeys.onKeyDown(e)) return true
   if (survival.onKeyDown(e)) return true
-  if (runUseOrPunch(e.code, e.repeat)) return true
+  if (runUseOrPunch(e.code, e.repeat, e.shiftKey)) return true
   if (matches('buyHouse', e.code) && !e.repeat) {
     e.preventDefault()
     return housing.buy()
@@ -947,7 +955,7 @@ const movement = useGameMovement({
   onCanvasMouseDown: (e) => {
     // furniture placement keeps its own clicks (left: pick / place, right: cancel)
     if (placement.onPointerDown(e)) return true
-    return pointerLocked.value && runUseOrPunch(mouseButtonCode(e.button), false)
+    return pointerLocked.value && runUseOrPunch(mouseButtonCode(e.button), false, e.shiftKey)
   },
   speedFactor: () => survival.speedFactor() * intoxication.walkFactor(),
   movementLocked: () => seats.seated.value,
@@ -959,6 +967,7 @@ const movement = useGameMovement({
     realtime.tickRemoteAvatars(dt)
     currentHouseKey.value = houseKeyAt(myPosition.x, myPosition.z)
     placement.tick(dt)
+    mallCellTemplates.tick(dt, myPosition)
     for (const { store } of furnitureStores) store.update(dt)
     for (const store of clothingStores) store.update(dt)
     threadsMusic.update(dt, inThreads.value)

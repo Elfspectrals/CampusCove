@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "key": "bath_tile",
+  "label": "Bath tile",
+  "tileMeters": 2,
+  "maps": {
+    "color": "color.webp"
+  }
+}

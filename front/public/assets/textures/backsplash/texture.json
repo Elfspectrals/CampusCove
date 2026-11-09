@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "key": "backsplash",
+  "label": "Backsplash",
+  "tileMeters": 2,
+  "maps": {
+    "color": "color.webp"
+  }
+}

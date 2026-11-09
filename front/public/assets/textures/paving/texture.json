@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "key": "paving",
+  "label": "Paving",
+  "tileMeters": 2,
+  "maps": {
+    "color": "color.webp"
+  }
+}

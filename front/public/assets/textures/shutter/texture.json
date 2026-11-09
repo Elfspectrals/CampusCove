@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "key": "shutter",
+  "label": "Shutter",
+  "tileMeters": 2,
+  "maps": {
+    "color": "color.webp"
+  }
+}
