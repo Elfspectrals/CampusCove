@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "categories": [
+    {
+      "id": "wood",
+      "label": "Wood",
+      "keys": [
+        "a_wooden_wall_stained_with_blood"
+      ]
+    },
+    {
+      "id": "stone",
+      "label": "Stone & brick",
+      "keys": [
+        "a_red_brick_wall"
+      ]
+    }
+  ]
+}
