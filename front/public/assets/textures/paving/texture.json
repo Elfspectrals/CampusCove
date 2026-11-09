@@ -4,6 +4,19 @@
   "label": "Paving",
   "tileMeters": 2,
   "maps": {
-    "color": "color.webp"
-  }
+    "color": "color.webp",
+    "mask": "mask.png"
+  },
+  "parts": [
+    {
+      "id": "stones",
+      "label": "Stones",
+      "color": "#c9c2b4"
+    },
+    {
+      "id": "joints",
+      "label": "Joints",
+      "color": "#b1aa9c"
+    }
+  ]
 }

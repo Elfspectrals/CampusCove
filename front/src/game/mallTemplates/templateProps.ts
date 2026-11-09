@@ -6,12 +6,27 @@ import type { SlotHexes } from '../../avatar/modularCharacterLogic'
 import { decorModelUrl } from '../assets/catalog'
 import { createGltfLoader } from '../gltfLoaderFactory'
 import { outfitModels } from '../store/storeClerk'
-import { applyLook } from './templateSurfaces'
-import { itemModelUrl, type DecorProp, type LightProp, type MannequinProp, type NpcProp, type TemplateProp, type Vec3 } from './mallTemplate.ts'
+import { applyLook, type OwnParts } from './templateSurfaces'
+import { itemModelUrl, parseDecorParts, type DecorProp, type MaskedParts, type LightProp, type MannequinProp, type NpcProp, type TemplateProp, type Vec3 } from './mallTemplate.ts'
 
 const STACK_GAP = 0.02
 const loader = createGltfLoader()
 const modelTemplates = new Map<string, Promise<THREE.Object3D>>()
+const decorPartFiles = new Map<string, Promise<Record<string, MaskedParts>>>()
+
+export function decorParts(key: string): Promise<Record<string, MaskedParts>> {
+  let parts = decorPartFiles.get(key)
+  if (!parts) {
+    const url = `/assets/decor/${key}/parts.json`
+    parts = fetch(url).then(async (response) => {
+      if (!response.ok || !response.headers.get('content-type')?.includes('json')) throw new Error(`${url}: missing, run make texture-parts`)
+      return parseDecorParts(await response.json(), key)
+    })
+    parts.catch(() => decorPartFiles.delete(key))
+    decorPartFiles.set(key, parts)
+  }
+  return parts
+}
 
 function propModelUrl(prop: TemplateProp): string | null {
   if (prop.kind === 'decor') return decorModelUrl(prop.key)
@@ -134,7 +149,8 @@ export function disposeLookMaps(object: THREE.Object3D): void {
   })
 }
 
-async function applyMaterialLooks(model: THREE.Object3D, looks: NonNullable<DecorProp['materials']>): Promise<void> {
+async function applyMaterialLooks(model: THREE.Object3D, key: string, looks: NonNullable<DecorProp['materials']>): Promise<void> {
+  const own = await decorParts(key)
   const copies = new Map<THREE.Material, THREE.MeshStandardMaterial>()
   const pending: Promise<void>[] = []
   model.traverse((obj) => {
@@ -148,8 +164,10 @@ async function applyMaterialLooks(model: THREE.Object3D, looks: NonNullable<Deco
         copies.set(material, copy)
         const tile = look.texture ? metresPerUv(model, material.name) : 1
         if (tile === null) throw new Error(`${material.name} has no texture coordinates to take ${look.texture}`)
-        copy.userData.lookMap = Boolean(look.texture)
-        pending.push(applyLook(copy, look, [tile, tile]))
+        copy.userData.lookMap = Boolean(look.texture || look.parts)
+        const parts = own[material.name]
+        const ownParts: OwnParts | undefined = parts ? { maskUrl: `/assets/decor/${key}/${parts.mask}`, parts: parts.parts } : undefined
+        pending.push(applyLook(copy, look, [tile, tile], ownParts))
       }
       obj.userData.sharedMaterials = false
       return copy
@@ -164,7 +182,7 @@ export async function createPropObject(prop: TemplateProp): Promise<THREE.Object
   if (prop.kind === 'npc') return createNpc(prop)
   if (prop.kind === 'mannequin') return createMannequin(prop)
   const model = markShared((await modelTemplate(propModelUrl(prop)!)).clone(true))
-  if (prop.kind === 'decor' && prop.materials) await applyMaterialLooks(model, prop.materials)
+  if (prop.kind === 'decor' && prop.materials) await applyMaterialLooks(model, prop.key, prop.materials)
   return prop.kind === 'item' && prop.stack ? stackModels(model, prop.stack) : model
 }
 

@@ -7,13 +7,13 @@ import { fetchItemShopCatalog, type ShopItem } from '../../api/itemShop'
 import MallEditorContentBrowser, { type ContentEntry } from '../../components/admin/mallEditor/MallEditorContentBrowser.vue'
 import MallEditorDetails from '../../components/admin/mallEditor/MallEditorDetails.vue'
 import MallEditorOutliner from '../../components/admin/mallEditor/MallEditorOutliner.vue'
-import MallPlanMap from '../../components/admin/mallEditor/MallPlanMap.vue'
+import MallMapModal, { type MallPlaza, type MallStoreMark } from '../../components/admin/mallEditor/MallMapModal.vue'
 import { decorModelUrl } from '../../game/assets/catalog'
 import UiIcon from '../../components/ui/UiIcon.vue'
 import type { UiIconName } from '../../components/ui/icons'
 import { MallEditorScene, type GizmoMode, type PropTransform } from '../../game/mallEditor/MallEditorScene'
 import { MALL_TEMPLATE_ASSIGNMENTS_URL, mallTemplateUrl } from '../../game/mallTemplates/mallTemplateFiles'
-import type { MaterialSlot } from '../../game/mallTemplates/templateProps'
+import { decorParts, type MaterialSlot } from '../../game/mallTemplates/templateProps'
 import { TEXTURES_URL } from '../../game/mallTemplates/templateSurfaces'
 import {
   cellPresets,
@@ -32,6 +32,7 @@ import {
   type MallTemplate,
   type TemplateAssignments,
   type TemplateProp,
+  type TexturePart,
   type Vec3,
 } from '../../game/mallTemplates/mallTemplate.ts'
 
@@ -79,6 +80,9 @@ const saleCodes = ref<Record<string, string>>({})
 const wearSaleCodes = ref<Record<string, string>>({})
 const textureOptions = ref<Record<string, string>>({})
 const materialSlotsById = ref<Record<string, MaterialSlot[]>>({})
+const texturePartsByKey = ref<Record<string, TexturePart[]>>({})
+const ownParts = ref<Record<string, TexturePart[]>>({})
+
 const armedId = ref<string | null>(null)
 const template = ref<MallTemplate>({ version: 1, key: '', name: '', preset: { width: 0, depth: 0 }, props: [] })
 const selectedId = ref<string | null>(null)
@@ -92,18 +96,29 @@ const templateList = ref<Array<{ key: string; name: string; preset: CellPreset }
 const assignments = ref<TemplateAssignments>({ version: 1, cells: {} })
 const savedSnapshot = ref(JSON.stringify(template.value))
 const status = ref<{ kind: 'ok' | 'error'; text: string } | null>(null)
-const assignOpen = ref(false)
-const planCell = ref<MallCell | null>(null)
-const planCellHeld = computed(() => (planCell.value ? assignments.value.cells[planCell.value.id] : undefined))
-const planCellFits = computed(() => !!planCell.value && !!preset.value && samePreset(planCell.value, preset.value))
+const mapOpen = ref(false)
+const targetCell = ref<MallCell | null>(null)
+const plazas = ref<MallPlaza[]>([])
+const mallStores = ref<MallStoreMark[]>([])
 
-function usePlanCellSize(): void {
-  const cell = planCell.value
-  if (!cell) return
+async function assignFromMap(cell: MallCell): Promise<void> {
+  await setCellTemplate(cell.id, template.value.key)
+  if (assignments.value.cells[cell.id] === template.value.key) targetCell.value = cell
+}
+
+async function clearFromMap(cell: MallCell): Promise<void> {
+  await setCellTemplate(cell.id, null)
+  if (targetCell.value?.id === cell.id && assignments.value.cells[cell.id] === undefined) targetCell.value = null
+}
+
+function useCell(cell: MallCell): void {
   const index = presets.value.findIndex((p) => samePreset(p, cell))
   if (index < 0) return
-  if (template.value.props.length && !window.confirm('Props are placed for the current cell size. Switch size anyway?')) return
+  const switching = index !== presetIndex.value
+  if (switching && template.value.props.length && !window.confirm(`Props are laid out for ${preset.value?.width} × ${preset.value?.depth} m. Switch to ${cell.width} × ${cell.depth} m anyway?`)) return
   presetIndex.value = index
+  targetCell.value = cell
+  mapOpen.value = false
 }
 const walking = ref(false)
 const openKey = ref('')
@@ -131,6 +146,20 @@ watch(
 watch([editor, hiddenIds], ([scene, ids]) => scene?.setHidden(ids))
 
 const selectedProp = computed(() => template.value.props.find((p) => p.id === selectedId.value) ?? null)
+
+watch(
+  () => (selectedProp.value?.kind === 'decor' ? selectedProp.value.key : null),
+  async (key) => {
+    ownParts.value = {}
+    if (!key) return
+    try {
+      const parts = await decorParts(key)
+      if (selectedProp.value?.kind === 'decor' && selectedProp.value.key === key) ownParts.value = Object.fromEntries(Object.entries(parts).map(([name, m]) => [name, m.parts]))
+    } catch (error) {
+      sceneError.value = errorText(error)
+    }
+  },
+)
 const vendorTaken = computed(() => template.value.props.some((p) => p.kind === 'npc' && p.vendor && p.id !== selectedId.value))
 const emptyWear = { hair: [], head_accessory: [], top: [], bottom: [], shoes: [] } as Record<WearSlot, string[]>
 
@@ -236,6 +265,7 @@ function newTemplate(): void {
   if (!confirmDiscard()) return
   resetEditing({ version: 1, key: '', name: '', preset: { ...template.value.preset }, props: [] })
   loadedKey.value = null
+  targetCell.value = null
   status.value = null
 }
 
@@ -249,6 +279,7 @@ async function openTemplate(key: string): Promise<void> {
     presetIndex.value = index
     resetEditing(loaded)
     loadedKey.value = key
+    targetCell.value = cells.value.find((c) => assignments.value.cells[c.id] === key) ?? null
     status.value = { kind: 'ok', text: `Opened ${key}.` }
   } catch (error) {
     status.value = { kind: 'error', text: errorText(error) }
@@ -287,10 +318,6 @@ async function setCellTemplate(cellId: string, key: string | null): Promise<void
   } catch (error) {
     status.value = { kind: 'error', text: errorText(error) }
   }
-}
-
-function cellLabel(cell: MallCell): string {
-  return `${cell.id} · level ${cell.level} · ${cell.name}`
 }
 
 async function startWalk(): Promise<void> {
@@ -530,12 +557,11 @@ async function loadEditorAssets(): Promise<EditorAssets | null> {
 
 async function loadTextureOptions(): Promise<Record<string, string>> {
   const categories = parseCategories(await readJson(`${TEXTURES_URL}/categories.json`))
-  const options = await Promise.all(
-    categories.flatMap((category) =>
-      category.keys.map(async (key) => [`${category.label} · ${parseTextureMeta(await readJson(`${TEXTURES_URL}/${key}/texture.json`), key).label}`, key] as [string, string]),
-    ),
+  const metas = await Promise.all(
+    categories.flatMap((category) => category.keys.map(async (key) => ({ category, meta: parseTextureMeta(await readJson(`${TEXTURES_URL}/${key}/texture.json`), key) }))),
   )
-  return Object.fromEntries(options)
+  texturePartsByKey.value = Object.fromEntries(metas.flatMap(({ meta }) => (meta.parts ? [[meta.key, meta.parts]] : [])))
+  return Object.fromEntries(metas.map(({ category, meta }) => [`${category.label} · ${meta.label}`, meta.key]))
 }
 
 async function loadContent(): Promise<void> {
@@ -589,9 +615,11 @@ onMounted(async () => {
   try {
     const response = await fetch(MALL_LAYOUT_URL)
     if (!response.ok) throw new Error(`${MALL_LAYOUT_URL}: HTTP ${response.status}`)
-    const layout = (await response.json()) as { cells?: unknown }
-    if (!Array.isArray(layout.cells)) throw new Error(`${MALL_LAYOUT_URL}: no cells array`)
+    const layout = (await response.json()) as { cells?: unknown; plazas?: unknown; stores?: unknown }
+    if (!Array.isArray(layout.cells) || !Array.isArray(layout.plazas) || !Array.isArray(layout.stores)) throw new Error(`${MALL_LAYOUT_URL}: cells, plazas or stores missing`)
     cells.value = layout.cells as MallCell[]
+    plazas.value = layout.plazas as MallPlaza[]
+    mallStores.value = layout.stores as MallStoreMark[]
     if (presets.value.length === 0) throw new Error(`${MALL_LAYOUT_URL}: no planned cell to build a template for`)
     template.value.preset = presetOf(presets.value[presetIndex.value]!)
     savedSnapshot.value = JSON.stringify(template.value)
@@ -620,14 +648,10 @@ onUnmounted(() => {
         :class="['cc-input w-36 py-1.5 font-mono text-sm', template.key && !keyValid ? 'border-red-400' : '']"
         title="File name: lowercase letters, digits and _"
       />
-      <label class="flex items-center gap-2 text-sm font-bold text-mist">
-        Cell size
-        <select v-model.number="presetIndex" class="cc-input w-auto py-1.5 text-sm">
-          <option v-for="(p, i) in presets" :key="`${p.width}x${p.depth}`" :value="i">
-            {{ p.width }} × {{ p.depth }} m · {{ p.count }} cells
-          </option>
-        </select>
-      </label>
+      <button type="button" class="cc-btn cc-btn-sm cc-btn-ghost" title="Choose the shop cell on the mall map" @click="mapOpen = true">
+        <UiIcon name="map" :size="14" />
+        <template v-if="targetCell">{{ targetCell.id }} · {{ targetCell.name }} · </template>{{ preset ? `${preset.width} × ${preset.depth} m` : 'Choose a cell' }}
+      </button>
       <div class="ml-auto flex flex-wrap items-center gap-1">
         <button type="button" class="cc-btn cc-btn-sm cc-btn-ghost" @click="newTemplate">New</button>
         <select v-model="openKey" class="cc-input w-auto py-1.5 text-sm" @change="openTemplate(openKey)">
@@ -637,31 +661,9 @@ onUnmounted(() => {
         <button v-if="CAN_WRITE" type="button" class="cc-btn cc-btn-sm cc-btn-sun" :disabled="!keyValid || !template.name" @click="saveTemplate">
           Save<span v-if="dirty"> •</span>
         </button>
-        <button type="button" :class="['cc-btn cc-btn-sm', assignOpen ? 'cc-btn-sun' : 'cc-btn-ghost']" @click="assignOpen = !assignOpen"><UiIcon name="map" :size="14" /> Plan</button>
         <button type="button" class="cc-btn cc-btn-sm cc-btn-mint" :disabled="walking" @click="startWalk"><UiIcon name="play" :size="14" /> Test</button>
         <button type="button" class="cc-btn cc-btn-sm cc-btn-ghost" :disabled="!canUndo" title="Undo (Ctrl/Cmd+Z)" @click="undo"><UiIcon name="rotate-left" :size="16" /></button>
         <button type="button" class="cc-btn cc-btn-sm cc-btn-ghost" :disabled="!canRedo" title="Redo (Ctrl/Cmd+Shift+Z)" @click="redo"><UiIcon name="rotate-right" :size="16" /></button>
-      </div>
-      <div v-if="assignOpen" class="w-full rounded-xl bg-ink-950/60 p-3 text-sm">
-        <MallPlanMap :cells="cells" :assignments="assignments" :preset="preset" :template-key="template.key" :selected-id="planCell?.id ?? null" @select="planCell = $event" />
-        <div v-if="planCell" class="mt-2 flex flex-wrap items-center gap-2">
-          <span class="font-bold">{{ cellLabel(planCell) }} · {{ planCell.width }} × {{ planCell.depth }} m</span>
-          <template v-if="planCellHeld === template.key && template.key">
-            <button v-if="CAN_WRITE" type="button" class="cc-btn cc-btn-sm cc-btn-ghost" @click="setCellTemplate(planCell.id, null)">Clear {{ planCell.id }}</button>
-          </template>
-          <span v-else-if="planCellHeld" class="text-mist">holds {{ planCellHeld }}</span>
-          <button v-else-if="!planCellFits" type="button" class="cc-btn cc-btn-sm cc-btn-ghost" @click="usePlanCellSize">Use this cell size</button>
-          <button
-            v-else-if="CAN_WRITE"
-            type="button"
-            class="cc-btn cc-btn-sm cc-btn-sun"
-            :disabled="dirty || !keyValid"
-            :title="dirty || !keyValid ? 'Save the template first' : ''"
-            @click="setCellTemplate(planCell.id, template.key)"
-          >
-            Assign {{ template.key || 'template' }} here
-          </button>
-        </div>
       </div>
       <p v-if="status" :class="['m-0 w-full text-sm font-bold', status.kind === 'error' ? 'text-red-400' : 'text-mint']">{{ status.text }}</p>
       <p v-if="!CAN_WRITE" class="m-0 w-full text-xs font-bold text-sun">Read-only: templates are edited and saved on the local dev server, then committed.</p>
@@ -718,12 +720,31 @@ onUnmounted(() => {
           :wear-sale-codes="wearSaleCodes"
           :surfaces="template.surfaces"
           :textures="textureOptions"
+          :texture-parts="texturePartsByKey"
+          :own-parts="ownParts"
           :material-slots="selectedProp?.kind === 'decor' ? (materialSlotsById[selectedProp.id] ?? []) : []"
           @change="replaceProp"
           @surfaces="setSurfaces"
         />
       </aside>
     </div>
+    <MallMapModal
+      v-if="mapOpen"
+      :cells="cells"
+      :plazas="plazas"
+      :stores="mallStores"
+      :assignments="assignments"
+      :preset="preset"
+      :template-key="template.key"
+      :has-props="template.props.length > 0"
+      :can-assign="!dirty && keyValid"
+      :can-write="CAN_WRITE"
+      :selected-id="targetCell?.id ?? null"
+      @close="mapOpen = false"
+      @use="useCell"
+      @assign="assignFromMap"
+      @clear="clearFromMap"
+    />
     <MallEditorContentBrowser class="m-2 mt-0" :entries="entries" :armed-id="armedId" :notice="contentNotice" @pick="pick" />
   </div>
 </template>

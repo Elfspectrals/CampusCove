@@ -1,6 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
+import { hexToRgb, recolorPixels } from './partRecolor.ts'
 import {
   assignTemplate,
   cellArea,
@@ -8,6 +9,7 @@ import {
   cellPresets,
   freeCells,
   parseCategories,
+  parseDecorParts,
   parseMallTemplate,
   parseTemplateAssignments,
   parseTextureMeta,
@@ -206,7 +208,7 @@ test('surfaces and decor materials take a texture, a colour or both', () => {
   assert.deepEqual(parseMallTemplate({ ...structuredClone(template), surfaces }).surfaces, surfaces)
   assert.throws(() => parseMallTemplate({ ...structuredClone(template), surfaces: { front: { texture: 'brick' } } }), /surfaces\.front: unknown field/)
   assert.throws(() => parseMallTemplate({ ...structuredClone(template), surfaces: { back: { texture: '../x' } } }), /surfaces\.back\.texture/)
-  assert.throws(() => parseMallTemplate({ ...structuredClone(template), surfaces: { back: {} } }), /expected a texture, a color or both/)
+  assert.throws(() => parseMallTemplate({ ...structuredClone(template), surfaces: { back: {} } }), /expected a texture, a color, part colors or a mix/)
   const t = structuredClone(template) as typeof template & { props: Record<string, unknown>[] }
   t.props[0]!.materials = { DC_sofa_classic_Fabric: { color: '#aa2233' } }
   assert.deepEqual((parseMallTemplate(t).props[0] as { materials?: unknown }).materials, { DC_sofa_classic_Fabric: { color: '#aa2233' } })
@@ -232,4 +234,31 @@ test('the walls of a built cell come from its interior bounds, an end cell is na
   assert.ok(Math.abs(area.minZ + 11.7) < 0.01, `${area.minZ}`)
   assert.ok(Math.abs(area.maxX - area.minX - 12.05) < 0.01, `${area.maxX - area.minX}`)
   assert.deepEqual(cellArea(cell('E17')), { minX: -6.1, maxX: 6.1, minZ: -11.7 })
+})
+
+test('a look can recolour the parts of a texture by type', () => {
+  const surfaces = { back: { texture: 'brick', parts: { bricks: '#404048', mortar: '#f0ece4' } } }
+  assert.deepEqual(parseMallTemplate({ ...structuredClone(template), surfaces }).surfaces, surfaces)
+  assert.throws(() => parseMallTemplate({ ...structuredClone(template), surfaces: { back: { parts: { bricks: 'red' } } } }), /parts\.bricks/)
+  assert.throws(() => parseMallTemplate({ ...structuredClone(template), surfaces: { back: { parts: { bricks: '#ff0000' } } } }), /part colours need a texture/)
+  const twice = { version: 1, materials: { DC_Rug: { mask: 'parts_DC_Rug.png', parts: [{ id: 'main', label: 'Main', color: '#ffffff' }, { id: 'main', label: 'Main', color: '#000000' }] } } }
+  assert.throws(() => parseDecorParts(twice, 'rug'), /"main" is used twice/)
+})
+
+test('recolouring keeps the shading of each part and leaves untouched parts alone', () => {
+  const color = new Uint8ClampedArray([200, 100, 50, 255, 100, 50, 25, 255, 220, 220, 220, 255])
+  const mask = new Uint8ClampedArray([0, 0, 0, 255, 0, 0, 0, 255, 1, 0, 0, 255])
+  const out = recolorPixels(color, mask, [[200, 100, 50], [220, 220, 220]], [hexToRgb('#3264c8'), null])
+  assert.deepEqual([...out.slice(0, 3)], [50, 100, 200])
+  assert.deepEqual([...out.slice(4, 7)], [25, 50, 100])
+  assert.deepEqual([...out.slice(8, 11)], [220, 220, 220])
+  assert.throws(() => recolorPixels(color, mask.slice(0, 4), [], []), /differ in size/)
+})
+
+test('every decor parts.json is valid and its masks exist', () => {
+  const dir = new URL('../../../public/assets/decor/', import.meta.url)
+  for (const key of readdirSync(dir).filter((name) => existsSync(new URL(`${name}/parts.json`, dir)))) {
+    const materials = parseDecorParts(JSON.parse(readFileSync(new URL(`${key}/parts.json`, dir), 'utf8')), key)
+    for (const { mask } of Object.values(materials)) assert.ok(existsSync(new URL(`${key}/${mask}`, dir)), `${key}/${mask}`)
+  }
 })

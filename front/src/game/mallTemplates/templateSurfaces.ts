@@ -1,11 +1,13 @@
 import * as THREE from 'three'
-import { CEILING_HEIGHT, parseTextureMeta, presetArea, type CellArea, type MallTemplate, type MaterialLook, type Surface, type TextureMeta } from './mallTemplate.ts'
+import { CEILING_HEIGHT, parseTextureMeta, presetArea, type CellArea, type MallTemplate, type MaterialLook, type Surface, type TextureMeta, type TexturePart } from './mallTemplate.ts'
+import { hexToRgb, recolorPixels } from './partRecolor.ts'
 
 export const TEXTURES_URL = '/assets/textures'
 const PANEL_OFFSET = 0.005
 
 const metas = new Map<string, Promise<TextureMeta>>()
 const images = new Map<string, Promise<THREE.Texture>>()
+const masks = new Map<string, Promise<Uint8ClampedArray>>()
 const loader = new THREE.TextureLoader()
 
 function textureMeta(key: string): Promise<TextureMeta> {
@@ -70,21 +72,75 @@ function panelFrame(surface: Surface, area: CellArea): PanelFrame {
   }
 }
 
-export async function libraryTexture(key: string, metresPerUv: [number, number]): Promise<THREE.Texture> {
+function pixelsOf(image: CanvasImageSource & { width: number; height: number }): Uint8ClampedArray {
+  const canvas = document.createElement('canvas')
+  canvas.width = image.width
+  canvas.height = image.height
+  const context = canvas.getContext('2d', { willReadFrequently: true })
+  if (!context) throw new Error('no 2D canvas to recolour a texture')
+  context.drawImage(image, 0, 0)
+  return context.getImageData(0, 0, canvas.width, canvas.height).data
+}
+
+function maskPixels(url: string): Promise<Uint8ClampedArray> {
+  let mask = masks.get(url)
+  if (!mask) {
+    mask = loader.loadAsync(url).then((texture) => pixelsOf(texture.image as HTMLImageElement))
+    mask.catch(() => masks.delete(url))
+    masks.set(url, mask)
+  }
+  return mask
+}
+
+export async function recolorTexture(source: THREE.Texture, maskUrl: string, parts: readonly TexturePart[], colors: Record<string, string>): Promise<THREE.Texture> {
+  const image = source.image as HTMLImageElement
+  const color = pixelsOf(image)
+  const recolored = recolorPixels(color, await maskPixels(maskUrl), parts.map((p) => hexToRgb(p.color)), parts.map((p) => (colors[p.id] ? hexToRgb(colors[p.id]!) : null)))
+  const canvas = document.createElement('canvas')
+  canvas.width = image.width
+  canvas.height = image.height
+  canvas.getContext('2d')!.putImageData(new ImageData(recolored, image.width, image.height), 0, 0)
+  const texture = new THREE.CanvasTexture(canvas)
+  texture.flipY = source.flipY
+  texture.colorSpace = source.colorSpace
+  texture.wrapS = source.wrapS
+  texture.wrapT = source.wrapT
+  texture.magFilter = source.magFilter
+  texture.minFilter = source.minFilter
+  texture.repeat.copy(source.repeat)
+  texture.offset.copy(source.offset)
+  texture.channel = source.channel
+  return texture
+}
+
+export function textureParts(key: string): Promise<TexturePart[]> {
+  return textureMeta(key).then((meta) => meta.parts ?? [])
+}
+
+export async function libraryTexture(key: string, metresPerUv: [number, number], partColors: Record<string, string> = {}): Promise<THREE.Texture> {
   const meta = await textureMeta(key)
-  const map = (await colorMap(meta)).clone()
+  const base = await colorMap(meta)
+  const recolor = meta.maps.mask && meta.parts && Object.keys(partColors).length > 0
+  const map = recolor ? await recolorTexture(base, `${TEXTURES_URL}/${key}/${meta.maps.mask}`, meta.parts!, partColors) : base.clone()
   map.repeat.set(metresPerUv[0] / meta.tileMeters, metresPerUv[1] / meta.tileMeters)
   map.needsUpdate = true
   return map
 }
 
-export async function applyLook(material: THREE.MeshStandardMaterial, look: MaterialLook, metresPerUv: [number, number]): Promise<void> {
+export interface OwnParts {
+  maskUrl: string
+  parts: TexturePart[]
+}
+
+export async function applyLook(material: THREE.MeshStandardMaterial, look: MaterialLook, metresPerUv: [number, number], ownParts?: OwnParts): Promise<void> {
   if (look.texture) {
-    material.map = await libraryTexture(look.texture, metresPerUv)
+    material.map = await libraryTexture(look.texture, metresPerUv, look.parts)
     material.color.set(look.color ?? '#ffffff')
   } else if (look.color) {
     material.map = null
     material.color.set(look.color)
+  } else if (look.parts && ownParts && material.map) {
+    material.map = await recolorTexture(material.map, ownParts.maskUrl, ownParts.parts, look.parts)
   }
   material.needsUpdate = true
 }

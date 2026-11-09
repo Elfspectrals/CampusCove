@@ -10,6 +10,7 @@ export interface CellPreset {
 
 export interface MallCell {
   id: string
+  plaza: string
   level: number
   status: string
   name: string
@@ -37,6 +38,18 @@ interface PropBase {
 export interface MaterialLook {
   texture?: string
   color?: string
+  parts?: Record<string, string>
+}
+
+export interface TexturePart {
+  id: string
+  label: string
+  color: string
+}
+
+export interface MaskedParts {
+  mask: string
+  parts: TexturePart[]
 }
 
 export interface DecorProp extends PropBase {
@@ -118,7 +131,8 @@ export interface TextureMeta {
   key: string
   label: string
   tileMeters: number
-  maps: { color: string; normal?: string }
+  maps: { color: string; normal?: string; mask?: string }
+  parts?: TexturePart[]
 }
 
 export interface TemplateAssignments {
@@ -148,6 +162,7 @@ const NPC_POSES: readonly NpcPose[] = ['idle', 'sit']
 const LIGHT_KINDS: readonly LightKind[] = ['point', 'spot']
 export const MAX_LIGHTS = 8
 const MAP_FILE = /^[a-z0-9_]+\.(png|webp|jpg)$/
+const MAP_FILE_ANY = /^[A-Za-z0-9_.-]+\.png$/
 const MATERIAL_NAME = /^[A-Za-z0-9_.-]+$/
 
 export function usableArea(preset: CellPreset): { halfWidth: number; minZ: number } {
@@ -366,12 +381,38 @@ function itemAt(prop: Json, path: string): Pick<ItemProp, 'key' | 'code'> {
 }
 
 function lookAt(raw: unknown, path: string): MaterialLook {
-  const json = objectAt(raw, path, ['texture', 'color'])
-  if (json.texture === undefined && json.color === undefined) throw new TemplateError(path, 'expected a texture, a color or both')
+  const json = objectAt(raw, path, ['texture', 'color', 'parts'])
+  if (json.texture === undefined && json.color === undefined && json.parts === undefined) throw new TemplateError(path, 'expected a texture, a color, part colors or a mix')
+  const parts = json.parts === undefined ? undefined : objectAt(json.parts, `${path}.parts`)
   return {
     ...(json.texture !== undefined ? { texture: stringAt(json.texture, `${path}.texture`, TEMPLATE_KEY) } : {}),
     ...(json.color !== undefined ? { color: stringAt(json.color, `${path}.color`, HEX_COLOR) } : {}),
+    ...(parts ? { parts: Object.fromEntries(Object.entries(parts).map(([id, hex]) => [stringAt(id, `${path}.parts`, TEMPLATE_KEY), stringAt(hex, `${path}.parts.${id}`, HEX_COLOR)])) } : {}),
   }
+}
+
+function partsAt(raw: unknown, path: string): TexturePart[] {
+  if (!Array.isArray(raw) || raw.length < 2) throw new TemplateError(path, 'expected at least two parts')
+  const ids = new Set<string>()
+  return raw.map((part, i) => {
+    const id = (part as Json | null)?.id
+    if (typeof id === 'string' && ids.has(id)) throw new TemplateError(`${path}[${i}].id`, `"${id}" is used twice`)
+    if (typeof id === 'string') ids.add(id)
+    const json = objectAt(part, `${path}[${i}]`, ['id', 'label', 'color'])
+    return { id: stringAt(json.id, `${path}[${i}].id`, TEMPLATE_KEY), label: stringAt(json.label, `${path}[${i}].label`), color: stringAt(json.color, `${path}[${i}].color`, HEX_COLOR) }
+  })
+}
+
+export function parseDecorParts(raw: unknown, key: string): Record<string, MaskedParts> {
+  const path = `decor/${key}/parts.json`
+  const json = objectAt(raw, path, ['version', 'materials'])
+  if (json.version !== 1) throw new TemplateError(`${path}.version`, 'expected 1')
+  return Object.fromEntries(
+    Object.entries(objectAt(json.materials, `${path}.materials`)).map(([name, entry]) => {
+      const material = objectAt(entry, `${path}.materials.${name}`, ['mask', 'parts'])
+      return [name, { mask: stringAt(material.mask, `${path}.materials.${name}.mask`, MAP_FILE_ANY), parts: partsAt(material.parts, `${path}.materials.${name}.parts`) }]
+    }),
+  )
 }
 
 function propAt(raw: unknown, path: string): TemplateProp {
@@ -482,7 +523,13 @@ export function parseMallTemplate(raw: unknown): MallTemplate {
   }
   if (json.surfaces !== undefined) {
     const surfaces = objectAt(json.surfaces, 'template.surfaces', SURFACES)
-    template.surfaces = Object.fromEntries(Object.entries(surfaces).map(([surface, look]) => [surface, lookAt(look, `template.surfaces.${surface}`)]))
+    template.surfaces = Object.fromEntries(
+      Object.entries(surfaces).map(([surface, raw]) => {
+        const look = lookAt(raw, `template.surfaces.${surface}`)
+        if (look.parts && !look.texture) throw new TemplateError(`template.surfaces.${surface}.parts`, 'part colours need a texture')
+        return [surface, look]
+      }),
+    )
   }
   return template
 }
@@ -521,16 +568,22 @@ export function parseCategories(raw: unknown): Category[] {
 
 export function parseTextureMeta(raw: unknown, key: string): TextureMeta {
   const path = `textures/${key}/texture.json`
-  const json = objectAt(raw, path, ['version', 'key', 'label', 'tileMeters', 'maps'])
+  const json = objectAt(raw, path, ['version', 'key', 'label', 'tileMeters', 'maps', 'parts'])
   if (json.version !== 1) throw new TemplateError(`${path}.version`, 'expected 1')
   if (json.key !== key) throw new TemplateError(`${path}.key`, `expected ${key}`)
-  const maps = objectAt(json.maps, `${path}.maps`, ['color', 'normal'])
+  const maps = objectAt(json.maps, `${path}.maps`, ['color', 'normal', 'mask'])
+  if ((maps.mask === undefined) !== (json.parts === undefined)) throw new TemplateError(path, 'a mask and its parts go together')
   return {
     version: 1,
     key,
     label: stringAt(json.label, `${path}.label`),
     tileMeters: positiveAt(json.tileMeters, `${path}.tileMeters`),
-    maps: { color: stringAt(maps.color, `${path}.maps.color`, MAP_FILE), ...(maps.normal !== undefined ? { normal: stringAt(maps.normal, `${path}.maps.normal`, MAP_FILE) } : {}) },
+    maps: {
+      color: stringAt(maps.color, `${path}.maps.color`, MAP_FILE),
+      ...(maps.normal !== undefined ? { normal: stringAt(maps.normal, `${path}.maps.normal`, MAP_FILE) } : {}),
+      ...(maps.mask !== undefined ? { mask: stringAt(maps.mask, `${path}.maps.mask`, MAP_FILE) } : {}),
+    },
+    ...(json.parts !== undefined ? { parts: partsAt(json.parts, `${path}.parts`) } : {}),
   }
 }
 

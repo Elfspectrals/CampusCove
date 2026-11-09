@@ -4,6 +4,19 @@
   "label": "Soft checker floor",
   "tileMeters": 2,
   "maps": {
-    "color": "color.webp"
-  }
+    "color": "color.webp",
+    "mask": "mask.png"
+  },
+  "parts": [
+    {
+      "id": "checks_a",
+      "label": "Checks A",
+      "color": "#f4c035"
+    },
+    {
+      "id": "checks_b",
+      "label": "Checks B",
+      "color": "#e34d46"
+    }
+  ]
 }

@@ -4,6 +4,19 @@
   "label": "Stone",
   "tileMeters": 2,
   "maps": {
-    "color": "color.webp"
-  }
+    "color": "color.webp",
+    "mask": "mask.png"
+  },
+  "parts": [
+    {
+      "id": "stones",
+      "label": "Stones",
+      "color": "#9a948b"
+    },
+    {
+      "id": "joints",
+      "label": "Joints",
+      "color": "#767167"
+    }
+  ]
 }

@@ -5,7 +5,7 @@ import { Pane } from 'tweakpane'
 import { WEAR_SLOTS, type WearSlot } from '../../../avatar/modularCharacterLogic'
 import { DEFAULT_SLOT_COLORS } from '../../../api/characterCosmetics'
 import { isConsumableCode } from '../../../game/assets/catalog'
-import { CEILING_HEIGHT, SURFACES, usableArea, type CellPreset, type MallTemplate, type MaterialLook, type NpcPose, type Surface, type TemplateProp } from '../../../game/mallTemplates/mallTemplate.ts'
+import { CEILING_HEIGHT, SURFACES, usableArea, type CellPreset, type MallTemplate, type MaterialLook, type NpcPose, type Surface, type TemplateProp, type TexturePart } from '../../../game/mallTemplates/mallTemplate.ts'
 import type { FolderApi } from 'tweakpane'
 
 const NO_PIECE = ''
@@ -21,6 +21,8 @@ const props = defineProps<{
   surfaces: MallTemplate['surfaces']
   textures: Record<string, string>
   materialSlots: MaterialSlot[]
+  textureParts: Record<string, TexturePart[]>
+  ownParts: Record<string, TexturePart[]>
 }>()
 
 const materialNames = computed(() => props.materialSlots.map((m) => m.name))
@@ -34,22 +36,34 @@ interface LookParams {
   texture: Record<string, string>
   paint: Record<string, boolean>
   color: Record<string, string>
+  parts: Record<string, Record<string, string>>
+  partsTexture: Record<string, string>
+}
+
+function partsFor(name: string, texture: string): TexturePart[] {
+  return texture !== NO_TEXTURE ? (props.textureParts[texture] ?? []) : (props.ownParts[name] ?? [])
 }
 
 function lookParams(names: readonly string[], looks: Partial<Record<string, MaterialLook>> | undefined): LookParams {
+  const texture = Object.fromEntries(names.map((n) => [n, looks?.[n]?.texture ?? NO_TEXTURE]))
   return {
-    texture: Object.fromEntries(names.map((n) => [n, looks?.[n]?.texture ?? NO_TEXTURE])),
+    texture,
     paint: Object.fromEntries(names.map((n) => [n, looks?.[n]?.color !== undefined])),
     color: Object.fromEntries(names.map((n) => [n, looks?.[n]?.color ?? UNPAINTED])),
+    parts: Object.fromEntries(names.map((n) => [n, Object.fromEntries(partsFor(n, texture[n]!).map((part) => [part.id, looks?.[n]?.parts?.[part.id] ?? part.color]))])),
+    partsTexture: { ...texture },
   }
 }
 
 function looksOf(names: readonly string[], p: LookParams): Record<string, MaterialLook> {
   return Object.fromEntries(
     names.flatMap((n) => {
+      const sameTexture = p.texture[n] === p.partsTexture[n]
+      const changed = sameTexture ? partsFor(n, p.texture[n]!).filter((part) => p.parts[n]?.[part.id] && p.parts[n]![part.id] !== part.color) : []
       const look: MaterialLook = {
         ...(p.texture[n] !== NO_TEXTURE ? { texture: p.texture[n] } : {}),
         ...(p.paint[n] ? { color: p.color[n] } : {}),
+        ...(changed.length && !(p.paint[n] && p.texture[n] === NO_TEXTURE) ? { parts: Object.fromEntries(changed.map((part) => [part.id, p.parts[n]![part.id]!])) } : {}),
       }
       return Object.keys(look).length ? [[n, look]] : []
     }),
@@ -60,6 +74,11 @@ function addLookBindings(folder: FolderApi, p: LookParams, name: string, label: 
   if (texturable) folder.addBinding(p.texture, name, { label, options: { '(model)': NO_TEXTURE, ...props.textures } })
   folder.addBinding(p.paint, name, { label: texturable ? 'colour' : label })
   folder.addBinding(p.color, name, { label: ' ' })
+  for (const part of partsFor(name, p.texture[name]!)) folder.addBinding(p.parts[name]!, part.id, { label: `· ${part.label}` })
+}
+
+function texturesOf(looks: Partial<Record<string, MaterialLook>> | undefined): Record<string, string> {
+  return Object.fromEntries(Object.entries(looks ?? {}).map(([name, look]) => [name, look?.texture ?? NO_TEXTURE]))
 }
 
 interface Params {
@@ -179,13 +198,33 @@ function emitChange(): void {
 
 const SURFACE_LABELS: Record<Surface, string> = { left: 'Left wall', right: 'Right wall', back: 'Back wall', floor: 'Floor', ceiling: 'Ceiling' }
 
+let cellLooks: LookParams | null = null
+
 function buildCell(container: HTMLElement): void {
   const looks = lookParams(SURFACES, props.surfaces)
+  cellLooks = looks
   pane = new Pane({ container, title: 'Cell' })
   const folder = pane.addFolder({ title: 'Surfaces' })
   for (const surface of SURFACES) addLookBindings(folder, looks, surface, SURFACE_LABELS[surface], true)
-  pane.on('change', () => emit('surfaces', looksOf(SURFACES, looks)))
+  pane.on('change', () => {
+    if (!syncing) emit('surfaces', looksOf(SURFACES, looks))
+  })
 }
+
+watch(
+  () => props.surfaces,
+  (surfaces) => {
+    if (props.prop || !pane || !cellLooks) return
+    syncing = true
+    const next = lookParams(SURFACES, surfaces)
+    Object.assign(cellLooks.paint, next.paint)
+    Object.assign(cellLooks.color, next.color)
+    for (const [name, parts] of Object.entries(next.parts)) Object.assign(cellLooks.parts[name] ?? {}, parts)
+    pane.refresh()
+    syncing = false
+  },
+  { deep: true },
+)
 
 function build(): void {
   pane?.dispose()
@@ -255,8 +294,8 @@ function build(): void {
 function shapeOf(prop: TemplateProp | null): string {
   const keys = prop?.kind === 'npc' || prop?.kind === 'mannequin' ? prop.outfit.map((p) => p.key) : prop?.kind === 'decor' || prop?.kind === 'item' ? [prop.key] : []
   const forSale = prop?.kind === 'item' && prop.forSale
-  if (!prop) return JSON.stringify(['cell', props.surfaces ?? {}, props.textures])
-  return JSON.stringify([prop.id, prop.kind, forSale, props.vendorTaken, props.decorKeys.length, props.wear, props.preset, props.saleCodes, props.wearSaleCodes, props.materialSlots, prop.kind === 'decor' && !!prop.materials, keys])
+  if (!prop) return JSON.stringify(['cell', texturesOf(props.surfaces), props.textures, props.textureParts])
+  return JSON.stringify([prop.id, prop.kind, forSale, props.vendorTaken, props.decorKeys.length, props.wear, props.preset, props.saleCodes, props.wearSaleCodes, props.materialSlots, props.textureParts, props.ownParts, prop.kind === 'decor' ? texturesOf(prop.materials) : null, prop.kind === 'decor' && !!prop.materials, keys])
 }
 
 watch(() => shapeOf(props.prop), build)
@@ -271,6 +310,7 @@ watch(
     Object.assign(params.looks.texture, looks.texture)
     Object.assign(params.looks.paint, looks.paint)
     Object.assign(params.looks.color, looks.color)
+    for (const [name, parts] of Object.entries(looks.parts)) Object.assign(params.looks.parts[name] ?? {}, parts)
     Object.assign(params.pieces, pieces)
     Object.assign(params.colors, colors)
     Object.assign(params.sale, sale)

@@ -4,6 +4,19 @@
   "label": "Brick",
   "tileMeters": 2,
   "maps": {
-    "color": "color.webp"
-  }
+    "color": "color.webp",
+    "mask": "mask.png"
+  },
+  "parts": [
+    {
+      "id": "bricks",
+      "label": "Bricks",
+      "color": "#a8654f"
+    },
+    {
+      "id": "mortar",
+      "label": "Mortar",
+      "color": "#dfae93"
+    }
+  ]
 }

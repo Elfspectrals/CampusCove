@@ -4,6 +4,19 @@
   "label": "Wood floor",
   "tileMeters": 2,
   "maps": {
-    "color": "color.webp"
-  }
+    "color": "color.webp",
+    "mask": "mask.png"
+  },
+  "parts": [
+    {
+      "id": "planks",
+      "label": "Planks",
+      "color": "#c59a6c"
+    },
+    {
+      "id": "gaps",
+      "label": "Gaps",
+      "color": "#ab8052"
+    }
+  ]
 }

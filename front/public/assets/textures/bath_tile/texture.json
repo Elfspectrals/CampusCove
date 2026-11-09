@@ -4,6 +4,19 @@
   "label": "Bath tile",
   "tileMeters": 2,
   "maps": {
-    "color": "color.webp"
-  }
+    "color": "color.webp",
+    "mask": "mask.png"
+  },
+  "parts": [
+    {
+      "id": "tiles",
+      "label": "Tiles",
+      "color": "#e8f0f0"
+    },
+    {
+      "id": "grout",
+      "label": "Grout",
+      "color": "#c8d1d1"
+    }
+  ]
 }
