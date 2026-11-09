@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "key": "hw_paint_green",
+  "label": "Hw paint green",
+  "color": "#ffffff",
+  "roughness": 0.5,
+  "metalness": 0,
+  "maps": {
+    "color": "color.webp"
+  },
+  "source": "decor/paint_cans"
+}

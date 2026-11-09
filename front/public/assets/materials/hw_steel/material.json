@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "key": "hw_steel",
+  "label": "Hw steel",
+  "color": "#ffffff",
+  "roughness": 0.4,
+  "metalness": 0,
+  "maps": {
+    "color": "color.webp"
+  },
+  "source": "decor/metal_shelving"
+}

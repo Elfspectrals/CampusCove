@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "key": "fabric_mustard",
+  "label": "Fabric mustard",
+  "color": "#ffffff",
+  "roughness": 0.95,
+  "metalness": 0,
+  "maps": {
+    "color": "color.webp"
+  },
+  "source": "decor/armchair_lounge"
+}

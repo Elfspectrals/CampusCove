@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "key": "fabric_teal",
+  "label": "Fabric teal",
+  "color": "#ffffff",
+  "roughness": 0.95,
+  "metalness": 0,
+  "maps": {
+    "color": "color.webp"
+  },
+  "source": "decor/bed_double"
+}

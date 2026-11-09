@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "key": "door_wood",
+  "label": "Door wood",
+  "tileMeters": 2,
+  "maps": {
+    "color": "color.webp"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "key": "flower_pink",
+  "label": "Flower pink",
+  "color": "#f9b3cb",
+  "roughness": 0.7,
+  "metalness": 0,
+  "maps": {},
+  "source": "decor/cactus"
+}

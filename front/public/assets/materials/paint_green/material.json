@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "key": "paint_green",
+  "label": "Paint green",
+  "color": "#95daaa",
+  "roughness": 0.5,
+  "metalness": 0,
+  "maps": {},
+  "source": "decor/cube_shelf"
+}

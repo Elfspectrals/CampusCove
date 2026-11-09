@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "key": "kids_wall",
+  "label": "Kids room wall",
+  "tileMeters": 2,
+  "maps": {
+    "color": "color.webp"
+  }
+}

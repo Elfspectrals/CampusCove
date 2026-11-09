@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "materials": {
+    "DC_KnitCream": {
+      "mask": "parts_DC_KnitCream.png",
+      "parts": [
+        {
+          "id": "main",
+          "label": "Main",
+          "color": "#c1b59c"
+        },
+        {
+          "id": "accent",
+          "label": "Accent",
+          "color": "#d6cab1"
+        }
+      ]
+    }
+  }
+}

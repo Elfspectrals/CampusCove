@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "materials": {
+    "DC_HwWood": {
+      "mask": "parts_DC_HwWood.png",
+      "parts": [
+        {
+          "id": "main",
+          "label": "Main",
+          "color": "#caa46a"
+        },
+        {
+          "id": "accent",
+          "label": "Accent",
+          "color": "#b08a51"
+        }
+      ]
+    }
+  }
+}

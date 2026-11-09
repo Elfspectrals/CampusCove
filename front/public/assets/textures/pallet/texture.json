@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "key": "pallet",
+  "label": "Pallet wood",
+  "tileMeters": 2,
+  "maps": {
+    "color": "color.webp",
+    "mask": "mask.png"
+  },
+  "parts": [
+    {
+      "id": "planks",
+      "label": "Planks",
+      "color": "#caa46a"
+    },
+    {
+      "id": "gaps",
+      "label": "Gaps",
+      "color": "#b08a51"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "key": "rgb_glow",
+  "label": "Rgb glow",
+  "color": "#da7cf3",
+  "roughness": 0.7,
+  "metalness": 0,
+  "maps": {},
+  "source": "decor/computer_setup"
+}

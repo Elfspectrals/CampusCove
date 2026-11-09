@@ -42,7 +42,8 @@ make up-build
 | `make store-apply` | Branche le magasin Cove Home dans la ville (collisions + zone `retail_park` de `world.manifest.json`) |
 | `make newnation-optimize` | Carte du showroom `/NewNation` |
 | `make model "a single wooden lantern"` | Prompt → asset 3D IA (local uniquement) |
-| `make texture "a wooden wall stained with blood" [TILE=2.0] [SIZE=1024] [CATEGORY=wood]` | Prompt → texture IA raccordable (mur, sol, plafond) dans `front/public/assets/textures/<key>/` + `categories.json` (local uniquement) |
+| `make texture "a wooden wall stained with blood" [TILE=2.0] [SIZE=1024] [CATEGORY=wood] [PARTS=wood,stains]` | Prompt → texture IA raccordable (mur, sol, plafond) dans `front/public/assets/textures/<key>/` + `categories.json`, découpée en types recolorables (local uniquement) |
+| `make texture-parts` | Redécoupe en types recolorables (briques / joints…) toutes les textures et tous les décors |
 
 `CURRENCY` : `coins` ou `premium`. Relog après `set-admin`.
 
@@ -118,6 +119,8 @@ DOCKER_CONTEXT=cc make prod-up
 | `front/src/game/` | Code Three.js sans Vue : scène (`gameScene.ts`), environnements, `collision/` (Rapier), `placement/` (physique + fantôme), `town/` (maisons, bâtiments, pêche, terrain), `newNation/` (showroom) |
 | `socket/` | Serveur Colyseus : `server.ts` (démarrage) + `src/` (`CityRoom`, intérieurs, joueurs, appels backend) |
 | `backend/app/Console/Commands/` | Commandes Artisan (`setAdmin`, `setMoney`, `fillOutfit`, `housing:*`) |
+
+Éditeur de boutiques du mall (`/admin/mall-editor`) : mode d'emploi dans [docs/MALL_EDITOR.md](docs/MALL_EDITOR.md).
 
 Garde-fous : `cd front && npx knip` (code / exports morts), `make typecheck`, `npm run test:unit`, `make test`.
 

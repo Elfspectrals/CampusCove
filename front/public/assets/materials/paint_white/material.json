@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "key": "paint_white",
+  "label": "Paint white",
+  "color": "#ffffff",
+  "roughness": 0.6,
+  "metalness": 0,
+  "maps": {
+    "color": "color.webp"
+  },
+  "source": "decor/bed_double"
+}

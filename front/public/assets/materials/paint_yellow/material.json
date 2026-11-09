@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "key": "paint_yellow",
+  "label": "Paint yellow",
+  "color": "#fde57c",
+  "roughness": 0.5,
+  "metalness": 0,
+  "maps": {},
+  "source": "decor/bathtub"
+}

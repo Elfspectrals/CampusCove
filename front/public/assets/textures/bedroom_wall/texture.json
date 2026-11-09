@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "key": "bedroom_wall",
+  "label": "Bedroom wall",
+  "tileMeters": 2,
+  "maps": {
+    "color": "color.webp"
+  }
+}

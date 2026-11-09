@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "key": "ceramic",
+  "label": "Ceramic",
+  "color": "#f9fafc",
+  "roughness": 0.2,
+  "metalness": 0,
+  "maps": {},
+  "source": "decor/bathtub"
+}

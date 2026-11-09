@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "key": "fabric_olive",
+  "label": "Fabric olive",
+  "color": "#ffffff",
+  "roughness": 0.95,
+  "metalness": 0,
+  "maps": {
+    "color": "color.webp"
+  },
+  "source": "decor/coat_rack"
+}

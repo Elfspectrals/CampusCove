@@ -96,6 +96,12 @@ const router = createRouter({
       component: () => import('../views/admin/AdminWorldPlannerView.vue'),
       meta: { requiresAdmin: true, title: 'Admin — World Planner' },
     },
+    {
+      path: '/admin/mall-editor',
+      name: 'admin-mall-editor',
+      component: () => import('../views/admin/AdminMallEditorView.vue'),
+      meta: { requiresAdmin: true, title: 'Admin — Mall Editor', fullBleed: true, immersive: true },
+    },
     { path: '/:pathMatch(.*)*', name: 'not-found', component: NotFoundView, meta: { title: 'Not found' } },
   ],
   scrollBehavior(to, _from, saved) {

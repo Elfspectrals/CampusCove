@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "key": "steel",
+  "label": "Steel",
+  "tileMeters": 2,
+  "maps": {
+    "color": "color.webp"
+  }
+}

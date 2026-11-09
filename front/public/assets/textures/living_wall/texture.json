@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "key": "living_wall",
+  "label": "Living room wall",
+  "tileMeters": 2,
+  "maps": {
+    "color": "color.webp"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "key": "hw_label",
+  "label": "Hw label",
+  "color": "#ffffff",
+  "roughness": 0.7,
+  "metalness": 0,
+  "maps": {
+    "color": "color.webp"
+  },
+  "source": "decor/toolbox"
+}
