@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "key": "a_wooden_wall_stained_with_blood",
+  "label": "A wooden wall stained with blood",
+  "tileMeters": 2.0,
+  "maps": {
+    "color": "color.png"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "key": "a_red_brick_wall",
+  "label": "A red brick wall",
+  "tileMeters": 2.0,
+  "maps": {
+    "color": "color.png"
+  }
+}
