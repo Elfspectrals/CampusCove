@@ -1,5 +1,5 @@
 import { existsSync, readdirSync, writeFileSync } from 'node:fs'
-import { dirname, join, resolve } from 'node:path'
+import { basename, dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { NodeIO } from '@gltf-transform/core'
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions'
@@ -160,11 +160,22 @@ function footprintBoxes(grid) {
   return boxes
 }
 
-for (const key of readdirSync(DECOR).sort()) {
-  const model = join(DECOR, key, 'model.glb')
-  if (!existsSync(model)) continue
+async function writeFootprint(model, source) {
   const samples = bodyBandSamples(await io.read(model))
   const cuboids = samples.length > 0 ? footprintBoxes(occupancyGrid(samples)) : []
-  writeFileSync(join(DECOR, key, 'collision.json'), JSON.stringify({ version: 1, source: `decor/${key}/model.glb`, mode: 'footprint', cuboids }))
-  console.log(`${key}: ${cuboids.length} boxes`)
+  writeFileSync(join(dirname(model), 'collision.json'), JSON.stringify({ version: 1, source, mode: 'footprint', cuboids }))
+  console.log(`${source}: ${cuboids.length} boxes`)
+}
+
+const singleModel = process.argv[2]
+if (singleModel) {
+  const model = resolve(singleModel)
+  if (!existsSync(model)) throw new Error(`${model}: not found`)
+  await writeFootprint(model, basename(dirname(model)) + '/model.glb')
+} else {
+  for (const key of readdirSync(DECOR).sort()) {
+    const model = join(DECOR, key, 'model.glb')
+    if (!existsSync(model)) continue
+    await writeFootprint(model, `decor/${key}/model.glb`)
+  }
 }
