@@ -22,7 +22,7 @@ du Cove Parkview Mall. Le contrat technique (fichiers, repère, rebuild) est dan
 | Barre du viewport | Modes Select / Move / Rotate / Scale, snap de grille, de rotation et d'échelle |
 | Outliner (droite, haut) | Tous les objets posés, œil pour masquer dans l'éditeur, type, compteur |
 | Détails (droite, bas) | Réglages de l'objet sélectionné ; sans sélection, les surfaces de la cellule |
-| Content Browser (bas) | Dossiers Decor (par catégorie), Sellable, NPC, Mannequin, Lights, recherche, miniatures |
+| Content Browser (bas) | Dossiers Decor et Goods (par catégorie), NPC, Mannequin, Lights, recherche, miniatures |
 
 Les trois poignées (entre viewport et colonne de droite, entre Outliner et Détails, au-dessus du Content Browser) se
 glissent pour redimensionner ; les tailles sont mémorisées dans le navigateur. Chaque panneau défile à l'intérieur et se
@@ -62,8 +62,8 @@ L'échelle se règle par axe (X, Y, Z) au gizmo ou dans les Détails.
 
 | Dossier | Objet | Réglages (panneau Détails) |
 |---|---|---|
-| Decor | Meuble / déco, rangé par catégorie (`decor/categories.json`) | Modèle, **For sale** (si le catalogue le vend), **Materials** : texture et/ou couleur par matériau, couleur par type |
-| Sellable | Article du catalogue (meubles, nourriture, bonbons, épicerie…) | **For sale** (décoché = simple déco), pile colonnes × rangées |
+| Decor | Meuble / déco, rangé par catégorie (`decor/categories.json`) | Modèle, **For sale** (si le catalogue le vend, aussi dans l'Outliner avec son prix), **Materials** : matériau, texture et/ou couleur par slot, couleur par type |
+| Goods | Nourriture, boissons, bonbons, épicerie, soins du catalogue | **For sale** (décoché = simple déco, aussi dans l'Outliner avec son prix), pile colonnes × rangées quand c'est en vente |
 | NPC | Figurant | Pose (debout / assis), **Vendor** (un seul par cellule : tient le comptoir et la caisse), peau, tenue pièce par pièce avec couleur |
 | Mannequin | Mannequin immobile | Couleur du corps, tenue pièce par pièce, **for sale** par pièce |
 | Lights | Lumière ponctuelle ou spot | Couleur, intensité, portée, angle et inclinaison du spot ; 8 maximum par cellule |

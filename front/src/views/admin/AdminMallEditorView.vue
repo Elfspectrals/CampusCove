@@ -9,7 +9,7 @@ import EditorSearchSelect, { type SelectOption } from '../../components/admin/ma
 import MallEditorDetails from '../../components/admin/mallEditor/MallEditorDetails.vue'
 import MallEditorOutliner from '../../components/admin/mallEditor/MallEditorOutliner.vue'
 import MallMapModal, { type MallPlaza, type MallStoreMark } from '../../components/admin/mallEditor/MallMapModal.vue'
-import { decorModelUrl } from '../../game/assets/catalog'
+import { decorModelUrl, isConsumableCode } from '../../game/assets/catalog'
 import UiIcon from '../../components/ui/UiIcon.vue'
 import type { UiIconName } from '../../components/ui/icons'
 import { MallEditorScene, type GizmoMode, type PropTransform } from '../../game/mallEditor/MallEditorScene'
@@ -529,20 +529,18 @@ function decorKeyOf(item: ShopItem): string | null {
   return /^\/assets\/decor\/([a-z0-9_]+)\/model\.glb$/.exec(new URL(item.model_glb, window.location.origin).pathname)?.[1] ?? null
 }
 
-function sellableEntry(item: ShopItem, groupOfDecor: (key: string) => string): PlaceableEntry | null {
-  if ((item.kind !== 'furniture' && item.kind !== 'consumable') || !item.model_glb) return null
-  const modelPath = new URL(item.model_glb, window.location.origin).pathname
-  const decorKey = decorKeyOf(item)
-  const key = decorKey ?? item.code.slice(item.code.indexOf('_') + 1)
-  if (itemModelUrl({ key, code: item.code }) !== modelPath) return null
+function goodsEntry(item: ShopItem): PlaceableEntry | null {
+  if (!item.model_glb || decorKeyOf(item) || !isConsumableCode(item.code)) return null
+  const key = item.code.slice(item.code.indexOf('_') + 1)
+  if (itemModelUrl({ key, code: item.code }) !== new URL(item.model_glb, window.location.origin).pathname) return null
   return {
     id: `item:${item.code}`,
-    folder: 'sellable',
-    group: decorKey ? groupOfDecor(decorKey) : (CONSUMABLE_GROUPS.find(([prefix]) => item.code.startsWith(prefix))?.[1] ?? 'Other'),
+    folder: 'goods',
+    group: CONSUMABLE_GROUPS.find(([prefix]) => item.code.startsWith(prefix))?.[1] ?? 'Other',
     label: item.name,
     preview: item.preview_image,
     modelUrl: item.model_glb,
-    create: (id, position) => ({ id, kind: 'item', key, code: item.code, forSale: true, position, yaw: 0, scale: [1, 1, 1] }),
+    create: (id, position) => ({ id, kind: 'item', key, code: item.code, forSale: false, position, yaw: 0, scale: [1, 1, 1] }),
   }
 }
 
@@ -666,8 +664,8 @@ async function loadContent(): Promise<void> {
     return coins === undefined ? [] : [[item.code, coins]]
   }))
   const placeable = catalog.items.filter((item) => (item.kind === 'furniture' || item.kind === 'consumable') && item.model_glb)
-  const sellable = placeable.map((item) => sellableEntry(item, groupOfDecor)).filter((e): e is PlaceableEntry => e !== null)
-  const skipped = placeable.filter((item) => !sellable.some((e) => e.id === `item:${item.code}`)).map((item) => item.code)
+  const goods = placeable.map(goodsEntry).filter((e): e is PlaceableEntry => e !== null)
+  const skipped = placeable.filter((item) => !decorKeyOf(item) && !goods.some((e) => e.id === `item:${item.code}`)).map((item) => item.code)
   const notices = [
     ...(assets ? [] : ['Saving only works on the local dev server.']),
     ...(uncategorized.length ? [`Not in decor/categories.json: ${uncategorized.join(', ')}`] : []),
@@ -693,7 +691,7 @@ async function loadContent(): Promise<void> {
   wearSaleCodes.value = Object.fromEntries([...codesByWear].filter(([, codes]) => codes.length === 1).map(([piece, codes]) => [piece, codes[0]!]))
   contentNotice.value = notices.length ? notices.join(' ') : null
   saleCodes.value = Object.fromEntries([...codesByDecor].filter(([, codes]) => codes.length === 1).map(([key, codes]) => [key, codes[0]!]))
-  entries.value = [...decorKeys.map((key) => decorEntry(key, groupOfDecor(key))), ...sellable, NPC_ENTRY, MANNEQUIN_ENTRY, lightEntry('point', 'Point light'), lightEntry('spot', 'Spot light')]
+  entries.value = [...decorKeys.map((key) => decorEntry(key, groupOfDecor(key))), ...goods, NPC_ENTRY, MANNEQUIN_ENTRY, lightEntry('point', 'Point light'), lightEntry('spot', 'Spot light')]
   const [textures, materials] = await Promise.all([loadTextureOptions(), loadMaterialOptions()])
   textureOptions.value = textures
   materialOptions.value = materials
