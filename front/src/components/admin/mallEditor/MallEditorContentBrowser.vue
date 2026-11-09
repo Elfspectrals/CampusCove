@@ -11,7 +11,7 @@ export interface ContentEntry {
   preview: string | null
 }
 
-type ContentFolder = 'decor' | 'sellable' | 'npc' | 'mannequin' | 'light'
+type ContentFolder = 'decor' | 'goods' | 'npc' | 'mannequin' | 'light'
 
 const props = defineProps<{
   entries: ContentEntry[]
@@ -24,7 +24,7 @@ const emit = defineEmits<{ pick: [entry: ContentEntry]; toggle: [] }>()
 
 const FOLDERS: Array<{ key: ContentFolder; label: string; icon: UiIconName }> = [
   { key: 'decor', label: 'Decor', icon: 'chair' },
-  { key: 'sellable', label: 'Sellable', icon: 'shop' },
+  { key: 'goods', label: 'Goods', icon: 'shop' },
   { key: 'npc', label: 'NPC', icon: 'user' },
   { key: 'mannequin', label: 'Mannequin', icon: 'shirt' },
   { key: 'light', label: 'Lights', icon: 'bolt' },
