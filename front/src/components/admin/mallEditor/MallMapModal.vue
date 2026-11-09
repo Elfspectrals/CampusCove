@@ -34,16 +34,12 @@ const props = defineProps<{
 
 const emit = defineEmits<{ close: []; use: [cell: MallCell]; assign: [cell: MallCell]; clear: [cell: MallCell] }>()
 
-const ZONE_COLORS: Record<string, string> = {
-  entrance: '#3fa7d6',
-  paradise: '#f5a524',
-  north_plaza: '#7cc242',
-  wonderland: '#9b6bd6',
-  food_court: '#ef6c3a',
-  al_fresca: '#e85d9a',
-  leisure_park: '#5bbf8a',
-}
-const CLOSED_COLOR = '#5b6478'
+const FREE_COLOR = '#2fb457'
+const TAKEN_COLOR = '#e0483e'
+const PLAZA_COLOR = '#d9dde6'
+const PARK_COLOR = '#bfe3cc'
+const PLAZA_LABEL_COLOR = '#6b7385'
+const ANCHOR_COLOR = '#5b6478'
 const MARGIN = 6
 
 const level = ref(0)
@@ -63,8 +59,12 @@ const frame = computed(() => {
   return { minX, minZ, width: Math.max(...xs) - minX + MARGIN, height: Math.max(...zs) - minZ + MARGIN }
 })
 
-function zoneColor(plaza: string): string {
-  return ZONE_COLORS[plaza] ?? CLOSED_COLOR
+function isUpright(plaza: MallPlaza): boolean {
+  return plaza.bounds.maxZ - plaza.bounds.minZ > (plaza.bounds.maxX - plaza.bounds.minX) * 1.5
+}
+
+function cellColor(cell: MallCell): string {
+  return isClosed(cell) || held(cell) ? TAKEN_COLOR : FREE_COLOR
 }
 
 function isClosed(cell: MallCell): boolean {
@@ -80,9 +80,7 @@ function fits(cell: MallCell): boolean {
 }
 
 function cellOpacity(cell: MallCell): number {
-  if (isClosed(cell)) return 0.55
-  if (props.hasProps && !fits(cell)) return 0.35
-  return held(cell) && held(cell) !== props.templateKey ? 0.6 : 1
+  return props.hasProps && !isClosed(cell) && !held(cell) && !fits(cell) ? 0.35 : 1
 }
 
 function width(cell: MallCell): number {
@@ -111,7 +109,6 @@ const pickedFits = computed(() => !!picked.value && fits(picked.value))
 
 const dialogEl = ref<HTMLElement | null>(null)
 useDialogFocus(dialogEl, { onEscape: () => emit('close') })
-const zonesShown = computed(() => shownPlazas.value.filter((p) => shown.value.some((c) => c.plaza === p.id)))
 
 watch(level, () => {
   if (picked.value && picked.value.level !== level.value) picked.value = null
@@ -140,16 +137,17 @@ watch(level, () => {
               :y="plaza.bounds.minZ"
               :width="plaza.bounds.maxX - plaza.bounds.minX"
               :height="plaza.bounds.maxZ - plaza.bounds.minZ"
-              :fill="zoneColor(plaza.id)"
-              :fill-opacity="plaza.outdoor ? 0.28 : 0.1"
+              :fill="plaza.outdoor ? PARK_COLOR : PLAZA_COLOR"
+              fill-opacity="0.6"
             />
             <text
               :x="(plaza.bounds.minX + plaza.bounds.maxX) / 2"
               :y="(plaza.bounds.minZ + plaza.bounds.maxZ) / 2"
+              :transform="isUpright(plaza) ? `rotate(-90 ${(plaza.bounds.minX + plaza.bounds.maxX) / 2} ${(plaza.bounds.minZ + plaza.bounds.maxZ) / 2})` : undefined"
               text-anchor="middle"
               dominant-baseline="middle"
-              :fill="zoneColor(plaza.id)"
-              class="pointer-events-none text-[4px] font-extrabold uppercase tracking-[0.3em]"
+              :fill="PLAZA_LABEL_COLOR"
+              class="pointer-events-none text-[3px] font-extrabold uppercase tracking-[0.2em]"
             >
               {{ plaza.name }}
             </text>
@@ -161,7 +159,7 @@ watch(level, () => {
               :width="width(cell) - 0.5"
               :height="height(cell) - 0.5"
               rx="0.6"
-              :fill="isClosed(cell) ? CLOSED_COLOR : zoneColor(cell.plaza)"
+              :fill="cellColor(cell)"
               :fill-opacity="cellOpacity(cell)"
               :stroke="cell.id === picked?.id ? '#0b0e2a' : held(cell) === templateKey && templateKey ? '#ffd23f' : 'none'"
               :stroke-width="cell.id === picked?.id ? 0.9 : 0.6"
@@ -190,17 +188,15 @@ watch(level, () => {
             </text>
           </g>
           <g v-for="store in anchors" :key="store.key">
-            <circle :cx="store.position[0]" :cy="store.position[2]" r="2.2" :fill="CLOSED_COLOR" />
+            <circle :cx="store.position[0]" :cy="store.position[2]" r="2.2" :fill="ANCHOR_COLOR" />
             <text :x="store.position[0]" :y="store.position[2] + 4.5" text-anchor="middle" class="pointer-events-none fill-[#3a4256] text-[2.6px] font-bold">{{ store.name }}</text>
           </g>
         </svg>
         <aside class="flex shrink-0 flex-col gap-3 text-sm lg:w-64 lg:overflow-y-auto">
           <section class="cc-panel-flat p-3">
-            <p class="cc-eyebrow m-0 mb-2 text-mist">Zones</p>
-            <p v-for="plaza in zonesShown" :key="plaza.id" class="m-0 flex items-center gap-2 py-0.5 font-bold">
-              <span class="h-3 w-3 rounded" :style="{ background: zoneColor(plaza.id) }" />{{ plaza.name }}
-            </p>
-            <p class="m-0 mt-2 flex items-center gap-2 py-0.5 text-xs text-mist"><span class="h-3 w-3 rounded" :style="{ background: CLOSED_COLOR }" />Open store, passage, works</p>
+            <p class="cc-eyebrow m-0 mb-2 text-mist">Cells</p>
+            <p class="m-0 flex items-center gap-2 py-0.5 font-bold"><span class="h-3 w-3 rounded" :style="{ background: FREE_COLOR }" />Free</p>
+            <p class="m-0 flex items-center gap-2 py-0.5 font-bold"><span class="h-3 w-3 rounded" :style="{ background: TAKEN_COLOR }" />Occupied</p>
             <p class="m-0 flex items-center gap-2 py-0.5 text-xs text-mist"><span class="h-3 w-3 rounded border-2 border-sun" />Holds this template</p>
             <p v-if="hasProps" class="m-0 py-0.5 text-xs text-mist">Faded: another size than the props are laid out for.</p>
           </section>
