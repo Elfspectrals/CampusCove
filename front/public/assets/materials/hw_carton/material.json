@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "key": "hw_carton",
+  "label": "Hw carton",
+  "color": "#ffffff",
+  "roughness": 0.9,
+  "metalness": 0,
+  "maps": {
+    "color": "color.webp"
+  },
+  "source": "decor/metal_shelving"
+}

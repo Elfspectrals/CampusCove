@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "key": "hw_red",
+  "label": "Hw red",
+  "color": "#ffffff",
+  "roughness": 0.55,
+  "metalness": 0,
+  "maps": {
+    "color": "color.webp"
+  },
+  "source": "decor/toolbox"
+}

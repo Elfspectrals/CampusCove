@@ -1,0 +1,107 @@
+{
+  "version": 1,
+  "categories": [
+    {
+      "id": "wood",
+      "label": "Wood",
+      "keys": [
+        "walnut",
+        "oak",
+        "wood",
+        "wood_light",
+        "hw_wood"
+      ]
+    },
+    {
+      "id": "fabric",
+      "label": "Fabric",
+      "keys": [
+        "fabric_purple",
+        "fabric_mustard",
+        "fabric_coral",
+        "fabric_linen",
+        "fabric_teal",
+        "fabric_navy",
+        "fabric_olive",
+        "fabric_grey",
+        "rug_stripes",
+        "knit_cream",
+        "rug_sun"
+      ]
+    },
+    {
+      "id": "metal",
+      "label": "Metal",
+      "keys": [
+        "metal_black",
+        "brass",
+        "steel",
+        "hw_steel",
+        "hw_alu"
+      ]
+    },
+    {
+      "id": "stone",
+      "label": "Stone & ceramic",
+      "keys": [
+        "ceramic",
+        "terracotta",
+        "marble"
+      ]
+    },
+    {
+      "id": "glass",
+      "label": "Glass & plastic",
+      "keys": [
+        "screen",
+        "mirror"
+      ]
+    },
+    {
+      "id": "paint",
+      "label": "Paint",
+      "keys": [
+        "paint_yellow",
+        "paint_red",
+        "paint_white",
+        "paint_blue",
+        "paint_green",
+        "enamel_mint",
+        "hw_paint_blue",
+        "hw_paint_yellow",
+        "hw_paint_red",
+        "hw_paint_green"
+      ]
+    },
+    {
+      "id": "plants",
+      "label": "Plants",
+      "keys": [
+        "cactus",
+        "flower_pink",
+        "leaf_light",
+        "soil",
+        "leaf"
+      ]
+    },
+    {
+      "id": "other",
+      "label": "Other",
+      "keys": [
+        "water",
+        "sand",
+        "rgb_glow",
+        "lamp_shade",
+        "book_mustard",
+        "globe_ocean",
+        "hw_orange",
+        "hw_carton",
+        "hw_rubber",
+        "hw_red",
+        "hw_dark",
+        "hw_label",
+        "hw_green"
+      ]
+    }
+  ]
+}

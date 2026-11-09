@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "key": "soil",
+  "label": "Soil",
+  "color": "#816c59",
+  "roughness": 1,
+  "metalness": 0,
+  "maps": {},
+  "source": "decor/monstera"
+}

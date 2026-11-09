@@ -25,7 +25,10 @@ du Cove Parkview Mall. Le contrat technique (fichiers, repère, rebuild) est dan
 | Content Browser (bas) | Dossiers Decor (par catégorie), Sellable, NPC, Mannequin, Lights, recherche, miniatures |
 
 Les trois poignées (entre viewport et colonne de droite, entre Outliner et Détails, au-dessus du Content Browser) se
-glissent pour redimensionner ; les tailles sont mémorisées dans le navigateur. Chaque panneau défile à l'intérieur.
+glissent pour redimensionner ; les tailles sont mémorisées dans le navigateur. Chaque panneau défile à l'intérieur et se
+replie en cliquant son titre. Les listes (modèles, matériaux, textures, tenues) ont une recherche et des miniatures, les
+couleurs s'ouvrent dans un sélecteur avec carré de teinte, hex, ancienne / nouvelle couleur, couleurs récentes et pipette.
+L'échelle se règle par axe (X, Y, Z) au gizmo ou dans les Détails.
 
 ## Créer un template, pas à pas
 
@@ -49,7 +52,8 @@ glissent pour redimensionner ; les tailles sont mémorisées dans le navigateur.
 | Clic droit maintenu + WASD / Q E, Shift | Voler dans la scène (plus vite avec Shift) |
 | Molette, clic milieu | Zoom, déplacer la vue |
 | Q / W / E / R | Select / Move / Rotate / Scale |
-| Suppr ou Retour arrière | Supprimer la sélection |
+| Espace | Passer de Move à Rotate puis Scale |
+| Suppr ou Retour arrière | Supprimer la sélection (aussi la poubelle de l'Outliner et le bouton Delete des Détails) |
 | Cmd/Ctrl + D | Dupliquer |
 | Cmd/Ctrl + Z, Shift + Cmd/Ctrl + Z ou Ctrl + Y | Annuler, rétablir |
 | Échap | Annuler un placement, quitter le test, fermer la carte |
@@ -70,6 +74,9 @@ Sans sélection, le panneau **Cell** règle le mur gauche, le mur droit, le mur 
 
 Chaque surface et chaque matériau de décor accepte :
 
+- (décors) un **matériau** de la bibliothèque (`front/public/assets/materials/`, extraite des décors existants par
+  `node front/scripts/extract-materials.mjs`) : bois, tissu, métal, céramique, peinture…, avec sa texture, sa couleur et
+  son aspect mat / brillant / métallique ;
 - une **texture** de la bibliothèque (`front/public/assets/textures/`, rangée par catégorie) ;
 - une **couleur** : seule, elle repeint la matière en uni ; avec une texture, elle la teinte ;
 - une **couleur par type** (`· Bricks`, `· Mortar`, `· Planks`, `· Gaps`…) : recolore d'un coup toutes les briques, tous les

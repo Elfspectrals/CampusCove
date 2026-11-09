@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "key": "mirror",
+  "label": "Mirror",
+  "color": "#edf6fd",
+  "roughness": 0.02,
+  "metalness": 1,
+  "maps": {},
+  "source": "decor/mirror_standing"
+}

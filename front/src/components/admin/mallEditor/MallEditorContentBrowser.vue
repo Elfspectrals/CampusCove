@@ -17,9 +17,10 @@ const props = defineProps<{
   entries: ContentEntry[]
   armedId: string | null
   notice: string | null
+  collapsed: boolean
 }>()
 
-const emit = defineEmits<{ pick: [entry: ContentEntry] }>()
+const emit = defineEmits<{ pick: [entry: ContentEntry]; toggle: [] }>()
 
 const FOLDERS: Array<{ key: ContentFolder; label: string; icon: UiIconName }> = [
   { key: 'decor', label: 'Decor', icon: 'chair' },
@@ -63,9 +64,18 @@ function countIn(key: ContentFolder): number {
 </script>
 
 <template>
-  <section class="cc-panel-flat flex h-56 min-h-0 overflow-hidden">
+  <section v-if="collapsed" class="cc-panel-flat">
+    <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left" aria-expanded="false" @click="emit('toggle')">
+      <UiIcon name="chevron-right" :size="14" class="text-mist" />
+      <span class="cc-eyebrow m-0 text-mist">Content</span>
+    </button>
+  </section>
+  <section v-else class="cc-panel-flat flex min-h-0 overflow-hidden">
     <nav class="flex w-48 shrink-0 flex-col gap-0.5 overflow-y-auto border-r-2 border-ink-600/50 p-2">
-      <p class="cc-eyebrow m-0 px-2 pb-1 text-mist">Content</p>
+      <button type="button" class="flex items-center gap-2 px-2 pb-1 text-left" aria-expanded="true" @click="emit('toggle')">
+        <UiIcon name="chevron-down" :size="14" class="text-mist" />
+        <span class="cc-eyebrow m-0 text-mist">Content</span>
+      </button>
       <template v-for="f in FOLDERS" :key="f.key">
         <button
           type="button"

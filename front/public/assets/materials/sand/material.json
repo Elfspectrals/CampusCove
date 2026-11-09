@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "key": "sand",
+  "label": "Sand",
+  "color": "#f3e7cb",
+  "roughness": 1,
+  "metalness": 0,
+  "maps": {},
+  "source": "decor/cactus"
+}

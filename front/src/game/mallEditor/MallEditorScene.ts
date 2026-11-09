@@ -20,7 +20,7 @@ export type GizmoMode = 'select' | 'translate' | 'rotate' | 'scale'
 export interface PropTransform {
   position: Vec3
   yaw: number
-  scale: number
+  scale: Vec3
 }
 
 interface PlacedObject {
@@ -141,7 +141,6 @@ export class MallEditorScene {
   private gizmoMode: GizmoMode = 'translate'
   private gizmoDragging = false
   private pressAt: { x: number; y: number } | null = null
-  private scaleBeforeDrag = 1
   translationSnap = 0.1
   private rotationSnap = 0
   onSelect: (id: string | null) => void = () => {}
@@ -306,21 +305,14 @@ export class MallEditorScene {
     this.updateOrbitEnabled()
     const object = this.selectedObject()
     if (!object || !this.selectedId) return
-    if (this.gizmoDragging) {
-      this.scaleBeforeDrag = object.scale.x
-      return
-    }
+    if (this.gizmoDragging) return
     this.onTransform(this.selectedId, this.clampedTransform(object))
   }
 
   private readonly onGizmoChange = (): void => {
     const object = this.selectedObject()
     if (!object) return
-    if (this.gizmoMode === 'scale') {
-      const { x, y, z } = object.scale
-      const moved = [x, y, z].reduce((a, b) => (Math.abs(b - this.scaleBeforeDrag) > Math.abs(a - this.scaleBeforeDrag) ? b : a))
-      object.scale.setScalar(Math.max(MIN_SCALE, moved))
-    }
+    if (this.gizmoMode === 'scale') object.scale.max(new THREE.Vector3(MIN_SCALE, MIN_SCALE, MIN_SCALE))
     if (this.gizmoMode === 'rotate') {
       const yaw = new THREE.Euler().setFromQuaternion(object.quaternion, 'YXZ').y
       object.rotation.set(0, this.rotationSnap > 0 ? Math.round(yaw / this.rotationSnap) * this.rotationSnap : yaw, 0)
@@ -338,7 +330,7 @@ export class MallEditorScene {
         round(THREE.MathUtils.clamp(object.position.z, minZ, 0)),
       ],
       yaw: round(object.rotation.y),
-      scale: round(object.scale.x),
+      scale: [round(object.scale.x), round(object.scale.y), round(object.scale.z)],
     }
   }
 

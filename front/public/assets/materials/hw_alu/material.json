@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "key": "hw_alu",
+  "label": "Hw alu",
+  "color": "#ffffff",
+  "roughness": 0.3,
+  "metalness": 0,
+  "maps": {
+    "color": "color.webp"
+  },
+  "source": "decor/paint_cans"
+}

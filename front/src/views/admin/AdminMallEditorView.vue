@@ -5,6 +5,7 @@ import { DEFAULT_SLOT_COLORS } from '../../api/characterCosmetics'
 import type { WearSlot } from '../../avatar/modularCharacterLogic'
 import { fetchItemShopCatalog, type ShopItem } from '../../api/itemShop'
 import MallEditorContentBrowser, { type ContentEntry } from '../../components/admin/mallEditor/MallEditorContentBrowser.vue'
+import EditorSearchSelect, { type SelectOption } from '../../components/admin/mallEditor/EditorSearchSelect.vue'
 import MallEditorDetails from '../../components/admin/mallEditor/MallEditorDetails.vue'
 import MallEditorOutliner from '../../components/admin/mallEditor/MallEditorOutliner.vue'
 import MallMapModal, { type MallPlaza, type MallStoreMark } from '../../components/admin/mallEditor/MallMapModal.vue'
@@ -14,12 +15,13 @@ import type { UiIconName } from '../../components/ui/icons'
 import { MallEditorScene, type GizmoMode, type PropTransform } from '../../game/mallEditor/MallEditorScene'
 import { MALL_TEMPLATE_ASSIGNMENTS_URL, mallTemplateUrl } from '../../game/mallTemplates/mallTemplateFiles'
 import { decorParts, type MaterialSlot } from '../../game/mallTemplates/templateProps'
-import { TEXTURES_URL } from '../../game/mallTemplates/templateSurfaces'
+import { MATERIALS_URL, TEXTURES_URL } from '../../game/mallTemplates/templateSurfaces'
 import {
   cellPresets,
   itemModelUrl,
   parseCategories,
   parseMallTemplate,
+  parseMaterialMeta,
   parseTemplateAssignments,
   parseTextureMeta,
   MAX_LIGHTS,
@@ -53,6 +55,14 @@ const GIZMO_MODES: Array<{ mode: GizmoMode; icon: UiIconName; label: string; key
   { mode: 'rotate', icon: 'rotate-right', label: 'Rotate', key: 'KeyE' },
   { mode: 'scale', icon: 'box', label: 'Scale', key: 'KeyR' },
 ]
+const templateChoices = computed<SelectOption[]>(() =>
+  templateList.value.map((t) => ({ value: t.key, label: t.name, group: `${t.preset.width} × ${t.preset.depth} m` })),
+)
+
+function snapChoices(values: readonly number[], unit: string): SelectOption[] {
+  return values.map((v) => ({ value: String(v), label: v === 0 ? 'off' : `${v}${unit}` }))
+}
+
 const TRANSLATION_SNAPS = [0, 0.05, 0.1, 0.25, 0.5, 1]
 const ROTATION_SNAPS = [0, 5, 10, 15, 45, 90]
 const SCALE_SNAPS = [0, 0.1, 0.25, 0.5]
@@ -78,9 +88,26 @@ const editorAssets = ref<EditorAssets | null>(null)
 const decorKeyList = ref<string[]>([])
 const saleCodes = ref<Record<string, string>>({})
 const wearSaleCodes = ref<Record<string, string>>({})
-const textureOptions = ref<Record<string, string>>({})
+const textureOptions = ref<SelectOption[]>([])
+const decorGroups = ref<Record<string, string>>({})
+const decorOptions = computed<SelectOption[]>(() =>
+  decorKeyList.value.map((key) => ({ value: key, label: key.split('_').join(' '), group: decorGroups.value[key], preview: `/assets/decor/${key}/preview.png` })),
+)
 const materialSlotsById = ref<Record<string, MaterialSlot[]>>({})
 const texturePartsByKey = ref<Record<string, TexturePart[]>>({})
+const materialOptions = ref<SelectOption[]>([])
+
+async function loadMaterialOptions(): Promise<SelectOption[]> {
+  const categories = parseCategories(await readJson(`${MATERIALS_URL}/categories.json`))
+  const metas = await Promise.all(categories.flatMap((category) => category.keys.map(async (key) => ({ category, meta: parseMaterialMeta(await readJson(`${MATERIALS_URL}/${key}/material.json`), key) }))))
+  return metas.map(({ category, meta }) => ({
+    value: meta.key,
+    label: meta.label,
+    group: category.label,
+    preview: meta.maps.color ? `${MATERIALS_URL}/${meta.key}/${meta.maps.color}` : null,
+    swatch: meta.color,
+  }))
+}
 const ownParts = ref<Record<string, TexturePart[]>>({})
 
 const armedId = ref<string | null>(null)
@@ -101,6 +128,7 @@ const PANELS_KEY = 'cc.admin.mallEditor.panels.v1'
 const PANEL_LIMITS = { aside: [240, 640], outliner: [120, 600], browser: [140, 520] } as const
 type PanelKey = keyof typeof PANEL_LIMITS
 const panels = ref<Record<PanelKey, number>>(readPanels())
+const collapsed = ref({ outliner: false, details: false, browser: false })
 
 function readPanels(): Record<PanelKey, number> {
   const defaults = { aside: 320, outliner: 256, browser: 224 }
@@ -384,10 +412,14 @@ function applyTransform(id: string, transform: PropTransform): void {
   prop.scale = transform.scale
 }
 
+function removeProp(id: string): void {
+  template.value.props = template.value.props.filter((p) => p.id !== id)
+  if (selectedId.value === id) selectedId.value = null
+  hiddenIds.value = hiddenIds.value.filter((h) => h !== id)
+}
+
 function deleteSelected(): void {
-  if (!selectedId.value) return
-  template.value.props = template.value.props.filter((p) => p.id !== selectedId.value)
-  selectedId.value = null
+  if (selectedId.value) removeProp(selectedId.value)
 }
 
 function duplicateSelected(): void {
@@ -438,6 +470,13 @@ function onKeyDown(event: KeyboardEvent): void {
     deleteSelected()
     return
   }
+  if (event.code === 'Space') {
+    if ((event.target as HTMLElement | null)?.closest?.('button, a, [role=option]')) return
+    event.preventDefault()
+    const cycle: GizmoMode[] = ['translate', 'rotate', 'scale']
+    gizmoMode.value = cycle[(cycle.indexOf(gizmoMode.value) + 1) % cycle.length]!
+    return
+  }
   const mode = GIZMO_MODES.find((m) => m.key === event.code)
   if (mode) gizmoMode.value = mode.mode
 }
@@ -473,7 +512,7 @@ function decorEntry(key: string, group: string): PlaceableEntry {
     label: key.split('_').join(' '),
     preview: `/assets/decor/${key}/preview.png`,
     modelUrl: decorModelUrl(key),
-    create: (id, position) => ({ id, kind: 'decor', key, position, yaw: 0, scale: 1 }),
+    create: (id, position) => ({ id, kind: 'decor', key, position, yaw: 0, scale: [1, 1, 1] }),
   }
 }
 
@@ -495,7 +534,7 @@ function sellableEntry(item: ShopItem, groupOfDecor: (key: string) => string): P
     label: item.name,
     preview: item.preview_image,
     modelUrl: item.model_glb,
-    create: (id, position) => ({ id, kind: 'item', key, code: item.code, forSale: true, position, yaw: 0, scale: 1 }),
+    create: (id, position) => ({ id, kind: 'item', key, code: item.code, forSale: true, position, yaw: 0, scale: [1, 1, 1] }),
   }
 }
 
@@ -511,7 +550,7 @@ const MANNEQUIN_ENTRY: PlaceableEntry = {
     kind: 'mannequin',
     position,
     yaw: 0,
-    scale: 1,
+    scale: [1, 1, 1],
     body: MANNEQUIN_BODY,
     outfit: DEFAULT_MANNEQUIN_OUTFIT.map(({ slot, key }) => ({ slot, key, color: DEFAULT_SLOT_COLORS[slot], forSale: false })),
   }),
@@ -529,7 +568,7 @@ const NPC_ENTRY: PlaceableEntry = {
     kind: 'npc',
     position,
     yaw: 0,
-    scale: 1,
+    scale: [1, 1, 1],
     pose: 'idle',
     vendor: false,
     body: DEFAULT_SLOT_COLORS.body,
@@ -556,7 +595,7 @@ function lightEntry(light: 'point' | 'spot', label: string): PlaceableEntry {
       light,
       position: [x, 3.2, z],
       yaw: 0,
-      scale: 1,
+      scale: [1, 1, 1],
       color: '#ffd9a0',
       intensity: 20,
       range: 6,
@@ -599,13 +638,13 @@ async function loadEditorAssets(): Promise<EditorAssets | null> {
   return body
 }
 
-async function loadTextureOptions(): Promise<Record<string, string>> {
+async function loadTextureOptions(): Promise<SelectOption[]> {
   const categories = parseCategories(await readJson(`${TEXTURES_URL}/categories.json`))
   const metas = await Promise.all(
     categories.flatMap((category) => category.keys.map(async (key) => ({ category, meta: parseTextureMeta(await readJson(`${TEXTURES_URL}/${key}/texture.json`), key) }))),
   )
   texturePartsByKey.value = Object.fromEntries(metas.flatMap(({ meta }) => (meta.parts ? [[meta.key, meta.parts]] : [])))
-  return Object.fromEntries(metas.map(({ category, meta }) => [`${category.label} · ${meta.label}`, meta.key]))
+  return metas.map(({ category, meta }) => ({ value: meta.key, label: meta.label, group: category.label, preview: `${TEXTURES_URL}/${meta.key}/${meta.maps.color}` }))
 }
 
 async function loadContent(): Promise<void> {
@@ -624,6 +663,7 @@ async function loadContent(): Promise<void> {
   ]
   editorAssets.value = assets
   decorKeyList.value = decorKeys
+  decorGroups.value = Object.fromEntries(decorKeys.map((key) => [key, groupOfDecor(key)]))
   const codesByDecor = new Map<string, string[]>()
   for (const item of placeable) {
     const key = decorKeyOf(item)
@@ -642,7 +682,9 @@ async function loadContent(): Promise<void> {
   contentNotice.value = notices.length ? notices.join(' ') : null
   saleCodes.value = Object.fromEntries([...codesByDecor].filter(([, codes]) => codes.length === 1).map(([key, codes]) => [key, codes[0]!]))
   entries.value = [...decorKeys.map((key) => decorEntry(key, groupOfDecor(key))), ...sellable, NPC_ENTRY, MANNEQUIN_ENTRY, lightEntry('point', 'Point light'), lightEntry('spot', 'Spot light')]
-  textureOptions.value = await loadTextureOptions()
+  const [textures, materials] = await Promise.all([loadTextureOptions(), loadMaterialOptions()])
+  textureOptions.value = textures
+  materialOptions.value = materials
 }
 
 onMounted(async () => {
@@ -682,7 +724,8 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="flex h-full min-h-0 w-full flex-col overflow-hidden bg-ink-950 text-fog">
+  <div class="h-full w-full overflow-auto bg-ink-950">
+  <div class="flex h-full min-h-[680px] w-full min-w-[900px] flex-col text-fog">
     <header class="cc-panel-flat m-2 mb-0 flex flex-wrap items-center gap-3 px-4 py-2">
       <h1 class="cc-display m-0 text-xl text-sun">Mall Editor</h1>
       <input v-model.trim="template.name" placeholder="Template name" class="cc-input w-44 py-1.5 text-sm" />
@@ -698,10 +741,7 @@ onUnmounted(() => {
       </button>
       <div class="ml-auto flex flex-wrap items-center gap-1">
         <button type="button" class="cc-btn cc-btn-sm cc-btn-ghost" @click="newTemplate">New</button>
-        <select v-model="openKey" class="cc-input w-auto py-1.5 text-sm" @change="openTemplate(openKey)">
-          <option value="">Open…</option>
-          <option v-for="t in templateList" :key="t.key" :value="t.key">{{ t.name }} ({{ t.preset.width }}×{{ t.preset.depth }})</option>
-        </select>
+        <EditorSearchSelect class="w-48" :model-value="openKey" :options="templateChoices" placeholder="Open…" @update:model-value="openTemplate" />
         <button v-if="CAN_WRITE" type="button" class="cc-btn cc-btn-sm cc-btn-sun" :disabled="!keyValid || !template.name" @click="saveTemplate">
           Save<span v-if="dirty"> •</span>
         </button>
@@ -733,41 +773,51 @@ onUnmounted(() => {
           </button>
           <label class="ml-2 flex items-center gap-1 text-mist" title="Grid snap (m)">
             <UiIcon name="grid" :size="14" />
-            <select v-model.number="translationSnap" class="rounded bg-ink-950/70 px-1 py-0.5 text-fog">
-              <option v-for="v in TRANSLATION_SNAPS" :key="v" :value="v">{{ v === 0 ? 'off' : v }}</option>
-            </select>
+            <EditorSearchSelect class="w-16" :model-value="String(translationSnap)" :options="snapChoices(TRANSLATION_SNAPS, '')" :searchable="false" @update:model-value="translationSnap = Number($event)" />
           </label>
           <label class="flex items-center gap-1 text-mist" title="Rotation snap (°)">
             <UiIcon name="rotate-right" :size="14" />
-            <select v-model.number="rotationSnap" class="rounded bg-ink-950/70 px-1 py-0.5 text-fog">
-              <option v-for="v in ROTATION_SNAPS" :key="v" :value="v">{{ v === 0 ? 'off' : `${v}°` }}</option>
-            </select>
+            <EditorSearchSelect class="w-16" :model-value="String(rotationSnap)" :options="snapChoices(ROTATION_SNAPS, '°')" :searchable="false" @update:model-value="rotationSnap = Number($event)" />
           </label>
           <label class="flex items-center gap-1 text-mist" title="Scale snap">
             <UiIcon name="box" :size="14" />
-            <select v-model.number="scaleSnap" class="rounded bg-ink-950/70 px-1 py-0.5 text-fog">
-              <option v-for="v in SCALE_SNAPS" :key="v" :value="v">{{ v === 0 ? 'off' : v }}</option>
-            </select>
+            <EditorSearchSelect class="w-16" :model-value="String(scaleSnap)" :options="snapChoices(SCALE_SNAPS, '')" :searchable="false" @update:model-value="scaleSnap = Number($event)" />
           </label>
         </div>
       </div>
       <div class="w-1.5 shrink-0 cursor-col-resize rounded bg-ink-800 hover:bg-pool/60" title="Drag to resize" @pointerdown="startResize('aside', $event)" />
       <aside class="flex min-h-0 shrink-0 flex-col" :style="{ width: `${panels.aside}px` }">
-        <MallEditorOutliner class="shrink-0" :style="{ height: `${panels.outliner}px` }" :props="template.props" :selected-id="selectedId" :hidden="hiddenIds" @select="selectedId = $event" @toggle-hidden="toggleHidden" />
-        <div class="my-1 h-1.5 shrink-0 cursor-row-resize rounded bg-ink-800 hover:bg-pool/60" title="Drag to resize" @pointerdown="startResize('outliner', $event)" />
+        <MallEditorOutliner
+          :class="collapsed.details && !collapsed.outliner ? 'min-h-0 flex-1' : 'shrink-0'"
+          :style="collapsed.outliner || collapsed.details ? undefined : { height: `${panels.outliner}px` }"
+          :props="template.props"
+          :selected-id="selectedId"
+          :hidden="hiddenIds"
+          :collapsed="collapsed.outliner"
+          @select="selectedId = $event"
+          @toggle-hidden="toggleHidden"
+          @remove="removeProp"
+          @toggle="collapsed.outliner = !collapsed.outliner"
+        />
+        <div v-if="!collapsed.outliner && !collapsed.details" class="my-1 h-1.5 shrink-0 cursor-row-resize rounded bg-ink-800 hover:bg-pool/60" title="Drag to resize" @pointerdown="startResize('outliner', $event)" />
+        <div v-else class="h-2 shrink-0" />
         <MallEditorDetails
-          class="min-h-0 flex-1"
+          :class="collapsed.details ? 'shrink-0' : 'min-h-0 flex-1'"
+          :collapsed="collapsed.details"
+          @remove="removeProp"
+          @toggle="collapsed.details = !collapsed.details"
           :prop="selectedProp"
-          :decor-keys="decorKeyList"
+          :decor-options="decorOptions"
           :wear="editorAssets?.wear ?? emptyWear"
           :vendor-taken="vendorTaken"
           :preset="template.preset"
           :sale-codes="saleCodes"
           :wear-sale-codes="wearSaleCodes"
           :surfaces="template.surfaces"
-          :textures="textureOptions"
+          :texture-options="textureOptions"
           :texture-parts="texturePartsByKey"
           :own-parts="ownParts"
+          :material-options="materialOptions"
           :material-slots="selectedProp?.kind === 'decor' ? (materialSlotsById[selectedProp.id] ?? []) : []"
           @change="replaceProp"
           @surfaces="setSurfaces"
@@ -791,7 +841,13 @@ onUnmounted(() => {
       @assign="assignFromMap"
       @clear="clearFromMap"
     />
-    <div class="mx-2 mb-1 h-1.5 shrink-0 cursor-row-resize rounded bg-ink-800 hover:bg-pool/60" title="Drag to resize" @pointerdown="startResize('browser', $event)" />
-    <MallEditorContentBrowser class="m-2 mt-0 shrink-0" :style="{ height: `${panels.browser}px` }" :entries="entries" :armed-id="armedId" :notice="contentNotice" @pick="pick" />
+    <div v-if="!collapsed.browser" class="mx-2 mb-1 h-1.5 shrink-0 cursor-row-resize rounded bg-ink-800 hover:bg-pool/60" title="Drag to resize" @pointerdown="startResize('browser', $event)" />
+    <MallEditorContentBrowser
+      class="m-2 mt-0 shrink-0"
+      :style="collapsed.browser ? undefined : { height: `${panels.browser}px` }"
+      :collapsed="collapsed.browser"
+      @toggle="collapsed.browser = !collapsed.browser"
+      :entries="entries" :armed-id="armedId" :notice="contentNotice" @pick="pick" />
+  </div>
   </div>
 </template>

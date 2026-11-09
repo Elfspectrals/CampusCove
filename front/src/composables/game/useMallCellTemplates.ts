@@ -133,7 +133,8 @@ export function useMallCellTemplates(deps: MallCellTemplatesDeps) {
     if (prop.kind === 'mannequin') store?.bindFigure(prop.id, object)
     const feet = object.getWorldPosition(new THREE.Vector3())
     const { hx, hy, hz } = NPC_HALF_EXTENTS
-    block(blockerKey(cellId, prop.id, 0), { cx: feet.x, cy: feet.y + hy * prop.scale, cz: feet.z, hx: hx * prop.scale, hy: hy * prop.scale, hz: hz * prop.scale, qx: 0, qy: 0, qz: 0, qw: 1 })
+    const [sx, sy, sz] = prop.scale
+    block(blockerKey(cellId, prop.id, 0), { cx: feet.x, cy: feet.y + hy * sy, cz: feet.z, hx: hx * Math.max(sx, sz), hy: hy * sy, hz: hz * Math.max(sx, sz), qx: 0, qy: 0, qz: 0, qw: 1 })
   }
 
   async function fillCell({ cell, template }: FilledCell): Promise<void> {

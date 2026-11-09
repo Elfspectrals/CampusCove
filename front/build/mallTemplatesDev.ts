@@ -101,7 +101,11 @@ function mallTemplatesApi(assets: string) {
       ...Object.entries(template.surfaces ?? {}).map(([surface, look]) => [surface, look.texture] as const),
       ...template.props.flatMap((prop) => (prop.kind === 'decor' ? Object.entries(prop.materials ?? {}).map(([name, look]) => [`${prop.id}.${name}`, look.texture] as const) : [])),
     ]
-    const textures = looks.filter(([, key]) => key && !existsSync(join(assets, 'textures', key, 'texture.json'))).map(([where, key]) => `${where}: textures/${key}`)
+    const libraryMaterials = template.props.flatMap((prop) => (prop.kind === 'decor' ? Object.entries(prop.materials ?? {}).flatMap(([name, look]) => (look.material ? [[`${prop.id}.${name}`, look.material] as const] : [])) : []))
+    const textures = [
+      ...looks.filter(([, key]) => key && !existsSync(join(assets, 'textures', key, 'texture.json'))).map(([where, key]) => `${where}: textures/${key}`),
+      ...libraryMaterials.filter(([, key]) => !existsSync(join(assets, 'materials', key, 'material.json'))).map(([where, key]) => `${where}: materials/${key}`),
+    ]
     if (missing.length || textures.length) throw new HttpError(400, `missing assets: ${[...missing, ...textures].join(', ')}`)
   }
 

@@ -288,7 +288,7 @@ export interface StoreDisplay {
   size: [number, number, number]
   /** Copies lined up on the spot as [columns, rows] (small goods on a shelf); one model when omitted. */
   stack?: [number, number]
-  scale?: number
+  scale?: [number, number, number]
   figure?: { prop: string; slot: string }
   /** Price-tag board (centre) at the edge of the route. */
   tag: { position: [number, number, number]; yaw: number }

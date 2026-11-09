@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "key": "book_mustard",
+  "label": "Book mustard",
+  "color": "#edce7c",
+  "roughness": 0.8,
+  "metalness": 0,
+  "maps": {},
+  "source": "decor/dining_table"
+}

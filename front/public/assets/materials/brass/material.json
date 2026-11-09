@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "key": "brass",
+  "label": "Brass",
+  "color": "#edd395",
+  "roughness": 0.3,
+  "metalness": 1,
+  "maps": {},
+  "source": "decor/bathtub"
+}

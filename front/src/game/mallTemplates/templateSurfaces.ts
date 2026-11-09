@@ -1,8 +1,59 @@
 import * as THREE from 'three'
-import { CEILING_HEIGHT, parseTextureMeta, presetArea, type CellArea, type MallTemplate, type MaterialLook, type Surface, type TextureMeta, type TexturePart } from './mallTemplate.ts'
+import { CEILING_HEIGHT, parseMaterialMeta, parseTextureMeta, type MaterialMeta, presetArea, type CellArea, type MallTemplate, type MaterialLook, type Surface, type TextureMeta, type TexturePart } from './mallTemplate.ts'
 import { hexToRgb, recolorPixels } from './partRecolor.ts'
 
 export const TEXTURES_URL = '/assets/textures'
+export const MATERIALS_URL = '/assets/materials'
+const materialMetas = new Map<string, Promise<MaterialMeta>>()
+
+function materialMeta(key: string): Promise<MaterialMeta> {
+  let meta = materialMetas.get(key)
+  if (!meta) {
+    meta = fetch(`${MATERIALS_URL}/${key}/material.json`).then(async (response) => {
+      if (!response.ok || !response.headers.get('content-type')?.includes('json')) throw new Error(`${MATERIALS_URL}/${key}/material.json: missing`)
+      return parseMaterialMeta(await response.json(), key)
+    })
+    meta.catch(() => materialMetas.delete(key))
+    materialMetas.set(key, meta)
+  }
+  return meta
+}
+
+const materialMaps = new Map<string, Promise<THREE.Texture>>()
+
+function materialMap(url: string): Promise<THREE.Texture> {
+  let map = materialMaps.get(url)
+  if (!map) {
+    map = loader.loadAsync(url)
+    map.catch(() => materialMaps.delete(url))
+    materialMaps.set(url, map)
+  }
+  return map
+}
+
+async function applyLibraryMaterial(material: THREE.MeshStandardMaterial, key: string): Promise<void> {
+  const meta = await materialMeta(key)
+  if (meta.maps.color && material.userData.flatOnly) throw new Error(`${material.name} has no texture coordinates to take the ${key} material`)
+  const previous = material.map
+  material.map = meta.maps.color ? (await materialMap(`${MATERIALS_URL}/${key}/${meta.maps.color}`)).clone() : null
+  if (material.map) {
+    material.map.colorSpace = THREE.SRGBColorSpace
+    material.map.magFilter = THREE.NearestFilter
+    material.map.wrapS = THREE.RepeatWrapping
+    material.map.wrapT = THREE.RepeatWrapping
+    if (previous) {
+      material.map.flipY = previous.flipY
+      material.map.repeat.copy(previous.repeat)
+      material.map.offset.copy(previous.offset)
+      material.map.channel = previous.channel
+    } else {
+      material.map.flipY = false
+    }
+  }
+  material.color.set(meta.color)
+  material.roughness = meta.roughness
+  material.metalness = meta.metalness
+}
 const PANEL_OFFSET = 0.005
 
 const metas = new Map<string, Promise<TextureMeta>>()
@@ -92,7 +143,7 @@ function maskPixels(url: string): Promise<Uint8ClampedArray> {
   return mask
 }
 
-export async function recolorTexture(source: THREE.Texture, maskUrl: string, parts: readonly TexturePart[], colors: Record<string, string>): Promise<THREE.Texture> {
+async function recolorTexture(source: THREE.Texture, maskUrl: string, parts: readonly TexturePart[], colors: Record<string, string>): Promise<THREE.Texture> {
   const image = source.image as HTMLImageElement
   const color = pixelsOf(image)
   const recolored = recolorPixels(color, await maskPixels(maskUrl), parts.map((p) => hexToRgb(p.color)), parts.map((p) => (colors[p.id] ? hexToRgb(colors[p.id]!) : null)))
@@ -113,11 +164,7 @@ export async function recolorTexture(source: THREE.Texture, maskUrl: string, par
   return texture
 }
 
-export function textureParts(key: string): Promise<TexturePart[]> {
-  return textureMeta(key).then((meta) => meta.parts ?? [])
-}
-
-export async function libraryTexture(key: string, metresPerUv: [number, number], partColors: Record<string, string> = {}): Promise<THREE.Texture> {
+async function libraryTexture(key: string, metresPerUv: [number, number], partColors: Record<string, string> = {}): Promise<THREE.Texture> {
   const meta = await textureMeta(key)
   const base = await colorMap(meta)
   const recolor = meta.maps.mask && meta.parts && Object.keys(partColors).length > 0
@@ -133,7 +180,10 @@ export interface OwnParts {
 }
 
 export async function applyLook(material: THREE.MeshStandardMaterial, look: MaterialLook, metresPerUv: [number, number], ownParts?: OwnParts): Promise<void> {
-  if (look.texture) {
+  if (look.material) {
+    await applyLibraryMaterial(material, look.material)
+    if (look.color) material.color.set(look.color)
+  } else if (look.texture) {
     material.map = await libraryTexture(look.texture, metresPerUv, look.parts)
     material.color.set(look.color ?? '#ffffff')
   } else if (look.color) {
@@ -162,7 +212,7 @@ export async function createSurfacePanels(template: Pick<MallTemplate, 'preset' 
   group.name = 'CellSurfaces'
   const results = await Promise.allSettled(Object.entries(template.surfaces ?? {}).map(([surface, look]) => createPanel(surface as Surface, look, area)))
   const panels = results.flatMap((r) => (r.status === 'fulfilled' ? [r.value] : []))
-  group.add(...panels)
+  if (panels.length) group.add(...panels)
   const failed = results.find((r): r is PromiseRejectedResult => r.status === 'rejected')
   if (failed) {
     disposeSurfacePanels(group)

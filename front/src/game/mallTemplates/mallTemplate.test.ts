@@ -11,6 +11,7 @@ import {
   parseCategories,
   parseDecorParts,
   parseMallTemplate,
+  parseMaterialMeta,
   parseTemplateAssignments,
   parseTextureMeta,
   templateStoreLayout,
@@ -33,10 +34,10 @@ const template = {
   name: 'Book Nook',
   preset: { width: 12.5, depth: 12 },
   props: [
-    { id: 'a1', kind: 'decor', key: 'sofa_classic', position: [-3, 0, -4], yaw: 1.5708, scale: 1 },
-    { id: 'a2', kind: 'item', key: 'floor_lamp', code: 'decor_floor_lamp', forSale: true, position: [2, 0, -6], yaw: 0, scale: 1, stack: [2, 1] },
-    { id: 'a3', kind: 'npc', position: [0, 0, -9], yaw: 0, scale: 1, pose: 'idle', vendor: true, body: '#8b7aa8', outfit: [{ slot: 'top', key: 'tee', color: '#2f6b4f' }] },
-    { id: 'a4', kind: 'mannequin', position: [-2, 0, -2], yaw: 0, scale: 1, body: '#e8e4dc', outfit: [{ slot: 'top', key: 'hoodie', color: '#c0392b', forSale: true, code: 'COS_WEAR_TOP_HOODIE' }, { slot: 'bottom', key: 'jeans', color: '#2f4f6b', forSale: false }] },
+    { id: 'a1', kind: 'decor', key: 'sofa_classic', position: [-3, 0, -4], yaw: 1.5708, scale: [1, 1, 1] },
+    { id: 'a2', kind: 'item', key: 'floor_lamp', code: 'decor_floor_lamp', forSale: true, position: [2, 0, -6], yaw: 0, scale: [1, 1, 1], stack: [2, 1] },
+    { id: 'a3', kind: 'npc', position: [0, 0, -9], yaw: 0, scale: [1, 1, 1], pose: 'idle', vendor: true, body: '#8b7aa8', outfit: [{ slot: 'top', key: 'tee', color: '#2f6b4f' }] },
+    { id: 'a4', kind: 'mannequin', position: [-2, 0, -2], yaw: 0, scale: [1, 1, 1], body: '#e8e4dc', outfit: [{ slot: 'top', key: 'hoodie', color: '#c0392b', forSale: true, code: 'COS_WEAR_TOP_HOODIE' }, { slot: 'bottom', key: 'jeans', color: '#2f4f6b', forSale: false }] },
   ],
 }
 
@@ -99,7 +100,7 @@ test('a broken template says what is wrong and where', () => {
   }
   assert.throws(broken((t) => (t.key = 'Book Nook')), /template\.key/)
   assert.throws(broken((t) => ((t.props[0] as Record<string, unknown>).position = [0, Number.NaN, 0])), /props\[0\]\.position\[1\]/)
-  assert.throws(broken((t) => ((t.props[0] as Record<string, unknown>).scale = 0)), /props\[0\]\.scale/)
+  assert.throws(broken((t) => ((t.props[0] as Record<string, unknown>).scale = [1, 0, 1])), /props\[0\]\.scale\[1\]/)
   assert.throws(broken((t) => ((t.props[1] as Record<string, unknown>).id = 'a1')), /"a1" is used twice/)
   assert.throws(broken((t) => ((t.props[1] as Record<string, unknown>).stack = [0, 1])), /props\[1\]\.stack/)
   assert.throws(broken((t) => ((t.props[2] as Record<string, unknown>).outfit = [{ slot: 'cape', key: 'x', color: '#000000' }])), /outfit\[0\]\.slot/)
@@ -125,7 +126,7 @@ test('a broken template says what is wrong and where', () => {
   assert.throws(broken((t) => ((t.props[2] as Record<string, unknown>).outfit = [{ slot: 'top', key: '../x', color: '#000000' }])), /outfit\[0\]\.key/)
   assert.throws(broken((t) => (t.preset.width = 0)), /preset\.width/)
   assert.throws(broken((t) => ((t.props[2] as Record<string, unknown>).pose = 'sit')), /the vendor stands/)
-  assert.throws(broken((t) => ((t.props[2] as Record<string, unknown>).scale = 1.2)), /the vendor stands/)
+  assert.throws(broken((t) => ((t.props[2] as Record<string, unknown>).scale = [1, 1.2, 1])), /the vendor stands/)
 })
 
 test('props stay inside the cell: between the side walls, behind the glass, on or above the floor', () => {
@@ -192,7 +193,7 @@ test('every decor folder sits in exactly one category of decor/categories.json',
 })
 
 test('lights: point or spot with colour, intensity and range, at most 8 per cell', () => {
-  const point = { id: 'l1', kind: 'light', light: 'point', position: [0, 3, -4], yaw: 0, scale: 1, color: '#ffd9a0', intensity: 8, range: 8 }
+  const point = { id: 'l1', kind: 'light', light: 'point', position: [0, 3, -4], yaw: 0, scale: [1, 1, 1], color: '#ffd9a0', intensity: 8, range: 8 }
   const spot = { ...point, id: 'l2', light: 'spot', angle: Math.PI / 6, pitch: Math.PI / 2 }
   const withProps = (props: unknown[]) => () => parseMallTemplate({ ...structuredClone(template), props: [...structuredClone(template.props), ...props] })
   assert.doesNotThrow(withProps([point, spot]))
@@ -208,7 +209,7 @@ test('surfaces and decor materials take a texture, a colour or both', () => {
   assert.deepEqual(parseMallTemplate({ ...structuredClone(template), surfaces }).surfaces, surfaces)
   assert.throws(() => parseMallTemplate({ ...structuredClone(template), surfaces: { front: { texture: 'brick' } } }), /surfaces\.front: unknown field/)
   assert.throws(() => parseMallTemplate({ ...structuredClone(template), surfaces: { back: { texture: '../x' } } }), /surfaces\.back\.texture/)
-  assert.throws(() => parseMallTemplate({ ...structuredClone(template), surfaces: { back: {} } }), /expected a texture, a color, part colors or a mix/)
+  assert.throws(() => parseMallTemplate({ ...structuredClone(template), surfaces: { back: {} } }), /expected a material, a texture, a color, part colors or a mix/)
   const t = structuredClone(template) as typeof template & { props: Record<string, unknown>[] }
   t.props[0]!.materials = { DC_sofa_classic_Fabric: { color: '#aa2233' } }
   assert.deepEqual((parseMallTemplate(t).props[0] as { materials?: unknown }).materials, { DC_sofa_classic_Fabric: { color: '#aa2233' } })
@@ -261,4 +262,18 @@ test('every decor parts.json is valid and its masks exist', () => {
     const materials = parseDecorParts(JSON.parse(readFileSync(new URL(`${key}/parts.json`, dir), 'utf8')), key)
     for (const { mask } of Object.values(materials)) assert.ok(existsSync(new URL(`${key}/${mask}`, dir)), `${key}/${mask}`)
   }
+})
+
+test('every library material has a valid material.json and sits in one category', () => {
+  const dir = new URL('../../../public/assets/materials/', import.meta.url)
+  const categories = parseCategories(JSON.parse(readFileSync(new URL('categories.json', dir), 'utf8')))
+  const folders = readdirSync(dir).filter((name) => statSync(new URL(name, dir)).isDirectory()).sort()
+  assert.deepEqual(categories.flatMap((c) => c.keys).sort(), folders)
+  for (const key of folders) {
+    const meta = parseMaterialMeta(JSON.parse(readFileSync(new URL(`${key}/material.json`, dir), 'utf8')), key)
+    if (meta.maps.color) assert.ok(existsSync(new URL(`${key}/${meta.maps.color}`, dir)), `${key}: ${meta.maps.color} missing`)
+  }
+  const t = structuredClone(template) as typeof template & { props: Record<string, unknown>[] }
+  t.props[0]!.materials = { DC_Oak: { material: 'walnut' } }
+  assert.deepEqual((parseMallTemplate(t).props[0] as { materials?: unknown }).materials, { DC_Oak: { material: 'walnut' } })
 })

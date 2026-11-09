@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "key": "rug_sun",
+  "label": "Rug sun",
+  "color": "#ffffff",
+  "roughness": 1,
+  "metalness": 0,
+  "maps": {
+    "color": "color.webp"
+  },
+  "source": "decor/rug_round"
+}

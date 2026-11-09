@@ -162,12 +162,13 @@ async function applyMaterialLooks(model: THREE.Object3D, key: string, looks: Non
       if (!copy) {
         copy = material.clone()
         copies.set(material, copy)
-        const tile = look.texture ? metresPerUv(model, material.name) : 1
-        if (tile === null) throw new Error(`${material.name} has no texture coordinates to take ${look.texture}`)
-        copy.userData.lookMap = Boolean(look.texture || look.parts)
+        const tile = look.texture || look.material ? metresPerUv(model, material.name) : 1
+        if (tile === null && look.texture) throw new Error(`${material.name} has no texture coordinates to take ${look.texture}`)
+        copy.userData.lookMap = Boolean(look.texture || look.parts || look.material)
+        copy.userData.flatOnly = tile === null
         const parts = own[material.name]
         const ownParts: OwnParts | undefined = parts ? { maskUrl: `/assets/decor/${key}/${parts.mask}`, parts: parts.parts } : undefined
-        pending.push(applyLook(copy, look, [tile, tile], ownParts))
+        pending.push(applyLook(copy, look, [tile ?? 1, tile ?? 1], ownParts))
       }
       obj.userData.sharedMaterials = false
       return copy
@@ -189,5 +190,5 @@ export async function createPropObject(prop: TemplateProp): Promise<THREE.Object
 export function placeProp(object: THREE.Object3D, prop: TemplateProp): void {
   object.position.fromArray(prop.position)
   object.rotation.set(0, prop.yaw, 0)
-  object.scale.setScalar(prop.scale)
+  object.scale.fromArray(prop.scale)
 }

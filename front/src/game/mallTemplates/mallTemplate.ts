@@ -32,13 +32,24 @@ interface PropBase {
   id: string
   position: Vec3
   yaw: number
-  scale: number
+  scale: Vec3
 }
 
 export interface MaterialLook {
+  material?: string
   texture?: string
   color?: string
   parts?: Record<string, string>
+}
+
+export interface MaterialMeta {
+  version: 1
+  key: string
+  label: string
+  color: string
+  roughness: number
+  metalness: number
+  maps: { color?: string }
 }
 
 export interface TexturePart {
@@ -66,7 +77,7 @@ export interface ItemProp extends PropBase {
   stack?: [number, number]
 }
 
-interface OutfitPiece {
+export interface OutfitPiece {
   slot: WearSlot
   key: string
   color: string
@@ -82,7 +93,7 @@ export interface NpcProp extends PropBase {
   outfit: OutfitPiece[]
 }
 
-interface MannequinPiece extends OutfitPiece {
+export interface MannequinPiece extends OutfitPiece {
   forSale: boolean
   code?: string
 }
@@ -252,9 +263,9 @@ function mannequinDisplays(prop: MannequinProp): StoreDisplay[] {
       code: piece.code,
       department: TEMPLATE_DEPARTMENT,
       description: '',
-      position: [x, y + (PIECE_HEIGHT[piece.slot] - PIECE_SIZE[1] / 2) * prop.scale, z] as Vec3,
+      position: [x, y + (PIECE_HEIGHT[piece.slot] - PIECE_SIZE[1] / 2) * prop.scale[1], z] as Vec3,
       yaw: prop.yaw,
-      size: PIECE_SIZE.map((v) => v * prop.scale) as Vec3,
+      size: PIECE_SIZE.map((v, i) => v * prop.scale[i]!) as Vec3,
       figure: { prop: prop.id, slot: piece.slot },
       tag: { position: prop.position, yaw: prop.yaw },
     }]
@@ -276,7 +287,7 @@ export function templateStoreLayout(template: MallTemplate, modelSizes: Readonly
       description: '',
       position: prop.position,
       yaw: prop.yaw,
-      size: size.map((v) => v * prop.scale) as Vec3,
+      size: size.map((v, i) => v * prop.scale[i]!) as Vec3,
       scale: prop.scale,
       ...(prop.stack ? { stack: prop.stack } : {}),
       tag: { position: prop.position, yaw: prop.yaw },
@@ -324,6 +335,12 @@ function positiveAt(value: unknown, path: string): number {
   const n = numberAt(value, path)
   if (n <= 0) throw new TemplateError(path, 'expected a number above 0')
   return n
+}
+
+function scaleAt(value: unknown, path: string): Vec3 {
+  const scale = vec3At(value, path)
+  scale.forEach((s, i) => positiveAt(s, `${path}[${i}]`))
+  return scale
 }
 
 function vec3At(value: unknown, path: string): Vec3 {
@@ -381,10 +398,12 @@ function itemAt(prop: Json, path: string): Pick<ItemProp, 'key' | 'code'> {
 }
 
 function lookAt(raw: unknown, path: string): MaterialLook {
-  const json = objectAt(raw, path, ['texture', 'color', 'parts'])
-  if (json.texture === undefined && json.color === undefined && json.parts === undefined) throw new TemplateError(path, 'expected a texture, a color, part colors or a mix')
+  const json = objectAt(raw, path, ['material', 'texture', 'color', 'parts'])
+  if (json.material === undefined && json.texture === undefined && json.color === undefined && json.parts === undefined) throw new TemplateError(path, 'expected a material, a texture, a color, part colors or a mix')
+  if (json.material !== undefined && (json.texture !== undefined || json.parts !== undefined)) throw new TemplateError(path, 'a library material replaces the texture and its parts')
   const parts = json.parts === undefined ? undefined : objectAt(json.parts, `${path}.parts`)
   return {
+    ...(json.material !== undefined ? { material: stringAt(json.material, `${path}.material`, TEMPLATE_KEY) } : {}),
     ...(json.texture !== undefined ? { texture: stringAt(json.texture, `${path}.texture`, TEMPLATE_KEY) } : {}),
     ...(json.color !== undefined ? { color: stringAt(json.color, `${path}.color`, HEX_COLOR) } : {}),
     ...(parts ? { parts: Object.fromEntries(Object.entries(parts).map(([id, hex]) => [stringAt(id, `${path}.parts`, TEMPLATE_KEY), stringAt(hex, `${path}.parts.${id}`, HEX_COLOR)])) } : {}),
@@ -401,6 +420,28 @@ function partsAt(raw: unknown, path: string): TexturePart[] {
     const json = objectAt(part, `${path}[${i}]`, ['id', 'label', 'color'])
     return { id: stringAt(json.id, `${path}[${i}].id`, TEMPLATE_KEY), label: stringAt(json.label, `${path}[${i}].label`), color: stringAt(json.color, `${path}[${i}].color`, HEX_COLOR) }
   })
+}
+
+export function parseMaterialMeta(raw: unknown, key: string): MaterialMeta {
+  const path = `materials/${key}/material.json`
+  const json = objectAt(raw, path, ['version', 'key', 'label', 'color', 'roughness', 'metalness', 'maps', 'source'])
+  if (json.version !== 1) throw new TemplateError(`${path}.version`, 'expected 1')
+  if (json.key !== key) throw new TemplateError(`${path}.key`, `expected ${key}`)
+  const maps = objectAt(json.maps, `${path}.maps`, ['color'])
+  const unit = (value: unknown, field: string) => {
+    const n = numberAt(value, `${path}.${field}`)
+    if (n < 0 || n > 1) throw new TemplateError(`${path}.${field}`, 'expected 0 to 1')
+    return n
+  }
+  return {
+    version: 1,
+    key,
+    label: stringAt(json.label, `${path}.label`),
+    color: stringAt(json.color, `${path}.color`, HEX_COLOR),
+    roughness: unit(json.roughness, 'roughness'),
+    metalness: unit(json.metalness, 'metalness'),
+    maps: maps.color !== undefined ? { color: stringAt(maps.color, `${path}.maps.color`, MAP_FILE) } : {},
+  }
 }
 
 export function parseDecorParts(raw: unknown, key: string): Record<string, MaskedParts> {
@@ -423,7 +464,7 @@ function propAt(raw: unknown, path: string): TemplateProp {
     id: stringAt(prop.id, `${path}.id`),
     position: vec3At(prop.position, `${path}.position`),
     yaw: numberAt(prop.yaw, `${path}.yaw`),
-    scale: positiveAt(prop.scale, `${path}.scale`),
+    scale: scaleAt(prop.scale, `${path}.scale`),
   }
   switch (prop.kind) {
     case 'decor': {
@@ -507,7 +548,7 @@ export function parseMallTemplate(raw: unknown): MallTemplate {
   })
   if (props.filter((p) => p.kind === 'npc' && p.vendor).length > 1) throw new TemplateError('template.props', 'only one NPC can be the vendor')
   props.forEach((p, i) => {
-    if (p.kind === 'npc' && p.vendor && (p.pose !== 'idle' || p.scale !== 1)) throw new TemplateError(`template.props[${i}]`, 'the vendor stands (pose idle) at scale 1')
+    if (p.kind === 'npc' && p.vendor && (p.pose !== 'idle' || p.scale.some((s) => s !== 1))) throw new TemplateError(`template.props[${i}]`, 'the vendor stands (pose idle) at scale 1')
   })
   props.forEach((p, i) => {
     if (!insidePreset(p.position, preset)) throw new TemplateError(`template.props[${i}].position`, `outside the ${preset.width}×${preset.depth} cell`)

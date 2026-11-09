@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "key": "water",
+  "label": "Water",
+  "color": "#89cbed",
+  "roughness": 0.1,
+  "metalness": 0,
+  "maps": {},
+  "source": "decor/bathtub"
+}

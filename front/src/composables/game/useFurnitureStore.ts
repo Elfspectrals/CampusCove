@@ -219,7 +219,7 @@ export function useFurnitureStore(deps: FurnitureStoreDeps) {
           model.userData.storeDisplay = index
           model.position.set(px + ox * cos + oz * sin, py, pz - ox * sin + oz * cos)
           model.rotation.y = display.yaw
-          if (display.scale !== undefined) model.scale.setScalar(display.scale)
+          if (display.scale !== undefined) model.scale.fromArray(display.scale)
           configureRoomMeshShadows(model)
           group.add(model)
         }

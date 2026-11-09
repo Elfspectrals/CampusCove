@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "key": "screen",
+  "label": "Screen",
+  "color": "#5989c4",
+  "roughness": 0.7,
+  "metalness": 0,
+  "maps": {},
+  "source": "decor/computer_setup"
+}
