@@ -16,7 +16,7 @@
     {
       "id": "farm",
       "label": "Farm",
-      "keys": ["scarecrow", "hay_bale_round", "water_trough", "milk_churn", "feed_sacks", "wooden_barrel", "chicken_coop", "stone_well", "watering_can", "vegetable_crate", "tool_rack"]
+      "keys": ["scarecrow", "hay_bale_round", "water_trough", "milk_churn", "feed_sacks", "wooden_barrel", "chicken_coop", "stone_well", "watering_can", "vegetable_crate", "tool_rack", "chicken_feeder", "fence_panel", "fence_gate", "wire_panel", "mud_patch", "hay_rack"]
     }
   ]
 }

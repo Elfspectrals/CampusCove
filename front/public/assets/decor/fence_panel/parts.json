@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "materials": {
+    "DC_PenRail": {
+      "mask": "parts_DC_PenRail.png",
+      "parts": [
+        {
+          "id": "main",
+          "label": "Main",
+          "color": "#aa835c"
+        },
+        {
+          "id": "accent",
+          "label": "Accent",
+          "color": "#8f6841"
+        }
+      ]
+    }
+  }
+}

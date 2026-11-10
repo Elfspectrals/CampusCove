@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises'
+import { dirname, join } from 'node:path'
 import type { Json } from './backend.ts'
 import type { Bounds, Vec3 } from './types.ts'
 
@@ -93,9 +94,20 @@ interface World {
   pubZone: Bounds | null
   orchard: WorldOrchard | null
   cropPlants: WorldCropPlant[]
+  zoneBounds: Map<string, Bounds>
 }
 
 let world: World | null = null
+
+export interface WorldBuyer {
+  zone: string
+  area: string
+  x: number
+  y: number
+  z: number
+}
+
+let buyerZones = new Set<string>()
 
 function parseVec3(raw: Json, what: string): Vec3 {
   if (!Array.isArray(raw) || raw.length !== 3 || !raw.every(Number.isFinite)) {
@@ -264,7 +276,8 @@ function parseWorld(manifest: Json): World {
     pub,
     pubZone: parsePubZone(manifest.zones, pub),
     orchard: parseOrchard(manifest.orchard),
-    cropPlants: parseCropPlants(manifest.crops)
+    cropPlants: parseCropPlants(manifest.crops),
+    zoneBounds: new Map(manifest.zones.filter((zone: Json) => zone.bounds !== undefined).map((zone: Json) => [zone.key, parseBounds(zone.bounds, `${zone.key} zone bounds`)]))
   }
 }
 
@@ -292,6 +305,37 @@ export async function loadWorld(): Promise<void> {
     }
   }
   throw lastError
+}
+
+function besideManifest(path: string): string {
+  const manifest = WORLD_MANIFEST_URL!
+  return /^https?:\/\//.test(manifest) ? new URL(path, manifest).href : join(dirname(manifest), path)
+}
+
+function zoneBuyers(zone: string, decor: Json): WorldBuyer[] {
+  if (!Array.isArray(decor?.areas) || !Array.isArray(decor?.props)) throw new Error(`zones/${zone}.json: missing props or areas`)
+  return decor.areas.filter((area: Json) => area.role === 'buyer').map((area: Json) => {
+    const npc = decor.props.find((p: Json) => p.kind === 'npc' && p.id === area.npc)
+    if (!npc) throw new Error(`zones/${zone}.json: buyer ${area.id} has no NPC ${area.npc}`)
+    const [x, y, z] = npc.position
+    if (![x, y, z].every(Number.isFinite)) throw new Error(`zones/${zone}.json: invalid position of ${npc.id}`)
+    return { zone, area: area.id, x, y, z }
+  })
+}
+
+export async function loadZoneBuyers(): Promise<void> {
+  if (!WORLD_MANIFEST_URL) throw new Error('WORLD_MANIFEST_URL is not set')
+  const index = await readManifest(besideManifest('zones/index.json'))
+  if (!Array.isArray(index?.zones)) throw new Error('zones/index.json: missing zones')
+  let count = 0
+  for (const zone of index.zones) count += zoneBuyers(zone, await readManifest(besideManifest(`zones/${zone}.json`))).length
+  buyerZones = new Set(index.zones)
+  console.log(`[world] ${count} zone buyer(s) loaded`)
+}
+
+export async function worldBuyer(zone: string, area: string): Promise<WorldBuyer | null> {
+  if (!buyerZones.has(zone)) return null
+  return zoneBuyers(zone, await readManifest(besideManifest(`zones/${zone}.json`))).find((b) => b.area === area) ?? null
 }
 
 function loadedWorld(): World {
@@ -341,4 +385,8 @@ export function worldOrchard(): WorldOrchard | null {
 
 export function worldCropPlants(): WorldCropPlant[] {
   return loadedWorld().cropPlants
+}
+
+export function worldZoneBounds(key: string): Bounds | null {
+  return loadedWorld().zoneBounds.get(key) ?? null
 }

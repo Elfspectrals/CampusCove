@@ -357,3 +357,26 @@ export interface OrchardErrorPayload {
   message: string
   code: string
 }
+
+export interface ZoneCheckoutDonePayload {
+  balance_after: number
+  request: number | null
+}
+
+export interface ZoneCheckoutErrorPayload {
+  message: string
+  code: string
+  request: number | null
+}
+
+export interface ZoneSoldPayload {
+  sold: number
+  coins: number
+  balance_after: number
+  full_price_left: number
+}
+
+export interface ZoneSellErrorPayload {
+  message: string
+  code: string
+}

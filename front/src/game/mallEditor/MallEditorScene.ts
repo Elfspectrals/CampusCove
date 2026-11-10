@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import { captureWorldMap, type WorldMapImage } from '../world/minimap.ts'
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js'
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
 import { disposeObject3D } from '../../avatar/compositeAvatar'
@@ -24,11 +25,20 @@ export interface EditorZone {
 }
 
 export type GizmoMode = 'select' | 'translate' | 'rotate' | 'scale'
+export type SelectHow = 'replace' | 'toggle' | 'member'
 
 export interface PropTransform {
   position: Vec3
   yaw: number
   scale: Vec3
+}
+
+interface CameraFocus {
+  fromPosition: THREE.Vector3
+  fromTarget: THREE.Vector3
+  toPosition: THREE.Vector3
+  toTarget: THREE.Vector3
+  elapsed: number
 }
 
 interface PlacedObject {
@@ -48,7 +58,10 @@ const WALK_SPEED = 3.2
 const WALK_MARGIN = 0.25
 const MIN_SCALE = 0.05
 const STEP_UP = 0.6
-const BAKED_DECOR_PREFIX = 'ZD_'
+const BAKED_PREFIXES = ['ZD_', 'FB_']
+const FOCUS_S = 0.35
+const FOCUS_MARGIN = 1.3
+const FOCUS_MIN_DISTANCE = 0.8
 const FLY_KEYS: Record<string, THREE.Vector3> = {
   KeyW: new THREE.Vector3(0, 0, -1),
   KeyS: new THREE.Vector3(0, 0, 1),
@@ -148,16 +161,23 @@ export class MallEditorScene {
   private backdrop: THREE.Object3D | null = null
   private backdropToken = 0
   private readonly gizmo: TransformControls
-  private readonly selectionBox = new THREE.BoxHelper(new THREE.Object3D(), 0xffc94d)
-  private selectedId: string | null = null
+  private readonly selectionBounds = new THREE.Box3()
+  private readonly selectionBox = new THREE.Box3Helper(this.selectionBounds, 0xffc94d)
+  private selectedIds: readonly string[] = []
+  private readonly pivot = new THREE.Object3D()
+  private groupDrag: Array<{ id: string; object: THREE.Object3D; relative: THREE.Matrix4 }> = []
+  private marquee: { x: number; y: number; box: HTMLDivElement } | null = null
   private hiddenIds = new Set<string>()
   private gizmoMode: GizmoMode = 'translate'
   private gizmoDragging = false
   private pressAt: { x: number; y: number } | null = null
+  private focus: CameraFocus | null = null
   translationSnap = 0.1
   private rotationSnap = 0
-  onSelect: (id: string | null) => void = () => {}
+  onSelect: (id: string | null, how: SelectHow) => void = () => {}
+  onBoxSelect: (ids: string[], additive: boolean) => void = () => {}
   onTransform: (id: string, transform: PropTransform) => void = () => {}
+  onTransformMany: (updates: Array<{ id: string; transform: PropTransform }>) => void = () => {}
   onError: (message: string) => void = () => {}
   onMaterials: (id: string, slots: MaterialSlot[]) => void = () => {}
   private shell: THREE.Group | null = null
@@ -204,13 +224,15 @@ export class MallEditorScene {
     this.gizmo = new TransformControls(this.camera, this.renderer.domElement)
     this.gizmo.addEventListener('dragging-changed', this.onGizmoDragging)
     this.gizmo.addEventListener('objectChange', this.onGizmoChange)
-    this.scene.add(this.propsRoot, this.ghost.root, this.selectionBox, this.gizmo.getHelper())
+    this.scene.add(this.propsRoot, this.ghost.root, this.selectionBox, this.pivot, this.gizmo.getHelper())
 
     const el = this.renderer.domElement
     el.addEventListener('pointerdown', this.onPlacePointerDown, { capture: true })
+    el.addEventListener('pointerdown', this.onMarqueePointerDown, { capture: true })
     el.addEventListener('pointerdown', this.onPointerDown)
     el.addEventListener('pointermove', this.onPointerMove)
     el.addEventListener('pointerup', this.onPointerUp)
+    el.addEventListener('dblclick', this.onDoubleClick)
     el.addEventListener('lostpointercapture', this.onLostPointerCapture)
     el.addEventListener('contextmenu', this.onContextMenu)
     window.addEventListener('keydown', this.onKeyDown)
@@ -250,6 +272,11 @@ export class MallEditorScene {
     this.attachSelection()
   }
 
+  invalidate(id: string): void {
+    const entry = this.placed.get(id)
+    if (entry) entry.signature = ''
+  }
+
   private async loadPlaced(prop: TemplateProp, entry: PlacedObject): Promise<void> {
     const object = await createPropObject(prop)
     if (this.placed.get(prop.id) !== entry) {
@@ -265,7 +292,7 @@ export class MallEditorScene {
     entry.object = object
     this.propsRoot.add(object)
     if (prop.kind === 'decor') this.onMaterials(prop.id, materialSlotsOf(object))
-    if (this.selectedId === prop.id) this.attachSelection()
+    if (this.selectedIds.includes(prop.id)) this.attachSelection()
   }
 
   setHidden(ids: readonly string[]): void {
@@ -273,8 +300,8 @@ export class MallEditorScene {
     for (const [id, { object }] of this.placed) if (object) object.visible = !this.hiddenIds.has(id)
   }
 
-  select(id: string | null): void {
-    this.selectedId = id
+  select(ids: readonly string[]): void {
+    this.selectedIds = ids
     this.attachSelection()
   }
 
@@ -296,33 +323,88 @@ export class MallEditorScene {
     this.gizmo.setScaleSnap(scale > 0 ? scale : null)
   }
 
+  private selectedObjects(): Array<{ id: string; object: THREE.Object3D }> {
+    return this.selectedIds.flatMap((id) => {
+      const object = this.placed.get(id)?.object
+      return object ? [{ id, object }] : []
+    })
+  }
+
   private selectedObject(): THREE.Object3D | null {
-    return this.selectedId ? (this.placed.get(this.selectedId)?.object ?? null) : null
+    return this.selectedIds.length === 1 ? (this.placed.get(this.selectedIds[0]!)?.object ?? null) : null
+  }
+
+  private updateSelectionBox(): void {
+    const selected = this.selectedObjects()
+    this.selectionBounds.makeEmpty()
+    for (const { object } of selected) this.selectionBounds.expandByObject(object)
+    this.selectionBox.visible = selected.length > 0
   }
 
   private attachSelection(): void {
     if (this.walking) return
-    const object = this.selectedObject()
-    this.selectionBox.visible = object !== null
-    if (object) this.selectionBox.setFromObject(object)
-    if (object && this.gizmoMode !== 'select') this.gizmo.attach(object)
-    else this.gizmo.detach()
+    this.updateSelectionBox()
+    const selected = this.selectedObjects()
+    if (selected.length === 1 && this.gizmoMode !== 'select') this.gizmo.attach(selected[0]!.object)
+    else if (selected.length > 1 && this.gizmoMode !== 'select' && this.gizmoMode !== 'scale') {
+      const center = this.selectionBounds.getCenter(new THREE.Vector3())
+      this.pivot.position.set(center.x, this.selectionBounds.min.y, center.z)
+      this.pivot.rotation.set(0, 0, 0)
+      this.pivot.updateMatrixWorld()
+      this.gizmo.attach(this.pivot)
+    } else this.gizmo.detach()
   }
 
   private updateOrbitEnabled(): void {
-    this.controls.enabled = !this.flying && !this.gizmoDragging
+    this.controls.enabled = !this.flying && !this.gizmoDragging && !this.marquee
   }
 
   private readonly onGizmoDragging = (event: { value: unknown }): void => {
     this.gizmoDragging = event.value === true
     this.updateOrbitEnabled()
+    if (this.selectedIds.length > 1) {
+      this.dragGroup()
+      return
+    }
     const object = this.selectedObject()
-    if (!object || !this.selectedId) return
+    if (!object) return
     if (this.gizmoDragging) return
-    this.onTransform(this.selectedId, this.clampedTransform(object))
+    this.onTransform(this.selectedIds[0]!, this.clampedTransform(object))
+  }
+
+  private dragGroup(): void {
+    if (this.gizmoDragging) {
+      const toPivot = this.pivot.matrixWorld.clone().invert()
+      this.groupDrag = this.selectedObjects().map(({ id, object }) => ({ id, object, relative: toPivot.clone().multiply(object.matrixWorld) }))
+      return
+    }
+    const moved = this.groupDrag
+    this.groupDrag = []
+    this.onTransformMany(moved.map(({ id, object }) => ({ id, transform: this.clampedTransform(object) })))
+    this.attachSelection()
+  }
+
+  private moveGroup(): void {
+    if (this.gizmoMode === 'rotate') {
+      const quarterTurns = this.groupDrag.some(({ object }) => object.userData.templatePropKind === 'building')
+      const snap = quarterTurns ? Math.PI / 2 : this.rotationSnap
+      const yaw = new THREE.Euler().setFromQuaternion(this.pivot.quaternion, 'YXZ').y
+      this.pivot.rotation.set(0, snap > 0 ? Math.round(yaw / snap) * snap : yaw, 0)
+    }
+    this.pivot.updateMatrixWorld()
+    const fromRoot = this.propsRoot.matrixWorld.clone().invert().multiply(this.pivot.matrixWorld)
+    for (const { object, relative } of this.groupDrag) {
+      fromRoot.clone().multiply(relative).decompose(object.position, object.quaternion, object.scale)
+      object.updateMatrixWorld()
+    }
+    this.updateSelectionBox()
   }
 
   private readonly onGizmoChange = (): void => {
+    if (this.selectedIds.length > 1) {
+      if (this.groupDrag.length) this.moveGroup()
+      return
+    }
     const object = this.selectedObject()
     if (!object) return
     if (this.gizmoMode === 'scale') object.scale.max(new THREE.Vector3(MIN_SCALE, MIN_SCALE, MIN_SCALE))
@@ -330,7 +412,7 @@ export class MallEditorScene {
       const yaw = new THREE.Euler().setFromQuaternion(object.quaternion, 'YXZ').y
       object.rotation.set(0, this.rotationSnap > 0 ? Math.round(yaw / this.rotationSnap) * this.rotationSnap : yaw, 0)
     }
-    this.selectionBox.setFromObject(object)
+    this.updateSelectionBox()
   }
 
   private clampedTransform(object: THREE.Object3D): PropTransform {
@@ -355,7 +437,7 @@ export class MallEditorScene {
     }
   }
 
-  private pickProp(event: PointerEvent): string | null {
+  private pickProp(event: MouseEvent): string | null {
     const rect = this.renderer.domElement.getBoundingClientRect()
     const ndc = new THREE.Vector2(((event.clientX - rect.left) / rect.width) * 2 - 1, -((event.clientY - rect.top) / rect.height) * 2 + 1)
     this.raycaster.setFromCamera(ndc, this.camera)
@@ -478,7 +560,7 @@ export class MallEditorScene {
     gltf.scene.name = `ZoneBackdrop_${zone.key}`
     const baked: THREE.Object3D[] = []
     gltf.scene.traverse((node) => {
-      if (node.name.startsWith(BAKED_DECOR_PREFIX)) baked.push(node)
+      if (BAKED_PREFIXES.some((prefix) => node.name.startsWith(prefix))) baked.push(node)
     })
     for (const node of baked) {
       node.removeFromParent()
@@ -522,12 +604,17 @@ export class MallEditorScene {
     if (this.walking) return
     if (event.button === 0) this.pressAt = this.gizmo.dragging ? null : { x: event.clientX, y: event.clientY }
     if (event.button !== 2) return
+    this.focus = null
     this.flying = true
     this.updateOrbitEnabled()
     this.renderer.domElement.setPointerCapture(event.pointerId)
   }
 
   private readonly onPointerMove = (event: PointerEvent): void => {
+    if (this.marquee) {
+      this.updateMarquee(event)
+      return
+    }
     if (this.placement && !this.flying) {
       const point = this.floorPoint(event)
       this.ghost.root.visible = point !== null
@@ -550,6 +637,10 @@ export class MallEditorScene {
   }
 
   private readonly onPointerUp = (event: PointerEvent): void => {
+    if (this.marquee) {
+      if (event.button === 0) this.endMarquee(event)
+      return
+    }
     if (event.button === 0) this.endClick(event)
     if (event.button !== 2 || !this.flying) return
     this.stopFlying()
@@ -560,7 +651,103 @@ export class MallEditorScene {
     this.pressAt = null
     if (!press) return
     if (Math.hypot(event.clientX - press.x, event.clientY - press.y) > CLICK_SLOP_PX) return
-    this.onSelect(this.pickProp(event))
+    this.onSelect(this.pickProp(event), event.shiftKey ? 'toggle' : event.altKey ? 'member' : 'replace')
+  }
+
+  private readonly onMarqueePointerDown = (event: PointerEvent): void => {
+    if (this.walking || this.placement || event.button !== 0 || !(event.ctrlKey || event.metaKey)) return
+    event.stopImmediatePropagation()
+    const box = document.createElement('div')
+    box.style.cssText = 'position:fixed;pointer-events:none;border:1px solid #ffc94d;background:rgba(255,201,77,0.12);z-index:50'
+    document.body.appendChild(box)
+    this.marquee = { x: event.clientX, y: event.clientY, box }
+    this.updateMarquee(event)
+    this.updateOrbitEnabled()
+    this.renderer.domElement.setPointerCapture(event.pointerId)
+  }
+
+  private marqueeRect(event: PointerEvent): { left: number; top: number; right: number; bottom: number } {
+    const { x, y } = this.marquee!
+    return { left: Math.min(x, event.clientX), top: Math.min(y, event.clientY), right: Math.max(x, event.clientX), bottom: Math.max(y, event.clientY) }
+  }
+
+  private updateMarquee(event: PointerEvent): void {
+    const { left, top, right, bottom } = this.marqueeRect(event)
+    Object.assign(this.marquee!.box.style, { left: `${left}px`, top: `${top}px`, width: `${right - left}px`, height: `${bottom - top}px` })
+  }
+
+  private endMarquee(event: PointerEvent | null): void {
+    const marquee = this.marquee
+    if (!marquee) return
+    const rect = event && this.marqueeRect(event)
+    marquee.box.remove()
+    this.marquee = null
+    this.updateOrbitEnabled()
+    if (!event || !rect) return
+    const { left, top, right, bottom } = rect
+    const canvas = this.renderer.domElement.getBoundingClientRect()
+    const center = new THREE.Vector3()
+    const inside: string[] = []
+    for (const [id, { object }] of this.placed) {
+      if (!object?.visible) continue
+      new THREE.Box3().setFromObject(object).getCenter(center).project(this.camera)
+      const x = canvas.left + ((center.x + 1) / 2) * canvas.width
+      const y = canvas.top + ((1 - center.y) / 2) * canvas.height
+      if (center.z < 1 && x >= left && x <= right && y >= top && y <= bottom) inside.push(id)
+    }
+    this.onBoxSelect(inside, event.shiftKey)
+  }
+
+  private readonly onDoubleClick = (event: MouseEvent): void => {
+    if (this.walking || this.flying || this.placement) return
+    const id = this.pickProp(event)
+    if (!id) return
+    this.onSelect(id, event.altKey ? 'member' : 'replace')
+    this.frame([id])
+  }
+
+  private frame(ids: readonly string[]): void {
+    const bounds = new THREE.Box3()
+    for (const id of ids) {
+      this.placed.get(id)?.object?.traverse((child) => {
+        if ((child as THREE.Mesh).isMesh) bounds.expandByObject(child)
+      })
+    }
+    if (bounds.isEmpty()) return
+    const sphere = bounds.getBoundingSphere(new THREE.Sphere())
+    const halfFov = THREE.MathUtils.degToRad(this.camera.fov / 2)
+    const fitting = Math.min(halfFov, Math.atan(Math.tan(halfFov) * this.camera.aspect))
+    const distance = Math.max(FOCUS_MIN_DISTANCE, (sphere.radius * FOCUS_MARGIN) / Math.sin(fitting))
+    const forward = this.camera.getWorldDirection(new THREE.Vector3())
+    this.camera.far = Math.max(this.camera.far, distance * 4)
+    this.camera.updateProjectionMatrix()
+    this.focus = {
+      fromPosition: this.camera.position.clone(),
+      fromTarget: this.controls.target.clone(),
+      toPosition: sphere.center.clone().addScaledVector(forward, -distance),
+      toTarget: sphere.center.clone(),
+      elapsed: 0,
+    }
+  }
+
+  private glide(dt: number): void {
+    const focus = this.focus!
+    focus.elapsed = Math.min(FOCUS_S, focus.elapsed + dt)
+    const t = focus.elapsed / FOCUS_S
+    const eased = 1 - (1 - t) ** 3
+    this.camera.position.lerpVectors(focus.fromPosition, focus.toPosition, eased)
+    this.controls.target.lerpVectors(focus.fromTarget, focus.toTarget, eased)
+    this.camera.lookAt(this.controls.target)
+    if (t === 1) this.focus = null
+  }
+
+  captureZoneMap(): WorldMapImage | null {
+    if (!this.zone) return null
+    const overlays = [this.gizmo.getHelper(), this.selectionBox, this.ghost.root].filter((o) => o.visible)
+    overlays.forEach((o) => (o.visible = false))
+    const image = captureWorldMap(this.renderer, this.scene, this.zone.bounds)
+    overlays.forEach((o) => (o.visible = true))
+    return image
   }
 
   get isFlying(): boolean {
@@ -585,6 +772,7 @@ export class MallEditorScene {
       return false
     }
     this.cancelPlacing()
+    this.focus = null
     this.cameraBeforeWalk.position.copy(this.camera.position)
     this.cameraBeforeWalk.target.copy(this.controls.target)
     this.walking = true
@@ -665,6 +853,7 @@ export class MallEditorScene {
 
   private readonly onLostPointerCapture = (): void => {
     if (this.flying) this.stopFlying()
+    this.endMarquee(null)
   }
 
   private readonly onContextMenu = (event: Event): void => event.preventDefault()
@@ -675,6 +864,7 @@ export class MallEditorScene {
     else if (isTypingTarget(event)) return
     if (event.code === 'Escape' && this.walking) this.stopWalk()
     if (event.code === 'Escape' && this.placement) this.cancelPlacing()
+    if (event.code === 'KeyF' && this.selectedIds.length && !this.flying && !this.walking) this.frame(this.selectedIds)
     if (event.code in FLY_KEYS || event.code === 'ShiftLeft' || event.code === 'ShiftRight') this.flyKeys.add(event.code)
   }
 
@@ -722,14 +912,14 @@ export class MallEditorScene {
     const dt = Math.min(this.clock.getDelta(), 0.1)
     if (this.walking) this.walk(dt)
     else if (this.flying) this.fly(dt)
+    else if (this.focus) this.glide(dt)
     else this.controls.update()
     if (this.ghost.root.visible) {
       this.ghost.tickFeedback(dt, this.ghostRest)
       this.ghost.applyShake()
       this.ghost.updateColors(dt)
     }
-    const selected = this.selectedObject()
-    if (selected && this.gizmoDragging) this.selectionBox.setFromObject(selected)
+    if (this.gizmoDragging) this.updateSelectionBox()
     for (const { object } of this.placed.values()) {
       if (object?.userData.templatePropKind === 'npc') updateAvatarAnimation(object, dt, 0)
     }
@@ -741,9 +931,11 @@ export class MallEditorScene {
     this.resizeObserver.disconnect()
     const el = this.renderer.domElement
     el.removeEventListener('pointerdown', this.onPlacePointerDown, { capture: true })
+    el.removeEventListener('pointerdown', this.onMarqueePointerDown, { capture: true })
     el.removeEventListener('pointerdown', this.onPointerDown)
     el.removeEventListener('pointermove', this.onPointerMove)
     el.removeEventListener('pointerup', this.onPointerUp)
+    el.removeEventListener('dblclick', this.onDoubleClick)
     el.removeEventListener('lostpointercapture', this.onLostPointerCapture)
     el.removeEventListener('contextmenu', this.onContextMenu)
     window.removeEventListener('keydown', this.onKeyDown)

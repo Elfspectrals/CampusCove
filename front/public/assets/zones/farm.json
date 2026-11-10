@@ -4,6 +4,134 @@
   "name": "Farm",
   "props": [
     {
+      "id": "house",
+      "kind": "building",
+      "building": "farmhouse",
+      "position": [
+        -36,
+        0,
+        -138.5
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "size": [
+        8,
+        7
+      ],
+      "height": 3,
+      "roof": 1.8,
+      "ridge": "x",
+      "openings": [
+        {
+          "type": "door",
+          "side": "front",
+          "offset": 0,
+          "width": 1.2,
+          "bottom": 0,
+          "top": 2.1
+        },
+        {
+          "type": "window",
+          "side": "front",
+          "offset": -2.6,
+          "width": 1.2,
+          "bottom": 1,
+          "top": 2
+        },
+        {
+          "type": "window",
+          "side": "front",
+          "offset": 2.6,
+          "width": 1.2,
+          "bottom": 1,
+          "top": 2
+        },
+        {
+          "type": "window",
+          "side": "left",
+          "offset": -0.5,
+          "width": 1.2,
+          "bottom": 1,
+          "top": 2
+        },
+        {
+          "type": "window",
+          "side": "right",
+          "offset": -0.5,
+          "width": 1.2,
+          "bottom": 1,
+          "top": 2
+        }
+      ],
+      "colors": {
+        "walls": "#efe3c8",
+        "roof": "#7a4a3a",
+        "trim": "#f6f3ec",
+        "floor": "#b08a5c",
+        "door": "#5b7f4a"
+      }
+    },
+    {
+      "id": "barn",
+      "kind": "building",
+      "building": "barn",
+      "position": [
+        -22,
+        0,
+        -145
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "size": [
+        12,
+        14
+      ],
+      "height": 4.5,
+      "roof": 3,
+      "ridge": "z",
+      "openings": [
+        {
+          "type": "door",
+          "side": "right",
+          "offset": 0,
+          "width": 4,
+          "bottom": 0,
+          "top": 3.6
+        },
+        {
+          "type": "window",
+          "side": "front",
+          "offset": 0,
+          "width": 2,
+          "bottom": 2.8,
+          "top": 3.8
+        },
+        {
+          "type": "window",
+          "side": "back",
+          "offset": 0,
+          "width": 2,
+          "bottom": 2.8,
+          "top": 3.8
+        }
+      ],
+      "colors": {
+        "walls": "#b23a2e",
+        "roof": "#5d5f66",
+        "trim": "#f6f3ec",
+        "floor": "#d8bf6a",
+        "door": "#b23a2e"
+      }
+    },
+    {
       "id": "corn_field",
       "kind": "field",
       "crop": "corn",
@@ -6950,6 +7078,610 @@
           "slot": "shoes",
           "key": "boots",
           "color": "#6b4a30"
+        }
+      ]
+    },
+    {
+      "id": "run_wire_n",
+      "kind": "decor",
+      "key": "wire_panel",
+      "position": [
+        -30.75,
+        0,
+        -134.8
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "run_gate_n",
+      "kind": "decor",
+      "key": "fence_gate",
+      "position": [
+        -28.9,
+        0,
+        -134.8
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "run_wire_e",
+      "kind": "decor",
+      "key": "wire_panel",
+      "position": [
+        -28.1,
+        0,
+        -136.4
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "run_wire_s",
+      "kind": "decor",
+      "key": "wire_panel",
+      "position": [
+        -30.75,
+        0,
+        -142.2
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "run_gate_s",
+      "kind": "decor",
+      "key": "fence_gate",
+      "position": [
+        -28.9,
+        0,
+        -142.2
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "run_feeder",
+      "kind": "decor",
+      "key": "chicken_feeder",
+      "position": [
+        -28.9,
+        0,
+        -136.1
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "hen_1",
+      "kind": "animal",
+      "animal": "hen",
+      "position": [
+        -30.1,
+        0,
+        -139.65
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "size": [
+        3.2,
+        3.7
+      ]
+    },
+    {
+      "id": "hen_2",
+      "kind": "animal",
+      "animal": "hen",
+      "position": [
+        -30.1,
+        0,
+        -139.65
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "size": [
+        3.2,
+        3.7
+      ]
+    },
+    {
+      "id": "rooster",
+      "kind": "animal",
+      "animal": "rooster",
+      "position": [
+        -30.1,
+        0,
+        -139.65
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "size": [
+        3.2,
+        3.7
+      ]
+    },
+    {
+      "id": "pasture_w0",
+      "kind": "decor",
+      "key": "fence_panel",
+      "position": [
+        -35,
+        0,
+        -143.45
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "pasture_w1",
+      "kind": "decor",
+      "key": "fence_panel",
+      "position": [
+        -35,
+        0,
+        -145.95
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "pasture_w2",
+      "kind": "decor",
+      "key": "fence_panel",
+      "position": [
+        -35,
+        0,
+        -148.45
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "pasture_w3",
+      "kind": "decor",
+      "key": "fence_panel",
+      "position": [
+        -35,
+        0,
+        -150.95
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "pasture_w4",
+      "kind": "decor",
+      "key": "fence_panel",
+      "position": [
+        -35,
+        0,
+        -153.45
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "pasture_s0",
+      "kind": "decor",
+      "key": "fence_panel",
+      "position": [
+        -33.75,
+        0,
+        -154.7
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "pasture_s1",
+      "kind": "decor",
+      "key": "fence_panel",
+      "position": [
+        -31.25,
+        0,
+        -154.7
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "pasture_gate",
+      "kind": "decor",
+      "key": "fence_gate",
+      "position": [
+        -29.1,
+        0,
+        -154.7
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "pasture_e",
+      "kind": "decor",
+      "key": "fence_panel",
+      "position": [
+        -28.2,
+        0,
+        -153.35
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "pasture_rack",
+      "kind": "decor",
+      "key": "hay_rack",
+      "position": [
+        -34.2,
+        0,
+        -148.5
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "cow",
+      "kind": "animal",
+      "animal": "cow",
+      "position": [
+        -31.4,
+        0,
+        -148.4
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "size": [
+        3.4,
+        9.6
+      ]
+    },
+    {
+      "id": "sheep_1",
+      "kind": "animal",
+      "animal": "sheep",
+      "position": [
+        -31.4,
+        0,
+        -148.4
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "size": [
+        4.2,
+        10.4
+      ]
+    },
+    {
+      "id": "sheep_2",
+      "kind": "animal",
+      "animal": "sheep",
+      "position": [
+        -31.4,
+        0,
+        -148.4
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "size": [
+        4.2,
+        10.4
+      ]
+    },
+    {
+      "id": "pigpen_w0",
+      "kind": "decor",
+      "key": "fence_panel",
+      "position": [
+        -7,
+        0,
+        -143.75
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "pigpen_w1",
+      "kind": "decor",
+      "key": "fence_panel",
+      "position": [
+        -7,
+        0,
+        -146.25
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "pigpen_w2",
+      "kind": "decor",
+      "key": "fence_panel",
+      "position": [
+        -7,
+        0,
+        -148.75
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "pigpen_n",
+      "kind": "decor",
+      "key": "fence_panel",
+      "position": [
+        -5.75,
+        0,
+        -142.5
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "pigpen_gate_n",
+      "kind": "decor",
+      "key": "fence_gate",
+      "position": [
+        -3.4,
+        0,
+        -142.5
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "pigpen_s",
+      "kind": "decor",
+      "key": "fence_panel",
+      "position": [
+        -5.75,
+        0,
+        -150
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "pigpen_gate_s",
+      "kind": "decor",
+      "key": "fence_gate",
+      "position": [
+        -3.4,
+        0,
+        -150
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "pigpen_mud",
+      "kind": "decor",
+      "key": "mud_patch",
+      "position": [
+        -4.8,
+        0,
+        -146.2
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "pig_1",
+      "kind": "animal",
+      "animal": "pig",
+      "position": [
+        -4.75,
+        0,
+        -146.25
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "size": [
+        2.6,
+        5.0
+      ]
+    },
+    {
+      "id": "pig_2",
+      "kind": "animal",
+      "animal": "pig",
+      "position": [
+        -4.75,
+        0,
+        -146.25
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "size": [
+        2.6,
+        5.0
+      ]
+    },
+    {
+      "id": "dog",
+      "kind": "animal",
+      "animal": "dog",
+      "position": [
+        -12,
+        0,
+        -146
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "size": [
+        3,
+        8
+      ]
+    }
+  ],
+  "areas": [
+    {
+      "id": "stand",
+      "name": "Farmer's stand",
+      "role": "buyer",
+      "npc": "farmer",
+      "bounds": {
+        "minX": -16.5,
+        "maxX": -11,
+        "minZ": -144,
+        "maxZ": -139
+      },
+      "offers": [
+        {
+          "code": "farm_corn",
+          "price": 3,
+          "quota": 300,
+          "overPrice": 1
+        },
+        {
+          "code": "farm_potato",
+          "price": 3,
+          "quota": 300,
+          "overPrice": 1
+        },
+        {
+          "code": "farm_cabbage",
+          "price": 4,
+          "quota": 200,
+          "overPrice": 1
+        },
+        {
+          "code": "farm_pumpkin",
+          "price": 6,
+          "quota": 100,
+          "overPrice": 1
         }
       ]
     }

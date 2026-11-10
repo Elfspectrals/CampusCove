@@ -33,6 +33,7 @@ interface PropBase {
   position: Vec3
   yaw: number
   scale: Vec3
+  group?: string
 }
 
 export interface MaterialLook {
@@ -75,6 +76,7 @@ export interface ItemProp extends PropBase {
   code: string
   forSale: boolean
   stack?: [number, number]
+  price?: number
 }
 
 export interface OutfitPiece {
@@ -123,7 +125,39 @@ export interface FieldProp extends PropBase {
   pattern: 'rows' | 'staggered' | 'scattered'
 }
 
-export type TemplateProp = DecorProp | ItemProp | NpcProp | MannequinProp | LightProp | FieldProp
+export interface AnimalProp extends PropBase {
+  kind: 'animal'
+  animal: string
+  size: [number, number]
+}
+
+export const BUILDING_SIDES = ['front', 'back', 'left', 'right'] as const
+export type BuildingSide = (typeof BUILDING_SIDES)[number]
+export const BUILDING_PARTS = ['walls', 'roof', 'trim', 'floor', 'door'] as const
+export type BuildingPart = (typeof BUILDING_PARTS)[number]
+
+export interface BuildingOpening {
+  type: 'door' | 'window'
+  side: BuildingSide
+  offset: number
+  width: number
+  bottom: number
+  top: number
+}
+
+export interface BuildingProp extends PropBase {
+  kind: 'building'
+  building: string
+  size: [number, number]
+  height: number
+  roof: number
+  ridge: 'x' | 'z'
+  openings: BuildingOpening[]
+  colors: Record<BuildingPart, string>
+  textures?: Partial<Record<BuildingPart, string>>
+}
+
+export type TemplateProp = DecorProp | ItemProp | NpcProp | MannequinProp | LightProp | FieldProp | AnimalProp | BuildingProp
 
 export type Surface = 'left' | 'right' | 'back' | 'floor' | 'ceiling'
 
@@ -253,19 +287,20 @@ export function itemModelUrl(item: Pick<ItemProp, 'key' | 'code'>): string {
   return isConsumableCode(item.code) ? consumableModelUrl(item.code) : decorModelUrl(item.key)
 }
 
-export function withSale(prop: TemplateProp, on: boolean, saleCode: string | undefined): TemplateProp | null {
+export function withSale(prop: TemplateProp, on: boolean, saleCode: string | undefined, price?: number): TemplateProp | null {
+  const priced = price === undefined ? {} : { price }
   if (prop.kind === 'decor') {
     if (!on || !saleCode || prop.materials) return null
     const { materials: _, ...rest } = prop
-    return { ...rest, kind: 'item', code: saleCode, forSale: true }
+    return { ...rest, kind: 'item', code: saleCode, forSale: true, ...priced }
   }
   if (prop.kind !== 'item' || prop.forSale === on) return null
-  const { stack: _, ...rest } = prop
+  const { stack: _, price: _price, ...rest } = prop
   if (!on && !isConsumableCode(prop.code)) {
     const { code: __, forSale: ___, ...plain } = rest
     return { ...plain, kind: 'decor' }
   }
-  return { ...rest, forSale: on }
+  return { ...rest, forSale: on, ...(on ? priced : {}) }
 }
 
 export function templateVendor(template: MallTemplate): NpcProp | null {
@@ -403,7 +438,7 @@ function outfitAt(value: unknown, path: string, extraFields: readonly string[] =
   })
 }
 
-const BASE_FIELDS = ['id', 'kind', 'position', 'yaw', 'scale']
+const BASE_FIELDS = ['id', 'kind', 'position', 'yaw', 'scale', 'group']
 const KIND_FIELDS: Record<string, readonly string[]> = {
   decor: [...BASE_FIELDS, 'key', 'materials'],
   item: [...BASE_FIELDS, 'key', 'code', 'forSale', 'stack'],
@@ -487,6 +522,7 @@ export function propAt(raw: unknown, path: string): TemplateProp {
     position: vec3At(prop.position, `${path}.position`),
     yaw: numberAt(prop.yaw, `${path}.yaw`),
     scale: scaleAt(prop.scale, `${path}.scale`),
+    ...(prop.group === undefined ? {} : { group: stringAt(prop.group, `${path}.group`, TEMPLATE_KEY) }),
   }
   switch (prop.kind) {
     case 'decor': {

@@ -52,6 +52,8 @@ interface FurnitureStoreSpec {
   clerkColors?: CosmeticColors
   /** IKEA-style price tag next to each display (Cove Home); the mall stores show the model alone. Default true. */
   priceTags?: boolean
+  coinPrices?: ReadonlyMap<string, number>
+  checkout?: (shopCatalogItemIds: number[]) => Promise<unknown>
 }
 
 const COVE_HOME_SPEC: FurnitureStoreSpec = { key: COVE_HOME.key, interiorLayoutUrl: COVE_HOME.interiorLayoutUrl, modelUrl: (display) => decorModelUrl(display.key) }
@@ -177,11 +179,17 @@ export function useFurnitureStore(deps: FurnitureStoreDeps) {
         fetchItemShopCatalog(),
         sellsWear ? fetchAccountInventory({ kind: 'cosmetic' }).catch((error: unknown) => console.warn('[store] owned clothes unknown', error)) : null,
       ])
-      catalogByCode.value = new Map(items.map((item) => [item.code, item]))
+      catalogByCode.value = new Map(items.map((item) => [item.code, withStorePrice(item)]))
       if (cosmetics) ownedCosmetics.value = new Set(cosmetics.items.map((row) => row.item.item_def_id))
     } catch (error) {
       console.warn('[store] catalogue failed to load, tags show no prices', error)
     }
+  }
+
+  function withStorePrice(item: ShopItem): ShopItem {
+    const price = store.coinPrices?.get(item.code)
+    if (price === undefined) return item
+    return { ...item, options: item.options.map((option) => (option.currency === 'coins' ? { ...option, price } : option)) }
   }
 
   function coinsPrice(item: ShopItem | null): number | null {
@@ -389,7 +397,7 @@ export function useFurnitureStore(deps: FurnitureStoreDeps) {
     if (paying.value || basket.value.length === 0) return
     paying.value = true
     try {
-      await checkoutShopBasket(basket.value.map((item) => item.shop_catalog_item_id))
+      await (store.checkout ?? checkoutShopBasket)(basket.value.map((item) => item.shop_catalog_item_id))
       feedback.value = { kind: 'success', text: 'Paid! Your items are in your inventory.' }
       basket.value = []
       checkoutOpen.value = false

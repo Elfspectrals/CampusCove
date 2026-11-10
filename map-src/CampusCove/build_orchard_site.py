@@ -14,6 +14,10 @@ if HERE not in sys.path:
     sys.path.insert(0, HERE)
 import lib_common as L
 importlib.reload(L)
+import lib_kit as K
+importlib.reload(K)
+import lib_buildings as B
+importlib.reload(B)
 import bpy
 
 BOUNDS = {"minX": -42.6, "maxX": -2.0, "minZ": -130.0, "maxZ": -72.0}
@@ -111,9 +115,9 @@ def add(o):
     return o
 
 
-def add_col(name, gx, gz, sx, sz, h, yaw=0.0):
+def add_col(name, gx, gz, sx, sz, h, yaw=0.0, y0=0.0):
     col.append({"name": f"COL_Orchard_{name}", "cx": round(gx, 3), "cz": round(gz, 3), "hx": round(sx / 2, 3), "hz": round(sz / 2, 3), "hy": round(h / 2, 3),
-                "cy": round(h / 2, 3), "yaw": round(yaw, 4)})
+                "cy": round(y0 + h / 2, 3), "yaw": round(yaw, 4)})
 
 
 def mesh_obj(name, bm, mat, loc=(0.0, 0.0, 0.0), tile=1.0):
@@ -333,8 +337,17 @@ decor_objs, decor_cols, crop_plants = L.zone_decor(coll, "orchard", "COL_Orchard
 so += decor_objs
 col += decor_cols
 
+kit = K.Kit()
+B.zone_buildings(kit, "orchard")
+K.report(kit)
+for o in kit.build(coll, merge=False):
+    add(o)
+for b in kit.boxes:
+    if b.collide:
+        add_col(b.name.removeprefix(B.PREFIX), (b.x0 + b.x1) / 2, (b.z0 + b.z1) / 2, b.x1 - b.x0, b.z1 - b.z0, b.y1 - b.y0, y0=b.y0)
+
 bad = L.check_grounded(so, allow=("OS_Path", "OS_Lawn", "OS_OrchardFloor", "OS_AppleTree", "OS_Fallen", "OS_Lantern", "OS_FenceRail", "OS_GateArch", "OS_Stall",
-                                  "OS_Crate", "OS_Shed", "OS_Hay", "OS_Pine", "ZD_"))
+                                  "OS_Crate", "OS_Shed", "OS_Hay", "OS_Pine", "ZD_", B.PREFIX))
 print("ORCHARD grounded violations:", bad)
 assert not bad, bad
 

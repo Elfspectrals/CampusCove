@@ -24,6 +24,7 @@ import GameSettingsDialog from '../components/game/GameSettingsDialog.vue'
 import GameStoreItemCard from '../components/game/GameStoreItemCard.vue'
 import GameCafeMenu from '../components/game/GameCafeMenu.vue'
 import GameOrchardSellMenu from '../components/game/GameOrchardSellMenu.vue'
+import GameZoneBuyerMenu from '../components/game/GameZoneBuyerMenu.vue'
 import GamePubMenu from '../components/game/GamePubMenu.vue'
 import GamePubSecretDialog from '../components/game/GamePubSecretDialog.vue'
 import GameDrunkEffects from '../components/game/GameDrunkEffects.vue'
@@ -57,6 +58,7 @@ import { useIntoxication } from '../composables/game/useIntoxication'
 import { useMinimap } from '../composables/game/useMinimap'
 import { usePlayerInventory } from '../composables/game/usePlayerInventory'
 import { useOrchard } from '../composables/game/useOrchard'
+import { useZoneBuyers } from '../composables/game/useZoneBuyers'
 import { useFarm } from '../composables/game/useFarm'
 import { useMallCellTemplates, type CellStoreEntry } from '../composables/game/useMallCellTemplates'
 import { useZoneDecor } from '../composables/game/useZoneDecor'
@@ -265,6 +267,7 @@ const zoneDecor = useZoneDecor({
   storeDeps: mallStoreDeps,
   addStore: (entry) => furnitureStores.push(entry),
   insideOtherStore: () => mallCellTemplates.currentStoreKey.value !== null || currentHouseKey.value !== null,
+  getGameRoom: () => gameRoomRef.value,
 })
 const activeFurniture = computed(() => furnitureStores.find((s) => s.key === (mallCellTemplates.currentStoreKey.value ?? currentHouseKey.value ?? zoneDecor.currentStoreKey.value)) ?? null)
 const storeBrand = computed(() => activeFurniture.value?.brand ?? COVE_HOME.name)
@@ -503,6 +506,17 @@ const orchard = useOrchard({
   say: (text) => survival.say(text),
 })
 const { menuOpen: orchardMenuOpen, selling: orchardSelling, feedback: orchardFeedback, pickProgress: orchardPickProgress } = orchard
+const zoneBuyers = useZoneBuyers({
+  myPosition,
+  getCamera,
+  canvasRef,
+  gameRoomRef,
+  promptsHidden: () => inventoryOpen.value || !canUsePub(),
+  itemByCode: () => itemByCode.value,
+  refreshInventory: () => refreshOwnedItems(),
+  buyers: () => zoneDecor.buyers.value,
+})
+const { openBuyer: zoneBuyerOpen, selling: zoneBuyerSelling, feedback: zoneBuyerFeedback } = zoneBuyers
 const farm = useFarm({
   myPosition,
   getCamera,
@@ -519,6 +533,9 @@ const pickBar = computed(() => {
 })
 watch(orchardMenuOpen, (open) => {
   if (!open && !document.pointerLockElement) requestPointerLock()
+})
+watch(zoneBuyerOpen, (buyer) => {
+  if (!buyer && !document.pointerLockElement) requestPointerLock()
 })
 
 const interactions = useInteractionTargets({
@@ -562,7 +579,7 @@ const interactions = useInteractionTargets({
     else if (activeFurniture.value?.store.hasCounter.value) activeFurniture.value.store.toggleTarget(useWithShift)
     else openStorePurchase()
   },
-  sources: [pub.source, pubChallenge.source, pubGames.source, seats.source, orchard.source, farm.source],
+  sources: [pub.source, pubChallenge.source, pubGames.source, seats.source, orchard.source, farm.source, zoneBuyers.source],
 })
 const { doorPrompt } = interactions
 
@@ -910,6 +927,7 @@ const pauseMenuOpen = computed(
     !tradeUiOpen.value &&
     !pubUiOpen.value &&
     !orchardMenuOpen.value &&
+    !zoneBuyerOpen.value &&
     !settingsOpen.value,
 )
 /** Back in the game with the menu closed, but the browser hasn't given the pointer back yet. */
@@ -1082,6 +1100,7 @@ const realtime = useGameRealtime({
   pub: pub.handlers,
   pubGames: pubGames.handlers,
   orchard: orchard.handlers,
+  zoneBuyers: zoneBuyers.handlers,
   farm: farm.handlers,
   pubChallenge: pubChallenge.handlers,
 })
@@ -1485,6 +1504,16 @@ const crosshairClass = computed(() => {
       :feedback="clinicFeedback"
       @buy="clinic.buy"
       @close="clinic.close"
+    />
+    <GameZoneBuyerMenu
+      v-if="zoneBuyerOpen"
+      :area="zoneBuyerOpen.area"
+      :selling="zoneBuyerSelling"
+      :feedback="zoneBuyerFeedback"
+      :held="zoneBuyers.held"
+      :item-name="zoneBuyers.itemName"
+      @sell="zoneBuyers.sell"
+      @close="zoneBuyers.close"
     />
     <GameOrchardSellMenu
       v-if="orchardMenuOpen"

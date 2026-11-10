@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "zone": "orchard",
+  "prices": {
+    "decor_bar_stool": 70
+  },
+  "buyers": {}
+}

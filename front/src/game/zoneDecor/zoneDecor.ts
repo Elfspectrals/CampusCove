@@ -1,5 +1,8 @@
-import type { StoreLayout } from '../assets/catalog.ts'
+import { isConsumableCode, type StoreLayout } from '../assets/catalog.ts'
 import type { WorldBounds } from '../world/worldManifest.ts'
+import type { SaleCurve } from '../economy/sharemath.ts'
+import { MAX_PEN_SIDE, MIN_PEN_SIDE, type AnimalTable } from '../animals/animals.ts'
+import { MAX_ROOF, MIN_ROOF, ROOF_OVERHANG, checkBuilding, colorsAt, openingAt, texturesAt, type BuildingTable } from '../buildings/buildings.ts'
 import { FIELD_PATTERNS, MAX_FIELD_PLANTS, fieldCorners, fieldPlants, type CropTable, type PlantSpot } from '../crops/crops.ts'
 import {
   TEMPLATE_KEY,
@@ -10,6 +13,8 @@ import {
   templateStoreLayout,
   vec3At,
   vendorCounter,
+  type AnimalProp,
+  type BuildingProp,
   type DecorProp,
   type FieldProp,
   type ItemProp,
@@ -19,19 +24,43 @@ import {
   type Vec3,
 } from '../mallTemplates/mallTemplate.ts'
 
-type ZoneProp = DecorProp | ItemProp | NpcProp | MannequinProp | FieldProp
-export type BakedZoneProp = DecorProp | FieldProp
+type ZoneProp = DecorProp | ItemProp | NpcProp | MannequinProp | FieldProp | AnimalProp | BuildingProp
+export type BakedZoneProp = DecorProp | FieldProp | BuildingProp
 export type RuntimeZoneProp = Exclude<ZoneProp, BakedZoneProp>
-const FIELD_KEYS = ['id', 'kind', 'crop', 'position', 'yaw', 'scale', 'size', 'pattern', 'plants']
+const FIELD_KEYS = ['id', 'kind', 'crop', 'position', 'yaw', 'scale', 'size', 'pattern', 'plants', 'group']
+const ANIMAL_KEYS = ['id', 'kind', 'animal', 'position', 'yaw', 'scale', 'size', 'group']
+const BUILDING_KEYS = ['id', 'kind', 'building', 'position', 'yaw', 'scale', 'size', 'height', 'roof', 'ridge', 'openings', 'colors', 'textures', 'group']
+const QUARTER_TURN = Math.PI / 2
 const MIN_FIELD_SIDE = 1
 const MAX_FIELD_SIDE = 60
 const PLANT_TOLERANCE = 1e-3
+const MAX_ZONE_PRICE = 100_000
+const MAX_DAILY_QUOTA = 10_000
+const MIN_AREA_SIDE = 1
+const AREA_KEYS = ['id', 'name', 'role', 'npc', 'bounds', 'offers']
+const OFFER_KEYS = ['code', 'price', 'quota', 'overPrice']
+export const SALE_ROLES = ['seller', 'buyer'] as const
+export type SaleRole = (typeof SALE_ROLES)[number]
+
+export interface SaleOffer extends SaleCurve {
+  code: string
+}
+
+export interface SaleArea {
+  id: string
+  name: string
+  role: SaleRole
+  npc: string
+  bounds: WorldBounds
+  offers: SaleOffer[]
+}
 
 export interface ZoneDecor {
   version: 1
   zone: string
   name: string
   props: ZoneProp[]
+  areas: SaleArea[]
 }
 
 export interface ZoneDecorIndex {
@@ -58,9 +87,9 @@ function objectAt(raw: unknown, path: string, allowed: readonly string[]): Recor
   return raw as Record<string, unknown>
 }
 
-function sideAt(value: unknown, path: string): number {
+function sideAt(value: unknown, path: string, min = MIN_FIELD_SIDE, max = MAX_FIELD_SIDE): number {
   const side = numberAt(value, path)
-  if (side < MIN_FIELD_SIDE || side > MAX_FIELD_SIDE) throw new TemplateError(path, `expected ${MIN_FIELD_SIDE} to ${MAX_FIELD_SIDE} m`)
+  if (side < min || side > max) throw new TemplateError(path, `expected ${min} to ${max} m`)
   return side
 }
 
@@ -98,33 +127,237 @@ function fieldPropAt(raw: unknown, path: string, crops: CropTable | null): Field
   return field
 }
 
-function zonePropAt(raw: unknown, path: string, crops: CropTable | null): ZoneProp {
-  if ((raw as { kind?: unknown } | null)?.kind === 'field') return fieldPropAt(raw, path, crops)
+function animalPropAt(raw: unknown, path: string, animals: AnimalTable | null): AnimalProp {
+  const json = objectAt(raw, path, ANIMAL_KEYS)
+  const animal = stringAt(json.animal, `${path}.animal`)
+  if (animals && !animals[animal]) throw new TemplateError(`${path}.animal`, `expected one of ${Object.keys(animals).join(', ')}`)
+  if (!Array.isArray(json.size) || json.size.length !== 2) throw new TemplateError(`${path}.size`, 'expected [width, depth] of the pen')
+  const scale = vec3At(json.scale, `${path}.scale`)
+  if (scale.some((s) => s !== 1)) throw new TemplateError(`${path}.scale`, 'an animal keeps scale 1, change its pen size instead')
+  return {
+    id: stringAt(json.id, `${path}.id`),
+    kind: 'animal',
+    animal,
+    position: vec3At(json.position, `${path}.position`),
+    yaw: numberAt(json.yaw, `${path}.yaw`),
+    scale,
+    size: [sideAt(json.size[0], `${path}.size[0]`, MIN_PEN_SIDE, MAX_PEN_SIDE), sideAt(json.size[1], `${path}.size[1]`, MIN_PEN_SIDE, MAX_PEN_SIDE)],
+  }
+}
+
+function zoneItemAt(raw: unknown, path: string): ItemProp {
+  const { price, ...rest } = raw as Record<string, unknown>
+  const item = propAt(rest, path) as ItemProp
+  if (!item.forSale) {
+    if (price !== undefined) throw new TemplateError(`${path}.price`, 'only items for sale have a price')
+    return item
+  }
+  if (typeof price !== 'number' || !Number.isInteger(price) || price < 1 || price > MAX_ZONE_PRICE) throw new TemplateError(`${path}.price`, `expected whole coins from 1 to ${MAX_ZONE_PRICE}`)
+  return { ...item, price }
+}
+
+function buildingPropAt(raw: unknown, path: string, buildings: BuildingTable | null): BuildingProp {
+  const json = objectAt(raw, path, BUILDING_KEYS)
+  const key = stringAt(json.building, `${path}.building`)
+  const def = buildings?.[key]
+  if (buildings && !def) throw new TemplateError(`${path}.building`, `expected one of ${Object.keys(buildings).join(', ')}`)
+  if (!Array.isArray(json.size) || json.size.length !== 2) throw new TemplateError(`${path}.size`, 'expected [width, depth]')
+  const scale = vec3At(json.scale, `${path}.scale`)
+  if (scale.some((v) => v !== 1)) throw new TemplateError(`${path}.scale`, 'a building keeps scale 1, change its size instead')
+  const yaw = numberAt(json.yaw, `${path}.yaw`)
+  if (Math.abs(Math.round(yaw / QUARTER_TURN) * QUARTER_TURN - yaw) > 1e-3) throw new TemplateError(`${path}.yaw`, 'a building turns by quarter turns (0, 90, 180, 270°)')
+  const roof = numberAt(json.roof, `${path}.roof`)
+  if (roof < MIN_ROOF || roof > MAX_ROOF) throw new TemplateError(`${path}.roof`, `expected ${MIN_ROOF} to ${MAX_ROOF} m`)
+  if (json.ridge !== 'x' && json.ridge !== 'z') throw new TemplateError(`${path}.ridge`, 'expected x or z')
+  const position = vec3At(json.position, `${path}.position`)
+  if (position[1] !== 0) throw new TemplateError(`${path}.position`, 'a building stands on the ground (height 0)')
+  if (!Array.isArray(json.openings)) throw new TemplateError(`${path}.openings`, 'expected an array')
+  const building: BuildingProp = {
+    id: stringAt(json.id, `${path}.id`),
+    kind: 'building',
+    building: key,
+    position,
+    yaw,
+    scale,
+    size: [numberAt(json.size[0], `${path}.size[0]`), numberAt(json.size[1], `${path}.size[1]`)],
+    height: numberAt(json.height, `${path}.height`),
+    roof,
+    ridge: json.ridge,
+    openings: json.openings.map((o, i) => openingAt(o, `${path}.openings[${i}]`)),
+    colors: colorsAt(json.colors, `${path}.colors`),
+  }
+  if (json.textures !== undefined) building.textures = texturesAt(json.textures, `${path}.textures`)
+  if (def) checkBuilding(building, def, path)
+  return building
+}
+
+export function parseBuildingProp(raw: unknown, buildings: BuildingTable): BuildingProp {
+  return buildingPropAt(raw, 'building', buildings)
+}
+
+function grouped<P extends FieldProp | AnimalProp | BuildingProp>(prop: P, raw: unknown, path: string): P {
+  const group = (raw as { group?: unknown }).group
+  return group === undefined ? prop : { ...prop, group: stringAt(group, `${path}.group`, TEMPLATE_KEY) }
+}
+
+function zonePropAt(raw: unknown, path: string, crops: CropTable | null, animals: AnimalTable | null, buildings: BuildingTable | null): ZoneProp {
+  const kind = (raw as { kind?: unknown } | null)?.kind
+  if (kind === 'field') return grouped(fieldPropAt(raw, path, crops), raw, path)
+  if (kind === 'animal') return grouped(animalPropAt(raw, path, animals), raw, path)
+  if (kind === 'building') return grouped(buildingPropAt(raw, path, buildings), raw, path)
+  if (kind === 'item') return zoneItemAt(raw, path)
   const prop = propAt(raw, path)
   if (prop.kind === 'light') throw new TemplateError(`${path}.kind`, 'zones are lit by the sky, they take no light')
   if (prop.kind === 'decor' && prop.materials) throw new TemplateError(`${path}.materials`, 'baked zone decor keeps its own materials')
   return prop
 }
 
-export function parseZoneDecor(raw: unknown, zone: { key: string; bounds: WorldBounds }, crops: CropTable | null): ZoneDecor {
-  const json = objectAt(raw, 'zone', ['version', 'zone', 'name', 'props'])
+function wholeAt(value: unknown, path: string, min: number, max: number): number {
+  if (typeof value !== 'number' || !Number.isInteger(value) || value < min || value > max) throw new TemplateError(path, `expected a whole number from ${min} to ${max}`)
+  return value
+}
+
+function offerAt(raw: unknown, path: string): SaleOffer {
+  const json = objectAt(raw, path, OFFER_KEYS)
+  const price = wholeAt(json.price, `${path}.price`, 1, MAX_ZONE_PRICE)
+  const code = stringAt(json.code, `${path}.code`)
+  if (!isConsumableCode(code)) throw new TemplateError(`${path}.code`, 'a buyer buys consumables (crops, eggs, food...)')
+  return {
+    code,
+    price,
+    quota: wholeAt(json.quota, `${path}.quota`, 0, MAX_DAILY_QUOTA),
+    overPrice: wholeAt(json.overPrice, `${path}.overPrice`, 0, price),
+  }
+}
+
+function areaBoundsAt(raw: unknown, path: string, zone: { key: string; bounds: WorldBounds }): WorldBounds {
+  const json = objectAt(raw, path, ['minX', 'maxX', 'minZ', 'maxZ'])
+  const bounds = { minX: numberAt(json.minX, `${path}.minX`), maxX: numberAt(json.maxX, `${path}.maxX`), minZ: numberAt(json.minZ, `${path}.minZ`), maxZ: numberAt(json.maxZ, `${path}.maxZ`) }
+  if (bounds.maxX - bounds.minX < MIN_AREA_SIDE || bounds.maxZ - bounds.minZ < MIN_AREA_SIDE) throw new TemplateError(path, `an area is at least ${MIN_AREA_SIDE} m on each side`)
+  if (!insideBounds([bounds.minX, 0, bounds.minZ], zone.bounds) || !insideBounds([bounds.maxX, 0, bounds.maxZ], zone.bounds)) throw new TemplateError(path, `the area reaches outside zone ${zone.key}`)
+  return bounds
+}
+
+function areaAt(raw: unknown, path: string, zone: { key: string; bounds: WorldBounds }): SaleArea {
+  const json = objectAt(raw, path, AREA_KEYS)
+  const role = json.role as SaleRole
+  if (!SALE_ROLES.includes(role)) throw new TemplateError(`${path}.role`, `expected one of ${SALE_ROLES.join(', ')}`)
+  if (!Array.isArray(json.offers)) throw new TemplateError(`${path}.offers`, 'expected an array')
+  const name = stringAt(json.name, `${path}.name`)
+  if (name.trim() === '') throw new TemplateError(`${path}.name`, 'expected a non-empty string')
+  return {
+    id: stringAt(json.id, `${path}.id`),
+    name,
+    role,
+    npc: stringAt(json.npc, `${path}.npc`),
+    bounds: areaBoundsAt(json.bounds, `${path}.bounds`, zone),
+    offers: json.offers.map((o, i) => offerAt(o, `${path}.offers[${i}]`)),
+  }
+}
+
+function overlap(a: WorldBounds, b: WorldBounds): boolean {
+  return a.minX < b.maxX && b.minX < a.maxX && a.minZ < b.maxZ && b.minZ < a.maxZ
+}
+
+function roofBounds(building: BuildingProp): WorldBounds {
+  const corners = fieldCorners(building)
+  const xs = corners.map(([x]) => x)
+  const zs = corners.map(([, z]) => z)
+  return { minX: Math.min(...xs) - ROOF_OVERHANG, maxX: Math.max(...xs) + ROOF_OVERHANG, minZ: Math.min(...zs) - ROOF_OVERHANG, maxZ: Math.max(...zs) + ROOF_OVERHANG }
+}
+
+function checkBuildingRoofs(props: ZoneProp[]): void {
+  const roofs = props.flatMap((p, i) => (p.kind === 'building' ? [{ i, id: p.id, bounds: roofBounds(p) }] : []))
+  roofs.forEach((a, k) => {
+    const other = roofs.find((b, j) => j < k && overlap(a.bounds, b.bounds))
+    if (other) throw new TemplateError(`zone.props[${a.i}].position`, `the building's roof overlaps building "${other.id}"`)
+  })
+}
+
+function checkAreas(areas: SaleArea[], props: ZoneProp[]): void {
+  areas.forEach((area, i) => {
+    if (areas.findIndex((a) => a.id === area.id) !== i) throw new TemplateError(`zone.areas[${i}].id`, `"${area.id}" is used twice`)
+  })
+  const npcs = new Set<string>()
+  areas.forEach((area, i) => {
+    const path = `zone.areas[${i}]`
+    const npc = props.find((p): p is NpcProp => p.kind === 'npc' && p.id === area.npc)
+    if (!npc) throw new TemplateError(`${path}.npc`, `no NPC "${area.npc}" in this zone`)
+    if (npcs.has(npc.id)) throw new TemplateError(`${path}.npc`, `"${npc.id}" already works in another area`)
+    npcs.add(npc.id)
+    if (!insideBounds(npc.position, area.bounds)) throw new TemplateError(`${path}.npc`, `"${npc.id}" stands outside the area`)
+    if (area.role === 'buyer') {
+      if (area.offers.length === 0) throw new TemplateError(`${path}.offers`, 'a buyer buys at least one item')
+      const codes = area.offers.map((o) => o.code)
+      const twice = codes.find((code, k) => codes.indexOf(code) !== k)
+      if (twice) throw new TemplateError(`${path}.offers`, `${twice} is listed twice`)
+      return
+    }
+    if (area.offers.length > 0) throw new TemplateError(`${path}.offers`, 'a seller sells the items for sale in its area, it has no offers')
+    if (npc.pose !== 'idle' || npc.scale.some((v) => v !== 1)) throw new TemplateError(`${path}.npc`, 'the seller stands (pose idle) at scale 1')
+    if (!insideBounds(vendorCounter(npc), area.bounds)) throw new TemplateError(`${path}.npc`, 'the counter in front of the seller is outside the area')
+    const other = areas.findIndex((b, k) => k !== i && b.role === 'seller' && overlap(area.bounds, b.bounds))
+    if (other !== -1) throw new TemplateError(`${path}.bounds`, `overlaps the seller area "${areas[other]!.name}"`)
+  })
+  props.forEach((p, i) => {
+    if (p.kind !== 'item' || !p.forSale) return
+    const sellers = areas.filter((a) => a.role === 'seller' && insideBounds(p.position, a.bounds))
+    if (sellers.length === 0) throw new TemplateError(`zone.props[${i}]`, `${p.code} is for sale outside every seller area: draw one in the Sellers map`)
+    if (sellers.length > 1) throw new TemplateError(`zone.props[${i}]`, `${p.code} sits on the edge of "${sellers[0]!.name}" and "${sellers[1]!.name}": move it into one of them`)
+  })
+}
+
+export function parseZoneDecor(raw: unknown, zone: { key: string; bounds: WorldBounds }, crops: CropTable | null, animals: AnimalTable | null, buildings: BuildingTable | null): ZoneDecor {
+  const json = objectAt(raw, 'zone', ['version', 'zone', 'name', 'props', 'areas'])
   if (json.version !== 1) throw new TemplateError('zone.version', 'expected 1')
   if (json.zone !== zone.key) throw new TemplateError('zone.zone', `expected ${zone.key}`)
   if (typeof json.name !== 'string' || json.name.trim() === '') throw new TemplateError('zone.name', 'expected a non-empty string')
   if (!Array.isArray(json.props)) throw new TemplateError('zone.props', 'expected an array')
-  const props = json.props.map((p, i) => zonePropAt(p, `zone.props[${i}]`, crops))
+  const props = json.props.map((p, i) => zonePropAt(p, `zone.props[${i}]`, crops, animals, buildings))
   const ids = new Set<string>()
   props.forEach((p, i) => {
     if (ids.has(p.id)) throw new TemplateError(`zone.props[${i}].id`, `"${p.id}" is used twice`)
     ids.add(p.id)
     if (!insideBounds(p.position, zone.bounds)) throw new TemplateError(`zone.props[${i}].position`, `outside zone ${zone.key}`)
     if (p.kind === 'field' && fieldCorners(p).some(([x, z]) => !insideBounds([x, 0, z], zone.bounds))) throw new TemplateError(`zone.props[${i}].size`, `the field reaches outside zone ${zone.key}`)
-    if (p.kind !== 'npc' || !p.vendor) return
-    if (p.pose !== 'idle' || p.scale.some((s) => s !== 1)) throw new TemplateError(`zone.props[${i}]`, 'the cashier stands (pose idle) at scale 1')
-    if (!insideBounds(vendorCounter(p), zone.bounds)) throw new TemplateError(`zone.props[${i}]`, `the counter in front of the cashier is outside zone ${zone.key}`)
+    if (p.kind === 'animal' && fieldCorners(p).some(([x, z]) => !insideBounds([x, 0, z], zone.bounds))) throw new TemplateError(`zone.props[${i}].size`, `the pen reaches outside zone ${zone.key}`)
+    if (p.kind === 'building' && fieldCorners(p).some(([x, z]) => !insideBounds([x, 0, z], zone.bounds))) throw new TemplateError(`zone.props[${i}].size`, `the building reaches outside zone ${zone.key}`)
+    if (p.kind === 'npc' && p.vendor) throw new TemplateError(`zone.props[${i}].vendor`, 'a zone NPC sells through a sale area of the Sellers map, not the Cashier box')
   })
-  if (props.filter((p) => p.kind === 'npc' && p.vendor).length > 1) throw new TemplateError('zone.props', 'only one NPC can be the cashier')
-  return { version: 1, zone: zone.key, name: json.name, props }
+  checkBuildingRoofs(props)
+  const prices = new Map<string, number>()
+  props.forEach((p, i) => {
+    if (p.kind !== 'item' || !p.forSale) return
+    const other = prices.get(p.code)
+    if (other !== undefined && other !== p.price) throw new TemplateError(`zone.props[${i}].price`, `${p.code} is already sold at ${other} coins in this zone`)
+    prices.set(p.code, p.price!)
+  })
+  if (!Array.isArray(json.areas)) throw new TemplateError('zone.areas', 'expected an array')
+  const areas = json.areas.map((a, i) => areaAt(a, `zone.areas[${i}]`, zone))
+  checkAreas(areas, props)
+  return { version: 1, zone: zone.key, name: json.name, props, areas }
+}
+
+export function zonePrices(decor: ZoneDecor): Record<string, number> {
+  const sold = decor.props.filter((p): p is ItemProp & { price: number } => p.kind === 'item' && p.forSale)
+  return Object.fromEntries(sold.map((p) => [p.code, p.price] as const).sort(([a], [b]) => a.localeCompare(b)))
+}
+
+export interface ZonePriceFile {
+  version: 1
+  zone: string
+  prices: Record<string, number>
+  buyers: Record<string, Record<string, SaleCurve>>
+}
+
+export function zonePriceFile(decor: ZoneDecor): ZonePriceFile {
+  const buyers = decor.areas.filter((a) => a.role === 'buyer')
+  return {
+    version: 1,
+    zone: decor.zone,
+    prices: zonePrices(decor),
+    buyers: Object.fromEntries(buyers.map((a) => [a.id, Object.fromEntries(a.offers.map(({ code, price, quota, overPrice }) => [code, { price, quota, overPrice }]))])),
+  }
 }
 
 export function parseZoneDecorIndex(raw: unknown): ZoneDecorIndex {
@@ -140,11 +373,11 @@ export function parseZoneDecorIndex(raw: unknown): ZoneDecorIndex {
 }
 
 export function bakedProps(decor: ZoneDecor): BakedZoneProp[] {
-  return decor.props.filter((p): p is BakedZoneProp => p.kind === 'decor' || p.kind === 'field')
+  return decor.props.filter((p): p is BakedZoneProp => p.kind === 'decor' || p.kind === 'field' || p.kind === 'building')
 }
 
 export function runtimeProps(decor: ZoneDecor): RuntimeZoneProp[] {
-  return decor.props.filter((p): p is RuntimeZoneProp => p.kind !== 'decor' && p.kind !== 'field')
+  return decor.props.filter((p): p is RuntimeZoneProp => p.kind !== 'decor' && p.kind !== 'field' && p.kind !== 'building')
 }
 
 export function zoneDecorJson(decor: Omit<ZoneDecor, 'props'> & { props: readonly TemplateProp[] }, crops: CropTable): unknown {
@@ -159,7 +392,13 @@ export function zoneDecorJson(decor: Omit<ZoneDecor, 'props'> & { props: readonl
   }
 }
 
-export function zoneStoreLayout(decor: ZoneDecor, bounds: WorldBounds, modelSizes: ReadonlyMap<string, Vec3>): StoreLayout {
-  const layout = templateStoreLayout({ version: 1, key: decor.zone, name: decor.name, preset: { width: 0, depth: 0 }, props: decor.props }, modelSizes)
-  return { ...layout, bounds: { ...bounds } }
+export function areaSeller(decor: ZoneDecor, area: SaleArea): NpcProp {
+  return decor.props.find((p): p is NpcProp => p.kind === 'npc' && p.id === area.npc)!
+}
+
+export function areaStoreLayout(decor: ZoneDecor, area: SaleArea, modelSizes: ReadonlyMap<string, Vec3>): StoreLayout {
+  const sold = decor.props.filter((p) => p.kind === 'item' && p.forSale && insideBounds(p.position, area.bounds))
+  const props = [...sold, { ...areaSeller(decor, area), vendor: true }]
+  const layout = templateStoreLayout({ version: 1, key: `${decor.zone}_${area.id}`, name: area.name, preset: { width: 0, depth: 0 }, props }, modelSizes)
+  return { ...layout, bounds: { ...area.bounds } }
 }
