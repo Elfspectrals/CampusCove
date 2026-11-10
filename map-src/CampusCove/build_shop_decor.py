@@ -368,6 +368,298 @@ def potted_shrub():
     ]
 
 
+def shelf_kit_mats():
+    return {
+        "steel": L.make_mat("DC_ShelfSteel", "#e9e6df", 0.5, "noise", 0.02),
+        "board": L.make_mat("DC_ShelfBoard", "#f4f2ec", 0.6, "noise", 0.02),
+        "strip": L.make_mat("DC_ShelfStrip", "#2f8f8a", 0.6, "noise", 0.02),
+        "back": L.make_mat("DC_ShelfBack", "#d9d4ca", 0.8, "tiles", 0.03, accent="#cbc5b9"),
+        "body": L.make_mat("DC_FridgeBody", "#f4f6f7", 0.4, "noise", 0.01),
+        "dark": L.make_mat("DC_FridgeDark", "#2a2c33", 0.6, "noise", 0.03),
+        "light": L.make_mat("DC_FridgeLight", "#e8f6ff", 0.3, "noise", 0.0, emit="#e8f6ff", emit_strength=1.0),
+        "glass": L.make_mat("DC_FridgeGlass", "#cfe9f2", 0.1, "noise", 0.01, alpha=0.22),
+        "chrome": L.make_mat("DC_FridgeChrome", "#d9dde2", 0.2, "noise", 0.02),
+        "liner": L.make_mat("DC_ChillerLiner", "#bfe4ef", 0.5, "noise", 0.02),
+    }
+
+
+def shelf_kit_upright():
+    return [L.box(coll, "Upright", 0.0, 0.0, 0.0, 0.04, 1.0, 1.0, shelf_kit_mats()["steel"])]
+
+
+def shelf_kit_board():
+    m = shelf_kit_mats()
+    parts = [L.box(coll, "Board", 0.0, 0.0, 0.0, 1.0, 1.0, 0.03, m["board"])]
+    parts += [L.box(coll, f"Strip{k}", 0.0, z, 0.0, 1.0, 0.02, 0.05, m["strip"]) for k, z in enumerate((0.49, -0.49))]
+    return parts
+
+
+def shelf_kit_back():
+    return [L.box(coll, "Back", 0.0, 0.0, 0.0, 1.0, 0.03, 1.0, shelf_kit_mats()["back"])]
+
+
+def shelf_kit_fridge():
+    m = shelf_kit_mats()
+    parts = [
+        L.box(coll, "Plinth", 0.0, 0.0, 0.0, 1.0, 0.75, 0.15, m["dark"]),
+        L.box(coll, "Canopy", 0.0, 0.0, 1.95, 1.0, 0.75, 0.15, m["body"]),
+        L.box(coll, "Light", 0.0, 0.0, 1.93, 0.9, 0.6, 0.02, m["light"]),
+        L.box(coll, "Back", 0.0, -0.35, 0.15, 1.0, 0.05, 1.8, m["body"]),
+        L.box(coll, "Kick", 0.0, 0.35, 0.0, 1.0, 0.05, 0.15, m["dark"]),
+    ]
+    parts += [L.box(coll, f"Post{k}", x, z, 0.15, 0.02, 0.03, 1.8, m["body"]) for k, (x, z) in enumerate((x, z) for x in (-0.49, 0.49) for z in (-0.33, 0.33))]
+    return parts
+
+
+def shelf_kit_door():
+    m = shelf_kit_mats()
+    parts = [L.box(coll, f"Stile{k}", x, 0.0, 0.0, 0.05, 0.03, 1.8, m["dark"]) for k, x in enumerate((-0.475, 0.475))]
+    parts += [L.box(coll, f"Rail{k}", 0.0, 0.0, y, 0.9, 0.03, 0.05, m["dark"]) for k, y in enumerate((0.0, 1.75))]
+    parts += [
+        L.box(coll, "Glass", 0.0, 0.0, 0.05, 0.9, 0.01, 1.7, m["glass"]),
+        L.box(coll, "Handle", 0.0, 0.0, 1.5, 0.6, 0.06, 0.03, m["chrome"]),
+    ]
+    return parts
+
+
+def shelf_kit_tub():
+    m = shelf_kit_mats()
+    parts = [
+        L.box(coll, "Base", 0.0, 0.0, 0.0, 1.0, 0.9, 0.38, m["body"]),
+        L.box(coll, "Liner", 0.0, 0.0, 0.38, 1.0, 0.8, 0.02, m["liner"]),
+    ]
+    for k, z in enumerate((0.425, -0.425)):
+        parts += [
+            L.box(coll, f"Wall{k}", 0.0, z, 0.38, 1.0, 0.05, 0.45, m["body"]),
+            L.box(coll, f"Rim{k}", 0.0, z, 0.83, 1.0, 0.06, 0.02, m["chrome"]),
+            L.box(coll, f"Stripe{k}", 0.0, z * 1.064, 0.55, 1.0, 0.006, 0.08, m["strip"]),
+        ]
+    return parts
+
+
+def sign_text(name, body, gx, gz, y0, size, mat):
+    cu = bpy.data.curves.new(name + "_cu", "FONT")
+    cu.body = body
+    cu.size = size
+    cu.resolution_u = 1
+    cu.align_x = "CENTER"
+    cu.align_y = "BOTTOM"
+    tmp = bpy.data.objects.new(name + "_tmp", cu)
+    coll.objects.link(tmp)
+    me = bpy.data.meshes.new_from_object(tmp.evaluated_get(bpy.context.evaluated_depsgraph_get()))
+    bpy.data.objects.remove(tmp)
+    bpy.data.curves.remove(cu)
+    me.materials.append(mat)
+    ob = bpy.data.objects.new(name, me)
+    ob.rotation_euler = (math.pi / 2, 0, 0)
+    ob.location = L.b(gx, gz, y0)
+    coll.objects.link(ob)
+    return ob
+
+
+def grocery_mats():
+    return {
+        "white": L.make_mat("DC_CartWhite", "#fbfbf8", 0.5, "noise", 0.01),
+        "green": L.make_mat("DC_CartGreen", "#3c9a3c", 0.6, "noise", 0.02),
+        "lime": L.make_mat("DC_CartLime", "#9ad24a", 0.6, "noise", 0.02),
+        "yellow": L.make_mat("DC_CartPromo", "#f7c21b", 0.5, "noise", 0.0, emit="#f7c21b", emit_strength=0.5),
+        "red": L.make_mat("DC_CartRed", "#d9473a", 0.6, "noise", 0.02),
+        "metal": L.make_mat("DC_CartMetal", "#b9bec6", 0.35, "noise", 0.03),
+        "dark": L.make_mat("DC_CartDark", "#2a2e35", 0.6, "noise", 0.02),
+        "conveyor": L.make_mat("DC_CartConveyor", "#2a2d33", 0.6, "stripes", 0.02, accent="#1c1e22"),
+        "panel": L.make_mat("DC_CartPanel", "#e9f4fb", 0.2, "noise", 0.01, emit="#dff1ff", emit_strength=0.7),
+        "glass": L.make_mat("DC_CartGlass", "#dff1ff", 0.1, "noise", 0.01, alpha=0.25),
+        "crate": L.make_mat("DC_CartCrate", "#4f8a3c", 0.8, "planks", 0.04, accent="#3f6f30"),
+        "ice": L.make_mat("DC_CartIce", "#dff3fb", 0.3, "noise", 0.03),
+        "bread": L.make_mat("DC_CartBread", "#d2a15a", 0.9, "noise", 0.05),
+        "rail": L.make_mat("DC_CartTagRail", "#f7f4ec", 0.5, "stripes", 0.01, accent="#f6d04d"),
+        "sign": L.make_mat("DC_CartSign", "#ffffff", 0.4, "noise", 0.0, emit="#ffffff", emit_strength=1.0),
+    }
+
+
+def grocery_colour(c):
+    return L.make_mat(f"DC_CartColour_{c[1:]}", c, 0.6, "noise", 0.04)
+
+
+def produce_table(fruits=()):
+    m = grocery_mats()
+    parts = [
+        L.box(coll, "Body", 0.0, 0.0, 0.0, 1.8, 1.2, 0.7, m["crate"]),
+        L.box(coll, "Rim", 0.0, 0.0, 0.7, 1.9, 1.3, 0.1, m["crate"]),
+    ]
+    mats = [grocery_colour(c) for c in fruits]
+    parts += [L.cyl(coll, f"Fruit{i}", -0.69 + (i % 4) * 0.46, -0.35 + (i // 4) * 0.35, 0.8, 0.14, 0.2, mats[(i + i // 4) % len(mats)], seg=8)
+              for i in range(12 if mats else 0)]
+    return parts
+
+
+def shopping_cart(name, lx, lz, body, m):
+    posts = ((-0.25, -body / 2 + 0.1), (0.25, -body / 2 + 0.1), (-0.25, body / 2 - 0.1), (0.25, body / 2 - 0.1)) if body > 0.6 else ((-0.25, 0.0), (0.25, 0.0))
+    parts = [
+        L.box(coll, f"{name}_Basket", lx, lz, 0.55, 0.6, body, 0.45, m["metal"]),
+        L.box(coll, f"{name}_Handle", lx, lz + body / 2 - 0.025, 1.0, 0.64, 0.05, 0.12, m["red"]),
+    ]
+    parts += [L.box(coll, f"{name}_Post{j}", lx + px, lz + pz, 0.0, 0.05, 0.05, 0.55, m["metal"]) for j, (px, pz) in enumerate(posts)]
+    return parts
+
+
+def cart_pen():
+    m = grocery_mats()
+    parts = []
+    for row, lx in enumerate((-0.5, 0.5)):
+        parts += shopping_cart(f"Cart{row}_0", lx, -1.1, 0.95, m)
+        for i in range(1, 6):
+            parts += shopping_cart(f"Cart{row}_{i}", lx, -0.835 + 0.42 * i, 0.42, m)
+    for j, lx in enumerate((-1.0, 1.0)):
+        parts.append(L.box(coll, f"Rail{j}", lx, 0.0, 0.9, 0.05, 3.4, 0.05, m["metal"]))
+        parts += [L.box(coll, f"RailPost{j}_{i}", lx, lz, 0.0, 0.05, 0.05, 0.9, m["metal"]) for i, lz in enumerate((-1.6, 0.0, 1.6))]
+    return parts
+
+
+def promo_bin():
+    m = grocery_mats()
+    goods = [grocery_colour(c) for c in ("#d9473a", "#2fa17a", "#1f5fae")]
+    parts = [L.box(coll, "Bin", 0.0, 0.0, 0.0, 1.2, 1.2, 0.9, m["yellow"], bevel=0.03)]
+    parts += [L.box(coll, f"Goods{k}", -0.25 + (k % 2) * 0.5, -0.25 + (k // 2) * 0.5, 0.9, 0.45, 0.45, 0.24 + 0.04 * (k % 3), goods[k % 3]) for k in range(4)]
+    return parts
+
+
+def flower_stand():
+    m = grocery_mats()
+    blooms = [grocery_colour(c) for c in ("#f28c28", "#d9473a", "#f6d04d", "#5a2a6b", "#f4b3c8")]
+    parts = [L.box(coll, "Stand", 0.0, 0.0, 0.0, 2.4, 1.0, 0.8, m["crate"])]
+    parts += [L.cyl(coll, f"Bunch{i}", -0.9 + i * 0.36, 0.0, 0.8, 0.12, 0.5, blooms[i % len(blooms)], seg=6) for i in range(6)]
+    return parts
+
+
+def basket_stack():
+    m = grocery_mats()
+    parts = [L.box(coll, "Core", 0.0, 0.0, 0.06, 0.4, 0.28, 0.82, m["green"])]
+    parts += [L.box(coll, f"Basket{j}", 0.0, 0.0, 0.12 * j, 0.45, 0.32, 0.06, m["green"]) for j in range(8)]
+    parts += [L.box(coll, f"Handle{k}", x, 0.0, 0.9, 0.02, 0.3, 0.02, m["metal"]) for k, x in enumerate((-0.18, 0.18))]
+    return parts
+
+
+def trash_bin():
+    m = grocery_mats()
+    return [L.cyl(coll, "Body", 0.0, 0.0, 0.0, 0.28, 0.85, m["dark"], seg=8), L.cyl(coll, "Lid", 0.0, 0.0, 0.85, 0.3, 0.05, m["green"], seg=8)]
+
+
+def service_desk():
+    m = grocery_mats()
+    return [L.box(coll, "Body", 0.0, 0.0, 0.0, 1.6, 0.6, 1.0, m["white"]), L.box(coll, "Top", 0.0, 0.0, 1.0, 1.7, 0.7, 0.05, m["lime"])]
+
+
+def produce_scale():
+    m = grocery_mats()
+    return [
+        L.cyl(coll, "Post", 0.0, 0.0, 0.0, 0.03, 0.9, m["metal"], seg=6),
+        L.box(coll, "Pan", 0.0, 0.0, 0.9, 0.4, 0.4, 0.25, m["metal"]),
+        L.cyl(coll, "Mast", 0.0, 0.0, 1.15, 0.015, 0.3, m["metal"], seg=6),
+        L.box(coll, "Screen", 0.0, 0.0, 1.45, 0.3, 0.02, 0.15, m["panel"]),
+    ]
+
+
+def bag_roll_stand():
+    m = grocery_mats()
+    return [L.cyl(coll, "Post", 0.0, 0.0, 0.0, 0.03, 0.9, m["metal"], seg=6), L.cyl(coll, "Roll", 0.0, 0.0, 0.9, 0.08, 0.35, m["white"], seg=8)]
+
+
+def bakery_counter():
+    m = grocery_mats()
+    return [
+        L.box(coll, "Body", 0.0, 0.0, 0.0, 2.36, 1.0, 1.0, m["crate"]),
+        L.box(coll, "Top", 0.0, 0.0, 1.0, 2.4, 1.1, 0.05, m["white"]),
+        L.box(coll, "Glass", 0.0, 0.5, 1.05, 2.36, 0.04, 0.6, m["glass"]),
+        L.box(coll, "Rail", 0.0, 0.51, 0.95, 2.2, 0.02, 0.045, m["rail"]),
+    ]
+
+
+def bakery_oven():
+    m = grocery_mats()
+    return [
+        L.box(coll, "Body", 0.0, 0.0, 0.0, 1.6, 1.0, 2.0, m["metal"], bevel=0.02),
+        L.box(coll, "Door", 0.0, 0.52, 0.7, 1.2, 0.04, 0.8, m["panel"]),
+        L.box(coll, "Handle", 0.0, 0.56, 1.42, 0.8, 0.04, 0.04, m["dark"]),
+    ]
+
+
+def baguette_barrel():
+    m = grocery_mats()
+    parts = [L.cyl(coll, "Barrel", 0.0, 0.0, 0.0, 0.3, 0.6, m["crate"], seg=10)]
+    parts += [L.cyl(coll, f"Baguette{i}", 0.2 * math.cos(i * math.pi / 4), 0.2 * math.sin(i * math.pi / 4), 0.55, 0.03, 0.7, m["bread"], seg=4) for i in range(8)]
+    return parts
+
+
+def fish_counter():
+    m = grocery_mats()
+    fish = [grocery_colour(c) for c in ("#79b765", "#5a2a6b")]
+    parts = [
+        L.box(coll, "Body", 0.0, 0.0, 0.0, 5.0, 1.2, 0.95, m["white"]),
+        L.box(coll, "Ice", 0.0, 0.0, 0.95, 4.8, 1.0, 0.15, m["ice"]),
+        L.box(coll, "Glass", 0.0, 0.65, 1.0, 5.0, 0.04, 0.7, m["glass"]),
+        L.box(coll, "Rail", 0.0, 0.61, 0.9, 4.8, 0.02, 0.045, m["dark"]),
+    ]
+    parts += [L.box(coll, f"Fish{i}", -1.65 + i * 1.1, 0.0, 1.1, 0.5, 0.22, 0.1, fish[i % 2], bevel=0.03) for i in range(4)]
+    for i, x in enumerate((-1.25, 1.25)):
+        slate = L.box(coll, f"Slate{i}", x, 0.7, 1.72, 0.5, 0.02, 0.35, m["dark"])
+        slate.rotation_euler = (-math.radians(15), 0.0, 0.0)
+        parts.append(slate)
+    return parts
+
+
+def promo_end_cap():
+    m = grocery_mats()
+    return [
+        L.box(coll, "Pallet", 0.0, 0.0, 0.0, 1.2, 1.0, 0.15, m["crate"]),
+        L.box(coll, "Tier0", 0.0, 0.0, 0.15, 1.1, 0.9, 0.45, m["red"]),
+        L.box(coll, "Tier1", 0.0, 0.0, 0.6, 0.8, 0.65, 0.4, grocery_colour("#1f5fae")),
+        L.box(coll, "Tier2", 0.0, 0.0, 1.0, 0.5, 0.4, 0.35, grocery_colour("#2fa17a")),
+        L.box(coll, "Mast", 0.0, 0.47, 0.15, 0.04, 0.04, 1.85, m["metal"]),
+        L.box(coll, "Sign", 0.0, 0.515, 1.6, 0.9, 0.05, 0.4, m["yellow"]),
+        sign_text("SignText", "PROMO", 0.0, 0.541, 1.68, 0.22, m["red"]),
+    ]
+
+
+def promo_pallet():
+    m = grocery_mats()
+    return [
+        L.box(coll, "Pallet", 0.0, 0.0, 0.0, 1.2, 0.6, 0.15, m["crate"]),
+        L.box(coll, "Tier0", 0.0, 0.0, 0.15, 1.1, 0.5, 0.45, m["red"]),
+        L.box(coll, "Tier1", 0.0, 0.0, 0.6, 0.8, 0.39, 0.4, m["yellow"]),
+    ]
+
+
+def checkout_lane():
+    m = grocery_mats()
+    parts = [
+        L.box(coll, "Body", 0.0, 0.0, 0.0, 1.0, 3.4, 0.9, m["white"], bevel=0.02),
+        L.box(coll, "Belt", 0.0, 0.0, 0.9, 0.7, 3.0, 0.05, m["conveyor"]),
+        L.box(coll, "Register", 0.0, 1.3, 0.95, 0.5, 0.35, 0.3, m["metal"], bevel=0.01),
+        L.box(coll, "Mast", 0.0, 1.62, 0.9, 0.04, 0.04, 1.6, m["metal"]),
+        L.box(coll, "Screen", 0.0, 1.585, 1.3, 0.4, 0.03, 0.3, m["conveyor"]),
+        L.box(coll, "ScreenFace", 0.0, 1.56, 1.32, 0.36, 0.02, 0.26, m["panel"]),
+        L.box(coll, "Terminal", -0.42, 1.0, 0.9, 0.12, 0.08, 0.05, m["conveyor"]),
+        L.box(coll, "Divider", 0.0, -1.0, 0.95, 0.3, 0.03, 0.03, m["green"]),
+        L.box(coll, "Seat", 0.8, -0.6, 0.0, 0.42, 0.42, 0.48, m["conveyor"]),
+        L.box(coll, "SeatBack", 0.8, -0.78, 0.48, 0.42, 0.06, 0.4, m["conveyor"]),
+        L.box(coll, "Light", 0.0, 1.5, 2.5, 0.5, 0.5, 0.3, m["yellow"], bevel=0.05),
+    ]
+    parts += [L.box(coll, f"Bag{j}", 0.51, dz, 0.5, 0.02, 0.3, 0.35, m[mat]) for j, (dz, mat) in enumerate(((0.5, "white"), (0.85, "green"), (1.2, "white")))]
+    return parts
+
+
+def lane_closed_chain():
+    m = grocery_mats()
+    parts = [L.cyl(coll, f"Post{j}", x, 0.0, 0.0, 0.02, 0.85, m["metal"], seg=6) for j, x in enumerate((-0.5, 0.5))]
+    parts += [
+        L.box(coll, "Chain", 0.0, 0.0, 0.85, 1.0, 0.02, 0.02, m["red"]),
+        L.box(coll, "Sign", 0.0, 0.0, 0.65, 0.36, 0.02, 0.2, m["red"]),
+        sign_text("SignText", "CLOSED", 0.0, 0.011, 0.69, 0.1, m["sign"]),
+    ]
+    return parts
+
+
 DECOR = {
     "checkout_counter": checkout_counter,
     "shop_rack": shop_rack,
@@ -402,6 +694,32 @@ DECOR = {
     "round_clothes_rail": round_clothes_rail,
     "display_cube_stacks": display_cube_stacks,
     "mannequin_podium_wide": lambda: mannequin_podium(2.5, 32, "chrome", wide_podium_tag_posts()),
+    "produce_table": produce_table,
+    "produce_table_citrus": lambda: produce_table(("#f28c28", "#f6d04d")),
+    "produce_table_greens": lambda: produce_table(("#79b765", "#a9c99a")),
+    "produce_table_veg": lambda: produce_table(("#5a2a6b", "#e24b4a")),
+    "cart_pen": cart_pen,
+    "promo_bin": promo_bin,
+    "flower_stand": flower_stand,
+    "basket_stack": basket_stack,
+    "trash_bin": trash_bin,
+    "service_desk": service_desk,
+    "produce_scale": produce_scale,
+    "bag_roll_stand": bag_roll_stand,
+    "bakery_counter": bakery_counter,
+    "bakery_oven": bakery_oven,
+    "baguette_barrel": baguette_barrel,
+    "fish_counter": fish_counter,
+    "promo_end_cap": promo_end_cap,
+    "promo_pallet": promo_pallet,
+    "checkout_lane": checkout_lane,
+    "lane_closed_chain": lane_closed_chain,
+    "shelf_kit/upright": shelf_kit_upright,
+    "shelf_kit/board": shelf_kit_board,
+    "shelf_kit/back": shelf_kit_back,
+    "shelf_kit/fridge": shelf_kit_fridge,
+    "shelf_kit/door": shelf_kit_door,
+    "shelf_kit/tub": shelf_kit_tub,
 }
 
 

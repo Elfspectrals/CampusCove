@@ -26,6 +26,7 @@ import { BUILDING_PARTS, BUILDING_SIDES, STAFF_ROLES, type BuildingOpening, type
 import EditorColorPicker from './EditorColorPicker.vue'
 import EditorLookEditor from './EditorLookEditor.vue'
 import EditorSearchSelect, { type SelectOption } from './EditorSearchSelect.vue'
+import MallEditorShelf, { type ShelfItem } from './MallEditorShelf.vue'
 
 const props = defineProps<{
   prop: TemplateProp | null
@@ -48,6 +49,7 @@ const props = defineProps<{
   rebuilding?: string | null
   selectedCount?: number
   shop?: string | null
+  shelfItems?: ShelfItem[]
 }>()
 
 const emit = defineEmits<{ change: [prop: TemplateProp]; surfaces: [surfaces: NonNullable<MallTemplate['surfaces']>]; remove: [id: string]; toggle: []; rebuild: [id: string]; openShop: [] }>()
@@ -123,6 +125,7 @@ function withNumbers(source: TemplateProp, n: Numbers): TemplateProp {
     const quarter = Math.PI / 2
     return { ...base, yaw: Math.round(base.yaw / quarter) * quarter, scale: [1, 1, 1], size: [round(n.width), round(n.depth)], height: round(n.height), roof: round(n.roof) }
   }
+  if (base.kind === 'shelf') return { ...base, scale: [1, 1, 1] }
   if (base.kind === 'light') {
     const lamp = { ...base, intensity: round(n.intensity), range: round(n.range) }
     return base.light === 'spot' ? { ...lamp, angle: round((n.angle * Math.PI) / 180), pitch: round((n.pitch * Math.PI) / 180) } : lamp
@@ -164,7 +167,7 @@ function build(): void {
   } else if (prop.kind === 'animal') {
     pane.addBinding(numbers, 'width', { label: 'Pen width m', min: MIN_PEN_SIDE, max: MAX_PEN_SIDE, step: 0.5 })
     pane.addBinding(numbers, 'depth', { label: 'Pen depth m', min: MIN_PEN_SIDE, max: MAX_PEN_SIDE, step: 0.5 })
-  } else if (!(prop.kind === 'npc' && prop.vendor)) pane.addBinding(numbers, 'scale', { label: 'Scale', x: axis, y: axis, z: axis })
+  } else if (!(prop.kind === 'npc' && prop.vendor) && prop.kind !== 'shelf') pane.addBinding(numbers, 'scale', { label: 'Scale', x: axis, y: axis, z: axis })
   if (prop.kind === 'item' && prop.forSale) {
     pane.addBinding(numbers, 'columns', { label: 'Stack cols', min: 1, max: 10, step: 1 })
     pane.addBinding(numbers, 'rows', { label: 'Stack rows', min: 1, max: 10, step: 1 })
@@ -210,6 +213,7 @@ const figure = computed(() => (props.prop?.kind === 'npc' || props.prop?.kind ==
 const light = computed(() => (props.prop?.kind === 'light' ? props.prop : null))
 const field = computed(() => (props.prop?.kind === 'field' ? props.prop : null))
 const building = computed(() => (props.prop?.kind === 'building' ? props.prop : null))
+const shelf = computed(() => (props.prop?.kind === 'shelf' ? props.prop : null))
 const RIDGES: SelectOption[] = [
   { value: 'x', label: 'Along the width' },
   { value: 'z', label: 'Along the depth' },
@@ -452,6 +456,7 @@ const flatMaterials = computed(() => props.materialOptions.filter((o) => !o.prev
           </button>
           <p class="m-0 text-[11px] text-mist">Rebuild shows the real building here. The game gets it after Save and zone:bake.</p>
         </div>
+        <MallEditorShelf v-if="shelf" :shelf="shelf" :items="shelfItems ?? []" @change="change" />
         <div v-if="field" class="flex flex-col gap-1.5 rounded-lg bg-ink-950/50 p-2">
           <div class="grid grid-cols-[5.5rem_1fr] items-center gap-2">
             <span class="text-xs text-mist">Crop</span>

@@ -52,8 +52,8 @@ const OPEN_DOOR_ANGLE = 1.4
 const DOOR_SWING_SPEED = 3
 const DOOR_BLOCKER_MIN_HALF = 0.08
 const LIGHTMAP_INTENSITY = Math.PI * 0.65
-const INTERIOR_SHOW_DISTANCE = 20
-const INTERIOR_HIDE_DISTANCE = 26
+export const INTERIOR_SHOW_DISTANCE = 20
+export const INTERIOR_HIDE_DISTANCE = 26
 
 const buildingFloors: BuildingFloor[] = []
 const placedInteriors: THREE.Group[] = []

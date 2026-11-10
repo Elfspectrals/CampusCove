@@ -290,6 +290,7 @@ export interface StoreDisplay {
   stack?: [number, number]
   scale?: [number, number, number]
   figure?: { prop: string; slot: string }
+  shelfSlot?: { prop: string; slot: string }
   /** Price-tag board (centre) at the edge of the route. */
   tag: { position: [number, number, number]; yaw: number }
 }

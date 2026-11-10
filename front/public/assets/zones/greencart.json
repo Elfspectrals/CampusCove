@@ -51,6 +51,3947 @@
       ]
     },
     {
+      "id": "greencart_cart_pen",
+      "kind": "item",
+      "key": "cart_pen",
+      "code": "decor_cart_pen",
+      "forSale": false,
+      "position": [
+        -333.991,
+        0.2,
+        -80.605
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "greencart_promo_bin_door",
+      "kind": "item",
+      "key": "promo_bin",
+      "code": "decor_promo_bin",
+      "forSale": false,
+      "position": [
+        -342.6,
+        0.2,
+        -81.905
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "greencart_promo_bin_produce",
+      "kind": "item",
+      "key": "promo_bin",
+      "code": "decor_promo_bin",
+      "forSale": false,
+      "position": [
+        -337.8,
+        0.2,
+        -82.605
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "greencart_flower_stand",
+      "kind": "item",
+      "key": "flower_stand",
+      "code": "decor_flower_stand",
+      "forSale": false,
+      "position": [
+        -325.0,
+        0.2,
+        -80.405
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "greencart_baskets_entrance",
+      "kind": "item",
+      "key": "basket_stack",
+      "code": "decor_basket_stack",
+      "forSale": false,
+      "position": [
+        -343.0,
+        0.2,
+        -79.205
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "greencart_baskets_exit",
+      "kind": "item",
+      "key": "basket_stack",
+      "code": "decor_basket_stack",
+      "forSale": false,
+      "position": [
+        -358.6,
+        0.2,
+        -82.805
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "greencart_bin_door",
+      "kind": "item",
+      "key": "trash_bin",
+      "code": "decor_trash_bin",
+      "forSale": false,
+      "position": [
+        -338.0,
+        0.2,
+        -79.105
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "greencart_bin_exit",
+      "kind": "item",
+      "key": "trash_bin",
+      "code": "decor_trash_bin",
+      "forSale": false,
+      "position": [
+        -358.6,
+        0.2,
+        -81.805
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "greencart_bin_produce",
+      "kind": "item",
+      "key": "trash_bin",
+      "code": "decor_trash_bin",
+      "forSale": false,
+      "position": [
+        -321.5,
+        0.208,
+        -82.905
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "greencart_bin_east",
+      "kind": "item",
+      "key": "trash_bin",
+      "code": "decor_trash_bin",
+      "forSale": false,
+      "position": [
+        -321.5,
+        0.208,
+        -101.905
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "greencart_bin_fresh",
+      "kind": "item",
+      "key": "trash_bin",
+      "code": "decor_trash_bin",
+      "forSale": false,
+      "position": [
+        -341.0,
+        0.208,
+        -109.705
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "greencart_bin_west",
+      "kind": "item",
+      "key": "trash_bin",
+      "code": "decor_trash_bin",
+      "forSale": false,
+      "position": [
+        -359.0,
+        0.208,
+        -96.005
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "greencart_service_desk",
+      "kind": "item",
+      "key": "service_desk",
+      "code": "decor_service_desk",
+      "forSale": false,
+      "position": [
+        -355.5,
+        0.2,
+        -79.205
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "greencart_produce_table_bananas",
+      "kind": "item",
+      "key": "produce_table",
+      "code": "decor_produce_table",
+      "forSale": false,
+      "position": [
+        -328.0,
+        0.208,
+        -84.405
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "greencart_produce_table_apples",
+      "kind": "item",
+      "key": "produce_table",
+      "code": "decor_produce_table",
+      "forSale": false,
+      "position": [
+        -324.0,
+        0.208,
+        -84.405
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "greencart_produce_table_citrus_a",
+      "kind": "item",
+      "key": "produce_table_citrus",
+      "code": "decor_produce_table_citrus",
+      "forSale": false,
+      "position": [
+        -328.0,
+        0.208,
+        -87.405
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "greencart_produce_table_citrus_b",
+      "kind": "item",
+      "key": "produce_table_citrus",
+      "code": "decor_produce_table_citrus",
+      "forSale": false,
+      "position": [
+        -324.0,
+        0.208,
+        -87.405
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "greencart_produce_table_greens_a",
+      "kind": "item",
+      "key": "produce_table_greens",
+      "code": "decor_produce_table_greens",
+      "forSale": false,
+      "position": [
+        -328.0,
+        0.208,
+        -90.405
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "greencart_produce_table_greens_b",
+      "kind": "item",
+      "key": "produce_table_greens",
+      "code": "decor_produce_table_greens",
+      "forSale": false,
+      "position": [
+        -324.0,
+        0.208,
+        -90.405
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "greencart_produce_table_veg_a",
+      "kind": "item",
+      "key": "produce_table_veg",
+      "code": "decor_produce_table_veg",
+      "forSale": false,
+      "position": [
+        -328.0,
+        0.208,
+        -93.405
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "greencart_produce_table_veg_b",
+      "kind": "item",
+      "key": "produce_table_veg",
+      "code": "decor_produce_table_veg",
+      "forSale": false,
+      "position": [
+        -324.0,
+        0.208,
+        -93.405
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "greencart_produce_scale",
+      "kind": "item",
+      "key": "produce_scale",
+      "code": "decor_produce_scale",
+      "forSale": false,
+      "position": [
+        -326.0,
+        0.208,
+        -88.905
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "greencart_bag_roll",
+      "kind": "item",
+      "key": "bag_roll_stand",
+      "code": "decor_bag_roll_stand",
+      "forSale": false,
+      "position": [
+        -326.0,
+        0.208,
+        -85.905
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "greencart_bakery_counter_a",
+      "kind": "item",
+      "key": "bakery_counter",
+      "code": "decor_bakery_counter",
+      "forSale": false,
+      "position": [
+        -326.752,
+        0.208,
+        -108.805
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "greencart_bakery_counter_b",
+      "kind": "item",
+      "key": "bakery_counter",
+      "code": "decor_bakery_counter",
+      "forSale": false,
+      "position": [
+        -326.752,
+        0.208,
+        -106.405
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "greencart_bakery_counter_c",
+      "kind": "item",
+      "key": "bakery_counter",
+      "code": "decor_bakery_counter",
+      "forSale": false,
+      "position": [
+        -326.752,
+        0.208,
+        -104.005
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "greencart_bakery_oven_a",
+      "kind": "item",
+      "key": "bakery_oven",
+      "code": "decor_bakery_oven",
+      "forSale": false,
+      "position": [
+        -330.0,
+        0.208,
+        -113.445
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "greencart_bakery_oven_b",
+      "kind": "item",
+      "key": "bakery_oven",
+      "code": "decor_bakery_oven",
+      "forSale": false,
+      "position": [
+        -328.0,
+        0.208,
+        -113.445
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "greencart_baguette_barrel",
+      "kind": "item",
+      "key": "baguette_barrel",
+      "code": "decor_baguette_barrel",
+      "forSale": false,
+      "position": [
+        -329.0,
+        0.208,
+        -103.405
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "greencart_fish_counter_a",
+      "kind": "item",
+      "key": "fish_counter",
+      "code": "decor_fish_counter",
+      "forSale": false,
+      "position": [
+        -342.5,
+        0.208,
+        -111.648
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "greencart_fish_counter_b",
+      "kind": "item",
+      "key": "fish_counter",
+      "code": "decor_fish_counter",
+      "forSale": false,
+      "position": [
+        -337.5,
+        0.208,
+        -111.648
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "greencart_end_cap_breakfast",
+      "kind": "item",
+      "key": "promo_end_cap",
+      "code": "decor_promo_end_cap",
+      "forSale": false,
+      "position": [
+        -355.0,
+        0.2,
+        -94.437
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "greencart_end_cap_drinks",
+      "kind": "item",
+      "key": "promo_end_cap",
+      "code": "decor_promo_end_cap",
+      "forSale": false,
+      "position": [
+        -351.0,
+        0.2,
+        -94.437
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "greencart_end_cap_snacks",
+      "kind": "item",
+      "key": "promo_end_cap",
+      "code": "decor_promo_end_cap",
+      "forSale": false,
+      "position": [
+        -347.0,
+        0.2,
+        -94.437
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "greencart_end_cap_pasta",
+      "kind": "item",
+      "key": "promo_end_cap",
+      "code": "decor_promo_end_cap",
+      "forSale": false,
+      "position": [
+        -343.0,
+        0.2,
+        -94.437
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "greencart_end_cap_household",
+      "kind": "item",
+      "key": "promo_end_cap",
+      "code": "decor_promo_end_cap",
+      "forSale": false,
+      "position": [
+        -339.0,
+        0.2,
+        -94.437
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "greencart_end_cap_frozen",
+      "kind": "item",
+      "key": "promo_end_cap",
+      "code": "decor_promo_end_cap",
+      "forSale": false,
+      "position": [
+        -335.0,
+        0.2,
+        -94.437
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "greencart_back_cap_drinks",
+      "kind": "item",
+      "key": "promo_pallet",
+      "code": "decor_promo_pallet",
+      "forSale": false,
+      "position": [
+        -351.0,
+        0.2,
+        -107.455
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "greencart_back_cap_pasta",
+      "kind": "item",
+      "key": "promo_pallet",
+      "code": "decor_promo_pallet",
+      "forSale": false,
+      "position": [
+        -343.0,
+        0.2,
+        -107.455
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "greencart_back_cap_frozen",
+      "kind": "item",
+      "key": "promo_pallet",
+      "code": "decor_promo_pallet",
+      "forSale": false,
+      "position": [
+        -335.0,
+        0.2,
+        -107.455
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "greencart_checkout_1",
+      "kind": "item",
+      "key": "checkout_lane",
+      "code": "decor_checkout_lane",
+      "forSale": false,
+      "position": [
+        -356.806,
+        0.2,
+        -80.981
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "greencart_checkout_2",
+      "kind": "item",
+      "key": "checkout_lane",
+      "code": "decor_checkout_lane",
+      "forSale": false,
+      "position": [
+        -353.806,
+        0.2,
+        -80.981
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "greencart_checkout_3",
+      "kind": "item",
+      "key": "checkout_lane",
+      "code": "decor_checkout_lane",
+      "forSale": false,
+      "position": [
+        -350.806,
+        0.2,
+        -80.981
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "greencart_checkout_4",
+      "kind": "item",
+      "key": "checkout_lane",
+      "code": "decor_checkout_lane",
+      "forSale": false,
+      "position": [
+        -347.806,
+        0.2,
+        -80.981
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "greencart_checkout_5",
+      "kind": "item",
+      "key": "checkout_lane",
+      "code": "decor_checkout_lane",
+      "forSale": false,
+      "position": [
+        -344.806,
+        0.2,
+        -80.981
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "greencart_checkout_4_closed",
+      "kind": "item",
+      "key": "lane_closed_chain",
+      "code": "decor_lane_closed_chain",
+      "forSale": false,
+      "position": [
+        -349.0,
+        0.208,
+        -83.507
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "greencart_checkout_5_closed",
+      "kind": "item",
+      "key": "lane_closed_chain",
+      "code": "decor_lane_closed_chain",
+      "forSale": false,
+      "position": [
+        -346.0,
+        0.208,
+        -83.507
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "greencart_plant_west",
+      "kind": "item",
+      "key": "potted_shrub",
+      "code": "decor_potted_shrub",
+      "forSale": false,
+      "position": [
+        -358.8,
+        0.2,
+        -79.105
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "greencart_plant_east",
+      "kind": "item",
+      "key": "potted_shrub",
+      "code": "decor_potted_shrub",
+      "forSale": false,
+      "position": [
+        -321.2,
+        0.208,
+        -79.105
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "greencart_gondola_breakfast_a",
+      "kind": "shelf",
+      "shelf": "gondola",
+      "position": [
+        -355.0,
+        0.2,
+        -104.155
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "length": 6,
+      "levels": 4,
+      "slots": 3,
+      "fill": {
+        "0.0.0": {
+          "code": "grocery_cereal",
+          "key": "cereal",
+          "price": 18,
+          "count": 4,
+          "arrange": "front"
+        },
+        "0.0.1": {
+          "code": "food_coffee",
+          "key": "coffee",
+          "price": 15,
+          "count": 5,
+          "arrange": "stack"
+        },
+        "0.0.2": {
+          "code": "food_cookie",
+          "key": "cookie",
+          "price": 5,
+          "count": 10,
+          "arrange": "messy"
+        },
+        "0.1.0": {
+          "code": "food_coffee",
+          "key": "coffee",
+          "price": 15,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "0.1.1": {
+          "code": "food_cookie",
+          "key": "cookie",
+          "price": 5,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "0.1.2": {
+          "code": "grocery_cereal",
+          "key": "cereal",
+          "price": 18,
+          "count": 3,
+          "arrange": "front"
+        },
+        "0.2.0": {
+          "code": "grocery_cereal",
+          "key": "cereal",
+          "price": 18,
+          "count": 8,
+          "arrange": "rows"
+        },
+        "0.2.1": {
+          "code": "grocery_cereal",
+          "key": "cereal",
+          "price": 18,
+          "count": 4,
+          "arrange": "rows"
+        },
+        "0.2.2": {
+          "code": "food_coffee",
+          "key": "coffee",
+          "price": 15,
+          "count": 10,
+          "arrange": "front"
+        },
+        "0.3.0": {
+          "code": "grocery_cereal",
+          "key": "cereal",
+          "price": 18,
+          "count": 7,
+          "arrange": "rows"
+        },
+        "0.3.1": {
+          "code": "food_coffee",
+          "key": "coffee",
+          "price": 15,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "0.3.2": {
+          "code": "food_cookie",
+          "key": "cookie",
+          "price": 5,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "1.0.0": {
+          "code": "food_cookie",
+          "key": "cookie",
+          "price": 5,
+          "count": 10,
+          "arrange": "messy"
+        },
+        "1.0.1": {
+          "code": "grocery_cereal",
+          "key": "cereal",
+          "price": 18,
+          "count": 7,
+          "arrange": "rows"
+        },
+        "1.0.2": {
+          "code": "food_coffee",
+          "key": "coffee",
+          "price": 15,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "1.1.1": {
+          "code": "food_coffee",
+          "key": "coffee",
+          "price": 15,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "1.1.2": {
+          "code": "food_cookie",
+          "key": "cookie",
+          "price": 5,
+          "count": 7,
+          "arrange": "messy"
+        },
+        "1.2.0": {
+          "code": "food_coffee",
+          "key": "coffee",
+          "price": 15,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "1.2.1": {
+          "code": "food_cookie",
+          "key": "cookie",
+          "price": 5,
+          "count": 6,
+          "arrange": "stack"
+        },
+        "1.2.2": {
+          "code": "grocery_cereal",
+          "key": "cereal",
+          "price": 18,
+          "count": 3,
+          "arrange": "front"
+        },
+        "1.3.0": {
+          "code": "food_cookie",
+          "key": "cookie",
+          "price": 5,
+          "count": 7,
+          "arrange": "rows"
+        },
+        "1.3.1": {
+          "code": "grocery_cereal",
+          "key": "cereal",
+          "price": 18,
+          "count": 4,
+          "arrange": "rows"
+        },
+        "1.3.2": {
+          "code": "food_coffee",
+          "key": "coffee",
+          "price": 15,
+          "count": 10,
+          "arrange": "rows"
+        }
+      }
+    },
+    {
+      "id": "greencart_gondola_breakfast_b",
+      "kind": "shelf",
+      "shelf": "gondola",
+      "position": [
+        -355.0,
+        0.2,
+        -98.155
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "length": 6,
+      "levels": 4,
+      "slots": 3,
+      "fill": {
+        "0.0.0": {
+          "code": "food_coffee",
+          "key": "coffee",
+          "price": 15,
+          "count": 6,
+          "arrange": "front"
+        },
+        "0.0.1": {
+          "code": "food_cookie",
+          "key": "cookie",
+          "price": 5,
+          "count": 6,
+          "arrange": "front"
+        },
+        "0.0.2": {
+          "code": "grocery_cereal",
+          "key": "cereal",
+          "price": 18,
+          "count": 7,
+          "arrange": "rows"
+        },
+        "0.1.0": {
+          "code": "food_cookie",
+          "key": "cookie",
+          "price": 5,
+          "count": 10,
+          "arrange": "front"
+        },
+        "0.1.1": {
+          "code": "grocery_cereal",
+          "key": "cereal",
+          "price": 18,
+          "count": 3,
+          "arrange": "rows"
+        },
+        "0.1.2": {
+          "code": "food_coffee",
+          "key": "coffee",
+          "price": 15,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "0.2.0": {
+          "code": "grocery_cereal",
+          "key": "cereal",
+          "price": 18,
+          "count": 4,
+          "arrange": "rows"
+        },
+        "0.2.2": {
+          "code": "food_cookie",
+          "key": "cookie",
+          "price": 5,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "0.3.0": {
+          "code": "food_coffee",
+          "key": "coffee",
+          "price": 15,
+          "count": 10,
+          "arrange": "front"
+        },
+        "0.3.1": {
+          "code": "food_cookie",
+          "key": "cookie",
+          "price": 5,
+          "count": 10,
+          "arrange": "messy"
+        },
+        "0.3.2": {
+          "code": "grocery_cereal",
+          "key": "cereal",
+          "price": 18,
+          "count": 4,
+          "arrange": "front"
+        },
+        "1.0.0": {
+          "code": "grocery_cereal",
+          "key": "cereal",
+          "price": 18,
+          "count": 3,
+          "arrange": "rows"
+        },
+        "1.0.1": {
+          "code": "food_coffee",
+          "key": "coffee",
+          "price": 15,
+          "count": 6,
+          "arrange": "front"
+        },
+        "1.0.2": {
+          "code": "food_cookie",
+          "key": "cookie",
+          "price": 5,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "1.1.0": {
+          "code": "food_coffee",
+          "key": "coffee",
+          "price": 15,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "1.1.1": {
+          "code": "food_cookie",
+          "key": "cookie",
+          "price": 5,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "1.1.2": {
+          "code": "grocery_cereal",
+          "key": "cereal",
+          "price": 18,
+          "count": 3,
+          "arrange": "front"
+        },
+        "1.2.0": {
+          "code": "food_coffee",
+          "key": "coffee",
+          "price": 15,
+          "count": 8,
+          "arrange": "rows"
+        },
+        "1.2.1": {
+          "code": "grocery_cereal",
+          "key": "cereal",
+          "price": 18,
+          "count": 4,
+          "arrange": "rows"
+        },
+        "1.2.2": {
+          "code": "food_coffee",
+          "key": "coffee",
+          "price": 15,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "1.3.0": {
+          "code": "grocery_cereal",
+          "key": "cereal",
+          "price": 18,
+          "count": 3,
+          "arrange": "front"
+        },
+        "1.3.1": {
+          "code": "food_coffee",
+          "key": "coffee",
+          "price": 15,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "1.3.2": {
+          "code": "food_cookie",
+          "key": "cookie",
+          "price": 5,
+          "count": 10,
+          "arrange": "rows"
+        }
+      }
+    },
+    {
+      "id": "greencart_gondola_drinks_a",
+      "kind": "shelf",
+      "shelf": "gondola",
+      "position": [
+        -351.0,
+        0.2,
+        -104.155
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "length": 6,
+      "levels": 4,
+      "slots": 3,
+      "fill": {
+        "0.0.0": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 9,
+          "arrange": "rows"
+        },
+        "0.0.1": {
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 8,
+          "arrange": "front"
+        },
+        "0.0.2": {
+          "code": "food_orange_juice",
+          "key": "orange_juice",
+          "price": 14,
+          "count": 9,
+          "arrange": "rows"
+        },
+        "0.1.0": {
+          "code": "food_orange_juice",
+          "key": "orange_juice",
+          "price": 14,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "0.1.1": {
+          "code": "food_orange_juice",
+          "key": "orange_juice",
+          "price": 14,
+          "count": 10,
+          "arrange": "front"
+        },
+        "0.1.2": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "0.2.0": {
+          "code": "food_orange_juice",
+          "key": "orange_juice",
+          "price": 14,
+          "count": 9,
+          "arrange": "rows"
+        },
+        "0.2.1": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "0.2.2": {
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "0.3.0": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "0.3.1": {
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "0.3.2": {
+          "code": "food_orange_juice",
+          "key": "orange_juice",
+          "price": 14,
+          "count": 9,
+          "arrange": "rows"
+        },
+        "1.0.0": {
+          "code": "food_orange_juice",
+          "key": "orange_juice",
+          "price": 14,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "1.0.1": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "1.0.2": {
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 10,
+          "arrange": "front"
+        },
+        "1.1.0": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 10,
+          "arrange": "front"
+        },
+        "1.1.2": {
+          "code": "food_orange_juice",
+          "key": "orange_juice",
+          "price": 14,
+          "count": 8,
+          "arrange": "front"
+        },
+        "1.2.0": {
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "1.2.1": {
+          "code": "food_orange_juice",
+          "key": "orange_juice",
+          "price": 14,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "1.2.2": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 9,
+          "arrange": "rows"
+        },
+        "1.3.0": {
+          "code": "food_orange_juice",
+          "key": "orange_juice",
+          "price": 14,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "1.3.1": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "1.3.2": {
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 9,
+          "arrange": "rows"
+        }
+      }
+    },
+    {
+      "id": "greencart_gondola_drinks_b",
+      "kind": "shelf",
+      "shelf": "gondola",
+      "position": [
+        -351.0,
+        0.2,
+        -98.155
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "length": 6,
+      "levels": 4,
+      "slots": 3,
+      "fill": {
+        "0.0.0": {
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 9,
+          "arrange": "rows"
+        },
+        "0.0.1": {
+          "code": "food_orange_juice",
+          "key": "orange_juice",
+          "price": 14,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "0.0.2": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 10,
+          "arrange": "front"
+        },
+        "0.1.0": {
+          "code": "food_orange_juice",
+          "key": "orange_juice",
+          "price": 14,
+          "count": 9,
+          "arrange": "rows"
+        },
+        "0.1.1": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 10,
+          "arrange": "front"
+        },
+        "0.1.2": {
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "0.2.0": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 10,
+          "arrange": "front"
+        },
+        "0.2.1": {
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "0.3.0": {
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 9,
+          "arrange": "rows"
+        },
+        "0.3.1": {
+          "code": "food_orange_juice",
+          "key": "orange_juice",
+          "price": 14,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "0.3.2": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 9,
+          "arrange": "rows"
+        },
+        "1.0.0": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 10,
+          "arrange": "front"
+        },
+        "1.0.1": {
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 9,
+          "arrange": "rows"
+        },
+        "1.0.2": {
+          "code": "food_orange_juice",
+          "key": "orange_juice",
+          "price": 14,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "1.1.0": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 18,
+          "arrange": "rows"
+        },
+        "1.1.1": {
+          "code": "food_orange_juice",
+          "key": "orange_juice",
+          "price": 14,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "1.1.2": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 10,
+          "arrange": "front"
+        },
+        "1.2.0": {
+          "code": "food_orange_juice",
+          "key": "orange_juice",
+          "price": 14,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "1.2.1": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "1.2.2": {
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "1.3.0": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 7,
+          "arrange": "stack"
+        },
+        "1.3.1": {
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 8,
+          "arrange": "front"
+        },
+        "1.3.2": {
+          "code": "food_orange_juice",
+          "key": "orange_juice",
+          "price": 14,
+          "count": 10,
+          "arrange": "front"
+        }
+      }
+    },
+    {
+      "id": "greencart_gondola_snacks_a",
+      "kind": "shelf",
+      "shelf": "gondola",
+      "position": [
+        -347.0,
+        0.2,
+        -104.155
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "length": 6,
+      "levels": 4,
+      "slots": 3,
+      "fill": {
+        "0.0.1": {
+          "code": "food_cookie",
+          "key": "cookie",
+          "price": 5,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "0.0.2": {
+          "code": "grocery_chips",
+          "key": "chips",
+          "price": 9,
+          "count": 6,
+          "arrange": "messy"
+        },
+        "0.1.0": {
+          "code": "grocery_chocolate",
+          "key": "chocolate",
+          "price": 10,
+          "count": 9,
+          "arrange": "rows"
+        },
+        "0.1.1": {
+          "code": "grocery_chips",
+          "key": "chips",
+          "price": 9,
+          "count": 7,
+          "arrange": "rows"
+        },
+        "0.1.2": {
+          "code": "grocery_chocolate",
+          "key": "chocolate",
+          "price": 10,
+          "count": 6,
+          "arrange": "stack"
+        },
+        "0.2.0": {
+          "code": "grocery_chips",
+          "key": "chips",
+          "price": 9,
+          "count": 4,
+          "arrange": "front"
+        },
+        "0.2.1": {
+          "code": "grocery_chocolate",
+          "key": "chocolate",
+          "price": 10,
+          "count": 3,
+          "arrange": "front"
+        },
+        "0.2.2": {
+          "code": "food_cookie",
+          "key": "cookie",
+          "price": 5,
+          "count": 7,
+          "arrange": "rows"
+        },
+        "0.3.0": {
+          "code": "grocery_chocolate",
+          "key": "chocolate",
+          "price": 10,
+          "count": 3,
+          "arrange": "front"
+        },
+        "0.3.1": {
+          "code": "food_cookie",
+          "key": "cookie",
+          "price": 5,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "0.3.2": {
+          "code": "grocery_chips",
+          "key": "chips",
+          "price": 9,
+          "count": 4,
+          "arrange": "rows"
+        },
+        "1.0.0": {
+          "code": "grocery_chips",
+          "key": "chips",
+          "price": 9,
+          "count": 3,
+          "arrange": "front"
+        },
+        "1.0.1": {
+          "code": "grocery_chocolate",
+          "key": "chocolate",
+          "price": 10,
+          "count": 4,
+          "arrange": "rows"
+        },
+        "1.0.2": {
+          "code": "food_cookie",
+          "key": "cookie",
+          "price": 5,
+          "count": 7,
+          "arrange": "rows"
+        },
+        "1.1.0": {
+          "code": "grocery_chocolate",
+          "key": "chocolate",
+          "price": 10,
+          "count": 6,
+          "arrange": "rows"
+        },
+        "1.1.1": {
+          "code": "food_cookie",
+          "key": "cookie",
+          "price": 5,
+          "count": 10,
+          "arrange": "messy"
+        },
+        "1.2.0": {
+          "code": "food_cookie",
+          "key": "cookie",
+          "price": 5,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "1.2.1": {
+          "code": "grocery_chips",
+          "key": "chips",
+          "price": 9,
+          "count": 4,
+          "arrange": "rows"
+        },
+        "1.2.2": {
+          "code": "grocery_chocolate",
+          "key": "chocolate",
+          "price": 10,
+          "count": 6,
+          "arrange": "rows"
+        },
+        "1.3.0": {
+          "code": "grocery_chips",
+          "key": "chips",
+          "price": 9,
+          "count": 7,
+          "arrange": "rows"
+        },
+        "1.3.1": {
+          "code": "grocery_chocolate",
+          "key": "chocolate",
+          "price": 10,
+          "count": 3,
+          "arrange": "front"
+        },
+        "1.3.2": {
+          "code": "food_cookie",
+          "key": "cookie",
+          "price": 5,
+          "count": 7,
+          "arrange": "rows"
+        }
+      }
+    },
+    {
+      "id": "greencart_gondola_snacks_b",
+      "kind": "shelf",
+      "shelf": "gondola",
+      "position": [
+        -347.0,
+        0.2,
+        -98.155
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "length": 6,
+      "levels": 4,
+      "slots": 3,
+      "fill": {
+        "0.0.0": {
+          "code": "food_cookie",
+          "key": "cookie",
+          "price": 5,
+          "count": 7,
+          "arrange": "rows"
+        },
+        "0.0.1": {
+          "code": "grocery_chips",
+          "key": "chips",
+          "price": 9,
+          "count": 3,
+          "arrange": "rows"
+        },
+        "0.0.2": {
+          "code": "grocery_chocolate",
+          "key": "chocolate",
+          "price": 10,
+          "count": 4,
+          "arrange": "rows"
+        },
+        "0.1.0": {
+          "code": "grocery_chips",
+          "key": "chips",
+          "price": 9,
+          "count": 4,
+          "arrange": "rows"
+        },
+        "0.1.1": {
+          "code": "grocery_chocolate",
+          "key": "chocolate",
+          "price": 10,
+          "count": 6,
+          "arrange": "rows"
+        },
+        "0.1.2": {
+          "code": "food_cookie",
+          "key": "cookie",
+          "price": 5,
+          "count": 6,
+          "arrange": "stack"
+        },
+        "0.2.0": {
+          "code": "grocery_chocolate",
+          "key": "chocolate",
+          "price": 10,
+          "count": 4,
+          "arrange": "rows"
+        },
+        "0.2.1": {
+          "code": "food_cookie",
+          "key": "cookie",
+          "price": 5,
+          "count": 6,
+          "arrange": "front"
+        },
+        "0.2.2": {
+          "code": "grocery_chips",
+          "key": "chips",
+          "price": 9,
+          "count": 4,
+          "arrange": "front"
+        },
+        "0.3.1": {
+          "code": "grocery_chips",
+          "key": "chips",
+          "price": 9,
+          "count": 3,
+          "arrange": "rows"
+        },
+        "0.3.2": {
+          "code": "grocery_chocolate",
+          "key": "chocolate",
+          "price": 10,
+          "count": 4,
+          "arrange": "rows"
+        },
+        "1.0.0": {
+          "code": "grocery_chocolate",
+          "key": "chocolate",
+          "price": 10,
+          "count": 4,
+          "arrange": "messy"
+        },
+        "1.0.1": {
+          "code": "food_cookie",
+          "key": "cookie",
+          "price": 5,
+          "count": 6,
+          "arrange": "stack"
+        },
+        "1.0.2": {
+          "code": "grocery_chips",
+          "key": "chips",
+          "price": 9,
+          "count": 3,
+          "arrange": "rows"
+        },
+        "1.1.0": {
+          "code": "food_cookie",
+          "key": "cookie",
+          "price": 5,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "1.1.1": {
+          "code": "grocery_chips",
+          "key": "chips",
+          "price": 9,
+          "count": 4,
+          "arrange": "rows"
+        },
+        "1.1.2": {
+          "code": "grocery_chocolate",
+          "key": "chocolate",
+          "price": 10,
+          "count": 10,
+          "arrange": "stack"
+        },
+        "1.2.0": {
+          "code": "grocery_chips",
+          "key": "chips",
+          "price": 9,
+          "count": 8,
+          "arrange": "rows"
+        },
+        "1.2.1": {
+          "code": "grocery_chocolate",
+          "key": "chocolate",
+          "price": 10,
+          "count": 10,
+          "arrange": "stack"
+        },
+        "1.2.2": {
+          "code": "food_cookie",
+          "key": "cookie",
+          "price": 5,
+          "count": 6,
+          "arrange": "stack"
+        },
+        "1.3.0": {
+          "code": "grocery_chocolate",
+          "key": "chocolate",
+          "price": 10,
+          "count": 6,
+          "arrange": "rows"
+        },
+        "1.3.1": {
+          "code": "food_cookie",
+          "key": "cookie",
+          "price": 5,
+          "count": 10,
+          "arrange": "messy"
+        },
+        "1.3.2": {
+          "code": "grocery_chips",
+          "key": "chips",
+          "price": 9,
+          "count": 4,
+          "arrange": "rows"
+        }
+      }
+    },
+    {
+      "id": "greencart_gondola_pasta_a",
+      "kind": "shelf",
+      "shelf": "gondola",
+      "position": [
+        -343.0,
+        0.2,
+        -104.155
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "length": 6,
+      "levels": 4,
+      "slots": 3,
+      "fill": {
+        "0.0.0": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 6,
+          "arrange": "front"
+        },
+        "0.0.2": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 6,
+          "arrange": "rows"
+        },
+        "0.1.0": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 4,
+          "arrange": "rows"
+        },
+        "0.1.1": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 4,
+          "arrange": "front"
+        },
+        "0.1.2": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 3,
+          "arrange": "front"
+        },
+        "0.2.0": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 6,
+          "arrange": "rows"
+        },
+        "0.2.1": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 4,
+          "arrange": "front"
+        },
+        "0.2.2": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 4,
+          "arrange": "front"
+        },
+        "0.3.0": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 4,
+          "arrange": "rows"
+        },
+        "0.3.1": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 6,
+          "arrange": "rows"
+        },
+        "0.3.2": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 4,
+          "arrange": "front"
+        },
+        "1.0.0": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 4,
+          "arrange": "front"
+        },
+        "1.0.1": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 3,
+          "arrange": "front"
+        },
+        "1.0.2": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 3,
+          "arrange": "front"
+        },
+        "1.1.0": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 6,
+          "arrange": "rows"
+        },
+        "1.1.1": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 6,
+          "arrange": "front"
+        },
+        "1.1.2": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 15,
+          "arrange": "rows"
+        },
+        "1.2.1": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 6,
+          "arrange": "rows"
+        },
+        "1.2.2": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 4,
+          "arrange": "rows"
+        },
+        "1.3.0": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 3,
+          "arrange": "front"
+        },
+        "1.3.1": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 6,
+          "arrange": "rows"
+        },
+        "1.3.2": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 6,
+          "arrange": "rows"
+        }
+      }
+    },
+    {
+      "id": "greencart_gondola_pasta_b",
+      "kind": "shelf",
+      "shelf": "gondola",
+      "position": [
+        -343.0,
+        0.2,
+        -98.155
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "length": 6,
+      "levels": 4,
+      "slots": 3,
+      "fill": {
+        "0.0.0": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 6,
+          "arrange": "rows"
+        },
+        "0.0.1": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 3,
+          "arrange": "front"
+        },
+        "0.0.2": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 6,
+          "arrange": "rows"
+        },
+        "0.1.0": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 6,
+          "arrange": "rows"
+        },
+        "0.1.1": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 6,
+          "arrange": "front"
+        },
+        "0.1.2": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 6,
+          "arrange": "rows"
+        },
+        "0.2.0": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 6,
+          "arrange": "rows"
+        },
+        "0.2.1": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 8,
+          "arrange": "rows"
+        },
+        "0.2.2": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 8,
+          "arrange": "rows"
+        },
+        "0.3.0": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 3,
+          "arrange": "front"
+        },
+        "0.3.2": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 4,
+          "arrange": "front"
+        },
+        "1.0.0": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 8,
+          "arrange": "rows"
+        },
+        "1.0.1": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 6,
+          "arrange": "rows"
+        },
+        "1.0.2": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 6,
+          "arrange": "front"
+        },
+        "1.1.0": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 3,
+          "arrange": "front"
+        },
+        "1.1.1": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 3,
+          "arrange": "front"
+        },
+        "1.1.2": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 3,
+          "arrange": "front"
+        },
+        "1.2.0": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 6,
+          "arrange": "rows"
+        },
+        "1.2.1": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 6,
+          "arrange": "rows"
+        },
+        "1.2.2": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 3,
+          "arrange": "front"
+        },
+        "1.3.0": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 6,
+          "arrange": "rows"
+        },
+        "1.3.1": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 3,
+          "arrange": "front"
+        },
+        "1.3.2": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 6,
+          "arrange": "rows"
+        }
+      }
+    },
+    {
+      "id": "greencart_gondola_household_a",
+      "kind": "shelf",
+      "shelf": "gondola",
+      "position": [
+        -339.0,
+        0.2,
+        -104.155
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "length": 6,
+      "levels": 4,
+      "slots": 3,
+      "fill": {
+        "0.0.0": {
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 10,
+          "arrange": "front"
+        },
+        "0.0.1": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 4,
+          "arrange": "front"
+        },
+        "0.1.0": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 6,
+          "arrange": "rows"
+        },
+        "0.1.1": {
+          "code": "grocery_cereal",
+          "key": "cereal",
+          "price": 18,
+          "count": 7,
+          "arrange": "rows"
+        },
+        "0.1.2": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 8,
+          "arrange": "front"
+        },
+        "0.2.0": {
+          "code": "grocery_cereal",
+          "key": "cereal",
+          "price": 18,
+          "count": 4,
+          "arrange": "rows"
+        },
+        "0.2.1": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 9,
+          "arrange": "rows"
+        },
+        "0.2.2": {
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 8,
+          "arrange": "front"
+        },
+        "0.3.0": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 8,
+          "arrange": "front"
+        },
+        "0.3.1": {
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 8,
+          "arrange": "front"
+        },
+        "0.3.2": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 3,
+          "arrange": "front"
+        },
+        "1.0.0": {
+          "code": "grocery_cereal",
+          "key": "cereal",
+          "price": 18,
+          "count": 4,
+          "arrange": "rows"
+        },
+        "1.0.1": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 8,
+          "arrange": "front"
+        },
+        "1.0.2": {
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "1.1.0": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 5,
+          "arrange": "stack"
+        },
+        "1.1.1": {
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "1.1.2": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 4,
+          "arrange": "front"
+        },
+        "1.2.0": {
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 10,
+          "arrange": "front"
+        },
+        "1.2.2": {
+          "code": "grocery_cereal",
+          "key": "cereal",
+          "price": 18,
+          "count": 4,
+          "arrange": "front"
+        },
+        "1.3.0": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 3,
+          "arrange": "front"
+        },
+        "1.3.1": {
+          "code": "grocery_cereal",
+          "key": "cereal",
+          "price": 18,
+          "count": 4,
+          "arrange": "rows"
+        },
+        "1.3.2": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 7,
+          "arrange": "stack"
+        }
+      }
+    },
+    {
+      "id": "greencart_gondola_household_b",
+      "kind": "shelf",
+      "shelf": "gondola",
+      "position": [
+        -339.0,
+        0.2,
+        -98.155
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "length": 6,
+      "levels": 4,
+      "slots": 3,
+      "fill": {
+        "0.0.0": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 6,
+          "arrange": "rows"
+        },
+        "0.0.1": {
+          "code": "grocery_cereal",
+          "key": "cereal",
+          "price": 18,
+          "count": 4,
+          "arrange": "rows"
+        },
+        "0.0.2": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "0.1.0": {
+          "code": "grocery_cereal",
+          "key": "cereal",
+          "price": 18,
+          "count": 4,
+          "arrange": "rows"
+        },
+        "0.1.1": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "0.1.2": {
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 9,
+          "arrange": "rows"
+        },
+        "0.2.0": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "0.2.1": {
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 9,
+          "arrange": "rows"
+        },
+        "0.2.2": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 4,
+          "arrange": "front"
+        },
+        "0.3.0": {
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "0.3.1": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 4,
+          "arrange": "rows"
+        },
+        "1.0.0": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 10,
+          "arrange": "front"
+        },
+        "1.0.1": {
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 10,
+          "arrange": "front"
+        },
+        "1.0.2": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 4,
+          "arrange": "front"
+        },
+        "1.1.0": {
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "1.1.1": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 4,
+          "arrange": "front"
+        },
+        "1.1.2": {
+          "code": "grocery_cereal",
+          "key": "cereal",
+          "price": 18,
+          "count": 7,
+          "arrange": "rows"
+        },
+        "1.2.0": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 4,
+          "arrange": "rows"
+        },
+        "1.2.1": {
+          "code": "grocery_cereal",
+          "key": "cereal",
+          "price": 18,
+          "count": 3,
+          "arrange": "rows"
+        },
+        "1.2.2": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 10,
+          "arrange": "front"
+        },
+        "1.3.0": {
+          "code": "grocery_cereal",
+          "key": "cereal",
+          "price": 18,
+          "count": 4,
+          "arrange": "front"
+        },
+        "1.3.1": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 10,
+          "arrange": "front"
+        },
+        "1.3.2": {
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 10,
+          "arrange": "rows"
+        }
+      }
+    },
+    {
+      "id": "greencart_frozen_west_a",
+      "kind": "shelf",
+      "shelf": "fridge",
+      "position": [
+        -335.375,
+        0.2,
+        -104.155
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "length": 6,
+      "levels": 4,
+      "slots": 3,
+      "fill": {
+        "0.0.0": {
+          "code": "food_orange_juice",
+          "key": "orange_juice",
+          "price": 14,
+          "count": 10,
+          "arrange": "front"
+        },
+        "0.0.1": {
+          "code": "grocery_yogurt",
+          "key": "yogurt",
+          "price": 8,
+          "count": 10,
+          "arrange": "front"
+        },
+        "0.0.2": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 10,
+          "arrange": "front"
+        },
+        "0.1.1": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "0.1.2": {
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "0.2.0": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "0.2.1": {
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 10,
+          "arrange": "front"
+        },
+        "0.2.2": {
+          "code": "food_orange_juice",
+          "key": "orange_juice",
+          "price": 14,
+          "count": 9,
+          "arrange": "rows"
+        },
+        "0.3.0": {
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "0.3.1": {
+          "code": "food_orange_juice",
+          "key": "orange_juice",
+          "price": 14,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "0.3.2": {
+          "code": "grocery_yogurt",
+          "key": "yogurt",
+          "price": 8,
+          "count": 10,
+          "arrange": "rows"
+        }
+      }
+    },
+    {
+      "id": "greencart_frozen_east_a",
+      "kind": "shelf",
+      "shelf": "fridge",
+      "position": [
+        -334.625,
+        0.2,
+        -104.155
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "length": 6,
+      "levels": 4,
+      "slots": 3,
+      "fill": {
+        "0.0.0": {
+          "code": "grocery_yogurt",
+          "key": "yogurt",
+          "price": 8,
+          "count": 10,
+          "arrange": "front"
+        },
+        "0.0.1": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 6,
+          "arrange": "stack"
+        },
+        "0.0.2": {
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "0.1.0": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 9,
+          "arrange": "rows"
+        },
+        "0.1.1": {
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 10,
+          "arrange": "front"
+        },
+        "0.1.2": {
+          "code": "food_orange_juice",
+          "key": "orange_juice",
+          "price": 14,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "0.2.0": {
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 8,
+          "arrange": "front"
+        },
+        "0.2.1": {
+          "code": "food_orange_juice",
+          "key": "orange_juice",
+          "price": 14,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "0.2.2": {
+          "code": "grocery_yogurt",
+          "key": "yogurt",
+          "price": 8,
+          "count": 7,
+          "arrange": "rows"
+        },
+        "0.3.0": {
+          "code": "food_orange_juice",
+          "key": "orange_juice",
+          "price": 14,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "0.3.1": {
+          "code": "grocery_yogurt",
+          "key": "yogurt",
+          "price": 8,
+          "count": 7,
+          "arrange": "rows"
+        },
+        "0.3.2": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 6,
+          "arrange": "stack"
+        }
+      }
+    },
+    {
+      "id": "greencart_frozen_west_b",
+      "kind": "shelf",
+      "shelf": "fridge",
+      "position": [
+        -335.375,
+        0.2,
+        -98.155
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "length": 6,
+      "levels": 4,
+      "slots": 3,
+      "fill": {
+        "0.0.0": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 10,
+          "arrange": "front"
+        },
+        "0.0.1": {
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 10,
+          "arrange": "front"
+        },
+        "0.0.2": {
+          "code": "food_orange_juice",
+          "key": "orange_juice",
+          "price": 14,
+          "count": 8,
+          "arrange": "front"
+        },
+        "0.1.0": {
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 8,
+          "arrange": "front"
+        },
+        "0.1.2": {
+          "code": "grocery_yogurt",
+          "key": "yogurt",
+          "price": 8,
+          "count": 7,
+          "arrange": "rows"
+        },
+        "0.2.0": {
+          "code": "food_orange_juice",
+          "key": "orange_juice",
+          "price": 14,
+          "count": 8,
+          "arrange": "front"
+        },
+        "0.2.1": {
+          "code": "grocery_yogurt",
+          "key": "yogurt",
+          "price": 8,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "0.2.2": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 9,
+          "arrange": "rows"
+        },
+        "0.3.0": {
+          "code": "grocery_yogurt",
+          "key": "yogurt",
+          "price": 8,
+          "count": 10,
+          "arrange": "front"
+        },
+        "0.3.1": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 10,
+          "arrange": "front"
+        },
+        "0.3.2": {
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 8,
+          "arrange": "front"
+        }
+      }
+    },
+    {
+      "id": "greencart_frozen_east_b",
+      "kind": "shelf",
+      "shelf": "fridge",
+      "position": [
+        -334.625,
+        0.2,
+        -98.155
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "length": 6,
+      "levels": 4,
+      "slots": 3,
+      "fill": {
+        "0.0.0": {
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 10,
+          "arrange": "front"
+        },
+        "0.0.1": {
+          "code": "food_orange_juice",
+          "key": "orange_juice",
+          "price": 14,
+          "count": 10,
+          "arrange": "front"
+        },
+        "0.0.2": {
+          "code": "grocery_yogurt",
+          "key": "yogurt",
+          "price": 8,
+          "count": 7,
+          "arrange": "rows"
+        },
+        "0.1.0": {
+          "code": "food_orange_juice",
+          "key": "orange_juice",
+          "price": 14,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "0.1.1": {
+          "code": "grocery_yogurt",
+          "key": "yogurt",
+          "price": 8,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "0.1.2": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 10,
+          "arrange": "front"
+        },
+        "0.2.0": {
+          "code": "grocery_yogurt",
+          "key": "yogurt",
+          "price": 8,
+          "count": 10,
+          "arrange": "front"
+        },
+        "0.2.1": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "0.2.2": {
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 9,
+          "arrange": "rows"
+        },
+        "0.3.0": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 10,
+          "arrange": "front"
+        },
+        "0.3.1": {
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 10,
+          "arrange": "front"
+        },
+        "0.3.2": {
+          "code": "food_orange_juice",
+          "key": "orange_juice",
+          "price": 14,
+          "count": 10,
+          "arrange": "rows"
+        }
+      }
+    },
+    {
+      "id": "greencart_fridge_produce_a",
+      "kind": "shelf",
+      "shelf": "fridge",
+      "position": [
+        -320.5,
+        0.208,
+        -93.405
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "length": 4,
+      "levels": 3,
+      "slots": 3,
+      "fill": {
+        "0.0.0": {
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "0.0.1": {
+          "code": "grocery_apple",
+          "key": "apple",
+          "price": 6,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "0.0.2": {
+          "code": "food_orange_juice",
+          "key": "orange_juice",
+          "price": 14,
+          "count": 8,
+          "arrange": "rows"
+        },
+        "0.1.0": {
+          "code": "grocery_apple",
+          "key": "apple",
+          "price": 6,
+          "count": 10,
+          "arrange": "stack"
+        },
+        "0.1.1": {
+          "code": "food_orange_juice",
+          "key": "orange_juice",
+          "price": 14,
+          "count": 6,
+          "arrange": "front"
+        },
+        "0.2.0": {
+          "code": "food_orange_juice",
+          "key": "orange_juice",
+          "price": 14,
+          "count": 8,
+          "arrange": "front"
+        },
+        "0.2.1": {
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 7,
+          "arrange": "front"
+        },
+        "0.2.2": {
+          "code": "grocery_apple",
+          "key": "apple",
+          "price": 6,
+          "count": 7,
+          "arrange": "front"
+        }
+      }
+    },
+    {
+      "id": "greencart_fridge_produce_b",
+      "kind": "shelf",
+      "shelf": "fridge",
+      "position": [
+        -320.5,
+        0.208,
+        -89.405
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "length": 4,
+      "levels": 3,
+      "slots": 3,
+      "fill": {
+        "0.0.0": {
+          "code": "food_orange_juice",
+          "key": "orange_juice",
+          "price": 14,
+          "count": 6,
+          "arrange": "front"
+        },
+        "0.0.1": {
+          "code": "grocery_apple",
+          "key": "apple",
+          "price": 6,
+          "count": 9,
+          "arrange": "messy"
+        },
+        "0.0.2": {
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 6,
+          "arrange": "rows"
+        },
+        "0.1.0": {
+          "code": "grocery_apple",
+          "key": "apple",
+          "price": 6,
+          "count": 7,
+          "arrange": "rows"
+        },
+        "0.1.1": {
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 6,
+          "arrange": "rows"
+        },
+        "0.1.2": {
+          "code": "food_orange_juice",
+          "key": "orange_juice",
+          "price": 14,
+          "count": 5,
+          "arrange": "front"
+        },
+        "0.2.0": {
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 8,
+          "arrange": "front"
+        },
+        "0.2.1": {
+          "code": "food_orange_juice",
+          "key": "orange_juice",
+          "price": 14,
+          "count": 5,
+          "arrange": "front"
+        },
+        "0.2.2": {
+          "code": "grocery_apple",
+          "key": "apple",
+          "price": 6,
+          "count": 7,
+          "arrange": "rows"
+        }
+      }
+    },
+    {
+      "id": "greencart_fridge_dairy_a",
+      "kind": "shelf",
+      "shelf": "fridge",
+      "position": [
+        -356.0,
+        0.208,
+        -113.905
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "length": 6,
+      "levels": 3,
+      "slots": 4,
+      "fill": {
+        "0.0.0": {
+          "code": "grocery_milk",
+          "key": "milk",
+          "price": 10,
+          "count": 5,
+          "arrange": "front"
+        },
+        "0.0.1": {
+          "code": "grocery_yogurt",
+          "key": "yogurt",
+          "price": 8,
+          "count": 8,
+          "arrange": "front"
+        },
+        "0.0.2": {
+          "code": "grocery_cheese",
+          "key": "cheese",
+          "price": 16,
+          "count": 3,
+          "arrange": "front"
+        },
+        "0.0.3": {
+          "code": "grocery_eggs",
+          "key": "eggs",
+          "price": 15,
+          "count": 4,
+          "arrange": "front"
+        },
+        "0.1.0": {
+          "code": "grocery_yogurt",
+          "key": "yogurt",
+          "price": 8,
+          "count": 6,
+          "arrange": "front"
+        },
+        "0.1.1": {
+          "code": "grocery_cheese",
+          "key": "cheese",
+          "price": 16,
+          "count": 8,
+          "arrange": "rows"
+        },
+        "0.1.3": {
+          "code": "grocery_milk",
+          "key": "milk",
+          "price": 10,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "0.2.0": {
+          "code": "grocery_cheese",
+          "key": "cheese",
+          "price": 16,
+          "count": 4,
+          "arrange": "rows"
+        },
+        "0.2.1": {
+          "code": "grocery_eggs",
+          "key": "eggs",
+          "price": 15,
+          "count": 4,
+          "arrange": "front"
+        },
+        "0.2.2": {
+          "code": "grocery_milk",
+          "key": "milk",
+          "price": 10,
+          "count": 7,
+          "arrange": "front"
+        },
+        "0.2.3": {
+          "code": "grocery_yogurt",
+          "key": "yogurt",
+          "price": 8,
+          "count": 5,
+          "arrange": "rows"
+        }
+      }
+    },
+    {
+      "id": "greencart_fridge_dairy_b",
+      "kind": "shelf",
+      "shelf": "fridge",
+      "position": [
+        -350.5,
+        0.208,
+        -113.905
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "length": 5,
+      "levels": 3,
+      "slots": 3,
+      "fill": {
+        "0.0.0": {
+          "code": "grocery_milk",
+          "key": "milk",
+          "price": 10,
+          "count": 7,
+          "arrange": "rows"
+        },
+        "0.0.1": {
+          "code": "grocery_eggs",
+          "key": "eggs",
+          "price": 15,
+          "count": 4,
+          "arrange": "front"
+        },
+        "0.0.2": {
+          "code": "grocery_cheese",
+          "key": "cheese",
+          "price": 16,
+          "count": 6,
+          "arrange": "front"
+        },
+        "0.1.0": {
+          "code": "grocery_eggs",
+          "key": "eggs",
+          "price": 15,
+          "count": 3,
+          "arrange": "front"
+        },
+        "0.1.1": {
+          "code": "grocery_cheese",
+          "key": "cheese",
+          "price": 16,
+          "count": 6,
+          "arrange": "rows"
+        },
+        "0.1.2": {
+          "code": "grocery_yogurt",
+          "key": "yogurt",
+          "price": 8,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "0.2.0": {
+          "code": "grocery_cheese",
+          "key": "cheese",
+          "price": 16,
+          "count": 6,
+          "arrange": "stack"
+        },
+        "0.2.1": {
+          "code": "grocery_yogurt",
+          "key": "yogurt",
+          "price": 8,
+          "count": 8,
+          "arrange": "rows"
+        },
+        "0.2.2": {
+          "code": "grocery_milk",
+          "key": "milk",
+          "price": 10,
+          "count": 10,
+          "arrange": "front"
+        }
+      }
+    },
+    {
+      "id": "greencart_fridge_west_a",
+      "kind": "shelf",
+      "shelf": "fridge",
+      "position": [
+        -359.5,
+        0.208,
+        -106.405
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "length": 6,
+      "levels": 3,
+      "slots": 4,
+      "fill": {
+        "0.0.0": {
+          "code": "grocery_milk",
+          "key": "milk",
+          "price": 10,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "0.0.1": {
+          "code": "grocery_yogurt",
+          "key": "yogurt",
+          "price": 8,
+          "count": 5,
+          "arrange": "rows"
+        },
+        "0.0.2": {
+          "code": "grocery_cheese",
+          "key": "cheese",
+          "price": 16,
+          "count": 4,
+          "arrange": "rows"
+        },
+        "0.0.3": {
+          "code": "food_sandwich",
+          "key": "sandwich",
+          "price": 30,
+          "count": 4,
+          "arrange": "rows"
+        },
+        "0.1.0": {
+          "code": "food_sandwich",
+          "key": "sandwich",
+          "price": 30,
+          "count": 6,
+          "arrange": "rows"
+        },
+        "0.1.1": {
+          "code": "grocery_cheese",
+          "key": "cheese",
+          "price": 16,
+          "count": 6,
+          "arrange": "rows"
+        },
+        "0.1.2": {
+          "code": "food_sandwich",
+          "key": "sandwich",
+          "price": 30,
+          "count": 4,
+          "arrange": "messy"
+        },
+        "0.2.0": {
+          "code": "grocery_eggs",
+          "key": "eggs",
+          "price": 15,
+          "count": 6,
+          "arrange": "rows"
+        },
+        "0.2.1": {
+          "code": "food_sandwich",
+          "key": "sandwich",
+          "price": 30,
+          "count": 3,
+          "arrange": "front"
+        },
+        "0.2.2": {
+          "code": "grocery_eggs",
+          "key": "eggs",
+          "price": 15,
+          "count": 4,
+          "arrange": "rows"
+        },
+        "0.2.3": {
+          "code": "grocery_milk",
+          "key": "milk",
+          "price": 10,
+          "count": 5,
+          "arrange": "front"
+        }
+      }
+    },
+    {
+      "id": "greencart_fridge_west_b",
+      "kind": "shelf",
+      "shelf": "fridge",
+      "position": [
+        -359.5,
+        0.208,
+        -100.405
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "length": 6,
+      "levels": 3,
+      "slots": 4,
+      "fill": {
+        "0.0.0": {
+          "code": "grocery_cheese",
+          "key": "cheese",
+          "price": 16,
+          "count": 4,
+          "arrange": "front"
+        },
+        "0.0.1": {
+          "code": "grocery_milk",
+          "key": "milk",
+          "price": 10,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "0.0.2": {
+          "code": "grocery_yogurt",
+          "key": "yogurt",
+          "price": 8,
+          "count": 8,
+          "arrange": "rows"
+        },
+        "0.0.3": {
+          "code": "food_sandwich",
+          "key": "sandwich",
+          "price": 30,
+          "count": 8,
+          "arrange": "rows"
+        },
+        "0.1.0": {
+          "code": "grocery_milk",
+          "key": "milk",
+          "price": 10,
+          "count": 9,
+          "arrange": "front"
+        },
+        "0.1.1": {
+          "code": "grocery_yogurt",
+          "key": "yogurt",
+          "price": 8,
+          "count": 15,
+          "arrange": "rows"
+        },
+        "0.1.2": {
+          "code": "food_sandwich",
+          "key": "sandwich",
+          "price": 30,
+          "count": 5,
+          "arrange": "rows"
+        },
+        "0.1.3": {
+          "code": "grocery_eggs",
+          "key": "eggs",
+          "price": 15,
+          "count": 7,
+          "arrange": "rows"
+        },
+        "0.2.0": {
+          "code": "grocery_yogurt",
+          "key": "yogurt",
+          "price": 8,
+          "count": 8,
+          "arrange": "rows"
+        },
+        "0.2.1": {
+          "code": "food_sandwich",
+          "key": "sandwich",
+          "price": 30,
+          "count": 5,
+          "arrange": "rows"
+        },
+        "0.2.2": {
+          "code": "grocery_eggs",
+          "key": "eggs",
+          "price": 15,
+          "count": 3,
+          "arrange": "rows"
+        },
+        "0.2.3": {
+          "code": "grocery_cheese",
+          "key": "cheese",
+          "price": 16,
+          "count": 6,
+          "arrange": "stack"
+        }
+      }
+    },
+    {
+      "id": "greencart_chiller_a",
+      "kind": "shelf",
+      "shelf": "chiller",
+      "position": [
+        -354.4,
+        0.208,
+        -110.505
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "length": 5,
+      "levels": 1,
+      "slots": 4,
+      "fill": {
+        "0.0.0": {
+          "code": "grocery_yogurt",
+          "key": "yogurt",
+          "price": 8,
+          "count": 6,
+          "arrange": "rows"
+        },
+        "0.0.1": {
+          "code": "food_sandwich",
+          "key": "sandwich",
+          "price": 30,
+          "count": 3,
+          "arrange": "front"
+        },
+        "0.0.2": {
+          "code": "grocery_cheese",
+          "key": "cheese",
+          "price": 16,
+          "count": 4,
+          "arrange": "rows"
+        },
+        "0.0.3": {
+          "code": "grocery_yogurt",
+          "key": "yogurt",
+          "price": 8,
+          "count": 4,
+          "arrange": "rows"
+        }
+      }
+    },
+    {
+      "id": "greencart_chiller_b",
+      "kind": "shelf",
+      "shelf": "chiller",
+      "position": [
+        -349.4,
+        0.208,
+        -110.505
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "length": 5,
+      "levels": 1,
+      "slots": 4,
+      "fill": {
+        "0.0.1": {
+          "code": "food_sandwich",
+          "key": "sandwich",
+          "price": 30,
+          "count": 4,
+          "arrange": "rows"
+        },
+        "0.0.2": {
+          "code": "grocery_cheese",
+          "key": "cheese",
+          "price": 16,
+          "count": 4,
+          "arrange": "rows"
+        },
+        "0.0.3": {
+          "code": "grocery_yogurt",
+          "key": "yogurt",
+          "price": 8,
+          "count": 5,
+          "arrange": "front"
+        }
+      }
+    },
+    {
+      "id": "greencart_freezer_a",
+      "kind": "shelf",
+      "shelf": "chiller",
+      "position": [
+        -359.3,
+        0.208,
+        -92.905
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "length": 4,
+      "levels": 1,
+      "slots": 3,
+      "fill": {
+        "0.0.0": {
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "0.0.1": {
+          "code": "food_orange_juice",
+          "key": "orange_juice",
+          "price": 14,
+          "count": 8,
+          "arrange": "rows"
+        },
+        "0.0.2": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 7,
+          "arrange": "front"
+        }
+      }
+    },
+    {
+      "id": "greencart_freezer_b",
+      "kind": "shelf",
+      "shelf": "chiller",
+      "position": [
+        -359.3,
+        0.208,
+        -88.905
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "length": 4,
+      "levels": 1,
+      "slots": 3,
+      "fill": {
+        "0.0.0": {
+          "code": "food_orange_juice",
+          "key": "orange_juice",
+          "price": 14,
+          "count": 8,
+          "arrange": "front"
+        },
+        "0.0.2": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 10,
+          "arrange": "rows"
+        }
+      }
+    },
+    {
+      "id": "greencart_bakery_shelf_a",
+      "kind": "shelf",
+      "shelf": "wall",
+      "position": [
+        -320.25,
+        0.208,
+        -107.905
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "length": 4,
+      "levels": 3,
+      "slots": 3,
+      "fill": {
+        "0.0.0": {
+          "code": "grocery_bread",
+          "key": "bread",
+          "price": 14,
+          "count": 3,
+          "arrange": "rows"
+        },
+        "0.0.1": {
+          "code": "food_croissant",
+          "key": "croissant",
+          "price": 12,
+          "count": 6,
+          "arrange": "rows"
+        },
+        "0.0.2": {
+          "code": "food_cookie",
+          "key": "cookie",
+          "price": 5,
+          "count": 5,
+          "arrange": "messy"
+        },
+        "0.1.0": {
+          "code": "food_croissant",
+          "key": "croissant",
+          "price": 12,
+          "count": 3,
+          "arrange": "rows"
+        },
+        "0.1.1": {
+          "code": "food_cookie",
+          "key": "cookie",
+          "price": 5,
+          "count": 6,
+          "arrange": "rows"
+        },
+        "0.1.2": {
+          "code": "grocery_bread",
+          "key": "bread",
+          "price": 14,
+          "count": 2,
+          "arrange": "rows"
+        },
+        "0.2.0": {
+          "code": "food_cookie",
+          "key": "cookie",
+          "price": 5,
+          "count": 6,
+          "arrange": "stack"
+        },
+        "0.2.1": {
+          "code": "grocery_bread",
+          "key": "bread",
+          "price": 14,
+          "count": 3,
+          "arrange": "messy"
+        },
+        "0.2.2": {
+          "code": "food_croissant",
+          "key": "croissant",
+          "price": 12,
+          "count": 3,
+          "arrange": "rows"
+        }
+      }
+    },
+    {
+      "id": "greencart_bakery_shelf_b",
+      "kind": "shelf",
+      "shelf": "wall",
+      "position": [
+        -320.25,
+        0.208,
+        -104.405
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "length": 3,
+      "levels": 3,
+      "slots": 2,
+      "fill": {
+        "0.0.0": {
+          "code": "grocery_bread",
+          "key": "bread",
+          "price": 14,
+          "count": 2,
+          "arrange": "rows"
+        },
+        "0.0.1": {
+          "code": "food_cookie",
+          "key": "cookie",
+          "price": 5,
+          "count": 10,
+          "arrange": "rows"
+        },
+        "0.1.1": {
+          "code": "food_croissant",
+          "key": "croissant",
+          "price": 12,
+          "count": 6,
+          "arrange": "stack"
+        },
+        "0.2.0": {
+          "code": "food_croissant",
+          "key": "croissant",
+          "price": 12,
+          "count": 4,
+          "arrange": "rows"
+        },
+        "0.2.1": {
+          "code": "grocery_bread",
+          "key": "bread",
+          "price": 14,
+          "count": 2,
+          "arrange": "rows"
+        }
+      }
+    },
+    {
       "id": "greencart_banana",
       "kind": "item",
       "key": "banana",
@@ -169,318 +4110,6 @@
         3
       ],
       "description": "Chocolate chip cookie."
-    },
-    {
-      "id": "greencart_milk",
-      "kind": "item",
-      "key": "milk",
-      "code": "grocery_milk",
-      "forSale": true,
-      "price": 10,
-      "position": [
-        -359.45,
-        0.68,
-        -100.405
-      ],
-      "yaw": 1.5708,
-      "scale": [
-        1,
-        1,
-        1
-      ],
-      "stack": [
-        5,
-        2
-      ],
-      "description": "Carton of fresh milk, three glasses."
-    },
-    {
-      "id": "greencart_yogurt",
-      "kind": "item",
-      "key": "yogurt",
-      "code": "grocery_yogurt",
-      "forSale": true,
-      "price": 8,
-      "position": [
-        -359.45,
-        1.18,
-        -100.405
-      ],
-      "yaw": 1.5708,
-      "scale": [
-        1,
-        1,
-        1
-      ],
-      "stack": [
-        5,
-        3
-      ],
-      "description": "Fruit yogurt cup, two spoons."
-    },
-    {
-      "id": "greencart_sandwich",
-      "kind": "item",
-      "key": "sandwich",
-      "code": "food_sandwich",
-      "forSale": true,
-      "price": 30,
-      "position": [
-        -359.45,
-        1.18,
-        -103.405
-      ],
-      "yaw": 1.5708,
-      "scale": [
-        1,
-        1,
-        1
-      ],
-      "stack": [
-        3,
-        2
-      ],
-      "description": "Club sandwich, four bites."
-    },
-    {
-      "id": "greencart_cheese",
-      "kind": "item",
-      "key": "cheese",
-      "code": "grocery_cheese",
-      "forSale": true,
-      "price": 16,
-      "position": [
-        -359.45,
-        1.18,
-        -106.405
-      ],
-      "yaw": 1.5708,
-      "scale": [
-        1,
-        1,
-        1
-      ],
-      "stack": [
-        3,
-        2
-      ],
-      "description": "Wedge of cheese, three portions."
-    },
-    {
-      "id": "greencart_eggs",
-      "kind": "item",
-      "key": "eggs",
-      "code": "grocery_eggs",
-      "forSale": true,
-      "price": 15,
-      "position": [
-        -359.45,
-        1.68,
-        -103.405
-      ],
-      "yaw": 1.5708,
-      "scale": [
-        1,
-        1,
-        1
-      ],
-      "stack": [
-        3,
-        2
-      ],
-      "description": "Half a dozen eggs, three portions."
-    },
-    {
-      "id": "greencart_coffee",
-      "kind": "item",
-      "key": "coffee",
-      "code": "food_coffee",
-      "forSale": true,
-      "price": 15,
-      "position": [
-        -355.3,
-        1.58,
-        -100.405
-      ],
-      "yaw": -1.5708,
-      "scale": [
-        1,
-        1,
-        1
-      ],
-      "stack": [
-        4,
-        2
-      ],
-      "description": "Hot latte to go, a little speed boost."
-    },
-    {
-      "id": "greencart_cereal",
-      "kind": "item",
-      "key": "cereal",
-      "code": "grocery_cereal",
-      "forSale": true,
-      "price": 18,
-      "position": [
-        -354.7,
-        1.58,
-        -102.263
-      ],
-      "yaw": 1.5708,
-      "scale": [
-        1,
-        1,
-        1
-      ],
-      "stack": [
-        4,
-        2
-      ],
-      "description": "Box of cereal, four bowls."
-    },
-    {
-      "id": "greencart_water_bottle",
-      "kind": "item",
-      "key": "water_bottle",
-      "code": "food_water_bottle",
-      "forSale": true,
-      "price": 8,
-      "position": [
-        -350.7,
-        1.08,
-        -99.405
-      ],
-      "yaw": 1.5708,
-      "scale": [
-        1,
-        1,
-        1
-      ],
-      "stack": [
-        5,
-        2
-      ],
-      "description": "Still water, four sips."
-    },
-    {
-      "id": "greencart_orange_juice",
-      "kind": "item",
-      "key": "orange_juice",
-      "code": "food_orange_juice",
-      "forSale": true,
-      "price": 14,
-      "position": [
-        -350.7,
-        1.08,
-        -101.405
-      ],
-      "yaw": 1.5708,
-      "scale": [
-        1,
-        1,
-        1
-      ],
-      "stack": [
-        5,
-        2
-      ],
-      "description": "Fresh orange juice, two portions."
-    },
-    {
-      "id": "greencart_soda",
-      "kind": "item",
-      "key": "soda",
-      "code": "grocery_soda",
-      "forSale": true,
-      "price": 7,
-      "position": [
-        -351.3,
-        1.08,
-        -100.047
-      ],
-      "yaw": -1.5708,
-      "scale": [
-        1,
-        1,
-        1
-      ],
-      "stack": [
-        6,
-        3
-      ],
-      "description": "Fizzy soda, two sips."
-    },
-    {
-      "id": "greencart_chips",
-      "kind": "item",
-      "key": "chips",
-      "code": "grocery_chips",
-      "forSale": true,
-      "price": 9,
-      "position": [
-        -347.3,
-        1.58,
-        -100.047
-      ],
-      "yaw": -1.5708,
-      "scale": [
-        1,
-        1,
-        1
-      ],
-      "stack": [
-        4,
-        2
-      ],
-      "description": "Bag of crisps, three handfuls."
-    },
-    {
-      "id": "greencart_chocolate",
-      "kind": "item",
-      "key": "chocolate",
-      "code": "grocery_chocolate",
-      "forSale": true,
-      "price": 10,
-      "position": [
-        -346.7,
-        1.08,
-        -102.263
-      ],
-      "yaw": 1.5708,
-      "scale": [
-        1,
-        1,
-        1
-      ],
-      "stack": [
-        3,
-        3
-      ],
-      "description": "Chocolate bar, four squares."
-    },
-    {
-      "id": "greencart_pasta",
-      "kind": "item",
-      "key": "pasta",
-      "code": "grocery_pasta",
-      "forSale": true,
-      "price": 12,
-      "position": [
-        -343.3,
-        1.08,
-        -102.263
-      ],
-      "yaw": -1.5708,
-      "scale": [
-        1,
-        1,
-        1
-      ],
-      "stack": [
-        5,
-        3
-      ],
-      "description": "Box of pasta, four plates."
     }
   ],
   "areas": [

@@ -34,6 +34,7 @@ function label(prop: TemplateProp): string {
   if (prop.kind === 'field') return `${prop.crop} field`
   if (prop.kind === 'animal') return prop.animal
   if (prop.kind === 'building') return prop.id
+  if (prop.kind === 'shelf') return `${prop.shelf} shelf`
   if (prop.kind === 'mannequin') return 'Mannequin'
   if (prop.kind === 'light') return prop.light === 'spot' ? 'Spot light' : 'Point light'
   if (prop.kind === 'item') return prop.code
@@ -42,7 +43,7 @@ function label(prop: TemplateProp): string {
 
 function typeOf(prop: TemplateProp): string {
   if (prop.kind === 'item') return prop.forSale ? 'For sale' : 'Prop'
-  return { decor: 'Decor', npc: 'NPC', mannequin: 'Mannequin', light: 'Light', field: 'Field', animal: 'Animal', building: 'Building' }[prop.kind]
+  return { decor: 'Decor', npc: 'NPC', mannequin: 'Mannequin', light: 'Light', field: 'Field', animal: 'Animal', building: 'Building', shelf: 'Shelf' }[prop.kind]
 }
 
 type SortColumn = 'label' | 'type' | 'sale'

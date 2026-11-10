@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "materials": {
+    "DC_CartTagRail": {
+      "mask": "parts_DC_CartTagRail.png",
+      "parts": [
+        {
+          "id": "main",
+          "label": "Main",
+          "color": "#f4d054"
+        },
+        {
+          "id": "accent",
+          "label": "Accent",
+          "color": "#f9f4e6"
+        }
+      ]
+    }
+  }
+}

@@ -4,13 +4,17 @@ import type { SaleCurve } from '../economy/sharemath.ts'
 import { MAX_PEN_SIDE, MIN_PEN_SIDE, type AnimalTable } from '../animals/animals.ts'
 import { MAX_ROOF, MIN_ROOF, ROOF_OVERHANG, checkBuilding, colorsAt, openingAt, texturesAt, type BuildingTable } from '../buildings/buildings.ts'
 import { FIELD_PATTERNS, MAX_FIELD_PLANTS, fieldCorners, fieldPlants, type CropTable, type PlantSpot } from '../crops/crops.ts'
+import { MAX_SHELF_LENGTH, MAX_SHELF_SLOTS, MAX_SLOT_COPIES, MIN_SHELF_LENGTH, SHELF_ARRANGES, SHELF_TYPES, shelfFaces, shelfMaxLevels, slotBoxes, slotTag, type ShelfArrange, type ShelfType } from '../shelves/shelves.ts'
 import {
+  TEMPLATE_DEPARTMENT,
   TEMPLATE_KEY,
   TemplateError,
+  itemAt,
   numberAt,
   propAt,
   stringAt,
   templateStoreLayout,
+  toWorld,
   vec3At,
   vendorCounter,
   type AnimalProp,
@@ -20,18 +24,23 @@ import {
   type ItemProp,
   type MannequinProp,
   type NpcProp,
+  type ShelfProp,
+  type ShelfSlotFill,
   STAFF_ROLES,
   type StaffRole,
   type TemplateProp,
   type Vec3,
 } from '../mallTemplates/mallTemplate.ts'
 
-type ZoneProp = DecorProp | ItemProp | NpcProp | MannequinProp | FieldProp | AnimalProp | BuildingProp
+type ZoneProp = DecorProp | ItemProp | NpcProp | MannequinProp | FieldProp | AnimalProp | BuildingProp | ShelfProp
 export type BakedZoneProp = DecorProp | FieldProp | BuildingProp
 export type RuntimeZoneProp = Exclude<ZoneProp, BakedZoneProp>
 const FIELD_KEYS = ['id', 'kind', 'crop', 'position', 'yaw', 'scale', 'size', 'pattern', 'plants', 'group']
 const ANIMAL_KEYS = ['id', 'kind', 'animal', 'position', 'yaw', 'scale', 'size', 'group']
 const BUILDING_KEYS = ['id', 'kind', 'building', 'position', 'yaw', 'scale', 'size', 'height', 'roof', 'ridge', 'openings', 'colors', 'textures', 'group']
+const SHELF_KEYS = ['id', 'kind', 'shelf', 'position', 'yaw', 'scale', 'length', 'levels', 'slots', 'fill', 'group']
+const SLOT_FILL_KEYS = ['code', 'key', 'price', 'count', 'arrange']
+const SLOT_KEY = /^(\d)\.(\d)\.(\d)$/
 const QUARTER_TURN = Math.PI / 2
 const MIN_FIELD_SIDE = 1
 const MAX_FIELD_SIDE = 60
@@ -242,7 +251,52 @@ export interface SoldCode {
 export function soldCodes(prop: ZoneProp | TemplateProp): SoldCode[] {
   if (prop.kind === 'item') return prop.forSale && prop.price !== undefined ? [{ code: prop.code, price: prop.price }] : []
   if (prop.kind === 'mannequin') return prop.outfit.flatMap((piece) => (piece.forSale && piece.code && piece.price !== undefined ? [{ code: piece.code, price: piece.price }] : []))
+  if (prop.kind === 'shelf') return Object.values(prop.fill).map(({ code, price }) => ({ code, price }))
   return []
+}
+
+function slotFillAt(raw: unknown, path: string): ShelfSlotFill {
+  const json = objectAt(raw, path, SLOT_FILL_KEYS)
+  const arrange = json.arrange as ShelfArrange
+  if (!SHELF_ARRANGES.includes(arrange)) throw new TemplateError(`${path}.arrange`, `expected one of ${SHELF_ARRANGES.join(', ')}`)
+  return {
+    ...itemAt(json, path),
+    price: zonePriceAt(json.price, true, `${path}.price`, 'slots')!,
+    count: wholeAt(json.count, `${path}.count`, 1, MAX_SLOT_COPIES),
+    arrange,
+  }
+}
+
+function shelfPropAt(raw: unknown, path: string): ShelfProp {
+  const json = objectAt(raw, path, SHELF_KEYS)
+  const shelf = json.shelf as ShelfType
+  if (!SHELF_TYPES.includes(shelf)) throw new TemplateError(`${path}.shelf`, `expected one of ${SHELF_TYPES.join(', ')}`)
+  const scale = vec3At(json.scale, `${path}.scale`)
+  if (scale.some((v) => v !== 1)) throw new TemplateError(`${path}.scale`, 'a shelf keeps scale 1, change its length or levels instead')
+  const length = wholeAt(json.length, `${path}.length`, MIN_SHELF_LENGTH, MAX_SHELF_LENGTH)
+  const levels = wholeAt(json.levels, `${path}.levels`, 1, shelfMaxLevels(shelf))
+  const slots = wholeAt(json.slots, `${path}.slots`, 1, MAX_SHELF_SLOTS)
+  const faces = shelfFaces(shelf)
+  if (typeof json.fill !== 'object' || json.fill === null || Array.isArray(json.fill)) throw new TemplateError(`${path}.fill`, 'expected an object')
+  const fill = Object.entries(json.fill).map(([key, slot]) => {
+    const [, face, level, index] = (SLOT_KEY.exec(key) ?? []).map(Number)
+    if (face === undefined || face >= faces || level! >= levels || index! >= slots) {
+      throw new TemplateError(`${path}.fill.${key}`, `no such slot, keys are <face>.<level>.<slot> with face below ${faces}, level below ${levels}, slot below ${slots}`)
+    }
+    return [key, slotFillAt(slot, `${path}.fill.${key}`)] as const
+  })
+  return {
+    id: stringAt(json.id, `${path}.id`),
+    kind: 'shelf',
+    shelf,
+    position: vec3At(json.position, `${path}.position`),
+    yaw: numberAt(json.yaw, `${path}.yaw`),
+    scale,
+    length,
+    levels,
+    slots,
+    fill: Object.fromEntries(fill),
+  }
 }
 
 function buildingPropAt(raw: unknown, path: string, buildings: BuildingTable | null): BuildingProp {
@@ -284,7 +338,7 @@ export function parseBuildingProp(raw: unknown, buildings: BuildingTable): Build
   return buildingPropAt(raw, 'building', buildings)
 }
 
-function grouped<P extends FieldProp | AnimalProp | BuildingProp>(prop: P, raw: unknown, path: string): P {
+function grouped<P extends FieldProp | AnimalProp | BuildingProp | ShelfProp>(prop: P, raw: unknown, path: string): P {
   const group = (raw as { group?: unknown }).group
   return group === undefined ? prop : { ...prop, group: stringAt(group, `${path}.group`, TEMPLATE_KEY) }
 }
@@ -294,6 +348,7 @@ function zonePropAt(raw: unknown, path: string, zone: string, crops: CropTable |
   if (kind === 'field') return grouped(fieldPropAt(raw, path, crops), raw, path)
   if (kind === 'animal') return grouped(animalPropAt(raw, path, animals), raw, path)
   if (kind === 'building') return grouped(buildingPropAt(raw, path, buildings), raw, path)
+  if (kind === 'shelf') return grouped(shelfPropAt(raw, path), raw, path)
   if (kind === 'item') return zoneItemAt(raw, path)
   if (kind === 'mannequin') return zoneMannequinAt(raw, path)
   if (kind === 'npc') return zoneNpcAt(raw, path, zone)
@@ -514,7 +569,29 @@ export function areaStoreLayout(decor: ZoneDecor, area: SaleArea, modelSizes: Re
   const props = [...sold, { ...areaSeller(decor, area), vendor: true }]
   const layout = templateStoreLayout({ version: 1, key: `${decor.zone}_${area.id}`, name: area.name, preset: { width: 0, depth: 0 }, props }, modelSizes)
   const displays = area.priceTags ? layout.displays.map((d) => ({ ...d, tag: priceTagBeside(d) })) : layout.displays
-  return { ...layout, displays, bounds: { ...area.bounds } }
+  const shelves = sold.filter((p): p is ShelfProp => p.kind === 'shelf').flatMap(shelfDisplays)
+  return { ...layout, displays: [...displays, ...shelves], bounds: { ...area.bounds } }
+}
+
+function shelfDisplays(shelf: ShelfProp): StoreDisplay[] {
+  const placement = { position: shelf.position, yaw: shelf.yaw }
+  return slotBoxes(shelf).flatMap((box) => {
+    const fill = shelf.fill[box.key]
+    if (!fill) return []
+    const [x, y, z] = box.center
+    const tag = slotTag(shelf, box)
+    return [{
+      key: fill.key,
+      code: fill.code,
+      department: TEMPLATE_DEPARTMENT,
+      description: '',
+      position: toWorld(placement, [x, y - box.size[1] / 2, z]),
+      yaw: shelf.yaw + box.yaw,
+      size: box.size,
+      shelfSlot: { prop: shelf.id, slot: box.key },
+      tag: { position: toWorld(placement, tag.position), yaw: shelf.yaw + tag.yaw },
+    }]
+  })
 }
 
 function priceTagBeside(display: StoreDisplay): StoreDisplay['tag'] {
@@ -522,4 +599,9 @@ function priceTagBeside(display: StoreDisplay): StoreDisplay['tag'] {
   const ahead = display.size[2] / 2 + PRICE_TAG_GAP
   const lift = display.figure ? 0 : PRICE_TAG_HEIGHT
   return { position: [x + Math.sin(display.yaw) * ahead, y + lift, z + Math.cos(display.yaw) * ahead], yaw: display.yaw }
+}
+
+export function zoneShown(bounds: WorldBounds, at: { x: number; z: number }, shown: boolean, showWithin: number, hideBeyond: number): boolean {
+  const distance = Math.hypot(Math.max(bounds.minX - at.x, 0, at.x - bounds.maxX), Math.max(bounds.minZ - at.z, 0, at.z - bounds.maxZ))
+  return shown ? distance <= hideBeyond : distance < showWithin
 }

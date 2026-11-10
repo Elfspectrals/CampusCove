@@ -7,6 +7,8 @@ import { fetchItemShopCatalog, type ShopItem } from '../../api/itemShop'
 import MallEditorContentBrowser, { type ContentEntry } from '../../components/admin/mallEditor/MallEditorContentBrowser.vue'
 import EditorSearchSelect, { type SelectOption } from '../../components/admin/mallEditor/EditorSearchSelect.vue'
 import MallEditorDetails from '../../components/admin/mallEditor/MallEditorDetails.vue'
+import type { ShelfItem } from '../../components/admin/mallEditor/MallEditorShelf.vue'
+import type { ShelfType } from '../../game/shelves/shelves.ts'
 import MallEditorOutliner from '../../components/admin/mallEditor/MallEditorOutliner.vue'
 import MallMapModal, { type MallPlaza, type MallStoreMark } from '../../components/admin/mallEditor/MallMapModal.vue'
 import MallEditorSaleMap from '../../components/admin/mallEditor/MallEditorSaleMap.vue'
@@ -104,6 +106,7 @@ const editorAssets = ref<EditorAssets | null>(null)
 const decorKeyList = ref<string[]>([])
 const saleCodes = ref<Record<string, string>>({})
 const itemPrices = ref<Record<string, number>>({})
+const shelfItems = ref<ShelfItem[]>([])
 const wearSaleCodes = ref<Record<string, string>>({})
 const textureOptions = ref<SelectOption[]>([])
 const decorGroups = ref<Record<string, string>>({})
@@ -575,7 +578,7 @@ function applyTransform(id: string, transform: PropTransform): void {
   if (!prop) return
   prop.position = transform.position
   prop.yaw = prop.kind === 'building' ? Math.round(transform.yaw / (Math.PI / 2)) * (Math.PI / 2) : transform.yaw
-  prop.scale = prop.kind === 'field' || prop.kind === 'animal' || prop.kind === 'building' ? [1, 1, 1] : transform.scale
+  prop.scale = prop.kind === 'field' || prop.kind === 'animal' || prop.kind === 'building' || prop.kind === 'shelf' ? [1, 1, 1] : transform.scale
 }
 
 function sellProp(id: string, on: boolean): void {
@@ -867,6 +870,19 @@ function buildingEntry(building: BuildingDef): PlaceableEntry {
   }
 }
 
+function shelfEntry(shelf: ShelfType, label: string, levels: number, slots: number): PlaceableEntry {
+  return {
+    id: `shelf:${shelf}`,
+    folder: 'decor',
+    group: 'Shop',
+    label,
+    preview: null,
+    modelUrl: null,
+    zoneOnly: true,
+    create: (id, position) => ({ id, kind: 'shelf', shelf, position, yaw: 0, scale: [1, 1, 1], length: 2, levels, slots, fill: {} }),
+  }
+}
+
 function pick(entry: ContentEntry): void {
   const scene = editor.value
   const placeable = entries.value.find((e) => e.id === entry.id)
@@ -922,6 +938,14 @@ async function loadContent(): Promise<void> {
   }))
   const placeable = catalog.items.filter((item) => (item.kind === 'furniture' || item.kind === 'consumable') && item.model_glb)
   const goods = placeable.map(goodsEntry).filter((e): e is PlaceableEntry => e !== null)
+  shelfItems.value = placeable.flatMap((item): ShelfItem[] => {
+    const decorKey = decorKeyOf(item)
+    const good = goods.find((e) => e.id === `item:${item.code}`)
+    const key = decorKey ?? (good ? item.code.slice(item.code.indexOf('_') + 1) : null)
+    const price = itemPrices.value[item.code]
+    if (!key || price === undefined) return []
+    return [{ code: item.code, key, label: item.name, group: good?.group ?? groupOfDecor(key), preview: item.preview_image, price }]
+  })
   const skipped = placeable.filter((item) => !decorKeyOf(item) && !goods.some((e) => e.id === `item:${item.code}`)).map((item) => item.code)
   const notices = [
     ...(assets ? [] : ['Saving only works on the local dev server.']),
@@ -964,6 +988,10 @@ async function loadContent(): Promise<void> {
     ...Object.values(cropTable.value).map(fieldEntry),
     ...Object.values(animalTable.value).map(animalEntry),
     ...Object.values(buildingTable.value).map(buildingEntry),
+    shelfEntry('gondola', 'Gondola', 4, 4),
+    shelfEntry('wall', 'Wall shelf', 5, 4),
+    shelfEntry('fridge', 'Fridge', 5, 2),
+    shelfEntry('chiller', 'Chiller', 1, 4),
   ]
   const [textures, materials] = await Promise.all([loadTextureOptions(), loadMaterialOptions()])
   textureOptions.value = textures
@@ -1132,6 +1160,7 @@ onUnmounted(() => {
           :material-options="materialOptions"
           :material-slots="selectedProp?.kind === 'decor' && !openZone ? (materialSlotsById[selectedProp.id] ?? []) : []"
           :rebuilding="rebuilding"
+          :shelf-items="shelfItems"
           @rebuild="rebuildBuilding($event, true)"
           @change="replaceProp"
           @surfaces="setSurfaces"

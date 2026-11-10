@@ -11,13 +11,17 @@ import { applyLook, type OwnParts } from './templateSurfaces'
 import { CROPS_URL, fieldPlantsLocal, parseCrops, type CropTable } from '../crops/crops.ts'
 import { ANIMALS_URL, ANIMAL_CLIPS, animalModelUrl, parseAnimals, type AnimalClip, type AnimalTable } from '../animals/animals.ts'
 import { BUILDINGS_URL, buildingPreviewKey, parseBuildings, type BuildingTable } from '../buildings/buildings.ts'
-import { itemModelUrl, parseDecorParts, type AnimalProp, type BuildingProp, type DecorProp, type FieldProp, type MaskedParts, type LightProp, type MannequinProp, type NpcProp, type TemplateProp, type Vec3 } from './mallTemplate.ts'
+import { shelfPieces, slotBoxes, slotCopies, slotTag, type SlotBox, type SlotCopy } from '../shelves/shelves.ts'
+import { itemModelUrl, parseDecorParts, type AnimalProp, type BuildingProp, type DecorProp, type FieldProp, type MaskedParts, type LightProp, type MannequinProp, type NpcProp, type ShelfProp, type TemplateProp, type Vec3 } from './mallTemplate.ts'
 
 const STACK_GAP = 0.02
 const SOIL_HEIGHT = 0.03
 const SOIL_COLOR = 0x6e4b32
 const PEN_COLOR = 0xe8c26a
 const PEN_LIFT = 0.05
+const OUT_OF_STOCK_SIZE = [0.2, 0.05] as const
+const OUT_OF_STOCK_CANVAS = [256, 64] as const
+let outOfStockMaterial: THREE.MeshBasicMaterial | null = null
 let cropTable: Promise<CropTable> | null = null
 let animalTable: Promise<AnimalTable> | null = null
 let buildingTable: Promise<BuildingTable> | null = null
@@ -54,6 +58,7 @@ export function propSignature(prop: TemplateProp): string {
   if (prop.kind === 'building') return JSON.stringify(['building', buildingPreviewKey(prop)])
   if (prop.kind === 'mannequin') return JSON.stringify(['mannequin', prop.body, prop.outfit, prop.bodyHidden ?? false])
   if (prop.kind === 'light') return JSON.stringify(['light', prop.light, prop.color, prop.intensity, prop.range, prop.angle, prop.pitch])
+  if (prop.kind === 'shelf') return JSON.stringify(['shelf', prop.id, prop.shelf, prop.length, prop.levels, prop.slots, prop.fill])
   return JSON.stringify([prop.kind, propModelUrl(prop), prop.kind === 'item' ? prop.stack : null, prop.kind === 'decor' ? (prop.materials ?? null) : null])
 }
 
@@ -94,17 +99,19 @@ async function createNpc(npc: NpcProp): Promise<THREE.Object3D> {
   return character
 }
 
-function stackModels(model: THREE.Object3D, stack: [number, number]): THREE.Object3D {
+export function stackPlacements(stack: [number, number], size: { x: number; z: number }): THREE.Matrix4[] {
   const [columns, rows] = stack
+  const placements: THREE.Matrix4[] = []
+  for (let c = 0; c < columns; c++) {
+    for (let r = 0; r < rows; r++) placements.push(new THREE.Matrix4().makeTranslation((c - (columns - 1) / 2) * (size.x + STACK_GAP), 0, (r - (rows - 1) / 2) * (size.z + STACK_GAP)))
+  }
+  return placements
+}
+
+function stackModels(model: THREE.Object3D, stack: [number, number]): THREE.Object3D {
   const size = new THREE.Box3().setFromObject(model).getSize(new THREE.Vector3())
   const group = new THREE.Group()
-  for (let c = 0; c < columns; c++) {
-    for (let r = 0; r < rows; r++) {
-      const copy = model.clone(true)
-      copy.position.set((c - (columns - 1) / 2) * (size.x + STACK_GAP), 0, (r - (rows - 1) / 2) * (size.z + STACK_GAP))
-      group.add(copy)
-    }
-  }
+  group.add(...instancedParts(model, stackPlacements(stack, size)))
   return group
 }
 
@@ -321,7 +328,116 @@ async function createBuilding(prop: BuildingProp): Promise<THREE.Object3D> {
   return (await loader.loadAsync(url)).scene
 }
 
+function outOfStockTag(): THREE.Mesh {
+  if (!outOfStockMaterial) {
+    const canvas = document.createElement('canvas')
+    ;[canvas.width, canvas.height] = OUT_OF_STOCK_CANVAS
+    const ctx = canvas.getContext('2d')
+    if (!ctx) throw new Error('no 2D canvas for the out of stock tag')
+    ctx.fillStyle = '#e0534f'
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    ctx.fillStyle = '#ffffff'
+    ctx.font = 'bold 34px sans-serif'
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText('OUT OF STOCK', canvas.width / 2, canvas.height / 2)
+    const map = new THREE.CanvasTexture(canvas)
+    map.colorSpace = THREE.SRGBColorSpace
+    outOfStockMaterial = new THREE.MeshBasicMaterial({ map })
+  }
+  const tag = new THREE.Mesh(new THREE.PlaneGeometry(...OUT_OF_STOCK_SIZE), outOfStockMaterial)
+  tag.name = 'ShelfOutOfStock'
+  tag.userData.sharedMaterials = true
+  return tag
+}
+
+function footed(model: THREE.Object3D): THREE.Group {
+  const box = new THREE.Box3().setFromObject(model)
+  const center = box.getCenter(new THREE.Vector3())
+  const inner = markShared(model.clone(true))
+  inner.position.set(-center.x, -box.min.y, -center.z)
+  const pivot = new THREE.Group()
+  pivot.add(inner)
+  return pivot
+}
+
+const UNTINTED = new THREE.Color(1, 1, 1)
+
+function placement(position: readonly number[], rotation: THREE.Euler, scale: readonly number[]): THREE.Matrix4 {
+  return new THREE.Matrix4().compose(new THREE.Vector3().fromArray(position), new THREE.Quaternion().setFromEuler(rotation), new THREE.Vector3().fromArray(scale))
+}
+
+export function instancedParts(model: THREE.Object3D, placements: readonly THREE.Matrix4[]): THREE.InstancedMesh[] {
+  model.updateMatrixWorld(true)
+  const parts: THREE.InstancedMesh[] = []
+  model.traverse((obj) => {
+    if (!(obj instanceof THREE.Mesh)) return
+    const instanced = new THREE.InstancedMesh(obj.geometry, obj.material, placements.length)
+    placements.forEach((placement, i) => instanced.setMatrixAt(i, placement.clone().multiply(obj.matrixWorld)))
+    instanced.computeBoundingSphere()
+    instanced.userData.sharedGeometry = true
+    instanced.userData.sharedMaterials = true
+    parts.push(instanced)
+  })
+  return parts
+}
+
+function filledSlot(prop: ShelfProp, box: SlotBox, size: Vec3): SlotCopy[] {
+  const fill = prop.fill[box.key]!
+  try {
+    return slotCopies(box.size, size, fill.count, fill.arrange, `${prop.id}#${box.key}`)
+  } catch (error) {
+    if (error instanceof RangeError) throw new RangeError(`slot ${box.key} (${fill.code}): ${error.message}`)
+    throw error
+  }
+}
+
+async function createShelf(prop: ShelfProp): Promise<THREE.Group> {
+  const group = new THREE.Group()
+  const pieces = shelfPieces(prop)
+  const kit = new Map(await Promise.all([...new Set(pieces.map((p) => p.key))].map(async (key) => [key, await modelTemplate(decorModelUrl(key))] as const)))
+  for (const [key, model] of kit) {
+    const placed = pieces.filter((p) => p.key === key).map((p) => placement(p.position, new THREE.Euler(0, p.yaw, 0), p.scale))
+    group.add(...instancedParts(model, placed))
+  }
+  const boxes = slotBoxes(prop)
+  for (const box of boxes.filter((b) => !prop.fill[b.key])) {
+    const tag = outOfStockTag()
+    const { position, yaw } = slotTag(prop, box)
+    tag.position.fromArray(position)
+    tag.rotation.y = yaw
+    group.add(tag)
+  }
+  const byModel = new Map<string, SlotBox[]>()
+  for (const box of boxes) {
+    const fill = prop.fill[box.key]
+    if (!fill) continue
+    const url = itemModelUrl(fill)
+    byModel.set(url, [...(byModel.get(url) ?? []), box])
+  }
+  await Promise.all([...byModel].map(async ([url, filled]) => {
+    const [template, size] = await Promise.all([modelTemplate(url), modelSize(url)])
+    const placements: THREE.Matrix4[] = []
+    const slotOfCopy: string[] = []
+    for (const box of filled) {
+      const [x, y, z] = box.center
+      const slotMatrix = placement([x, y - box.size[1] / 2, z], new THREE.Euler(0, box.yaw, 0), [1, 1, 1])
+      for (const { position, yaw, tipped } of filledSlot(prop, box, size)) {
+        placements.push(slotMatrix.clone().multiply(placement(position, new THREE.Euler(0, yaw, tipped ? Math.PI / 2 : 0), [1, 1, 1])))
+        slotOfCopy.push(box.key)
+      }
+    }
+    for (const part of instancedParts(footed(template), placements)) {
+      slotOfCopy.forEach((_, i) => part.setColorAt(i, UNTINTED))
+      part.userData.shelfSlots = slotOfCopy
+      group.add(part)
+    }
+  }))
+  return group
+}
+
 export async function createPropObject(prop: TemplateProp): Promise<THREE.Object3D> {
+  if (prop.kind === 'shelf') return createShelf(prop)
   if (prop.kind === 'field') return createField(prop)
   if (prop.kind === 'building') return createBuilding(prop)
   if (prop.kind === 'animal') return createAnimalPen(prop)
