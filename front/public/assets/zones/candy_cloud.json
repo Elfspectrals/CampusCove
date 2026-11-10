@@ -51,6 +51,312 @@
       ]
     },
     {
+      "id": "candy_cloud_jar_shelf_0",
+      "kind": "item",
+      "key": "candy_jar_shelf",
+      "code": "decor_candy_jar_shelf",
+      "forSale": false,
+      "position": [
+        -376.605,
+        0.2,
+        22.733
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "candy_cloud_jar_shelf_1",
+      "kind": "item",
+      "key": "candy_jar_shelf",
+      "code": "decor_candy_jar_shelf",
+      "forSale": false,
+      "position": [
+        -376.605,
+        0.2,
+        20.733
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "candy_cloud_jar_shelf_2",
+      "kind": "item",
+      "key": "candy_jar_shelf",
+      "code": "decor_candy_jar_shelf",
+      "forSale": false,
+      "position": [
+        -376.605,
+        0.2,
+        18.733
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "candy_cloud_jar_shelf_3",
+      "kind": "item",
+      "key": "candy_jar_shelf",
+      "code": "decor_candy_jar_shelf",
+      "forSale": false,
+      "position": [
+        -376.605,
+        0.2,
+        16.733
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "candy_cloud_jar_shelf_4",
+      "kind": "item",
+      "key": "candy_jar_shelf",
+      "code": "decor_candy_jar_shelf",
+      "forSale": false,
+      "position": [
+        -376.605,
+        0.2,
+        14.733
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "candy_cloud_jar_shelf_5",
+      "kind": "item",
+      "key": "candy_jar_shelf",
+      "code": "decor_candy_jar_shelf",
+      "forSale": false,
+      "position": [
+        -376.605,
+        0.2,
+        12.733
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "candy_cloud_jar_shelf_6",
+      "kind": "item",
+      "key": "candy_jar_shelf",
+      "code": "decor_candy_jar_shelf",
+      "forSale": false,
+      "position": [
+        -376.605,
+        0.2,
+        10.733
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "candy_cloud_jar_shelf_7",
+      "kind": "item",
+      "key": "candy_jar_shelf",
+      "code": "decor_candy_jar_shelf",
+      "forSale": false,
+      "position": [
+        -376.605,
+        0.2,
+        8.733
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "candy_cloud_jar_shelf_8",
+      "kind": "item",
+      "key": "candy_jar_shelf",
+      "code": "decor_candy_jar_shelf",
+      "forSale": false,
+      "position": [
+        -376.605,
+        0.2,
+        6.733
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "candy_cloud_jar_shelf_9",
+      "kind": "item",
+      "key": "candy_jar_shelf",
+      "code": "decor_candy_jar_shelf",
+      "forSale": false,
+      "position": [
+        -376.605,
+        0.2,
+        4.733
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "candy_cloud_jar_shelf_10",
+      "kind": "item",
+      "key": "candy_jar_shelf",
+      "code": "decor_candy_jar_shelf",
+      "forSale": false,
+      "position": [
+        -376.605,
+        0.2,
+        2.733
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "candy_cloud_pick_mix",
+      "kind": "item",
+      "key": "pick_mix_island",
+      "code": "decor_pick_mix_island",
+      "forSale": false,
+      "position": [
+        -372.905,
+        0.2,
+        12.733
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "candy_cloud_lollipop_tree",
+      "kind": "item",
+      "key": "lollipop_tree",
+      "code": "decor_lollipop_tree",
+      "forSale": false,
+      "position": [
+        -374.405,
+        0.2,
+        20.733
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "candy_cloud_cotton_machine",
+      "kind": "item",
+      "key": "cotton_candy_machine",
+      "code": "decor_cotton_candy_machine",
+      "forSale": false,
+      "position": [
+        -374.905,
+        0.2,
+        5.233
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "candy_cloud_apple_tray",
+      "kind": "item",
+      "key": "candy_apple_tray",
+      "code": "decor_candy_apple_tray",
+      "forSale": false,
+      "position": [
+        -372.405,
+        0.2,
+        2.933
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "candy_cloud_checkout",
+      "kind": "item",
+      "key": "checkout_counter",
+      "code": "decor_checkout_counter",
+      "forSale": false,
+      "position": [
+        -370.405,
+        0.2,
+        17.733
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "candy_cloud_gum_stand",
+      "kind": "item",
+      "key": "gum_stand",
+      "code": "decor_gum_stand",
+      "forSale": false,
+      "position": [
+        -370.405,
+        0.2,
+        16.533
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
       "id": "candy_cloud_bag",
       "kind": "item",
       "key": "bag",

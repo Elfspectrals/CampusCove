@@ -1,6 +1,8 @@
 """Summit Sports: the mall's sportswear store, on two merged Al Fresca cells (docs/MALL.md). Same layout contract as
 Cove Threads (v2: counter, clerk, departments, displays, outfits, mirror), read by useClothingStore: the three tops
-and three bottoms added to front/scripts/skins/wear.py hang on rails, two dressed mannequins stand on a podium.
+and three bottoms added to front/scripts/skins/wear.py hang on rails, two dressed mannequins stand on a podium. The
+rails, folded-clothes tables, podium, gym props and checkout counter are zone props in zones/summit_sports.json
+(build_shop_decor.py), not baked here.
 
 Outputs out/store/summit_sports/{interior,exterior}.glb, *.colsrc.glb, *.layout.json, preview.png.
 Then build_house_lightmaps.py -- store summit_sports, npm run assets:optimize -- store.
@@ -50,18 +52,9 @@ cols = L.Collisions(coll)
 M = L.std_mats(wall="#f2f2ef", floor=("#2f3338", "noise", "#262a2e"))
 M["yellow"] = L.make_mat("IN_SummitYellow", "#f0b429", 0.6, "noise", 0.02)
 M["black"] = L.make_mat("IN_SummitBlack", "#1b1d22", 0.6, "noise", 0.01)
-M["white"] = L.make_mat("IN_SummitWhite", "#fbfaf8", 0.5, "noise", 0.01)
-M["chrome"] = L.make_mat("IN_SummitChrome", "#d9dde2", 0.15, "noise", 0.02)
 M["sign"] = L.make_mat("IN_SummitSign", "#ffffff", 0.4, "noise", 0.0, emit="#ffffff", emit_strength=1.0)
-M["lightbox"] = L.make_mat("IN_SummitLightbox", "#fdfcf8", 0.4, "noise", 0.0, emit="#fffaf0", emit_strength=0.8)
 M["line"] = L.make_mat("IN_SummitLine", "#f0b429", 0.7, "noise", 0.0, emit="#f0b429", emit_strength=0.3)
-M["rubber"] = L.make_mat("IN_SummitRubber", "#3a3f47", 0.9, "noise", 0.03)
 M["form"] = L.make_mat("IN_SummitForm", "#f2efe9", 0.4, "noise", 0.01)
-M["mat_blue"] = L.make_mat("IN_SummitMatBlue", "#1f5fae", 0.9, "noise", 0.03)
-M["mat_red"] = L.make_mat("IN_SummitMatRed", "#e0534f", 0.9, "noise", 0.03)
-M["ball"] = L.make_mat("IN_SummitBall", "#f28c28", 0.7, "noise", 0.04, accent="#1b1d22")
-STACK_COLORS = ("#1f2a5a", "#f0b429", "#2fa17a", "#e0534f", "#f2f0ea", "#2a2c33", "#b73cc9", "#38a3c9")
-STACK = [L.make_mat(f"IN_SummitStack{i}", c, 0.9, "stripes", 0.03, accent=c) for i, c in enumerate(STACK_COLORS)]
 objs = []
 displays = []
 dept_info = []
@@ -118,30 +111,14 @@ def hanging_rail(slot, x_start, z_wall):
     keys = ITEMS[slot]
     z = z_wall + 0.42
     x_end = x_start + 1.25 * (len(keys) - 1)
-    for sx_ in (x_start - 0.75, x_end + 0.75):
-        add(L.box(coll, f"Rail_{slot}_Bracket{int(sx_ * 10)}", sx_, z_wall + 0.25, RAIL_Y + 0.02, 0.04, 0.5, 0.04, M["chrome"]))
-    add(L.box(coll, f"Rail_{slot}_Bar", (x_start + x_end) / 2, z, RAIL_Y, x_end - x_start + 1.6, 0.03, 0.03, M["chrome"]))
-    add(L.box(coll, f"Rail_{slot}_Light", (x_start + x_end) / 2, z_wall + 0.03, 0.0, x_end - x_start + 1.8, 0.05, 2.7, M["lightbox"]))
     dept_board(slot, (x_start + x_end) / 2, z_wall + 0.06)
     for i, key in enumerate(keys):
         gx = x_start + i * 1.25
-        add(L.box(coll, f"Hanger_{slot}_{key}", gx, z, RAIL_Y - 0.06, 0.03, 0.03, 0.09, M["chrome"]))
         y = root_y_for_top(PIECE_TOP[slot], RAIL_Y - 0.08)
         displays.append({"slot": slot, "key": key, "department": slot,
                          "position": [round(gx, 3), y, round(z, 3)], "yaw": 0.0,
                          "center": [round(gx, 3), round(RAIL_Y - 0.45, 3), round(z, 3)],
                          "tag": tag_at(gx, z_wall + 0.1, 0.0)})
-    cols.add(f"Rail_{slot}", (x_start + x_end) / 2, z_wall + 0.45, 0.0, x_end - x_start + 1.8, 0.9, 2.2)
-
-
-def fold_table(name, gx, gz, w, d):
-    add(L.box(coll, f"{name}_Top", gx, gz, 0.86, w, d, 0.04, M["white"], bevel=0.01))
-    add(L.box(coll, f"{name}_Body", gx, gz, 0.0, w - 0.3, d - 0.3, 0.86, M["black"]))
-    n = max(1, int(w / 0.42))
-    for i in range(n):
-        for r in range(2):
-            add(L.box(coll, f"{name}_Stack{i}_{r}", gx - w / 2 + (i + 0.5) * w / n, gz - d / 4 + r * d / 2, 0.9, 0.36, d / 2 - 0.1, 0.14 + 0.05 * ((i + r) % 3), STACK[(i + r * 3) % len(STACK)]))
-    cols.add(name, gx, gz, 0.0, w, d, 1.1)
 
 
 # ---------------------------------------------------------------- shell
@@ -169,37 +146,14 @@ for gx in (-12.0, -6.0, 0.0, 6.0, 12.0):
         add(L.box(coll, f"Light_{li:02d}", gx, gz, H - 0.07, 1.8, 0.4, 0.07, M["lamp"]))
         li += 1
 
-# ---------------------------------------------------------------- rails, tables, props
+# ---------------------------------------------------------------- rails, mirror, podium
 hanging_rail("top", -12.0, Z0)
 hanging_rail("bottom", 8.5, Z0)
-fold_table("FoldTable_W", -6.0, 0.5, 3.0, 1.2)
-fold_table("FoldTable_E", 6.0, 0.5, 3.0, 1.2)
-# dumbbell rack, yoga mats and a treadmill as props, a basketball hoop on the east wall
-add(L.box(coll, "DumbRack_Frame", -13.5, 2.0, 0.0, 1.0, 2.2, 0.9, M["rubber"]))
-for i in range(6):
-    gz = 1.1 + i * 0.36
-    add(L.cyl(coll, f"Dumb{i}_Bar", -13.5, gz, 0.92, 0.015, 0.4, M["chrome"], seg=6))
-    add(L.cyl(coll, f"Dumb{i}_A", -13.75, gz, 0.9, 0.07 + 0.01 * (i % 3), 0.08, M["rubber"], seg=8))
-    add(L.cyl(coll, f"Dumb{i}_B", -13.25, gz, 0.9, 0.07 + 0.01 * (i % 3), 0.08, M["rubber"], seg=8))
-cols.add("DumbRack", -13.5, 2.0, 0.0, 1.0, 2.3, 1.1)
-for i in range(5):
-    add(L.cyl(coll, f"YogaMat{i}", -11.0 + i * 0.25, 3.8, 0.0, 0.1, 0.6 + 0.05 * (i % 2), M["mat_blue"] if i % 2 else M["mat_red"], seg=8))
-cols.add("YogaMats", -10.5, 3.8, 0.0, 1.5, 0.4, 0.7)
-add(L.furn(coll, "Treadmill", 12.5, 2.0, -math.pi / 2, [(0, 0, 0.0, 0.8, 1.8, 0.18, M["rubber"], 0.02), (0, 0, 0.18, 0.6, 1.6, 0.03, M["black"]), (0, -0.8, 0.18, 0.7, 0.1, 1.2, M["chrome"]), (0, -0.85, 1.3, 0.7, 0.2, 0.25, M["lightbox"], 0.02)]))
-cols.add("Treadmill", 12.5, 2.0, 0.0, 1.9, 0.9, 1.6)
-add(L.box(coll, "Hoop_Board", X1 - 0.1, 0.0, 2.6, 0.06, 1.2, 0.9, M["white"]))
-add(L.box(coll, "Hoop_Square", X1 - 0.12, 0.0, 2.75, 0.02, 0.5, 0.4, M["yellow"]))
-add(L.cyl(coll, "Hoop_Ring", X1 - 0.4, 0.0, 2.75, 0.23, 0.03, M["ball"], seg=12))
-add(L.cyl(coll, "Hoop_Ball", X1 - 0.6, 1.0, 0.0, 0.12, 0.24, M["ball"], seg=10))
-cols.add("Hoop_Ball", X1 - 0.6, 1.0, 0.0, 0.3, 0.3, 0.3)
 MIRROR = {"position": [round(X0 + 0.09, 3), 1.27, -1.0], "yaw": round(math.pi / 2, 4), "size": [1.4, 2.2]}
 add(L.box(coll, "Mirror_Frame", X0 + 0.04, -1.0, 0.1, 0.06, 1.6, 2.4, M["black"], bevel=0.02))
 add(L.box(coll, "Mirror_Base", X0 + 0.15, -1.0, 0.0, 0.25, 1.7, 0.1, M["black"]))
 # podium with the two dressed mannequins
 PLAT = (0.0, -0.3)
-add(L.cyl(coll, "Mannequin_Platform", PLAT[0], PLAT[1], 0.0, 1.8, 0.14, M["white"], seg=24))
-add(L.cyl(coll, "Mannequin_PlatformEdge", PLAT[0], PLAT[1], 0.14, 1.8, 0.02, M["yellow"], seg=24))
-cols.add("Mannequin_Platform", PLAT[0], PLAT[1], 0.0, 3.4, 2.2, 1.9)
 outfits = []
 for i, pieces in enumerate(OUTFITS):
     gx = PLAT[0] - 0.8 + i * 1.6
@@ -208,22 +162,14 @@ for i, pieces in enumerate(OUTFITS):
                     "position": [round(gx, 3), 0.14, round(gz, 3)], "yaw": round(0.12 - i * 0.24, 4),
                     "center": [round(gx, 3), 1.1, round(gz, 3)],
                     "tag": tag_at(gx, gz + 0.75, 0.0, y=0.4)})
-    add(L.cyl(coll, f"Mannequin_TagPost{i}", gx, gz + 0.75, 0.14, 0.02, 0.18, M["chrome"], seg=6))
 add(L.box(coll, "Podium_Board", PLAT[0], PLAT[1] - 2.4, 3.0, 3.0, 0.06, 0.55, M["black"]))
 text("Podium_Text", "TEAM LOOKS", PLAT[0], PLAT[1] - 2.36, 3.14, 0.3, M["sign"], 0.0)
 counter_x, counter_z = 10.0, 3.2
-add(L.furn(coll, "Counter", counter_x, counter_z, 0.0, [
-    (0, 0, 0.0, 3.6, 0.9, 1.0, M["black"], 0.02),
-    (0, 0, 1.0, 3.8, 1.0, 0.06, M["yellow"], 0.01),
-    (-1.1, -0.1, 1.06, 0.45, 0.35, 0.3, M["chrome"], 0.01),
-]))
-cols.add("Counter", counter_x, counter_z, 0.0, 3.8, 1.0, 1.1)
 add(L.box(coll, "Counter_SignBoard", counter_x, counter_z - 0.3, 2.5, 2.2, 0.06, 0.55, M["yellow"]))
 text("Counter_SignText", "CHECKOUT", counter_x, counter_z - 0.26, 2.62, 0.3, M["black"], 0.0)
 CLERK = {"position": [round(counter_x - 1.1, 3), 0.0, round(counter_z - 0.95, 3)], "yaw": 0.0}
 
-bad = L.check_grounded(objs, allow=L.ALLOW_INTERIOR + ("Ceiling", "Line_", "Logo_", "Brand_", "Sign_", "Rail_", "Hanger_", "FoldTable_", "Dumb", "Hoop_Board",
-                                                      "Hoop_Square", "Hoop_Ring", "Mirror_Frame", "Mannequin_", "Podium_", "Counter_Sign", "YogaMat"))
+bad = L.check_grounded(objs, allow=L.ALLOW_INTERIOR + ("Ceiling", "Line_", "Logo_", "Brand_", "Sign_", "Mirror_Frame", "Podium_", "Counter_Sign"))
 print("SUMMIT grounded violations:", bad)
 assert not bad, bad
 by_mat = {}

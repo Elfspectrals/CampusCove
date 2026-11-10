@@ -1,6 +1,8 @@
 """Northline: the clothing department store of the Cove Parkview Mall (docs/MALL.md). Same layout contract as Cove
 Threads (build_threads.py), so useClothingStore reads it unchanged: 25 modular pieces on rails, shelves and head forms,
 4 dressed mannequins on a podium, a counter with a clerk, a mirror. H&M mood: white, mirrored pillars, strings of bulbs.
+The rails, shoe wall, head-form tables, folded-clothes tables, round rails, display cubes, podium, plants and checkout
+counter are zone props in zones/northline.json (build_shop_decor.py), not baked here.
 
 Outputs: out/store/northline/{interior.glb, interior.colsrc.glb, interior.layout.json, exterior.glb, exterior.colsrc.glb,
 exterior.layout.json, preview.png}. Then build_house_lightmaps.py -- store northline, npm run assets:optimize -- store.
@@ -8,7 +10,6 @@ exterior.layout.json, preview.png}. Then build_house_lightmaps.py -- store north
 import importlib
 import math
 import os
-import random
 import sys
 
 if "__file__" not in globals():
@@ -53,7 +54,6 @@ OUTFITS = [
     [("head_accessory", "studio"), ("top", "hoodie"), ("bottom", "cargo"), ("shoes", "runners")],
     [("hair", "buzz"), ("top", "tee"), ("bottom", "shorts"), ("shoes", "slides")],
 ]
-rng = random.Random(23)
 
 
 def root_y_for_top(top_in_body, world_top):
@@ -65,21 +65,13 @@ coll = bpy.data.collections.new("Interior")
 sc.collection.children.link(coll)
 cols = L.Collisions(coll)
 M = L.std_mats(wall="#f7f6f3", floor=("#e4e0d8", "tiles", "#d3cfc6"))
-M["white"] = L.make_mat("IN_NorthWhite", "#fbfaf8", 0.45, "noise", 0.01)
 M["mirror"] = L.make_mat("IN_NorthMirror", "#cfd8dd", 0.08, "noise", 0.02, emit="#dde6ea", emit_strength=0.25)
-M["chrome"] = L.make_mat("IN_NorthChrome", "#d9dde2", 0.15, "noise", 0.02)
 M["black"] = L.make_mat("IN_NorthBlack", "#1b1d22", 0.6, "noise", 0.01)
 M["sign"] = L.make_mat("IN_NorthSign", "#ffffff", 0.4, "noise", 0.0, emit="#ffffff", emit_strength=1.0)
 M["neon"] = L.make_mat("IN_NorthNeon", "#ffffff", 0.3, "noise", 0.0, emit="#fff6e8", emit_strength=2.2)
 M["bulb"] = L.make_mat("IN_NorthBulb", "#fff2d6", 0.4, "noise", 0.0, emit="#ffe0a8", emit_strength=1.8)
 M["wire"] = L.make_mat("IN_NorthWire", "#2a2d33", 0.6, "noise", 0.02)
-M["red"] = L.make_mat("IN_NorthRed", "#c8102e", 0.6, "noise", 0.01)
 M["navy"] = L.make_mat("IN_NorthNavy", "#1f2a5a", 0.7, "noise", 0.02)
-M["form"] = L.make_mat("IN_NorthForm", "#f2efe9", 0.4, "noise", 0.01)
-M["wood"] = L.make_mat("IN_NorthOak", "#dcc29a", 0.6, "planks", 0.03, accent="#c9ad84")
-STACK_COLORS = ("#f4f1ea", "#c8102e", "#1f2a5a", "#e9e4da", "#8fb7d9", "#f0b8a8", "#2f2f35", "#d9c48a", "#5a8f6a", "#f4b3c8", "#ffffff", "#9aa0a8")
-STACK = [L.make_mat(f"IN_NorthStack{i}", c, 0.9, "stripes", 0.03, accent=c) for i, c in enumerate(STACK_COLORS)]
-
 objs = []
 
 
@@ -120,15 +112,6 @@ def text(name, body, gx, gz, y0, size, mat, yaw):
     return add(ob)
 
 
-def stacks(name, cx, cz, w, d, y0, row, along_x):
-    n = max(1, int(w / 0.42))
-    for i in range(n):
-        h = 0.14 + 0.05 * rng.randint(0, 3)
-        off = -w / 2 + (i + 0.5) * w / n
-        gx, gz = (cx + off, cz) if along_x else (cx, cz + off)
-        add(L.box(coll, f"{name}_{i}", gx, gz, y0, 0.36 if along_x else d, d if along_x else 0.36, h, STACK[(i // 2 + row * 3) % len(STACK)]))
-
-
 displays = []
 dept_info = []
 
@@ -148,14 +131,9 @@ def hanging_rail(slot, x_start, z_wall):
     keys = ITEMS[slot]
     z = z_wall + 0.42
     x_end = x_start + 1.25 * (len(keys) - 1)
-    for sx_ in (x_start - 0.75, x_end + 0.75):
-        add(L.box(coll, f"Rail_{slot}_Bracket{int(sx_ * 10)}", sx_, z_wall + 0.25, RAIL_Y + 0.02, 0.04, 0.5, 0.04, M["chrome"]))
-    add(L.box(coll, f"Rail_{slot}_Bar", (x_start + x_end) / 2, z, RAIL_Y, x_end - x_start + 1.6, 0.03, 0.03, M["chrome"]))
-    add(L.box(coll, f"Rail_{slot}_Panel", (x_start + x_end) / 2, z_wall + 0.03, 0.0, x_end - x_start + 1.8, 0.05, 2.7, M["mirror"]))
     dept_board(slot, (x_start + x_end) / 2, z_wall + 0.06, 0.0, True)
     for i, key in enumerate(keys):
         gx = x_start + i * 1.25
-        add(L.box(coll, f"Hanger_{slot}_{key}", gx, z, RAIL_Y - 0.06, 0.03, 0.03, 0.09, M["chrome"]))
         y = root_y_for_top(PIECE_TOP[slot], RAIL_Y - 0.08)
         displays.append({
             "slot": slot, "key": key, "department": slot,
@@ -163,7 +141,6 @@ def hanging_rail(slot, x_start, z_wall):
             "center": [round(gx, 3), round(RAIL_Y - 0.45, 3), round(z, 3)],
             "tag": tag_at(gx, z_wall + 0.1, 0.0),
         })
-    cols.add(f"Rail_{slot}", (x_start + x_end) / 2, z_wall + 0.45, 0.0, x_end - x_start + 1.8, 0.9, 2.2)
 
 
 def shoe_wall(x_wall, z_start):
@@ -171,12 +148,6 @@ def shoe_wall(x_wall, z_start):
     x = x_wall + 0.25
     z_end = z_start + 1.25 * (len(keys) - 1)
     zc = (z_start + z_end) / 2
-    length = z_end - z_start + 1.4
-    for lv, y in enumerate((0.35, SHELF_Y - 0.03, 1.75)):
-        add(L.box(coll, f"ShoeShelf_{lv}", x, zc, y, 0.5, length, 0.03, M["white"]))
-    for k, zz in enumerate((zc - length / 2, zc + length / 2)):
-        add(L.box(coll, f"ShoeShelf_Side{k}", x, zz, 0.0, 0.5, 0.04, 2.2, M["white"]))
-    add(L.box(coll, "ShoeShelf_Back", x_wall + 0.03, zc, 0.0, 0.05, length, 2.2, M["mirror"]))
     dept_board("shoes", x_wall + 0.06, zc, math.pi / 2, False)
     for i, key in enumerate(keys):
         gz = z_start + i * 1.25
@@ -186,7 +157,6 @@ def shoe_wall(x_wall, z_start):
             "center": [round(x, 3), round(SHELF_Y + 0.12, 3), round(gz, 3)],
             "tag": tag_at(x_wall + 0.1, gz, math.pi / 2),
         })
-    cols.add("ShoeShelf", x, zc, 0.0, 0.55, length, 2.2)
 
 
 def head_table(slot, x_wall, z_start):
@@ -194,41 +164,15 @@ def head_table(slot, x_wall, z_start):
     x = x_wall - 0.55
     z_end = z_start + 1.2 * (len(keys) - 1)
     zc = (z_start + z_end) / 2
-    length = z_end - z_start + 1.2
-    add(L.box(coll, f"HeadTable_{slot}_Top", x, zc, TABLE_Y - 0.04, 0.8, length, 0.04, M["wood"]))
-    add(L.box(coll, f"HeadTable_{slot}_Body", x, zc, 0.0, 0.7, length - 0.1, TABLE_Y - 0.04, M["white"]))
     dept_board(slot, x_wall - 0.06, zc, -math.pi / 2, False)
     for i, key in enumerate(keys):
         gz = z_start + i * 1.2
-        add(L.cyl(coll, f"HeadForm_{slot}_{key}_Neck", x, gz, TABLE_Y, 0.045, HEAD_Y - TABLE_Y - 0.08, M["form"], seg=10))
-        add(L.box(coll, f"HeadForm_{slot}_{key}_Base", x, gz, TABLE_Y, 0.2, 0.2, 0.03, M["form"], bevel=0.01))
-        add(L.box(coll, f"HeadForm_{slot}_{key}_Head", x, gz, HEAD_Y - 0.1, 0.16, 0.18, 0.21, M["form"], bevel=0.07))
         displays.append({
             "slot": slot, "key": key, "department": slot,
             "position": [round(x, 3), round(HEAD_Y - 1.745 * BODY_SCALE - BODY_LIFT, 3), round(gz, 3)], "yaw": round(-math.pi / 2, 4),
             "center": [round(x, 3), HEAD_Y, round(gz, 3)],
             "tag": tag_at(x - 0.42, gz, -math.pi / 2, y=0.62),
         })
-    cols.add(f"HeadTable_{slot}", x, zc, 0.0, 0.8, length, 1.7)
-
-
-def fold_table(name, gx, gz, w, d, rows):
-    add(L.box(coll, f"{name}_Top", gx, gz, TABLE_Y - 0.04, w, d, 0.04, M["white"], bevel=0.01))
-    add(L.box(coll, f"{name}_Body", gx, gz, 0.0, w - 0.3, d - 0.3, TABLE_Y - 0.04, M["white"]))
-    for r in range(rows):
-        stacks(f"{name}_Stack{r}", gx, gz - d / 2 + (r + 0.5) * d / rows, w - 0.2, d / rows - 0.1, TABLE_Y, r, True)
-    cols.add(name, gx, gz, 0.0, w, d, TABLE_Y + 0.2)
-
-
-def round_rail(name, gx, gz, r):
-    add(L.cyl(coll, f"{name}_Base", gx, gz, 0.0, 0.3, 0.04, M["chrome"], seg=12))
-    add(L.cyl(coll, f"{name}_Pole", gx, gz, 0.04, 0.03, 1.4, M["chrome"], seg=8))
-    add(L.cyl(coll, f"{name}_Ring", gx, gz, 1.4, r, 0.03, M["chrome"], seg=24))
-    count = int(2 * math.pi * r / 0.22)
-    for k in range(count):
-        a = 2 * math.pi * k / count
-        add(L.box(coll, f"{name}_Garment{k}", gx + r * math.cos(a), gz + r * math.sin(a), 0.5, 0.05, 0.4, 0.9, STACK[(k + 3) % len(STACK)], rot=-a))
-    cols.add(name, gx, gz, 0.0, 2 * r + 0.5, 2 * r + 0.5, 1.6)
 
 
 def pillar(name, gx, gz):
@@ -280,25 +224,11 @@ shoe_wall(X0, -19.0)
 head_table("hair", X1, -21.0)
 head_table("head_accessory", X1, -12.0)
 
-fold_table("FoldTable_A", -3.0, -12.0, 3.2, 1.4, 2)
-fold_table("FoldTable_B", 3.0, -12.0, 3.2, 1.4, 2)
-fold_table("FoldTable_C", 0.0, -20.0, 4.0, 1.6, 2)
-round_rail("RoundRail_W", -11.0, -8.0, 0.9)
-round_rail("RoundRail_E", 11.0, -4.0, 0.9)
-for i, (gx, gz) in enumerate(((-11.0, -14.0), (11.0, 1.5))):
-    add(L.box(coll, f"Cube_{i}_Body", gx, gz, 0.0, 1.4, 1.4, 0.9, M["white"], bevel=0.02))
-    for k in range(4):
-        add(L.box(coll, f"Cube_{i}_Stack{k}", gx - 0.45 + k * 0.3, gz, 0.9, 0.26, 0.34, 0.14 + 0.05 * (k % 2), STACK[(k + 2 + i * 5) % len(STACK)]))
-    cols.add(f"Cube_{i}", gx, gz, 0.0, 1.5, 1.5, 1.1)
-
 MIRROR = {"position": [round(X0 + 0.09, 3), 1.27, -8.5], "yaw": round(math.pi / 2, 4), "size": [1.4, 2.2]}
 add(L.box(coll, "Mirror_Frame", X0 + 0.04, -8.5, 0.1, 0.06, 1.6, 2.4, M["black"], bevel=0.02))
 add(L.box(coll, "Mirror_Base", X0 + 0.15, -8.5, 0.0, 0.25, 1.7, 0.1, M["black"]))
 
 PLAT = (-8.5, 0.5)
-add(L.cyl(coll, "Mannequin_Platform", PLAT[0], PLAT[1], 0.0, 2.5, 0.14, M["white"], seg=32))
-add(L.cyl(coll, "Mannequin_PlatformEdge", PLAT[0], PLAT[1], 0.14, 2.5, 0.02, M["chrome"], seg=32))
-cols.add("Mannequin_Platform", PLAT[0], PLAT[1], 0.0, 4.6, 2.7, 1.9)
 outfits = []
 for i, pieces in enumerate(OUTFITS):
     a = math.radians(-40 + i * 26.7)
@@ -309,29 +239,16 @@ for i, pieces in enumerate(OUTFITS):
         "center": [round(gx, 3), 1.1, round(gz, 3)],
         "tag": tag_at(gx, gz + 0.75, 0.0, y=0.4),
     })
-    add(L.cyl(coll, f"Mannequin_TagPost{i}", gx, gz + 0.75, 0.14, 0.02, 0.18, M["chrome"], seg=6))
 add(L.box(coll, "Podium_Board", PLAT[0], PLAT[1] - 3.2, 3.2, 3.2, 0.06, 0.62, M["black"]))
 text("Podium_Text", "NEW ARRIVALS", PLAT[0], PLAT[1] - 3.16, 3.36, 0.34, M["sign"], 0.0)
 
 counter_x, counter_z = 9.5, 1.0
-add(L.furn(coll, "Counter", counter_x, counter_z, 0.0, [
-    (0, 0, 0.0, 4.2, 1.0, 1.0, M["white"], 0.02),
-    (0, 0, 1.0, 4.4, 1.1, 0.06, M["black"], 0.01),
-    (0, -0.52, 0.2, 4.2, 0.04, 0.6, M["red"]),
-    (-1.3, -0.1, 1.06, 0.45, 0.35, 0.3, M["black"], 0.01),
-    (0.9, 0.0, 1.06, 0.7, 0.5, 0.12, STACK[1], 0.01),
-]))
-cols.add("Counter", counter_x, counter_z, 0.0, 4.4, 1.1, 1.1)
 add(L.box(coll, "Counter_SignBoard", counter_x, counter_z - 0.3, 2.6, 2.6, 0.08, 0.7, M["black"]))
 text("Counter_SignText", "CHECKOUT", counter_x, counter_z - 0.24, 2.75, 0.4, M["sign"], 0.0)
 CLERK = {"position": [round(counter_x - 1.3, 3), 0.0, round(counter_z - 1.05, 3)], "yaw": 0.0}
-for gx in (-14.6, 14.6):
-    add(L.plant(coll, M, f"Plant_{int(gx)}", gx, 4.2))
-    cols.add(f"Plant_{int(gx)}", gx, 4.2, 0.0, 0.5, 0.5, 1.3)
 
-bad = L.check_grounded(objs, allow=L.ALLOW_INTERIOR + ("Ceiling", "Sign_", "Counter_Sign", "Rail_", "Hanger_", "ShoeShelf_", "HeadTable_", "HeadForm_",
-                                                      "FoldTable_", "RoundRail_", "Cube_", "Mannequin_", "Mirror_Frame", "Wall_Mirror", "Neon_",
-                                                      "Fairy_", "Pillar_", "Podium_"))
+bad = L.check_grounded(objs, allow=L.ALLOW_INTERIOR + ("Ceiling", "Sign_", "Counter_Sign", "Mirror_Frame", "Wall_Mirror", "Neon_", "Fairy_",
+                                                      "Pillar_", "Podium_"))
 print("NORTHLINE grounded violations:", bad)
 assert not bad, bad
 

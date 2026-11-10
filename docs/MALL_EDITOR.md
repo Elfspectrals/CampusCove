@@ -209,7 +209,14 @@ de la clinique, le Campus Cafe et les six boutiques du mall sont dans `zones/ret
   (`shop_rack`), le comptoir (`checkout_counter`), le présentoir (`display_plinth`), le kiosque à clés, le râtelier à bois,
   les panneaux d'outils et le nuancier de peinture viennent de `map-src/CampusCove/build_shop_decor.py` (dossier
   **Shop**). L'intérieur ne garde que murs, sol, plafond, lumières et enseignes. Les objets posés, vendus ou non, ont
-  leur collision en jeu.
+  leur collision en jeu. Toutes les caisses sont un `checkout_counter`.
+  - Candy Cloud : étagères à bocaux, îlot pick & mix, arbre à sucettes, machine à barbe à papa, plateau de pommes
+    d'amour, présentoir à chewing-gums.
+  - Summit Sports : portants muraux, tables de pliés, podium des mannequins, rack d'haltères, tapis de yoga, tapis de
+    course, panier de basket.
+  - Hearth & Hollow : étagères à bibelots, tables de présentation, socles en béton, plantes.
+  - Northline : portants à miroir, mur à chaussures, tables à têtes, tables de pliés, portants ronds, cubes, podium,
+    plantes.
 
 **Staff role** (Détails d'un NPC) donne au NPC un rôle de jeu : `bartender` et `bouncer` au pub, `nurse` à la clinique.
 Chacun existe une seule fois dans sa zone. **Save** (ou `npm --prefix front run zone:prices`) recopie leur position dans

@@ -51,6 +51,186 @@
       ]
     },
     {
+      "id": "summit_sports_rail_top",
+      "kind": "item",
+      "key": "clothes_wall_rail",
+      "code": "decor_clothes_wall_rail",
+      "forSale": false,
+      "position": [
+        -273.25,
+        0.2,
+        86.589
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "summit_sports_rail_bottom",
+      "kind": "item",
+      "key": "clothes_wall_rail",
+      "code": "decor_clothes_wall_rail",
+      "forSale": false,
+      "position": [
+        -293.75,
+        0.2,
+        86.589
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "summit_sports_table_w",
+      "kind": "item",
+      "key": "folded_clothes_table",
+      "code": "decor_folded_clothes_table",
+      "forSale": false,
+      "position": [
+        -278.0,
+        0.2,
+        82.905
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "summit_sports_table_e",
+      "kind": "item",
+      "key": "folded_clothes_table",
+      "code": "decor_folded_clothes_table",
+      "forSale": false,
+      "position": [
+        -290.0,
+        0.2,
+        82.905
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "summit_sports_dumbbell_rack",
+      "kind": "item",
+      "key": "dumbbell_rack",
+      "code": "decor_dumbbell_rack",
+      "forSale": false,
+      "position": [
+        -270.5,
+        0.2,
+        81.405
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "summit_sports_yoga_mats",
+      "kind": "item",
+      "key": "yoga_mat_rolls",
+      "code": "decor_yoga_mat_rolls",
+      "forSale": false,
+      "position": [
+        -273.5,
+        0.2,
+        79.605
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "summit_sports_treadmill",
+      "kind": "item",
+      "key": "treadmill",
+      "code": "decor_treadmill",
+      "forSale": false,
+      "position": [
+        -296.913,
+        0.2,
+        81.405
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "summit_sports_hoop",
+      "kind": "item",
+      "key": "basketball_hoop",
+      "code": "decor_basketball_hoop",
+      "forSale": false,
+      "position": [
+        -298.862,
+        0.2,
+        83.238
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "summit_sports_podium",
+      "kind": "item",
+      "key": "mannequin_podium",
+      "code": "decor_mannequin_podium",
+      "forSale": false,
+      "position": [
+        -284.0,
+        0.2,
+        83.43
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "summit_sports_checkout",
+      "kind": "item",
+      "key": "checkout_counter",
+      "code": "decor_checkout_counter",
+      "forSale": false,
+      "position": [
+        -293.3,
+        0.2,
+        80.205
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
       "id": "summit_sports_top_track_jacket",
       "kind": "mannequin",
       "position": [

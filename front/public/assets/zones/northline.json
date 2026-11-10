@@ -51,6 +51,294 @@
       ]
     },
     {
+      "id": "northline_rail_top",
+      "kind": "item",
+      "key": "mirror_wall_rail",
+      "code": "decor_mirror_wall_rail",
+      "forSale": false,
+      "position": [
+        -226.0,
+        0.2,
+        108.066
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "northline_rail_bottom",
+      "kind": "item",
+      "key": "mirror_wall_rail",
+      "code": "decor_mirror_wall_rail",
+      "forSale": false,
+      "position": [
+        -246.0,
+        0.2,
+        108.066
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "northline_shoe_wall",
+      "kind": "item",
+      "key": "shoe_wall_shelf",
+      "code": "decor_shoe_wall_shelf",
+      "forSale": false,
+      "position": [
+        -220.213,
+        0.2,
+        99.905
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "northline_head_table_hair",
+      "kind": "item",
+      "key": "head_form_table",
+      "code": "decor_head_form_table",
+      "forSale": false,
+      "position": [
+        -251.45,
+        0.2,
+        102.005
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "northline_head_table_accessory",
+      "kind": "item",
+      "key": "head_form_table",
+      "code": "decor_head_form_table",
+      "forSale": false,
+      "position": [
+        -251.45,
+        0.2,
+        93.005
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "northline_table_a",
+      "kind": "item",
+      "key": "white_clothes_table",
+      "code": "decor_white_clothes_table",
+      "forSale": false,
+      "position": [
+        -233.0,
+        0.2,
+        95.405
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "northline_table_b",
+      "kind": "item",
+      "key": "white_clothes_table",
+      "code": "decor_white_clothes_table",
+      "forSale": false,
+      "position": [
+        -239.0,
+        0.2,
+        95.405
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "northline_table_c",
+      "kind": "item",
+      "key": "white_clothes_table_long",
+      "code": "decor_white_clothes_table_long",
+      "forSale": false,
+      "position": [
+        -236.0,
+        0.2,
+        103.405
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "northline_round_rail_w",
+      "kind": "item",
+      "key": "round_clothes_rail",
+      "code": "decor_round_clothes_rail",
+      "forSale": false,
+      "position": [
+        -225.0,
+        0.2,
+        91.405
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "northline_round_rail_e",
+      "kind": "item",
+      "key": "round_clothes_rail",
+      "code": "decor_round_clothes_rail",
+      "forSale": false,
+      "position": [
+        -247.0,
+        0.2,
+        87.405
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "northline_cube_w",
+      "kind": "item",
+      "key": "display_cube_stacks",
+      "code": "decor_display_cube_stacks",
+      "forSale": false,
+      "position": [
+        -225.0,
+        0.2,
+        97.405
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "northline_cube_e",
+      "kind": "item",
+      "key": "display_cube_stacks",
+      "code": "decor_display_cube_stacks",
+      "forSale": false,
+      "position": [
+        -247.0,
+        0.2,
+        81.905
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "northline_podium",
+      "kind": "item",
+      "key": "mannequin_podium_wide",
+      "code": "decor_mannequin_podium_wide",
+      "forSale": false,
+      "position": [
+        -227.501,
+        0.2,
+        82.382
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "northline_checkout",
+      "kind": "item",
+      "key": "checkout_counter",
+      "code": "decor_checkout_counter",
+      "forSale": false,
+      "position": [
+        -244.65,
+        0.2,
+        82.405
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "northline_plant_w",
+      "kind": "item",
+      "key": "potted_shrub",
+      "code": "decor_potted_shrub",
+      "forSale": false,
+      "position": [
+        -221.4,
+        0.2,
+        79.205
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "northline_plant_e",
+      "kind": "item",
+      "key": "potted_shrub",
+      "code": "decor_potted_shrub",
+      "forSale": false,
+      "position": [
+        -250.6,
+        0.2,
+        79.205
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
       "id": "northline_top_tee",
       "kind": "mannequin",
       "position": [

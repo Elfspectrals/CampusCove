@@ -51,6 +51,330 @@
       ]
     },
     {
+      "id": "hearth_hollow_knick_e1_a",
+      "kind": "item",
+      "key": "knick_shelf",
+      "code": "decor_knick_shelf",
+      "forSale": false,
+      "position": [
+        -235.25,
+        0.2,
+        -90.93
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "hearth_hollow_knick_e1_b",
+      "kind": "item",
+      "key": "knick_shelf",
+      "code": "decor_knick_shelf",
+      "forSale": false,
+      "position": [
+        -235.25,
+        0.2,
+        -87.88
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "hearth_hollow_knick_e2_a",
+      "kind": "item",
+      "key": "knick_shelf",
+      "code": "decor_knick_shelf",
+      "forSale": false,
+      "position": [
+        -235.25,
+        0.2,
+        -101.93
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "hearth_hollow_knick_e2_b",
+      "kind": "item",
+      "key": "knick_shelf",
+      "code": "decor_knick_shelf",
+      "forSale": false,
+      "position": [
+        -235.25,
+        0.2,
+        -98.88
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "hearth_hollow_knick_w1_a",
+      "kind": "item",
+      "key": "knick_shelf",
+      "code": "decor_knick_shelf",
+      "forSale": false,
+      "position": [
+        -264.75,
+        0.2,
+        -100.93
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "hearth_hollow_knick_w1_b",
+      "kind": "item",
+      "key": "knick_shelf",
+      "code": "decor_knick_shelf",
+      "forSale": false,
+      "position": [
+        -264.75,
+        0.2,
+        -97.88
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "hearth_hollow_knick_back_a",
+      "kind": "item",
+      "key": "knick_shelf",
+      "code": "decor_knick_shelf",
+      "forSale": false,
+      "position": [
+        -261.025,
+        0.2,
+        -108.155
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "hearth_hollow_knick_back_b",
+      "kind": "item",
+      "key": "knick_shelf",
+      "code": "decor_knick_shelf",
+      "forSale": false,
+      "position": [
+        -257.975,
+        0.2,
+        -108.155
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "hearth_hollow_knick_back2_a",
+      "kind": "item",
+      "key": "knick_shelf",
+      "code": "decor_knick_shelf",
+      "forSale": false,
+      "position": [
+        -242.025,
+        0.2,
+        -108.155
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "hearth_hollow_knick_back2_b",
+      "kind": "item",
+      "key": "knick_shelf",
+      "code": "decor_knick_shelf",
+      "forSale": false,
+      "position": [
+        -238.975,
+        0.2,
+        -108.155
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "hearth_hollow_table_light_plants",
+      "kind": "item",
+      "key": "wood_display_table",
+      "code": "decor_wood_display_table",
+      "forSale": false,
+      "position": [
+        -250.0,
+        0.2,
+        -86.405
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "hearth_hollow_table_shelving",
+      "kind": "item",
+      "key": "wood_display_table_small",
+      "code": "decor_wood_display_table_small",
+      "forSale": false,
+      "position": [
+        -241.5,
+        0.2,
+        -92.405
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "hearth_hollow_plinth_side_table",
+      "kind": "item",
+      "key": "concrete_plinth",
+      "code": "decor_concrete_plinth",
+      "forSale": false,
+      "position": [
+        -255.729,
+        0.2,
+        -93.705
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "hearth_hollow_plinth_nightstand",
+      "kind": "item",
+      "key": "concrete_plinth",
+      "code": "decor_concrete_plinth",
+      "forSale": false,
+      "position": [
+        -238.457,
+        0.2,
+        -91.602
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "hearth_hollow_plinth_bar_stool",
+      "kind": "item",
+      "key": "concrete_plinth",
+      "code": "decor_concrete_plinth",
+      "forSale": false,
+      "position": [
+        -257.0,
+        0.2,
+        -100.005
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "hearth_hollow_plant_w",
+      "kind": "item",
+      "key": "potted_shrub",
+      "code": "decor_potted_shrub",
+      "forSale": false,
+      "position": [
+        -263.5,
+        0.2,
+        -79.405
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "hearth_hollow_plant_e",
+      "kind": "item",
+      "key": "potted_shrub",
+      "code": "decor_potted_shrub",
+      "forSale": false,
+      "position": [
+        -236.5,
+        0.2,
+        -79.405
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "hearth_hollow_checkout",
+      "kind": "item",
+      "key": "checkout_counter",
+      "code": "decor_checkout_counter",
+      "forSale": false,
+      "position": [
+        -239.5,
+        0.2,
+        -81.905
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
       "id": "hearth_hollow_armchair_lounge",
       "kind": "item",
       "key": "armchair_lounge",

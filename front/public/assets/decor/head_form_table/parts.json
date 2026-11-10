@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "materials": {
+    "DC_NorthOak": {
+      "mask": "parts_DC_NorthOak.png",
+      "parts": [
+        {
+          "id": "main",
+          "label": "Main",
+          "color": "#dcc29b"
+        },
+        {
+          "id": "accent",
+          "label": "Accent",
+          "color": "#cab089"
+        }
+      ]
+    }
+  }
+}

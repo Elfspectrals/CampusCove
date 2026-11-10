@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "materials": {
+    "DC_CandyStripe": {
+      "mask": "parts_DC_CandyStripe.png",
+      "parts": [
+        {
+          "id": "main",
+          "label": "Main",
+          "color": "#fef2ea"
+        },
+        {
+          "id": "accent",
+          "label": "Accent",
+          "color": "#d75752"
+        }
+      ]
+    }
+  }
+}

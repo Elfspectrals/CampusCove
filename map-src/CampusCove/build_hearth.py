@@ -1,7 +1,8 @@
 """Hearth & Hollow: the home-decor concept store of the Cove Parkview Mall (docs/MALL.md). Same layout contract as Cove
 Home (build_store.py) so useFurnitureStore reads it: a curated set of 26 Cove Home pieces (decor/<key>/model.glb,
 codes decor_*) shown on wooden tables, plinths and the floor of an industrial hall (sawtooth skylights, steel trusses,
-brick wall, timber panels, a big slatted pendant), each with a price tag.
+brick wall, timber panels, a big slatted pendant), each with a price tag. The tables, plinths, knick-knack shelves, plants
+and checkout counter are zone props in zones/hearth_hollow.json (build_shop_decor.py), not baked here.
 
 Reads out/decor/furniture.manifest.json (build_furniture.py) for the item footprints.
 Outputs: out/store/hearth_hollow/{interior.glb, interior.colsrc.glb, interior.layout.json, exterior.glb, exterior.colsrc.glb,
@@ -12,7 +13,6 @@ import importlib
 import json
 import math
 import os
-import random
 import sys
 
 if "__file__" not in globals():
@@ -30,7 +30,6 @@ OUT = os.path.join(L.OUT_ROOT, "store", KEY)
 H = 5.2
 X0, X1, Z0, Z1 = -15.0, 15.0, -25.0, 5.0
 TABLE_Y = 0.78
-rng = random.Random(31)
 
 manifest = json.load(open(os.path.join(L.OUT_ROOT, "decor", "furniture.manifest.json"), encoding="utf-8"))
 manifest.update({
@@ -79,14 +78,10 @@ M["timber"] = L.make_mat("IN_HearthTimber", "#c9a36a", 0.7, "planks", 0.05, acce
 M["ochre"] = L.make_mat("IN_HearthOchre", "#e0b85a", 0.95, "noise", 0.04)
 M["steel"] = L.make_mat("IN_HearthSteel", "#2f3338", 0.55, "noise", 0.03)
 M["shed"] = L.make_mat("IN_HearthLightPanelShed", "#eef6fb", 0.3, "noise", 0.01, emit="#f4f8ff", emit_strength=0.9)
-M["concrete"] = L.make_mat("IN_HearthConcrete", "#b9b3a8", 0.9, "noise", 0.03)
-M["table"] = L.make_mat("IN_HearthTable", "#b8884f", 0.6, "planks", 0.04, accent="#96693a")
 M["slat"] = L.make_mat("IN_HearthSlat", "#3b3630", 0.7, "noise", 0.02)
 M["bulb"] = L.make_mat("IN_HearthLightPanelBulb", "#fff0cf", 0.4, "noise", 0.0, emit="#ffd98a", emit_strength=1.8)
 M["sign"] = L.make_mat("IN_HearthSign", "#fff7ea", 0.4, "noise", 0.0, emit="#fff1d6", emit_strength=0.9)
 M["black"] = L.make_mat("IN_HearthBlack", "#1d1f24", 0.6, "noise", 0.01)
-OBJ_COLORS = ("#e0533d", "#f6d04d", "#3f7f8c", "#f07fa8", "#2f6f63", "#1f5fae", "#f2a65a", "#a985e0", "#79b765", "#f7f4ec")
-OBJS = [L.make_mat(f"IN_HearthObj{i}", c, 0.6, "noise", 0.03) for i, c in enumerate(OBJ_COLORS)]
 DM = {dep: L.make_mat(f"IN_HearthDept_{dep}", c, 0.8, "noise", 0.02) for dep, (_, c) in DEPARTMENTS.items()}
 
 objs = []
@@ -131,31 +126,6 @@ def text(name, body, gx, gz, y0, size, mat, yaw):
 
 def facing_yaw(fx, fz):
     return math.atan2(fx, fz)
-
-
-def knick_shelf(name, gx, gz, length, along_x, yaw_face):
-    """Wall shelving of colourful small objects (decor only, nothing sold)."""
-    depth = 0.38
-    sx, sz = (length, depth) if along_x else (depth, length)
-    for lv in range(4):
-        y = 0.4 + lv * 0.55
-        add(L.box(coll, f"{name}_Board{lv}", gx, gz, y, sx, sz, 0.035, M["timber"]))
-        n = int(length / 0.45)
-        for i in range(n):
-            off = -length / 2 + (i + 0.5) * length / n
-            ox, oz = (gx + off, gz) if along_x else (gx, gz + off)
-            kind = rng.randint(0, 2)
-            m = OBJS[(i + lv * 3) % len(OBJS)]
-            if kind == 0:
-                add(L.box(coll, f"{name}_Obj{lv}_{i}", ox, oz, y + 0.035, 0.22, 0.22, 0.18 + 0.06 * (i % 3), m))
-            elif kind == 1:
-                add(L.cyl(coll, f"{name}_Obj{lv}_{i}", ox, oz, y + 0.035, 0.09, 0.26 + 0.05 * (i % 2), m, seg=6))
-            else:
-                add(L.cyl(coll, f"{name}_Obj{lv}_{i}", ox, oz, y + 0.035, 0.12, 0.12, m, seg=6))
-    for k in (-1, 1):
-        px, pz = (gx + k * length / 2, gz) if along_x else (gx, gz + k * length / 2)
-        add(L.box(coll, f"{name}_Post{k + 1}", px, pz, 0.0, 0.05 if along_x else depth, depth if along_x else 0.05, 2.1, M["steel"]))
-    cols.add(name, gx, gz, 0.0, sx + 0.1, sz + 0.1, 2.1)
 
 
 # ---------------------------------------------------------------- hall
@@ -204,11 +174,6 @@ text("Brand_Text", "HEARTH & HOLLOW", 0.0, Z0 + 0.1, 3.4, 0.75, M["sign"], 0.0)
 text("Brand_Tag", "objects for a slow home", 0.0, Z0 + 0.1, 3.0, 0.3, M["sign"], 0.0)
 for i, body in enumerate(("make", "room", "for", "beauty")):
     text(f"Ochre_Word{i}", body, X0 + 0.1, 1.5 - i * 1.3, 2.0, 0.5, M["black"], math.pi / 2)
-knick_shelf("Knick_E1", X1 - 0.25, -6.0, 6.0, False, -math.pi / 2)
-knick_shelf("Knick_E2", X1 - 0.25, -17.0, 6.0, False, -math.pi / 2)
-knick_shelf("Knick_W1", X0 + 0.25, -16.0, 7.0, False, math.pi / 2)
-knick_shelf("Knick_Back", -9.5, Z0 + 0.25, 6.0, True, 0.0)
-knick_shelf("Knick_Back2", 9.5, Z0 + 0.25, 6.0, True, 0.0)
 
 # ---------------------------------------------------------------- islands
 displays = []
@@ -216,17 +181,13 @@ dept_info = []
 
 
 def island(dep, cx, cz, dx, dz):
-    """One department: a wooden table for the small pieces, floor spots around it for the big ones, a hanging sign."""
+    """One department: small pieces on a wooden table (a zone prop), big ones on floor spots around it, a hanging sign."""
     label, color = DEPARTMENTS[dep]
     items = ISLANDS[dep]
     table_items = [k for k, kind in items if kind == "table"]
     floor_items = [k for k, kind in items if kind == "floor"]
     if table_items:
         tw = 0.7 * len(table_items) + 0.5
-        add(L.box(coll, f"Table_{dep}_Top", cx, cz, TABLE_Y - 0.05, tw, 0.9, 0.05, M["table"], bevel=0.01))
-        for k, (ox, oz) in enumerate(((-tw / 2 + 0.15, -0.3), (tw / 2 - 0.15, -0.3), (-tw / 2 + 0.15, 0.3), (tw / 2 - 0.15, 0.3))):
-            add(L.box(coll, f"Table_{dep}_Leg{k}", cx + ox, cz + oz, 0.0, 0.07, 0.07, TABLE_Y - 0.05, M["steel"]))
-        cols.add(f"Table_{dep}", cx, cz, 0.0, tw, 0.9, TABLE_Y + 0.4)
         for i, key in enumerate(table_items):
             gx = cx - tw / 2 + 0.6 + i * 0.7
             gz = cz
@@ -241,15 +202,8 @@ def island(dep, cx, cz, dx, dz):
         a = 2 * math.pi * i / n + math.pi / 2
         gx, gz = cx + dx * math.cos(a), cz + dz * math.sin(a)
         yaw = facing_yaw(cx - gx, cz - gz) + math.pi
-        y0 = 0.0
-        if max(w_, d_) < 0.5 and h_ < 0.9:
-            y0 = 0.4
-            add(L.box(coll, f"Plinth_{key}", gx, gz, 0.0, 0.6, 0.6, 0.4, M["concrete"], bevel=0.02))
-            cols.add(f"Plinth_{key}", gx, gz, 0.0, 0.6, 0.6, 0.4)
+        y0 = 0.4 if max(w_, d_) < 0.5 and h_ < 0.9 else 0.0
         cw, cd = COL_OVERRIDE.get(key, [w_, d_])
-        if h_ > 0.05:
-            side = max(cw, cd)
-            cols.add(f"Item_{key}", gx, gz, y0, side, side, h_)
         r_tag = math.hypot(gx - cx, gz - cz) + max(cw, cd) / 2 + 0.3
         tx, tz = cx + r_tag * math.cos(a), cz + r_tag * math.sin(a)
         displays.append({"key": key, "code": code_of(key), "department": dep, "description": BLURB[key],
@@ -270,21 +224,11 @@ island("kitchen_bath", -7.0, -19.0, 3.0, 2.4)
 island("outdoor", 7.0, -19.0, 3.4, 2.4)
 
 counter_x, counter_z = 10.5, 1.5
-add(L.furn(coll, "Counter", counter_x, counter_z, 0.0, [
-    (0, 0, 0.0, 3.4, 0.9, 0.95, M["timber"], 0.02),
-    (0, 0, 0.95, 3.6, 1.0, 0.06, M["concrete"], 0.01),
-    (-1.0, -0.05, 1.01, 0.45, 0.35, 0.3, M["black"], 0.01),
-    (0.9, 0.0, 1.01, 0.5, 0.4, 0.3, OBJS[3], 0.02),
-]))
-cols.add("Counter", counter_x, counter_z, 0.0, 3.6, 1.0, 1.1)
 add(L.box(coll, "Counter_SignBoard", counter_x, counter_z - 0.35, 2.5, 2.2, 0.08, 0.6, M["slat"]))
 text("Counter_SignText", "PAY HERE", counter_x, counter_z - 0.29, 2.62, 0.34, M["sign"], 0.0)
-for gx in (-13.5, 13.5):
-    add(L.plant(coll, M, f"Plant_{int(gx)}", gx, 4.0))
-    cols.add(f"Plant_{int(gx)}", gx, 4.0, 0.0, 0.5, 0.5, 1.3)
 
-bad = L.check_grounded(objs, allow=L.ALLOW_INTERIOR + ("Ceiling", "Truss_", "Pendant_", "Bulb_", "Brand_", "Ochre_", "Knick_", "Table_", "Sign_",
-                                                      "Counter_Sign", "Plinth_", "TagPost_", "TagFoot_", "Column_"))
+bad = L.check_grounded(objs, allow=L.ALLOW_INTERIOR + ("Ceiling", "Truss_", "Pendant_", "Bulb_", "Brand_", "Ochre_", "Sign_", "Counter_Sign", "TagPost_",
+                                                      "TagFoot_", "Column_"))
 print("HEARTH grounded violations:", bad)
 assert not bad, bad
 
