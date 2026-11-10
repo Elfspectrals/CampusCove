@@ -909,7 +909,7 @@ const movement = useGameMovement({
     clinic.updatePrompt()
     pub.tick(dt)
     pubGames.tick()
-    orchard.tick(dt)
+    orchard.tick()
     farm.tick()
     if (!doorSigns.group.parent) getScene()?.add(doorSigns.group)
     minimap.tick()

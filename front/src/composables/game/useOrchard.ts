@@ -65,7 +65,7 @@ export function useOrchard(deps: OrchardDeps) {
     deps.gameRoomRef.value?.send('orchard_pick_cancel')
   }
 
-  function tick(dt: number): void {
+  function tick(): void {
     if (!picking || !layout) return
     const tree = layout.trees[picking.tree]
     if (!tree || deps.promptsHidden()) {
