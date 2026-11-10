@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "materials": {
+    "DC_ChickenCoop": {
+      "mask": "parts_DC_ChickenCoop.png",
+      "parts": [
+        {
+          "id": "main",
+          "label": "Main",
+          "color": "#de7e76"
+        },
+        {
+          "id": "accent",
+          "label": "Accent",
+          "color": "#eccdc4"
+        },
+        {
+          "id": "detail",
+          "label": "Detail",
+          "color": "#893230"
+        }
+      ]
+    }
+  }
+}

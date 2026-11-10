@@ -1,7 +1,7 @@
 // Optimizes the Blender exports in map-src/CampusCove/out/ into front/public/assets/.
 //
 //   npm run assets:optimize            (all categories)
-//   npm run assets:optimize -- houses  (one category: skins | decor | houses | town | work | park | items | store | wear)
+//   npm run assets:optimize -- houses  (one category: skins | decor | houses | town | work | park | items | store | wear | animals)
 //   npm run assets:optimize -- store greencart crispins_hardware  (only these folders of the category)
 //
 // Blender (map-src/CampusCove/build_*.py) writes raw GLBs + *.colsrc.glb collision sources to

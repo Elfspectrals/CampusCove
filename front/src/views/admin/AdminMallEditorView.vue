@@ -9,10 +9,17 @@ import EditorSearchSelect, { type SelectOption } from '../../components/admin/ma
 import MallEditorDetails from '../../components/admin/mallEditor/MallEditorDetails.vue'
 import MallEditorOutliner from '../../components/admin/mallEditor/MallEditorOutliner.vue'
 import MallMapModal, { type MallPlaza, type MallStoreMark } from '../../components/admin/mallEditor/MallMapModal.vue'
+import MallEditorSaleMap from '../../components/admin/mallEditor/MallEditorSaleMap.vue'
+import type { WorldMapImage } from '../../game/world/minimap'
 import { decorModelUrl, isConsumableCode } from '../../game/assets/catalog'
 import UiIcon from '../../components/ui/UiIcon.vue'
 import type { UiIconName } from '../../components/ui/icons'
-import { MallEditorScene, type GizmoMode, type PropTransform } from '../../game/mallEditor/MallEditorScene'
+import { MallEditorScene, type EditorZone, type GizmoMode, type PropTransform, type SelectHow } from '../../game/mallEditor/MallEditorScene'
+import { bakedProps, parseZoneDecor, zoneDecorJson, type SaleArea, type ZoneDecor } from '../../game/zoneDecor/zoneDecor.ts'
+import { animals as loadAnimals, buildings as loadBuildings, crops as loadCrops } from '../../game/mallTemplates/templateProps'
+import type { AnimalDef, AnimalTable } from '../../game/animals/animals.ts'
+import type { BuildingDef, BuildingTable } from '../../game/buildings/buildings.ts'
+import type { CropDef, CropTable } from '../../game/crops/crops.ts'
 import { MALL_TEMPLATE_ASSIGNMENTS_URL, mallTemplateUrl } from '../../game/mallTemplates/mallTemplateFiles'
 import { decorParts, type MaterialSlot } from '../../game/mallTemplates/templateProps'
 import { MATERIALS_URL, TEXTURES_URL } from '../../game/mallTemplates/templateSurfaces'
@@ -40,7 +47,7 @@ import {
 } from '../../game/mallTemplates/mallTemplate.ts'
 
 const MALL_LAYOUT_URL = '/assets/store/mall/mall.layout.json'
-const EDITOR_API = '/__mall-editor'
+const EDITOR_API = '/__editor'
 const CAN_WRITE = import.meta.env.DEV
 const DEFAULT_NPC_OUTFIT = [
   { slot: 'hair', key: 'ponytail' },
@@ -71,10 +78,16 @@ const SCALE_SNAPS = [0, 0.1, 0.25, 0.5]
 interface EditorAssets {
   decor: string[]
   wear: Record<WearSlot, string[]>
+  consumables: string[]
+}
+
+interface ZoneChoice extends EditorZone {
+  decorated: boolean
 }
 
 interface PlaceableEntry extends ContentEntry {
   modelUrl: string | null
+  zoneOnly?: true
   create: (id: string, position: Vec3) => TemplateProp
 }
 
@@ -114,7 +127,11 @@ const ownParts = ref<Record<string, TexturePart[]>>({})
 
 const armedId = ref<string | null>(null)
 const template = ref<MallTemplate>({ version: 1, key: '', name: '', preset: { width: 0, depth: 0 }, props: [] })
-const selectedId = ref<string | null>(null)
+const selectedIds = ref<string[]>([])
+const selectedId = computed<string | null>({
+  get: () => (selectedIds.value.length === 1 ? selectedIds.value[0]! : null),
+  set: (id) => (selectedIds.value = id ? [id] : []),
+})
 const gizmoMode = ref<GizmoMode>('translate')
 const translationSnap = ref(0.1)
 const rotationSnap = ref(10)
@@ -122,10 +139,27 @@ const scaleSnap = ref(0.5)
 const sceneError = ref<string | null>(null)
 const hiddenIds = ref<string[]>([])
 const templateList = ref<Array<{ key: string; name: string; preset: CellPreset }>>([])
+const zoneChoices = ref<ZoneChoice[]>([])
+const cropTable = ref<CropTable>({})
+const animalTable = ref<AnimalTable>({})
+const buildingTable = ref<BuildingTable>({})
+const cropOptions = computed<SelectOption[]>(() => Object.values(cropTable.value).map((c) => ({ value: c.key, label: c.label })))
+const zoneOptions = computed<SelectOption[]>(() => zoneChoices.value.map((z) => ({ value: z.key, label: z.key, group: z.decorated ? 'Decorated' : 'Bare' })))
+const openZone = ref<ZoneChoice | null>(null)
+const zonePick = ref('')
+const savedBakedDecor = ref('')
+const bakePending = ref(false)
+const placeableEntries = computed(() => entries.value.filter((e) => (openZone.value ? e.folder !== 'light' : !e.zoneOnly)))
 const assignments = ref<TemplateAssignments>({ version: 1, cells: {} })
 const savedSnapshot = ref(JSON.stringify(template.value))
 const status = ref<{ kind: 'ok' | 'error'; text: string } | null>(null)
 const mapOpen = ref(false)
+const zoneAreas = ref<SaleArea[]>([])
+const savedAreas = ref('[]')
+const saleMap = shallowRef<WorldMapImage | null | undefined>(undefined)
+const offerOptions = ref<SelectOption[]>([])
+const rebuilding = ref<string | null>(null)
+const npcRoles = computed(() => Object.fromEntries(zoneAreas.value.map((a) => [a.npc, `${a.role === 'seller' ? 'Seller' : 'Buyer'} · ${a.name}`])))
 const PANELS_KEY = 'cc.admin.mallEditor.panels.v1'
 const PANEL_LIMITS = { aside: [240, 640], outliner: [120, 600], browser: [140, 520] } as const
 type PanelKey = keyof typeof PANEL_LIMITS
@@ -191,6 +225,7 @@ function useCell(cell: MallCell): void {
   const switching = index !== presetIndex.value
   if (switching && template.value.props.length && !window.confirm(`Props are laid out for ${preset.value?.width} × ${preset.value?.depth} m. Switch to ${cell.width} × ${cell.depth} m anyway?`)) return
   presetIndex.value = index
+  leaveZone()
   targetCell.value = cell
   mapOpen.value = false
 }
@@ -212,10 +247,12 @@ watch([editor, preset], ([scene, current]) => {
 })
 
 watch([editor, () => template.value.props], ([scene, props]) => scene?.syncProps(props), { deep: true })
-watch([editor, selectedId], ([scene, id]) => scene?.select(id))
+watch([editor, selectedIds], ([scene, ids]) => scene?.select(ids))
 watch(
   [editor, () => JSON.stringify([template.value.preset, template.value.surfaces ?? {}])],
-  ([scene]) => scene?.setSurfaces(template.value).catch((error: unknown) => (sceneError.value = errorText(error))),
+  ([scene]) => {
+    if (!openZone.value) scene?.setSurfaces(template.value).catch((error: unknown) => (sceneError.value = errorText(error)))
+  },
 )
 watch([editor, hiddenIds], ([scene, ids]) => scene?.setHidden(ids))
 
@@ -269,7 +306,7 @@ function restoreHistory(index: number): void {
   const restored = JSON.parse(saved) as { props: TemplateProp[]; surfaces: NonNullable<MallTemplate['surfaces']> }
   template.value.props = restored.props
   setSurfaces(restored.surfaces)
-  if (selectedId.value && !template.value.props.some((p) => p.id === selectedId.value)) selectedId.value = null
+  selectedIds.value = selectedIds.value.filter((id) => template.value.props.some((p) => p.id === id))
 }
 
 function undo(): void {
@@ -295,7 +332,7 @@ watch(
   { deep: true },
 )
 
-const dirty = computed(() => JSON.stringify(template.value) !== savedSnapshot.value)
+const dirty = computed(() => JSON.stringify(template.value) !== savedSnapshot.value || JSON.stringify(zoneAreas.value) !== savedAreas.value)
 const keyValid = computed(() => TEMPLATE_KEY.test(template.value.key))
 
 function errorText(error: unknown): string {
@@ -313,7 +350,9 @@ async function readJson<T>(url: string, init?: RequestInit): Promise<T> {
 async function loadLists(): Promise<void> {
   assignments.value = parseTemplateAssignments(await readJson(MALL_TEMPLATE_ASSIGNMENTS_URL))
   if (CAN_WRITE) {
-    templateList.value = await readJson(`${EDITOR_API}/templates`)
+    const [templates, zones] = await Promise.all([readJson<typeof templateList.value>(`${EDITOR_API}/templates`), readJson<ZoneChoice[]>(`${EDITOR_API}/zones`)])
+    templateList.value = templates
+    zoneChoices.value = zones
     return
   }
   const keys = [...new Set(Object.values(assignments.value.cells))]
@@ -338,6 +377,7 @@ function resetEditing(next: MallTemplate): void {
 function newTemplate(): void {
   if (!confirmDiscard()) return
   resetEditing({ version: 1, key: '', name: '', preset: { ...template.value.preset }, props: [] })
+  leaveZone()
   loadedKey.value = null
   targetCell.value = null
   status.value = null
@@ -352,6 +392,7 @@ async function openTemplate(key: string): Promise<void> {
     if (index < 0) throw new Error(`${key}: no planned cell is ${loaded.preset.width}×${loaded.preset.depth} any more`)
     presetIndex.value = index
     resetEditing(loaded)
+    leaveZone()
     loadedKey.value = key
     targetCell.value = cells.value.find((c) => assignments.value.cells[c.id] === key) ?? null
     status.value = { kind: 'ok', text: `Opened ${key}.` }
@@ -373,6 +414,108 @@ async function saveTemplate(): Promise<void> {
   } catch (error) {
     status.value = { kind: 'error', text: errorText(error) }
   }
+}
+
+function leaveZone(): void {
+  if (!openZone.value) return
+  openZone.value = null
+  zoneAreas.value = []
+  savedAreas.value = '[]'
+  if (preset.value) editor.value?.setPreset(preset.value)
+}
+
+function zoneName(key: string): string {
+  const words = key.split('_').join(' ')
+  return words.charAt(0).toUpperCase() + words.slice(1)
+}
+
+async function openZoneDecor(key: string): Promise<void> {
+  zonePick.value = ''
+  const zone = zoneChoices.value.find((z) => z.key === key)
+  if (!zone || !confirmDiscard()) return
+  try {
+    const decor: ZoneDecor = zone.decorated ? parseZoneDecor(await readJson(`${EDITOR_API}/zones/${key}`), zone, cropTable.value, animalTable.value, buildingTable.value) : { version: 1, zone: key, name: zoneName(key), props: [], areas: [] }
+    openZone.value = zone
+    zoneAreas.value = decor.areas
+    savedAreas.value = JSON.stringify(decor.areas)
+    resetEditing({ version: 1, key, name: decor.name, preset: { ...template.value.preset }, props: decor.props })
+    loadedKey.value = null
+    targetCell.value = null
+    savedBakedDecor.value = JSON.stringify(bakedProps(decor))
+    bakePending.value = false
+    status.value = { kind: 'ok', text: `Opened zone ${key}.` }
+    await editor.value?.setZone(zone)
+    void previewBuildings()
+  } catch (error) {
+    if (openZone.value?.key === key) {
+      leaveZone()
+      resetEditing({ version: 1, key: '', name: '', preset: { ...template.value.preset }, props: [] })
+    }
+    status.value = { kind: 'error', text: errorText(error) }
+  }
+}
+
+async function saveZone(zone: ZoneChoice): Promise<void> {
+  try {
+    const sent = JSON.stringify(template.value)
+    const sentAreas = JSON.stringify(zoneAreas.value)
+    const body = zoneDecorJson({ version: 1, zone: zone.key, name: template.value.name, props: template.value.props, areas: zoneAreas.value }, cropTable.value)
+    const decor = parseZoneDecor(body, zone, cropTable.value, animalTable.value, buildingTable.value)
+    const saved = await readJson<{ prices: 'written' | 'pending' }>(`${EDITOR_API}/zones/${zone.key}`, { method: 'PUT', body: JSON.stringify(body) })
+    savedSnapshot.value = sent
+    savedAreas.value = sentAreas
+    const baked = JSON.stringify(bakedProps(decor))
+    bakePending.value ||= baked !== savedBakedDecor.value
+    savedBakedDecor.value = baked
+    await loadLists()
+    const pricesNote = saved.prices === 'pending' ? ' The backend folder is not reachable from this server: run "npm run zone:prices" on your machine.' : ''
+    status.value = {
+      kind: 'ok',
+      text: (bakePending.value
+        ? `Saved zones/${zone.key}.json. Decor changed: run "npm run zone:bake -- ${zone.key}" to bake it into the zone.`
+        : `Saved zones/${zone.key}.json. NPCs and items show in /game after a reload.`) + pricesNote,
+    }
+  } catch (error) {
+    status.value = { kind: 'error', text: errorText(error) }
+  }
+}
+
+function validateAreas(areas: SaleArea[]): string | null {
+  const zone = openZone.value
+  if (!zone) return null
+  try {
+    parseZoneDecor(zoneDecorJson({ version: 1, zone: zone.key, name: template.value.name, props: template.value.props, areas }, cropTable.value), zone, cropTable.value, animalTable.value, buildingTable.value)
+    return null
+  } catch (error) {
+    return errorText(error)
+  }
+}
+
+async function rebuildBuilding(id: string, announce: boolean): Promise<void> {
+  const prop = template.value.props.find((p) => p.id === id)
+  if (!prop || prop.kind !== 'building' || rebuilding.value) return
+  rebuilding.value = id
+  try {
+    await readJson(`${EDITOR_API}/buildings/preview`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(prop) })
+    editor.value?.invalidate(id)
+    editor.value?.syncProps(template.value.props)
+    if (announce) status.value = { kind: 'ok', text: `Rebuilt ${id}. Save, then run "npm run zone:bake -- ${openZone.value?.key}" to put it in the game.` }
+  } catch (error) {
+    status.value = { kind: 'error', text: errorText(error) }
+  } finally {
+    rebuilding.value = null
+  }
+}
+
+async function previewBuildings(): Promise<void> {
+  for (const prop of template.value.props) {
+    if (prop.kind !== 'building' || !openZone.value) continue
+    await rebuildBuilding(prop.id, false)
+  }
+}
+
+function openSaleMap(): void {
+  saleMap.value = editor.value?.captureZoneMap() ?? null
 }
 
 function confirmNewKey(key: string): boolean {
@@ -410,24 +553,64 @@ function applyTransform(id: string, transform: PropTransform): void {
   const prop = template.value.props.find((p) => p.id === id)
   if (!prop) return
   prop.position = transform.position
-  prop.yaw = transform.yaw
-  prop.scale = transform.scale
+  prop.yaw = prop.kind === 'building' ? Math.round(transform.yaw / (Math.PI / 2)) * (Math.PI / 2) : transform.yaw
+  prop.scale = prop.kind === 'field' || prop.kind === 'animal' || prop.kind === 'building' ? [1, 1, 1] : transform.scale
 }
 
 function sellProp(id: string, on: boolean): void {
   const prop = template.value.props.find((p) => p.id === id)
-  const next = prop && withSale(prop, on, prop.kind === 'decor' ? saleCodes.value[prop.key] : undefined)
+  const code = prop?.kind === 'decor' ? saleCodes.value[prop.key] : prop?.kind === 'item' ? prop.code : undefined
+  const next = prop && withSale(prop, on, prop.kind === 'decor' ? saleCodes.value[prop.key] : undefined, code && openZone.value ? itemPrices.value[code] : undefined)
   if (next) replaceProp(next)
 }
 
 function removeProp(id: string): void {
   template.value.props = template.value.props.filter((p) => p.id !== id)
-  if (selectedId.value === id) selectedId.value = null
+  selectedIds.value = selectedIds.value.filter((s) => s !== id)
   hiddenIds.value = hiddenIds.value.filter((h) => h !== id)
 }
 
 function deleteSelected(): void {
-  if (selectedId.value) removeProp(selectedId.value)
+  for (const id of [...selectedIds.value]) removeProp(id)
+}
+
+function withGroups(ids: readonly string[]): string[] {
+  const groups = new Set(template.value.props.filter((p) => ids.includes(p.id) && p.group).map((p) => p.group))
+  return template.value.props.filter((p) => ids.includes(p.id) || (p.group && groups.has(p.group))).map((p) => p.id)
+}
+
+function pickProp(id: string | null, how: SelectHow): void {
+  if (!id) {
+    if (how !== 'toggle') selectedIds.value = []
+    return
+  }
+  const ids = how === 'member' ? [id] : withGroups([id])
+  if (how !== 'toggle') selectedIds.value = ids
+  else if (ids.every((i) => selectedIds.value.includes(i))) selectedIds.value = selectedIds.value.filter((i) => !ids.includes(i))
+  else selectedIds.value = [...new Set([...selectedIds.value, ...ids])]
+}
+
+function boxSelect(ids: string[], additive: boolean): void {
+  const picked = withGroups(ids)
+  selectedIds.value = additive ? [...new Set([...selectedIds.value, ...picked])] : picked
+}
+
+function groupSelected(): void {
+  if (selectedIds.value.length < 2) {
+    status.value = { kind: 'error', text: 'Select two props or more to group them (Shift-click or Ctrl-drag a box).' }
+    return
+  }
+  const taken = new Set(template.value.props.map((p) => p.group))
+  let n = 1
+  while (taken.has(`group_${n}`)) n++
+  for (const prop of template.value.props) if (selectedIds.value.includes(prop.id)) prop.group = `group_${n}`
+  status.value = { kind: 'ok', text: `Grouped ${selectedIds.value.length} props as group_${n}. A click selects them all, Alt-click picks one.` }
+}
+
+function ungroupSelected(): void {
+  const grouped = template.value.props.filter((p) => selectedIds.value.includes(p.id) && p.group)
+  for (const prop of grouped) delete prop.group
+  status.value = grouped.length ? { kind: 'ok', text: `Ungrouped ${grouped.length} props.` } : { kind: 'error', text: 'Nothing grouped in the selection.' }
 }
 
 function duplicateSelected(): void {
@@ -441,6 +624,14 @@ function duplicateSelected(): void {
   copy.id = newPropId()
   if (copy.kind === 'npc') copy.vendor = false
   const step = Math.max(translationSnap.value, 0.5)
+  if (openZone.value) {
+    const { minX, maxX } = openZone.value.bounds
+    const x = copy.position[0] + step <= maxX ? copy.position[0] + step : copy.position[0] - step
+    copy.position = [Math.max(minX, x), copy.position[1], copy.position[2]]
+    template.value.props.push(copy)
+    selectedId.value = copy.id
+    return
+  }
   const { halfWidth } = usableArea(template.value.preset)
   const x = copy.position[0] + step <= halfWidth ? copy.position[0] + step : copy.position[0] - step
   copy.position = [Math.max(-halfWidth, x), copy.position[1], copy.position[2]]
@@ -465,6 +656,12 @@ function onKeyDown(event: KeyboardEvent): void {
   if (command && event.code === 'KeyY') {
     event.preventDefault()
     redo()
+    return
+  }
+  if (command && event.code === 'KeyG') {
+    event.preventDefault()
+    if (event.shiftKey) ungroupSelected()
+    else groupSelected()
     return
   }
   if (command && event.code === 'KeyD') {
@@ -610,6 +807,45 @@ function lightEntry(light: 'point' | 'spot', label: string): PlaceableEntry {
   }
 }
 
+function fieldEntry(crop: CropDef): PlaceableEntry {
+  return {
+    id: `field:${crop.key}`,
+    folder: 'decor',
+    group: 'Fields',
+    zoneOnly: true,
+    label: `${crop.label} field`,
+    preview: `/assets/${crop.plant.replace(/model\.glb$/, 'preview.png')}`,
+    modelUrl: null,
+    create: (id, position) => ({ id, kind: 'field', crop: crop.key, position, yaw: 0, scale: [1, 1, 1], size: [8, 12], pattern: 'rows' }),
+  }
+}
+
+function animalEntry(animal: AnimalDef): PlaceableEntry {
+  return {
+    id: `animal:${animal.key}`,
+    folder: 'animal',
+    group: 'Animals',
+    zoneOnly: true,
+    label: animal.label,
+    preview: `/assets/animals/${animal.key}/preview.png`,
+    modelUrl: null,
+    create: (id, position) => ({ id, kind: 'animal', animal: animal.key, position, yaw: 0, scale: [1, 1, 1], size: [8, 8] }),
+  }
+}
+
+function buildingEntry(building: BuildingDef): PlaceableEntry {
+  return {
+    id: `building:${building.key}`,
+    folder: 'building',
+    group: 'Buildings',
+    label: building.label,
+    preview: null,
+    modelUrl: null,
+    zoneOnly: true,
+    create: (id, position) => ({ id, kind: 'building', building: building.key, position, yaw: 0, scale: [1, 1, 1], ...structuredClone(building.defaults) }),
+  }
+}
+
 function pick(entry: ContentEntry): void {
   const scene = editor.value
   const placeable = entries.value.find((e) => e.id === entry.id)
@@ -672,6 +908,8 @@ async function loadContent(): Promise<void> {
     ...(skipped.length ? [`Not placeable (model path does not match its code): ${skipped.join(', ')}`] : []),
   ]
   editorAssets.value = assets
+  const consumables = catalog.items.filter((item) => item.kind === 'consumable' && isConsumableCode(item.code)).map((item) => item.code)
+  offerOptions.value = [...new Set([...consumables, ...(assets?.consumables ?? [])])].sort().map((code) => ({ value: code, label: code, group: code.split('_')[0]! }))
   decorKeyList.value = decorKeys
   decorGroups.value = Object.fromEntries(decorKeys.map((key) => [key, groupOfDecor(key)]))
   const codesByDecor = new Map<string, string[]>()
@@ -691,7 +929,21 @@ async function loadContent(): Promise<void> {
   wearSaleCodes.value = Object.fromEntries([...codesByWear].filter(([, codes]) => codes.length === 1).map(([piece, codes]) => [piece, codes[0]!]))
   contentNotice.value = notices.length ? notices.join(' ') : null
   saleCodes.value = Object.fromEntries([...codesByDecor].filter(([, codes]) => codes.length === 1).map(([key, codes]) => [key, codes[0]!]))
-  entries.value = [...decorKeys.map((key) => decorEntry(key, groupOfDecor(key))), ...goods, NPC_ENTRY, MANNEQUIN_ENTRY, lightEntry('point', 'Point light'), lightEntry('spot', 'Spot light')]
+  const [crops, herd, buildingDefs] = await Promise.all([loadCrops(), loadAnimals(), loadBuildings()])
+  cropTable.value = crops
+  animalTable.value = herd
+  buildingTable.value = buildingDefs
+  entries.value = [
+    ...decorKeys.map((key) => decorEntry(key, groupOfDecor(key))),
+    ...goods,
+    NPC_ENTRY,
+    MANNEQUIN_ENTRY,
+    lightEntry('point', 'Point light'),
+    lightEntry('spot', 'Spot light'),
+    ...Object.values(cropTable.value).map(fieldEntry),
+    ...Object.values(animalTable.value).map(animalEntry),
+    ...Object.values(buildingTable.value).map(buildingEntry),
+  ]
   const [textures, materials] = await Promise.all([loadTextureOptions(), loadMaterialOptions()])
   textureOptions.value = textures
   materialOptions.value = materials
@@ -699,8 +951,10 @@ async function loadContent(): Promise<void> {
 
 onMounted(async () => {
   const scene = new MallEditorScene(viewportRef.value!)
-  scene.onSelect = (id) => (selectedId.value = id)
+  scene.onSelect = pickProp
+  scene.onBoxSelect = boxSelect
   scene.onTransform = applyTransform
+  scene.onTransformMany = (updates) => updates.forEach(({ id, transform }) => applyTransform(id, transform))
   scene.onError = (message) => (sceneError.value = message)
   scene.onWalkEnd = () => (walking.value = false)
   scene.onMaterials = (id, slots) => (materialSlotsById.value = { ...materialSlotsById.value, [id]: slots })
@@ -737,25 +991,33 @@ onUnmounted(() => {
   <div class="h-full w-full overflow-auto bg-ink-950">
   <div class="flex h-full min-h-[680px] w-full min-w-[900px] flex-col text-fog">
     <header class="cc-panel-flat m-2 mb-0 flex flex-wrap items-center gap-3 px-4 py-2">
-      <h1 class="cc-display m-0 text-xl text-sun">Mall Editor</h1>
+      <h1 class="cc-display m-0 text-xl text-sun">Editor</h1>
       <input v-model.trim="template.name" placeholder="Template name" class="cc-input w-44 py-1.5 text-sm" />
       <input
         v-model.trim="template.key"
+        :disabled="!!openZone"
         placeholder="file_key"
         :class="['cc-input w-36 py-1.5 font-mono text-sm', template.key && !keyValid ? 'border-red-400' : '']"
         title="File name: lowercase letters, digits and _"
       />
-      <button type="button" class="cc-btn cc-btn-sm cc-btn-ghost" title="Choose the shop cell on the mall map" @click="mapOpen = true">
+      <span v-if="openZone" class="cc-btn cc-btn-sm cc-btn-ghost pointer-events-none"><UiIcon name="map" :size="14" /> Zone · {{ openZone.key }}</span>
+      <button v-if="openZone" type="button" class="cc-btn cc-btn-sm cc-btn-ghost" title="Draw the sale areas and give them a seller or a buyer" @click="openSaleMap">
+        <UiIcon name="shop" :size="14" /> Sellers
+      </button>
+      <button v-else type="button" class="cc-btn cc-btn-sm cc-btn-ghost" title="Choose the shop cell on the mall map" @click="mapOpen = true">
         <UiIcon name="map" :size="14" />
         <template v-if="targetCell">{{ targetCell.id }} · {{ targetCell.name }} · </template>{{ preset ? `${preset.width} × ${preset.depth} m` : 'Choose a cell' }}
       </button>
       <div class="ml-auto flex flex-wrap items-center gap-1">
         <button type="button" class="cc-btn cc-btn-sm cc-btn-ghost" @click="newTemplate">New</button>
         <EditorSearchSelect class="w-48" :model-value="openKey" :options="templateChoices" placeholder="Open…" @update:model-value="openTemplate" />
-        <button v-if="CAN_WRITE" type="button" class="cc-btn cc-btn-sm cc-btn-sun" :disabled="!keyValid || !template.name" @click="saveTemplate">
+        <EditorSearchSelect v-if="CAN_WRITE" class="w-40" :model-value="zonePick" :options="zoneOptions" placeholder="Zone…" @update:model-value="openZoneDecor" />
+        <button v-if="CAN_WRITE" type="button" class="cc-btn cc-btn-sm cc-btn-sun" :disabled="!keyValid || !template.name" @click="openZone ? saveZone(openZone) : saveTemplate()">
           Save<span v-if="dirty"> •</span>
         </button>
         <button type="button" class="cc-btn cc-btn-sm cc-btn-mint" :disabled="walking" @click="startWalk"><UiIcon name="play" :size="14" /> Test</button>
+        <button type="button" class="cc-btn cc-btn-sm cc-btn-ghost" :disabled="selectedIds.length < 2" title="Group the selection (Ctrl/Cmd+G)" @click="groupSelected"><UiIcon name="box" :size="14" /> Group</button>
+        <button type="button" class="cc-btn cc-btn-sm cc-btn-ghost" :disabled="!selectedIds.length" title="Ungroup the selection (Ctrl/Cmd+Shift+G)" @click="ungroupSelected"><UiIcon name="grid" :size="14" /> Ungroup</button>
         <button type="button" class="cc-btn cc-btn-sm cc-btn-ghost" :disabled="!canUndo" title="Undo (Ctrl/Cmd+Z)" @click="undo"><UiIcon name="rotate-left" :size="16" /></button>
         <button type="button" class="cc-btn cc-btn-sm cc-btn-ghost" :disabled="!canRedo" title="Redo (Ctrl/Cmd+Shift+Z)" @click="redo"><UiIcon name="rotate-right" :size="16" /></button>
       </div>
@@ -801,13 +1063,14 @@ onUnmounted(() => {
           :class="collapsed.details && !collapsed.outliner ? 'min-h-0 flex-1' : 'shrink-0'"
           :style="collapsed.outliner || collapsed.details ? undefined : { height: `${panels.outliner}px` }"
           :props="template.props"
-          :selected-id="selectedId"
+          :selected-ids="selectedIds"
           :hidden="hiddenIds"
           :collapsed="collapsed.outliner"
-          @select="selectedId = $event"
+          @select="pickProp"
           @toggle-hidden="toggleHidden"
           :sale-codes="saleCodes"
           :prices="itemPrices"
+          :roles="openZone ? npcRoles : undefined"
           @remove="removeProp"
           @sell="sellProp"
           @toggle="collapsed.outliner = !collapsed.outliner"
@@ -820,18 +1083,24 @@ onUnmounted(() => {
           @remove="removeProp"
           @toggle="collapsed.details = !collapsed.details"
           :prop="selectedProp"
+          :selected-count="selectedIds.length"
           :decor-options="decorOptions"
           :wear="editorAssets?.wear ?? emptyWear"
           :vendor-taken="vendorTaken"
           :preset="template.preset"
+          :bounds="openZone?.bounds"
+          :crop-options="cropOptions"
           :sale-codes="saleCodes"
+          :zone-prices="openZone ? itemPrices : undefined"
           :wear-sale-codes="wearSaleCodes"
           :surfaces="template.surfaces"
           :texture-options="textureOptions"
           :texture-parts="texturePartsByKey"
           :own-parts="ownParts"
           :material-options="materialOptions"
-          :material-slots="selectedProp?.kind === 'decor' ? (materialSlotsById[selectedProp.id] ?? []) : []"
+          :material-slots="selectedProp?.kind === 'decor' && !openZone ? (materialSlotsById[selectedProp.id] ?? []) : []"
+          :rebuilding="rebuilding"
+          @rebuild="rebuildBuilding($event, true)"
           @change="replaceProp"
           @surfaces="setSurfaces"
         />
@@ -854,13 +1123,26 @@ onUnmounted(() => {
       @assign="assignFromMap"
       @clear="clearFromMap"
     />
+    <MallEditorSaleMap
+      v-if="openZone && saleMap !== undefined"
+      :zone-key="openZone.key"
+      :bounds="openZone.bounds"
+      :image="saleMap"
+      :props="template.props"
+      :areas="zoneAreas"
+      :item-options="offerOptions"
+      :shop-prices="itemPrices"
+      :validate="validateAreas"
+      @change="zoneAreas = $event"
+      @close="saleMap = undefined"
+    />
     <div v-if="!collapsed.browser" class="mx-2 mb-1 h-1.5 shrink-0 cursor-row-resize rounded bg-ink-800 hover:bg-pool/60" title="Drag to resize" @pointerdown="startResize('browser', $event)" />
     <MallEditorContentBrowser
       class="m-2 mt-0 shrink-0"
       :style="collapsed.browser ? undefined : { height: `${panels.browser}px` }"
       :collapsed="collapsed.browser"
       @toggle="collapsed.browser = !collapsed.browser"
-      :entries="entries" :armed-id="armedId" :notice="contentNotice" @pick="pick" />
+      :entries="placeableEntries" :armed-id="armedId" :notice="contentNotice" @pick="pick" />
   </div>
   </div>
 </template>

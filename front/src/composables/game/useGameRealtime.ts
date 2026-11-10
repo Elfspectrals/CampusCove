@@ -56,8 +56,12 @@ import type {
   UserPunchedPayload,
   UserSeatedPayload,
   OrchardErrorPayload,
+  FarmErrorPayload,
+  FarmPickedPayload,
   OrchardPickedPayload,
   OrchardSoldPayload,
+  ZoneSellErrorPayload,
+  ZoneSoldPayload,
 } from '../../types/gameRealtime'
 import { useRemoteAvatars, type SeatPose } from './useRemoteAvatars'
 import { PUNCH_DAMAGE } from '../../game/punch'
@@ -161,10 +165,18 @@ export interface GameRealtimeDeps {
     onResult: (data: PubRaceChallengeResultPayload) => void
     onCancelled: (data: PubRaceChallengeCancelledPayload) => void
   }
+  zoneBuyers: {
+    onSold: (data: ZoneSoldPayload) => void
+    onError: (data: ZoneSellErrorPayload) => void
+  }
   orchard: {
     onPicked: (data: OrchardPickedPayload) => void
     onSold: (data: OrchardSoldPayload) => void
     onError: (data: OrchardErrorPayload) => void
+  }
+  farm: {
+    onPicked: (data: FarmPickedPayload) => void
+    onError: (data: FarmErrorPayload) => void
   }
 }
 
@@ -314,6 +326,10 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('orchard_picked', (data: OrchardPickedPayload) => deps.orchard.onPicked(data))
     room.onMessage('orchard_sold', (data: OrchardSoldPayload) => deps.orchard.onSold(data))
     room.onMessage('orchard_error', (data: OrchardErrorPayload) => deps.orchard.onError(data))
+    room.onMessage('zone_sold', (data: ZoneSoldPayload) => deps.zoneBuyers.onSold(data))
+    room.onMessage('zone_sell_error', (data: ZoneSellErrorPayload) => deps.zoneBuyers.onError(data))
+    room.onMessage('farm_picked', (data: FarmPickedPayload) => deps.farm.onPicked(data))
+    room.onMessage('farm_error', (data: FarmErrorPayload) => deps.farm.onError(data))
     room.onMessage('pub_shots_ready', (data: PubShotsReadyPayload) => deps.pubGames.onShotsReady(data))
     room.onMessage('pub_shots_result', (data: PubShotsResultPayload) => deps.pubGames.onShotsResult(data))
     room.onMessage('pub_darts_lobby', (data: PubDartsLobbyPayload) => deps.pubGames.onDartsLobby(data))

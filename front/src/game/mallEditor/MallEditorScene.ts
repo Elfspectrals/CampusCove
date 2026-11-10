@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import { captureWorldMap, type WorldMapImage } from '../world/minimap.ts'
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js'
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
 import { disposeObject3D } from '../../avatar/compositeAvatar'
@@ -8,6 +9,9 @@ import { CEILING_HEIGHT, CELL_HEIGHT, usableArea, type CellPreset, type MallTemp
 import { createSurfacePanels, disposeSurfacePanels } from '../mallTemplates/templateSurfaces'
 import { createPropObject, disposeLookMaps, materialSlotsOf, placeProp, propSignature, type MaterialSlot } from '../mallTemplates/templateProps'
 import { createPlacementGhost, DEFAULT_GHOST_COLOR } from '../placement/placementGhost'
+import { createGltfLoader } from '../gltfLoaderFactory'
+import { HIDDEN_INTERIOR_NODES } from '../town/openHouses'
+import type { WorldBounds } from '../world/worldManifest'
 
 export interface PlacementRequest {
   modelUrl: string | null
@@ -15,12 +19,37 @@ export interface PlacementRequest {
   cancel: () => void
 }
 
+export interface EditorZoneBuilding {
+  key: string
+  url: string
+  position: Vec3
+  rotationY: number
+  interiorUrl?: string
+  interiorOffset?: Vec3
+}
+
+export interface EditorZone {
+  key: string
+  bounds: WorldBounds
+  modelUrl: string
+  buildings: EditorZoneBuilding[]
+}
+
 export type GizmoMode = 'select' | 'translate' | 'rotate' | 'scale'
+export type SelectHow = 'replace' | 'toggle' | 'member'
 
 export interface PropTransform {
   position: Vec3
   yaw: number
   scale: Vec3
+}
+
+interface CameraFocus {
+  fromPosition: THREE.Vector3
+  fromTarget: THREE.Vector3
+  toPosition: THREE.Vector3
+  toTarget: THREE.Vector3
+  elapsed: number
 }
 
 interface PlacedObject {
@@ -39,6 +68,11 @@ const EYE_HEIGHT = 1.6
 const WALK_SPEED = 3.2
 const WALK_MARGIN = 0.25
 const MIN_SCALE = 0.05
+const STEP_UP = 0.6
+const BAKED_PREFIXES = ['ZD_', 'FB_']
+const FOCUS_S = 0.35
+const FOCUS_MARGIN = 1.3
+const FOCUS_MIN_DISTANCE = 0.8
 const FLY_KEYS: Record<string, THREE.Vector3> = {
   KeyW: new THREE.Vector3(0, 0, -1),
   KeyS: new THREE.Vector3(0, 0, 1),
@@ -46,6 +80,19 @@ const FLY_KEYS: Record<string, THREE.Vector3> = {
   KeyD: new THREE.Vector3(1, 0, 0),
   KeyE: new THREE.Vector3(0, 1, 0),
   KeyQ: new THREE.Vector3(0, -1, 0),
+}
+
+function placedInterior(interior: THREE.Group, offset: Vec3): THREE.Group {
+  const hidden: THREE.Object3D[] = []
+  interior.traverse((obj) => {
+    if (HIDDEN_INTERIOR_NODES.has(obj.name.replace(/\.?\d{3,}$/, ''))) hidden.push(obj)
+  })
+  for (const obj of hidden) {
+    obj.removeFromParent()
+    disposeObject3D(obj)
+  }
+  interior.position.fromArray(offset)
+  return interior
 }
 
 function isTypingTarget(event: KeyboardEvent): boolean {
@@ -134,17 +181,27 @@ export class MallEditorScene {
   private readonly floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0)
   private placement: PlacementRequest | null = null
   private preset: CellPreset | null = null
+  private zone: EditorZone | null = null
+  private backdrop: THREE.Object3D | null = null
+  private backdropToken = 0
   private readonly gizmo: TransformControls
-  private readonly selectionBox = new THREE.BoxHelper(new THREE.Object3D(), 0xffc94d)
-  private selectedId: string | null = null
+  private readonly selectionBounds = new THREE.Box3()
+  private readonly selectionBox = new THREE.Box3Helper(this.selectionBounds, 0xffc94d)
+  private selectedIds: readonly string[] = []
+  private readonly pivot = new THREE.Object3D()
+  private groupDrag: Array<{ id: string; object: THREE.Object3D; relative: THREE.Matrix4 }> = []
+  private marquee: { x: number; y: number; box: HTMLDivElement } | null = null
   private hiddenIds = new Set<string>()
   private gizmoMode: GizmoMode = 'translate'
   private gizmoDragging = false
   private pressAt: { x: number; y: number } | null = null
+  private focus: CameraFocus | null = null
   translationSnap = 0.1
   private rotationSnap = 0
-  onSelect: (id: string | null) => void = () => {}
+  onSelect: (id: string | null, how: SelectHow) => void = () => {}
+  onBoxSelect: (ids: string[], additive: boolean) => void = () => {}
   onTransform: (id: string, transform: PropTransform) => void = () => {}
+  onTransformMany: (updates: Array<{ id: string; transform: PropTransform }>) => void = () => {}
   onError: (message: string) => void = () => {}
   onMaterials: (id: string, slots: MaterialSlot[]) => void = () => {}
   private shell: THREE.Group | null = null
@@ -191,13 +248,15 @@ export class MallEditorScene {
     this.gizmo = new TransformControls(this.camera, this.renderer.domElement)
     this.gizmo.addEventListener('dragging-changed', this.onGizmoDragging)
     this.gizmo.addEventListener('objectChange', this.onGizmoChange)
-    this.scene.add(this.propsRoot, this.ghost.root, this.selectionBox, this.gizmo.getHelper())
+    this.scene.add(this.propsRoot, this.ghost.root, this.selectionBox, this.pivot, this.gizmo.getHelper())
 
     const el = this.renderer.domElement
     el.addEventListener('pointerdown', this.onPlacePointerDown, { capture: true })
+    el.addEventListener('pointerdown', this.onMarqueePointerDown, { capture: true })
     el.addEventListener('pointerdown', this.onPointerDown)
     el.addEventListener('pointermove', this.onPointerMove)
     el.addEventListener('pointerup', this.onPointerUp)
+    el.addEventListener('dblclick', this.onDoubleClick)
     el.addEventListener('lostpointercapture', this.onLostPointerCapture)
     el.addEventListener('contextmenu', this.onContextMenu)
     window.addEventListener('keydown', this.onKeyDown)
@@ -237,6 +296,11 @@ export class MallEditorScene {
     this.attachSelection()
   }
 
+  invalidate(id: string): void {
+    const entry = this.placed.get(id)
+    if (entry) entry.signature = ''
+  }
+
   private async loadPlaced(prop: TemplateProp, entry: PlacedObject): Promise<void> {
     const object = await createPropObject(prop)
     if (this.placed.get(prop.id) !== entry) {
@@ -252,7 +316,7 @@ export class MallEditorScene {
     entry.object = object
     this.propsRoot.add(object)
     if (prop.kind === 'decor') this.onMaterials(prop.id, materialSlotsOf(object))
-    if (this.selectedId === prop.id) this.attachSelection()
+    if (this.selectedIds.includes(prop.id)) this.attachSelection()
   }
 
   setHidden(ids: readonly string[]): void {
@@ -260,8 +324,8 @@ export class MallEditorScene {
     for (const [id, { object }] of this.placed) if (object) object.visible = !this.hiddenIds.has(id)
   }
 
-  select(id: string | null): void {
-    this.selectedId = id
+  select(ids: readonly string[]): void {
+    this.selectedIds = ids
     this.attachSelection()
   }
 
@@ -283,33 +347,88 @@ export class MallEditorScene {
     this.gizmo.setScaleSnap(scale > 0 ? scale : null)
   }
 
+  private selectedObjects(): Array<{ id: string; object: THREE.Object3D }> {
+    return this.selectedIds.flatMap((id) => {
+      const object = this.placed.get(id)?.object
+      return object ? [{ id, object }] : []
+    })
+  }
+
   private selectedObject(): THREE.Object3D | null {
-    return this.selectedId ? (this.placed.get(this.selectedId)?.object ?? null) : null
+    return this.selectedIds.length === 1 ? (this.placed.get(this.selectedIds[0]!)?.object ?? null) : null
+  }
+
+  private updateSelectionBox(): void {
+    const selected = this.selectedObjects()
+    this.selectionBounds.makeEmpty()
+    for (const { object } of selected) this.selectionBounds.expandByObject(object)
+    this.selectionBox.visible = selected.length > 0
   }
 
   private attachSelection(): void {
     if (this.walking) return
-    const object = this.selectedObject()
-    this.selectionBox.visible = object !== null
-    if (object) this.selectionBox.setFromObject(object)
-    if (object && this.gizmoMode !== 'select') this.gizmo.attach(object)
-    else this.gizmo.detach()
+    this.updateSelectionBox()
+    const selected = this.selectedObjects()
+    if (selected.length === 1 && this.gizmoMode !== 'select') this.gizmo.attach(selected[0]!.object)
+    else if (selected.length > 1 && this.gizmoMode !== 'select' && this.gizmoMode !== 'scale') {
+      const center = this.selectionBounds.getCenter(new THREE.Vector3())
+      this.pivot.position.set(center.x, this.selectionBounds.min.y, center.z)
+      this.pivot.rotation.set(0, 0, 0)
+      this.pivot.updateMatrixWorld()
+      this.gizmo.attach(this.pivot)
+    } else this.gizmo.detach()
   }
 
   private updateOrbitEnabled(): void {
-    this.controls.enabled = !this.flying && !this.gizmoDragging
+    this.controls.enabled = !this.flying && !this.gizmoDragging && !this.marquee
   }
 
   private readonly onGizmoDragging = (event: { value: unknown }): void => {
     this.gizmoDragging = event.value === true
     this.updateOrbitEnabled()
+    if (this.selectedIds.length > 1) {
+      this.dragGroup()
+      return
+    }
     const object = this.selectedObject()
-    if (!object || !this.selectedId) return
+    if (!object) return
     if (this.gizmoDragging) return
-    this.onTransform(this.selectedId, this.clampedTransform(object))
+    this.onTransform(this.selectedIds[0]!, this.clampedTransform(object))
+  }
+
+  private dragGroup(): void {
+    if (this.gizmoDragging) {
+      const toPivot = this.pivot.matrixWorld.clone().invert()
+      this.groupDrag = this.selectedObjects().map(({ id, object }) => ({ id, object, relative: toPivot.clone().multiply(object.matrixWorld) }))
+      return
+    }
+    const moved = this.groupDrag
+    this.groupDrag = []
+    this.onTransformMany(moved.map(({ id, object }) => ({ id, transform: this.clampedTransform(object) })))
+    this.attachSelection()
+  }
+
+  private moveGroup(): void {
+    if (this.gizmoMode === 'rotate') {
+      const quarterTurns = this.groupDrag.some(({ object }) => object.userData.templatePropKind === 'building')
+      const snap = quarterTurns ? Math.PI / 2 : this.rotationSnap
+      const yaw = new THREE.Euler().setFromQuaternion(this.pivot.quaternion, 'YXZ').y
+      this.pivot.rotation.set(0, snap > 0 ? Math.round(yaw / snap) * snap : yaw, 0)
+    }
+    this.pivot.updateMatrixWorld()
+    const fromRoot = this.propsRoot.matrixWorld.clone().invert().multiply(this.pivot.matrixWorld)
+    for (const { object, relative } of this.groupDrag) {
+      fromRoot.clone().multiply(relative).decompose(object.position, object.quaternion, object.scale)
+      object.updateMatrixWorld()
+    }
+    this.updateSelectionBox()
   }
 
   private readonly onGizmoChange = (): void => {
+    if (this.selectedIds.length > 1) {
+      if (this.groupDrag.length) this.moveGroup()
+      return
+    }
     const object = this.selectedObject()
     if (!object) return
     if (this.gizmoMode === 'scale') object.scale.max(new THREE.Vector3(MIN_SCALE, MIN_SCALE, MIN_SCALE))
@@ -317,12 +436,20 @@ export class MallEditorScene {
       const yaw = new THREE.Euler().setFromQuaternion(object.quaternion, 'YXZ').y
       object.rotation.set(0, this.rotationSnap > 0 ? Math.round(yaw / this.rotationSnap) * this.rotationSnap : yaw, 0)
     }
-    this.selectionBox.setFromObject(object)
+    this.updateSelectionBox()
   }
 
   private clampedTransform(object: THREE.Object3D): PropTransform {
-    const { halfWidth, minZ } = usableArea(this.preset ?? { width: 0, depth: 0 })
     const round = (v: number) => Number(v.toFixed(4))
+    if (this.zone) {
+      const { minX, maxX, minZ, maxZ } = this.zone.bounds
+      return {
+        position: [round(THREE.MathUtils.clamp(object.position.x, minX, maxX)), round(object.position.y), round(THREE.MathUtils.clamp(object.position.z, minZ, maxZ))],
+        yaw: round(object.rotation.y),
+        scale: [round(object.scale.x), round(object.scale.y), round(object.scale.z)],
+      }
+    }
+    const { halfWidth, minZ } = usableArea(this.preset ?? { width: 0, depth: 0 })
     return {
       position: [
         round(THREE.MathUtils.clamp(object.position.x, -halfWidth, halfWidth)),
@@ -334,7 +461,7 @@ export class MallEditorScene {
     }
   }
 
-  private pickProp(event: PointerEvent): string | null {
+  private pickProp(event: MouseEvent): string | null {
     const rect = this.renderer.domElement.getBoundingClientRect()
     const ndc = new THREE.Vector2(((event.clientX - rect.left) / rect.width) * 2 - 1, -((event.clientY - rect.top) / rect.height) * 2 + 1)
     this.raycaster.setFromCamera(ndc, this.camera)
@@ -372,15 +499,34 @@ export class MallEditorScene {
     return this.placement !== null
   }
 
+  private groundBelow(x: number, fromY: number, z: number): number | null {
+    if (!this.backdrop) return null
+    this.raycaster.set(new THREE.Vector3(x, fromY, z), new THREE.Vector3(0, -1, 0))
+    const hit = this.raycaster.intersectObject(this.backdrop, true)[0]
+    return hit ? Number(hit.point.y.toFixed(4)) : null
+  }
+
   private floorPoint(event: PointerEvent): Vec3 | null {
     const rect = this.renderer.domElement.getBoundingClientRect()
     const ndc = new THREE.Vector2(((event.clientX - rect.left) / rect.width) * 2 - 1, -((event.clientY - rect.top) / rect.height) * 2 + 1)
     this.raycaster.setFromCamera(ndc, this.camera)
+    if (this.zone) return this.zonePoint()
     const hit = this.raycaster.ray.intersectPlane(this.floorPlane, new THREE.Vector3())
     return hit ? [snapTo(hit.x, this.translationSnap), 0, snapTo(hit.z, this.translationSnap)] : null
   }
 
+  private zonePoint(): Vec3 | null {
+    if (!this.backdrop) return null
+    const hit = this.raycaster.intersectObject(this.backdrop, true)[0]
+    if (!hit) return null
+    return [snapTo(hit.point.x, this.translationSnap), Number(hit.point.y.toFixed(4)), snapTo(hit.point.z, this.translationSnap)]
+  }
+
   private insideCell(point: Vec3): boolean {
+    if (this.zone) {
+      const { minX, maxX, minZ, maxZ } = this.zone.bounds
+      return point[0] >= minX && point[0] <= maxX && point[2] >= minZ && point[2] <= maxZ
+    }
     if (!this.preset) return false
     const [x, , z] = point
     const { halfWidth, minZ } = usableArea(this.preset)
@@ -414,12 +560,74 @@ export class MallEditorScene {
     this.scene.add(next)
   }
 
-  setPreset(preset: CellPreset): void {
-    this.preset = preset
-    if (this.shell) {
-      this.scene.remove(this.shell)
-      disposeShell(this.shell)
+  async setZone(zone: EditorZone): Promise<void> {
+    const token = ++this.backdropToken
+    this.preset = null
+    this.zone = zone
+    this.removeShell()
+    this.surfacesToken++
+    if (this.surfaces) {
+      this.scene.remove(this.surfaces)
+      disposeSurfacePanels(this.surfaces)
+      this.surfaces = null
     }
+    this.removeBackdrop()
+    const { minX, maxX, minZ, maxZ } = zone.bounds
+    const reach = Math.max(maxX - minX, maxZ - minZ)
+    this.camera.far = Math.max(200, reach * 4)
+    this.camera.updateProjectionMatrix()
+    this.controls.target.set((minX + maxX) / 2, 0, (minZ + maxZ) / 2)
+    this.camera.position.set(this.controls.target.x + reach * 0.4, reach * 0.6, this.controls.target.z + reach * 0.4)
+    this.controls.update()
+    const loader = createGltfLoader()
+    const [gltf, ...buildings] = await Promise.all([
+      loader.loadAsync(zone.modelUrl),
+      ...zone.buildings.map((b) => Promise.all([loader.loadAsync(b.url), b.interiorUrl ? loader.loadAsync(b.interiorUrl) : null])),
+    ])
+    buildings.forEach(([exterior, interior], i) => {
+      const { key, position, rotationY, interiorOffset } = zone.buildings[i]!
+      exterior.scene.name = `ZoneBuilding_${key}`
+      exterior.scene.position.fromArray(position)
+      exterior.scene.rotation.y = rotationY
+      if (interior && interiorOffset) exterior.scene.add(placedInterior(interior.scene, interiorOffset))
+      gltf.scene.add(exterior.scene)
+    })
+    if (token !== this.backdropToken) return disposeObject3D(gltf.scene)
+    gltf.scene.name = `ZoneBackdrop_${zone.key}`
+    const baked: THREE.Object3D[] = []
+    gltf.scene.traverse((node) => {
+      if (BAKED_PREFIXES.some((prefix) => node.name.startsWith(prefix))) baked.push(node)
+    })
+    for (const node of baked) {
+      node.removeFromParent()
+      disposeObject3D(node)
+    }
+    this.backdrop = gltf.scene
+    this.scene.add(gltf.scene)
+  }
+
+  private removeBackdrop(): void {
+    if (!this.backdrop) return
+    this.scene.remove(this.backdrop)
+    disposeObject3D(this.backdrop)
+    this.backdrop = null
+  }
+
+  private removeShell(): void {
+    if (!this.shell) return
+    this.scene.remove(this.shell)
+    disposeShell(this.shell)
+    this.shell = null
+  }
+
+  setPreset(preset: CellPreset): void {
+    this.backdropToken++
+    this.removeBackdrop()
+    this.zone = null
+    this.camera.far = 200
+    this.camera.updateProjectionMatrix()
+    this.preset = preset
+    this.removeShell()
     this.shell = buildShell(preset)
     this.scene.add(this.shell)
     const reach = Math.max(preset.width, preset.depth)
@@ -432,17 +640,22 @@ export class MallEditorScene {
     if (this.walking) return
     if (event.button === 0) this.pressAt = this.gizmo.dragging ? null : { x: event.clientX, y: event.clientY }
     if (event.button !== 2) return
+    this.focus = null
     this.flying = true
     this.updateOrbitEnabled()
     this.renderer.domElement.setPointerCapture(event.pointerId)
   }
 
   private readonly onPointerMove = (event: PointerEvent): void => {
+    if (this.marquee) {
+      this.updateMarquee(event)
+      return
+    }
     if (this.placement && !this.flying) {
       const point = this.floorPoint(event)
       this.ghost.root.visible = point !== null
       if (point) {
-        this.ghostRest.set(point[0], GHOST_LIFT, point[2])
+        this.ghostRest.set(point[0], point[1] + GHOST_LIFT, point[2])
         this.ghost.root.position.copy(this.ghostRest)
         this.ghost.setValid(this.insideCell(point))
       }
@@ -460,6 +673,10 @@ export class MallEditorScene {
   }
 
   private readonly onPointerUp = (event: PointerEvent): void => {
+    if (this.marquee) {
+      if (event.button === 0) this.endMarquee(event)
+      return
+    }
     if (event.button === 0) this.endClick(event)
     if (event.button !== 2 || !this.flying) return
     this.stopFlying()
@@ -470,7 +687,103 @@ export class MallEditorScene {
     this.pressAt = null
     if (!press) return
     if (Math.hypot(event.clientX - press.x, event.clientY - press.y) > CLICK_SLOP_PX) return
-    this.onSelect(this.pickProp(event))
+    this.onSelect(this.pickProp(event), event.shiftKey ? 'toggle' : event.altKey ? 'member' : 'replace')
+  }
+
+  private readonly onMarqueePointerDown = (event: PointerEvent): void => {
+    if (this.walking || this.placement || event.button !== 0 || !(event.ctrlKey || event.metaKey)) return
+    event.stopImmediatePropagation()
+    const box = document.createElement('div')
+    box.style.cssText = 'position:fixed;pointer-events:none;border:1px solid #ffc94d;background:rgba(255,201,77,0.12);z-index:50'
+    document.body.appendChild(box)
+    this.marquee = { x: event.clientX, y: event.clientY, box }
+    this.updateMarquee(event)
+    this.updateOrbitEnabled()
+    this.renderer.domElement.setPointerCapture(event.pointerId)
+  }
+
+  private marqueeRect(event: PointerEvent): { left: number; top: number; right: number; bottom: number } {
+    const { x, y } = this.marquee!
+    return { left: Math.min(x, event.clientX), top: Math.min(y, event.clientY), right: Math.max(x, event.clientX), bottom: Math.max(y, event.clientY) }
+  }
+
+  private updateMarquee(event: PointerEvent): void {
+    const { left, top, right, bottom } = this.marqueeRect(event)
+    Object.assign(this.marquee!.box.style, { left: `${left}px`, top: `${top}px`, width: `${right - left}px`, height: `${bottom - top}px` })
+  }
+
+  private endMarquee(event: PointerEvent | null): void {
+    const marquee = this.marquee
+    if (!marquee) return
+    const rect = event && this.marqueeRect(event)
+    marquee.box.remove()
+    this.marquee = null
+    this.updateOrbitEnabled()
+    if (!event || !rect) return
+    const { left, top, right, bottom } = rect
+    const canvas = this.renderer.domElement.getBoundingClientRect()
+    const center = new THREE.Vector3()
+    const inside: string[] = []
+    for (const [id, { object }] of this.placed) {
+      if (!object?.visible) continue
+      new THREE.Box3().setFromObject(object).getCenter(center).project(this.camera)
+      const x = canvas.left + ((center.x + 1) / 2) * canvas.width
+      const y = canvas.top + ((1 - center.y) / 2) * canvas.height
+      if (center.z < 1 && x >= left && x <= right && y >= top && y <= bottom) inside.push(id)
+    }
+    this.onBoxSelect(inside, event.shiftKey)
+  }
+
+  private readonly onDoubleClick = (event: MouseEvent): void => {
+    if (this.walking || this.flying || this.placement) return
+    const id = this.pickProp(event)
+    if (!id) return
+    this.onSelect(id, event.altKey ? 'member' : 'replace')
+    this.frame([id])
+  }
+
+  private frame(ids: readonly string[]): void {
+    const bounds = new THREE.Box3()
+    for (const id of ids) {
+      this.placed.get(id)?.object?.traverse((child) => {
+        if ((child as THREE.Mesh).isMesh) bounds.expandByObject(child)
+      })
+    }
+    if (bounds.isEmpty()) return
+    const sphere = bounds.getBoundingSphere(new THREE.Sphere())
+    const halfFov = THREE.MathUtils.degToRad(this.camera.fov / 2)
+    const fitting = Math.min(halfFov, Math.atan(Math.tan(halfFov) * this.camera.aspect))
+    const distance = Math.max(FOCUS_MIN_DISTANCE, (sphere.radius * FOCUS_MARGIN) / Math.sin(fitting))
+    const forward = this.camera.getWorldDirection(new THREE.Vector3())
+    this.camera.far = Math.max(this.camera.far, distance * 4)
+    this.camera.updateProjectionMatrix()
+    this.focus = {
+      fromPosition: this.camera.position.clone(),
+      fromTarget: this.controls.target.clone(),
+      toPosition: sphere.center.clone().addScaledVector(forward, -distance),
+      toTarget: sphere.center.clone(),
+      elapsed: 0,
+    }
+  }
+
+  private glide(dt: number): void {
+    const focus = this.focus!
+    focus.elapsed = Math.min(FOCUS_S, focus.elapsed + dt)
+    const t = focus.elapsed / FOCUS_S
+    const eased = 1 - (1 - t) ** 3
+    this.camera.position.lerpVectors(focus.fromPosition, focus.toPosition, eased)
+    this.controls.target.lerpVectors(focus.fromTarget, focus.toTarget, eased)
+    this.camera.lookAt(this.controls.target)
+    if (t === 1) this.focus = null
+  }
+
+  captureZoneMap(): WorldMapImage | null {
+    if (!this.zone) return null
+    const overlays = [this.gizmo.getHelper(), this.selectionBox, this.ghost.root].filter((o) => o.visible)
+    overlays.forEach((o) => (o.visible = false))
+    const image = captureWorldMap(this.renderer, this.scene, this.zone.bounds)
+    overlays.forEach((o) => (o.visible = true))
+    return image
   }
 
   get isFlying(): boolean {
@@ -481,16 +794,29 @@ export class MallEditorScene {
     return this.walking
   }
 
+  private aimedGround(): THREE.Vector3 | null {
+    if (!this.backdrop) return null
+    this.raycaster.setFromCamera(new THREE.Vector2(0, 0), this.camera)
+    return this.raycaster.intersectObject(this.backdrop, true)[0]?.point ?? null
+  }
+
   async startWalk(): Promise<boolean> {
-    if (this.walking || !this.preset) return false
+    if (this.walking || (!this.preset && !this.zone)) return false
+    const start = this.zone ? this.aimedGround() : null
+    if (this.zone && !start) {
+      this.onError('Aim the view at the ground of the zone to start walking there.')
+      return false
+    }
     this.cancelPlacing()
+    this.focus = null
     this.cameraBeforeWalk.position.copy(this.camera.position)
     this.cameraBeforeWalk.target.copy(this.controls.target)
     this.walking = true
     this.controls.enabled = false
     this.gizmo.detach()
     this.selectionBox.visible = false
-    this.camera.position.set(0, EYE_HEIGHT, -WALK_MARGIN)
+    if (start) this.camera.position.set(start.x, start.y + EYE_HEIGHT, start.z)
+    else this.camera.position.set(0, EYE_HEIGHT, -WALK_MARGIN)
     this.camera.rotation.set(0, 0, 0, 'YXZ')
     try {
       await this.renderer.domElement.requestPointerLock()
@@ -531,7 +857,7 @@ export class MallEditorScene {
   }
 
   private walk(dt: number): void {
-    if (!this.preset) return
+    if (!this.preset && !this.zone) return
     const move = new THREE.Vector3()
     for (const code of this.flyKeys) if (FLY_KEYS[code] && FLY_KEYS[code].y === 0) move.add(FLY_KEYS[code])
     if (move.lengthSq() > 0) {
@@ -539,6 +865,15 @@ export class MallEditorScene {
       move.normalize().applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw).multiplyScalar(WALK_SPEED * dt)
       this.camera.position.add(move)
     }
+    if (this.zone) {
+      const { minX, maxX, minZ, maxZ } = this.zone.bounds
+      const x = THREE.MathUtils.clamp(this.camera.position.x, minX + WALK_MARGIN, maxX - WALK_MARGIN)
+      const z = THREE.MathUtils.clamp(this.camera.position.z, minZ + WALK_MARGIN, maxZ - WALK_MARGIN)
+      const ground = this.groundBelow(x, this.camera.position.y - EYE_HEIGHT + STEP_UP, z)
+      this.camera.position.set(x, ground === null ? this.camera.position.y : ground + EYE_HEIGHT, z)
+      return
+    }
+    if (!this.preset) return
     const area = usableArea(this.preset)
     const halfWidth = area.halfWidth - WALK_MARGIN
     this.camera.position.set(
@@ -554,6 +889,7 @@ export class MallEditorScene {
 
   private readonly onLostPointerCapture = (): void => {
     if (this.flying) this.stopFlying()
+    this.endMarquee(null)
   }
 
   private readonly onContextMenu = (event: Event): void => event.preventDefault()
@@ -564,6 +900,7 @@ export class MallEditorScene {
     else if (isTypingTarget(event)) return
     if (event.code === 'Escape' && this.walking) this.stopWalk()
     if (event.code === 'Escape' && this.placement) this.cancelPlacing()
+    if (event.code === 'KeyF' && this.selectedIds.length && !this.flying && !this.walking) this.frame(this.selectedIds)
     if (event.code in FLY_KEYS || event.code === 'ShiftLeft' || event.code === 'ShiftRight') this.flyKeys.add(event.code)
   }
 
@@ -611,14 +948,14 @@ export class MallEditorScene {
     const dt = Math.min(this.clock.getDelta(), 0.1)
     if (this.walking) this.walk(dt)
     else if (this.flying) this.fly(dt)
+    else if (this.focus) this.glide(dt)
     else this.controls.update()
     if (this.ghost.root.visible) {
       this.ghost.tickFeedback(dt, this.ghostRest)
       this.ghost.applyShake()
       this.ghost.updateColors(dt)
     }
-    const selected = this.selectedObject()
-    if (selected && this.gizmoDragging) this.selectionBox.setFromObject(selected)
+    if (this.gizmoDragging) this.updateSelectionBox()
     for (const { object } of this.placed.values()) {
       if (object?.userData.templatePropKind === 'npc') updateAvatarAnimation(object, dt, 0)
     }
@@ -630,9 +967,11 @@ export class MallEditorScene {
     this.resizeObserver.disconnect()
     const el = this.renderer.domElement
     el.removeEventListener('pointerdown', this.onPlacePointerDown, { capture: true })
+    el.removeEventListener('pointerdown', this.onMarqueePointerDown, { capture: true })
     el.removeEventListener('pointerdown', this.onPointerDown)
     el.removeEventListener('pointermove', this.onPointerMove)
     el.removeEventListener('pointerup', this.onPointerUp)
+    el.removeEventListener('dblclick', this.onDoubleClick)
     el.removeEventListener('lostpointercapture', this.onLostPointerCapture)
     el.removeEventListener('contextmenu', this.onContextMenu)
     window.removeEventListener('keydown', this.onKeyDown)
@@ -647,6 +986,7 @@ export class MallEditorScene {
     this.gizmo.dispose()
     this.controls.dispose()
     if (this.shell) disposeShell(this.shell)
+    this.backdropToken++
     if (this.surfaces) disposeSurfacePanels(this.surfaces)
     disposeObject3D(this.scene)
     this.envMap.dispose()

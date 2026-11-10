@@ -64,7 +64,7 @@ Decision (2026-11-10): new clips for the human rig and the animals are written a
 
 ## Mall editor (in progress, branch feat-shop-editor)
 
-- [in progress] `/admin/mall-editor`, a UE5-style level editor: templates built per cell size (decor by category, items for sale or as props, NPC extras, one vendor, dressable mannequins), saved as committed JSON by a dev-only endpoint, assigned to free planned cells, opened by a `build_mall.py` rebuild.
+- [in progress] `/admin/editor`, a UE5-style level editor: templates built per cell size (decor by category, items for sale or as props, NPC extras, one vendor, dressable mannequins), saved as committed JSON by a dev-only endpoint, assigned to free planned cells, opened by a `build_mall.py` rebuild.
 
 ## Tooling (done)
 

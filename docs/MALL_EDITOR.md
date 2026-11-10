@@ -1,14 +1,14 @@
 # Mall Editor — aménager les cellules du centre commercial
 
-`/admin/mall-editor` est un éditeur de niveau dans l'esprit d'Unreal Engine : on compose un **template** (un aménagement de
+`/admin/editor` est un éditeur de niveau dans l'esprit d'Unreal Engine : on compose un **template** (un aménagement de
 boutique : décors, articles en vente, NPC, mannequins, lumières, murs texturés) puis on le pose dans une **cellule libre**
-du Cove Parkview Mall. Le contrat technique (fichiers, repère, rebuild) est dans [MALL.md](MALL.md#templates-de-cellule-adminmall-editor).
+du Cove Parkview Mall. Le contrat technique (fichiers, repère, rebuild) est dans [MALL.md](MALL.md#templates-de-cellule-admineditor).
 
 ## Accès
 
 1. Compte admin : `make set-admin EMAIL=…`, puis se reconnecter.
-2. Lancer le front en local (`make up` ou `npm run dev` dans `front/`) et ouvrir `/admin/mall-editor` (menu admin
-   « Mall Editor »).
+2. Lancer le front en local (`make up` ou `npm run dev` dans `front/`) et ouvrir `/admin/editor` (menu admin
+   « Editor »).
 3. **Sauver et assigner ne marchent qu'en local** : un endpoint réservé au serveur Vite de dev écrit les fichiers dans le
    repo. En production, l'éditeur est en lecture seule (on peut ouvrir et parcourir les templates assignés).
 4. Dans Docker, installer les dépendances du front une fois : `docker compose exec front npm ci` (Tweakpane).
@@ -51,6 +51,11 @@ L'échelle se règle par axe (X, Y, Z) au gizmo ou dans les Détails.
 | Clic gauche glissé | Orbiter |
 | Clic droit maintenu + WASD / Q E, Shift | Voler dans la scène (plus vite avec Shift) |
 | Molette, clic milieu | Zoom, déplacer la vue |
+| F, double-clic sur un objet | Cadrer la sélection : la caméra glisse jusqu'à l'objet en gardant l'angle de vue |
+| Shift + clic (vue ou Outliner) | Ajouter ou retirer un objet de la sélection |
+| Cmd/Ctrl + glisser dans la vue | Sélectionner au cadre (avec Shift : ajoute à la sélection) |
+| Cmd/Ctrl + G, Shift + Cmd/Ctrl + G | Grouper la sélection, dégrouper (aussi les boutons Group / Ungroup) |
+| Alt + clic | Choisir un seul membre d'un groupe |
 | Q / W / E / R | Select / Move / Rotate / Scale |
 | Espace | Passer de Move à Rotate puis Scale |
 | Suppr ou Retour arrière | Supprimer la sélection (aussi la poubelle de l'Outliner et le bouton Delete des Détails) |
@@ -87,7 +92,7 @@ de types. Un article **en vente** garde son aspect : seuls les décors (et les o
 
 ## Vendre
 
-- Un article coché **For sale** se vend dans la cellule. Sans vendeur, un clic l'achète. Avec un NPC **Vendor**, le
+- Un article coché **For sale** se vend dans la cellule. Sans vendeur, un clic l'achète. Avec un NPC **Cashier**, le
   joueur remplit un panier et paie au comptoir devant le vendeur.
 - Pièces de mannequin cochées **for sale** : viser une pièce l'ajoute au panier, **Shift + interagir** ajoute tout le
   look ; une pièce déjà possédée n'est pas ajoutée.
@@ -103,6 +108,85 @@ le mall n'est pas reconstruit :
 3. commiter le template, `template_assignments.json` et les assets du mall.
 
 Le jeu refuse une cellule dont l'assignation ne correspond pas au build (message `rebuild the mall` en console).
+
+## Décorer une zone du monde ouvert
+
+Le sélecteur **Zone…** de la barre du haut ouvre une zone de `world.manifest.json` (toutes sauf le mall) : son modèle
+sert de fond, on pose décors, objets vendables, NPC, mannequins, champs (dossier **Fields**, voir
+[FARM.md](FARM.md#champs-modulaires)) et animaux (dossier **Animals**, voir [FARM.md](FARM.md#animaux)) en coordonnées monde, posés sur la surface cliquée. Pas
+de lumière ni de matière personnalisée sur les décors d'une zone. **Test** marche à partir du point visé, dans les
+limites de la zone.
+
+**Save** écrit `front/public/assets/zones/<zone>.json` et l'ajoute à `zones/index.json` (endpoint de dev, comme les
+templates). En jeu :
+
+- NPC, mannequins, animaux et objets vendables sont chargés au démarrage de `/game` : recharger la page suffit. Chaque
+  zone **vendeur** de la carte **Sellers** est un magasin : son NPC encaisse le panier des objets à vendre posés dans son
+  rectangle, tant que le joueur y est (hors bâtiment et hors cellule du mall).
+- Les décors sont **cuits** dans le GLB de la zone, avec leurs collisions dans `town.collision.json` :
+  `cd front && npm run zone:bake -- <zone>` (Blender headless, `assets:optimize`, `apply-<zone>.mjs`). L'éditeur le
+  rappelle après un Save qui change les décors. Zones cuisables : `orchard`, `farm` (table `ZONES` de
+  `front/scripts/bake-zone.mjs` ; une nouvelle zone appelle `L.zone_decor()` dans son `build_*_site.py`).
+- Dans le GLB, chaque décor cuit est un nœud `ZD_<id>_<clé>` ; l'éditeur masque ces nœuds du fond pour ne montrer que
+  les décors éditables.
+
+### Bâtiments
+
+Le dossier **Buildings** pose un bâtiment visitable d'après un modèle de `front/public/assets/buildings/buildings.json`
+(`farmhouse`, `barn` : épaisseur des murs, motifs, taille et hauteur minimales, valeurs par défaut). Les Détails règlent
+la largeur, la profondeur, la hauteur des murs et du toit, l'axe du faîtage, les portes et fenêtres (côté `front` /
+`back` / `left` / `right` du bâtiment, décalage depuis le milieu du mur, largeur, bas et haut) et la couleur de chaque
+partie (murs, toit, encadrements, sol, porte). Chaque partie peut aussi prendre une texture de la bibliothèque
+(`textures/`, répétée selon son `tileMeters`) : la couleur la teinte, et choisir une texture remet la couleur en blanc. Un
+bâtiment tourne par quarts de tour, à l'échelle 1, posé au sol (hauteur 0). Le toit d'un bâtiment ne touche pas celui
+d'un autre, et les portes de la grange gardent de la place de chaque côté pour leurs battants coulissants
+(`slidingDoors` dans `buildings.json`).
+
+**Rebuild** construit le bâtiment dans Blender (headless, `map-src/CampusCove/build_building.py`, environ 1 s) et
+l'affiche ; à l'ouverture d'une zone, l'éditeur demande l'aperçu de chaque bâtiment (gardé dans
+`map-src/CampusCove/out/building_previews/`, par forme et couleurs). Sans aperçu, un bloc murs + toit le remplace. Le
+serveur de dev lance `blender` (ou `BLENDER=/chemin`) : Rebuild ne marche pas dans le conteneur Docker du front.
+
+Au **bake**, `lib_buildings.zone_buildings` construit chaque bâtiment au même endroit (nœuds `FB_<id>_*`, masqués dans le
+fond de l'éditeur), avec ses collisions, dans la ferme comme dans le verger.
+
+### Groupes
+
+Plusieurs objets sélectionnés (Shift + clic ou cadre) bougent et tournent ensemble autour de leur centre ; une sélection
+qui contient un bâtiment tourne par quarts de tour. **Group** (Cmd/Ctrl + G) les garde ensemble : chaque objet reçoit
+`"group": "group_N"` dans le fichier, un clic sur l'un d'eux sélectionne tout le groupe, Alt + clic n'en prend qu'un.
+Grouper un bâtiment avec ses meubles les fait suivre quand on le déplace. Le bake ignore les groupes.
+
+### Vendeurs et acheteurs
+
+Le bouton **Sellers** (zone ouverte) affiche la zone vue du dessus. **New area** puis glisser sur la carte trace un
+rectangle ; chaque rectangle a un nom, un rôle et un NPC qui s'y tient :
+
+- **Seller** : vend le panier des objets **For sale** posés dans le rectangle. Il se tient debout, échelle 1, avec son
+  comptoir (devant lui) dans le rectangle. Deux vendeurs ne se chevauchent pas ; un objet à vendre hors de tout vendeur
+  est refusé à l'enregistrement.
+- **Buyer** : achète aux joueurs les objets listés (prix plein jusqu'à un quota par joueur et par jour, puis prix
+  réduit, comme les pommes du verger : 3 pièces, puis 1 après 300). Le graphique compare les pièces gagnées en une
+  journée avec la cueillette de pommes, et signale une offre trop rentable ou un objet vendu moins cher dans une
+  boutique. Le calcul est dans `front/src/game/economy/sharemath.ts`, vérifié par les mêmes valeurs que l'API
+  (`backend/tests/fixtures/sale_curve_vectors.json`).
+
+En jeu, viser un acheteur ouvre son menu de vente ; le serveur temps réel vérifie que le joueur est à 3 m de lui et
+l'API paie selon la courbe (`ZoneBuyerService`, `App\Support\SaleCurve`). Le serveur temps réel vérifie les acheteurs de
+`zones/*.json` au démarrage (`loadZoneBuyers`), puis relit le fichier de la zone à chaque vente : un acheteur déplacé
+compte tout de suite, seule une zone ajoutée à `zones/index.json` demande de le redémarrer. Un acheteur n'achète que
+des consommables.
+
+Les zones sont dans `areas` du fichier de zone ; l'Outliner affiche le rôle de chaque NPC. Annuler/rétablir ne couvre pas
+encore les zones de vente.
+
+Un objet **For sale** dans une zone a son propre prix (**Price (coins)**, prérempli avec le prix du catalogue), différent
+du reste du jeu. **Save** copie la liste des prix dans `backend/resources/zones/<zone>.json` ; si le serveur de dev ne voit
+pas `backend/` (conteneur Docker du front), lancer `npm --prefix front run zone:prices`. Un test front vérifie que la
+copie suit le fichier de zone. En jeu, le panier d'une zone se paie par le serveur temps réel (`zone_checkout`), qui
+vérifie que le joueur est dans la zone, puis `POST /api/zone/checkout` débite les prix de la zone.
+
+Commiter `zones/`, `backend/resources/zones/`, le GLB et le layout de la zone, `town.collision.json`.
 
 ## Ajouter du contenu
 

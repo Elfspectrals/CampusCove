@@ -17,6 +17,8 @@ import random
 from mathutils import Matrix, Vector
 
 OUT_ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "out"))
+FIELD_SOIL = 0.03
+FRONT_ASSETS = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "front", "public", "assets"))
 
 _tex_cache = {}
 _mat_cache = {}
@@ -574,3 +576,280 @@ def gable_roof(coll, name, gx, gz, y0, sx, sz, h, mat, ridge_axis="x", tile=2.0)
     ob.location = b(gx, gz, y0)
     coll.objects.link(ob)
     return ob
+
+
+REF_TEXTURE_SIZE = 256
+
+
+def _bleed_subject(rgb, subject):
+    import numpy as np
+    color = np.where(subject[..., None], rgb, 0.0)
+    filled = subject.astype(np.float32)
+    while not filled.all():
+        total = np.zeros_like(color)
+        count = np.zeros_like(filled)
+        for dy, dx in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            total += np.roll(np.roll(color * filled[..., None], dy, axis=0), dx, axis=1)
+            count += np.roll(np.roll(filled, dy, axis=0), dx, axis=1)
+        grow = (filled == 0) & (count > 0)
+        color[grow] = total[grow] / count[grow][..., None]
+        filled[grow] = 1.0
+    return np.where(filled[..., None] > 0, color, rgb).astype(np.float32)
+
+
+def project_ref_image(objs, image_path, material_name, background_threshold=0.3, highlight_margin=0.12, near_white=0.9, grey_spread=0.08, max_washed=0.3):
+    import numpy as np
+    source = bpy.data.images.load(image_path, check_existing=True)
+    if min(source.size) < REF_TEXTURE_SIZE:
+        raise ValueError(f"{image_path}: {tuple(source.size)} is smaller than {REF_TEXTURE_SIZE} px")
+    step = source.size[0] // REF_TEXTURE_SIZE
+    pixels = np.empty(source.size[0] * source.size[1] * 4, dtype=np.float32)
+    source.pixels.foreach_get(pixels)
+    rgb = np.ascontiguousarray(pixels.reshape(source.size[1], source.size[0], 4)[::step, ::step, :3])
+    height, width = rgb.shape[:2]
+    subject = np.abs(rgb - rgb[2, 2]).sum(axis=-1) > background_threshold
+    rows, cols = np.nonzero(subject)
+    if rows.size == 0:
+        raise ValueError(f"{image_path}: no subject found on the background")
+    px0, px1, py0, py1 = cols.min(), cols.max(), rows.min(), rows.max()
+    lightness = rgb.max(axis=-1)
+    washed = subject & (lightness > near_white) & (rgb.max(axis=-1) - rgb.min(axis=-1) < grey_spread)
+    highlight = subject & (lightness > np.percentile(lightness[subject], 85) + highlight_margin)
+    if washed.sum() < max_washed * subject.sum():
+        highlight |= washed
+    seed = subject & ~highlight
+    if not seed.any():
+        raise ValueError(f"{image_path}: the whole subject reads as highlight")
+    bled = _bleed_subject(rgb, seed)
+    image = bpy.data.images.new(material_name, width, height)
+    image.pixels.foreach_set(np.concatenate([bled, np.ones((height, width, 1), dtype=np.float32)], axis=-1).ravel())
+    image.pack()
+    material = bpy.data.materials.new(material_name)
+    material.use_nodes = True
+    shader = next(n for n in material.node_tree.nodes if n.type == "BSDF_PRINCIPLED")
+    shader.inputs["Roughness"].default_value = 0.8
+    texture = material.node_tree.nodes.new("ShaderNodeTexImage")
+    texture.image = image
+    material.node_tree.links.new(texture.outputs["Color"], shader.inputs["Base Color"])
+    points = {o: [o.matrix_world @ v.co for v in o.data.vertices] for o in objs}
+    every = [p for pts in points.values() for p in pts]
+    x0, x1 = min(p.x for p in every), max(p.x for p in every)
+    z0, z1 = min(p.z for p in every), max(p.z for p in every)
+    for o in objs:
+        mesh = o.data
+        uv = mesh.uv_layers.new(name="RefProjection")
+        mesh.uv_layers.active = uv
+        for loop in mesh.loops:
+            p = points[o][loop.vertex_index]
+            uv.data[loop.index].uv = ((px0 + (p.x - x0) / (x1 - x0) * (px1 - px0)) / width, (py0 + (p.z - z0) / (z1 - z0) * (py1 - py0)) / height)
+        for layer in [layer for layer in mesh.uv_layers if layer.name != uv.name]:
+            mesh.uv_layers.remove(layer)
+        mesh.materials.clear()
+        mesh.materials.append(material)
+    return material
+
+
+def fence_run(coll, name, ax, az, bx, bz, post_mat, rail_mat, spacing=2.5):
+    length = math.hypot(bx - ax, bz - az)
+    yaw = math.atan2(-(bz - az), bx - ax)
+    steps = max(1, round(length / spacing))
+    objs = [box(coll, f"{name}_Post{k:02d}", ax + (bx - ax) * k / steps, az + (bz - az) * k / steps, 0.0, 0.14, 0.14, 1.1, post_mat) for k in range(steps + 1)]
+    objs += [box(coll, f"{name}_Rail{k}", (ax + bx) / 2, (az + bz) / 2, h, length + 0.05, 0.07, 0.09, rail_mat, rot=yaw) for k, h in enumerate((0.45, 0.85))]
+    collision = {"cx": (ax + bx) / 2, "cz": (az + bz) / 2, "sx": length + 0.2, "sz": 0.3, "h": 1.2, "yaw": yaw}
+    return objs, collision
+
+
+def _read_json(path):
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def _decor_collision(prop, cuboids, col_prefix):
+    x, y, z = prop["position"]
+    sx, sy, sz = prop["scale"]
+    yaw = prop["yaw"]
+    cos, sin = math.cos(yaw), math.sin(yaw)
+    out = []
+    for i, c in enumerate(cuboids):
+        if abs(c["qx"]) > 1e-6 or abs(c["qz"]) > 1e-6:
+            raise ValueError(f"decor/{prop['key']}/collision.json: cuboid {i} is tilted, only yaw is baked")
+        lx, lz = c["cx"] * sx, c["cz"] * sz
+        out.append({
+            "name": f"{col_prefix}ZD_{prop['id']}_{i}",
+            "cx": round(x + lx * cos + lz * sin, 3),
+            "cy": round(y + c["cy"] * sy, 3),
+            "cz": round(z - lx * sin + lz * cos, 3),
+            "hx": round(c["hx"] * sx, 3),
+            "hy": round(c["hy"] * sy, 3),
+            "hz": round(c["hz"] * sz, 3),
+            "yaw": round(yaw + 2 * math.atan2(c["qy"], c["qw"]), 4),
+        })
+    return out
+
+
+def _crop_prototype(coll, crop_key, crop, cache):
+    if crop_key in cache:
+        return cache[crop_key]
+    before = set(bpy.data.objects)
+    bpy.ops.import_scene.gltf(filepath=os.path.join(FRONT_ASSETS, *crop["plant"].split("/")))
+    imported = [o for o in bpy.data.objects if o not in before]
+    bpy.context.view_layer.update()
+    meshes = [o for o in imported if o.type == "MESH"]
+    if not meshes:
+        raise ValueError(f"{crop['plant']} has no mesh")
+    for o in meshes:
+        world = o.matrix_world.copy()
+        o.parent = None
+        o.matrix_world = world
+        for c in list(o.users_collection):
+            c.objects.unlink(o)
+        coll.objects.link(o)
+    for o in imported:
+        if o.type != "MESH":
+            bpy.data.objects.remove(o, do_unlink=True)
+    proto = join(coll, f"ZD_crop_{crop_key}", meshes) if len(meshes) > 1 else meshes[0]
+    proto.location = (0.0, 0.0, 0.0)
+    proto.rotation_euler = (0.0, 0.0, 0.0)
+    proto.name = proto.data.name = f"ZD_crop_{crop_key}"
+    coll.objects.unlink(proto)
+    cache[crop_key] = proto
+    return proto
+
+
+def _place_field(coll, prop, crops, cache):
+    crop = crops[prop["crop"]]
+    x, y, z = prop["position"]
+    width, depth = prop["size"]
+    soil_mat = make_mat("TW_FieldSoil", "#6e4b32", 1.0, "stripes", 0.05, accent="#5a3c27")
+    objs = [box(coll, f"ZD_{prop['id']}_soil", x, z, y, width, depth, FIELD_SOIL, soil_mat, rot=prop["yaw"], tile=1.5)]
+    proto = _crop_prototype(coll, prop["crop"], crop, cache)
+    plants = []
+    for i, (px, py, pz, pyaw) in enumerate(prop["plants"]):
+        ob = bpy.data.objects.new(f"ZD_{prop['id']}_{i:03d}", proto.data)
+        coll.objects.link(ob)
+        ob.location = b(px, pz, py + FIELD_SOIL)
+        ob.rotation_euler = (0.0, 0.0, pyaw)
+        objs.append(ob)
+        plants.append({"crop": prop["crop"], "position": [px, round(py + FIELD_SOIL, 3), pz]})
+    return objs, plants
+
+
+def _place_decor(coll, prop):
+    x, y, z = prop["position"]
+    sx, sy, sz = prop["scale"]
+    placement = Matrix.Translation(b(x, z, y)) @ Matrix.Rotation(prop["yaw"], 4, "Z") @ Matrix.Diagonal((sx, sz, sy, 1.0))
+    before = set(bpy.data.objects)
+    bpy.ops.import_scene.gltf(filepath=os.path.join(FRONT_ASSETS, "decor", prop["key"], "model.glb"))
+    imported = [o for o in bpy.data.objects if o not in before]
+    bpy.context.view_layer.update()
+    meshes = [o for o in imported if o.type == "MESH"]
+    if not meshes:
+        raise ValueError(f"decor/{prop['key']}/model.glb has no mesh")
+    worlds = {o: placement @ o.matrix_world for o in meshes}
+    for o in meshes:
+        o.parent = None
+        o.matrix_world = worlds[o]
+        for c in list(o.users_collection):
+            c.objects.unlink(o)
+        coll.objects.link(o)
+    for o in imported:
+        if o.type != "MESH":
+            bpy.data.objects.remove(o, do_unlink=True)
+    for i, o in enumerate(meshes):
+        o.name = f"ZD_{prop['id']}_{prop['key']}" + (f"_{i}" if len(meshes) > 1 else "")
+        o.data.name = o.name
+    return meshes
+
+
+def zone_decor(coll, zone_key, col_prefix):
+    path = os.path.join(FRONT_ASSETS, "zones", f"{zone_key}.json")
+    listed = zone_key in _read_json(os.path.join(FRONT_ASSETS, "zones", "index.json"))["zones"]
+    if listed != os.path.exists(path):
+        raise ValueError(f"zones/index.json and zones/{zone_key}.json disagree: listed {listed}, file {os.path.exists(path)}")
+    if not listed:
+        return [], [], []
+    decor = _read_json(path)
+    if decor["zone"] != zone_key:
+        raise ValueError(f"zones/{zone_key}.json belongs to zone {decor['zone']}")
+    crops = _read_json(os.path.join(FRONT_ASSETS, "crops", "crops.json"))["crops"]
+    objs, cols, plants, prototypes = [], [], [], {}
+    for prop in decor["props"]:
+        if prop["kind"] == "field":
+            field_objs, field_plants = _place_field(coll, prop, crops, prototypes)
+            objs += field_objs
+            plants += field_plants
+        elif prop["kind"] == "decor":
+            objs += _place_decor(coll, prop)
+            cols += _decor_collision(prop, _read_json(os.path.join(FRONT_ASSETS, "decor", prop["key"], "collision.json"))["cuboids"], col_prefix)
+    return objs, cols, plants
+
+
+def import_ai_model(coll, slug, material_name):
+    folder = os.path.join(OUT_ROOT, "ai", slug)
+    before = set(bpy.data.objects)
+    bpy.ops.import_scene.gltf(filepath=os.path.join(folder, "model.glb"))
+    imported = [o for o in bpy.data.objects if o not in before]
+    bpy.context.view_layer.update()
+    meshes = [o for o in imported if o.type == "MESH"]
+    if not meshes:
+        raise ValueError(f"out/ai/{slug}/model.glb has no mesh")
+    for o in meshes:
+        world = o.matrix_world.copy()
+        o.parent = None
+        o.matrix_world = world
+        for c in list(o.users_collection):
+            c.objects.unlink(o)
+        coll.objects.link(o)
+    for o in imported:
+        if o.type != "MESH":
+            bpy.data.objects.remove(o, do_unlink=True)
+    project_ref_image(meshes, os.path.join(folder, "ref.png"), material_name)
+    return meshes
+
+
+def render_preview(sc, obj, path):
+    import contextlib
+    import io
+    corners = [obj.matrix_world @ Vector(c) for c in obj.bound_box]
+    ctr = sum(corners, Vector()) / 8
+    cam_data = bpy.data.cameras.new("PV_cam")
+    cam_data.type = "ORTHO"
+    cam = bpy.data.objects.new("PV_cam", cam_data)
+    sc.collection.objects.link(cam)
+    cam.location = ctr + Vector((0.5, -0.9, 0.7)).normalized() * 3
+    cam.rotation_euler = (ctr - cam.location).to_track_quat("-Z", "Y").to_euler()
+    bpy.context.view_layer.update()
+    inv = cam.matrix_world.inverted()
+    pts = [inv @ c for c in corners]
+    w = max(p.x for p in pts) - min(p.x for p in pts)
+    h = max(p.y for p in pts) - min(p.y for p in pts)
+    cam_data.ortho_scale = max(w, h) * 1.12
+    cam_data.shift_x = (max(p.x for p in pts) + min(p.x for p in pts)) / 2 / cam_data.ortho_scale
+    cam_data.shift_y = (max(p.y for p in pts) + min(p.y for p in pts)) / 2 / cam_data.ortho_scale
+    sc.camera = cam
+    sun = bpy.data.objects.new("PV_sun", bpy.data.lights.new("PV_sun", "SUN"))
+    sun.data.energy = 2.6
+    sun.rotation_euler = (0.8, 0.3, 0.7)
+    sc.collection.objects.link(sun)
+    sc.render.engine = "BLENDER_EEVEE"
+    if sc.world is None:
+        sc.world = bpy.data.worlds.new("PV_world")
+        sc.world.use_nodes = True
+        bg = next(n for n in sc.world.node_tree.nodes if n.type == "BACKGROUND")
+        bg.inputs[0].default_value = (0.42, 0.45, 0.55, 1.0)
+        bg.inputs[1].default_value = 0.9
+    sc.view_settings.view_transform = "Standard"
+    sc.render.resolution_x = sc.render.resolution_y = 512
+    sc.render.film_transparent = True
+    sc.render.filepath = path
+    sc.render.image_settings.file_format = "PNG"
+    sc.render.image_settings.color_mode = "RGBA"
+    hidden = [o for o in sc.objects if o.type == "MESH" and o is not obj and not o.hide_render]
+    for o in hidden:
+        o.hide_render = True
+    with contextlib.redirect_stdout(io.StringIO()):
+        bpy.ops.render.render(write_still=True)
+    for o in hidden:
+        o.hide_render = False
+    bpy.data.objects.remove(cam, do_unlink=True)
+    bpy.data.objects.remove(sun, do_unlink=True)

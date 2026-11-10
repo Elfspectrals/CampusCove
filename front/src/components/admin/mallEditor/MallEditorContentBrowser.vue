@@ -11,7 +11,7 @@ export interface ContentEntry {
   preview: string | null
 }
 
-type ContentFolder = 'decor' | 'goods' | 'npc' | 'mannequin' | 'light'
+type ContentFolder = 'decor' | 'goods' | 'npc' | 'mannequin' | 'light' | 'animal' | 'building'
 
 const props = defineProps<{
   entries: ContentEntry[]
@@ -28,6 +28,8 @@ const FOLDERS: Array<{ key: ContentFolder; label: string; icon: UiIconName }> = 
   { key: 'npc', label: 'NPC', icon: 'user' },
   { key: 'mannequin', label: 'Mannequin', icon: 'shirt' },
   { key: 'light', label: 'Lights', icon: 'bolt' },
+  { key: 'animal', label: 'Animals', icon: 'walk' },
+  { key: 'building', label: 'Buildings', icon: 'home' },
 ]
 
 const folder = ref<ContentFolder>('decor')

@@ -24,6 +24,7 @@ import GameSettingsDialog from '../components/game/GameSettingsDialog.vue'
 import GameStoreItemCard from '../components/game/GameStoreItemCard.vue'
 import GameCafeMenu from '../components/game/GameCafeMenu.vue'
 import GameOrchardSellMenu from '../components/game/GameOrchardSellMenu.vue'
+import GameZoneBuyerMenu from '../components/game/GameZoneBuyerMenu.vue'
 import GamePubMenu from '../components/game/GamePubMenu.vue'
 import GamePubSecretDialog from '../components/game/GamePubSecretDialog.vue'
 import GameDrunkEffects from '../components/game/GameDrunkEffects.vue'
@@ -57,7 +58,10 @@ import { useIntoxication } from '../composables/game/useIntoxication'
 import { useMinimap } from '../composables/game/useMinimap'
 import { usePlayerInventory } from '../composables/game/usePlayerInventory'
 import { useOrchard } from '../composables/game/useOrchard'
+import { useZoneBuyers } from '../composables/game/useZoneBuyers'
+import { useFarm } from '../composables/game/useFarm'
 import { useMallCellTemplates, type CellStoreEntry } from '../composables/game/useMallCellTemplates'
+import { useZoneDecor } from '../composables/game/useZoneDecor'
 import { usePub } from '../composables/game/usePub'
 import { usePubChallenge } from '../composables/game/usePubChallenge'
 import { usePubGames } from '../composables/game/usePubGames'
@@ -258,7 +262,14 @@ const furnitureStores = shallowReactive<CellStoreEntry[]>([
   })),
 ])
 const mallCellTemplates = useMallCellTemplates({ getScene, storeDeps: mallStoreDeps, addStore: (entry) => furnitureStores.push(entry) })
-const activeFurniture = computed(() => furnitureStores.find((s) => s.key === (mallCellTemplates.currentStoreKey.value ?? currentHouseKey.value)) ?? null)
+const zoneDecor = useZoneDecor({
+  getScene,
+  storeDeps: mallStoreDeps,
+  addStore: (entry) => furnitureStores.push(entry),
+  insideOtherStore: () => mallCellTemplates.currentStoreKey.value !== null || currentHouseKey.value !== null,
+  getGameRoom: () => gameRoomRef.value,
+})
+const activeFurniture = computed(() => furnitureStores.find((s) => s.key === (mallCellTemplates.currentStoreKey.value ?? currentHouseKey.value ?? zoneDecor.currentStoreKey.value)) ?? null)
 const storeBrand = computed(() => activeFurniture.value?.brand ?? COVE_HOME.name)
 const storeTarget = computed(() => activeFurniture.value?.store.target.value ?? null)
 const storeDepartment = computed(() => activeFurniture.value?.store.currentDepartment.value ?? null)
@@ -496,8 +507,36 @@ const orchard = useOrchard({
   say: (text) => survival.say(text),
 })
 const { menuOpen: orchardMenuOpen, selling: orchardSelling, feedback: orchardFeedback, pickProgress: orchardPickProgress } = orchard
+const zoneBuyers = useZoneBuyers({
+  myPosition,
+  getCamera,
+  canvasRef,
+  gameRoomRef,
+  promptsHidden: () => inventoryOpen.value || !canUsePub(),
+  itemByCode: () => itemByCode.value,
+  refreshInventory: () => refreshOwnedItems(),
+  buyers: () => zoneDecor.buyers.value,
+})
+const { openBuyer: zoneBuyerOpen, selling: zoneBuyerSelling, feedback: zoneBuyerFeedback } = zoneBuyers
+const farm = useFarm({
+  myPosition,
+  getCamera,
+  canvasRef,
+  gameRoomRef,
+  promptsHidden: () => inventoryOpen.value || !canUsePub(),
+  refreshInventory: () => refreshOwnedItems(),
+  say: (text) => survival.say(text),
+})
+const pickBar = computed(() => {
+  if (orchardPickProgress.value !== null) return { progress: orchardPickProgress.value, label: 'Picking an apple…' }
+  if (farm.pickProgress.value !== null) return { progress: farm.pickProgress.value, label: farm.pickLabel.value }
+  return null
+})
 watch(orchardMenuOpen, (open) => {
   if (!open && !document.pointerLockElement) requestPointerLock()
+})
+watch(zoneBuyerOpen, (buyer) => {
+  if (!buyer && !document.pointerLockElement) requestPointerLock()
 })
 
 const interactions = useInteractionTargets({
@@ -541,7 +580,7 @@ const interactions = useInteractionTargets({
     else if (activeFurniture.value?.store.hasCounter.value) activeFurniture.value.store.toggleTarget(useWithShift)
     else openStorePurchase()
   },
-  sources: [pub.source, pubChallenge.source, pubGames.source, seats.source, orchard.source],
+  sources: [pub.source, pubChallenge.source, pubGames.source, seats.source, orchard.source, farm.source, zoneBuyers.source],
 })
 const { doorPrompt } = interactions
 
@@ -784,7 +823,9 @@ const environment = useRoomEnvironment({
     pub.onTownLoaded(manifest)
     pubGames.onTownLoaded(manifest)
     orchard.onTownLoaded(manifest)
+    farm.onTownLoaded(manifest)
     mallCellTemplates.onTownLoaded(manifest).catch((error: unknown) => console.error('[mall] cell templates failed to load', error))
+    zoneDecor.onTownLoaded(manifest).catch((error: unknown) => console.error('[zones] zone decor failed to load', error))
     minimap.onTownLoaded(manifest)
     houseFurniture.onTownReady()
     for (const { key, store } of furnitureStores) {
@@ -887,6 +928,7 @@ const pauseMenuOpen = computed(
     !tradeUiOpen.value &&
     !pubUiOpen.value &&
     !orchardMenuOpen.value &&
+    !zoneBuyerOpen.value &&
     !settingsOpen.value,
 )
 /** Back in the game with the menu closed, but the browser hasn't given the pointer back yet. */
@@ -969,6 +1011,7 @@ const movement = useGameMovement({
     currentHouseKey.value = houseKeyAt(myPosition.x, myPosition.z)
     placement.tick(dt)
     mallCellTemplates.tick(dt, myPosition)
+    zoneDecor.tick(dt, myPosition)
     for (const { store } of furnitureStores) store.update(dt)
     for (const store of clothingStores) store.update(dt)
     threadsMusic.update(dt, inThreads.value)
@@ -988,6 +1031,7 @@ const movement = useGameMovement({
     pub.tick(dt)
     pubGames.tick()
     orchard.tick(dt)
+    farm.tick()
     if (!doorSigns.group.parent) getScene()?.add(doorSigns.group)
     minimap.tick()
   },
@@ -1057,6 +1101,8 @@ const realtime = useGameRealtime({
   pub: pub.handlers,
   pubGames: pubGames.handlers,
   orchard: orchard.handlers,
+  zoneBuyers: zoneBuyers.handlers,
+  farm: farm.handlers,
   pubChallenge: pubChallenge.handlers,
 })
 const { switchingRoom } = realtime
@@ -1460,6 +1506,16 @@ const crosshairClass = computed(() => {
       @buy="clinic.buy"
       @close="clinic.close"
     />
+    <GameZoneBuyerMenu
+      v-if="zoneBuyerOpen"
+      :area="zoneBuyerOpen.area"
+      :selling="zoneBuyerSelling"
+      :feedback="zoneBuyerFeedback"
+      :held="zoneBuyers.held"
+      :item-name="zoneBuyers.itemName"
+      @sell="zoneBuyers.sell"
+      @close="zoneBuyers.close"
+    />
     <GameOrchardSellMenu
       v-if="orchardMenuOpen"
       :carried="orchard.carried()"
@@ -1469,18 +1525,18 @@ const crosshairClass = computed(() => {
       @close="orchard.close"
     />
     <div
-      v-if="orchardPickProgress !== null"
+      v-if="pickBar"
       class="pointer-events-none absolute bottom-40 left-1/2 flex -translate-x-1/2 flex-col items-center gap-2 text-center"
     >
-      <p class="m-0 font-display text-sm tracking-wide text-fog">Picking an apple…</p>
+      <p class="m-0 font-display text-sm tracking-wide text-fog">{{ pickBar.label }}</p>
       <div
         class="h-2 w-[min(240px,60vw)] overflow-hidden rounded-full bg-ink-950/60"
         role="progressbar"
-        :aria-valuenow="Math.round(orchardPickProgress * 100)"
+        :aria-valuenow="Math.round(pickBar.progress * 100)"
         aria-valuemin="0"
         aria-valuemax="100"
       >
-        <div class="h-full rounded-full bg-mint" :style="{ width: `${orchardPickProgress * 100}%` }" />
+        <div class="h-full rounded-full bg-mint" :style="{ width: `${pickBar.progress * 100}%` }" />
       </div>
     </div>
     <GamePubMenu

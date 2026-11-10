@@ -12,6 +12,11 @@
     { "id": "fun_tech", "label": "Fun & tech", "keys": ["aquarium", "arcade_cabinet", "computer_setup"] },
     { "id": "outdoor", "label": "Outdoor", "keys": ["bbq_grill", "garden_bench", "parasol", "sun_lounger"] },
     { "id": "tools", "label": "Tools", "keys": ["paint_cans", "stepladder", "toolbox", "wheelbarrow", "workbench"] },
-    { "id": "accents", "label": "Accents", "keys": ["globe", "rug_round"] }
+    { "id": "accents", "label": "Accents", "keys": ["globe", "rug_round"] },
+    {
+      "id": "farm",
+      "label": "Farm",
+      "keys": ["scarecrow", "hay_bale_round", "water_trough", "milk_churn", "feed_sacks", "wooden_barrel", "chicken_coop", "stone_well", "watering_can", "vegetable_crate", "tool_rack", "chicken_feeder", "fence_panel", "fence_gate", "wire_panel", "mud_patch", "hay_rack"]
+    }
   ]
 }

@@ -222,7 +222,7 @@ export function findStore(key: string | null | undefined): (typeof STORES)[numbe
 export const SURVIVAL_WATCH_URL = `${ROOT}/items/tools/watch/model.glb`
 export const DRINKING_FOUNTAIN_URL = `${ROOT}/park/drinking_fountain/model.glb`
 
-const CONSUMABLE_FOLDERS: ReadonlyArray<[prefix: string, folder: string]> = [
+export const CONSUMABLE_FOLDERS: ReadonlyArray<[prefix: string, folder: string]> = [
   ['food_', 'food'],
   ['candy_', 'sweets'],
   ['grocery_', 'grocery'],

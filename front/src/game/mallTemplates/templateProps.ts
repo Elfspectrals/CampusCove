@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js'
 import { DEFAULT_SLOT_COLORS } from '../../api/characterCosmetics'
 import { setAvatarSeated } from '../../avatar/glbCharacter'
 import { createModularCharacter } from '../../avatar/modularCharacter'
@@ -7,9 +8,21 @@ import { decorModelUrl } from '../assets/catalog'
 import { createGltfLoader } from '../gltfLoaderFactory'
 import { outfitModels } from '../store/storeClerk'
 import { applyLook, type OwnParts } from './templateSurfaces'
-import { itemModelUrl, parseDecorParts, type DecorProp, type MaskedParts, type LightProp, type MannequinProp, type NpcProp, type TemplateProp, type Vec3 } from './mallTemplate.ts'
+import { CROPS_URL, fieldPlantsLocal, parseCrops, type CropTable } from '../crops/crops.ts'
+import { ANIMALS_URL, ANIMAL_CLIPS, animalModelUrl, parseAnimals, type AnimalClip, type AnimalTable } from '../animals/animals.ts'
+import { BUILDINGS_URL, buildingPreviewKey, parseBuildings, type BuildingTable } from '../buildings/buildings.ts'
+import { itemModelUrl, parseDecorParts, type AnimalProp, type BuildingProp, type DecorProp, type FieldProp, type MaskedParts, type LightProp, type MannequinProp, type NpcProp, type TemplateProp, type Vec3 } from './mallTemplate.ts'
 
 const STACK_GAP = 0.02
+const SOIL_HEIGHT = 0.03
+const SOIL_COLOR = 0x6e4b32
+const PEN_COLOR = 0xe8c26a
+const PEN_LIFT = 0.05
+let cropTable: Promise<CropTable> | null = null
+let animalTable: Promise<AnimalTable> | null = null
+let buildingTable: Promise<BuildingTable> | null = null
+const BUILDING_PREVIEWS_URL = '/__editor/buildings'
+const animalModels = new Map<string, Promise<{ scene: THREE.Object3D; clips: THREE.AnimationClip[] }>>()
 const loader = createGltfLoader()
 const modelTemplates = new Map<string, Promise<THREE.Object3D>>()
 const decorPartFiles = new Map<string, Promise<Record<string, MaskedParts>>>()
@@ -36,6 +49,9 @@ function propModelUrl(prop: TemplateProp): string | null {
 
 export function propSignature(prop: TemplateProp): string {
   if (prop.kind === 'npc') return JSON.stringify(['npc', prop.body, prop.outfit, prop.pose])
+  if (prop.kind === 'field') return JSON.stringify(['field', prop.id, prop.crop, prop.size, prop.pattern])
+  if (prop.kind === 'animal') return JSON.stringify(['animal', prop.animal, prop.size])
+  if (prop.kind === 'building') return JSON.stringify(['building', buildingPreviewKey(prop)])
   if (prop.kind === 'mannequin') return JSON.stringify(['mannequin', prop.body, prop.outfit])
   if (prop.kind === 'light') return JSON.stringify(['light', prop.light, prop.color, prop.intensity, prop.range, prop.angle, prop.pitch])
   return JSON.stringify([prop.kind, propModelUrl(prop), prop.kind === 'item' ? prop.stack : null, prop.kind === 'decor' ? (prop.materials ?? null) : null])
@@ -178,7 +194,131 @@ async function applyMaterialLooks(model: THREE.Object3D, key: string, looks: Non
   await Promise.all(pending)
 }
 
+export function crops(): Promise<CropTable> {
+  if (!cropTable) {
+    cropTable = fetch(CROPS_URL).then(async (response) => {
+      if (!response.ok) throw new Error(`${CROPS_URL}: HTTP ${response.status}`)
+      return parseCrops(await response.json())
+    })
+    cropTable.catch(() => (cropTable = null))
+  }
+  return cropTable
+}
+
+async function createField(prop: FieldProp): Promise<THREE.Group> {
+  const crop = (await crops())[prop.crop]
+  if (!crop) throw new Error(`no crop ${prop.crop} in ${CROPS_URL}`)
+  const plant = await modelTemplate(`/assets/${crop.plant}`)
+  const group = new THREE.Group()
+  const [width, depth] = prop.size
+  const soil = new THREE.Mesh(new THREE.BoxGeometry(width, SOIL_HEIGHT, depth), new THREE.MeshStandardMaterial({ color: SOIL_COLOR, roughness: 1 }))
+  soil.position.y = SOIL_HEIGHT / 2
+  group.add(soil)
+  for (const [x, , z, yaw] of fieldPlantsLocal(prop, crop)) {
+    const copy = markShared(plant.clone(true))
+    copy.position.set(x, SOIL_HEIGHT, z)
+    copy.rotation.y = yaw
+    group.add(copy)
+  }
+  return group
+}
+
+export function animals(): Promise<AnimalTable> {
+  if (!animalTable) {
+    animalTable = fetch(ANIMALS_URL).then(async (response) => {
+      if (!response.ok) throw new Error(`${ANIMALS_URL}: HTTP ${response.status}`)
+      return parseAnimals(await response.json())
+    })
+    animalTable.catch(() => (animalTable = null))
+  }
+  return animalTable
+}
+
+function animalModel(key: string): Promise<{ scene: THREE.Object3D; clips: THREE.AnimationClip[] }> {
+  let model = animalModels.get(key)
+  if (!model) {
+    const url = animalModelUrl(key)
+    model = loader.loadAsync(url).then((gltf) => {
+      const missing = ANIMAL_CLIPS.filter((name) => !gltf.animations.some((clip) => clip.name === name))
+      if (missing.length) throw new Error(`${url}: missing clips ${missing.join(', ')}, run build_barnyard.py`)
+      return { scene: gltf.scene, clips: gltf.animations }
+    })
+    model.catch(() => animalModels.delete(key))
+    animalModels.set(key, model)
+  }
+  return model
+}
+
+export interface AnimalRig {
+  object: THREE.Object3D
+  mixer: THREE.AnimationMixer
+  actions: Record<AnimalClip, THREE.AnimationAction>
+}
+
+async function cloneAnimal(key: string): Promise<THREE.Object3D> {
+  const object = markShared(cloneSkinned((await animalModel(key)).scene))
+  object.traverse((child) => {
+    if ((child as THREE.SkinnedMesh).isSkinnedMesh) child.frustumCulled = false
+  })
+  return object
+}
+
+export async function createAnimal(key: string): Promise<AnimalRig> {
+  const { clips } = await animalModel(key)
+  const object = await cloneAnimal(key)
+  const mixer = new THREE.AnimationMixer(object)
+  const actions = Object.fromEntries(ANIMAL_CLIPS.map((name) => [name, mixer.clipAction(clips.find((clip) => clip.name === name)!)])) as Record<AnimalClip, THREE.AnimationAction>
+  return { object, mixer, actions }
+}
+
+async function createAnimalPen(prop: AnimalProp): Promise<THREE.Group> {
+  const object = await cloneAnimal(prop.animal)
+  const [width, depth] = prop.size
+  const pen = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.PlaneGeometry(width, depth).rotateX(-Math.PI / 2)), new THREE.LineBasicMaterial({ color: PEN_COLOR }))
+  pen.position.y = PEN_LIFT
+  pen.raycast = () => {}
+  const group = new THREE.Group()
+  group.add(pen, object)
+  return group
+}
+
+export function buildings(): Promise<BuildingTable> {
+  if (!buildingTable) {
+    buildingTable = fetch(BUILDINGS_URL).then(async (response) => {
+      if (!response.ok) throw new Error(`${BUILDINGS_URL}: HTTP ${response.status}`)
+      return parseBuildings(await response.json())
+    })
+    buildingTable.catch(() => (buildingTable = null))
+  }
+  return buildingTable
+}
+
+function buildingMassing(prop: BuildingProp): THREE.Group {
+  const [width, depth] = prop.size
+  const group = new THREE.Group()
+  const walls = new THREE.Mesh(new THREE.BoxGeometry(width, prop.height, depth), new THREE.MeshStandardMaterial({ color: prop.colors.walls, roughness: 0.9 }))
+  walls.position.y = prop.height / 2
+  const span = prop.ridge === 'x' ? depth : width
+  const length = prop.ridge === 'x' ? width : depth
+  const profile = new THREE.Shape([new THREE.Vector2(-span / 2, 0), new THREE.Vector2(span / 2, 0), new THREE.Vector2(0, prop.roof)])
+  const roof = new THREE.Mesh(new THREE.ExtrudeGeometry(profile, { depth: length, bevelEnabled: false }), new THREE.MeshStandardMaterial({ color: prop.colors.roof, roughness: 0.8 }))
+  roof.position.set(prop.ridge === 'x' ? -width / 2 : 0, prop.height, prop.ridge === 'x' ? 0 : -depth / 2)
+  if (prop.ridge === 'x') roof.rotation.y = Math.PI / 2
+  group.add(walls, roof)
+  return group
+}
+
+async function createBuilding(prop: BuildingProp): Promise<THREE.Object3D> {
+  const url = `${BUILDING_PREVIEWS_URL}/${buildingPreviewKey(prop)}.glb`
+  const response = await fetch(url, { method: 'HEAD', cache: 'no-store' })
+  if (!response.ok) return buildingMassing(prop)
+  return (await loader.loadAsync(url)).scene
+}
+
 export async function createPropObject(prop: TemplateProp): Promise<THREE.Object3D> {
+  if (prop.kind === 'field') return createField(prop)
+  if (prop.kind === 'building') return createBuilding(prop)
+  if (prop.kind === 'animal') return createAnimalPen(prop)
   if (prop.kind === 'light') return createLightObject(prop)
   if (prop.kind === 'npc') return createNpc(prop)
   if (prop.kind === 'mannequin') return createMannequin(prop)
