@@ -10,7 +10,7 @@ const REGIONS = ['head', 'chest', 'hips', 'upper_arms', 'forearms', 'hands', 'th
 const PIECES = {
   hair: ['basic', 'short', 'long', 'curly', 'buzz', 'ponytail'],
   head_accessory: ['gamer', 'studio', 'cat_ear', 'neon', 'pilot', 'straw_hat', 'bandana'],
-  top: ['basic', 'tee', 'tank', 'hoodie', 'varsity', 'sweater', 'track_jacket', 'jersey', 'sports_bra', 'plaid_shirt', 'farm_apron', 'flannel_jacket'],
+  top: ['basic', 'tee', 'tank', 'hoodie', 'varsity', 'sweater', 'track_jacket', 'jersey', 'sports_bra', 'plaid_shirt', 'farm_apron', 'flannel_jacket', 'staff_polo'],
   bottom: ['basic', 'jeans', 'joggers', 'cargo', 'shorts', 'skirt', 'track_pants', 'basketball_shorts', 'leggings', 'dungarees'],
   shoes: ['basic', 'sneakers', 'high_tops', 'boots', 'slides', 'runners', 'rubber_boots'],
 }

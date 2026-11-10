@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "zone": "pond",
+  "name": "Pond",
+  "props": [
+    {
+      "id": "pond_keeper",
+      "kind": "npc",
+      "position": [
+        20.9,
+        0.346,
+        -60.5
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pose": "idle",
+      "vendor": false,
+      "body": "#8a5a3c",
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "short",
+          "color": "#6b6b6b"
+        },
+        {
+          "slot": "head_accessory",
+          "key": "straw_hat",
+          "color": "#d8b56a"
+        },
+        {
+          "slot": "top",
+          "key": "flannel_jacket",
+          "color": "#5f7d4a"
+        },
+        {
+          "slot": "bottom",
+          "key": "cargo",
+          "color": "#6b6a45"
+        },
+        {
+          "slot": "shoes",
+          "key": "rubber_boots",
+          "color": "#3f7a4a"
+        }
+      ]
+    }
+  ],
+  "areas": []
+}

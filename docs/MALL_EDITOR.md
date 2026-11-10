@@ -111,8 +111,9 @@ Le jeu refuse une cellule dont l'assignation ne correspond pas au build (message
 
 ## Décorer une zone du monde ouvert
 
-Le sélecteur **Zone…** de la barre du haut ouvre une zone de `world.manifest.json` (toutes sauf le mall) : son modèle
-sert de fond, on pose décors, objets vendables, NPC, mannequins, champs (dossier **Fields**, voir
+Le sélecteur **Zone…** de la barre du haut ouvre une zone de `world.manifest.json` : son modèle, ses bâtiments et leurs
+intérieurs servent de fond (le mall s'ouvre aussi, pour ses six boutiques ; ses cellules restent décorées par
+templates), on pose décors, objets vendables, NPC, mannequins, champs (dossier **Fields**, voir
 [FARM.md](FARM.md#champs-modulaires)) et animaux (dossier **Animals**, voir [FARM.md](FARM.md#animaux)) en coordonnées monde, posés sur la surface cliquée. Pas
 de lumière ni de matière personnalisée sur les décors d'une zone. **Test** marche à partir du point visé, dans les
 limites de la zone.
@@ -187,6 +188,26 @@ copie suit le fichier de zone. En jeu, le panier d'une zone se paie par le serve
 vérifie que le joueur est dans la zone, puis `POST /api/zone/checkout` débite les prix de la zone.
 
 Commiter `zones/`, `backend/resources/zones/`, le GLB et le layout de la zone, `town.collision.json`.
+
+### Boutiques et personnel
+
+Toutes les boutiques marchent pareil : une zone **Seller** autour de la boutique, un vendeur debout derrière un comptoir
+(`decor/checkout_counter`, dossier **Shop**, ou le comptoir du bâtiment), les objets **For sale** et les mannequins dans
+la zone. Le joueur remplit son panier en visant les objets, puis paie au vendeur. Cove Home, Cove Threads, la pharmacie
+de la clinique, le Campus Cafe et les six boutiques du mall sont dans `zones/retail_park.json`, `fashion.json`,
+`clinic.json`, `work_district.json` et `mall.json` ; leurs anciens layouts d'intérieur ne sont plus lus pour les ventes.
+
+- **Price tags beside each item** (carte Sellers) pose une étiquette de prix devant chaque objet de la zone.
+- Un objet à vendre peut avoir une **Description**, affichée quand on le vise.
+- Un mannequin vend les pièces cochées **For sale**, chacune à son **Price (coins)** ; **Clothes only (no body)**
+  n'affiche que les vêtements (une pièce sur un portant).
+- Les vendeurs portent des pièces de `wear/` : celui de Cove Home porte `top/staff_polo` (polo jaune « CH »).
+
+**Staff role** (Détails d'un NPC) donne au NPC un rôle de jeu : `bartender` et `bouncer` au pub, `nurse` à la clinique.
+Chacun existe une seule fois dans sa zone. **Save** (ou `npm --prefix front run zone:prices`) recopie leur position dans
+`world.manifest.json` (`pub.bartender`, `pub.bartenderYaw`, `pub.bouncer`, `clinic.nurse`), que lisent le jeu et le
+serveur temps réel ; redémarrer le serveur temps réel après les avoir déplacés. Les anciens NPC cuits dans les intérieurs
+(`NPC_Bartender`, `NPC_Bouncer`, `NPC_Nurse`) sont masqués au chargement.
 
 ## Ajouter du contenu
 

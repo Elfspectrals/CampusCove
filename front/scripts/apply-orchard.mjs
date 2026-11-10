@@ -51,7 +51,8 @@ const zone = {
 const at = manifest.zones.findIndex((z) => z.key === zone.key)
 if (at >= 0) manifest.zones[at] = zone
 else manifest.zones.push(zone)
-manifest.orchard = site.points
+const { farmer: _farmer, farmerYaw: _farmerYaw, ...orchardPoints } = site.points
+manifest.orchard = orchardPoints
 manifest.bounds = col.bounds
 writeFileSync(WORLD_MANIFEST, JSON.stringify(manifest, null, 2) + '\n')
-console.log(`world.manifest.json: orchard with ${site.points.trees.length} trees, farmer at ${JSON.stringify(site.points.farmer)}, gate at ${JSON.stringify(site.gate)}`)
+console.log(`world.manifest.json: orchard with ${site.points.trees.length} trees, gate at ${JSON.stringify(site.gate)}`)

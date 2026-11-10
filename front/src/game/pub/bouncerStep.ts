@@ -1,6 +1,5 @@
 import * as THREE from 'three'
 
-const BOUNCER_NODE = 'NPC_Bouncer'
 const DOOR_NODE = 'Door_Secret'
 /** Half a step (m) towards the cellar door, capped by how far the door actually is. */
 const STEP_DISTANCE = 0.35
@@ -22,12 +21,10 @@ export function bouncerStepAmount(t: number): number {
 }
 
 /**
- * The bouncer (`NPC_Bouncer`, baked into the pub interior) steps into the cellar doorway and back when someone
+ * The bouncer (the pub zone NPC with the bouncer role) steps into the cellar doorway and back when someone
  * tries to slip past him (`pub_bouncer_block`). Purely visual: the server already pushed the player back.
  */
-export function createBouncerStep(interior: THREE.Object3D) {
-  const bouncer = interior.getObjectByName(BOUNCER_NODE)
-  if (!bouncer) throw new Error(`Pub interior has no ${BOUNCER_NODE} node`)
+export function createBouncerStep(interior: THREE.Object3D, bouncer: THREE.Object3D) {
   const door = interior.getObjectByName(DOOR_NODE) ?? null
   const rest = bouncer.position.clone()
   const offset = new THREE.Vector3()
@@ -35,9 +32,9 @@ export function createBouncerStep(interior: THREE.Object3D) {
 
   function towardDoor(): THREE.Vector3 {
     offset.set(0, 0, 0)
-    if (!door || !bouncer!.parent) return offset
+    if (!door || !bouncer.parent) return offset
     door.getWorldPosition(offset)
-    bouncer!.parent.worldToLocal(offset)
+    bouncer.parent.worldToLocal(offset)
     offset.sub(rest).setY(0)
     const distance = offset.length()
     if (distance < 1e-3) return offset.set(0, 0, 0)
@@ -52,7 +49,7 @@ export function createBouncerStep(interior: THREE.Object3D) {
   function update(dt: number): void {
     if (t >= BOUNCER_STEP_S) return
     t += dt
-    bouncer!.position.copy(rest).addScaledVector(offset, bouncerStepAmount(t))
+    bouncer.position.copy(rest).addScaledVector(offset, bouncerStepAmount(t))
   }
 
   return { block, update }

@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "zone": "work_district",
+  "prices": {
+    "food_coffee": 15,
+    "food_cookie": 5,
+    "food_croissant": 12,
+    "food_orange_juice": 14,
+    "food_sandwich": 30,
+    "food_water_bottle": 8
+  },
+  "buyers": {}
+}

@@ -3,7 +3,6 @@ import { computed, onMounted, onUnmounted, ref, shallowReactive, shallowRef, wat
 import { useRouter } from 'vue-router'
 import type { Room } from '@colyseus/sdk'
 import {
-  DEFAULT_SLOT_COLORS,
   wearModelsFromLoadout,
   defaultCosmeticColors,
   emptyCosmeticLoadout,
@@ -22,8 +21,6 @@ import GamePlayerInventoryPanel from '../components/game/GamePlayerInventoryPane
 import GamePointerLockOverlay from '../components/game/GamePointerLockOverlay.vue'
 import GameSettingsDialog from '../components/game/GameSettingsDialog.vue'
 import GameStoreItemCard from '../components/game/GameStoreItemCard.vue'
-import GameCafeMenu from '../components/game/GameCafeMenu.vue'
-import GameOrchardSellMenu from '../components/game/GameOrchardSellMenu.vue'
 import GameZoneBuyerMenu from '../components/game/GameZoneBuyerMenu.vue'
 import GamePubMenu from '../components/game/GamePubMenu.vue'
 import GamePubSecretDialog from '../components/game/GamePubSecretDialog.vue'
@@ -43,10 +40,7 @@ import ItemShopPurchaseConfirmModal from '../components/shop/ItemShopPurchaseCon
 import GameRoomMessageBanner from '../components/game/GameRoomMessageBanner.vue'
 import UiIcon from '../components/ui/UiIcon.vue'
 import { useApartmentObjects } from '../composables/game/useApartmentObjects'
-import { useCafeCounter } from '../composables/game/useCafeCounter'
 import { useClinic } from '../composables/game/useClinic'
-import { useFurnitureStore } from '../composables/game/useFurnitureStore'
-import { useClothingStore } from '../composables/game/useClothingStore'
 import { useHouseFurniture } from '../composables/game/useHouseFurniture'
 import { useHouseKeys } from '../composables/game/useHouseKeys'
 import { useApartmentPlacement } from '../composables/game/useApartmentPlacement'
@@ -81,22 +75,7 @@ import { LOCK_RETRY_MS, isLockReleaseEscape } from '../game/pauseMenu'
 import { createGameScene, disposeGameScene, type GameScene } from '../game/gameScene'
 import { createFirstPersonArms } from '../game/firstPersonArms'
 import { createHeldItem } from '../game/heldItem'
-import {
-  CANDY_CLOUD,
-  COVE_HOME,
-  COVE_THREADS,
-  CRISPINS_HARDWARE,
-  GREENCART,
-  HEARTH_HOLLOW,
-  NORTHLINE,
-  SUMMIT_SPORTS,
-  consumableModelUrl,
-  decorModelUrl,
-  findHouse,
-  findStore,
-  findWork,
-  type StoreDisplay,
-} from '../game/assets/catalog'
+import { COVE_HOME, COVE_THREADS, findHouse, findStore, findWork } from '../game/assets/catalog'
 import type { WorldBounds } from '../game/world/worldManifest'
 import type { GearSlot } from '../game/wardrobeSlots'
 import { createSfx } from '../game/sfx'
@@ -230,17 +209,6 @@ const {
 
 // ---------------------------------------------------------------- stores: Cove Home (click to buy), the mall's shops (basket paid at the cashier), Cove Threads, Northline and Summit (basket)
 
-const MALL_FURNITURE_STORES = [
-  { spec: HEARTH_HOLLOW, modelUrl: (display: StoreDisplay) => decorModelUrl(display.key), clerkColors: { top: '#c47c4c', bottom: '#3b3f4a' } },
-  { spec: GREENCART, modelUrl: (display: StoreDisplay) => consumableModelUrl(display.code), clerkColors: { top: '#3c9a3c', bottom: '#2a2e35' } },
-  { spec: CRISPINS_HARDWARE, modelUrl: (display: StoreDisplay) => decorModelUrl(display.key), clerkColors: { top: '#e07a2e', bottom: '#2f3338' } },
-  { spec: CANDY_CLOUD, modelUrl: (display: StoreDisplay) => consumableModelUrl(display.code), clerkColors: { top: '#f4b3c8', bottom: '#38a3c9' } },
-]
-const MALL_CLOTHING_STORES = [
-  { spec: NORTHLINE, clerkColors: { top: '#1b1d22', bottom: '#f4f2ee' } },
-  { spec: SUMMIT_SPORTS, clerkColors: { top: '#1b1d22', bottom: '#f0b429' } },
-]
-
 /** The mall stores sell through a basket: the cashier prompt needs the canvas, paying refreshes the inventory. */
 const mallStoreDeps = {
   getCamera,
@@ -249,56 +217,26 @@ const mallStoreDeps = {
   promptsHidden: () => inventoryOpen.value,
   onPurchased: () => refreshOwnedItems(),
 }
-const furnitureStores = shallowReactive<CellStoreEntry[]>([
-  { key: COVE_HOME.key, brand: COVE_HOME.name, store: useFurnitureStore({ inStore: () => currentHouseKey.value === COVE_HOME.key, getCamera, myPosition }) },
-  ...MALL_FURNITURE_STORES.map(({ spec, modelUrl, clerkColors }) => ({
-    key: spec.key,
-    brand: spec.name,
-    store: useFurnitureStore({
-      ...mallStoreDeps,
-      inStore: () => currentHouseKey.value === spec.key,
-      store: { key: spec.key, interiorLayoutUrl: spec.interiorLayoutUrl, modelUrl, clerkColors: { ...DEFAULT_SLOT_COLORS, ...clerkColors }, priceTags: false },
-    }),
-  })),
-])
+const furnitureStores = shallowReactive<CellStoreEntry[]>([])
 const mallCellTemplates = useMallCellTemplates({ getScene, storeDeps: mallStoreDeps, addStore: (entry) => furnitureStores.push(entry) })
 const zoneDecor = useZoneDecor({
   getScene,
   storeDeps: mallStoreDeps,
   addStore: (entry) => furnitureStores.push(entry),
-  insideOtherStore: () => mallCellTemplates.currentStoreKey.value !== null || currentHouseKey.value !== null,
+  insideOtherStore: () => mallCellTemplates.currentStoreKey.value !== null,
   getGameRoom: () => gameRoomRef.value,
+  onStaff: (role, npc) => {
+    if (role === 'bartender' || role === 'bouncer') pub.onStaff(role, npc)
+  },
 })
-const activeFurniture = computed(() => furnitureStores.find((s) => s.key === (mallCellTemplates.currentStoreKey.value ?? currentHouseKey.value ?? zoneDecor.currentStoreKey.value)) ?? null)
+const activeFurniture = computed(() => {
+  const keys = [mallCellTemplates.currentStoreKey.value, zoneDecor.currentStoreKey.value]
+  return keys.map((key) => furnitureStores.find((s) => s.key === key)).find((store) => store !== undefined) ?? null
+})
 const storeBrand = computed(() => activeFurniture.value?.brand ?? COVE_HOME.name)
 const storeTarget = computed(() => activeFurniture.value?.store.target.value ?? null)
 const storeDepartment = computed(() => activeFurniture.value?.store.currentDepartment.value ?? null)
 const inThreads = computed(() => currentHouseKey.value === COVE_THREADS.key)
-const clothingDeps = {
-  getCamera,
-  canvasRef,
-  myPosition,
-  promptsHidden: () => inventoryOpen.value,
-  onPurchased: () => refreshOwnedItems(),
-  getScene,
-  getFpHands: () => game?.fpHands ?? null,
-  myOutfit: () => myCosmetics.value,
-}
-const clothingEntries = [
-  { key: COVE_THREADS.key, name: COVE_THREADS.name, store: useClothingStore({ ...clothingDeps, inStore: () => inThreads.value }) },
-  ...MALL_CLOTHING_STORES.map(({ spec, clerkColors }) => ({
-    key: spec.key,
-    name: spec.name,
-    store: useClothingStore({
-      ...clothingDeps,
-      inStore: () => currentHouseKey.value === spec.key,
-      store: { key: spec.key, interiorLayoutUrl: spec.interiorLayoutUrl, clerkColors: { ...DEFAULT_SLOT_COLORS, ...clerkColors } },
-    }),
-  })),
-]
-const clothingStores = clothingEntries.map((entry) => entry.store)
-const activeClothingEntry = computed(() => clothingEntries.find((entry) => entry.key === currentHouseKey.value) ?? null)
-const activeClothing = computed(() => activeClothingEntry.value?.store ?? null)
 const myCosmetics = shallowRef<CharacterCosmeticsState | null>(null)
 
 function onWardrobeChanged(state: CharacterCosmeticsState): void {
@@ -315,13 +253,12 @@ function onOutfit(change: { state: CharacterCosmeticsState; returnedCode: string
   if (change.returnedCode && change.toSlot !== null) placeInSlot(change.returnedCode, change.toSlot, change.wornCode)
   refreshOwnedItems()
 }
-const clothesTarget = computed(() => activeClothing.value?.target.value ?? null)
 /** The store whose basket the HUD shows: a clothing store, or a mall store that pays at its counter. */
-const basketStore = computed(() => activeClothing.value ?? (activeFurniture.value?.store.hasCounter.value ? activeFurniture.value.store : null))
-const basketTitle = computed(() => activeClothingEntry.value?.name ?? activeFurniture.value?.brand ?? COVE_THREADS.name)
+const basketStore = computed(() => (activeFurniture.value?.store.hasCounter.value ? activeFurniture.value.store : null))
+const basketTitle = computed(() => activeFurniture.value?.brand ?? '')
 const basketItems = computed(() => basketStore.value?.basket.value ?? [])
 const basketTotal = computed(() => basketStore.value?.basketTotal.value ?? 0)
-const checkoutOpen = computed(() => clothingStores.some((s) => s.checkoutOpen.value) || furnitureStores.some((s) => s.store.checkoutOpen.value))
+const checkoutOpen = computed(() => furnitureStores.some((s) => s.store.checkoutOpen.value))
 const basketPaying = computed(() => basketStore.value?.paying.value ?? false)
 const basketFeedback = computed(() => basketStore.value?.feedback.value ?? null)
 const counterPrompt = computed(() => basketStore.value?.counterPrompt.value ?? null)
@@ -497,16 +434,14 @@ watch(pubUiOpen, (open) => {
 const orchard = useOrchard({
   myPosition,
   getCamera,
-  getScene,
   canvasRef,
   gameRoomRef,
   getArms: () => arms,
   promptsHidden: () => inventoryOpen.value || !canUsePub(),
-  itemByCode: () => itemByCode.value,
   refreshInventory: () => refreshOwnedItems(),
   say: (text) => survival.say(text),
 })
-const { menuOpen: orchardMenuOpen, selling: orchardSelling, feedback: orchardFeedback, pickProgress: orchardPickProgress } = orchard
+const { pickProgress: orchardPickProgress } = orchard
 const zoneBuyers = useZoneBuyers({
   myPosition,
   getCamera,
@@ -531,9 +466,6 @@ const pickBar = computed(() => {
   if (orchardPickProgress.value !== null) return { progress: orchardPickProgress.value, label: 'Picking an apple…' }
   if (farm.pickProgress.value !== null) return { progress: farm.pickProgress.value, label: farm.pickLabel.value }
   return null
-})
-watch(orchardMenuOpen, (open) => {
-  if (!open && !document.pointerLockElement) requestPointerLock()
 })
 watch(zoneBuyerOpen, (buyer) => {
   if (!buyer && !document.pointerLockElement) requestPointerLock()
@@ -562,11 +494,6 @@ const interactions = useInteractionTargets({
   // Fishing gameplay is not built yet: the spots only show their prompt.
   onFishingSpot: () => window.alert('implement pechee'),
   storeTarget: () => {
-    const clothes = clothesTarget.value
-    if (clothes) {
-      const action = clothes.owned ? 'owned' : clothes.inBasket ? 'in basket' : clothes.coins !== null ? `${clothes.coins} coins` : 'not on sale'
-      return { position: clothes.tagPosition, detail: `${clothes.name} · ${action}` }
-    }
     const target = storeTarget.value
     if (!target) return null
     const price = target.coins !== null ? `${target.name} · ${target.coins} coins` : target.name
@@ -576,8 +503,7 @@ const interactions = useInteractionTargets({
     return { position: target.tagPosition, detail: `${target.inBasket ? `${price} · in basket` : price}${look}`, action: target.inBasket ? 'Remove' : 'Add' }
   },
   onStoreTarget: () => {
-    if (clothesTarget.value) activeClothing.value?.toggleTarget()
-    else if (activeFurniture.value?.store.hasCounter.value) activeFurniture.value.store.toggleTarget(useWithShift)
+    if (activeFurniture.value?.store.hasCounter.value) activeFurniture.value.store.toggleTarget(useWithShift)
     else openStorePurchase()
   },
   sources: [pub.source, pubChallenge.source, pubGames.source, seats.source, orchard.source, farm.source, zoneBuyers.source],
@@ -615,7 +541,7 @@ const trade = useTrade({
   refreshInventory: () => refreshOwnedItems(),
   onCoins: (balance) => applyCachedBalanceAfterPurchase('coins', balance),
   onClothesChanged: () => {
-    for (const store of clothingStores) void store.refreshOwned()
+    for (const { store } of furnitureStores) void store.refreshOwned()
     void fetchCharacterCosmetics().then(onWardrobeChanged).catch(() => {
       /* the look catches up on the next window focus */
     })
@@ -672,7 +598,7 @@ const survival = useSurvival({
   onBelongingsLost: (clothes) => {
     refreshOwnedItems()
     if (!clothes) return
-    for (const store of clothingStores) void store.refreshOwned()
+    for (const { store } of furnitureStores) void store.refreshOwned()
     void fetchCharacterCosmetics().then(onWardrobeChanged).catch(() => {
       /* the look catches up on the next window focus */
     })
@@ -705,47 +631,16 @@ const {
 const intoxication = useIntoxication({ reducedEffects })
 const { effects: drunkEffects, canvasFilter: drunkCanvasFilter } = intoxication
 
-const cafe = useCafeCounter({
-  myPosition,
-  getCamera,
-  canvasRef,
-  promptsHidden: () => inventoryOpen.value,
-  refreshInventory: () => refreshOwnedItems(),
-})
-const {
-  prompt: cafePrompt,
-  menuOpen: cafeMenuOpen,
-  menu: cafeMenu,
-  loading: cafeLoading,
-  buyingId: cafeBuyingId,
-  feedback: cafeFeedback,
-} = cafe
-// Back to mouse look once the menu closes.
-watch(cafeMenuOpen, (open) => {
-  if (!open && !document.pointerLockElement) requestPointerLock()
-})
-
 const clinic = useClinic({
   myPosition,
   getCamera,
   canvasRef,
   gameRoomRef,
   promptsHidden: () => inventoryOpen.value,
-  refreshInventory: () => refreshOwnedItems(),
   health: () => survival.stats.value?.health ?? null,
   say: survival.say,
 })
-const {
-  prompt: clinicPrompt,
-  menuOpen: clinicMenuOpen,
-  menu: clinicMenu,
-  loading: clinicLoading,
-  buyingId: clinicBuyingId,
-  feedback: clinicFeedback,
-} = clinic
-watch(clinicMenuOpen, (open) => {
-  if (!open && !document.pointerLockElement) requestPointerLock()
-})
+const { prompt: clinicPrompt } = clinic
 
 /** Key settings opened from the pause screen. */
 const settingsOpen = ref(false)
@@ -828,14 +723,6 @@ const environment = useRoomEnvironment({
     zoneDecor.onTownLoaded(manifest).catch((error: unknown) => console.error('[zones] zone decor failed to load', error))
     minimap.onTownLoaded(manifest)
     houseFurniture.onTownReady()
-    for (const { key, store } of furnitureStores) {
-      const interior = openHouseInterior(key)
-      if (interior) void store.attach(interior)
-    }
-    for (const { key, store } of clothingEntries) {
-      const interior = openHouseInterior(key)
-      if (interior) void store.attach(interior)
-    }
   },
   onError: (message) => {
     roomMessage.value = message
@@ -856,16 +743,14 @@ function loadTown(): void {
 
 /**
  * The interact action (right click / G by default, like Minecraft's "use"): unlock with the key in hand, doors and
- * shops, the cafe counter, the clinic desk, then what is held in hand (food, fountain sips).
+ * shops, the clinic nurse, then what is held in hand (food, fountain sips).
  */
 function useAction(): void {
   if (housing.unlock()) arms?.use('key')
   else
     void (
       interactions.tryInteract() ||
-      clothingStores.some((s) => s.tryOpenCheckout()) ||
       furnitureStores.some((s) => s.store.tryOpenCheckout()) ||
-      cafe.tryOpen() ||
       clinic.tryInteract() ||
       survival.onPrimaryDown()
     )
@@ -922,12 +807,9 @@ const pauseMenuOpen = computed(
     !pointerLocked.value &&
     !inventoryOpen.value &&
     !switchingRoom.value &&
-    !cafeMenuOpen.value &&
-    !clinicMenuOpen.value &&
     !checkoutOpen.value &&
     !tradeUiOpen.value &&
     !pubUiOpen.value &&
-    !orchardMenuOpen.value &&
     !zoneBuyerOpen.value &&
     !settingsOpen.value,
 )
@@ -1013,7 +895,6 @@ const movement = useGameMovement({
     mallCellTemplates.tick(dt, myPosition)
     zoneDecor.tick(dt, myPosition)
     for (const { store } of furnitureStores) store.update(dt)
-    for (const store of clothingStores) store.update(dt)
     threadsMusic.update(dt, inThreads.value)
     zoneMusic?.update(dt, (currentHouseKey.value === null || currentHouseKey.value === zoneMusicKey) && insideBounds(zoneMusicBounds, myPosition))
     interactions.updatePrompts()
@@ -1024,8 +905,6 @@ const movement = useGameMovement({
     heldItem.update(arms?.rightHand() ?? null, held.url, held.scale)
     survival.tick(dt)
     stamina.value = punch.staminaNow()
-    cafe.updatePrompt()
-    for (const store of clothingStores) store.updatePrompt()
     for (const { store } of furnitureStores) store.updatePrompt()
     clinic.updatePrompt()
     pub.tick(dt)
@@ -1303,13 +1182,6 @@ const crosshairClass = computed(() => {
       :detail-label="counterPrompt.detail"
     />
     <GameInteractionPrompt
-      v-if="cafePrompt && !doorPrompt"
-      :screen-x="cafePrompt.x"
-      :screen-y="cafePrompt.y"
-      :action-label="cafePrompt.action"
-      :detail-label="cafePrompt.detail"
-    />
-    <GameInteractionPrompt
       v-if="clinicPrompt && !doorPrompt"
       :screen-x="clinicPrompt.x"
       :screen-y="clinicPrompt.y"
@@ -1486,26 +1358,6 @@ const crosshairClass = computed(() => {
       @confirm="trade.confirm"
       @cancel="trade.cancel"
     />
-    <GameCafeMenu
-      v-if="cafeMenuOpen"
-      title="Campus Cafe"
-      :items="cafeMenu"
-      :loading="cafeLoading"
-      :buying-id="cafeBuyingId"
-      :feedback="cafeFeedback"
-      @buy="cafe.buy"
-      @close="cafe.close"
-    />
-    <GameCafeMenu
-      v-if="clinicMenuOpen"
-      title="Cove Clinic"
-      :items="clinicMenu"
-      :loading="clinicLoading"
-      :buying-id="clinicBuyingId"
-      :feedback="clinicFeedback"
-      @buy="clinic.buy"
-      @close="clinic.close"
-    />
     <GameZoneBuyerMenu
       v-if="zoneBuyerOpen"
       :area="zoneBuyerOpen.area"
@@ -1515,14 +1367,6 @@ const crosshairClass = computed(() => {
       :item-name="zoneBuyers.itemName"
       @sell="zoneBuyers.sell"
       @close="zoneBuyers.close"
-    />
-    <GameOrchardSellMenu
-      v-if="orchardMenuOpen"
-      :carried="orchard.carried()"
-      :selling="orchardSelling"
-      :feedback="orchardFeedback"
-      @sell="orchard.sell"
-      @close="orchard.close"
     />
     <div
       v-if="pickBar"

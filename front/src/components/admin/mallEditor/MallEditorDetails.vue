@@ -22,7 +22,7 @@ import {
 import type { WorldBounds } from '../../../game/world/worldManifest'
 import { MAX_PEN_SIDE, MIN_PEN_SIDE } from '../../../game/animals/animals.ts'
 import { MAX_BUILDING_HEIGHT, MAX_BUILDING_SIDE, MAX_ROOF, MIN_ROOF } from '../../../game/buildings/buildings.ts'
-import { BUILDING_PARTS, BUILDING_SIDES, type BuildingOpening, type BuildingPart, type BuildingProp } from '../../../game/mallTemplates/mallTemplate.ts'
+import { BUILDING_PARTS, BUILDING_SIDES, STAFF_ROLES, type BuildingOpening, type BuildingPart, type BuildingProp, type StaffRole } from '../../../game/mallTemplates/mallTemplate.ts'
 import EditorColorPicker from './EditorColorPicker.vue'
 import EditorLookEditor from './EditorLookEditor.vue'
 import EditorSearchSelect, { type SelectOption } from './EditorSearchSelect.vue'
@@ -283,6 +283,12 @@ function setPrice(value: string): void {
   if (item.value) change({ ...item.value, price: Number(value) })
 }
 
+function setDescription(value: string): void {
+  if (!item.value) return
+  const { description: _, ...rest } = item.value
+  change(value.trim() ? { ...rest, description: value.trim() } : rest)
+}
+
 const wearChoices = computed(() =>
   Object.fromEntries(
     WEAR_SLOTS.map((slot) => {
@@ -293,6 +299,15 @@ const wearChoices = computed(() =>
     }),
   ) as Record<WearSlot, SelectOption[]>,
 )
+
+const ROLE_OPTIONS: SelectOption[] = [{ value: '', label: '(none)' }, ...STAFF_ROLES.map((role) => ({ value: role, label: role }))]
+
+function setRole(role: string): void {
+  const f = figure.value
+  if (f?.kind !== 'npc') return
+  const { role: _, ...rest } = f
+  change(role ? { ...rest, role: role as StaffRole } : rest)
+}
 
 const vendorAllowed = computed(() => figure.value?.kind === 'npc' && figure.value.pose === 'idle' && figure.value.scale.every((s) => s === 1))
 
@@ -327,9 +342,22 @@ function setPieceSale(slot: WearSlot, on: boolean): void {
   setOutfit(slot, (current) => {
     if (!current) return null
     const code = wearCode(slot, current.key)
-    const { code: _, ...rest } = current
-    return on && code ? { ...rest, forSale: true, code } : { ...rest, forSale: false }
+    const { code: _, price: _price, ...rest } = current as MannequinPiece
+    if (!on || !code) return { ...rest, forSale: false }
+    const price = props.zonePrices?.[code]
+    return price === undefined ? { ...rest, forSale: true, code } : { ...rest, forSale: true, code, price }
   })
+}
+
+function setPiecePrice(slot: WearSlot, value: string): void {
+  setOutfit(slot, (current) => (current ? { ...current, price: Number(value) } : null))
+}
+
+function setBodyHidden(hidden: boolean): void {
+  const f = figure.value
+  if (f?.kind !== 'mannequin') return
+  const { bodyHidden: _, ...rest } = f
+  change(hidden ? { ...rest, bodyHidden: true } : rest)
 }
 
 function setSurface(surface: Surface, look: MaterialLook | null): void {
@@ -463,6 +491,10 @@ const flatMaterials = computed(() => props.materialOptions.filter((o) => !o.prev
             <input type="number" min="1" step="1" class="cc-input py-1 text-sm" :value="item.price" @change="setPrice(($event.target as HTMLInputElement).value)" />
           </label>
           <p v-if="item.forSale && zonePrices && zonePrices[item.code] !== undefined" class="m-0 text-xs text-mist">Shop price elsewhere: {{ zonePrices[item.code] }}</p>
+          <label v-if="item.forSale" class="flex flex-col gap-1 text-xs text-mist">
+            Description
+            <textarea rows="2" class="cc-input py-1 text-sm" :value="item.description ?? ''" placeholder="Shown when a player looks at it" @change="setDescription(($event.target as HTMLTextAreaElement).value)" />
+          </label>
         </div>
         <div v-if="light" class="grid grid-cols-[5.5rem_1fr] items-center gap-2 rounded-lg bg-ink-950/50 p-2">
           <span class="text-xs text-mist">Colour</span>
@@ -474,6 +506,10 @@ const flatMaterials = computed(() => props.materialOptions.filter((o) => !o.prev
               <span class="text-xs text-mist">Pose</span>
               <EditorSearchSelect :model-value="figure.pose" :options="POSES" :searchable="false" :disabled="figure.vendor" @update:model-value="change({ ...figure, pose: $event as NpcPose })" />
             </div>
+            <div v-if="bounds" class="grid grid-cols-[5.5rem_1fr] items-center gap-2" title="The pub bartender and bouncer, the clinic nurse: the game takes their place from this NPC">
+              <span class="text-xs text-mist">Staff role</span>
+              <EditorSearchSelect :model-value="figure.role ?? ''" :options="ROLE_OPTIONS" :searchable="false" @update:model-value="setRole($event)" />
+            </div>
             <p v-if="bounds" class="m-0 text-xs text-mist">Sellers and buyers are set in the Sellers map.</p>
             <label v-else class="flex items-center gap-2 text-xs text-mist">
               <input type="checkbox" :checked="figure.vendor" :disabled="!figure.vendor && (vendorTaken || !vendorAllowed)" :title="!figure.vendor && !vendorAllowed ? 'A cashier stands (pose standing) at scale 1' : ''" @change="change({ ...figure, vendor: ($event.target as HTMLInputElement).checked })" />
@@ -484,6 +520,10 @@ const flatMaterials = computed(() => props.materialOptions.filter((o) => !o.prev
             <span class="text-xs text-mist">{{ figure.kind === 'npc' ? 'Skin' : 'Body' }}</span>
             <EditorColorPicker :model-value="figure.body" @update:model-value="change({ ...figure, body: $event })" />
           </div>
+          <label v-if="figure.kind === 'mannequin'" class="flex items-center gap-2 text-xs text-mist">
+            <input type="checkbox" :checked="figure.bodyHidden === true" @change="setBodyHidden(($event.target as HTMLInputElement).checked)" />
+            Clothes only (no body)
+          </label>
           <p class="cc-eyebrow m-0 pt-1 text-mist">Outfit</p>
           <div v-for="slot in WEAR_SLOTS" :key="slot" class="flex flex-col gap-1 border-t border-ink-700/70 pt-1.5">
             <div class="grid grid-cols-[5.5rem_1fr] items-center gap-2">
@@ -498,6 +538,10 @@ const flatMaterials = computed(() => props.materialOptions.filter((o) => !o.prev
               <span v-else class="text-xs text-mist">Colour</span>
               <EditorColorPicker :model-value="piece(slot)!.color" @update:model-value="setPieceColor(slot, $event)" />
             </div>
+            <label v-if="figure.kind === 'mannequin' && zonePrices && (piece(slot) as MannequinPiece).forSale" class="grid grid-cols-[5.5rem_1fr] items-center gap-2 text-xs text-mist">
+              Price (coins)
+              <input type="number" min="1" step="1" class="cc-input py-1 text-sm" :value="(piece(slot) as MannequinPiece).price" @change="setPiecePrice(slot, ($event.target as HTMLInputElement).value)" />
+            </label>
           </div>
         </div>
       </template>

@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "zone": "clinic",
+  "prices": {
+    "med_bandage": 10,
+    "med_medkit": 50,
+    "med_painkillers": 20
+  },
+  "buyers": {}
+}

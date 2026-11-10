@@ -15,7 +15,7 @@ import {
   type MallTemplate,
   type TemplateAssignments,
 } from '../src/game/mallTemplates/mallTemplate.ts'
-import { parseBuildingProp, parseZoneDecor, parseZoneDecorIndex, zoneDecorJson, zonePriceFile, type ZoneDecorIndex } from '../src/game/zoneDecor/zoneDecor.ts'
+import { parseBuildingProp, parseZoneDecor, parseZoneDecorIndex, withStaff, zoneDecorJson, zonePriceFile, type ZoneDecorIndex } from '../src/game/zoneDecor/zoneDecor.ts'
 import { buildingPreviewKey, parseBuildings, type BuildingTable } from '../src/game/buildings/buildings.ts'
 import type { BuildingProp } from '../src/game/mallTemplates/mallTemplate.ts'
 import { parseCrops, type CropTable } from '../src/game/crops/crops.ts'
@@ -167,7 +167,7 @@ function mallTemplatesApi(assets: string, backendZones: string, repo: string) {
   }
 
   function decoratableZones() {
-    return manifestZones().filter((zone) => zone.key !== 'mall')
+    return manifestZones()
   }
 
   function exteriorOf(zoneKey: string, building: ManifestBuilding) {
@@ -226,7 +226,6 @@ function mallTemplatesApi(assets: string, backendZones: string, repo: string) {
   }
 
   function decoratableZone(key: string) {
-    if (key === 'mall') throw new HttpError(400, 'the mall is decorated cell by cell with templates')
     const zone = manifestZones().find((z) => z.key === key)
     if (!zone) throw new HttpError(404, `no zone ${key} in world.manifest.json`)
     return zone
@@ -296,6 +295,9 @@ function mallTemplatesApi(assets: string, backendZones: string, repo: string) {
         writeJson(join(backendZones, `${zoneKey}.json`), zonePriceFile(decor))
       }
       if (!index.zones.includes(zoneKey)) writeJson(zoneIndexPath, { version: 1, zones: [...index.zones, zoneKey].sort() })
+      const manifest = readJson(join(assets, 'world.manifest.json')) as WorldManifest
+      const staffed = withStaff(manifest, decor)
+      if (JSON.stringify(staffed) !== JSON.stringify(manifest)) writeFileSync(join(assets, 'world.manifest.json'), `${JSON.stringify(staffed, null, 2)}\n`)
       return { zone: json, prices: backendReachable ? 'written' : 'pending' }
     }
     const cellId = /^assignments\/([A-Z][0-9]{2})$/.exec(path)?.[1]

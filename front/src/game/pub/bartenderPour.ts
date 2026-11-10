@@ -34,13 +34,16 @@ export function createBartenderPour(interior: THREE.Group, layout: PubLayout) {
   const toLocal = interior.matrixWorld.clone().invert()
   const tapsSpot = new THREE.Vector3().fromArray(layout.taps).applyMatrix4(toLocal)
   const serveSpot = new THREE.Vector3().fromArray(layout.serve).applyMatrix4(toLocal)
-  const bartender = interior.getObjectByName('NPC_Bartender') ?? null
-  const restRotation = bartender?.rotation.y ?? 0
-  const pourRotation = bartender ? restRotation + yawTowards(bartender.position, tapsSpot) - yawTowards(bartender.position, bartenderFacing(bartender, layout)) : 0
+  let bartender: THREE.Object3D | null = null
+  let restRotation = 0
+  let pourRotation = 0
 
-  function bartenderFacing(npc: THREE.Object3D, pub: PubLayout): THREE.Vector3 {
-    const ahead = new THREE.Vector3(-Math.sin(pub.bartenderYaw), 0, -Math.cos(pub.bartenderYaw))
-    return new THREE.Vector3().fromArray(pub.bartender).add(ahead).applyMatrix4(toLocal).setY(npc.position.y)
+  function setBartender(npc: THREE.Object3D): void {
+    bartender = npc
+    restRotation = npc.rotation.y
+    const at = npc.getWorldPosition(new THREE.Vector3())
+    const ahead = at.clone().add(new THREE.Vector3(-Math.sin(layout.bartenderYaw), 0, -Math.cos(layout.bartenderYaw)))
+    pourRotation = restRotation + yawTowards(at, new THREE.Vector3().fromArray(layout.taps)) - yawTowards(at, ahead)
   }
 
   function yawTowards(from: THREE.Vector3, to: THREE.Vector3): number {
@@ -158,5 +161,5 @@ export function createBartenderPour(interior: THREE.Group, layout: PubLayout) {
     if (bartender) bartender.rotation.y = restRotation
   }
 
-  return { pour, serve, servedCode, pickUp, update, dispose }
+  return { pour, serve, servedCode, pickUp, update, dispose, setBartender }
 }

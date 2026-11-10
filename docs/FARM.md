@@ -19,7 +19,8 @@ Le chou et la citrouille utilisent le même modèle comme plant et comme objet.
 
 ## Vente des récoltes
 
-Le fermier tient la zone acheteur **Farmer's stand** (carte **Sellers** de l'éditeur) : maïs et pommes de terre à 3
+Au verger, le fermier est un NPC de `zones/orchard.json` qui tient la zone acheteur **Apple stall** (pommes à 3 pièces
+jusqu'à 300 par jour, puis 1), avec le même menu de vente que la ferme. Le fermier de la ferme tient la zone acheteur **Farmer's stand** (carte **Sellers** de l'éditeur) : maïs et pommes de terre à 3
 pièces jusqu'à 300 par jour puis 1, chou à 4 jusqu'à 200, citrouille à 6 jusqu'à 100, puis 1. En jeu, viser le fermier
 ouvre le menu de vente (`zone_sell` → socket, qui vérifie qu'on est à 3 m de lui → `POST /api/zone/sell`).
 

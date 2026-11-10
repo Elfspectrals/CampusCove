@@ -7,7 +7,7 @@ import { disposeAvatarAnimations, updateAvatarAnimation } from '../../avatar/glb
 import { decorModelUrl, isConsumableCode } from '../../game/assets/catalog'
 import { fetchCollisionFile, setPropBlocker } from '../../game/collision/worldCollision'
 import { ANIMALS_URL, animalPose, type AnimalClip, type AnimalDef } from '../../game/animals/animals.ts'
-import { itemModelUrl, type AnimalProp, type ItemProp, type MannequinProp, type NpcProp, type Vec3 } from '../../game/mallTemplates/mallTemplate.ts'
+import { itemModelUrl, type AnimalProp, type ItemProp, type MannequinProp, type NpcProp, type StaffRole, type Vec3 } from '../../game/mallTemplates/mallTemplate.ts'
 import { animals, createAnimal, createPropObject, modelSize, npcColors, placeProp, type AnimalRig } from '../../game/mallTemplates/templateProps'
 import { configureRoomMeshShadows, normalizeRoomMaterials } from '../../game/sceneLighting'
 import type { WorldBounds, WorldManifest, WorldZone } from '../../game/world/worldManifest'
@@ -41,6 +41,7 @@ export interface ZoneDecorDeps {
   addStore: (entry: CellStoreEntry) => void
   insideOtherStore: () => boolean
   getGameRoom: () => Room | null
+  onStaff: (role: StaffRole, npc: THREE.Object3D) => void
 }
 
 interface StoreArea {
@@ -124,6 +125,7 @@ export function useZoneDecor(deps: ZoneDecorDeps) {
     if (prop.kind === 'npc') npcs.push(object)
     else disposeAvatarAnimations(object)
     if (prop.kind === 'mannequin') store?.bindFigure(prop.id, object)
+    if (prop.kind === 'npc' && prop.role) deps.onStaff(prop.role, object)
     const [x, y, z] = prop.position
     const { hx, hy, hz } = NPC_HALF_EXTENTS
     const [sx, sy, sz] = prop.scale
@@ -202,7 +204,7 @@ export function useZoneDecor(deps: ZoneDecorDeps) {
         key,
         layout,
         modelUrl: (display) => itemModelUrl(display),
-        priceTags: false,
+        priceTags: area.priceTags ?? false,
         coinPrices: new Map(Object.entries(zonePrices(decor))),
         checkout: (items) => zoneCheckout(zone.key, items),
         clerkColors: npcColors(vendor),

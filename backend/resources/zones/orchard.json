@@ -4,5 +4,13 @@
   "prices": {
     "decor_bar_stool": 70
   },
-  "buyers": {}
+  "buyers": {
+    "apple_buyer": {
+      "farm_apple": {
+        "price": 3,
+        "quota": 300,
+        "overPrice": 1
+      }
+    }
+  }
 }

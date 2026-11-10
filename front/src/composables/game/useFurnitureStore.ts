@@ -3,7 +3,7 @@ import * as THREE from 'three'
 import type { CosmeticColors } from '../../api/characterCosmetics'
 import { fetchAccountInventory } from '../../api/inventory'
 import { checkoutShopBasket, fetchItemShopCatalog, type ShopItem } from '../../api/itemShop'
-import { COVE_HOME, decorModelUrl, type StoreDisplay, type StoreLayout } from '../../game/assets/catalog'
+import type { StoreDisplay, StoreLayout } from '../../game/assets/catalog'
 import { createGltfLoader } from '../../game/gltfLoaderFactory'
 import { configureRoomMeshShadows } from '../../game/sceneLighting'
 import { freshDisplayGroup } from '../../game/store/displayGroup'
@@ -33,7 +33,7 @@ export interface FurnitureStoreDeps {
   getCamera: () => THREE.Camera | undefined
   myPosition: { x: number; y: number; z: number }
   /** The store this instance serves; Cove Home (decor models) when omitted. */
-  store?: FurnitureStoreSpec
+  store: FurnitureStoreSpec
   /** Stores with a counter draw the "Pay" prompt on the canvas and refresh the inventory after paying. */
   canvasRef?: Ref<HTMLCanvasElement | null>
   promptsHidden?: () => boolean
@@ -55,8 +55,6 @@ interface FurnitureStoreSpec {
   coinPrices?: ReadonlyMap<string, number>
   checkout?: (shopCatalogItemIds: number[]) => Promise<unknown>
 }
-
-const COVE_HOME_SPEC: FurnitureStoreSpec = { key: COVE_HOME.key, interiorLayoutUrl: COVE_HOME.interiorLayoutUrl, modelUrl: (display) => decorModelUrl(display.key) }
 
 /** Furthest (XZ, metres) an item can be picked from, and the widest angle off the crosshair. */
 const PICK_DISTANCE = 4.2
@@ -130,7 +128,7 @@ function ownMaterials(model: THREE.Object3D): THREE.MeshStandardMaterial[] {
  */
 export function useFurnitureStore(deps: FurnitureStoreDeps) {
   const loader = createGltfLoader()
-  const store = deps.store ?? COVE_HOME_SPEC
+  const store = deps.store
   const withTags = store.priceTags ?? true
   const layout = shallowRef<StoreLayout | null>(null)
   const catalogByCode = shallowRef<Map<string, ShopItem>>(new Map())
@@ -527,6 +525,7 @@ export function useFurnitureStore(deps: FurnitureStoreDeps) {
   }
 
   return {
+    refreshOwned: refreshCatalog,
     target: target as Readonly<Ref<StoreTarget | null>>,
     currentDepartment,
     hasCounter,

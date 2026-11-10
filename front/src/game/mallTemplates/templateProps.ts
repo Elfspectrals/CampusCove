@@ -52,7 +52,7 @@ export function propSignature(prop: TemplateProp): string {
   if (prop.kind === 'field') return JSON.stringify(['field', prop.id, prop.crop, prop.size, prop.pattern])
   if (prop.kind === 'animal') return JSON.stringify(['animal', prop.animal, prop.size])
   if (prop.kind === 'building') return JSON.stringify(['building', buildingPreviewKey(prop)])
-  if (prop.kind === 'mannequin') return JSON.stringify(['mannequin', prop.body, prop.outfit])
+  if (prop.kind === 'mannequin') return JSON.stringify(['mannequin', prop.body, prop.outfit, prop.bodyHidden ?? false])
   if (prop.kind === 'light') return JSON.stringify(['light', prop.light, prop.color, prop.intensity, prop.range, prop.angle, prop.pitch])
   return JSON.stringify([prop.kind, propModelUrl(prop), prop.kind === 'item' ? prop.stack : null, prop.kind === 'decor' ? (prop.materials ?? null) : null])
 }
@@ -78,8 +78,14 @@ export function npcColors(npc: NpcProp | MannequinProp): SlotHexes {
   return colors
 }
 
-function createMannequin(mannequin: MannequinProp): Promise<THREE.Object3D> {
-  return createModularCharacter(outfitModels(mannequin.outfit), npcColors(mannequin), DEFAULT_SLOT_COLORS)
+async function createMannequin(mannequin: MannequinProp): Promise<THREE.Object3D> {
+  const character = await createModularCharacter(outfitModels(mannequin.outfit), npcColors(mannequin), DEFAULT_SLOT_COLORS)
+  if (mannequin.bodyHidden) {
+    character.traverse((obj) => {
+      if (typeof obj.userData.region === 'string') obj.visible = false
+    })
+  }
+  return character
 }
 
 async function createNpc(npc: NpcProp): Promise<THREE.Object3D> {

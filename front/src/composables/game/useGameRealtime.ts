@@ -59,7 +59,6 @@ import type {
   FarmErrorPayload,
   FarmPickedPayload,
   OrchardPickedPayload,
-  OrchardSoldPayload,
   ZoneSellErrorPayload,
   ZoneSoldPayload,
 } from '../../types/gameRealtime'
@@ -171,7 +170,6 @@ export interface GameRealtimeDeps {
   }
   orchard: {
     onPicked: (data: OrchardPickedPayload) => void
-    onSold: (data: OrchardSoldPayload) => void
     onError: (data: OrchardErrorPayload) => void
   }
   farm: {
@@ -324,7 +322,6 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('pub_race_challenge_result', (data: PubRaceChallengeResultPayload) => deps.pubChallenge.onResult(data))
     room.onMessage('pub_race_challenge_cancelled', (data: PubRaceChallengeCancelledPayload) => deps.pubChallenge.onCancelled(data))
     room.onMessage('orchard_picked', (data: OrchardPickedPayload) => deps.orchard.onPicked(data))
-    room.onMessage('orchard_sold', (data: OrchardSoldPayload) => deps.orchard.onSold(data))
     room.onMessage('orchard_error', (data: OrchardErrorPayload) => deps.orchard.onError(data))
     room.onMessage('zone_sold', (data: ZoneSoldPayload) => deps.zoneBuyers.onSold(data))
     room.onMessage('zone_sell_error', (data: ZoneSellErrorPayload) => deps.zoneBuyers.onError(data))
