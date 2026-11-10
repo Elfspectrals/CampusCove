@@ -240,7 +240,7 @@ function animalModel(key: string): Promise<{ scene: THREE.Object3D; clips: THREE
     const url = animalModelUrl(key)
     model = loader.loadAsync(url).then((gltf) => {
       const missing = ANIMAL_CLIPS.filter((name) => !gltf.animations.some((clip) => clip.name === name))
-      if (missing.length) throw new Error(`${url}: missing clips ${missing.join(', ')}, run build_animals.py`)
+      if (missing.length) throw new Error(`${url}: missing clips ${missing.join(', ')}, run build_barnyard.py`)
       return { scene: gltf.scene, clips: gltf.animations }
     })
     model.catch(() => animalModels.delete(key))

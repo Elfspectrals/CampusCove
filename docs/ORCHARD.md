@@ -26,7 +26,7 @@ Décisions produit (validées les 02 et 03/11/2026) :
 | Blender | `map-src/CampusCove/build_pond.py` (porte ouest, encoche dans la crête, chemin depuis la boucle, décor retiré du passage), `build_orchard_site.py` (chemin, étal, verger, abri, colliders, points monde), `front/scripts/skins/wear.py` (tenue du fermier), `front/scripts/apply-orchard.mjs` |
 | Assets | `front/public/assets/park/orchard_site/`, `park/pond/`, `town/town.collision.json`, `world.manifest.json` (zone `orchard` + section `orchard`), `wear/{head_accessory/straw_hat,top/plaid_shirt,top/farm_apron,bottom/dungarees}/`, `items/farm/apple/` (provisoire) |
 | API | `backend/app/Support/FoodCatalog.php` (`farm_apple`), `OrchardController`, `OrchardService`, `OrchardRejectedException`, routes `realtime` dans `routes/api.php`, `tests/Feature/OrchardApiTest.php` |
-| Socket | `socket/src/orchard.ts` (+ `orchard.test.ts`), `world.ts` (`parseOrchard`), `CityRoom.ts` (3 messages), `types.ts` / `players.ts` (`orchardPick`) |
+| Socket | `socket/src/orchard.ts` (+ `orchard.test.ts`), `world.ts` (`parseOrchard`), `CityRoom.ts` (4 messages), `types.ts` / `players.ts` (`orchardPick`, `lastPickStartAt`) |
 | Front | `front/src/game/orchard.ts` (+ test), `composables/game/useOrchard.ts`, `components/game/GameOrchardSellMenu.vue`, `game/store/storeClerk.ts` (options `outfit` / `brighten`), `game/assets/catalog.ts` (préfixe `farm_`), `useGameRealtime.ts`, `GameView.vue`, `types/gameRealtime.ts`, `game/world/worldManifest.ts` |
 
 ## 2. Valeurs partagées
@@ -45,13 +45,17 @@ Décisions produit (validées les 02 et 03/11/2026) :
 
 | Client → socket | Socket → API | Réponse |
 |---|---|---|
-| `orchard_pick_start { tree }` | — (le socket note l'arbre et l'heure) | `orchard_error` si arbre inconnu ou trop loin |
-| `orchard_pick` (après 3 s) | `POST /api/orchard/pick` | `orchard_picked { code, quantity }` |
+| `orchard_pick_start { tree }` | — (le socket note l'arbre et l'heure) | `orchard_error` si arbre inconnu, trop loin ou relancé moins de 300 ms après le précédent départ (`PICK_RESTART_MS`) ; sinon `user_picking { sessionId, picking: true }` aux autres joueurs |
+| `orchard_pick_cancel` (relâché, éloigné, fenêtre quittée) | — | `user_picking { sessionId, picking: false }` aux autres joueurs ; ignoré sans cueillette en cours |
+| `orchard_pick` (après 3 s) | `POST /api/orchard/pick` | `orchard_picked { code, quantity }` ; `user_picking { picking: false }` aux autres joueurs dès qu'une cueillette en cours se termine |
 | `orchard_sell { quantity }` | `POST /api/orchard/sell` | `orchard_sold { sold, coins, balance_after, full_price_left }` |
 
 Erreurs : `orchard_error { message, code }`. Codes socket : `orchard_unknown_tree`, `orchard_too_far`,
-`orchard_not_picking`, `orchard_too_fast`, `orchard_bad_quantity`, `no_orchard`. Codes API : `pick_too_fast`,
+`orchard_not_picking`, `orchard_too_fast`, `orchard_pick_cooldown`, `orchard_bad_quantity`, `no_orchard`. Codes API : `pick_too_fast`,
 `basket_full`, `not_enough_apples`. Une pomme entamée ne se vend pas.
+
+`user_picking` joue le clip `Pick` (3 s, une fois) sur l'avatar distant ; `picking: false` le ramène en fondu vers
+Idle / Walk / Run. Un skin sans clip `Pick` l'ignore.
 
 ## 4. Reconstruire
 

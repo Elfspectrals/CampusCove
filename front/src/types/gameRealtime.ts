@@ -21,6 +21,11 @@ export interface UserSeatedPayload {
   seatId: string | null
 }
 
+export interface UserPickingPayload {
+  sessionId: string
+  picking: boolean
+}
+
 /** Another player ate or drank (socket/src/survival.ts); `code` is the food item, null for a fountain sip. */
 export interface UserActionPayload {
   sessionId: string

@@ -78,6 +78,7 @@ export interface Player extends Vec3 {
   lastBouncerBlockAt: number
   orchardPick: { tree: number, startedAt: number } | null
   farmPick: { plant: number, startedAt: number } | null
+  lastPickStartAt: number
   decoratedTemplateKey?: string | null
   appearance: Record<AppearanceSlot, number | null>
   slotHexes: Record<AppearanceSlot, string>

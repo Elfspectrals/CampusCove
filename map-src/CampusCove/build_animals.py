@@ -1,7 +1,11 @@
+import contextlib
 import importlib
+import io
 import math
 import os
 import sys
+
+import bmesh
 
 if "__file__" not in globals():
     raise RuntimeError('Run with exec(open(p).read(), {"__file__": p}) so the script can find lib_common.py')
@@ -11,230 +15,180 @@ if HERE not in sys.path:
 import lib_common as L
 importlib.reload(L)
 import bpy
-import numpy as np
 from mathutils import Matrix, Vector
 
+SRC_DIR = os.path.normpath(os.path.join(HERE, "..", "..", "docs", "quaternius"))
 ONLY = globals().get("ONLY_ANIMALS")
-FPS = 30
-IDLE_S = 4.0
-GRAZE_S = 3.0
-PECK_S = 2.0
-MAX_SWING = 0.5
-AXIS_SIDE = Vector((1, 0, 0))
-AXIS_UP = Vector((0, 0, 1))
-PREVIEWS = os.path.join(L.FRONT_ASSETS, "animals")
-SPEEDS = L._read_json(os.path.join(L.FRONT_ASSETS, "animals", "animals.json"))["animals"]
-
-QUADRUPED_GAIT = {"HL": 0.0, "FL": 0.25, "HR": 0.5, "FR": 0.75}
-BIRD_GAIT = {"L": 0.0, "R": 0.5}
-
-ANIMALS = {
-    "cow": dict(slug="a_single_black_and_white_dairy_cow_stand", head=1, legs=4, leg_top=0.5, neck=0.66, skull=0.82, graze=1.25, step_s=1.2),
-    "pig": dict(slug="a_single_pink_farm_pig_standing_side_vie", head=1, legs=4, leg_top=0.38, neck=0.72, skull=0.84, graze=0.45, step_s=0.8),
-    "sheep": dict(slug="a_single_fluffy_white_sheep_standing_sid", head=1, legs=4, leg_top=0.42, neck=0.68, skull=0.82, graze=0.6, step_s=1.0),
-    "dog": dict(slug="a_single_brown_farm_dog_standing_side_vi", head=1, legs=4, leg_top=0.48, neck=0.7, skull=0.82, graze=0.7, step_s=0.45),
-    "hen": dict(slug="a_single_brown_hen_standing_side_view_wi", head=1, legs=2, leg_top=0.24, neck=0.62, skull=0.78, graze=1.0, step_s=0.5),
-    "rooster": dict(slug="one_rooster_with_a_single_head_and_red_c", head=1, legs=2, leg_top=0.24, neck=0.62, skull=0.78, graze=1.0, step_s=0.5),
-}
-
-sc = L.new_build_scene("ANIMALS")
-sc.render.fps = FPS
-coll = bpy.data.collections.new("Animals")
-sc.collection.children.link(coll)
+OUT_DIR = os.path.join(L.OUT_ROOT, "animals")
+SKINS_DIR = os.path.normpath(os.path.join(HERE, "..", "..", "front", "scripts", "skins")) + "/"
+POSE = {"SKINS_DIR": SKINS_DIR, "bpy": bpy}
+exec(open(SKINS_DIR + "anim.py", encoding="utf8").read(), POSE)
+min_jerk = POSE["min_jerk"]
 
 
-def smoothstep(edge0, edge1, x):
-    t = np.clip((x - edge0) / (edge1 - edge0), 0.0, 1.0)
-    return t * t * (3 - 2 * t)
+def import_rig(path):
+    if not os.path.isfile(path):
+        raise FileNotFoundError(f"{path} missing: the CC0 source rigs live in docs/quaternius (see its README)")
+    objects_before = set(bpy.data.objects)
+    actions_before = set(bpy.data.actions)
+    with contextlib.redirect_stdout(io.StringIO()):
+        bpy.ops.import_scene.gltf(filepath=path)
+    imported = [o for o in bpy.data.objects if o not in objects_before]
+    arm = next(o for o in imported if o.type == "ARMATURE")
+    world = arm.matrix_world.copy()
+    arm.parent = None
+    arm.matrix_world = world
+    for o in imported:
+        if o is not arm:
+            bpy.data.objects.remove(o, do_unlink=True)
+    clips = set()
+    for action in [a for a in bpy.data.actions if a not in actions_before]:
+        clip = action.name.split("|")[-1].lower()
+        stale = bpy.data.actions.get(clip)
+        if stale is not None:
+            bpy.data.actions.remove(stale)
+        action.name = clip
+        clips.add(clip)
+    return arm, clips
 
 
-def body_mesh(key, cfg):
-    meshes = L.import_ai_model(coll, cfg["slug"], f"AN_{key.capitalize()}")
-    obj = L.join(coll, f"Animal_{key}", meshes)
-    obj.data.transform(Matrix.Rotation(-math.pi / 2 * cfg["head"], 4, "Z") @ obj.matrix_world)
-    obj.matrix_world = Matrix.Identity(4)
-    verts = np.array([v.co[:] for v in obj.data.vertices])
-    lo, hi = verts.min(0), verts.max(0)
-    obj.data.transform(Matrix.Translation((-(lo[0] + hi[0]) / 2, -(lo[1] + hi[1]) / 2, -lo[2])))
-    return obj
+def ellipsoid(bm, center, size, seg=8, rings=6, tilt=0.0):
+    geom = bmesh.ops.create_uvsphere(bm, u_segments=seg, v_segments=rings, radius=0.5)
+    place = Matrix.Translation(center) @ Matrix.Rotation(tilt, 4, "X") @ Matrix.Diagonal((*size, 1.0))
+    bmesh.ops.transform(bm, matrix=place, verts=geom["verts"])
 
 
-def find_legs(key, verts, cfg, height):
-    low = verts[verts[:, 2] < 0.2 * height]
-    ahead = -low[:, 1]
-    if cfg["legs"] == 4:
-        middle = (ahead.min() + ahead.max()) / 2
-        groups = {
-            "FL": (ahead >= middle) & (low[:, 0] >= 0),
-            "FR": (ahead >= middle) & (low[:, 0] < 0),
-            "HL": (ahead < middle) & (low[:, 0] >= 0),
-            "HR": (ahead < middle) & (low[:, 0] < 0),
-        }
-    else:
-        spread = low[:, :2] - low[:, :2].mean(0)
-        apart = spread @ np.linalg.svd(spread, full_matrices=False)[2][0]
-        groups = {"L": apart >= 0, "R": apart < 0}
-    legs = {}
-    for name, mask in groups.items():
-        if mask.sum() < 8:
-            raise RuntimeError(f"{key}: leg {name} has {mask.sum()} vertices near the ground, regenerate the model with the legs apart")
-        foot = low[mask][:, :2]
-        centre = foot.mean(0)
-        legs[name] = (centre, float(np.percentile(np.linalg.norm(foot - centre, axis=1), 95)) * 1.3)
-    return legs
+def spike(bm, base, direction, radius, length, seg=4):
+    geom = bmesh.ops.create_cone(bm, cap_ends=True, segments=seg, radius1=radius, radius2=0.0, depth=length)
+    axis = Vector(direction).normalized()
+    place = Matrix.Translation(Vector(base) + axis * length / 2) @ axis.to_track_quat("Z", "Y").to_matrix().to_4x4()
+    bmesh.ops.transform(bm, matrix=place, verts=geom["verts"])
 
 
-def build_rig(key, obj, cfg):
-    verts = np.array([v.co[:] for v in obj.data.vertices])
-    height = verts[:, 2].max()
-    ahead = -verts[:, 1]
-    rear, front = ahead.min(), ahead.max()
-    length = front - rear
-    leg_top = cfg["leg_top"] * height
-    knee = leg_top * 0.5
-    spine_z = leg_top + 0.4 * (height - leg_top)
-    s = (ahead - rear) / length
-    head_z = float(verts[s > cfg["skull"], 2].mean())
-    legs = find_legs(key, verts, cfg, height)
-
-    def at(frac, z):
-        return Vector((0.0, -(rear + frac * length), z))
-
-    arm_data = bpy.data.armatures.new(f"Rig_{key}")
-    arm = bpy.data.objects.new(f"Rig_{key}", arm_data)
-    coll.objects.link(arm)
-    bpy.ops.object.select_all(action="DESELECT")
-    bpy.context.view_layer.objects.active = arm
-    bpy.ops.object.mode_set(mode="EDIT")
-
-    def bone(name, head, tail, parent=None):
-        b = arm_data.edit_bones.new(name)
-        b.head, b.tail = head, tail
-        if parent:
-            b.parent = arm_data.edit_bones[parent]
-        return b
-
-    bone("hips", at(0.15, spine_z), at(0.45, spine_z))
-    bone("chest", at(0.45, spine_z), at(cfg["neck"], spine_z), "hips")
-    bone("neck", at(cfg["neck"], spine_z), at(cfg["skull"], head_z), "chest")
-    bone("head", at(cfg["skull"], head_z), at(1.0, head_z), "neck")
-    for name, (centre, _) in legs.items():
-        x, y = float(centre[0]), float(centre[1])
-        parent = "chest" if name.startswith("F") else "hips"
-        bone(f"leg_{name}", Vector((x, y, leg_top)), Vector((x, y, knee)), parent)
-        bone(f"shin_{name}", Vector((x, y, knee)), Vector((x, y, 0.0)), f"leg_{name}")
-    bpy.ops.object.mode_set(mode="OBJECT")
-
-    z = verts[:, 2]
-    centres = [("hips", 0.3), ("chest", (0.45 + cfg["neck"]) / 2), ("neck", (cfg["neck"] + cfg["skull"]) / 2), ("head", min(1.0, cfg["skull"] + 0.08))]
-    weights = {name: np.zeros(len(verts)) for name, _ in centres}
-    for (a, sa), (b, sb) in zip(centres, centres[1:]):
-        f = np.clip((s - sa) / (sb - sa), 0.0, 1.0)
-        span = (s >= sa) & (s < sb)
-        weights[a][span] += 1 - f[span]
-        weights[b][span] += f[span]
-    weights["hips"][s < centres[0][1]] = 1.0
-    weights["head"][s >= centres[-1][1]] = 1.0
-    lifted = np.where(s < cfg["skull"], smoothstep(spine_z - 0.2 * height, spine_z, z), 1.0)
-    for name in ("neck", "head"):
-        dropped = weights[name] * (1 - lifted)
-        weights[name] -= dropped
-        weights["chest"] += dropped
-
-    centres_xy = np.array([c for c, _ in legs.values()])
-    nearest = np.argmin(np.linalg.norm(verts[:, None, :2] - centres_xy[None], axis=2), axis=1)
-    blend = 0.12 * leg_top
-    for i, (name, (centre, radius)) in enumerate(legs.items()):
-        mine = (nearest == i) & (np.linalg.norm(verts[:, :2] - centre, axis=1) < radius) & (z < leg_top)
-        on_leg = np.where(mine, smoothstep(leg_top, leg_top - 0.2 * leg_top, z), 0.0)
-        upper = smoothstep(knee - blend, knee + blend, z)
-        for body in weights:
-            if not body.startswith(("leg_", "shin_")):
-                weights[body] *= 1 - on_leg
-        weights[f"leg_{name}"] = on_leg * upper
-        weights[f"shin_{name}"] = on_leg * (1 - upper)
-
-    for name, w in weights.items():
-        group = obj.vertex_groups.new(name=name)
-        for i in np.nonzero(w > 1e-4)[0]:
-            group.add([int(i)], float(w[i]), "REPLACE")
-    obj.parent = arm
-    obj.modifiers.new("Armature", "ARMATURE").object = arm
-    return arm, legs, height, leg_top
+def rod(bm, top, bottom, radius, seg=6):
+    top, bottom = Vector(top), Vector(bottom)
+    geom = bmesh.ops.create_cone(bm, cap_ends=True, segments=seg, radius1=radius, radius2=radius, depth=(top - bottom).length)
+    axis = (top - bottom).normalized()
+    place = Matrix.Translation((top + bottom) / 2) @ axis.to_track_quat("Z", "Y").to_matrix().to_4x4()
+    bmesh.ops.transform(bm, matrix=place, verts=geom["verts"])
 
 
-def pose_at(cfg, clip, t, legs, height, leg_top, speed):
-    rot = {}
-    loc = {}
-    bird = cfg["legs"] == 2
-    if clip == "walk":
-        period = cfg["step_s"]
-        gait = BIRD_GAIT if bird else QUADRUPED_GAIT
-        swing = min(MAX_SWING, math.atan(speed * period / 2 / leg_top) * 0.85)
-        for name in legs:
-            phase = 2 * math.pi * (t / period + gait[name])
-            rot[f"leg_{name}"] = Matrix.Rotation(-swing * math.sin(phase), 3, AXIS_SIDE)
-            rot[f"shin_{name}"] = Matrix.Rotation(0.7 * max(0.0, math.cos(phase)), 3, AXIS_SIDE)
-        bob = 4 * math.pi * t / period
-        loc["hips"] = Vector((0, 0, (0.03 if bird else 0.012) * height * math.cos(bob)))
-        rot["neck"] = Matrix.Rotation((0.18 if bird else 0.05) * math.sin(bob), 3, AXIS_SIDE)
-    elif clip == "idle":
-        look = math.sin(2 * math.pi * t / IDLE_S)
-        rot["neck"] = Matrix.Rotation((0.5 * look ** 3) if bird else 0.25 * look, 3, AXIS_UP)
-        loc["hips"] = Vector((0, 0, 0.006 * height * math.sin(4 * math.pi * t / IDLE_S)))
-    else:
-        if bird:
-            u = (t % (PECK_S / 2)) / (PECK_S / 2)
-            dip = math.sin(math.pi * min(1.0, u / 0.35)) ** 2 if u < 0.35 else 0.0
-            rot["neck"] = Matrix.Rotation(cfg["graze"] * dip, 3, AXIS_SIDE)
-        else:
-            chew = math.sin(4 * math.pi * t / GRAZE_S)
-            rot["neck"] = Matrix.Rotation(cfg["graze"] + 0.05 * chew, 3, AXIS_SIDE)
-            rot["head"] = Matrix.Rotation(0.15 + 0.08 * chew, 3, AXIS_SIDE)
-    return rot, loc
+def skinned_piece(coll, arm, name, mat, bone, *shapes):
+    bm = bmesh.new()
+    for shape, *args in shapes:
+        shape(bm, *args)
+    bm.normal_update()
+    L._box_uv(bm, 0.25)
+    me = bpy.data.meshes.new(name)
+    bm.to_mesh(me)
+    bm.free()
+    me.materials.append(mat)
+    ob = bpy.data.objects.new(name, me)
+    coll.objects.link(ob)
+    ob.vertex_groups.new(name=bone).add(range(len(me.vertices)), 1.0, "REPLACE")
+    ob.parent = arm
+    ob.matrix_parent_inverse = arm.matrix_world.inverted()
+    ob.modifiers.new("Armature", "ARMATURE").object = arm
+    return ob
 
 
-def animate(arm, cfg, legs, height, leg_top, speed):
-    for pb in arm.pose.bones:
-        pb.rotation_mode = "QUATERNION"
-    arm.animation_data_create()
-    clips = {"idle": IDLE_S, "walk": cfg["step_s"], "graze": PECK_S if cfg["legs"] == 2 else GRAZE_S}
-    for clip, seconds in clips.items():
-        arm.animation_data.action = None
-        frames = round(seconds * FPS)
-        for frame in range(frames + 1):
-            rot, loc = pose_at(cfg, clip, frame / frames * seconds, legs, height, leg_top, speed)
-            for pb in arm.pose.bones:
-                rest = pb.bone.matrix_local.to_3x3()
-                inverse = rest.inverted()
-                pb.rotation_quaternion = (inverse @ rot.get(pb.name, Matrix.Identity(3)) @ rest).to_quaternion()
-                pb.location = inverse @ loc.get(pb.name, Vector())
-                pb.keyframe_insert("rotation_quaternion", frame=frame)
-                pb.keyframe_insert("location", frame=frame)
-        action = arm.animation_data.action
-        action.name = f"{clip}_{arm.name}"
-        track = arm.animation_data.nla_tracks.new()
-        track.name = clip
-        track.strips.new(clip, 0, action)
-        arm.animation_data.action = None
-    for pb in arm.pose.bones:
-        pb.rotation_quaternion = (1, 0, 0, 0)
-        pb.location = (0, 0, 0)
+def bird_walk(arm, leg_height, sweep=18.0, duty=0.7, nod=6.0, roll=3.0):
+    to_arm = 1.0 / arm.scale[0]
+
+    def leg_angle(s):
+        if s < duty:
+            return -sweep + 2 * sweep * s / duty
+        return sweep - 2 * sweep * min_jerk((s - duty) / (1 - duty))
+
+    def head_hold_then_thrust(t):
+        return min_jerk(t / 0.75) if t < 0.75 else 1 - min_jerk((t - 0.75) / 0.25)
+
+    def f(ph, P):
+        drops = []
+        for bone, touchdown in (("Leg.L", 0.0), ("Leg.R", 0.5)):
+            s = (ph - touchdown) % 1.0
+            angle = leg_angle(s)
+            P.rx(bone, angle)
+            if s < duty:
+                drops.append(leg_height * (1 - math.cos(math.radians(angle))))
+        for bone in ("Root", "Body"):
+            P.move(bone, 0, min(drops) * to_arm, 0)
+        P.rz("Body", roll * math.sin(2 * math.pi * ph))
+        P.rx("Body", nod * (0.5 - head_hold_then_thrust((2 * ph) % 1.0)))
+    return f
 
 
-def ship(key, cfg):
-    obj = body_mesh(key, cfg)
-    arm, legs, height, leg_top = build_rig(key, obj, cfg)
-    animate(arm, cfg, legs, height, leg_top, SPEEDS[key]["speed"])
-    bpy.context.view_layer.update()
-    out = os.path.join(L.OUT_ROOT, "animals", key)
-    L.export_glb(os.path.join(out, "model.glb"), [arm, obj], export_skins=True, export_animations=True,
-                 export_animation_mode="NLA_TRACKS", export_force_sampling=True, export_frame_range=False)
-    os.makedirs(os.path.join(PREVIEWS, key), exist_ok=True)
-    L.render_preview(sc, obj, os.path.join(PREVIEWS, key, "preview.png"))
-    obj.hide_render = True
-    return {"key": key, "tris": sum(len(p.vertices) - 2 for p in obj.data.polygons), "dims": tuple(round(x, 3) for x in obj.dimensions), "legs": sorted(legs)}
+def scale_to_height(arm, pieces, height):
+    top = max((o.matrix_world @ v.co).z for o in pieces for v in o.data.vertices)
+    arm.scale = arm.scale * (height / top)
+    arm.location = (0.0, 0.0, 0.0)
 
 
-results = [ship(key, cfg) for key, cfg in ANIMALS.items() if not ONLY or key in ONLY]
-print("ANIMALS", results)
+def triangles(pieces):
+    return sum(sum(len(p.vertices) - 2 for p in o.data.polygons) for o in pieces)
+
+
+def export_animal(key, sc, arm, pieces, preview_cam, clips):
+    foreign = sorted(a.name for a in bpy.data.actions if a.name not in clips)
+    if foreign:
+        raise RuntimeError(f"{key}: actions {foreign} would leak into the GLB (ACTIONS mode exports every action); remove them first")
+    idle = bpy.data.actions["idle"]
+    arm.animation_data.action = idle
+    arm.animation_data.action_slot = idle.slots[0]
+    sc.frame_set(0)
+    low = min((o.matrix_world @ Vector(c)).z for o in pieces for c in o.bound_box)
+    if not 0.0 <= low <= 0.03:
+        raise RuntimeError(f"{key}: lowest point at {low:.3f} m, expected between 0 and 0.03")
+    out = os.path.join(OUT_DIR, key)
+    L.export_glb(os.path.join(out, "model.glb"), [arm, *pieces], export_animations=True, export_animation_mode="ACTIONS", export_skins=True, export_anim_slide_to_zero=True)
+    L.snapshot(sc, os.path.join(out, "preview.png"), preview_cam, (0.0, 0.2, 0.0), lens=50.0, res=(512, 512))
+    print(f"{key}: {triangles(pieces)} tris, {len(pieces)} pieces, clips {sorted(clips)}")
+
+
+def chicken():
+    sc = L.new_build_scene("ANIMALS_chicken")
+    coll = bpy.data.collections.new("Chicken")
+    sc.collection.children.link(coll)
+    arm, clips = import_rig(os.path.join(SRC_DIR, "chicken.glb"))
+    feather = L.make_mat("AN_Chicken_Feather", "#f6efe2", 0.9, "noise", 0.04, accent="#e8dcc6")
+    wing = L.make_mat("AN_Chicken_Wing", "#ebdfca", 0.9, "noise", 0.05)
+    comb = L.make_mat("AN_Chicken_Comb", "#ff8f8f", 0.8, "noise", 0.05)
+    beak = L.make_mat("AN_Chicken_Beak", "#ffbf69", 0.7, "noise", 0.04)
+    eye = L.make_mat("AN_Chicken_Eye", "#5b4a6e", 0.4, "noise", 0.02)
+
+    def leg(side, x):
+        toes = [(spike, (x, 0.03, 0.03), (dx, -1.0, 0.0), 0.025, 0.13) for dx in (-0.5, 0.0, 0.5)]
+        return skinned_piece(coll, arm, f"Chicken_Leg_{side}", beak, f"Leg.{side}",
+                             (rod, (x, 0.031, 0.36), (x, 0.031, 0.04), 0.03),
+                             (spike, (x, 0.03, 0.03), (0.0, 1.0, 0.0), 0.025, 0.07), *toes)
+
+    def wing_piece(side, x):
+        return skinned_piece(coll, arm, f"Chicken_Wing_{side}", wing, "Body",
+                             (ellipsoid, (x, 0.08, 0.64), (0.08, 0.46, 0.32), 8, 6, -0.25))
+
+    pieces = [
+        skinned_piece(coll, arm, "Chicken_Body", feather, "Body", (ellipsoid, (0.0, 0.05, 0.62), (0.56, 0.78, 0.6), 8, 6, -0.15)),
+        skinned_piece(coll, arm, "Chicken_Head", feather, "Body", (ellipsoid, (0.0, -0.28, 0.98), (0.36, 0.36, 0.4))),
+        skinned_piece(coll, arm, "Chicken_Beak", beak, "Body", (spike, (0.0, -0.42, 0.97), (0.0, -1.0, -0.15), 0.06, 0.14)),
+        skinned_piece(coll, arm, "Chicken_Wattle", comb, "Body", (ellipsoid, (0.0, -0.43, 0.86), (0.07, 0.06, 0.11), 6, 4)),
+        skinned_piece(coll, arm, "Chicken_Comb", comb, "Body",
+                      *[(ellipsoid, (0.0, y, z), (0.06, 0.1, 0.12), 6, 4) for y, z in ((-0.36, 1.17), (-0.27, 1.21), (-0.18, 1.17))]),
+        skinned_piece(coll, arm, "Chicken_Eyes", eye, "Body",
+                      *[(ellipsoid, (x, -0.36, 1.03), (0.03, 0.06, 0.07), 6, 4) for x in (-0.16, 0.16)]),
+        skinned_piece(coll, arm, "Chicken_Tail", feather, "Body",
+                      *[(spike, (0.0, 0.36, 0.72), (dx, 0.6, 1.0), 0.09, 0.32) for dx in (-0.35, 0.0, 0.35)]),
+        wing_piece("L", 0.29),
+        wing_piece("R", -0.29),
+        leg("L", 0.106),
+        leg("R", -0.106),
+    ]
+    scale_to_height(arm, pieces, 0.45)
+    POSE["sample_actions"](arm, {"walk": (20, bird_walk(arm, leg_height=0.128))}, fps=sc.render.fps)
+    export_animal("chicken", sc, arm, pieces, (0.9, 0.45, 1.1), clips | {"walk"})
+
+
+ANIMALS = {"chicken": chicken}
+
+for key, build in ANIMALS.items():
+    if ONLY is None or key in ONLY:
+        build()

@@ -36,7 +36,7 @@ Les espèces sont dans `front/public/assets/animals/animals.json` (libellé, vit
 
 | Espèce | Source |
 |---|---|
-| `cow`, `pig`, `sheep`, `dog`, `hen`, `rooster` | `make model` (vue de profil, pattes écartées), squelette, poids et clips générés par `build_animals.py` |
+| `cow`, `pig`, `sheep`, `dog`, `hen`, `rooster` | `make model` (vue de profil, pattes écartées), squelette, poids et clips générés par `build_barnyard.py` |
 
 Les animaux n'ont pas de collision : l'enclos se ferme avec les décors `fence_panel`, `fence_gate` ou `wire_panel`, et
 on y laisse le passage libre (un animal traverse les décors posés dans son rectangle).
@@ -47,11 +47,11 @@ Nouvel animal :
 make model "a single brown goat standing side view with four legs apart" HEIGHT=0.8 TRIS=1200
 ```
 
-ajouter l'espèce dans `animals.json` et dans `ANIMALS` de `build_animals.py` (dossier `out/ai/<slug>`, tête à droite de
+ajouter l'espèce dans `animals.json` et dans `ANIMALS` de `build_barnyard.py` (dossier `out/ai/<slug>`, tête à droite de
 l'image = `head=1`, `legs`, hauteurs relatives `leg_top`, `neck`, `skull`), puis :
 
 ```bash
-blender --background --factory-startup --python-expr "ONLY_ANIMALS=['<clé>']; p='map-src/CampusCove/build_animals.py'; exec(open(p).read(), {'__file__': p, 'ONLY_ANIMALS': ONLY_ANIMALS})"
+blender --background --factory-startup --python-expr "ONLY_ANIMALS=['<clé>']; p='map-src/CampusCove/build_barnyard.py'; exec(open(p).read(), {'__file__': p, 'ONLY_ANIMALS': ONLY_ANIMALS})"
 node front/scripts/optimize-assets.mjs animals <clé>
 ```
 

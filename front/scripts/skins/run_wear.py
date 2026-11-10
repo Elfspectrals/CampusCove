@@ -23,7 +23,7 @@ for o in list(sc.objects):
 body_coll = wipe("WEAR_BASE")
 arm = build_armature(None, "Armature_base")
 body_objs = build_base_body(body_coll, arm)
-sample_actions(arm, make_clips(None))
+sample_actions(arm, {**make_clips(None), "Pick": (90, pose_pick())})
 piece_coll = wipe("WEAR_PIECES")
 pieces = {}
 for slot, spec in WEAR.items():

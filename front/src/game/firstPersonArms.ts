@@ -1,33 +1,34 @@
 import * as THREE from 'three'
+import { firstPersonWalkTimeScale } from '../avatar/avatarAnimationLogic'
 import { wearTopFpArmsUrl } from './assets/catalog'
 import { createGltfLoader } from './gltfLoaderFactory'
 
-const WALK_SPEED = 0.5
+const MIN_WALK_SPEED = 0.5
 const BASE_FADE_S = 0.2
 const ONE_SHOT_FADE_S = 0.06
 const PUNCH_FADE_S = 0.02
-const ONE_SHOT_CLIPS = ['Equip', 'UseDoor', 'UseKey', 'Punch', 'PunchL'] as const
+const PICK_CANCEL_FADE_S = 0.15
+const ONE_SHOT_CLIPS = ['Equip', 'UseDoor', 'UseKey', 'Punch', 'PunchL', 'Pick', 'Eat', 'Drink'] as const
+const HELD_CLIPS = ['Pick', 'Eat', 'Drink'] as const
 
 /**
  * A procedural arm pose, in camera space (the arms root sits at the camera): where the hand goes, which way the
- * forearm points (elbow -> hand), and which way the back of the wrist faces (null = no roll constraint).
+ * forearm points (elbow -> hand), and which way the back of the wrist faces.
  * The arm is blended towards it after the mixer, so the clips keep playing underneath.
  */
 interface ArmPose {
   hand: THREE.Vector3
   forearm: THREE.Vector3
-  wristFacing: THREE.Vector3 | null
+  wristFacing: THREE.Vector3
 }
 
 /**
- * Left wrist raised in front of the eyes to read the survival watch; right hand bringing food to the mouth.
+ * Left wrist raised in front of the eyes to read the survival watch.
  * Tunable live in dev (window.__ccArmPoses).
  */
 const ARM_POSES = {
   watch: { hand: new THREE.Vector3(0.03, -0.07, -0.36), forearm: new THREE.Vector3(0.85, 0.3, -0.25), wristFacing: new THREE.Vector3(0, 0.25, 1) },
-  eat: { hand: new THREE.Vector3(0.03, -0.11, -0.2), forearm: new THREE.Vector3(-0.55, 0.6, -0.5), wristFacing: null },
   watchSpeed: 7,
-  eatDurationS: 0.9,
 }
 if (import.meta.env?.DEV && typeof window !== 'undefined') {
   ;(window as unknown as { __ccArmPoses: typeof ARM_POSES }).__ccArmPoses = ARM_POSES
@@ -55,7 +56,6 @@ export function createFirstPersonArms(container: THREE.Group) {
   let oneShot: THREE.AnimationAction | null = null
   let watchTarget = 0
   let watchWeight = 0
-  let eatT = -1
   let frozenFor = 0
   let leftPunchNext = false
   const poseQuat = new THREE.Quaternion()
@@ -88,9 +88,21 @@ export function createFirstPersonArms(container: THREE.Group) {
     oneShot = next
   }
 
+  function isPlaying(...names: (typeof HELD_CLIPS)[number][]): boolean {
+    return oneShot !== null && names.some((name) => oneShot === actions.get(name))
+  }
+
+  function cancelPick(): void {
+    if (!oneShot || !isPlaying('Pick')) return
+    oneShot.fadeOut(PICK_CANCEL_FADE_S)
+    base?.reset().fadeIn(PICK_CANCEL_FADE_S).play()
+    oneShot = null
+  }
+
   function onFinished(e: { action: THREE.AnimationAction }): void {
     if (e.action !== oneShot) return
     oneShot = null
+    if (e.action.clampWhenFinished) e.action.fadeOut(BASE_FADE_S)
     base?.reset().fadeIn(BASE_FADE_S).play()
   }
 
@@ -128,6 +140,7 @@ export function createFirstPersonArms(container: THREE.Group) {
         mixer = new THREE.AnimationMixer(model)
         actions = new Map(gltf.animations.map((clip) => [clip.name, mixer!.clipAction(clip)]))
         for (const name of ONE_SHOT_CLIPS) action(name).setLoop(THREE.LoopOnce, 1)
+        for (const name of HELD_CLIPS) action(name).clampWhenFinished = true
         mixer.addEventListener('finished', onFinished)
         playBase('Idle')
       })
@@ -140,7 +153,8 @@ export function createFirstPersonArms(container: THREE.Group) {
     if (!mixer) return
     const speed = dt > 0 ? Math.hypot(position.x - lastPosition.x, position.z - lastPosition.z) / dt : 0
     lastPosition.set(position.x, 0, position.z)
-    if (!oneShot) playBase(speed > WALK_SPEED ? 'Walk' : 'Idle')
+    if (!oneShot) playBase(speed > MIN_WALK_SPEED ? 'Walk' : 'Idle')
+    if (base && base === actions.get('Walk')) base.timeScale = firstPersonWalkTimeScale(speed)
     if (frozenFor > 0) frozenFor -= dt
     else mixer.update(dt)
     applyPoses(dt)
@@ -151,13 +165,11 @@ export function createFirstPersonArms(container: THREE.Group) {
     if (!arm || !hand || weight <= 0) return
     dir.copy(pose.forearm).normalize()
     poseQuat.setFromUnitVectors(FOREARM_LOCAL, dir)
-    if (pose.wristFacing) {
-      // roll around the forearm so the back of the wrist (the watch) faces `wristFacing`
-      back.copy(WRIST_BACK_LOCAL).applyQuaternion(poseQuat).projectOnPlane(dir).normalize()
-      want.copy(pose.wristFacing).projectOnPlane(dir).normalize()
-      roll.setFromUnitVectors(back, want)
-      poseQuat.premultiply(roll)
-    }
+    // roll around the forearm so the back of the wrist (the watch) faces `wristFacing`
+    back.copy(WRIST_BACK_LOCAL).applyQuaternion(poseQuat).projectOnPlane(dir).normalize()
+    want.copy(pose.wristFacing).projectOnPlane(dir).normalize()
+    roll.setFromUnitVectors(back, want)
+    poseQuat.premultiply(roll)
     poseArm.copy(hand.position).applyQuaternion(poseQuat)
     poseArm.subVectors(pose.hand, poseArm)
     arm.position.lerp(poseArm, weight)
@@ -169,11 +181,6 @@ export function createFirstPersonArms(container: THREE.Group) {
     const step = Math.min(1, ARM_POSES.watchSpeed * dt)
     watchWeight += (watchTarget - watchWeight) * step
     blendArm(model.getObjectByName('Arm_L'), model.getObjectByName('Hand_L'), ARM_POSES.watch, smooth(watchWeight))
-    if (eatT >= 0) {
-      eatT += dt / ARM_POSES.eatDurationS
-      if (eatT >= 1) eatT = -1
-      else blendArm(model.getObjectByName('Arm_R'), model.getObjectByName('Hand_R'), ARM_POSES.eat, Math.sin(Math.PI * eatT))
-    }
   }
 
   function rightHand(): THREE.Object3D | null {
@@ -194,17 +201,24 @@ export function createFirstPersonArms(container: THREE.Group) {
       watchTarget = raised ? 1 : 0
     },
     isWatchRaised: () => watchWeight > 0.6,
-    /** One bite / sip: the right hand goes to the mouth and back. */
+    /** One bite: the right hand goes to the mouth and back. */
     eat: () => {
-      eatT = 0
+      if (!isPlaying('Pick')) playOnce('Eat')
     },
-    isEating: () => eatT >= 0,
-    equip: () => playOnce('Equip'),
+    drink: () => {
+      if (!isPlaying('Pick')) playOnce('Drink')
+    },
+    isEating: () => isPlaying('Eat', 'Drink'),
+    equip: () => {
+      if (!isPlaying(...HELD_CLIPS)) playOnce('Equip')
+    },
     use: (kind: ArmsUse) => playOnce(kind === 'door' ? 'UseDoor' : 'UseKey'),
     punch: () => {
       playOnce(leftPunchNext ? 'PunchL' : 'Punch', PUNCH_FADE_S)
       leftPunchNext = !leftPunchNext
     },
+    pick: () => playOnce('Pick'),
+    cancelPick,
     hitStop: (seconds: number) => {
       frozenFor = seconds
     },
