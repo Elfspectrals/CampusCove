@@ -205,6 +205,11 @@ de la clinique, le Campus Cafe et les six boutiques du mall sont dans `zones/ret
 - Un mannequin vend les pièces cochées **For sale**, chacune à son **Price (coins)** ; **Clothes only (no body)**
   n'affiche que les vêtements (une pièce sur un portant).
 - Les vendeurs portent des pièces de `wear/` : celui de Cove Home porte `top/staff_polo` (polo jaune « CH »).
+- Le mobilier d'une boutique est en props, pas cuit dans l'intérieur : à Crispin's Hardware, les étagères
+  (`shop_rack`), le comptoir (`checkout_counter`), le présentoir (`display_plinth`), le kiosque à clés, le râtelier à bois,
+  les panneaux d'outils et le nuancier de peinture viennent de `map-src/CampusCove/build_shop_decor.py` (dossier
+  **Shop**). L'intérieur ne garde que murs, sol, plafond, lumières et enseignes. Les objets posés, vendus ou non, ont
+  leur collision en jeu.
 
 **Staff role** (Détails d'un NPC) donne au NPC un rôle de jeu : `bartender` et `bouncer` au pub, `nurse` à la clinique.
 Chacun existe une seule fois dans sa zone. **Save** (ou `npm --prefix front run zone:prices`) recopie leur position dans

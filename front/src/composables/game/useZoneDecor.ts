@@ -114,6 +114,15 @@ export function useZoneDecor(deps: ZoneDecorDeps) {
     if (collision) worldCuboids(object, collision.cuboids).forEach((c, i) => block(blockerKey(zone, item.id, i), c))
   }
 
+  async function blockSoldItem(zone: string, item: ItemProp): Promise<void> {
+    if (isConsumableCode(item.code)) return
+    const collision = await fetchCollisionFile(decorModelUrl(item.key).replace(/model\.glb$/, 'collision.json'))
+    if (disposed || !collision) return
+    const spot = new THREE.Object3D()
+    placeProp(spot, item)
+    worldCuboids(spot, collision.cuboids).forEach((c, i) => block(blockerKey(zone, item.id, i), c))
+  }
+
   async function addFigure(zone: string, group: THREE.Group, prop: NpcProp | MannequinProp, store: ZoneStore | null): Promise<void> {
     const object = await createPropObject(prop)
     if (disposed) {
@@ -235,7 +244,7 @@ export function useZoneDecor(deps: ZoneDecorDeps) {
     }))
     const storeAt = (position: Vec3): ZoneStore | null => [...storeOf].find(([a]) => insideZone(a.bounds, { x: position[0], z: position[2] }))?.[1] ?? null
     const loads = runtimeProps(decorated.decor).flatMap((prop) => {
-      if (prop.kind === 'item') return prop.forSale ? [] : [addItem(zone.key, group, prop)]
+      if (prop.kind === 'item') return [prop.forSale ? blockSoldItem(zone.key, prop) : addItem(zone.key, group, prop)]
       if (prop.kind === 'npc' && [...storeOf.keys()].some((a) => a.npc === prop.id)) return []
       if (prop.kind === 'animal') return [addAnimal(group, prop)]
       return [addFigure(zone.key, group, prop, storeAt(prop.position))]

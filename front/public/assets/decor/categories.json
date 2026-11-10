@@ -18,6 +18,6 @@
       "label": "Farm",
       "keys": ["scarecrow", "hay_bale_round", "water_trough", "milk_churn", "feed_sacks", "wooden_barrel", "chicken_coop", "stone_well", "watering_can", "vegetable_crate", "tool_rack", "chicken_feeder", "fence_panel", "fence_gate", "wire_panel", "mud_patch", "hay_rack"]
     },
-    { "id": "shop", "label": "Shop", "keys": ["checkout_counter"] }
+    { "id": "shop", "label": "Shop", "keys": ["checkout_counter", "shop_rack", "display_plinth", "key_kiosk", "lumber_rack", "tool_pegboard", "paint_chip_board"] }
   ]
 }

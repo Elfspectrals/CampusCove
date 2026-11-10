@@ -51,6 +51,222 @@
       ]
     },
     {
+      "id": "crispins_rack_mid_a",
+      "kind": "item",
+      "key": "shop_rack",
+      "code": "decor_shop_rack",
+      "forSale": false,
+      "position": [
+        -368.75,
+        0.2,
+        -86.105
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "crispins_rack_mid_b",
+      "kind": "item",
+      "key": "shop_rack",
+      "code": "decor_shop_rack",
+      "forSale": false,
+      "position": [
+        -368.75,
+        0.2,
+        -83.705
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "crispins_rack_back_a",
+      "kind": "item",
+      "key": "shop_rack",
+      "code": "decor_shop_rack",
+      "forSale": false,
+      "position": [
+        -371.35,
+        0.2,
+        -88.605
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "crispins_rack_back_b",
+      "kind": "item",
+      "key": "shop_rack",
+      "code": "decor_shop_rack",
+      "forSale": false,
+      "position": [
+        -369.15,
+        0.2,
+        -88.605
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "crispins_checkout",
+      "kind": "item",
+      "key": "checkout_counter",
+      "code": "decor_checkout_counter",
+      "forSale": false,
+      "position": [
+        -364.25,
+        0.2,
+        -80.905
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "crispins_key_kiosk",
+      "kind": "item",
+      "key": "key_kiosk",
+      "code": "decor_key_kiosk",
+      "forSale": false,
+      "position": [
+        -373.75,
+        0.2,
+        -80.405
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "crispins_lumber_rack",
+      "kind": "item",
+      "key": "lumber_rack",
+      "code": "decor_lumber_rack",
+      "forSale": false,
+      "position": [
+        -361.25,
+        0.2,
+        -80.905
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "crispins_pegboard_a",
+      "kind": "item",
+      "key": "tool_pegboard",
+      "code": "decor_tool_pegboard",
+      "forSale": false,
+      "position": [
+        -376.515,
+        0.2,
+        -87.605
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "crispins_pegboard_b",
+      "kind": "item",
+      "key": "tool_pegboard",
+      "code": "decor_tool_pegboard",
+      "forSale": false,
+      "position": [
+        -376.515,
+        0.2,
+        -84.805
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "crispins_pegboard_c",
+      "kind": "item",
+      "key": "tool_pegboard",
+      "code": "decor_tool_pegboard",
+      "forSale": false,
+      "position": [
+        -376.515,
+        0.2,
+        -82.005
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "crispins_paint_chips",
+      "kind": "item",
+      "key": "paint_chip_board",
+      "code": "decor_paint_chip_board",
+      "forSale": false,
+      "position": [
+        -371.15,
+        0.2,
+        -89.145
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "crispins_toolbox_plinth",
+      "kind": "item",
+      "key": "display_plinth",
+      "code": "decor_display_plinth",
+      "forSale": false,
+      "position": [
+        -371.25,
+        0.2,
+        -84.405
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
       "id": "crispins_hardware_workbench",
       "kind": "item",
       "key": "workbench",
