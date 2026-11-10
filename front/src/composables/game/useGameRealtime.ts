@@ -52,6 +52,7 @@ import type {
   TradeRequestedPayload,
   TradeStatePayload,
   UserActionPayload,
+  UserPickingPayload,
   UserPunchedPayload,
   UserSeatedPayload,
   OrchardErrorPayload,
@@ -242,6 +243,10 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('user_seated', (data: UserSeatedPayload) => {
       if (data.sessionId !== room.sessionId) remotes.setSeated(data.sessionId, deps.seats.seatPose(data.seatId))
       deps.seats.onSeated(data, room.sessionId)
+    })
+
+    room.onMessage('user_picking', (data: UserPickingPayload) => {
+      if (data.sessionId !== room.sessionId) remotes.setPicking(data.sessionId, data.picking === true)
     })
 
     room.onMessage('user_moved', (data: { sessionId: string; x: number; y: number; z: number; ry?: number }) => {

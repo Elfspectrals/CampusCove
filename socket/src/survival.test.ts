@@ -15,17 +15,27 @@ const manifest = {
     nurse: [40, 0.2, 0],
     pharmacy: [44, 0.2, 0],
     beds: [{ id: 'bed_01', position: [38, 1.8, 4], bed: [38, 0.7, 5], yaw: 0 }]
-  }
+  },
+  fountains: [[60, 0, 0]]
 }
-globalThis.fetch = async (url: string | URL | Request) => {
+const portions: Record<string, object> = {
+  bread: { hunger: 20, thirst: 0, quantity: 2, portions_left: 1 },
+  water_bottle: { hunger: 0, thirst: 25, quantity: 0, portions_left: 0 }
+}
+globalThis.fetch = async (url: string | URL | Request, init?: RequestInit) => {
   if (String(url) === process.env.WORLD_MANIFEST_URL) return new Response(JSON.stringify(manifest))
+  if (String(url).endsWith('/survival/consume')) {
+    const portion = portions[JSON.parse(String(init?.body)).code]
+    if (!portion) return new Response(JSON.stringify({ code: 'not_owned', message: 'You do not have this.' }), { status: 422 })
+    return new Response(JSON.stringify({ consumed: portion }))
+  }
   if (String(url).endsWith('/survival/clinic-heal')) return new Response(JSON.stringify({ billed: 30, balance_after: 70 }))
   if (String(url).endsWith('/survival')) return new Response(JSON.stringify({}))
   return new Response(JSON.stringify({ cooked: { code: 'fish_cooked' } }))
 }
 
 const { loadWorld } = await import('./world.ts')
-const { onClinicHeal, onCook, onSurvivalMove } = await import('./survival.ts')
+const { onClinicHeal, onConsume, onCook, onDrinkFountain, onSurvivalMove } = await import('./survival.ts')
 await loadWorld()
 
 function fakeClient(): FakeClient {
@@ -107,4 +117,55 @@ test('the nurse is out of reach from afar or from another floor', async () => {
 test('the nurse does not charge a player in full health', async () => {
   const { sent } = await healAt(41, 0.2 + 1.6, 100)
   assert.deepEqual(sent.map((m) => m.payload?.code), ['already_healthy'])
+})
+
+function eatingRoom(x: number) {
+  const eater = fakeClient()
+  const watcher: FakeClient = { ...fakeClient(), sessionId: 's2' }
+  const clients = [eater, watcher]
+  const player = {
+    sessionId: 's1', accountId: 1, token: 't', x, y: 1.6, z: 0, knockedOutUntil: 0, lastConsumeAt: -Infinity, lastSipAt: -Infinity,
+    intoxication: 0, healOverTime: null, stats: { health: 100, hunger: 50, thirst: 50 }
+  } as unknown as Player
+  const room = {
+    players: new Map([['s1', player]]),
+    forEachClient: (fn: (c: GameClient) => void, except?: GameClient) => clients.filter((c) => c !== except).forEach(fn)
+  } as unknown as GameRoom
+  return { eater, watcher, player, room }
+}
+
+function actionsSeenBy(client: FakeClient) {
+  return client.sent.filter((m) => m.type === 'user_action').map((m) => m.payload)
+}
+
+test('other players see an accepted bite as eat and an accepted sip as drink', async () => {
+  const { eater, watcher, player, room } = eatingRoom(0)
+  await onConsume(room, eater, { code: 'bread' })
+  player.lastConsumeAt = -Infinity
+  await onConsume(room, eater, { code: 'water_bottle' })
+
+  assert.deepEqual(actionsSeenBy(watcher), [
+    { sessionId: 's1', action: 'eat', code: 'bread' },
+    { sessionId: 's1', action: 'drink', code: 'water_bottle' }
+  ])
+  assert.deepEqual(actionsSeenBy(eater), [])
+})
+
+test('a refused consume is not shown to other players', async () => {
+  const { eater, watcher, room } = eatingRoom(0)
+  await onConsume(room, eater, { code: 'cake' })
+  await onConsume(room, eater, { code: 'bread' })
+
+  assert.equal(eater.sent.find((m) => m.type === 'survival_error')?.payload.code, 'not_owned')
+  assert.deepEqual(actionsSeenBy(watcher), [])
+})
+
+test('a sip at a fountain is shown to other players as drink, never from afar', () => {
+  const far = eatingRoom(0)
+  onDrinkFountain(far.room, far.eater)
+  assert.deepEqual(actionsSeenBy(far.watcher), [])
+
+  const near = eatingRoom(60)
+  onDrinkFountain(near.room, near.eater)
+  assert.deepEqual(actionsSeenBy(near.watcher), [{ sessionId: 's1', action: 'drink', code: null }])
 })

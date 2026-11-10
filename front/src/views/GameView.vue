@@ -489,6 +489,7 @@ const orchard = useOrchard({
   getScene,
   canvasRef,
   gameRoomRef,
+  getArms: () => arms,
   promptsHidden: () => inventoryOpen.value || !canUsePub(),
   itemByCode: () => itemByCode.value,
   refreshInventory: () => refreshOwnedItems(),

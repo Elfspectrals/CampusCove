@@ -34,7 +34,7 @@ globalThis.fetch = async (url: string | URL | Request, init?: RequestInit) => {
 }
 
 const { loadWorld } = await import('./world.ts')
-const { PICK_MS, onOrchardPick, onOrchardPickStart, onOrchardSell } = await import('./orchard.ts')
+const { PICK_MS, PICK_RESTART_MS, onOrchardPick, onOrchardPickCancel, onOrchardPickStart, onOrchardSell } = await import('./orchard.ts')
 await loadWorld()
 
 function fakeClient(sessionId: string): FakeClient {
@@ -43,11 +43,18 @@ function fakeClient(sessionId: string): FakeClient {
 }
 
 function setup(x: number, z: number) {
-  const player = { sessionId: 's1', accountId: 1, token: 'token-s1', x, y: 1.6, z, knockedOutUntil: 0, orchardPick: null } as unknown as Player
+  const player = {
+    sessionId: 's1', accountId: 1, token: 'token-s1', x, y: 1.6, z, knockedOutUntil: 0, orchardPick: null, lastPickStartAt: -Infinity
+  } as unknown as Player
   const client = fakeClient('s1')
-  const room = { players: new Map([['s1', player]]) } as unknown as GameRoom
+  const watcher = fakeClient('s2')
+  const clients = [client, watcher]
+  const room = {
+    players: new Map([['s1', player]]),
+    forEachClient: (fn: (c: GameClient) => void, except?: GameClient) => clients.filter((c) => c !== except).forEach(fn)
+  } as unknown as GameRoom
   apiCalls.length = 0
-  return { player, client, room }
+  return { player, client, watcher, room }
 }
 
 function received(client: FakeClient, type: string) {
@@ -148,4 +155,52 @@ test('an API refusal reaches the player with its code', async () => {
   await onOrchardPick(room, client, PICK_MS)
 
   assert.deepEqual(received(client, 'orchard_error'), [{ code: 'basket_full', message: 'You cannot carry more than 20 apples.' }])
+})
+
+test('other players see the pick start, and its end when it lands', async () => {
+  const { client, watcher, room } = setup(-20, -98)
+  onOrchardPickStart(room, client, { tree: 0 }, 0)
+  await onOrchardPick(room, client, PICK_MS)
+
+  assert.deepEqual(received(watcher, 'user_picking'), [{ sessionId: 's1', picking: true }, { sessionId: 's1', picking: false }])
+  assert.deepEqual(received(client, 'user_picking'), [])
+})
+
+test('a cancelled pick stops for everyone and gives no apple', async () => {
+  const { player, client, watcher, room } = setup(-20, -98)
+  onOrchardPickStart(room, client, { tree: 0 }, 0)
+  onOrchardPickCancel(room, client)
+  await onOrchardPick(room, client, PICK_MS)
+
+  assert.equal(player.orchardPick, null)
+  assert.deepEqual(received(watcher, 'user_picking'), [{ sessionId: 's1', picking: true }, { sessionId: 's1', picking: false }])
+  assert.deepEqual(errorCodes(client), ['orchard_not_picking'])
+  assert.equal(apiCalls.length, 0)
+})
+
+test('a cancel without a pick in progress is ignored', () => {
+  const { client, watcher, room } = setup(-20, -98)
+  onOrchardPickCancel(room, client)
+
+  assert.equal(watcher.sent.length, 0)
+  assert.equal(client.sent.length, 0)
+})
+
+test('a refused pick start is not shown to other players', () => {
+  const { client, watcher, room } = setup(-20, -90)
+  onOrchardPickStart(room, client, { tree: 0 }, 0)
+  onOrchardPickStart(room, client, { tree: 9 }, 0)
+
+  assert.deepEqual(received(watcher, 'user_picking'), [])
+})
+
+test('restarting a pick is limited to one start every 300 ms', () => {
+  const { client, watcher, room } = setup(-20, -98)
+  onOrchardPickStart(room, client, { tree: 0 }, 1000)
+  onOrchardPickCancel(room, client)
+  onOrchardPickStart(room, client, { tree: 0 }, 1000 + PICK_RESTART_MS - 1)
+  onOrchardPickStart(room, client, { tree: 0 }, 1000 + PICK_RESTART_MS)
+
+  assert.deepEqual(errorCodes(client), ['orchard_pick_cooldown'])
+  assert.deepEqual(received(watcher, 'user_picking').map((m) => m.picking), [true, false, true])
 })
