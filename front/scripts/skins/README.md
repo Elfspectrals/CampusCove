@@ -48,6 +48,8 @@ regions listed in its `extras.hides`. Pieces are weighted from the nearest body 
 | `stylized.py` | the stylized character: swept body, hands, simple head, drawn face graphics, haircuts, beard |
 | `stylized_base.py` | turns it into game pieces: reference body skinned and split into regions, a head and six faces per sex, haircut pieces |
 | `run_stylized.py` | review renders of the stylized man and woman (no export) |
+| `sculpt_prep.py` | one-time: places a raw haircut sculpt on our head and saves it in `sculpts/` |
+| `sculpt_bake.py` | wraps a haircut onto its sculpt and bakes the locks into a normal map |
 | `wear_preview.py` | 256 px preview per piece |
 | `run_wear.py` | entry point |
 
@@ -71,3 +73,21 @@ npm run wear:check
 
 The first-person arms come from the base body plus the equipped top (`wear/top/<key>/fp_arms.glb`, bare arms in
 `wear/bare/fp_arms.glb`).
+
+## Sculpted haircuts
+
+A haircut that has a sculpt, `sculpts/hair_<key>.glb`, keeps its own low-poly mesh, triangle budget and rig. The
+build wraps its outer shell onto the sculpt and bakes the sculpt's locks into a 512 px tangent-space normal map. The
+map is exported as WebP inside the piece, in the `W_hair_<key>_Main` material, so the hair colour tint still applies.
+The inner cap, which stays hidden in the skull, and the strands framing the face keep their built shape and a flat
+normal. `buzz` has no sculpt: it is a 3 mm cap.
+
+The sculpts are reference shapes, not shipped meshes. Each was made once: an original concept image of a
+stylized bust with that haircut, then image-to-3D with Hunyuan3D-2mini (shape only, run locally; Tencent Hunyuan 3D
+community licence), then `sculpt_prep.py`. The prep puts the sculpt's nose tip on ours and its top on the top of the
+current haircut, keeps the head and hair, and decimates them to 150k faces. To add or redo one:
+
+```
+blender --background --factory-startup --python front/scripts/skins/sculpt_prep.py -- <raw_sculpt.glb> <key>
+blender --background --factory-startup --python front/scripts/skins/run_wear.py -- previews=hair
+```

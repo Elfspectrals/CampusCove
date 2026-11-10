@@ -175,6 +175,7 @@ def build_stylized_hair(coll, arm, key, head):
     style = {"basic": "basic", "short": "short", "long": "long", "curly": "curly", "buzz": "buzz", "ponytail": "ponytail"}[key]
     spec = WEAR["hair"]["items"][key]
     ob = build_hair(coll, style, spec["main"], head)
+    apply_hair_sculpt(ob, key, head)  # sculpt_bake.py: locks baked into a normal map when a sculpt exists
     ob.name = "Wear_hair_" + key
     for slot_mat in ob.data.materials:
         slot_mat.name = "W_hair_%s_Main" % key

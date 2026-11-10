@@ -71,3 +71,6 @@ et Sit jouent pareil sur chaque personnage. Détails : `front/scripts/skins/READ
 - Chaque fichier de corps contient les 6 visages de son sexe : maillages `extras.region = "face"`,
   `extras.face = 1..6`. Le front affiche celui choisi et cache les autres.
 - Teintes : matériau `Skin` = `skin_color` ; matériau `BB_Brow` (sourcils, barbe, moustache) = `hair_color`.
+- Mèches sculptées : une coupe qui a un sculpt (`front/scripts/skins/sculpts/hair_<key>.glb`) porte une normal map
+  (`normalTexture`, WebP 512 px) dans son matériau `W_hair_<key>_Main`. La teinte `hair_color` change seulement la
+  couleur, la normal map reste. `buzz` n'en a pas.

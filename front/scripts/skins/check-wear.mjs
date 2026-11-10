@@ -2,7 +2,7 @@ import { statSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { NodeIO } from '@gltf-transform/core'
-import { KHRDracoMeshCompression, KHRMaterialsClearcoat, KHRMaterialsEmissiveStrength } from '@gltf-transform/extensions'
+import { EXTTextureWebP, KHRDracoMeshCompression, KHRMaterialsClearcoat, KHRMaterialsEmissiveStrength } from '@gltf-transform/extensions'
 import draco3d from 'draco3dgltf'
 
 const WEAR = join(resolve(dirname(fileURLToPath(import.meta.url)), '..', '..'), 'public', 'assets', 'wear')
@@ -24,7 +24,7 @@ const MAX_PIECE_TRIS = 3_000
 const MAX_BASE_TRIS = 8_000
 
 const io = new NodeIO()
-  .registerExtensions([KHRDracoMeshCompression, KHRMaterialsClearcoat, KHRMaterialsEmissiveStrength])
+  .registerExtensions([EXTTextureWebP, KHRDracoMeshCompression, KHRMaterialsClearcoat, KHRMaterialsEmissiveStrength])
   .registerDependencies({ 'draco3d.decoder': await draco3d.createDecoderModule() })
 
 let failed = false

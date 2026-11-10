@@ -17,6 +17,7 @@ exec(open(SKINS_DIR + "base_body.py", encoding="utf8").read())
 exec(open(SKINS_DIR + "wear.py", encoding="utf8").read())
 exec(open(SKINS_DIR + "fit.py", encoding="utf8").read())
 exec(open(SKINS_DIR + "stylized.py", encoding="utf8").read())
+exec(open(SKINS_DIR + "sculpt_bake.py", encoding="utf8").read())
 exec(open(SKINS_DIR + "stylized_base.py", encoding="utf8").read())
 exec(open(SKINS_DIR + "wear_preview.py", encoding="utf8").read())
 
