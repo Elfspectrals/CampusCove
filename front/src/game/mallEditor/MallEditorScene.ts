@@ -10,6 +10,7 @@ import { createSurfacePanels, disposeSurfacePanels } from '../mallTemplates/temp
 import { createPropObject, disposeLookMaps, materialSlotsOf, placeProp, propSignature, type MaterialSlot } from '../mallTemplates/templateProps'
 import { createPlacementGhost, DEFAULT_GHOST_COLOR } from '../placement/placementGhost'
 import { createGltfLoader } from '../gltfLoaderFactory'
+import { HIDDEN_INTERIOR_NODES } from '../town/openHouses'
 import type { WorldBounds } from '../world/worldManifest'
 
 export interface PlacementRequest {
@@ -18,10 +19,20 @@ export interface PlacementRequest {
   cancel: () => void
 }
 
+export interface EditorZoneBuilding {
+  key: string
+  url: string
+  position: Vec3
+  rotationY: number
+  interiorUrl?: string
+  interiorOffset?: Vec3
+}
+
 export interface EditorZone {
   key: string
   bounds: WorldBounds
   modelUrl: string
+  buildings: EditorZoneBuilding[]
 }
 
 export type GizmoMode = 'select' | 'translate' | 'rotate' | 'scale'
@@ -69,6 +80,19 @@ const FLY_KEYS: Record<string, THREE.Vector3> = {
   KeyD: new THREE.Vector3(1, 0, 0),
   KeyE: new THREE.Vector3(0, 1, 0),
   KeyQ: new THREE.Vector3(0, -1, 0),
+}
+
+function placedInterior(interior: THREE.Group, offset: Vec3): THREE.Group {
+  const hidden: THREE.Object3D[] = []
+  interior.traverse((obj) => {
+    if (HIDDEN_INTERIOR_NODES.has(obj.name.replace(/\.?\d{3,}$/, ''))) hidden.push(obj)
+  })
+  for (const obj of hidden) {
+    obj.removeFromParent()
+    disposeObject3D(obj)
+  }
+  interior.position.fromArray(offset)
+  return interior
 }
 
 function isTypingTarget(event: KeyboardEvent): boolean {
@@ -555,7 +579,19 @@ export class MallEditorScene {
     this.controls.target.set((minX + maxX) / 2, 0, (minZ + maxZ) / 2)
     this.camera.position.set(this.controls.target.x + reach * 0.4, reach * 0.6, this.controls.target.z + reach * 0.4)
     this.controls.update()
-    const gltf = await createGltfLoader().loadAsync(zone.modelUrl)
+    const loader = createGltfLoader()
+    const [gltf, ...buildings] = await Promise.all([
+      loader.loadAsync(zone.modelUrl),
+      ...zone.buildings.map((b) => Promise.all([loader.loadAsync(b.url), b.interiorUrl ? loader.loadAsync(b.interiorUrl) : null])),
+    ])
+    buildings.forEach(([exterior, interior], i) => {
+      const { key, position, rotationY, interiorOffset } = zone.buildings[i]!
+      exterior.scene.name = `ZoneBuilding_${key}`
+      exterior.scene.position.fromArray(position)
+      exterior.scene.rotation.y = rotationY
+      if (interior && interiorOffset) exterior.scene.add(placedInterior(interior.scene, interiorOffset))
+      gltf.scene.add(exterior.scene)
+    })
     if (token !== this.backdropToken) return disposeObject3D(gltf.scene)
     gltf.scene.name = `ZoneBackdrop_${zone.key}`
     const baked: THREE.Object3D[] = []

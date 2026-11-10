@@ -19,7 +19,7 @@ import { parseBuildingProp, parseZoneDecor, parseZoneDecorIndex, zoneDecorJson, 
 import { buildingPreviewKey, parseBuildings, type BuildingTable } from '../src/game/buildings/buildings.ts'
 import type { BuildingProp } from '../src/game/mallTemplates/mallTemplate.ts'
 import { parseCrops, type CropTable } from '../src/game/crops/crops.ts'
-import { CONSUMABLE_FOLDERS } from '../src/game/assets/catalog.ts'
+import { CONSUMABLE_FOLDERS, findHouse, findStore, findWork } from '../src/game/assets/catalog.ts'
 import { parseAnimals, type AnimalTable } from '../src/game/animals/animals.ts'
 import type { WorldManifest } from '../src/game/world/worldManifest.ts'
 
@@ -28,6 +28,7 @@ const MAX_BODY_BYTES = 1_000_000
 const LOCAL_HOSTS = ['localhost', '127.0.0.1', '[::1]', 'front']
 const BLENDER_TIMEOUT_MS = 120_000
 const PREVIEW_FILE = /^buildings\/([a-z0-9_]+)\.glb$/
+type ManifestBuilding = NonNullable<WorldManifest['zones'][number]['buildings']>[number]
 const BUILDING_SOURCES = ['lib_buildings.py', 'build_building.py', 'lib_kit.py', 'lib_common.py']
 
 class HttpError extends Error {
@@ -169,6 +170,13 @@ function mallTemplatesApi(assets: string, backendZones: string, repo: string) {
     return manifestZones().filter((zone) => zone.key !== 'mall')
   }
 
+  function exteriorOf(zoneKey: string, building: ManifestBuilding) {
+    const asset = building.kind === 'house' ? findHouse(building.key) : building.kind === 'work' ? findWork(building.key) : findStore(building.key)
+    if (!asset) throw new HttpError(500, `world.manifest.json: zone ${zoneKey} lists an unknown ${building.kind} ${building.key}`)
+    const interior = building.interiorOffset ? { interiorUrl: asset.interiorUrl, interiorOffset: building.interiorOffset } : {}
+    return { key: building.key, url: asset.exteriorUrl, position: building.position, rotationY: building.rotationY, ...interior }
+  }
+
   function stored<T>(file: string, parse: () => T): T {
     try {
       return parse()
@@ -259,7 +267,14 @@ function mallTemplatesApi(assets: string, backendZones: string, repo: string) {
     }
     if (method === 'GET' && path === 'zones') {
       const decorated = zoneIndex().zones
-      return decoratableZones().map(({ key, bounds, modelUrl, heightmapUrl }) => ({ key, bounds, modelUrl, heightmapUrl, decorated: decorated.includes(key) }))
+      return decoratableZones().map(({ key, bounds, modelUrl, heightmapUrl, buildings }) => ({
+        key,
+        bounds,
+        modelUrl,
+        heightmapUrl,
+        buildings: (buildings ?? []).map((building) => exteriorOf(key, building)),
+        decorated: decorated.includes(key),
+      }))
     }
     const zoneKey = /^zones\/([a-z0-9_]+)$/.exec(path)?.[1]
     if (method === 'GET' && zoneKey) {

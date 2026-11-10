@@ -36,7 +36,7 @@ interface BuildingFloor {
   layout: HouseLayout
 }
 
-const HIDDEN_INTERIOR_NODES = new Set([
+export const HIDDEN_INTERIOR_NODES = new Set([
   'Sky_Front',
   'Sky_Back',
   'Sky_West',
