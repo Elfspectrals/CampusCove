@@ -15,15 +15,16 @@ import {
   type MallTemplate,
   type TemplateAssignments,
 } from '../src/game/mallTemplates/mallTemplate.ts'
-import { parseBuildingProp, parseZoneDecor, parseZoneDecorIndex, withStaff, zoneDecorJson, zonePriceFile, type ZoneDecorIndex } from '../src/game/zoneDecor/zoneDecor.ts'
+import { parseBuildingProp, parseZoneDecor, parseZoneDecorIndex, withStaff, zoneDecorJson, zonePriceFile, type ZoneDecorIndex, type ZoneRef } from '../src/game/zoneDecor/zoneDecor.ts'
 import { buildingPreviewKey, parseBuildings, type BuildingTable } from '../src/game/buildings/buildings.ts'
 import type { BuildingProp } from '../src/game/mallTemplates/mallTemplate.ts'
 import { parseCrops, type CropTable } from '../src/game/crops/crops.ts'
 import { CONSUMABLE_FOLDERS, findHouse, findStore, findWork } from '../src/game/assets/catalog.ts'
 import { parseAnimals, type AnimalTable } from '../src/game/animals/animals.ts'
-import type { WorldManifest } from '../src/game/world/worldManifest.ts'
+import type { WorldBounds, WorldManifest } from '../src/game/world/worldManifest.ts'
 
 const ROUTE = '/__editor/'
+const SHOP_PARENT = 'mall'
 const MAX_BODY_BYTES = 1_000_000
 const LOCAL_HOSTS = ['localhost', '127.0.0.1', '[::1]', 'front']
 const BLENDER_TIMEOUT_MS = 120_000
@@ -225,10 +226,39 @@ function mallTemplatesApi(assets: string, backendZones: string, repo: string) {
     return stored('index.json', () => parseZoneDecorIndex(readJson(zoneIndexPath)))
   }
 
-  function decoratableZone(key: string) {
+  function shopBuildings() {
+    return (manifestZones().find((z) => z.key === SHOP_PARENT)?.buildings ?? []).filter((b) => b.kind === 'store')
+  }
+
+  function shopBounds(building: ManifestBuilding) {
+    const store = findStore(building.key)
+    if (!store || !building.interiorOffset) throw new HttpError(500, `world.manifest.json: ${building.key} is not a walk-in store`)
+    const local = (readJson(join(assets, store.interiorLayoutUrl.replace(/^\/assets\//, ''))) as { bounds: WorldBounds }).bounds
+    const [ox, , oz] = building.interiorOffset
+    const [px, , pz] = building.position
+    const cos = Math.cos(building.rotationY)
+    const sin = Math.sin(building.rotationY)
+    const corners = [local.minX, local.maxX].flatMap((x) => [local.minZ, local.maxZ].map((z) => [px + (x + ox) * cos + (z + oz) * sin, pz - (x + ox) * sin + (z + oz) * cos]))
+    const round = (v: number) => Number(v.toFixed(3))
+    return {
+      minX: round(Math.min(...corners.map(([x]) => x!))),
+      maxX: round(Math.max(...corners.map(([x]) => x!))),
+      minZ: round(Math.min(...corners.map(([, z]) => z!))),
+      maxZ: round(Math.max(...corners.map(([, z]) => z!))),
+    }
+  }
+
+  function decoratableZone(key: string): ZoneRef {
     const zone = manifestZones().find((z) => z.key === key)
-    if (!zone) throw new HttpError(404, `no zone ${key} in world.manifest.json`)
-    return zone
+    if (zone?.bounds) return { key, bounds: zone.bounds }
+    const shop = shopBuildings().find((b) => b.key === key)
+    if (!shop) throw new HttpError(404, `no zone ${key} in world.manifest.json, nor a shop of ${SHOP_PARENT}`)
+    return { key, bounds: shopBounds(shop), parent: SHOP_PARENT }
+  }
+
+  function zoneName(key: string, fallback: string): string {
+    if (!existsSync(zonePath(key))) return fallback
+    return (readJson(zonePath(key)) as { name: string }).name
   }
 
   function cellsHolding(key: string): string[] {
@@ -266,14 +296,25 @@ function mallTemplatesApi(assets: string, backendZones: string, repo: string) {
     }
     if (method === 'GET' && path === 'zones') {
       const decorated = zoneIndex().zones
-      return decoratableZones().map(({ key, bounds, modelUrl, heightmapUrl, buildings }) => ({
+      const main = decoratableZones().map(({ key, bounds, modelUrl, heightmapUrl, buildings }) => ({
         key,
+        name: zoneName(key, key.split('_').map((w) => w[0]!.toUpperCase() + w.slice(1)).join(' ')),
         bounds,
         modelUrl,
         heightmapUrl,
         buildings: (buildings ?? []).map((building) => exteriorOf(key, building)),
         decorated: decorated.includes(key),
       }))
+      const shops = shopBuildings().map((building) => ({
+        key: building.key,
+        name: zoneName(building.key, building.name),
+        parent: SHOP_PARENT,
+        bounds: shopBounds(building),
+        modelUrl: null,
+        buildings: [exteriorOf(SHOP_PARENT, building)],
+        decorated: decorated.includes(building.key),
+      }))
+      return [...main, ...shops]
     }
     const zoneKey = /^zones\/([a-z0-9_]+)$/.exec(path)?.[1]
     if (method === 'GET' && zoneKey) {

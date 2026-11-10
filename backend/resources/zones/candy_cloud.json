@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "zone": "candy_cloud",
+  "prices": {
+    "candy_apple": 15,
+    "candy_bag": 14,
+    "candy_cotton": 12,
+    "candy_gum": 5,
+    "candy_licorice": 9,
+    "candy_lollipop": 6
+  },
+  "buyers": {}
+}

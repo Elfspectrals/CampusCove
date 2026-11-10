@@ -1,0 +1,190 @@
+{
+  "version": 1,
+  "zone": "crispins_hardware",
+  "name": "Crispin's Hardware",
+  "parent": "mall",
+  "bounds": {
+    "minX": -376.55,
+    "maxX": -360.95,
+    "minZ": -89.205,
+    "maxZ": -78.405
+  },
+  "props": [
+    {
+      "id": "crispins_hardware_clerk",
+      "kind": "npc",
+      "position": [
+        -364.25,
+        0.2,
+        -79.805
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pose": "idle",
+      "vendor": false,
+      "body": "#8b7aa8",
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "ponytail",
+          "color": "#6b5b95"
+        },
+        {
+          "slot": "top",
+          "key": "tee",
+          "color": "#e07a2e"
+        },
+        {
+          "slot": "bottom",
+          "key": "joggers",
+          "color": "#2f3338"
+        },
+        {
+          "slot": "shoes",
+          "key": "sneakers",
+          "color": "#4a3f62"
+        }
+      ]
+    },
+    {
+      "id": "crispins_hardware_workbench",
+      "kind": "item",
+      "key": "workbench",
+      "code": "decor_workbench",
+      "forSale": true,
+      "price": 340,
+      "position": [
+        -375.05,
+        0.2,
+        -84.905
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Solid workbench with a vice and a tool rail."
+    },
+    {
+      "id": "crispins_hardware_stepladder",
+      "kind": "item",
+      "key": "stepladder",
+      "code": "decor_stepladder",
+      "forSale": true,
+      "price": 140,
+      "position": [
+        -375.25,
+        0.2,
+        -87.805
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Aluminium stepladder with a safety platform."
+    },
+    {
+      "id": "crispins_hardware_toolbox",
+      "kind": "item",
+      "key": "toolbox",
+      "code": "decor_toolbox",
+      "forSale": true,
+      "price": 90,
+      "position": [
+        -371.25,
+        1.1,
+        -84.405
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Red steel toolbox, latches included."
+    },
+    {
+      "id": "crispins_hardware_paint_cans",
+      "kind": "item",
+      "key": "paint_cans",
+      "code": "decor_paint_cans",
+      "forSale": true,
+      "price": 110,
+      "position": [
+        -367.25,
+        0.2,
+        -87.905
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Pallet of paint cans in four colours."
+    },
+    {
+      "id": "crispins_hardware_wheelbarrow",
+      "kind": "item",
+      "key": "wheelbarrow",
+      "code": "decor_wheelbarrow",
+      "forSale": true,
+      "price": 180,
+      "position": [
+        -362.95,
+        0.2,
+        -85.005
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Green garden wheelbarrow on a rubber wheel."
+    },
+    {
+      "id": "crispins_hardware_metal_shelving",
+      "kind": "item",
+      "key": "metal_shelving",
+      "code": "decor_metal_shelving",
+      "forSale": true,
+      "price": 260,
+      "position": [
+        -363.15,
+        0.2,
+        -88.605
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Orange warehouse shelving, boxes included."
+    }
+  ],
+  "areas": [
+    {
+      "id": "crispins_hardware",
+      "name": "Crispin's Hardware",
+      "role": "seller",
+      "npc": "crispins_hardware_clerk",
+      "bounds": {
+        "minX": -376.55,
+        "maxX": -360.95,
+        "minZ": -89.205,
+        "maxZ": -78.405
+      },
+      "offers": [],
+      "priceTags": true
+    }
+  ]
+}

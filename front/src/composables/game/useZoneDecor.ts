@@ -10,8 +10,8 @@ import { ANIMALS_URL, animalPose, type AnimalClip, type AnimalDef } from '../../
 import { itemModelUrl, type AnimalProp, type ItemProp, type MannequinProp, type NpcProp, type StaffRole, type Vec3 } from '../../game/mallTemplates/mallTemplate.ts'
 import { animals, createAnimal, createPropObject, modelSize, npcColors, placeProp, type AnimalRig } from '../../game/mallTemplates/templateProps'
 import { configureRoomMeshShadows, normalizeRoomMaterials } from '../../game/sceneLighting'
-import type { WorldBounds, WorldManifest, WorldZone } from '../../game/world/worldManifest'
-import { ZONE_DECOR_INDEX_URL, areaSeller, areaStoreLayout, parseZoneDecor, parseZoneDecorIndex, runtimeProps, zoneDecorUrl, zonePrices, type SaleArea, type ZoneDecor } from '../../game/zoneDecor/zoneDecor.ts'
+import type { WorldBounds, WorldManifest } from '../../game/world/worldManifest'
+import { ZONE_DECOR_INDEX_URL, areaSeller, areaStoreLayout, parseZoneDecor, parseZoneDecorIndex, runtimeProps, zoneDecorUrl, zonePrices, zoneRefOf, type SaleArea, type ZoneDecor, type ZoneRef } from '../../game/zoneDecor/zoneDecor.ts'
 import type { ZoneCheckoutDonePayload, ZoneCheckoutErrorPayload } from '../../types/gameRealtime'
 import { worldCuboids, type CellStoreEntry } from './useMallCellTemplates'
 import { useFurnitureStore, type FurnitureStoreDeps } from './useFurnitureStore'
@@ -31,7 +31,7 @@ interface Wanderer {
 }
 
 interface DecoratedZone {
-  zone: WorldZone
+  zone: ZoneRef
   decor: ZoneDecor
 }
 
@@ -71,9 +71,9 @@ async function fetchDecoratedZones(manifest: WorldManifest): Promise<DecoratedZo
   const index = parseZoneDecorIndex(await fetchJson(ZONE_DECOR_INDEX_URL))
   const results = await Promise.allSettled(
     index.zones.map(async (key) => {
-      const zone = manifest.zones.find((z) => z.key === key)
-      if (!zone) throw new Error(`${ZONE_DECOR_INDEX_URL}: zone ${key} is not in the world manifest`)
-      return { zone, decor: parseZoneDecor(await fetchJson(zoneDecorUrl(key)), zone, null, null, null) }
+      const raw = await fetchJson(zoneDecorUrl(key))
+      const zone = zoneRefOf(key, raw, manifest.zones)
+      return { zone, decor: parseZoneDecor(raw, zone, null, null, null) }
     }),
   )
   for (const result of results) if (result.status === 'rejected') console.error('[zones] a zone decor failed to load', result.reason)

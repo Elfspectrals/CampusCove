@@ -1,7 +1,7 @@
 {
   "version": 1,
   "zone": "retail_park",
-  "name": "Shopping park",
+  "name": "Campus Home",
   "props": [
     {
       "id": "cove_home_clerk",

@@ -15,7 +15,8 @@ const manifest = {
 
 const apiCalls: Array<{ path: string, body: any }> = []
 let nextApiError: { status: number, code: string, message: string } | null = null
-const zoneIndex = { version: 1, zones: ['farm'] }
+const zoneIndex = { version: 1, zones: ['farm', 'barn_shop'] }
+const shopZone = { version: 1, zone: 'barn_shop', name: 'Barn shop', parent: 'farm', bounds: { minX: -30, maxX: -20, minZ: -160, maxZ: -150 }, props: [], areas: [] }
 const farmZone = {
   version: 1,
   zone: 'farm',
@@ -29,6 +30,7 @@ globalThis.fetch = async (url: string | URL | Request, init?: RequestInit) => {
   if (path === process.env.WORLD_MANIFEST_URL) return new Response(JSON.stringify(manifest))
   if (path === 'http://world.test/zones/index.json') return new Response(JSON.stringify(zoneIndex))
   if (path === 'http://world.test/zones/farm.json') return new Response(JSON.stringify(farmZone))
+  if (path === 'http://world.test/zones/barn_shop.json') return new Response(JSON.stringify(shopZone))
   const body = init?.body ? JSON.parse(String(init.body)) : null
   apiCalls.push({ path: path.replace(/^.*\/api/, ''), body })
   if (nextApiError) {
@@ -132,4 +134,13 @@ test('a buyer moved in the zone file is found at its new place without a restart
   } finally {
     farmZone.props[0]!.position = before
   }
+})
+
+test('a shop zone inside a main zone takes payments inside its own bounds only', async () => {
+  const inside = setup(-25, -155)
+  await onZoneCheckout(inside.room, inside.client, { zone: 'barn_shop', items: [3], request: 1 })
+  assert.deepEqual(apiCalls, [{ path: '/zone/checkout', body: { zone: 'barn_shop', items: [3] } }])
+  const outside = setup(-10, -155)
+  await onZoneCheckout(outside.room, outside.client, { zone: 'barn_shop', items: [3], request: 2 })
+  assert.equal(outside.client.sent[0]!.payload.code, 'zone_too_far')
 })

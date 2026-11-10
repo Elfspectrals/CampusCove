@@ -1,0 +1,502 @@
+{
+  "version": 1,
+  "zone": "greencart",
+  "name": "GreenCart",
+  "parent": "mall",
+  "bounds": {
+    "minX": -360.0,
+    "maxX": -320.0,
+    "minZ": -114.405,
+    "maxZ": -78.405
+  },
+  "props": [
+    {
+      "id": "greencart_clerk",
+      "kind": "npc",
+      "position": [
+        -350.0,
+        0.2,
+        -80.805
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pose": "idle",
+      "vendor": false,
+      "body": "#8b7aa8",
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "ponytail",
+          "color": "#6b5b95"
+        },
+        {
+          "slot": "top",
+          "key": "tee",
+          "color": "#3c9a3c"
+        },
+        {
+          "slot": "bottom",
+          "key": "joggers",
+          "color": "#2a2e35"
+        },
+        {
+          "slot": "shoes",
+          "key": "sneakers",
+          "color": "#4a3f62"
+        }
+      ]
+    },
+    {
+      "id": "greencart_banana",
+      "kind": "item",
+      "key": "banana",
+      "code": "grocery_banana",
+      "forSale": true,
+      "price": 6,
+      "position": [
+        -328.0,
+        1.0,
+        -84.405
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "stack": [
+        5,
+        3
+      ],
+      "description": "Ripe banana, two portions."
+    },
+    {
+      "id": "greencart_apple",
+      "kind": "item",
+      "key": "apple",
+      "code": "grocery_apple",
+      "forSale": true,
+      "price": 6,
+      "position": [
+        -324.0,
+        1.0,
+        -84.405
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "stack": [
+        6,
+        4
+      ],
+      "description": "Crisp red apple, two bites."
+    },
+    {
+      "id": "greencart_croissant",
+      "kind": "item",
+      "key": "croissant",
+      "code": "food_croissant",
+      "forSale": true,
+      "price": 12,
+      "position": [
+        -326.6,
+        1.25,
+        -104.405
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "stack": [
+        3,
+        2
+      ],
+      "description": "Butter croissant, baked this morning."
+    },
+    {
+      "id": "greencart_bread",
+      "kind": "item",
+      "key": "bread",
+      "code": "grocery_bread",
+      "forSale": true,
+      "price": 14,
+      "position": [
+        -326.6,
+        1.25,
+        -106.405
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "stack": [
+        3,
+        2
+      ],
+      "description": "Sliced loaf in its bag, four slices."
+    },
+    {
+      "id": "greencart_cookie",
+      "kind": "item",
+      "key": "cookie",
+      "code": "food_cookie",
+      "forSale": true,
+      "price": 5,
+      "position": [
+        -326.6,
+        1.25,
+        -108.405
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "stack": [
+        4,
+        3
+      ],
+      "description": "Chocolate chip cookie."
+    },
+    {
+      "id": "greencart_milk",
+      "kind": "item",
+      "key": "milk",
+      "code": "grocery_milk",
+      "forSale": true,
+      "price": 10,
+      "position": [
+        -359.45,
+        0.68,
+        -100.405
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "stack": [
+        5,
+        2
+      ],
+      "description": "Carton of fresh milk, three glasses."
+    },
+    {
+      "id": "greencart_yogurt",
+      "kind": "item",
+      "key": "yogurt",
+      "code": "grocery_yogurt",
+      "forSale": true,
+      "price": 8,
+      "position": [
+        -359.45,
+        1.18,
+        -100.405
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "stack": [
+        5,
+        3
+      ],
+      "description": "Fruit yogurt cup, two spoons."
+    },
+    {
+      "id": "greencart_sandwich",
+      "kind": "item",
+      "key": "sandwich",
+      "code": "food_sandwich",
+      "forSale": true,
+      "price": 30,
+      "position": [
+        -359.45,
+        1.18,
+        -103.405
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "stack": [
+        3,
+        2
+      ],
+      "description": "Club sandwich, four bites."
+    },
+    {
+      "id": "greencart_cheese",
+      "kind": "item",
+      "key": "cheese",
+      "code": "grocery_cheese",
+      "forSale": true,
+      "price": 16,
+      "position": [
+        -359.45,
+        1.18,
+        -106.405
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "stack": [
+        3,
+        2
+      ],
+      "description": "Wedge of cheese, three portions."
+    },
+    {
+      "id": "greencart_eggs",
+      "kind": "item",
+      "key": "eggs",
+      "code": "grocery_eggs",
+      "forSale": true,
+      "price": 15,
+      "position": [
+        -359.45,
+        1.68,
+        -103.405
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "stack": [
+        3,
+        2
+      ],
+      "description": "Half a dozen eggs, three portions."
+    },
+    {
+      "id": "greencart_coffee",
+      "kind": "item",
+      "key": "coffee",
+      "code": "food_coffee",
+      "forSale": true,
+      "price": 15,
+      "position": [
+        -355.3,
+        1.58,
+        -100.405
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "stack": [
+        4,
+        2
+      ],
+      "description": "Hot latte to go, a little speed boost."
+    },
+    {
+      "id": "greencart_cereal",
+      "kind": "item",
+      "key": "cereal",
+      "code": "grocery_cereal",
+      "forSale": true,
+      "price": 18,
+      "position": [
+        -354.7,
+        1.58,
+        -102.263
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "stack": [
+        4,
+        2
+      ],
+      "description": "Box of cereal, four bowls."
+    },
+    {
+      "id": "greencart_water_bottle",
+      "kind": "item",
+      "key": "water_bottle",
+      "code": "food_water_bottle",
+      "forSale": true,
+      "price": 8,
+      "position": [
+        -350.7,
+        1.08,
+        -99.405
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "stack": [
+        5,
+        2
+      ],
+      "description": "Still water, four sips."
+    },
+    {
+      "id": "greencart_orange_juice",
+      "kind": "item",
+      "key": "orange_juice",
+      "code": "food_orange_juice",
+      "forSale": true,
+      "price": 14,
+      "position": [
+        -350.7,
+        1.08,
+        -101.405
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "stack": [
+        5,
+        2
+      ],
+      "description": "Fresh orange juice, two portions."
+    },
+    {
+      "id": "greencart_soda",
+      "kind": "item",
+      "key": "soda",
+      "code": "grocery_soda",
+      "forSale": true,
+      "price": 7,
+      "position": [
+        -351.3,
+        1.08,
+        -100.047
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "stack": [
+        6,
+        3
+      ],
+      "description": "Fizzy soda, two sips."
+    },
+    {
+      "id": "greencart_chips",
+      "kind": "item",
+      "key": "chips",
+      "code": "grocery_chips",
+      "forSale": true,
+      "price": 9,
+      "position": [
+        -347.3,
+        1.58,
+        -100.047
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "stack": [
+        4,
+        2
+      ],
+      "description": "Bag of crisps, three handfuls."
+    },
+    {
+      "id": "greencart_chocolate",
+      "kind": "item",
+      "key": "chocolate",
+      "code": "grocery_chocolate",
+      "forSale": true,
+      "price": 10,
+      "position": [
+        -346.7,
+        1.08,
+        -102.263
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "stack": [
+        3,
+        3
+      ],
+      "description": "Chocolate bar, four squares."
+    },
+    {
+      "id": "greencart_pasta",
+      "kind": "item",
+      "key": "pasta",
+      "code": "grocery_pasta",
+      "forSale": true,
+      "price": 12,
+      "position": [
+        -343.3,
+        1.08,
+        -102.263
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "stack": [
+        5,
+        3
+      ],
+      "description": "Box of pasta, four plates."
+    }
+  ],
+  "areas": [
+    {
+      "id": "greencart",
+      "name": "GreenCart",
+      "role": "seller",
+      "npc": "greencart_clerk",
+      "bounds": {
+        "minX": -360.0,
+        "maxX": -320.0,
+        "minZ": -114.405,
+        "maxZ": -78.405
+      },
+      "offers": [],
+      "priceTags": true
+    }
+  ]
+}

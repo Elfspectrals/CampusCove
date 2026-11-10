@@ -64,8 +64,16 @@ export interface ZoneDecor {
   version: 1
   zone: string
   name: string
+  parent?: string
+  bounds?: WorldBounds
   props: ZoneProp[]
   areas: SaleArea[]
+}
+
+export interface ZoneRef {
+  key: string
+  bounds: WorldBounds
+  parent?: string
 }
 
 export interface ZoneDecorIndex {
@@ -394,10 +402,27 @@ function checkAreas(areas: SaleArea[], props: ZoneProp[]): void {
   })
 }
 
-export function parseZoneDecor(raw: unknown, zone: { key: string; bounds: WorldBounds }, crops: CropTable | null, animals: AnimalTable | null, buildings: BuildingTable | null): ZoneDecor {
-  const json = objectAt(raw, 'zone', ['version', 'zone', 'name', 'props', 'areas'])
+export function zoneRefOf(key: string, raw: unknown, mainZones: readonly { key: string; bounds?: WorldBounds }[]): ZoneRef {
+  const json = (raw ?? {}) as { parent?: unknown; bounds?: unknown }
+  const main = mainZones.find((z) => z.key === key)
+  if (main) {
+    if (!main.bounds) throw new TemplateError('zone', `zone ${key} has no bounds in world.manifest.json`)
+    if (json.parent !== undefined) throw new TemplateError('zone.parent', `${key} is a main zone, it has no parent`)
+    return { key, bounds: main.bounds }
+  }
+  if (typeof json.parent !== 'string') throw new TemplateError('zone.parent', `${key} is not in world.manifest.json: a shop zone names its parent zone`)
+  const parent = mainZones.find((z) => z.key === json.parent)
+  if (!parent?.bounds) throw new TemplateError('zone.parent', `no main zone ${json.parent} in world.manifest.json`)
+  return { key, bounds: areaBoundsAt(json.bounds, 'zone.bounds', { key: parent.key, bounds: parent.bounds }), parent: parent.key }
+}
+
+export function parseZoneDecor(raw: unknown, zone: ZoneRef, crops: CropTable | null, animals: AnimalTable | null, buildings: BuildingTable | null): ZoneDecor {
+  const json = objectAt(raw, 'zone', ['version', 'zone', 'name', 'parent', 'bounds', 'props', 'areas'])
   if (json.version !== 1) throw new TemplateError('zone.version', 'expected 1')
   if (json.zone !== zone.key) throw new TemplateError('zone.zone', `expected ${zone.key}`)
+  if (json.parent !== zone.parent) throw new TemplateError('zone.parent', zone.parent ? `expected ${zone.parent}` : 'a main zone has no parent')
+  if (!zone.parent && json.bounds !== undefined) throw new TemplateError('zone.bounds', 'a main zone takes its bounds from world.manifest.json')
+  if (zone.parent && JSON.stringify(areaBoundsAt(json.bounds, 'zone.bounds', zone)) !== JSON.stringify(zone.bounds)) throw new TemplateError('zone.bounds', `expected ${JSON.stringify(zone.bounds)}`)
   if (typeof json.name !== 'string' || json.name.trim() === '') throw new TemplateError('zone.name', 'expected a non-empty string')
   if (!Array.isArray(json.props)) throw new TemplateError('zone.props', 'expected an array')
   const props = json.props.map((p, i) => zonePropAt(p, `zone.props[${i}]`, zone.key, crops, animals, buildings))
@@ -424,7 +449,7 @@ export function parseZoneDecor(raw: unknown, zone: { key: string; bounds: WorldB
   if (!Array.isArray(json.areas)) throw new TemplateError('zone.areas', 'expected an array')
   const areas = json.areas.map((a, i) => areaAt(a, `zone.areas[${i}]`, zone))
   checkAreas(areas, props)
-  return { version: 1, zone: zone.key, name: json.name, props, areas }
+  return { version: 1, zone: zone.key, name: json.name, ...(zone.parent ? { parent: zone.parent, bounds: zone.bounds } : {}), props, areas }
 }
 
 export function zonePrices(decor: ZoneDecor): Record<string, number> {

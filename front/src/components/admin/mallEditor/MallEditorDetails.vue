@@ -47,9 +47,10 @@ const props = defineProps<{
   collapsed: boolean
   rebuilding?: string | null
   selectedCount?: number
+  shop?: string | null
 }>()
 
-const emit = defineEmits<{ change: [prop: TemplateProp]; surfaces: [surfaces: NonNullable<MallTemplate['surfaces']>]; remove: [id: string]; toggle: []; rebuild: [id: string] }>()
+const emit = defineEmits<{ change: [prop: TemplateProp]; surfaces: [surfaces: NonNullable<MallTemplate['surfaces']>]; remove: [id: string]; toggle: []; rebuild: [id: string]; openShop: [] }>()
 
 const NO_PIECE = ''
 const SURFACE_LABELS: Record<Surface, string> = { left: 'Left wall', right: 'Right wall', back: 'Back wall', floor: 'Floor', ceiling: 'Ceiling' }
@@ -387,7 +388,13 @@ const flatMaterials = computed(() => props.materialOptions.filter((o) => !o.prev
       </button>
     </header>
     <div v-if="!collapsed" class="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-2 text-sm" @keydown.stop>
-      <p v-if="!prop && selectedCount && selectedCount > 1" class="m-0 px-1 text-xs text-mist">
+      <div v-if="!prop && shop" class="cc-panel-flat flex flex-col gap-2 p-3">
+        <p class="cc-eyebrow m-0 text-mist">Shop</p>
+        <p class="m-0 text-base font-extrabold">{{ shop }}</p>
+        <p class="m-0 text-xs text-mist">Edited in its own zone.</p>
+        <button type="button" class="cc-btn cc-btn-sm cc-btn-sun" @click="emit('openShop')">Open {{ shop }} editor</button>
+      </div>
+      <p v-else-if="!prop && selectedCount && selectedCount > 1" class="m-0 px-1 text-xs text-mist">
         {{ selectedCount }} props selected: the gizmo moves and turns them together. Group (Ctrl/Cmd+G) keeps them together, Alt-click edits one alone.
       </p>
       <p v-else-if="!prop && bounds" class="m-0 px-1 text-xs text-mist">Nothing selected. Select a prop to edit it.</p>

@@ -1,0 +1,332 @@
+{
+  "version": 1,
+  "zone": "summit_sports",
+  "name": "Summit Sports",
+  "parent": "mall",
+  "bounds": {
+    "minX": -299.1,
+    "maxX": -268.9,
+    "minZ": 78.405,
+    "maxZ": 86.905
+  },
+  "props": [
+    {
+      "id": "summit_sports_clerk",
+      "kind": "npc",
+      "position": [
+        -292.9,
+        0.2,
+        81.155
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pose": "idle",
+      "vendor": false,
+      "body": "#8b7aa8",
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "ponytail",
+          "color": "#6b5b95"
+        },
+        {
+          "slot": "top",
+          "key": "tee",
+          "color": "#1b1d22"
+        },
+        {
+          "slot": "bottom",
+          "key": "joggers",
+          "color": "#f0b429"
+        },
+        {
+          "slot": "shoes",
+          "key": "sneakers",
+          "color": "#4a3f62"
+        }
+      ]
+    },
+    {
+      "id": "summit_sports_top_track_jacket",
+      "kind": "mannequin",
+      "position": [
+        -272.0,
+        0.463,
+        86.485
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "top",
+          "key": "track_jacket",
+          "color": "#9b8abf",
+          "forSale": true,
+          "code": "COS_WEAR_TOP_TRACK_JACKET",
+          "price": 260
+        }
+      ]
+    },
+    {
+      "id": "summit_sports_top_jersey",
+      "kind": "mannequin",
+      "position": [
+        -273.25,
+        0.463,
+        86.485
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "top",
+          "key": "jersey",
+          "color": "#9b8abf",
+          "forSale": true,
+          "code": "COS_WEAR_TOP_JERSEY",
+          "price": 110
+        }
+      ]
+    },
+    {
+      "id": "summit_sports_top_sports_bra",
+      "kind": "mannequin",
+      "position": [
+        -274.5,
+        0.463,
+        86.485
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "top",
+          "key": "sports_bra",
+          "color": "#9b8abf",
+          "forSale": true,
+          "code": "COS_WEAR_TOP_SPORTS_BRA",
+          "price": 80
+        }
+      ]
+    },
+    {
+      "id": "summit_sports_bottom_track_pants",
+      "kind": "mannequin",
+      "position": [
+        -292.5,
+        1.078,
+        86.485
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "bottom",
+          "key": "track_pants",
+          "color": "#5a4e72",
+          "forSale": true,
+          "code": "COS_WEAR_BOTTOM_TRACK_PANTS",
+          "price": 150
+        }
+      ]
+    },
+    {
+      "id": "summit_sports_bottom_basketball_shorts",
+      "kind": "mannequin",
+      "position": [
+        -293.75,
+        1.078,
+        86.485
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "bottom",
+          "key": "basketball_shorts",
+          "color": "#5a4e72",
+          "forSale": true,
+          "code": "COS_WEAR_BOTTOM_BASKETBALL_SHORTS",
+          "price": 90
+        }
+      ]
+    },
+    {
+      "id": "summit_sports_bottom_leggings",
+      "kind": "mannequin",
+      "position": [
+        -295.0,
+        1.078,
+        86.485
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "bottom",
+          "key": "leggings",
+          "color": "#5a4e72",
+          "forSale": true,
+          "code": "COS_WEAR_BOTTOM_LEGGINGS",
+          "price": 120
+        }
+      ]
+    },
+    {
+      "id": "summit_sports_look_1",
+      "kind": "mannequin",
+      "position": [
+        -283.2,
+        0.34,
+        83.905
+      ],
+      "yaw": -3.0216,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "short",
+          "color": "#6b5b95",
+          "forSale": true,
+          "code": "COS_WEAR_HAIR_SHORT",
+          "price": 80
+        },
+        {
+          "slot": "top",
+          "key": "track_jacket",
+          "color": "#9b8abf",
+          "forSale": true,
+          "code": "COS_WEAR_TOP_TRACK_JACKET",
+          "price": 260
+        },
+        {
+          "slot": "bottom",
+          "key": "track_pants",
+          "color": "#5a4e72",
+          "forSale": true,
+          "code": "COS_WEAR_BOTTOM_TRACK_PANTS",
+          "price": 150
+        },
+        {
+          "slot": "shoes",
+          "key": "runners",
+          "color": "#4a3f62",
+          "forSale": true,
+          "code": "COS_WEAR_SHOES_RUNNERS",
+          "price": 250
+        }
+      ]
+    },
+    {
+      "id": "summit_sports_look_2",
+      "kind": "mannequin",
+      "position": [
+        -284.8,
+        0.34,
+        83.905
+      ],
+      "yaw": 3.0216,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "buzz",
+          "color": "#6b5b95",
+          "forSale": true,
+          "code": "COS_WEAR_HAIR_BUZZ",
+          "price": 60
+        },
+        {
+          "slot": "top",
+          "key": "jersey",
+          "color": "#9b8abf",
+          "forSale": true,
+          "code": "COS_WEAR_TOP_JERSEY",
+          "price": 110
+        },
+        {
+          "slot": "bottom",
+          "key": "basketball_shorts",
+          "color": "#5a4e72",
+          "forSale": true,
+          "code": "COS_WEAR_BOTTOM_BASKETBALL_SHORTS",
+          "price": 90
+        },
+        {
+          "slot": "shoes",
+          "key": "high_tops",
+          "color": "#4a3f62",
+          "forSale": true,
+          "code": "COS_WEAR_SHOES_HIGH_TOPS",
+          "price": 220
+        }
+      ]
+    }
+  ],
+  "areas": [
+    {
+      "id": "summit_sports",
+      "name": "Summit Sports",
+      "role": "seller",
+      "npc": "summit_sports_clerk",
+      "bounds": {
+        "minX": -299.1,
+        "maxX": -268.9,
+        "minZ": 78.405,
+        "maxZ": 86.905
+      },
+      "offers": [],
+      "priceTags": true
+    }
+  ]
+}

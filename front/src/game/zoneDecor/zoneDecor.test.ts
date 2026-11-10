@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs'
 import { parseCrops } from '../crops/crops.ts'
 import { parseAnimals } from '../animals/animals.ts'
 import { buildingPreviewKey, parseBuildings } from '../buildings/buildings.ts'
-import { areaStoreLayout, withStaff, bakedProps, parseZoneDecor as parseWithCrops, parseZoneDecorIndex, runtimeProps, zoneDecorJson, zonePriceFile, zonePrices } from './zoneDecor.ts'
+import { areaStoreLayout, withStaff, zoneRefOf, bakedProps, parseZoneDecor as parseWithCrops, parseZoneDecorIndex, runtimeProps, zoneDecorJson, zonePriceFile, zonePrices } from './zoneDecor.ts'
 import type { WorldManifest } from '../world/worldManifest.ts'
 
 const crops = parseCrops(JSON.parse(readFileSync(new URL('../../../public/assets/crops/crops.json', import.meta.url), 'utf8')))
@@ -86,7 +86,8 @@ test('areas stay inside the zone, seller areas never overlap, an NPC works in on
 
 test('the file shape is strict', () => {
   assert.throws(() => parseZoneDecor({ ...decor([]), version: 2 }, orchard), /zone.version/)
-  assert.throws(() => parseZoneDecor(decor([], { bounds: {} }), orchard), /zone.bounds: unknown field/)
+  assert.throws(() => parseZoneDecor(decor([], { bounds: {} }), orchard), /zone.bounds: a main zone takes its bounds from world.manifest.json/)
+  assert.throws(() => parseZoneDecor(decor([], { colour: 'red' }), orchard), /zone.colour: unknown field/)
   assert.throws(() => parseZoneDecor(decor([{ ...crate, kind: 'tree' }]), orchard), /kind/)
   assert.throws(() => parseZoneDecorIndex({ version: 2, zones: [] }), /index.version/)
 })
@@ -174,8 +175,8 @@ test('the backend copy of each zone price list matches its zone file', () => {
   const read = (url: URL): unknown => JSON.parse(readFileSync(url, 'utf8'))
   const manifest = read(new URL('world.manifest.json', assets)) as WorldManifest
   for (const key of parseZoneDecorIndex(read(new URL('zones/index.json', assets))).zones) {
-    const zone = manifest.zones.find((z) => z.key === key)!
-    const expected = zonePriceFile(parseWithCrops(read(new URL(`zones/${key}.json`, assets)), zone, null, null, null))
+    const raw = read(new URL(`zones/${key}.json`, assets))
+    const expected = zonePriceFile(parseWithCrops(raw, zoneRefOf(key, raw, manifest.zones), null, null, null))
     assert.deepEqual(read(new URL(`../../../backend/resources/zones/${key}.json`, assets)), expected, `${key}: run npm run zone:prices`)
   }
 })
@@ -295,4 +296,16 @@ test('the pub staff come from the pub zone file and land in the manifest', () =>
   assert.throws(() => parseZoneDecor({ version: 1, zone: 'pub', name: 'Pub', props: [barman, doorman, { ...barman, id: 'b3' }], areas: [] }, pub), /only one bartender/)
   assert.throws(() => parseZoneDecor(decor([{ ...cashier, role: 'bartender' }]), orchard), /the bartender works in zone pub/)
   assert.throws(() => parseZoneDecor(decor([{ ...cashier, role: 'chef' }]), orchard), /role: expected one of bartender, bouncer, nurse/)
+})
+
+test('a shop zone lives inside its parent zone and keeps its own bounds', () => {
+  const shop = { version: 1, zone: 'stall_shop', name: 'Stall shop', parent: 'orchard', bounds: { minX: -24, maxX: -16, minZ: -92, maxZ: -84 }, props: [], areas: [] }
+  const ref = zoneRefOf('stall_shop', shop, [orchard])
+  assert.deepEqual(ref, { key: 'stall_shop', bounds: shop.bounds, parent: 'orchard' })
+  assert.deepEqual([parseZoneDecor(shop, ref).parent, parseZoneDecor(shop, ref).bounds], ['orchard', shop.bounds])
+  assert.throws(() => zoneRefOf('stall_shop', { ...shop, parent: undefined }, [orchard]), /a shop zone names its parent zone/)
+  assert.throws(() => zoneRefOf('stall_shop', { ...shop, bounds: { ...shop.bounds, minX: -60 } }, [orchard]), /reaches outside zone orchard/)
+  assert.throws(() => zoneRefOf('orchard', { parent: 'farm' }, [orchard]), /orchard is a main zone, it has no parent/)
+  assert.throws(() => parseZoneDecor({ ...shop, bounds: { ...shop.bounds, maxX: -17 } }, ref), /zone.bounds: expected/)
+  assert.throws(() => parseZoneDecor({ ...shop, parent: undefined }, ref), /zone.parent: expected orchard/)
 })

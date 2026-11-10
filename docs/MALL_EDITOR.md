@@ -112,8 +112,11 @@ Le jeu refuse une cellule dont l'assignation ne correspond pas au build (message
 ## Décorer une zone du monde ouvert
 
 Le sélecteur **Zone…** de la barre du haut ouvre une zone de `world.manifest.json` : son modèle, ses bâtiments et leurs
-intérieurs servent de fond (le mall s'ouvre aussi, pour ses six boutiques ; ses cellules restent décorées par
-templates), on pose décors, objets vendables, NPC, mannequins, champs (dossier **Fields**, voir
+intérieurs servent de fond. Le sélecteur ne liste que les zones principales, par leur nom (`retail_park` s'appelle
+**Campus Home**). Les six boutiques du mall sont des zones à part : dans le mall, leur contenu s'affiche en lecture
+seule, un clic dessus propose **Open … editor**, et **Shops map** ouvre le plan du mall pour en choisir une. Une boutique
+s'ouvre seule (son bâtiment, ses props), avec **Back to Mall** et le fil `Zone · Mall › <boutique>` en haut ; son fichier
+porte `"parent": "mall"` et ses `bounds`. Les cellules du mall restent décorées par templates, on pose décors, objets vendables, NPC, mannequins, champs (dossier **Fields**, voir
 [FARM.md](FARM.md#champs-modulaires)) et animaux (dossier **Animals**, voir [FARM.md](FARM.md#animaux)) en coordonnées monde, posés sur la surface cliquée. Pas
 de lumière ni de matière personnalisée sur les décors d'une zone. **Test** marche à partir du point visé, dans les
 limites de la zone.
@@ -195,7 +198,7 @@ Toutes les boutiques marchent pareil : une zone **Seller** autour de la boutique
 (`decor/checkout_counter`, dossier **Shop**, ou le comptoir du bâtiment), les objets **For sale** et les mannequins dans
 la zone. Le joueur remplit son panier en visant les objets, puis paie au vendeur. Cove Home, Cove Threads, la pharmacie
 de la clinique, le Campus Cafe et les six boutiques du mall sont dans `zones/retail_park.json`, `fashion.json`,
-`clinic.json`, `work_district.json` et `mall.json` ; leurs anciens layouts d'intérieur ne sont plus lus pour les ventes.
+`clinic.json`, `work_district.json` et un fichier par boutique du mall (`hearth_hollow.json`, `greencart.json`…) ; leurs anciens layouts d'intérieur ne sont plus lus pour les ventes.
 
 - **Price tags beside each item** (carte Sellers) pose une étiquette de prix devant chaque objet de la zone.
 - Un objet à vendre peut avoir une **Description**, affichée quand on le vise.

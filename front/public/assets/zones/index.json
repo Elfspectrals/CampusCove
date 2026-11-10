@@ -1,14 +1,19 @@
 {
   "version": 1,
   "zones": [
+    "candy_cloud",
     "clinic",
+    "crispins_hardware",
     "farm",
     "fashion",
-    "mall",
+    "greencart",
+    "hearth_hollow",
+    "northline",
     "orchard",
     "pond",
     "pub",
     "retail_park",
+    "summit_sports",
     "work_district"
   ]
 }

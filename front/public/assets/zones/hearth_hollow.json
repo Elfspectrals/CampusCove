@@ -1,0 +1,610 @@
+{
+  "version": 1,
+  "zone": "hearth_hollow",
+  "name": "Hearth & Hollow",
+  "parent": "mall",
+  "bounds": {
+    "minX": -265.0,
+    "maxX": -235.0,
+    "minZ": -108.405,
+    "maxZ": -78.405
+  },
+  "props": [
+    {
+      "id": "hearth_hollow_clerk",
+      "kind": "npc",
+      "position": [
+        -239.5,
+        0.2,
+        -81.105
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pose": "idle",
+      "vendor": false,
+      "body": "#8b7aa8",
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "ponytail",
+          "color": "#6b5b95"
+        },
+        {
+          "slot": "top",
+          "key": "tee",
+          "color": "#c47c4c"
+        },
+        {
+          "slot": "bottom",
+          "key": "joggers",
+          "color": "#3b3f4a"
+        },
+        {
+          "slot": "shoes",
+          "key": "sneakers",
+          "color": "#4a3f62"
+        }
+      ]
+    },
+    {
+      "id": "hearth_hollow_armchair_lounge",
+      "kind": "item",
+      "key": "armchair_lounge",
+      "code": "decor_armchair_lounge",
+      "forSale": true,
+      "price": 260,
+      "position": [
+        -258.5,
+        0.2,
+        -89.805
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Mustard lounge armchair on oak legs."
+    },
+    {
+      "id": "hearth_hollow_coffee_table_round",
+      "kind": "item",
+      "key": "coffee_table_round",
+      "code": "decor_coffee_table_round",
+      "forSale": true,
+      "price": 140,
+      "position": [
+        -261.271,
+        0.2,
+        -91.105
+      ],
+      "yaw": -1.1322,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Round oak coffee table with a lower shelf."
+    },
+    {
+      "id": "hearth_hollow_pouf_knit",
+      "kind": "item",
+      "key": "pouf_knit",
+      "code": "decor_pouf_knit",
+      "forSale": true,
+      "price": 60,
+      "position": [
+        -261.271,
+        0.2,
+        -93.705
+      ],
+      "yaw": -2.0094,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Chunky knitted pouf, cream."
+    },
+    {
+      "id": "hearth_hollow_rug_round",
+      "kind": "item",
+      "key": "rug_round",
+      "code": "decor_rug_round",
+      "forSale": true,
+      "price": 90,
+      "position": [
+        -258.5,
+        0.2,
+        -95.005
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Round sunny rug, 1.8 m."
+    },
+    {
+      "id": "hearth_hollow_side_table",
+      "kind": "item",
+      "key": "side_table",
+      "code": "decor_side_table",
+      "forSale": true,
+      "price": 80,
+      "position": [
+        -255.729,
+        0.6,
+        -93.705
+      ],
+      "yaw": 2.0094,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Small white side table with a drawer."
+    },
+    {
+      "id": "hearth_hollow_floor_lamp_arc",
+      "kind": "item",
+      "key": "floor_lamp_arc",
+      "code": "decor_floor_lamp_arc",
+      "forSale": true,
+      "price": 210,
+      "position": [
+        -255.729,
+        0.2,
+        -91.105
+      ],
+      "yaw": 1.1322,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Brass arc lamp that reaches over the sofa."
+    },
+    {
+      "id": "hearth_hollow_desk_lamp",
+      "kind": "item",
+      "key": "desk_lamp",
+      "code": "decor_desk_lamp",
+      "forSale": true,
+      "price": 50,
+      "position": [
+        -250.7,
+        0.98,
+        -86.405
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Adjustable work lamp."
+    },
+    {
+      "id": "hearth_hollow_cactus",
+      "kind": "item",
+      "key": "cactus",
+      "code": "decor_cactus",
+      "forSale": true,
+      "price": 35,
+      "position": [
+        -250.0,
+        0.98,
+        -86.405
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Easy-going cactus in a pot."
+    },
+    {
+      "id": "hearth_hollow_vase_tulips",
+      "kind": "item",
+      "key": "vase_tulips",
+      "code": "decor_vase_tulips",
+      "forSale": true,
+      "price": 40,
+      "position": [
+        -249.3,
+        0.98,
+        -86.405
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Glass vase with tulips."
+    },
+    {
+      "id": "hearth_hollow_floor_lamp",
+      "kind": "item",
+      "key": "floor_lamp",
+      "code": "lamp_study",
+      "forSale": true,
+      "price": 120,
+      "position": [
+        -250.0,
+        0.2,
+        -84.205
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Brass floor lamp with a warm shade."
+    },
+    {
+      "id": "hearth_hollow_monstera",
+      "kind": "item",
+      "key": "monstera",
+      "code": "decor_monstera",
+      "forSale": true,
+      "price": 120,
+      "position": [
+        -252.598,
+        0.2,
+        -87.505
+      ],
+      "yaw": -1.9713,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Big leafy monstera, 1.4 m."
+    },
+    {
+      "id": "hearth_hollow_potted_plant",
+      "kind": "item",
+      "key": "potted_plant",
+      "code": "decor_potted_plant",
+      "forSale": true,
+      "price": 60,
+      "position": [
+        -247.402,
+        0.2,
+        -87.505
+      ],
+      "yaw": 1.9713,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Leafy plant in a terracotta pot."
+    },
+    {
+      "id": "hearth_hollow_globe",
+      "kind": "item",
+      "key": "globe",
+      "code": "decor_globe",
+      "forSale": true,
+      "price": 75,
+      "position": [
+        -241.5,
+        0.98,
+        -92.405
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Desk globe on a wooden stand."
+    },
+    {
+      "id": "hearth_hollow_bookshelf",
+      "kind": "item",
+      "key": "bookshelf",
+      "code": "decor_bookshelf",
+      "forSale": true,
+      "price": 220,
+      "position": [
+        -241.5,
+        0.2,
+        -89.805
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Four-shelf bookcase, books included."
+    },
+    {
+      "id": "hearth_hollow_cube_shelf",
+      "kind": "item",
+      "key": "cube_shelf",
+      "code": "decor_cube_shelf",
+      "forSale": true,
+      "price": 150,
+      "position": [
+        -244.543,
+        0.2,
+        -91.602
+      ],
+      "yaw": -1.3127,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "4x4 cube shelf with storage boxes."
+    },
+    {
+      "id": "hearth_hollow_coat_rack",
+      "kind": "item",
+      "key": "coat_rack",
+      "code": "decor_coat_rack",
+      "forSale": true,
+      "price": 65,
+      "position": [
+        -243.381,
+        0.2,
+        -94.508
+      ],
+      "yaw": -2.412,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Coat stand with hooks and a hat."
+    },
+    {
+      "id": "hearth_hollow_mirror_standing",
+      "kind": "item",
+      "key": "mirror_standing",
+      "code": "decor_mirror_standing",
+      "forSale": true,
+      "price": 120,
+      "position": [
+        -239.619,
+        0.2,
+        -94.508
+      ],
+      "yaw": 2.412,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Full-length standing mirror."
+    },
+    {
+      "id": "hearth_hollow_nightstand",
+      "kind": "item",
+      "key": "nightstand",
+      "code": "decor_nightstand",
+      "forSale": true,
+      "price": 90,
+      "position": [
+        -238.457,
+        0.6,
+        -91.602
+      ],
+      "yaw": 1.3127,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Two-drawer nightstand with a little lamp."
+    },
+    {
+      "id": "hearth_hollow_bar_stool",
+      "kind": "item",
+      "key": "bar_stool",
+      "code": "decor_bar_stool",
+      "forSale": true,
+      "price": 70,
+      "position": [
+        -257.0,
+        0.6,
+        -100.005
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Tall stool with a round oak seat."
+    },
+    {
+      "id": "hearth_hollow_dining_bench",
+      "kind": "item",
+      "key": "dining_bench",
+      "code": "decor_dining_bench",
+      "forSale": true,
+      "price": 110,
+      "position": [
+        -259.853,
+        0.2,
+        -101.663
+      ],
+      "yaw": -1.3165,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Solid oak bench for the dining table."
+    },
+    {
+      "id": "hearth_hollow_wooden_chair",
+      "kind": "item",
+      "key": "wooden_chair",
+      "code": "chair_campus_basic",
+      "forSale": true,
+      "price": 90,
+      "position": [
+        -258.763,
+        0.2,
+        -104.347
+      ],
+      "yaw": -2.4043,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Solid wood chair with a teal cushion."
+    },
+    {
+      "id": "hearth_hollow_towel_rack",
+      "kind": "item",
+      "key": "towel_rack",
+      "code": "decor_towel_rack",
+      "forSale": true,
+      "price": 45,
+      "position": [
+        -255.237,
+        0.2,
+        -104.347
+      ],
+      "yaw": 2.4043,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Ladder towel rack with towels."
+    },
+    {
+      "id": "hearth_hollow_aquarium",
+      "kind": "item",
+      "key": "aquarium",
+      "code": "decor_aquarium",
+      "forSale": true,
+      "price": 340,
+      "position": [
+        -254.147,
+        0.2,
+        -101.663
+      ],
+      "yaw": 1.3165,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Aquarium on a cabinet, fish included."
+    },
+    {
+      "id": "hearth_hollow_garden_bench",
+      "kind": "item",
+      "key": "garden_bench",
+      "code": "decor_garden_bench",
+      "forSale": true,
+      "price": 170,
+      "position": [
+        -243.0,
+        0.2,
+        -100.005
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Slatted garden bench."
+    },
+    {
+      "id": "hearth_hollow_parasol",
+      "kind": "item",
+      "key": "parasol",
+      "code": "decor_parasol",
+      "forSale": true,
+      "price": 130,
+      "position": [
+        -246.4,
+        0.2,
+        -102.405
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Striped parasol on a heavy base."
+    },
+    {
+      "id": "hearth_hollow_sun_lounger",
+      "kind": "item",
+      "key": "sun_lounger",
+      "code": "decor_sun_lounger",
+      "forSale": true,
+      "price": 190,
+      "position": [
+        -243.0,
+        0.2,
+        -104.805
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Reclining sun lounger."
+    },
+    {
+      "id": "hearth_hollow_bbq_grill",
+      "kind": "item",
+      "key": "bbq_grill",
+      "code": "decor_bbq_grill",
+      "forSale": true,
+      "price": 230,
+      "position": [
+        -239.6,
+        0.2,
+        -102.405
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Kettle barbecue on three legs."
+    }
+  ],
+  "areas": [
+    {
+      "id": "hearth_hollow",
+      "name": "Hearth & Hollow",
+      "role": "seller",
+      "npc": "hearth_hollow_clerk",
+      "bounds": {
+        "minX": -265.0,
+        "maxX": -235.0,
+        "minZ": -108.405,
+        "maxZ": -78.405
+      },
+      "offers": [],
+      "priceTags": true
+    }
+  ]
+}
