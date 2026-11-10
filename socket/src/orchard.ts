@@ -6,7 +6,6 @@ export const PICK_MS = 3000
 const PICK_LAG_MARGIN_MS = 250
 export const PICK_RESTART_MS = 300
 const TREE_REACH = 2.5
-const FARMER_REACH = 3
 const EYE_HEIGHT = 1.6
 const POINT_FLOOR_TOLERANCE = 2
 
@@ -88,30 +87,5 @@ export async function onOrchardPick(room: GameRoom, client: GameClient, now = Da
   } catch (error) {
     warn('pick failed', error)
     client.send('orchard_error', errorPayload(error, 'The apple slipped from your hand.', 'orchard_pick_failed'))
-  }
-}
-
-export async function onOrchardSell(room: GameRoom, client: GameClient, payload: ClientPayload, now = Date.now()): Promise<void> {
-  const player = activePlayer(room, client, now)
-  if (!player) return
-  const orchard = worldOrchard()
-  if (!orchard) {
-    sendOrchardError(client, 'There is no orchard in this world.', 'no_orchard')
-    return
-  }
-  const quantity = payload?.quantity
-  if (typeof quantity !== 'number' || !Number.isInteger(quantity) || quantity < 1) {
-    sendOrchardError(client, 'Choose how many apples to sell.', 'orchard_bad_quantity')
-    return
-  }
-  if (!isWithinReach(player, orchard.farmer, FARMER_REACH)) {
-    sendOrchardError(client, 'Walk up to the farmer.', 'orchard_too_far')
-    return
-  }
-  try {
-    client.send('orchard_sold', await callRealtimeBackend(player.token, '/orchard/sell', 'POST', { quantity }))
-  } catch (error) {
-    warn('sell failed', error)
-    client.send('orchard_error', errorPayload(error, 'The farmer could not buy your apples.', 'orchard_sell_failed'))
   }
 }

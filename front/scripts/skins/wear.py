@@ -234,6 +234,17 @@ def build_top(key, M, m):
         for sg in (1, -1):
             add_box(M, m["main"], S((0.095, -0.166, 1.36), sg), (0.08, 0.01, 0.08), bevel=0.005)
             add_box(M, m["accent"], S((0.095, -0.172, 1.395), sg), (0.084, 0.006, 0.022), bevel=0.002)
+    elif key == "staff_polo":
+        torso(M, m["main"])
+        sleeves(M, m["main"], 1, puff=1.12)
+        add_sweep(M, m["accent"], [(0, 0, 1.55), (0, 0, 1.6)], [(0.104, 0.095), (0.09, 0.084)], seg=18, per=1)
+        letter_z, half, stroke, depth = 1.36, 0.035, 0.014, -0.143
+        add_box(M, m["accent"], (-0.06, depth, letter_z), (stroke, 0.006, 2 * half), bevel=0.0)
+        for dz in (half - stroke / 2, -half + stroke / 2):
+            add_box(M, m["accent"], (-0.04, depth, letter_z + dz), (0.04, 0.006, stroke), bevel=0.0)
+        for x in (0.012, 0.058):
+            add_box(M, m["accent"], (x, depth, letter_z), (stroke, 0.006, 2 * half), bevel=0.0)
+        add_box(M, m["accent"], (0.035, depth, letter_z), (0.046, 0.006, stroke), bevel=0.0)
     elif key == "sports_bra":
         torso(M, m["main"], hem_z=1.28, puff=1.0)
         for sg in (1, -1):
@@ -393,6 +404,7 @@ WEAR = {
         "plaid_shirt": dict(main="b5362e", accent="2a2630", hides=["chest", "upper_arms", "forearms"]),
         "farm_apron": dict(main="b5362e", accent="2a2630", extra={"apron": dict(color="c2a878", rough=0.9)}, hides=["chest", "upper_arms", "forearms"]),
         "flannel_jacket": dict(main="5f7d4a", accent="2b2a24", hides=["chest", "upper_arms", "forearms"]),
+        "staff_polo": dict(main="f2c230", accent="1f3a6b", hides=["chest"]),
     }),
     "bottom": dict(builder=build_bottom, bones=['Hips', 'Spine', 'UpperLeg.L', 'UpperLeg.R', 'LowerLeg.L', 'LowerLeg.R'], items={
         "basic": dict(main="4b5669", accent="3a4352", hides=["hips", "thighs", "shins"]),

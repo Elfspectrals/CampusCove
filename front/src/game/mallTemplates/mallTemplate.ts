@@ -77,6 +77,7 @@ export interface ItemProp extends PropBase {
   forSale: boolean
   stack?: [number, number]
   price?: number
+  description?: string
 }
 
 export interface OutfitPiece {
@@ -87,23 +88,29 @@ export interface OutfitPiece {
 
 export type NpcPose = 'idle' | 'sit'
 
+export const STAFF_ROLES = ['bartender', 'bouncer', 'nurse'] as const
+export type StaffRole = (typeof STAFF_ROLES)[number]
+
 export interface NpcProp extends PropBase {
   kind: 'npc'
   pose: NpcPose
   vendor: boolean
   body: string
   outfit: OutfitPiece[]
+  role?: StaffRole
 }
 
 export interface MannequinPiece extends OutfitPiece {
   forSale: boolean
   code?: string
+  price?: number
 }
 
 export interface MannequinProp extends PropBase {
   kind: 'mannequin'
   body: string
   outfit: MannequinPiece[]
+  bodyHidden?: true
 }
 
 type LightKind = 'point' | 'spot'
@@ -295,7 +302,7 @@ export function withSale(prop: TemplateProp, on: boolean, saleCode: string | und
     return { ...rest, kind: 'item', code: saleCode, forSale: true, ...priced }
   }
   if (prop.kind !== 'item' || prop.forSale === on) return null
-  const { stack: _, price: _price, ...rest } = prop
+  const { stack: _, price: _price, description: _description, ...rest } = prop
   if (!on && !isConsumableCode(prop.code)) {
     const { code: __, forSale: ___, ...plain } = rest
     return { ...plain, kind: 'decor' }
@@ -341,7 +348,7 @@ export function templateStoreLayout(template: MallTemplate, modelSizes: Readonly
       key: prop.key,
       code: prop.code,
       department: TEMPLATE_DEPARTMENT,
-      description: '',
+      description: prop.description ?? '',
       position: prop.position,
       yaw: prop.yaw,
       size: size.map((v, i) => v * prop.scale[i]!) as Vec3,
@@ -441,9 +448,9 @@ function outfitAt(value: unknown, path: string, extraFields: readonly string[] =
 const BASE_FIELDS = ['id', 'kind', 'position', 'yaw', 'scale', 'group']
 const KIND_FIELDS: Record<string, readonly string[]> = {
   decor: [...BASE_FIELDS, 'key', 'materials'],
-  item: [...BASE_FIELDS, 'key', 'code', 'forSale', 'stack'],
+  item: [...BASE_FIELDS, 'key', 'code', 'forSale', 'stack', 'description'],
   npc: [...BASE_FIELDS, 'pose', 'vendor', 'body', 'outfit'],
-  mannequin: [...BASE_FIELDS, 'body', 'outfit'],
+  mannequin: [...BASE_FIELDS, 'body', 'outfit', 'bodyHidden'],
   light: [...BASE_FIELDS, 'light', 'color', 'intensity', 'range', 'angle', 'pitch'],
 }
 
@@ -543,6 +550,8 @@ export function propAt(raw: unknown, path: string): TemplateProp {
       const item: ItemProp = { ...base, kind: 'item', ...itemAt(prop, path), forSale: prop.forSale }
       if (prop.stack !== undefined && !item.forSale) throw new TemplateError(`${path}.stack`, 'only items for sale are stacked')
       if (prop.stack !== undefined) item.stack = stackAt(prop.stack, `${path}.stack`)
+      if (prop.description !== undefined && !item.forSale) throw new TemplateError(`${path}.description`, 'only items for sale have a description')
+      if (prop.description !== undefined) item.description = stringAt(prop.description, `${path}.description`)
       return item
     }
     case 'npc': {
@@ -558,8 +567,11 @@ export function propAt(raw: unknown, path: string): TemplateProp {
         outfit: outfitAt(prop.outfit, `${path}.outfit`),
       }
     }
-    case 'mannequin':
-      return { ...base, kind: 'mannequin', body: stringAt(prop.body, `${path}.body`, HEX_COLOR), outfit: mannequinOutfitAt(prop.outfit, `${path}.outfit`) }
+    case 'mannequin': {
+      if (prop.bodyHidden !== undefined && prop.bodyHidden !== true) throw new TemplateError(`${path}.bodyHidden`, 'set true (only the clothes show) or leave it out')
+      const mannequin: MannequinProp = { ...base, kind: 'mannequin', body: stringAt(prop.body, `${path}.body`, HEX_COLOR), outfit: mannequinOutfitAt(prop.outfit, `${path}.outfit`) }
+      return prop.bodyHidden ? { ...mannequin, bodyHidden: true } : mannequin
+    }
     case 'light': {
       const light = prop.light as LightKind
       if (!LIGHT_KINDS.includes(light)) throw new TemplateError(`${path}.light`, `expected one of ${LIGHT_KINDS.join(', ')}`)

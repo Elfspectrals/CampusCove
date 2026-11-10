@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs'
 import { parseCrops } from '../crops/crops.ts'
 import { parseAnimals } from '../animals/animals.ts'
 import { buildingPreviewKey, parseBuildings } from '../buildings/buildings.ts'
-import { areaStoreLayout, bakedProps, parseZoneDecor as parseWithCrops, parseZoneDecorIndex, runtimeProps, zoneDecorJson, zonePriceFile, zonePrices } from './zoneDecor.ts'
+import { areaStoreLayout, withStaff, bakedProps, parseZoneDecor as parseWithCrops, parseZoneDecorIndex, runtimeProps, zoneDecorJson, zonePriceFile, zonePrices } from './zoneDecor.ts'
 import type { WorldManifest } from '../world/worldManifest.ts'
 
 const crops = parseCrops(JSON.parse(readFileSync(new URL('../../../public/assets/crops/crops.json', import.meta.url), 'utf8')))
@@ -255,4 +255,44 @@ test('any prop can belong to a group, saved with it', () => {
   assert.deepEqual(parsed.props.map((p) => p.group), ['group_1', 'group_1'])
   assert.throws(() => parseZoneDecor(decor([{ ...crate, group: 'Group 1' }]), orchard), /props\[0\].group/)
   assert.throws(() => parseZoneDecor(decor([{ ...barnProp, group: 7 }]), orchard), /props\[0\].group: expected a non-empty string/)
+})
+
+test('a seller area can show a price tag in front of each item, and an item for sale can carry a description', () => {
+  const described = { ...lamp, description: 'Arc lamp, warm light.' }
+  const parsed = parseZoneDecor(decor([described, cashier], { areas: [{ ...stall, priceTags: true }] }), orchard)
+  const [display] = areaStoreLayout(parsed, parsed.areas[0]!, new Map([['i1', [0.4, 1.6, 0.4]]])).displays
+  assert.equal(display!.description, 'Arc lamp, warm light.')
+  assert.deepEqual(display!.tag.position.map((v) => Number(v.toFixed(3))), [-21, 1.32, -87.5])
+  const untagged = parseZoneDecor(decor([described, cashier], { areas: [stall] }), orchard)
+  assert.deepEqual(areaStoreLayout(untagged, untagged.areas[0]!, new Map([['i1', [0.4, 1.6, 0.4]]])).displays[0]!.tag.position, lamp.position)
+  assert.throws(() => parseZoneDecor(decor([lamp, cashier, farmer], { areas: [stall, { ...buyer, priceTags: true }] }), orchard), /only a seller area shows price tags/)
+  assert.throws(() => parseZoneDecor(decor([{ ...crate, kind: 'item', code: 'decor_sofa_classic', forSale: false, description: 'x' }]), orchard), /only items for sale have a description/)
+})
+
+test('a mannequin sells its pieces at zone prices, and can show the clothes alone', () => {
+  const tee = { slot: 'top', key: 'tee', color: '#9b8abf', forSale: true, code: 'COS_WEAR_TOP_TEE', price: 60 }
+  const rack = { id: 'm1', kind: 'mannequin', position: [-21, 0, -88], yaw: 0, scale: [1, 1, 1], body: '#8b7aa8', bodyHidden: true, outfit: [tee] }
+  const look = { ...rack, id: 'm2', position: [-19, 0, -88], bodyHidden: undefined, outfit: [tee, { slot: 'bottom', key: 'jeans', color: '#5a4e72', forSale: false }] }
+  const parsed = parseZoneDecor(decor([cashier, rack, look], { areas: [stall] }), orchard)
+  assert.deepEqual(zonePrices(parsed), { COS_WEAR_TOP_TEE: 60 })
+  assert.equal((parsed.props[1] as { bodyHidden?: true }).bodyHidden, true)
+  assert.deepEqual(areaStoreLayout(parsed, parsed.areas[0]!, new Map()).displays.map((d) => d.figure?.prop), ['m1', 'm2'])
+  assert.throws(() => parseZoneDecor(decor([cashier, { ...rack, outfit: [{ ...tee, price: undefined }] }], { areas: [stall] }), orchard), /outfit\[0\].price: expected whole coins/)
+  assert.throws(() => parseZoneDecor(decor([cashier, rack, { ...look, outfit: [{ ...tee, price: 61 }] }], { areas: [stall] }), orchard), /COS_WEAR_TOP_TEE is already sold at 60 coins/)
+  assert.throws(() => parseZoneDecor(decor([cashier, { ...rack, position: [-35, 0, -110] }], { areas: [stall] }), orchard), /COS_WEAR_TOP_TEE is for sale outside every seller area/)
+  assert.throws(() => parseZoneDecor(decor([{ ...rack, bodyHidden: false }]), orchard), /bodyHidden: set true/)
+})
+
+test('the pub staff come from the pub zone file and land in the manifest', () => {
+  const pub = { key: 'pub', bounds: { minX: 80, maxX: 110, minZ: -150, maxZ: -110 } }
+  const barman = { ...cashier, id: 'b1', role: 'bartender', position: [98.3, 0.2, -133.505], yaw: -Math.PI / 2 }
+  const doorman = { ...cashier, id: 'b2', role: 'bouncer', position: [94, 0.2, -137.955] }
+  const pubDecor = parseZoneDecor({ version: 1, zone: 'pub', name: 'Pub', props: [barman, doorman], areas: [] }, pub)
+  const manifest = { zones: [], pub: { bartender: [0, 0, 0], bartenderYaw: 0, bouncer: [0, 0, 0] } } as unknown as Parameters<typeof withStaff>[0]
+  const staffed = withStaff(manifest, pubDecor)
+  assert.deepEqual([staffed.pub!.bartender, staffed.pub!.bartenderYaw, staffed.pub!.bouncer], [[98.3, 0.2, -133.505], 1.5708, [94, 0.2, -137.955]])
+  assert.throws(() => parseZoneDecor({ version: 1, zone: 'pub', name: 'Pub', props: [barman], areas: [] }, pub), /the bouncer is missing/)
+  assert.throws(() => parseZoneDecor({ version: 1, zone: 'pub', name: 'Pub', props: [barman, doorman, { ...barman, id: 'b3' }], areas: [] }, pub), /only one bartender/)
+  assert.throws(() => parseZoneDecor(decor([{ ...cashier, role: 'bartender' }]), orchard), /the bartender works in zone pub/)
+  assert.throws(() => parseZoneDecor(decor([{ ...cashier, role: 'chef' }]), orchard), /role: expected one of bartender, bouncer, nurse/)
 })

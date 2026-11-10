@@ -1,0 +1,1081 @@
+{
+  "version": 1,
+  "zone": "retail_park",
+  "name": "Shopping park",
+  "props": [
+    {
+      "id": "cove_home_clerk",
+      "kind": "npc",
+      "position": [
+        57.0,
+        0.2,
+        72.405
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pose": "idle",
+      "vendor": false,
+      "body": "#c8946a",
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "ponytail",
+          "color": "#3b2a1f"
+        },
+        {
+          "slot": "top",
+          "key": "staff_polo",
+          "color": "#f2c230"
+        },
+        {
+          "slot": "bottom",
+          "key": "jeans",
+          "color": "#1f3a6b"
+        },
+        {
+          "slot": "shoes",
+          "key": "sneakers",
+          "color": "#f4f2ec"
+        }
+      ]
+    },
+    {
+      "id": "cove_home_checkout",
+      "kind": "item",
+      "key": "checkout_counter",
+      "code": "decor_checkout_counter",
+      "forSale": false,
+      "position": [
+        56.0,
+        0.2,
+        72.405
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "cove_home_sofa_classic",
+      "kind": "item",
+      "key": "sofa_classic",
+      "code": "decor_sofa_classic",
+      "forSale": true,
+      "price": 450,
+      "position": [
+        62.83,
+        0.2,
+        78.11
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Two-seat sofa in teal fabric, deep cushions."
+    },
+    {
+      "id": "cove_home_armchair_lounge",
+      "kind": "item",
+      "key": "armchair_lounge",
+      "code": "decor_armchair_lounge",
+      "forSale": true,
+      "price": 260,
+      "position": [
+        62.765,
+        0.2,
+        80.15
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Mustard lounge armchair on oak legs."
+    },
+    {
+      "id": "cove_home_tv_bench",
+      "kind": "item",
+      "key": "tv_bench",
+      "code": "decor_tv_bench",
+      "forSale": true,
+      "price": 320,
+      "position": [
+        62.625,
+        0.2,
+        82.1
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Low TV bench, flat screen included."
+    },
+    {
+      "id": "cove_home_rug_round",
+      "kind": "item",
+      "key": "rug_round",
+      "code": "decor_rug_round",
+      "forSale": true,
+      "price": 90,
+      "position": [
+        62.9,
+        0.2,
+        84.51
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Round sunny rug, 1.8 m."
+    },
+    {
+      "id": "cove_home_floor_lamp",
+      "kind": "item",
+      "key": "floor_lamp",
+      "code": "lamp_study",
+      "forSale": true,
+      "price": 120,
+      "position": [
+        62.645,
+        0.2,
+        86.355
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Brass floor lamp with a warm shade."
+    },
+    {
+      "id": "cove_home_sofa_corner",
+      "kind": "item",
+      "key": "sofa_corner",
+      "code": "decor_sofa_corner",
+      "forSale": true,
+      "price": 780,
+      "position": [
+        56.7,
+        0.2,
+        78.82
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "L-shaped corner sofa for movie nights."
+    },
+    {
+      "id": "cove_home_coffee_table_round",
+      "kind": "item",
+      "key": "coffee_table_round",
+      "code": "decor_coffee_table_round",
+      "forSale": true,
+      "price": 140,
+      "position": [
+        57.15,
+        0.2,
+        81.17
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Round oak coffee table with a lower shelf."
+    },
+    {
+      "id": "cove_home_side_table",
+      "kind": "item",
+      "key": "side_table",
+      "code": "decor_side_table",
+      "forSale": true,
+      "price": 80,
+      "position": [
+        57.375,
+        0.2,
+        82.545
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Small white side table with a drawer."
+    },
+    {
+      "id": "cove_home_pouf_knit",
+      "kind": "item",
+      "key": "pouf_knit",
+      "code": "decor_pouf_knit",
+      "forSale": true,
+      "price": 60,
+      "position": [
+        57.3,
+        0.2,
+        83.77
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Chunky knitted pouf, cream."
+    },
+    {
+      "id": "cove_home_floor_lamp_arc",
+      "kind": "item",
+      "key": "floor_lamp_arc",
+      "code": "decor_floor_lamp_arc",
+      "forSale": true,
+      "price": 210,
+      "position": [
+        57.36,
+        0.2,
+        85.48
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Brass arc lamp that reaches over the sofa."
+    },
+    {
+      "id": "cove_home_bed_double",
+      "kind": "item",
+      "key": "bed_double",
+      "code": "decor_bed_double",
+      "forSale": true,
+      "price": 520,
+      "position": [
+        63.495,
+        0.2,
+        92.155
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Double bed with upholstered headboard."
+    },
+    {
+      "id": "cove_home_wardrobe",
+      "kind": "item",
+      "key": "wardrobe",
+      "code": "decor_wardrobe",
+      "forSale": true,
+      "price": 380,
+      "position": [
+        62.715,
+        0.2,
+        94.235
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Two-door wardrobe, 2 m tall."
+    },
+    {
+      "id": "cove_home_mirror_standing",
+      "kind": "item",
+      "key": "mirror_standing",
+      "code": "decor_mirror_standing",
+      "forSale": true,
+      "price": 120,
+      "position": [
+        62.67,
+        0.2,
+        95.735
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Full-length standing mirror."
+    },
+    {
+      "id": "cove_home_bed_single",
+      "kind": "item",
+      "key": "bed_single",
+      "code": "decor_bed_single",
+      "forSale": true,
+      "price": 300,
+      "position": [
+        56.55,
+        0.2,
+        92.11
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Single pine bed, navy duvet."
+    },
+    {
+      "id": "cove_home_nightstand",
+      "kind": "item",
+      "key": "nightstand",
+      "code": "decor_nightstand",
+      "forSale": true,
+      "price": 90,
+      "position": [
+        57.375,
+        0.2,
+        93.55
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Two-drawer nightstand with a little lamp."
+    },
+    {
+      "id": "cove_home_dresser",
+      "kind": "item",
+      "key": "dresser",
+      "code": "decor_dresser",
+      "forSale": true,
+      "price": 240,
+      "position": [
+        57.335,
+        0.2,
+        95.095
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Six-drawer chest in white and oak."
+    },
+    {
+      "id": "cove_home_dining_table",
+      "kind": "item",
+      "key": "dining_table",
+      "code": "decor_dining_table",
+      "forSale": true,
+      "price": 160,
+      "position": [
+        62.825,
+        0.2,
+        101.755
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Light oak table for four, flowers included."
+    },
+    {
+      "id": "cove_home_dining_bench",
+      "kind": "item",
+      "key": "dining_bench",
+      "code": "decor_dining_bench",
+      "forSale": true,
+      "price": 110,
+      "position": [
+        62.58,
+        0.2,
+        103.855
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Solid oak bench for the dining table."
+    },
+    {
+      "id": "cove_home_fridge_retro",
+      "kind": "item",
+      "key": "fridge_retro",
+      "code": "decor_fridge_retro",
+      "forSale": true,
+      "price": 420,
+      "position": [
+        62.78,
+        0.2,
+        105.605
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Rounded retro fridge in mint."
+    },
+    {
+      "id": "cove_home_stove_oven",
+      "kind": "item",
+      "key": "stove_oven",
+      "code": "decor_stove_oven",
+      "forSale": true,
+      "price": 360,
+      "position": [
+        62.73,
+        0.2,
+        106.955
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Four-burner stove with oven."
+    },
+    {
+      "id": "cove_home_wooden_chair",
+      "kind": "item",
+      "key": "wooden_chair",
+      "code": "chair_campus_basic",
+      "forSale": true,
+      "price": 90,
+      "position": [
+        57.38,
+        0.2,
+        101.76
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Solid wood chair with a teal cushion."
+    },
+    {
+      "id": "cove_home_round_dining_table",
+      "kind": "item",
+      "key": "round_dining_table",
+      "code": "decor_round_dining_table",
+      "forSale": true,
+      "price": 190,
+      "position": [
+        57.05,
+        0.2,
+        103.24
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Round dining table on a pedestal."
+    },
+    {
+      "id": "cove_home_bar_stool",
+      "kind": "item",
+      "key": "bar_stool",
+      "code": "decor_bar_stool",
+      "forSale": true,
+      "price": 70,
+      "position": [
+        57.41,
+        0.65,
+        104.675
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Tall stool with a round oak seat."
+    },
+    {
+      "id": "cove_home_kitchen_counter",
+      "kind": "item",
+      "key": "kitchen_counter",
+      "code": "decor_kitchen_counter",
+      "forSale": true,
+      "price": 300,
+      "position": [
+        57.29,
+        0.2,
+        106.17
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Base cabinet with sink and worktop."
+    },
+    {
+      "id": "cove_home_computer_setup",
+      "kind": "item",
+      "key": "computer_setup",
+      "code": "decor_computer_setup",
+      "forSale": true,
+      "price": 480,
+      "position": [
+        62.3,
+        0.2,
+        117.685
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Desk, dual screens and RGB tower."
+    },
+    {
+      "id": "cove_home_desk_study",
+      "kind": "item",
+      "key": "desk_study",
+      "code": "decor_desk_study",
+      "forSale": true,
+      "price": 200,
+      "position": [
+        60.15,
+        0.2,
+        117.635
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Study desk with a drawer unit."
+    },
+    {
+      "id": "cove_home_office_chair",
+      "kind": "item",
+      "key": "office_chair",
+      "code": "decor_office_chair",
+      "forSale": true,
+      "price": 160,
+      "position": [
+        58.49,
+        0.2,
+        117.615
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Swivel chair on five wheels."
+    },
+    {
+      "id": "cove_home_filing_cabinet",
+      "kind": "item",
+      "key": "filing_cabinet",
+      "code": "decor_filing_cabinet",
+      "forSale": true,
+      "price": 100,
+      "position": [
+        57.255,
+        0.2,
+        117.63
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Three-drawer steel filing cabinet."
+    },
+    {
+      "id": "cove_home_desk_lamp",
+      "kind": "item",
+      "key": "desk_lamp",
+      "code": "decor_desk_lamp",
+      "forSale": true,
+      "price": 50,
+      "position": [
+        56.115,
+        0.65,
+        117.395
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Adjustable work lamp."
+    },
+    {
+      "id": "cove_home_bunk_bed",
+      "kind": "item",
+      "key": "bunk_bed",
+      "code": "decor_bunk_bed",
+      "forSale": true,
+      "price": 560,
+      "position": [
+        46.73,
+        0.2,
+        118.365
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Bunk bed with ladder, sleeps two."
+    },
+    {
+      "id": "cove_home_arcade_cabinet",
+      "kind": "item",
+      "key": "arcade_cabinet",
+      "code": "decor_arcade_cabinet",
+      "forSale": true,
+      "price": 900,
+      "position": [
+        45.115,
+        0.2,
+        117.83
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Retro arcade cabinet with a glowing screen."
+    },
+    {
+      "id": "cove_home_toy_chest",
+      "kind": "item",
+      "key": "toy_chest",
+      "code": "decor_toy_chest",
+      "forSale": true,
+      "price": 85,
+      "position": [
+        43.645,
+        0.2,
+        117.67
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Painted chest full of toys."
+    },
+    {
+      "id": "cove_home_bean_bag",
+      "kind": "item",
+      "key": "bean_bag",
+      "code": "decor_bean_bag",
+      "forSale": true,
+      "price": 95,
+      "position": [
+        42.125,
+        0.2,
+        117.725
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Squishy bean bag, coral."
+    },
+    {
+      "id": "cove_home_bathtub",
+      "kind": "item",
+      "key": "bathtub",
+      "code": "decor_bathtub",
+      "forSale": true,
+      "price": 400,
+      "position": [
+        40.76,
+        0.2,
+        105.725
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Freestanding tub on brass feet."
+    },
+    {
+      "id": "cove_home_toilet",
+      "kind": "item",
+      "key": "toilet",
+      "code": "decor_toilet",
+      "forSale": true,
+      "price": 150,
+      "position": [
+        41.275,
+        0.2,
+        104.405
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Classic white toilet."
+    },
+    {
+      "id": "cove_home_sink_vanity",
+      "kind": "item",
+      "key": "sink_vanity",
+      "code": "decor_sink_vanity",
+      "forSale": true,
+      "price": 220,
+      "position": [
+        46.64,
+        0.2,
+        105.745
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Vanity unit with basin and mirror."
+    },
+    {
+      "id": "cove_home_towel_rack",
+      "kind": "item",
+      "key": "towel_rack",
+      "code": "decor_towel_rack",
+      "forSale": true,
+      "price": 45,
+      "position": [
+        46.555,
+        0.2,
+        104.395
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Ladder towel rack with towels."
+    },
+    {
+      "id": "cove_home_bookshelf",
+      "kind": "item",
+      "key": "bookshelf",
+      "code": "decor_bookshelf",
+      "forSale": true,
+      "price": 220,
+      "position": [
+        41.43,
+        0.2,
+        97.25
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Four-shelf bookcase, books included."
+    },
+    {
+      "id": "cove_home_coat_rack",
+      "kind": "item",
+      "key": "coat_rack",
+      "code": "decor_coat_rack",
+      "forSale": true,
+      "price": 65,
+      "position": [
+        41.38,
+        0.2,
+        95.805
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Coat stand with hooks and a hat."
+    },
+    {
+      "id": "cove_home_cube_shelf",
+      "kind": "item",
+      "key": "cube_shelf",
+      "code": "decor_cube_shelf",
+      "forSale": true,
+      "price": 150,
+      "position": [
+        46.595,
+        0.2,
+        96.655
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "4x4 cube shelf with storage boxes."
+    },
+    {
+      "id": "cove_home_aquarium",
+      "kind": "item",
+      "key": "aquarium",
+      "code": "decor_aquarium",
+      "forSale": true,
+      "price": 340,
+      "position": [
+        41.39,
+        0.2,
+        89.33
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Aquarium on a cabinet, fish included."
+    },
+    {
+      "id": "cove_home_potted_plant",
+      "kind": "item",
+      "key": "potted_plant",
+      "code": "decor_potted_plant",
+      "forSale": true,
+      "price": 60,
+      "position": [
+        41.32,
+        0.2,
+        87.85
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Leafy plant in a terracotta pot."
+    },
+    {
+      "id": "cove_home_globe",
+      "kind": "item",
+      "key": "globe",
+      "code": "decor_globe",
+      "forSale": true,
+      "price": 75,
+      "position": [
+        41.425,
+        0.65,
+        86.675
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Desk globe on a wooden stand."
+    },
+    {
+      "id": "cove_home_monstera",
+      "kind": "item",
+      "key": "monstera",
+      "code": "decor_monstera",
+      "forSale": true,
+      "price": 120,
+      "position": [
+        46.97,
+        0.2,
+        89.085
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Big leafy monstera, 1.4 m."
+    },
+    {
+      "id": "cove_home_cactus",
+      "kind": "item",
+      "key": "cactus",
+      "code": "decor_cactus",
+      "forSale": true,
+      "price": 35,
+      "position": [
+        46.54,
+        0.65,
+        87.665
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Easy-going cactus in a pot."
+    },
+    {
+      "id": "cove_home_vase_tulips",
+      "kind": "item",
+      "key": "vase_tulips",
+      "code": "decor_vase_tulips",
+      "forSale": true,
+      "price": 40,
+      "position": [
+        46.49,
+        0.65,
+        86.735
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Glass vase with tulips."
+    },
+    {
+      "id": "cove_home_garden_bench",
+      "kind": "item",
+      "key": "garden_bench",
+      "code": "decor_garden_bench",
+      "forSale": true,
+      "price": 170,
+      "position": [
+        41.32,
+        0.2,
+        80.305
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Slatted garden bench."
+    },
+    {
+      "id": "cove_home_bbq_grill",
+      "kind": "item",
+      "key": "bbq_grill",
+      "code": "decor_bbq_grill",
+      "forSale": true,
+      "price": 230,
+      "position": [
+        41.3,
+        0.2,
+        78.555
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Kettle barbecue on three legs."
+    },
+    {
+      "id": "cove_home_parasol",
+      "kind": "item",
+      "key": "parasol",
+      "code": "decor_parasol",
+      "forSale": true,
+      "price": 130,
+      "position": [
+        47.7,
+        0.2,
+        80.33
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Striped parasol on a heavy base."
+    },
+    {
+      "id": "cove_home_sun_lounger",
+      "kind": "item",
+      "key": "sun_lounger",
+      "code": "decor_sun_lounger",
+      "forSale": true,
+      "price": 190,
+      "position": [
+        47.315,
+        0.2,
+        78.005
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Reclining sun lounger."
+    }
+  ],
+  "areas": [
+    {
+      "id": "cove_home",
+      "name": "Cove Home",
+      "role": "seller",
+      "npc": "cove_home_clerk",
+      "bounds": {
+        "minX": 37.0,
+        "maxX": 67.0,
+        "minZ": 66.405,
+        "maxZ": 121.405
+      },
+      "offers": [],
+      "priceTags": true
+    }
+  ]
+}

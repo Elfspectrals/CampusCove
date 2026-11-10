@@ -60,7 +60,6 @@ export interface WorldPub {
 
 export interface WorldOrchard {
   trees: Vec3[]
-  farmer: Vec3
 }
 
 export type Crop = 'corn' | 'potato' | 'cabbage' | 'pumpkin'
@@ -158,8 +157,7 @@ function parseOrchard(raw: Json): WorldOrchard | null {
   if (raw === undefined || raw === null) return null
   if (!Array.isArray(raw.trees) || raw.trees.length === 0) throw new Error('world manifest: orchard has no trees')
   return {
-    trees: raw.trees.map((tree: Json, i: number) => parseVec3(tree, `orchard tree ${i}`)),
-    farmer: parseVec3(raw.farmer, 'orchard farmer')
+    trees: raw.trees.map((tree: Json, i: number) => parseVec3(tree, `orchard tree ${i}`))
   }
 }
 

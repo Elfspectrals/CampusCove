@@ -84,6 +84,20 @@ export function usePub(deps: PubDeps) {
     return deps.gameRoomRef.value?.sessionId ?? ''
   }
 
+  const staff: { bartender: THREE.Object3D | null; bouncer: THREE.Object3D | null } = { bartender: null, bouncer: null }
+
+  function hireStaff(): void {
+    const interior = openHouseInterior(PUB_KEY)
+    if (staff.bartender) pour?.setBartender(staff.bartender)
+    if (staff.bouncer && interior && !bouncerStep) bouncerStep = createBouncerStep(interior, staff.bouncer)
+  }
+
+  function onStaff(role: 'bartender' | 'bouncer', npc: THREE.Object3D): void {
+    staff[role] = npc
+    if (role === 'bouncer') bouncerStep = null
+    hireStaff()
+  }
+
   function onTownLoaded(manifest: WorldManifest): void {
     layout = manifest.pub ?? null
     pour?.dispose()
@@ -99,11 +113,7 @@ export function usePub(deps: PubDeps) {
     } catch (err) {
       console.error('[pub] staff door unavailable', err)
     }
-    try {
-      bouncerStep = createBouncerStep(interior)
-    } catch (err) {
-      console.error('[pub] bouncer unavailable', err)
-    }
+    hireStaff()
   }
 
   // ------------------------------------------------------------ reach
@@ -320,6 +330,7 @@ export function usePub(deps: PubDeps) {
   const source: InteractionSource = { prompt, interact }
 
   return {
+    onStaff,
     menuOpen,
     menu,
     loading,

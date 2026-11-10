@@ -13,7 +13,6 @@ const manifest = {
   zones: [{ key: 'town', buildings: [] }],
   orchard: {
     trees: [[-20, 0, -100], [-30, 0, -100]],
-    farmer: [-10, 0, -95]
   }
 }
 
@@ -34,7 +33,7 @@ globalThis.fetch = async (url: string | URL | Request, init?: RequestInit) => {
 }
 
 const { loadWorld } = await import('./world.ts')
-const { PICK_MS, PICK_RESTART_MS, onOrchardPick, onOrchardPickCancel, onOrchardPickStart, onOrchardSell } = await import('./orchard.ts')
+const { PICK_MS, PICK_RESTART_MS, onOrchardPick, onOrchardPickCancel, onOrchardPickStart } = await import('./orchard.ts')
 await loadWorld()
 
 function fakeClient(sessionId: string): FakeClient {
@@ -119,34 +118,15 @@ test('only trees of the orchard can be picked', () => {
   assert.equal(player.orchardPick, null)
 })
 
-test('a knocked out player can neither pick nor sell', async () => {
+test('a knocked out player cannot pick', async () => {
   const { player, client, room } = setup(-10, -95)
   player.knockedOutUntil = 10_000
   onOrchardPickStart(room, client, { tree: 0 }, 0)
-  await onOrchardSell(room, client, { quantity: 1 }, 0)
 
   assert.equal(client.sent.length, 0)
   assert.equal(apiCalls.length, 0)
 })
 
-test('selling at the farmer forwards the quantity and the sale', async () => {
-  const { client, room } = setup(-10, -97)
-  await onOrchardSell(room, client, { quantity: 3 }, 0)
-
-  assert.deepEqual(apiCalls, [{ path: '/orchard/sell', body: { quantity: 3 } }])
-  assert.deepEqual(received(client, 'orchard_sold'), [{ sold: 3, coins: 9, balance_after: 59 }])
-})
-
-test('selling needs a whole positive quantity and the farmer within 3 m', async () => {
-  const { client, room } = setup(-10, -95)
-  for (const quantity of [0, -2, 1.5, '3', undefined]) await onOrchardSell(room, client, { quantity }, 0)
-  const far = setup(-10, -91.9)
-  await onOrchardSell(far.room, far.client, { quantity: 1 }, 0)
-
-  assert.deepEqual(errorCodes(client), Array(5).fill('orchard_bad_quantity'))
-  assert.deepEqual(errorCodes(far.client), ['orchard_too_far'])
-  assert.equal(apiCalls.length, 0)
-})
 
 test('an API refusal reaches the player with its code', async () => {
   const { client, room } = setup(-20, -98)

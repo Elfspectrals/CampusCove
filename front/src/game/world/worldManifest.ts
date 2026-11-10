@@ -114,8 +114,6 @@ export interface PubLayout {
 
 export interface OrchardLayout {
   trees: Vec3[]
-  farmer: Vec3
-  farmerYaw: number
 }
 
 export type Crop = 'corn' | 'potato' | 'cabbage' | 'pumpkin'

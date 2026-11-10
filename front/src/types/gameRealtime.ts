@@ -341,13 +341,6 @@ export interface OrchardPickedPayload {
   quantity: number
 }
 
-export interface OrchardSoldPayload {
-  sold: number
-  coins: number
-  balance_after: number
-  full_price_left: number
-}
-
 export interface FarmPickedPayload {
   code: string
   quantity: number

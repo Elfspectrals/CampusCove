@@ -1,0 +1,2706 @@
+{
+  "version": 1,
+  "zone": "mall",
+  "name": "Mall",
+  "props": [
+    {
+      "id": "hearth_hollow_clerk",
+      "kind": "npc",
+      "position": [
+        -239.5,
+        0.2,
+        -81.105
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pose": "idle",
+      "vendor": false,
+      "body": "#8b7aa8",
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "ponytail",
+          "color": "#6b5b95"
+        },
+        {
+          "slot": "top",
+          "key": "tee",
+          "color": "#c47c4c"
+        },
+        {
+          "slot": "bottom",
+          "key": "joggers",
+          "color": "#3b3f4a"
+        },
+        {
+          "slot": "shoes",
+          "key": "sneakers",
+          "color": "#4a3f62"
+        }
+      ]
+    },
+    {
+      "id": "hearth_hollow_armchair_lounge",
+      "kind": "item",
+      "key": "armchair_lounge",
+      "code": "decor_armchair_lounge",
+      "forSale": true,
+      "price": 260,
+      "position": [
+        -258.5,
+        0.2,
+        -89.805
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Mustard lounge armchair on oak legs."
+    },
+    {
+      "id": "hearth_hollow_coffee_table_round",
+      "kind": "item",
+      "key": "coffee_table_round",
+      "code": "decor_coffee_table_round",
+      "forSale": true,
+      "price": 140,
+      "position": [
+        -261.271,
+        0.2,
+        -91.105
+      ],
+      "yaw": -1.1322,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Round oak coffee table with a lower shelf."
+    },
+    {
+      "id": "hearth_hollow_pouf_knit",
+      "kind": "item",
+      "key": "pouf_knit",
+      "code": "decor_pouf_knit",
+      "forSale": true,
+      "price": 60,
+      "position": [
+        -261.271,
+        0.2,
+        -93.705
+      ],
+      "yaw": -2.0094,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Chunky knitted pouf, cream."
+    },
+    {
+      "id": "hearth_hollow_rug_round",
+      "kind": "item",
+      "key": "rug_round",
+      "code": "decor_rug_round",
+      "forSale": true,
+      "price": 90,
+      "position": [
+        -258.5,
+        0.2,
+        -95.005
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Round sunny rug, 1.8 m."
+    },
+    {
+      "id": "hearth_hollow_side_table",
+      "kind": "item",
+      "key": "side_table",
+      "code": "decor_side_table",
+      "forSale": true,
+      "price": 80,
+      "position": [
+        -255.729,
+        0.6,
+        -93.705
+      ],
+      "yaw": 2.0094,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Small white side table with a drawer."
+    },
+    {
+      "id": "hearth_hollow_floor_lamp_arc",
+      "kind": "item",
+      "key": "floor_lamp_arc",
+      "code": "decor_floor_lamp_arc",
+      "forSale": true,
+      "price": 210,
+      "position": [
+        -255.729,
+        0.2,
+        -91.105
+      ],
+      "yaw": 1.1322,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Brass arc lamp that reaches over the sofa."
+    },
+    {
+      "id": "hearth_hollow_desk_lamp",
+      "kind": "item",
+      "key": "desk_lamp",
+      "code": "decor_desk_lamp",
+      "forSale": true,
+      "price": 50,
+      "position": [
+        -250.7,
+        0.98,
+        -86.405
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Adjustable work lamp."
+    },
+    {
+      "id": "hearth_hollow_cactus",
+      "kind": "item",
+      "key": "cactus",
+      "code": "decor_cactus",
+      "forSale": true,
+      "price": 35,
+      "position": [
+        -250.0,
+        0.98,
+        -86.405
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Easy-going cactus in a pot."
+    },
+    {
+      "id": "hearth_hollow_vase_tulips",
+      "kind": "item",
+      "key": "vase_tulips",
+      "code": "decor_vase_tulips",
+      "forSale": true,
+      "price": 40,
+      "position": [
+        -249.3,
+        0.98,
+        -86.405
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Glass vase with tulips."
+    },
+    {
+      "id": "hearth_hollow_floor_lamp",
+      "kind": "item",
+      "key": "floor_lamp",
+      "code": "lamp_study",
+      "forSale": true,
+      "price": 120,
+      "position": [
+        -250.0,
+        0.2,
+        -84.205
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Brass floor lamp with a warm shade."
+    },
+    {
+      "id": "hearth_hollow_monstera",
+      "kind": "item",
+      "key": "monstera",
+      "code": "decor_monstera",
+      "forSale": true,
+      "price": 120,
+      "position": [
+        -252.598,
+        0.2,
+        -87.505
+      ],
+      "yaw": -1.9713,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Big leafy monstera, 1.4 m."
+    },
+    {
+      "id": "hearth_hollow_potted_plant",
+      "kind": "item",
+      "key": "potted_plant",
+      "code": "decor_potted_plant",
+      "forSale": true,
+      "price": 60,
+      "position": [
+        -247.402,
+        0.2,
+        -87.505
+      ],
+      "yaw": 1.9713,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Leafy plant in a terracotta pot."
+    },
+    {
+      "id": "hearth_hollow_globe",
+      "kind": "item",
+      "key": "globe",
+      "code": "decor_globe",
+      "forSale": true,
+      "price": 75,
+      "position": [
+        -241.5,
+        0.98,
+        -92.405
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Desk globe on a wooden stand."
+    },
+    {
+      "id": "hearth_hollow_bookshelf",
+      "kind": "item",
+      "key": "bookshelf",
+      "code": "decor_bookshelf",
+      "forSale": true,
+      "price": 220,
+      "position": [
+        -241.5,
+        0.2,
+        -89.805
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Four-shelf bookcase, books included."
+    },
+    {
+      "id": "hearth_hollow_cube_shelf",
+      "kind": "item",
+      "key": "cube_shelf",
+      "code": "decor_cube_shelf",
+      "forSale": true,
+      "price": 150,
+      "position": [
+        -244.543,
+        0.2,
+        -91.602
+      ],
+      "yaw": -1.3127,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "4x4 cube shelf with storage boxes."
+    },
+    {
+      "id": "hearth_hollow_coat_rack",
+      "kind": "item",
+      "key": "coat_rack",
+      "code": "decor_coat_rack",
+      "forSale": true,
+      "price": 65,
+      "position": [
+        -243.381,
+        0.2,
+        -94.508
+      ],
+      "yaw": -2.412,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Coat stand with hooks and a hat."
+    },
+    {
+      "id": "hearth_hollow_mirror_standing",
+      "kind": "item",
+      "key": "mirror_standing",
+      "code": "decor_mirror_standing",
+      "forSale": true,
+      "price": 120,
+      "position": [
+        -239.619,
+        0.2,
+        -94.508
+      ],
+      "yaw": 2.412,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Full-length standing mirror."
+    },
+    {
+      "id": "hearth_hollow_nightstand",
+      "kind": "item",
+      "key": "nightstand",
+      "code": "decor_nightstand",
+      "forSale": true,
+      "price": 90,
+      "position": [
+        -238.457,
+        0.6,
+        -91.602
+      ],
+      "yaw": 1.3127,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Two-drawer nightstand with a little lamp."
+    },
+    {
+      "id": "hearth_hollow_bar_stool",
+      "kind": "item",
+      "key": "bar_stool",
+      "code": "decor_bar_stool",
+      "forSale": true,
+      "price": 70,
+      "position": [
+        -257.0,
+        0.6,
+        -100.005
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Tall stool with a round oak seat."
+    },
+    {
+      "id": "hearth_hollow_dining_bench",
+      "kind": "item",
+      "key": "dining_bench",
+      "code": "decor_dining_bench",
+      "forSale": true,
+      "price": 110,
+      "position": [
+        -259.853,
+        0.2,
+        -101.663
+      ],
+      "yaw": -1.3165,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Solid oak bench for the dining table."
+    },
+    {
+      "id": "hearth_hollow_wooden_chair",
+      "kind": "item",
+      "key": "wooden_chair",
+      "code": "chair_campus_basic",
+      "forSale": true,
+      "price": 90,
+      "position": [
+        -258.763,
+        0.2,
+        -104.347
+      ],
+      "yaw": -2.4043,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Solid wood chair with a teal cushion."
+    },
+    {
+      "id": "hearth_hollow_towel_rack",
+      "kind": "item",
+      "key": "towel_rack",
+      "code": "decor_towel_rack",
+      "forSale": true,
+      "price": 45,
+      "position": [
+        -255.237,
+        0.2,
+        -104.347
+      ],
+      "yaw": 2.4043,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Ladder towel rack with towels."
+    },
+    {
+      "id": "hearth_hollow_aquarium",
+      "kind": "item",
+      "key": "aquarium",
+      "code": "decor_aquarium",
+      "forSale": true,
+      "price": 340,
+      "position": [
+        -254.147,
+        0.2,
+        -101.663
+      ],
+      "yaw": 1.3165,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Aquarium on a cabinet, fish included."
+    },
+    {
+      "id": "hearth_hollow_garden_bench",
+      "kind": "item",
+      "key": "garden_bench",
+      "code": "decor_garden_bench",
+      "forSale": true,
+      "price": 170,
+      "position": [
+        -243.0,
+        0.2,
+        -100.005
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Slatted garden bench."
+    },
+    {
+      "id": "hearth_hollow_parasol",
+      "kind": "item",
+      "key": "parasol",
+      "code": "decor_parasol",
+      "forSale": true,
+      "price": 130,
+      "position": [
+        -246.4,
+        0.2,
+        -102.405
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Striped parasol on a heavy base."
+    },
+    {
+      "id": "hearth_hollow_sun_lounger",
+      "kind": "item",
+      "key": "sun_lounger",
+      "code": "decor_sun_lounger",
+      "forSale": true,
+      "price": 190,
+      "position": [
+        -243.0,
+        0.2,
+        -104.805
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Reclining sun lounger."
+    },
+    {
+      "id": "hearth_hollow_bbq_grill",
+      "kind": "item",
+      "key": "bbq_grill",
+      "code": "decor_bbq_grill",
+      "forSale": true,
+      "price": 230,
+      "position": [
+        -239.6,
+        0.2,
+        -102.405
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Kettle barbecue on three legs."
+    },
+    {
+      "id": "greencart_clerk",
+      "kind": "npc",
+      "position": [
+        -350.0,
+        0.2,
+        -80.805
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pose": "idle",
+      "vendor": false,
+      "body": "#8b7aa8",
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "ponytail",
+          "color": "#6b5b95"
+        },
+        {
+          "slot": "top",
+          "key": "tee",
+          "color": "#3c9a3c"
+        },
+        {
+          "slot": "bottom",
+          "key": "joggers",
+          "color": "#2a2e35"
+        },
+        {
+          "slot": "shoes",
+          "key": "sneakers",
+          "color": "#4a3f62"
+        }
+      ]
+    },
+    {
+      "id": "greencart_banana",
+      "kind": "item",
+      "key": "banana",
+      "code": "grocery_banana",
+      "forSale": true,
+      "price": 6,
+      "position": [
+        -328.0,
+        1.0,
+        -84.405
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "stack": [
+        5,
+        3
+      ],
+      "description": "Ripe banana, two portions."
+    },
+    {
+      "id": "greencart_apple",
+      "kind": "item",
+      "key": "apple",
+      "code": "grocery_apple",
+      "forSale": true,
+      "price": 6,
+      "position": [
+        -324.0,
+        1.0,
+        -84.405
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "stack": [
+        6,
+        4
+      ],
+      "description": "Crisp red apple, two bites."
+    },
+    {
+      "id": "greencart_croissant",
+      "kind": "item",
+      "key": "croissant",
+      "code": "food_croissant",
+      "forSale": true,
+      "price": 12,
+      "position": [
+        -326.6,
+        1.25,
+        -104.405
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "stack": [
+        3,
+        2
+      ],
+      "description": "Butter croissant, baked this morning."
+    },
+    {
+      "id": "greencart_bread",
+      "kind": "item",
+      "key": "bread",
+      "code": "grocery_bread",
+      "forSale": true,
+      "price": 14,
+      "position": [
+        -326.6,
+        1.25,
+        -106.405
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "stack": [
+        3,
+        2
+      ],
+      "description": "Sliced loaf in its bag, four slices."
+    },
+    {
+      "id": "greencart_cookie",
+      "kind": "item",
+      "key": "cookie",
+      "code": "food_cookie",
+      "forSale": true,
+      "price": 5,
+      "position": [
+        -326.6,
+        1.25,
+        -108.405
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "stack": [
+        4,
+        3
+      ],
+      "description": "Chocolate chip cookie."
+    },
+    {
+      "id": "greencart_milk",
+      "kind": "item",
+      "key": "milk",
+      "code": "grocery_milk",
+      "forSale": true,
+      "price": 10,
+      "position": [
+        -359.45,
+        0.68,
+        -100.405
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "stack": [
+        5,
+        2
+      ],
+      "description": "Carton of fresh milk, three glasses."
+    },
+    {
+      "id": "greencart_yogurt",
+      "kind": "item",
+      "key": "yogurt",
+      "code": "grocery_yogurt",
+      "forSale": true,
+      "price": 8,
+      "position": [
+        -359.45,
+        1.18,
+        -100.405
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "stack": [
+        5,
+        3
+      ],
+      "description": "Fruit yogurt cup, two spoons."
+    },
+    {
+      "id": "greencart_sandwich",
+      "kind": "item",
+      "key": "sandwich",
+      "code": "food_sandwich",
+      "forSale": true,
+      "price": 30,
+      "position": [
+        -359.45,
+        1.18,
+        -103.405
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "stack": [
+        3,
+        2
+      ],
+      "description": "Club sandwich, four bites."
+    },
+    {
+      "id": "greencart_cheese",
+      "kind": "item",
+      "key": "cheese",
+      "code": "grocery_cheese",
+      "forSale": true,
+      "price": 16,
+      "position": [
+        -359.45,
+        1.18,
+        -106.405
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "stack": [
+        3,
+        2
+      ],
+      "description": "Wedge of cheese, three portions."
+    },
+    {
+      "id": "greencart_eggs",
+      "kind": "item",
+      "key": "eggs",
+      "code": "grocery_eggs",
+      "forSale": true,
+      "price": 15,
+      "position": [
+        -359.45,
+        1.68,
+        -103.405
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "stack": [
+        3,
+        2
+      ],
+      "description": "Half a dozen eggs, three portions."
+    },
+    {
+      "id": "greencart_coffee",
+      "kind": "item",
+      "key": "coffee",
+      "code": "food_coffee",
+      "forSale": true,
+      "price": 15,
+      "position": [
+        -355.3,
+        1.58,
+        -100.405
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "stack": [
+        4,
+        2
+      ],
+      "description": "Hot latte to go, a little speed boost."
+    },
+    {
+      "id": "greencart_cereal",
+      "kind": "item",
+      "key": "cereal",
+      "code": "grocery_cereal",
+      "forSale": true,
+      "price": 18,
+      "position": [
+        -354.7,
+        1.58,
+        -102.263
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "stack": [
+        4,
+        2
+      ],
+      "description": "Box of cereal, four bowls."
+    },
+    {
+      "id": "greencart_water_bottle",
+      "kind": "item",
+      "key": "water_bottle",
+      "code": "food_water_bottle",
+      "forSale": true,
+      "price": 8,
+      "position": [
+        -350.7,
+        1.08,
+        -99.405
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "stack": [
+        5,
+        2
+      ],
+      "description": "Still water, four sips."
+    },
+    {
+      "id": "greencart_orange_juice",
+      "kind": "item",
+      "key": "orange_juice",
+      "code": "food_orange_juice",
+      "forSale": true,
+      "price": 14,
+      "position": [
+        -350.7,
+        1.08,
+        -101.405
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "stack": [
+        5,
+        2
+      ],
+      "description": "Fresh orange juice, two portions."
+    },
+    {
+      "id": "greencart_soda",
+      "kind": "item",
+      "key": "soda",
+      "code": "grocery_soda",
+      "forSale": true,
+      "price": 7,
+      "position": [
+        -351.3,
+        1.08,
+        -100.047
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "stack": [
+        6,
+        3
+      ],
+      "description": "Fizzy soda, two sips."
+    },
+    {
+      "id": "greencart_chips",
+      "kind": "item",
+      "key": "chips",
+      "code": "grocery_chips",
+      "forSale": true,
+      "price": 9,
+      "position": [
+        -347.3,
+        1.58,
+        -100.047
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "stack": [
+        4,
+        2
+      ],
+      "description": "Bag of crisps, three handfuls."
+    },
+    {
+      "id": "greencart_chocolate",
+      "kind": "item",
+      "key": "chocolate",
+      "code": "grocery_chocolate",
+      "forSale": true,
+      "price": 10,
+      "position": [
+        -346.7,
+        1.08,
+        -102.263
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "stack": [
+        3,
+        3
+      ],
+      "description": "Chocolate bar, four squares."
+    },
+    {
+      "id": "greencart_pasta",
+      "kind": "item",
+      "key": "pasta",
+      "code": "grocery_pasta",
+      "forSale": true,
+      "price": 12,
+      "position": [
+        -343.3,
+        1.08,
+        -102.263
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "stack": [
+        5,
+        3
+      ],
+      "description": "Box of pasta, four plates."
+    },
+    {
+      "id": "crispins_hardware_clerk",
+      "kind": "npc",
+      "position": [
+        -364.25,
+        0.2,
+        -79.805
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pose": "idle",
+      "vendor": false,
+      "body": "#8b7aa8",
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "ponytail",
+          "color": "#6b5b95"
+        },
+        {
+          "slot": "top",
+          "key": "tee",
+          "color": "#e07a2e"
+        },
+        {
+          "slot": "bottom",
+          "key": "joggers",
+          "color": "#2f3338"
+        },
+        {
+          "slot": "shoes",
+          "key": "sneakers",
+          "color": "#4a3f62"
+        }
+      ]
+    },
+    {
+      "id": "crispins_hardware_workbench",
+      "kind": "item",
+      "key": "workbench",
+      "code": "decor_workbench",
+      "forSale": true,
+      "price": 340,
+      "position": [
+        -375.05,
+        0.2,
+        -84.905
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Solid workbench with a vice and a tool rail."
+    },
+    {
+      "id": "crispins_hardware_stepladder",
+      "kind": "item",
+      "key": "stepladder",
+      "code": "decor_stepladder",
+      "forSale": true,
+      "price": 140,
+      "position": [
+        -375.25,
+        0.2,
+        -87.805
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Aluminium stepladder with a safety platform."
+    },
+    {
+      "id": "crispins_hardware_toolbox",
+      "kind": "item",
+      "key": "toolbox",
+      "code": "decor_toolbox",
+      "forSale": true,
+      "price": 90,
+      "position": [
+        -371.25,
+        1.1,
+        -84.405
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Red steel toolbox, latches included."
+    },
+    {
+      "id": "crispins_hardware_paint_cans",
+      "kind": "item",
+      "key": "paint_cans",
+      "code": "decor_paint_cans",
+      "forSale": true,
+      "price": 110,
+      "position": [
+        -367.25,
+        0.2,
+        -87.905
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Pallet of paint cans in four colours."
+    },
+    {
+      "id": "crispins_hardware_wheelbarrow",
+      "kind": "item",
+      "key": "wheelbarrow",
+      "code": "decor_wheelbarrow",
+      "forSale": true,
+      "price": 180,
+      "position": [
+        -362.95,
+        0.2,
+        -85.005
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Green garden wheelbarrow on a rubber wheel."
+    },
+    {
+      "id": "crispins_hardware_metal_shelving",
+      "kind": "item",
+      "key": "metal_shelving",
+      "code": "decor_metal_shelving",
+      "forSale": true,
+      "price": 260,
+      "position": [
+        -363.15,
+        0.2,
+        -88.605
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Orange warehouse shelving, boxes included."
+    },
+    {
+      "id": "candy_cloud_clerk",
+      "kind": "npc",
+      "position": [
+        -369.405,
+        0.2,
+        18.033
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pose": "idle",
+      "vendor": false,
+      "body": "#8b7aa8",
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "ponytail",
+          "color": "#6b5b95"
+        },
+        {
+          "slot": "top",
+          "key": "tee",
+          "color": "#f4b3c8"
+        },
+        {
+          "slot": "bottom",
+          "key": "joggers",
+          "color": "#38a3c9"
+        },
+        {
+          "slot": "shoes",
+          "key": "sneakers",
+          "color": "#4a3f62"
+        }
+      ]
+    },
+    {
+      "id": "candy_cloud_bag",
+      "kind": "item",
+      "key": "bag",
+      "code": "candy_bag",
+      "forSale": true,
+      "price": 14,
+      "position": [
+        -374.305,
+        1.1,
+        12.733
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "stack": [
+        4,
+        2
+      ],
+      "description": "A bag of gummies from the pick & mix."
+    },
+    {
+      "id": "candy_cloud_licorice",
+      "kind": "item",
+      "key": "licorice",
+      "code": "candy_licorice",
+      "forSale": true,
+      "price": 9,
+      "position": [
+        -372.205,
+        1.1,
+        13.933
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "stack": [
+        3,
+        2
+      ],
+      "description": "Four twists of black licorice."
+    },
+    {
+      "id": "candy_cloud_lollipop",
+      "kind": "item",
+      "key": "lollipop",
+      "code": "candy_lollipop",
+      "forSale": true,
+      "price": 6,
+      "position": [
+        -374.405,
+        1.9,
+        20.733
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "stack": [
+        3,
+        1
+      ],
+      "description": "Swirl lollipop on a stick."
+    },
+    {
+      "id": "candy_cloud_cotton",
+      "kind": "item",
+      "key": "cotton",
+      "code": "candy_cotton",
+      "forSale": true,
+      "price": 12,
+      "position": [
+        -374.905,
+        1.13,
+        5.233
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "stack": [
+        2,
+        1
+      ],
+      "description": "Spun sugar cloud, freshly made at the machine."
+    },
+    {
+      "id": "candy_cloud_apple",
+      "kind": "item",
+      "key": "apple",
+      "code": "candy_apple",
+      "forSale": true,
+      "price": 15,
+      "position": [
+        -372.105,
+        1.1,
+        3.333
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "stack": [
+        3,
+        2
+      ],
+      "description": "Red candy apple, glossy and crunchy."
+    },
+    {
+      "id": "candy_cloud_gum",
+      "kind": "item",
+      "key": "gum",
+      "code": "candy_gum",
+      "forSale": true,
+      "price": 5,
+      "position": [
+        -370.405,
+        1.71,
+        16.533
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "stack": [
+        3,
+        2
+      ],
+      "description": "Pack of bubble gum, five sticks."
+    },
+    {
+      "id": "northline_clerk",
+      "kind": "npc",
+      "position": [
+        -244.2,
+        0.2,
+        83.455
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pose": "idle",
+      "vendor": false,
+      "body": "#8b7aa8",
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "ponytail",
+          "color": "#6b5b95"
+        },
+        {
+          "slot": "top",
+          "key": "tee",
+          "color": "#1b1d22"
+        },
+        {
+          "slot": "bottom",
+          "key": "joggers",
+          "color": "#f4f2ee"
+        },
+        {
+          "slot": "shoes",
+          "key": "sneakers",
+          "color": "#4a3f62"
+        }
+      ]
+    },
+    {
+      "id": "northline_top_tee",
+      "kind": "mannequin",
+      "position": [
+        -223.5,
+        0.463,
+        107.985
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "top",
+          "key": "tee",
+          "color": "#9b8abf",
+          "forSale": true,
+          "code": "COS_WEAR_TOP_TEE",
+          "price": 60
+        }
+      ]
+    },
+    {
+      "id": "northline_top_tank",
+      "kind": "mannequin",
+      "position": [
+        -224.75,
+        0.463,
+        107.985
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "top",
+          "key": "tank",
+          "color": "#9b8abf",
+          "forSale": true,
+          "code": "COS_WEAR_TOP_TANK",
+          "price": 70
+        }
+      ]
+    },
+    {
+      "id": "northline_top_hoodie",
+      "kind": "mannequin",
+      "position": [
+        -226.0,
+        0.463,
+        107.985
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "top",
+          "key": "hoodie",
+          "color": "#9b8abf",
+          "forSale": true,
+          "code": "COS_WEAR_TOP_HOODIE",
+          "price": 180
+        }
+      ]
+    },
+    {
+      "id": "northline_top_varsity",
+      "kind": "mannequin",
+      "position": [
+        -227.25,
+        0.463,
+        107.985
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "top",
+          "key": "varsity",
+          "color": "#9b8abf",
+          "forSale": true,
+          "code": "COS_WEAR_TOP_VARSITY",
+          "price": 350
+        }
+      ]
+    },
+    {
+      "id": "northline_top_sweater",
+      "kind": "mannequin",
+      "position": [
+        -228.5,
+        0.463,
+        107.985
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "top",
+          "key": "sweater",
+          "color": "#9b8abf",
+          "forSale": true,
+          "code": "COS_WEAR_TOP_SWEATER",
+          "price": 220
+        }
+      ]
+    },
+    {
+      "id": "northline_bottom_jeans",
+      "kind": "mannequin",
+      "position": [
+        -243.5,
+        1.078,
+        107.985
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "bottom",
+          "key": "jeans",
+          "color": "#5a4e72",
+          "forSale": true,
+          "code": "COS_WEAR_BOTTOM_JEANS",
+          "price": 120
+        }
+      ]
+    },
+    {
+      "id": "northline_bottom_joggers",
+      "kind": "mannequin",
+      "position": [
+        -244.75,
+        1.078,
+        107.985
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "bottom",
+          "key": "joggers",
+          "color": "#5a4e72",
+          "forSale": true,
+          "code": "COS_WEAR_BOTTOM_JOGGERS",
+          "price": 100
+        }
+      ]
+    },
+    {
+      "id": "northline_bottom_cargo",
+      "kind": "mannequin",
+      "position": [
+        -246.0,
+        1.078,
+        107.985
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "bottom",
+          "key": "cargo",
+          "color": "#5a4e72",
+          "forSale": true,
+          "code": "COS_WEAR_BOTTOM_CARGO",
+          "price": 160
+        }
+      ]
+    },
+    {
+      "id": "northline_bottom_shorts",
+      "kind": "mannequin",
+      "position": [
+        -247.25,
+        1.078,
+        107.985
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "bottom",
+          "key": "shorts",
+          "color": "#5a4e72",
+          "forSale": true,
+          "code": "COS_WEAR_BOTTOM_SHORTS",
+          "price": 70
+        }
+      ]
+    },
+    {
+      "id": "northline_bottom_skirt",
+      "kind": "mannequin",
+      "position": [
+        -248.5,
+        1.078,
+        107.985
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "bottom",
+          "key": "skirt",
+          "color": "#5a4e72",
+          "forSale": true,
+          "code": "COS_WEAR_BOTTOM_SKIRT",
+          "price": 140
+        }
+      ]
+    },
+    {
+      "id": "northline_shoes_sneakers",
+      "kind": "mannequin",
+      "position": [
+        -220.25,
+        1.241,
+        102.405
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "shoes",
+          "key": "sneakers",
+          "color": "#4a3f62",
+          "forSale": true,
+          "code": "COS_WEAR_SHOES_SNEAKERS",
+          "price": 150
+        }
+      ]
+    },
+    {
+      "id": "northline_shoes_high_tops",
+      "kind": "mannequin",
+      "position": [
+        -220.25,
+        1.241,
+        101.155
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "shoes",
+          "key": "high_tops",
+          "color": "#4a3f62",
+          "forSale": true,
+          "code": "COS_WEAR_SHOES_HIGH_TOPS",
+          "price": 220
+        }
+      ]
+    },
+    {
+      "id": "northline_shoes_boots",
+      "kind": "mannequin",
+      "position": [
+        -220.25,
+        1.241,
+        99.905
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "shoes",
+          "key": "boots",
+          "color": "#4a3f62",
+          "forSale": true,
+          "code": "COS_WEAR_SHOES_BOOTS",
+          "price": 300
+        }
+      ]
+    },
+    {
+      "id": "northline_shoes_slides",
+      "kind": "mannequin",
+      "position": [
+        -220.25,
+        1.241,
+        98.655
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "shoes",
+          "key": "slides",
+          "color": "#4a3f62",
+          "forSale": true,
+          "code": "COS_WEAR_SHOES_SLIDES",
+          "price": 60
+        }
+      ]
+    },
+    {
+      "id": "northline_shoes_runners",
+      "kind": "mannequin",
+      "position": [
+        -220.25,
+        1.241,
+        97.405
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "shoes",
+          "key": "runners",
+          "color": "#4a3f62",
+          "forSale": true,
+          "code": "COS_WEAR_SHOES_RUNNERS",
+          "price": 250
+        }
+      ]
+    },
+    {
+      "id": "northline_hair_short",
+      "kind": "mannequin",
+      "position": [
+        -251.45,
+        0.108,
+        104.405
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "short",
+          "color": "#6b5b95",
+          "forSale": true,
+          "code": "COS_WEAR_HAIR_SHORT",
+          "price": 80
+        }
+      ]
+    },
+    {
+      "id": "northline_hair_long",
+      "kind": "mannequin",
+      "position": [
+        -251.45,
+        0.108,
+        103.205
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "long",
+          "color": "#6b5b95",
+          "forSale": true,
+          "code": "COS_WEAR_HAIR_LONG",
+          "price": 120
+        }
+      ]
+    },
+    {
+      "id": "northline_hair_curly",
+      "kind": "mannequin",
+      "position": [
+        -251.45,
+        0.108,
+        102.005
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "curly",
+          "color": "#6b5b95",
+          "forSale": true,
+          "code": "COS_WEAR_HAIR_CURLY",
+          "price": 150
+        }
+      ]
+    },
+    {
+      "id": "northline_hair_buzz",
+      "kind": "mannequin",
+      "position": [
+        -251.45,
+        0.108,
+        100.805
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "buzz",
+          "color": "#6b5b95",
+          "forSale": true,
+          "code": "COS_WEAR_HAIR_BUZZ",
+          "price": 60
+        }
+      ]
+    },
+    {
+      "id": "northline_hair_ponytail",
+      "kind": "mannequin",
+      "position": [
+        -251.45,
+        0.108,
+        99.605
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "ponytail",
+          "color": "#6b5b95",
+          "forSale": true,
+          "code": "COS_WEAR_HAIR_PONYTAIL",
+          "price": 130
+        }
+      ]
+    },
+    {
+      "id": "northline_head_accessory_gamer",
+      "kind": "mannequin",
+      "position": [
+        -251.45,
+        0.108,
+        95.405
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "head_accessory",
+          "key": "gamer",
+          "color": "#7a6b94",
+          "forSale": true,
+          "code": "COS_WEAR_HEAD_ACCESSORY_GAMER",
+          "price": 200
+        }
+      ]
+    },
+    {
+      "id": "northline_head_accessory_studio",
+      "kind": "mannequin",
+      "position": [
+        -251.45,
+        0.108,
+        94.205
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "head_accessory",
+          "key": "studio",
+          "color": "#7a6b94",
+          "forSale": true,
+          "code": "COS_WEAR_HEAD_ACCESSORY_STUDIO",
+          "price": 280
+        }
+      ]
+    },
+    {
+      "id": "northline_head_accessory_cat_ear",
+      "kind": "mannequin",
+      "position": [
+        -251.45,
+        0.108,
+        93.005
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "head_accessory",
+          "key": "cat_ear",
+          "color": "#7a6b94",
+          "forSale": true,
+          "code": "COS_WEAR_HEAD_ACCESSORY_CAT_EAR",
+          "price": 320
+        }
+      ]
+    },
+    {
+      "id": "northline_head_accessory_neon",
+      "kind": "mannequin",
+      "position": [
+        -251.45,
+        0.108,
+        91.805
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "head_accessory",
+          "key": "neon",
+          "color": "#7a6b94",
+          "forSale": true,
+          "code": "COS_WEAR_HEAD_ACCESSORY_NEON",
+          "price": 400
+        }
+      ]
+    },
+    {
+      "id": "northline_head_accessory_pilot",
+      "kind": "mannequin",
+      "position": [
+        -251.45,
+        0.108,
+        90.605
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "head_accessory",
+          "key": "pilot",
+          "color": "#7a6b94",
+          "forSale": true,
+          "code": "COS_WEAR_HEAD_ACCESSORY_PILOT",
+          "price": 360
+        }
+      ]
+    },
+    {
+      "id": "northline_look_1",
+      "kind": "mannequin",
+      "position": [
+        -226.407,
+        0.34,
+        82.922
+      ],
+      "yaw": -2.9671,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "long",
+          "color": "#6b5b95",
+          "forSale": true,
+          "code": "COS_WEAR_HAIR_LONG",
+          "price": 120
+        },
+        {
+          "slot": "top",
+          "key": "sweater",
+          "color": "#9b8abf",
+          "forSale": true,
+          "code": "COS_WEAR_TOP_SWEATER",
+          "price": 220
+        },
+        {
+          "slot": "bottom",
+          "key": "skirt",
+          "color": "#5a4e72",
+          "forSale": true,
+          "code": "COS_WEAR_BOTTOM_SKIRT",
+          "price": 140
+        },
+        {
+          "slot": "shoes",
+          "key": "boots",
+          "color": "#4a3f62",
+          "forSale": true,
+          "code": "COS_WEAR_SHOES_BOOTS",
+          "price": 300
+        }
+      ]
+    },
+    {
+      "id": "northline_look_2",
+      "kind": "mannequin",
+      "position": [
+        -227.109,
+        0.34,
+        82.818
+      ],
+      "yaw": -3.0892,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "short",
+          "color": "#6b5b95",
+          "forSale": true,
+          "code": "COS_WEAR_HAIR_SHORT",
+          "price": 80
+        },
+        {
+          "slot": "top",
+          "key": "varsity",
+          "color": "#9b8abf",
+          "forSale": true,
+          "code": "COS_WEAR_TOP_VARSITY",
+          "price": 350
+        },
+        {
+          "slot": "bottom",
+          "key": "jeans",
+          "color": "#5a4e72",
+          "forSale": true,
+          "code": "COS_WEAR_BOTTOM_JEANS",
+          "price": 120
+        },
+        {
+          "slot": "shoes",
+          "key": "high_tops",
+          "color": "#4a3f62",
+          "forSale": true,
+          "code": "COS_WEAR_SHOES_HIGH_TOPS",
+          "price": 220
+        }
+      ]
+    },
+    {
+      "id": "northline_look_3",
+      "kind": "mannequin",
+      "position": [
+        -227.894,
+        0.34,
+        82.819
+      ],
+      "yaw": 3.0718,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "outfit": [
+        {
+          "slot": "head_accessory",
+          "key": "studio",
+          "color": "#7a6b94",
+          "forSale": true,
+          "code": "COS_WEAR_HEAD_ACCESSORY_STUDIO",
+          "price": 280
+        },
+        {
+          "slot": "top",
+          "key": "hoodie",
+          "color": "#9b8abf",
+          "forSale": true,
+          "code": "COS_WEAR_TOP_HOODIE",
+          "price": 180
+        },
+        {
+          "slot": "bottom",
+          "key": "cargo",
+          "color": "#5a4e72",
+          "forSale": true,
+          "code": "COS_WEAR_BOTTOM_CARGO",
+          "price": 160
+        },
+        {
+          "slot": "shoes",
+          "key": "runners",
+          "color": "#4a3f62",
+          "forSale": true,
+          "code": "COS_WEAR_SHOES_RUNNERS",
+          "price": 250
+        }
+      ]
+    },
+    {
+      "id": "northline_look_4",
+      "kind": "mannequin",
+      "position": [
+        -228.595,
+        0.34,
+        82.923
+      ],
+      "yaw": 2.9496,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "buzz",
+          "color": "#6b5b95",
+          "forSale": true,
+          "code": "COS_WEAR_HAIR_BUZZ",
+          "price": 60
+        },
+        {
+          "slot": "top",
+          "key": "tee",
+          "color": "#9b8abf",
+          "forSale": true,
+          "code": "COS_WEAR_TOP_TEE",
+          "price": 60
+        },
+        {
+          "slot": "bottom",
+          "key": "shorts",
+          "color": "#5a4e72",
+          "forSale": true,
+          "code": "COS_WEAR_BOTTOM_SHORTS",
+          "price": 70
+        },
+        {
+          "slot": "shoes",
+          "key": "slides",
+          "color": "#4a3f62",
+          "forSale": true,
+          "code": "COS_WEAR_SHOES_SLIDES",
+          "price": 60
+        }
+      ]
+    },
+    {
+      "id": "summit_sports_clerk",
+      "kind": "npc",
+      "position": [
+        -292.9,
+        0.2,
+        81.155
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pose": "idle",
+      "vendor": false,
+      "body": "#8b7aa8",
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "ponytail",
+          "color": "#6b5b95"
+        },
+        {
+          "slot": "top",
+          "key": "tee",
+          "color": "#1b1d22"
+        },
+        {
+          "slot": "bottom",
+          "key": "joggers",
+          "color": "#f0b429"
+        },
+        {
+          "slot": "shoes",
+          "key": "sneakers",
+          "color": "#4a3f62"
+        }
+      ]
+    },
+    {
+      "id": "summit_sports_top_track_jacket",
+      "kind": "mannequin",
+      "position": [
+        -272.0,
+        0.463,
+        86.485
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "top",
+          "key": "track_jacket",
+          "color": "#9b8abf",
+          "forSale": true,
+          "code": "COS_WEAR_TOP_TRACK_JACKET",
+          "price": 260
+        }
+      ]
+    },
+    {
+      "id": "summit_sports_top_jersey",
+      "kind": "mannequin",
+      "position": [
+        -273.25,
+        0.463,
+        86.485
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "top",
+          "key": "jersey",
+          "color": "#9b8abf",
+          "forSale": true,
+          "code": "COS_WEAR_TOP_JERSEY",
+          "price": 110
+        }
+      ]
+    },
+    {
+      "id": "summit_sports_top_sports_bra",
+      "kind": "mannequin",
+      "position": [
+        -274.5,
+        0.463,
+        86.485
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "top",
+          "key": "sports_bra",
+          "color": "#9b8abf",
+          "forSale": true,
+          "code": "COS_WEAR_TOP_SPORTS_BRA",
+          "price": 80
+        }
+      ]
+    },
+    {
+      "id": "summit_sports_bottom_track_pants",
+      "kind": "mannequin",
+      "position": [
+        -292.5,
+        1.078,
+        86.485
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "bottom",
+          "key": "track_pants",
+          "color": "#5a4e72",
+          "forSale": true,
+          "code": "COS_WEAR_BOTTOM_TRACK_PANTS",
+          "price": 150
+        }
+      ]
+    },
+    {
+      "id": "summit_sports_bottom_basketball_shorts",
+      "kind": "mannequin",
+      "position": [
+        -293.75,
+        1.078,
+        86.485
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "bottom",
+          "key": "basketball_shorts",
+          "color": "#5a4e72",
+          "forSale": true,
+          "code": "COS_WEAR_BOTTOM_BASKETBALL_SHORTS",
+          "price": 90
+        }
+      ]
+    },
+    {
+      "id": "summit_sports_bottom_leggings",
+      "kind": "mannequin",
+      "position": [
+        -295.0,
+        1.078,
+        86.485
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "bottom",
+          "key": "leggings",
+          "color": "#5a4e72",
+          "forSale": true,
+          "code": "COS_WEAR_BOTTOM_LEGGINGS",
+          "price": 120
+        }
+      ]
+    },
+    {
+      "id": "summit_sports_look_1",
+      "kind": "mannequin",
+      "position": [
+        -283.2,
+        0.34,
+        83.905
+      ],
+      "yaw": -3.0216,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "short",
+          "color": "#6b5b95",
+          "forSale": true,
+          "code": "COS_WEAR_HAIR_SHORT",
+          "price": 80
+        },
+        {
+          "slot": "top",
+          "key": "track_jacket",
+          "color": "#9b8abf",
+          "forSale": true,
+          "code": "COS_WEAR_TOP_TRACK_JACKET",
+          "price": 260
+        },
+        {
+          "slot": "bottom",
+          "key": "track_pants",
+          "color": "#5a4e72",
+          "forSale": true,
+          "code": "COS_WEAR_BOTTOM_TRACK_PANTS",
+          "price": 150
+        },
+        {
+          "slot": "shoes",
+          "key": "runners",
+          "color": "#4a3f62",
+          "forSale": true,
+          "code": "COS_WEAR_SHOES_RUNNERS",
+          "price": 250
+        }
+      ]
+    },
+    {
+      "id": "summit_sports_look_2",
+      "kind": "mannequin",
+      "position": [
+        -284.8,
+        0.34,
+        83.905
+      ],
+      "yaw": 3.0216,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "buzz",
+          "color": "#6b5b95",
+          "forSale": true,
+          "code": "COS_WEAR_HAIR_BUZZ",
+          "price": 60
+        },
+        {
+          "slot": "top",
+          "key": "jersey",
+          "color": "#9b8abf",
+          "forSale": true,
+          "code": "COS_WEAR_TOP_JERSEY",
+          "price": 110
+        },
+        {
+          "slot": "bottom",
+          "key": "basketball_shorts",
+          "color": "#5a4e72",
+          "forSale": true,
+          "code": "COS_WEAR_BOTTOM_BASKETBALL_SHORTS",
+          "price": 90
+        },
+        {
+          "slot": "shoes",
+          "key": "high_tops",
+          "color": "#4a3f62",
+          "forSale": true,
+          "code": "COS_WEAR_SHOES_HIGH_TOPS",
+          "price": 220
+        }
+      ]
+    }
+  ],
+  "areas": [
+    {
+      "id": "hearth_hollow",
+      "name": "Hearth & Hollow",
+      "role": "seller",
+      "npc": "hearth_hollow_clerk",
+      "bounds": {
+        "minX": -265.0,
+        "maxX": -235.0,
+        "minZ": -108.405,
+        "maxZ": -78.405
+      },
+      "offers": [],
+      "priceTags": true
+    },
+    {
+      "id": "greencart",
+      "name": "GreenCart",
+      "role": "seller",
+      "npc": "greencart_clerk",
+      "bounds": {
+        "minX": -360.0,
+        "maxX": -320.0,
+        "minZ": -114.405,
+        "maxZ": -78.405
+      },
+      "offers": [],
+      "priceTags": true
+    },
+    {
+      "id": "crispins_hardware",
+      "name": "Crispin's Hardware",
+      "role": "seller",
+      "npc": "crispins_hardware_clerk",
+      "bounds": {
+        "minX": -376.55,
+        "maxX": -360.95,
+        "minZ": -89.205,
+        "maxZ": -78.405
+      },
+      "offers": [],
+      "priceTags": true
+    },
+    {
+      "id": "candy_cloud",
+      "name": "Candy Cloud",
+      "role": "seller",
+      "npc": "candy_cloud_clerk",
+      "bounds": {
+        "minX": -376.905,
+        "maxX": -368.405,
+        "minZ": 0.733,
+        "maxZ": 24.733
+      },
+      "offers": [],
+      "priceTags": true
+    },
+    {
+      "id": "northline",
+      "name": "Northline",
+      "role": "seller",
+      "npc": "northline_clerk",
+      "bounds": {
+        "minX": -252.0,
+        "maxX": -220.0,
+        "minZ": 78.405,
+        "maxZ": 108.405
+      },
+      "offers": [],
+      "priceTags": true
+    },
+    {
+      "id": "summit_sports",
+      "name": "Summit Sports",
+      "role": "seller",
+      "npc": "summit_sports_clerk",
+      "bounds": {
+        "minX": -299.1,
+        "maxX": -268.9,
+        "minZ": 78.405,
+        "maxZ": 86.905
+      },
+      "offers": [],
+      "priceTags": true
+    }
+  ]
+}
