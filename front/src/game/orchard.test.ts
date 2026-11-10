@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { nearestTree, saleLine, sellQuantity, wholeApples, withinReach } from './orchard.ts'
+import { nearestTree, sellQuantity, wholeApples, withinReach } from './orchard.ts'
 
 test('the nearest tree within reach is the one to pick', () => {
   const trees: [number, number, number][] = [[0, 0, 0], [5, 0, 0]]
@@ -28,10 +28,4 @@ test('the quantity to sell stays between one and the apples carried', () => {
   assert.equal(sellQuantity(9, 7), 7)
   assert.equal(sellQuantity(0, 7), 1)
   assert.equal(sellQuantity(3, 0), 0)
-})
-
-test('the sale line tells how many apples are still paid full price today', () => {
-  assert.equal(saleLine(15, 295), '+15 coins · 295 apples left at 3 coins today')
-  assert.equal(saleLine(3, 1), '+3 coins · 1 apple left at 3 coins today')
-  assert.equal(saleLine(5, 0), '+5 coins · the farmer pays 1 coin per apple until tomorrow')
 })

@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "key": "enamel_mint",
+  "label": "Enamel mint",
+  "color": "#cbefe2",
+  "roughness": 0.3,
+  "metalness": 0,
+  "maps": {},
+  "source": "decor/fridge_retro"
+}

@@ -116,10 +116,14 @@ interface AvatarAnimState {
   current: THREE.AnimationAction | null
   selector: AvatarClipSelector
   seated: boolean
+  oneShot: OneShotClip | null
 }
 
 const CROSSFADE_S = 0.22
 const SIT_CLIP = 'Sit'
+const PICK_CLIP = 'Pick'
+const ONE_SHOT_CLIPS = [PICK_CLIP, 'Eat', 'Drink'] as const
+type OneShotClip = (typeof ONE_SHOT_CLIPS)[number]
 
 /**
  * Premium skins ship rigged with "Idle" / "Walk" / "Run" clips. Starts a mixer on the instance (no-op for
@@ -131,8 +135,17 @@ export function attachAvatarAnimations(root: THREE.Object3D): void {
   const mixer = new THREE.AnimationMixer(root)
   const actions = new Map<string, THREE.AnimationAction>()
   for (const clip of clips) actions.set(clip.name, mixer.clipAction(clip))
-  const state: AvatarAnimState = { mixer, actions, current: null, selector: new AvatarClipSelector(), seated: false }
+  const state: AvatarAnimState = { mixer, actions, current: null, selector: new AvatarClipSelector(), seated: false, oneShot: null }
   animStateByRoot.set(root, state)
+  for (const name of ONE_SHOT_CLIPS) {
+    const action = actions.get(name)
+    if (!action) continue
+    action.setLoop(THREE.LoopOnce, 1)
+    action.clampWhenFinished = true
+  }
+  mixer.addEventListener('finished', (e) => {
+    if (state.oneShot && e.action === actions.get(state.oneShot)) state.oneShot = null
+  })
   playClip(state, 'Idle', 1)
 }
 
@@ -145,6 +158,27 @@ export function setAvatarSeated(root: THREE.Object3D, seated: boolean): boolean 
   if (!state) return false
   state.seated = seated && state.actions.has(SIT_CLIP)
   return state.seated
+}
+
+function playOneShot(state: AvatarAnimState, name: OneShotClip): void {
+  const action = state.actions.get(name)
+  if (!action) return
+  state.oneShot = name
+  if (state.current === action) action.reset()
+  else playClip(state, name, 1)
+}
+
+export function setAvatarPicking(root: THREE.Object3D, picking: boolean): void {
+  const state = animStateByRoot.get(root)
+  if (!state) return
+  if (picking) playOneShot(state, PICK_CLIP)
+  else if (state.oneShot === PICK_CLIP) state.oneShot = null
+}
+
+export function setAvatarEating(root: THREE.Object3D, kind: 'eat' | 'drink'): void {
+  const state = animStateByRoot.get(root)
+  if (!state || state.seated || state.oneShot === PICK_CLIP || state.selector.clip !== 'Idle') return
+  playOneShot(state, kind === 'eat' ? 'Eat' : 'Drink')
 }
 
 function playClip(state: AvatarAnimState, name: string, timeScale: number): void {
@@ -168,7 +202,8 @@ export function updateAvatarAnimation(root: THREE.Object3D, dt: number, speed: n
     playClip(state, SIT_CLIP, 1)
   } else {
     const { clip, timeScale } = state.selector.update(dt, speed)
-    playClip(state, clip, timeScale)
+    if (state.oneShot !== PICK_CLIP && clip !== 'Idle') state.oneShot = null
+    if (state.oneShot === null) playClip(state, clip, timeScale)
   }
   state.mixer.update(clampDt(dt))
 }

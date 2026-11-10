@@ -5,7 +5,7 @@ import {
   type CosmeticColors,
 } from '../../api/characterCosmetics'
 import { buildCompositeAvatar, disposeObject3D } from '../../avatar/compositeAvatar'
-import { setAvatarSeated, updateAvatarAnimation } from '../../avatar/glbCharacter'
+import { setAvatarEating, setAvatarPicking, setAvatarSeated, updateAvatarAnimation } from '../../avatar/glbCharacter'
 import { parseCharacterLook, type CharacterLook } from '../../avatar/characterLook'
 import { createModularCharacter } from '../../avatar/modularCharacter'
 import { WEAR_SLOTS, wearSignature, type WearModels } from '../../avatar/modularCharacterLogic'
@@ -313,6 +313,11 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     applySeat(entry)
   }
 
+  function setPicking(sessionId: string, picking: boolean) {
+    const entry = avatars.get(sessionId)
+    if (entry) setAvatarPicking(entry.group, picking)
+  }
+
   function pseudoOf(sessionId: string): string | null {
     return avatars.get(sessionId)?.pseudo ?? null
   }
@@ -327,11 +332,12 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     entry.ry = parseYaw(ry ?? entry.ry)
   }
 
-  /** Another player ate or drank (socket `user_action`): a bubble with the food pops over their head. */
+  /** Another player ate or drank (socket `user_action`): a bubble with the food pops over their head and the avatar plays Eat / Drink. */
   function showAction(sessionId: string, action: AvatarAction, code: string | null) {
     const entry = avatars.get(sessionId)
     if (!entry) return
     bubbles.push(createActionBubble(entry.group, action, code))
+    setAvatarEating(entry.group, action)
   }
 
   /** Drink Fast: the player races with a pint `progress` drunk (0..1), or puts it down (null). */
@@ -437,5 +443,5 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     }
   }
 
-  return { upsert, updateAppearance, setTarget, setSeated, setRacePint, pseudoOf, showAction, showPunch, showHit, remove, clear, tick }
+  return { upsert, updateAppearance, setTarget, setSeated, setPicking, setRacePint, pseudoOf, showAction, showPunch, showHit, remove, clear, tick }
 }

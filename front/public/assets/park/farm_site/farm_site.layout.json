@@ -1,0 +1,9812 @@
+{
+  "version": 1,
+  "bounds": {
+    "minX": -42.6,
+    "maxX": -2.0,
+    "minZ": -200.0,
+    "maxZ": -130.0
+  },
+  "gate": {
+    "x": -8.5,
+    "z": -130.0,
+    "width": 3.0
+  },
+  "collision": [
+    {
+      "name": "COL_Farm_house_Corner_WS",
+      "cx": -40.0,
+      "cz": -142.0,
+      "hx": 0.125,
+      "hz": 0.125,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_house_Corner_ES",
+      "cx": -32.0,
+      "cz": -142.0,
+      "hx": 0.125,
+      "hz": 0.125,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_house_Corner_WN",
+      "cx": -40.0,
+      "cz": -135.0,
+      "hx": 0.125,
+      "hz": 0.125,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_house_Corner_EN",
+      "cx": -32.0,
+      "cz": -135.0,
+      "hx": 0.125,
+      "hz": 0.125,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_house_Wall_front_00",
+      "cx": -39.538,
+      "cz": -142.0,
+      "hx": 0.337,
+      "hz": 0.125,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_house_Wall_front_00s",
+      "cx": -38.6,
+      "cz": -142.0,
+      "hx": 0.6,
+      "hz": 0.125,
+      "hy": 0.5,
+      "cy": 0.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_house_Wall_front_00l",
+      "cx": -38.6,
+      "cz": -142.0,
+      "hx": 0.6,
+      "hz": 0.125,
+      "hy": 0.5,
+      "cy": 2.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_house_Wall_front_01",
+      "cx": -37.3,
+      "cz": -142.0,
+      "hx": 0.7,
+      "hz": 0.125,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_house_Wall_front_01l",
+      "cx": -36.0,
+      "cz": -142.0,
+      "hx": 0.6,
+      "hz": 0.125,
+      "hy": 0.45,
+      "cy": 2.55,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_house_Wall_front_02",
+      "cx": -34.7,
+      "cz": -142.0,
+      "hx": 0.7,
+      "hz": 0.125,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_house_Wall_front_02s",
+      "cx": -33.4,
+      "cz": -142.0,
+      "hx": 0.6,
+      "hz": 0.125,
+      "hy": 0.5,
+      "cy": 0.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_house_Wall_front_02l",
+      "cx": -33.4,
+      "cz": -142.0,
+      "hx": 0.6,
+      "hz": 0.125,
+      "hy": 0.5,
+      "cy": 2.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_house_Wall_front_03",
+      "cx": -32.462,
+      "cz": -142.0,
+      "hx": 0.337,
+      "hz": 0.125,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_house_Door_front0_JambA",
+      "cx": -36.56,
+      "cz": -142.0,
+      "hx": 0.04,
+      "hz": 0.155,
+      "hy": 1.05,
+      "cy": 1.05,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_house_Door_front0_JambB",
+      "cx": -35.44,
+      "cz": -142.0,
+      "hx": 0.04,
+      "hz": 0.155,
+      "hy": 1.05,
+      "cy": 1.05,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_house_Wall_back_00",
+      "cx": -36.0,
+      "cz": -135.0,
+      "hx": 3.875,
+      "hz": 0.125,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_house_Wall_left_00",
+      "cx": -40.0,
+      "cz": -140.738,
+      "hx": 0.125,
+      "hz": 1.138,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_house_Wall_left_00s",
+      "cx": -40.0,
+      "cz": -139.0,
+      "hx": 0.125,
+      "hz": 0.6,
+      "hy": 0.5,
+      "cy": 0.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_house_Wall_left_00l",
+      "cx": -40.0,
+      "cz": -139.0,
+      "hx": 0.125,
+      "hz": 0.6,
+      "hy": 0.5,
+      "cy": 2.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_house_Wall_left_01",
+      "cx": -40.0,
+      "cz": -136.762,
+      "hx": 0.125,
+      "hz": 1.638,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_house_Wall_right_00",
+      "cx": -32.0,
+      "cz": -140.738,
+      "hx": 0.125,
+      "hz": 1.138,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_house_Wall_right_00s",
+      "cx": -32.0,
+      "cz": -139.0,
+      "hx": 0.125,
+      "hz": 0.6,
+      "hy": 0.5,
+      "cy": 0.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_house_Wall_right_00l",
+      "cx": -32.0,
+      "cz": -139.0,
+      "hx": 0.125,
+      "hz": 0.6,
+      "hy": 0.5,
+      "cy": 2.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_house_Wall_right_01",
+      "cx": -32.0,
+      "cz": -136.762,
+      "hx": 0.125,
+      "hz": 1.638,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_house_DoorOpen0",
+      "cx": -36.475,
+      "cz": -141.355,
+      "hx": 0.025,
+      "hz": 0.5,
+      "hy": 0.98,
+      "cy": 1.02,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_barn_Corner_WS",
+      "cx": -28.0,
+      "cz": -152.0,
+      "hx": 0.15,
+      "hz": 0.15,
+      "hy": 2.25,
+      "cy": 2.25,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_barn_Corner_ES",
+      "cx": -16.0,
+      "cz": -152.0,
+      "hx": 0.15,
+      "hz": 0.15,
+      "hy": 2.25,
+      "cy": 2.25,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_barn_Corner_WN",
+      "cx": -28.0,
+      "cz": -138.0,
+      "hx": 0.15,
+      "hz": 0.15,
+      "hy": 2.25,
+      "cy": 2.25,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_barn_Corner_EN",
+      "cx": -16.0,
+      "cz": -138.0,
+      "hx": 0.15,
+      "hz": 0.15,
+      "hy": 2.25,
+      "cy": 2.25,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_barn_Wall_front_00",
+      "cx": -25.425,
+      "cz": -152.0,
+      "hx": 2.425,
+      "hz": 0.15,
+      "hy": 2.25,
+      "cy": 2.25,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_barn_Wall_front_00s",
+      "cx": -22.0,
+      "cz": -152.0,
+      "hx": 1.0,
+      "hz": 0.15,
+      "hy": 1.4,
+      "cy": 1.4,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_barn_Wall_front_00l",
+      "cx": -22.0,
+      "cz": -152.0,
+      "hx": 1.0,
+      "hz": 0.15,
+      "hy": 0.35,
+      "cy": 4.15,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_barn_Wall_front_01",
+      "cx": -18.575,
+      "cz": -152.0,
+      "hx": 2.425,
+      "hz": 0.15,
+      "hy": 2.25,
+      "cy": 2.25,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_barn_Wall_back_00",
+      "cx": -25.425,
+      "cz": -138.0,
+      "hx": 2.425,
+      "hz": 0.15,
+      "hy": 2.25,
+      "cy": 2.25,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_barn_Wall_back_00s",
+      "cx": -22.0,
+      "cz": -138.0,
+      "hx": 1.0,
+      "hz": 0.15,
+      "hy": 1.4,
+      "cy": 1.4,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_barn_Wall_back_00l",
+      "cx": -22.0,
+      "cz": -138.0,
+      "hx": 1.0,
+      "hz": 0.15,
+      "hy": 0.35,
+      "cy": 4.15,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_barn_Wall_back_01",
+      "cx": -18.575,
+      "cz": -138.0,
+      "hx": 2.425,
+      "hz": 0.15,
+      "hy": 2.25,
+      "cy": 2.25,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_barn_Wall_left_00",
+      "cx": -28.0,
+      "cz": -145.0,
+      "hx": 0.15,
+      "hz": 6.85,
+      "hy": 2.25,
+      "cy": 2.25,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_barn_Wall_right_00",
+      "cx": -16.0,
+      "cz": -149.425,
+      "hx": 0.15,
+      "hz": 2.425,
+      "hy": 2.25,
+      "cy": 2.25,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_barn_Wall_right_00l",
+      "cx": -16.0,
+      "cz": -145.0,
+      "hx": 0.15,
+      "hz": 2.0,
+      "hy": 0.45,
+      "cy": 4.05,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_barn_Wall_right_01",
+      "cx": -16.0,
+      "cz": -140.575,
+      "hx": 0.15,
+      "hz": 2.425,
+      "hy": 2.25,
+      "cy": 2.25,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_barn_Door_right0_JambA",
+      "cx": -16.0,
+      "cz": -146.96,
+      "hx": 0.18,
+      "hz": 0.04,
+      "hy": 1.8,
+      "cy": 1.8,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_barn_Door_right0_JambB",
+      "cx": -16.0,
+      "cz": -143.04,
+      "hx": 0.18,
+      "hz": 0.04,
+      "hy": 1.8,
+      "cy": 1.8,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_barn_DoorOpen0A",
+      "cx": -15.8,
+      "cz": -148.0,
+      "hx": 0.03,
+      "hz": 1.0,
+      "hy": 1.75,
+      "cy": 1.75,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_barn_DoorOpen0B",
+      "cx": -15.8,
+      "cz": -142.0,
+      "hx": 0.03,
+      "hz": 1.0,
+      "hy": 1.75,
+      "cy": 1.75,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_barn_Stall0",
+      "cx": -26.55,
+      "cz": -148.603,
+      "hx": 1.3,
+      "hz": 0.04,
+      "hy": 0.655,
+      "cy": 0.695,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_barn_Stall1",
+      "cx": -26.55,
+      "cz": -145.301,
+      "hx": 1.3,
+      "hz": 0.04,
+      "hy": 0.655,
+      "cy": 0.695,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_barn_LoftPost0",
+      "cx": -23.989,
+      "cz": -142.105,
+      "hx": 0.1,
+      "hz": 0.1,
+      "hy": 1.28,
+      "cy": 1.32,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_barn_LoftPost1",
+      "cx": -20.011,
+      "cz": -142.105,
+      "hx": 0.1,
+      "hz": 0.1,
+      "hy": 1.28,
+      "cy": 1.32,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_barn_LadderCol",
+      "cx": -18.256,
+      "cz": -142.265,
+      "hx": 0.28,
+      "hz": 0.05,
+      "hy": 1.28,
+      "cy": 1.32,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_FenceNorthW",
+      "cx": -26.05,
+      "cz": -130.5,
+      "hx": 16.15,
+      "hz": 0.15,
+      "hy": 0.6,
+      "cy": 0.6,
+      "yaw": -0.0
+    },
+    {
+      "name": "COL_Farm_FenceNorthE",
+      "cx": -4.75,
+      "cz": -130.5,
+      "hx": 2.35,
+      "hz": 0.15,
+      "hy": 0.6,
+      "cy": 0.6,
+      "yaw": -0.0
+    },
+    {
+      "name": "COL_Farm_FenceEast",
+      "cx": -2.5,
+      "cz": -165.0,
+      "hx": 34.6,
+      "hz": 0.15,
+      "hy": 0.6,
+      "cy": 0.6,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_Farm_FenceSouth",
+      "cx": -22.3,
+      "cz": -199.5,
+      "hx": 19.9,
+      "hz": 0.15,
+      "hy": 0.6,
+      "cy": 0.6,
+      "yaw": -3.1416
+    },
+    {
+      "name": "COL_Farm_FenceWest",
+      "cx": -42.1,
+      "cz": -165.0,
+      "hx": 34.6,
+      "hz": 0.15,
+      "hy": 0.6,
+      "cy": 0.6,
+      "yaw": -1.5708
+    },
+    {
+      "name": "COL_Farm_ZD_house_counter_0",
+      "cx": -38.89,
+      "cy": 0.588,
+      "cz": -135.65,
+      "hx": 0.6,
+      "hy": 0.547,
+      "hz": 0.35,
+      "yaw": 3.1416
+    },
+    {
+      "name": "COL_Farm_ZD_house_counter_1",
+      "cx": -38.94,
+      "cy": 0.588,
+      "cz": -135.6,
+      "hx": 0.65,
+      "hy": 0.547,
+      "hz": 0.3,
+      "yaw": 3.1416
+    },
+    {
+      "name": "COL_Farm_ZD_house_stove_0",
+      "cx": -37.7,
+      "cy": 0.58,
+      "cz": -135.65,
+      "hx": 0.3,
+      "hy": 0.54,
+      "hz": 0.35,
+      "yaw": 3.1416
+    },
+    {
+      "name": "COL_Farm_ZD_house_stove_1",
+      "cx": -37.75,
+      "cy": 0.58,
+      "cz": -135.6,
+      "hx": 0.35,
+      "hy": 0.54,
+      "hz": 0.3,
+      "yaw": 3.1416
+    },
+    {
+      "name": "COL_Farm_ZD_house_fridge_0",
+      "cx": -32.7,
+      "cy": 0.865,
+      "cz": -135.75,
+      "hx": 0.35,
+      "hy": 0.825,
+      "hz": 0.4,
+      "yaw": 3.1416
+    },
+    {
+      "name": "COL_Farm_ZD_house_fridge_1",
+      "cx": -32.75,
+      "cy": 0.865,
+      "cz": -135.7,
+      "hx": 0.4,
+      "hy": 0.825,
+      "hz": 0.35,
+      "yaw": 3.1416
+    },
+    {
+      "name": "COL_Farm_ZD_house_table_0",
+      "cx": -35.8,
+      "cy": 0.565,
+      "cz": -138.375,
+      "hx": 0.7,
+      "hy": 0.525,
+      "hz": 0.45,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_house_chair_w_0",
+      "cx": -36.87,
+      "cy": 0.555,
+      "cz": -138.42,
+      "hx": 0.25,
+      "hy": 0.515,
+      "hz": 0.25,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_Farm_ZD_house_chair_e_0",
+      "cx": -34.73,
+      "cy": 0.555,
+      "cz": -138.38,
+      "hx": 0.25,
+      "hy": 0.515,
+      "hz": 0.25,
+      "yaw": -1.5708
+    },
+    {
+      "name": "COL_Farm_ZD_house_bed_0",
+      "cx": -38.8,
+      "cy": 0.503,
+      "cz": -140.645,
+      "hx": 0.55,
+      "hy": 0.463,
+      "hz": 1.05,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_Farm_ZD_house_dresser_0",
+      "cx": -33.61,
+      "cy": 0.615,
+      "cz": -141.35,
+      "hx": 0.6,
+      "hy": 0.575,
+      "hz": 0.3,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_house_dresser_1",
+      "cx": -33.56,
+      "cy": 0.615,
+      "cz": -141.4,
+      "hx": 0.65,
+      "hy": 0.575,
+      "hz": 0.25,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_house_lamp_0",
+      "cx": -37.195,
+      "cy": 0.91,
+      "cz": -141.395,
+      "hx": 0.25,
+      "hy": 0.87,
+      "hz": 0.25,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_barn_hay_1_0",
+      "cx": -26.4,
+      "cy": 0.639,
+      "cz": -150.304,
+      "hx": 0.4,
+      "hy": 0.599,
+      "hz": 0.6,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_Farm_ZD_barn_hay_1_1",
+      "cx": -26.351,
+      "cy": 0.639,
+      "cz": -150.554,
+      "hx": 0.15,
+      "hy": 0.599,
+      "hz": 0.65,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_Farm_ZD_barn_hay_2_0",
+      "cx": -26.4,
+      "cy": 0.639,
+      "cz": -147.004,
+      "hx": 0.4,
+      "hy": 0.599,
+      "hz": 0.6,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_Farm_ZD_barn_hay_2_1",
+      "cx": -26.351,
+      "cy": 0.639,
+      "cz": -147.254,
+      "hx": 0.15,
+      "hy": 0.599,
+      "hz": 0.65,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_Farm_ZD_barn_loft_hay_1_0",
+      "cx": -25.496,
+      "cy": 3.349,
+      "cz": -140.3,
+      "hx": 0.4,
+      "hy": 0.599,
+      "hz": 0.6,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_barn_loft_hay_1_1",
+      "cx": -25.246,
+      "cy": 3.349,
+      "cz": -140.251,
+      "hx": 0.15,
+      "hy": 0.599,
+      "hz": 0.65,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_barn_loft_hay_2_0",
+      "cx": -21.997,
+      "cy": 3.349,
+      "cz": -140.002,
+      "hx": 0.4,
+      "hy": 0.599,
+      "hz": 0.6,
+      "yaw": 0.4
+    },
+    {
+      "name": "COL_Farm_ZD_barn_loft_hay_2_1",
+      "cx": -21.747,
+      "cy": 3.349,
+      "cz": -140.053,
+      "hx": 0.15,
+      "hy": 0.599,
+      "hz": 0.65,
+      "yaw": 0.4
+    },
+    {
+      "name": "COL_Farm_ZD_barn_loft_hay_3_0",
+      "cx": -19.8,
+      "cy": 3.349,
+      "cz": -139.304,
+      "hx": 0.4,
+      "hy": 0.599,
+      "hz": 0.6,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_Farm_ZD_barn_loft_hay_3_1",
+      "cx": -19.751,
+      "cy": 3.349,
+      "cz": -139.554,
+      "hx": 0.15,
+      "hy": 0.599,
+      "hz": 0.65,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_Farm_ZD_barn_sacks_0",
+      "cx": -17.201,
+      "cy": 0.388,
+      "cz": -150.881,
+      "hx": 0.35,
+      "hy": 0.348,
+      "hz": 0.35,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_barn_sacks_1",
+      "cx": -17.151,
+      "cy": 0.385,
+      "cz": -151.181,
+      "hx": 0.4,
+      "hy": 0.345,
+      "hz": 0.05,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_barn_barrel_0",
+      "cx": -17.259,
+      "cy": 0.488,
+      "cz": -149.369,
+      "hx": 0.35,
+      "hy": 0.448,
+      "hz": 0.35,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_barn_barrel_1",
+      "cx": -17.309,
+      "cy": 0.488,
+      "cz": -149.419,
+      "hx": 0.4,
+      "hy": 0.448,
+      "hz": 0.3,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_barn_barrel_2",
+      "cx": -17.309,
+      "cy": 0.488,
+      "cz": -149.419,
+      "hx": 0.3,
+      "hy": 0.448,
+      "hz": 0.4,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_barn_barrel_3",
+      "cx": -17.309,
+      "cy": 0.488,
+      "cz": -149.369,
+      "hx": 0.2,
+      "hy": 0.448,
+      "hz": 0.45,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_barn_barrel_4",
+      "cx": -17.259,
+      "cy": 0.487,
+      "cz": -149.369,
+      "hx": 0.45,
+      "hy": 0.447,
+      "hz": 0.15,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_barn_churn_0",
+      "cx": -18.587,
+      "cy": 0.387,
+      "cz": -151.084,
+      "hx": 0.2,
+      "hy": 0.347,
+      "hz": 0.2,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_barn_tools_0",
+      "cx": -22.046,
+      "cy": 0.845,
+      "cz": -151.236,
+      "hx": 0.7,
+      "hy": 0.805,
+      "hz": 0.1,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_barn_can_0",
+      "cx": -20.153,
+      "cy": 0.213,
+      "cz": -151.202,
+      "hx": 0.25,
+      "hy": 0.173,
+      "hz": 0.1,
+      "yaw": 0.6
+    },
+    {
+      "name": "COL_Farm_ZD_barn_can_1",
+      "cx": -20.264,
+      "cy": 0.213,
+      "cz": -151.187,
+      "hx": 0.15,
+      "hy": 0.173,
+      "hz": 0.15,
+      "yaw": 0.6
+    },
+    {
+      "name": "COL_Farm_ZD_barn_can_2",
+      "cx": -20.318,
+      "cy": 0.213,
+      "cz": -151.089,
+      "hx": 0.05,
+      "hy": 0.173,
+      "hz": 0.2,
+      "yaw": 0.6
+    },
+    {
+      "name": "COL_Farm_ZD_yard_coop_0",
+      "cx": -30.152,
+      "cy": 0.717,
+      "cz": -136.648,
+      "hx": 0.55,
+      "hy": 0.697,
+      "hz": 0.6,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_Farm_ZD_yard_coop_1",
+      "cx": -30.102,
+      "cy": 0.717,
+      "cz": -136.598,
+      "hx": 0.5,
+      "hy": 0.697,
+      "hz": 0.65,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_Farm_ZD_yard_coop_2",
+      "cx": -30.052,
+      "cy": 0.717,
+      "cz": -136.598,
+      "hx": 0.3,
+      "hy": 0.697,
+      "hz": 0.7,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_Farm_ZD_yard_coop_3",
+      "cx": -30.003,
+      "cy": 0.669,
+      "cz": -136.398,
+      "hx": 0.1,
+      "hy": 0.649,
+      "hz": 0.75,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_Farm_ZD_yard_coop_4",
+      "cx": -30.003,
+      "cy": 0.67,
+      "cz": -136.798,
+      "hx": 0.1,
+      "hy": 0.65,
+      "hz": 0.75,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_Farm_ZD_yard_trough_0",
+      "cx": -21.955,
+      "cy": 0.319,
+      "cz": -136.591,
+      "hx": 1,
+      "hy": 0.299,
+      "hz": 0.4,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_yard_well_0",
+      "cx": -12.527,
+      "cy": 0.97,
+      "cz": -152.478,
+      "hx": 0.85,
+      "hy": 0.95,
+      "hz": 0.8,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_yard_well_1",
+      "cx": -12.527,
+      "cy": 0.97,
+      "cz": -152.478,
+      "hx": 0.75,
+      "hy": 0.95,
+      "hz": 0.9,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_yard_well_2",
+      "cx": -12.477,
+      "cy": 0.97,
+      "cz": -152.478,
+      "hx": 0.9,
+      "hy": 0.95,
+      "hz": 0.7,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_yard_well_3",
+      "cx": -12.527,
+      "cy": 0.97,
+      "cz": -152.529,
+      "hx": 0.95,
+      "hy": 0.95,
+      "hz": 0.65,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_yard_well_4",
+      "cx": -12.477,
+      "cy": 0.97,
+      "cz": -152.529,
+      "hx": 0.6,
+      "hy": 0.95,
+      "hz": 0.95,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_yard_well_5",
+      "cx": -12.477,
+      "cy": 0.97,
+      "cz": -152.529,
+      "hx": 1,
+      "hy": 0.95,
+      "hz": 0.55,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_yard_well_6",
+      "cx": -12.527,
+      "cy": 0.97,
+      "cz": -152.478,
+      "hx": 0.55,
+      "hy": 0.95,
+      "hz": 1,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_yard_well_7",
+      "cx": -12.527,
+      "cy": 0.97,
+      "cz": -152.478,
+      "hx": 1.05,
+      "hy": 0.95,
+      "hz": 0.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_yard_well_8",
+      "cx": -12.477,
+      "cy": 0.97,
+      "cz": -152.529,
+      "hx": 0.5,
+      "hy": 0.95,
+      "hz": 1.05,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_yard_well_9",
+      "cx": -12.527,
+      "cy": 0.97,
+      "cz": -152.478,
+      "hx": 0.35,
+      "hy": 0.95,
+      "hz": 1.1,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_yard_well_10",
+      "cx": -12.477,
+      "cy": 0.97,
+      "cz": -152.478,
+      "hx": 1.1,
+      "hy": 0.95,
+      "hz": 0.3,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_yard_hay_1_0",
+      "cx": -14.196,
+      "cy": 0.619,
+      "cz": -139.602,
+      "hx": 0.4,
+      "hy": 0.599,
+      "hz": 0.6,
+      "yaw": 0.3
+    },
+    {
+      "name": "COL_Farm_ZD_yard_hay_1_1",
+      "cx": -13.943,
+      "cy": 0.619,
+      "cz": -139.628,
+      "hx": 0.15,
+      "hy": 0.599,
+      "hz": 0.65,
+      "yaw": 0.3
+    },
+    {
+      "name": "COL_Farm_ZD_yard_hay_2_0",
+      "cx": -13.999,
+      "cy": 0.619,
+      "cz": -137.004,
+      "hx": 0.4,
+      "hy": 0.599,
+      "hz": 0.6,
+      "yaw": 1.2
+    },
+    {
+      "name": "COL_Farm_ZD_yard_hay_2_1",
+      "cx": -13.862,
+      "cy": 0.619,
+      "cz": -137.219,
+      "hx": 0.15,
+      "hy": 0.599,
+      "hz": 0.65,
+      "yaw": 1.2
+    },
+    {
+      "name": "COL_Farm_ZD_yard_barrow_0",
+      "cx": -24.041,
+      "cy": 0.355,
+      "cz": -160.826,
+      "hx": 0.35,
+      "hy": 0.335,
+      "hz": 0.5,
+      "yaw": 0.4
+    },
+    {
+      "name": "COL_Farm_ZD_yard_barrow_1",
+      "cx": -23.806,
+      "cy": 0.355,
+      "cz": -160.654,
+      "hx": 0.1,
+      "hy": 0.335,
+      "hz": 0.75,
+      "yaw": 0.4
+    },
+    {
+      "name": "COL_Farm_ZD_yard_barrow_2",
+      "cx": -24.22,
+      "cy": 0.355,
+      "cz": -160.479,
+      "hx": 0.05,
+      "hy": 0.335,
+      "hz": 0.75,
+      "yaw": 0.4
+    },
+    {
+      "name": "COL_Farm_ZD_yard_barrow_3",
+      "cx": -23.921,
+      "cy": 0.195,
+      "cz": -159.899,
+      "hx": 0.1,
+      "hy": 0.175,
+      "hz": 0.1,
+      "yaw": 0.4
+    },
+    {
+      "name": "COL_Farm_ZD_yard_crate_1_0",
+      "cx": -26.575,
+      "cy": 0.242,
+      "cz": -160.381,
+      "hx": 0.25,
+      "hy": 0.222,
+      "hz": 0.25,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_yard_crate_2_0",
+      "cx": -6.57,
+      "cy": 0.242,
+      "cz": -160.389,
+      "hx": 0.25,
+      "hy": 0.222,
+      "hz": 0.25,
+      "yaw": 0.3
+    },
+    {
+      "name": "COL_Farm_ZD_field_scarecrow_corn_0",
+      "cx": -33.897,
+      "cy": 0.917,
+      "cz": -179.454,
+      "hx": 0.35,
+      "hy": 0.897,
+      "hz": 0.3,
+      "yaw": 0.3
+    },
+    {
+      "name": "COL_Farm_ZD_field_scarecrow_corn_1",
+      "cx": -33.93,
+      "cy": 0.917,
+      "cz": -179.392,
+      "hx": 0.4,
+      "hy": 0.897,
+      "hz": 0.25,
+      "yaw": 0.3
+    },
+    {
+      "name": "COL_Farm_ZD_field_scarecrow_corn_2",
+      "cx": -33.897,
+      "cy": 0.917,
+      "cz": -179.454,
+      "hx": 0.25,
+      "hy": 0.897,
+      "hz": 0.4,
+      "yaw": 0.3
+    },
+    {
+      "name": "COL_Farm_ZD_field_scarecrow_corn_3",
+      "cx": -33.897,
+      "cy": 0.917,
+      "cz": -179.454,
+      "hx": 0.45,
+      "hy": 0.897,
+      "hz": 0.2,
+      "yaw": 0.3
+    },
+    {
+      "name": "COL_Farm_ZD_field_scarecrow_corn_4",
+      "cx": -33.882,
+      "cy": 0.917,
+      "cz": -179.407,
+      "hx": 0.05,
+      "hy": 0.897,
+      "hz": 0.45,
+      "yaw": 0.3
+    },
+    {
+      "name": "COL_Farm_ZD_field_scarecrow_pumpkin_0",
+      "cx": -15.795,
+      "cy": 0.917,
+      "cz": -190.301,
+      "hx": 0.35,
+      "hy": 0.897,
+      "hz": 0.3,
+      "yaw": -0.4
+    },
+    {
+      "name": "COL_Farm_ZD_field_scarecrow_pumpkin_1",
+      "cx": -15.861,
+      "cy": 0.917,
+      "cz": -190.275,
+      "hx": 0.4,
+      "hy": 0.897,
+      "hz": 0.25,
+      "yaw": -0.4
+    },
+    {
+      "name": "COL_Farm_ZD_field_scarecrow_pumpkin_2",
+      "cx": -15.795,
+      "cy": 0.917,
+      "cz": -190.301,
+      "hx": 0.25,
+      "hy": 0.897,
+      "hz": 0.4,
+      "yaw": -0.4
+    },
+    {
+      "name": "COL_Farm_ZD_field_scarecrow_pumpkin_3",
+      "cx": -15.795,
+      "cy": 0.917,
+      "cz": -190.301,
+      "hx": 0.45,
+      "hy": 0.897,
+      "hz": 0.2,
+      "yaw": -0.4
+    },
+    {
+      "name": "COL_Farm_ZD_field_scarecrow_pumpkin_4",
+      "cx": -15.815,
+      "cy": 0.917,
+      "cz": -190.255,
+      "hx": 0.05,
+      "hy": 0.897,
+      "hz": 0.45,
+      "yaw": -0.4
+    },
+    {
+      "name": "COL_Farm_ZD_run_wire_n_0",
+      "cx": -30.75,
+      "cy": 0.6,
+      "cz": -134.8,
+      "hx": 1.3,
+      "hy": 0.6,
+      "hz": 0.05,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_run_gate_n_0",
+      "cx": -28.885,
+      "cy": 0.65,
+      "cz": -134.78,
+      "hx": 0.9,
+      "hy": 0.65,
+      "hz": 0.1,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_run_wire_e_0",
+      "cx": -28.1,
+      "cy": 0.6,
+      "cz": -136.4,
+      "hx": 1.3,
+      "hy": 0.6,
+      "hz": 0.05,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_Farm_ZD_run_wire_s_0",
+      "cx": -30.75,
+      "cy": 0.6,
+      "cz": -142.2,
+      "hx": 1.3,
+      "hy": 0.6,
+      "hz": 0.05,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_run_gate_s_0",
+      "cx": -28.885,
+      "cy": 0.65,
+      "cz": -142.18,
+      "hx": 0.9,
+      "hy": 0.65,
+      "hz": 0.1,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_run_feeder_0",
+      "cx": -28.923,
+      "cy": 0.249,
+      "cz": -136.071,
+      "hx": 0.35,
+      "hy": 0.249,
+      "hz": 0.3,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_run_feeder_1",
+      "cx": -28.873,
+      "cy": 0.249,
+      "cz": -136.121,
+      "hx": 0.3,
+      "hy": 0.249,
+      "hz": 0.35,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_run_feeder_2",
+      "cx": -28.873,
+      "cy": 0.249,
+      "cz": -136.071,
+      "hx": 0.4,
+      "hy": 0.249,
+      "hz": 0.2,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_run_feeder_3",
+      "cx": -28.873,
+      "cy": 0.249,
+      "cz": -136.071,
+      "hx": 0.2,
+      "hy": 0.249,
+      "hz": 0.4,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_pasture_w0_0",
+      "cx": -34.97,
+      "cy": 0.55,
+      "cz": -143.48,
+      "hx": 1.35,
+      "hy": 0.55,
+      "hz": 0.1,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_Farm_ZD_pasture_w1_0",
+      "cx": -34.97,
+      "cy": 0.55,
+      "cz": -145.98,
+      "hx": 1.35,
+      "hy": 0.55,
+      "hz": 0.1,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_Farm_ZD_pasture_w2_0",
+      "cx": -34.97,
+      "cy": 0.55,
+      "cz": -148.48,
+      "hx": 1.35,
+      "hy": 0.55,
+      "hz": 0.1,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_Farm_ZD_pasture_w3_0",
+      "cx": -34.97,
+      "cy": 0.55,
+      "cz": -150.98,
+      "hx": 1.35,
+      "hy": 0.55,
+      "hz": 0.1,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_Farm_ZD_pasture_w4_0",
+      "cx": -34.97,
+      "cy": 0.55,
+      "cz": -153.48,
+      "hx": 1.35,
+      "hy": 0.55,
+      "hz": 0.1,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_Farm_ZD_pasture_s0_0",
+      "cx": -33.72,
+      "cy": 0.55,
+      "cz": -154.67,
+      "hx": 1.35,
+      "hy": 0.55,
+      "hz": 0.1,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_pasture_s1_0",
+      "cx": -31.22,
+      "cy": 0.55,
+      "cz": -154.67,
+      "hx": 1.35,
+      "hy": 0.55,
+      "hz": 0.1,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_pasture_gate_0",
+      "cx": -29.085,
+      "cy": 0.65,
+      "cz": -154.68,
+      "hx": 0.9,
+      "hy": 0.65,
+      "hz": 0.1,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_pasture_e_0",
+      "cx": -28.17,
+      "cy": 0.55,
+      "cz": -153.38,
+      "hx": 1.35,
+      "hy": 0.55,
+      "hz": 0.1,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_Farm_ZD_pasture_rack_0",
+      "cx": -34.19,
+      "cy": 0.555,
+      "cz": -148.51,
+      "hx": 0.8,
+      "hy": 0.555,
+      "hz": 0.35,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_Farm_ZD_pigpen_w0_0",
+      "cx": -6.97,
+      "cy": 0.55,
+      "cz": -143.78,
+      "hx": 1.35,
+      "hy": 0.55,
+      "hz": 0.1,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_Farm_ZD_pigpen_w1_0",
+      "cx": -6.97,
+      "cy": 0.55,
+      "cz": -146.28,
+      "hx": 1.35,
+      "hy": 0.55,
+      "hz": 0.1,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_Farm_ZD_pigpen_w2_0",
+      "cx": -6.97,
+      "cy": 0.55,
+      "cz": -148.78,
+      "hx": 1.35,
+      "hy": 0.55,
+      "hz": 0.1,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_Farm_ZD_pigpen_n_0",
+      "cx": -5.72,
+      "cy": 0.55,
+      "cz": -142.47,
+      "hx": 1.35,
+      "hy": 0.55,
+      "hz": 0.1,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_pigpen_gate_n_0",
+      "cx": -3.385,
+      "cy": 0.65,
+      "cz": -142.48,
+      "hx": 0.9,
+      "hy": 0.65,
+      "hz": 0.1,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_pigpen_s_0",
+      "cx": -5.72,
+      "cy": 0.55,
+      "cz": -149.97,
+      "hx": 1.35,
+      "hy": 0.55,
+      "hz": 0.1,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_pigpen_gate_s_0",
+      "cx": -3.385,
+      "cy": 0.65,
+      "cz": -149.98,
+      "hx": 0.9,
+      "hy": 0.65,
+      "hz": 0.1,
+      "yaw": 0.0
+    }
+  ],
+  "crops": [
+    {
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -195.2
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -194.3
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -193.4
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -192.5
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -191.6
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -190.7
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -189.8
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -188.9
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -188
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -187.1
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -186.2
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -185.3
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -184.4
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -183.5
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -182.6
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -181.7
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -180.8
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -179.9
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -179
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -178.1
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -177.2
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -176.3
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -175.4
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -174.5
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -173.6
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -172.7
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -171.8
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -170.9
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -170
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -169.1
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -168.2
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -167.3
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -166.4
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -165.5
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -164.6
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -163.7
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -162.8
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -195.2
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -194.3
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -193.4
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -192.5
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -191.6
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -190.7
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -189.8
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -188.9
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -188
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -187.1
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -186.2
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -185.3
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -184.4
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -183.5
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -182.6
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -181.7
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -180.8
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -179.9
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -179
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -178.1
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -177.2
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -176.3
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -175.4
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -174.5
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -173.6
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -172.7
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -171.8
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -170.9
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -170
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -169.1
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -168.2
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -167.3
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -166.4
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -165.5
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -164.6
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -163.7
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -162.8
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -195.2
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -194.3
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -193.4
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -192.5
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -191.6
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -190.7
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -189.8
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -188.9
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -188
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -187.1
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -186.2
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -185.3
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -184.4
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -183.5
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -182.6
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -181.7
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -180.8
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -179.9
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -179
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -178.1
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -177.2
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -176.3
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -175.4
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -174.5
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -173.6
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -172.7
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -171.8
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -170.9
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -170
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -169.1
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -168.2
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -167.3
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -166.4
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -165.5
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -164.6
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -163.7
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -162.8
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -195.2
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -194.3
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -193.4
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -192.5
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -191.6
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -190.7
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -189.8
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -188.9
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -188
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -187.1
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -186.2
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -185.3
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -184.4
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -183.5
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -182.6
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -181.7
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -180.8
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -179.9
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -179
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -178.1
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -177.2
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -176.3
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -175.4
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -174.5
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -173.6
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -172.7
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -171.8
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -170.9
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -170
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -169.1
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -168.2
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -167.3
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -166.4
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -165.5
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -164.6
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -163.7
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -162.8
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -195.2
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -194.3
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -193.4
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -192.5
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -191.6
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -190.7
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -189.8
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -188.9
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -188
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -187.1
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -186.2
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -185.3
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -184.4
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -183.5
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -182.6
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -181.7
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -180.8
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -179.9
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -179
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -178.1
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -177.2
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -176.3
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -175.4
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -174.5
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -173.6
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -172.7
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -171.8
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -170.9
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -170
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -169.1
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -168.2
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -167.3
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -166.4
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -165.5
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -164.6
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -163.7
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -162.8
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -195.2
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -194.3
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -193.4
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -192.5
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -191.6
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -190.7
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -189.8
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -188.9
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -188
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -187.1
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -186.2
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -185.3
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -184.4
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -183.5
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -182.6
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -181.7
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -180.8
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -179.9
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -179
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -178.1
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -177.2
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -176.3
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -175.4
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -174.5
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -173.6
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -172.7
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -171.8
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -170.9
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -170
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -169.1
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -168.2
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -167.3
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -166.4
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -165.5
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -164.6
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -163.7
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -162.8
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -195.2
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -194.3
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -193.4
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -192.5
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -191.6
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -190.7
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -189.8
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -188.9
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -188
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -187.1
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -186.2
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -185.3
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -184.4
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -183.5
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -182.6
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -181.7
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -180.8
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -179.9
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -179
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -178.1
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -177.2
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -176.3
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -175.4
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -174.5
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -173.6
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -172.7
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -171.8
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -170.9
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -170
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -169.1
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -168.2
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -167.3
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -166.4
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -165.5
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -164.6
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -163.7
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -162.8
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -195.2
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -194.3
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -193.4
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -192.5
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -191.6
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -190.7
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -189.8
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -188.9
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -188
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -187.1
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -186.2
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -185.3
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -184.4
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -183.5
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -182.6
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -181.7
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -180.8
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -179.9
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -179
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -178.1
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -177.2
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -176.3
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -175.4
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -174.5
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -173.6
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -172.7
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -171.8
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -170.9
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -170
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -169.1
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -168.2
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -167.3
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -166.4
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -165.5
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -164.6
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -163.7
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -162.8
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -195.2
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -194.3
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -193.4
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -192.5
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -191.6
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -190.7
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -189.8
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -188.9
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -188
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -187.1
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -186.2
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -185.3
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -184.4
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -183.5
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -182.6
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -181.7
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -180.8
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -179.9
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -179
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -178.1
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -177.2
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -176.3
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -175.4
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -174.5
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -173.6
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -172.7
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -171.8
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -170.9
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -170
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -169.1
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -168.2
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -167.3
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -166.4
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -165.5
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -164.6
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -163.7
+      ]
+    },
+    {
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -162.8
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -25.45,
+        0.05,
+        -171.55
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -25.45,
+        0.05,
+        -170.85
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -25.45,
+        0.05,
+        -170.15
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -25.45,
+        0.05,
+        -169.45
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -25.45,
+        0.05,
+        -168.75
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -25.45,
+        0.05,
+        -168.05
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -25.45,
+        0.05,
+        -167.35
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -25.45,
+        0.05,
+        -166.65
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -25.45,
+        0.05,
+        -165.95
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -25.45,
+        0.05,
+        -165.25
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -25.45,
+        0.05,
+        -164.55
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -25.45,
+        0.05,
+        -163.85
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -25.45,
+        0.05,
+        -163.15
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -25.45,
+        0.05,
+        -162.45
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -24.55,
+        0.05,
+        -171.55
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -24.55,
+        0.05,
+        -170.85
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -24.55,
+        0.05,
+        -170.15
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -24.55,
+        0.05,
+        -169.45
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -24.55,
+        0.05,
+        -168.75
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -24.55,
+        0.05,
+        -168.05
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -24.55,
+        0.05,
+        -167.35
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -24.55,
+        0.05,
+        -166.65
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -24.55,
+        0.05,
+        -165.95
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -24.55,
+        0.05,
+        -165.25
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -24.55,
+        0.05,
+        -164.55
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -24.55,
+        0.05,
+        -163.85
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -24.55,
+        0.05,
+        -163.15
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -24.55,
+        0.05,
+        -162.45
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -23.65,
+        0.05,
+        -171.55
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -23.65,
+        0.05,
+        -170.85
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -23.65,
+        0.05,
+        -170.15
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -23.65,
+        0.05,
+        -169.45
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -23.65,
+        0.05,
+        -168.75
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -23.65,
+        0.05,
+        -168.05
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -23.65,
+        0.05,
+        -167.35
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -23.65,
+        0.05,
+        -166.65
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -23.65,
+        0.05,
+        -165.95
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -23.65,
+        0.05,
+        -165.25
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -23.65,
+        0.05,
+        -164.55
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -23.65,
+        0.05,
+        -163.85
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -23.65,
+        0.05,
+        -163.15
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -23.65,
+        0.05,
+        -162.45
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -22.75,
+        0.05,
+        -171.55
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -22.75,
+        0.05,
+        -170.85
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -22.75,
+        0.05,
+        -170.15
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -22.75,
+        0.05,
+        -169.45
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -22.75,
+        0.05,
+        -168.75
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -22.75,
+        0.05,
+        -168.05
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -22.75,
+        0.05,
+        -167.35
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -22.75,
+        0.05,
+        -166.65
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -22.75,
+        0.05,
+        -165.95
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -22.75,
+        0.05,
+        -165.25
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -22.75,
+        0.05,
+        -164.55
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -22.75,
+        0.05,
+        -163.85
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -22.75,
+        0.05,
+        -163.15
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -22.75,
+        0.05,
+        -162.45
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -21.85,
+        0.05,
+        -171.55
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -21.85,
+        0.05,
+        -170.85
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -21.85,
+        0.05,
+        -170.15
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -21.85,
+        0.05,
+        -169.45
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -21.85,
+        0.05,
+        -168.75
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -21.85,
+        0.05,
+        -168.05
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -21.85,
+        0.05,
+        -167.35
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -21.85,
+        0.05,
+        -166.65
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -21.85,
+        0.05,
+        -165.95
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -21.85,
+        0.05,
+        -165.25
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -21.85,
+        0.05,
+        -164.55
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -21.85,
+        0.05,
+        -163.85
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -21.85,
+        0.05,
+        -163.15
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -21.85,
+        0.05,
+        -162.45
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -20.95,
+        0.05,
+        -171.55
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -20.95,
+        0.05,
+        -170.85
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -20.95,
+        0.05,
+        -170.15
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -20.95,
+        0.05,
+        -169.45
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -20.95,
+        0.05,
+        -168.75
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -20.95,
+        0.05,
+        -168.05
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -20.95,
+        0.05,
+        -167.35
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -20.95,
+        0.05,
+        -166.65
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -20.95,
+        0.05,
+        -165.95
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -20.95,
+        0.05,
+        -165.25
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -20.95,
+        0.05,
+        -164.55
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -20.95,
+        0.05,
+        -163.85
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -20.95,
+        0.05,
+        -163.15
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -20.95,
+        0.05,
+        -162.45
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -20.05,
+        0.05,
+        -171.55
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -20.05,
+        0.05,
+        -170.85
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -20.05,
+        0.05,
+        -170.15
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -20.05,
+        0.05,
+        -169.45
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -20.05,
+        0.05,
+        -168.75
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -20.05,
+        0.05,
+        -168.05
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -20.05,
+        0.05,
+        -167.35
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -20.05,
+        0.05,
+        -166.65
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -20.05,
+        0.05,
+        -165.95
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -20.05,
+        0.05,
+        -165.25
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -20.05,
+        0.05,
+        -164.55
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -20.05,
+        0.05,
+        -163.85
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -20.05,
+        0.05,
+        -163.15
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -20.05,
+        0.05,
+        -162.45
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -19.15,
+        0.05,
+        -171.55
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -19.15,
+        0.05,
+        -170.85
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -19.15,
+        0.05,
+        -170.15
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -19.15,
+        0.05,
+        -169.45
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -19.15,
+        0.05,
+        -168.75
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -19.15,
+        0.05,
+        -168.05
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -19.15,
+        0.05,
+        -167.35
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -19.15,
+        0.05,
+        -166.65
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -19.15,
+        0.05,
+        -165.95
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -19.15,
+        0.05,
+        -165.25
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -19.15,
+        0.05,
+        -164.55
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -19.15,
+        0.05,
+        -163.85
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -19.15,
+        0.05,
+        -163.15
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -19.15,
+        0.05,
+        -162.45
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -18.25,
+        0.05,
+        -171.55
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -18.25,
+        0.05,
+        -170.85
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -18.25,
+        0.05,
+        -170.15
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -18.25,
+        0.05,
+        -169.45
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -18.25,
+        0.05,
+        -168.75
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -18.25,
+        0.05,
+        -168.05
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -18.25,
+        0.05,
+        -167.35
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -18.25,
+        0.05,
+        -166.65
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -18.25,
+        0.05,
+        -165.95
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -18.25,
+        0.05,
+        -165.25
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -18.25,
+        0.05,
+        -164.55
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -18.25,
+        0.05,
+        -163.85
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -18.25,
+        0.05,
+        -163.15
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -18.25,
+        0.05,
+        -162.45
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -17.35,
+        0.05,
+        -171.55
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -17.35,
+        0.05,
+        -170.85
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -17.35,
+        0.05,
+        -170.15
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -17.35,
+        0.05,
+        -169.45
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -17.35,
+        0.05,
+        -168.75
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -17.35,
+        0.05,
+        -168.05
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -17.35,
+        0.05,
+        -167.35
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -17.35,
+        0.05,
+        -166.65
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -17.35,
+        0.05,
+        -165.95
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -17.35,
+        0.05,
+        -165.25
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -17.35,
+        0.05,
+        -164.55
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -17.35,
+        0.05,
+        -163.85
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -17.35,
+        0.05,
+        -163.15
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -17.35,
+        0.05,
+        -162.45
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -16.45,
+        0.05,
+        -171.55
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -16.45,
+        0.05,
+        -170.85
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -16.45,
+        0.05,
+        -170.15
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -16.45,
+        0.05,
+        -169.45
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -16.45,
+        0.05,
+        -168.75
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -16.45,
+        0.05,
+        -168.05
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -16.45,
+        0.05,
+        -167.35
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -16.45,
+        0.05,
+        -166.65
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -16.45,
+        0.05,
+        -165.95
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -16.45,
+        0.05,
+        -165.25
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -16.45,
+        0.05,
+        -164.55
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -16.45,
+        0.05,
+        -163.85
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -16.45,
+        0.05,
+        -163.15
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -16.45,
+        0.05,
+        -162.45
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -15.55,
+        0.05,
+        -171.55
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -15.55,
+        0.05,
+        -170.85
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -15.55,
+        0.05,
+        -170.15
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -15.55,
+        0.05,
+        -169.45
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -15.55,
+        0.05,
+        -168.75
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -15.55,
+        0.05,
+        -168.05
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -15.55,
+        0.05,
+        -167.35
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -15.55,
+        0.05,
+        -166.65
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -15.55,
+        0.05,
+        -165.95
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -15.55,
+        0.05,
+        -165.25
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -15.55,
+        0.05,
+        -164.55
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -15.55,
+        0.05,
+        -163.85
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -15.55,
+        0.05,
+        -163.15
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -15.55,
+        0.05,
+        -162.45
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -14.65,
+        0.05,
+        -171.55
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -14.65,
+        0.05,
+        -170.85
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -14.65,
+        0.05,
+        -170.15
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -14.65,
+        0.05,
+        -169.45
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -14.65,
+        0.05,
+        -168.75
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -14.65,
+        0.05,
+        -168.05
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -14.65,
+        0.05,
+        -167.35
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -14.65,
+        0.05,
+        -166.65
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -14.65,
+        0.05,
+        -165.95
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -14.65,
+        0.05,
+        -165.25
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -14.65,
+        0.05,
+        -164.55
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -14.65,
+        0.05,
+        -163.85
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -14.65,
+        0.05,
+        -163.15
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -14.65,
+        0.05,
+        -162.45
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -13.75,
+        0.05,
+        -171.55
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -13.75,
+        0.05,
+        -170.85
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -13.75,
+        0.05,
+        -170.15
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -13.75,
+        0.05,
+        -169.45
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -13.75,
+        0.05,
+        -168.75
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -13.75,
+        0.05,
+        -168.05
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -13.75,
+        0.05,
+        -167.35
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -13.75,
+        0.05,
+        -166.65
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -13.75,
+        0.05,
+        -165.95
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -13.75,
+        0.05,
+        -165.25
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -13.75,
+        0.05,
+        -164.55
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -13.75,
+        0.05,
+        -163.85
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -13.75,
+        0.05,
+        -163.15
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -13.75,
+        0.05,
+        -162.45
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -12.85,
+        0.05,
+        -171.55
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -12.85,
+        0.05,
+        -170.85
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -12.85,
+        0.05,
+        -170.15
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -12.85,
+        0.05,
+        -169.45
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -12.85,
+        0.05,
+        -168.75
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -12.85,
+        0.05,
+        -168.05
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -12.85,
+        0.05,
+        -167.35
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -12.85,
+        0.05,
+        -166.65
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -12.85,
+        0.05,
+        -165.95
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -12.85,
+        0.05,
+        -165.25
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -12.85,
+        0.05,
+        -164.55
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -12.85,
+        0.05,
+        -163.85
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -12.85,
+        0.05,
+        -163.15
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -12.85,
+        0.05,
+        -162.45
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -11.95,
+        0.05,
+        -171.55
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -11.95,
+        0.05,
+        -170.85
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -11.95,
+        0.05,
+        -170.15
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -11.95,
+        0.05,
+        -169.45
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -11.95,
+        0.05,
+        -168.75
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -11.95,
+        0.05,
+        -168.05
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -11.95,
+        0.05,
+        -167.35
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -11.95,
+        0.05,
+        -166.65
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -11.95,
+        0.05,
+        -165.95
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -11.95,
+        0.05,
+        -165.25
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -11.95,
+        0.05,
+        -164.55
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -11.95,
+        0.05,
+        -163.85
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -11.95,
+        0.05,
+        -163.15
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -11.95,
+        0.05,
+        -162.45
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -11.05,
+        0.05,
+        -171.55
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -11.05,
+        0.05,
+        -170.85
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -11.05,
+        0.05,
+        -170.15
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -11.05,
+        0.05,
+        -169.45
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -11.05,
+        0.05,
+        -168.75
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -11.05,
+        0.05,
+        -168.05
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -11.05,
+        0.05,
+        -167.35
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -11.05,
+        0.05,
+        -166.65
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -11.05,
+        0.05,
+        -165.95
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -11.05,
+        0.05,
+        -165.25
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -11.05,
+        0.05,
+        -164.55
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -11.05,
+        0.05,
+        -163.85
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -11.05,
+        0.05,
+        -163.15
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -11.05,
+        0.05,
+        -162.45
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -10.15,
+        0.05,
+        -171.55
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -10.15,
+        0.05,
+        -170.85
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -10.15,
+        0.05,
+        -170.15
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -10.15,
+        0.05,
+        -169.45
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -10.15,
+        0.05,
+        -168.75
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -10.15,
+        0.05,
+        -168.05
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -10.15,
+        0.05,
+        -167.35
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -10.15,
+        0.05,
+        -166.65
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -10.15,
+        0.05,
+        -165.95
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -10.15,
+        0.05,
+        -165.25
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -10.15,
+        0.05,
+        -164.55
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -10.15,
+        0.05,
+        -163.85
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -10.15,
+        0.05,
+        -163.15
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -10.15,
+        0.05,
+        -162.45
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -9.25,
+        0.05,
+        -171.55
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -9.25,
+        0.05,
+        -170.85
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -9.25,
+        0.05,
+        -170.15
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -9.25,
+        0.05,
+        -169.45
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -9.25,
+        0.05,
+        -168.75
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -9.25,
+        0.05,
+        -168.05
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -9.25,
+        0.05,
+        -167.35
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -9.25,
+        0.05,
+        -166.65
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -9.25,
+        0.05,
+        -165.95
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -9.25,
+        0.05,
+        -165.25
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -9.25,
+        0.05,
+        -164.55
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -9.25,
+        0.05,
+        -163.85
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -9.25,
+        0.05,
+        -163.15
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -9.25,
+        0.05,
+        -162.45
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -8.35,
+        0.05,
+        -171.55
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -8.35,
+        0.05,
+        -170.85
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -8.35,
+        0.05,
+        -170.15
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -8.35,
+        0.05,
+        -169.45
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -8.35,
+        0.05,
+        -168.75
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -8.35,
+        0.05,
+        -168.05
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -8.35,
+        0.05,
+        -167.35
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -8.35,
+        0.05,
+        -166.65
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -8.35,
+        0.05,
+        -165.95
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -8.35,
+        0.05,
+        -165.25
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -8.35,
+        0.05,
+        -164.55
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -8.35,
+        0.05,
+        -163.85
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -8.35,
+        0.05,
+        -163.15
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -8.35,
+        0.05,
+        -162.45
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -7.45,
+        0.05,
+        -171.55
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -7.45,
+        0.05,
+        -170.85
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -7.45,
+        0.05,
+        -170.15
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -7.45,
+        0.05,
+        -169.45
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -7.45,
+        0.05,
+        -168.75
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -7.45,
+        0.05,
+        -168.05
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -7.45,
+        0.05,
+        -167.35
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -7.45,
+        0.05,
+        -166.65
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -7.45,
+        0.05,
+        -165.95
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -7.45,
+        0.05,
+        -165.25
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -7.45,
+        0.05,
+        -164.55
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -7.45,
+        0.05,
+        -163.85
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -7.45,
+        0.05,
+        -163.15
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -7.45,
+        0.05,
+        -162.45
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -6.55,
+        0.05,
+        -171.55
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -6.55,
+        0.05,
+        -170.85
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -6.55,
+        0.05,
+        -170.15
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -6.55,
+        0.05,
+        -169.45
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -6.55,
+        0.05,
+        -168.75
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -6.55,
+        0.05,
+        -168.05
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -6.55,
+        0.05,
+        -167.35
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -6.55,
+        0.05,
+        -166.65
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -6.55,
+        0.05,
+        -165.95
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -6.55,
+        0.05,
+        -165.25
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -6.55,
+        0.05,
+        -164.55
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -6.55,
+        0.05,
+        -163.85
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -6.55,
+        0.05,
+        -163.15
+      ]
+    },
+    {
+      "crop": "potato",
+      "position": [
+        -6.55,
+        0.05,
+        -162.45
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -25.45,
+        0.05,
+        -183.55
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -25.45,
+        0.05,
+        -182.85
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -25.45,
+        0.05,
+        -182.15
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -25.45,
+        0.05,
+        -181.45
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -25.45,
+        0.05,
+        -180.75
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -25.45,
+        0.05,
+        -180.05
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -25.45,
+        0.05,
+        -179.35
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -25.45,
+        0.05,
+        -178.65
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -25.45,
+        0.05,
+        -177.95
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -25.45,
+        0.05,
+        -177.25
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -25.45,
+        0.05,
+        -176.55
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -25.45,
+        0.05,
+        -175.85
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -25.45,
+        0.05,
+        -175.15
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -25.45,
+        0.05,
+        -174.45
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -24.55,
+        0.05,
+        -183.2
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -24.55,
+        0.05,
+        -182.5
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -24.55,
+        0.05,
+        -181.8
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -24.55,
+        0.05,
+        -181.1
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -24.55,
+        0.05,
+        -180.4
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -24.55,
+        0.05,
+        -179.7
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -24.55,
+        0.05,
+        -179
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -24.55,
+        0.05,
+        -178.3
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -24.55,
+        0.05,
+        -177.6
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -24.55,
+        0.05,
+        -176.9
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -24.55,
+        0.05,
+        -176.2
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -24.55,
+        0.05,
+        -175.5
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -24.55,
+        0.05,
+        -174.8
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -24.55,
+        0.05,
+        -174.1
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -23.65,
+        0.05,
+        -183.55
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -23.65,
+        0.05,
+        -182.85
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -23.65,
+        0.05,
+        -182.15
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -23.65,
+        0.05,
+        -181.45
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -23.65,
+        0.05,
+        -180.75
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -23.65,
+        0.05,
+        -180.05
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -23.65,
+        0.05,
+        -179.35
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -23.65,
+        0.05,
+        -178.65
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -23.65,
+        0.05,
+        -177.95
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -23.65,
+        0.05,
+        -177.25
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -23.65,
+        0.05,
+        -176.55
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -23.65,
+        0.05,
+        -175.85
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -23.65,
+        0.05,
+        -175.15
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -23.65,
+        0.05,
+        -174.45
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -22.75,
+        0.05,
+        -183.2
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -22.75,
+        0.05,
+        -182.5
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -22.75,
+        0.05,
+        -181.8
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -22.75,
+        0.05,
+        -181.1
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -22.75,
+        0.05,
+        -180.4
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -22.75,
+        0.05,
+        -179.7
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -22.75,
+        0.05,
+        -179
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -22.75,
+        0.05,
+        -178.3
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -22.75,
+        0.05,
+        -177.6
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -22.75,
+        0.05,
+        -176.9
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -22.75,
+        0.05,
+        -176.2
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -22.75,
+        0.05,
+        -175.5
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -22.75,
+        0.05,
+        -174.8
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -22.75,
+        0.05,
+        -174.1
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -21.85,
+        0.05,
+        -183.55
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -21.85,
+        0.05,
+        -182.85
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -21.85,
+        0.05,
+        -182.15
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -21.85,
+        0.05,
+        -181.45
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -21.85,
+        0.05,
+        -180.75
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -21.85,
+        0.05,
+        -180.05
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -21.85,
+        0.05,
+        -179.35
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -21.85,
+        0.05,
+        -178.65
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -21.85,
+        0.05,
+        -177.95
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -21.85,
+        0.05,
+        -177.25
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -21.85,
+        0.05,
+        -176.55
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -21.85,
+        0.05,
+        -175.85
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -21.85,
+        0.05,
+        -175.15
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -21.85,
+        0.05,
+        -174.45
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -20.95,
+        0.05,
+        -183.2
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -20.95,
+        0.05,
+        -182.5
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -20.95,
+        0.05,
+        -181.8
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -20.95,
+        0.05,
+        -181.1
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -20.95,
+        0.05,
+        -180.4
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -20.95,
+        0.05,
+        -179.7
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -20.95,
+        0.05,
+        -179
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -20.95,
+        0.05,
+        -178.3
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -20.95,
+        0.05,
+        -177.6
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -20.95,
+        0.05,
+        -176.9
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -20.95,
+        0.05,
+        -176.2
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -20.95,
+        0.05,
+        -175.5
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -20.95,
+        0.05,
+        -174.8
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -20.95,
+        0.05,
+        -174.1
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -20.05,
+        0.05,
+        -183.55
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -20.05,
+        0.05,
+        -182.85
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -20.05,
+        0.05,
+        -182.15
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -20.05,
+        0.05,
+        -181.45
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -20.05,
+        0.05,
+        -180.75
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -20.05,
+        0.05,
+        -180.05
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -20.05,
+        0.05,
+        -179.35
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -20.05,
+        0.05,
+        -178.65
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -20.05,
+        0.05,
+        -177.95
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -20.05,
+        0.05,
+        -177.25
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -20.05,
+        0.05,
+        -176.55
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -20.05,
+        0.05,
+        -175.85
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -20.05,
+        0.05,
+        -175.15
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -20.05,
+        0.05,
+        -174.45
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -19.15,
+        0.05,
+        -183.2
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -19.15,
+        0.05,
+        -182.5
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -19.15,
+        0.05,
+        -181.8
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -19.15,
+        0.05,
+        -181.1
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -19.15,
+        0.05,
+        -180.4
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -19.15,
+        0.05,
+        -179.7
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -19.15,
+        0.05,
+        -179
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -19.15,
+        0.05,
+        -178.3
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -19.15,
+        0.05,
+        -177.6
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -19.15,
+        0.05,
+        -176.9
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -19.15,
+        0.05,
+        -176.2
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -19.15,
+        0.05,
+        -175.5
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -19.15,
+        0.05,
+        -174.8
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -19.15,
+        0.05,
+        -174.1
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -18.25,
+        0.05,
+        -183.55
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -18.25,
+        0.05,
+        -182.85
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -18.25,
+        0.05,
+        -182.15
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -18.25,
+        0.05,
+        -181.45
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -18.25,
+        0.05,
+        -180.75
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -18.25,
+        0.05,
+        -180.05
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -18.25,
+        0.05,
+        -179.35
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -18.25,
+        0.05,
+        -178.65
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -18.25,
+        0.05,
+        -177.95
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -18.25,
+        0.05,
+        -177.25
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -18.25,
+        0.05,
+        -176.55
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -18.25,
+        0.05,
+        -175.85
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -18.25,
+        0.05,
+        -175.15
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -18.25,
+        0.05,
+        -174.45
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -17.35,
+        0.05,
+        -183.2
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -17.35,
+        0.05,
+        -182.5
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -17.35,
+        0.05,
+        -181.8
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -17.35,
+        0.05,
+        -181.1
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -17.35,
+        0.05,
+        -180.4
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -17.35,
+        0.05,
+        -179.7
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -17.35,
+        0.05,
+        -179
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -17.35,
+        0.05,
+        -178.3
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -17.35,
+        0.05,
+        -177.6
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -17.35,
+        0.05,
+        -176.9
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -17.35,
+        0.05,
+        -176.2
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -17.35,
+        0.05,
+        -175.5
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -17.35,
+        0.05,
+        -174.8
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -17.35,
+        0.05,
+        -174.1
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -16.45,
+        0.05,
+        -183.55
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -16.45,
+        0.05,
+        -182.85
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -16.45,
+        0.05,
+        -182.15
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -16.45,
+        0.05,
+        -181.45
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -16.45,
+        0.05,
+        -180.75
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -16.45,
+        0.05,
+        -180.05
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -16.45,
+        0.05,
+        -179.35
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -16.45,
+        0.05,
+        -178.65
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -16.45,
+        0.05,
+        -177.95
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -16.45,
+        0.05,
+        -177.25
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -16.45,
+        0.05,
+        -176.55
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -16.45,
+        0.05,
+        -175.85
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -16.45,
+        0.05,
+        -175.15
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -16.45,
+        0.05,
+        -174.45
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -15.55,
+        0.05,
+        -183.2
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -15.55,
+        0.05,
+        -182.5
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -15.55,
+        0.05,
+        -181.8
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -15.55,
+        0.05,
+        -181.1
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -15.55,
+        0.05,
+        -180.4
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -15.55,
+        0.05,
+        -179.7
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -15.55,
+        0.05,
+        -179
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -15.55,
+        0.05,
+        -178.3
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -15.55,
+        0.05,
+        -177.6
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -15.55,
+        0.05,
+        -176.9
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -15.55,
+        0.05,
+        -176.2
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -15.55,
+        0.05,
+        -175.5
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -15.55,
+        0.05,
+        -174.8
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -15.55,
+        0.05,
+        -174.1
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -14.65,
+        0.05,
+        -183.55
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -14.65,
+        0.05,
+        -182.85
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -14.65,
+        0.05,
+        -182.15
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -14.65,
+        0.05,
+        -181.45
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -14.65,
+        0.05,
+        -180.75
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -14.65,
+        0.05,
+        -180.05
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -14.65,
+        0.05,
+        -179.35
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -14.65,
+        0.05,
+        -178.65
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -14.65,
+        0.05,
+        -177.95
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -14.65,
+        0.05,
+        -177.25
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -14.65,
+        0.05,
+        -176.55
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -14.65,
+        0.05,
+        -175.85
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -14.65,
+        0.05,
+        -175.15
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -14.65,
+        0.05,
+        -174.45
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -13.75,
+        0.05,
+        -183.2
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -13.75,
+        0.05,
+        -182.5
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -13.75,
+        0.05,
+        -181.8
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -13.75,
+        0.05,
+        -181.1
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -13.75,
+        0.05,
+        -180.4
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -13.75,
+        0.05,
+        -179.7
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -13.75,
+        0.05,
+        -179
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -13.75,
+        0.05,
+        -178.3
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -13.75,
+        0.05,
+        -177.6
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -13.75,
+        0.05,
+        -176.9
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -13.75,
+        0.05,
+        -176.2
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -13.75,
+        0.05,
+        -175.5
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -13.75,
+        0.05,
+        -174.8
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -13.75,
+        0.05,
+        -174.1
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -12.85,
+        0.05,
+        -183.55
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -12.85,
+        0.05,
+        -182.85
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -12.85,
+        0.05,
+        -182.15
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -12.85,
+        0.05,
+        -181.45
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -12.85,
+        0.05,
+        -180.75
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -12.85,
+        0.05,
+        -180.05
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -12.85,
+        0.05,
+        -179.35
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -12.85,
+        0.05,
+        -178.65
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -12.85,
+        0.05,
+        -177.95
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -12.85,
+        0.05,
+        -177.25
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -12.85,
+        0.05,
+        -176.55
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -12.85,
+        0.05,
+        -175.85
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -12.85,
+        0.05,
+        -175.15
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -12.85,
+        0.05,
+        -174.45
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -11.95,
+        0.05,
+        -183.2
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -11.95,
+        0.05,
+        -182.5
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -11.95,
+        0.05,
+        -181.8
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -11.95,
+        0.05,
+        -181.1
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -11.95,
+        0.05,
+        -180.4
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -11.95,
+        0.05,
+        -179.7
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -11.95,
+        0.05,
+        -179
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -11.95,
+        0.05,
+        -178.3
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -11.95,
+        0.05,
+        -177.6
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -11.95,
+        0.05,
+        -176.9
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -11.95,
+        0.05,
+        -176.2
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -11.95,
+        0.05,
+        -175.5
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -11.95,
+        0.05,
+        -174.8
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -11.95,
+        0.05,
+        -174.1
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -11.05,
+        0.05,
+        -183.55
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -11.05,
+        0.05,
+        -182.85
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -11.05,
+        0.05,
+        -182.15
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -11.05,
+        0.05,
+        -181.45
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -11.05,
+        0.05,
+        -180.75
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -11.05,
+        0.05,
+        -180.05
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -11.05,
+        0.05,
+        -179.35
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -11.05,
+        0.05,
+        -178.65
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -11.05,
+        0.05,
+        -177.95
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -11.05,
+        0.05,
+        -177.25
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -11.05,
+        0.05,
+        -176.55
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -11.05,
+        0.05,
+        -175.85
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -11.05,
+        0.05,
+        -175.15
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -11.05,
+        0.05,
+        -174.45
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -10.15,
+        0.05,
+        -183.2
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -10.15,
+        0.05,
+        -182.5
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -10.15,
+        0.05,
+        -181.8
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -10.15,
+        0.05,
+        -181.1
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -10.15,
+        0.05,
+        -180.4
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -10.15,
+        0.05,
+        -179.7
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -10.15,
+        0.05,
+        -179
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -10.15,
+        0.05,
+        -178.3
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -10.15,
+        0.05,
+        -177.6
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -10.15,
+        0.05,
+        -176.9
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -10.15,
+        0.05,
+        -176.2
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -10.15,
+        0.05,
+        -175.5
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -10.15,
+        0.05,
+        -174.8
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -10.15,
+        0.05,
+        -174.1
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -9.25,
+        0.05,
+        -183.55
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -9.25,
+        0.05,
+        -182.85
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -9.25,
+        0.05,
+        -182.15
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -9.25,
+        0.05,
+        -181.45
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -9.25,
+        0.05,
+        -180.75
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -9.25,
+        0.05,
+        -180.05
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -9.25,
+        0.05,
+        -179.35
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -9.25,
+        0.05,
+        -178.65
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -9.25,
+        0.05,
+        -177.95
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -9.25,
+        0.05,
+        -177.25
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -9.25,
+        0.05,
+        -176.55
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -9.25,
+        0.05,
+        -175.85
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -9.25,
+        0.05,
+        -175.15
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -9.25,
+        0.05,
+        -174.45
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -8.35,
+        0.05,
+        -183.2
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -8.35,
+        0.05,
+        -182.5
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -8.35,
+        0.05,
+        -181.8
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -8.35,
+        0.05,
+        -181.1
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -8.35,
+        0.05,
+        -180.4
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -8.35,
+        0.05,
+        -179.7
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -8.35,
+        0.05,
+        -179
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -8.35,
+        0.05,
+        -178.3
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -8.35,
+        0.05,
+        -177.6
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -8.35,
+        0.05,
+        -176.9
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -8.35,
+        0.05,
+        -176.2
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -8.35,
+        0.05,
+        -175.5
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -8.35,
+        0.05,
+        -174.8
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -8.35,
+        0.05,
+        -174.1
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -7.45,
+        0.05,
+        -183.55
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -7.45,
+        0.05,
+        -182.85
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -7.45,
+        0.05,
+        -182.15
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -7.45,
+        0.05,
+        -181.45
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -7.45,
+        0.05,
+        -180.75
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -7.45,
+        0.05,
+        -180.05
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -7.45,
+        0.05,
+        -179.35
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -7.45,
+        0.05,
+        -178.65
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -7.45,
+        0.05,
+        -177.95
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -7.45,
+        0.05,
+        -177.25
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -7.45,
+        0.05,
+        -176.55
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -7.45,
+        0.05,
+        -175.85
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -7.45,
+        0.05,
+        -175.15
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -7.45,
+        0.05,
+        -174.45
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -6.55,
+        0.05,
+        -183.2
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -6.55,
+        0.05,
+        -182.5
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -6.55,
+        0.05,
+        -181.8
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -6.55,
+        0.05,
+        -181.1
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -6.55,
+        0.05,
+        -180.4
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -6.55,
+        0.05,
+        -179.7
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -6.55,
+        0.05,
+        -179
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -6.55,
+        0.05,
+        -178.3
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -6.55,
+        0.05,
+        -177.6
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -6.55,
+        0.05,
+        -176.9
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -6.55,
+        0.05,
+        -176.2
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -6.55,
+        0.05,
+        -175.5
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -6.55,
+        0.05,
+        -174.8
+      ]
+    },
+    {
+      "crop": "cabbage",
+      "position": [
+        -6.55,
+        0.05,
+        -174.1
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -24.747,
+        0.05,
+        -195.508
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -24.322,
+        0.05,
+        -193.766
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -25.215,
+        0.05,
+        -192.635
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -25.248,
+        0.05,
+        -191.201
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -24.907,
+        0.05,
+        -190.009
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -25.334,
+        0.05,
+        -187.866
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -25.019,
+        0.05,
+        -186.602
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -22.813,
+        0.05,
+        -194.717
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -23.713,
+        0.05,
+        -193.322
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -22.791,
+        0.05,
+        -192.197
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -23.739,
+        0.05,
+        -190.655
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -22.849,
+        0.05,
+        -190.01
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -23.107,
+        0.05,
+        -188.063
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -23.115,
+        0.05,
+        -186.585
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -21.757,
+        0.05,
+        -195.116
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -21.98,
+        0.05,
+        -193.332
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -21.721,
+        0.05,
+        -192.806
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -21.684,
+        0.05,
+        -191.27
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -21.228,
+        0.05,
+        -189.147
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -22.014,
+        0.05,
+        -187.835
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -21.356,
+        0.05,
+        -186.93
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -20.314,
+        0.05,
+        -195.558
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -20.396,
+        0.05,
+        -194.202
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -19.749,
+        0.05,
+        -192.089
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -19.469,
+        0.05,
+        -191.392
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -20.555,
+        0.05,
+        -189.201
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -19.544,
+        0.05,
+        -188.024
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -19.792,
+        0.05,
+        -186.948
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -18.269,
+        0.05,
+        -195.053
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -17.989,
+        0.05,
+        -193.383
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -18.415,
+        0.05,
+        -192.4
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -18.325,
+        0.05,
+        -190.921
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -18.696,
+        0.05,
+        -189.989
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -18.317,
+        0.05,
+        -188.54
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -18.627,
+        0.05,
+        -186.424
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -17.127,
+        0.05,
+        -195.629
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -17.322,
+        0.05,
+        -193.834
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -16.781,
+        0.05,
+        -192.03
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -16.703,
+        0.05,
+        -191.372
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -16.615,
+        0.05,
+        -189.239
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -17.264,
+        0.05,
+        -188.583
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -16.244,
+        0.05,
+        -186.311
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -15.41,
+        0.05,
+        -195.487
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -15.086,
+        0.05,
+        -193.668
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -14.847,
+        0.05,
+        -192.424
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -14.777,
+        0.05,
+        -191.367
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -14.99,
+        0.05,
+        -189.234
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -15.56,
+        0.05,
+        -188.547
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -14.82,
+        0.05,
+        -186.578
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -13.167,
+        0.05,
+        -195.606
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -13.281,
+        0.05,
+        -193.98
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -13.525,
+        0.05,
+        -192.258
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -13.5,
+        0.05,
+        -191.057
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -13.313,
+        0.05,
+        -189.535
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -13.698,
+        0.05,
+        -187.802
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -13.272,
+        0.05,
+        -187.257
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -12.127,
+        0.05,
+        -195.567
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -11.501,
+        0.05,
+        -193.403
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -12.523,
+        0.05,
+        -192.516
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -12.233,
+        0.05,
+        -191.437
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -11.546,
+        0.05,
+        -189.314
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -12.232,
+        0.05,
+        -187.961
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -12.338,
+        0.05,
+        -186.429
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -10.402,
+        0.05,
+        -195.43
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -10.787,
+        0.05,
+        -193.837
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -10.895,
+        0.05,
+        -192.194
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -10.654,
+        0.05,
+        -191.441
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -10.413,
+        0.05,
+        -189.86
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -10.663,
+        0.05,
+        -188.12
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -10.496,
+        0.05,
+        -187.06
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -8.421,
+        0.05,
+        -195.28
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -8.745,
+        0.05,
+        -193.391
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -8.525,
+        0.05,
+        -192.576
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -8.472,
+        0.05,
+        -190.573
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -8.634,
+        0.05,
+        -189.487
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -9.209,
+        0.05,
+        -188.438
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -9.332,
+        0.05,
+        -186.331
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -7.092,
+        0.05,
+        -195.224
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -7.121,
+        0.05,
+        -194.097
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -7.008,
+        0.05,
+        -192.231
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -6.804,
+        0.05,
+        -190.646
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -7.638,
+        0.05,
+        -189.833
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -7.191,
+        0.05,
+        -188.508
+      ]
+    },
+    {
+      "crop": "pumpkin",
+      "position": [
+        -6.942,
+        0.05,
+        -187.128
+      ]
+    }
+  ]
+}

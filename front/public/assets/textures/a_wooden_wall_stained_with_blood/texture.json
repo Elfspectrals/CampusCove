@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "key": "a_wooden_wall_stained_with_blood",
+  "label": "A wooden wall stained with blood",
+  "tileMeters": 2.0,
+  "maps": {
+    "color": "color.png",
+    "mask": "mask.png"
+  },
+  "parts": [
+    {
+      "id": "wood",
+      "label": "Wood",
+      "color": "#f0d4ca"
+    },
+    {
+      "id": "blood",
+      "label": "Blood",
+      "color": "#9a383e"
+    },
+    {
+      "id": "stains",
+      "label": "Stains",
+      "color": "#c56a6a"
+    }
+  ]
+}

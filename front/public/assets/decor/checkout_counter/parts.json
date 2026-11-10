@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "materials": {
+    "DC_CounterTop": {
+      "mask": "parts_DC_CounterTop.png",
+      "parts": [
+        {
+          "id": "main",
+          "label": "Main",
+          "color": "#b18a5c"
+        },
+        {
+          "id": "accent",
+          "label": "Accent",
+          "color": "#9b7547"
+        }
+      ]
+    }
+  }
+}

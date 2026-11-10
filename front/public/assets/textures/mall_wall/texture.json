@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "key": "mall_wall",
+  "label": "Mall wall",
+  "tileMeters": 2,
+  "maps": {
+    "color": "color.webp"
+  }
+}

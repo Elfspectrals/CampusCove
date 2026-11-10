@@ -14,9 +14,13 @@ sys.path.insert(0, HERE)
 import lib_common as L
 importlib.reload(L)
 import bpy
-from mathutils import Euler, Matrix, Vector
+from mathutils import Euler, Matrix, Quaternion, Vector
 
 SKINS_DIR = os.path.normpath(os.path.join(HERE, "..", "..", "front", "public", "assets", "skins"))
+SKIN_SCRIPTS_DIR = os.path.normpath(os.path.join(HERE, "..", "..", "front", "scripts", "skins")) + "/"
+POSE = {"SKINS_DIR": SKIN_SCRIPTS_DIR, "bpy": bpy}
+exec(open(SKIN_SCRIPTS_DIR + "anim.py", encoding="utf8").read(), POSE)
+key_poses = POSE["key_poses"]
 ONLY = globals().get("ONLY_SKINS")
 PREVIEW_DIR = globals().get("PREVIEW_DIR")
 KEEP_SCENES = globals().get("KEEP_SCENES", False)
@@ -29,6 +33,7 @@ STATIC_ARM_MIN_X = 0.265
 STATIC_ARM_MAX_DEPTH = 0.08
 STATIC_ACCESSORY_MATERIAL = "Leather"
 FPS = 30
+MAX_WRIST_FLEX = 0.15
 
 REST_ELBOW = {"R": Vector((0.24, 0.02, -0.3)), "L": Vector((-0.24, 0.02, -0.3))}
 REST_ROTATION = {"R": Euler((math.radians(32), 0, math.radians(20))), "L": Euler((math.radians(32), 0, math.radians(-20)))}
@@ -44,7 +49,7 @@ FP_HAND_RAMP = 0.04
 def import_skin(key):
     before = set(bpy.data.objects)
     with contextlib.redirect_stdout(io.StringIO()):
-        bpy.ops.import_scene.gltf(filepath=os.path.join(SKINS_DIR, key, "model.glb"))
+        bpy.ops.import_scene.gltf(filepath=os.path.join(SKINS_DIR, key, "model.glb"), disable_bone_shape=True)
     imported = [o for o in bpy.data.objects if o not in before]
     body = max((o for o in imported if o.type == "MESH"), key=lambda o: len(o.data.vertices))
     return body, imported
@@ -53,7 +58,7 @@ def import_skin(key):
 def import_glb(path):
     before = set(bpy.data.objects)
     with contextlib.redirect_stdout(io.StringIO()):
-        bpy.ops.import_scene.gltf(filepath=path)
+        bpy.ops.import_scene.gltf(filepath=path, disable_bone_shape=True)
     return [o for o in bpy.data.objects if o not in before]
 
 
@@ -197,111 +202,193 @@ def action_fcurves(action):
     return [fc for layer in action.layers for strip in layer.strips for bag in strip.channelbags for fc in bag.fcurves]
 
 
-def mirrored(keys):
-    return [(frame, (-dloc[0], dloc[1], dloc[2]), (drot[0], -drot[1], -drot[2]), *rest) for frame, dloc, drot, *rest in keys]
+def mirrored(pose_at):
+    return lambda fr: {k: -v if k in ("x", "ry", "rz") else v for k, v in pose_at(fr).items()}
 
 
-# Jab: 2-frame anticipation (pull back, cock the wrist), a straight snap that lands on frame 6 (= punch.ts
-# PUNCH_IMPACT_S, the hit-stop and the hit test rely on it), a short follow-through past the target, a held beat, then
-# an eased recovery. The elbow stays low and to the side so the forearm crosses the screen to the fist (seen
-# along its length, not end-on); the wrist cocks in the wind-up; the other arm pulls back to guard.
-PUNCH_KEYS = [
-    (1, (0, 0, 0), (0, 0, 0)),
-    (3, (0.035, -0.11, -0.05), (0.26, 0, 0.18)),
-    (4, (0.035, -0.11, -0.05), (0.26, 0, 0.18), "snap"),
-    (6, (-0.03, 0.17, 0.08), (-0.15, 0.0, -0.3), "snap"),
-    (7, (-0.035, 0.19, 0.085), (-0.17, 0.0, -0.32)),
-    (9, (-0.03, 0.165, 0.078), (-0.14, 0.0, -0.29)),
-    (15, (0, 0, 0), (0, 0, 0)),
-]
-PUNCH_FIST_KEYS = [
-    (1, (0, 0, 0), (0, 0, 0)),
-    (3, (0, 0, 0), (0, math.radians(18), 0)),
-    (6, (0, 0, 0), (0, 0, 0)),
-    (9, (0, 0, 0), (0, 0, 0)),
-    (15, (0, 0, 0), (0, 0, 0)),
-]
-# The fist travels about 25 cm away from the eye, so perspective shrinks it right when it should read
-# biggest; it swells instead through the strike, like viewmodel punches do.
-PUNCH_FIST_SCALE = {1: 1.0, 4: 1.0, 6: 1.3, 9: 1.25, 15: 1.0}
-PUNCH_GUARD_KEYS = [
-    (1, (0, 0, 0), (0, 0, 0)),
-    (5, (0.03, -0.12, 0.07), (0.3, 0, 0.12)),
-    (10, (0.03, -0.12, 0.07), (0.3, 0, 0.12)),
-    (15, (0, 0, 0), (0, 0, 0)),
-]
+def eased(frames, keys):
+    pose_at = key_poses([(frame / frames, pose) for frame, pose in keys])
+    return lambda fr: pose_at(fr / frames)
 
 
-def keyframes(obj, clip, keys, scales=None):
-    """keys: (frame, location offset, rotation offset[, "snap"]); scales: optional {frame: uniform scale}."""
-    rest_loc = obj.location.copy()
-    rest_rot = obj.rotation_euler.copy()
+def blend(a, b, w):
+    return {k: a.get(k, 0.0) + (b.get(k, 0.0) - a.get(k, 0.0)) * w for k in a.keys() | b.keys()}
+
+
+def move_arm(obj, rest, pose):
+    obj.location = rest[0] + Vector((pose.get("x", 0.0), pose.get("y", 0.0), pose.get("z", 0.0)))
+    obj.rotation_euler = Euler((rest[1].x + pose.get("rx", 0.0), rest[1].y + pose.get("ry", 0.0), rest[1].z + pose.get("rz", 0.0)))
+
+
+def move_hand(obj, rest, pose):
+    flex = pose.get("flex", 0.0)
+    if not -MAX_WRIST_FLEX - 1e-9 <= flex <= 1e-9:
+        raise ValueError(f"{obj.name}: wrist flex {flex:.3f} outside [-{MAX_WRIST_FLEX}, 0]")
+    twist = Quaternion(rest[0].normalized(), math.radians(pose.get("twist", 0.0)))
+    obj.rotation_euler = (twist @ Euler((flex, 0, 0)).to_quaternion()).to_euler("XYZ")
+
+
+def bake(obj, clip, frames, pose_at, move=move_arm, scale=False):
+    """scale: also key a uniform scale from the pose's "s" (1 when missing)."""
+    rest = (obj.location.copy(), obj.rotation_euler.copy())
     obj.animation_data_create()
     obj.animation_data.action = None
-    snaps = set()
-    for frame, dloc, drot, *interpolation in keys:
-        obj.location = rest_loc + Vector(dloc)
-        obj.rotation_euler = Euler((rest_rot.x + drot[0], rest_rot.y + drot[1], rest_rot.z + drot[2]))
-        obj.keyframe_insert("location", frame=frame)
-        obj.keyframe_insert("rotation_euler", frame=frame)
-        if interpolation:
-            snaps.add(frame)
-    for frame, scale in (scales or {}).items():
-        obj.scale = (scale,) * 3
-        obj.keyframe_insert("scale", frame=frame)
+    for fr in range(frames + 1):
+        pose = pose_at(fr)
+        move(obj, rest, pose)
+        obj.keyframe_insert("location", frame=fr)
+        obj.keyframe_insert("rotation_euler", frame=fr)
+        if scale:
+            obj.scale = (pose.get("s", 1.0),) * 3
+            obj.keyframe_insert("scale", frame=fr)
     action = obj.animation_data.action
     for fcurve in action_fcurves(action):
         for point in fcurve.keyframe_points:
-            if point.co.x in snaps:
-                point.interpolation = "LINEAR"
+            point.interpolation = "LINEAR"
     action.name = f"{clip}_{obj.name}"
     track = obj.animation_data.nla_tracks.new()
     track.name = clip
-    track.strips.new(clip, int(keys[0][0]), action)
+    track.strips.new(clip, 0, action)
     obj.animation_data.action = None
-    obj.location = rest_loc
-    obj.rotation_euler = rest_rot
+    obj.location, obj.rotation_euler = rest
     obj.scale = (1, 1, 1)
 
 
-def loop(n, period_s, fn):
-    frames = round(period_s * FPS)
-    return [(1 + frames * i / n, *fn(2 * math.pi * i / n)) for i in range(n + 1)]
+def idle(frames, phase, side_sign):
+    def pose_at(fr):
+        t = 2 * math.pi * fr / frames + phase
+        return {"z": 0.008 * math.sin(t), "rx": math.radians(1.2) * math.sin(t - 0.6), "rz": side_sign * math.radians(0.4) * math.sin(2 * t)}
+    return pose_at
+
+
+def walk(frames, phase):
+    lowest = math.pi / 2 + 0.3
+
+    def pose_at(fr):
+        t = 2 * math.pi * fr / frames
+        swing = math.sin(t + phase)
+        return {"x": 0.008 * math.sin(t), "y": 0.025 * swing, "z": -0.012 * (1 + math.cos(2 * (t - lowest))) / 2, "rx": math.radians(4) * swing}
+    return pose_at
+
+
+PUNCH_WINDUP = {"x": 0.01, "y": -0.05, "z": -0.02, "rx": 0.1}
+PUNCH_CONTACT = {"x": -0.05, "y": 0.2, "z": 0.03, "rx": -0.02, "ry": -0.293, "rz": 0.453}
+PUNCH_RECOIL = {**PUNCH_CONTACT, "y": 0.17}
+PUNCH = eased(13, [
+    (0, {}),
+    (3, PUNCH_WINDUP),
+    (4, blend(PUNCH_WINDUP, PUNCH_CONTACT, 0.85)),
+    (5, PUNCH_CONTACT),
+    (6, PUNCH_RECOIL),
+    (7, PUNCH_RECOIL),
+    (11, {"z": -0.01, "rx": -0.03}),
+    (13, {}),
+])
+# The fist travels about 25 cm away from the eye, so perspective shrinks it right when it should read
+# biggest; it swells instead through the strike, like viewmodel punches do.
+PUNCH_FIST = eased(13, [(0, {"s": 1.0}), (3, {"s": 1.0}), (5, {"s": 1.3}), (7, {"s": 1.25}), (13, {"s": 1.0})])
+
+EQUIP = eased(14, [
+    (0, {"x": 0.01, "y": -0.03, "z": -0.15, "rx": -0.35, "rz": 0.05}),
+    (9, {"z": 0.015, "rx": 0.06}),
+    (14, {}),
+])
+
+DOOR_CONTACT = {"x": -0.02, "y": 0.14, "z": 0.05, "rx": 0.05, "ry": -0.158, "rz": 0.181, "flex": -0.05}
+USE_DOOR = eased(16, [
+    (0, {}),
+    (3, {"x": 0.005, "y": -0.02, "z": -0.01, "flex": -0.12}),
+    (7, DOOR_CONTACT),
+    (10, {**DOOR_CONTACT, "y": 0.16}),
+    (16, {}),
+])
+
+KEY_INSERT = {"x": -0.03, "y": 0.13, "z": 0.04, "rx": -0.023, "ry": -0.147, "rz": 0.265}
+KEY_PUSH = {**KEY_INSERT, "y": 0.14}
+USE_KEY = eased(24, [
+    (0, {}),
+    (3, {"y": -0.015}),
+    (8, KEY_INSERT),
+    (10, KEY_PUSH),
+    (15, {**KEY_PUSH, "twist": 70}),
+    (17, {**KEY_PUSH, "twist": 70}),
+    (20, KEY_INSERT),
+    (24, {}),
+])
+
+PICK_GRAB = {"x": 0.03, "y": 0.15, "z": 0.11, "rx": 0.577, "ry": -0.418, "rz": 0.692, "flex": -0.05}
+PICK_KEYS = eased(90, [
+    (0, {}),
+    (4, {"x": 0.01, "y": -0.01, "z": -0.025, "rx": -0.1, "rz": 0.03}),
+    (20, {**PICK_GRAB, "z": 0.125, "flex": -0.15}),
+    (26, PICK_GRAB),
+    (63, PICK_GRAB),
+    (74, {"x": -0.04, "y": 0.08, "z": 0.1, "rx": -0.21, "ry": -0.521, "rz": 0.031, "flex": -0.1}),
+    (83, {"z": -0.012, "rx": -0.05}),
+    (90, {}),
+])
+PICK_BALANCE = eased(90, [(0, {}), (20, {"z": -0.01, "rx": -0.06}), (63, {"z": -0.01, "rx": -0.06}), (74, {}), (90, {})])
+
+
+MOUTH_ANTICIPATION = {"x": 0.005, "y": -0.01, "z": -0.015, "rx": -0.06}
+MOUTH_SETTLE = {"z": -0.01, "rx": -0.04}
+EAT_MOUTH = {"x": -0.08, "y": 0.115, "z": -0.02, "rx": 0.354, "ry": -0.832, "rz": 0.48, "flex": -0.1}
+EAT_BITE = {**EAT_MOUTH, "y": 0.1, "z": -0.03, "flex": -0.13}
+EAT = eased(30, [
+    (0, {}),
+    (2, MOUTH_ANTICIPATION),
+    (10, EAT_MOUTH),
+    (12, EAT_BITE),
+    (14, EAT_MOUTH),
+    (15, EAT_MOUTH),
+    (17, EAT_BITE),
+    (19, EAT_MOUTH),
+    (26, MOUTH_SETTLE),
+    (30, {}),
+])
+DRINK_MOUTH = {"x": -0.04, "y": 0.12, "z": 0.1, "rx": 0.168, "ry": -0.055, "rz": 1.345}
+DRINK_TIP = {"x": -0.04, "y": 0.12, "z": 0.13, "rx": -0.229, "ry": -0.57, "rz": 1.06, "flex": -0.1}
+DRINK = eased(30, [
+    (0, {}),
+    (2, MOUTH_ANTICIPATION),
+    (10, DRINK_MOUTH),
+    (14, DRINK_TIP),
+    (20, DRINK_TIP),
+    (26, MOUTH_SETTLE),
+    (30, {}),
+])
+OFF_HAND_DIP = eased(30, [(0, {}), (10, {"z": -0.008, "rx": -0.04}), (19, {"z": -0.008, "rx": -0.04}), (30, {})])
+
+
+def pick(fr):
+    pose = PICK_KEYS(fr)
+    if 26 < fr < 63:
+        tug = (1 - math.cos(4 * math.pi * (fr - 26) / 37)) / 2
+        pose["z"] -= 0.015 * tug
+        pose["flex"] -= 0.05 * tug
+    return pose
 
 
 def animate(arm, hand):
-    for side, phase in (("R", 0.0), ("L", math.pi)):
-        keyframes(arm[side], "Idle", loop(8, 2.4, lambda t, p=phase: ((0, 0, 0.006 * math.sin(t + p * 0.2)), (0.012 * math.sin(t), 0, 0))))
-        keyframes(arm[side], "Walk", loop(8, 0.8, lambda t, p=phase: ((0.008 * math.sin(t + p), 0.012 * math.sin(t + p), 0.02 * abs(math.sin(t + p))), (0.05 * math.sin(t + p), 0, 0))))
-    keyframes(arm["R"], "Equip", [
-        (1, (0, -0.05, -0.32), (-0.9, 0, 0)),
-        (6, (0, -0.03, -0.12), (-0.35, 0, 0)),
-        (11, (0, 0, 0), (0, 0, 0)),
-    ])
-    keyframes(arm["R"], "UseDoor", [
-        (1, (0, 0, 0), (0, 0, 0)),
-        (5, (-0.02, 0.16, 0.03), (0.12, 0, 0)),
-        (14, (0, 0, 0), (0, 0, 0)),
-    ])
-    keyframes(arm["R"], "UseKey", [
-        (1, (0, 0, 0), (0, 0, 0)),
-        (6, (-0.03, 0.13, 0.04), (0.1, 0, 0)),
-        (14, (-0.03, 0.13, 0.04), (0.1, 0, 0)),
-        (19, (0, 0, 0), (0, 0, 0)),
-    ])
-    keyframes(arm["R"], "Punch", PUNCH_KEYS)
-    keyframes(hand["R"], "Punch", PUNCH_FIST_KEYS, PUNCH_FIST_SCALE)
-    keyframes(arm["L"], "Punch", mirrored(PUNCH_GUARD_KEYS))
-    keyframes(arm["L"], "PunchL", mirrored(PUNCH_KEYS))
-    keyframes(hand["L"], "PunchL", mirrored(PUNCH_FIST_KEYS), PUNCH_FIST_SCALE)
-    keyframes(arm["R"], "PunchL", PUNCH_GUARD_KEYS)
-    keyframes(hand["R"], "UseKey", [
-        (1, (0, 0, 0), (0, 0, 0)),
-        (6, (0, 0, 0), (0, 0, 0)),
-        (10, (0, 0, 0), (0, math.radians(80), 0)),
-        (14, (0, 0, 0), (0, 0, 0)),
-        (19, (0, 0, 0), (0, 0, 0)),
-    ])
+    for side, side_sign, idle_phase, walk_phase in (("R", 1, 0.0, 0.0), ("L", -1, 0.9, math.pi)):
+        bake(arm[side], "Idle", 96, idle(96, idle_phase, side_sign))
+        bake(arm[side], "Walk", 24, walk(24, walk_phase))
+    bake(arm["R"], "Equip", 14, EQUIP)
+    bake(arm["R"], "UseDoor", 16, USE_DOOR)
+    bake(hand["R"], "UseDoor", 16, USE_DOOR, move_hand)
+    bake(arm["R"], "UseKey", 24, USE_KEY)
+    bake(hand["R"], "UseKey", 24, USE_KEY, move_hand)
+    bake(arm["R"], "Punch", 13, PUNCH)
+    bake(hand["R"], "Punch", 13, PUNCH_FIST, move_hand, scale=True)
+    bake(arm["L"], "PunchL", 13, mirrored(PUNCH))
+    bake(hand["L"], "PunchL", 13, mirrored(PUNCH_FIST), move_hand, scale=True)
+    bake(arm["R"], "Pick", 90, pick)
+    bake(hand["R"], "Pick", 90, pick, move_hand)
+    bake(arm["L"], "Pick", 90, PICK_BALANCE)
+    for clip, pose_at in (("Eat", EAT), ("Drink", DRINK)):
+        bake(arm["R"], clip, 30, pose_at)
+        bake(hand["R"], clip, 30, pose_at, move_hand)
+        bake(arm["L"], clip, 30, OFF_HAND_DIP)
 
 
 def build(key, load=import_skin, out_rel=("skins",), fp_proportions=False):

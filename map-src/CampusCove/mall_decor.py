@@ -609,7 +609,7 @@ def _food_court(ctx, C, M):
     for gz in (64.0, 76.0):
         _bulb_line(ctx, f"Deco_FC_Lights{int(gz)}", -367.0, gz, -303.0, gz, 4.4, 3.0, bulb=(0.1, 0.1, 0.15))
     for c in M.cells:
-        if c["row"] == "S_out_a" and c["status"] == "planned":
+        if c["row"] == "S_out_a" and c["status"] == "planned" and "template" not in c:
             cx = (c["bounds"]["minX"] + c["bounds"]["maxX"]) / 2
             ctx.box(f"Deco_FC_Menu_{c['id']}", cx, 77.55, 2.5, 2.4, 0.05, 0.8, P["dark"])
             for k, dx in enumerate((-0.75, 0.0, 0.75)):
@@ -637,7 +637,7 @@ def _al_fresca(ctx, C, M):
             if _place(ctx, f"Deco_Fountain_AF_Bench{k}", [(gx, gz)], hx, hz):
                 ctx.bench(f"Deco_Fountain_AF_Bench{k}", gx, gz, rot)
     for c in M.cells:
-        if c["plaza"] == "al_fresca" and c["level"] == 0 and c["status"] == "planned":
+        if c["plaza"] == "al_fresca" and c["level"] == 0 and c["status"] == "planned" and "template" not in c:
             b = c["bounds"]
             outer = c["row"].startswith("S_out")
             front_z = b["minZ"] if outer else b["maxZ"]

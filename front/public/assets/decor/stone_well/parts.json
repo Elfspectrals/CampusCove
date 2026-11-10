@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "materials": {
+    "DC_StoneWell": {
+      "mask": "parts_DC_StoneWell.png",
+      "parts": [
+        {
+          "id": "main",
+          "label": "Main",
+          "color": "#d2d6d5"
+        },
+        {
+          "id": "accent",
+          "label": "Accent",
+          "color": "#beb3a5"
+        },
+        {
+          "id": "detail",
+          "label": "Detail",
+          "color": "#978b81"
+        }
+      ]
+    }
+  }
+}

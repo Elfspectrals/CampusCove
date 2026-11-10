@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "key": "metal_black",
+  "label": "Metal black",
+  "color": "#505055",
+  "roughness": 0.35,
+  "metalness": 0.6,
+  "maps": {},
+  "source": "decor/bar_stool"
+}

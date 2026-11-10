@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "key": "mall_floor_upper",
+  "label": "Mall upper floor",
+  "tileMeters": 3,
+  "maps": {
+    "color": "color.webp",
+    "mask": "mask.png"
+  },
+  "parts": [
+    {
+      "id": "tiles",
+      "label": "Tiles",
+      "color": "#dfdbd1"
+    },
+    {
+      "id": "grout",
+      "label": "Grout",
+      "color": "#cbc7bd"
+    }
+  ]
+}

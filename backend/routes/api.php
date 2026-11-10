@@ -11,6 +11,7 @@ use App\Http\Controllers\AssetController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CharacterAppearanceController;
 use App\Http\Controllers\CharacterCosmeticController;
+use App\Http\Controllers\FarmController;
 use App\Http\Controllers\FriendController;
 use App\Http\Controllers\GemShopController;
 use App\Http\Controllers\HousingController;
@@ -25,6 +26,7 @@ use App\Http\Controllers\ShopController;
 use App\Http\Controllers\StripeWebhookController;
 use App\Http\Controllers\SurvivalController;
 use App\Http\Controllers\TradeController;
+use App\Http\Controllers\ZoneShopController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/health', function () {
@@ -83,6 +85,9 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
         Route::post('/pub/reward', [PubController::class, 'reward']);
         Route::post('/orchard/pick', [OrchardController::class, 'pick']);
         Route::post('/orchard/sell', [OrchardController::class, 'sell']);
+        Route::post('/farm/pick', [FarmController::class, 'pick']);
+        Route::post('/zone/checkout', [ZoneShopController::class, 'checkout']);
+        Route::post('/zone/sell', [ZoneShopController::class, 'sell']);
         Route::post('/trades/execute', [TradeController::class, 'execute']);
     });
     Route::get('/trades/offerable', [TradeController::class, 'offerable']);

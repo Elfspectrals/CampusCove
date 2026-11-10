@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "key": "globe_ocean",
+  "label": "Globe ocean",
+  "color": "#7cbce7",
+  "roughness": 0.5,
+  "metalness": 0,
+  "maps": {},
+  "source": "decor/globe"
+}

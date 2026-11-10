@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "key": "bathroom_floor",
+  "label": "Bathroom floor",
+  "tileMeters": 2,
+  "maps": {
+    "color": "color.webp",
+    "mask": "mask.png"
+  },
+  "parts": [
+    {
+      "id": "tiles",
+      "label": "Tiles",
+      "color": "#f5f8f9"
+    },
+    {
+      "id": "grout",
+      "label": "Grout",
+      "color": "#e1e6e7"
+    }
+  ]
+}

@@ -895,6 +895,22 @@
         "z": -73.137,
         "width": 4.084
       }
+    },
+    {
+      "key": "farm",
+      "optional": true,
+      "bounds": {
+        "minX": -42.6,
+        "maxX": -2,
+        "minZ": -200,
+        "maxZ": -130
+      },
+      "modelUrl": "/assets/park/farm_site/farm_site.glb",
+      "gate": {
+        "x": -8.5,
+        "z": -130,
+        "width": 3
+      }
     }
   ],
   "fountains": [
@@ -1719,12 +1735,9305 @@
         0,
         -117.699
       ]
-    ],
-    "farmer": [
-      -29.05,
-      0,
-      -94.5
-    ],
-    "farmerYaw": 1.5708
-  }
+    ]
+  },
+  "crops": [
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -195.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -194.3
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -193.4
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -192.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -191.6
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -190.7
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -189.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -188.9
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -188
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -187.1
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -186.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -185.3
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -184.4
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -183.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -182.6
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -181.7
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -180.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -179.9
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -179
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -178.1
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -177.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -176.3
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -175.4
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -174.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -173.6
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -172.7
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -171.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -170.9
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -170
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -169.1
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -168.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -167.3
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -166.4
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -165.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -164.6
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -163.7
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -39.3,
+        0.05,
+        -162.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -195.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -194.3
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -193.4
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -192.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -191.6
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -190.7
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -189.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -188.9
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -188
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -187.1
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -186.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -185.3
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -184.4
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -183.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -182.6
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -181.7
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -180.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -179.9
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -179
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -178.1
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -177.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -176.3
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -175.4
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -174.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -173.6
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -172.7
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -171.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -170.9
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -170
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -169.1
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -168.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -167.3
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -166.4
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -165.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -164.6
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -163.7
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -38.1,
+        0.05,
+        -162.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -195.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -194.3
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -193.4
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -192.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -191.6
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -190.7
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -189.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -188.9
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -188
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -187.1
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -186.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -185.3
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -184.4
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -183.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -182.6
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -181.7
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -180.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -179.9
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -179
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -178.1
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -177.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -176.3
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -175.4
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -174.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -173.6
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -172.7
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -171.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -170.9
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -170
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -169.1
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -168.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -167.3
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -166.4
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -165.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -164.6
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -163.7
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -36.9,
+        0.05,
+        -162.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -195.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -194.3
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -193.4
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -192.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -191.6
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -190.7
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -189.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -188.9
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -188
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -187.1
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -186.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -185.3
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -184.4
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -183.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -182.6
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -181.7
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -180.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -179.9
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -179
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -178.1
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -177.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -176.3
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -175.4
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -174.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -173.6
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -172.7
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -171.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -170.9
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -170
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -169.1
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -168.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -167.3
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -166.4
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -165.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -164.6
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -163.7
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -35.7,
+        0.05,
+        -162.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -195.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -194.3
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -193.4
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -192.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -191.6
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -190.7
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -189.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -188.9
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -188
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -187.1
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -186.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -185.3
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -184.4
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -183.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -182.6
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -181.7
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -180.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -179.9
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -179
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -178.1
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -177.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -176.3
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -175.4
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -174.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -173.6
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -172.7
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -171.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -170.9
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -170
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -169.1
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -168.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -167.3
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -166.4
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -165.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -164.6
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -163.7
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -34.5,
+        0.05,
+        -162.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -195.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -194.3
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -193.4
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -192.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -191.6
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -190.7
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -189.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -188.9
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -188
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -187.1
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -186.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -185.3
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -184.4
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -183.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -182.6
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -181.7
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -180.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -179.9
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -179
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -178.1
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -177.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -176.3
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -175.4
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -174.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -173.6
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -172.7
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -171.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -170.9
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -170
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -169.1
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -168.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -167.3
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -166.4
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -165.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -164.6
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -163.7
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -33.3,
+        0.05,
+        -162.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -195.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -194.3
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -193.4
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -192.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -191.6
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -190.7
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -189.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -188.9
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -188
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -187.1
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -186.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -185.3
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -184.4
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -183.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -182.6
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -181.7
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -180.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -179.9
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -179
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -178.1
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -177.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -176.3
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -175.4
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -174.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -173.6
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -172.7
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -171.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -170.9
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -170
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -169.1
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -168.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -167.3
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -166.4
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -165.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -164.6
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -163.7
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -32.1,
+        0.05,
+        -162.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -195.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -194.3
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -193.4
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -192.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -191.6
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -190.7
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -189.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -188.9
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -188
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -187.1
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -186.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -185.3
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -184.4
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -183.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -182.6
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -181.7
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -180.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -179.9
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -179
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -178.1
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -177.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -176.3
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -175.4
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -174.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -173.6
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -172.7
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -171.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -170.9
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -170
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -169.1
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -168.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -167.3
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -166.4
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -165.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -164.6
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -163.7
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -30.9,
+        0.05,
+        -162.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -195.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -194.3
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -193.4
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -192.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -191.6
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -190.7
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -189.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -188.9
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -188
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -187.1
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -186.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -185.3
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -184.4
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -183.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -182.6
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -181.7
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -180.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -179.9
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -179
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -178.1
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -177.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -176.3
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -175.4
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -174.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -173.6
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -172.7
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -171.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -170.9
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -170
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -169.1
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -168.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -167.3
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -166.4
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -165.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -164.6
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -163.7
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "corn",
+      "position": [
+        -29.7,
+        0.05,
+        -162.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -25.45,
+        0.05,
+        -171.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -25.45,
+        0.05,
+        -170.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -25.45,
+        0.05,
+        -170.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -25.45,
+        0.05,
+        -169.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -25.45,
+        0.05,
+        -168.75
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -25.45,
+        0.05,
+        -168.05
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -25.45,
+        0.05,
+        -167.35
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -25.45,
+        0.05,
+        -166.65
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -25.45,
+        0.05,
+        -165.95
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -25.45,
+        0.05,
+        -165.25
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -25.45,
+        0.05,
+        -164.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -25.45,
+        0.05,
+        -163.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -25.45,
+        0.05,
+        -163.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -25.45,
+        0.05,
+        -162.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -24.55,
+        0.05,
+        -171.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -24.55,
+        0.05,
+        -170.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -24.55,
+        0.05,
+        -170.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -24.55,
+        0.05,
+        -169.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -24.55,
+        0.05,
+        -168.75
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -24.55,
+        0.05,
+        -168.05
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -24.55,
+        0.05,
+        -167.35
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -24.55,
+        0.05,
+        -166.65
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -24.55,
+        0.05,
+        -165.95
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -24.55,
+        0.05,
+        -165.25
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -24.55,
+        0.05,
+        -164.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -24.55,
+        0.05,
+        -163.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -24.55,
+        0.05,
+        -163.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -24.55,
+        0.05,
+        -162.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -23.65,
+        0.05,
+        -171.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -23.65,
+        0.05,
+        -170.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -23.65,
+        0.05,
+        -170.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -23.65,
+        0.05,
+        -169.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -23.65,
+        0.05,
+        -168.75
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -23.65,
+        0.05,
+        -168.05
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -23.65,
+        0.05,
+        -167.35
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -23.65,
+        0.05,
+        -166.65
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -23.65,
+        0.05,
+        -165.95
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -23.65,
+        0.05,
+        -165.25
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -23.65,
+        0.05,
+        -164.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -23.65,
+        0.05,
+        -163.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -23.65,
+        0.05,
+        -163.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -23.65,
+        0.05,
+        -162.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -22.75,
+        0.05,
+        -171.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -22.75,
+        0.05,
+        -170.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -22.75,
+        0.05,
+        -170.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -22.75,
+        0.05,
+        -169.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -22.75,
+        0.05,
+        -168.75
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -22.75,
+        0.05,
+        -168.05
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -22.75,
+        0.05,
+        -167.35
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -22.75,
+        0.05,
+        -166.65
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -22.75,
+        0.05,
+        -165.95
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -22.75,
+        0.05,
+        -165.25
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -22.75,
+        0.05,
+        -164.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -22.75,
+        0.05,
+        -163.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -22.75,
+        0.05,
+        -163.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -22.75,
+        0.05,
+        -162.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -21.85,
+        0.05,
+        -171.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -21.85,
+        0.05,
+        -170.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -21.85,
+        0.05,
+        -170.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -21.85,
+        0.05,
+        -169.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -21.85,
+        0.05,
+        -168.75
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -21.85,
+        0.05,
+        -168.05
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -21.85,
+        0.05,
+        -167.35
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -21.85,
+        0.05,
+        -166.65
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -21.85,
+        0.05,
+        -165.95
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -21.85,
+        0.05,
+        -165.25
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -21.85,
+        0.05,
+        -164.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -21.85,
+        0.05,
+        -163.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -21.85,
+        0.05,
+        -163.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -21.85,
+        0.05,
+        -162.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -20.95,
+        0.05,
+        -171.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -20.95,
+        0.05,
+        -170.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -20.95,
+        0.05,
+        -170.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -20.95,
+        0.05,
+        -169.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -20.95,
+        0.05,
+        -168.75
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -20.95,
+        0.05,
+        -168.05
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -20.95,
+        0.05,
+        -167.35
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -20.95,
+        0.05,
+        -166.65
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -20.95,
+        0.05,
+        -165.95
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -20.95,
+        0.05,
+        -165.25
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -20.95,
+        0.05,
+        -164.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -20.95,
+        0.05,
+        -163.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -20.95,
+        0.05,
+        -163.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -20.95,
+        0.05,
+        -162.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -20.05,
+        0.05,
+        -171.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -20.05,
+        0.05,
+        -170.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -20.05,
+        0.05,
+        -170.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -20.05,
+        0.05,
+        -169.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -20.05,
+        0.05,
+        -168.75
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -20.05,
+        0.05,
+        -168.05
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -20.05,
+        0.05,
+        -167.35
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -20.05,
+        0.05,
+        -166.65
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -20.05,
+        0.05,
+        -165.95
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -20.05,
+        0.05,
+        -165.25
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -20.05,
+        0.05,
+        -164.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -20.05,
+        0.05,
+        -163.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -20.05,
+        0.05,
+        -163.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -20.05,
+        0.05,
+        -162.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -19.15,
+        0.05,
+        -171.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -19.15,
+        0.05,
+        -170.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -19.15,
+        0.05,
+        -170.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -19.15,
+        0.05,
+        -169.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -19.15,
+        0.05,
+        -168.75
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -19.15,
+        0.05,
+        -168.05
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -19.15,
+        0.05,
+        -167.35
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -19.15,
+        0.05,
+        -166.65
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -19.15,
+        0.05,
+        -165.95
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -19.15,
+        0.05,
+        -165.25
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -19.15,
+        0.05,
+        -164.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -19.15,
+        0.05,
+        -163.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -19.15,
+        0.05,
+        -163.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -19.15,
+        0.05,
+        -162.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -18.25,
+        0.05,
+        -171.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -18.25,
+        0.05,
+        -170.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -18.25,
+        0.05,
+        -170.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -18.25,
+        0.05,
+        -169.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -18.25,
+        0.05,
+        -168.75
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -18.25,
+        0.05,
+        -168.05
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -18.25,
+        0.05,
+        -167.35
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -18.25,
+        0.05,
+        -166.65
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -18.25,
+        0.05,
+        -165.95
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -18.25,
+        0.05,
+        -165.25
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -18.25,
+        0.05,
+        -164.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -18.25,
+        0.05,
+        -163.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -18.25,
+        0.05,
+        -163.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -18.25,
+        0.05,
+        -162.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -17.35,
+        0.05,
+        -171.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -17.35,
+        0.05,
+        -170.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -17.35,
+        0.05,
+        -170.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -17.35,
+        0.05,
+        -169.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -17.35,
+        0.05,
+        -168.75
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -17.35,
+        0.05,
+        -168.05
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -17.35,
+        0.05,
+        -167.35
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -17.35,
+        0.05,
+        -166.65
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -17.35,
+        0.05,
+        -165.95
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -17.35,
+        0.05,
+        -165.25
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -17.35,
+        0.05,
+        -164.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -17.35,
+        0.05,
+        -163.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -17.35,
+        0.05,
+        -163.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -17.35,
+        0.05,
+        -162.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -16.45,
+        0.05,
+        -171.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -16.45,
+        0.05,
+        -170.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -16.45,
+        0.05,
+        -170.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -16.45,
+        0.05,
+        -169.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -16.45,
+        0.05,
+        -168.75
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -16.45,
+        0.05,
+        -168.05
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -16.45,
+        0.05,
+        -167.35
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -16.45,
+        0.05,
+        -166.65
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -16.45,
+        0.05,
+        -165.95
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -16.45,
+        0.05,
+        -165.25
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -16.45,
+        0.05,
+        -164.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -16.45,
+        0.05,
+        -163.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -16.45,
+        0.05,
+        -163.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -16.45,
+        0.05,
+        -162.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -15.55,
+        0.05,
+        -171.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -15.55,
+        0.05,
+        -170.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -15.55,
+        0.05,
+        -170.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -15.55,
+        0.05,
+        -169.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -15.55,
+        0.05,
+        -168.75
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -15.55,
+        0.05,
+        -168.05
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -15.55,
+        0.05,
+        -167.35
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -15.55,
+        0.05,
+        -166.65
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -15.55,
+        0.05,
+        -165.95
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -15.55,
+        0.05,
+        -165.25
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -15.55,
+        0.05,
+        -164.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -15.55,
+        0.05,
+        -163.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -15.55,
+        0.05,
+        -163.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -15.55,
+        0.05,
+        -162.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -14.65,
+        0.05,
+        -171.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -14.65,
+        0.05,
+        -170.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -14.65,
+        0.05,
+        -170.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -14.65,
+        0.05,
+        -169.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -14.65,
+        0.05,
+        -168.75
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -14.65,
+        0.05,
+        -168.05
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -14.65,
+        0.05,
+        -167.35
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -14.65,
+        0.05,
+        -166.65
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -14.65,
+        0.05,
+        -165.95
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -14.65,
+        0.05,
+        -165.25
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -14.65,
+        0.05,
+        -164.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -14.65,
+        0.05,
+        -163.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -14.65,
+        0.05,
+        -163.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -14.65,
+        0.05,
+        -162.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -13.75,
+        0.05,
+        -171.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -13.75,
+        0.05,
+        -170.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -13.75,
+        0.05,
+        -170.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -13.75,
+        0.05,
+        -169.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -13.75,
+        0.05,
+        -168.75
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -13.75,
+        0.05,
+        -168.05
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -13.75,
+        0.05,
+        -167.35
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -13.75,
+        0.05,
+        -166.65
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -13.75,
+        0.05,
+        -165.95
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -13.75,
+        0.05,
+        -165.25
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -13.75,
+        0.05,
+        -164.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -13.75,
+        0.05,
+        -163.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -13.75,
+        0.05,
+        -163.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -13.75,
+        0.05,
+        -162.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -12.85,
+        0.05,
+        -171.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -12.85,
+        0.05,
+        -170.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -12.85,
+        0.05,
+        -170.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -12.85,
+        0.05,
+        -169.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -12.85,
+        0.05,
+        -168.75
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -12.85,
+        0.05,
+        -168.05
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -12.85,
+        0.05,
+        -167.35
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -12.85,
+        0.05,
+        -166.65
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -12.85,
+        0.05,
+        -165.95
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -12.85,
+        0.05,
+        -165.25
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -12.85,
+        0.05,
+        -164.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -12.85,
+        0.05,
+        -163.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -12.85,
+        0.05,
+        -163.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -12.85,
+        0.05,
+        -162.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -11.95,
+        0.05,
+        -171.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -11.95,
+        0.05,
+        -170.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -11.95,
+        0.05,
+        -170.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -11.95,
+        0.05,
+        -169.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -11.95,
+        0.05,
+        -168.75
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -11.95,
+        0.05,
+        -168.05
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -11.95,
+        0.05,
+        -167.35
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -11.95,
+        0.05,
+        -166.65
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -11.95,
+        0.05,
+        -165.95
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -11.95,
+        0.05,
+        -165.25
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -11.95,
+        0.05,
+        -164.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -11.95,
+        0.05,
+        -163.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -11.95,
+        0.05,
+        -163.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -11.95,
+        0.05,
+        -162.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -11.05,
+        0.05,
+        -171.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -11.05,
+        0.05,
+        -170.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -11.05,
+        0.05,
+        -170.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -11.05,
+        0.05,
+        -169.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -11.05,
+        0.05,
+        -168.75
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -11.05,
+        0.05,
+        -168.05
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -11.05,
+        0.05,
+        -167.35
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -11.05,
+        0.05,
+        -166.65
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -11.05,
+        0.05,
+        -165.95
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -11.05,
+        0.05,
+        -165.25
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -11.05,
+        0.05,
+        -164.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -11.05,
+        0.05,
+        -163.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -11.05,
+        0.05,
+        -163.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -11.05,
+        0.05,
+        -162.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -10.15,
+        0.05,
+        -171.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -10.15,
+        0.05,
+        -170.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -10.15,
+        0.05,
+        -170.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -10.15,
+        0.05,
+        -169.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -10.15,
+        0.05,
+        -168.75
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -10.15,
+        0.05,
+        -168.05
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -10.15,
+        0.05,
+        -167.35
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -10.15,
+        0.05,
+        -166.65
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -10.15,
+        0.05,
+        -165.95
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -10.15,
+        0.05,
+        -165.25
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -10.15,
+        0.05,
+        -164.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -10.15,
+        0.05,
+        -163.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -10.15,
+        0.05,
+        -163.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -10.15,
+        0.05,
+        -162.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -9.25,
+        0.05,
+        -171.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -9.25,
+        0.05,
+        -170.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -9.25,
+        0.05,
+        -170.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -9.25,
+        0.05,
+        -169.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -9.25,
+        0.05,
+        -168.75
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -9.25,
+        0.05,
+        -168.05
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -9.25,
+        0.05,
+        -167.35
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -9.25,
+        0.05,
+        -166.65
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -9.25,
+        0.05,
+        -165.95
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -9.25,
+        0.05,
+        -165.25
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -9.25,
+        0.05,
+        -164.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -9.25,
+        0.05,
+        -163.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -9.25,
+        0.05,
+        -163.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -9.25,
+        0.05,
+        -162.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -8.35,
+        0.05,
+        -171.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -8.35,
+        0.05,
+        -170.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -8.35,
+        0.05,
+        -170.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -8.35,
+        0.05,
+        -169.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -8.35,
+        0.05,
+        -168.75
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -8.35,
+        0.05,
+        -168.05
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -8.35,
+        0.05,
+        -167.35
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -8.35,
+        0.05,
+        -166.65
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -8.35,
+        0.05,
+        -165.95
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -8.35,
+        0.05,
+        -165.25
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -8.35,
+        0.05,
+        -164.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -8.35,
+        0.05,
+        -163.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -8.35,
+        0.05,
+        -163.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -8.35,
+        0.05,
+        -162.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -7.45,
+        0.05,
+        -171.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -7.45,
+        0.05,
+        -170.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -7.45,
+        0.05,
+        -170.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -7.45,
+        0.05,
+        -169.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -7.45,
+        0.05,
+        -168.75
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -7.45,
+        0.05,
+        -168.05
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -7.45,
+        0.05,
+        -167.35
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -7.45,
+        0.05,
+        -166.65
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -7.45,
+        0.05,
+        -165.95
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -7.45,
+        0.05,
+        -165.25
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -7.45,
+        0.05,
+        -164.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -7.45,
+        0.05,
+        -163.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -7.45,
+        0.05,
+        -163.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -7.45,
+        0.05,
+        -162.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -6.55,
+        0.05,
+        -171.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -6.55,
+        0.05,
+        -170.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -6.55,
+        0.05,
+        -170.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -6.55,
+        0.05,
+        -169.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -6.55,
+        0.05,
+        -168.75
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -6.55,
+        0.05,
+        -168.05
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -6.55,
+        0.05,
+        -167.35
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -6.55,
+        0.05,
+        -166.65
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -6.55,
+        0.05,
+        -165.95
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -6.55,
+        0.05,
+        -165.25
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -6.55,
+        0.05,
+        -164.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -6.55,
+        0.05,
+        -163.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -6.55,
+        0.05,
+        -163.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "potato",
+      "position": [
+        -6.55,
+        0.05,
+        -162.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -25.45,
+        0.05,
+        -183.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -25.45,
+        0.05,
+        -182.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -25.45,
+        0.05,
+        -182.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -25.45,
+        0.05,
+        -181.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -25.45,
+        0.05,
+        -180.75
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -25.45,
+        0.05,
+        -180.05
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -25.45,
+        0.05,
+        -179.35
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -25.45,
+        0.05,
+        -178.65
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -25.45,
+        0.05,
+        -177.95
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -25.45,
+        0.05,
+        -177.25
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -25.45,
+        0.05,
+        -176.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -25.45,
+        0.05,
+        -175.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -25.45,
+        0.05,
+        -175.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -25.45,
+        0.05,
+        -174.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -24.55,
+        0.05,
+        -183.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -24.55,
+        0.05,
+        -182.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -24.55,
+        0.05,
+        -181.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -24.55,
+        0.05,
+        -181.1
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -24.55,
+        0.05,
+        -180.4
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -24.55,
+        0.05,
+        -179.7
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -24.55,
+        0.05,
+        -179
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -24.55,
+        0.05,
+        -178.3
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -24.55,
+        0.05,
+        -177.6
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -24.55,
+        0.05,
+        -176.9
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -24.55,
+        0.05,
+        -176.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -24.55,
+        0.05,
+        -175.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -24.55,
+        0.05,
+        -174.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -24.55,
+        0.05,
+        -174.1
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -23.65,
+        0.05,
+        -183.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -23.65,
+        0.05,
+        -182.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -23.65,
+        0.05,
+        -182.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -23.65,
+        0.05,
+        -181.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -23.65,
+        0.05,
+        -180.75
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -23.65,
+        0.05,
+        -180.05
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -23.65,
+        0.05,
+        -179.35
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -23.65,
+        0.05,
+        -178.65
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -23.65,
+        0.05,
+        -177.95
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -23.65,
+        0.05,
+        -177.25
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -23.65,
+        0.05,
+        -176.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -23.65,
+        0.05,
+        -175.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -23.65,
+        0.05,
+        -175.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -23.65,
+        0.05,
+        -174.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -22.75,
+        0.05,
+        -183.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -22.75,
+        0.05,
+        -182.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -22.75,
+        0.05,
+        -181.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -22.75,
+        0.05,
+        -181.1
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -22.75,
+        0.05,
+        -180.4
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -22.75,
+        0.05,
+        -179.7
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -22.75,
+        0.05,
+        -179
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -22.75,
+        0.05,
+        -178.3
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -22.75,
+        0.05,
+        -177.6
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -22.75,
+        0.05,
+        -176.9
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -22.75,
+        0.05,
+        -176.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -22.75,
+        0.05,
+        -175.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -22.75,
+        0.05,
+        -174.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -22.75,
+        0.05,
+        -174.1
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -21.85,
+        0.05,
+        -183.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -21.85,
+        0.05,
+        -182.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -21.85,
+        0.05,
+        -182.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -21.85,
+        0.05,
+        -181.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -21.85,
+        0.05,
+        -180.75
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -21.85,
+        0.05,
+        -180.05
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -21.85,
+        0.05,
+        -179.35
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -21.85,
+        0.05,
+        -178.65
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -21.85,
+        0.05,
+        -177.95
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -21.85,
+        0.05,
+        -177.25
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -21.85,
+        0.05,
+        -176.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -21.85,
+        0.05,
+        -175.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -21.85,
+        0.05,
+        -175.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -21.85,
+        0.05,
+        -174.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -20.95,
+        0.05,
+        -183.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -20.95,
+        0.05,
+        -182.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -20.95,
+        0.05,
+        -181.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -20.95,
+        0.05,
+        -181.1
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -20.95,
+        0.05,
+        -180.4
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -20.95,
+        0.05,
+        -179.7
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -20.95,
+        0.05,
+        -179
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -20.95,
+        0.05,
+        -178.3
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -20.95,
+        0.05,
+        -177.6
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -20.95,
+        0.05,
+        -176.9
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -20.95,
+        0.05,
+        -176.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -20.95,
+        0.05,
+        -175.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -20.95,
+        0.05,
+        -174.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -20.95,
+        0.05,
+        -174.1
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -20.05,
+        0.05,
+        -183.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -20.05,
+        0.05,
+        -182.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -20.05,
+        0.05,
+        -182.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -20.05,
+        0.05,
+        -181.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -20.05,
+        0.05,
+        -180.75
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -20.05,
+        0.05,
+        -180.05
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -20.05,
+        0.05,
+        -179.35
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -20.05,
+        0.05,
+        -178.65
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -20.05,
+        0.05,
+        -177.95
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -20.05,
+        0.05,
+        -177.25
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -20.05,
+        0.05,
+        -176.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -20.05,
+        0.05,
+        -175.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -20.05,
+        0.05,
+        -175.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -20.05,
+        0.05,
+        -174.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -19.15,
+        0.05,
+        -183.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -19.15,
+        0.05,
+        -182.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -19.15,
+        0.05,
+        -181.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -19.15,
+        0.05,
+        -181.1
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -19.15,
+        0.05,
+        -180.4
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -19.15,
+        0.05,
+        -179.7
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -19.15,
+        0.05,
+        -179
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -19.15,
+        0.05,
+        -178.3
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -19.15,
+        0.05,
+        -177.6
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -19.15,
+        0.05,
+        -176.9
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -19.15,
+        0.05,
+        -176.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -19.15,
+        0.05,
+        -175.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -19.15,
+        0.05,
+        -174.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -19.15,
+        0.05,
+        -174.1
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -18.25,
+        0.05,
+        -183.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -18.25,
+        0.05,
+        -182.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -18.25,
+        0.05,
+        -182.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -18.25,
+        0.05,
+        -181.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -18.25,
+        0.05,
+        -180.75
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -18.25,
+        0.05,
+        -180.05
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -18.25,
+        0.05,
+        -179.35
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -18.25,
+        0.05,
+        -178.65
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -18.25,
+        0.05,
+        -177.95
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -18.25,
+        0.05,
+        -177.25
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -18.25,
+        0.05,
+        -176.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -18.25,
+        0.05,
+        -175.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -18.25,
+        0.05,
+        -175.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -18.25,
+        0.05,
+        -174.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -17.35,
+        0.05,
+        -183.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -17.35,
+        0.05,
+        -182.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -17.35,
+        0.05,
+        -181.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -17.35,
+        0.05,
+        -181.1
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -17.35,
+        0.05,
+        -180.4
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -17.35,
+        0.05,
+        -179.7
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -17.35,
+        0.05,
+        -179
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -17.35,
+        0.05,
+        -178.3
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -17.35,
+        0.05,
+        -177.6
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -17.35,
+        0.05,
+        -176.9
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -17.35,
+        0.05,
+        -176.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -17.35,
+        0.05,
+        -175.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -17.35,
+        0.05,
+        -174.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -17.35,
+        0.05,
+        -174.1
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -16.45,
+        0.05,
+        -183.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -16.45,
+        0.05,
+        -182.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -16.45,
+        0.05,
+        -182.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -16.45,
+        0.05,
+        -181.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -16.45,
+        0.05,
+        -180.75
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -16.45,
+        0.05,
+        -180.05
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -16.45,
+        0.05,
+        -179.35
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -16.45,
+        0.05,
+        -178.65
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -16.45,
+        0.05,
+        -177.95
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -16.45,
+        0.05,
+        -177.25
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -16.45,
+        0.05,
+        -176.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -16.45,
+        0.05,
+        -175.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -16.45,
+        0.05,
+        -175.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -16.45,
+        0.05,
+        -174.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -15.55,
+        0.05,
+        -183.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -15.55,
+        0.05,
+        -182.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -15.55,
+        0.05,
+        -181.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -15.55,
+        0.05,
+        -181.1
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -15.55,
+        0.05,
+        -180.4
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -15.55,
+        0.05,
+        -179.7
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -15.55,
+        0.05,
+        -179
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -15.55,
+        0.05,
+        -178.3
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -15.55,
+        0.05,
+        -177.6
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -15.55,
+        0.05,
+        -176.9
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -15.55,
+        0.05,
+        -176.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -15.55,
+        0.05,
+        -175.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -15.55,
+        0.05,
+        -174.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -15.55,
+        0.05,
+        -174.1
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -14.65,
+        0.05,
+        -183.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -14.65,
+        0.05,
+        -182.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -14.65,
+        0.05,
+        -182.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -14.65,
+        0.05,
+        -181.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -14.65,
+        0.05,
+        -180.75
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -14.65,
+        0.05,
+        -180.05
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -14.65,
+        0.05,
+        -179.35
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -14.65,
+        0.05,
+        -178.65
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -14.65,
+        0.05,
+        -177.95
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -14.65,
+        0.05,
+        -177.25
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -14.65,
+        0.05,
+        -176.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -14.65,
+        0.05,
+        -175.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -14.65,
+        0.05,
+        -175.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -14.65,
+        0.05,
+        -174.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -13.75,
+        0.05,
+        -183.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -13.75,
+        0.05,
+        -182.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -13.75,
+        0.05,
+        -181.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -13.75,
+        0.05,
+        -181.1
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -13.75,
+        0.05,
+        -180.4
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -13.75,
+        0.05,
+        -179.7
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -13.75,
+        0.05,
+        -179
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -13.75,
+        0.05,
+        -178.3
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -13.75,
+        0.05,
+        -177.6
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -13.75,
+        0.05,
+        -176.9
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -13.75,
+        0.05,
+        -176.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -13.75,
+        0.05,
+        -175.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -13.75,
+        0.05,
+        -174.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -13.75,
+        0.05,
+        -174.1
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -12.85,
+        0.05,
+        -183.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -12.85,
+        0.05,
+        -182.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -12.85,
+        0.05,
+        -182.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -12.85,
+        0.05,
+        -181.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -12.85,
+        0.05,
+        -180.75
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -12.85,
+        0.05,
+        -180.05
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -12.85,
+        0.05,
+        -179.35
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -12.85,
+        0.05,
+        -178.65
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -12.85,
+        0.05,
+        -177.95
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -12.85,
+        0.05,
+        -177.25
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -12.85,
+        0.05,
+        -176.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -12.85,
+        0.05,
+        -175.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -12.85,
+        0.05,
+        -175.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -12.85,
+        0.05,
+        -174.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -11.95,
+        0.05,
+        -183.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -11.95,
+        0.05,
+        -182.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -11.95,
+        0.05,
+        -181.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -11.95,
+        0.05,
+        -181.1
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -11.95,
+        0.05,
+        -180.4
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -11.95,
+        0.05,
+        -179.7
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -11.95,
+        0.05,
+        -179
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -11.95,
+        0.05,
+        -178.3
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -11.95,
+        0.05,
+        -177.6
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -11.95,
+        0.05,
+        -176.9
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -11.95,
+        0.05,
+        -176.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -11.95,
+        0.05,
+        -175.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -11.95,
+        0.05,
+        -174.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -11.95,
+        0.05,
+        -174.1
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -11.05,
+        0.05,
+        -183.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -11.05,
+        0.05,
+        -182.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -11.05,
+        0.05,
+        -182.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -11.05,
+        0.05,
+        -181.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -11.05,
+        0.05,
+        -180.75
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -11.05,
+        0.05,
+        -180.05
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -11.05,
+        0.05,
+        -179.35
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -11.05,
+        0.05,
+        -178.65
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -11.05,
+        0.05,
+        -177.95
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -11.05,
+        0.05,
+        -177.25
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -11.05,
+        0.05,
+        -176.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -11.05,
+        0.05,
+        -175.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -11.05,
+        0.05,
+        -175.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -11.05,
+        0.05,
+        -174.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -10.15,
+        0.05,
+        -183.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -10.15,
+        0.05,
+        -182.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -10.15,
+        0.05,
+        -181.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -10.15,
+        0.05,
+        -181.1
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -10.15,
+        0.05,
+        -180.4
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -10.15,
+        0.05,
+        -179.7
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -10.15,
+        0.05,
+        -179
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -10.15,
+        0.05,
+        -178.3
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -10.15,
+        0.05,
+        -177.6
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -10.15,
+        0.05,
+        -176.9
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -10.15,
+        0.05,
+        -176.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -10.15,
+        0.05,
+        -175.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -10.15,
+        0.05,
+        -174.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -10.15,
+        0.05,
+        -174.1
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -9.25,
+        0.05,
+        -183.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -9.25,
+        0.05,
+        -182.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -9.25,
+        0.05,
+        -182.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -9.25,
+        0.05,
+        -181.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -9.25,
+        0.05,
+        -180.75
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -9.25,
+        0.05,
+        -180.05
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -9.25,
+        0.05,
+        -179.35
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -9.25,
+        0.05,
+        -178.65
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -9.25,
+        0.05,
+        -177.95
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -9.25,
+        0.05,
+        -177.25
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -9.25,
+        0.05,
+        -176.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -9.25,
+        0.05,
+        -175.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -9.25,
+        0.05,
+        -175.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -9.25,
+        0.05,
+        -174.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -8.35,
+        0.05,
+        -183.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -8.35,
+        0.05,
+        -182.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -8.35,
+        0.05,
+        -181.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -8.35,
+        0.05,
+        -181.1
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -8.35,
+        0.05,
+        -180.4
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -8.35,
+        0.05,
+        -179.7
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -8.35,
+        0.05,
+        -179
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -8.35,
+        0.05,
+        -178.3
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -8.35,
+        0.05,
+        -177.6
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -8.35,
+        0.05,
+        -176.9
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -8.35,
+        0.05,
+        -176.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -8.35,
+        0.05,
+        -175.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -8.35,
+        0.05,
+        -174.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -8.35,
+        0.05,
+        -174.1
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -7.45,
+        0.05,
+        -183.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -7.45,
+        0.05,
+        -182.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -7.45,
+        0.05,
+        -182.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -7.45,
+        0.05,
+        -181.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -7.45,
+        0.05,
+        -180.75
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -7.45,
+        0.05,
+        -180.05
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -7.45,
+        0.05,
+        -179.35
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -7.45,
+        0.05,
+        -178.65
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -7.45,
+        0.05,
+        -177.95
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -7.45,
+        0.05,
+        -177.25
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -7.45,
+        0.05,
+        -176.55
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -7.45,
+        0.05,
+        -175.85
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -7.45,
+        0.05,
+        -175.15
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -7.45,
+        0.05,
+        -174.45
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -6.55,
+        0.05,
+        -183.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -6.55,
+        0.05,
+        -182.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -6.55,
+        0.05,
+        -181.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -6.55,
+        0.05,
+        -181.1
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -6.55,
+        0.05,
+        -180.4
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -6.55,
+        0.05,
+        -179.7
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -6.55,
+        0.05,
+        -179
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -6.55,
+        0.05,
+        -178.3
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -6.55,
+        0.05,
+        -177.6
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -6.55,
+        0.05,
+        -176.9
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -6.55,
+        0.05,
+        -176.2
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -6.55,
+        0.05,
+        -175.5
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -6.55,
+        0.05,
+        -174.8
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "cabbage",
+      "position": [
+        -6.55,
+        0.05,
+        -174.1
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -24.747,
+        0.05,
+        -195.508
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -24.322,
+        0.05,
+        -193.766
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -25.215,
+        0.05,
+        -192.635
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -25.248,
+        0.05,
+        -191.201
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -24.907,
+        0.05,
+        -190.009
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -25.334,
+        0.05,
+        -187.866
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -25.019,
+        0.05,
+        -186.602
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -22.813,
+        0.05,
+        -194.717
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -23.713,
+        0.05,
+        -193.322
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -22.791,
+        0.05,
+        -192.197
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -23.739,
+        0.05,
+        -190.655
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -22.849,
+        0.05,
+        -190.01
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -23.107,
+        0.05,
+        -188.063
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -23.115,
+        0.05,
+        -186.585
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -21.757,
+        0.05,
+        -195.116
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -21.98,
+        0.05,
+        -193.332
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -21.721,
+        0.05,
+        -192.806
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -21.684,
+        0.05,
+        -191.27
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -21.228,
+        0.05,
+        -189.147
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -22.014,
+        0.05,
+        -187.835
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -21.356,
+        0.05,
+        -186.93
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -20.314,
+        0.05,
+        -195.558
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -20.396,
+        0.05,
+        -194.202
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -19.749,
+        0.05,
+        -192.089
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -19.469,
+        0.05,
+        -191.392
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -20.555,
+        0.05,
+        -189.201
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -19.544,
+        0.05,
+        -188.024
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -19.792,
+        0.05,
+        -186.948
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -18.269,
+        0.05,
+        -195.053
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -17.989,
+        0.05,
+        -193.383
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -18.415,
+        0.05,
+        -192.4
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -18.325,
+        0.05,
+        -190.921
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -18.696,
+        0.05,
+        -189.989
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -18.317,
+        0.05,
+        -188.54
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -18.627,
+        0.05,
+        -186.424
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -17.127,
+        0.05,
+        -195.629
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -17.322,
+        0.05,
+        -193.834
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -16.781,
+        0.05,
+        -192.03
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -16.703,
+        0.05,
+        -191.372
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -16.615,
+        0.05,
+        -189.239
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -17.264,
+        0.05,
+        -188.583
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -16.244,
+        0.05,
+        -186.311
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -15.41,
+        0.05,
+        -195.487
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -15.086,
+        0.05,
+        -193.668
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -14.847,
+        0.05,
+        -192.424
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -14.777,
+        0.05,
+        -191.367
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -14.99,
+        0.05,
+        -189.234
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -15.56,
+        0.05,
+        -188.547
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -14.82,
+        0.05,
+        -186.578
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -13.167,
+        0.05,
+        -195.606
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -13.281,
+        0.05,
+        -193.98
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -13.525,
+        0.05,
+        -192.258
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -13.5,
+        0.05,
+        -191.057
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -13.313,
+        0.05,
+        -189.535
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -13.698,
+        0.05,
+        -187.802
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -13.272,
+        0.05,
+        -187.257
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -12.127,
+        0.05,
+        -195.567
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -11.501,
+        0.05,
+        -193.403
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -12.523,
+        0.05,
+        -192.516
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -12.233,
+        0.05,
+        -191.437
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -11.546,
+        0.05,
+        -189.314
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -12.232,
+        0.05,
+        -187.961
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -12.338,
+        0.05,
+        -186.429
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -10.402,
+        0.05,
+        -195.43
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -10.787,
+        0.05,
+        -193.837
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -10.895,
+        0.05,
+        -192.194
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -10.654,
+        0.05,
+        -191.441
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -10.413,
+        0.05,
+        -189.86
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -10.663,
+        0.05,
+        -188.12
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -10.496,
+        0.05,
+        -187.06
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -8.421,
+        0.05,
+        -195.28
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -8.745,
+        0.05,
+        -193.391
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -8.525,
+        0.05,
+        -192.576
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -8.472,
+        0.05,
+        -190.573
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -8.634,
+        0.05,
+        -189.487
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -9.209,
+        0.05,
+        -188.438
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -9.332,
+        0.05,
+        -186.331
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -7.092,
+        0.05,
+        -195.224
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -7.121,
+        0.05,
+        -194.097
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -7.008,
+        0.05,
+        -192.231
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -6.804,
+        0.05,
+        -190.646
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -7.638,
+        0.05,
+        -189.833
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -7.191,
+        0.05,
+        -188.508
+      ]
+    },
+    {
+      "zone": "farm",
+      "crop": "pumpkin",
+      "position": [
+        -6.942,
+        0.05,
+        -187.128
+      ]
+    }
+  ]
 }

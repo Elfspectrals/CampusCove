@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "materials": {
+    "DC_RugSun": {
+      "mask": "parts_DC_RugSun.png",
+      "parts": [
+        {
+          "id": "main",
+          "label": "Main",
+          "color": "#ecbd6e"
+        },
+        {
+          "id": "accent",
+          "label": "Accent",
+          "color": "#c75c31"
+        },
+        {
+          "id": "detail",
+          "label": "Detail",
+          "color": "#783c26"
+        }
+      ]
+    }
+  }
+}

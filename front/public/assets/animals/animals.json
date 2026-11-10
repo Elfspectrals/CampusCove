@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "animals": {
+    "cow": { "label": "Cow", "speed": 0.7, "rest": 10 },
+    "pig": { "label": "Pig", "speed": 0.6, "rest": 8 },
+    "sheep": { "label": "Sheep", "speed": 0.7, "rest": 9 },
+    "dog": { "label": "Dog", "speed": 0.9, "rest": 5 },
+    "hen": { "label": "Hen", "speed": 0.45, "rest": 4 },
+    "rooster": { "label": "Rooster", "speed": 0.45, "rest": 5 }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "key": "wood_light",
+  "label": "Wood light",
+  "color": "#ffffff",
+  "roughness": 0.5,
+  "metalness": 0,
+  "maps": {
+    "color": "color.webp"
+  },
+  "source": "decor/dining_table"
+}

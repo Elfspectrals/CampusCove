@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "crops": {
+    "corn": { "label": "Corn", "item": "farm_corn", "plant": "items/farm/corn_plant/model.glb", "spacing": 0.9, "rowGap": 1.2 },
+    "potato": { "label": "Potatoes", "item": "farm_potato", "plant": "items/farm/potato_plant/model.glb", "spacing": 0.7, "rowGap": 0.9 },
+    "cabbage": { "label": "Cabbages", "item": "farm_cabbage", "plant": "items/farm/cabbage/model.glb", "spacing": 0.7, "rowGap": 0.9 },
+    "pumpkin": { "label": "Pumpkins", "item": "farm_pumpkin", "plant": "items/farm/pumpkin/model.glb", "spacing": 1.4, "rowGap": 1.6 }
+  }
+}

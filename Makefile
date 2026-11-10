@@ -82,6 +82,55 @@ newnation-optimize: ## Rebuild the /NewNation showroom map from map-src/NewNatio
 collision-extract: ## Collision JSON from a GLB (MODEL=path/to/Foo.colsrc.glb)
 	cd front && npm run collision:extract -- $(MODEL)
 
+# * local only: needs Jerome's Mac (~/test3Dmodel/Hunyuan3D-2, ~/image-inpaint-mps, Blender.app)
+ifeq (model,$(firstword $(MAKECMDGOALS)))
+MODEL_PROMPT := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+%:
+	@:
+endif
+ifeq (texture,$(firstword $(MAKECMDGOALS)))
+TEXTURE_PROMPT := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+%:
+	@:
+endif
+slug = $(shell echo '$(1)' | tr 'A-Z' 'a-z' | tr -cs 'a-z0-9' '_' | sed 's/^_//;s/_$$//' | cut -c1-40)
+MODEL_SLUG = $(call slug,$(MODEL_PROMPT))
+TEXTURE_KEY = $(call slug,$(TEXTURE_PROMPT))
+HEIGHT ?= 1.0
+TRIS ?= 800
+AI_3D := $(HOME)/test3Dmodel/Hunyuan3D-2
+AI_IMAGE_PYTHON := $(HOME)/image-inpaint-mps/.venv/bin/python
+BLENDER := /Applications/Blender.app/Contents/MacOS/Blender
+AI_OUT = map-src/CampusCove/out/ai/$(MODEL_SLUG)
+
+model: ## * Prompt -> image -> 3D -> cleaned GLB + collision.json in map-src/CampusCove/out/ai/<slug>/ (make model "a wooden lantern" HEIGHT=1.2 TRIS=400)
+	@test -n "$(MODEL_PROMPT)" || { echo 'usage: make model "a single wooden lantern" [HEIGHT=1.2] [TRIS=400]'; exit 1; }
+	mkdir -p $(AI_OUT)
+	$(AI_IMAGE_PYTHON) $(AI_3D)/campuscove_image.py "$(MODEL_PROMPT)" $(CURDIR)/$(AI_OUT)/ref.png
+	cd $(AI_3D) && HY3DGEN_MODELS=models HF_HUB_OFFLINE=1 PYTORCH_ENABLE_MPS_FALLBACK=1 .venv/bin/python campuscove_shape.py $(CURDIR)/$(AI_OUT)/ref.png $(CURDIR)/$(AI_OUT)/raw.glb hunyuan3d-dit-v2-0-turbo 5
+	$(BLENDER) -b --factory-startup -P map-src/CampusCove/clean_ai_mesh.py -- $(CURDIR)/$(AI_OUT)/raw.glb $(CURDIR)/$(AI_OUT)/model.glb $(MODEL_SLUG) $(HEIGHT) $(TRIS)
+	node front/scripts/apply-decor-collision.mjs $(AI_OUT)/model.glb
+	$(AI_IMAGE_PYTHON) map-src/CampusCove/texture_parts.py model $(AI_OUT) $(PARTS)
+
+model-test: ## * Tests of the make model Blender cleanup (headless Blender)
+	$(BLENDER) -b --factory-startup --python-exit-code 1 -P map-src/CampusCove/test_clean_ai_mesh.py
+
+TILE ?= 2.0
+SIZE ?= 1024
+CATEGORY ?= other
+
+texture: ## * Prompt -> seamless tileable texture in front/public/assets/textures/<key>/ + categories.json (make texture "a wooden wall stained with blood" TILE=2.0 SIZE=1024 CATEGORY=wood)
+	@test -n "$(TEXTURE_PROMPT)" || { echo 'usage: make texture "a wooden wall stained with blood" [TILE=2.0] [SIZE=1024] [CATEGORY=wood]'; exit 1; }
+	$(AI_IMAGE_PYTHON) map-src/CampusCove/make_texture.py "$(TEXTURE_PROMPT)" $(TEXTURE_KEY) $(TILE) $(SIZE) $(CATEGORY) map-src/CampusCove/out/ai_textures/$(TEXTURE_KEY)
+	$(AI_IMAGE_PYTHON) map-src/CampusCove/texture_parts.py texture front/public/assets/textures/$(TEXTURE_KEY) $(PARTS)
+
+texture-parts: ## * Split every library texture and decor model map into recolourable parts (mask + parts list, PARTS labels on make texture/model)
+	$(AI_IMAGE_PYTHON) map-src/CampusCove/texture_parts.py all front/public/assets
+
+texture-test: ## * Tests of the make texture seamless wrap and texture library files
+	$(AI_IMAGE_PYTHON) map-src/CampusCove/test_make_texture.py
+	$(AI_IMAGE_PYTHON) map-src/CampusCove/test_texture_parts.py
+
 
 # --- gem shop demo (Stripe TEST MODE only, docs/STRIPE.md) ---
 # Stripe CLI in Docker (service stripe-cli, profile stripe): needs STRIPE_SECRET_KEY=sk_test_... in $(ENV_FILE),
@@ -158,6 +207,6 @@ socket-start: ## Run socket locally (port 3000)
 
 .PHONY: help up up-build down logs rebuild-socket socket-rebuild \
 	front-install front-dev front-build typecheck share-local sharelocal \
-	assets-optimize store-apply newnation-optimize collision-extract \
+	assets-optimize store-apply newnation-optimize collision-extract model model-test texture texture-test texture-parts \
 	migrate seed seed-shop seed-housing purge-legacy-housing fix-housing collect-taxes set-admin set-money fill-outfit test \
 	backend-install backend-serve socket-install socket-start stripe-secret stripe-listen stripe-logs stripe-stop gems-reconcile

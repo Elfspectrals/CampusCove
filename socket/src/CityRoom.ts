@@ -16,7 +16,9 @@ import {
   workDoorId
 } from './doors.ts'
 import { moveRejection, onJump, spendSprintStamina } from './movement.ts'
-import { onOrchardPick, onOrchardPickStart, onOrchardSell } from './orchard.ts'
+import { onOrchardPick, onOrchardPickCancel, onOrchardPickStart } from './orchard.ts'
+import { onFarmPick, onFarmPickStart } from './farm.ts'
+import { onZoneCheckout, onZoneSell } from './zoneShop.ts'
 import { blockAtSecretDoor, onPubBell, onPubOrder, onPubSecret, onSit } from './pub.ts'
 import {
   leavePub,
@@ -142,7 +144,11 @@ export class CityRoom extends Room implements GameRoom {
     this.onMessage('pub_darts_leave', (client) => onDartsLeave(this, client))
     this.onMessage('orchard_pick_start', (client, payload: ClientPayload) => onOrchardPickStart(this, client, payload))
     this.onMessage('orchard_pick', (client) => void onOrchardPick(this, client))
-    this.onMessage('orchard_sell', (client, payload: ClientPayload) => void onOrchardSell(this, client, payload))
+    this.onMessage('orchard_pick_cancel', (client) => onOrchardPickCancel(this, client))
+    this.onMessage('farm_pick_start', (client, payload: ClientPayload) => onFarmPickStart(this, client, payload))
+    this.onMessage('farm_pick', (client) => void onFarmPick(this, client))
+    this.onMessage('zone_checkout', (client, payload: ClientPayload) => void onZoneCheckout(this, client, payload))
+    this.onMessage('zone_sell', (client, payload: ClientPayload) => void onZoneSell(this, client, payload))
     this.onMessage('admin_open', (client) => onAdminOpen(this, client))
     this.onMessage('admin_teleport', (client, payload: ClientPayload) => onAdminTeleport(this, client, payload))
     this.onMessage('admin_summon', (client, payload: ClientPayload) => onAdminSummon(this, client, payload))

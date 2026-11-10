@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "key": "a_red_brick_wall",
+  "label": "A red brick wall",
+  "tileMeters": 2.0,
+  "maps": {
+    "color": "color.png",
+    "mask": "mask.png"
+  },
+  "parts": [
+    {
+      "id": "bricks",
+      "label": "Bricks",
+      "color": "#dd8375"
+    },
+    {
+      "id": "mortar",
+      "label": "Mortar",
+      "color": "#cc9c92"
+    },
+    {
+      "id": "dark_bricks",
+      "label": "Dark bricks",
+      "color": "#a85d55"
+    }
+  ]
+}

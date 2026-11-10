@@ -23,6 +23,11 @@ export interface UserSeatedPayload {
   seatId: string | null
 }
 
+export interface UserPickingPayload {
+  sessionId: string
+  picking: boolean
+}
+
 /** Another player ate or drank (socket/src/survival.ts); `code` is the food item, null for a fountain sip. */
 export interface UserActionPayload {
   sessionId: string
@@ -338,14 +343,40 @@ export interface OrchardPickedPayload {
   quantity: number
 }
 
-export interface OrchardSoldPayload {
+export interface FarmPickedPayload {
+  code: string
+  quantity: number
+}
+
+export interface FarmErrorPayload {
+  message: string
+  code: string
+}
+
+export interface OrchardErrorPayload {
+  message: string
+  code: string
+}
+
+export interface ZoneCheckoutDonePayload {
+  balance_after: number
+  request: number | null
+}
+
+export interface ZoneCheckoutErrorPayload {
+  message: string
+  code: string
+  request: number | null
+}
+
+export interface ZoneSoldPayload {
   sold: number
   coins: number
   balance_after: number
   full_price_left: number
 }
 
-export interface OrchardErrorPayload {
+export interface ZoneSellErrorPayload {
   message: string
   code: string
 }

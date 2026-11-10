@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "key": "cactus",
+  "label": "Cactus",
+  "color": "#99c8a2",
+  "roughness": 0.8,
+  "metalness": 0,
+  "maps": {},
+  "source": "decor/cactus"
+}

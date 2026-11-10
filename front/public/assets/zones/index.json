@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "zones": [
+    "clinic",
+    "farm",
+    "fashion",
+    "mall",
+    "orchard",
+    "pond",
+    "pub",
+    "retail_park",
+    "work_district"
+  ]
+}

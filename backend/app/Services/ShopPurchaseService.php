@@ -22,14 +22,15 @@ final class ShopPurchaseService
         Account $account,
         string $shopItemPublicId,
         int $quantity,
-        ?string $selectedCurrency = null
+        ?string $selectedCurrency = null,
+        ?int $coinUnitPrice = null
     ): ShopPurchaseResult
     {
         if ($quantity < 1) {
             throw new ShopPurchaseRejectedException('invalid_quantity', 'Quantity must be at least 1.', 422);
         }
 
-        return DB::transaction(function () use ($account, $shopItemPublicId, $quantity, $selectedCurrency): ShopPurchaseResult {
+        return DB::transaction(function () use ($account, $shopItemPublicId, $quantity, $selectedCurrency, $coinUnitPrice): ShopPurchaseResult {
             /** @var ShopCatalogItem|null $catalogItem */
             $catalogItem = ShopCatalogItem::query()
                 ->where('public_id', $shopItemPublicId)
@@ -67,6 +68,12 @@ final class ShopPurchaseService
             }
 
             [$currency, $unitPrice] = $this->resolvePricing($catalogItem, $selectedCurrency);
+            if ($coinUnitPrice !== null) {
+                if ($currency !== 'coins') {
+                    throw new ShopPurchaseRejectedException('invalid_currency', 'Zone prices are paid in coins.', 422);
+                }
+                $unitPrice = $coinUnitPrice;
+            }
             if ($itemDef->premium_only && $currency !== 'premium') {
                 throw new ShopPurchaseRejectedException('invalid_currency', 'This item can only be bought with premium currency.', 422);
             }
@@ -160,9 +167,10 @@ final class ShopPurchaseService
 
     /**
      * @param  list<int>  $shopCatalogItemIds
+     * @param  array<string, int>|null  $coinPriceByCode  item code => zone price, null for the catalogue prices
      * @return list<ShopPurchaseResult>
      */
-    public function checkoutWithCoins(Account $account, array $shopCatalogItemIds): array
+    public function checkoutWithCoins(Account $account, array $shopCatalogItemIds, ?array $coinPriceByCode = null): array
     {
         if ($shopCatalogItemIds === []) {
             throw new ShopPurchaseRejectedException('empty_basket', 'Your basket is empty.', 422);
@@ -171,11 +179,12 @@ final class ShopPurchaseService
             throw new ShopPurchaseRejectedException('duplicate_item', 'The same item is in your basket more than once.', 422);
         }
 
-        return DB::transaction(function () use ($account, $shopCatalogItemIds): array {
+        return DB::transaction(function () use ($account, $shopCatalogItemIds, $coinPriceByCode): array {
             $catalogItems = ShopCatalogItem::query()
                 ->whereIn('shop_catalog_item_id', $shopCatalogItemIds)
                 ->orderBy('shop_catalog_item_id')
                 ->lockForUpdate()
+                ->with('itemDef')
                 ->get()
                 ->keyBy('shop_catalog_item_id');
 
@@ -183,7 +192,18 @@ final class ShopPurchaseService
                 throw new ShopPurchaseRejectedException('invalid_shop_item', 'Shop item not found.', 404);
             }
 
-            $totalDebit = $catalogItems->sum(fn (ShopCatalogItem $catalogItem): int => $this->resolvePricing($catalogItem, 'coins')[1]);
+            $zonePrice = function (ShopCatalogItem $catalogItem) use ($coinPriceByCode): ?int {
+                if ($coinPriceByCode === null) {
+                    return null;
+                }
+                $code = (string) $catalogItem->itemDef?->code;
+                if (! array_key_exists($code, $coinPriceByCode)) {
+                    throw new ShopPurchaseRejectedException('not_sold_here', 'This item is not sold here.', 422);
+                }
+
+                return $coinPriceByCode[$code];
+            };
+            $totalDebit = $catalogItems->sum(fn (ShopCatalogItem $catalogItem): int => $zonePrice($catalogItem) ?? $this->resolvePricing($catalogItem, 'coins')[1]);
 
             $wallet = Wallet::lockForAccount((int) $account->getAuthIdentifier(), 'coins');
             if ($wallet->balance() < $totalDebit) {
@@ -195,7 +215,8 @@ final class ShopPurchaseService
                     $account,
                     (string) $catalogItems[$shopCatalogItemId]->public_id,
                     1,
-                    'coins'
+                    'coins',
+                    $zonePrice($catalogItems[$shopCatalogItemId])
                 ),
                 $shopCatalogItemIds
             );

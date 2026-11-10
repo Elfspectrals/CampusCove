@@ -36,7 +36,7 @@ interface BuildingFloor {
   layout: HouseLayout
 }
 
-const HIDDEN_INTERIOR_NODES = new Set([
+export const HIDDEN_INTERIOR_NODES = new Set([
   'Sky_Front',
   'Sky_Back',
   'Sky_West',
@@ -44,6 +44,9 @@ const HIDDEN_INTERIOR_NODES = new Set([
   'Door_Entrance',
   'Door_Entrance_Handle',
   'Door_Entrance_Sign',
+  'NPC_Bartender',
+  'NPC_Bouncer',
+  'NPC_Nurse',
 ])
 const OPEN_DOOR_ANGLE = 1.4
 const DOOR_SWING_SPEED = 3

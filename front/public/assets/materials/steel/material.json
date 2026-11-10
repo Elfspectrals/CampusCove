@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "key": "steel",
+  "label": "Steel",
+  "color": "#ced1d7",
+  "roughness": 0.3,
+  "metalness": 0.8,
+  "maps": {},
+  "source": "decor/desk_study"
+}

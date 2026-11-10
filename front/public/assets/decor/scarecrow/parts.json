@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "materials": {
+    "DC_Scarecrow": {
+      "mask": "parts_DC_Scarecrow.png",
+      "parts": [
+        {
+          "id": "main",
+          "label": "Main",
+          "color": "#e4d7b7"
+        },
+        {
+          "id": "accent",
+          "label": "Accent",
+          "color": "#a89c8b"
+        },
+        {
+          "id": "detail",
+          "label": "Detail",
+          "color": "#856952"
+        }
+      ]
+    }
+  }
+}

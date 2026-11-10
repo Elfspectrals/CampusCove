@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "key": "hw_orange",
+  "label": "Hw orange",
+  "color": "#ffffff",
+  "roughness": 0.6,
+  "metalness": 0,
+  "maps": {
+    "color": "color.webp"
+  },
+  "source": "decor/metal_shelving"
+}

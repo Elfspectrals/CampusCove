@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "materials": {
+    "DC_HwCarton": {
+      "mask": "parts_DC_HwCarton.png",
+      "parts": [
+        {
+          "id": "main",
+          "label": "Main",
+          "color": "#a57a4b"
+        },
+        {
+          "id": "accent",
+          "label": "Accent",
+          "color": "#b98d5b"
+        }
+      ]
+    },
+    "DC_HwWood": {
+      "mask": "parts_DC_HwWood.png",
+      "parts": [
+        {
+          "id": "main",
+          "label": "Main",
+          "color": "#caa46a"
+        },
+        {
+          "id": "accent",
+          "label": "Accent",
+          "color": "#b08a51"
+        }
+      ]
+    }
+  }
+}

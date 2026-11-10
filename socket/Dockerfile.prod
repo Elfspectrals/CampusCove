@@ -9,6 +9,7 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 COPY . .
 COPY --from=world world.manifest.json ./world.manifest.json
+COPY --from=world zones ./zones
 ENV WORLD_MANIFEST_URL=/app/world.manifest.json
 USER node
 EXPOSE 3000

@@ -114,8 +114,14 @@ export interface PubLayout {
 
 export interface OrchardLayout {
   trees: Vec3[]
-  farmer: Vec3
-  farmerYaw: number
+}
+
+export type Crop = 'corn' | 'potato' | 'cabbage' | 'pumpkin'
+
+export interface CropPlant {
+  zone: string
+  crop: Crop
+  position: Vec3
 }
 
 export interface WorldManifest {
@@ -129,6 +135,7 @@ export interface WorldManifest {
   clinic?: ClinicLayout
   pub?: PubLayout
   orchard?: OrchardLayout
+  crops?: CropPlant[]
 }
 
 const WORLD_MANIFEST_URL = '/assets/world.manifest.json'

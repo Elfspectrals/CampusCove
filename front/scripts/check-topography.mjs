@@ -29,7 +29,7 @@ const GROUND = /Grass|Meadow|Hill|Sand|PondBed|Path|Paving|Avenue|Asphalt|Cobble
 /** Walkable structures above the ground (jetty, bridges, gazebo floor): the walk height may sit on them. */
 const DECK = /Plank|Deck|Bridge|Step/
 /** Things a player walks through without harm: foliage, flowers, small decals and glows. */
-const SOFT = /Flower|Leaf|Reed|Bush|Blossom|Needle|Pine|Cattail|Lily|Tuft|Hay|Berry|Apple|Duck|Buoy|Line|Glow|Text|Chalk/
+const SOFT = /Flower|Leaf|Reed|Bush|Blossom|Needle|Pine|Cattail|Lily|Tuft|Hay|Berry|Apple|Crop|Duck|Buoy|Line|Glow|Text|Chalk/
 /** Low decor meant to be walked over: small rocks (r <= 0.5 m have no box by design) and the leaf base of flower beds. */
 const LOW_DECOR = /Rock|Hedge/
 const LOW_DECOR_MAX = 0.45

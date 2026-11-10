@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "materials": {
+    "DC_Barrel": {
+      "mask": "parts_DC_Barrel.png",
+      "parts": [
+        {
+          "id": "main",
+          "label": "Main",
+          "color": "#c9c9c9"
+        },
+        {
+          "id": "accent",
+          "label": "Accent",
+          "color": "#e4ba89"
+        },
+        {
+          "id": "detail",
+          "label": "Detail",
+          "color": "#bd9776"
+        }
+      ]
+    }
+  }
+}

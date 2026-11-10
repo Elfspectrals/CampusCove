@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "key": "slab",
+  "label": "Concrete slab",
+  "tileMeters": 3,
+  "maps": {
+    "color": "color.webp"
+  }
+}

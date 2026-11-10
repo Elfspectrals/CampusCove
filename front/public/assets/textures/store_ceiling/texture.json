@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "key": "store_ceiling",
+  "label": "Store ceiling",
+  "tileMeters": 2,
+  "maps": {
+    "color": "color.webp"
+  }
+}

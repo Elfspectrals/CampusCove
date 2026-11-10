@@ -1,0 +1,90 @@
+{
+  "version": 1,
+  "zone": "pub",
+  "name": "Pub",
+  "props": [
+    {
+      "id": "pub_bartender",
+      "kind": "npc",
+      "role": "bartender",
+      "position": [
+        98.3,
+        0.2,
+        -133.505
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pose": "idle",
+      "vendor": false,
+      "body": "#e0b08a",
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "short",
+          "color": "#b5562a"
+        },
+        {
+          "slot": "top",
+          "key": "tee",
+          "color": "#f2f0ea"
+        },
+        {
+          "slot": "bottom",
+          "key": "jeans",
+          "color": "#2a2c33"
+        },
+        {
+          "slot": "shoes",
+          "key": "boots",
+          "color": "#3a2a1d"
+        }
+      ]
+    },
+    {
+      "id": "pub_bouncer",
+      "kind": "npc",
+      "role": "bouncer",
+      "position": [
+        94,
+        0.2,
+        -137.955
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pose": "idle",
+      "vendor": false,
+      "body": "#8a5a3c",
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "buzz",
+          "color": "#1f1a17"
+        },
+        {
+          "slot": "top",
+          "key": "track_jacket",
+          "color": "#1f2230"
+        },
+        {
+          "slot": "bottom",
+          "key": "cargo",
+          "color": "#2a2c33"
+        },
+        {
+          "slot": "shoes",
+          "key": "high_tops",
+          "color": "#1f2230"
+        }
+      ]
+    }
+  ],
+  "areas": []
+}

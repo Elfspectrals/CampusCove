@@ -221,7 +221,7 @@ export function findStore(key: string | null | undefined): (typeof STORES)[numbe
 export const SURVIVAL_WATCH_URL = `${ROOT}/items/tools/watch/model.glb`
 export const DRINKING_FOUNTAIN_URL = `${ROOT}/park/drinking_fountain/model.glb`
 
-const CONSUMABLE_FOLDERS: ReadonlyArray<[prefix: string, folder: string]> = [
+export const CONSUMABLE_FOLDERS: ReadonlyArray<[prefix: string, folder: string]> = [
   ['food_', 'food'],
   ['candy_', 'sweets'],
   ['grocery_', 'grocery'],
@@ -229,6 +229,10 @@ const CONSUMABLE_FOLDERS: ReadonlyArray<[prefix: string, folder: string]> = [
   ['drink_', 'drinks'],
   ['farm_', 'farm'],
 ]
+
+export function isConsumableCode(code: string): boolean {
+  return CONSUMABLE_FOLDERS.some(([prefix]) => code.startsWith(prefix))
+}
 
 function consumableFolder(code: string): string {
   const match = CONSUMABLE_FOLDERS.find(([prefix]) => code.startsWith(prefix))
@@ -283,6 +287,8 @@ export interface StoreDisplay {
   size: [number, number, number]
   /** Copies lined up on the spot as [columns, rows] (small goods on a shelf); one model when omitted. */
   stack?: [number, number]
+  scale?: [number, number, number]
+  figure?: { prop: string; slot: string }
   /** Price-tag board (centre) at the edge of the route. */
   tag: { position: [number, number, number]; yaw: number }
 }

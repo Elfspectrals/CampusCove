@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "key": "terracotta",
+  "label": "Terracotta",
+  "color": "#e1aa8b",
+  "roughness": 0.85,
+  "metalness": 0,
+  "maps": {},
+  "source": "decor/cactus"
+}

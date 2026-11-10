@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "materials": {
+    "DC_FeedSacks": {
+      "mask": "parts_DC_FeedSacks.png",
+      "parts": [
+        {
+          "id": "main",
+          "label": "Main",
+          "color": "#e0deca"
+        },
+        {
+          "id": "accent",
+          "label": "Accent",
+          "color": "#c8c2aa"
+        },
+        {
+          "id": "detail",
+          "label": "Detail",
+          "color": "#c6a980"
+        }
+      ]
+    }
+  }
+}

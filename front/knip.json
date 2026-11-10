@@ -1,5 +1,6 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "entry": ["src/**/*.test.ts", "scripts/**/*.mjs", "build/**/*.ts"],
-  "project": ["src/**/*.{ts,vue,css}", "scripts/**/*.mjs", "build/**/*.ts"]
+  "project": ["src/**/*.{ts,vue,css}", "scripts/**/*.mjs", "build/**/*.ts"],
+  "ignoreDependencies": ["@tweakpane/core"]
 }

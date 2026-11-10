@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "key": "kitchen_floor",
+  "label": "Kitchen floor",
+  "tileMeters": 2,
+  "maps": {
+    "color": "color.webp"
+  }
+}

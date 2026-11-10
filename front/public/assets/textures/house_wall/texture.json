@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "key": "house_wall",
+  "label": "House wall",
+  "tileMeters": 2,
+  "maps": {
+    "color": "color.webp"
+  }
+}

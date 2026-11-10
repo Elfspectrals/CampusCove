@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "key": "leaf_light",
+  "label": "Leaf light",
+  "color": "#a6d390",
+  "roughness": 0.8,
+  "metalness": 0,
+  "maps": {},
+  "source": "decor/dresser"
+}

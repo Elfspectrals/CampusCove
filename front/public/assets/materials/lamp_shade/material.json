@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "key": "lamp_shade",
+  "label": "Lamp shade",
+  "color": "#fff7e5",
+  "roughness": 0.7,
+  "metalness": 0,
+  "maps": {},
+  "source": "decor/desk_lamp"
+}

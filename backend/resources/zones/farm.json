@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "zone": "farm",
+  "prices": {},
+  "buyers": {
+    "stand": {
+      "farm_corn": {
+        "price": 3,
+        "quota": 300,
+        "overPrice": 1
+      },
+      "farm_potato": {
+        "price": 3,
+        "quota": 300,
+        "overPrice": 1
+      },
+      "farm_cabbage": {
+        "price": 4,
+        "quota": 200,
+        "overPrice": 1
+      },
+      "farm_pumpkin": {
+        "price": 6,
+        "quota": 100,
+        "overPrice": 1
+      }
+    }
+  }
+}

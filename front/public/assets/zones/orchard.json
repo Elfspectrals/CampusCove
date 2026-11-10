@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "zone": "orchard",
+  "name": "Orchard stall",
+  "props": [
+    { "id": "p1", "kind": "decor", "key": "bar_stool", "position": [-22, 0, -82], "yaw": 0, "scale": [1, 1, 1] },
+    { "id": "p2", "kind": "item", "key": "bar_stool", "code": "decor_bar_stool", "forSale": true, "price": 70, "position": [-26, 0, -78.5], "yaw": 0, "scale": [1, 1, 1] },
+    { "id": "p3", "kind": "npc", "position": [-28, 0, -80], "yaw": 0, "scale": [1, 1, 1], "pose": "idle", "vendor": false, "body": "#c8946a", "outfit": [{ "slot": "hair", "key": "ponytail", "color": "#3b2a1f" }, { "slot": "top", "key": "tee", "color": "#2f6b4f" }, { "slot": "bottom", "key": "joggers", "color": "#33415c" }, { "slot": "shoes", "key": "sneakers", "color": "#eeeeee" }] },
+    { "id": "p4", "kind": "npc", "position": [-20, 0, -78], "yaw": 3.14, "scale": [1, 1, 1], "pose": "idle", "vendor": false, "body": "#8b6a4f", "outfit": [{ "slot": "top", "key": "tee", "color": "#a33b3b" }, { "slot": "bottom", "key": "joggers", "color": "#33415c" }] },
+    { "id": "orchard_farmer", "kind": "npc", "position": [-29.05, 0, -94.5], "yaw": -1.5708, "scale": [1, 1, 1], "pose": "idle", "vendor": false, "body": "#8b7aa8", "outfit": [{ "slot": "hair", "key": "short", "color": "#2e2018" }, { "slot": "head_accessory", "key": "straw_hat", "color": "#d8b56a" }, { "slot": "top", "key": "farm_apron", "color": "#b5362e" }, { "slot": "bottom", "key": "dungarees", "color": "#41618f" }, { "slot": "shoes", "key": "boots", "color": "#6b4a30" }] }
+  ],
+  "areas": [
+    { "id": "stall", "name": "Orchard stall", "role": "seller", "npc": "p3", "bounds": { "minX": -31, "maxX": -23, "minZ": -83, "maxZ": -75 }, "offers": [] },
+    { "id": "apple_buyer", "name": "Apple stall", "role": "buyer", "npc": "orchard_farmer", "bounds": { "minX": -31.5, "maxX": -26.5, "minZ": -97, "maxZ": -92 }, "offers": [{ "code": "farm_apple", "price": 3, "quota": 300, "overPrice": 1 }] }
+  ]
+}

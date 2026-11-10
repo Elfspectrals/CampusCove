@@ -206,6 +206,16 @@ def build_stylized_headwear(coll, arm, key, head):
         add_cyl(M, m["main"], c, (0, -0.004, 1.94), 0.114, 0.098, seg=22, sx=0.92)
         add_cyl(M, m["main"], (0, -0.004, 1.795), (0, -0.004, 1.808), 0.21, 0.21, seg=28)
         add_cyl(M, m["accent"], (0, -0.004, 1.808), (0, -0.004, 1.84), 0.1155, 0.113, seg=22, cap=False, sx=0.92)
+    elif key == "bandana":
+        # a cloth tied over the skull (the cap is merged below), a hem band on the forehead, a knot and two tails at the back
+        band = [tuple(on_head(tree, (math.sin(math.radians(a)), -math.cos(math.radians(a)), 0.32 + 0.2 * math.cos(math.radians(a))), 0.008))
+                for a in range(0, 361, 20)]
+        add_sweep(M, m["accent"], band, [(0.004, 0.012)] * len(band), seg=8, per=1, power=2.4)
+        knot = on_head(tree, (0.0, 1.0, -0.05), 0.016)
+        add_ellipsoid(M, m["main"], tuple(knot), (0.026, 0.02, 0.022), seg=10, rings=6)
+        for sg in (1, -1):
+            tail = [tuple(knot + V3((0.01 * sg, 0.006, -0.01))), tuple(knot + V3((0.024 * sg, 0.016, -0.05))), tuple(knot + V3((0.03 * sg, 0.012, -0.085)))]
+            add_sweep(M, m["main"], tail, [(0.004, 0.016), (0.004, 0.018), (0.003, 0.012)], seg=6, per=2)
     else:
         width, cup_r = HEADSET_STYLE[key]
         band = [tuple(on_head(tree, (math.sin(math.radians(a)), 0.0, math.cos(math.radians(a))), 0.019)) for a in range(-96, 97, 12)]
@@ -234,6 +244,12 @@ def build_stylized_headwear(coll, arm, key, head):
     smooth_shade(cap)
     cap.data.materials.append(hair_m)
     merge_into(ob, cap)
+    if key == "bandana":
+        cloth = head_cap(head, 0.0065, [((0, 0, 1.715), (0, 0, 1)), ((0, -0.088, 1.79), (0, 0.5, 0.87))], 0.003)
+        decimate(cloth, 600)  # two caps (hair + cloth) would pass the headwear budget
+        smooth_shade(cloth)
+        cloth.data.materials.append(m["main"])
+        merge_into(ob, cloth)
     ob.name = "Wear_head_accessory_" + key
     weight_rigid(ob, "Head")
     bind(ob, arm)
