@@ -33,12 +33,18 @@ const FARMER_COLORS = { ...DEFAULT_SLOT_COLORS, hair: '#2e2018', head_accessory:
 const FARMER_PROMPT_HEIGHT = 2.2
 const TREE_PROMPT_HEIGHT = 2.4
 
+interface Arms {
+  pick: () => void
+  cancelPick: () => void
+}
+
 export interface OrchardDeps {
   myPosition: { x: number; y: number; z: number }
   getCamera: () => THREE.Camera | undefined
   getScene: () => THREE.Scene | undefined
   canvasRef: Ref<HTMLCanvasElement | null>
   gameRoomRef: ShallowRef<Room | null>
+  getArms: () => Arms | null
   promptsHidden: () => boolean
   itemByCode: () => Record<string, ApartmentInventoryItem>
   refreshInventory: () => void
@@ -85,12 +91,20 @@ export function useOrchard(deps: OrchardDeps) {
   function startPick(tree: number): void {
     picking = { tree, startedAt: performance.now() }
     pickProgress.value = 0
+    deps.getArms()?.pick()
     deps.gameRoomRef.value?.send('orchard_pick_start', { tree })
   }
 
-  function cancelPick(): void {
+  function endPick(): void {
     picking = null
     pickProgress.value = null
+  }
+
+  function cancelPick(): void {
+    if (!picking) return
+    endPick()
+    deps.getArms()?.cancelPick()
+    deps.gameRoomRef.value?.send('orchard_pick_cancel')
   }
 
   function openMenu(): void {
@@ -124,7 +138,7 @@ export function useOrchard(deps: OrchardDeps) {
     }
     pickProgress.value = recoveryProgress(picking.startedAt, PICK_MS, performance.now())
     if (pickProgress.value < 1) return
-    cancelPick()
+    endPick()
     deps.gameRoomRef.value?.send('orchard_pick')
   }
 

@@ -4,6 +4,7 @@ import { worldOrchard } from './world.ts'
 
 export const PICK_MS = 3000
 const PICK_LAG_MARGIN_MS = 250
+export const PICK_RESTART_MS = 300
 const TREE_REACH = 2.5
 const FARMER_REACH = 3
 const EYE_HEIGHT = 1.6
@@ -15,6 +16,10 @@ function warn(context: string, error: unknown): void {
 
 function sendOrchardError(client: GameClient, message: string, code: string): void {
   client.send('orchard_error', { message, code })
+}
+
+function broadcastPicking(room: GameRoom, client: GameClient, picking: boolean): void {
+  room.forEachClient((c) => c.send('user_picking', { sessionId: client.sessionId, picking }), client)
 }
 
 function isWithinReach(player: Player, point: Vec3, reach: number): boolean {
@@ -43,7 +48,20 @@ export function onOrchardPickStart(room: GameRoom, client: GameClient, payload: 
     sendOrchardError(client, 'Get closer to the tree.', 'orchard_too_far')
     return
   }
+  if (now - player.lastPickStartAt < PICK_RESTART_MS) {
+    sendOrchardError(client, 'One apple at a time.', 'orchard_pick_cooldown')
+    return
+  }
+  player.lastPickStartAt = now
   player.orchardPick = { tree: treeIndex, startedAt: now }
+  broadcastPicking(room, client, true)
+}
+
+export function onOrchardPickCancel(room: GameRoom, client: GameClient): void {
+  const player = room.players.get(client.sessionId)
+  if (!player?.orchardPick) return
+  player.orchardPick = null
+  broadcastPicking(room, client, false)
 }
 
 export async function onOrchardPick(room: GameRoom, client: GameClient, now = Date.now()): Promise<void> {
@@ -55,6 +73,7 @@ export async function onOrchardPick(room: GameRoom, client: GameClient, now = Da
     sendOrchardError(client, 'Start picking an apple first.', 'orchard_not_picking')
     return
   }
+  broadcastPicking(room, client, false)
   if (now - pick.startedAt < PICK_MS - PICK_LAG_MARGIN_MS) {
     sendOrchardError(client, 'Keep picking a little longer.', 'orchard_too_fast')
     return

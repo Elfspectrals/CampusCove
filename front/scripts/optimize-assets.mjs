@@ -18,10 +18,10 @@ import { fileURLToPath } from 'node:url'
 const FRONT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const SRC = resolve(FRONT, '../map-src/CampusCove/out')
 const DEST = resolve(FRONT, 'public/assets')
-const CATEGORIES = ['skins', 'decor', 'houses', 'town', 'work', 'park', 'items', 'store', 'wear']
+const CATEGORIES = ['skins', 'decor', 'houses', 'town', 'work', 'park', 'items', 'store', 'wear', 'animals']
 
 /** Texture size per category: characters / props are small on screen, the town is not. */
-const TEXTURE_SIZE = { skins: 512, decor: 512, houses: 1024, town: 1024, work: 1024, park: 1024, items: 512, store: 1024, wear: 512 }
+const TEXTURE_SIZE = { skins: 512, decor: 512, houses: 1024, town: 1024, work: 1024, park: 1024, items: 512, store: 1024, wear: 512, animals: 512 }
 
 function run(cmd, args) {
   const r = spawnSync(cmd, args, { cwd: FRONT, stdio: ['ignore', 'pipe', 'pipe'], shell: process.platform === 'win32' })

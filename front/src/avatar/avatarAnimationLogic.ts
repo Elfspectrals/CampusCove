@@ -9,8 +9,10 @@ export type AvatarClipName = 'Idle' | 'Walk' | 'Run'
 
 export const WALK_ENTER = 0.5
 const WALK_EXIT = 0.25
-export const RUN_ENTER = 5
-const RUN_EXIT = 3.5
+export const RUN_ENTER = 6.7
+export const RUN_EXIT = 5.8
+export const WALK_DESIGN_SPEED = 5
+export const RUN_DESIGN_SPEED = 8.5
 const MIN_HOLD_S = 0.18
 /** Longest frame step fed to the animation system (a background tab can report several seconds). */
 export const MAX_DT_S = 0.1
@@ -23,8 +25,20 @@ export function clampDt(dt: number): number {
   return Math.min(dt, MAX_DT_S)
 }
 
+function timeScaleFor(speed: number, designSpeed: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, speed / designSpeed))
+}
+
 export function walkTimeScale(speed: number): number {
-  return Math.max(0.6, Math.min(1.4, speed / 2.5))
+  return timeScaleFor(speed, WALK_DESIGN_SPEED, 0.6, 1.3)
+}
+
+export function runTimeScale(speed: number): number {
+  return timeScaleFor(speed, RUN_DESIGN_SPEED, 0.8, 1.3)
+}
+
+export function firstPersonWalkTimeScale(speed: number): number {
+  return timeScaleFor(speed, WALK_DESIGN_SPEED, 0.8, 1.3)
 }
 
 export class AvatarClipSelector {
@@ -44,7 +58,18 @@ export class AvatarClipSelector {
       this.clip = wanted
       this.heldFor = 0
     }
-    return { clip: this.clip, timeScale: this.clip === 'Walk' ? walkTimeScale(this.speed) : 1 }
+    return { clip: this.clip, timeScale: this.timeScale() }
+  }
+
+  private timeScale(): number {
+    switch (this.clip) {
+      case 'Walk':
+        return walkTimeScale(this.speed)
+      case 'Run':
+        return runTimeScale(this.speed)
+      default:
+        return 1
+    }
   }
 
   private wantedClip(): AvatarClipName {

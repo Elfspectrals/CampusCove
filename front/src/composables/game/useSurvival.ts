@@ -22,6 +22,7 @@ type Arms = {
   leftHand: () => THREE.Object3D | null
   raiseWatch: (raised: boolean) => void
   eat: () => void
+  drink: () => void
   isEating: () => boolean
 }
 
@@ -194,7 +195,7 @@ export function useSurvival(deps: SurvivalDeps) {
   function sip(): void {
     if (!nearFountain() || knockedOut.value || recovery.value || fountainDry()) return
     deps.gameRoomRef.value?.send('drink_fountain')
-    deps.getArms()?.eat()
+    deps.getArms()?.drink()
     particles?.burst('drink')
   }
 
@@ -213,9 +214,11 @@ export function useSurvival(deps: SurvivalDeps) {
     if (!item) return false
     const arms = deps.getArms()
     if (arms?.isEating()) return true
-    arms?.eat()
+    const kind = item.code.includes('water') || item.code.includes('juice') || item.code.includes('coffee') ? 'drink' : 'eat'
+    if (kind === 'drink') arms?.drink()
+    else arms?.eat()
     deps.gameRoomRef.value?.send('consume', { code: item.code })
-    window.setTimeout(() => particles?.burst((item.code.includes('water') || item.code.includes('juice') || item.code.includes('coffee')) ? 'drink' : 'eat'), 350)
+    window.setTimeout(() => particles?.burst(kind), 350)
     return true
   }
 
