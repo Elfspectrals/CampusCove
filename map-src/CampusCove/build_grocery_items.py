@@ -3,9 +3,7 @@
 Same contract as build_food_items.py: metres, origin centre-bottom, a few hundred triangles, IT_ materials,
 out/items/grocery/<key>/{model.glb,preview.png}. Then `cd front && npm run assets:optimize -- items`.
 """
-import contextlib
 import importlib
-import io
 import math
 import os
 import sys
@@ -360,52 +358,6 @@ def yogurt_cup():
 
 
 # ---------------------------------------------------------------- export + preview
-def preview(obj, path):
-    corners = [obj.matrix_world @ Vector(c) for c in obj.bound_box]
-    ctr = sum(corners, Vector()) / 8
-    cam_data = bpy.data.cameras.new("PV_cam")
-    cam_data.type = "ORTHO"
-    cam = bpy.data.objects.new("PV_cam", cam_data)
-    sc.collection.objects.link(cam)
-    cam.location = ctr + Vector((0.5, -0.9, 0.7)).normalized() * 3
-    cam.rotation_euler = (ctr - cam.location).to_track_quat("-Z", "Y").to_euler()
-    bpy.context.view_layer.update()
-    inv = cam.matrix_world.inverted()
-    pts = [inv @ c for c in corners]
-    w = max(p.x for p in pts) - min(p.x for p in pts)
-    h = max(p.y for p in pts) - min(p.y for p in pts)
-    cam_data.ortho_scale = max(w, h) * 1.12
-    cam_data.shift_x = (max(p.x for p in pts) + min(p.x for p in pts)) / 2 / cam_data.ortho_scale
-    cam_data.shift_y = (max(p.y for p in pts) + min(p.y for p in pts)) / 2 / cam_data.ortho_scale
-    sc.camera = cam
-    sun = bpy.data.objects.new("PV_sun", bpy.data.lights.new("PV_sun", "SUN"))
-    sun.data.energy = 2.6
-    sun.rotation_euler = (0.8, 0.3, 0.7)
-    sc.collection.objects.link(sun)
-    sc.render.engine = "BLENDER_EEVEE"
-    if sc.world is None:
-        sc.world = bpy.data.worlds.new("PV_world")
-        sc.world.use_nodes = True
-        bg = next(n for n in sc.world.node_tree.nodes if n.type == "BACKGROUND")
-        bg.inputs[0].default_value = (0.42, 0.45, 0.55, 1.0)
-        bg.inputs[1].default_value = 0.9
-    sc.view_settings.view_transform = "Standard"
-    sc.render.resolution_x = sc.render.resolution_y = 512
-    sc.render.film_transparent = True
-    sc.render.filepath = path
-    sc.render.image_settings.file_format = "PNG"
-    sc.render.image_settings.color_mode = "RGBA"
-    hidden = [o for o in sc.objects if o.type == "MESH" and o is not obj and not o.hide_render]
-    for o in hidden:
-        o.hide_render = True
-    with contextlib.redirect_stdout(io.StringIO()):
-        bpy.ops.render.render(write_still=True)
-    for o in hidden:
-        o.hide_render = False
-    bpy.data.objects.remove(cam, do_unlink=True)
-    bpy.data.objects.remove(sun, do_unlink=True)
-
-
 def ship(key, parts, group="grocery"):
     obj = L.join(coll, key, parts)
     obj.location = (0, 0, 0)
@@ -421,32 +373,14 @@ def ship(key, parts, group="grocery"):
     out = os.path.join(L.OUT_ROOT, "items", group, key)
     os.makedirs(out, exist_ok=True)
     L.export_glb(os.path.join(out, "model.glb"), [obj])
-    preview(obj, os.path.join(out, "preview.png"))
+    L.render_preview(sc, obj, os.path.join(out, "preview.png"))
     tris = sum(len(p.vertices) - 2 for p in obj.data.polygons)
     obj.location.x += 0.6 * len(results)
     return {"key": key, "tris": tris, "mats": len(obj.data.materials), "dims": tuple(round(x, 3) for x in obj.dimensions)}
 
 
 def ai_model(slug, material):
-    def build():
-        before = set(bpy.data.objects)
-        bpy.ops.import_scene.gltf(filepath=os.path.join(L.OUT_ROOT, "ai", slug, "model.glb"))
-        imported = [o for o in bpy.data.objects if o not in before]
-        bpy.context.view_layer.update()
-        meshes = [o for o in imported if o.type == "MESH"]
-        for o in meshes:
-            world = o.matrix_world.copy()
-            o.parent = None
-            o.matrix_world = world
-            for c in list(o.users_collection):
-                c.objects.unlink(o)
-            coll.objects.link(o)
-        for o in imported:
-            if o.type != "MESH":
-                bpy.data.objects.remove(o, do_unlink=True)
-        L.project_ref_image(meshes, os.path.join(L.OUT_ROOT, "ai", slug, "ref.png"), f"IT_Crop_{material}")
-        return meshes
-    return build
+    return lambda: L.import_ai_model(coll, slug, f"IT_Crop_{material}")
 
 
 FARM = {
@@ -456,6 +390,8 @@ FARM = {
     "pumpkin": ai_model("a_single_round_orange_pumpkin_with_a_sho", "Pumpkin"),
     "corn_plant": ai_model("a_single_tall_corn_plant_with_green_leav", "CornPlant"),
     "potato_plant": ai_model("a_single_small_potato_plant_leafy_green_", "PotatoPlant"),
+    "egg": ai_model("a_single_white_chicken_egg_three_quarter", "Egg"),
+    "milk": ai_model("a_single_glass_bottle_of_milk_with_a_blu", "Milk"),
 }
 
 GROCERY = {

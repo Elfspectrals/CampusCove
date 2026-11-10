@@ -163,16 +163,6 @@
       "yaw": 0.0
     },
     {
-      "name": "COL_Farm_House_Door_south0_Leaf",
-      "cx": -36.0,
-      "cz": -142.0,
-      "hx": 0.52,
-      "hz": 0.025,
-      "hy": 0.99,
-      "cy": 0.99,
-      "yaw": 0.0
-    },
-    {
       "name": "COL_Farm_House_Wall_north_00",
       "cx": -36.0,
       "cz": -135.0,
@@ -443,13 +433,83 @@
       "yaw": 0.0
     },
     {
-      "name": "COL_Farm_Barn_Door_east0_Leaf",
-      "cx": -16.0,
-      "cz": -145.0,
+      "name": "COL_Farm_House_DoorOpen",
+      "cx": -36.475,
+      "cz": -141.355,
       "hx": 0.025,
-      "hz": 1.92,
-      "hy": 1.74,
-      "cy": 1.74,
+      "hz": 0.5,
+      "hy": 0.98,
+      "cy": 1.02,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_Barn_DoorOpenN",
+      "cx": -15.8,
+      "cz": -142.0,
+      "hx": 0.03,
+      "hz": 1.0,
+      "hy": 1.75,
+      "cy": 1.75,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_Barn_DoorOpenS",
+      "cx": -15.8,
+      "cz": -148.0,
+      "hx": 0.03,
+      "hz": 1.0,
+      "hy": 1.75,
+      "cy": 1.75,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_Barn_Stall0",
+      "cx": -26.55,
+      "cz": -148.6,
+      "hx": 1.3,
+      "hz": 0.04,
+      "hy": 0.655,
+      "cy": 0.695,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_Barn_Stall1",
+      "cx": -26.55,
+      "cz": -145.3,
+      "hx": 1.3,
+      "hz": 0.04,
+      "hy": 0.655,
+      "cy": 0.695,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_Barn_LoftPost0",
+      "cx": -24.0,
+      "cz": -142.1,
+      "hx": 0.1,
+      "hz": 0.1,
+      "hy": 1.28,
+      "cy": 1.32,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_Barn_LoftPost1",
+      "cx": -20.0,
+      "cz": -142.1,
+      "hx": 0.1,
+      "hz": 0.1,
+      "hy": 1.28,
+      "cy": 1.32,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_Barn_LadderCol",
+      "cx": -18.25,
+      "cz": -142.26,
+      "hx": 0.28,
+      "hz": 0.05,
+      "hy": 1.28,
+      "cy": 1.32,
       "yaw": 0.0
     },
     {
@@ -501,6 +561,726 @@
       "hy": 0.6,
       "cy": 0.6,
       "yaw": -1.5708
+    },
+    {
+      "name": "COL_Farm_ZD_house_counter_0",
+      "cx": -38.89,
+      "cy": 0.588,
+      "cz": -135.65,
+      "hx": 0.6,
+      "hy": 0.547,
+      "hz": 0.35,
+      "yaw": 3.1416
+    },
+    {
+      "name": "COL_Farm_ZD_house_counter_1",
+      "cx": -38.94,
+      "cy": 0.588,
+      "cz": -135.6,
+      "hx": 0.65,
+      "hy": 0.547,
+      "hz": 0.3,
+      "yaw": 3.1416
+    },
+    {
+      "name": "COL_Farm_ZD_house_stove_0",
+      "cx": -37.7,
+      "cy": 0.58,
+      "cz": -135.65,
+      "hx": 0.3,
+      "hy": 0.54,
+      "hz": 0.35,
+      "yaw": 3.1416
+    },
+    {
+      "name": "COL_Farm_ZD_house_stove_1",
+      "cx": -37.75,
+      "cy": 0.58,
+      "cz": -135.6,
+      "hx": 0.35,
+      "hy": 0.54,
+      "hz": 0.3,
+      "yaw": 3.1416
+    },
+    {
+      "name": "COL_Farm_ZD_house_fridge_0",
+      "cx": -32.7,
+      "cy": 0.865,
+      "cz": -135.75,
+      "hx": 0.35,
+      "hy": 0.825,
+      "hz": 0.4,
+      "yaw": 3.1416
+    },
+    {
+      "name": "COL_Farm_ZD_house_fridge_1",
+      "cx": -32.75,
+      "cy": 0.865,
+      "cz": -135.7,
+      "hx": 0.4,
+      "hy": 0.825,
+      "hz": 0.35,
+      "yaw": 3.1416
+    },
+    {
+      "name": "COL_Farm_ZD_house_table_0",
+      "cx": -35.8,
+      "cy": 0.565,
+      "cz": -138.375,
+      "hx": 0.7,
+      "hy": 0.525,
+      "hz": 0.45,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_house_chair_w_0",
+      "cx": -36.87,
+      "cy": 0.555,
+      "cz": -138.42,
+      "hx": 0.25,
+      "hy": 0.515,
+      "hz": 0.25,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_Farm_ZD_house_chair_e_0",
+      "cx": -34.73,
+      "cy": 0.555,
+      "cz": -138.38,
+      "hx": 0.25,
+      "hy": 0.515,
+      "hz": 0.25,
+      "yaw": -1.5708
+    },
+    {
+      "name": "COL_Farm_ZD_house_bed_0",
+      "cx": -38.8,
+      "cy": 0.503,
+      "cz": -140.645,
+      "hx": 0.55,
+      "hy": 0.463,
+      "hz": 1.05,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_Farm_ZD_house_dresser_0",
+      "cx": -33.61,
+      "cy": 0.615,
+      "cz": -141.35,
+      "hx": 0.6,
+      "hy": 0.575,
+      "hz": 0.3,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_house_dresser_1",
+      "cx": -33.56,
+      "cy": 0.615,
+      "cz": -141.4,
+      "hx": 0.65,
+      "hy": 0.575,
+      "hz": 0.25,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_house_lamp_0",
+      "cx": -37.195,
+      "cy": 0.91,
+      "cz": -141.395,
+      "hx": 0.25,
+      "hy": 0.87,
+      "hz": 0.25,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_barn_hay_1_0",
+      "cx": -26.4,
+      "cy": 0.639,
+      "cz": -150.304,
+      "hx": 0.4,
+      "hy": 0.599,
+      "hz": 0.6,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_Farm_ZD_barn_hay_1_1",
+      "cx": -26.351,
+      "cy": 0.639,
+      "cz": -150.554,
+      "hx": 0.15,
+      "hy": 0.599,
+      "hz": 0.65,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_Farm_ZD_barn_hay_2_0",
+      "cx": -26.4,
+      "cy": 0.639,
+      "cz": -147.004,
+      "hx": 0.4,
+      "hy": 0.599,
+      "hz": 0.6,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_Farm_ZD_barn_hay_2_1",
+      "cx": -26.351,
+      "cy": 0.639,
+      "cz": -147.254,
+      "hx": 0.15,
+      "hy": 0.599,
+      "hz": 0.65,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_Farm_ZD_barn_loft_hay_1_0",
+      "cx": -25.496,
+      "cy": 3.349,
+      "cz": -140.3,
+      "hx": 0.4,
+      "hy": 0.599,
+      "hz": 0.6,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_barn_loft_hay_1_1",
+      "cx": -25.246,
+      "cy": 3.349,
+      "cz": -140.251,
+      "hx": 0.15,
+      "hy": 0.599,
+      "hz": 0.65,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_barn_loft_hay_2_0",
+      "cx": -21.997,
+      "cy": 3.349,
+      "cz": -140.002,
+      "hx": 0.4,
+      "hy": 0.599,
+      "hz": 0.6,
+      "yaw": 0.4
+    },
+    {
+      "name": "COL_Farm_ZD_barn_loft_hay_2_1",
+      "cx": -21.747,
+      "cy": 3.349,
+      "cz": -140.053,
+      "hx": 0.15,
+      "hy": 0.599,
+      "hz": 0.65,
+      "yaw": 0.4
+    },
+    {
+      "name": "COL_Farm_ZD_barn_loft_hay_3_0",
+      "cx": -19.8,
+      "cy": 3.349,
+      "cz": -139.304,
+      "hx": 0.4,
+      "hy": 0.599,
+      "hz": 0.6,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_Farm_ZD_barn_loft_hay_3_1",
+      "cx": -19.751,
+      "cy": 3.349,
+      "cz": -139.554,
+      "hx": 0.15,
+      "hy": 0.599,
+      "hz": 0.65,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_Farm_ZD_barn_sacks_0",
+      "cx": -17.201,
+      "cy": 0.388,
+      "cz": -150.881,
+      "hx": 0.35,
+      "hy": 0.348,
+      "hz": 0.35,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_barn_sacks_1",
+      "cx": -17.151,
+      "cy": 0.385,
+      "cz": -151.181,
+      "hx": 0.4,
+      "hy": 0.345,
+      "hz": 0.05,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_barn_barrel_0",
+      "cx": -17.259,
+      "cy": 0.488,
+      "cz": -149.369,
+      "hx": 0.35,
+      "hy": 0.448,
+      "hz": 0.35,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_barn_barrel_1",
+      "cx": -17.309,
+      "cy": 0.488,
+      "cz": -149.419,
+      "hx": 0.4,
+      "hy": 0.448,
+      "hz": 0.3,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_barn_barrel_2",
+      "cx": -17.309,
+      "cy": 0.488,
+      "cz": -149.419,
+      "hx": 0.3,
+      "hy": 0.448,
+      "hz": 0.4,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_barn_barrel_3",
+      "cx": -17.309,
+      "cy": 0.488,
+      "cz": -149.369,
+      "hx": 0.2,
+      "hy": 0.448,
+      "hz": 0.45,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_barn_barrel_4",
+      "cx": -17.259,
+      "cy": 0.487,
+      "cz": -149.369,
+      "hx": 0.45,
+      "hy": 0.447,
+      "hz": 0.15,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_barn_churn_0",
+      "cx": -18.587,
+      "cy": 0.387,
+      "cz": -151.084,
+      "hx": 0.2,
+      "hy": 0.347,
+      "hz": 0.2,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_barn_tools_0",
+      "cx": -22.046,
+      "cy": 0.845,
+      "cz": -151.236,
+      "hx": 0.7,
+      "hy": 0.805,
+      "hz": 0.1,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_barn_can_0",
+      "cx": -20.153,
+      "cy": 0.213,
+      "cz": -151.202,
+      "hx": 0.25,
+      "hy": 0.173,
+      "hz": 0.1,
+      "yaw": 0.6
+    },
+    {
+      "name": "COL_Farm_ZD_barn_can_1",
+      "cx": -20.264,
+      "cy": 0.213,
+      "cz": -151.187,
+      "hx": 0.15,
+      "hy": 0.173,
+      "hz": 0.15,
+      "yaw": 0.6
+    },
+    {
+      "name": "COL_Farm_ZD_barn_can_2",
+      "cx": -20.318,
+      "cy": 0.213,
+      "cz": -151.089,
+      "hx": 0.05,
+      "hy": 0.173,
+      "hz": 0.2,
+      "yaw": 0.6
+    },
+    {
+      "name": "COL_Farm_ZD_yard_coop_0",
+      "cx": -30.152,
+      "cy": 0.717,
+      "cz": -136.648,
+      "hx": 0.55,
+      "hy": 0.697,
+      "hz": 0.6,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_Farm_ZD_yard_coop_1",
+      "cx": -30.102,
+      "cy": 0.717,
+      "cz": -136.598,
+      "hx": 0.5,
+      "hy": 0.697,
+      "hz": 0.65,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_Farm_ZD_yard_coop_2",
+      "cx": -30.052,
+      "cy": 0.717,
+      "cz": -136.598,
+      "hx": 0.3,
+      "hy": 0.697,
+      "hz": 0.7,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_Farm_ZD_yard_coop_3",
+      "cx": -30.003,
+      "cy": 0.669,
+      "cz": -136.398,
+      "hx": 0.1,
+      "hy": 0.649,
+      "hz": 0.75,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_Farm_ZD_yard_coop_4",
+      "cx": -30.003,
+      "cy": 0.67,
+      "cz": -136.798,
+      "hx": 0.1,
+      "hy": 0.65,
+      "hz": 0.75,
+      "yaw": 1.5708
+    },
+    {
+      "name": "COL_Farm_ZD_yard_trough_0",
+      "cx": -21.955,
+      "cy": 0.319,
+      "cz": -136.591,
+      "hx": 1,
+      "hy": 0.299,
+      "hz": 0.4,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_yard_well_0",
+      "cx": -12.527,
+      "cy": 0.97,
+      "cz": -152.478,
+      "hx": 0.85,
+      "hy": 0.95,
+      "hz": 0.8,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_yard_well_1",
+      "cx": -12.527,
+      "cy": 0.97,
+      "cz": -152.478,
+      "hx": 0.75,
+      "hy": 0.95,
+      "hz": 0.9,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_yard_well_2",
+      "cx": -12.477,
+      "cy": 0.97,
+      "cz": -152.478,
+      "hx": 0.9,
+      "hy": 0.95,
+      "hz": 0.7,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_yard_well_3",
+      "cx": -12.527,
+      "cy": 0.97,
+      "cz": -152.529,
+      "hx": 0.95,
+      "hy": 0.95,
+      "hz": 0.65,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_yard_well_4",
+      "cx": -12.477,
+      "cy": 0.97,
+      "cz": -152.529,
+      "hx": 0.6,
+      "hy": 0.95,
+      "hz": 0.95,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_yard_well_5",
+      "cx": -12.477,
+      "cy": 0.97,
+      "cz": -152.529,
+      "hx": 1,
+      "hy": 0.95,
+      "hz": 0.55,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_yard_well_6",
+      "cx": -12.527,
+      "cy": 0.97,
+      "cz": -152.478,
+      "hx": 0.55,
+      "hy": 0.95,
+      "hz": 1,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_yard_well_7",
+      "cx": -12.527,
+      "cy": 0.97,
+      "cz": -152.478,
+      "hx": 1.05,
+      "hy": 0.95,
+      "hz": 0.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_yard_well_8",
+      "cx": -12.477,
+      "cy": 0.97,
+      "cz": -152.529,
+      "hx": 0.5,
+      "hy": 0.95,
+      "hz": 1.05,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_yard_well_9",
+      "cx": -12.527,
+      "cy": 0.97,
+      "cz": -152.478,
+      "hx": 0.35,
+      "hy": 0.95,
+      "hz": 1.1,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_yard_well_10",
+      "cx": -12.477,
+      "cy": 0.97,
+      "cz": -152.478,
+      "hx": 1.1,
+      "hy": 0.95,
+      "hz": 0.3,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_yard_hay_1_0",
+      "cx": -14.196,
+      "cy": 0.619,
+      "cz": -139.602,
+      "hx": 0.4,
+      "hy": 0.599,
+      "hz": 0.6,
+      "yaw": 0.3
+    },
+    {
+      "name": "COL_Farm_ZD_yard_hay_1_1",
+      "cx": -13.943,
+      "cy": 0.619,
+      "cz": -139.628,
+      "hx": 0.15,
+      "hy": 0.599,
+      "hz": 0.65,
+      "yaw": 0.3
+    },
+    {
+      "name": "COL_Farm_ZD_yard_hay_2_0",
+      "cx": -13.999,
+      "cy": 0.619,
+      "cz": -137.004,
+      "hx": 0.4,
+      "hy": 0.599,
+      "hz": 0.6,
+      "yaw": 1.2
+    },
+    {
+      "name": "COL_Farm_ZD_yard_hay_2_1",
+      "cx": -13.862,
+      "cy": 0.619,
+      "cz": -137.219,
+      "hx": 0.15,
+      "hy": 0.599,
+      "hz": 0.65,
+      "yaw": 1.2
+    },
+    {
+      "name": "COL_Farm_ZD_yard_barrow_0",
+      "cx": -24.041,
+      "cy": 0.355,
+      "cz": -160.826,
+      "hx": 0.35,
+      "hy": 0.335,
+      "hz": 0.5,
+      "yaw": 0.4
+    },
+    {
+      "name": "COL_Farm_ZD_yard_barrow_1",
+      "cx": -23.806,
+      "cy": 0.355,
+      "cz": -160.654,
+      "hx": 0.1,
+      "hy": 0.335,
+      "hz": 0.75,
+      "yaw": 0.4
+    },
+    {
+      "name": "COL_Farm_ZD_yard_barrow_2",
+      "cx": -24.22,
+      "cy": 0.355,
+      "cz": -160.479,
+      "hx": 0.05,
+      "hy": 0.335,
+      "hz": 0.75,
+      "yaw": 0.4
+    },
+    {
+      "name": "COL_Farm_ZD_yard_barrow_3",
+      "cx": -23.921,
+      "cy": 0.195,
+      "cz": -159.899,
+      "hx": 0.1,
+      "hy": 0.175,
+      "hz": 0.1,
+      "yaw": 0.4
+    },
+    {
+      "name": "COL_Farm_ZD_yard_crate_1_0",
+      "cx": -26.575,
+      "cy": 0.242,
+      "cz": -160.381,
+      "hx": 0.25,
+      "hy": 0.222,
+      "hz": 0.25,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Farm_ZD_yard_crate_2_0",
+      "cx": -6.57,
+      "cy": 0.242,
+      "cz": -160.389,
+      "hx": 0.25,
+      "hy": 0.222,
+      "hz": 0.25,
+      "yaw": 0.3
+    },
+    {
+      "name": "COL_Farm_ZD_field_scarecrow_corn_0",
+      "cx": -33.897,
+      "cy": 0.917,
+      "cz": -179.454,
+      "hx": 0.35,
+      "hy": 0.897,
+      "hz": 0.3,
+      "yaw": 0.3
+    },
+    {
+      "name": "COL_Farm_ZD_field_scarecrow_corn_1",
+      "cx": -33.93,
+      "cy": 0.917,
+      "cz": -179.392,
+      "hx": 0.4,
+      "hy": 0.897,
+      "hz": 0.25,
+      "yaw": 0.3
+    },
+    {
+      "name": "COL_Farm_ZD_field_scarecrow_corn_2",
+      "cx": -33.897,
+      "cy": 0.917,
+      "cz": -179.454,
+      "hx": 0.25,
+      "hy": 0.897,
+      "hz": 0.4,
+      "yaw": 0.3
+    },
+    {
+      "name": "COL_Farm_ZD_field_scarecrow_corn_3",
+      "cx": -33.897,
+      "cy": 0.917,
+      "cz": -179.454,
+      "hx": 0.45,
+      "hy": 0.897,
+      "hz": 0.2,
+      "yaw": 0.3
+    },
+    {
+      "name": "COL_Farm_ZD_field_scarecrow_corn_4",
+      "cx": -33.882,
+      "cy": 0.917,
+      "cz": -179.407,
+      "hx": 0.05,
+      "hy": 0.897,
+      "hz": 0.45,
+      "yaw": 0.3
+    },
+    {
+      "name": "COL_Farm_ZD_field_scarecrow_pumpkin_0",
+      "cx": -15.795,
+      "cy": 0.917,
+      "cz": -190.301,
+      "hx": 0.35,
+      "hy": 0.897,
+      "hz": 0.3,
+      "yaw": -0.4
+    },
+    {
+      "name": "COL_Farm_ZD_field_scarecrow_pumpkin_1",
+      "cx": -15.861,
+      "cy": 0.917,
+      "cz": -190.275,
+      "hx": 0.4,
+      "hy": 0.897,
+      "hz": 0.25,
+      "yaw": -0.4
+    },
+    {
+      "name": "COL_Farm_ZD_field_scarecrow_pumpkin_2",
+      "cx": -15.795,
+      "cy": 0.917,
+      "cz": -190.301,
+      "hx": 0.25,
+      "hy": 0.897,
+      "hz": 0.4,
+      "yaw": -0.4
+    },
+    {
+      "name": "COL_Farm_ZD_field_scarecrow_pumpkin_3",
+      "cx": -15.795,
+      "cy": 0.917,
+      "cz": -190.301,
+      "hx": 0.45,
+      "hy": 0.897,
+      "hz": 0.2,
+      "yaw": -0.4
+    },
+    {
+      "name": "COL_Farm_ZD_field_scarecrow_pumpkin_4",
+      "cx": -15.815,
+      "cy": 0.917,
+      "cz": -190.255,
+      "hx": 0.05,
+      "hy": 0.897,
+      "hz": 0.45,
+      "yaw": -0.4
     }
   ],
   "crops": [

@@ -6292,6 +6292,666 @@
           4.205
         ]
       ]
+    },
+    {
+      "id": "house_counter",
+      "kind": "decor",
+      "key": "kitchen_counter",
+      "position": [
+        -38.9,
+        0.04,
+        -135.6
+      ],
+      "yaw": 3.141592653589793,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "house_stove",
+      "kind": "decor",
+      "key": "stove_oven",
+      "position": [
+        -37.7,
+        0.04,
+        -135.6
+      ],
+      "yaw": 3.141592653589793,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "house_fridge",
+      "kind": "decor",
+      "key": "fridge_retro",
+      "position": [
+        -32.7,
+        0.04,
+        -135.7
+      ],
+      "yaw": 3.141592653589793,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "house_rug",
+      "kind": "decor",
+      "key": "rug_round",
+      "position": [
+        -35.8,
+        0.04,
+        -138.4
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "house_table",
+      "kind": "decor",
+      "key": "dining_table",
+      "position": [
+        -35.8,
+        0.04,
+        -138.4
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "house_chair_w",
+      "kind": "decor",
+      "key": "wooden_chair",
+      "position": [
+        -36.9,
+        0.04,
+        -138.4
+      ],
+      "yaw": 1.5707963267948966,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "house_chair_e",
+      "kind": "decor",
+      "key": "wooden_chair",
+      "position": [
+        -34.7,
+        0.04,
+        -138.4
+      ],
+      "yaw": -1.5707963267948966,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "house_bed",
+      "kind": "decor",
+      "key": "bed_single",
+      "position": [
+        -38.8,
+        0.04,
+        -140.6
+      ],
+      "yaw": 1.5707963267948966,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "house_dresser",
+      "kind": "decor",
+      "key": "dresser",
+      "position": [
+        -33.6,
+        0.04,
+        -141.4
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "house_lamp",
+      "kind": "decor",
+      "key": "floor_lamp",
+      "position": [
+        -37.2,
+        0.04,
+        -141.4
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "barn_hay_1",
+      "kind": "decor",
+      "key": "hay_bale_round",
+      "position": [
+        -26.4,
+        0.04,
+        -150.3
+      ],
+      "yaw": 1.5707963267948966,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "barn_hay_2",
+      "kind": "decor",
+      "key": "hay_bale_round",
+      "position": [
+        -26.4,
+        0.04,
+        -147
+      ],
+      "yaw": 1.5707963267948966,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "barn_loft_hay_1",
+      "kind": "decor",
+      "key": "hay_bale_round",
+      "position": [
+        -25.5,
+        2.75,
+        -140.3
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "barn_loft_hay_2",
+      "kind": "decor",
+      "key": "hay_bale_round",
+      "position": [
+        -22,
+        2.75,
+        -140
+      ],
+      "yaw": 0.4,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "barn_loft_hay_3",
+      "kind": "decor",
+      "key": "hay_bale_round",
+      "position": [
+        -19.8,
+        2.75,
+        -139.3
+      ],
+      "yaw": 1.5707963267948966,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "barn_sacks",
+      "kind": "decor",
+      "key": "feed_sacks",
+      "position": [
+        -17.2,
+        0.04,
+        -150.9
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "barn_barrel",
+      "kind": "decor",
+      "key": "wooden_barrel",
+      "position": [
+        -17.3,
+        0.04,
+        -149.4
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "barn_churn",
+      "kind": "decor",
+      "key": "milk_churn",
+      "position": [
+        -18.6,
+        0.04,
+        -151.1
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "barn_tools",
+      "kind": "decor",
+      "key": "tool_rack",
+      "position": [
+        -22.2,
+        0.04,
+        -151.3
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "barn_can",
+      "kind": "decor",
+      "key": "watering_can",
+      "position": [
+        -20.2,
+        0.04,
+        -151.2
+      ],
+      "yaw": 0.6,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "barn_milk_1",
+      "kind": "item",
+      "key": "milk",
+      "code": "farm_milk",
+      "forSale": false,
+      "position": [
+        -19.1,
+        0.04,
+        -150.7
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "barn_milk_2",
+      "kind": "item",
+      "key": "milk",
+      "code": "farm_milk",
+      "forSale": false,
+      "position": [
+        -18.9,
+        0.04,
+        -150.5
+      ],
+      "yaw": 0.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "yard_coop",
+      "kind": "decor",
+      "key": "chicken_coop",
+      "position": [
+        -30,
+        0.02,
+        -136.6
+      ],
+      "yaw": 1.5707963267948966,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "yard_egg_1",
+      "kind": "item",
+      "key": "egg",
+      "code": "farm_egg",
+      "forSale": false,
+      "position": [
+        -29.4,
+        0.02,
+        -138.4
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "yard_egg_2",
+      "kind": "item",
+      "key": "egg",
+      "code": "farm_egg",
+      "forSale": false,
+      "position": [
+        -29.2,
+        0.02,
+        -138.6
+      ],
+      "yaw": 0.8,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "yard_egg_3",
+      "kind": "item",
+      "key": "egg",
+      "code": "farm_egg",
+      "forSale": false,
+      "position": [
+        -29.5,
+        0.02,
+        -138.7
+      ],
+      "yaw": 1.9,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "yard_trough",
+      "kind": "decor",
+      "key": "water_trough",
+      "position": [
+        -22,
+        0.02,
+        -136.6
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "yard_well",
+      "kind": "decor",
+      "key": "stone_well",
+      "position": [
+        -12.5,
+        0.02,
+        -152.5
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "yard_hay_1",
+      "kind": "decor",
+      "key": "hay_bale_round",
+      "position": [
+        -14.2,
+        0.02,
+        -139.6
+      ],
+      "yaw": 0.3,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "yard_hay_2",
+      "kind": "decor",
+      "key": "hay_bale_round",
+      "position": [
+        -14,
+        0.02,
+        -137
+      ],
+      "yaw": 1.2,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "yard_barrow",
+      "kind": "decor",
+      "key": "wheelbarrow",
+      "position": [
+        -24,
+        0.02,
+        -160.6
+      ],
+      "yaw": 0.4,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "yard_crate_1",
+      "kind": "decor",
+      "key": "vegetable_crate",
+      "position": [
+        -26.6,
+        0.02,
+        -160.4
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "yard_crate_2",
+      "kind": "decor",
+      "key": "vegetable_crate",
+      "position": [
+        -6.6,
+        0.02,
+        -160.4
+      ],
+      "yaw": 0.3,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "field_scarecrow_corn",
+      "kind": "decor",
+      "key": "scarecrow",
+      "position": [
+        -33.9,
+        0.02,
+        -179.45
+      ],
+      "yaw": 0.3,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "field_scarecrow_pumpkin",
+      "kind": "decor",
+      "key": "scarecrow",
+      "position": [
+        -15.8,
+        0.02,
+        -190.3
+      ],
+      "yaw": -0.4,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "farmer",
+      "kind": "npc",
+      "position": [
+        -13.8,
+        0.02,
+        -141.6
+      ],
+      "yaw": -1.5707963267948966,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pose": "idle",
+      "vendor": false,
+      "body": "#c8946a",
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "short",
+          "color": "#3b2a1f"
+        },
+        {
+          "slot": "head_accessory",
+          "key": "straw_hat",
+          "color": "#d8b56a"
+        },
+        {
+          "slot": "top",
+          "key": "flannel_jacket",
+          "color": "#5f7d4a"
+        },
+        {
+          "slot": "bottom",
+          "key": "dungarees",
+          "color": "#41618f"
+        },
+        {
+          "slot": "shoes",
+          "key": "rubber_boots",
+          "color": "#3f7a4a"
+        }
+      ]
+    },
+    {
+      "id": "farmhand",
+      "kind": "npc",
+      "position": [
+        -21.5,
+        0.04,
+        -146.5
+      ],
+      "yaw": 1.5707963267948966,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pose": "idle",
+      "vendor": false,
+      "body": "#8b6a4f",
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "curly",
+          "color": "#1f1a18"
+        },
+        {
+          "slot": "head_accessory",
+          "key": "bandana",
+          "color": "#c8322f"
+        },
+        {
+          "slot": "top",
+          "key": "plaid_shirt",
+          "color": "#b5362e"
+        },
+        {
+          "slot": "bottom",
+          "key": "dungarees",
+          "color": "#41618f"
+        },
+        {
+          "slot": "shoes",
+          "key": "boots",
+          "color": "#6b4a30"
+        }
+      ]
     }
   ]
 }

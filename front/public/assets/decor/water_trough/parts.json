@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "materials": {
+    "DC_WaterTrough": {
+      "mask": "parts_DC_WaterTrough.png",
+      "parts": [
+        {
+          "id": "main",
+          "label": "Main",
+          "color": "#eed5b2"
+        },
+        {
+          "id": "accent",
+          "label": "Accent",
+          "color": "#c3a27d"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "materials": {
+    "DC_HayBale": {
+      "mask": "parts_DC_HayBale.png",
+      "parts": [
+        {
+          "id": "main",
+          "label": "Main",
+          "color": "#eee1b0"
+        },
+        {
+          "id": "accent",
+          "label": "Accent",
+          "color": "#e8d078"
+        },
+        {
+          "id": "detail",
+          "label": "Detail",
+          "color": "#bba363"
+        }
+      ]
+    }
+  }
+}

@@ -597,7 +597,7 @@ def _bleed_subject(rgb, subject):
     return np.where(filled[..., None] > 0, color, rgb).astype(np.float32)
 
 
-def project_ref_image(objs, image_path, material_name, background_threshold=0.3, highlight_margin=0.12):
+def project_ref_image(objs, image_path, material_name, background_threshold=0.3, highlight_margin=0.12, near_white=0.9, grey_spread=0.08, max_washed=0.3):
     import numpy as np
     source = bpy.data.images.load(image_path, check_existing=True)
     if min(source.size) < REF_TEXTURE_SIZE:
@@ -613,8 +613,14 @@ def project_ref_image(objs, image_path, material_name, background_threshold=0.3,
         raise ValueError(f"{image_path}: no subject found on the background")
     px0, px1, py0, py1 = cols.min(), cols.max(), rows.min(), rows.max()
     lightness = rgb.max(axis=-1)
+    washed = subject & (lightness > near_white) & (rgb.max(axis=-1) - rgb.min(axis=-1) < grey_spread)
     highlight = subject & (lightness > np.percentile(lightness[subject], 85) + highlight_margin)
-    bled = _bleed_subject(rgb, subject & ~highlight)
+    if washed.sum() < max_washed * subject.sum():
+        highlight |= washed
+    seed = subject & ~highlight
+    if not seed.any():
+        raise ValueError(f"{image_path}: the whole subject reads as highlight")
+    bled = _bleed_subject(rgb, seed)
     image = bpy.data.images.new(material_name, width, height)
     image.pixels.foreach_set(np.concatenate([bled, np.ones((height, width, 1), dtype=np.float32)], axis=-1).ravel())
     image.pack()
@@ -776,3 +782,74 @@ def zone_decor(coll, zone_key, col_prefix):
             objs += _place_decor(coll, prop)
             cols += _decor_collision(prop, _read_json(os.path.join(FRONT_ASSETS, "decor", prop["key"], "collision.json"))["cuboids"], col_prefix)
     return objs, cols, plants
+
+
+def import_ai_model(coll, slug, material_name):
+    folder = os.path.join(OUT_ROOT, "ai", slug)
+    before = set(bpy.data.objects)
+    bpy.ops.import_scene.gltf(filepath=os.path.join(folder, "model.glb"))
+    imported = [o for o in bpy.data.objects if o not in before]
+    bpy.context.view_layer.update()
+    meshes = [o for o in imported if o.type == "MESH"]
+    if not meshes:
+        raise ValueError(f"out/ai/{slug}/model.glb has no mesh")
+    for o in meshes:
+        world = o.matrix_world.copy()
+        o.parent = None
+        o.matrix_world = world
+        for c in list(o.users_collection):
+            c.objects.unlink(o)
+        coll.objects.link(o)
+    for o in imported:
+        if o.type != "MESH":
+            bpy.data.objects.remove(o, do_unlink=True)
+    project_ref_image(meshes, os.path.join(folder, "ref.png"), material_name)
+    return meshes
+
+
+def render_preview(sc, obj, path):
+    import contextlib
+    import io
+    corners = [obj.matrix_world @ Vector(c) for c in obj.bound_box]
+    ctr = sum(corners, Vector()) / 8
+    cam_data = bpy.data.cameras.new("PV_cam")
+    cam_data.type = "ORTHO"
+    cam = bpy.data.objects.new("PV_cam", cam_data)
+    sc.collection.objects.link(cam)
+    cam.location = ctr + Vector((0.5, -0.9, 0.7)).normalized() * 3
+    cam.rotation_euler = (ctr - cam.location).to_track_quat("-Z", "Y").to_euler()
+    bpy.context.view_layer.update()
+    inv = cam.matrix_world.inverted()
+    pts = [inv @ c for c in corners]
+    w = max(p.x for p in pts) - min(p.x for p in pts)
+    h = max(p.y for p in pts) - min(p.y for p in pts)
+    cam_data.ortho_scale = max(w, h) * 1.12
+    cam_data.shift_x = (max(p.x for p in pts) + min(p.x for p in pts)) / 2 / cam_data.ortho_scale
+    cam_data.shift_y = (max(p.y for p in pts) + min(p.y for p in pts)) / 2 / cam_data.ortho_scale
+    sc.camera = cam
+    sun = bpy.data.objects.new("PV_sun", bpy.data.lights.new("PV_sun", "SUN"))
+    sun.data.energy = 2.6
+    sun.rotation_euler = (0.8, 0.3, 0.7)
+    sc.collection.objects.link(sun)
+    sc.render.engine = "BLENDER_EEVEE"
+    if sc.world is None:
+        sc.world = bpy.data.worlds.new("PV_world")
+        sc.world.use_nodes = True
+        bg = next(n for n in sc.world.node_tree.nodes if n.type == "BACKGROUND")
+        bg.inputs[0].default_value = (0.42, 0.45, 0.55, 1.0)
+        bg.inputs[1].default_value = 0.9
+    sc.view_settings.view_transform = "Standard"
+    sc.render.resolution_x = sc.render.resolution_y = 512
+    sc.render.film_transparent = True
+    sc.render.filepath = path
+    sc.render.image_settings.file_format = "PNG"
+    sc.render.image_settings.color_mode = "RGBA"
+    hidden = [o for o in sc.objects if o.type == "MESH" and o is not obj and not o.hide_render]
+    for o in hidden:
+        o.hide_render = True
+    with contextlib.redirect_stdout(io.StringIO()):
+        bpy.ops.render.render(write_still=True)
+    for o in hidden:
+        o.hide_render = False
+    bpy.data.objects.remove(cam, do_unlink=True)
+    bpy.data.objects.remove(sun, do_unlink=True)

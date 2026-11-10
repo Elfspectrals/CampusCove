@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "materials": {
+    "DC_VegetableCrate": {
+      "mask": "parts_DC_VegetableCrate.png",
+      "parts": [
+        {
+          "id": "main",
+          "label": "Main",
+          "color": "#d0a77f"
+        },
+        {
+          "id": "accent",
+          "label": "Accent",
+          "color": "#bbd9af"
+        },
+        {
+          "id": "detail",
+          "label": "Detail",
+          "color": "#889b68"
+        }
+      ]
+    }
+  }
+}

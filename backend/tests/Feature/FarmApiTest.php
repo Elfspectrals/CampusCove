@@ -87,6 +87,18 @@ class FarmApiTest extends TestCase
         }
     }
 
+    public function test_farm_produce_exists_as_food_but_is_not_sold(): void
+    {
+        $codes = collect($this->getJson('/api/shop/items')->assertOk()->json('items'))
+            ->map(fn (array $row) => $row['item']['code'])
+            ->all();
+
+        foreach (['egg', 'milk'] as $asset) {
+            $this->assertNotContains("farm_{$asset}", $codes);
+            $this->assertSame("/assets/items/farm/{$asset}/model.glb", ItemDef::query()->where('code', "farm_{$asset}")->value('model_glb'));
+        }
+    }
+
     public function test_farm_route_needs_the_realtime_server(): void
     {
         $player = $this->registerAndCreditWallet(0, 'coins');

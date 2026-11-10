@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "materials": {
+    "DC_WateringCan": {
+      "mask": "parts_DC_WateringCan.png",
+      "parts": [
+        {
+          "id": "main",
+          "label": "Main",
+          "color": "#9dcfa2"
+        },
+        {
+          "id": "accent",
+          "label": "Accent",
+          "color": "#c3e5c9"
+        },
+        {
+          "id": "detail",
+          "label": "Detail",
+          "color": "#7aab79"
+        }
+      ]
+    }
+  }
+}

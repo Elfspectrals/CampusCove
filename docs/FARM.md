@@ -17,12 +17,39 @@ Les cultures sont décrites dans `front/public/assets/crops/crops.json` (lu par 
 bake Python) : libellé, objet ramassé, modèle du plant, espacement dans la rangée (`spacing`) et entre rangées (`rowGap`).
 Le chou et la citrouille utilisent le même modèle comme plant et comme objet.
 
+## Pack de la ferme
+
+Règle `.claude/rules/assets.md` : un lieu arrive avec ses propres assets, même non vendus.
+
+| Bloc | Contenu | Source |
+|---|---|---|
+| Bâtiments | Maison et grange visitables : portes ouvertes, sols, stalles, grenier à foin sur poteaux, échelle, poutres, lanterne | builders `lib_kit` dans `build_farm_site.py` |
+| Décor (catégorie **Farm** de l'éditeur) | `scarecrow`, `hay_bale_round`, `water_trough`, `milk_churn`, `feed_sacks`, `wooden_barrel`, `chicken_coop`, `stone_well`, `watering_can`, `vegetable_crate`, `tool_rack` | `make model` importés et colorés par `build_farm_decor.py` ; `tool_rack` (pièces fines) en builder |
+| Consommables (groupe `farm`, non vendus) | `farm_egg`, `farm_milk`, plus les récoltes | `make model` via `build_grocery_items.py` (`FARM`) |
+| Tenue | `head_accessory/bandana`, `top/flannel_jacket` (+ bras FPS), `shoes/rubber_boots`, avec `straw_hat`, `plaid_shirt`, `farm_apron`, `dungarees`, `boots` | `front/scripts/skins/wear.py` |
+
+Premier aménagement dans `zones/farm.json` : cuisine, table et lit dans la maison ; foin, sacs, tonneau, bidon, outils et
+lait dans la grange ; poulailler et œufs, abreuvoir, puits, épouvantails dans la cour et les champs ; un fermier et un
+ouvrier agricole habillés du pack. Le grenier est du décor : on n'y monte pas.
+
+Nouveau décor : `make model "<prompt>"`, ajouter la clé et le dossier `out/ai/<slug>` dans `DECOR` de
+`build_farm_decor.py`, puis :
+
+```bash
+blender --background --factory-startup --python-expr "ONLY_DECOR=['<clé>']; p='map-src/CampusCove/build_farm_decor.py'; exec(open(p).read(), {'__file__': p, 'ONLY_DECOR': ONLY_DECOR})"
+node front/scripts/optimize-assets.mjs decor <clé>
+node front/scripts/apply-decor-collision.mjs front/public/assets/decor/<clé>/model.glb
+make texture-parts
+```
+
+et ajouter la clé à la catégorie `farm` de `decor/categories.json`.
+
 ## Fichiers
 
 | Couche | Fichiers |
 |---|---|
 | Blender | `build_farm_site.py` (maison et grange en kit `lib_kit`, clôture `L.fence_run`, chemins), `lib_common.zone_decor` (champs et décors cuits), `build_grocery_items.py` (`FARM` : modèles `make model` importés, colorés par `L.project_ref_image`) |
-| Assets | `park/farm_site/`, `items/farm/{corn,potato,cabbage,pumpkin,corn_plant,potato_plant}/`, `crops/crops.json`, `zones/farm.json`, `world.manifest.json` (zone `farm` + `crops`) |
+| Assets | `park/farm_site/`, `items/farm/{corn,potato,cabbage,pumpkin,corn_plant,potato_plant,egg,milk}/`, `decor/<pack>/`, `wear/<pack>/`, `crops/crops.json`, `zones/farm.json`, `world.manifest.json` (zone `farm` + `crops`) |
 | API | `FarmService`, `FarmController`, `FarmRejectedException`, route realtime `POST /api/farm/pick`, `FoodCatalog` (`farm_corn`, `farm_potato`, `farm_cabbage`, `farm_pumpkin`), `tests/Feature/FarmApiTest.php` |
 | Socket | `socket/src/farm.ts` (+ test), `world.ts` (`parseCropPlants`), `CityRoom.ts`, `farmPick` du joueur |
 | Front | `game/crops/crops.ts` (+ test), `game/farm.ts`, `composables/game/useFarm.ts`, `GameView.vue` (barre de cueillette partagée avec le verger) |
