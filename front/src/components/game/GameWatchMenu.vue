@@ -65,7 +65,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey, true))
         </button>
       </header>
 
-      <div v-if="incoming" class="flex items-center gap-2 border-b border-white/10 bg-sun/15 px-4 py-3">
+      <div v-if="incoming" class="flex items-center gap-2 border-b border-line/10 bg-sun/15 px-4 py-3">
         <UiIcon name="hand" :size="18" class="text-sun" />
         <p class="m-0 min-w-0 flex-1 text-sm font-bold text-fog">
           <span class="text-sun">{{ incoming.fromPseudo }}</span> wants to trade with you.
