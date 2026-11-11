@@ -2,10 +2,10 @@
 export const messages = {
   en: {
     a11y: { skip: 'Skip to main content' },
-    nav: { home: 'Home', lobby: 'Lobby', skins: 'Skins', gems: 'Gems', friends: 'Friends', settings: 'Settings', play: 'Play', signIn: 'Sign in', shop: 'Shop' },
+    nav: { home: 'Home', lobby: 'Lobby', skins: 'Skins', gems: 'Gems', friends: 'Friends', settings: 'Settings', play: 'Play', signIn: 'Sign in', shop: 'Shop', profile: 'Profile', logout: 'Log out', openMenu: 'Open menu', closeMenu: 'Close menu' },
     landing: { playFree: 'Play free', haveAccount: 'I have an account' },
     footer: {
-      tagline: 'A free multiplayer 3D campus — non-commercial school project.',
+      tagline: 'A free multiplayer 3D town in your browser',
       legal: 'Legal',
       manageCookies: 'Manage cookies',
       language: 'Language',
@@ -279,10 +279,10 @@ export const messages = {
   },
   fr: {
     a11y: { skip: 'Aller au contenu principal' },
-    nav: { home: 'Accueil', lobby: 'Lobby', skins: 'Skins', gems: 'Gems', friends: 'Amis', settings: 'Paramètres', play: 'Jouer', signIn: 'Connexion', shop: 'Boutique' },
+    nav: { home: 'Accueil', lobby: 'Lobby', skins: 'Skins', gems: 'Gems', friends: 'Amis', settings: 'Paramètres', play: 'Jouer', signIn: 'Connexion', shop: 'Boutique', profile: 'Profil', logout: 'Se déconnecter', openMenu: 'Ouvrir le menu', closeMenu: 'Fermer le menu' },
     landing: { playFree: 'Jouer gratuitement', haveAccount: 'J’ai déjà un compte' },
     footer: {
-      tagline: 'Un campus 3D multijoueur gratuit — projet scolaire non commercial.',
+      tagline: 'Une ville 3D multijoueur gratuite dans ton navigateur',
       legal: 'Informations légales',
       manageCookies: 'Gérer les cookies',
       language: 'Langue',
