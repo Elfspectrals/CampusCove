@@ -205,8 +205,10 @@ function loadStoreExteriors(loader: GLTFLoader, manifest: WorldManifest): Promis
   }))
 }
 
+const FOG_END_DISTANCE = { low: 120, medium: 180, high: 250 } as const
+
 export function fogEndDistance(): number {
-  return getGraphicsQuality() === 'low' ? 120 : 250
+  return FOG_END_DISTANCE[getGraphicsQuality()]
 }
 
 export function applySceneAtmosphere(scene: THREE.Scene, renderer?: THREE.WebGLRenderer): void {

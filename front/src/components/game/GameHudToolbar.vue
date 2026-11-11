@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { getGraphicsQuality, toggleGraphicsQuality } from '../../game/graphicsQuality'
+import { cycleGraphicsQuality, getGraphicsQuality } from '../../game/graphicsQuality'
 import UiIcon from '../ui/UiIcon.vue'
 
 defineProps<{
@@ -15,11 +15,11 @@ defineProps<{
 
 const emit = defineEmits<{ toggleReducedEffects: [] }>()
 
-const graphicsQualityLabel = getGraphicsQuality() === 'low' ? 'Low' : 'High'
+const graphicsQualityLabel = { low: 'Low', medium: 'Medium', high: 'High' }[getGraphicsQuality()]
 
 /** The renderer is configured at creation, so a quality change needs a reload. */
 function onToggleGraphicsQuality(): void {
-  toggleGraphicsQuality()
+  cycleGraphicsQuality()
   window.location.reload()
 }
 </script>

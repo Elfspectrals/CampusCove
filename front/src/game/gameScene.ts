@@ -36,18 +36,18 @@ export function createGameScene(
   canvas: HTMLCanvasElement,
   size: { w: number; h: number },
 ): GameScene {
-  const isLowQuality = getGraphicsQuality() === 'low'
+  const quality = getGraphicsQuality()
 
   const scene = new THREE.Scene()
   const camera = new THREE.PerspectiveCamera(verticalFovFor(comfortSettings.fov, size.w / size.h), size.w / size.h, 0.1, fogEndDistance())
   camera.position.set(HOUSING_LOBBY_SPAWN.x, HOUSING_LOBBY_SPAWN.y, HOUSING_LOBBY_SPAWN.z)
 
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: !isLowQuality })
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: quality !== 'low' })
   renderer.setSize(size.w, size.h)
-  renderer.setPixelRatio(isLowQuality ? 1 : Math.min(window.devicePixelRatio, 2))
+  renderer.setPixelRatio(quality === 'high' ? Math.min(window.devicePixelRatio, 2) : 1)
   renderer.outputColorSpace = THREE.SRGBColorSpace
-  renderer.shadowMap.enabled = !isLowQuality
-  if (!isLowQuality) renderer.shadowMap.type = THREE.PCFSoftShadowMap
+  renderer.shadowMap.enabled = quality === 'high'
+  if (quality === 'high') renderer.shadowMap.type = THREE.PCFSoftShadowMap
   renderer.toneMapping = THREE.ACESFilmicToneMapping
   renderer.toneMappingExposure = 1.05
 
@@ -57,7 +57,7 @@ export function createGameScene(
   scene.add(ambient)
   const sun = new THREE.DirectionalLight(0xffffff, 1.0)
   sun.position.set(10, 20, 10)
-  if (!isLowQuality) {
+  if (quality === 'high') {
     sun.castShadow = true
     sun.shadow.mapSize.set(1024, 1024)
   }

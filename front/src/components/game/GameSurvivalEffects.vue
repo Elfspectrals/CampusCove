@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { supportsScreenBlur } from '../../game/graphicsQuality'
 import type { ScreenEffects } from '../../game/survival'
 import type { KnockoutCause } from '../../composables/game/useSurvival'
 
@@ -16,6 +17,8 @@ const props = defineProps<{
   reducedEffects: boolean
 }>()
 
+const screenBlur = supportsScreenBlur()
+
 const heartbeat = computed(() => `${(props.effects?.heartbeatPeriod ?? 1).toFixed(2)}s`)
 
 const blackout = computed(() => props.cause === 'alcohol')
@@ -30,7 +33,7 @@ const billText = computed(() => {
   <div class="pointer-events-none absolute inset-0 z-[15] overflow-hidden">
     <!-- thirst: blurred edges when critical (the desaturation itself is a filter on the canvas) -->
     <div
-      v-if="effects && effects.edgeBlur > 0"
+      v-if="screenBlur && effects && effects.edgeBlur > 0"
       class="cc-survival-blur absolute inset-0"
       :style="{ opacity: effects.edgeBlur }"
     />
