@@ -13,6 +13,30 @@ Target floor (confirmed with the owner): an office laptop with an integrated GPU
 - The three biggest wins need no visual sacrifice at all: merge building meshes, instance the farm plants, give each character one skeleton and let it be culled.
 - Loading time has nothing big left to fix.
 
+## Outcome on 2026-11-11
+
+Work done on branch `perf/low-config-wave-1`. Each number below was read in the game with the dev readout (draw calls and triangles of the frame, low tier unless stated). Frame rate on a real low-end laptop is still not measured, so none of this proves the game is smooth yet.
+
+| # | Finding | Outcome |
+|---|---|---|
+| 1 | Buildings unmerged | Done. Meshes are merged by material when a building loads. At the spawn: 885 to 382 draw calls, same triangles. Over the 46 building files: 5,562 to 1,131 draw calls, identical geometry and lightmap coordinates. |
+| 2 | Farm fields clone one mesh per plant | Wrong for the game: the zone bake already instances the plants (4 draw calls for 1,033 plants); only the zone editor clones them. The real cost is the plant models, 442 to 698 triangles each, about 560,000 triangles. Left to the branch that owns the farm. |
+| 3 | Characters never culled, mannequins skinned | Mostly done. Characters out of the view are no longer drawn (back to Northline: 371 to 238 draw calls). Shop mannequins are static meshes (facing Northline: 430 to 396 draw calls, about 100 skeletons gone). Left: one skeleton per character instead of one per wear piece. |
+| 4 | Camera draws behind the fog | Done on every tier. At the spawn: about 770,000 to 185,000 triangles. |
+| 5 | Lightmap memory | Not done. Waits for a memory reading in Chrome. |
+| 6 | Scene graph recomposed each frame | Not done. Waits for a profile; freezing matrices can break doors and moved furniture. |
+| 7 | Shop aim raycast every frame | Wrong: already throttled. |
+| 8 | Vue refs written each frame | Left as it is: one text node a frame. |
+| 9 | Full-screen blur when drunk or thirsty | Done: not drawn on the low tier. |
+| 10 | Sun shadow camera on high | Not done. A visual feature, not an optimisation. |
+| 11 | NPCs and animals animate when far | Wrong: already gated on their zone being shown (26 m). |
+
+Also done: a dev-only readout of draw calls and triangles in the HUD, and a medium tier (antialiasing and environment map on, no shadows, fog at 180 m). On medium the spawn frame is about 720,000 triangles, because the farm fields come inside its fog.
+
+Not done: choosing the tier automatically at the first launch. Its thresholds need frame rates measured on a real low-end laptop.
+
+Three of the eleven findings came from an audit that read the code without running it, and were wrong. The sections below are kept as written on the day of the review.
+
 ## What exists today
 
 - Two tiers, `low` and `high`, default `low`, stored in localStorage, switched from the HUD with a page reload. No auto-detection and no FPS-based scaling. [code] `front/src/game/graphicsQuality.ts:5-11`, `front/src/components/game/GameHudToolbar.vue:19-23`
