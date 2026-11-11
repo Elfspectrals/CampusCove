@@ -9,6 +9,7 @@ use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\ApartmentPlacementController;
 use App\Http\Controllers\AssetController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CharacterAppearanceController;
 use App\Http\Controllers\CharacterCosmeticController;
 use App\Http\Controllers\FarmController;
 use App\Http\Controllers\FriendController;
@@ -104,6 +105,8 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
 
     Route::get('/character/cosmetics', [CharacterCosmeticController::class, 'show']);
     Route::put('/character/cosmetics', [CharacterCosmeticController::class, 'update']);
+    Route::get('/character/appearance', [CharacterAppearanceController::class, 'show']);
+    Route::put('/character/appearance', [CharacterAppearanceController::class, 'update']);
     Route::get('/apartments/assets', [ApartmentPlacementController::class, 'inventory']);
     Route::get('/apartments/houses', [ApartmentPlacementController::class, 'houses']);
     Route::post('/apartments/state', [ApartmentPlacementController::class, 'state']);

@@ -4,13 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\Account;
 use App\Services\AccountCosmeticService;
+use App\Services\CharacterAppearanceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use InvalidArgumentException;
 
 class CharacterCosmeticController extends Controller
 {
-    public function show(Request $request, AccountCosmeticService $accountCosmeticService): JsonResponse
+    public function show(Request $request, AccountCosmeticService $accountCosmeticService, CharacterAppearanceService $appearance): JsonResponse
     {
         /** @var Account $account */
         $account = $request->user();
@@ -20,10 +21,12 @@ class CharacterCosmeticController extends Controller
             'slots' => $accountCosmeticService->getLoadout($accountId),
             'colors' => $accountCosmeticService->getColors($accountId),
             'owned' => $accountCosmeticService->getOwnedLockerSkins($accountId),
+            // the body to build the outfit on (docs/CHARACTER.md), null until the character exists
+            'character' => $appearance->look($accountId),
         ]);
     }
 
-    public function update(Request $request, AccountCosmeticService $accountCosmeticService): JsonResponse
+    public function update(Request $request, AccountCosmeticService $accountCosmeticService, CharacterAppearanceService $appearance): JsonResponse
     {
         /** @var Account $account */
         $account = $request->user();
@@ -64,6 +67,8 @@ class CharacterCosmeticController extends Controller
             'slots' => $slotsOut,
             'colors' => $colorsOut,
             'owned' => $accountCosmeticService->getOwnedLockerSkins($accountId),
+            // the body to build the outfit on (docs/CHARACTER.md), null until the character exists
+            'character' => $appearance->look($accountId),
         ]);
     }
 }

@@ -209,6 +209,10 @@ class ShopSeeder extends Seeder
             self::wear('bottom', 'track_pants', 'Summit Track Pants', 2),
             self::wear('bottom', 'basketball_shorts', 'Summit Court Shorts', 1),
             self::wear('bottom', 'leggings', 'Summit Leggings', 1),
+            // ---- newcomer outfit: given by the character creator and worn again after each death, never sold
+            self::starterWear('top', 'newcomer', 'Newcomer Tee'),
+            self::starterWear('bottom', 'newcomer', 'Newcomer Joggers'),
+            self::starterWear('shoes', 'newcomer', 'Newcomer Sneakers'),
         ];
         // ---- food and drinks (eaten from the hotbar; sold at the Campus Cafe counter)
         foreach (FoodCatalog::items() as $food) {
@@ -352,11 +356,7 @@ class ShopSeeder extends Seeder
             self::premium('COS_WEAR_BODY_NEON_RONIN', 300, 58),
             self::premium('COS_WEAR_BODY_STREET_LUXE', 250, 60),
             self::premium('COS_WEAR_BODY_ASTRAL_ORACLE', 350, 62),
-            self::coins('COS_WEAR_HAIR_SHORT', 80, 300),
-            self::coins('COS_WEAR_HAIR_LONG', 120, 301),
-            self::coins('COS_WEAR_HAIR_CURLY', 150, 302),
-            self::coins('COS_WEAR_HAIR_BUZZ', 60, 303),
-            self::coins('COS_WEAR_HAIR_PONYTAIL', 130, 304),
+            // haircuts are not sold: every one is free in the character creator (CharacterAppearanceService)
             self::coins('COS_WEAR_HEAD_ACCESSORY_GAMER', 200, 305),
             self::coins('COS_WEAR_HEAD_ACCESSORY_STUDIO', 280, 306),
             self::coins('COS_WEAR_HEAD_ACCESSORY_CAT_EAR', 320, 307),
@@ -558,6 +558,12 @@ class ShopSeeder extends Seeder
             'preview_image' => "/assets/wear/{$slot}/{$key}/preview.png",
             'model_glb' => "/assets/wear/{$slot}/{$key}/model.glb",
         ];
+    }
+
+    /** A free wear piece bound to the account, like the default outfit. @return array<string, mixed> */
+    private static function starterWear(string $slot, string $key, string $name): array
+    {
+        return array_merge(self::wear($slot, $key, $name, 0), ['tradable' => false, 'bind' => 'bound', 'max_stack' => 99]);
     }
 
     /** @return array<string, mixed> */

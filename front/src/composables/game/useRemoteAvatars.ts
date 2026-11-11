@@ -6,6 +6,7 @@ import {
 } from '../../api/characterCosmetics'
 import { buildCompositeAvatar, disposeObject3D } from '../../avatar/compositeAvatar'
 import { setAvatarEating, setAvatarPicking, setAvatarSeated, updateAvatarAnimation } from '../../avatar/glbCharacter'
+import { parseCharacterLook, type CharacterLook } from '../../avatar/characterLook'
 import { createModularCharacter } from '../../avatar/modularCharacter'
 import { WEAR_SLOTS, wearSignature, type WearModels } from '../../avatar/modularCharacterLogic'
 import { createActionBubble, type AvatarAction } from '../../game/actionBubble'
@@ -70,6 +71,8 @@ export interface SeatPose {
 interface AppearanceUpdate {
   slotHexes?: Record<string, string>
   slotModels?: Record<string, string | null>
+  /** Validated again here (parseCharacterLook): the socket only forwards what a client sent. */
+  character?: unknown
 }
 
 export interface RemoteAvatarsDeps {
@@ -176,9 +179,9 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     }
   }
 
-  async function loadModel(models: WearModels, colors: CosmeticColors, fallbackColor: number) {
+  async function loadModel(models: WearModels, colors: CosmeticColors, look: CharacterLook | null, fallbackColor: number) {
     try {
-      return await createModularCharacter(models, colors, DEFAULT_SLOT_COLORS)
+      return await createModularCharacter(models, colors, DEFAULT_SLOT_COLORS, look)
     } catch (err) {
       console.error('[avatars] outfit failed to load, showing the placeholder avatar', models, err)
       return buildCompositeAvatar(null, fallbackColor)
@@ -209,7 +212,8 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
 
     const colors = parseSlotHexes(data.slotHexes)
     const models = parseSlotModels(data.slotModels)
-    const group = await loadModel(models, colors, data.color)
+    const look = parseCharacterLook(data.character)
+    const group = await loadModel(models, colors, look, data.color)
     if (upsertTokenByUserId.get(data.id) !== token || renderTokenBySessionId.get(sessionId) !== renderToken) {
       disposeObject3D(group)
       return
@@ -232,7 +236,7 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
       z: data.z,
       ry,
       color: data.color,
-      outfit: wearSignature(models, colors),
+      outfit: wearSignature(models, colors, look),
       punchPose: idlePunchPose(),
       punchOffsetX: 0,
       punchOffsetZ: 0,
@@ -263,11 +267,12 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     }
     const colors = parseSlotHexes(update.slotHexes)
     const models = parseSlotModels(update.slotModels)
-    const outfit = wearSignature(models, colors)
+    const look = parseCharacterLook(update.character)
+    const outfit = wearSignature(models, colors, look)
     if (outfit === entry.outfit) return
 
     const renderToken = nextRenderToken(sessionId)
-    const group = await loadModel(models, colors, entry.color)
+    const group = await loadModel(models, colors, look, entry.color)
     const latest = avatars.get(sessionId)
     if (!latest || renderTokenBySessionId.get(sessionId) !== renderToken) {
       disposeObject3D(group)

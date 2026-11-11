@@ -223,6 +223,16 @@ def build_top(key, M, m):
         add_sweep(M, m["accent"], [(0, 0, 1.56), (0, 0, 1.59)], [(0.1, 0.092), (0.088, 0.082)], seg=18, per=1)
         add_box(M, m["accent"], (0, -0.142, 1.1), (0.21, 0.006, 0.03), bevel=0.0)
         add_box(M, m["accent"], (0, -0.147, 1.33), (0.08, 0.006, 0.1), bevel=0.004)
+    elif key == "newcomer":
+        # bright tee + a "visitor pass" lanyard: what every new or just-respawned player wears
+        torso(M, m["main"], puff=1.02)
+        sleeves(M, m["accent"], 1, puff=1.12)
+        add_sweep(M, m["accent"], [(0, 0, 1.56), (0, 0, 1.59)], [(0.1, 0.092), (0.088, 0.082)], seg=18, per=1)
+        add_sweep(M, m["trim"], [(-0.07, -0.125, 1.30), (-0.08, -0.12, 1.45), (-0.06, -0.085, 1.565), (0, -0.09, 1.585),
+                                 (0.06, -0.085, 1.565), (0.08, -0.12, 1.45), (0.07, -0.125, 1.30)],
+                  [(0.006, 0.003)] * 7, seg=6, per=2)
+        add_box(M, m["card"], (0, -0.15, 1.25), (0.075, 0.006, 0.1), bevel=0.004)
+        add_box(M, m["trim"], (0, -0.154, 1.275), (0.06, 0.003, 0.02), bevel=0.0)
     elif key == "flannel_jacket":
         torso(M, m["main"], puff=1.12, power=2.2)
         sleeves(M, m["main"], 4, puff=1.16, cuff=m["accent"])
@@ -278,7 +288,7 @@ def build_bottom(key, M, m):
         if key == "jeans":
             for sg in (1, -1):
                 add_box(M, m["accent"], S((0.09, 0.12, 0.93), sg), (0.07, 0.008, 0.07), bevel=0.006)
-    elif key == "joggers":
+    elif key in ("joggers", "newcomer"):
         waist(M, m["main"])
         legs(M, m["main"], 4, puff=1.05)
         for sg in (1, -1):
@@ -349,9 +359,9 @@ def shoe(M, m, sg, collar_z=0.11, sole_h=0.03, toe_cap=False, slide=False):
 
 def build_shoes(key, M, m):
     for sg in (1, -1):
-        if key in ("basic", "sneakers"):
-            shoe(M, m, sg, toe_cap=key == "sneakers")
-            if key == "sneakers":
+        if key in ("basic", "sneakers", "newcomer"):
+            shoe(M, m, sg, toe_cap=key != "basic")
+            if key != "basic":
                 add_box(M, m["accent"], S((0.152, -0.06, 0.07), sg), (0.006, 0.12, 0.018), bevel=0.002)
         elif key == "high_tops":
             shoe(M, m, sg, collar_z=0.2, toe_cap=True)
@@ -403,6 +413,7 @@ WEAR = {
         "sports_bra": dict(main="e0534f", accent="1f2230", hides=["chest"]),
         "plaid_shirt": dict(main="b5362e", accent="2a2630", hides=["chest", "upper_arms", "forearms"]),
         "farm_apron": dict(main="b5362e", accent="2a2630", extra={"apron": dict(color="c2a878", rough=0.9)}, hides=["chest", "upper_arms", "forearms"]),
+        "newcomer": dict(main="f7c948", accent="2f8f9c", extra={"trim": dict(color="e0534f", rough=0.6), "card": dict(color="f4f2ec", rough=0.5)}, hides=["chest"]),
         "flannel_jacket": dict(main="5f7d4a", accent="2b2a24", hides=["chest", "upper_arms", "forearms"]),
         "staff_polo": dict(main="f2c230", accent="1f3a6b", hides=["chest"]),
     }),
@@ -417,6 +428,7 @@ WEAR = {
         "basketball_shorts": dict(main="f0b429", accent="1f2230", hides=["hips", "thighs"]),
         "leggings": dict(main="2a2c33", accent="b73cc9", hides=["hips", "thighs", "shins"]),
         "dungarees": dict(main="41618f", accent="c9a23f", hides=["hips", "thighs", "shins"]),
+        "newcomer": dict(main="2f8f9c", accent="f7c948", hides=["hips", "thighs", "shins"]),
     }),
     "shoes": dict(builder=build_shoes, bones=['LowerLeg.L', 'LowerLeg.R', 'Foot.L', 'Foot.R', 'Toe.L', 'Toe.R'], items={
         "basic": dict(main="e9e6df", accent="9a9ca4", hides=["feet"]),
@@ -426,6 +438,7 @@ WEAR = {
         "rubber_boots": dict(main="3f7a4a", accent="2a2c22", hides=["feet"]),
         "slides": dict(main="2f6f63", accent="ece8de", hides=[]),
         "runners": dict(main="ff9a3c", accent="2a2c33", hides=["feet"]),
+        "newcomer": dict(main="f4f2ec", accent="f7c948", hides=["feet"]),
     }),
 }
 
@@ -486,7 +499,7 @@ def export_piece_glb(path, objs, animations):
     bpy.ops.export_scene.gltf(
         filepath=path, export_format='GLB', use_selection=True, export_apply=False, export_yup=True,
         export_animations=animations, export_animation_mode='NLA_TRACKS', export_force_sampling=True,
-        export_skins=True, export_materials='EXPORT', export_extras=True,
+        export_skins=True, export_materials='EXPORT', export_image_format='WEBP', export_extras=True,
         export_cameras=False, export_lights=False, use_active_scene=True,
         export_draco_mesh_compression_enable=True, export_draco_mesh_compression_level=6,
         export_draco_position_quantization=14, export_draco_normal_quantization=10)

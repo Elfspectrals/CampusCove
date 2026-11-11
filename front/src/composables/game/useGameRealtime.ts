@@ -265,7 +265,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
 
     room.onMessage(
       'appearance_updated',
-      (data: { sessionId: string; slotHexes?: Record<string, string>; bodyModelGlb?: string | null; slotModels?: Record<string, string | null> }) => {
+      (data: { sessionId: string; slotHexes?: Record<string, string>; bodyModelGlb?: string | null; slotModels?: Record<string, string | null>; character?: unknown }) => {
         if (data.sessionId !== room.sessionId) void remotes.updateAppearance(data.sessionId, data)
       },
     )
@@ -362,6 +362,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       slotHexes: { ...state.colors },
       bodyModelGlb: bodyModelGlbFromLoadout(state.slots),
       slotModels: wearModelsFromLoadout(state.slots),
+      character: state.character,
     }
   }
 

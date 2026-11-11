@@ -422,31 +422,31 @@ class ShopApiTest extends TestCase
 
     public function test_checkout_buys_every_basket_line_into_the_locker(): void
     {
-        $hair = $this->catalogRow('COS_WEAR_HAIR_SHORT');
+        $headset = $this->catalogRow('COS_WEAR_HEAD_ACCESSORY_GAMER');
         $top = $this->catalogRow('COS_WEAR_TOP_VARSITY');
         ['token' => $token, 'account_id' => $accountId] = $this->registerAndCreditWallet(1_000, 'coins');
 
         $response = $this->postJson('/api/shop/checkout', [
             'items' => [
-                ['shop_catalog_item_id' => $hair->shop_catalog_item_id],
+                ['shop_catalog_item_id' => $headset->shop_catalog_item_id],
                 ['shop_catalog_item_id' => $top->shop_catalog_item_id],
             ],
             'currency' => 'coins',
         ], ['Authorization' => 'Bearer '.$token]);
 
-        $total = (int) $hair->coins_price + (int) $top->coins_price;
+        $total = (int) $headset->coins_price + (int) $top->coins_price;
         $response->assertOk()
             ->assertJsonCount(2, 'purchases')
-            ->assertJsonPath('purchases.0.shop_item.item.code', 'COS_WEAR_HAIR_SHORT')
+            ->assertJsonPath('purchases.0.shop_item.item.code', 'COS_WEAR_HEAD_ACCESSORY_GAMER')
             ->assertJsonPath('purchases.1.shop_item.item.code', 'COS_WEAR_TOP_VARSITY')
             ->assertJsonPath('purchases.1.balance_after', 1_000 - $total)
             ->assertJsonPath('balance_after', 1_000 - $total);
         $this->assertSame(1_000 - $total, $this->coinBalance($accountId));
         $this->assertEqualsCanonicalizing(
-            [$hair->item_def_id, $top->item_def_id],
+            [$headset->item_def_id, $top->item_def_id],
             DB::table('account_locker_cosmetics')
                 ->where('account_id', $accountId)
-                ->whereIn('item_def_id', [$hair->item_def_id, $top->item_def_id])
+                ->whereIn('item_def_id', [$headset->item_def_id, $top->item_def_id])
                 ->pluck('item_def_id')
                 ->all()
         );
@@ -454,14 +454,14 @@ class ShopApiTest extends TestCase
 
     public function test_checkout_without_enough_coins_buys_nothing(): void
     {
-        $hair = $this->catalogRow('COS_WEAR_HAIR_SHORT');
+        $headset = $this->catalogRow('COS_WEAR_HEAD_ACCESSORY_GAMER');
         $top = $this->catalogRow('COS_WEAR_TOP_VARSITY');
-        $coins = (int) $hair->coins_price + (int) $top->coins_price - 1;
+        $coins = (int) $headset->coins_price + (int) $top->coins_price - 1;
         ['token' => $token, 'account_id' => $accountId] = $this->registerAndCreditWallet($coins, 'coins');
 
         $this->postJson('/api/shop/checkout', [
             'items' => [
-                ['shop_catalog_item_id' => $hair->shop_catalog_item_id],
+                ['shop_catalog_item_id' => $headset->shop_catalog_item_id],
                 ['shop_catalog_item_id' => $top->shop_catalog_item_id],
             ],
             'currency' => 'coins',
@@ -475,18 +475,18 @@ class ShopApiTest extends TestCase
 
     public function test_checkout_with_an_already_owned_item_buys_nothing(): void
     {
-        $hair = $this->catalogRow('COS_WEAR_HAIR_SHORT');
+        $headset = $this->catalogRow('COS_WEAR_HEAD_ACCESSORY_GAMER');
         $top = $this->catalogRow('COS_WEAR_TOP_VARSITY');
         ['token' => $token, 'account_id' => $accountId] = $this->registerAndCreditWallet(1_000, 'coins');
         $headers = ['Authorization' => 'Bearer '.$token];
 
-        $this->postJson('/api/shop/purchase', ['shop_item_public_id' => $hair->public_id], $headers)->assertOk();
+        $this->postJson('/api/shop/purchase', ['shop_item_public_id' => $headset->public_id], $headers)->assertOk();
         $balanceBefore = $this->coinBalance($accountId);
 
         $this->postJson('/api/shop/checkout', [
             'items' => [
                 ['shop_catalog_item_id' => $top->shop_catalog_item_id],
-                ['shop_catalog_item_id' => $hair->shop_catalog_item_id],
+                ['shop_catalog_item_id' => $headset->shop_catalog_item_id],
             ],
             'currency' => 'coins',
         ], $headers)
@@ -502,13 +502,13 @@ class ShopApiTest extends TestCase
 
     public function test_checkout_rejects_a_duplicate_basket_line(): void
     {
-        $hair = $this->catalogRow('COS_WEAR_HAIR_SHORT');
+        $headset = $this->catalogRow('COS_WEAR_HEAD_ACCESSORY_GAMER');
         ['token' => $token, 'account_id' => $accountId] = $this->registerAndCreditWallet(1_000, 'coins');
 
         $this->postJson('/api/shop/checkout', [
             'items' => [
-                ['shop_catalog_item_id' => $hair->shop_catalog_item_id],
-                ['shop_catalog_item_id' => $hair->shop_catalog_item_id],
+                ['shop_catalog_item_id' => $headset->shop_catalog_item_id],
+                ['shop_catalog_item_id' => $headset->shop_catalog_item_id],
             ],
             'currency' => 'coins',
         ], ['Authorization' => 'Bearer '.$token])

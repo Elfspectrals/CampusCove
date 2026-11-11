@@ -84,6 +84,18 @@ export interface Player extends Vec3 {
   slotHexes: Record<AppearanceSlot, string>
   bodyModelGlb: string | null
   slotModels: Record<WearSlot, string | null>
+  /** Body built in the character creator (docs/CHARACTER.md); null until the player has made one. */
+  character: CharacterLook | null
+}
+
+export type CharacterSex = 'm' | 'f'
+export type CharacterBuild = 'slim' | 'normal' | 'broad'
+
+export interface CharacterLook {
+  sex: CharacterSex
+  /** 1..CHARACTER_FACE_COUNT */
+  face: number
+  build: CharacterBuild
 }
 
 /** A house as the Laravel API lists it (GET /housing/units). */

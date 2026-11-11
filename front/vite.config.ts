@@ -16,6 +16,7 @@ export default defineConfig({
     // 1.8 MB lightmap took 20 s instead of 30 ms. Poll once a second and skip the binary assets (rebuilt in place by
     // the Blender scripts; a brand-new one needs a front restart to be served). JSON stays watched for the editor.
     watch: {
+      usePolling: process.env.CHOKIDAR_USEPOLLING === 'true',
       interval: 1000,
       binaryInterval: 3000,
       ignored: ['**/public/assets/**/*.{glb,png,jpg,webp,mp3,hdr,wasm}', '**/dist/**'],
