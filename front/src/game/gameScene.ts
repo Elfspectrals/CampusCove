@@ -5,7 +5,7 @@ import { HOUSING_LOBBY_SPAWN } from './gameRoomConstants'
 import { comfortSettings } from '../composables/game/useComfortSettings'
 import { verticalFovFor } from './comfort'
 import { getGraphicsQuality, supportsEnvironmentMap } from './graphicsQuality'
-import { applySceneAtmosphere } from './roomEnvironments'
+import { applySceneAtmosphere, fogEndDistance } from './roomEnvironments'
 import {
   applySharedEnvironment,
   clearSharedEnvironment,
@@ -39,7 +39,7 @@ export function createGameScene(
   const isLowQuality = getGraphicsQuality() === 'low'
 
   const scene = new THREE.Scene()
-  const camera = new THREE.PerspectiveCamera(verticalFovFor(comfortSettings.fov, size.w / size.h), size.w / size.h, 0.1, isLowQuality ? 300 : 1000)
+  const camera = new THREE.PerspectiveCamera(verticalFovFor(comfortSettings.fov, size.w / size.h), size.w / size.h, 0.1, fogEndDistance())
   camera.position.set(HOUSING_LOBBY_SPAWN.x, HOUSING_LOBBY_SPAWN.y, HOUSING_LOBBY_SPAWN.z)
 
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: !isLowQuality })

@@ -201,10 +201,13 @@ function loadStoreExteriors(loader: GLTFLoader, manifest: WorldManifest): Promis
   }))
 }
 
+export function fogEndDistance(): number {
+  return getGraphicsQuality() === 'low' ? 120 : 250
+}
+
 export function applySceneAtmosphere(scene: THREE.Scene, renderer?: THREE.WebGLRenderer): void {
   scene.background = new THREE.Color(CITY_SKY_COLOR)
-  const fogFar = getGraphicsQuality() === 'low' ? 120 : 250
-  scene.fog = new THREE.Fog(CITY_SKY_COLOR, 30, fogFar)
+  scene.fog = new THREE.Fog(CITY_SKY_COLOR, 30, fogEndDistance())
   if (renderer) {
     renderer.toneMappingExposure = 1.05
   }
