@@ -217,7 +217,7 @@ export function findStore(key: string | null | undefined): (typeof STORES)[numbe
   return STORES.find((s) => s.key === key) ?? null
 }
 
-/** Survival (map-src/CampusCove/build_food_items.py): the first-person wrist watch and the town drinking fountain. */
+/** Survival: the first-person wrist watch (map-src/CampusCove/build_watch.py) and the town drinking fountain (build_food_items.py). */
 export const SURVIVAL_WATCH_URL = `${ROOT}/items/tools/watch/model.glb`
 export const DRINKING_FOUNTAIN_URL = `${ROOT}/park/drinking_fountain/model.glb`
 

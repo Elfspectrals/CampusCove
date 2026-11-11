@@ -1,8 +1,8 @@
 import * as THREE from 'three'
 import { createGltfLoader } from './gltfLoaderFactory'
 
-const HELD_ITEM_POSITION = new THREE.Vector3(-0.01, 0.045, -0.06)
-const HELD_ITEM_ROTATION = new THREE.Euler(0.6708, 0, 1.3208, 'ZYX')
+const HELD_ITEM_GRIP = new THREE.Vector3(-0.032, 0, -0.1)
+const GRIP_HEIGHT = 0.35
 const HELD_ITEM_SCALE = 1.15
 
 export function createHeldItem() {
@@ -17,10 +17,13 @@ export function createHeldItem() {
     let model = models.get(url)
     if (!model) {
       model = loader.loadAsync(url).then((gltf) => {
-        gltf.scene.position.copy(HELD_ITEM_POSITION)
-        gltf.scene.rotation.copy(HELD_ITEM_ROTATION)
-        gltf.scene.scale.setScalar(HELD_ITEM_SCALE)
-        return gltf.scene
+        const box = new THREE.Box3().setFromObject(gltf.scene)
+        gltf.scene.position.y = -(box.min.y + GRIP_HEIGHT * (box.max.y - box.min.y))
+        const held = new THREE.Group()
+        held.add(gltf.scene)
+        held.position.copy(HELD_ITEM_GRIP)
+        held.scale.setScalar(HELD_ITEM_SCALE)
+        return held
       })
       models.set(url, model)
     }

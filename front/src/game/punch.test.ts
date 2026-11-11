@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { PUNCH_REACH, createCameraShake, createKnockback, pickPunchTarget } from './punch.ts'
+import { PUNCH_COMBO_RESET_MS, PUNCH_REACH, createCameraShake, createKnockback, nextPunchHand, pickPunchTarget } from './punch.ts'
 
 const feet = { x: 0, y: 0, z: 0 }
 const north = { x: 0, z: -1 }
@@ -67,4 +67,15 @@ test('a knockback travels its distance then stops', () => {
   }
   assert.ok(Math.abs(Math.hypot(x, z) - 0.6) < 0.01)
   assert.ok(Math.abs(x / z - 3 / 4) < 1e-9)
+})
+
+test('opens with the jab, follows with the cross, then starts again', () => {
+  assert.equal(nextPunchHand(null, 0), 'jab')
+  assert.equal(nextPunchHand('jab', 800), 'cross')
+  assert.equal(nextPunchHand('cross', 800), 'jab')
+})
+
+test('goes back to the jab after a pause', () => {
+  assert.equal(nextPunchHand('jab', PUNCH_COMBO_RESET_MS), 'cross')
+  assert.equal(nextPunchHand('jab', PUNCH_COMBO_RESET_MS + 1), 'jab')
 })

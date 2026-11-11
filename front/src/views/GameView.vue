@@ -816,14 +816,14 @@ function loadTown(): void {
  * The interact action (right click / G by default, like Minecraft's "use"): unlock with the key in hand, doors and
  * shops, the clinic nurse, then what is held in hand (food, fountain sips).
  */
-function useAction(): void {
+function useAction(code: string): void {
   if (housing.unlock()) arms?.use('key')
   else
     void (
       interactions.tryInteract() ||
       furnitureStores.some((s) => s.store.tryOpenCheckout()) ||
       clinic.tryInteract() ||
-      survival.onPrimaryDown()
+      survival.onPrimaryDown(code)
     )
 }
 
@@ -832,12 +832,12 @@ let useWithShift = false
 
 function runUseOrPunch(code: string, repeat: boolean, shift: boolean): boolean {
   if (matches('punch', code)) {
-    if (!repeat) punch.tryPunch()
+    if (!repeat && !survival.startEating(code)) punch.tryPunch()
     return true
   }
   if (matches('interact', code)) {
     useWithShift = shift
-    if (!repeat) useAction()
+    if (!repeat) useAction(code)
     return true
   }
   return false

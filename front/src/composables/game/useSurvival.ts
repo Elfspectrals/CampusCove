@@ -2,9 +2,10 @@ import { computed, ref, watch, type Ref, type ShallowRef } from 'vue'
 import type { Room } from '@colyseus/sdk'
 import * as THREE from 'three'
 import { applyCachedBalanceAfterPurchase } from '../../api/session'
-import { matches } from '../../config/keybindings'
+import { matches, mouseButtonCode } from '../../config/keybindings'
 import { createBiteParticles } from '../../game/biteParticles'
 import { lookAngles, recoveryProgress } from '../../game/clinic'
+import { consumeKind, eatStep, isFull, type ConsumeKind } from '../../game/holdToEat'
 import { screenEffects, walkSpeedFactor, type SurvivalStats } from '../../game/survival'
 import { createSurvivalWatch } from '../../game/survivalWatch'
 import { createFountains } from '../../game/town/fountains'
@@ -21,9 +22,8 @@ const WATCH_TAP_MS = 250
 type Arms = {
   leftHand: () => THREE.Object3D | null
   raiseWatch: (raised: boolean) => void
-  eat: () => void
-  drink: () => void
-  isEating: () => boolean
+  startEating: (kind: ConsumeKind) => boolean
+  stopEating: () => void
 }
 
 export interface SurvivalDeps {
@@ -88,6 +88,7 @@ export function useSurvival(deps: SurvivalDeps) {
   /** Local time when the fountains give water again (server: survivalStats.fountainSip). */
   let fountainReadyAt = 0
   let messageTimer: number | undefined
+  let eating: { kind: ConsumeKind; code: string | null; button: string | null; startedAt: number; bites: number; released: boolean } | null = null
   const projection = new THREE.Vector3()
 
   function say(text: string): void {
@@ -195,12 +196,14 @@ export function useSurvival(deps: SurvivalDeps) {
   function sip(): void {
     if (!nearFountain() || knockedOut.value || recovery.value || fountainDry()) return
     deps.gameRoomRef.value?.send('drink_fountain')
-    deps.getArms()?.drink()
+    if (!eating && deps.getArms()?.startEating('drink')) {
+      eating = { kind: 'drink', code: null, button: null, startedAt: performance.now(), bites: 1, released: true }
+    }
     particles?.burst('drink')
   }
 
   /** Interact (nothing else in front): returns true when it was used here. */
-  function onPrimaryDown(): boolean {
+  function onPrimaryDown(button: string): boolean {
     if (!deps.pointerLocked.value || knockedOut.value || recovery.value) return false
     if (nearFountain()) {
       if (fountainDry()) {
@@ -210,16 +213,55 @@ export function useSurvival(deps: SurvivalDeps) {
       sip()
       return true
     }
+    return startEating(button)
+  }
+
+  function startEating(button: string): boolean {
+    if (!deps.pointerLocked.value || knockedOut.value || recovery.value) return false
     const item = heldConsumable()
     if (!item) return false
-    const arms = deps.getArms()
-    if (arms?.isEating()) return true
-    const kind = item.code.includes('water') || item.code.includes('juice') || item.code.includes('coffee') ? 'drink' : 'eat'
-    if (kind === 'drink') arms?.drink()
-    else arms?.eat()
-    deps.gameRoomRef.value?.send('consume', { code: item.code })
-    window.setTimeout(() => particles?.burst(kind), 350)
+    if (eating) return true
+    const kind = consumeKind(item.code)
+    if (stats.value && isFull(stats.value, kind)) {
+      say(kind === 'drink' ? 'You are not thirsty.' : 'You are not hungry.')
+      return true
+    }
+    if (!deps.getArms()?.startEating(kind)) return true
+    eating = { kind, code: item.code, button, startedAt: performance.now(), bites: 0, released: false }
+    tickEating()
     return true
+  }
+
+  function tickEating(): void {
+    if (!eating) return
+    const item = heldConsumable()
+    const keepGoing =
+      !eating.released &&
+      eating.code !== null &&
+      item?.code === eating.code &&
+      deps.pointerLocked.value &&
+      !knockedOut.value &&
+      !(stats.value && isFull(stats.value, eating.kind))
+    const step = eatStep((performance.now() - eating.startedAt) / 1000, eating.bites, keepGoing)
+    if (step === 'stop') {
+      eating = null
+      deps.getArms()?.stopEating()
+      return
+    }
+    if (step !== 'bite') return
+    eating.bites++
+    deps.gameRoomRef.value?.send('consume', { code: eating.code })
+    const kind = eating.kind
+    window.setTimeout(() => particles?.burst(kind), 350)
+  }
+
+  function releaseEating(button: string): void {
+    if (eating && eating.button === button) eating.released = true
+  }
+
+  const onMouseUp = (e: MouseEvent) => releaseEating(mouseButtonCode(e.button))
+  const onBlur = () => {
+    if (eating) eating.released = true
   }
 
   function onKeyDown(e: KeyboardEvent): boolean {
@@ -240,6 +282,7 @@ export function useSurvival(deps: SurvivalDeps) {
   let watchPressedAt: number | null = null
 
   function onKeyUp(e: KeyboardEvent): void {
+    releaseEating(e.code)
     if (!matches('survivalWatch', e.code)) return
     deps.getArms()?.raiseWatch(false)
     const tapped = watchPressedAt !== null && performance.now() - watchPressedAt < WATCH_TAP_MS
@@ -249,8 +292,12 @@ export function useSurvival(deps: SurvivalDeps) {
 
   function bindInputListeners(): () => void {
     document.addEventListener('keyup', onKeyUp)
+    window.addEventListener('mouseup', onMouseUp)
+    window.addEventListener('blur', onBlur)
     return () => {
       document.removeEventListener('keyup', onKeyUp)
+      window.removeEventListener('mouseup', onMouseUp)
+      window.removeEventListener('blur', onBlur)
     }
   }
 
@@ -285,6 +332,7 @@ export function useSurvival(deps: SurvivalDeps) {
     if (!particles && fpHands) particles = createBiteParticles(fpHands)
     particles?.update(dt)
     prompt.value = currentPrompt()
+    tickEating()
     tickRecovery()
   }
 
@@ -342,6 +390,7 @@ export function useSurvival(deps: SurvivalDeps) {
     heldConsumable,
     onTownLoaded,
     onPrimaryDown,
+    startEating,
     onKeyDown,
     bindInputListeners,
     tick,
