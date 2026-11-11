@@ -95,6 +95,7 @@
 
     --cc-world: linear-gradient(180deg, rgb(var(--cc-ink-900)), rgb(var(--cc-ink-950)) 420px);
     --cc-world-pattern: none;
+    --cc-bar-background: rgb(var(--cc-ink-950));
   }
 
   [data-theme='arcade'] {
@@ -226,6 +227,7 @@
     --cc-hud-radius: 14px;
     --cc-world: rgb(var(--cc-ink-950));
     --cc-world-pattern: radial-gradient(rgb(var(--cc-line) / 0.09) 1px, transparent 1.5px) 0 0 / 18px 18px;
+    --cc-bar-background: rgb(var(--cc-ink-900));
   }
 
   [data-theme='tactical'] {
@@ -524,6 +526,27 @@
   .cc-panel-header {
     @apply flex items-center justify-between gap-3 px-5 py-3;
     border-bottom: 1px solid rgb(var(--cc-line) / 0.1);
+  }
+
+  .cc-bar {
+    background: var(--cc-bar-background);
+    border-bottom: var(--cc-panel-border);
+  }
+  .cc-bar-side {
+    border-bottom: 0;
+    border-right: var(--cc-panel-border);
+  }
+  .cc-bar-floating {
+    @apply rounded-full backdrop-blur-xl;
+    background: rgb(var(--cc-ink-900) / 0.6);
+    border: var(--cc-panel-border);
+  }
+  .cc-navlink {
+    font-family: var(--cc-label-font);
+    font-size: max(var(--cc-label-size), 0.9375rem);
+    font-weight: max(var(--cc-label-weight), 600);
+    text-transform: var(--cc-label-case);
+    letter-spacing: var(--cc-label-tracking);
   }
 
   .cc-btn {

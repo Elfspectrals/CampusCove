@@ -1,4 +1,5 @@
-import { readonly, ref } from 'vue'
+import { computed, readonly, ref } from 'vue'
+import { THEME_LAYOUTS } from '../theme/layouts'
 import { DEFAULT_THEME, THEME_STORAGE_KEY, parseTheme, type ThemeId } from '../theme/themes'
 
 function load(): ThemeId {
@@ -25,6 +26,8 @@ function apply(theme: ThemeId): void {
 const current = ref<ThemeId>(load())
 
 export const activeTheme = readonly(current)
+
+export const activeLayout = computed(() => THEME_LAYOUTS[current.value])
 
 export function applySavedTheme(): void {
   apply(current.value)
