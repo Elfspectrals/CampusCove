@@ -182,7 +182,7 @@ function statusLabel(status: string): string {
     </div>
 
     <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-      <section class="min-h-[360px] overflow-hidden rounded-2xl border border-white/10 bg-ink-900">
+      <section class="min-h-[360px] overflow-hidden cc-panel">
         <template v-if="friendsTab === 'pending'">
           <div v-if="friendsLoading" class="p-12 text-center text-mist">{{ t('friendsPage.loading') }}</div>
           <div v-else-if="pending.length === 0" class="p-12 text-center">
@@ -192,7 +192,7 @@ function statusLabel(status: string): string {
           <div v-else>
             <div v-if="incomingPending.length > 0" class="p-4">
               <h2 class="m-0 mb-2 px-1 text-sm font-semibold text-mist">{{ t('friendsPage.incoming') }}</h2>
-              <ul class="m-0 list-none divide-y divide-white/10 p-0">
+              <ul class="m-0 list-none divide-y divide-line/10 p-0">
                 <li v-for="p in incomingPending" :key="p.account_id" class="flex flex-wrap items-center gap-3 px-1 py-3">
                   <span class="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-ink-700 font-display text-fog">
                     {{ friendInitial(p.display_name) }}
@@ -204,15 +204,15 @@ function statusLabel(status: string): string {
                   <div class="flex items-center gap-1">
                     <button type="button" class="cc-btn cc-btn-sun cc-btn-sm" @click="acceptFriend(p.account_id)">{{ t('friendsPage.accept') }}</button>
                     <button type="button" class="cc-btn cc-btn-ghost cc-btn-sm" @click="declineFriend(p.account_id)">{{ t('friendsPage.decline') }}</button>
-                    <button type="button" class="grid h-11 w-11 place-items-center rounded-lg text-mist transition-colors hover:bg-white/5 hover:text-coral" :title="t('friendsPage.block')" :aria-label="t('friendsPage.block')" @click="blockFriend(p.account_id)"><UiIcon name="ban" :size="16" :stroke-width="1.75" /></button>
-                    <button type="button" class="grid h-11 w-11 place-items-center rounded-lg text-mist transition-colors hover:bg-white/5 hover:text-fog" :title="t('report.action')" :aria-label="t('report.action')" @click="reporting = { accountId: p.account_id, name: p.display_name }"><UiIcon name="flag" :size="16" :stroke-width="1.75" /></button>
+                    <button type="button" class="grid h-11 w-11 place-items-center rounded-lg text-mist transition-colors hover:bg-line/5 hover:text-coral" :title="t('friendsPage.block')" :aria-label="t('friendsPage.block')" @click="blockFriend(p.account_id)"><UiIcon name="ban" :size="16" :stroke-width="1.75" /></button>
+                    <button type="button" class="grid h-11 w-11 place-items-center rounded-lg text-mist transition-colors hover:bg-line/5 hover:text-fog" :title="t('report.action')" :aria-label="t('report.action')" @click="reporting = { accountId: p.account_id, name: p.display_name }"><UiIcon name="flag" :size="16" :stroke-width="1.75" /></button>
                   </div>
                 </li>
               </ul>
             </div>
             <div v-if="outgoingPending.length > 0" class="p-4">
               <h2 class="m-0 mb-2 px-1 text-sm font-semibold text-mist">{{ t('friendsPage.sent') }}</h2>
-              <ul class="m-0 list-none divide-y divide-white/10 p-0">
+              <ul class="m-0 list-none divide-y divide-line/10 p-0">
                 <li v-for="p in outgoingPending" :key="p.account_id" class="flex items-center gap-3 px-1 py-3">
                   <span class="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-ink-700 font-display text-mist">
                     {{ friendInitial(p.display_name) }}
@@ -237,7 +237,7 @@ function statusLabel(status: string): string {
             </p>
           </div>
           <ul v-else class="m-0 grid list-none gap-1 p-2 sm:grid-cols-2">
-            <li v-for="f in filteredFriends" :key="f.account_id" class="group flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-white/5">
+            <li v-for="f in filteredFriends" :key="f.account_id" class="group flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-line/5">
               <span class="relative shrink-0">
                 <span class="grid h-10 w-10 place-items-center rounded-lg bg-ink-700 font-display text-fog" :class="f.status === 'offline' ? 'opacity-50' : ''">
                   {{ friendInitial(f.display_name) }}
@@ -272,7 +272,7 @@ function statusLabel(status: string): string {
       </section>
 
       <div class="flex flex-col gap-6 self-start">
-        <aside class="rounded-2xl border border-white/10 bg-ink-900 p-5">
+        <aside class="cc-panel p-5">
           <h2 class="m-0 text-base font-semibold">{{ t('friendsPage.addTitle') }}</h2>
           <div class="mt-4 flex items-end gap-2">
             <div class="min-w-0 flex-1">
@@ -296,7 +296,7 @@ function statusLabel(status: string): string {
           </button>
         </aside>
 
-        <aside v-if="referral" class="rounded-2xl border border-white/10 bg-ink-900 p-5">
+        <aside v-if="referral" class="cc-panel p-5">
           <h2 class="m-0 text-base font-semibold">{{ t('friendsPage.inviteTitle') }}</h2>
           <i18n-t keypath="friendsPage.inviteBody" tag="p" class="m-0 mt-2 text-sm text-mist" scope="global">
             <template #referrer><UiCurrency currency="coins" :amount="referral.rewards.referrer" :size="14" /></template>
@@ -311,7 +311,7 @@ function statusLabel(status: string): string {
           </div>
           <p class="m-0 mt-2 text-xs text-mist">{{ t('friendsPage.code') }} <span class="font-mono text-fog">{{ referral.code }}</span></p>
 
-          <ul v-if="referral.referees.length > 0" class="m-0 mt-4 list-none divide-y divide-white/10 border-t border-white/10 p-0">
+          <ul v-if="referral.referees.length > 0" class="m-0 mt-4 list-none divide-y divide-line/10 border-t border-line/10 p-0">
             <li v-for="r in referral.referees" :key="r.account_id" class="py-3">
               <div class="flex items-center justify-between gap-2">
                 <p class="m-0 truncate font-semibold">{{ r.display_name }}</p>

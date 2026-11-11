@@ -49,17 +49,17 @@ useDialogFocus(dialogEl, { onEscape: () => !props.submitting && emit('close') })
             {{ t('gems.packGems', { n: pack.gems.toLocaleString(locale) }) }}
           </h2>
         </div>
-        <button type="button" class="grid h-11 w-11 place-items-center rounded-lg text-mist transition-colors hover:bg-white/5 hover:text-fog" :aria-label="t('gems.cancel')" :disabled="submitting" @click="emit('close')">
+        <button type="button" class="grid h-11 w-11 place-items-center rounded-lg text-mist transition-colors hover:bg-line/5 hover:text-fog" :aria-label="t('gems.cancel')" :disabled="submitting" @click="emit('close')">
           <UiIcon name="x" :size="18" :stroke-width="1.75" />
         </button>
       </div>
 
-      <dl class="mt-5 space-y-2 rounded-xl border border-white/10 p-4 text-sm">
+      <dl class="mt-5 space-y-2 rounded-xl border border-line/10 p-4 text-sm">
         <div class="flex justify-between gap-4">
           <dt class="text-mist">{{ t('gems.pack') }}</dt>
           <dd class="m-0">{{ t('gems.packGems', { n: pack.gems.toLocaleString(locale) }) }}</dd>
         </div>
-        <div class="flex items-baseline justify-between gap-4 border-t border-white/10 pt-2">
+        <div class="flex items-baseline justify-between gap-4 border-t border-line/10 pt-2">
           <dt class="text-mist">{{ t('gems.total') }}</dt>
           <dd class="m-0 text-2xl font-semibold tabular-nums text-fog">{{ price }}</dd>
         </div>

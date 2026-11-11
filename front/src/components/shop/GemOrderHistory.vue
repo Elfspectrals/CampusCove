@@ -25,12 +25,12 @@ function statusClass(order: GemOrder): string {
 </script>
 
 <template>
-  <section class="rounded-2xl border border-white/10 bg-ink-900 p-4 sm:p-5" aria-labelledby="gem-history-title">
+  <section class="cc-panel p-4 sm:p-5" aria-labelledby="gem-history-title">
     <h2 id="gem-history-title" class="m-0 text-base font-semibold">{{ t('gems.history') }}</h2>
     <p v-if="loading" class="m-0 mt-3 text-sm text-mist">…</p>
     <p v-else-if="error" class="m-0 mt-3 text-sm text-coral" role="alert">{{ error }}</p>
     <p v-else-if="orders.length === 0" class="m-0 mt-3 text-sm text-mist">{{ t('gems.historyEmpty') }}</p>
-    <ul v-else class="m-0 mt-3 list-none divide-y divide-white/10 border-t border-white/10 p-0">
+    <ul v-else class="m-0 mt-3 list-none divide-y divide-line/10 border-t border-line/10 p-0">
       <li v-for="order in orders" :key="order.public_id" class="flex min-h-11 flex-wrap items-center gap-x-4 gap-y-1 py-2 text-sm">
         <UiCurrency currency="premium" :amount="order.gems" :size="16" />
         <span class="font-semibold tabular-nums">{{ formatPrice(order.amount_cents, order.currency, locale) }}</span>

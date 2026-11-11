@@ -555,7 +555,7 @@
     --btn-edge: var(--cc-ink-800);
     --btn-background: rgb(var(--btn-bg));
     --btn-ring: 0 0 0 transparent;
-    @apply relative inline-flex min-h-11 cursor-pointer select-none items-center justify-center gap-2 overflow-hidden whitespace-nowrap px-5 py-2 leading-none no-underline;
+    @apply relative inline-flex min-h-11 max-w-full cursor-pointer select-none items-center justify-center gap-2 overflow-hidden px-5 py-2 text-center leading-tight no-underline;
     font-family: var(--cc-btn-font);
     font-size: calc(var(--cc-btn-scale) * 1rem);
     font-weight: var(--cc-btn-weight);

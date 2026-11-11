@@ -113,7 +113,7 @@ const canCheckAgain = computed(() => failure.value === 'network' || phase.value 
 
 <template>
   <div class="mx-auto w-full max-w-lg">
-    <section class="rounded-2xl border border-white/10 bg-ink-900 p-6 text-center sm:p-8" aria-labelledby="gem-return-title">
+    <section class="cc-panel p-6 text-center sm:p-8" aria-labelledby="gem-return-title">
       <div role="status" aria-live="polite">
         <div class="mx-auto grid h-16 w-16 place-items-center rounded-xl bg-ink-800" :class="view.tone">
           <UiCurrency v-if="phase === 'success' && !failure" currency="premium" :size="40" />

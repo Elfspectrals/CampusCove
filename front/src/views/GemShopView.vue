@@ -133,7 +133,7 @@ function closeModal() {
     </p>
   
     <div v-if="catalogLoading" class="grid grid-cols-2 gap-4 lg:grid-cols-4">
-      <div v-for="n in 4" :key="n" class="h-56 animate-pulse rounded-2xl border border-white/10 bg-ink-900" />
+      <div v-for="n in 4" :key="n" class="h-56 animate-pulse cc-panel" />
     </div>
 
     <div v-else-if="catalogError" class="cc-alert cc-alert-error" role="alert">
@@ -151,11 +151,11 @@ function closeModal() {
     </p>
 
     <ul class="m-0 grid list-none grid-cols-1 gap-4 p-0 min-[420px]:grid-cols-2 lg:grid-cols-4">
-      <li v-for="(pack, i) in catalog.packs" :key="pack.code" class="flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-ink-900">
+      <li v-for="(pack, i) in catalog.packs" :key="pack.code" class="flex flex-col overflow-hidden cc-panel">
         <div class="grid h-32 place-items-center bg-ink-800">
           <UiCurrency currency="premium" :size="48 + i * 10" />
         </div>
-        <div class="flex flex-1 flex-col gap-1 border-t border-white/10 px-4 py-4">
+        <div class="flex flex-1 flex-col gap-1 border-t border-line/10 px-4 py-4">
           <p class="m-0 text-xl font-semibold leading-tight tabular-nums text-fog">{{ t('gems.packGems', { n: pack.gems.toLocaleString(locale) }) }}</p>
           <p class="m-0 text-lg tabular-nums text-fog">{{ formatPrice(pack.amount_cents, pack.currency, locale) }}</p>
           <p class="m-0 text-xs text-mist">{{ t('gems.simulatedPrice') }}</p>

@@ -42,7 +42,7 @@ async function confirmDelete() {
 </script>
 
 <template>
-  <section class="rounded-2xl border border-white/10 bg-ink-900 p-5" aria-labelledby="privacy-title">
+  <section class="cc-panel p-5" aria-labelledby="privacy-title">
     <h2 id="privacy-title" class="m-0 text-base font-semibold">{{ t('privacy.title') }}</h2>
     <p class="m-0 mt-1 text-sm text-mist">{{ t('privacy.body') }}</p>
     <div class="mt-4 flex flex-col gap-2">

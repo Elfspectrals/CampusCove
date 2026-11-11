@@ -30,7 +30,7 @@ function switchLocale(next: Locale) {
 </script>
 
 <template>
-  <footer class="border-t border-white/10 bg-ink-950 px-4 py-8 text-sm sm:px-8">
+  <footer class="border-t border-line/10 bg-ink-950 px-4 py-8 text-sm sm:px-8">
     <div class="mx-auto flex max-w-6xl flex-col gap-6 md:flex-row md:justify-between">
       <div class="max-w-xs">
         <UiLogo size="sm" />
