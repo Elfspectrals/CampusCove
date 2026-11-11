@@ -42,21 +42,21 @@ async function confirmDelete() {
 </script>
 
 <template>
-  <section class="cc-panel p-5" aria-labelledby="privacy-title">
-    <h2 id="privacy-title" class="cc-display m-0 text-xl">{{ t('privacy.title') }}</h2>
-    <p class="m-0 mt-1 text-sm font-semibold text-mist">{{ t('privacy.body') }}</p>
+  <section class="rounded-2xl border border-white/10 bg-ink-900 p-5" aria-labelledby="privacy-title">
+    <h2 id="privacy-title" class="m-0 text-base font-semibold">{{ t('privacy.title') }}</h2>
+    <p class="m-0 mt-1 text-sm text-mist">{{ t('privacy.body') }}</p>
     <div class="mt-4 flex flex-col gap-2">
       <button type="button" class="cc-btn cc-btn-ghost cc-btn-sm" :disabled="exporting" @click="exportData">
-        <UiIcon name="box" :size="16" /> {{ exporting ? t('privacy.exporting') : t('privacy.export') }}
+        <UiIcon name="box" :size="16" :stroke-width="1.75" /> {{ exporting ? t('privacy.exporting') : t('privacy.export') }}
       </button>
-      <button v-if="!confirming" type="button" class="cc-btn cc-btn-coral cc-btn-sm" @click="confirming = true">
-        <UiIcon name="trash" :size="16" /> {{ t('privacy.delete') }}
+      <button v-if="!confirming" type="button" class="inline-flex min-h-11 items-center justify-center gap-2 text-sm font-semibold text-coral transition-colors hover:underline" @click="confirming = true">
+        <UiIcon name="trash" :size="16" :stroke-width="1.75" /> {{ t('privacy.delete') }}
       </button>
     </div>
 
-    <form v-if="confirming" class="cc-panel-flat mt-4 flex flex-col gap-3 p-4" @submit.prevent="confirmDelete">
-      <p class="m-0 font-extrabold text-coral">{{ t('privacy.deleteTitle') }}</p>
-      <p class="m-0 text-sm font-semibold text-mist">{{ t('privacy.deleteBody') }}</p>
+    <form v-if="confirming" class="mt-4 flex flex-col gap-3 rounded-xl border border-coral/30 p-4" @submit.prevent="confirmDelete">
+      <p class="m-0 font-semibold text-coral">{{ t('privacy.deleteTitle') }}</p>
+      <p class="m-0 text-sm text-mist">{{ t('privacy.deleteBody') }}</p>
       <div>
         <label for="delete-password" class="cc-label">{{ t('privacy.password') }}</label>
         <input id="delete-password" v-model="password" type="password" required autocomplete="current-password" class="cc-input" />

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { getStoredAuth } from '../api/session'
 import { useWalletBalances } from '../composables/useWalletBalances'
 import * as friendsApi from '../api/friends'
@@ -8,8 +9,10 @@ import type { Friend } from '../api/friends'
 import UiIcon from '../components/ui/UiIcon.vue'
 import UiCurrency from '../components/ui/UiCurrency.vue'
 import PrivacyPanel from '../components/site/PrivacyPanel.vue'
+import townHero from '../assets/landing/town-hero.webp'
 
 const router = useRouter()
+const { t } = useI18n()
 
 const auth = computed(() => getStoredAuth())
 const wallet = useWalletBalances()
@@ -59,9 +62,9 @@ function statusDotClass(status: string): string {
 }
 
 function statusLabel(status: string): string {
-  if (status === 'online') return 'Online'
-  if (status === 'playing') return 'Playing CampusCove'
-  return 'Offline'
+  if (status === 'online') return t('home.status.online')
+  if (status === 'playing') return t('home.status.playing')
+  return t('home.status.offline')
 }
 
 function launchGame() {
@@ -72,173 +75,100 @@ function openChat(friend: Friend) {
   // TODO: Implement chat functionality
   console.log('Open chat with', friend.display_name)
 }
-
-const memberSince = 'February 2026'
-const lastOnline = 'Just now'
-const stats = computed(() => ({
-  friends: friends.value.length,
-  level: 5,
-  items: 24,
-  achievements: 8,
-}))
-const levelProgress = 62
-
-
-
 </script>
 
 <template>
   <div class="mx-auto w-full max-w-[1500px]">
-    <div class="grid gap-5 lg:grid-cols-[300px_minmax(0,1fr)_300px]">
-      <!-- player card -->
-      <section class="cc-panel order-2 p-5 lg:order-1">
+    <div class="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)_300px]">
+      <section class="order-2 self-start rounded-2xl border border-white/10 bg-ink-900 p-5 lg:order-1">
         <div class="flex items-center gap-4">
-          <div class="relative">
-            <div class="grid h-20 w-20 place-items-center rounded-2xl bg-gradient-to-br from-grape to-coral font-display text-4xl text-white shadow-[inset_0_-5px_0_rgb(0_0_0/0.25),0_4px_0_rgb(var(--cc-ink-950))]">
-              {{ initial }}
-            </div>
-            <span class="absolute -bottom-2 -right-2 grid h-8 min-w-8 place-items-center rounded-lg border-2 border-ink-950 bg-sun px-1 font-display text-sm text-ink-950">
-              {{ stats.level }}
-            </span>
+          <div class="grid h-16 w-16 shrink-0 place-items-center rounded-xl bg-ink-700 font-display text-3xl text-fog">
+            {{ initial }}
           </div>
           <div class="min-w-0">
-            <h1 class="cc-display m-0 truncate text-2xl">{{ displayName }}</h1>
+            <h1 class="m-0 truncate text-xl font-semibold">{{ displayName }}</h1>
             <p class="m-0 truncate font-mono text-xs text-mist">{{ handle }}</p>
           </div>
         </div>
 
-        <div class="mt-5">
-          <div class="mb-1.5 flex justify-between text-xs font-extrabold uppercase tracking-wider">
-            <span class="text-mist">Level {{ stats.level }}</span>
-            <span class="text-mint">{{ levelProgress }}%</span>
+        <dl class="m-0 mt-6 divide-y divide-white/10 border-t border-white/10 text-sm">
+          <div class="flex min-h-11 items-center justify-between">
+            <dt class="text-mist">{{ t('home.friends') }}</dt>
+            <dd class="m-0 font-semibold tabular-nums">{{ friends.length }}</dd>
           </div>
-          <div class="cc-meter"><span :style="{ width: `${levelProgress}%` }" /></div>
-        </div>
-
-        <dl class="mt-5 grid grid-cols-2 gap-2">
-          <div class="cc-panel-flat px-3 py-2.5">
-            <dt class="cc-eyebrow">Friends</dt>
-            <dd class="cc-display m-0 text-2xl">{{ stats.friends }}</dd>
+          <div class="flex min-h-11 items-center justify-between">
+            <dt class="text-mist">{{ t('home.coins') }}</dt>
+            <dd class="m-0"><UiCurrency currency="coins" :amount="wallet.coins" /></dd>
           </div>
-          <div class="cc-panel-flat px-3 py-2.5">
-            <dt class="cc-eyebrow">Items</dt>
-            <dd class="cc-display m-0 text-2xl">{{ stats.items }}</dd>
-          </div>
-          <div class="cc-panel-flat px-3 py-2.5">
-            <dt class="cc-eyebrow">Trophies</dt>
-            <dd class="cc-display m-0 text-2xl">{{ stats.achievements }}</dd>
-          </div>
-          <div class="cc-panel-flat px-3 py-2.5">
-            <dt class="cc-eyebrow">Level</dt>
-            <dd class="cc-display m-0 text-2xl text-sun">{{ stats.level }}</dd>
+          <div class="flex min-h-11 items-center justify-between">
+            <dt class="text-mist">{{ t('home.gems') }}</dt>
+            <dd class="m-0"><UiCurrency currency="premium" :amount="wallet.premium" /></dd>
           </div>
         </dl>
-
-        <div class="mt-5 space-y-2 text-sm font-semibold">
-          <div class="flex items-center justify-between">
-            <span class="text-mist">Member since</span><span>{{ memberSince }}</span>
-          </div>
-          <div class="flex items-center justify-between">
-            <span class="text-mist">Last online</span><span class="text-mint">{{ lastOnline }}</span>
-          </div>
-          <div class="flex items-center justify-between">
-            <span class="text-mist">Coins</span><UiCurrency currency="coins" :amount="wallet.coins" />
-          </div>
-          <div class="flex items-center justify-between">
-            <span class="text-mist">Gems</span><UiCurrency currency="premium" :amount="wallet.premium" />
-          </div>
-        </div>
       </section>
 
-      <!-- play hero + quick tiles -->
-      <section class="order-1 flex min-w-0 flex-col gap-5 lg:order-2">
-        <div class="cc-panel relative min-h-[320px] overflow-hidden p-0 sm:min-h-[380px]">
-          <div
-            class="absolute inset-0"
-            style="
-              background:
-                radial-gradient(600px 300px at 70% 110%, rgb(255 92 122 / 0.55), transparent 65%),
-                radial-gradient(500px 260px at 85% 70%, rgb(255 202 58 / 0.45), transparent 60%),
-                linear-gradient(160deg, rgb(32 38 92), rgb(14 17 48) 60%, rgb(60 30 100));
-            "
-          />
-          <!-- iso town skyline -->
-          <svg class="absolute bottom-0 right-0 h-[85%] w-auto opacity-35 sm:opacity-90" viewBox="0 0 400 260" aria-hidden="true">
-            <g>
-              <path d="M220 120l60-34 60 34-60 34z" fill="rgb(255 202 58)" />
-              <path d="M220 120v80l60 34v-80z" fill="rgb(201 120 14)" />
-              <path d="M340 120v80l-60 34v-80z" fill="rgb(150 80 10)" />
-              <path d="M250 150l14 8v18l-14-8zM300 158l14-8v18l-14 8z" fill="rgb(255 240 190)" />
-              <path d="M120 150l50-28 50 28-50 28z" fill="rgb(64 214 245)" />
-              <path d="M120 150v70l50 28v-70z" fill="rgb(22 128 176)" />
-              <path d="M220 150v70l-50 28v-70z" fill="rgb(16 90 130)" />
-              <path d="M140 175l12 7v14l-12-7z" fill="rgb(220 250 255)" />
-              <path d="M300 60l40-22 40 22-40 22z" fill="rgb(168 110 255)" />
-              <path d="M300 60v120l40 22V82z" fill="rgb(104 56 196)" />
-              <path d="M380 60v120l-40 22V82z" fill="rgb(80 40 160)" />
-              <path d="M312 90l10 6v10l-10-6zM312 120l10 6v10l-10-6z" fill="rgb(235 220 255)" />
-              <path d="M0 260 200 150l200 110z" fill="rgb(8 10 32)" opacity=".55" />
-            </g>
-          </svg>
-          <div class="relative flex h-full flex-col justify-end gap-4 p-6 sm:p-8">
-            <span class="cc-chip cc-chip-mint self-start"><span class="h-2 w-2 rounded-full bg-mint" /> Servers online</span>
+      <section class="order-1 min-w-0 lg:order-2">
+        <div class="relative isolate flex min-h-[320px] flex-col justify-end overflow-hidden rounded-2xl border border-white/10 sm:min-h-[380px]">
+          <img :src="townHero" alt="" width="2400" height="1350" class="absolute inset-0 -z-10 h-full w-full object-cover object-right" />
+          <div class="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-3/4 bg-gradient-to-b from-transparent to-ink-950/90" />
+          <div class="flex flex-col items-start gap-5 p-6 sm:p-8">
             <div>
-              <p class="cc-eyebrow text-fog/70">Mode · Campus Town</p>
-              <h2 class="cc-display m-0 mt-1 text-5xl leading-none sm:text-6xl">Ready to play?</h2>
-              <p class="m-0 mt-2 max-w-md text-sm font-semibold text-fog/80">Drop into the town, visit your loft and see who's around.</p>
+              <h2 class="m-0 font-display text-4xl leading-none text-fog sm:text-5xl">{{ t('home.playTitle') }}</h2>
+              <p class="m-0 mt-3 max-w-md text-fog/85">{{ t('home.playLead') }}</p>
             </div>
-            <button type="button" class="cc-btn cc-btn-sun cc-btn-xl cc-btn-shine self-start" @click="launchGame">
-              <UiIcon name="play" :size="26" fill /> Launch game
+            <button type="button" class="cc-btn cc-btn-sun cc-btn-lg" @click="launchGame">
+              <UiIcon name="play" :size="20" fill /> {{ t('home.launch') }}
             </button>
           </div>
         </div>
-
       </section>
 
-      <!-- friends rail -->
-      <aside class="cc-panel order-3 flex max-h-[640px] flex-col overflow-hidden">
-        <div class="cc-panel-header">
+      <aside class="order-3 flex max-h-[640px] flex-col overflow-hidden rounded-2xl border border-white/10 bg-ink-900">
+        <div class="flex items-center justify-between gap-3 border-b border-white/10 py-3 pl-5 pr-2">
           <div>
-            <h2 class="cc-display m-0 text-xl">Friends</h2>
-            <p class="m-0 text-xs font-bold text-mist">{{ onlineCount }} of {{ friends.length }} online</p>
+            <h2 class="m-0 text-base font-semibold">{{ t('home.friends') }}</h2>
+            <p class="m-0 text-sm tabular-nums text-mist">{{ t('home.online', { online: onlineCount, total: friends.length }) }}</p>
           </div>
-          <RouterLink to="/friends" class="cc-btn cc-btn-ghost cc-btn-sm cc-btn-icon" title="Manage friends">
-            <UiIcon name="user-plus" :size="18" />
+          <RouterLink
+            to="/friends"
+            class="grid h-11 w-11 place-items-center rounded-lg text-mist transition-colors hover:bg-white/5 hover:text-fog"
+            :title="t('home.manageFriends')"
+            :aria-label="t('home.manageFriends')"
+          >
+            <UiIcon name="user-plus" :size="18" :stroke-width="1.75" />
           </RouterLink>
         </div>
         <div class="min-h-0 flex-1 overflow-y-auto p-2">
-          <div v-if="friendsLoading" class="py-10 text-center text-sm font-bold text-mist">Loading friends…</div>
+          <div v-if="friendsLoading" class="py-10 text-center text-sm text-mist">{{ t('home.loadingFriends') }}</div>
           <div v-else-if="friends.length === 0" class="px-4 py-10 text-center">
-            <UiIcon name="users" :size="36" class="mx-auto text-ink-500" />
-            <p class="m-0 mt-2 text-sm font-bold text-mist">No friends yet</p>
-            <RouterLink to="/friends" class="cc-btn cc-btn-pool cc-btn-sm mt-4">Add friends</RouterLink>
+            <UiIcon name="users" :size="24" :stroke-width="1.75" class="mx-auto text-mist" />
+            <p class="m-0 mt-2 text-sm text-mist">{{ t('home.noFriends') }}</p>
+            <RouterLink to="/friends" class="cc-btn cc-btn-ghost cc-btn-sm mt-4">{{ t('home.addFriends') }}</RouterLink>
           </div>
           <ul v-else class="m-0 list-none space-y-1 p-0">
             <li v-for="f in sortedFriends" :key="f.account_id">
               <button
                 type="button"
-                class="group flex w-full items-center gap-3 rounded-xl p-2.5 text-left transition hover:bg-white/5"
+                class="group flex w-full items-center gap-3 rounded-lg p-2 text-left transition-colors hover:bg-white/5"
                 @click="openChat(f)"
               >
                 <span class="relative shrink-0">
-                  <span class="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-pool to-grape font-display text-white" :class="f.status === 'offline' ? 'opacity-50 grayscale' : ''">
+                  <span class="grid h-10 w-10 place-items-center rounded-lg bg-ink-700 font-display text-fog" :class="f.status === 'offline' ? 'opacity-50' : ''">
                     {{ friendInitial(f.display_name) }}
                   </span>
-                  <span :class="['absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-[3px] border-ink-900', statusDotClass(f.status)]" :title="statusLabel(f.status)" />
+                  <span :class="['absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-ink-900', statusDotClass(f.status)]" :title="statusLabel(f.status)" />
                 </span>
                 <span class="min-w-0 flex-1">
-                  <span class="block truncate text-sm font-extrabold text-fog">{{ f.display_name }}</span>
-                  <span class="block truncate text-xs font-semibold" :class="f.status === 'playing' ? 'text-pool' : f.status === 'online' ? 'text-mint' : 'text-mist/70'">{{ statusLabel(f.status) }}</span>
+                  <span class="block truncate text-sm font-semibold text-fog">{{ f.display_name }}</span>
+                  <span class="block truncate text-xs text-mist">{{ statusLabel(f.status) }}</span>
                 </span>
-                <UiIcon name="message" :size="18" class="text-mist opacity-0 transition group-hover:opacity-100" />
+                <UiIcon name="message" :size="18" :stroke-width="1.75" class="text-mist opacity-0 transition-opacity group-hover:opacity-100" />
               </button>
             </li>
           </ul>
         </div>
       </aside>
     </div>
-
-    
 
     <div class="mt-8 max-w-md">
       <PrivacyPanel />
