@@ -61,8 +61,20 @@ async function loadZoneScenery(loader: GLTFLoader, zone: WorldZone): Promise<THR
 }
 
 /**
- * Loads the world once from world.manifest.json: every zone's scenery, then the house and work building
- * exteriors (and the house interiors placed in the world) listed in the zones. Collision is composed
+ * Lightmaps are 1-2k JPEGs: decoded off the main thread as ImageBitmaps instead of on the first frame that shows them.
+ * ImageBitmaps are never flipped on upload, which matches applyInteriorLightmap's flipY = false.
+ */
+const lightmapLoader = new THREE.ImageBitmapLoader().setOptions({ imageOrientation: 'none' })
+
+async function loadLightmap(url: string): Promise<THREE.Texture> {
+  const texture = new THREE.Texture(await lightmapLoader.loadAsync(url))
+  texture.needsUpdate = true
+  return texture
+}
+
+/**
+ * Loads the world once from world.manifest.json: every zone's scenery, the house, work and store exteriors and the
+ * interiors placed in the world, all requested at once (they do not depend on each other). Collision is composed
  * separately (town/openHouses buildTownCollisionData). The group is cached, never disposed.
  */
 export function loadTownEnvironment(): Promise<TownEnvironmentBuildResult> {
@@ -74,97 +86,21 @@ export function loadTownEnvironment(): Promise<TownEnvironmentBuildResult> {
       const manifest = await fetchWorldManifest()
       const root = new THREE.Group()
       root.name = 'CampusWorld'
-      const sceneries = await Promise.all(manifest.zones.map((zone) =>
-        loadZoneScenery(loader, zone).catch((error: unknown) => {
-          if (!zone.optional) throw error
-          console.warn('[world] optional zone failed to load', zone.key, error)
-          return null
-        }),
-      ))
-      for (const scenery of sceneries) {
-        if (scenery) root.add(scenery)
-      }
-      // A missing house should not take the whole town down.
-      const houses = await Promise.all(houseBuildings(manifest).map(async (lot) => {
-        const house = findHouse(lot.key)
-        if (!house) return null
-        try {
-          const gltf = await loadModelSharingTextures(loader, house.exteriorUrl)
-          const exterior = gltf.scene
-          exterior.name = `HouseExterior_${lot.key}`
-          if (lot.interiorOffset) registerFrontDoor(exterior, lot.key)
-          exterior.position.fromArray(lot.position)
-          exterior.rotation.y = lot.rotationY
-          exterior.userData.houseKey = lot.key
-          return exterior
-        } catch (error) {
-          console.warn('[town] house exterior failed to load', lot.key, error)
-          return null
-        }
-      }))
-      for (const exterior of houses) {
-        if (exterior) root.add(exterior)
-      }
-      const interiorSources = [
-        ...openHouseLots(manifest).map((lot) => ({ lot, asset: findHouse(lot.key) })),
-        ...openWorkLots(manifest).map((lot) => ({ lot, asset: findWork(lot.key) })),
-        ...openStoreLots(manifest).map((lot) => ({ lot, asset: findStore(lot.key) })),
-      ]
-      const openInteriors = await Promise.all(interiorSources.map(async ({ lot, asset }) => {
-        if (!asset) return null
-        try {
-          const [gltf, lightmap] = await Promise.all([
-            loadModelSharingTextures(loader, asset.interiorUrl),
-            new THREE.TextureLoader().loadAsync(asset.interiorLightmapUrl),
-          ])
-          applyInteriorLightmap(gltf.scene, lightmap)
-          return placeOpenHouseInterior(gltf.scene, lot)
-        } catch (error) {
-          console.warn('[town] open house interior failed to load', lot.key, error)
-          return null
-        }
-      }))
-      for (const interior of openInteriors) {
-        if (interior) root.add(interior)
-      }
-      const works = await Promise.all(workBuildings(manifest).map(async (lot) => {
-        const asset = findWork(lot.key)
-        if (!asset) return null
-        try {
-          const gltf = await loader.loadAsync(asset.exteriorUrl)
-          const exterior = gltf.scene
-          exterior.name = `WorkExterior_${lot.key}`
-          if (lot.interiorOffset) registerFrontDoor(exterior, lot.key)
-          exterior.position.fromArray(lot.position)
-          exterior.rotation.y = lot.rotationY
-          exterior.userData.workKey = lot.key
-          return exterior
-        } catch (error) {
-          console.warn('[town] work exterior failed to load', lot.key, error)
-          return null
-        }
-      }))
-      for (const exterior of works) {
-        if (exterior) root.add(exterior)
-      }
-      const stores = await Promise.all(storeBuildings(manifest).map(async (lot) => {
-        const asset = findStore(lot.key)
-        if (!asset) return null
-        try {
-          const gltf = await loader.loadAsync(asset.exteriorUrl)
-          const exterior = gltf.scene
-          exterior.name = `StoreExterior_${lot.key}`
-          if (lot.interiorOffset) registerFrontDoor(exterior, lot.key)
-          exterior.position.fromArray(lot.position)
-          exterior.rotation.y = lot.rotationY
-          return exterior
-        } catch (error) {
-          console.warn('[town] store exterior failed to load', lot.key, error)
-          return null
-        }
-      }))
-      for (const exterior of stores) {
-        if (exterior) root.add(exterior)
+      const parts = await Promise.all([
+        Promise.all(manifest.zones.map((zone) =>
+          loadZoneScenery(loader, zone).catch((error: unknown) => {
+            if (!zone.optional) throw error
+            console.warn('[world] optional zone failed to load', zone.key, error)
+            return null
+          }),
+        )),
+        loadHouseExteriors(loader, manifest),
+        loadOpenInteriors(loader, manifest),
+        loadWorkExteriors(loader, manifest),
+        loadStoreExteriors(loader, manifest),
+      ])
+      for (const part of parts.flat()) {
+        if (part) root.add(part)
       }
       sanitizeGltfLights(root)
       configureRoomMeshShadows(root)
@@ -180,6 +116,89 @@ export function loadTownEnvironment(): Promise<TownEnvironmentBuildResult> {
     })
   }
   return townLoadPromise
+}
+
+// A missing building should not take the whole town down: each loader below logs and skips its failures.
+
+function loadHouseExteriors(loader: GLTFLoader, manifest: WorldManifest): Promise<Array<THREE.Object3D | null>> {
+  return Promise.all(houseBuildings(manifest).map(async (lot) => {
+    const house = findHouse(lot.key)
+    if (!house) return null
+    try {
+      const gltf = await loadModelSharingTextures(loader, house.exteriorUrl)
+      const exterior = gltf.scene
+      exterior.name = `HouseExterior_${lot.key}`
+      if (lot.interiorOffset) registerFrontDoor(exterior, lot.key)
+      exterior.position.fromArray(lot.position)
+      exterior.rotation.y = lot.rotationY
+      exterior.userData.houseKey = lot.key
+      return exterior
+    } catch (error) {
+      console.warn('[town] house exterior failed to load', lot.key, error)
+      return null
+    }
+  }))
+}
+
+function loadOpenInteriors(loader: GLTFLoader, manifest: WorldManifest): Promise<Array<THREE.Object3D | null>> {
+  const interiorSources = [
+    ...openHouseLots(manifest).map((lot) => ({ lot, asset: findHouse(lot.key) })),
+    ...openWorkLots(manifest).map((lot) => ({ lot, asset: findWork(lot.key) })),
+    ...openStoreLots(manifest).map((lot) => ({ lot, asset: findStore(lot.key) })),
+  ]
+  return Promise.all(interiorSources.map(async ({ lot, asset }) => {
+    if (!asset) return null
+    try {
+      const [gltf, lightmap] = await Promise.all([
+        loadModelSharingTextures(loader, asset.interiorUrl),
+        loadLightmap(asset.interiorLightmapUrl),
+      ])
+      applyInteriorLightmap(gltf.scene, lightmap)
+      return placeOpenHouseInterior(gltf.scene, lot)
+    } catch (error) {
+      console.warn('[town] open house interior failed to load', lot.key, error)
+      return null
+    }
+  }))
+}
+
+function loadWorkExteriors(loader: GLTFLoader, manifest: WorldManifest): Promise<Array<THREE.Object3D | null>> {
+  return Promise.all(workBuildings(manifest).map(async (lot) => {
+    const asset = findWork(lot.key)
+    if (!asset) return null
+    try {
+      const gltf = await loader.loadAsync(asset.exteriorUrl)
+      const exterior = gltf.scene
+      exterior.name = `WorkExterior_${lot.key}`
+      if (lot.interiorOffset) registerFrontDoor(exterior, lot.key)
+      exterior.position.fromArray(lot.position)
+      exterior.rotation.y = lot.rotationY
+      exterior.userData.workKey = lot.key
+      return exterior
+    } catch (error) {
+      console.warn('[town] work exterior failed to load', lot.key, error)
+      return null
+    }
+  }))
+}
+
+function loadStoreExteriors(loader: GLTFLoader, manifest: WorldManifest): Promise<Array<THREE.Object3D | null>> {
+  return Promise.all(storeBuildings(manifest).map(async (lot) => {
+    const asset = findStore(lot.key)
+    if (!asset) return null
+    try {
+      const gltf = await loader.loadAsync(asset.exteriorUrl)
+      const exterior = gltf.scene
+      exterior.name = `StoreExterior_${lot.key}`
+      if (lot.interiorOffset) registerFrontDoor(exterior, lot.key)
+      exterior.position.fromArray(lot.position)
+      exterior.rotation.y = lot.rotationY
+      return exterior
+    } catch (error) {
+      console.warn('[town] store exterior failed to load', lot.key, error)
+      return null
+    }
+  }))
 }
 
 export function applySceneAtmosphere(scene: THREE.Scene, renderer?: THREE.WebGLRenderer): void {

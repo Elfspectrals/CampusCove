@@ -64,8 +64,8 @@
 		@noindex path /login /register /forgot-password /reset-password /home /locker /friends /gems /gems/* /settings /game /NewNation /admin /admin/* /dev /dev/* /app.html /404.html
 		header @noindex X-Robots-Tag "noindex, nofollow"
 
-		# Vite's hashed bundles never change; models, lightmaps and manifests keep their names.
-		@hashed path_regexp ^/assets/.+-[A-Za-z0-9_-]{8}\.(js|css)$
+		# Vite's hashed bundles (and the Rapier physics .wasm) never change; models, lightmaps and manifests keep their names.
+		@hashed path_regexp ^/assets/.+-[A-Za-z0-9_-]{8}\.(js|css|wasm)$
 		header @hashed Cache-Control "public, max-age=31536000, immutable"
 		@html path / *.html
 		header @html Cache-Control "no-cache"

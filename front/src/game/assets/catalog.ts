@@ -66,7 +66,7 @@ const house = (key: HouseKey, name: string): HouseAsset => ({
   interiorUrl: `${ROOT}/houses/${key}/interior.glb`,
   interiorCollisionUrl: `${ROOT}/houses/${key}/interior.collision.json`,
   interiorLayoutUrl: `${ROOT}/houses/${key}/interior.layout.json`,
-  interiorLightmapUrl: `${ROOT}/houses/${key}/lightmap.jpg`,
+  interiorLightmapUrl: `${ROOT}/houses/${key}/lightmap.webp`,
   previewUrl: `${ROOT}/houses/${key}/preview.png`,
 })
 
@@ -139,7 +139,7 @@ const work = (key: WorkKey, name: string, job: WorkJob): WorkAsset => ({
   exteriorCollisionUrl: `${ROOT}/work/${key}/exterior.collision.json`,
   interiorUrl: `${ROOT}/work/${key}/interior.glb`,
   interiorCollisionUrl: `${ROOT}/work/${key}/interior.collision.json`,
-  interiorLightmapUrl: `${ROOT}/work/${key}/lightmap.jpg`,
+  interiorLightmapUrl: `${ROOT}/work/${key}/lightmap.webp`,
   interiorLayoutUrl: `${ROOT}/work/${key}/interior.layout.json`,
   previewUrl: `${ROOT}/work/${key}/preview.png`,
 })
@@ -169,7 +169,7 @@ export const COVE_HOME = {
   exteriorCollisionUrl: `${ROOT}/store/cove_home/exterior.collision.json`,
   interiorUrl: `${ROOT}/store/cove_home/interior.glb`,
   interiorCollisionUrl: `${ROOT}/store/cove_home/interior.collision.json`,
-  interiorLightmapUrl: `${ROOT}/store/cove_home/lightmap.jpg`,
+  interiorLightmapUrl: `${ROOT}/store/cove_home/lightmap.webp`,
   interiorLayoutUrl: `${ROOT}/store/cove_home/interior.layout.json`,
 } as const
 
@@ -180,7 +180,7 @@ export const COVE_THREADS = {
   exteriorCollisionUrl: `${ROOT}/store/cove_threads/exterior.collision.json`,
   interiorUrl: `${ROOT}/store/cove_threads/interior.glb`,
   interiorCollisionUrl: `${ROOT}/store/cove_threads/interior.collision.json`,
-  interiorLightmapUrl: `${ROOT}/store/cove_threads/lightmap.jpg`,
+  interiorLightmapUrl: `${ROOT}/store/cove_threads/lightmap.webp`,
   interiorLayoutUrl: `${ROOT}/store/cove_threads/interior.layout.json`,
   /** map-src/CampusCove/build_threads_music.py */
   musicUrl: `${ROOT}/music/cove_threads.mp3`,
@@ -198,7 +198,7 @@ const mallStore = <K extends string>(key: K, name: string) => ({
   exteriorCollisionUrl: `${ROOT}/store/${key}/exterior.collision.json`,
   interiorUrl: `${ROOT}/store/${key}/interior.glb`,
   interiorCollisionUrl: `${ROOT}/store/${key}/interior.collision.json`,
-  interiorLightmapUrl: `${ROOT}/store/${key}/lightmap.jpg`,
+  interiorLightmapUrl: `${ROOT}/store/${key}/lightmap.webp`,
   interiorLayoutUrl: `${ROOT}/store/${key}/interior.layout.json`,
 }) as const
 

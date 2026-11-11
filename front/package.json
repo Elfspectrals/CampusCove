@@ -24,7 +24,7 @@
   },
   "dependencies": {
     "@colyseus/sdk": "^0.17.41",
-    "@dimforge/rapier3d-compat": "^0.19.3",
+    "@dimforge/rapier3d": "0.19.3",
     "@fontsource/jetbrains-mono": "^5.3.0",
     "@fontsource/lilita-one": "^5.3.0",
     "@fontsource/nunito": "^5.3.0",
@@ -48,9 +48,11 @@
     "draco3dgltf": "^1.5.7",
     "knip": "^6.42.1",
     "postcss": "^8.4.49",
+    "sharp": "0.34.5",
     "tailwindcss": "^3.4.16",
     "typescript": "~5.9.3",
     "vite": "^7.2.4",
+    "vite-plugin-wasm": "3.6.0",
     "vue-tsc": "^3.1.4"
   },
   "overrides": {
