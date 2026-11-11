@@ -27,7 +27,7 @@ interface ArmPose {
  * Tunable live in dev (window.__ccArmPoses).
  */
 const ARM_POSES = {
-  watch: { hand: new THREE.Vector3(0.03, -0.07, -0.36), forearm: new THREE.Vector3(0.85, 0.3, -0.25), wristFacing: new THREE.Vector3(0, 0.25, 1) },
+  watch: { hand: new THREE.Vector3(0.03, -0.06, -0.36), forearm: new THREE.Vector3(0.9, 0.12, -0.3), wristFacing: new THREE.Vector3(0, 0.25, 1) },
   watchSpeed: 7,
 }
 if (import.meta.env?.DEV && typeof window !== 'undefined') {
