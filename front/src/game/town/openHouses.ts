@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import { disposeObject3D } from '../../avatar/compositeAvatar'
 import { findHouse, findStore, findWork } from '../assets/catalog'
 import { APARTMENT_ROOM_HEIGHT } from '../gameRoomConstants'
+import { mergeStaticMeshes } from './mergeStaticMeshes'
 import {
   fetchCollisionFile,
   setDoorBlocker,
@@ -60,6 +61,9 @@ const placedInteriors: THREE.Group[] = []
 const interiorsByHouse = new Map<string, THREE.Group>()
 /** Interior colliders the gameplay switches on and off (the pub's staff door), kept out of the static world. */
 const TOGGLED_INTERIOR_COLLIDERS = new Set(['COL_Door_Secret'])
+const FRONT_DOOR_NODE = 'Door'
+export const MOVING_EXTERIOR_NODES: ReadonlySet<string> = new Set([FRONT_DOOR_NODE])
+const MOVING_INTERIOR_NODES: ReadonlySet<string> = new Set(['Door_Secret', 'Bell'])
 const toggledColliders = new Map<string, CollisionCuboidJson>()
 
 interface FrontDoor {
@@ -96,8 +100,8 @@ function interiorAssetOf(lot: OpenLot): { interiorUrl: string; interiorCollision
 }
 
 export function registerFrontDoor(exterior: THREE.Object3D, houseKey: string): void {
-  const door = exterior.getObjectByName('Door')
-  if (!door) throw new Error(`House ${houseKey} has no Door node`)
+  const door = exterior.getObjectByName(FRONT_DOOR_NODE)
+  if (!door) throw new Error(`House ${houseKey} has no ${FRONT_DOOR_NODE} node`)
   door.rotation.y = OPEN_DOOR_ANGLE
   frontDoors.set(houseKey, { node: door, blocker: null, swing: OPEN_DOOR_ANGLE, rattleLeft: 0 })
 }
@@ -171,6 +175,7 @@ export function placeOpenHouseInterior(interior: THREE.Group, lot: OpenLot): THR
     obj.removeFromParent()
     disposeObject3D(obj)
   }
+  mergeStaticMeshes(interior, MOVING_INTERIOR_NODES)
   interior.position.fromArray(lot.interiorOffset)
   const placed = new THREE.Group()
   placed.name = `OpenHouse_${lot.key}`
