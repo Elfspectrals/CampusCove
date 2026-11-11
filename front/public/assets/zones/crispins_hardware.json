@@ -1,0 +1,406 @@
+{
+  "version": 1,
+  "zone": "crispins_hardware",
+  "name": "Crispin's Hardware",
+  "parent": "mall",
+  "bounds": {
+    "minX": -376.55,
+    "maxX": -360.95,
+    "minZ": -89.205,
+    "maxZ": -78.405
+  },
+  "props": [
+    {
+      "id": "crispins_hardware_clerk",
+      "kind": "npc",
+      "position": [
+        -364.25,
+        0.2,
+        -79.805
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pose": "idle",
+      "vendor": false,
+      "body": "#8b7aa8",
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "ponytail",
+          "color": "#6b5b95"
+        },
+        {
+          "slot": "top",
+          "key": "tee",
+          "color": "#e07a2e"
+        },
+        {
+          "slot": "bottom",
+          "key": "joggers",
+          "color": "#2f3338"
+        },
+        {
+          "slot": "shoes",
+          "key": "sneakers",
+          "color": "#4a3f62"
+        }
+      ]
+    },
+    {
+      "id": "crispins_rack_mid_a",
+      "kind": "item",
+      "key": "shop_rack",
+      "code": "decor_shop_rack",
+      "forSale": false,
+      "position": [
+        -368.75,
+        0.2,
+        -86.105
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "crispins_rack_mid_b",
+      "kind": "item",
+      "key": "shop_rack",
+      "code": "decor_shop_rack",
+      "forSale": false,
+      "position": [
+        -368.75,
+        0.2,
+        -83.705
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "crispins_rack_back_a",
+      "kind": "item",
+      "key": "shop_rack",
+      "code": "decor_shop_rack",
+      "forSale": false,
+      "position": [
+        -371.35,
+        0.2,
+        -88.605
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "crispins_rack_back_b",
+      "kind": "item",
+      "key": "shop_rack",
+      "code": "decor_shop_rack",
+      "forSale": false,
+      "position": [
+        -369.15,
+        0.2,
+        -88.605
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "crispins_checkout",
+      "kind": "item",
+      "key": "checkout_counter",
+      "code": "decor_checkout_counter",
+      "forSale": false,
+      "position": [
+        -364.25,
+        0.2,
+        -80.905
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "crispins_key_kiosk",
+      "kind": "item",
+      "key": "key_kiosk",
+      "code": "decor_key_kiosk",
+      "forSale": false,
+      "position": [
+        -373.75,
+        0.2,
+        -80.405
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "crispins_lumber_rack",
+      "kind": "item",
+      "key": "lumber_rack",
+      "code": "decor_lumber_rack",
+      "forSale": false,
+      "position": [
+        -361.25,
+        0.2,
+        -80.905
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "crispins_pegboard_a",
+      "kind": "item",
+      "key": "tool_pegboard",
+      "code": "decor_tool_pegboard",
+      "forSale": false,
+      "position": [
+        -376.515,
+        0.2,
+        -87.605
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "crispins_pegboard_b",
+      "kind": "item",
+      "key": "tool_pegboard",
+      "code": "decor_tool_pegboard",
+      "forSale": false,
+      "position": [
+        -376.515,
+        0.2,
+        -84.805
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "crispins_pegboard_c",
+      "kind": "item",
+      "key": "tool_pegboard",
+      "code": "decor_tool_pegboard",
+      "forSale": false,
+      "position": [
+        -376.515,
+        0.2,
+        -82.005
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "crispins_paint_chips",
+      "kind": "item",
+      "key": "paint_chip_board",
+      "code": "decor_paint_chip_board",
+      "forSale": false,
+      "position": [
+        -371.15,
+        0.2,
+        -89.145
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "crispins_toolbox_plinth",
+      "kind": "item",
+      "key": "display_plinth",
+      "code": "decor_display_plinth",
+      "forSale": false,
+      "position": [
+        -371.25,
+        0.2,
+        -84.405
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "crispins_hardware_workbench",
+      "kind": "item",
+      "key": "workbench",
+      "code": "decor_workbench",
+      "forSale": true,
+      "price": 340,
+      "position": [
+        -375.05,
+        0.2,
+        -84.905
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Solid workbench with a vice and a tool rail."
+    },
+    {
+      "id": "crispins_hardware_stepladder",
+      "kind": "item",
+      "key": "stepladder",
+      "code": "decor_stepladder",
+      "forSale": true,
+      "price": 140,
+      "position": [
+        -375.25,
+        0.2,
+        -87.805
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Aluminium stepladder with a safety platform."
+    },
+    {
+      "id": "crispins_hardware_toolbox",
+      "kind": "item",
+      "key": "toolbox",
+      "code": "decor_toolbox",
+      "forSale": true,
+      "price": 90,
+      "position": [
+        -371.25,
+        1.1,
+        -84.405
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Red steel toolbox, latches included."
+    },
+    {
+      "id": "crispins_hardware_paint_cans",
+      "kind": "item",
+      "key": "paint_cans",
+      "code": "decor_paint_cans",
+      "forSale": true,
+      "price": 110,
+      "position": [
+        -367.25,
+        0.2,
+        -87.905
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Pallet of paint cans in four colours."
+    },
+    {
+      "id": "crispins_hardware_wheelbarrow",
+      "kind": "item",
+      "key": "wheelbarrow",
+      "code": "decor_wheelbarrow",
+      "forSale": true,
+      "price": 180,
+      "position": [
+        -362.95,
+        0.2,
+        -85.005
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Green garden wheelbarrow on a rubber wheel."
+    },
+    {
+      "id": "crispins_hardware_metal_shelving",
+      "kind": "item",
+      "key": "metal_shelving",
+      "code": "decor_metal_shelving",
+      "forSale": true,
+      "price": 260,
+      "position": [
+        -363.15,
+        0.2,
+        -88.605
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Orange warehouse shelving, boxes included."
+    }
+  ],
+  "areas": [
+    {
+      "id": "crispins_hardware",
+      "name": "Crispin's Hardware",
+      "role": "seller",
+      "npc": "crispins_hardware_clerk",
+      "bounds": {
+        "minX": -376.55,
+        "maxX": -360.95,
+        "minZ": -89.205,
+        "maxZ": -78.405
+      },
+      "offers": [],
+      "priceTags": true
+    }
+  ]
+}

@@ -112,8 +112,11 @@ Le jeu refuse une cellule dont l'assignation ne correspond pas au build (message
 ## Décorer une zone du monde ouvert
 
 Le sélecteur **Zone…** de la barre du haut ouvre une zone de `world.manifest.json` : son modèle, ses bâtiments et leurs
-intérieurs servent de fond (le mall s'ouvre aussi, pour ses six boutiques ; ses cellules restent décorées par
-templates), on pose décors, objets vendables, NPC, mannequins, champs (dossier **Fields**, voir
+intérieurs servent de fond. Le sélecteur ne liste que les zones principales, par leur nom (`retail_park` s'appelle
+**Campus Home**). Les six boutiques du mall sont des zones à part : dans le mall, leur contenu s'affiche en lecture
+seule, un clic dessus propose **Open … editor**, et **Shops map** ouvre le plan du mall pour en choisir une. Une boutique
+s'ouvre seule (son bâtiment, ses props), avec **Back to Mall** et le fil `Zone · Mall › <boutique>` en haut ; son fichier
+porte `"parent": "mall"` et ses `bounds`. Les cellules du mall restent décorées par templates, on pose décors, objets vendables, NPC, mannequins, champs (dossier **Fields**, voir
 [FARM.md](FARM.md#champs-modulaires)) et animaux (dossier **Animals**, voir [FARM.md](FARM.md#animaux)) en coordonnées monde, posés sur la surface cliquée. Pas
 de lumière ni de matière personnalisée sur les décors d'une zone. **Test** marche à partir du point visé, dans les
 limites de la zone.
@@ -195,13 +198,31 @@ Toutes les boutiques marchent pareil : une zone **Seller** autour de la boutique
 (`decor/checkout_counter`, dossier **Shop**, ou le comptoir du bâtiment), les objets **For sale** et les mannequins dans
 la zone. Le joueur remplit son panier en visant les objets, puis paie au vendeur. Cove Home, Cove Threads, la pharmacie
 de la clinique, le Campus Cafe et les six boutiques du mall sont dans `zones/retail_park.json`, `fashion.json`,
-`clinic.json`, `work_district.json` et `mall.json` ; leurs anciens layouts d'intérieur ne sont plus lus pour les ventes.
+`clinic.json`, `work_district.json` et un fichier par boutique du mall (`hearth_hollow.json`, `greencart.json`…) ; leurs anciens layouts d'intérieur ne sont plus lus pour les ventes.
 
 - **Price tags beside each item** (carte Sellers) pose une étiquette de prix devant chaque objet de la zone.
 - Un objet à vendre peut avoir une **Description**, affichée quand on le vise.
 - Un mannequin vend les pièces cochées **For sale**, chacune à son **Price (coins)** ; **Clothes only (no body)**
   n'affiche que les vêtements (une pièce sur un portant).
 - Les vendeurs portent des pièces de `wear/` : celui de Cove Home porte `top/staff_polo` (polo jaune « CH »).
+- Le mobilier d'une boutique est en props, pas cuit dans l'intérieur : à Crispin's Hardware, les étagères
+  (`shop_rack`), le comptoir (`checkout_counter`), le présentoir (`display_plinth`), le kiosque à clés, le râtelier à bois,
+  les panneaux d'outils et le nuancier de peinture viennent de `map-src/CampusCove/build_shop_decor.py` (dossier
+  **Shop**). L'intérieur ne garde que murs, sol, plafond, lumières et enseignes. Les objets posés, vendus ou non, ont
+  leur collision en jeu. Toutes les caisses sont un `checkout_counter`, sauf les caisses à tapis de GreenCart
+  (`checkout_lane`).
+  - Candy Cloud : étagères à bocaux, îlot pick & mix, arbre à sucettes, machine à barbe à papa, plateau de pommes
+    d'amour, présentoir à chewing-gums.
+  - Summit Sports : portants muraux, tables de pliés, podium des mannequins, rack d'haltères, tapis de yoga, tapis de
+    course, panier de basket.
+  - Hearth & Hollow : étagères à bibelots, tables de présentation, socles en béton, plantes.
+  - Northline : portants à miroir, mur à chaussures, tables à têtes, tables de pliés, portants ronds, cubes, podium,
+    plantes.
+  - GreenCart : les rayons sont des étagères à emplacements (gondoles, frigos muraux et allée surgelés, bacs réfrigérés,
+    étagère de la boulangerie) garnies de ses 18 produits ; quelques emplacements sont vides exprès (« out of stock »).
+    Bananes et pommes restent sur leurs tables, viennoiseries et pain sur le comptoir de la boulangerie. Autour : caisses
+    à tapis, parc à chariots, bacs et palettes promo, tables de fruits et légumes, balance, comptoirs boulangerie et
+    poissonnerie, fours, poubelles, plantes.
 
 **Staff role** (Détails d'un NPC) donne au NPC un rôle de jeu : `bartender` et `bouncer` au pub, `nurse` à la clinique.
 Chacun existe une seule fois dans sa zone. **Save** (ou `npm --prefix front run zone:prices`) recopie leur position dans

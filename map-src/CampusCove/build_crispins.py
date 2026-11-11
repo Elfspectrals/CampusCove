@@ -1,6 +1,7 @@
 """Crispin's Hardware: the mall's hardware store, in its North Plaza cell (docs/MALL.md). Cove Home layout contract
 (departments + displays with a price tag), read by useFurnitureStore with decor/<key>/model.glb: the six pieces of
-build_hardware_items.py are on display among pegboard walls, orange racks, a paint corner and a lumber rack.
+build_hardware_items.py are on display; its racks, lumber rack, pegboards, paint chips, key kiosk and checkout counter are
+zone props in zones/crispins_hardware.json (build_shop_decor.py), not baked here.
 
 Reads out/decor/hardware.manifest.json. Outputs out/store/crispins_hardware/{interior,exterior}.glb, *.colsrc.glb,
 *.layout.json, preview.png. Then build_house_lightmaps.py -- store crispins_hardware, npm run assets:optimize -- store.
@@ -50,15 +51,7 @@ cols = L.Collisions(coll)
 M = L.std_mats(wall="#e9dcc4", floor=("#a9a7a0", "noise", "#9a9892"))
 M["peg"] = L.make_mat("IN_HwPegboard", "#d9c7a4", 0.9, "tiles", 0.03, accent="#c9b58f")
 M["orange"] = L.make_mat("IN_HwOrange", "#e07a2e", 0.6, "noise", 0.02)
-M["dark"] = L.make_mat("IN_HwDark", "#2f3338", 0.55, "noise", 0.03)
-M["rack"] = L.make_mat("IN_HwRack", "#9aa0a8", 0.45, "noise", 0.03)
-M["carton"] = L.make_mat("IN_Carton", "#b98c5a", 0.9, "stripes", 0.04, accent="#a47a4c")
 M["sign"] = L.make_mat("IN_HwSign", "#ffffff", 0.4, "noise", 0.0, emit="#ffffff", emit_strength=1.0)
-M["counter"] = L.make_mat("IN_HwCounter", "#4a4f57", 0.5, "noise", 0.03)
-M["lumber"] = L.make_mat("IN_HwLumber", "#d8b78a", 0.8, "planks", 0.05, accent="#c49c6c")
-M["plinth"] = L.make_mat("IN_HwPlinth", "#f2efe8", 0.6, "noise", 0.01)
-CHIPS = [L.make_mat(f"IN_HwChip{i}", c, 0.6, "noise", 0.02) for i, c in enumerate(("#e0533d", "#f6d04d", "#3f7f8c", "#79b765", "#1f5fae", "#a985e0", "#f2a65a", "#f7f4ec", "#2f6f63", "#f07fa8"))]
-TOOLS = [L.make_mat(f"IN_HwTool{i}", c, 0.5, "noise", 0.03) for i, c in enumerate(("#e07a2e", "#2f3338", "#9aa0a8", "#1f5fae", "#f6d04d"))]
 DM = {dep: L.make_mat(f"IN_HwDept_{dep}", c, 0.8, "noise", 0.02) for dep, (_, c) in DEPARTMENTS.items()}
 objs = []
 displays = []
@@ -113,26 +106,6 @@ def hanging_sign(dep, gx, gz, yaw):
     dept_info.append({"id": dep, "label": label, "color": DEPARTMENTS[dep][1], "sign": [round(gx, 3), 3.3, round(gz, 3)]})
 
 
-def rack(name, gx, gz, length, along_x, levels=3):
-    sx, sz = (length, 0.9) if along_x else (0.9, length)
-    for px in (-length / 2 + 0.05, length / 2 - 0.05):
-        for pz in (-0.4, 0.4):
-            ox, oz = (gx + px, gz + pz) if along_x else (gx + pz, gz + px)
-            add(L.box(coll, f"{name}_Post{int(px * 10)}{int(pz * 10)}", ox, oz, 0.0, 0.06, 0.06, 2.4, M["orange"]))
-    for lv in range(levels):
-        y = 0.15 + lv * 0.75
-        add(L.box(coll, f"{name}_Shelf{lv}", gx, gz, y, sx, sz, 0.04, M["rack"]))
-        n = int(length / 0.6)
-        for i in range(n):
-            off = -length / 2 + (i + 0.5) * length / n
-            ox, oz = (gx + off, gz) if along_x else (gx, gz + off)
-            if (i + lv) % 3 == 0:
-                add(L.box(coll, f"{name}_Box{lv}_{i}", ox, oz, y + 0.04, 0.45 if along_x else 0.7, 0.7 if along_x else 0.45, 0.35 + 0.1 * (i % 2), M["carton"]))
-            else:
-                add(L.cyl(coll, f"{name}_Can{lv}_{i}", ox, oz, y + 0.04, 0.12, 0.3, TOOLS[(i + lv) % len(TOOLS)], seg=8))
-    cols.add(name, gx, gz, 0.0, sx + 0.1, sz + 0.1, 2.4)
-
-
 # ---------------------------------------------------------------- shell
 rect("House_Floor_Crispins", X0 - 0.2, Z0 - 0.2, X1 + 0.2, Z1 + 0.2, -0.1, 0.1, M["floor"], tile=3.0)
 rect("Ceiling", X0 - 0.2, Z0 - 0.2, X1 + 0.2, Z1 + 0.3, H, 0.15, M["ceil"], tile=3.0)
@@ -158,54 +131,23 @@ for gx in (-5.0, 0.0, 5.0):
     for gz in (-4.0, -0.5, 3.0):
         add(L.box(coll, f"Light_{li:02d}", gx, gz, H - 0.07, 1.8, 0.4, 0.07, M["lamp"]))
         li += 1
-# pegboard tools along the west wall (hanging), a lumber rack on the east wall, paint chips on the back wall
-for i in range(14):
-    gz = -5.2 + i * 0.7
-    add(L.box(coll, f"Peg_Tool{i}", X0 + 0.08, gz, 1.5 + 0.2 * (i % 3), 0.06, 0.08 + 0.04 * (i % 2), 0.3 + 0.1 * (i % 3), TOOLS[i % len(TOOLS)]))
-for lv, y in enumerate((0.5, 1.3, 2.1)):
-    add(L.box(coll, f"Lumber_Bracket{lv}", X1 - 0.3, 2.5, y, 0.6, 2.4, 0.05, M["dark"]))
-    for k in range(5):
-        add(L.box(coll, f"Lumber_Plank{lv}_{k}", X1 - 0.3, 1.5 + k * 0.5, y + 0.05, 0.1 + 0.05 * (k % 2), 2.6 - 0.2 * (k % 3), 0.1, M["lumber"]))
-cols.add("Lumber_Rack", X1 - 0.3, 2.5, 0.0, 0.7, 2.8, 2.4)
-for k in range(40):
-    add(L.box(coll, f"Chip{k}", -3.4 + (k % 10) * 0.22, Z0 + 0.06, 1.2 + (k // 10) * 0.24, 0.18, 0.02, 0.2, CHIPS[k % len(CHIPS)]))
-add(L.box(coll, "Chip_Board", -2.4, Z0 + 0.04, 1.1, 2.4, 0.02, 1.1, M["plinth"]))
-# central gondola and two side racks
-rack("Rack_Mid", 0.0, -1.5, 5.0, False)
-rack("Rack_Back", -1.5, Z0 + 0.6, 4.0, True, levels=2)
-# checkout and key-cutting kiosk by the door
-add(L.furn(coll, "Counter", 4.5, 2.5, 0.0, [
-    (0, 0, 0.0, 3.0, 1.0, 0.95, M["counter"], 0.02),
-    (0, 0, 0.95, 3.2, 1.1, 0.06, M["plinth"], 0.01),
-    (-0.9, -0.05, 1.01, 0.45, 0.35, 0.3, M["dark"], 0.01),
-]))
-cols.add("Counter", 4.5, 2.5, 0.0, 3.2, 1.1, 1.1)
 add(L.box(coll, "Counter_SignBoard", 4.5, 2.2, 2.5, 2.0, 0.08, 0.55, M["orange"]))
 text("Counter_SignText", "PAY HERE", 4.5, 2.26, 2.62, 0.3, M["sign"], 0.0)
-add(L.furn(coll, "KeyKiosk", -5.0, 3.0, 0.0, [(0, 0, 0.0, 1.2, 0.8, 1.0, M["dark"], 0.02), (0, -0.1, 1.0, 0.8, 0.5, 0.6, M["rack"], 0.02), (0, 0.35, 1.0, 1.0, 0.1, 0.8, M["plinth"], 0.01)]))
-cols.add("KeyKiosk", -5.0, 3.0, 0.0, 1.3, 0.9, 1.7)
-text("KeyKiosk_Text", "KEYS CUT", -5.0, 3.41, 1.3, 0.22, M["dark"], 0.0)
 for i, dep in enumerate(("tools", "paint", "garden", "storage")):
     hanging_sign(dep, (-5.5, 0.0, 5.5, 3.0)[i], (-1.0, -3.5, -1.0, -4.5)[i], 0.0 if i != 3 else -math.pi / 2)
 
 # ---------------------------------------------------------------- the six pieces on display
 for key, (dep, blurb, (gx, gz), yaw) in ITEMS.items():
     w_, h_, d_ = manifest[key]
-    y0 = 0.0
-    if key == "toolbox":
-        y0 = 0.9
-        add(L.box(coll, "Plinth_toolbox", gx, gz, 0.0, 0.9, 0.7, 0.9, M["plinth"], bevel=0.02))
-        cols.add("Plinth_toolbox", gx, gz, 0.0, 0.9, 0.7, 0.9)
+    y0 = 0.9 if key == "toolbox" else 0.0
     side = max(w_, d_)
-    cols.add(f"Item_{key}", gx, gz, y0, side if yaw in (0.0, math.pi) else d_, d_ if yaw in (0.0, math.pi) else w_, h_)
     fx, fz = math.sin(yaw), math.cos(yaw)
     tx, tz = gx + fx * (side / 2 + 0.45), gz + fz * (side / 2 + 0.45)
     displays.append({"key": key, "code": "decor_" + key, "department": dep, "description": blurb,
                      "position": [round(gx, 3), y0, round(gz, 3)], "yaw": round(yaw, 4), "size": [w_, h_, d_],
                      "tag": {"position": [round(tx, 3), 1.32, round(tz, 3)], "yaw": round(yaw, 4)}})
 
-bad = L.check_grounded(objs, allow=L.ALLOW_INTERIOR + ("Ceiling", "Sign_", "Brand_", "Wall_Band", "Peg_", "Lumber_", "Chip", "Rack_", "Counter_Sign",
-                                                      "KeyKiosk_Text", "TagPost_", "TagFoot_", "Plinth_"))
+bad = L.check_grounded(objs, allow=L.ALLOW_INTERIOR + ("Ceiling", "Sign_", "Brand_", "Wall_Band", "Counter_Sign", "TagPost_", "TagFoot_"))
 print("CRISPINS grounded violations:", bad)
 assert not bad, bad
 by_mat = {}

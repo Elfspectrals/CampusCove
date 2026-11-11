@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "materials": {
+    "DC_HearthTimber": {
+      "mask": "parts_DC_HearthTimber.png",
+      "parts": [
+        {
+          "id": "main",
+          "label": "Main",
+          "color": "#caa46a"
+        },
+        {
+          "id": "accent",
+          "label": "Accent",
+          "color": "#ae884f"
+        }
+      ]
+    }
+  }
+}

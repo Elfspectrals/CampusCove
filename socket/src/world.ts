@@ -107,6 +107,7 @@ export interface WorldBuyer {
 }
 
 let buyerZones = new Set<string>()
+let shopBounds = new Map<string, Bounds>()
 
 function parseVec3(raw: Json, what: string): Vec3 {
   if (!Array.isArray(raw) || raw.length !== 3 || !raw.every(Number.isFinite)) {
@@ -324,9 +325,15 @@ export async function loadZoneBuyers(): Promise<void> {
   const index = await readManifest(besideManifest('zones/index.json'))
   if (!Array.isArray(index?.zones)) throw new Error('zones/index.json: missing zones')
   let count = 0
-  for (const zone of index.zones) count += zoneBuyers(zone, await readManifest(besideManifest(`zones/${zone}.json`))).length
+  const shops = new Map<string, Bounds>()
+  for (const zone of index.zones) {
+    const decor = await readManifest(besideManifest(`zones/${zone}.json`))
+    count += zoneBuyers(zone, decor).length
+    if (decor.parent !== undefined) shops.set(zone, parseBounds(decor.bounds, `zones/${zone}.json bounds`))
+  }
   buyerZones = new Set(index.zones)
-  console.log(`[world] ${count} zone buyer(s) loaded`)
+  shopBounds = shops
+  console.log(`[world] ${count} zone buyer(s), ${shops.size} shop zone(s) loaded`)
 }
 
 export async function worldBuyer(zone: string, area: string): Promise<WorldBuyer | null> {
@@ -384,5 +391,5 @@ export function worldCropPlants(): WorldCropPlant[] {
 }
 
 export function worldZoneBounds(key: string): Bounds | null {
-  return loadedWorld().zoneBounds.get(key) ?? null
+  return loadedWorld().zoneBounds.get(key) ?? shopBounds.get(key) ?? null
 }

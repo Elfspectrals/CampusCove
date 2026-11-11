@@ -1,5 +1,6 @@
 import { WEAR_SLOTS, type WearSlot } from '../../avatar/modularCharacterLogic.ts'
 import { consumableModelUrl, decorModelUrl, isConsumableCode, type StoreDisplay, type StoreLayout } from '../assets/catalog.ts'
+import type { ShelfArrange, ShelfType } from '../shelves/shelves.ts'
 
 export type Vec3 = [number, number, number]
 
@@ -164,7 +165,24 @@ export interface BuildingProp extends PropBase {
   textures?: Partial<Record<BuildingPart, string>>
 }
 
-export type TemplateProp = DecorProp | ItemProp | NpcProp | MannequinProp | LightProp | FieldProp | AnimalProp | BuildingProp
+export interface ShelfSlotFill {
+  code: string
+  key: string
+  price: number
+  count: number
+  arrange: ShelfArrange
+}
+
+export interface ShelfProp extends PropBase {
+  kind: 'shelf'
+  shelf: ShelfType
+  length: number
+  levels: number
+  slots: number
+  fill: Record<string, ShelfSlotFill>
+}
+
+export type TemplateProp = DecorProp | ItemProp | NpcProp | MannequinProp | LightProp | FieldProp | AnimalProp | BuildingProp | ShelfProp
 
 export type Surface = 'left' | 'right' | 'back' | 'floor' | 'ceiling'
 
@@ -314,7 +332,7 @@ export function templateVendor(template: MallTemplate): NpcProp | null {
   return template.props.find((p): p is NpcProp => p.kind === 'npc' && p.vendor) ?? null
 }
 
-const TEMPLATE_DEPARTMENT = 'shop'
+export const TEMPLATE_DEPARTMENT = 'shop'
 const PIECE_HEIGHT: Record<WearSlot, number> = { hair: 1.75, head_accessory: 1.85, top: 1.25, bottom: 0.75, shoes: 0.08 }
 const PIECE_SIZE: Vec3 = [0.5, 0.35, 0.3]
 
@@ -454,7 +472,7 @@ const KIND_FIELDS: Record<string, readonly string[]> = {
   light: [...BASE_FIELDS, 'light', 'color', 'intensity', 'range', 'angle', 'pitch'],
 }
 
-function itemAt(prop: Json, path: string): Pick<ItemProp, 'key' | 'code'> {
+export function itemAt(prop: Json, path: string): Pick<ItemProp, 'key' | 'code'> {
   const key = stringAt(prop.key, `${path}.key`, TEMPLATE_KEY)
   const code = stringAt(prop.code, `${path}.code`, ITEM_CODE)
   if (isConsumableCode(code) && !code.endsWith(`_${key}`)) throw new TemplateError(`${path}.key`, `consumable ${code} has its model in folder ${code.slice(code.indexOf('_') + 1)}`)

@@ -1,0 +1,1233 @@
+{
+  "version": 1,
+  "zone": "northline",
+  "name": "Northline",
+  "parent": "mall",
+  "bounds": {
+    "minX": -252.0,
+    "maxX": -220.0,
+    "minZ": 78.405,
+    "maxZ": 108.405
+  },
+  "props": [
+    {
+      "id": "northline_clerk",
+      "kind": "npc",
+      "position": [
+        -244.2,
+        0.2,
+        83.455
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pose": "idle",
+      "vendor": false,
+      "body": "#8b7aa8",
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "ponytail",
+          "color": "#6b5b95"
+        },
+        {
+          "slot": "top",
+          "key": "tee",
+          "color": "#1b1d22"
+        },
+        {
+          "slot": "bottom",
+          "key": "joggers",
+          "color": "#f4f2ee"
+        },
+        {
+          "slot": "shoes",
+          "key": "sneakers",
+          "color": "#4a3f62"
+        }
+      ]
+    },
+    {
+      "id": "northline_rail_top",
+      "kind": "item",
+      "key": "mirror_wall_rail",
+      "code": "decor_mirror_wall_rail",
+      "forSale": false,
+      "position": [
+        -226.0,
+        0.2,
+        108.066
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "northline_rail_bottom",
+      "kind": "item",
+      "key": "mirror_wall_rail",
+      "code": "decor_mirror_wall_rail",
+      "forSale": false,
+      "position": [
+        -246.0,
+        0.2,
+        108.066
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "northline_shoe_wall",
+      "kind": "item",
+      "key": "shoe_wall_shelf",
+      "code": "decor_shoe_wall_shelf",
+      "forSale": false,
+      "position": [
+        -220.213,
+        0.2,
+        99.905
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "northline_head_table_hair",
+      "kind": "item",
+      "key": "head_form_table",
+      "code": "decor_head_form_table",
+      "forSale": false,
+      "position": [
+        -251.45,
+        0.2,
+        102.005
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "northline_head_table_accessory",
+      "kind": "item",
+      "key": "head_form_table",
+      "code": "decor_head_form_table",
+      "forSale": false,
+      "position": [
+        -251.45,
+        0.2,
+        93.005
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "northline_table_a",
+      "kind": "item",
+      "key": "white_clothes_table",
+      "code": "decor_white_clothes_table",
+      "forSale": false,
+      "position": [
+        -233.0,
+        0.2,
+        95.405
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "northline_table_b",
+      "kind": "item",
+      "key": "white_clothes_table",
+      "code": "decor_white_clothes_table",
+      "forSale": false,
+      "position": [
+        -239.0,
+        0.2,
+        95.405
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "northline_table_c",
+      "kind": "item",
+      "key": "white_clothes_table_long",
+      "code": "decor_white_clothes_table_long",
+      "forSale": false,
+      "position": [
+        -236.0,
+        0.2,
+        103.405
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "northline_round_rail_w",
+      "kind": "item",
+      "key": "round_clothes_rail",
+      "code": "decor_round_clothes_rail",
+      "forSale": false,
+      "position": [
+        -225.0,
+        0.2,
+        91.405
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "northline_round_rail_e",
+      "kind": "item",
+      "key": "round_clothes_rail",
+      "code": "decor_round_clothes_rail",
+      "forSale": false,
+      "position": [
+        -247.0,
+        0.2,
+        87.405
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "northline_cube_w",
+      "kind": "item",
+      "key": "display_cube_stacks",
+      "code": "decor_display_cube_stacks",
+      "forSale": false,
+      "position": [
+        -225.0,
+        0.2,
+        97.405
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "northline_cube_e",
+      "kind": "item",
+      "key": "display_cube_stacks",
+      "code": "decor_display_cube_stacks",
+      "forSale": false,
+      "position": [
+        -247.0,
+        0.2,
+        81.905
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "northline_podium",
+      "kind": "item",
+      "key": "mannequin_podium_wide",
+      "code": "decor_mannequin_podium_wide",
+      "forSale": false,
+      "position": [
+        -227.501,
+        0.2,
+        82.382
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "northline_checkout",
+      "kind": "item",
+      "key": "checkout_counter",
+      "code": "decor_checkout_counter",
+      "forSale": false,
+      "position": [
+        -244.65,
+        0.2,
+        82.405
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "northline_plant_w",
+      "kind": "item",
+      "key": "potted_shrub",
+      "code": "decor_potted_shrub",
+      "forSale": false,
+      "position": [
+        -221.4,
+        0.2,
+        79.205
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "northline_plant_e",
+      "kind": "item",
+      "key": "potted_shrub",
+      "code": "decor_potted_shrub",
+      "forSale": false,
+      "position": [
+        -250.6,
+        0.2,
+        79.205
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "northline_top_tee",
+      "kind": "mannequin",
+      "position": [
+        -223.5,
+        0.463,
+        107.985
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "top",
+          "key": "tee",
+          "color": "#9b8abf",
+          "forSale": true,
+          "code": "COS_WEAR_TOP_TEE",
+          "price": 60
+        }
+      ]
+    },
+    {
+      "id": "northline_top_tank",
+      "kind": "mannequin",
+      "position": [
+        -224.75,
+        0.463,
+        107.985
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "top",
+          "key": "tank",
+          "color": "#9b8abf",
+          "forSale": true,
+          "code": "COS_WEAR_TOP_TANK",
+          "price": 70
+        }
+      ]
+    },
+    {
+      "id": "northline_top_hoodie",
+      "kind": "mannequin",
+      "position": [
+        -226.0,
+        0.463,
+        107.985
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "top",
+          "key": "hoodie",
+          "color": "#9b8abf",
+          "forSale": true,
+          "code": "COS_WEAR_TOP_HOODIE",
+          "price": 180
+        }
+      ]
+    },
+    {
+      "id": "northline_top_varsity",
+      "kind": "mannequin",
+      "position": [
+        -227.25,
+        0.463,
+        107.985
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "top",
+          "key": "varsity",
+          "color": "#9b8abf",
+          "forSale": true,
+          "code": "COS_WEAR_TOP_VARSITY",
+          "price": 350
+        }
+      ]
+    },
+    {
+      "id": "northline_top_sweater",
+      "kind": "mannequin",
+      "position": [
+        -228.5,
+        0.463,
+        107.985
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "top",
+          "key": "sweater",
+          "color": "#9b8abf",
+          "forSale": true,
+          "code": "COS_WEAR_TOP_SWEATER",
+          "price": 220
+        }
+      ]
+    },
+    {
+      "id": "northline_bottom_jeans",
+      "kind": "mannequin",
+      "position": [
+        -243.5,
+        1.078,
+        107.985
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "bottom",
+          "key": "jeans",
+          "color": "#5a4e72",
+          "forSale": true,
+          "code": "COS_WEAR_BOTTOM_JEANS",
+          "price": 120
+        }
+      ]
+    },
+    {
+      "id": "northline_bottom_joggers",
+      "kind": "mannequin",
+      "position": [
+        -244.75,
+        1.078,
+        107.985
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "bottom",
+          "key": "joggers",
+          "color": "#5a4e72",
+          "forSale": true,
+          "code": "COS_WEAR_BOTTOM_JOGGERS",
+          "price": 100
+        }
+      ]
+    },
+    {
+      "id": "northline_bottom_cargo",
+      "kind": "mannequin",
+      "position": [
+        -246.0,
+        1.078,
+        107.985
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "bottom",
+          "key": "cargo",
+          "color": "#5a4e72",
+          "forSale": true,
+          "code": "COS_WEAR_BOTTOM_CARGO",
+          "price": 160
+        }
+      ]
+    },
+    {
+      "id": "northline_bottom_shorts",
+      "kind": "mannequin",
+      "position": [
+        -247.25,
+        1.078,
+        107.985
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "bottom",
+          "key": "shorts",
+          "color": "#5a4e72",
+          "forSale": true,
+          "code": "COS_WEAR_BOTTOM_SHORTS",
+          "price": 70
+        }
+      ]
+    },
+    {
+      "id": "northline_bottom_skirt",
+      "kind": "mannequin",
+      "position": [
+        -248.5,
+        1.078,
+        107.985
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "bottom",
+          "key": "skirt",
+          "color": "#5a4e72",
+          "forSale": true,
+          "code": "COS_WEAR_BOTTOM_SKIRT",
+          "price": 140
+        }
+      ]
+    },
+    {
+      "id": "northline_shoes_sneakers",
+      "kind": "mannequin",
+      "position": [
+        -220.25,
+        1.241,
+        102.405
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "shoes",
+          "key": "sneakers",
+          "color": "#4a3f62",
+          "forSale": true,
+          "code": "COS_WEAR_SHOES_SNEAKERS",
+          "price": 150
+        }
+      ]
+    },
+    {
+      "id": "northline_shoes_high_tops",
+      "kind": "mannequin",
+      "position": [
+        -220.25,
+        1.241,
+        101.155
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "shoes",
+          "key": "high_tops",
+          "color": "#4a3f62",
+          "forSale": true,
+          "code": "COS_WEAR_SHOES_HIGH_TOPS",
+          "price": 220
+        }
+      ]
+    },
+    {
+      "id": "northline_shoes_boots",
+      "kind": "mannequin",
+      "position": [
+        -220.25,
+        1.241,
+        99.905
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "shoes",
+          "key": "boots",
+          "color": "#4a3f62",
+          "forSale": true,
+          "code": "COS_WEAR_SHOES_BOOTS",
+          "price": 300
+        }
+      ]
+    },
+    {
+      "id": "northline_shoes_slides",
+      "kind": "mannequin",
+      "position": [
+        -220.25,
+        1.241,
+        98.655
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "shoes",
+          "key": "slides",
+          "color": "#4a3f62",
+          "forSale": true,
+          "code": "COS_WEAR_SHOES_SLIDES",
+          "price": 60
+        }
+      ]
+    },
+    {
+      "id": "northline_shoes_runners",
+      "kind": "mannequin",
+      "position": [
+        -220.25,
+        1.241,
+        97.405
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "shoes",
+          "key": "runners",
+          "color": "#4a3f62",
+          "forSale": true,
+          "code": "COS_WEAR_SHOES_RUNNERS",
+          "price": 250
+        }
+      ]
+    },
+    {
+      "id": "northline_hair_short",
+      "kind": "mannequin",
+      "position": [
+        -251.45,
+        0.108,
+        104.405
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "short",
+          "color": "#6b5b95",
+          "forSale": true,
+          "code": "COS_WEAR_HAIR_SHORT",
+          "price": 80
+        }
+      ]
+    },
+    {
+      "id": "northline_hair_long",
+      "kind": "mannequin",
+      "position": [
+        -251.45,
+        0.108,
+        103.205
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "long",
+          "color": "#6b5b95",
+          "forSale": true,
+          "code": "COS_WEAR_HAIR_LONG",
+          "price": 120
+        }
+      ]
+    },
+    {
+      "id": "northline_hair_curly",
+      "kind": "mannequin",
+      "position": [
+        -251.45,
+        0.108,
+        102.005
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "curly",
+          "color": "#6b5b95",
+          "forSale": true,
+          "code": "COS_WEAR_HAIR_CURLY",
+          "price": 150
+        }
+      ]
+    },
+    {
+      "id": "northline_hair_buzz",
+      "kind": "mannequin",
+      "position": [
+        -251.45,
+        0.108,
+        100.805
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "buzz",
+          "color": "#6b5b95",
+          "forSale": true,
+          "code": "COS_WEAR_HAIR_BUZZ",
+          "price": 60
+        }
+      ]
+    },
+    {
+      "id": "northline_hair_ponytail",
+      "kind": "mannequin",
+      "position": [
+        -251.45,
+        0.108,
+        99.605
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "ponytail",
+          "color": "#6b5b95",
+          "forSale": true,
+          "code": "COS_WEAR_HAIR_PONYTAIL",
+          "price": 130
+        }
+      ]
+    },
+    {
+      "id": "northline_head_accessory_gamer",
+      "kind": "mannequin",
+      "position": [
+        -251.45,
+        0.108,
+        95.405
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "head_accessory",
+          "key": "gamer",
+          "color": "#7a6b94",
+          "forSale": true,
+          "code": "COS_WEAR_HEAD_ACCESSORY_GAMER",
+          "price": 200
+        }
+      ]
+    },
+    {
+      "id": "northline_head_accessory_studio",
+      "kind": "mannequin",
+      "position": [
+        -251.45,
+        0.108,
+        94.205
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "head_accessory",
+          "key": "studio",
+          "color": "#7a6b94",
+          "forSale": true,
+          "code": "COS_WEAR_HEAD_ACCESSORY_STUDIO",
+          "price": 280
+        }
+      ]
+    },
+    {
+      "id": "northline_head_accessory_cat_ear",
+      "kind": "mannequin",
+      "position": [
+        -251.45,
+        0.108,
+        93.005
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "head_accessory",
+          "key": "cat_ear",
+          "color": "#7a6b94",
+          "forSale": true,
+          "code": "COS_WEAR_HEAD_ACCESSORY_CAT_EAR",
+          "price": 320
+        }
+      ]
+    },
+    {
+      "id": "northline_head_accessory_neon",
+      "kind": "mannequin",
+      "position": [
+        -251.45,
+        0.108,
+        91.805
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "head_accessory",
+          "key": "neon",
+          "color": "#7a6b94",
+          "forSale": true,
+          "code": "COS_WEAR_HEAD_ACCESSORY_NEON",
+          "price": 400
+        }
+      ]
+    },
+    {
+      "id": "northline_head_accessory_pilot",
+      "kind": "mannequin",
+      "position": [
+        -251.45,
+        0.108,
+        90.605
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "head_accessory",
+          "key": "pilot",
+          "color": "#7a6b94",
+          "forSale": true,
+          "code": "COS_WEAR_HEAD_ACCESSORY_PILOT",
+          "price": 360
+        }
+      ]
+    },
+    {
+      "id": "northline_look_1",
+      "kind": "mannequin",
+      "position": [
+        -226.407,
+        0.34,
+        82.922
+      ],
+      "yaw": -2.9671,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "long",
+          "color": "#6b5b95",
+          "forSale": true,
+          "code": "COS_WEAR_HAIR_LONG",
+          "price": 120
+        },
+        {
+          "slot": "top",
+          "key": "sweater",
+          "color": "#9b8abf",
+          "forSale": true,
+          "code": "COS_WEAR_TOP_SWEATER",
+          "price": 220
+        },
+        {
+          "slot": "bottom",
+          "key": "skirt",
+          "color": "#5a4e72",
+          "forSale": true,
+          "code": "COS_WEAR_BOTTOM_SKIRT",
+          "price": 140
+        },
+        {
+          "slot": "shoes",
+          "key": "boots",
+          "color": "#4a3f62",
+          "forSale": true,
+          "code": "COS_WEAR_SHOES_BOOTS",
+          "price": 300
+        }
+      ]
+    },
+    {
+      "id": "northline_look_2",
+      "kind": "mannequin",
+      "position": [
+        -227.109,
+        0.34,
+        82.818
+      ],
+      "yaw": -3.0892,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "short",
+          "color": "#6b5b95",
+          "forSale": true,
+          "code": "COS_WEAR_HAIR_SHORT",
+          "price": 80
+        },
+        {
+          "slot": "top",
+          "key": "varsity",
+          "color": "#9b8abf",
+          "forSale": true,
+          "code": "COS_WEAR_TOP_VARSITY",
+          "price": 350
+        },
+        {
+          "slot": "bottom",
+          "key": "jeans",
+          "color": "#5a4e72",
+          "forSale": true,
+          "code": "COS_WEAR_BOTTOM_JEANS",
+          "price": 120
+        },
+        {
+          "slot": "shoes",
+          "key": "high_tops",
+          "color": "#4a3f62",
+          "forSale": true,
+          "code": "COS_WEAR_SHOES_HIGH_TOPS",
+          "price": 220
+        }
+      ]
+    },
+    {
+      "id": "northline_look_3",
+      "kind": "mannequin",
+      "position": [
+        -227.894,
+        0.34,
+        82.819
+      ],
+      "yaw": 3.0718,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "outfit": [
+        {
+          "slot": "head_accessory",
+          "key": "studio",
+          "color": "#7a6b94",
+          "forSale": true,
+          "code": "COS_WEAR_HEAD_ACCESSORY_STUDIO",
+          "price": 280
+        },
+        {
+          "slot": "top",
+          "key": "hoodie",
+          "color": "#9b8abf",
+          "forSale": true,
+          "code": "COS_WEAR_TOP_HOODIE",
+          "price": 180
+        },
+        {
+          "slot": "bottom",
+          "key": "cargo",
+          "color": "#5a4e72",
+          "forSale": true,
+          "code": "COS_WEAR_BOTTOM_CARGO",
+          "price": 160
+        },
+        {
+          "slot": "shoes",
+          "key": "runners",
+          "color": "#4a3f62",
+          "forSale": true,
+          "code": "COS_WEAR_SHOES_RUNNERS",
+          "price": 250
+        }
+      ]
+    },
+    {
+      "id": "northline_look_4",
+      "kind": "mannequin",
+      "position": [
+        -228.595,
+        0.34,
+        82.923
+      ],
+      "yaw": 2.9496,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "buzz",
+          "color": "#6b5b95",
+          "forSale": true,
+          "code": "COS_WEAR_HAIR_BUZZ",
+          "price": 60
+        },
+        {
+          "slot": "top",
+          "key": "tee",
+          "color": "#9b8abf",
+          "forSale": true,
+          "code": "COS_WEAR_TOP_TEE",
+          "price": 60
+        },
+        {
+          "slot": "bottom",
+          "key": "shorts",
+          "color": "#5a4e72",
+          "forSale": true,
+          "code": "COS_WEAR_BOTTOM_SHORTS",
+          "price": 70
+        },
+        {
+          "slot": "shoes",
+          "key": "slides",
+          "color": "#4a3f62",
+          "forSale": true,
+          "code": "COS_WEAR_SHOES_SLIDES",
+          "price": 60
+        }
+      ]
+    }
+  ],
+  "areas": [
+    {
+      "id": "northline",
+      "name": "Northline",
+      "role": "seller",
+      "npc": "northline_clerk",
+      "bounds": {
+        "minX": -252.0,
+        "maxX": -220.0,
+        "minZ": 78.405,
+        "maxZ": 108.405
+      },
+      "offers": [],
+      "priceTags": true
+    }
+  ]
+}

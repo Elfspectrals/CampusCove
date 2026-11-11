@@ -7,11 +7,14 @@ import { disposeAvatarAnimations, updateAvatarAnimation } from '../../avatar/glb
 import { decorModelUrl, isConsumableCode } from '../../game/assets/catalog'
 import { fetchCollisionFile, setPropBlocker } from '../../game/collision/worldCollision'
 import { ANIMALS_URL, animalPose, type AnimalClip, type AnimalDef } from '../../game/animals/animals.ts'
-import { itemModelUrl, type AnimalProp, type ItemProp, type MannequinProp, type NpcProp, type StaffRole, type Vec3 } from '../../game/mallTemplates/mallTemplate.ts'
+import { itemModelUrl, type AnimalProp, type ItemProp, type MannequinProp, type NpcProp, type ShelfProp, type StaffRole, type Vec3 } from '../../game/mallTemplates/mallTemplate.ts'
+import { lighterStock, shelfUnits } from '../../game/shelves/shelves.ts'
+import { getGraphicsQuality } from '../../game/graphicsQuality'
 import { animals, createAnimal, createPropObject, modelSize, npcColors, placeProp, type AnimalRig } from '../../game/mallTemplates/templateProps'
 import { configureRoomMeshShadows, normalizeRoomMaterials } from '../../game/sceneLighting'
-import type { WorldBounds, WorldManifest, WorldZone } from '../../game/world/worldManifest'
-import { ZONE_DECOR_INDEX_URL, areaSeller, areaStoreLayout, parseZoneDecor, parseZoneDecorIndex, runtimeProps, zoneDecorUrl, zonePrices, type SaleArea, type ZoneDecor } from '../../game/zoneDecor/zoneDecor.ts'
+import { INTERIOR_HIDE_DISTANCE, INTERIOR_SHOW_DISTANCE } from '../../game/town/openHouses'
+import type { WorldBounds, WorldManifest } from '../../game/world/worldManifest'
+import { ZONE_DECOR_INDEX_URL, areaSeller, areaStoreLayout, parseZoneDecor, parseZoneDecorIndex, runtimeProps, zoneDecorUrl, zonePrices, zoneRefOf, zoneShown, type SaleArea, type ZoneDecor, type ZoneRef } from '../../game/zoneDecor/zoneDecor.ts'
 import type { ZoneCheckoutDonePayload, ZoneCheckoutErrorPayload } from '../../types/gameRealtime'
 import { worldCuboids, type CellStoreEntry } from './useMallCellTemplates'
 import { useFurnitureStore, type FurnitureStoreDeps } from './useFurnitureStore'
@@ -31,7 +34,7 @@ interface Wanderer {
 }
 
 interface DecoratedZone {
-  zone: WorldZone
+  zone: ZoneRef
   decor: ZoneDecor
 }
 
@@ -71,9 +74,9 @@ async function fetchDecoratedZones(manifest: WorldManifest): Promise<DecoratedZo
   const index = parseZoneDecorIndex(await fetchJson(ZONE_DECOR_INDEX_URL))
   const results = await Promise.allSettled(
     index.zones.map(async (key) => {
-      const zone = manifest.zones.find((z) => z.key === key)
-      if (!zone) throw new Error(`${ZONE_DECOR_INDEX_URL}: zone ${key} is not in the world manifest`)
-      return { zone, decor: parseZoneDecor(await fetchJson(zoneDecorUrl(key)), zone, null, null, null) }
+      const raw = await fetchJson(zoneDecorUrl(key))
+      const zone = zoneRefOf(key, raw, manifest.zones)
+      return { zone, decor: parseZoneDecor(raw, zone, null, null, null) }
     }),
   )
   for (const result of results) if (result.status === 'rejected') console.error('[zones] a zone decor failed to load', result.reason)
@@ -88,6 +91,7 @@ export function useZoneDecor(deps: ZoneDecorDeps) {
   const buyers = shallowRef<ZoneBuyer[]>([])
   const blockers: string[] = []
   const storeAreas: StoreArea[] = []
+  const zoneGroups: Array<{ group: THREE.Group; bounds: WorldBounds }> = []
   const currentStoreKey = ref<string | null>(null)
   let loaded = false
   let disposed = false
@@ -114,6 +118,15 @@ export function useZoneDecor(deps: ZoneDecorDeps) {
     if (collision) worldCuboids(object, collision.cuboids).forEach((c, i) => block(blockerKey(zone, item.id, i), c))
   }
 
+  async function blockSoldItem(zone: string, item: ItemProp): Promise<void> {
+    if (isConsumableCode(item.code)) return
+    const collision = await fetchCollisionFile(decorModelUrl(item.key).replace(/model\.glb$/, 'collision.json'))
+    if (disposed || !collision) return
+    const spot = new THREE.Object3D()
+    placeProp(spot, item)
+    worldCuboids(spot, collision.cuboids).forEach((c, i) => block(blockerKey(zone, item.id, i), c))
+  }
+
   async function addFigure(zone: string, group: THREE.Group, prop: NpcProp | MannequinProp, store: ZoneStore | null): Promise<void> {
     const object = await createPropObject(prop)
     if (disposed) {
@@ -132,6 +145,20 @@ export function useZoneDecor(deps: ZoneDecorDeps) {
     block(blockerKey(zone, prop.id, 0), { cx: x, cy: y + hy * sy, cz: z, hx: hx * Math.max(sx, sz), hy: hy * sy, hz: hz * Math.max(sx, sz), qx: 0, qy: 0, qz: 0, qw: 1 })
   }
 
+  async function addShelf(zone: string, group: THREE.Group, shelf: ShelfProp, store: ZoneStore | null): Promise<void> {
+    const object = await createPropObject(getGraphicsQuality() === 'low' ? lighterStock(shelf) : shelf)
+    if (disposed) return disposeObject3D(object)
+    configureRoomMeshShadows(object)
+    normalizeRoomMaterials(object, 'city')
+    placeProp(object, shelf)
+    group.add(object)
+    object.traverse((obj) => {
+      if (obj instanceof THREE.InstancedMesh && Array.isArray(obj.userData.shelfSlots)) store?.bindShelfGoods(shelf.id, obj)
+    })
+    const units = shelfUnits(shelf).map(({ center: [cx, cy, cz], size: [w, h, d] }) => ({ cx, cy, cz, hx: w / 2, hy: h / 2, hz: d / 2, qx: 0, qy: 0, qz: 0, qw: 1 }))
+    worldCuboids(object, units).forEach((c, i) => block(blockerKey(zone, shelf.id, i), c))
+  }
+
   async function addAnimal(group: THREE.Group, prop: AnimalProp): Promise<void> {
     const def = (await animals())[prop.animal]
     if (!def) throw new Error(`${ANIMALS_URL}: no animal ${prop.animal}`)
@@ -146,6 +173,7 @@ export function useZoneDecor(deps: ZoneDecorDeps) {
   function wander(dt: number): void {
     const seconds = Date.now() / 1000
     for (const animal of herd) {
+      if (!animal.rig.object.parent?.visible) continue
       const pose = animalPose(animal.prop, animal.def, seconds)
       animal.rig.object.position.set(pose.x, animal.prop.position[1], pose.z)
       animal.rig.object.rotation.y = pose.yaw
@@ -223,6 +251,8 @@ export function useZoneDecor(deps: ZoneDecorDeps) {
     const { zone } = decorated
     const group = new THREE.Group()
     group.name = `ZoneDecor_${zone.key}`
+    group.visible = false
+    zoneGroups.push({ group, bounds: zone.bounds })
     root.add(group)
     group.updateWorldMatrix(true, false)
     const npcAt = (id: string) => decorated.decor.props.find((p) => p.kind === 'npc' && p.id === id)!.position
@@ -235,9 +265,10 @@ export function useZoneDecor(deps: ZoneDecorDeps) {
     }))
     const storeAt = (position: Vec3): ZoneStore | null => [...storeOf].find(([a]) => insideZone(a.bounds, { x: position[0], z: position[2] }))?.[1] ?? null
     const loads = runtimeProps(decorated.decor).flatMap((prop) => {
-      if (prop.kind === 'item') return prop.forSale ? [] : [addItem(zone.key, group, prop)]
+      if (prop.kind === 'item') return [prop.forSale ? blockSoldItem(zone.key, prop) : addItem(zone.key, group, prop)]
       if (prop.kind === 'npc' && [...storeOf.keys()].some((a) => a.npc === prop.id)) return []
       if (prop.kind === 'animal') return [addAnimal(group, prop)]
+      if (prop.kind === 'shelf') return [addShelf(zone.key, group, prop, storeAt(prop.position))]
       return [addFigure(zone.key, group, prop, storeAt(prop.position))]
     })
     const failures = [...opened, ...(await Promise.allSettled(loads))].filter((r): r is PromiseRejectedResult => r.status === 'rejected')
@@ -255,8 +286,13 @@ export function useZoneDecor(deps: ZoneDecorDeps) {
     await Promise.all(decorated.map(fillZone))
   }
 
+  function cullZones(at: { x: number; z: number }): void {
+    for (const { group, bounds } of zoneGroups) group.visible = zoneShown(bounds, at, group.visible, INTERIOR_SHOW_DISTANCE, INTERIOR_HIDE_DISTANCE)
+  }
+
   function tick(dt: number, at: { x: number; y: number; z: number }): void {
-    for (const npc of npcs) updateAvatarAnimation(npc, dt, 0)
+    cullZones(at)
+    for (const npc of npcs) if (npc.parent?.visible) updateAvatarAnimation(npc, dt, 0)
     wander(dt)
     const inside = deps.insideOtherStore() ? undefined : storeAreas.find((a) => insideZone(a.bounds, at))
     currentStoreKey.value = inside?.key ?? null

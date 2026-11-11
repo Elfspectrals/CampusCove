@@ -30,9 +30,10 @@ const props = defineProps<{
   canAssign: boolean
   canWrite: boolean
   selectedId: string | null
+  shopsOnly?: boolean
 }>()
 
-const emit = defineEmits<{ close: []; use: [cell: MallCell]; assign: [cell: MallCell]; clear: [cell: MallCell] }>()
+const emit = defineEmits<{ close: []; use: [cell: MallCell]; assign: [cell: MallCell]; clear: [cell: MallCell]; openShop: [key: string] }>()
 
 const FREE_COLOR = '#2fb457'
 const TAKEN_COLOR = '#e0483e'
@@ -44,12 +45,13 @@ const MARGIN = 6
 
 const level = ref(0)
 const picked = ref<MallCell | null>(props.cells.find((c) => c.id === props.selectedId) ?? null)
+const pickedStore = ref<MallStoreMark | null>(null)
 if (picked.value) level.value = picked.value.level
 
 const levels = computed(() => [...new Set(props.cells.map((c) => c.level))].sort((a, b) => a - b))
 const shown = computed(() => props.cells.filter((c) => c.level === level.value))
 const shownPlazas = computed(() => props.plazas.filter((p) => p.floors > level.value || (p.outdoor && level.value === 0)))
-const anchors = computed(() => (level.value === 0 ? props.stores.filter((s) => !s.cell) : []))
+const anchors = computed(() => (level.value === 0 ? props.stores.filter((s) => props.shopsOnly || !s.cell) : []))
 
 const frame = computed(() => {
   const xs = [...shown.value.flatMap((c) => [c.bounds.minX, c.bounds.maxX]), ...shownPlazas.value.flatMap((p) => [p.bounds.minX, p.bounds.maxX])]
@@ -101,7 +103,14 @@ function statusText(cell: MallCell): string {
 }
 
 function pick(cell: MallCell): void {
-  if (!isClosed(cell)) picked.value = cell
+  if (props.shopsOnly || isClosed(cell)) return
+  picked.value = cell
+  pickedStore.value = null
+}
+
+function pickStore(store: MallStoreMark): void {
+  pickedStore.value = store
+  picked.value = null
 }
 
 const pickedHeld = computed(() => (picked.value ? held(picked.value) : undefined))
@@ -187,20 +196,34 @@ watch(level, () => {
               {{ held(cell) }}
             </text>
           </g>
-          <g v-for="store in anchors" :key="store.key">
-            <circle :cx="store.position[0]" :cy="store.position[2]" r="2.2" :fill="ANCHOR_COLOR" />
+          <g v-for="store in anchors" :key="store.key" class="cursor-pointer" @click="pickStore(store)">
+            <title>{{ store.name }} · walk-in shop, opens in its own zone</title>
+            <circle
+              :cx="store.position[0]"
+              :cy="store.position[2]"
+              r="2.2"
+              :fill="ANCHOR_COLOR"
+              :stroke="store.key === pickedStore?.key ? '#ffd23f' : 'none'"
+              stroke-width="0.8"
+            />
             <text :x="store.position[0]" :y="store.position[2] + 4.5" text-anchor="middle" class="pointer-events-none fill-[#3a4256] text-[2.6px] font-bold">{{ store.name }}</text>
           </g>
         </svg>
         <aside class="flex shrink-0 flex-col gap-3 text-sm lg:w-64 lg:overflow-y-auto">
-          <section class="cc-panel-flat p-3">
+          <section v-if="!shopsOnly" class="cc-panel-flat p-3">
             <p class="cc-eyebrow m-0 mb-2 text-mist">Cells</p>
             <p class="m-0 flex items-center gap-2 py-0.5 font-bold"><span class="h-3 w-3 rounded" :style="{ background: FREE_COLOR }" />Free</p>
             <p class="m-0 flex items-center gap-2 py-0.5 font-bold"><span class="h-3 w-3 rounded" :style="{ background: TAKEN_COLOR }" />Occupied</p>
             <p class="m-0 flex items-center gap-2 py-0.5 text-xs text-mist"><span class="h-3 w-3 rounded border-2 border-sun" />Holds this template</p>
             <p v-if="hasProps" class="m-0 py-0.5 text-xs text-mist">Faded: another size than the props are laid out for.</p>
           </section>
-          <section v-if="picked" class="cc-panel-flat flex flex-col gap-2 p-3">
+          <section v-if="pickedStore" class="cc-panel-flat flex flex-col gap-2 p-3">
+            <p class="cc-eyebrow m-0 text-mist">Shop</p>
+            <p class="m-0 text-base font-extrabold">{{ pickedStore.name }}</p>
+            <p class="m-0 text-mist">Walk-in shop · own zone</p>
+            <button type="button" class="cc-btn cc-btn-sm cc-btn-sun" @click="emit('openShop', pickedStore.key)">Open shop editor</button>
+          </section>
+          <section v-else-if="picked" class="cc-panel-flat flex flex-col gap-2 p-3">
             <p class="cc-eyebrow m-0 text-mist">Cell {{ picked.id }}</p>
             <p class="m-0 text-base font-extrabold">{{ picked.name }}</p>
             <p class="m-0 text-mist">{{ picked.width }} × {{ picked.depth }} m · {{ picked.level === 0 ? 'ground floor' : `floor ${picked.level}` }}</p>
@@ -218,7 +241,7 @@ watch(level, () => {
               Assign {{ templateKey || 'template' }} here
             </button>
           </section>
-          <p v-else class="m-0 text-mist">Click a shop to see it.</p>
+          <p v-else class="m-0 text-mist">{{ shopsOnly ? 'Click a walk-in shop to open its editor.' : 'Click a shop to see it.' }}</p>
         </aside>
       </div>
     </div>

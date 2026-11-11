@@ -7,6 +7,8 @@ import { fetchItemShopCatalog, type ShopItem } from '../../api/itemShop'
 import MallEditorContentBrowser, { type ContentEntry } from '../../components/admin/mallEditor/MallEditorContentBrowser.vue'
 import EditorSearchSelect, { type SelectOption } from '../../components/admin/mallEditor/EditorSearchSelect.vue'
 import MallEditorDetails from '../../components/admin/mallEditor/MallEditorDetails.vue'
+import type { ShelfItem } from '../../components/admin/mallEditor/MallEditorShelf.vue'
+import type { ShelfType } from '../../game/shelves/shelves.ts'
 import MallEditorOutliner from '../../components/admin/mallEditor/MallEditorOutliner.vue'
 import MallMapModal, { type MallPlaza, type MallStoreMark } from '../../components/admin/mallEditor/MallMapModal.vue'
 import MallEditorSaleMap from '../../components/admin/mallEditor/MallEditorSaleMap.vue'
@@ -82,6 +84,8 @@ interface EditorAssets {
 }
 
 interface ZoneChoice extends EditorZone {
+  name: string
+  parent?: string
   decorated: boolean
 }
 
@@ -102,6 +106,7 @@ const editorAssets = ref<EditorAssets | null>(null)
 const decorKeyList = ref<string[]>([])
 const saleCodes = ref<Record<string, string>>({})
 const itemPrices = ref<Record<string, number>>({})
+const shelfItems = ref<ShelfItem[]>([])
 const wearSaleCodes = ref<Record<string, string>>({})
 const textureOptions = ref<SelectOption[]>([])
 const decorGroups = ref<Record<string, string>>({})
@@ -144,7 +149,11 @@ const cropTable = ref<CropTable>({})
 const animalTable = ref<AnimalTable>({})
 const buildingTable = ref<BuildingTable>({})
 const cropOptions = computed<SelectOption[]>(() => Object.values(cropTable.value).map((c) => ({ value: c.key, label: c.label })))
-const zoneOptions = computed<SelectOption[]>(() => zoneChoices.value.map((z) => ({ value: z.key, label: z.key, group: z.decorated ? 'Decorated' : 'Bare' })))
+const zoneOptions = computed<SelectOption[]>(() => zoneChoices.value.filter((z) => !z.parent).map((z) => ({ value: z.key, label: z.name, group: z.decorated ? 'Decorated' : 'Bare' })))
+const parentZone = computed(() => zoneChoices.value.find((z) => z.key === openZone.value?.parent) ?? null)
+const zoneShops = computed(() => zoneChoices.value.filter((z) => z.parent && z.parent === openZone.value?.key))
+const pickedShop = ref<ZoneChoice | null>(null)
+const shopMapOpen = ref(false)
 const openZone = ref<ZoneChoice | null>(null)
 const zonePick = ref('')
 const savedBakedDecor = ref('')
@@ -421,12 +430,22 @@ function leaveZone(): void {
   openZone.value = null
   zoneAreas.value = []
   savedAreas.value = '[]'
+  pickedShop.value = null
+  void editor.value?.setReadOnlyShops([])
   if (preset.value) editor.value?.setPreset(preset.value)
 }
 
-function zoneName(key: string): string {
-  const words = key.split('_').join(' ')
-  return words.charAt(0).toUpperCase() + words.slice(1)
+async function showShopsReadOnly(): Promise<void> {
+  const shops = await Promise.all(zoneShops.value.filter((z) => z.decorated).map(async (z) => ({
+    key: z.key,
+    props: parseZoneDecor(await readJson(`${EDITOR_API}/zones/${z.key}`), z, cropTable.value, animalTable.value, buildingTable.value).props,
+  })))
+  await editor.value?.setReadOnlyShops(shops)
+}
+
+function openShop(key: string): void {
+  shopMapOpen.value = false
+  void openZoneDecor(key)
 }
 
 async function openZoneDecor(key: string): Promise<void> {
@@ -434,7 +453,10 @@ async function openZoneDecor(key: string): Promise<void> {
   const zone = zoneChoices.value.find((z) => z.key === key)
   if (!zone || !confirmDiscard()) return
   try {
-    const decor: ZoneDecor = zone.decorated ? parseZoneDecor(await readJson(`${EDITOR_API}/zones/${key}`), zone, cropTable.value, animalTable.value, buildingTable.value) : { version: 1, zone: key, name: zoneName(key), props: [], areas: [] }
+    const shell = zone.parent ? { parent: zone.parent, bounds: zone.bounds } : {}
+    const decor: ZoneDecor = zone.decorated ? parseZoneDecor(await readJson(`${EDITOR_API}/zones/${key}`), zone, cropTable.value, animalTable.value, buildingTable.value) : { version: 1, zone: key, name: zone.name, ...shell, props: [], areas: [] }
+    pickedShop.value = null
+    shopMapOpen.value = false
     openZone.value = zone
     zoneAreas.value = decor.areas
     savedAreas.value = JSON.stringify(decor.areas)
@@ -443,9 +465,10 @@ async function openZoneDecor(key: string): Promise<void> {
     targetCell.value = null
     savedBakedDecor.value = JSON.stringify(bakedProps(decor))
     bakePending.value = false
-    status.value = { kind: 'ok', text: `Opened zone ${key}.` }
+    status.value = { kind: 'ok', text: `Opened ${zone.parent ? 'shop' : 'zone'} ${zone.name}.` }
     await editor.value?.setZone(zone)
     void previewBuildings()
+    void showShopsReadOnly()
   } catch (error) {
     if (openZone.value?.key === key) {
       leaveZone()
@@ -459,7 +482,8 @@ async function saveZone(zone: ZoneChoice): Promise<void> {
   try {
     const sent = JSON.stringify(template.value)
     const sentAreas = JSON.stringify(zoneAreas.value)
-    const body = zoneDecorJson({ version: 1, zone: zone.key, name: template.value.name, props: template.value.props, areas: zoneAreas.value }, cropTable.value)
+    const shell = zone.parent ? { parent: zone.parent, bounds: zone.bounds } : {}
+    const body = zoneDecorJson({ version: 1, zone: zone.key, name: template.value.name, ...shell, props: template.value.props, areas: zoneAreas.value }, cropTable.value)
     const decor = parseZoneDecor(body, zone, cropTable.value, animalTable.value, buildingTable.value)
     const saved = await readJson<{ prices: 'written' | 'pending' }>(`${EDITOR_API}/zones/${zone.key}`, { method: 'PUT', body: JSON.stringify(body) })
     savedSnapshot.value = sent
@@ -554,7 +578,7 @@ function applyTransform(id: string, transform: PropTransform): void {
   if (!prop) return
   prop.position = transform.position
   prop.yaw = prop.kind === 'building' ? Math.round(transform.yaw / (Math.PI / 2)) * (Math.PI / 2) : transform.yaw
-  prop.scale = prop.kind === 'field' || prop.kind === 'animal' || prop.kind === 'building' ? [1, 1, 1] : transform.scale
+  prop.scale = prop.kind === 'field' || prop.kind === 'animal' || prop.kind === 'building' || prop.kind === 'shelf' ? [1, 1, 1] : transform.scale
 }
 
 function sellProp(id: string, on: boolean): void {
@@ -846,6 +870,19 @@ function buildingEntry(building: BuildingDef): PlaceableEntry {
   }
 }
 
+function shelfEntry(shelf: ShelfType, label: string, levels: number, slots: number): PlaceableEntry {
+  return {
+    id: `shelf:${shelf}`,
+    folder: 'decor',
+    group: 'Shop',
+    label,
+    preview: null,
+    modelUrl: null,
+    zoneOnly: true,
+    create: (id, position) => ({ id, kind: 'shelf', shelf, position, yaw: 0, scale: [1, 1, 1], length: 2, levels, slots, fill: {} }),
+  }
+}
+
 function pick(entry: ContentEntry): void {
   const scene = editor.value
   const placeable = entries.value.find((e) => e.id === entry.id)
@@ -901,6 +938,14 @@ async function loadContent(): Promise<void> {
   }))
   const placeable = catalog.items.filter((item) => (item.kind === 'furniture' || item.kind === 'consumable') && item.model_glb)
   const goods = placeable.map(goodsEntry).filter((e): e is PlaceableEntry => e !== null)
+  shelfItems.value = placeable.flatMap((item): ShelfItem[] => {
+    const decorKey = decorKeyOf(item)
+    const good = goods.find((e) => e.id === `item:${item.code}`)
+    const key = decorKey ?? (good ? item.code.slice(item.code.indexOf('_') + 1) : null)
+    const price = itemPrices.value[item.code]
+    if (!key || price === undefined) return []
+    return [{ code: item.code, key, label: item.name, group: good?.group ?? groupOfDecor(key), preview: item.preview_image, price }]
+  })
   const skipped = placeable.filter((item) => !decorKeyOf(item) && !goods.some((e) => e.id === `item:${item.code}`)).map((item) => item.code)
   const notices = [
     ...(assets ? [] : ['Saving only works on the local dev server.']),
@@ -943,6 +988,10 @@ async function loadContent(): Promise<void> {
     ...Object.values(cropTable.value).map(fieldEntry),
     ...Object.values(animalTable.value).map(animalEntry),
     ...Object.values(buildingTable.value).map(buildingEntry),
+    shelfEntry('gondola', 'Gondola', 4, 4),
+    shelfEntry('wall', 'Wall shelf', 5, 4),
+    shelfEntry('fridge', 'Fridge', 5, 2),
+    shelfEntry('chiller', 'Chiller', 1, 4),
   ]
   const [textures, materials] = await Promise.all([loadTextureOptions(), loadMaterialOptions()])
   textureOptions.value = textures
@@ -952,6 +1001,7 @@ async function loadContent(): Promise<void> {
 onMounted(async () => {
   const scene = new MallEditorScene(viewportRef.value!)
   scene.onSelect = pickProp
+  scene.onShopPick = (key) => (pickedShop.value = zoneShops.value.find((z) => z.key === key) ?? null)
   scene.onBoxSelect = boxSelect
   scene.onTransform = applyTransform
   scene.onTransformMany = (updates) => updates.forEach(({ id, transform }) => applyTransform(id, transform))
@@ -1000,7 +1050,15 @@ onUnmounted(() => {
         :class="['cc-input w-36 py-1.5 font-mono text-sm', template.key && !keyValid ? 'border-red-400' : '']"
         title="File name: lowercase letters, digits and _"
       />
-      <span v-if="openZone" class="cc-btn cc-btn-sm cc-btn-ghost pointer-events-none"><UiIcon name="map" :size="14" /> Zone · {{ openZone.key }}</span>
+      <button v-if="parentZone" type="button" class="cc-btn cc-btn-sm cc-btn-ghost" :title="`Back to ${parentZone.name}`" @click="openZoneDecor(parentZone.key)">
+        <UiIcon name="chevron-left" :size="14" /> Back to {{ parentZone.name }}
+      </button>
+      <span v-if="openZone" class="cc-btn cc-btn-sm cc-btn-ghost pointer-events-none">
+        <UiIcon name="map" :size="14" /> Zone · <template v-if="parentZone">{{ parentZone.name }} › </template>{{ openZone.name }}
+      </span>
+      <button v-if="zoneShops.length" type="button" class="cc-btn cc-btn-sm cc-btn-ghost" title="Open one of the walk-in shops in its own zone" @click="shopMapOpen = true">
+        <UiIcon name="map" :size="14" /> Shops map
+      </button>
       <button v-if="openZone" type="button" class="cc-btn cc-btn-sm cc-btn-ghost" title="Draw the sale areas and give them a seller or a buyer" @click="openSaleMap">
         <UiIcon name="shop" :size="14" /> Sellers
       </button>
@@ -1083,6 +1141,8 @@ onUnmounted(() => {
           @remove="removeProp"
           @toggle="collapsed.details = !collapsed.details"
           :prop="selectedProp"
+          :shop="pickedShop && !selectedProp ? pickedShop.name : null"
+          @open-shop="pickedShop && openShop(pickedShop.key)"
           :selected-count="selectedIds.length"
           :decor-options="decorOptions"
           :wear="editorAssets?.wear ?? emptyWear"
@@ -1100,12 +1160,29 @@ onUnmounted(() => {
           :material-options="materialOptions"
           :material-slots="selectedProp?.kind === 'decor' && !openZone ? (materialSlotsById[selectedProp.id] ?? []) : []"
           :rebuilding="rebuilding"
+          :shelf-items="shelfItems"
           @rebuild="rebuildBuilding($event, true)"
           @change="replaceProp"
           @surfaces="setSurfaces"
         />
       </aside>
     </div>
+    <MallMapModal
+      v-if="shopMapOpen"
+      shops-only
+      :cells="cells"
+      :plazas="plazas"
+      :stores="mallStores.filter((s) => zoneShops.some((z) => z.key === s.key))"
+      :assignments="assignments"
+      :preset="preset"
+      :template-key="template.key"
+      :has-props="false"
+      :can-assign="false"
+      :can-write="false"
+      :selected-id="null"
+      @close="shopMapOpen = false"
+      @open-shop="openShop"
+    />
     <MallMapModal
       v-if="mapOpen"
       :cells="cells"

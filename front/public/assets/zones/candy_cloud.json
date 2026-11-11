@@ -1,0 +1,520 @@
+{
+  "version": 1,
+  "zone": "candy_cloud",
+  "name": "Candy Cloud",
+  "parent": "mall",
+  "bounds": {
+    "minX": -376.905,
+    "maxX": -368.405,
+    "minZ": 0.733,
+    "maxZ": 24.733
+  },
+  "props": [
+    {
+      "id": "candy_cloud_clerk",
+      "kind": "npc",
+      "position": [
+        -369.405,
+        0.2,
+        18.033
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pose": "idle",
+      "vendor": false,
+      "body": "#8b7aa8",
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "ponytail",
+          "color": "#6b5b95"
+        },
+        {
+          "slot": "top",
+          "key": "tee",
+          "color": "#f4b3c8"
+        },
+        {
+          "slot": "bottom",
+          "key": "joggers",
+          "color": "#38a3c9"
+        },
+        {
+          "slot": "shoes",
+          "key": "sneakers",
+          "color": "#4a3f62"
+        }
+      ]
+    },
+    {
+      "id": "candy_cloud_jar_shelf_0",
+      "kind": "item",
+      "key": "candy_jar_shelf",
+      "code": "decor_candy_jar_shelf",
+      "forSale": false,
+      "position": [
+        -376.605,
+        0.2,
+        22.733
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "candy_cloud_jar_shelf_1",
+      "kind": "item",
+      "key": "candy_jar_shelf",
+      "code": "decor_candy_jar_shelf",
+      "forSale": false,
+      "position": [
+        -376.605,
+        0.2,
+        20.733
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "candy_cloud_jar_shelf_2",
+      "kind": "item",
+      "key": "candy_jar_shelf",
+      "code": "decor_candy_jar_shelf",
+      "forSale": false,
+      "position": [
+        -376.605,
+        0.2,
+        18.733
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "candy_cloud_jar_shelf_3",
+      "kind": "item",
+      "key": "candy_jar_shelf",
+      "code": "decor_candy_jar_shelf",
+      "forSale": false,
+      "position": [
+        -376.605,
+        0.2,
+        16.733
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "candy_cloud_jar_shelf_4",
+      "kind": "item",
+      "key": "candy_jar_shelf",
+      "code": "decor_candy_jar_shelf",
+      "forSale": false,
+      "position": [
+        -376.605,
+        0.2,
+        14.733
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "candy_cloud_jar_shelf_5",
+      "kind": "item",
+      "key": "candy_jar_shelf",
+      "code": "decor_candy_jar_shelf",
+      "forSale": false,
+      "position": [
+        -376.605,
+        0.2,
+        12.733
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "candy_cloud_jar_shelf_6",
+      "kind": "item",
+      "key": "candy_jar_shelf",
+      "code": "decor_candy_jar_shelf",
+      "forSale": false,
+      "position": [
+        -376.605,
+        0.2,
+        10.733
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "candy_cloud_jar_shelf_7",
+      "kind": "item",
+      "key": "candy_jar_shelf",
+      "code": "decor_candy_jar_shelf",
+      "forSale": false,
+      "position": [
+        -376.605,
+        0.2,
+        8.733
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "candy_cloud_jar_shelf_8",
+      "kind": "item",
+      "key": "candy_jar_shelf",
+      "code": "decor_candy_jar_shelf",
+      "forSale": false,
+      "position": [
+        -376.605,
+        0.2,
+        6.733
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "candy_cloud_jar_shelf_9",
+      "kind": "item",
+      "key": "candy_jar_shelf",
+      "code": "decor_candy_jar_shelf",
+      "forSale": false,
+      "position": [
+        -376.605,
+        0.2,
+        4.733
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "candy_cloud_jar_shelf_10",
+      "kind": "item",
+      "key": "candy_jar_shelf",
+      "code": "decor_candy_jar_shelf",
+      "forSale": false,
+      "position": [
+        -376.605,
+        0.2,
+        2.733
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "candy_cloud_pick_mix",
+      "kind": "item",
+      "key": "pick_mix_island",
+      "code": "decor_pick_mix_island",
+      "forSale": false,
+      "position": [
+        -372.905,
+        0.2,
+        12.733
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "candy_cloud_lollipop_tree",
+      "kind": "item",
+      "key": "lollipop_tree",
+      "code": "decor_lollipop_tree",
+      "forSale": false,
+      "position": [
+        -374.405,
+        0.2,
+        20.733
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "candy_cloud_cotton_machine",
+      "kind": "item",
+      "key": "cotton_candy_machine",
+      "code": "decor_cotton_candy_machine",
+      "forSale": false,
+      "position": [
+        -374.905,
+        0.2,
+        5.233
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "candy_cloud_apple_tray",
+      "kind": "item",
+      "key": "candy_apple_tray",
+      "code": "decor_candy_apple_tray",
+      "forSale": false,
+      "position": [
+        -372.405,
+        0.2,
+        2.933
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "candy_cloud_checkout",
+      "kind": "item",
+      "key": "checkout_counter",
+      "code": "decor_checkout_counter",
+      "forSale": false,
+      "position": [
+        -370.405,
+        0.2,
+        17.733
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "candy_cloud_gum_stand",
+      "kind": "item",
+      "key": "gum_stand",
+      "code": "decor_gum_stand",
+      "forSale": false,
+      "position": [
+        -370.405,
+        0.2,
+        16.533
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "candy_cloud_bag",
+      "kind": "item",
+      "key": "bag",
+      "code": "candy_bag",
+      "forSale": true,
+      "price": 14,
+      "position": [
+        -374.305,
+        1.1,
+        12.733
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "stack": [
+        4,
+        2
+      ],
+      "description": "A bag of gummies from the pick & mix."
+    },
+    {
+      "id": "candy_cloud_licorice",
+      "kind": "item",
+      "key": "licorice",
+      "code": "candy_licorice",
+      "forSale": true,
+      "price": 9,
+      "position": [
+        -372.205,
+        1.1,
+        13.933
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "stack": [
+        3,
+        2
+      ],
+      "description": "Four twists of black licorice."
+    },
+    {
+      "id": "candy_cloud_lollipop",
+      "kind": "item",
+      "key": "lollipop",
+      "code": "candy_lollipop",
+      "forSale": true,
+      "price": 6,
+      "position": [
+        -374.405,
+        1.9,
+        20.733
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "stack": [
+        3,
+        1
+      ],
+      "description": "Swirl lollipop on a stick."
+    },
+    {
+      "id": "candy_cloud_cotton",
+      "kind": "item",
+      "key": "cotton",
+      "code": "candy_cotton",
+      "forSale": true,
+      "price": 12,
+      "position": [
+        -374.905,
+        1.13,
+        5.233
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "stack": [
+        2,
+        1
+      ],
+      "description": "Spun sugar cloud, freshly made at the machine."
+    },
+    {
+      "id": "candy_cloud_apple",
+      "kind": "item",
+      "key": "apple",
+      "code": "candy_apple",
+      "forSale": true,
+      "price": 15,
+      "position": [
+        -372.105,
+        1.1,
+        3.333
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "stack": [
+        3,
+        2
+      ],
+      "description": "Red candy apple, glossy and crunchy."
+    },
+    {
+      "id": "candy_cloud_gum",
+      "kind": "item",
+      "key": "gum",
+      "code": "candy_gum",
+      "forSale": true,
+      "price": 5,
+      "position": [
+        -370.405,
+        1.71,
+        16.533
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "stack": [
+        3,
+        2
+      ],
+      "description": "Pack of bubble gum, five sticks."
+    }
+  ],
+  "areas": [
+    {
+      "id": "candy_cloud",
+      "name": "Candy Cloud",
+      "role": "seller",
+      "npc": "candy_cloud_clerk",
+      "bounds": {
+        "minX": -376.905,
+        "maxX": -368.405,
+        "minZ": 0.733,
+        "maxZ": 24.733
+      },
+      "offers": [],
+      "priceTags": true
+    }
+  ]
+}

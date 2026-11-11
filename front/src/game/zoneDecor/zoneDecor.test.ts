@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs'
 import { parseCrops } from '../crops/crops.ts'
 import { parseAnimals } from '../animals/animals.ts'
 import { buildingPreviewKey, parseBuildings } from '../buildings/buildings.ts'
-import { areaStoreLayout, withStaff, bakedProps, parseZoneDecor as parseWithCrops, parseZoneDecorIndex, runtimeProps, zoneDecorJson, zonePriceFile, zonePrices } from './zoneDecor.ts'
+import { areaStoreLayout, withStaff, zoneRefOf, zoneShown, bakedProps, parseZoneDecor as parseWithCrops, parseZoneDecorIndex, runtimeProps, zoneDecorJson, zonePriceFile, zonePrices } from './zoneDecor.ts'
 import type { WorldManifest } from '../world/worldManifest.ts'
 
 const crops = parseCrops(JSON.parse(readFileSync(new URL('../../../public/assets/crops/crops.json', import.meta.url), 'utf8')))
@@ -86,7 +86,8 @@ test('areas stay inside the zone, seller areas never overlap, an NPC works in on
 
 test('the file shape is strict', () => {
   assert.throws(() => parseZoneDecor({ ...decor([]), version: 2 }, orchard), /zone.version/)
-  assert.throws(() => parseZoneDecor(decor([], { bounds: {} }), orchard), /zone.bounds: unknown field/)
+  assert.throws(() => parseZoneDecor(decor([], { bounds: {} }), orchard), /zone.bounds: a main zone takes its bounds from world.manifest.json/)
+  assert.throws(() => parseZoneDecor(decor([], { colour: 'red' }), orchard), /zone.colour: unknown field/)
   assert.throws(() => parseZoneDecor(decor([{ ...crate, kind: 'tree' }]), orchard), /kind/)
   assert.throws(() => parseZoneDecorIndex({ version: 2, zones: [] }), /index.version/)
 })
@@ -174,8 +175,8 @@ test('the backend copy of each zone price list matches its zone file', () => {
   const read = (url: URL): unknown => JSON.parse(readFileSync(url, 'utf8'))
   const manifest = read(new URL('world.manifest.json', assets)) as WorldManifest
   for (const key of parseZoneDecorIndex(read(new URL('zones/index.json', assets))).zones) {
-    const zone = manifest.zones.find((z) => z.key === key)!
-    const expected = zonePriceFile(parseWithCrops(read(new URL(`zones/${key}.json`, assets)), zone, null, null, null))
+    const raw = read(new URL(`zones/${key}.json`, assets))
+    const expected = zonePriceFile(parseWithCrops(raw, zoneRefOf(key, raw, manifest.zones), null, null, null))
     assert.deepEqual(read(new URL(`../../../backend/resources/zones/${key}.json`, assets)), expected, `${key}: run npm run zone:prices`)
   }
 })
@@ -295,4 +296,91 @@ test('the pub staff come from the pub zone file and land in the manifest', () =>
   assert.throws(() => parseZoneDecor({ version: 1, zone: 'pub', name: 'Pub', props: [barman, doorman, { ...barman, id: 'b3' }], areas: [] }, pub), /only one bartender/)
   assert.throws(() => parseZoneDecor(decor([{ ...cashier, role: 'bartender' }]), orchard), /the bartender works in zone pub/)
   assert.throws(() => parseZoneDecor(decor([{ ...cashier, role: 'chef' }]), orchard), /role: expected one of bartender, bouncer, nurse/)
+})
+
+test('a shop zone lives inside its parent zone and keeps its own bounds', () => {
+  const shop = { version: 1, zone: 'stall_shop', name: 'Stall shop', parent: 'orchard', bounds: { minX: -24, maxX: -16, minZ: -92, maxZ: -84 }, props: [], areas: [] }
+  const ref = zoneRefOf('stall_shop', shop, [orchard])
+  assert.deepEqual(ref, { key: 'stall_shop', bounds: shop.bounds, parent: 'orchard' })
+  assert.deepEqual([parseZoneDecor(shop, ref).parent, parseZoneDecor(shop, ref).bounds], ['orchard', shop.bounds])
+  assert.throws(() => zoneRefOf('stall_shop', { ...shop, parent: undefined }, [orchard]), /a shop zone names its parent zone/)
+  assert.throws(() => zoneRefOf('stall_shop', { ...shop, bounds: { ...shop.bounds, minX: -60 } }, [orchard]), /reaches outside zone orchard/)
+  assert.throws(() => zoneRefOf('orchard', { parent: 'farm' }, [orchard]), /orchard is a main zone, it has no parent/)
+  assert.throws(() => parseZoneDecor({ ...shop, bounds: { ...shop.bounds, maxX: -17 } }, ref), /zone.bounds: expected/)
+  assert.throws(() => parseZoneDecor({ ...shop, parent: undefined }, ref), /zone.parent: expected orchard/)
+})
+
+const corn = { code: 'farm_corn', key: 'corn', price: 5, count: 6, arrange: 'rows' }
+const gondola = { id: 's1', kind: 'shelf', shelf: 'gondola', position: [-21, 0, -86], yaw: 0, scale: [1, 1, 1], length: 2, levels: 4, slots: 3, fill: { '0.0.0': corn, '1.3.2': { ...corn, code: 'decor_floor_lamp', key: 'floor_lamp', price: 40, arrange: 'messy' } } }
+const withShelf = (shelf: unknown, props: unknown[] = []) => decor([cashier, shelf, ...props], { areas: [stall] })
+const shelfOf = (fill: Record<string, unknown>) => ({ ...gondola, fill: { '0.0.0': { ...corn, ...fill } } })
+
+test('a shelf is a runtime zone prop with its slots filled by key', () => {
+  const parsed = parseZoneDecor(withShelf(gondola), orchard)
+  const shelf = parsed.props[1]!
+  assert.equal(shelf.kind, 'shelf')
+  assert.deepEqual(Object.keys((shelf as { fill: object }).fill), ['0.0.0', '1.3.2'])
+  assert.deepEqual(runtimeProps(parsed).map((p) => p.id), ['n1', 's1'])
+  assert.deepEqual(bakedProps(parsed), [])
+  assert.doesNotThrow(() => parseZoneDecor(decor([{ ...gondola, position: [-35, 0, -110], fill: {} }]), orchard))
+})
+
+test('a shelf keeps its type, length, levels and slots in range, a chiller has one level', () => {
+  const bad = (patch: Record<string, unknown>) => () => parseZoneDecor(withShelf({ ...gondola, fill: {}, ...patch }), orchard)
+  assert.throws(bad({ shelf: 'crate' }), /shelf: expected one of gondola, wall, fridge, chiller/)
+  assert.throws(bad({ length: 0 }), /length: expected a whole number from 1 to 6/)
+  assert.throws(bad({ length: 7 }), /length: expected a whole number from 1 to 6/)
+  assert.throws(bad({ length: 1.5 }), /length: expected a whole number/)
+  assert.throws(bad({ levels: 7 }), /levels: expected a whole number from 1 to 6/)
+  assert.throws(bad({ slots: 9 }), /slots: expected a whole number from 1 to 8/)
+  assert.throws(bad({ shelf: 'chiller', levels: 2 }), /levels: expected a whole number from 1 to 1/)
+  assert.doesNotThrow(bad({ shelf: 'chiller', levels: 1 }))
+  assert.throws(bad({ scale: [1, 2, 1] }), /a shelf keeps scale 1/)
+  assert.throws(bad({ colour: 'red' }), /props\[1\]\.colour: unknown field/)
+  assert.throws(bad({ fill: [] }), /fill: expected an object/)
+})
+
+test('a slot key names an existing face, level and slot, a slot holds a known item', () => {
+  const at = (key: string, shelf: Record<string, unknown> = {}) => () => parseZoneDecor(withShelf({ ...gondola, ...shelf, fill: { [key]: corn } }), orchard)
+  assert.doesNotThrow(at('1.3.2'))
+  assert.throws(at('1.0.0', { shelf: 'wall' }), /fill\.1\.0\.0: no such slot/)
+  assert.throws(at('0.4.0'), /fill\.0\.4\.0: no such slot/)
+  assert.throws(at('0.0.3'), /fill\.0\.0\.3: no such slot/)
+  assert.throws(at('a.b.c'), /fill\.a\.b\.c: no such slot/)
+  assert.throws(at('00.0.0'), /no such slot/)
+  const slot = (fill: Record<string, unknown>) => () => parseZoneDecor(withShelf(shelfOf(fill)), orchard)
+  assert.throws(slot({ arrange: 'pile' }), /arrange: expected one of rows, messy, stack, front/)
+  assert.throws(slot({ count: 0 }), /count: expected a whole number from 1 to 48/)
+  assert.throws(slot({ price: 0 }), /price: expected whole coins/)
+  assert.throws(slot({ key: 'apple' }), /consumable farm_corn has its model in folder corn/)
+  assert.throws(slot({ forSale: true }), /forSale: unknown field/)
+})
+
+test('a slot sells at the zone price of its code, inside one seller area', () => {
+  const parsed = parseZoneDecor(withShelf(gondola, [lamp]), orchard)
+  assert.deepEqual(zonePrices(parsed), { decor_floor_lamp: 40, farm_corn: 5 })
+  assert.throws(() => parseZoneDecor(withShelf(gondola, [{ ...lamp, price: 41 }]), orchard), /decor_floor_lamp is already sold at 40 coins/)
+  assert.throws(() => parseZoneDecor(withShelf(shelfOf({}), [{ ...gondola, id: 's2', fill: { '0.1.0': { ...corn, price: 6 } } }]), orchard), /farm_corn is already sold at 5 coins/)
+  assert.throws(() => parseZoneDecor(decor([cashier, { ...gondola, position: [-35, 0, -110] }], { areas: [stall] }), orchard), /farm_corn, decor_floor_lamp is for sale outside every seller area/)
+})
+
+test('each filled slot is a display of its seller area, aimed at its slot box', () => {
+  const parsed = parseZoneDecor(withShelf(gondola), orchard)
+  const displays = areaStoreLayout(parsed, parsed.areas[0]!, new Map()).displays
+  assert.deepEqual(displays.map((d) => [d.code, d.shelfSlot]), [['farm_corn', { prop: 's1', slot: '0.0.0' }], ['decor_floor_lamp', { prop: 's1', slot: '1.3.2' }]])
+  const [front, back] = displays
+  assert.ok(front!.position[2] > -86 && front!.yaw === 0)
+  assert.ok(back!.position[2] < -86 && Math.abs(back!.yaw - Math.PI) < 1e-9)
+  assert.ok(front!.tag.position[2] > front!.position[2])
+  const tagged = parseZoneDecor(decor([cashier, gondola], { areas: [{ ...stall, priceTags: true }] }), orchard)
+  assert.deepEqual(areaStoreLayout(tagged, tagged.areas[0]!, new Map()).displays[0]!.tag, front!.tag)
+})
+
+test('a zone shows its props within 20 m of its rectangle and hides them past 26 m', () => {
+  const shop = { minX: 0, maxX: 10, minZ: 0, maxZ: 10 }
+  assert.equal(zoneShown(shop, { x: 5, z: 5 }, false, 20, 26), true)
+  assert.equal(zoneShown(shop, { x: 32, z: 5 }, false, 20, 26), false)
+  assert.equal(zoneShown(shop, { x: 32, z: 5 }, true, 20, 26), true)
+  assert.equal(zoneShown(shop, { x: 37, z: 5 }, true, 20, 26), false)
+  assert.equal(zoneShown(shop, { x: 25, z: 25 }, false, 20, 26), false)
 })

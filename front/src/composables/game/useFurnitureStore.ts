@@ -5,6 +5,7 @@ import { fetchAccountInventory } from '../../api/inventory'
 import { checkoutShopBasket, fetchItemShopCatalog, type ShopItem } from '../../api/itemShop'
 import type { StoreDisplay, StoreLayout } from '../../game/assets/catalog'
 import { createGltfLoader } from '../../game/gltfLoaderFactory'
+import { instancedParts, stackPlacements } from '../../game/mallTemplates/templateProps'
 import { configureRoomMeshShadows } from '../../game/sceneLighting'
 import { freshDisplayGroup } from '../../game/store/displayGroup'
 import { createPriceTag, type PriceTagContent } from '../../game/store/priceTag'
@@ -68,9 +69,11 @@ const AIM_INTERVAL = 0.08
 /** A hit this close before an item's middle still counts as the item (its own shelf, the copy next to it). */
 const SEE_THROUGH_SLACK = 0.15
 const COUNTER_REACH = 2.2
-const STACK_GAP = 0.02
 const PROMPT_LIFT = 0.18
 const HIGHLIGHT = new THREE.Color(0x3a3a2a)
+const INSTANCE_HIGHLIGHT = new THREE.Color(1.6, 1.6, 1.35)
+const INSTANCE_PLAIN = new THREE.Color(1, 1, 1)
+const SHELF_TAG_SCALE = 0.35
 
 interface DisplayRuntime {
   display: StoreDisplay
@@ -80,6 +83,7 @@ interface DisplayRuntime {
   tagPosition: [number, number, number]
   /** The display's own material copies (shared by its stacked copies), lit up while it is aimed at. */
   materials: THREE.MeshStandardMaterial[]
+  instances: Array<{ mesh: THREE.InstancedMesh; id: number }>
 }
 
 function prettyName(key: string): string {
@@ -207,29 +211,24 @@ export function useFurnitureStore(deps: FurnitureStoreDeps) {
   /** The model on its spot; a `stack` lines up copies in a grid so small goods read as a filled shelf. */
   async function placeModel(group: THREE.Group, rt: DisplayRuntime, index: number): Promise<void> {
     const { display } = rt
-    if (display.figure) return
+    if (display.figure || display.shelfSlot) return
     try {
       const gltf = await loader.loadAsync(store.modelUrl(display))
       rt.materials = ownMaterials(gltf.scene)
-      const [cols, rows] = display.stack ?? [1, 1]
       const [w, , d] = display.size
-      const [px, py, pz] = display.position
-      const cos = Math.cos(display.yaw)
-      const sin = Math.sin(display.yaw)
-      for (let i = 0; i < cols; i++) {
-        for (let j = 0; j < rows; j++) {
-          const model = i === 0 && j === 0 ? gltf.scene : gltf.scene.clone()
-          const ox = (i - (cols - 1) / 2) * (w + STACK_GAP)
-          const oz = (j - (rows - 1) / 2) * (d + STACK_GAP)
-          model.name = `StoreDisplay_${display.key}`
-          model.userData.storeDisplay = index
-          model.position.set(px + ox * cos + oz * sin, py, pz - ox * sin + oz * cos)
-          model.rotation.y = display.yaw
-          if (display.scale !== undefined) model.scale.fromArray(display.scale)
-          configureRoomMeshShadows(model)
-          group.add(model)
-        }
+      const spot = new THREE.Group()
+      spot.name = `StoreDisplay_${display.key}`
+      spot.userData.storeDisplay = index
+      spot.position.fromArray(display.position)
+      spot.rotation.y = display.yaw
+      const scale = new THREE.Matrix4().makeScale(...(display.scale ?? [1, 1, 1]))
+      for (const part of instancedParts(gltf.scene, stackPlacements(display.stack ?? [1, 1], { x: w, z: d }).map((at) => at.multiply(scale)))) {
+        part.userData.sharedGeometry = false
+        part.userData.sharedMaterials = false
+        spot.add(part)
       }
+      configureRoomMeshShadows(spot)
+      group.add(spot)
     } catch (error) {
       console.warn('[store] display model failed to load', display.key, error)
     }
@@ -261,13 +260,14 @@ export function useFurnitureStore(deps: FurnitureStoreDeps) {
         tag = createPriceTag(tagContent(display))
         tag.object.position.fromArray(display.tag.position)
         tag.object.rotation.y = display.tag.yaw
+        if (display.shelfSlot) tag.object.scale.setScalar(SHELF_TAG_SCALE)
         displays.add(tag.object)
         displays.updateWorldMatrix(true, true)
         tagPosition = tag.object.getWorldPosition(new THREE.Vector3()).toArray()
       } else {
         tagPosition = new THREE.Vector3(x, y + display.size[1] + PROMPT_LIFT, z).applyMatrix4(group.matrixWorld).toArray()
       }
-      runtimes.push({ display, tag, center, tagPosition, materials: [] })
+      runtimes.push({ display, tag, center, tagPosition, materials: [], instances: [] })
     }
     await Promise.all(runtimes.map((rt, i) => placeModel(displays, rt, i)))
   }
@@ -280,6 +280,10 @@ export function useFurnitureStore(deps: FurnitureStoreDeps) {
       for (const m of rt.materials) {
         m.emissive.copy(m.userData.baseEmissive as THREE.Color)
         if (rt === next) m.emissive.add(HIGHLIGHT)
+      }
+      for (const { mesh, id } of rt.instances) {
+        mesh.setColorAt(id, rt === next ? INSTANCE_HIGHLIGHT : INSTANCE_PLAIN)
+        if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true
       }
     }
     if (!next) {
@@ -320,6 +324,17 @@ export function useFurnitureStore(deps: FurnitureStoreDeps) {
         rt.materials.push(...ownMaterials(obj))
       })
     })
+  }
+
+  function bindShelfGoods(propId: string, goods: THREE.InstancedMesh): void {
+    const slots = goods.userData.shelfSlots as string[]
+    const displays = slots.map((slot) => {
+      const index = runtimes.findIndex((rt) => rt.display.shelfSlot?.prop === propId && rt.display.shelfSlot.slot === slot)
+      if (index === -1) throw new Error(`${store.key}: no display for shelf ${propId} slot ${slot}`)
+      return index
+    })
+    goods.userData.instanceDisplays = displays
+    displays.forEach((index, id) => runtimes[index]!.instances.push({ mesh: goods, id }))
   }
 
   function addLook(current: StoreTarget): void {
@@ -433,6 +448,8 @@ export function useFurnitureStore(deps: FurnitureStoreDeps) {
     raycaster.far = PICK_DISTANCE + 1
     const hit = raycaster.intersectObject(attachedTo, true).find((h) => isShown(h.object, attachedTo!) && !isSeeThrough(h.object))
     if (!hit) return { display: null, distance: Infinity }
+    const instanceDisplays = hit.object.userData.instanceDisplays as number[] | undefined
+    if (instanceDisplays && hit.instanceId !== undefined) return { display: runtimes[instanceDisplays[hit.instanceId]!] ?? null, distance: hit.distance }
     for (let obj: THREE.Object3D | null = hit.object; obj; obj = obj.parent) {
       const index = obj.userData.storeDisplay
       if (typeof index === 'number') return { display: runtimes[index] ?? null, distance: hit.distance }
@@ -540,6 +557,7 @@ export function useFurnitureStore(deps: FurnitureStoreDeps) {
     updatePrompt,
     toggleTarget,
     bindFigure,
+    bindShelfGoods,
     removeFromBasket,
     tryOpenCheckout,
     pay,

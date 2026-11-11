@@ -31,8 +31,13 @@ export interface EditorZoneBuilding {
 export interface EditorZone {
   key: string
   bounds: WorldBounds
-  modelUrl: string
+  modelUrl: string | null
   buildings: EditorZoneBuilding[]
+}
+
+export interface ReadOnlyShop {
+  key: string
+  props: TemplateProp[]
 }
 
 export type GizmoMode = 'select' | 'translate' | 'rotate' | 'scale'
@@ -73,6 +78,7 @@ const BAKED_PREFIXES = ['ZD_', 'FB_']
 const FOCUS_S = 0.35
 const FOCUS_MARGIN = 1.3
 const FOCUS_MIN_DISTANCE = 0.8
+const FIGURE_PICK_SIZE = [0.6, 1.8, 0.6] as const
 const FLY_KEYS: Record<string, THREE.Vector3> = {
   KeyW: new THREE.Vector3(0, 0, -1),
   KeyS: new THREE.Vector3(0, 0, 1),
@@ -80,6 +86,13 @@ const FLY_KEYS: Record<string, THREE.Vector3> = {
   KeyD: new THREE.Vector3(1, 0, 0),
   KeyE: new THREE.Vector3(0, 1, 0),
   KeyQ: new THREE.Vector3(0, -1, 0),
+}
+
+function addPickBox(figure: THREE.Object3D): void {
+  const box = new THREE.Mesh(new THREE.BoxGeometry(FIGURE_PICK_SIZE[0], FIGURE_PICK_SIZE[1], FIGURE_PICK_SIZE[2]), new THREE.MeshBasicMaterial({ visible: false }))
+  box.name = 'EditorPickBox'
+  box.position.y = FIGURE_PICK_SIZE[1] / 2
+  figure.add(box)
 }
 
 function placedInterior(interior: THREE.Group, offset: Vec3): THREE.Group {
@@ -174,6 +187,9 @@ export class MallEditorScene {
   private readonly clock = new THREE.Clock()
   private readonly flyKeys = new Set<string>()
   private readonly propsRoot = new THREE.Group()
+  private readonly readOnlyRoot = new THREE.Group()
+  private shopKeys = new Set<string>()
+  private shopsToken = 0
   private readonly placed = new Map<string, PlacedObject>()
   private readonly ghost = createPlacementGhost()
   private readonly raycaster = new THREE.Raycaster()
@@ -199,6 +215,7 @@ export class MallEditorScene {
   translationSnap = 0.1
   private rotationSnap = 0
   onSelect: (id: string | null, how: SelectHow) => void = () => {}
+  onShopPick: (key: string | null) => void = () => {}
   onBoxSelect: (ids: string[], additive: boolean) => void = () => {}
   onTransform: (id: string, transform: PropTransform) => void = () => {}
   onTransformMany: (updates: Array<{ id: string; transform: PropTransform }>) => void = () => {}
@@ -248,7 +265,7 @@ export class MallEditorScene {
     this.gizmo = new TransformControls(this.camera, this.renderer.domElement)
     this.gizmo.addEventListener('dragging-changed', this.onGizmoDragging)
     this.gizmo.addEventListener('objectChange', this.onGizmoChange)
-    this.scene.add(this.propsRoot, this.ghost.root, this.selectionBox, this.pivot, this.gizmo.getHelper())
+    this.scene.add(this.propsRoot, this.readOnlyRoot, this.ghost.root, this.selectionBox, this.pivot, this.gizmo.getHelper())
 
     const el = this.renderer.domElement
     el.addEventListener('pointerdown', this.onPlacePointerDown, { capture: true })
@@ -309,6 +326,7 @@ export class MallEditorScene {
     }
     if (prop.kind === 'light') object.add(lightHelper(prop.color))
     object.name = prop.id
+    if (prop.kind === 'npc' || prop.kind === 'mannequin') addPickBox(object)
     object.userData.templatePropId = prop.id
     object.userData.templatePropKind = prop.kind
     placeProp(object, prop)
@@ -581,7 +599,7 @@ export class MallEditorScene {
     this.controls.update()
     const loader = createGltfLoader()
     const [gltf, ...buildings] = await Promise.all([
-      loader.loadAsync(zone.modelUrl),
+      zone.modelUrl ? loader.loadAsync(zone.modelUrl) : { scene: new THREE.Group() },
       ...zone.buildings.map((b) => Promise.all([loader.loadAsync(b.url), b.interiorUrl ? loader.loadAsync(b.interiorUrl) : null])),
     ])
     buildings.forEach(([exterior, interior], i) => {
@@ -604,6 +622,37 @@ export class MallEditorScene {
     }
     this.backdrop = gltf.scene
     this.scene.add(gltf.scene)
+  }
+
+  async setReadOnlyShops(shops: readonly ReadOnlyShop[]): Promise<void> {
+    const token = ++this.shopsToken
+    for (const old of [...this.readOnlyRoot.children]) {
+      this.readOnlyRoot.remove(old)
+      disposeObject3D(old)
+    }
+    this.shopKeys = new Set(shops.map((s) => s.key))
+    const objects = await Promise.all(shops.flatMap((shop) => shop.props.map(async (prop) => {
+      const object = await createPropObject(prop)
+      if (prop.kind === 'npc' || prop.kind === 'mannequin') addPickBox(object)
+      placeProp(object, prop)
+      object.userData.shopKey = shop.key
+      return object
+    })))
+    if (token !== this.shopsToken) return objects.forEach(disposeObject3D)
+    for (const object of objects) this.readOnlyRoot.add(object)
+  }
+
+  private pickShop(): string | null {
+    if (this.shopKeys.size === 0) return null
+    const buildings = this.backdrop?.children.filter((o) => this.shopKeys.has(o.name.replace(/^ZoneBuilding_/, ''))) ?? []
+    for (const hit of this.raycaster.intersectObjects([this.readOnlyRoot, ...buildings], true)) {
+      for (let node: THREE.Object3D | null = hit.object; node; node = node.parent) {
+        if (typeof node.userData.shopKey === 'string') return node.userData.shopKey
+        const building = /^ZoneBuilding_(.+)$/.exec(node.name)?.[1]
+        if (building && this.shopKeys.has(building)) return building
+      }
+    }
+    return null
   }
 
   private removeBackdrop(): void {
@@ -687,7 +736,9 @@ export class MallEditorScene {
     this.pressAt = null
     if (!press) return
     if (Math.hypot(event.clientX - press.x, event.clientY - press.y) > CLICK_SLOP_PX) return
-    this.onSelect(this.pickProp(event), event.shiftKey ? 'toggle' : event.altKey ? 'member' : 'replace')
+    const id = this.pickProp(event)
+    this.onShopPick(id ? null : this.pickShop())
+    this.onSelect(id, event.shiftKey ? 'toggle' : event.altKey ? 'member' : 'replace')
   }
 
   private readonly onMarqueePointerDown = (event: PointerEvent): void => {

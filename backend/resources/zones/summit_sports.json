@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "zone": "summit_sports",
+  "prices": {
+    "COS_WEAR_BOTTOM_BASKETBALL_SHORTS": 90,
+    "COS_WEAR_BOTTOM_LEGGINGS": 120,
+    "COS_WEAR_BOTTOM_TRACK_PANTS": 150,
+    "COS_WEAR_HAIR_BUZZ": 60,
+    "COS_WEAR_HAIR_SHORT": 80,
+    "COS_WEAR_SHOES_HIGH_TOPS": 220,
+    "COS_WEAR_SHOES_RUNNERS": 250,
+    "COS_WEAR_TOP_JERSEY": 110,
+    "COS_WEAR_TOP_SPORTS_BRA": 80,
+    "COS_WEAR_TOP_TRACK_JACKET": 260
+  },
+  "buyers": {}
+}

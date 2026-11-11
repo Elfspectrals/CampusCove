@@ -26,6 +26,7 @@ import { BUILDING_PARTS, BUILDING_SIDES, STAFF_ROLES, type BuildingOpening, type
 import EditorColorPicker from './EditorColorPicker.vue'
 import EditorLookEditor from './EditorLookEditor.vue'
 import EditorSearchSelect, { type SelectOption } from './EditorSearchSelect.vue'
+import MallEditorShelf, { type ShelfItem } from './MallEditorShelf.vue'
 
 const props = defineProps<{
   prop: TemplateProp | null
@@ -47,9 +48,11 @@ const props = defineProps<{
   collapsed: boolean
   rebuilding?: string | null
   selectedCount?: number
+  shop?: string | null
+  shelfItems?: ShelfItem[]
 }>()
 
-const emit = defineEmits<{ change: [prop: TemplateProp]; surfaces: [surfaces: NonNullable<MallTemplate['surfaces']>]; remove: [id: string]; toggle: []; rebuild: [id: string] }>()
+const emit = defineEmits<{ change: [prop: TemplateProp]; surfaces: [surfaces: NonNullable<MallTemplate['surfaces']>]; remove: [id: string]; toggle: []; rebuild: [id: string]; openShop: [] }>()
 
 const NO_PIECE = ''
 const SURFACE_LABELS: Record<Surface, string> = { left: 'Left wall', right: 'Right wall', back: 'Back wall', floor: 'Floor', ceiling: 'Ceiling' }
@@ -122,6 +125,7 @@ function withNumbers(source: TemplateProp, n: Numbers): TemplateProp {
     const quarter = Math.PI / 2
     return { ...base, yaw: Math.round(base.yaw / quarter) * quarter, scale: [1, 1, 1], size: [round(n.width), round(n.depth)], height: round(n.height), roof: round(n.roof) }
   }
+  if (base.kind === 'shelf') return { ...base, scale: [1, 1, 1] }
   if (base.kind === 'light') {
     const lamp = { ...base, intensity: round(n.intensity), range: round(n.range) }
     return base.light === 'spot' ? { ...lamp, angle: round((n.angle * Math.PI) / 180), pitch: round((n.pitch * Math.PI) / 180) } : lamp
@@ -163,7 +167,7 @@ function build(): void {
   } else if (prop.kind === 'animal') {
     pane.addBinding(numbers, 'width', { label: 'Pen width m', min: MIN_PEN_SIDE, max: MAX_PEN_SIDE, step: 0.5 })
     pane.addBinding(numbers, 'depth', { label: 'Pen depth m', min: MIN_PEN_SIDE, max: MAX_PEN_SIDE, step: 0.5 })
-  } else if (!(prop.kind === 'npc' && prop.vendor)) pane.addBinding(numbers, 'scale', { label: 'Scale', x: axis, y: axis, z: axis })
+  } else if (!(prop.kind === 'npc' && prop.vendor) && prop.kind !== 'shelf') pane.addBinding(numbers, 'scale', { label: 'Scale', x: axis, y: axis, z: axis })
   if (prop.kind === 'item' && prop.forSale) {
     pane.addBinding(numbers, 'columns', { label: 'Stack cols', min: 1, max: 10, step: 1 })
     pane.addBinding(numbers, 'rows', { label: 'Stack rows', min: 1, max: 10, step: 1 })
@@ -209,6 +213,7 @@ const figure = computed(() => (props.prop?.kind === 'npc' || props.prop?.kind ==
 const light = computed(() => (props.prop?.kind === 'light' ? props.prop : null))
 const field = computed(() => (props.prop?.kind === 'field' ? props.prop : null))
 const building = computed(() => (props.prop?.kind === 'building' ? props.prop : null))
+const shelf = computed(() => (props.prop?.kind === 'shelf' ? props.prop : null))
 const RIDGES: SelectOption[] = [
   { value: 'x', label: 'Along the width' },
   { value: 'z', label: 'Along the depth' },
@@ -387,7 +392,13 @@ const flatMaterials = computed(() => props.materialOptions.filter((o) => !o.prev
       </button>
     </header>
     <div v-if="!collapsed" class="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-2 text-sm" @keydown.stop>
-      <p v-if="!prop && selectedCount && selectedCount > 1" class="m-0 px-1 text-xs text-mist">
+      <div v-if="!prop && shop" class="cc-panel-flat flex flex-col gap-2 p-3">
+        <p class="cc-eyebrow m-0 text-mist">Shop</p>
+        <p class="m-0 text-base font-extrabold">{{ shop }}</p>
+        <p class="m-0 text-xs text-mist">Edited in its own zone.</p>
+        <button type="button" class="cc-btn cc-btn-sm cc-btn-sun" @click="emit('openShop')">Open {{ shop }} editor</button>
+      </div>
+      <p v-else-if="!prop && selectedCount && selectedCount > 1" class="m-0 px-1 text-xs text-mist">
         {{ selectedCount }} props selected: the gizmo moves and turns them together. Group (Ctrl/Cmd+G) keeps them together, Alt-click edits one alone.
       </p>
       <p v-else-if="!prop && bounds" class="m-0 px-1 text-xs text-mist">Nothing selected. Select a prop to edit it.</p>
@@ -445,6 +456,7 @@ const flatMaterials = computed(() => props.materialOptions.filter((o) => !o.prev
           </button>
           <p class="m-0 text-[11px] text-mist">Rebuild shows the real building here. The game gets it after Save and zone:bake.</p>
         </div>
+        <MallEditorShelf v-if="shelf" :shelf="shelf" :items="shelfItems ?? []" @change="change" />
         <div v-if="field" class="flex flex-col gap-1.5 rounded-lg bg-ink-950/50 p-2">
           <div class="grid grid-cols-[5.5rem_1fr] items-center gap-2">
             <span class="text-xs text-mist">Crop</span>

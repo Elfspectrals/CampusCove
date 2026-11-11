@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "zone": "greencart",
+  "prices": {
+    "food_coffee": 15,
+    "food_cookie": 5,
+    "food_croissant": 12,
+    "food_orange_juice": 14,
+    "food_sandwich": 30,
+    "food_water_bottle": 8,
+    "grocery_apple": 6,
+    "grocery_banana": 6,
+    "grocery_bread": 14,
+    "grocery_cereal": 18,
+    "grocery_cheese": 16,
+    "grocery_chips": 9,
+    "grocery_chocolate": 10,
+    "grocery_eggs": 15,
+    "grocery_milk": 10,
+    "grocery_pasta": 12,
+    "grocery_soda": 7,
+    "grocery_yogurt": 8
+  },
+  "buyers": {}
+}

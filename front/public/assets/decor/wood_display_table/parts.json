@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "materials": {
+    "DC_HearthTable": {
+      "mask": "parts_DC_HearthTable.png",
+      "parts": [
+        {
+          "id": "main",
+          "label": "Main",
+          "color": "#b88850"
+        },
+        {
+          "id": "accent",
+          "label": "Accent",
+          "color": "#996a32"
+        }
+      ]
+    }
+  }
+}

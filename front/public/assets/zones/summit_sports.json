@@ -1,0 +1,512 @@
+{
+  "version": 1,
+  "zone": "summit_sports",
+  "name": "Summit Sports",
+  "parent": "mall",
+  "bounds": {
+    "minX": -299.1,
+    "maxX": -268.9,
+    "minZ": 78.405,
+    "maxZ": 86.905
+  },
+  "props": [
+    {
+      "id": "summit_sports_clerk",
+      "kind": "npc",
+      "position": [
+        -292.9,
+        0.2,
+        81.155
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pose": "idle",
+      "vendor": false,
+      "body": "#8b7aa8",
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "ponytail",
+          "color": "#6b5b95"
+        },
+        {
+          "slot": "top",
+          "key": "tee",
+          "color": "#1b1d22"
+        },
+        {
+          "slot": "bottom",
+          "key": "joggers",
+          "color": "#f0b429"
+        },
+        {
+          "slot": "shoes",
+          "key": "sneakers",
+          "color": "#4a3f62"
+        }
+      ]
+    },
+    {
+      "id": "summit_sports_rail_top",
+      "kind": "item",
+      "key": "clothes_wall_rail",
+      "code": "decor_clothes_wall_rail",
+      "forSale": false,
+      "position": [
+        -273.25,
+        0.2,
+        86.589
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "summit_sports_rail_bottom",
+      "kind": "item",
+      "key": "clothes_wall_rail",
+      "code": "decor_clothes_wall_rail",
+      "forSale": false,
+      "position": [
+        -293.75,
+        0.2,
+        86.589
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "summit_sports_table_w",
+      "kind": "item",
+      "key": "folded_clothes_table",
+      "code": "decor_folded_clothes_table",
+      "forSale": false,
+      "position": [
+        -278.0,
+        0.2,
+        82.905
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "summit_sports_table_e",
+      "kind": "item",
+      "key": "folded_clothes_table",
+      "code": "decor_folded_clothes_table",
+      "forSale": false,
+      "position": [
+        -290.0,
+        0.2,
+        82.905
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "summit_sports_dumbbell_rack",
+      "kind": "item",
+      "key": "dumbbell_rack",
+      "code": "decor_dumbbell_rack",
+      "forSale": false,
+      "position": [
+        -270.5,
+        0.2,
+        81.405
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "summit_sports_yoga_mats",
+      "kind": "item",
+      "key": "yoga_mat_rolls",
+      "code": "decor_yoga_mat_rolls",
+      "forSale": false,
+      "position": [
+        -273.5,
+        0.2,
+        79.605
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "summit_sports_treadmill",
+      "kind": "item",
+      "key": "treadmill",
+      "code": "decor_treadmill",
+      "forSale": false,
+      "position": [
+        -296.913,
+        0.2,
+        81.405
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "summit_sports_hoop",
+      "kind": "item",
+      "key": "basketball_hoop",
+      "code": "decor_basketball_hoop",
+      "forSale": false,
+      "position": [
+        -298.862,
+        0.2,
+        83.238
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "summit_sports_podium",
+      "kind": "item",
+      "key": "mannequin_podium",
+      "code": "decor_mannequin_podium",
+      "forSale": false,
+      "position": [
+        -284.0,
+        0.2,
+        83.43
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "summit_sports_checkout",
+      "kind": "item",
+      "key": "checkout_counter",
+      "code": "decor_checkout_counter",
+      "forSale": false,
+      "position": [
+        -293.3,
+        0.2,
+        80.205
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "summit_sports_top_track_jacket",
+      "kind": "mannequin",
+      "position": [
+        -272.0,
+        0.463,
+        86.485
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "top",
+          "key": "track_jacket",
+          "color": "#9b8abf",
+          "forSale": true,
+          "code": "COS_WEAR_TOP_TRACK_JACKET",
+          "price": 260
+        }
+      ]
+    },
+    {
+      "id": "summit_sports_top_jersey",
+      "kind": "mannequin",
+      "position": [
+        -273.25,
+        0.463,
+        86.485
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "top",
+          "key": "jersey",
+          "color": "#9b8abf",
+          "forSale": true,
+          "code": "COS_WEAR_TOP_JERSEY",
+          "price": 110
+        }
+      ]
+    },
+    {
+      "id": "summit_sports_top_sports_bra",
+      "kind": "mannequin",
+      "position": [
+        -274.5,
+        0.463,
+        86.485
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "top",
+          "key": "sports_bra",
+          "color": "#9b8abf",
+          "forSale": true,
+          "code": "COS_WEAR_TOP_SPORTS_BRA",
+          "price": 80
+        }
+      ]
+    },
+    {
+      "id": "summit_sports_bottom_track_pants",
+      "kind": "mannequin",
+      "position": [
+        -292.5,
+        1.078,
+        86.485
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "bottom",
+          "key": "track_pants",
+          "color": "#5a4e72",
+          "forSale": true,
+          "code": "COS_WEAR_BOTTOM_TRACK_PANTS",
+          "price": 150
+        }
+      ]
+    },
+    {
+      "id": "summit_sports_bottom_basketball_shorts",
+      "kind": "mannequin",
+      "position": [
+        -293.75,
+        1.078,
+        86.485
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "bottom",
+          "key": "basketball_shorts",
+          "color": "#5a4e72",
+          "forSale": true,
+          "code": "COS_WEAR_BOTTOM_BASKETBALL_SHORTS",
+          "price": 90
+        }
+      ]
+    },
+    {
+      "id": "summit_sports_bottom_leggings",
+      "kind": "mannequin",
+      "position": [
+        -295.0,
+        1.078,
+        86.485
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "bottom",
+          "key": "leggings",
+          "color": "#5a4e72",
+          "forSale": true,
+          "code": "COS_WEAR_BOTTOM_LEGGINGS",
+          "price": 120
+        }
+      ]
+    },
+    {
+      "id": "summit_sports_look_1",
+      "kind": "mannequin",
+      "position": [
+        -283.2,
+        0.34,
+        83.905
+      ],
+      "yaw": -3.0216,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "short",
+          "color": "#6b5b95",
+          "forSale": true,
+          "code": "COS_WEAR_HAIR_SHORT",
+          "price": 80
+        },
+        {
+          "slot": "top",
+          "key": "track_jacket",
+          "color": "#9b8abf",
+          "forSale": true,
+          "code": "COS_WEAR_TOP_TRACK_JACKET",
+          "price": 260
+        },
+        {
+          "slot": "bottom",
+          "key": "track_pants",
+          "color": "#5a4e72",
+          "forSale": true,
+          "code": "COS_WEAR_BOTTOM_TRACK_PANTS",
+          "price": 150
+        },
+        {
+          "slot": "shoes",
+          "key": "runners",
+          "color": "#4a3f62",
+          "forSale": true,
+          "code": "COS_WEAR_SHOES_RUNNERS",
+          "price": 250
+        }
+      ]
+    },
+    {
+      "id": "summit_sports_look_2",
+      "kind": "mannequin",
+      "position": [
+        -284.8,
+        0.34,
+        83.905
+      ],
+      "yaw": 3.0216,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "buzz",
+          "color": "#6b5b95",
+          "forSale": true,
+          "code": "COS_WEAR_HAIR_BUZZ",
+          "price": 60
+        },
+        {
+          "slot": "top",
+          "key": "jersey",
+          "color": "#9b8abf",
+          "forSale": true,
+          "code": "COS_WEAR_TOP_JERSEY",
+          "price": 110
+        },
+        {
+          "slot": "bottom",
+          "key": "basketball_shorts",
+          "color": "#5a4e72",
+          "forSale": true,
+          "code": "COS_WEAR_BOTTOM_BASKETBALL_SHORTS",
+          "price": 90
+        },
+        {
+          "slot": "shoes",
+          "key": "high_tops",
+          "color": "#4a3f62",
+          "forSale": true,
+          "code": "COS_WEAR_SHOES_HIGH_TOPS",
+          "price": 220
+        }
+      ]
+    }
+  ],
+  "areas": [
+    {
+      "id": "summit_sports",
+      "name": "Summit Sports",
+      "role": "seller",
+      "npc": "summit_sports_clerk",
+      "bounds": {
+        "minX": -299.1,
+        "maxX": -268.9,
+        "minZ": 78.405,
+        "maxZ": 86.905
+      },
+      "offers": [],
+      "priceTags": true
+    }
+  ]
+}
