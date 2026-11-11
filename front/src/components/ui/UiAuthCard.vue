@@ -3,9 +3,9 @@ import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { localizedTo } from '../../i18n/routes'
 import type { Locale } from '../../seo/site'
-import UiTitleScreen from './UiTitleScreen.vue'
 import UiLogo from './UiLogo.vue'
 import UiIcon from './UiIcon.vue'
+import townHero from '../../assets/landing/town-hero.webp'
 
 defineProps<{
   title: string
@@ -15,29 +15,32 @@ const { t, locale } = useI18n()
 </script>
 
 <template>
-  <UiTitleScreen>
-    <div class="flex flex-1 items-center justify-center px-4 py-10">
-      <div class="w-full max-w-[440px] animate-cc-pop">
-        <div class="mb-6 flex items-center justify-between">
-          <RouterLink :to="localizedTo('landing', locale as Locale)" class="cc-btn cc-btn-ghost cc-btn-sm">
-            <UiIcon name="chevron-left" :size="16" /> {{ t('auth.back') }}
-          </RouterLink>
-          <UiLogo size="sm" />
+  <div class="flex min-h-screen w-full bg-ink-950 text-fog">
+    <div class="flex w-full flex-col px-4 py-4 sm:px-8 lg:w-1/2 lg:max-w-[640px]">
+      <header class="flex items-center justify-between">
+        <UiLogo size="sm" />
+        <RouterLink
+          :to="localizedTo('landing', locale as Locale)"
+          class="inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-mist transition-colors hover:text-fog"
+        >
+          <UiIcon name="chevron-left" :size="16" :stroke-width="1.75" /> {{ t('auth.back') }}
+        </RouterLink>
+      </header>
+
+      <main class="mx-auto flex w-full max-w-[400px] flex-1 flex-col justify-center py-12">
+        <h1 class="cc-title">{{ title }}</h1>
+        <p v-if="subtitle" class="m-0 mt-2 text-mist">{{ subtitle }}</p>
+        <div class="mt-8">
+          <slot />
         </div>
-        <div class="cc-panel overflow-hidden">
-          <div class="h-2 bg-[linear-gradient(90deg,rgb(var(--cc-sun)),rgb(var(--cc-coral)),rgb(var(--cc-grape)),rgb(var(--cc-pool)))]" />
-          <div class="p-7 sm:p-8">
-            <h1 class="cc-title text-center">{{ title }}</h1>
-            <p v-if="subtitle" class="m-0 mt-1 text-center text-sm font-semibold text-mist">{{ subtitle }}</p>
-            <div class="mt-7">
-              <slot />
-            </div>
-          </div>
-          <div v-if="$slots.footer" class="border-t-2 border-ink-600/50 bg-ink-950/40 px-7 py-4 text-center text-sm font-semibold text-mist">
-            <slot name="footer" />
-          </div>
-        </div>
-      </div>
+        <p v-if="$slots.footer" class="m-0 mt-8 text-sm text-mist">
+          <slot name="footer" />
+        </p>
+      </main>
     </div>
-  </UiTitleScreen>
+
+    <div class="relative hidden flex-1 lg:block">
+      <img :src="townHero" alt="" width="2400" height="1350" class="absolute inset-0 h-full w-full object-cover object-right" />
+    </div>
+  </div>
 </template>

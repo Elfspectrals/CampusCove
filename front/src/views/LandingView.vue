@@ -4,16 +4,14 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { marketing } from '../content/marketing'
 import type { Locale } from '../seo/site'
-import UiTitleScreen from '../components/ui/UiTitleScreen.vue'
 import UiLogo from '../components/ui/UiLogo.vue'
 import UiIcon from '../components/ui/UiIcon.vue'
+import townHero from '../assets/landing/town-hero.webp'
 
 const router = useRouter()
 const { t, locale } = useI18n()
 const loc = computed(() => locale.value as Locale)
 const copy = computed(() => marketing[loc.value])
-
-const tones = ['text-pool', 'text-sun', 'text-grape', 'text-mint', 'text-coral', 'text-pool']
 
 function getStarted() {
   router.push({ name: 'register' })
@@ -25,57 +23,80 @@ function signIn() {
 </script>
 
 <template>
-  <UiTitleScreen>
-    <div class="flex items-center justify-between px-4 py-4 sm:px-8">
-      <UiLogo size="sm" />
-      <nav class="flex items-center gap-2" :aria-label="t('nav.home')">
-        <button type="button" class="cc-btn cc-btn-ghost cc-btn-sm" @click="signIn">{{ t('nav.signIn') }}</button>
-      </nav>
-    </div>
+  <div class="min-h-screen w-full bg-ink-950 text-fog">
+    <section class="relative isolate flex min-h-svh flex-col overflow-hidden">
+      <img
+        :src="townHero"
+        alt=""
+        width="2400"
+        height="1350"
+        fetchpriority="high"
+        class="absolute inset-0 -z-10 h-full w-full object-cover object-[80%_center]"
+      />
+      <div class="pointer-events-none absolute inset-x-0 top-0 -z-10 h-32 bg-gradient-to-b from-ink-950/60 to-transparent" />
+      <div class="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-1/3 bg-gradient-to-b from-transparent to-ink-950" />
 
-    <section class="flex flex-1 flex-col items-center justify-center px-6 pb-16 pt-8 text-center">
-      <span class="cc-chip cc-chip-sun mb-6 animate-cc-pop">
-        <UiIcon name="sparkles" :size="14" /> {{ copy.heroBadge }}
-      </span>
-      <h1 class="m-0">
-        <UiLogo size="xl" class="animate-cc-pop" aria-hidden="true" />
-        <span class="sr-only">{{ copy.heroTitle }}</span>
-      </h1>
-      <p class="mx-auto mt-6 max-w-xl text-lg font-semibold text-fog/85 sm:text-xl">
-        {{ copy.heroLead }}
-      </p>
-      <div class="mt-10 flex flex-wrap items-center justify-center gap-4">
-        <button type="button" class="cc-btn cc-btn-sun cc-btn-xl cc-btn-shine" @click="getStarted">
-          <UiIcon name="play" :size="26" fill /> {{ t('landing.playFree') }}
-        </button>
-        <button type="button" class="cc-btn cc-btn-ghost cc-btn-lg" @click="signIn">
-          {{ t('landing.haveAccount') }}
-        </button>
+      <header class="flex items-center justify-between px-4 py-4 sm:px-8">
+        <UiLogo size="sm" />
+        <nav :aria-label="t('nav.home')">
+          <button
+            type="button"
+            class="min-h-11 px-2 text-sm font-semibold text-fog transition-colors hover:text-sun"
+            @click="signIn"
+          >
+            {{ t('nav.signIn') }}
+          </button>
+        </nav>
+      </header>
+
+      <div class="flex flex-1 items-start px-4 pt-[6vh] sm:px-8 sm:pt-[12vh] lg:px-16">
+        <div class="max-w-xl">
+          <h1 class="m-0 font-display text-4xl leading-[1.05] text-fog sm:text-6xl">{{ copy.headline }}</h1>
+          <p class="m-0 mt-5 max-w-md text-lg text-fog/85 sm:text-xl">{{ copy.heroLead }}</p>
+          <div class="mt-8 flex flex-wrap items-center gap-x-6 gap-y-4">
+            <button type="button" class="cc-btn cc-btn-sun cc-btn-lg" @click="getStarted">
+              <UiIcon name="play" :size="20" fill /> {{ t('landing.playFree') }}
+            </button>
+            <button
+              type="button"
+              class="min-h-11 text-base font-semibold text-fog underline-offset-4 transition-colors hover:text-sun hover:underline"
+              @click="signIn"
+            >
+              {{ t('landing.haveAccount') }}
+            </button>
+          </div>
+        </div>
       </div>
+    </section>
 
-      <div class="mt-20 grid w-full max-w-5xl gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <article v-for="(f, i) in copy.features" :key="f.title" class="cc-panel-glass p-5 text-left">
-          <span :class="['mb-3 grid h-11 w-11 place-items-center rounded-xl bg-ink-950/70', tones[i % tones.length]]">
-            <UiIcon :name="f.icon" :size="22" />
-          </span>
-          <h2 class="cc-display m-0 text-xl text-fog">{{ f.title }}</h2>
-          <p class="m-0 mt-1 text-sm font-semibold text-mist">{{ f.body }}</p>
+    <section class="mx-auto w-full max-w-6xl px-4 py-16 sm:px-8 sm:py-24">
+      <div class="grid gap-x-10 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
+        <article v-for="f in copy.features" :key="f.title" class="border-t border-white/10 pt-5">
+          <UiIcon :name="f.icon" :size="18" :stroke-width="1.75" class="text-mist" />
+          <h2 class="m-0 mt-3 text-lg font-semibold text-fog">{{ f.title }}</h2>
+          <p class="m-0 mt-1 text-mist">{{ f.body }}</p>
         </article>
       </div>
-
-      <section class="mt-16 w-full max-w-3xl text-left" aria-labelledby="faq-title">
-        <h2 id="faq-title" class="cc-display m-0 text-center text-3xl text-fog">{{ copy.faqTitle }}</h2>
-        <div class="mt-6 flex flex-col gap-3">
-          <details v-for="f in copy.faq" :key="f.q" class="cc-panel-glass group p-4">
-            <summary class="cursor-pointer list-none font-extrabold text-fog marker:hidden">
-              <span class="mr-2 inline-block text-sun transition-transform group-open:rotate-45" aria-hidden="true">+</span>{{ f.q }}
-            </summary>
-            <p class="m-0 mt-2 font-semibold text-mist">{{ f.a }}</p>
-          </details>
-        </div>
-        <p class="mt-6 text-center">
-        </p>
-      </section>
     </section>
-  </UiTitleScreen>
+
+    <section class="mx-auto w-full max-w-3xl px-4 pb-24 sm:px-8" aria-labelledby="faq-title">
+      <h2 id="faq-title" class="m-0 font-display text-3xl text-fog sm:text-4xl">{{ copy.faqTitle }}</h2>
+      <div class="mt-8 divide-y divide-white/10 border-y border-white/10">
+        <details v-for="f in copy.faq" :key="f.q" class="group py-4">
+          <summary
+            class="flex min-h-11 cursor-pointer list-none items-center justify-between gap-4 font-semibold text-fog [&::-webkit-details-marker]:hidden"
+          >
+            {{ f.q }}
+            <UiIcon
+              name="chevron-down"
+              :size="18"
+              :stroke-width="1.75"
+              class="shrink-0 text-mist transition-transform group-open:rotate-180"
+            />
+          </summary>
+          <p class="m-0 mt-2 max-w-prose text-mist">{{ f.a }}</p>
+        </details>
+      </div>
+    </section>
+  </div>
 </template>

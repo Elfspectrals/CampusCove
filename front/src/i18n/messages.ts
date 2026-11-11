@@ -75,8 +75,8 @@ export const messages = {
       showPassword: 'Show password',
       hidePassword: 'Hide password',
       login: {
-        title: 'Welcome back',
-        subtitle: 'Sign in and get back to town.',
+        title: 'Sign in',
+        subtitle: 'Sign in and get back to town',
         forgot: 'Forgot your password?',
         submit: 'Sign in',
         submitting: 'Signing in…',
@@ -86,7 +86,7 @@ export const messages = {
       },
       register: {
         title: 'Create your player',
-        subtitle: 'Free, in your browser, ready in a minute.',
+        subtitle: 'Free, in your browser, ready in a minute',
         username: 'Username',
         usernameShort: 'At least 3 characters.',
         usernameTaken: 'Someone already has this name. Try another one.',
@@ -107,7 +107,7 @@ export const messages = {
       },
       forgot: {
         title: 'Reset your password',
-        subtitle: 'Enter the e-mail of your account and we will send you a link.',
+        subtitle: 'Enter the e-mail of your account and we will send you a link',
         submit: 'Send the link',
         submitting: 'Sending…',
         sent: 'If an account uses this e-mail, a link is on its way. It works for 60 minutes.',
@@ -115,7 +115,7 @@ export const messages = {
       },
       reset: {
         title: 'Choose a new password',
-        subtitle: 'You will be signed out everywhere else.',
+        subtitle: 'You will be signed out everywhere else',
         newPassword: 'New password',
         submit: 'Save my new password',
         submitting: 'Saving…',
@@ -352,8 +352,8 @@ export const messages = {
       showPassword: 'Afficher le mot de passe',
       hidePassword: 'Masquer le mot de passe',
       login: {
-        title: 'Content de te revoir',
-        subtitle: 'Connecte-toi et retourne en ville.',
+        title: 'Connexion',
+        subtitle: 'Connecte-toi et retourne en ville',
         forgot: 'Mot de passe oublié ?',
         submit: 'Se connecter',
         submitting: 'Connexion…',
@@ -363,7 +363,7 @@ export const messages = {
       },
       register: {
         title: 'Crée ton joueur',
-        subtitle: 'Gratuit, dans ton navigateur, prêt en une minute.',
+        subtitle: 'Gratuit, dans ton navigateur, prêt en une minute',
         username: 'Pseudo',
         usernameShort: 'Au moins 3 caractères.',
         usernameTaken: 'Ce pseudo est déjà pris. Essaie-en un autre.',
@@ -383,7 +383,7 @@ export const messages = {
       },
       forgot: {
         title: 'Réinitialiser ton mot de passe',
-        subtitle: 'Indique l’e-mail de ton compte, on t’envoie un lien.',
+        subtitle: 'Indique l’e-mail de ton compte, on t’envoie un lien',
         submit: 'Envoyer le lien',
         submitting: 'Envoi…',
         sent: 'Si un compte utilise cet e-mail, un lien est en route. Il est valable 60 minutes.',
@@ -391,7 +391,7 @@ export const messages = {
       },
       reset: {
         title: 'Choisis un nouveau mot de passe',
-        subtitle: 'Tu seras déconnecté de tes autres appareils.',
+        subtitle: 'Tu seras déconnecté de tes autres appareils',
         newPassword: 'Nouveau mot de passe',
         submit: 'Enregistrer mon mot de passe',
         submitting: 'Enregistrement…',

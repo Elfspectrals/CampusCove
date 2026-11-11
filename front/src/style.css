@@ -113,7 +113,7 @@
     @apply text-[11px] font-extrabold uppercase tracking-[0.22em] text-mist;
   }
   .cc-title {
-    @apply cc-display m-0 text-3xl text-fog sm:text-4xl;
+    @apply m-0 font-display text-3xl text-fog sm:text-4xl;
   }
 
   /* ---------- panels ---------- */
@@ -202,7 +202,7 @@
 
   /* ---------- form controls ---------- */
   .cc-label {
-    @apply mb-1.5 block text-xs font-extrabold uppercase tracking-[0.14em] text-mist;
+    @apply mb-2 block text-sm font-semibold text-fog/90;
   }
   .cc-input {
     @apply w-full rounded-xl border-2 border-ink-600 bg-ink-950/70 px-4 py-3 text-[15px] font-semibold text-fog placeholder:font-medium placeholder:text-mist/60 transition-colors;

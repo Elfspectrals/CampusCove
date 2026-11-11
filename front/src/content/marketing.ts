@@ -2,7 +2,7 @@
 import type { Locale } from '../seo/site'
 
 interface Feature {
-  icon: 'map' | 'home' | 'shirt' | 'users' | 'sparkles' | 'globe'
+  icon: 'map' | 'home' | 'shirt' | 'users' | 'briefcase' | 'globe'
   title: string
   body: string
 }
@@ -18,8 +18,8 @@ interface TitledText {
 }
 
 export interface MarketingCopy {
-  heroBadge: string
   heroTitle: string
+  headline: string
   heroLead: string
   features: Feature[]
   faqTitle: string
@@ -30,15 +30,15 @@ export interface MarketingCopy {
 
 export const marketing: Record<Locale, MarketingCopy> = {
   en: {
-    heroBadge: 'Season 1 · New Nation is live',
     heroTitle: 'CampusCove — free multiplayer 3D campus game in your browser',
-    heroLead: 'Your virtual campus. Hang out, build your space and meet people — all in one cozy 3D town.',
+    headline: 'A free 3D town to share with your friends',
+    heroLead: 'Explore the town, furnish your loft and meet your friends. Free and multiplayer, right in your browser.',
     features: [
       { icon: 'map', title: 'Explore the town', body: 'Roam a living campus town with friends in real time: plaza, café, pond, workplaces and more.' },
       { icon: 'home', title: 'Own your loft', body: 'Rent or buy an apartment and furnish it piece by piece from the Cove Home store.' },
-      { icon: 'shirt', title: 'Dress to impress', body: 'Unlock skins and build a look nobody else has.' },
+      { icon: 'shirt', title: 'Your own look', body: 'Unlock skins and build a look nobody else has.' },
       { icon: 'users', title: 'Play with friends', body: 'Add friends, give them a key to your place and meet up anywhere in town.' },
-      { icon: 'sparkles', title: 'Work, fish, cook', body: 'Earn coins with jobs, fishing and cooking, and keep your character fed and rested.' },
+      { icon: 'briefcase', title: 'Work, fish, cook', body: 'Earn coins with jobs, fishing and cooking, and keep your character fed and rested.' },
       { icon: 'globe', title: 'No download', body: 'Runs in any modern desktop browser. Create an account and you are in town in seconds.' },
     ],
     faqTitle: 'Frequently asked questions',
@@ -62,15 +62,15 @@ export const marketing: Record<Locale, MarketingCopy> = {
     },
   },
   fr: {
-    heroBadge: 'Saison 1 · New Nation est en ligne',
     heroTitle: 'CampusCove — jeu de campus 3D multijoueur gratuit dans le navigateur',
-    heroLead: 'Ton campus virtuel. Retrouve tes amis, aménage ton chez-toi et rencontre du monde, dans une petite ville 3D chaleureuse.',
+    headline: 'Une ville 3D gratuite à partager avec tes amis',
+    heroLead: 'Explore la ville, meuble ton loft et retrouve tes amis. Gratuit et multijoueur, directement dans ton navigateur.',
     features: [
       { icon: 'map', title: 'Explore la ville', body: 'Parcours un campus vivant avec tes amis en temps réel : place, café, étang, lieux de travail et plus encore.' },
       { icon: 'home', title: 'Ton propre loft', body: 'Loue ou achète un appartement et meuble-le pièce par pièce au magasin Cove Home.' },
       { icon: 'shirt', title: 'Ton style', body: 'Débloque des skins et crée un look unique.' },
       { icon: 'users', title: 'Joue entre amis', body: 'Ajoute des amis, donne-leur une clé de chez toi et retrouvez-vous partout en ville.' },
-      { icon: 'sparkles', title: 'Travaille, pêche, cuisine', body: 'Gagne des pièces grâce aux jobs, à la pêche et à la cuisine, et garde ton personnage en forme.' },
+      { icon: 'briefcase', title: 'Travaille, pêche, cuisine', body: 'Gagne des pièces grâce aux jobs, à la pêche et à la cuisine, et garde ton personnage en forme.' },
       { icon: 'globe', title: 'Sans téléchargement', body: 'Fonctionne dans n’importe quel navigateur récent sur ordinateur. Crée un compte, tu es en ville en quelques secondes.' },
     ],
     faqTitle: 'Questions fréquentes',

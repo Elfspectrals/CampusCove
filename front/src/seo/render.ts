@@ -59,7 +59,7 @@ export function bodySnapshot(page: SeoPage, locale: Locale): string {
   ]
   parts.push(`<header><nav>${nav.join(' · ')}</nav></header><main>`)
   if (page.routeName === 'landing') {
-    parts.push(`<h1>${esc(m.heroTitle)}</h1><p>${esc(m.heroLead)}</p>`)
+    parts.push(`<h1>${esc(m.headline)}</h1><p>${esc(m.heroLead)}</p>`)
     parts.push(...m.features.map((f) => `<section><h2>${esc(f.title)}</h2><p>${esc(f.body)}</p></section>`))
     parts.push(`<section><h2>${esc(m.faqTitle)}</h2>${m.faq.map((f) => `<h3>${esc(f.q)}</h3><p>${esc(f.a)}</p>`).join('')}</section>`)
   } else if (page.legalSlug) {
