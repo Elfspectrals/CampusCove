@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { WEAR_BASE_MODEL_URL } from '../game/assets/catalog'
 import { createGltfLoader } from '../game/gltfLoaderFactory'
+import { cullCharacterOutOfView } from './characterCulling'
 import { bodyUrlFor, DEFAULT_LOOK, pieceUrlFor, type CharacterLook } from './characterLook'
 import { attachAvatarAnimations, cloneCharacterWithUniqueMaterials, normalizeCharacterScale, setCharacterClips } from './glbCharacter'
 import { hiddenRegions, tintHexFor, WEAR_SLOTS, type SlotHexes, type WearModels } from './modularCharacterLogic'
@@ -97,5 +98,6 @@ export async function createModularCharacter(models: WearModels, colors: SlotHex
   }
   for (const mesh of [...body, ...worn]) tint(mesh, colors, defaults)
   attachAvatarAnimations(instance)
+  cullCharacterOutOfView(instance)
   return instance
 }
