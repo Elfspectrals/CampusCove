@@ -48,6 +48,7 @@ export function mergeStaticMeshes(root: THREE.Object3D, movingNodeNames: Readonl
     mesh.name = `Merged_${first.material.name}`
     mesh.castShadow = first.castShadow
     mesh.receiveShadow = first.receiveShadow
+    mesh.userData.sharedMaterials = first.userData.sharedMaterials
     for (const original of meshes) original.removeFromParent()
     root.add(mesh)
   }

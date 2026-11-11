@@ -62,13 +62,16 @@ function attachPiece(template: THREE.Group, parent: THREE.Object3D, bones: Map<s
   })
 }
 
-function tint(mesh: THREE.Mesh, colors: SlotHexes, defaults: SlotHexes): void {
+function tint(mesh: THREE.Mesh, colors: SlotHexes, defaults: SlotHexes, tinted: Map<THREE.Material, THREE.Material>): void {
   const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
   if (!materials.some((m) => tintHexFor(m.name, colors, defaults))) return
   const own = materials.map((m) => {
+    const known = tinted.get(m)
+    if (known) return known
     const copy = m.clone()
     const hex = tintHexFor(m.name, colors, defaults)
     if (hex && copy instanceof THREE.MeshStandardMaterial) copy.color.set(hex)
+    tinted.set(m, copy)
     return copy
   })
   mesh.material = Array.isArray(mesh.material) ? own : own[0]!
@@ -96,7 +99,8 @@ export async function createModularCharacter(models: WearModels, colors: SlotHex
     const region = extras.region as string
     mesh.visible = region === 'face' ? extras.face === face : !hidden.has(region)
   }
-  for (const mesh of [...body, ...worn]) tint(mesh, colors, defaults)
+  const tinted = new Map<THREE.Material, THREE.Material>()
+  for (const mesh of [...body, ...worn]) tint(mesh, colors, defaults, tinted)
   attachAvatarAnimations(instance)
   cullCharacterOutOfView(instance)
   return instance
