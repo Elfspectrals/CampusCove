@@ -2,6 +2,13 @@ export const PUNCH_REACH = 2
 export const PUNCH_COOLDOWN_MS = 800
 export const PUNCH_IMPACT_S = 5 / 30
 export const PUNCH_DAMAGE = 8
+export const PUNCH_COMBO_RESET_MS = 1500
+
+export type PunchHand = 'jab' | 'cross'
+
+export function nextPunchHand(previous: PunchHand | null, sinceLastMs: number): PunchHand {
+  return previous === 'jab' && sinceLastMs <= PUNCH_COMBO_RESET_MS ? 'cross' : 'jab'
+}
 const PUNCH_FACING_COS = 0.5
 const PUNCH_HEIGHT_REACH = 1
 const SHAKE_DECAY = 2.2

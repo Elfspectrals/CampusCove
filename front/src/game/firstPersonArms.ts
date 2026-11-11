@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import { firstPersonWalkTimeScale } from '../avatar/avatarAnimationLogic'
 import { wearTopFpArmsUrl } from './assets/catalog'
 import { createGltfLoader } from './gltfLoaderFactory'
+import { nextPunchHand, type PunchHand } from './punch'
 
 const MIN_WALK_SPEED = 0.5
 const BASE_FADE_S = 0.2
@@ -57,7 +58,8 @@ export function createFirstPersonArms(container: THREE.Group) {
   let watchTarget = 0
   let watchWeight = 0
   let frozenFor = 0
-  let leftPunchNext = false
+  let lastPunch: PunchHand | null = null
+  let lastPunchAt = 0
   const poseQuat = new THREE.Quaternion()
   const roll = new THREE.Quaternion()
   const poseArm = new THREE.Vector3()
@@ -214,8 +216,10 @@ export function createFirstPersonArms(container: THREE.Group) {
     },
     use: (kind: ArmsUse) => playOnce(kind === 'door' ? 'UseDoor' : 'UseKey'),
     punch: () => {
-      playOnce(leftPunchNext ? 'PunchL' : 'Punch', PUNCH_FADE_S)
-      leftPunchNext = !leftPunchNext
+      const now = performance.now()
+      lastPunch = nextPunchHand(lastPunch, now - lastPunchAt)
+      lastPunchAt = now
+      playOnce(lastPunch === 'jab' ? 'PunchL' : 'Punch', PUNCH_FADE_S)
     },
     pick: () => playOnce('Pick'),
     cancelPick,

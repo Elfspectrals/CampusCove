@@ -514,19 +514,61 @@ def walk(frames, phase):
     return pose_at
 
 
-PUNCH_WINDUP = {"x": 0.01, "y": -0.05, "z": -0.02, "rx": 0.1}
-PUNCH_CONTACT = {"x": -0.05, "y": 0.2, "z": 0.03, "rx": -0.02, "ry": -0.293, "rz": 0.453}
-PUNCH_RECOIL = {**PUNCH_CONTACT, "y": 0.17}
-PUNCH = eased(13, [
-    (0, {}),
-    (3, PUNCH_WINDUP),
-    (4, blend(PUNCH_WINDUP, PUNCH_CONTACT, 0.85)),
-    (5, PUNCH_CONTACT),
-    (6, PUNCH_RECOIL),
-    (7, PUNCH_RECOIL),
-    (11, {"z": -0.01, "rx": -0.03}),
-    (13, {}),
-])
+JAB_FRAMES = 12
+CROSS_FRAMES = 16
+FIST_CENTRE = Vector((-0.012, 0.085, 0.0))
+JAB_COCK = {"x": -0.01, "y": -0.035, "z": -0.012, "rx": 0.08}
+CROSS_WINDUP = {"x": 0.02, "y": -0.045, "z": -0.012, "rx": 0.12, "rz": -0.06}
+GUARD = {"x": -0.05, "y": -0.04, "z": 0.05, "rx": 0.15}
+
+
+def frame(along, side):
+    y = along.normalized()
+    x = (side - side.project(y)).normalized()
+    return Matrix((x, y, x.cross(y))).transposed()
+
+
+def fist_at(side, wrist, at, forearm, back):
+    rot = frame(forearm, back) @ frame(wrist, Vector((1 if side == "R" else -1, 0, 0))).inverted()
+    elbow = at - rot @ (wrist + MIRROR[side].to_3x3() @ FIST_CENTRE)
+    turn = rot.to_euler("XYZ", REST_ROTATION[side])
+    rest = REST_ROTATION[side]
+    return {"x": elbow.x - REST_ELBOW[side].x, "y": elbow.y - REST_ELBOW[side].y, "z": elbow.z - REST_ELBOW[side].z,
+            "rx": turn.x - rest.x, "ry": turn.y - rest.y, "rz": turn.z - rest.z}
+
+
+def jab(wrist):
+    forearm, back = Vector((0.35, 1, 0.5)), Vector((-0.5, 0, 1))
+    contact = fist_at("L", wrist, Vector((-0.015, 0.34, -0.05)), forearm, back)
+    snap = fist_at("L", wrist, Vector((-0.08, 0.27, -0.09)), forearm, Vector((-1, 0, 0.3)))
+    return eased(JAB_FRAMES, [
+        (0, {}),
+        (2, JAB_COCK),
+        (4, blend(JAB_COCK, contact, 0.8)),
+        (5, contact),
+        (7, snap),
+        (JAB_FRAMES, {}),
+    ])
+
+
+def cross(wrist):
+    back = Vector((0.5, 0, 1))
+    contact = fist_at("R", wrist, Vector((0.01, 0.37, -0.045)), Vector((-0.4, 1, 0.65)), back)
+    through = fist_at("R", wrist, Vector((-0.025, 0.4, -0.055)), Vector((-0.5, 1, 0.65)), back)
+    return eased(CROSS_FRAMES, [
+        (0, {}),
+        (3, CROSS_WINDUP),
+        (4, blend(CROSS_WINDUP, contact, 0.8)),
+        (5, contact),
+        (7, through),
+        (9, through),
+        (CROSS_FRAMES, {}),
+    ])
+
+
+def guard(frames):
+    return eased(frames, [(0, {}), (3, GUARD), (frames - 4, GUARD), (frames, {})])
+
 
 EQUIP = eased(14, [
     (0, {"x": 0.01, "y": -0.03, "z": -0.15, "rx": -0.35, "rz": 0.05}),
@@ -619,18 +661,25 @@ def hand_pose(index, middle, ring, pinky, thumb, spread=0.0):
 
 
 RELAXED = hand_pose((25, 32, 15), (30, 38, 18), (35, 42, 20), (40, 45, 22), (12, 10, 8, 12))
-FIST = hand_pose((88, 100, 60), (90, 100, 60), (92, 100, 58), (94, 98, 55), (20, 20, 20, 30), -0.5)
+FIST = hand_pose((88, 100, 60), (90, 100, 60), (92, 100, 58), (94, 98, 55), (0, 10, 30, 60), -0.5)
 GRIP = hand_pose((42, 55, 48), (45, 55, 50), (48, 57, 50), (52, 58, 50), (20, 20, 15, 20), -0.3)
 OPEN = hand_pose((0, 4, 2), (0, 4, 2), (2, 5, 3), (4, 6, 3), (0, 25, 0, 0), 1.3)
 GRAB = hand_pose((40, 45, 25), (42, 48, 25), (46, 50, 25), (50, 52, 25), (25, 30, 15, 10), 0.4)
 PINCH = hand_pose((45, 55, 25), (70, 90, 55), (78, 92, 55), (85, 92, 50), (25, 5, 10, 15), -0.3)
 HOOK = hand_pose((55, 60, 35), (58, 62, 35), (60, 64, 35), (62, 66, 35), (15, 15, 10, 5), -0.2)
 
-FIST_HAND = eased(13, [(0, RELAXED), (4, FIST), (8, FIST), (13, RELAXED)])
+LOOSE_FIST = hand_pose((60, 70, 40), (62, 72, 40), (65, 74, 40), (68, 75, 40), (0, 10, 25, 45), -0.3)
+
+JAB_HAND = eased(JAB_FRAMES, [(0, RELAXED), (4, FIST), (7, FIST), (JAB_FRAMES, RELAXED)])
+CROSS_HAND = eased(CROSS_FRAMES, [(0, RELAXED), (4, FIST), (10, FIST), (CROSS_FRAMES, RELAXED)])
 GRIP_HAND = eased(30, [(0, RELAXED), (4, GRIP), (26, GRIP), (30, RELAXED)])
 PICK_HAND = eased(90, [(0, RELAXED), (4, RELAXED), (16, OPEN), (20, OPEN), (26, GRAB), (74, GRAB), (86, RELAXED), (90, RELAXED)])
 KEY_HAND = eased(24, [(0, RELAXED), (3, RELAXED), (8, PINCH), (20, PINCH), (24, RELAXED)])
 DOOR_HAND = eased(16, [(0, RELAXED), (3, OPEN), (7, HOOK), (10, HOOK), (16, RELAXED)])
+
+
+def guard_hand(frames):
+    return eased(frames, [(0, RELAXED), (3, LOOSE_FIST), (frames - 4, LOOSE_FIST), (frames, RELAXED)])
 
 
 def finger_clips(side):
@@ -642,8 +691,8 @@ def finger_clips(side):
         "Equip": (14, relaxed),
         "UseDoor": (16, main(DOOR_HAND)),
         "UseKey": (24, main(KEY_HAND)),
-        "Punch": (13, main(FIST_HAND)),
-        "PunchL": (13, FIST_HAND if side == "L" else relaxed),
+        "Punch": (CROSS_FRAMES, CROSS_HAND if side == "R" else guard_hand(CROSS_FRAMES)),
+        "PunchL": (JAB_FRAMES, JAB_HAND if side == "L" else guard_hand(JAB_FRAMES)),
         "Pick": (90, main(PICK_HAND)),
         "Eat": (30, main(GRIP_HAND)),
         "Drink": (30, main(GRIP_HAND)),
@@ -685,8 +734,10 @@ def animate(arm, hand):
     bake(hand["R"], "UseDoor", 16, USE_DOOR, move_hand)
     bake(arm["R"], "UseKey", 24, USE_KEY)
     bake(hand["R"], "UseKey", 24, USE_KEY, move_hand)
-    bake(arm["R"], "Punch", 13, PUNCH)
-    bake(arm["L"], "PunchL", 13, mirrored(PUNCH))
+    bake(arm["R"], "Punch", CROSS_FRAMES, cross(hand["R"].location))
+    bake(arm["L"], "Punch", CROSS_FRAMES, mirrored(guard(CROSS_FRAMES)))
+    bake(arm["L"], "PunchL", JAB_FRAMES, jab(hand["L"].location))
+    bake(arm["R"], "PunchL", JAB_FRAMES, guard(JAB_FRAMES))
     bake(arm["R"], "Pick", 90, pick)
     bake(hand["R"], "Pick", 90, pick, move_hand)
     bake(arm["L"], "Pick", 90, PICK_BALANCE)
