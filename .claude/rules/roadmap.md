@@ -123,3 +123,10 @@ Decision (2026-11-11): the site pages are redesigned with the `unslop` skill (`.
 - [doing] Auth pages (login, register, forgot and reset password): form on plain ink with the town render beside it on desktop, labels in sentence case, one sun button, quiet links.
 - [doing] Logged-in pages and the app shell (home, friends, gems, settings, footer): quiet header and drawer, town render on the Home play card, Home keeps only real player data (the hardcoded level, items, trophies and dates are gone), Home and Friends strings in English and French. Waiting for a review in the browser.
 - [todo] Game HUD and overlays.
+
+Decision (2026-11-11, after review): the first redesign looked too close to the old one. The player now picks one of six styles (mockup `docs/mockups/style-directions.html`): Graphite lobby (default), Arcade, Comic, Tactical HUD, Console, Fireside. A style changes colours, fonts, shapes and the page layout, on the site and in the game. Saved in the browser (`cc.theme`), not on the account. Cove Nights is dropped.
+
+- [done] Theme system: `src/theme/themes.ts`, `useTheme`, the saved theme applied in `index.html` before the first paint, every `cc-*` class driven by per-theme CSS variables, twelve self-hosted fonts, style picker in Settings.
+- [todo] Per-theme layouts: header and menu, landing, auth pages.
+- [todo] Home, Friends and Gems on every theme (hardcoded white lines become the `line` token so the light Comic theme works).
+- [todo] Game HUD on every theme and a style picker in the game menu, checked in a playtest.

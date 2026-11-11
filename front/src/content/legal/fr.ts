@@ -365,7 +365,7 @@ export const legalFr: LegalDocs = {
       },
       {
         heading: 'Polices',
-        items: ['Lilita One, Nunito, JetBrains Mono — SIL Open Font License 1.1, auto-hébergées via Fontsource'],
+        items: ['Lilita One, Nunito, JetBrains Mono, Barlow, Barlow Condensed, Bungee, Space Grotesk, Space Mono, Bricolage Grotesque, Oxanium, IBM Plex Sans, IBM Plex Mono, Outfit, Fraunces, Figtree — SIL Open Font License 1.1, auto-hébergées via Fontsource'],
       },
       {
         heading: 'Modèles 3D et images',
