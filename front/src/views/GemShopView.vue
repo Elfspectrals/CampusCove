@@ -119,12 +119,11 @@ function closeModal() {
   <div class="mx-auto w-full max-w-5xl">
     <div class="mb-5 flex flex-wrap items-end justify-between gap-4">
       <div>
-        <p class="cc-eyebrow">{{ t('gems.eyebrow') }}</p>
         <h1 class="cc-title">{{ t('gems.title') }}</h1>
-        <p class="m-0 mt-1 max-w-2xl text-sm font-semibold text-mist">{{ t('gems.lead') }}</p>
+        <p class="m-0 mt-2 max-w-2xl text-mist">{{ t('gems.lead') }}</p>
       </div>
-      <div class="cc-panel-flat flex items-center gap-3 px-4 py-2.5">
-        <span class="text-sm font-bold text-mist">{{ t('gems.balance') }}</span>
+      <div class="flex items-center gap-3">
+        <span class="text-sm text-mist">{{ t('gems.balance') }}</span>
         <UiCurrency currency="premium" :amount="balances.premium" pill />
       </div>
     </div>
@@ -134,35 +133,35 @@ function closeModal() {
     </p>
   
     <div v-if="catalogLoading" class="grid grid-cols-2 gap-4 lg:grid-cols-4">
-      <div v-for="n in 4" :key="n" class="h-56 animate-pulse rounded-chunk border-2 border-ink-700 bg-ink-800/60" />
+      <div v-for="n in 4" :key="n" class="h-56 animate-pulse rounded-2xl border border-white/10 bg-ink-900" />
     </div>
 
     <div v-else-if="catalogError" class="cc-alert cc-alert-error" role="alert">
       <UiIcon name="alert" :size="18" />
-      <p class="m-0 flex-1 font-extrabold">{{ catalogError }}</p>
-      <button type="button" class="cc-btn cc-btn-coral cc-btn-sm" @click="loadCatalog">{{ t('gems.retry') }}</button>
+      <p class="m-0 flex-1 font-semibold">{{ catalogError }}</p>
+      <button type="button" class="cc-btn cc-btn-ghost cc-btn-sm" @click="loadCatalog">{{ t('gems.retry') }}</button>
     </div>
 
     <template v-else-if="catalog">
     <!-- packs stay on show when ordering is off; only the buy buttons are disabled -->
     <p v-if="!catalog.available" class="cc-alert cc-alert-warn mb-4" role="status">
       <UiIcon name="info" :size="18" />
-      <span v-if="catalog.unavailableReason === 'admin_only'"><strong class="block font-extrabold">{{ t('gems.adminOnlyTitle') }}</strong>{{ t('gems.adminOnlyBody') }}</span>
-      <span v-else><strong class="block font-extrabold">{{ t('gems.unavailableTitle') }}</strong>{{ t('gems.unavailableBody') }}</span>
+      <span v-if="catalog.unavailableReason === 'admin_only'"><strong class="block font-semibold">{{ t('gems.adminOnlyTitle') }}</strong>{{ t('gems.adminOnlyBody') }}</span>
+      <span v-else><strong class="block font-semibold">{{ t('gems.unavailableTitle') }}</strong>{{ t('gems.unavailableBody') }}</span>
     </p>
 
     <ul class="m-0 grid list-none grid-cols-1 gap-4 p-0 min-[420px]:grid-cols-2 lg:grid-cols-4">
-      <li v-for="(pack, i) in catalog.packs" :key="pack.code" class="cc-card flex flex-col">
-        <div class="relative grid h-32 place-items-center bg-gradient-to-b from-grape/30 to-ink-900/40">
+      <li v-for="(pack, i) in catalog.packs" :key="pack.code" class="flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-ink-900">
+        <div class="grid h-32 place-items-center bg-ink-800">
           <UiCurrency currency="premium" :size="48 + i * 10" />
         </div>
-        <div class="flex flex-1 flex-col gap-1 border-t-2 border-ink-950/60 bg-ink-950/60 px-4 py-3">
-          <p class="cc-display m-0 text-2xl leading-tight text-grape">{{ t('gems.packGems', { n: pack.gems.toLocaleString(locale) }) }}</p>
-          <p class="m-0 font-display text-xl text-fog">{{ formatPrice(pack.amount_cents, pack.currency, locale) }}</p>
-          <p class="m-0 text-xs font-semibold text-mist">{{ t('gems.simulatedPrice') }}</p>
+        <div class="flex flex-1 flex-col gap-1 border-t border-white/10 px-4 py-4">
+          <p class="m-0 text-xl font-semibold leading-tight tabular-nums text-fog">{{ t('gems.packGems', { n: pack.gems.toLocaleString(locale) }) }}</p>
+          <p class="m-0 text-lg tabular-nums text-fog">{{ formatPrice(pack.amount_cents, pack.currency, locale) }}</p>
+          <p class="m-0 text-xs text-mist">{{ t('gems.simulatedPrice') }}</p>
           <button
             type="button"
-            class="cc-btn cc-btn-grape mt-3 w-full disabled:cursor-not-allowed disabled:opacity-50"
+            class="cc-btn cc-btn-ghost mt-3 w-full disabled:cursor-not-allowed disabled:opacity-50"
             :disabled="!catalog.available"
             :aria-label="`${t('gems.buy')} — ${t('gems.packGems', { n: pack.gems })} — ${formatPrice(pack.amount_cents, pack.currency, locale)}`"
             @click="choose(pack)"

@@ -9,8 +9,8 @@ const { t } = useI18n()
 <template>
   <div class="mx-auto w-full max-w-2xl">
     <h1 class="cc-title">{{ t('settings.title') }}</h1>
-    <section class="cc-panel mt-5 p-5 sm:p-6" aria-labelledby="settings-controls">
-      <h2 id="settings-controls" class="cc-display m-0 text-2xl">{{ t('settings.controls') }}</h2>
+    <section class="mt-6 rounded-2xl border border-white/10 bg-ink-900 p-5 sm:p-6" aria-labelledby="settings-controls">
+      <h2 id="settings-controls" class="m-0 text-lg font-semibold">{{ t('settings.controls') }}</h2>
       <div class="mt-2">
         <KeybindingSettings />
       </div>

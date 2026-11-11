@@ -121,5 +121,5 @@ Decision (2026-11-11): the site pages are redesigned with the `unslop` skill (`.
 
 - [doing] Landing: full-bleed render of the real town models (Blender, golden hour) instead of floating cubes, a visible headline that says what the game is, one sun button, quiet feature list and FAQ.
 - [doing] Auth pages (login, register, forgot and reset password): form on plain ink with the town render beside it on desktop, labels in sentence case, one sun button, quiet links.
-- [todo] Logged-in pages and the app shell (home, friends, gems, settings, footer).
+- [doing] Logged-in pages and the app shell (home, friends, gems, settings, footer): quiet header and drawer, town render on the Home play card, Home keeps only real player data (the hardcoded level, items, trophies and dates are gone), Home and Friends strings in English and French. Waiting for a review in the browser.
 - [todo] Game HUD and overlays.
