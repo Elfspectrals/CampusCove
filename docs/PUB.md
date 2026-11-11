@@ -48,7 +48,7 @@ Clé bâtiment `pub`, nom `The Salty Shamrock`, métier `barman`, `kind: 'work'`
 
 ```
 front/public/assets/work/pub/{interior.glb, interior.collision.json, interior.layout.json, exterior.glb,
-                              exterior.collision.json, exterior.layout.json, lightmap.jpg, preview.png}
+                              exterior.collision.json, exterior.layout.json, lightmap.webp, preview.png}
 front/public/assets/park/pub_site/{pub_site.glb, pub_site.collision.json, pub_site.layout.json}
 front/public/assets/items/drinks/<asset>/{model.glb, preview.png}   asset ∈ stout, lager, red_wine, whisky, vodka
 front/public/assets/sfx/pub/{pour.mp3, glass_down.mp3, dart_hit.mp3, clink.mp3, ambience.mp3}  (optionnel, Earshot)
