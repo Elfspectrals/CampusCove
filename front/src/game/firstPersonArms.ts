@@ -9,8 +9,10 @@ const BASE_FADE_S = 0.2
 const ONE_SHOT_FADE_S = 0.06
 const PUNCH_FADE_S = 0.02
 const PICK_CANCEL_FADE_S = 0.15
-const ONE_SHOT_CLIPS = ['Equip', 'UseDoor', 'UseKey', 'Punch', 'PunchL', 'Pick', 'Eat', 'Drink'] as const
-const HELD_CLIPS = ['Pick', 'Eat', 'Drink'] as const
+const ONE_SHOT_CLIPS = ['Equip', 'UseDoor', 'UseKey', 'Punch', 'PunchL', 'Pick'] as const
+const HELD_CLIPS = ['Pick'] as const
+const EAT_CLIPS = { eat: 'Eat', drink: 'Drink' } as const
+const EAT_FADE_S = 0.25
 
 /**
  * A procedural arm pose, in camera space (the arms root sits at the camera): where the hand goes, which way the
@@ -90,7 +92,7 @@ export function createFirstPersonArms(container: THREE.Group) {
     oneShot = next
   }
 
-  function isPlaying(...names: (typeof HELD_CLIPS)[number][]): boolean {
+  function isPlaying(...names: string[]): boolean {
     return oneShot !== null && names.some((name) => oneShot === actions.get(name))
   }
 
@@ -203,14 +205,21 @@ export function createFirstPersonArms(container: THREE.Group) {
       watchTarget = raised ? 1 : 0
     },
     isWatchRaised: () => watchWeight > 0.6,
-    /** One bite: the right hand goes to the mouth and back. */
-    eat: () => {
-      if (!isPlaying('Pick')) playOnce('Eat')
+    startEating: (kind: 'eat' | 'drink'): boolean => {
+      if (!mixer || isPlaying('Pick')) return false
+      const next = action(EAT_CLIPS[kind])
+      oneShot?.stop()
+      next.reset().setLoop(THREE.LoopRepeat, Infinity).fadeIn(EAT_FADE_S).play()
+      base?.fadeOut(EAT_FADE_S)
+      oneShot = next
+      return true
     },
-    drink: () => {
-      if (!isPlaying('Pick')) playOnce('Drink')
+    stopEating: () => {
+      if (!oneShot || !isPlaying(EAT_CLIPS.eat, EAT_CLIPS.drink)) return
+      oneShot.fadeOut(EAT_FADE_S)
+      base?.reset().fadeIn(EAT_FADE_S).play()
+      oneShot = null
     },
-    isEating: () => isPlaying('Eat', 'Drink'),
     equip: () => {
       if (!isPlaying(...HELD_CLIPS)) playOnce('Equip')
     },

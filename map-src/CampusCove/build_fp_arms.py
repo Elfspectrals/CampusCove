@@ -530,7 +530,10 @@ def frame(along, side):
 
 def fist_at(side, wrist, at, forearm, back):
     rot = frame(forearm, back) @ frame(wrist, Vector((1 if side == "R" else -1, 0, 0))).inverted()
-    elbow = at - rot @ (wrist + MIRROR[side].to_3x3() @ FIST_CENTRE)
+    return arm_pose(side, rot, at - rot @ (wrist + MIRROR[side].to_3x3() @ FIST_CENTRE))
+
+
+def arm_pose(side, rot, elbow):
     turn = rot.to_euler("XYZ", REST_ROTATION[side])
     rest = REST_ROTATION[side]
     return {"x": elbow.x - REST_ELBOW[side].x, "y": elbow.y - REST_ELBOW[side].y, "z": elbow.z - REST_ELBOW[side].z,
@@ -612,34 +615,42 @@ PICK_KEYS = eased(90, [
 PICK_BALANCE = eased(90, [(0, {}), (20, {"z": -0.01, "rx": -0.06}), (63, {"z": -0.01, "rx": -0.06}), (74, {}), (90, {})])
 
 
-MOUTH_ANTICIPATION = {"x": 0.005, "y": -0.01, "z": -0.015, "rx": -0.06}
-MOUTH_SETTLE = {"z": -0.01, "rx": -0.04}
-EAT_MOUTH = {"x": -0.08, "y": 0.115, "z": -0.02, "rx": 0.354, "ry": -0.832, "rz": 0.48, "flex": -0.1}
-EAT_BITE = {**EAT_MOUTH, "y": 0.1, "z": -0.03, "flex": -0.13}
-EAT = eased(30, [
-    (0, {}),
-    (2, MOUTH_ANTICIPATION),
-    (10, EAT_MOUTH),
-    (12, EAT_BITE),
-    (14, EAT_MOUTH),
-    (15, EAT_MOUTH),
-    (17, EAT_BITE),
-    (19, EAT_MOUTH),
-    (26, MOUTH_SETTLE),
-    (30, {}),
-])
-DRINK_MOUTH = {"x": -0.04, "y": 0.12, "z": 0.1, "rx": 0.168, "ry": -0.055, "rz": 1.345}
-DRINK_TIP = {"x": -0.04, "y": 0.12, "z": 0.13, "rx": -0.229, "ry": -0.57, "rz": 1.06, "flex": -0.1}
-DRINK = eased(30, [
-    (0, {}),
-    (2, MOUTH_ANTICIPATION),
-    (10, DRINK_MOUTH),
-    (14, DRINK_TIP),
-    (20, DRINK_TIP),
-    (26, MOUTH_SETTLE),
-    (30, {}),
-])
-OFF_HAND_DIP = eased(30, [(0, {}), (10, {"z": -0.008, "rx": -0.04}), (19, {"z": -0.008, "rx": -0.04}), (30, {})])
+MOUTH = Vector((0.0, -0.04, -0.085))
+HELD_GRIP = Vector((-0.032, 0.1, 0.0))
+EAT_AT = Vector((0.015, 0.1, -0.085))
+EAT_UP = Vector((0.0, -0.3, 1.0))
+EAT_FOREARM = Vector((-0.5, 0.4, 0.8))
+DRINK_FOREARM = Vector((-0.3, 0.3, 0.9))
+SIP_REACH = 0.22
+OFF_HAND_LOW = {"z": -0.008, "rx": -0.04}
+
+
+def hold_at(wrist, grip, up, forearm):
+    rot = frame(up, forearm) @ frame(Vector((0, 0, 1)), wrist).inverted()
+    return arm_pose("R", rot, grip - rot @ (wrist + HELD_GRIP))
+
+
+def eat(wrist):
+    hold = hold_at(wrist, EAT_AT, EAT_UP, EAT_FOREARM)
+    bite = hold_at(wrist, EAT_AT + Vector((0.0, -0.025, -0.006)), EAT_UP, EAT_FOREARM)
+    keys = eased(30, [(0, hold), (10, bite), (20, hold), (30, hold)])
+
+    def pose_at(fr):
+        pose = keys(fr)
+        chew = math.sin(6 * math.pi * fr / 30)
+        pose["z"] += 0.003 * chew
+        pose["rx"] += 0.015 * chew
+        return pose
+    return pose_at
+
+
+def drink(wrist):
+    def tilted(degrees):
+        a = math.radians(degrees)
+        neck = Vector((-0.45, -math.cos(a), -math.sin(a))).normalized()
+        return hold_at(wrist, MOUTH - neck * SIP_REACH, neck, DRINK_FOREARM)
+    hold, sip = tilted(5), tilted(30)
+    return eased(30, [(0, hold), (10, sip), (16, sip), (26, hold), (30, hold)])
 
 
 def pick(fr):
@@ -672,7 +683,6 @@ LOOSE_FIST = hand_pose((60, 70, 40), (62, 72, 40), (65, 74, 40), (68, 75, 40), (
 
 JAB_HAND = eased(JAB_FRAMES, [(0, RELAXED), (4, FIST), (7, FIST), (JAB_FRAMES, RELAXED)])
 CROSS_HAND = eased(CROSS_FRAMES, [(0, RELAXED), (4, FIST), (10, FIST), (CROSS_FRAMES, RELAXED)])
-GRIP_HAND = eased(30, [(0, RELAXED), (4, GRIP), (26, GRIP), (30, RELAXED)])
 PICK_HAND = eased(90, [(0, RELAXED), (4, RELAXED), (16, OPEN), (20, OPEN), (26, GRAB), (74, GRAB), (86, RELAXED), (90, RELAXED)])
 KEY_HAND = eased(24, [(0, RELAXED), (3, RELAXED), (8, PINCH), (20, PINCH), (24, RELAXED)])
 DOOR_HAND = eased(16, [(0, RELAXED), (3, OPEN), (7, HOOK), (10, HOOK), (16, RELAXED)])
@@ -694,8 +704,8 @@ def finger_clips(side):
         "Punch": (CROSS_FRAMES, CROSS_HAND if side == "R" else guard_hand(CROSS_FRAMES)),
         "PunchL": (JAB_FRAMES, JAB_HAND if side == "L" else guard_hand(JAB_FRAMES)),
         "Pick": (90, main(PICK_HAND)),
-        "Eat": (30, main(GRIP_HAND)),
-        "Drink": (30, main(GRIP_HAND)),
+        "Eat": (30, main(lambda fr: GRIP)),
+        "Drink": (30, main(lambda fr: GRIP)),
     }
 
 
@@ -741,10 +751,9 @@ def animate(arm, hand):
     bake(arm["R"], "Pick", 90, pick)
     bake(hand["R"], "Pick", 90, pick, move_hand)
     bake(arm["L"], "Pick", 90, PICK_BALANCE)
-    for clip, pose_at in (("Eat", EAT), ("Drink", DRINK)):
+    for clip, pose_at in (("Eat", eat(hand["R"].location)), ("Drink", drink(hand["R"].location))):
         bake(arm["R"], clip, 30, pose_at)
-        bake(hand["R"], clip, 30, pose_at, move_hand)
-        bake(arm["L"], clip, 30, OFF_HAND_DIP)
+        bake(arm["L"], clip, 30, lambda fr: OFF_HAND_LOW)
 
 
 def build(key, load=import_skin, out_rel=("skins",), fp_proportions=False):
