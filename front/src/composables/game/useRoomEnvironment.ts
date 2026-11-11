@@ -9,6 +9,8 @@ export interface RoomEnvironmentDeps {
   getScene: () => THREE.Scene | undefined
   getRenderer: () => THREE.WebGLRenderer | undefined
   onTownLoaded: (manifest: WorldManifest) => void
+  /** The town group was just added to the scene (after `onTownLoaded`). */
+  onTownShown: (group: THREE.Group) => void
   onError: (message: string) => void
 }
 
@@ -49,7 +51,9 @@ export function useRoomEnvironment(deps: RoomEnvironmentDeps) {
     void loadTownEnvironment()
       .then(({ group, manifest }) => {
         deps.onTownLoaded(manifest)
-        if (token === loadToken) show(scene, group)
+        if (token !== loadToken) return
+        show(scene, group)
+        deps.onTownShown(group)
       })
       .catch((err) => {
         console.error('[town] load failed', err)

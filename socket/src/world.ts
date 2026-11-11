@@ -279,30 +279,28 @@ function parseWorld(manifest: Json): World {
   }
 }
 
-// An http(s) URL in dev (the front serves it), a file path in the production image.
+// An http(s) URL in dev (the front serves it), a file path in the production image. In dev the front container can
+// still be starting or restarting when this one boots, so every world file is retried, not only the manifest.
 async function readManifest(source: string): Promise<Json> {
   if (!/^https?:\/\//.test(source)) return JSON.parse(await readFile(source, 'utf8'))
-  const res = await fetch(source)
-  if (!res.ok) throw new Error(`${source} answered ${res.status}`)
-  return res.json()
+  for (let attempt = 1; ; attempt++) {
+    try {
+      const res = await fetch(source)
+      if (!res.ok) throw new Error(`${source} answered ${res.status}`)
+      return await res.json()
+    } catch (error) {
+      if (attempt >= FETCH_ATTEMPTS) throw error
+      console.warn(`[world] ${source} fetch ${attempt}/${FETCH_ATTEMPTS} failed: ${error instanceof Error ? error.message : error}`)
+      await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS))
+    }
+  }
 }
 
 export async function loadWorld(): Promise<void> {
   if (!WORLD_MANIFEST_URL) throw new Error('WORLD_MANIFEST_URL is not set')
-  let lastError: unknown = null
-  for (let attempt = 1; attempt <= FETCH_ATTEMPTS; attempt++) {
-    try {
-      const loaded = parseWorld(await readManifest(WORLD_MANIFEST_URL))
-      world = loaded
-      console.log(`[world] manifest loaded from ${WORLD_MANIFEST_URL}: ${loaded.workDoors.size} public buildings, ${loaded.houses.size} houses`)
-      return
-    } catch (error) {
-      lastError = error
-      console.warn(`[world] manifest fetch ${attempt}/${FETCH_ATTEMPTS} failed: ${error instanceof Error ? error.message : error}`)
-      await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS))
-    }
-  }
-  throw lastError
+  const loaded = parseWorld(await readManifest(WORLD_MANIFEST_URL))
+  world = loaded
+  console.log(`[world] manifest loaded from ${WORLD_MANIFEST_URL}: ${loaded.workDoors.size} public buildings, ${loaded.houses.size} houses`)
 }
 
 function besideManifest(path: string): string {

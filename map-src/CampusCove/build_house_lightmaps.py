@@ -4,7 +4,7 @@ Edits the shipped interior.glb: every lit mesh gets a second UV map packed into 
 bakes the irradiance of the ceiling lamps (Light_* nodes) and a soft sky fill into lightmap.jpg, and the
 interior is exported with that UV map as TEXCOORD_1. The sky planes, the entrance door and the window glass
 are left out of the bake.
-Raw exports go to out/houses/<key>/{interior.glb,lightmap.jpg}, then `npm run assets:optimize -- houses`.
+Raw exports go to out/houses/<key>/{interior.glb,lightmap.jpg}, then `npm run assets:optimize -- houses` (ships it as lightmap.webp, front/scripts/lightmap.mjs).
 
 Headless only (resets the file for each house):
   /Applications/Blender.app/Contents/MacOS/Blender --background --factory-startup \

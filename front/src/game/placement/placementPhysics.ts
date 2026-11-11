@@ -2,8 +2,8 @@
  * Rapier world used while decorating a house: the room shell (floor, ceiling, walls, door) plus one kinematic
  * box per placed prop, so the placement ghost can be tested for overlaps.
  */
-import * as RAPIER from '@dimforge/rapier3d-compat'
-import type { Collider, World } from '@dimforge/rapier3d-compat'
+import * as RAPIER from '@dimforge/rapier3d'
+import type { Collider, World } from '@dimforge/rapier3d'
 import * as THREE from 'three'
 import type { CollisionFileJson } from '../collision/worldCollision'
 import { APARTMENT_DOOR_POS, APARTMENT_WALL_THICKNESS } from '../gameRoomConstants'
@@ -118,7 +118,6 @@ function addRoomStaticColliders(w: World, room: CollisionFileJson, layout: House
 
 export function createPlacementPhysics() {
   let world: World | null = null
-  let initPromise: Promise<void> | null = null
   const propBodies = new Map<string, RAPIER.RigidBody>()
   const propMeshById = new Map<string, THREE.Mesh>()
   /** Props registered before the world finished initialising. */
@@ -135,17 +134,11 @@ export function createPlacementPhysics() {
 
   async function ensureReady(room: CollisionFileJson, layout: HouseLayout): Promise<void> {
     if (world) return
-    if (!initPromise) {
-      initPromise = (async () => {
-        await RAPIER.init()
-        const w = new RAPIER.World(new RAPIER.Vector3(0, 0, 0))
-        addRoomStaticColliders(w, room, layout)
-        world = w
-        const pending = pendingMeshes.splice(0)
-        for (const m of pending) registerProp(m)
-      })()
-    }
-    await initPromise
+    const w = new RAPIER.World(new RAPIER.Vector3(0, 0, 0))
+    addRoomStaticColliders(w, room, layout)
+    world = w
+    const pending = pendingMeshes.splice(0)
+    for (const m of pending) registerProp(m)
   }
 
   function unregisterProp(objectId: string): void {
@@ -247,7 +240,6 @@ export function createPlacementPhysics() {
     pendingMeshes.length = 0
     world?.free()
     world = null
-    initPromise = null
   }
 
   return { isReady, ensureReady, setRoomFrame, registerProp, unregisterProp, syncProps, ghostIntersects, dispose }

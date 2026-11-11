@@ -7,7 +7,7 @@ description: "Light types and physical units, shadow maps, HDR environment light
 >
 > **Version gap:** written for three r186; CampusCove runs **r170** with `WebGLRenderer` only. In r170: `Timer` is `import { Timer } from 'three/addons/misc/Timer.js'` (not `THREE.Timer`, `Clock` is not deprecated); `HDRLoader` is `RGBELoader`; `PCFSoftShadowMap` is not deprecated; `SunLight`, `LightProbeGridWebGL`, `USDLoader`, `HTMLTexture`, `VideoFrameTexture` do not exist. Skip every WebGPU/TSL and React section. Keep the project's import style `three/examples/jsm/...`: the "use `three/addons/`" mistake listed below is about browser import maps and does not apply under Vite. Check `front/node_modules/three` before using an API named here, and do not migrate the existing `requestAnimationFrame` loop (`useGameMovement.ts`) unless asked.
 >
-> Here: lighting lives in `front/src/game/sceneLighting.ts`; interiors use baked lightmaps (`build_house_lightmaps.py`, `lightmap.jpg` on UV set 1) rather than real-time shadows. Prefer baking over adding shadow-casting lights.
+> Here: lighting lives in `front/src/game/sceneLighting.ts`; interiors use baked lightmaps (`build_house_lightmaps.py`, `lightmap.jpg` baked, shipped as `lightmap.webp`, on UV set 1) rather than real-time shadows. Prefer baking over adding shadow-casting lights.
 >
 > Advisory reference: CampusCove's own skills (`game-feature`, `blender-asset`, `playtest-game`, ...) win on any conflict.
 

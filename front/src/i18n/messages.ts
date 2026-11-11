@@ -239,6 +239,19 @@ export const messages = {
     },
     notFound: { title: 'Page not found', body: 'This page does not exist or has moved.', back: 'Back to home' },
     legal: { updated: 'Last updated', otherPages: 'Other legal pages' },
+    gameLoading: {
+      title: 'Entering Campus Town',
+      stages: { character: 'Your character', world: 'The town and buildings', decor: 'Shops, decor and neighbours', server: 'Joining the server' },
+      files: '{loaded} / {total} files',
+      tip: 'TIP',
+      tips: [
+        'Pick apples at the orchard to earn your first coins.',
+        'Press G to open doors, sit down or talk to a clerk.',
+        'Keep an eye on hunger and thirst: the café and the fountains help.',
+        'Press M for the full map of the town.',
+        'Take your basket to the clerk to pay for what you picked in a shop.',
+      ],
+    },
   },
   fr: {
     a11y: { skip: 'Aller au contenu principal' },
@@ -478,5 +491,18 @@ export const messages = {
     },
     notFound: { title: 'Page introuvable', body: 'Cette page n’existe pas ou a été déplacée.', back: 'Retour à l’accueil' },
     legal: { updated: 'Dernière mise à jour', otherPages: 'Autres pages légales' },
+    gameLoading: {
+      title: 'Entrée dans Campus Town',
+      stages: { character: 'Ton personnage', world: 'La ville et les bâtiments', decor: 'Boutiques, décor et voisins', server: 'Connexion au serveur' },
+      files: '{loaded} / {total} fichiers',
+      tip: 'ASTUCE',
+      tips: [
+        'Cueille des pommes au verger pour gagner tes premières pièces.',
+        'Appuie sur G pour ouvrir les portes, t’asseoir ou parler à un vendeur.',
+        'Surveille ta faim et ta soif : le café et les fontaines sont là pour ça.',
+        'Appuie sur M pour voir la carte de la ville.',
+        'Apporte ton panier au vendeur pour payer ce que tu as pris en boutique.',
+      ],
+    },
   },
 } as const

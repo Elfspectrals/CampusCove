@@ -1,5 +1,5 @@
-import * as RAPIER from '@dimforge/rapier3d-compat'
-import type { Collider, World } from '@dimforge/rapier3d-compat'
+import * as RAPIER from '@dimforge/rapier3d'
+import type { Collider, World } from '@dimforge/rapier3d'
 import * as THREE from 'three'
 import { refreshCollisionDebug } from './collisionDebug'
 
@@ -60,7 +60,6 @@ const stats: WorldCollisionStats = {
 }
 
 let world: World | null = null
-let initPromise: Promise<void> | null = null
 let builtUrl: string | null = null
 let buildInFlight: Promise<void> | null = null
 let collidersReady = false
@@ -186,16 +185,11 @@ function ensureCharacterController(): void {
 }
 
 async function ensureWorld(): Promise<World> {
-  if (world) return world
-  if (!initPromise) {
-    initPromise = (async () => {
-      await RAPIER.init()
-      world = new RAPIER.World(new RAPIER.Vector3(0, 0, 0))
-      ensureCharacterController()
-    })()
+  if (!world) {
+    world = new RAPIER.World(new RAPIER.Vector3(0, 0, 0))
+    ensureCharacterController()
   }
-  await initPromise
-  return world!
+  return world
 }
 
 function disposeWorld(): void {
@@ -203,7 +197,6 @@ function disposeWorld(): void {
     world.free()
   }
   world = null
-  initPromise = null
   playerBody = null
   playerCollider = null
   characterController = null
@@ -246,12 +239,23 @@ async function buildFromCollisionData(url: string, data: CollisionFileJson): Pro
   refreshCollisionDebug(loadedCuboids, loadedTrimeshes)
 }
 
-export async function fetchCollisionFile(url: string): Promise<CollisionFileJson> {
-  const res = await fetch(url)
-  if (!res.ok) {
-    throw new Error(`Failed to load collision file ${url}: ${res.status}`)
+const collisionFiles = new Map<string, Promise<CollisionFileJson>>()
+
+/**
+ * One request per file for the page's lifetime: a shop places the same prop dozens of times. The result is shared, so
+ * callers read it and never mutate it. A failed load is forgotten so the next call retries.
+ */
+export function fetchCollisionFile(url: string): Promise<CollisionFileJson> {
+  let file = collisionFiles.get(url)
+  if (!file) {
+    file = fetch(url).then(async (res) => {
+      if (!res.ok) throw new Error(`Failed to load collision file ${url}: ${res.status}`)
+      return (await res.json()) as CollisionFileJson
+    })
+    file.catch(() => collisionFiles.delete(url))
+    collisionFiles.set(url, file)
   }
-  return (await res.json()) as CollisionFileJson
+  return file
 }
 
 /** Meshes that never block movement when building collision from a scene object. */
