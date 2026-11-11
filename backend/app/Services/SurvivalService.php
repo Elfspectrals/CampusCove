@@ -32,9 +32,13 @@ final class SurvivalService
     /** Inventory kinds dropped when a player passes out (keys, titles and apartments stay). */
     private const LOST_KINDS = ['consumable', 'furniture'];
 
-    public function __construct(private readonly AccountInventoryService $inventory)
-    {
-    }
+    /** Clothes that can be lost: the haircut is part of the character, not a piece of clothing. */
+    private const LOSABLE_SLOTS = ['top', 'bottom', 'shoes', 'head_accessory'];
+
+    public function __construct(
+        private readonly AccountInventoryService $inventory,
+        private readonly CharacterAppearanceService $appearance,
+    ) {}
 
     /** @return array{health: float, hunger: float, thirst: float} */
     public function stats(int $accountId): array
@@ -170,8 +174,9 @@ final class SurvivalService
     }
 
     /**
-     * Passing out costs the player their inventory: food, unplaced furniture and every Cove Threads piece of clothing,
-     * worn or not. Placed furniture, house keys, coins and skins stay.
+     * Passing out costs the player their inventory (food, unplaced furniture) and the coin-bought clothes they wear,
+     * then they wake up in the newcomer outfit. The wardrobe, the haircut, placed furniture, house keys, coins, skins
+     * and anything bought with gems stay (gem pieces are only taken off).
      *
      * @return array{items: int, clothes: int}
      */
@@ -192,20 +197,25 @@ final class SurvivalService
                     ->delete();
             }
 
-            // Cove Threads clothes are lost too; body skins (incl. premium ones) and the free defaults are not
             $clothes = ItemDef::query()
                 ->where('kind', 'cosmetic')
-                ->whereIn('cosmetic_slot', AccountCosmeticService::CLOTHING_SLOTS)
-                ->whereNotIn('code', StarterCosmeticGrantService::STARTER_CODES)
+                ->where('premium_only', false)
+                ->whereIn('cosmetic_slot', self::LOSABLE_SLOTS)
+                ->whereNotIn('code', [...StarterCosmeticGrantService::STARTER_CODES, ...array_values(CharacterAppearanceService::NEWCOMER_OUTFIT)])
+                ->pluck('item_def_id');
+            $worn = DB::table('account_cosmetic_equipment')
+                ->where('account_id', $accountId)
+                ->whereIn('item_def_id', $clothes)
                 ->pluck('item_def_id');
             DB::table('account_cosmetic_equipment')
                 ->where('account_id', $accountId)
-                ->whereIn('item_def_id', $clothes)
+                ->whereIn('item_def_id', $worn)
                 ->delete();
             $lostClothes = DB::table('account_locker_cosmetics')
                 ->where('account_id', $accountId)
-                ->whereIn('item_def_id', $clothes)
+                ->whereIn('item_def_id', $worn)
                 ->delete();
+            $this->appearance->dressAsNewcomer($accountId);
 
             return ['items' => $items, 'clothes' => $lostClothes];
         });

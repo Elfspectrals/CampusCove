@@ -18,9 +18,19 @@ export interface GameScene {
   scene: THREE.Scene
   camera: THREE.PerspectiveCamera
   renderer: THREE.WebGLRenderer
-  /** Holds the first-person arms (firstPersonArms.ts), parented to the camera, shown while the pointer is locked. */
+  /** Holds the first-person arms (firstPersonArms.ts), shown while the pointer is locked. */
   fpHands: THREE.Group
+  /** The arms are drawn by their own camera over the world (renderGameFrame), so the world FOV never stretches them. */
+  viewScene: THREE.Scene
+  viewCamera: THREE.PerspectiveCamera
 }
+
+/**
+ * Viewmodel camera: a fixed, narrow FOV for the arms whatever the player's FOV setting (a wide world FOV stretched the
+ * hands at the screen edges). The arms sit a little further forward to stay well inside this narrower frame.
+ */
+const VIEWMODEL_FOV = 62
+const VIEWMODEL_PUSH = -0.06
 
 export function createGameScene(
   canvas: HTMLCanvasElement,
@@ -63,14 +73,42 @@ export function createGameScene(
   const fpHands = new THREE.Group()
   fpHands.name = 'FirstPersonArms'
   fpHands.visible = false
-  camera.add(fpHands)
+  fpHands.position.z = VIEWMODEL_PUSH
   scene.add(camera)
 
-  return { scene, camera, renderer, fpHands }
+  const viewScene = new THREE.Scene()
+  const viewCamera = new THREE.PerspectiveCamera(VIEWMODEL_FOV, size.w / size.h, 0.01, 5)
+  viewCamera.add(fpHands)
+  viewScene.add(viewCamera)
+  // a steady key light from above and in front, so the hands read the same in every room
+  viewScene.add(new THREE.HemisphereLight(0xfff6ec, 0x6e6258, 1.6))
+  const viewKey = new THREE.DirectionalLight(0xffffff, 1.3)
+  viewKey.position.set(-0.6, 1.2, 0.8)
+  viewScene.add(viewKey)
+
+  return { scene, camera, renderer, fpHands, viewScene, viewCamera }
+}
+
+/** World first, then the arms on a cleared depth buffer: they never clip into walls and keep their own FOV. */
+export function renderGameFrame(game: Pick<GameScene, 'scene' | 'camera' | 'renderer' | 'fpHands' | 'viewScene' | 'viewCamera'>): void {
+  const { renderer } = game
+  renderer.render(game.scene, game.camera)
+  if (!game.fpHands.visible) return
+  game.viewScene.environment = game.scene.environment
+  const autoClear = renderer.autoClear
+  renderer.autoClear = false
+  renderer.clearDepth()
+  renderer.render(game.viewScene, game.viewCamera)
+  renderer.autoClear = autoClear
+}
+
+export function resizeViewmodel(game: Pick<GameScene, 'viewCamera'>, w: number, h: number): void {
+  game.viewCamera.aspect = w / h
+  game.viewCamera.updateProjectionMatrix()
 }
 
 export function disposeGameScene(game: GameScene): void {
-  game.camera.remove(game.fpHands)
+  game.viewCamera.remove(game.fpHands)
   disposeObject3D(game.fpHands)
   disposeSharedEnvironment()
   game.renderer.dispose()

@@ -138,7 +138,7 @@ class SurvivalApiTest extends TestCase
         $this->assertSame(0, $this->balance($poor['account_id']));
     }
 
-    public function test_passing_out_loses_the_inventory_and_the_clothes(): void
+    public function test_passing_out_loses_the_inventory_and_the_worn_clothes(): void
     {
         $player = $this->registerAndCreditWallet(500, 'coins');
         $accountId = $player['account_id'];
@@ -153,20 +153,54 @@ class SurvivalApiTest extends TestCase
         $this->postJson('/api/survival/hospital', [], $this->auth($player['token'], self::SECRET))
             ->assertOk()
             ->assertJsonPath('lost.items', 2)
-            ->assertJsonPath('lost.clothes', 2);
+            ->assertJsonPath('lost.clothes', 1);
 
         $this->assertNull($this->hotbarItem($player['token'], 'food_sandwich'));
         $this->assertNull($this->hotbarItem($player['token'], 'decor_cactus'));
         $this->assertNotNull($this->hotbarItem($player['token'], 'house_key'));
-        $owned = DB::table('account_locker_cosmetics')
-            ->join('item_defs', 'item_defs.item_def_id', '=', 'account_locker_cosmetics.item_def_id')
-            ->where('account_id', $accountId)
-            ->pluck('item_defs.code')
-            ->all();
-        $this->assertEqualsCanonicalizing(['COS_WEAR_BODY_DEFAULT', 'COS_WEAR_BODY_NEON_RONIN', 'COS_WEAR_HAIR_DEFAULT'], $owned);
+        // the hoodie was worn and is gone; the boots were only in the wardrobe and stay; the skin is only taken off
+        $this->assertEqualsCanonicalizing(
+            ['COS_WEAR_BODY_DEFAULT', 'COS_WEAR_BODY_NEON_RONIN', 'COS_WEAR_HAIR_DEFAULT', 'COS_WEAR_SHOES_BOOTS',
+                'COS_WEAR_TOP_NEWCOMER', 'COS_WEAR_BOTTOM_NEWCOMER', 'COS_WEAR_SHOES_NEWCOMER'],
+            $this->lockerCodes($accountId),
+        );
         $loadout = app(AccountCosmeticService::class)->getLoadout($accountId);
-        $this->assertNull($loadout['top']);
-        $this->assertSame('COS_WEAR_BODY_NEON_RONIN', $loadout['body']['code']);
+        $this->assertSame('COS_WEAR_BODY_DEFAULT', $loadout['body']['code']);
+        $this->assertSame('COS_WEAR_TOP_NEWCOMER', $loadout['top']['code']);
+        $this->assertSame('COS_WEAR_BOTTOM_NEWCOMER', $loadout['bottom']['code']);
+        $this->assertSame('COS_WEAR_SHOES_NEWCOMER', $loadout['shoes']['code']);
+        $this->assertNull($loadout['head_accessory']);
+    }
+
+    public function test_passing_out_keeps_worn_clothes_bought_with_gems(): void
+    {
+        $player = $this->registerAndCreditWallet(500, 'coins');
+        $accountId = $player['account_id'];
+        $this->grant($accountId, 'COS_WEAR_TOP_HOODIE', 1);
+        $hoodie = ItemDef::query()->where('code', 'COS_WEAR_TOP_HOODIE')->firstOrFail();
+        $hoodie->update(['premium_only' => true]);
+        app(AccountCosmeticService::class)->setLoadout($accountId, ['top' => (int) $hoodie->item_def_id]);
+
+        $this->postJson('/api/survival/hospital', [], $this->auth($player['token'], self::SECRET))
+            ->assertOk()
+            ->assertJsonPath('lost.clothes', 0);
+
+        // kept, only taken off: the player wakes up in the newcomer tee
+        $this->assertContains('COS_WEAR_TOP_HOODIE', $this->lockerCodes($accountId));
+        $this->assertSame('COS_WEAR_TOP_NEWCOMER', app(AccountCosmeticService::class)->getLoadout($accountId)['top']['code']);
+    }
+
+    public function test_passing_out_keeps_the_haircut(): void
+    {
+        $player = $this->registerAndCreditWallet(500, 'coins');
+        $this->grant($player['account_id'], 'COS_WEAR_HAIR_CURLY', 1);
+        app(AccountCosmeticService::class)->setLoadout($player['account_id'], [
+            'hair' => (int) ItemDef::query()->where('code', 'COS_WEAR_HAIR_CURLY')->value('item_def_id'),
+        ]);
+
+        $this->postJson('/api/survival/hospital', [], $this->auth($player['token'], self::SECRET))->assertJsonPath('lost.clothes', 0);
+
+        $this->assertSame('COS_WEAR_HAIR_CURLY', app(AccountCosmeticService::class)->getLoadout($player['account_id'])['hair']['code']);
     }
 
     public function test_clothes_lost_when_passing_out_can_be_bought_again(): void
@@ -180,6 +214,9 @@ class SurvivalApiTest extends TestCase
 
         $buy()->assertSuccessful();
         $buy()->assertStatus(422)->assertJsonPath('code', 'already_owned');
+        app(AccountCosmeticService::class)->setLoadout($player['account_id'], [
+            'top' => (int) ItemDef::query()->where('code', 'COS_WEAR_TOP_HOODIE')->value('item_def_id'),
+        ]);
         $this->postJson('/api/survival/hospital', [], $this->auth($player['token'], self::SECRET))->assertJsonPath('lost.clothes', 1);
         $buy()->assertSuccessful();
     }
@@ -273,6 +310,16 @@ class SurvivalApiTest extends TestCase
     }
 
     /** @return array<string, string> */
+    /** @return list<string> */
+    private function lockerCodes(int $accountId): array
+    {
+        return DB::table('account_locker_cosmetics')
+            ->join('item_defs', 'item_defs.item_def_id', '=', 'account_locker_cosmetics.item_def_id')
+            ->where('account_id', $accountId)
+            ->pluck('item_defs.code')
+            ->all();
+    }
+
     private function auth(string $token, ?string $secret = null): array
     {
         // the guard keeps the first user of the test otherwise

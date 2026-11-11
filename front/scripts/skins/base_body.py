@@ -20,16 +20,73 @@ def body_materials():
 
 
 def region_head(M, m):
+    """Skull, jaw and ears: the same on every face and fit, so hair and head accessories fit them all."""
     add_sweep(M, m["skin"], [(0, 0, 1.50), (0, 0.0, 1.62), (0, 0.0, 1.66)], [(0.056, 0.054), (0.05, 0.05), (0.05, 0.05)], seg=10, per=2)
     add_ellipsoid(M, m["skin"], (0, -0.012, 1.745), (0.088, 0.098, 0.115), seg=16, rings=11)
     add_ellipsoid(M, m["skin"], (0, -0.045, 1.69), (0.07, 0.07, 0.075), seg=12, rings=8)
-    add_ellipsoid(M, m["skin"], (0, -0.106, 1.722), (0.013, 0.02, 0.024), seg=8, rings=6)
-    add_box(M, m["lips"], (0, -0.108, 1.672), (0.034, 0.008, 0.008), bevel=0.003)
     for sg in (1, -1):
         add_ellipsoid(M, m["skin"], (0.092 * sg, 0.0, 1.745), (0.014, 0.022, 0.034), seg=8, rings=6)
-        add_ellipsoid(M, m["white"], (0.034 * sg, -0.093, 1.755), (0.017, 0.008, 0.013), seg=10, rings=6)
-        add_ellipsoid(M, m["eye"], (0.034 * sg, -0.1, 1.753), (0.009, 0.004, 0.01), seg=8, rings=5)
-        add_box(M, m["brow"], (0.035 * sg, -0.098, 1.786), (0.032, 0.008, 0.007), rot=(0, 0.12 * sg, 0), bevel=0.002)
+
+
+# Preset faces, one skinned mesh each (extras.region = "face", extras.face = 1..6); the game shows the chosen one.
+# eye: (half spacing, width, height); brow: (width, thickness, tilt, lift); nose: (width, length, depth);
+# lips: (width, thickness); hair: facial hair drawn with the brow material (BB_Brow, tinted like the hair).
+FACE_COUNT = 6
+FACES = {
+    "m": [
+        dict(eye=(0.034, 0.017, 0.013), brow=(0.032, 0.008, 0.12, 0.0), nose=(0.013, 0.024, 0.02), lips=(0.034, 0.008)),
+        dict(eye=(0.031, 0.015, 0.011), brow=(0.034, 0.011, 0.04, -0.004), nose=(0.016, 0.026, 0.024), lips=(0.038, 0.007)),
+        dict(eye=(0.036, 0.018, 0.015), brow=(0.03, 0.007, 0.2, 0.004), nose=(0.012, 0.02, 0.018), lips=(0.03, 0.009)),
+        dict(eye=(0.033, 0.016, 0.012), brow=(0.034, 0.01, 0.08, 0.0), nose=(0.015, 0.028, 0.022), lips=(0.036, 0.008), hair="moustache"),
+        dict(eye=(0.035, 0.017, 0.012), brow=(0.033, 0.009, -0.06, 0.002), nose=(0.014, 0.022, 0.026), lips=(0.035, 0.01)),
+        dict(eye=(0.032, 0.016, 0.012), brow=(0.035, 0.011, 0.1, -0.002), nose=(0.015, 0.025, 0.022), lips=(0.034, 0.008), hair="beard"),
+    ],
+    "f": [
+        dict(eye=(0.034, 0.019, 0.015), brow=(0.03, 0.005, 0.16, 0.004), nose=(0.011, 0.02, 0.017), lips=(0.033, 0.011), lashes=True),
+        dict(eye=(0.032, 0.018, 0.013), brow=(0.031, 0.006, 0.06, 0.0), nose=(0.012, 0.022, 0.019), lips=(0.036, 0.012), lashes=True),
+        dict(eye=(0.036, 0.02, 0.016), brow=(0.028, 0.005, 0.24, 0.006), nose=(0.01, 0.018, 0.016), lips=(0.03, 0.012), lashes=True),
+        dict(eye=(0.033, 0.018, 0.012), brow=(0.032, 0.007, 0.1, 0.002), nose=(0.013, 0.024, 0.02), lips=(0.035, 0.01), lashes=True),
+        dict(eye=(0.035, 0.019, 0.014), brow=(0.03, 0.006, -0.04, 0.004), nose=(0.011, 0.021, 0.022), lips=(0.032, 0.013), lashes=True),
+        dict(eye=(0.031, 0.017, 0.013), brow=(0.033, 0.006, 0.14, 0.0), nose=(0.012, 0.023, 0.018), lips=(0.038, 0.01), lashes=True),
+    ],
+}
+
+
+def build_face(M, m, spec):
+    ex, ew, eh = spec["eye"]
+    bw, bt, tilt, lift = spec["brow"]
+    nw, nl, nd = spec["nose"]
+    lw, lt = spec["lips"]
+    add_ellipsoid(M, m["skin"], (0, -0.106, 1.722), (nw, nd, nl), seg=8, rings=6)
+    add_box(M, m["lips"], (0, -0.108, 1.672), (lw, 0.008, lt), bevel=min(0.003, lt * 0.35))
+    for sg in (1, -1):
+        add_ellipsoid(M, m["white"], (ex * sg, -0.093, 1.755), (ew, 0.008, eh), seg=10, rings=6)
+        add_ellipsoid(M, m["eye"], (ex * sg, -0.1, 1.753), (ew * 0.53, 0.004, eh * 0.77), seg=8, rings=5)
+        add_box(M, m["brow"], (ex * sg, -0.098, 1.786 + lift), (bw, 0.008, bt), rot=(0, tilt * sg, 0), bevel=min(0.002, bt * 0.3))
+        if spec.get("lashes"):
+            # upper lid line + a small flick up and out at the outer corner
+            add_box(M, m["eye"], (ex * sg, -0.1005, 1.755 + eh * 0.8), (ew * 2.0, 0.004, 0.0035), bevel=0.0)
+            add_box(M, m["eye"], ((ex + ew * 1.05) * sg, -0.0995, 1.755 + eh * 1.0), (0.009, 0.004, 0.003), rot=(0, -0.6 * sg, 0), bevel=0.0)
+    if spec.get("hair") == "moustache":
+        add_box(M, m["brow"], (0, -0.111, 1.688), (0.044, 0.01, 0.01), bevel=0.003)
+    elif spec.get("hair") == "beard":
+        add_box(M, m["brow"], (0, -0.111, 1.688), (0.044, 0.01, 0.009), bevel=0.003)
+        add_ellipsoid(M, m["brow"], (0, -0.074, 1.652), (0.056, 0.042, 0.032), seg=12, rings=7)
+
+
+def build_faces(coll, arm, sex):
+    m = body_materials()
+    objs = []
+    for i, spec in enumerate(FACES[sex], start=1):
+        M = Mesh("Body_face_%s%d" % (sex, i))
+        build_face(M, m, spec)
+        ob = M.finish(coll)
+        weight_rigid(ob, "Head")
+        bind(ob, arm)
+        ob["region"] = "face"
+        ob["face"] = i
+        objs.append(ob)
+    return objs
 
 
 def region_chest(M, m):
