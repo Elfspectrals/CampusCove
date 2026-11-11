@@ -29,7 +29,11 @@ test('centres the watch on the forearm, 4.5 cm before the wrist', () => {
 
 test('scales the strap to the thicker half of the forearm plus slack', () => {
   near(fitWatchToForearm(forearm(0.03, 0.035, new THREE.Vector3()), wrist, 0.035).scale, 0.039 / 0.035, 'bare arm')
-  near(fitWatchToForearm(forearm(0.055, 0.05, new THREE.Vector3()), wrist, 0.035).scale, 0.059 / 0.035, 'sleeve')
+  near(fitWatchToForearm(forearm(0.047, 0.04, new THREE.Vector3()), wrist, 0.035).scale, 0.051 / 0.035, 'thickest strapped forearm')
+})
+
+test('squeezes a thick sleeve instead of growing past the thickest strapped forearm', () => {
+  near(fitWatchToForearm(forearm(0.055, 0.05, new THREE.Vector3()), wrist, 0.035).scale, 0.051 / 0.035, 'hoodie sleeve')
 })
 
 test('turns the face to the back of the wrist and the model -Z to the hand', () => {

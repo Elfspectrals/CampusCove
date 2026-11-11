@@ -3,6 +3,7 @@ import * as THREE from 'three'
 const WATCH_FROM_WRIST = 0.045
 const BAND_HALF_LENGTH = 0.015
 const STRAP_SLACK = 0.004
+const MAX_STRAPPED_HALF = 0.047
 const WRIST_BACK = new THREE.Vector3(0, 1, 0)
 
 export interface WatchFit {
@@ -33,6 +34,6 @@ export function fitWatchToForearm(forearm: readonly THREE.Vector3[], wrist: THRE
   return {
     position,
     quaternion: new THREE.Quaternion().setFromRotationMatrix(basis),
-    scale: (Math.max(halfUp, halfSide) + STRAP_SLACK) / strapInnerHalf,
+    scale: (Math.min(Math.max(halfUp, halfSide), MAX_STRAPPED_HALF) + STRAP_SLACK) / strapInnerHalf,
   }
 }
