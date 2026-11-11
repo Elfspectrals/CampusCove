@@ -56,7 +56,7 @@ Décisions produit (validées le 30/10/2026) :
 ```
 front/public/assets/store/mall/{mall.glb, mall.collision.json, mall.layout.json}
 front/public/assets/store/<key>/{interior.glb, interior.collision.json, interior.layout.json, exterior.glb,
-                                  exterior.collision.json, exterior.layout.json, lightmap.jpg, preview.png}
+                                  exterior.collision.json, exterior.layout.json, lightmap.webp, preview.png}
                                   key ∈ northline, hearth_hollow, greencart
 ```
 

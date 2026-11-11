@@ -8,12 +8,14 @@
 // map-src/CampusCove/out/<category>/<key>/. This script:
 //   1. compresses every GLB (Draco geometry, WebP textures) into public/assets/<category>/<key>/
 //   2. turns each *.colsrc.glb into <name>.collision.json with scripts/extract-collision.mjs
+//   3. encodes each interior lightmap.jpg into lightmap.webp (scripts/lightmap.mjs)
 // Interiors keep one node per object (--join false) so House_Floor_* / Door_Entrance names survive,
 // and house exteriors keep their `Door` node (map-src/CampusCove/build_house_doors.py).
 import { spawnSync } from 'node:child_process'
 import { copyFileSync, existsSync, mkdirSync, readdirSync, statSync } from 'node:fs'
 import { basename, dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { encodeLightmap, LIGHTMAP_SHIPPED, LIGHTMAP_SOURCE } from './lightmap.mjs'
 
 const FRONT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const SRC = resolve(FRONT, '../map-src/CampusCove/out')
@@ -59,7 +61,12 @@ function processDir(category, dir, rel) {
     }
     const shipsAsIs = ((category === 'work' || category === 'park' || category === 'items' || category === 'store') && (file === 'preview.png' || file.endsWith('.layout.json')))
       || (category === 'houses' && file.endsWith('.layout.json'))
-    if (shipsAsIs || ((category === 'houses' || category === 'work' || category === 'store') && file === 'lightmap.jpg')) {
+    if ((category === 'houses' || category === 'work' || category === 'store') && file === LIGHTMAP_SOURCE) {
+      mkdirSync(join(DEST, category, rel), { recursive: true })
+      lightmaps.push({ input: full, output: join(DEST, category, rel, LIGHTMAP_SHIPPED), label: `${category}/${join(rel, LIGHTMAP_SHIPPED)}` })
+      continue
+    }
+    if (shipsAsIs) {
       // work buildings / the store ship their preview + layout next to the GLBs
       mkdirSync(join(DEST, category, rel), { recursive: true })
       copyFileSync(full, join(DEST, category, rel, file))
@@ -83,6 +90,9 @@ function processDir(category, dir, rel) {
   }
 }
 
+/** Lightmaps found while walking the folders, encoded at the end (sharp is async, the walk is not). */
+const lightmaps = []
+
 const only = process.argv[2]
 /** Optional keys after the category (`-- store greencart crispins_hardware`): only those folders are shipped. */
 const keys = process.argv.slice(3)
@@ -101,4 +111,8 @@ for (const category of CATEGORIES) {
     if (existsSync(join(dir, key))) processDir(category, join(dir, key), key)
     else console.warn(`skip ${category}/${key}: not built`)
   }
+}
+for (const { input, output, label } of lightmaps) {
+  await encodeLightmap(input, output)
+  console.log(`lightmap   ${label}  ${(statSync(output).size / 1024).toFixed(0)} KB`)
 }

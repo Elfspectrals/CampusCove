@@ -345,7 +345,7 @@ en `(90, -130)`, porte au sud en `(90, 1.25, -123.5)` (`rotationY = 0`). Contrat
 |---|---|
 | `build_drink_items.py` | `items/drinks/{stout,lager,red_wine,whisky,vodka}/{model.glb,preview.png}` (88 à 288 triangles, `IT_Drink_*`) |
 | `build_pub.py` (+ `build_pub_ext.py` exécuté à la fin) | `work/pub/{interior,exterior}.glb`, `*.colsrc.glb`, `*.layout.json`, `preview.png` |
-| `build_house_lightmaps.py -- work pub` | `work/pub/lightmap.jpg` (headless, Cycles) |
+| `build_house_lightmaps.py -- work pub` | `work/pub/lightmap.webp` (baked as `lightmap.jpg`, encoded by `assets:optimize`) (headless, Cycles) |
 | `build_pond.py` | porte est, encoche dans la crête, sentier `PD_PathPub`, `pubGate` dans `pond.layout.json` |
 | `build_pub_site.py` | `park/pub_site/{pub_site.glb,pub_site.layout.json}` (chemin, ruisseau et pont, jardin à bière, `points` en coordonnées monde) |
 | `build_pub_sfx.py` | `sfx/pub/{glass_down,dart_hit,clink}.mp3` (Earshot ; pas de son de versement ni d'ambiance dans la banque) |
@@ -418,7 +418,7 @@ Northline (vêtements), Hearth & Hollow (déco), GreenCart (supermarché). Contr
 | Script | Sorties |
 |---|---|
 | `build_northline.py`, `build_hearth.py`, `build_greencart.py` | `store/<clé>/{interior,exterior}.glb`, `*.colsrc.glb`, `*.layout.json`, `preview.png` (intérieurs 10 600 / 11 000 / 22 000 triangles, coques ≤ 3 000) |
-| `build_house_lightmaps.py -- store northline hearth_hollow greencart` | `store/<clé>/lightmap.jpg` (headless, Cycles) ; les lampes sont les nœuds `Light_*` ou les mailles dont le matériau contient `LightPanel` |
+| `build_house_lightmaps.py -- store northline hearth_hollow greencart` | `store/<clé>/lightmap.webp` (cuit en `lightmap.jpg`, encodé par `assets:optimize`) (headless, Cycles) ; les lampes sont les nœuds `Light_*` ou les mailles dont le matériau contient `LightPanel` |
 | `build_mall.py` (lit les `exterior.layout.json` des trois enseignes) | `store/mall/{mall.glb, mall.colsrc.glb, mall.layout.json}` (≈ 124 000 triangles, 1 258 boîtes `COL_Mall_*`, 126 cellules, 8 rampes ; `mall_lib.py`, `mall_decor.py`, `mall_dressing.py` à côté) |
 | `build_hardware_items.py`, `build_sweets_items.py`, `build_grocery_items.py` | `decor/{workbench,stepladder,toolbox,paint_cans,wheelbarrow,metal_shelving}/`, `items/sweets/{cotton,lollipop,bag,licorice,gum,apple}/`, `items/grocery/{apple,banana,bread,milk,cheese,eggs,cereal,pasta,soda,chips,chocolate,yogurt}/` (`model.glb`, `preview.png`, 48 à 630 triangles ; le dossier d'un consommable = son code sans préfixe) + `out/decor/hardware.manifest.json` |
 | `front/scripts/skins/wear.py` (+ `run_wear.py`, `build_fp_arms.py`) | `wear/top/{track_jacket,jersey,sports_bra}/`, `wear/bottom/{track_pants,basketball_shorts,leggings}/` (Summit Sports) |

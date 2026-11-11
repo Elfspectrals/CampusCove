@@ -86,6 +86,9 @@ import { createAmbientLoop } from '../game/ambientLoop'
 import { MAX_STAMINA } from '../game/stamina'
 import { createDoorSigns } from '../game/town/doorSigns'
 import { frontDoorNode, houseKeyAt, openHouseInterior, rattleFrontDoor, updateFrontDoors } from '../game/town/openHouses'
+import { loadTownEnvironment } from '../game/roomEnvironments'
+import { useBootProgress } from '../composables/game/useBootProgress'
+import GameLoadingScreen from '../components/game/GameLoadingScreen.vue'
 import { isAlcoholItem, isMedicalItem } from '../utils/itemShopPresentation'
 
 const router = useRouter()
@@ -96,6 +99,13 @@ const canvasRef = ref<HTMLCanvasElement | null>(null)
 
 const gameRoomRef = shallowRef<Room | null>(null)
 const roomMessage = ref<string | null>(null)
+const boot = useBootProgress()
+/** Stays up a moment after the boot so the screen shows 100 % and every stage ticked before it fades out. */
+const loadingShown = ref(true)
+const LOADING_HOLD_MS = 350
+watch(boot.done, (done) => {
+  if (done) setTimeout(() => (loadingShown.value = false), LOADING_HOLD_MS)
+})
 const pointerLocked = ref(false)
 const refreshMyAppearance = ref<(() => void) | null>(null)
 const myAccountId = computed(() => getStoredAuth()?.user.account_id ?? null)
@@ -770,10 +780,20 @@ const environment = useRoomEnvironment({
     pubGames.onTownLoaded(manifest)
     orchard.onTownLoaded(manifest)
     farm.onTownLoaded(manifest)
-    mallCellTemplates.onTownLoaded(manifest).catch((error: unknown) => console.error('[mall] cell templates failed to load', error))
-    zoneDecor.onTownLoaded(manifest).catch((error: unknown) => console.error('[zones] zone decor failed to load', error))
+    void Promise.all([
+      mallCellTemplates.onTownLoaded(manifest).catch((error: unknown) => console.error('[mall] cell templates failed to load', error)),
+      zoneDecor.onTownLoaded(manifest).catch((error: unknown) => console.error('[zones] zone decor failed to load', error)),
+    ]).then(() => boot.complete('decor'))
     minimap.onTownLoaded(manifest)
     houseFurniture.onTownReady()
+  },
+  onTownShown: (group) => {
+    if (boot.done.value) return
+    // Compile the town's shaders behind the loading screen instead of stalling the first frames.
+    const renderer = getRenderer()
+    const camera = getCamera()
+    const compiled = renderer && camera ? renderer.compileAsync(group, camera, getScene()) : Promise.resolve()
+    void compiled.catch((error: unknown) => console.warn('[boot] shader warm-up failed', error)).then(() => boot.complete('world'))
   },
   onError: (message) => {
     roomMessage.value = message
@@ -1096,10 +1116,14 @@ async function bootGame() {
     void router.push({ name: 'landing' })
     return
   }
+  // The world downloads while the character loads (or is being created): loadTownEnvironment caches the one load for
+  // loadTown below.
+  loadTownEnvironment().catch(() => undefined)
   const loaded = await loadCosmeticsState()
   // first time in the game: build the character before spawning
   const cosmetics = loaded && loaded.character === null && !unmounted ? await waitForCharacter() : loaded
   const state = cosmetics ?? { slots: emptyCosmeticLoadout(), colors: defaultCosmeticColors(), character: null }
+  boot.complete('character')
   myCosmetics.value = state
   if (unmounted || !canvasRef.value) return
   game = createGameScene(canvasRef.value, movement.containerSize())
@@ -1114,6 +1138,7 @@ async function bootGame() {
   }
   await loadLayoutFromServer()
   refreshOwnedItems()
+  boot.complete('server')
   if (!unmounted) movement.startRenderLoop()
 }
 
@@ -1202,6 +1227,15 @@ const crosshairClass = computed(() => {
     />
     <GameDrunkEffects :effects="drunkEffects" />
     <GameRoomMessageBanner v-if="roomMessage" :message="roomMessage" />
+    <!-- an error during boot drops the loading screen so its banner is seen; the character creator shows over the load -->
+    <Transition leave-active-class="transition-opacity duration-500" leave-to-class="opacity-0">
+      <GameLoadingScreen
+        v-if="loadingShown && !roomMessage && !creator"
+        :percent="boot.percent.value"
+        :stages="boot.stages.value"
+        :files="boot.files.value"
+      />
+    </Transition>
     <GameMinimap
       :image="minimap.image.value"
       :markers="minimap.markers.value"
