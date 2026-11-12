@@ -225,6 +225,19 @@ function parsePubZone(zones: Json[], pub: WorldPub | null): Bounds | null {
 }
 
 /** Steps out of the building through its door; yaw makes the camera (forward = -sin, -cos) look back at the door. */
+export function zoneGateDestination(key: string, name: string, gate: { x: number, z: number }, bounds: Bounds): TeleportDestination {
+  const dx = (bounds.minX + bounds.maxX) / 2 - gate.x
+  const dz = (bounds.minZ + bounds.maxZ) / 2 - gate.z
+  const length = Math.hypot(dx, dz) || 1
+  const inX = dx / length
+  const inZ = dz / length
+  return { key, name, position: { x: gate.x + inX * DESTINATION_DOOR_GAP, y: EYE_HEIGHT, z: gate.z + inZ * DESTINATION_DOOR_GAP }, yaw: Math.atan2(-inX, -inZ) + 0 }
+}
+
+export function orchardDestination(tree: Vec3): TeleportDestination {
+  return { key: 'orchard', name: 'Orchard', position: { x: tree.x, y: EYE_HEIGHT, z: tree.z + DESTINATION_DOOR_GAP }, yaw: 0 }
+}
+
 export function doorDestination(key: string, name: string, building: Vec3, door: Vec3): TeleportDestination {
   const dx = door.x - building.x
   const dz = door.z - building.z
@@ -265,6 +278,13 @@ function parseWorld(manifest: Json): World {
   const b = manifest.bounds
   if (![b?.minX, b?.maxX, b?.minZ, b?.maxZ].every(Number.isFinite)) throw new Error('world manifest: invalid bounds')
   const pub = parsePub(manifest.pub)
+  const orchard = parseOrchard(manifest.orchard)
+  if (orchard) destinations.push(orchardDestination(orchard.trees[0]))
+  const farm = manifest.zones.find((zone: Json) => zone.key === 'farm')
+  if (farm?.gate !== undefined) {
+    if (![farm.gate?.x, farm.gate?.z].every(Number.isFinite)) throw new Error(`world manifest: invalid farm gate ${JSON.stringify(farm.gate)}`)
+    destinations.push(zoneGateDestination('farm', 'Farm', farm.gate, parseBounds(farm.bounds, 'farm zone bounds')))
+  }
   return {
     citySpawn: parseVec3(manifest.spawn, 'spawn'),
     destinations,
@@ -275,7 +295,7 @@ function parseWorld(manifest: Json): World {
     clinic: parseClinic(manifest.clinic),
     pub,
     pubZone: parsePubZone(manifest.zones, pub),
-    orchard: parseOrchard(manifest.orchard),
+    orchard,
     cropPlants: parseCropPlants(manifest.crops),
     zoneBounds: new Map(manifest.zones.filter((zone: Json) => zone.bounds !== undefined).map((zone: Json) => [zone.key, parseBounds(zone.bounds, `${zone.key} zone bounds`)]))
   }

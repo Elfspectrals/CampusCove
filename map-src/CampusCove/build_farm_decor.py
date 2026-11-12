@@ -24,6 +24,10 @@ def ai(slug, material):
     return lambda: L.import_ai_model(coll, slug, f"DC_{material}")
 
 
+def apple_tree(slug, n, layout):
+    return lambda: L.import_ai_apple_tree(coll, slug, f"DC_AppleTree{n}", layout)
+
+
 def tool_rack():
     wood = L.make_mat("DC_RackWood", "#9a7448", 0.85, "planks", 0.05, accent="#7e5c38")
     handle = L.make_mat("DC_ToolHandle", "#c79a62", 0.8, "noise", 0.04)
@@ -114,6 +118,10 @@ DECOR = {
     "wire_panel": wire_panel,
     "mud_patch": mud_patch,
     "hay_rack": hay_rack,
+    "apple_tree_1": apple_tree("a_leafy_tree_with_a_round_dark_green_cro", 1, "spread"),
+    "apple_tree_2": apple_tree("a_leafy_tree_with_a_tall_oval_dark_green", 2, "low"),
+    "apple_tree_3": apple_tree("a_leafy_tree_with_a_wide_spreading_dark_", 3, "clusters"),
+    "apple_tree_4": apple_tree("a_leafy_tree_with_a_lumpy_dark_green_cro", 4, "few_big"),
 }
 
 

@@ -26,3 +26,17 @@ Use the `blender-asset` skill. Every new or rebuilt 3D asset is assembled from r
   - Refine it round by round from the answers until the user explicitly validates it. Nothing is built before that.
   - The validated plan is saved in `design-plans/<asset>.md` (like `shelf-slots.md`) in the same change as the asset, so a later rebuild starts from it instead of asking again.
   - The questions happen in the main session before any work is handed to an agent, since agents cannot ask the user.
+
+## `make model` anti-patterns
+
+The texture is the concept image (`ref.png`) projected flat along one axis, and Hunyuan only rebuilds the shape. So a model is only as good as its concept image. Look at every `ref.png` before the 3D step and regenerate with another `SEED=` when one of these shows:
+
+- Wrong anatomy: extra or missing legs, two heads, more than two eyes, a fifth leg made of a tail, legs fused into one block, a beak and a snout on the same head.
+- Wrong view: anything rigged or animated (animals) is made with `VIEW=side` (strict profile facing right, legs apart); a three-quarter image projected sideways shifts the face onto the neck and turns the body along the depth axis.
+- Extra objects: ground disc, soil, pot, grass tuft, shadow, fence, a second animal, text. Add "no soil, no pot" style words or regenerate.
+- Painted details that must move, be recoloured or stay readable on their own (fruit on a tree, eyes, buttons): the mesh will not have them as geometry, and small ones vanish in the projection. Model them as separate pieces (apple trees: `lib_common.import_ai_apple_tree`; animal eyes: `lib_common.add_ai_eyes` finds the pupil in `ref.png` and places a glossy eye on both sides of the head).
+- Flat 2D illustration: Hunyuan needs shading to read the volume; the `side` view asks for a 3D render.
+- Rim light, outlines and white highlights along the silhouette: they get stretched over the faces seen side-on. Animals project a posterized image (`palette=<colours>` in `project_ref_image`: the rembg silhouette `mask.png`, edge pixels replaced by the interior, each pixel snapped to a small k-means palette), so a stretched face only repeats a body colour.
+- Too few triangles or the turbo shape model: decimating an animal to about 1200 triangles gives visible facets and breaks the colour patches. Animals are made with `SHAPE=hunyuan3d-dit-v2-0 STEPS=30 OCTREE=384` and 3000 to 6000 triangles.
+
+For animals, `make model ... VIEW=side CHECK=quadruped` (or `CHECK=biped`) also checks the concept image automatically (one subject, wider than tall, the right number of legs on the ground) and stops before the 3D step when it fails; `make model-checked` retries with the next seeds. After the 3D step `build_barnyard.py` refuses a body that is not lengthwise along the view. Clip rules (hock and bird ankle fold point-backward, the foot goes forward) are in `docs/animation/playbook.md`.

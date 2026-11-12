@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { type AdminRoom, SUMMON_DISTANCE, onAdminOpen, onAdminSummon, onAdminTeleport } from './admin.ts'
 import type { Player } from './types.ts'
-import { type TeleportDestination, doorDestination } from './world.ts'
+import { type TeleportDestination, doorDestination, orchardDestination, zoneGateDestination } from './world.ts'
 
 interface Sent { type: string, payload: any }
 type FakeClient = ReturnType<typeof fakeClient>
@@ -88,6 +88,21 @@ test('an admin teleports to a listed place; a player cannot', () => {
   assert.deepEqual(room.moves, ['a'])
   onAdminTeleport(room, admin, { key: 'nowhere' }, 5000, destinations)
   assert.equal(received(admin, 'admin_error').length, 1)
+})
+
+test('the orchard teleport lands an admin 2.5 m in front of the first tree, facing it', () => {
+  const room = fakeRoom(fakePlayer('a', true))
+  const [admin] = room.clients
+  onAdminTeleport(room, admin, { key: 'orchard' }, 1000, () => [orchardDestination({ x: -34.745, y: 0, z: -104.231 })])
+  assert.deepEqual(received(admin, 'teleported'), [{ x: -34.745, y: 1.6, z: -101.731, ry: 0 }])
+})
+
+test('the farm teleport lands an admin 2.5 m inside the gate, facing into the farm', () => {
+  const room = fakeRoom(fakePlayer('a', true))
+  const [admin] = room.clients
+  const farm = zoneGateDestination('farm', 'Farm', { x: -8.5, z: -130 }, { minX: -8.5, maxX: -8.5, minZ: -200, maxZ: -130 })
+  onAdminTeleport(room, admin, { key: 'farm' }, 1000, () => [farm])
+  assert.deepEqual(received(admin, 'teleported'), [{ x: -8.5, y: 1.6, z: -132.5, ry: 0 }])
 })
 
 test('a summoned player lands in front of the admin, facing them', () => {

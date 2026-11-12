@@ -86,11 +86,7 @@ P = {
     "grass": L.make_mat("TW_GrassOrchard", "#86bf63", 1.0, "noise", 0.06),
     "orchard_grass": L.make_mat("TW_OrchardRows", "#79b257", 1.0, "stripes", 0.04, accent="#6ea64f"),
     "path": L.make_mat("TW_OrchardPath", "#c7ad84", 0.95, "noise", 0.07),
-    "trunk": L.make_mat("TW_AppleTrunk", "#7a5a3c", 0.85, "planks", 0.05, accent="#5c4229"),
-    "leaf1": L.make_mat("TW_AppleLeaf", "#4f9a48", 0.9, "noise", 0.07),
-    "leaf2": L.make_mat("TW_AppleLeafLight", "#69b153", 0.9, "noise", 0.07),
     "apple": L.make_mat("TW_AppleRed", "#d8382f", 0.55, "noise", 0.05),
-    "apple2": L.make_mat("TW_AppleRedDark", "#b52a25", 0.55, "noise", 0.05),
     "fence": L.make_mat("TW_OrchardFence", "#a9825a", 0.85, "planks", 0.05, accent="#86633f"),
     "post": L.make_mat("TW_OrchardPost", "#6e4f33", 0.85, "noise", 0.04),
     "crate": L.make_mat("TW_OrchardCrate", "#c79a62", 0.85, "planks", 0.06, accent="#a57a48"),
@@ -100,10 +96,7 @@ P = {
     "hay": L.make_mat("TW_OrchardHay", "#e1c46a", 0.95, "stripes", 0.06, accent="#c9aa52"),
     "shed": L.make_mat("TW_OrchardShed", "#9c5b3c", 0.85, "planks", 0.05, accent="#7e4630"),
     "roof": L.make_mat("TW_OrchardRoof", "#5d5f66", 0.8, "tiles", 0.05, accent="#4a4c52"),
-    "iron": L.make_mat("TW_OrchardIron", "#2a2d33", 0.6, "noise", 0.03),
     "lantern": L.make_mat("TW_OrchardLantern", "#fff1c4", 0.5, "noise", 0.0, emit="#ffd27a", emit_strength=1.4),
-    "pine": L.make_mat("TW_OrchardPine", "#3f7a4a", 0.9, "noise", 0.07),
-    "basket": L.make_mat("TW_OrchardBasket", "#b8874f", 0.9, "stripes", 0.06, accent="#946a3a"),
 }
 so = []
 col = []
@@ -133,19 +126,6 @@ def mesh_obj(name, bm, mat, loc=(0.0, 0.0, 0.0), tile=1.0):
     return add(ob)
 
 
-def blob(name, gx, gz, y0, r, mat, sy=1.0, jitter=0.14):
-    bm = bmesh.new()
-    bmesh.ops.create_icosphere(bm, subdivisions=1, radius=r)
-    for v in bm.verts:
-        v.co.x += rnd.uniform(-jitter, jitter) * r
-        v.co.y += rnd.uniform(-jitter, jitter) * r
-        v.co.z = (v.co.z + rnd.uniform(-jitter, jitter) * r) * sy
-    zmin = min(v.co.z for v in bm.verts)
-    for v in bm.verts:
-        v.co.z -= zmin
-    return mesh_obj(name, bm, mat, L.b(gx, gz, y0))
-
-
 def ribbon(name, pts, width, mat, y):
     bm = bmesh.new()
     left, right = [], []
@@ -169,19 +149,82 @@ def tag(prefix):
     return f"{prefix}{counter[prefix]:02d}"
 
 
+def single_template(meshes, source):
+    if len(meshes) != 1:
+        raise RuntimeError(f"{source} should hold one mesh, got {len(meshes)}")
+    template = meshes[0]
+    template.parent = None
+    template.data.transform(template.matrix_world)
+    template.matrix_world.identity()
+    for c in list(template.users_collection):
+        c.objects.unlink(template)
+    return template
+
+
+def ai_template(slug, material):
+    return single_template(L.import_ai_model(coll, slug, material), f"out/ai/{slug}")
+
+
+def asset_template(folder):
+    before = set(bpy.data.objects)
+    bpy.ops.import_scene.gltf(filepath=os.path.join(L.FRONT_ASSETS, folder, "model.glb"))
+    imported = [o for o in bpy.data.objects if o not in before]
+    bpy.context.view_layer.update()
+    meshes = [o for o in imported if o.type == "MESH"]
+    for o in meshes:
+        world = o.matrix_world.copy()
+        o.parent = None
+        o.matrix_world = world
+    for o in imported:
+        if o.type != "MESH":
+            bpy.data.objects.remove(o, do_unlink=True)
+    return single_template(meshes, f"{folder}/model.glb")
+
+
+def glow_faces(obj, slug, glow, z0, z1, min_lightness):
+    import numpy as np
+    mesh = obj.data
+    image = bpy.data.images.load(os.path.join(L.OUT_ROOT, "ai", slug, "ref.png"), check_existing=True)
+    w, h = image.size
+    pixels = np.empty(w * h * 4, dtype=np.float32)
+    image.pixels.foreach_get(pixels)
+    rgb = pixels.reshape(h, w, 4)[:, :, :3]
+    uv = mesh.uv_layers["RefProjection"].data
+    mesh.materials.append(glow)
+    lit = 0
+    for poly in mesh.polygons:
+        if not z0 <= poly.center.z <= z1:
+            continue
+        u = sum(uv[i].uv.x for i in poly.loop_indices) / poly.loop_total
+        v = sum(uv[i].uv.y for i in poly.loop_indices) / poly.loop_total
+        if rgb[min(h - 1, int(v * h)), min(w - 1, int(u * w))].max() >= min_lightness:
+            poly.material_index = 1
+            lit += 1
+    if lit == 0:
+        raise RuntimeError(f"{obj.name}: no face of the lantern head is bright enough to glow")
+
+
+def ai_copy(template, name, gx, gz, y0=0.0, s=1.0, rot=0.0):
+    o = template.copy()
+    o.name = name
+    o.location = L.b(gx, gz, y0)
+    o.rotation_euler = (0, 0, rot)
+    o.scale = (s, s, s)
+    coll.objects.link(o)
+    return add(o)
+
+
+APPLE_TREES = [asset_template(f"decor/apple_tree_{n}") for n in range(1, 5)]
+FALLEN_APPLE = asset_template("items/farm/apple")
+BASKET = ai_template("a_single_round_woven_wicker_basket_full_", "TW_OrchardBasket")
+PINE = ai_template("a_single_tall_dark_green_fir_tree_with_f", "TW_OrchardPine")
+LANTERN = ai_template("a_single_tall_black_iron_garden_lamp_pos", "TW_OrchardLanternPost")
+glow_faces(LANTERN, "a_single_tall_black_iron_garden_lamp_pos", P["lantern"], 2.4, 2.85, 0.55)
+
+
 def apple_tree(gx, gz, s):
     n = tag("AppleTree")
-    add(L.cone(coll, f"OS_{n}_Trunk", gx, gz, 0.0, 0.24 * s, 0.15 * s, 2.3 * s, P["trunk"], seg=6))
-    sy = 0.8
-    for k in range(3):
-        a = TWO_PI * k / 3 + rnd.uniform(-0.3, 0.3)
-        cx, cz, cy, cr = gx + 0.55 * s * math.cos(a), gz + 0.55 * s * math.sin(a), (1.95 + 0.25 * (k % 2)) * s, rnd.uniform(1.15, 1.35) * s
-        blob(f"OS_{n}_Leaf{k}", cx, cz, cy, cr, P[("leaf1", "leaf2", "leaf1")[k]], sy=sy)
-        for j, da in enumerate((-0.9, -0.3, 0.3, 0.9)):
-            h = cr * sy * rnd.uniform(-0.3, 0.2)
-            reach = cr * math.sqrt(1.0 - (h / (cr * sy)) ** 2) * 0.97
-            add(L.box(coll, f"OS_{n}_Apple{k}{j}", cx + reach * math.cos(a + da), cz + reach * math.sin(a + da), cy + cr * sy + h - 0.11, 0.22, 0.22, 0.22,
-                      P[("apple", "apple2")[(k + j) % 2]], bevel=0.07))
+    ai_copy(rnd.choice(APPLE_TREES), f"OS_{n}", gx, gz, s=s, rot=rnd.uniform(0, TWO_PI))
     add_col(n, gx, gz, 0.6, 0.6, 3.0)
     placed.append((gx, gz, 1.8))
 
@@ -190,12 +233,12 @@ def fallen_apples(gx, gz):
     for k in range(3):
         a = rnd.uniform(0, TWO_PI)
         d = rnd.uniform(0.6, 1.6)
-        add(L.box(coll, f"OS_{tag('Fallen')}", gx + d * math.cos(a), gz + d * math.sin(a), 0.0, 0.16, 0.16, 0.15, P["apple2"], rot=a, bevel=0.05))
+        ai_copy(FALLEN_APPLE, f"OS_{tag('Fallen')}", gx + d * math.cos(a), gz + d * math.sin(a), rot=a)
 
 
 def basket(gx, gz, rot):
     n = tag("Basket")
-    add(L.furn(coll, f"OS_{n}", gx, gz, rot, [(0, 0, 0.0, 0.55, 0.4, 0.32, P["basket"], 0.04), (0, 0, 0.32, 0.46, 0.32, 0.06, P["apple"], 0.03)]))
+    ai_copy(BASKET, f"OS_{n}", gx, gz, rot=rot)
     placed.append((gx, gz, 0.4))
 
 
@@ -212,10 +255,7 @@ def crate(gx, gz, y0, rot, full=True):
 
 def lantern(gx, gz):
     n = tag("Lantern")
-    add(L.cyl(coll, f"OS_{n}_Pole", gx, gz, 0.0, 0.06, 2.6, P["iron"], seg=6))
-    add(L.box(coll, f"OS_{n}_Base", gx, gz, 0.0, 0.3, 0.3, 0.12, P["iron"], bevel=0.02))
-    add(L.box(coll, f"OS_{n}_Head", gx, gz, 2.6, 0.32, 0.32, 0.42, P["lantern"], bevel=0.03))
-    add(L.box(coll, f"OS_{n}_Cap", gx, gz, 3.02, 0.4, 0.4, 0.08, P["iron"], bevel=0.02))
+    ai_copy(LANTERN, f"OS_{n}", gx, gz)
     add_col(n, gx, gz, 0.32, 0.32, 3.1)
     placed.append((gx, gz, 0.4))
 
@@ -230,9 +270,7 @@ def hay_bale(gx, gz, rot, y0=0.0):
 
 def pine(gx, gz, s):
     n = tag("Pine")
-    add(L.cyl(coll, f"OS_{n}_Trunk", gx, gz, 0.0, 0.16 * s, 1.0 * s, P["trunk"], seg=5))
-    for k, (y, r) in enumerate(((0.8, 1.5), (2.0, 1.15), (3.1, 0.75))):
-        add(L.cone(coll, f"OS_{n}_Cone{k}", gx, gz, y * s, r * s, 0.05, 1.6 * s, P["pine"], seg=7))
+    ai_copy(PINE, f"OS_{n}", gx, gz, s=s, rot=rnd.uniform(0, TWO_PI))
     add_col(n, gx, gz, 0.5, 0.5, 3.0)
     placed.append((gx, gz, 1.6 * s))
 

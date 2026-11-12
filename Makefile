@@ -85,7 +85,7 @@ collision-extract: ## Collision JSON from a GLB (MODEL=path/to/Foo.colsrc.glb)
 	cd front && npm run collision:extract -- $(MODEL)
 
 # * local only: needs Jerome's Mac (~/test3Dmodel/Hunyuan3D-2, ~/image-inpaint-mps, Blender.app)
-ifeq (model,$(firstword $(MAKECMDGOALS)))
+ifneq (,$(filter model model-checked,$(firstword $(MAKECMDGOALS))))
 MODEL_PROMPT := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
 %:
 	@:
@@ -100,19 +100,36 @@ MODEL_SLUG = $(call slug,$(MODEL_PROMPT))
 TEXTURE_KEY = $(call slug,$(TEXTURE_PROMPT))
 HEIGHT ?= 1.0
 TRIS ?= 800
+VIEW ?= quarter
+SEED ?= 42
+REFS ?=
+CHECK ?=
+TRIES ?= 6
+SHAPE ?= hunyuan3d-dit-v2-0-turbo
+STEPS ?= 5
+OCTREE ?= 256
 AI_3D := $(HOME)/test3Dmodel/Hunyuan3D-2
 AI_IMAGE_PYTHON := $(HOME)/image-inpaint-mps/.venv/bin/python
 BLENDER := /Applications/Blender.app/Contents/MacOS/Blender
 AI_OUT = map-src/CampusCove/out/ai/$(MODEL_SLUG)
 
-model: ## * Prompt -> image -> 3D -> cleaned GLB + collision.json in map-src/CampusCove/out/ai/<slug>/ (make model "a wooden lantern" HEIGHT=1.2 TRIS=400)
+model: ## * Prompt -> image -> 3D -> cleaned GLB + collision.json in map-src/CampusCove/out/ai/<slug>/ (make model "a wooden lantern" HEIGHT=1.2 TRIS=400 [VIEW=side] [SEED=7] [REFS="a.png b.png"] [SHAPE=hunyuan3d-dit-v2-0 STEPS=30 OCTREE=384])
 	@test -n "$(MODEL_PROMPT)" || { echo 'usage: make model "a single wooden lantern" [HEIGHT=1.2] [TRIS=400]'; exit 1; }
 	mkdir -p $(AI_OUT)
-	$(AI_IMAGE_PYTHON) $(AI_3D)/campuscove_image.py "$(MODEL_PROMPT)" $(CURDIR)/$(AI_OUT)/ref.png
-	cd $(AI_3D) && HY3DGEN_MODELS=models HF_HUB_OFFLINE=1 PYTORCH_ENABLE_MPS_FALLBACK=1 .venv/bin/python campuscove_shape.py $(CURDIR)/$(AI_OUT)/ref.png $(CURDIR)/$(AI_OUT)/raw.glb hunyuan3d-dit-v2-0-turbo 5
+	$(AI_IMAGE_PYTHON) map-src/CampusCove/campuscove_image.py "$(MODEL_PROMPT)" $(CURDIR)/$(AI_OUT)/ref.png --view $(VIEW) --seed $(SEED) $(foreach ref,$(REFS),--ref $(ref))
+	$(if $(CHECK),cd $(AI_3D) && HF_HUB_OFFLINE=1 .venv/bin/python $(CURDIR)/map-src/CampusCove/check_ai_image.py $(CURDIR)/$(AI_OUT)/ref.png $(CHECK))
+	cd $(AI_3D) && HF_HUB_OFFLINE=1 .venv/bin/python $(CURDIR)/map-src/CampusCove/ai_mask.py $(CURDIR)/$(AI_OUT)/ref.png
+	cd $(AI_3D) && HY3DGEN_MODELS=models HF_HUB_OFFLINE=1 PYTORCH_ENABLE_MPS_FALLBACK=1 .venv/bin/python $(CURDIR)/map-src/CampusCove/campuscove_shape.py $(CURDIR)/$(AI_OUT)/ref.png $(CURDIR)/$(AI_OUT)/raw.glb --model $(SHAPE) --steps $(STEPS) --octree $(OCTREE)
 	$(BLENDER) -b --factory-startup -P map-src/CampusCove/clean_ai_mesh.py -- $(CURDIR)/$(AI_OUT)/raw.glb $(CURDIR)/$(AI_OUT)/model.glb $(MODEL_SLUG) $(HEIGHT) $(TRIS)
 	node front/scripts/apply-decor-collision.mjs $(AI_OUT)/model.glb
 	$(AI_IMAGE_PYTHON) map-src/CampusCove/texture_parts.py model $(AI_OUT) $(PARTS)
+
+model-checked: ## * make model with CHECK=quadruped|biped, retried on the next seeds until the concept image passes (TRIES=6)
+	@test -n "$(CHECK)" || { echo 'usage: make model-checked "a cow standing" VIEW=side CHECK=quadruped [TRIES=6]'; exit 1; }
+	@for seed in $$(seq $(SEED) $$(($(SEED) + $(TRIES) - 1))); do \
+		$(MAKE) --no-print-directory model "$(MODEL_PROMPT)" HEIGHT=$(HEIGHT) TRIS=$(TRIS) VIEW=$(VIEW) SEED=$$seed CHECK=$(CHECK) REFS="$(REFS)" PARTS="$(PARTS)" SHAPE=$(SHAPE) STEPS=$(STEPS) OCTREE=$(OCTREE) && exit 0; \
+		echo "seed $$seed refused, trying the next one"; \
+	done; echo "no seed out of $(TRIES) passed the check"; exit 1
 
 model-test: ## * Tests of the make model Blender cleanup (headless Blender)
 	$(BLENDER) -b --factory-startup --python-exit-code 1 -P map-src/CampusCove/test_clean_ai_mesh.py

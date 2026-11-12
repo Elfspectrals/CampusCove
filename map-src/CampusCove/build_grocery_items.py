@@ -139,23 +139,6 @@ def sawtooth(x0, x1, base, tip, teeth):
 
 
 # ---------------------------------------------------------------- items
-def apple():
-    skin = L.make_mat("IT_Apple_Skin", "#d7352c", 0.45, "noise", 0.06, accent="#b8261f")
-    blush = L.make_mat("IT_Apple_Blush", "#9ccf4a", 0.5, "noise", 0.05)
-    stem = L.make_mat("IT_Apple_Stem", "#6b4a2b", 0.9, "noise", 0.04)
-    leaf = L.make_mat("IT_Apple_Leaf", "#4f9d3c", 0.8, "noise", 0.05)
-    leaf_shape = [(0.0, 0.0), (0.012, -0.006), (0.028, 0.0), (0.012, 0.006)]
-    leaf_ob = prism("Leaf", leaf_shape, 0.0, 0.002, leaf)
-    leaf_ob.location = (0.004, 0.0, 0.083)
-    leaf_ob.rotation_euler = (0.0, -0.5, 0.6)
-    return [
-        blob("Body", (0, 0, 0.04), (0.08, 0.08, 0.076), skin, seg=12, rings=7),
-        blob("Blush", (0.0045, -0.0035, 0.039), (0.078, 0.078, 0.074), blush, seg=12, rings=7),
-        tube("Stem", 0.003, 0.0025, 0.07, 0.024, stem, seg=5),
-        leaf_ob,
-    ]
-
-
 def banana():
     peel = L.make_mat("IT_Banana_Peel", "#f3d13a", 0.6, "noise", 0.05, accent="#e0b82a")
     tip = L.make_mat("IT_Banana_Tip", "#5b3a1e", 0.8, "noise", 0.04)
@@ -383,19 +366,22 @@ def ai_model(slug, material):
     return lambda: L.import_ai_model(coll, slug, f"IT_Crop_{material}")
 
 
+APPLE = ai_model("a_single_shiny_red_apple_with_a_short_br", "Apple")
+
 FARM = {
-    "corn": ai_model("a_single_yellow_corn_cob_with_green_husk", "Corn"),
-    "potato": ai_model("a_chunky_thick_brown_potato_tuber_three_", "Potato"),
-    "cabbage": ai_model("a_single_green_cabbage_head_with_outer_l", "Cabbage"),
-    "pumpkin": ai_model("a_single_round_orange_pumpkin_with_a_sho", "Pumpkin"),
+    "apple": APPLE,
+    "corn": ai_model("a_single_yellow_corn_cob_half_wrapped_in", "Corn"),
+    "potato": ai_model("a_potato_with_evenly_coloured_smooth_mat", "Potato"),
+    "cabbage": ai_model("a_single_round_green_cabbage_head_with_c", "Cabbage"),
+    "pumpkin": ai_model("a_single_round_orange_pumpkin_with_deep_", "Pumpkin"),
     "corn_plant": ai_model("a_single_tall_corn_plant_with_green_leav", "CornPlant"),
-    "potato_plant": ai_model("a_single_small_potato_plant_leafy_green_", "PotatoPlant"),
-    "egg": ai_model("a_single_white_chicken_egg_three_quarter", "Egg"),
-    "milk": ai_model("a_single_glass_bottle_of_milk_with_a_blu", "Milk"),
+    "potato_plant": ai_model("a_single_young_potato_plant_with_bushy_g", "PotatoPlant"),
+    "egg": ai_model("a_single_smooth_white_chicken_egg_standi", "Egg"),
+    "milk": ai_model("a_milk_bottle_made_of_clear_glass_filled", "Milk"),
 }
 
 GROCERY = {
-    "apple": apple,
+    "apple": APPLE,
     "banana": banana,
     "bread": bread_loaf,
     "milk": milk_carton,
