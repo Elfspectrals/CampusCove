@@ -45,14 +45,14 @@ async function submit() {
         />
       </div>
       <p v-if="error" class="cc-alert cc-alert-error m-0" role="alert"><UiIcon name="alert" :size="18" /> {{ error }}</p>
-      <button type="submit" :disabled="loading" class="cc-btn cc-btn-pool cc-btn-lg w-full">
+      <button type="submit" :disabled="loading" class="cc-btn cc-btn-sun cc-btn-lg w-full">
         <UiIcon v-if="!loading" name="key" :size="18" />
         {{ loading ? t('auth.forgot.submitting') : t('auth.forgot.submit') }}
       </button>
     </form>
 
     <template #footer>
-      <RouterLink :to="{ name: 'login' }" class="font-extrabold text-sun hover:underline">{{ t('auth.forgot.backToSignIn') }}</RouterLink>
+      <RouterLink :to="{ name: 'login' }" class="font-semibold text-fog underline underline-offset-4 transition-colors hover:text-sun">{{ t('auth.forgot.backToSignIn') }}</RouterLink>
     </template>
   </UiAuthCard>
 </template>

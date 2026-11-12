@@ -35,7 +35,7 @@ const tip = computed(() => tips.value[tipIndex.value % tips.value.length] ?? '')
     <UiLogo size="md" class="scale-110 sm:scale-125" />
 
     <div class="cc-panel w-full max-w-[480px] animate-cc-pop overflow-hidden">
-      <div class="h-2 bg-[linear-gradient(90deg,rgb(var(--cc-sun)),rgb(var(--cc-coral)),rgb(var(--cc-grape)),rgb(var(--cc-pool)))]" />
+      <div class="h-1 bg-sun" />
       <div class="flex flex-col gap-[18px] px-5 pb-6 pt-6 sm:px-7">
         <div class="flex items-baseline justify-between gap-3">
           <p class="cc-eyebrow m-0">{{ t('gameLoading.title') }}</p>
@@ -44,7 +44,7 @@ const tip = computed(() => tips.value[tipIndex.value % tips.value.length] ?? '')
 
         <div class="relative h-[18px] overflow-hidden rounded-full border-2 border-ink-600/60 bg-ink-950">
           <div
-            class="relative h-full rounded-full bg-[linear-gradient(90deg,rgb(var(--cc-sun)),rgb(var(--cc-coral)))] transition-[width] duration-300 ease-out"
+            class="relative h-full rounded-full bg-sun transition-[width] duration-300 ease-out"
             :style="{ width: `${props.percent}%` }"
           >
             <span class="absolute inset-x-1 top-[3px] h-1 rounded-sm bg-white/35" />
@@ -71,7 +71,7 @@ const tip = computed(() => tips.value[tipIndex.value % tips.value.length] ?? '')
       </div>
     </div>
 
-    <p v-if="tip" class="m-0 flex w-full max-w-[480px] items-center gap-2 rounded-2xl border border-white/10 bg-ink-950/50 px-4 py-2.5 text-sm font-semibold text-fog sm:w-auto sm:rounded-full">
+    <p v-if="tip" class="m-0 flex w-full max-w-[480px] items-center gap-2 rounded-2xl border border-line/10 bg-ink-950/50 px-4 py-2.5 text-sm font-semibold text-fog sm:w-auto sm:rounded-full">
       <span class="shrink-0 rounded-md bg-pool px-1.5 py-0.5 text-[11px] font-extrabold text-ink-950">{{ t('gameLoading.tip') }}</span>
       {{ tip }}
     </p>

@@ -55,7 +55,7 @@ async function submit() {
       <div>
         <label for="login-password" class="cc-label">{{ t('auth.password') }}</label>
         <UiPasswordInput id="login-password" v-model="password" required autocomplete="current-password" :aria-invalid="!!error" @input="error = ''" />
-        <RouterLink :to="{ name: 'forgot-password' }" class="mt-2 inline-block text-xs font-extrabold text-pool hover:underline">{{ t('auth.login.forgot') }}</RouterLink>
+        <RouterLink :to="{ name: 'forgot-password' }" class="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-fog underline underline-offset-4 transition-colors hover:text-sun">{{ t('auth.login.forgot') }}</RouterLink>
       </div>
 
       <p v-if="error" class="cc-alert cc-alert-error m-0" role="alert"><UiIcon name="alert" :size="18" /> {{ error }}</p>
@@ -68,7 +68,7 @@ async function submit() {
 
     <template #footer>
       {{ t('auth.login.newHere') }}
-      <RouterLink :to="{ name: 'register' }" class="ml-1 font-extrabold text-sun hover:underline">{{ t('auth.login.create') }}</RouterLink>
+      <RouterLink :to="{ name: 'register' }" class="ml-1 font-semibold text-fog underline underline-offset-4 transition-colors hover:text-sun">{{ t('auth.login.create') }}</RouterLink>
     </template>
   </UiAuthCard>
 </template>

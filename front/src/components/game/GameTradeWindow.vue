@@ -74,7 +74,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey, true))
               min="0"
               :max="offerable?.coins ?? 0"
               step="1"
-              class="w-28 rounded-lg border border-white/15 bg-ink-950/60 px-2 py-1 text-fog"
+              class="w-28 rounded-lg border border-line/15 bg-ink-950/60 px-2 py-1 text-fog"
               :value="draft.coins"
               :disabled="executing || !offerable"
               aria-label="Coins you offer"
@@ -136,7 +136,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey, true))
       </div>
 
       <p v-if="error" class="m-0 bg-coral/20 px-4 py-2 text-xs font-bold text-coral">{{ error }}</p>
-      <footer class="flex flex-wrap items-center justify-end gap-2 border-t border-white/10 px-4 py-3">
+      <footer class="flex flex-wrap items-center justify-end gap-2 border-t border-line/10 px-4 py-3">
         <p class="m-0 mr-auto text-xs text-mist">
           <template v-if="executing">Trading…</template>
           <template v-else-if="state.me.confirmed && !state.partner.confirmed">Waiting for {{ state.partner.pseudo }} to confirm.</template>

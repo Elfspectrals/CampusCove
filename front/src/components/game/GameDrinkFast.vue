@@ -233,7 +233,7 @@ onUnmounted(() => {
 
       <div class="flex flex-wrap items-stretch gap-5 px-5 py-4">
         <div
-          class="relative h-64 w-9 shrink-0 overflow-hidden rounded-lg border-2 border-white/15 bg-ink-950/80"
+          class="relative h-64 w-9 shrink-0 overflow-hidden rounded-lg border-2 border-line/15 bg-ink-950/80"
           role="img"
           :aria-label="`Balance ${Math.round(y * 100)}%, ${zone}`"
         >
@@ -329,7 +329,7 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <footer v-if="finished" class="flex items-center justify-end border-t border-white/10 px-4 py-3">
+      <footer v-if="finished" class="flex items-center justify-end border-t border-line/10 px-4 py-3">
         <button type="button" class="cc-btn cc-btn-sm cc-btn-mint" @click="emit('close')">Back to the bar</button>
       </footer>
     </section>

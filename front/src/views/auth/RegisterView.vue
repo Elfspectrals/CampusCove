@@ -145,7 +145,7 @@ async function focusField(field: string) {
         />
         <p v-if="shown('email')" id="reg-email-error" class="m-0 mt-1.5 text-xs font-bold text-coral" role="alert">
           {{ shown('email') }}
-          <RouterLink v-if="serverErrors.email" :to="{ name: 'login' }" class="ml-1 text-sun underline">{{ t('auth.register.signIn') }}</RouterLink>
+          <RouterLink v-if="serverErrors.email" :to="{ name: 'login' }" class="ml-1 text-fog underline underline-offset-4">{{ t('auth.register.signIn') }}</RouterLink>
         </p>
       </div>
 
@@ -173,7 +173,7 @@ async function focusField(field: string) {
       </div>
 
       <div v-if="!inviteOpen">
-        <button type="button" class="inline-flex items-center gap-1.5 text-sm font-extrabold text-pool hover:underline" @click="inviteOpen = true; focusField('referral')">
+        <button type="button" class="inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-fog transition-colors hover:text-sun" @click="inviteOpen = true; focusField('referral')">
           <UiIcon name="plus" :size="16" /> {{ t('auth.register.inviteToggle') }}
         </button>
       </div>
@@ -202,10 +202,10 @@ async function focusField(field: string) {
           <input id="reg-terms" v-model="acceptedTerms" type="checkbox" class="cc-check mt-0.5" @change="clearServerError('consents')" />
           <i18n-t keypath="register.acceptTerms" tag="span" scope="global">
             <template #terms>
-              <RouterLink :to="localizedTo('legal-terms', locale as Locale)" target="_blank" class="font-extrabold text-sun hover:underline">{{ t('register.terms') }}</RouterLink>
+              <RouterLink :to="localizedTo('legal-terms', locale as Locale)" target="_blank" class="font-semibold text-fog underline underline-offset-4 transition-colors hover:text-sun">{{ t('register.terms') }}</RouterLink>
             </template>
             <template #privacy>
-              <RouterLink :to="localizedTo('legal-privacy', locale as Locale)" target="_blank" class="font-extrabold text-sun hover:underline">{{ t('register.privacy') }}</RouterLink>
+              <RouterLink :to="localizedTo('legal-privacy', locale as Locale)" target="_blank" class="font-semibold text-fog underline underline-offset-4 transition-colors hover:text-sun">{{ t('register.privacy') }}</RouterLink>
             </template>
           </i18n-t>
         </label>
@@ -219,14 +219,13 @@ async function focusField(field: string) {
       <p v-if="formError" class="cc-alert cc-alert-error m-0" role="alert"><UiIcon name="alert" :size="18" /> {{ formError }}</p>
 
       <button type="submit" :disabled="loading" class="cc-btn cc-btn-sun cc-btn-lg w-full">
-        <UiIcon v-if="!loading" name="sparkles" :size="18" />
         {{ loading ? t('auth.register.submitting') : t('auth.register.submit') }}
       </button>
     </form>
 
     <template #footer>
       {{ t('auth.register.haveAccount') }}
-      <RouterLink :to="{ name: 'login' }" class="ml-1 font-extrabold text-sun hover:underline">{{ t('auth.register.signIn') }}</RouterLink>
+      <RouterLink :to="{ name: 'login' }" class="ml-1 font-semibold text-fog underline underline-offset-4 transition-colors hover:text-sun">{{ t('auth.register.signIn') }}</RouterLink>
     </template>
   </UiAuthCard>
 </template>

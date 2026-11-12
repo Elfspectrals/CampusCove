@@ -115,12 +115,12 @@ const canCheckAgain = computed(() => failure.value === 'network' || phase.value 
   <div class="mx-auto w-full max-w-lg">
     <section class="cc-panel p-6 text-center sm:p-8" aria-labelledby="gem-return-title">
       <div role="status" aria-live="polite">
-        <div class="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-ink-950/60" :class="view.tone">
+        <div class="mx-auto grid h-16 w-16 place-items-center rounded-xl bg-ink-800" :class="view.tone">
           <UiCurrency v-if="phase === 'success' && !failure" currency="premium" :size="40" />
           <UiIcon v-else :name="view.icon" :size="34" :class="phase === 'checking' && !failure ? 'animate-spin motion-reduce:animate-none' : ''" />
         </div>
-        <h1 id="gem-return-title" class="cc-display m-0 mt-4 text-3xl leading-tight">{{ view.title }}</h1>
-        <p v-if="view.body" class="m-0 mt-2 text-sm font-semibold text-mist">{{ view.body }}</p>
+        <h1 id="gem-return-title" class="m-0 mt-4 font-display text-3xl leading-tight">{{ view.title }}</h1>
+        <p v-if="view.body" class="m-0 mt-2 text-sm text-mist">{{ view.body }}</p>
       </div>
 
       <dl v-if="order && !failure" class="mx-auto mt-5 max-w-xs space-y-1 rounded-xl bg-ink-950/50 p-3 text-left text-sm font-bold">
@@ -146,7 +146,7 @@ const canCheckAgain = computed(() => failure.value === 'network' || phase.value 
 
       <!-- three labels do not fit on one line of the card: wrap, each button grows to fill its row -->
       <div class="mt-6 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-center [&>*]:sm:grow">
-        <button v-if="canCheckAgain" type="button" class="cc-btn cc-btn-grape" :disabled="busy" @click="checkAgain">
+        <button v-if="canCheckAgain" type="button" class="cc-btn cc-btn-sun" :disabled="busy" @click="checkAgain">
           <UiIcon name="refresh" :size="16" /> {{ t('gems.return.checkAgain') }}
         </button>
         <RouterLink :to="{ name: 'gems' }" class="cc-btn cc-btn-ghost">{{ t('gems.return.backToShop') }}</RouterLink>

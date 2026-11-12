@@ -376,7 +376,7 @@ onUnmounted(() => {
               v-for="(player, index) in players"
               :key="player.sessionId"
               class="flex items-center gap-3 rounded-xl bg-ink-950/40 px-3 py-2"
-              :class="player.sessionId === turn ? 'ring-2 ring-white/40' : ''"
+              :class="player.sessionId === turn ? 'ring-2 ring-line/40' : ''"
             >
               <span class="h-3 w-3 shrink-0 rounded-full" :class="toneOf(index).dot" />
               <div class="min-w-0 flex-1">
@@ -442,7 +442,7 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <footer v-if="ranking" class="flex items-center justify-end border-t border-white/10 px-4 py-3">
+      <footer v-if="ranking" class="flex items-center justify-end border-t border-line/10 px-4 py-3">
         <button type="button" class="cc-btn cc-btn-sm cc-btn-coral" @click="emit('close')">Back to the bar</button>
       </footer>
     </section>

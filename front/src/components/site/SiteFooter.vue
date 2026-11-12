@@ -30,24 +30,24 @@ function switchLocale(next: Locale) {
 </script>
 
 <template>
-  <footer class="border-t border-ink-700/60 bg-ink-950/80 px-4 py-8 text-sm sm:px-8">
+  <footer class="border-t border-line/10 bg-ink-950 px-4 py-8 text-sm sm:px-8">
     <div class="mx-auto flex max-w-6xl flex-col gap-6 md:flex-row md:justify-between">
       <div class="max-w-xs">
         <UiLogo size="sm" />
-        <p class="m-0 mt-2 font-semibold text-mist">{{ t('footer.tagline') }}</p>
-        <p class="m-0 mt-2 text-xs font-semibold text-mist">© {{ year }} {{ SITE.name }}</p>
+        <p class="m-0 mt-2 text-mist">{{ t('footer.tagline') }}</p>
+        <p class="m-0 mt-2 font-mono text-xs text-mist">© {{ year }} {{ SITE.name }}</p>
       </div>
 
       <nav :aria-label="t('footer.legal')">
-        <h2 class="cc-eyebrow m-0 mb-2">{{ t('footer.legal') }}</h2>
+        <h2 class="m-0 mb-2 text-sm font-semibold text-fog">{{ t('footer.legal') }}</h2>
         <ul class="m-0 grid list-none grid-cols-2 gap-x-6 gap-y-1.5 p-0">
           <li v-for="slug in LEGAL_SLUGS" :key="slug">
-            <RouterLink :to="localizedTo(`legal-${slug}`, loc)" class="font-semibold text-fog/85 hover:text-sun hover:underline">
+            <RouterLink :to="localizedTo(`legal-${slug}`, loc)" class="text-mist transition-colors hover:text-fog hover:underline">
               {{ docs[slug].title }}
             </RouterLink>
           </li>
           <li>
-            <button type="button" class="p-0 font-semibold text-fog/85 hover:text-sun hover:underline" @click="openConsentDialog">
+            <button type="button" class="p-0 text-mist transition-colors hover:text-fog hover:underline" @click="openConsentDialog">
               {{ t('footer.manageCookies') }}
             </button>
           </li>
@@ -55,15 +55,15 @@ function switchLocale(next: Locale) {
       </nav>
 
       <div>
-        <h2 class="cc-eyebrow m-0 mb-2">{{ t('footer.language') }}</h2>
-        <div class="flex gap-2" role="group" :aria-label="t('footer.language')">
+        <h2 class="m-0 mb-2 text-sm font-semibold text-fog">{{ t('footer.language') }}</h2>
+        <div class="flex gap-4" role="group" :aria-label="t('footer.language')">
           <button
             v-for="l in (['en', 'fr'] as const)"
             :key="l"
             type="button"
             :lang="l"
             :aria-pressed="loc === l"
-            :class="['cc-btn cc-btn-sm', loc === l ? 'cc-btn-sun' : 'cc-btn-ghost']"
+            :class="['min-h-11 text-sm transition-colors', loc === l ? 'font-semibold text-fog underline underline-offset-4' : 'text-mist hover:text-fog']"
             @click="switchLocale(l)"
           >
             {{ l === 'en' ? 'English' : 'Français' }}

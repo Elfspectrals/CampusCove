@@ -122,3 +122,19 @@ Decision (2026-11-11): /game shows a loading screen (mockup `docs/mockups/game-l
 ## Tooling (done)
 
 - [done] Two fixed local playtest accounts (`make playtest-accounts`, `PlaytestAccountSeeder`) instead of a new account per playtest; running it again resets coins, health and admin rights.
+
+## Site redesign with unslop (doing, branch feat/unslop-ui)
+
+Decision (2026-11-11): the site pages are redesigned with the `unslop` skill (`.claude/skills/unslop/`, CC BY 4.0). Direction: cosy, playful, a little nocturnal; the town as it looks in the game, at golden hour; dark ink neutrals; lamplight yellow (`sun`) is the only accent in the chrome; the chunky pressable sun button is the signature and the primary action. Lilita One for large headlines only, Nunito for the interface. Site pages only: the game HUD keeps the current `cc-*` look until its own step. One screen group per step, each reviewed before the next.
+
+- [doing] Landing: full-bleed render of the real town models (Blender, golden hour) instead of floating cubes, a visible headline that says what the game is, one sun button, quiet feature list and FAQ.
+- [doing] Auth pages (login, register, forgot and reset password): form on plain ink with the town render beside it on desktop, labels in sentence case, one sun button, quiet links.
+- [doing] Logged-in pages and the app shell (home, friends, gems, settings, footer): quiet header and drawer, town render on the Home play card, Home keeps only real player data (the hardcoded level, items, trophies and dates are gone), Home and Friends strings in English and French. Waiting for a review in the browser.
+- [todo] Game HUD and overlays.
+
+Decision (2026-11-11, after review): the first redesign looked too close to the old one. The player now picks one of six styles (mockup `docs/mockups/style-directions.html`): Graphite lobby (default), Arcade, Comic, Tactical HUD, Console, Fireside. A style changes colours, fonts, shapes and the page layout, on the site and in the game. Saved in the browser (`cc.theme`), not on the account. Cove Nights is dropped.
+
+- [done] Theme system: `src/theme/themes.ts`, `useTheme`, the saved theme applied in `index.html` before the first paint, every `cc-*` class driven by per-theme CSS variables, twelve self-hosted fonts, style picker in Settings.
+- [done] Per-theme layouts (`src/theme/layouts.ts`): top bar, side menu (Tactical HUD) or floating pill (Console) on desktop; landing hero on the left, centred, at the bottom or in two columns with a framed render (Comic); auth form beside the render, or in a card over it (Arcade, Fireside). Phones keep the top bar and drawer.
+- [done] Home, Friends, Gems and Settings on every theme: pages use the theme panel (`cc-panel`) and the `line` token instead of white lines, so the light Comic theme works. The Home lobby changes layout per theme (three columns, play banner, big play card, profile strip...).
+- [done] Game HUD on every theme and the style picker in the in-game Settings, checked in a playtest (loading screen, pause screen, vitals, hotbar, inventory, live switch from the game menu). HUD positions stay the same on every theme: they are gameplay, not decoration. Not checked yet: the pub mini-games, trade window and shops on each theme.
