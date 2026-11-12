@@ -3,7 +3,9 @@
 // show up in a running game.
 import type { Json } from './backend.ts'
 import { parseNpcBehavior, type CropKind, type NpcBehaviorFile, type Vec3Tuple } from './npcBehavior.ts'
-import { NpcBrain, type NpcHome, type NpcState, type PlantSource } from './npcBrain.ts'
+import { NpcBrain, type NpcHome, type NpcShop, type NpcState, type PlantSource } from './npcBrain.ts'
+import { shopNav } from './shopNav.ts'
+import { CheckoutLine, shopLayout } from './shopSpots.ts'
 import type { GameClient, Player } from './types.ts'
 import { readWorldFile, worldCropPlants, worldOrchard } from './world.ts'
 
@@ -47,14 +49,28 @@ export function plantSource(crops: readonly { x: number; y: number; z: number; c
   return (kind) => byKind.get(kind) ?? []
 }
 
+/** One layout and one checkout line per shop zone, shared by its shoppers. */
+function shopsFor(): (zone: string, decor: Json) => NpcShop {
+  const shops = new Map<string, NpcShop>()
+  return (zone, decor) => {
+    let shop = shops.get(zone)
+    if (!shop) {
+      shop = { layout: shopLayout(decor), line: new CheckoutLine(), nav: shopNav(decor) }
+      shops.set(zone, shop)
+    }
+    return shop
+  }
+}
+
 export function buildBrains(file: NpcBehaviorFile, zones: ReadonlyMap<string, Json>, random: () => number = Math.random, plants: PlantSource = () => []): NpcBrain[] {
+  const shopOf = shopsFor()
   return file.npcs.map((a) => {
     const decor = zones.get(a.zone)
     if (!decor) throw new Error(`no zone "${a.zone}"`)
     const home = zoneNpcHome(a.zone, decor, a.npc)
     const far = Object.entries(a.points).find(([, [x, , z]]) => Math.hypot(x - home.position[0], z - home.position[2]) > MAX_POINT_DISTANCE)
     if (far) throw new Error(`${a.zone}/${a.npc}: point ${far[0]} is over ${MAX_POINT_DISTANCE} m from the NPC`)
-    return new NpcBrain(`${a.zone}/${a.npc}`, file.trees.get(a.tree)!, home, a.points, random, plants)
+    return new NpcBrain(`${a.zone}/${a.npc}`, file.trees.get(a.tree)!, home, a.points, { random, plants, shop: shopOf(a.zone, decor) })
   })
 }
 

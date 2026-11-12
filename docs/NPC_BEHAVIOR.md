@@ -11,8 +11,11 @@ joueurs voient donc le même NPC au même endroit.
 
 **Limites de la v1.**
 
-- Pas de navmesh : un NPC va en ligne droite vers un point. C'est l'auteur qui place les points pour que le
-  chemin soit dégagé (la carte de l'onglet NPCs trace les lignes). Le sol suit la hauteur des points.
+- Pas de navmesh dans le monde ouvert : un NPC y va en ligne droite vers un point. C'est l'auteur qui place les
+  points pour que le chemin soit dégagé (la carte de l'onglet NPCs trace les lignes). Le sol suit la hauteur des
+  points. Dans une zone qui a des `bounds` (les boutiques), le serveur contourne les étagères : grille de 0,4 m sur
+  la zone, empreinte des étagères agrandie de 0,35 m, A* puis chemin tendu (`socket/src/shopNav.ts`). Les autres
+  props (caisses, présentoirs) ne sont pas évités.
 - Seuls les NPC sans rôle (`role`) et qui ne tiennent pas une zone de vente (`areas[].npc`) peuvent avoir un
   arbre : un vendeur doit rester derrière son comptoir.
 - Un NPC piloté n'a pas de collision : les joueurs le traversent.
@@ -66,7 +69,9 @@ Chaque nœud : `{ "id", "type", ...paramètres, "decorators"?: [], "services"?: 
 | `pick_crop` | `crop: "any" \| "corn" \| "potato" \| "cabbage" \| "pumpkin" \| "apple_tree"`, `radius` 1 à 60 m, `speed` | Va à une plante de ce type tirée au hasard à moins de `radius` de `home` (cultures du `world.manifest.json`, arbres du verger), s'arrête à 0,7 m d'une culture ou 1,3 m d'un tronc, se tourne vers elle et joue `pick` 3 s. Purement visuel : rien n'est récolté, la plante reste aux joueurs. Échoue s'il n'y a aucune plante dans le rayon. |
 | `wait` | `min`, `max` en s, 0 ≤ min ≤ max ≤ 600 | Attend une durée tirée entre les deux. |
 | `face` | `point: PointRef` | Se tourne vers le point (immédiat). Échoue si `target` est vide. |
-| `animate` | `clip: "idle" \| "sit" \| "pick" \| "eat" \| "drink"`, `seconds` 0,5 à 600 | Joue le clip pendant la durée (`sit` et `idle` tenus, les autres une fois). |
+| `browse_shelf` | `radius` 1 à 60 m, `seconds` 2 à 30, `take` 0 à 100 (%) | Dans une boutique : va devant un emplacement d'étagère garni tiré au hasard à moins de `radius` de `home` (0,5 m devant l'étagère), le regarde (`browse`) pendant `seconds`, puis avec `take` % de chance prend un article de cet emplacement (`take`) et le garde en main (`held`). Le stock ne bouge pas. Échoue sans étagère dans le rayon. |
+| `checkout` | aucun | Fait la queue chez le caissier de la zone (0,6 m après le comptoir, la file part vers le milieu de la boutique, 0,9 m entre deux clients), avance quand ceux de devant ont payé, joue `pay` face au caissier, puis lâche l'article. Faux achat : aucun argent ne bouge. Échoue les mains vides ou sans caissier. |
+| `animate` | `clip: "idle" \| "sit" \| "pick" \| "eat" \| "drink" \| "browse" \| "take" \| "pay"`, `seconds` 0,5 à 600 | Joue le clip pendant la durée (`sit`, `idle` et `browse` tenus, les autres une fois). |
 | `say` | `lines`: 1 à 10 textes de 1 à 120 caractères, `seconds` 1 à 6 (durée de vie d'une bulle de chat) | Bulle au-dessus de la tête avec une ligne tirée au hasard, pendant la durée. |
 
 ### Décorateurs (6 au plus par nœud)
@@ -109,9 +114,14 @@ Chaque nœud : `{ "id", "type", ...paramètres, "decorators"?: [], "services"?: 
 | `npcs` | serveur → client, à l'arrivée et après rechargement | `{ npcs: NpcState[] }` : liste complète, un NPC absent redevient immobile à sa place |
 | `npc_state` | serveur → tous, à chaque changement | `NpcState` |
 
-`NpcState` = `{ id: "<zone>/<npc>", x, y, z, ry, clip, clipSeq, move, say }` : position des pieds et cap au départ,
+`NpcState` = `{ id: "<zone>/<npc>", x, y, z, ry, clip, clipSeq, move, say, held }` : position des pieds et cap au départ,
 `clip` parmi ceux de `animate`, `clipSeq` augmente à chaque clip lancé (rejouer deux fois le même clip), `move` = `{ x, y, z, ms }` (arrivée et durée restante, ou `null`),
-`say` = texte ou `null`. Le client ne renvoie rien : les NPC n'acceptent aucun message.
+`say` = texte ou `null`, `held` = `{ code, key }` de l'article en main (même modèle que sur l'étagère) ou `null`. Un trajet
+qui contourne des étagères arrive en plusieurs `npc_state`, un par segment. Le client ne renvoie rien : les NPC
+n'acceptent aucun message.
+
+Clips du corps de base : `browse` → `Browse` (boucle), `take` → `TakeItem`, `pay` → `Pay`, en plus des clips
+existants.
 
 ## Fichiers
 

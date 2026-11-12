@@ -4,7 +4,7 @@
 export type Vec3Tuple = [number, number, number]
 export type Abort = 'none' | 'self' | 'lower' | 'both'
 export type MoveSpeed = 'walk' | 'run'
-export type NpcClip = 'idle' | 'sit' | 'pick' | 'eat' | 'drink'
+export type NpcClip = 'idle' | 'sit' | 'pick' | 'eat' | 'drink' | 'browse' | 'take' | 'pay'
 export type CompositeType = 'selector' | 'sequence' | 'random'
 export type CropKind = 'any' | 'corn' | 'potato' | 'cabbage' | 'pumpkin' | 'apple_tree'
 
@@ -40,6 +40,8 @@ export type TaskNode = NodeBase &
     | { type: 'move_to'; point: string; speed: MoveSpeed }
     | { type: 'wander'; radius: number; speed: MoveSpeed }
     | { type: 'pick_crop'; crop: CropKind; radius: number; speed: MoveSpeed }
+    | { type: 'browse_shelf'; radius: number; seconds: number; take: number }
+    | { type: 'checkout' }
     | { type: 'wait'; min: number; max: number }
     | { type: 'face'; point: string }
     | { type: 'animate'; clip: NpcClip; seconds: number }
@@ -88,7 +90,9 @@ const TASK_FIELDS: Record<string, Record<string, Field>> = {
   pick_crop: { crop: { kind: 'choice', options: ['any', 'corn', 'potato', 'cabbage', 'pumpkin', 'apple_tree'] }, radius: { kind: 'number', min: 1, max: 60 }, speed: SPEED },
   wait: { min: { kind: 'number', min: 0, max: 600 }, max: { kind: 'number', min: 0, max: 600 } },
   face: { point: { kind: 'point' } },
-  animate: { clip: { kind: 'choice', options: ['idle', 'sit', 'pick', 'eat', 'drink'] }, seconds: { kind: 'number', min: 0.5, max: 600 } },
+  browse_shelf: { radius: { kind: 'number', min: 1, max: 60 }, seconds: { kind: 'number', min: 2, max: 30 }, take: { kind: 'number', min: 0, max: 100, integer: true } },
+  checkout: {},
+  animate: { clip: { kind: 'choice', options: ['idle', 'sit', 'pick', 'eat', 'drink', 'browse', 'take', 'pay'] }, seconds: { kind: 'number', min: 0.5, max: 600 } },
   say: { lines: { kind: 'lines', maxLines: 10, maxLength: 120 }, seconds: { kind: 'number', min: 1, max: 6 } },
 }
 

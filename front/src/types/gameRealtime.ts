@@ -427,4 +427,6 @@ export interface NpcStatePayload {
   clipSeq: number
   move: { x: number; y: number; z: number; ms: number } | null
   say: string | null
+  /** Item a shopper carries from a shelf to the checkout (`code` + model `key`, as on the shelf). */
+  held: { code: string; key: string } | null
 }

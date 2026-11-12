@@ -1,7 +1,8 @@
 import { onUnmounted } from 'vue'
 import type * as THREE from 'three'
-import { setAvatarEating, setAvatarPicking, setAvatarSeated, updateAvatarAnimation } from '../../avatar/glbCharacter'
+import { playAvatarGesture, setAvatarEating, setAvatarPicking, setAvatarPose, setAvatarSeated, updateAvatarAnimation } from '../../avatar/glbCharacter'
 import { createChatBubble, type ChatBubble } from '../../game/chatBubble'
+import { createNpcHeldItem, type NpcHeldItem } from '../../game/npcBehavior/npcHeldItem'
 import { npcPoseAt, turnTowards } from '../../game/npcBehavior/npcMotion'
 import type { NpcStatePayload } from '../../types/gameRealtime'
 
@@ -20,6 +21,8 @@ interface Driven {
   appliedSeq: number
   bubble: ChatBubble | null
   bubbleText: string | null
+  held: NpcHeldItem | null
+  heldCode: string | null
 }
 
 /**
@@ -35,10 +38,18 @@ export function useNpcBrains(deps: NpcBrainsDeps) {
     d.bubbleText = null
   }
 
+  function clearHeld(d: Driven): void {
+    d.held?.dispose()
+    d.held = null
+    d.heldCode = null
+  }
+
   function release(id: string): void {
     const d = driven.get(id)
     if (!d) return
     clearBubble(d)
+    clearHeld(d)
+    if (d.object) setAvatarPose(d.object, null)
     driven.delete(id)
     deps.releaseNpc(id)
   }
@@ -50,7 +61,7 @@ export function useNpcBrains(deps: NpcBrainsDeps) {
       d.receivedAt = performance.now()
       return
     }
-    driven.set(state.id, { state, receivedAt: performance.now(), object: null, appliedSeq: -1, bubble: null, bubbleText: null })
+    driven.set(state.id, { state, receivedAt: performance.now(), object: null, appliedSeq: -1, bubble: null, bubbleText: null, held: null, heldCode: null })
   }
 
   function onSnapshot(payload: { npcs?: NpcStatePayload[] }): void {
@@ -63,11 +74,14 @@ export function useNpcBrains(deps: NpcBrainsDeps) {
   function applyClip(d: Driven, object: THREE.Object3D): void {
     const { clip, clipSeq } = d.state
     setAvatarSeated(object, clip === 'sit')
+    setAvatarPose(object, clip === 'browse' ? 'Browse' : null)
     if (clip !== 'pick') setAvatarPicking(object, false)
     if (clipSeq === d.appliedSeq) return
     d.appliedSeq = clipSeq
     if (clip === 'pick') setAvatarPicking(object, true)
     else if (clip === 'eat' || clip === 'drink') setAvatarEating(object, clip)
+    else if (clip === 'take') playAvatarGesture(object, 'TakeItem')
+    else if (clip === 'pay') playAvatarGesture(object, 'Pay')
   }
 
   function applyBubble(d: Driven, object: THREE.Object3D, dt: number): void {
@@ -81,6 +95,16 @@ export function useNpcBrains(deps: NpcBrainsDeps) {
     if (d.bubble && !d.bubble.update(dt)) d.bubble = null
   }
 
+  function applyHeld(d: Driven, object: THREE.Object3D): void {
+    const wanted = d.state.held ?? null
+    const code = wanted ? `${wanted.code}/${wanted.key}` : null
+    if (code === d.heldCode) return
+    clearHeld(d)
+    if (!wanted) return
+    d.held = createNpcHeldItem(object, wanted)
+    d.heldCode = code
+  }
+
   function tick(dt: number): void {
     const now = performance.now()
     for (const [id, d] of driven) {
@@ -92,7 +116,10 @@ export function useNpcBrains(deps: NpcBrainsDeps) {
       object.rotation.y = turnTowards(object.rotation.y, d.state.ry, TURN_RAD_PER_S * dt)
       applyClip(d, object)
       applyBubble(d, object, dt)
-      if (object.parent?.visible) updateAvatarAnimation(object, dt, pose.speed)
+      applyHeld(d, object)
+      if (!object.parent?.visible) continue
+      updateAvatarAnimation(object, dt, pose.speed)
+      d.held?.update()
     }
   }
 

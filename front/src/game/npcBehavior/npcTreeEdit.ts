@@ -186,6 +186,10 @@ export function describeNode(node: BtNode): string {
       return `${node.clip} · ${node.seconds} s`
     case 'pick_crop':
       return `${node.crop.replace('_', ' ')} within ${node.radius} m · ${node.speed}`
+    case 'browse_shelf':
+      return `shelves within ${node.radius} m · ${node.seconds} s · takes ${node.take} %`
+    case 'checkout':
+      return 'queue and pay the clerk'
     case 'say':
       return `“${node.lines[0]}”${node.lines.length > 1 ? ` +${node.lines.length - 1}` : ''}`
     default:
@@ -212,8 +216,8 @@ export function describeService(s: Service): string {
   return `Perceive players · ${s.radius} m every ${s.interval} s`
 }
 
-/** Wander and Pick Crop radii used anywhere in the tree, for the placement map. */
+/** Wander, Pick Crop and Browse Shelf radii used anywhere in the tree, for the placement map. */
 export function areaRadii(root: BtNode): number[] {
-  const own = root.type === 'wander' || root.type === 'pick_crop' ? [root.radius] : []
+  const own = root.type === 'wander' || root.type === 'pick_crop' || root.type === 'browse_shelf' ? [root.radius] : []
   return [...own, ...(isComposite(root) ? root.children.flatMap(areaRadii) : [])]
 }

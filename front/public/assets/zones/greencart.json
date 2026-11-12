@@ -51,6 +51,126 @@
       ]
     },
     {
+      "id": "greencart_shopper_1",
+      "kind": "npc",
+      "position": [
+        -342.05,
+        0.2,
+        -96.18
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pose": "idle",
+      "vendor": false,
+      "body": "#c8946a",
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "long",
+          "color": "#3b2a1f"
+        },
+        {
+          "slot": "top",
+          "key": "sweater",
+          "color": "#c9705a"
+        },
+        {
+          "slot": "bottom",
+          "key": "jeans",
+          "color": "#3a4f7a"
+        },
+        {
+          "slot": "shoes",
+          "key": "runners",
+          "color": "#eeeeee"
+        }
+      ]
+    },
+    {
+      "id": "greencart_shopper_2",
+      "kind": "npc",
+      "position": [
+        -338.05,
+        0.2,
+        -100.13
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pose": "idle",
+      "vendor": false,
+      "body": "#8b6a4f",
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "short",
+          "color": "#1e1a17"
+        },
+        {
+          "slot": "top",
+          "key": "hoodie",
+          "color": "#4b6a8f"
+        },
+        {
+          "slot": "bottom",
+          "key": "cargo",
+          "color": "#5b5a45"
+        },
+        {
+          "slot": "shoes",
+          "key": "sneakers",
+          "color": "#2a2a2a"
+        }
+      ]
+    },
+    {
+      "id": "greencart_shopper_3",
+      "kind": "npc",
+      "position": [
+        -347.95,
+        0.2,
+        -104.15
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pose": "idle",
+      "vendor": false,
+      "body": "#f0c8a0",
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "curly",
+          "color": "#a0522d"
+        },
+        {
+          "slot": "top",
+          "key": "plaid_shirt",
+          "color": "#a33b3b"
+        },
+        {
+          "slot": "bottom",
+          "key": "leggings",
+          "color": "#2a2e35"
+        },
+        {
+          "slot": "shoes",
+          "key": "slides",
+          "color": "#d0d0d0"
+        }
+      ]
+    },
+    {
       "id": "greencart_cart_pen",
       "kind": "item",
       "key": "cart_pen",

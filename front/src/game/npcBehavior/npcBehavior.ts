@@ -19,12 +19,12 @@ export const MAX_POINT_DISTANCE = 60
 const MAX_NAME = 40
 
 export const COMPOSITE_TYPES = ['selector', 'sequence', 'random'] as const
-export const TASK_TYPES = ['move_to', 'wander', 'pick_crop', 'wait', 'face', 'animate', 'say'] as const
+export const TASK_TYPES = ['move_to', 'wander', 'pick_crop', 'browse_shelf', 'checkout', 'wait', 'face', 'animate', 'say'] as const
 export const DECORATOR_TYPES = ['has_target', 'time_of_day', 'chance', 'cooldown', 'loop'] as const
 export const SERVICE_TYPES = ['perceive_players'] as const
 const ABORTS = ['none', 'self', 'lower', 'both'] as const
 const SPEEDS = ['walk', 'run'] as const
-const CLIPS = ['idle', 'sit', 'pick', 'eat', 'drink'] as const
+const CLIPS = ['idle', 'sit', 'pick', 'eat', 'drink', 'browse', 'take', 'pay'] as const
 /** What Pick Crop looks for: a crop of the farm fields, an orchard tree, or any of them. */
 const CROP_KINDS = ['any', 'corn', 'potato', 'cabbage', 'pumpkin', 'apple_tree'] as const
 const MAX_PICK_RADIUS = 60
@@ -65,6 +65,8 @@ type TaskNode = NodeBase &
     | { type: 'move_to'; point: string; speed: MoveSpeed }
     | { type: 'wander'; radius: number; speed: MoveSpeed }
     | { type: 'pick_crop'; crop: CropKind; radius: number; speed: MoveSpeed }
+    | { type: 'browse_shelf'; radius: number; seconds: number; take: number }
+    | { type: 'checkout' }
     | { type: 'wait'; min: number; max: number }
     | { type: 'face'; point: string }
     | { type: 'animate'; clip: NpcClip; seconds: number }
@@ -140,6 +142,26 @@ export const NODE_SPECS: Record<NodeSpec['type'], NodeSpec> = {
       SPEED_FIELD,
     ],
     defaults: { crop: 'any', radius: 30, speed: 'walk' },
+  },
+  browse_shelf: {
+    type: 'browse_shelf',
+    label: 'Browse Shelf',
+    group: 'task',
+    hint: 'In a shop zone: walks to a random shelf slot with goods, looks at it, then may take an item into its hand (nothing leaves the stock).',
+    fields: [
+      { key: 'radius', label: 'Search radius from home (m)', kind: 'number', min: 1, max: MAX_PICK_RADIUS, step: 1 },
+      { key: 'seconds', label: 'Looking time (s)', kind: 'number', min: 2, max: 30, step: 0.5 },
+      { key: 'take', label: 'Takes an item (%)', kind: 'number', min: 0, max: 100, integer: true, step: 5 },
+    ],
+    defaults: { radius: 30, seconds: 5, take: 60 },
+  },
+  checkout: {
+    type: 'checkout',
+    label: 'Checkout',
+    group: 'task',
+    hint: 'Queues at the clerk of the shop zone and pays for what is in hand (fake buying). Fails with empty hands.',
+    fields: [],
+    defaults: {},
   },
   wait: {
     type: 'wait',

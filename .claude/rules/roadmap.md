@@ -135,6 +135,10 @@ Decision (2026-11-12): zone NPCs get UE5-style behavior trees (composites, tasks
 - [doing] In-game display (`useNpcBrains`): glide along the server's moves, clips, speech bubbles. Typechecked and unit-tested, not yet seen in a playtest.
 - Only NPCs without a role or sale area can get a tree; NPCs walk in straight lines (no navmesh) and have no collision while driven.
 - [done] Pick Crop task (decided 2026-11-12, after the first look: the farmhand picked in the void): walks to a random crop or orchard tree of the chosen kind within a radius of home, faces it and plays Pick for 3 s. Visual only, nothing is harvested. The farmhand now picks 5 random plants of the field, then goes home for a break. The editor map shows the zone's plants.
+- [doing] GreenCart shoppers (decided 2026-11-12): Browse Shelf (walk to a stocked shelf slot, look, maybe take an item into the hand, stock untouched) and Checkout (queue at the clerk, move up, pay, fake buying) tasks; three shoppers in GreenCart on a Shopper tree; Browse, TakeItem and Pay clips on the base body; in shop zones the socket walks NPCs around the shelves (grid A*, `shopNav.ts`). Checked live with a socket client; not yet seen in a playtest.
+- [todo] Clothes shops: Window Shop at mannequins, hold a piece up at the mirror.
+- [todo] Mall corridor: foot traffic between shop doors with bags, benches, pairs chatting, phone and coffee (needs a `mall` zone or points between the doors).
+- [todo] Reactions everywhere: wave at a player, step aside, follow with the head.
 - [todo] Live debugging like UE5: highlight the running branch of a chosen NPC in the graph.
 
 ## Later

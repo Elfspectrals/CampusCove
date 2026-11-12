@@ -194,6 +194,65 @@
           }
         ]
       }
+    },
+    "shopper": {
+      "name": "Shopper",
+      "points": [],
+      "root": {
+        "id": "root",
+        "type": "sequence",
+        "decorators": [],
+        "services": [],
+        "children": [
+          {
+            "id": "browse",
+            "type": "browse_shelf",
+            "decorators": [
+              {
+                "type": "loop",
+                "count": 3
+              }
+            ],
+            "radius": 20,
+            "seconds": 4,
+            "take": 50
+          },
+          {
+            "id": "pay_if_holding",
+            "type": "selector",
+            "decorators": [],
+            "services": [],
+            "children": [
+              {
+                "id": "pay",
+                "type": "checkout",
+                "decorators": []
+              },
+              {
+                "id": "nothing_to_buy",
+                "type": "wait",
+                "decorators": [],
+                "min": 1,
+                "max": 1
+              }
+            ]
+          },
+          {
+            "id": "back",
+            "type": "move_to",
+            "decorators": [],
+            "point": "home",
+            "speed": "walk"
+          },
+          {
+            "id": "rest",
+            "type": "wait",
+            "decorators": [],
+            "min": 3,
+            "max": 8
+          }
+        ]
+      }
     }
   },
   "npcs": [
@@ -213,6 +272,24 @@
       "zone": "farm",
       "npc": "farmhand",
       "tree": "field_worker",
+      "points": {}
+    },
+    {
+      "zone": "greencart",
+      "npc": "greencart_shopper_1",
+      "tree": "shopper",
+      "points": {}
+    },
+    {
+      "zone": "greencart",
+      "npc": "greencart_shopper_2",
+      "tree": "shopper",
+      "points": {}
+    },
+    {
+      "zone": "greencart",
+      "npc": "greencart_shopper_3",
+      "tree": "shopper",
       "points": {}
     }
   ]

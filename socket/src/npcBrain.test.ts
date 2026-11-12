@@ -108,7 +108,7 @@ test('cooldown, chance and loop decorators', () => {
   assert.equal(brain.state(12200).clip, 'eat')
 
   const never = treeOf({ id: 's', type: 'selector', children: [{ id: 'eat', type: 'animate', clip: 'eat', seconds: 1, decorators: [{ type: 'chance', percent: 50 }] }, { id: 'w', type: 'wait', min: 1, max: 1 }] })
-  const unlucky = new NpcBrain('z/n', never, HOME, {}, () => 0.9)
+  const unlucky = new NpcBrain('z/n', never, HOME, {}, { random: () => 0.9 })
   unlucky.tick(world(0))
   assert.equal(unlucky.state(0).clip, 'idle')
 })
@@ -150,7 +150,7 @@ test('pick crop walks to a plant of the kind within the radius, faces it, then p
     [{ x: -6, y: 0, z: 0 }]
   )
   const tree = treeOf({ id: 'p', type: 'pick_crop', crop: 'corn', radius: 20, speed: 'walk' })
-  const brain = new NpcBrain('z/n', tree, HOME, {}, () => 0.99, plants)
+  const brain = new NpcBrain('z/n', tree, HOME, {}, { random: () => 0.99, plants })
   brain.tick(world(0))
   const walk = brain.state(0)
   assert.equal(walk.move?.x, 10 - PICK_STAND.crop, 'the corn 50 m away and the potato are not candidates')
@@ -165,11 +165,11 @@ test('pick crop walks to a plant of the kind within the radius, faces it, then p
   brain.tick(world(arrive + NPC_PICK_MS))
   assert.equal(brain.state(arrive + NPC_PICK_MS).clip, 'idle', 'done: the root starts over')
 
-  const orchard = new NpcBrain('z/n', treeOf({ id: 'p', type: 'pick_crop', crop: 'apple_tree', radius: 20, speed: 'walk' }), HOME, {}, () => 0, plants)
+  const orchard = new NpcBrain('z/n', treeOf({ id: 'p', type: 'pick_crop', crop: 'apple_tree', radius: 20, speed: 'walk' }), HOME, {}, { random: () => 0, plants })
   orchard.tick(world(0))
   assert.equal(orchard.state(0).move?.x, -6 + PICK_STAND.tree, 'trees are picked from the trunk')
 
-  const nothing = new NpcBrain('z/n', treeOf({ id: 'p', type: 'pick_crop', crop: 'pumpkin', radius: 20, speed: 'walk' }), HOME, {}, () => 0, plants)
+  const nothing = new NpcBrain('z/n', treeOf({ id: 'p', type: 'pick_crop', crop: 'pumpkin', radius: 20, speed: 'walk' }), HOME, {}, { random: () => 0, plants })
   nothing.tick(world(0))
   assert.equal(nothing.state(0).move, null, 'no pumpkin around: the task fails, nobody walks')
 })

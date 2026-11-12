@@ -46,6 +46,9 @@ Clips are phase functions `f(ph, P)` sampled by `sample_actions(arm, clips, fps=
     positive raises the right arm sideways.
   - `Hips` `ry` positive lowers the left hip.
   - `Hand` `rx` negative bends the hand toward the face, like a negative `LowerArm` `rx`.
+  - `Head` `rz` positive turns the face to the character's left; `Head` `ry` positive tilts the head toward its left
+    shoulder; `Chest` `rz` positive brings the right shoulder forward (torso turns left). With the arm swung forward
+    (`UpperArm.R` `rx` −60), `UpperArm.R` `rz` positive brings the hand toward the midline (measured 2026-11-12).
   Any other sign is checked on a render before it is trusted.
 - `sample_actions` deletes every NLA track first: always pass the full clip dict.
 
@@ -60,6 +63,9 @@ Clips are phase functions `f(ph, P)` sampled by `sample_actions(arm, clips, fps=
 | Eat | 30 | 1.0 | one-shot | `pose_eat`, hand at the mouth from 0.33 s, two bites, chew (upper body only) |
 | Drink | 30 | 1.0 | one-shot | `pose_drink`, hand at the mouth from 0.33 s, head back 22° (upper body only) |
 | Pick | 90 | 3.0 | one-shot | `pose_pick`, base body only (`run_wear.py`) |
+| Browse | 120 | 4.0 | yes | `pose_browse`, base body only: weight shift, head scans the shelf, left hand to the chin (plateau 0.15-0.41), lean to read a label with the right hand forward (0.64-0.89), feet pinned by `leg_ik` |
+| TakeItem | 45 | 1.5 | one-shot | `pose_take_item`, base body only: right palm at 1.23 m and 0.64 m forward at 0.33, closes at 0.40 (1.30 m), down beside the right hip at 0.70 (0.95 m), rest at 1.0 |
+| Pay | 45 | 1.5 | one-shot | `pose_pay`, base body only: right palm at 1.10 m and 0.50 m forward from 0.33 to 0.62 with a small nod, rest at 1.0 |
 
 Every clip is keyed from frame 0 (glTF time starts at 0). Gaits plant the feet with `leg_ik` (analytic two-bone IK,
 knee forward): the stance foot moves back at exactly the design speed, so there is no slide at timeScale 1.
