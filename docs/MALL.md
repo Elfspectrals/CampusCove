@@ -212,15 +212,14 @@ Après le script : `make seed-shop` (30 articles consommables du centre) et `doc
 - `useFurnitureStore(deps)` : `deps.store?` = `{ key, interiorLayoutUrl, modelUrl(display), clerkColors? }` (défaut Cove
   Home) ; instancié cinq fois dans `GameView.vue` (Cove Home, Hearth & Hollow, GreenCart, Crispin's, Candy Cloud).
   Quand le `interior.layout.json` a `counter` (point client) et `clerk` (`position`, `yaw`), la boutique vend au
-  **panier** : `toggleTarget()` au clic (un exemplaire par article, un second clic le repose : `/shop/checkout` refuse
-  deux fois le même article), `tryOpenCheckout()` à la caisse (`COUNTER_REACH`
-  2,2 m), `pay()` via `POST /shop/checkout`, invite « Pay » sur la tête du caissier (`updatePrompt`, `deps.canvasRef`) ;
+  **panier partagé** (`docs/SHOP_CART.md`) : `addTarget()` au clic ajoute un exemplaire, `tryOpenCheckout()` à la
+  caisse (`COUNTER_REACH` 2,2 m) ouvre le panier avec les lignes de cette boutique payables (`POST /shop/checkout`),
+  invite « Pay » sur la tête du caissier (`updatePrompt`, `deps.canvasRef`) ;
   sans `counter`, achat immédiat (Cove Home). Un affichage avec `stack: [colonnes, rangées]` est cloné en grille
-  (`STACK_GAP` 2 cm). `GameStoreItemCard` reçoit `brand` et `basket`. Le caissier (tenue, couleurs de l'enseigne,
+  (`STACK_GAP` 2 cm). `GameStoreItemCard` reçoit `brand` et `cart`. Le caissier (tenue, couleurs de l'enseigne,
   bloqueur `<key>_clerk`, regard vers le client) est `game/store/storeClerk.ts`, partagé avec `useClothingStore`.
-- `GameView.vue` : `basketStore` = la boutique de vêtements active ou la boutique du centre à caisse ; le bandeau
-  « Basket », l'invite caisse, `GameBasketCheckout` et le retour sont communs (`basketTitle`, `basketItems`,
-  `checkoutOpen`…). `zoneMusic` joue la musique de la zone du manifeste qui en déclare une (`music`) tant que le joueur
+- `GameView.vue` : `cartStore` = la boutique à caisse où se trouve le joueur ; le bandeau « Cart », l'invite caisse et
+  `GameShopCart` sont communs à toutes les boutiques (`useShopCart`). `zoneMusic` joue la musique de la zone du manifeste qui en déclare une (`music`) tant que le joueur
   est dans ses bornes et hors bâtiment.
 - `useClothingStore(deps)` : `deps.store?` = `{ key, interiorLayoutUrl, clerkColors }` (défaut Cove Threads) ; le
   bloqueur du vendeur est `<key>_clerk`. Instancié trois fois (Cove Threads, Northline, Summit Sports) ; la vue affiche

@@ -156,6 +156,13 @@ Decision (2026-11-10): every shop works the same way (items and shelves in a sel
 - [done] Shelf prop with item slots (gondola, wall, fridge, chiller): per slot item, count shown, arrangement (rows, messy, stack, front), "out of stock" tag, sold from the slot; GreenCart stocked with it. Spec in `design-plans/shelf-slots.md`.
 - [todo] Playtest the shops in game (basket from slots, frame rate in GreenCart).
 
+## Multi-shop cart (doing, branch feat/multi-shop-cart)
+
+Decision (2026-11-12): one cart for every shop with a cashier, instead of one basket per shop emptied on leaving. A click on an item adds one to the cart (again for one more); the cart screen (L, rebindable, or Use at a cashier) shows every shop's lines with quantity, remove and totals. Each shop's lines are paid at that shop's own cashier, in cash. Clothes stay one at a time. A payment carries a checkout key so a retry never charges twice. Contract in `docs/SHOP_CART.md`.
+
+- [doing] Cart and cart screen, quantities on `/shop/checkout` and `zone_checkout`, `shop_checkouts` idempotency table. Server checks tested; waiting for a playtest.
+- [done] No price card in shops (decided 2026-11-12 from the user's screenshot of the GreenCart orange juice card): only the item models show; the price is in the aim prompt, the item card and the cart. The `priceTags` area option, its editor checkbox and `priceTag.ts` are gone.
+
 ## Mall editor (in progress, branch feat-shop-editor)
 
 - [in progress] `/admin/editor`, a UE5-style level editor: templates built per cell size (decor by category, items for sale or as props, NPC extras, one vendor, dressable mannequins), saved as committed JSON by a dev-only endpoint, assigned to free planned cells, opened by a `build_mall.py` rebuild.

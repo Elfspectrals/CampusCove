@@ -2,16 +2,33 @@ import { callRealtimeBackend, errorPayload } from './backend.ts'
 import type { ClientPayload, GameClient, GameRoom } from './types.ts'
 import { worldBuyer, worldZoneBounds } from './world.ts'
 
-const MAX_BASKET = 50
+/** Same caps as Laravel's ShopCheckoutRequest (docs/SHOP_CART.md). */
+const MAX_BASKET_LINES = 50
+const MAX_LINE_QUANTITY = 20
 const MAX_SALE = 999
 const BUYER_REACH = 3
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+interface BasketLine { id: number, quantity: number }
 
 function sendZoneCheckoutError(client: GameClient, request: number | null, message: string, code: string): void {
   client.send('zone_checkout_error', { message, code, request })
 }
 
-function validBasket(items: unknown): items is number[] {
-  return Array.isArray(items) && items.length > 0 && items.length <= MAX_BASKET && items.every((id) => Number.isInteger(id) && id > 0)
+function isPositiveInt(value: unknown, max = Number.MAX_SAFE_INTEGER): value is number {
+  return Number.isInteger(value) && (value as number) > 0 && (value as number) <= max
+}
+
+function validBasket(items: unknown): items is BasketLine[] {
+  if (!Array.isArray(items) || items.length === 0 || items.length > MAX_BASKET_LINES) return false
+  const ids = new Set<number>()
+  for (const line of items) {
+    if (typeof line !== 'object' || line === null) return false
+    const { id, quantity } = line as Record<string, unknown>
+    if (!isPositiveInt(id) || !isPositiveInt(quantity, MAX_LINE_QUANTITY) || ids.has(id)) return false
+    ids.add(id)
+  }
+  return true
 }
 
 export async function onZoneCheckout(room: GameRoom, client: GameClient, payload: ClientPayload, now = Date.now()): Promise<void> {
@@ -24,7 +41,8 @@ export async function onZoneCheckout(room: GameRoom, client: GameClient, payload
   }
   const zone = payload?.zone
   const items = payload?.items
-  if (typeof zone !== 'string' || !validBasket(items)) {
+  const checkoutKey = payload?.checkoutKey
+  if (typeof zone !== 'string' || typeof checkoutKey !== 'string' || !UUID.test(checkoutKey) || !validBasket(items)) {
     sendZoneCheckoutError(client, request, 'Your basket is not valid.', 'zone_bad_basket')
     return
   }
@@ -37,8 +55,9 @@ export async function onZoneCheckout(room: GameRoom, client: GameClient, payload
     sendZoneCheckoutError(client, request, 'Walk back into the shop to pay.', 'zone_too_far')
     return
   }
+  const lines = items.map(({ id, quantity }) => ({ shop_catalog_item_id: id, quantity }))
   try {
-    client.send('zone_checkout_done', { ...await callRealtimeBackend(player.token, '/zone/checkout', 'POST', { zone, items }), request })
+    client.send('zone_checkout_done', { ...await callRealtimeBackend(player.token, '/zone/checkout', 'POST', { zone, checkout_key: checkoutKey, items: lines }), request })
   } catch (error) {
     console.warn('[zone shop] checkout failed:', error instanceof Error ? error.message : error)
     client.send('zone_checkout_error', { ...errorPayload(error, 'The cashier could not take your payment.', 'zone_checkout_failed'), request })

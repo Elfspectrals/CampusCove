@@ -154,8 +154,7 @@
         "minZ": 5.8,
         "maxZ": 9.0
       },
-      "offers": [],
-      "priceTags": true
+      "offers": []
     }
   ]
 }
