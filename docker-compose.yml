@@ -100,7 +100,7 @@ services:
   livekit:
     image: livekit/livekit-server:v1.13.10
     container_name: campuscove-livekit
-    command: --dev --bind 0.0.0.0 --node-ip 127.0.0.1
+    command: --dev --bind 0.0.0.0 --node-ip ${LIVEKIT_NODE_IP:-127.0.0.1}
     ports:
       - "7880:7880"
       - "7881:7881"

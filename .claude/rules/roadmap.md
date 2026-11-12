@@ -114,6 +114,7 @@ Decision (2026-11-12): voice goes through a self-hosted LiveKit SFU (open source
 - [done] Audio starts on the first click or key; open mic turns on at Play (fixed after the first real test, 2026-11-12).
 - [done] Voice settings like Discord: microphone and output device, mic and voices volume (0 to 200 %), mic test with a level meter.
 - [done] Per-player volume (0 to 200 %) in the Tab list, saved per account in this browser (`cc.voiceVolumes`).
+- [done] Voice from another PC on the same network: `make up` gives LiveKit the network address, `make share-local` reaches LiveKit through the page (`/livekit` proxy) over https (2026-11-12).
 - [todo] Deploy LiveKit on a VPS with TURN; privacy page mentions voice.
 
 ## Later

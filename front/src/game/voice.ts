@@ -83,3 +83,9 @@ export function withPlayerVolume(volumes: Readonly<Record<string, number>>, acco
   const clamped = clampVolume(volume)
   return clamped === 1 ? others : { ...others, [accountId]: clamped }
 }
+
+export function liveKitUrl(tokenUrl: string, override: string | undefined, page: { protocol: string; host: string }): string {
+  if (!override) return tokenUrl
+  if (!override.startsWith('/')) return override
+  return `${page.protocol === 'https:' ? 'wss' : 'ws'}://${page.host}${override}`
+}

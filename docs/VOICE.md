@@ -34,3 +34,11 @@ Every 500 ms (`VOICE_SYNC_MS`) the socket lists the microphone tracks of the Liv
 - `useProximityVoice` plays each voice the socket subscribed it to through an HRTF `PannerNode` at the avatar's head, full volume up to 2 m, silent at 34 m (`VOICE_RELEASE_RANGE` in `front/src/game/voice.ts`, the same 34 m as the socket).
 - Talk key `pushToTalk` (B): hold to talk, or toggle with an open mic (Settings, `cc.voice`).
 - Player list `playerList` (Tab): the players of this city instance, who is speaking (LiveKit active speakers), and a mute button per account, saved in `cc.voiceMuted` until unmuted.
+
+## Playing from another PC
+
+Browsers only open the microphone on `https://` pages (or `localhost`), so another PC uses `make share-local`:
+
+1. `make up` gives LiveKit this PC's network address (`--node-ip`, detected on macOS and Linux; force it with `make up LAN_IP=192.168.1.20`, otherwise `127.0.0.1`). Re-run it after changing network.
+2. `make share-local` serves the front through a Cloudflare `https://` link and builds it with `VITE_LIVEKIT_URL=/livekit`: the front reaches LiveKit through the page itself (`vite.config.ts` proxies `/livekit` to port 7880, WebSocket included) instead of the `ws://localhost:7880` the socket sends.
+3. The audio itself goes straight to this PC over UDP 7882 (or TCP 7881), which a Cloudflare tunnel cannot carry: players on the same network hear each other, players elsewhere get the game without voice until LiveKit runs on a public server.

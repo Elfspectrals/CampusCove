@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { MAX_VOLUME, clampVolume, micLevel, parseMutedAccounts, parsePlayerVolumes, parseVoiceSettings, toggleMutedAccount, withPlayerVolume } from './voice.ts'
+import { MAX_VOLUME, clampVolume, liveKitUrl, micLevel, parseMutedAccounts, parsePlayerVolumes, parseVoiceSettings, toggleMutedAccount, withPlayerVolume } from './voice.ts'
 
 test('the voice settings default to push-to-talk, default devices and full volume', () => {
   const defaults = { mode: 'pushToTalk', inputDeviceId: null, outputDeviceId: null, inputVolume: 1, outputVolume: 1 }
@@ -62,4 +62,16 @@ test('saved player volumes keep only account ids with a number, clamped', () => 
   assert.deepEqual(parsePlayerVolumes('[0.5]'), {})
   assert.deepEqual(parsePlayerVolumes('nope'), {})
   assert.deepEqual(parsePlayerVolumes(null), {})
+})
+
+test('the LiveKit address comes from the socket unless the build overrides it', () => {
+  const page = { protocol: 'https:', host: 'abc.trycloudflare.com' }
+  assert.equal(liveKitUrl('ws://localhost:7880', undefined, page), 'ws://localhost:7880')
+  assert.equal(liveKitUrl('ws://localhost:7880', '', page), 'ws://localhost:7880')
+  assert.equal(liveKitUrl('ws://localhost:7880', 'wss://voice.example.org', page), 'wss://voice.example.org')
+})
+
+test('a relative LiveKit address goes through the page itself, secure on https', () => {
+  assert.equal(liveKitUrl('ws://localhost:7880', '/livekit', { protocol: 'https:', host: 'abc.trycloudflare.com' }), 'wss://abc.trycloudflare.com/livekit')
+  assert.equal(liveKitUrl('ws://localhost:7880', '/livekit', { protocol: 'http:', host: 'localhost:4173' }), 'ws://localhost:4173/livekit')
 })

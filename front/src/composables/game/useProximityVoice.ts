@@ -15,7 +15,7 @@ import {
 } from 'livekit-client'
 import { matches } from '../../config/keybindings'
 import { EYE_HEIGHT } from '../../game/gameRoomConstants'
-import { VOICE_FULL_VOLUME_DISTANCE, VOICE_RELEASE_RANGE } from '../../game/voice'
+import { VOICE_FULL_VOLUME_DISTANCE, VOICE_RELEASE_RANGE, liveKitUrl } from '../../game/voice'
 import type { VoiceIconState } from '../../game/voiceIcon'
 import { voiceSettings } from './useVoiceSettings'
 
@@ -150,7 +150,7 @@ export function useProximityVoice(deps: ProximityVoiceDeps) {
     next.on(RoomEvent.ActiveSpeakersChanged, (speakers) => {
       speaking.value = new Set(speakers.map((p) => p.identity))
     })
-    await next.connect(payload.url, payload.token, { autoSubscribe: false })
+    await next.connect(liveKitUrl(payload.url, import.meta.env.VITE_LIVEKIT_URL, window.location), payload.token, { autoSubscribe: false })
     room = next
     connected.value = true
     deps.sendMuted()
