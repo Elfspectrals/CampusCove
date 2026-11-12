@@ -5,7 +5,7 @@ import { voiceRoomName, voiceToken } from './voice.ts'
 
 const config = { url: 'ws://localhost:7880', apiUrl: 'http://localhost:7880', apiKey: 'devkey', apiSecret: 'secret-at-least-32-characters-long!' }
 
-test('the token only opens the voice room of this city instance, as this session, and cannot subscribe on its own', async () => {
+test('the token only opens the voice room of this city instance, as this session, and can be subscribed by the socket', async () => {
   const { url, token } = await voiceToken(config, 'abc123', 'session-1', 'Bob#0420')
   const claims = await new TokenVerifier(config.apiKey, config.apiSecret).verify(token)
   assert.equal(url, 'ws://localhost:7880')
@@ -13,7 +13,7 @@ test('the token only opens the voice room of this city instance, as this session
   assert.equal(claims.name, 'Bob#0420')
   assert.deepEqual(
     { room: claims.video?.room, roomJoin: claims.video?.roomJoin, canPublish: claims.video?.canPublish, canSubscribe: claims.video?.canSubscribe, canPublishData: claims.video?.canPublishData },
-    { room: voiceRoomName('abc123'), roomJoin: true, canPublish: true, canSubscribe: false, canPublishData: false }
+    { room: voiceRoomName('abc123'), roomJoin: true, canPublish: true, canSubscribe: true, canPublishData: false }
   )
 })
 
