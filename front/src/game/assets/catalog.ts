@@ -25,7 +25,7 @@ export type SkinKey =
 export type HouseKey =
   | 'house_01' | 'house_02' | 'house_03' | 'house_04' | 'house_05'
   | 'house_06' | 'house_07' | 'house_08' | 'house_09' | 'house_10'
-  | 'cove_villa_a02' | 'cove_villa_a01'
+  | 'cove_villa_a02' | 'cove_villa_a01' | 'cove_villa_a03'
 
 export interface SkinAsset {
   key: SkinKey
@@ -110,6 +110,7 @@ const HOUSES: readonly HouseAsset[] = [
   house('house_10', 'Forest Lodge'),
   house('cove_villa_a02', 'Colonial Villa'), // Cove Heights lot A-02, two storeys + walk-in garage
   house('cove_villa_a01', 'Villa Serena'), // Cove Heights lot A-01, Tuscan, loggia + balcony, two-bay garage
+  house('cove_villa_a03', 'Harbor Shingle House'),
 ]
 
 /**

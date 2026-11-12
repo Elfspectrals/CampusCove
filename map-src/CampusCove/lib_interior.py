@@ -56,6 +56,16 @@ def fireplace(B, name, wall, y, ceil_h, M, style="mantel"):
                wbox(B, f"{name}_Art", wall, y + 1.52, 1.0, 0.02, 0.76, M["art"], off=0.05)]
         wcol(B, name, wall, y, 1.95, 0.5, 1.25)
         return out
+    if style == "stone":
+        out = [wbox(B, f"{name}_Hearth", wall, y, 1.96, 0.5, 0.05, M["stone"]),
+               wbox(B, f"{name}_Firebox", wall, y + 0.05, 0.86, 0.22, 0.78, M["soot"]),
+               wbox(B, f"{name}_JambA", wall, y + 0.05, 0.42, 0.3, 0.78, M["stone"], shift=-0.64),
+               wbox(B, f"{name}_JambB", wall, y + 0.05, 0.42, 0.3, 0.78, M["stone"], shift=0.64),
+               wbox(B, f"{name}_Lintel", wall, y + 0.83, 1.7, 0.3, 0.34, M["stone"]),
+               wbox(B, f"{name}_Mantel", wall, y + 1.17, 1.9, 0.34, 0.12, M["beam"]),
+               wbox(B, f"{name}_Breast", wall, y + 1.29, 1.5, 0.22, ceil_h - 1.29, M["stone"])]
+        wcol(B, name, wall, y, 1.96, 0.5, 1.3)
+        return out
     out = [wbox(B, f"{name}_Hearth", wall, y, 2.1, 0.62, 0.16, M["stone"]),
            wbox(B, f"{name}_Firebox", wall, y + 0.16, 0.9, 0.42, 0.86, M["soot"]),
            wbox(B, f"{name}_JambA", wall, y + 0.16, 0.34, 0.5, 0.86, M["stone"], shift=-0.62),
@@ -64,6 +74,33 @@ def fireplace(B, name, wall, y, ceil_h, M, style="mantel"):
            wbox(B, f"{name}_Hood", wall, y + 1.24, 1.5, 0.48, 0.5, M["plaster"]),
            wbox(B, f"{name}_Flue", wall, y + 1.74, 1.0, 0.36, ceil_h - 1.74, M["plaster"])]
     wcol(B, name, wall, y, 2.1, 0.62, 1.3)
+    return out
+
+
+def inglenook(B, name, wall, y, M, width=2.9, depth=1.3, header_y=2.25):
+    out = []
+    for tag, sgn in (("A", -1), ("B", 1)):
+        settle = sgn * (width / 2 - 0.225)
+        out += [wbox(B, f"{name}_Base{tag}", wall, y, 0.45, depth, 0.40, M["beam"], shift=settle),
+                wbox(B, f"{name}_Seat{tag}", wall, y + 0.40, 0.47, depth + 0.02, 0.05, M["beam"], shift=settle),
+                wbox(B, f"{name}_Back{tag}", wall, y, 0.06, depth, 1.40, M["beam"], shift=sgn * (width / 2 - 0.03)),
+                wbox(B, f"{name}_Post{tag}", wall, y, 0.1, 0.1, header_y, M["beam"], off=depth - 0.1, shift=sgn * (width / 2 - 0.05))]
+        wcol(B, f"{name}{tag}", wall, y, 0.45, depth, 1.4, shift=settle)
+    out.append(wbox(B, f"{name}_Header", wall, y + header_y, width, 0.2, 0.22, M["beam"], off=depth - 0.2))
+    return out
+
+
+def mudroom_bench(B, name, wall, y, along, M, depth=0.45):
+    out = [wbox(B, f"{name}_Base", wall, y, along, depth, 0.40, M["closet"]),
+           wbox(B, f"{name}_Seat", wall, y + 0.40, along + 0.04, depth + 0.03, 0.05, M["beam"]),
+           wbox(B, f"{name}_Back", wall, y + 0.45, along, 0.02, 1.35, M["closet"]),
+           wbox(B, f"{name}_HookRail", wall, y + 1.55, along, 0.03, 0.12, M["beam"], off=0.02),
+           wbox(B, f"{name}_Shelf", wall, y + 1.80, along + 0.04, 0.30, 0.03, M["closet"])]
+    hooks = int(along / 0.4)
+    for k in range(hooks):
+        out.append(wbox(B, f"{name}_Hook{k}", wall, y + 1.57, 0.03, 0.08, 0.03, M["fixture"], off=0.05,
+                        shift=-along / 2 + along * (k + 0.5) / hooks))
+    wcol(B, name, wall, y, along + 0.04, depth + 0.03, 0.5)
     return out
 
 

@@ -552,6 +552,30 @@
         0.2,
         -1.405
       ]
+    },
+    {
+      "kind": "house",
+      "key": "cove_villa_a03",
+      "name": "Harbor Shingle House",
+      "lot": "A-03",
+      "position": [
+        -220.8,
+        0.0,
+        -291.0
+      ],
+      "rotationY": 0,
+      "door": [
+        -220.8,
+        1.25,
+        -286.2
+      ],
+      "offer": "buy",
+      "price": 28000,
+      "interiorOffset": [
+        0.0,
+        0.2,
+        -1.405
+      ]
     }
   ],
   "collision": [
@@ -1071,6 +1095,176 @@
       "cz": -291.905,
       "hx": 10.7,
       "hz": 5.605,
+      "hy": 3.0,
+      "cy": 3.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_LotA03_PostLamp",
+      "cx": -219.2,
+      "cz": -282.2,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_LotA03_PorchPost0",
+      "cx": -222.28,
+      "cz": -284.72,
+      "hx": 0.08,
+      "hz": 0.08,
+      "hy": 1.225,
+      "cy": 1.225,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_LotA03_PorchPost1",
+      "cx": -219.65,
+      "cz": -284.72,
+      "hx": 0.08,
+      "hz": 0.08,
+      "hy": 1.225,
+      "cy": 1.225,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_LotA03_PorchPost2",
+      "cx": -217.273,
+      "cz": -284.72,
+      "hx": 0.08,
+      "hz": 0.08,
+      "hy": 1.225,
+      "cy": 1.225,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_LotA03_PorchPost3",
+      "cx": -214.897,
+      "cz": -284.72,
+      "hx": 0.08,
+      "hz": 0.08,
+      "hy": 1.225,
+      "cy": 1.225,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_LotA03_PorchPost4",
+      "cx": -212.52,
+      "cz": -284.72,
+      "hx": 0.08,
+      "hz": 0.08,
+      "hy": 1.225,
+      "cy": 1.225,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_LotA03_PorchPost5",
+      "cx": -212.52,
+      "cz": -287.06,
+      "hx": 0.08,
+      "hz": 0.08,
+      "hy": 1.225,
+      "cy": 1.225,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_LotA03_PorchPost6",
+      "cx": -212.52,
+      "cz": -289.4,
+      "hx": 0.08,
+      "hz": 0.08,
+      "hy": 1.225,
+      "cy": 1.225,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_LotA03_PorchPost7",
+      "cx": -212.52,
+      "cz": -291.74,
+      "hx": 0.08,
+      "hz": 0.08,
+      "hy": 1.225,
+      "cy": 1.225,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_LotA03_PorchPost8",
+      "cx": -212.52,
+      "cz": -294.08,
+      "hx": 0.08,
+      "hz": 0.08,
+      "hy": 1.225,
+      "cy": 1.225,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_LotA03_PorchPost9",
+      "cx": -222.28,
+      "cz": -286.88,
+      "hx": 0.08,
+      "hz": 0.08,
+      "hy": 1.225,
+      "cy": 1.225,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_LotA03_PorchPost10",
+      "cx": -214.18,
+      "cz": -294.08,
+      "hx": 0.08,
+      "hz": 0.08,
+      "hy": 1.225,
+      "cy": 1.225,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_LotA03_PorchRailFront",
+      "cx": -216.085,
+      "cz": -284.72,
+      "hx": 3.565,
+      "hz": 0.05,
+      "hy": 0.53,
+      "cy": 0.53,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_LotA03_PorchRailSide",
+      "cx": -212.52,
+      "cz": -289.4,
+      "hx": 0.05,
+      "hz": 4.68,
+      "hy": 0.53,
+      "cy": 0.53,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_LotA03_PorchRailEnd",
+      "cx": -213.35,
+      "cz": -294.08,
+      "hx": 0.83,
+      "hz": 0.05,
+      "hy": 0.53,
+      "cy": 0.53,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_LotA03_PorchRailWest",
+      "cx": -222.28,
+      "cz": -285.8,
+      "hx": 0.05,
+      "hz": 1.08,
+      "hy": 0.53,
+      "cy": 0.53,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_House_cove_villa_a03",
+      "cx": -224.5,
+      "cz": -292.805,
+      "hx": 10.2,
+      "hz": 5.805,
       "hy": 3.0,
       "cy": 3.0,
       "yaw": 0.0

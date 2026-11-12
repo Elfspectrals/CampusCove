@@ -9,6 +9,7 @@ z -330..-190) and moved as a whole by OFFSET; Cove Road is drawn in world coordi
 entry boulevard from the east. Every piece comes from the shared builders in lib_site.py.
 """
 import importlib
+import json
 import math
 import os
 import sys
@@ -382,7 +383,23 @@ for k, px in enumerate((-5.175, -1.75, 1.75, 5.175)):  # loggia piers stand outs
     est.col(f"LotA01_LoggiaPier{k}", ax + px, az + 6.175, 0.45, 0.45, 3.0)
 est.col("HousePlaceholderA01", ax + 3.7, az - 1.605, 21.4, 11.21, 6.0)
 est.cols[-1]["name"] = f"COL_House_{VILLA_A01['key']}"
-HOUSES = [VILLA_A02, VILLA_A01]
+VILLA_A03 = {"key": "cove_villa_a03", "name": "Harbor Shingle House", "lot": "A-03", "origin": (210.2, -309.0), "zf": 4.0,
+             "interiorOffset": [0.0, 0.2, -1.405], "price": 28000}
+hx, hz = VILLA_A03["origin"]
+HM_BLUE = dict(HM, hydrangea=L.make_mat("TW_CoveHydrangeaBlueFlower", "#8aa6d8", 0.9, "noise", 0.08, accent="#b3a3d6"))
+S.rect(est, "CH_LotA03_GarageApron", 196.95, -304.0, 203.05, hz + VILLA_A03["zf"], Y["lot"], Y["drive"], M["drive"])
+S.rect(est, "CH_LotA03_ApronW", 196.95, -302.6, 198.5, -304.0, Y["lot"], Y["drive"], M["drive"])
+S.rect(est, "CH_LotA03_ApronE", 201.5, -302.6, 203.05, -304.0, Y["lot"], Y["drive"], M["drive"])
+S.rect(est, "CH_LotA03_FrontPath", hx - 0.8, -299.0, hx + 0.8, -302.2, Y["lot"], Y["drive"], M["drive"])
+S.street_lamp(est, "CH_LotA03_PostLamp", hx + 1.6, -300.2, M, h=2.6)
+S.hedge_run(est, "CH_LotA03_HedgeW", (204.6, -304.3), (207.2, -304.3), HM, w=0.5)
+S.hydrangeas(est, "CH_LotA03_Hydrangea", 211.6, 217.6, -301.9, HM_BLUE, n=4)
+with open(os.path.join(L.FRONT_ASSETS, "houses", VILLA_A03["key"], "exterior.layout.json"), encoding="utf-8") as f:
+    for c in json.load(f)["collision"]:
+        est.col(f"LotA03_{c['name']}", hx + c["x"], hz + c["z"], c["sx"], c["sz"], c["h"])
+est.col("HousePlaceholderA03", hx - 3.7, hz - 1.805, 20.4, 11.61, 6.0)
+est.cols[-1]["name"] = f"COL_House_{VILLA_A03['key']}"
+HOUSES = [VILLA_A02, VILLA_A01, VILLA_A03]
 
 # ================================================================ communal
 # clubhouse & leisure parcel

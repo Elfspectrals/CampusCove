@@ -126,6 +126,18 @@ Decision (2026-11-12): voice goes through a self-hosted LiveKit SFU (open source
 - [done] Voice from another PC on the same network: `make up` gives LiveKit the network address, `make share-local` reaches LiveKit through the page (`/livekit` proxy) over https (2026-11-12).
 - [todo] Deploy LiveKit on a VPS with TURN; privacy page mentions voice.
 
+## Cove Heights gated estate (doing, branch feat/cove-heights-gated-estate)
+
+Decision (2026-11-06): a walled estate north of the mall, reached by Cove Road from the mall avenue, with 16 lots that each get a house of its own (master plan `docs/GATED_COMMUNITY.md`, anti-monotony rules R1-R11 in 7.2c.1). The gate is residents-only by design but open until lots sell.
+
+- [done] Estate shell: wall, main and emergency gates, loop road, 16 lots, clubhouse shell, park, Cove Road. Not walked in game since the move north of the mall.
+- [done] Colonial Villa on A-02 (20 000) and Villa Serena on A-01 (26 000), walk-in, for sale.
+- [doing] Harbor Shingle House on A-03 (28 000): cedar shakes, gambrel roof, wrap porch on the east corner, west garage wing, harbor interior plan. Built; not walked in game yet.
+- [todo] The other 13 houses of the 7.2c.2 programme, next A-04 Skyline Residence.
+- [todo] Residents-only gate logic.
+
+Decision (2026-11-12): rule R8 allows an open wrap porch up to 2.0 m into a side setback when the neighbouring building stays at least 4.0 m away. A-03 keeps W 13.0 like A-02 and its interior goes 0.4 k over the 12 k triangle ceiling.
+
 ## Later
 
 - Fishing as the second job (reuse the darts power meter or the Drink Fast balance bar; rod and fish models exist).

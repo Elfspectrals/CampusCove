@@ -424,7 +424,7 @@ A-04/B-07 (NE corner), B-10/B-11 (SE swale). The inner block is communal, so no 
 | R5 | **Massing rhythm.** Each 4-lot band (west, east) has at least one single-storey home and no more than three two-storey homes in a row. The boulevard frontage (B-01, B-12) is the gateway and stays two-storey on both sides. | west 1-2-2-2, east 1-2-1-2 |
 | R6 | **Staggered facades.** Facades of adjacent lots are at least 0.6 m apart in setback (executives alternate 4.0 / 5.0 m, villas 5.0–6.3 m). The gateway pair mirrors on purpose (both 4.0 m). | column *s* in 7.2c.3 |
 | R7 | **Garages never lead.** Garage doors take at most 40 % of the street frontage; the garage face is never in front of the main facade (no "snout houses"); it sits at least 5.0 m behind the front lot line (the driveway length; less only with a paved apron). Adjacent lots use a different garage expression (flush wing, recessed wing, two-bay wing, carport, no garage) or door style (carriage, plank, flush, glass). The two forced garage-to-garage pairs (B-05/B-06, B-07/B-08, driveways paired on the shared line by § 7.2) differ in both wing roof and door style. | 7.2c.2 garage column |
-| R8 | **Entries.** Every house has a different entry type (porch, loggia, portico, gallery, wrap porch, stoop, canopy, pergola). Open porches, loggias and steps may project up to 2.8 m into the front setback and stay ≥ 1.4 m from the front lot line; eaves up to 1.2 m into side setbacks. | generator porch depth |
+| R8 | **Entries.** Every house has a different entry type (porch, loggia, portico, gallery, wrap porch, stoop, canopy, pergola). Open porches, loggias and steps may project up to 2.8 m into the front setback and stay ≥ 1.4 m from the front lot line; eaves up to 1.2 m into side setbacks; an open wrap porch may take up to 2.0 m of a side setback when the neighbouring building stays ≥ 4.0 m away. | generator porch depth |
 | R9 | **Windows.** Shutters only on traditional styles (Classical, Vernacular, Picturesque, Tuscan). Window frame colour (white / black / bronze / wood) differs on adjacent lots. | `frame` palette key |
 | R10 | **Unifying elements** (the estate still reads as one place): standard postbox with the lot ID, 0.40 m lot hedges, cobble driveways, one 2.6 m lot lamp by the front path, warm 2700 K lanterns, house numbers in the same gold lettering. | site build, unchanged per lot |
 | R11 | **Envelope and coverage.** Main block + wing stay inside the § 7.1 envelope; coverage ≤ 35 % (villa) / ≤ 45 % (executive). | 7.2c.3 |
@@ -673,31 +673,307 @@ The postbox (135.9, −299.4) stays outside the motor court (z ≤ −300.5).
 `HOUSE_KEYS = ["cove_villa_a01"]`, the site build, `apply-cove-heights.mjs`, `make seed`. Rebuild `cove_villa_a02` once
 after N2/N6 land to confirm the defaults left it byte-for-byte equivalent (same materials, same node names).
 
+#### 7.2c.6 Harbor Shingle House on A-03 [built: cove_villa_a03, for sale 28 000]
+
+**Why A-03.** It is the first house seen after the emergency lane and the counterpart of the Colonial across it (visible
+pair A-02/A-03). A New England Shingle summer house is the warmest contrast the rules allow: natural cedar shakes against
+white clapboard, a side gambrel against side gables, a wrap-around porch against a front porch, and an informal "living
+hall" plan inside against the formal centre hall. It also brings four generator features that other lots reuse: the
+mirrored wing (garage on −x), the gambrel, the `shakes` wall texture and the wrap porch.
+
+**Rule check** (adjacent: A-04; visible pair: A-02)
+
+| Rule | A-03 | A-04 (adjacent) | A-02 (visible pair) | Result |
+|------|------|-----------------|---------------------|--------|
+| R1 | key `cove_villa_a03`, palette `harbor`, W 13.0 | W 14.0 | **W 13.0** | key and palette unique; plan width repeats A-02, accepted (Decisions below) |
+| R2 | Vernacular | Modern | Classical | ok |
+| R3 | N (cedar), door barn red `#8e2f2a` | D | W | ok; N is used 3 times (A-03, B-04, B-10) |
+| R4 | gambrel, weathered cedar `#7d7468` | flat, dark deck | side gable + cross gable, charcoal | ok |
+| R6 | setback 6.0 | 5.0 | 6.3 | stagger 1.0 m with A-04 |
+| R7 | two-bay wing −x, street gable, two white carriage doors, flush, 6.0 m behind the front line; doors 5.2 m of 20.4 m frontage (25 %) | flat terrace, flush aluminium | one wide carriage door | ok |
+| R8 | wrap porch (unique entry); front run 2.4 m + step 0.4 m = 2.8 m, 3.2 m from the front line | | | ok; the east run takes 1.6 m of the 3.0 m side setback (roof 1.9 m), allowed for open wrap porches, 4.4 m to A-04's garage |
+| R9 | shutters (traditional), white frames | black frames | white frames | ok (R9 is checked on adjacent lots) |
+| R10 | postbox, 0.40 m hedges, cobble driveway and apron, 2.6 m lot lamp | | | ok |
+| R11 | main + wing inside the envelope; 26.8 % (31.6 % with the porch decks) | | | ok |
+
+Across the lane the two garage wings face each other (A-02 east wing, A-03 west wing): different style group, body
+colour, roof form and door count, so the pair still reads as two different houses.
+
+**Placement**
+
+```
+Lot A-03: x 192–220, z −299 … −327, faces S, envelope x 195–217, z −303.3 … −323
+Lot point:     plan (210.2, −309.0) = world (−220.8, −291.0), rotationY 0      (lot centre (206, −313) + (u₀, v₀) = (4.2, 4.0))
+Facade:        plan z −305.0 (setback 6.0 m; A-04 is at 5.0 → R6 stagger 1.0 m)
+Main block:    plan x 203.7 → 216.7, z −305.0 → −316.61 (13.0 × 11.61)
+Garage wing:   plan x 196.3 → 203.7, z −305.0 → −313.0 (7.4 × 8.0), centre x 200.0 on the driveway axis,
+               doors centred at x 201.55 and 198.45 (house x −8.65, −11.75)
+Wrap porch:    front run plan x 208.6 → 218.6, z −305.0 → −302.6, step to −302.2 (projection 2.8 m, 3.2 m left to the lot line)
+               east run plan x 216.7 → 218.6, z −312.2 → −305.0; roof drip to x 218.9 (1.1 m from the lot line at x 220)
+Door point:    world (−220.8, 1.25, −286.2)  (= origin + ZF + 0.8, the site build's formula)
+interiorOffset [0, 0.2, −1.405]
+Seeder bounds: minX −13.695, maxX 6.295, minZ −6.0, maxZ 5.2, maxY 5.6 · price 28 000 · colour '#B8875A'
+Coverage:      150.9 + 59.2 = 210.1 m² (26.8 %), porch decks 37.7 m² more; GFA 2 × 150.9 + 59.2 = 361 m²
+```
+
+Derived generator values (T 0.2, GAP 0.005, FY 0.2): x_out = W/2 − T − GAP = 6.295, xi = 6.095, OZ = ZF − T − GAP − 5.2 =
+−1.405, ZB = OZ + back − GAP − T = −7.61, DEPTH = ZF − ZB = 11.61, ZC = −1.805, H_SHELL = FY + 5.6 + 0.3 = 6.10,
+y_eave 6.15; interior zi_f 5.0, zi_b −5.8. Wing (east frame, mirrored to −x by H1): x_in 6.5, x_ext 13.9, xo 13.695,
+xi 13.495, zb = 5.2 − 8.0 + 3T + 2GAP = −2.19, shell height 3.30; side window at z 1.405 ± 0.7 on the west end; garage room
+7.34 × 7.19 m. The mudroom → garage doorway is set by the harbor plan (7.2d.1): west wall, z 0.2 → 1.2.
+
+**HOUSES entry** (new keys marked in the feature map; everything else exists):
+
+```python
+"cove_villa_a03": dict(name="Harbor Shingle House", W=13.0, ZF=4.0, back=-6.0, floors=2, mirror=False, palette="harbor",
+                       roof="gambrel_x", rise=3.3, eave=0.45, gambrel=dict(run=1.0, knee=1.5, rake=0.3),
+                       cross=None, chimney=(2.6, 0.45), windows="classic", flowers=False,
+                       porch="wrap",
+                       wrap=dict(corner="east", x0=-1.6, d=2.4, side_d=1.9, z1=-3.2, high=2.86, drop=0.40, over=0.3, step_w=1.8,
+                                 posts=((-1.48, 6.28), (1.15, 6.28), (3.527, 6.28), (5.903, 6.28), (8.28, 6.28),
+                                        (8.28, 3.94), (8.28, 1.6), (8.28, -0.74), (8.28, -3.08),
+                                        (-1.48, 4.12), (6.62, -3.08))),
+                       wing=dict(w=7.4, d=8.0, rise=2.2, side="west", doors=2, door_w=2.6, door_h=2.3, door_style="carriage"),
+                       interior=dict(plan="harbor", style="harbor")),
+```
+
+**Palette** (`PALETTES["harbor"]`; `frame` and `garage` are left out on purpose: frames fall back to the white trim and the
+carriage doors to the shared white `EX_GarageDoor`):
+
+```python
+"harbor": dict(wall="#b8875a", wall_pat="shakes", wall_acc="#8a623e", trim="#f7f5ef", roof="#7d7468", roof_acc="#6a625a",
+               shutter="#3e4f45", door="#8e2f2a", in_wall="#f4f2ea", in_bed="#e2eaee", floor="#c9a77c", floor_acc="#ad8c62",
+               cabinet="#e9ece8", worktop="#4b4f52",
+               ridge="#6a625a", deck="#8c9196", deck_acc="#767b80", deck_pat="planks"),
+```
+
+**Feature map**
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Two-storey shell, both shells cut per storey, glass, casings | exists | W 13.0, back −6.0 |
+| `windows="classic"` with shutters, chimney (brick, `E["found"]` cap) | exists | chimney top rule for the gambrel is new (H6) |
+| Walk-in two-bay wing, `doors=2`, carriage style, street gable | exists | N6 options |
+| Wing on −x (`wing.side="west"`) | **new** | H1 |
+| Side gambrel roof (`roof="gambrel_x"`) + shared `L.prism_x` | **new** | H2 |
+| Cedar shake texture (`wall_pat="shakes"`) | **new** | H3 |
+| Wrap-around porch (`porch="wrap"`) + shared `L.lean_to_corner` | **new** | H4 |
+| Harbor interior plan (`interior.plan="harbor"`) and style kit | **new** | H5, geometry in 7.2d.1 |
+| Palette key `deck_pat`; French door dressing on side walls | **new** | H6 |
+
+**New generator options (geometry, exterior frame: origin at the lot point, front face z = ZF = 4.0, y up)**
+
+*H1: mirrored wing* (`wing["side"]`: `"east"` default, `"west"`). Every wing number stays computed in the east frame
+(x_in = W/2, x_ext, xo, xi as today) and one sign s = −1 for west, +1 for east carries it to the right side:
+- `Plan.__init__`: store `s` in `self.wing`; the garage light becomes `("Garage", 0, s·(hw + xo − T)/2, zc)`. The assert
+  becomes `h["floors"] == 2 and not h["mirror"]` (message: "the garage wing needs a two-storey, unmirrored plan"); the
+  duplex and the estate plan each assert `self.wing["s"] == 1` (their garage doorway is on the east wall); the harbor plan
+  asserts `s == −1`.
+- `build_garage`: `GB = Mirror(B.coll, B.cols, s)` and every `B.box` / `B.wall` of the function goes through `GB`
+  (floor, walls, skin, ceiling, doorway lining and casings, door insides, window casings). The doorway is still found by
+  `kind == "door"`; its z values do not change with the side.
+- `wing_exterior`: `WB = Mirror(coll, None, s)`; every `L.box(coll, name, x, …)` becomes `WB.box(name, x, …)`, every
+  `B.wall` becomes `WB.wall`, `dress(B, …)` becomes `dress(WB, …)` (face x1, outward +1 in the east frame).
+  `L.gable_roof(…, cx, …)` takes `WB.x(cx)`. The two slabs: location `L.b(WB.x(cx + sgn·run/2), zc, h_mid)`, rotation
+  `(0, s·sgn·angle, 0)`, and their names follow the real side: with s = −1 the house-side slope (the east-frame "W", run =
+  half) is named `EX_WingRoofE` and the overhanging one `EX_WingRoofW`. Node names otherwise unchanged (allow-list
+  unchanged).
+- `Plan.layout`: wing rect `r(*sorted((s·xi, s·g["xi"])), g["zb"], g["zf"])` → x −13.495 → −6.095, z −2.19 → 5.0.
+- `build_interior` sky boxes: with s = −1, `Sky_West` at x −max(13, x_ext + 1.5) = −15.4 and `Sky_East` back at 13.
+- `build()` print: minX = −wing xo, maxX = x_out when s = −1 (−13.695 / 6.295).
+- Site build: the placeholder box is centred at origin x − 3.7 (house x −13.9 → 6.5).
+
+For A-03 the doors are centred at east-frame cx ± 1.55 = 8.65 / 11.75 → house x −8.65 / −11.75; lanterns at −6.80 and
+−13.60. Cost: 0 triangles.
+
+*H2: side gambrel roof* (`roof="gambrel_x"`, values from `h["gambrel"]`, `h["rise"]`, `h["eave"]`). The second floor stays
+a full storey under the knee (walls to 6.10, interior contract unchanged); the gambrel holds an attic lit by a window in
+each gable end. Shared builder `L.prism_x(coll, name, poly, x0, x1, mat, tile=1.0)` in `lib_common.py`: extrudes a closed
+polygon `poly = [(z, y), …]` along game x from x0 to x1 (two n-gon caps triangulated with `bmesh.ops.triangulate`, n side
+quads, `_mesh_from` with recalculated normals; 2(n − 2) + 2n triangles). It covers gable, gambrel, shed and saltbox
+profiles later. New `gambrel_roof_x(coll, E, h, W, DEPTH, ZC, y_eave)` in the generator, with hd = DEPTH/2 = 5.805, lower
+run r = 1.0, knee rise k = 1.5 (56.3°), upper rise rise − k = 1.8 over 4.805 (20.5°), eave e = 0.45, rake 0.3,
+t = k / r = 1.5:
+```
+gable mass   EX_Gables  L.prism_x, E["siding"], x ±6.49, poly (wall line inset 0.01):
+             (3.99, 6.15) (2.99, 7.65) (−1.805, 9.45) (−6.60, 7.65) (−7.60, 6.15)          16 tris
+roof plate   EX_Roof    L.prism_x, E["roof"], tile 0.7, x ±6.80 (W/2 + rake); outer line = full-depth profile + 0.18
+             (0.02 clear of the mass, then 0.16 thick), extended by the eave along the lower pitch:
+             O0 (ZC + hd + e, y_eave + 0.18 − e·t) = (4.45, 5.655)   O1 (ZC + hd − r, y_eave + k + 0.18) = (3.00, 7.83)
+             O2 (ZC, y_eave + rise + 0.18) = (−1.805, 9.63)         O3 (−6.61, 7.83)   O4 (−8.06, 5.655)
+             poly = O0…O4 then the same points 0.16 lower in reverse order (10 points)            36 tris
+ridge cap    EX_RidgeCap   13.65 × 0.24 × 0.12, centre (0, ZC), y 9.61 → 9.73, E["ridge"]
+fascia       EX_FasciaFront / EX_FasciaBack  13.66 × 0.06 × 0.22 at z 4.48 / −8.09, y 5.455 → 5.675, E["trim"]
+             (inner face on the drip face of the plate, top 2 cm above the drip)
+rake boards  EX_FasciaRakeW0..3 / EX_FasciaRakeE0..3 = L.beam(O_k − 0.08 y → O_k+1 − 0.08 y) at x ±6.83, w 0.06, h 0.20,
+             E["trim"] (inner face on the plate end face at ±6.80)
+attic window per gable end, s = −1 (W) / +1 (E), centred on z ZC, names EX_WinGable<W|E>_*:
+             Lite    x s·6.505, 0.03 × 1.10 (z −2.355 → −1.255), y 6.70 → 7.90, E["glass_dark"]
+             Head    x s·6.53, 0.08 × 1.30, y 7.90 → 8.02, E["trim"]   Sill x s·6.55, 0.12 × 1.36, y 6.62 → 6.70, E["trim"]
+             JambA/B x s·6.53, 0.08 × 0.10 at z −2.405 / −1.205, y 6.70 → 7.90, E["frame"]
+             Mullion x s·6.525, 0.04 × 0.05, y 6.70 → 7.90 · Transom x s·6.525, 0.04 × 1.10, y 7.40 → 7.45, E["frame"]
+             (head top 8.02 stays 1.19 below the mass at z −2.455)
+```
+No gable vents. `EX_ShellTop` (6.10 → 6.15) stays under the mass. Every L1 window head (5.40, dressing top 5.52) stays
+below the plate: 0.09 m out from the wall its underside is at 6.04. The wing roof meets the west wall at about 3.45, far
+under the west rake (lowest point 5.50). Chimney (H6): `h["chimney"] = (2.6, 0.45)` puts the stack over the inglenook (7.2d.1) at x 2.6,
+z ZC + 0.45 = −1.355, its back face on the ridge line. Allow-list prefixes: `EX_Roof`, `EX_Gables`, `EX_Ridge`, `EX_Fascia`,
+`EX_Win` (existing). About 0.35 k triangles.
+
+*H3: cedar shakes* (`wall_pat="shakes"`, new pattern in `make_texture`, 64 px):
+```
+course = y // 8 (8 courses a tile, so it tiles in y); row = y % 8
+width  = (9, 13, 11)[course % 3];  offset = (course · 23) % 64;  idx = (x + offset) // width
+row 0               → accent (shadow under the butt of the course)
+row 1               → (base + accent) / 2
+(x + offset) % width == 0 → accent (vertical joint, staggered course to course)
+else                → base + k + tone, tone = (((idx · 73 + course · 151) % 11) − 5) / 5 × 0.05 (fixed per shingle)
+```
+The width cycle does not divide 64, so one narrower shingle falls on the x seam; irregular widths are the look of shakes.
+UVs: the walls are box-mapped at tile 2.0; with `shakes`, `scale_uvs(…, 1.5, 1.5)` replaces the plank factors (1.0, 3.0) on
+the main shell, `EX_Gables`, the wing shell and `EX_WingGables`: a course shows 0.167 m, shingles 0.19–0.27 m wide. The
+other patterns keep their factors. Material `EX_cove_villa_a03_Siding` from `wall` / `wall_acc`. No triangle cost.
+
+*H4: wrap-around porch* (`porch="wrap"`, values from `h["wrap"]`). Deck outer edges: front z_o = ZF + d = 6.4, side
+x_o = hw + side_d = 8.4; post line 0.12 inside them (z 6.28, x 8.28). Both runs drop 0.40 from the wall to the drip, so the
+two roof planes meet on a straight hip.
+```
+deck       EX_PorchDeckFront x −1.6 → 8.4, z 4.0 → 6.4, y 0 → 0.16, E["deck"], tile 1.0
+           EX_PorchDeckSide  x 6.5 → 8.4, z −3.2 → 4.0, y 0 → 0.16 (abuts the front piece at z 4.0, no overlap)
+step       EX_PorchStep      x −0.9 → 0.9, z 6.4 → 6.8, y 0 → 0.08, E["step"] (centred on the door)
+posts      EX_PorchPost0..10 0.16 × 0.16, y 0.16 → 2.45, E["trim"], at h["wrap"]["posts"]: front line x −1.48, 1.15,
+           3.527, 5.903, 8.28 (corner); side line z 3.94, 1.6, −0.74, −3.08; wall posts (−1.48, 4.12) and (6.62, −3.08)
+beams      EX_PorchBeamFront x −1.56 → 8.36, z 6.20 → 6.36 · EX_PorchBeamSide x 8.20 → 8.36, z −3.16 → 6.20
+           EX_PorchBeamWest x −1.56 → −1.40, z 4.0 → 6.20 · EX_PorchBeamEnd x 6.5 → 8.20, z −3.16 → −3.00
+           all y 2.29 → 2.45, E["trim"] (abutting, never overlapping)
+roof       EX_PorchRoof = L.lean_to_corner(coll, "EX_PorchRoof", x0=−1.8, x_wall=6.5, x_out=8.7, z_wall=4.0, z_out=6.7,
+           z1=−3.4, y_high=2.86, y_low=2.46, thick=0.10, mat=E["roof"])
+           (overhang 0.3 at the drips, 0.2 at the west and south ends)
+fascia     EX_FasciaPorchFront x −1.8 → 8.76, z 6.70 → 6.76 · EX_FasciaPorchSide x 8.70 → 8.76, z −3.4 → 6.70
+           y 2.25 → 2.47, E["trim"]
+railing    EX_RailPorch     = L.railing(pts [(1.15, 6.28), (8.28, 6.28), (8.28, −3.08), (6.62, −3.08)], y0 0.16, h 0.9,
+           step 0.30, E["trim"], post=0.10, bar=0.04)                   (22 + 30 + 4 bars)
+           EX_RailPorchWest = L.railing([(−1.48, 4.12), (−1.48, 6.28)], same values) (6 bars)
+           every railing point is a porch post, so the 0.10 newels stay inside the 0.16 posts
+bushes     with porch "wrap": EX_BushBase/Top0 at (−2.4, ZF + 0.6) and 1 at (−6.1, ZF + 0.5); no bush on the porch side
+```
+Shared builder `L.lean_to_corner(coll, name, x0, x_wall, x_out, z_wall, z_out, z1, y_high, y_low, thick, mat, tile=0.7)`:
+an L-shaped lean-to along a front wall (z = z_wall, from x0) that turns the corner at x_wall and runs down the side wall to
+z1. Top vertices A (x0, z_wall, yh), B (x0, z_out, yl), C (x_out, z_out, yl), D (x_wall, z_wall, yh), E (x_out, z1, yl),
+F (x_wall, z1, yh); the same six points `thick` lower for the underside. Faces: front slope A-D-C-B, side slope D-F-E-C
+(both planar, meeting on the hip D-C), the two undersides, and six edge quads (A-B, B-C, C-E, E-F, F-D, D-A). 20
+triangles. Slopes here: front 0.40 / 2.7 (8.4°), side 0.40 / 2.2 (10.3°). The wall-side faces lie on the shell faces
+(back to back, hidden); the corner boards pass through the roof.
+
+Heights: the roof underside meets the walls at 2.76. Under it: hall and parlour front windows (dressing top 2.52), east
+French door (2.62), parlour east windows (2.52); the floor band (3.08) and the L1 sills (4.10) stay above it. The posts
+end 2–3 cm inside the roof. Window dressing: the front-side wall west of the porch carries the stair landing window
+(7.2d.1), whose right shutter ends at x −1.858, 0.06 clear of the roof's west end (−1.8). The sunroom east window's
+shutter ends at z −3.435, 3.5 cm behind the roof end.
+
+Collisions in the **site** build (the house collision does not cover them): 11 posts 0.16 × 0.16 × 2.45 and four rail
+boxes 0.10 thick, 1.06 high (front x 1.15 → 8.28 at z 6.28, side z −3.08 → 6.28 at x 8.28, end x 6.62 → 8.28 at z −3.08,
+west z 4.12 → 6.28 at x −1.48). The deck (0.16) and the step (0.08) are walk-over; the opening between the posts at
+x −1.48 and 1.15 is the way in. About 1.1 k triangles (railing 0.8 k).
+
+*H5: harbor interior plan* (`interior=dict(plan="harbor", style="harbor")`): new `Plan.harbor()`, `build_stair_l()` and
+`build_harbor()` in `build_house_v2.py`, three builders in `lib_interior.py`, a `harbor` style kit. Geometry, rooms,
+layout and collisions in 7.2d.1.
+
+*H6: small additive keys.*
+- `E["deck"]` uses `C.get("deck_pat", "tiles")` (Villa Serena keeps tiles; A-03 gets painted grey planks).
+- `build_exterior`, side windows: `dress(…, shutters=not small and w["kind"] != "french", french=w["kind"] == "french")`,
+  so a French door on a side wall gets jambs and head, no sill, no shutters (A-01 has none, unchanged).
+- Chimney top: with `roof="gambrel_x"`, top = y_eave + rise + 1.1 = 10.55 (0.92 above the ridge); other roofs keep
+  their formula.
+- `PALETTES` accept the new pattern name; `M["panel"]` (interior wainscot) takes `S.get("panel_pat", "tiles")` and
+  `S.get("panel_acc", "#d9d5ca")`.
+
+Triangle cost of the new exterior parts ≈ 1.5 k (gambrel 0.35 k, porch 1.1 k).
+
+**Lot dressing** (`build_cove_heights_site.py`, plan coordinates, same helpers as A-01):
+
+```python
+VILLA_A03 = {"key": "cove_villa_a03", "name": "Harbor Shingle House", "lot": "A-03", "origin": (210.2, -309.0), "zf": 4.0,
+             "interiorOffset": [0.0, 0.2, -1.405], "price": 28000}
+hx, hz = VILLA_A03["origin"]
+front_z = hz + VILLA_A03["zf"]                                                       # -305.0
+HM_BLUE = dict(HM, hydrangea=L.make_mat("TW_CoveHydrangeaBlueFlower", "#8aa6d8", 0.9, "noise", 0.08, accent="#b3a3d6"))
+S.rect(est, "CH_LotA03_GarageApron", 196.95, -304.0, 203.05, front_z, Y["lot"], Y["drive"], M["drive"])
+S.rect(est, "CH_LotA03_ApronW", 196.95, -302.6, 198.5, -304.0, Y["lot"], Y["drive"], M["drive"])   # flares beside
+S.rect(est, "CH_LotA03_ApronE", 201.5, -302.6, 203.05, -304.0, Y["lot"], Y["drive"], M["drive"])   # the v1 driveway
+S.rect(est, "CH_LotA03_FrontPath", hx - 0.8, -299.0, hx + 0.8, -302.2, Y["lot"], Y["drive"], M["drive"])  # to the porch step
+S.street_lamp(est, "CH_LotA03_PostLamp", hx + 1.6, -300.2, M, h=2.6)
+S.hedge_run(est, "CH_LotA03_HedgeW", (204.6, -304.3), (207.2, -304.3), HM, w=0.5)
+S.hydrangeas(est, "CH_LotA03_Hydrangea", 211.6, 217.6, -301.9, HM_BLUE, n=4)
+with open(os.path.join(L.FRONT_ASSETS, "houses", VILLA_A03["key"], "exterior.layout.json"), encoding="utf-8") as f:
+    for c in json.load(f)["collision"]:                       # PorchPost0..10, PorchRailFront / Side / End / West
+        est.col(f"LotA03_{c['name']}", hx + c["x"], hz + c["z"], c["sx"], c["sz"], c["h"])
+est.col("HousePlaceholderA03", hx - 3.7, hz - 1.805, 20.4, 11.61, 6.0)
+est.cols[-1]["name"] = f"COL_House_{VILLA_A03['key']}"
+HOUSES = [VILLA_A02, VILLA_A01, VILLA_A03]
+```
+The apron runs in front of both garage doors (door edges x 197.15 → 202.85) and flares 1.4 m toward the street beside the
+3.0 m driveway without overlapping it. The postbox (202.1, −299.4) stays clear of the apron (z ≤ −302.6). The house's two
+bushes (204.1, −304.5) and (207.8, −304.4) frame the boxwood hedge; the blue hydrangeas run in front of the porch, east of
+the path, and stay 0.5 m off the lamp. The porch post list lives only in `h["wrap"]["posts"]`: the house build derives
+the post and rail collision boxes from it (`wrap_porch_collision`, house frame) and writes them to
+`out/houses/cove_villa_a03/exterior.layout.json`, which `assets:optimize -- houses` ships next to the interior layout;
+the site build reads that committed file from `front/public/assets/houses/` (so it runs without a fresh house build).
+
+**Wiring and rebuild.** `catalog.ts` `house('cove_villa_a03', 'Harbor Shingle House')`; `HousingUnitSeeder`
+`['cove_villa_a03', 'buy', 28000, -220.8, 1.25, -286.2, '#B8875A']` and the bounds above; then the § 7.2b sequence with
+`HOUSE_KEYS = ["cove_villa_a03"]`, the site build, `apply-cove-heights.mjs`, `make seed`. Rebuild `cove_villa_a01` and
+`cove_villa_a02` once after H1, H3 and H6 land to confirm the defaults left them equivalent (same node names, materials and
+triangle counts).
+
+**Decisions** (2026-11-12): R8 amended for open wrap porches (≤ 2.0 m into a side setback, ≥ 4.0 m to the
+neighbouring building). A-03 keeps W 13.0 like A-02: they differ in depth, plan and every visible element. The porch
+post list lives in the HOUSES entry only; the site build reads the collision boxes the house build derives from it.
+The interior counts 12 424 triangles, 0.4 k over the 12 k ceiling: accepted for this house (2026-11-12).
+
+**Pieces and where they come from** (every piece is a building part or a simple shape, so none is a `make model` job):
+
+| Piece | Source | Why |
+|---|---|---|
+| Shell walls, window cuts, plinth, corner boards | existing `L.wall`, `L.perimeter`, `dress()` | same builders as every house |
+| Cedar shakes | new `wall_pat="shakes"` in `L.make_texture` | a wall texture, recoloured by the palette |
+| Gambrel roof and gable ends | new shared `L.prism_x`, used by `gambrel_roof_x` | any extruded profile (gambrel, barn, dormer) |
+| Gable windows, chimney | existing `dress()`, chimney boxes | same window trim as the facades |
+| Wrap porch deck, posts, beams, fascia | `L.box` through `Mirror` | plain boxes; `corner` picks the east or west corner |
+| Porch roof | new shared `L.lean_to_corner` | a lean-to that turns a corner, reusable for any wrap porch |
+| Porch railings | existing `L.railing` | shared with the Tuscan balcony |
+| Garage wing and carriage doors | existing `wing_exterior`, mirrored by `wing.side="west"` | one wing builder for both sides |
+| Two-flight stair | new `build_stair_l`, driven by `Plan.flights` | any stair with a landing |
+| Stone fireplace, inglenook, mudroom bench | new `LI.fireplace(style="stone")`, `LI.inglenook`, `LI.mudroom_bench` | parameterised fittings for the next villas |
+| Kitchen, island, hood, bathrooms, wardrobes, closet rails, beams | existing `lib_interior.py` builders | reused as they are |
+| Lot dressing: apron, path, lamp, hedge, hydrangeas, postbox | existing `lib_site.py` builders | same estate furniture as A-01 and A-02 |
+
 #### 7.2c.5 Generator extension wishlist (impact on uniqueness ÷ effort)
 
 | # | Extension | Lots it unlocks | Impact | Effort |
 |---|-----------|-----------------|--------|--------|
 | 1 | Palette-driven exterior materials (N2) + per-house `eave` and `shutters` flags | all | high | XS |
-| 2 | Wing variants: mirrored wing (−x, every `L.box`/`L.b` in `wing_exterior` through `Mirror`, seeder minX from the wing), wing on the cottage plan (doorway in the east living wall), `wing.setback` (recessed front; doorway centre clamped to the wing's depth ± 0.8), `doors` 1/2, `door_style` carriage/plank/flush/glass, wing `roof` gable_z/flat/hip (N6) | 14 lots (all but B-02, B-10) | high | S–M |
+| 2 | Wing variants: mirrored wing (−x, every `L.box`/`L.b` in `wing_exterior` through `Mirror`, seeder minX from the wing) [A-03 builds it: 7.2c.6 H1], wing on the cottage plan (doorway in the east living wall), `wing.setback` (recessed front; doorway centre clamped to the wing's depth ± 0.8), `doors` 1/2, `door_style` carriage/plank/flush/glass, wing `roof` gable_z/flat/hip (N6) | 14 lots (all but B-02, B-10) | high | S–M |
 | 3 | Per-house `rotationY` in the site build (`houses[].rotationY`, door point = origin + R(θ)·(0, ZF + 0.8)); today it is hard-wired to 0 | all B lots | required | XS |
 | 4 | Hip roof `L.hip_roof` + `L.beam` caps (N1); pyramid case for chimney hoods and the gazebo | A-01, B-02, B-04, B-09 wing | high | S |
-| 5 | Wall textures in `make_texture`: `battens` (board-and-batten), `shakes` (shingles, fish-scale variant), half-timber overlay with `L.beam` | B-03, B-05, B-06, B-07, B-12, A-03 | high | S each |
-| 6 | Porch kinds: `loggia` + `L.arch_panel` (N3), `portico` (2 columns + pediment), `gallery` (two-tier porch), `wrap` (porch turning a corner), `craftsman` (tapered posts on stone piers) | A-01, B-09, B-01, A-03, B-07, B-11 | high | S–M each |
+| 5 | Wall textures in `make_texture`: `battens` (board-and-batten), `shakes` (shingles [A-03 builds it: 7.2c.6 H3], fish-scale variant), half-timber overlay with `L.beam` | B-03, B-05, B-06, B-07, B-12, A-03 | high | S each |
+| 6 | Porch kinds: `loggia` + `L.arch_panel` (N3), `portico` (2 columns + pediment), `gallery` (two-tier porch), `wrap` (porch turning a corner) [A-03 builds it: 7.2c.6 H4, `L.lean_to_corner`; `corner="east"|"west"` picks the corner, posts in house coordinates], `craftsman` (tapered posts on stone piers) | A-01, B-09, B-01, A-03, B-07, B-11 | high | S–M each |
 | 7 | `kind="french"` windows with blocking collision (N5) + `L.railing` (N4), Juliet and full balconies | A-01, B-01, B-02, B-07, A-04 | medium-high | S |
 | 8 | Front window presets: `symmetric` (centred door, equal bays: B-02, B-09), `ribbon` (B-04), `picture` floor-to-ceiling (B-06 gable, B-10, A-04), `bay` (projecting polygonal bay box, B-07) | 6 lots | medium-high | M |
-| 9 | Roof forms: `shed`/`butterfly` (B-10), `gambrel_x` (A-03), cross gable on `gable_z` (B-07), steep crisp gable via `eave=0` (B-06) | 4 lots | medium | S–M each |
+| 9 | Roof forms: `shed`/`butterfly` (B-10), `gambrel_x` (A-03) [A-03 builds it: 7.2c.6 H2, `L.prism_x`], cross gable on `gable_z` (B-07), steep crisp gable via `eave=0` (B-06) | 4 lots | medium | S–M each |
 | 10 | Dormers on a `gable_x` front slope (gable box + mini prism + dressed window, visual) | B-03 (+ option B-12) | medium | M |
 | 11 | Chimney list (twin end chimneys) and chimney materials | B-09, B-05, B-02 | low-medium | XS |
 | 12 | Detail kit with `L.beam`: exposed rafter tails and knee brackets, vigas, half-timbering | B-11, B-08, B-05 | medium | S |
 | 13 | Mission parapet (shaped espadaña panel with a bell niche, from `L.arch_panel`) | B-08 | medium | S |
 | 14 | Carport builder (slim posts + flat slab + fascia) and site-side driveway extension | B-10 | low-medium | S |
-| 15 | Interior plan variants: villa plan [first variant built: estate plan, 7.2d], open-plan modern, 3-bed bungalow | all (felt from inside) | high | L |
+| 15 | Interior plan variants: villa plan [first variant built: estate plan, 7.2d; second designed: harbor plan for A-03, 7.2d.1], open-plan modern, 3-bed bungalow | all (felt from inside) | high | L |
 | 16 | Walkable balconies / roof terraces (exterior levels), turrets | A-01, A-04, B-07 | low for the effort | L |
 
 Recommended order: 1 → 3 → 2 (mirror + setback first) → 4 → 6 (loggia) → 7, which is exactly what Villa Serena needs, then 5
 and 8, which give the executive homes most of their character.
 
-### 7.2d Villa interiors: the estate plan and style kits [built for A-01 and A-02]
+### 7.2d Villa interiors: the estate plan, the harbor plan and style kits [estate built for A-01 and A-02, harbor built for A-03]
 
 Item 15 of the wishlist, first variant. The town houses keep their duplex; a villa entry with
 `interior=dict(plan="estate", style=..., stair="west"|"east", ...)` in `build_house_v2.py` gets a luxury plan instead
@@ -726,6 +1002,231 @@ the next villas. Reception rooms and bedrooms stay empty for the player's Cove H
 
 Triangles: interiors ~11.7 k (A-02) and ~10.8 k (A-01), against ~5.2 k for a town house: within the 12 k work-interior
 ceiling, accepted for the premium homes.
+
+#### 7.2d.1 The harbor plan for A-03 [built]
+
+Second variant of wishlist item 15. A New England shingle summer house is lived in around one big **living hall**, not
+a formal foyer: you step from the porch straight into it, a dog-leg stair climbs along the front wall to a landing with
+its own window and turns up a narrow stair well, a fieldstone fireplace sits in an **inglenook** with two built-in
+settles, and the service side (mudroom, powder room, kitchen) runs to the garage on the west. Sources: the "service strip
+between kitchen and garage" and the mudroom-off-the-garage pattern in
+[`notes/floor_plans.md`](research/luxury-suburban-houses/notes/floor_plans.md), the Vernacular cues (cedar shingles,
+wrap porch, informal massing) in [`notes/traditional_styles.md`](research/luxury-suburban-houses/notes/traditional_styles.md).
+
+| | Estate plan (A-01, A-02) | Harbor plan (A-03) |
+|---|---|---|
+| Entry | centre hall, double height, gallery | living hall (the main living room), single height, beamed ceiling |
+| Stair | one straight flight on the hall axis, rising away from the door | dog-leg: 4 treads along the front wall, landing, 11 treads toward the back, boxed in on L1 |
+| Fire | in the great room, back wall | inglenook on the hall's east wall, two settles and a header beam |
+| Reception | side room + open room in front, great room across the back | parlour (east, French doors onto the porch), sunroom across the back east |
+| Service | kitchen beside the garage door, powder at the back | mudroom with bench (garage door), powder off the mudroom, kitchen with island behind |
+| L1 | suite on one side, 2 bedrooms, bath 2 | suite (bedroom, bath, walk-through closet), 3 bedrooms incl. a bunk room, bath 2 |
+
+Written for the west wing only (`Plan.harbor()` asserts `wing.s == −1`, `floors == 2`, `not mirror`), no mirroring.
+House frame: xi 6.095, zi_f 5.0, zi_b −5.8, PT 0.12, e = PT/2; a partition "at x" is its centre line, its faces at ±e.
+
+```
+L0   x: −6.095        −3.43                          0.06             2.6          6.095
+z 5.0  ┌─────────────┬───────────────────────────door──────────────┬──────────────┐
+       │ Powder      │ landing ◄── flight 1 (4)        ┃           │ Parlour      │
+z 3.0  ├──── d ──────┤   │                    inglenook┃ opening   │   French door│ east
+       │ Mudroom     │   │ flight 2 (11)       settles ┃ 1.9–4.4   │   onto the   │ porch
+garage │   bench     │   ▼                     fire ▣  ┃           │   porch      │
+ door  │             │        Living hall      settles ┃           │              │
+z −1.54├──── d ──────┴──── opening −3.0…−1.0 ──┬─ d ───┴────────────┴──── d ───────┤
+       │ Kitchen: run on the back + west wall, │ Sunroom (slate floor,            │
+       │ island, plaster hood                   │ panelled walls)                 │
+z −5.8 └────────────────────────────────────────┴─────────────────────────────────┘
+```
+
+**L0 rooms** (rect x0, x1, z0, z1; level 0)
+
+| Room | Rect | Floor | Paint / finish | Light |
+|---|---|---|---|---|
+| Hall | −3.37, 2.54, −1.48, 5.0 | wood | `hall`, no wainscot | manual (below) |
+| Mudroom | −6.095, −3.49, −1.48, 2.94 | `foyer` (slate) | `mudroom`, `panel=True` (beadboard) | centre |
+| Powder | −6.095, −3.49, 3.06, 5.0 | bath | `wainscot=True`, `baseboard=False` | centre |
+| Parlour | 2.66, 6.095, −1.48, 5.0 | wood | `parlour` (wainscot dropped for the triangle budget) | centre |
+| Kitchen | −6.095, 0.0, −5.8, −1.6 | wood | none | manual |
+| Sunroom | 0.12, 6.095, −5.8, −1.6 | `foyer` (slate) | `sunroom`, `panel=True` | centre |
+
+**L0 partitions** (name, axis, fixed, a0 → a1, doors (a, b[, h, style]))
+
+| Partition | Line | Doors |
+|---|---|---|
+| `Walls_Row` | x-axis at z −1.54, x −6.095 → 6.095 | mudroom → kitchen (−5.2, −4.3); hall → kitchen (−3.0, −1.0, 2.4, cased); hall → sunroom (0.25, 1.15); parlour → sunroom (3.9, 4.8) |
+| `Walls_HallW` | z-axis at x −3.43, z −1.54 → 5.0, **h = L1_Y** (it lines the stair well) | none |
+| `Walls_HallE` | z-axis at x 2.6, z −1.54 → 5.0 | hall → parlour (1.9, 4.4, 2.4, cased) |
+| `Walls_Powder` | x-axis at z 3.0, x −6.095 → −3.43 | powder door (−5.3, −4.5) |
+| `Walls_KitchenE` | z-axis at x 0.06, z −5.8 → −1.54 | kitchen → sunroom (−4.4, −2.6, 2.4, cased) |
+
+Path from the front door to the garage: hall → cased opening → kitchen → mudroom door → garage doorway.
+
+**L1 rooms** (level 1)
+
+| Room | Rect | Floor | Paint / finish | Notes |
+|---|---|---|---|---|
+| CorridorW | −6.095, −3.37, −0.69, 0.6375 | wood | | `open=("E",)`, `light=False` |
+| StairHead | −3.37, −2.17, −0.69, 0.6375 | wood | | `open=("W", "E", "N")`, `light=False`; ends flush with the top tread |
+| CorridorE | −2.17, 2.54, −0.69, 0.6375 | wood | | `open=("W",)`, `light=False` |
+| StairWell | −3.37, −2.17, 0.6375, 5.0 | **None** (void over flight 2 and the landing) | `hall`, `baseboard=False` | `light=False` |
+| Bunk | −6.095, −3.49, 0.7575, 5.0 | wood | `bunk` | bedroom 3, empty |
+| Bed2 | −2.05, 2.54, 0.7575, 5.0 | wood | `bed` | over the hall front and flight 1 |
+| Suite | 2.66, 6.095, −0.69, 5.0 | wood | `suite` | primary bedroom |
+| Bed4 | −6.095, −2.35, −5.8, −0.81 | wood | `bed` | |
+| Bath2 | −2.23, 0.35, −5.8, −0.81 | bath | `wainscot=True`, `baseboard=False` | |
+| Closet | 0.47, 2.54, −5.8, −0.81 | wood | | walk-through from the primary bath |
+| PrimaryBath | 2.66, 6.095, −5.8, −0.81 | bath | `wainscot=True`, `baseboard=False` | |
+
+The corridor is three rooms so its floor can stop at the top tread over the stair mouth only (one room with `open=("N",)`
+would leave a 6 cm slot under the bedroom partitions; one without it would overlap the top tread).
+
+**L1 partitions**
+
+| Partition | Line | Doors |
+|---|---|---|
+| `Walls_FrontRowW` | x-axis at z 0.6975, x −6.095 → −3.43 | bunk (−5.2, −4.3) |
+| `Walls_FrontRowE` | x-axis at z 0.6975, x −2.11 → 2.6 | bed 2 (−1.6, −0.7) |
+| `Walls_WellW` | z-axis at x −3.43, z 0.6375 → 5.0 | none |
+| `Walls_WellE` | z-axis at x −2.11, z 0.6375 → 5.0 | none |
+| `Walls_SuiteW` | z-axis at x 2.6, z −5.8 → 5.0 | corridor → suite (−0.5, 0.4); primary bath → closet (−5.3, −4.5) |
+| `Walls_BackRow` | x-axis at z −0.75, x −6.095 → 6.095 | bed 4 (−3.3, −2.5); bath 2 (−1.6, −0.8); suite → primary bath (4.1, 4.9) |
+| `Walls_Bed4E` | z-axis at x −2.29, z −5.8 → −0.75 | none |
+| `Walls_Bath2E` | z-axis at x 0.41, z −5.8 → −0.75 | none |
+
+**Windows** (`Plan.window(side, a, b, level, y, kind)`; y = (0.9, 2.2) unless given). Spacing was checked with the
+exterior shutters (width min(0.55, 0.38·w), 0.12 off the opening) so no two shutters, casings or porch parts overlap.
+
+| Side | L0 | L1 |
+|---|---|---|
+| front | powder (−5.15, −4.45) y (1.5, 2.1); **landing** (−3.22, −2.32) y (1.4, 2.4); hall (1.3, 2.2); parlour (3.6, 5.2) | bunk (−5.45, −4.35); stair well (−3.22, −2.32); bed 2 (−0.9, 0.0) and (1.3, 2.2); suite (3.6, 5.2) |
+| back | kitchen sink (−4.0475, −2.4475) y (1.05, 2.15); sunroom (0.8, 2.4) and (3.8, 5.4) | bed 4 (−5.0, −3.4); bath 2 (−1.1, −0.5) y (1.5, 2.1); closet (1.2, 1.8) y (1.5, 2.1); primary bath (3.8, 5.0) y (1.0, 2.0) |
+| east | parlour (−1.1, −0.1); **French door** (0.8, 2.4) y (0.05, 2.30) `kind="french"`; parlour (3.3, 4.5); sunroom (−4.7, −2.7) | suite (0.0, 1.2) and (2.8, 4.0); primary bath (−4.0, −2.8) y (1.0, 2.0) |
+| west | **garage doorway** (0.2, 1.2) y (0, DOOR_H) `kind="door"`; kitchen (−4.0, −3.1) | corridor (−0.48, 0.42); bunk (2.3, 3.5); bed 4 (−3.9, −2.7) |
+
+The landing window and the stair-well window above it make a stacked pair off the storey rhythm, a shingle-style cue
+seen from the street; the landing window sits west of the porch roof. The kitchen west window stays clear of the return
+cabinet (it ends at z −4.2) and its shutter ends 4 cm before the wing's back wall. The parlour French door is visual only:
+the generic `COL_Window_<i>_French` box blocks it (it opens onto the porch, which the player reaches from outside). West
+L0 and L1 openings above z −2.595 face the wing: only the doorway on L0; the L1 west windows sit above the wing roof
+(its house-side edge is at 3.45).
+
+**Stair** (`build_stair_l(B, M, P)`, from `P.flights`; run 0.2875, rise 0.1875, 16 risers to L1_Y 3.0, width 1.2)
+
+```
+flight 1   Stair_F1Step00..03  rises −x along the front wall: tread i x [−1.02 − (i+1)·0.2875, −1.02 − i·0.2875],
+           z 3.8 → 5.0, solid box from y 0 to (i+1)·0.1875 (0.75 at x −2.17), run + 0.005 long as in build_stair;
+           Stair_F1Nose00..03 0.04 × 1.2 × 0.03 on the +x edge of each tread, M["trim"]
+landing    Stair_Landing  x −3.37 → −2.17, z 3.8 → 5.0, y 0 → 0.9375 (the 5th riser); Stair_LandingNose on its x −2.17 edge
+flight 2   Stair_F2Step00..10  rises −z along Walls_HallW: tread k z [3.8 − (k+1)·0.2875, 3.8 − k·0.2875], x −3.37 → −2.17,
+           solid from y 0 to 0.9375 + (k+1)·0.1875 (3.0 at z 0.6375); Stair_F2Nose00..10 on the +z edge of each tread
+rails      Stair_F1Handrail L.beam (−1.02, 3.76, 0.95) → (−2.17, 3.76, 1.70), 0.06 × 0.06, M["rail"]
+           Stair_F2Handrail L.beam (−2.13, 3.8, 1.8875) → (−2.13, 0.6375, 3.95), 0.06 × 0.06, M["rail"]
+           (runs into Fit_WellHeader and Walls_WellE above 2.75, hidden there)
+           Stair_F1Stringer L.beam (−1.02, 3.80, 0.06) → (−2.17, 3.80, 0.81); Stair_F2Stringer (−2.17, 3.8, 0.9975) →
+           (−2.17, 0.6375, 3.06); 0.04 × 0.25, M["stair"]
+balusters  0.035 square, 0.95 high, M["trim"]: flight 1 treads 1 and 3 at z 3.76 (x −1.451, −2.026, from 0.375 / 0.75);
+           flight 2 treads 1, 3, 5, 7, 9 at x −2.13 (z 3.369, 2.794, 2.219, 1.644, 1.069, from 1.3125 / 1.6875 /
+           2.0625 / 2.4375 / 2.8125)
+newels     Stair_NewelFoot (−0.96, 3.76) 0.12 square, y 0 → 1.15 + cap 0.16 × 0.06 (M["rail"]);
+           Stair_NewelTurn (−2.13, 3.76) y 0 → 2.09 + cap
+header     Fit_WellHeader x −2.23 → −2.05, z 0.6375 → 5.0, y 2.75 → 3.0, M["trim"]: carries Walls_WellE over the hall and
+           closes the slot between the L0 ceiling and that wall; clear height on the last tread of flight 1 is 2.0 m
+```
+Headroom: flight 1 and the landing stay under the L1 floor (top tread 0.75 + 1.8 = 2.55, landing 2.74 < 2.8); flight 2
+climbs in the open well. The L1 well is closed by walls on three sides and open only at its mouth, the top tread, so it
+needs no gallery guard.
+
+**layout.json** (`Plan.layout` takes `P.l1_rects` and, when `P.flights` is set, writes its stairs instead of `Stair_Main`)
+
+```
+L0 rects   (−6.095, 6.095, −5.8, 5.2) and the wing (−13.495, −6.095, −2.19, 5.0)
+L1 rects   (−6.095, 6.095, −5.8, 0.6375)      back row and corridor
+           (−6.095, −3.37, 0.6375, 5.0)       bunk room and Walls_WellW
+           (−2.17, 6.095, 0.6375, 5.0)        bed 2 (over flight 1 and the landing corner) and the suite
+stairs     Stair_F1      x −2.17 → −1.02, z 3.8 → 5.0, y0 0, y1 0.75, rise "-x"
+           Stair_Landing x −3.37 → −2.17, z 3.8 → 5.0, y0 0.9375, y1 0.9375, rise "-z" (a flat stair; houseLevels.ts accepts it)
+           Stair_F2      x −3.37 → −2.17, z 0.6375 → 3.8, y0 0.9375, y1 3.0, rise "-z"
+```
+Each step between pieces is one riser (0.1875 < STEP_UP 1). The L1 rects leave out the well (x −3.37 → −2.17, z 0.6375 →
+5.0).
+
+**Collisions** (besides the walls, which collide through `L.wall`): `Stair_F1Side` centre (−1.595, 3.76), 1.15 × 0.08,
+y 0 → 2.8 (no stepping onto flight 1 from the hall side); `Stair_F2Side` centre (−2.13, 2.21875), 0.08 × 3.1625, y 0 → 3.0
+(above it, `Walls_WellE` collides on L1); fittings collide through their builders (fireplace, settles, bench, island,
+kitchen run and return, vanities, WCs, showers, tub, wardrobes, closet rails); the French door box. Garage doorway: the
+wing lining and casings of `build_garage` through H1.
+
+**Fittings** (`build_harbor(B, M, P)`; wall anchors `((x, z), facing)` on the room-side face)
+
+| Where | Builder |
+|---|---|
+| Hall | `LI.fireplace(B, "Fit_Fireplace", ((2.54, 0.05), "-x"), 0, L0_H, M, "stone")` (new style) · `LI.inglenook(B, "Fit_Inglenook", ((2.54, 0.05), "-x"), 0, M, width=2.9, depth=1.3, header_y=2.25)` (new) · `LI.beams(B, "Fit_BeamHall", −2.05, 2.54, −1.48, 5.0, L0_H, M, axis="z", spacing=1.15)` → beams at x −1.476, −0.329, 0.819, 1.966 · well header and stair (above) |
+| Kitchen | `build_kitchen(KB, M, P)` with `KB = Mirror(coll, cols, −1)` and `P.kitchen = dict(x0=0.4, x1=xi, ret_z=zb + 1.6, sink_x=3.2475, hood=(1.05, 0.9), uppers="shelf", west=True)` in the mirrored frame: run on the back wall x −6.095 → −0.4, return on the west wall z −5.18 → −4.2, sink at x −3.2475 under the back window, open shelves at x −2.2475 → −1.55 and −6.095 → −4.6475 · `Fit_Cooktop` box (−1.05, −5.47), 0.76 × 0.5 × 0.012 at K_H + 0.04, M["dark"] · `LI.range_hood(B, "Fit_Hood", ((−1.05, −5.8), "+z"), 0, L0_H, M, "plaster")` · `LI.island(B, "Fit_Island", −3.2475, −3.68, 0, 2.4, 0.9, M, pendants=2, ceil_y=L0_H)` |
+| Mudroom | `LI.mudroom_bench(B, "Fit_MudBench", ((−3.49, 0.8), "-x"), 0, 2.4, M)` (new), z −0.4 → 2.0, facing the garage doorway |
+| Powder | `LI.vanity(B, "Fit_PowderVanity", ((−6.095, 4.4), "+x"), 0, 0.6, M)` · `LI.wc(B, "Fit_PowderWC", ((−3.49, 4.3), "-x"), 0, M)` |
+| Bed 2, bed 4 | `LI.wardrobe(B, "Fit_WardrobeBed2", ((−2.05, 2.9), "+x"), Y1, 2.0, M)` · `LI.wardrobe(B, "Fit_WardrobeBed4", ((−2.35, −3.3), "-x"), Y1, 2.0, M)` |
+| Bath 2 | `LI.shower(B, "Fit_Bath2Shower", (−2.23, −5.8), 1, 1, Y1, M)` · `LI.vanity(B, "Fit_Bath2Vanity", ((0.35, −3.6), "-x"), Y1, 0.9, M)` · `LI.wc(B, "Fit_Bath2WC", ((0.35, −2.2), "-x"), Y1, M)` |
+| Primary bath | `LI.tub(B, "Fit_Tub", 4.3, −4.5, Y1, 1.7, 0.8, "x", M)` · `LI.vanity(B, "Fit_SuiteVanity", ((2.66, −2.5), "+x"), Y1, 1.5, M, basins=2, depth=0.55)` · `LI.shower(B, "Fit_SuiteShower", (6.095, −0.81), −1, −1, Y1, M)` · `LI.wc(B, "Fit_SuiteWC", ((6.095, −2.4), "-x"), Y1, M)` |
+| Closet | `LI.closet_rail(B, "Fit_ClosetRailW", ((0.47, −3.3), "+x"), Y1, 4.0, M)` · `LI.closet_rail(B, "Fit_ClosetRailE", ((2.54, −2.65), "-x"), Y1, 3.3, M)` (1.17 m aisle) |
+| Suite | `LI.beams(B, "Fit_BeamSuite", 2.66, 6.095, −0.69, 5.0, Y1T, M, axis="x", spacing=5.69 / 4)` → beams at z 0.021, 1.444, 2.866, 4.289 |
+
+Hall, parlour, sunroom, bunk room, bedrooms and suite stay empty for Cove Home furniture.
+
+New builders in `lib_interior.py` (wall-anchor convention of the module):
+- `fireplace(…, style="stone")`: `_Hearth` 1.96 × 0.5 × 0.05 stone (1.96 so its ends stay 2 cm off the settles);
+  `_Firebox` 0.86 × 0.22 × 0.78 soot at y + 0.05; `_JambA/B` 0.42 × 0.3 × 0.78 stone, shift ∓0.64; `_Lintel`
+  1.7 × 0.3 × 0.34 stone at y + 0.83; `_Mantel` 1.9 × 0.34 × 0.12 `M["beam"]` at y + 1.17; `_Breast` 1.5 × 0.22 stone from
+  y + 1.29 to the ceiling; `wcol` 1.96 × 0.5 × 1.3.
+- `inglenook(B, name, wall, y, M, width=2.9, depth=1.3, header_y=2.25)`: per side (shift ∓(width/2 − 0.225)) a settle
+  `_BaseA/B` 0.45 × depth × 0.40, `_SeatA/B` 0.47 × (depth + 0.02) × 0.05 at y + 0.40, `_BackA/B` 0.06 × depth × 1.40 on the
+  outer edge (shift ∓(width/2 − 0.03)); two `_PostA/B` 0.1 × 0.1 from the floor to the header at depth − 0.1, shift
+  ∓(width/2 − 0.05); `_Header` width × 0.2 × 0.22 at y + header_y, `off = depth − 0.2`; all `M["beam"]`;
+  `wcol` per settle 0.45 × depth × 1.4. Here the settles cover z −1.40 → 1.50, mouth at x 1.24, header x 1.24 → 1.44.
+- `mudroom_bench(B, name, wall, y, along, M, depth=0.45)`: `_Base` along × depth × 0.40 `M["closet"]`; `_Seat`
+  (along + 0.04) × (depth + 0.03) × 0.05 `M["beam"]` at y + 0.40; `_Back` along × 0.02 × 1.35 `M["closet"]` from y + 0.45;
+  `_HookRail` along × 0.03 × 0.12 `M["beam"]` at y + 1.55, off 0.02; `int(along / 0.4)` `_Hook<k>` 0.03 × 0.08 × 0.03
+  `M["fixture"]` at y + 1.57 (on the rail face, not floating under it), off 0.05, evenly spread; `_Shelf` (along + 0.04) × 0.30 × 0.03 `M["closet"]` at y + 1.80;
+  `wcol` (along + 0.04) × (depth + 0.03) × 0.5.
+
+**Lights** (rooms with `light=True` get a centre lamp): `("Hall", 0, 0.245, 0.4)`, `("HallFront", 0, 0.245, 3.2)`
+(between the beams at −0.329 and 0.819), `("Kitchen", 0, −1.6, −2.6)`, `("KitchenSink", 0, −3.2475, −4.6)`,
+`("StairWell", 1, −2.77, 2.8)`, `("CorridorW", 1, −4.7, −0.03)`, `("CorridorE", 1, 0.2, −0.03)`; the island pendants.
+
+**Code hooks.** `Plan.__init__` dispatches `interior.plan == "harbor"` to `self.harbor()`, which fills rooms,
+partitions, windows, `self.flights`, `self.l1_rects`, `self.kitchen` and `self.fit = dict(plan="harbor", S=S, I=I)` and
+leaves `self.stair` and `self.bath` at None. `build_interior` creates the `P.fit` materials as today (the harbor kit
+provides every key read there); it calls `build_kitchen` with `KB`
+when `P.kitchen.get("west")`, `build_stair_l` when `P.flights`, and `build_harbor` instead of `build_estate` when
+`P.fit.get("plan") == "harbor"`. No new allow-list prefix (`Stair_`, `Fit_`, `Kitchen_`, `Garage_` exist).
+
+**Style kit** (`STYLES["harbor"]`):
+
+```python
+"harbor": dict(foyer=("tiles", "#5e6366", "#4a4f52", 0.6), stone="#9a948a", rail="#6b4c32", baluster="trim",
+               metal="#b08d57", fire="stone", island="#b8895a", hood="plaster", uppers="shelf", beam="#8a6d4e",
+               shelf="#c9a77c", closet="#f1efe8", art="#4f6f86", art2="#e6dcc6", plaster="#f4f2ea",
+               vanity_top="#e9e7e1", stair_pat="planks", panel_pat="stripes", panel_acc="#e6e4dc",
+               paints=dict(hall="#f1ede2", mudroom="#dfe6e2", parlour="#e6ecea", sunroom="#e4eef0", bunk="#d6e4ec",
+                           suite="#ebefe9")),
+```
+
+| Style kit | Harbor Shingle House (A-03, `harbor`) |
+|---|---|
+| Plan | living hall with a dog-leg stair and inglenook; parlour (east) and sunroom (back east); mudroom, powder and kitchen on the garage side |
+| Floors | white oak planks; slate tiles in the mudroom and the sunroom |
+| Walls / ceilings | white beadboard wainscot (mudroom, sunroom), sea-glass and pale blue paints, weathered oak beams in the hall and the suite |
+| Stair | oak handrail on white square balusters, capped newels, boxed well upstairs with its own window |
+| Fireplace | fieldstone surround and chimney breast, oak mantel, inglenook settles under an oak header |
+| Kitchen | pale grey-white cabinets, soapstone worktops, open oak shelves, white plaster hood, butcher-block island |
+| Baths | white marble vanity tops, aged-brass fixtures, freestanding tub in the primary bath |
+
+Triangles: about 10.5 k by count of the pieces above (stairs 0.5 k, kitchen 1.0 k, inglenook and fireplace 0.3 k, baths
+0.9 k, beams 0.1 k; walls, skins and trims as in the estate plan), inside the 12 k ceiling. The build prints `interior
+tris`; if it goes over 12 k, drop the sunroom beadboard ceiling and the parlour wainscot first.
+Built: the first build counted 12 724 (more rooms, windows and wall skins than the estate plan), so both were dropped:
+**12 424** interior, 6 732 exterior. Still 0.4 k over the 12 k ceiling; the next cuts would be lamp segments or fewer
+L1 windows (open).
 
 ### 7.3 Non-lot land around the bands
 

@@ -29,6 +29,7 @@ class HousingUnitSeeder extends Seeder
         // Cove Heights (docs/GATED_COMMUNITY.md 7.2b): door point from cove_heights.layout.json "houses"
         ['cove_villa_a02', 'buy', 20000, -281.0, 1.25, -286.5, '#F4F2EC'], // Colonial Villa, lot A-02
         ['cove_villa_a01', 'buy', 26000, -308.5, 1.25, -285.5, '#E6C495'], // Villa Serena, lot A-01
+        ['cove_villa_a03', 'buy', 28000, -220.8, 1.25, -286.2, '#B8875A'],
     ];
 
     /** @var array<string, array{minX:float,maxX:float,minZ:float,maxZ:float,maxY?:float}> */
@@ -46,6 +47,7 @@ class HousingUnitSeeder extends Seeder
         // two storeys + the garage wing on +x (build_house_v2.py prints these)
         'cove_villa_a02' => ['minX' => -6.295, 'maxX' => 13.695, 'minZ' => -5.0, 'maxZ' => 5.2, 'maxY' => 5.6],
         'cove_villa_a01' => ['minX' => -6.795, 'maxX' => 14.195, 'minZ' => -5.6, 'maxZ' => 5.2, 'maxY' => 5.6],
+        'cove_villa_a03' => ['minX' => -13.695, 'maxX' => 6.295, 'minZ' => -6.0, 'maxZ' => 5.2, 'maxY' => 5.6],
     ];
 
     public function run(): void

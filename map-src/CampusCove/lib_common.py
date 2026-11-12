@@ -81,6 +81,19 @@ def make_texture(key, base, var=0.06, pattern="noise", size=64, accent=None, see
             elif pattern == "checker":
                 if ((x // 16) + (y // 16)) % 2 == 0:
                     r, g, bl = ar + k, ag + k, ab + k
+            elif pattern == "shakes":
+                course, row = y // 8, y % 8
+                width = (9, 13, 11)[course % 3]
+                shifted = x + (course * 23) % 64
+                if row == 0:
+                    r, g, bl = ar, ag, ab
+                elif row == 1:
+                    r, g, bl = (r0 + ar) / 2, (g0 + ag) / 2, (b0 + ab) / 2
+                elif shifted % width == 0:
+                    r, g, bl = ar, ag, ab
+                else:
+                    tone = (((shifted // width) * 73 + course * 151) % 11 - 5) / 5 * 0.05
+                    r, g, bl = r + tone, g + tone, bl + tone
             px.extend((max(0, min(1, r)), max(0, min(1, g)), max(0, min(1, bl)), 1.0))
     img.pixels.foreach_set(px)
     img.pack()
@@ -1281,6 +1294,36 @@ def railing(coll, name, pts, y0, h, step, mat, post=0.08, bar=0.025):
             t = k / n
             out.append(box(coll, f"{name}_Bar{i}_{k:02d}", ax + (bx - ax) * t, az + (bz - az) * t, y0 + 0.12, bar, bar, h - 0.17, mat))
     return out
+
+
+def prism_x(coll, name, poly, x0, x1, mat, tile=1.0):
+    assert len(poly) >= 3 and x1 > x0, (name, poly, x0, x1)
+    bm = bmesh.new()
+    west = [bm.verts.new(b(x0, z, y)) for z, y in poly]
+    east = [bm.verts.new(b(x1, z, y)) for z, y in poly]
+    caps = [bm.faces.new(west), bm.faces.new(list(reversed(east)))]
+    n = len(poly)
+    for i in range(n):
+        j = (i + 1) % n
+        bm.faces.new((west[i], west[j], east[j], east[i]))
+    bmesh.ops.triangulate(bm, faces=caps)
+    return _mesh_from(coll, name, bm, mat, tile)
+
+
+def lean_to_corner(coll, name, x0, x_wall, x_out, z_wall, z_out, z1, y_high, y_low, thick, mat, tile=0.7, mirror=1):
+    assert x0 < x_wall < x_out and z1 < z_wall < z_out and y_low < y_high and mirror in (1, -1), name
+    corners = ((x0, z_wall, y_high), (x0, z_out, y_low), (x_out, z_out, y_low), (x_wall, z_wall, y_high),
+               (x_out, z1, y_low), (x_wall, z1, y_high))
+    bm = bmesh.new()
+    top = [bm.verts.new(b(mirror * x, z, y)) for x, z, y in corners]
+    bot = [bm.verts.new(b(mirror * x, z, y - thick)) for x, z, y in corners]
+    A, B, C, D, E, F = range(6)
+    for quad in ((A, D, C, B), (D, F, E, C)):
+        bm.faces.new([top[i] for i in quad])
+        bm.faces.new([bot[i] for i in reversed(quad)])
+    for i, j in ((A, B), (B, C), (C, E), (E, F), (F, D), (D, A)):
+        bm.faces.new((top[i], bot[i], bot[j], top[j]))
+    return _mesh_from(coll, name, bm, mat, tile)
 
 
 def rot_uvs90(objs):
