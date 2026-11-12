@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { MAX_SLOT_COPIES, SHELF_KIT, lighterStock, shelfPieces, shelfUnits, slotBoxes, slotCapacity, slotCopies, slotTag, type ShelfArrange, type SlotCopy } from './shelves.ts'
+import { MAX_SLOT_COPIES, SHELF_KIT, lighterStock, shelfPieces, shelfUnits, slotBoxes, slotCapacity, slotCopies, emptySlotCube, EMPTY_SLOT_COLORS, type ShelfArrange, type SlotCopy } from './shelves.ts'
 import type { Vec3 } from '../mallTemplates/mallTemplate.ts'
 
 const gondola = { shelf: 'gondola', length: 3, levels: 4, slots: 2 } as const
@@ -59,11 +59,18 @@ test('a gondola has slots on both faces, slot 0 on the left seen from each aisle
   assert.deepEqual(slotBoxes({ shelf: 'chiller', length: 2, levels: 1, slots: 4 }).map((b) => b.key), ['0.0.0', '0.0.1', '0.0.2', '0.0.3'])
 })
 
-test('the price tag of a slot sits on the front edge of its board, on the rim of a chiller', () => {
-  const front = slotBoxes(gondola)[0]!
-  assert.deepEqual(round(slotTag(gondola, front).position), [-0.73, 0.11, 0.454])
-  const chiller = { shelf: 'chiller', length: 2, levels: 1, slots: 1 } as const
-  assert.deepEqual(round(slotTag(chiller, slotBoxes(chiller)[0]!).position), [0, 0.8, 0.454])
+test('an empty slot holds a coloured cube that fits inside it and rests on its floor', () => {
+  for (const box of slotBoxes(gondola)) {
+    const cube = emptySlotCube(box, `s1#${box.key}`)
+    assert.ok(cube.side > 0 && cube.side <= Math.min(...box.size))
+    assert.ok(Math.abs(cube.position[1] - cube.side / 2 - (box.center[1] - box.size[1] / 2)) < 1e-9)
+    assert.equal(cube.yaw, box.yaw)
+    assert.ok((EMPTY_SLOT_COLORS as readonly string[]).includes(cube.color))
+  }
+  const box = slotBoxes(gondola)[0]!
+  assert.equal(emptySlotCube(box, 's1#0.0.0').color, emptySlotCube(box, 's1#0.0.0').color)
+  const colors = new Set(slotBoxes(gondola).map((b) => emptySlotCube(b, `s1#${b.key}`).color))
+  assert.ok(colors.size > 1, 'one shelf mixes colours')
 })
 
 test('capacity depends on the arrangement and the item size, capped', () => {

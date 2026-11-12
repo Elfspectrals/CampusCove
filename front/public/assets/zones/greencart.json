@@ -1075,162 +1075,162 @@
           "code": "grocery_cereal",
           "key": "cereal",
           "price": 18,
-          "count": 4,
-          "arrange": "front"
+          "count": 32,
+          "arrange": "messy"
         },
         "0.0.1": {
-          "code": "food_coffee",
-          "key": "coffee",
-          "price": 15,
-          "count": 5,
-          "arrange": "stack"
-        },
-        "0.0.2": {
           "code": "food_cookie",
           "key": "cookie",
           "price": 5,
-          "count": 10,
+          "count": 12,
+          "arrange": "front"
+        },
+        "0.0.2": {
+          "code": "grocery_chocolate",
+          "key": "chocolate",
+          "price": 10,
+          "count": 22,
           "arrange": "messy"
         },
         "0.1.0": {
-          "code": "food_coffee",
-          "key": "coffee",
-          "price": 15,
-          "count": 10,
-          "arrange": "rows"
-        },
-        "0.1.1": {
           "code": "food_cookie",
           "key": "cookie",
           "price": 5,
-          "count": 10,
-          "arrange": "rows"
+          "count": 44,
+          "arrange": "stack"
+        },
+        "0.1.1": {
+          "code": "grocery_chocolate",
+          "key": "chocolate",
+          "price": 10,
+          "count": 6,
+          "arrange": "front"
         },
         "0.1.2": {
-          "code": "grocery_cereal",
-          "key": "cereal",
-          "price": 18,
-          "count": 3,
-          "arrange": "front"
+          "code": "food_coffee",
+          "key": "coffee",
+          "price": 15,
+          "count": 48,
+          "arrange": "messy"
         },
         "0.2.0": {
           "code": "grocery_cereal",
           "key": "cereal",
           "price": 18,
-          "count": 8,
+          "count": 39,
           "arrange": "rows"
         },
         "0.2.1": {
-          "code": "grocery_cereal",
-          "key": "cereal",
-          "price": 18,
-          "count": 4,
-          "arrange": "rows"
-        },
-        "0.2.2": {
-          "code": "food_coffee",
-          "key": "coffee",
-          "price": 15,
-          "count": 10,
+          "code": "food_cookie",
+          "key": "cookie",
+          "price": 5,
+          "count": 11,
           "arrange": "front"
         },
-        "0.3.0": {
+        "0.2.2": {
           "code": "grocery_cereal",
           "key": "cereal",
           "price": 18,
-          "count": 7,
+          "count": 41,
+          "arrange": "stack"
+        },
+        "0.3.0": {
+          "code": "food_cookie",
+          "key": "cookie",
+          "price": 5,
+          "count": 25,
           "arrange": "rows"
         },
         "0.3.1": {
-          "code": "food_coffee",
-          "key": "coffee",
-          "price": 15,
-          "count": 10,
-          "arrange": "rows"
+          "code": "grocery_cereal",
+          "key": "cereal",
+          "price": 18,
+          "count": 5,
+          "arrange": "front"
         },
         "0.3.2": {
           "code": "food_cookie",
           "key": "cookie",
           "price": 5,
-          "count": 10,
+          "count": 47,
           "arrange": "rows"
         },
         "1.0.0": {
-          "code": "food_cookie",
-          "key": "cookie",
-          "price": 5,
-          "count": 10,
-          "arrange": "messy"
-        },
-        "1.0.1": {
-          "code": "grocery_cereal",
-          "key": "cereal",
-          "price": 18,
-          "count": 7,
-          "arrange": "rows"
-        },
-        "1.0.2": {
           "code": "food_coffee",
           "key": "coffee",
           "price": 15,
-          "count": 10,
+          "count": 25,
+          "arrange": "rows"
+        },
+        "1.0.1": {
+          "code": "grocery_chocolate",
+          "key": "chocolate",
+          "price": 10,
+          "count": 7,
+          "arrange": "front"
+        },
+        "1.0.2": {
+          "code": "grocery_banana",
+          "key": "banana",
+          "price": 6,
+          "count": 41,
           "arrange": "rows"
         },
         "1.1.1": {
           "code": "food_coffee",
           "key": "coffee",
           "price": 15,
-          "count": 10,
+          "count": 33,
           "arrange": "rows"
         },
         "1.1.2": {
           "code": "food_cookie",
           "key": "cookie",
           "price": 5,
-          "count": 7,
+          "count": 25,
           "arrange": "messy"
         },
         "1.2.0": {
-          "code": "food_coffee",
-          "key": "coffee",
-          "price": 15,
-          "count": 10,
+          "code": "grocery_chocolate",
+          "key": "chocolate",
+          "price": 10,
+          "count": 31,
           "arrange": "rows"
         },
         "1.2.1": {
-          "code": "food_cookie",
-          "key": "cookie",
-          "price": 5,
+          "code": "grocery_banana",
+          "key": "banana",
+          "price": 6,
           "count": 6,
-          "arrange": "stack"
-        },
-        "1.2.2": {
-          "code": "grocery_cereal",
-          "key": "cereal",
-          "price": 18,
-          "count": 3,
           "arrange": "front"
         },
+        "1.2.2": {
+          "code": "grocery_chocolate",
+          "key": "chocolate",
+          "price": 10,
+          "count": 45,
+          "arrange": "stack"
+        },
         "1.3.0": {
-          "code": "food_cookie",
-          "key": "cookie",
-          "price": 5,
-          "count": 7,
-          "arrange": "rows"
-        },
-        "1.3.1": {
-          "code": "grocery_cereal",
-          "key": "cereal",
-          "price": 18,
-          "count": 4,
-          "arrange": "rows"
-        },
-        "1.3.2": {
           "code": "food_coffee",
           "key": "coffee",
           "price": 15,
-          "count": 10,
+          "count": 25,
+          "arrange": "messy"
+        },
+        "1.3.1": {
+          "code": "grocery_chocolate",
+          "key": "chocolate",
+          "price": 10,
+          "count": 43,
           "arrange": "rows"
+        },
+        "1.3.2": {
+          "code": "grocery_banana",
+          "key": "banana",
+          "price": 6,
+          "count": 9,
+          "arrange": "front"
         }
       }
     },
@@ -1254,165 +1254,165 @@
       "slots": 3,
       "fill": {
         "0.0.0": {
-          "code": "food_coffee",
-          "key": "coffee",
-          "price": 15,
-          "count": 6,
-          "arrange": "front"
+          "code": "grocery_chocolate",
+          "key": "chocolate",
+          "price": 10,
+          "count": 40,
+          "arrange": "rows"
         },
         "0.0.1": {
-          "code": "food_cookie",
-          "key": "cookie",
-          "price": 5,
-          "count": 6,
-          "arrange": "front"
-        },
-        "0.0.2": {
           "code": "grocery_cereal",
           "key": "cereal",
           "price": 18,
-          "count": 7,
+          "count": 25,
+          "arrange": "messy"
+        },
+        "0.0.2": {
+          "code": "grocery_chocolate",
+          "key": "chocolate",
+          "price": 10,
+          "count": 24,
           "arrange": "rows"
         },
         "0.1.0": {
-          "code": "food_cookie",
-          "key": "cookie",
-          "price": 5,
-          "count": 10,
+          "code": "grocery_banana",
+          "key": "banana",
+          "price": 6,
+          "count": 7,
           "arrange": "front"
         },
         "0.1.1": {
-          "code": "grocery_cereal",
-          "key": "cereal",
-          "price": 18,
-          "count": 3,
-          "arrange": "rows"
+          "code": "grocery_chocolate",
+          "key": "chocolate",
+          "price": 10,
+          "count": 25,
+          "arrange": "messy"
         },
         "0.1.2": {
-          "code": "food_coffee",
-          "key": "coffee",
-          "price": 15,
-          "count": 10,
-          "arrange": "rows"
+          "code": "food_cookie",
+          "key": "cookie",
+          "price": 5,
+          "count": 38,
+          "arrange": "stack"
         },
         "0.2.0": {
           "code": "grocery_cereal",
           "key": "cereal",
           "price": 18,
-          "count": 4,
-          "arrange": "rows"
+          "count": 5,
+          "arrange": "front"
         },
         "0.2.2": {
-          "code": "food_cookie",
-          "key": "cookie",
-          "price": 5,
-          "count": 10,
+          "code": "grocery_banana",
+          "key": "banana",
+          "price": 6,
+          "count": 25,
           "arrange": "rows"
         },
         "0.3.0": {
-          "code": "food_coffee",
-          "key": "coffee",
-          "price": 15,
-          "count": 10,
-          "arrange": "front"
-        },
-        "0.3.1": {
           "code": "food_cookie",
           "key": "cookie",
           "price": 5,
-          "count": 10,
+          "count": 37,
           "arrange": "messy"
         },
+        "0.3.1": {
+          "code": "grocery_chocolate",
+          "key": "chocolate",
+          "price": 10,
+          "count": 48,
+          "arrange": "stack"
+        },
         "0.3.2": {
-          "code": "grocery_cereal",
-          "key": "cereal",
-          "price": 18,
-          "count": 4,
-          "arrange": "front"
-        },
-        "1.0.0": {
-          "code": "grocery_cereal",
-          "key": "cereal",
-          "price": 18,
-          "count": 3,
-          "arrange": "rows"
-        },
-        "1.0.1": {
           "code": "food_coffee",
           "key": "coffee",
           "price": 15,
-          "count": 6,
-          "arrange": "front"
+          "count": 36,
+          "arrange": "rows"
         },
-        "1.0.2": {
+        "1.0.0": {
           "code": "food_cookie",
           "key": "cookie",
           "price": 5,
-          "count": 10,
+          "count": 18,
+          "arrange": "front"
+        },
+        "1.0.1": {
+          "code": "grocery_cereal",
+          "key": "cereal",
+          "price": 18,
+          "count": 43,
           "arrange": "rows"
         },
+        "1.0.2": {
+          "code": "grocery_chocolate",
+          "key": "chocolate",
+          "price": 10,
+          "count": 42,
+          "arrange": "stack"
+        },
         "1.1.0": {
-          "code": "food_coffee",
-          "key": "coffee",
-          "price": 15,
-          "count": 10,
+          "code": "grocery_cereal",
+          "key": "cereal",
+          "price": 18,
+          "count": 33,
           "arrange": "rows"
         },
         "1.1.1": {
+          "code": "grocery_chocolate",
+          "key": "chocolate",
+          "price": 10,
+          "count": 26,
+          "arrange": "stack"
+        },
+        "1.1.2": {
+          "code": "food_coffee",
+          "key": "coffee",
+          "price": 15,
+          "count": 44,
+          "arrange": "messy"
+        },
+        "1.2.0": {
           "code": "food_cookie",
           "key": "cookie",
           "price": 5,
           "count": 10,
-          "arrange": "rows"
-        },
-        "1.1.2": {
-          "code": "grocery_cereal",
-          "key": "cereal",
-          "price": 18,
-          "count": 3,
           "arrange": "front"
         },
-        "1.2.0": {
-          "code": "food_coffee",
-          "key": "coffee",
-          "price": 15,
-          "count": 8,
-          "arrange": "rows"
-        },
         "1.2.1": {
-          "code": "grocery_cereal",
-          "key": "cereal",
-          "price": 18,
-          "count": 4,
-          "arrange": "rows"
+          "code": "grocery_banana",
+          "key": "banana",
+          "price": 6,
+          "count": 31,
+          "arrange": "stack"
         },
         "1.2.2": {
-          "code": "food_coffee",
-          "key": "coffee",
-          "price": 15,
-          "count": 10,
-          "arrange": "rows"
+          "code": "food_cookie",
+          "key": "cookie",
+          "price": 5,
+          "count": 16,
+          "arrange": "front"
         },
         "1.3.0": {
-          "code": "grocery_cereal",
-          "key": "cereal",
-          "price": 18,
-          "count": 3,
+          "code": "grocery_chocolate",
+          "key": "chocolate",
+          "price": 10,
+          "count": 6,
           "arrange": "front"
         },
         "1.3.1": {
-          "code": "food_coffee",
-          "key": "coffee",
-          "price": 15,
-          "count": 10,
-          "arrange": "rows"
-        },
-        "1.3.2": {
           "code": "food_cookie",
           "key": "cookie",
           "price": 5,
-          "count": 10,
+          "count": 47,
           "arrange": "rows"
+        },
+        "1.3.2": {
+          "code": "grocery_banana",
+          "key": "banana",
+          "price": 6,
+          "count": 6,
+          "arrange": "front"
         }
       }
     },
@@ -1436,165 +1436,165 @@
       "slots": 3,
       "fill": {
         "0.0.0": {
-          "code": "grocery_soda",
-          "key": "soda",
-          "price": 7,
-          "count": 9,
-          "arrange": "rows"
-        },
-        "0.0.1": {
           "code": "food_water_bottle",
           "key": "water_bottle",
           "price": 8,
-          "count": 8,
+          "count": 39,
+          "arrange": "rows"
+        },
+        "0.0.1": {
+          "code": "food_orange_juice",
+          "key": "orange_juice",
+          "price": 14,
+          "count": 21,
           "arrange": "front"
         },
         "0.0.2": {
-          "code": "food_orange_juice",
-          "key": "orange_juice",
-          "price": 14,
-          "count": 9,
-          "arrange": "rows"
+          "code": "grocery_milk",
+          "key": "milk",
+          "price": 10,
+          "count": 40,
+          "arrange": "messy"
         },
         "0.1.0": {
-          "code": "food_orange_juice",
-          "key": "orange_juice",
-          "price": 14,
-          "count": 10,
-          "arrange": "rows"
-        },
-        "0.1.1": {
-          "code": "food_orange_juice",
-          "key": "orange_juice",
-          "price": 14,
-          "count": 10,
-          "arrange": "front"
-        },
-        "0.1.2": {
           "code": "grocery_soda",
           "key": "soda",
           "price": 7,
-          "count": 10,
+          "count": 30,
+          "arrange": "rows"
+        },
+        "0.1.1": {
+          "code": "grocery_milk",
+          "key": "milk",
+          "price": 10,
+          "count": 35,
+          "arrange": "stack"
+        },
+        "0.1.2": {
+          "code": "food_orange_juice",
+          "key": "orange_juice",
+          "price": 14,
+          "count": 37,
           "arrange": "rows"
         },
         "0.2.0": {
           "code": "food_orange_juice",
           "key": "orange_juice",
           "price": 14,
-          "count": 9,
-          "arrange": "rows"
+          "count": 27,
+          "arrange": "stack"
         },
         "0.2.1": {
           "code": "grocery_soda",
           "key": "soda",
           "price": 7,
-          "count": 10,
-          "arrange": "rows"
+          "count": 26,
+          "arrange": "front"
         },
         "0.2.2": {
           "code": "food_water_bottle",
           "key": "water_bottle",
           "price": 8,
-          "count": 10,
+          "count": 34,
           "arrange": "rows"
         },
         "0.3.0": {
-          "code": "grocery_soda",
-          "key": "soda",
-          "price": 7,
-          "count": 10,
-          "arrange": "rows"
-        },
-        "0.3.1": {
           "code": "food_water_bottle",
           "key": "water_bottle",
           "price": 8,
-          "count": 10,
+          "count": 31,
           "arrange": "rows"
+        },
+        "0.3.1": {
+          "code": "food_orange_juice",
+          "key": "orange_juice",
+          "price": 14,
+          "count": 30,
+          "arrange": "messy"
         },
         "0.3.2": {
-          "code": "food_orange_juice",
-          "key": "orange_juice",
-          "price": 14,
-          "count": 9,
-          "arrange": "rows"
+          "code": "grocery_milk",
+          "key": "milk",
+          "price": 10,
+          "count": 33,
+          "arrange": "stack"
         },
         "1.0.0": {
-          "code": "food_orange_juice",
-          "key": "orange_juice",
-          "price": 14,
-          "count": 10,
-          "arrange": "rows"
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 28,
+          "arrange": "stack"
         },
         "1.0.1": {
           "code": "grocery_soda",
           "key": "soda",
           "price": 7,
-          "count": 10,
-          "arrange": "rows"
+          "count": 18,
+          "arrange": "front"
         },
         "1.0.2": {
           "code": "food_water_bottle",
           "key": "water_bottle",
           "price": 8,
-          "count": 10,
-          "arrange": "front"
+          "count": 41,
+          "arrange": "messy"
         },
         "1.1.0": {
-          "code": "grocery_soda",
-          "key": "soda",
-          "price": 7,
-          "count": 10,
-          "arrange": "front"
+          "code": "grocery_milk",
+          "key": "milk",
+          "price": 10,
+          "count": 24,
+          "arrange": "messy"
         },
         "1.1.2": {
-          "code": "food_orange_juice",
-          "key": "orange_juice",
-          "price": 14,
-          "count": 8,
+          "code": "grocery_milk",
+          "key": "milk",
+          "price": 10,
+          "count": 18,
           "arrange": "front"
         },
         "1.2.0": {
           "code": "food_water_bottle",
           "key": "water_bottle",
           "price": 8,
-          "count": 10,
-          "arrange": "rows"
+          "count": 14,
+          "arrange": "front"
         },
         "1.2.1": {
-          "code": "food_orange_juice",
-          "key": "orange_juice",
-          "price": 14,
-          "count": 10,
-          "arrange": "rows"
-        },
-        "1.2.2": {
           "code": "grocery_soda",
           "key": "soda",
           "price": 7,
-          "count": 9,
-          "arrange": "rows"
+          "count": 28,
+          "arrange": "stack"
+        },
+        "1.2.2": {
+          "code": "food_orange_juice",
+          "key": "orange_juice",
+          "price": 14,
+          "count": 13,
+          "arrange": "front"
         },
         "1.3.0": {
           "code": "food_orange_juice",
           "key": "orange_juice",
           "price": 14,
-          "count": 10,
-          "arrange": "rows"
+          "count": 21,
+          "arrange": "front"
         },
         "1.3.1": {
-          "code": "grocery_soda",
-          "key": "soda",
-          "price": 7,
-          "count": 10,
-          "arrange": "rows"
-        },
-        "1.3.2": {
           "code": "food_water_bottle",
           "key": "water_bottle",
           "price": 8,
-          "count": 9,
+          "count": 35,
           "arrange": "rows"
+        },
+        "1.3.2": {
+          "code": "grocery_milk",
+          "key": "milk",
+          "price": 10,
+          "count": 16,
+          "arrange": "front"
         }
       }
     },
@@ -1618,165 +1618,165 @@
       "slots": 3,
       "fill": {
         "0.0.0": {
-          "code": "food_water_bottle",
-          "key": "water_bottle",
-          "price": 8,
-          "count": 9,
-          "arrange": "rows"
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 20,
+          "arrange": "front"
         },
         "0.0.1": {
           "code": "food_orange_juice",
           "key": "orange_juice",
           "price": 14,
-          "count": 10,
+          "count": 39,
           "arrange": "rows"
         },
         "0.0.2": {
           "code": "grocery_soda",
           "key": "soda",
           "price": 7,
-          "count": 10,
-          "arrange": "front"
+          "count": 39,
+          "arrange": "messy"
         },
         "0.1.0": {
-          "code": "food_orange_juice",
-          "key": "orange_juice",
-          "price": 14,
-          "count": 9,
-          "arrange": "rows"
+          "code": "grocery_milk",
+          "key": "milk",
+          "price": 10,
+          "count": 31,
+          "arrange": "stack"
         },
         "0.1.1": {
-          "code": "grocery_soda",
-          "key": "soda",
-          "price": 7,
-          "count": 10,
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 13,
           "arrange": "front"
         },
         "0.1.2": {
-          "code": "food_water_bottle",
-          "key": "water_bottle",
-          "price": 8,
-          "count": 10,
-          "arrange": "rows"
+          "code": "grocery_milk",
+          "key": "milk",
+          "price": 10,
+          "count": 41,
+          "arrange": "messy"
         },
         "0.2.0": {
-          "code": "grocery_soda",
-          "key": "soda",
-          "price": 7,
-          "count": 10,
-          "arrange": "front"
-        },
-        "0.2.1": {
-          "code": "food_water_bottle",
-          "key": "water_bottle",
-          "price": 8,
-          "count": 10,
-          "arrange": "rows"
-        },
-        "0.3.0": {
-          "code": "food_water_bottle",
-          "key": "water_bottle",
-          "price": 8,
-          "count": 9,
-          "arrange": "rows"
-        },
-        "0.3.1": {
           "code": "food_orange_juice",
           "key": "orange_juice",
           "price": 14,
-          "count": 10,
+          "count": 29,
           "arrange": "rows"
         },
-        "0.3.2": {
+        "0.2.1": {
           "code": "grocery_soda",
           "key": "soda",
           "price": 7,
-          "count": 9,
-          "arrange": "rows"
-        },
-        "1.0.0": {
-          "code": "grocery_soda",
-          "key": "soda",
-          "price": 7,
-          "count": 10,
+          "count": 23,
           "arrange": "front"
         },
-        "1.0.1": {
+        "0.3.0": {
+          "code": "grocery_milk",
+          "key": "milk",
+          "price": 10,
+          "count": 26,
+          "arrange": "rows"
+        },
+        "0.3.1": {
           "code": "food_water_bottle",
           "key": "water_bottle",
           "price": 8,
-          "count": 9,
+          "count": 17,
+          "arrange": "front"
+        },
+        "0.3.2": {
+          "code": "food_orange_juice",
+          "key": "orange_juice",
+          "price": 14,
+          "count": 27,
           "arrange": "rows"
+        },
+        "1.0.0": {
+          "code": "grocery_milk",
+          "key": "milk",
+          "price": 10,
+          "count": 35,
+          "arrange": "messy"
+        },
+        "1.0.1": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 44,
+          "arrange": "stack"
         },
         "1.0.2": {
           "code": "food_orange_juice",
           "key": "orange_juice",
           "price": 14,
-          "count": 10,
+          "count": 30,
           "arrange": "rows"
         },
         "1.1.0": {
-          "code": "grocery_soda",
-          "key": "soda",
-          "price": 7,
-          "count": 18,
-          "arrange": "rows"
-        },
-        "1.1.1": {
           "code": "food_orange_juice",
           "key": "orange_juice",
           "price": 14,
-          "count": 10,
-          "arrange": "rows"
+          "count": 30,
+          "arrange": "stack"
+        },
+        "1.1.1": {
+          "code": "grocery_milk",
+          "key": "milk",
+          "price": 10,
+          "count": 17,
+          "arrange": "front"
         },
         "1.1.2": {
           "code": "grocery_soda",
           "key": "soda",
           "price": 7,
-          "count": 10,
-          "arrange": "front"
-        },
-        "1.2.0": {
-          "code": "food_orange_juice",
-          "key": "orange_juice",
-          "price": 14,
-          "count": 10,
-          "arrange": "rows"
-        },
-        "1.2.1": {
-          "code": "grocery_soda",
-          "key": "soda",
-          "price": 7,
-          "count": 10,
-          "arrange": "rows"
-        },
-        "1.2.2": {
-          "code": "food_water_bottle",
-          "key": "water_bottle",
-          "price": 8,
-          "count": 10,
-          "arrange": "rows"
-        },
-        "1.3.0": {
-          "code": "grocery_soda",
-          "key": "soda",
-          "price": 7,
-          "count": 7,
+          "count": 35,
           "arrange": "stack"
         },
-        "1.3.1": {
+        "1.2.0": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 18,
+          "arrange": "front"
+        },
+        "1.2.1": {
           "code": "food_water_bottle",
           "key": "water_bottle",
           "price": 8,
-          "count": 8,
-          "arrange": "front"
+          "count": 39,
+          "arrange": "messy"
         },
-        "1.3.2": {
+        "1.2.2": {
           "code": "food_orange_juice",
           "key": "orange_juice",
           "price": 14,
-          "count": 10,
+          "count": 15,
           "arrange": "front"
+        },
+        "1.3.0": {
+          "code": "food_orange_juice",
+          "key": "orange_juice",
+          "price": 14,
+          "count": 45,
+          "arrange": "messy"
+        },
+        "1.3.1": {
+          "code": "grocery_milk",
+          "key": "milk",
+          "price": 10,
+          "count": 39,
+          "arrange": "rows"
+        },
+        "1.3.2": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 47,
+          "arrange": "messy"
         }
       }
     },
@@ -1800,158 +1800,158 @@
       "slots": 3,
       "fill": {
         "0.0.1": {
-          "code": "food_cookie",
-          "key": "cookie",
-          "price": 5,
-          "count": 10,
+          "code": "grocery_chips",
+          "key": "chips",
+          "price": 9,
+          "count": 37,
           "arrange": "rows"
         },
         "0.0.2": {
-          "code": "grocery_chips",
-          "key": "chips",
-          "price": 9,
-          "count": 6,
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 30,
           "arrange": "messy"
         },
         "0.1.0": {
-          "code": "grocery_chocolate",
-          "key": "chocolate",
-          "price": 10,
-          "count": 9,
-          "arrange": "rows"
+          "code": "food_cookie",
+          "key": "cookie",
+          "price": 5,
+          "count": 13,
+          "arrange": "front"
         },
         "0.1.1": {
-          "code": "grocery_chips",
-          "key": "chips",
-          "price": 9,
-          "count": 7,
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 42,
           "arrange": "rows"
         },
         "0.1.2": {
           "code": "grocery_chocolate",
           "key": "chocolate",
           "price": 10,
-          "count": 6,
+          "count": 37,
           "arrange": "stack"
         },
         "0.2.0": {
-          "code": "grocery_chips",
-          "key": "chips",
-          "price": 9,
-          "count": 4,
-          "arrange": "front"
-        },
-        "0.2.1": {
           "code": "grocery_chocolate",
           "key": "chocolate",
           "price": 10,
-          "count": 3,
+          "count": 41,
+          "arrange": "rows"
+        },
+        "0.2.1": {
+          "code": "grocery_chips",
+          "key": "chips",
+          "price": 9,
+          "count": 6,
           "arrange": "front"
         },
         "0.2.2": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 33,
+          "arrange": "messy"
+        },
+        "0.3.0": {
           "code": "food_cookie",
           "key": "cookie",
           "price": 5,
-          "count": 7,
-          "arrange": "rows"
+          "count": 44,
+          "arrange": "messy"
         },
-        "0.3.0": {
+        "0.3.1": {
           "code": "grocery_chocolate",
           "key": "chocolate",
           "price": 10,
-          "count": 3,
+          "count": 10,
           "arrange": "front"
         },
-        "0.3.1": {
+        "0.3.2": {
           "code": "food_cookie",
           "key": "cookie",
           "price": 5,
-          "count": 10,
-          "arrange": "rows"
-        },
-        "0.3.2": {
-          "code": "grocery_chips",
-          "key": "chips",
-          "price": 9,
-          "count": 4,
-          "arrange": "rows"
+          "count": 48,
+          "arrange": "messy"
         },
         "1.0.0": {
           "code": "grocery_chips",
           "key": "chips",
           "price": 9,
-          "count": 3,
-          "arrange": "front"
+          "count": 36,
+          "arrange": "messy"
         },
         "1.0.1": {
           "code": "grocery_chocolate",
           "key": "chocolate",
           "price": 10,
-          "count": 4,
-          "arrange": "rows"
+          "count": 11,
+          "arrange": "front"
         },
         "1.0.2": {
-          "code": "food_cookie",
-          "key": "cookie",
-          "price": 5,
-          "count": 7,
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 24,
           "arrange": "rows"
         },
         "1.1.0": {
-          "code": "grocery_chocolate",
-          "key": "chocolate",
-          "price": 10,
-          "count": 6,
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 33,
           "arrange": "rows"
         },
         "1.1.1": {
-          "code": "food_cookie",
-          "key": "cookie",
-          "price": 5,
-          "count": 10,
+          "code": "grocery_chips",
+          "key": "chips",
+          "price": 9,
+          "count": 44,
           "arrange": "messy"
         },
         "1.2.0": {
           "code": "food_cookie",
           "key": "cookie",
           "price": 5,
-          "count": 10,
-          "arrange": "rows"
+          "count": 31,
+          "arrange": "stack"
         },
         "1.2.1": {
-          "code": "grocery_chips",
-          "key": "chips",
-          "price": 9,
-          "count": 4,
-          "arrange": "rows"
-        },
-        "1.2.2": {
           "code": "grocery_chocolate",
           "key": "chocolate",
           "price": 10,
-          "count": 6,
-          "arrange": "rows"
+          "count": 38,
+          "arrange": "messy"
         },
-        "1.3.0": {
+        "1.2.2": {
           "code": "grocery_chips",
           "key": "chips",
           "price": 9,
-          "count": 7,
+          "count": 5,
+          "arrange": "front"
+        },
+        "1.3.0": {
+          "code": "grocery_chocolate",
+          "key": "chocolate",
+          "price": 10,
+          "count": 22,
           "arrange": "rows"
         },
         "1.3.1": {
-          "code": "grocery_chocolate",
-          "key": "chocolate",
-          "price": 10,
-          "count": 3,
-          "arrange": "front"
-        },
-        "1.3.2": {
           "code": "food_cookie",
           "key": "cookie",
           "price": 5,
-          "count": 7,
-          "arrange": "rows"
+          "count": 14,
+          "arrange": "front"
+        },
+        "1.3.2": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 33,
+          "arrange": "stack"
         }
       }
     },
@@ -1975,164 +1975,164 @@
       "slots": 3,
       "fill": {
         "0.0.0": {
-          "code": "food_cookie",
-          "key": "cookie",
-          "price": 5,
-          "count": 7,
-          "arrange": "rows"
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 33,
+          "arrange": "stack"
         },
         "0.0.1": {
           "code": "grocery_chips",
           "key": "chips",
           "price": 9,
-          "count": 3,
+          "count": 44,
           "arrange": "rows"
         },
         "0.0.2": {
           "code": "grocery_chocolate",
           "key": "chocolate",
           "price": 10,
-          "count": 4,
-          "arrange": "rows"
+          "count": 6,
+          "arrange": "front"
         },
         "0.1.0": {
-          "code": "grocery_chips",
-          "key": "chips",
-          "price": 9,
-          "count": 4,
-          "arrange": "rows"
-        },
-        "0.1.1": {
           "code": "grocery_chocolate",
           "key": "chocolate",
           "price": 10,
-          "count": 6,
+          "count": 31,
+          "arrange": "messy"
+        },
+        "0.1.1": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 26,
           "arrange": "rows"
         },
         "0.1.2": {
-          "code": "food_cookie",
-          "key": "cookie",
-          "price": 5,
-          "count": 6,
+          "code": "grocery_chips",
+          "key": "chips",
+          "price": 9,
+          "count": 35,
           "arrange": "stack"
         },
         "0.2.0": {
-          "code": "grocery_chocolate",
-          "key": "chocolate",
-          "price": 10,
-          "count": 4,
-          "arrange": "rows"
-        },
-        "0.2.1": {
           "code": "food_cookie",
           "key": "cookie",
           "price": 5,
-          "count": 6,
-          "arrange": "front"
+          "count": 47,
+          "arrange": "stack"
         },
-        "0.2.2": {
+        "0.2.1": {
           "code": "grocery_chips",
           "key": "chips",
           "price": 9,
-          "count": 4,
+          "count": 23,
+          "arrange": "rows"
+        },
+        "0.2.2": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 23,
           "arrange": "front"
         },
         "0.3.1": {
-          "code": "grocery_chips",
-          "key": "chips",
-          "price": 9,
-          "count": 3,
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 34,
           "arrange": "rows"
         },
         "0.3.2": {
-          "code": "grocery_chocolate",
-          "key": "chocolate",
-          "price": 10,
-          "count": 4,
-          "arrange": "rows"
-        },
-        "1.0.0": {
-          "code": "grocery_chocolate",
-          "key": "chocolate",
-          "price": 10,
-          "count": 4,
-          "arrange": "messy"
-        },
-        "1.0.1": {
           "code": "food_cookie",
           "key": "cookie",
           "price": 5,
-          "count": 6,
+          "count": 29,
           "arrange": "stack"
         },
-        "1.0.2": {
+        "1.0.0": {
           "code": "grocery_chips",
           "key": "chips",
           "price": 9,
-          "count": 3,
+          "count": 44,
           "arrange": "rows"
         },
-        "1.1.0": {
+        "1.0.1": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 18,
+          "arrange": "front"
+        },
+        "1.0.2": {
           "code": "food_cookie",
           "key": "cookie",
           "price": 5,
-          "count": 10,
-          "arrange": "rows"
+          "count": 24,
+          "arrange": "messy"
+        },
+        "1.1.0": {
+          "code": "grocery_chocolate",
+          "key": "chocolate",
+          "price": 10,
+          "count": 43,
+          "arrange": "messy"
         },
         "1.1.1": {
-          "code": "grocery_chips",
-          "key": "chips",
-          "price": 9,
-          "count": 4,
+          "code": "food_cookie",
+          "key": "cookie",
+          "price": 5,
+          "count": 26,
           "arrange": "rows"
         },
         "1.1.2": {
-          "code": "grocery_chocolate",
-          "key": "chocolate",
-          "price": 10,
-          "count": 10,
-          "arrange": "stack"
-        },
-        "1.2.0": {
           "code": "grocery_chips",
           "key": "chips",
           "price": 9,
-          "count": 8,
-          "arrange": "rows"
+          "count": 24,
+          "arrange": "messy"
         },
-        "1.2.1": {
-          "code": "grocery_chocolate",
-          "key": "chocolate",
-          "price": 10,
-          "count": 10,
-          "arrange": "stack"
-        },
-        "1.2.2": {
+        "1.2.0": {
           "code": "food_cookie",
           "key": "cookie",
           "price": 5,
-          "count": 6,
+          "count": 25,
+          "arrange": "stack"
+        },
+        "1.2.1": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 39,
+          "arrange": "rows"
+        },
+        "1.2.2": {
+          "code": "grocery_chocolate",
+          "key": "chocolate",
+          "price": 10,
+          "count": 27,
           "arrange": "stack"
         },
         "1.3.0": {
-          "code": "grocery_chocolate",
-          "key": "chocolate",
-          "price": 10,
-          "count": 6,
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 45,
           "arrange": "rows"
         },
         "1.3.1": {
-          "code": "food_cookie",
-          "key": "cookie",
-          "price": 5,
-          "count": 10,
-          "arrange": "messy"
-        },
-        "1.3.2": {
           "code": "grocery_chips",
           "key": "chips",
           "price": 9,
-          "count": 4,
+          "count": 27,
+          "arrange": "messy"
+        },
+        "1.3.2": {
+          "code": "food_cookie",
+          "key": "cookie",
+          "price": 5,
+          "count": 30,
           "arrange": "rows"
         }
       }
@@ -2157,157 +2157,157 @@
       "slots": 3,
       "fill": {
         "0.0.0": {
-          "code": "grocery_pasta",
-          "key": "pasta",
-          "price": 12,
-          "count": 6,
-          "arrange": "front"
+          "code": "grocery_chips",
+          "key": "chips",
+          "price": 9,
+          "count": 36,
+          "arrange": "messy"
         },
         "0.0.2": {
           "code": "grocery_pasta",
           "key": "pasta",
           "price": 12,
-          "count": 6,
-          "arrange": "rows"
+          "count": 38,
+          "arrange": "messy"
         },
         "0.1.0": {
           "code": "grocery_pasta",
           "key": "pasta",
           "price": 12,
-          "count": 4,
-          "arrange": "rows"
+          "count": 40,
+          "arrange": "stack"
         },
         "0.1.1": {
-          "code": "grocery_pasta",
-          "key": "pasta",
-          "price": 12,
-          "count": 4,
-          "arrange": "front"
+          "code": "grocery_bread",
+          "key": "bread",
+          "price": 14,
+          "count": 18,
+          "arrange": "messy"
         },
         "0.1.2": {
-          "code": "grocery_pasta",
-          "key": "pasta",
-          "price": 12,
-          "count": 3,
-          "arrange": "front"
+          "code": "grocery_chips",
+          "key": "chips",
+          "price": 9,
+          "count": 43,
+          "arrange": "rows"
         },
         "0.2.0": {
-          "code": "grocery_pasta",
-          "key": "pasta",
-          "price": 12,
-          "count": 6,
-          "arrange": "rows"
+          "code": "grocery_chips",
+          "key": "chips",
+          "price": 9,
+          "count": 7,
+          "arrange": "front"
         },
         "0.2.1": {
           "code": "grocery_pasta",
           "key": "pasta",
           "price": 12,
-          "count": 4,
-          "arrange": "front"
+          "count": 40,
+          "arrange": "rows"
         },
         "0.2.2": {
-          "code": "grocery_pasta",
-          "key": "pasta",
-          "price": 12,
-          "count": 4,
-          "arrange": "front"
+          "code": "grocery_cereal",
+          "key": "cereal",
+          "price": 18,
+          "count": 38,
+          "arrange": "messy"
         },
         "0.3.0": {
-          "code": "grocery_pasta",
-          "key": "pasta",
-          "price": 12,
-          "count": 4,
-          "arrange": "rows"
+          "code": "grocery_cereal",
+          "key": "cereal",
+          "price": 18,
+          "count": 6,
+          "arrange": "front"
         },
         "0.3.1": {
-          "code": "grocery_pasta",
-          "key": "pasta",
-          "price": 12,
-          "count": 6,
-          "arrange": "rows"
+          "code": "grocery_bread",
+          "key": "bread",
+          "price": 14,
+          "count": 13,
+          "arrange": "messy"
         },
         "0.3.2": {
-          "code": "grocery_pasta",
-          "key": "pasta",
-          "price": 12,
-          "count": 4,
-          "arrange": "front"
-        },
-        "1.0.0": {
-          "code": "grocery_pasta",
-          "key": "pasta",
-          "price": 12,
-          "count": 4,
-          "arrange": "front"
-        },
-        "1.0.1": {
-          "code": "grocery_pasta",
-          "key": "pasta",
-          "price": 12,
-          "count": 3,
-          "arrange": "front"
-        },
-        "1.0.2": {
-          "code": "grocery_pasta",
-          "key": "pasta",
-          "price": 12,
-          "count": 3,
-          "arrange": "front"
-        },
-        "1.1.0": {
-          "code": "grocery_pasta",
-          "key": "pasta",
-          "price": 12,
-          "count": 6,
+          "code": "grocery_chips",
+          "key": "chips",
+          "price": 9,
+          "count": 33,
           "arrange": "rows"
         },
+        "1.0.0": {
+          "code": "grocery_chips",
+          "key": "chips",
+          "price": 9,
+          "count": 31,
+          "arrange": "rows"
+        },
+        "1.0.1": {
+          "code": "grocery_cereal",
+          "key": "cereal",
+          "price": 18,
+          "count": 35,
+          "arrange": "stack"
+        },
+        "1.0.2": {
+          "code": "grocery_chips",
+          "key": "chips",
+          "price": 9,
+          "count": 32,
+          "arrange": "rows"
+        },
+        "1.1.0": {
+          "code": "grocery_cereal",
+          "key": "cereal",
+          "price": 18,
+          "count": 41,
+          "arrange": "stack"
+        },
         "1.1.1": {
-          "code": "grocery_pasta",
-          "key": "pasta",
-          "price": 12,
-          "count": 6,
-          "arrange": "front"
+          "code": "grocery_bread",
+          "key": "bread",
+          "price": 14,
+          "count": 14,
+          "arrange": "rows"
         },
         "1.1.2": {
           "code": "grocery_pasta",
           "key": "pasta",
           "price": 12,
-          "count": 15,
-          "arrange": "rows"
+          "count": 27,
+          "arrange": "stack"
         },
         "1.2.1": {
           "code": "grocery_pasta",
           "key": "pasta",
           "price": 12,
-          "count": 6,
-          "arrange": "rows"
+          "count": 42,
+          "arrange": "messy"
         },
         "1.2.2": {
-          "code": "grocery_pasta",
-          "key": "pasta",
-          "price": 12,
-          "count": 4,
+          "code": "grocery_chips",
+          "key": "chips",
+          "price": 9,
+          "count": 31,
           "arrange": "rows"
         },
         "1.3.0": {
           "code": "grocery_pasta",
           "key": "pasta",
           "price": 12,
-          "count": 3,
-          "arrange": "front"
+          "count": 47,
+          "arrange": "rows"
         },
         "1.3.1": {
-          "code": "grocery_pasta",
-          "key": "pasta",
-          "price": 12,
-          "count": 6,
-          "arrange": "rows"
+          "code": "grocery_chips",
+          "key": "chips",
+          "price": 9,
+          "count": 7,
+          "arrange": "front"
         },
         "1.3.2": {
           "code": "grocery_pasta",
           "key": "pasta",
           "price": 12,
-          "count": 6,
+          "count": 32,
           "arrange": "rows"
         }
       }
@@ -2335,161 +2335,161 @@
           "code": "grocery_pasta",
           "key": "pasta",
           "price": 12,
-          "count": 6,
-          "arrange": "rows"
+          "count": 9,
+          "arrange": "front"
         },
         "0.0.1": {
-          "code": "grocery_pasta",
-          "key": "pasta",
-          "price": 12,
-          "count": 3,
-          "arrange": "front"
+          "code": "grocery_cereal",
+          "key": "cereal",
+          "price": 18,
+          "count": 37,
+          "arrange": "stack"
         },
         "0.0.2": {
           "code": "grocery_pasta",
           "key": "pasta",
           "price": 12,
-          "count": 6,
-          "arrange": "rows"
+          "count": 31,
+          "arrange": "messy"
         },
         "0.1.0": {
-          "code": "grocery_pasta",
-          "key": "pasta",
-          "price": 12,
-          "count": 6,
-          "arrange": "rows"
+          "code": "grocery_chips",
+          "key": "chips",
+          "price": 9,
+          "count": 31,
+          "arrange": "stack"
         },
         "0.1.1": {
-          "code": "grocery_pasta",
-          "key": "pasta",
-          "price": 12,
-          "count": 6,
-          "arrange": "front"
+          "code": "grocery_bread",
+          "key": "bread",
+          "price": 14,
+          "count": 18,
+          "arrange": "rows"
         },
         "0.1.2": {
-          "code": "grocery_pasta",
-          "key": "pasta",
-          "price": 12,
-          "count": 6,
-          "arrange": "rows"
+          "code": "grocery_chips",
+          "key": "chips",
+          "price": 9,
+          "count": 37,
+          "arrange": "messy"
         },
         "0.2.0": {
-          "code": "grocery_pasta",
-          "key": "pasta",
-          "price": 12,
-          "count": 6,
-          "arrange": "rows"
+          "code": "grocery_bread",
+          "key": "bread",
+          "price": 14,
+          "count": 4,
+          "arrange": "front"
         },
         "0.2.1": {
           "code": "grocery_pasta",
           "key": "pasta",
           "price": 12,
-          "count": 8,
+          "count": 45,
           "arrange": "rows"
         },
         "0.2.2": {
-          "code": "grocery_pasta",
-          "key": "pasta",
-          "price": 12,
-          "count": 8,
-          "arrange": "rows"
+          "code": "grocery_bread",
+          "key": "bread",
+          "price": 14,
+          "count": 23,
+          "arrange": "stack"
         },
         "0.3.0": {
           "code": "grocery_pasta",
           "key": "pasta",
           "price": 12,
-          "count": 3,
-          "arrange": "front"
+          "count": 30,
+          "arrange": "stack"
         },
         "0.3.2": {
           "code": "grocery_pasta",
           "key": "pasta",
           "price": 12,
-          "count": 4,
-          "arrange": "front"
+          "count": 32,
+          "arrange": "messy"
         },
         "1.0.0": {
-          "code": "grocery_pasta",
-          "key": "pasta",
-          "price": 12,
-          "count": 8,
-          "arrange": "rows"
+          "code": "grocery_bread",
+          "key": "bread",
+          "price": 14,
+          "count": 7,
+          "arrange": "front"
         },
         "1.0.1": {
           "code": "grocery_pasta",
           "key": "pasta",
           "price": 12,
-          "count": 6,
-          "arrange": "rows"
+          "count": 44,
+          "arrange": "messy"
         },
         "1.0.2": {
-          "code": "grocery_pasta",
-          "key": "pasta",
-          "price": 12,
-          "count": 6,
+          "code": "grocery_cereal",
+          "key": "cereal",
+          "price": 18,
+          "count": 7,
           "arrange": "front"
         },
         "1.1.0": {
-          "code": "grocery_pasta",
-          "key": "pasta",
-          "price": 12,
-          "count": 3,
+          "code": "grocery_chips",
+          "key": "chips",
+          "price": 9,
+          "count": 7,
           "arrange": "front"
         },
         "1.1.1": {
-          "code": "grocery_pasta",
-          "key": "pasta",
-          "price": 12,
-          "count": 3,
-          "arrange": "front"
+          "code": "grocery_cereal",
+          "key": "cereal",
+          "price": 18,
+          "count": 40,
+          "arrange": "rows"
         },
         "1.1.2": {
           "code": "grocery_pasta",
           "key": "pasta",
           "price": 12,
-          "count": 3,
-          "arrange": "front"
+          "count": 43,
+          "arrange": "messy"
         },
         "1.2.0": {
-          "code": "grocery_pasta",
-          "key": "pasta",
-          "price": 12,
-          "count": 6,
+          "code": "grocery_cereal",
+          "key": "cereal",
+          "price": 18,
+          "count": 26,
           "arrange": "rows"
         },
         "1.2.1": {
           "code": "grocery_pasta",
           "key": "pasta",
           "price": 12,
-          "count": 6,
-          "arrange": "rows"
+          "count": 45,
+          "arrange": "messy"
         },
         "1.2.2": {
-          "code": "grocery_pasta",
-          "key": "pasta",
-          "price": 12,
-          "count": 3,
-          "arrange": "front"
-        },
-        "1.3.0": {
-          "code": "grocery_pasta",
-          "key": "pasta",
-          "price": 12,
-          "count": 6,
+          "code": "grocery_bread",
+          "key": "bread",
+          "price": 14,
+          "count": 16,
           "arrange": "rows"
         },
+        "1.3.0": {
+          "code": "grocery_chips",
+          "key": "chips",
+          "price": 9,
+          "count": 45,
+          "arrange": "stack"
+        },
         "1.3.1": {
-          "code": "grocery_pasta",
-          "key": "pasta",
-          "price": 12,
-          "count": 3,
-          "arrange": "front"
+          "code": "grocery_bread",
+          "key": "bread",
+          "price": 14,
+          "count": 13,
+          "arrange": "messy"
         },
         "1.3.2": {
           "code": "grocery_pasta",
           "key": "pasta",
           "price": 12,
-          "count": 6,
+          "count": 45,
           "arrange": "rows"
         }
       }
@@ -2514,158 +2514,158 @@
       "slots": 3,
       "fill": {
         "0.0.0": {
+          "code": "grocery_chips",
+          "key": "chips",
+          "price": 9,
+          "count": 41,
+          "arrange": "stack"
+        },
+        "0.0.1": {
           "code": "food_water_bottle",
           "key": "water_bottle",
           "price": 8,
+          "count": 46,
+          "arrange": "rows"
+        },
+        "0.1.0": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 33,
+          "arrange": "stack"
+        },
+        "0.1.1": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 7,
+          "arrange": "front"
+        },
+        "0.1.2": {
+          "code": "grocery_cereal",
+          "key": "cereal",
+          "price": 18,
+          "count": 32,
+          "arrange": "messy"
+        },
+        "0.2.0": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
           "count": 10,
           "arrange": "front"
         },
-        "0.0.1": {
-          "code": "grocery_pasta",
-          "key": "pasta",
-          "price": 12,
-          "count": 4,
-          "arrange": "front"
-        },
-        "0.1.0": {
-          "code": "grocery_pasta",
-          "key": "pasta",
-          "price": 12,
-          "count": 6,
-          "arrange": "rows"
-        },
-        "0.1.1": {
-          "code": "grocery_cereal",
-          "key": "cereal",
-          "price": 18,
-          "count": 7,
-          "arrange": "rows"
-        },
-        "0.1.2": {
-          "code": "grocery_soda",
-          "key": "soda",
-          "price": 7,
-          "count": 8,
-          "arrange": "front"
-        },
-        "0.2.0": {
-          "code": "grocery_cereal",
-          "key": "cereal",
-          "price": 18,
-          "count": 4,
-          "arrange": "rows"
-        },
         "0.2.1": {
-          "code": "grocery_soda",
-          "key": "soda",
-          "price": 7,
-          "count": 9,
-          "arrange": "rows"
+          "code": "grocery_chips",
+          "key": "chips",
+          "price": 9,
+          "count": 44,
+          "arrange": "messy"
         },
         "0.2.2": {
-          "code": "food_water_bottle",
-          "key": "water_bottle",
-          "price": 8,
-          "count": 8,
-          "arrange": "front"
-        },
-        "0.3.0": {
-          "code": "grocery_soda",
-          "key": "soda",
-          "price": 7,
-          "count": 8,
-          "arrange": "front"
-        },
-        "0.3.1": {
-          "code": "food_water_bottle",
-          "key": "water_bottle",
-          "price": 8,
-          "count": 8,
-          "arrange": "front"
-        },
-        "0.3.2": {
           "code": "grocery_pasta",
           "key": "pasta",
           "price": 12,
-          "count": 3,
+          "count": 35,
+          "arrange": "stack"
+        },
+        "0.3.0": {
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 48,
+          "arrange": "stack"
+        },
+        "0.3.1": {
+          "code": "grocery_cereal",
+          "key": "cereal",
+          "price": 18,
+          "count": 32,
+          "arrange": "rows"
+        },
+        "0.3.2": {
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 14,
           "arrange": "front"
         },
         "1.0.0": {
-          "code": "grocery_cereal",
-          "key": "cereal",
-          "price": 18,
-          "count": 4,
-          "arrange": "rows"
-        },
-        "1.0.1": {
           "code": "grocery_soda",
           "key": "soda",
           "price": 7,
-          "count": 8,
+          "count": 18,
           "arrange": "front"
         },
-        "1.0.2": {
-          "code": "food_water_bottle",
-          "key": "water_bottle",
-          "price": 8,
-          "count": 10,
-          "arrange": "rows"
-        },
-        "1.1.0": {
-          "code": "grocery_soda",
-          "key": "soda",
-          "price": 7,
-          "count": 5,
-          "arrange": "stack"
-        },
-        "1.1.1": {
-          "code": "food_water_bottle",
-          "key": "water_bottle",
-          "price": 8,
-          "count": 10,
-          "arrange": "rows"
-        },
-        "1.1.2": {
+        "1.0.1": {
           "code": "grocery_pasta",
           "key": "pasta",
           "price": 12,
-          "count": 4,
+          "count": 25,
+          "arrange": "stack"
+        },
+        "1.0.2": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 21,
           "arrange": "front"
+        },
+        "1.1.0": {
+          "code": "grocery_cereal",
+          "key": "cereal",
+          "price": 18,
+          "count": 29,
+          "arrange": "rows"
+        },
+        "1.1.1": {
+          "code": "grocery_chips",
+          "key": "chips",
+          "price": 9,
+          "count": 38,
+          "arrange": "messy"
+        },
+        "1.1.2": {
+          "code": "grocery_cereal",
+          "key": "cereal",
+          "price": 18,
+          "count": 30,
+          "arrange": "rows"
         },
         "1.2.0": {
           "code": "food_water_bottle",
           "key": "water_bottle",
           "price": 8,
-          "count": 10,
-          "arrange": "front"
+          "count": 34,
+          "arrange": "stack"
         },
         "1.2.2": {
-          "code": "grocery_cereal",
-          "key": "cereal",
-          "price": 18,
-          "count": 4,
-          "arrange": "front"
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 35,
+          "arrange": "stack"
         },
         "1.3.0": {
           "code": "grocery_pasta",
           "key": "pasta",
           "price": 12,
-          "count": 3,
+          "count": 6,
           "arrange": "front"
         },
         "1.3.1": {
-          "code": "grocery_cereal",
-          "key": "cereal",
-          "price": 18,
-          "count": 4,
+          "code": "grocery_chips",
+          "key": "chips",
+          "price": 9,
+          "count": 33,
           "arrange": "rows"
         },
         "1.3.2": {
-          "code": "grocery_soda",
-          "key": "soda",
-          "price": 7,
-          "count": 7,
-          "arrange": "stack"
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 10,
+          "arrange": "front"
         }
       }
     },
@@ -2692,162 +2692,162 @@
           "code": "grocery_pasta",
           "key": "pasta",
           "price": 12,
-          "count": 6,
-          "arrange": "rows"
+          "count": 10,
+          "arrange": "front"
         },
         "0.0.1": {
           "code": "grocery_cereal",
           "key": "cereal",
           "price": 18,
-          "count": 4,
+          "count": 39,
           "arrange": "rows"
         },
         "0.0.2": {
           "code": "grocery_soda",
           "key": "soda",
           "price": 7,
-          "count": 10,
-          "arrange": "rows"
+          "count": 24,
+          "arrange": "messy"
         },
         "0.1.0": {
           "code": "grocery_cereal",
           "key": "cereal",
           "price": 18,
-          "count": 4,
-          "arrange": "rows"
+          "count": 7,
+          "arrange": "front"
         },
         "0.1.1": {
           "code": "grocery_soda",
           "key": "soda",
           "price": 7,
-          "count": 10,
+          "count": 29,
           "arrange": "rows"
         },
         "0.1.2": {
-          "code": "food_water_bottle",
-          "key": "water_bottle",
-          "price": 8,
-          "count": 9,
-          "arrange": "rows"
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 29,
+          "arrange": "messy"
         },
         "0.2.0": {
-          "code": "grocery_soda",
-          "key": "soda",
-          "price": 7,
-          "count": 10,
-          "arrange": "rows"
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 29,
+          "arrange": "messy"
         },
         "0.2.1": {
           "code": "food_water_bottle",
           "key": "water_bottle",
           "price": 8,
-          "count": 9,
+          "count": 40,
           "arrange": "rows"
         },
         "0.2.2": {
-          "code": "grocery_pasta",
-          "key": "pasta",
-          "price": 12,
-          "count": 4,
-          "arrange": "front"
+          "code": "grocery_cereal",
+          "key": "cereal",
+          "price": 18,
+          "count": 41,
+          "arrange": "stack"
         },
         "0.3.0": {
-          "code": "food_water_bottle",
-          "key": "water_bottle",
-          "price": 8,
-          "count": 10,
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 34,
           "arrange": "rows"
         },
         "0.3.1": {
-          "code": "grocery_pasta",
-          "key": "pasta",
-          "price": 12,
-          "count": 4,
-          "arrange": "rows"
+          "code": "grocery_cereal",
+          "key": "cereal",
+          "price": 18,
+          "count": 5,
+          "arrange": "front"
         },
         "1.0.0": {
-          "code": "grocery_soda",
-          "key": "soda",
-          "price": 7,
-          "count": 10,
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 22,
           "arrange": "front"
         },
         "1.0.1": {
-          "code": "food_water_bottle",
-          "key": "water_bottle",
-          "price": 8,
-          "count": 10,
-          "arrange": "front"
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 32,
+          "arrange": "rows"
         },
         "1.0.2": {
-          "code": "grocery_pasta",
-          "key": "pasta",
-          "price": 12,
-          "count": 4,
+          "code": "grocery_chips",
+          "key": "chips",
+          "price": 9,
+          "count": 5,
           "arrange": "front"
         },
         "1.1.0": {
-          "code": "food_water_bottle",
-          "key": "water_bottle",
-          "price": 8,
-          "count": 10,
+          "code": "grocery_cereal",
+          "key": "cereal",
+          "price": 18,
+          "count": 34,
           "arrange": "rows"
         },
         "1.1.1": {
-          "code": "grocery_pasta",
-          "key": "pasta",
-          "price": 12,
-          "count": 4,
-          "arrange": "front"
-        },
-        "1.1.2": {
-          "code": "grocery_cereal",
-          "key": "cereal",
-          "price": 18,
-          "count": 7,
-          "arrange": "rows"
-        },
-        "1.2.0": {
-          "code": "grocery_pasta",
-          "key": "pasta",
-          "price": 12,
-          "count": 4,
-          "arrange": "rows"
-        },
-        "1.2.1": {
-          "code": "grocery_cereal",
-          "key": "cereal",
-          "price": 18,
-          "count": 3,
-          "arrange": "rows"
-        },
-        "1.2.2": {
-          "code": "grocery_soda",
-          "key": "soda",
-          "price": 7,
-          "count": 10,
-          "arrange": "front"
-        },
-        "1.3.0": {
-          "code": "grocery_cereal",
-          "key": "cereal",
-          "price": 18,
-          "count": 4,
-          "arrange": "front"
-        },
-        "1.3.1": {
-          "code": "grocery_soda",
-          "key": "soda",
-          "price": 7,
-          "count": 10,
-          "arrange": "front"
-        },
-        "1.3.2": {
           "code": "food_water_bottle",
           "key": "water_bottle",
           "price": 8,
-          "count": 10,
+          "count": 23,
+          "arrange": "front"
+        },
+        "1.1.2": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 48,
+          "arrange": "messy"
+        },
+        "1.2.0": {
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 38,
           "arrange": "rows"
+        },
+        "1.2.1": {
+          "code": "grocery_pasta",
+          "key": "pasta",
+          "price": 12,
+          "count": 7,
+          "arrange": "front"
+        },
+        "1.2.2": {
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 37,
+          "arrange": "rows"
+        },
+        "1.3.0": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 27,
+          "arrange": "stack"
+        },
+        "1.3.1": {
+          "code": "grocery_cereal",
+          "key": "cereal",
+          "price": 18,
+          "count": 38,
+          "arrange": "messy"
+        },
+        "1.3.2": {
+          "code": "grocery_chips",
+          "key": "chips",
+          "price": 9,
+          "count": 6,
+          "arrange": "front"
         }
       }
     },
@@ -2871,80 +2871,80 @@
       "slots": 3,
       "fill": {
         "0.0.0": {
-          "code": "food_orange_juice",
-          "key": "orange_juice",
-          "price": 14,
-          "count": 10,
-          "arrange": "front"
-        },
-        "0.0.1": {
           "code": "grocery_yogurt",
           "key": "yogurt",
           "price": 8,
-          "count": 10,
+          "count": 41,
+          "arrange": "rows"
+        },
+        "0.0.1": {
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 23,
           "arrange": "front"
         },
         "0.0.2": {
           "code": "grocery_soda",
           "key": "soda",
           "price": 7,
-          "count": 10,
-          "arrange": "front"
+          "count": 43,
+          "arrange": "messy"
         },
         "0.1.1": {
-          "code": "grocery_soda",
-          "key": "soda",
-          "price": 7,
-          "count": 10,
-          "arrange": "rows"
+          "code": "grocery_milk",
+          "key": "milk",
+          "price": 10,
+          "count": 38,
+          "arrange": "stack"
         },
         "0.1.2": {
-          "code": "food_water_bottle",
-          "key": "water_bottle",
-          "price": 8,
-          "count": 10,
-          "arrange": "rows"
-        },
-        "0.2.0": {
-          "code": "grocery_soda",
-          "key": "soda",
-          "price": 7,
-          "count": 10,
-          "arrange": "rows"
-        },
-        "0.2.1": {
-          "code": "food_water_bottle",
-          "key": "water_bottle",
-          "price": 8,
-          "count": 10,
-          "arrange": "front"
-        },
-        "0.2.2": {
-          "code": "food_orange_juice",
-          "key": "orange_juice",
-          "price": 14,
-          "count": 9,
-          "arrange": "rows"
-        },
-        "0.3.0": {
-          "code": "food_water_bottle",
-          "key": "water_bottle",
-          "price": 8,
-          "count": 10,
-          "arrange": "rows"
-        },
-        "0.3.1": {
-          "code": "food_orange_juice",
-          "key": "orange_juice",
-          "price": 14,
-          "count": 10,
-          "arrange": "rows"
-        },
-        "0.3.2": {
           "code": "grocery_yogurt",
           "key": "yogurt",
           "price": 8,
-          "count": 10,
+          "count": 34,
+          "arrange": "messy"
+        },
+        "0.2.0": {
+          "code": "grocery_yogurt",
+          "key": "yogurt",
+          "price": 8,
+          "count": 27,
+          "arrange": "stack"
+        },
+        "0.2.1": {
+          "code": "food_orange_juice",
+          "key": "orange_juice",
+          "price": 14,
+          "count": 23,
+          "arrange": "front"
+        },
+        "0.2.2": {
+          "code": "grocery_milk",
+          "key": "milk",
+          "price": 10,
+          "count": 43,
+          "arrange": "rows"
+        },
+        "0.3.0": {
+          "code": "food_orange_juice",
+          "key": "orange_juice",
+          "price": 14,
+          "count": 32,
+          "arrange": "stack"
+        },
+        "0.3.1": {
+          "code": "grocery_milk",
+          "key": "milk",
+          "price": 10,
+          "count": 44,
+          "arrange": "messy"
+        },
+        "0.3.2": {
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 35,
           "arrange": "rows"
         }
       }
@@ -2969,88 +2969,88 @@
       "slots": 3,
       "fill": {
         "0.0.0": {
-          "code": "grocery_yogurt",
-          "key": "yogurt",
-          "price": 8,
-          "count": 10,
-          "arrange": "front"
-        },
-        "0.0.1": {
           "code": "grocery_soda",
           "key": "soda",
           "price": 7,
-          "count": 6,
+          "count": 24,
+          "arrange": "rows"
+        },
+        "0.0.1": {
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 46,
           "arrange": "stack"
         },
         "0.0.2": {
-          "code": "food_water_bottle",
-          "key": "water_bottle",
+          "code": "grocery_yogurt",
+          "key": "yogurt",
           "price": 8,
-          "count": 10,
+          "count": 26,
           "arrange": "rows"
         },
         "0.1.0": {
-          "code": "grocery_soda",
-          "key": "soda",
-          "price": 7,
-          "count": 9,
-          "arrange": "rows"
+          "code": "grocery_yogurt",
+          "key": "yogurt",
+          "price": 8,
+          "count": 47,
+          "arrange": "stack"
         },
         "0.1.1": {
-          "code": "food_water_bottle",
-          "key": "water_bottle",
-          "price": 8,
-          "count": 10,
+          "code": "grocery_milk",
+          "key": "milk",
+          "price": 10,
+          "count": 20,
           "arrange": "front"
         },
         "0.1.2": {
-          "code": "food_orange_juice",
-          "key": "orange_juice",
-          "price": 14,
-          "count": 10,
-          "arrange": "rows"
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 47,
+          "arrange": "stack"
         },
         "0.2.0": {
-          "code": "food_water_bottle",
-          "key": "water_bottle",
-          "price": 8,
-          "count": 8,
-          "arrange": "front"
+          "code": "grocery_milk",
+          "key": "milk",
+          "price": 10,
+          "count": 46,
+          "arrange": "messy"
         },
         "0.2.1": {
           "code": "food_orange_juice",
           "key": "orange_juice",
           "price": 14,
-          "count": 10,
-          "arrange": "rows"
+          "count": 26,
+          "arrange": "stack"
         },
         "0.2.2": {
           "code": "grocery_yogurt",
           "key": "yogurt",
           "price": 8,
-          "count": 7,
-          "arrange": "rows"
+          "count": 29,
+          "arrange": "messy"
         },
         "0.3.0": {
-          "code": "food_orange_juice",
-          "key": "orange_juice",
-          "price": 14,
-          "count": 10,
-          "arrange": "rows"
-        },
-        "0.3.1": {
-          "code": "grocery_yogurt",
-          "key": "yogurt",
-          "price": 8,
-          "count": 7,
-          "arrange": "rows"
-        },
-        "0.3.2": {
           "code": "grocery_soda",
           "key": "soda",
           "price": 7,
-          "count": 6,
+          "count": 39,
           "arrange": "stack"
+        },
+        "0.3.1": {
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 39,
+          "arrange": "rows"
+        },
+        "0.3.2": {
+          "code": "food_orange_juice",
+          "key": "orange_juice",
+          "price": 14,
+          "count": 19,
+          "arrange": "front"
         }
       }
     },
@@ -3074,81 +3074,81 @@
       "slots": 3,
       "fill": {
         "0.0.0": {
-          "code": "grocery_soda",
-          "key": "soda",
-          "price": 7,
-          "count": 10,
-          "arrange": "front"
-        },
-        "0.0.1": {
-          "code": "food_water_bottle",
-          "key": "water_bottle",
-          "price": 8,
-          "count": 10,
-          "arrange": "front"
-        },
-        "0.0.2": {
           "code": "food_orange_juice",
           "key": "orange_juice",
           "price": 14,
-          "count": 8,
-          "arrange": "front"
+          "count": 45,
+          "arrange": "messy"
         },
-        "0.1.0": {
-          "code": "food_water_bottle",
-          "key": "water_bottle",
-          "price": 8,
-          "count": 8,
-          "arrange": "front"
-        },
-        "0.1.2": {
+        "0.0.1": {
           "code": "grocery_yogurt",
           "key": "yogurt",
           "price": 8,
-          "count": 7,
-          "arrange": "rows"
+          "count": 17,
+          "arrange": "front"
+        },
+        "0.0.2": {
+          "code": "grocery_milk",
+          "key": "milk",
+          "price": 10,
+          "count": 38,
+          "arrange": "stack"
+        },
+        "0.1.0": {
+          "code": "grocery_yogurt",
+          "key": "yogurt",
+          "price": 8,
+          "count": 43,
+          "arrange": "messy"
+        },
+        "0.1.2": {
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 15,
+          "arrange": "front"
         },
         "0.2.0": {
-          "code": "food_orange_juice",
-          "key": "orange_juice",
-          "price": 14,
-          "count": 8,
-          "arrange": "front"
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 41,
+          "arrange": "stack"
         },
         "0.2.1": {
           "code": "grocery_yogurt",
           "key": "yogurt",
           "price": 8,
-          "count": 10,
-          "arrange": "rows"
+          "count": 20,
+          "arrange": "front"
         },
         "0.2.2": {
-          "code": "grocery_soda",
-          "key": "soda",
-          "price": 7,
-          "count": 9,
+          "code": "grocery_milk",
+          "key": "milk",
+          "price": 10,
+          "count": 38,
           "arrange": "rows"
         },
         "0.3.0": {
-          "code": "grocery_yogurt",
-          "key": "yogurt",
-          "price": 8,
-          "count": 10,
-          "arrange": "front"
-        },
-        "0.3.1": {
           "code": "grocery_soda",
           "key": "soda",
           "price": 7,
-          "count": 10,
+          "count": 39,
+          "arrange": "rows"
+        },
+        "0.3.1": {
+          "code": "food_orange_juice",
+          "key": "orange_juice",
+          "price": 14,
+          "count": 22,
           "arrange": "front"
         },
         "0.3.2": {
-          "code": "food_water_bottle",
-          "key": "water_bottle",
-          "price": 8,
-          "count": 8,
-          "arrange": "front"
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 47,
+          "arrange": "messy"
         }
       }
     },
@@ -3172,88 +3172,88 @@
       "slots": 3,
       "fill": {
         "0.0.0": {
-          "code": "food_water_bottle",
-          "key": "water_bottle",
-          "price": 8,
-          "count": 10,
-          "arrange": "front"
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 24,
+          "arrange": "messy"
         },
         "0.0.1": {
           "code": "food_orange_juice",
           "key": "orange_juice",
           "price": 14,
-          "count": 10,
-          "arrange": "front"
+          "count": 36,
+          "arrange": "rows"
         },
         "0.0.2": {
-          "code": "grocery_yogurt",
-          "key": "yogurt",
-          "price": 8,
-          "count": 7,
-          "arrange": "rows"
+          "code": "grocery_milk",
+          "key": "milk",
+          "price": 10,
+          "count": 29,
+          "arrange": "stack"
         },
         "0.1.0": {
-          "code": "food_orange_juice",
-          "key": "orange_juice",
-          "price": 14,
-          "count": 10,
-          "arrange": "rows"
+          "code": "grocery_yogurt",
+          "key": "yogurt",
+          "price": 8,
+          "count": 27,
+          "arrange": "stack"
         },
         "0.1.1": {
-          "code": "grocery_yogurt",
-          "key": "yogurt",
-          "price": 8,
-          "count": 10,
-          "arrange": "rows"
-        },
-        "0.1.2": {
-          "code": "grocery_soda",
-          "key": "soda",
-          "price": 7,
-          "count": 10,
-          "arrange": "front"
-        },
-        "0.2.0": {
-          "code": "grocery_yogurt",
-          "key": "yogurt",
-          "price": 8,
-          "count": 10,
-          "arrange": "front"
-        },
-        "0.2.1": {
-          "code": "grocery_soda",
-          "key": "soda",
-          "price": 7,
-          "count": 10,
-          "arrange": "rows"
-        },
-        "0.2.2": {
           "code": "food_water_bottle",
           "key": "water_bottle",
           "price": 8,
-          "count": 9,
+          "count": 34,
+          "arrange": "messy"
+        },
+        "0.1.2": {
+          "code": "grocery_yogurt",
+          "key": "yogurt",
+          "price": 8,
+          "count": 40,
           "arrange": "rows"
         },
-        "0.3.0": {
+        "0.2.0": {
           "code": "grocery_soda",
           "key": "soda",
           "price": 7,
-          "count": 10,
-          "arrange": "front"
+          "count": 37,
+          "arrange": "messy"
+        },
+        "0.2.1": {
+          "code": "food_orange_juice",
+          "key": "orange_juice",
+          "price": 14,
+          "count": 32,
+          "arrange": "stack"
+        },
+        "0.2.2": {
+          "code": "grocery_soda",
+          "key": "soda",
+          "price": 7,
+          "count": 30,
+          "arrange": "messy"
+        },
+        "0.3.0": {
+          "code": "grocery_yogurt",
+          "key": "yogurt",
+          "price": 8,
+          "count": 46,
+          "arrange": "stack"
         },
         "0.3.1": {
           "code": "food_water_bottle",
           "key": "water_bottle",
           "price": 8,
-          "count": 10,
+          "count": 18,
           "arrange": "front"
         },
         "0.3.2": {
           "code": "food_orange_juice",
           "key": "orange_juice",
           "price": 14,
-          "count": 10,
-          "arrange": "rows"
+          "count": 26,
+          "arrange": "stack"
         }
       }
     },
@@ -3277,59 +3277,59 @@
       "slots": 3,
       "fill": {
         "0.0.0": {
-          "code": "food_water_bottle",
-          "key": "water_bottle",
-          "price": 8,
-          "count": 10,
+          "code": "grocery_apple",
+          "key": "apple",
+          "price": 6,
+          "count": 26,
           "arrange": "rows"
         },
         "0.0.1": {
-          "code": "grocery_apple",
-          "key": "apple",
-          "price": 6,
-          "count": 10,
-          "arrange": "rows"
+          "code": "food_orange_juice",
+          "key": "orange_juice",
+          "price": 14,
+          "count": 35,
+          "arrange": "messy"
         },
         "0.0.2": {
-          "code": "food_orange_juice",
-          "key": "orange_juice",
-          "price": 14,
-          "count": 8,
-          "arrange": "rows"
-        },
-        "0.1.0": {
           "code": "grocery_apple",
           "key": "apple",
           "price": 6,
-          "count": 10,
+          "count": 25,
           "arrange": "stack"
         },
+        "0.1.0": {
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 45,
+          "arrange": "messy"
+        },
         "0.1.1": {
-          "code": "food_orange_juice",
-          "key": "orange_juice",
-          "price": 14,
-          "count": 6,
-          "arrange": "front"
+          "code": "grocery_apple",
+          "key": "apple",
+          "price": 6,
+          "count": 35,
+          "arrange": "stack"
         },
         "0.2.0": {
           "code": "food_orange_juice",
           "key": "orange_juice",
           "price": 14,
-          "count": 8,
+          "count": 15,
           "arrange": "front"
         },
         "0.2.1": {
           "code": "food_water_bottle",
           "key": "water_bottle",
           "price": 8,
-          "count": 7,
-          "arrange": "front"
+          "count": 42,
+          "arrange": "rows"
         },
         "0.2.2": {
           "code": "grocery_apple",
           "key": "apple",
           "price": 6,
-          "count": 7,
+          "count": 11,
           "arrange": "front"
         }
       }
@@ -3357,63 +3357,63 @@
           "code": "food_orange_juice",
           "key": "orange_juice",
           "price": 14,
-          "count": 6,
-          "arrange": "front"
+          "count": 26,
+          "arrange": "messy"
         },
         "0.0.1": {
-          "code": "grocery_apple",
-          "key": "apple",
+          "code": "grocery_banana",
+          "key": "banana",
           "price": 6,
-          "count": 9,
-          "arrange": "messy"
+          "count": 37,
+          "arrange": "rows"
         },
         "0.0.2": {
           "code": "food_water_bottle",
           "key": "water_bottle",
           "price": 8,
-          "count": 6,
-          "arrange": "rows"
+          "count": 42,
+          "arrange": "stack"
         },
         "0.1.0": {
-          "code": "grocery_apple",
-          "key": "apple",
+          "code": "grocery_banana",
+          "key": "banana",
           "price": 6,
-          "count": 7,
+          "count": 46,
           "arrange": "rows"
         },
         "0.1.1": {
-          "code": "food_water_bottle",
-          "key": "water_bottle",
-          "price": 8,
-          "count": 6,
-          "arrange": "rows"
+          "code": "food_orange_juice",
+          "key": "orange_juice",
+          "price": 14,
+          "count": 44,
+          "arrange": "stack"
         },
         "0.1.2": {
-          "code": "food_orange_juice",
-          "key": "orange_juice",
-          "price": 14,
-          "count": 5,
-          "arrange": "front"
-        },
-        "0.2.0": {
-          "code": "food_water_bottle",
-          "key": "water_bottle",
-          "price": 8,
-          "count": 8,
-          "arrange": "front"
-        },
-        "0.2.1": {
-          "code": "food_orange_juice",
-          "key": "orange_juice",
-          "price": 14,
-          "count": 5,
-          "arrange": "front"
-        },
-        "0.2.2": {
           "code": "grocery_apple",
           "key": "apple",
           "price": 6,
-          "count": 7,
+          "count": 13,
+          "arrange": "front"
+        },
+        "0.2.0": {
+          "code": "food_orange_juice",
+          "key": "orange_juice",
+          "price": 14,
+          "count": 46,
+          "arrange": "rows"
+        },
+        "0.2.1": {
+          "code": "food_water_bottle",
+          "key": "water_bottle",
+          "price": 8,
+          "count": 43,
+          "arrange": "stack"
+        },
+        "0.2.2": {
+          "code": "grocery_banana",
+          "key": "banana",
+          "price": 6,
+          "count": 30,
           "arrange": "rows"
         }
       }
@@ -3438,81 +3438,81 @@
       "slots": 4,
       "fill": {
         "0.0.0": {
+          "code": "grocery_eggs",
+          "key": "eggs",
+          "price": 15,
+          "count": 48,
+          "arrange": "stack"
+        },
+        "0.0.1": {
+          "code": "grocery_cheese",
+          "key": "cheese",
+          "price": 16,
+          "count": 41,
+          "arrange": "rows"
+        },
+        "0.0.2": {
           "code": "grocery_milk",
           "key": "milk",
           "price": 10,
+          "count": 26,
+          "arrange": "stack"
+        },
+        "0.0.3": {
+          "code": "grocery_yogurt",
+          "key": "yogurt",
+          "price": 8,
+          "count": 36,
+          "arrange": "messy"
+        },
+        "0.1.0": {
+          "code": "grocery_milk",
+          "key": "milk",
+          "price": 10,
+          "count": 25,
+          "arrange": "messy"
+        },
+        "0.1.1": {
+          "code": "grocery_eggs",
+          "key": "eggs",
+          "price": 15,
           "count": 5,
           "arrange": "front"
         },
-        "0.0.1": {
-          "code": "grocery_yogurt",
-          "key": "yogurt",
-          "price": 8,
-          "count": 8,
-          "arrange": "front"
-        },
-        "0.0.2": {
-          "code": "grocery_cheese",
-          "key": "cheese",
-          "price": 16,
-          "count": 3,
-          "arrange": "front"
-        },
-        "0.0.3": {
-          "code": "grocery_eggs",
-          "key": "eggs",
-          "price": 15,
-          "count": 4,
-          "arrange": "front"
-        },
-        "0.1.0": {
-          "code": "grocery_yogurt",
-          "key": "yogurt",
-          "price": 8,
-          "count": 6,
-          "arrange": "front"
-        },
-        "0.1.1": {
-          "code": "grocery_cheese",
-          "key": "cheese",
-          "price": 16,
-          "count": 8,
-          "arrange": "rows"
-        },
         "0.1.3": {
-          "code": "grocery_milk",
-          "key": "milk",
-          "price": 10,
-          "count": 10,
-          "arrange": "rows"
+          "code": "grocery_cheese",
+          "key": "cheese",
+          "price": 16,
+          "count": 11,
+          "arrange": "front"
         },
         "0.2.0": {
-          "code": "grocery_cheese",
-          "key": "cheese",
-          "price": 16,
-          "count": 4,
-          "arrange": "rows"
-        },
-        "0.2.1": {
           "code": "grocery_eggs",
           "key": "eggs",
           "price": 15,
-          "count": 4,
-          "arrange": "front"
-        },
-        "0.2.2": {
-          "code": "grocery_milk",
-          "key": "milk",
-          "price": 10,
           "count": 7,
           "arrange": "front"
         },
-        "0.2.3": {
+        "0.2.1": {
+          "code": "grocery_milk",
+          "key": "milk",
+          "price": 10,
+          "count": 32,
+          "arrange": "rows"
+        },
+        "0.2.2": {
           "code": "grocery_yogurt",
           "key": "yogurt",
           "price": 8,
-          "count": 5,
-          "arrange": "rows"
+          "count": 42,
+          "arrange": "stack"
+        },
+        "0.2.3": {
+          "code": "grocery_eggs",
+          "key": "eggs",
+          "price": 15,
+          "count": 24,
+          "arrange": "messy"
         }
       }
     },
@@ -3536,67 +3536,67 @@
       "slots": 3,
       "fill": {
         "0.0.0": {
-          "code": "grocery_milk",
-          "key": "milk",
-          "price": 10,
-          "count": 7,
-          "arrange": "rows"
+          "code": "grocery_yogurt",
+          "key": "yogurt",
+          "price": 8,
+          "count": 12,
+          "arrange": "front"
         },
         "0.0.1": {
           "code": "grocery_eggs",
           "key": "eggs",
           "price": 15,
-          "count": 4,
-          "arrange": "front"
+          "count": 36,
+          "arrange": "rows"
         },
         "0.0.2": {
-          "code": "grocery_cheese",
-          "key": "cheese",
-          "price": 16,
-          "count": 6,
-          "arrange": "front"
+          "code": "grocery_milk",
+          "key": "milk",
+          "price": 10,
+          "count": 42,
+          "arrange": "messy"
         },
         "0.1.0": {
           "code": "grocery_eggs",
           "key": "eggs",
           "price": 15,
-          "count": 3,
-          "arrange": "front"
+          "count": 45,
+          "arrange": "stack"
         },
         "0.1.1": {
-          "code": "grocery_cheese",
-          "key": "cheese",
-          "price": 16,
-          "count": 6,
+          "code": "grocery_milk",
+          "key": "milk",
+          "price": 10,
+          "count": 39,
           "arrange": "rows"
         },
         "0.1.2": {
           "code": "grocery_yogurt",
           "key": "yogurt",
           "price": 8,
-          "count": 10,
-          "arrange": "rows"
+          "count": 43,
+          "arrange": "stack"
         },
         "0.2.0": {
-          "code": "grocery_cheese",
-          "key": "cheese",
-          "price": 16,
-          "count": 6,
-          "arrange": "stack"
+          "code": "grocery_milk",
+          "key": "milk",
+          "price": 10,
+          "count": 45,
+          "arrange": "rows"
         },
         "0.2.1": {
           "code": "grocery_yogurt",
           "key": "yogurt",
           "price": 8,
-          "count": 8,
-          "arrange": "rows"
+          "count": 33,
+          "arrange": "stack"
         },
         "0.2.2": {
-          "code": "grocery_milk",
-          "key": "milk",
-          "price": 10,
-          "count": 10,
-          "arrange": "front"
+          "code": "grocery_cheese",
+          "key": "cheese",
+          "price": 16,
+          "count": 44,
+          "arrange": "rows"
         }
       }
     },
@@ -3620,81 +3620,81 @@
       "slots": 4,
       "fill": {
         "0.0.0": {
-          "code": "grocery_milk",
-          "key": "milk",
-          "price": 10,
-          "count": 10,
-          "arrange": "rows"
-        },
-        "0.0.1": {
-          "code": "grocery_yogurt",
-          "key": "yogurt",
-          "price": 8,
-          "count": 5,
-          "arrange": "rows"
-        },
-        "0.0.2": {
           "code": "grocery_cheese",
           "key": "cheese",
           "price": 16,
-          "count": 4,
+          "count": 43,
+          "arrange": "messy"
+        },
+        "0.0.1": {
+          "code": "grocery_eggs",
+          "key": "eggs",
+          "price": 15,
+          "count": 36,
           "arrange": "rows"
         },
+        "0.0.2": {
+          "code": "grocery_yogurt",
+          "key": "yogurt",
+          "price": 8,
+          "count": 44,
+          "arrange": "stack"
+        },
         "0.0.3": {
-          "code": "food_sandwich",
-          "key": "sandwich",
-          "price": 30,
-          "count": 4,
+          "code": "grocery_milk",
+          "key": "milk",
+          "price": 10,
+          "count": 40,
           "arrange": "rows"
         },
         "0.1.0": {
           "code": "food_sandwich",
           "key": "sandwich",
           "price": 30,
-          "count": 6,
+          "count": 47,
           "arrange": "rows"
         },
         "0.1.1": {
-          "code": "grocery_cheese",
-          "key": "cheese",
-          "price": 16,
-          "count": 6,
-          "arrange": "rows"
+          "code": "grocery_milk",
+          "key": "milk",
+          "price": 10,
+          "count": 35,
+          "arrange": "messy"
         },
         "0.1.2": {
-          "code": "food_sandwich",
-          "key": "sandwich",
-          "price": 30,
-          "count": 4,
-          "arrange": "messy"
+          "code": "grocery_eggs",
+          "key": "eggs",
+          "price": 15,
+          "count": 44,
+          "arrange": "stack"
         },
         "0.2.0": {
           "code": "grocery_eggs",
           "key": "eggs",
           "price": 15,
-          "count": 6,
-          "arrange": "rows"
+          "count": 27,
+          "arrange": "stack"
         },
         "0.2.1": {
-          "code": "food_sandwich",
-          "key": "sandwich",
-          "price": 30,
-          "count": 3,
-          "arrange": "front"
+          "code": "grocery_yogurt",
+          "key": "yogurt",
+          "price": 8,
+          "count": 29,
+          "arrange": "messy"
         },
         "0.2.2": {
-          "code": "grocery_eggs",
-          "key": "eggs",
-          "price": 15,
-          "count": 4,
-          "arrange": "rows"
-        },
-        "0.2.3": {
           "code": "grocery_milk",
           "key": "milk",
           "price": 10,
-          "count": 5,
+          "count": 11,
           "arrange": "front"
+        },
+        "0.2.3": {
+          "code": "food_sandwich",
+          "key": "sandwich",
+          "price": 30,
+          "count": 34,
+          "arrange": "rows"
         }
       }
     },
@@ -3718,87 +3718,87 @@
       "slots": 4,
       "fill": {
         "0.0.0": {
-          "code": "grocery_cheese",
-          "key": "cheese",
-          "price": 16,
-          "count": 4,
-          "arrange": "front"
+          "code": "food_sandwich",
+          "key": "sandwich",
+          "price": 30,
+          "count": 30,
+          "arrange": "stack"
         },
         "0.0.1": {
-          "code": "grocery_milk",
-          "key": "milk",
-          "price": 10,
-          "count": 10,
-          "arrange": "rows"
-        },
-        "0.0.2": {
-          "code": "grocery_yogurt",
-          "key": "yogurt",
-          "price": 8,
-          "count": 8,
-          "arrange": "rows"
-        },
-        "0.0.3": {
-          "code": "food_sandwich",
-          "key": "sandwich",
-          "price": 30,
-          "count": 8,
-          "arrange": "rows"
-        },
-        "0.1.0": {
-          "code": "grocery_milk",
-          "key": "milk",
-          "price": 10,
-          "count": 9,
-          "arrange": "front"
-        },
-        "0.1.1": {
-          "code": "grocery_yogurt",
-          "key": "yogurt",
-          "price": 8,
-          "count": 15,
-          "arrange": "rows"
-        },
-        "0.1.2": {
-          "code": "food_sandwich",
-          "key": "sandwich",
-          "price": 30,
-          "count": 5,
-          "arrange": "rows"
-        },
-        "0.1.3": {
           "code": "grocery_eggs",
           "key": "eggs",
           "price": 15,
-          "count": 7,
+          "count": 40,
           "arrange": "rows"
+        },
+        "0.0.2": {
+          "code": "grocery_milk",
+          "key": "milk",
+          "price": 10,
+          "count": 43,
+          "arrange": "messy"
+        },
+        "0.0.3": {
+          "code": "grocery_cheese",
+          "key": "cheese",
+          "price": 16,
+          "count": 32,
+          "arrange": "rows"
+        },
+        "0.1.0": {
+          "code": "grocery_eggs",
+          "key": "eggs",
+          "price": 15,
+          "count": 42,
+          "arrange": "messy"
+        },
+        "0.1.1": {
+          "code": "food_sandwich",
+          "key": "sandwich",
+          "price": 30,
+          "count": 9,
+          "arrange": "front"
+        },
+        "0.1.2": {
+          "code": "grocery_eggs",
+          "key": "eggs",
+          "price": 15,
+          "count": 42,
+          "arrange": "stack"
+        },
+        "0.1.3": {
+          "code": "grocery_milk",
+          "key": "milk",
+          "price": 10,
+          "count": 11,
+          "arrange": "front"
         },
         "0.2.0": {
           "code": "grocery_yogurt",
           "key": "yogurt",
           "price": 8,
-          "count": 8,
+          "count": 24,
           "arrange": "rows"
         },
         "0.2.1": {
-          "code": "food_sandwich",
-          "key": "sandwich",
-          "price": 30,
-          "count": 5,
-          "arrange": "rows"
-        },
-        "0.2.2": {
-          "code": "grocery_eggs",
-          "key": "eggs",
-          "price": 15,
-          "count": 3,
-          "arrange": "rows"
-        },
-        "0.2.3": {
           "code": "grocery_cheese",
           "key": "cheese",
           "price": 16,
-          "count": 6,
+          "count": 30,
+          "arrange": "stack"
+        },
+        "0.2.2": {
+          "code": "grocery_yogurt",
+          "key": "yogurt",
+          "price": 8,
+          "count": 30,
+          "arrange": "rows"
+        },
+        "0.2.3": {
+          "code": "grocery_eggs",
+          "key": "eggs",
+          "price": 15,
+          "count": 26,
           "arrange": "stack"
         }
       }
@@ -3823,32 +3823,32 @@
       "slots": 4,
       "fill": {
         "0.0.0": {
-          "code": "grocery_yogurt",
-          "key": "yogurt",
-          "price": 8,
-          "count": 6,
-          "arrange": "rows"
-        },
-        "0.0.1": {
           "code": "food_sandwich",
           "key": "sandwich",
           "price": 30,
-          "count": 3,
+          "count": 38,
+          "arrange": "rows"
+        },
+        "0.0.1": {
+          "code": "grocery_eggs",
+          "key": "eggs",
+          "price": 15,
+          "count": 5,
           "arrange": "front"
         },
         "0.0.2": {
-          "code": "grocery_cheese",
-          "key": "cheese",
-          "price": 16,
-          "count": 4,
+          "code": "food_sandwich",
+          "key": "sandwich",
+          "price": 30,
+          "count": 46,
           "arrange": "rows"
         },
         "0.0.3": {
           "code": "grocery_yogurt",
           "key": "yogurt",
           "price": 8,
-          "count": 4,
-          "arrange": "rows"
+          "count": 41,
+          "arrange": "stack"
         }
       }
     },
@@ -3872,25 +3872,25 @@
       "slots": 4,
       "fill": {
         "0.0.1": {
-          "code": "food_sandwich",
-          "key": "sandwich",
-          "price": 30,
-          "count": 4,
-          "arrange": "rows"
+          "code": "grocery_yogurt",
+          "key": "yogurt",
+          "price": 8,
+          "count": 7,
+          "arrange": "front"
         },
         "0.0.2": {
-          "code": "grocery_cheese",
-          "key": "cheese",
-          "price": 16,
-          "count": 4,
+          "code": "grocery_eggs",
+          "key": "eggs",
+          "price": 15,
+          "count": 47,
           "arrange": "rows"
         },
         "0.0.3": {
           "code": "grocery_yogurt",
           "key": "yogurt",
           "price": 8,
-          "count": 5,
-          "arrange": "front"
+          "count": 47,
+          "arrange": "stack"
         }
       }
     },
@@ -3914,25 +3914,25 @@
       "slots": 3,
       "fill": {
         "0.0.0": {
-          "code": "food_water_bottle",
-          "key": "water_bottle",
-          "price": 8,
-          "count": 10,
-          "arrange": "rows"
-        },
-        "0.0.1": {
           "code": "food_orange_juice",
           "key": "orange_juice",
           "price": 14,
-          "count": 8,
+          "count": 26,
           "arrange": "rows"
         },
-        "0.0.2": {
+        "0.0.1": {
           "code": "grocery_soda",
           "key": "soda",
           "price": 7,
-          "count": 7,
-          "arrange": "front"
+          "count": 36,
+          "arrange": "messy"
+        },
+        "0.0.2": {
+          "code": "food_orange_juice",
+          "key": "orange_juice",
+          "price": 14,
+          "count": 47,
+          "arrange": "rows"
         }
       }
     },
@@ -3956,17 +3956,17 @@
       "slots": 3,
       "fill": {
         "0.0.0": {
-          "code": "food_orange_juice",
-          "key": "orange_juice",
-          "price": 14,
-          "count": 8,
+          "code": "grocery_milk",
+          "key": "milk",
+          "price": 10,
+          "count": 14,
           "arrange": "front"
         },
         "0.0.2": {
-          "code": "grocery_soda",
-          "key": "soda",
-          "price": 7,
-          "count": 10,
+          "code": "grocery_milk",
+          "key": "milk",
+          "price": 10,
+          "count": 41,
           "arrange": "rows"
         }
       }
@@ -3991,66 +3991,66 @@
       "slots": 3,
       "fill": {
         "0.0.0": {
-          "code": "grocery_bread",
-          "key": "bread",
-          "price": 14,
-          "count": 3,
-          "arrange": "rows"
+          "code": "food_croissant",
+          "key": "croissant",
+          "price": 12,
+          "count": 42,
+          "arrange": "stack"
         },
         "0.0.1": {
-          "code": "food_croissant",
-          "key": "croissant",
-          "price": 12,
-          "count": 6,
-          "arrange": "rows"
+          "code": "food_cookie",
+          "key": "cookie",
+          "price": 5,
+          "count": 9,
+          "arrange": "front"
         },
         "0.0.2": {
-          "code": "food_cookie",
-          "key": "cookie",
-          "price": 5,
-          "count": 5,
-          "arrange": "messy"
-        },
-        "0.1.0": {
           "code": "food_croissant",
           "key": "croissant",
           "price": 12,
-          "count": 3,
+          "count": 10,
           "arrange": "rows"
         },
-        "0.1.1": {
-          "code": "food_cookie",
-          "key": "cookie",
-          "price": 5,
-          "count": 6,
-          "arrange": "rows"
-        },
-        "0.1.2": {
+        "0.1.0": {
           "code": "grocery_bread",
           "key": "bread",
           "price": 14,
-          "count": 2,
+          "count": 25,
+          "arrange": "stack"
+        },
+        "0.1.1": {
+          "code": "food_croissant",
+          "key": "croissant",
+          "price": 12,
+          "count": 12,
+          "arrange": "messy"
+        },
+        "0.1.2": {
+          "code": "food_cookie",
+          "key": "cookie",
+          "price": 5,
+          "count": 27,
           "arrange": "rows"
         },
         "0.2.0": {
-          "code": "food_cookie",
-          "key": "cookie",
-          "price": 5,
-          "count": 6,
-          "arrange": "stack"
+          "code": "food_croissant",
+          "key": "croissant",
+          "price": 12,
+          "count": 13,
+          "arrange": "messy"
         },
         "0.2.1": {
           "code": "grocery_bread",
           "key": "bread",
           "price": 14,
-          "count": 3,
-          "arrange": "messy"
+          "count": 27,
+          "arrange": "stack"
         },
         "0.2.2": {
           "code": "food_croissant",
           "key": "croissant",
           "price": 12,
-          "count": 3,
+          "count": 12,
           "arrange": "rows"
         }
       }
@@ -4075,39 +4075,39 @@
       "slots": 2,
       "fill": {
         "0.0.0": {
-          "code": "grocery_bread",
-          "key": "bread",
-          "price": 14,
-          "count": 2,
-          "arrange": "rows"
-        },
-        "0.0.1": {
           "code": "food_cookie",
           "key": "cookie",
           "price": 5,
-          "count": 10,
+          "count": 36,
+          "arrange": "messy"
+        },
+        "0.0.1": {
+          "code": "food_croissant",
+          "key": "croissant",
+          "price": 12,
+          "count": 11,
           "arrange": "rows"
         },
         "0.1.1": {
-          "code": "food_croissant",
-          "key": "croissant",
-          "price": 12,
-          "count": 6,
-          "arrange": "stack"
-        },
-        "0.2.0": {
-          "code": "food_croissant",
-          "key": "croissant",
-          "price": 12,
-          "count": 4,
-          "arrange": "rows"
-        },
-        "0.2.1": {
           "code": "grocery_bread",
           "key": "bread",
           "price": 14,
-          "count": 2,
+          "count": 13,
           "arrange": "rows"
+        },
+        "0.2.0": {
+          "code": "grocery_bread",
+          "key": "bread",
+          "price": 14,
+          "count": 15,
+          "arrange": "rows"
+        },
+        "0.2.1": {
+          "code": "food_croissant",
+          "key": "croissant",
+          "price": 12,
+          "count": 8,
+          "arrange": "front"
         }
       }
     },

@@ -36,6 +36,7 @@ import GamePubRaceBoard from '../components/game/GamePubRaceBoard.vue'
 import GameMeterShot from '../components/game/GameMeterShot.vue'
 import GameMinimap from '../components/game/GameMinimap.vue'
 import GameDarts from '../components/game/GameDarts.vue'
+import GameCartButton from '../components/game/GameCartButton.vue'
 import GameShopCart from '../components/game/GameShopCart.vue'
 import GameCharacterCreator from '../components/game/GameCharacterCreator.vue'
 import GameWardrobe from '../components/game/GameWardrobe.vue'
@@ -526,7 +527,7 @@ const interactions = useInteractionTargets({
   myPosition,
   getCamera,
   canvasRef,
-  promptsHidden: () => inventoryOpen.value || housing.claimInFlight.value,
+  promptsHidden: () => inventoryOpen.value || cart.open.value || housing.claimInFlight.value,
   housingUnits: housing.units,
   nearbyHousingUnit: housing.nearbyUnit,
   housingActionFor: housing.actionFor,
@@ -799,6 +800,7 @@ const minimap = useMinimap({
   buildingKey: () => currentHouseKey.value,
 })
 const mapKey = computed(() => actionKeyLabels('map')[0] ?? 'M')
+const cartKey = computed(() => actionKeyLabels('cart')[0] ?? 'L')
 // Esc frees the mouse and opens the pause menu: the full map gives way to it
 watch(pointerLocked, (locked) => {
   if (!locked) minimap.fullOpen.value = false
@@ -1410,7 +1412,7 @@ const crosshairClass = computed(() => {
       <span class="text-sun">{{ storeBrand }}</span> · {{ storeDepartment }}
     </div>
     <GameStoreItemCard
-      v-if="storeTarget && !inventoryOpen"
+      v-if="storeTarget && !inventoryOpen && !cartOpen"
       :target="storeTarget"
       :feedback="cartStore ? cartNoticeText : storeFeedback"
       :brand="storeBrand"
@@ -1501,8 +1503,11 @@ const crosshairClass = computed(() => {
       @saved="onCharacterSaved"
       @close="closeCharacterEditor"
     />
-    <div v-show="pointerLocked" class="absolute right-3 top-3 z-10">
+    <!-- z-[21]: the cart button stays clickable above the pause screen (z-20), where the cursor is free -->
+    <div class="absolute right-3 top-3 z-[21] flex items-center gap-2">
+      <GameCartButton v-if="cart.count.value > 0 && !cartOpen" :count="cart.count.value" :key-label="cartKey" @open="cart.openCart()" />
       <button
+        v-show="pointerLocked"
         type="button"
         class="cc-hud inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-extrabold text-fog transition hover:border-coral/70 hover:text-coral"
         @click="logout"

@@ -162,6 +162,9 @@ Decision (2026-11-12): one cart for every shop with a cashier, instead of one ba
 
 - [doing] Cart and cart screen, quantities on `/shop/checkout` and `zone_checkout`, `shop_checkouts` idempotency table. Server checks tested; waiting for a playtest.
 - [done] No price card in shops (decided 2026-11-12 from the user's screenshot of the GreenCart orange juice card): only the item models show; the price is in the aim prompt, the item card and the cart. The `priceTags` area option, its editor checkbox and `priceTag.ts` are gone.
+- [done] Cart button in the HUD (user's choice, 2026-11-12): cart icon with the number of items, next to Log out, shown only while the cart holds something. The cursor is captured in game, so the button also shows its key (L); it is clickable whenever the cursor is free (pause, inventory, a shop screen).
+- [done] Empty shelf slot = coloured cube (user's choice, 2026-11-12), replacing the "OUT OF STOCK" tag: one cube per empty slot, its colour picked per slot from a fixed palette, one instanced mesh per shelf with a plain Lambert material (cheap on the low tier). Not a display, so it can never be bought or added to the cart.
+- [done] More variety on GreenCart's shelves (user's choice, 2026-11-12): neighbouring slots never hold the same product (62 of 333 pairs did), arrangements mixed (112 rows, 85 front, 82 stack, 80 messy instead of mostly rows and front), each aisle keeps its theme with a wider product set (banana added, pasta aisle no longer pasta only). Counts fit each slot's capacity and prices follow the zone price book. GreenCart is the only shop with shelves today.
 
 ## Mall editor (in progress, branch feat-shop-editor)
 

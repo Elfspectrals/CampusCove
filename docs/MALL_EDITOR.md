@@ -220,7 +220,7 @@ de la clinique, le Campus Cafe et les six boutiques du mall sont dans `zones/ret
   - Northline : portants à miroir, mur à chaussures, tables à têtes, tables de pliés, portants ronds, cubes, podium,
     plantes.
   - GreenCart : les rayons sont des étagères à emplacements (gondoles, frigos muraux et allée surgelés, bacs réfrigérés,
-    étagère de la boulangerie) garnies de ses 18 produits ; quelques emplacements sont vides exprès (« out of stock »).
+    étagère de la boulangerie) garnies de ses 18 produits ; quelques emplacements sont vides exprès (un cube coloré les remplace, il ne se vend pas).
     Bananes et pommes restent sur leurs tables, viennoiseries et pain sur le comptoir de la boulangerie. Autour : caisses
     à tapis, parc à chariots, bacs et palettes promo, tables de fruits et légumes, balance, comptoirs boulangerie et
     poissonnerie, fours, poubelles, plantes.
