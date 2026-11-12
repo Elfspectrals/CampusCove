@@ -9,6 +9,8 @@ export function voiceRoomName(cityRoomId: string): string {
 
 export async function voiceToken(config: LiveKitConfig, cityRoomId: string, sessionId: string, pseudo: string): Promise<{ url: string, token: string }> {
   const token = new AccessToken(config.apiKey, config.apiSecret, { identity: sessionId, name: pseudo, ttl: VOICE_TOKEN_TTL })
-  token.addGrant({ room: voiceRoomName(cityRoomId), roomJoin: true, canPublish: true, canSubscribe: false, canPublishData: false })
+  // canSubscribe must stay true: LiveKit refuses even the socket's UpdateSubscriptions for a participant without it.
+  // The client joins with autoSubscribe off, so it only hears the voices the socket subscribes it to (docs/VOICE.md).
+  token.addGrant({ room: voiceRoomName(cityRoomId), roomJoin: true, canPublish: true, canSubscribe: true, canPublishData: false })
   return { url: config.url, token: await token.toJwt() }
 }
