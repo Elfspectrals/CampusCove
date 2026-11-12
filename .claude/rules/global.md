@@ -21,6 +21,10 @@
 
 CampusCove is presented as a real product. Never mention a school, course, assignment, grade, teacher or "projet annuel" in code, comments, docs, commits, PRs, UI text, SEO content or legal pages.
 
+## New assets
+
+Before planning a new asset that holds items or a new plant, even from a zone file or game code, follow "Variety before building" in `.claude/rules/assets.md`: variety plan, product questions, explicit validation, then build.
+
 ## Git
 
 - Branches follow the Airbnb naming: `<type>/<what-it-does>` in kebab-case (`feat/`, `fix/`, `chore/`, `docs/`, `refactor/`...), for example `fix/economy-exploits`. Never `claude/...` or a generated hash; rename before the first push.

@@ -52,7 +52,7 @@ final class PubService
 
         return DB::transaction(function () use ($accountId, $game, $rules): array {
             // no fee while the reward is on cooldown: the player would pay for a game that cannot pay back
-            $wallet = Wallet::lockForAccount($accountId, 'coins');
+            $wallet = Wallet::lockForAccount($accountId, Wallet::CASH);
             $secondsLeft = $this->cooldownSecondsLeft($wallet, 'pub_reward_'.$game);
             if ($secondsLeft > 0) {
                 throw new PubRejectedException('pub_cooldown', "You can play this game again in {$secondsLeft} s.", 429);
@@ -73,12 +73,12 @@ final class PubService
         $reason = 'pub_reward_'.$game;
 
         return DB::transaction(function () use ($accountId, $game, $placement, $score, $coins, $reason): array {
-            $wallet = Wallet::lockForAccount($accountId, 'coins');
+            $wallet = Wallet::lockForAccount($accountId, Wallet::CASH);
             if ($this->cooldownSecondsLeft($wallet, $reason) > 0) {
                 return ['coins' => 0, 'cooldown' => true, 'balance_after' => $wallet->balance()];
             }
             if ($coins > 0) {
-                $this->coinRewards->credit($accountId, $reason, $coins, ['game' => $game, 'placement' => $placement, 'score' => $score]);
+                $this->coinRewards->creditCash($accountId, $reason, $coins, ['game' => $game, 'placement' => $placement, 'score' => $score]);
             }
 
             return ['coins' => $coins, 'cooldown' => false, 'balance_after' => $wallet->balance()];
@@ -122,10 +122,10 @@ final class PubService
      */
     private function debit(int $accountId, int $amount, string $type, array $meta): int
     {
-        $wallet = Wallet::lockForAccount($accountId, 'coins');
+        $wallet = Wallet::lockForAccount($accountId, Wallet::CASH);
         $balance = $wallet->balance();
         if ($balance < $amount) {
-            throw new PubRejectedException('insufficient_funds', 'Insufficient wallet balance.');
+            throw new PubRejectedException('insufficient_funds', 'Not enough cash on you. Withdraw some at an ATM.');
         }
         $tx = EconomyTransaction::query()->create([
             'server_id' => null,

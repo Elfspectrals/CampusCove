@@ -14,7 +14,7 @@ const visible = ref(false)
     <input v-model="model" v-bind="$attrs" :type="visible ? 'text' : 'password'" spellcheck="false" autocapitalize="off" class="cc-input pr-24" />
     <button
       type="button"
-      class="absolute inset-y-1.5 right-1.5 rounded-lg px-3 text-xs font-extrabold text-pool transition-colors hover:bg-ink-800"
+      class="absolute inset-y-1.5 right-1.5 rounded-lg px-3 text-xs font-semibold text-mist transition-colors hover:bg-ink-800 hover:text-fog"
       :aria-label="visible ? t('auth.hidePassword') : t('auth.showPassword')"
       :aria-pressed="visible"
       @click="visible = !visible"

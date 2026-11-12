@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { getGraphicsQuality, toggleGraphicsQuality } from '../../game/graphicsQuality'
+import { cycleGraphicsQuality, getGraphicsQuality } from '../../game/graphicsQuality'
 import UiIcon from '../ui/UiIcon.vue'
 
 defineProps<{
   positionLabel: string
+  renderStats?: string | null
   /** The quality toggle is only clickable while the pointer is free. */
   showGraphicsToggle: boolean
   /** Name of the public building the player is in (e.g. "Cove Home"), instead of "Campus Town". */
@@ -14,11 +15,11 @@ defineProps<{
 
 const emit = defineEmits<{ toggleReducedEffects: [] }>()
 
-const graphicsQualityLabel = getGraphicsQuality() === 'low' ? 'Low' : 'High'
+const graphicsQualityLabel = { low: 'Low', medium: 'Medium', high: 'High' }[getGraphicsQuality()]
 
 /** The renderer is configured at creation, so a quality change needs a reload. */
 function onToggleGraphicsQuality(): void {
-  toggleGraphicsQuality()
+  cycleGraphicsQuality()
   window.location.reload()
 }
 </script>
@@ -31,6 +32,9 @@ function onToggleGraphicsQuality(): void {
     </span>
     <span class="cc-hud px-2.5 py-1.5 font-mono text-[11px] text-mist" title="Player world coordinates">
       XYZ {{ positionLabel }}
+    </span>
+    <span v-if="renderStats" class="cc-hud px-2.5 py-1.5 font-mono text-[11px] text-mist">
+      {{ renderStats }}
     </span>
     <button
       v-if="showGraphicsToggle"

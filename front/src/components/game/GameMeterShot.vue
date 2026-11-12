@@ -115,10 +115,10 @@ onUnmounted(() => {
             class="relative grid h-11 w-11 shrink-0 place-items-center rounded-full border-2 transition-transform"
             :class="[
               isDown(index - 1)
-                ? 'border-white/20 bg-black/30 opacity-40'
+                ? 'border-line/20 bg-ink-950/30 opacity-40'
                 : index - 1 === nextIndex && playing
                   ? 'scale-110 border-sun bg-sun/20 shadow-[0_0_14px_rgb(var(--cc-sun)/0.7)]'
-                  : 'border-white/60 bg-white/15',
+                  : 'border-line/60 bg-line/15',
               wrongIndex === index - 1 ? 'cc-shot-wrong' : '',
             ]"
             :aria-label="isDown(index - 1) ? `Shot ${index}, empty` : index - 1 === nextIndex ? `Shot ${index}, drink this one` : `Shot ${index}`"
@@ -140,7 +140,7 @@ onUnmounted(() => {
         </p>
       </div>
 
-      <footer v-if="result" class="flex items-center justify-end border-t border-white/10 px-4 py-3">
+      <footer v-if="result" class="flex items-center justify-end border-t border-line/10 px-4 py-3">
         <button type="button" class="cc-btn cc-btn-sm cc-btn-grape" @click="emit('close')">Back to the bar</button>
       </footer>
     </section>

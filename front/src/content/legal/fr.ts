@@ -149,7 +149,7 @@ export const legalFr: LegalDocs = {
           'campus_cove_wallet_balances — cache de vos soldes pour l’affichage — jusqu’à la déconnexion.',
           'cc_locale — langue choisie — jusqu’à suppression.',
           'cc_consent — vos choix en matière de traceurs — 6 mois.',
-          'cc_graphics_quality, cc.reducedEffects, cc.comfort — réglages graphiques et d’accessibilité du jeu — jusqu’à suppression.',
+          'cc_graphics_quality, cc.reducedEffects, cc.comfort, cc.voice, cc.voiceMuted, cc.voiceVolumes — réglages graphiques, d’accessibilité et du chat vocal du jeu, joueurs que tu as coupés ou dont tu as changé le volume — jusqu’à suppression.',
           'cc_keybindings — tes touches personnalisées (Paramètres) — jusqu’à suppression ou remise par défaut.',
           'campus_cove_admin_mode, cc.admin.worldPlanner.v1 — outils d’administration (comptes administrateurs uniquement).',
         ],
@@ -365,7 +365,7 @@ export const legalFr: LegalDocs = {
       },
       {
         heading: 'Polices',
-        items: ['Lilita One, Nunito, JetBrains Mono — SIL Open Font License 1.1, auto-hébergées via Fontsource'],
+        items: ['Lilita One, Nunito, JetBrains Mono, Barlow, Barlow Condensed, Bungee, Space Grotesk, Space Mono, Bricolage Grotesque, Oxanium, IBM Plex Sans, IBM Plex Mono, Outfit, Fraunces, Figtree — SIL Open Font License 1.1, auto-hébergées via Fontsource'],
       },
       {
         heading: 'Modèles 3D et images',

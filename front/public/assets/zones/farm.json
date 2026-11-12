@@ -7644,6 +7644,24 @@
         3,
         8
       ]
+    },
+    {
+      "id": "atm_farm",
+      "kind": "item",
+      "key": "atm",
+      "code": "decor_atm",
+      "forSale": false,
+      "position": [
+        -8.5,
+        0.0,
+        -138.5
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
     }
   ],
   "areas": [

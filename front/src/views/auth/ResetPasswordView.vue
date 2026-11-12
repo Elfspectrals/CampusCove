@@ -48,15 +48,15 @@ async function submit() {
         <p id="reset-password-help" class="m-0 mt-1.5 text-xs font-semibold text-mist">{{ t('auth.register.passwordHint') }}</p>
       </div>
       <p v-if="error" class="cc-alert cc-alert-error m-0" role="alert"><UiIcon name="alert" :size="18" /> {{ error }}</p>
-      <button type="submit" :disabled="loading" class="cc-btn cc-btn-pool cc-btn-lg w-full">
+      <button type="submit" :disabled="loading" class="cc-btn cc-btn-sun cc-btn-lg w-full">
         <UiIcon v-if="!loading" name="key" :size="18" />
         {{ loading ? t('auth.reset.submitting') : t('auth.reset.submit') }}
       </button>
     </form>
 
     <template #footer>
-      <RouterLink v-if="!token || (error && !done)" :to="{ name: 'forgot-password' }" class="font-extrabold text-sun hover:underline">{{ t('auth.reset.requestNew') }}</RouterLink>
-      <RouterLink v-else :to="{ name: 'login' }" class="font-extrabold text-sun hover:underline">{{ t('auth.reset.signIn') }}</RouterLink>
+      <RouterLink v-if="!token || (error && !done)" :to="{ name: 'forgot-password' }" class="font-semibold text-fog underline underline-offset-4 transition-colors hover:text-sun">{{ t('auth.reset.requestNew') }}</RouterLink>
+      <RouterLink v-else :to="{ name: 'login' }" class="font-semibold text-fog underline underline-offset-4 transition-colors hover:text-sun">{{ t('auth.reset.signIn') }}</RouterLink>
     </template>
   </UiAuthCard>
 </template>

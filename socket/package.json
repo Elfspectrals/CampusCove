@@ -12,6 +12,7 @@
   "dependencies": {
     "@colyseus/schema": "^4.0.20",
     "colyseus": "^0.17.10",
+    "livekit-server-sdk": "2.19.2",
     "tsx": "^4.23.15"
   },
   "devDependencies": {

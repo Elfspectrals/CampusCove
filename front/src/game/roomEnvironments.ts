@@ -4,7 +4,8 @@ import { findHouse, findStore, findWork } from './assets/catalog'
 import { createGltfLoader } from './gltfLoaderFactory'
 import { getGraphicsQuality } from './graphicsQuality'
 import { shareTexturesAcrossModels } from './sharedTextures'
-import { applyInteriorLightmap, openHouseLots, openStoreLots, openWorkLots, placeOpenHouseInterior, registerFrontDoor } from './town/openHouses'
+import { mergeStaticMeshes } from './town/mergeStaticMeshes'
+import { MOVING_EXTERIOR_NODES, applyInteriorLightmap, openHouseLots, openStoreLots, openWorkLots, placeOpenHouseInterior, registerFrontDoor } from './town/openHouses'
 import { animatePondWater } from './town/pondWater'
 import { clearTerrainHeightmaps, setTerrainHeightmap, type TerrainHeightmap } from './town/terrainHeight'
 import { fetchWorldManifest, houseBuildings, storeBuildings, workBuildings, type WorldManifest, type WorldZone } from './world/worldManifest'
@@ -127,6 +128,7 @@ function loadHouseExteriors(loader: GLTFLoader, manifest: WorldManifest): Promis
     try {
       const gltf = await loadModelSharingTextures(loader, house.exteriorUrl)
       const exterior = gltf.scene
+      mergeStaticMeshes(exterior, MOVING_EXTERIOR_NODES)
       exterior.name = `HouseExterior_${lot.key}`
       if (lot.interiorOffset) registerFrontDoor(exterior, lot.key)
       exterior.position.fromArray(lot.position)
@@ -169,6 +171,7 @@ function loadWorkExteriors(loader: GLTFLoader, manifest: WorldManifest): Promise
     try {
       const gltf = await loader.loadAsync(asset.exteriorUrl)
       const exterior = gltf.scene
+      mergeStaticMeshes(exterior, MOVING_EXTERIOR_NODES)
       exterior.name = `WorkExterior_${lot.key}`
       if (lot.interiorOffset) registerFrontDoor(exterior, lot.key)
       exterior.position.fromArray(lot.position)
@@ -189,6 +192,7 @@ function loadStoreExteriors(loader: GLTFLoader, manifest: WorldManifest): Promis
     try {
       const gltf = await loader.loadAsync(asset.exteriorUrl)
       const exterior = gltf.scene
+      mergeStaticMeshes(exterior, MOVING_EXTERIOR_NODES)
       exterior.name = `StoreExterior_${lot.key}`
       if (lot.interiorOffset) registerFrontDoor(exterior, lot.key)
       exterior.position.fromArray(lot.position)
@@ -201,10 +205,15 @@ function loadStoreExteriors(loader: GLTFLoader, manifest: WorldManifest): Promis
   }))
 }
 
+const FOG_END_DISTANCE = { low: 120, medium: 180, high: 250 } as const
+
+export function fogEndDistance(): number {
+  return FOG_END_DISTANCE[getGraphicsQuality()]
+}
+
 export function applySceneAtmosphere(scene: THREE.Scene, renderer?: THREE.WebGLRenderer): void {
   scene.background = new THREE.Color(CITY_SKY_COLOR)
-  const fogFar = getGraphicsQuality() === 'low' ? 120 : 250
-  scene.fog = new THREE.Fog(CITY_SKY_COLOR, 30, fogFar)
+  scene.fog = new THREE.Fog(CITY_SKY_COLOR, 30, fogEndDistance())
   if (renderer) {
     renderer.toneMappingExposure = 1.05
   }

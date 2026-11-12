@@ -25,6 +25,7 @@ export default {
           600: token('ink-600'),
           500: token('ink-500'),
         },
+        line: token('line'),
         fog: token('fog'),
         mist: token('mist'),
         sun: { DEFAULT: token('sun'), edge: token('sun-edge') },
@@ -41,12 +42,12 @@ export default {
         },
       },
       fontFamily: {
-        display: ['"Lilita One"', 'Nunito', 'system-ui', 'sans-serif'],
-        sans: ['Nunito', 'system-ui', 'sans-serif'],
-        mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
+        display: ['var(--cc-font-display)'],
+        sans: ['var(--cc-font-sans)'],
+        mono: ['var(--cc-font-mono)'],
       },
       borderRadius: {
-        chunk: '18px',
+        chunk: 'var(--cc-radius-chunk)',
       },
       keyframes: {
         'cc-float': {

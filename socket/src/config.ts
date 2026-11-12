@@ -17,3 +17,18 @@ if (CLOUDFLARE_ENFORCE_ORIGIN && !CLOUDFLARE_ORIGIN_SECRET) {
 }
 // >1 makes hunger and thirst drop faster, for playtests (never in production).
 export const SURVIVAL_TIME_SCALE = Math.max(1, parseFloat(process.env.SURVIVAL_TIME_SCALE || '1') || 1)
+
+export interface LiveKitConfig {
+  url: string
+  apiUrl: string
+  apiKey: string
+  apiSecret: string
+}
+
+const LIVEKIT_VARS = [process.env.LIVEKIT_URL, process.env.LIVEKIT_API_URL, process.env.LIVEKIT_API_KEY, process.env.LIVEKIT_API_SECRET]
+if (LIVEKIT_VARS.some(Boolean) && !LIVEKIT_VARS.every(Boolean)) {
+  throw new Error('Set LIVEKIT_URL, LIVEKIT_API_URL, LIVEKIT_API_KEY and LIVEKIT_API_SECRET together, or none of them to turn proximity voice off')
+}
+export const LIVEKIT: LiveKitConfig | null = LIVEKIT_VARS.every(Boolean)
+  ? { url: process.env.LIVEKIT_URL!, apiUrl: process.env.LIVEKIT_API_URL!, apiKey: process.env.LIVEKIT_API_KEY!, apiSecret: process.env.LIVEKIT_API_SECRET! }
+  : null

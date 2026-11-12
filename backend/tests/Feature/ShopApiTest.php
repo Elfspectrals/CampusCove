@@ -113,7 +113,7 @@ class ShopApiTest extends TestCase
         $catalog = DB::table('shop_catalog_items')->where('currency', 'coins')->first();
         $this->assertNotNull($catalog);
 
-        $token = $this->registerAndCreditWallet(10_000, 'coins')['token'];
+        $token = $this->registerAndCreditWallet(10_000, 'cash')['token'];
 
         $response = $this->postJson('/api/shop/purchase', [
             'shop_item_public_id' => $catalog->public_id,
@@ -138,7 +138,7 @@ class ShopApiTest extends TestCase
             ->first();
         $this->assertNotNull($catalog);
 
-        ['token' => $token, 'account_id' => $accountId] = $this->registerAndCreditWallet(10_000, 'coins');
+        ['token' => $token, 'account_id' => $accountId] = $this->registerAndCreditWallet(10_000, 'cash');
 
         $this->postJson('/api/shop/purchase', [
             'shop_item_public_id' => $catalog->public_id,
@@ -166,7 +166,7 @@ class ShopApiTest extends TestCase
             ->first();
         $this->assertNotNull($catalog);
 
-        ['token' => $token, 'account_id' => $accountId] = $this->registerAndCreditWallet(10_000, 'coins');
+        ['token' => $token, 'account_id' => $accountId] = $this->registerAndCreditWallet(10_000, 'cash');
 
         $this->postJson('/api/shop/purchase', [
             'shop_item_public_id' => $catalog->public_id,
@@ -193,7 +193,7 @@ class ShopApiTest extends TestCase
     public function test_purchase_fails_when_insufficient_funds(): void
     {
         $catalog = DB::table('shop_catalog_items')->where('currency', 'coins')->first();
-        $token = $this->registerAndCreditWallet(1, 'coins')['token'];
+        $token = $this->registerAndCreditWallet(1, 'cash')['token'];
 
         $this->postJson('/api/shop/purchase', [
             'shop_item_public_id' => $catalog->public_id,
@@ -219,7 +219,7 @@ class ShopApiTest extends TestCase
                 'updated_at' => now(),
             ]);
 
-        $account = $this->registerAndCreditWallet(1000, 'coins');
+        $account = $this->registerAndCreditWallet(1000, 'cash');
         $token = $account['token'];
         $accountId = $account['account_id'];
         $premiumWalletId = (int) DB::table('wallets')->insertGetId([
@@ -292,7 +292,7 @@ class ShopApiTest extends TestCase
         $this->assertSame(5, $listed['item']['rarity']);
 
         // coins can never buy it
-        $account = $this->registerAndCreditWallet(100_000, 'coins');
+        $account = $this->registerAndCreditWallet(100_000, 'cash');
         $this->postJson('/api/shop/purchase', [
             'shop_item_public_id' => $row->public_id,
             'currency' => 'coins',
@@ -318,7 +318,7 @@ class ShopApiTest extends TestCase
             ->where('shop_catalog_item_id', $nightOwl->shop_catalog_item_id)
             ->update(['allow_coins' => true, 'coins_price' => 1200, 'updated_at' => now()]);
 
-        $account = $this->registerAndCreditWallet(10_000, 'coins');
+        $account = $this->registerAndCreditWallet(10_000, 'cash');
         $this->postJson('/api/shop/purchase', [
             'shop_item_public_id' => $nightOwl->public_id,
             'currency' => 'coins',
@@ -330,7 +330,7 @@ class ShopApiTest extends TestCase
 
     public function test_purchase_fails_for_unknown_public_id(): void
     {
-        $token = $this->registerAndCreditWallet(5000, 'coins')['token'];
+        $token = $this->registerAndCreditWallet(5000, 'cash')['token'];
 
         $this->postJson('/api/shop/purchase', [
             'shop_item_public_id' => '00000000-0000-4000-8000-000000000001',
@@ -349,7 +349,7 @@ class ShopApiTest extends TestCase
             ->where('shop_catalog_item_id', $row->shop_catalog_item_id)
             ->update(['is_active' => false, 'updated_at' => now()]);
 
-        $token = $this->registerAndCreditWallet(10_000, 'coins')['token'];
+        $token = $this->registerAndCreditWallet(10_000, 'cash')['token'];
 
         $this->postJson('/api/shop/purchase', [
             'shop_item_public_id' => $row->public_id,
@@ -369,7 +369,7 @@ class ShopApiTest extends TestCase
             ->first();
         $this->assertNotNull($row);
 
-        $token = $this->registerAndCreditWallet(50_000, 'coins')['token'];
+        $token = $this->registerAndCreditWallet(50_000, 'cash')['token'];
 
         $this->postJson('/api/shop/purchase', [
             'shop_item_public_id' => $row->public_id,
@@ -400,8 +400,8 @@ class ShopApiTest extends TestCase
             ->where('shop_catalog_item_id', $row->shop_catalog_item_id)
             ->update(['stock_remaining' => 1, 'updated_at' => now()]);
 
-        $tokenA = $this->registerAndCreditWallet(50_000, 'coins')['token'];
-        $tokenB = $this->registerAndCreditWallet(50_000, 'coins')['token'];
+        $tokenA = $this->registerAndCreditWallet(50_000, 'cash')['token'];
+        $tokenB = $this->registerAndCreditWallet(50_000, 'cash')['token'];
 
         $this->postJson('/api/shop/purchase', [
             'shop_item_public_id' => $row->public_id,
@@ -424,7 +424,7 @@ class ShopApiTest extends TestCase
     {
         $headset = $this->catalogRow('COS_WEAR_HEAD_ACCESSORY_GAMER');
         $top = $this->catalogRow('COS_WEAR_TOP_VARSITY');
-        ['token' => $token, 'account_id' => $accountId] = $this->registerAndCreditWallet(1_000, 'coins');
+        ['token' => $token, 'account_id' => $accountId] = $this->registerAndCreditWallet(1_000, 'cash');
 
         $response = $this->postJson('/api/shop/checkout', [
             'items' => [
@@ -457,7 +457,7 @@ class ShopApiTest extends TestCase
         $headset = $this->catalogRow('COS_WEAR_HEAD_ACCESSORY_GAMER');
         $top = $this->catalogRow('COS_WEAR_TOP_VARSITY');
         $coins = (int) $headset->coins_price + (int) $top->coins_price - 1;
-        ['token' => $token, 'account_id' => $accountId] = $this->registerAndCreditWallet($coins, 'coins');
+        ['token' => $token, 'account_id' => $accountId] = $this->registerAndCreditWallet($coins, 'cash');
 
         $this->postJson('/api/shop/checkout', [
             'items' => [
@@ -477,7 +477,7 @@ class ShopApiTest extends TestCase
     {
         $headset = $this->catalogRow('COS_WEAR_HEAD_ACCESSORY_GAMER');
         $top = $this->catalogRow('COS_WEAR_TOP_VARSITY');
-        ['token' => $token, 'account_id' => $accountId] = $this->registerAndCreditWallet(1_000, 'coins');
+        ['token' => $token, 'account_id' => $accountId] = $this->registerAndCreditWallet(1_000, 'cash');
         $headers = ['Authorization' => 'Bearer '.$token];
 
         $this->postJson('/api/shop/purchase', ['shop_item_public_id' => $headset->public_id], $headers)->assertOk();
@@ -503,7 +503,7 @@ class ShopApiTest extends TestCase
     public function test_checkout_rejects_a_duplicate_basket_line(): void
     {
         $headset = $this->catalogRow('COS_WEAR_HEAD_ACCESSORY_GAMER');
-        ['token' => $token, 'account_id' => $accountId] = $this->registerAndCreditWallet(1_000, 'coins');
+        ['token' => $token, 'account_id' => $accountId] = $this->registerAndCreditWallet(1_000, 'cash');
 
         $this->postJson('/api/shop/checkout', [
             'items' => [
@@ -520,7 +520,7 @@ class ShopApiTest extends TestCase
 
     public function test_checkout_rejects_an_empty_basket(): void
     {
-        $token = $this->registerAndCreditWallet(1_000, 'coins')['token'];
+        $token = $this->registerAndCreditWallet(1_000, 'cash')['token'];
 
         $this->postJson('/api/shop/checkout', ['items' => [], 'currency' => 'coins'], ['Authorization' => 'Bearer '.$token])
             ->assertStatus(422)
@@ -545,7 +545,7 @@ class ShopApiTest extends TestCase
             ->join('wallets', 'wallets.wallet_id', '=', 'wallet_ledger.wallet_id')
             ->where('wallets.owner_type', 'account')
             ->where('wallets.owner_id', $accountId)
-            ->where('wallets.currency', 'coins')
+            ->where('wallets.currency', 'cash')
             ->sum('wallet_ledger.delta');
     }
 

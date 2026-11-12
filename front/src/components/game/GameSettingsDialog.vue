@@ -3,10 +3,12 @@
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import KeybindingSettings from '../site/KeybindingSettings.vue'
+import ThemePicker from '../site/ThemePicker.vue'
 import UiIcon from '../ui/UiIcon.vue'
 import { useDialogFocus } from '../../composables/useDialogFocus'
 import { comfortSettings, setComfortFov, setReduceCameraMotion } from '../../composables/game/useComfortSettings'
 import { MAX_FOV, MIN_FOV } from '../../game/comfort'
+import GameVoiceSettings from './GameVoiceSettings.vue'
 
 const emit = defineEmits<{ close: [] }>()
 const { t } = useI18n()
@@ -29,7 +31,14 @@ useDialogFocus(dialogEl, { onEscape: () => emit('close') })
           <UiIcon name="x" :size="16" />
         </button>
       </div>
-      <section class="mt-3" aria-labelledby="game-comfort-title">
+      <section class="mt-3" aria-labelledby="game-style-title">
+        <h3 id="game-style-title" class="m-0 mb-1 text-sm font-extrabold text-fog">{{ t('settings.style') }}</h3>
+        <p class="m-0 text-sm font-semibold text-mist">{{ t('settings.styleIntro') }}</p>
+        <div class="mt-3">
+          <ThemePicker />
+        </div>
+      </section>
+      <section class="mt-5" aria-labelledby="game-comfort-title">
         <h3 id="game-comfort-title" class="m-0 mb-1 text-sm font-extrabold text-fog">{{ t('settings.comfort') }}</h3>
         <p class="m-0 text-sm font-semibold text-mist">{{ t('settings.comfortIntro') }}</p>
         <label class="mt-3 flex min-h-11 items-center gap-3 rounded-xl bg-ink-950/50 px-3 py-1.5">
@@ -55,6 +64,7 @@ useDialogFocus(dialogEl, { onEscape: () => emit('close') })
           <span class="min-w-0 text-sm font-bold text-mist">{{ t('settings.reduceCameraMotion') }}</span>
         </label>
       </section>
+      <GameVoiceSettings />
       <div class="mt-5">
         <h3 class="m-0 mb-1 text-sm font-extrabold text-fog">{{ t('settings.controls') }}</h3>
         <KeybindingSettings />

@@ -30,7 +30,7 @@ final class ZoneBuyerService
         }
 
         return DB::transaction(function () use ($accountId, $zone, $area, $code, $quantity, $offer, $def): array {
-            Wallet::lockForAccount($accountId, 'coins');
+            Wallet::lockForAccount($accountId, Wallet::CASH);
             $stack = $this->lockStack($accountId, $def);
             $whole = $stack !== null ? (int) $stack->quantity - ((int) $stack->portions_used > 0 ? 1 : 0) : 0;
             if ($whole < $quantity) {
@@ -38,12 +38,12 @@ final class ZoneBuyerService
             }
             $payout = SaleCurve::payout($offer['price'], $offer['quota'], $offer['overPrice'], $this->soldInLastDay($accountId, $zone, $area, $code), $quantity);
             $this->inventory->revokeItem($accountId, $def, $quantity);
-            $this->coinRewards->credit($accountId, self::SOURCE, $payout['coins'], ['quantity' => $quantity, 'zone' => $zone, 'area' => $area, 'code' => $code]);
+            $this->coinRewards->creditCash($accountId, self::SOURCE, $payout['coins'], ['quantity' => $quantity, 'zone' => $zone, 'area' => $area, 'code' => $code]);
 
             return [
                 'sold' => $quantity,
                 'coins' => $payout['coins'],
-                'balance_after' => Wallet::lockForAccount($accountId, 'coins')->balance(),
+                'balance_after' => Wallet::lockForAccount($accountId, Wallet::CASH)->balance(),
                 'full_price_left' => $payout['full_price_left'],
             ];
         });

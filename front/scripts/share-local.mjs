@@ -5,7 +5,9 @@
 // Needs the Docker stack up (`make up`: API 8000, socket 3000) and cloudflared installed
 // (`winget install Cloudflare.cloudflared`). Opens a quick Cloudflare tunnel on the socket, builds the front
 // with that socket URL baked in (VITE_SOCKET_URL), serves the build with `vite preview` (which proxies /api to
-// 8000) and opens a second tunnel on it. Prints the link to share; Ctrl+C stops everything.
+// 8000 and /livekit to the voice server on 7880) and opens a second tunnel on it. Voice audio itself goes straight
+// to this PC over UDP 7882, so it works for players on the same network (`make up` gives LiveKit this PC's
+// network address); players elsewhere get the game without voice. Prints the link to share; Ctrl+C stops everything.
 // Quick tunnel URLs are random and change on every run.
 import { spawn } from 'node:child_process'
 import { Resolver } from 'node:dns/promises'
@@ -117,7 +119,7 @@ await waitUntilUp(socketTunnel, 'Socket tunnel')
 console.log('→ Building the front…')
 // VITE_API_URL unset: the build falls back to same-origin /api, proxied by vite preview.
 const { VITE_API_URL: _unused, ...baseEnv } = process.env
-const env = { ...baseEnv, VITE_SOCKET_URL: socketTunnel }
+const env = { ...baseEnv, VITE_SOCKET_URL: socketTunnel, VITE_LIVEKIT_URL: '/livekit' }
 const build = runVite(['build', '--logLevel', 'warn'], env)
 const buildCode = await new Promise((resolve) => build.on('exit', resolve))
 children.splice(children.indexOf(build), 1)
@@ -135,4 +137,5 @@ await waitUntilUp(frontTunnel, 'Front tunnel')
 await waitUntilUp(`${frontTunnel}/api/health`, 'API through the front tunnel')
 
 console.log(`\n✔ Link to share:\n\n    ${frontTunnel}\n`)
+console.log('Voice chat works for players on the same network as this PC.')
 console.log('Keep this PC, Docker and this terminal running. Ctrl+C to stop.')

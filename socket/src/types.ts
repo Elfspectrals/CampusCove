@@ -55,6 +55,10 @@ export interface Player extends Vec3 {
   lastConsumeAt: number
   lastSipAt: number
   lastPunchAt: number
+  lastChatAt: number
+  lastAtmAt: number
+  lastCashBagPickAt: number
+  voiceMuted: ReadonlySet<string>
   stamina: number
   /** Last time stamina was spent (punch, jump, sprint); regen starts after STAMINA_REGEN_DELAY_MS. */
   staminaSpentAt: number
@@ -204,8 +208,17 @@ export interface GameClient {
   send(type: string, payload?: unknown): void
 }
 
+export interface CashBag {
+  id: number
+  x: number
+  y: number
+  z: number
+  expiresAt: number
+}
+
 export interface GameRoom {
   players: Map<string, Player>
+  cashBags: Map<number, CashBag>
   housingUnits: HousingUnit[]
   houseFurniture: HouseFurniture[]
   openDoors: Set<string>

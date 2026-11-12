@@ -11,6 +11,10 @@ class Wallet extends Model
 {
     public const OWNER_TYPE_ACCOUNT = 'account';
 
+    public const BANK = 'coins';
+
+    public const CASH = 'cash';
+
     protected $table = 'wallets';
 
     protected $primaryKey = 'wallet_id';

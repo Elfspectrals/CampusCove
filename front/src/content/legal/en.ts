@@ -130,7 +130,7 @@ export const legalEn: LegalDocs = {
           'campus_cove_wallet_balances — cached balances for display — until logout.',
           'cc_locale — chosen language — until cleared.',
           'cc_consent — your tracker choices — 6 months.',
-          'cc_graphics_quality, cc.reducedEffects, cc.comfort — game graphics and accessibility settings — until cleared.',
+          'cc_graphics_quality, cc.reducedEffects, cc.comfort, cc.voice, cc.voiceMuted, cc.voiceVolumes — game graphics, accessibility and voice chat settings, players you muted or turned up or down — until cleared.',
           'cc_keybindings — your custom keys (Settings) — until deleted or reset to default.',
           'campus_cove_admin_mode, cc.admin.worldPlanner.v1 — admin tools (admin accounts only).',
         ],
@@ -230,7 +230,7 @@ export const legalEn: LegalDocs = {
     description: `Technologies, fonts and assets used by ${SITE.name}, with their licences.`,
     sections: [
       { heading: 'Technologies', items: ['Vue.js, Vue Router, Vue I18n — MIT', 'Three.js — MIT', 'Rapier (physics) — Apache 2.0', 'Colyseus (multiplayer) — MIT', 'Laravel — MIT', 'Tailwind CSS — MIT'] },
-      { heading: 'Fonts', items: ['Lilita One, Nunito, JetBrains Mono — SIL Open Font License 1.1, self-hosted via Fontsource'] },
+      { heading: 'Fonts', items: ['Lilita One, Nunito, JetBrains Mono, Barlow, Barlow Condensed, Bungee, Space Grotesk, Space Mono, Bricolage Grotesque, Oxanium, IBM Plex Sans, IBM Plex Mono, Outfit, Fraunces, Figtree — SIL Open Font License 1.1, self-hosted via Fontsource'] },
       { heading: '3D models and images', paragraphs: ['3D models, interfaces and visuals are made for the project unless stated otherwise in the source repository.'] },
     ],
   },

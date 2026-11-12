@@ -2,15 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\CashDropService;
 use App\Services\SurvivalService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class SurvivalController extends Controller
 {
-    public function __construct(private readonly SurvivalService $survival)
-    {
-    }
+    public function __construct(
+        private readonly SurvivalService $survival,
+        private readonly CashDropService $cashDrops,
+    ) {}
 
     public function show(Request $request): JsonResponse
     {
@@ -55,9 +57,14 @@ class SurvivalController extends Controller
     public function hospital(Request $request): JsonResponse
     {
         $accountId = $this->accountId($request);
+        $killer = $request->validate(['killer_account_id' => 'nullable|integer|min:1|exists:accounts,account_id'])['killer_account_id'] ?? null;
         $bill = $this->survival->billHospital($accountId);
 
-        return response()->json([...$bill, 'lost' => $this->survival->loseBelongings($accountId)]);
+        return response()->json([
+            ...$bill,
+            'lost' => $this->survival->loseBelongings($accountId),
+            'cash_drop' => $this->cashDrops->dropAtDeath($accountId, $killer === null ? null : (int) $killer),
+        ]);
     }
 
     public function clinicHeal(Request $request): JsonResponse

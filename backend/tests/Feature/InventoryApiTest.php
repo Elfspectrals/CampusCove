@@ -31,7 +31,7 @@ class InventoryApiTest extends TestCase
             ->first();
         $this->assertNotNull($catalog);
 
-        $token = $this->registerAndCreditWallet(10_000, 'coins')['token'];
+        $token = $this->registerAndCreditWallet(10_000, 'cash')['token'];
 
         $this->postJson('/api/shop/purchase', [
             'shop_item_public_id' => $catalog->public_id,
@@ -64,7 +64,7 @@ class InventoryApiTest extends TestCase
             ->first();
         $this->assertNotNull($chair);
 
-        $token = $this->registerAndCreditWallet(10_000, 'coins')['token'];
+        $token = $this->registerAndCreditWallet(10_000, 'cash')['token'];
 
         $this->postJson('/api/shop/purchase', [
             'shop_item_public_id' => $chair->public_id,
@@ -97,7 +97,7 @@ class InventoryApiTest extends TestCase
             ->first();
         $this->assertNotNull($lamp);
 
-        $token = $this->registerAndCreditWallet(10_000, 'coins')['token'];
+        $token = $this->registerAndCreditWallet(10_000, 'cash')['token'];
 
         $this->postJson('/api/shop/purchase', [
             'shop_item_public_id' => $lamp->public_id,
@@ -159,7 +159,7 @@ class InventoryApiTest extends TestCase
             ->first();
         $this->assertNotNull($catalog);
 
-        $token = $this->registerAndCreditWallet(10_000, 'coins')['token'];
+        $token = $this->registerAndCreditWallet(10_000, 'cash')['token'];
 
         $this->postJson('/api/shop/purchase', [
             'shop_item_public_id' => $catalog->public_id,

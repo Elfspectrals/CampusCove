@@ -60,7 +60,7 @@ final class TradeService
             ->values()
             ->all();
 
-        return ['coins' => $this->wallets->forAccountId($accountId)['coins'], 'items' => $items];
+        return ['coins' => $this->wallets->forAccountId($accountId)['cash'], 'items' => $items];
     }
 
     /**
@@ -94,7 +94,7 @@ final class TradeService
             }
             $walletByAccount = [];
             foreach ($ids as $id) {
-                $walletByAccount[$id] = Wallet::lockForAccount($id, 'coins');
+                $walletByAccount[$id] = Wallet::lockForAccount($id, Wallet::CASH);
             }
 
             $alreadyDone = EconomyTransaction::query()
@@ -117,7 +117,7 @@ final class TradeService
             }
             foreach ($sides as $side) {
                 if ($balances[$side['from']] < $side['offer']['coins']) {
-                    throw new TradeRejectedException('trade_insufficient_coins', 'One of you no longer has enough coins.');
+                    throw new TradeRejectedException('trade_insufficient_coins', 'One of you no longer has enough cash.');
                 }
                 $worn = $this->wornItemDefIds($side['from']);
                 foreach ($side['offer']['items'] as $code => $quantity) {

@@ -99,6 +99,32 @@ Decision (2026-11-11): the first-person hands get finger bones so they can relax
 - [done] Hands: rebuilt first-person hands on finger bones, poses relaxed, fist, grip, pick, key and door, on every arm model.
 - [done] Punch: left jab then right cross with a closed fist, the other arm guards.
 
+## Names, chat, cash and bank (doing, branch pseudos-money-system)
+
+Decision (2026-11-11): money is split into cash (carried) and bank. Jobs pay in cash, shops take cash only, so players withdraw at ATMs placed around the world. At death the cash drops on the ground in a bag anyone can pick up for 5 minutes, then it is gone. Existing coins move to the bank. The ATM screen offers withdraw, deposit, balance, recent operations and a transfer to another player (same 72 h giver rule as trades). The inventory shows both cash and bank. Chat is a bubble over the speaker's head, seen by nearby players only, no chat log. Run the `economist` before shipping the cash split and the death bag.
+
+- [done] Pseudo (with its #tag) above other players, hidden past 25 m.
+- [done] Chat bubble above the speaker (Enter, rebindable), 120 characters, 1 s cooldown, heard within 30 m and not through house walls; the sender sees their own line in the HUD.
+- [done] Cash and bank wallets: earnings in cash, shop payments in cash, deposit, withdraw, transfer, history. Housing, tax, hospital and hangover bills are taken from the bank; welcome bonus and referrals are paid to the bank; trades move cash (decided 2026-11-12). The housing tax is taken from the bank only: a player with too little in the bank loses the house even with cash on them, so keeping rent money in the bank is their job (decided 2026-11-12, after the economist flagged it).
+- [done] Inventory shows cash ("On you") and bank, read from `GET /api/bank` each time it opens.
+- [done] ATM model (`make model`, built by `build_street_decor.py` into `decor/atm`, editor category Street) placed as runtime items at five spots: town hall, orchard apple buyer, farm stand, pub door, Cove Home entrance.
+- [done] ATM screen (`GameAtmScreen.vue`, styled like a real ATM): withdraw, deposit, balance, recent transactions and transfer by name#tag, through the socket `atm` message checked within 2.5 m of an ATM. Contract in `docs/BANK.md`.
+- [done] Cash bag dropped at death, picked up by anyone within 5 minutes. From the economist review (2026-11-12): ship it with the cash split, since without it keeping everything in cash dodges the hospital bill; an account younger than 72 h drops no bag (its cash is destroyed), or the welcome bonus is funnelled by killing the alt; the killer cannot pick up their victim's bag; the bag is a ledger-backed row picked up once under a lock; the expiry is a ledger debit; one ATM within about 30 s walk of each pay point (orchard farmer, zone buyers, pub).
+
+## Proximity voice chat (doing, branch feat/names-chat-cash-bank)
+
+Decision (2026-11-12): voice goes through a self-hosted LiveKit SFU (open source), not a voice SaaS (ODIN was the other option). Docker in dev, a VPS with UDP and TURN later (Heroku has no UDP). The socket signs the LiveKit token, one LiveKit room per city instance; the socket decides who hears whom (within 30 m), the client places the voices in 3D with Web Audio. The player chooses push-to-talk (B, rebindable) or an open mic in the settings. Contract in `docs/VOICE.md`.
+
+- [done] LiveKit dev server in docker-compose, socket signs `voice_token` on join.
+- [done] Front: connect, publish the mic (push-to-talk or open mic, B, set in Settings), hear voices within 30 m (kept up to 34 m) through HRTF panners on the avatars. Checked with two tabs and a test tone; a real two-person voice test is still to do.
+- [done] Speaking icon above the pseudo (crossed out when muted), player list on Tab (rebindable) with a mute button per account, kept in this browser until unmuted (decided 2026-11-12: a list, not aiming, so a running player can still be muted). A muted account is not even subscribed to.
+- [done] The socket enforces who hears whom: tokens cannot subscribe, the socket subscribes every 500 ms through the LiveKit admin API (range, house walls, mutes sent with `voice_mute`).
+- [done] Audio starts on the first click or key; open mic turns on at Play (fixed after the first real test, 2026-11-12).
+- [done] Voice settings like Discord: microphone and output device, mic and voices volume (0 to 200 %), mic test with a level meter.
+- [done] Per-player volume (0 to 200 %) in the Tab list, saved per account in this browser (`cc.voiceVolumes`).
+- [done] Voice from another PC on the same network: `make up` gives LiveKit the network address, `make share-local` reaches LiveKit through the page (`/livekit` proxy) over https (2026-11-12).
+- [todo] Deploy LiveKit on a VPS with TURN; privacy page mentions voice.
+
 ## Later
 
 - Fishing as the second job (reuse the darts power meter or the Drink Fast balance bar; rod and fish models exist).
@@ -127,8 +153,41 @@ Decision (2026-11-11): /game shows a loading screen (mockup `docs/mockups/game-l
 - [done] World loads in one parallel wave instead of five, lightmaps decode off the main thread, the town's shaders compile behind the loading screen, decor collision files are fetched once per file instead of once per prop.
 - [done] Lighter downloads for production. Lightmaps ship as WebP q85 at full size (`front/scripts/lightmap.mjs`, run by `assets:optimize`; the bake stays JPEG): 15.2 MB to 9.1 MB, worst PSNR about 36 dB (halving them to 1024 px blurred the shadows, 20 dB, so rejected). Rapier moved from `rapier3d-compat` (WASM inlined as base64) to `@dimforge/rapier3d` with `vite-plugin-wasm`: the shared game chunk went from 854 kB to 50 kB gzip plus a 584 kB `.wasm` that compiles while it streams and stays cached across deploys (Caddy marks hashed `.wasm` immutable).
 
+## Low-config performance (doing, branch perf/low-config-wave-1)
+
+Decision (2026-11-11): the floor is an office laptop with an integrated GPU and 8 GB RAM, at about 30 fps. Costs that need no visual sacrifice are fixed for every tier before new tiers are added. The camera stops where the fog is opaque, on both tiers. Freezing static matrices and the per-frame HUD writes wait for measured numbers. The review behind it is `docs/review/01-optimisation-low-config.md` on branch `docs/game-review-brainstorm`.
+
+- [done] Dev-only render readout: in a dev build the HUD shows the draw calls and triangles of the frame next to the XYZ label, refreshed twice a second. First reading at the spawn on the low tier: 1,027 draw calls, 768,076 triangles for the world alone.
+- [done] Camera far at the fog end: 120 m on low (was 300), 250 m on high (was 1000). Same picture, since the fog is opaque and sky-coloured from that distance. At the spawn on the low tier the frame went from about 770,000 to about 185,000 triangles: the farm fields, 150 to 210 m away, were drawn behind the fog.
+- [done] Building meshes merged by material when a building loads (`front/src/game/town/mergeStaticMeshes.ts`), exteriors and interiors. The front door, the pub's secret door and its bell stay separate nodes; glass, mirrored and hidden meshes are left alone. A new node that the game moves or looks up by name must be added to `MOVING_EXTERIOR_NODES` or `MOVING_INTERIOR_NODES` in `openHouses.ts`. At the spawn on the low tier the frame went from 885 to 382 draw calls facing the hall, 1,008 to 351 and 1,049 to 500 in two other directions, with the same triangle count. Inside the pub the whole frame is 134 draw calls; its interior file alone held 548.
+- [done] The 46 building files were checked after the merge: same triangles per material, same vertex positions and lightmap coordinates, 5,562 draw calls down to 1,131 in total, every front door, the pub's secret door and bell still found.
+- [done] Characters out of the view are no longer drawn (`front/src/avatar/characterCulling.ts`): every skinned piece of a modular character is culled on one 2.5 m sphere around its feet, instead of never being culled. At the Northline door on the low tier, back to the shop: 371 to 238 draw calls, 219,738 to 136,856 triangles; facing the shop it is unchanged (430 draw calls), since its mannequins are in the view behind the door.
+- [done] Shop mannequins are plain meshes frozen in their rest pose (`front/src/avatar/staticFigure.ts`), merged by material, instead of skinned characters that never moved. A character's regions now share one tinted material per source material. Northline holds 29 mannequins (25 with a hidden body, 41 outfit pieces): about 100 skinned meshes, each with its own skeleton updated every frame, are gone. Facing its door on the low tier the frame went from 430 to 396 draw calls; the skinning time saved was not measured.
+- Dropped: instancing the farm plants. In the game they are already instanced by the zone bake (4 draw calls for 1,033 plants in `park/farm_site/farm_site.glb`); only the zone editor clones them. What weighed at the farm was the plant models, 442 to 698 triangles each, about 560,000 triangles for the fields.
+- Left to the branch that owns the farm (decided 2026-11-11): lighter field plants. A trial in the zone bake (vertices welded at 0.5 mm, then decimated to 200 triangles a plant) brought `farm_site.glb` from 582,053 to 228,591 triangles with clean shapes; decimating without the weld tore the corn. Nothing of it is kept on this branch.
+- [done] Medium tier between low and high (`graphicsQuality.ts`): antialiasing and the environment map on, pixel ratio 1, no shadows, fog and camera at 180 m, full shelf stock. The HUD button cycles low, medium, high. At the spawn its frame is about 720,000 triangles, because the farm fields come inside its fog.
+- [done] On the low tier the blurred screen edges of drunkenness and thirst are not drawn; the vignettes stay.
+- Not built: choosing the tier automatically at the first launch. It needs frame rates measured on a real low-end laptop to set its thresholds; a wrong upgrade would hurt the players this work is for.
+- Withdrawn after reading the code: shop aim raycast every frame (already throttled), NPCs and animals animated far away (already gated on their zone being shown, 26 m). The per-frame HUD writes were left: one text node a frame, not worth the code.
+
 ## Tooling (done)
 
 - [done] Two fixed local playtest accounts (`make playtest-accounts`, `PlaytestAccountSeeder`) instead of a new account per playtest; running it again resets coins, health and admin rights.
 - [done] Admin watch teleport "Orchard": lands 2.5 m in front of the first orchard tree, facing it (`orchardDestination`, `socket/src/world.ts`).
 - [done] Admin watch teleport "Farm": lands 2.5 m inside the farm gate, facing into the farm (`zoneGateDestination`).
+
+## Site redesign with unslop (doing, branch feat/unslop-ui)
+
+Decision (2026-11-11): the site pages are redesigned with the `unslop` skill (`.claude/skills/unslop/`, CC BY 4.0). Direction: cosy, playful, a little nocturnal; the town as it looks in the game, at golden hour; dark ink neutrals; lamplight yellow (`sun`) is the only accent in the chrome; the chunky pressable sun button is the signature and the primary action. Lilita One for large headlines only, Nunito for the interface. Site pages only: the game HUD keeps the current `cc-*` look until its own step. One screen group per step, each reviewed before the next.
+
+- [doing] Landing: full-bleed render of the real town models (Blender, golden hour) instead of floating cubes, a visible headline that says what the game is, one sun button, quiet feature list and FAQ.
+- [doing] Auth pages (login, register, forgot and reset password): form on plain ink with the town render beside it on desktop, labels in sentence case, one sun button, quiet links.
+- [doing] Logged-in pages and the app shell (home, friends, gems, settings, footer): quiet header and drawer, town render on the Home play card, Home keeps only real player data (the hardcoded level, items, trophies and dates are gone), Home and Friends strings in English and French. Waiting for a review in the browser.
+- [todo] Game HUD and overlays.
+
+Decision (2026-11-11, after review): the first redesign looked too close to the old one. The player now picks one of six styles (mockup `docs/mockups/style-directions.html`): Graphite lobby (default), Arcade, Comic, Tactical HUD, Console, Fireside. A style changes colours, fonts, shapes and the page layout, on the site and in the game. Saved in the browser (`cc.theme`), not on the account. Cove Nights is dropped.
+
+- [done] Theme system: `src/theme/themes.ts`, `useTheme`, the saved theme applied in `index.html` before the first paint, every `cc-*` class driven by per-theme CSS variables, twelve self-hosted fonts, style picker in Settings.
+- [done] Per-theme layouts (`src/theme/layouts.ts`): top bar, side menu (Tactical HUD) or floating pill (Console) on desktop; landing hero on the left, centred, at the bottom or in two columns with a framed render (Comic); auth form beside the render, or in a card over it (Arcade, Fireside). Phones keep the top bar and drawer.
+- [done] Home, Friends, Gems and Settings on every theme: pages use the theme panel (`cc-panel`) and the `line` token instead of white lines, so the light Comic theme works. The Home lobby changes layout per theme (three columns, play banner, big play card, profile strip...).
+- [done] Game HUD on every theme and the style picker in the in-game Settings, checked in a playtest (loading screen, pause screen, vitals, hotbar, inventory, live switch from the game menu). HUD positions stay the same on every theme: they are gameplay, not decoration. Not checked yet: the pub mini-games, trade window and shops on each theme.

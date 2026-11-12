@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { DOUBLE_VISION_FILTER_ID } from '../../composables/game/useIntoxication'
+import { supportsScreenBlur } from '../../game/graphicsQuality'
 import type { DrunkScreenEffects } from '../../game/pub/intoxication'
 
 const props = defineProps<{ effects: DrunkScreenEffects }>()
+
+const screenBlur = supportsScreenBlur()
 
 /** Offset of the faint second image, in CSS pixels. */
 const MAX_DOUBLE_PX = 9
@@ -27,7 +30,7 @@ const ghostOpacity = computed(() => (0.45 * props.effects.doubleVision).toFixed(
       </defs>
     </svg>
     <!-- alcohol: blurred edges, stronger as the glasses add up -->
-    <div v-if="effects.blur > 0" class="cc-drunk-blur absolute inset-0" :style="{ opacity: effects.blur }" />
+    <div v-if="screenBlur && effects.blur > 0" class="cc-drunk-blur absolute inset-0" :style="{ opacity: effects.blur }" />
     <!-- a warm, rosy vignette from the first pint on -->
     <div
       v-if="effects.warmth > 0"
