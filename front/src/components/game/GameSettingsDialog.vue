@@ -7,8 +7,7 @@ import UiIcon from '../ui/UiIcon.vue'
 import { useDialogFocus } from '../../composables/useDialogFocus'
 import { comfortSettings, setComfortFov, setReduceCameraMotion } from '../../composables/game/useComfortSettings'
 import { MAX_FOV, MIN_FOV } from '../../game/comfort'
-import { setVoiceMode, voiceSettings } from '../../composables/game/useVoiceSettings'
-import { VOICE_MODES } from '../../game/voice'
+import GameVoiceSettings from './GameVoiceSettings.vue'
 
 const emit = defineEmits<{ close: [] }>()
 const { t } = useI18n()
@@ -57,14 +56,7 @@ useDialogFocus(dialogEl, { onEscape: () => emit('close') })
           <span class="min-w-0 text-sm font-bold text-mist">{{ t('settings.reduceCameraMotion') }}</span>
         </label>
       </section>
-      <section class="mt-5" aria-labelledby="game-voice-title">
-        <h3 id="game-voice-title" class="m-0 mb-1 text-sm font-extrabold text-fog">{{ t('settings.voice') }}</h3>
-        <p class="m-0 text-sm font-semibold text-mist">{{ t('settings.voiceIntro') }}</p>
-        <label v-for="mode in VOICE_MODES" :key="mode" class="mt-1.5 flex min-h-11 cursor-pointer items-center gap-3 rounded-xl bg-ink-950/50 px-3 py-1.5">
-          <input type="radio" name="voice-mode" class="size-4 shrink-0 accent-sun" :checked="voiceSettings.mode === mode" @change="setVoiceMode(mode)" />
-          <span class="min-w-0 text-sm font-bold text-mist">{{ t(mode === 'pushToTalk' ? 'settings.voicePushToTalk' : 'settings.voiceOpenMic') }}</span>
-        </label>
-      </section>
+      <GameVoiceSettings />
       <div class="mt-5">
         <h3 class="m-0 mb-1 text-sm font-extrabold text-fog">{{ t('settings.controls') }}</h3>
         <KeybindingSettings />

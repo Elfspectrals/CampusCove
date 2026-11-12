@@ -62,7 +62,7 @@ import { useZoneBuyers } from '../composables/game/useZoneBuyers'
 import { useAtm } from '../composables/game/useAtm'
 import { useCashBags } from '../composables/game/useCashBags'
 import { useProximityVoice } from '../composables/game/useProximityVoice'
-import { mutedAccounts, toggleMuteAccount } from '../composables/game/useVoiceSettings'
+import { mutedAccounts, playerVolumes, setPlayerVolume, toggleMuteAccount } from '../composables/game/useVoiceSettings'
 import GamePlayerList from '../components/game/GamePlayerList.vue'
 import { useFarm } from '../composables/game/useFarm'
 import { useMallCellTemplates, type CellStoreEntry } from '../composables/game/useMallCellTemplates'
@@ -1100,6 +1100,10 @@ const voice = useProximityVoice({
     const account = realtime.remoteAccount(sessionId)
     return account !== null && mutedAccounts.value.includes(account)
   },
+  playerVolume: (sessionId) => {
+    const account = realtime.remoteAccount(sessionId)
+    return account === null ? 1 : playerVolumes.value[account] ?? 1
+  },
   setVoiceState: (sessionId, state) => realtime.setRemoteVoiceState(sessionId, state),
   sendMuted: () => gameRoomRef.value?.send('voice_mute', { accounts: [...mutedAccounts.value] }),
   canTalk: () => pointerLocked.value && !chatOpen.value && !atmOpen.value,
@@ -1603,7 +1607,9 @@ const crosshairClass = computed(() => {
       :players="realtime.remotePlayers"
       :speaking="voice.speaking.value"
       :muted="mutedAccounts"
+      :volumes="playerVolumes"
       @toggle-mute="toggleMuteAccount"
+      @set-volume="setPlayerVolume"
       @close="playerListOpen = false"
     />
     <GameChat :open="chatOpen" @send="sendChat" @close="chatOpen = false" />

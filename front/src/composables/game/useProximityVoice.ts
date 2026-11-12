@@ -1,4 +1,4 @@
-import { onUnmounted, ref, shallowRef } from 'vue'
+import { onUnmounted, ref, shallowRef, watch } from 'vue'
 import * as THREE from 'three'
 import {
   createLocalAudioTrack,
@@ -10,6 +10,8 @@ import {
   type RemoteParticipant,
   type RemoteTrack,
   type RemoteTrackPublication,
+  type AudioProcessorOptions,
+  type TrackProcessor,
 } from 'livekit-client'
 import { matches } from '../../config/keybindings'
 import { EYE_HEIGHT } from '../../game/gameRoomConstants'
@@ -27,6 +29,7 @@ export interface ProximityVoiceDeps {
   getCamera: () => THREE.Camera | undefined
   remotePosition: (sessionId: string) => THREE.Vector3 | null
   isMuted: (sessionId: string) => boolean
+  playerVolume: (sessionId: string) => number
   setVoiceState: (sessionId: string, state: VoiceIconState) => void
   sendMuted: () => void
   canTalk: () => boolean
@@ -34,8 +37,42 @@ export interface ProximityVoiceDeps {
   micDeniedMessage: () => string
 }
 
+type SinkAudioContext = AudioContext & { setSinkId?: (sinkId: string) => Promise<void> }
+
+export function outputDeviceSupported(): boolean {
+  return typeof (AudioContext.prototype as SinkAudioContext).setSinkId === 'function'
+}
+
+function createMicGain(initial: () => number) {
+  let source: MediaStreamAudioSourceNode | null = null
+  let gain: GainNode | null = null
+  const processor: TrackProcessor<Track.Kind.Audio, AudioProcessorOptions> = {
+    name: 'campuscove-mic-gain',
+    async init({ track, audioContext }) {
+      source = audioContext.createMediaStreamSource(new MediaStream([track]))
+      gain = new GainNode(audioContext, { gain: initial() })
+      const destination = audioContext.createMediaStreamDestination()
+      source.connect(gain).connect(destination)
+      processor.processedTrack = destination.stream.getAudioTracks()[0]
+    },
+    async restart(opts) {
+      await processor.destroy()
+      await processor.init(opts)
+    },
+    async destroy() {
+      source?.disconnect()
+      gain?.disconnect()
+      source = null
+      gain = null
+      processor.processedTrack = undefined
+    },
+  }
+  return { processor, setGain: (value: number) => gain?.gain.setValueAtTime(value, gain.context.currentTime) }
+}
+
 interface Voice {
   panner: PannerNode
+  volume: GainNode
   source: MediaStreamAudioSourceNode
   element: HTMLMediaElement
 }
@@ -46,15 +83,29 @@ export function useProximityVoice(deps: ProximityVoiceDeps) {
   const speaking = shallowRef<ReadonlySet<string>>(new Set())
   let room: Room | null = null
   let audio: AudioContext | null = null
+  let master: GainNode | null = null
+  const micGain = createMicGain(() => voiceSettings.inputVolume)
   let mic: LocalAudioTrack | null = null
   let micPending: Promise<LocalAudioTrack | null> | null = null
+  let unlocked = false
   const voices = new Map<string, Voice>()
   const forward = new THREE.Vector3()
   const up = new THREE.Vector3()
   const camPos = new THREE.Vector3()
 
+  function applyOutputDevice(ctx: AudioContext): void {
+    const sinkCtx = ctx as SinkAudioContext
+    if (!sinkCtx.setSinkId) return
+    sinkCtx.setSinkId(voiceSettings.outputDeviceId ?? '').catch((err) => console.error('[voice] could not switch the output device', err))
+  }
+
   function context(): AudioContext {
-    audio ??= new AudioContext()
+    if (!audio) {
+      audio = new AudioContext()
+      master = new GainNode(audio, { gain: voiceSettings.outputVolume })
+      master.connect(audio.destination)
+      applyOutputDevice(audio)
+    }
     if (audio.state === 'suspended') void audio.resume()
     return audio
   }
@@ -72,8 +123,9 @@ export function useProximityVoice(deps: ProximityVoiceDeps) {
       maxDistance: VOICE_RELEASE_RANGE,
       rolloffFactor: 1,
     })
-    source.connect(panner).connect(ctx.destination)
-    voices.set(participant.identity, { panner, source, element })
+    const volume = new GainNode(ctx, { gain: deps.playerVolume(participant.identity) })
+    source.connect(panner).connect(volume).connect(master!)
+    voices.set(participant.identity, { panner, volume, source, element })
   }
 
   function dropVoice(identity: string): void {
@@ -81,6 +133,7 @@ export function useProximityVoice(deps: ProximityVoiceDeps) {
     if (!voice) return
     voice.source.disconnect()
     voice.panner.disconnect()
+    voice.volume.disconnect()
     voice.element.remove()
     voices.delete(identity)
   }
@@ -101,7 +154,7 @@ export function useProximityVoice(deps: ProximityVoiceDeps) {
     room = next
     connected.value = true
     deps.sendMuted()
-    if (voiceSettings.mode === 'openMic' && talking.value) await setTalking(true)
+    if (unlocked && voiceSettings.mode === 'openMic') await setTalking(true)
   }
 
   async function disconnect(): Promise<void> {
@@ -123,7 +176,14 @@ export function useProximityVoice(deps: ProximityVoiceDeps) {
     if (mic) return mic
     micPending ??= (async () => {
       try {
-        const track = await createLocalAudioTrack({ echoCancellation: true, noiseSuppression: true, autoGainControl: true })
+        const track = await createLocalAudioTrack({
+          deviceId: voiceSettings.inputDeviceId ?? undefined,
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        })
+        await track.setAudioContext(context())
+        await track.setProcessor(micGain.processor)
         await current.localParticipant.publishTrack(track, { source: Track.Source.Microphone })
         mic = track
         return track
@@ -150,6 +210,38 @@ export function useProximityVoice(deps: ProximityVoiceDeps) {
     else await track.mute()
   }
 
+  function onGesture(): void {
+    context()
+    if (unlocked) return
+    unlocked = true
+    if (room && voiceSettings.mode === 'openMic' && !talking.value) void setTalking(true)
+  }
+
+  watch(
+    () => voiceSettings.outputVolume,
+    (volume) => master?.gain.setValueAtTime(volume, master.context.currentTime),
+  )
+  watch(
+    () => voiceSettings.inputVolume,
+    (volume) => micGain.setGain(volume),
+  )
+  watch(
+    () => voiceSettings.outputDeviceId,
+    () => audio && applyOutputDevice(audio),
+  )
+  watch(
+    () => voiceSettings.inputDeviceId,
+    (deviceId) => {
+      mic?.setDeviceId(deviceId ?? 'default').catch((err) => console.error('[voice] could not switch the microphone', err))
+    },
+  )
+  watch(
+    () => voiceSettings.mode,
+    (mode) => {
+      if (room && unlocked) void setTalking(mode === 'openMic')
+    },
+  )
+
   function onKeyDown(e: KeyboardEvent): void {
     if (e.repeat || !room || !deps.canTalk() || !matches('pushToTalk', e.code)) return
     if (voiceSettings.mode === 'pushToTalk') void setTalking(true)
@@ -167,6 +259,10 @@ export function useProximityVoice(deps: ProximityVoiceDeps) {
       const talkingNow = speaking.value.has(participant.identity)
       deps.setVoiceState(participant.identity, talkingNow ? (deps.isMuted(participant.identity) ? 'muted' : 'speaking') : null)
       const voice = voices.get(participant.identity)
+      if (voice) {
+        const target = deps.playerVolume(participant.identity)
+        if (voice.volume.gain.value !== target) voice.volume.gain.setValueAtTime(target, voice.volume.context.currentTime)
+      }
       if (voice && position) {
         const t = voice.panner.context.currentTime
         voice.panner.positionX.setValueAtTime(position.x, t)
@@ -202,9 +298,13 @@ export function useProximityVoice(deps: ProximityVoiceDeps) {
 
   document.addEventListener('keydown', onKeyDown)
   document.addEventListener('keyup', onKeyUp)
+  document.addEventListener('pointerdown', onGesture, true)
+  document.addEventListener('keydown', onGesture, true)
   onUnmounted(() => {
     document.removeEventListener('keydown', onKeyDown)
     document.removeEventListener('keyup', onKeyUp)
+    document.removeEventListener('pointerdown', onGesture, true)
+    document.removeEventListener('keydown', onGesture, true)
     void disconnect()
     void audio?.close()
   })

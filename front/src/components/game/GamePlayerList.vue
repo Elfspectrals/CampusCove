@@ -2,6 +2,7 @@
 import { onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { matches } from '../../config/keybindings'
+import { MAX_VOLUME } from '../../game/voice'
 
 interface ListedPlayer {
   sessionId: string
@@ -13,8 +14,9 @@ const props = defineProps<{
   players: () => ListedPlayer[]
   speaking: ReadonlySet<string>
   muted: readonly string[]
+  volumes: Readonly<Record<string, number>>
 }>()
-const emit = defineEmits<{ toggleMute: [accountId: string]; close: [] }>()
+const emit = defineEmits<{ toggleMute: [accountId: string]; setVolume: [accountId: string, volume: number]; close: [] }>()
 
 const { t } = useI18n()
 const REFRESH_MS = 500
@@ -52,6 +54,18 @@ onUnmounted(() => {
             :aria-label="speaking.has(player.sessionId) ? t('playerList.speaking') : undefined"
           />
           <span class="min-w-0 flex-1 truncate font-bold text-fog">{{ player.pseudo }}</span>
+          <input
+            type="range"
+            class="w-24 shrink-0 accent-sun sm:w-32"
+            min="0"
+            :max="MAX_VOLUME"
+            step="0.05"
+            :value="volumes[player.accountId] ?? 1"
+            :disabled="muted.includes(player.accountId)"
+            :aria-label="t('playerList.volume', { name: player.pseudo })"
+            @input="emit('setVolume', player.accountId, Number(($event.target as HTMLInputElement).value))"
+          />
+          <span class="w-11 shrink-0 text-right font-mono text-xs text-mist">{{ Math.round((volumes[player.accountId] ?? 1) * 100) }} %</span>
           <button
             type="button"
             :class="['cc-btn cc-btn-sm', muted.includes(player.accountId) ? 'cc-btn-coral' : 'cc-btn-ghost']"

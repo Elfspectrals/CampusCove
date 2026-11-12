@@ -111,6 +111,9 @@ Decision (2026-11-12): voice goes through a self-hosted LiveKit SFU (open source
 - [done] Front: connect, publish the mic (push-to-talk or open mic, B, set in Settings), hear voices within 30 m (kept up to 34 m) through HRTF panners on the avatars. Checked with two tabs and a test tone; a real two-person voice test is still to do.
 - [done] Speaking icon above the pseudo (crossed out when muted), player list on Tab (rebindable) with a mute button per account, kept in this browser until unmuted (decided 2026-11-12: a list, not aiming, so a running player can still be muted). A muted account is not even subscribed to.
 - [done] The socket enforces who hears whom: tokens cannot subscribe, the socket subscribes every 500 ms through the LiveKit admin API (range, house walls, mutes sent with `voice_mute`).
+- [done] Audio starts on the first click or key; open mic turns on at Play (fixed after the first real test, 2026-11-12).
+- [done] Voice settings like Discord: microphone and output device, mic and voices volume (0 to 200 %), mic test with a level meter.
+- [done] Per-player volume (0 to 200 %) in the Tab list, saved per account in this browser (`cc.voiceVolumes`).
 - [todo] Deploy LiveKit on a VPS with TURN; privacy page mentions voice.
 
 ## Later
