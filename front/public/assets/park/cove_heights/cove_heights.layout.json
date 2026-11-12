@@ -576,6 +576,30 @@
         0.2,
         -1.405
       ]
+    },
+    {
+      "kind": "house",
+      "key": "cove_villa_a04",
+      "name": "Skyline Residence",
+      "lot": "A-04",
+      "position": [
+        -193.6,
+        0.0,
+        -290.0
+      ],
+      "rotationY": 0,
+      "door": [
+        -193.6,
+        1.25,
+        -285.2
+      ],
+      "offer": "buy",
+      "price": 32000,
+      "interiorOffset": [
+        0.0,
+        0.2,
+        -1.405
+      ]
     }
   ],
   "collision": [
@@ -1265,6 +1289,36 @@
       "cz": -292.805,
       "hx": 10.2,
       "hz": 5.805,
+      "hy": 3.0,
+      "cy": 3.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_LotA04_PostLamp",
+      "cx": -192.0,
+      "cz": -282.2,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_LotA04_Tree0",
+      "cx": -184.8,
+      "cz": -284.0,
+      "hx": 0.225,
+      "hz": 0.225,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_House_cove_villa_a04",
+      "cx": -197.3,
+      "cz": -292.005,
+      "hx": 10.7,
+      "hz": 6.005,
       "hy": 3.0,
       "cy": 3.0,
       "yaw": 0.0

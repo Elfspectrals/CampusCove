@@ -399,7 +399,18 @@ with open(os.path.join(L.FRONT_ASSETS, "houses", VILLA_A03["key"], "exterior.lay
         est.col(f"LotA03_{c['name']}", hx + c["x"], hz + c["z"], c["sx"], c["sz"], c["h"])
 est.col("HousePlaceholderA03", hx - 3.7, hz - 1.805, 20.4, 11.61, 6.0)
 est.cols[-1]["name"] = f"COL_House_{VILLA_A03['key']}"
-HOUSES = [VILLA_A02, VILLA_A01, VILLA_A03]
+VILLA_A04 = {"key": "cove_villa_a04", "name": "Skyline Residence", "lot": "A-04", "origin": (237.4, -308.0), "zf": 4.0,
+             "interiorOffset": [0.0, 0.2, -1.405], "price": 32000}
+sx_, sz_ = VILLA_A04["origin"]
+front_z = sz_ + VILLA_A04["zf"]
+S.rect(est, "CH_LotA04_MotorCourt", 223.5, -300.5, 230.0, front_z, Y["lot"], Y["drive"], M["drive"])
+S.rect(est, "CH_LotA04_FrontPath", sx_ - 0.8, -299.0, sx_ + 0.8, front_z + 1.47, Y["lot"], Y["drive"], M["drive"])
+S.street_lamp(est, "CH_LotA04_PostLamp", sx_ + 1.6, -300.2, M, h=2.6)
+S.hedge_run(est, "CH_LotA04_HedgeE", (239.2, front_z + 0.8), (243.8, front_z + 0.8), HM, w=0.5)
+S.tree(est, "CH_LotA04_Tree0", 246.2, -302.0, M, "round", 0.9)
+est.col("HousePlaceholderA04", sx_ - 3.7, sz_ - 2.005, 21.4, 12.01, 6.0)
+est.cols[-1]["name"] = f"COL_House_{VILLA_A04['key']}"
+HOUSES = [VILLA_A02, VILLA_A01, VILLA_A03, VILLA_A04]
 
 # ================================================================ communal
 # clubhouse & leisure parcel

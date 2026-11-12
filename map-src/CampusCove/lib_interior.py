@@ -66,6 +66,14 @@ def fireplace(B, name, wall, y, ceil_h, M, style="mantel"):
                wbox(B, f"{name}_Breast", wall, y + 1.29, 1.5, 0.22, ceil_h - 1.29, M["stone"])]
         wcol(B, name, wall, y, 1.96, 0.5, 1.3)
         return out
+    if style == "linear":
+        out = [wbox(B, f"{name}_Breast", wall, y, 2.6, 0.30, ceil_h - y, M["stone"]),
+               wbox(B, f"{name}_Bench", wall, y, 3.0, 0.50, 0.38, M["stone"]),
+               wbox(B, f"{name}_Firebox", wall, y + 0.62, 1.6, 0.02, 0.42, M["soot"], off=0.30),
+               wbox(B, f"{name}_Glow", wall, y + 0.66, 1.4, 0.01, 0.06, M["candle"], off=0.32)]
+        wcol(B, name, wall, y, 3.0, 0.5, 0.45)
+        wcol(B, f"{name}Breast", wall, y, 2.6, 0.30, 2.0)
+        return out
     out = [wbox(B, f"{name}_Hearth", wall, y, 2.1, 0.62, 0.16, M["stone"]),
            wbox(B, f"{name}_Firebox", wall, y + 0.16, 0.9, 0.42, 0.86, M["soot"]),
            wbox(B, f"{name}_JambA", wall, y + 0.16, 0.34, 0.5, 0.86, M["stone"], shift=-0.62),
@@ -301,6 +309,11 @@ def balustrade(B, name, axis, fixed, a0, a1, y, M, style="spindle", h=1.0, step=
 
     if style == "iron":
         out = L.railing(B.coll, name, [tuple(at(a0)), tuple(at(a1))], y, h, 0.14, M["iron"], post=0.05, bar=0.018)
+    elif style == "glass":
+        out = L.railing(B.coll, name, [tuple(at(a0)), tuple(at(a1))], y, h, step, M["dark"], post=0.05, bar=0.018, glass=M["glass"])
+        for o in out:
+            if o.name.startswith(f"{name}_Glass"):
+                o.name = f"Glass_{o.name}"
     else:
         def bx(nm, a, y0, along, thick, hh, mat):
             px, pz = at(a)

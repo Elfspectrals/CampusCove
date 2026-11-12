@@ -94,6 +94,15 @@ def make_texture(key, base, var=0.06, pattern="noise", size=64, accent=None, see
                 else:
                     tone = (((shifted // width) * 73 + course * 151) % 11 - 5) / 5 * 0.05
                     r, g, bl = r + tone, g + tone, bl + tone
+            elif pattern == "slats":
+                slat, col = x // 8, x % 8
+                if col == 0:
+                    r, g, bl = ar, ag, ab
+                elif col == 1:
+                    r, g, bl = (r0 + ar) / 2, (g0 + ag) / 2, (b0 + ab) / 2
+                else:
+                    tone = (((slat * 37) % 7) - 3) / 3 * 0.04
+                    r, g, bl = r + tone, g + tone, bl + tone
             px.extend((max(0, min(1, r)), max(0, min(1, g)), max(0, min(1, bl)), 1.0))
     img.pixels.foreach_set(px)
     img.pack()
@@ -1277,7 +1286,7 @@ def arch_panel(coll, name, axis, fixed, a0, a1, y_spring, rise, y_top, depth, ma
     return _mesh_from(coll, name, bm, mat, tile, expect=expect)
 
 
-def railing(coll, name, pts, y0, h, step, mat, post=0.08, bar=0.025):
+def railing(coll, name, pts, y0, h, step, mat, post=0.08, bar=0.025, glass=None):
     """Metal railing along the game polyline pts [(x, z)]: newel posts at the points, top and bottom rails, square bars
     every `step`. Returns the objects (visual only)."""
     out = []
@@ -1288,11 +1297,29 @@ def railing(coll, name, pts, y0, h, step, mat, post=0.08, bar=0.025):
         rot = math.atan2(-(bz - az), bx - ax)
         mx, mz = (ax + bx) / 2, (az + bz) / 2
         out.append(box(coll, f"{name}_Top{i}", mx, mz, y0 + h - 0.05, ln, 0.05, 0.05, mat, rot=rot))
+        if glass is not None:
+            out.append(box(coll, f"{name}_Glass{i}", mx, mz, y0 + 0.03, ln - post, 0.02, h - 0.075, glass, rot=rot))
+            continue
         out.append(box(coll, f"{name}_Bottom{i}", mx, mz, y0 + 0.12, ln, 0.04, 0.04, mat, rot=rot))
         n = max(1, int(ln / step))
         for k in range(1, n):
             t = k / n
             out.append(box(coll, f"{name}_Bar{i}_{k:02d}", ax + (bx - ax) * t, az + (bz - az) * t, y0 + 0.12, bar, bar, h - 0.17, mat))
+    return out
+
+
+def pergola(coll, name, x0, x1, z0, z1, y0, h, mat, post=0.12, beam=(0.10, 0.22), slat=(0.05, 0.14), step=0.35, over=0.15):
+    assert x1 - x0 > 2 * post and z1 - z0 > 2 * post, (name, x0, x1, z0, z1)
+    out = []
+    xs, zs = (x0 + post / 2, x1 - post / 2), (z0 + post / 2, z1 - post / 2)
+    for i, (px, pz) in enumerate((px, pz) for px in xs for pz in zs):
+        out.append(box(coll, f"{name}_Post{i}", px, pz, y0, post, post, h, mat))
+    for i, px in enumerate(xs):
+        out.append(box(coll, f"{name}_Beam{i}", px, (z0 + z1) / 2, y0 + h, beam[0], z1 - z0 + 2 * over, beam[1], mat))
+    n = max(2, round((z1 - z0) / step))
+    for k in range(n):
+        out.append(box(coll, f"{name}_Slat{k:02d}", (x0 + x1) / 2, z0 + (z1 - z0) * (k + 0.5) / n, y0 + h + beam[1],
+                       x1 - x0 + 2 * over, slat[0], slat[1], mat))
     return out
 
 
