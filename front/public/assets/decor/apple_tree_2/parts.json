@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "materials": {
+    "DC_AppleTree2": {
+      "mask": "parts_DC_AppleTree2.png",
+      "parts": [
+        {
+          "id": "main",
+          "label": "Main",
+          "color": "#549f61"
+        },
+        {
+          "id": "accent",
+          "label": "Accent",
+          "color": "#a46d48"
+        },
+        {
+          "id": "detail",
+          "label": "Detail",
+          "color": "#a1cba0"
+        }
+      ]
+    },
+    "IT_Crop_Apple": {
+      "mask": "parts_IT_Crop_Apple.png",
+      "parts": [
+        {
+          "id": "main",
+          "label": "Main",
+          "color": "#d2c1b6"
+        },
+        {
+          "id": "accent",
+          "label": "Accent",
+          "color": "#b17670"
+        },
+        {
+          "id": "detail",
+          "label": "Detail",
+          "color": "#d83a3c"
+        }
+      ]
+    }
+  }
+}

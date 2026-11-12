@@ -579,6 +579,12 @@ def gable_roof(coll, name, gx, gz, y0, sx, sz, h, mat, ridge_axis="x", tile=2.0)
 
 
 REF_TEXTURE_SIZE = 256
+FLAT_EDGE_PX = 3
+PALETTE_SMOOTH_PASSES = 2
+PALETTE_SAMPLE_SIZE = 512
+SHADE_HUE_GAP = 0.06
+SHADE_MIN_SATURATION = 0.25
+SHADE_MAX_VALUE_GAP = 0.3
 
 
 def _bleed_subject(rgb, subject):
@@ -597,17 +603,76 @@ def _bleed_subject(rgb, subject):
     return np.where(filled[..., None] > 0, color, rgb).astype(np.float32)
 
 
-def project_ref_image(objs, image_path, material_name, background_threshold=0.3, highlight_margin=0.12, near_white=0.9, grey_spread=0.08, max_washed=0.3):
+def _erode(mask, pixels):
+    import numpy as np
+    for _ in range(pixels):
+        mask = mask & np.roll(mask, 1, 0) & np.roll(mask, -1, 0) & np.roll(mask, 1, 1) & np.roll(mask, -1, 1)
+    return mask
+
+
+def _kmeans(pixels, k):
+    import numpy as np
+    rng = np.random.default_rng(0)
+    centres = [pixels[rng.integers(len(pixels))]]
+    for _ in range(1, k):
+        far = np.min([((pixels - c) ** 2).sum(axis=1) for c in centres], axis=0)
+        centres.append(pixels[rng.choice(len(pixels), p=far / far.sum())])
+    centres = np.array(centres)
+    for _ in range(20):
+        labels = np.argmin(((pixels[:, None] - centres[None]) ** 2).sum(axis=2), axis=1)
+        centres = np.array([pixels[labels == i].mean(axis=0) if (labels == i).any() else centres[i] for i in range(k)])
+    return centres
+
+
+def _merge_shades(pixels, centres):
+    import colorsys
+    import numpy as np
+    labels = np.argmin(((pixels[:, None] - centres[None]) ** 2).sum(axis=2), axis=1)
+    counts = np.bincount(labels, minlength=len(centres))
+    hsv = [colorsys.rgb_to_hsv(*c) for c in centres]
+    keep = list(range(len(centres)))
+    for a in sorted(range(len(centres)), key=lambda i: counts[i]):
+        for b in keep:
+            if b == a or counts[b] < counts[a]:
+                continue
+            hue_gap = min(abs(hsv[a][0] - hsv[b][0]), 1 - abs(hsv[a][0] - hsv[b][0]))
+            if hue_gap < SHADE_HUE_GAP and min(hsv[a][1], hsv[b][1]) > SHADE_MIN_SATURATION and abs(hsv[a][2] - hsv[b][2]) < SHADE_MAX_VALUE_GAP:
+                keep.remove(a)
+                break
+    return centres[keep]
+
+
+def _posterize(rgb, centres):
+    import numpy as np
+    labels = np.argmin(((rgb[:, :, None] - centres[None, None]) ** 2).sum(axis=3), axis=2)
+    for _ in range(PALETTE_SMOOTH_PASSES):
+        stack = np.stack([np.roll(np.roll(labels, dy, 0), dx, 1) for dy in (-1, 0, 1) for dx in (-1, 0, 1)])
+        votes = np.stack([(stack == i).sum(axis=0) for i in range(len(centres))])
+        labels = np.argmax(votes, axis=0)
+    return centres[labels].astype(np.float32)
+
+
+def project_ref_image(objs, image_path, material_name, background_threshold=0.3, highlight_margin=0.12, near_white=0.9, grey_spread=0.08, max_washed=0.3,
+                      palette=0):
     import numpy as np
     source = bpy.data.images.load(image_path, check_existing=True)
     if min(source.size) < REF_TEXTURE_SIZE:
         raise ValueError(f"{image_path}: {tuple(source.size)} is smaller than {REF_TEXTURE_SIZE} px")
-    step = source.size[0] // REF_TEXTURE_SIZE
+    step = source.size[0] // (PALETTE_SAMPLE_SIZE if palette else REF_TEXTURE_SIZE)
     pixels = np.empty(source.size[0] * source.size[1] * 4, dtype=np.float32)
     source.pixels.foreach_get(pixels)
     rgb = np.ascontiguousarray(pixels.reshape(source.size[1], source.size[0], 4)[::step, ::step, :3])
     height, width = rgb.shape[:2]
-    subject = np.abs(rgb - rgb[2, 2]).sum(axis=-1) > background_threshold
+    if palette:
+        mask_path = os.path.join(os.path.dirname(image_path), "mask.png")
+        if not os.path.exists(mask_path):
+            raise ValueError(f"{mask_path} is missing: a palette projection needs the rembg silhouette (map-src/CampusCove/ai_mask.py)")
+        mask = bpy.data.images.load(mask_path, check_existing=True)
+        alpha = np.empty(mask.size[0] * mask.size[1] * 4, dtype=np.float32)
+        mask.pixels.foreach_get(alpha)
+        subject = np.ascontiguousarray(alpha.reshape(mask.size[1], mask.size[0], 4)[::step, ::step, 0]) > 0.5
+    else:
+        subject = np.abs(rgb - rgb[2, 2]).sum(axis=-1) > background_threshold
     rows, cols = np.nonzero(subject)
     if rows.size == 0:
         raise ValueError(f"{image_path}: no subject found on the background")
@@ -617,10 +682,12 @@ def project_ref_image(objs, image_path, material_name, background_threshold=0.3,
     highlight = subject & (lightness > np.percentile(lightness[subject], 85) + highlight_margin)
     if washed.sum() < max_washed * subject.sum():
         highlight |= washed
-    seed = subject & ~highlight
+    seed = _erode(subject, FLAT_EDGE_PX) if palette else subject & ~highlight
     if not seed.any():
         raise ValueError(f"{image_path}: the whole subject reads as highlight")
     bled = _bleed_subject(rgb, seed)
+    if palette:
+        bled = _posterize(bled, _merge_shades(rgb[seed], _kmeans(rgb[seed], palette)))
     image = bpy.data.images.new(material_name, width, height)
     image.pixels.foreach_set(np.concatenate([bled, np.ones((height, width, 1), dtype=np.float32)], axis=-1).ravel())
     image.pack()
@@ -784,7 +851,7 @@ def zone_decor(coll, zone_key, col_prefix):
     return objs, cols, plants
 
 
-def import_ai_model(coll, slug, material_name):
+def import_ai_model(coll, slug, material_name, palette=0):
     folder = os.path.join(OUT_ROOT, "ai", slug)
     before = set(bpy.data.objects)
     bpy.ops.import_scene.gltf(filepath=os.path.join(folder, "model.glb"))
@@ -803,8 +870,216 @@ def import_ai_model(coll, slug, material_name):
     for o in imported:
         if o.type != "MESH":
             bpy.data.objects.remove(o, do_unlink=True)
-    project_ref_image(meshes, os.path.join(folder, "ref.png"), material_name)
+    project_ref_image(meshes, os.path.join(folder, "ref.png"), material_name, palette=palette)
     return meshes
+
+
+APPLE_ON_TREE_TRIS = 50
+APPLE_ON_TREE_HEIGHT = 0.24
+CROWN_BRIGHTNESS = 1.5
+_tree_apple = {}
+
+
+def _apple_for_trees(coll):
+    if "mesh" not in _tree_apple:
+        before = set(bpy.data.objects)
+        bpy.ops.import_scene.gltf(filepath=os.path.join(FRONT_ASSETS, "items", "farm", "apple", "model.glb"))
+        imported = [o for o in bpy.data.objects if o not in before]
+        meshes = [o for o in imported if o.type == "MESH"]
+        if len(meshes) != 1:
+            raise ValueError(f"items/farm/apple/model.glb should hold one mesh, got {len(meshes)}")
+        apple = meshes[0]
+        for o in imported:
+            if o is not apple:
+                bpy.data.objects.remove(o, do_unlink=True)
+        apple.parent = None
+        for c in list(apple.users_collection):
+            c.objects.unlink(apple)
+        coll.objects.link(apple)
+        bpy.context.view_layer.objects.active = apple
+        decimate = apple.modifiers.new("Decimate", "DECIMATE")
+        decimate.ratio = APPLE_ON_TREE_TRIS / sum(len(p.vertices) - 2 for p in apple.data.polygons)
+        bpy.ops.object.modifier_apply(modifier=decimate.name)
+        apple.data.transform(apple.matrix_world)
+        apple.matrix_world.identity()
+        low = min(v.co.z for v in apple.data.vertices)
+        size = max(v.co.z for v in apple.data.vertices) - low
+        apple.data.transform(Matrix.Scale(APPLE_ON_TREE_HEIGHT / size, 4) @ Matrix.Translation((0, 0, -low - size / 2)))
+        coll.objects.unlink(apple)
+        if len(apple.data.uv_layers) != 1 or len(apple.data.materials) != 1:
+            raise ValueError("items/farm/apple/model.glb should have one UV map and one material")
+        apple.data.uv_layers[0].name = "RefProjection"
+        apple.data.materials[0].name = "IT_Crop_Apple"
+        if apple.data.materials[0].name != "IT_Crop_Apple":
+            raise ValueError(f"another material already holds the name IT_Crop_Apple: {apple.data.materials[0].name}")
+        _tree_apple["mesh"] = apple.data
+    return _tree_apple["mesh"]
+
+
+def _fibonacci(count):
+    golden = math.pi * (3 - math.sqrt(5))
+    for i in range(count):
+        z = 1 - 2 * (i + 0.5) / count
+        r = math.sqrt(1 - z * z)
+        yield Vector((r * math.cos(golden * i), r * math.sin(golden * i), z))
+
+
+def _apple_directions(layout, rnd):
+    if layout == "spread":
+        return [(d, 1.0) for d in _fibonacci(22) if d.z > -0.55]
+    if layout == "low":
+        return [(d, 1.0) for d in _fibonacci(40) if -0.6 < d.z < 0.05]
+    if layout == "clusters":
+        picks = []
+        for centre in [d for d in _fibonacci(9) if d.z > -0.4][:5]:
+            for _ in range(3):
+                picks.append(((centre + Vector((rnd.uniform(-0.22, 0.22), rnd.uniform(-0.22, 0.22), rnd.uniform(-0.22, 0.22)))).normalized(), 0.9))
+        return picks
+    if layout == "few_big":
+        return [(d, 1.45) for d in _fibonacci(9) if d.z > -0.5]
+    raise ValueError(f"unknown apple layout {layout}")
+
+
+def _brighten(material, factor):
+    import numpy as np
+    image = next(n for n in material.node_tree.nodes if n.type == "TEX_IMAGE").image
+    pixels = np.empty(len(image.pixels), dtype=np.float32)
+    image.pixels.foreach_get(pixels)
+    rgba = pixels.reshape(-1, 4)
+    rgba[:, :3] = np.clip(rgba[:, :3] * factor, 0.0, 1.0)
+    image.pixels.foreach_set(rgba.ravel())
+    image.pack()
+
+
+EYE_DARK = 0.22
+EYE_MIN_AREA = 0.0002
+EYE_MAX_AREA = 0.006
+EYE_HEAD_SHARE = 0.3
+EYE_SIZE_BOOST = 1.15
+
+
+def _image_rgb(path, size):
+    import numpy as np
+    image = bpy.data.images.load(path, check_existing=True)
+    step = image.size[0] // size
+    pixels = np.empty(image.size[0] * image.size[1] * 4, dtype=np.float32)
+    image.pixels.foreach_get(pixels)
+    return np.ascontiguousarray(pixels.reshape(image.size[1], image.size[0], 4)[::step, ::step, :3])
+
+
+def _find_pupil(rgb, subject):
+    import numpy as np
+    from collections import deque
+    rows, cols = np.nonzero(subject)
+    head = subject & (np.arange(subject.shape[1])[None, :] > cols.max() - EYE_HEAD_SHARE * (cols.max() - cols.min()))
+    head &= np.arange(subject.shape[0])[:, None] > rows.min() + 0.4 * (rows.max() - rows.min())
+    dark = head & (rgb.max(axis=-1) < EYE_DARK)
+    left = dark.copy()
+    h, w = dark.shape
+    found = []
+    for y, x in zip(*np.nonzero(dark)):
+        if not left[y, x]:
+            continue
+        left[y, x] = False
+        queue, cells = deque([(y, x)]), []
+        while queue:
+            cy, cx = queue.popleft()
+            cells.append((cy, cx))
+            for ny, nx in ((cy + 1, cx), (cy - 1, cx), (cy, cx + 1), (cy, cx - 1)):
+                if 0 <= ny < h and 0 <= nx < w and left[ny, nx]:
+                    left[ny, nx] = False
+                    queue.append((ny, nx))
+        area = len(cells) / subject.sum()
+        cells = np.array(cells)
+        span = cells.max(axis=0) - cells.min(axis=0) + 1
+        if EYE_MIN_AREA <= area <= EYE_MAX_AREA and max(span) <= 2 * min(span):
+            found.append((len(cells), cells.mean(axis=0), np.sqrt(len(cells) / np.pi)))
+    if not found:
+        return None
+    _, (row, col), radius = max(found, key=lambda f: f[0])
+    return row, col, radius
+
+
+def add_ai_eyes(coll, obj, slug, material_name):
+    import numpy as np
+    from mathutils.bvhtree import BVHTree
+    folder = os.path.join(OUT_ROOT, "ai", slug)
+    rgb = _image_rgb(os.path.join(folder, "ref.png"), PALETTE_SAMPLE_SIZE)
+    subject = _image_rgb(os.path.join(folder, "mask.png"), PALETTE_SAMPLE_SIZE)[:, :, 0] > 0.5
+    pupil = _find_pupil(rgb, subject)
+    if pupil is None:
+        raise ValueError(f"out/ai/{slug}/ref.png: no eye found on the head (a small dark spot); regenerate the concept image")
+    row, col, radius_px = pupil
+    rows, cols = np.nonzero(subject)
+    verts = [obj.matrix_world @ v.co for v in obj.data.vertices]
+    x0, x1 = min(p.x for p in verts), max(p.x for p in verts)
+    z0, z1 = min(p.z for p in verts), max(p.z for p in verts)
+    metres_per_px = (x1 - x0) / (cols.max() - cols.min())
+    target = Vector((x0 + (col - cols.min()) * metres_per_px, 0.0, z0 + (row - rows.min()) * (z1 - z0) / (rows.max() - rows.min())))
+    radius = radius_px * metres_per_px * EYE_SIZE_BOOST
+    bvh = BVHTree.FromObject(obj, bpy.context.evaluated_depsgraph_get())
+    inverse = obj.matrix_world.inverted()
+    depth = max(p.y for p in verts) - min(p.y for p in verts)
+    glossy = bpy.data.materials.new(material_name)
+    glossy.use_nodes = True
+    shader = next(n for n in glossy.node_tree.nodes if n.type == "BSDF_PRINCIPLED")
+    shader.inputs["Base Color"].default_value = (0.02, 0.02, 0.02, 1.0)
+    shader.inputs["Roughness"].default_value = 0.15
+    eyes = []
+    for side in (1.0, -1.0):
+        start = target + Vector((0.0, side * depth * 2, 0.0))
+        hit, normal, _, _ = bvh.ray_cast(inverse @ start, inverse.to_3x3() @ Vector((0.0, -side, 0.0)))
+        if hit is None:
+            raise ValueError(f"out/ai/{slug}: the eye at {tuple(round(c, 3) for c in target)} misses the head on side {side:+.0f}")
+        mesh = bpy.data.meshes.new(f"{material_name}_{'L' if side > 0 else 'R'}")
+        bm = bmesh.new()
+        bmesh.ops.create_icosphere(bm, subdivisions=2, radius=radius)
+        bm.to_mesh(mesh)
+        bm.free()
+        mesh.materials.append(glossy)
+        eye = bpy.data.objects.new(mesh.name, mesh)
+        world_normal = (obj.matrix_world.to_3x3() @ normal).normalized()
+        eye.location = obj.matrix_world @ hit - world_normal * radius * 0.35
+        eye.rotation_euler = world_normal.to_track_quat("Z", "Y").to_euler()
+        eye.scale = (1.0, 1.0, 0.55)
+        coll.objects.link(eye)
+        for poly in mesh.polygons:
+            poly.use_smooth = True
+        eyes.append(eye)
+    return eyes
+
+
+def import_ai_apple_tree(coll, slug, material_name, layout):
+    from mathutils.bvhtree import BVHTree
+    meshes = import_ai_model(coll, slug, material_name)
+    if len(meshes) != 1:
+        raise ValueError(f"out/ai/{slug} should hold one mesh, got {len(meshes)}")
+    tree = meshes[0]
+    _brighten(tree.data.materials[0], CROWN_BRIGHTNESS)
+    tree.data.transform(tree.matrix_world)
+    tree.matrix_world.identity()
+    top = max(v.co.z for v in tree.data.vertices)
+    crown = [v.co for v in tree.data.vertices if v.co.z > 0.45 * top]
+    centre = sum(crown, Vector()) / len(crown)
+    reach = max((c - centre).length for c in crown) * 2
+    bvh = BVHTree.FromObject(tree, bpy.context.evaluated_depsgraph_get())
+    apple_mesh = _apple_for_trees(coll)
+    rnd = random.Random(slug)
+    apples = []
+    for direction, scale in _apple_directions(layout, rnd):
+        hit, normal, _, _ = bvh.ray_cast(centre + direction * reach, -direction)
+        if hit is None:
+            continue
+        apple = bpy.data.objects.new(f"{material_name}_Apple{len(apples)}", apple_mesh)
+        apple.location = hit + normal * (APPLE_ON_TREE_HEIGHT * scale * 0.2)
+        apple.rotation_euler = (rnd.uniform(-0.3, 0.3), rnd.uniform(-0.3, 0.3), rnd.uniform(0, 2 * math.pi))
+        apple.scale = (scale, scale, scale)
+        coll.objects.link(apple)
+        apple.data = apple.data.copy()
+        apples.append(apple)
+    if len(apples) < 4:
+        raise ValueError(f"out/ai/{slug}: only {len(apples)} apples landed on the crown ({layout})")
+    return [tree] + apples
 
 
 def render_preview(sc, obj, path):

@@ -74,6 +74,14 @@ Decision (2026-11-10): animals reuse the skeleton and clips of a CC0 Quaternius 
 - [todo] Cow, pig and sheep from the same Quaternius pack, then decide where they live in the world.
 - [done] Chicken `walk` written in code (`bird_walk`), the missing clip of the Quaternius pack.
 
+## Farm and orchard assets through make model (done)
+
+Decision (2026-11-11): every farm and orchard asset is regenerated with `make model` for a cleaner look, at the same keys and paths, reviewed one family at a time on a before/after sheet. Animals get an AI mesh auto-skinned to their existing Quaternius rig so the clips are kept.
+
+- [done] Farm items: new apple (one source for `farm/apple` and `grocery/apple`), potato, potato plant, corn, cabbage, pumpkin, egg, milk. The corn plant kept its previous model (the new ones lost the cobs or grew too wide).
+- [done] Orchard (decided 2026-11-12): four apple tree varieties as decor `apple_tree_1`-`4` (Farm category), each a `make model` crown without fruit plus copies of the apple item placed on it in its own layout (spread, low, clusters, few big), the apples on the `IT_Crop_Apple` material so the editor recolours them. The 12 pickable trees stay baked by `build_orchard_site.py` and mix the four. Pine, basket and lantern (glass glows) from `make model`, fallen apples are the apple item; hay bales, crates, stall, shed and fences stay builders. The farm decor was not regenerated. Tree positions moved by up to 0.3 m (new random draws), the manifest follows.
+- [done] Animals (decided 2026-11-12): the six farm animals already came from `make model` with their own rig and idle/walk/graze clips (`build_barnyard.py`, not Quaternius). Their glitches came from the pipeline, not the AI: a forced three-quarter concept image projected as a side view, a flat single-axis projection stretching rim pixels, a colour-based silhouette that dropped white areas, 1200-triangle decimation, and hind legs bending like front knees. Fixed with `VIEW=side`, automatic concept checks (`check_ai_image.py`, `make model-checked`), the rembg mask, a posterized palette texture, the full Hunyuan model at 3000-6000 triangles, eye pieces and point-backward hocks. All six regenerated to match their concept image. The chicken proof of concept on the Quaternius rig is untouched.
+
 ## Animation in code (doing)
 
 Decision (2026-11-10): new clips for the human rig and the animals are written as phase functions in the Blender build scripts by the `animator` agent (`.claude/agents/animator.md`), from `docs/animation/` (skeleton contracts and a sourced playbook). No hand keying, no paid tool.
@@ -122,3 +130,5 @@ Decision (2026-11-11): /game shows a loading screen (mockup `docs/mockups/game-l
 ## Tooling (done)
 
 - [done] Two fixed local playtest accounts (`make playtest-accounts`, `PlaytestAccountSeeder`) instead of a new account per playtest; running it again resets coins, health and admin rights.
+- [done] Admin watch teleport "Orchard": lands 2.5 m in front of the first orchard tree, facing it (`orchardDestination`, `socket/src/world.ts`).
+- [done] Admin watch teleport "Farm": lands 2.5 m inside the farm gate, facing into the farm (`zoneGateDestination`).

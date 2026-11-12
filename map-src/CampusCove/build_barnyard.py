@@ -29,12 +29,12 @@ QUADRUPED_GAIT = {"HL": 0.0, "FL": 0.25, "HR": 0.5, "FR": 0.75}
 BIRD_GAIT = {"L": 0.0, "R": 0.5}
 
 ANIMALS = {
-    "cow": dict(slug="a_single_black_and_white_dairy_cow_stand", head=1, legs=4, leg_top=0.5, neck=0.66, skull=0.82, graze=1.25, step_s=1.2),
-    "pig": dict(slug="a_single_pink_farm_pig_standing_side_vie", head=1, legs=4, leg_top=0.38, neck=0.72, skull=0.84, graze=0.45, step_s=0.8),
-    "sheep": dict(slug="a_single_fluffy_white_sheep_standing_sid", head=1, legs=4, leg_top=0.42, neck=0.68, skull=0.82, graze=0.6, step_s=1.0),
-    "dog": dict(slug="a_single_brown_farm_dog_standing_side_vi", head=1, legs=4, leg_top=0.48, neck=0.7, skull=0.82, graze=0.7, step_s=0.45),
-    "hen": dict(slug="a_single_brown_hen_standing_side_view_wi", head=1, legs=2, leg_top=0.24, neck=0.62, skull=0.78, graze=1.0, step_s=0.5),
-    "rooster": dict(slug="one_rooster_with_a_single_head_and_red_c", head=1, legs=2, leg_top=0.24, neck=0.62, skull=0.78, graze=1.0, step_s=0.5),
+    "cow": dict(slug="a_black_and_white_dairy_cow_with_small_h", palette=5, head=1, legs=4, leg_top=0.5, neck=0.66, skull=0.82, graze=1.25, step_s=1.2),
+    "pig": dict(slug="a_pink_farm_pig_with_a_round_snout_and_f", palette=6, head=1, legs=4, leg_top=0.38, neck=0.72, skull=0.84, graze=0.45, step_s=0.8),
+    "sheep": dict(slug="a_white_woolly_sheep_with_a_black_face_a", palette=4, head=1, legs=4, leg_top=0.42, neck=0.68, skull=0.82, graze=0.6, step_s=1.0),
+    "dog": dict(slug="a_brown_farm_dog_with_floppy_ears_and_a_", palette=6, head=1, legs=4, leg_top=0.48, neck=0.7, skull=0.82, graze=0.7, step_s=0.45),
+    "hen": dict(slug="a_brown_hen_with_a_small_red_comb_and_a_", palette=5, head=1, legs=2, leg_top=0.24, neck=0.62, skull=0.78, graze=1.0, step_s=0.5),
+    "rooster": dict(slug="a_white_rooster_with_a_big_red_comb_red_", palette=6, head=1, legs=2, leg_top=0.24, neck=0.62, skull=0.78, graze=1.0, step_s=0.5),
 }
 
 sc = L.new_build_scene("ANIMALS")
@@ -49,12 +49,19 @@ def smoothstep(edge0, edge1, x):
 
 
 def body_mesh(key, cfg):
-    meshes = L.import_ai_model(coll, cfg["slug"], f"AN_{key.capitalize()}")
+    meshes = L.import_ai_model(coll, cfg["slug"], f"AN_{key.capitalize()}", palette=cfg["palette"])
+    if len(meshes) != 1:
+        raise RuntimeError(f"{key}: out/ai/{cfg['slug']} should hold one mesh, got {len(meshes)}")
+    meshes += L.add_ai_eyes(coll, meshes[0], cfg["slug"], f"AN_{key.capitalize()}_Eye")
     obj = L.join(coll, f"Animal_{key}", meshes)
     obj.data.transform(Matrix.Rotation(-math.pi / 2 * cfg["head"], 4, "Z") @ obj.matrix_world)
     obj.matrix_world = Matrix.Identity(4)
     verts = np.array([v.co[:] for v in obj.data.vertices])
     lo, hi = verts.min(0), verts.max(0)
+    width, length = hi[0] - lo[0], hi[1] - lo[1]
+    if width > length:
+        raise RuntimeError(f"{key}: the body is {width:.2f} m wide for {length:.2f} m long, the concept image was not a side view; "
+                           "regenerate with VIEW=side CHECK=quadruped or CHECK=biped")
     obj.data.transform(Matrix.Translation((-(lo[0] + hi[0]) / 2, -(lo[1] + hi[1]) / 2, -lo[2])))
     return obj
 
@@ -143,7 +150,7 @@ def build_rig(key, obj, cfg):
 
     centres_xy = np.array([c for c, _ in legs.values()])
     nearest = np.argmin(np.linalg.norm(verts[:, None, :2] - centres_xy[None], axis=2), axis=1)
-    blend = 0.12 * leg_top
+    blend = 0.3 * leg_top
     for i, (name, (centre, radius)) in enumerate(legs.items()):
         mine = (nearest == i) & (np.linalg.norm(verts[:, :2] - centre, axis=1) < radius) & (z < leg_top)
         on_leg = np.where(mine, smoothstep(leg_top, leg_top - 0.2 * leg_top, z), 0.0)
@@ -174,7 +181,8 @@ def pose_at(cfg, clip, t, legs, height, leg_top, speed):
         for name in legs:
             phase = 2 * math.pi * (t / period + gait[name])
             rot[f"leg_{name}"] = Matrix.Rotation(-swing * math.sin(phase), 3, AXIS_SIDE)
-            rot[f"shin_{name}"] = Matrix.Rotation(0.7 * max(0.0, math.cos(phase)), 3, AXIS_SIDE)
+            folds_back = 1.0 if name.startswith("F") else -1.0
+            rot[f"shin_{name}"] = Matrix.Rotation(folds_back * 0.7 * max(0.0, math.cos(phase)), 3, AXIS_SIDE)
         bob = 4 * math.pi * t / period
         loc["hips"] = Vector((0, 0, (0.03 if bird else 0.012) * height * math.cos(bob)))
         rot["neck"] = Matrix.Rotation((0.18 if bird else 0.05) * math.sin(bob), 3, AXIS_SIDE)
