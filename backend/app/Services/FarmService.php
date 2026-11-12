@@ -28,7 +28,7 @@ final class FarmService
         $item = ItemDef::query()->where('code', self::CROPS[$crop])->firstOrFail();
 
         return DB::transaction(function () use ($accountId, $item): array {
-            Wallet::lockForAccount($accountId, 'coins');
+            Wallet::lockForAccount($accountId, Wallet::CASH);
             $lastPickKey = "farm_last_pick:{$accountId}";
             $nowMs = now()->getTimestampMs();
             $lastPickMs = Cache::get($lastPickKey);

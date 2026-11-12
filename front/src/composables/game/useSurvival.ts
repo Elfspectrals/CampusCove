@@ -39,6 +39,7 @@ export interface SurvivalDeps {
   refreshInventory: () => void
   /** Passing out took the inventory and the clothes (backend SurvivalService::loseBelongings). */
   onBelongingsLost: (clothes: boolean) => void
+  onCashLost: (amount: number) => void
   /** Moves the local player (respawn after passing out). */
   teleport: (x: number, y: number, z: number) => void
   setLook: (yaw: number, pitch: number) => void
@@ -140,7 +141,7 @@ export function useSurvival(deps: SurvivalDeps) {
       lostBelongings.value = false
       deps.getArms()?.raiseWatch(false)
     })
-    room.onMessage('survival_hospital_bill', (data: { billed: number; balanceAfter: number | null; lostItems: number; lostClothes: number }) => {
+    room.onMessage('survival_hospital_bill', (data: { billed: number; balanceAfter: number | null; lostItems: number; lostClothes: number; lostCash: number }) => {
       hospitalBill.value = data.billed
       // the wallet in the header reads this cache
       if (typeof data.balanceAfter === 'number') applyCachedBalanceAfterPurchase('coins', data.balanceAfter)
@@ -148,6 +149,7 @@ export function useSurvival(deps: SurvivalDeps) {
         lostBelongings.value = true
         deps.onBelongingsLost(data.lostClothes > 0)
       }
+      if (data.lostCash > 0) deps.onCashLost(data.lostCash)
     })
     room.onMessage(
       'survival_respawn',

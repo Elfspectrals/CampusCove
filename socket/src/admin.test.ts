@@ -34,6 +34,7 @@ function fakeRoom(...players: Player[]): AdminRoom & { clients: FakeClient[], mo
   const moves: string[] = []
   return {
     players: new Map(players.map((p) => [p.sessionId, p])),
+    cashBags: new Map(),
     clients: players.map((p) => fakeClient(p.sessionId)),
     housingUnits: [],
     houseFurniture: [],

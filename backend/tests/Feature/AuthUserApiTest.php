@@ -100,7 +100,7 @@ class AuthUserApiTest extends TestCase
         $accountId = (int) $reg->json('user.account_id');
         $token = $reg->json('token');
 
-        $this->creditWallet($accountId, 'coins', 10_000);
+        $this->creditWallet($accountId, 'cash', 10_000);
 
         $purchase = $this->postJson('/api/shop/purchase', [
             'shop_item_public_id' => $catalog->public_id,
@@ -115,7 +115,8 @@ class AuthUserApiTest extends TestCase
             'Authorization' => 'Bearer '.$token,
         ]);
         $user->assertOk();
-        $user->assertJsonPath('user.wallet_summary.coins', $expectedCoins);
+        $user->assertJsonPath('user.wallet_summary.cash', $expectedCoins);
+        $user->assertJsonPath('user.wallet_summary.coins', WelcomeBonusService::AMOUNT);
         $user->assertJsonPath('user.wallet_summary.premium', 0);
     }
 

@@ -42,7 +42,7 @@ class ZoneShopApiTest extends TestCase
 
     public function test_a_zone_checkout_charges_the_price_set_in_the_zone(): void
     {
-        $player = $this->registerAndCreditWallet(100, 'coins');
+        $player = $this->registerAndCreditWallet(100, 'cash');
         $stool = $this->catalogId('decor_bar_stool');
 
         $this->postJson('/api/zone/checkout', ['zone' => self::ZONE, 'items' => [$stool]], $this->auth($player['token'], self::SECRET))
@@ -54,7 +54,7 @@ class ZoneShopApiTest extends TestCase
 
     public function test_an_item_the_zone_does_not_sell_buys_nothing(): void
     {
-        $player = $this->registerAndCreditWallet(1_000, 'coins');
+        $player = $this->registerAndCreditWallet(1_000, 'cash');
         $items = [$this->catalogId('decor_bar_stool'), $this->catalogId('decor_sofa_classic')];
 
         $this->postJson('/api/zone/checkout', ['zone' => self::ZONE, 'items' => $items], $this->auth($player['token'], self::SECRET))
@@ -65,7 +65,7 @@ class ZoneShopApiTest extends TestCase
 
     public function test_a_zone_without_a_price_list_sells_nothing(): void
     {
-        $player = $this->registerAndCreditWallet(100, 'coins');
+        $player = $this->registerAndCreditWallet(100, 'cash');
 
         $this->postJson('/api/zone/checkout', ['zone' => 'nowhere', 'items' => [$this->catalogId('decor_bar_stool')]], $this->auth($player['token'], self::SECRET))
             ->assertNotFound()
@@ -74,7 +74,7 @@ class ZoneShopApiTest extends TestCase
 
     public function test_only_the_realtime_server_checks_out_in_a_zone(): void
     {
-        $player = $this->registerAndCreditWallet(100, 'coins');
+        $player = $this->registerAndCreditWallet(100, 'cash');
 
         $this->postJson('/api/zone/checkout', ['zone' => self::ZONE, 'items' => [$this->catalogId('decor_bar_stool')]], $this->auth($player['token']))
             ->assertForbidden()
@@ -98,7 +98,7 @@ class ZoneShopApiTest extends TestCase
 
     public function test_a_buyer_pays_the_full_price_up_to_the_daily_quota_then_the_lower_one(): void
     {
-        $player = $this->registerAndCreditWallet(0, 'coins');
+        $player = $this->registerAndCreditWallet(0, 'cash');
         $this->grant($player['account_id'], 'farm_corn', 7);
         $headers = $this->auth($player['token'], self::SECRET);
 
@@ -112,7 +112,7 @@ class ZoneShopApiTest extends TestCase
 
     public function test_a_buyer_only_buys_what_the_player_holds_and_what_it_lists(): void
     {
-        $player = $this->registerAndCreditWallet(0, 'coins');
+        $player = $this->registerAndCreditWallet(0, 'cash');
         $this->grant($player['account_id'], 'farm_corn', 1);
         $headers = $this->auth($player['token'], self::SECRET);
 
@@ -179,7 +179,7 @@ class ZoneShopApiTest extends TestCase
 
     private function balance(int $accountId): int
     {
-        $walletId = DB::table('wallets')->where('owner_type', 'account')->where('owner_id', $accountId)->where('currency', 'coins')->value('wallet_id');
+        $walletId = DB::table('wallets')->where('owner_type', 'account')->where('owner_id', $accountId)->where('currency', 'cash')->value('wallet_id');
 
         return (int) DB::table('wallet_ledger')->where('wallet_id', $walletId)->sum('delta');
     }

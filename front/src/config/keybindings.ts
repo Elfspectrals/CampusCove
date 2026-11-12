@@ -25,6 +25,7 @@ const BINDABLE_ACTIONS = [
   'putAway',
   'acceptChallenge',
   'declineChallenge',
+  'chat',
   'hotbar1',
   'hotbar2',
   'hotbar3',
@@ -70,6 +71,7 @@ const DEFAULT_BINDINGS: Readonly<Record<BindableAction, readonly string[]>> = {
   /** A Drink Fast challenge from another player at the bar: Y(es) / N(o). */
   acceptChallenge: ['KeyY'],
   declineChallenge: ['KeyN'],
+  chat: ['Enter'],
   hotbar1: ['Digit1'],
   hotbar2: ['Digit2'],
   hotbar3: ['Digit3'],

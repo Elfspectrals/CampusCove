@@ -156,6 +156,24 @@
         1,
         1
       ]
+    },
+    {
+      "id": "atm_town",
+      "kind": "item",
+      "key": "atm",
+      "code": "decor_atm",
+      "forSale": false,
+      "position": [
+        7.0,
+        0.0,
+        10.5
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
     }
   ],
   "areas": [

@@ -68,11 +68,12 @@ class StripeWebhookApiTest extends TestCase
     {
         [$player, $publicId, $sessionId, $paymentIntentId] = $this->paidOrder();
         $coinsBefore = $this->wallet($player['id'])['coins'];
+        $cashBefore = $this->wallet($player['id'])['cash'];
 
         // the player closed the tab after paying: only Stripe calls back
         $this->sessionEvent('checkout.session.completed', $sessionId)->assertOk()->assertJsonPath('outcome', 'processed');
 
-        $this->assertSame(['coins' => $coinsBefore, 'premium' => 650], $this->wallet($player['id']));
+        $this->assertSame(['coins' => $coinsBefore, 'cash' => $cashBefore, 'premium' => 650], $this->wallet($player['id']));
         $order = $this->order($publicId);
         $this->assertSame('paid', $order->status);
         $this->assertNotNull($order->paid_at);

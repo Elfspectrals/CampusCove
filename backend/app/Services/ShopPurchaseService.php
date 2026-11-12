@@ -80,7 +80,7 @@ final class ShopPurchaseService
             $totalDebit = $unitPrice * $quantity;
 
             $accountId = $account->getAuthIdentifier();
-            $wallet = Wallet::lockForAccount((int) $accountId, (string) $currency);
+            $wallet = Wallet::lockForAccount((int) $accountId, $currency === 'coins' ? Wallet::CASH : (string) $currency);
 
             $balance = $wallet->balance();
             // a refunded gem pack whose gems were already spent leaves a debt (PremiumGemLedgerService)
@@ -88,7 +88,7 @@ final class ShopPurchaseService
                 throw new ShopPurchaseRejectedException('premium_debt', 'Your gem balance is negative after a refund. Top up your gems before spending them again.', 422);
             }
             if ($balance < $totalDebit) {
-                throw new ShopPurchaseRejectedException('insufficient_funds', 'Insufficient wallet balance.', 422);
+                throw new ShopPurchaseRejectedException('insufficient_funds', $currency === 'coins' ? 'Not enough cash on you. Withdraw some at an ATM.' : 'Insufficient wallet balance.', 422);
             }
 
             if ($catalogItem->is_unique_per_account) {
@@ -205,9 +205,9 @@ final class ShopPurchaseService
             };
             $totalDebit = $catalogItems->sum(fn (ShopCatalogItem $catalogItem): int => $zonePrice($catalogItem) ?? $this->resolvePricing($catalogItem, 'coins')[1]);
 
-            $wallet = Wallet::lockForAccount((int) $account->getAuthIdentifier(), 'coins');
+            $wallet = Wallet::lockForAccount((int) $account->getAuthIdentifier(), Wallet::CASH);
             if ($wallet->balance() < $totalDebit) {
-                throw new ShopPurchaseRejectedException('not_enough_coins', 'Not enough coins for this basket.', 422);
+                throw new ShopPurchaseRejectedException('not_enough_coins', 'Not enough cash on you for this basket. Withdraw some at an ATM.', 422);
             }
 
             return array_map(

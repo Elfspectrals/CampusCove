@@ -77,6 +77,7 @@ export interface RoomInitPayload {
   houseFurniture?: HouseFurniturePayload[]
   openDoors?: string[]
   pubSecretOpen?: boolean
+  cashBags?: CashBagPayload[]
   /** The API flags this account is_admin: the watch shows its Admin app (the server re-checks every admin message). */
   isAdmin?: boolean
 }
@@ -377,6 +378,39 @@ export interface ZoneSoldPayload {
 }
 
 export interface ZoneSellErrorPayload {
+  message: string
+  code: string
+}
+
+export interface AtmDonePayload {
+  action: 'deposit' | 'withdraw' | 'transfer'
+  bank: number
+  cash?: number
+  request: number | null
+}
+
+export interface AtmErrorPayload {
+  message: string
+  code: string
+  request: number | null
+}
+
+export interface CashBagPayload {
+  id: number
+  x: number
+  y: number
+  z: number
+  expiresAt: number
+}
+
+export interface CashBagPickedPayload {
+  id: number
+  amount: number
+  cash: number
+}
+
+export interface CashBagErrorPayload {
+  id: number | null
   message: string
   code: string
 }

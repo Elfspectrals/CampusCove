@@ -10,7 +10,9 @@ import { parseCharacterLook, type CharacterLook } from '../../avatar/characterLo
 import { createModularCharacter } from '../../avatar/modularCharacter'
 import { WEAR_SLOTS, wearSignature, type WearModels } from '../../avatar/modularCharacterLogic'
 import { createActionBubble, type AvatarAction } from '../../game/actionBubble'
+import { createChatBubble, type ChatBubble } from '../../game/chatBubble'
 import { EYE_HEIGHT } from '../../game/gameRoomConstants'
+import { createNameTag, nameTagVisible, type NameTag } from '../../game/nameTag'
 import {
   advancePunchPose,
   createDamageNumber,
@@ -41,6 +43,8 @@ interface RemoteAvatar {
   userId: string
   pseudo: string
   group: THREE.Group
+  nameTag: NameTag
+  chatBubble: ChatBubble | null
   /** Last position / yaw received; the group glides towards it in `tick`. */
   x: number
   y: number
@@ -166,6 +170,8 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     }
     endFlashOf(entry.group)
     entry.racePint?.dispose()
+    entry.nameTag.dispose()
+    entry.chatBubble?.dispose()
     disposeObject3D(entry.group)
     avatars.delete(sessionId)
     if (sessionByUserId.get(entry.userId) === sessionId) sessionByUserId.delete(entry.userId)
@@ -204,6 +210,8 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
       scene.remove(existing.group)
       endFlashOf(existing.group)
       existing.racePint?.dispose()
+      existing.nameTag.dispose()
+      existing.chatBubble?.dispose()
       disposeObject3D(existing.group)
       avatars.delete(sessionId)
       if (sessionByUserId.get(existing.userId) === sessionId) sessionByUserId.delete(existing.userId)
@@ -231,6 +239,8 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
       userId: data.id,
       pseudo: data.pseudo,
       group,
+      nameTag: createNameTag(group, data.pseudo),
+      chatBubble: null,
       x: data.x,
       y: data.y,
       z: data.z,
@@ -284,12 +294,15 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     scene.remove(latest.group)
     endFlashOf(latest.group)
     latest.racePint?.dispose()
+    latest.nameTag.dispose()
+    latest.chatBubble?.dispose()
     disposeObject3D(latest.group)
     placeAvatar(group, latest.x, latest.y, latest.z, latest.ry)
     scene.add(group)
     const racePint = latest.racePint ? createRacePint(group) : null
     racePint?.setProgress(latest.raceProgress)
-    const rebuilt = { ...latest, group, outfit, punchOffsetX: 0, punchOffsetZ: 0, racePint }
+    const nameTag = createNameTag(group, latest.pseudo)
+    const rebuilt = { ...latest, group, nameTag, chatBubble: null, outfit, punchOffsetX: 0, punchOffsetZ: 0, racePint }
     avatars.set(sessionId, rebuilt)
     applySeat(rebuilt)
   }
@@ -338,6 +351,13 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     if (!entry) return
     bubbles.push(createActionBubble(entry.group, action, code))
     setAvatarEating(entry.group, action)
+  }
+
+  function showChat(sessionId: string, text: string) {
+    const entry = avatars.get(sessionId)
+    if (!entry) return
+    entry.chatBubble?.dispose()
+    entry.chatBubble = createChatBubble(entry.group, text)
   }
 
   /** Drink Fast: the player races with a pint `progress` drunk (0..1), or puts it down (null). */
@@ -416,6 +436,8 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     const t = 1 - Math.exp(-REMOTE_SMOOTHING * dt)
     for (const entry of avatars.values()) {
       const group = entry.group
+      if (entry.chatBubble && !entry.chatBubble.update(dt)) entry.chatBubble = null
+      entry.nameTag.setVisible(nameTagVisible(group.position.x - deps.myPosition.x, group.position.z - deps.myPosition.z))
       group.position.x -= entry.punchOffsetX
       group.position.z -= entry.punchOffsetZ
       const dx = entry.x - group.position.x
@@ -443,5 +465,5 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     }
   }
 
-  return { upsert, updateAppearance, setTarget, setSeated, setPicking, setRacePint, pseudoOf, showAction, showPunch, showHit, remove, clear, tick }
+  return { upsert, updateAppearance, setTarget, setSeated, setPicking, setRacePint, pseudoOf, showAction, showChat, showPunch, showHit, remove, clear, tick }
 }

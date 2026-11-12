@@ -22,7 +22,7 @@ export interface User {
   /** When the API exposes roles (e.g. GET /user). */
   roles?: string[]
   /** Wallet summary from API user payload. */
-  wallet_summary?: { coins: number; premium: number }
+  wallet_summary?: WalletSummary
   /** False when the terms / privacy policy changed since the player accepted them (TermsUpdateDialog asks again). */
   terms_current?: boolean
 }
@@ -37,11 +37,18 @@ function parseRoles(value: unknown): string[] | undefined {
   return roles.length > 0 ? roles : undefined
 }
 
-export function parseWalletSummary(value: unknown): { coins: number; premium: number } | null {
+export interface WalletSummary {
+  coins: number
+  cash: number
+  premium: number
+}
+
+export function parseWalletSummary(value: unknown): WalletSummary | null {
   if (!isRecord(value)) return null
   if (typeof value.coins !== 'number') return null
+  if (typeof value.cash !== 'number') return null
   if (typeof value.premium !== 'number') return null
-  return { coins: value.coins, premium: value.premium }
+  return { coins: value.coins, cash: value.cash, premium: value.premium }
 }
 
 export function parseUser(raw: unknown): User | null {
@@ -91,16 +98,17 @@ function notifyAuthListeners(): void {
 
 export interface CachedWalletBalances {
   coins: number | null
+  cash: number | null
   premium: number | null
 }
 
-function setCachedWalletBalances(next: { coins: number; premium: number }): void {
+function setCachedWalletBalances(next: WalletSummary): void {
   localStorage.setItem(WALLET_BALANCE_KEY, JSON.stringify(next))
 }
 
 /** Cached wallet amounts (updated after purchases). Unknown until first purchase sync. */
 export function getCachedWalletBalances(): CachedWalletBalances {
-  const empty: CachedWalletBalances = { coins: null, premium: null }
+  const empty: CachedWalletBalances = { coins: null, cash: null, premium: null }
   const raw = localStorage.getItem(WALLET_BALANCE_KEY)
   if (!raw) return empty
   try {
@@ -108,6 +116,7 @@ export function getCachedWalletBalances(): CachedWalletBalances {
     if (!isRecord(parsed)) return empty
     return {
       coins: typeof parsed.coins === 'number' ? parsed.coins : null,
+      cash: typeof parsed.cash === 'number' ? parsed.cash : null,
       premium: typeof parsed.premium === 'number' ? parsed.premium : null,
     }
   } catch {
@@ -116,7 +125,7 @@ export function getCachedWalletBalances(): CachedWalletBalances {
 }
 
 /** Persists post-purchase balance for a currency and notifies subscribers. */
-export function applyCachedBalanceAfterPurchase(currency: 'coins' | 'premium', balanceAfter: number): void {
+export function applyCachedBalanceAfterPurchase(currency: keyof WalletSummary, balanceAfter: number): void {
   const next: CachedWalletBalances = { ...getCachedWalletBalances(), [currency]: balanceAfter }
   localStorage.setItem(WALLET_BALANCE_KEY, JSON.stringify(next))
   notifyAuthListeners()
@@ -127,7 +136,7 @@ export function applyCachedBalanceAfterPurchase(currency: 'coins' | 'premium', b
  * wallet_summary, so a later mergeStoredUser cannot bring back the old amounts. Logged out: nothing is written,
  * a late answer must not bring the cache back.
  */
-export function storeWalletSummary(summary: { coins: number; premium: number }): void {
+export function storeWalletSummary(summary: WalletSummary): void {
   const auth = getStoredAuth()
   if (!auth) return
   localStorage.setItem(AUTH_KEY, JSON.stringify({ user: { ...auth.user, wallet_summary: summary }, token: auth.token }))

@@ -106,7 +106,7 @@ export function useZoneBuyers(deps: ZoneBuyersDeps) {
 
   function onSold(data: ZoneSoldPayload): void {
     settle()
-    applyCachedBalanceAfterPurchase('coins', data.balance_after)
+    applyCachedBalanceAfterPurchase('cash', data.balance_after)
     deps.refreshInventory()
     const rest = data.full_price_left > 0 ? `${data.full_price_left} more at full price today` : 'the lower price applies until tomorrow'
     feedback.value = { kind: 'success', text: `Sold ${data.sold} · +${data.coins} coins · ${rest}` }

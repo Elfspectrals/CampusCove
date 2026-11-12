@@ -1,6 +1,7 @@
 // Hunger, thirst and health of the connected players. The live values are kept here (the rules are in
 // survivalStats.ts); the API stores them, owns the food items and bills the hospital (callRealtimeBackend).
 import { callRealtimeBackend, errorPayload } from './backend.ts'
+import { dropCashBag } from './cashBags.ts'
 import { CITY_SPAWN_RADIUS, SURVIVAL_TIME_SCALE } from './config.ts'
 import { toInterior, unitAt } from './movement.ts'
 import { spawnNear } from './players.ts'
@@ -122,12 +123,12 @@ export function tickSurvival(room: GameRoom, dtSeconds: number): void {
   })
 }
 
-export function hurt(room: GameRoom, client: GameClient, player: Player, amount: number, cause: DamageCause): void {
+export function hurt(room: GameRoom, client: GameClient, player: Player, amount: number, cause: DamageCause, attacker: Player | null = null): void {
   if (!player.stats || amount <= 0 || Date.now() < player.knockedOutUntil) return
   setStats(player, { ...player.stats, health: Math.max(0, player.stats.health - amount) })
   client.send('survival_damage', { amount, cause })
   sendStats(client, player)
-  if (player.stats.health <= 0) knockOut(room, client, player, 'health')
+  if (player.stats.health <= 0) knockOut(room, client, player, 'health', attacker?.accountId ?? null)
 }
 
 function blackOut(room: GameRoom, client: GameClient, player: Player): void {
@@ -138,20 +139,26 @@ function blackOut(room: GameRoom, client: GameClient, player: Player): void {
  * Health reached 0: the player passes out, pays the hospital, loses their inventory and clothes (API) and wakes up
  * beside a clinic bed (the town spawn without a clinic).
  */
-function knockOut(room: GameRoom, client: GameClient, player: Player, cause: KnockOutCause): void {
+function knockOut(room: GameRoom, client: GameClient, player: Player, cause: KnockOutCause, killerAccountId: number | null = null): void {
+  const diedAt = { x: player.x, y: player.y, z: player.z }
   player.knockedOutUntil = Date.now() + KNOCKOUT_MS
   player.speedBoostUntil = 0
   player.healOverTime = null
   leavePub(room, player)
   client.send('survival_knocked_out', { durationMs: KNOCKOUT_MS, cause })
-  callRealtimeBackend(player.token, cause === 'alcohol' ? '/survival/hangover' : '/survival/hospital', 'POST')
-    .then((data) => client.send('survival_hospital_bill', {
-      cause,
-      billed: Number(data?.billed) || 0,
-      balanceAfter: typeof data?.balance_after === 'number' ? data.balance_after : null,
-      lostItems: Number(data?.lost?.items) || 0,
-      lostClothes: Number(data?.lost?.clothes) || 0
-    }))
+  const body = cause === 'health' && killerAccountId !== null ? { killer_account_id: killerAccountId } : null
+  callRealtimeBackend(player.token, cause === 'alcohol' ? '/survival/hangover' : '/survival/hospital', 'POST', body)
+    .then((data) => {
+      client.send('survival_hospital_bill', {
+        cause,
+        billed: Number(data?.billed) || 0,
+        balanceAfter: typeof data?.balance_after === 'number' ? data.balance_after : null,
+        lostItems: Number(data?.lost?.items) || 0,
+        lostClothes: Number(data?.lost?.clothes) || 0,
+        lostCash: Number(data?.cash_drop?.amount) || 0
+      })
+      if (cause === 'health') dropCashBag(room, diedAt, data?.cash_drop)
+    })
     .catch((error) => warn('hospital bill failed', error))
   room.clock.setTimeout(() => {
     if (room.players.get(client.sessionId) !== player || !player.stats) return

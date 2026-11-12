@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { actionKeyLabels } from '../../config/keybindings'
 import type { ApartmentInventoryItem } from '../../types/gameRealtime'
+import UiCurrency from '../ui/UiCurrency.vue'
 import UiIcon from '../ui/UiIcon.vue'
 import GamePortionBar from './GamePortionBar.vue'
 
@@ -16,7 +18,11 @@ const props = defineProps<{
   apartmentObjectIds: string[]
   /** objectKey (item code) of each placed object */
   apartmentObjectKeys: Record<string, string>
+  cash: number | null
+  bank: number | null
 }>()
+
+const { t } = useI18n()
 
 const emit = defineEmits<{
   close: []
@@ -143,6 +149,14 @@ function ghostQty(): number {
           </div>
         </div>
         <div class="flex items-center gap-2">
+          <span class="flex flex-col items-end gap-0.5 text-[10px] font-bold uppercase tracking-wider text-mist">
+            {{ t('gameMoney.cash') }}
+            <UiCurrency currency="coins" :amount="cash" :size="14" pill />
+          </span>
+          <span class="flex flex-col items-end gap-0.5 text-[10px] font-bold uppercase tracking-wider text-mist">
+            {{ t('gameMoney.bank') }}
+            <UiCurrency currency="coins" :amount="bank" :size="14" pill />
+          </span>
           <button type="button" class="cc-btn cc-btn-ghost cc-btn-sm" :disabled="loading" @click="emit('refresh')">
             <UiIcon name="refresh" :size="16" /> {{ loading ? 'Loading…' : 'Refresh' }}
           </button>

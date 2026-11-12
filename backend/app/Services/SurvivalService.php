@@ -254,7 +254,7 @@ final class SurvivalService
     public function payClinicHeal(int $accountId): array
     {
         return DB::transaction(function () use ($accountId): array {
-            $wallet = Wallet::lockForAccount($accountId, 'coins');
+            $wallet = Wallet::lockForAccount($accountId, Wallet::CASH);
             $balance = $wallet->balance();
             if ($balance < self::CLINIC_HEAL_FEE) {
                 throw new SurvivalRejectedException('insufficient_funds', 'Insufficient wallet balance.');

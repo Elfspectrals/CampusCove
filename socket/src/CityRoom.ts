@@ -38,6 +38,9 @@ import {
   standUp
 } from './pubGames.ts'
 import { onPunch } from './punch.ts'
+import { onChat } from './chat.ts'
+import { onAtm } from './atm.ts'
+import { onCashBagPick } from './cashBags.ts'
 import {
   createPlayer,
   normalizeAppearanceIds,
@@ -73,6 +76,7 @@ import {
   onTradeRespond
 } from './trade.ts'
 import type {
+  CashBag,
   ClientPayload,
   ClinicBedOccupant,
   GameClient,
@@ -99,6 +103,7 @@ export class CityRoom extends Room implements GameRoom {
   clinicBeds = new Map<string, ClinicBedOccupant>()
   trades = new Map<string, Trade>()
   seats = new Map<string, string>()
+  cashBags = new Map<number, CashBag>()
   pub: PubState = { secretOpen: false, race: null, darts: null, challenges: new Map(), challengeSentAt: new Map() }
 
   onCreate() {
@@ -119,6 +124,9 @@ export class CityRoom extends Room implements GameRoom {
     this.onMessage('clinic_heal', (client) => void onClinicHeal(this, client))
     this.onMessage('jump', (client) => onJump(this.players.get(client.sessionId), Date.now()))
     this.onMessage('punch', (client, payload: ClientPayload) => onPunch(this, client, payload))
+    this.onMessage('chat', (client, payload: ClientPayload) => onChat(this, client, payload))
+    this.onMessage('atm', (client, payload: ClientPayload) => void onAtm(this, client, payload))
+    this.onMessage('cash_bag_pick', (client, payload: ClientPayload) => void onCashBagPick(this, client, payload))
     this.onMessage('trade_nearby', (client) => onTradeNearby(this, client))
     this.onMessage('trade_request', (client, payload: ClientPayload) => onTradeRequest(this, client, payload))
     this.onMessage('trade_respond', (client, payload: ClientPayload) => onTradeRespond(this, client, payload))
@@ -196,6 +204,7 @@ export class CityRoom extends Room implements GameRoom {
       houseFurniture: this.houseFurniture,
       openDoors: [...this.openDoors],
       pubSecretOpen: this.pub.secretOpen,
+      cashBags: [...this.cashBags.values()],
       isAdmin: player.isAdmin
     })
     this.forEachClient((c) => c.send('user_joined', publicPlayer(player)), client)

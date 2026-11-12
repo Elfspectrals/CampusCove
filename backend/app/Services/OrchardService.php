@@ -33,7 +33,7 @@ final class OrchardService
         $apple = $this->apple();
 
         return DB::transaction(function () use ($accountId, $apple): array {
-            Wallet::lockForAccount($accountId, 'coins');
+            Wallet::lockForAccount($accountId, Wallet::CASH);
             $lastPickKey = "orchard_last_pick:{$accountId}";
             $nowMs = now()->getTimestampMs();
             $lastPickMs = Cache::get($lastPickKey);
@@ -57,7 +57,7 @@ final class OrchardService
         $apple = $this->apple();
 
         return DB::transaction(function () use ($accountId, $apple, $quantity): array {
-            Wallet::lockForAccount($accountId, 'coins');
+            Wallet::lockForAccount($accountId, Wallet::CASH);
             $stack = $this->lockStack($accountId, $apple);
             $whole = $stack !== null ? (int) $stack->quantity - ((int) $stack->portions_used > 0 ? 1 : 0) : 0;
             if ($whole < $quantity) {
@@ -67,12 +67,12 @@ final class OrchardService
             $atFullPrice = min($quantity, $fullPriceLeft);
             $coins = $atFullPrice * self::APPLE_PRICE + ($quantity - $atFullPrice) * self::APPLE_PRICE_OVER_DAILY_QUOTA;
             $this->inventory->revokeItem($accountId, $apple, $quantity);
-            $this->coinRewards->credit($accountId, 'orchard_sell', $coins, ['quantity' => $quantity]);
+            $this->coinRewards->creditCash($accountId, 'orchard_sell', $coins, ['quantity' => $quantity]);
 
             return [
                 'sold' => $quantity,
                 'coins' => $coins,
-                'balance_after' => Wallet::lockForAccount($accountId, 'coins')->balance(),
+                'balance_after' => Wallet::lockForAccount($accountId, Wallet::CASH)->balance(),
                 'full_price_left' => $fullPriceLeft - $atFullPrice,
             ];
         });

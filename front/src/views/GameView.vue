@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, shallowReactive, shallowRef, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import type { Room } from '@colyseus/sdk'
 import {
@@ -11,6 +12,8 @@ import {
 } from '../api/characterCosmetics'
 import { fetchHousingUnits } from '../api/housing'
 import { applyCachedBalanceAfterPurchase, clearAuth, getStoredAuth } from '../api/session'
+import { refreshCashAndBank } from '../api/bank'
+import { useWalletBalances } from '../composables/useWalletBalances'
 import GameHitMarker from '../components/game/GameHitMarker.vue'
 import GameHudToolbar from '../components/game/GameHudToolbar.vue'
 import GameInteractionPrompt from '../components/game/GameInteractionPrompt.vue'
@@ -22,8 +25,10 @@ import GamePointerLockOverlay from '../components/game/GamePointerLockOverlay.vu
 import GameSettingsDialog from '../components/game/GameSettingsDialog.vue'
 import GameStoreItemCard from '../components/game/GameStoreItemCard.vue'
 import GameZoneBuyerMenu from '../components/game/GameZoneBuyerMenu.vue'
+import GameAtmScreen from '../components/game/GameAtmScreen.vue'
 import GamePubMenu from '../components/game/GamePubMenu.vue'
 import GamePubSecretDialog from '../components/game/GamePubSecretDialog.vue'
+import GameChat from '../components/game/GameChat.vue'
 import GameDrunkEffects from '../components/game/GameDrunkEffects.vue'
 import GameDrinkFast from '../components/game/GameDrinkFast.vue'
 import GamePubChallenge from '../components/game/GamePubChallenge.vue'
@@ -54,6 +59,8 @@ import { useMinimap } from '../composables/game/useMinimap'
 import { usePlayerInventory } from '../composables/game/usePlayerInventory'
 import { useOrchard } from '../composables/game/useOrchard'
 import { useZoneBuyers } from '../composables/game/useZoneBuyers'
+import { useAtm } from '../composables/game/useAtm'
+import { useCashBags } from '../composables/game/useCashBags'
 import { useFarm } from '../composables/game/useFarm'
 import { useMallCellTemplates, type CellStoreEntry } from '../composables/game/useMallCellTemplates'
 import { useZoneDecor } from '../composables/game/useZoneDecor'
@@ -466,6 +473,31 @@ const zoneBuyers = useZoneBuyers({
   buyers: () => zoneDecor.buyers.value,
 })
 const { openBuyer: zoneBuyerOpen, selling: zoneBuyerSelling, feedback: zoneBuyerFeedback } = zoneBuyers
+const atm = useAtm({
+  myPosition,
+  getCamera,
+  canvasRef,
+  gameRoomRef,
+  promptsHidden: () => inventoryOpen.value || !canUsePub(),
+  atms: () => zoneDecor.atms.value,
+  promptLabel: () => t('atm.prompt'),
+  timeoutMessage: () => t('atm.timeout'),
+})
+const { open: atmOpen } = atm
+const cashBags = useCashBags({
+  myPosition,
+  getScene,
+  getCamera,
+  canvasRef,
+  gameRoomRef,
+  promptsHidden: () => inventoryOpen.value || !canUsePub(),
+  promptLabel: () => t('cashBag.prompt'),
+  say: (text) => survival.say(text),
+  pickedMessage: (amount) => t('cashBag.picked', { amount }),
+})
+watch(atmOpen, (open) => {
+  if (!open && !document.pointerLockElement) requestPointerLock()
+})
 const farm = useFarm({
   myPosition,
   getCamera,
@@ -519,7 +551,7 @@ const interactions = useInteractionTargets({
     if (activeFurniture.value?.store.hasCounter.value) activeFurniture.value.store.toggleTarget(useWithShift)
     else openStorePurchase()
   },
-  sources: [pub.source, pubChallenge.source, pubGames.source, seats.source, orchard.source, farm.source, zoneBuyers.source],
+  sources: [pub.source, pubChallenge.source, pubGames.source, seats.source, orchard.source, farm.source, zoneBuyers.source, atm.source, cashBags.source],
 })
 const { doorPrompt } = interactions
 
@@ -552,7 +584,7 @@ function heldModel(): { url: string | null; scale: number } {
 const trade = useTrade({
   gameRoomRef,
   refreshInventory: () => refreshOwnedItems(),
-  onCoins: (balance) => applyCachedBalanceAfterPurchase('coins', balance),
+  onCoins: (balance) => applyCachedBalanceAfterPurchase('cash', balance),
   onClothesChanged: () => {
     for (const { store } of furnitureStores) void store.refreshOwned()
     void fetchCharacterCosmetics().then(onWardrobeChanged).catch(() => {
@@ -608,6 +640,10 @@ const survival = useSurvival({
   pointerLocked,
   selectedItem,
   refreshInventory: () => refreshOwnedItems(),
+  onCashLost: (amount) => {
+    applyCachedBalanceAfterPurchase('cash', 0)
+    survival.say(t('cashBag.dropped', { amount }))
+  },
   onBelongingsLost: (clothes) => {
     refreshOwnedItems()
     if (clothes) for (const { store } of furnitureStores) void store.refreshOwned()
@@ -882,13 +918,28 @@ const pauseMenuOpen = computed(
     !tradeUiOpen.value &&
     !pubUiOpen.value &&
     !zoneBuyerOpen.value &&
+    !atmOpen.value &&
     !settingsOpen.value &&
     !creator.value,
 )
 /** Back in the game with the menu closed, but the browser hasn't given the pointer back yet. */
 const resumedWithoutLock = computed(() => pauseMenuOpen.value && pauseDismissed.value)
 
+const { t } = useI18n()
+const walletBalances = useWalletBalances()
+
+watch(inventoryOpen, (open) => {
+  if (open) refreshCashAndBank().catch((err) => console.error('[bank] could not load cash and bank', err))
+})
+
+const chatOpen = ref(false)
+
+function sendChat(text: string): void {
+  gameRoomRef.value?.send('chat', { text })
+}
+
 function handleExtraKeyDown(e: KeyboardEvent): boolean {
+  if (chatOpen.value || atmOpen.value) return true
   // the character screen owns the keyboard (Esc closes the editor)
   if (creator.value) return true
   // the watch and the trade window take the keyboard (coins field, Esc): no game key behind them
@@ -912,6 +963,11 @@ function handleExtraKeyDown(e: KeyboardEvent): boolean {
   if (runUseOrPunch(e.code, e.repeat, e.shiftKey)) return true
   if (matches('characterEditor', e.code) && !e.repeat) {
     void openCharacterEditor()
+    return true
+  }
+  if (matches('chat', e.code) && !e.repeat) {
+    e.preventDefault()
+    chatOpen.value = true
     return true
   }
   if (matches('buyHouse', e.code) && !e.repeat) {
@@ -978,6 +1034,7 @@ const movement = useGameMovement({
     placement.tick(dt)
     mallCellTemplates.tick(dt, myPosition)
     zoneDecor.tick(dt, myPosition)
+    cashBags.tick(dt)
     for (const { store } of furnitureStores) store.update(dt)
     threadsMusic.update(dt, inThreads.value)
     zoneMusic?.update(dt, (currentHouseKey.value === null || currentHouseKey.value === zoneMusicKey) && insideBounds(zoneMusicBounds, myPosition))
@@ -1065,6 +1122,8 @@ const realtime = useGameRealtime({
   pubGames: pubGames.handlers,
   orchard: orchard.handlers,
   zoneBuyers: zoneBuyers.handlers,
+  atm: atm.handlers,
+  cashBags: cashBags.handlers,
   farm: farm.handlers,
   pubChallenge: pubChallenge.handlers,
 })
@@ -1348,6 +1407,8 @@ const crosshairClass = computed(() => {
       :can-edit-apartment="canDecorate"
       :apartment-object-ids="apartmentObjectIds"
       :apartment-object-keys="apartmentObjectKeys"
+      :cash="walletBalances.cash"
+      :bank="walletBalances.coins"
       @close="closeInventory"
       @refresh="refreshOwnedItems"
       @cancel-cursor="cancelCursorPick"
@@ -1470,6 +1531,7 @@ const crosshairClass = computed(() => {
       @confirm="trade.confirm"
       @cancel="trade.cancel"
     />
+    <GameAtmScreen v-if="atmOpen" :screen="atm.screen.value" :pending="atm.pending.value" :feedback="atm.feedback.value" @run="atm.run" @clear-feedback="atm.clearFeedback" @close="atm.close" />
     <GameZoneBuyerMenu
       v-if="zoneBuyerOpen"
       :area="zoneBuyerOpen.area"
@@ -1505,6 +1567,7 @@ const crosshairClass = computed(() => {
       @order="pub.order"
       @close="pub.close"
     />
+    <GameChat :open="chatOpen" @send="sendChat" @close="chatOpen = false" />
     <GamePubSecretDialog
       v-if="pubSecretOpen"
       :greeting="pub.bouncerGreeting"

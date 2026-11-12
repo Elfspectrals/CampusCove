@@ -21,8 +21,8 @@ class SetMoney extends Command
     public function handle(): int
     {
         $currency = mb_strtolower(trim((string) $this->argument('currency')));
-        if (! in_array($currency, ['coins', 'premium'], true)) {
-            $this->error("Invalid currency '{$this->argument('currency')}'. Use 'coins' or 'premium'.");
+        if (! in_array($currency, ['coins', 'cash', 'premium'], true)) {
+            $this->error("Invalid currency '{$this->argument('currency')}'. Use 'coins' (bank), 'cash' or 'premium'.");
 
             return self::FAILURE;
         }

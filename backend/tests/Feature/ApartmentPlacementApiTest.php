@@ -345,6 +345,7 @@ class ApartmentPlacementApiTest extends TestCase
         $token = (string) $reg->json('token');
 
         $this->setWalletBalance($accountId, $currency, $coins);
+        $this->setWalletBalance($accountId, 'cash', $coins);
 
         return ['token' => $token, 'account_id' => $accountId];
     }

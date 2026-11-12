@@ -134,8 +134,8 @@ class SurvivalApiTest extends TestCase
         $this->postJson('/api/survival/hospital', [], $this->auth($poor['token'], self::SECRET))
             ->assertJsonPath('billed', 0);
 
-        $this->assertSame(500 - SurvivalService::HOSPITAL_FEE, $this->balance($rich['account_id']));
-        $this->assertSame(0, $this->balance($poor['account_id']));
+        $this->assertSame(500 - SurvivalService::HOSPITAL_FEE, $this->balance($rich['account_id'], 'coins'));
+        $this->assertSame(0, $this->balance($poor['account_id'], 'coins'));
     }
 
     public function test_passing_out_loses_the_inventory_and_the_worn_clothes(): void
@@ -205,7 +205,7 @@ class SurvivalApiTest extends TestCase
 
     public function test_clothes_lost_when_passing_out_can_be_bought_again(): void
     {
-        $player = $this->registerAndCreditWallet(1000, 'coins');
+        $player = $this->registerAndCreditWallet(1000, 'cash');
         $catalogId = DB::table('shop_catalog_items')
             ->join('item_defs', 'item_defs.item_def_id', '=', 'shop_catalog_items.item_def_id')
             ->where('item_defs.code', 'COS_WEAR_TOP_HOODIE')
@@ -218,12 +218,13 @@ class SurvivalApiTest extends TestCase
             'top' => (int) ItemDef::query()->where('code', 'COS_WEAR_TOP_HOODIE')->value('item_def_id'),
         ]);
         $this->postJson('/api/survival/hospital', [], $this->auth($player['token'], self::SECRET))->assertJsonPath('lost.clothes', 1);
+        $this->setWalletBalance($player['account_id'], 'cash', 1000);
         $buy()->assertSuccessful();
     }
 
     public function test_clinic_heal_charges_the_fixed_fee(): void
     {
-        $player = $this->registerAndCreditWallet(100, 'coins');
+        $player = $this->registerAndCreditWallet(100, 'cash');
 
         $this->postJson('/api/survival/clinic-heal', [], $this->auth($player['token'], self::SECRET))
             ->assertOk()
@@ -238,7 +239,7 @@ class SurvivalApiTest extends TestCase
 
     public function test_clinic_heal_is_refused_without_enough_coins(): void
     {
-        $player = $this->registerAndCreditWallet(SurvivalService::CLINIC_HEAL_FEE - 1, 'coins');
+        $player = $this->registerAndCreditWallet(SurvivalService::CLINIC_HEAL_FEE - 1, 'cash');
 
         $this->postJson('/api/survival/clinic-heal', [], $this->auth($player['token'], self::SECRET))
             ->assertStatus(422)
@@ -250,7 +251,7 @@ class SurvivalApiTest extends TestCase
 
     public function test_clinic_heal_needs_the_realtime_server(): void
     {
-        $player = $this->registerAndCreditWallet(100, 'coins');
+        $player = $this->registerAndCreditWallet(100, 'cash');
 
         $this->postJson('/api/survival/clinic-heal', [], $this->auth($player['token']))
             ->assertForbidden()
@@ -296,7 +297,7 @@ class SurvivalApiTest extends TestCase
 
     public function test_food_is_sold_for_coins(): void
     {
-        $player = $this->registerAndCreditWallet(100, 'coins');
+        $player = $this->registerAndCreditWallet(100, 'cash');
         $catalogId = DB::table('shop_catalog_items')
             ->join('item_defs', 'item_defs.item_def_id', '=', 'shop_catalog_items.item_def_id')
             ->where('item_defs.code', 'food_croissant')
@@ -344,9 +345,9 @@ class SurvivalApiTest extends TestCase
         return collect($items)->firstWhere('code', $code);
     }
 
-    private function balance(int $accountId): int
+    private function balance(int $accountId, string $currency = 'cash'): int
     {
-        $walletId = DB::table('wallets')->where('owner_type', 'account')->where('owner_id', $accountId)->where('currency', 'coins')->value('wallet_id');
+        $walletId = DB::table('wallets')->where('owner_type', 'account')->where('owner_id', $accountId)->where('currency', $currency)->value('wallet_id');
 
         return (int) DB::table('wallet_ledger')->where('wallet_id', $walletId)->sum('delta');
     }
