@@ -60,6 +60,7 @@ import { useZoneDecor } from '../composables/game/useZoneDecor'
 import { usePub } from '../composables/game/usePub'
 import { usePubChallenge } from '../composables/game/usePubChallenge'
 import { usePubGames } from '../composables/game/usePubGames'
+import { useRenderStats } from '../composables/game/useRenderStats'
 import { useRoomEnvironment } from '../composables/game/useRoomEnvironment'
 import { useSeats } from '../composables/game/useSeats'
 import { useSurvival } from '../composables/game/useSurvival'
@@ -138,6 +139,7 @@ function insideBounds(bounds: WorldBounds | null, at: { x: number; z: number }):
   return bounds !== null && at.x >= bounds.minX && at.x <= bounds.maxX && at.z >= bounds.minZ && at.z <= bounds.maxZ
 }
 const getRenderer = () => game?.renderer
+const renderStats = useRenderStats(getRenderer)
 
 // ---------------------------------------------------------------- house decoration
 
@@ -972,6 +974,7 @@ const movement = useGameMovement({
   trySpendJump: () => punch.trySpendJump(),
   trySpendSprint: (dt, wasSprinting) => punch.trySpendSprint(dt, wasSprinting),
   onBeforeRender: (dt) => {
+    if (import.meta.env.DEV) renderStats.tick(dt)
     positionLabel.value = formatPosition()
     realtime.tickRemoteAvatars(dt)
     currentHouseKey.value = houseKeyAt(myPosition.x, myPosition.z)
@@ -1247,6 +1250,7 @@ const crosshairClass = computed(() => {
     />
     <GameHudToolbar
       :position-label="positionLabel"
+      :render-stats="renderStats.label.value"
       :show-graphics-toggle="!pointerLocked"
       :place-label="activeFurniture?.brand"
       :reduced-effects="reducedEffects"

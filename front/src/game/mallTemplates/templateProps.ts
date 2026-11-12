@@ -1,12 +1,14 @@
 import * as THREE from 'three'
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js'
 import { DEFAULT_SLOT_COLORS } from '../../api/characterCosmetics'
-import { setAvatarSeated } from '../../avatar/glbCharacter'
+import { disposeAvatarAnimations, setAvatarSeated } from '../../avatar/glbCharacter'
 import { createModularCharacter } from '../../avatar/modularCharacter'
 import type { SlotHexes } from '../../avatar/modularCharacterLogic'
+import { bakeStaticFigure } from '../../avatar/staticFigure'
 import { decorModelUrl } from '../assets/catalog'
 import { createGltfLoader } from '../gltfLoaderFactory'
 import { outfitModels } from '../store/storeClerk'
+import { mergeStaticMeshes } from '../town/mergeStaticMeshes'
 import { applyLook, type OwnParts } from './templateSurfaces'
 import { CROPS_URL, fieldPlantsLocal, parseCrops, type CropTable } from '../crops/crops.ts'
 import { ANIMALS_URL, ANIMAL_CLIPS, animalModelUrl, parseAnimals, type AnimalClip, type AnimalTable } from '../animals/animals.ts'
@@ -90,7 +92,10 @@ async function createMannequin(mannequin: MannequinProp): Promise<THREE.Object3D
       if (typeof obj.userData.region === 'string') obj.visible = false
     })
   }
-  return character
+  const figure = bakeStaticFigure(character)
+  mergeStaticMeshes(figure, new Set())
+  disposeAvatarAnimations(character)
+  return figure
 }
 
 async function createNpc(npc: NpcProp): Promise<THREE.Object3D> {
