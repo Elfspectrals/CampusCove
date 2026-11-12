@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { StoreTarget } from '../../composables/game/useFurnitureStore'
 import { itemRarity, rarityClass } from '../../utils/itemShopPresentation'
 import UiCurrency from '../ui/UiCurrency.vue'
@@ -10,9 +11,11 @@ const props = defineProps<{
   feedback: { kind: 'success' | 'error'; text: string } | null
   /** Store name in the header; Cove Home when omitted. */
   brand?: string
-  /** The store sells through a basket paid at the counter (a click adds a copy) instead of buying at once. */
-  basket?: boolean
+  /** The store sells through the cart paid at its cashier (a click adds one) instead of buying at once. */
+  cart?: boolean
 }>()
+
+const { t } = useI18n()
 
 const previewSrc = computed(() => props.target.item?.preview_image ?? `/assets/decor/${props.target.display.key}/preview.png`)
 const dimensions = computed(() => {
@@ -21,8 +24,8 @@ const dimensions = computed(() => {
 })
 const rarity = computed(() => (props.target.item ? itemRarity(props.target.item) : null))
 const actionLabel = computed(() => {
-  if (!props.basket) return 'Click to buy'
-  return props.target.inBasket ? 'In basket · click to put back' : 'Click to add to basket'
+  if (!props.cart) return 'Click to buy'
+  return props.target.inCart > 0 ? t('cart.clickMore', { n: props.target.inCart }) : t('cart.click')
 })
 </script>
 

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Exceptions\ShopPurchaseRejectedException;
+use App\Http\Requests\ShopCheckoutRequest;
 use App\Http\Resources\ShopCatalogItemResource;
 use App\Http\Resources\ShopPurchaseResource;
 use App\Models\Account;
@@ -94,21 +95,12 @@ class ShopController extends Controller
         ]);
     }
 
-    public function checkout(Request $request, ShopPurchaseService $shopPurchaseService, ReferralService $referrals): JsonResponse
+    public function checkout(ShopCheckoutRequest $request, ShopPurchaseService $shopPurchaseService, ReferralService $referrals): JsonResponse
     {
-        $validated = $request->validate([
-            'items' => 'present|array',
-            'items.*.shop_catalog_item_id' => 'required|integer|min:1',
-            'currency' => 'required|string|in:coins',
-        ]);
-
         /** @var Account $account */
         $account = $request->user();
 
-        $results = $shopPurchaseService->checkoutWithCoins(
-            $account,
-            array_map(fn (array $line): int => (int) $line['shop_catalog_item_id'], $validated['items'])
-        );
+        $results = $shopPurchaseService->checkoutWithCoins($account, $request->quantities(), $request->checkoutKey());
 
         $referrals->checkQualification((int) $account->getAuthIdentifier());
 

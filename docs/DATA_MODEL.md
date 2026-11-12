@@ -167,6 +167,7 @@ erDiagram
     SHOP_CATALOG_ITEMS ||--o{ ACCOUNT_SHOP_PURCHASES : vendu
     ACCOUNTS ||--o{ ACCOUNT_SHOP_PURCHASES : achète
     TRANSACTIONS ||--|| ACCOUNT_SHOP_PURCHASES : "débit"
+    ACCOUNTS ||--o{ SHOP_CHECKOUTS : "paie un panier"
 
     ITEM_DEFS {
         bigint item_def_id PK
@@ -215,7 +216,16 @@ erDiagram
         bigint total_debit
         currency_code currency
     }
+    SHOP_CHECKOUTS {
+        bigint account_id PK "FK"
+        uuid checkout_key PK "clé du client, rejouée sans repayer"
+        jsonb purchase_ids
+        int balance_after
+    }
 ```
+
+`shop_checkouts` rend un paiement de panier idempotent : la même `checkout_key` renvoie le premier résultat
+(`docs/SHOP_CART.md`).
 
 ## 4. Monde & logement
 

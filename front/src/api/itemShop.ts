@@ -209,10 +209,11 @@ export async function purchaseShopItem(body: PurchaseShopItemBody): Promise<Purc
   }
 }
 
-export async function checkoutShopBasket(shopCatalogItemIds: number[]): Promise<{ balanceAfter: number }> {
+/** Pays one shop's cart lines in cash; the same `checkoutKey` sent again returns the first payment (docs/SHOP_CART.md). */
+export async function checkoutShopBasket(lines: Array<{ id: number; quantity: number }>, checkoutKey: string): Promise<{ balanceAfter: number }> {
   const data = await apiRequest('/shop/checkout', {
     method: 'POST',
-    body: { currency: 'coins', items: shopCatalogItemIds.map((id) => ({ shop_catalog_item_id: id })) },
+    body: { checkout_key: checkoutKey, items: lines.map(({ id, quantity }) => ({ shop_catalog_item_id: id, quantity })) },
   })
   if (!isRecord(data) || typeof data.balance_after !== 'number') throw new Error('Invalid checkout response')
   applyCachedBalanceAfterPurchase('cash', data.balance_after)

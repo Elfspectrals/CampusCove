@@ -189,7 +189,7 @@ export function useZoneDecor(deps: ZoneDecorDeps) {
 
   let checkoutRequests = 0
 
-  function zoneCheckout(zone: string, items: number[]): Promise<void> {
+  function zoneCheckout(zone: string, items: Array<{ id: number; quantity: number }>, checkoutKey: string): Promise<void> {
     const room = deps.getGameRoom()
     if (!room) return Promise.reject(new Error('Not connected to the game server.'))
     const request = ++checkoutRequests
@@ -214,7 +214,7 @@ export function useZoneDecor(deps: ZoneDecorDeps) {
         stop()
         reject(new Error('The cashier did not answer. Check your coins and inventory before paying again.'))
       }, CHECKOUT_TIMEOUT_MS)
-      room.send('zone_checkout', { zone, items, request })
+      room.send('zone_checkout', { zone, checkoutKey, items, request })
     })
   }
 
@@ -231,11 +231,11 @@ export function useZoneDecor(deps: ZoneDecorDeps) {
       inStore: () => currentStoreKey.value === key,
       store: {
         key,
+        name: area.name,
         layout,
         modelUrl: (display) => itemModelUrl(display),
-        priceTags: area.priceTags ?? false,
         coinPrices: new Map(Object.entries(zonePrices(decor))),
-        checkout: (items) => zoneCheckout(zone.key, items),
+        checkout: (items, checkoutKey) => zoneCheckout(zone.key, items, checkoutKey),
         clerkColors: npcColors(vendor),
         clerkOutfit: vendor.outfit,
         clerkBrighten: false,

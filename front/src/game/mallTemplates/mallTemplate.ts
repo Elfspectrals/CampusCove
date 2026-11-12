@@ -349,7 +349,6 @@ function mannequinDisplays(prop: MannequinProp): StoreDisplay[] {
       yaw: prop.yaw,
       size: PIECE_SIZE.map((v, i) => v * prop.scale[i]!) as Vec3,
       figure: { prop: prop.id, slot: piece.slot },
-      tag: { position: prop.position, yaw: prop.yaw },
     }]
   })
 }
@@ -372,7 +371,6 @@ export function templateStoreLayout(template: MallTemplate, modelSizes: Readonly
       size: size.map((v, i) => v * prop.scale[i]!) as Vec3,
       scale: prop.scale,
       ...(prop.stack ? { stack: prop.stack } : {}),
-      tag: { position: prop.position, yaw: prop.yaw },
     }]
   })
   return {

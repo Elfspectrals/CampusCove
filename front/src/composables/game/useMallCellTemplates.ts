@@ -177,9 +177,9 @@ export function useMallCellTemplates(deps: MallCellTemplatesDeps) {
       inStore: () => currentStoreKey.value === key,
       store: {
         key,
+        name: template.name,
         layout,
         modelUrl: (display) => itemModelUrl(display),
-        priceTags: false,
         ...(vendor ? { clerkColors: npcColors(vendor), clerkOutfit: vendor.outfit, clerkBrighten: false } : {}),
       },
     })

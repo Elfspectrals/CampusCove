@@ -2,8 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Services\ShopPurchaseService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Illuminate\Testing\TestResponse;
 use Tests\Concerns\SetsWalletBalance;
 use Tests\TestCase;
 
@@ -426,13 +429,7 @@ class ShopApiTest extends TestCase
         $top = $this->catalogRow('COS_WEAR_TOP_VARSITY');
         ['token' => $token, 'account_id' => $accountId] = $this->registerAndCreditWallet(1_000, 'cash');
 
-        $response = $this->postJson('/api/shop/checkout', [
-            'items' => [
-                ['shop_catalog_item_id' => $headset->shop_catalog_item_id],
-                ['shop_catalog_item_id' => $top->shop_catalog_item_id],
-            ],
-            'currency' => 'coins',
-        ], ['Authorization' => 'Bearer '.$token]);
+        $response = $this->checkout($token, [$headset->shop_catalog_item_id => 1, $top->shop_catalog_item_id => 1]);
 
         $total = (int) $headset->coins_price + (int) $top->coins_price;
         $response->assertOk()
@@ -459,13 +456,7 @@ class ShopApiTest extends TestCase
         $coins = (int) $headset->coins_price + (int) $top->coins_price - 1;
         ['token' => $token, 'account_id' => $accountId] = $this->registerAndCreditWallet($coins, 'cash');
 
-        $this->postJson('/api/shop/checkout', [
-            'items' => [
-                ['shop_catalog_item_id' => $headset->shop_catalog_item_id],
-                ['shop_catalog_item_id' => $top->shop_catalog_item_id],
-            ],
-            'currency' => 'coins',
-        ], ['Authorization' => 'Bearer '.$token])
+        $this->checkout($token, [$headset->shop_catalog_item_id => 1, $top->shop_catalog_item_id => 1])
             ->assertStatus(422)
             ->assertJsonPath('code', 'not_enough_coins');
 
@@ -483,13 +474,7 @@ class ShopApiTest extends TestCase
         $this->postJson('/api/shop/purchase', ['shop_item_public_id' => $headset->public_id], $headers)->assertOk();
         $balanceBefore = $this->coinBalance($accountId);
 
-        $this->postJson('/api/shop/checkout', [
-            'items' => [
-                ['shop_catalog_item_id' => $top->shop_catalog_item_id],
-                ['shop_catalog_item_id' => $headset->shop_catalog_item_id],
-            ],
-            'currency' => 'coins',
-        ], $headers)
+        $this->checkout($token, [$top->shop_catalog_item_id => 1, $headset->shop_catalog_item_id => 1])
             ->assertStatus(422)
             ->assertJsonPath('code', 'already_owned');
 
@@ -505,15 +490,11 @@ class ShopApiTest extends TestCase
         $headset = $this->catalogRow('COS_WEAR_HEAD_ACCESSORY_GAMER');
         ['token' => $token, 'account_id' => $accountId] = $this->registerAndCreditWallet(1_000, 'cash');
 
-        $this->postJson('/api/shop/checkout', [
-            'items' => [
-                ['shop_catalog_item_id' => $headset->shop_catalog_item_id],
-                ['shop_catalog_item_id' => $headset->shop_catalog_item_id],
-            ],
-            'currency' => 'coins',
-        ], ['Authorization' => 'Bearer '.$token])
+        $line = ['shop_catalog_item_id' => $headset->shop_catalog_item_id, 'quantity' => 1];
+
+        $this->postJson('/api/shop/checkout', ['checkout_key' => (string) Str::uuid(), 'items' => [$line, $line]], ['Authorization' => 'Bearer '.$token])
             ->assertStatus(422)
-            ->assertJsonPath('code', 'duplicate_item');
+            ->assertJsonValidationErrors('items.1.shop_catalog_item_id');
 
         $this->assertSame(1_000, $this->coinBalance($accountId));
     }
@@ -522,9 +503,68 @@ class ShopApiTest extends TestCase
     {
         $token = $this->registerAndCreditWallet(1_000, 'cash')['token'];
 
-        $this->postJson('/api/shop/checkout', ['items' => [], 'currency' => 'coins'], ['Authorization' => 'Bearer '.$token])
+        $this->postJson('/api/shop/checkout', ['checkout_key' => (string) Str::uuid(), 'items' => []], ['Authorization' => 'Bearer '.$token])
             ->assertStatus(422)
-            ->assertJsonPath('code', 'empty_basket');
+            ->assertJsonValidationErrors('items');
+    }
+
+    public function test_checkout_needs_a_checkout_key(): void
+    {
+        $top = $this->catalogRow('COS_WEAR_TOP_VARSITY');
+        $token = $this->registerAndCreditWallet(1_000, 'cash')['token'];
+
+        $this->postJson('/api/shop/checkout', ['items' => [['shop_catalog_item_id' => $top->shop_catalog_item_id, 'quantity' => 1]]], ['Authorization' => 'Bearer '.$token])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('checkout_key');
+    }
+
+    public function test_checkout_sells_clothes_one_at_a_time(): void
+    {
+        $top = $this->catalogRow('COS_WEAR_TOP_VARSITY');
+        ['token' => $token, 'account_id' => $accountId] = $this->registerAndCreditWallet(1_000, 'cash');
+
+        $this->checkout($token, [$top->shop_catalog_item_id => 2])
+            ->assertStatus(422)
+            ->assertJsonPath('code', 'invalid_quantity');
+
+        $this->assertSame(1_000, $this->coinBalance($accountId));
+    }
+
+    public function test_checkout_refuses_a_quantity_over_the_line_cap(): void
+    {
+        $top = $this->catalogRow('COS_WEAR_TOP_VARSITY');
+        $token = $this->registerAndCreditWallet(1_000, 'cash')['token'];
+
+        $this->checkout($token, [$top->shop_catalog_item_id => ShopPurchaseService::MAX_LINE_QUANTITY + 1])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('items.0.quantity');
+    }
+
+    public function test_the_same_checkout_sent_twice_pays_once(): void
+    {
+        $top = $this->catalogRow('COS_WEAR_TOP_VARSITY');
+        ['token' => $token, 'account_id' => $accountId] = $this->registerAndCreditWallet(1_000, 'cash');
+        $key = (string) Str::uuid();
+
+        $first = $this->checkout($token, [$top->shop_catalog_item_id => 1], $key)->assertOk();
+        $this->checkout($token, [$top->shop_catalog_item_id => 1], $key)
+            ->assertOk()
+            ->assertJsonPath('balance_after', $first->json('balance_after'))
+            ->assertJsonPath('purchases.0.purchase_id', $first->json('purchases.0.purchase_id'));
+
+        $this->assertSame(1_000 - (int) $top->coins_price, $this->coinBalance($accountId));
+        $this->assertSame(1, DB::table('account_shop_purchases')->where('account_id', $accountId)->count());
+    }
+
+    /** @param  array<int, int>  $quantities  shop_catalog_item_id => quantity */
+    private function checkout(string $token, array $quantities, ?string $key = null): TestResponse
+    {
+        $items = [];
+        foreach ($quantities as $id => $quantity) {
+            $items[] = ['shop_catalog_item_id' => $id, 'quantity' => $quantity];
+        }
+
+        return $this->postJson('/api/shop/checkout', ['checkout_key' => $key ?? (string) Str::uuid(), 'items' => $items], ['Authorization' => 'Bearer '.$token]);
     }
 
     private function catalogRow(string $code): object

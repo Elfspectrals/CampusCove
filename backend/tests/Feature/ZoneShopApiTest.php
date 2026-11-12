@@ -10,6 +10,7 @@ use App\Support\SaleCurve;
 use Database\Seeders\ShopSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Tests\Concerns\SetsWalletBalance;
 use Tests\TestCase;
 
@@ -45,19 +46,45 @@ class ZoneShopApiTest extends TestCase
         $player = $this->registerAndCreditWallet(100, 'cash');
         $stool = $this->catalogId('decor_bar_stool');
 
-        $this->postJson('/api/zone/checkout', ['zone' => self::ZONE, 'items' => [$stool]], $this->auth($player['token'], self::SECRET))
+        $this->postJson('/api/zone/checkout', $this->basket(self::ZONE, [$stool => 1]), $this->auth($player['token'], self::SECRET))
             ->assertOk()
             ->assertJsonPath('balance_after', 95)
             ->assertJsonPath('purchases.0.unit_price', 5);
         $this->assertSame(95, $this->balance($player['account_id']));
     }
 
+    public function test_a_zone_checkout_charges_each_line_times_its_quantity(): void
+    {
+        $player = $this->registerAndCreditWallet(100, 'cash');
+        $stool = $this->catalogId('decor_bar_stool');
+
+        $this->postJson('/api/zone/checkout', $this->basket(self::ZONE, [$stool => 3]), $this->auth($player['token'], self::SECRET))
+            ->assertOk()
+            ->assertJsonPath('balance_after', 85)
+            ->assertJsonPath('purchases.0.quantity', 3)
+            ->assertJsonPath('purchases.0.unit_price', 5);
+        $this->assertSame(85, $this->balance($player['account_id']));
+    }
+
+    public function test_a_zone_checkout_retried_with_the_same_key_pays_once(): void
+    {
+        $player = $this->registerAndCreditWallet(100, 'cash');
+        $basket = $this->basket(self::ZONE, [$this->catalogId('decor_bar_stool') => 2]);
+
+        $this->postJson('/api/zone/checkout', $basket, $this->auth($player['token'], self::SECRET))->assertOk();
+        $this->postJson('/api/zone/checkout', $basket, $this->auth($player['token'], self::SECRET))
+            ->assertOk()
+            ->assertJsonPath('balance_after', 90);
+        $this->assertSame(90, $this->balance($player['account_id']));
+        $this->assertSame(1, DB::table('account_shop_purchases')->where('account_id', $player['account_id'])->count());
+    }
+
     public function test_an_item_the_zone_does_not_sell_buys_nothing(): void
     {
         $player = $this->registerAndCreditWallet(1_000, 'cash');
-        $items = [$this->catalogId('decor_bar_stool'), $this->catalogId('decor_sofa_classic')];
+        $items = [$this->catalogId('decor_bar_stool') => 1, $this->catalogId('decor_sofa_classic') => 1];
 
-        $this->postJson('/api/zone/checkout', ['zone' => self::ZONE, 'items' => $items], $this->auth($player['token'], self::SECRET))
+        $this->postJson('/api/zone/checkout', $this->basket(self::ZONE, $items), $this->auth($player['token'], self::SECRET))
             ->assertStatus(422)
             ->assertJsonPath('code', 'not_sold_here');
         $this->assertSame(1_000, $this->balance($player['account_id']));
@@ -67,7 +94,7 @@ class ZoneShopApiTest extends TestCase
     {
         $player = $this->registerAndCreditWallet(100, 'cash');
 
-        $this->postJson('/api/zone/checkout', ['zone' => 'nowhere', 'items' => [$this->catalogId('decor_bar_stool')]], $this->auth($player['token'], self::SECRET))
+        $this->postJson('/api/zone/checkout', $this->basket('nowhere', [$this->catalogId('decor_bar_stool') => 1]), $this->auth($player['token'], self::SECRET))
             ->assertNotFound()
             ->assertJsonPath('code', 'unknown_zone');
     }
@@ -76,7 +103,7 @@ class ZoneShopApiTest extends TestCase
     {
         $player = $this->registerAndCreditWallet(100, 'cash');
 
-        $this->postJson('/api/zone/checkout', ['zone' => self::ZONE, 'items' => [$this->catalogId('decor_bar_stool')]], $this->auth($player['token']))
+        $this->postJson('/api/zone/checkout', $this->basket(self::ZONE, [$this->catalogId('decor_bar_stool') => 1]), $this->auth($player['token']))
             ->assertForbidden()
             ->assertJsonPath('code', 'realtime_only');
         $this->assertSame(100, $this->balance($player['account_id']));
@@ -153,6 +180,20 @@ class ZoneShopApiTest extends TestCase
     private function zoneFile(): string
     {
         return resource_path('zones/'.self::ZONE.'.json');
+    }
+
+    /**
+     * @param  array<int, int>  $quantities  shop_catalog_item_id => quantity
+     * @return array<string, mixed>
+     */
+    private function basket(string $zone, array $quantities): array
+    {
+        $items = [];
+        foreach ($quantities as $id => $quantity) {
+            $items[] = ['shop_catalog_item_id' => $id, 'quantity' => $quantity];
+        }
+
+        return ['zone' => $zone, 'checkout_key' => (string) Str::uuid(), 'items' => $items];
     }
 
     private function catalogId(string $code): int

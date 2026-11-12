@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ShopCheckoutRequest;
 use App\Http\Resources\ShopPurchaseResource;
 use App\Models\Account;
 use App\Services\ReferralService;
@@ -14,22 +15,14 @@ use Illuminate\Http\Request;
 
 class ZoneShopController extends Controller
 {
-    public function checkout(Request $request, ShopPurchaseService $shop, ZonePriceBook $prices, ReferralService $referrals): JsonResponse
+    public function checkout(ShopCheckoutRequest $request, ShopPurchaseService $shop, ZonePriceBook $prices, ReferralService $referrals): JsonResponse
     {
-        $validated = $request->validate([
-            'zone' => ['required', 'string', 'regex:/^[a-z0-9_]+$/'],
-            'items' => 'required|array|min:1|max:50',
-            'items.*' => 'required|integer|min:1',
-        ]);
+        $zone = $request->validate(['zone' => ['required', 'string', 'regex:/^[a-z0-9_]+$/']])['zone'];
 
         /** @var Account $account */
         $account = $request->user();
 
-        $results = $shop->checkoutWithCoins(
-            $account,
-            array_map(fn (mixed $id): int => (int) $id, $validated['items']),
-            $prices->prices($validated['zone'])
-        );
+        $results = $shop->checkoutWithCoins($account, $request->quantities(), $request->checkoutKey(), $prices->prices($zone));
 
         $referrals->checkQualification((int) $account->getAuthIdentifier());
 

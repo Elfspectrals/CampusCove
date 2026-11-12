@@ -46,6 +46,9 @@ const { onZoneCheckout, onZoneSell } = await import('./zoneShop.ts')
 await loadWorld()
 await loadZoneBuyers()
 
+const KEY = '0b6c1d2e-3f40-4a5b-8c6d-7e8f90a1b2c3'
+const line = (id: number) => ({ id, quantity: 1 })
+
 function setup(x: number, z: number, knockedOutUntil = 0) {
   const player = { sessionId: 's1', accountId: 1, token: 'token-s1', x, y: 1.6, z, knockedOutUntil } as unknown as Player
   const room = { players: new Map([['s1', player]]) } as unknown as GameRoom
@@ -57,25 +60,30 @@ function setup(x: number, z: number, knockedOutUntil = 0) {
 
 test('a player inside the zone pays the basket through the API', async () => {
   const { room, client } = setup(-20, -150)
-  await onZoneCheckout(room, client, { zone: 'farm', items: [3, 7], request: 4 })
-  assert.deepEqual(apiCalls, [{ path: '/zone/checkout', body: { zone: 'farm', items: [3, 7] } }])
+  await onZoneCheckout(room, client, { zone: 'farm', checkoutKey: KEY, items: [{ id: 3, quantity: 2 }, { id: 7, quantity: 1 }], request: 4 })
+  assert.deepEqual(apiCalls, [{ path: '/zone/checkout', body: { zone: 'farm', checkout_key: KEY, items: [{ shop_catalog_item_id: 3, quantity: 2 }, { shop_catalog_item_id: 7, quantity: 1 }] } }])
   assert.deepEqual(client.sent, [{ type: 'zone_checkout_done', payload: { purchases: [], balance_after: 95, request: 4 } }])
 })
 
 test('a player outside the zone cannot pay there', async () => {
   const { room, client } = setup(-20, -120)
-  await onZoneCheckout(room, client, { zone: 'farm', items: [3] })
+  await onZoneCheckout(room, client, { zone: 'farm', checkoutKey: KEY, items: [line(3)] })
   assert.deepEqual(apiCalls, [])
   assert.equal(client.sent[0]!.payload.code, 'zone_too_far')
 })
 
 test('a zone without bounds or a bad basket is refused before the API', async () => {
   for (const [payload, code] of [
-    [{ zone: 'town', items: [3] }, 'zone_unknown'],
-    [{ zone: 'farm', items: [] }, 'zone_bad_basket'],
-    [{ zone: 'farm', items: [1.5] }, 'zone_bad_basket'],
-    [{ zone: 'farm', items: Array.from({ length: 51 }, (_, i) => i + 1) }, 'zone_bad_basket'],
-    [{ items: [3] }, 'zone_bad_basket'],
+    [{ zone: 'town', checkoutKey: KEY, items: [line(3)] }, 'zone_unknown'],
+    [{ zone: 'farm', checkoutKey: KEY, items: [] }, 'zone_bad_basket'],
+    [{ zone: 'farm', checkoutKey: KEY, items: [line(1.5)] }, 'zone_bad_basket'],
+    [{ zone: 'farm', checkoutKey: KEY, items: [{ id: 3, quantity: 21 }] }, 'zone_bad_basket'],
+    [{ zone: 'farm', checkoutKey: KEY, items: [{ id: 3, quantity: 0 }] }, 'zone_bad_basket'],
+    [{ zone: 'farm', checkoutKey: KEY, items: [line(3), line(3)] }, 'zone_bad_basket'],
+    [{ zone: 'farm', checkoutKey: KEY, items: Array.from({ length: 51 }, (_, i) => line(i + 1)) }, 'zone_bad_basket'],
+    [{ zone: 'farm', checkoutKey: 'not-a-key', items: [line(3)] }, 'zone_bad_basket'],
+    [{ zone: 'farm', items: [line(3)] }, 'zone_bad_basket'],
+    [{ checkoutKey: KEY, items: [line(3)] }, 'zone_bad_basket'],
   ] as const) {
     const { room, client } = setup(-20, -150)
     await onZoneCheckout(room, client, payload)
@@ -86,7 +94,7 @@ test('a zone without bounds or a bad basket is refused before the API', async ()
 
 test('a knocked out player cannot pay', async () => {
   const { room, client } = setup(-20, -150, Date.now() + 10_000)
-  await onZoneCheckout(room, client, { zone: 'farm', items: [3] })
+  await onZoneCheckout(room, client, { zone: 'farm', checkoutKey: KEY, items: [line(3)] })
   assert.deepEqual(apiCalls, [])
   assert.equal(client.sent[0]!.payload.code, 'zone_cannot_pay')
 })
@@ -94,7 +102,7 @@ test('a knocked out player cannot pay', async () => {
 test('an API refusal reaches the player with its code', async () => {
   const { room, client } = setup(-20, -150)
   nextApiError = { status: 422, code: 'not_sold_here', message: 'This item is not sold here.' }
-  await onZoneCheckout(room, client, { zone: 'farm', items: [3] })
+  await onZoneCheckout(room, client, { zone: 'farm', checkoutKey: KEY, items: [line(3)] })
   assert.equal(client.sent[0]!.type, 'zone_checkout_error')
   assert.equal(client.sent[0]!.payload.code, 'not_sold_here')
 })
@@ -138,9 +146,9 @@ test('a buyer moved in the zone file is found at its new place without a restart
 
 test('a shop zone inside a main zone takes payments inside its own bounds only', async () => {
   const inside = setup(-25, -155)
-  await onZoneCheckout(inside.room, inside.client, { zone: 'barn_shop', items: [3], request: 1 })
-  assert.deepEqual(apiCalls, [{ path: '/zone/checkout', body: { zone: 'barn_shop', items: [3] } }])
+  await onZoneCheckout(inside.room, inside.client, { zone: 'barn_shop', checkoutKey: KEY, items: [line(3)], request: 1 })
+  assert.deepEqual(apiCalls, [{ path: '/zone/checkout', body: { zone: 'barn_shop', checkout_key: KEY, items: [{ shop_catalog_item_id: 3, quantity: 1 }] } }])
   const outside = setup(-10, -155)
-  await onZoneCheckout(outside.room, outside.client, { zone: 'barn_shop', items: [3], request: 2 })
+  await onZoneCheckout(outside.room, outside.client, { zone: 'barn_shop', checkoutKey: KEY, items: [line(3)], request: 2 })
   assert.equal(outside.client.sent[0]!.payload.code, 'zone_too_far')
 })
