@@ -18,8 +18,24 @@ final class CoinRewardService
      */
     public function credit(int $accountId, string $reason, int $amount, array $meta = []): void
     {
-        DB::transaction(function () use ($accountId, $reason, $amount, $meta): void {
-            $wallet = Wallet::lockForAccount($accountId, 'coins');
+        $this->creditWallet(Wallet::BANK, $accountId, $reason, $amount, $meta);
+    }
+
+    /**
+     * @param array<string, mixed> $meta
+     */
+    public function creditCash(int $accountId, string $reason, int $amount, array $meta = []): void
+    {
+        $this->creditWallet(Wallet::CASH, $accountId, $reason, $amount, $meta);
+    }
+
+    /**
+     * @param array<string, mixed> $meta
+     */
+    private function creditWallet(string $currency, int $accountId, string $reason, int $amount, array $meta): void
+    {
+        DB::transaction(function () use ($currency, $accountId, $reason, $amount, $meta): void {
+            $wallet = Wallet::lockForAccount($accountId, $currency);
 
             $tx = EconomyTransaction::query()->create([
                 'server_id' => null,
@@ -42,7 +58,7 @@ final class CoinRewardService
     public function hasReceived(int $accountId, string $reason): bool
     {
         return WalletLedgerEntry::query()
-            ->where('wallet_id', Wallet::lockForAccount($accountId, 'coins')->wallet_id)
+            ->where('wallet_id', Wallet::lockForAccount($accountId, Wallet::BANK)->wallet_id)
             ->where('reason', $reason)
             ->exists();
     }

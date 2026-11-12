@@ -127,7 +127,7 @@ class ReferralApiTest extends TestCase
 
     private function buySomethingWithCoins(array $account): void
     {
-        $this->setWalletBalance($account['account_id'], 'coins', 1000);
+        $this->setWalletBalance($account['account_id'], 'cash', 1000);
         $plant = DB::table('shop_catalog_items')
             ->join('item_defs', 'item_defs.item_def_id', '=', 'shop_catalog_items.item_def_id')
             ->where('item_defs.code', 'decor_potted_plant')

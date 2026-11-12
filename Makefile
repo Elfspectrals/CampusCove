@@ -7,17 +7,19 @@
 ENV_FILE := $(if $(wildcard .env.prod),.env.prod,.env)
 COMPOSE := docker compose --env-file $(ENV_FILE)
 ART    := $(COMPOSE) exec -T backend php artisan
+LAN_IP ?= $(shell ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null || hostname -I 2>/dev/null | cut -d' ' -f1)
+UP_ENV := LIVEKIT_NODE_IP=$(or $(LAN_IP),127.0.0.1)
 
 help: ## List commands
 	@grep -hE '^[a-zA-Z0-9_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-22s %s\n", $$1, $$2}'
 
 # --- docker ---
 
-up: ## Start the stack (front 5173, api 8000, socket 3000, db 5432)
-	$(COMPOSE) up -d
+up: ## Start the stack (front 5173, api 8000, socket 3000, db 5432, voice 7880); voice uses this PC's network address (LAN_IP=... to force it)
+	$(UP_ENV) $(COMPOSE) up -d
 
 up-build: ## Start the stack, rebuilding images
-	$(COMPOSE) up -d --build
+	$(UP_ENV) $(COMPOSE) up -d --build
 
 down: ## Stop the stack (keeps volumes), the optional Stripe CLI relay included
 	$(COMPOSE) --profile stripe down

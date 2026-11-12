@@ -29,8 +29,8 @@ class TradeApiTest extends TestCase
 
     public function test_only_the_realtime_server_can_execute_a_trade(): void
     {
-        $alice = $this->registerAndCreditWallet(100, 'coins');
-        $bob = $this->registerAndCreditWallet(0, 'coins');
+        $alice = $this->registerAndCreditWallet(100, 'cash');
+        $bob = $this->registerAndCreditWallet(0, 'cash');
         $body = $this->body($bob['account_id'], ['coins' => 100, 'items' => []], ['coins' => 0, 'items' => []]);
 
         $this->postJson('/api/trades/execute', $body, $this->auth($alice['token']))
@@ -41,7 +41,7 @@ class TradeApiTest extends TestCase
 
     public function test_offerable_lists_coins_and_tradable_items_only(): void
     {
-        $alice = $this->registerAndCreditWallet(250, 'coins');
+        $alice = $this->registerAndCreditWallet(250, 'cash');
         $this->grant($alice['account_id'], 'food_sandwich', 3);
         $this->grant($alice['account_id'], self::TEE, 1);
         $this->grant($alice['account_id'], 'COS_WEAR_TOP_HOODIE', 1);
@@ -63,8 +63,8 @@ class TradeApiTest extends TestCase
 
     public function test_both_offers_are_swapped_in_one_transaction(): void
     {
-        $alice = $this->registerAndCreditWallet(500, 'coins');
-        $bob = $this->registerAndCreditWallet(40, 'coins');
+        $alice = $this->registerAndCreditWallet(500, 'cash');
+        $bob = $this->registerAndCreditWallet(40, 'cash');
         $this->grant($alice['account_id'], 'food_sandwich', 3);
         $this->grant($bob['account_id'], self::TEE, 1);
 
@@ -86,8 +86,8 @@ class TradeApiTest extends TestCase
 
     public function test_a_new_account_can_receive_but_not_give(): void
     {
-        $veteran = $this->registerAndCreditWallet(100, 'coins');
-        $newcomer = $this->registerAndCreditWallet(300, 'coins');
+        $veteran = $this->registerAndCreditWallet(100, 'cash');
+        $newcomer = $this->registerAndCreditWallet(300, 'cash');
         $this->ageAccount($newcomer['account_id'], TradeService::MIN_GIVER_AGE_HOURS - 1);
 
         $this->execute($newcomer, $veteran['account_id'], ['coins' => 300, 'items' => []], ['coins' => 0, 'items' => []])
@@ -105,7 +105,7 @@ class TradeApiTest extends TestCase
 
     public function test_a_player_cannot_trade_with_themselves(): void
     {
-        $alice = $this->registerAndCreditWallet(100, 'coins');
+        $alice = $this->registerAndCreditWallet(100, 'cash');
 
         $this->execute($alice, $alice['account_id'], ['coins' => 10, 'items' => []], ['coins' => 10, 'items' => []])
             ->assertStatus(422)
@@ -114,8 +114,8 @@ class TradeApiTest extends TestCase
 
     public function test_coins_are_checked_at_execution_time_and_nothing_moves_on_failure(): void
     {
-        $alice = $this->registerAndCreditWallet(100, 'coins');
-        $bob = $this->registerAndCreditWallet(30, 'coins');
+        $alice = $this->registerAndCreditWallet(100, 'cash');
+        $bob = $this->registerAndCreditWallet(30, 'cash');
         $this->grant($alice['account_id'], 'food_sandwich', 1);
 
         $this->execute($alice, $bob['account_id'],
@@ -131,8 +131,8 @@ class TradeApiTest extends TestCase
 
     public function test_items_no_longer_owned_fail_the_whole_trade(): void
     {
-        $alice = $this->registerAndCreditWallet(100, 'coins');
-        $bob = $this->registerAndCreditWallet(0, 'coins');
+        $alice = $this->registerAndCreditWallet(100, 'cash');
+        $bob = $this->registerAndCreditWallet(0, 'cash');
         $this->grant($alice['account_id'], 'food_sandwich', 1);
 
         $this->execute($alice, $bob['account_id'],
@@ -147,8 +147,8 @@ class TradeApiTest extends TestCase
 
     public function test_premium_and_bound_items_cannot_be_traded(): void
     {
-        $alice = $this->registerAndCreditWallet(0, 'coins');
-        $bob = $this->registerAndCreditWallet(1000, 'coins');
+        $alice = $this->registerAndCreditWallet(0, 'cash');
+        $bob = $this->registerAndCreditWallet(1000, 'cash');
         $this->grant($alice['account_id'], 'COS_WEAR_BODY_NEON_RONIN', 1);
         $this->grant($alice['account_id'], 'house_key', 1);
 
@@ -167,8 +167,8 @@ class TradeApiTest extends TestCase
 
     public function test_worn_clothes_must_be_taken_off_first(): void
     {
-        $alice = $this->registerAndCreditWallet(0, 'coins');
-        $bob = $this->registerAndCreditWallet(100, 'coins');
+        $alice = $this->registerAndCreditWallet(0, 'cash');
+        $bob = $this->registerAndCreditWallet(100, 'cash');
         $this->grant($alice['account_id'], self::TEE, 1);
         $this->wear($alice['account_id'], 'top', self::TEE);
 
@@ -180,8 +180,8 @@ class TradeApiTest extends TestCase
 
     public function test_a_player_cannot_receive_clothes_they_already_own(): void
     {
-        $alice = $this->registerAndCreditWallet(0, 'coins');
-        $bob = $this->registerAndCreditWallet(100, 'coins');
+        $alice = $this->registerAndCreditWallet(0, 'cash');
+        $bob = $this->registerAndCreditWallet(100, 'cash');
         $this->grant($alice['account_id'], self::TEE, 1);
         $this->grant($bob['account_id'], self::TEE, 1);
 
@@ -193,8 +193,8 @@ class TradeApiTest extends TestCase
 
     public function test_a_trade_is_executed_only_once(): void
     {
-        $alice = $this->registerAndCreditWallet(100, 'coins');
-        $bob = $this->registerAndCreditWallet(0, 'coins');
+        $alice = $this->registerAndCreditWallet(100, 'cash');
+        $bob = $this->registerAndCreditWallet(0, 'cash');
         $offers = [['coins' => 40, 'items' => []], ['coins' => 0, 'items' => []]];
 
         $this->execute($alice, $bob['account_id'], ...$offers)->assertOk();
@@ -208,8 +208,8 @@ class TradeApiTest extends TestCase
 
     public function test_an_empty_trade_is_refused(): void
     {
-        $alice = $this->registerAndCreditWallet(100, 'coins');
-        $bob = $this->registerAndCreditWallet(0, 'coins');
+        $alice = $this->registerAndCreditWallet(100, 'cash');
+        $bob = $this->registerAndCreditWallet(0, 'cash');
 
         $this->execute($alice, $bob['account_id'], ['coins' => 0, 'items' => []], ['coins' => 0, 'items' => []])
             ->assertStatus(422)
@@ -278,7 +278,7 @@ class TradeApiTest extends TestCase
 
     private function balance(int $accountId): int
     {
-        $walletId = DB::table('wallets')->where('owner_type', 'account')->where('owner_id', $accountId)->where('currency', 'coins')->value('wallet_id');
+        $walletId = DB::table('wallets')->where('owner_type', 'account')->where('owner_id', $accountId)->where('currency', 'cash')->value('wallet_id');
 
         return (int) DB::table('wallet_ledger')->where('wallet_id', $walletId)->sum('delta');
     }

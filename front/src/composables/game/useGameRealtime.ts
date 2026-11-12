@@ -2,6 +2,7 @@ import { ref, type Ref, type ShallowRef } from 'vue'
 import type { Router } from 'vue-router'
 import type * as THREE from 'three'
 import { Client as ColyseusClient, type Room } from '@colyseus/sdk'
+import type { VoiceTokenPayload } from './useProximityVoice'
 import {
   appearanceIdsFromLoadout,
   bodyModelGlbFromLoadout,
@@ -61,6 +62,11 @@ import type {
   OrchardPickedPayload,
   ZoneSellErrorPayload,
   ZoneSoldPayload,
+  AtmDonePayload,
+  AtmErrorPayload,
+  CashBagErrorPayload,
+  CashBagPayload,
+  CashBagPickedPayload,
 } from '../../types/gameRealtime'
 import { useRemoteAvatars, type SeatPose } from './useRemoteAvatars'
 import { PUNCH_DAMAGE } from '../../game/punch'
@@ -168,6 +174,21 @@ export interface GameRealtimeDeps {
     onSold: (data: ZoneSoldPayload) => void
     onError: (data: ZoneSellErrorPayload) => void
   }
+  atm: {
+    onDone: (data: AtmDonePayload) => void
+    onError: (data: AtmErrorPayload) => void
+  }
+  voice: {
+    onToken: (payload: VoiceTokenPayload) => void
+    disconnect: () => Promise<void>
+  }
+  cashBags: {
+    onSync: (bags: CashBagPayload[]) => void
+    onDropped: (bag: CashBagPayload) => void
+    onRemoved: (data: { id: number }) => void
+    onPicked: (data: CashBagPickedPayload) => void
+    onError: (data: CashBagErrorPayload) => void
+  }
   orchard: {
     onPicked: (data: OrchardPickedPayload) => void
     onError: (data: OrchardErrorPayload) => void
@@ -231,6 +252,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       if (payload.houseFurniture !== undefined) deps.onHouseFurnitureSync(payload.houseFurniture)
       if (payload.openDoors !== undefined) deps.onDoorsSync(payload.openDoors)
       deps.pub.onSecretDoor({ open: payload.pubSecretOpen === true })
+      deps.cashBags.onSync(payload.cashBags ?? [])
       deps.admin.onInit(payload.isAdmin === true)
     })
 
@@ -276,6 +298,10 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       if (data.sessionId !== room.sessionId && (data.action === 'eat' || data.action === 'drink')) {
         remotes.showAction(data.sessionId, data.action, typeof data.code === 'string' ? data.code : null)
       }
+    })
+
+    room.onMessage('user_chat', (data: { sessionId: string; text: string }) => {
+      if (data.sessionId !== room.sessionId && typeof data.text === 'string') remotes.showChat(data.sessionId, data.text)
     })
 
     room.onMessage('user_punched', (data: UserPunchedPayload) => {
@@ -325,6 +351,12 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('orchard_error', (data: OrchardErrorPayload) => deps.orchard.onError(data))
     room.onMessage('zone_sold', (data: ZoneSoldPayload) => deps.zoneBuyers.onSold(data))
     room.onMessage('zone_sell_error', (data: ZoneSellErrorPayload) => deps.zoneBuyers.onError(data))
+    room.onMessage('atm_done', (data: AtmDonePayload) => deps.atm.onDone(data))
+    room.onMessage('atm_error', (data: AtmErrorPayload) => deps.atm.onError(data))
+    room.onMessage('cash_bag_dropped', (data: CashBagPayload) => deps.cashBags.onDropped(data))
+    room.onMessage('cash_bag_removed', (data: { id: number }) => deps.cashBags.onRemoved(data))
+    room.onMessage('cash_bag_picked', (data: CashBagPickedPayload) => deps.cashBags.onPicked(data))
+    room.onMessage('cash_bag_error', (data: CashBagErrorPayload) => deps.cashBags.onError(data))
     room.onMessage('farm_picked', (data: FarmPickedPayload) => deps.farm.onPicked(data))
     room.onMessage('farm_error', (data: FarmErrorPayload) => deps.farm.onError(data))
     room.onMessage('pub_shots_ready', (data: PubShotsReadyPayload) => deps.pubGames.onShotsReady(data))
@@ -347,7 +379,9 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       deps.apartment.onActionError()
     })
 
+    room.onMessage('voice_token', (data: VoiceTokenPayload) => deps.voice.onToken(data))
     room.onLeave(() => {
+      void deps.voice.disconnect()
       if (!switchingRoom.value) deps.roomMessage.value = 'Disconnected from realtime room.'
     })
   }
@@ -437,6 +471,10 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     clearRemoteUsers: remotes.clear,
     tickRemoteAvatars: remotes.tick,
     remotePseudo: remotes.pseudoOf,
+    remotePosition: remotes.positionOf,
+    setRemoteVoiceState: remotes.setVoiceState,
+    remotePlayers: remotes.players,
+    remoteAccount: remotes.accountOf,
     setRemoteRacePint: remotes.setRacePint,
   }
 }

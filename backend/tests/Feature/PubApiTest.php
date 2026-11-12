@@ -28,7 +28,7 @@ class PubApiTest extends TestCase
 
     public function test_ordering_a_drink_debits_its_price_and_serves_one_glass(): void
     {
-        $player = $this->registerAndCreditWallet(100, 'coins');
+        $player = $this->registerAndCreditWallet(100, 'cash');
 
         $this->postJson('/api/pub/order', ['code' => 'drink_stout'], $this->auth($player['token'], self::SECRET))
             ->assertOk()
@@ -44,7 +44,7 @@ class PubApiTest extends TestCase
 
     public function test_the_bar_only_serves_its_drinks(): void
     {
-        $player = $this->registerAndCreditWallet(100, 'coins');
+        $player = $this->registerAndCreditWallet(100, 'cash');
         $headers = $this->auth($player['token'], self::SECRET);
 
         foreach (['drink_mead', 'food_coffee', 'chair_campus_basic'] as $code) {
@@ -57,7 +57,7 @@ class PubApiTest extends TestCase
 
     public function test_ordering_without_enough_coins_is_refused(): void
     {
-        $player = $this->registerAndCreditWallet(24, 'coins');
+        $player = $this->registerAndCreditWallet(24, 'cash');
 
         $this->postJson('/api/pub/order', ['code' => 'drink_stout'], $this->auth($player['token'], self::SECRET))
             ->assertStatus(422)
@@ -69,7 +69,7 @@ class PubApiTest extends TestCase
 
     public function test_playing_charges_the_entry_fee_and_tells_the_alcohol_of_the_game(): void
     {
-        $player = $this->registerAndCreditWallet(100, 'coins');
+        $player = $this->registerAndCreditWallet(100, 'cash');
         $headers = $this->auth($player['token'], self::SECRET);
         $balance = 100;
 
@@ -86,7 +86,7 @@ class PubApiTest extends TestCase
 
     public function test_playing_an_unknown_game_or_without_coins_is_refused(): void
     {
-        $player = $this->registerAndCreditWallet(19, 'coins');
+        $player = $this->registerAndCreditWallet(19, 'cash');
         $headers = $this->auth($player['token'], self::SECRET);
 
         $this->postJson('/api/pub/play', ['game' => 'poker'], $headers)
@@ -126,7 +126,7 @@ class PubApiTest extends TestCase
     /** @dataProvider rewardTable */
     public function test_rewards_follow_the_table(string $game, int $placement, int $score, int $coins): void
     {
-        $player = $this->registerAndCreditWallet(100, 'coins');
+        $player = $this->registerAndCreditWallet(100, 'cash');
 
         $this->postJson('/api/pub/reward', ['game' => $game, 'placement' => $placement, 'score' => $score], $this->auth($player['token'], self::SECRET))
             ->assertOk()
@@ -139,7 +139,7 @@ class PubApiTest extends TestCase
 
     public function test_no_entry_fee_is_taken_while_the_reward_is_on_cooldown(): void
     {
-        $player = $this->registerAndCreditWallet(100, 'coins');
+        $player = $this->registerAndCreditWallet(100, 'cash');
         $headers = $this->auth($player['token'], self::SECRET);
         $this->postJson('/api/pub/reward', ['game' => 'darts', 'placement' => 1, 'score' => 50], $headers)->assertOk();
 
@@ -155,7 +155,7 @@ class PubApiTest extends TestCase
 
     public function test_one_reward_per_game_and_per_account_every_sixty_seconds(): void
     {
-        $player = $this->registerAndCreditWallet(100, 'coins');
+        $player = $this->registerAndCreditWallet(100, 'cash');
         $headers = $this->auth($player['token'], self::SECRET);
         $win = fn (string $game) => $this->postJson('/api/pub/reward', ['game' => $game, 'placement' => 1, 'score' => 50], $headers)->assertOk();
 
@@ -184,7 +184,7 @@ class PubApiTest extends TestCase
             ->assertOk()
             ->assertExactJson(['billed' => SurvivalService::HANGOVER_FEE, 'balance_after' => 500 - SurvivalService::HANGOVER_FEE]);
 
-        $this->assertSame(500 - SurvivalService::HANGOVER_FEE, $this->balance($accountId));
+        $this->assertSame(500 - SurvivalService::HANGOVER_FEE, $this->balance($accountId, 'coins'));
         $this->assertSame(3, $this->hotbarItem($player['token'], 'food_sandwich')['quantity']);
         $this->assertNotNull($this->hotbarItem($player['token'], 'decor_cactus'));
         $this->assertNotNull($this->hotbarItem($player['token'], 'drink_lager'));
@@ -209,12 +209,12 @@ class PubApiTest extends TestCase
             ->assertOk()
             ->assertExactJson(['billed' => 0, 'balance_after' => 0]);
 
-        $this->assertSame(0, $this->balance($poor['account_id']));
+        $this->assertSame(0, $this->balance($poor['account_id'], 'coins'));
     }
 
     public function test_pub_routes_need_the_realtime_server(): void
     {
-        $player = $this->registerAndCreditWallet(100, 'coins');
+        $player = $this->registerAndCreditWallet(100, 'cash');
         $headers = $this->auth($player['token']);
 
         $this->postJson('/api/pub/order', ['code' => 'drink_stout'], $headers)->assertForbidden()->assertJsonPath('code', 'realtime_only');
@@ -249,9 +249,9 @@ class PubApiTest extends TestCase
         return collect($items)->firstWhere('code', $code);
     }
 
-    private function balance(int $accountId): int
+    private function balance(int $accountId, string $currency = 'cash'): int
     {
-        $walletId = DB::table('wallets')->where('owner_type', 'account')->where('owner_id', $accountId)->where('currency', 'coins')->value('wallet_id');
+        $walletId = DB::table('wallets')->where('owner_type', 'account')->where('owner_id', $accountId)->where('currency', $currency)->value('wallet_id');
 
         return (int) DB::table('wallet_ledger')->where('wallet_id', $walletId)->sum('delta');
     }

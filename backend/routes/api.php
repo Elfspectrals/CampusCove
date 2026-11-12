@@ -9,6 +9,8 @@ use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\ApartmentPlacementController;
 use App\Http\Controllers\AssetController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BankController;
+use App\Http\Controllers\CashDropController;
 use App\Http\Controllers\CharacterAppearanceController;
 use App\Http\Controllers\CharacterCosmeticController;
 use App\Http\Controllers\FarmController;
@@ -89,7 +91,12 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
         Route::post('/zone/checkout', [ZoneShopController::class, 'checkout']);
         Route::post('/zone/sell', [ZoneShopController::class, 'sell']);
         Route::post('/trades/execute', [TradeController::class, 'execute']);
+        Route::post('/bank/deposit', [BankController::class, 'deposit']);
+        Route::post('/bank/withdraw', [BankController::class, 'withdraw']);
+        Route::post('/bank/transfer', [BankController::class, 'transfer']);
+        Route::post('/cash-drops/{id}/pick', [CashDropController::class, 'pick'])->whereNumber('id');
     });
+    Route::get('/bank', [BankController::class, 'show']);
     Route::get('/trades/offerable', [TradeController::class, 'offerable']);
 
     Route::post('/shop/purchase', [ShopController::class, 'purchase']);

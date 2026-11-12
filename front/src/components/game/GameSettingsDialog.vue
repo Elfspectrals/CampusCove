@@ -8,6 +8,7 @@ import UiIcon from '../ui/UiIcon.vue'
 import { useDialogFocus } from '../../composables/useDialogFocus'
 import { comfortSettings, setComfortFov, setReduceCameraMotion } from '../../composables/game/useComfortSettings'
 import { MAX_FOV, MIN_FOV } from '../../game/comfort'
+import GameVoiceSettings from './GameVoiceSettings.vue'
 
 const emit = defineEmits<{ close: [] }>()
 const { t } = useI18n()
@@ -63,6 +64,7 @@ useDialogFocus(dialogEl, { onEscape: () => emit('close') })
           <span class="min-w-0 text-sm font-bold text-mist">{{ t('settings.reduceCameraMotion') }}</span>
         </label>
       </section>
+      <GameVoiceSettings />
       <div class="mt-5">
         <h3 class="m-0 mb-1 text-sm font-extrabold text-fog">{{ t('settings.controls') }}</h3>
         <KeybindingSettings />

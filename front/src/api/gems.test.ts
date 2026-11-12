@@ -41,14 +41,14 @@ async function request(n: number): Promise<PendingRequest> {
   return requests[n]
 }
 
-function user(id: number, wallet: { coins: number; premium: number }) {
+function user(id: number, wallet: { coins: number; cash: number; premium: number }) {
   return { account_id: id, public_id: `p${id}`, username: `u${id}`, tag: 1, display_name: `U${id}`, email: `u${id}@test.com`, wallet_summary: wallet }
 }
 
 /** GET /gems/orders/{id} answer for player A: 650 gems just delivered. */
 const ANSWER_FOR_A = {
   order: { public_id: 'order-a', pack_code: 'gems_650', gems: 650, amount_cents: 999, currency: 'eur', status: 'paid', delivered: true },
-  wallet_summary: { coins: 100, premium: 650 },
+  wallet_summary: { coins: 100, cash: 0, premium: 650 },
 }
 
 beforeEach(() => {
@@ -57,54 +57,54 @@ beforeEach(() => {
 })
 
 test('the answer refreshes the wallet when the session is still the same', async () => {
-  storeAuth(user(1, { coins: 100, premium: 0 }), 'token-a')
+  storeAuth(user(1, { coins: 100, cash: 0, premium: 0 }), 'token-a')
   const pending = fetchGemOrder('order-a')
   requests[0].answer(ANSWER_FOR_A)
 
   assert.equal((await pending).status, 'paid')
-  assert.deepEqual(getCachedWalletBalances(), { coins: 100, premium: 650 })
-  assert.deepEqual(getStoredAuth()?.user.wallet_summary, { coins: 100, premium: 650 })
+  assert.deepEqual(getCachedWalletBalances(), { coins: 100, cash: 0, premium: 650 })
+  assert.deepEqual(getStoredAuth()?.user.wallet_summary, { coins: 100, cash: 0, premium: 650 })
 })
 
 test('a late answer for A is ignored once B is logged in', async () => {
-  storeAuth(user(1, { coins: 100, premium: 0 }), 'token-a')
+  storeAuth(user(1, { coins: 100, cash: 0, premium: 0 }), 'token-a')
   const pending = fetchGemOrder('order-a')
   assert.equal(requests[0].authorization, 'Bearer token-a')
 
   clearAuth()
-  storeAuth(user(2, { coins: 5, premium: 7 }), 'token-b')
+  storeAuth(user(2, { coins: 5, cash: 0, premium: 7 }), 'token-b')
   requests[0].answer(ANSWER_FOR_A)
 
   await assert.rejects(pending, StaleSessionError)
-  assert.deepEqual(getCachedWalletBalances(), { coins: 5, premium: 7 })
+  assert.deepEqual(getCachedWalletBalances(), { coins: 5, cash: 0, premium: 7 })
   assert.equal(getStoredAuth()?.user.account_id, 2)
-  assert.deepEqual(getStoredAuth()?.user.wallet_summary, { coins: 5, premium: 7 })
+  assert.deepEqual(getStoredAuth()?.user.wallet_summary, { coins: 5, cash: 0, premium: 7 })
 })
 
 test('a late answer after logout does not bring the wallet cache back', async () => {
-  storeAuth(user(1, { coins: 100, premium: 0 }), 'token-a')
+  storeAuth(user(1, { coins: 100, cash: 0, premium: 0 }), 'token-a')
   const pending = fetchGemOrder('order-a')
   clearAuth()
   requests[0].answer(ANSWER_FOR_A)
 
   await assert.rejects(pending, StaleSessionError)
   assert.equal(store.size, 0)
-  assert.deepEqual(getCachedWalletBalances(), { coins: null, premium: null })
+  assert.deepEqual(getCachedWalletBalances(), { coins: null, cash: null, premium: null })
   assert.equal(getStoredAuth(), null)
 })
 
 test('a new session of the same account does not take the old answer either', async () => {
-  storeAuth(user(1, { coins: 100, premium: 0 }), 'token-a')
+  storeAuth(user(1, { coins: 100, cash: 0, premium: 0 }), 'token-a')
   const pending = fetchGemOrder('order-a')
-  storeAuth(user(1, { coins: 100, premium: 0 }), 'token-a2')
+  storeAuth(user(1, { coins: 100, cash: 0, premium: 0 }), 'token-a2')
   requests[0].answer(ANSWER_FOR_A)
 
   await assert.rejects(pending, StaleSessionError)
-  assert.deepEqual(getCachedWalletBalances(), { coins: 100, premium: 0 })
+  assert.deepEqual(getCachedWalletBalances(), { coins: 100, cash: 0, premium: 0 })
 })
 
 test('storing a wallet while logged out writes nothing', () => {
-  storeWalletSummary({ coins: 1, premium: 2 })
+  storeWalletSummary({ coins: 1, cash: 0, premium: 2 })
   assert.equal(store.size, 0)
 })
 
@@ -113,7 +113,7 @@ test('storing a wallet while logged out writes nothing', () => {
 const creatingOrder = { public_id: 'order-a', pack_code: 'gems_650', gems: 650, amount_cents: 999, currency: 'eur', status: 'creating' }
 const PREPARING = { code: 'checkout_preparing', order: creatingOrder, checkout_url: null, retry_after_ms: 1000 }
 const PAGE = 'https://checkout.stripe.com/c/pay/cs_test_a'
-const WALLET = { coins: 100, premium: 0 }
+const WALLET = { coins: 100, cash: 0, premium: 0 }
 
 function recordSleeps(): { sleeps: number[]; sleep: (ms: number) => Promise<void> } {
   const sleeps: number[] = []

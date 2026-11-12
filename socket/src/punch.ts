@@ -56,5 +56,5 @@ export function onPunch(room: GameRoom, client: GameClient, payload: ClientPaylo
   room.forEachClient((c) => c.send('user_punched', message))
   if (!hit) return
   const targetClient = room.clients.find((c) => c.sessionId === targetSessionId)
-  if (targetClient) hurt(room, targetClient, target, PUNCH_DAMAGE, 'punch')
+  if (targetClient) hurt(room, targetClient, target, PUNCH_DAMAGE, 'punch', attacker)
 }

@@ -84,6 +84,24 @@
           "color": "#1f2230"
         }
       ]
+    },
+    {
+      "id": "atm_pub",
+      "kind": "item",
+      "key": "atm",
+      "code": "decor_atm",
+      "forSale": false,
+      "position": [
+        95.0,
+        0.0,
+        -121.3
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
     }
   ],
   "areas": []

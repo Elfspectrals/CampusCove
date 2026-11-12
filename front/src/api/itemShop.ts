@@ -192,7 +192,7 @@ export async function purchaseShopItem(body: PurchaseShopItemBody): Promise<Purc
     throw new Error('Invalid purchase response')
   }
 
-  applyCachedBalanceAfterPurchase(currency, balanceAfter)
+  applyCachedBalanceAfterPurchase(currency === 'coins' ? 'cash' : currency, balanceAfter)
 
   const message = `Purchase successful (-${totalDebit.toLocaleString()} ${currency})`
   const shopItem = isRecord(purchase.shop_item) ? purchase.shop_item : null
@@ -215,6 +215,6 @@ export async function checkoutShopBasket(shopCatalogItemIds: number[]): Promise<
     body: { currency: 'coins', items: shopCatalogItemIds.map((id) => ({ shop_catalog_item_id: id })) },
   })
   if (!isRecord(data) || typeof data.balance_after !== 'number') throw new Error('Invalid checkout response')
-  applyCachedBalanceAfterPurchase('coins', data.balance_after)
+  applyCachedBalanceAfterPurchase('cash', data.balance_after)
   return { balanceAfter: data.balance_after }
 }

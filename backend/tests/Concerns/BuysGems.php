@@ -107,7 +107,7 @@ trait BuysGems
         return $this->sendStripeEvent($type, ['id' => 're_evt', 'object' => 'refund', 'payment_intent' => $paymentIntentId, 'status' => 'succeeded']);
     }
 
-    /** @return array{coins: int, premium: int} */
+    /** @return array{coins: int, cash: int, premium: int} */
     protected function wallet(int $accountId): array
     {
         return app(WalletSummaryService::class)->forAccountId($accountId);

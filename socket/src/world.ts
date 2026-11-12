@@ -108,6 +108,7 @@ export interface WorldBuyer {
 
 let buyerZones = new Set<string>()
 let shopBounds = new Map<string, Bounds>()
+let atms: Vec3[] = []
 
 function parseVec3(raw: Json, what: string): Vec3 {
   if (!Array.isArray(raw) || raw.length !== 3 || !raw.every(Number.isFinite)) {
@@ -334,6 +335,28 @@ export async function loadZoneBuyers(): Promise<void> {
   buyerZones = new Set(index.zones)
   shopBounds = shops
   console.log(`[world] ${count} zone buyer(s), ${shops.size} shop zone(s) loaded`)
+}
+
+export async function loadAtms(): Promise<void> {
+  if (!WORLD_MANIFEST_URL) throw new Error('WORLD_MANIFEST_URL is not set')
+  const index = await readManifest(besideManifest('zones/index.json'))
+  if (!Array.isArray(index?.zones)) throw new Error('zones/index.json: missing zones')
+  const found: Vec3[] = []
+  for (const zone of index.zones) {
+    const decor = await readManifest(besideManifest(`zones/${zone}.json`))
+    if (!Array.isArray(decor?.props)) throw new Error(`zones/${zone}.json: missing props`)
+    for (const prop of decor.props.filter((p: Json) => p.key === 'atm')) {
+      const [x, y, z] = prop.position
+      if (![x, y, z].every(Number.isFinite)) throw new Error(`zones/${zone}.json: invalid position of ${prop.id}`)
+      found.push({ x, y, z })
+    }
+  }
+  atms = found
+  console.log(`[world] ${found.length} ATM(s) loaded`)
+}
+
+export function worldAtms(): readonly Vec3[] {
+  return atms
 }
 
 export async function worldBuyer(zone: string, area: string): Promise<WorldBuyer | null> {

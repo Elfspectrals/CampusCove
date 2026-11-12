@@ -30,6 +30,12 @@ export default defineConfig({
         target: 'http://localhost:8000',
         changeOrigin: true,
       },
+      '/livekit': {
+        target: 'http://localhost:7880',
+        changeOrigin: true,
+        ws: true,
+        rewrite: (path) => path.replace(/^\/livekit/, ''),
+      },
     },
   },
 })

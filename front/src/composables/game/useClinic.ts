@@ -34,7 +34,7 @@ export function useClinic(deps: ClinicDeps) {
 
   watch(deps.gameRoomRef, (room) => {
     room?.onMessage('clinic_healed', (data: { billed: number; balanceAfter: number | null }) => {
-      if (typeof data.balanceAfter === 'number') applyCachedBalanceAfterPurchase('coins', data.balanceAfter)
+      if (typeof data.balanceAfter === 'number') applyCachedBalanceAfterPurchase('cash', data.balanceAfter)
       deps.say(`The nurse patched you up: full health for ${data.billed} coins.`)
     })
   })

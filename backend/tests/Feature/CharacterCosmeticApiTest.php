@@ -25,7 +25,7 @@ class CharacterCosmeticApiTest extends TestCase
 
     public function test_cosmetics_returns_slots_for_authenticated_user(): void
     {
-        $token = $this->registerAndCreditWallet(10_000, 'coins')['token'];
+        $token = $this->registerAndCreditWallet(10_000, 'cash')['token'];
 
         $res = $this->getJson('/api/character/cosmetics', [
             'Authorization' => 'Bearer '.$token,
@@ -46,7 +46,7 @@ class CharacterCosmeticApiTest extends TestCase
 
     public function test_cosmetics_put_colors_only(): void
     {
-        $token = $this->registerAndCreditWallet(10_000, 'coins')['token'];
+        $token = $this->registerAndCreditWallet(10_000, 'cash')['token'];
 
         $res = $this->putJson('/api/character/cosmetics', [
             'colors' => [
@@ -65,7 +65,7 @@ class CharacterCosmeticApiTest extends TestCase
 
     public function test_cosmetics_equip_rejects_unowned_item(): void
     {
-        $token = $this->registerAndCreditWallet(10_000, 'coins')['token'];
+        $token = $this->registerAndCreditWallet(10_000, 'cash')['token'];
 
         $otherDef = DB::table('item_defs')->where('code', 'chair_campus_basic')->first();
         $this->assertNotNull($otherDef);
@@ -81,7 +81,7 @@ class CharacterCosmeticApiTest extends TestCase
 
     public function test_cosmetics_equip_owned_wearable(): void
     {
-        $token = $this->registerAndCreditWallet(10_000, 'coins')['token'];
+        $token = $this->registerAndCreditWallet(10_000, 'cash')['token'];
 
         $def = DB::table('item_defs')->where('code', 'COS_WEAR_BODY_DEFAULT')->first();
         $this->assertNotNull($def);
@@ -139,7 +139,7 @@ class CharacterCosmeticApiTest extends TestCase
         $catalog = DB::table('shop_catalog_items')->where('shop_catalog_item_id', $catalogId)->first();
         $this->assertNotNull($catalog);
 
-        ['token' => $token, 'account_id' => $accountId] = $this->registerAndCreditWallet(10_000, 'coins');
+        ['token' => $token, 'account_id' => $accountId] = $this->registerAndCreditWallet(10_000, 'cash');
 
         $serverId = (int) DB::table('servers')->insertGetId([
             'name' => 'test-server-'.uniqid('', true),
@@ -186,7 +186,7 @@ class CharacterCosmeticApiTest extends TestCase
 
     public function test_starter_body_item_defs_use_front_origin_model_paths(): void
     {
-        $account = $this->registerAndCreditWallet(10_000, 'coins');
+        $account = $this->registerAndCreditWallet(10_000, 'cash');
         $token = $account['token'];
 
         $rows = DB::table('item_defs')
@@ -244,7 +244,7 @@ class CharacterCosmeticApiTest extends TestCase
 
     public function test_only_the_default_skin_is_free_and_the_others_are_sold(): void
     {
-        $account = $this->registerAndCreditWallet(0, 'coins');
+        $account = $this->registerAndCreditWallet(0, 'cash');
 
         $owned = DB::table('account_locker_cosmetics')
             ->join('item_defs', 'item_defs.item_def_id', '=', 'account_locker_cosmetics.item_def_id')
@@ -274,7 +274,7 @@ class CharacterCosmeticApiTest extends TestCase
 
     public function test_equipping_a_headset_takes_off_the_hair_and_hair_takes_off_the_headset(): void
     {
-        ['token' => $token, 'account_id' => $accountId] = $this->registerAndCreditWallet(10_000, 'coins');
+        ['token' => $token, 'account_id' => $accountId] = $this->registerAndCreditWallet(10_000, 'cash');
         $headers = ['Authorization' => 'Bearer '.$token];
         $hair = $this->freeHaircut($accountId, 'COS_WEAR_HAIR_SHORT');
         $headset = $this->buyWearable('COS_WEAR_HEAD_ACCESSORY_GAMER', $headers);
@@ -301,7 +301,7 @@ class CharacterCosmeticApiTest extends TestCase
 
     public function test_clothes_not_worn_are_in_the_backpack(): void
     {
-        ['token' => $token] = $this->registerAndCreditWallet(10_000, 'coins');
+        ['token' => $token] = $this->registerAndCreditWallet(10_000, 'cash');
         $headers = ['Authorization' => 'Bearer '.$token];
         $tee = $this->buyWearable('COS_WEAR_TOP_TEE', $headers);
         $this->buyWearable('COS_WEAR_SHOES_BOOTS', $headers);
@@ -319,7 +319,7 @@ class CharacterCosmeticApiTest extends TestCase
 
     public function test_hair_and_headset_cannot_be_equipped_together(): void
     {
-        ['token' => $token, 'account_id' => $accountId] = $this->registerAndCreditWallet(10_000, 'coins');
+        ['token' => $token, 'account_id' => $accountId] = $this->registerAndCreditWallet(10_000, 'cash');
         $headers = ['Authorization' => 'Bearer '.$token];
         $hair = $this->freeHaircut($accountId, 'COS_WEAR_HAIR_SHORT');
         $headset = $this->buyWearable('COS_WEAR_HEAD_ACCESSORY_GAMER', $headers);

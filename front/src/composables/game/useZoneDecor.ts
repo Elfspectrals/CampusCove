@@ -89,6 +89,7 @@ export function useZoneDecor(deps: ZoneDecorDeps) {
   const npcs: THREE.Object3D[] = []
   const herd: Wanderer[] = []
   const buyers = shallowRef<ZoneBuyer[]>([])
+  const atms = shallowRef<Vec3[]>([])
   const blockers: string[] = []
   const storeAreas: StoreArea[] = []
   const zoneGroups: Array<{ group: THREE.Group; bounds: WorldBounds }> = []
@@ -201,7 +202,7 @@ export function useZoneDecor(deps: ZoneDecorDeps) {
       const offDone = room.onMessage('zone_checkout_done', (data: ZoneCheckoutDonePayload) => {
         if (data.request !== request) return
         stop()
-        applyCachedBalanceAfterPurchase('coins', data.balance_after)
+        applyCachedBalanceAfterPurchase('cash', data.balance_after)
         resolve()
       })
       const offError = room.onMessage('zone_checkout_error', (data: ZoneCheckoutErrorPayload) => {
@@ -257,6 +258,7 @@ export function useZoneDecor(deps: ZoneDecorDeps) {
     group.updateWorldMatrix(true, false)
     const npcAt = (id: string) => decorated.decor.props.find((p) => p.kind === 'npc' && p.id === id)!.position
     buyers.value = [...buyers.value, ...decorated.decor.areas.filter((a) => a.role === 'buyer').map((area) => ({ zone: zone.key, area, position: npcAt(area.npc) }))]
+    atms.value = [...atms.value, ...decorated.decor.props.filter((p) => p.kind === 'item' && p.key === 'atm').map((p) => p.position)]
     const sellers = decorated.decor.areas.filter((a) => a.role === 'seller')
     const opened = await Promise.allSettled(sellers.map((a) => openAreaStore(decorated, a, group)))
     const storeOf = new Map(sellers.flatMap((a, i) => {
@@ -310,5 +312,5 @@ export function useZoneDecor(deps: ZoneDecorDeps) {
     disposeObject3D(root)
   })
 
-  return { onTownLoaded, tick, currentStoreKey, buyers }
+  return { onTownLoaded, tick, currentStoreKey, buyers, atms }
 }

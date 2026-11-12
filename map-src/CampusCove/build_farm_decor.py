@@ -11,11 +11,9 @@ if HERE not in sys.path:
 import lib_common as L
 importlib.reload(L)
 import bpy
-from mathutils import Vector
 
 ONLY = globals().get("ONLY_DECOR")
 MAX_MATERIALS = 6
-PREVIEWS = os.path.join(L.FRONT_ASSETS, "decor")
 
 sc = L.new_build_scene("DECOR_farm")
 coll = bpy.data.collections.new("FarmDecor")
@@ -119,25 +117,5 @@ DECOR = {
 }
 
 
-def ship(key, parts):
-    obj = L.join(coll, f"Decor_{key}", parts)
-    obj.location = (0, 0, 0)
-    bpy.context.view_layer.update()
-    obj.location.z -= min((obj.matrix_world @ Vector(c)).z for c in obj.bound_box)
-    bpy.context.view_layer.update()
-    bad = L.check_grounded([obj])
-    if bad:
-        raise RuntimeError(f"{key} is not grounded: {bad}")
-    if len(obj.data.materials) > MAX_MATERIALS:
-        raise RuntimeError(f"{key} uses {len(obj.data.materials)} materials (max {MAX_MATERIALS})")
-    out = os.path.join(L.OUT_ROOT, "decor", key)
-    os.makedirs(out, exist_ok=True)
-    L.export_glb(os.path.join(out, "model.glb"), [obj])
-    os.makedirs(os.path.join(PREVIEWS, key), exist_ok=True)
-    L.render_preview(sc, obj, os.path.join(PREVIEWS, key, "preview.png"))
-    obj.hide_render = True
-    return {"key": key, "tris": sum(len(p.vertices) - 2 for p in obj.data.polygons), "dims": tuple(round(x, 3) for x in obj.dimensions)}
-
-
-results = [ship(key, build()) for key, build in DECOR.items() if not ONLY or key in ONLY]
+results = [L.ship_decor(sc, coll, key, build(), MAX_MATERIALS) for key, build in DECOR.items() if not ONLY or key in ONLY]
 print("FARM DECOR", results)

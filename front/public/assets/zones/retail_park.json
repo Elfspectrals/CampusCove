@@ -1060,6 +1060,24 @@
         1
       ],
       "description": "Reclining sun lounger."
+    },
+    {
+      "id": "atm_retail",
+      "kind": "item",
+      "key": "atm",
+      "code": "decor_atm",
+      "forSale": false,
+      "position": [
+        44.0,
+        0.0,
+        64.6
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
     }
   ],
   "areas": [
