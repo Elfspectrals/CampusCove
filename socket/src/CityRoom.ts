@@ -38,6 +38,8 @@ import {
   standUp
 } from './pubGames.ts'
 import { onPunch } from './punch.ts'
+import { NPC_TICK_MS } from './npcBrain.ts'
+import { NPC_RELOAD_MS, NpcDirector } from './npcs.ts'
 import { onChat } from './chat.ts'
 import { onAtm } from './atm.ts'
 import { onCashBagPick } from './cashBags.ts'
@@ -107,6 +109,7 @@ export class CityRoom extends Room implements GameRoom {
   seats = new Map<string, string>()
   cashBags = new Map<number, CashBag>()
   pub: PubState = { secretOpen: false, race: null, darts: null, challenges: new Map(), challengeSentAt: new Map() }
+  npcs = new NpcDirector(this)
 
   onCreate() {
     this.maxClients = CITY_MAX_PLAYERS
@@ -169,6 +172,9 @@ export class CityRoom extends Room implements GameRoom {
     this.onMessage('admin_summon', (client, payload: ClientPayload) => onAdminSummon(this, client, payload))
     this.clock.setInterval(() => void this.pollHousingUnits(), HOUSING_POLL_MS)
     this.clock.setInterval(() => tickSurvival(this, SURVIVAL_TICK_MS / 1000), SURVIVAL_TICK_MS)
+    void this.npcs.reload()
+    this.clock.setInterval(() => void this.npcs.reload(), NPC_RELOAD_MS)
+    this.clock.setInterval(() => this.npcs.tick(Date.now()), NPC_TICK_MS)
   }
 
   async onAuth(_client: Client, options: Json, context: AuthContext): Promise<Identity> {
@@ -214,6 +220,7 @@ export class CityRoom extends Room implements GameRoom {
       cashBags: [...this.cashBags.values()],
       isAdmin: player.isAdmin
     })
+    client.send('npcs', this.npcs.snapshot(Date.now()))
     this.forEachClient((c) => c.send('user_joined', publicPlayer(player)), client)
     if (LIVEKIT) {
       await voiceToken(LIVEKIT, this.roomId, client.sessionId, player.pseudo)

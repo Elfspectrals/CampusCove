@@ -21,6 +21,7 @@ import type { BuildingProp } from '../src/game/mallTemplates/mallTemplate.ts'
 import { parseCrops, type CropTable } from '../src/game/crops/crops.ts'
 import { CONSUMABLE_FOLDERS, findHouse, findStore, findWork } from '../src/game/assets/catalog.ts'
 import { parseAnimals, type AnimalTable } from '../src/game/animals/animals.ts'
+import { assignmentProblems, parseNpcBehavior, type ZoneNpcSource } from '../src/game/npcBehavior/npcBehavior.ts'
 import type { WorldBounds, WorldManifest } from '../src/game/world/worldManifest.ts'
 
 const ROUTE = '/__editor/'
@@ -111,6 +112,7 @@ function mallTemplatesApi(assets: string, backendZones: string, repo: string) {
   const zonesDir = join(assets, 'zones')
   const zoneIndexPath = join(zonesDir, 'index.json')
   const zonePath = (key: string) => join(zonesDir, `${key}.json`)
+  const npcBehaviorPath = join(assets, 'npc', 'behavior.json')
   mkdirSync(templatesDir, { recursive: true })
 
   function storedTemplate(key: string): MallTemplate {
@@ -349,6 +351,14 @@ function mallTemplatesApi(assets: string, backendZones: string, repo: string) {
       const next = assignTemplate(assignments(), cells(), cellId, key === null ? null : storedTemplate(key))
       writeJson(assignmentsPath, next)
       return next
+    }
+    if (method === 'PUT' && path === 'npc-behavior') {
+      const file = parseNpcBehavior(await readBody(req))
+      const problems = assignmentProblems(file, (zone) => (/^[a-z0-9_]+$/.test(zone) && existsSync(zonePath(zone)) ? (readJson(zonePath(zone)) as ZoneNpcSource) : null))
+      if (problems.length > 0) throw new HttpError(400, problems.join('; '))
+      mkdirSync(join(assets, 'npc'), { recursive: true })
+      writeJson(npcBehaviorPath, file)
+      return file
     }
     if (method === 'POST' && path === 'buildings/preview') {
       const building = parseBuildingProp(await readBody(req), buildingTable())

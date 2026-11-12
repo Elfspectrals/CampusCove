@@ -67,6 +67,7 @@ import GamePlayerList from '../components/game/GamePlayerList.vue'
 import { useFarm } from '../composables/game/useFarm'
 import { useMallCellTemplates, type CellStoreEntry } from '../composables/game/useMallCellTemplates'
 import { useZoneDecor } from '../composables/game/useZoneDecor'
+import { useNpcBrains } from '../composables/game/useNpcBrains'
 import { usePub } from '../composables/game/usePub'
 import { usePubChallenge } from '../composables/game/usePubChallenge'
 import { usePubGames } from '../composables/game/usePubGames'
@@ -254,6 +255,7 @@ const zoneDecor = useZoneDecor({
     if (role === 'bartender' || role === 'bouncer') pub.onStaff(role, npc)
   },
 })
+const npcBrains = useNpcBrains({ driveNpc: zoneDecor.driveNpc, releaseNpc: zoneDecor.releaseNpc })
 const activeFurniture = computed(() => {
   const keys = [mallCellTemplates.currentStoreKey.value, zoneDecor.currentStoreKey.value]
   return keys.map((key) => furnitureStores.find((s) => s.key === key)).find((store) => store !== undefined) ?? null
@@ -1052,6 +1054,7 @@ const movement = useGameMovement({
     placement.tick(dt)
     mallCellTemplates.tick(dt, myPosition)
     zoneDecor.tick(dt, myPosition)
+    npcBrains.tick(dt)
     cashBags.tick(dt)
     voice.tick()
     for (const { store } of furnitureStores) store.update(dt)
@@ -1161,6 +1164,7 @@ const realtime = useGameRealtime({
   zoneBuyers: zoneBuyers.handlers,
   atm: atm.handlers,
   cashBags: cashBags.handlers,
+  npcs: npcBrains.handlers,
   voice: { onToken: voice.onToken, disconnect: voice.disconnect },
   farm: farm.handlers,
   pubChallenge: pubChallenge.handlers,

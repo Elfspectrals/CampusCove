@@ -67,6 +67,7 @@ import type {
   CashBagErrorPayload,
   CashBagPayload,
   CashBagPickedPayload,
+  NpcStatePayload,
 } from '../../types/gameRealtime'
 import { useRemoteAvatars, type SeatPose } from './useRemoteAvatars'
 import { PUNCH_DAMAGE } from '../../game/punch'
@@ -181,6 +182,10 @@ export interface GameRealtimeDeps {
   voice: {
     onToken: (payload: VoiceTokenPayload) => void
     disconnect: () => Promise<void>
+  }
+  npcs: {
+    onSnapshot: (payload: { npcs?: NpcStatePayload[] }) => void
+    onState: (state: NpcStatePayload) => void
   }
   cashBags: {
     onSync: (bags: CashBagPayload[]) => void
@@ -353,6 +358,8 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('zone_sell_error', (data: ZoneSellErrorPayload) => deps.zoneBuyers.onError(data))
     room.onMessage('atm_done', (data: AtmDonePayload) => deps.atm.onDone(data))
     room.onMessage('atm_error', (data: AtmErrorPayload) => deps.atm.onError(data))
+    room.onMessage('npcs', (data: { npcs?: NpcStatePayload[] }) => deps.npcs.onSnapshot(data))
+    room.onMessage('npc_state', (data: NpcStatePayload) => deps.npcs.onState(data))
     room.onMessage('cash_bag_dropped', (data: CashBagPayload) => deps.cashBags.onDropped(data))
     room.onMessage('cash_bag_removed', (data: { id: number }) => deps.cashBags.onRemoved(data))
     room.onMessage('cash_bag_picked', (data: CashBagPickedPayload) => deps.cashBags.onPicked(data))

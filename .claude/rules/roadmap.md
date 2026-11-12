@@ -126,6 +126,17 @@ Decision (2026-11-12): voice goes through a self-hosted LiveKit SFU (open source
 - [done] Voice from another PC on the same network: `make up` gives LiveKit the network address, `make share-local` reaches LiveKit through the page (`/livekit` proxy) over https (2026-11-12).
 - [todo] Deploy LiveKit on a VPS with TURN; privacy page mentions voice.
 
+## NPC Interface: behavior trees (doing, branch feat/npc-behavior-trees)
+
+Decision (2026-11-12): zone NPCs get UE5-style behavior trees (composites, tasks, decorators with observer aborts, services) edited in the admin at `/admin/npc` and saved to `npc/behavior.json`. The socket runs the trees and is the authority (position, moves, clips, speech, perceived player); the front only shows them. v1 nodes: selector, sequence, random; move to, wander, wait, face, play animation, say; has target, time of day (Paris), chance, cooldown, loop; perceive players. Contract in `docs/NPC_BEHAVIOR.md`.
+
+- [done] Contract, server validation and runtime (`npcBehavior.ts`, `npcBrain.ts`, `npcs.ts`), 100 ms tick, the file re-read every 5 s. Checked live with a socket client: the farmhand picks three times, walks between its rows at 2.5 m/s and goes home; p4 wanders.
+- [done] Admin NPC Interface: tree graph with execution order, right-click menu, Details panel, blackboard points, undo/redo, dev-only save that refuses sellers, staff and points over 60 m; NPCs tab with a map to place each NPC's points.
+- [doing] In-game display (`useNpcBrains`): glide along the server's moves, clips, speech bubbles. Typechecked and unit-tested, not yet seen in a playtest.
+- Only NPCs without a role or sale area can get a tree; NPCs walk in straight lines (no navmesh) and have no collision while driven.
+- [done] Pick Crop task (decided 2026-11-12, after the first look: the farmhand picked in the void): walks to a random crop or orchard tree of the chosen kind within a radius of home, faces it and plays Pick for 3 s. Visual only, nothing is harvested. The farmhand now picks 5 random plants of the field, then goes home for a break. The editor map shows the zone's plants.
+- [todo] Live debugging like UE5: highlight the running branch of a chosen NPC in the graph.
+
 ## Later
 
 - Fishing as the second job (reuse the darts power meter or the Drink Fast balance bar; rod and fish models exist).

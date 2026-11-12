@@ -3,11 +3,12 @@ import * as THREE from 'three'
 import type { Room } from '@colyseus/sdk'
 import { applyCachedBalanceAfterPurchase } from '../../api/session'
 import { disposeObject3D } from '../../avatar/compositeAvatar'
-import { disposeAvatarAnimations, updateAvatarAnimation } from '../../avatar/glbCharacter'
+import { disposeAvatarAnimations, setAvatarSeated, updateAvatarAnimation } from '../../avatar/glbCharacter'
 import { decorModelUrl, isConsumableCode } from '../../game/assets/catalog'
 import { fetchCollisionFile, setPropBlocker } from '../../game/collision/worldCollision'
 import { ANIMALS_URL, animalPose, type AnimalClip, type AnimalDef } from '../../game/animals/animals.ts'
 import { itemModelUrl, type AnimalProp, type ItemProp, type MannequinProp, type NpcProp, type ShelfProp, type StaffRole, type Vec3 } from '../../game/mallTemplates/mallTemplate.ts'
+import { npcStateId } from '../../game/npcBehavior/npcBehavior.ts'
 import { lighterStock, shelfUnits } from '../../game/shelves/shelves.ts'
 import { getGraphicsQuality } from '../../game/graphicsQuality'
 import { animals, createAnimal, createPropObject, modelSize, npcColors, placeProp, type AnimalRig } from '../../game/mallTemplates/templateProps'
@@ -31,6 +32,21 @@ interface Wanderer {
   def: AnimalDef
   rig: AnimalRig
   clip: AnimalClip | null
+}
+
+/** A zone NPC; `driven` while the socket runs its behavior tree (useNpcBrains moves and animates it then). */
+interface ZoneNpc {
+  object: THREE.Object3D
+  prop: NpcProp
+  blocker: string
+  driven: boolean
+}
+
+function npcBlocker(prop: Pick<NpcProp, 'position' | 'scale'>) {
+  const [x, y, z] = prop.position
+  const { hx, hy, hz } = NPC_HALF_EXTENTS
+  const [sx, sy, sz] = prop.scale
+  return { cx: x, cy: y + hy * sy, cz: z, hx: hx * Math.max(sx, sz), hy: hy * sy, hz: hz * Math.max(sx, sz), qx: 0, qy: 0, qz: 0, qw: 1 }
 }
 
 interface DecoratedZone {
@@ -86,7 +102,7 @@ async function fetchDecoratedZones(manifest: WorldManifest): Promise<DecoratedZo
 export function useZoneDecor(deps: ZoneDecorDeps) {
   const root = new THREE.Group()
   root.name = 'ZoneDecor'
-  const npcs: THREE.Object3D[] = []
+  const npcs = new Map<string, ZoneNpc>()
   const herd: Wanderer[] = []
   const buyers = shallowRef<ZoneBuyer[]>([])
   const atms = shallowRef<Vec3[]>([])
@@ -136,14 +152,12 @@ export function useZoneDecor(deps: ZoneDecorDeps) {
     }
     placeProp(object, prop)
     group.add(object)
-    if (prop.kind === 'npc') npcs.push(object)
+    const blocker = blockerKey(zone, prop.id, 0)
+    if (prop.kind === 'npc') npcs.set(npcStateId(zone, prop.id), { object, prop, blocker, driven: false })
     else disposeAvatarAnimations(object)
     if (prop.kind === 'mannequin') store?.bindFigure(prop.id, object)
     if (prop.kind === 'npc' && prop.role) deps.onStaff(prop.role, object)
-    const [x, y, z] = prop.position
-    const { hx, hy, hz } = NPC_HALF_EXTENTS
-    const [sx, sy, sz] = prop.scale
-    block(blockerKey(zone, prop.id, 0), { cx: x, cy: y + hy * sy, cz: z, hx: hx * Math.max(sx, sz), hy: hy * sy, hz: hz * Math.max(sx, sz), qx: 0, qy: 0, qz: 0, qw: 1 })
+    block(blocker, npcBlocker(prop))
   }
 
   async function addShelf(zone: string, group: THREE.Group, shelf: ShelfProp, store: ZoneStore | null): Promise<void> {
@@ -294,7 +308,7 @@ export function useZoneDecor(deps: ZoneDecorDeps) {
 
   function tick(dt: number, at: { x: number; y: number; z: number }): void {
     cullZones(at)
-    for (const npc of npcs) if (npc.parent?.visible) updateAvatarAnimation(npc, dt, 0)
+    for (const npc of npcs.values()) if (!npc.driven && npc.object.parent?.visible) updateAvatarAnimation(npc.object, dt, 0)
     wander(dt)
     const inside = deps.insideOtherStore() ? undefined : storeAreas.find((a) => insideZone(a.bounds, at))
     currentStoreKey.value = inside?.key ?? null
@@ -302,7 +316,7 @@ export function useZoneDecor(deps: ZoneDecorDeps) {
 
   onUnmounted(() => {
     disposed = true
-    for (const npc of npcs) disposeAvatarAnimations(npc)
+    for (const npc of npcs.values()) disposeAvatarAnimations(npc.object)
     for (const animal of herd) {
       animal.rig.mixer.stopAllAction()
       animal.rig.mixer.uncacheRoot(animal.rig.object)
@@ -312,5 +326,26 @@ export function useZoneDecor(deps: ZoneDecorDeps) {
     disposeObject3D(root)
   })
 
-  return { onTownLoaded, tick, currentStoreKey, buyers, atms }
+  /** Hands an NPC to the socket's behavior tree: no collision box, no idle loop here. Null until it is loaded. */
+  function driveNpc(id: string): THREE.Object3D | null {
+    const npc = npcs.get(id)
+    if (!npc) return null
+    if (!npc.driven) {
+      npc.driven = true
+      setPropBlocker(npc.blocker, null)
+    }
+    return npc.object
+  }
+
+  /** Back to a still NPC at its spot in the zone file. */
+  function releaseNpc(id: string): void {
+    const npc = npcs.get(id)
+    if (!npc?.driven) return
+    npc.driven = false
+    setAvatarSeated(npc.object, false)
+    placeProp(npc.object, npc.prop)
+    setPropBlocker(npc.blocker, npcBlocker(npc.prop))
+  }
+
+  return { onTownLoaded, tick, currentStoreKey, buyers, atms, driveNpc, releaseNpc }
 }
