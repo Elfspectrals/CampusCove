@@ -7,19 +7,26 @@
 ENV_FILE := $(if $(wildcard .env.prod),.env.prod,.env)
 COMPOSE := docker compose --env-file $(ENV_FILE)
 ART    := $(COMPOSE) exec -T backend php artisan
+# this PC's network address for LiveKit: the adapter holding the default route on Windows
+# (Windows' ipconfig has no getifaddr and prints its help instead), en0/en1 on macOS, hostname -I on Linux
+ifeq ($(OS),Windows_NT)
+LAN_IP ?= $(strip $(shell powershell -NoProfile -ExecutionPolicy Bypass -File scripts/lan-ip.ps1))
+else
 LAN_IP ?= $(shell ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null || hostname -I 2>/dev/null | cut -d' ' -f1)
-UP_ENV := LIVEKIT_NODE_IP=$(or $(LAN_IP),127.0.0.1)
+endif
+# exported rather than prefixed (VAR=x cmd) so the recipes also run under cmd.exe when make is called from PowerShell
+export LIVEKIT_NODE_IP := $(or $(LAN_IP),127.0.0.1)
 
 help: ## List commands
 	@grep -hE '^[a-zA-Z0-9_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-22s %s\n", $$1, $$2}'
 
 # --- docker ---
 
-up: ## Start the stack (front 5173, api 8000, socket 3000, db 5432, voice 7880); voice uses this PC's network address (LAN_IP=... to force it)
-	$(UP_ENV) $(COMPOSE) up -d
+up: front-install socket-install ## Start the stack (front 5173, api 8000, socket 3000, db 5432, voice 7880); voice uses this PC's network address (LAN_IP=... to force it)
+	$(COMPOSE) up -d
 
-up-build: ## Start the stack, rebuilding images
-	$(UP_ENV) $(COMPOSE) up -d --build
+up-build: front-install socket-install ## Start the stack, rebuilding images
+	$(COMPOSE) up -d --build
 
 down: ## Stop the stack (keeps volumes), the optional Stripe CLI relay included
 	$(COMPOSE) --profile stripe down
@@ -53,7 +60,7 @@ prod-logs: ## Tail production logs
 
 # --- front ---
 
-front-install: ## Install front dependencies
+front-install: ## Install front dependencies (run by up, so the host builds share-local and tests with them)
 	cd front && npm install
 
 front-dev: ## Front dev server (http://localhost:5173)
@@ -218,7 +225,7 @@ backend-serve: ## Laravel API locally (http://localhost:8000)
 
 # --- socket (local, no Docker) ---
 
-socket-install: ## Install socket dependencies
+socket-install: ## Install socket dependencies (run by up, so the host runs the socket tests with them)
 	cd socket && npm install
 
 socket-start: ## Run socket locally (port 3000)

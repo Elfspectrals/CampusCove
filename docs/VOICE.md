@@ -16,14 +16,14 @@ Voice goes through a self-hosted LiveKit server (SFU). Laravel is not involved: 
 | identity | the player's Colyseus session id, so the front maps a voice to the avatar it already knows |
 | name | the pseudo (`name#tag`) |
 | room | `city-<Colyseus room id>`, one LiveKit room per city instance |
-| grants | join and publish; no subscribe, no data channel |
+| grants | join, publish and subscribe; no data channel. Subscribe is required: LiveKit refuses the socket's `UpdateSubscriptions` for a participant without it |
 | lifetime | 6 h |
 
-The browser never chooses its LiveKit room, and cannot subscribe to anyone on its own.
+The browser never chooses its LiveKit room. It joins with `autoSubscribe: false`, so it only hears the voices the socket subscribes it to.
 
 ## Who hears whom (socket)
 
-Every 500 ms (`VOICE_SYNC_MS`) the socket lists the microphone tracks of the LiveKit room and computes, for each player, the voices they hear (`socket/src/voiceRange.ts`): players within 30 m, kept up to 34 m, on the same side of a house wall, minus the accounts that player muted. It sends only the changes with the LiveKit admin API `UpdateSubscriptions`. A modified client cannot listen across the map.
+Every 500 ms (`VOICE_SYNC_MS`) the socket lists the microphone tracks of the LiveKit room and computes, for each player, the voices they hear (`socket/src/voiceRange.ts`): players within 30 m, kept up to 34 m, on the same side of a house wall, minus the accounts that player muted. It sends only the changes with the LiveKit admin API `UpdateSubscriptions`. A modified client could still subscribe to every voice of its city instance itself; closing that needs each publisher to restrict who may subscribe to its track (`setTrackSubscriptionPermissions`), not done yet.
 
 ## Socket message `voice_mute` (client → socket)
 
