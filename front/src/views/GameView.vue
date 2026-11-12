@@ -61,6 +61,9 @@ import { useOrchard } from '../composables/game/useOrchard'
 import { useZoneBuyers } from '../composables/game/useZoneBuyers'
 import { useAtm } from '../composables/game/useAtm'
 import { useCashBags } from '../composables/game/useCashBags'
+import { useProximityVoice } from '../composables/game/useProximityVoice'
+import { mutedAccounts, toggleMuteAccount } from '../composables/game/useVoiceSettings'
+import GamePlayerList from '../components/game/GamePlayerList.vue'
 import { useFarm } from '../composables/game/useFarm'
 import { useMallCellTemplates, type CellStoreEntry } from '../composables/game/useMallCellTemplates'
 import { useZoneDecor } from '../composables/game/useZoneDecor'
@@ -919,6 +922,7 @@ const pauseMenuOpen = computed(
     !pubUiOpen.value &&
     !zoneBuyerOpen.value &&
     !atmOpen.value &&
+    !playerListOpen.value &&
     !settingsOpen.value &&
     !creator.value,
 )
@@ -933,13 +937,19 @@ watch(inventoryOpen, (open) => {
 })
 
 const chatOpen = ref(false)
+const playerListOpen = ref(false)
+watch(mutedAccounts, (accounts) => gameRoomRef.value?.send('voice_mute', { accounts: [...accounts] }))
+watch(playerListOpen, (open) => {
+  if (open && document.pointerLockElement) document.exitPointerLock()
+  if (!open && !document.pointerLockElement) requestPointerLock()
+})
 
 function sendChat(text: string): void {
   gameRoomRef.value?.send('chat', { text })
 }
 
 function handleExtraKeyDown(e: KeyboardEvent): boolean {
-  if (chatOpen.value || atmOpen.value) return true
+  if (chatOpen.value || atmOpen.value || playerListOpen.value) return true
   // the character screen owns the keyboard (Esc closes the editor)
   if (creator.value) return true
   // the watch and the trade window take the keyboard (coins field, Esc): no game key behind them
@@ -963,6 +973,11 @@ function handleExtraKeyDown(e: KeyboardEvent): boolean {
   if (runUseOrPunch(e.code, e.repeat, e.shiftKey)) return true
   if (matches('characterEditor', e.code) && !e.repeat) {
     void openCharacterEditor()
+    return true
+  }
+  if (matches('playerList', e.code) && !e.repeat) {
+    e.preventDefault()
+    playerListOpen.value = true
     return true
   }
   if (matches('chat', e.code) && !e.repeat) {
@@ -1035,6 +1050,7 @@ const movement = useGameMovement({
     mallCellTemplates.tick(dt, myPosition)
     zoneDecor.tick(dt, myPosition)
     cashBags.tick(dt)
+    voice.tick()
     for (const { store } of furnitureStores) store.update(dt)
     threadsMusic.update(dt, inThreads.value)
     zoneMusic?.update(dt, (currentHouseKey.value === null || currentHouseKey.value === zoneMusicKey) && insideBounds(zoneMusicBounds, myPosition))
@@ -1076,6 +1092,20 @@ const punch = usePunch({
 })
 const { hitMarker } = punch
 
+const voice = useProximityVoice({
+  myPosition,
+  getCamera,
+  remotePosition: (sessionId) => realtime.remotePosition(sessionId),
+  isMuted: (sessionId) => {
+    const account = realtime.remoteAccount(sessionId)
+    return account !== null && mutedAccounts.value.includes(account)
+  },
+  setVoiceState: (sessionId, state) => realtime.setRemoteVoiceState(sessionId, state),
+  sendMuted: () => gameRoomRef.value?.send('voice_mute', { accounts: [...mutedAccounts.value] }),
+  canTalk: () => pointerLocked.value && !chatOpen.value && !atmOpen.value,
+  say: (text) => survival.say(text),
+  micDeniedMessage: () => t('voice.micDenied'),
+})
 const realtime = useGameRealtime({
   router,
   gameRoomRef,
@@ -1124,6 +1154,7 @@ const realtime = useGameRealtime({
   zoneBuyers: zoneBuyers.handlers,
   atm: atm.handlers,
   cashBags: cashBags.handlers,
+  voice: { onToken: voice.onToken, disconnect: voice.disconnect },
   farm: farm.handlers,
   pubChallenge: pubChallenge.handlers,
 })
@@ -1567,7 +1598,18 @@ const crosshairClass = computed(() => {
       @order="pub.order"
       @close="pub.close"
     />
+    <GamePlayerList
+      v-if="playerListOpen"
+      :players="realtime.remotePlayers"
+      :speaking="voice.speaking.value"
+      :muted="mutedAccounts"
+      @toggle-mute="toggleMuteAccount"
+      @close="playerListOpen = false"
+    />
     <GameChat :open="chatOpen" @send="sendChat" @close="chatOpen = false" />
+    <p v-if="voice.talking.value" class="cc-hud pointer-events-none absolute bottom-48 left-4 z-[30] m-0 flex items-center gap-2 px-3 py-1.5 text-sm font-bold text-fog" role="status">
+      <span class="size-2.5 animate-pulse rounded-full bg-coral" />{{ t('voice.live') }}
+    </p>
     <GamePubSecretDialog
       v-if="pubSecretOpen"
       :greeting="pub.bouncerGreeting"

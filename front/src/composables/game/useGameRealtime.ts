@@ -2,6 +2,7 @@ import { ref, type Ref, type ShallowRef } from 'vue'
 import type { Router } from 'vue-router'
 import type * as THREE from 'three'
 import { Client as ColyseusClient, type Room } from '@colyseus/sdk'
+import type { VoiceTokenPayload } from './useProximityVoice'
 import {
   appearanceIdsFromLoadout,
   bodyModelGlbFromLoadout,
@@ -176,6 +177,10 @@ export interface GameRealtimeDeps {
   atm: {
     onDone: (data: AtmDonePayload) => void
     onError: (data: AtmErrorPayload) => void
+  }
+  voice: {
+    onToken: (payload: VoiceTokenPayload) => void
+    disconnect: () => Promise<void>
   }
   cashBags: {
     onSync: (bags: CashBagPayload[]) => void
@@ -374,7 +379,9 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       deps.apartment.onActionError()
     })
 
+    room.onMessage('voice_token', (data: VoiceTokenPayload) => deps.voice.onToken(data))
     room.onLeave(() => {
+      void deps.voice.disconnect()
       if (!switchingRoom.value) deps.roomMessage.value = 'Disconnected from realtime room.'
     })
   }
@@ -464,6 +471,10 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     clearRemoteUsers: remotes.clear,
     tickRemoteAvatars: remotes.tick,
     remotePseudo: remotes.pseudoOf,
+    remotePosition: remotes.positionOf,
+    setRemoteVoiceState: remotes.setVoiceState,
+    remotePlayers: remotes.players,
+    remoteAccount: remotes.accountOf,
     setRemoteRacePint: remotes.setRacePint,
   }
 }

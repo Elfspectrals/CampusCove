@@ -2,7 +2,7 @@ import { type AuthContext, type Client, Room } from 'colyseus'
 import { onAdminOpen, onAdminSummon, onAdminTeleport } from './admin.ts'
 import { pickupObject, saveObject, setDecoratedHouse } from './apartments.ts'
 import { type Json, callBackendJson, clientIp, isDirectOrigin, parseAccountId, resolveIdentity } from './backend.ts'
-import { CITY_MAX_PLAYERS, CITY_SPAWN_RADIUS } from './config.ts'
+import { CITY_MAX_PLAYERS, CITY_SPAWN_RADIUS, LIVEKIT } from './config.ts'
 
 const HOUSING_REFRESH_COOLDOWN_MS = 2000
 const HOUSING_POLL_MS = 60_000
@@ -41,6 +41,8 @@ import { onPunch } from './punch.ts'
 import { onChat } from './chat.ts'
 import { onAtm } from './atm.ts'
 import { onCashBagPick } from './cashBags.ts'
+import { voiceRoomName, voiceToken } from './voice.ts'
+import { VOICE_SYNC_MS, createVoiceSync, liveKitService, onVoiceMute } from './voiceSync.ts'
 import {
   createPlayer,
   normalizeAppearanceIds,
@@ -127,6 +129,11 @@ export class CityRoom extends Room implements GameRoom {
     this.onMessage('chat', (client, payload: ClientPayload) => onChat(this, client, payload))
     this.onMessage('atm', (client, payload: ClientPayload) => void onAtm(this, client, payload))
     this.onMessage('cash_bag_pick', (client, payload: ClientPayload) => void onCashBagPick(this, client, payload))
+    this.onMessage('voice_mute', (client, payload: ClientPayload) => onVoiceMute(this, client, payload))
+    if (LIVEKIT) {
+      const voice = createVoiceSync(this, liveKitService(LIVEKIT), voiceRoomName(this.roomId))
+      this.clock.setInterval(() => void voice.sync().catch((error) => warn('voice sync failed', error)), VOICE_SYNC_MS)
+    }
     this.onMessage('trade_nearby', (client) => onTradeNearby(this, client))
     this.onMessage('trade_request', (client, payload: ClientPayload) => onTradeRequest(this, client, payload))
     this.onMessage('trade_respond', (client, payload: ClientPayload) => onTradeRespond(this, client, payload))
@@ -208,6 +215,11 @@ export class CityRoom extends Room implements GameRoom {
       isAdmin: player.isAdmin
     })
     this.forEachClient((c) => c.send('user_joined', publicPlayer(player)), client)
+    if (LIVEKIT) {
+      await voiceToken(LIVEKIT, this.roomId, client.sessionId, player.pseudo)
+        .then((voice) => client.send('voice_token', voice))
+        .catch((error) => warn('voice token failed', error))
+    }
     if (player.token) await loadSurvival(client, player)
   }
 

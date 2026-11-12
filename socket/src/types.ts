@@ -58,6 +58,7 @@ export interface Player extends Vec3 {
   lastChatAt: number
   lastAtmAt: number
   lastCashBagPickAt: number
+  voiceMuted: ReadonlySet<string>
   stamina: number
   /** Last time stamina was spent (punch, jump, sprint); regen starts after STAMINA_REGEN_DELAY_MS. */
   staminaSpentAt: number

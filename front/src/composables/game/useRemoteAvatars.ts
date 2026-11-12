@@ -13,6 +13,7 @@ import { createActionBubble, type AvatarAction } from '../../game/actionBubble'
 import { createChatBubble, type ChatBubble } from '../../game/chatBubble'
 import { EYE_HEIGHT } from '../../game/gameRoomConstants'
 import { createNameTag, nameTagVisible, type NameTag } from '../../game/nameTag'
+import { createVoiceIcon, type VoiceIcon, type VoiceIconState } from '../../game/voiceIcon'
 import {
   advancePunchPose,
   createDamageNumber,
@@ -44,6 +45,8 @@ interface RemoteAvatar {
   pseudo: string
   group: THREE.Group
   nameTag: NameTag
+  voiceIcon: VoiceIcon
+  voiceState: VoiceIconState
   chatBubble: ChatBubble | null
   /** Last position / yaw received; the group glides towards it in `tick`. */
   x: number
@@ -171,6 +174,7 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     endFlashOf(entry.group)
     entry.racePint?.dispose()
     entry.nameTag.dispose()
+    entry.voiceIcon.dispose()
     entry.chatBubble?.dispose()
     disposeObject3D(entry.group)
     avatars.delete(sessionId)
@@ -211,6 +215,7 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
       endFlashOf(existing.group)
       existing.racePint?.dispose()
       existing.nameTag.dispose()
+      existing.voiceIcon.dispose()
       existing.chatBubble?.dispose()
       disposeObject3D(existing.group)
       avatars.delete(sessionId)
@@ -240,6 +245,8 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
       pseudo: data.pseudo,
       group,
       nameTag: createNameTag(group, data.pseudo),
+      voiceIcon: createVoiceIcon(group),
+      voiceState: null,
       chatBubble: null,
       x: data.x,
       y: data.y,
@@ -295,6 +302,7 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     endFlashOf(latest.group)
     latest.racePint?.dispose()
     latest.nameTag.dispose()
+    latest.voiceIcon.dispose()
     latest.chatBubble?.dispose()
     disposeObject3D(latest.group)
     placeAvatar(group, latest.x, latest.y, latest.z, latest.ry)
@@ -302,7 +310,8 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     const racePint = latest.racePint ? createRacePint(group) : null
     racePint?.setProgress(latest.raceProgress)
     const nameTag = createNameTag(group, latest.pseudo)
-    const rebuilt = { ...latest, group, nameTag, chatBubble: null, outfit, punchOffsetX: 0, punchOffsetZ: 0, racePint }
+    const voiceIcon = createVoiceIcon(group)
+    const rebuilt = { ...latest, group, nameTag, voiceIcon, chatBubble: null, outfit, punchOffsetX: 0, punchOffsetZ: 0, racePint }
     avatars.set(sessionId, rebuilt)
     applySeat(rebuilt)
   }
@@ -329,6 +338,23 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
   function setPicking(sessionId: string, picking: boolean) {
     const entry = avatars.get(sessionId)
     if (entry) setAvatarPicking(entry.group, picking)
+  }
+
+  function setVoiceState(sessionId: string, state: VoiceIconState): void {
+    const entry = avatars.get(sessionId)
+    if (entry) entry.voiceState = state
+  }
+
+  function players(): Array<{ sessionId: string; accountId: string; pseudo: string }> {
+    return [...avatars.entries()].map(([sessionId, a]) => ({ sessionId, accountId: a.userId, pseudo: a.pseudo }))
+  }
+
+  function accountOf(sessionId: string): string | null {
+    return avatars.get(sessionId)?.userId ?? null
+  }
+
+  function positionOf(sessionId: string): THREE.Vector3 | null {
+    return avatars.get(sessionId)?.group.position ?? null
   }
 
   function pseudoOf(sessionId: string): string | null {
@@ -437,7 +463,9 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     for (const entry of avatars.values()) {
       const group = entry.group
       if (entry.chatBubble && !entry.chatBubble.update(dt)) entry.chatBubble = null
-      entry.nameTag.setVisible(nameTagVisible(group.position.x - deps.myPosition.x, group.position.z - deps.myPosition.z))
+      const tagVisible = nameTagVisible(group.position.x - deps.myPosition.x, group.position.z - deps.myPosition.z)
+      entry.nameTag.setVisible(tagVisible)
+      entry.voiceIcon.set(entry.voiceState, tagVisible)
       group.position.x -= entry.punchOffsetX
       group.position.z -= entry.punchOffsetZ
       const dx = entry.x - group.position.x
@@ -465,5 +493,5 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     }
   }
 
-  return { upsert, updateAppearance, setTarget, setSeated, setPicking, setRacePint, pseudoOf, showAction, showChat, showPunch, showHit, remove, clear, tick }
+  return { upsert, updateAppearance, setTarget, setSeated, setPicking, setRacePint, pseudoOf, positionOf, setVoiceState, players, accountOf, showAction, showChat, showPunch, showHit, remove, clear, tick }
 }

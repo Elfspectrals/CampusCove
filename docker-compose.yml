@@ -21,6 +21,10 @@ services:
       DB_DATABASE: campus_cove
       DB_USERNAME: postgres
       DB_PASSWORD: secret
+      LIVEKIT_URL: ws://localhost:7880
+      LIVEKIT_API_URL: http://livekit:7880
+      LIVEKIT_API_KEY: devkey
+      LIVEKIT_API_SECRET: secret
     depends_on:
       postgres:
         condition: service_healthy
@@ -92,6 +96,15 @@ services:
       - ./backend:/var/www/html
       - backend_vendor:/var/www/html/vendor
     command: sh -c "composer install --no-interaction && php artisan key:generate --force && php artisan migrate --force && php artisan db:seed --class=ShopSeeder --force && php artisan db:seed --class=HousingUnitSeeder --force && php artisan housing:purge-legacy && php artisan serve --host=0.0.0.0 --port=8000"
+
+  livekit:
+    image: livekit/livekit-server:v1.13.10
+    container_name: campuscove-livekit
+    command: --dev --bind 0.0.0.0 --node-ip 127.0.0.1
+    ports:
+      - "7880:7880"
+      - "7881:7881"
+      - "7882:7882/udp"
 
   front:
     build:
