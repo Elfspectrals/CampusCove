@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { BankOperation, BankScreen } from '../../api/bank'
+import type { BankScreen } from '../../api/bank'
+import { useBankOperationLabel } from '../../composables/game/useBankOperationLabel'
 import type { AtmOperation } from '../../composables/game/useAtm'
 import { parseAmount, parseRecipient } from '../../game/bank'
 import UiCurrency from '../ui/UiCurrency.vue'
@@ -13,7 +14,8 @@ const props = defineProps<{
 }>()
 const emit = defineEmits<{ run: [operation: AtmOperation]; clearFeedback: []; close: [] }>()
 
-const { t, te, locale } = useI18n()
+const { t, locale } = useI18n()
+const operationLabel = useBankOperationLabel()
 
 type View = 'menu' | 'withdraw' | 'deposit' | 'transfer' | 'balance' | 'history'
 const view = ref<View>('menu')
@@ -62,13 +64,6 @@ function submit(): void {
     emit('run', { action: view.value, amount: amount.value })
   }
   amountText.value = ''
-}
-
-function operationLabel(op: BankOperation): string {
-  if (op.reason === 'bank_transfer_out') return t('atm.reasons.bank_transfer_out', { name: op.to ?? '?' })
-  if (op.reason === 'bank_transfer_in') return t('atm.reasons.bank_transfer_in', { name: op.from ?? '?' })
-  const key = `atm.reasons.${op.reason}`
-  return te(key) ? t(key) : op.reason.replace(/_/g, ' ')
 }
 
 function formatDate(iso: string): string {

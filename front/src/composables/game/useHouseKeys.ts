@@ -85,7 +85,7 @@ export function useHouseKeys(deps: HouseKeysDeps) {
     keyPrompt.value = {
       x: (head.x * 0.5 + 0.5) * rect.width,
       y: (-head.y * 0.5 + 0.5) * rect.height,
-      action: hasKeys(target.accountId) ? 'Take keys' : 'Give keys',
+      action: hasKeys(target.accountId) ? 'Remove flatmate' : 'Add flatmate',
       detail: target.pseudo,
     }
   }
@@ -100,7 +100,7 @@ export function useHouseKeys(deps: HouseKeysDeps) {
       else await giveHouseKeys(current.accountId)
       deps.gameRoomRef.value?.send('housing_refresh')
     } catch (err) {
-      deps.roomMessage.value = err instanceof Error ? err.message : 'Could not change the keys.'
+      deps.roomMessage.value = err instanceof Error ? err.message : 'Could not change the flatmates.'
     } finally {
       inFlight = false
     }

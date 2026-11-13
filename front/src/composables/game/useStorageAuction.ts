@@ -92,7 +92,7 @@ export function useStorageAuction(deps: StorageAuctionDeps) {
     const room = deps.gameRoomRef.value
     if (!found || !room) return false
     if (found.intent.kind === 'bid') room.send('storage_bid')
-    else if (found.intent.kind === 'open') room.send('storage_open', { lotId: found.intent.lotId })
+    else if (found.intent.kind === 'open') room.send('storage_lot_open', { lotId: found.intent.lotId })
     else room.send('storage_open_mine')
     return true
   }

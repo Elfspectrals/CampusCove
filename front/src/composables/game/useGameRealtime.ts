@@ -22,6 +22,14 @@ import type {
   HouseFurniturePayload,
   HousingUnitPayload,
   PubBellPayload,
+  PubQuizAnnouncePayload,
+  PubQuizAnsweredPayload,
+  PubQuizCancelledPayload,
+  PubQuizLobbyPayload,
+  PubQuizPrizePayload,
+  PubQuizQuestionPayload,
+  PubQuizResultsPayload,
+  PubQuizRevealPayload,
   PubBouncerBlockPayload,
   PubDartsEndPayload,
   PubDartsLobbyPayload,
@@ -63,6 +71,14 @@ import type {
   ZoneSellErrorPayload,
   ZoneSoldPayload,
   AtmDonePayload,
+  TaskDonePayload,
+
+  LockpickErrorPayload,
+  LockpickPinPayload,
+  LockpickResultPayload,
+  BedErrorPayload,
+  StorageErrorPayload,
+  StorageScreenPayload,
   AtmErrorPayload,
   CashBagErrorPayload,
   CashBagPayload,
@@ -153,6 +169,17 @@ export interface GameRealtimeDeps {
     onBouncerBlock: (data: PubBouncerBlockPayload, mySessionId: string) => void
     onBell: (data: PubBellPayload) => void
   }
+  pubQuiz: {
+    onInit: (data: PubQuizAnnouncePayload | null) => void
+    onAnnounce: (data: PubQuizAnnouncePayload) => void
+    onLobby: (data: PubQuizLobbyPayload) => void
+    onCancelled: (data: PubQuizCancelledPayload) => void
+    onQuestion: (data: PubQuizQuestionPayload) => void
+    onAnswered: (data: PubQuizAnsweredPayload) => void
+    onReveal: (data: PubQuizRevealPayload) => void
+    onResults: (data: PubQuizResultsPayload) => void
+    onPrize: (data: PubQuizPrizePayload) => void
+  }
   /** Drink Fast, Meter Shot and Darts (usePubGames). */
   pubGames: {
     onRaceLobby: (data: PubRaceLobbyPayload) => void
@@ -180,6 +207,23 @@ export interface GameRealtimeDeps {
     onDone: (data: AtmDonePayload) => void
     onError: (data: AtmErrorPayload) => void
   }
+  bed: {
+    onDone: () => void
+    onError: (data: BedErrorPayload) => void
+  }
+  storage: {
+    onScreen: (data: StorageScreenPayload) => void
+    onError: (data: StorageErrorPayload) => void
+  }
+  lockpick: {
+    onPin: (data: LockpickPinPayload) => void
+    onResult: (data: LockpickResultPayload) => void
+    onError: (data: LockpickErrorPayload) => void
+    onReinforced: () => void
+    onReinforceError: (data: LockpickErrorPayload) => void
+    onAlarmSiren: (data: { door: string }) => void
+    onHouseAlarm: () => void
+  }
   voice: {
     onToken: (payload: VoiceTokenPayload) => void
     disconnect: () => Promise<void>
@@ -200,12 +244,19 @@ export interface GameRealtimeDeps {
     onError: (data: CashBagErrorPayload) => void
   }
   orchard: {
+    onPickStarted: (data: { tree: number; durationMs: number }) => void
     onPicked: (data: OrchardPickedPayload) => void
     onError: (data: OrchardErrorPayload) => void
   }
   farm: {
     onPicked: (data: FarmPickedPayload) => void
     onError: (data: FarmErrorPayload) => void
+  }
+  tasks: {
+    onDone: (data: TaskDonePayload) => void
+  }
+  tutorial: {
+    onState: (data: unknown) => void
   }
 }
 
@@ -262,6 +313,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       if (payload.houseFurniture !== undefined) deps.onHouseFurnitureSync(payload.houseFurniture)
       if (payload.openDoors !== undefined) deps.onDoorsSync(payload.openDoors)
       deps.pub.onSecretDoor({ open: payload.pubSecretOpen === true })
+      deps.pubQuiz.onInit(payload.pubQuiz ?? null)
       deps.cashBags.onSync(payload.cashBags ?? [])
       deps.admin.onInit(payload.isAdmin === true)
     })
@@ -285,6 +337,10 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('user_seated', (data: UserSeatedPayload) => {
       if (data.sessionId !== room.sessionId) remotes.setSeated(data.sessionId, deps.seats.seatPose(data.seatId))
       deps.seats.onSeated(data, room.sessionId)
+    })
+
+    room.onMessage('user_held', (data: { sessionId: string; code: string | null }) => {
+      if (data.sessionId !== room.sessionId) remotes.setHeldTool(data.sessionId, typeof data.code === 'string' ? data.code : null)
     })
 
     room.onMessage('user_picking', (data: UserPickingPayload) => {
@@ -357,6 +413,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('pub_race_challenge_sent', (data: PubRaceChallengeSentPayload) => deps.pubChallenge.onSent(data))
     room.onMessage('pub_race_challenge_result', (data: PubRaceChallengeResultPayload) => deps.pubChallenge.onResult(data))
     room.onMessage('pub_race_challenge_cancelled', (data: PubRaceChallengeCancelledPayload) => deps.pubChallenge.onCancelled(data))
+    room.onMessage('orchard_pick_started', (data: { tree: number; durationMs: number }) => deps.orchard.onPickStarted(data))
     room.onMessage('orchard_picked', (data: OrchardPickedPayload) => deps.orchard.onPicked(data))
     room.onMessage('orchard_error', (data: OrchardErrorPayload) => deps.orchard.onError(data))
     room.onMessage('zone_sold', (data: ZoneSoldPayload) => deps.zoneBuyers.onSold(data))
@@ -368,7 +425,21 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('storage_sale_started', (data: { count: number }) => deps.storageAuction.onStarted(data))
     room.onMessage('storage_sale_ended', () => deps.storageAuction.onEnded())
     room.onMessage('storage_opened', (data: StorageOpenedPayload) => deps.storageAuction.onOpened(data))
-    room.onMessage('storage_error', (data: { message: string }) => deps.storageAuction.onError(data))
+    room.onMessage('storage_sale_error', (data: { message: string }) => deps.storageAuction.onError(data))
+    room.onMessage('task_done', (data: TaskDonePayload) => deps.tasks.onDone(data))
+    room.onMessage('tutorial_state', (data: unknown) => deps.tutorial.onState(data))
+    room.onMessage('user_badges', (data: { sessionId: string; badges: string[] }) => remotes.setBadges(data.sessionId, data.badges))
+    room.onMessage('lockpick_pin', (data: LockpickPinPayload) => deps.lockpick.onPin(data))
+    room.onMessage('lockpick_result', (data: LockpickResultPayload) => deps.lockpick.onResult(data))
+    room.onMessage('lockpick_error', (data: LockpickErrorPayload) => deps.lockpick.onError(data))
+    room.onMessage('door_reinforced', () => deps.lockpick.onReinforced())
+    room.onMessage('door_reinforce_error', (data: LockpickErrorPayload) => deps.lockpick.onReinforceError(data))
+    room.onMessage('alarm_siren', (data: { door: string }) => deps.lockpick.onAlarmSiren(data))
+    room.onMessage('house_alarm', () => deps.lockpick.onHouseAlarm())
+    room.onMessage('storage_screen', (data: StorageScreenPayload) => deps.storage.onScreen(data))
+    room.onMessage('storage_error', (data: StorageErrorPayload) => deps.storage.onError(data))
+    room.onMessage('bed_set_done', () => deps.bed.onDone())
+    room.onMessage('bed_error', (data: BedErrorPayload) => deps.bed.onError(data))
     room.onMessage('cash_bag_dropped', (data: CashBagPayload) => deps.cashBags.onDropped(data))
     room.onMessage('cash_bag_removed', (data: { id: number }) => deps.cashBags.onRemoved(data))
     room.onMessage('cash_bag_picked', (data: CashBagPickedPayload) => deps.cashBags.onPicked(data))
@@ -380,6 +451,14 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('pub_darts_lobby', (data: PubDartsLobbyPayload) => deps.pubGames.onDartsLobby(data))
     room.onMessage('pub_darts_state', (data: PubDartsStatePayload) => deps.pubGames.onDartsState(data))
     room.onMessage('pub_darts_end', (data: PubDartsEndPayload) => deps.pubGames.onDartsEnd(data))
+    room.onMessage('pub_quiz_announce', (data: PubQuizAnnouncePayload) => deps.pubQuiz.onAnnounce(data))
+    room.onMessage('pub_quiz_lobby', (data: PubQuizLobbyPayload) => deps.pubQuiz.onLobby(data))
+    room.onMessage('pub_quiz_cancelled', (data: PubQuizCancelledPayload) => deps.pubQuiz.onCancelled(data))
+    room.onMessage('pub_quiz_question', (data: PubQuizQuestionPayload) => deps.pubQuiz.onQuestion(data))
+    room.onMessage('pub_quiz_answered', (data: PubQuizAnsweredPayload) => deps.pubQuiz.onAnswered(data))
+    room.onMessage('pub_quiz_reveal', (data: PubQuizRevealPayload) => deps.pubQuiz.onReveal(data))
+    room.onMessage('pub_quiz_results', (data: PubQuizResultsPayload) => deps.pubQuiz.onResults(data))
+    room.onMessage('pub_quiz_prize', (data: PubQuizPrizePayload) => deps.pubQuiz.onPrize(data))
 
     room.onMessage('apartment_inventory', (data: { items: ApartmentInventoryItem[] }) => {
       onInventory(Array.isArray(data.items) ? data.items : [])

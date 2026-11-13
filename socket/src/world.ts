@@ -45,6 +45,7 @@ export interface WorldPub {
   bartender: Vec3
   bartenderYaw: number
   bouncer: Vec3
+  quizmaster: Vec3
   counter: Vec3
   taps: Vec3
   serve: Vec3
@@ -217,6 +218,7 @@ function parsePub(raw: Json): WorldPub | null {
     bartender: parseVec3(raw.bartender, 'pub bartender'),
     bartenderYaw: parseYaw(raw.bartenderYaw, 'pub bartenderYaw'),
     bouncer: parseVec3(raw.bouncer, 'pub bouncer'),
+    quizmaster: parseVec3(raw.quizmaster, 'pub quizmaster'),
     counter: parseVec3(raw.counter, 'pub counter'),
     taps: parseVec3(raw.taps, 'pub taps'),
     serve: parseVec3(raw.serve, 'pub serve'),
@@ -462,6 +464,11 @@ export function worldOrchard(): WorldOrchard | null {
 
 export function worldCropPlants(): WorldCropPlant[] {
   return loadedWorld().cropPlants
+}
+
+export function worldZoneKeysAt(x: number, z: number): string[] {
+  const inside = ([, b]: [string, Bounds]) => x >= b.minX && x <= b.maxX && z >= b.minZ && z <= b.maxZ
+  return [...loadedWorld().zoneBounds, ...shopBounds].filter(inside).map(([key]) => key)
 }
 
 export function worldZoneBounds(key: string): Bounds | null {

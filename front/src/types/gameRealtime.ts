@@ -1,7 +1,10 @@
+import type { QuizChoice, QuizRankingEntry, QuizText } from '../game/pub/quiz'
+
 export interface RemoteUserPayload {
   sessionId: string
   id: string
   pseudo: string
+  badges?: string[]
   color: number
   x: number
   y: number
@@ -15,6 +18,8 @@ export interface RemoteUserPayload {
   character?: unknown
   /** Pub seat the player sits on (socket/src/pub.ts), null or absent when standing. */
   seatId?: string | null
+  /** Job tool in hand, checked by the socket (docs/TOOLS.md). */
+  heldTool?: string | null
 }
 
 /** 'user_seated': a visible player sat down on a pub seat, or stood up (`seatId` null). */
@@ -65,6 +70,7 @@ export interface HousingUnitPayload {
   occupant_name: string | null
   tax_due_at: string | null
   door_locked: boolean
+  reinforced_lock: boolean
   room_public_id: string | null
   template_key: string
   key_holder_account_ids: number[]
@@ -78,6 +84,7 @@ export interface RoomInitPayload {
   houseFurniture?: HouseFurniturePayload[]
   openDoors?: string[]
   pubSecretOpen?: boolean
+  pubQuiz?: PubQuizAnnouncePayload | null
   cashBags?: CashBagPayload[]
   /** The API flags this account is_admin: the watch shows its Admin app (the server re-checks every admin message). */
   isAdmin?: boolean
@@ -102,10 +109,48 @@ export interface AdminSummonedPayload {
   byPseudo: string
 }
 
-/** 'door_sound': only sent to players within 5 m of the door. `door` is the building key (house model key or work key). */
+/** 'door_sound': only sent to players within 5 m of the door (12 m for lockpicking). `door` is the building key (house model key or work key). */
 export interface DoorSoundPayload {
   door: string
-  sound: 'open' | 'close' | 'lock' | 'unlock' | 'rattle'
+  sound: 'open' | 'close' | 'lock' | 'unlock' | 'rattle' | 'pick_click' | 'pick_scrape'
+}
+
+/** 'lockpick_pin': the next pin to set (docs/LOCKPICK.md). `phase` is the needle position (0 to 1) when sent. */
+export interface LockpickPinPayload {
+  pinsSet: number
+  pins: number
+  period: number
+  phase: number
+  window: number
+  readyInMs: number
+}
+
+export interface StorageScreenPayload {
+  object_id: string
+  code: string
+  slots: number
+  food_only: boolean
+  can_deposit: boolean
+  items: { code: string; name: string; kind: string; quantity: number; preview_image: string | null }[]
+}
+
+export interface BedErrorPayload {
+  message: string
+  code: string
+}
+
+export interface StorageErrorPayload {
+  message: string
+  code: string
+}
+
+export interface LockpickResultPayload {
+  outcome: 'set' | 'miss' | 'broke' | 'open' | 'abandoned'
+}
+
+export interface LockpickErrorPayload {
+  message: string
+  code: string
 }
 
 export interface HouseFurniturePayload {
@@ -254,6 +299,48 @@ export interface PubBellPayload {
   sessionId: string
 }
 
+export interface PubQuizAnnouncePayload {
+  startsAt: number
+}
+
+export interface PubQuizLobbyPayload {
+  startsAt: number
+  contestants: Array<{ sessionId: string; pseudo: string }>
+}
+
+export interface PubQuizCancelledPayload {
+  reason: 'not_enough_players'
+}
+
+export interface PubQuizQuestionPayload {
+  index: number
+  count: number
+  prompt: QuizText
+  choices: [QuizText, QuizText, QuizText, QuizText]
+  closesAt: number
+}
+
+export interface PubQuizRevealPayload {
+  index: number
+  answer: QuizChoice
+  ranking: QuizRankingEntry[]
+}
+
+export interface PubQuizResultsPayload {
+  ranking: QuizRankingEntry[]
+}
+
+export interface PubQuizPrizePayload {
+  sessionId: string
+  pseudo: string
+  coins: number
+  pint: boolean
+}
+
+export interface PubQuizAnsweredPayload {
+  choice: QuizChoice
+}
+
 export interface PubRewardPayload {
   sessionId: string
   coins: number
@@ -383,6 +470,12 @@ export interface ZoneSellErrorPayload {
   code: string
 }
 
+export interface TaskDonePayload {
+  task: string
+  tier: 1 | 2 | 3
+  threshold: number
+}
+
 export interface AtmDonePayload {
   action: 'deposit' | 'withdraw' | 'transfer'
   bank: number
@@ -408,6 +501,8 @@ export interface CashBagPickedPayload {
   id: number
   amount: number
   cash: number
+  /** Job tools that were in the bag, now in the picker's inventory (docs/TOOLS.md). */
+  tools?: string[]
 }
 
 export interface CashBagErrorPayload {

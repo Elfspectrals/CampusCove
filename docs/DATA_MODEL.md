@@ -179,6 +179,8 @@ erDiagram
         text cosmetic_slot
         smallint hunger_per_portion
         smallint thirst_per_portion
+        int max_uses "outil de métier, voir TOOLS.md"
+        bool weapon "outil qui frappe plus fort que le poing"
     }
     ITEM_INSTANCES {
         bigint item_instance_id PK
@@ -186,6 +188,7 @@ erDiagram
         bigint owner_account_id FK
         bigint container_id FK
         bigint locked_tx_id FK "verrou pendant un échange"
+        int uses_left "usures restantes d'un outil"
     }
     CONTAINERS {
         bigint container_id PK
@@ -237,6 +240,12 @@ erDiagram
     ROOMS ||--o{ ROOM_MUTES : "rend muet"
     ROOMS ||--o{ ROOM_AUDIT_LOGS : journalise
     ROOMS ||--o{ CHAT_LOGS : discussions
+    HOUSING_UNITS ||--o{ LOCKPICK_ATTEMPTS : crochetée
+    ACCOUNTS ||--o{ LOCKPICK_ATTEMPTS : cambrioleur
+    ACCOUNTS ||--o| LOCKPICK_WEAR : "crochet entamé"
+    ROOM_FURNITURES ||--o| FURNITURE_STORAGES : "rangement"
+    ACCOUNTS ||--o| ACCOUNT_RESPAWN_BEDS : "lit de réveil"
+    HOUSING_UNITS ||--o{ HOUSE_ALARM_EVENTS : "alarme"
 
     HOUSING_UNITS {
         bigint unit_id PK
@@ -272,7 +281,45 @@ erDiagram
         bigint account_id PK, FK
         room_role role
     }
+    LOCKPICK_ATTEMPTS {
+        bigint id PK
+        bigint burglar_account_id FK
+        bigint unit_id FK
+        smallint misses
+        text outcome "null | success | broke | abandoned"
+        timestamptz started_at
+        timestamptz ended_at
+    }
+    LOCKPICK_WEAR {
+        bigint account_id PK, FK
+        smallint uses_spent "1 à 5"
+    }
+    FURNITURE_STORAGES {
+        bigint room_furniture_id PK, FK
+        bigint container_id FK
+    }
+    ACCOUNT_RESPAWN_BEDS {
+        bigint account_id PK, FK
+        bigint room_furniture_id FK
+        timestamptz set_at
+    }
+    HOUSE_ALARM_EVENTS {
+        bigint id PK
+        bigint unit_id FK
+        bigint owner_account_id FK
+        bigint attempt_id FK "unique"
+        timestamptz triggered_at
+        timestamptz seen_at
+    }
 ```
+
+- **Alarme** : `house_alarm_events` garde chaque déclenchement (au plus un par séance de crochetage) pour le bilan que le propriétaire lit à son retour. Voir `docs/LOCKPICK.md`.
+
+- **Lit de réveil** : `account_respawn_beds` garde le lit posé que le joueur a choisi ; la ligne disparaît avec le lit. Voir `docs/RESPAWN_BED.md`.
+
+- **Rangement** : un meuble de rangement posé (commode, coffre à jouets, frigo) a une ligne `furniture_storages` qui le relie à son conteneur ; les objets rangés sont les `inventory_stacks` de ce conteneur. Voir `docs/STORAGE.md`.
+
+- **Crochetage** : une ligne `lockpick_attempts` par séance devant une porte (une seule ouverte par cambrioleur). Les réussites servent aux limites : maison protégée 24 h, cambrioleur en attente 30 min. `lockpick_wear` compte les usages du crochet entamé ; au 5e usage ou à la casse, un crochet est retiré de l'inventaire. Voir `docs/LOCKPICK.md`.
 
 ## 5. Échanges entre joueurs
 
@@ -311,6 +358,36 @@ erDiagram
         listing_status status
     }
 ```
+
+## 5 bis. Compteurs d'actions et tâches
+
+```mermaid
+erDiagram
+    ACCOUNTS ||--o{ ACCOUNT_COUNTERS : "une ligne par compteur"
+    ACCOUNTS ||--o{ ACCOUNT_TASK_TIERS : "paliers atteints"
+    ACCOUNTS ||--o{ ACCOUNT_COUNTER_KEYS : "éléments déjà comptés"
+
+    ACCOUNT_COUNTERS {
+        bigint account_id PK, FK
+        text counter PK
+        bigint value
+        timestamptz updated_at
+    }
+    ACCOUNT_COUNTER_KEYS {
+        bigint account_id PK, FK
+        text counter PK
+        text key PK
+        timestamptz counted_at
+    }
+    ACCOUNT_TASK_TIERS {
+        bigint account_id PK, FK
+        text task PK
+        smallint tier PK
+        timestamptz reached_at
+    }
+```
+
+`account_counters.counter` prend les valeurs de l'enum PHP `App\Enums\ActionCounter`, `account_task_tiers.task` les clés de `App\Support\TaskCatalog`. Contrat : `docs/TASKS.md`.
 
 ## 6. Modération & sécurité
 
@@ -367,10 +444,13 @@ erDiagram
 
 - **Compte et personnage séparés** : `accounts` porte l'identité, la connexion, le RGPD et l'argent ; `characters` porte la présence dans un monde (`servers`). Un compte peut avoir un personnage par serveur sans dupliquer ses achats.
 - **Apparence du personnage sur le compte** : `accounts.character_sex`, `character_face`, `character_build` et `character_created_at` sont tous vides (le créateur s'ouvre) ou tous remplis (contrainte `ck_accounts_character_complete`). La couleur de peau et de cheveux reste dans `cosmetic_colors`, la coupe dans l'emplacement `hair` de `account_cosmetic_equipment`. Contrat : `docs/CHARACTER.md`.
+- **Tutoriel « Premier jour en ville »** : une ligne `account_tutorials` par compte (étape, statut `active` / `skipped` / `done`, `completed_at` rempli si et seulement si `done`), créée à la première sauvegarde du personnage. Les comptes dont le personnage existait avant n'en ont pas et ne voient pas le tutoriel. Contrat : `docs/TUTORIAL.md`.
+- **Badges** : `account_badges` (compte, code du badge, date), une ligne par compte et par badge, codes limités par une contrainte `CHECK`. Un badge est un statut affiché en icône près du pseudo, pas un objet : ni échange, ni vente, ni perte à la mort. Contrat : `docs/TUTORIAL.md`.
 - **Authentification à part** : `account_auth_local` et `account_auth_oauth` isolent les secrets de `accounts`. Ajouter un fournisseur OAuth ne touche pas la table principale ; l'anonymisation RGPD efface ces lignes et garde l'historique économique.
 - **Argent en grand livre** : pas de colonne solde. Chaque mouvement est une ligne de `wallet_ledger` rattachée à une `transactions` ; le solde est `SUM(delta)`. Un achat, un échange ou une taxe est donc toujours traçable et auditable, et on ne peut pas « créer » de pièces en modifiant un nombre.
 - **Deux monnaies, un modèle** : `currency_code` (`coins` gagnés en jeu, `premium` achetés) partage la même mécanique ; les skins premium ne se vendent qu'en `premium`.
-- **Liquide et banque** : les pièces gagnées en jeu vivent dans deux portefeuilles. `cash` est l'argent sur soi : les jobs (verger, acheteurs de zone, récompenses du pub) y versent, les boutiques, le pub, les soins de la clinique et les échanges entre joueurs y prennent. `coins` est la banque : maison, taxe, hôpital et gueule de bois y sont prélevés, bonus de bienvenue et parrainage y sont versés. Dépôt, retrait et virement (`BankService`, types `bank_deposit`, `bank_withdraw`, `bank_transfer`) déplacent l'argent entre les deux. À la mort, le liquide part dans une ligne `cash_drops` (propriétaire, tueur éventuel, montant, transactions de chute et de ramassage, expiration à 5 min) que n'importe qui sauf le tueur ramasse une seule fois ; voir `docs/BANK.md`.
+- **Liquide et banque** : les pièces gagnées en jeu vivent dans deux portefeuilles. `cash` est l'argent sur soi : les jobs (verger, acheteurs de zone, récompenses du pub) y versent, les boutiques, le pub, les soins de la clinique et les échanges entre joueurs y prennent. `coins` est la banque : maison, taxe, hôpital et gueule de bois y sont prélevés, bonus de bienvenue et parrainage y sont versés. Dépôt, retrait et virement (`BankService`, types `bank_deposit`, `bank_withdraw`, `bank_transfer`) déplacent l'argent entre les deux. À la mort, le liquide part dans une ligne `cash_drops` (propriétaire, tueur éventuel, montant, transactions de chute et de ramassage, expiration à 5 min) que n'importe qui sauf le tueur ramasse une seule fois ; voir `docs/BANK.md`. Les outils de métier portés y partent aussi : ils passent dans un conteneur `death_drop` relié par `cash_drops.container_id` (un sac sans liquide n'existe qu'avec ce conteneur), puis dans l'inventaire de celui qui ramasse le sac ; voir `docs/TOOLS.md`.
+- **Quiz du pub** : `pub_quiz_wins` garde une ligne par quiz (`quiz_id` unique, donc un seul paiement même si le socket rappelle) : vainqueur, nombre de joueurs valides, coins versés en cash (`pub_reward_quiz`), et la pinte offerte (`pint_expires_at` 24 h, `pint_redeemed_at` quand le bar la sert gratuitement) ; voir `docs/PUB.md`.
 - **Définition vs exemplaire** : `item_defs` décrit un type d'objet ; un objet unique (meuble, outil, vêtement échangeable) est une `item_instances`, un consommable est une ligne de `inventory_stacks` avec une quantité. On évite des milliers de lignes pour 99 pommes, tout en gardant un historique par meuble.
 - **Conteneurs génériques** : sac, coffre de meuble, séquestre d'échange, boîte de cadeaux sont tous des `containers`. Déplacer un objet revient à changer `container_id`, avec la même logique partout.
 - **Échanges sûrs** : un objet engagé est bloqué (`locked_tx_id`) et les biens passent par un séquestre (`trade_escrows`, `escrow_container_id`) ; l'échange se valide en une seule transaction SQL ou pas du tout.

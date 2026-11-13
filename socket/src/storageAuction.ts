@@ -69,7 +69,7 @@ function broadcast(room: StorageRoom, now: number): void {
 }
 
 function sendError(client: GameClient, error: unknown, fallback: string, code: string): void {
-  client.send('storage_error', errorPayload(error, fallback, code))
+  client.send('storage_sale_error', errorPayload(error, fallback, code))
 }
 
 function parseLots(raw: Json): SaleLot[] {
@@ -174,19 +174,19 @@ export async function onStorageBid(room: StorageRoom, client: GameClient, now = 
   const storage = worldStorage()
   const player = bidder(room, client, now)
   if (!player || !sale || !storage || sale.phase !== 'bidding') {
-    client.send('storage_error', { code: 'storage_not_bidding', message: 'Bidding is not open.' })
+    client.send('storage_sale_error', { code: 'storage_not_bidding', message: 'Bidding is not open.' })
     return
   }
   if (!inBidZone(player, unitOf(storage, sale.index))) {
-    client.send('storage_error', { code: 'storage_out_of_zone', message: 'Step into the circle in front of the auctioneer to bid.' })
+    client.send('storage_sale_error', { code: 'storage_out_of_zone', message: 'Step into the circle in front of the auctioneer to bid.' })
     return
   }
   if (sale.leader?.accountId === player.accountId) {
-    client.send('storage_error', { code: 'storage_already_leading', message: 'You already hold the best bid.' })
+    client.send('storage_sale_error', { code: 'storage_already_leading', message: 'You already hold the best bid.' })
     return
   }
   if (auction.busy || now - (auction.lastBidAt.get(player.accountId) ?? 0) < STORAGE_BID_COOLDOWN_MS) {
-    client.send('storage_error', { code: 'storage_busy', message: 'Wait a moment before bidding again.' })
+    client.send('storage_sale_error', { code: 'storage_busy', message: 'Wait a moment before bidding again.' })
     return
   }
   auction.lastBidAt.set(player.accountId, now)
@@ -221,7 +221,7 @@ export async function onStorageOpen(room: StorageRoom, client: GameClient, paylo
   const box = room.storageAuction.won.find((w) => w.lotId === lotId)
   const unit = box && storage ? storage.units.find((u) => u.id === box.unitId) : undefined
   if (!player || !box || !unit || box.winnerAccountId !== player.accountId || !nearUnit(player, unit)) {
-    client.send('storage_error', { code: 'storage_cannot_open', message: 'Stand in front of your box to open it.' })
+    client.send('storage_sale_error', { code: 'storage_cannot_open', message: 'Stand in front of your box to open it.' })
     return
   }
   try {
@@ -239,14 +239,14 @@ export async function onStorageOpenMine(room: StorageRoom, client: GameClient, n
   const player = bidder(room, client, now)
   const home = storage?.auctioneer
   if (!player || !home || Math.hypot(player.x - home.x, player.z - home.z) > STORAGE_OPEN_REACH + 2) {
-    client.send('storage_error', { code: 'storage_cannot_open', message: 'Ask the auctioneer on his stage.' })
+    client.send('storage_sale_error', { code: 'storage_cannot_open', message: 'Ask the auctioneer on his stage.' })
     return
   }
   try {
     const answer = await callRealtimeBackend(player.token, '/storage/won/open')
     const lots: Json[] = Array.isArray(answer?.lots) ? answer.lots : []
     if (lots.length === 0) {
-      client.send('storage_error', { code: 'storage_nothing_to_open', message: 'You have no box waiting here.' })
+      client.send('storage_sale_error', { code: 'storage_nothing_to_open', message: 'You have no box waiting here.' })
       return
     }
     for (const lot of lots) revealed(room, String(lot.lot_public_id), null, player.pseudo, lot.contents ?? [])

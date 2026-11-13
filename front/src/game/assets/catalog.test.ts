@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { consumablePreviewUrl, findWork, wearTopFpArmsUrl } from './catalog.ts'
+import { consumablePreviewUrl, findWork, toolModelUrl, wearTopFpArmsUrl } from './catalog.ts'
 
 test('every top, the newcomer tee included, has its first-person arms; no top means bare arms', () => {
   assert.equal(wearTopFpArmsUrl('/assets/wear/top/newcomer/model.glb'), '/assets/wear/top/newcomer/fp_arms.glb')
@@ -24,6 +24,11 @@ test('orchard produce resolves to the farm folder', () => {
 
 test('an unknown consumable code is an explicit error', () => {
   assert.throws(() => consumablePreviewUrl('house_key'), /house_key/)
+})
+
+test('a tool code resolves to the tools folder, any other code is an explicit error', () => {
+  assert.equal(toolModelUrl('tool_lockpick'), '/assets/items/tools/lockpick/model.glb')
+  assert.throws(() => toolModelUrl('food_cookie'), /food_cookie/)
 })
 
 test('the clinic is a medic work building', () => {

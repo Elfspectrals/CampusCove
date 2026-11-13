@@ -26,6 +26,8 @@ import GameSettingsDialog from '../components/game/GameSettingsDialog.vue'
 import GameStoreItemCard from '../components/game/GameStoreItemCard.vue'
 import GameZoneBuyerMenu from '../components/game/GameZoneBuyerMenu.vue'
 import GameAtmScreen from '../components/game/GameAtmScreen.vue'
+import GameLockpick from '../components/game/GameLockpick.vue'
+import GameFurnitureStorage from '../components/game/GameFurnitureStorage.vue'
 import GamePubMenu from '../components/game/GamePubMenu.vue'
 import GamePubSecretDialog from '../components/game/GamePubSecretDialog.vue'
 import GameChat from '../components/game/GameChat.vue'
@@ -34,6 +36,8 @@ import GameDrinkFast from '../components/game/GameDrinkFast.vue'
 import GamePubChallenge from '../components/game/GamePubChallenge.vue'
 import GamePubRaceBoard from '../components/game/GamePubRaceBoard.vue'
 import GameStorageBoard from '../components/game/GameStorageBoard.vue'
+import GamePubQuizBoard from '../components/game/GamePubQuizBoard.vue'
+import GameQuiz from '../components/game/GameQuiz.vue'
 import GameMeterShot from '../components/game/GameMeterShot.vue'
 import GameMinimap from '../components/game/GameMinimap.vue'
 import GameDarts from '../components/game/GameDarts.vue'
@@ -45,6 +49,14 @@ import GameTradeWindow from '../components/game/GameTradeWindow.vue'
 import GameWatchMenu from '../components/game/GameWatchMenu.vue'
 import ItemShopPurchaseConfirmModal from '../components/shop/ItemShopPurchaseConfirmModal.vue'
 import GameRoomMessageBanner from '../components/game/GameRoomMessageBanner.vue'
+import GameTutorialQuest from '../components/game/GameTutorialQuest.vue'
+import GameTutorialMarker from '../components/game/GameTutorialMarker.vue'
+import { useTutorialMarker } from '../composables/game/useTutorialMarker'
+import { useTutorialHints } from '../composables/game/useTutorialHints'
+import GameTutorialHint from '../components/game/GameTutorialHint.vue'
+import type { Vec3 } from '../game/mallTemplates/mallTemplate'
+import { applyTutorialState, loadTutorial, skipTheTutorial, tutorial } from '../composables/game/useTutorial'
+import GameTaskBanner from '../components/game/GameTaskBanner.vue'
 import UiIcon from '../components/ui/UiIcon.vue'
 import { useApartmentObjects } from '../composables/game/useApartmentObjects'
 import { useClinic } from '../composables/game/useClinic'
@@ -61,25 +73,38 @@ import { usePlayerInventory } from '../composables/game/usePlayerInventory'
 import { useOrchard } from '../composables/game/useOrchard'
 import { useZoneBuyers } from '../composables/game/useZoneBuyers'
 import { useAtm } from '../composables/game/useAtm'
+import { useTaskBanner } from '../composables/game/useTaskBanner'
+
+import { useLockpick } from '../composables/game/useLockpick'
+import { useFurnitureStorage } from '../composables/game/useFurnitureStorage'
+import { useRespawnBed } from '../composables/game/useRespawnBed'
+import { useHouseAlarms } from '../composables/game/useHouseAlarms'
+import type { HouseFurniturePayload } from '../types/gameRealtime'
 import { useCashBags } from '../composables/game/useCashBags'
 import { useStorageAuction } from '../composables/game/useStorageAuction'
 import { useStorageWarehouse } from '../composables/game/useStorageWarehouse'
 import { useProximityVoice } from '../composables/game/useProximityVoice'
 import { mutedAccounts, playerVolumes, setPlayerVolume, toggleMuteAccount } from '../composables/game/useVoiceSettings'
 import GamePlayerList from '../components/game/GamePlayerList.vue'
+import GameTasksPanel from '../components/game/GameTasksPanel.vue'
 import { useFarm } from '../composables/game/useFarm'
 import { useMallCellTemplates, type CellStoreEntry } from '../composables/game/useMallCellTemplates'
 import { useZoneDecor } from '../composables/game/useZoneDecor'
 import { usePub } from '../composables/game/usePub'
 import { usePubChallenge } from '../composables/game/usePubChallenge'
 import { usePubGames } from '../composables/game/usePubGames'
+import { usePubQuiz } from '../composables/game/usePubQuiz'
 import { useRenderStats } from '../composables/game/useRenderStats'
 import { useRoomEnvironment } from '../composables/game/useRoomEnvironment'
 import { useSeats } from '../composables/game/useSeats'
 import { useSurvival } from '../composables/game/useSurvival'
 import { useTrade } from '../composables/game/useTrade'
 import { useAdminWatch } from '../composables/game/useAdminWatch'
+import { useWatchBank } from '../composables/game/useWatchBank'
+import { useGps } from '../composables/game/useGps'
+import { useWatchContacts } from '../composables/game/useWatchContacts'
 import { usePunch } from '../composables/game/usePunch'
+import { useHeldTool } from '../composables/game/useHeldTool'
 import { useShopPurchase } from '../composables/useShopPurchase'
 import { toggleCollisionDebug } from '../game/collision/collisionDebug'
 import { toggleTerrainDebug } from '../game/town/terrainDebug'
@@ -93,7 +118,7 @@ import { createGameScene, disposeGameScene, renderGameFrame, resizeViewmodel, ty
 import { createFirstPersonArms } from '../game/firstPersonArms'
 import { createHeldItem } from '../game/heldItem'
 import { COVE_HOME, COVE_THREADS, findHouse, findStore, findWork } from '../game/assets/catalog'
-import type { WorldBounds } from '../game/world/worldManifest'
+import { storeBuildings, workBuildings, type WorldBounds } from '../game/world/worldManifest'
 import type { GearSlot } from '../game/wardrobeSlots'
 import { createSfx } from '../game/sfx'
 import { createAmbientLoop } from '../game/ambientLoop'
@@ -355,12 +380,29 @@ watch(storeConfirmItem, (item, previous) => {
 // ---------------------------------------------------------------- town: houses, doors, environment
 
 const holdingHouseKey = () => selectedItem.value?.code === 'house_key'
+const holdingLockpick = () => selectedItem.value?.code === 'tool_lockpick'
+const holdingReinforcedLock = () => selectedItem.value?.code === 'tool_reinforced_lock'
+
+const lockpick = useLockpick({
+  gameRoomRef,
+  onOutcome: (outcome) => {
+    if (outcome === 'open' || outcome === 'broke' || outcome === 'abandoned') void refreshOwnedItems()
+  },
+})
+const { open: lockpickOpen } = lockpick
+watch(lockpickOpen, (open) => {
+  if (!open && !document.pointerLockElement) requestPointerLock()
+})
 
 const housing = useCityHousing({
   myAccountId,
   gameRoomRef,
   roomMessage,
   holdingHouseKey,
+  refreshInventory: () => refreshOwnedItems(),
+  holdingLockpick,
+  holdingReinforcedLock,
+  startLockpick: lockpick.start,
 })
 
 // ---------------------------------------------------------------- The Salty Shamrock: seats, bar, games
@@ -429,6 +471,7 @@ const pubGames = usePubGames({
   pseudoOf: (sessionId) => (sessionId === gameRoomRef.value?.sessionId ? getStoredAuth()?.user.display_name ?? 'You' : realtime.remotePseudo(sessionId) ?? '…'),
   say: (text) => survival.say(text),
   setRacePint: (sessionId, progress) => realtime.setRemoteRacePint(sessionId, progress),
+  dartsFree: () => tutorial.value?.status === 'active' && tutorial.value.step === 'play_darts',
 })
 const {
   race: pubRace,
@@ -441,6 +484,17 @@ const {
   uiOpen: pubGamesOpen,
   board: pubRaceBoard,
 } = pubGames
+
+const pubQuiz = usePubQuiz({
+  myPosition,
+  getCamera,
+  canvasRef,
+  gameRoomRef,
+  promptsHidden: () => inventoryOpen.value || !canUsePub(),
+  say: (text) => survival.say(text),
+  t: (key, params) => (params ? t(key, params) : t(key)),
+})
+const { screen: pubQuizScreen, open: pubQuizOpen, board: pubQuizBoard, announcement: pubQuizAnnouncement } = pubQuiz
 
 const pubChallenge = usePubChallenge({
   getScene,
@@ -461,7 +515,7 @@ function closePubRace(): void {
   pubGames.closeRace()
   pubChallenge.clear()
 }
-const pubUiOpen = computed(() => pubMenuOpen.value || pubSecretOpen.value || pubGamesOpen.value)
+const pubUiOpen = computed(() => pubMenuOpen.value || pubSecretOpen.value || pubGamesOpen.value || pubQuizOpen.value)
 // Back to mouse look once the menu, the bouncer or a game screen closes.
 watch(pubUiOpen, (open) => {
   if (!open && !document.pointerLockElement) requestPointerLock()
@@ -489,6 +543,7 @@ const zoneBuyers = useZoneBuyers({
   buyers: () => zoneDecor.buyers.value,
 })
 const { openBuyer: zoneBuyerOpen, selling: zoneBuyerSelling, feedback: zoneBuyerFeedback } = zoneBuyers
+const { shown: taskDone, handlers: taskHandlers } = useTaskBanner()
 const atm = useAtm({
   myPosition,
   getCamera,
@@ -500,6 +555,71 @@ const atm = useAtm({
   timeoutMessage: () => t('atm.timeout'),
 })
 const { open: atmOpen } = atm
+const tutorialWorldPlaces = shallowRef<{ trees: readonly Vec3[]; dartsOche: Vec3 | null; bartender: Vec3 | null; doors: readonly Vec3[] }>({
+  trees: [],
+  dartsOche: null,
+  bartender: null,
+  doors: [],
+})
+const tutorialMarker = useTutorialMarker({
+  myPosition,
+  getCamera,
+  canvasRef,
+  step: () => (tutorial.value?.status === 'active' ? tutorial.value.step : null),
+  places: () => ({
+    ...tutorialWorldPlaces.value,
+    farmer: zoneDecor.buyers.value.find((buyer) => buyer.zone === 'orchard')?.position ?? null,
+    atms: zoneDecor.atms.value,
+  }),
+})
+const { marker: tutorialMarkerOnScreen } = tutorialMarker
+const tutorialHints = useTutorialHints({
+  myPosition,
+  getCamera,
+  canvasRef,
+  accountId: () => myAccountId.value,
+  active: () => tutorial.value?.status === 'active' && !loadingShown.value,
+  places: () => {
+    const { bartender, doors } = tutorialWorldPlaces.value
+    const buyers = zoneDecor.buyers.value.map((buyer) => buyer.position)
+    return { atm: zoneDecor.atms.value, npc: bartender ? [...buyers, bartender] : buyers, door: doors }
+  },
+})
+const { bubble: tutorialHintBubble } = tutorialHints
+const interactKeys = computed(() => actionKeyLabels('interact').join(' / '))
+const houseAlarms = useHouseAlarms({
+  gameRoomRef,
+  say: (text) => survival.say(text),
+  ring: () => sfx.play('alarm_siren'),
+  liveMessage: () => t('watch.alarm.alert'),
+  awayMessage: (count) => t('watch.alarm.away', { count }),
+})
+const furnishedHouses = shallowRef<HouseFurniturePayload[]>([])
+const storage = useFurnitureStorage({
+  myPosition,
+  getCamera,
+  canvasRef,
+  gameRoomRef,
+  promptsHidden: () => inventoryOpen.value || !canUsePub(),
+  houses: () => furnishedHouses.value,
+  promptLabel: () => t('storage.prompt'),
+  onChanged: () => refreshOwnedItems(),
+})
+const { open: storageOpen } = storage
+const respawnBed = useRespawnBed({
+  myPosition,
+  getCamera,
+  canvasRef,
+  gameRoomRef,
+  promptsHidden: () => inventoryOpen.value || !canUsePub(),
+  houses: () => furnishedHouses.value,
+  promptLabel: () => t('bed.prompt'),
+  say: (text) => survival.say(text),
+  doneMessage: () => t('bed.set'),
+})
+watch(storageOpen, (open) => {
+  if (!open && !document.pointerLockElement) requestPointerLock()
+})
 const cashBags = useCashBags({
   myPosition,
   getScene,
@@ -509,7 +629,11 @@ const cashBags = useCashBags({
   promptsHidden: () => inventoryOpen.value || !canUsePub(),
   promptLabel: () => t('cashBag.prompt'),
   say: (text) => survival.say(text),
-  pickedMessage: (amount) => t('cashBag.picked', { amount }),
+  pickedMessage: (amount, toolCount) => {
+    if (toolCount === 0) return t('cashBag.picked', { amount })
+    return amount > 0 ? t('cashBag.pickedTools', { amount, count: toolCount }) : t('cashBag.pickedOnlyTools', { count: toolCount })
+  },
+  onToolsPicked: () => refreshOwnedItems(),
 })
 let storageUnits: readonly { id: string; door: string; threshold: [number, number, number]; inside: [number, number, number] }[] = []
 const storageAuction = useStorageAuction({
@@ -556,16 +680,17 @@ const interactions = useInteractionTargets({
   myPosition,
   getCamera,
   canvasRef,
-  promptsHidden: () => inventoryOpen.value || housing.claimInFlight.value,
+  promptsHidden: () => inventoryOpen.value || housing.claimInFlight.value || lockpickOpen.value,
   housingUnits: housing.units,
   nearbyHousingUnit: housing.nearbyUnit,
   housingActionFor: housing.actionFor,
+  housingLeaveDetailFor: housing.leaveDetailFor,
   isWorkDoorOpen: (lot) => housing.isWorkDoorOpen(lot.key),
   onHousingDoor: () => {
     const unit = housing.nearbyUnit.value
     const action = unit ? housing.actionFor(unit) : null
     if (action === 'open' || action === 'close' || action === 'locked') arms?.use('door')
-    else if (action === 'lock') arms?.use('key')
+    else if (action === 'lock' || action === 'pick') arms?.use('key')
     void housing.interact()
   },
   onWorkDoor: (lot) => {
@@ -587,7 +712,7 @@ const interactions = useInteractionTargets({
     if (activeFurniture.value?.store.hasCounter.value) activeFurniture.value.store.toggleTarget(useWithShift)
     else openStorePurchase()
   },
-  sources: [pub.source, pubChallenge.source, pubGames.source, seats.source, orchard.source, farm.source, zoneBuyers.source, atm.source, cashBags.source, storageAuction.source],
+  sources: [pub.source, pubQuiz.source, pubChallenge.source, pubGames.source, seats.source, orchard.source, farm.source, zoneBuyers.source, atm.source, storage.source, respawnBed.source, cashBags.source, storageAuction.source],
 })
 const { doorPrompt } = interactions
 
@@ -608,9 +733,16 @@ let arms: ReturnType<typeof createFirstPersonArms> | null = null
 watch(() => selectedItem.value?.code ?? null, () => arms?.equip())
 
 /** Model shown in the right hand: tools and food (a half-eaten item is drawn smaller). */
+const FIRST_PERSON_TOOL_SCALE = 0.6
+
+function holdingJobTool(): boolean {
+  return heldTool.code.value !== null && heldTool.code.value === selectedItem.value?.code
+}
+
 function heldModel(): { url: string | null; scale: number } {
   const item = selectedItem.value
   if (!item || (item.kind !== 'tool' && item.kind !== 'consumable')) return { url: null, scale: 1 }
+  if (holdingJobTool()) return { url: item.model_glb, scale: FIRST_PERSON_TOOL_SCALE }
   const eaten = item.portions && item.portions_left ? item.portions_left / item.portions : 1
   return { url: item.model_glb, scale: 0.55 + 0.45 * eaten }
 }
@@ -642,15 +774,14 @@ const {
   error: tradeError,
   syncing: tradeSyncing,
 } = trade
-const tradeUiOpen = computed(() => watchMenuOpen.value || tradeWindowOpen.value)
-// Back to mouse look once the watch and the trade window are closed.
-watch(tradeUiOpen, (open) => {
+watch(tradeWindowOpen, (open) => {
   if (!open && !document.pointerLockElement) requestPointerLock()
 })
 const watchKey = computed(() => actionKeyLabels('survivalWatch')[0] ?? 'T')
 
 // ---------------------------------------------------------------- watch apps: admin teleports
 
+const watchBank = useWatchBank()
 const adminWatch = useAdminWatch({ gameRoomRef, say: (text) => survival.say(text) })
 const { isAdmin, menu: adminMenu, error: adminError } = adminWatch
 function adminTeleport(key: string): void {
@@ -680,6 +811,10 @@ const survival = useSurvival({
     applyCachedBalanceAfterPurchase('cash', 0)
     survival.say(t('cashBag.dropped', { amount }))
   },
+  onToolsLost: (count) => {
+    refreshOwnedItems()
+    survival.say(t('cashBag.droppedTools', { count }))
+  },
   onBelongingsLost: (clothes) => {
     refreshOwnedItems()
     if (clothes) for (const { store } of furnitureStores) void store.refreshOwned()
@@ -697,7 +832,8 @@ const survival = useSurvival({
   onStamina: (value) => punch.syncStamina(value),
   onIntoxication: (value) => intoxication.set(value),
   onWatchTap: () => {
-    if (pointerLocked.value && !inventoryOpen.value) trade.openMenu()
+    if (watchMenuOpen.value) trade.closeMenu()
+    else if (pointerLocked.value && !inventoryOpen.value) trade.openMenu()
   },
 })
 const {
@@ -829,9 +965,31 @@ const minimap = useMinimap({
   buildingKey: () => currentHouseKey.value,
 })
 const mapKey = computed(() => actionKeyLabels('map')[0] ?? 'M')
+const gps = useGps({
+  markers: () => minimap.markers.value,
+  atms: () => zoneDecor.atms.value,
+  player: minimap.player,
+  atmName: () => t('watch.gps.atm'),
+  say: (text) => survival.say(text),
+  arrivedText: (name) => t('watch.gps.arrived', { name }),
+  noAtmText: () => t('watch.gps.noAtm'),
+  positionOf: (sessionId) => realtime.remotePosition(sessionId),
+  leftText: (name) => t('watch.gps.left', { name }),
+})
+const watchContacts = useWatchContacts({
+  players: () => realtime.remotePlayers(),
+  positionOf: (sessionId) => realtime.remotePosition(sessionId),
+  me: minimap.player,
+  isOpen: () => watchMenuOpen.value,
+  say: (text) => survival.say(text),
+  acceptedText: (name) => t('watch.contacts.accepted', { name }),
+  askedText: (pseudo) => t('watch.contacts.sent', { name: pseudo }),
+})
+const followedSessionId = computed(() => (gps.target.value?.kind === 'friend' ? gps.target.value.id.slice('friend:'.length) : null))
 // Esc frees the mouse and opens the pause menu: the full map gives way to it
 watch(pointerLocked, (locked) => {
   if (!locked) minimap.fullOpen.value = false
+  if (!locked) trade.closeMenu()
 })
 
 const environment = useRoomEnvironment({
@@ -850,9 +1008,16 @@ const environment = useRoomEnvironment({
     clinic.onTownLoaded(manifest)
     seats.onTownLoaded(manifest)
     pub.onTownLoaded(manifest)
+    pubQuiz.onTownLoaded(manifest)
     pubGames.onTownLoaded(manifest)
     orchard.onTownLoaded(manifest)
     farm.onTownLoaded(manifest)
+    tutorialWorldPlaces.value = {
+      trees: manifest.orchard?.trees ?? [],
+      dartsOche: manifest.pub?.darts.oche ?? null,
+      bartender: manifest.pub?.bartender ?? null,
+      doors: [...storeBuildings(manifest), ...workBuildings(manifest)].map((building) => building.door),
+    }
     void Promise.all([
       mallCellTemplates.onTownLoaded(manifest).catch((error: unknown) => console.error('[mall] cell templates failed to load', error)),
       zoneDecor.onTownLoaded(manifest).catch((error: unknown) => console.error('[zones] zone decor failed to load', error)),
@@ -952,11 +1117,14 @@ const pauseMenuOpen = computed(
     !inventoryOpen.value &&
     !switchingRoom.value &&
     !checkoutOpen.value &&
-    !tradeUiOpen.value &&
+    !tradeWindowOpen.value &&
     !pubUiOpen.value &&
     !zoneBuyerOpen.value &&
     !atmOpen.value &&
+    !lockpickOpen.value &&
+    !storageOpen.value &&
     !playerListOpen.value &&
+    !tasksOpen.value &&
     !settingsOpen.value &&
     !creator.value,
 )
@@ -972,8 +1140,10 @@ watch(inventoryOpen, (open) => {
 
 const chatOpen = ref(false)
 const playerListOpen = ref(false)
+const tasksOpen = ref(false)
 watch(mutedAccounts, (accounts) => gameRoomRef.value?.send('voice_mute', { accounts: [...accounts] }))
-watch(playerListOpen, (open) => {
+watch([playerListOpen, tasksOpen], ([listOpen, taskMenuOpen]) => {
+  const open = listOpen || taskMenuOpen
   if (open && document.pointerLockElement) document.exitPointerLock()
   if (!open && !document.pointerLockElement) requestPointerLock()
 })
@@ -982,14 +1152,22 @@ function sendChat(text: string): void {
   gameRoomRef.value?.send('chat', { text })
 }
 
+const WALK_WITH_WATCH_ACTIONS = ['moveForward', 'moveBack', 'moveLeft', 'moveRight', 'jump', 'survivalWatch'] as const
+
+function isWalkWithWatchKey(code: string): boolean {
+  return code === 'ShiftLeft' || code === 'ShiftRight' || WALK_WITH_WATCH_ACTIONS.some((action) => matches(action, code))
+}
+
 function handleExtraKeyDown(e: KeyboardEvent): boolean {
-  if (chatOpen.value || atmOpen.value || playerListOpen.value) return true
+  if (chatOpen.value || atmOpen.value || lockpickOpen.value || storageOpen.value || playerListOpen.value || tasksOpen.value) return true
   // the character screen owns the keyboard (Esc closes the editor)
   if (creator.value) return true
-  // the watch and the trade window take the keyboard (coins field, Esc): no game key behind them
-  if (tradeUiOpen.value) return true
+  // the trade window takes the keyboard (coins field, Esc): no game key behind it
+  if (tradeWindowOpen.value) return true
+  if (watchMenuOpen.value && !isWalkWithWatchKey(e.code)) return true
   // the bouncer's text field and the pub games (Space holds the pint) take the keyboard too
   if (pubSecretOpen.value || pubGamesOpen.value) return true
+  if (pubQuiz.onKeyDown(e)) return true
   // Y / N answer a Drink Fast challenge
   if (pubChallenge.onKeyDown(e)) return true
   // seated at the pub: a step or a jump stands the player up instead of moving
@@ -1014,6 +1192,11 @@ function handleExtraKeyDown(e: KeyboardEvent): boolean {
     playerListOpen.value = true
     return true
   }
+  if (matches('tasks', e.code) && !e.repeat) {
+    e.preventDefault()
+    tasksOpen.value = true
+    return true
+  }
   if (matches('chat', e.code) && !e.repeat) {
     e.preventDefault()
     chatOpen.value = true
@@ -1021,7 +1204,7 @@ function handleExtraKeyDown(e: KeyboardEvent): boolean {
   }
   if (matches('buyHouse', e.code) && !e.repeat) {
     e.preventDefault()
-    return housing.buy()
+    return housing.buy() || housing.leave()
   }
   // collision overlay: a developer tool, kept off in production so it never steals a player's key
   if (import.meta.env.DEV && e.code === 'KeyC' && !e.repeat) {
@@ -1099,6 +1282,7 @@ const movement = useGameMovement({
     updateFrontDoors(dt, isBuildingDoorOpen)
     arms?.update(dt, myPosition)
     const held = heldModel()
+    arms?.setHolding(holdingJobTool())
     heldItem.update(arms?.rightHand() ?? null, held.url, held.scale)
     survival.tick(dt)
     stamina.value = punch.staminaNow()
@@ -1106,14 +1290,26 @@ const movement = useGameMovement({
     clinic.updatePrompt()
     pub.tick(dt)
     pubGames.tick()
+    pubQuiz.tick()
     orchard.tick()
+    tutorialMarker.tick()
+    tutorialHints.tick()
     farm.tick()
     if (!doorSigns.group.parent) getScene()?.add(doorSigns.group)
     minimap.tick()
+    gps.tick()
   },
 })
 const { requestPointerLock, onCanvasMouseDown } = movement
 
+const heldTool = useHeldTool({
+  gameRoomRef,
+  selectedCode: () => selectedItem.value?.code ?? null,
+  itemName: (code) => (selectedItem.value?.code === code ? selectedItem.value.name.toLowerCase() : 'tool'),
+  say: (text) => survival.say(text),
+  playSound: sfx.play,
+  refreshInventory: () => refreshOwnedItems(),
+})
 const punch = usePunch({
   gameRoomRef,
   getScene,
@@ -1129,6 +1325,7 @@ const punch = usePunch({
   joltCamera: movement.joltCamera,
   knockBack: movement.knockBack,
   playSound: sfx.play,
+  cooldownMs: () => heldTool.cooldownMs.value,
 })
 const { hitMarker } = punch
 
@@ -1171,7 +1368,10 @@ const realtime = useGameRealtime({
   },
   loadTown,
   onHousingUnitsSync: housing.applyUnits,
-  onHouseFurnitureSync: houseFurniture.applyHouses,
+  onHouseFurnitureSync: (houses) => {
+    furnishedHouses.value = houses
+    houseFurniture.applyHouses(houses)
+  },
   onDoorsSync: housing.applyOpenDoors,
   onDoorSound: ({ door, sound }) => {
     const node = frontDoorNode(door)
@@ -1194,9 +1394,33 @@ const realtime = useGameRealtime({
   seats: { seatPose: seats.seatPose, onSeated: seats.onSeated },
   pub: pub.handlers,
   pubGames: pubGames.handlers,
+  pubQuiz: pubQuiz.handlers,
   orchard: orchard.handlers,
   zoneBuyers: zoneBuyers.handlers,
   atm: atm.handlers,
+  tasks: taskHandlers,
+  tutorial: {
+    onState: (data) => {
+      const wasDone = tutorial.value?.status === 'done'
+      applyTutorialState(data)
+      if (!wasDone && tutorial.value?.status === 'done') survival.say(t('tutorial.welcome'))
+    },
+  },
+  lockpick: {
+    ...lockpick.handlers,
+    onReinforced: () => {
+      survival.say(t('lockpick.reinforced'))
+      void refreshOwnedItems()
+    },
+    onReinforceError: (data) => survival.say(data.message),
+    onHouseAlarm: () => houseAlarms.onLive(),
+    onAlarmSiren: ({ door }) => {
+      const node = frontDoorNode(door)
+      if (node) sfx.playOn('alarm_siren', node)
+    },
+  },
+  storage: storage.handlers,
+  bed: respawnBed.handlers,
   cashBags: cashBags.handlers,
   storageAuction: {
     ...storageAuction.handlers,
@@ -1279,8 +1503,17 @@ async function bootGame() {
   }
   await loadLayoutFromServer()
   refreshOwnedItems()
+  loadTutorial().catch((error: unknown) => survival.say(error instanceof Error ? error.message : String(error)))
   boot.complete('server')
   if (!unmounted) movement.startRenderLoop()
+}
+
+async function skipTutorialQuest(): Promise<void> {
+  try {
+    await skipTheTutorial()
+  } catch (error) {
+    survival.say(error instanceof Error ? error.message : String(error))
+  }
 }
 
 function leaveRoom() {
@@ -1369,6 +1602,8 @@ const crosshairClass = computed(() => {
     />
     <GameDrunkEffects :effects="drunkEffects" />
     <GameRoomMessageBanner v-if="roomMessage" :message="roomMessage" />
+    <GameRoomMessageBanner v-else-if="pubQuizAnnouncement" :message="pubQuizAnnouncement" />
+    <GameTaskBanner v-if="taskDone" :key="`${taskDone.task}-${taskDone.tier}`" :done="taskDone" />
     <!-- an error during boot drops the loading screen so its banner is seen; the character creator shows over the load -->
     <Transition leave-active-class="transition-opacity duration-500" leave-to-class="opacity-0">
       <GameLoadingScreen
@@ -1378,6 +1613,26 @@ const crosshairClass = computed(() => {
         :files="boot.files.value"
       />
     </Transition>
+    <GameTutorialMarker
+      v-if="tutorialMarkerOnScreen && !loadingShown"
+      :x="tutorialMarkerOnScreen.x"
+      :y="tutorialMarkerOnScreen.y"
+      :on-screen="tutorialMarkerOnScreen.onScreen"
+      :angle="tutorialMarkerOnScreen.angle"
+      :metres="tutorialMarkerOnScreen.metres"
+    />
+    <GameTutorialHint
+      v-if="tutorialHintBubble && !loadingShown"
+      :kind="tutorialHintBubble.kind"
+      :x="tutorialHintBubble.x"
+      :y="tutorialHintBubble.y"
+      :use-key="interactKeys"
+    />
+    <GameTutorialQuest
+      v-if="tutorial?.status === 'active' && !loadingShown"
+      :step="tutorial.step"
+      @skip="skipTutorialQuest"
+    />
     <GameMinimap
       :image="minimap.image.value"
       :markers="minimap.markers.value"
@@ -1385,6 +1640,7 @@ const crosshairClass = computed(() => {
       :inside-name="minimap.insideName.value"
       :full-open="minimap.fullOpen.value"
       :map-key="mapKey"
+      :target="gps.target.value"
       @close="minimap.fullOpen.value = false"
     />
     <GameHudToolbar
@@ -1594,11 +1850,30 @@ const crosshairClass = computed(() => {
       :is-admin="isAdmin"
       :admin-menu="adminMenu"
       :admin-error="adminError"
+      :cash="walletBalances.cash"
+      :bank-screen="watchBank.screen.value"
+      :bank-error="watchBank.error.value"
+      :gps-places="gps.places.value"
+      :gps-target-id="gps.target.value?.id ?? null"
+      :atm-distance="gps.places.value.find((place) => place.kind === 'atm')?.distance ?? null"
+      :contact-rows="watchContacts.rows.value"
+      :contacts-error="watchContacts.error.value"
+      :followed-session-id="followedSessionId"
+      :alarm-alerts="houseAlarms.alerts.value"
+      :alarm-unseen="houseAlarms.unseen.value"
+      @alarm-open="houseAlarms.markSeen"
       @request="trade.request"
       @respond="trade.respond"
       @cancel="trade.cancel"
       @close="trade.closeMenu"
       @admin-open="adminWatch.load"
+      @bank-open="watchBank.load"
+      @gps-toggle="gps.toggle"
+      @route-atm="gps.routeToNearestAtm"
+      @contacts-open="watchContacts.load"
+      @contact-accept="watchContacts.accept"
+      @contact-follow="gps.togglePlayer"
+      @contact-ask="watchContacts.ask"
       @teleport="adminTeleport"
       @summon="adminSummon"
       @storage-sale="adminWatch.startStorageSale"
@@ -1616,6 +1891,17 @@ const crosshairClass = computed(() => {
       @confirm="trade.confirm"
       @cancel="trade.cancel"
     />
+    <GameFurnitureStorage
+      v-if="storageOpen"
+      :screen="storage.screen.value"
+      :storable="storage.storable.value"
+      :pending="storage.pending.value"
+      :error="storage.error.value"
+      @deposit="storage.deposit"
+      @take="storage.take"
+      @close="storage.close"
+    />
+    <GameLockpick v-if="lockpick.board.value" :board="lockpick.board.value" @press="lockpick.press" @close="lockpick.close" />
     <GameAtmScreen v-if="atmOpen" :screen="atm.screen.value" :pending="atm.pending.value" :feedback="atm.feedback.value" @run="atm.run" @clear-feedback="atm.clearFeedback" @close="atm.close" />
     <GameZoneBuyerMenu
       v-if="zoneBuyerOpen"
@@ -1662,6 +1948,7 @@ const crosshairClass = computed(() => {
       @set-volume="setPlayerVolume"
       @close="playerListOpen = false"
     />
+    <GameTasksPanel v-if="tasksOpen" @close="tasksOpen = false" />
     <GameChat :open="chatOpen" @send="sendChat" @close="chatOpen = false" />
     <p v-if="voice.talking.value" class="cc-hud pointer-events-none absolute bottom-48 left-4 z-[30] m-0 flex items-center gap-2 px-3 py-1.5 text-sm font-bold text-fog" role="status">
       <span class="size-2.5 animate-pulse rounded-full bg-coral" />{{ t('voice.live') }}
@@ -1687,6 +1974,14 @@ const crosshairClass = computed(() => {
     />
     <GamePubRaceBoard v-if="pubRaceBoard" :board="pubRaceBoard" />
     <GameStorageBoard v-if="storageBoard" :board="storageBoard" />
+    <GamePubQuizBoard v-if="pubQuizBoard" :board="pubQuizBoard" />
+    <GameQuiz
+      v-if="pubQuizScreen"
+      :screen="pubQuizScreen"
+      :my-session-id="gameRoomRef?.sessionId ?? ''"
+      @answer="pubQuiz.answer"
+      @close="pubQuiz.close"
+    />
     <GamePubChallenge
       v-if="!pubGamesOpen"
       :incoming="pubChallengeIncoming"

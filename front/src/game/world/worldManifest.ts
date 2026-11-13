@@ -114,6 +114,7 @@ export interface PubLayout {
   bartender: Vec3
   bartenderYaw: number
   bouncer: Vec3
+  quizmaster: Vec3
   counter: Vec3
   taps: Vec3
   serve: Vec3
