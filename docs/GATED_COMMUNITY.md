@@ -1,7 +1,7 @@
 # Cove Heights — Gated Community Master Plan
 
 > **Civil Architect Document** · CampusCove Open World
-> Version 1.3 · November 2026 (v1 shell built: `build_cove_heights_site.py` + `lib_site.py`; estate moved north of the mall)
+> Version 1.4 · November 2026 (v1 shell built; five houses built: A-01 to A-04 and B-01, see § 7.2c.0)
 > Governed by `.claude/agents/civil-architect.md`. Topography rules: `.claude/agents/topographer.md`. Kit rules: `docs/BUILD_KIT.md`.
 
 > **Plan frame vs world (v1.3).** The estate (§ 2–4 and § 6–14) is drawn in a *plan frame* (wall x 100 → 260,
@@ -409,6 +409,53 @@ Architectural Review Committee (ARC) never lets two neighbours look alike. Every
 generator options and palettes, not from hand-modelled one-offs (CLAUDE.md modular rule). Keys: villas `cove_villa_a0N`,
 executive homes `cove_home_b0N`. Sources: the style catalog, floor plans and desirability research in
 [`research/luxury-suburban-houses/REPORT.md`](research/luxury-suburban-houses/REPORT.md) (notes in `notes/`).
+
+#### 7.2c.0 Programme status and how to build the next house (2026-11-13)
+
+| Lot | House | Key | Price | Status |
+|-----|-------|-----|-------|--------|
+| A-01 | Villa Serena | `cove_villa_a01` | 26 000 | built (7.2c.4, estate plan) |
+| A-02 | Colonial Villa | `cove_villa_a02` | 20 000 | built (7.2b, estate plan) |
+| A-03 | Harbor Shingle House | `cove_villa_a03` | 28 000 | built (7.2c.6, harbor plan) |
+| A-04 | Skyline Residence | `cove_villa_a04` | 32 000 | built (7.2c.7, skyline plan, walkable garage terrace) |
+| B-01 | Tidewater House | `cove_home_b01` | 14 000 | built (7.2c.8, tidewater plan, walkable two-tier gallery, back door) |
+| B-02 | Maison Lavande | `cove_home_b02` | 15 500 | **next**, not designed |
+| B-03 … B-12 | see 7.2c.2 | `cove_home_b03` … `b12` | 7.2c.2 | not designed |
+
+None of the five houses has been walked in the game yet: buying one, the walkable terrace and gallery, the back door and
+the lock are only checked by tests and Blender renders. That playtest needs the housing seeder run on a dev database
+(`make seed`) and the dev stack serving this branch.
+
+**Workflow that built A-03 to B-01** (one house per commit):
+1. **Spec.** The civil architect writes `7.2c.N <House> on <lot> [design]` and a `7.2d.N` interior plan from 7.2c.2 and
+   7.2c.3: rule check (R1–R11), placement in plan and world coordinates, derived values, HOUSES entry, palette, every new
+   generator option with exact geometry, collisions, triangles, lot dressing, wiring, a "Pieces and where they come from"
+   table and the open decisions.
+2. **Decisions.** The open decisions go to the product owner; the answers are written under "Decisions" in the section and,
+   when they set a rule for later houses, in `.claude/rules/roadmap.md`.
+3. **Build.** Generator options are additive and parameterised: sizes and positions come from the HOUSES entry or the plan's
+   room rects (see `build_harbor`, `build_skyline`, `build_tidewater`), windows go through `dress()`, house data stays in the
+   HOUSES entry. Pipeline: house build (`HOUSE_KEYS=[key]`), `npm run assets:optimize -- houses <key>`, lightmap bake
+   (`build_house_lightmaps.py`), optimize again, site build, `npm run assets:optimize -- park cove_heights`,
+   `node scripts/apply-cove-heights.mjs`, seeder row and bounds, `catalog.ts`, housing test counts.
+4. **Equivalence check.** Before and after the generator change, dump every HOUSES scene in Blender (per object: name,
+   materials, triangle count, rounded world bounding box) and compare with the `.NNN` suffixes stripped; every other house
+   must come out identical (`Door` / `Door_stale` swapping between scenes is a naming artefact). After each optimize,
+   restore with `git checkout --` every asset folder that was not meant to change (the optimizer rewrites the whole
+   category from `out/`).
+5. **Checks.** `vue-tsc -b`, front and socket unit tests, `topo:check -- cove_heights cove_road cove_road_mall`, backend
+   `--filter=Housing`, the site overlap and grounded audits; renders of the outside, every special feature and the floor plans.
+
+**Rules decided along the way**: R8 allows open wrap porches up to 2.0 m into a side setback (7.2c.6); villas pay the
+standard 5 % daily house tax on purpose (roadmap); executive homes have a 9 k interior triangle budget, villas 12 k; every
+later B house planned at W 11.0 changes its width by at least 0.4 m (7.2c.3); a house may have a real back door that shares
+the front door's open state and lock (7.2c.8 T7); walkable terraces and galleries are upper-floor rects of the house with
+guards 1.2 m above the deck.
+
+**Known follow-ups**: A-03 (12.4 k) and B-01 (9.5 k) are over their interior budgets, accepted; A-04's floor band stands
+4 cm proud at the terrace doorway (visual only); the A-03 and A-04 `preview.png` crop the west wing; B-01's haint-blue
+gallery ceilings read dark in unlit renders; the harbor plan asserts its own size (W 13.0, back −6.0) and is not reusable
+at another size; the residents-only gate logic is not started.
 
 #### 7.2c.1 Design guidelines (anti-monotony rules)
 

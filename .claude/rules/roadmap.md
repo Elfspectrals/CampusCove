@@ -135,7 +135,8 @@ Decision (2026-11-06): a walled estate north of the mall, reached by Cove Road f
 - [doing] Harbor Shingle House on A-03 (28 000): cedar shakes, gambrel roof, wrap porch on the east corner, west garage wing, harbor interior plan. Built; not walked in game yet.
 - [doing] Skyline Residence on A-04 (32 000): contemporary, stepped flat roof, cedar timber frame entry, double-height living room with a floating stair and glass gallery, west garage wing whose roof is a walkable terrace from the primary suite. Built; not walked in game yet.
 - [doing] Tidewater House on B-01 (14 000): first executive home and first north-facing house, Lowcountry, two-tier gallery with both tiers walkable, recessed west garage, a real back door to the garden (shared open state and lock with the front door). Built; not walked in game yet.
-- [todo] The other 11 houses of the 7.2c.2 programme.
+- [todo] The other 11 houses of the 7.2c.2 programme, next B-02 Maison Lavande. Status table, workflow and known follow-ups: `docs/GATED_COMMUNITY.md` 7.2c.0.
+- [todo] Playtest the five houses in game (buy, walkable terrace and gallery, back door, lock): needs `make seed` and the dev stack on this branch.
 - [todo] Residents-only gate logic.
 
 Decision (2026-11-12): rule R8 allows an open wrap porch up to 2.0 m into a side setback when the neighbouring building stays at least 4.0 m away. A-03 keeps W 13.0 like A-02 and its interior goes 0.4 k over the 12 k triangle ceiling.
