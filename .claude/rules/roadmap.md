@@ -11,7 +11,7 @@ Playtested on 2026-11-07 against the dev stack: a solo Drink Fast race finished 
 - [done] Drink Fast: the client sends only its press/release steps; the socket replays the balance simulation (`socket/src/drinkFastSim.ts`, fixed 1/60 s step, golden test shared with `front/src/game/pub/drinkFast.test.ts`) and owns progress, spills and finish time.
 - [done] Meter Shot time comes from the socket clock less a 250 ms network allowance; the client's figure is ignored.
 
-## 2. Pub: a place to spend, skill earns a little back (todo)
+## 2. Pub: a place to spend, skill earns a little back (doing)
 
 Decision (2026-11-06): you go to the pub to drink, not to make money. The UI shows the fee and the best payout before each game.
 
@@ -19,6 +19,12 @@ Decision (2026-11-06): you go to the pub to drink, not to make money. The UI sho
 - [todo] Meter Shot fee 25; a run under 5 s pays 60 (only once the timing is server-owned).
 - [todo] Weekly leaderboard (best darts total, fastest pint), persisted, shown as an HTML overlay in the style of `GameDarts.vue` / `GamePubRaceBoard.vue` (not a 3D model), small weekly prize.
 - [todo] Fee and best payout shown on each pub game prompt.
+
+Decision (2026-11-13): a pub quiz every evening at 21:00 Europe/Paris in each city instance (V1 aims at 15-20 players per instance), solo, run by a quiz host NPC at the bar end. Questions mix the game world (about a third) and general knowledge, in French and English. Sign-up with the host during the 10 minutes of announcements (20:50 and 20:59, town-wide banner); fewer than 2 at 21:00 and the host calls it off until tomorrow. 15 questions, 4 choices, 15 s each, points fall with answer time. The winner earns min(120, 8 × (n − 1)) coins in cash, n being the contestants with an account of 72 h or more and 12 answers or more, plus one free stout or lager at the bar within 24 h (economist review: no entry fee, so no betting feel and no pot for colluders; alts add at most 120 a day). Contract in `docs/PUB.md` §8.
+
+- [done] Pub quiz: socket schedule, questions and scoring, Laravel prize and free pint, quiz host NPC, overlay, spectator board and banner. Played with two players on 2026-11-13.
+- [todo] Admin "Start the quiz now" button as a watch app, once `feat/watch-apps` is merged (the socket `admin_quiz_start` message exists).
+- [todo] Quiz sounds (answer locked, right, wrong): no fitting sound in `sfx.ts` yet.
 
 ## 3. Orchard: more fun, same income (todo)
 
