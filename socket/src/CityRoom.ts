@@ -90,6 +90,7 @@ import type {
   PubState
 } from './types.ts'
 import { citySpawn, workDoor } from './world.ts'
+import { sendTaskTierReached, type TaskTierReached } from './tasks.ts'
 
 function warn(context: string, error: unknown): void {
   console.warn(`[colyseus] ${context}:`, error instanceof Error ? error.message : error)
@@ -352,6 +353,10 @@ export class CityRoom extends Room implements GameRoom {
     for (const client of this.clients) {
       if (client.auth?.ip === ip) client.leave(4003, 'ip banned')
     }
+  }
+
+  onTaskTierReached(reached: TaskTierReached): void {
+    sendTaskTierReached(this, reached)
   }
 
   async fetchHouseFurniture(token: string): Promise<void> {

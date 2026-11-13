@@ -63,6 +63,7 @@ import type {
   ZoneSellErrorPayload,
   ZoneSoldPayload,
   AtmDonePayload,
+  TaskDonePayload,
   AtmErrorPayload,
   CashBagErrorPayload,
   CashBagPayload,
@@ -196,6 +197,9 @@ export interface GameRealtimeDeps {
   farm: {
     onPicked: (data: FarmPickedPayload) => void
     onError: (data: FarmErrorPayload) => void
+  }
+  tasks: {
+    onDone: (data: TaskDonePayload) => void
   }
 }
 
@@ -353,6 +357,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('zone_sell_error', (data: ZoneSellErrorPayload) => deps.zoneBuyers.onError(data))
     room.onMessage('atm_done', (data: AtmDonePayload) => deps.atm.onDone(data))
     room.onMessage('atm_error', (data: AtmErrorPayload) => deps.atm.onError(data))
+    room.onMessage('task_done', (data: TaskDonePayload) => deps.tasks.onDone(data))
     room.onMessage('cash_bag_dropped', (data: CashBagPayload) => deps.cashBags.onDropped(data))
     room.onMessage('cash_bag_removed', (data: { id: number }) => deps.cashBags.onRemoved(data))
     room.onMessage('cash_bag_picked', (data: CashBagPickedPayload) => deps.cashBags.onPicked(data))

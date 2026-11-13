@@ -29,6 +29,28 @@ final class RealtimeNotifier
         }
     }
 
+    public function taskTierReached(int $accountId, string $task, int $tier, int $threshold): void
+    {
+        $url = (string) config('services.realtime.url');
+        $secret = (string) config('services.realtime.secret');
+        if ($url === '' || $secret === '') {
+            return;
+        }
+        try {
+            Http::timeout(3)
+                ->withHeaders(['X-Realtime-Secret' => $secret])
+                ->post(rtrim($url, '/').'/internal/task-tier-reached', [
+                    'accountId' => $accountId,
+                    'task' => $task,
+                    'tier' => $tier,
+                    'threshold' => $threshold,
+                ])
+                ->throw();
+        } catch (Throwable $e) {
+            Log::warning('realtime task-tier-reached notify failed: '.$e->getMessage());
+        }
+    }
+
     public function ipBanned(string $ip): void
     {
         $url = (string) config('services.realtime.url');
