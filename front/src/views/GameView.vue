@@ -33,6 +33,8 @@ import GameDrunkEffects from '../components/game/GameDrunkEffects.vue'
 import GameDrinkFast from '../components/game/GameDrinkFast.vue'
 import GamePubChallenge from '../components/game/GamePubChallenge.vue'
 import GamePubRaceBoard from '../components/game/GamePubRaceBoard.vue'
+import GamePubQuizBoard from '../components/game/GamePubQuizBoard.vue'
+import GameQuiz from '../components/game/GameQuiz.vue'
 import GameMeterShot from '../components/game/GameMeterShot.vue'
 import GameMinimap from '../components/game/GameMinimap.vue'
 import GameDarts from '../components/game/GameDarts.vue'
@@ -439,7 +441,9 @@ const pubQuiz = usePubQuiz({
   gameRoomRef,
   promptsHidden: () => inventoryOpen.value || !canUsePub(),
   say: (text) => survival.say(text),
+  t: (key, params) => (params ? t(key, params) : t(key)),
 })
+const { screen: pubQuizScreen, open: pubQuizOpen, board: pubQuizBoard, announcement: pubQuizAnnouncement } = pubQuiz
 
 const pubChallenge = usePubChallenge({
   getScene,
@@ -460,7 +464,7 @@ function closePubRace(): void {
   pubGames.closeRace()
   pubChallenge.clear()
 }
-const pubUiOpen = computed(() => pubMenuOpen.value || pubSecretOpen.value || pubGamesOpen.value)
+const pubUiOpen = computed(() => pubMenuOpen.value || pubSecretOpen.value || pubGamesOpen.value || pubQuizOpen.value)
 // Back to mouse look once the menu, the bouncer or a game screen closes.
 watch(pubUiOpen, (open) => {
   if (!open && !document.pointerLockElement) requestPointerLock()
@@ -969,6 +973,7 @@ function handleExtraKeyDown(e: KeyboardEvent): boolean {
   if (tradeUiOpen.value) return true
   // the bouncer's text field and the pub games (Space holds the pint) take the keyboard too
   if (pubSecretOpen.value || pubGamesOpen.value) return true
+  if (pubQuiz.onKeyDown(e)) return true
   // Y / N answer a Drink Fast challenge
   if (pubChallenge.onKeyDown(e)) return true
   // seated at the pub: a step or a jump stands the player up instead of moving
@@ -1080,6 +1085,7 @@ const movement = useGameMovement({
     clinic.updatePrompt()
     pub.tick(dt)
     pubGames.tick()
+    pubQuiz.tick()
     orchard.tick()
     farm.tick()
     if (!doorSigns.group.parent) getScene()?.add(doorSigns.group)
@@ -1336,6 +1342,7 @@ const crosshairClass = computed(() => {
     />
     <GameDrunkEffects :effects="drunkEffects" />
     <GameRoomMessageBanner v-if="roomMessage" :message="roomMessage" />
+    <GameRoomMessageBanner v-else-if="pubQuizAnnouncement" :message="pubQuizAnnouncement" />
     <!-- an error during boot drops the loading screen so its banner is seen; the character creator shows over the load -->
     <Transition leave-active-class="transition-opacity duration-500" leave-to-class="opacity-0">
       <GameLoadingScreen
@@ -1652,6 +1659,14 @@ const crosshairClass = computed(() => {
       @close="closePubRace"
     />
     <GamePubRaceBoard v-if="pubRaceBoard" :board="pubRaceBoard" />
+    <GamePubQuizBoard v-if="pubQuizBoard" :board="pubQuizBoard" />
+    <GameQuiz
+      v-if="pubQuizScreen"
+      :screen="pubQuizScreen"
+      :my-session-id="gameRoomRef?.sessionId ?? ''"
+      @answer="pubQuiz.answer"
+      @close="pubQuiz.close"
+    />
     <GamePubChallenge
       v-if="!pubGamesOpen"
       :incoming="pubChallengeIncoming"

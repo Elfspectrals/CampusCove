@@ -1,3 +1,5 @@
+import type { QuizChoice, QuizRankingEntry, QuizText } from '../game/pub/quiz'
+
 export interface RemoteUserPayload {
   sessionId: string
   id: string
@@ -265,6 +267,35 @@ export interface PubQuizLobbyPayload {
 
 export interface PubQuizCancelledPayload {
   reason: 'not_enough_players'
+}
+
+export interface PubQuizQuestionPayload {
+  index: number
+  count: number
+  prompt: QuizText
+  choices: [QuizText, QuizText, QuizText, QuizText]
+  closesAt: number
+}
+
+export interface PubQuizRevealPayload {
+  index: number
+  answer: QuizChoice
+  ranking: QuizRankingEntry[]
+}
+
+export interface PubQuizResultsPayload {
+  ranking: QuizRankingEntry[]
+}
+
+export interface PubQuizPrizePayload {
+  sessionId: string
+  pseudo: string
+  coins: number
+  pint: boolean
+}
+
+export interface PubQuizAnsweredPayload {
+  choice: QuizChoice
 }
 
 export interface PubRewardPayload {

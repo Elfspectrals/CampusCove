@@ -23,8 +23,13 @@ import type {
   HousingUnitPayload,
   PubBellPayload,
   PubQuizAnnouncePayload,
+  PubQuizAnsweredPayload,
   PubQuizCancelledPayload,
   PubQuizLobbyPayload,
+  PubQuizPrizePayload,
+  PubQuizQuestionPayload,
+  PubQuizResultsPayload,
+  PubQuizRevealPayload,
   PubBouncerBlockPayload,
   PubDartsEndPayload,
   PubDartsLobbyPayload,
@@ -159,6 +164,11 @@ export interface GameRealtimeDeps {
     onAnnounce: (data: PubQuizAnnouncePayload) => void
     onLobby: (data: PubQuizLobbyPayload) => void
     onCancelled: (data: PubQuizCancelledPayload) => void
+    onQuestion: (data: PubQuizQuestionPayload) => void
+    onAnswered: (data: PubQuizAnsweredPayload) => void
+    onReveal: (data: PubQuizRevealPayload) => void
+    onResults: (data: PubQuizResultsPayload) => void
+    onPrize: (data: PubQuizPrizePayload) => void
   }
   /** Drink Fast, Meter Shot and Darts (usePubGames). */
   pubGames: {
@@ -377,6 +387,11 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('pub_quiz_announce', (data: PubQuizAnnouncePayload) => deps.pubQuiz.onAnnounce(data))
     room.onMessage('pub_quiz_lobby', (data: PubQuizLobbyPayload) => deps.pubQuiz.onLobby(data))
     room.onMessage('pub_quiz_cancelled', (data: PubQuizCancelledPayload) => deps.pubQuiz.onCancelled(data))
+    room.onMessage('pub_quiz_question', (data: PubQuizQuestionPayload) => deps.pubQuiz.onQuestion(data))
+    room.onMessage('pub_quiz_answered', (data: PubQuizAnsweredPayload) => deps.pubQuiz.onAnswered(data))
+    room.onMessage('pub_quiz_reveal', (data: PubQuizRevealPayload) => deps.pubQuiz.onReveal(data))
+    room.onMessage('pub_quiz_results', (data: PubQuizResultsPayload) => deps.pubQuiz.onResults(data))
+    room.onMessage('pub_quiz_prize', (data: PubQuizPrizePayload) => deps.pubQuiz.onPrize(data))
 
     room.onMessage('apartment_inventory', (data: { items: ApartmentInventoryItem[] }) => {
       onInventory(Array.isArray(data.items) ? data.items : [])
