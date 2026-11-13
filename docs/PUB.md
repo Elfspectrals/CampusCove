@@ -189,8 +189,8 @@ Cafe : le front filtre par préfixe de code (`drink_`), l'API ne change rien au 
 | Route | Corps | Effet | Réponse |
 |---|---|---|---|
 | `POST /pub/order` | `{ code }` | débite le prix de la boisson (ledger `pub_order`), donne 1 exemplaire | `{ code, price, balance_after }` ; rejets `unknown_drink` (404), coins insuffisants (code existant des achats) |
-| `POST /pub/play` | `{ game }` | débite le droit d'entrée (ledger `pub_play`) : `drink_fast` 20, `meter_shot` 35, `darts` 10 | `{ game, fee, alcohol, balance_after }` avec `alcohol` : `drink_fast` 24, `meter_shot` 50, `darts` 0 ; rejet `unknown_game` (422) |
-| `POST /pub/reward` | `{ game, placement, score }` | crédite via `CoinRewardService` selon le barème ; **un gain par jeu et par compte toutes les 60 s**, sinon `coins: 0, cooldown: true` (200, pas d'erreur) | `{ coins, cooldown, balance_after }` |
+| `POST /pub/play` | `{ game }` | débite le droit d'entrée (ledger `pub_play`) : `drink_fast` 20, `meter_shot` 35, `darts` 10 ; `darts` gratuit (`fee` 0, rien débité) pour un compte au tutoriel actif à l'étape `play_darts` (`docs/TUTORIAL.md`), l'attente de 60 s s'applique quand même | `{ game, fee, alcohol, balance_after }` avec `alcohol` : `drink_fast` 24, `meter_shot` 50, `darts` 0 ; rejet `unknown_game` (422) |
+| `POST /pub/reward` | `{ game, placement, score, free? }` ; `free: true` (partie avec une entrée gratuite du tutoriel) : compte la partie, gain 0 | crédite via `CoinRewardService` selon le barème ; **un gain par jeu et par compte toutes les 60 s**, sinon `coins: 0, cooldown: true` (200, pas d'erreur) | `{ coins, cooldown, balance_after }` |
 | `POST /survival/hangover` | — | facture 40 coins (ou tout le solde s'il est inférieur, comme l'hôpital), ledger `hangover`, **ne retire rien d'autre** | `{ billed, balance_after }` |
 
 Barème de `POST /pub/reward` (`placement` : 1, 2, 3 ou 0 = solo ; `score` = ms pour Drink Fast et Meter Shot,
@@ -244,7 +244,7 @@ Constantes (`socket/src/pubConstants.ts`, miroir côté front dans `gameRoomCons
 | `pub_shots_start` | — | à 2,5 m de `shots.player`, pas de partie en cours ; `POST /pub/play` ; `pub_shots_ready { seed, startedAt }` |
 | `pub_shots_done` | `{ ms }` | partie en cours, `ms` plausible (voir constantes) ; ajoute l'alcool, `POST /pub/reward`, `pub_shots_result { ms, coins }`, broadcast `user_action { action: 'drink', code: 'drink_vodka' }` |
 | `pub_shots_leave` | — | le joueur ferme l'écran Meter Shot (Échap, ×, clic hors du panneau) avant le résultat : partie abandonnée (`pubShots = null`, ni alcool ni gain), une nouvelle peut être lancée tout de suite |
-| `pub_darts_join` | — | à 3 m de `darts.oche`, partie en lobby ou aucune, < `DARTS_MAX_PLAYERS` ; `POST /pub/play` ; lobby de `DARTS_LOBBY_MS` après la première inscription |
+| `pub_darts_join` | — | à 3 m de `darts.oche`, partie en lobby ou aucune, < `DARTS_MAX_PLAYERS` ; `POST /pub/play` ; lobby de `DARTS_LOBBY_MS` après la première inscription ; si une entrée a été gratuite (`fee` 0), `POST /pub/reward` part avec `free: true` pour chaque joueur : la partie compte (`darts_played`) mais ne paie aucun gain, à personne |
 | `pub_darts_throw` | `{ x, y }` | c'est son tour, il lui reste des fléchettes, `|x|,|y| ≤ DARTS_MAX_OFFSET_CM` (cm depuis le bull) ; score par `dartsScore(x, y)` ; tour suivant ; tour non joué en `DARTS_TURN_MS` = fléchette perdue (0) |
 | `pub_darts_leave` | — | le joueur ferme l'écran de fléchettes avant la fin : retiré du lobby ou de la partie (son tour passe au suivant, ni alcool ni gain) ; sinon le broadcast suivant rouvrirait l'écran |
 

@@ -255,6 +255,18 @@ export function consumableModelUrl(code: string): string {
   return `${consumableFolder(code)}/model.glb`
 }
 
+const TOOL_PREFIX = 'tool_'
+
+export function isToolCode(code: string): boolean {
+  return code.startsWith(TOOL_PREFIX)
+}
+
+/** A tool sold in a shop: `tool_<key>` -> public/assets/items/tools/<key>/model.glb. */
+export function toolModelUrl(code: string): string {
+  if (!isToolCode(code)) throw new Error(`No asset folder for tool code "${code}"`)
+  return `${ROOT}/items/tools/${code.slice(TOOL_PREFIX.length)}/model.glb`
+}
+
 /** Furniture model shown in the store and placed in houses: public/assets/decor/<key>/model.glb. */
 export function decorModelUrl(key: string): string {
   return `${ROOT}/decor/${key}/model.glb`

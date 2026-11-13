@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\ActionCounter;
 use App\Exceptions\ZoneShopRejectedException;
 use App\Models\EconomyTransaction;
 use App\Models\InventoryStack;
@@ -18,6 +19,7 @@ final class ZoneBuyerService
         private readonly AccountInventoryService $inventory,
         private readonly CoinRewardService $coinRewards,
         private readonly ZonePriceBook $book,
+        private readonly ActionCounterService $counters,
     ) {}
 
     /** @return array{sold: int, coins: int, balance_after: int, full_price_left: int} */
@@ -39,6 +41,11 @@ final class ZoneBuyerService
             $payout = SaleCurve::payout($offer['price'], $offer['quota'], $offer['overPrice'], $this->soldInLastDay($accountId, $zone, $area, $code), $quantity);
             $this->inventory->revokeItem($accountId, $def, $quantity);
             $this->coinRewards->creditCash($accountId, self::SOURCE, $payout['coins'], ['quantity' => $quantity, 'zone' => $zone, 'area' => $area, 'code' => $code]);
+            if ($code === OrchardService::APPLE_CODE) {
+                $this->counters->bump($accountId, ActionCounter::ApplesSold, $quantity);
+            } else {
+                $this->counters->bump($accountId, ActionCounter::ItemsSoldToBuyers, $quantity);
+            }
 
             return [
                 'sold' => $quantity,

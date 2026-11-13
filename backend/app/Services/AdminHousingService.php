@@ -71,7 +71,7 @@ final class AdminHousingService
                     'model_key' => $unit->model_key,
                     'status' => (string) $unit->status,
                     'price_coins' => (int) $unit->price_coins,
-                    'tax_coins' => $this->housing->taxFor($unit),
+                    'tax_coins' => $this->housing->baseTaxFor($unit),
                     'tax_is_custom' => $unit->tax_coins !== null,
                     'tax_due_at' => $unit->tax_due_at?->toIso8601String(),
                     'door_locked' => (bool) $unit->door_locked,

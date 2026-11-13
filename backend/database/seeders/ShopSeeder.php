@@ -2,10 +2,13 @@
 
 namespace Database\Seeders;
 
+use App\Services\HouseAlarmService;
+use App\Services\LockpickService;
 use App\Services\StarterCosmeticGrantService;
 use App\Support\FoodCatalog;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use RuntimeException;
 
 class ShopSeeder extends Seeder
 {
@@ -81,6 +84,31 @@ class ShopSeeder extends Seeder
             self::decor('decor_paint_cans', 'Paint Can Pallet', 'paint_cans', 1, 3),
             self::decor('decor_wheelbarrow', 'Garden Wheelbarrow', 'wheelbarrow', 2, 2),
             self::decor('decor_metal_shelving', 'Warehouse Shelving', 'metal_shelving', 2, 3),
+            self::decor(HouseAlarmService::ITEM_CODE, 'Home Alarm', 'alarm', 2, 1),
+            [
+                'code' => LockpickService::ITEM_CODE,
+                'name' => 'Lockpick',
+                'kind' => 'tool',
+                'rarity' => 2,
+                'tradable' => true,
+                'premium_only' => false,
+                'bind' => 'none',
+                'max_stack' => 10,
+                'preview_image' => '/assets/items/tools/lockpick/preview.png',
+                'model_glb' => '/assets/items/tools/lockpick/model.glb',
+            ],
+            [
+                'code' => LockpickService::REINFORCED_LOCK_CODE,
+                'name' => 'Reinforced lock',
+                'kind' => 'tool',
+                'rarity' => 2,
+                'tradable' => true,
+                'premium_only' => false,
+                'bind' => 'none',
+                'max_stack' => 1,
+                'preview_image' => '/assets/items/tools/reinforced_lock/preview.png',
+                'model_glb' => '/assets/items/tools/reinforced_lock/model.glb',
+            ],
             [
                 'code' => 'emote_wave',
                 'name' => 'Wave Emote',
@@ -389,6 +417,13 @@ class ShopSeeder extends Seeder
             self::coins('decor_paint_cans', 110, 143),
             self::coins('decor_wheelbarrow', 180, 144),
             self::coins('decor_metal_shelving', 260, 145),
+            self::coins(LockpickService::ITEM_CODE, 120, 146),
+            self::coins(LockpickService::REINFORCED_LOCK_CODE, 600, 147),
+            self::coins(HouseAlarmService::ITEM_CODE, 400, 148),
+            self::coins('tool_secateurs', 180, 149),
+            self::coins('tool_wrench', 120, 150),
+            self::coins('tool_hammer', 120, 151),
+            self::coins('tool_crowbar', 120, 152),
         ];
         foreach (FoodCatalog::items() as $i => $food) {
             if ($food['price'] !== null) {
@@ -397,7 +432,11 @@ class ShopSeeder extends Seeder
         }
 
         foreach ($catalogRows as $catalog) {
-            $itemDefId = $itemDefIds[$catalog['item_def_code']];
+            $itemDefId = $itemDefIds[$catalog['item_def_code']]
+                ?? (int) DB::table('item_defs')->where('code', $catalog['item_def_code'])->value('item_def_id');
+            if ($itemDefId === 0) {
+                throw new RuntimeException("Shop catalog item {$catalog['item_def_code']} has no item_defs row");
+            }
 
             $exists = DB::table('shop_catalog_items')->where('item_def_id', $itemDefId)->exists();
             if ($exists) {

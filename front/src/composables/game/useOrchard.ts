@@ -17,7 +17,7 @@ import type { InteractionSource, ScreenPrompt } from './useInteractionTargets'
 const TREE_PROMPT_HEIGHT = 2.4
 
 interface Arms {
-  pick: () => void
+  pick: (durationMs?: number) => void
   cancelPick: () => void
 }
 
@@ -35,7 +35,7 @@ export interface OrchardDeps {
 export function useOrchard(deps: OrchardDeps) {
   const pickProgress = ref<number | null>(null)
   let layout: OrchardLayout | null = null
-  let picking: { tree: number; startedAt: number } | null = null
+  let picking: { tree: number; startedAt: number; durationMs: number } | null = null
   const projection = new THREE.Vector3()
 
   function onTownLoaded(manifest: WorldManifest): void {
@@ -47,7 +47,7 @@ export function useOrchard(deps: OrchardDeps) {
   }
 
   function startPick(tree: number): void {
-    picking = { tree, startedAt: performance.now() }
+    picking = { tree, startedAt: performance.now(), durationMs: PICK_MS }
     pickProgress.value = 0
     deps.getArms()?.pick()
     deps.gameRoomRef.value?.send('orchard_pick_start', { tree })
@@ -77,7 +77,7 @@ export function useOrchard(deps: OrchardDeps) {
       deps.say('You stepped away from the tree.')
       return
     }
-    pickProgress.value = recoveryProgress(picking.startedAt, PICK_MS, performance.now())
+    pickProgress.value = recoveryProgress(picking.startedAt, picking.durationMs, performance.now())
     if (pickProgress.value < 1) return
     endPick()
     deps.gameRoomRef.value?.send('orchard_pick')
@@ -96,6 +96,12 @@ export function useOrchard(deps: OrchardDeps) {
     window.removeEventListener('mouseup', onMouseUp)
     window.removeEventListener('blur', cancelPick)
   })
+
+  function onPickStarted(data: { tree: number; durationMs: number }): void {
+    if (!picking || picking.tree !== data.tree || data.durationMs === picking.durationMs) return
+    picking.durationMs = data.durationMs
+    deps.getArms()?.pick(data.durationMs)
+  }
 
   function onPicked(data: OrchardPickedPayload): void {
     deps.refreshInventory()
@@ -142,6 +148,6 @@ export function useOrchard(deps: OrchardDeps) {
     onTownLoaded,
     tick,
     source,
-    handlers: { onPicked, onError },
+    handlers: { onPickStarted, onPicked, onError },
   }
 }

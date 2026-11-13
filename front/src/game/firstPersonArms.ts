@@ -57,6 +57,7 @@ export function createFirstPersonArms(container: THREE.Group) {
   let actions = new Map<string, THREE.AnimationAction>()
   let base: THREE.AnimationAction | null = null
   let oneShot: THREE.AnimationAction | null = null
+  let holding = false
   let watchTarget = 0
   let watchWeight = 0
   let frozenFor = 0
@@ -75,7 +76,7 @@ export function createFirstPersonArms(container: THREE.Group) {
     return found
   }
 
-  function playBase(name: 'Idle' | 'Walk'): void {
+  function playBase(name: 'Idle' | 'Walk' | 'Hold'): void {
     const next = action(name)
     if (base === next) return
     next.reset().fadeIn(BASE_FADE_S).play()
@@ -83,10 +84,11 @@ export function createFirstPersonArms(container: THREE.Group) {
     base = next
   }
 
-  function playOnce(name: (typeof ONE_SHOT_CLIPS)[number], fadeS = ONE_SHOT_FADE_S): void {
+  function playOnce(name: (typeof ONE_SHOT_CLIPS)[number], fadeS = ONE_SHOT_FADE_S, durationS?: number): void {
     if (!mixer) return
     const next = action(name)
     oneShot?.stop()
+    next.timeScale = durationS ? next.getClip().duration / durationS : 1
     next.reset().fadeIn(fadeS).play()
     base?.fadeOut(fadeS)
     oneShot = next
@@ -157,7 +159,7 @@ export function createFirstPersonArms(container: THREE.Group) {
     if (!mixer) return
     const speed = dt > 0 ? Math.hypot(position.x - lastPosition.x, position.z - lastPosition.z) / dt : 0
     lastPosition.set(position.x, 0, position.z)
-    if (!oneShot) playBase(speed > MIN_WALK_SPEED ? 'Walk' : 'Idle')
+    if (!oneShot) playBase(holding ? 'Hold' : speed > MIN_WALK_SPEED ? 'Walk' : 'Idle')
     if (base && base === actions.get('Walk')) base.timeScale = firstPersonWalkTimeScale(speed)
     if (frozenFor > 0) frozenFor -= dt
     else mixer.update(dt)
@@ -205,6 +207,10 @@ export function createFirstPersonArms(container: THREE.Group) {
       watchTarget = raised ? 1 : 0
     },
     isWatchRaised: () => watchWeight > 0.6,
+    /** Right hand closed on a job tool (Hold clip) instead of the Idle / Walk swing. */
+    setHolding: (next: boolean) => {
+      holding = next
+    },
     startEating: (kind: 'eat' | 'drink'): boolean => {
       if (!mixer || isPlaying('Pick')) return false
       const next = action(EAT_CLIPS[kind])
@@ -230,7 +236,7 @@ export function createFirstPersonArms(container: THREE.Group) {
       lastPunchAt = now
       playOnce(lastPunch === 'jab' ? 'PunchL' : 'Punch', PUNCH_FADE_S)
     },
-    pick: () => playOnce('Pick'),
+    pick: (durationMs?: number) => playOnce('Pick', ONE_SHOT_FADE_S, durationMs && durationMs / 1000),
     cancelPick,
     hitStop: (seconds: number) => {
       frozenFor = seconds

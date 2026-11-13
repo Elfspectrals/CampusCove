@@ -101,12 +101,12 @@ class AdminHousingApiTest extends TestCase
 
         Carbon::setTestNow(Carbon::parse('2026-10-30 12:00:01 UTC'));
         app(HousingService::class)->collectDueTaxes();
-        $this->assertDatabaseHas('wallet_ledger', ['reason' => 'housing_tax', 'delta' => -7]);
+        $this->assertDatabaseHas('wallet_ledger', ['reason' => 'housing_tax', 'delta' => -9]);
 
         $this->patchJson('/api/admin/housing/units/'.$this->unit->public_id, ['tax_coins' => null], $headers)
             ->assertOk();
         $this->assertNull($this->unit->fresh()->tax_coins);
-        $this->assertSame((int) ceil($this->unit->price_coins * 0.05), app(HousingService::class)->taxFor($this->unit->fresh()));
+        $this->assertSame((int) ceil($this->unit->price_coins * 0.05), app(HousingService::class)->baseTaxFor($this->unit->fresh()));
         $this->assertSame(['occupied', $owner['account_id']], [$this->unit->fresh()->status, (int) $this->unit->fresh()->occupant_account_id]);
 
         Carbon::setTestNow();
