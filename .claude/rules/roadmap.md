@@ -126,6 +126,19 @@ Decision (2026-11-12): voice goes through a self-hosted LiveKit SFU (open source
 - [done] Voice from another PC on the same network: `make up` gives LiveKit the network address, `make share-local` reaches LiveKit through the page (`/livekit` proxy) over https (2026-11-12).
 - [todo] Deploy LiveKit on a VPS with TURN; privacy page mentions voice.
 
+## First day in town tutorial (doing, branch feat/first-day-tutorial)
+
+Decision (2026-11-13): a new account plays a 5-minute tutorial right after the character creator, the orchard farmer as guide: pick 6 apples, eat one, sell the others, deposit at the orchard ATM (cash drops at death, the bank does not), one free darts game at the pub that pays 0 coins to anyone. GreenCart is left out (312 m away, and a deposit before a shop leaves no cash). New hunger stays at 100. Reward: a "New citizen" badge next to the pseudo, the same for everyone, never traded or lost, zero coins. Skipping gives no badge; the player can resume later. Accounts that existed before never see it. Every step is validated by the server, on the action counters of the tasks branch once they are validated. Contract in `docs/TUTORIAL.md`.
+
+- [done] Tutorial state per account (`account_tutorials`), started by the first character save, skip and resume.
+- [todo] Steps advanced by the server from the action counters.
+- [todo] Free darts game at the tutorial step, paying 0.
+- [todo] One-line quest log with skip, resume in the settings.
+- [todo] Marker to the objective (tree, farmer, ATM, pub).
+- [todo] Bubbles the first time near an ATM, a door or an NPC.
+- [todo] "New citizen" badge next to the pseudo.
+- [todo] Playtest in the game.
+
 ## Later
 
 - Fishing as the second job (reuse the darts power meter or the Drink Fast balance bar; rod and fish models exist).
