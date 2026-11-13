@@ -27,13 +27,16 @@ globalThis.fetch = async (url: string | URL | Request, init?: RequestInit) => {
     nextApiError = null
     return new Response(JSON.stringify({ code, message }), { status })
   }
-  if (path.endsWith('/orchard/pick')) return new Response(JSON.stringify({ code: 'farm_apple', quantity: 4 }))
+  if (path.endsWith('/orchard/pick')) {
+    const tool = init?.body ? JSON.parse(String(init.body)).tool : undefined
+    return new Response(JSON.stringify(tool ? { code: 'farm_apple', quantity: 4, tool: { code: tool, uses_left: 41 } } : { code: 'farm_apple', quantity: 4 }))
+  }
   if (path.endsWith('/orchard/sell')) return new Response(JSON.stringify({ sold: 3, coins: 9, balance_after: 59 }))
   return new Response(JSON.stringify({}))
 }
 
 const { loadWorld } = await import('./world.ts')
-const { PICK_MS, PICK_RESTART_MS, onOrchardPick, onOrchardPickCancel, onOrchardPickStart } = await import('./orchard.ts')
+const { PICK_MS, PICK_RESTART_MS, TOOL_PICK_MS, onOrchardPick, onOrchardPickCancel, onOrchardPickStart } = await import('./orchard.ts')
 await loadWorld()
 
 function fakeClient(sessionId: string): FakeClient {
@@ -71,6 +74,30 @@ test('holding the pick for 3 s gives one apple', async () => {
 
   assert.deepEqual(apiCalls, [{ path: '/orchard/pick', body: {} }])
   assert.deepEqual(received(client, 'orchard_picked'), [{ code: 'farm_apple', quantity: 4 }])
+})
+
+test('with secateurs in hand a pick takes 2 s, tells the client and spends one use', async () => {
+  const { player, client, room } = setup(-20, -98)
+  player.heldTool = 'tool_secateurs'
+  onOrchardPickStart(room, client, { tree: 0 }, 0)
+  assert.deepEqual(received(client, 'orchard_pick_started'), [{ tree: 0, durationMs: TOOL_PICK_MS }])
+  await onOrchardPick(room, client, TOOL_PICK_MS - 251)
+  assert.deepEqual(errorCodes(client), ['orchard_too_fast'])
+
+  onOrchardPickStart(room, client, { tree: 0 }, 10_000)
+  await onOrchardPick(room, client, 10_000 + TOOL_PICK_MS - 250)
+  assert.deepEqual(apiCalls, [{ path: '/orchard/pick', body: { tool: 'tool_secateurs' } }])
+  assert.deepEqual(received(client, 'tool_worn'), [{ code: 'tool_secateurs', usesLeft: 41 }])
+})
+
+test('putting the secateurs away during a pick brings back the 3 s pick', async () => {
+  const { player, client, room } = setup(-20, -98)
+  player.heldTool = 'tool_secateurs'
+  onOrchardPickStart(room, client, { tree: 0 }, 0)
+  player.heldTool = null
+  await onOrchardPick(room, client, TOOL_PICK_MS)
+  assert.deepEqual(errorCodes(client), ['orchard_too_fast'])
+  assert.equal(apiCalls.length, 0)
 })
 
 test('a pick may land 250 ms early for network lag, not one more', async () => {

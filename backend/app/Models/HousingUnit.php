@@ -29,6 +29,7 @@ class HousingUnit extends Model
         'lease_expires_at',
         'tax_due_at',
         'door_locked',
+        'reinforced_lock',
         'room_id',
     ];
 
@@ -48,6 +49,7 @@ class HousingUnit extends Model
             'lease_expires_at' => 'datetime',
             'tax_due_at' => 'datetime',
             'door_locked' => 'boolean',
+            'reinforced_lock' => 'boolean',
             'interior_bounds' => 'array',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
@@ -67,5 +69,18 @@ class HousingUnit extends Model
     public function templateKey(): string
     {
         return 'housing_'.$this->unit_id;
+    }
+
+    public const SQUARE_METRES_PER_PLACED_OBJECT = 5.0;
+
+    public const STOREY_HEIGHT = 3.0;
+
+    public function furnitureLimit(): int
+    {
+        $bounds = $this->interior_bounds;
+        $floorArea = ($bounds['maxX'] - $bounds['minX']) * ($bounds['maxZ'] - $bounds['minZ']);
+        $storeys = (int) ceil(($bounds['maxY'] ?? self::STOREY_HEIGHT) / self::STOREY_HEIGHT);
+
+        return (int) floor($floorArea * $storeys / self::SQUARE_METRES_PER_PLACED_OBJECT);
     }
 }

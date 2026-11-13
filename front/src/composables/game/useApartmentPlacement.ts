@@ -15,12 +15,13 @@ const YAW_SMOOTH_PER_FRAME = 0.25
 const ROT_TAU_S = 0.028
 const RAYCAST_MAX = 24
 const YAW_STEP = Math.PI / 12
+const FINE_YAW_STEP = Math.PI / 36
 const FLOOR_TOLERANCE = 0.01
 /** Placement hints with the player's own keys (Settings). */
 function rotateHint(): string {
   const r = actionKeyLabels('rotate')[0]
   const inv = actionKeyLabels('inventory')[0]
-  return `${r ? `${r} rotate · Shift+${r} reverse · ` : ''}Esc${inv ? ` / ${inv}` : ''} cancel`
+  return `${r ? `${r} rotate · Shift+${r} reverse · ` : ''}Wheel fine rotate · Esc${inv ? ` / ${inv}` : ''} cancel`
 }
 function placeHint(): string {
   return `LMB place · RMB cancel · ${rotateHint()}`
@@ -53,6 +54,7 @@ export interface ApartmentPlacementDeps {
   getColyseusRoom: () => Room | null
   getApartmentObjectMesh: (objectId: string) => THREE.Mesh | undefined
   canDecorate: Ref<boolean>
+  furnitureUsage: Ref<{ placed: number; limit: number } | null>
   pointerLocked: Ref<boolean>
   getApartmentInventoryOpen: () => boolean
   persistApartmentTransformForMesh: (mesh: THREE.Mesh, force: boolean) => void
@@ -143,6 +145,19 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
   }
 
   /** Put the ghost in the scene, two metres in front of the camera. */
+  function houseIsFull(): boolean {
+    const usage = deps.furnitureUsage.value
+    return usage !== null && usage.placed >= usage.limit
+  }
+
+  function newObjectHint(): string {
+    if (!deps.canDecorate.value) return NOT_HERE_HINT
+    const usage = deps.furnitureUsage.value
+    if (!usage) return placeHint()
+    if (houseIsFull()) return `This house is full (${usage.placed}/${usage.limit}): put something away first`
+    return `${usage.placed}/${usage.limit} objects · ${placeHint()}`
+  }
+
   function showGhost(hint: string): void {
     hudHints.value = [hint]
     crosshairTint.value = 'valid'
@@ -172,7 +187,7 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
       if (currentState.value.kind === 'preview_new' && q <= 0) cancelPreview()
     })
     currentState.value = { kind: 'preview_new', itemDef, ownedCountRef }
-    showGhost(deps.canDecorate.value ? placeHint() : NOT_HERE_HINT)
+    showGhost(newObjectHint())
     loadGhostVisual(itemDef)
     void ensureWorld()
   }
@@ -340,9 +355,9 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
 
     const ignored = new Set([movingId, supportPropId].filter(Boolean))
     const valid = deps.canDecorate.value && ghostInsideRoom() && !physics.ghostIntersects(ghost.root, ignored)
-      && !ghostOverlapsPlayer()
+      && !ghostOverlapsPlayer() && !(st.kind === 'preview_new' && houseIsFull())
     if (st.kind === 'preview_new') {
-      const hint = deps.canDecorate.value ? placeHint() : NOT_HERE_HINT
+      const hint = newObjectHint()
       if (hudHints.value[0] !== hint) hudHints.value = [hint]
     }
     if (ghost.setValid(valid)) {
@@ -362,6 +377,12 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
     else if (matchesRotateCW(e)) userYawTarget += YAW_STEP
     else if (matchesRotateCCW(e)) userYawTarget -= YAW_STEP
     else return false
+    return true
+  }
+
+  function onWheelStep(step: 1 | -1): boolean {
+    if (currentState.value.kind === 'idle') return false
+    userYawTarget += step * FINE_YAW_STEP
     return true
   }
 
@@ -462,6 +483,7 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
     notifyPropRemovedFromWorld,
     tick,
     onKeyDown,
+    onWheelStep,
     dispose,
     onPointerDown,
   }

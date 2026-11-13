@@ -101,7 +101,7 @@ function setup() {
     const sent: Sent[] = []
     const client = { sessionId, sent, send: (type: string, payload: unknown) => void sent.push({ type, payload }) } as FakeClient
     const player = Object.assign(
-      createPlayer({ sessionId, auth: { accountId, pseudo: sessionId, token: `token-${sessionId}` } } as any, structuredClone(OWN_OUTFIT), 0, { x: 0, y: 1.6, z: 0 }),
+      createPlayer({ sessionId, auth: { accountId, pseudo: sessionId, token: `token-${sessionId}`, badges: [] } } as any, structuredClone(OWN_OUTFIT), 0, { x: 0, y: 1.6, z: 0 }),
       { stats: { health: 100, hunger: 100, thirst: 100 } },
       extra
     )

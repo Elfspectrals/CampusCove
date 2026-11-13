@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "key": "storage",
+  "name": "Cove Storage",
+  "footprint": [
+    16.0,
+    34.809999999999995
+  ],
+  "footprintCenterZ": 0.5950000000000024,
+  "doorLocal": [
+    0.0,
+    1.25,
+    18.0
+  ],
+  "interiorOffset": [
+    0.0,
+    0.2,
+    12.595
+  ],
+  "collision": [
+    {
+      "cx": 0.0,
+      "cz": 0.5950000000000024,
+      "hx": 8.2,
+      "hz": 17.604999999999997,
+      "hy": 2.2
+    }
+  ]
+}

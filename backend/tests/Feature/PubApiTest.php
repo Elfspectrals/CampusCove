@@ -102,6 +102,75 @@ class PubApiTest extends TestCase
         $this->assertSame(19, $this->balance($player['account_id']));
     }
 
+    public function test_the_tutorial_darts_game_is_free_without_cash(): void
+    {
+        $player = $this->registerAndCreditWallet(0, 'cash');
+        $this->putTutorialAt($player['account_id'], 'play_darts', 'active');
+
+        $this->postJson('/api/pub/play', ['game' => 'darts'], $this->auth($player['token'], self::SECRET))
+            ->assertOk()
+            ->assertExactJson(['game' => 'darts', 'fee' => 0, 'alcohol' => 0, 'balance_after' => 0]);
+
+        $this->assertSame(0, DB::table('transactions')->where('type', 'pub_play')->where('created_by_account_id', $player['account_id'])->count());
+    }
+
+    /** @return array<string, array{string, string, string, int}> */
+    public static function paidGames(): array
+    {
+        return [
+            'other game at the darts step' => ['drink_fast', 'play_darts', 'active', 20],
+            'darts before the darts step' => ['darts', 'deposit_cash', 'active', 10],
+            'darts after skipping' => ['darts', 'play_darts', 'skipped', 10],
+        ];
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('paidGames')]
+    public function test_only_darts_at_the_tutorial_darts_step_is_free(string $game, string $step, string $status, int $fee): void
+    {
+        $player = $this->registerAndCreditWallet(100, 'cash');
+        $this->putTutorialAt($player['account_id'], $step, $status);
+
+        $this->postJson('/api/pub/play', ['game' => $game], $this->auth($player['token'], self::SECRET))
+            ->assertOk()
+            ->assertJsonPath('fee', $fee);
+
+        $this->assertSame(100 - $fee, $this->balance($player['account_id']));
+    }
+
+    public function test_a_finished_tutorial_pays_the_darts_fee(): void
+    {
+        $player = $this->registerAndCreditWallet(100, 'cash');
+        $this->putTutorialAt($player['account_id'], 'play_darts', 'done');
+
+        $this->postJson('/api/pub/play', ['game' => 'darts'], $this->auth($player['token'], self::SECRET))
+            ->assertOk()
+            ->assertJsonPath('fee', 10);
+    }
+
+    public function test_the_tutorial_darts_game_still_waits_for_the_reward_cooldown(): void
+    {
+        $player = $this->registerAndCreditWallet(0, 'cash');
+        $headers = $this->auth($player['token'], self::SECRET);
+        $this->postJson('/api/pub/reward', ['game' => 'darts', 'placement' => 0, 'score' => 60], $headers)->assertOk();
+        $this->putTutorialAt($player['account_id'], 'play_darts', 'active');
+
+        $this->postJson('/api/pub/play', ['game' => 'darts'], $headers)
+            ->assertStatus(429)
+            ->assertJsonPath('code', 'pub_cooldown');
+    }
+
+    public function test_a_free_darts_game_counts_as_played_and_pays_nothing(): void
+    {
+        $player = $this->registerAndCreditWallet(0, 'cash');
+
+        $this->postJson('/api/pub/reward', ['game' => 'darts', 'placement' => 1, 'score' => 90, 'free' => true], $this->auth($player['token'], self::SECRET))
+            ->assertOk()
+            ->assertJsonPath('coins', 0);
+
+        $this->assertSame(0, $this->balance($player['account_id']));
+        $this->assertSame(1, (int) DB::table('account_counters')->where('account_id', $player['account_id'])->where('counter', 'darts_played')->value('value'));
+    }
+
     /** @return array<string, array{string, int, int, int}> */
     public static function rewardTable(): array
     {
@@ -233,6 +302,16 @@ class PubApiTest extends TestCase
         return array_filter([
             'Authorization' => 'Bearer '.$token,
             'X-Realtime-Secret' => $secret,
+        ]);
+    }
+
+    private function putTutorialAt(int $accountId, string $step, string $status): void
+    {
+        DB::table('account_tutorials')->insert([
+            'account_id' => $accountId,
+            'step' => $step,
+            'status' => $status,
+            'completed_at' => $status === 'done' ? now() : null,
         ]);
     }
 

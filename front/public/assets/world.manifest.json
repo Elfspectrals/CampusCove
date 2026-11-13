@@ -913,6 +913,50 @@
       }
     },
     {
+      "key": "storage",
+      "optional": true,
+      "bounds": {
+        "minX": 45.12,
+        "maxX": 178,
+        "minZ": -14,
+        "maxZ": 32
+      },
+      "modelUrl": "/assets/park/storage_site/storage_site.glb",
+      "gate": {
+        "x": 45.12,
+        "z": 8.97,
+        "width": 6
+      },
+      "buildings": [
+        {
+          "kind": "work",
+          "job": "auction",
+          "key": "storage",
+          "name": "Cove Storage",
+          "position": [
+            150,
+            0,
+            9
+          ],
+          "rotationY": -1.5707963267948966,
+          "door": [
+            132,
+            1.25,
+            9
+          ],
+          "footprint": [
+            16,
+            34.809999999999995
+          ],
+          "interiorOffset": [
+            0,
+            0.2,
+            12.595
+          ]
+        }
+      ]
+    },
+    {
       "key": "police",
       "optional": true,
       "bounds": {
@@ -1715,7 +1759,12 @@
       "minZ": -143.905,
       "maxZ": -132.905,
       "floorY": -3
-    }
+    },
+    "quizmaster": [
+      94.6,
+      0.2,
+      -129.8
+    ]
   },
   "orchard": {
     "trees": [
@@ -11080,6 +11129,260 @@
       ]
     }
   ],
+  "storage": {
+    "auctioneer": [
+      163.605,
+      0.8,
+      9
+    ],
+    "lotBoard": [
+      166.285,
+      3.7,
+      9
+    ],
+    "units": [
+      {
+        "id": "unit_01",
+        "door": "Door_Rollup_01",
+        "threshold": [
+          137.705,
+          0.2,
+          6.6
+        ],
+        "inside": [
+          137.705,
+          0.2,
+          4
+        ],
+        "size": [
+          4,
+          2.6,
+          4
+        ],
+        "yaw": 0
+      },
+      {
+        "id": "unit_02",
+        "door": "Door_Rollup_02",
+        "threshold": [
+          141.905,
+          0.2,
+          6.6
+        ],
+        "inside": [
+          141.905,
+          0.2,
+          4
+        ],
+        "size": [
+          4,
+          2.6,
+          4
+        ],
+        "yaw": 0
+      },
+      {
+        "id": "unit_03",
+        "door": "Door_Rollup_03",
+        "threshold": [
+          146.105,
+          0.2,
+          6.6
+        ],
+        "inside": [
+          146.105,
+          0.2,
+          4
+        ],
+        "size": [
+          4,
+          2.6,
+          4
+        ],
+        "yaw": 0
+      },
+      {
+        "id": "unit_04",
+        "door": "Door_Rollup_04",
+        "threshold": [
+          150.305,
+          0.2,
+          6.6
+        ],
+        "inside": [
+          150.305,
+          0.2,
+          4
+        ],
+        "size": [
+          4,
+          2.6,
+          4
+        ],
+        "yaw": 0
+      },
+      {
+        "id": "unit_05",
+        "door": "Door_Rollup_05",
+        "threshold": [
+          154.505,
+          0.2,
+          6.6
+        ],
+        "inside": [
+          154.505,
+          0.2,
+          4
+        ],
+        "size": [
+          4,
+          2.6,
+          4
+        ],
+        "yaw": 0
+      },
+      {
+        "id": "unit_06",
+        "door": "Door_Rollup_06",
+        "threshold": [
+          158.705,
+          0.2,
+          6.6
+        ],
+        "inside": [
+          158.705,
+          0.2,
+          4
+        ],
+        "size": [
+          4,
+          2.6,
+          4
+        ],
+        "yaw": 0
+      },
+      {
+        "id": "unit_07",
+        "door": "Door_Rollup_07",
+        "threshold": [
+          137.705,
+          0.2,
+          11.4
+        ],
+        "inside": [
+          137.705,
+          0.2,
+          14
+        ],
+        "size": [
+          4,
+          2.6,
+          4
+        ],
+        "yaw": 3.1416
+      },
+      {
+        "id": "unit_08",
+        "door": "Door_Rollup_08",
+        "threshold": [
+          141.905,
+          0.2,
+          11.4
+        ],
+        "inside": [
+          141.905,
+          0.2,
+          14
+        ],
+        "size": [
+          4,
+          2.6,
+          4
+        ],
+        "yaw": 3.1416
+      },
+      {
+        "id": "unit_09",
+        "door": "Door_Rollup_09",
+        "threshold": [
+          146.105,
+          0.2,
+          11.4
+        ],
+        "inside": [
+          146.105,
+          0.2,
+          14
+        ],
+        "size": [
+          4,
+          2.6,
+          4
+        ],
+        "yaw": 3.1416
+      },
+      {
+        "id": "unit_10",
+        "door": "Door_Rollup_10",
+        "threshold": [
+          150.305,
+          0.2,
+          11.4
+        ],
+        "inside": [
+          150.305,
+          0.2,
+          14
+        ],
+        "size": [
+          4,
+          2.6,
+          4
+        ],
+        "yaw": 3.1416
+      },
+      {
+        "id": "unit_11",
+        "door": "Door_Rollup_11",
+        "threshold": [
+          154.505,
+          0.2,
+          11.4
+        ],
+        "inside": [
+          154.505,
+          0.2,
+          14
+        ],
+        "size": [
+          4,
+          2.6,
+          4
+        ],
+        "yaw": 3.1416
+      },
+      {
+        "id": "unit_12",
+        "door": "Door_Rollup_12",
+        "threshold": [
+          158.705,
+          0.2,
+          11.4
+        ],
+        "inside": [
+          158.705,
+          0.2,
+          14
+        ],
+        "size": [
+          4,
+          2.6,
+          4
+        ],
+        "yaw": 3.1416
+      }
+    ]
+  },
   "police": {
     "desk": [
       94.605,

@@ -6,10 +6,12 @@ import { getStoredAuth } from '../api/session'
 import { activeLayout } from '../composables/useTheme'
 import { useWalletBalances } from '../composables/useWalletBalances'
 import * as friendsApi from '../api/friends'
+import { useTasks } from '../composables/useTasks'
 import type { Friend } from '../api/friends'
 import UiIcon from '../components/ui/UiIcon.vue'
 import UiCurrency from '../components/ui/UiCurrency.vue'
 import PrivacyPanel from '../components/site/PrivacyPanel.vue'
+import TaskProgressList from '../components/tasks/TaskProgressList.vue'
 import townHero from '../assets/landing/town-hero.webp'
 
 const router = useRouter()
@@ -28,16 +30,17 @@ const initial = computed(() => {
 })
 
 const lobbyGridClass = computed(() => ({
-  columns: "lg:grid-cols-[280px_minmax(0,1fr)_300px] lg:[grid-template-areas:'player_play_friends']",
-  banner: "lg:grid-cols-2 lg:[grid-template-areas:'play_play'_'player_friends']",
-  feature: "lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:[grid-template-areas:'play_player'_'play_friends']",
-  stacked: "lg:grid-cols-[minmax(0,1fr)_320px] lg:[grid-template-areas:'play_friends'_'player_friends']",
-  row: "lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)] lg:[grid-template-areas:'play_player_friends']",
-  profileTop: "lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:[grid-template-areas:'player_player'_'play_friends']",
+  columns: "lg:grid-cols-[280px_minmax(0,1fr)_300px] lg:[grid-template-areas:'player_play_friends'_'tasks_play_friends']",
+  banner: "lg:grid-cols-2 lg:[grid-template-areas:'play_play'_'player_friends'_'tasks_friends']",
+  feature: "lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:[grid-template-areas:'play_player'_'play_friends'_'play_tasks']",
+  stacked: "lg:grid-cols-[minmax(0,1fr)_320px] lg:[grid-template-areas:'play_friends'_'player_friends'_'tasks_friends']",
+  row: "lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)] lg:[grid-template-areas:'play_player_friends'_'play_tasks_friends']",
+  profileTop: "lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:[grid-template-areas:'player_player'_'play_friends'_'tasks_friends']",
 })[activeLayout.value.lobby])
 const wideProfile = computed(() => activeLayout.value.lobby === 'stacked' || activeLayout.value.lobby === 'profileTop')
 
 const friends = ref<Friend[]>([])
+const { tasks, error: tasksError } = useTasks()
 const friendsLoading = ref(false)
 
 const onlineCount = computed(() => friends.value.filter((f) => f.status === 'online' || f.status === 'playing').length)
@@ -140,7 +143,13 @@ function openChat(friend: Friend) {
         </div>
       </section>
 
-      <aside class="cc-panel order-3 flex max-h-[640px] flex-col overflow-hidden lg:order-none lg:[grid-area:friends]">
+      <section class="cc-panel order-3 self-start lg:order-none lg:[grid-area:tasks]">
+        <h2 class="m-0 border-b border-line/10 px-5 py-3 font-display text-2xl leading-none">{{ t('tasks.title') }}</h2>
+        <p v-if="tasksError" class="m-0 p-5 text-sm font-semibold text-coral" role="alert">{{ tasksError }}</p>
+        <TaskProgressList v-else-if="tasks" :tasks="tasks" />
+      </section>
+
+      <aside class="cc-panel order-4 flex max-h-[640px] flex-col overflow-hidden lg:order-none lg:[grid-area:friends]">
         <div class="flex items-center justify-between gap-3 border-b border-line/10 py-3 pl-5 pr-2">
           <div>
             <h2 class="m-0 font-display text-2xl leading-none">{{ t('home.friends') }}</h2>

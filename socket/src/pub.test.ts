@@ -20,7 +20,7 @@ const manifest = {
     beds: [{ id: 'bed_01', position: [-126, 1.8, 16], bed: [-128, 0.85, 16], yaw: 0 }]
   },
   pub: {
-    bartender: [90, 0, -138], bartenderYaw: 0, bouncer: [100, 0, -142],
+    bartender: [90, 0, -138], bartenderYaw: 0, bouncer: [100, 0, -142], quizmaster: [91, 0.2, -123.5],
     counter: [90, 0, -135], taps: [90, 1.05, -137], serve: [91, 1.05, -136], bell: [92, 1.9, -137],
     secretDoor: { position: [102, 0, -142], yaw: 0 },
     secretRoom: { minX: 100, maxX: 108, minZ: -150, maxZ: -143 },
@@ -390,8 +390,8 @@ test('a drunk player blacks out: hangover bill, seat released, 30 of intoxicatio
   assert.equal(room.seats.size, 0)
   assert.deepEqual(received(cMe, 'survival_knocked_out').map((m) => m.cause), ['alcohol'])
   await new Promise((resolve) => setImmediate(resolve))
-  assert.deepEqual(apiCalls, ['/survival/hangover'])
-  assert.deepEqual(received(cMe, 'survival_hospital_bill'), [{ cause: 'alcohol', billed: 40, jailTax: 0, balanceAfter: 60, lostItems: 0, lostClothes: 0, lostCash: 0 }])
+  assert.deepEqual(apiCalls, ['/survival/hangover', '/respawn-bed'])
+  assert.deepEqual(received(cMe, 'survival_hospital_bill'), [{ cause: 'alcohol', billed: 40, jailTax: 0, balanceAfter: 60, lostItems: 0, lostClothes: 0, lostCash: 0, lostTools: 0 }])
 
   timers.shift()!()
   assert.equal(me.intoxication, HANGOVER_INTOXICATION)
@@ -407,5 +407,5 @@ test('a health knockout keeps the hospital route and says so', async () => {
   tickSurvival(room, 60)
   assert.deepEqual(received(clients[0], 'survival_knocked_out').map((m) => m.cause), ['health'])
   await new Promise((resolve) => setImmediate(resolve))
-  assert.deepEqual(apiCalls, ['/survival/hospital'])
+  assert.deepEqual(apiCalls, ['/survival/hospital', '/respawn-bed'])
 })

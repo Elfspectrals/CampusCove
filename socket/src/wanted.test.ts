@@ -203,7 +203,7 @@ test('picking up the cash bag of a murder you did not suffer is a bag theft', as
   const thief = join('t', 3)
   const victim = join('v', 2)
   const bag = (id: number, murderVictimAccountId: number | null) =>
-    room.cashBags.set(id, { id, x: 0, y: 1.6, z: 0, expiresAt: Date.now() + 60_000, murderVictimAccountId })
+    room.cashBags.set(id, { id, x: 0, y: 1.6, z: 0, expiresAt: Date.now() + 60_000, murderVictimAccountId, tools: [] })
   bag(1, null)
   await onCashBagPick(room, thief.client, { id: 1 })
   assert.equal(thief.player.wantedStars, 0)

@@ -30,7 +30,8 @@ function fakePlayer(sessionId: string, x: number, z: number, ry = 0): Player {
     wantedDecayMs: 0,
     wantedDirty: false,
     lastHitAt: new Map(),
-    lastAssaultAt: new Map()
+    lastAssaultAt: new Map(),
+    heldTool: null
   } as Player
 }
 
@@ -64,7 +65,7 @@ test('a punch in reach and in front hurts the target and is seen by everyone', (
   assert.equal(target.stats?.health, 100 - PUNCH_DAMAGE)
   assert.deepEqual(received(room.clients[1], 'survival_damage'), [{ amount: PUNCH_DAMAGE, cause: 'punch' }])
   for (const client of room.clients) {
-    assert.deepEqual(received(client, 'user_punched'), [{ sessionId: 'a', targetSessionId: 'b', dirX: 0, dirZ: -1 }])
+    assert.deepEqual(received(client, 'user_punched'), [{ sessionId: 'a', targetSessionId: 'b', dirX: 0, dirZ: -1, tool: null }])
   }
 })
 

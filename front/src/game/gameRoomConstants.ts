@@ -30,6 +30,7 @@ export const TRANSFORM_EPSILON_ROTATION = 0.01
 export const SEAT_REACH = 2.5
 export const COUNTER_REACH = 2.6
 export const BARTENDER_REACH = 3.6
+export const QUIZMASTER_REACH = 3
 export const POUR_MS = 3000
 export const SECRET_OPEN_MS = 20_000
 export const RACE_MAX_PROGRESS_PER_S = 0.125

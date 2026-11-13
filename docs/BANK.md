@@ -41,7 +41,7 @@ Answers (socket → client):
 When health reaches 0 (not an alcohol black-out), the socket calls `POST /api/survival/hospital` with `{ killer_account_id }` when a punch knocked the player out. In the same request Laravel (`CashDropService`) takes all the cash carried out of the ledger (`cash_drop`) and answers `cash_drop: { id, amount, expires_at } | null`:
 
 - `null` when the player carried no cash, or when the account is younger than 72 h: its cash is destroyed and no bag drops, so an alt account cannot hand its welcome bonus to the account that knocks it out.
-- otherwise a `cash_drops` row lives 5 minutes (`CashDropService::LIFETIME_MINUTES`). Anyone can pick it up, its owner included, except the killer. The pickup locks the row and succeeds once (`cash_pickup`); after the expiry the coins are gone.
+- otherwise a `cash_drops` row lives 5 minutes (`CashDropService::LIFETIME_MINUTES`). Anyone can pick it up, its owner included, except the killer. The pickup locks the row and succeeds once (`cash_pickup`); after the expiry the coins are gone. The bag also carries the job tools of the victim (`tools` in the drop and the pickup answers, `docs/TOOLS.md`); a bag with tools and no cash has `amount = 0`.
 
 Socket messages:
 

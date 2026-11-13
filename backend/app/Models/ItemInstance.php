@@ -24,6 +24,7 @@ class ItemInstance extends Model
         'container_id',
         'locked_tx_id',
         'lock_expires_at',
+        'uses_left',
     ];
 
     protected function casts(): array
@@ -37,6 +38,7 @@ class ItemInstance extends Model
             'container_id' => 'integer',
             'locked_tx_id' => 'integer',
             'lock_expires_at' => 'datetime',
+            'uses_left' => 'integer',
         ];
     }
 

@@ -1,6 +1,7 @@
 // Hunger, thirst and health of the connected players. The live values are kept here (the rules are in
 // survivalStats.ts); the API stores them, owns the food items and bills the hospital (callRealtimeBackend).
 import { callRealtimeBackend, errorPayload } from './backend.ts'
+import { type RespawnBed, fetchRespawnBed, homeWakeUp } from './bed.ts'
 import { dropCashBag } from './cashBags.ts'
 import { CITY_SPAWN_RADIUS, SURVIVAL_TIME_SCALE } from './config.ts'
 import { toInterior, unitAt } from './movement.ts'
@@ -41,6 +42,7 @@ import {
   tickHealOverTime,
   tickStats
 } from './survivalStats.ts'
+import { emptyHand } from './tools.ts'
 import type { ClientPayload, GameClient, GameRoom, JailSentence, Player, Stats } from './types.ts'
 import { reportCrime } from './wanted.ts'
 import { type ClinicBed, citySpawn, worldClinic, worldFountains, worldHouse } from './world.ts'
@@ -161,6 +163,7 @@ function knockOut(room: GameRoom, client: GameClient, player: Player, cause: Kno
   player.knockedOutUntil = Date.now() + KNOCKOUT_MS
   player.speedBoostUntil = 0
   player.healOverTime = null
+  emptyHand(room, client, player)
   leavePub(room, player)
   endDuty(room, player, 'death')
   releaseCuffs(room, player, 'suspect_down')
@@ -180,23 +183,27 @@ function knockOut(room: GameRoom, client: GameClient, player: Player, cause: Kno
         balanceAfter: typeof data?.balance_after === 'number' ? data.balance_after : null,
         lostItems: Number(data?.lost?.items) || 0,
         lostClothes: Number(data?.lost?.clothes) || 0,
-        lostCash: Number(data?.cash_drop?.amount) || 0
+        lostCash: Number(data?.cash_drop?.amount) || 0,
+        lostTools: Array.isArray(data?.cash_drop?.tools) ? data.cash_drop.tools.length : 0
       })
       if (data?.licence_lost === true && room.players.get(client.sessionId) === player) loseLicence(room, player)
       if (cause === 'health') dropCashBag(room, diedAt, data?.cash_drop, killerAccountId === null ? null : player.accountId)
     })
     .catch((error) => warn('hospital bill failed', error))
+  let respawnBed: RespawnBed | null = null
+  void fetchRespawnBed(player).then((found) => { respawnBed = found })
   room.clock.setTimeout(() => {
     if (room.players.get(client.sessionId) !== player || !player.stats) return
-    const bed = player.jail ? null : claimClinicBed(room, player)
+    const home = player.jail ? null : homeWakeUp(room, respawnBed)
+    const bed = player.jail || home ? null : claimClinicBed(room, player)
     const spawn = player.jail
       ? cellSpawn(assignCell(room, player as Player & { jail: JailSentence }))
-      : bed ? { ...bed.position, ry: bed.yaw } : spawnNear(citySpawn(), CITY_SPAWN_RADIUS)
-    const recoveringMs = bed ? RECOVERY_MS : 0
+      : home ? { ...home.position, ry: player.ry } : bed ? { ...bed.position, ry: bed.yaw } : spawnNear(citySpawn(), CITY_SPAWN_RADIUS)
+    const recoveringMs = home || bed ? RECOVERY_MS : 0
     Object.assign(player, spawn, {
       fallPeakY: spawn.y,
       lastMoveAt: Date.now(),
-      knockedOutUntil: bed ? Date.now() + recoveringMs : 0,
+      knockedOutUntil: recoveringMs > 0 ? Date.now() + recoveringMs : 0,
       intoxication: cause === 'alcohol' ? HANGOVER_INTOXICATION : player.intoxication
     })
     setStats(player, respawnStats(player.stats))
@@ -205,7 +212,7 @@ function knockOut(room: GameRoom, client: GameClient, player: Player, cause: Kno
       y: player.y,
       z: player.z,
       yaw: player.ry,
-      bed: bed ? [bed.bed.x, bed.bed.y, bed.bed.z] : null,
+      bed: home ? [home.bed.x, home.bed.y, home.bed.z] : bed ? [bed.bed.x, bed.bed.y, bed.bed.z] : null,
       recoveringMs
     })
     sendStats(client, player)

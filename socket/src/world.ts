@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import type { Json } from './backend.ts'
+import type { StorageUnit } from './storageSale.ts'
 import type { Bounds, Vec3 } from './types.ts'
 
 const WORLD_MANIFEST_URL = process.env.WORLD_MANIFEST_URL
@@ -44,6 +45,7 @@ export interface WorldPub {
   bartender: Vec3
   bartenderYaw: number
   bouncer: Vec3
+  quizmaster: Vec3
   counter: Vec3
   taps: Vec3
   serve: Vec3
@@ -112,6 +114,12 @@ interface World {
   cropPlants: WorldCropPlant[]
   police: WorldPolice | null
   zoneBounds: Map<string, Bounds>
+  storage: WorldStorage | null
+}
+
+export interface WorldStorage {
+  auctioneer: Vec3
+  units: StorageUnit[]
 }
 
 let world: World | null = null
@@ -150,6 +158,25 @@ function parseClinic(raw: Json): WorldClinic | null {
         position: parseVec3(bed.position, `position of clinic bed ${bed.id}`),
         bed: parseVec3(bed.bed, `bed of clinic bed ${bed.id}`),
         yaw: bed.yaw
+      }
+    })
+  }
+}
+
+function parseStorage(raw: Json): WorldStorage | null {
+  if (raw === undefined) return null
+  if (!Array.isArray(raw?.units) || raw.units.length === 0) throw new Error('world manifest: storage has no units')
+  return {
+    auctioneer: parseVec3(raw.auctioneer, 'storage auctioneer'),
+    units: raw.units.map((unit: Json, i: number): StorageUnit => {
+      if (typeof unit?.id !== 'string' || typeof unit.door !== 'string') {
+        throw new Error(`world manifest: invalid storage unit ${i} ${JSON.stringify(unit)}`)
+      }
+      return {
+        id: unit.id,
+        door: unit.door,
+        threshold: parseVec3(unit.threshold, `threshold of storage unit ${unit.id}`),
+        inside: parseVec3(unit.inside, `inside of storage unit ${unit.id}`)
       }
     })
   }
@@ -233,6 +260,7 @@ function parsePub(raw: Json): WorldPub | null {
     bartender: parseVec3(raw.bartender, 'pub bartender'),
     bartenderYaw: parseYaw(raw.bartenderYaw, 'pub bartenderYaw'),
     bouncer: parseVec3(raw.bouncer, 'pub bouncer'),
+    quizmaster: parseVec3(raw.quizmaster, 'pub quizmaster'),
     counter: parseVec3(raw.counter, 'pub counter'),
     taps: parseVec3(raw.taps, 'pub taps'),
     serve: parseVec3(raw.serve, 'pub serve'),
@@ -340,7 +368,8 @@ function parseWorld(manifest: Json): World {
     orchard,
     cropPlants: parseCropPlants(manifest.crops),
     police: parsePolice(manifest.police, destinations),
-    zoneBounds: new Map(manifest.zones.filter((zone: Json) => zone.bounds !== undefined).map((zone: Json) => [zone.key, parseBounds(zone.bounds, `${zone.key} zone bounds`)]))
+    zoneBounds: new Map(manifest.zones.filter((zone: Json) => zone.bounds !== undefined).map((zone: Json) => [zone.key, parseBounds(zone.bounds, `${zone.key} zone bounds`)])),
+    storage: parseStorage(manifest.storage)
   }
 }
 
@@ -460,6 +489,10 @@ export function worldClinic(): WorldClinic | null {
   return loadedWorld().clinic
 }
 
+export function worldStorage(): WorldStorage | null {
+  return loadedWorld().storage
+}
+
 export function worldPub(): WorldPub | null {
   return loadedWorld().pub
 }
@@ -478,6 +511,11 @@ export function worldCropPlants(): WorldCropPlant[] {
 
 export function worldPolice(): WorldPolice | null {
   return loadedWorld().police
+}
+
+export function worldZoneKeysAt(x: number, z: number): string[] {
+  const inside = ([, b]: [string, Bounds]) => x >= b.minX && x <= b.maxX && z >= b.minZ && z <= b.maxZ
+  return [...loadedWorld().zoneBounds, ...shopBounds].filter(inside).map(([key]) => key)
 }
 
 export function worldZoneBounds(key: string): Bounds | null {

@@ -55,6 +55,7 @@ const { createPlayer } = await import('./players.ts')
 const { endDuty } = await import('./police.ts')
 const { moveRejection } = await import('./movement.ts')
 const { canPunchNow, onPunch } = await import('./punch.ts')
+const { FIST } = await import('./tools.ts')
 const { hurt } = await import('./survival.ts')
 const { onJailPay, tickJail } = await import('./jail.ts')
 await loadWorld()
@@ -227,7 +228,7 @@ test('the suspect follows 1 m behind the officer and cannot walk alone', () => {
 
 test('a handcuffed player cannot punch', () => {
   const { suspect } = cuffed()
-  assert.equal(canPunchNow(suspect.player, Date.now()), false)
+  assert.equal(canPunchNow(suspect.player, FIST, Date.now()), false)
 })
 
 test('the officer frees the suspect with E', () => {

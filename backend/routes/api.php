@@ -15,10 +15,14 @@ use App\Http\Controllers\CharacterAppearanceController;
 use App\Http\Controllers\CharacterCosmeticController;
 use App\Http\Controllers\FarmController;
 use App\Http\Controllers\FriendController;
+use App\Http\Controllers\FurnitureStorageController;
 use App\Http\Controllers\GemShopController;
+use App\Http\Controllers\HouseAlarmController;
 use App\Http\Controllers\HousingController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\JailController;
+use App\Http\Controllers\JobToolController;
+use App\Http\Controllers\LockpickController;
 use App\Http\Controllers\OrchardController;
 use App\Http\Controllers\PickpocketController;
 use App\Http\Controllers\PlayerInventoryLayoutController;
@@ -26,11 +30,15 @@ use App\Http\Controllers\PlayerReportController;
 use App\Http\Controllers\PoliceController;
 use App\Http\Controllers\PubController;
 use App\Http\Controllers\ReferralController;
+use App\Http\Controllers\RespawnBedController;
 use App\Http\Controllers\SecurityScanController;
 use App\Http\Controllers\ShopController;
+use App\Http\Controllers\StorageAuctionController;
 use App\Http\Controllers\StripeWebhookController;
 use App\Http\Controllers\SurvivalController;
+use App\Http\Controllers\TaskController;
 use App\Http\Controllers\TradeController;
+use App\Http\Controllers\TutorialController;
 use App\Http\Controllers\WantedController;
 use App\Http\Controllers\ZoneShopController;
 use Illuminate\Support\Facades\Route;
@@ -54,6 +62,11 @@ Route::get('/assets/public/{path}', [AssetController::class, 'publicDisk'])->whe
 // Called by Stripe (signed body), never by the browser: no session, no CORS.
 Route::post('/stripe/webhook', StripeWebhookController::class);
 
+Route::middleware('realtime')->group(function () {
+    Route::post('/storage/sale', [StorageAuctionController::class, 'openSale']);
+    Route::post('/storage/lots/{publicId}/hammer', [StorageAuctionController::class, 'hammer'])->whereUuid('publicId');
+});
+
 Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
     Route::get('/user', [AuthController::class, 'user']);
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -75,6 +88,7 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
     Route::get('/housing/units', [HousingController::class, 'index']);
     Route::post('/housing/units/{publicId}/buy', [HousingController::class, 'buy']);
     Route::post('/housing/keys', [HousingController::class, 'giveKeys']);
+    Route::post('/housing/units/{publicId}/leave', [HousingController::class, 'leaveFlatshare']);
     Route::put('/housing/units/{publicId}/door', [HousingController::class, 'setDoorLocked']);
     Route::delete('/housing/keys/{accountId}', [HousingController::class, 'takeKeys'])->whereNumber('accountId');
 
@@ -89,9 +103,12 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
         Route::post('/pub/order', [PubController::class, 'order']);
         Route::post('/pub/play', [PubController::class, 'play']);
         Route::post('/pub/reward', [PubController::class, 'reward']);
+        Route::post('/pub/quiz/reward', [PubController::class, 'quizReward']);
         Route::post('/orchard/pick', [OrchardController::class, 'pick']);
         Route::post('/orchard/sell', [OrchardController::class, 'sell']);
         Route::post('/farm/pick', [FarmController::class, 'pick']);
+        Route::post('/tools/hold', [JobToolController::class, 'hold']);
+        Route::post('/tools/wear', [JobToolController::class, 'wear']);
         Route::post('/zone/checkout', [ZoneShopController::class, 'checkout']);
         Route::post('/zone/sell', [ZoneShopController::class, 'sell']);
         Route::post('/trades/execute', [TradeController::class, 'execute']);
@@ -111,8 +128,27 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
         Route::post('/pickpocket/attempts', [PickpocketController::class, 'open']);
         Route::post('/pickpocket/attempts/{id}/outcome', [PickpocketController::class, 'settle'])->whereNumber('id');
         Route::post('/pickpocket/attempts/{id}/take', [PickpocketController::class, 'take'])->whereNumber('id');
+        Route::post('/storage/lots/{publicId}/bid', [StorageAuctionController::class, 'bid'])->whereUuid('publicId');
+        Route::post('/storage/lots/{publicId}/open', [StorageAuctionController::class, 'open'])->whereUuid('publicId');
+        Route::post('/storage/won/open', [StorageAuctionController::class, 'openAllWon']);
+        Route::post('/tasks/zone-visited', [TaskController::class, 'zoneVisited']);
+        Route::post('/tasks/active-day', [TaskController::class, 'activeDay']);
+        Route::post('/tasks/pub-game', [TaskController::class, 'pubGame']);
+        Route::post('/tasks/secret-room', [TaskController::class, 'secretRoom']);
+        Route::post('/lockpicks/attempts', [LockpickController::class, 'start']);
+        Route::post('/lockpicks/attempts/{attemptId}/miss', [LockpickController::class, 'miss'])->whereNumber('attemptId');
+        Route::post('/lockpicks/attempts/{attemptId}/success', [LockpickController::class, 'succeed'])->whereNumber('attemptId');
+        Route::post('/lockpicks/attempts/{attemptId}/abandon', [LockpickController::class, 'abandon'])->whereNumber('attemptId');
+        Route::post('/lockpicks/reinforced-lock', [LockpickController::class, 'fitReinforcedLock']);
+        Route::post('/furniture-storage/open', [FurnitureStorageController::class, 'open']);
+        Route::post('/furniture-storage/deposit', [FurnitureStorageController::class, 'deposit']);
+        Route::post('/furniture-storage/take', [FurnitureStorageController::class, 'take']);
+        Route::get('/respawn-bed', [RespawnBedController::class, 'show']);
+        Route::post('/respawn-bed', [RespawnBedController::class, 'store']);
     });
     Route::get('/bank', [BankController::class, 'show']);
+    Route::get('/tasks', [TaskController::class, 'index']);
+    Route::post('/house-alarms/report', [HouseAlarmController::class, 'report']);
     Route::get('/trades/offerable', [TradeController::class, 'offerable']);
 
     Route::post('/shop/purchase', [ShopController::class, 'purchase']);
@@ -130,6 +166,9 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
     Route::put('/character/cosmetics', [CharacterCosmeticController::class, 'update']);
     Route::get('/character/appearance', [CharacterAppearanceController::class, 'show']);
     Route::put('/character/appearance', [CharacterAppearanceController::class, 'update']);
+    Route::get('/tutorial', [TutorialController::class, 'show']);
+    Route::post('/tutorial/skip', [TutorialController::class, 'skip']);
+    Route::post('/tutorial/resume', [TutorialController::class, 'resume']);
     Route::get('/apartments/assets', [ApartmentPlacementController::class, 'inventory']);
     Route::get('/apartments/houses', [ApartmentPlacementController::class, 'houses']);
     Route::post('/apartments/state', [ApartmentPlacementController::class, 'state']);

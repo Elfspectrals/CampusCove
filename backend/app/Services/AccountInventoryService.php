@@ -501,6 +501,7 @@ final class AccountInventoryService
                 'container_id' => $containerId,
                 'locked_tx_id' => null,
                 'lock_expires_at' => null,
+                'uses_left' => $itemDef->max_uses,
             ]);
         }
     }

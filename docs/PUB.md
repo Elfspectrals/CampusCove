@@ -189,8 +189,8 @@ Cafe : le front filtre par préfixe de code (`drink_`), l'API ne change rien au 
 | Route | Corps | Effet | Réponse |
 |---|---|---|---|
 | `POST /pub/order` | `{ code }` | débite le prix de la boisson (ledger `pub_order`), donne 1 exemplaire | `{ code, price, balance_after }` ; rejets `unknown_drink` (404), coins insuffisants (code existant des achats) |
-| `POST /pub/play` | `{ game }` | débite le droit d'entrée (ledger `pub_play`) : `drink_fast` 20, `meter_shot` 35, `darts` 10 | `{ game, fee, alcohol, balance_after }` avec `alcohol` : `drink_fast` 24, `meter_shot` 50, `darts` 0 ; rejet `unknown_game` (422) |
-| `POST /pub/reward` | `{ game, placement, score }` | crédite via `CoinRewardService` selon le barème ; **un gain par jeu et par compte toutes les 60 s**, sinon `coins: 0, cooldown: true` (200, pas d'erreur) | `{ coins, cooldown, balance_after }` |
+| `POST /pub/play` | `{ game }` | débite le droit d'entrée (ledger `pub_play`) : `drink_fast` 20, `meter_shot` 35, `darts` 10 ; `darts` gratuit (`fee` 0, rien débité) pour un compte au tutoriel actif à l'étape `play_darts` (`docs/TUTORIAL.md`), l'attente de 60 s s'applique quand même | `{ game, fee, alcohol, balance_after }` avec `alcohol` : `drink_fast` 24, `meter_shot` 50, `darts` 0 ; rejet `unknown_game` (422) |
+| `POST /pub/reward` | `{ game, placement, score, free? }` ; `free: true` (partie avec une entrée gratuite du tutoriel) : compte la partie, gain 0 | crédite via `CoinRewardService` selon le barème ; **un gain par jeu et par compte toutes les 60 s**, sinon `coins: 0, cooldown: true` (200, pas d'erreur) | `{ coins, cooldown, balance_after }` |
 | `POST /survival/hangover` | — | facture 40 coins (ou tout le solde s'il est inférieur, comme l'hôpital), ledger `hangover`, **ne retire rien d'autre** | `{ billed, balance_after }` |
 
 Barème de `POST /pub/reward` (`placement` : 1, 2, 3 ou 0 = solo ; `score` = ms pour Drink Fast et Meter Shot,
@@ -244,7 +244,7 @@ Constantes (`socket/src/pubConstants.ts`, miroir côté front dans `gameRoomCons
 | `pub_shots_start` | — | à 2,5 m de `shots.player`, pas de partie en cours ; `POST /pub/play` ; `pub_shots_ready { seed, startedAt }` |
 | `pub_shots_done` | `{ ms }` | partie en cours, `ms` plausible (voir constantes) ; ajoute l'alcool, `POST /pub/reward`, `pub_shots_result { ms, coins }`, broadcast `user_action { action: 'drink', code: 'drink_vodka' }` |
 | `pub_shots_leave` | — | le joueur ferme l'écran Meter Shot (Échap, ×, clic hors du panneau) avant le résultat : partie abandonnée (`pubShots = null`, ni alcool ni gain), une nouvelle peut être lancée tout de suite |
-| `pub_darts_join` | — | à 3 m de `darts.oche`, partie en lobby ou aucune, < `DARTS_MAX_PLAYERS` ; `POST /pub/play` ; lobby de `DARTS_LOBBY_MS` après la première inscription |
+| `pub_darts_join` | — | à 3 m de `darts.oche`, partie en lobby ou aucune, < `DARTS_MAX_PLAYERS` ; `POST /pub/play` ; lobby de `DARTS_LOBBY_MS` après la première inscription ; si une entrée a été gratuite (`fee` 0), `POST /pub/reward` part avec `free: true` pour chaque joueur : la partie compte (`darts_played`) mais ne paie aucun gain, à personne |
 | `pub_darts_throw` | `{ x, y }` | c'est son tour, il lui reste des fléchettes, `|x|,|y| ≤ DARTS_MAX_OFFSET_CM` (cm depuis le bull) ; score par `dartsScore(x, y)` ; tour suivant ; tour non joué en `DARTS_TURN_MS` = fléchette perdue (0) |
 | `pub_darts_leave` | — | le joueur ferme l'écran de fléchettes avant la fin : retiré du lobby ou de la partie (son tour passe au suivant, ni alcool ni gain) ; sinon le broadcast suivant rouvrirait l'écran |
 
@@ -371,3 +371,64 @@ dans la vue.
 4. Front → `npx vue-tsc -b`, tests `node --experimental-strip-types --test "src/**/*.test.ts"`, `npx knip`.
 5. Playtest (`playtest-game`) à deux onglets : s'asseoir, commander au comptoir et au barman, boire jusqu'au
    black-out, les trois jeux, le videur et la porte secrète, un joueur hors zone ne reçoit rien.
+
+## 8. Quiz du pub
+
+Décisions produit (2026-11-13) : un quiz par soir à **21h Europe/Paris** dans chaque instance de ville, en solo,
+animé par un PNJ au bout du bar. On s'y inscrit pendant les 10 minutes d'annonce ; moins de 2 inscrits à 21h et le
+quiz est annulé. Le vainqueur gagne un peu de cash, selon le nombre de joueurs valides, et une pinte offerte.
+
+### Valeurs partagées
+
+| Valeur | Où | Socket | Front | Laravel |
+|---|---|---|---|---|
+| Heure, fuseau | 21h, `Europe/Paris` | `QUIZ_START_HOUR`, `QUIZ_TIME_ZONE` | heure affichée depuis `startsAt` | — |
+| Annonces | 20h50 et 20h59 | `QUIZ_ANNOUNCE_MS` (10 min), `QUIZ_LAST_CALL_MS` (1 min) | bandeau 8 s | — |
+| Inscrits minimum | 2 | `QUIZ_MIN_CONTESTANTS` | — | — |
+| Questions | 15, 4 choix, 15 s, pause 5 s | `QUIZ_QUESTION_COUNT`, `QUIZ_ANSWER_MS`, `QUIZ_REVEAL_MS` | — | `PubQuizService::QUESTION_COUNT` |
+| Points | `round(500 + 500 × temps restant / 15 s)`, 0 si faux, refus à 15 s | `QUIZ_POINTS_BASE`, `QUIZ_POINTS_SPEED` | — | — |
+| Égalité | plus petit temps cumulé (15 s par question sans réponse) | `quizRanking` | — | — |
+| Portée de l'animateur | 3 m | `QUIZMASTER_REACH` | `QUIZMASTER_REACH` | — |
+| Lancement admin | dans 30 s | `QUIZ_ADMIN_LEAD_MS` | — | — |
+| Joueur valide | compte ≥ 72 h et ≥ 12 réponses | — | — | `MIN_ANSWERS`, `TradeService::MIN_GIVER_AGE_HOURS` |
+| Gain | `min(120, 8 × (n − 1))` coins en cash, 0 si n < 2 | — | — | `prizeCoins` |
+| Pinte offerte | 1 stout ou lager gratuite dans les 24 h, si n ≥ 2 | — | — | `PINT_HOURS`, `PINT_CODES` |
+
+La banque de questions (`socket/src/pubQuizQuestions.ts`, FR et EN, environ 1/3 sur le monde du jeu) reste côté
+socket : la bonne réponse ne part vers les joueurs qu'à la révélation. Les questions sur le monde évitent les prix et
+les montants, qui changent avec l'équilibre.
+
+### Messages client → serveur
+
+- `pub_quiz_join` : pendant l'inscription, à 3 m de `pub.quizmaster`. Refus en `pub_error` : `quiz_closed`,
+  `quiz_outside`, `quiz_started`, `quiz_already_joined`.
+- `pub_quiz_answer { choice: 0..3 }` : une réponse par question, mesurée à l'horloge du socket. Refus : `quiz_no_question`,
+  `quiz_invalid_choice`, `quiz_not_contestant`, `quiz_too_late`, `quiz_already_answered`.
+- `admin_quiz_start` (comptes admin) : ouvre l'inscription d'un quiz qui démarre dans 30 s et remplace le programme
+  en cours.
+
+### Messages serveur → client
+
+- `init.pubQuiz` : `{ startsAt }` pendant l'inscription, sinon `null`.
+- `pub_quiz_announce { startsAt }` : à toute la ville, à l'ouverture de l'inscription et une minute avant.
+- `pub_quiz_lobby { startsAt, contestants: [{ sessionId, pseudo }] }` : aux joueurs du pub, à chaque inscription ou
+  départ.
+- `pub_quiz_cancelled { reason: 'not_enough_players' }`, `pub_quiz_question { index, count, prompt, choices, closesAt }`,
+  `pub_quiz_answered { choice }` (au joueur), `pub_quiz_reveal { index, answer, ranking }`,
+  `pub_quiz_results { ranking }`, `pub_quiz_prize { sessionId, pseudo, coins, pint }` : aux joueurs du pub.
+  `ranking` est `[{ sessionId, pseudo, points }]`, trié.
+
+Un inscrit qui sort du pub (à pied, par un téléport ou en se déconnectant) est retiré du quiz.
+
+### Laravel
+
+`POST /api/pub/quiz/reward` (groupe `realtime`, jeton du vainqueur) `{ quiz_id, contestants: [{ account_id, answered }] }`
+→ `{ coins, pint, valid_contestants }`. Une ligne `pub_quiz_wins` par `quiz_id` (unique) : un rappel du socket ne
+paie jamais deux fois. Le gain est un `CoinRewardService::creditCash` de raison `pub_reward_quiz`. La pinte est
+servie gratuitement par `PubService::order` (prix 0, aucune ligne de ledger) et marquée `pint_redeemed_at`.
+
+### Front
+
+`usePubQuiz` : prompt « Join the quiz » sur l'animateur, bandeau d'annonce, overlay `GameQuiz.vue` pour les inscrits
+(clic ou touches 1 à 4, chrono, révélation, classement, résultats), `GamePubQuizBoard.vue` au-dessus de l'animateur pour
+les joueurs du pub non inscrits. Logique pure dans `src/game/pub/quiz.ts`.
