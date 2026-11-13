@@ -443,6 +443,10 @@ async function createShelf(prop: ShelfProp): Promise<THREE.Group> {
   return group
 }
 
+export async function instancedCopies(url: string, placements: readonly THREE.Matrix4[]): Promise<THREE.InstancedMesh[]> {
+  return instancedParts(footed(await modelTemplate(url)), placements)
+}
+
 export async function createPropObject(prop: TemplateProp): Promise<THREE.Object3D> {
   if (prop.kind === 'shelf') return createShelf(prop)
   if (prop.kind === 'field') return createField(prop)

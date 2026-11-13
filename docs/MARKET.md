@@ -18,6 +18,8 @@ Laravel (`MarketService`) owns the schedule, the stalls, the lots and every coin
 
 A market is identified by its date (`market_date`, the Saturday in Paris time, `YYYY-MM-DD`).
 
+Playtest: `MARKET_OPEN_NOW=1` in `backend/.env` opens the market all day, every day, when `APP_ENV=local` (ignored in any other environment). Put it in `.env` rather than in the container environment: `php artisan serve` only passes a few variables to the PHP server.
+
 ## Rules
 
 | Rule | Value |

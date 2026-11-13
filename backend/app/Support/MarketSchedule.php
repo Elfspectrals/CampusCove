@@ -20,6 +20,9 @@ final class MarketSchedule
     {
         $local = CarbonImmutable::instance($now)->setTimezone(self::TIMEZONE);
         $day = $local->startOfDay();
+        if (self::openAllDayForPlaytest()) {
+            return ['open' => true, 'market_date' => $day->toDateString(), 'opens_at' => $day, 'closes_at' => $day->addDay()];
+        }
         if ($day->dayOfWeek !== self::DAY || $local >= self::at($day, self::CLOSES_AT)) {
             $day = $day->next(self::DAY);
         }
@@ -39,6 +42,11 @@ final class MarketSchedule
         $window = self::window($now);
 
         return $window['open'] ? $window['market_date'] : null;
+    }
+
+    private static function openAllDayForPlaytest(): bool
+    {
+        return config('market.open_now_in_local') === true && app()->environment('local');
     }
 
     private static function at(CarbonImmutable $day, string $time): CarbonImmutable

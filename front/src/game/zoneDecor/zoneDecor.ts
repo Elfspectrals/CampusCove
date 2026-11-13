@@ -33,7 +33,7 @@ import {
   type Vec3,
 } from '../mallTemplates/mallTemplate.ts'
 
-export const MARKET_STALLS = 6
+const MARKET_STALLS = 6
 
 type ZoneProp = DecorProp | ItemProp | NpcProp | MannequinProp | FieldProp | AnimalProp | BuildingProp | ShelfProp | MarketStallProp
 export type BakedZoneProp = DecorProp | FieldProp | BuildingProp

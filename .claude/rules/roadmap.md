@@ -136,7 +136,7 @@ Decision (2026-11-13): every Saturday from 15:00 to 17:00 (Paris time), six stal
 - [done] Stall models (`build_market_decor.py`): `decor/market_stall_folded`, `market_stall_free`, `market_stall_taken`, one shared builder, 176 to 368 triangles; the canopy stripe colour of a taken stall comes from `variants.json` (created with it). Decor category Market.
 - [done] Market square (`build_market_site.py`, `park/market_site`, zone `town_market`): paved square, bandstand, lamps, bunting, sign, trees, baked benches; hedge opening and site collisions by `front/scripts/apply-market.mjs`; pond terrain and fence cut along the path (`market_gate_cut`). Stalls are a runtime zone prop kind `market_stall` (zone parser, editor outliner), shown folded for now.
 - [todo] Market NPC outfits.
-- [todo] Stall UI: claim, canopy colour, lay out a lot with its price, buy; opening and closing announcement.
+- [doing] Stall UI. Done: stalls follow `market_sync` in game (folded, free, taken in the seller's colour) with their lots in a crate, a basket or flat, one item model per unit up to 8 (`useMarketStalls`, `game/market/marketStalls.ts`); `MARKET_OPEN_NOW` for playtests; admin teleport Market. Left: claim with a colour picker, the seller panel, aiming at a lot to see its price and buy, the opening and closing banner, a Market app on the watch.
 - [todo] Ambience: strolling NPCs, market music, bunting and lanterns.
 - [todo] Playtest with the two playtest accounts.
 

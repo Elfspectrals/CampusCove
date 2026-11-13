@@ -54,6 +54,21 @@ class MarketApiTest extends TestCase
         }
     }
 
+    public function test_the_playtest_switch_opens_the_market_all_day_in_local_only(): void
+    {
+        $player = $this->registerAndCreditWallet(0);
+        $this->travelToParis('2026-11-13 10:00:00');
+        config(['market.open_now_in_local' => true]);
+
+        $this->getJson('/api/market', $this->auth($player['token']))->assertJsonPath('open', false);
+
+        $this->app['env'] = 'local';
+        $this->getJson('/api/market', $this->auth($player['token']))
+            ->assertJsonPath('open', true)
+            ->assertJsonPath('market_date', '2026-11-13')
+            ->assertJsonPath('closes_at', CarbonImmutable::parse('2026-11-14 00:00:00', 'Europe/Paris')->toIso8601String());
+    }
+
     public function test_the_tax_is_five_percent_rounded_down_from_twenty_coins(): void
     {
         $this->assertSame(0, MarketService::tax(19));

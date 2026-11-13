@@ -34,8 +34,8 @@ Approved by the user on 2026-11-13. Product choices come from the user; technica
 |---|---|---|
 | Stall frame, table, posts | builder (`lib_kit` planks and posts) | planks and posts are what the AI pipeline does badly |
 | Canopy (striped, folded) and tarp | builder | flat cloth panels, simple shapes |
-| Crate | existing `decor/vegetable_crate` | already in the Farm category |
-| Basket | existing `decor/basket_stack`, or one basket from it | already in the Shop category |
+| Crate | builder `decor/market_crate` (84 triangles) | `vegetable_crate` is a crate already full of vegetables, so items cannot be laid in it |
+| Basket | builder `decor/market_basket` (88 triangles) | `basket_stack` is a stack of plastic shopping baskets |
 | Bandstand | builder (posts, roof, deck) | building pieces |
 | Benches | existing `decor/garden_bench` | reuse |
 | Bunting and lanterns | builder (string, flags) and the orchard lantern | thin pieces |

@@ -100,7 +100,34 @@ def stall(state):
     return parts
 
 
+CRATE = (0.44, 0.34, 0.18)
+BASKET_R, BASKET_H = 0.17, 0.14
+
+
+def crate():
+    wood = L.make_mat("DC_MarketCrate", "#c49a62", 0.85, "planks", 0.05, accent="#a37c4b")
+    w, d, h = CRATE
+    t = 0.02
+    parts = [L.box(coll, "CrateFloor", 0.0, 0.0, 0.0, w, d, t, wood)]
+    for k, y in enumerate((0.02, 0.11)):
+        parts.append(L.box(coll, f"CrateSideF{k}", 0.0, d / 2 - t / 2, y, w, t, 0.06, wood))
+        parts.append(L.box(coll, f"CrateSideB{k}", 0.0, -d / 2 + t / 2, y, w, t, 0.06, wood))
+    for k, gx in enumerate((-w / 2 + t / 2, w / 2 - t / 2)):
+        parts.append(L.box(coll, f"CrateEnd{k}", gx, 0.0, 0.0, t, d, h, wood))
+    return parts
+
+
+def basket():
+    wicker = L.make_mat("DC_MarketBasket", "#c8a265", 0.95, "stripes", 0.08, accent="#a7814a")
+    rim = L.make_mat("DC_MarketBasketRim", "#9c7742", 0.9, "noise", 0.05)
+    parts = [L.cone(coll, "BasketBody", 0.0, 0.0, 0.0, BASKET_R * 0.8, BASKET_R, BASKET_H, wicker, seg=12)]
+    parts.append(L.cyl(coll, "BasketRim", 0.0, 0.0, BASKET_H - 0.02, BASKET_R + 0.01, 0.03, rim, seg=12))
+    return parts
+
+
 DECOR = {
+    "market_crate": crate,
+    "market_basket": basket,
     "market_stall_free": lambda: stall("free"),
     "market_stall_taken": lambda: stall("taken"),
     "market_stall_folded": lambda: stall("folded"),

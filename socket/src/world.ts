@@ -286,6 +286,11 @@ function parseWorld(manifest: Json): World {
     if (![farm.gate?.x, farm.gate?.z].every(Number.isFinite)) throw new Error(`world manifest: invalid farm gate ${JSON.stringify(farm.gate)}`)
     destinations.push(zoneGateDestination('farm', 'Farm', farm.gate, parseBounds(farm.bounds, 'farm zone bounds')))
   }
+  const market = manifest.zones.find((zone: Json) => zone.key === 'town_market')
+  if (market?.gate !== undefined) {
+    if (![market.gate?.x, market.gate?.z].every(Number.isFinite)) throw new Error(`world manifest: invalid market gate ${JSON.stringify(market.gate)}`)
+    destinations.push(zoneGateDestination('market', 'Market', market.gate, parseBounds(market.bounds, 'market zone bounds')))
+  }
   return {
     citySpawn: parseVec3(manifest.spawn, 'spawn'),
     destinations,
