@@ -1,7 +1,7 @@
 import { ref, type Ref, type ShallowRef } from 'vue'
 import type { Room } from '@colyseus/sdk'
-import { buyHousingUnit, setHouseDoorLocked } from '../../api/housing'
-import { housingActionFor, type HousingAction, type HousingUnit } from '../../game/town/housing'
+import { buyHousingUnit, leaveFlatshare, setHouseDoorLocked } from '../../api/housing'
+import { housingActionFor, isFlatmate, type HousingAction, type HousingUnit } from '../../game/town/housing'
 import type { HousingUnitPayload } from '../../types/gameRealtime'
 
 export interface CityHousingDeps {
@@ -10,7 +10,10 @@ export interface CityHousingDeps {
   /** Error banner of the game view. */
   roomMessage: Ref<string | null>
   holdingHouseKey: () => boolean
+  refreshInventory: () => void
 }
+
+const LEAVE_CONFIRM_MS = 3000
 
 /** Town houses: synced unit list, the one at the player's door, open doors, and the door actions. */
 export function useCityHousing(deps: CityHousingDeps) {
@@ -18,6 +21,8 @@ export function useCityHousing(deps: CityHousingDeps) {
   const nearbyUnit = ref<HousingUnit | null>(null)
   const claimInFlight = ref(false)
   const openDoorIds = ref(new Set<string>())
+  const leaveConfirmUnitId = ref<string | null>(null)
+  let leaveConfirmTimer: ReturnType<typeof setTimeout> | undefined
 
   /** Server snapshot (REST or realtime). Units without a house model have nothing to show in the town. */
   function applyUnits(list: HousingUnitPayload[]): void {
@@ -86,5 +91,41 @@ export function useCityHousing(deps: CityHousingDeps) {
     return true
   }
 
-  return { units, nearbyUnit, claimInFlight, applyUnits, applyOpenDoors, isDoorOpen, isWorkDoorOpen, actionFor, interact, unlock, buy }
+  function leaveDetailFor(unit: HousingUnit): string | undefined {
+    if (!isFlatmate(unit, deps.myAccountId.value)) return undefined
+    return leaveConfirmUnitId.value === unit.public_id ? 'F2 again to leave the flatshare' : 'F2 Leave flatshare'
+  }
+
+  function leave(): boolean {
+    const unit = nearbyUnit.value
+    if (!unit || claimInFlight.value || !isFlatmate(unit, deps.myAccountId.value)) return false
+    clearTimeout(leaveConfirmTimer)
+    if (leaveConfirmUnitId.value !== unit.public_id) {
+      leaveConfirmUnitId.value = unit.public_id
+      leaveConfirmTimer = setTimeout(() => (leaveConfirmUnitId.value = null), LEAVE_CONFIRM_MS)
+      return true
+    }
+    leaveConfirmUnitId.value = null
+    void runClaim(async () => {
+      await leaveFlatshare(unit.public_id)
+      deps.refreshInventory()
+    }, 'Could not leave the flatshare.')
+    return true
+  }
+
+  return {
+    units,
+    nearbyUnit,
+    claimInFlight,
+    applyUnits,
+    applyOpenDoors,
+    isDoorOpen,
+    isWorkDoorOpen,
+    actionFor,
+    leaveDetailFor,
+    interact,
+    unlock,
+    buy,
+    leave,
+  }
 }

@@ -350,6 +350,7 @@ const housing = useCityHousing({
   gameRoomRef,
   roomMessage,
   holdingHouseKey,
+  refreshInventory: () => refreshOwnedItems(),
 })
 
 // ---------------------------------------------------------------- The Salty Shamrock: seats, bar, games
@@ -529,6 +530,7 @@ const interactions = useInteractionTargets({
   housingUnits: housing.units,
   nearbyHousingUnit: housing.nearbyUnit,
   housingActionFor: housing.actionFor,
+  housingLeaveDetailFor: housing.leaveDetailFor,
   isWorkDoorOpen: (lot) => housing.isWorkDoorOpen(lot.key),
   onHousingDoor: () => {
     const unit = housing.nearbyUnit.value
@@ -989,7 +991,7 @@ function handleExtraKeyDown(e: KeyboardEvent): boolean {
   }
   if (matches('buyHouse', e.code) && !e.repeat) {
     e.preventDefault()
-    return housing.buy()
+    return housing.buy() || housing.leave()
   }
   // collision overlay: a developer tool, kept off in production so it never steals a player's key
   if (import.meta.env.DEV && e.code === 'KeyC' && !e.repeat) {

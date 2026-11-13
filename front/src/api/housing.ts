@@ -94,6 +94,10 @@ export async function takeHouseKeys(accountId: number): Promise<void> {
   await apiRequest(`/housing/keys/${accountId}`, { method: 'DELETE' })
 }
 
+export async function leaveFlatshare(publicId: string): Promise<void> {
+  await apiRequest(`/housing/units/${encodeURIComponent(publicId)}/leave`, { method: 'POST' })
+}
+
 export async function setHouseDoorLocked(publicId: string, locked: boolean): Promise<void> {
   await apiRequest(`/housing/units/${encodeURIComponent(publicId)}/door`, { method: 'PUT', body: { locked } })
 }
