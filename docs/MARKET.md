@@ -51,6 +51,7 @@ Items of a lot leave the seller's inventory when it is listed (escrow on the lot
   "market_date": "2026-11-14",
   "opens_at": "2026-11-14T15:00:00+01:00",
   "closes_at": "2026-11-14T17:00:00+01:00",
+  "stall_fee": 15,
   "stalls": [
     {
       "stall_no": 2,
@@ -100,6 +101,10 @@ Server to client:
 | `market_sold` | the seller, when online | `lotId`, `code`, `quantity` |
 
 The socket refreshes the state at the next opening or closing time (plus 1 s) with the token of a connected player, and again when someone joins after that time.
+
+## Front
+
+`useMarketStalls` draws each stall from `market_sync`; `useMarket` turns the crosshair into a prompt: a lot of another player's stall (within 2.4 m, tight cone) shows its name, price and stock and G opens the buy window; a free stall (when the player holds none) offers it for `stall_fee`; the player's own stall opens their table. `useMarketCrowd` walks the six `market_shopper_*` NPCs of `zones/town_market.json` from stall to stall while the market is open. The front never decides a price, a stock or an opening time: it shows what `market_sync` says.
 
 ## Rejection codes
 

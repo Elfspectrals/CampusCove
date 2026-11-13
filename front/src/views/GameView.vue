@@ -61,6 +61,10 @@ import { useOrchard } from '../composables/game/useOrchard'
 import { useZoneBuyers } from '../composables/game/useZoneBuyers'
 import { useAtm } from '../composables/game/useAtm'
 import { useMarketStalls } from '../composables/game/useMarketStalls'
+import { useMarket } from '../composables/game/useMarket'
+import { useMarketCrowd } from '../composables/game/useMarketCrowd'
+import { MARKET_MUSIC_URL, MARKET_ZONE } from '../game/market/marketStalls.ts'
+import GameMarketPanel from '../components/game/GameMarketPanel.vue'
 import { useCashBags } from '../composables/game/useCashBags'
 import { useProximityVoice } from '../composables/game/useProximityVoice'
 import { mutedAccounts, playerVolumes, setPlayerVolume, toggleMuteAccount } from '../composables/game/useVoiceSettings'
@@ -145,6 +149,8 @@ const threadsMusic = createAmbientLoop(COVE_THREADS.musicUrl, 0.18, sfx.listener
 let zoneMusic: ReturnType<typeof createAmbientLoop> | null = null
 let zoneMusicBounds: WorldBounds | null = null
 let zoneMusicKey: string | null = null
+const marketMusic = createAmbientLoop(MARKET_MUSIC_URL, 0.14, sfx.listener)
+let marketBounds: WorldBounds | null = null
 
 function insideBounds(bounds: WorldBounds | null, at: { x: number; z: number }): boolean {
   return bounds !== null && at.x >= bounds.minX && at.x <= bounds.maxX && at.z >= bounds.minZ && at.z <= bounds.maxZ
@@ -491,6 +497,28 @@ const atm = useAtm({
 })
 const { open: atmOpen } = atm
 const marketStalls = useMarketStalls({ stalls: () => zoneDecor.marketStalls.value })
+const market = useMarket({
+  myPosition,
+  getCamera,
+  canvasRef,
+  gameRoomRef,
+  promptsHidden: () => inventoryOpen.value || !canUsePub(),
+  market: () => marketStalls.market.value,
+  stalls: () => zoneDecor.marketStalls.value,
+  myAccountId: () => myAccountId.value,
+  t: (key, params) => t(key, params ?? {}),
+  playSound: (name) => sfx.play(name),
+  refreshInventory: () => refreshOwnedItems(),
+})
+const marketCrowd = useMarketCrowd({
+  shoppers: () => zoneDecor.marketShoppers.value,
+  stalls: () => zoneDecor.marketStalls.value,
+  market: () => marketStalls.market.value,
+})
+const marketPanelOpen = computed(() => market.panel.value !== null)
+watch(marketPanelOpen, (open) => {
+  if (!open && !document.pointerLockElement) requestPointerLock()
+})
 const cashBags = useCashBags({
   myPosition,
   getScene,
@@ -558,7 +586,7 @@ const interactions = useInteractionTargets({
     if (activeFurniture.value?.store.hasCounter.value) activeFurniture.value.store.toggleTarget(useWithShift)
     else openStorePurchase()
   },
-  sources: [pub.source, pubChallenge.source, pubGames.source, seats.source, orchard.source, farm.source, zoneBuyers.source, atm.source, cashBags.source],
+  sources: [pub.source, pubChallenge.source, pubGames.source, seats.source, orchard.source, farm.source, zoneBuyers.source, atm.source, cashBags.source, market.source],
 })
 const { doorPrompt } = interactions
 
@@ -816,6 +844,7 @@ const environment = useRoomEnvironment({
       zoneMusicBounds = musicZone.music.bounds
       zoneMusicKey = musicZone.key
     }
+    marketBounds = manifest.zones.find((zone) => zone.key === MARKET_ZONE)?.bounds ?? null
     survival.onTownLoaded(manifest)
     clinic.onTownLoaded(manifest)
     seats.onTownLoaded(manifest)
@@ -926,6 +955,7 @@ const pauseMenuOpen = computed(
     !pubUiOpen.value &&
     !zoneBuyerOpen.value &&
     !atmOpen.value &&
+    !marketPanelOpen.value &&
     !playerListOpen.value &&
     !settingsOpen.value &&
     !creator.value,
@@ -953,7 +983,7 @@ function sendChat(text: string): void {
 }
 
 function handleExtraKeyDown(e: KeyboardEvent): boolean {
-  if (chatOpen.value || atmOpen.value || playerListOpen.value) return true
+  if (chatOpen.value || atmOpen.value || marketPanelOpen.value || playerListOpen.value) return true
   // the character screen owns the keyboard (Esc closes the editor)
   if (creator.value) return true
   // the watch and the trade window take the keyboard (coins field, Esc): no game key behind them
@@ -1054,11 +1084,13 @@ const movement = useGameMovement({
     placement.tick(dt)
     mallCellTemplates.tick(dt, myPosition)
     zoneDecor.tick(dt, myPosition)
+    marketCrowd.tick(dt)
     cashBags.tick(dt)
     voice.tick()
     for (const { store } of furnitureStores) store.update(dt)
     threadsMusic.update(dt, inThreads.value)
     zoneMusic?.update(dt, (currentHouseKey.value === null || currentHouseKey.value === zoneMusicKey) && insideBounds(zoneMusicBounds, myPosition))
+    marketMusic.update(dt, currentHouseKey.value === null && marketStalls.market.value?.open === true && insideBounds(marketBounds, myPosition))
     interactions.updatePrompts()
     houseKeys.updateKeyPrompt()
     updateFrontDoors(dt, isBuildingDoorOpen)
@@ -1162,7 +1194,7 @@ const realtime = useGameRealtime({
   orchard: orchard.handlers,
   zoneBuyers: zoneBuyers.handlers,
   atm: atm.handlers,
-  market: marketStalls.handlers,
+  market: { ...marketStalls.handlers, ...market.handlers },
   cashBags: cashBags.handlers,
   voice: { onToken: voice.onToken, disconnect: voice.disconnect },
   farm: farm.handlers,
@@ -1282,6 +1314,7 @@ onUnmounted(() => {
   arms?.dispose()
   threadsMusic.dispose()
   zoneMusic?.dispose()
+  marketMusic.dispose()
   sfx.dispose()
   environment.disposeRoomEnvironment()
   if (game) disposeGameScene(game)
@@ -1327,6 +1360,7 @@ const crosshairClass = computed(() => {
     />
     <GameDrunkEffects :effects="drunkEffects" />
     <GameRoomMessageBanner v-if="roomMessage" :message="roomMessage" />
+    <GameRoomMessageBanner v-else-if="market.announcement.value" :message="market.announcement.value" />
     <!-- an error during boot drops the loading screen so its banner is seen; the character creator shows over the load -->
     <Transition leave-active-class="transition-opacity duration-500" leave-to-class="opacity-0">
       <GameLoadingScreen
@@ -1574,6 +1608,20 @@ const crosshairClass = computed(() => {
       @cancel="trade.cancel"
     />
     <GameAtmScreen v-if="atmOpen" :screen="atm.screen.value" :pending="atm.pending.value" :feedback="atm.feedback.value" @run="atm.run" @clear-feedback="atm.clearFeedback" @close="atm.close" />
+    <GameMarketPanel
+      v-if="market.panel.value"
+      :panel="market.panel.value"
+      :market="marketStalls.market.value"
+      :canopies="marketStalls.canopyHexes.value"
+      :offerable="market.offerable.value"
+      :pending="market.pending.value"
+      :feedback="market.feedback.value"
+      @claim="(stallNo, canopy) => market.run({ action: 'claim', stallNo, canopy })"
+      @list="(slot, code, quantity, unitPrice, container) => market.run({ action: 'list', slot, code, quantity, unitPrice, container })"
+      @withdraw="(lotId) => market.run({ action: 'withdraw', lotId })"
+      @buy="market.buy"
+      @close="market.close"
+    />
     <GameZoneBuyerMenu
       v-if="zoneBuyerOpen"
       :area="zoneBuyerOpen.area"

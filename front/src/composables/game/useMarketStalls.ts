@@ -44,6 +44,13 @@ export function useMarketStalls(deps: MarketStallsDeps) {
     return canopyLooks
   }
 
+  const canopyHexes = shallowRef<Record<string, string>>({})
+  canopies()
+    .then((looks) => {
+      canopyHexes.value = Object.fromEntries(Object.entries(looks).map(([key, materials]) => [key, Object.values(materials)[0]?.color ?? '#ffffff']))
+    })
+    .catch((error) => console.error('[market] canopy colours failed to load', error))
+
   async function lotObjects(lot: MarketLotView): Promise<THREE.Object3D[]> {
     const origin = slotOrigin(lot.slot)
     const objects: THREE.Object3D[] = []
@@ -101,5 +108,5 @@ export function useMarketStalls(deps: MarketStallsDeps) {
 
   watch(deps.stalls, refresh)
 
-  return { market, handlers: { onSync } }
+  return { market, canopyHexes, handlers: { onSync } }
 }

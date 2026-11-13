@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { MarketLotView, MarketSnapshot } from '../../types/gameRealtime.ts'
-import { MAX_COPIES_SHOWN, copiesShown, copiesThatFit, slotOrigin, stallLook, stallLookKey } from './marketStalls.ts'
+import { MAX_COPIES_SHOWN, copiesShown, copiesThatFit, firstFreeSlot, ownStallNo, slotOrigin, stallLook, stallLookKey } from './marketStalls.ts'
 
 const apples: MarketLotView = { lot_id: 9, slot: 2, code: 'farm_apple', name: 'Apple', quantity: 20, unit_price: 5, container: 'crate', preview_image: null, model_glb: '/assets/items/farm/apple/model.glb' }
 
 function market(open: boolean): MarketSnapshot {
-  return { open, market_date: '2026-11-14', opens_at: '2026-11-14T15:00:00+01:00', closes_at: '2026-11-14T17:00:00+01:00', stalls: open ? [{ stall_no: 3, account_id: 7, canopy: 'blue', lots: [apples] }] : [] }
+  return { open, stall_fee: 15, market_date: '2026-11-14', opens_at: '2026-11-14T15:00:00+01:00', closes_at: '2026-11-14T17:00:00+01:00', stalls: open ? [{ stall_no: 3, account_id: 7, canopy: 'blue', lots: [apples] }] : [] }
 }
 
 test('a stall is folded while the market is closed or unknown, bare when free, covered when taken', () => {
@@ -39,4 +39,18 @@ test('the stall look changes key when the shown heap changes, not for every sale
   const sold = (quantity: number) => stallLookKey(stallLook({ ...market(true), stalls: [{ stall_no: 3, account_id: 7, canopy: 'blue', lots: [{ ...apples, quantity }] }] }, 3))
   assert.equal(sold(20), sold(9))
   assert.notEqual(sold(9), sold(7))
+})
+
+test('a player holds a stall only while the market is open', () => {
+  assert.equal(ownStallNo(market(true), 7), 3)
+  assert.equal(ownStallNo(market(true), 8), null)
+  assert.equal(ownStallNo(market(false), 7), null)
+  assert.equal(ownStallNo(market(true), null), null)
+})
+
+test('a new lot goes to the first free slot from the left, none when the table is full', () => {
+  assert.equal(firstFreeSlot([]), 1)
+  assert.equal(firstFreeSlot([apples]), 1)
+  assert.equal(firstFreeSlot([{ ...apples, slot: 1 }, { ...apples, slot: 3 }]), 2)
+  assert.equal(firstFreeSlot([1, 2, 3, 4, 5, 6].map((slot) => ({ ...apples, slot }))), null)
 })

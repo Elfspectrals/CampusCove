@@ -418,10 +418,29 @@ interface MarketStallView {
 
 export interface MarketSnapshot {
   open: boolean
+  stall_fee: number
   market_date: string
   opens_at: string
   closes_at: string
   stalls: MarketStallView[]
+}
+
+export interface MarketDonePayload {
+  action: 'claim' | 'list' | 'withdraw' | 'buy'
+  request: number | null
+  cash?: number
+}
+
+export interface MarketErrorPayload {
+  message: string
+  code: string
+  request: number | null
+}
+
+export interface MarketSoldPayload {
+  lotId: number
+  code: string
+  quantity: number
 }
 
 export interface CashBagPayload {

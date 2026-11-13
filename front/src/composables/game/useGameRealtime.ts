@@ -64,7 +64,10 @@ import type {
   ZoneSoldPayload,
   AtmDonePayload,
   AtmErrorPayload,
+  MarketDonePayload,
+  MarketErrorPayload,
   MarketSnapshot,
+  MarketSoldPayload,
   CashBagErrorPayload,
   CashBagPayload,
   CashBagPickedPayload,
@@ -181,6 +184,9 @@ export interface GameRealtimeDeps {
   }
   market: {
     onSync: (data: MarketSnapshot) => void
+    onDone: (data: MarketDonePayload) => void
+    onError: (data: MarketErrorPayload) => void
+    onSold: (data: MarketSoldPayload) => void
   }
   voice: {
     onToken: (payload: VoiceTokenPayload) => void
@@ -358,6 +364,9 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('atm_done', (data: AtmDonePayload) => deps.atm.onDone(data))
     room.onMessage('atm_error', (data: AtmErrorPayload) => deps.atm.onError(data))
     room.onMessage('market_sync', (data: MarketSnapshot) => deps.market.onSync(data))
+    room.onMessage('market_done', (data: MarketDonePayload) => deps.market.onDone(data))
+    room.onMessage('market_error', (data: MarketErrorPayload) => deps.market.onError(data))
+    room.onMessage('market_sold', (data: MarketSoldPayload) => deps.market.onSold(data))
     room.onMessage('cash_bag_dropped', (data: CashBagPayload) => deps.cashBags.onDropped(data))
     room.onMessage('cash_bag_removed', (data: { id: number }) => deps.cashBags.onRemoved(data))
     room.onMessage('cash_bag_picked', (data: CashBagPickedPayload) => deps.cashBags.onPicked(data))

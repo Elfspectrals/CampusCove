@@ -111,6 +111,19 @@ add_col("COL_Market_Sign", sign_x, sign_z, 0.3, 2.6, 2.3)
 
 props = [{"id": f"market_stall_{n}", "kind": "market_stall", "stallNo": n, "position": [gx, 0.0, gz], "yaw": round(yaw, 4), "scale": [1, 1, 1]} for n, gx, gz, yaw in STALLS]
 props += [{"id": f"market_bench_{i}", "kind": "decor", "key": "garden_bench", "position": [round(gx, 3), 0.0, round(gz, 3)], "yaw": round(yaw, 4), "scale": [1, 1, 1]} for i, (gx, gz, yaw) in enumerate(BENCHES)]
+SHOPPERS = [
+    ("#e0b48f", [("hair", "long", "#3b2a20"), ("top", "sweater", "#c8463c"), ("bottom", "jeans", "#34506e"), ("shoes", "sneakers", "#f0f0f0")]),
+    ("#a7714f", [("hair", "short", "#6b4a2f"), ("top", "plaid_shirt", "#4f7a46"), ("bottom", "cargo", "#6b6a45"), ("shoes", "boots", "#4a3322")]),
+    ("#f1cfae", [("hair", "ponytail", "#d9b36c"), ("top", "tee", "#e3b83a"), ("bottom", "skirt", "#8657a8"), ("shoes", "runners", "#ffffff")]),
+    ("#6b4630", [("hair", "curly", "#1f1a17"), ("top", "hoodie", "#3f6fb5"), ("bottom", "joggers", "#444444"), ("shoes", "high_tops", "#c8463c")]),
+    ("#c99a74", [("hair", "basic", "#8a8a8a"), ("top", "flannel_jacket", "#a0522d"), ("bottom", "dungarees", "#3f5f8a"), ("shoes", "rubber_boots", "#3f7a4a"), ("head_accessory", "straw_hat", "#d8b56a")]),
+    ("#8a5a3c", [("hair", "buzz", "#2b2b2b"), ("top", "varsity", "#2f6f63"), ("bottom", "track_pants", "#222222"), ("shoes", "slides", "#e07a35")]),
+]
+props += [
+    {"id": f"market_shopper_{i}", "kind": "npc", "position": [round(CENTER[0] - 6.0, 3), 0.0, round(CENTER[1] - 3.0 + i * 1.2, 3)], "yaw": 0.0, "scale": [1, 1, 1],
+     "pose": "idle", "vendor": False, "body": body, "outfit": [{"slot": slot, "key": key, "color": color} for slot, key, color in outfit]}
+    for i, (body, outfit) in enumerate(SHOPPERS)
+]
 if not os.path.exists(ZONE_FILE):
     L.write_json(ZONE_FILE, {"version": 1, "zone": "town_market", "name": "Town market", "props": props, "areas": []})
 decor_objs, decor_cols, _ = L.zone_decor(coll, "town_market", "COL_Market_")

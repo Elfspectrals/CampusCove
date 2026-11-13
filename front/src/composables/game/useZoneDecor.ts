@@ -11,6 +11,7 @@ import { itemModelUrl, type AnimalProp, type ItemProp, type MannequinProp, type 
 import { lighterStock, shelfUnits } from '../../game/shelves/shelves.ts'
 import { getGraphicsQuality } from '../../game/graphicsQuality'
 import type { MarketStallAnchor } from './useMarketStalls'
+import { MARKET_SHOPPER_PREFIX } from '../../game/market/marketCrowd.ts'
 import { MARKET_STALL_FOLDED, animals, createAnimal, createPropObject, modelSize, npcColors, placeProp, type AnimalRig } from '../../game/mallTemplates/templateProps'
 import { configureRoomMeshShadows, normalizeRoomMaterials } from '../../game/sceneLighting'
 import { INTERIOR_HIDE_DISTANCE, INTERIOR_SHOW_DISTANCE } from '../../game/town/openHouses'
@@ -92,6 +93,7 @@ export function useZoneDecor(deps: ZoneDecorDeps) {
   const buyers = shallowRef<ZoneBuyer[]>([])
   const atms = shallowRef<Vec3[]>([])
   const marketStalls = shallowRef<MarketStallAnchor[]>([])
+  const marketShoppers = shallowRef<THREE.Object3D[]>([])
   const blockers: string[] = []
   const storeAreas: StoreArea[] = []
   const zoneGroups: Array<{ group: THREE.Group; bounds: WorldBounds }> = []
@@ -149,6 +151,10 @@ export function useZoneDecor(deps: ZoneDecorDeps) {
     }
     placeProp(object, prop)
     group.add(object)
+    if (prop.kind === 'npc' && prop.id.startsWith(MARKET_SHOPPER_PREFIX)) {
+      marketShoppers.value = [...marketShoppers.value, object]
+      return
+    }
     if (prop.kind === 'npc') npcs.push(object)
     else disposeAvatarAnimations(object)
     if (prop.kind === 'mannequin') store?.bindFigure(prop.id, object)
@@ -326,5 +332,5 @@ export function useZoneDecor(deps: ZoneDecorDeps) {
     disposeObject3D(root)
   })
 
-  return { onTownLoaded, tick, currentStoreKey, buyers, atms, marketStalls }
+  return { onTownLoaded, tick, currentStoreKey, buyers, atms, marketStalls, marketShoppers }
 }

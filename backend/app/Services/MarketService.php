@@ -47,7 +47,7 @@ final class MarketService
         return $total >= self::TAX_MIN_TOTAL ? intdiv($total * self::TAX_PERCENT, 100) : 0;
     }
 
-    /** @return array{open: bool, market_date: string, opens_at: string, closes_at: string, stalls: list<array<string, mixed>>} */
+    /** @return array{open: bool, market_date: string, opens_at: string, closes_at: string, stall_fee: int, stalls: list<array<string, mixed>>} */
     public function current(): array
     {
         $window = MarketSchedule::window(now());
@@ -66,6 +66,7 @@ final class MarketService
             'market_date' => $window['market_date'],
             'opens_at' => $window['opens_at']->toIso8601String(),
             'closes_at' => $window['closes_at']->toIso8601String(),
+            'stall_fee' => self::STALL_FEE,
             'stalls' => $stalls,
         ];
     }

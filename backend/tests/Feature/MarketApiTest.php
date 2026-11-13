@@ -48,6 +48,7 @@ class MarketApiTest extends TestCase
             $this->getJson('/api/market', $this->auth($player['token']))
                 ->assertOk()
                 ->assertJsonPath('open', $open, $parisTime)
+                ->assertJsonPath('stall_fee', MarketService::STALL_FEE)
                 ->assertJsonPath('market_date', $marketDate)
                 ->assertJsonPath('opens_at', CarbonImmutable::parse("{$marketDate} 15:00:00", 'Europe/Paris')->toIso8601String())
                 ->assertJsonPath('closes_at', CarbonImmutable::parse("{$marketDate} 17:00:00", 'Europe/Paris')->toIso8601String());

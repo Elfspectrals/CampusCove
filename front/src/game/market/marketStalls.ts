@@ -2,6 +2,11 @@ import type { Vec3 } from '../mallTemplates/mallTemplate.ts'
 import { slotCapacity } from '../shelves/shelves.ts'
 import type { MarketLotContainer, MarketLotView, MarketSnapshot } from '../../types/gameRealtime.ts'
 
+const LOTS_PER_STALL = 6
+export const MARKET_ZONE = 'town_market'
+export const MARKET_MUSIC_URL = '/assets/music/town_market.mp3'
+const LOT_AIM_HEIGHT = 0.12
+
 export const STALL_MODELS = { folded: 'market_stall_folded', free: 'market_stall_free', taken: 'market_stall_taken' } as const
 type StallState = keyof typeof STALL_MODELS
 export const CONTAINER_MODELS: Record<Exclude<MarketLotContainer, 'flat'>, string> = { crate: 'market_crate', basket: 'market_basket' }
@@ -52,4 +57,19 @@ export function copiesSpace(container: MarketLotContainer): CopiesSpace {
 
 export function copiesThatFit(container: MarketLotContainer, itemSize: Vec3, quantity: number): number {
   return Math.min(copiesShown(quantity), slotCapacity(COPIES_SPACE[container].box, itemSize, 'messy'))
+}
+
+export function lotAimPoint(slot: number): Vec3 {
+  const [x, y, z] = slotOrigin(slot)
+  return [x, y + LOT_AIM_HEIGHT, z]
+}
+
+export function ownStallNo(market: MarketSnapshot | null, accountId: number | null): number | null {
+  if (market === null || !market.open || accountId === null) return null
+  return market.stalls.find((s) => s.account_id === accountId)?.stall_no ?? null
+}
+
+export function firstFreeSlot(lots: readonly MarketLotView[]): number | null {
+  for (let slot = 1; slot <= LOTS_PER_STALL; slot++) if (!lots.some((l) => l.slot === slot)) return slot
+  return null
 }
