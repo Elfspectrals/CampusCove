@@ -14,6 +14,10 @@ Laravel owns every counter. A counter counts one real action, bumped by the serv
 | Counter (`App\Enums\ActionCounter`) | One unit | Bumped by |
 |---|---|---|
 | `apples_picked` | one apple put in the inventory by a successful orchard pick | `OrchardService::pick` |
+| `apples_sold` | one apple sold to the orchard farmer | `OrchardService::sell` |
+| `food_eaten` | one portion eaten or drunk (an apple is two bites), drinks included | `SurvivalService::consume` |
+| `atm_deposits` | one deposit at an ATM, whatever the amount; a replayed `ref` counts nothing | `BankService::deposit` |
+| `darts_played` | one finished darts game, for each player, even while its coin reward is on cooldown | `PubService::reward` |
 
 ## Tiers
 
@@ -25,3 +29,4 @@ Every task lives in `App\Support\TaskCatalog`: a key, the counter it reads and i
 | Task | Counter | Tiers |
 |---|---|---|
 | `orchard` | `apples_picked` | 100 / 1,000 / 5,000 |
+| `darts` | `darts_played` | 10 / 50 / 200 |

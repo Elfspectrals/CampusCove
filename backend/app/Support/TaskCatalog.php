@@ -11,6 +11,7 @@ final class TaskCatalog
     {
         return [
             'orchard' => ['counter' => ActionCounter::ApplesPicked, 'tiers' => [100, 1000, 5000]],
+            'darts' => ['counter' => ActionCounter::DartsPlayed, 'tiers' => [10, 50, 200]],
         ];
     }
 

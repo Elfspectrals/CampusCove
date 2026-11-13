@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\ActionCounter;
 use App\Exceptions\PubRejectedException;
 use App\Models\EconomyTransaction;
 use App\Models\ItemDef;
@@ -24,6 +25,7 @@ final class PubService
     public function __construct(
         private readonly AccountInventoryService $inventory,
         private readonly CoinRewardService $coinRewards,
+        private readonly ActionCounterService $counters,
     ) {}
 
     /** @return array{code: string, price: int, balance_after: int} */
@@ -74,6 +76,9 @@ final class PubService
 
         return DB::transaction(function () use ($accountId, $game, $placement, $score, $coins, $reason): array {
             $wallet = Wallet::lockForAccount($accountId, Wallet::CASH);
+            if ($game === 'darts') {
+                $this->counters->bump($accountId, ActionCounter::DartsPlayed);
+            }
             if ($this->cooldownSecondsLeft($wallet, $reason) > 0) {
                 return ['coins' => 0, 'cooldown' => true, 'balance_after' => $wallet->balance()];
             }

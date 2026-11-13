@@ -93,6 +93,76 @@ class TaskProgressApiTest extends TestCase
         app(ActionCounterService::class)->bump($player['account_id'], ActionCounter::ApplesPicked, 0);
     }
 
+    public function test_selling_apples_counts_each_apple_sold(): void
+    {
+        $player = $this->registerAndCreditWallet(0, 'cash');
+        $headers = $this->auth($player['token'], self::SECRET);
+        $this->grant($player['account_id'], 'farm_apple', 5);
+
+        $this->postJson('/api/orchard/sell', ['quantity' => 6], $headers)->assertStatus(422);
+        $this->assertSame(0, $this->counter($player['account_id'], ActionCounter::ApplesSold));
+
+        $this->postJson('/api/orchard/sell', ['quantity' => 5], $headers)->assertOk();
+        $this->assertSame(5, $this->counter($player['account_id'], ActionCounter::ApplesSold));
+    }
+
+    public function test_each_bite_counts_one_food_eaten(): void
+    {
+        $player = $this->registerAndCreditWallet(0, 'cash');
+        $headers = $this->auth($player['token'], self::SECRET);
+        $this->grant($player['account_id'], 'farm_apple', 1);
+
+        $this->postJson('/api/survival/consume', ['code' => 'farm_apple'], $headers)->assertOk();
+        $this->assertSame(1, $this->counter($player['account_id'], ActionCounter::FoodEaten));
+        $this->postJson('/api/survival/consume', ['code' => 'farm_apple'], $headers)->assertOk();
+        $this->assertSame(2, $this->counter($player['account_id'], ActionCounter::FoodEaten));
+
+        $this->postJson('/api/survival/consume', ['code' => 'farm_apple'], $headers)->assertStatus(422);
+        $this->assertSame(2, $this->counter($player['account_id'], ActionCounter::FoodEaten));
+    }
+
+    public function test_each_deposit_counts_once_whatever_the_amount(): void
+    {
+        $player = $this->registerAndCreditWallet(80, 'cash');
+        $headers = $this->auth($player['token'], self::SECRET);
+
+        $this->postJson('/api/bank/deposit', ['ref' => 'atm-1', 'amount' => 50], $headers)->assertOk();
+        $this->postJson('/api/bank/deposit', ['ref' => 'atm-1', 'amount' => 50], $headers)->assertStatus(409);
+        $this->postJson('/api/bank/deposit', ['ref' => 'atm-2', 'amount' => 31], $headers)->assertStatus(422);
+        $this->assertSame(1, $this->counter($player['account_id'], ActionCounter::AtmDeposits));
+
+        $this->postJson('/api/bank/deposit', ['ref' => 'atm-3', 'amount' => 1], $headers)->assertOk();
+        $this->assertSame(2, $this->counter($player['account_id'], ActionCounter::AtmDeposits));
+    }
+
+    public function test_each_finished_darts_game_counts_even_on_reward_cooldown(): void
+    {
+        $player = $this->registerAndCreditWallet(0, 'cash');
+        $headers = $this->auth($player['token'], self::SECRET);
+
+        $this->postJson('/api/pub/reward', ['game' => 'darts', 'placement' => 1, 'score' => 50], $headers)->assertOk()->assertJsonPath('cooldown', false);
+        $this->postJson('/api/pub/reward', ['game' => 'darts', 'placement' => 2, 'score' => 10], $headers)->assertOk()->assertJsonPath('cooldown', true);
+        $this->postJson('/api/pub/reward', ['game' => 'drink_fast', 'placement' => 1, 'score' => 9000], $headers)->assertOk();
+
+        $this->assertSame(2, $this->counter($player['account_id'], ActionCounter::DartsPlayed));
+    }
+
+    public function test_the_tenth_darts_game_reaches_the_first_darts_tier(): void
+    {
+        $player = $this->registerAndCreditWallet(0, 'cash');
+
+        app(ActionCounterService::class)->bump($player['account_id'], ActionCounter::DartsPlayed, 9);
+        $this->assertSame([], $this->tiers($player['account_id']));
+        app(ActionCounterService::class)->bump($player['account_id'], ActionCounter::DartsPlayed);
+
+        $this->assertSame([['darts', 1]], $this->tiers($player['account_id']));
+    }
+
+    private function counter(int $accountId, ActionCounter $counter): int
+    {
+        return app(ActionCounterService::class)->value($accountId, $counter);
+    }
+
     private function applesPicked(int $accountId): int
     {
         return app(ActionCounterService::class)->value($accountId, ActionCounter::ApplesPicked);

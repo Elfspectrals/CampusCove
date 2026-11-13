@@ -70,6 +70,7 @@ final class OrchardService
             $atFullPrice = min($quantity, $fullPriceLeft);
             $coins = $atFullPrice * self::APPLE_PRICE + ($quantity - $atFullPrice) * self::APPLE_PRICE_OVER_DAILY_QUOTA;
             $this->inventory->revokeItem($accountId, $apple, $quantity);
+            $this->counters->bump($accountId, ActionCounter::ApplesSold, $quantity);
             $this->coinRewards->creditCash($accountId, 'orchard_sell', $coins, ['quantity' => $quantity]);
 
             return [
