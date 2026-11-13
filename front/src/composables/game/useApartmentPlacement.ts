@@ -15,12 +15,13 @@ const YAW_SMOOTH_PER_FRAME = 0.25
 const ROT_TAU_S = 0.028
 const RAYCAST_MAX = 24
 const YAW_STEP = Math.PI / 12
+const FINE_YAW_STEP = Math.PI / 36
 const FLOOR_TOLERANCE = 0.01
 /** Placement hints with the player's own keys (Settings). */
 function rotateHint(): string {
   const r = actionKeyLabels('rotate')[0]
   const inv = actionKeyLabels('inventory')[0]
-  return `${r ? `${r} rotate · Shift+${r} reverse · ` : ''}Esc${inv ? ` / ${inv}` : ''} cancel`
+  return `${r ? `${r} rotate · Shift+${r} reverse · ` : ''}Wheel fine rotate · Esc${inv ? ` / ${inv}` : ''} cancel`
 }
 function placeHint(): string {
   return `LMB place · RMB cancel · ${rotateHint()}`
@@ -379,6 +380,12 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
     return true
   }
 
+  function onWheelStep(step: 1 | -1): boolean {
+    if (currentState.value.kind === 'idle') return false
+    userYawTarget += step * FINE_YAW_STEP
+    return true
+  }
+
   /** The piece being moved goes back to the owner's inventory; the server then removes it from the house. */
   function putAwayMoving(): void {
     const st = currentState.value
@@ -476,6 +483,7 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
     notifyPropRemovedFromWorld,
     tick,
     onKeyDown,
+    onWheelStep,
     dispose,
     onPointerDown,
   }

@@ -1038,7 +1038,10 @@ const movement = useGameMovement({
   updateProximity: interactions.updateProximity,
   onToggleInventory: toggleInventory,
   onHotbarDigit: selectHotbarIndex,
-  onHotbarScroll: (step) => selectHotbarIndex((selectedHotbarIndex.value + step + 9) % 9),
+  onHotbarScroll: (step) => {
+    if (placement.onWheelStep(step)) return
+    selectHotbarIndex((selectedHotbarIndex.value + step + 9) % 9)
+  },
   handleExtraKeyDown,
   onCanvasMouseDown: (e) => {
     // furniture placement keeps its own clicks (left: pick / place, right: cancel)
