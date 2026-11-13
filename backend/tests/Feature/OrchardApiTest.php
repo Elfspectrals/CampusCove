@@ -88,17 +88,17 @@ class OrchardApiTest extends TestCase
         $this->assertSame(1, DB::table('wallet_ledger')->where('reason', 'orchard_sell')->where('delta', 15)->count());
     }
 
-    public function test_apples_past_three_hundred_sold_in_a_day_pay_one_coin_each(): void
+    public function test_apples_past_three_hundred_sold_in_a_day_pay_nothing(): void
     {
         $player = $this->registerAndCreditWallet(0, 'cash');
         $this->grant($player['account_id'], 'farm_apple', 308);
         $sell = fn (int $quantity) => $this->postJson('/api/orchard/sell', ['quantity' => $quantity], $this->auth($player['token'], self::SECRET))->assertOk();
 
         $sell(298)->assertJsonPath('coins', 894)->assertJsonPath('full_price_left', 2);
-        $sell(5)->assertJsonPath('coins', 9)->assertJsonPath('full_price_left', 0);
-        $sell(5)->assertExactJson(['sold' => 5, 'coins' => 5, 'balance_after' => 908, 'full_price_left' => 0]);
+        $sell(5)->assertJsonPath('coins', 6)->assertJsonPath('full_price_left', 0);
+        $sell(5)->assertExactJson(['sold' => 5, 'coins' => 0, 'balance_after' => 900, 'full_price_left' => 0]);
 
-        $this->assertSame(908, $this->balance($player['account_id']));
+        $this->assertSame(900, $this->balance($player['account_id']));
     }
 
     public function test_the_daily_quota_rolls_over_twenty_four_hours_per_account(): void
@@ -113,7 +113,7 @@ class OrchardApiTest extends TestCase
         $sell($player, 300)->assertJsonPath('coins', 900);
         $sell($other, 5)->assertJsonPath('coins', 15);
         $this->travel(24 * 3600)->seconds();
-        $sell($player, 5)->assertJsonPath('coins', 5)->assertJsonPath('full_price_left', 0);
+        $sell($player, 5)->assertJsonPath('coins', 0)->assertJsonPath('full_price_left', 0);
         $this->travel(1)->seconds();
         $sell($player, 5)->assertJsonPath('coins', 15)->assertJsonPath('full_price_left', 290);
     }

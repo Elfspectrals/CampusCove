@@ -16,7 +16,7 @@ final class OrchardService
 
     public const APPLE_PRICE = 3;
 
-    public const APPLE_PRICE_OVER_DAILY_QUOTA = 1;
+    public const APPLE_PRICE_OVER_DAILY_QUOTA = 0;
 
     public const DAILY_FULL_PRICE_APPLES = 300;
 

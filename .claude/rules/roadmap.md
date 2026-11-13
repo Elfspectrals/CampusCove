@@ -147,6 +147,19 @@ Decision (2026-11-13): assets that were only decoration get a use, and house doo
 - [done] Alarm (decided 2026-11-13): `decor_alarm`, 400 cash at Crispin's Hardware, placed in the house like furniture; it goes off once per lockpicking session, on the second miss or when the door opens; siren heard within 25 m; the owner gets a message, the siren and an "Alarm" watch app that lists the alarms and, when they come back, the break-in attempts made while they were away (`house_alarm_events`). This branch is rebased on `feat/watch-apps` (PR #84). Playtested on 2026-11-13: siren on the second miss, the owner far away alerted without hearing it, the report read once, the app with its badge seen in the browser. Not wired: the police call `reportCrime(room, player, 'alarm')`, waiting for the police branch.
 - [todo] Safe (1,500, 8 slots, 7 pins, very loud), new model.
 
+## Job tools (doing, branch feat/job-tools)
+
+Decision (2026-11-13): job tools are sold in an aisle of the hardware store (the store itself belongs to the useful-items work). Each tool has a job bonus and a combat use, stronger but slower than the punch, with a damage per second close to it; hits are owned by the socket. Tools wear out per use (pick or landed hit) and break at 0. At death the held tools drop on the ground for 5 minutes, with the cash bag rules (72 h giver age, not for the killer, house key excluded). A tool is visible only when held; items carry a `weapon` flag for the police. The ~900 coins/day cap applies per job; the orchard after-quota price is 0 for everyone so the secateurs save time, not money. The hoe waits for the farm quotas (about 3,200 coins/day today) to be cut to about 900 by the branch that owns the farm. Economist review: go under those conditions. Contract in `docs/TOOLS.md`.
+
+- [done] Items and data: secateurs, crowbar, hammer, wrench with uses and the `weapon` flag; orchard after-quota price 0.
+- [todo] Models in hand (first and third person) through `make model`.
+- [todo] Combat with the held tool, wear per landed hit.
+- [todo] Secateurs at the orchard: 2.0 s pick, server-side interval, wear per pick.
+- [todo] Tools dropped at death.
+- [todo] Tool aisle in the hardware store (needs the store from the useful-items work).
+- [todo] Playtest with two players.
+- [todo] Hoe for the farm, after the farm quota fix.
+
 ## Later
 
 - Fishing as the second job (reuse the darts power meter or the Drink Fast balance bar; rod and fish models exist).

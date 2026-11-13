@@ -179,6 +179,8 @@ erDiagram
         text cosmetic_slot
         smallint hunger_per_portion
         smallint thirst_per_portion
+        int max_uses "outil de métier, voir TOOLS.md"
+        bool weapon "outil qui frappe plus fort que le poing"
     }
     ITEM_INSTANCES {
         bigint item_instance_id PK
@@ -186,6 +188,7 @@ erDiagram
         bigint owner_account_id FK
         bigint container_id FK
         bigint locked_tx_id FK "verrou pendant un échange"
+        int uses_left "usures restantes d'un outil"
     }
     CONTAINERS {
         bigint container_id PK

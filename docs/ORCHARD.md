@@ -12,7 +12,7 @@ Décisions produit (validées les 02 et 03/11/2026) :
 - Cueillette **infinie, façon Altis Life** : maintenir la touche d'interaction **3 s** près d'un arbre donne une pomme.
   Relâcher la touche ou s'éloigner de l'arbre annule la cueillette.
 - Prix : **3 coins** la pomme. Pas de plafond journalier (il bloquerait ceux qui veulent farmer) mais un **prix dégressif** :
-  les 300 premières pommes vendues par compte sur 24 h glissantes paient 3 coins, les suivantes 1 coin.
+  les 300 premières pommes vendues par compte sur 24 h glissantes paient 3 coins, les suivantes rien (0 depuis le 2026-11-13, pour que le sécateur fasse gagner du temps et pas d'argent).
 - Intervalle minimum de **2,5 s** entre deux cueillettes, vérifié par l'API (le socket ne fait pas foi pour le temps).
 - Le fermier porte une tenue en pièces modulaires (chapeau de paille, chemise à carreaux avec tablier, salopette,
   bottes), au même format que les vêtements des joueurs, pour pouvoir les vendre plus tard (règle `CLAUDE.md`).
