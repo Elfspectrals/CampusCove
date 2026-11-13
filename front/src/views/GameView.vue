@@ -428,6 +428,7 @@ const pubGames = usePubGames({
   pseudoOf: (sessionId) => (sessionId === gameRoomRef.value?.sessionId ? getStoredAuth()?.user.display_name ?? 'You' : realtime.remotePseudo(sessionId) ?? '…'),
   say: (text) => survival.say(text),
   setRacePint: (sessionId, progress) => realtime.setRemoteRacePint(sessionId, progress),
+  dartsFree: () => tutorial.value?.status === 'active' && tutorial.value.step === 'play_darts',
 })
 const {
   race: pubRace,

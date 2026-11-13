@@ -138,7 +138,7 @@ Decision (2026-11-13): a new account plays a 5-minute tutorial right after the c
 - [done] Bubbles the first time within 4 m of an ATM, an NPC (zone buyers, bartender) or a shop or work door, 6 s over the place, once per kind, while the tutorial is active; remembered in this browser per account (`cc.tutorialHints.<account>`).
 - [done] "New citizen" badge next to the pseudo: badges are SVG icons (decided 2026-11-13), one shared `account_badges` table that the tasks branch reuses for its badge rewards; shown in the Tab list; New citizen is the only badge also shown before the pseudo over the head (decided 2026-11-13, task badges stay off the head). Task tier badges are read from the tasks tables by `BadgeService::badges()`, not copied. Granted when the tutorial ends, with the server-side steps.
 - [done] Playtest in the game (2026-11-13, new account on the branch stack): creator, 8 apples picked, one eaten, 6 sold, 18 deposited, a free darts game left to time out; each step moved live, the quest log and marker went away at the end, `new_citizen` granted, no darts fee taken. Not seen: the welcome message (3.5 s, gone before the check) and the badge appearing live for another player (unit-tested only).
-- [todo] The darts prompt still says "10 coins" during the free tutorial game.
+- [done] The darts prompt says "free" instead of "10 coins" during the tutorial darts step.
 
 ## Tasks and rewards (doing, branch feat/tasks-and-rewards)
 
