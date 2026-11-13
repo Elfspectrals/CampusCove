@@ -133,8 +133,8 @@ Decision (2026-11-13): a new account plays a 5-minute tutorial right after the c
 - [done] Tutorial state per account (`account_tutorials`), started by the first character save, skip and resume.
 - [todo] Steps advanced by the server from the action counters.
 - [done] Free darts game at the tutorial step: no fee, and a darts game with a free entry pays nobody.
-- [todo] One-line quest log with skip, resume in the settings.
-- [todo] Marker to the objective (tree, farmer, ATM, pub).
+- [done] One-line quest log under the minimap, skip with confirmation, resume in the in-game settings.
+- [done] Marker to the objective: a diamond with the distance over the nearest orchard tree, the farmer, the nearest ATM or the darts oche, stuck to the screen edge with an arrow when out of view; none while eating.
 - [todo] Bubbles the first time near an ATM, a door or an NPC.
 - [todo] "New citizen" badge next to the pseudo.
 - [todo] Playtest in the game.

@@ -45,6 +45,9 @@ import GameWatchMenu from '../components/game/GameWatchMenu.vue'
 import ItemShopPurchaseConfirmModal from '../components/shop/ItemShopPurchaseConfirmModal.vue'
 import GameRoomMessageBanner from '../components/game/GameRoomMessageBanner.vue'
 import GameTutorialQuest from '../components/game/GameTutorialQuest.vue'
+import GameTutorialMarker from '../components/game/GameTutorialMarker.vue'
+import { useTutorialMarker } from '../composables/game/useTutorialMarker'
+import type { Vec3 } from '../game/mallTemplates/mallTemplate'
 import { loadTutorial, skipTheTutorial, tutorial } from '../composables/game/useTutorial'
 import UiIcon from '../components/ui/UiIcon.vue'
 import { useApartmentObjects } from '../composables/game/useApartmentObjects'
@@ -491,6 +494,19 @@ const atm = useAtm({
   timeoutMessage: () => t('atm.timeout'),
 })
 const { open: atmOpen } = atm
+const tutorialWorldPlaces = shallowRef<{ trees: readonly Vec3[]; dartsOche: Vec3 | null }>({ trees: [], dartsOche: null })
+const tutorialMarker = useTutorialMarker({
+  myPosition,
+  getCamera,
+  canvasRef,
+  step: () => (tutorial.value?.status === 'active' ? tutorial.value.step : null),
+  places: () => ({
+    ...tutorialWorldPlaces.value,
+    farmer: zoneDecor.buyers.value.find((buyer) => buyer.zone === 'orchard')?.position ?? null,
+    atms: zoneDecor.atms.value,
+  }),
+})
+const { marker: tutorialMarkerOnScreen } = tutorialMarker
 const cashBags = useCashBags({
   myPosition,
   getScene,
@@ -823,6 +839,7 @@ const environment = useRoomEnvironment({
     pubGames.onTownLoaded(manifest)
     orchard.onTownLoaded(manifest)
     farm.onTownLoaded(manifest)
+    tutorialWorldPlaces.value = { trees: manifest.orchard?.trees ?? [], dartsOche: manifest.pub?.darts.oche ?? null }
     void Promise.all([
       mallCellTemplates.onTownLoaded(manifest).catch((error: unknown) => console.error('[mall] cell templates failed to load', error)),
       zoneDecor.onTownLoaded(manifest).catch((error: unknown) => console.error('[zones] zone decor failed to load', error)),
@@ -1072,6 +1089,7 @@ const movement = useGameMovement({
     pub.tick(dt)
     pubGames.tick()
     orchard.tick()
+    tutorialMarker.tick()
     farm.tick()
     if (!doorSigns.group.parent) getScene()?.add(doorSigns.group)
     minimap.tick()
@@ -1344,6 +1362,14 @@ const crosshairClass = computed(() => {
         :files="boot.files.value"
       />
     </Transition>
+    <GameTutorialMarker
+      v-if="tutorialMarkerOnScreen && !loadingShown"
+      :x="tutorialMarkerOnScreen.x"
+      :y="tutorialMarkerOnScreen.y"
+      :on-screen="tutorialMarkerOnScreen.onScreen"
+      :angle="tutorialMarkerOnScreen.angle"
+      :metres="tutorialMarkerOnScreen.metres"
+    />
     <GameTutorialQuest
       v-if="tutorial?.status === 'active' && !loadingShown"
       :step="tutorial.step"

@@ -20,6 +20,10 @@ While the tutorial is `active` at `play_darts`, `POST /pub/play` for `darts` ans
 
 Finishing gives the "New citizen" badge next to the pseudo. No coins.
 
+## Marker
+
+The front points at the objective of the current step (`front/src/game/tutorialMarker.ts`): the nearest orchard tree, nothing while eating (any place works), the orchard farmer, the nearest ATM, then the darts oche at the pub. The marker shows the ground distance in metres, through walls, and sticks to the screen edge with an arrow when the target is out of view.
+
 ## State
 
 Table `account_tutorials`, one row per account, created by the first save of the character (`CharacterAppearanceService::save`). Accounts whose character existed before have no row: status `none`, they never see the tutorial.

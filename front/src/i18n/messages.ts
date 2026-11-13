@@ -38,6 +38,7 @@ export const messages = {
       settingsTitle: 'Tutorial',
       settingsIntro: 'You skipped the first day tutorial. Pick it up where you left it.',
       resume: 'Resume the tutorial',
+      metres: '{n} m',
     },
     settings: {
       title: 'Settings',
@@ -447,6 +448,7 @@ export const messages = {
       settingsTitle: 'Tutoriel',
       settingsIntro: 'Tu as passé le tutoriel du premier jour. Reprends-le là où tu l’avais laissé.',
       resume: 'Reprendre le tutoriel',
+      metres: '{n} m',
     },
     settings: {
       title: 'Paramètres',
