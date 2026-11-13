@@ -44,6 +44,8 @@ import GameTradeWindow from '../components/game/GameTradeWindow.vue'
 import GameWatchMenu from '../components/game/GameWatchMenu.vue'
 import ItemShopPurchaseConfirmModal from '../components/shop/ItemShopPurchaseConfirmModal.vue'
 import GameRoomMessageBanner from '../components/game/GameRoomMessageBanner.vue'
+import GameTutorialQuest from '../components/game/GameTutorialQuest.vue'
+import { loadTutorial, skipTheTutorial, tutorial } from '../composables/game/useTutorial'
 import UiIcon from '../components/ui/UiIcon.vue'
 import { useApartmentObjects } from '../composables/game/useApartmentObjects'
 import { useClinic } from '../composables/game/useClinic'
@@ -1235,8 +1237,17 @@ async function bootGame() {
   }
   await loadLayoutFromServer()
   refreshOwnedItems()
+  loadTutorial().catch((error: unknown) => survival.say(error instanceof Error ? error.message : String(error)))
   boot.complete('server')
   if (!unmounted) movement.startRenderLoop()
+}
+
+async function skipTutorialQuest(): Promise<void> {
+  try {
+    await skipTheTutorial()
+  } catch (error) {
+    survival.say(error instanceof Error ? error.message : String(error))
+  }
 }
 
 function leaveRoom() {
@@ -1333,6 +1344,11 @@ const crosshairClass = computed(() => {
         :files="boot.files.value"
       />
     </Transition>
+    <GameTutorialQuest
+      v-if="tutorial?.status === 'active' && !loadingShown"
+      :step="tutorial.step"
+      @skip="skipTutorialQuest"
+    />
     <GameMinimap
       :image="minimap.image.value"
       :markers="minimap.markers.value"
