@@ -114,6 +114,7 @@ export interface LockpickPin {
 export interface LockpickSession {
   unitId: string
   attemptId: number | null
+  pins: number
   pinsSet: number
   misses: number
   pin: LockpickPin

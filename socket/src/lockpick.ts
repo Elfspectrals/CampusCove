@@ -2,7 +2,7 @@ import { callRealtimeBackend, errorPayload } from './backend.ts'
 import { canUseDoor, isWithinDoorReach } from './doors.ts'
 import type { ClientPayload, GameClient, GameRoom, HousingUnit, LockpickPin, LockpickSession, Player } from './types.ts'
 
-export const PINS_PER_DOOR = 3
+const MAX_PINS = 9
 export const PIN_SETTLE_MS = 8000
 export const PIN_PERIOD_MIN_MS = 1200
 export const PIN_PERIOD_MAX_MS = 2000
@@ -52,7 +52,7 @@ function nextPin(client: GameClient, session: LockpickSession, now: number, rand
   session.busy = false
   client.send('lockpick_pin', {
     pinsSet: session.pinsSet,
-    pins: PINS_PER_DOOR,
+    pins: session.pins,
     period: session.pin.period,
     phase: session.pin.phase,
     window: PIN_WINDOW,
@@ -100,12 +100,14 @@ export async function onLockpickStart(room: GameRoom, client: GameClient, payloa
     sendError(client, 'You have the keys to this house.', 'has_house_key')
     return
   }
-  const session: LockpickSession = { unitId: unit.public_id, attemptId: null, pinsSet: 0, misses: 0, pin: rollPin(now, random), readyAt: now, busy: true }
+  const session: LockpickSession = { unitId: unit.public_id, attemptId: null, pins: 0, pinsSet: 0, misses: 0, pin: rollPin(now, random), readyAt: now, busy: true }
   player.lockpick = session
   try {
     const data = await callRealtimeBackend(player.token, '/lockpicks/attempts', 'POST', { unit_public_id: unit.public_id })
     if (!Number.isInteger(data?.attempt_id)) throw new Error('invalid attempt id')
+    if (!Number.isInteger(data?.pins) || data.pins < 1 || data.pins > MAX_PINS) throw new Error('invalid pin count')
     session.attemptId = data.attempt_id
+    session.pins = data.pins
   } catch (error) {
     if (player.lockpick === session) player.lockpick = null
     client.send('lockpick_error', errorPayload(error, 'You cannot pick this lock.', 'lockpick_failed'))
@@ -139,7 +141,7 @@ export async function onLockpickPress(room: LockpickRoom, client: GameClient, cl
   try {
     if (hit) {
       session.pinsSet += 1
-      if (session.pinsSet >= PINS_PER_DOOR) {
+      if (session.pinsSet >= session.pins) {
         await callRealtimeBackend(player.token, `/lockpicks/attempts/${session.attemptId}/success`)
         player.lockpick = null
         client.send('lockpick_result', { outcome: 'open' })
@@ -169,4 +171,22 @@ export async function onLockpickPress(room: LockpickRoom, client: GameClient, cl
 export function onLockpickCancel(room: GameRoom, client: GameClient): void {
   const player = room.players.get(client.sessionId)
   if (player?.lockpick) abandon(player, player.lockpick)
+}
+
+export async function onDoorReinforce(room: LockpickRoom, client: GameClient, payload: ClientPayload, now = Date.now()): Promise<void> {
+  const player = room.players.get(client.sessionId)
+  if (!player || !isActive(player, now)) return
+  const unit = room.housingUnits.find((u) => u.public_id === payload?.unitId && u.status === 'occupied')
+  if (!unit || !isWithinDoorReach(player, unit)) {
+    client.send('door_reinforce_error', { message: 'Get closer to the door.', code: 'lockpick_too_far' })
+    return
+  }
+  try {
+    await callRealtimeBackend(player.token, '/lockpicks/reinforced-lock', 'POST', { unit_public_id: unit.public_id })
+  } catch (error) {
+    client.send('door_reinforce_error', errorPayload(error, 'The lock did not fit.', 'reinforce_failed'))
+    return
+  }
+  client.send('door_reinforced', { unitId: unit.public_id })
+  await room.pollHousingUnits()
 }

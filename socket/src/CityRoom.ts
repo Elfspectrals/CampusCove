@@ -15,7 +15,7 @@ import {
   lockChanges,
   workDoorId
 } from './doors.ts'
-import { onLockpickCancel, onLockpickPress, onLockpickStart } from './lockpick.ts'
+import { onDoorReinforce, onLockpickCancel, onLockpickPress, onLockpickStart } from './lockpick.ts'
 import { onStorage } from './storage.ts'
 import { onBedSet } from './bed.ts'
 import { moveRejection, onJump, spendSprintStamina } from './movement.ts'
@@ -122,6 +122,7 @@ export class CityRoom extends Room implements GameRoom {
     this.onMessage('lockpick_start', (client, payload: ClientPayload) => void onLockpickStart(this, client, payload))
     this.onMessage('lockpick_press', (client) => void onLockpickPress(this, client))
     this.onMessage('lockpick_cancel', (client) => onLockpickCancel(this, client))
+    this.onMessage('door_reinforce', (client, payload: ClientPayload) => void onDoorReinforce(this, client, payload))
     this.onMessage('storage_open', (client, payload: ClientPayload) => void onStorage(this, client, 'open', payload))
     this.onMessage('storage_deposit', (client, payload: ClientPayload) => void onStorage(this, client, 'deposit', payload))
     this.onMessage('storage_take', (client, payload: ClientPayload) => void onStorage(this, client, 'take', payload))

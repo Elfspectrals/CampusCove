@@ -29,3 +29,11 @@ test('a locked door offers to pick the lock only with a lockpick in hand and no 
   assert.equal(housingActionFor(lockedHouse, { myAccountId: 4, doorOpen: false, holdingHouseKey: false, holdingLockpick: true }), 'locked')
   assert.equal(housingActionFor({ ...lockedHouse, door_locked: false }, { myAccountId: 1, doorOpen: false, holdingHouseKey: false, holdingLockpick: true }), 'open')
 })
+
+test('the owner holding a reinforced lock is offered to fit it, once', () => {
+  const owned = { ...lockedHouse, occupant_account_id: 1, reinforced_lock: false } as HousingUnit
+  const holding = { myAccountId: 1, doorOpen: false, holdingHouseKey: false, holdingReinforcedLock: true }
+  assert.equal(housingActionFor(owned, holding), 'reinforce')
+  assert.equal(housingActionFor({ ...owned, reinforced_lock: true }, holding), 'locked')
+  assert.equal(housingActionFor(lockedHouse, holding), 'locked')
+})

@@ -95,6 +95,18 @@ class ShopSeeder extends Seeder
                 'model_glb' => '/assets/items/tools/lockpick/model.glb',
             ],
             [
+                'code' => LockpickService::REINFORCED_LOCK_CODE,
+                'name' => 'Reinforced lock',
+                'kind' => 'tool',
+                'rarity' => 2,
+                'tradable' => true,
+                'premium_only' => false,
+                'bind' => 'none',
+                'max_stack' => 1,
+                'preview_image' => '/assets/items/tools/reinforced_lock/preview.png',
+                'model_glb' => '/assets/items/tools/reinforced_lock/model.glb',
+            ],
+            [
                 'code' => 'emote_wave',
                 'name' => 'Wave Emote',
                 'kind' => 'cosmetic',
@@ -403,6 +415,7 @@ class ShopSeeder extends Seeder
             self::coins('decor_wheelbarrow', 180, 144),
             self::coins('decor_metal_shelving', 260, 145),
             self::coins(LockpickService::ITEM_CODE, 120, 146),
+            self::coins(LockpickService::REINFORCED_LOCK_CODE, 600, 147),
         ];
         foreach (FoodCatalog::items() as $i => $food) {
             if ($food['price'] !== null) {

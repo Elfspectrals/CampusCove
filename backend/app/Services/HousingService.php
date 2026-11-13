@@ -114,6 +114,7 @@ final class HousingService
             'lease_expires_at' => null,
             'tax_due_at' => null,
             'door_locked' => false,
+            'reinforced_lock' => false,
             'room_id' => null,
             'updated_at' => now(),
         ]);
@@ -455,6 +456,7 @@ final class HousingService
                 : null,
             'tax_due_at' => $unit->tax_due_at?->toIso8601String(),
             'door_locked' => (bool) $unit->door_locked,
+            'reinforced_lock' => (bool) $unit->reinforced_lock,
             'interior_bounds' => $unit->interior_bounds,
             'room_public_id' => $unit->room !== null ? (string) $unit->room->public_id : null,
             'template_key' => $unit->templateKey(),

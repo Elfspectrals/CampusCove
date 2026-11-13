@@ -5,6 +5,7 @@ import {
   PIN_SETTLE_MS,
   isHit,
   needlePosition,
+  onDoorReinforce,
   onLockpickCancel,
   onLockpickPress,
   onLockpickStart,
@@ -18,10 +19,11 @@ type FakeClient = GameClient & { sent: Sent[] }
 
 const apiCalls: Array<{ path: string, body: any }> = []
 let breakOnMiss = false
+let doorPins = 3
 globalThis.fetch = async (url: string | URL | Request, init?: RequestInit) => {
   const path = String(url).replace(/^.*\/api/, '')
   apiCalls.push({ path, body: init?.body ? JSON.parse(String(init.body)) : null })
-  if (path === '/lockpicks/attempts') return new Response(JSON.stringify({ attempt_id: 7 }))
+  if (path === '/lockpicks/attempts') return new Response(JSON.stringify({ attempt_id: 7, pins: doorPins }))
   if (path.endsWith('/miss')) return new Response(JSON.stringify({ broke: breakOnMiss }))
   return new Response(JSON.stringify({ ok: true }))
 }
@@ -57,6 +59,7 @@ function setup({ x = 0, z = 2, locked = true, keyHolders = [] as number[] } = {}
   } as unknown as LockpickRoom
   apiCalls.length = 0
   breakOnMiss = false
+  doorPins = 3
   return {
     burglar, client, near, far, room,
     clock: () => now,
@@ -105,6 +108,20 @@ test('three hits open the door after the settle time of each pin', async () => {
   assert.deepEqual(received(client, 'lockpick_result').map((r) => r.outcome), ['set', 'set', 'open'])
   assert.deepEqual(apiCalls, [{ path: '/lockpicks/attempts/7/success', body: null }])
   assert.equal(polls(), 1)
+})
+
+test('a reinforced door asks for the five pins Laravel gives', async () => {
+  const { client, room, clock, at } = setup()
+  doorPins = 5
+  await onLockpickStart(room, client, { unitId: 'house-1' }, clock, always0)
+  assert.equal(received(client, 'lockpick_pin')[0].pins, 5)
+
+  for (let pin = 1; pin <= 5; pin++) {
+    at(pin * firstHitAfterSettle)
+    await onLockpickPress(room, client, clock, always0)
+  }
+
+  assert.deepEqual(received(client, 'lockpick_result').map((r) => r.outcome), ['set', 'set', 'set', 'set', 'open'])
 })
 
 test('a press while the lock settles is refused and costs nothing', async () => {
@@ -196,5 +213,22 @@ test('a start is refused far from the door, on an unlocked door, or with the key
   assert.deepEqual(received(far.client, 'lockpick_error').map((e) => e.code), ['lockpick_too_far'])
   assert.deepEqual(received(open.client, 'lockpick_error').map((e) => e.code), ['door_not_locked'])
   assert.deepEqual(received(holder.client, 'lockpick_error').map((e) => e.code), ['has_house_key'])
+  assert.equal(apiCalls.length, 0)
+})
+
+test('fitting a reinforced lock at the door asks Laravel and reloads the houses', async () => {
+  const { client, room, polls } = setup()
+  await onDoorReinforce(room, client, { unitId: 'house-1' })
+
+  assert.deepEqual(apiCalls, [{ path: '/lockpicks/reinforced-lock', body: { unit_public_id: 'house-1' } }])
+  assert.deepEqual(received(client, 'door_reinforced'), [{ unitId: 'house-1' }])
+  assert.equal(polls(), 1)
+})
+
+test('a lock is fitted only next to the door', async () => {
+  const { client, room } = setup({ z: 10 })
+  await onDoorReinforce(room, client, { unitId: 'house-1' })
+
+  assert.deepEqual(received(client, 'door_reinforce_error').map((e) => e.code), ['lockpick_too_far'])
   assert.equal(apiCalls.length, 0)
 })

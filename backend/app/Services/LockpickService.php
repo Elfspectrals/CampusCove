@@ -14,6 +14,12 @@ final class LockpickService
 {
     public const ITEM_CODE = 'tool_lockpick';
 
+    public const REINFORCED_LOCK_CODE = 'tool_reinforced_lock';
+
+    public const PINS_PLAIN = 3;
+
+    public const PINS_REINFORCED = 5;
+
     public const USES_PER_PICK = 5;
 
     public const BREAK_PERCENT_PER_MISS = 40;
@@ -27,7 +33,7 @@ final class LockpickService
         private readonly HousingService $housing,
     ) {}
 
-    /** @return array{attempt_id: int} */
+    /** @return array{attempt_id: int, pins: int} */
     public function start(int $burglarId, string $unitPublicId): array
     {
         return DB::transaction(function () use ($burglarId, $unitPublicId): array {
@@ -68,7 +74,7 @@ final class LockpickService
                 'unit_id' => $unit->unit_id,
             ]);
 
-            return ['attempt_id' => (int) $attemptId];
+            return ['attempt_id' => (int) $attemptId, 'pins' => $unit->reinforced_lock ? self::PINS_REINFORCED : self::PINS_PLAIN];
         });
     }
 
@@ -116,6 +122,25 @@ final class LockpickService
             if ($this->lockAttempt($burglarId, $attemptId)->outcome === null) {
                 $this->close($attemptId, $burglarId, 'abandoned');
             }
+        });
+    }
+
+    public function fitReinforcedLock(int $accountId, string $unitPublicId): void
+    {
+        DB::transaction(function () use ($accountId, $unitPublicId): void {
+            $unit = HousingUnit::query()->where('public_id', $unitPublicId)->lockForUpdate()->first();
+            if ($unit === null || $unit->status !== 'occupied' || (int) $unit->occupant_account_id !== $accountId) {
+                throw new LockpickRejectedException('not_your_house', 'Only the owner can change the lock.', 403);
+            }
+            if ($unit->reinforced_lock) {
+                throw new LockpickRejectedException('lock_already_reinforced', 'This door already has a reinforced lock.', 409);
+            }
+            $lock = ItemDef::query()->where('code', self::REINFORCED_LOCK_CODE)->firstOrFail();
+            if (! $this->inventory->accountHasPositiveQuantity($accountId, (int) $lock->item_def_id)) {
+                throw new LockpickRejectedException('no_reinforced_lock', 'You need a reinforced lock.', 422);
+            }
+            $this->inventory->revokeItem($accountId, $lock, 1);
+            $unit->update(['reinforced_lock' => true, 'updated_at' => now()]);
         });
     }
 

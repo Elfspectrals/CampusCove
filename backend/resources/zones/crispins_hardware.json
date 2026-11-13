@@ -8,7 +8,8 @@
     "decor_toolbox": 90,
     "decor_wheelbarrow": 180,
     "decor_workbench": 340,
-    "tool_lockpick": 120
+    "tool_lockpick": 120,
+    "tool_reinforced_lock": 600
   },
   "buyers": {}
 }

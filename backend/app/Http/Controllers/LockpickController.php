@@ -31,6 +31,14 @@ class LockpickController extends Controller
         return response()->json(['ok' => true]);
     }
 
+    public function fitReinforcedLock(Request $request): JsonResponse
+    {
+        $validated = $request->validate(['unit_public_id' => ['required', 'string', 'max:64']]);
+        $this->lockpicks->fitReinforcedLock($this->accountId($request), $validated['unit_public_id']);
+
+        return response()->json(['ok' => true]);
+    }
+
     public function abandon(Request $request, int $attemptId): JsonResponse
     {
         $this->lockpicks->abandon($this->accountId($request), $attemptId);

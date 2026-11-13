@@ -6,6 +6,7 @@ use App\Models\HousingUnit;
 use App\Models\ItemDef;
 use App\Models\Wallet;
 use App\Services\AccountInventoryService;
+use App\Services\HousingService;
 use App\Services\LockpickService;
 use App\Services\TradeService;
 use App\Services\ZonePriceBook;
@@ -45,6 +46,7 @@ class LockpickApiTest extends TestCase
         $this->assertNotNull($itemDefId);
         $this->assertDatabaseHas('shop_catalog_items', ['item_def_id' => $itemDefId, 'coins_price' => 120, 'allow_coins' => true]);
         $this->assertSame(120, app(ZonePriceBook::class)->prices('crispins_hardware')[LockpickService::ITEM_CODE]);
+        $this->assertSame(600, app(ZonePriceBook::class)->prices('crispins_hardware')[LockpickService::REINFORCED_LOCK_CODE]);
     }
 
     public function test_a_burglar_without_a_lockpick_cannot_start(): void
@@ -183,6 +185,50 @@ class LockpickApiTest extends TestCase
         $this->start($holder, $unit)->assertForbidden()->assertJsonPath('code', 'has_house_key');
     }
 
+    public function test_a_plain_door_has_three_pins_and_a_reinforced_one_five(): void
+    {
+        $owner = $this->player();
+        $unit = $this->lockedHouse($owner);
+        $burglar = $this->player(lockpicks: 2);
+        $first = $this->start($burglar, $unit)->assertOk()->assertJsonPath('pins', LockpickService::PINS_PLAIN)->json('attempt_id');
+        $this->abandon($burglar, $first);
+        $this->grant($owner, LockpickService::REINFORCED_LOCK_CODE);
+
+        $this->fitLock($owner, $unit)->assertOk();
+
+        $this->start($burglar, $unit)->assertOk()->assertJsonPath('pins', LockpickService::PINS_REINFORCED);
+        $this->assertSame(0, $this->quantity($owner, LockpickService::REINFORCED_LOCK_CODE));
+    }
+
+    public function test_only_the_owner_fits_a_reinforced_lock_and_only_once(): void
+    {
+        $owner = $this->player();
+        $holder = $this->player();
+        $unit = $this->lockedHouse($owner);
+        $this->postJson('/api/housing/keys', ['account_id' => $holder['account_id']], $this->auth($owner['token']))->assertOk();
+        $this->grant($holder, LockpickService::REINFORCED_LOCK_CODE);
+        $this->grant($owner, LockpickService::REINFORCED_LOCK_CODE);
+
+        $this->fitLock($owner, $this->lockedHouse($this->player()))->assertForbidden()->assertJsonPath('code', 'not_your_house');
+        $this->fitLock($holder, $unit)->assertForbidden()->assertJsonPath('code', 'not_your_house');
+        $this->fitLock($owner, $unit)->assertOk();
+        $this->grant($owner, LockpickService::REINFORCED_LOCK_CODE);
+        $this->fitLock($owner, $unit)->assertStatus(409)->assertJsonPath('code', 'lock_already_reinforced');
+    }
+
+    public function test_a_lock_needs_the_item_and_goes_with_a_lost_house(): void
+    {
+        $owner = $this->player();
+        $unit = $this->lockedHouse($owner);
+
+        $this->fitLock($owner, $unit)->assertStatus(422)->assertJsonPath('code', 'no_reinforced_lock');
+        $this->grant($owner, LockpickService::REINFORCED_LOCK_CODE);
+        $this->fitLock($owner, $unit)->assertOk();
+        app(HousingService::class)->resetExpiredUnit($unit->refresh());
+
+        $this->assertFalse((bool) $unit->refresh()->reinforced_lock);
+    }
+
     public function test_the_browser_cannot_pick_without_the_socket(): void
     {
         $unit = $this->lockedHouse($this->player());
@@ -206,6 +252,24 @@ class LockpickApiTest extends TestCase
     private function start(array $burglar, HousingUnit $unit): TestResponse
     {
         return $this->postJson('/api/lockpicks/attempts', ['unit_public_id' => $unit->public_id], $this->auth($burglar['token'], self::SECRET));
+    }
+
+    /** @param array{token: string} $owner */
+    private function fitLock(array $owner, HousingUnit $unit): TestResponse
+    {
+        return $this->postJson('/api/lockpicks/reinforced-lock', ['unit_public_id' => $unit->public_id], $this->auth($owner['token'], self::SECRET));
+    }
+
+    /** @param array{account_id: int} $player */
+    private function grant(array $player, string $code): void
+    {
+        app(AccountInventoryService::class)->grantItem($player['account_id'], ItemDef::query()->where('code', $code)->firstOrFail(), 1);
+    }
+
+    /** @param array{account_id: int} $player */
+    private function quantity(array $player, string $code): int
+    {
+        return app(TradeService::class)->ownedQuantity($player['account_id'], ItemDef::query()->where('code', $code)->firstOrFail());
     }
 
     /** @param array{token: string} $burglar */

@@ -354,6 +354,7 @@ watch(storeConfirmItem, (item, previous) => {
 
 const holdingHouseKey = () => selectedItem.value?.code === 'house_key'
 const holdingLockpick = () => selectedItem.value?.code === 'tool_lockpick'
+const holdingReinforcedLock = () => selectedItem.value?.code === 'tool_reinforced_lock'
 
 const lockpick = useLockpick({
   gameRoomRef,
@@ -372,6 +373,7 @@ const housing = useCityHousing({
   roomMessage,
   holdingHouseKey,
   holdingLockpick,
+  holdingReinforcedLock,
   startLockpick: lockpick.start,
 })
 
@@ -1244,7 +1246,14 @@ const realtime = useGameRealtime({
   orchard: orchard.handlers,
   zoneBuyers: zoneBuyers.handlers,
   atm: atm.handlers,
-  lockpick: lockpick.handlers,
+  lockpick: {
+    ...lockpick.handlers,
+    onReinforced: () => {
+      survival.say(t('lockpick.reinforced'))
+      void refreshOwnedItems()
+    },
+    onReinforceError: (data) => survival.say(data.message),
+  },
   storage: storage.handlers,
   bed: respawnBed.handlers,
   cashBags: cashBags.handlers,

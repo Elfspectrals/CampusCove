@@ -102,6 +102,7 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
         Route::post('/lockpicks/attempts/{attemptId}/miss', [LockpickController::class, 'miss'])->whereNumber('attemptId');
         Route::post('/lockpicks/attempts/{attemptId}/success', [LockpickController::class, 'succeed'])->whereNumber('attemptId');
         Route::post('/lockpicks/attempts/{attemptId}/abandon', [LockpickController::class, 'abandon'])->whereNumber('attemptId');
+        Route::post('/lockpicks/reinforced-lock', [LockpickController::class, 'fitReinforcedLock']);
         Route::post('/furniture-storage/open', [FurnitureStorageController::class, 'open']);
         Route::post('/furniture-storage/deposit', [FurnitureStorageController::class, 'deposit']);
         Route::post('/furniture-storage/take', [FurnitureStorageController::class, 'take']);

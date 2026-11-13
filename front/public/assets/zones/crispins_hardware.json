@@ -347,6 +347,26 @@
       "description": "Steel hook pick. Five uses, snaps on a bad miss."
     },
     {
+      "id": "crispins_hardware_reinforced_lock",
+      "kind": "item",
+      "key": "reinforced_lock",
+      "code": "tool_reinforced_lock",
+      "forSale": true,
+      "price": 600,
+      "position": [
+        -363.25,
+        1.53,
+        -80.91
+      ],
+      "yaw": 0.4,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Fit it on your front door: picking it then takes five pins."
+    },
+    {
       "id": "crispins_hardware_paint_cans",
       "kind": "item",
       "key": "paint_cans",

@@ -16,13 +16,18 @@ A session is refused when nobody lives in the house (`unit_not_found`, 404), the
 
 A success unlocks the door (`door_locked = false`) until the owner or a key holder locks it again.
 
+## Reinforced lock
+
+`tool_reinforced_lock` (tool, sold at Crispin's Hardware for 600 cash, model from `make model` built by `map-src/CampusCove/build_security_items.py`). The owner holding it at their own front door fits it (`housing_units.reinforced_lock`): picking that door then takes 5 pins instead of 3 (`PINS_REINFORCED`), same break chance per miss. It goes with the house when the house is lost. Refusals: `not_your_house` (403, not the owner), `lock_already_reinforced` (409), `no_reinforced_lock` (422).
+
 ## Realtime routes (socket → Laravel)
 
 All under the `realtime` middleware, with the burglar's bearer token.
 
 | Route | Body | Answer |
 |---|---|---|
-| `POST /api/lockpicks/attempts` | `unit_public_id` (string, 64 max) | `{ attempt_id }`; abandons the burglar's open session if any |
+| `POST /api/lockpicks/attempts` | `unit_public_id` (string, 64 max) | `{ attempt_id, pins }` (3, or 5 on a reinforced door); abandons the burglar's open session if any |
+| `POST /api/lockpicks/reinforced-lock` | `unit_public_id` | `{ ok: true }`: the owner fits the lock they hold |
 | `POST /api/lockpicks/attempts/{id}/miss` | `miss` (integer, 1 to 1000, the miss count in this session: 1, 2, 3...) | `{ broke }`; the same `miss` sent twice is rolled once |
 | `POST /api/lockpicks/attempts/{id}/success` | none | `{ ok: true }`; idempotent, `attempt_over` (409) if the session already broke or was abandoned |
 | `POST /api/lockpicks/attempts/{id}/abandon` | none | `{ ok: true }`; idempotent |
@@ -31,7 +36,7 @@ An unknown session, or one of another account, is `attempt_not_found` (404).
 
 ## Mini-game (socket)
 
-A plain door has 3 pins. For each pin the socket rolls a needle period (1,200 to 2,000 ms per turn) and a start phase (0 to 1), and the window is the 12 % arc centred on 0. A press hits when the needle was in the window at any time in the last 150 ms of the socket clock (the client may be late, never early). After each press, hit or miss, the lock settles 8 s before the next press counts, so a perfect door takes about 24 s.
+A plain door has 3 pins, a reinforced one 5 (the socket takes the count from Laravel's answer). For each pin the socket rolls a needle period (1,200 to 2,000 ms per turn) and a start phase (0 to 1), and the window is the 12 % arc centred on 0. A press hits when the needle was in the window at any time in the last 150 ms of the socket clock (the client may be late, never early). After each press, hit or miss, the lock settles 8 s before the next press counts, so a perfect door takes about 24 s.
 
 - Hit: the pin is set and the next pin is rolled; the last pin calls `success` and the door unlocks.
 - Miss: one set pin drops (none below 0), the socket calls `miss` with the miss count of the session, and Laravel rolls the break.
@@ -43,6 +48,7 @@ A plain door has 3 pins. For each pin the socket rolls a needle period (1,200 to
 | `lockpick_start` | client → socket | `unitId` (house public id) |
 | `lockpick_press` | client → socket | none |
 | `lockpick_cancel` | client → socket | none |
+| `door_reinforce` | client → socket | `unitId`: fit the held reinforced lock, within 3 m of the door; answers `door_reinforced { unitId }` or `door_reinforce_error { message, code }` |
 | `lockpick_pin` | socket → client | `pinsSet`, `pins`, `period` (ms), `phase` (0 to 1, at receipt), `window` (0.12), `readyInMs` |
 | `lockpick_result` | socket → client | `outcome`: `'set' \| 'miss' \| 'broke' \| 'open' \| 'abandoned'` |
 | `lockpick_error` | socket → client | `message`, `code` (`door_not_locked`, `lockpick_too_far`, `has_house_key`, `lockpick_settling`, or a Laravel code above) |

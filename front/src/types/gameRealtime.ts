@@ -65,6 +65,7 @@ export interface HousingUnitPayload {
   occupant_name: string | null
   tax_due_at: string | null
   door_locked: boolean
+  reinforced_lock: boolean
   room_public_id: string | null
   template_key: string
   key_holder_account_ids: number[]
