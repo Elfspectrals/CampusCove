@@ -14,13 +14,13 @@ import lib_buildings as B
 importlib.reload(B)
 import bpy
 
-POLICE_POS = (100.0, 12.0)
+POLICE_POS = (100.0, 34.0)
 POLICE_YAW = -math.pi / 2
 GATE = {"x": 44.6, "z": 12.0, "width": 11.0}
-BOUNDS = {"minX": 44.6, "maxX": 122.0, "minZ": -10.0, "maxZ": 40.0}
+BOUNDS = {"minX": 46.6, "maxX": 122.0, "minZ": 8.0, "maxZ": 56.0}
 PATH_W = 2.6
 EYE_HEIGHT = 1.6
-LOT = (58.0, 16.0, 74.0, 33.0)
+LOT = (58.0, 38.0, 74.0, 55.0)
 BAY_W = 2.6
 BAY_D = 5.0
 LINE_W = 0.12
@@ -77,11 +77,22 @@ lawn_x0 = GATE["x"] + 4.0
 so.append(L.box(coll, "PS_Lawn", (lawn_x0 + BOUNDS["maxX"]) / 2, (BOUNDS["minZ"] + BOUNDS["maxZ"]) / 2, 0.0, BOUNDS["maxX"] - lawn_x0,
                 BOUNDS["maxZ"] - BOUNDS["minZ"], 0.02, P["grass"], tile=2.0))
 forecourt_x0 = steps_end_x - 7.0
-path_x0, path_x1 = GATE["x"] + 0.5, forecourt_x0
-so.append(L.box(coll, "PS_Path", (path_x0 + path_x1) / 2, GATE["z"], 0.0, path_x1 - path_x0, PATH_W, 0.04, P["paving"], tile=PAVING_TILE))
-for side, dz in (("N", -PATH_W / 2 - 0.1), ("S", PATH_W / 2 + 0.1)):
-    so.append(L.box(coll, f"PS_Curb{side}", (path_x0 + path_x1) / 2, GATE["z"] + dz, 0.0, path_x1 - path_x0, 0.2, 0.08, P["curb"]))
-so.append(L.box(coll, "PS_Forecourt", (forecourt_x0 + steps_end_x + 1.0) / 2, GATE["z"], 0.0, steps_end_x + 1.0 - forecourt_x0, 22.0, 0.035, P["paving"], tile=PAVING_TILE))
+FORECOURT_D = 22.0
+forecourt_z0 = POLICE_POS[1] - FORECOURT_D / 2
+turn_x = forecourt_x0 + 2.0
+path_x0, path_x1 = GATE["x"] + 0.5, turn_x + PATH_W / 2
+path_z0, path_z1 = GATE["z"] + PATH_W / 2, forecourt_z0
+curb_off = PATH_W / 2 + 0.1
+so.append(L.box(coll, "PS_PathEast", (path_x0 + path_x1) / 2, GATE["z"], 0.0, path_x1 - path_x0, PATH_W, 0.04, P["paving"], tile=PAVING_TILE))
+so.append(L.box(coll, "PS_PathNorth", turn_x, (path_z0 + path_z1) / 2, 0.0, PATH_W, path_z1 - path_z0, 0.04, P["paving"], tile=PAVING_TILE))
+outer_x1, inner_x1 = path_x1 + 0.2, turn_x - curb_off - 0.1
+so.append(L.box(coll, "PS_CurbN", (path_x0 + outer_x1) / 2, GATE["z"] - curb_off, 0.0, outer_x1 - path_x0, 0.2, 0.08, P["curb"]))
+so.append(L.box(coll, "PS_CurbS", (path_x0 + inner_x1) / 2, GATE["z"] + curb_off, 0.0, inner_x1 - path_x0, 0.2, 0.08, P["curb"]))
+outer_z0, inner_z0 = GATE["z"] - curb_off - 0.1, GATE["z"] + curb_off + 0.1
+so.append(L.box(coll, "PS_CurbE", turn_x + curb_off, (outer_z0 + path_z1) / 2, 0.0, 0.2, path_z1 - outer_z0, 0.08, P["curb"]))
+so.append(L.box(coll, "PS_CurbW", turn_x - curb_off, (inner_z0 + path_z1) / 2, 0.0, 0.2, path_z1 - inner_z0, 0.08, P["curb"]))
+so.append(L.box(coll, "PS_Forecourt", (forecourt_x0 + steps_end_x + 1.0) / 2, POLICE_POS[1], 0.0, steps_end_x + 1.0 - forecourt_x0, FORECOURT_D, 0.035, P["paving"],
+                tile=PAVING_TILE))
 
 lx0, lz0, lx1, lz1 = LOT
 so.append(L.box(coll, "PS_Asphalt", (lx0 + lx1) / 2, (lz0 + lz1) / 2, 0.0, lx1 - lx0, lz1 - lz0, 0.03, P["asphalt"], tile=ASPHALT_TILE))
@@ -101,14 +112,16 @@ for side, (cx, cz, sx, sz) in {"W": (lx0 - 0.1, (lz0 + lz1) / 2, 0.2, lz1 - lz0)
                                "S": ((lx0 + lx1) / 2, lz1 + 0.1, lx1 - lx0 + 0.4, 0.2)}.items():
     so.append(L.box(coll, f"PS_LotCurb{side}", cx, cz, 0.0, sx, sz, 0.08, P["curb"]))
 
-for i, gx in enumerate(range(50, int(forecourt_x0) - 2, 10)):
-    gz = GATE["z"] + (PATH_W / 2 + 0.8) * (1 if i % 2 == 0 else -1)
+lamp_off = PATH_W / 2 + 0.8
+lamps = [(gx, GATE["z"] + lamp_off * (1 if i % 2 == 0 else -1)) for i, gx in enumerate(range(50, int(turn_x) - 2, 10))]
+lamps.append((turn_x - lamp_off, (path_z0 + path_z1) / 2))
+for i, (gx, gz) in enumerate(lamps):
     so.append(L.cyl(coll, f"PS_Lamp{i}_Pole", gx, gz, 0.0, 0.07, 3.2, P["metal"], seg=6))
     so.append(L.box(coll, f"PS_Lamp{i}_Head", gx, gz, 3.2, 0.5, 0.5, 0.3, P["lamp"], bevel=0.03))
     add_col(f"COL_Police_Lamp{i}", gx, gz, 0.3, 0.3, 3.4)
 
-trees = [(52.0, 3.0), (54.0, 22.0), (56.0, -4.0), (66.0, 2.0), (70.0, -6.0), (118.0, -6.0), (118.0, 36.0), (84.0, 36.0), (96.0, 36.0), (108.0, 36.0),
-         (84.0, -7.0), (96.0, -7.0), (108.0, -7.0), (52.0, 34.0)]
+trees = [(54.0, 20.0), (62.0, 24.0), (70.0, 18.0), (52.0, 30.0), (66.0, 31.0), (118.0, 12.0), (118.0, 52.0), (84.0, 52.0), (96.0, 53.0), (108.0, 53.0),
+         (90.0, 12.0), (102.0, 12.0), (117.0, 30.0), (52.0, 46.0)]
 for i, (gx, gz) in enumerate(trees):
     so.append(L.cyl(coll, f"PS_TreeTrunk{i}", gx, gz, 0.0, 0.22, 1.6, P["trunk"], seg=6))
     so.append(L.cone(coll, f"PS_TreeA{i}", gx, gz, 1.4, 1.6, 0.3, 2.4, P["leaf"], seg=7))
