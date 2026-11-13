@@ -34,4 +34,9 @@ class StorageAuctionController extends Controller
     {
         return response()->json($this->auction->open($publicId, (int) $request->user()->getAuthIdentifier()));
     }
+
+    public function openAllWon(Request $request): JsonResponse
+    {
+        return response()->json(['lots' => $this->auction->openAllWon((int) $request->user()->getAuthIdentifier())]);
+    }
 }

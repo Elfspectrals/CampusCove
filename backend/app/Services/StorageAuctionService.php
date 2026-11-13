@@ -217,6 +217,21 @@ final class StorageAuctionService
         });
     }
 
+    /**
+     * @return list<array{lot_public_id: string, contents: list<array<string, mixed>>}>
+     */
+    public function openAllWon(int $accountId): array
+    {
+        return StorageLot::query()
+            ->where('status', 'sold')
+            ->where('winner_account_id', $accountId)
+            ->whereNull('opened_at')
+            ->orderBy('id')
+            ->pluck('public_id')
+            ->map(fn (string $publicId): array => $this->open($publicId, $accountId))
+            ->all();
+    }
+
     private function topUpGeneratedLots(string $night, int $listedGenerated): void
     {
         for ($slot = 1; $slot <= self::GENERATED_LOTS_PER_NIGHT && $listedGenerated < self::GENERATED_LOTS_PER_NIGHT; $slot++) {

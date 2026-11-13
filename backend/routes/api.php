@@ -103,6 +103,7 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
         Route::post('/cash-drops/{id}/pick', [CashDropController::class, 'pick'])->whereNumber('id');
         Route::post('/storage/lots/{publicId}/bid', [StorageAuctionController::class, 'bid'])->whereUuid('publicId');
         Route::post('/storage/lots/{publicId}/open', [StorageAuctionController::class, 'open'])->whereUuid('publicId');
+        Route::post('/storage/won/open', [StorageAuctionController::class, 'openAllWon']);
     });
     Route::get('/bank', [BankController::class, 'show']);
     Route::get('/trades/offerable', [TradeController::class, 'offerable']);

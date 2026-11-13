@@ -189,6 +189,22 @@ class StorageAuctionTest extends TestCase
         $this->assertSame(750, $this->bank($alice));
     }
 
+    public function test_the_winner_opens_every_box_left_closed_later_at_the_auctioneer(): void
+    {
+        $this->catalogItem('storage_test_chair', 100);
+        $lots = array_column($this->postJson('/api/storage/sale', ['night' => '2026-11-13'], $this->serverHeaders())->json('lots'), 'lot_public_id');
+        $alice = $this->register(1000, true);
+        $this->bid($alice, $lots[0], 250)->assertOk();
+        $this->postJson("/api/storage/lots/{$lots[0]}/hammer", [], $this->serverHeaders())->assertJsonPath('status', 'sold');
+
+        $first = $this->postJson('/api/storage/won/open', [], $this->playerHeaders($alice))->assertOk();
+        $again = $this->postJson('/api/storage/won/open', [], $this->playerHeaders($alice))->assertOk();
+
+        $this->assertSame([$lots[0]], array_column($first->json('lots'), 'lot_public_id'));
+        $this->assertSame([], $again->json('lots'));
+        $this->assertSame(3, $this->carriedChairs($alice));
+    }
+
     public function test_an_unsold_box_comes_back_cheaper_twice_then_is_destroyed(): void
     {
         $lot = $this->generatedLot();

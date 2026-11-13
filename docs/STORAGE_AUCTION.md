@@ -37,3 +37,27 @@ The winner opens the box at the storage zone: its contents go to their inventory
 | `POST /api/storage/lots/{publicId}/open` | socket for the winner | none | `lot_public_id`, `contents`; anyone else gets `storage_not_winner` (403) |
 
 All instances share the same lots: a lot is one row locked during each bid, hammer and opening, so it is sold once.
+
+## Live sale (socket)
+
+The socket starts the sale at 19:00 Paris time (summer and winter time), announces it to everyone at 18:55 (`storage_sale_soon`), and only starts it until 20:00 if it could not start at 19:00. An admin starts it at any time from the watch (`admin_storage_sale`). Constants live in `socket/src/storageSale.ts`, the room handlers in `socket/src/storageAuction.ts`.
+
+The lots of the night go to the units in order (lot 1 in unit 1, and so on); lots beyond the 12th wait for the next night. For each box:
+
+| Phase | Duration | What happens |
+|---|---|---|
+| `walking` | 4 s | the auctioneer walks to the unit |
+| `preview` | 45 s | the roll-up door is up, players look from the threshold, no bids |
+| `bidding` | 15 s, +10 s for each accepted bid, no ceiling | players in the bid zone bid; the front calls "going once" at 5 s left and "twice" at 2 s |
+| `hammering` | until Laravel answers | the socket calls the hammer; a failed call is tried again on the next tick |
+| `result` | 6 s | sold, back on sale next night, or destroyed |
+
+The bid zone is a 6 m circle in the aisle, 3 m in front of the unit's threshold; the auctioneer stands 0.6 m in front of the threshold, facing the aisle.
+
+| Message | Direction | Fields and rules |
+|---|---|---|
+| `storage_sale` | socket → everyone, on join and on every change | `active`; when active: `night`, `phase`, `endsAt` and `serverNow` (ms, socket clock), `index`, `count`, `unitId`, `lot` (`id`, `source`, `formerOwnerName`, `openingBid`, `contents`), `auctioneer` (`x`, `y`, `z`, `yaw`), `bidZone` (`x`, `z`, `radius`), `leader` (`pseudo`, `amount`) or null, `nextBid`, `result` (`status`, `winnerAccountId`, `price`) or null; always `won` (boxes won tonight not opened yet: `lotId`, `unitId`, `winnerAccountId`, `winnerPseudo`) and, when idle, the auctioneer's place on the stage |
+| `storage_bid` | client → socket, no field | bids the `nextBid` the socket holds; refused (`storage_error`) when not bidding (`storage_not_bidding`), outside the bid zone (`storage_out_of_zone`), already leading (`storage_already_leading`), within 1 s of the last bid or while a call is running (`storage_busy`), or by Laravel (its code) |
+| `storage_open` | client → socket, `lotId` string | the winner, within 3 m of the unit's threshold, opens a box won tonight; everyone gets `storage_opened` (`lotId`, `unitId`, `pseudo`, `contents`) |
+| `storage_open_mine` | client → socket, no field | within 5 m of the auctioneer on the stage, opens every box the player won and left closed, on any day; everyone gets `storage_opened` with `unitId` null |
+| `storage_sale_started`, `storage_sale_ended` | socket → everyone | the start (`night`, `count`) and the end of the sale |
