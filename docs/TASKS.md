@@ -10,6 +10,7 @@ Laravel owns every counter. A counter counts one real action, bumped by the serv
 - `ActionCounterService::bump(int $accountId, ActionCounter $counter, int $by = 1): int` adds `$by` (> 0) and returns the new value. `value(int $accountId, ActionCounter $counter): int` reads it (0 when never bumped).
 - After the transaction commits, the event `App\Events\CounterBumped` (`accountId`, `counter`, `before`, `after`) is dispatched. Tasks listen to it; the tutorial can too.
 - Counters start at zero for every account: past actions are not counted.
+- A counter of different things (foods tasted, later zones visited, trade partners) uses `bumpOncePerKey(int $accountId, ActionCounter $counter, string $key)`: the key goes in `account_counter_keys` (`account_id`, `counter`, `key`, primary key on the three), and the counter is bumped only when the key is new.
 
 | Counter (`App\Enums\ActionCounter`) | One unit | Bumped by |
 |---|---|---|
@@ -18,6 +19,8 @@ Laravel owns every counter. A counter counts one real action, bumped by the serv
 | `food_eaten` | one portion eaten or drunk (an apple is two bites), drinks included | `SurvivalService::consume` |
 | `atm_deposits` | one deposit at an ATM, whatever the amount; a replayed `ref` counts nothing | `BankService::deposit` |
 | `darts_played` | one finished darts game, for each player, even while its coin reward is on cooldown | `PubService::reward` |
+| `darts_duels_80` | one finished darts game against other players (placement 1 or more) with 80 points or more, won or lost; solo games do not count | `PubService::reward` |
+| `foods_tasted` | one food or drink tasted for the first time (any group of `FoodCatalog` but `medical`), once per item code | `SurvivalService::consume` |
 
 ## Tiers
 
@@ -30,6 +33,8 @@ Every task lives in `App\Support\TaskCatalog`: a key, the counter it reads and i
 |---|---|---|
 | `orchard` | `apples_picked` | 100 / 1,000 / 5,000 |
 | `darts` | `darts_played` | 10 / 50 / 200 |
+| `sharp_eye` | `darts_duels_80` | 1 / 10 / 50 |
+| `gourmet` | `foods_tasted` | 5 / 15 / 30 (fixed, so it does not move when foods are added) |
 
 ## Notification
 

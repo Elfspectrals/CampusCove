@@ -12,6 +12,8 @@ final class TaskCatalog
         return [
             'orchard' => ['counter' => ActionCounter::ApplesPicked, 'tiers' => [100, 1000, 5000]],
             'darts' => ['counter' => ActionCounter::DartsPlayed, 'tiers' => [10, 50, 200]],
+            'sharp_eye' => ['counter' => ActionCounter::DartsDuels80, 'tiers' => [1, 10, 50]],
+            'gourmet' => ['counter' => ActionCounter::FoodsTasted, 'tiers' => [5, 15, 30]],
         ];
     }
 

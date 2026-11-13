@@ -22,6 +22,8 @@ final class PubService
 
     public const REWARD_COOLDOWN_SECONDS = 60;
 
+    public const DARTS_BONUS_SCORE = 80;
+
     public function __construct(
         private readonly AccountInventoryService $inventory,
         private readonly CoinRewardService $coinRewards,
@@ -79,6 +81,9 @@ final class PubService
             if ($game === 'darts') {
                 $this->counters->bump($accountId, ActionCounter::DartsPlayed);
             }
+            if ($game === 'darts' && $placement > 0 && $score >= self::DARTS_BONUS_SCORE) {
+                $this->counters->bump($accountId, ActionCounter::DartsDuels80);
+            }
             if ($this->cooldownSecondsLeft($wallet, $reason) > 0) {
                 return ['coins' => 0, 'cooldown' => true, 'balance_after' => $wallet->balance()];
             }
@@ -101,7 +106,7 @@ final class PubService
             },
             'meter_shot' => $score < 6000 ? 30 : ($score < 9000 ? 15 : 0),
             'darts' => match ($placement) {
-                1 => 30 + ($score >= 80 ? 20 : 0),
+                1 => 30 + ($score >= self::DARTS_BONUS_SCORE ? 20 : 0),
                 0 => $score >= 45 ? 10 : 0,
                 default => 0,
             },

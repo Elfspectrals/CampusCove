@@ -101,6 +101,9 @@ final class SurvivalService
                 $stack->delete();
             }
             $this->counters->bump($accountId, ActionCounter::FoodEaten);
+            if (FoodCatalog::groupOf((string) $def->code) !== 'medical') {
+                $this->counters->bumpOncePerKey($accountId, ActionCounter::FoodsTasted, (string) $def->code);
+            }
 
             return [
                 'code' => (string) $def->code,

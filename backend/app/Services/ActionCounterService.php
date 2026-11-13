@@ -26,6 +26,18 @@ final class ActionCounterService
         return $after;
     }
 
+    public function bumpOncePerKey(int $accountId, ActionCounter $counter, string $key): void
+    {
+        $isNewKey = DB::table('account_counter_keys')->insertOrIgnore([
+            'account_id' => $accountId,
+            'counter' => $counter->value,
+            'key' => $key,
+        ]) === 1;
+        if ($isNewKey) {
+            $this->bump($accountId, $counter);
+        }
+    }
+
     public function value(int $accountId, ActionCounter $counter): int
     {
         return (int) DB::table('account_counters')

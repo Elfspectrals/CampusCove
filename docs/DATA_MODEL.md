@@ -318,12 +318,19 @@ erDiagram
 erDiagram
     ACCOUNTS ||--o{ ACCOUNT_COUNTERS : "une ligne par compteur"
     ACCOUNTS ||--o{ ACCOUNT_TASK_TIERS : "paliers atteints"
+    ACCOUNTS ||--o{ ACCOUNT_COUNTER_KEYS : "éléments déjà comptés"
 
     ACCOUNT_COUNTERS {
         bigint account_id PK, FK
         text counter PK
         bigint value
         timestamptz updated_at
+    }
+    ACCOUNT_COUNTER_KEYS {
+        bigint account_id PK, FK
+        text counter PK
+        text key PK
+        timestamptz counted_at
     }
     ACCOUNT_TASK_TIERS {
         bigint account_id PK, FK

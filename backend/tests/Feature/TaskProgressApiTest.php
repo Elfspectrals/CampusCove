@@ -188,12 +188,43 @@ class TaskProgressApiTest extends TestCase
             ->assertExactJson(['tasks' => [
                 ['task' => 'orchard', 'value' => 340, 'tiers' => [100, 1000, 5000], 'reached' => [1]],
                 ['task' => 'darts', 'value' => 0, 'tiers' => [10, 50, 200], 'reached' => []],
+                ['task' => 'sharp_eye', 'value' => 0, 'tiers' => [1, 10, 50], 'reached' => []],
+                ['task' => 'gourmet', 'value' => 0, 'tiers' => [5, 15, 30], 'reached' => []],
             ]]);
     }
 
     public function test_the_tasks_menu_needs_a_signed_in_player(): void
     {
         $this->getJson('/api/tasks')->assertUnauthorized();
+    }
+
+    public function test_only_darts_duels_of_eighty_or_more_count_for_sharp_eye(): void
+    {
+        $player = $this->registerAndCreditWallet(0, 'cash');
+        $headers = $this->auth($player['token'], self::SECRET);
+
+        foreach ([[1, 80], [2, 95], [0, 120], [1, 79]] as [$placement, $score]) {
+            $this->postJson('/api/pub/reward', ['game' => 'darts', 'placement' => $placement, 'score' => $score], $headers)->assertOk();
+        }
+
+        $this->assertSame(2, $this->counter($player['account_id'], ActionCounter::DartsDuels80));
+        $this->assertSame([['sharp_eye', 1]], $this->tiers($player['account_id']));
+    }
+
+    public function test_gourmet_counts_each_food_once_and_never_care_items(): void
+    {
+        $player = $this->registerAndCreditWallet(0, 'cash');
+        $headers = $this->auth($player['token'], self::SECRET);
+        $this->grant($player['account_id'], 'farm_apple', 2);
+        $this->grant($player['account_id'], 'drink_stout', 1);
+        $this->grant($player['account_id'], 'med_bandage', 1);
+
+        foreach (['farm_apple', 'farm_apple', 'farm_apple', 'drink_stout', 'med_bandage'] as $code) {
+            $this->postJson('/api/survival/consume', ['code' => $code], $headers)->assertOk();
+        }
+
+        $this->assertSame(2, $this->counter($player['account_id'], ActionCounter::FoodsTasted));
+        $this->assertSame(5, $this->counter($player['account_id'], ActionCounter::FoodEaten));
     }
 
     private function counter(int $accountId, ActionCounter $counter): int
