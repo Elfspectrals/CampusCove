@@ -8,6 +8,7 @@ use App\Services\StarterCosmeticGrantService;
 use App\Support\FoodCatalog;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use RuntimeException;
 
 class ShopSeeder extends Seeder
 {
@@ -419,6 +420,10 @@ class ShopSeeder extends Seeder
             self::coins(LockpickService::ITEM_CODE, 120, 146),
             self::coins(LockpickService::REINFORCED_LOCK_CODE, 600, 147),
             self::coins(HouseAlarmService::ITEM_CODE, 400, 148),
+            self::coins('tool_secateurs', 180, 149),
+            self::coins('tool_wrench', 120, 150),
+            self::coins('tool_hammer', 120, 151),
+            self::coins('tool_crowbar', 120, 152),
         ];
         foreach (FoodCatalog::items() as $i => $food) {
             if ($food['price'] !== null) {
@@ -427,7 +432,11 @@ class ShopSeeder extends Seeder
         }
 
         foreach ($catalogRows as $catalog) {
-            $itemDefId = $itemDefIds[$catalog['item_def_code']];
+            $itemDefId = $itemDefIds[$catalog['item_def_code']]
+                ?? (int) DB::table('item_defs')->where('code', $catalog['item_def_code'])->value('item_def_id');
+            if ($itemDefId === 0) {
+                throw new RuntimeException("Shop catalog item {$catalog['item_def_code']} has no item_defs row");
+            }
 
             $exists = DB::table('shop_catalog_items')->where('item_def_id', $itemDefId)->exists();
             if ($exists) {

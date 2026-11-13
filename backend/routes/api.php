@@ -20,6 +20,7 @@ use App\Http\Controllers\GemShopController;
 use App\Http\Controllers\HouseAlarmController;
 use App\Http\Controllers\HousingController;
 use App\Http\Controllers\InventoryController;
+use App\Http\Controllers\JobToolController;
 use App\Http\Controllers\LockpickController;
 use App\Http\Controllers\OrchardController;
 use App\Http\Controllers\PlayerInventoryLayoutController;
@@ -92,6 +93,8 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
         Route::post('/orchard/pick', [OrchardController::class, 'pick']);
         Route::post('/orchard/sell', [OrchardController::class, 'sell']);
         Route::post('/farm/pick', [FarmController::class, 'pick']);
+        Route::post('/tools/hold', [JobToolController::class, 'hold']);
+        Route::post('/tools/wear', [JobToolController::class, 'wear']);
         Route::post('/zone/checkout', [ZoneShopController::class, 'checkout']);
         Route::post('/zone/sell', [ZoneShopController::class, 'sell']);
         Route::post('/trades/execute', [TradeController::class, 'execute']);

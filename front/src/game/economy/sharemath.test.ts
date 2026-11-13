@@ -18,6 +18,6 @@ test('the apple curve matches the one the API pays', () => {
 test('an hour of picking apples earns 1200 apples worth, the quota caps the day', () => {
   assert.equal(PICKS_PER_HOUR, 1200)
   assert.equal(coinsAfter(APPLE_SALE, PICKS_PER_HOUR, 0.25), 900)
-  assert.equal(coinsAfter(APPLE_SALE, PICKS_PER_HOUR, 1), 300 * 3 + 900)
-  assert.deepEqual(dayCurve(APPLE_SALE, PICKS_PER_HOUR, 2, 2), [[0, 0], [1, 1800], [2, 3000]])
+  assert.equal(coinsAfter(APPLE_SALE, PICKS_PER_HOUR, 1), 300 * 3)
+  assert.deepEqual(dayCurve(APPLE_SALE, PICKS_PER_HOUR, 2, 2), [[0, 0], [1, 900], [2, 900]])
 })

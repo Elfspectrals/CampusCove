@@ -28,6 +28,7 @@ import {
   tickHealOverTime,
   tickStats
 } from './survivalStats.ts'
+import { emptyHand } from './tools.ts'
 import type { ClientPayload, GameClient, GameRoom, Player, Stats } from './types.ts'
 import { type ClinicBed, citySpawn, worldClinic, worldFountains, worldHouse } from './world.ts'
 
@@ -145,6 +146,7 @@ function knockOut(room: GameRoom, client: GameClient, player: Player, cause: Kno
   player.knockedOutUntil = Date.now() + KNOCKOUT_MS
   player.speedBoostUntil = 0
   player.healOverTime = null
+  emptyHand(room, client, player)
   leavePub(room, player)
   client.send('survival_knocked_out', { durationMs: KNOCKOUT_MS, cause })
   const body = cause === 'health' && killerAccountId !== null ? { killer_account_id: killerAccountId } : null
@@ -156,7 +158,8 @@ function knockOut(room: GameRoom, client: GameClient, player: Player, cause: Kno
         balanceAfter: typeof data?.balance_after === 'number' ? data.balance_after : null,
         lostItems: Number(data?.lost?.items) || 0,
         lostClothes: Number(data?.lost?.clothes) || 0,
-        lostCash: Number(data?.cash_drop?.amount) || 0
+        lostCash: Number(data?.cash_drop?.amount) || 0,
+        lostTools: Array.isArray(data?.cash_drop?.tools) ? data.cash_drop.tools.length : 0
       })
       if (cause === 'health') dropCashBag(room, diedAt, data?.cash_drop)
     })

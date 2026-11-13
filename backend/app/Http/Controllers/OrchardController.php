@@ -12,7 +12,9 @@ class OrchardController extends Controller
 
     public function pick(Request $request): JsonResponse
     {
-        return response()->json($this->orchard->pick($this->accountId($request)));
+        $tool = $request->validate(['tool' => 'nullable|string|in:'.OrchardService::PICK_TOOL])['tool'] ?? null;
+
+        return response()->json($this->orchard->pick($this->accountId($request), $tool));
     }
 
     public function sell(Request $request): JsonResponse

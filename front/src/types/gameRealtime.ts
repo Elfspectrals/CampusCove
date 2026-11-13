@@ -15,6 +15,8 @@ export interface RemoteUserPayload {
   character?: unknown
   /** Pub seat the player sits on (socket/src/pub.ts), null or absent when standing. */
   seatId?: string | null
+  /** Job tool in hand, checked by the socket (docs/TOOLS.md). */
+  heldTool?: string | null
 }
 
 /** 'user_seated': a visible player sat down on a pub seat, or stood up (`seatId` null). */
@@ -446,6 +448,8 @@ export interface CashBagPickedPayload {
   id: number
   amount: number
   cash: number
+  /** Job tools that were in the bag, now in the picker's inventory (docs/TOOLS.md). */
+  tools?: string[]
 }
 
 export interface CashBagErrorPayload {

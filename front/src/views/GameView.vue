@@ -87,6 +87,7 @@ import { useWatchBank } from '../composables/game/useWatchBank'
 import { useGps } from '../composables/game/useGps'
 import { useWatchContacts } from '../composables/game/useWatchContacts'
 import { usePunch } from '../composables/game/usePunch'
+import { useHeldTool } from '../composables/game/useHeldTool'
 import { useShopPurchase } from '../composables/useShopPurchase'
 import { toggleCollisionDebug } from '../game/collision/collisionDebug'
 import { toggleTerrainDebug } from '../game/town/terrainDebug'
@@ -557,7 +558,11 @@ const cashBags = useCashBags({
   promptsHidden: () => inventoryOpen.value || !canUsePub(),
   promptLabel: () => t('cashBag.prompt'),
   say: (text) => survival.say(text),
-  pickedMessage: (amount) => t('cashBag.picked', { amount }),
+  pickedMessage: (amount, toolCount) => {
+    if (toolCount === 0) return t('cashBag.picked', { amount })
+    return amount > 0 ? t('cashBag.pickedTools', { amount, count: toolCount }) : t('cashBag.pickedOnlyTools', { count: toolCount })
+  },
+  onToolsPicked: () => refreshOwnedItems(),
 })
 watch(atmOpen, (open) => {
   if (!open && !document.pointerLockElement) requestPointerLock()
@@ -636,9 +641,16 @@ let arms: ReturnType<typeof createFirstPersonArms> | null = null
 watch(() => selectedItem.value?.code ?? null, () => arms?.equip())
 
 /** Model shown in the right hand: tools and food (a half-eaten item is drawn smaller). */
+const FIRST_PERSON_TOOL_SCALE = 0.6
+
+function holdingJobTool(): boolean {
+  return heldTool.code.value !== null && heldTool.code.value === selectedItem.value?.code
+}
+
 function heldModel(): { url: string | null; scale: number } {
   const item = selectedItem.value
   if (!item || (item.kind !== 'tool' && item.kind !== 'consumable')) return { url: null, scale: 1 }
+  if (holdingJobTool()) return { url: item.model_glb, scale: FIRST_PERSON_TOOL_SCALE }
   const eaten = item.portions && item.portions_left ? item.portions_left / item.portions : 1
   return { url: item.model_glb, scale: 0.55 + 0.45 * eaten }
 }
@@ -706,6 +718,10 @@ const survival = useSurvival({
   onCashLost: (amount) => {
     applyCachedBalanceAfterPurchase('cash', 0)
     survival.say(t('cashBag.dropped', { amount }))
+  },
+  onToolsLost: (count) => {
+    refreshOwnedItems()
+    survival.say(t('cashBag.droppedTools', { count }))
   },
   onBelongingsLost: (clothes) => {
     refreshOwnedItems()
@@ -1152,6 +1168,7 @@ const movement = useGameMovement({
     updateFrontDoors(dt, isBuildingDoorOpen)
     arms?.update(dt, myPosition)
     const held = heldModel()
+    arms?.setHolding(holdingJobTool())
     heldItem.update(arms?.rightHand() ?? null, held.url, held.scale)
     survival.tick(dt)
     stamina.value = punch.staminaNow()
@@ -1168,6 +1185,14 @@ const movement = useGameMovement({
 })
 const { requestPointerLock, onCanvasMouseDown } = movement
 
+const heldTool = useHeldTool({
+  gameRoomRef,
+  selectedCode: () => selectedItem.value?.code ?? null,
+  itemName: (code) => (selectedItem.value?.code === code ? selectedItem.value.name.toLowerCase() : 'tool'),
+  say: (text) => survival.say(text),
+  playSound: sfx.play,
+  refreshInventory: () => refreshOwnedItems(),
+})
 const punch = usePunch({
   gameRoomRef,
   getScene,
@@ -1183,6 +1208,7 @@ const punch = usePunch({
   joltCamera: movement.joltCamera,
   knockBack: movement.knockBack,
   playSound: sfx.play,
+  cooldownMs: () => heldTool.cooldownMs.value,
 })
 const { hitMarker } = punch
 
