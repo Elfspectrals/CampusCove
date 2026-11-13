@@ -21,8 +21,20 @@ const KEY_CODES: Readonly<Record<string, WatchKey>> = {
   Backspace: 'back',
 }
 
-export function watchKeyOf(code: string): WatchKey | null {
-  return KEY_CODES[code] ?? null
+const MOVE_KEYS: ReadonlyArray<[MoveAction, WatchKey]> = [
+  ['moveForward', 'up'],
+  ['moveBack', 'down'],
+  ['moveLeft', 'left'],
+  ['moveRight', 'right'],
+]
+
+export type MoveAction = 'moveForward' | 'moveBack' | 'moveLeft' | 'moveRight'
+
+/** The movement keys (ZQSD / WASD, as bound by the player) steer the watch too. */
+export function watchKeyOf(code: string, isMoveKey: (action: MoveAction, code: string) => boolean = () => false): WatchKey | null {
+  const fixed = KEY_CODES[code]
+  if (fixed) return fixed
+  return MOVE_KEYS.find(([action]) => isMoveKey(action, code))?.[1] ?? null
 }
 
 export const WATCH_HOME: WatchView = { screen: 'home', app: 0 }

@@ -1,6 +1,6 @@
 # Watch apps
 
-The survival watch on the left wrist is also the player's phone: a tap on the watch key (T, rebindable) opens its apps in the bottom left corner. The player keeps walking and looking around while it is open, so every app is driven by the keyboard only. Mockup: `docs/mockups/watch-apps.html`.
+The survival watch on the left wrist is also the player's phone: a tap on the watch key (T, rebindable) opens its apps in the bottom left corner. The player keeps looking around while it is open; the movement keys (ZQSD / WASD as bound, or the arrows) choose, Enter acts and Backspace goes back, so the player stands still while using it. Mockup: `docs/mockups/watch-apps.html`.
 
 ## Keys
 

@@ -16,14 +16,18 @@ const SLOT_PITCH = 0.5
 const FIRST_SLOT_X = -1.25
 
 interface CopiesSpace {
+  /** Height the copies stand on, from the table top. */
   floor: number
+  /** Height of the container's rim: an item too big to go in sits on it. */
+  top: number
   box: Vec3
 }
 
+// The basket model is a closed heap, so its copies lie on the heap instead of inside it.
 const COPIES_SPACE: Record<MarketLotContainer, CopiesSpace> = {
-  crate: { floor: 0.02, box: [0.4, 0.35, 0.3] },
-  basket: { floor: 0.02, box: [0.22, 0.3, 0.22] },
-  flat: { floor: 0, box: [0.46, 0.3, 0.6] },
+  crate: { floor: 0.02, top: 0.18, box: [0.4, 0.35, 0.3] },
+  basket: { floor: 0.13, top: 0.13, box: [0.22, 0.3, 0.22] },
+  flat: { floor: 0, top: 0, box: [0.46, 0.3, 0.6] },
 }
 
 export interface StallLook {
@@ -53,6 +57,12 @@ export function copiesShown(quantity: number): number {
 
 export function copiesSpace(container: MarketLotContainer): CopiesSpace {
   return COPIES_SPACE[container]
+}
+
+/** Where the copies stand: in the container, or on its rim when the item is too big to go in. */
+export function copiesFloor(container: MarketLotContainer, fitting: number): number {
+  const space = COPIES_SPACE[container]
+  return fitting > 0 ? space.floor : space.top
 }
 
 export function copiesThatFit(container: MarketLotContainer, itemSize: Vec3, quantity: number): number {

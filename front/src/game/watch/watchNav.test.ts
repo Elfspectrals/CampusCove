@@ -52,6 +52,12 @@ test('only the arrows, Enter and Backspace drive the watch', () => {
   assert.equal(watchKeyOf('ArrowLeft'), 'left')
   assert.equal(watchKeyOf('NumpadEnter'), 'enter')
   assert.equal(watchKeyOf('KeyW'), null)
+  const azerty = (action: string, code: string) => ({ moveForward: 'KeyZ', moveBack: 'KeyS', moveLeft: 'KeyQ', moveRight: 'KeyD' })[action] === code
+  assert.equal(watchKeyOf('KeyZ', azerty), 'up')
+  assert.equal(watchKeyOf('KeyS', azerty), 'down')
+  assert.equal(watchKeyOf('KeyQ', azerty), 'left')
+  assert.equal(watchKeyOf('KeyD', azerty), 'right')
+  assert.equal(watchKeyOf('KeyE', azerty), null)
 })
 
 test('when a list reorders, the selection stays on the same row, or keeps its place if that row is gone', () => {

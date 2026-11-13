@@ -107,6 +107,7 @@ function tickClock(): void {
 let clockTimer: number | undefined
 
 const errorText = computed(() => ({ gps: null, alarm: null, contacts: props.contactsError, bank: props.bankError, trade: props.error, admin: props.adminError })[openApp.value?.key ?? 'trade'])
+const chooseKeys = `${actionKeyLabels('moveForward').slice(-1)[0] ?? '↑'}${actionKeyLabels('moveBack')[0] ?? '↓'}`
 const enterHint = computed(() => (openApp.value ? openApp.value.enterLabel : t('watch.keys.open')))
 
 const screenRef = ref<HTMLElement | null>(null)
@@ -121,7 +122,7 @@ function onKey(e: KeyboardEvent): void {
     e.stopPropagation()
     return
   }
-  const key = watchKeyOf(e.code)
+  const key = watchKeyOf(e.code, matches)
   if (!key) return
   e.preventDefault()
   e.stopPropagation()
@@ -241,7 +242,7 @@ onUnmounted(() => {
         <p v-if="openApp && errorText" class="m-0 bg-coral/20 px-3 py-1.5 text-[11px] font-bold text-coral">{{ errorText }}</p>
 
         <div class="flex justify-center gap-2.5 border-t border-line/10 px-2 pb-2 pt-1.5 text-[11px] font-semibold text-mist">
-          <span><kbd class="rounded bg-ink-700 px-1 text-[10px] font-bold text-fog">↑↓</kbd> {{ t('watch.keys.choose') }}</span>
+          <span><kbd class="rounded bg-ink-700 px-1 text-[10px] font-bold text-fog">{{ chooseKeys }}</kbd> {{ t('watch.keys.choose') }}</span>
           <span v-if="enterHint"><kbd class="rounded bg-ink-700 px-1 text-[10px] font-bold text-fog">↵</kbd> {{ enterHint }}</span>
           <span><kbd class="rounded bg-ink-700 px-1 text-[10px] font-bold text-fog">⌫</kbd> {{ openApp ? t('watch.keys.back') : t('watch.keys.close') }}</span>
         </div>
