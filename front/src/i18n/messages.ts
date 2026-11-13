@@ -23,6 +23,9 @@ export const messages = {
       close: 'Close',
       more: 'Read the cookie policy',
     },
+    badges: {
+      new_citizen: 'New citizen',
+    },
     tutorial: {
       title: 'First day · {n}/{total}',
       steps: {
@@ -437,6 +440,9 @@ export const messages = {
       save: 'Enregistrer mes choix',
       close: 'Fermer',
       more: 'Lire la politique cookies',
+    },
+    badges: {
+      new_citizen: 'Nouveau citoyen',
     },
     tutorial: {
       title: 'Premier jour · {n}/{total}',

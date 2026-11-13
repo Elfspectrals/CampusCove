@@ -2,6 +2,7 @@ export interface RemoteUserPayload {
   sessionId: string
   id: string
   pseudo: string
+  badges?: string[]
   color: number
   x: number
   y: number

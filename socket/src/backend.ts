@@ -3,6 +3,7 @@
 import { createHash, timingSafeEqual } from 'node:crypto'
 import { BACKEND_API_URL, CLOUDFLARE_ENFORCE_ORIGIN, CLOUDFLARE_ORIGIN_SECRET, REALTIME_SHARED_SECRET } from './config.ts'
 import type { Identity } from './types.ts'
+import { parseBadges } from './badges.ts'
 
 /** Unvalidated JSON from the API or a client: callers check every field they read. */
 export type Json = any
@@ -39,7 +40,7 @@ export async function resolveIdentity(options: Json, ip: string): Promise<Identi
   const accountId = parseAccountId(data?.user?.account_id)
   if (accountId === null) throw new Error('invalid account id in auth payload')
   const pseudo = firstNonEmpty(data?.user?.display_name, data?.user?.username) ?? `User_${accountId}`
-  return { accountId, pseudo, token, isAdmin: data?.user?.is_admin === true, ip }
+  return { accountId, pseudo, token, isAdmin: data?.user?.is_admin === true, badges: parseBadges(data?.user?.badges), ip }
 }
 
 const sha256 = (value: string) => createHash('sha256').update(value).digest()

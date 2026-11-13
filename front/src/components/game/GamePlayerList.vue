@@ -3,11 +3,14 @@ import { onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { matches } from '../../config/keybindings'
 import { MAX_VOLUME } from '../../game/voice'
+import { BADGES, type BadgeCode } from '../../game/badges'
+import UiIcon from '../ui/UiIcon.vue'
 
 interface ListedPlayer {
   sessionId: string
   accountId: string
   pseudo: string
+  badges: BadgeCode[]
 }
 
 const props = defineProps<{
@@ -53,7 +56,12 @@ onUnmounted(() => {
             :class="['size-2.5 shrink-0 rounded-full', speaking.has(player.sessionId) ? (muted.includes(player.accountId) ? 'bg-coral' : 'animate-pulse bg-mint') : 'bg-mist/30']"
             :aria-label="speaking.has(player.sessionId) ? t('playerList.speaking') : undefined"
           />
-          <span class="min-w-0 flex-1 truncate font-bold text-fog">{{ player.pseudo }}</span>
+          <span class="flex min-w-0 flex-1 items-center gap-1.5">
+            <span v-for="badge in player.badges" :key="badge" class="shrink-0 text-sun" role="img" :title="t(`badges.${badge}`)" :aria-label="t(`badges.${badge}`)">
+              <UiIcon :name="BADGES[badge].icon" :size="16" />
+            </span>
+            <span class="min-w-0 truncate font-bold text-fog">{{ player.pseudo }}</span>
+          </span>
           <input
             type="range"
             class="w-24 shrink-0 accent-sun sm:w-32"

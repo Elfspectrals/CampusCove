@@ -136,7 +136,7 @@ Decision (2026-11-13): a new account plays a 5-minute tutorial right after the c
 - [done] One-line quest log under the minimap, skip with confirmation, resume in the in-game settings.
 - [done] Marker to the objective: a diamond with the distance over the nearest orchard tree, the farmer, the nearest ATM or the darts oche, stuck to the screen edge with an arrow when out of view; none while eating.
 - [done] Bubbles the first time within 4 m of an ATM, an NPC (zone buyers, bartender) or a shop or work door, 6 s over the place, once per kind, while the tutorial is active; remembered in this browser per account (`cc.tutorialHints.<account>`).
-- [todo] "New citizen" badge next to the pseudo.
+- [doing] "New citizen" badge next to the pseudo: badges are SVG icons (decided 2026-11-13), one shared `account_badges` table that the tasks branch reuses for its badge rewards; shown in the Tab list; New citizen is the only badge also shown before the pseudo over the head (decided 2026-11-13, task badges stay off the head). Task tier badges are read from the tasks tables by `BadgeService::badges()`, not copied. Granted when the tutorial ends, with the server-side steps.
 - [todo] Playtest in the game.
 
 ## Later

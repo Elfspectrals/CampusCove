@@ -20,6 +20,15 @@ While the tutorial is `active` at `play_darts`, `POST /pub/play` for `darts` ans
 
 Finishing gives the "New citizen" badge next to the pseudo. No coins.
 
+## Badges
+
+A badge is a status shown as an icon, never an item: it cannot be traded, sold or lost at death.
+
+- Table `account_badges` (`account_id`, `badge`, `granted_at`), one row per account and badge; the `CHECK` lists the stored codes (`new_citizen`).
+- `BadgeService::badges()` is the one entry point for every badge of an account: `GET /api/user` returns it as `user.badges`. Task tier badges are not copied into `account_badges`: their truth is `account_task_tiers` (tasks branch), and `badges()` will add the highest tier of each task as `task:<task>:<tier>` when both branches meet. `BadgeService::grant()` is idempotent.
+- The socket reads `user.badges` when the player joins and sends them to the other players (`badges` in the player payload); a malformed list refuses the join.
+- The front maps each code to an icon of `front/src/components/ui/icons.ts` (`front/src/game/badges.ts`, `new_citizen` = `home`). Every badge shows in the Tab player list; only New citizen also shows before the pseudo over the head (decided 2026-11-13: task badges stay on the Home page and in the Tab list). A code the front does not know yet is not drawn.
+
 ## Marker
 
 The front points at the objective of the current step (`front/src/game/tutorialMarker.ts`): the nearest orchard tree, nothing while eating (any place works), the orchard farmer, the nearest ATM, then the darts oche at the pub. The marker shows the ground distance in metres, through walls, and sticks to the screen edge with an arrow when the target is out of view.

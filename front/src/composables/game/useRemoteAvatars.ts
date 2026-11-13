@@ -32,6 +32,8 @@ import { createRacePint, type RacePint } from '../../game/pub/racePint'
 import { seatedAvatarFeetY } from '../../game/pub/seats'
 import type { SfxName } from '../../game/sfx'
 import type { RemoteUserPayload } from '../../types/gameRealtime'
+import { BADGES, overHeadBadges, shownBadges, type BadgeCode } from '../../game/badges'
+import { ICONS } from '../../components/ui/icons'
 
 /** How fast remote avatars catch up with their last known position (1/s; higher = snappier). */
 const REMOTE_SMOOTHING = 12
@@ -43,6 +45,7 @@ const ANIMATION_MAX_DISTANCE = 60
 interface RemoteAvatar {
   userId: string
   pseudo: string
+  badges: BadgeCode[]
   group: THREE.Group
   nameTag: NameTag
   voiceIcon: VoiceIcon
@@ -121,6 +124,10 @@ function placeAvatar(group: THREE.Group, x: number, y: number, z: number, ry: nu
  * render token and a stale load (superseded, or for a player who left) is thrown away; a player is never
  * shown twice even if they reconnect under a new session.
  */
+function badgeIconPaths(badges: readonly BadgeCode[]): string[] {
+  return overHeadBadges(badges).map((badge) => ICONS[BADGES[badge].icon])
+}
+
 export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
   const avatars = new Map<string, RemoteAvatar>()
   const sessionByUserId = new Map<string, string>()
@@ -243,8 +250,9 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     avatars.set(sessionId, {
       userId: data.id,
       pseudo: data.pseudo,
+      badges: shownBadges(data.badges),
       group,
-      nameTag: createNameTag(group, data.pseudo),
+      nameTag: createNameTag(group, data.pseudo, badgeIconPaths(shownBadges(data.badges))),
       voiceIcon: createVoiceIcon(group),
       voiceState: null,
       chatBubble: null,
@@ -309,7 +317,7 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     scene.add(group)
     const racePint = latest.racePint ? createRacePint(group) : null
     racePint?.setProgress(latest.raceProgress)
-    const nameTag = createNameTag(group, latest.pseudo)
+    const nameTag = createNameTag(group, latest.pseudo, badgeIconPaths(latest.badges))
     const voiceIcon = createVoiceIcon(group)
     const rebuilt = { ...latest, group, nameTag, voiceIcon, chatBubble: null, outfit, punchOffsetX: 0, punchOffsetZ: 0, racePint }
     avatars.set(sessionId, rebuilt)
@@ -345,8 +353,8 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     if (entry) entry.voiceState = state
   }
 
-  function players(): Array<{ sessionId: string; accountId: string; pseudo: string }> {
-    return [...avatars.entries()].map(([sessionId, a]) => ({ sessionId, accountId: a.userId, pseudo: a.pseudo }))
+  function players(): Array<{ sessionId: string; accountId: string; pseudo: string; badges: BadgeCode[] }> {
+    return [...avatars.entries()].map(([sessionId, a]) => ({ sessionId, accountId: a.userId, pseudo: a.pseudo, badges: a.badges }))
   }
 
   function accountOf(sessionId: string): string | null {
