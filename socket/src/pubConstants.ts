@@ -2,6 +2,7 @@ export const SEAT_REACH = 2.5
 export const COUNTER_REACH = 2.6
 export const BARTENDER_REACH = 3.6
 export const BOUNCER_REACH = 2.6
+export const QUIZMASTER_REACH = 3
 export const POUR_MS = 3000
 /** One phrase per week, cycled in order; add more to rotate (the front must not hard-code it). */
 export const SECRET_PHRASES: readonly string[] = ['paris wiener']

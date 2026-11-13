@@ -77,6 +77,7 @@ export interface RoomInitPayload {
   houseFurniture?: HouseFurniturePayload[]
   openDoors?: string[]
   pubSecretOpen?: boolean
+  pubQuiz?: PubQuizAnnouncePayload | null
   cashBags?: CashBagPayload[]
   /** The API flags this account is_admin: the watch shows its Admin app (the server re-checks every admin message). */
   isAdmin?: boolean
@@ -251,6 +252,19 @@ export interface PubBouncerBlockPayload {
 
 export interface PubBellPayload {
   sessionId: string
+}
+
+export interface PubQuizAnnouncePayload {
+  startsAt: number
+}
+
+export interface PubQuizLobbyPayload {
+  startsAt: number
+  contestants: Array<{ sessionId: string; pseudo: string }>
+}
+
+export interface PubQuizCancelledPayload {
+  reason: 'not_enough_players'
 }
 
 export interface PubRewardPayload {

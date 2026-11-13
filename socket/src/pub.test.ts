@@ -20,7 +20,7 @@ const manifest = {
     beds: [{ id: 'bed_01', position: [-126, 1.8, 16], bed: [-128, 0.85, 16], yaw: 0 }]
   },
   pub: {
-    bartender: [90, 0, -138], bartenderYaw: 0, bouncer: [100, 0, -142],
+    bartender: [90, 0, -138], bartenderYaw: 0, bouncer: [100, 0, -142], quizmaster: [91, 0.2, -123.5],
     counter: [90, 0, -135], taps: [90, 1.05, -137], serve: [91, 1.05, -136], bell: [92, 1.9, -137],
     secretDoor: { position: [102, 0, -142], yaw: 0 },
     secretRoom: { minX: 100, maxX: 108, minZ: -150, maxZ: -143 },

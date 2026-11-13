@@ -14,7 +14,7 @@ const manifest = {
   bounds: { minX: -500, maxX: 500, minZ: -500, maxZ: 500 },
   zones: [{ key: 'pub', bounds: { minX: 40, maxX: 140, minZ: -180, maxZ: -80 }, buildings: [] }],
   pub: {
-    bartender: [90, 0, -138], bartenderYaw: 0, bouncer: [100, 0, -142],
+    bartender: [90, 0, -138], bartenderYaw: 0, bouncer: [100, 0, -142], quizmaster: [91, 0.2, -123.5],
     counter: [90, 0, -135], taps: [90, 1.05, -137], serve: [91, 1.05, -136], bell: [92, 1.9, -137],
     secretDoor: { position: [102, 0, -142], yaw: 0 },
     secretRoom: { minX: 100, maxX: 108, minZ: -150, maxZ: -143 },
@@ -41,7 +41,8 @@ const { leavePub } = await import('./pubGames.ts')
 const { QUIZ_ADMIN_LEAD_MS, QUIZ_ANNOUNCE_MS, QUIZ_ANSWER_MS, QUIZ_LAST_CALL_MS, QUIZ_QUESTION_COUNT, QUIZ_REVEAL_MS } = await import('./pubConstants.ts')
 await loadWorld()
 
-const IN_PUB = { x: 90, z: -130 }
+const IN_PUB = { x: 91, z: -122 }
+const FAR_FROM_HOST = { x: 90, z: -140 }
 const OUTSIDE = { x: 0, z: 0 }
 
 function fakePlayer(sessionId: string, at: { x: number, z: number }, isAdmin = false): Player {
@@ -111,13 +112,15 @@ test('registration announces the quiz to the whole town, again one minute before
   assert.deepEqual(quizSnapshot(room), { startsAt })
 })
 
-test('only players inside the pub can join, once', () => {
-  const { room, clients } = fakeRoom(fakePlayer('a', IN_PUB), fakePlayer('o', OUTSIDE))
+test('only players next to the quiz host can join, once', () => {
+  const { room, clients } = fakeRoom(fakePlayer('a', IN_PUB), fakePlayer('o', OUTSIDE), fakePlayer('f', FAR_FROM_HOST))
   onQuizJoin(room, clients[0])
   assert.deepEqual(received(clients[0], 'pub_error'), [{ message: 'The quiz is not taking names right now.', code: 'quiz_closed' }])
   openRegistration(room, 2_000_000, 'q', 1_000_000)
   onQuizJoin(room, clients[1])
   assert.equal(received(clients[1], 'pub_error').at(-1).code, 'quiz_outside')
+  onQuizJoin(room, clients[2])
+  assert.equal(received(clients[2], 'pub_error').at(-1).code, 'quiz_outside')
   onQuizJoin(room, clients[0])
   assert.deepEqual(received(clients[0], 'pub_quiz_lobby').at(-1).contestants, [{ sessionId: 'a', pseudo: 'A' }])
   onQuizJoin(room, clients[0])

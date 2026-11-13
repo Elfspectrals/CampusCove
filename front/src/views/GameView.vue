@@ -70,6 +70,7 @@ import { useZoneDecor } from '../composables/game/useZoneDecor'
 import { usePub } from '../composables/game/usePub'
 import { usePubChallenge } from '../composables/game/usePubChallenge'
 import { usePubGames } from '../composables/game/usePubGames'
+import { usePubQuiz } from '../composables/game/usePubQuiz'
 import { useRenderStats } from '../composables/game/useRenderStats'
 import { useRoomEnvironment } from '../composables/game/useRoomEnvironment'
 import { useSeats } from '../composables/game/useSeats'
@@ -431,6 +432,15 @@ const {
   board: pubRaceBoard,
 } = pubGames
 
+const pubQuiz = usePubQuiz({
+  myPosition,
+  getCamera,
+  canvasRef,
+  gameRoomRef,
+  promptsHidden: () => inventoryOpen.value || !canUsePub(),
+  say: (text) => survival.say(text),
+})
+
 const pubChallenge = usePubChallenge({
   getScene,
   getCamera,
@@ -556,7 +566,7 @@ const interactions = useInteractionTargets({
     if (activeFurniture.value?.store.hasCounter.value) activeFurniture.value.store.toggleTarget(useWithShift)
     else openStorePurchase()
   },
-  sources: [pub.source, pubChallenge.source, pubGames.source, seats.source, orchard.source, farm.source, zoneBuyers.source, atm.source, cashBags.source],
+  sources: [pub.source, pubQuiz.source, pubChallenge.source, pubGames.source, seats.source, orchard.source, farm.source, zoneBuyers.source, atm.source, cashBags.source],
 })
 const { doorPrompt } = interactions
 
@@ -818,6 +828,7 @@ const environment = useRoomEnvironment({
     clinic.onTownLoaded(manifest)
     seats.onTownLoaded(manifest)
     pub.onTownLoaded(manifest)
+    pubQuiz.onTownLoaded(manifest)
     pubGames.onTownLoaded(manifest)
     orchard.onTownLoaded(manifest)
     farm.onTownLoaded(manifest)
@@ -1157,6 +1168,7 @@ const realtime = useGameRealtime({
   seats: { seatPose: seats.seatPose, onSeated: seats.onSeated },
   pub: pub.handlers,
   pubGames: pubGames.handlers,
+  pubQuiz: pubQuiz.handlers,
   orchard: orchard.handlers,
   zoneBuyers: zoneBuyers.handlers,
   atm: atm.handlers,

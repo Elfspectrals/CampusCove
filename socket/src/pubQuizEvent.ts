@@ -1,5 +1,5 @@
 import { callRealtimeBackend, errorPayload } from './backend.ts'
-import { forEachPubClient, inPubZone, sendPubError } from './pub.ts'
+import { forEachPubClient, inPubZone, isWithinPubReach, sendPubError } from './pub.ts'
 import {
   QUIZ_ADMIN_LEAD_MS,
   QUIZ_ANNOUNCE_MS,
@@ -7,7 +7,8 @@ import {
   QUIZ_LAST_CALL_MS,
   QUIZ_MIN_CONTESTANTS,
   QUIZ_QUESTION_COUNT,
-  QUIZ_REVEAL_MS
+  QUIZ_REVEAL_MS,
+  QUIZMASTER_REACH
 } from './pubConstants.ts'
 import {
   type PubQuiz,
@@ -25,10 +26,11 @@ import {
 } from './pubQuiz.ts'
 import { QUIZ_BANK } from './pubQuizQuestions.ts'
 import type { ClientPayload, GameClient, GameRoom, Player } from './types.ts'
+import { worldPub } from './world.ts'
 
 const ERRORS = {
   closed: 'The quiz is not taking names right now.',
-  outside: 'Come into the pub to join the quiz.',
+  outside: 'Come and see the quiz host to join.',
   started: 'The quiz has already started.',
   already_joined: 'You are already in.',
   not_contestant: 'You are not playing this quiz.',
@@ -165,7 +167,8 @@ export function onQuizJoin(room: GameRoom, client: GameClient): void {
   const quiz = room.pub.quiz
   if (!player) return
   if (!quiz) return sendPubError(client, ERRORS.closed, 'quiz_closed')
-  if (!inPubZone(player)) return sendPubError(client, ERRORS.outside, 'quiz_outside')
+  const pub = worldPub()
+  if (!pub || !isWithinPubReach(player, pub.quizmaster, QUIZMASTER_REACH)) return sendPubError(client, ERRORS.outside, 'quiz_outside')
   const result = joinQuiz(quiz, client.sessionId, player.accountId, player.pseudo)
   if (result !== 'ok') return sendPubError(client, ERRORS[result], `quiz_${result}`)
   const payload = lobby(quiz)
