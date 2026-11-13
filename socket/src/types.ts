@@ -1,5 +1,6 @@
 // Shared shapes of the realtime server. Room helpers take a GameRoom (not CityRoom) so tests can pass fakes.
 import type { DrinkFastSim } from './drinkFastSim.ts'
+import type { PubQuiz } from './pubQuiz.ts'
 
 export interface Vec3 {
   x: number
@@ -193,6 +194,8 @@ export interface PubState {
   challenges: Map<string, PubChallenge>
   /** Last challenge sent per challenger (rate limit), pruned as it goes. */
   challengeSentAt: Map<string, number>
+  quiz: PubQuiz | null
+  quizSchedule: number
 }
 
 export interface ClinicBedOccupant {
@@ -217,6 +220,7 @@ export interface CashBag {
 }
 
 export interface GameRoom {
+  roomId: string
   players: Map<string, Player>
   cashBags: Map<number, CashBag>
   housingUnits: HousingUnit[]

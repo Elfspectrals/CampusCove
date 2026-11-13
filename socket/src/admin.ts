@@ -1,6 +1,7 @@
 // Admin tools on the watch: teleport to a public place, or bring a player next to you. Only accounts the API
 // flags is_admin (GET /user at join) get an answer; everyone else is ignored.
 import { leavePub } from './pubGames.ts'
+import { startQuizSoon } from './pubQuizEvent.ts'
 import { type TradeRoom, checkTradeDistance } from './trade.ts'
 import type { ClientPayload, GameClient, GameRoom, Player, Vec3 } from './types.ts'
 import { type TeleportDestination, teleportDestinations } from './world.ts'
@@ -86,4 +87,10 @@ export function onAdminSummon(room: AdminRoom, client: GameClient, payload: Clie
   teleportPlayer(room, target, to, admin.ry + Math.PI, now)
   const targetClient = room.clients.find((c) => c.sessionId === target.sessionId)
   targetClient?.send('admin_summoned', { byPseudo: admin.pseudo })
+}
+
+export function onAdminQuizStart(room: AdminRoom, client: GameClient, now = Date.now()): void {
+  const admin = adminOf(room, client)
+  if (!admin || coolingDown(admin, now)) return
+  startQuizSoon(room, now)
 }

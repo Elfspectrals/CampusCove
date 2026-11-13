@@ -55,3 +55,5 @@ export const QUIZ_QUESTION_COUNT = 15
 export const QUIZ_ANSWER_MS = 15_000
 export const QUIZ_POINTS_BASE = 500
 export const QUIZ_POINTS_SPEED = 500
+export const QUIZ_REVEAL_MS = 5000
+export const QUIZ_ADMIN_LEAD_MS = 30_000
