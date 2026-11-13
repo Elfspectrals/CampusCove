@@ -24,8 +24,13 @@ const manifest = {
   }
 }
 
-globalThis.fetch = async (url: string | URL | Request) => {
-  if (String(url) === process.env.WORLD_MANIFEST_URL) return new Response(JSON.stringify(manifest))
+const apiCalls: Array<{ token: string, path: string, body: any }> = []
+globalThis.fetch = async (url: string | URL | Request, init?: RequestInit) => {
+  const path = String(url)
+  if (path === process.env.WORLD_MANIFEST_URL) return new Response(JSON.stringify(manifest))
+  const token = String((init?.headers as Record<string, string>)?.Authorization ?? '').replace('Bearer ', '')
+  apiCalls.push({ token, path: path.replace(/^.*\/api/, ''), body: init?.body ? JSON.parse(String(init.body)) : null })
+  if (path.endsWith('/pub/quiz/reward')) return new Response(JSON.stringify({ coins: 8, pint: true, valid_contestants: 2 }))
   return new Response(JSON.stringify({}))
 }
 
@@ -41,7 +46,7 @@ const OUTSIDE = { x: 0, z: 0 }
 
 function fakePlayer(sessionId: string, at: { x: number, z: number }, isAdmin = false): Player {
   return {
-    sessionId, accountId: sessionId.charCodeAt(0), pseudo: sessionId.toUpperCase(), token: null, x: at.x, y: 1.6, z: at.z, ry: 0,
+    sessionId, accountId: sessionId.charCodeAt(0), pseudo: sessionId.toUpperCase(), token: `token-${sessionId}`, x: at.x, y: 1.6, z: at.z, ry: 0,
     seatId: null, pubShots: null, isAdmin, lastAdminActionAt: 0
   } as unknown as Player
 }
@@ -129,7 +134,7 @@ test('with fewer than two contestants the quiz is called off and the next one sc
   assert.equal(timers.length, 1)
 })
 
-test('a full quiz: questions without their answer, timed answers, reveals, then the results', () => {
+test('a full quiz: questions without their answer, timed answers, reveals, results, then the prize', async () => {
   const ana = fakePlayer('a', IN_PUB)
   const bob = fakePlayer('b', IN_PUB)
   const { room, clients, timers } = fakeRoom(ana, bob)
@@ -158,6 +163,14 @@ test('a full quiz: questions without their answer, timed answers, reveals, then 
   assert.equal(received(clients[0], 'pub_quiz_question').length, QUIZ_QUESTION_COUNT)
   assert.equal(received(clients[0], 'pub_quiz_results')[0].ranking[0].sessionId, 'a')
   assert.equal(room.pub.quiz, null)
+
+  await new Promise((resolve) => setImmediate(resolve))
+  assert.deepEqual(apiCalls.at(-1), {
+    token: 'token-a',
+    path: '/pub/quiz/reward',
+    body: { quiz_id: 'q', contestants: [{ account_id: 97, answered: 1 }, { account_id: 98, answered: 0 }] }
+  })
+  assert.deepEqual(received(clients[1], 'pub_quiz_prize'), [{ sessionId: 'a', pseudo: 'A', coins: 8, pint: true }])
 })
 
 test('a contestant who walks out of the pub is dropped at the next reveal', () => {

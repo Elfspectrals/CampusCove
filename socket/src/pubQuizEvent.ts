@@ -1,3 +1,4 @@
+import { callRealtimeBackend, errorPayload } from './backend.ts'
 import { forEachPubClient, inPubZone, sendPubError } from './pub.ts'
 import {
   QUIZ_ADMIN_LEAD_MS,
@@ -127,6 +128,23 @@ function finishQuiz(room: GameRoom, quiz: PubQuiz, now: number): void {
   const ranking = publicRanking(quiz)
   forEachPubClient(room, (c) => c.send('pub_quiz_results', { ranking }))
   scheduleNextQuiz(room, now)
+  void payWinner(room, quiz)
+}
+
+async function payWinner(room: GameRoom, quiz: PubQuiz): Promise<void> {
+  const [winner] = quizRanking(quiz)
+  const player = winner && room.players.get(winner.sessionId)
+  if (!player?.token) return
+  const contestants = [...quiz.contestants.values()].map(({ accountId, answered }) => ({ account_id: accountId, answered }))
+  try {
+    const prize = await callRealtimeBackend(player.token, '/pub/quiz/reward', 'POST', { quiz_id: quiz.id, contestants })
+    if (typeof prize?.coins !== 'number' || typeof prize?.pint !== 'boolean') throw new Error('The quiz prize answer is malformed.')
+    const payload = { sessionId: winner.sessionId, pseudo: winner.pseudo, coins: prize.coins, pint: prize.pint }
+    forEachPubClient(room, (c) => c.send('pub_quiz_prize', payload))
+  } catch (error) {
+    console.warn('[pub] quiz reward failed:', error instanceof Error ? error.message : error)
+    room.clients.find((c) => c.sessionId === winner.sessionId)?.send('pub_error', errorPayload(error, 'Your quiz prize could not be paid.', 'quiz_reward_failed'))
+  }
 }
 
 export function quizSnapshot(room: GameRoom): { startsAt: number } | null {
