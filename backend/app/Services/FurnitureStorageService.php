@@ -105,6 +105,16 @@ final class FurnitureStorageService
     /**
      * @param  list<int>  $roomFurnitureIds
      */
+    public static function moveInto(array $roomFurnitureIds, int $containerId): void
+    {
+        $containerIds = DB::table('furniture_storages')->whereIn('room_furniture_id', $roomFurnitureIds)->pluck('container_id');
+        DB::table('inventory_stacks')->whereIn('container_id', $containerIds)->update(['container_id' => $containerId, 'updated_at' => now()]);
+        self::destroy($roomFurnitureIds);
+    }
+
+    /**
+     * @param  list<int>  $roomFurnitureIds
+     */
     public static function destroy(array $roomFurnitureIds): void
     {
         $containerIds = DB::table('furniture_storages')->whereIn('room_furniture_id', $roomFurnitureIds)->pluck('container_id');
