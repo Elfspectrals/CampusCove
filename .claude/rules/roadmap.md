@@ -234,6 +234,21 @@ Decision (2026-11-13): job tools are sold in an aisle of the hardware store (the
 - [todo] Playtest with two players.
 - [todo] Hoe for the farm, after the farm quota fix.
 
+## Town market (doing, branch feat/town-market)
+
+Decision (2026-11-13): every Saturday from 15:00 to 17:00 (Paris time), six stalls appear on a new market square near the town centre. A player claims a free stall for 15 coins in cash, picks its canopy colour, and lays out up to six lots of any tradable item at a price of their choice; other players buy in cash. Market NPCs are ambience only (they buy nothing), so the market creates no coins. A 5 % tax on sales of 20 coins or more is the sink. Claiming a stall and buying both need an account at least 72 h old, as for trades. Lots are shown in crates and baskets. The economist reviewed it (2026-11-13). Contract in `docs/MARKET.md`. Rented mall stalls and the indoor mall market are another branch's work.
+
+- [done] Laravel: schedule, stalls, lots held in escrow, idempotent cash purchase, unsold lots returned at closing (`MarketService`, `market:close`).
+- [done] Socket: one `market` message (claim, list, withdraw, buy) checked within 3 m of the stall, state broadcast as `market_sync`, refreshed at opening and closing (`socket/src/market.ts`). Stall positions come from `market_stall` props in the zone files, so nothing is reachable until the market zone exists.
+- [done] Stall variety plan validated (`design-plans/market-stall.md`, 2026-11-13): square east of the town through an opening in the town hedge, six long-table stalls in an open U around a bandstand, stalls folded outside market hours, bare when free, canopy in the seller's colour when taken, the seller picks crate, basket or flat for each lot (`container`), one item model per unit up to 8.
+- [done] Stall models (`build_market_decor.py`): `decor/market_stall_folded`, `market_stall_free`, `market_stall_taken`, one shared builder, 176 to 368 triangles; the canopy stripe colour of a taken stall comes from `variants.json` (created with it). Decor category Market.
+- [done] Market square (`build_market_site.py`, `park/market_site`, zone `town_market`): paved square, bandstand, lamps, bunting, sign, trees, baked benches; hedge opening and site collisions by `front/scripts/apply-market.mjs`; pond terrain and fence cut along the path (`market_gate_cut`). Stalls are a runtime zone prop kind `market_stall` (zone parser, editor outliner), shown folded for now.
+- [todo] Market NPC outfits.
+- [done] Stall UI: stalls follow `market_sync` in game (folded, free, taken in the seller's colour) with their lots in a crate, a basket or flat, one item model per unit up to 8 (`useMarketStalls`); aiming at a free stall offers it for the fee, aiming at your own stall opens your table (lay out a lot in the first free slot, take a lot back), aiming at a lot shows its name, price and stock and G buys it (`useMarket`, `GameMarketPanel`); the seller hears and sees each sale; a banner announces the opening, 15 minutes before closing and the closing. `MARKET_OPEN_NOW` for playtests, admin teleport Market.
+- [todo] A Market app on the watch (next opening, stalls taken), once the watch apps (PR #84) are merged.
+- [done] Ambience: six shoppers in wear outfits stroll from stall to stall and pause at each while the market is open (`useMarketCrowd`, `game/market/marketCrowd.ts`), a folk loop near the bandstand while the market is open (`build_market_music.py`), bell, sale and purchase sounds (`build_market_sfx.py`, Earshot bank), bunting and lamps from the square.
+- [done] Playtested on 2026-11-13 with the two playtest accounts on a worktree stack (market forced open): claim and colour, lay out, buy by aiming at a lot (cash and tax checked in the ledger), the seller's sale notice, a retried purchase bought once, take a lot back, shoppers and music loading. Not seen in play: the opening bell and the 15-minute and closing banners, which need the real Saturday clock.
+
 ## Later
 
 - Fishing as the second job (reuse the darts power meter or the Drink Fast balance bar; rod and fish models exist).

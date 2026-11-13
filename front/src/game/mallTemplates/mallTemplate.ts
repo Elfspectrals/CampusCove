@@ -71,6 +71,11 @@ export interface DecorProp extends PropBase {
   materials?: Record<string, MaterialLook>
 }
 
+export interface MarketStallProp extends PropBase {
+  kind: 'market_stall'
+  stallNo: number
+}
+
 export interface ItemProp extends PropBase {
   kind: 'item'
   key: string
@@ -182,7 +187,7 @@ export interface ShelfProp extends PropBase {
   fill: Record<string, ShelfSlotFill>
 }
 
-export type TemplateProp = DecorProp | ItemProp | NpcProp | MannequinProp | LightProp | FieldProp | AnimalProp | BuildingProp | ShelfProp
+export type TemplateProp = DecorProp | ItemProp | NpcProp | MannequinProp | LightProp | FieldProp | AnimalProp | BuildingProp | ShelfProp | MarketStallProp
 
 export type Surface = 'left' | 'right' | 'back' | 'floor' | 'ceiling'
 

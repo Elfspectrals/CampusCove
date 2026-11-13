@@ -23,6 +23,7 @@ import {
   type FieldProp,
   type ItemProp,
   type MannequinProp,
+  type MarketStallProp,
   type NpcProp,
   type ShelfProp,
   type ShelfSlotFill,
@@ -32,12 +33,15 @@ import {
   type Vec3,
 } from '../mallTemplates/mallTemplate.ts'
 
-type ZoneProp = DecorProp | ItemProp | NpcProp | MannequinProp | FieldProp | AnimalProp | BuildingProp | ShelfProp
+const MARKET_STALLS = 6
+
+type ZoneProp = DecorProp | ItemProp | NpcProp | MannequinProp | FieldProp | AnimalProp | BuildingProp | ShelfProp | MarketStallProp
 export type BakedZoneProp = DecorProp | FieldProp | BuildingProp
 export type RuntimeZoneProp = Exclude<ZoneProp, BakedZoneProp>
 const FIELD_KEYS = ['id', 'kind', 'crop', 'position', 'yaw', 'scale', 'size', 'pattern', 'plants', 'group']
 const ANIMAL_KEYS = ['id', 'kind', 'animal', 'position', 'yaw', 'scale', 'size', 'group']
 const BUILDING_KEYS = ['id', 'kind', 'building', 'position', 'yaw', 'scale', 'size', 'height', 'roof', 'ridge', 'openings', 'colors', 'textures', 'group']
+const MARKET_STALL_KEYS = ['id', 'kind', 'stallNo', 'position', 'yaw', 'scale']
 const SHELF_KEYS = ['id', 'kind', 'shelf', 'position', 'yaw', 'scale', 'length', 'levels', 'slots', 'fill', 'group']
 const SLOT_FILL_KEYS = ['code', 'key', 'price', 'count', 'arrange']
 const SLOT_KEY = /^(\d)\.(\d)\.(\d)$/
@@ -165,6 +169,27 @@ function animalPropAt(raw: unknown, path: string, animals: AnimalTable | null): 
     scale,
     size: [sideAt(json.size[0], `${path}.size[0]`, MIN_PEN_SIDE, MAX_PEN_SIDE), sideAt(json.size[1], `${path}.size[1]`, MIN_PEN_SIDE, MAX_PEN_SIDE)],
   }
+}
+
+function marketStallAt(raw: unknown, path: string): MarketStallProp {
+  const json = objectAt(raw, path, MARKET_STALL_KEYS)
+  const stallNo = json.stallNo
+  if (!Number.isInteger(stallNo) || (stallNo as number) < 1 || (stallNo as number) > MARKET_STALLS) throw new TemplateError(`${path}.stallNo`, `expected a whole number from 1 to ${MARKET_STALLS}`)
+  const scale = vec3At(json.scale, `${path}.scale`)
+  if (scale.some((s) => s !== 1)) throw new TemplateError(`${path}.scale`, 'a market stall keeps scale 1')
+  return {
+    id: stringAt(json.id, `${path}.id`),
+    kind: 'market_stall',
+    stallNo: stallNo as number,
+    position: vec3At(json.position, `${path}.position`),
+    yaw: numberAt(json.yaw, `${path}.yaw`),
+    scale,
+  }
+}
+
+function checkMarketStalls(props: ZoneProp[]): void {
+  const numbers = props.flatMap((p) => (p.kind === 'market_stall' ? [p.stallNo] : []))
+  if (new Set(numbers).size !== numbers.length) throw new TemplateError('zone.props', 'two market stalls share a stallNo')
 }
 
 function zonePriceAt(price: unknown, forSale: boolean, path: string, what: string): number | undefined {
@@ -357,6 +382,7 @@ function zonePropAt(raw: unknown, path: string, zone: string, crops: CropTable |
   if (kind === 'item') return zoneItemAt(raw, path)
   if (kind === 'mannequin') return zoneMannequinAt(raw, path)
   if (kind === 'npc') return zoneNpcAt(raw, path, zone)
+  if (kind === 'market_stall') return marketStallAt(raw, path)
   const prop = propAt(raw, path)
   if (prop.kind === 'light') throw new TemplateError(`${path}.kind`, 'zones are lit by the sky, they take no light')
   if (prop.kind === 'decor' && prop.materials) throw new TemplateError(`${path}.materials`, 'baked zone decor keeps its own materials')
@@ -498,6 +524,7 @@ export function parseZoneDecor(raw: unknown, zone: ZoneRef, crops: CropTable | n
   })
   checkBuildingRoofs(props)
   checkStaff(props, zone.key)
+  checkMarketStalls(props)
   const prices = new Map<string, number>()
   props.forEach((p, i) => {
     for (const { code, price } of soldCodes(p)) {

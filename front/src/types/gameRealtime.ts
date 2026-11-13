@@ -489,6 +489,54 @@ export interface AtmErrorPayload {
   request: number | null
 }
 
+export type MarketLotContainer = 'crate' | 'basket' | 'flat'
+
+export interface MarketLotView {
+  lot_id: number
+  slot: number
+  code: string
+  name: string
+  quantity: number
+  unit_price: number
+  container: MarketLotContainer
+  preview_image: string | null
+  model_glb: string | null
+}
+
+interface MarketStallView {
+  stall_no: number
+  account_id: number
+  canopy: string
+  lots: MarketLotView[]
+}
+
+export interface MarketSnapshot {
+  open: boolean
+  stall_fee: number
+  market_date: string
+  opens_at: string
+  closes_at: string
+  stalls: MarketStallView[]
+}
+
+export interface MarketDonePayload {
+  action: 'claim' | 'list' | 'withdraw' | 'buy'
+  request: number | null
+  cash?: number
+}
+
+export interface MarketErrorPayload {
+  message: string
+  code: string
+  request: number | null
+}
+
+export interface MarketSoldPayload {
+  lotId: number
+  code: string
+  quantity: number
+}
+
 export interface CashBagPayload {
   id: number
   x: number

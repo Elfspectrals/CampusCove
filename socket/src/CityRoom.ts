@@ -45,6 +45,7 @@ import { onPunch } from './punch.ts'
 import { onHold } from './tools.ts'
 import { onChat } from './chat.ts'
 import { onAtm } from './atm.ts'
+import { onMarket, sendMarketOnJoin } from './market.ts'
 import { onCashBagPick, publicCashBag } from './cashBags.ts'
 import { STORAGE_TICK_MS, newStorageAuction, onAdminStorageSale, onStorageBid, onStorageOpen, onStorageOpenMine, storageSnapshot, tickStorageAuction } from './storageAuction.ts'
 import { WANTED_TICK_MS, loadWanted, saveWanted, sendWantedOnJoin, tickWanted } from './wanted.ts'
@@ -98,6 +99,7 @@ import type {
   HouseFurniture,
   HousingUnit,
   Identity,
+  MarketSnapshot,
   Player,
   PubState
 } from './types.ts'
@@ -121,6 +123,7 @@ export class CityRoom extends Room implements GameRoom {
   trades = new Map<string, Trade>()
   seats = new Map<string, string>()
   cashBags = new Map<number, CashBag>()
+  market: MarketSnapshot | null = null
   storageAuction = newStorageAuction()
   pub: PubState = { secretOpen: false, race: null, darts: null, challenges: new Map(), challengeSentAt: new Map(), quiz: null, quizSchedule: 0 }
 
@@ -153,6 +156,7 @@ export class CityRoom extends Room implements GameRoom {
     this.onMessage('hold', (client, payload: ClientPayload) => onHold(this, client, payload))
     this.onMessage('chat', (client, payload: ClientPayload) => onChat(this, client, payload))
     this.onMessage('atm', (client, payload: ClientPayload) => void onAtm(this, client, payload))
+    this.onMessage('market', (client, payload: ClientPayload) => void onMarket(this, client, payload))
     this.onMessage('cash_bag_pick', (client, payload: ClientPayload) => void onCashBagPick(this, client, payload))
     this.onMessage('jail_pay', (client) => void onJailPay(this, client))
     this.onMessage('jail_tray_eat', (client) => onEatMealTray(this, client))
@@ -282,6 +286,7 @@ export class CityRoom extends Room implements GameRoom {
       await loadPoliceLicence(this, client, player)
       await loadSurvival(client, player)
     }
+    await sendMarketOnJoin(this, client, player)
   }
 
   onLeave(client: Client) {

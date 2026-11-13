@@ -999,6 +999,22 @@
           ]
         }
       ]
+    },
+    {
+      "key": "town_market",
+      "optional": true,
+      "bounds": {
+        "minX": 42.6,
+        "maxX": 98,
+        "minZ": -41,
+        "maxZ": 7
+      },
+      "modelUrl": "/assets/park/market_site/market_site.glb",
+      "gate": {
+        "x": 42.6,
+        "z": -17.6,
+        "width": 12.2
+      }
     }
   ],
   "fountains": [
