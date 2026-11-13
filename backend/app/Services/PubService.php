@@ -24,6 +24,7 @@ final class PubService
     public function __construct(
         private readonly AccountInventoryService $inventory,
         private readonly CoinRewardService $coinRewards,
+        private readonly TutorialService $tutorial,
     ) {}
 
     /** @return array{code: string, price: int, balance_after: int} */
@@ -56,6 +57,9 @@ final class PubService
             $secondsLeft = $this->cooldownSecondsLeft($wallet, 'pub_reward_'.$game);
             if ($secondsLeft > 0) {
                 throw new PubRejectedException('pub_cooldown', "You can play this game again in {$secondsLeft} s.", 429);
+            }
+            if ($game === 'darts' && $this->tutorial->isActiveAt($accountId, 'play_darts')) {
+                return ['game' => $game, 'fee' => 0, 'alcohol' => $rules['alcohol'], 'balance_after' => $wallet->balance()];
             }
             $balance = $this->debit($accountId, $rules['fee'], 'pub_play', ['game' => $game]);
 

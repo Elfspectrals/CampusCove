@@ -20,6 +20,15 @@ final class TutorialService
         ]);
     }
 
+    public function isActiveAt(int $accountId, string $step): bool
+    {
+        return AccountTutorial::query()
+            ->where('account_id', $accountId)
+            ->where('status', 'active')
+            ->where('step', $step)
+            ->exists();
+    }
+
     /**
      * @return array{status: 'none'|'active'|'skipped'|'done', step: string|null}
      */

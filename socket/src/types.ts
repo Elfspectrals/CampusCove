@@ -167,6 +167,7 @@ export interface DartsPlayer {
   sessionId: string
   darts: DartsThrow[]
   alcohol: number
+  free: boolean
 }
 
 export interface DartsGame {

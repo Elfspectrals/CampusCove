@@ -27,12 +27,13 @@ const manifest = {
 }
 
 const apiCalls: Array<{ token: string | null, path: string, body: any }> = []
+const freeDartsTokens = new Set<string>()
 globalThis.fetch = async (url: string | URL | Request, init?: RequestInit) => {
   const path = String(url)
   if (path === process.env.WORLD_MANIFEST_URL) return new Response(JSON.stringify(manifest))
   const token = String((init?.headers as Record<string, string>)?.Authorization ?? '').replace('Bearer ', '')
   apiCalls.push({ token, path: path.replace(/^.*\/api/, ''), body: init?.body ? JSON.parse(String(init.body)) : null })
-  if (path.endsWith('/pub/play')) return new Response(JSON.stringify({ alcohol: 24 }))
+  if (path.endsWith('/pub/play')) return new Response(JSON.stringify(freeDartsTokens.has(token) ? { alcohol: 0, fee: 0 } : { alcohol: 24 }))
   if (path.endsWith('/pub/reward')) {
     const { placement } = JSON.parse(String(init?.body))
     return new Response(JSON.stringify({ coins: placement === 1 ? 40 : placement === 2 ? 15 : 0 }))
@@ -462,6 +463,29 @@ test('Darts: lobby, three darts each in turn, a timed-out turn loses its darts, 
     ['token-b', { game: 'darts', placement: 2, score: 6 }]
   ])
   assert.equal(game.players[1].darts.filter((d) => d.score === 0).length, 2)
+})
+
+test('Darts: a game with a free tutorial entry pays nobody', async () => {
+  const a = fakePlayer('a', 84, -139)
+  const newcomer = fakePlayer('newcomer', 84.5, -139)
+  const { room, clients, timers } = fakeRoom(a, newcomer)
+  const [ca, cn] = clients
+  apiCalls.length = 0
+  freeDartsTokens.add('token-newcomer')
+  const t0 = 700_000
+
+  await onDartsJoin(room, ca, t0)
+  await onDartsJoin(room, cn, t0)
+  const game = room.pub.darts!
+  startDarts(room, game, t0 + DARTS_LOBBY_MS)
+  timers.at(-1)!()
+  timers.at(-1)!()
+  await new Promise((resolve) => setImmediate(resolve))
+  freeDartsTokens.clear()
+
+  assert.equal(room.pub.darts, null)
+  assert.deepEqual(received(ca, 'pub_darts_end').at(-1).rewards, [{ sessionId: 'a', coins: 0 }, { sessionId: 'newcomer', coins: 0 }])
+  assert.deepEqual(apiCalls.filter((c) => c.path === '/pub/reward'), [])
 })
 
 test('the race state carries spills, and a new spill skips the state throttle', async () => {

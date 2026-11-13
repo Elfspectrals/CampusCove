@@ -14,6 +14,10 @@ In order (`TutorialService::STEPS`):
 | `deposit_cash` | one deposit at an ATM ("cash drops at death, the bank does not") |
 | `play_darts` | one darts game played at the pub, free, paying 0 coins to anyone |
 
+## Free darts game
+
+While the tutorial is `active` at `play_darts`, `POST /pub/play` for `darts` answers `fee: 0` and debits nothing (the 60 s reward wait still applies). The socket then pays no reward to anyone in that darts game, so an established player gains nothing by playing against a new account.
+
 Finishing gives the "New citizen" badge next to the pseudo. No coins.
 
 ## State
