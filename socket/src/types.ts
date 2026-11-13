@@ -35,6 +35,7 @@ export interface Identity {
   token: string
   /** GET /user's is_admin: unlocks the watch's admin app (src/admin.ts). */
   isAdmin: boolean
+  badges: string[]
   ip: string
 }
 
@@ -44,6 +45,7 @@ export interface Player extends Vec3 {
   pseudo: string
   token: string | null
   isAdmin: boolean
+  badges: string[]
   color: number
   ry: number
   lastMoveAt: number
@@ -193,6 +195,7 @@ export interface DartsPlayer {
   sessionId: string
   darts: DartsThrow[]
   alcohol: number
+  free: boolean
 }
 
 export interface DartsGame {

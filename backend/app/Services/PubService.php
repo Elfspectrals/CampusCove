@@ -27,6 +27,7 @@ final class PubService
     public function __construct(
         private readonly AccountInventoryService $inventory,
         private readonly CoinRewardService $coinRewards,
+        private readonly TutorialService $tutorial,
         private readonly ActionCounterService $counters,
         private readonly PlayerActivityService $activity,
     ) {}
@@ -64,6 +65,9 @@ final class PubService
             if ($secondsLeft > 0) {
                 throw new PubRejectedException('pub_cooldown', "You can play this game again in {$secondsLeft} s.", 429);
             }
+            if ($game === 'darts' && $this->tutorial->isActiveAt($accountId, 'play_darts')) {
+                return ['game' => $game, 'fee' => 0, 'alcohol' => $rules['alcohol'], 'balance_after' => $wallet->balance()];
+            }
             $balance = $this->debit($accountId, $rules['fee'], 'pub_play', ['game' => $game]);
 
             return ['game' => $game, 'fee' => $rules['fee'], 'alcohol' => $rules['alcohol'], 'balance_after' => $balance];
@@ -71,12 +75,12 @@ final class PubService
     }
 
     /** @return array{coins: int, cooldown: bool, balance_after: int} */
-    public function reward(int $accountId, string $game, int $placement, int $score): array
+    public function reward(int $accountId, string $game, int $placement, int $score, bool $freeGame = false): array
     {
         if (! array_key_exists($game, self::GAMES)) {
             throw new PubRejectedException('unknown_game', 'There is no such game at the pub.');
         }
-        $coins = self::rewardCoins($game, $placement, $score);
+        $coins = $freeGame ? 0 : self::rewardCoins($game, $placement, $score);
         $reason = 'pub_reward_'.$game;
 
         return DB::transaction(function () use ($accountId, $game, $placement, $score, $coins, $reason): array {

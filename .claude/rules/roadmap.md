@@ -126,6 +126,20 @@ Decision (2026-11-12): voice goes through a self-hosted LiveKit SFU (open source
 - [done] Voice from another PC on the same network: `make up` gives LiveKit the network address, `make share-local` reaches LiveKit through the page (`/livekit` proxy) over https (2026-11-12).
 - [todo] Deploy LiveKit on a VPS with TURN; privacy page mentions voice.
 
+## First day in town tutorial (doing, branch feat/first-day-tutorial)
+
+Decision (2026-11-13): a new account plays a 5-minute tutorial right after the character creator, the orchard farmer as guide: pick 6 apples, eat one, sell the others, deposit at the orchard ATM (cash drops at death, the bank does not), one free darts game at the pub that pays 0 coins to anyone. GreenCart is left out (312 m away, and a deposit before a shop leaves no cash). New hunger stays at 100. Reward: a "New citizen" badge next to the pseudo, the same for everyone, never traded or lost, zero coins. Skipping gives no badge; the player can resume later. Accounts that existed before never see it. Every step is validated by the server, on the action counters of the tasks branch once they are validated. Contract in `docs/TUTORIAL.md`.
+
+- [done] Tutorial state per account (`account_tutorials`), started by the first character save, skip and resume.
+- [done] Steps advanced by the server from the action counters of the tasks branch (merged into this branch), only what is done during the step counts (decided 2026-11-13), 1 apple sold is enough; live `tutorial_state` to the player, badge and welcome message at the end.
+- [done] Free darts game at the tutorial step: no fee, and a darts game with a free entry pays nobody.
+- [done] One-line quest log under the minimap, skip with confirmation, resume in the in-game settings.
+- [done] Marker to the objective: a diamond with the distance over the nearest orchard tree, the farmer, the nearest ATM or the darts oche, stuck to the screen edge with an arrow when out of view; none while eating.
+- [done] Bubbles the first time within 4 m of an ATM, an NPC (zone buyers, bartender) or a shop or work door, 6 s over the place, once per kind, while the tutorial is active; remembered in this browser per account (`cc.tutorialHints.<account>`).
+- [done] "New citizen" badge next to the pseudo: badges are SVG icons (decided 2026-11-13), one shared `account_badges` table that the tasks branch reuses for its badge rewards; shown in the Tab list; New citizen is the only badge also shown before the pseudo over the head (decided 2026-11-13, task badges stay off the head). Task tier badges are read from the tasks tables by `BadgeService::badges()`, not copied. Granted when the tutorial ends, with the server-side steps.
+- [done] Playtest in the game (2026-11-13, new account on the branch stack): creator, 8 apples picked, one eaten, 6 sold, 18 deposited, a free darts game left to time out; each step moved live, the quest log and marker went away at the end, `new_citizen` granted, no darts fee taken. Not seen: the welcome message (3.5 s, gone before the check) and the badge appearing live for another player (unit-tested only).
+- [done] The darts prompt says "free" instead of "10 coins" during the tutorial darts step.
+
 ## Tasks and rewards (doing, branch feat/tasks-and-rewards)
 
 Decision (2026-11-13): tasks are achievements with three tiers, rewarded in decor, cosmetics and badges, never coins. Rewards are bound to the account (no trade, no sale), so they have no market value. Tiers 1 and 2 give a badge, the last tier gives an object (some tasks give only a rarer badge). Badges show on the Home page and in the Tab player list, nothing above the head. Counters are owned by Laravel, bumped by the real action in its transaction, and start at zero for every account. The first-day tutorial reads the same counters (`CounterBumped`) instead of its own. Contract in `docs/TASKS.md`.

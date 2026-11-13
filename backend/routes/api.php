@@ -34,6 +34,7 @@ use App\Http\Controllers\StripeWebhookController;
 use App\Http\Controllers\SurvivalController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\TradeController;
+use App\Http\Controllers\TutorialController;
 use App\Http\Controllers\ZoneShopController;
 use Illuminate\Support\Facades\Route;
 
@@ -138,6 +139,9 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
     Route::put('/character/cosmetics', [CharacterCosmeticController::class, 'update']);
     Route::get('/character/appearance', [CharacterAppearanceController::class, 'show']);
     Route::put('/character/appearance', [CharacterAppearanceController::class, 'update']);
+    Route::get('/tutorial', [TutorialController::class, 'show']);
+    Route::post('/tutorial/skip', [TutorialController::class, 'skip']);
+    Route::post('/tutorial/resume', [TutorialController::class, 'resume']);
     Route::get('/apartments/assets', [ApartmentPlacementController::class, 'inventory']);
     Route::get('/apartments/houses', [ApartmentPlacementController::class, 'houses']);
     Route::post('/apartments/state', [ApartmentPlacementController::class, 'state']);

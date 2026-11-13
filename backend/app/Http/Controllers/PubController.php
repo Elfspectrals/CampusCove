@@ -32,6 +32,7 @@ class PubController extends Controller
             'game' => 'required|string|max:32',
             'placement' => 'required|integer|min:0|max:3',
             'score' => 'required|integer|min:0',
+            'free' => 'sometimes|boolean',
         ]);
 
         return response()->json($this->pub->reward(
@@ -39,6 +40,7 @@ class PubController extends Controller
             $validated['game'],
             (int) $validated['placement'],
             (int) $validated['score'],
+            (bool) ($validated['free'] ?? false),
         ));
     }
 

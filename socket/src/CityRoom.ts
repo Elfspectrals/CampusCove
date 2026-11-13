@@ -95,6 +95,7 @@ import type {
 } from './types.ts'
 import { citySpawn, workDoor } from './world.ts'
 import { sendTaskTierReached, type TaskTierReached } from './tasks.ts'
+import { applyTutorialChange, type TutorialChange } from './tutorial.ts'
 import { onTaskMove } from './taskTracking.ts'
 
 function warn(context: string, error: unknown): void {
@@ -372,6 +373,10 @@ export class CityRoom extends Room implements GameRoom {
 
   onTaskTierReached(reached: TaskTierReached): void {
     sendTaskTierReached(this, reached)
+  }
+
+  onTutorialChanged(change: TutorialChange): void {
+    applyTutorialChange(this, change)
   }
 
   async fetchHouseFurniture(token: string): Promise<void> {

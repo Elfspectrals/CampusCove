@@ -54,9 +54,13 @@ function isOnStool(player: Player): boolean {
 }
 
 async function payEntry(client: GameClient, player: Player, game: PubGame): Promise<number | null> {
+  return (await payEntryWithFee(client, player, game))?.alcohol ?? null
+}
+
+async function payEntryWithFee(client: GameClient, player: Player, game: PubGame): Promise<{ alcohol: number, free: boolean } | null> {
   try {
     const data = await callRealtimeBackend(player.token, '/pub/play', 'POST', { game })
-    return Number(data?.alcohol) || 0
+    return { alcohol: Number(data?.alcohol) || 0, free: data?.fee === 0 }
   } catch (error) {
     warn(`${game} entry failed`, error)
     client.send('pub_error', errorPayload(error, 'You could not join the game.', 'pub_play_failed'))
@@ -64,11 +68,11 @@ async function payEntry(client: GameClient, player: Player, game: PubGame): Prom
   }
 }
 
-async function payReward(room: GameRoom, sessionId: string, game: PubGame, placement: number, score: number): Promise<number> {
+async function payReward(room: GameRoom, sessionId: string, game: PubGame, placement: number, score: number, free = false): Promise<number> {
   const player = room.players.get(sessionId)
   if (!player) return 0
   try {
-    const data = await callRealtimeBackend(player.token, '/pub/reward', 'POST', { game, placement, score })
+    const data = await callRealtimeBackend(player.token, '/pub/reward', 'POST', free ? { game, placement, score, free } : { game, placement, score })
     return Number(data?.coins) || 0
   } catch (error) {
     warn(`${game} reward failed`, error)
@@ -563,15 +567,16 @@ export async function onDartsJoin(room: GameRoom, client: GameClient, now = Date
   const opened = room.pub.darts === null
   const game: DartsGame = room.pub.darts ?? { startsAt: now + DARTS_LOBBY_MS, started: false, players: [], turn: 0, turnEndsAt: 0, turnSeq: 0 }
   room.pub.darts = game
-  const entry: DartsPlayer = { sessionId: player.sessionId, darts: [], alcohol: 0 }
+  const entry: DartsPlayer = { sessionId: player.sessionId, darts: [], alcohol: 0, free: false }
   game.players.push(entry)
-  const alcohol = await payEntry(client, player, 'darts')
+  const paid = await payEntryWithFee(client, player, 'darts')
   if (room.pub.darts !== game) return
-  if (alcohol === null) {
+  if (paid === null) {
     removeDartsPlayer(room, game, player.sessionId)
     return
   }
-  entry.alcohol = alcohol
+  entry.alcohol = paid.alcohol
+  entry.free = paid.free
   const lobby = dartsLobby(game)
   forEachPubClient(room, (c) => c.send('pub_darts_lobby', lobby))
   if (opened) room.clock.setTimeout(() => startDarts(room, game, Date.now()), DARTS_LOBBY_MS)
@@ -646,9 +651,10 @@ export async function endDarts(room: GameRoom, game: DartsGame): Promise<void> {
   if (room.pub.darts !== game) return
   room.pub.darts = null
   const ranking = dartsRanking(game)
+  const hasFreeEntry = game.players.some((p) => p.free)
   const rewards = await Promise.all(ranking.map(async ({ sessionId, total }, rank) => ({
     sessionId,
-    coins: await payReward(room, sessionId, 'darts', rewardPlacement(rank, ranking.length), total)
+    coins: await payReward(room, sessionId, 'darts', rewardPlacement(rank, ranking.length), total, hasFreeEntry)
   })))
   for (const p of game.players) drink(room, p.sessionId, p.alcohol)
   const payload = { ranking, rewards }

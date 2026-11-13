@@ -46,6 +46,13 @@ import GameTradeWindow from '../components/game/GameTradeWindow.vue'
 import GameWatchMenu from '../components/game/GameWatchMenu.vue'
 import ItemShopPurchaseConfirmModal from '../components/shop/ItemShopPurchaseConfirmModal.vue'
 import GameRoomMessageBanner from '../components/game/GameRoomMessageBanner.vue'
+import GameTutorialQuest from '../components/game/GameTutorialQuest.vue'
+import GameTutorialMarker from '../components/game/GameTutorialMarker.vue'
+import { useTutorialMarker } from '../composables/game/useTutorialMarker'
+import { useTutorialHints } from '../composables/game/useTutorialHints'
+import GameTutorialHint from '../components/game/GameTutorialHint.vue'
+import type { Vec3 } from '../game/mallTemplates/mallTemplate'
+import { applyTutorialState, loadTutorial, skipTheTutorial, tutorial } from '../composables/game/useTutorial'
 import GameTaskBanner from '../components/game/GameTaskBanner.vue'
 import UiIcon from '../components/ui/UiIcon.vue'
 import { useApartmentObjects } from '../composables/game/useApartmentObjects'
@@ -105,7 +112,7 @@ import { createGameScene, disposeGameScene, renderGameFrame, resizeViewmodel, ty
 import { createFirstPersonArms } from '../game/firstPersonArms'
 import { createHeldItem } from '../game/heldItem'
 import { COVE_HOME, COVE_THREADS, findHouse, findStore, findWork } from '../game/assets/catalog'
-import type { WorldBounds } from '../game/world/worldManifest'
+import { storeBuildings, workBuildings, type WorldBounds } from '../game/world/worldManifest'
 import type { GearSlot } from '../game/wardrobeSlots'
 import { createSfx } from '../game/sfx'
 import { createAmbientLoop } from '../game/ambientLoop'
@@ -449,6 +456,7 @@ const pubGames = usePubGames({
   pseudoOf: (sessionId) => (sessionId === gameRoomRef.value?.sessionId ? getStoredAuth()?.user.display_name ?? 'You' : realtime.remotePseudo(sessionId) ?? '…'),
   say: (text) => survival.say(text),
   setRacePint: (sessionId, progress) => realtime.setRemoteRacePint(sessionId, progress),
+  dartsFree: () => tutorial.value?.status === 'active' && tutorial.value.step === 'play_darts',
 })
 const {
   race: pubRace,
@@ -521,6 +529,38 @@ const atm = useAtm({
   timeoutMessage: () => t('atm.timeout'),
 })
 const { open: atmOpen } = atm
+const tutorialWorldPlaces = shallowRef<{ trees: readonly Vec3[]; dartsOche: Vec3 | null; bartender: Vec3 | null; doors: readonly Vec3[] }>({
+  trees: [],
+  dartsOche: null,
+  bartender: null,
+  doors: [],
+})
+const tutorialMarker = useTutorialMarker({
+  myPosition,
+  getCamera,
+  canvasRef,
+  step: () => (tutorial.value?.status === 'active' ? tutorial.value.step : null),
+  places: () => ({
+    ...tutorialWorldPlaces.value,
+    farmer: zoneDecor.buyers.value.find((buyer) => buyer.zone === 'orchard')?.position ?? null,
+    atms: zoneDecor.atms.value,
+  }),
+})
+const { marker: tutorialMarkerOnScreen } = tutorialMarker
+const tutorialHints = useTutorialHints({
+  myPosition,
+  getCamera,
+  canvasRef,
+  accountId: () => myAccountId.value,
+  active: () => tutorial.value?.status === 'active' && !loadingShown.value,
+  places: () => {
+    const { bartender, doors } = tutorialWorldPlaces.value
+    const buyers = zoneDecor.buyers.value.map((buyer) => buyer.position)
+    return { atm: zoneDecor.atms.value, npc: bartender ? [...buyers, bartender] : buyers, door: doors }
+  },
+})
+const { bubble: tutorialHintBubble } = tutorialHints
+const interactKeys = computed(() => actionKeyLabels('interact').join(' / '))
 const houseAlarms = useHouseAlarms({
   gameRoomRef,
   say: (text) => survival.say(text),
@@ -923,6 +963,12 @@ const environment = useRoomEnvironment({
     pubGames.onTownLoaded(manifest)
     orchard.onTownLoaded(manifest)
     farm.onTownLoaded(manifest)
+    tutorialWorldPlaces.value = {
+      trees: manifest.orchard?.trees ?? [],
+      dartsOche: manifest.pub?.darts.oche ?? null,
+      bartender: manifest.pub?.bartender ?? null,
+      doors: [...storeBuildings(manifest), ...workBuildings(manifest)].map((building) => building.door),
+    }
     void Promise.all([
       mallCellTemplates.onTownLoaded(manifest).catch((error: unknown) => console.error('[mall] cell templates failed to load', error)),
       zoneDecor.onTownLoaded(manifest).catch((error: unknown) => console.error('[zones] zone decor failed to load', error)),
@@ -1190,6 +1236,8 @@ const movement = useGameMovement({
     pub.tick(dt)
     pubGames.tick()
     orchard.tick()
+    tutorialMarker.tick()
+    tutorialHints.tick()
     farm.tick()
     if (!doorSigns.group.parent) getScene()?.add(doorSigns.group)
     minimap.tick()
@@ -1294,7 +1342,13 @@ const realtime = useGameRealtime({
   zoneBuyers: zoneBuyers.handlers,
   atm: atm.handlers,
   tasks: taskHandlers,
-
+  tutorial: {
+    onState: (data) => {
+      const wasDone = tutorial.value?.status === 'done'
+      applyTutorialState(data)
+      if (!wasDone && tutorial.value?.status === 'done') survival.say(t('tutorial.welcome'))
+    },
+  },
   lockpick: {
     ...lockpick.handlers,
     onReinforced: () => {
@@ -1385,8 +1439,17 @@ async function bootGame() {
   }
   await loadLayoutFromServer()
   refreshOwnedItems()
+  loadTutorial().catch((error: unknown) => survival.say(error instanceof Error ? error.message : String(error)))
   boot.complete('server')
   if (!unmounted) movement.startRenderLoop()
+}
+
+async function skipTutorialQuest(): Promise<void> {
+  try {
+    await skipTheTutorial()
+  } catch (error) {
+    survival.say(error instanceof Error ? error.message : String(error))
+  }
 }
 
 function leaveRoom() {
@@ -1484,6 +1547,26 @@ const crosshairClass = computed(() => {
         :files="boot.files.value"
       />
     </Transition>
+    <GameTutorialMarker
+      v-if="tutorialMarkerOnScreen && !loadingShown"
+      :x="tutorialMarkerOnScreen.x"
+      :y="tutorialMarkerOnScreen.y"
+      :on-screen="tutorialMarkerOnScreen.onScreen"
+      :angle="tutorialMarkerOnScreen.angle"
+      :metres="tutorialMarkerOnScreen.metres"
+    />
+    <GameTutorialHint
+      v-if="tutorialHintBubble && !loadingShown"
+      :kind="tutorialHintBubble.kind"
+      :x="tutorialHintBubble.x"
+      :y="tutorialHintBubble.y"
+      :use-key="interactKeys"
+    />
+    <GameTutorialQuest
+      v-if="tutorial?.status === 'active' && !loadingShown"
+      :step="tutorial.step"
+      @skip="skipTutorialQuest"
+    />
     <GameMinimap
       :image="minimap.image.value"
       :markers="minimap.markers.value"
