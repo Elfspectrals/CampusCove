@@ -1,0 +1,103 @@
+# Town market
+
+An outdoor market held every Saturday from 15:00 to 17:00 (Europe/Paris) on its own square near the town centre. Six stalls appear, players claim one, lay out lots of their items with a price, and other players buy them in cash. Market NPCs are ambience only: they never buy, so the market creates no coins.
+
+Laravel (`MarketService`) owns the schedule, the stalls, the lots and every coin and item movement. The socket checks that the player stands at the stall and forwards intents; the front only shows and sends intents.
+
+## Schedule
+
+`MarketSchedule`: open when the Paris time is Saturday and `15:00 <= time < 17:00`.
+
+| Paris time | Open |
+|---|---|
+| Saturday 14:59:59 | no |
+| Saturday 15:00:00 | yes |
+| Saturday 16:59:59 | yes |
+| Saturday 17:00:00 | no |
+| Sunday 15:30 | no |
+
+A market is identified by its date (`market_date`, the Saturday in Paris time, `YYYY-MM-DD`).
+
+## Rules
+
+| Rule | Value |
+|---|---|
+| Stalls | 6, numbered 1 to 6 |
+| Stalls per player and market | 1 |
+| Stall fee | 15 coins in cash, not refunded |
+| Lots per stall | 6, numbered 1 to 6 |
+| What can be sold | any tradable item (`TradeService::isTradable`), not worn |
+| Lot quantity | 1 to the item's `max_stack`, at most 999 |
+| Unit price | free, 1 to 1,000,000 coins |
+| Payment | buyer's cash to seller's cash |
+| Tax | 5 % of the sale total, rounded down, only when the total is 20 coins or more |
+| Account age | claiming a stall and buying both need an account at least 72 h old (`TradeService::MIN_GIVER_AGE_HOURS`), as for trades |
+| Canopy colours | `red`, `blue`, `green`, `yellow`, `orange`, `purple` |
+
+Tax examples: a total of 19 pays 0, 20 pays 1, 39 pays 1, 100 pays 5.
+
+Items of a lot leave the seller's inventory when it is listed (escrow on the lot) and come back when the lot is withdrawn or when the market closes. `php artisan market:close` (scheduled every minute) returns every unsold lot of a market that is no longer open.
+
+## Endpoints
+
+`GET /api/market` (any signed-in player): the current or next market.
+
+```json
+{
+  "open": true,
+  "market_date": "2026-11-14",
+  "opens_at": "2026-11-14T15:00:00+01:00",
+  "closes_at": "2026-11-14T17:00:00+01:00",
+  "stalls": [
+    {
+      "stall_no": 2,
+      "account_id": 41,
+      "canopy": "blue",
+      "lots": [
+        { "lot_id": 9, "slot": 1, "code": "farm_apple", "name": "Apple", "quantity": 18, "unit_price": 5, "preview_image": "/assets/...", "model_glb": "/assets/..." }
+      ]
+    }
+  ]
+}
+```
+
+Only claimed stalls are listed; only active lots are listed. When the market is closed, `stalls` is empty and the dates are those of the next market.
+
+The others are `realtime` routes: the socket calls them with the player's token after checking that the player stands at the stall.
+
+| Route | Body | Result |
+|---|---|---|
+| `POST /api/market/stalls` | `stall_no` 1-6, `canopy` | the stall; a retry for the same stall returns it without charging again |
+| `POST /api/market/lots` | `slot` 1-6, `code`, `quantity`, `unit_price` | the lot, on the player's own stall |
+| `POST /api/market/lots/{id}/withdraw` | | the items come back to the seller |
+| `POST /api/market/lots/{id}/buy` | `quantity`, `purchase_ref` (unique, at most 64 characters) | `{ "cash": <buyer cash>, "quantity_left": <left in the lot> }`; a retry with the same `purchase_ref` by the same buyer on the same lot returns the same answer without buying again |
+
+## Rejection codes
+
+| Code | Status | When |
+|---|---|---|
+| `market_closed` | 409 | outside the market hours |
+| `market_account_too_new` | 403 | account younger than 72 h |
+| `market_stall_taken` | 409 | another player holds the stall |
+| `market_already_has_stall` | 409 | the player already holds another stall at this market |
+| `market_canopy_unknown` | 422 | canopy not in the list |
+| `market_no_stall` | 409 | listing without holding a stall |
+| `market_slot_taken` | 409 | the slot already holds an active lot |
+| `market_item_unknown` | 422 | unknown item code |
+| `market_item_not_tradable` | 422 | item cannot be traded |
+| `market_item_worn` | 409 | item is being worn |
+| `market_item_missing` | 409 | not enough of the item |
+| `market_quantity_too_big` | 422 | more than the item's `max_stack` |
+| `market_lot_gone` | 409 | lot sold out, withdrawn, returned or unknown |
+| `market_not_your_lot` | 403 | withdrawing someone else's lot |
+| `market_own_lot` | 409 | buying from your own stall |
+| `market_insufficient_cash` | 409 | buyer cannot pay, stall fee unpaid |
+| `market_inventory_full` | 409 | buyer cannot carry that many |
+| `market_already_bought` | 409 | `purchase_ref` already used by another buyer or lot |
+
+## Ledger
+
+| Movement | Transaction type | Ledger reason |
+|---|---|---|
+| Stall fee | `market_stall_fee` | `market_stall_fee` (−15 on the seller's cash) |
+| Sale | `market_sale` | `market_purchase` (−total, buyer), `market_sale` (+total, seller), `market_tax` (−tax, seller) |

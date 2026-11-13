@@ -18,6 +18,7 @@ use App\Http\Controllers\FriendController;
 use App\Http\Controllers\GemShopController;
 use App\Http\Controllers\HousingController;
 use App\Http\Controllers\InventoryController;
+use App\Http\Controllers\MarketController;
 use App\Http\Controllers\OrchardController;
 use App\Http\Controllers\PlayerInventoryLayoutController;
 use App\Http\Controllers\PlayerReportController;
@@ -95,8 +96,13 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
         Route::post('/bank/withdraw', [BankController::class, 'withdraw']);
         Route::post('/bank/transfer', [BankController::class, 'transfer']);
         Route::post('/cash-drops/{id}/pick', [CashDropController::class, 'pick'])->whereNumber('id');
+        Route::post('/market/stalls', [MarketController::class, 'claimStall']);
+        Route::post('/market/lots', [MarketController::class, 'listLot']);
+        Route::post('/market/lots/{id}/withdraw', [MarketController::class, 'withdrawLot'])->whereNumber('id');
+        Route::post('/market/lots/{id}/buy', [MarketController::class, 'buy'])->whereNumber('id');
     });
     Route::get('/bank', [BankController::class, 'show']);
+    Route::get('/market', [MarketController::class, 'show']);
     Route::get('/trades/offerable', [TradeController::class, 'offerable']);
 
     Route::post('/shop/purchase', [ShopController::class, 'purchase']);
