@@ -1,7 +1,8 @@
 import { callRealtimeBackend, errorPayload } from './backend.ts'
-import { canUseDoor, isWithinReach } from './doors.ts'
+import { canUseDoor, doorInReach, isWithinReach } from './doors.ts'
 import type { ClientPayload, GameClient, GameRoom, HousingUnit, LockpickPin, LockpickSession, Player } from './types.ts'
 import { reportCrime } from './wanted.ts'
+import type { WorldHouse } from './world.ts'
 
 const MAX_PINS = 9
 export const PIN_SETTLE_MS = 8000
@@ -12,7 +13,11 @@ export const PRESS_LAG_ALLOWANCE_MS = 150
 export const LOCKPICK_NOISE_RADIUS = 12
 export const ALARM_SIREN_RADIUS = 25
 
-export type LockpickRoom = GameRoom & { pollHousingUnits(): Promise<void> }
+export type LockpickRoom = GameRoom & { pollHousingUnits(): Promise<void>, houseOf(unit: HousingUnit): WorldHouse | null }
+
+function nearADoor(room: LockpickRoom, player: Player, unit: HousingUnit): boolean {
+  return doorInReach(player, unit, room.houseOf(unit)) !== null
+}
 
 export type LockpickNoise = 'pick_click' | 'pick_scrape'
 
@@ -94,7 +99,7 @@ function abandon(player: Player, session: LockpickSession): void {
   callRealtimeBackend(player.token, `/lockpicks/attempts/${session.attemptId}/abandon`).catch((error) => warn('abandon failed', error))
 }
 
-export async function onLockpickStart(room: GameRoom, client: GameClient, payload: ClientPayload, clock: () => number = Date.now, random: () => number = Math.random): Promise<void> {
+export async function onLockpickStart(room: LockpickRoom, client: GameClient, payload: ClientPayload, clock: () => number = Date.now, random: () => number = Math.random): Promise<void> {
   const now = clock()
   const player = room.players.get(client.sessionId)
   if (!player || !isActive(player, now) || player.lockpick) return
@@ -103,7 +108,7 @@ export async function onLockpickStart(room: GameRoom, client: GameClient, payloa
     sendError(client, 'This door is not locked.', 'door_not_locked')
     return
   }
-  if (!isWithinReach(player, unit.pos_x, unit.pos_z)) {
+  if (!nearADoor(room, player, unit)) {
     sendError(client, 'Get closer to the door.', 'lockpick_too_far')
     return
   }
@@ -138,7 +143,7 @@ export async function onLockpickPress(room: LockpickRoom, client: GameClient, cl
   const session = player?.lockpick
   if (!player || !session || session.busy || session.attemptId === null) return
   const unit = lockedUnit(room, session.unitId)
-  if (!unit || !isActive(player, now) || !isWithinReach(player, unit.pos_x, unit.pos_z)) {
+  if (!unit || !isActive(player, now) || !nearADoor(room, player, unit)) {
     abandon(player, session)
     client.send('lockpick_result', { outcome: 'abandoned' })
     return

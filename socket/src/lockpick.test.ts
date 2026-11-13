@@ -13,6 +13,7 @@ import {
 } from './lockpick.ts'
 import type { LockpickRoom } from './lockpick.ts'
 import type { GameClient, HousingUnit, Player } from './types.ts'
+import type { WorldHouse } from './world.ts'
 
 interface Sent { type: string, payload: any }
 type FakeClient = GameClient & { sent: Sent[] }
@@ -46,7 +47,7 @@ function fakeClient(sessionId: string): FakeClient {
   return { sessionId, sent, send: (type, payload) => void sent.push({ type, payload }) }
 }
 
-function setup({ x = 0, z = 2, locked = true, keyHolders = [] as number[] } = {}) {
+function setup({ x = 0, z = 2, locked = true, keyHolders = [] as number[], backDoor = null as { x: number, z: number } | null } = {}) {
   let now = 0
   const burglar = { sessionId: 's1', accountId: 1, token: 'token-s1', x, y: 1.6, z, knockedOutUntil: 0, lockpick: null, wantedStars: 0, wantedDecayMs: 0, wantedDirty: false, onDuty: false } as unknown as Player
   const neighbour = { sessionId: 's2', accountId: 2, token: 'token-s2', x: 0, y: 1.6, z: LOCKPICK_NOISE_RADIUS - 1 } as unknown as Player
@@ -64,7 +65,8 @@ function setup({ x = 0, z = 2, locked = true, keyHolders = [] as number[] } = {}
     players: new Map([['s1', burglar], ['s2', neighbour], ['s3', farAway]]),
     housingUnits: [unit],
     forEachClient: (fn: (c: GameClient) => void, except?: GameClient) => clients.filter((c) => c !== except).forEach(fn),
-    pollHousingUnits: async () => { polls += 1 }
+    pollHousingUnits: async () => { polls += 1 },
+    houseOf: () => (backDoor ? { backDoor } as unknown as WorldHouse : null)
   } as unknown as LockpickRoom
   apiCalls.length = 0
   crimeCalls.length = 0
@@ -226,6 +228,17 @@ test('a start is refused far from the door, on an unlocked door, or with the key
   assert.deepEqual(received(open.client, 'lockpick_error').map((e) => e.code), ['door_not_locked'])
   assert.deepEqual(received(holder.client, 'lockpick_error').map((e) => e.code), ['has_house_key'])
   assert.equal(apiCalls.length, 0)
+})
+
+test('a house with a back door can be picked from the back door', async () => {
+  const { burglar, client, room, clock, at } = setup({ z: 11, backDoor: { x: 0, z: 10 } })
+  await onLockpickStart(room, client, { unitId: 'house-1' }, clock, always0)
+  at(firstHitAfterSettle)
+  await onLockpickPress(room, client, clock, always0)
+
+  assert.deepEqual(received(client, 'lockpick_error'), [])
+  assert.deepEqual(received(client, 'lockpick_result'), [{ outcome: 'set' }])
+  assert.notEqual(burglar.lockpick, null)
 })
 
 test('fitting a reinforced lock at the door asks Laravel and reloads the houses', async () => {
