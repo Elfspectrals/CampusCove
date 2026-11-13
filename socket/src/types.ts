@@ -140,6 +140,7 @@ export interface FurnitureObject {
   x: number
   y: number
   z: number
+  rotY?: number
 }
 
 /** The objects placed in one house (GET /apartments/houses). */

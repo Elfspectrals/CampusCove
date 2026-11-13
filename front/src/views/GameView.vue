@@ -64,6 +64,7 @@ import { useZoneBuyers } from '../composables/game/useZoneBuyers'
 import { useAtm } from '../composables/game/useAtm'
 import { useLockpick } from '../composables/game/useLockpick'
 import { useFurnitureStorage } from '../composables/game/useFurnitureStorage'
+import { useRespawnBed } from '../composables/game/useRespawnBed'
 import type { HouseFurniturePayload } from '../types/gameRealtime'
 import { useCashBags } from '../composables/game/useCashBags'
 import { useProximityVoice } from '../composables/game/useProximityVoice'
@@ -523,6 +524,17 @@ const storage = useFurnitureStorage({
   onChanged: () => refreshOwnedItems(),
 })
 const { open: storageOpen } = storage
+const respawnBed = useRespawnBed({
+  myPosition,
+  getCamera,
+  canvasRef,
+  gameRoomRef,
+  promptsHidden: () => inventoryOpen.value || !canUsePub(),
+  houses: () => furnishedHouses.value,
+  promptLabel: () => t('bed.prompt'),
+  say: (text) => survival.say(text),
+  doneMessage: () => t('bed.set'),
+})
 watch(storageOpen, (open) => {
   if (!open && !document.pointerLockElement) requestPointerLock()
 })
@@ -593,7 +605,7 @@ const interactions = useInteractionTargets({
     if (activeFurniture.value?.store.hasCounter.value) activeFurniture.value.store.toggleTarget(useWithShift)
     else openStorePurchase()
   },
-  sources: [pub.source, pubChallenge.source, pubGames.source, seats.source, orchard.source, farm.source, zoneBuyers.source, atm.source, storage.source, cashBags.source],
+  sources: [pub.source, pubChallenge.source, pubGames.source, seats.source, orchard.source, farm.source, zoneBuyers.source, atm.source, storage.source, respawnBed.source, cashBags.source],
 })
 const { doorPrompt } = interactions
 
@@ -1234,6 +1246,7 @@ const realtime = useGameRealtime({
   atm: atm.handlers,
   lockpick: lockpick.handlers,
   storage: storage.handlers,
+  bed: respawnBed.handlers,
   cashBags: cashBags.handlers,
   voice: { onToken: voice.onToken, disconnect: voice.disconnect },
   farm: farm.handlers,

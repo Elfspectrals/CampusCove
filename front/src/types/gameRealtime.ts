@@ -126,6 +126,11 @@ export interface StorageScreenPayload {
   items: { code: string; name: string; kind: string; quantity: number; preview_image: string | null }[]
 }
 
+export interface BedErrorPayload {
+  message: string
+  code: string
+}
+
 export interface StorageErrorPayload {
   message: string
   code: string

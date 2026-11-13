@@ -1,6 +1,7 @@
 // Hunger, thirst and health of the connected players. The live values are kept here (the rules are in
 // survivalStats.ts); the API stores them, owns the food items and bills the hospital (callRealtimeBackend).
 import { callRealtimeBackend, errorPayload } from './backend.ts'
+import { type RespawnBed, fetchRespawnBed, homeWakeUp } from './bed.ts'
 import { dropCashBag } from './cashBags.ts'
 import { CITY_SPAWN_RADIUS, SURVIVAL_TIME_SCALE } from './config.ts'
 import { toInterior, unitAt } from './movement.ts'
@@ -160,15 +161,18 @@ function knockOut(room: GameRoom, client: GameClient, player: Player, cause: Kno
       if (cause === 'health') dropCashBag(room, diedAt, data?.cash_drop)
     })
     .catch((error) => warn('hospital bill failed', error))
+  let respawnBed: RespawnBed | null = null
+  void fetchRespawnBed(player).then((found) => { respawnBed = found })
   room.clock.setTimeout(() => {
+    const home = homeWakeUp(room, respawnBed)
     if (room.players.get(client.sessionId) !== player || !player.stats) return
-    const bed = claimClinicBed(room, player)
-    const spawn = bed ? { ...bed.position, ry: bed.yaw } : spawnNear(citySpawn(), CITY_SPAWN_RADIUS)
-    const recoveringMs = bed ? RECOVERY_MS : 0
+    const bed = home ? null : claimClinicBed(room, player)
+    const spawn = home ? { ...home.position, ry: player.ry } : bed ? { ...bed.position, ry: bed.yaw } : spawnNear(citySpawn(), CITY_SPAWN_RADIUS)
+    const recoveringMs = home || bed ? RECOVERY_MS : 0
     Object.assign(player, spawn, {
       fallPeakY: spawn.y,
       lastMoveAt: Date.now(),
-      knockedOutUntil: bed ? Date.now() + recoveringMs : 0,
+      knockedOutUntil: recoveringMs > 0 ? Date.now() + recoveringMs : 0,
       intoxication: cause === 'alcohol' ? HANGOVER_INTOXICATION : player.intoxication
     })
     setStats(player, respawnStats(player.stats))
@@ -177,7 +181,7 @@ function knockOut(room: GameRoom, client: GameClient, player: Player, cause: Kno
       y: player.y,
       z: player.z,
       yaw: player.ry,
-      bed: bed ? [bed.bed.x, bed.bed.y, bed.bed.z] : null,
+      bed: home ? [home.bed.x, home.bed.y, home.bed.z] : bed ? [bed.bed.x, bed.bed.y, bed.bed.z] : null,
       recoveringMs
     })
     sendStats(client, player)

@@ -25,6 +25,7 @@ use App\Http\Controllers\PlayerInventoryLayoutController;
 use App\Http\Controllers\PlayerReportController;
 use App\Http\Controllers\PubController;
 use App\Http\Controllers\ReferralController;
+use App\Http\Controllers\RespawnBedController;
 use App\Http\Controllers\SecurityScanController;
 use App\Http\Controllers\ShopController;
 use App\Http\Controllers\StripeWebhookController;
@@ -104,6 +105,8 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
         Route::post('/furniture-storage/open', [FurnitureStorageController::class, 'open']);
         Route::post('/furniture-storage/deposit', [FurnitureStorageController::class, 'deposit']);
         Route::post('/furniture-storage/take', [FurnitureStorageController::class, 'take']);
+        Route::get('/respawn-bed', [RespawnBedController::class, 'show']);
+        Route::post('/respawn-bed', [RespawnBedController::class, 'store']);
     });
     Route::get('/bank', [BankController::class, 'show']);
     Route::get('/trades/offerable', [TradeController::class, 'offerable']);

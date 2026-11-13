@@ -375,6 +375,7 @@ export const messages = {
     },
     playerList: { title: 'Players here ({n})', empty: 'Nobody else is here.', speaking: 'Speaking', mute: 'Mute', unmute: 'Unmute', volume: 'Volume of {name}' },
     voice: { live: 'Mic on', micDenied: 'Microphone unavailable: allow it in your browser to talk.' },
+    bed: { prompt: 'Wake up here', set: 'You will wake up in this bed.' },
     storage: {
       prompt: 'Open',
       title: 'Storage',
@@ -829,6 +830,7 @@ export const messages = {
     },
     playerList: { title: 'Joueurs présents ({n})', empty: 'Personne d’autre ici.', speaking: 'Parle', mute: 'Couper', unmute: 'Rétablir', volume: 'Volume de {name}' },
     voice: { live: 'Micro ouvert', micDenied: 'Micro indisponible : autorise-le dans ton navigateur pour parler.' },
+    bed: { prompt: 'Me réveiller ici', set: 'Tu te réveilleras dans ce lit.' },
     storage: {
       prompt: 'Ouvrir',
       title: 'Rangement',

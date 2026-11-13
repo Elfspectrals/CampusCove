@@ -241,6 +241,7 @@ erDiagram
     ACCOUNTS ||--o{ LOCKPICK_ATTEMPTS : cambrioleur
     ACCOUNTS ||--o| LOCKPICK_WEAR : "crochet entamé"
     ROOM_FURNITURES ||--o| FURNITURE_STORAGES : "rangement"
+    ACCOUNTS ||--o| ACCOUNT_RESPAWN_BEDS : "lit de réveil"
 
     HOUSING_UNITS {
         bigint unit_id PK
@@ -293,7 +294,14 @@ erDiagram
         bigint room_furniture_id PK, FK
         bigint container_id FK
     }
+    ACCOUNT_RESPAWN_BEDS {
+        bigint account_id PK, FK
+        bigint room_furniture_id FK
+        timestamptz set_at
+    }
 ```
+
+- **Lit de réveil** : `account_respawn_beds` garde le lit posé que le joueur a choisi ; la ligne disparaît avec le lit. Voir `docs/RESPAWN_BED.md`.
 
 - **Rangement** : un meuble de rangement posé (commode, coffre à jouets, frigo) a une ligne `furniture_storages` qui le relie à son conteneur ; les objets rangés sont les `inventory_stacks` de ce conteneur. Voir `docs/STORAGE.md`.
 

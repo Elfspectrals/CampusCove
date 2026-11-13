@@ -1,15 +1,11 @@
 import { computed, ref, shallowRef, type Ref, type ShallowRef } from 'vue'
 import type { Room } from '@colyseus/sdk'
-import * as THREE from 'three'
+import type * as THREE from 'three'
 import { fetchOfferable, type OfferableItem } from '../../api/trades'
-import { isAimingAtNpc } from '../../game/pub/npcAim'
-import { openHouseInterior } from '../../game/town/openHouses'
 import { isStorageFurniture, storableItems } from '../../game/town/furnitureStorage'
 import type { HouseFurniturePayload, StorageErrorPayload, StorageScreenPayload } from '../../types/gameRealtime'
 import type { InteractionSource } from './useInteractionTargets'
-
-const STORAGE_REACH = 2.3
-const PROMPT_HEIGHT = 1.4
+import { createPlacedObjectAim } from './placedObjectAim'
 
 export interface FurnitureStorageDeps {
   myPosition: { x: number; y: number; z: number }
@@ -30,36 +26,10 @@ export function useFurnitureStorage(deps: FurnitureStorageDeps) {
   const error = ref<string | null>(null)
   const open = computed(() => objectId.value !== null)
   const storable = computed(() => (screen.value ? storableItems(bag.value, screen.value.food_only) : []))
-  const forward = new THREE.Vector3()
-  const world = new THREE.Vector3()
-  const projection = new THREE.Vector3()
-
-  function aimed(): { objectId: string; point: THREE.Vector3 } | null {
-    const camera = deps.getCamera()
-    if (!camera) return null
-    camera.getWorldDirection(forward)
-    for (const house of deps.houses()) {
-      const interior = house.model_key ? openHouseInterior(house.model_key) : undefined
-      if (!interior) continue
-      for (const object of house.objects) {
-        if (!isStorageFurniture(object.objectKey)) continue
-        interior.localToWorld(world.set(object.x, object.y, object.z))
-        if (isAimingAtNpc(deps.myPosition, forward, [world.x, world.y, world.z], STORAGE_REACH)) return { objectId: object.objectId, point: world.clone() }
-      }
-    }
-    return null
-  }
+  const aim = createPlacedObjectAim(deps, isStorageFurniture)
 
   function prompt() {
-    if (deps.promptsHidden() || open.value) return null
-    const target = aimed()
-    const camera = deps.getCamera()
-    const canvas = deps.canvasRef.value
-    if (!target || !camera || !canvas) return null
-    projection.set(target.point.x, target.point.y + PROMPT_HEIGHT, target.point.z).project(camera)
-    if (projection.z > 1) return null
-    const rect = canvas.getBoundingClientRect()
-    return { x: (projection.x * 0.5 + 0.5) * rect.width, y: (-projection.y * 0.5 + 0.5) * rect.height, action: deps.promptLabel() }
+    return deps.promptsHidden() || open.value ? null : aim.prompt(deps.promptLabel())
   }
 
   async function reloadBag(): Promise<void> {
@@ -80,7 +50,7 @@ export function useFurnitureStorage(deps: FurnitureStorageDeps) {
 
   function interact(): boolean {
     if (open.value) return false
-    const target = aimed()
+    const target = aim.aimed()
     if (!target) return false
     if (document.pointerLockElement) document.exitPointerLock()
     objectId.value = target.objectId

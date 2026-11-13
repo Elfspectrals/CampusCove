@@ -390,7 +390,7 @@ test('a drunk player blacks out: hangover bill, seat released, 30 of intoxicatio
   assert.equal(room.seats.size, 0)
   assert.deepEqual(received(cMe, 'survival_knocked_out').map((m) => m.cause), ['alcohol'])
   await new Promise((resolve) => setImmediate(resolve))
-  assert.deepEqual(apiCalls, ['/survival/hangover'])
+  assert.deepEqual(apiCalls, ['/survival/hangover', '/respawn-bed'])
   assert.deepEqual(received(cMe, 'survival_hospital_bill'), [{ cause: 'alcohol', billed: 40, balanceAfter: 60, lostItems: 0, lostClothes: 0, lostCash: 0 }])
 
   timers.shift()!()
@@ -407,5 +407,5 @@ test('a health knockout keeps the hospital route and says so', async () => {
   tickSurvival(room, 60)
   assert.deepEqual(received(clients[0], 'survival_knocked_out').map((m) => m.cause), ['health'])
   await new Promise((resolve) => setImmediate(resolve))
-  assert.deepEqual(apiCalls, ['/survival/hospital'])
+  assert.deepEqual(apiCalls, ['/survival/hospital', '/respawn-bed'])
 })
