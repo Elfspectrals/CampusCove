@@ -56,7 +56,7 @@ class ShopApiTest extends TestCase
             ->mapWithKeys(fn (array $row) => [$row['item']['code'] => $row['item']['model_glb']])
             ->all();
 
-        $this->assertCount(56, $items);
+        $this->assertCount(57, $items);
         foreach ([
             'chair_campus_basic' => '/assets/decor/wooden_chair/model.glb',
             'lamp_study' => '/assets/decor/floor_lamp/model.glb',
@@ -65,6 +65,7 @@ class ShopApiTest extends TestCase
             'decor_bookshelf' => '/assets/decor/bookshelf/model.glb',
             'decor_workbench' => '/assets/decor/workbench/model.glb',
             'decor_wheelbarrow' => '/assets/decor/wheelbarrow/model.glb',
+            'decor_alarm' => '/assets/decor/alarm/model.glb',
         ] as $code => $model) {
             $this->assertSame($model, $items[$code] ?? null, $code);
         }

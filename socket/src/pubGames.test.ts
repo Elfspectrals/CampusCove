@@ -27,14 +27,16 @@ const manifest = {
 }
 
 const apiCalls: Array<{ token: string | null, path: string, body: any }> = []
+const freeDartsTokens = new Set<string>()
 globalThis.fetch = async (url: string | URL | Request, init?: RequestInit) => {
   const path = String(url)
   if (path === process.env.WORLD_MANIFEST_URL) return new Response(JSON.stringify(manifest))
   const token = String((init?.headers as Record<string, string>)?.Authorization ?? '').replace('Bearer ', '')
   apiCalls.push({ token, path: path.replace(/^.*\/api/, ''), body: init?.body ? JSON.parse(String(init.body)) : null })
-  if (path.endsWith('/pub/play')) return new Response(JSON.stringify({ alcohol: 24 }))
+  if (path.endsWith('/pub/play')) return new Response(JSON.stringify(freeDartsTokens.has(token) ? { alcohol: 0, fee: 0 } : { alcohol: 24 }))
   if (path.endsWith('/pub/reward')) {
-    const { placement } = JSON.parse(String(init?.body))
+    const { placement, free } = JSON.parse(String(init?.body))
+    if (free) return new Response(JSON.stringify({ coins: 0 }))
     return new Response(JSON.stringify({ coins: placement === 1 ? 40 : placement === 2 ? 15 : 0 }))
   }
   return new Response(JSON.stringify({}))
@@ -241,8 +243,11 @@ test('a full Drink Fast race: lobby, start, replayed progress, rewards with each
   const end = received(cw, 'pub_race_end').at(-1)
   assert.deepEqual(end.ranking, expected)
   assert.deepEqual(end.rewards, [{ sessionId: expected[0].sessionId, coins: 40 }, { sessionId: expected[1].sessionId, coins: 15 }])
-  assert.deepEqual(apiCalls.slice(2).map((c) => [c.token, c.body]), expected.map((row, i) => [
+  assert.deepEqual(apiCalls.slice(2).filter((c) => c.path === '/pub/reward').map((c) => [c.token, c.body]), expected.map((row, i) => [
     `token-${row.sessionId}`, { game: 'drink_fast', placement: i + 1, score: row.ms }
+  ]))
+  assert.deepEqual(apiCalls.filter((c) => c.path === '/tasks/pub-game').map((c) => [c.token, c.body]), expected.map((row) => [
+    `token-${row.sessionId}`, { game: 'drink_fast', intoxication: 0 }
   ]))
   assert.equal(a.intoxication, 24)
   assert.equal(b.intoxication, 24)
@@ -281,7 +286,8 @@ test('standing up forfeits the race and a lone finisher wins solo', async () => 
   sendDrinkFast(room, ca, plan.toggles, t0 + RACE_LOBBY_MS, drinkingMs(plan.finishStep!) + 500)
   await new Promise((resolve) => setImmediate(resolve))
   const score = drinkingMs(plan.finishStep!) + plan.spillsAt.at(-1)! * RACE_SPILL_PENALTY_MS
-  assert.deepEqual(apiCalls.map((c) => c.body), [{ game: 'drink_fast', placement: 0, score }])
+  assert.deepEqual(apiCalls.filter((c) => c.path === '/pub/reward').map((c) => c.body), [{ game: 'drink_fast', placement: 0, score }])
+  assert.deepEqual(apiCalls.filter((c) => c.path === '/tasks/pub-game').map((c) => [c.token, c.body]), [['token-a', { game: 'drink_fast', intoxication: 0 }]])
   assert.equal(b.intoxication, 0)
   assert.equal(a.intoxication, 24)
 })
@@ -355,6 +361,7 @@ test('Meter Shot: paid start, result rewarded, drink seen by the others', async 
   assert.equal(me.pubShots, null)
   assert.equal(me.intoxication, 24)
   assert.deepEqual(apiCalls[1].body, { game: 'meter_shot', placement: 0, score: 5000 })
+  assert.deepEqual([apiCalls[2].path, apiCalls[2].body], ['/tasks/pub-game', { game: 'meter_shot', intoxication: 0 }])
   assert.equal(received(cMe, 'pub_shots_result')[0].ms, 5000)
   assert.deepEqual(received(cOther, 'user_action'), [{ sessionId: 'me', action: 'drink', code: 'drink_vodka' }])
 })
@@ -462,6 +469,32 @@ test('Darts: lobby, three darts each in turn, a timed-out turn loses its darts, 
     ['token-b', { game: 'darts', placement: 2, score: 6 }]
   ])
   assert.equal(game.players[1].darts.filter((d) => d.score === 0).length, 2)
+})
+
+test('Darts: a game with a free tutorial entry still counts for everyone and pays nobody', async () => {
+  const a = fakePlayer('a', 84, -139)
+  const newcomer = fakePlayer('newcomer', 84.5, -139)
+  const { room, clients, timers } = fakeRoom(a, newcomer)
+  const [ca, cn] = clients
+  apiCalls.length = 0
+  freeDartsTokens.add('token-newcomer')
+  const t0 = 700_000
+
+  await onDartsJoin(room, ca, t0)
+  await onDartsJoin(room, cn, t0)
+  const game = room.pub.darts!
+  startDarts(room, game, t0 + DARTS_LOBBY_MS)
+  timers.at(-1)!()
+  timers.at(-1)!()
+  await new Promise((resolve) => setImmediate(resolve))
+  freeDartsTokens.clear()
+
+  assert.equal(room.pub.darts, null)
+  assert.deepEqual(received(ca, 'pub_darts_end').at(-1).rewards, [{ sessionId: 'a', coins: 0 }, { sessionId: 'newcomer', coins: 0 }])
+  assert.deepEqual(apiCalls.filter((c) => c.path === '/pub/reward').map((c) => [c.token, c.body.free]), [
+    ['token-a', true],
+    ['token-newcomer', true]
+  ])
 })
 
 test('the race state carries spills, and a new spill skips the state throttle', async () => {

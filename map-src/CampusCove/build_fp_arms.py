@@ -623,6 +623,10 @@ EAT_FOREARM = Vector((-0.5, 0.4, 0.8))
 DRINK_FOREARM = Vector((-0.3, 0.3, 0.9))
 SIP_REACH = 0.22
 OFF_HAND_LOW = {"z": -0.008, "rx": -0.04}
+TOOL_AT = Vector((0.17, 0.36, -0.16))
+TOOL_UP = Vector((0.4, 0.45, 1.0))
+TOOL_FOREARM = Vector((-0.35, 1.0, 0.25))
+HOLD_FRAMES = 96
 
 
 def hold_at(wrist, grip, up, forearm):
@@ -651,6 +655,16 @@ def drink(wrist):
         return hold_at(wrist, MOUTH - neck * SIP_REACH, neck, DRINK_FOREARM)
     hold, sip = tilted(5), tilted(30)
     return eased(30, [(0, hold), (10, sip), (16, sip), (26, hold), (30, hold)])
+
+
+def hold_tool(wrist):
+    hold = hold_at(wrist, TOOL_AT, TOOL_UP, TOOL_FOREARM)
+    sway = idle(HOLD_FRAMES, 0.0, 1)
+
+    def pose_at(fr):
+        breath = sway(fr)
+        return {k: hold.get(k, 0.0) + breath.get(k, 0.0) for k in hold.keys() | breath.keys()}
+    return pose_at
 
 
 def pick(fr):
@@ -688,6 +702,10 @@ KEY_HAND = eased(24, [(0, RELAXED), (3, RELAXED), (8, PINCH), (20, PINCH), (24, 
 DOOR_HAND = eased(16, [(0, RELAXED), (3, OPEN), (7, HOOK), (10, HOOK), (16, RELAXED)])
 
 
+def hold_hand(fr):
+    return blend(GRIP, FIST, 0.05 * (1 - math.cos(2 * math.pi * fr / HOLD_FRAMES)) / 2)
+
+
 def guard_hand(frames):
     return eased(frames, [(0, RELAXED), (3, LOOSE_FIST), (frames - 4, LOOSE_FIST), (frames, RELAXED)])
 
@@ -706,6 +724,7 @@ def finger_clips(side):
         "Pick": (90, main(PICK_HAND)),
         "Eat": (30, main(lambda fr: GRIP)),
         "Drink": (30, main(lambda fr: GRIP)),
+        "Hold": (HOLD_FRAMES, main(hold_hand)),
     }
 
 
@@ -754,6 +773,8 @@ def animate(arm, hand):
     for clip, pose_at in (("Eat", eat(hand["R"].location)), ("Drink", drink(hand["R"].location))):
         bake(arm["R"], clip, 30, pose_at)
         bake(arm["L"], clip, 30, lambda fr: OFF_HAND_LOW)
+    bake(arm["R"], "Hold", HOLD_FRAMES, hold_tool(hand["R"].location))
+    bake(arm["L"], "Hold", HOLD_FRAMES, idle(HOLD_FRAMES, 0.9, -1))
 
 
 def build(key, load=import_skin, out_rel=("skins",), fp_proportions=False):

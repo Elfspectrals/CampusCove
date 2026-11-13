@@ -9,7 +9,7 @@
       "farm_apple": {
         "price": 3,
         "quota": 300,
-        "overPrice": 1
+        "overPrice": 0
       }
     }
   }

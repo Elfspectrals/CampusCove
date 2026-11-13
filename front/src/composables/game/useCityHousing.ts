@@ -11,6 +11,9 @@ export interface CityHousingDeps {
   roomMessage: Ref<string | null>
   holdingHouseKey: () => boolean
   refreshInventory: () => void
+  holdingLockpick: () => boolean
+  holdingReinforcedLock: () => boolean
+  startLockpick: (unitId: string) => void
 }
 
 const LEAVE_CONFIRM_MS = 3000
@@ -48,6 +51,8 @@ export function useCityHousing(deps: CityHousingDeps) {
       myAccountId: deps.myAccountId.value,
       doorOpen: isDoorOpen(unit),
       holdingHouseKey: deps.holdingHouseKey(),
+      holdingLockpick: deps.holdingLockpick(),
+      holdingReinforcedLock: deps.holdingReinforcedLock(),
     })
   }
 
@@ -73,6 +78,8 @@ export function useCityHousing(deps: CityHousingDeps) {
     else if (action === 'lock') await runClaim(() => setHouseDoorLocked(unit.public_id, true), 'Could not change the lock.')
     // no key: try the handle anyway; the socket makes the door rattle for everyone nearby
     else if (action === 'locked') deps.gameRoomRef.value.send('door_rattle', { unitId: unit.public_id })
+    else if (action === 'pick') deps.startLockpick(unit.public_id)
+    else if (action === 'reinforce') deps.gameRoomRef.value.send('door_reinforce', { unitId: unit.public_id })
   }
 
   /** Interact at a locked door with the key in hand: unlock it. Returns true when there was a door to unlock. */

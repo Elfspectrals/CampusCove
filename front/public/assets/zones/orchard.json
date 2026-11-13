@@ -12,6 +12,6 @@
   ],
   "areas": [
     { "id": "stall", "name": "Orchard stall", "role": "seller", "npc": "p3", "bounds": { "minX": -31, "maxX": -23, "minZ": -83, "maxZ": -75 }, "offers": [] },
-    { "id": "apple_buyer", "name": "Apple stall", "role": "buyer", "npc": "orchard_farmer", "bounds": { "minX": -31.5, "maxX": -26.5, "minZ": -97, "maxZ": -92 }, "offers": [{ "code": "farm_apple", "price": 3, "quota": 300, "overPrice": 1 }] }
+    { "id": "apple_buyer", "name": "Apple stall", "role": "buyer", "npc": "orchard_farmer", "bounds": { "minX": -31.5, "maxX": -26.5, "minZ": -97, "maxZ": -92 }, "offers": [{ "code": "farm_apple", "price": 3, "quota": 300, "overPrice": 0 }] }
   ]
 }

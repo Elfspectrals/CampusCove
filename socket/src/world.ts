@@ -433,6 +433,11 @@ export function worldCropPlants(): WorldCropPlant[] {
   return loadedWorld().cropPlants
 }
 
+export function worldZoneKeysAt(x: number, z: number): string[] {
+  const inside = ([, b]: [string, Bounds]) => x >= b.minX && x <= b.maxX && z >= b.minZ && z <= b.maxZ
+  return [...loadedWorld().zoneBounds, ...shopBounds].filter(inside).map(([key]) => key)
+}
+
 export function worldZoneBounds(key: string): Bounds | null {
   return loadedWorld().zoneBounds.get(key) ?? shopBounds.get(key) ?? null
 }

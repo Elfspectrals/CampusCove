@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\ActionCounter;
 use App\Exceptions\FarmRejectedException;
 use App\Models\InventoryStack;
 use App\Models\ItemDef;
@@ -20,7 +21,10 @@ final class FarmService
 
     public const MIN_PICK_INTERVAL_MS = 2500;
 
-    public function __construct(private readonly AccountInventoryService $inventory) {}
+    public function __construct(
+        private readonly AccountInventoryService $inventory,
+        private readonly ActionCounterService $counters,
+    ) {}
 
     /** @return array{code: string, quantity: int} */
     public function pick(int $accountId, string $crop): array
@@ -45,6 +49,7 @@ final class FarmService
                 throw new FarmRejectedException('basket_full', "You cannot carry more than {$item->max_stack} of those.");
             }
             $this->inventory->grantItem($accountId, $item, 1);
+            $this->counters->bump($accountId, ActionCounter::FarmHarvests);
             Cache::put($lastPickKey, $nowMs, now()->addMinute());
 
             return ['code' => (string) $item->code, 'quantity' => $carried + 1];

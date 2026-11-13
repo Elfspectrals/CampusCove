@@ -29,6 +29,7 @@ class HousingUnit extends Model
         'lease_expires_at',
         'tax_due_at',
         'door_locked',
+        'reinforced_lock',
         'room_id',
     ];
 
@@ -48,6 +49,7 @@ class HousingUnit extends Model
             'lease_expires_at' => 'datetime',
             'tax_due_at' => 'datetime',
             'door_locked' => 'boolean',
+            'reinforced_lock' => 'boolean',
             'interior_bounds' => 'array',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
