@@ -1,7 +1,7 @@
 import { ref, type Ref, type ShallowRef } from 'vue'
 import type { Room } from '@colyseus/sdk'
 import { buyHousingUnit, setHouseDoorLocked } from '../../api/housing'
-import { housingActionFor, type HousingAction, type HousingUnit } from '../../game/town/housing'
+import { housingActionFor, type HousingAction, type HousingTarget, type HousingUnit } from '../../game/town/housing'
 import type { HousingUnitPayload } from '../../types/gameRealtime'
 
 export interface CityHousingDeps {
@@ -15,7 +15,7 @@ export interface CityHousingDeps {
 /** Town houses: synced unit list, the one at the player's door, open doors, and the door actions. */
 export function useCityHousing(deps: CityHousingDeps) {
   const units = ref<HousingUnit[]>([])
-  const nearbyUnit = ref<HousingUnit | null>(null)
+  const nearbyUnit = ref<HousingTarget | null>(null)
   const claimInFlight = ref(false)
   const openDoorIds = ref(new Set<string>())
 
@@ -23,7 +23,10 @@ export function useCityHousing(deps: CityHousingDeps) {
   function applyUnits(list: HousingUnitPayload[]): void {
     units.value = list.filter((u) => u.model_key)
     const near = nearbyUnit.value
-    if (near) nearbyUnit.value = units.value.find((u) => u.public_id === near.public_id) ?? null
+    if (near) {
+      const unit = units.value.find((u) => u.public_id === near.unit.public_id)
+      nearbyUnit.value = unit ? { ...near, unit } : null
+    }
   }
 
   function applyOpenDoors(ids: readonly string[]): void {
@@ -61,7 +64,7 @@ export function useCityHousing(deps: CityHousingDeps) {
 
   /** Interact at a door: open or close it, or lock it with the key in hand. */
   async function interact(): Promise<void> {
-    const unit = nearbyUnit.value
+    const unit = nearbyUnit.value?.unit
     if (!unit || !deps.gameRoomRef.value || claimInFlight.value) return
     const action = actionFor(unit)
     if (action === 'open' || action === 'close') deps.gameRoomRef.value.send('door_toggle', { unitId: unit.public_id })
@@ -72,7 +75,7 @@ export function useCityHousing(deps: CityHousingDeps) {
 
   /** Interact at a locked door with the key in hand: unlock it. Returns true when there was a door to unlock. */
   function unlock(): boolean {
-    const unit = nearbyUnit.value
+    const unit = nearbyUnit.value?.unit
     if (!unit || claimInFlight.value || actionFor(unit) !== 'unlock') return false
     void runClaim(() => setHouseDoorLocked(unit.public_id, false), 'Could not change the lock.')
     return true
@@ -80,7 +83,7 @@ export function useCityHousing(deps: CityHousingDeps) {
 
   /** F2 at the door of a house for sale: buy it. */
   function buy(): boolean {
-    const unit = nearbyUnit.value
+    const unit = nearbyUnit.value?.unit
     if (!unit || claimInFlight.value || actionFor(unit) !== 'buy') return false
     void runClaim(() => buyHousingUnit(unit.public_id), 'Housing claim failed.')
     return true

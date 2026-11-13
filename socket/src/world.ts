@@ -13,6 +13,7 @@ export interface WorldHouse {
   position: Vec3
   rotationY: number
   interiorOffset: Vec3
+  backDoor?: Vec3
 }
 
 export interface ClinicBed {
@@ -115,6 +116,16 @@ function parseVec3(raw: Json, what: string): Vec3 {
     throw new Error(`world manifest: invalid ${what} ${JSON.stringify(raw)}`)
   }
   return { x: raw[0], y: raw[1], z: raw[2] }
+}
+
+export function parseHouse(building: Json): WorldHouse {
+  const house: WorldHouse = {
+    position: parseVec3(building.position, `position of ${building.key}`),
+    rotationY: building.rotationY,
+    interiorOffset: parseVec3(building.interiorOffset, `interiorOffset of ${building.key}`)
+  }
+  if (building.backDoor !== undefined) house.backDoor = parseVec3(building.backDoor, `backDoor of ${building.key}`)
+  return house
 }
 
 function parseClinic(raw: Json): WorldClinic | null {
@@ -275,13 +286,7 @@ function parseWorld(manifest: Json): World {
   const fountains = (manifest.fountains ?? []).map((raw: Json, i: number) => parseVec3(raw, `fountain ${i}`))
   for (const zone of manifest.zones) {
     for (const building of zone.buildings ?? []) {
-      if (building.kind === 'house' && building.interiorOffset) {
-        houses.set(building.key, {
-          position: parseVec3(building.position, `position of ${building.key}`),
-          rotationY: building.rotationY,
-          interiorOffset: parseVec3(building.interiorOffset, `interiorOffset of ${building.key}`)
-        })
-      }
+      if (building.kind === 'house' && building.interiorOffset) houses.set(building.key, parseHouse(building))
       if (building.kind !== 'work' && building.kind !== 'store') continue
       const door = parseVec3(building.door, `door of ${building.key}`)
       workDoors.set(building.key, { x: door.x, z: door.z })

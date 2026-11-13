@@ -103,6 +103,16 @@ def make_texture(key, base, var=0.06, pattern="noise", size=64, accent=None, see
                 else:
                     tone = (((slat * 37) % 7) - 3) / 3 * 0.04
                     r, g, bl = r + tone, g + tone, bl + tone
+            elif pattern == "seams":
+                col = x % 32
+                if col == 0:
+                    r, g, bl = ar, ag, ab
+                elif col == 1:
+                    r, g, bl = r0 + 0.08, g0 + 0.08, b0 + 0.08
+                elif col == 2:
+                    r, g, bl = (r0 + ar) / 2, (g0 + ag) / 2, (b0 + ab) / 2
+                else:
+                    r, g, bl = r0 + k * 0.3, g0 + k * 0.3, b0 + k * 0.3
             px.extend((max(0, min(1, r)), max(0, min(1, g)), max(0, min(1, bl)), 1.0))
     img.pixels.foreach_set(px)
     img.pack()
@@ -532,26 +542,29 @@ def walk_in_shell(coll, cols, W, zf, H, mat, glass, front, west, east, interior_
     return objs, (0.0, fy, oz), zb
 
 
-def perimeter(coll, name, W, zf, zb, y0, h, thick, mat, front_gaps=(), tile=1.0):
+def perimeter(coll, name, W, zf, zb, y0, h, thick, mat, front_gaps=(), tile=1.0, back_gaps=()):
     hw = W / 2
     objs = []
-    cur, idx = -hw, 0
-    for a, bb in sorted(front_gaps):
-        if a - cur > 0.01:
-            objs.append(box(coll, f"{name}_Front{idx}", (cur + a) / 2, zf - thick / 2, y0, a - cur, thick, h, mat, tile=tile))
-        cur, idx = bb, idx + 1
-    objs.append(box(coll, f"{name}_Front{idx}", (cur + hw) / 2, zf - thick / 2, y0, hw - cur, thick, h, mat, tile=tile))
-    objs.append(box(coll, f"{name}_Back", 0, zb + thick / 2, y0, W, thick, h, mat, tile=tile))
+    for side, z, gaps in (("Front", zf - thick / 2, front_gaps), ("Back", zb + thick / 2, back_gaps)):
+        if side == "Back" and not gaps:
+            objs.append(box(coll, f"{name}_Back", 0, z, y0, W, thick, h, mat, tile=tile))
+            continue
+        cur, idx = -hw, 0
+        for a, bb in sorted(gaps):
+            if a - cur > 0.01:
+                objs.append(box(coll, f"{name}_{side}{idx}", (cur + a) / 2, z, y0, a - cur, thick, h, mat, tile=tile))
+            cur, idx = bb, idx + 1
+        objs.append(box(coll, f"{name}_{side}{idx}", (cur + hw) / 2, z, y0, hw - cur, thick, h, mat, tile=tile))
     for side, x in (("W", -hw + thick / 2), ("E", hw - thick / 2)):
         objs.append(box(coll, f"{name}_{side}", x, (zf + zb) / 2, y0, thick, zf - zb - 2 * thick, h, mat, tile=tile))
     return objs
 
 
-def hinged_door(coll, parts, hinge_x, zf, y0):
-    stale = bpy.data.objects.get("Door")
+def hinged_door(coll, parts, hinge_x, zf, y0, name="Door"):
+    stale = bpy.data.objects.get(name)
     if stale:
-        stale.name = "Door_stale"
-    door = join(coll, "Door", [box(coll, f"Door_{i}", gx, zf, y0 + py, sx, sz, h, m, bevel=bv) for i, (gx, py, sx, sz, h, m, bv) in enumerate(parts)])
+        stale.name = f"{name}_stale"
+    door = join(coll, name, [box(coll, f"{name}_{i}", gx, zf, y0 + py, sx, sz, h, m, bevel=bv) for i, (gx, py, sx, sz, h, m, bv) in enumerate(parts)])
     pivot = Vector(b(hinge_x, zf, y0))
     door.data.transform(Matrix.Translation(door.location - pivot))
     door.location = pivot

@@ -1014,6 +1014,34 @@
             0.2,
             -1.405
           ]
+        },
+        {
+          "kind": "house",
+          "key": "cove_home_b01",
+          "name": "Tidewater House",
+          "position": [
+            -273.5,
+            0,
+            -187
+          ],
+          "rotationY": 3.141593,
+          "door": [
+            -273.5,
+            1.25,
+            -191.8
+          ],
+          "backDoor": [
+            -273.5,
+            1.25,
+            -178.99
+          ],
+          "offer": "buy",
+          "price": 14000,
+          "interiorOffset": [
+            0,
+            0.2,
+            -1.405
+          ]
         }
       ]
     },

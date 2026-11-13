@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import { disposeObject3D } from '../../avatar/compositeAvatar'
 import { findHouse, findStore, findWork } from '../assets/catalog'
 import { APARTMENT_ROOM_HEIGHT } from '../gameRoomConstants'
+import type { DoorSide } from '../../types/gameRealtime'
 import { mergeStaticMeshes } from './mergeStaticMeshes'
 import {
   fetchCollisionFile,
@@ -62,11 +63,13 @@ const interiorsByHouse = new Map<string, THREE.Group>()
 /** Interior colliders the gameplay switches on and off (the pub's staff door), kept out of the static world. */
 const TOGGLED_INTERIOR_COLLIDERS = new Set(['COL_Door_Secret'])
 const FRONT_DOOR_NODE = 'Door'
-export const MOVING_EXTERIOR_NODES: ReadonlySet<string> = new Set([FRONT_DOOR_NODE])
+const BACK_DOOR_NODE = 'DoorBack'
+export const MOVING_EXTERIOR_NODES: ReadonlySet<string> = new Set([FRONT_DOOR_NODE, BACK_DOOR_NODE])
 const MOVING_INTERIOR_NODES: ReadonlySet<string> = new Set(['Door_Secret', 'Bell'])
 const toggledColliders = new Map<string, CollisionCuboidJson>()
 
 interface FrontDoor {
+  houseKey: string
   node: THREE.Object3D
   blocker: CollisionCuboidJson | null
   /** Open / close angle; the rattle jiggle is added on top of it. */
@@ -99,21 +102,30 @@ function interiorAssetOf(lot: OpenLot): { interiorUrl: string; interiorCollision
   return asset
 }
 
-export function registerFrontDoor(exterior: THREE.Object3D, houseKey: string): void {
-  const door = exterior.getObjectByName(FRONT_DOOR_NODE)
-  if (!door) throw new Error(`House ${houseKey} has no ${FRONT_DOOR_NODE} node`)
-  door.rotation.y = OPEN_DOOR_ANGLE
-  frontDoors.set(houseKey, { node: door, blocker: null, swing: OPEN_DOOR_ANGLE, rattleLeft: 0 })
+function doorKey(buildingKey: string, side: DoorSide): string {
+  if (side === 'front') return buildingKey
+  if (side === 'back') return `${buildingKey}#back`
+  throw new Error(`Unknown door side ${JSON.stringify(side)} of ${buildingKey}`)
+}
+
+export function registerFrontDoor(exterior: THREE.Object3D, houseKey: string, hasBackDoor = false): void {
+  const doors: Array<[DoorSide, string]> = hasBackDoor ? [['front', FRONT_DOOR_NODE], ['back', BACK_DOOR_NODE]] : [['front', FRONT_DOOR_NODE]]
+  for (const [side, nodeName] of doors) {
+    const door = exterior.getObjectByName(nodeName)
+    if (!door) throw new Error(`House ${houseKey} has no ${nodeName} node`)
+    door.rotation.y = OPEN_DOOR_ANGLE
+    frontDoors.set(doorKey(houseKey, side), { houseKey, node: door, blocker: null, swing: OPEN_DOOR_ANGLE, rattleLeft: 0 })
+  }
 }
 
 /** The swinging door of a building (house model key or work key), to play its sounds on. */
-export function frontDoorNode(buildingKey: string): THREE.Object3D | null {
-  const door = frontDoors.get(buildingKey)
+export function frontDoorNode(buildingKey: string, side: DoorSide = 'front'): THREE.Object3D | null {
+  const door = frontDoors.get(doorKey(buildingKey, side))
   return door?.node.parent ? door.node : null
 }
 
-export function rattleFrontDoor(buildingKey: string): void {
-  const door = frontDoors.get(buildingKey)
+export function rattleFrontDoor(buildingKey: string, side: DoorSide = 'front'): void {
+  const door = frontDoors.get(doorKey(buildingKey, side))
   if (door) door.rattleLeft = RATTLE_SECONDS
 }
 
@@ -150,11 +162,11 @@ function closedDoorBlocker(door: THREE.Object3D): CollisionCuboidJson {
 }
 
 export function updateFrontDoors(dt: number, isDoorOpen: (houseKey: string) => boolean): void {
-  for (const [houseKey, door] of frontDoors) {
+  for (const [key, door] of frontDoors) {
     if (!door.node.parent) continue
-    const open = isDoorOpen(houseKey)
+    const open = isDoorOpen(door.houseKey)
     door.blocker ??= closedDoorBlocker(door.node)
-    setDoorBlocker(houseKey, open ? null : door.blocker)
+    setDoorBlocker(key, open ? null : door.blocker)
     const target = open ? OPEN_DOOR_ANGLE : 0
     const step = DOOR_SWING_SPEED * dt
     const delta = target - door.swing

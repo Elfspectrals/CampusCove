@@ -1,0 +1,106 @@
+{
+  "version": 1,
+  "key": "cove_home_b01",
+  "collision": [
+    {
+      "name": "GalleryPostLow0",
+      "x": -5.48,
+      "z": 6.08,
+      "sx": 0.18,
+      "sz": 0.18,
+      "h": 3.0
+    },
+    {
+      "name": "GalleryPostLow1",
+      "x": -3.29,
+      "z": 6.08,
+      "sx": 0.18,
+      "sz": 0.18,
+      "h": 3.0
+    },
+    {
+      "name": "GalleryPostLow2",
+      "x": -1.1,
+      "z": 6.08,
+      "sx": 0.18,
+      "sz": 0.18,
+      "h": 3.0
+    },
+    {
+      "name": "GalleryPostLow3",
+      "x": 1.1,
+      "z": 6.08,
+      "sx": 0.18,
+      "sz": 0.18,
+      "h": 3.0
+    },
+    {
+      "name": "GalleryPostLow4",
+      "x": 3.29,
+      "z": 6.08,
+      "sx": 0.18,
+      "sz": 0.18,
+      "h": 3.0
+    },
+    {
+      "name": "GalleryPostLow5",
+      "x": 5.48,
+      "z": 6.08,
+      "sx": 0.18,
+      "sz": 0.18,
+      "h": 3.0
+    },
+    {
+      "name": "GalleryWallPost0",
+      "x": -5.48,
+      "z": 4.18,
+      "sx": 0.16,
+      "sz": 0.16,
+      "h": 3.0
+    },
+    {
+      "name": "GalleryWallPost1",
+      "x": 5.48,
+      "z": 4.18,
+      "sx": 0.16,
+      "sz": 0.16,
+      "h": 3.0
+    },
+    {
+      "name": "GalleryRailFrontW",
+      "x": -3.29,
+      "z": 6.08,
+      "sx": 4.38,
+      "sz": 0.1,
+      "h": 1.08
+    },
+    {
+      "name": "GalleryRailFrontE",
+      "x": 3.29,
+      "z": 6.08,
+      "sx": 4.38,
+      "sz": 0.1,
+      "h": 1.08
+    },
+    {
+      "name": "GalleryRailEndW",
+      "x": -5.48,
+      "z": 5.13,
+      "sx": 0.1,
+      "sz": 1.9,
+      "h": 1.08
+    },
+    {
+      "name": "GalleryRailEndE",
+      "x": 5.48,
+      "z": 5.13,
+      "sx": 0.1,
+      "sz": 1.9,
+      "h": 1.08
+    }
+  ],
+  "backDoor": {
+    "x": 0.0,
+    "z": -8.01
+  }
+}

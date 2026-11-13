@@ -343,6 +343,7 @@ Approach:    emergency lane § 4.4 (opposite side of the estate from the main ga
 | Envelope | 22.0 × 19.7 m | 16.0 × 12.5 m |
 | Max house footprint (v3) | 16 × 17 m = 272 m² (34.7 %) | 14 × 12.5 m = 175 m² (43.75 %) |
 | Driveway | 3.0 × 5.0 m | 2.4 × 5.0 m |
+| Interior triangle ceiling | 12 k | 9 k (decided 2026-11-12, all 12 B lots; town houses ~5 k) |
 | v1 content | lot lawn, low hedge on side and rear lines (0.40 m, centred on the line, one hedge per shared line), driveway, postbox with the lot ID | same |
 
 Postbox (`postbox`): 0.25 × 0.4 box on a 1.0 m post, lot ID in `text_mesh` 2 cm proud, 0.6 m from the driveway edge, 0.4 m
@@ -487,6 +488,9 @@ door); the garage centre sits on the driveway, which bounds the main width: W �
 | B-10 | −π/2 | −x (carport) | 6.5 | 5.0 | 13.3 | 13.0 × −5.0 (1 st.) | carport 2.9 × 6.0 | (1.4, 1.0) | 155.3 | 38.8 % |
 | B-11 | π | +x | 4 | 5.0 | 10 | 10.0 × −5.4 | 4.0 × 7.0 (0) | (−3.0, 1.0) | 138.1 | 34.5 % |
 | B-12 | π | +x | 5 | 4.0 | 11 | 11.0 × −5.6 | 4.0 × 7.0 (1.0) | (−2.5, 2.0) | 151.3 | 37.8 % |
+
+R1 widths (decided 2026-11-12): B-01 keeps W 11.0; every later B lot whose row says W 11.0 (B-04, B-05, B-08, B-09,
+B-12) changes W by at least 0.4 m when it is designed, and its row is updated then.
 
 Notes: the duplex plan works from W ≈ 9 m; the cottage plan needs **W ≥ 11.0** (its bedroom partition at −xi + 4.4 must
 clear the 1.2 m door), which is why the narrow B-11 lot (d = 4) is two-storey. On A-01 and A-04 the v1 driveway lies
@@ -1257,16 +1261,477 @@ the primary suite (S5), built inside the interior system: one more L1 rect, a re
 | Kitchen, island, hood, baths, wardrobes, closet rails, bookshelves, mudroom bench | existing `lib_interior.py` and `build_kitchen` | reused as they are (pantry shelves = `LI.bookshelves` with a goods material) |
 | Lot dressing: motor court, path, lamp, hedge, tree, postbox | existing `lib_site.py` builders | same estate furniture as the other villas |
 
+#### 7.2c.8 Tidewater House on B-01 [built: cove_home_b01, for sale 14 000]
+
+**Why B-01.** It is the first executive home and one half of the gateway pair: the first house a resident sees on the
+left after the gate, facing B-12 across the boulevard (R6 mirror). A Lowcountry coastal house is the clearest contrast the
+rules allow next to the French Country hip of B-02 and the black Modern Farmhouse across the boulevard: butter-yellow
+clapboard against greige limestone and white battens, a silver standing-seam side gable against a slate hip and a black
+front gable, and a full-width **two-tier gallery** (the Charleston "double piazza") that no other lot has. It is smaller
+than the villas (W 11.0 against 13–14 m, one-car wing), so its luxury comes from the porch life outside and a through hall
+inside, not from volume. It is also the first house that faces north (rotationY π), so it carries the site-build changes
+every B lot needs (T1). It brings six features that other lots reuse: per-house rotation, the recessed wing, the gallery
+porch (walkable on both tiers), the `seams` standing-seam texture, a real back door and the tidewater plan.
+
+Sources: the estate research has no Lowcountry entry ([`notes/traditional_styles.md`](research/luxury-suburban-houses/notes/traditional_styles.md)
+covers Colonial, Georgian, Cape Cod, Tudor and Queen Anne). The cues used here (raised two-storey galleries on slender
+square posts, haint-blue porch ceilings, floor-length "jib" windows onto the gallery, a centre hall running front to back
+for the breeze, standing-seam metal roofs, painted heart-pine floors) are design derivations, not sourced data, and should
+be checked in the first playtest like the other style values.
+
+**Rule check** (adjacent: B-02; visible pair: B-12 across the boulevard)
+
+| Rule | B-01 | B-02 (adjacent) | B-12 (visible pair) | Result |
+|------|------|-----------------|---------------------|--------|
+| R1 | key `cove_home_b01`, palette `tidewater`, W 11.0 | W 14.0 | W 11.0 (planned) | key and palette unique; B-01 keeps W 11.0, the other lots that planned 11.0 change it when designed (Decisions) |
+| R2 | Vernacular | Classical | Modern | ok |
+| R3 | Y (butter yellow), door haint blue `#8fb8c9` | S | W | ok; Y on 2 lots (A-01, B-01); no other door is haint blue |
+| R4 | side gable `gable_x`, silver standing seam `#a6abb0`; secondary element: the gallery | steep hip, slate | front gable, black standing seam | ok; the six side gables carry six different secondary elements |
+| R5 | 2 storeys on the boulevard | | 2 storeys | ok (gateway stays two-storey on both sides) |
+| R6 | facade setback 4.0 | 5.0 | 4.0 | stagger 1.0 m with B-02; the gateway pair matches on purpose |
+| R7 | single wing −x recessed 1.5 m, white carriage door; garage face 5.5 m behind the front line; door 2.6 m of 15.0 m frontage (17 %) | no garage | single wing +x recessed 1.0, black carriage door | ok |
+| R8 | entry type **gallery** (unique); deck 2.2 m + step 0.4 m = 2.6 m, 1.4 m left to the front line (the limit) | entry not designed yet (must not be a gallery) | full-width porch | ok |
+| R9 | shutters (Vernacular), white frames | must not use white frames (constraint handed to B-02) | black frames | ok |
+| R10 | postbox, 0.40 m lot hedges, cobble driveway and apron, 2.6 m lot lamp | | | ok |
+| R11 | main block plan x 152.0 → 163.0, wing 163.0 → 167.0 inside the envelope x 152–168; facade on the envelope line z −209.0, back −197.79 (envelope −196.5); 37.8 % | | | ok |
+
+The gallery deck ends 0.1 m past the main walls (plan x 151.9), 2 cm past the plinth: trim, not floor area, like every
+plinth and corner board of the estate. Its roof fascia stands 0.36 m into the side setback (eaves allow 1.2 m).
+
+**Placement**
+
+```
+Lot B-01: x 150–170, z −193 … −213, faces N (street at z −213), envelope x 152–168, z −209.0 … −196.5
+Rotation:      rotationY π: house +x → plan −x, house +z (front) → plan −z (north); plan = origin + (−x, −z)
+Lot point:     plan (157.5, −205.0) = world (−273.5, −187.0)    (lot centre (160, −203) + R(π)·(u₀, v₀) = (−2.5, −2.0))
+Facade:        plan z −209.0 (setback 4.0 m; B-02 is at 5.0 → R6 stagger 1.0 m)
+Main block:    house x −5.5 → 5.5, z 4.0 → −7.21 = plan x 152.0 → 163.0, z −209.0 → −197.79 (11.0 × 11.21)
+Garage wing:   house x −9.5 → −5.5, z 2.5 → −4.5 = plan x 163.0 → 167.0, z −207.5 → −200.5 (4.0 × 7.0, recessed 1.5 m);
+               door centred at house x −7.5 = plan x 165.0 on the driveway axis, door edges plan 163.7 → 166.3
+Gallery:       deck house x −5.6 → 5.6, z 4.0 → 6.2 = plan x 151.9 → 163.1, z −209.0 → −211.2; step to −211.6
+               (projection 2.6 m, 1.4 m left to the front line); roof drip at plan z −211.5
+Door point:    world (−273.5, 1.25, −191.8)  (= origin + R(π)·(0, ZF + 0.8) = plan (157.5, −209.8))
+Back door:     world (−273.5, 1.25, −178.99) (= origin + R(π)·(0, ZB − 0.8) = plan (157.5, −196.99)); landing plan
+               z −197.79 → −196.59, step to −196.19, garden to the rear line −193.0
+interiorOffset [0, 0.2, −1.405]  (house frame, unchanged by the rotation)
+Seeder bounds: minX −9.295, maxX 5.295, minZ −5.6, maxZ 5.2, maxY 5.6 · price 14 000 · colour '#F0D98C'
+Coverage:      123.3 + 28.0 = 151.3 m² (37.8 %); GFA 2 × 123.3 + 28.0 = 274.6 m²; gallery decks 2 × 24.6 m² more
+```
+
+Derived generator values (T 0.2, GAP 0.005, FY 0.2): x_out = W/2 − T − GAP = 5.295, xi = 5.095,
+OZ = ZF − T − GAP − 5.2 = −1.405, ZB = OZ + back − GAP − T = −7.21, DEPTH = ZF − ZB = 11.21, ZC = −1.605,
+H_SHELL = FY + 5.6 + 0.3 = 6.10, y_eave 6.15; interior zi_f 5.0, zi_b −5.4. Wing (east frame, mirrored to −x by H1,
+recessed by T2 with r = 1.5): x_in 5.5, x_ext 9.5, xo 9.295, xi 9.095; interior zf = zi_f − r = 3.5,
+zb = 5.2 − r − d + 3T + 2GAP = −2.69, zc 0.405; exterior front zf_e = ZF − r = 2.5, back zb_e = ZF − r − d = −4.5; shell
+height 3.30; side window at z 0.405 ± 0.7 (y 1.0 → 2.0) on the west end; garage room 3.58 m clear (skin to the west
+wall) × 6.19 m; layout wing rect x −9.095 → −5.095, z −2.69 → 3.5; garage light (−7.2975, 0.405); `Sky_West` at
+x −max(13, x_ext + 1.5) = −13. Main roof (`gable_x`, rise 3.4, 31.2°): ridge cap y 9.63 → 9.75, gable vents at y 7.61,
+front slab underside 6.156 at the wall line, front fascia z 4.55 → 4.61, y 5.77 → 5.97. Wing roof (`gable_z`, rise 1.6,
+38.7°): eave 3.35, ridge 4.95, cap 5.03 → 5.15, front overhang to z 2.95 (1.05 m behind the facade, clear of the gallery).
+Chimney (4.55, 1.93): brick stack x 4.10 → 5.00, z 0.325 (over the living-room fireplace, 7.2d.3), y 5.85 → 9.90.
+
+**HOUSES entry** (new keys marked in the feature map; everything else exists):
+
+```python
+"cove_home_b01": dict(name="Tidewater House", W=11.0, ZF=4.0, back=-5.6, floors=2, mirror=False, palette="tidewater",
+                      roof="gable_x", rise=3.4, cross=None, chimney=(4.55, 1.93), windows="classic", flowers=False,
+                      porch="gallery",
+                      gallery=dict(d=2.2, half=5.6, posts=(-5.48, -3.29, -1.1, 1.1, 3.29, 5.48), step_w=1.8,
+                                   slab=0.18, high=5.72, drop=0.35, over=0.3, beam_top=5.27, rail_up=1.0, guard=1.2,
+                                   upper="walkable", low_floor=True),
+                      back_door=dict(x=0.0, landing=1.2),
+                      wing=dict(w=4.0, d=7.0, rise=1.6, side="west", setback=1.5, doors=1, door_w=2.6, door_h=2.3,
+                                door_style="carriage"),
+                      interior=dict(plan="tidewater", style="tidewater",
+                                    lines=dict(hall_x=1.26, front_z=1.6, back_z=-1.6, mud_x=-3.0, bed_z=-0.3, stair_top=3.55),
+                                    windows=[...])),   # the window list of 7.2d.3
+```
+The window list of 7.2d.3 is written inline in the entry, like A-04's (no single-use module constant). `rail_up` (upper rail
+height) and `guard` (height of the upper-gallery guard boxes above the deck, T5) keep those two values out of the builders.
+`gallery.upper` and `gallery.low_floor` follow the decisions below (walkable upper tier, lower deck in the floor layout).
+
+**Palette** (`PALETTES["tidewater"]`; `roof_pat` is a new optional key, absent on every other palette, so their roofs keep
+`tiles`; `soffit` is A-04's key, used here for the haint-blue porch ceilings; `frame` and `garage` are left out: frames
+fall back to the white trim and the carriage door to the shared white `EX_GarageDoor`):
+
+```python
+"tidewater": dict(wall="#f0d98c", wall_pat="planks", wall_acc="#d9bf6e", trim="#f7f6f0", roof="#a6abb0", roof_acc="#8d9297",
+                  roof_pat="seams", shutter="#2f3d34", door="#8fb8c9", in_wall="#f6f1e2", in_bed="#e3ecef",
+                  floor="#b8834f", floor_acc="#9a6a3c", cabinet="#f2f0ea", worktop="#e8e6e0",
+                  ridge="#8d9297", deck="#8f969a", deck_acc="#7a8185", deck_pat="planks", soffit="#8fb8c9"),
+```
+Butter-yellow clapboard (`planks` at the usual 1.0 × 3.0 UV factors), white trim, Charleston-green shutters, a haint-blue
+door, porch-grey painted deck boards, haint-blue gallery ceilings, silver standing seam on every roof (main, wing and
+gallery). The chimney keeps the shared brick `EX_Chimney`.
+
+**Feature map**
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Two-storey shell, cut per storey, glass, casings, floor band | exists | W 11.0, back −5.6 |
+| `windows="classic"` with shutters; floor-length French openings (`kind="french"`, no sill, blocking box) | exists | the jib windows onto the gallery |
+| Side gable `gable_x`, brick chimney | exists | rise 3.4 |
+| Walk-in single wing on −x (`side="west"`), street gable, one carriage door | exists | H1, wing defaults |
+| Palette keys `ridge`, `deck`, `deck_pat`, `soffit` | exists | N2, H6, S2 |
+| Per-house `rotationY` in the site build, rotated door point, placeholder and porch collisions | **new** | T1 |
+| Recessed wing (`wing.setback`) | **new** | T2 |
+| Two-tier gallery (`porch="gallery"`) and its collision export | **new** | T3 |
+| Standing-seam texture (`seams`) and palette key `roof_pat` | **new** | T4 |
+| Walkable upper gallery (`gallery.upper="walkable"`) | **new** | T5 |
+| Back door to the garden (`back_door`): second hinged door, landing, shared lock and open state | **new** | T7 |
+| Tidewater interior plan (`interior.plan="tidewater"`), `build_stair` rising `+z`, style kit | **new** | T6, geometry in 7.2d.3 |
+
+**New generator and site options (geometry in the exterior house frame: origin at the lot point, front face z = ZF = 4.0,
+y up; plan = origin + R(θ)·(x, z))**
+
+*T1: per-house rotation in the site build* (wishlist #3). The rest of the chain already handles any rotation: the ten town
+houses stand at rotationY −2.83 … 2.83 and the work buildings at π. Checked in the code:
+- `front/src/game/roomEnvironments.ts` sets `exterior.rotation.y = lot.rotationY`; `openHouses.placeOpenHouseInterior`
+  sets the interior group's `rotation.y` and puts the interior at `interiorOffset` inside it; `lotToWorld` /
+  `interiorToWorld` rotate the interior collision cuboids (`transformCuboid` multiplies the quaternions) and
+  `worldToInterior` (its inverse) drives `floorAt`, so walk heights and stairs follow the rotation.
+- `socket/src/movement.ts` `toInterior` applies the inverse rotation (x = dx cos θ − dz sin θ, z = dx sin θ + dz cos θ,
+  then subtracts `interiorOffset`), so `unitAt` and the lock rules work in the house frame; `world.ts` reads `rotationY`
+  from the manifest.
+- `apply-cove-heights.mjs` copies `rotationY` from the layout into the zone buildings and turns every site `yaw` into a
+  y-quaternion (qy = sin(yaw/2), qw = cos(yaw/2)): the same sense as three.js `rotation.y`, so a house box rotates with
+  yaw = θ.
+- `interiorOffset` and the seeder `interior_bounds` are in the house frame: they do not change with θ.
+
+So only `build_cove_heights_site.py` hard-wires θ = 0. Changes (additive, A-01 … A-04 keep θ 0 and write the same values):
+- Each house dict may carry `"rotationY"` (B-01: `math.pi`); absent = 0.
+- One helper, used for every house point:
+  ```python
+  def house_point(h, lx, lz):
+      th = h.get("rotationY", 0.0)
+      ox, oz = h["origin"]
+      return ox + lx * math.cos(th) + lz * math.sin(th), oz - lx * math.sin(th) + lz * math.cos(th)
+  ```
+- Manifest `houses`: `"rotationY": round(h.get("rotationY", 0.0), 6)` and `"door": [*wp(*house_point(h, 0.0, h["zf"] + 0.8))]`
+  with y 1.25 (today x = origin x and z = origin z + zf + 0.8, the θ = 0 case of the same formula).
+- Porch collisions: the A-03 loop becomes one helper `house_cols(h, prefix)` that reads the house's committed
+  `exterior.layout.json` and adds `est.col(f"{prefix}_{c['name']}", *house_point(h, c["x"], c["z"]), c["sx"], c["sz"],
+  c["h"], yaw=h.get("rotationY", 0.0))`. A-03 calls it with θ 0 (same boxes as today); B-01 with π. The house build keeps
+  writing its boxes in the house frame (T3).
+- Placeholder: `est.col(f"HousePlaceholder{lot}", *house_point(h, cx, zc), sx, sz, 6.0, yaw=θ)` with (cx, zc, sx, sz) in the
+  house frame. B-01: cx = (−9.5 + 5.5)/2 = −2.0, zc = ZC = −1.605, 15.0 × 11.21 → plan centre (159.5, −203.395), yaw π.
+- Self-check in the site build, per house: the door point lies inside its lot and in front of the facade on the street
+  side, `assert lot_contains(lot, door)` and `dot(door − origin, entry − centre) > 0`, so a wrong θ fails the build instead of
+  putting the door in the back garden.
+- Seeder: the door row is the world door point printed by the site build (below).
+
+Rounding: θ = round(π, 6) = 3.141593 like the mall stores; cos θ = −1 to 1e-12, so the seeder door point and the
+manifest agree to the millimetre. Cost: 0 triangles.
+
+*T2: recessed wing* (`wing["setback"]` = r ≥ 0, default 0; wishlist #2). Nothing in the code recesses a wing today: the
+wing front is always the main front (`zf = zi_f` in `Plan.__init__`, `zf_e = ZF` in `wing_exterior`). With r:
+- `Plan.__init__`: `zf_g = self.zi_f − r`, `zb_g = Z_FRONT_OUT − r − wg["d"] + 3T + 2GAP`, `zc = (zb_g + zf_g)/2`; the wing
+  dict stores `zf=zf_g`, `zb=zb_g`, `setback=r`. Asserts: `0 <= r <= wg["d"] − 3.0` (a car still fits) and
+  `not (r and wg.get("terrace"))` (the terrace guards use the main front line; no recessed terrace is planned).
+- `wing_exterior`: `zf_e, zb_e = ZF − r, ZF − r − g["d"]`. Every wing piece already derives from `zf_e`, `zb_e` and
+  `zc` (shell, plinth, corner boards, gable, fascia, vent, door slab at `zf_e + 0.03`, casings, lanterns at `zf_e + 0.08`).
+- `build_garage`, `Plan.layout` and the garage light read `g["zf"]`, `g["zb"]` and need no change.
+- The plan's garage doorway must stay inside the recessed wing: `g["zb"] + 0.15 <= a, b <= g["zf"] − 0.15` (the skyline
+  assert, moved to `Plan.__init__` so every plan gets it). B-01: −2.54 ≤ −0.2, 0.8 ≤ 3.35.
+- The main side wall between z ZF and ZF − r is now seen from the street: it is the main shell, already sided and
+  plinthed. No window is put there on B-01 (the strip is 1.1 m wide inside).
+
+B-01: wing exterior z 2.5 → −4.5, door slab z 2.53, lanterns at house x −5.65 and −9.35, z 2.58 (the east one stands
+0.15 m from the main wall, 1.87 m above its plinth). Cost: 0 triangles. A-01 … A-04 have r = 0 and rebuild unchanged.
+
+*T3: two-tier gallery* (`porch="gallery"`, values from `h["gallery"]`; wishlist #6). A full-width porch on two levels: the
+lower deck at the front door, an upper deck on the floor line of the upper storey, square posts on both tiers in one line,
+a low balustrade below, a guard rail above, a standing-seam lean-to roof under the main eave and haint-blue ceilings.
+`gallery_porch(coll, B, E, ZF, hw, ga)`, every box through `B` (so a mirrored house flips it), all values derived:
+```
+lines        post line zp = ZF + d − 0.12 = 6.08 · deck edge ZF + d = 6.2 · wall posts at zw = ZF + 0.18 = 4.18
+             (0.02 clear of the plinth's front face 4.08) · drip zd = ZF + d + over = 6.5 · slope s = drop / (d + over) = 0.14
+             deck top yd = FY − 0.02 = 0.18 (0.02 under the EX_Threshold top, so the two never share a plane)
+             upper deck top yu = FY + L1_Y = 3.20 (= the L1 floor) · upper slab bottom yu − slab = 3.02
+lower deck   EX_GalleryDeck        x −5.6 → 5.6 (±half), z 4.0 → 6.2, y 0 → 0.18, E["deck"], tile 1.0
+step         EX_GalleryStep        x −0.9 → 0.9 (±step_w/2), z 6.2 → 6.6, y 0 → 0.09, E["step"]
+lower posts  EX_GalleryPostLow0..5 0.18 × 0.18 at (posts[k], 6.08), y 0.17 → 3.01, E["trim"] (1 cm into deck and soffit)
+wall posts   EX_GalleryWallPostLow0/1 0.16 × 0.16 at (±5.48, 4.18), y 0.17 → 3.01
+upper deck   EX_GalleryDeckUp      x −5.6 → 5.6, z 4.07 → 6.2, y 3.02 → 3.20, E["deck"]   (starts 0.02 clear of the
+                                   floor band's face 4.05; the band top 3.24 shows 4 cm above the deck as a skirting)
+low ceiling  EX_GallerySoffitLow   x −5.57 → 5.57, z 4.10 → 6.17, y 3.00 → 3.02, E["soffit"] (haint blue, inset 3 cm)
+rim board    EX_GalleryRim         x −5.64 → 5.64, z 6.20 → 6.24, y 2.96 → 3.24, E["trim"]
+upper posts  EX_GalleryPostUp0..5  0.18 × 0.18 at (posts[k], 6.08), y 3.19 → 5.12
+upper wall   EX_GalleryWallPostUp0/1 0.16 × 0.16 at (±5.48, 4.18), y 3.19 → 5.58 (1 cm into the high soffit)
+upper beam   EX_GalleryBeamUp      x −5.57 → 5.57, z 6.00 → 6.16, y 5.11 → 5.27 (beam_top), E["trim"]
+roof         EX_GalleryRoof = L.prism_x(coll, name, [(4.0, 5.72), (6.5, 5.37), (6.5, 5.27), (4.0, 5.62)], −5.8, 5.8,
+                                        E["roof"], tile=0.7)       (high 5.72, drop 0.35, 0.10 thick, 8.0°)
+high ceiling EX_GallerySoffitUp = L.prism_x(…, [(4.03, 5.616), (6.47, 5.274), (6.47, 5.254), (4.03, 5.596)], −5.77, 5.77,
+                                           E["soffit"])           (its top lies on the roof's underside, back to back)
+fascia       EX_FasciaGallery      x −5.86 → 5.86, z 6.50 → 6.56, y 5.16 → 5.38, E["trim"] (inner face on the drip face)
+rails        EX_RailGalleryLowW = L.railing(pts [(−1.1, 6.08), (−5.48, 6.08), (−5.48, 4.18)], y0 0.18, h 0.9, step 0.30,
+                                   E["trim"], post=0.10, bar=0.04) · EX_RailGalleryLowE the same with +x
+             EX_RailGalleryUp   = L.railing([(−5.48, 4.18), (−5.48, 6.08), (5.48, 6.08), (5.48, 4.18)], y0 3.20, h 1.0,
+                                   step 0.30, E["trim"], post=0.10, bar=0.04)
+             every railing point is a post or a wall post, so the 0.10 newels stay inside the 0.16–0.18 posts
+```
+The entry gap is the bay between the two posts nearest the door (x ±1.1); the code asserts the posts are symmetric, that
+one pair frames the step (|x| ≥ step_w/2 + 0.09) and that the outer posts sit 0.12 inside ±half.
+Heights checked against the house: lower clear height 3.00 − 0.18 = 2.82 (door head dressing top 2.62, lamp cap 2.27,
+L0 French heads 2.72); upper clear height under the beam 5.11 − 3.20 = 1.91; the L1 French heads (y1 2.25 → dressing top
+5.57) stay 3 cm under the high soffit at the wall (5.60); the roof top at the main fascia's inner face (z 4.55) is 5.643,
+0.13 m under the fascia bottom (5.77), and 0.44 m under the main slab at the wall line (6.156); the soffit clears the beam
+top by 2.8 cm at z 6.16. With `porch="gallery"` the generator builds no bushes (the site build plants the bed) and the
+porch lamp stays on the wall under the upper deck.
+
+Collision export: `wrap_porch_collision` becomes `porch_collision(h, P)` with one branch per kind ("wrap" unchanged, new
+"gallery"); `build()` writes `exterior.layout.json` whenever it returns boxes. Gallery boxes, house frame, from the same
+lines (`gallery_collision`):
+```
+GalleryPostLow0..5     0.18 × 0.18 at (posts[k], 6.08), h 3.00
+GalleryWallPost0/1     0.16 × 0.16 at (±5.48, 4.18), h 3.00
+GalleryRailFrontW / E  centre (∓3.29, 6.08), 4.38 × 0.10, h 1.08        (yd + 0.9)
+GalleryRailEndW / E    centre (∓5.48, 5.13), 0.10 × 1.90, h 1.08
+```
+The site build rotates them with T1 (B-01: plan = (157.5 − x, −205.0 − z), yaw π). The decks (0.18, 0.09 risers) are
+walk-over; the gap between the posts at x ±1.1 is the way in. Nothing of the upper tier is reachable from outside (3.2 m
+up), so it needs no exterior collision. Allow-list prefixes: `EX_Gallery` (new), `EX_Rail`, `EX_Fascia` (existing).
+About 1.65 k triangles (railings 1.35 k, decks, posts, roof and trims 0.3 k).
+
+*T4: standing-seam texture* (`seams`, new pattern in `L.make_texture`, 64 px; palette key `roof_pat`, default `tiles`):
+```
+col = x % 32                       (2 seams a tile)
+col 0             → accent         (shadow side of the rib)
+col 1             → base + 0.08    (lit top of the rib)
+col 2             → (base + accent) / 2
+else              → base + k · 0.3 (flat pan, faint noise)
+```
+`E["roof"] = L.make_mat(f"EX_{key}_Roof", C["roof"], 0.85, C.get("roof_pat", "tiles"), 0.06, accent=C["roof_acc"])`. At
+the roof tile 0.7 a pan is 0.35 m wide. The ribs must run down the slope: check the main slabs, the wing slabs and the
+gallery prism with `look` after the first build and turn the UVs with `L.rot_uvs90` on any piece where they run along the
+ridge. Reused by B-06 and B-12 (wishlist #5). No triangle cost.
+
+*T5: walkable upper gallery* (`gallery.upper="walkable"`, decided). Built like A-04's terrace (S5):
+one more L1 rect and guard boxes in the interior system, no exterior level system, no extra mesh.
+- The three L1 front openings of 7.2d.3 become `kind="terrace"` with y (0.0, 2.25): holes with room-side casings, no sill,
+  no glass, no blocking box. `build_exterior`, front branch: `french=w["kind"] in ("french", "terrace")` (today only
+  `"french"`, so a front terrace doorway would get a sill; A-01 … A-04 have none, unchanged).
+- Layout and collisions, interior frame (interior z = exterior z − OZ = exterior z + 1.405), written by the plan when
+  `upper == "walkable"`:
+```
+L1 rect   Gallery (−5.44, 5.44, 5.0, 7.445): it touches the room rects at z 5.0 across the doorway reveals
+COL_Gallery_GuardFront   centre (0, 7.485), 11.04 × 0.08, y 3.0 → 4.2
+COL_Gallery_GuardW / E   centre (∓5.48, 6.3625), 0.08 × 2.325, y 3.0 → 4.2
+COL_Gallery_Post0..5     0.18 × 0.18 at (posts[k], 7.485), y 3.0 → 4.91
+```
+  The guards rise 1.2 m above the deck, past the visible rail (1.0) and the jump apex (0.96 m). `low_floor` must be True
+  (asserted): without the L0 gallery rect, a player on the lower deck is inside the house's walkable bounds with only the
+  L1 gallery rect under them, and `surfaceHeight` returns the lowest candidate it finds (3.0), which lifts them onto the
+  upper deck.
+- Socket: the seeder `interior_bounds` stay as they are (maxZ 5.2). The upper gallery is outside the unit for `unitAt`;
+  it can only be reached through the house, so the lock rules still hold: stepping out of a locked house onto the gallery
+  is refused for a player who has no key (`locked_in`), as at the front door. A player upstairs is within the 3 m door
+  reach of the front door point below (harmless: the same lock and open rules apply).
+- Cost: 0 triangles; about 40 lines in `build_house_v2.py` (`gallery_lines`, `gallery_walkable_collisions` next to
+  `terrace_collisions`).
+
+*T7: back door* (`back_door=dict(x=0.0, landing=1.2)`, any house; absent = no back door, every other house unchanged).
+A real second way in and out, on the garden side, with the same lock, the same open state and the same prompt as the
+front door. It needs no new lock rule: the socket locks a house by its `interior_bounds` (`movement.ts` `isLockedFor`:
+entering or leaving the bounds is refused when `unit.door_locked`, the door is not open and the player has no key), so a
+second hole in the walls is covered by the same check.
+
+*Shared open state.* One open state per house (`room.openDoors` keeps `unit.public_id`): opening either door opens both
+and closing either closes both. A second state would add an id format, a cleanup case in `fetchHousingUnits` and a
+second check in `isLockedFor` for no gain: an unlocked house can be opened by anyone at either door anyway, and a locked
+one cannot be opened at all. The only cost is visual (the far door swings too). Lock and unlock stay one state, as today.
+
+*House build* (`build_house_v2.py`; house frame; B-01 values for x 0.0, ZB −7.21):
+- `Plan.__init__`, when `h.get("back_door")`: one opening `dict(side="back", a=x − 0.6, b=x + 0.6, level=0, y0=0.0,
+  y1=ENTRANCE[3], kind="exit")` in `self.windows` (the size of `ENTRANCE`). So both shells get the hole
+  (`outer_openings`: interior `Walls_Back_L0`, exterior `EX_ShellBack`; y0 0 keeps the piece open, no glass), the room
+  skins and baseboards stop at it (`holes` is built from `P.windows`), and the window loop of `build_interior` gives it
+  room-side casings (CasA, CasB, CasH, no sill, no blocking box: `"exit"` joins the kinds skipped after the casings).
+  The plan asserts the opening lies inside one L0 room's back wall and clear of fittings (B-01: the great room, x −0.6 →
+  0.6, kitchen run ends at −1.5, island at −2.0). `kind == "door"` lookups (garage doorway) are unchanged.
+- `build_exterior`: the dressing loop skips `"exit"` like `"door"`; new `back_door_exterior(coll, E, ZB, bd)`:
+```
+door       DoorBack = L.hinged_door(coll, parts, hinge_x=x + 0.59, zf=ZB + T/2, y0=FY, name="DoorBack"), the front door's
+           three parts (slab 1.18 × 0.06 × 2.18, lite, handle) with the handle at x − 0.45: hinged on +x so the same
+           positive swing (OPEN_DOOR_ANGLE 1.4) opens it inward (+z), like the front door
+casings    EX_BackDoorCasing0/1 at x ± 0.68, z ZB − 0.03, y FY → FY + 2.26 · EX_BackDoorHead x, z ZB − 0.04, y FY + 2.26,
+           1.6 × 0.1 × 0.16 · EX_BackThreshold x, z ZB + 0.2, 1.2 × 0.44, y 0 → FY, E["trim"] (mirror of the front ones)
+landing    EX_BackLanding x ± 1.0, z ZB − landing → ZB (−8.41 → −7.21), y 0 → FY − 0.02 = 0.18, E["step"]
+step       EX_BackStep x ± 0.9, z ZB − landing − 0.4 → ZB − landing, y 0 → 0.09, E["step"]
+lamp       EX_BackLamp / EX_BackLampCap at x + 1.0, z ZB − 0.08, y FY + 1.75 / FY + 2.03 (the porch lamp, on the back)
+plinth     `L.perimeter` gets `back_gaps=()` (new optional argument, same rule as `front_gaps`); the house passes
+           [(x − 0.7, x + 0.7)]; with no gaps the back piece keeps its name `EX_Plinth_Back`
+```
+  `L.hinged_door` gets an optional `name="Door"` argument (today the name is fixed; the stale-object rename uses it).
+  Allow-list prefix `EX_Back` (new; `Door` already covers `DoorBack`). About 0.15 k triangles.
+- `exterior.layout.json` gains `"backDoor": {"x": x, "z": ZB − 0.8}` (house frame, the front rule ZF + 0.8 mirrored):
+  B-01 (0.0, −8.01). The file is then written for every house with a back door or porch collisions.
+- Layout (interior frame): one L0 rect `BackLanding` (x − 1.0, x + 1.0, z_out − landing, zi_b) with
+  z_out = z_back_out − T − GAP (the exterior back face): B-01 (−1.0, 1.0, −7.005, −5.4). It covers the doorway reveal and
+  the landing so the feet stay on the threshold and the landing (0.20 against 0.18), as `low_floor` does for the gallery.
+  The socket bounds stay as they are (minZ −5.6): the landing is outside the unit.
+
+*Site build.* `house_cols` also reads `backDoor` when present and the manifest entry gets
+`"backDoor": [*wp(*house_point(h, bx, bz))]` with y 1.25. B-01: plan (157.5, −196.99) = world (−273.5, 1.25, −178.99).
+The garden behind is the lot's own lawn (plan z −197.79 → −193, 4.8 m deep, the 0.40 m rear hedge is walk-over), inside
+the `cove_heights` zone and reached from the street along both side yards (2.0 m and 3.0 m wide). `apply-cove-heights.mjs`
+copies `backDoor` into the zone building (the field list in its `buildings` map).
+
+*Socket* (`socket/src`):
+- `world.ts`: `WorldHouse` gets `backDoor?: Vec3`, parsed with `parseVec3(building.backDoor, …)` only when the field is
+  present (a malformed one throws, like `door`), in the exported `parseHouse(building)` so the test reaches it.
+- `doors.ts`: `export type DoorSide = 'front' | 'back'` and `doorInReach(player, unit, house): DoorSide | null`, the nearer of
+  the front point (`unit.pos_x/pos_z`, the seeder row) and `house.backDoor` within `DOOR_REACH` (no house: the front
+  point only, today's check, which replaces `isWithinDoorReach`). `doorPoint(unit, house, side)` gives the
+  point for the sound.
+- `CityRoom.ts`: `onDoorToggle` and `onDoorRattle` take `side = doorInReach(player, unit, worldHouse(unit.model_key))`
+  and return when it is null; `sendHouseDoorSound(unit, sound, side)` sends from `doorPoint(…)` with `side` in the
+  payload. Contract: `door_sound` is `{ door: string, sound: 'open' | 'close' | 'lock' | 'unlock' | 'rattle', side?: 'front' |
+  'back' }`; `side` is only sent for a house with a back door (absent means the front door, as before), and the client
+  throws on any other value (`openHouses.ts` `doorKey`). Lock and unlock (from `lockChanges`, which has no position) play at every door point of the house, so a key
+  turned at the back is heard there. Work doors are unchanged (no side).
+- Tests: `doors.test.ts`: `doorInReach` is `'back'` 1 m from the back point, `'front'` near the front, the nearer one
+  when both are in reach, null at 3.1 m from both; without a house only the front point counts.
+  `world.test.ts`: a house with `backDoor` parses it, one without leaves it undefined, a malformed one throws.
+  `movement.test.ts`: with B-01 locked and no key, a move from the landing (interior z −5.9) to inside (−5.0) is
+  `locked_house`, and with the key it passes.
+
+*Front* (`front/src`):
+- `game/world/worldManifest.ts`: `HouseBuilding.backDoor?: Vec3`.
+- `game/town/openHouses.ts`: `BACK_DOOR_NODE = 'DoorBack'` joins `MOVING_EXTERIOR_NODES` (so `mergeStaticMeshes` leaves
+  it alone); `registerFrontDoor(exterior, houseKey, hasBackDoor)` registers the back node too (throws when the manifest
+  says there is one and the node is missing). `FrontDoor` gets `houseKey` and `side`; the map key is `houseKey` for the
+  front and `${houseKey}#back` for the back, so each door has its own `closedDoorBlocker` and `setDoorBlocker` entry,
+  while `updateFrontDoors` asks `isDoorOpen(door.houseKey)`, so both swing with the shared state. `frontDoorNode(key,
+  side = 'front')` and `rattleFrontDoor(key, side = 'front')` take the side.
+- `game/roomEnvironments.ts`: passes `lot.backDoor !== undefined` to `registerFrontDoor`.
+- `game/town/housing.ts`: `findNearestHousingUnit(x, z, units, backDoors)` (backDoors: `ReadonlyMap<modelKey, {x, z}>`)
+  returns `{ unit, side, x, z }` for the nearest door point in reach; `housingInteractPosition(target)` anchors the prompt
+  on that point. Actions and labels do not change (the same lock and open state).
+- `composables/game/useInteractionTargets.ts`: builds `backDoors` in `setWorldManifest` from `houseBuildings(manifest)`
+  and passes it; `nearbyHousingUnit` holds the target; `useCityHousing.ts` reads `target.unit` (same messages:
+  `door_toggle` / `door_rattle` with the `unitId`, the socket finds the side).
+- `types/gameRealtime.ts`: `DoorSoundPayload.side?: 'front' | 'back'`; `views/GameView.vue` `onDoorSound` plays on
+  `frontDoorNode(door, side ?? 'front')`.
+- Tests: a new `game/town/housing.test.ts`: the back point is found from the garden, the front from the street, the
+  nearer wins, no back door means today's result.
+
+Cost: 0.15 k exterior triangles; interior casings as for a window, no blocking box.
+
+*T6: tidewater interior plan* (`interior=dict(plan="tidewater", …)`): new `Plan.tidewater()` and `build_tidewater()` in
+`build_house_v2.py`, a `rise` option on `build_stair`, a `tidewater` style kit. Geometry, rooms, layout and collisions in
+7.2d.3.
+
+Exterior triangles: the shell, roofs, windows and wing count about 4.2 k at this size, the gallery 1.65 k, the back door
+0.15 k: about 6.0 k (A-03: 6.7 k, A-04: 5 k). Built: 5 236 exterior triangles (gallery 1.7 k, of which railings 1.26 k).
+
+**Lot dressing** (`build_cove_heights_site.py`, plan coordinates, same helpers as the villas; house points through T1):
+
+```python
+HOME_B01 = {"key": "cove_home_b01", "name": "Tidewater House", "lot": "B-01", "origin": (157.5, -205.0), "zf": 4.0,
+            "rotationY": math.pi, "interiorOffset": [0.0, 0.2, -1.405], "price": 14000}
+facade_z = house_point(HOME_B01, 0.0, HOME_B01["zf"])[1]                              # -209.0
+S.rect(est, "CH_LotB01_GarageApron", 163.5, -207.5, 166.5, -208.0, Y["lot"], Y["drive"], M["drive"])  # wing face to the driveway
+S.rect(est, "CH_LotB01_FrontPath", 156.7, -211.6, 158.3, -213.0, Y["lot"], Y["drive"], M["drive"])    # front line to the step
+S.street_lamp(est, "CH_LotB01_PostLamp", 159.3, -212.3, M, h=2.6)
+S.hedge_run(est, "CH_LotB01_HedgeW", (152.4, -211.75), (156.2, -211.75), HM, w=0.5)        # along the gallery, west of the path
+S.hydrangeas(est, "CH_LotB01_Hydrangea", 160.2, 162.9, -211.75, HM, n=3)                   # white, east of the lamp
+house_cols(HOME_B01, "LotB01")              # GalleryPostLow0..5, GalleryWallPost0/1, GalleryRailFront/End W/E; backDoor
+est.col("HousePlaceholderB01", *house_point(HOME_B01, -2.0, -1.605), 15.0, 11.21, 6.0, yaw=HOME_B01["rotationY"])
+est.cols[-1]["name"] = f"COL_House_{HOME_B01['key']}"
+HOUSES = [VILLA_A02, VILLA_A01, VILLA_A03, VILLA_A04, HOME_B01]
+```
+The 0.5 m apron joins the recessed garage door (edges 163.7 → 166.3) to the v1 driveway (163.8 → 166.2, z −208 … −213)
+without overlapping it; the wing plinth stands on its back edge as A-03's does. The path meets the gallery step (house z
+6.6). The hedge runs 0.3 m in front of the deck edge (z −211.2) and stops 0.5 m short of the path; the lamp (1.0 m clear of the path) and the
+hydrangeas (0.9 m clear of the driveway) share the east bed; the postbox (163.2, −212.6, collision z −212.375 …
+−212.825) stays 0.6 m clear of the hydrangeas and far from the apron (z ≥ −208.0). B-12's dressing mirrors
+this one across x 182.0 (halfway between the two lots) when it is designed (R6). Behind the house the landing and step
+(house build) open on the lot lawn; no path is added, the garden stays lawn to the 0.40 m rear hedge.
+
+**Wiring and rebuild.** Files that change:
+- `map-src/CampusCove/lib_common.py`: `seams` pattern (T4), `perimeter(back_gaps=())`, `hinged_door(name="Door")` (T7).
+- `map-src/CampusCove/build_house_v2.py`: `PALETTES["tidewater"]`, `STYLES["tidewater"]`, the `cove_home_b01` entry and
+  its inline window list; `roof_pat`; `wing.setback` (T2); `gallery_porch`, `porch_collision` (T3); front `"terrace"`
+  dressing, gallery rects and `COL_Gallery_*` (T5); `back_door` opening, `back_door_exterior`, `"exit"` kind, `backDoor` in
+  `exterior.layout.json` (T7); `Plan.tidewater`, `build_tidewater`, `build_stair(rise, upper_edge)`, `Plan.layout` rise
+  (T6); the allow-list prefixes `EX_Gallery`, `EX_Back`.
+- `map-src/CampusCove/build_cove_heights_site.py`: `house_point`, `house_cols`, `rotationY` and `backDoor` in the manifest
+  houses, rotated placeholder, the self-check, `HOME_B01` and its dressing (T1, T7).
+- `front/scripts/apply-cove-heights.mjs`: copy `backDoor`.
+- `front/src/game/assets/catalog.ts`: `'cove_home_b01'` in the key union and `house('cove_home_b01', 'Tidewater House')`.
+- `front/src/game/world/worldManifest.ts`, `front/src/game/town/openHouses.ts`, `front/src/game/roomEnvironments.ts`,
+  `front/src/game/town/housing.ts` (+ new `housing.test.ts`), `front/src/composables/game/useInteractionTargets.ts`,
+  `front/src/composables/game/useCityHousing.ts`, `front/src/types/gameRealtime.ts`, `front/src/views/GameView.vue` (T7).
+- `socket/src/world.ts`, `socket/src/doors.ts`, `socket/src/CityRoom.ts`, with `doors.test.ts`, `world.test.ts`,
+  `movement.test.ts` (T7, and the π case below).
+- `backend/database/seeders/HousingUnitSeeder.php`: `['cove_home_b01', 'buy', 14000, -273.5, 1.25, -191.8, '#F0D98C']` and
+  `'cove_home_b01' => ['minX' => -9.295, 'maxX' => 5.295, 'minZ' => -5.6, 'maxZ' => 5.2, 'maxY' => 5.6]`. No migration:
+  the back door point is static geometry and lives in the manifest, not in `housing_units`.
+- Generated: `front/public/assets/houses/cove_home_b01/*`, `front/public/assets/park/cove_heights/*`,
+  `town.collision.json`, `world.manifest.json`.
+
+Then the § 7.2b sequence with `HOUSE_KEYS = ["cove_home_b01"]`, the site build, `apply-cove-heights.mjs`, `make seed`.
+The house build prints the seeder bounds and `interiorOffset`, the site build the door points; check them against the
+values above. Rebuild `cove_villa_a01` … `cove_villa_a04` and `house_01` … `house_10` once after T2, T3 (collision
+export), T4, T7 (`perimeter`, `hinged_door`) and the `build_stair` change land to confirm the defaults left them
+equivalent (same node names, materials, triangle counts and `exterior.layout.json` for A-03), and diff
+`cove_heights.layout.json`: the four villa entries must not change. Tests besides T7's: a socket test in
+`movement.test.ts` that `unitAt` finds B-01 for a point 1 m inside its door (world (−273.5, −189.595), interior (0, 4.0))
+and not for the door point itself; it pins the π case, which no Cove Heights house used before. Playtest (`playtest-game`):
+walk in by the front, climb to the upper gallery, walk it end to end, try to jump the guard, leave by the back door, lock
+from the back with the key and check that a second player without a key is refused at both doors.
+
+**Decisions** (2026-11-12):
+1. The upper gallery is **walkable** (T5), built like A-04's terrace: the three upstairs front openings are open doorways,
+   one L1 rect, guards 1.2 m above the deck. The upper gallery stays outside the seeder bounds; it is only reached
+   through the house.
+2. The lower gallery is part of the house floor layout (`low_floor=True`, required by 1). Accepted caveat: on the porch
+   the owner sees the Decorate action, and `ApartmentPlacementService::assertInsideHouse` refuses the furniture there
+   (`out_of_bounds`).
+3. Executive homes get a **9 k** interior triangle ceiling, all 12 B lots (§ 7.1).
+4. B-01 keeps W 11.0; every later B lot that planned 11.0 changes W by at least 0.4 m when it is designed (note under
+   table 7.2c.3).
+5. The back door is a **real second exit** to the garden (T7), a generic `back_door` house option: same lock, same open
+   state, same prompt as the front door; its point lives in the manifest `houses[]` entry.
+
+**Open decisions** (for the user)
+1. **Lowcountry planting.** The dressing uses the estate's hedge, white hydrangeas and lamp. A live oak or a palmetto
+   would say "Lowcountry" at a glance; both are plants, so they would go through "Variety before building" and
+   `make model`. Not in this spec.
+
+**Pieces and where they come from** (every piece is a building part or a simple shape, so none is a `make model` job):
+
+| Piece | Source | Why |
+|---|---|---|
+| Shell walls, window cuts, plinth, corner boards, floor band | existing `L.wall`, `L.perimeter`, `dress()` | same builders as every house |
+| Butter-yellow clapboard | existing `planks` pattern from the palette | a wall material |
+| Side gable roof, gable vents, ridge cap, brick chimney | existing `gable_roof_x`, chimney boxes | standard parts |
+| Standing-seam metal on every roof | new `seams` pattern in `L.make_texture`, palette `roof_pat` | a roof texture recoloured by any palette (B-06, B-12) |
+| Jib windows and upstairs French doors | existing `kind="french"` (L0, with its blocking box) and `kind="terrace"` (L1, open onto the gallery) openings and `dress()` | floor-length glazing |
+| Two-tier gallery: decks, posts, wall posts, rim, beam, soffits | new `gallery_porch` (`L.box` through `Mirror`), driven by `h["gallery"]` | plain boxes from a few lines; any double porch |
+| Gallery lean-to roof and its haint-blue ceiling | existing `L.prism_x` with a 4-point profile | any straight lean-to, no rotation maths |
+| Gallery balustrade and upper guard rail | existing `L.railing` | shared with the Tuscan balcony and the wrap porch |
+| Gallery collision boxes in house coordinates | new `porch_collision` branch, shipped in `exterior.layout.json` | the A-03 contract, rotated by the site build |
+| Recessed garage wing, carriage door | existing `wing_exterior` with `side="west"` and the new `setback` | one wing builder for every lot |
+| Per-house rotation | new `house_point` and `house_cols` in the site build | every B lot faces E, W or N |
+| Through-hall plan, rooms, walls, stair well | new `Plan.tidewater` from `interior["lines"]` | a small two-storey plan with its own circulation |
+| Straight stair rising toward the street | existing `build_stair` with a new `rise="+z"` option | one stair builder, both directions |
+| Painted mantel, kitchen, island, hood, baths, wardrobes, mudroom bench | existing `lib_interior.py` builders and `build_kitchen` | reused as they are |
+| Back door, its casings, landing, step and lamp | existing `L.hinged_door` (new `name` argument) and `L.box`, new `back_door_exterior` driven by `h["back_door"]` | the front door's parts on the garden side, any house |
+| Second door in the game (swing, blocker, prompt, sound) | `openHouses.ts` door registry, `housing.ts` nearest door, socket `doorInReach` | one door system with one or two points per house |
+| Lot dressing: apron, path, lamp, hedge, hydrangeas, postbox | existing `lib_site.py` builders | same estate furniture as the villas |
+
 #### 7.2c.5 Generator extension wishlist (impact on uniqueness ÷ effort)
 
 | # | Extension | Lots it unlocks | Impact | Effort |
 |---|-----------|-----------------|--------|--------|
 | 1 | Palette-driven exterior materials (N2) + per-house `eave` and `shutters` flags | all | high | XS |
-| 2 | Wing variants: mirrored wing (−x, every `L.box`/`L.b` in `wing_exterior` through `Mirror`, seeder minX from the wing) [A-03 builds it: 7.2c.6 H1], wing on the cottage plan (doorway in the east living wall), `wing.setback` (recessed front; doorway centre clamped to the wing's depth ± 0.8), `doors` 1/2, `door_style` carriage/plank/flush/glass [A-04 builds `flush`: 7.2c.7 S4], wing `roof` gable_z/flat/hip (N6), flat-roof `terrace` with glass and pergola [A-04 builds it: 7.2c.7 S5] | 14 lots (all but B-02, B-10) | high | S–M |
-| 3 | Per-house `rotationY` in the site build (`houses[].rotationY`, door point = origin + R(θ)·(0, ZF + 0.8)); today it is hard-wired to 0 | all B lots | required | XS |
+| 2 | Wing variants: mirrored wing (−x, every `L.box`/`L.b` in `wing_exterior` through `Mirror`, seeder minX from the wing) [A-03 builds it: 7.2c.6 H1], wing on the cottage plan (doorway in the east living wall), `wing.setback` (recessed front; doorway centre clamped to the wing's depth ± 0.8) [B-01 designs it: 7.2c.8 T2], `doors` 1/2, `door_style` carriage/plank/flush/glass [A-04 builds `flush`: 7.2c.7 S4], wing `roof` gable_z/flat/hip (N6), flat-roof `terrace` with glass and pergola [A-04 builds it: 7.2c.7 S5] | 14 lots (all but B-02, B-10) | high | S–M |
+| 3 | Per-house `rotationY` in the site build (`houses[].rotationY`, door point = origin + R(θ)·(0, ZF + 0.8)); today it is hard-wired to 0 [B-01 designs it: 7.2c.8 T1, `house_point` / `house_cols`; front, socket and manifest already rotate] | all B lots | required | XS |
 | 4 | Hip roof `L.hip_roof` + `L.beam` caps (N1); pyramid case for chimney hoods and the gazebo | A-01, B-02, B-04, B-09 wing | high | S |
-| 5 | Wall textures in `make_texture`: `battens` (board-and-batten), `shakes` (shingles [A-03 builds it: 7.2c.6 H3], fish-scale variant), `slats` with `clad` panels [A-04 builds it: 7.2c.7 S2], half-timber overlay with `L.beam` | B-03, B-05, B-06, B-07, B-12, A-03, A-04 | high | S each |
-| 6 | Porch kinds: `loggia` + `L.arch_panel` (N3), `portico` (2 columns + pediment), `gallery` (two-tier porch), `wrap` (porch turning a corner) [A-03 builds it: 7.2c.6 H4, `L.lean_to_corner`; `corner="east"|"west"` picks the corner, posts in house coordinates], `craftsman` (tapered posts on stone piers), `frame` (cantilevered timber frame whose bottom slab is the entry canopy) [A-04 builds it: 7.2c.7 S3] | A-01, B-09, B-01, A-03, B-07, B-11, A-04 | high | S–M each |
+| 5 | Wall textures in `make_texture`: `battens` (board-and-batten), `shakes` (shingles [A-03 builds it: 7.2c.6 H3], fish-scale variant), `slats` with `clad` panels [A-04 builds it: 7.2c.7 S2], `seams` standing-seam roofs with palette `roof_pat` [B-01 designs it: 7.2c.8 T4], half-timber overlay with `L.beam` | B-03, B-05, B-06, B-07, B-12, A-03, A-04 | high | S each |
+| 6 | Porch kinds: `loggia` + `L.arch_panel` (N3), `portico` (2 columns + pediment), `gallery` (two-tier porch) [B-01 designs it: 7.2c.8 T3, upper tier visual or walkable], `wrap` (porch turning a corner) [A-03 builds it: 7.2c.6 H4, `L.lean_to_corner`; `corner="east"|"west"` picks the corner, posts in house coordinates], `craftsman` (tapered posts on stone piers), `frame` (cantilevered timber frame whose bottom slab is the entry canopy) [A-04 builds it: 7.2c.7 S3] | A-01, B-09, B-01, A-03, B-07, B-11, A-04 | high | S–M each |
 | 7 | `kind="french"` windows with blocking collision (N5) + `L.railing` (N4) with a `glass` pane variant [A-04 builds it: 7.2c.7 S5], Juliet and full balconies | A-01, B-01, B-02, B-07, A-04 | medium-high | S |
 | 8 | Front window presets: `symmetric` (centred door, equal bays: B-02, B-09), `ribbon` (B-04), `picture` floor-to-ceiling (B-06 gable, B-10, A-04) [A-04 glazes with plain `kind="french"` openings, no preset needed: 7.2d.2], `bay` (projecting polygonal bay box, B-07) | 6 lots | medium-high | M |
 | 9 | Roof forms: `shed`/`butterfly` (B-10), `gambrel_x` (A-03) [A-03 builds it: 7.2c.6 H2, `L.prism_x`], cross gable on `gable_z` (B-07), steep crisp gable via `eave=0` (B-06), stepped flat parapet `step` [A-04 builds it: 7.2c.7 S1] | 5 lots | medium | S–M each |
@@ -1275,13 +1740,13 @@ the primary suite (S5), built inside the interior system: one more L1 rect, a re
 | 12 | Detail kit with `L.beam`: exposed rafter tails and knee brackets, vigas, half-timbering | B-11, B-08, B-05 | medium | S |
 | 13 | Mission parapet (shaped espadaña panel with a bell niche, from `L.arch_panel`) | B-08 | medium | S |
 | 14 | Carport builder (slim posts + flat slab + fascia, or `L.pergola` from A-04) and site-side driveway extension | B-10 | low-medium | S |
-| 15 | Interior plan variants: villa plan [first variant built: estate plan, 7.2d; second built: harbor plan for A-03, 7.2d.1; third built: skyline plan for A-04, 7.2d.2], open-plan modern [A-04's skyline plan], 3-bed bungalow | all (felt from inside) | high | L |
-| 16 | Walkable balconies / roof terraces, turrets [A-04 builds a walkable garage roof terrace inside the interior system: `wing.terrace.walkable`, deck at the L1 floor, extra L1 rect, guard collisions, 7.2c.7 S5; no exterior level system needed] | A-01, A-04, B-07 | low for the effort | L |
+| 15 | Interior plan variants: villa plan [first variant built: estate plan, 7.2d; second built: harbor plan for A-03, 7.2d.1; third built: skyline plan for A-04, 7.2d.2; fourth designed: tidewater through-hall plan for B-01, 7.2d.3], open-plan modern [A-04's skyline plan], 3-bed bungalow | all (felt from inside) | high | L |
+| 16 | Walkable balconies / roof terraces, turrets [A-04 builds a walkable garage roof terrace inside the interior system: `wing.terrace.walkable`, deck at the L1 floor, extra L1 rect, guard collisions, 7.2c.7 S5; no exterior level system needed; B-01's upper gallery is walkable the same way, 7.2c.8 T5] | A-01, A-04, B-07 | low for the effort | L |
 
 Recommended order: 1 → 3 → 2 (mirror + setback first) → 4 → 6 (loggia) → 7, which is exactly what Villa Serena needs, then 5
 and 8, which give the executive homes most of their character.
 
-### 7.2d Villa interiors: the estate, harbor and skyline plans and style kits [estate built for A-01 and A-02, harbor built for A-03, skyline built for A-04]
+### 7.2d Villa interiors: the estate, harbor and skyline plans and style kits [estate built for A-01 and A-02, harbor built for A-03, skyline built for A-04, tidewater built for B-01]
 
 Item 15 of the wishlist, first variant. The town houses keep their duplex; a villa entry with
 `interior=dict(plan="estate", style=..., stair="west"|"east", ...)` in `build_house_v2.py` gets a luxury plan instead
@@ -1765,6 +2230,235 @@ Triangles: about 11.3 k by count of the pieces above (walls, skins and trims abo
 harbor plan; kitchen 1.0 k; baths 0.9 k; shelves 0.4 k; wardrobes, lockers, bench and closet rails 0.6 k; stair and guards
 0.3 k; fireplace 0.1 k; garage, doors and lights 1.0 k), inside the 12 k ceiling. The build prints `interior tris`; if it
 goes over 12 k, drop the pantry shelves (0.2 k), then the east dining window, then the study shelves.
+
+#### 7.2d.3 The tidewater plan for B-01 [built]
+
+Fourth variant of wishlist item 15, and the first plan of an executive home. A Lowcountry house is lived in along a
+**through hall**: a single-height centre hall runs from the front door straight to a real back door onto the garden (T7), so
+you see the garden from the porch and can walk through. The stair climbs along the hall's east wall **toward the street**, from the back of the
+hall to an upper hall that opens on the upper gallery through a French door. Two front rooms (dining, living) open onto the
+lower gallery through floor-length jib windows, the back of the house is one great room (kitchen and keeping room) on both
+sides of the back door, and the service side (mudroom, powder) sits between the dining room and the kitchen, next to the
+garage. Upstairs, two bedrooms on the garage side and the primary suite on the other side, a shared bath at the back of the
+hall. Sources: the foyer → reception rooms → great room across the back sequence and the mudroom between garage and
+kitchen in [`notes/floor_plans.md`](research/luxury-suburban-houses/notes/floor_plans.md) (smaller rooms here: dining 12.6 m²,
+powder 1.6 × 3.1 m, bedrooms 19–20 m², primary bedroom 24.7 m²); the Lowcountry cues are derivations (7.2c.8).
+
+| | Estate (A-01, A-02) | Harbor (A-03) | Skyline (A-04) | Tidewater (B-01) |
+|---|---|---|---|---|
+| Entry | double-height centre hall, gallery | living hall with inglenook | open entry into dining and living | single-height through hall, front door to back door (two ways in) |
+| Stair | straight, on the hall axis, rising away from the door | dog-leg along the front wall | straight across the house, floating treads | straight along the hall's side wall, rising toward the street to an upper hall |
+| Front rooms | side room + open room | parlour | study, living (double height) | dining and living, both onto the gallery |
+| Back | great room | kitchen + sunroom | full-width great room | full-width great room split by the hall axis (kitchen, keeping room) |
+| Service | powder at the back | mudroom, powder, kitchen | study, powder, pantry, mudroom | mudroom and powder between the dining room and the kitchen |
+| L1 | suite, 2 bedrooms, bath 2 | suite, 3 bedrooms, bath 2 | suite, 3 bedrooms, bath 2 | suite with bath, 2 bedrooms, bath 2, upper hall onto the gallery |
+
+Written for the west wing only (`Plan.tidewater()` asserts `wing.s == −1`, `floors == 2`, `not mirror`). The plan code has
+no house literal: it reads the lines below from `interior["lines"]`, derives every room, partition, door, the stair and
+the lights from them and from xi, zf, zb, and takes its windows from `interior["windows"]`. B-01 values: xi 5.095, zf 5.0,
+zb −5.4, PT 0.12, e = PT/2; a partition "at x" is its centre line.
+
+```
+lines (B-01)   hall_x HX 1.26 · front_z FZ 1.6 · back_z BZ −1.6 · mud_x MX −3.0 · bed_z WZ −0.3 · stair_top ST 3.55
+derived        RUN 0.2875, RISE L1_Y / 16 = 0.1875, stair x SX0 = HX − e − STAIR_W = 0.0 → SX1 = HX − e = 1.2,
+               foot SF = ST − 16·RUN = −1.05; hall clear width 2(HX − e) = 2.4
+asserts        SF ≥ BZ + 0.5 (−1.05 ≥ −1.1: a landing at the foot) · ST ≤ zf − 1.2 (3.55 ≤ 3.8: the door leaf, 1.18 m, swings
+               clear of the stair) · SX0 − 0.08 − (−HX + e) ≥ 0.9 (1.12: hall passage beside the stair guard) · the garage
+               doorway lies inside the wing (T2) · every room rect has a positive size
+```
+
+```
+L0   x: −5.095          −3.0      −1.26   0.0   1.26                          5.095
+z 5.0  ┌───────────────────────────┬──── door ────┬─────────────────────────────┐
+       │ Dining         jib window d  vestibule   d Living           jib window │
+z 3.55 │                           │        ▲ top │                             │
+z 1.6  ├─────────────┬─────────────┤        ┃     │                      fire ▣ │ east
+       │ Mudroom     │ Powder      d  Hall  ┃stair│                             │
+garage d   bench     │             │ passage┃ +z  │                             │
+ door  │             │             │        ┃foot │                             │
+z −1.6 ├──── d ──────┴─────────────┘ . . . . . .  └──────── cased 2.0 → 4.4 ────┤
+       │ Great room: kitchen run, return and island (west) · keeping room (east)  │
+z −5.4 └─────────────────────────── back door ─────────────────────────────────────┘
+```
+
+**L0 rooms** (rect x0, x1, z0, z1; level 0; the dotted line z −1.6 between x ±1.26 has no wall: the hall and the great
+room slabs meet on it, as the skyline dining area and great room do)
+
+| Room | Rect (formula → B-01) | Floor | Paint / finish | Light |
+|---|---|---|---|---|
+| Hall | −HX + e, HX − e, BZ + e, zf → −1.2, 1.2, −1.54, 5.0 | wood | `hall` | manual (below) |
+| Dining | −xi, −HX − e, FZ + e, zf → −5.095, −1.32, 1.66, 5.0 | wood | `dining` | centre |
+| Mudroom | −xi, MX − e, BZ + e, FZ − e → −5.095, −3.06, −1.54, 1.54 | `foyer` (old brick) | `mudroom`, `panel=True` (beadboard) | centre |
+| Powder | MX + e, −HX − e, BZ + e, FZ − e → −2.94, −1.32, −1.54, 1.54 | bath | `wainscot=True`, `baseboard=False` | centre |
+| Living | HX + e, xi, BZ + e, zf → 1.32, 5.095, −1.54, 5.0 | wood | `living` | centre |
+| Great | −xi, xi, zb, BZ − e → −5.095, 5.095, −5.4, −1.66 | wood | none | manual |
+
+**L0 partitions** (name, axis, fixed, a0 → a1, doors (a, b[, h, style]))
+
+| Partition | Line | Doors |
+|---|---|---|
+| `Walls_HallW` | z-axis at x −HX, z BZ → zf | hall → dining (FZ + 0.7, FZ + 2.7, 2.4, cased) = (2.3, 4.3); hall → powder (BZ + 0.7, BZ + 1.5) = (−0.9, −0.1) |
+| `Walls_HallE` | z-axis at x HX, z BZ → zf, **h = L1_Y** (it lines the stair well) | hall → living (ST + 0.15, zf − 0.1, 2.4, cased) = (3.7, 4.9) |
+| `Walls_DiningBack` | x-axis at z FZ, x −xi → −HX | none |
+| `Walls_MudE` | z-axis at x MX, z BZ → FZ | none |
+| `Walls_BackW` | x-axis at z BZ, x −xi → −HX | mudroom → kitchen (−xi + 0.5, −xi + 1.3) = (−4.595, −3.795) |
+| `Walls_BackE` | x-axis at z BZ, x HX → xi | living → keeping room (HX + 0.74, xi − 0.695, 2.4, cased) = (2.0, 4.4) |
+
+Paths: front door → hall → back of the hall → great room; garage doorway → mudroom → kitchen; the hall → dining opening
+is 2.0 m wide (the reception-room rule of the research, 2.4 at the villas, 2.0 at this size).
+
+**L1 rooms** (level 1)
+
+| Room | Rect (formula → B-01) | Floor | Paint / finish | Notes |
+|---|---|---|---|---|
+| UpperHall | −HX + e, HX − e, ST, zf → −1.2, 1.2, 3.55, 5.0 | wood | `hall` | `open=("S",)`; ends flush with the top tread; French door onto the gallery |
+| Corridor | −HX + e, SX0, BZ + e, ST → −1.2, 0.0, −1.54, 3.55 | wood | | `open=("N", "E")` |
+| CorridorBack | SX0, SX1, BZ + e, SF → 0.0, 1.2, −1.54, −1.05 | wood | | `open=("W", "N")`, `light=False` |
+| StairWell | SX0, SX1, SF, ST → 0.0, 1.2, −1.05, 3.55 | **None** (void over the flight) | `hall`, `baseboard=False` | `light=False` |
+| Bed2 | −xi, −HX − e, WZ + e, zf → −5.095, −1.32, −0.24, 5.0 | wood | `bed` | 3.78 × 5.24 m |
+| Bed3 | −xi, −HX − e, zb, WZ − e → −5.095, −1.32, −5.4, −0.36 | wood | `bed` | 3.78 × 5.04 m |
+| Bath2 | −HX + e, HX − e, zb, BZ − e → −1.2, 1.2, −5.4, −1.66 | bath | `wainscot=True`, `baseboard=False` | |
+| Suite | HX + e, xi, BZ + e, zf → 1.32, 5.095, −1.54, 5.0 | wood | `suite` | primary bedroom, 24.7 m² |
+| PrimaryBath | HX + e, xi, zb, BZ − e → 1.32, 5.095, −5.4, −1.66 | bath | `wainscot=True`, `baseboard=False` | |
+
+The corridor is an L of two rooms (Corridor beside the well, CorridorBack over the stair foot) so no slab runs into the
+well; the well is closed by `Walls_SuiteW` on the east, open to the corridor on the west (the stair's upper guard) and
+guarded at the foot end.
+
+**L1 partitions**
+
+| Partition | Line | Doors |
+|---|---|---|
+| `Walls_CorridorW` | z-axis at x −HX, z zb → zf | bed 2 (WZ + 0.5, WZ + 1.4) = (0.2, 1.1); bed 3 (WZ − 1.0, WZ − 0.2) = (−1.3, −0.5) |
+| `Walls_Bed23` | x-axis at z WZ, x −xi → −HX | none |
+| `Walls_SuiteW` | z-axis at x HX, z zb → zf | upper hall → suite (ST + 0.2, ST + 1.1) = (3.75, 4.65) |
+| `Walls_BackRowL1` | x-axis at z BZ, x −HX → xi | bath 2 (−HX + 0.36, −HX + 1.16) = (−0.9, −0.1); suite → primary bath (HX + 1.74, HX + 2.54) = (3.0, 3.8) |
+
+**Windows** (`interior["windows"]` of the entry, `(side, a, b, level, y, kind)`; y = WIN (0.9, 2.2) unless given; centres from the
+room rects: front and back bays at the room centres ±3.2075 and the hall axis 0; the back door is not in this list, the
+`back_door` option adds its opening, T7)
+
+| Side | L0 | L1 |
+|---|---|---|
+| front | dining jib (−3.9075, −2.5075) y (0.05, 2.4) `french`; living jib (2.5075, 3.9075) y (0.05, 2.4) `french` | bed 2 (−3.9075, −2.5075), upper hall (−0.55, 0.55), suite (2.5075, 3.9075), all y (0.0, 2.25) `terrace` (doorways onto the upper gallery, T5) |
+| back | sink (−4.0975, −2.4975) y (1.05, 2.15); (**back door** (−0.6, 0.6) y (0, 2.2) `exit`, from `back_door`); keeping room (2.5075, 3.9075) y (0.05, 2.4) `french` | bed 3 (−3.9075, −2.5075); bath 2 (−0.1, 0.7) y (1.5, 2.1); primary bath (2.5075, 3.9075) y (1.0, 2.0) |
+| east | living (−0.6, 0.4) and (3.1, 4.1); keeping room (−4.2, −3.0) | suite (0.0, 1.2) and (3.2, 4.4) |
+| west | **garage doorway** (−0.2, 0.8) y (0, DOOR_H) `door` | bed 2 (1.6, 2.8); bed 3 (−3.3, −2.1) |
+
+A symmetric three-bay facade on both storeys, the Lowcountry rhythm, with the front door under the upper hall's doorway
+and the back door on the same axis. No L0 west window: the wing covers the main west wall from interior z −3.095 to 3.905, and the free strips are
+taken by the kitchen return and the 1.1 m recess. The L1 west windows (sill 4.1) stand over the wing roof (3.35 at the
+wall). The living-room east windows frame the mantel (z 0.755 → 2.705) with 0.3 m to spare; the keeping-room French door gets
+the generic back dressing (sill and shutters), which reads as a threshold at that size. The three French openings left
+(dining, living, keeping room) are visual: the generic `COL_Window_<i>_French` box blocks each one. The back door swings
+inward over x −0.6 → 0.6, z −5.4 → −4.22, clear of the kitchen run (ends at x −1.5) and the island (ends at −2.0).
+
+**Stair** (`build_stair(B, M, P)` with `P.stair = dict(x0=SX0, x1=SX1, z0=SF, z1=ST, rise="+z", open=−1, rail="rail",
+baluster=S["baluster"], newel=True, foot_rail=True, upper_edge=False)`; run 0.2875, rise 0.1875, 16 risers, width 1.2)
+
+`build_stair` gets one option, `rise` (`"-z"` default, today's stair; `"+z"`), and one key, `upper_edge` (default: the
+`foot_rail` value, today's behaviour). With `sgn = +1` for `"+z"` and the foot at z0 (z1 for `"-z"`):
+```
+treads     Stair_Step00..15  tread i z [foot + sgn·i·run, foot + sgn·(i+1)·run], x 0.0 → 1.2, solid from y 0 to (i+1)·0.1875
+           (B-01: z −1.05 → 3.55, 3.0 at the top tread z 3.2625 → 3.55), run + 0.005 long as today
+noses      Stair_Nose00..15  on the leading edge, z foot + sgn·i·run + sgn·0.01, top at (i+1)·rise − 0.02
+rail side  open=−1 → rail_x = x0 − 0.04 = −0.04 (the hall side; the east side is Walls_HallE)
+rails      Stair_Handrail / Stair_Stringer rotation (−sgn·angle, 0, 0) (today (angle, 0, 0) for "-z"); check the slope with look
+balusters  odd treads, z foot + sgn·(i + 0.5)·run, from (i+1)·rise, 0.95 high, M[S["baluster"]]
+newel      Stair_PostFoot at z foot + sgn·0.05 = −1.0, 1.15 high + Stair_PostFootCap (newel=True)
+L1 guard   Stair_UpperBaluster0..5 and Stair_UpperRail along rail_x on L1 (today's code, the well's west guard)
+foot guard Stair_FootRail at z foot − sgn·0.04 = −1.09, x 0.0 → 1.2, y 3.0 → 4.06, with its collision (the well's foot end)
+upper edge not built (upper_edge=False): the UpperHall slab and Ceiling_UnderUpperHall already close the 2.8 → 3.0 band
+           at z 3.55, and the edge box would share their bottom face
+```
+Headroom: the whole flight climbs in the open well (x 0 → 1.2, z −1.05 → 3.55); at the foot the L1 slab over CorridorBack
+is 2.6 m above the first tread. The vestibule under the upper hall (z 3.55 → 5.0) keeps 2.8 m. `back_col` stays `"-z"`
+only (asserted).
+
+**layout.json** (`Plan.layout` writes `rise=s.get("rise", "-z")` for `Stair_Main` instead of the fixed `"-z"`)
+
+```
+L0 rects   (−5.095, 5.095, −5.4, 5.2), the wing (−9.095, −5.095, −2.69, 3.5)
+           Gallery_Low (−5.6, 5.6, 5.2, 7.605): the lower gallery (gallery.low_floor, decided)
+           BackLanding (−1.0, 1.0, −7.005, −5.4): back doorway reveal and landing (T7)
+L1 rects   (−5.095, 5.095, −5.4, −1.05)     back row, corridor back
+           (−5.095, 0.0, −1.05, 5.0)        bedrooms 2 and 3, corridor, west half of the upper hall
+           (1.2, 5.095, −1.05, 5.0)         suite
+           (0.0, 1.2, 3.55, 5.0)            upper hall over the stair top
+           Gallery (−5.44, 5.44, 5.0, 7.445): the upper gallery (gallery.upper "walkable", T5)
+stairs     Stair_Main x 0.0 → 1.2, z −1.05 → 3.55, y0 0, y1 3.0, rise "+z"   (houseLevels.ts accepts "+z")
+```
+The L1 rects leave out the well (x 0 → 1.2, z −1.05 → 3.55). On L0 in the hall beside the stair the candidates are L0
+(0) and L1 (3.0): the reachable one wins, so nobody is lifted. On the lower gallery the same holds (Gallery_Low 0,
+Gallery 3.0), which is why the two rects come together.
+
+**Collisions** (besides the walls, which collide through `L.wall`): `Stair_Side` centre (−0.04, 1.25), 0.08 × 4.6,
+y 0 → 5.6 (today's box: it keeps players off the flight from the hall and guards the well on L1); `Stair_FootRail`
+centre (0.6, −1.09), 1.2 × 0.08, y 3.0 → 4.1; fittings through their builders (mantel, kitchen run and return, island,
+bench, vanities, WCs, showers, tub, wardrobes); the 3 French blocking boxes (dining, living, keeping room); the `COL_Gallery_*` guards and posts of T5; the back door
+blocker is the front code's `closedDoorBlocker` on `DoorBack` (T7), no interior box. Garage doorway: the wing lining and casings of `build_garage` through H1, at the recessed
+wing (T2).
+
+**Fittings** (`build_tidewater(B, M, P)`; every position from a room rect through `rect(nm, level)` as in `build_harbor` /
+`build_skyline`; wall anchors `((x, z), facing)` on the room-side face)
+
+| Where | Builder (B-01 result) |
+|---|---|
+| Living | `LI.fireplace(B, "Fit_Fireplace", ((liv.x1, (liv.z0 + liv.z1)/2), "-x"), 0, L0_H, M, "mantel")` → east wall, centre z 1.73, painted mantel 1.95 wide (z 0.755 → 2.705) under the brick chimney (7.2c.8) |
+| Great (kitchen) | `build_kitchen(KB, M, P)` with `KB = Mirror(coll, cols, −1)` and `P.kitchen = dict(x0=HX + 0.24, ret_z=zb + 1.6, sink_x=(HX + 0.24 + xi)/2, hood=(HX + 0.69, 0.9), uppers=S["uppers"], west=True)` → run x −5.095 → −1.5 on the back wall, return z −4.78 → −3.8 on the west wall, sink at x −3.2975 under the back window · `Fit_Cooktop` box (−1.95, zb + 0.33), 0.76 × 0.5 × 0.012 at K_H + 0.04, M["dark"] · `LI.range_hood(B, "Fit_Hood", ((−1.95, zb), "+z"), 0, L0_H, M, "plaster")` → x −2.40 → −1.50, 2.75 cm clear of the sink window casing · `LI.island(B, "Fit_Island", −(sink_x − 0.3), zb + K_D + 1.55, 0, 2.0, 0.9, M, pendants=2, ceil_y=L0_H)` → body x −3.9975 → −1.9975, z −3.68 → −2.78 (1.10 m to the run, 1.12 m to the back-row wall, 1.10 m to the west wall) |
+| Mudroom | `LI.mudroom_bench(B, "Fit_MudBench", ((mud.x1, (mud.z0 + mud.z1)/2), "-x"), 0, 1.8, M)` → x −3.51 → −3.06, z −0.9 → 0.9, facing the garage doorway 1.58 m away |
+| Powder | `LI.wc(B, "Fit_PowderWC", ((pw.x0, pw.z1 − 0.44), "+x"), 0, M)` → x −2.94 → −2.22, z 0.88 → 1.32 · `LI.vanity(B, "Fit_PowderVanity", ((pw.x0 + 0.8, pw.z0), "+z"), 0, 0.6, M)` → x −2.44 → −1.84 on the back wall, clear of the door (z −0.9 → −0.1 on the hall wall) |
+| Bed 2, bed 3 | `LI.wardrobe(B, "Fit_WardrobeBed2", (((b2.x0 + b2.x1)/2, b2.z0), "+z"), Y1, 2.0, M)` and `Fit_WardrobeBed3` on ((b3.x0 + b3.x1)/2, b3.z1) facing "-z": back to back on `Walls_Bed23`, x −4.2075 → −2.2075 |
+| Bath 2 | `LI.shower(B, "Fit_Bath2Shower", (b2.x0, b2.z0), 1, 1, Y1, M)` → x −1.2 → −0.25 · `LI.vanity(B, "Fit_Bath2Vanity", ((b2.x1, b2.z0 + 1.8), "-x"), Y1, 0.9, M)` → z −4.05 → −3.15 · `LI.wc(B, "Fit_Bath2WC", ((b2.x1, b2.z1 − 0.66), "-x"), Y1, M)` → z −2.54 → −2.10, clear of the door (x −0.9 → −0.1) |
+| Primary bath | `LI.tub(B, "Fit_Tub", (pb.x0 + pb.x1)/2, pb.z0 + 0.7, Y1, 1.7, 0.8, "x", M)` under the back window · `LI.vanity(B, "Fit_SuiteVanity", ((pb.x1, (pb.z0 + pb.z1)/2), "-x"), Y1, 1.5, M, basins=2, depth=0.55)` → z −4.28 → −2.78 · `LI.shower(B, "Fit_SuiteShower", (pb.x0, pb.z1), 1, −1, Y1, M)` → x 1.32 → 2.27, z −2.61 → −1.66 (the door at x 3.0 → 3.8 clears it) · `LI.wc(B, "Fit_SuiteWC", ((pb.x0, pb.z0 + 1.6), "+x"), Y1, M)` → z −4.02 → −3.58 |
+| Suite | `LI.wardrobe(B, "Fit_WardrobeSuiteA", ((su.x0, su.z0 + 1.54), "+x"), Y1, 2.0, M)` and `Fit_WardrobeSuiteB` at su.z0 + 3.74 → z −1.0 → 1.0 and 1.2 → 3.2 on `Walls_SuiteW`, 0.55 m short of the suite door |
+
+Hall, dining, living, keeping room, bedrooms and suite stay empty for Cove Home furniture.
+
+**Lights** (rooms with `light=True` get a centre lamp): `("HallFront", 0, 0.0, (ST + zf)/2)` = (0, 4.275) in the
+vestibule, `("HallBack", 0, (−HX + e + SX0)/2, (BZ + e + ST)/2)` = (−0.6, 1.005) over the passage, `("Kitchen", 0,
+−(sink_x − 0.3), BZ − e − 0.6)` = (−2.9975, −2.26), `("Keeping", 0, (HX + e + xi)/2, (zb + BZ − e)/2)` = (3.2075, −3.53),
+`("StairWell", 1, (SX0 + SX1)/2, (SF + ST)/2)` = (0.6, 1.25) on the L1 ceiling; the island pendants; room centres for the
+others (UpperHall, Corridor, bedrooms, baths, suite, dining, living, mudroom, powder).
+
+**Code hooks.** `Plan.__init__` dispatches `interior.plan == "tidewater"` to `self.tidewater()`, which fills rooms,
+partitions, windows, `self.stair` (with `rise="+z"`), `self.l1_rects` (plus the gallery rects of T5 and the L0 gallery and
+back-landing rects),
+`self.kitchen` and `self.fit = dict(plan="tidewater", S=S, I=I)`, and leaves `self.flights` and `self.bath` at None.
+`build_interior` calls `build_stair` when `P.stair` is set (as for the duplex and the estate), `build_kitchen` with `KB`
+when `P.kitchen.get("west")`, and the fittings dispatch becomes `{"harbor": build_harbor, "skyline": build_skyline,
+"tidewater": build_tidewater}.get(P.fit.get("plan"), build_estate)`. The gallery collisions of T5 are added next to
+`terrace_collisions`. No new allow-list prefix (`Stair_`, `Fit_`, `Kitchen_`, `Garage_` exist).
+
+**Style kit** (`STYLES["tidewater"]`, the same keys as the harbor kit so `build_interior` finds every material):
+
+```python
+"tidewater": dict(foyer=("tiles", "#a5553f", "#8a4433", 0.5), stone="#d9d3c7", rail="#4a2e20", baluster="trim",
+                  metal="#b08d57", fire="mantel", island="#5f7f78", hood="plaster", uppers="cabinet", beam="#8a6d4e",
+                  shelf="#f2f0ea", closet="#f2f0ea", art="#6f9fb2", art2="#e9d7a4", plaster="#f6f1e2",
+                  vanity_top="#ecebe7", stair_pat="planks", panel_pat="stripes", panel_acc="#e4e0d4",
+                  paints=dict(hall="#f3ecd6", dining="#c9dbe0", mudroom="#dfe7e3", living="#efe6cc", suite="#e4eef1")),
+```
+
+| Style kit | Tidewater House (B-01, `tidewater`) |
+|---|---|
+| Plan | through hall from the front door to the back door; dining and living on the gallery; mudroom and powder by the garage; great room with kitchen and keeping room across the back |
+| Floors | heart-pine planks (palette `floor`); old-brick tiles in the mudroom |
+| Walls / ceilings | warm cream hall, pale haint-blue dining room, white beadboard wainscot in the mudroom, flat white ceilings |
+| Stair | mahogany handrail on white square balusters, capped newel at the foot, white guard along the well upstairs |
+| Fireplace | painted white mantel with an overmantel picture, brick hearth stone tone, under a brick chimney |
+| Kitchen | white shaker cabinets and wall units, white marble worktops, a painted sage-teal island, white plaster hood |
+| Baths | white marble vanity tops, aged-brass fixtures, freestanding tub under the window in the primary bath |
+
+Triangles: about 8.3 k by count of the pieces above (walls, skins and trims about 5.0 k for 15 rooms; kitchen 0.9 k;
+baths 0.8 k; stair and guards 0.6 k; wardrobes and bench 0.45 k; mantel 0.1 k; garage, doors and lights 0.45 k; the walkable
+gallery and the back door add layout and collision only). Inside the 9 k executive ceiling (§ 7.1). The build prints
+`interior tris`; if it goes over 9 k, drop the mudroom beadboard (`panel=False`, about 0.15 k), then the Bed3 wardrobe
+(0.1 k), then the powder wainscot (0.1 k).
+
+Built: 9 804 interior triangles with every piece above (lights 0.8 k, window and door casings 1.5 k more than counted). The
+three cuts are applied (mudroom without beadboard, no Bed3 wardrobe, powder without wainscot): 9 476, still 0.48 k over the
+9 k ceiling, accepted for this house (decided 2026-11-13, as for A-03).
 
 ### 7.3 Non-lot land around the bands
 

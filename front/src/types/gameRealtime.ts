@@ -102,9 +102,12 @@ export interface AdminSummonedPayload {
 }
 
 /** 'door_sound': only sent to players within 5 m of the door. `door` is the building key (house model key or work key). */
+export type DoorSide = 'front' | 'back'
+
 export interface DoorSoundPayload {
   door: string
   sound: 'open' | 'close' | 'lock' | 'unlock' | 'rattle'
+  side?: DoorSide
 }
 
 export interface HouseFurniturePayload {

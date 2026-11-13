@@ -52,6 +52,12 @@ def W2(x, z):
     """Plan frame -> world."""
     return x + DX, z + DZ
 
+
+def house_point(h, lx, lz):
+    th = h.get("rotationY", 0.0)
+    ox, oz = h["origin"]
+    return ox + lx * math.cos(th) + lz * math.sin(th), oz - lx * math.sin(th) + lz * math.cos(th)
+
 Y = {"lawn": 0.02, "lot": 0.04, "asphalt": 0.04, "line": 0.06, "drive": 0.06, "path": 0.06, "track": 0.05, "plaza": 0.08, "walk": 0.12,
      "curb": 0.14, "verge": 0.03}
 
@@ -394,9 +400,18 @@ S.rect(est, "CH_LotA03_FrontPath", hx - 0.8, -299.0, hx + 0.8, -302.2, Y["lot"],
 S.street_lamp(est, "CH_LotA03_PostLamp", hx + 1.6, -300.2, M, h=2.6)
 S.hedge_run(est, "CH_LotA03_HedgeW", (204.6, -304.3), (207.2, -304.3), HM, w=0.5)
 S.hydrangeas(est, "CH_LotA03_Hydrangea", 211.6, 217.6, -301.9, HM_BLUE, n=4)
-with open(os.path.join(L.FRONT_ASSETS, "houses", VILLA_A03["key"], "exterior.layout.json"), encoding="utf-8") as f:
-    for c in json.load(f)["collision"]:
-        est.col(f"LotA03_{c['name']}", hx + c["x"], hz + c["z"], c["sx"], c["sz"], c["h"])
+
+
+def house_cols(h, prefix):
+    with open(os.path.join(L.FRONT_ASSETS, "houses", h["key"], "exterior.layout.json"), encoding="utf-8") as f:
+        layout = json.load(f)
+    for c in layout["collision"]:
+        est.col(f"{prefix}_{c['name']}", *house_point(h, c["x"], c["z"]), c["sx"], c["sz"], c["h"], yaw=h.get("rotationY", 0.0))
+    if "backDoor" in layout:
+        h["back_door"] = (layout["backDoor"]["x"], layout["backDoor"]["z"])
+
+
+house_cols(VILLA_A03, "LotA03")
 est.col("HousePlaceholderA03", hx - 3.7, hz - 1.805, 20.4, 11.61, 6.0)
 est.cols[-1]["name"] = f"COL_House_{VILLA_A03['key']}"
 VILLA_A04 = {"key": "cove_villa_a04", "name": "Skyline Residence", "lot": "A-04", "origin": (237.4, -308.0), "zf": 4.0,
@@ -410,7 +425,24 @@ S.hedge_run(est, "CH_LotA04_HedgeE", (239.2, front_z + 0.8), (243.8, front_z + 0
 S.tree(est, "CH_LotA04_Tree0", 246.2, -302.0, M, "round", 0.9)
 est.col("HousePlaceholderA04", sx_ - 3.7, sz_ - 2.005, 21.4, 12.01, 6.0)
 est.cols[-1]["name"] = f"COL_House_{VILLA_A04['key']}"
-HOUSES = [VILLA_A02, VILLA_A01, VILLA_A03, VILLA_A04]
+HOME_B01 = {"key": "cove_home_b01", "name": "Tidewater House", "lot": "B-01", "origin": (157.5, -205.0), "zf": 4.0,
+            "rotationY": PI, "interiorOffset": [0.0, 0.2, -1.405], "price": 14000}
+S.rect(est, "CH_LotB01_GarageApron", 163.5, -207.5, 166.5, -208.0, Y["lot"], Y["drive"], M["drive"])
+S.rect(est, "CH_LotB01_FrontPath", 156.7, -211.6, 158.3, -213.0, Y["lot"], Y["drive"], M["drive"])
+S.street_lamp(est, "CH_LotB01_PostLamp", 159.3, -212.3, M, h=2.6)
+S.hedge_run(est, "CH_LotB01_HedgeW", (152.4, -211.75), (156.2, -211.75), HM, w=0.5)
+S.hydrangeas(est, "CH_LotB01_Hydrangea", 160.2, 162.9, -211.75, HM, n=3)
+house_cols(HOME_B01, "LotB01")
+est.col("HousePlaceholderB01", *house_point(HOME_B01, -2.0, -1.605), 15.0, 11.21, 6.0, yaw=HOME_B01["rotationY"])
+est.cols[-1]["name"] = f"COL_House_{HOME_B01['key']}"
+HOUSES = [VILLA_A02, VILLA_A01, VILLA_A03, VILLA_A04, HOME_B01]
+for h in HOUSES:
+    _, _, x0, x1, z0, z1, _, _, entry, *_ = next(lot for lot in LOTS if lot[0] == h["lot"])
+    door = house_point(h, 0.0, h["zf"] + 0.8)
+    assert min(x0, x1) <= door[0] <= max(x0, x1) and min(z0, z1) <= door[1] <= max(z0, z1), ("door outside its lot", h["key"], door)
+    ox, oz = h["origin"]
+    street = (door[0] - ox) * (entry[0] - (x0 + x1) / 2) + (door[1] - oz) * (entry[1] - (z0 + z1) / 2)
+    assert street > 0, ("door on the garden side of its lot", h["key"], door)
 
 # ================================================================ communal
 # clubhouse & leisure parcel
@@ -483,6 +515,15 @@ def wp(x, z):
     return [round(x + DX, 3), 0.0, round(z + DZ, 3)]
 
 
+def door_point(h, lx, lz):
+    x, _, z = wp(*house_point(h, lx, lz))
+    return [x, 1.25, z]
+
+
+for h in HOUSES:
+    print("house", h["key"], "door", door_point(h, 0.0, h["zf"] + 0.8), "backDoor", door_point(h, *h["back_door"]) if "back_door" in h else None)
+
+
 for lot in lots_out:
     b_ = lot["bounds"]
     lot["bounds"] = {"minX": b_["minX"] + DX, "maxX": b_["maxX"] + DX, "minZ": b_["minZ"] + DZ, "maxZ": b_["maxZ"] + DZ}
@@ -510,9 +551,10 @@ L.write_json(os.path.join(OUT, "cove_heights.layout.json"), {
     "clubhouseDoor": wp(180.0, -226.4),
     "junction": {"x": ROAD_X, "z": AVENUE_EDGE_Z, "road": "mall_avenue"},
     "lots": lots_out,
-    "houses": [{"kind": "house", "key": h["key"], "name": h["name"], "lot": h["lot"], "position": wp(*h["origin"]), "rotationY": 0,
-                "door": [wp(*h["origin"])[0], 1.25, round(h["origin"][1] + h["zf"] + 0.8 + DZ, 3)], "offer": "buy", "price": h["price"],
-                "interiorOffset": h["interiorOffset"]} for h in HOUSES],
+    "houses": [{"kind": "house", "key": h["key"], "name": h["name"], "lot": h["lot"], "position": wp(*h["origin"]),
+                "rotationY": round(h.get("rotationY", 0), 6), "door": door_point(h, 0.0, h["zf"] + 0.8), "offer": "buy", "price": h["price"],
+                "interiorOffset": h["interiorOffset"], **({"backDoor": door_point(h, *h["back_door"])} if "back_door" in h else {})}
+               for h in HOUSES],
     "collision": est.cols + road.cols + mall_leg.cols,
 })
 print("cove_heights:", len(est.objs), "objects,", est.tris(), "tris,", len(est.cols), "COL")

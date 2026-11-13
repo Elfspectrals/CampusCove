@@ -8,9 +8,12 @@ const HOUSING_REFRESH_COOLDOWN_MS = 2000
 const HOUSING_POLL_MS = 60_000
 import {
   DOOR_RATTLE_COOLDOWN_MS,
+  DOOR_SIDES,
+  type DoorSide,
   type DoorSound,
+  doorInReach,
+  doorPoint,
   hearsDoor,
-  isWithinDoorReach,
   isWithinReach,
   lockChanges,
   workDoorId
@@ -89,7 +92,7 @@ import type {
   Player,
   PubState
 } from './types.ts'
-import { citySpawn, workDoor } from './world.ts'
+import { type WorldHouse, citySpawn, workDoor, worldHouse } from './world.ts'
 
 function warn(context: string, error: unknown): void {
   console.warn(`[colyseus] ${context}:`, error instanceof Error ? error.message : error)
@@ -402,24 +405,26 @@ export class CityRoom extends Room implements GameRoom {
       return
     }
     const unit = this.housingUnits.find((u) => u.public_id === payload?.unitId && u.status === 'occupied')
-    if (!player || !unit || !isWithinDoorReach(player, unit)) return
+    const side = player && unit ? doorInReach(player, unit, this.houseOf(unit)) : null
+    if (!unit || !side) return
     if (unit.door_locked) {
       client.send('door_error', { message: 'This door is locked.' })
       return
     }
     const open = this.toggleDoor(unit.public_id)
-    this.sendHouseDoorSound(unit, open ? 'open' : 'close')
+    this.sendHouseDoorSound(unit, open ? 'open' : 'close', side)
   }
 
   // Someone tries the handle of a locked door: nearby players hear (and see) it rattle.
   onDoorRattle(client: Client, payload: ClientPayload): void {
     const player = this.players.get(client.sessionId)
     const unit = this.housingUnits.find((u) => u.public_id === payload?.unitId && u.status === 'occupied')
-    if (!player || !unit?.door_locked || !isWithinDoorReach(player, unit)) return
+    const side = player && unit?.door_locked ? doorInReach(player, unit, this.houseOf(unit)) : null
+    if (!player || !unit || !side) return
     const now = Date.now()
     if (now - player.lastDoorRattleAt < DOOR_RATTLE_COOLDOWN_MS) return
     player.lastDoorRattleAt = now
-    this.sendHouseDoorSound(unit, 'rattle')
+    this.sendHouseDoorSound(unit, 'rattle', side)
   }
 
   /** Returns whether the door is now open. */
@@ -431,13 +436,26 @@ export class CityRoom extends Room implements GameRoom {
     return open
   }
 
-  sendHouseDoorSound(unit: HousingUnit, sound: DoorSound): void {
-    if (unit.model_key) this.sendDoorSound(unit.model_key, unit.pos_x, unit.pos_z, sound)
+  houseOf(unit: HousingUnit): WorldHouse | null {
+    return unit.model_key ? worldHouse(unit.model_key) : null
+  }
+
+  sendHouseDoorSound(unit: HousingUnit, sound: DoorSound, side?: DoorSide): void {
+    if (!unit.model_key) return
+    const house = this.houseOf(unit)
+    if (!house?.backDoor) {
+      this.sendDoorSound(unit.model_key, unit.pos_x, unit.pos_z, sound)
+      return
+    }
+    for (const s of side ? [side] : DOOR_SIDES) {
+      const p = doorPoint(unit, house, s)
+      this.sendDoorSound(unit.model_key, p.x, p.z, sound, s)
+    }
   }
 
   /** `door` is the building key (house model key or work key): the client plays the sound on that building's door. */
-  sendDoorSound(door: string, x: number, z: number, sound: DoorSound): void {
-    const payload = { door, sound }
+  sendDoorSound(door: string, x: number, z: number, sound: DoorSound, side?: DoorSide): void {
+    const payload = side ? { door, sound, side } : { door, sound }
     this.forEachClient((c) => {
       const listener = this.players.get(c.sessionId)
       if (listener && hearsDoor(listener, x, z)) c.send('door_sound', payload)

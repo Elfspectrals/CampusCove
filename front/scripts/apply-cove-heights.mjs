@@ -54,8 +54,8 @@ console.log(`town.collision.json: ${before} -> ${col.cuboids.length} cuboids`)
 
 const manifest = JSON.parse(readFileSync(WORLD_MANIFEST, 'utf8'))
 // walk-in, buyable houses of the estate (build_house_v2.py assets, HousingUnitSeeder rows with the same key and door)
-const buildings = (site.houses ?? []).map(({ kind, key, name, position, rotationY, door, offer, price, interiorOffset }) =>
-  ({ kind, key, name, position, rotationY, door, offer, price, interiorOffset }))
+const buildings = (site.houses ?? []).map(({ kind, key, name, position, rotationY, door, backDoor, offer, price, interiorOffset }) =>
+  ({ kind, key, name, position, rotationY, door, backDoor, offer, price, interiorOffset }))
 for (const [key, bounds] of Object.entries(site.zones)) {
   const zone = { key, optional: true, bounds, modelUrl: `/assets/park/cove_heights/${key}.glb` }
   if (key === 'cove_heights' && buildings.length) zone.buildings = buildings

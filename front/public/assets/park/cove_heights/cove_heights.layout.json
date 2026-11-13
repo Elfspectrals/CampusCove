@@ -600,6 +600,35 @@
         0.2,
         -1.405
       ]
+    },
+    {
+      "kind": "house",
+      "key": "cove_home_b01",
+      "name": "Tidewater House",
+      "lot": "B-01",
+      "position": [
+        -273.5,
+        0.0,
+        -187.0
+      ],
+      "rotationY": 3.141593,
+      "door": [
+        -273.5,
+        1.25,
+        -191.8
+      ],
+      "offer": "buy",
+      "price": 14000,
+      "interiorOffset": [
+        0.0,
+        0.2,
+        -1.405
+      ],
+      "backDoor": [
+        -273.5,
+        1.25,
+        -178.99
+      ]
     }
   ],
   "collision": [
@@ -1322,6 +1351,146 @@
       "hy": 3.0,
       "cy": 3.0,
       "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_CH_LotB01_PostLamp",
+      "cx": -271.7,
+      "cz": -194.3,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Cove_LotB01_GalleryPostLow0",
+      "cx": -268.02,
+      "cz": -193.08,
+      "hx": 0.09,
+      "hz": 0.09,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 3.1416
+    },
+    {
+      "name": "COL_Cove_LotB01_GalleryPostLow1",
+      "cx": -270.21,
+      "cz": -193.08,
+      "hx": 0.09,
+      "hz": 0.09,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 3.1416
+    },
+    {
+      "name": "COL_Cove_LotB01_GalleryPostLow2",
+      "cx": -272.4,
+      "cz": -193.08,
+      "hx": 0.09,
+      "hz": 0.09,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 3.1416
+    },
+    {
+      "name": "COL_Cove_LotB01_GalleryPostLow3",
+      "cx": -274.6,
+      "cz": -193.08,
+      "hx": 0.09,
+      "hz": 0.09,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 3.1416
+    },
+    {
+      "name": "COL_Cove_LotB01_GalleryPostLow4",
+      "cx": -276.79,
+      "cz": -193.08,
+      "hx": 0.09,
+      "hz": 0.09,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 3.1416
+    },
+    {
+      "name": "COL_Cove_LotB01_GalleryPostLow5",
+      "cx": -278.98,
+      "cz": -193.08,
+      "hx": 0.09,
+      "hz": 0.09,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 3.1416
+    },
+    {
+      "name": "COL_Cove_LotB01_GalleryWallPost0",
+      "cx": -268.02,
+      "cz": -191.18,
+      "hx": 0.08,
+      "hz": 0.08,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 3.1416
+    },
+    {
+      "name": "COL_Cove_LotB01_GalleryWallPost1",
+      "cx": -278.98,
+      "cz": -191.18,
+      "hx": 0.08,
+      "hz": 0.08,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 3.1416
+    },
+    {
+      "name": "COL_Cove_LotB01_GalleryRailFrontW",
+      "cx": -270.21,
+      "cz": -193.08,
+      "hx": 2.19,
+      "hz": 0.05,
+      "hy": 0.54,
+      "cy": 0.54,
+      "yaw": 3.1416
+    },
+    {
+      "name": "COL_Cove_LotB01_GalleryRailFrontE",
+      "cx": -276.79,
+      "cz": -193.08,
+      "hx": 2.19,
+      "hz": 0.05,
+      "hy": 0.54,
+      "cy": 0.54,
+      "yaw": 3.1416
+    },
+    {
+      "name": "COL_Cove_LotB01_GalleryRailEndW",
+      "cx": -268.02,
+      "cz": -192.13,
+      "hx": 0.05,
+      "hz": 0.95,
+      "hy": 0.54,
+      "cy": 0.54,
+      "yaw": 3.1416
+    },
+    {
+      "name": "COL_Cove_LotB01_GalleryRailEndE",
+      "cx": -278.98,
+      "cz": -192.13,
+      "hx": 0.05,
+      "hz": 0.95,
+      "hy": 0.54,
+      "cy": 0.54,
+      "yaw": 3.1416
+    },
+    {
+      "name": "COL_House_cove_home_b01",
+      "cx": -271.5,
+      "cz": -185.395,
+      "hx": 7.5,
+      "hz": 5.605,
+      "hy": 3.0,
+      "cy": 3.0,
+      "yaw": 3.1416
     },
     {
       "name": "COL_Cove_CH_Clubhouse",

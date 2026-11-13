@@ -31,6 +31,7 @@ class HousingUnitSeeder extends Seeder
         ['cove_villa_a01', 'buy', 26000, -308.5, 1.25, -285.5, '#E6C495'], // Villa Serena, lot A-01
         ['cove_villa_a03', 'buy', 28000, -220.8, 1.25, -286.2, '#B8875A'],
         ['cove_villa_a04', 'buy', 32000, -193.6, 1.25, -285.2, '#4A4D52'],
+        ['cove_home_b01', 'buy', 14000, -273.5, 1.25, -191.8, '#F0D98C'],
     ];
 
     /** @var array<string, array{minX:float,maxX:float,minZ:float,maxZ:float,maxY?:float}> */
@@ -50,6 +51,7 @@ class HousingUnitSeeder extends Seeder
         'cove_villa_a01' => ['minX' => -6.795, 'maxX' => 14.195, 'minZ' => -5.6, 'maxZ' => 5.2, 'maxY' => 5.6],
         'cove_villa_a03' => ['minX' => -13.695, 'maxX' => 6.295, 'minZ' => -6.0, 'maxZ' => 5.2, 'maxY' => 5.6],
         'cove_villa_a04' => ['minX' => -14.195, 'maxX' => 6.795, 'minZ' => -6.4, 'maxZ' => 5.2, 'maxY' => 5.6],
+        'cove_home_b01' => ['minX' => -9.295, 'maxX' => 5.295, 'minZ' => -5.6, 'maxZ' => 5.2, 'maxY' => 5.6],
     ];
 
     public function run(): void

@@ -130,7 +130,7 @@ function loadHouseExteriors(loader: GLTFLoader, manifest: WorldManifest): Promis
       const exterior = gltf.scene
       mergeStaticMeshes(exterior, MOVING_EXTERIOR_NODES)
       exterior.name = `HouseExterior_${lot.key}`
-      if (lot.interiorOffset) registerFrontDoor(exterior, lot.key)
+      if (lot.interiorOffset) registerFrontDoor(exterior, lot.key, lot.backDoor !== undefined)
       exterior.position.fromArray(lot.position)
       exterior.rotation.y = lot.rotationY
       exterior.userData.houseKey = lot.key
