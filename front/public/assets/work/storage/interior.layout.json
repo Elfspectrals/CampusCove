@@ -1,0 +1,237 @@
+{
+  "version": 1,
+  "key": "storage",
+  "name": "Cove Storage",
+  "spawn": [
+    0.0,
+    1.6,
+    3.7
+  ],
+  "exit": {
+    "position": [
+      0.0,
+      4.75
+    ],
+    "radius": 1.4
+  },
+  "stations": [],
+  "npcs": {
+    "auctioneer": [
+      0.0,
+      0.6,
+      -26.2
+    ]
+  },
+  "lotBoard": [
+    0.0,
+    3.5,
+    -28.88
+  ],
+  "units": [
+    {
+      "id": "unit_01",
+      "door": "Door_Rollup_01",
+      "threshold": [
+        -2.4,
+        0.0,
+        -0.3
+      ],
+      "inside": {
+        "cx": -5.0,
+        "cz": -0.3,
+        "sx": 4.0,
+        "sz": 4.0,
+        "h": 2.6
+      },
+      "facing": 1.5708
+    },
+    {
+      "id": "unit_02",
+      "door": "Door_Rollup_02",
+      "threshold": [
+        -2.4,
+        0.0,
+        -4.5
+      ],
+      "inside": {
+        "cx": -5.0,
+        "cz": -4.5,
+        "sx": 4.0,
+        "sz": 4.0,
+        "h": 2.6
+      },
+      "facing": 1.5708
+    },
+    {
+      "id": "unit_03",
+      "door": "Door_Rollup_03",
+      "threshold": [
+        -2.4,
+        0.0,
+        -8.7
+      ],
+      "inside": {
+        "cx": -5.0,
+        "cz": -8.7,
+        "sx": 4.0,
+        "sz": 4.0,
+        "h": 2.6
+      },
+      "facing": 1.5708
+    },
+    {
+      "id": "unit_04",
+      "door": "Door_Rollup_04",
+      "threshold": [
+        -2.4,
+        0.0,
+        -12.9
+      ],
+      "inside": {
+        "cx": -5.0,
+        "cz": -12.9,
+        "sx": 4.0,
+        "sz": 4.0,
+        "h": 2.6
+      },
+      "facing": 1.5708
+    },
+    {
+      "id": "unit_05",
+      "door": "Door_Rollup_05",
+      "threshold": [
+        -2.4,
+        0.0,
+        -17.1
+      ],
+      "inside": {
+        "cx": -5.0,
+        "cz": -17.1,
+        "sx": 4.0,
+        "sz": 4.0,
+        "h": 2.6
+      },
+      "facing": 1.5708
+    },
+    {
+      "id": "unit_06",
+      "door": "Door_Rollup_06",
+      "threshold": [
+        -2.4,
+        0.0,
+        -21.3
+      ],
+      "inside": {
+        "cx": -5.0,
+        "cz": -21.3,
+        "sx": 4.0,
+        "sz": 4.0,
+        "h": 2.6
+      },
+      "facing": 1.5708
+    },
+    {
+      "id": "unit_07",
+      "door": "Door_Rollup_07",
+      "threshold": [
+        2.4,
+        0.0,
+        -0.3
+      ],
+      "inside": {
+        "cx": 5.0,
+        "cz": -0.3,
+        "sx": 4.0,
+        "sz": 4.0,
+        "h": 2.6
+      },
+      "facing": -1.5708
+    },
+    {
+      "id": "unit_08",
+      "door": "Door_Rollup_08",
+      "threshold": [
+        2.4,
+        0.0,
+        -4.5
+      ],
+      "inside": {
+        "cx": 5.0,
+        "cz": -4.5,
+        "sx": 4.0,
+        "sz": 4.0,
+        "h": 2.6
+      },
+      "facing": -1.5708
+    },
+    {
+      "id": "unit_09",
+      "door": "Door_Rollup_09",
+      "threshold": [
+        2.4,
+        0.0,
+        -8.7
+      ],
+      "inside": {
+        "cx": 5.0,
+        "cz": -8.7,
+        "sx": 4.0,
+        "sz": 4.0,
+        "h": 2.6
+      },
+      "facing": -1.5708
+    },
+    {
+      "id": "unit_10",
+      "door": "Door_Rollup_10",
+      "threshold": [
+        2.4,
+        0.0,
+        -12.9
+      ],
+      "inside": {
+        "cx": 5.0,
+        "cz": -12.9,
+        "sx": 4.0,
+        "sz": 4.0,
+        "h": 2.6
+      },
+      "facing": -1.5708
+    },
+    {
+      "id": "unit_11",
+      "door": "Door_Rollup_11",
+      "threshold": [
+        2.4,
+        0.0,
+        -17.1
+      ],
+      "inside": {
+        "cx": 5.0,
+        "cz": -17.1,
+        "sx": 4.0,
+        "sz": 4.0,
+        "h": 2.6
+      },
+      "facing": -1.5708
+    },
+    {
+      "id": "unit_12",
+      "door": "Door_Rollup_12",
+      "threshold": [
+        2.4,
+        0.0,
+        -21.3
+      ],
+      "inside": {
+        "cx": 5.0,
+        "cz": -21.3,
+        "sx": 4.0,
+        "sz": 4.0,
+        "h": 2.6
+      },
+      "facing": -1.5708
+    }
+  ],
+  "seats": []
+}

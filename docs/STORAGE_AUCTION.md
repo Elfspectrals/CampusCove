@@ -2,6 +2,10 @@
 
 A house seized for unpaid tax does not lose its contents: its placed furniture and its chest go into one storage lot (`storage_lots`), sold at the live auction of the storage zone every evening at 19:00. Laravel owns the lots, the bids and the money; the socket owns the clock and the live sale; the front only shows it and sends bid intents.
 
+## Zone
+
+The sale happens in the Cove Storage warehouse (zone `storage`, building `work` `storage`). `world.manifest.json` `storage` gives, in world coordinates, the auctioneer, the lot board and the 12 units: `id`, `door` (the roll-up node `Door_Rollup_NN` of the interior), `threshold` (where players stand to look in), `inside` (floor centre), `size` (width, height, depth in metres) and `yaw` (facing the aisle). Written by `front/scripts/apply-storage.mjs` from `park/storage_site/storage_site.layout.json`.
+
 ## Lots
 
 | Field | Rule |
