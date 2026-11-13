@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\HousingUnit;
 use App\Models\ItemDef;
+use App\Models\StorageLot;
 use App\Models\Wallet;
 use App\Services\AccountInventoryService;
 use App\Services\HousingService;
@@ -164,6 +165,25 @@ class FurnitureStorageApiTest extends TestCase
 
         $this->assertSame(0, DB::table('furniture_storages')->count());
         $this->assertFalse(DB::table('inventory_stacks')->where('container_id', $containerId)->exists());
+    }
+
+    public function test_a_seized_house_moves_what_its_furniture_held_into_the_storage_lot(): void
+    {
+        $owner = $this->player();
+        $dresser = $this->placed($owner, 'decor_dresser');
+        $this->give($owner, 'food_cookie', 2);
+        $this->storage('deposit', $owner, $owner, $dresser, ['code' => 'food_cookie', 'quantity' => 2])->assertOk();
+        $unit = HousingUnit::query()->where('occupant_account_id', $owner['account_id'])->firstOrFail();
+        $unit->update(['tax_due_at' => now()->subMinute()]);
+        $this->setWalletBalance($owner['account_id'], Wallet::BANK, 0);
+
+        $this->assertSame(1, app(HousingService::class)->collectDueTaxes());
+
+        $lot = StorageLot::query()->sole();
+        $cookie = ItemDef::query()->where('code', 'food_cookie')->firstOrFail();
+        $this->assertSame(2, (int) DB::table('inventory_stacks')->where('container_id', $lot->container_id)->where('item_def_id', $cookie->item_def_id)->value('quantity'));
+        $this->assertSame(0, DB::table('furniture_storages')->count());
+        $this->assertSame('vacant', $unit->fresh()->status);
     }
 
     public function test_the_browser_cannot_open_a_storage_without_the_socket(): void

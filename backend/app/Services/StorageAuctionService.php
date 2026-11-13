@@ -59,11 +59,13 @@ final class StorageAuctionService
             return null;
         }
 
-        $shopValue = $this->shopValueOf($roomContainerId);
         $lotContainerId = $this->newLotContainerId();
-        RoomFurniture::query()->where('room_id', (int) $unit->room_id)->delete();
+        $placed = RoomFurniture::query()->where('room_id', (int) $unit->room_id);
+        FurnitureStorageService::moveInto($placed->pluck('room_furniture_id')->all(), $lotContainerId);
+        $placed->delete();
         ItemInstance::query()->where('container_id', $roomContainerId)->update(['container_id' => $lotContainerId, 'updated_at' => now()]);
         InventoryStack::query()->where('container_id', $roomContainerId)->update(['container_id' => $lotContainerId, 'updated_at' => now()]);
+        $shopValue = $this->shopValueOf($lotContainerId);
 
         return StorageLot::query()->create([
             'source' => 'seized',
