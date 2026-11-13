@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { MarketLotView, MarketSnapshot } from '../../types/gameRealtime.ts'
-import { MAX_COPIES_SHOWN, copiesShown, copiesThatFit, firstFreeSlot, ownStallNo, slotOrigin, stallLook, stallLookKey } from './marketStalls.ts'
+import { MAX_COPIES_SHOWN, copiesFloor, copiesShown, copiesThatFit, firstFreeSlot, ownStallNo, slotOrigin, stallLook, stallLookKey } from './marketStalls.ts'
 
 const apples: MarketLotView = { lot_id: 9, slot: 2, code: 'farm_apple', name: 'Apple', quantity: 20, unit_price: 5, container: 'crate', preview_image: null, model_glb: '/assets/items/farm/apple/model.glb' }
 
@@ -53,4 +53,11 @@ test('a new lot goes to the first free slot from the left, none when the table i
   assert.equal(firstFreeSlot([apples]), 1)
   assert.equal(firstFreeSlot([{ ...apples, slot: 1 }, { ...apples, slot: 3 }]), 2)
   assert.equal(firstFreeSlot([1, 2, 3, 4, 5, 6].map((slot) => ({ ...apples, slot }))), null)
+})
+
+test('copies stand inside a crate, on the closed basket, and an item too big to go in sits on the rim', () => {
+  assert.ok(copiesFloor('crate', 4) < copiesFloor('crate', 0))
+  assert.ok(copiesFloor('basket', 3) > 0.1)
+  assert.equal(copiesFloor('flat', 0), 0)
+  assert.equal(copiesFloor('flat', 5), 0)
 })

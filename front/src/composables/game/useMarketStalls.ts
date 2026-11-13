@@ -3,7 +3,7 @@ import * as THREE from 'three'
 import { disposeObject3D } from '../../avatar/compositeAvatar'
 import type { MaterialLook, Vec3 } from '../../game/mallTemplates/mallTemplate.ts'
 import { createPropObject, instancedCopies, modelSize } from '../../game/mallTemplates/templateProps'
-import { CONTAINER_MODELS, STALL_MODELS, copiesSpace, copiesThatFit, slotOrigin, stallLook, stallLookKey, type StallLook } from '../../game/market/marketStalls.ts'
+import { CONTAINER_MODELS, STALL_MODELS, copiesFloor, copiesSpace, copiesThatFit, slotOrigin, stallLook, stallLookKey, type StallLook } from '../../game/market/marketStalls.ts'
 import { slotCopies } from '../../game/shelves/shelves.ts'
 import { configureRoomMeshShadows, normalizeRoomMaterials } from '../../game/sceneLighting'
 import type { MarketLotView, MarketSnapshot } from '../../types/gameRealtime'
@@ -61,9 +61,9 @@ export function useMarketStalls(deps: MarketStallsDeps) {
     }
     if (!lot.model_glb) return objects
     const size = await modelSize(lot.model_glb)
-    const { floor, box } = copiesSpace(lot.container)
-    const base = new THREE.Matrix4().makeTranslation(origin[0], origin[1] + floor, origin[2])
+    const { box } = copiesSpace(lot.container)
     const count = copiesThatFit(lot.container, size, lot.quantity)
+    const base = new THREE.Matrix4().makeTranslation(origin[0], origin[1] + copiesFloor(lot.container, count), origin[2])
     const copies = count > 0 ? slotCopies(box, size, count, 'messy', `lot#${lot.lot_id}`) : [{ position: [0, 0, 0] as Vec3, yaw: 0, tipped: false }]
     const parts = await instancedCopies(lot.model_glb, copies.map((c) => base.clone().multiply(placement(c.position, c.yaw, c.tipped))))
     for (const part of parts) part.userData.sharedMaterials = true

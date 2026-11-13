@@ -279,6 +279,12 @@ export function useProximityVoice(deps: ProximityVoiceDeps) {
     camera.getWorldDirection(forward)
     up.set(0, 1, 0).applyQuaternion(camera.quaternion)
     const l = audio.listener
+    // Firefox has no AudioParam on the listener, only the older setters.
+    if (!l.positionX) {
+      l.setPosition(camPos.x, camPos.y, camPos.z)
+      l.setOrientation(forward.x, forward.y, forward.z, up.x, up.y, up.z)
+      return
+    }
     const t = audio.currentTime
     l.positionX.setValueAtTime(camPos.x, t)
     l.positionY.setValueAtTime(camPos.y, t)

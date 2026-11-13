@@ -128,7 +128,7 @@ function openChat(friend: Friend) {
       </section>
 
       <section class="order-1 flex min-w-0 flex-col lg:order-none lg:[grid-area:play]">
-        <div class="cc-panel isolate flex min-h-[320px] flex-1 flex-col justify-end overflow-hidden sm:min-h-[380px]">
+        <div class="cc-panel isolate flex max-h-[20vh] min-h-[220px] flex-1 flex-col justify-end overflow-hidden">
           <img :src="townHero" alt="" width="2400" height="1350" class="absolute inset-0 -z-10 h-full w-full object-cover object-right" />
           <div class="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-3/4 bg-gradient-to-b from-transparent to-ink-950/90" />
           <div class="flex flex-col items-start gap-5 p-6 sm:p-8">
@@ -143,10 +143,10 @@ function openChat(friend: Friend) {
         </div>
       </section>
 
-      <section class="cc-panel order-3 self-start lg:order-none lg:[grid-area:tasks]">
+      <section class="cc-panel order-3 flex max-h-[480px] flex-col self-start overflow-hidden lg:order-none lg:[grid-area:tasks]">
         <h2 class="m-0 border-b border-line/10 px-5 py-3 font-display text-2xl leading-none">{{ t('tasks.title') }}</h2>
         <p v-if="tasksError" class="m-0 p-5 text-sm font-semibold text-coral" role="alert">{{ tasksError }}</p>
-        <TaskProgressList v-else-if="tasks" :tasks="tasks" />
+        <div v-else-if="tasks" class="min-h-0 flex-1 overflow-y-auto"><TaskProgressList :tasks="tasks" /></div>
       </section>
 
       <aside class="cc-panel order-4 flex max-h-[640px] flex-col overflow-hidden lg:order-none lg:[grid-area:friends]">
