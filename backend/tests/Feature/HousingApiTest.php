@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Account;
 use App\Models\HousingUnit;
+use App\Models\Wallet;
 use App\Services\ApartmentPlacementService;
 use App\Services\HousingService;
 use Database\Seeders\HousingUnitSeeder;
@@ -158,6 +159,69 @@ class HousingApiTest extends TestCase
         Carbon::setTestNow();
     }
 
+    public function test_each_flatmate_adds_a_quarter_of_the_base_tax(): void
+    {
+        $unit = HousingUnit::query()->where('offer_type', 'buy')->firstOrFail();
+        $unit->update(['price_coins' => 2400, 'tax_coins' => null]);
+        $owner = $this->registerAndCreditWallet(2400, 'coins');
+        $this->postJson('/api/housing/units/'.$unit->public_id.'/buy', [], [
+            'Authorization' => 'Bearer '.$owner['token'],
+        ])->assertOk();
+        $housing = app(HousingService::class);
+        $this->assertSame(120, $housing->taxFor($unit->fresh()));
+
+        foreach ([150, 180, 210] as $expectedTax) {
+            $flatmate = $this->registerAndCreditWallet(0, 'coins');
+            $this->postJson('/api/housing/keys', ['account_id' => $flatmate['account_id']], [
+                'Authorization' => 'Bearer '.$owner['token'],
+            ])->assertOk()->assertJsonPath('unit.tax_coins', $expectedTax);
+        }
+
+        $this->deleteJson('/api/housing/keys/'.$flatmate['account_id'], [], [
+            'Authorization' => 'Bearer '.$owner['token'],
+        ])->assertOk();
+        $this->assertSame(180, $housing->taxFor($unit->fresh()));
+    }
+
+    public function test_flatmate_surcharge_rounds_up(): void
+    {
+        $unit = HousingUnit::query()->where('offer_type', 'buy')->firstOrFail();
+        $unit->update(['price_coins' => 2600, 'tax_coins' => null]);
+        $owner = $this->registerAndCreditWallet(2600, 'coins');
+        $flatmate = $this->registerAndCreditWallet(0, 'coins');
+        $this->postJson('/api/housing/units/'.$unit->public_id.'/buy', [], [
+            'Authorization' => 'Bearer '.$owner['token'],
+        ])->assertOk();
+        $this->postJson('/api/housing/keys', ['account_id' => $flatmate['account_id']], [
+            'Authorization' => 'Bearer '.$owner['token'],
+        ])->assertOk();
+
+        $this->assertSame(163, app(HousingService::class)->taxFor($unit->fresh()));
+    }
+
+    public function test_collect_due_taxes_charges_the_owner_the_flatmate_surcharge(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-09-22 12:00:00 UTC'));
+        $unit = HousingUnit::query()->where('offer_type', 'buy')->firstOrFail();
+        $unit->update(['price_coins' => 2400, 'tax_coins' => null]);
+        $owner = $this->registerAndCreditWallet(2400 + 150, 'coins');
+        $flatmate = $this->registerAndCreditWallet(500, 'coins');
+        $this->postJson('/api/housing/units/'.$unit->public_id.'/buy', [], [
+            'Authorization' => 'Bearer '.$owner['token'],
+        ])->assertOk();
+        $this->postJson('/api/housing/keys', ['account_id' => $flatmate['account_id']], [
+            'Authorization' => 'Bearer '.$owner['token'],
+        ])->assertOk();
+
+        Carbon::setTestNow(Carbon::parse('2026-09-23 12:00:01 UTC'));
+        $this->assertSame(0, app(HousingService::class)->collectDueTaxes());
+
+        $this->assertSame(0, Wallet::lockForAccount($owner['account_id'], 'coins')->balance());
+        $this->assertSame(500, Wallet::lockForAccount($flatmate['account_id'], 'coins')->balance());
+
+        Carbon::setTestNow();
+    }
+
     public function test_unpaid_tax_seizes_the_house_and_deletes_its_room(): void
     {
         Carbon::setTestNow(Carbon::parse('2026-09-22 12:00:00 UTC'));
@@ -281,6 +345,46 @@ class HousingApiTest extends TestCase
             'Authorization' => 'Bearer '.$owner['token'],
         ])->assertOk();
         $this->assertSame(0, $this->houseKeyQuantity($friend));
+        $this->assertSame(1, $this->houseKeyQuantity($owner));
+    }
+
+    public function test_flatmate_leaves_and_gives_the_key_back(): void
+    {
+        $unit = HousingUnit::query()->where('offer_type', 'buy')->firstOrFail();
+        $unit->update(['price_coins' => 2400, 'tax_coins' => null]);
+        $owner = $this->registerAndCreditWallet(2400, 'coins');
+        $flatmate = $this->registerAndCreditWallet(0, 'coins');
+        $this->postJson('/api/housing/units/'.$unit->public_id.'/buy', [], [
+            'Authorization' => 'Bearer '.$owner['token'],
+        ])->assertOk();
+        $this->postJson('/api/housing/keys', ['account_id' => $flatmate['account_id']], [
+            'Authorization' => 'Bearer '.$owner['token'],
+        ])->assertOk();
+        $this->app['auth']->forgetGuards();
+
+        foreach ([1, 2] as $attempt) {
+            $this->postJson('/api/housing/units/'.$unit->public_id.'/leave', [], [
+                'Authorization' => 'Bearer '.$flatmate['token'],
+            ])->assertOk()
+                ->assertJsonPath('unit.key_holder_account_ids', [])
+                ->assertJsonPath('unit.tax_coins', 120);
+        }
+        $this->assertSame(0, $this->houseKeyQuantity($flatmate));
+        $this->assertSame(1, $this->houseKeyQuantity($owner));
+    }
+
+    public function test_owner_cannot_leave_their_own_house(): void
+    {
+        $unit = HousingUnit::query()->where('offer_type', 'buy')->firstOrFail();
+        $owner = $this->registerAndCreditWallet(10_000, 'coins');
+        $this->postJson('/api/housing/units/'.$unit->public_id.'/buy', [], [
+            'Authorization' => 'Bearer '.$owner['token'],
+        ])->assertOk();
+
+        $this->postJson('/api/housing/units/'.$unit->public_id.'/leave', [], [
+            'Authorization' => 'Bearer '.$owner['token'],
+        ])->assertStatus(422)->assertJsonPath('code', 'owner_cannot_leave');
+        $this->assertSame('occupied', $unit->fresh()->status);
         $this->assertSame(1, $this->houseKeyQuantity($owner));
     }
 

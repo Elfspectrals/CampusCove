@@ -14,12 +14,14 @@ export interface HousingTarget {
   z: number
 }
 
-export type HousingAction = 'buy' | 'open' | 'close' | 'lock' | 'unlock' | 'locked'
+export type HousingAction = 'buy' | 'open' | 'close' | 'lock' | 'unlock' | 'locked' | 'pick' | 'reinforce'
 
 export interface DoorContext {
   myAccountId: number | null
   doorOpen: boolean
   holdingHouseKey: boolean
+  holdingLockpick?: boolean
+  holdingReinforcedLock?: boolean
 }
 
 /** Extra XZ reach beyond half the unit size for the door prompt. */
@@ -65,11 +67,16 @@ function hasHouseKeys(unit: HousingUnit, accountId: number | null): boolean {
   return unit.occupant_account_id === accountId || unit.key_holder_account_ids.includes(accountId)
 }
 
+export function isFlatmate(unit: HousingUnit, accountId: number | null): boolean {
+  return accountId !== null && unit.status === 'occupied' && unit.key_holder_account_ids.includes(accountId)
+}
+
 export function housingActionFor(unit: HousingUnit, door: DoorContext): HousingAction | null {
   if (unit.status === 'vacant') return unit.offer_type === 'buy' ? 'buy' : null
   const keys = hasHouseKeys(unit, door.myAccountId)
+  if (door.holdingReinforcedLock && unit.occupant_account_id === door.myAccountId && !unit.reinforced_lock) return 'reinforce'
   if (door.holdingHouseKey && keys) return unit.door_locked ? 'unlock' : 'lock'
-  if (unit.door_locked) return 'locked'
+  if (unit.door_locked) return door.holdingLockpick && !keys ? 'pick' : 'locked'
   return door.doorOpen ? 'close' : 'open'
 }
 
@@ -88,5 +95,9 @@ export function housingPromptLabel(unit: HousingUnit, action: HousingAction): { 
       return { action: 'Unlock' }
     case 'locked':
       return { action: 'Locked' }
+    case 'pick':
+      return { action: 'Pick the lock' }
+    case 'reinforce':
+      return { action: 'Fit the reinforced lock' }
   }
 }

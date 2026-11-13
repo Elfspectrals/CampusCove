@@ -1,5 +1,5 @@
 import { type AuthContext, type Client, Room } from 'colyseus'
-import { onAdminOpen, onAdminSummon, onAdminTeleport } from './admin.ts'
+import { onAdminOpen, onAdminQuizStart, onAdminSummon, onAdminTeleport } from './admin.ts'
 import { pickupObject, saveObject, setDecoratedHouse } from './apartments.ts'
 import { type Json, callBackendJson, clientIp, isDirectOrigin, parseAccountId, resolveIdentity } from './backend.ts'
 import { CITY_MAX_PLAYERS, CITY_SPAWN_RADIUS, LIVEKIT } from './config.ts'
@@ -18,6 +18,9 @@ import {
   lockChanges,
   workDoorId
 } from './doors.ts'
+import { onDoorReinforce, onLockpickCancel, onLockpickPress, onLockpickStart } from './lockpick.ts'
+import { onStorage } from './storage.ts'
+import { onBedSet } from './bed.ts'
 import { moveRejection, onJump, spendSprintStamina } from './movement.ts'
 import { onOrchardPick, onOrchardPickCancel, onOrchardPickStart } from './orchard.ts'
 import { onFarmPick, onFarmPickStart } from './farm.ts'
@@ -40,10 +43,19 @@ import {
   onStand,
   standUp
 } from './pubGames.ts'
+import { onQuizAnswer, onQuizJoin, quizSnapshot, scheduleNextQuiz } from './pubQuizEvent.ts'
 import { onPunch } from './punch.ts'
+import { onHold } from './tools.ts'
 import { onChat } from './chat.ts'
 import { onAtm } from './atm.ts'
-import { onCashBagPick } from './cashBags.ts'
+import { onMarket, sendMarketOnJoin } from './market.ts'
+import { onCashBagPick, publicCashBag } from './cashBags.ts'
+import { STORAGE_TICK_MS, newStorageAuction, onAdminStorageSale, onStorageBid, onStorageOpen, onStorageOpenMine, storageSnapshot, tickStorageAuction } from './storageAuction.ts'
+import { WANTED_TICK_MS, loadWanted, saveWanted, sendWantedOnJoin, tickWanted } from './wanted.ts'
+import { holdInCell, loadJail, lockUpOnJoin, onJailPay, saveJail, tickJail } from './jail.ts'
+import { broadcastAppearance, loadPoliceLicence, onPoliceDuty, onPoliceLicenceBuy } from './police.ts'
+import { leaveCuffs, onCuffCancel, onCuffStart, onCuffsMove, onPoliceCell, onUncuff, tickCuffs } from './handcuffs.ts'
+import { leavePickpocket, onPickpocketMove, onPickpocketStart, onPickpocketStop, onPickpocketTake } from './pickpocket.ts'
 import { voiceRoomName, voiceToken } from './voice.ts'
 import { VOICE_SYNC_MS, createVoiceSync, liveKitService, onVoiceMute } from './voiceSync.ts'
 import {
@@ -64,6 +76,7 @@ import {
   onClinicHeal,
   onCook,
   onDrinkFountain,
+  onEatMealTray,
   onSurvivalMove,
   releaseClinicBed,
   saveSurvival,
@@ -89,10 +102,14 @@ import type {
   HouseFurniture,
   HousingUnit,
   Identity,
+  MarketSnapshot,
   Player,
   PubState
 } from './types.ts'
 import { type WorldHouse, citySpawn, workDoor, worldHouse } from './world.ts'
+import { sendTaskTierReached, type TaskTierReached } from './tasks.ts'
+import { applyTutorialChange, type TutorialChange } from './tutorial.ts'
+import { onTaskMove } from './taskTracking.ts'
 
 function warn(context: string, error: unknown): void {
   console.warn(`[colyseus] ${context}:`, error instanceof Error ? error.message : error)
@@ -109,7 +126,9 @@ export class CityRoom extends Room implements GameRoom {
   trades = new Map<string, Trade>()
   seats = new Map<string, string>()
   cashBags = new Map<number, CashBag>()
-  pub: PubState = { secretOpen: false, race: null, darts: null, challenges: new Map(), challengeSentAt: new Map() }
+  market: MarketSnapshot | null = null
+  storageAuction = newStorageAuction()
+  pub: PubState = { secretOpen: false, race: null, darts: null, challenges: new Map(), challengeSentAt: new Map(), quiz: null, quizSchedule: 0 }
 
   onCreate() {
     this.maxClients = CITY_MAX_PLAYERS
@@ -119,6 +138,14 @@ export class CityRoom extends Room implements GameRoom {
     this.onMessage('housing_refresh', (client) => this.onHousingRefresh(client))
     this.onMessage('door_toggle', (client, payload: ClientPayload) => this.onDoorToggle(client, payload))
     this.onMessage('door_rattle', (client, payload: ClientPayload) => this.onDoorRattle(client, payload))
+    this.onMessage('lockpick_start', (client, payload: ClientPayload) => void onLockpickStart(this, client, payload))
+    this.onMessage('lockpick_press', (client) => void onLockpickPress(this, client))
+    this.onMessage('lockpick_cancel', (client) => onLockpickCancel(this, client))
+    this.onMessage('door_reinforce', (client, payload: ClientPayload) => void onDoorReinforce(this, client, payload))
+    this.onMessage('storage_open', (client, payload: ClientPayload) => void onStorage(this, client, 'open', payload))
+    this.onMessage('storage_deposit', (client, payload: ClientPayload) => void onStorage(this, client, 'deposit', payload))
+    this.onMessage('storage_take', (client, payload: ClientPayload) => void onStorage(this, client, 'take', payload))
+    this.onMessage('bed_set', (client, payload: ClientPayload) => void onBedSet(this, client, payload))
     this.onMessage('decorate_house', (client, payload: ClientPayload) => setDecoratedHouse(this, client, payload))
     this.onMessage('apartment_spawn_request', (client, payload: ClientPayload) => saveObject(this, client, payload, true))
     this.onMessage('apartment_transform_request', (client, payload: ClientPayload) => saveObject(this, client, payload, false))
@@ -129,9 +156,22 @@ export class CityRoom extends Room implements GameRoom {
     this.onMessage('clinic_heal', (client) => void onClinicHeal(this, client))
     this.onMessage('jump', (client) => onJump(this.players.get(client.sessionId), Date.now()))
     this.onMessage('punch', (client, payload: ClientPayload) => onPunch(this, client, payload))
+    this.onMessage('hold', (client, payload: ClientPayload) => onHold(this, client, payload))
     this.onMessage('chat', (client, payload: ClientPayload) => onChat(this, client, payload))
     this.onMessage('atm', (client, payload: ClientPayload) => void onAtm(this, client, payload))
+    this.onMessage('market', (client, payload: ClientPayload) => void onMarket(this, client, payload))
     this.onMessage('cash_bag_pick', (client, payload: ClientPayload) => void onCashBagPick(this, client, payload))
+    this.onMessage('jail_pay', (client) => void onJailPay(this, client))
+    this.onMessage('jail_tray_eat', (client) => onEatMealTray(this, client))
+    this.onMessage('police_licence_buy', (client) => void onPoliceLicenceBuy(this, client))
+    this.onMessage('police_duty', (client) => onPoliceDuty(this, client))
+    this.onMessage('police_cuff_start', (client, payload: ClientPayload) => onCuffStart(this, client, payload))
+    this.onMessage('police_cuff_cancel', (client) => onCuffCancel(this, client))
+    this.onMessage('police_uncuff', (client) => onUncuff(this, client))
+    this.onMessage('police_cell', (client) => onPoliceCell(this, client))
+    this.onMessage('pickpocket_start', (client, payload: ClientPayload) => onPickpocketStart(this, client, payload))
+    this.onMessage('pickpocket_stop', (client) => onPickpocketStop(this, client))
+    this.onMessage('pickpocket_take', (client, payload: ClientPayload) => onPickpocketTake(this, client, payload))
     this.onMessage('voice_mute', (client, payload: ClientPayload) => onVoiceMute(this, client, payload))
     if (LIVEKIT) {
       const voice = createVoiceSync(this, liveKitService(LIVEKIT), voiceRoomName(this.roomId))
@@ -160,6 +200,8 @@ export class CityRoom extends Room implements GameRoom {
     this.onMessage('pub_darts_join', (client) => void onDartsJoin(this, client))
     this.onMessage('pub_darts_throw', (client, payload: ClientPayload) => onDartsThrow(this, client, payload))
     this.onMessage('pub_darts_leave', (client) => onDartsLeave(this, client))
+    this.onMessage('pub_quiz_join', (client) => onQuizJoin(this, client))
+    this.onMessage('pub_quiz_answer', (client, payload: ClientPayload) => onQuizAnswer(this, client, payload))
     this.onMessage('orchard_pick_start', (client, payload: ClientPayload) => onOrchardPickStart(this, client, payload))
     this.onMessage('orchard_pick', (client) => void onOrchardPick(this, client))
     this.onMessage('orchard_pick_cancel', (client) => onOrchardPickCancel(this, client))
@@ -170,8 +212,20 @@ export class CityRoom extends Room implements GameRoom {
     this.onMessage('admin_open', (client) => onAdminOpen(this, client))
     this.onMessage('admin_teleport', (client, payload: ClientPayload) => onAdminTeleport(this, client, payload))
     this.onMessage('admin_summon', (client, payload: ClientPayload) => onAdminSummon(this, client, payload))
+    this.onMessage('admin_storage_sale', (client) => void onAdminStorageSale(this, client))
+    this.onMessage('storage_bid', (client) => void onStorageBid(this, client))
+    this.onMessage('storage_lot_open', (client, payload: ClientPayload) => void onStorageOpen(this, client, payload))
+    this.onMessage('storage_open_mine', (client) => void onStorageOpenMine(this, client))
+    this.clock.setInterval(() => void tickStorageAuction(this, Date.now()).catch((error) => warn('storage auction tick failed', error)), STORAGE_TICK_MS)
+    this.onMessage('admin_quiz_start', (client) => onAdminQuizStart(this, client))
+    scheduleNextQuiz(this)
     this.clock.setInterval(() => void this.pollHousingUnits(), HOUSING_POLL_MS)
     this.clock.setInterval(() => tickSurvival(this, SURVIVAL_TICK_MS / 1000), SURVIVAL_TICK_MS)
+    this.clock.setInterval(() => {
+      tickWanted(this, WANTED_TICK_MS)
+      tickJail(this, WANTED_TICK_MS)
+      tickCuffs(this)
+    }, WANTED_TICK_MS)
   }
 
   async onAuth(_client: Client, options: Json, context: AuthContext): Promise<Identity> {
@@ -195,10 +249,12 @@ export class CityRoom extends Room implements GameRoom {
       if (stale) {
         onTradeLeave(this, stale)
         leavePub(this, stale)
+        leaveCuffs(this, stale)
+        leavePickpocket(this, stale)
       }
       this.players.delete(staleSessionId)
       // saved before this session loads them
-      if (stale) await saveSurvival(stale)
+      if (stale) await Promise.all([saveSurvival(stale), saveWanted(stale), saveJail(stale)])
     }
     const player = createPlayer(client, options, this.players.size, spawnNear(citySpawn(), CITY_SPAWN_RADIUS))
     this.players.set(client.sessionId, player)
@@ -214,16 +270,26 @@ export class CityRoom extends Room implements GameRoom {
       houseFurniture: this.houseFurniture,
       openDoors: [...this.openDoors],
       pubSecretOpen: this.pub.secretOpen,
-      cashBags: [...this.cashBags.values()],
+      pubQuiz: quizSnapshot(this),
+      cashBags: [...this.cashBags.values()].map(publicCashBag),
       isAdmin: player.isAdmin
     })
+    client.send('storage_sale', storageSnapshot(this, Date.now()))
     this.forEachClient((c) => c.send('user_joined', publicPlayer(player)), client)
     if (LIVEKIT) {
       await voiceToken(LIVEKIT, this.roomId, client.sessionId, player.pseudo)
         .then((voice) => client.send('voice_token', voice))
         .catch((error) => warn('voice token failed', error))
     }
-    if (player.token) await loadSurvival(client, player)
+    sendWantedOnJoin(this, client, player)
+    if (player.token) {
+      await loadWanted(this, player)
+      await loadJail(this, player)
+      lockUpOnJoin(this, player)
+      await loadPoliceLicence(this, client, player)
+      await loadSurvival(client, player)
+    }
+    await sendMarketOnJoin(this, client, player)
   }
 
   onLeave(client: Client) {
@@ -231,9 +297,13 @@ export class CityRoom extends Room implements GameRoom {
     this.players.delete(client.sessionId)
     if (!player) return
     releaseClinicBed(this, player)
+    leaveCuffs(this, player)
+    leavePickpocket(this, player)
     onTradeLeave(this, player)
     leavePub(this, player)
     void saveSurvival(player)
+    void saveWanted(player)
+    void saveJail(player)
     if (this.sessionByAccountId.get(player.accountId) === client.sessionId) {
       this.sessionByAccountId.delete(player.accountId)
     }
@@ -269,6 +339,10 @@ export class CityRoom extends Room implements GameRoom {
       blockAtSecretDoor(this, client, player, now)
       return
     }
+    if (rejection === 'jailed') {
+      holdInCell(client, player)
+      return
+    }
     if (rejection !== null) {
       client.send('position_correction', { x: player.x, y: player.y, z: player.z })
       return
@@ -282,8 +356,11 @@ export class CityRoom extends Room implements GameRoom {
     if (sprinting && distXZ > 0) spendSprintStamina(player, now - player.lastMoveAt, now)
     player.lastMoveAt = now
     this.broadcastMove(client, player)
+    onCuffsMove(this, player, distXZ, now)
+    onPickpocketMove(this, player)
     checkTradeDistance(this, player)
     onSurvivalMove(this, client, player, previousY, distXZ)
+    onTaskMove(player, distXZ, now)
   }
 
   broadcastMove(client: GameClient, player: Player): void {
@@ -304,14 +381,7 @@ export class CityRoom extends Room implements GameRoom {
       JSON.stringify([player.appearance, player.slotHexes, player.bodyModelGlb, player.slotModels, player.character])
     if (unchanged) return
     Object.assign(player, { appearance, slotHexes, bodyModelGlb, slotModels, character })
-    this.forEachClient((c) => c.send('appearance_updated', {
-      sessionId: client.sessionId,
-      appearance: { ...appearance },
-      slotHexes: { ...slotHexes },
-      bodyModelGlb,
-      slotModels: { ...slotModels },
-      character: character && { ...character }
-    }))
+    broadcastAppearance(this, player)
   }
 
   // ------------------------------------------------------------ housing
@@ -355,6 +425,14 @@ export class CityRoom extends Room implements GameRoom {
     for (const client of this.clients) {
       if (client.auth?.ip === ip) client.leave(4003, 'ip banned')
     }
+  }
+
+  onTaskTierReached(reached: TaskTierReached): void {
+    sendTaskTierReached(this, reached)
+  }
+
+  onTutorialChanged(change: TutorialChange): void {
+    applyTutorialChange(this, change)
   }
 
   async fetchHouseFurniture(token: string): Promise<void> {

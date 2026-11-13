@@ -52,6 +52,21 @@ class ZoneShopApiTest extends TestCase
         $this->assertSame(95, $this->balance($player['account_id']));
     }
 
+    public function test_crispins_hardware_sells_a_job_tool_with_all_its_uses(): void
+    {
+        $player = $this->registerAndCreditWallet(200, 'cash');
+
+        $this->postJson('/api/zone/checkout', ['zone' => 'crispins_hardware', 'items' => [$this->catalogId('tool_crowbar')]], $this->auth($player['token'], self::SECRET))
+            ->assertOk()
+            ->assertJsonPath('balance_after', 80)
+            ->assertJsonPath('purchases.0.unit_price', 120);
+        $this->assertSame(300, (int) DB::table('item_instances')
+            ->join('item_defs', 'item_defs.item_def_id', '=', 'item_instances.item_def_id')
+            ->where('item_instances.owner_account_id', $player['account_id'])
+            ->where('item_defs.code', 'tool_crowbar')
+            ->value('uses_left'));
+    }
+
     public function test_an_item_the_zone_does_not_sell_buys_nothing(): void
     {
         $player = $this->registerAndCreditWallet(1_000, 'cash');

@@ -33,6 +33,8 @@ class ItemDef extends Model
         'health_per_portion',
         'alcohol_per_portion',
         'consume_effect',
+        'max_uses',
+        'weapon',
     ];
 
     protected function casts(): array
@@ -48,6 +50,8 @@ class ItemDef extends Model
             'thirst_per_portion' => 'integer',
             'health_per_portion' => 'integer',
             'alcohol_per_portion' => 'integer',
+            'max_uses' => 'integer',
+            'weapon' => 'boolean',
         ];
     }
 

@@ -73,6 +73,47 @@ class OrchardApiTest extends TestCase
         $this->assertSame(1, $this->hotbarItem($other['token'], 'farm_apple')['quantity']);
     }
 
+    public function test_secateurs_allow_picks_one_and_three_quarter_seconds_apart_and_spend_one_use_each(): void
+    {
+        $player = $this->registerAndCreditWallet(0, 'cash');
+        $this->grant($player['account_id'], 'tool_secateurs', 1);
+        $pick = fn () => $this->postJson('/api/orchard/pick', ['tool' => 'tool_secateurs'], $this->auth($player['token'], self::SECRET));
+        $this->freezeTime();
+
+        $pick()->assertOk()->assertExactJson(['code' => 'farm_apple', 'quantity' => 1, 'tool' => ['code' => 'tool_secateurs', 'uses_left' => 599]]);
+        $this->travel(OrchardService::MIN_PICK_INTERVAL_WITH_TOOL_MS - 1)->milliseconds();
+        $pick()->assertStatus(422)->assertJsonPath('code', 'pick_too_fast');
+        $this->travel(1)->milliseconds();
+        $pick()->assertOk()->assertJsonPath('quantity', 2)->assertJsonPath('tool.uses_left', 598);
+    }
+
+    public function test_a_pick_with_secateurs_not_carried_gives_no_apple(): void
+    {
+        $player = $this->registerAndCreditWallet(0, 'cash');
+
+        $this->postJson('/api/orchard/pick', ['tool' => 'tool_secateurs'], $this->auth($player['token'], self::SECRET))
+            ->assertStatus(422)
+            ->assertJsonPath('code', 'tool_not_carried');
+        $this->postJson('/api/orchard/pick', ['tool' => 'tool_crowbar'], $this->auth($player['token'], self::SECRET))
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('tool');
+
+        $this->assertNull($this->hotbarItem($player['token'], 'farm_apple'));
+    }
+
+    public function test_a_full_basket_spends_no_use_of_the_secateurs(): void
+    {
+        $player = $this->registerAndCreditWallet(0, 'cash');
+        $this->grant($player['account_id'], 'tool_secateurs', 1);
+        $this->grant($player['account_id'], 'farm_apple', 20);
+
+        $this->postJson('/api/orchard/pick', ['tool' => 'tool_secateurs'], $this->auth($player['token'], self::SECRET))
+            ->assertStatus(422)
+            ->assertJsonPath('code', 'basket_full');
+
+        $this->assertSame(600, (int) DB::table('item_instances')->where('owner_account_id', $player['account_id'])->value('uses_left'));
+    }
+
     public function test_selling_apples_pays_three_coins_each_and_keeps_the_rest(): void
     {
         $player = $this->registerAndCreditWallet(10, 'cash');
@@ -88,17 +129,17 @@ class OrchardApiTest extends TestCase
         $this->assertSame(1, DB::table('wallet_ledger')->where('reason', 'orchard_sell')->where('delta', 15)->count());
     }
 
-    public function test_apples_past_three_hundred_sold_in_a_day_pay_one_coin_each(): void
+    public function test_apples_past_three_hundred_sold_in_a_day_pay_nothing(): void
     {
         $player = $this->registerAndCreditWallet(0, 'cash');
         $this->grant($player['account_id'], 'farm_apple', 308);
         $sell = fn (int $quantity) => $this->postJson('/api/orchard/sell', ['quantity' => $quantity], $this->auth($player['token'], self::SECRET))->assertOk();
 
         $sell(298)->assertJsonPath('coins', 894)->assertJsonPath('full_price_left', 2);
-        $sell(5)->assertJsonPath('coins', 9)->assertJsonPath('full_price_left', 0);
-        $sell(5)->assertExactJson(['sold' => 5, 'coins' => 5, 'balance_after' => 908, 'full_price_left' => 0]);
+        $sell(5)->assertJsonPath('coins', 6)->assertJsonPath('full_price_left', 0);
+        $sell(5)->assertExactJson(['sold' => 5, 'coins' => 0, 'balance_after' => 900, 'full_price_left' => 0]);
 
-        $this->assertSame(908, $this->balance($player['account_id']));
+        $this->assertSame(900, $this->balance($player['account_id']));
     }
 
     public function test_the_daily_quota_rolls_over_twenty_four_hours_per_account(): void
@@ -113,7 +154,7 @@ class OrchardApiTest extends TestCase
         $sell($player, 300)->assertJsonPath('coins', 900);
         $sell($other, 5)->assertJsonPath('coins', 15);
         $this->travel(24 * 3600)->seconds();
-        $sell($player, 5)->assertJsonPath('coins', 5)->assertJsonPath('full_price_left', 0);
+        $sell($player, 5)->assertJsonPath('coins', 0)->assertJsonPath('full_price_left', 0);
         $this->travel(1)->seconds();
         $sell($player, 5)->assertJsonPath('coins', 15)->assertJsonPath('full_price_left', 290);
     }

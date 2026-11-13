@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="fr" data-theme="lobby">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Watch apps</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@500;600;700&family=Barlow+Condensed:wght@600;700;800&family=Bricolage+Grotesque:wght@500;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  [data-theme='lobby'] {
+    --ink-950: 10 14 23; --ink-900: 17 24 39; --ink-800: 24 33 50; --ink-700: 34 45 66;
+    --fog: 238 242 248; --mist: 154 166 187; --line: 255 255 255;
+    --sun: 255 204 51; --pool: 47 155 255; --mint: 61 220 151; --coral: 255 107 129; --grape: 160 120 255;
+    --on-accent: 26 19 0;
+    --display: 'Barlow Condensed', system-ui, sans-serif; --sans: 'Barlow', system-ui, sans-serif;
+    --label-case: uppercase; --screen-radius: 18px; --bezel: #1b2232; --bezel-edge: #0a0e17; --outline: 0 0 0 1px rgb(255 255 255 / .06);
+    --page: #0c111c; --page-fg: #eef2f8;
+  }
+  html:has(#t-bd:checked) {
+    --ink-950: 243 234 216; --ink-900: 255 250 240; --ink-800: 243 231 207; --ink-700: 230 214 186;
+    --fog: 20 20 20; --mist: 82 74 62; --line: 20 20 20;
+    --sun: 240 80 40; --pool: 43 89 255; --mint: 25 136 74; --coral: 200 40 90; --grape: 120 70 220;
+    --on-accent: 20 20 20;
+    --display: 'Bricolage Grotesque', system-ui, sans-serif; --sans: 'Bricolage Grotesque', system-ui, sans-serif;
+    --label-case: none; --screen-radius: 14px; --bezel: #141414; --bezel-edge: #141414; --outline: 0 0 0 2px #141414;
+    --page: #efe4cc; --page-fg: #141414;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--page); color: var(--page-fg); font-family: var(--sans); }
+  main { max-width: 1180px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-family: var(--display); font-size: clamp(32px, 5vw, 48px); line-height: 1; margin: 0 0 8px; }
+  h2 { font-family: var(--display); font-size: 24px; margin: 48px 0 6px; }
+  .lede { max-width: 64ch; margin: 0 0 20px; line-height: 1.5; opacity: .8; }
+  .switch { display: flex; gap: 8px; margin-bottom: 24px; }
+  .switch label { font: 700 15px var(--sans); padding: 10px 16px; border-radius: 10px; border: 1px solid currentColor; cursor: pointer; }
+  .switch input { position: absolute; opacity: 0; }
+  .switch label:has(:checked) { background: rgb(var(--sun)); color: rgb(var(--on-accent)); border-color: rgb(var(--sun)); }
+  .switch label:has(:focus-visible) { outline: 2px solid rgb(var(--pool)); outline-offset: 2px; }
+
+  .scene { position: relative; aspect-ratio: 16 / 9; border-radius: 14px; overflow: hidden;
+    background:
+      radial-gradient(120% 70% at 70% 110%, #3a2a1c 0 30%, transparent 31%),
+      linear-gradient(180deg, #f6b26b 0%, #e98a5e 38%, #7a5a6e 62%, #2f3a3a 63%, #3d4a3c 100%); }
+  .scene::before { content: ''; position: absolute; left: 30%; right: 18%; bottom: 37%; height: 22%;
+    background: linear-gradient(90deg, #5b4a5e 0 14%, transparent 14% 18%, #6d5560 18% 40%, transparent 40% 46%, #4f4458 46% 70%, transparent 70% 74%, #63505a 74%); opacity: .85; }
+  .arm { position: absolute; left: -2%; bottom: -8%; width: 34%; height: 46%; border-radius: 40% 60% 0 0; background: linear-gradient(160deg, #d9a27f, #b07a5c); transform: rotate(14deg); }
+  .minimap { position: absolute; right: 12px; top: 56px; width: 17%; aspect-ratio: 1; border-radius: 50%;
+    background: radial-gradient(circle, #8fae7a 0 30%, #6f8f62 31% 60%, #567548 61%); box-shadow: 0 0 0 3px rgb(var(--ink-950) / .8); }
+  .minimap .me { position: absolute; left: 50%; top: 50%; width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-bottom: 12px solid #fff; transform: translate(-50%, -50%); }
+  .minimap .pin { position: absolute; left: 68%; top: 22%; width: 14px; height: 14px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); background: rgb(var(--sun)); box-shadow: 0 0 0 2px rgb(var(--ink-950)); }
+  .route { position: absolute; right: 12px; top: calc(56px + 17% * 16 / 9 + 10px); display: flex; align-items: center; gap: 8px;
+    padding: 6px 10px; border-radius: 999px; background: rgb(var(--ink-950) / .75); color: rgb(var(--fog)); font: 700 13px var(--sans); box-shadow: var(--outline); }
+  .route svg { color: rgb(var(--sun)); transform: rotate(32deg); }
+  .vitals { position: absolute; bottom: 70px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; }
+  .vitals i { display: block; width: 90px; height: 8px; border-radius: 4px; background: rgb(var(--coral)); box-shadow: var(--outline); }
+  .vitals i + i { background: rgb(var(--mint)); }
+  .hotbar { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); display: flex; gap: 5px; }
+  .hotbar b { width: 42px; height: 42px; border-radius: 8px; background: rgb(var(--ink-950) / .7); box-shadow: var(--outline); }
+  .hotbar b:first-child { box-shadow: 0 0 0 2px rgb(var(--sun)); }
+  .scene .watch { position: absolute; left: 16px; bottom: 16px; transform-origin: bottom left; }
+  .hint { position: absolute; left: 50%; top: 14px; transform: translateX(-50%); font: 700 13px var(--sans); color: #fff; text-shadow: 0 1px 2px #000; }
+
+  .screens { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 32px 20px; }
+  figure { margin: 0; }
+  figcaption { margin-top: 12px; font-size: 14px; line-height: 1.45; opacity: .85; max-width: 34ch; }
+  figcaption strong { display: block; font-family: var(--display); font-size: 17px; opacity: 1; }
+
+  .watch { position: relative; width: 236px; padding: 10px; border-radius: 30px; background: var(--bezel);
+    box-shadow: inset 0 0 0 2px var(--bezel-edge), 0 14px 30px rgb(0 0 0 / .35); }
+  .watch::before, .watch::after { content: ''; position: absolute; left: 50%; width: 120px; height: 18px; transform: translateX(-50%); background: var(--bezel); opacity: .9; }
+  .watch::before { top: -14px; border-radius: 10px 10px 0 0; }
+  .watch::after { bottom: -14px; border-radius: 0 0 10px 10px; }
+  .crown { position: absolute; right: -9px; top: 54px; width: 12px; height: 34px; border-radius: 4px; background: var(--bezel); box-shadow: inset 0 0 0 2px var(--bezel-edge);
+    display: grid; place-items: center; }
+  .crown span { position: absolute; left: 18px; font: 700 11px var(--sans); color: var(--page-fg); white-space: nowrap; opacity: .7; }
+  .screen { position: relative; z-index: 1; height: 268px; border-radius: var(--screen-radius); background: rgb(var(--ink-900)); color: rgb(var(--fog));
+    display: flex; flex-direction: column; overflow: hidden; box-shadow: var(--outline); }
+  .status { display: flex; align-items: center; justify-content: space-between; padding: 9px 12px 4px; font: 700 12px var(--sans); color: rgb(var(--mist)); }
+  .status .time { font-family: var(--display); font-size: 16px; color: rgb(var(--fog)); }
+  .title { display: flex; align-items: center; gap: 6px; padding: 2px 12px 8px; font: 800 18px var(--display); text-transform: var(--label-case); }
+  .title svg { color: rgb(var(--mist)); }
+  .body { flex: 1; padding: 0 8px; overflow: hidden; }
+  .keys { display: flex; justify-content: center; gap: 10px; padding: 6px 8px 8px; font: 600 11px var(--sans); color: rgb(var(--mist)); border-top: 1px solid rgb(var(--line) / .08); }
+  kbd { font: 700 10px var(--sans); padding: 1px 5px; border-radius: 4px; background: rgb(var(--ink-700)); color: rgb(var(--fog)); }
+
+  .apps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 6px 4px; }
+  .app { position: relative; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 10px 0 8px; border-radius: 14px; font: 700 11px var(--sans); }
+  .app .ico { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; color: rgb(var(--on-accent)); }
+  .app.sel { background: rgb(var(--ink-700)); box-shadow: 0 0 0 2px rgb(var(--sun)); }
+  .badge { position: absolute; top: 4px; right: 12px; min-width: 16px; height: 16px; border-radius: 8px; background: rgb(var(--coral)); color: #fff; font: 800 10px/16px var(--sans); text-align: center; }
+
+  .rows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+  .row { display: flex; align-items: center; gap: 9px; padding: 7px 8px; border-radius: 10px; font-size: 13px; }
+  .row.sel { background: rgb(var(--ink-700)); box-shadow: inset 3px 0 0 rgb(var(--sun)); }
+  .row .name { flex: 1; min-width: 0; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row .meta { font-size: 11px; color: rgb(var(--mist)); white-space: nowrap; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+  .group { padding: 6px 8px 2px; font: 700 11px var(--sans); color: rgb(var(--mist)); }
+
+  .money { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 0 4px 4px; }
+  .money div { padding: 8px 10px; border-radius: 12px; background: rgb(var(--ink-800)); }
+  .money small { display: block; font-size: 11px; color: rgb(var(--mist)); font-weight: 600; }
+  .money b { font: 800 22px var(--display); }
+  .plus { color: rgb(var(--mint)); font-weight: 700; } .minus { color: rgb(var(--coral)); font-weight: 700; }
+  .note { margin: 6px 8px 0; font-size: 11px; color: rgb(var(--mist)); line-height: 1.35; }
+
+  .toast { display: flex; gap: 8px; align-items: center; margin: 0 4px 6px; padding: 8px; border-radius: 12px; background: rgb(var(--sun) / .18); font-size: 12px; font-weight: 700; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Applis de la montre</h1>
+  <p class="lede">Un tap sur T ouvre la montre au poignet, en bas à gauche. On continue à marcher et à regarder : les flèches choisissent, Entrée ouvre, ⌫ revient, T referme. Rien n'assombrit l'écran.</p>
+  <div class="switch" role="radiogroup" aria-label="Thème">
+    <label><input type="radio" name="theme" id="t-lobby" checked>Graphite</label>
+    <label><input type="radio" name="theme" id="t-bd">Comic</label>
+  </div>
+
+  <div class="scene" aria-label="La montre ouverte en jeu, GPS actif">
+    <div class="arm"></div>
+    <p class="hint">Le joueur marche vers le distributeur</p>
+    <div class="minimap"><span class="me"></span><span class="pin"></span></div>
+    <div class="route"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 20 21 12 17 4 21z"/></svg>Distributeur · 84 m</div>
+    <div class="vitals"><i></i><i></i></div>
+    <div class="hotbar"><b></b><b></b><b></b><b></b><b></b><b></b></div>
+    <div class="watch"><span class="crown"><span>T</span></span><div class="screen"><div class="status"><span class="time">18:42</span><span>140 $ sur toi</span></div><div class="title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5-7 7 7 7"/></svg>GPS</div><div class="body"><ul class="rows">
+        <li class="row sel"><span class="dot" style="background:rgb(var(--sun))"></span><span class="name">Distributeur</span><span class="meta">84 m · suivi</span></li>
+        <li class="row"><span class="dot" style="background:rgb(var(--mint))"></span><span class="name">Verger</span><span class="meta">210 m</span></li>
+        <li class="row"><span class="dot" style="background:rgb(var(--pool))"></span><span class="name">GreenCart</span><span class="meta">260 m</span></li>
+        <li class="row"><span class="dot" style="background:rgb(var(--grape))"></span><span class="name">Le pub</span><span class="meta">330 m</span></li>
+        <li class="row"><span class="dot" style="background:rgb(var(--coral))"></span><span class="name">Chez toi</span><span class="meta">410 m</span></li>
+      </ul></div><div class="keys"><span><kbd>↑↓</kbd> choisir</span><span><kbd>↵</kbd> arrêter</span><span><kbd>⌫</kbd> retour</span></div></div></div>
+  </div>
+
+  <h2>Écrans</h2>
+  <p class="lede">Graphite est le thème par défaut ; Comic montre que tout tient sur un thème clair. Chaque écran garde la même ossature : heure et liquide en haut, le contenu, les touches en bas.</p>
+  <div class="screens">
+    <figure><div class="watch"><span class="crown"><span>T</span></span><div class="screen"><div class="status"><span class="time">18:42</span><span>140 $ sur toi</span></div><div class="body"><div class="apps">
+        <div class="app sel"><span class="ico" style="background:rgb(var(--sun))"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></span>GPS</div>
+        <div class="app"><span class="ico" style="background:rgb(var(--mint))"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10 12 4l9 6M5 10v8M10 10v8M14 10v8M19 10v8M3 20h18"/></svg></span>Banque</div>
+        <div class="app"><span class="ico" style="background:rgb(var(--pool))"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5M16 4.5a3.5 3.5 0 0 1 0 7M18 14.8c2 .7 3.2 2.5 3.5 5.2"/></svg></span>Contacts</div>
+        <div class="app"><span class="badge">1</span><span class="ico" style="background:rgb(var(--grape))"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h13l-3-3M20 16H7l3 3"/></svg></span>Trade</div>
+        <div class="app"><span class="ico" style="background:rgb(var(--coral))"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6v6c0 4.5 3.4 8 8 9 4.6-1 8-4.5 8-9V6z"/></svg></span>Admin</div>
+      </div></div><div class="keys"><span><kbd>↑↓</kbd> choisir</span><span><kbd>↵</kbd> ouvrir</span><span><kbd>⌫</kbd> retour</span></div></div></div><figcaption><strong>Accueil</strong>Six applis au plus par page. La pastille rouge sur Trade signale une demande en attente.</figcaption></figure>
+    <figure><div class="watch"><span class="crown"><span>T</span></span><div class="screen"><div class="status"><span class="time">18:42</span><span>140 $ sur toi</span></div><div class="title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5-7 7 7 7"/></svg>Banque</div><div class="body">
+        <div class="money"><div><small>Sur toi</small><b>140 $</b></div><div><small>En banque</small><b>2 315 $</b></div></div>
+        <ul class="rows">
+          <li class="row"><span class="name">Vente de pommes</span><span class="meta"><span class="plus">+60</span></span></li>
+          <li class="row"><span class="name">Retrait</span><span class="meta"><span class="minus">−100</span></span></li>
+          <li class="row"><span class="name">Virement de Lou#2041</span><span class="meta"><span class="plus">+25</span></span></li>
+        </ul>
+        <p class="note">Dépôt et retrait : distributeur, 84 m</p>
+      </div><div class="keys"><span><kbd>↑↓</kbd> choisir</span><span><kbd>↵</kbd> y aller</span><span><kbd>⌫</kbd> retour</span></div></div></div><figcaption><strong>Banque</strong>Lecture seule : sur soi, en banque, dernières opérations (on défile avec ↑↓). Entrée lance le GPS vers le distributeur le plus proche.</figcaption></figure>
+    <figure><div class="watch"><span class="crown"><span>T</span></span><div class="screen"><div class="status"><span class="time">18:42</span><span>140 $ sur toi</span></div><div class="title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5-7 7 7 7"/></svg>GPS</div><div class="body"><ul class="rows">
+        <li class="row sel"><span class="dot" style="background:rgb(var(--sun))"></span><span class="name">Distributeur</span><span class="meta">84 m · suivi</span></li>
+        <li class="row"><span class="dot" style="background:rgb(var(--mint))"></span><span class="name">Verger</span><span class="meta">210 m</span></li>
+        <li class="row"><span class="dot" style="background:rgb(var(--pool))"></span><span class="name">GreenCart</span><span class="meta">260 m</span></li>
+        <li class="row"><span class="dot" style="background:rgb(var(--grape))"></span><span class="name">Le pub</span><span class="meta">330 m</span></li>
+        <li class="row"><span class="dot" style="background:rgb(var(--coral))"></span><span class="name">Chez toi</span><span class="meta">410 m</span></li>
+      </ul></div><div class="keys"><span><kbd>↑↓</kbd> choisir</span><span><kbd>↵</kbd> arrêter</span><span><kbd>⌫</kbd> retour</span></div></div></div><figcaption><strong>GPS</strong>Lieux triés par distance. Entrée pose le marqueur, Entrée sur le lieu suivi l'enlève. Le marqueur disparaît à l'arrivée.</figcaption></figure>
+    <figure><div class="watch"><span class="crown"><span>T</span></span><div class="screen"><div class="status"><span class="time">18:42</span><span>140 $ sur toi</span></div><div class="title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5-7 7 7 7"/></svg>Contacts</div><div class="body">
+        <div class="group">En ville</div>
+        <ul class="rows">
+          <li class="row sel"><span class="dot" style="background:rgb(var(--mint))"></span><span class="name">Lou#2041</span><span class="meta">45 m</span></li>
+          <li class="row"><span class="dot" style="background:rgb(var(--mint))"></span><span class="name">Sami#0907</span><span class="meta">320 m</span></li>
+        </ul>
+        <div class="group">Ailleurs</div>
+        <ul class="rows">
+          <li class="row"><span class="dot" style="background:rgb(var(--pool))"></span><span class="name">Nora#1180</span><span class="meta">sur le site</span></li>
+          <li class="row"><span class="dot" style="background:rgb(var(--mist))"></span><span class="name">Ezra#3302</span><span class="meta">hors ligne</span></li>
+        </ul>
+      </div><div class="keys"><span><kbd>↑↓</kbd> choisir</span><span><kbd>↵</kbd> suivre</span><span><kbd>⌫</kbd> retour</span></div></div></div><figcaption><strong>Contacts</strong>Les amis en ville d'abord. Entrée sur un ami en ville le suit au GPS.</figcaption></figure>
+    <figure><div class="watch"><span class="crown"><span>T</span></span><div class="screen"><div class="status"><span class="time">18:42</span><span>140 $ sur toi</span></div><div class="title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5-7 7 7 7"/></svg>Trade</div><div class="body">
+        <div class="toast">Lou#2041 veut échanger · <kbd>Y</kbd> / <kbd>N</kbd></div>
+        <div class="group">Joueurs proches</div>
+        <ul class="rows">
+          <li class="row sel"><span class="dot" style="background:rgb(var(--mint))"></span><span class="name">Lou#2041</span><span class="meta">1,8 m</span></li>
+          <li class="row"><span class="dot" style="background:rgb(var(--mist))"></span><span class="name">Kim#5520</span><span class="meta">7 m · approche-toi</span></li>
+        </ul>
+      </div><div class="keys"><span><kbd>↑↓</kbd> choisir</span><span><kbd>↵</kbd> demander</span><span><kbd>⌫</kbd> retour</span></div></div></div><figcaption><strong>Trade</strong>L'appli actuelle, rangée dans la montre. Entrée demande l'échange au joueur choisi.</figcaption></figure>
+  </div>
+</main>
+
+</body>
+</html>

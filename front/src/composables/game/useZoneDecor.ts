@@ -4,13 +4,15 @@ import type { Room } from '@colyseus/sdk'
 import { applyCachedBalanceAfterPurchase } from '../../api/session'
 import { disposeObject3D } from '../../avatar/compositeAvatar'
 import { disposeAvatarAnimations, updateAvatarAnimation } from '../../avatar/glbCharacter'
-import { decorModelUrl, isConsumableCode } from '../../game/assets/catalog'
+import { decorModelUrl, isConsumableCode, isToolCode } from '../../game/assets/catalog'
 import { fetchCollisionFile, setPropBlocker } from '../../game/collision/worldCollision'
 import { ANIMALS_URL, animalPose, type AnimalClip, type AnimalDef } from '../../game/animals/animals.ts'
-import { itemModelUrl, type AnimalProp, type ItemProp, type MannequinProp, type NpcProp, type ShelfProp, type StaffRole, type Vec3 } from '../../game/mallTemplates/mallTemplate.ts'
+import { itemModelUrl, type AnimalProp, type ItemProp, type MannequinProp, type MarketStallProp, type NpcProp, type ShelfProp, type StaffRole, type Vec3 } from '../../game/mallTemplates/mallTemplate.ts'
 import { lighterStock, shelfUnits } from '../../game/shelves/shelves.ts'
 import { getGraphicsQuality } from '../../game/graphicsQuality'
-import { animals, createAnimal, createPropObject, modelSize, npcColors, placeProp, type AnimalRig } from '../../game/mallTemplates/templateProps'
+import type { MarketStallAnchor } from './useMarketStalls'
+import { MARKET_SHOPPER_PREFIX } from '../../game/market/marketCrowd.ts'
+import { MARKET_STALL_FOLDED, animals, createAnimal, createPropObject, modelSize, npcColors, placeProp, type AnimalRig } from '../../game/mallTemplates/templateProps'
 import { configureRoomMeshShadows, normalizeRoomMaterials } from '../../game/sceneLighting'
 import { INTERIOR_HIDE_DISTANCE, INTERIOR_SHOW_DISTANCE } from '../../game/town/openHouses'
 import type { WorldBounds, WorldManifest } from '../../game/world/worldManifest'
@@ -45,6 +47,7 @@ export interface ZoneDecorDeps {
   insideOtherStore: () => boolean
   getGameRoom: () => Room | null
   onStaff: (role: StaffRole, npc: THREE.Object3D) => void
+  npcSpeed?: (npc: THREE.Object3D) => number
 }
 
 interface StoreArea {
@@ -90,6 +93,8 @@ export function useZoneDecor(deps: ZoneDecorDeps) {
   const herd: Wanderer[] = []
   const buyers = shallowRef<ZoneBuyer[]>([])
   const atms = shallowRef<Vec3[]>([])
+  const marketStalls = shallowRef<MarketStallAnchor[]>([])
+  const marketShoppers = shallowRef<THREE.Object3D[]>([])
   const blockers: string[] = []
   const storeAreas: StoreArea[] = []
   const zoneGroups: Array<{ group: THREE.Group; bounds: WorldBounds }> = []
@@ -109,7 +114,7 @@ export function useZoneDecor(deps: ZoneDecorDeps) {
   async function addItem(zone: string, group: THREE.Group, item: ItemProp): Promise<void> {
     const [object, collision] = await Promise.all([
       createPropObject(item),
-      isConsumableCode(item.code) ? null : fetchCollisionFile(decorModelUrl(item.key).replace(/model\.glb$/, 'collision.json')),
+      isConsumableCode(item.code) || isToolCode(item.code) ? null : fetchCollisionFile(decorModelUrl(item.key).replace(/model\.glb$/, 'collision.json')),
     ])
     if (disposed) return disposeObject3D(object)
     configureRoomMeshShadows(object)
@@ -119,8 +124,19 @@ export function useZoneDecor(deps: ZoneDecorDeps) {
     if (collision) worldCuboids(object, collision.cuboids).forEach((c, i) => block(blockerKey(zone, item.id, i), c))
   }
 
+  async function addMarketStall(zone: string, group: THREE.Group, stall: MarketStallProp): Promise<void> {
+    const collision = await fetchCollisionFile(decorModelUrl(MARKET_STALL_FOLDED).replace(/model\.glb$/, 'collision.json'))
+    if (disposed) return
+    const anchor = new THREE.Group()
+    anchor.name = `MarketStall_${stall.stallNo}`
+    placeProp(anchor, stall)
+    group.add(anchor)
+    if (collision) worldCuboids(anchor, collision.cuboids).forEach((c, i) => block(blockerKey(zone, stall.id, i), c))
+    marketStalls.value = [...marketStalls.value, { stallNo: stall.stallNo, anchor }]
+  }
+
   async function blockSoldItem(zone: string, item: ItemProp): Promise<void> {
-    if (isConsumableCode(item.code)) return
+    if (isConsumableCode(item.code) || isToolCode(item.code)) return
     const collision = await fetchCollisionFile(decorModelUrl(item.key).replace(/model\.glb$/, 'collision.json'))
     if (disposed || !collision) return
     const spot = new THREE.Object3D()
@@ -136,6 +152,10 @@ export function useZoneDecor(deps: ZoneDecorDeps) {
     }
     placeProp(object, prop)
     group.add(object)
+    if (prop.kind === 'npc' && prop.id.startsWith(MARKET_SHOPPER_PREFIX)) {
+      marketShoppers.value = [...marketShoppers.value, object]
+      return
+    }
     if (prop.kind === 'npc') npcs.push(object)
     else disposeAvatarAnimations(object)
     if (prop.kind === 'mannequin') store?.bindFigure(prop.id, object)
@@ -271,6 +291,7 @@ export function useZoneDecor(deps: ZoneDecorDeps) {
       if (prop.kind === 'npc' && [...storeOf.keys()].some((a) => a.npc === prop.id)) return []
       if (prop.kind === 'animal') return [addAnimal(group, prop)]
       if (prop.kind === 'shelf') return [addShelf(zone.key, group, prop, storeAt(prop.position))]
+      if (prop.kind === 'market_stall') return [addMarketStall(zone.key, group, prop)]
       return [addFigure(zone.key, group, prop, storeAt(prop.position))]
     })
     const failures = [...opened, ...(await Promise.allSettled(loads))].filter((r): r is PromiseRejectedResult => r.status === 'rejected')
@@ -294,7 +315,7 @@ export function useZoneDecor(deps: ZoneDecorDeps) {
 
   function tick(dt: number, at: { x: number; y: number; z: number }): void {
     cullZones(at)
-    for (const npc of npcs) if (npc.parent?.visible) updateAvatarAnimation(npc, dt, 0)
+    for (const npc of npcs) if (npc.parent?.visible) updateAvatarAnimation(npc, dt, deps.npcSpeed?.(npc) ?? 0)
     wander(dt)
     const inside = deps.insideOtherStore() ? undefined : storeAreas.find((a) => insideZone(a.bounds, at))
     currentStoreKey.value = inside?.key ?? null
@@ -312,5 +333,5 @@ export function useZoneDecor(deps: ZoneDecorDeps) {
     disposeObject3D(root)
   })
 
-  return { onTownLoaded, tick, currentStoreKey, buyers, atms }
+  return { onTownLoaded, tick, currentStoreKey, buyers, atms, marketStalls, marketShoppers }
 }

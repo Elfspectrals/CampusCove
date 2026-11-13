@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { findNearestHousingUnit, housingInteractPosition, type HousingUnit } from './housing.ts'
+import { findNearestHousingUnit, housingInteractPosition, isFlatmate, type HousingUnit } from './housing.ts'
 
 function unit(publicId: string, modelKey: string, x: number, z: number): HousingUnit {
   return {
@@ -36,4 +36,22 @@ test('the prompt is anchored on the door the player stands at', () => {
   const target = findNearestHousingUnit(-273.5, -178.0, [tidewater], backDoors)
   assert.ok(target)
   assert.deepEqual(housingInteractPosition(target), { x: -273.5, y: 1.25 + 1.25 + 0.35, z: -178.99 })
+})
+
+function occupiedUnit(overrides: Partial<HousingUnit>): HousingUnit {
+  return { status: 'occupied', occupant_account_id: 1, key_holder_account_ids: [2], ...overrides } as HousingUnit
+}
+
+test('a key holder of an occupied house is a flatmate', () => {
+  assert.equal(isFlatmate(occupiedUnit({}), 2), true)
+})
+
+test('the owner, a stranger and a guest are not flatmates', () => {
+  assert.equal(isFlatmate(occupiedUnit({}), 1), false)
+  assert.equal(isFlatmate(occupiedUnit({}), 3), false)
+  assert.equal(isFlatmate(occupiedUnit({}), null), false)
+})
+
+test('nobody is a flatmate of a vacant house', () => {
+  assert.equal(isFlatmate(occupiedUnit({ status: 'vacant' }), 2), false)
 })

@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "items": {
+    "market_stall_taken": {
+      "red": { "DC_MarketCanopyStripe": { "color": "#c8463c" } },
+      "blue": { "DC_MarketCanopyStripe": { "color": "#3f6fb5" } },
+      "green": { "DC_MarketCanopyStripe": { "color": "#4f9a58" } },
+      "yellow": { "DC_MarketCanopyStripe": { "color": "#e3b83a" } },
+      "orange": { "DC_MarketCanopyStripe": { "color": "#e07a35" } },
+      "purple": { "DC_MarketCanopyStripe": { "color": "#8657a8" } }
+    }
+  }
+}

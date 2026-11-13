@@ -33,15 +33,17 @@ function fakePlayer(sessionId: string, isAdmin: boolean, x = 0, z = 0, ry = 0): 
 function fakeRoom(...players: Player[]): AdminRoom & { clients: FakeClient[], moves: string[] } {
   const moves: string[] = []
   return {
+    roomId: 'room-1',
     players: new Map(players.map((p) => [p.sessionId, p])),
     cashBags: new Map(),
+    market: null,
     clients: players.map((p) => fakeClient(p.sessionId)),
     housingUnits: [],
     houseFurniture: [],
     openDoors: new Set(),
     clinicBeds: new Map(),
     seats: new Map(),
-    pub: { secretOpen: false, race: null, darts: null, challenges: new Map(), challengeSentAt: new Map() },
+    pub: { secretOpen: false, race: null, darts: null, challenges: new Map(), challengeSentAt: new Map(), quiz: null, quizSchedule: 0 },
     trades: new Map(),
     clock: { setTimeout: () => undefined },
     forEachClient: () => undefined,

@@ -19,6 +19,7 @@ class CashDrop extends Model
         'picked_by_account_id',
         'pickup_tx_id',
         'picked_at',
+        'container_id',
     ];
 
     protected function casts(): array
