@@ -99,6 +99,7 @@ final class HousingService
                 $this->inventoryService->revokeItem($keyHolderId, $this->houseKey(), 1);
             }
             $containerId = RoomFurnitureContainer::query()->where('room_id', $roomId)->value('container_id');
+            FurnitureStorageService::destroy(RoomFurniture::query()->where('room_id', $roomId)->pluck('room_furniture_id')->all());
             RoomFurniture::query()->where('room_id', $roomId)->delete();
             if ($containerId !== null) {
                 ItemInstance::query()->where('container_id', (int) $containerId)->delete();

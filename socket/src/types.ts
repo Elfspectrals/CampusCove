@@ -84,6 +84,7 @@ export interface Player extends Vec3 {
   farmPick: { plant: number, startedAt: number } | null
   lockpick: LockpickSession | null
   lastPickStartAt: number
+  lastStorageAt: number
   decoratedTemplateKey?: string | null
   appearance: Record<AppearanceSlot, number | null>
   slotHexes: Record<AppearanceSlot, string>
@@ -134,6 +135,7 @@ export interface HousingUnit {
 }
 
 export interface FurnitureObject {
+  objectId: string
   objectKey: string
   x: number
   y: number

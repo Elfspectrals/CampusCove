@@ -16,6 +16,7 @@ import {
   workDoorId
 } from './doors.ts'
 import { onLockpickCancel, onLockpickPress, onLockpickStart } from './lockpick.ts'
+import { onStorage } from './storage.ts'
 import { moveRejection, onJump, spendSprintStamina } from './movement.ts'
 import { onOrchardPick, onOrchardPickCancel, onOrchardPickStart } from './orchard.ts'
 import { onFarmPick, onFarmPickStart } from './farm.ts'
@@ -120,6 +121,9 @@ export class CityRoom extends Room implements GameRoom {
     this.onMessage('lockpick_start', (client, payload: ClientPayload) => void onLockpickStart(this, client, payload))
     this.onMessage('lockpick_press', (client) => void onLockpickPress(this, client))
     this.onMessage('lockpick_cancel', (client) => onLockpickCancel(this, client))
+    this.onMessage('storage_open', (client, payload: ClientPayload) => void onStorage(this, client, 'open', payload))
+    this.onMessage('storage_deposit', (client, payload: ClientPayload) => void onStorage(this, client, 'deposit', payload))
+    this.onMessage('storage_take', (client, payload: ClientPayload) => void onStorage(this, client, 'take', payload))
     this.onMessage('decorate_house', (client, payload: ClientPayload) => setDecoratedHouse(this, client, payload))
     this.onMessage('apartment_spawn_request', (client, payload: ClientPayload) => saveObject(this, client, payload, true))
     this.onMessage('apartment_transform_request', (client, payload: ClientPayload) => saveObject(this, client, payload, false))

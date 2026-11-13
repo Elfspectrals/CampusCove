@@ -240,6 +240,7 @@ erDiagram
     HOUSING_UNITS ||--o{ LOCKPICK_ATTEMPTS : crochetée
     ACCOUNTS ||--o{ LOCKPICK_ATTEMPTS : cambrioleur
     ACCOUNTS ||--o| LOCKPICK_WEAR : "crochet entamé"
+    ROOM_FURNITURES ||--o| FURNITURE_STORAGES : "rangement"
 
     HOUSING_UNITS {
         bigint unit_id PK
@@ -288,7 +289,13 @@ erDiagram
         bigint account_id PK, FK
         smallint uses_spent "1 à 5"
     }
+    FURNITURE_STORAGES {
+        bigint room_furniture_id PK, FK
+        bigint container_id FK
+    }
 ```
+
+- **Rangement** : un meuble de rangement posé (commode, coffre à jouets, frigo) a une ligne `furniture_storages` qui le relie à son conteneur ; les objets rangés sont les `inventory_stacks` de ce conteneur. Voir `docs/STORAGE.md`.
 
 - **Crochetage** : une ligne `lockpick_attempts` par séance devant une porte (une seule ouverte par cambrioleur). Les réussites servent aux limites : maison protégée 24 h, cambrioleur en attente 30 min. `lockpick_wear` compte les usages du crochet entamé ; au 5e usage ou à la casse, un crochet est retiré de l'inventaire. Voir `docs/LOCKPICK.md`.
 

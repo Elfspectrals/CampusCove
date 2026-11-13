@@ -117,6 +117,20 @@ export interface LockpickPinPayload {
   readyInMs: number
 }
 
+export interface StorageScreenPayload {
+  object_id: string
+  code: string
+  slots: number
+  food_only: boolean
+  can_deposit: boolean
+  items: { code: string; name: string; kind: string; quantity: number; preview_image: string | null }[]
+}
+
+export interface StorageErrorPayload {
+  message: string
+  code: string
+}
+
 export interface LockpickResultPayload {
   outcome: 'set' | 'miss' | 'broke' | 'open' | 'abandoned'
 }

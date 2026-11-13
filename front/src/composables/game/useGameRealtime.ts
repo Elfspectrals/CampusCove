@@ -66,6 +66,8 @@ import type {
   LockpickErrorPayload,
   LockpickPinPayload,
   LockpickResultPayload,
+  StorageErrorPayload,
+  StorageScreenPayload,
   AtmErrorPayload,
   CashBagErrorPayload,
   CashBagPayload,
@@ -180,6 +182,10 @@ export interface GameRealtimeDeps {
   atm: {
     onDone: (data: AtmDonePayload) => void
     onError: (data: AtmErrorPayload) => void
+  }
+  storage: {
+    onScreen: (data: StorageScreenPayload) => void
+    onError: (data: StorageErrorPayload) => void
   }
   lockpick: {
     onPin: (data: LockpickPinPayload) => void
@@ -364,6 +370,8 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('lockpick_pin', (data: LockpickPinPayload) => deps.lockpick.onPin(data))
     room.onMessage('lockpick_result', (data: LockpickResultPayload) => deps.lockpick.onResult(data))
     room.onMessage('lockpick_error', (data: LockpickErrorPayload) => deps.lockpick.onError(data))
+    room.onMessage('storage_screen', (data: StorageScreenPayload) => deps.storage.onScreen(data))
+    room.onMessage('storage_error', (data: StorageErrorPayload) => deps.storage.onError(data))
     room.onMessage('cash_bag_dropped', (data: CashBagPayload) => deps.cashBags.onDropped(data))
     room.onMessage('cash_bag_removed', (data: { id: number }) => deps.cashBags.onRemoved(data))
     room.onMessage('cash_bag_picked', (data: CashBagPickedPayload) => deps.cashBags.onPicked(data))

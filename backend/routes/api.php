@@ -15,6 +15,7 @@ use App\Http\Controllers\CharacterAppearanceController;
 use App\Http\Controllers\CharacterCosmeticController;
 use App\Http\Controllers\FarmController;
 use App\Http\Controllers\FriendController;
+use App\Http\Controllers\FurnitureStorageController;
 use App\Http\Controllers\GemShopController;
 use App\Http\Controllers\HousingController;
 use App\Http\Controllers\InventoryController;
@@ -100,6 +101,9 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
         Route::post('/lockpicks/attempts/{attemptId}/miss', [LockpickController::class, 'miss'])->whereNumber('attemptId');
         Route::post('/lockpicks/attempts/{attemptId}/success', [LockpickController::class, 'succeed'])->whereNumber('attemptId');
         Route::post('/lockpicks/attempts/{attemptId}/abandon', [LockpickController::class, 'abandon'])->whereNumber('attemptId');
+        Route::post('/furniture-storage/open', [FurnitureStorageController::class, 'open']);
+        Route::post('/furniture-storage/deposit', [FurnitureStorageController::class, 'deposit']);
+        Route::post('/furniture-storage/take', [FurnitureStorageController::class, 'take']);
     });
     Route::get('/bank', [BankController::class, 'show']);
     Route::get('/trades/offerable', [TradeController::class, 'offerable']);
