@@ -38,3 +38,8 @@ When `TaskProgressService` records a new tier (and only then), Laravel calls the
 - `POST /internal/task-tier-reached` with `X-Realtime-Secret`, body `{ accountId: int > 0, task: string [a-z_]{1,40}, tier: 1 | 2 | 3, threshold: int > 0 }`. The socket refuses any other body with 422. Best effort: a failed call is logged and the tier stays recorded.
 - The socket sends `task_done` `{ task, tier, threshold }` to every client of that account in every city room.
 - The front shows a banner at the top centre for 4 s (one at a time, queued) with a two-note chime: "Task complete", the task name and its tier name (Bronze, Silver, Gold), and the goal reached.
+
+## Tasks menu
+
+- `GET /api/tasks` (signed-in player, read only) returns `{ tasks: [{ task: string, value: int, tiers: int[3], reached: int[] }] }`, every task of the catalog in its order, `value` 0 when never bumped, `reached` the tiers recorded in `account_task_tiers`.
+- In game, J (rebindable, action `tasks`) opens the menu; J or Esc closes it. One line per task: its name, three dots filled in the tier colour when reached, a bar from 0 to the next threshold with "value / threshold", and the next tier's badge. Past the last threshold the bar is full and reads "Complete".

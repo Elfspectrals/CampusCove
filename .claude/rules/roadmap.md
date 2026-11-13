@@ -135,7 +135,7 @@ Validated list (after a `game-designer` review): orchard (apples picked 100 / 1,
 - [doing] Step 1: `account_counters` and `account_task_tiers`, `ActionCounterService`, `CounterBumped`, `TaskCatalog` with the orchard task, apples picked counted on each pick. No reward object yet.
 - [doing] The other counters, with their anti-farm rules. Done: the counters the first-day tutorial reads (apples sold, food eaten by the bite, ATM deposits, darts games played) and the darts task.
 - [done] Notification when a tier is reached: Laravel calls the socket, which sends `task_done` to that player; a banner at the top centre in the tier colour (Bronze, Silver, Gold, decided 2026-11-13) with a two-note chime made with Web Audio, queued 4 s each. Played on a local stack with the orchard tiers.
-- [todo] Tasks menu in the HUD style.
+- [done] Tasks menu in the HUD style: J (rebindable) opens a panel like the Tab list, one line per task with Bronze / Silver / Gold dots, a bar to the next threshold and the next badge (`GET /api/tasks`). Played on a local stack.
 - [todo] Badges on Home and in the Tab list.
 - [todo] Reward objects, one asset at a time (mini apple tree goes through "Variety before building").
 

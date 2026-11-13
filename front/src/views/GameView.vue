@@ -66,6 +66,7 @@ import { useCashBags } from '../composables/game/useCashBags'
 import { useProximityVoice } from '../composables/game/useProximityVoice'
 import { mutedAccounts, playerVolumes, setPlayerVolume, toggleMuteAccount } from '../composables/game/useVoiceSettings'
 import GamePlayerList from '../components/game/GamePlayerList.vue'
+import GameTasksPanel from '../components/game/GameTasksPanel.vue'
 import { useFarm } from '../composables/game/useFarm'
 import { useMallCellTemplates, type CellStoreEntry } from '../composables/game/useMallCellTemplates'
 import { useZoneDecor } from '../composables/game/useZoneDecor'
@@ -928,6 +929,7 @@ const pauseMenuOpen = computed(
     !zoneBuyerOpen.value &&
     !atmOpen.value &&
     !playerListOpen.value &&
+    !tasksOpen.value &&
     !settingsOpen.value &&
     !creator.value,
 )
@@ -943,8 +945,10 @@ watch(inventoryOpen, (open) => {
 
 const chatOpen = ref(false)
 const playerListOpen = ref(false)
+const tasksOpen = ref(false)
 watch(mutedAccounts, (accounts) => gameRoomRef.value?.send('voice_mute', { accounts: [...accounts] }))
-watch(playerListOpen, (open) => {
+watch([playerListOpen, tasksOpen], ([listOpen, taskMenuOpen]) => {
+  const open = listOpen || taskMenuOpen
   if (open && document.pointerLockElement) document.exitPointerLock()
   if (!open && !document.pointerLockElement) requestPointerLock()
 })
@@ -954,7 +958,7 @@ function sendChat(text: string): void {
 }
 
 function handleExtraKeyDown(e: KeyboardEvent): boolean {
-  if (chatOpen.value || atmOpen.value || playerListOpen.value) return true
+  if (chatOpen.value || atmOpen.value || playerListOpen.value || tasksOpen.value) return true
   // the character screen owns the keyboard (Esc closes the editor)
   if (creator.value) return true
   // the watch and the trade window take the keyboard (coins field, Esc): no game key behind them
@@ -983,6 +987,11 @@ function handleExtraKeyDown(e: KeyboardEvent): boolean {
   if (matches('playerList', e.code) && !e.repeat) {
     e.preventDefault()
     playerListOpen.value = true
+    return true
+  }
+  if (matches('tasks', e.code) && !e.repeat) {
+    e.preventDefault()
+    tasksOpen.value = true
     return true
   }
   if (matches('chat', e.code) && !e.repeat) {
@@ -1621,6 +1630,7 @@ const crosshairClass = computed(() => {
       @set-volume="setPlayerVolume"
       @close="playerListOpen = false"
     />
+    <GameTasksPanel v-if="tasksOpen" @close="tasksOpen = false" />
     <GameChat :open="chatOpen" @send="sendChat" @close="chatOpen = false" />
     <p v-if="voice.talking.value" class="cc-hud pointer-events-none absolute bottom-48 left-4 z-[30] m-0 flex items-center gap-2 px-3 py-1.5 text-sm font-bold text-fog" role="status">
       <span class="size-2.5 animate-pulse rounded-full bg-coral" />{{ t('voice.live') }}

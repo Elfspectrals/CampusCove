@@ -27,6 +27,7 @@ use App\Http\Controllers\SecurityScanController;
 use App\Http\Controllers\ShopController;
 use App\Http\Controllers\StripeWebhookController;
 use App\Http\Controllers\SurvivalController;
+use App\Http\Controllers\TaskController;
 use App\Http\Controllers\TradeController;
 use App\Http\Controllers\ZoneShopController;
 use Illuminate\Support\Facades\Route;
@@ -97,6 +98,7 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
         Route::post('/cash-drops/{id}/pick', [CashDropController::class, 'pick'])->whereNumber('id');
     });
     Route::get('/bank', [BankController::class, 'show']);
+    Route::get('/tasks', [TaskController::class, 'index']);
     Route::get('/trades/offerable', [TradeController::class, 'offerable']);
 
     Route::post('/shop/purchase', [ShopController::class, 'purchase']);

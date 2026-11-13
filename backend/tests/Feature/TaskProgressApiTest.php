@@ -178,6 +178,24 @@ class TaskProgressApiTest extends TestCase
             && $request->data() === ['accountId' => $player['account_id'], 'task' => 'darts', 'tier' => 1, 'threshold' => 10]);
     }
 
+    public function test_the_tasks_menu_lists_every_task_with_its_progress(): void
+    {
+        $player = $this->registerAndCreditWallet(0, 'cash');
+        app(ActionCounterService::class)->bump($player['account_id'], ActionCounter::ApplesPicked, 340);
+
+        $this->getJson('/api/tasks', $this->auth($player['token']))
+            ->assertOk()
+            ->assertExactJson(['tasks' => [
+                ['task' => 'orchard', 'value' => 340, 'tiers' => [100, 1000, 5000], 'reached' => [1]],
+                ['task' => 'darts', 'value' => 0, 'tiers' => [10, 50, 200], 'reached' => []],
+            ]]);
+    }
+
+    public function test_the_tasks_menu_needs_a_signed_in_player(): void
+    {
+        $this->getJson('/api/tasks')->assertUnauthorized();
+    }
+
     private function counter(int $accountId, ActionCounter $counter): int
     {
         return app(ActionCounterService::class)->value($accountId, $counter);
