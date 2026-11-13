@@ -72,6 +72,32 @@ The others are `realtime` routes: the socket calls them with the player's token 
 | `POST /api/market/lots/{id}/withdraw` | | the items come back to the seller |
 | `POST /api/market/lots/{id}/buy` | `quantity`, `purchase_ref` (unique, at most 64 characters) | `{ "cash": <buyer cash>, "quantity_left": <left in the lot> }`; a retry with the same `purchase_ref` by the same buyer on the same lot returns the same answer without buying again |
 
+## Socket
+
+`socket/src/market.ts`. Stall positions come from the zone files: a prop with `key: "market_stall"` and `stallNo` 1-6 (unique) is stall `stallNo`. The socket refuses every action made more than 3 m (`STALL_REACH`) from the stall it targets: the claimed stall, the player's own stall for a lot, the lot's stall for a withdrawal or a purchase.
+
+Client to server, one message `market`:
+
+| `action` | Fields |
+|---|---|
+| `claim` | `stallNo` 1-6, `canopy` |
+| `list` | `slot` 1-6, `code`, `quantity` 1-999, `unitPrice` 1-1,000,000 |
+| `withdraw` | `lotId` |
+| `buy` | `lotId`, `quantity` 1-999, `ref` (8-40 of `A-Z a-z 0-9 -`, sent to Laravel as `<accountId>-<ref>`) |
+
+Every message may carry a `request` number, echoed in the answer. One action per player every 500 ms.
+
+Server to client:
+
+| Message | To | Payload |
+|---|---|---|
+| `market_sync` | everyone, on join and after every change | the `GET /api/market` body |
+| `market_done` | the player | `action`, `request` and the API answer |
+| `market_error` | the player | `message`, `code`, `request`; socket codes `market_cannot_use`, `market_bad_request`, `market_busy`, `market_too_far`, `market_closed`, `market_no_stall`, `market_lot_gone`, or the API code |
+| `market_sold` | the seller, when online | `lotId`, `code`, `quantity` |
+
+The socket refreshes the state at the next opening or closing time (plus 1 s) with the token of a connected player, and again when someone joins after that time.
+
 ## Rejection codes
 
 | Code | Status | When |

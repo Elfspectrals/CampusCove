@@ -57,6 +57,7 @@ export interface Player extends Vec3 {
   lastPunchAt: number
   lastChatAt: number
   lastAtmAt: number
+  lastMarketAt: number
   lastCashBagPickAt: number
   voiceMuted: ReadonlySet<string>
   stamina: number
@@ -216,8 +217,28 @@ export interface CashBag {
   expiresAt: number
 }
 
+export interface MarketLotView {
+  lot_id: number
+  code: string
+  quantity: number
+}
+
+export interface MarketStallView {
+  stall_no: number
+  account_id: number
+  lots: MarketLotView[]
+}
+
+export interface MarketSnapshot {
+  open: boolean
+  opens_at: string
+  closes_at: string
+  stalls: MarketStallView[]
+}
+
 export interface GameRoom {
   players: Map<string, Player>
+  market: MarketSnapshot | null
   cashBags: Map<number, CashBag>
   housingUnits: HousingUnit[]
   houseFurniture: HouseFurniture[]

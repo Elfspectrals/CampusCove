@@ -130,8 +130,8 @@ Decision (2026-11-12): voice goes through a self-hosted LiveKit SFU (open source
 
 Decision (2026-11-13): every Saturday from 15:00 to 17:00 (Paris time), six stalls appear on a new market square near the town centre. A player claims a free stall for 15 coins in cash, picks its canopy colour, and lays out up to six lots of any tradable item at a price of their choice; other players buy in cash. Market NPCs are ambience only (they buy nothing), so the market creates no coins. A 5 % tax on sales of 20 coins or more is the sink. Claiming a stall and buying both need an account at least 72 h old, as for trades. Lots are shown in crates and baskets. The economist reviewed it (2026-11-13). Contract in `docs/MARKET.md`. Rented mall stalls and the indoor mall market are another branch's work.
 
-- [doing] Laravel: schedule, stalls, lots held in escrow, idempotent cash purchase, unsold lots returned at closing (`MarketService`, `market:close`).
-- [todo] Socket: market open state, reach check at the stall, buy and list intents, stalls broadcast.
+- [done] Laravel: schedule, stalls, lots held in escrow, idempotent cash purchase, unsold lots returned at closing (`MarketService`, `market:close`).
+- [done] Socket: one `market` message (claim, list, withdraw, buy) checked within 3 m of the stall, state broadcast as `market_sync`, refreshed at opening and closing (`socket/src/market.ts`). Stall positions come from `market_stall` props in the zone files, so nothing is reachable until the market zone exists.
 - [todo] Market zone near the town centre, stall variety plan (`design-plans/market-stall.md`), stall builder with a canopy colour slot, crates and baskets, NPC outfits, decor category, first dressing.
 - [todo] Stall UI: claim, canopy colour, lay out a lot with its price, buy; opening and closing announcement.
 - [todo] Ambience: strolling NPCs, market music, bunting and lanterns.

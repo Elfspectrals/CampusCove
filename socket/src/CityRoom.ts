@@ -40,6 +40,7 @@ import {
 import { onPunch } from './punch.ts'
 import { onChat } from './chat.ts'
 import { onAtm } from './atm.ts'
+import { onMarket, sendMarketOnJoin } from './market.ts'
 import { onCashBagPick } from './cashBags.ts'
 import { voiceRoomName, voiceToken } from './voice.ts'
 import { VOICE_SYNC_MS, createVoiceSync, liveKitService, onVoiceMute } from './voiceSync.ts'
@@ -86,6 +87,7 @@ import type {
   HouseFurniture,
   HousingUnit,
   Identity,
+  MarketSnapshot,
   Player,
   PubState
 } from './types.ts'
@@ -106,6 +108,7 @@ export class CityRoom extends Room implements GameRoom {
   trades = new Map<string, Trade>()
   seats = new Map<string, string>()
   cashBags = new Map<number, CashBag>()
+  market: MarketSnapshot | null = null
   pub: PubState = { secretOpen: false, race: null, darts: null, challenges: new Map(), challengeSentAt: new Map() }
 
   onCreate() {
@@ -128,6 +131,7 @@ export class CityRoom extends Room implements GameRoom {
     this.onMessage('punch', (client, payload: ClientPayload) => onPunch(this, client, payload))
     this.onMessage('chat', (client, payload: ClientPayload) => onChat(this, client, payload))
     this.onMessage('atm', (client, payload: ClientPayload) => void onAtm(this, client, payload))
+    this.onMessage('market', (client, payload: ClientPayload) => void onMarket(this, client, payload))
     this.onMessage('cash_bag_pick', (client, payload: ClientPayload) => void onCashBagPick(this, client, payload))
     this.onMessage('voice_mute', (client, payload: ClientPayload) => onVoiceMute(this, client, payload))
     if (LIVEKIT) {
@@ -221,6 +225,7 @@ export class CityRoom extends Room implements GameRoom {
         .catch((error) => warn('voice token failed', error))
     }
     if (player.token) await loadSurvival(client, player)
+    await sendMarketOnJoin(this, client, player)
   }
 
   onLeave(client: Client) {

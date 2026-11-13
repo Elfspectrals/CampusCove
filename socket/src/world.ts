@@ -109,6 +109,7 @@ export interface WorldBuyer {
 let buyerZones = new Set<string>()
 let shopBounds = new Map<string, Bounds>()
 let atms: Vec3[] = []
+let marketStalls = new Map<number, Vec3>()
 
 function parseVec3(raw: Json, what: string): Vec3 {
   if (!Array.isArray(raw) || raw.length !== 3 || !raw.every(Number.isFinite)) {
@@ -435,4 +436,28 @@ export function worldCropPlants(): WorldCropPlant[] {
 
 export function worldZoneBounds(key: string): Bounds | null {
   return loadedWorld().zoneBounds.get(key) ?? shopBounds.get(key) ?? null
+}
+
+export async function loadMarketStalls(): Promise<void> {
+  if (!WORLD_MANIFEST_URL) throw new Error('WORLD_MANIFEST_URL is not set')
+  const index = await readManifest(besideManifest('zones/index.json'))
+  if (!Array.isArray(index?.zones)) throw new Error('zones/index.json: missing zones')
+  const found = new Map<number, Vec3>()
+  for (const zone of index.zones) {
+    const decor = await readManifest(besideManifest(`zones/${zone}.json`))
+    if (!Array.isArray(decor?.props)) throw new Error(`zones/${zone}.json: missing props`)
+    for (const prop of decor.props.filter((p: Json) => p.key === 'market_stall')) {
+      const { stallNo } = prop
+      if (!Number.isInteger(stallNo) || stallNo < 1 || found.has(stallNo)) throw new Error(`zones/${zone}.json: invalid or duplicate stallNo of ${prop.id}`)
+      const [x, y, z] = prop.position
+      if (![x, y, z].every(Number.isFinite)) throw new Error(`zones/${zone}.json: invalid position of ${prop.id}`)
+      found.set(stallNo, { x, y, z })
+    }
+  }
+  marketStalls = found
+  console.log(`[world] ${found.size} market stall(s) loaded`)
+}
+
+export function worldMarketStall(stallNo: number): Vec3 | null {
+  return marketStalls.get(stallNo) ?? null
 }
