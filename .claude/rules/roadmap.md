@@ -126,6 +126,19 @@ Decision (2026-11-12): voice goes through a self-hosted LiveKit SFU (open source
 - [done] Voice from another PC on the same network: `make up` gives LiveKit the network address, `make share-local` reaches LiveKit through the page (`/livekit` proxy) over https (2026-11-12).
 - [todo] Deploy LiveKit on a VPS with TURN; privacy page mentions voice.
 
+## Tasks and rewards (doing, branch feat/tasks-and-rewards)
+
+Decision (2026-11-13): tasks are achievements with three tiers, rewarded in decor, cosmetics and badges, never coins. Rewards are bound to the account (no trade, no sale), so they have no market value. Tiers 1 and 2 give a badge, the last tier gives an object (some tasks give only a rarer badge). Badges show on the Home page and in the Tab player list, nothing above the head. Counters are owned by Laravel, bumped by the real action in its transaction, and start at zero for every account. The first-day tutorial reads the same counters (`CounterBumped`) instead of its own. Contract in `docs/TASKS.md`.
+
+Validated list (after a `game-designer` review): orchard (apples picked 100 / 1,000 / 5,000, potted mini apple tree), market gardener (farm harvests 100 / 1,000 / 5,000, scarecrow), trader (items sold to zone buyers 50 / 500 / 2,500, market crate), regular (days with a pub order 3 / 15 / 50, bar stool), darts (games 10 / 50 / 200, wall dartboard), sharp eye (darts games of 80+ 1 / 10 / 50), pub games (Drink Fast and Meter Shot, at most 5 a day and none above 50 drunkenness, 10 / 50 / 150, golden pint), duellist (duels won against distinct players 1 / 5 / 15), insider (weeks through the pub's secret door 1 / 4 / 12), loyal customer (baskets paid, at most one per shop per hour, 10 / 100 / 300, shopping bag), dapper (distinct Cove Threads clothes 3 / 10 / 25), cook (dishes cooked 10 / 100 / 500, wall pan), gourmet (distinct foods eaten 5 / 15 / all), barterer (trades with distinct partners older than 72 h, items on both sides, one per pair a day, 1 / 5 / 15), well surrounded (friends after 10 min in the same instance 1 / 5 / 10, photo frame), sponsor (referrals 1 / 3 / 10), owner (weeks of lease 1 / 4 / 12, doormat), decorator (distinct furniture models placed 5 / 15 / 40, house plant), explorer (all zones, framed town map), loyal (days with 10 active minutes 7 / 30 / 100, "honorary citizen" plaque).
+
+- [doing] Step 1: `account_counters` and `account_task_tiers`, `ActionCounterService`, `CounterBumped`, `TaskCatalog` with the orchard task, apples picked counted on each pick. No reward object yet.
+- [todo] The other counters, with their anti-farm rules.
+- [todo] Notification when a tier is reached (socket `task_done`, HUD toast).
+- [todo] Tasks menu in the HUD style.
+- [todo] Badges on Home and in the Tab list.
+- [todo] Reward objects, one asset at a time (mini apple tree goes through "Variety before building").
+
 ## Later
 
 - Fishing as the second job (reuse the darts power meter or the Drink Fast balance bar; rod and fish models exist).
