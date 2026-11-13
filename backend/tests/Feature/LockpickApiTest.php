@@ -6,6 +6,7 @@ use App\Models\HousingUnit;
 use App\Models\ItemDef;
 use App\Models\Wallet;
 use App\Services\AccountInventoryService;
+use App\Services\HouseAlarmService;
 use App\Services\HousingService;
 use App\Services\LockpickService;
 use App\Services\TradeService;
@@ -84,8 +85,8 @@ class LockpickApiTest extends TestCase
         $attempt = $this->start($burglar, $unit)->json('attempt_id');
 
         Lottery::alwaysWin();
-        $this->miss($burglar, $attempt, 1)->assertOk()->assertExactJson(['broke' => true]);
-        $this->miss($burglar, $attempt, 1)->assertOk()->assertExactJson(['broke' => true]);
+        $this->miss($burglar, $attempt, 1)->assertOk()->assertExactJson(['broke' => true, 'alarm' => false]);
+        $this->miss($burglar, $attempt, 1)->assertOk()->assertExactJson(['broke' => true, 'alarm' => false]);
 
         $this->assertSame(1, $this->lockpicks($burglar));
         $this->assertNull(DB::table('lockpick_wear')->where('account_id', $burglar['account_id'])->value('uses_spent'));
@@ -99,9 +100,9 @@ class LockpickApiTest extends TestCase
         $attempt = $this->start($burglar, $unit)->json('attempt_id');
 
         Lottery::alwaysLose();
-        $this->miss($burglar, $attempt, 1)->assertExactJson(['broke' => false]);
-        $this->miss($burglar, $attempt, 1)->assertExactJson(['broke' => false]);
-        $this->miss($burglar, $attempt, 2)->assertExactJson(['broke' => false]);
+        $this->miss($burglar, $attempt, 1)->assertExactJson(['broke' => false, 'alarm' => false]);
+        $this->miss($burglar, $attempt, 1)->assertExactJson(['broke' => false, 'alarm' => false]);
+        $this->miss($burglar, $attempt, 2)->assertExactJson(['broke' => false, 'alarm' => false]);
 
         $this->assertSame(2, (int) DB::table('lockpick_attempts')->where('id', $attempt)->value('misses'));
         $this->assertSame(1, $this->lockpicks($burglar));
@@ -229,6 +230,54 @@ class LockpickApiTest extends TestCase
         $this->assertFalse((bool) $unit->refresh()->reinforced_lock);
     }
 
+    public function test_an_alarm_goes_off_on_the_second_miss_once_per_session(): void
+    {
+        $owner = $this->player();
+        $unit = $this->lockedHouse($owner);
+        $this->placeAlarm($owner);
+        $burglar = $this->player(lockpicks: 1);
+        $attempt = $this->start($burglar, $unit)->json('attempt_id');
+
+        Lottery::alwaysLose();
+        $this->miss($burglar, $attempt, 1)->assertExactJson(['broke' => false, 'alarm' => false]);
+        $this->miss($burglar, $attempt, 2)->assertExactJson(['broke' => false, 'alarm' => true]);
+        $this->miss($burglar, $attempt, 3)->assertExactJson(['broke' => false, 'alarm' => false]);
+        $this->succeed($burglar, $attempt)->assertExactJson(['alarm' => false]);
+
+        $this->assertSame(1, DB::table('house_alarm_events')->count());
+    }
+
+    public function test_an_alarm_goes_off_when_the_door_opens(): void
+    {
+        $owner = $this->player();
+        $unit = $this->lockedHouse($owner);
+        $this->placeAlarm($owner);
+        $burglar = $this->player(lockpicks: 1);
+
+        $this->succeed($burglar, $this->start($burglar, $unit)->json('attempt_id'))->assertExactJson(['alarm' => true]);
+    }
+
+    public function test_a_house_without_an_alarm_stays_silent(): void
+    {
+        $unit = $this->lockedHouse($this->player());
+        $burglar = $this->player(lockpicks: 1);
+
+        $this->succeed($burglar, $this->start($burglar, $unit)->json('attempt_id'))->assertExactJson(['alarm' => false]);
+    }
+
+    public function test_the_owner_reads_the_alarms_of_their_absence_once(): void
+    {
+        $owner = $this->player();
+        $unit = $this->lockedHouse($owner);
+        $this->placeAlarm($owner);
+        $burglar = $this->player(lockpicks: 1);
+        $this->succeed($burglar, $this->start($burglar, $unit)->json('attempt_id'));
+
+        $this->postJson('/api/house-alarms/report', [], $this->auth($owner['token']))->assertOk()->assertJsonPath('count', 1);
+        $this->postJson('/api/house-alarms/report', [], $this->auth($owner['token']))->assertOk()->assertExactJson(['count' => 0, 'last_at' => null]);
+        $this->postJson('/api/house-alarms/report', [], $this->auth($burglar['token']))->assertExactJson(['count' => 0, 'last_at' => null]);
+    }
+
     public function test_the_browser_cannot_pick_without_the_socket(): void
     {
         $unit = $this->lockedHouse($this->player());
@@ -252,6 +301,20 @@ class LockpickApiTest extends TestCase
     private function start(array $burglar, HousingUnit $unit): TestResponse
     {
         return $this->postJson('/api/lockpicks/attempts', ['unit_public_id' => $unit->public_id], $this->auth($burglar['token'], self::SECRET));
+    }
+
+    /** @param array{token: string, account_id: int} $owner */
+    private function placeAlarm(array $owner): void
+    {
+        $this->grant($owner, HouseAlarmService::ITEM_CODE);
+        $unitId = HousingUnit::query()->where('occupant_account_id', $owner['account_id'])->value('unit_id');
+        $this->postJson('/api/apartments/spawn', [
+            'owner_account_id' => $owner['account_id'],
+            'template_key' => 'housing_'.$unitId,
+            'objectId' => 'alarm_'.uniqid(),
+            'objectKey' => HouseAlarmService::ITEM_CODE,
+            'x' => 0, 'y' => 0, 'z' => 0, 'rotX' => 0, 'rotY' => 0, 'rotZ' => 0,
+        ], $this->auth($owner['token']))->assertOk();
     }
 
     /** @param array{token: string} $owner */

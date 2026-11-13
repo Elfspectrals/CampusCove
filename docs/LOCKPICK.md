@@ -20,6 +20,10 @@ A success unlocks the door (`door_locked = false`) until the owner or a key hold
 
 `tool_reinforced_lock` (tool, sold at Crispin's Hardware for 600 cash, model from `make model` built by `map-src/CampusCove/build_security_items.py`). The owner holding it at their own front door fits it (`housing_units.reinforced_lock`): picking that door then takes 5 pins instead of 3 (`PINS_REINFORCED`), same break chance per miss. It goes with the house when the house is lost. Refusals: `not_your_house` (403, not the owner), `lock_already_reinforced` (409), `no_reinforced_lock` (422).
 
+## Alarm
+
+`decor_alarm` (furniture, 400 cash at Crispin's Hardware, model from `make model`). A house with at least one alarm placed goes off once per lockpicking session, on its second miss (`MISSES_TO_TRIGGER`) or when the door opens, whichever comes first (`HouseAlarmService`). Laravel writes a `house_alarm_events` row (house, owner at that time, session, time, `seen_at`) and answers `alarm: true` to the socket, which plays the siren to everyone within 25 m of the door (`alarm_siren { door }`) and tells the owner wherever they are (`house_alarm { unitId }`). `POST /api/house-alarms/report` (the owner, from the browser) returns `{ count, last_at }` of the alarms not seen yet and marks them seen.
+
 ## Realtime routes (socket → Laravel)
 
 All under the `realtime` middleware, with the burglar's bearer token.
@@ -28,8 +32,8 @@ All under the `realtime` middleware, with the burglar's bearer token.
 |---|---|---|
 | `POST /api/lockpicks/attempts` | `unit_public_id` (string, 64 max) | `{ attempt_id, pins }` (3, or 5 on a reinforced door); abandons the burglar's open session if any |
 | `POST /api/lockpicks/reinforced-lock` | `unit_public_id` | `{ ok: true }`: the owner fits the lock they hold |
-| `POST /api/lockpicks/attempts/{id}/miss` | `miss` (integer, 1 to 1000, the miss count in this session: 1, 2, 3...) | `{ broke }`; the same `miss` sent twice is rolled once |
-| `POST /api/lockpicks/attempts/{id}/success` | none | `{ ok: true }`; idempotent, `attempt_over` (409) if the session already broke or was abandoned |
+| `POST /api/lockpicks/attempts/{id}/miss` | `miss` (integer, 1 to 1000, the miss count in this session: 1, 2, 3...) | `{ broke, alarm }`; the same `miss` sent twice is rolled once |
+| `POST /api/lockpicks/attempts/{id}/success` | none | `{ alarm }`; idempotent, `attempt_over` (409) if the session already broke or was abandoned |
 | `POST /api/lockpicks/attempts/{id}/abandon` | none | `{ ok: true }`; idempotent |
 
 An unknown session, or one of another account, is `attempt_not_found` (404).

@@ -242,6 +242,7 @@ erDiagram
     ACCOUNTS ||--o| LOCKPICK_WEAR : "crochet entamé"
     ROOM_FURNITURES ||--o| FURNITURE_STORAGES : "rangement"
     ACCOUNTS ||--o| ACCOUNT_RESPAWN_BEDS : "lit de réveil"
+    HOUSING_UNITS ||--o{ HOUSE_ALARM_EVENTS : "alarme"
 
     HOUSING_UNITS {
         bigint unit_id PK
@@ -299,7 +300,17 @@ erDiagram
         bigint room_furniture_id FK
         timestamptz set_at
     }
+    HOUSE_ALARM_EVENTS {
+        bigint id PK
+        bigint unit_id FK
+        bigint owner_account_id FK
+        bigint attempt_id FK "unique"
+        timestamptz triggered_at
+        timestamptz seen_at
+    }
 ```
+
+- **Alarme** : `house_alarm_events` garde chaque déclenchement (au plus un par séance de crochetage) pour le bilan que le propriétaire lit à son retour. Voir `docs/LOCKPICK.md`.
 
 - **Lit de réveil** : `account_respawn_beds` garde le lit posé que le joueur a choisi ; la ligne disparaît avec le lit. Voir `docs/RESPAWN_BED.md`.
 

@@ -17,6 +17,7 @@ use App\Http\Controllers\FarmController;
 use App\Http\Controllers\FriendController;
 use App\Http\Controllers\FurnitureStorageController;
 use App\Http\Controllers\GemShopController;
+use App\Http\Controllers\HouseAlarmController;
 use App\Http\Controllers\HousingController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\LockpickController;
@@ -110,6 +111,7 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
         Route::post('/respawn-bed', [RespawnBedController::class, 'store']);
     });
     Route::get('/bank', [BankController::class, 'show']);
+    Route::post('/house-alarms/report', [HouseAlarmController::class, 'report']);
     Route::get('/trades/offerable', [TradeController::class, 'offerable']);
 
     Route::post('/shop/purchase', [ShopController::class, 'purchase']);

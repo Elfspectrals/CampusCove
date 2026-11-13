@@ -20,11 +20,13 @@ type FakeClient = GameClient & { sent: Sent[] }
 const apiCalls: Array<{ path: string, body: any }> = []
 let breakOnMiss = false
 let doorPins = 3
+let alarmOnSuccess = false
 globalThis.fetch = async (url: string | URL | Request, init?: RequestInit) => {
   const path = String(url).replace(/^.*\/api/, '')
   apiCalls.push({ path, body: init?.body ? JSON.parse(String(init.body)) : null })
   if (path === '/lockpicks/attempts') return new Response(JSON.stringify({ attempt_id: 7, pins: doorPins }))
-  if (path.endsWith('/miss')) return new Response(JSON.stringify({ broke: breakOnMiss }))
+  if (path.endsWith('/miss')) return new Response(JSON.stringify({ broke: breakOnMiss, alarm: false }))
+  if (path.endsWith('/success')) return new Response(JSON.stringify({ alarm: alarmOnSuccess }))
   return new Response(JSON.stringify({ ok: true }))
 }
 
@@ -60,6 +62,7 @@ function setup({ x = 0, z = 2, locked = true, keyHolders = [] as number[] } = {}
   apiCalls.length = 0
   breakOnMiss = false
   doorPins = 3
+  alarmOnSuccess = false
   return {
     burglar, client, near, far, room,
     clock: () => now,
@@ -231,4 +234,24 @@ test('a lock is fitted only next to the door', async () => {
 
   assert.deepEqual(received(client, 'door_reinforce_error').map((e) => e.code), ['lockpick_too_far'])
   assert.equal(apiCalls.length, 0)
+})
+
+test('an alarm that goes off is heard within 25 m and reaches the owner wherever they are', async () => {
+  const { client, near, far, room, clock, at } = setup()
+  const owner = { sessionId: 's4', accountId: 9, token: 'token-s4', x: 400, y: 1.6, z: 400 } as unknown as Player
+  const ownerClient = fakeClient('s4')
+  room.players.set('s4', owner)
+  const everyone = [client, near, far, ownerClient]
+  ;(room as unknown as { forEachClient: (fn: (c: GameClient) => void) => void }).forEachClient = (fn) => everyone.forEach(fn)
+  alarmOnSuccess = true
+  await onLockpickStart(room, client, { unitId: 'house-1' }, clock, always0)
+  for (let pin = 1; pin <= 3; pin++) {
+    at(pin * firstHitAfterSettle)
+    await onLockpickPress(room, client, clock, always0)
+  }
+
+  assert.deepEqual(received(near, 'alarm_siren'), [{ door: 'house_a' }])
+  assert.deepEqual(received(far, 'alarm_siren'), [{ door: 'house_a' }])
+  assert.deepEqual(received(ownerClient, 'alarm_siren'), [])
+  assert.deepEqual(received(ownerClient, 'house_alarm'), [{ unitId: 'house-1' }])
 })

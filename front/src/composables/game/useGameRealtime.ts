@@ -198,6 +198,8 @@ export interface GameRealtimeDeps {
     onError: (data: LockpickErrorPayload) => void
     onReinforced: () => void
     onReinforceError: (data: LockpickErrorPayload) => void
+    onAlarmSiren: (data: { door: string }) => void
+    onHouseAlarm: () => void
   }
   voice: {
     onToken: (payload: VoiceTokenPayload) => void
@@ -379,6 +381,8 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('lockpick_error', (data: LockpickErrorPayload) => deps.lockpick.onError(data))
     room.onMessage('door_reinforced', () => deps.lockpick.onReinforced())
     room.onMessage('door_reinforce_error', (data: LockpickErrorPayload) => deps.lockpick.onReinforceError(data))
+    room.onMessage('alarm_siren', (data: { door: string }) => deps.lockpick.onAlarmSiren(data))
+    room.onMessage('house_alarm', () => deps.lockpick.onHouseAlarm())
     room.onMessage('storage_screen', (data: StorageScreenPayload) => deps.storage.onScreen(data))
     room.onMessage('storage_error', (data: StorageErrorPayload) => deps.storage.onError(data))
     room.onMessage('bed_set_done', () => deps.bed.onDone())

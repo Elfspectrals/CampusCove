@@ -26,9 +26,7 @@ class LockpickController extends Controller
 
     public function succeed(Request $request, int $attemptId): JsonResponse
     {
-        $this->lockpicks->succeed($this->accountId($request), $attemptId);
-
-        return response()->json(['ok' => true]);
+        return response()->json($this->lockpicks->succeed($this->accountId($request), $attemptId));
     }
 
     public function fitReinforcedLock(Request $request): JsonResponse

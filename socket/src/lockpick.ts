@@ -9,6 +9,7 @@ export const PIN_PERIOD_MAX_MS = 2000
 export const PIN_WINDOW = 0.12
 export const PRESS_LAG_ALLOWANCE_MS = 150
 export const LOCKPICK_NOISE_RADIUS = 12
+export const ALARM_SIREN_RADIUS = 25
 
 export type LockpickRoom = GameRoom & { pollHousingUnits(): Promise<void> }
 
@@ -66,6 +67,15 @@ function sendNoise(room: GameRoom, unit: HousingUnit, noise: LockpickNoise): voi
   room.forEachClient((c) => {
     const listener = room.players.get(c.sessionId)
     if (listener && Math.hypot(listener.x - unit.pos_x, listener.z - unit.pos_z) <= LOCKPICK_NOISE_RADIUS) c.send('door_sound', payload)
+  })
+}
+
+function soundAlarm(room: GameRoom, unit: HousingUnit): void {
+  room.forEachClient((c) => {
+    const listener = room.players.get(c.sessionId)
+    if (!listener) return
+    if (Math.hypot(listener.x - unit.pos_x, listener.z - unit.pos_z) <= ALARM_SIREN_RADIUS) c.send('alarm_siren', { door: unit.model_key })
+    if (listener.accountId === unit.occupant_account_id) c.send('house_alarm', { unitId: unit.public_id })
   })
 }
 
@@ -142,7 +152,8 @@ export async function onLockpickPress(room: LockpickRoom, client: GameClient, cl
     if (hit) {
       session.pinsSet += 1
       if (session.pinsSet >= session.pins) {
-        await callRealtimeBackend(player.token, `/lockpicks/attempts/${session.attemptId}/success`)
+        const data = await callRealtimeBackend(player.token, `/lockpicks/attempts/${session.attemptId}/success`)
+        if (data?.alarm === true) soundAlarm(room, unit)
         player.lockpick = null
         client.send('lockpick_result', { outcome: 'open' })
         await room.pollHousingUnits()
@@ -152,6 +163,7 @@ export async function onLockpickPress(room: LockpickRoom, client: GameClient, cl
       session.misses += 1
       session.pinsSet = Math.max(0, session.pinsSet - 1)
       const data = await callRealtimeBackend(player.token, `/lockpicks/attempts/${session.attemptId}/miss`, 'POST', { miss: session.misses })
+      if (data?.alarm === true) soundAlarm(room, unit)
       if (data?.broke === true) {
         player.lockpick = null
         client.send('lockpick_result', { outcome: 'broke' })

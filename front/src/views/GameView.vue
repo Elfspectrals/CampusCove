@@ -65,6 +65,7 @@ import { useAtm } from '../composables/game/useAtm'
 import { useLockpick } from '../composables/game/useLockpick'
 import { useFurnitureStorage } from '../composables/game/useFurnitureStorage'
 import { useRespawnBed } from '../composables/game/useRespawnBed'
+import { useHouseAlarms } from '../composables/game/useHouseAlarms'
 import type { HouseFurniturePayload } from '../types/gameRealtime'
 import { useCashBags } from '../composables/game/useCashBags'
 import { useProximityVoice } from '../composables/game/useProximityVoice'
@@ -514,6 +515,13 @@ const atm = useAtm({
   timeoutMessage: () => t('atm.timeout'),
 })
 const { open: atmOpen } = atm
+const houseAlarms = useHouseAlarms({
+  gameRoomRef,
+  say: (text) => survival.say(text),
+  ring: () => sfx.play('alarm_siren'),
+  liveMessage: () => t('watch.alarm.alert'),
+  awayMessage: (count) => t('watch.alarm.away', { count }),
+})
 const furnishedHouses = shallowRef<HouseFurniturePayload[]>([])
 const storage = useFurnitureStorage({
   myPosition,
@@ -1253,6 +1261,11 @@ const realtime = useGameRealtime({
       void refreshOwnedItems()
     },
     onReinforceError: (data) => survival.say(data.message),
+    onHouseAlarm: () => houseAlarms.onLive(),
+    onAlarmSiren: ({ door }) => {
+      const node = frontDoorNode(door)
+      if (node) sfx.playOn('alarm_siren', node)
+    },
   },
   storage: storage.handlers,
   bed: respawnBed.handlers,
@@ -1655,6 +1668,9 @@ const crosshairClass = computed(() => {
       :contact-rows="watchContacts.rows.value"
       :contacts-error="watchContacts.error.value"
       :followed-session-id="followedSessionId"
+      :alarm-alerts="houseAlarms.alerts.value"
+      :alarm-unseen="houseAlarms.unseen.value"
+      @alarm-open="houseAlarms.markSeen"
       @request="trade.request"
       @respond="trade.respond"
       @cancel="trade.cancel"

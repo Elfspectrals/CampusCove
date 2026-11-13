@@ -15,6 +15,7 @@ const MAX_DISTANCE = 15
 const DOOR_RANGE = { refDistance: 1, maxDistance: 5 }
 /** Lockpicking is louder: the socket sends it within 12 m (LOCKPICK_NOISE_RADIUS). */
 const LOCKPICK_RANGE = { refDistance: 2, maxDistance: 12 }
+const ALARM_RANGE = { refDistance: 4, maxDistance: 25 }
 
 const doorUrls = (name: string, count: number) => Array.from({ length: count }, (_, i) => `/assets/sfx/door/${name}_${i + 1}.mp3`)
 
@@ -30,6 +31,7 @@ const SOUNDS = {
   door_rattle: { urls: doorUrls('rattle', 3), volume: 0.9, ...DOOR_RANGE },
   door_pick_click: { urls: doorUrls('pick_click', 2), volume: 0.9, ...LOCKPICK_RANGE },
   door_pick_scrape: { urls: doorUrls('pick_scrape', 2), volume: 1, ...LOCKPICK_RANGE },
+  alarm_siren: { urls: ['/assets/sfx/alarm/siren_1.mp3'], volume: 1, ...ALARM_RANGE },
 } satisfies Record<string, SoundDef>
 
 export type SfxName = keyof typeof SOUNDS

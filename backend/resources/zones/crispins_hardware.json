@@ -2,6 +2,7 @@
   "version": 1,
   "zone": "crispins_hardware",
   "prices": {
+    "decor_alarm": 400,
     "decor_metal_shelving": 260,
     "decor_paint_cans": 110,
     "decor_stepladder": 140,

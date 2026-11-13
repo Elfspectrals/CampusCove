@@ -343,7 +343,13 @@ export const messages = {
     watch: {
       label: 'Watch',
       meters: '{d} m',
-      apps: { gps: 'GPS', bank: 'Bank', contacts: 'Contacts', trade: 'Trade', admin: 'Admin' },
+      apps: { gps: 'GPS', bank: 'Bank', contacts: 'Contacts', trade: 'Trade', alarm: 'Alarm', admin: 'Admin' },
+      alarm: {
+        empty: 'All quiet at home.',
+        live: 'Your alarm went off',
+        away: '{count} break-in attempt(s) while you were away',
+        alert: 'Your house alarm is going off!',
+      },
       contacts: {
         enter: 'select',
         loading: 'Loading…',
@@ -799,7 +805,13 @@ export const messages = {
     watch: {
       label: 'Montre',
       meters: '{d} m',
-      apps: { gps: 'GPS', bank: 'Banque', contacts: 'Contacts', trade: 'Échange', admin: 'Admin' },
+      apps: { gps: 'GPS', bank: 'Banque', contacts: 'Contacts', trade: 'Échange', alarm: 'Alarme', admin: 'Admin' },
+      alarm: {
+        empty: 'Tout est calme chez toi.',
+        live: 'Ton alarme a sonné',
+        away: '{count} tentative(s) d’effraction pendant ton absence',
+        alert: 'L’alarme de ta maison sonne !',
+      },
       contacts: {
         enter: 'valider',
         loading: 'Chargement…',

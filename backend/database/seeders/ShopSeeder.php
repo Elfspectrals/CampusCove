@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Services\HouseAlarmService;
 use App\Services\LockpickService;
 use App\Services\StarterCosmeticGrantService;
 use App\Support\FoodCatalog;
@@ -82,6 +83,7 @@ class ShopSeeder extends Seeder
             self::decor('decor_paint_cans', 'Paint Can Pallet', 'paint_cans', 1, 3),
             self::decor('decor_wheelbarrow', 'Garden Wheelbarrow', 'wheelbarrow', 2, 2),
             self::decor('decor_metal_shelving', 'Warehouse Shelving', 'metal_shelving', 2, 3),
+            self::decor(HouseAlarmService::ITEM_CODE, 'Home Alarm', 'alarm', 2, 1),
             [
                 'code' => LockpickService::ITEM_CODE,
                 'name' => 'Lockpick',
@@ -416,6 +418,7 @@ class ShopSeeder extends Seeder
             self::coins('decor_metal_shelving', 260, 145),
             self::coins(LockpickService::ITEM_CODE, 120, 146),
             self::coins(LockpickService::REINFORCED_LOCK_CODE, 600, 147),
+            self::coins(HouseAlarmService::ITEM_CODE, 400, 148),
         ];
         foreach (FoodCatalog::items() as $i => $food) {
             if ($food['price'] !== null) {

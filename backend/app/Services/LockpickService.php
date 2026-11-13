@@ -31,6 +31,7 @@ final class LockpickService
     public function __construct(
         private readonly AccountInventoryService $inventory,
         private readonly HousingService $housing,
+        private readonly HouseAlarmService $alarms,
     ) {}
 
     /** @return array{attempt_id: int, pins: int} */
@@ -78,18 +79,19 @@ final class LockpickService
         });
     }
 
-    /** @return array{broke: bool} */
+    /** @return array{broke: bool, alarm: bool} */
     public function miss(int $burglarId, int $attemptId, int $missNumber): array
     {
         return DB::transaction(function () use ($burglarId, $attemptId, $missNumber): array {
             $attempt = $this->lockAttempt($burglarId, $attemptId);
             if ($attempt->outcome === 'broke') {
-                return ['broke' => true];
+                return ['broke' => true, 'alarm' => false];
             }
             if ($attempt->outcome !== null || $missNumber !== $attempt->misses + 1) {
-                return ['broke' => false];
+                return ['broke' => false, 'alarm' => false];
             }
             DB::table('lockpick_attempts')->where('id', $attemptId)->update(['misses' => $missNumber]);
+            $alarm = $missNumber === HouseAlarmService::MISSES_TO_TRIGGER && $this->alarms->trigger($attemptId, (int) $attempt->unit_id);
             $broke = Lottery::odds(self::BREAK_PERCENT_PER_MISS, 100)->choose();
             if ($broke) {
                 $this->inventory->revokeItem($burglarId, $this->lockpick(), 1);
@@ -97,22 +99,25 @@ final class LockpickService
                 $this->end($attemptId, 'broke');
             }
 
-            return ['broke' => $broke];
+            return ['broke' => $broke, 'alarm' => $alarm];
         });
     }
 
-    public function succeed(int $burglarId, int $attemptId): void
+    /** @return array{alarm: bool} */
+    public function succeed(int $burglarId, int $attemptId): array
     {
-        DB::transaction(function () use ($burglarId, $attemptId): void {
+        return DB::transaction(function () use ($burglarId, $attemptId): array {
             $attempt = $this->lockAttempt($burglarId, $attemptId);
             if ($attempt->outcome === 'success') {
-                return;
+                return ['alarm' => false];
             }
             if ($attempt->outcome !== null) {
                 throw new LockpickRejectedException('attempt_over', 'This attempt is over.', 409);
             }
             HousingUnit::query()->whereKey($attempt->unit_id)->update(['door_locked' => false, 'updated_at' => now()]);
             $this->close($attemptId, $burglarId, 'success');
+
+            return ['alarm' => $this->alarms->trigger($attemptId, (int) $attempt->unit_id)];
         });
     }
 
