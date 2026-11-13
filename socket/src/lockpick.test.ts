@@ -18,14 +18,21 @@ interface Sent { type: string, payload: any }
 type FakeClient = GameClient & { sent: Sent[] }
 
 const apiCalls: Array<{ path: string, body: any }> = []
+const crimeCalls: Array<{ path: string, body: any }> = []
 let breakOnMiss = false
 let doorPins = 3
 let alarmOnSuccess = false
+let alarmOnMiss = false
 globalThis.fetch = async (url: string | URL | Request, init?: RequestInit) => {
   const path = String(url).replace(/^.*\/api/, '')
-  apiCalls.push({ path, body: init?.body ? JSON.parse(String(init.body)) : null })
+  const call = { path, body: init?.body ? JSON.parse(String(init.body)) : null }
+  if (path === '/crimes' || path === '/wanted') {
+    crimeCalls.push(call)
+    return new Response(JSON.stringify({ ok: true }))
+  }
+  apiCalls.push(call)
   if (path === '/lockpicks/attempts') return new Response(JSON.stringify({ attempt_id: 7, pins: doorPins }))
-  if (path.endsWith('/miss')) return new Response(JSON.stringify({ broke: breakOnMiss, alarm: false }))
+  if (path.endsWith('/miss')) return new Response(JSON.stringify({ broke: breakOnMiss, alarm: alarmOnMiss }))
   if (path.endsWith('/success')) return new Response(JSON.stringify({ alarm: alarmOnSuccess }))
   return new Response(JSON.stringify({ ok: true }))
 }
@@ -41,7 +48,7 @@ function fakeClient(sessionId: string): FakeClient {
 
 function setup({ x = 0, z = 2, locked = true, keyHolders = [] as number[] } = {}) {
   let now = 0
-  const burglar = { sessionId: 's1', accountId: 1, token: 'token-s1', x, y: 1.6, z, knockedOutUntil: 0, lockpick: null } as unknown as Player
+  const burglar = { sessionId: 's1', accountId: 1, token: 'token-s1', x, y: 1.6, z, knockedOutUntil: 0, lockpick: null, wantedStars: 0, wantedDecayMs: 0, wantedDirty: false, onDuty: false } as unknown as Player
   const neighbour = { sessionId: 's2', accountId: 2, token: 'token-s2', x: 0, y: 1.6, z: LOCKPICK_NOISE_RADIUS - 1 } as unknown as Player
   const farAway = { sessionId: 's3', accountId: 3, token: 'token-s3', x: 0, y: 1.6, z: LOCKPICK_NOISE_RADIUS + 1 } as unknown as Player
   const unit: HousingUnit = {
@@ -60,9 +67,11 @@ function setup({ x = 0, z = 2, locked = true, keyHolders = [] as number[] } = {}
     pollHousingUnits: async () => { polls += 1 }
   } as unknown as LockpickRoom
   apiCalls.length = 0
+  crimeCalls.length = 0
   breakOnMiss = false
   doorPins = 3
   alarmOnSuccess = false
+  alarmOnMiss = false
   return {
     burglar, client, near, far, room,
     clock: () => now,
@@ -254,4 +263,53 @@ test('an alarm that goes off is heard within 25 m and reaches the owner wherever
   assert.deepEqual(received(far, 'alarm_siren'), [{ door: 'house_a' }])
   assert.deepEqual(received(ownerClient, 'alarm_siren'), [])
   assert.deepEqual(received(ownerClient, 'house_alarm'), [{ unitId: 'house-1' }])
+})
+
+function crimes() {
+  return crimeCalls.filter((c) => c.path === '/crimes').map((c) => c.body.kind)
+}
+
+test('a start accepted by Laravel is a lockpick crime for the burglar', async () => {
+  const { burglar, client, room, clock } = setup()
+  await onLockpickStart(room, client, { unitId: 'house-1' }, clock, always0)
+  assert.deepEqual(crimes(), ['lockpick'])
+  assert.equal(burglar.wantedStars, 1)
+})
+
+test('a start refused before Laravel is no crime', async () => {
+  const { burglar, client, room, clock } = setup({ z: 50 })
+  await onLockpickStart(room, client, { unitId: 'house-1' }, clock, always0)
+  assert.deepEqual(crimes(), [])
+  assert.equal(burglar.wantedStars, 0)
+})
+
+test('an alarm set off by the last pin adds an alarm crime', async () => {
+  const { burglar, client, room, clock, at } = setup()
+  alarmOnSuccess = true
+  await onLockpickStart(room, client, { unitId: 'house-1' }, clock, always0)
+  for (let pin = 1; pin <= 3; pin++) {
+    at(pin * firstHitAfterSettle)
+    await onLockpickPress(room, client, clock, always0)
+  }
+  assert.deepEqual(crimes(), ['lockpick', 'alarm'])
+  assert.equal(burglar.wantedStars, 3)
+})
+
+test('an alarm set off by a miss adds an alarm crime', async () => {
+  const { burglar, client, room, clock, at } = setup()
+  alarmOnMiss = true
+  await onLockpickStart(room, client, { unitId: 'house-1' }, clock, always0)
+  at(firstHitAfterSettle + PERIOD / 2)
+  await onLockpickPress(room, client, clock, always0)
+  assert.deepEqual(received(client, 'lockpick_result').map((r) => r.outcome), ['miss'])
+  assert.deepEqual(crimes(), ['lockpick', 'alarm'])
+  assert.equal(burglar.wantedStars, 3)
+})
+
+test('a miss without an alarm adds no crime', async () => {
+  const { client, room, clock, at } = setup()
+  await onLockpickStart(room, client, { unitId: 'house-1' }, clock, always0)
+  at(firstHitAfterSettle + PERIOD / 2)
+  await onLockpickPress(room, client, clock, always0)
+  assert.deepEqual(crimes(), ['lockpick'])
 })

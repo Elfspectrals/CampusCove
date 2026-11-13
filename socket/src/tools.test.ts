@@ -34,6 +34,7 @@ function fakeClient(sessionId: string) {
 function fakePlayer(sessionId: string, z: number): Player {
   return {
     sessionId,
+    accountId: sessionId.charCodeAt(0),
     token: `token-${sessionId}`,
     x: 0,
     y: 1.6,
@@ -47,7 +48,12 @@ function fakePlayer(sessionId: string, z: number): Player {
     heldTool: null,
     wantedTool: null,
     holdSyncing: false,
-    lastHoldCheckAt: 0
+    lastHoldCheckAt: 0,
+    wantedStars: 0,
+    wantedDecayMs: 0,
+    wantedDirty: false,
+    lastHitAt: new Map(),
+    lastAssaultAt: new Map()
   } as unknown as Player
 }
 

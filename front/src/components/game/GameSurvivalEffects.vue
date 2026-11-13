@@ -11,6 +11,8 @@ const props = defineProps<{
   /** Starvation / wounds, or a drunken black-out: changes the black screen texts. */
   cause: KnockoutCause
   hospitalBill: number | null
+  jailText?: string | null
+  jailBillText?: string | null
   lostBelongings: boolean
   message: string | null
   recovering: number | null
@@ -23,6 +25,7 @@ const heartbeat = computed(() => `${(props.effects?.heartbeatPeriod ?? 1).toFixe
 
 const blackout = computed(() => props.cause === 'alcohol')
 const billText = computed(() => {
+  if (props.jailText) return props.jailText
   if (props.hospitalBill === null) return null
   if (props.hospitalBill <= 0) return 'The hospital waived the bill.'
   return blackout.value ? `Bill: ${props.hospitalBill} coins` : `Hospital bill: ${props.hospitalBill} coins`
@@ -70,6 +73,7 @@ const billText = computed(() => {
           {{ blackout ? 'You wake up at Cove Clinic with a headache.' : "You'll wake up at Cove Clinic, a bit weak." }}
         </p>
         <p v-if="billText" class="text-xs font-bold text-coral">{{ billText }}</p>
+        <p v-if="jailBillText" class="text-xs font-bold text-coral">{{ jailBillText }}</p>
         <p v-if="lostBelongings" class="text-xs text-mist">Your inventory and your clothes were lost.</p>
       </div>
     </Transition>

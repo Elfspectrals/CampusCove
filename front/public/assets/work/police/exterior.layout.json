@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "key": "police",
+  "name": "Cove Police",
+  "footprint": [
+    30.8,
+    24.81
+  ],
+  "footprintCenterZ": -0.005,
+  "doorLocal": [
+    0.0,
+    1.25,
+    12.4
+  ],
+  "interiorOffset": [
+    0.0,
+    0.2,
+    6.995
+  ],
+  "stepsEndZ": 17.6,
+  "collision": [
+    {
+      "cx": 0.0,
+      "cz": -0.005,
+      "hx": 15.6,
+      "hz": 12.605,
+      "hy": 4.5
+    }
+  ]
+}

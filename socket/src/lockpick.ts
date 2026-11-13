@@ -1,6 +1,7 @@
 import { callRealtimeBackend, errorPayload } from './backend.ts'
 import { canUseDoor, isWithinDoorReach } from './doors.ts'
 import type { ClientPayload, GameClient, GameRoom, HousingUnit, LockpickPin, LockpickSession, Player } from './types.ts'
+import { reportCrime } from './wanted.ts'
 
 const MAX_PINS = 9
 export const PIN_SETTLE_MS = 8000
@@ -123,6 +124,7 @@ export async function onLockpickStart(room: GameRoom, client: GameClient, payloa
     client.send('lockpick_error', errorPayload(error, 'You cannot pick this lock.', 'lockpick_failed'))
     return
   }
+  reportCrime(room, player, 'lockpick')
   if (player.lockpick !== session) {
     abandon(player, session)
     return
@@ -153,7 +155,10 @@ export async function onLockpickPress(room: LockpickRoom, client: GameClient, cl
       session.pinsSet += 1
       if (session.pinsSet >= session.pins) {
         const data = await callRealtimeBackend(player.token, `/lockpicks/attempts/${session.attemptId}/success`)
-        if (data?.alarm === true) soundAlarm(room, unit)
+        if (data?.alarm === true) {
+          soundAlarm(room, unit)
+          reportCrime(room, player, 'alarm')
+        }
         player.lockpick = null
         client.send('lockpick_result', { outcome: 'open' })
         await room.pollHousingUnits()
@@ -163,7 +168,10 @@ export async function onLockpickPress(room: LockpickRoom, client: GameClient, cl
       session.misses += 1
       session.pinsSet = Math.max(0, session.pinsSet - 1)
       const data = await callRealtimeBackend(player.token, `/lockpicks/attempts/${session.attemptId}/miss`, 'POST', { miss: session.misses })
-      if (data?.alarm === true) soundAlarm(room, unit)
+      if (data?.alarm === true) {
+        soundAlarm(room, unit)
+        reportCrime(room, player, 'alarm')
+      }
       if (data?.broke === true) {
         player.lockpick = null
         client.send('lockpick_result', { outcome: 'broke' })

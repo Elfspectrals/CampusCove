@@ -142,6 +142,14 @@ export function onTradeRequest(room: TradeRoom, client: GameClient, payload: Cli
     sendError(client, 'You cannot trade with this player.', 'trade_invalid_target')
     return
   }
+  if (player.jail || target.jail) {
+    sendError(client, 'Nobody trades through cell bars.', 'trade_jailed')
+    return
+  }
+  if (player.cuffedBy || target.cuffedBy) {
+    sendError(client, 'Nobody trades in handcuffs.', 'trade_cuffed')
+    return
+  }
   if (player.tradeId) {
     sendError(client, 'Finish your current trade first.', 'trade_busy')
     return
@@ -290,6 +298,14 @@ export async function onTradeConfirm(room: TradeRoom, client: GameClient, payloa
   if (!player || !trade || trade.status !== 'open') return
   // a confirmation for an offer that changed since: ignored, the player sees the new one
   if (payload?.revision !== trade.revision) return
+  if (player.jail || room.players.get(partnerSide(trade, player.sessionId).sessionId)?.jail) {
+    sendError(client, 'Nobody trades through cell bars.', 'trade_jailed')
+    return
+  }
+  if (player.cuffedBy || room.players.get(partnerSide(trade, player.sessionId).sessionId)?.cuffedBy) {
+    sendError(client, 'Nobody trades in handcuffs.', 'trade_cuffed')
+    return
+  }
   const mine = sideOf(trade, player.sessionId)
   mine.confirmed = true
   if (!partnerSide(trade, player.sessionId).confirmed) {

@@ -8,6 +8,20 @@ import { toInterior, unitAt } from './movement.ts'
 import { spawnNear } from './players.ts'
 import { HANGOVER_INTOXICATION, INTOXICATION_MAX } from './pubConstants.ts'
 import { leavePub } from './pubGames.ts'
+import {
+  assignCell,
+  atOwnCellTap,
+  canEatMealTray,
+  cellSpawn,
+  eatMealTray,
+  goesToNpcJail,
+  sendJailState,
+  sendMealTray,
+  sentenceAtDeath
+} from './jail.ts'
+import { endDuty, loseLicence } from './police.ts'
+import { releaseCuffs } from './handcuffs.ts'
+import { MEAL_TRAY_FOOD, MEAL_TRAY_HUNGER } from './policeConstants.ts'
 import { staminaAt } from './stamina.ts'
 import {
   FOUNTAIN_COOLDOWN_MS,
@@ -29,7 +43,8 @@ import {
   tickStats
 } from './survivalStats.ts'
 import { emptyHand } from './tools.ts'
-import type { ClientPayload, GameClient, GameRoom, Player, Stats } from './types.ts'
+import type { ClientPayload, GameClient, GameRoom, JailSentence, Player, Stats } from './types.ts'
+import { reportCrime } from './wanted.ts'
 import { type ClinicBed, citySpawn, worldClinic, worldFountains, worldHouse } from './world.ts'
 
 export const SURVIVAL_TICK_MS = 2000
@@ -130,7 +145,9 @@ export function hurt(room: GameRoom, client: GameClient, player: Player, amount:
   setStats(player, { ...player.stats, health: Math.max(0, player.stats.health - amount) })
   client.send('survival_damage', { amount, cause })
   sendStats(client, player)
-  if (player.stats.health <= 0) knockOut(room, client, player, 'health', attacker?.accountId ?? null)
+  if (player.stats.health > 0) return
+  knockOut(room, client, player, 'health', attacker?.accountId ?? null)
+  if (attacker && attacker !== player) reportCrime(room, attacker, 'murder', player.accountId)
 }
 
 function blackOut(room: GameRoom, client: GameClient, player: Player): void {
@@ -148,29 +165,40 @@ function knockOut(room: GameRoom, client: GameClient, player: Player, cause: Kno
   player.healOverTime = null
   emptyHand(room, client, player)
   leavePub(room, player)
-  client.send('survival_knocked_out', { durationMs: KNOCKOUT_MS, cause })
-  const body = cause === 'health' && killerAccountId !== null ? { killer_account_id: killerAccountId } : null
-  callRealtimeBackend(player.token, cause === 'alcohol' ? '/survival/hangover' : '/survival/hospital', 'POST', body)
+  endDuty(room, player, 'death')
+  releaseCuffs(room, player, 'suspect_down')
+  const jailed = cause === 'health' && goesToNpcJail(player)
+  const sentenceSaved = jailed ? sentenceAtDeath(room, player) : null
+  client.send('survival_knocked_out', { durationMs: KNOCKOUT_MS, cause, jailed: Boolean(player.jail) })
+  const killer = cause === 'health' && killerAccountId !== null ? { killer_account_id: killerAccountId } : null
+  const body = jailed ? { ...killer, jailed: true, jail_stars: player.jail!.stars } : killer
+  const bill = () => callRealtimeBackend(player.token, cause === 'alcohol' ? '/survival/hangover' : '/survival/hospital', 'POST', body)
+  const billed = sentenceSaved ? sentenceSaved.then(bill) : bill()
+  billed
     .then((data) => {
       client.send('survival_hospital_bill', {
         cause,
         billed: Number(data?.billed) || 0,
+        jailTax: Number(data?.jail_tax) || 0,
         balanceAfter: typeof data?.balance_after === 'number' ? data.balance_after : null,
         lostItems: Number(data?.lost?.items) || 0,
         lostClothes: Number(data?.lost?.clothes) || 0,
         lostCash: Number(data?.cash_drop?.amount) || 0,
         lostTools: Array.isArray(data?.cash_drop?.tools) ? data.cash_drop.tools.length : 0
       })
-      if (cause === 'health') dropCashBag(room, diedAt, data?.cash_drop)
+      if (data?.licence_lost === true && room.players.get(client.sessionId) === player) loseLicence(room, player)
+      if (cause === 'health') dropCashBag(room, diedAt, data?.cash_drop, killerAccountId === null ? null : player.accountId)
     })
     .catch((error) => warn('hospital bill failed', error))
   let respawnBed: RespawnBed | null = null
   void fetchRespawnBed(player).then((found) => { respawnBed = found })
   room.clock.setTimeout(() => {
-    const home = homeWakeUp(room, respawnBed)
     if (room.players.get(client.sessionId) !== player || !player.stats) return
-    const bed = home ? null : claimClinicBed(room, player)
-    const spawn = home ? { ...home.position, ry: player.ry } : bed ? { ...bed.position, ry: bed.yaw } : spawnNear(citySpawn(), CITY_SPAWN_RADIUS)
+    const home = player.jail ? null : homeWakeUp(room, respawnBed)
+    const bed = player.jail || home ? null : claimClinicBed(room, player)
+    const spawn = player.jail
+      ? cellSpawn(assignCell(room, player as Player & { jail: JailSentence }))
+      : home ? { ...home.position, ry: player.ry } : bed ? { ...bed.position, ry: bed.yaw } : spawnNear(citySpawn(), CITY_SPAWN_RADIUS)
     const recoveringMs = home || bed ? RECOVERY_MS : 0
     Object.assign(player, spawn, {
       fallPeakY: spawn.y,
@@ -188,6 +216,7 @@ function knockOut(room: GameRoom, client: GameClient, player: Player, cause: Kno
       recoveringMs
     })
     sendStats(client, player)
+    sendJailState(client, player)
     room.broadcastMove(client, player)
     void saveSurvival(player)
     if (bed) room.clock.setTimeout(() => releaseClinicBed(room, player), recoveringMs)
@@ -265,7 +294,7 @@ export function onDrinkFountain(room: GameRoom, client: GameClient): void {
   const player = room.players.get(client.sessionId)
   const now = Date.now()
   if (!player?.stats || now < player.knockedOutUntil || now - player.lastSipAt < SIP_COOLDOWN_MS) return
-  const near = worldFountains().some((f) => Math.hypot(player.x - f.x, player.z - f.z) <= FOUNTAIN_REACH)
+  const near = worldFountains().some((f) => Math.hypot(player.x - f.x, player.z - f.z) <= FOUNTAIN_REACH) || atOwnCellTap(player, FOUNTAIN_REACH)
   if (!near) return
   player.lastSipAt = now
   const key = player.accountId ?? client.sessionId
@@ -276,6 +305,16 @@ export function onDrinkFountain(room: GameRoom, client: GameClient): void {
   setStats(player, applyPortion(player.stats, { thirst: FOUNTAIN_SIP_THIRST }))
   sendStats(client, player)
   room.forEachClient((c) => c.send('user_action', { sessionId: client.sessionId, action: 'drink', code: null }), client)
+}
+
+export function onEatMealTray(room: GameRoom, client: GameClient): void {
+  const player = room.players.get(client.sessionId)
+  if (!player?.stats || Date.now() < player.knockedOutUntil || !canEatMealTray(player)) return
+  eatMealTray(player)
+  setStats(player, applyPortion(player.stats, { hunger: MEAL_TRAY_HUNGER }))
+  sendStats(client, player)
+  sendMealTray(client, player)
+  room.forEachClient((c) => c.send('user_action', { sessionId: client.sessionId, action: 'eat', code: MEAL_TRAY_FOOD }), client)
 }
 
 function isNearCooker(room: GameRoom, player: Player): boolean {

@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "key": "light_limestone_ashlar_blocks",
+  "label": "Light limestone ashlar blocks",
+  "tileMeters": 2.0,
+  "maps": {
+    "color": "color.png",
+    "mask": "mask.png"
+  },
+  "parts": [
+    {
+      "id": "blocks",
+      "label": "Blocks",
+      "color": "#e0dcd5"
+    },
+    {
+      "id": "joints",
+      "label": "Joints",
+      "color": "#bfbab7"
+    }
+  ]
+}

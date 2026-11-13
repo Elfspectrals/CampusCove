@@ -1,0 +1,1470 @@
+{
+  "version": 1,
+  "zone": "police",
+  "name": "Police",
+  "props": [
+    {
+      "id": "police_desk_officer",
+      "kind": "npc",
+      "position": [
+        95.505,
+        0.2,
+        34.0
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pose": "idle",
+      "vendor": false,
+      "body": "#c98f6a",
+      "outfit": [
+        {
+          "slot": "head_accessory",
+          "key": "sheriff_hat",
+          "color": "#d8c39a"
+        },
+        {
+          "slot": "top",
+          "key": "sheriff_shirt",
+          "color": "#d8c39a"
+        },
+        {
+          "slot": "bottom",
+          "key": "basic",
+          "color": "#6b4a2e"
+        },
+        {
+          "slot": "shoes",
+          "key": "boots",
+          "color": "#4a3222"
+        }
+      ]
+    },
+    {
+      "id": "police_service_desk_01",
+      "kind": "item",
+      "key": "service_desk",
+      "code": "decor_service_desk",
+      "forSale": false,
+      "position": [
+        94.605,
+        0.2,
+        34.0
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_dining_bench_01",
+      "kind": "item",
+      "key": "dining_bench",
+      "code": "decor_dining_bench",
+      "forSale": false,
+      "position": [
+        88.605,
+        0.2,
+        30.5
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_dining_bench_02",
+      "kind": "item",
+      "key": "dining_bench",
+      "code": "decor_dining_bench",
+      "forSale": false,
+      "position": [
+        88.605,
+        0.2,
+        37.5
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_potted_plant_01",
+      "kind": "item",
+      "key": "potted_plant",
+      "code": "decor_potted_plant",
+      "forSale": false,
+      "position": [
+        88.605,
+        0.2,
+        28.7
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_potted_plant_02",
+      "kind": "item",
+      "key": "potted_plant",
+      "code": "decor_potted_plant",
+      "forSale": false,
+      "position": [
+        88.605,
+        0.2,
+        39.3
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_potted_plant_03",
+      "kind": "item",
+      "key": "potted_plant",
+      "code": "decor_potted_plant",
+      "forSale": false,
+      "position": [
+        97.305,
+        0.2,
+        28.7
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_potted_plant_04",
+      "kind": "item",
+      "key": "potted_plant",
+      "code": "decor_potted_plant",
+      "forSale": false,
+      "position": [
+        98.705,
+        0.2,
+        31.4
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_potted_plant_05",
+      "kind": "item",
+      "key": "potted_plant",
+      "code": "decor_potted_plant",
+      "forSale": false,
+      "position": [
+        98.705,
+        0.2,
+        36.6
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_wanted_board_01",
+      "kind": "item",
+      "key": "wanted_board",
+      "code": "decor_wanted_board",
+      "forSale": false,
+      "position": [
+        95.605,
+        0.2,
+        39.6
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_police_lockers_01",
+      "kind": "item",
+      "key": "police_lockers",
+      "code": "decor_police_lockers",
+      "forSale": false,
+      "position": [
+        89.105,
+        0.2,
+        19.28
+      ],
+      "yaw": -0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_police_lockers_02",
+      "kind": "item",
+      "key": "police_lockers",
+      "code": "decor_police_lockers",
+      "forSale": false,
+      "position": [
+        90.805,
+        0.2,
+        19.28
+      ],
+      "yaw": -0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_police_lockers_03",
+      "kind": "item",
+      "key": "police_lockers",
+      "code": "decor_police_lockers",
+      "forSale": false,
+      "position": [
+        92.505,
+        0.2,
+        19.28
+      ],
+      "yaw": -0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_police_lockers_04",
+      "kind": "item",
+      "key": "police_lockers",
+      "code": "decor_police_lockers",
+      "forSale": false,
+      "position": [
+        94.205,
+        0.2,
+        19.28
+      ],
+      "yaw": -0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_police_lockers_05",
+      "kind": "item",
+      "key": "police_lockers",
+      "code": "decor_police_lockers",
+      "forSale": false,
+      "position": [
+        95.905,
+        0.2,
+        19.28
+      ],
+      "yaw": -0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_police_lockers_06",
+      "kind": "item",
+      "key": "police_lockers",
+      "code": "decor_police_lockers",
+      "forSale": false,
+      "position": [
+        97.625,
+        0.2,
+        20.4
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_police_lockers_07",
+      "kind": "item",
+      "key": "police_lockers",
+      "code": "decor_police_lockers",
+      "forSale": false,
+      "position": [
+        97.625,
+        0.2,
+        22.1
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_police_lockers_08",
+      "kind": "item",
+      "key": "police_lockers",
+      "code": "decor_police_lockers",
+      "forSale": false,
+      "position": [
+        97.625,
+        0.2,
+        26.2
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_dining_bench_03",
+      "kind": "item",
+      "key": "dining_bench",
+      "code": "decor_dining_bench",
+      "forSale": false,
+      "position": [
+        92.005,
+        0.2,
+        23.0
+      ],
+      "yaw": -0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_dining_bench_04",
+      "kind": "item",
+      "key": "dining_bench",
+      "code": "decor_dining_bench",
+      "forSale": false,
+      "position": [
+        94.205,
+        0.2,
+        23.0
+      ],
+      "yaw": -0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_coat_rack_01",
+      "kind": "item",
+      "key": "coat_rack",
+      "code": "decor_coat_rack",
+      "forSale": false,
+      "position": [
+        88.505,
+        0.2,
+        27.4
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_dining_table_01",
+      "kind": "item",
+      "key": "dining_table",
+      "code": "decor_dining_table",
+      "forSale": false,
+      "position": [
+        92.705,
+        0.2,
+        43.9
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_dining_table_02",
+      "kind": "item",
+      "key": "dining_table",
+      "code": "decor_dining_table",
+      "forSale": false,
+      "position": [
+        92.705,
+        0.2,
+        45.3
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_wooden_chair_01",
+      "kind": "item",
+      "key": "wooden_chair",
+      "code": "decor_wooden_chair",
+      "forSale": false,
+      "position": [
+        93.505,
+        0.2,
+        43.6
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_wooden_chair_02",
+      "kind": "item",
+      "key": "wooden_chair",
+      "code": "decor_wooden_chair",
+      "forSale": false,
+      "position": [
+        91.905,
+        0.2,
+        43.6
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_wooden_chair_03",
+      "kind": "item",
+      "key": "wooden_chair",
+      "code": "decor_wooden_chair",
+      "forSale": false,
+      "position": [
+        93.505,
+        0.2,
+        44.6
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_wooden_chair_04",
+      "kind": "item",
+      "key": "wooden_chair",
+      "code": "decor_wooden_chair",
+      "forSale": false,
+      "position": [
+        91.905,
+        0.2,
+        44.6
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_wooden_chair_05",
+      "kind": "item",
+      "key": "wooden_chair",
+      "code": "decor_wooden_chair",
+      "forSale": false,
+      "position": [
+        93.505,
+        0.2,
+        45.6
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_wooden_chair_06",
+      "kind": "item",
+      "key": "wooden_chair",
+      "code": "decor_wooden_chair",
+      "forSale": false,
+      "position": [
+        91.905,
+        0.2,
+        45.6
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_filing_cabinet_01",
+      "kind": "item",
+      "key": "filing_cabinet",
+      "code": "decor_filing_cabinet",
+      "forSale": false,
+      "position": [
+        97.505,
+        0.2,
+        47.2
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_filing_cabinet_02",
+      "kind": "item",
+      "key": "filing_cabinet",
+      "code": "decor_filing_cabinet",
+      "forSale": false,
+      "position": [
+        97.505,
+        0.2,
+        47.8
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_filing_cabinet_03",
+      "kind": "item",
+      "key": "filing_cabinet",
+      "code": "decor_filing_cabinet",
+      "forSale": false,
+      "position": [
+        97.505,
+        0.2,
+        48.4
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_potted_plant_06",
+      "kind": "item",
+      "key": "potted_plant",
+      "code": "decor_potted_plant",
+      "forSale": false,
+      "position": [
+        88.605,
+        0.2,
+        40.7
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_potted_plant_07",
+      "kind": "item",
+      "key": "potted_plant",
+      "code": "decor_potted_plant",
+      "forSale": false,
+      "position": [
+        88.605,
+        0.2,
+        48.4
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_computer_setup_01",
+      "kind": "item",
+      "key": "computer_setup",
+      "code": "decor_computer_setup",
+      "forSale": false,
+      "position": [
+        101.005,
+        0.2,
+        21.6
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_office_chair_01",
+      "kind": "item",
+      "key": "office_chair",
+      "code": "decor_office_chair",
+      "forSale": false,
+      "position": [
+        100.255,
+        0.2,
+        21.6
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_desk_study_01",
+      "kind": "item",
+      "key": "desk_study",
+      "code": "decor_desk_study",
+      "forSale": false,
+      "position": [
+        104.605,
+        0.2,
+        21.6
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_office_chair_02",
+      "kind": "item",
+      "key": "office_chair",
+      "code": "decor_office_chair",
+      "forSale": false,
+      "position": [
+        103.955,
+        0.2,
+        21.6
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_computer_setup_02",
+      "kind": "item",
+      "key": "computer_setup",
+      "code": "decor_computer_setup",
+      "forSale": false,
+      "position": [
+        101.005,
+        0.2,
+        25.2
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_office_chair_03",
+      "kind": "item",
+      "key": "office_chair",
+      "code": "decor_office_chair",
+      "forSale": false,
+      "position": [
+        100.255,
+        0.2,
+        25.2
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_desk_study_02",
+      "kind": "item",
+      "key": "desk_study",
+      "code": "decor_desk_study",
+      "forSale": false,
+      "position": [
+        104.605,
+        0.2,
+        25.2
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_office_chair_04",
+      "kind": "item",
+      "key": "office_chair",
+      "code": "decor_office_chair",
+      "forSale": false,
+      "position": [
+        103.955,
+        0.2,
+        25.2
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_computer_setup_03",
+      "kind": "item",
+      "key": "computer_setup",
+      "code": "decor_computer_setup",
+      "forSale": false,
+      "position": [
+        101.005,
+        0.2,
+        42.8
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_office_chair_05",
+      "kind": "item",
+      "key": "office_chair",
+      "code": "decor_office_chair",
+      "forSale": false,
+      "position": [
+        100.255,
+        0.2,
+        42.8
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_desk_study_03",
+      "kind": "item",
+      "key": "desk_study",
+      "code": "decor_desk_study",
+      "forSale": false,
+      "position": [
+        104.605,
+        0.2,
+        42.8
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_office_chair_06",
+      "kind": "item",
+      "key": "office_chair",
+      "code": "decor_office_chair",
+      "forSale": false,
+      "position": [
+        103.955,
+        0.2,
+        42.8
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_computer_setup_04",
+      "kind": "item",
+      "key": "computer_setup",
+      "code": "decor_computer_setup",
+      "forSale": false,
+      "position": [
+        101.005,
+        0.2,
+        46.4
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_office_chair_07",
+      "kind": "item",
+      "key": "office_chair",
+      "code": "decor_office_chair",
+      "forSale": false,
+      "position": [
+        100.255,
+        0.2,
+        46.4
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_desk_study_04",
+      "kind": "item",
+      "key": "desk_study",
+      "code": "decor_desk_study",
+      "forSale": false,
+      "position": [
+        104.605,
+        0.2,
+        46.4
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_office_chair_08",
+      "kind": "item",
+      "key": "office_chair",
+      "code": "decor_office_chair",
+      "forSale": false,
+      "position": [
+        103.955,
+        0.2,
+        46.4
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_filing_cabinet_04",
+      "kind": "item",
+      "key": "filing_cabinet",
+      "code": "decor_filing_cabinet",
+      "forSale": false,
+      "position": [
+        102.305,
+        0.2,
+        19.35
+      ],
+      "yaw": -0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_filing_cabinet_05",
+      "kind": "item",
+      "key": "filing_cabinet",
+      "code": "decor_filing_cabinet",
+      "forSale": false,
+      "position": [
+        106.605,
+        0.2,
+        19.35
+      ],
+      "yaw": -0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_filing_cabinet_06",
+      "kind": "item",
+      "key": "filing_cabinet",
+      "code": "decor_filing_cabinet",
+      "forSale": false,
+      "position": [
+        107.305,
+        0.2,
+        19.35
+      ],
+      "yaw": -0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_filing_cabinet_07",
+      "kind": "item",
+      "key": "filing_cabinet",
+      "code": "decor_filing_cabinet",
+      "forSale": false,
+      "position": [
+        102.305,
+        0.2,
+        48.65
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_filing_cabinet_08",
+      "kind": "item",
+      "key": "filing_cabinet",
+      "code": "decor_filing_cabinet",
+      "forSale": false,
+      "position": [
+        106.605,
+        0.2,
+        48.65
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_filing_cabinet_09",
+      "kind": "item",
+      "key": "filing_cabinet",
+      "code": "decor_filing_cabinet",
+      "forSale": false,
+      "position": [
+        107.305,
+        0.2,
+        48.65
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_dining_table_03",
+      "kind": "item",
+      "key": "dining_table",
+      "code": "decor_dining_table",
+      "forSale": false,
+      "position": [
+        110.505,
+        0.2,
+        23.5
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_wooden_chair_07",
+      "kind": "item",
+      "key": "wooden_chair",
+      "code": "decor_wooden_chair",
+      "forSale": false,
+      "position": [
+        109.705,
+        0.2,
+        23.0
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_wooden_chair_08",
+      "kind": "item",
+      "key": "wooden_chair",
+      "code": "decor_wooden_chair",
+      "forSale": false,
+      "position": [
+        111.305,
+        0.2,
+        23.0
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_wooden_chair_09",
+      "kind": "item",
+      "key": "wooden_chair",
+      "code": "decor_wooden_chair",
+      "forSale": false,
+      "position": [
+        109.705,
+        0.2,
+        24.0
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_wooden_chair_10",
+      "kind": "item",
+      "key": "wooden_chair",
+      "code": "decor_wooden_chair",
+      "forSale": false,
+      "position": [
+        111.305,
+        0.2,
+        24.0
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_potted_plant_08",
+      "kind": "item",
+      "key": "potted_plant",
+      "code": "decor_potted_plant",
+      "forSale": false,
+      "position": [
+        111.405,
+        0.2,
+        19.6
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_trash_bin_01",
+      "kind": "item",
+      "key": "trash_bin",
+      "code": "decor_trash_bin",
+      "forSale": false,
+      "position": [
+        111.405,
+        0.2,
+        27.8
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_filing_cabinet_10",
+      "kind": "item",
+      "key": "filing_cabinet",
+      "code": "decor_filing_cabinet",
+      "forSale": false,
+      "position": [
+        111.605,
+        0.2,
+        41.2
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_filing_cabinet_11",
+      "kind": "item",
+      "key": "filing_cabinet",
+      "code": "decor_filing_cabinet",
+      "forSale": false,
+      "position": [
+        111.605,
+        0.2,
+        41.8
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_filing_cabinet_12",
+      "kind": "item",
+      "key": "filing_cabinet",
+      "code": "decor_filing_cabinet",
+      "forSale": false,
+      "position": [
+        111.605,
+        0.2,
+        42.4
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_filing_cabinet_13",
+      "kind": "item",
+      "key": "filing_cabinet",
+      "code": "decor_filing_cabinet",
+      "forSale": false,
+      "position": [
+        111.605,
+        0.2,
+        43.0
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_computer_setup_05",
+      "kind": "item",
+      "key": "computer_setup",
+      "code": "decor_computer_setup",
+      "forSale": false,
+      "position": [
+        110.605,
+        0.2,
+        46.4
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_office_chair_09",
+      "kind": "item",
+      "key": "office_chair",
+      "code": "decor_office_chair",
+      "forSale": false,
+      "position": [
+        109.855,
+        0.2,
+        46.4
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_potted_plant_09",
+      "kind": "item",
+      "key": "potted_plant",
+      "code": "decor_potted_plant",
+      "forSale": false,
+      "position": [
+        111.405,
+        0.2,
+        48.4
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_bunk_bed_01",
+      "kind": "item",
+      "key": "bunk_bed",
+      "code": "decor_bunk_bed",
+      "forSale": false,
+      "position": [
+        110.855,
+        0.2,
+        29.28
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_toilet_01",
+      "kind": "item",
+      "key": "toilet",
+      "code": "decor_toilet",
+      "forSale": false,
+      "position": [
+        111.605,
+        0.2,
+        31.75
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_bunk_bed_02",
+      "kind": "item",
+      "key": "bunk_bed",
+      "code": "decor_bunk_bed",
+      "forSale": false,
+      "position": [
+        110.855,
+        0.2,
+        32.88
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_toilet_02",
+      "kind": "item",
+      "key": "toilet",
+      "code": "decor_toilet",
+      "forSale": false,
+      "position": [
+        111.605,
+        0.2,
+        35.35
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_bunk_bed_03",
+      "kind": "item",
+      "key": "bunk_bed",
+      "code": "decor_bunk_bed",
+      "forSale": false,
+      "position": [
+        110.855,
+        0.2,
+        36.48
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_toilet_03",
+      "kind": "item",
+      "key": "toilet",
+      "code": "decor_toilet",
+      "forSale": false,
+      "position": [
+        111.605,
+        0.2,
+        38.95
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_patrol_car_01",
+      "kind": "item",
+      "key": "patrol_car",
+      "code": "decor_patrol_car",
+      "forSale": false,
+      "position": [
+        61.0,
+        0.0,
+        43.4
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_patrol_car_02",
+      "kind": "item",
+      "key": "patrol_car",
+      "code": "decor_patrol_car",
+      "forSale": false,
+      "position": [
+        61.0,
+        0.0,
+        46.0
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_bike_rack_01",
+      "kind": "item",
+      "key": "bike_rack",
+      "code": "decor_bike_rack",
+      "forSale": false,
+      "position": [
+        80.5,
+        0.0,
+        26.5
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "police_parking_barrier_01",
+      "kind": "item",
+      "key": "parking_barrier",
+      "code": "decor_parking_barrier",
+      "forSale": false,
+      "position": [
+        66.0,
+        0.0,
+        38.4
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    }
+  ],
+  "areas": []
+}

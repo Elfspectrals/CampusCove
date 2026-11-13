@@ -25,6 +25,12 @@ function fakePlayer(sessionId: string, x: number, z: number, ry = 0): Player {
     lastPunchAt: 0,
     stamina: MAX_STAMINA,
     staminaSpentAt: 0,
+    accountId: sessionId.charCodeAt(0),
+    wantedStars: 0,
+    wantedDecayMs: 0,
+    wantedDirty: false,
+    lastHitAt: new Map(),
+    lastAssaultAt: new Map(),
     heldTool: null
   } as Player
 }

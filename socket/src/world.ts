@@ -64,6 +64,23 @@ export interface WorldOrchard {
   trees: Vec3[]
 }
 
+export interface PoliceCell {
+  id: string
+  position: Vec3
+  door: Vec3
+  tap: Vec3
+  hatch: Vec3
+  bounds: Bounds
+}
+
+export interface WorldPolice {
+  cells: PoliceCell[]
+  exit: TeleportDestination
+  desk: Vec3
+  officer: Vec3
+  lockers: Vec3
+}
+
 export type Crop = 'corn' | 'potato' | 'cabbage' | 'pumpkin'
 
 export interface WorldCropPlant extends Vec3 {
@@ -95,6 +112,7 @@ interface World {
   pubZone: Bounds | null
   orchard: WorldOrchard | null
   cropPlants: WorldCropPlant[]
+  police: WorldPolice | null
   zoneBounds: Map<string, Bounds>
   storage: WorldStorage | null
 }
@@ -197,6 +215,30 @@ function parseCropPlants(raw: Json): WorldCropPlant[] {
     if (!CROPS.includes(plant?.crop)) throw new Error(`world manifest: crop plant ${i} grows unknown crop ${JSON.stringify(plant?.crop)}`)
     return { ...parseVec3(plant.position, `crop plant ${i}`), crop: plant.crop }
   })
+}
+
+function parsePolice(raw: Json, destinations: TeleportDestination[]): WorldPolice | null {
+  if (raw === undefined || raw === null) return null
+  if (!Array.isArray(raw.cells) || raw.cells.length === 0) throw new Error('world manifest: police has no cells')
+  const exit = destinations.find((d) => d.key === 'police')
+  if (!exit) throw new Error('world manifest: police section without a police building')
+  return {
+    exit,
+    desk: parseVec3(raw.desk, 'police desk'),
+    officer: parseVec3(raw.officer, 'police officer'),
+    lockers: parseVec3(raw.lockers, 'police lockers'),
+    cells: raw.cells.map((cell: Json, i: number): PoliceCell => {
+      if (typeof cell?.id !== 'string') throw new Error(`world manifest: invalid police cell ${i} ${JSON.stringify(cell)}`)
+      return {
+        id: cell.id,
+        position: parseVec3(cell.position, `position of police cell ${cell.id}`),
+        door: parseVec3(cell.door, `door of police cell ${cell.id}`),
+        tap: parseVec3(cell.tap, `tap of police cell ${cell.id}`),
+        hatch: parseVec3(cell.hatch, `hatch of police cell ${cell.id}`),
+        bounds: parseBounds(cell.bounds, `bounds of police cell ${cell.id}`)
+      }
+    })
+  }
 }
 
 function parsePub(raw: Json): WorldPub | null {
@@ -325,6 +367,7 @@ function parseWorld(manifest: Json): World {
     pubZone: parsePubZone(manifest.zones, pub),
     orchard,
     cropPlants: parseCropPlants(manifest.crops),
+    police: parsePolice(manifest.police, destinations),
     zoneBounds: new Map(manifest.zones.filter((zone: Json) => zone.bounds !== undefined).map((zone: Json) => [zone.key, parseBounds(zone.bounds, `${zone.key} zone bounds`)])),
     storage: parseStorage(manifest.storage)
   }
@@ -464,6 +507,10 @@ export function worldOrchard(): WorldOrchard | null {
 
 export function worldCropPlants(): WorldCropPlant[] {
   return loadedWorld().cropPlants
+}
+
+export function worldPolice(): WorldPolice | null {
+  return loadedWorld().police
 }
 
 export function worldZoneKeysAt(x: number, z: number): string[] {

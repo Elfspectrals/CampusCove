@@ -135,6 +135,7 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
   const sessionByUserId = new Map<string, string>()
   /** Appearance received before the avatar finished its first load. */
   const pendingAppearance = new Map<string, AppearanceUpdate>()
+  const wantedStarsBySession = new Map<string, number>()
   const upsertTokenByUserId = new Map<string, number>()
   const renderTokenBySessionId = new Map<string, number>()
   /** Eat / drink bubbles over other players' heads (they live on the avatar group). */
@@ -190,6 +191,7 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     if (sessionByUserId.get(entry.userId) === sessionId) sessionByUserId.delete(entry.userId)
     pendingAppearance.delete(sessionId)
     renderTokenBySessionId.delete(sessionId)
+    wantedStarsBySession.delete(sessionId)
   }
 
   function removeOtherSessionsOf(userId: string, keepSessionId: string) {
@@ -254,7 +256,7 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
       pseudo: data.pseudo,
       badges: shownBadges(data.badges),
       group,
-      nameTag: createNameTag(group, data.pseudo, badgeIconPaths(shownBadges(data.badges))),
+      nameTag: createNameTag(group, data.pseudo, badgeIconPaths(shownBadges(data.badges)), wantedStarsBySession.get(sessionId) ?? 0),
       voiceIcon: createVoiceIcon(group),
       voiceState: null,
       chatBubble: null,
@@ -321,7 +323,7 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     const racePint = latest.racePint ? createRacePint(group) : null
     racePint?.setProgress(latest.raceProgress)
     const heldTool = latest.heldTool ? createRemoteHeldTool(group, latest.heldTool.code) : null
-    const nameTag = createNameTag(group, latest.pseudo, badgeIconPaths(latest.badges))
+    const nameTag = createNameTag(group, latest.pseudo, badgeIconPaths(latest.badges), wantedStarsBySession.get(sessionId) ?? 0)
     const voiceIcon = createVoiceIcon(group)
     const rebuilt = { ...latest, group, nameTag, voiceIcon, chatBubble: null, outfit, punchOffsetX: 0, punchOffsetZ: 0, racePint, heldTool }
     avatars.set(sessionId, rebuilt)
@@ -350,6 +352,12 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
   function setPicking(sessionId: string, picking: boolean) {
     const entry = avatars.get(sessionId)
     if (entry) setAvatarPicking(entry.group, picking)
+  }
+
+  function setWantedStars(sessionId: string, stars: number): void {
+    if (stars > 0) wantedStarsBySession.set(sessionId, stars)
+    else wantedStarsBySession.delete(sessionId)
+    avatars.get(sessionId)?.nameTag.setStars(stars)
   }
 
   function setHeldTool(sessionId: string, code: string | null) {
@@ -410,7 +418,7 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     if (!entry) return
     entry.badges = shownBadges(codes)
     entry.nameTag.dispose()
-    entry.nameTag = createNameTag(entry.group, entry.pseudo, badgeIconPaths(entry.badges))
+    entry.nameTag = createNameTag(entry.group, entry.pseudo, badgeIconPaths(entry.badges), wantedStarsBySession.get(sessionId) ?? 0)
   }
 
   /** Drink Fast: the player races with a pint `progress` drunk (0..1), or puts it down (null). */
@@ -520,5 +528,5 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     }
   }
 
-  return { upsert, updateAppearance, setTarget, setSeated, setPicking, setHeldTool, setRacePint, setBadges, pseudoOf, positionOf, setVoiceState, players, accountOf, showAction, showChat, showPunch, showHit, remove, clear, tick }
+  return { upsert, updateAppearance, setTarget, setSeated, setPicking, setHeldTool, setRacePint, setBadges, pseudoOf, positionOf, setVoiceState, setWantedStars, players, accountOf, showAction, showChat, showPunch, showHit, remove, clear, tick }
 }

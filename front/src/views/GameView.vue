@@ -30,11 +30,15 @@ import GameLockpick from '../components/game/GameLockpick.vue'
 import GameFurnitureStorage from '../components/game/GameFurnitureStorage.vue'
 import GamePubMenu from '../components/game/GamePubMenu.vue'
 import GamePubSecretDialog from '../components/game/GamePubSecretDialog.vue'
+import GamePoliceLicenceDialog from '../components/game/GamePoliceLicenceDialog.vue'
 import GameChat from '../components/game/GameChat.vue'
 import GameDrunkEffects from '../components/game/GameDrunkEffects.vue'
 import GameDrinkFast from '../components/game/GameDrinkFast.vue'
 import GamePubChallenge from '../components/game/GamePubChallenge.vue'
 import GamePubRaceBoard from '../components/game/GamePubRaceBoard.vue'
+import GameJail from '../components/game/GameJail.vue'
+import GameCuffed from '../components/game/GameCuffed.vue'
+import GamePickpocket from '../components/game/GamePickpocket.vue'
 import GameStorageBoard from '../components/game/GameStorageBoard.vue'
 import GamePubQuizBoard from '../components/game/GamePubQuizBoard.vue'
 import GameQuiz from '../components/game/GameQuiz.vue'
@@ -81,6 +85,10 @@ import { useRespawnBed } from '../composables/game/useRespawnBed'
 import { useHouseAlarms } from '../composables/game/useHouseAlarms'
 import type { HouseFurniturePayload } from '../types/gameRealtime'
 import { useCashBags } from '../composables/game/useCashBags'
+import { useJailCell } from '../composables/game/useJailCell'
+import { useJail } from '../composables/game/useJail'
+import { usePolice } from '../composables/game/usePolice'
+import { usePickpocket } from '../composables/game/usePickpocket'
 import { useStorageAuction } from '../composables/game/useStorageAuction'
 import { useStorageWarehouse } from '../composables/game/useStorageWarehouse'
 import { useProximityVoice } from '../composables/game/useProximityVoice'
@@ -120,6 +128,7 @@ import { createHeldItem } from '../game/heldItem'
 import { COVE_HOME, COVE_THREADS, findHouse, findStore, findWork } from '../game/assets/catalog'
 import { storeBuildings, workBuildings, type WorldBounds } from '../game/world/worldManifest'
 import type { GearSlot } from '../game/wardrobeSlots'
+import type { PoliceBountyPayload, PoliceCuffCancelledPayload } from '../types/gameRealtime'
 import { createSfx } from '../game/sfx'
 import { createAmbientLoop } from '../game/ambientLoop'
 import { MAX_STAMINA } from '../game/stamina'
@@ -658,6 +667,147 @@ const storageWarehouse = useStorageWarehouse({
 watch(atmOpen, (open) => {
   if (!open && !document.pointerLockElement) requestPointerLock()
 })
+const jailCell = useJailCell({
+  myPosition,
+  getScene,
+  getCamera,
+  canvasRef,
+  gameRoomRef,
+  promptsHidden: () => inventoryOpen.value,
+  trayLabel: () => t('jail.trayPrompt'),
+  onAte: () => {
+    survival.playOneShot('eat')
+    survival.say(t('jail.trayEaten'))
+  },
+})
+const POLICE_ERROR_KEYS: Record<string, string> = {
+  police_insufficient_funds: 'police.notEnough',
+  police_account_too_new: 'police.tooNew',
+  police_licence_held: 'police.alreadyHeld',
+  police_jailed: 'police.jailed',
+  police_no_licence: 'police.noLicence',
+  police_wanted: 'police.wanted',
+  police_not_on_duty: 'police.notOnDuty',
+  police_busy: 'police.busy',
+  cuff_busy: 'police.cuffBusy',
+  cuff_too_far: 'police.cuffTooFar',
+  cuff_jailed: 'police.cuffJailed',
+  cuff_knocked_out: 'police.cuffKnockedOut',
+  cuff_already: 'police.cuffAlready',
+  cuff_moving: 'police.cuffMoving',
+}
+const CUFF_CANCEL_KEYS: Partial<Record<PoliceCuffCancelledPayload['reason'], string>> = {
+  moved: 'police.cuffCancelMoved',
+  punched: 'police.cuffCancelMoved',
+  too_far: 'police.cuffCancelTooFar',
+}
+const BOUNTY_REASON_KEYS: Record<string, string> = {
+  daily_cap: 'police.bountyCap',
+  suspect_already_paid: 'police.bountyAlreadyPaid',
+  friends: 'police.bountyFriends',
+  recent_exchange: 'police.bountyExchange',
+  suspect_too_new: 'police.bountyTooNew',
+  no_crime_stars: 'police.bountyNoCrime',
+  not_wanted: 'police.bountyNotWanted',
+}
+function bountyText({ paid, reason }: PoliceBountyPayload): string {
+  if (paid > 0) return t(reason === 'daily_cap' ? 'police.bountyPaidCapped' : 'police.bountyPaid', { paid })
+  const key = reason ? BOUNTY_REASON_KEYS[reason] : undefined
+  return key ? t(key) : t('police.bountyNone')
+}
+const police = usePolice({
+  myPosition,
+  getScene,
+  getCamera,
+  canvasRef,
+  gameRoomRef,
+  promptsHidden: () => inventoryOpen.value,
+  jailed: () => jailSentence.value !== null,
+  deskPrompt: (price) => ({ action: t('police.buyAction'), detail: t('police.buyDetail', { price }) }),
+  lockerPrompt: (onDuty, licensed) => ({
+    action: t(onDuty ? 'police.goOffDuty' : 'police.goOnDuty'),
+    detail: onDuty || licensed ? t('police.lockers') : t('police.licenceNeeded'),
+  }),
+  errorText: (error, price) => {
+    const key = POLICE_ERROR_KEYS[error.code]
+    return key ? t(key, { price: price ?? '' }) : error.message
+  },
+  say: (text) => survival.say(text),
+  onDutyStarted: () => {
+    sfx.play('door_close')
+    survival.say(t('police.onDutyStarted'))
+  },
+  onDutyEnded: (reason) => {
+    if (reason !== 'off') return
+    sfx.play('door_open')
+    survival.say(t('police.offDuty'))
+  },
+  onLicenceBought: () => survival.say(t('police.bought')),
+  onLicenceLost: () => survival.say(t('police.licenceLost')),
+  pseudoOf: (sessionId) => realtime.remotePseudo(sessionId) ?? '…',
+  cuffPrompt: (pseudo) => ({ action: t('police.cuffAction', { pseudo }), detail: t('police.cuffDetail') }),
+  uncuffPrompt: (pseudo) => ({ action: t('police.uncuffAction', { pseudo }) }),
+  lockUpPrompt: (pseudo) => ({ action: t('police.lockUpAction', { pseudo }), detail: t('police.lockUpDetail') }),
+  releasePrompt: () => ({ action: t('police.releaseAction'), detail: t('police.releaseDetail') }),
+  onCuffStarted: (role) => {
+    if (role === 'suspect') survival.say(t('police.beingCuffed'))
+  },
+  onCuffCancelled: (role, reason) => {
+    const key = role === 'officer' ? CUFF_CANCEL_KEYS[reason] : undefined
+    if (key) survival.say(t(key))
+  },
+  onCuffs: (role, { cuffed, reason }) => {
+    if (role === 'suspect') survival.say(t(cuffed ? 'police.youAreCuffed' : 'police.youAreFree'))
+    else if (cuffed) survival.say(t('police.cuffed'))
+    else if (reason !== 'cell' && reason !== 'uncuffed') survival.say(t('police.escortEnded'))
+  },
+  onBounty: (data) => survival.say(bountyText(data)),
+})
+const { cuffedBy: policeCuffedBy, onDuty: policeOnDuty, confirmOpen: policeConfirmOpen, buying: policeBuying, error: policeError, price: policePrice } = police
+watch(policeConfirmOpen, (open) => {
+  if (!open && !document.pointerLockElement) requestPointerLock()
+})
+const PICKPOCKET_ERROR_KEYS = new Set([
+  'pickpocket_on_duty',
+  'pickpocket_jailed',
+  'pickpocket_cuffed',
+  'pickpocket_knocked_out',
+  'pickpocket_victim_jailed',
+  'pickpocket_position',
+  'pickpocket_account_too_new',
+  'pickpocket_victim_too_new',
+  'pickpocket_cooldown',
+  'pickpocket_victim_recent',
+  'pickpocket_inventory_full',
+  'pickpocket_item_gone',
+])
+const pickpocket = usePickpocket({
+  myPosition,
+  getScene,
+  getCamera,
+  canvasRef,
+  gameRoomRef,
+  promptsHidden: () => inventoryOpen.value,
+  blocked: () => !canUsePub() || jailSentence.value !== null || policeOnDuty.value || policeCuffedBy.value !== null,
+  pseudoOf: (sessionId) => realtime.remotePseudo(sessionId) ?? '…',
+  prompt: (pseudo) => ({ action: t('pickpocket.action', { pseudo }), detail: t('pickpocket.detail') }),
+  say: (text) => survival.say(text),
+  failedText: (reason) => t(`pickpocket.failed.${reason}`),
+  succeededText: (witnessed) => t(witnessed ? 'pickpocket.succeededSeen' : 'pickpocket.succeeded'),
+  takenText: ({ name, quantity }) => t('pickpocket.taken', { name, quantity }),
+  lootClosedText: () => t('pickpocket.lootClosed'),
+  alertText: ({ kind, thiefPseudo, victimPseudo }) => {
+    if (kind === 'witness') return t('pickpocket.alertWitness', { thief: thiefPseudo, victim: victimPseudo })
+    return t(kind === 'seen' ? 'pickpocket.alertSeen' : 'pickpocket.alertFailed', { thief: thiefPseudo })
+  },
+  missingText: ({ name, quantity, thiefPseudo }) =>
+    thiefPseudo ? t('pickpocket.missingBy', { name, quantity, thief: thiefPseudo }) : t('pickpocket.missing', { name, quantity }),
+  errorText: (error) => (PICKPOCKET_ERROR_KEYS.has(error.code) ? t(`pickpocket.errors.${error.code}`) : error.message),
+  onInventoryChanged: () => refreshOwnedItems(),
+  onStopped: () => sfx.play('whoosh'),
+  onCaught: () => sfx.play('impact'),
+})
+const { game: pickpocketGame, loot: pickpocketLoot } = pickpocket
 const farm = useFarm({
   myPosition,
   getCamera,
@@ -668,6 +818,7 @@ const farm = useFarm({
   say: (text) => survival.say(text),
 })
 const pickBar = computed(() => {
+  if (police.cuffProgress.value !== null) return { progress: police.cuffProgress.value, label: t('police.cuffing') }
   if (orchardPickProgress.value !== null) return { progress: orchardPickProgress.value, label: 'Picking an apple…' }
   if (farm.pickProgress.value !== null) return { progress: farm.pickProgress.value, label: farm.pickLabel.value }
   return null
@@ -712,7 +863,7 @@ const interactions = useInteractionTargets({
     if (activeFurniture.value?.store.hasCounter.value) activeFurniture.value.store.toggleTarget(useWithShift)
     else openStorePurchase()
   },
-  sources: [pub.source, pubQuiz.source, pubChallenge.source, pubGames.source, seats.source, orchard.source, farm.source, zoneBuyers.source, atm.source, storage.source, respawnBed.source, cashBags.source, storageAuction.source],
+  sources: [pub.source, pubQuiz.source, pubChallenge.source, pubGames.source, seats.source, orchard.source, farm.source, zoneBuyers.source, atm.source, storage.source, respawnBed.source, cashBags.source, storageAuction.source, jailCell.source, police.source, pickpocket.source],
 })
 const { doorPrompt } = interactions
 
@@ -796,6 +947,7 @@ function adminSummon(sessionId: string): void {
 // ---------------------------------------------------------------- survival: hunger, thirst, health
 
 const stamina = ref(MAX_STAMINA)
+const wantedStars = ref(0)
 const survival = useSurvival({
   gameRoomRef,
   getScene,
@@ -835,6 +987,8 @@ const survival = useSurvival({
     if (watchMenuOpen.value) trade.closeMenu()
     else if (pointerLocked.value && !inventoryOpen.value) trade.openMenu()
   },
+  cellTap: () => jailCell.tap(),
+  cellTapPrompt: () => ({ action: t('jail.tapAction'), detail: t('jail.tapDetail') }),
 })
 const {
   prompt: survivalPrompt,
@@ -842,12 +996,24 @@ const {
   damageFlash,
   knockedOut,
   knockoutCause,
+  knockedOutToJail,
   hospitalBill,
+  jailTax,
   lostBelongings,
   message: survivalMessage,
   reducedEffects,
   recovering,
 } = survival
+
+const jail = useJail({
+  gameRoomRef,
+  onReleased: ({ reason, fine }) => {
+    jailCell.clear()
+    if (reason === 'released') survival.say(t('jail.releasedByOfficer'))
+    else survival.say(reason === 'served' ? t('jail.served') : t('jail.paid', { fine }))
+  },
+})
+const { sentence: jailSentence, error: jailError, paying: jailPaying } = jail
 
 const intoxication = useIntoxication({ reducedEffects })
 const { effects: drunkEffects, canvasFilter: drunkCanvasFilter } = intoxication
@@ -1006,6 +1172,8 @@ const environment = useRoomEnvironment({
     }
     survival.onTownLoaded(manifest)
     clinic.onTownLoaded(manifest)
+    jailCell.onTownLoaded(manifest)
+    police.onTownLoaded(manifest)
     seats.onTownLoaded(manifest)
     pub.onTownLoaded(manifest)
     pubQuiz.onTownLoaded(manifest)
@@ -1182,6 +1350,7 @@ function handleExtraKeyDown(e: KeyboardEvent): boolean {
   if (minimap.onKeyDown(e)) return true
   if (houseKeys.onKeyDown(e)) return true
   if (survival.onKeyDown(e)) return true
+  if (pickpocket.onKeyDown(e)) return true
   if (runUseOrPunch(e.code, e.repeat, e.shiftKey)) return true
   if (matches('characterEditor', e.code) && !e.repeat) {
     void openCharacterEditor()
@@ -1258,7 +1427,7 @@ const movement = useGameMovement({
     return pointerLocked.value && runUseOrPunch(mouseButtonCode(e.button), false, e.shiftKey)
   },
   speedFactor: () => survival.speedFactor() * intoxication.walkFactor(),
-  movementLocked: () => seats.seated.value,
+  movementLocked: () => seats.seated.value || police.cuffedBy.value !== null,
   afterCameraPlaced: intoxication.applyToCamera,
   trySpendJump: () => punch.trySpendJump(),
   trySpendSprint: (dt, wasSprinting) => punch.trySpendSprint(dt, wasSprinting),
@@ -1295,6 +1464,7 @@ const movement = useGameMovement({
     tutorialMarker.tick()
     tutorialHints.tick()
     farm.tick()
+    police.tick()
     if (!doorSigns.group.parent) getScene()?.add(doorSigns.group)
     minimap.tick()
     gps.tick()
@@ -1379,9 +1549,13 @@ const realtime = useGameRealtime({
     sfx.playOn(`door_${sound}`, node)
     if (sound === 'rattle') rattleFrontDoor(door)
   },
-  onMyOutfit: (models) => arms?.setTop(models.top),
+  onMyOutfit: (models) => {
+    if (!policeOnDuty.value) arms?.setTop(models.top)
+  },
+  onMyShownTop: (top) => arms?.setTop(top),
   onPunched: punch.onPunched,
   onPunchTired: punch.onTired,
+  onMyWanted: (stars) => (wantedStars.value = stars),
   playSoundOn: sfx.playOn,
   punchHitTiming: punch.remoteHitTimingFor,
   trade: trade.handlers,
@@ -1422,6 +1596,9 @@ const realtime = useGameRealtime({
   storage: storage.handlers,
   bed: respawnBed.handlers,
   cashBags: cashBags.handlers,
+  jail: { ...jail.handlers, onTray: jailCell.onTray },
+  police: police.handlers,
+  pickpocket: pickpocket.handlers,
   storageAuction: {
     ...storageAuction.handlers,
     onOpened: (data) => {
@@ -1595,6 +1772,12 @@ const crosshairClass = computed(() => {
       :knocked-out="knockedOut"
       :cause="knockoutCause"
       :hospital-bill="hospitalBill"
+      :jail-text="knockedOutToJail ? t('jail.takenAway') : null"
+      :jail-bill-text="
+        knockedOutToJail && hospitalBill !== null && hospitalBill + jailTax > 0
+          ? t('jail.deathBill', { hospital: hospitalBill, tax: jailTax, total: hospitalBill + jailTax })
+          : null
+      "
       :lost-belongings="lostBelongings"
       :message="survivalMessage"
       :recovering="recovering"
@@ -1722,6 +1905,8 @@ const crosshairClass = computed(() => {
       :heal-until="survival.healUntil.value"
       :stamina="stamina"
       :reduced-effects="reducedEffects"
+      :wanted-stars="wantedStars"
+      :on-duty="policeOnDuty"
     />
     <GamePlayerHotbar
       :slots="slots"
@@ -1953,6 +2138,14 @@ const crosshairClass = computed(() => {
     <p v-if="voice.talking.value" class="cc-hud pointer-events-none absolute bottom-48 left-4 z-[30] m-0 flex items-center gap-2 px-3 py-1.5 text-sm font-bold text-fog" role="status">
       <span class="size-2.5 animate-pulse rounded-full bg-coral" />{{ t('voice.live') }}
     </p>
+    <GamePoliceLicenceDialog
+      v-if="policeConfirmOpen && policePrice !== null"
+      :price="policePrice"
+      :buying="policeBuying"
+      :error="policeError"
+      @confirm="police.confirmBuy"
+      @close="police.closeConfirm"
+    />
     <GamePubSecretDialog
       v-if="pubSecretOpen"
       :greeting="pub.bouncerGreeting"
@@ -1973,6 +2166,9 @@ const crosshairClass = computed(() => {
       @close="closePubRace"
     />
     <GamePubRaceBoard v-if="pubRaceBoard" :board="pubRaceBoard" />
+    <GameJail v-if="jailSentence && !knockedOut" :sentence="jailSentence" :error="jailError" :paying="jailPaying" @pay="jail.pay" />
+    <GameCuffed v-if="policeCuffedBy && !knockedOut" :officer="realtime.remotePseudo(policeCuffedBy) ?? '…'" />
+    <GamePickpocket v-if="!knockedOut" :game="pickpocketGame" :loot="pickpocketLoot" @take="pickpocket.take" />
     <GameStorageBoard v-if="storageBoard" :board="storageBoard" />
     <GamePubQuizBoard v-if="pubQuizBoard" :board="pubQuizBoard" />
     <GameQuiz
