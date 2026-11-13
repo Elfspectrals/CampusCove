@@ -9,7 +9,7 @@ import { fetchCollisionFile, setPropBlocker } from '../../game/collision/worldCo
 import { ANIMALS_URL, animalPose, type AnimalClip, type AnimalDef } from '../../game/animals/animals.ts'
 import { itemModelUrl, type AnimalProp, type ItemProp, type MannequinProp, type NpcProp, type ShelfProp, type StaffRole, type Vec3 } from '../../game/mallTemplates/mallTemplate.ts'
 import { npcStateId } from '../../game/npcBehavior/npcBehavior.ts'
-import { lighterStock, shelfUnits } from '../../game/shelves/shelves.ts'
+import { shelfUnits } from '../../game/shelves/shelves.ts'
 import { getGraphicsQuality } from '../../game/graphicsQuality'
 import { animals, createAnimal, createPropObject, modelSize, npcColors, placeProp, type AnimalRig } from '../../game/mallTemplates/templateProps'
 import { configureRoomMeshShadows, normalizeRoomMaterials } from '../../game/sceneLighting'
@@ -161,7 +161,7 @@ export function useZoneDecor(deps: ZoneDecorDeps) {
   }
 
   async function addShelf(zone: string, group: THREE.Group, shelf: ShelfProp, store: ZoneStore | null): Promise<void> {
-    const object = await createPropObject(getGraphicsQuality() === 'low' ? lighterStock(shelf) : shelf)
+    const object = await createPropObject(shelf, { lowDetail: getGraphicsQuality() === 'low' })
     if (disposed) return disposeObject3D(object)
     configureRoomMeshShadows(object)
     normalizeRoomMaterials(object, 'city')

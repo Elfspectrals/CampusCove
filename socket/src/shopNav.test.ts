@@ -47,7 +47,7 @@ test('in GreenCart, walks between shelf spots and to the checkout never cut thro
   const { spots, checkout } = shopLayout(decor)
   const depth: Record<string, number> = { gondola: 0.9, wall: 0.45, fridge: 0.75, chiller: 0.9 }
   const shelves = decor.props.filter((p: { kind: string }) => p.kind === 'shelf').map((p: { position: number[]; yaw?: number; length: number; shelf: string }) => ({ position: p.position, yaw: p.yaw ?? 0, length: p.length, depth: depth[p.shelf]! }))
-  const targets = [...spots.filter((_, i) => i % 9 === 0).map((s) => s.stand), checkout!.stand]
+  const targets = [...spots.filter((_, i) => i % 7 === 0).map((s) => s.stand), checkout!.stand]
   let routes = 0
   for (const from of targets) {
     for (const to of targets) {

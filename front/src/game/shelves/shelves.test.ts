@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { MAX_SLOT_COPIES, SHELF_KIT, lighterStock, shelfPieces, shelfUnits, slotBoxes, slotCapacity, slotCopies, emptySlotCube, EMPTY_SLOT_COLORS, type ShelfArrange, type SlotCopy } from './shelves.ts'
+import { MAX_SLOT_COPIES, SHELF_KIT, lowDetailCopies, shelfPieces, shelfUnits, slotBoxes, slotCapacity, slotCopies, emptySlotCube, EMPTY_SLOT_COLORS, type ShelfArrange, type SlotCopy } from './shelves.ts'
 import type { Vec3 } from '../mallTemplates/mallTemplate.ts'
 
 const gondola = { shelf: 'gondola', length: 3, levels: 4, slots: 2 } as const
@@ -124,8 +124,16 @@ test('messy is seeded: the same slot always looks the same, and it differs from 
   assert.ok(knocked > 40 && knocked < 160, `${knocked} of 600 knocked over`)
 })
 
-test('the low quality shelf shows half the copies of each slot, never an empty one', () => {
-  const fill = { '0.0.0': { code: 'grocery_apple', key: 'apple', price: 2, count: 7, arrange: 'rows' as const }, '0.1.0': { code: 'grocery_apple', key: 'apple', price: 2, count: 1, arrange: 'front' as const } }
-  assert.deepEqual(Object.values(lighterStock({ fill }).fill).map((slot) => slot.count), [4, 1])
-  assert.equal(fill['0.0.0'].count, 7)
+test('the low quality shelf keeps the front row of a packed slot, half of a messy one, never an empty slot', () => {
+  const full = (arrange: ShelfArrange) => slotCopies(box, can, slotCapacity(box, can, arrange), arrange, 'seed')
+  const columns = slotCapacity(box, can, 'front')
+  for (const arrange of ['rows', 'front'] as const) {
+    const kept = lowDetailCopies(full(arrange), arrange)
+    assert.equal(kept.length, columns, arrange)
+    assert.ok(kept.every((c) => c.position[2] === kept[0]!.position[2]), `${arrange}: one row`)
+  }
+  const stack = lowDetailCopies(full('stack'), 'stack')
+  assert.ok(stack.length >= columns && stack.length < full('stack').length, 'stack: the front pyramid')
+  assert.equal(lowDetailCopies(full('messy'), 'messy').length, Math.ceil(full('messy').length / 2))
+  assert.equal(lowDetailCopies(slotCopies(box, can, 1, 'rows', 's'), 'rows').length, 1)
 })

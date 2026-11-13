@@ -6,6 +6,7 @@ use App\Models\ItemDef;
 use App\Services\AccountInventoryService;
 use App\Services\OrchardService;
 use App\Services\ZonePriceBook;
+use App\Support\FoodCatalog;
 use App\Support\SaleCurve;
 use Database\Seeders\ShopSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -107,6 +108,33 @@ class ZoneShopApiTest extends TestCase
             ->assertForbidden()
             ->assertJsonPath('code', 'realtime_only');
         $this->assertSame(100, $this->balance($player['account_id']));
+    }
+
+    public function test_nothing_a_shop_sells_can_be_sold_back_to_a_buyer_for_more(): void
+    {
+        $buyerPrice = [];
+        $shopPrice = [];
+        foreach (glob(resource_path('zones/*.json')) as $file) {
+            $zone = json_decode((string) file_get_contents($file), true);
+            foreach ($zone['buyers'] ?? [] as $offers) {
+                foreach ($offers as $code => $offer) {
+                    $buyerPrice[$code] = max($buyerPrice[$code] ?? 0, (int) $offer['price']);
+                }
+            }
+            foreach ($zone['prices'] ?? [] as $code => $price) {
+                $shopPrice[$code] = min($shopPrice[$code] ?? PHP_INT_MAX, (int) $price);
+            }
+        }
+        foreach (FoodCatalog::items() as $food) {
+            if ($food['price'] !== null) {
+                $shopPrice[$food['code']] = min($shopPrice[$food['code']] ?? PHP_INT_MAX, $food['price']);
+            }
+        }
+
+        foreach (array_intersect_key($buyerPrice, $shopPrice) as $code => $paid) {
+            $this->assertGreaterThan($paid, $shopPrice[$code], "$code is sold for {$shopPrice[$code]} and bought back for $paid");
+        }
+        $this->assertArrayHasKey('farm_corn', array_intersect_key($buyerPrice, $shopPrice), 'GreenCart sells the farm crops the stand buys');
     }
 
     public function test_every_committed_zone_price_list_is_valid(): void

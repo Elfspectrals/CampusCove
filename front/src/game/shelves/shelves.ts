@@ -288,6 +288,13 @@ export function slotCopies(box: Vec3, size: Vec3, count: number, arrange: ShelfA
   return rowCopies(box, size, count)
 }
 
-export function lighterStock<P extends Pick<ShelfProp, 'fill'>>(shelf: P): P {
-  return { ...shelf, fill: Object.fromEntries(Object.entries(shelf.fill).map(([key, slot]) => [key, { ...slot, count: Math.ceil(slot.count / 2) }])) }
+/**
+ * Low graphics tier: a slot packed in depth keeps only its front-most row (what the aisle sees), so a full shelf
+ * still reads as full for far fewer copies; a messy slot, with no rows, keeps every other copy.
+ */
+export function lowDetailCopies(copies: SlotCopy[], arrange: ShelfArrange): SlotCopy[] {
+  if (copies.length <= 1) return copies
+  if (arrange === 'messy') return copies.filter((_, i) => i % 2 === 0)
+  const front = Math.max(...copies.map((c) => c.position[2]))
+  return copies.filter((c) => c.position[2] > front - EPS)
 }

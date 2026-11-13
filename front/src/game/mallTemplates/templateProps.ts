@@ -13,7 +13,7 @@ import { applyLook, type OwnParts } from './templateSurfaces'
 import { CROPS_URL, fieldPlantsLocal, parseCrops, type CropTable } from '../crops/crops.ts'
 import { ANIMALS_URL, ANIMAL_CLIPS, animalModelUrl, parseAnimals, type AnimalClip, type AnimalTable } from '../animals/animals.ts'
 import { BUILDINGS_URL, buildingPreviewKey, parseBuildings, type BuildingTable } from '../buildings/buildings.ts'
-import { shelfPieces, slotBoxes, slotCopies, emptySlotCube, type SlotBox, type SlotCopy } from '../shelves/shelves.ts'
+import { shelfPieces, slotBoxes, slotCopies, emptySlotCube, lowDetailCopies, type SlotBox, type SlotCopy } from '../shelves/shelves.ts'
 import { itemModelUrl, parseDecorParts, type AnimalProp, type BuildingProp, type DecorProp, type FieldProp, type MaskedParts, type LightProp, type MannequinProp, type NpcProp, type ShelfProp, type TemplateProp, type Vec3 } from './mallTemplate.ts'
 
 const STACK_GAP = 0.02
@@ -384,17 +384,18 @@ export function instancedParts(model: THREE.Object3D, placements: readonly THREE
   return parts
 }
 
-function filledSlot(prop: ShelfProp, box: SlotBox, size: Vec3): SlotCopy[] {
+function filledSlot(prop: ShelfProp, box: SlotBox, size: Vec3, lowDetail: boolean): SlotCopy[] {
   const fill = prop.fill[box.key]!
   try {
-    return slotCopies(box.size, size, fill.count, fill.arrange, `${prop.id}#${box.key}`)
+    const copies = slotCopies(box.size, size, fill.count, fill.arrange, `${prop.id}#${box.key}`)
+    return lowDetail ? lowDetailCopies(copies, fill.arrange) : copies
   } catch (error) {
     if (error instanceof RangeError) throw new RangeError(`slot ${box.key} (${fill.code}): ${error.message}`)
     throw error
   }
 }
 
-async function createShelf(prop: ShelfProp): Promise<THREE.Group> {
+async function createShelf(prop: ShelfProp, lowDetail: boolean): Promise<THREE.Group> {
   const group = new THREE.Group()
   const pieces = shelfPieces(prop)
   const kit = new Map(await Promise.all([...new Set(pieces.map((p) => p.key))].map(async (key) => [key, await modelTemplate(decorModelUrl(key))] as const)))
@@ -419,7 +420,7 @@ async function createShelf(prop: ShelfProp): Promise<THREE.Group> {
     for (const box of filled) {
       const [x, y, z] = box.center
       const slotMatrix = placement([x, y - box.size[1] / 2, z], new THREE.Euler(0, box.yaw, 0), [1, 1, 1])
-      for (const { position, yaw, tipped } of filledSlot(prop, box, size)) {
+      for (const { position, yaw, tipped } of filledSlot(prop, box, size, lowDetail)) {
         placements.push(slotMatrix.clone().multiply(placement(position, new THREE.Euler(0, yaw, tipped ? Math.PI / 2 : 0), [1, 1, 1])))
         slotOfCopy.push(box.key)
       }
@@ -433,8 +434,9 @@ async function createShelf(prop: ShelfProp): Promise<THREE.Group> {
   return group
 }
 
-export async function createPropObject(prop: TemplateProp): Promise<THREE.Object3D> {
-  if (prop.kind === 'shelf') return createShelf(prop)
+/** `lowDetail`: the low graphics tier (a shelf draws only the front row of each slot). */
+export async function createPropObject(prop: TemplateProp, { lowDetail = false } = {}): Promise<THREE.Object3D> {
+  if (prop.kind === 'shelf') return createShelf(prop, lowDetail)
   if (prop.kind === 'field') return createField(prop)
   if (prop.kind === 'building') return createBuilding(prop)
   if (prop.kind === 'animal') return createAnimalPen(prop)

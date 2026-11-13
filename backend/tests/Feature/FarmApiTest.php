@@ -75,14 +75,15 @@ class FarmApiTest extends TestCase
         $this->assertNull($this->hotbarItem($player['token'], 'farm_apple'));
     }
 
-    public function test_crops_are_not_sold_in_any_shop(): void
+    /** GreenCart sells the crops (decided 2026-11-12), always above what the farm stand pays (ZoneShopApiTest). */
+    public function test_crops_are_sold_in_the_shop_with_their_farm_model(): void
     {
         $codes = collect($this->getJson('/api/shop/items')->assertOk()->json('items'))
             ->map(fn (array $row) => $row['item']['code'])
             ->all();
 
         foreach (FarmService::CROPS as $crop => $code) {
-            $this->assertNotContains($code, $codes);
+            $this->assertContains($code, $codes);
             $this->assertSame("/assets/items/farm/{$crop}/model.glb", ItemDef::query()->where('code', $code)->value('model_glb'));
         }
     }
