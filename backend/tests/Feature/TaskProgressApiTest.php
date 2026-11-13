@@ -203,6 +203,8 @@ class TaskProgressApiTest extends TestCase
                 ['task' => 'darts', 'value' => 0, 'tiers' => [10, 50, 200], 'reached' => []],
                 ['task' => 'sharp_eye', 'value' => 0, 'tiers' => [1, 10, 50], 'reached' => []],
                 ['task' => 'gourmet', 'value' => 0, 'tiers' => [5, 15, 30], 'reached' => []],
+                ['task' => 'explorer', 'value' => 0, 'tiers' => [5, 10, 15], 'reached' => []],
+                ['task' => 'loyal', 'value' => 0, 'tiers' => [7, 30, 100], 'reached' => []],
             ]]);
     }
 
@@ -238,6 +240,42 @@ class TaskProgressApiTest extends TestCase
 
         $this->assertSame(2, $this->counter($player['account_id'], ActionCounter::FoodsTasted));
         $this->assertSame(5, $this->counter($player['account_id'], ActionCounter::FoodEaten));
+    }
+
+    public function test_each_zone_counts_once_for_the_explorer(): void
+    {
+        $player = $this->registerAndCreditWallet(0, 'cash');
+        $headers = $this->auth($player['token'], self::SECRET);
+
+        foreach (['orchard', 'orchard', 'greencart', 'mall'] as $zone) {
+            $this->postJson('/api/tasks/zone-visited', ['zone' => $zone], $headers)->assertOk();
+        }
+        $this->postJson('/api/tasks/zone-visited', ['zone' => 'Orchard!'], $headers)->assertStatus(422);
+
+        $this->assertSame(3, $this->counter($player['account_id'], ActionCounter::ZonesVisited));
+    }
+
+    public function test_an_active_day_counts_once_per_day_in_paris(): void
+    {
+        $player = $this->registerAndCreditWallet(0, 'cash');
+        $headers = $this->auth($player['token'], self::SECRET);
+
+        $this->travelTo(now()->parse('2026-11-13 22:30:00', 'UTC'));
+        $this->postJson('/api/tasks/active-day', [], $headers)->assertOk();
+        $this->postJson('/api/tasks/active-day', [], $headers)->assertOk();
+        $this->assertSame(1, $this->counter($player['account_id'], ActionCounter::ActiveDays));
+
+        $this->travelTo(now()->parse('2026-11-13 23:00:00', 'UTC'));
+        $this->postJson('/api/tasks/active-day', [], $headers)->assertOk();
+        $this->assertSame(2, $this->counter($player['account_id'], ActionCounter::ActiveDays));
+    }
+
+    public function test_activity_routes_need_the_realtime_server(): void
+    {
+        $player = $this->registerAndCreditWallet(0, 'cash');
+
+        $this->postJson('/api/tasks/zone-visited', ['zone' => 'orchard'], $this->auth($player['token']))->assertForbidden();
+        $this->postJson('/api/tasks/active-day', [], $this->auth($player['token']))->assertForbidden();
     }
 
     private function counter(int $accountId, ActionCounter $counter): int

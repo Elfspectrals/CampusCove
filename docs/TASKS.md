@@ -20,6 +20,8 @@ Laravel owns every counter. A counter counts one real action, bumped by the serv
 | `atm_deposits` | one deposit at an ATM, whatever the amount; a replayed `ref` counts nothing | `BankService::deposit` |
 | `darts_played` | one finished darts game, for each player, even while its coin reward is on cooldown | `PubService::reward` |
 | `darts_duels_80` | one finished darts game against other players (placement 1 or more) with 80 points or more, won or lost; solo games do not count | `PubService::reward` |
+| `zones_visited` | one zone entered for the first time: a zone of the world manifest with bounds or a shop zone (`zones/index.json` with a parent); a shop inside the mall also counts the mall. New zones count without a change | socket `taskTracking.ts` on every accepted move, then `POST /tasks/zone-visited` (realtime) `{ zone: [a-z0-9_]{1,40} }` |
+| `active_days` | one day (midnight to midnight, Europe/Paris) with 10 active minutes; a minute is a 60 s window, counted from the player's first move, in which the player walked at least 2 m (accepted moves only). Kept per account in the socket's memory, so a restart of the socket loses the minutes of the day | socket `taskTracking.ts`, then `POST /tasks/active-day` (realtime, no body); Laravel picks the date |
 | `foods_tasted` | one food or drink tasted for the first time (any group of `FoodCatalog` but `medical`), once per item code | `SurvivalService::consume` |
 
 ## Tiers
@@ -35,6 +37,8 @@ Every task lives in `App\Support\TaskCatalog`: a key, the counter it reads and i
 | `darts` | `darts_played` | 10 / 50 / 200 |
 | `sharp_eye` | `darts_duels_80` | 1 / 10 / 50 |
 | `gourmet` | `foods_tasted` | 5 / 15 / 30 (fixed, so it does not move when foods are added) |
+| `explorer` | `zones_visited` | 5 / 10 / 15 (fixed, 16 places today) |
+| `loyal` | `active_days` | 7 / 30 / 100 |
 
 ## Notification
 

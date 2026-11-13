@@ -11,4 +11,6 @@ enum ActionCounter: string
     case DartsPlayed = 'darts_played';
     case DartsDuels80 = 'darts_duels_80';
     case FoodsTasted = 'foods_tasted';
+    case ZonesVisited = 'zones_visited';
+    case ActiveDays = 'active_days';
 }

@@ -14,6 +14,8 @@ final class TaskCatalog
             'darts' => ['counter' => ActionCounter::DartsPlayed, 'tiers' => [10, 50, 200]],
             'sharp_eye' => ['counter' => ActionCounter::DartsDuels80, 'tiers' => [1, 10, 50]],
             'gourmet' => ['counter' => ActionCounter::FoodsTasted, 'tiers' => [5, 15, 30]],
+            'explorer' => ['counter' => ActionCounter::ZonesVisited, 'tiers' => [5, 10, 15]],
+            'loyal' => ['counter' => ActionCounter::ActiveDays, 'tiers' => [7, 30, 100]],
         ];
     }
 

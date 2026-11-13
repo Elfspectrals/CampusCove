@@ -91,6 +91,7 @@ import type {
 } from './types.ts'
 import { citySpawn, workDoor } from './world.ts'
 import { sendTaskTierReached, type TaskTierReached } from './tasks.ts'
+import { onTaskMove } from './taskTracking.ts'
 
 function warn(context: string, error: unknown): void {
   console.warn(`[colyseus] ${context}:`, error instanceof Error ? error.message : error)
@@ -282,6 +283,7 @@ export class CityRoom extends Room implements GameRoom {
     this.broadcastMove(client, player)
     checkTradeDistance(this, player)
     onSurvivalMove(this, client, player, previousY, distXZ)
+    onTaskMove(player, distXZ, now)
   }
 
   broadcastMove(client: GameClient, player: Player): void {

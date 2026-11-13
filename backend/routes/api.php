@@ -96,6 +96,8 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
         Route::post('/bank/withdraw', [BankController::class, 'withdraw']);
         Route::post('/bank/transfer', [BankController::class, 'transfer']);
         Route::post('/cash-drops/{id}/pick', [CashDropController::class, 'pick'])->whereNumber('id');
+        Route::post('/tasks/zone-visited', [TaskController::class, 'zoneVisited']);
+        Route::post('/tasks/active-day', [TaskController::class, 'activeDay']);
     });
     Route::get('/bank', [BankController::class, 'show']);
     Route::get('/tasks', [TaskController::class, 'index']);
