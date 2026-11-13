@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\ActionCounter;
 use App\Exceptions\PubRejectedException;
 use App\Models\EconomyTransaction;
 use App\Models\ItemDef;
@@ -21,9 +22,13 @@ final class PubService
 
     public const REWARD_COOLDOWN_SECONDS = 60;
 
+    public const DARTS_BONUS_SCORE = 80;
+
     public function __construct(
         private readonly AccountInventoryService $inventory,
         private readonly CoinRewardService $coinRewards,
+        private readonly ActionCounterService $counters,
+        private readonly PlayerActivityService $activity,
     ) {}
 
     /** @return array{code: string, price: int, balance_after: int} */
@@ -40,6 +45,8 @@ final class PubService
         return DB::transaction(function () use ($accountId, $def, $price): array {
             $balance = $this->debit($accountId, $price, 'pub_order', ['code' => $def->code]);
             $this->inventory->grantItem($accountId, $def, 1);
+            $this->activity->basketPaid($accountId, 'pub', []);
+            $this->activity->pubOrder($accountId);
 
             return ['code' => (string) $def->code, 'price' => $price, 'balance_after' => $balance];
         });
@@ -74,6 +81,15 @@ final class PubService
 
         return DB::transaction(function () use ($accountId, $game, $placement, $score, $coins, $reason): array {
             $wallet = Wallet::lockForAccount($accountId, Wallet::CASH);
+            if ($game === 'darts') {
+                $this->counters->bump($accountId, ActionCounter::DartsPlayed);
+            }
+            if ($game === 'darts' && $placement > 0 && $score >= self::DARTS_BONUS_SCORE) {
+                $this->counters->bump($accountId, ActionCounter::DartsDuels80);
+            }
+            if (in_array($game, ['darts', 'drink_fast'], true) && $placement === 1) {
+                $this->counters->bump($accountId, ActionCounter::DuelsWon);
+            }
             if ($this->cooldownSecondsLeft($wallet, $reason) > 0) {
                 return ['coins' => 0, 'cooldown' => true, 'balance_after' => $wallet->balance()];
             }
@@ -96,7 +112,7 @@ final class PubService
             },
             'meter_shot' => $score < 6000 ? 30 : ($score < 9000 ? 15 : 0),
             'darts' => match ($placement) {
-                1 => 30 + ($score >= 80 ? 20 : 0),
+                1 => 30 + ($score >= self::DARTS_BONUS_SCORE ? 20 : 0),
                 0 => $score >= 45 ? 10 : 0,
                 default => 0,
             },

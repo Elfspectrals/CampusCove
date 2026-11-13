@@ -63,6 +63,8 @@ import type {
   ZoneSellErrorPayload,
   ZoneSoldPayload,
   AtmDonePayload,
+  TaskDonePayload,
+
   LockpickErrorPayload,
   LockpickPinPayload,
   LockpickResultPayload,
@@ -220,6 +222,9 @@ export interface GameRealtimeDeps {
   farm: {
     onPicked: (data: FarmPickedPayload) => void
     onError: (data: FarmErrorPayload) => void
+  }
+  tasks: {
+    onDone: (data: TaskDonePayload) => void
   }
 }
 
@@ -382,6 +387,8 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('zone_sell_error', (data: ZoneSellErrorPayload) => deps.zoneBuyers.onError(data))
     room.onMessage('atm_done', (data: AtmDonePayload) => deps.atm.onDone(data))
     room.onMessage('atm_error', (data: AtmErrorPayload) => deps.atm.onError(data))
+    room.onMessage('task_done', (data: TaskDonePayload) => deps.tasks.onDone(data))
+
     room.onMessage('lockpick_pin', (data: LockpickPinPayload) => deps.lockpick.onPin(data))
     room.onMessage('lockpick_result', (data: LockpickResultPayload) => deps.lockpick.onResult(data))
     room.onMessage('lockpick_error', (data: LockpickErrorPayload) => deps.lockpick.onError(data))

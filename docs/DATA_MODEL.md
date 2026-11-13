@@ -359,6 +359,36 @@ erDiagram
     }
 ```
 
+## 5 bis. Compteurs d'actions et tâches
+
+```mermaid
+erDiagram
+    ACCOUNTS ||--o{ ACCOUNT_COUNTERS : "une ligne par compteur"
+    ACCOUNTS ||--o{ ACCOUNT_TASK_TIERS : "paliers atteints"
+    ACCOUNTS ||--o{ ACCOUNT_COUNTER_KEYS : "éléments déjà comptés"
+
+    ACCOUNT_COUNTERS {
+        bigint account_id PK, FK
+        text counter PK
+        bigint value
+        timestamptz updated_at
+    }
+    ACCOUNT_COUNTER_KEYS {
+        bigint account_id PK, FK
+        text counter PK
+        text key PK
+        timestamptz counted_at
+    }
+    ACCOUNT_TASK_TIERS {
+        bigint account_id PK, FK
+        text task PK
+        smallint tier PK
+        timestamptz reached_at
+    }
+```
+
+`account_counters.counter` prend les valeurs de l'enum PHP `App\Enums\ActionCounter`, `account_task_tiers.task` les clés de `App\Support\TaskCatalog`. Contrat : `docs/TASKS.md`.
+
 ## 6. Modération & sécurité
 
 ```mermaid

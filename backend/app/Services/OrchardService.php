@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\ActionCounter;
 use App\Exceptions\OrchardRejectedException;
 use App\Models\EconomyTransaction;
 use App\Models\InventoryStack;
@@ -29,6 +30,7 @@ final class OrchardService
     public function __construct(
         private readonly AccountInventoryService $inventory,
         private readonly CoinRewardService $coinRewards,
+        private readonly ActionCounterService $counters,
         private readonly JobToolService $tools,
     ) {}
 
@@ -52,6 +54,7 @@ final class OrchardService
             }
             $worn = $tool === null ? null : $this->tools->wear($accountId, $tool);
             $this->inventory->grantItem($accountId, $apple, 1);
+            $this->counters->bump($accountId, ActionCounter::ApplesPicked);
             Cache::put($lastPickKey, $nowMs, now()->addMinute());
             $picked = ['code' => (string) $apple->code, 'quantity' => $carried + 1];
 
@@ -75,6 +78,7 @@ final class OrchardService
             $atFullPrice = min($quantity, $fullPriceLeft);
             $coins = $atFullPrice * self::APPLE_PRICE + ($quantity - $atFullPrice) * self::APPLE_PRICE_OVER_DAILY_QUOTA;
             $this->inventory->revokeItem($accountId, $apple, $quantity);
+            $this->counters->bump($accountId, ActionCounter::ApplesSold, $quantity);
             $this->coinRewards->creditCash($accountId, 'orchard_sell', $coins, ['quantity' => $quantity]);
 
             return [

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\ActionCounter;
 use App\Exceptions\SurvivalRejectedException;
 use App\Models\EconomyTransaction;
 use App\Models\GiftInbox;
@@ -38,6 +39,7 @@ final class SurvivalService
     public function __construct(
         private readonly AccountInventoryService $inventory,
         private readonly CharacterAppearanceService $appearance,
+        private readonly ActionCounterService $counters,
     ) {}
 
     /** @return array{health: float, hunger: float, thirst: float} */
@@ -98,6 +100,10 @@ final class SurvivalService
             } else {
                 $stack->delete();
             }
+            $this->counters->bump($accountId, ActionCounter::FoodEaten);
+            if (FoodCatalog::groupOf((string) $def->code) !== 'medical') {
+                $this->counters->bumpOncePerKey($accountId, ActionCounter::FoodsTasted, (string) $def->code);
+            }
 
             return [
                 'code' => (string) $def->code,
@@ -135,6 +141,7 @@ final class SurvivalService
             }
             $this->inventory->revokeItem($accountId, $raw, 1);
             $this->inventory->grantItem($accountId, $cooked, 1);
+            $this->counters->bump($accountId, ActionCounter::DishesCooked);
         });
 
         return ['code' => $cookedCode];

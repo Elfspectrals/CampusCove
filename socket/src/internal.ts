@@ -3,6 +3,7 @@
 import { createHash, timingSafeEqual } from 'node:crypto'
 import { createEndpoint, createRouter, matchMaker } from 'colyseus'
 import { REALTIME_SHARED_SECRET } from './config.ts'
+import { parseTaskTierReached, type TaskTierReached } from './tasks.ts'
 
 interface HousingAware {
   onHousingChanged(): Promise<void>
@@ -10,6 +11,10 @@ interface HousingAware {
 
 interface BanAware {
   onIpBanned(ip: string): void
+}
+
+interface TaskAware {
+  onTaskTierReached(reached: TaskTierReached): void
 }
 
 const digest = (value: string) => createHash('sha256').update(value).digest()
@@ -42,4 +47,16 @@ const ipBanned = createEndpoint('/internal/ip-banned', { method: 'POST' }, async
   return Response.json({ ok: true })
 })
 
-export const internalRoutes = createRouter({ housingChanged, ipBanned })
+const taskTierReached = createEndpoint('/internal/task-tier-reached', { method: 'POST' }, async (ctx) => {
+  if (!isRealtimeSecret(ctx.request?.headers.get('x-realtime-secret') ?? null)) throw ctx.error(403)
+  const reached = parseTaskTierReached(ctx.body)
+  if (reached === null) throw ctx.error(422)
+  const rooms = await matchMaker.query({ name: 'city' })
+  for (const cached of rooms) {
+    const room = matchMaker.getLocalRoomById(cached.roomId) as unknown as TaskAware | undefined
+    room?.onTaskTierReached(reached)
+  }
+  return Response.json({ ok: true })
+})
+
+export const internalRoutes = createRouter({ housingChanged, ipBanned, taskTierReached })

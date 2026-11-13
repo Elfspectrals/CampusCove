@@ -46,6 +46,7 @@ import GameTradeWindow from '../components/game/GameTradeWindow.vue'
 import GameWatchMenu from '../components/game/GameWatchMenu.vue'
 import ItemShopPurchaseConfirmModal from '../components/shop/ItemShopPurchaseConfirmModal.vue'
 import GameRoomMessageBanner from '../components/game/GameRoomMessageBanner.vue'
+import GameTaskBanner from '../components/game/GameTaskBanner.vue'
 import UiIcon from '../components/ui/UiIcon.vue'
 import { useApartmentObjects } from '../composables/game/useApartmentObjects'
 import { useClinic } from '../composables/game/useClinic'
@@ -62,6 +63,8 @@ import { usePlayerInventory } from '../composables/game/usePlayerInventory'
 import { useOrchard } from '../composables/game/useOrchard'
 import { useZoneBuyers } from '../composables/game/useZoneBuyers'
 import { useAtm } from '../composables/game/useAtm'
+import { useTaskBanner } from '../composables/game/useTaskBanner'
+
 import { useLockpick } from '../composables/game/useLockpick'
 import { useFurnitureStorage } from '../composables/game/useFurnitureStorage'
 import { useRespawnBed } from '../composables/game/useRespawnBed'
@@ -71,6 +74,7 @@ import { useCashBags } from '../composables/game/useCashBags'
 import { useProximityVoice } from '../composables/game/useProximityVoice'
 import { mutedAccounts, playerVolumes, setPlayerVolume, toggleMuteAccount } from '../composables/game/useVoiceSettings'
 import GamePlayerList from '../components/game/GamePlayerList.vue'
+import GameTasksPanel from '../components/game/GameTasksPanel.vue'
 import { useFarm } from '../composables/game/useFarm'
 import { useMallCellTemplates, type CellStoreEntry } from '../composables/game/useMallCellTemplates'
 import { useZoneDecor } from '../composables/game/useZoneDecor'
@@ -505,6 +509,7 @@ const zoneBuyers = useZoneBuyers({
   buyers: () => zoneDecor.buyers.value,
 })
 const { openBuyer: zoneBuyerOpen, selling: zoneBuyerSelling, feedback: zoneBuyerFeedback } = zoneBuyers
+const { shown: taskDone, handlers: taskHandlers } = useTaskBanner()
 const atm = useAtm({
   myPosition,
   getCamera,
@@ -1024,6 +1029,7 @@ const pauseMenuOpen = computed(
     !lockpickOpen.value &&
     !storageOpen.value &&
     !playerListOpen.value &&
+    !tasksOpen.value &&
     !settingsOpen.value &&
     !creator.value,
 )
@@ -1039,8 +1045,10 @@ watch(inventoryOpen, (open) => {
 
 const chatOpen = ref(false)
 const playerListOpen = ref(false)
+const tasksOpen = ref(false)
 watch(mutedAccounts, (accounts) => gameRoomRef.value?.send('voice_mute', { accounts: [...accounts] }))
-watch(playerListOpen, (open) => {
+watch([playerListOpen, tasksOpen], ([listOpen, taskMenuOpen]) => {
+  const open = listOpen || taskMenuOpen
   if (open && document.pointerLockElement) document.exitPointerLock()
   if (!open && !document.pointerLockElement) requestPointerLock()
 })
@@ -1056,7 +1064,7 @@ function isWalkWithWatchKey(code: string): boolean {
 }
 
 function handleExtraKeyDown(e: KeyboardEvent): boolean {
-  if (chatOpen.value || atmOpen.value || lockpickOpen.value || storageOpen.value || playerListOpen.value) return true
+  if (chatOpen.value || atmOpen.value || lockpickOpen.value || storageOpen.value || playerListOpen.value || tasksOpen.value) return true
   // the character screen owns the keyboard (Esc closes the editor)
   if (creator.value) return true
   // the trade window takes the keyboard (coins field, Esc): no game key behind it
@@ -1086,6 +1094,11 @@ function handleExtraKeyDown(e: KeyboardEvent): boolean {
   if (matches('playerList', e.code) && !e.repeat) {
     e.preventDefault()
     playerListOpen.value = true
+    return true
+  }
+  if (matches('tasks', e.code) && !e.repeat) {
+    e.preventDefault()
+    tasksOpen.value = true
     return true
   }
   if (matches('chat', e.code) && !e.repeat) {
@@ -1280,6 +1293,8 @@ const realtime = useGameRealtime({
   orchard: orchard.handlers,
   zoneBuyers: zoneBuyers.handlers,
   atm: atm.handlers,
+  tasks: taskHandlers,
+
   lockpick: {
     ...lockpick.handlers,
     onReinforced: () => {
@@ -1459,6 +1474,7 @@ const crosshairClass = computed(() => {
     />
     <GameDrunkEffects :effects="drunkEffects" />
     <GameRoomMessageBanner v-if="roomMessage" :message="roomMessage" />
+    <GameTaskBanner v-if="taskDone" :key="`${taskDone.task}-${taskDone.tier}`" :done="taskDone" />
     <!-- an error during boot drops the loading screen so its banner is seen; the character creator shows over the load -->
     <Transition leave-active-class="transition-opacity duration-500" leave-to-class="opacity-0">
       <GameLoadingScreen
@@ -1782,6 +1798,7 @@ const crosshairClass = computed(() => {
       @set-volume="setPlayerVolume"
       @close="playerListOpen = false"
     />
+    <GameTasksPanel v-if="tasksOpen" @close="tasksOpen = false" />
     <GameChat :open="chatOpen" @send="sendChat" @close="chatOpen = false" />
     <p v-if="voice.talking.value" class="cc-hud pointer-events-none absolute bottom-48 left-4 z-[30] m-0 flex items-center gap-2 px-3 py-1.5 text-sm font-bold text-fog" role="status">
       <span class="size-2.5 animate-pulse rounded-full bg-coral" />{{ t('voice.live') }}
