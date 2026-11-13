@@ -122,8 +122,9 @@ class MarketApiTest extends TestCase
         $this->grant($seller['account_id'], self::APPLE, 12);
         $this->claim($seller, 1, 'green')->assertOk();
 
-        $this->listLot($seller, 1, self::APPLE, 10, 5)
+        $this->listLot($seller, 1, self::APPLE, 10, 5, 'basket')
             ->assertOk()
+            ->assertJsonPath('container', 'basket')
             ->assertJsonPath('slot', 1)
             ->assertJsonPath('code', self::APPLE)
             ->assertJsonPath('quantity', 10)
@@ -132,7 +133,18 @@ class MarketApiTest extends TestCase
         $this->assertSame(2, $this->owned($seller['token'], self::APPLE));
         $this->getJson('/api/market', $this->auth($seller['token']))
             ->assertJsonPath('stalls.0.stall_no', 1)
-            ->assertJsonPath('stalls.0.lots.0.quantity', 10);
+            ->assertJsonPath('stalls.0.lots.0.quantity', 10)
+            ->assertJsonPath('stalls.0.lots.0.container', 'basket');
+    }
+
+    public function test_a_lot_needs_a_known_container(): void
+    {
+        $seller = $this->registerAndCreditWallet(100);
+        $this->grant($seller['account_id'], self::APPLE, 5);
+        $this->claim($seller, 1, 'green')->assertOk();
+
+        $this->listLot($seller, 1, self::APPLE, 5, 5, 'barrel')->assertStatus(422)->assertJsonPath('code', 'market_container_unknown');
+        $this->assertSame(5, $this->owned($seller['token'], self::APPLE));
     }
 
     public function test_a_lot_needs_a_stall_a_free_slot_and_the_items(): void
@@ -253,11 +265,11 @@ class MarketApiTest extends TestCase
         return $this->postJson('/api/market/stalls', ['stall_no' => $stallNo, 'canopy' => $canopy], $this->auth($player['token'], self::SECRET));
     }
 
-    private function listLot(array $player, int $slot, string $code, int $quantity, int $unitPrice): TestResponse
+    private function listLot(array $player, int $slot, string $code, int $quantity, int $unitPrice, string $container = 'crate'): TestResponse
     {
         return $this->postJson(
             '/api/market/lots',
-            ['slot' => $slot, 'code' => $code, 'quantity' => $quantity, 'unit_price' => $unitPrice],
+            ['slot' => $slot, 'code' => $code, 'quantity' => $quantity, 'unit_price' => $unitPrice, 'container' => $container],
             $this->auth($player['token'], self::SECRET),
         );
     }

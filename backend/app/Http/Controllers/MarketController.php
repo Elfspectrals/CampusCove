@@ -38,6 +38,7 @@ class MarketController extends Controller
             'code' => 'required|string|max:64',
             'quantity' => 'required|integer|min:1|max:'.MarketService::MAX_QUANTITY,
             'unit_price' => 'required|integer|min:1|max:'.MarketService::MAX_UNIT_PRICE,
+            'container' => 'required|string|max:6',
         ]);
 
         return response()->json($this->market->listLot(
@@ -46,6 +47,7 @@ class MarketController extends Controller
             $validated['code'],
             (int) $validated['quantity'],
             (int) $validated['unit_price'],
+            $validated['container'],
         ));
     }
 

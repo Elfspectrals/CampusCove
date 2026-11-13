@@ -86,7 +86,7 @@ const types = (client: FakeClient) => client.sent.map((m) => m.type)
 
 test('intents are parsed field by field and anything out of range is refused', () => {
   assert.deepEqual(parseMarketIntent({ action: 'claim', stallNo: 6, canopy: 'blue' }), { action: 'claim', stallNo: 6, canopy: 'blue' })
-  assert.deepEqual(parseMarketIntent({ action: 'list', slot: 1, code: 'farm_apple', quantity: 999, unitPrice: 1_000_000 }), { action: 'list', slot: 1, code: 'farm_apple', quantity: 999, unitPrice: 1_000_000 })
+  assert.deepEqual(parseMarketIntent({ action: 'list', slot: 1, code: 'farm_apple', quantity: 999, unitPrice: 1_000_000, container: 'basket' }), { action: 'list', slot: 1, code: 'farm_apple', quantity: 999, unitPrice: 1_000_000, container: 'basket' })
   assert.deepEqual(parseMarketIntent({ action: 'buy', lotId: 31, quantity: 2, ref: 'abcd-1234' }), { action: 'buy', lotId: 31, quantity: 2, ref: 'abcd-1234' })
   for (const payload of [
     { action: 'claim', stallNo: 0, canopy: 'blue' },
@@ -96,7 +96,9 @@ test('intents are parsed field by field and anything out of range is refused', (
     { action: 'list', slot: 1, code: 'farm apple', quantity: 1, unitPrice: 1 },
     { action: 'list', slot: 1, code: 'farm_apple', quantity: 1000, unitPrice: 1 },
     { action: 'list', slot: 1, code: 'farm_apple', quantity: 1, unitPrice: 0 },
-    { action: 'list', slot: 1, code: 'farm_apple', quantity: 1, unitPrice: 2.5 },
+    { action: 'list', slot: 1, code: 'farm_apple', quantity: 1, unitPrice: 2.5, container: 'crate' },
+    { action: 'list', slot: 1, code: 'farm_apple', quantity: 1, unitPrice: 1, container: 'barrel' },
+    { action: 'list', slot: 1, code: 'farm_apple', quantity: 1, unitPrice: 1 },
     { action: 'buy', lotId: 31, quantity: 1, ref: 'x' },
     { action: 'buy', lotId: 0, quantity: 1, ref: 'abcd-1234' },
     { action: 'steal', lotId: 31 }
@@ -135,7 +137,7 @@ test('a stall is claimed from the stall itself and the API gets only validated f
 
 test('listing needs a stall of your own and is checked at that stall', async () => {
   const { room, client } = setup(10, 0)
-  await onMarket(room, client, { action: 'list', slot: 1, code: 'farm_apple', quantity: 3, unitPrice: 5 }, 10_000)
+  await onMarket(room, client, { action: 'list', slot: 1, code: 'farm_apple', quantity: 3, unitPrice: 5, container: 'crate' }, 10_000)
   assert.equal(client.sent[0].payload.code, 'market_no_stall')
   assert.equal(apiCalls.length, 0)
 })
@@ -176,4 +178,12 @@ test('a joining player gets the market state and a refresh is planned for the ne
   assert.deepEqual(apiCalls.map((c) => c.path), ['/market'])
   assert.deepEqual(client.sent.map((m) => m.type), ['market_sync'])
   assert.equal(timers.length, 1)
+})
+
+test('a lot laid out at your own stall reaches the API with its container', async () => {
+  const market = snapshot(true)
+  market.stalls[0].account_id = 42
+  const { room, client } = setup(10, 0, market)
+  await onMarket(room, client, { action: 'list', slot: 3, code: 'farm_apple', quantity: 3, unitPrice: 5, container: 'flat' }, 10_000)
+  assert.deepEqual(apiCalls[0], { path: '/market/lots', method: 'POST', body: { slot: 3, code: 'farm_apple', quantity: 3, unit_price: 5, container: 'flat' } })
 })

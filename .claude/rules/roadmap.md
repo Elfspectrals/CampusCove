@@ -132,7 +132,8 @@ Decision (2026-11-13): every Saturday from 15:00 to 17:00 (Paris time), six stal
 
 - [done] Laravel: schedule, stalls, lots held in escrow, idempotent cash purchase, unsold lots returned at closing (`MarketService`, `market:close`).
 - [done] Socket: one `market` message (claim, list, withdraw, buy) checked within 3 m of the stall, state broadcast as `market_sync`, refreshed at opening and closing (`socket/src/market.ts`). Stall positions come from `market_stall` props in the zone files, so nothing is reachable until the market zone exists.
-- [todo] Market zone near the town centre, stall variety plan (`design-plans/market-stall.md`), stall builder with a canopy colour slot, crates and baskets, NPC outfits, decor category, first dressing.
+- [done] Stall variety plan validated (`design-plans/market-stall.md`, 2026-11-13): square east of the town through an opening in the town hedge, six long-table stalls in an open U around a bandstand, stalls folded outside market hours, bare when free, canopy in the seller's colour when taken, the seller picks crate, basket or flat for each lot (`container`), one item model per unit up to 8.
+- [todo] Stall builder (three states, canopy colour slot), bandstand, square zone with its ground, path and hedge opening, NPC outfits, decor category, first dressing.
 - [todo] Stall UI: claim, canopy colour, lay out a lot with its price, buy; opening and closing announcement.
 - [todo] Ambience: strolling NPCs, market music, bunting and lanterns.
 - [todo] Playtest with the two playtest accounts.

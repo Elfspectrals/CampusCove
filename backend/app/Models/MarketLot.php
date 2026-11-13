@@ -26,6 +26,7 @@ class MarketLot extends Model
         'quantity_listed',
         'quantity_left',
         'unit_price',
+        'container',
         'status',
         'closed_at',
     ];

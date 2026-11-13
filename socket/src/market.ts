@@ -11,10 +11,12 @@ export const MAX_UNIT_PRICE = 1_000_000
 const BOUNDARY_DELAY_MS = 1000
 const REF = /^[A-Za-z0-9-]{8,40}$/
 const CODE = /^[A-Za-z0-9_]{1,64}$/
+const CONTAINERS = ['crate', 'basket', 'flat'] as const
+type LotContainer = (typeof CONTAINERS)[number]
 
 export type MarketIntent =
   | { action: 'claim', stallNo: number, canopy: string }
-  | { action: 'list', slot: number, code: string, quantity: number, unitPrice: number }
+  | { action: 'list', slot: number, code: string, quantity: number, unitPrice: number, container: LotContainer }
   | { action: 'withdraw', lotId: number }
   | { action: 'buy', lotId: number, quantity: number, ref: string }
 
@@ -39,8 +41,9 @@ export function parseMarketIntent(payload: ClientPayload): MarketIntent | null {
       const slot = intIn(payload.slot, 1, LOTS_PER_STALL)
       const code = stringMatching(payload.code, CODE)
       const unitPrice = intIn(payload.unitPrice, 1, MAX_UNIT_PRICE)
-      return slot !== null && code !== null && quantity !== null && unitPrice !== null
-        ? { action: 'list', slot, code, quantity, unitPrice }
+      const container = CONTAINERS.find((c) => c === payload.container) ?? null
+      return slot !== null && code !== null && quantity !== null && unitPrice !== null && container !== null
+        ? { action: 'list', slot, code, quantity, unitPrice, container }
         : null
     }
     case 'withdraw':
@@ -79,7 +82,7 @@ function backendRequest(player: Player, intent: MarketIntent): { path: string, b
     case 'claim':
       return { path: '/market/stalls', body: { stall_no: intent.stallNo, canopy: intent.canopy } }
     case 'list':
-      return { path: '/market/lots', body: { slot: intent.slot, code: intent.code, quantity: intent.quantity, unit_price: intent.unitPrice } }
+      return { path: '/market/lots', body: { slot: intent.slot, code: intent.code, quantity: intent.quantity, unit_price: intent.unitPrice, container: intent.container } }
     case 'withdraw':
       return { path: `/market/lots/${intent.lotId}/withdraw`, body: {} }
     case 'buy':

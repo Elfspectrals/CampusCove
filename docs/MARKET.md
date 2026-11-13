@@ -29,6 +29,7 @@ A market is identified by its date (`market_date`, the Saturday in Paris time, `
 | What can be sold | any tradable item (`TradeService::isTradable`), not worn |
 | Lot quantity | 1 to the item's `max_stack`, at most 999 |
 | Unit price | free, 1 to 1,000,000 coins |
+| Container | `crate`, `basket` or `flat` (laid on the table), picked by the seller for each lot |
 | Payment | buyer's cash to seller's cash |
 | Tax | 5 % of the sale total, rounded down, only when the total is 20 coins or more |
 | Account age | claiming a stall and buying both need an account at least 72 h old (`TradeService::MIN_GIVER_AGE_HOURS`), as for trades |
@@ -54,7 +55,7 @@ Items of a lot leave the seller's inventory when it is listed (escrow on the lot
       "account_id": 41,
       "canopy": "blue",
       "lots": [
-        { "lot_id": 9, "slot": 1, "code": "farm_apple", "name": "Apple", "quantity": 18, "unit_price": 5, "preview_image": "/assets/...", "model_glb": "/assets/..." }
+        { "lot_id": 9, "slot": 1, "code": "farm_apple", "name": "Apple", "quantity": 18, "unit_price": 5, "container": "crate", "preview_image": "/assets/...", "model_glb": "/assets/..." }
       ]
     }
   ]
@@ -68,7 +69,7 @@ The others are `realtime` routes: the socket calls them with the player's token 
 | Route | Body | Result |
 |---|---|---|
 | `POST /api/market/stalls` | `stall_no` 1-6, `canopy` | the stall; a retry for the same stall returns it without charging again |
-| `POST /api/market/lots` | `slot` 1-6, `code`, `quantity`, `unit_price` | the lot, on the player's own stall |
+| `POST /api/market/lots` | `slot` 1-6, `code`, `quantity`, `unit_price`, `container` | the lot, on the player's own stall |
 | `POST /api/market/lots/{id}/withdraw` | | the items come back to the seller |
 | `POST /api/market/lots/{id}/buy` | `quantity`, `purchase_ref` (unique, at most 64 characters) | `{ "cash": <buyer cash>, "quantity_left": <left in the lot> }`; a retry with the same `purchase_ref` by the same buyer on the same lot returns the same answer without buying again |
 
@@ -81,7 +82,7 @@ Client to server, one message `market`:
 | `action` | Fields |
 |---|---|
 | `claim` | `stallNo` 1-6, `canopy` |
-| `list` | `slot` 1-6, `code`, `quantity` 1-999, `unitPrice` 1-1,000,000 |
+| `list` | `slot` 1-6, `code`, `quantity` 1-999, `unitPrice` 1-1,000,000, `container` |
 | `withdraw` | `lotId` |
 | `buy` | `lotId`, `quantity` 1-999, `ref` (8-40 of `A-Z a-z 0-9 -`, sent to Laravel as `<accountId>-<ref>`) |
 
@@ -107,6 +108,7 @@ The socket refreshes the state at the next opening or closing time (plus 1 s) wi
 | `market_stall_taken` | 409 | another player holds the stall |
 | `market_already_has_stall` | 409 | the player already holds another stall at this market |
 | `market_canopy_unknown` | 422 | canopy not in the list |
+| `market_container_unknown` | 422 | container not in the list |
 | `market_no_stall` | 409 | listing without holding a stall |
 | `market_slot_taken` | 409 | the slot already holds an active lot |
 | `market_item_unknown` | 422 | unknown item code |

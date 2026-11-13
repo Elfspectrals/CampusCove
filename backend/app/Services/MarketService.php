@@ -34,6 +34,8 @@ final class MarketService
 
     public const CANOPIES = ['red', 'blue', 'green', 'yellow', 'orange', 'purple'];
 
+    public const CONTAINERS = ['crate', 'basket', 'flat'];
+
     public function __construct(
         private readonly AccountInventoryService $inventory,
         private readonly TradeService $trades,
@@ -112,11 +114,14 @@ final class MarketService
     }
 
     /** @return array<string, mixed> */
-    public function listLot(int $accountId, int $slot, string $code, int $quantity, int $unitPrice): array
+    public function listLot(int $accountId, int $slot, string $code, int $quantity, int $unitPrice, string $container): array
     {
         $marketDate = $this->openMarketDate();
+        if (! in_array($container, self::CONTAINERS, true)) {
+            throw new MarketRejectedException('market_container_unknown', 'Unknown container.');
+        }
 
-        return DB::transaction(function () use ($accountId, $slot, $code, $quantity, $unitPrice, $marketDate): array {
+        return DB::transaction(function () use ($accountId, $slot, $code, $quantity, $unitPrice, $container, $marketDate): array {
             $stall = MarketStall::query()->where('market_date', $marketDate)->where('account_id', $accountId)->lockForUpdate()->first();
             if ($stall === null) {
                 throw new MarketRejectedException('market_no_stall', 'Take a free stall first.', 409);
@@ -148,6 +153,7 @@ final class MarketService
                 'quantity_listed' => $quantity,
                 'quantity_left' => $quantity,
                 'unit_price' => $unitPrice,
+                'container' => $container,
                 'status' => MarketLot::ACTIVE,
             ]);
 
@@ -336,6 +342,7 @@ final class MarketService
             'name' => $lot->itemDef->name,
             'quantity' => $lot->quantity_left,
             'unit_price' => $lot->unit_price,
+            'container' => $lot->container,
             'preview_image' => AssetUrl::normalize($lot->itemDef->preview_image),
             'model_glb' => AssetUrl::normalize($lot->itemDef->model_glb),
         ];
