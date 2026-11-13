@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { stepWatch, watchKeyOf, type WatchKey, type WatchView } from './watchNav.ts'
+import { keepSelectedRow, stepWatch, watchKeyOf, type WatchKey, type WatchView } from './watchNav.ts'
 
 const home = (app: number): WatchView => ({ screen: 'home', app })
 const inApp = (app: number, row: number): WatchView => ({ screen: 'app', app, row })
@@ -52,4 +52,11 @@ test('only the arrows, Enter and Backspace drive the watch', () => {
   assert.equal(watchKeyOf('ArrowLeft'), 'left')
   assert.equal(watchKeyOf('NumpadEnter'), 'enter')
   assert.equal(watchKeyOf('KeyW'), null)
+})
+
+test('when a list reorders, the selection stays on the same row, or keeps its place if that row is gone', () => {
+  assert.deepEqual(keepSelectedRow(inApp(2, 1), ['b', 'lou', 'kim'], ['lou', 'kim']), inApp(2, 0))
+  assert.deepEqual(keepSelectedRow(inApp(2, 0), ['lou', 'kim'], ['kim', 'lou']), inApp(2, 1))
+  assert.deepEqual(keepSelectedRow(inApp(2, 1), ['b', 'lou'], ['kim']), inApp(2, 1))
+  assert.deepEqual(keepSelectedRow(home(2), ['a'], ['b', 'a']), home(2))
 })

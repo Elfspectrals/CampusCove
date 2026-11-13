@@ -23,7 +23,7 @@ function activate(index: number): void {
   if (index === 0) emit('routeAtm')
 }
 
-defineExpose({ rowCount: computed(() => (props.screen ? history.value.length + 1 : 0)), activate })
+defineExpose({ rowKeys: computed(() => (props.screen ? ['atm', ...history.value.map((op, index) => `${op.at}-${index}`)] : [])), activate })
 </script>
 
 <template>

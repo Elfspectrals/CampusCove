@@ -6,7 +6,7 @@ const NEAREST_ATM_ID = 'atm'
 
 export interface GpsPlace {
   id: string
-  kind: MapMarkerKind | 'atm'
+  kind: MapMarkerKind | 'atm' | 'friend'
   name: string
   x: number
   z: number

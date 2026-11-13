@@ -21,7 +21,7 @@ function activate(index: number): void {
   emit('summon', player.sessionId)
 }
 
-defineExpose({ rowCount: computed(() => destinations.value.length + players.value.length), activate })
+defineExpose({ rowKeys: computed(() => [...destinations.value.map((d) => `place-${d.key}`), ...players.value.map((p) => `player-${p.sessionId}`)]), activate })
 </script>
 
 <template>

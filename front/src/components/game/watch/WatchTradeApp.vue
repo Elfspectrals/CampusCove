@@ -43,7 +43,7 @@ function activate(index: number): void {
   else if (canAsk(row.player)) emit('request', row.player)
 }
 
-defineExpose({ rowCount: computed(() => rows.value.length), activate })
+defineExpose({ rowKeys: computed(() => rows.value.map((row) => (row.kind === 'cancel' ? 'cancel' : row.player.sessionId))), activate })
 </script>
 
 <template>

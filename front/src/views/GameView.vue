@@ -78,6 +78,7 @@ import { useTrade } from '../composables/game/useTrade'
 import { useAdminWatch } from '../composables/game/useAdminWatch'
 import { useWatchBank } from '../composables/game/useWatchBank'
 import { useGps } from '../composables/game/useGps'
+import { useWatchContacts } from '../composables/game/useWatchContacts'
 import { usePunch } from '../composables/game/usePunch'
 import { useShopPurchase } from '../composables/useShopPurchase'
 import { toggleCollisionDebug } from '../game/collision/collisionDebug'
@@ -808,7 +809,19 @@ const gps = useGps({
   say: (text) => survival.say(text),
   arrivedText: (name) => t('watch.gps.arrived', { name }),
   noAtmText: () => t('watch.gps.noAtm'),
+  positionOf: (sessionId) => realtime.remotePosition(sessionId),
+  leftText: (name) => t('watch.gps.left', { name }),
 })
+const watchContacts = useWatchContacts({
+  players: () => realtime.remotePlayers(),
+  positionOf: (sessionId) => realtime.remotePosition(sessionId),
+  me: minimap.player,
+  isOpen: () => watchMenuOpen.value,
+  say: (text) => survival.say(text),
+  acceptedText: (name) => t('watch.contacts.accepted', { name }),
+  askedText: (pseudo) => t('watch.contacts.sent', { name: pseudo }),
+})
+const followedSessionId = computed(() => (gps.target.value?.kind === 'friend' ? gps.target.value.id.slice('friend:'.length) : null))
 // Esc frees the mouse and opens the pause menu: the full map gives way to it
 watch(pointerLocked, (locked) => {
   if (!locked) minimap.fullOpen.value = false
@@ -1092,6 +1105,7 @@ const movement = useGameMovement({
     farm.tick()
     if (!doorSigns.group.parent) getScene()?.add(doorSigns.group)
     minimap.tick()
+    gps.tick()
   },
 })
 const { requestPointerLock, onCanvasMouseDown } = movement
@@ -1575,6 +1589,9 @@ const crosshairClass = computed(() => {
       :gps-places="gps.places.value"
       :gps-target-id="gps.target.value?.id ?? null"
       :atm-distance="gps.places.value.find((place) => place.kind === 'atm')?.distance ?? null"
+      :contact-rows="watchContacts.rows.value"
+      :contacts-error="watchContacts.error.value"
+      :followed-session-id="followedSessionId"
       @request="trade.request"
       @respond="trade.respond"
       @cancel="trade.cancel"
@@ -1583,6 +1600,10 @@ const crosshairClass = computed(() => {
       @bank-open="watchBank.load"
       @gps-toggle="gps.toggle"
       @route-atm="gps.routeToNearestAtm"
+      @contacts-open="watchContacts.load"
+      @contact-accept="watchContacts.accept"
+      @contact-follow="gps.togglePlayer"
+      @contact-ask="watchContacts.ask"
       @teleport="adminTeleport"
       @summon="adminSummon"
     />

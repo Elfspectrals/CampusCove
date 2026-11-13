@@ -2,8 +2,9 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { actionKeyLabels, matches } from '../../config/keybindings'
-import { WATCH_HOME, stepWatch, watchKeyOf, type WatchView } from '../../game/watch/watchNav'
+import { WATCH_HOME, keepSelectedRow, stepWatch, watchKeyOf, type WatchView } from '../../game/watch/watchNav'
 import type { BankScreen } from '../../api/bank'
+import type { ContactRow } from '../../game/watch/contacts'
 import type { GpsPlace, GpsPlaceAt } from '../../game/watch/gps'
 import type { AdminMenuPayload, TradeNearbyPlayer, TradePendingPayload, TradeRequestedPayload } from '../../types/gameRealtime'
 import type { UiIconName } from '../ui/icons'
@@ -11,6 +12,7 @@ import UiCurrency from '../ui/UiCurrency.vue'
 import UiIcon from '../ui/UiIcon.vue'
 import WatchAdminApp from './watch/WatchAdminApp.vue'
 import WatchBankApp from './watch/WatchBankApp.vue'
+import WatchContactsApp from './watch/WatchContactsApp.vue'
 import WatchGpsApp from './watch/WatchGpsApp.vue'
 import WatchTradeApp from './watch/WatchTradeApp.vue'
 
@@ -33,6 +35,9 @@ const props = defineProps<{
   gpsPlaces: GpsPlaceAt[]
   gpsTargetId: string | null
   atmDistance: number | null
+  contactRows: ContactRow[] | null
+  contactsError: string | null
+  followedSessionId: string | null
 }>()
 
 const emit = defineEmits<{
@@ -44,13 +49,17 @@ const emit = defineEmits<{
   bankOpen: []
   gpsToggle: [place: GpsPlace]
   routeAtm: []
+  contactsOpen: []
+  contactAccept: [accountId: string, name: string]
+  contactFollow: [sessionId: string, name: string]
+  contactAsk: [pseudo: string]
   teleport: [key: string]
   summon: [sessionId: string]
 }>()
 
 const { t } = useI18n()
 
-type AppKey = 'gps' | 'bank' | 'trade' | 'admin'
+type AppKey = 'gps' | 'bank' | 'contacts' | 'trade' | 'admin'
 
 interface WatchApp {
   key: AppKey
@@ -63,6 +72,7 @@ interface WatchApp {
 const apps = computed<WatchApp[]>(() => [
   { key: 'gps', icon: 'map', tile: 'bg-sun', badge: false, enterLabel: t('watch.gps.enter') },
   { key: 'bank', icon: 'bank', tile: 'bg-mint', badge: false, enterLabel: t('watch.bank.enter') },
+  { key: 'contacts', icon: 'users', tile: 'bg-pool', badge: false, enterLabel: t('watch.contacts.enter') },
   { key: 'trade', icon: 'hand', tile: 'bg-grape', badge: props.incoming !== null, enterLabel: t('watch.trade.enter') },
   ...(props.isAdmin ? [{ key: 'admin', icon: 'shield', tile: 'bg-coral', badge: false, enterLabel: t('watch.admin.enter') } as const] : []),
 ])
@@ -71,7 +81,13 @@ const view = ref<WatchView>(WATCH_HOME)
 const openApp = computed(() => (view.value.screen === 'app' ? apps.value[view.value.app] ?? null : null))
 const selectedRow = computed(() => (view.value.screen === 'app' ? view.value.row : -1))
 
-const appRef = ref<{ rowCount: number; activate: (row: number) => void } | null>(null)
+const appRef = ref<{ rowKeys: string[]; activate: (row: number) => void } | null>(null)
+watch(
+  () => appRef.value?.rowKeys ?? [],
+  (keys, previousKeys) => {
+    view.value = keepSelectedRow(view.value, previousKeys, keys)
+  },
+)
 
 const acceptKey = computed(() => actionKeyLabels('acceptChallenge')[0] ?? 'Y')
 const declineKey = computed(() => actionKeyLabels('declineChallenge')[0] ?? 'N')
@@ -82,7 +98,7 @@ function tickClock(): void {
 }
 let clockTimer: number | undefined
 
-const errorText = computed(() => ({ gps: null, bank: props.bankError, trade: props.error, admin: props.adminError })[openApp.value?.key ?? 'trade'])
+const errorText = computed(() => ({ gps: null, contacts: props.contactsError, bank: props.bankError, trade: props.error, admin: props.adminError })[openApp.value?.key ?? 'trade'])
 const enterHint = computed(() => (openApp.value ? openApp.value.enterLabel : t('watch.keys.open')))
 
 const screenRef = ref<HTMLElement | null>(null)
@@ -102,7 +118,7 @@ function onKey(e: KeyboardEvent): void {
   e.preventDefault()
   e.stopPropagation()
   if (e.repeat && (key === 'enter' || key === 'back')) return
-  const step = stepWatch(view.value, key, { apps: apps.value.length, rows: appRef.value?.rowCount ?? 0 })
+  const step = stepWatch(view.value, key, { apps: apps.value.length, rows: appRef.value?.rowKeys.length ?? 0 })
   view.value = step.view
   if (step.effect?.kind === 'close') emit('close')
   else if (step.effect?.kind === 'open') openedApp(step.effect.app)
@@ -113,6 +129,7 @@ function openedApp(index: number): void {
   const key = apps.value[index]?.key
   if (key === 'admin') emit('adminOpen')
   else if (key === 'bank') emit('bankOpen')
+  else if (key === 'contacts') emit('contactsOpen')
 }
 
 onMounted(() => {
@@ -176,6 +193,16 @@ onUnmounted(() => {
             :atm-distance="atmDistance"
             :selected="selectedRow"
             @route-atm="emit('routeAtm')"
+          />
+          <WatchContactsApp
+            v-else-if="openApp.key === 'contacts'"
+            ref="appRef"
+            :rows="contactRows"
+            :followed-session-id="followedSessionId"
+            :selected="selectedRow"
+            @accept="(accountId, name) => emit('contactAccept', accountId, name)"
+            @follow="(sessionId, name) => emit('contactFollow', sessionId, name)"
+            @ask="(pseudo) => emit('contactAsk', pseudo)"
           />
           <WatchTradeApp
             v-else-if="openApp.key === 'trade'"

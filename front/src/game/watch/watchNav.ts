@@ -49,3 +49,10 @@ export function stepWatch(view: WatchView, key: WatchKey, counts: { apps: number
   if (key === 'down') return { view: { ...view, row: Math.min(row + 1, Math.max(counts.rows - 1, 0)) }, effect: null }
   return { view: { ...view, row }, effect: null }
 }
+
+export function keepSelectedRow(view: WatchView, previousKeys: readonly string[], keys: readonly string[]): WatchView {
+  if (view.screen !== 'app') return view
+  const selectedKey = previousKeys[view.row]
+  const row = selectedKey === undefined ? -1 : keys.indexOf(selectedKey)
+  return row >= 0 && row !== view.row ? { ...view, row } : view
+}

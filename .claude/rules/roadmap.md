@@ -133,7 +133,8 @@ Decision (2026-11-13): no separate phone. The survival watch is the player's pho
 - [done] App shell: corner watch driven by the keyboard (`front/src/game/watch/watchNav.ts`, tested), movement and mouse look kept, other game keys ignored, Esc closes it. Trade and Admin moved in as apps. Played: open, browse, walk, teleport, ask, cancel, decline (N) and accept (Y) a trade.
 - [done] Bank (read only): cash, bank, recent operations from `GET /api/bank`, loaded when the app opens; deposit and withdraw stay at the ATM. The cash on you also shows in the watch's top bar.
 - [done] GPS: the nearest ATM and the map's places by distance, Enter follows one: a flag on the corner and full map, an arrow and the distance under the corner map, cleared within 8 m with a message. The Bank's first row follows the nearest ATM. A place's point is its building centre, so a big building may need a step inside to count as arrived.
-- [todo] Contacts: friends with their status, the ones in this town first, follow one on the GPS.
+- [done] Contacts (decided 2026-11-13: list, follow, accept and add): friend requests received (Enter accepts), friends in this town with their distance (Enter follows them live on the GPS, cleared when they leave), players within 30 m who are not friends (Enter sends a friend request), friends elsewhere. The friends API has no presence yet, so a friend outside this town shows "not in town". Refusing a request and removing a friend stay on the site's Friends page.
+- [done] A list that reorders keeps the selection on the same row (`keepSelectedRow`), so Enter never acts on a row that slid under it.
 
 ## Later
 
