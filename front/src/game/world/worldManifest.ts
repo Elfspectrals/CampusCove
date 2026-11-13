@@ -21,6 +21,7 @@ export interface HouseBuilding {
   offer: 'buy' | 'rent'
   price: number
   interiorOffset?: Vec3
+  backDoor?: Vec3
 }
 
 export interface WorkBuilding {

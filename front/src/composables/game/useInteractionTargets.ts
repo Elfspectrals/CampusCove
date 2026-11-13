@@ -6,10 +6,12 @@ import {
   housingInteractPosition,
   housingPromptLabel,
   type HousingAction,
+  type HousingTarget,
   type HousingUnit,
 } from '../../game/town/housing'
 import {
   fishingSpots as manifestFishingSpots,
+  houseBuildings,
   storeBuildings,
   workBuildings,
   type StoreBuilding,
@@ -39,7 +41,7 @@ export interface InteractionTargetsDeps {
   /** Prompts are hidden while one of these is true (inventory open, housing request running). */
   promptsHidden: () => boolean
   housingUnits: Ref<HousingUnit[]>
-  nearbyHousingUnit: Ref<HousingUnit | null>
+  nearbyHousingUnit: Ref<HousingTarget | null>
   housingActionFor: (unit: HousingUnit) => HousingAction | null
   housingLeaveDetailFor: (unit: HousingUnit) => string | undefined
   isWorkDoorOpen: (lot: PublicLot) => boolean
@@ -64,21 +66,23 @@ export function useInteractionTargets(deps: InteractionTargetsDeps) {
   const nearbyWork = ref<PublicLot | null>(null)
   const fishingSpots = ref<FishingSpot[]>([])
   const nearbyFishingSpot = ref<FishingSpot | null>(null)
+  let backDoors = new Map<string, { x: number; z: number }>()
   const doorPrompt = ref<ScreenPrompt | null>(null)
   const projection = new THREE.Vector3()
 
   /** The world manifest lists the work buildings and the pond's fishing spots. */
   function setWorldManifest(manifest: WorldManifest): void {
     workLots.value = [...workBuildings(manifest), ...storeBuildings(manifest)]
+    backDoors = new Map(houseBuildings(manifest).flatMap((b) => (b.backDoor ? [[b.key, { x: b.backDoor[0], z: b.backDoor[2] }] as const] : [])))
     fishingSpots.value = manifestFishingSpots(manifest)
   }
 
   function updateProximity(): void {
     const { x, z } = deps.myPosition
-    const unit = findNearestHousingUnit(x, z, deps.housingUnits.value)
-    deps.nearbyHousingUnit.value = unit
-    nearbyWork.value = unit ? null : findNearestWorkDoor(x, z, workLots.value)
-    nearbyFishingSpot.value = unit || nearbyWork.value ? null : findNearestFishingSpot(x, z, fishingSpots.value)
+    const target = findNearestHousingUnit(x, z, deps.housingUnits.value, backDoors)
+    deps.nearbyHousingUnit.value = target
+    nearbyWork.value = target ? null : findNearestWorkDoor(x, z, workLots.value)
+    nearbyFishingSpot.value = target || nearbyWork.value ? null : findNearestFishingSpot(x, z, fishingSpots.value)
   }
 
   /** Use whatever the player stands at. Returns true if there was something. */
@@ -119,13 +123,13 @@ export function useInteractionTargets(deps: InteractionTargetsDeps) {
       const screen = projectToScreen(tx, ty + 0.55, tz)
       return screen && { ...screen, action: item.action ?? 'Buy', detail: item.detail }
     }
-    const unit = deps.nearbyHousingUnit.value
-    if (unit) {
-      const action = deps.housingActionFor(unit)
-      const pos = housingInteractPosition(unit)
+    const target = deps.nearbyHousingUnit.value
+    if (target) {
+      const action = deps.housingActionFor(target.unit)
+      const pos = housingInteractPosition(target)
       const screen = projectToScreen(pos.x, pos.y, pos.z)
-      const leaveDetail = deps.housingLeaveDetailFor(unit)
-      return screen && action && { ...screen, ...housingPromptLabel(unit, action), ...(leaveDetail && { detail: leaveDetail }) }
+      const leaveDetail = deps.housingLeaveDetailFor(target.unit)
+      return screen && action && { ...screen, ...housingPromptLabel(target.unit, action), ...(leaveDetail && { detail: leaveDetail }) }
     }
     const work = nearbyWork.value
     if (work) {

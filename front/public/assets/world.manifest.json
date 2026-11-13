@@ -1015,6 +1015,161 @@
         "z": -17.6,
         "width": 12.2
       }
+    },
+    {
+      "key": "cove_heights",
+      "optional": true,
+      "bounds": {
+        "minX": -332,
+        "maxX": -170,
+        "minZ": -313,
+        "maxZ": -151.95
+      },
+      "modelUrl": "/assets/park/cove_heights/cove_heights.glb",
+      "buildings": [
+        {
+          "kind": "house",
+          "key": "cove_villa_a02",
+          "name": "Colonial Villa",
+          "position": [
+            -281,
+            0,
+            -291.3
+          ],
+          "rotationY": 0,
+          "door": [
+            -281,
+            1.25,
+            -286.5
+          ],
+          "offer": "buy",
+          "price": 20000,
+          "interiorOffset": [
+            0,
+            0.2,
+            -1.405
+          ]
+        },
+        {
+          "kind": "house",
+          "key": "cove_villa_a01",
+          "name": "Villa Serena",
+          "position": [
+            -308.5,
+            0,
+            -290.3
+          ],
+          "rotationY": 0,
+          "door": [
+            -308.5,
+            1.25,
+            -285.5
+          ],
+          "offer": "buy",
+          "price": 26000,
+          "interiorOffset": [
+            0,
+            0.2,
+            -1.405
+          ]
+        },
+        {
+          "kind": "house",
+          "key": "cove_villa_a03",
+          "name": "Harbor Shingle House",
+          "position": [
+            -220.8,
+            0,
+            -291
+          ],
+          "rotationY": 0,
+          "door": [
+            -220.8,
+            1.25,
+            -286.2
+          ],
+          "offer": "buy",
+          "price": 28000,
+          "interiorOffset": [
+            0,
+            0.2,
+            -1.405
+          ]
+        },
+        {
+          "kind": "house",
+          "key": "cove_villa_a04",
+          "name": "Skyline Residence",
+          "position": [
+            -193.6,
+            0,
+            -290
+          ],
+          "rotationY": 0,
+          "door": [
+            -193.6,
+            1.25,
+            -285.2
+          ],
+          "offer": "buy",
+          "price": 32000,
+          "interiorOffset": [
+            0,
+            0.2,
+            -1.405
+          ]
+        },
+        {
+          "kind": "house",
+          "key": "cove_home_b01",
+          "name": "Tidewater House",
+          "position": [
+            -273.5,
+            0,
+            -187
+          ],
+          "rotationY": 3.141593,
+          "door": [
+            -273.5,
+            1.25,
+            -191.8
+          ],
+          "backDoor": [
+            -273.5,
+            1.25,
+            -178.99
+          ],
+          "offer": "buy",
+          "price": 14000,
+          "interiorOffset": [
+            0,
+            0.2,
+            -1.405
+          ]
+        }
+      ]
+    },
+    {
+      "key": "cove_road",
+      "optional": true,
+      "bounds": {
+        "minX": -258.95,
+        "maxX": -67.25,
+        "minZ": -151.95,
+        "maxZ": -134
+      },
+      "modelUrl": "/assets/park/cove_heights/cove_road.glb"
+    },
+    {
+      "key": "cove_road_mall",
+      "optional": true,
+      "bounds": {
+        "minX": -79.15,
+        "maxX": -67.25,
+        "minZ": -134,
+        "maxZ": -17.3
+      },
+      "modelUrl": "/assets/park/cove_heights/cove_road_mall.glb"
     }
   ],
   "fountains": [
@@ -11509,5 +11664,369 @@
         }
       }
     ]
-  }
+  },
+  "coveHeights": {
+    "spawn": {
+      "x": -251,
+      "z": -178,
+      "yaw": 0
+    },
+    "mainGate": {
+      "x": -251,
+      "z": -172,
+      "yaw": 0
+    },
+    "emergencyGate": {
+      "x": -251,
+      "z": -312,
+      "yaw": 3.141592653589793,
+      "locked": true
+    },
+    "gate": {
+      "residentsOnly": true,
+      "enforced": false,
+      "toggle": [
+        {
+          "name": "COL_Cove_PortalW",
+          "cx": -258.35,
+          "cz": -172,
+          "hx": 0.62,
+          "hz": 0.15,
+          "cy": 1.1,
+          "hy": 1.1,
+          "yaw": 0
+        },
+        {
+          "name": "COL_Cove_BoomEgress",
+          "cx": -255,
+          "cz": -172,
+          "hx": 2,
+          "hz": 0.15,
+          "cy": 0.6,
+          "hy": 0.6,
+          "yaw": 0
+        },
+        {
+          "name": "COL_Cove_BoomVisitor",
+          "cx": -247.25,
+          "cz": -172,
+          "hx": 1.75,
+          "hz": 0.15,
+          "cy": 0.6,
+          "hy": 0.6,
+          "yaw": 0
+        },
+        {
+          "name": "COL_Cove_BoomResident",
+          "cx": -243.15,
+          "cz": -172,
+          "hx": 1.75,
+          "hz": 0.15,
+          "cy": 0.6,
+          "hy": 0.6,
+          "yaw": 0
+        },
+        {
+          "name": "COL_Cove_PortalE",
+          "cx": -240.05,
+          "cz": -172,
+          "hx": 0.62,
+          "hz": 0.15,
+          "cy": 1.1,
+          "hy": 1.1,
+          "yaw": 0
+        }
+      ]
+    },
+    "checkpoint": {
+      "id": "cove_heights_main",
+      "position": [
+        -240.05,
+        0,
+        -170
+      ],
+      "yaw": 0,
+      "trigger": {
+        "minX": -241.25,
+        "maxX": -239.45,
+        "minZ": -171.72,
+        "maxZ": -168
+      }
+    },
+    "clubhouseDoor": [
+      -251,
+      0,
+      -208.4
+    ],
+    "lots": [
+      {
+        "id": "B-01",
+        "type": "executive",
+        "center": [
+          -271,
+          0,
+          -185
+        ],
+        "entry": [
+          -266,
+          0,
+          -195
+        ],
+        "entryYaw": 3.1416,
+        "housingKey": "cove_heights:B-01"
+      },
+      {
+        "id": "B-02",
+        "type": "executive",
+        "center": [
+          -291,
+          0,
+          -185
+        ],
+        "entry": [
+          -291,
+          0,
+          -195
+        ],
+        "entryYaw": 3.1416,
+        "housingKey": "cove_heights:B-02"
+      },
+      {
+        "id": "B-03",
+        "type": "executive",
+        "center": [
+          -318,
+          0,
+          -205
+        ],
+        "entry": [
+          -308,
+          0,
+          -211.5
+        ],
+        "entryYaw": 1.5708,
+        "housingKey": "cove_heights:B-03"
+      },
+      {
+        "id": "B-04",
+        "type": "executive",
+        "center": [
+          -318,
+          0,
+          -225
+        ],
+        "entry": [
+          -308,
+          0,
+          -230
+        ],
+        "entryYaw": 1.5708,
+        "housingKey": "cove_heights:B-04"
+      },
+      {
+        "id": "B-05",
+        "type": "executive",
+        "center": [
+          -318,
+          0,
+          -245
+        ],
+        "entry": [
+          -308,
+          0,
+          -250
+        ],
+        "entryYaw": 1.5708,
+        "housingKey": "cove_heights:B-05"
+      },
+      {
+        "id": "B-06",
+        "type": "executive",
+        "center": [
+          -318,
+          0,
+          -265
+        ],
+        "entry": [
+          -308,
+          0,
+          -259
+        ],
+        "entryYaw": 1.5708,
+        "housingKey": "cove_heights:B-06"
+      },
+      {
+        "id": "A-01",
+        "type": "villa",
+        "center": [
+          -305,
+          0,
+          -295
+        ],
+        "entry": [
+          -293,
+          0,
+          -281
+        ],
+        "entryYaw": 0,
+        "housingKey": "cove_heights:A-01"
+      },
+      {
+        "id": "A-02",
+        "type": "villa",
+        "center": [
+          -277,
+          0,
+          -295
+        ],
+        "entry": [
+          -271,
+          0,
+          -281
+        ],
+        "entryYaw": 0,
+        "housingKey": "cove_heights:A-02"
+      },
+      {
+        "id": "A-03",
+        "type": "villa",
+        "center": [
+          -225,
+          0,
+          -295
+        ],
+        "entry": [
+          -231,
+          0,
+          -281
+        ],
+        "entryYaw": 0,
+        "housingKey": "cove_heights:A-03"
+      },
+      {
+        "id": "A-04",
+        "type": "villa",
+        "center": [
+          -197,
+          0,
+          -295
+        ],
+        "entry": [
+          -209,
+          0,
+          -281
+        ],
+        "entryYaw": 0,
+        "housingKey": "cove_heights:A-04"
+      },
+      {
+        "id": "B-07",
+        "type": "executive",
+        "center": [
+          -184,
+          0,
+          -265
+        ],
+        "entry": [
+          -194,
+          0,
+          -259
+        ],
+        "entryYaw": -1.5708,
+        "housingKey": "cove_heights:B-07"
+      },
+      {
+        "id": "B-08",
+        "type": "executive",
+        "center": [
+          -184,
+          0,
+          -245
+        ],
+        "entry": [
+          -194,
+          0,
+          -250
+        ],
+        "entryYaw": -1.5708,
+        "housingKey": "cove_heights:B-08"
+      },
+      {
+        "id": "B-09",
+        "type": "executive",
+        "center": [
+          -184,
+          0,
+          -225
+        ],
+        "entry": [
+          -194,
+          0,
+          -230
+        ],
+        "entryYaw": -1.5708,
+        "housingKey": "cove_heights:B-09"
+      },
+      {
+        "id": "B-10",
+        "type": "executive",
+        "center": [
+          -184,
+          0,
+          -205
+        ],
+        "entry": [
+          -194,
+          0,
+          -211.5
+        ],
+        "entryYaw": -1.5708,
+        "housingKey": "cove_heights:B-10"
+      },
+      {
+        "id": "B-11",
+        "type": "executive",
+        "center": [
+          -207,
+          0,
+          -185
+        ],
+        "entry": [
+          -211,
+          0,
+          -195
+        ],
+        "entryYaw": 3.1416,
+        "housingKey": "cove_heights:B-11"
+      },
+      {
+        "id": "B-12",
+        "type": "executive",
+        "center": [
+          -227,
+          0,
+          -185
+        ],
+        "entry": [
+          -232,
+          0,
+          -195
+        ],
+        "entryYaw": 3.1416,
+        "housingKey": "cove_heights:B-12"
+      }
+    ]
+  },
+  "adminDestinations": [
+    {
+      "key": "cove_heights_gate",
+      "name": "Cove Heights gate",
+      "position": [
+        -247.25,
+        0,
+        -158
+      ],
+      "yaw": 0
+    }
+  ]
 }

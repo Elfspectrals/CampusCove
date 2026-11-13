@@ -1,5 +1,5 @@
 import { callRealtimeBackend, errorPayload } from './backend.ts'
-import { canUseDoor, isWithinDoorReach } from './doors.ts'
+import { canUseDoor, isWithinReach } from './doors.ts'
 import type { ClientPayload, GameClient, GameRoom, HousingUnit, LockpickPin, LockpickSession, Player } from './types.ts'
 import { reportCrime } from './wanted.ts'
 
@@ -103,7 +103,7 @@ export async function onLockpickStart(room: GameRoom, client: GameClient, payloa
     sendError(client, 'This door is not locked.', 'door_not_locked')
     return
   }
-  if (!isWithinDoorReach(player, unit)) {
+  if (!isWithinReach(player, unit.pos_x, unit.pos_z)) {
     sendError(client, 'Get closer to the door.', 'lockpick_too_far')
     return
   }
@@ -138,7 +138,7 @@ export async function onLockpickPress(room: LockpickRoom, client: GameClient, cl
   const session = player?.lockpick
   if (!player || !session || session.busy || session.attemptId === null) return
   const unit = lockedUnit(room, session.unitId)
-  if (!unit || !isActive(player, now) || !isWithinDoorReach(player, unit)) {
+  if (!unit || !isActive(player, now) || !isWithinReach(player, unit.pos_x, unit.pos_z)) {
     abandon(player, session)
     client.send('lockpick_result', { outcome: 'abandoned' })
     return
@@ -197,7 +197,7 @@ export async function onDoorReinforce(room: LockpickRoom, client: GameClient, pa
   const player = room.players.get(client.sessionId)
   if (!player || !isActive(player, now)) return
   const unit = room.housingUnits.find((u) => u.public_id === payload?.unitId && u.status === 'occupied')
-  if (!unit || !isWithinDoorReach(player, unit)) {
+  if (!unit || !isWithinReach(player, unit.pos_x, unit.pos_z)) {
     client.send('door_reinforce_error', { message: 'Get closer to the door.', code: 'lockpick_too_far' })
     return
   }

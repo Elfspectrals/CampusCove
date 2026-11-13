@@ -249,6 +249,25 @@ Decision (2026-11-13): every Saturday from 15:00 to 17:00 (Paris time), six stal
 - [done] Ambience: six shoppers in wear outfits stroll from stall to stall and pause at each while the market is open (`useMarketCrowd`, `game/market/marketCrowd.ts`), a folk loop near the bandstand while the market is open (`build_market_music.py`), bell, sale and purchase sounds (`build_market_sfx.py`, Earshot bank), bunting and lamps from the square.
 - [done] Playtested on 2026-11-13 with the two playtest accounts on a worktree stack (market forced open): claim and colour, lay out, buy by aiming at a lot (cash and tax checked in the ledger), the seller's sale notice, a retried purchase bought once, take a lot back, shoppers and music loading. Not seen in play: the opening bell and the 15-minute and closing banners, which need the real Saturday clock.
 
+## Cove Heights gated estate (doing, branch feat/cove-heights-gated-estate)
+
+Decision (2026-11-06): a walled estate north of the mall, reached by Cove Road from the mall avenue, with 16 lots that each get a house of its own (master plan `docs/GATED_COMMUNITY.md`, anti-monotony rules R1-R11 in 7.2c.1). The gate is residents-only by design but open until lots sell.
+
+- [done] Estate shell: wall, main and emergency gates, loop road, 16 lots, clubhouse shell, park, Cove Road. Not walked in game since the move north of the mall.
+- [done] Colonial Villa on A-02 (20 000) and Villa Serena on A-01 (26 000), walk-in, for sale.
+- [doing] Harbor Shingle House on A-03 (28 000): cedar shakes, gambrel roof, wrap porch on the east corner, west garage wing, harbor interior plan. Built; not walked in game yet.
+- [doing] Skyline Residence on A-04 (32 000): contemporary, stepped flat roof, cedar timber frame entry, double-height living room with a floating stair and glass gallery, west garage wing whose roof is a walkable terrace from the primary suite. Built; not walked in game yet.
+- [doing] Tidewater House on B-01 (14 000): first executive home and first north-facing house, Lowcountry, two-tier gallery with both tiers walkable, recessed west garage, a real back door to the garden (shared open state and lock with the front door). Built; not walked in game yet.
+- [todo] The other 11 houses of the 7.2c.2 programme, next B-02 Maison Lavande. Status table, workflow and known follow-ups: `docs/GATED_COMMUNITY.md` 7.2c.0.
+- [todo] Playtest the five houses in game (buy, walkable terrace and gallery, back door, lock): needs `make seed` and the dev stack on this branch.
+- [todo] Residents-only gate logic.
+
+Decision (2026-11-12): rule R8 allows an open wrap porch up to 2.0 m into a side setback when the neighbouring building stays at least 4.0 m away. A-03 keeps W 13.0 like A-02 and its interior goes 0.4 k over the 12 k triangle ceiling.
+
+Decision (2026-11-12): villas keep the standard house tax of 5 % of the price per 24 h (A-02 1 000, A-01 1 300, A-03 1 400 coins a day), above the orchard's ~900 a day on purpose: taxes are there to make owners keep playing. No `tax_coins` override for villas.
+
+Decision (2026-11-12): executive homes (B lots) get a 9 k interior triangle budget; B-01 is accepted at 9.5 k. B-01 keeps W 11.0 and every later B house planned at 11.0 changes its width by at least 0.4 m. A house may have a real back door; it shares the front door's open state and lock.
+
 ## Later
 
 - Fishing as the second job (reuse the darts power meter or the Drink Fast balance bar; rod and fish models exist).

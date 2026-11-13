@@ -14,6 +14,7 @@ export interface WorldHouse {
   position: Vec3
   rotationY: number
   interiorOffset: Vec3
+  backDoor?: Vec3
 }
 
 export interface ClinicBed {
@@ -142,6 +143,16 @@ function parseVec3(raw: Json, what: string): Vec3 {
     throw new Error(`world manifest: invalid ${what} ${JSON.stringify(raw)}`)
   }
   return { x: raw[0], y: raw[1], z: raw[2] }
+}
+
+export function parseHouse(building: Json): WorldHouse {
+  const house: WorldHouse = {
+    position: parseVec3(building.position, `position of ${building.key}`),
+    rotationY: building.rotationY,
+    interiorOffset: parseVec3(building.interiorOffset, `interiorOffset of ${building.key}`)
+  }
+  if (building.backDoor !== undefined) house.backDoor = parseVec3(building.backDoor, `backDoor of ${building.key}`)
+  return house
 }
 
 function parseClinic(raw: Json): WorldClinic | null {
@@ -323,6 +334,19 @@ export function doorDestination(key: string, name: string, building: Vec3, door:
   }
 }
 
+/** Extra admin teleport points written by zone apply scripts (`manifest.adminDestinations`), e.g. outside a gate.
+ * Entries without a key, a name or a valid position are skipped; position y is replaced by the eye height. */
+export function parseAdminDestinations(raw: Json): TeleportDestination[] {
+  if (!Array.isArray(raw)) return []
+  const out: TeleportDestination[] = []
+  for (const entry of raw) {
+    const p = entry?.position
+    if (typeof entry?.key !== 'string' || typeof entry?.name !== 'string' || !Array.isArray(p) || !Number.isFinite(p[0]) || !Number.isFinite(p[2])) continue
+    out.push({ key: entry.key, name: entry.name, position: { x: p[0], y: EYE_HEIGHT, z: p[2] }, yaw: Number.isFinite(entry.yaw) ? entry.yaw : 0 })
+  }
+  return out
+}
+
 function parseWorld(manifest: Json): World {
   if (!Array.isArray(manifest?.zones)) throw new Error('world manifest: missing zones')
   const workDoors: World['workDoors'] = new Map()
@@ -333,19 +357,14 @@ function parseWorld(manifest: Json): World {
   const fountains = (manifest.fountains ?? []).map((raw: Json, i: number) => parseVec3(raw, `fountain ${i}`))
   for (const zone of manifest.zones) {
     for (const building of zone.buildings ?? []) {
-      if (building.kind === 'house' && building.interiorOffset) {
-        houses.set(building.key, {
-          position: parseVec3(building.position, `position of ${building.key}`),
-          rotationY: building.rotationY,
-          interiorOffset: parseVec3(building.interiorOffset, `interiorOffset of ${building.key}`)
-        })
-      }
+      if (building.kind === 'house' && building.interiorOffset) houses.set(building.key, parseHouse(building))
       if (building.kind !== 'work' && building.kind !== 'store') continue
       const door = parseVec3(building.door, `door of ${building.key}`)
       workDoors.set(building.key, { x: door.x, z: door.z })
       destinations.push(doorDestination(building.key, typeof building.name === 'string' ? building.name : building.key, parseVec3(building.position, `position of ${building.key}`), door))
     }
   }
+  destinations.push(...parseAdminDestinations(manifest.adminDestinations))
   const b = manifest.bounds
   if (![b?.minX, b?.maxX, b?.minZ, b?.maxZ].every(Number.isFinite)) throw new Error('world manifest: invalid bounds')
   const pub = parsePub(manifest.pub)

@@ -110,9 +110,12 @@ export interface AdminSummonedPayload {
 }
 
 /** 'door_sound': only sent to players within 5 m of the door (12 m for lockpicking). `door` is the building key (house model key or work key). */
+export type DoorSide = 'front' | 'back'
+
 export interface DoorSoundPayload {
   door: string
   sound: 'open' | 'close' | 'lock' | 'unlock' | 'rattle' | 'pick_click' | 'pick_scrape'
+  side?: DoorSide
 }
 
 /** 'lockpick_pin': the next pin to set (docs/LOCKPICK.md). `phase` is the needle position (0 to 1) when sent. */

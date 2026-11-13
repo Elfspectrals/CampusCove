@@ -868,7 +868,7 @@ const interactions = useInteractionTargets({
   housingLeaveDetailFor: housing.leaveDetailFor,
   isWorkDoorOpen: (lot) => housing.isWorkDoorOpen(lot.key),
   onHousingDoor: () => {
-    const unit = housing.nearbyUnit.value
+    const unit = housing.nearbyUnit.value?.unit
     const action = unit ? housing.actionFor(unit) : null
     if (action === 'open' || action === 'close' || action === 'locked') arms?.use('door')
     else if (action === 'lock' || action === 'pick') arms?.use('key')
@@ -1577,11 +1577,11 @@ const realtime = useGameRealtime({
     houseFurniture.applyHouses(houses)
   },
   onDoorsSync: housing.applyOpenDoors,
-  onDoorSound: ({ door, sound }) => {
-    const node = frontDoorNode(door)
+  onDoorSound: ({ door, sound, side = 'front' }) => {
+    const node = frontDoorNode(door, side)
     if (!node) return
     sfx.playOn(`door_${sound}`, node)
-    if (sound === 'rattle') rattleFrontDoor(door)
+    if (sound === 'rattle') rattleFrontDoor(door, side)
   },
   onMyOutfit: (models) => {
     if (!policeOnDuty.value) arms?.setTop(models.top)

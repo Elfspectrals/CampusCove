@@ -32,10 +32,10 @@ class HousingApiTest extends TestCase
             'Authorization' => 'Bearer '.$buyer['token'],
         ]);
         $list->assertOk();
-        $list->assertJsonCount(10, 'units');
-        // every unit is one of the town houses (front/public/assets/houses/<model_key>/)
+        $list->assertJsonCount(15, 'units');
+        // every unit is one of the town houses or a Cove Heights villa (front/public/assets/houses/<model_key>/)
         $modelKeys = collect($list->json('units'))->pluck('model_key')->sort()->values()->all();
-        $this->assertSame(array_map(fn (int $i) => sprintf('house_%02d', $i), range(1, 10)), $modelKeys);
+        $this->assertSame(['cove_home_b01', 'cove_villa_a01', 'cove_villa_a02', 'cove_villa_a03', 'cove_villa_a04', ...array_map(fn (int $i) => sprintf('house_%02d', $i), range(1, 10))], $modelKeys);
         $list->assertJsonPath('my_unit', null);
 
         $buyUnit = HousingUnit::query()->where('offer_type', 'buy')->orderBy('unit_id')->firstOrFail();
@@ -81,7 +81,7 @@ class HousingApiTest extends TestCase
     public function test_buy_insufficient_funds(): void
     {
         $buyer = $this->registerAndCreditWallet(100, 'coins');
-        $unit = HousingUnit::query()->where('offer_type', 'buy')->firstOrFail();
+        $unit = HousingUnit::query()->where('offer_type', 'buy')->orderBy('price_coins')->firstOrFail();
 
         $this->postJson('/api/housing/units/'.$unit->public_id.'/buy', [], [
             'Authorization' => 'Bearer '.$buyer['token'],
@@ -92,7 +92,7 @@ class HousingApiTest extends TestCase
     {
         $first = $this->registerAndCreditWallet(10_000, 'coins');
         $second = $this->registerAndCreditWallet(10_000, 'coins');
-        $unit = HousingUnit::query()->where('offer_type', 'buy')->firstOrFail();
+        $unit = HousingUnit::query()->where('offer_type', 'buy')->orderBy('price_coins')->firstOrFail();
 
         $this->postJson('/api/housing/units/'.$unit->public_id.'/buy', [], [
             'Authorization' => 'Bearer '.$first['token'],
@@ -122,7 +122,7 @@ class HousingApiTest extends TestCase
     {
         Carbon::setTestNow(Carbon::parse('2026-09-22 12:00:00 UTC'));
         $owner = $this->registerAndCreditWallet(10_000, 'coins');
-        $unit = HousingUnit::query()->where('offer_type', 'buy')->firstOrFail();
+        $unit = HousingUnit::query()->where('offer_type', 'buy')->orderBy('price_coins')->firstOrFail();
 
         $response = $this->postJson('/api/housing/units/'.$unit->public_id.'/buy', [], [
             'Authorization' => 'Bearer '.$owner['token'],
@@ -139,7 +139,7 @@ class HousingApiTest extends TestCase
     public function test_collect_due_taxes_debits_the_owner_and_moves_the_due_date(): void
     {
         Carbon::setTestNow(Carbon::parse('2026-09-22 12:00:00 UTC'));
-        $unit = HousingUnit::query()->where('offer_type', 'buy')->firstOrFail();
+        $unit = HousingUnit::query()->where('offer_type', 'buy')->orderBy('price_coins')->firstOrFail();
         $tax = (int) ceil($unit->price_coins * 0.05);
         $owner = $this->registerAndCreditWallet($unit->price_coins + 2 * $tax, 'coins');
 
@@ -225,7 +225,7 @@ class HousingApiTest extends TestCase
     public function test_unpaid_tax_seizes_the_house_and_deletes_its_room(): void
     {
         Carbon::setTestNow(Carbon::parse('2026-09-22 12:00:00 UTC'));
-        $unit = HousingUnit::query()->where('offer_type', 'buy')->firstOrFail();
+        $unit = HousingUnit::query()->where('offer_type', 'buy')->orderBy('price_coins')->firstOrFail();
         $owner = $this->registerAndCreditWallet($unit->price_coins, 'coins');
 
         $this->postJson('/api/housing/units/'.$unit->public_id.'/buy', [], [
@@ -253,7 +253,7 @@ class HousingApiTest extends TestCase
     {
         $owner = $this->registerAndCreditWallet(10_000, 'coins');
         $visitor = $this->registerAndCreditWallet(0, 'coins');
-        $unit = HousingUnit::query()->where('offer_type', 'buy')->firstOrFail();
+        $unit = HousingUnit::query()->where('offer_type', 'buy')->orderBy('price_coins')->firstOrFail();
 
         $this->postJson('/api/housing/units/'.$unit->public_id.'/buy', [], [
             'Authorization' => 'Bearer '.$owner['token'],
@@ -288,7 +288,7 @@ class HousingApiTest extends TestCase
     {
         $owner = $this->registerAndCreditWallet(10_000, 'coins');
         $visitor = $this->registerAndCreditWallet(0, 'coins');
-        $unit = HousingUnit::query()->where('offer_type', 'buy')->firstOrFail();
+        $unit = HousingUnit::query()->where('offer_type', 'buy')->orderBy('price_coins')->firstOrFail();
 
         $this->postJson('/api/housing/units/'.$unit->public_id.'/buy', [], [
             'Authorization' => 'Bearer '.$owner['token'],
@@ -310,7 +310,7 @@ class HousingApiTest extends TestCase
     public function test_buying_gives_the_owner_a_house_key(): void
     {
         $owner = $this->registerAndCreditWallet(10_000, 'coins');
-        $unit = HousingUnit::query()->where('offer_type', 'buy')->firstOrFail();
+        $unit = HousingUnit::query()->where('offer_type', 'buy')->orderBy('price_coins')->firstOrFail();
 
         $this->assertSame(0, $this->houseKeyQuantity($owner));
         $this->postJson('/api/housing/units/'.$unit->public_id.'/buy', [], [
@@ -329,7 +329,7 @@ class HousingApiTest extends TestCase
     {
         $owner = $this->registerAndCreditWallet(10_000, 'coins');
         $friend = $this->registerAndCreditWallet(0, 'coins');
-        $unit = HousingUnit::query()->where('offer_type', 'buy')->firstOrFail();
+        $unit = HousingUnit::query()->where('offer_type', 'buy')->orderBy('price_coins')->firstOrFail();
         $this->postJson('/api/housing/units/'.$unit->public_id.'/buy', [], [
             'Authorization' => 'Bearer '.$owner['token'],
         ])->assertOk();
@@ -391,7 +391,7 @@ class HousingApiTest extends TestCase
     public function test_seizure_takes_the_keys_from_the_owner_and_the_key_holders(): void
     {
         Carbon::setTestNow(Carbon::parse('2026-09-22 12:00:00 UTC'));
-        $unit = HousingUnit::query()->where('offer_type', 'buy')->firstOrFail();
+        $unit = HousingUnit::query()->where('offer_type', 'buy')->orderBy('price_coins')->firstOrFail();
         $owner = $this->registerAndCreditWallet($unit->price_coins, 'coins');
         $friend = $this->registerAndCreditWallet(0, 'coins');
         $this->postJson('/api/housing/units/'.$unit->public_id.'/buy', [], [
@@ -415,7 +415,7 @@ class HousingApiTest extends TestCase
         $owner = $this->registerAndCreditWallet(10_000, 'coins');
         $friend = $this->registerAndCreditWallet(0, 'coins');
         $stranger = $this->registerAndCreditWallet(0, 'coins');
-        $unit = HousingUnit::query()->where('offer_type', 'buy')->firstOrFail();
+        $unit = HousingUnit::query()->where('offer_type', 'buy')->orderBy('price_coins')->firstOrFail();
         $this->postJson('/api/housing/units/'.$unit->public_id.'/buy', [], [
             'Authorization' => 'Bearer '.$owner['token'],
         ])->assertOk()->assertJsonPath('unit.door_locked', false);
@@ -442,7 +442,7 @@ class HousingApiTest extends TestCase
     public function test_seizure_unlocks_the_door(): void
     {
         Carbon::setTestNow(Carbon::parse('2026-09-22 12:00:00 UTC'));
-        $unit = HousingUnit::query()->where('offer_type', 'buy')->firstOrFail();
+        $unit = HousingUnit::query()->where('offer_type', 'buy')->orderBy('price_coins')->firstOrFail();
         $owner = $this->registerAndCreditWallet($unit->price_coins, 'coins');
         $this->postJson('/api/housing/units/'.$unit->public_id.'/buy', [], [
             'Authorization' => 'Bearer '.$owner['token'],

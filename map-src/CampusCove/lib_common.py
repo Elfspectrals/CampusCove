@@ -81,6 +81,38 @@ def make_texture(key, base, var=0.06, pattern="noise", size=64, accent=None, see
             elif pattern == "checker":
                 if ((x // 16) + (y // 16)) % 2 == 0:
                     r, g, bl = ar + k, ag + k, ab + k
+            elif pattern == "shakes":
+                course, row = y // 8, y % 8
+                width = (9, 13, 11)[course % 3]
+                shifted = x + (course * 23) % 64
+                if row == 0:
+                    r, g, bl = ar, ag, ab
+                elif row == 1:
+                    r, g, bl = (r0 + ar) / 2, (g0 + ag) / 2, (b0 + ab) / 2
+                elif shifted % width == 0:
+                    r, g, bl = ar, ag, ab
+                else:
+                    tone = (((shifted // width) * 73 + course * 151) % 11 - 5) / 5 * 0.05
+                    r, g, bl = r + tone, g + tone, bl + tone
+            elif pattern == "slats":
+                slat, col = x // 8, x % 8
+                if col == 0:
+                    r, g, bl = ar, ag, ab
+                elif col == 1:
+                    r, g, bl = (r0 + ar) / 2, (g0 + ag) / 2, (b0 + ab) / 2
+                else:
+                    tone = (((slat * 37) % 7) - 3) / 3 * 0.04
+                    r, g, bl = r + tone, g + tone, bl + tone
+            elif pattern == "seams":
+                col = x % 32
+                if col == 0:
+                    r, g, bl = ar, ag, ab
+                elif col == 1:
+                    r, g, bl = r0 + 0.08, g0 + 0.08, b0 + 0.08
+                elif col == 2:
+                    r, g, bl = (r0 + ar) / 2, (g0 + ag) / 2, (b0 + ab) / 2
+                else:
+                    r, g, bl = r0 + k * 0.3, g0 + k * 0.3, b0 + k * 0.3
             px.extend((max(0, min(1, r)), max(0, min(1, g)), max(0, min(1, bl)), 1.0))
     img.pixels.foreach_set(px)
     img.pack()
@@ -409,12 +441,15 @@ def snapshot(scene, path, cam_game, look_game, lens=24.0, res=(960, 640), hide_p
     return path
 
 
-def text_mesh(coll, name, body, gx, gz, y0, size, extrude, mat, facing="+z"):
-    """Flat 3D lettering as a real mesh (no font data needed at export). facing: '+z' = readable from game +Z."""
+def text_mesh(coll, name, body, gx, gz, y0, size, extrude, mat, facing="+z", resolution=None):
+    """Flat 3D lettering as a real mesh (no font data needed at export). facing: '+z' = readable from game +Z.
+    resolution: curve resolution of the glyph outlines (Blender default 12); 2-3 keeps small labels cheap."""
     cu = bpy.data.curves.new(name + "_cu", "FONT")
     cu.body = body
     cu.size = size
     cu.extrude = extrude
+    if resolution is not None:
+        cu.resolution_u = resolution
     cu.align_x = "CENTER"
     cu.align_y = "BOTTOM"
     tmp = bpy.data.objects.new(name + "_tmp", cu)
@@ -507,26 +542,29 @@ def walk_in_shell(coll, cols, W, zf, H, mat, glass, front, west, east, interior_
     return objs, (0.0, fy, oz), zb
 
 
-def perimeter(coll, name, W, zf, zb, y0, h, thick, mat, front_gaps=(), tile=1.0):
+def perimeter(coll, name, W, zf, zb, y0, h, thick, mat, front_gaps=(), tile=1.0, back_gaps=()):
     hw = W / 2
     objs = []
-    cur, idx = -hw, 0
-    for a, bb in sorted(front_gaps):
-        if a - cur > 0.01:
-            objs.append(box(coll, f"{name}_Front{idx}", (cur + a) / 2, zf - thick / 2, y0, a - cur, thick, h, mat, tile=tile))
-        cur, idx = bb, idx + 1
-    objs.append(box(coll, f"{name}_Front{idx}", (cur + hw) / 2, zf - thick / 2, y0, hw - cur, thick, h, mat, tile=tile))
-    objs.append(box(coll, f"{name}_Back", 0, zb + thick / 2, y0, W, thick, h, mat, tile=tile))
+    for side, z, gaps in (("Front", zf - thick / 2, front_gaps), ("Back", zb + thick / 2, back_gaps)):
+        if side == "Back" and not gaps:
+            objs.append(box(coll, f"{name}_Back", 0, z, y0, W, thick, h, mat, tile=tile))
+            continue
+        cur, idx = -hw, 0
+        for a, bb in sorted(gaps):
+            if a - cur > 0.01:
+                objs.append(box(coll, f"{name}_{side}{idx}", (cur + a) / 2, z, y0, a - cur, thick, h, mat, tile=tile))
+            cur, idx = bb, idx + 1
+        objs.append(box(coll, f"{name}_{side}{idx}", (cur + hw) / 2, z, y0, hw - cur, thick, h, mat, tile=tile))
     for side, x in (("W", -hw + thick / 2), ("E", hw - thick / 2)):
         objs.append(box(coll, f"{name}_{side}", x, (zf + zb) / 2, y0, thick, zf - zb - 2 * thick, h, mat, tile=tile))
     return objs
 
 
-def hinged_door(coll, parts, hinge_x, zf, y0):
-    stale = bpy.data.objects.get("Door")
+def hinged_door(coll, parts, hinge_x, zf, y0, name="Door"):
+    stale = bpy.data.objects.get(name)
     if stale:
-        stale.name = "Door_stale"
-    door = join(coll, "Door", [box(coll, f"Door_{i}", gx, zf, y0 + py, sx, sz, h, m, bevel=bv) for i, (gx, py, sx, sz, h, m, bv) in enumerate(parts)])
+        stale.name = f"{name}_stale"
+    door = join(coll, name, [box(coll, f"{name}_{i}", gx, zf, y0 + py, sx, sz, h, m, bevel=bv) for i, (gx, py, sx, sz, h, m, bv) in enumerate(parts)])
     pivot = Vector(b(hinge_x, zf, y0))
     door.data.transform(Matrix.Translation(door.location - pivot))
     door.location = pivot
@@ -1199,3 +1237,188 @@ def render_preview(sc, obj, path):
         o.hide_render = False
     bpy.data.objects.remove(cam, do_unlink=True)
     bpy.data.objects.remove(sun, do_unlink=True)
+
+
+# ---------------------------------------------------------------- shared architectural builders (roofs, arches, rails)
+def _mesh_from(coll, name, bm, mat, tile=1.0, expect=None):
+    """Finish a bmesh into an object at the origin (vertices are already in Blender world coordinates).
+    expect: optional list (one per face) of outward Blender vectors used to orient open meshes."""
+    if expect is None:
+        bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    else:
+        bm.normal_update()
+        for f, want in zip(bm.faces, expect):
+            if f.normal.dot(Vector(want)) < 0:
+                f.normal_flip()
+    bm.normal_update()
+    _box_uv(bm, tile)
+    me = bpy.data.meshes.new(name)
+    bm.to_mesh(me)
+    bm.free()
+    me.materials.append(mat)
+    ob = bpy.data.objects.new(name, me)
+    coll.objects.link(ob)
+    return ob
+
+
+def hip_roof(coll, name, gx, gz, y_drip, sx, sz, rise, thick, mat, tile=0.7):
+    """Closed hip roof over the drip rectangle sx x sz centred on game (gx, gz): four slopes of equal pitch (45 deg hips),
+    the ridge on the longer side at y_drip + rise (a pyramid when sx == sz), a flat soffit `thick` below the drip edge."""
+    x0, x1, z0, z1 = gx - sx / 2, gx + sx / 2, gz - sz / 2, gz + sz / 2
+    bm = bmesh.new()
+    top = [bm.verts.new(b(x, z, y_drip)) for x, z in ((x0, z0), (x1, z0), (x1, z1), (x0, z1))]
+    bot = [bm.verts.new(b(x, z, y_drip - thick)) for x, z in ((x0, z0), (x1, z0), (x1, z1), (x0, z1))]
+    yr = y_drip + rise
+    half = abs(sx - sz) / 2
+    if half < 1e-4:
+        r = bm.verts.new(b(gx, gz, yr))
+        for i in range(4):
+            bm.faces.new((top[i], top[(i + 1) % 4], r))
+    elif sx > sz:
+        r0, r1 = bm.verts.new(b(gx - half, gz, yr)), bm.verts.new(b(gx + half, gz, yr))
+        bm.faces.new((top[0], top[1], r1, r0))
+        bm.faces.new((top[1], top[2], r1))
+        bm.faces.new((top[2], top[3], r0, r1))
+        bm.faces.new((top[3], top[0], r0))
+    else:
+        r0, r1 = bm.verts.new(b(gx, gz - half, yr)), bm.verts.new(b(gx, gz + half, yr))
+        bm.faces.new((top[0], top[1], r0))
+        bm.faces.new((top[1], top[2], r1, r0))
+        bm.faces.new((top[2], top[3], r1))
+        bm.faces.new((top[3], top[0], r0, r1))
+    for i in range(4):
+        bm.faces.new((top[i], bot[i], bot[(i + 1) % 4], top[(i + 1) % 4]))
+    bm.faces.new(list(reversed(bot)))
+    return _mesh_from(coll, name, bm, mat, tile)
+
+
+def beam(coll, name, p0, p1, w, h, mat, tile=1.0):
+    """Box of section w x h oriented from game point p0 = (x, z, y) to p1, centred on the segment (hip caps, timbers)."""
+    a, c = Vector(b(*p0)), Vector(b(*p1))
+    d = c - a
+    me = bpy.data.meshes.new(name)
+    bm = bmesh.new()
+    bmesh.ops.create_cube(bm, size=1.0)
+    for v in bm.verts:
+        v.co.x *= d.length
+        v.co.y *= w
+        v.co.z *= h
+    bm.normal_update()
+    _box_uv(bm, tile)
+    bm.to_mesh(me)
+    bm.free()
+    me.materials.append(mat)
+    ob = bpy.data.objects.new(name, me)
+    ob.location = (a + c) / 2
+    ob.rotation_mode = "QUATERNION"
+    ob.rotation_quaternion = d.to_track_quat("X", "Z")
+    coll.objects.link(ob)
+    return ob
+
+
+def arch_panel(coll, name, axis, fixed, a0, a1, y_spring, rise, y_top, depth, mat, seg=8, tile=1.0):
+    """Segmental arch filling the bay a0..a1 from the springing line up to y_top, `depth` thick across `fixed`
+    (axis 'x': the bay runs along game x at z = fixed; 'z': along game z at x = fixed). The pier ends are not built."""
+    c, f = a1 - a0, rise
+    R = (c * c / 4 + f * f) / (2 * f)
+    um, yc = (a0 + a1) / 2, y_spring + f - R
+    phi0 = math.asin(min(1.0, c / (2 * R)))
+
+    def P(u, y, d):
+        return b(u, fixed + d, y) if axis == "x" else b(fixed + d, u, y)
+
+    out_n = Vector(b(0, 1, 0)) if axis == "x" else Vector(b(1, 0, 0))  # +depth direction in Blender
+    bm = bmesh.new()
+    expect = []
+    arc = []
+    for k in range(seg + 1):
+        phi = -phi0 + 2 * phi0 * k / seg
+        arc.append((um + R * math.sin(phi), yc + R * math.cos(phi)))
+    hd = depth / 2
+    for k in range(seg):
+        (u0, y0), (u1, y1) = arc[k], arc[k + 1]
+        for sgn in (1, -1):
+            q = [bm.verts.new(P(u, y, sgn * hd)) for u, y in ((u0, y0), (u1, y1), (u1, y_top), (u0, y_top))]
+            bm.faces.new(q)
+            expect.append(tuple(out_n * sgn))
+        s = [bm.verts.new(P(u, y, d)) for u, y, d in ((u0, y0, hd), (u1, y1, hd), (u1, y1, -hd), (u0, y0, -hd))]
+        bm.faces.new(s)
+        expect.append((0.0, 0.0, -1.0))
+    t = [bm.verts.new(P(u, y_top, d)) for u, d in ((a0, hd), (a1, hd), (a1, -hd), (a0, -hd))]
+    bm.faces.new(t)
+    expect.append((0.0, 0.0, 1.0))
+    return _mesh_from(coll, name, bm, mat, tile, expect=expect)
+
+
+def railing(coll, name, pts, y0, h, step, mat, post=0.08, bar=0.025, glass=None):
+    """Metal railing along the game polyline pts [(x, z)]: newel posts at the points, top and bottom rails, square bars
+    every `step`. Returns the objects (visual only)."""
+    out = []
+    for i, (x, z) in enumerate(pts):
+        out.append(box(coll, f"{name}_Post{i}", x, z, y0, post, post, h, mat))
+    for i, ((ax, az), (bx, bz)) in enumerate(zip(pts, pts[1:])):
+        ln = math.hypot(bx - ax, bz - az)
+        rot = math.atan2(-(bz - az), bx - ax)
+        mx, mz = (ax + bx) / 2, (az + bz) / 2
+        out.append(box(coll, f"{name}_Top{i}", mx, mz, y0 + h - 0.05, ln, 0.05, 0.05, mat, rot=rot))
+        if glass is not None:
+            out.append(box(coll, f"{name}_Glass{i}", mx, mz, y0 + 0.03, ln - post, 0.02, h - 0.075, glass, rot=rot))
+            continue
+        out.append(box(coll, f"{name}_Bottom{i}", mx, mz, y0 + 0.12, ln, 0.04, 0.04, mat, rot=rot))
+        n = max(1, int(ln / step))
+        for k in range(1, n):
+            t = k / n
+            out.append(box(coll, f"{name}_Bar{i}_{k:02d}", ax + (bx - ax) * t, az + (bz - az) * t, y0 + 0.12, bar, bar, h - 0.17, mat))
+    return out
+
+
+def pergola(coll, name, x0, x1, z0, z1, y0, h, mat, post=0.12, beam=(0.10, 0.22), slat=(0.05, 0.14), step=0.35, over=0.15):
+    assert x1 - x0 > 2 * post and z1 - z0 > 2 * post, (name, x0, x1, z0, z1)
+    out = []
+    xs, zs = (x0 + post / 2, x1 - post / 2), (z0 + post / 2, z1 - post / 2)
+    for i, (px, pz) in enumerate((px, pz) for px in xs for pz in zs):
+        out.append(box(coll, f"{name}_Post{i}", px, pz, y0, post, post, h, mat))
+    for i, px in enumerate(xs):
+        out.append(box(coll, f"{name}_Beam{i}", px, (z0 + z1) / 2, y0 + h, beam[0], z1 - z0 + 2 * over, beam[1], mat))
+    n = max(2, round((z1 - z0) / step))
+    for k in range(n):
+        out.append(box(coll, f"{name}_Slat{k:02d}", (x0 + x1) / 2, z0 + (z1 - z0) * (k + 0.5) / n, y0 + h + beam[1],
+                       x1 - x0 + 2 * over, slat[0], slat[1], mat))
+    return out
+
+
+def prism_x(coll, name, poly, x0, x1, mat, tile=1.0):
+    assert len(poly) >= 3 and x1 > x0, (name, poly, x0, x1)
+    bm = bmesh.new()
+    west = [bm.verts.new(b(x0, z, y)) for z, y in poly]
+    east = [bm.verts.new(b(x1, z, y)) for z, y in poly]
+    caps = [bm.faces.new(west), bm.faces.new(list(reversed(east)))]
+    n = len(poly)
+    for i in range(n):
+        j = (i + 1) % n
+        bm.faces.new((west[i], west[j], east[j], east[i]))
+    bmesh.ops.triangulate(bm, faces=caps)
+    return _mesh_from(coll, name, bm, mat, tile)
+
+
+def lean_to_corner(coll, name, x0, x_wall, x_out, z_wall, z_out, z1, y_high, y_low, thick, mat, tile=0.7, mirror=1):
+    assert x0 < x_wall < x_out and z1 < z_wall < z_out and y_low < y_high and mirror in (1, -1), name
+    corners = ((x0, z_wall, y_high), (x0, z_out, y_low), (x_out, z_out, y_low), (x_wall, z_wall, y_high),
+               (x_out, z1, y_low), (x_wall, z1, y_high))
+    bm = bmesh.new()
+    top = [bm.verts.new(b(mirror * x, z, y)) for x, z, y in corners]
+    bot = [bm.verts.new(b(mirror * x, z, y - thick)) for x, z, y in corners]
+    A, B, C, D, E, F = range(6)
+    for quad in ((A, D, C, B), (D, F, E, C)):
+        bm.faces.new([top[i] for i in quad])
+        bm.faces.new([bot[i] for i in reversed(quad)])
+    for i, j in ((A, B), (B, C), (C, E), (E, F), (F, D), (D, A)):
+        bm.faces.new((top[i], bot[i], bot[j], top[j]))
+    return _mesh_from(coll, name, bm, mat, tile)
+
+
+def rot_uvs90(objs):
+    """Turn the first UV map of each object by 90 degrees (vertical planks from a horizontal-plank texture)."""
+    for o in objs:
+        for d in o.data.uv_layers[0].data:
+            d.uv = (d.uv[1], d.uv[0])
