@@ -611,9 +611,7 @@ const {
   error: tradeError,
   syncing: tradeSyncing,
 } = trade
-const tradeUiOpen = computed(() => watchMenuOpen.value || tradeWindowOpen.value)
-// Back to mouse look once the watch and the trade window are closed.
-watch(tradeUiOpen, (open) => {
+watch(tradeWindowOpen, (open) => {
   if (!open && !document.pointerLockElement) requestPointerLock()
 })
 const watchKey = computed(() => actionKeyLabels('survivalWatch')[0] ?? 'T')
@@ -666,7 +664,8 @@ const survival = useSurvival({
   onStamina: (value) => punch.syncStamina(value),
   onIntoxication: (value) => intoxication.set(value),
   onWatchTap: () => {
-    if (pointerLocked.value && !inventoryOpen.value) trade.openMenu()
+    if (watchMenuOpen.value) trade.closeMenu()
+    else if (pointerLocked.value && !inventoryOpen.value) trade.openMenu()
   },
 })
 const {
@@ -801,6 +800,7 @@ const mapKey = computed(() => actionKeyLabels('map')[0] ?? 'M')
 // Esc frees the mouse and opens the pause menu: the full map gives way to it
 watch(pointerLocked, (locked) => {
   if (!locked) minimap.fullOpen.value = false
+  if (!locked) trade.closeMenu()
 })
 
 const environment = useRoomEnvironment({
@@ -920,7 +920,7 @@ const pauseMenuOpen = computed(
     !inventoryOpen.value &&
     !switchingRoom.value &&
     !checkoutOpen.value &&
-    !tradeUiOpen.value &&
+    !tradeWindowOpen.value &&
     !pubUiOpen.value &&
     !zoneBuyerOpen.value &&
     !atmOpen.value &&
@@ -950,12 +950,19 @@ function sendChat(text: string): void {
   gameRoomRef.value?.send('chat', { text })
 }
 
+const WALK_WITH_WATCH_ACTIONS = ['moveForward', 'moveBack', 'moveLeft', 'moveRight', 'jump', 'survivalWatch'] as const
+
+function isWalkWithWatchKey(code: string): boolean {
+  return code === 'ShiftLeft' || code === 'ShiftRight' || WALK_WITH_WATCH_ACTIONS.some((action) => matches(action, code))
+}
+
 function handleExtraKeyDown(e: KeyboardEvent): boolean {
   if (chatOpen.value || atmOpen.value || playerListOpen.value) return true
   // the character screen owns the keyboard (Esc closes the editor)
   if (creator.value) return true
-  // the watch and the trade window take the keyboard (coins field, Esc): no game key behind them
-  if (tradeUiOpen.value) return true
+  // the trade window takes the keyboard (coins field, Esc): no game key behind it
+  if (tradeWindowOpen.value) return true
+  if (watchMenuOpen.value && !isWalkWithWatchKey(e.code)) return true
   // the bouncer's text field and the pub games (Space holds the pint) take the keyboard too
   if (pubSecretOpen.value || pubGamesOpen.value) return true
   // Y / N answer a Drink Fast challenge

@@ -1,13 +1,20 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { actionKeyLabels, matches } from '../../config/keybindings'
+import { WATCH_HOME, stepWatch, watchKeyOf, type WatchView } from '../../game/watch/watchNav'
 import type { AdminMenuPayload, TradeNearbyPlayer, TradePendingPayload, TradeRequestedPayload } from '../../types/gameRealtime'
+import type { UiIconName } from '../ui/icons'
 import UiIcon from '../ui/UiIcon.vue'
+import WatchAdminApp from './watch/WatchAdminApp.vue'
+import WatchTradeApp from './watch/WatchTradeApp.vue'
 
 /**
- * The watch's apps, opened with a tap on the watch key (holding it still raises the wrist): Trade, and Admin for
- * admins (teleport to a place, bring a player here).
+ * The watch's apps, opened with a tap on the watch key (holding it still raises the wrist). It sits in the bottom
+ * left corner and is driven by the keyboard (watchNav.ts) so the player keeps walking and looking around.
+ * Adding an app: docs/WATCH_APPS.md.
  */
-defineProps<{
+const props = defineProps<{
   nearby: TradeNearbyPlayer[]
   incoming: TradeRequestedPayload | null
   outgoing: TradePendingPayload | null
@@ -27,144 +34,139 @@ const emit = defineEmits<{
   summon: [sessionId: string]
 }>()
 
-const app = ref<'home' | 'trade' | 'admin'>('home')
-const appTitles = { home: '', trade: ' · Trade', admin: ' · Admin' }
+const { t } = useI18n()
 
-function openAdmin(): void {
-  app.value = 'admin'
-  emit('adminOpen')
+type AppKey = 'trade' | 'admin'
+
+interface WatchApp {
+  key: AppKey
+  icon: UiIconName
+  tile: string
+  badge: boolean
+  enterLabel: string
 }
+
+const apps = computed<WatchApp[]>(() => [
+  { key: 'trade', icon: 'hand', tile: 'bg-grape', badge: props.incoming !== null, enterLabel: t('watch.trade.enter') },
+  ...(props.isAdmin ? [{ key: 'admin', icon: 'shield', tile: 'bg-coral', badge: false, enterLabel: t('watch.admin.enter') } as const] : []),
+])
+
+const view = ref<WatchView>(WATCH_HOME)
+const openApp = computed(() => (view.value.screen === 'app' ? apps.value[view.value.app] ?? null : null))
+const selectedRow = computed(() => (view.value.screen === 'app' ? view.value.row : -1))
+
+const appRef = ref<{ rowCount: number; activate: (row: number) => void } | null>(null)
+
+const acceptKey = computed(() => actionKeyLabels('acceptChallenge')[0] ?? 'Y')
+const declineKey = computed(() => actionKeyLabels('declineChallenge')[0] ?? 'N')
+
+const clock = ref('')
+function tickClock(): void {
+  clock.value = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+}
+let clockTimer: number | undefined
+
+const errorText = computed(() => (openApp.value?.key === 'admin' ? props.adminError : props.error))
+
+const screenRef = ref<HTMLElement | null>(null)
+watch(view, () => {
+  void nextTick(() => screenRef.value?.querySelector('[data-watch-selected]')?.scrollIntoView({ block: 'nearest' }))
+})
 
 function onKey(e: KeyboardEvent): void {
-  if (e.key !== 'Escape') return
-  if (app.value !== 'home') app.value = 'home'
-  else emit('close')
+  if (props.incoming && !e.repeat && (matches('acceptChallenge', e.code) || matches('declineChallenge', e.code))) {
+    emit('respond', matches('acceptChallenge', e.code))
+    e.preventDefault()
+    e.stopPropagation()
+    return
+  }
+  const key = watchKeyOf(e.code)
+  if (!key) return
   e.preventDefault()
+  e.stopPropagation()
+  if (e.repeat && (key === 'enter' || key === 'back')) return
+  const step = stepWatch(view.value, key, { apps: apps.value.length, rows: appRef.value?.rowCount ?? 0 })
+  view.value = step.view
+  if (step.effect?.kind === 'close') emit('close')
+  else if (step.effect?.kind === 'open' && apps.value[step.effect.app]?.key === 'admin') emit('adminOpen')
+  else if (step.effect?.kind === 'activate') appRef.value?.activate(step.effect.row)
 }
 
-onMounted(() => window.addEventListener('keydown', onKey, true))
-onUnmounted(() => window.removeEventListener('keydown', onKey, true))
+onMounted(() => {
+  tickClock()
+  clockTimer = window.setInterval(tickClock, 10_000)
+  window.addEventListener('keydown', onKey, true)
+})
+onUnmounted(() => {
+  window.clearInterval(clockTimer)
+  window.removeEventListener('keydown', onKey, true)
+})
 </script>
 
 <template>
-  <div class="absolute inset-0 z-[40] flex items-center justify-center bg-black/40" @mousedown.self="emit('close')">
-    <section class="cc-hud w-[min(400px,92vw)] animate-cc-pop overflow-hidden p-0" aria-label="Watch">
-      <header class="flex items-center justify-between bg-pool px-4 py-2 text-ink-950">
-        <button
-          v-if="app !== 'home'"
-          type="button"
-          class="inline-flex items-center"
-          aria-label="Back to the watch apps"
-          @click="app = 'home'"
-        >
-          <UiIcon name="chevron-left" :size="18" />
-        </button>
-        <span class="font-display text-sm uppercase tracking-[0.18em]">Watch{{ appTitles[app] }}</span>
-        <button type="button" class="inline-flex items-center" aria-label="Close the watch" @click="emit('close')">
-          <UiIcon name="x" :size="18" />
-        </button>
-      </header>
-
-      <div v-if="incoming" class="flex items-center gap-2 border-b border-line/10 bg-sun/15 px-4 py-3">
-        <UiIcon name="hand" :size="18" class="text-sun" />
-        <p class="m-0 min-w-0 flex-1 text-sm font-bold text-fog">
-          <span class="text-sun">{{ incoming.fromPseudo }}</span> wants to trade with you.
-        </p>
-        <button type="button" class="cc-btn cc-btn-sm" @click="emit('respond', true)">Accept</button>
-        <button type="button" class="cc-btn cc-btn-sm cc-btn-ghost" @click="emit('respond', false)">Decline</button>
-      </div>
-
-      <ul v-if="app === 'home'" class="m-0 grid list-none grid-cols-3 gap-2 p-4">
-        <li>
-          <button
-            type="button"
-            class="flex w-full flex-col items-center gap-1.5 rounded-xl bg-ink-950/40 px-2 py-3 text-fog transition hover:bg-pool/25"
-            @click="app = 'trade'"
-          >
-            <UiIcon name="users" :size="26" class="text-pool" />
-            <span class="text-xs font-extrabold uppercase tracking-wider">Trade</span>
-          </button>
-        </li>
-        <li v-if="isAdmin">
-          <button
-            type="button"
-            class="flex w-full flex-col items-center gap-1.5 rounded-xl bg-ink-950/40 px-2 py-3 text-fog transition hover:bg-pool/25"
-            @click="openAdmin"
-          >
-            <UiIcon name="shield" :size="26" class="text-sun" />
-            <span class="text-xs font-extrabold uppercase tracking-wider">Admin</span>
-          </button>
-        </li>
-      </ul>
-
-      <div v-else-if="app === 'admin'" class="max-h-[60vh] overflow-y-auto p-3">
-        <p v-if="!adminMenu" class="m-0 px-1 py-4 text-center text-sm text-mist">Loading…</p>
-        <template v-else>
-          <p class="m-0 px-1 pb-2 text-[11px] font-bold uppercase tracking-wider text-mist">Teleport to</p>
-          <ul class="m-0 grid list-none grid-cols-2 gap-1.5 p-0">
-            <li v-for="place in adminMenu.destinations" :key="place.key">
-              <button
-                type="button"
-                class="flex w-full items-center gap-2 rounded-xl bg-ink-950/40 px-2.5 py-2 text-left text-sm font-bold text-fog transition hover:bg-pool/25"
-                @click="emit('teleport', place.key)"
-              >
-                <UiIcon name="map" :size="16" class="shrink-0 text-pool" />
-                <span class="truncate">{{ place.name }}</span>
-              </button>
-            </li>
-          </ul>
-          <p class="m-0 px-1 pb-2 pt-4 text-[11px] font-bold uppercase tracking-wider text-mist">Bring a player here</p>
-          <p v-if="adminMenu.players.length === 0" class="m-0 px-1 py-3 text-center text-sm text-mist">Nobody else is online.</p>
-          <ul v-else class="m-0 list-none p-0">
-            <li v-for="player in adminMenu.players" :key="player.sessionId" class="flex items-center gap-3 rounded-xl px-2 py-2 hover:bg-ink-950/40">
-              <UiIcon name="user" :size="18" class="text-pool" />
-              <div class="min-w-0 flex-1">
-                <p class="m-0 truncate font-display text-base text-fog">{{ player.pseudo }}</p>
-                <p class="m-0 text-[11px] font-bold text-mist">{{ player.distance.toFixed(0) }} m away</p>
-              </div>
-              <button type="button" class="cc-btn cc-btn-sm" @click="emit('summon', player.sessionId)">Bring here</button>
-            </li>
-          </ul>
-        </template>
-      </div>
-
-      <div v-else class="p-3">
-        <div v-if="outgoing" class="mb-2 flex items-center gap-2 rounded-xl bg-ink-950/40 px-3 py-2">
-          <p class="m-0 min-w-0 flex-1 text-sm text-mist">
-            Waiting for <span class="font-bold text-fog">{{ outgoing.toPseudo }}</span> to answer…
-          </p>
-          <button type="button" class="cc-btn cc-btn-sm cc-btn-ghost" @click="emit('cancel')">Cancel</button>
+  <section class="absolute bottom-6 left-4 z-[40] w-[248px] animate-cc-pop" :aria-label="t('watch.label')">
+    <span class="absolute -top-3 left-1/2 h-4 w-28 -translate-x-1/2 rounded-t-[10px] bg-ink-950" aria-hidden="true" />
+    <span class="absolute -bottom-3 left-1/2 h-4 w-28 -translate-x-1/2 rounded-b-[10px] bg-ink-950" aria-hidden="true" />
+    <span class="absolute -right-2 top-14 h-9 w-3 rounded bg-ink-950 ring-1 ring-line/10" aria-hidden="true" />
+    <div class="relative rounded-[30px] bg-ink-950 p-2.5 shadow-[0_14px_30px_rgb(0_0_0/0.35)] ring-1 ring-line/10">
+      <div class="flex h-[272px] flex-col overflow-hidden rounded-[18px] bg-ink-900 text-fog ring-1 ring-line/5">
+        <div class="flex items-center justify-between px-3 pb-1 pt-2 text-xs font-bold text-mist">
+          <span class="font-display text-base text-fog">{{ clock }}</span>
         </div>
-        <p class="m-0 px-1 pb-2 text-[11px] font-bold uppercase tracking-wider text-mist">Players nearby</p>
-        <p v-if="nearby.length === 0" class="m-0 px-1 py-4 text-center text-sm text-mist">
-          Nobody around. Walk up to another player to trade.
-        </p>
-        <ul v-else class="m-0 max-h-[50vh] list-none overflow-y-auto p-0">
-          <li v-for="player in nearby" :key="player.sessionId" class="flex items-center gap-3 rounded-xl px-2 py-2 hover:bg-ink-950/40">
-            <UiIcon name="user" :size="18" class="text-pool" />
-            <div class="min-w-0 flex-1">
-              <p class="m-0 truncate font-display text-base text-fog">{{ player.pseudo }}</p>
-              <p class="m-0 text-[11px] font-bold text-mist">
-                {{ player.distance.toFixed(1) }} m<span v-if="outgoing?.toSessionId === player.sessionId"> · asked</span>
-                <span v-else-if="player.busy"> · already trading</span>
-                <span v-else-if="!player.inReach"> · get closer</span>
-              </p>
-            </div>
-            <button
-              type="button"
-              class="cc-btn cc-btn-sm"
-              :disabled="!player.inReach || player.busy || outgoing !== null || incoming !== null"
-              @click="emit('request', player)"
-            >
-              Trade
-            </button>
-          </li>
-        </ul>
-      </div>
 
-      <p v-if="app === 'admin' ? adminError : error" class="m-0 bg-coral/20 px-4 py-2 text-xs font-bold text-coral">
-        {{ app === 'admin' ? adminError : error }}
-      </p>
-    </section>
-  </div>
+        <div v-if="openApp" class="flex items-center gap-1.5 px-3 pb-2 font-display text-lg font-extrabold">
+          <UiIcon name="chevron-left" :size="16" class="text-mist" />
+          {{ t(`watch.apps.${openApp.key}`) }}
+        </div>
+
+        <div ref="screenRef" class="min-h-0 flex-1 overflow-y-auto px-2">
+          <ul v-if="!openApp" class="m-0 grid list-none grid-cols-3 gap-2 px-1 py-1.5">
+            <li
+              v-for="(app, index) in apps"
+              :key="app.key"
+              :data-watch-selected="view.app === index || undefined"
+              :class="[
+                'relative flex flex-col items-center gap-1.5 rounded-[14px] pb-2 pt-2.5 text-[11px] font-bold',
+                view.app === index ? 'bg-ink-700 ring-2 ring-sun' : '',
+              ]"
+            >
+              <span v-if="app.badge" class="absolute right-3 top-1 size-4 rounded-full bg-coral text-center text-[10px] font-extrabold leading-4 text-white">1</span>
+              <span :class="['grid size-10 place-items-center rounded-xl text-ink-950', app.tile]">
+                <UiIcon :name="app.icon" :size="22" />
+              </span>
+              {{ t(`watch.apps.${app.key}`) }}
+            </li>
+          </ul>
+          <WatchTradeApp
+            v-else-if="openApp.key === 'trade'"
+            ref="appRef"
+            :nearby="nearby"
+            :incoming="incoming"
+            :outgoing="outgoing"
+            :selected="selectedRow"
+            :accept-key="acceptKey"
+            :decline-key="declineKey"
+            @request="(player) => emit('request', player)"
+            @cancel="emit('cancel')"
+          />
+          <WatchAdminApp
+            v-else
+            ref="appRef"
+            :menu="adminMenu"
+            :selected="selectedRow"
+            @teleport="(key) => emit('teleport', key)"
+            @summon="(sessionId) => emit('summon', sessionId)"
+          />
+        </div>
+
+        <p v-if="openApp && errorText" class="m-0 bg-coral/20 px-3 py-1.5 text-[11px] font-bold text-coral">{{ errorText }}</p>
+
+        <div class="flex justify-center gap-2.5 border-t border-line/10 px-2 pb-2 pt-1.5 text-[11px] font-semibold text-mist">
+          <span><kbd class="rounded bg-ink-700 px-1 text-[10px] font-bold text-fog">↑↓</kbd> {{ t('watch.keys.choose') }}</span>
+          <span><kbd class="rounded bg-ink-700 px-1 text-[10px] font-bold text-fog">↵</kbd> {{ openApp ? openApp.enterLabel : t('watch.keys.open') }}</span>
+          <span><kbd class="rounded bg-ink-700 px-1 text-[10px] font-bold text-fog">⌫</kbd> {{ openApp ? t('watch.keys.back') : t('watch.keys.close') }}</span>
+        </div>
+      </div>
+    </div>
+  </section>
 </template>
