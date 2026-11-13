@@ -4,12 +4,14 @@ import { useI18n } from 'vue-i18n'
 import { actionKeyLabels, matches } from '../../config/keybindings'
 import { WATCH_HOME, stepWatch, watchKeyOf, type WatchView } from '../../game/watch/watchNav'
 import type { BankScreen } from '../../api/bank'
+import type { GpsPlace, GpsPlaceAt } from '../../game/watch/gps'
 import type { AdminMenuPayload, TradeNearbyPlayer, TradePendingPayload, TradeRequestedPayload } from '../../types/gameRealtime'
 import type { UiIconName } from '../ui/icons'
 import UiCurrency from '../ui/UiCurrency.vue'
 import UiIcon from '../ui/UiIcon.vue'
 import WatchAdminApp from './watch/WatchAdminApp.vue'
 import WatchBankApp from './watch/WatchBankApp.vue'
+import WatchGpsApp from './watch/WatchGpsApp.vue'
 import WatchTradeApp from './watch/WatchTradeApp.vue'
 
 /**
@@ -28,6 +30,9 @@ const props = defineProps<{
   cash: number | null
   bankScreen: BankScreen | null
   bankError: string | null
+  gpsPlaces: GpsPlaceAt[]
+  gpsTargetId: string | null
+  atmDistance: number | null
 }>()
 
 const emit = defineEmits<{
@@ -37,13 +42,15 @@ const emit = defineEmits<{
   close: []
   adminOpen: []
   bankOpen: []
+  gpsToggle: [place: GpsPlace]
+  routeAtm: []
   teleport: [key: string]
   summon: [sessionId: string]
 }>()
 
 const { t } = useI18n()
 
-type AppKey = 'bank' | 'trade' | 'admin'
+type AppKey = 'gps' | 'bank' | 'trade' | 'admin'
 
 interface WatchApp {
   key: AppKey
@@ -54,7 +61,8 @@ interface WatchApp {
 }
 
 const apps = computed<WatchApp[]>(() => [
-  { key: 'bank', icon: 'bank', tile: 'bg-mint', badge: false, enterLabel: null },
+  { key: 'gps', icon: 'map', tile: 'bg-sun', badge: false, enterLabel: t('watch.gps.enter') },
+  { key: 'bank', icon: 'bank', tile: 'bg-mint', badge: false, enterLabel: t('watch.bank.enter') },
   { key: 'trade', icon: 'hand', tile: 'bg-grape', badge: props.incoming !== null, enterLabel: t('watch.trade.enter') },
   ...(props.isAdmin ? [{ key: 'admin', icon: 'shield', tile: 'bg-coral', badge: false, enterLabel: t('watch.admin.enter') } as const] : []),
 ])
@@ -74,7 +82,7 @@ function tickClock(): void {
 }
 let clockTimer: number | undefined
 
-const errorText = computed(() => ({ bank: props.bankError, trade: props.error, admin: props.adminError })[openApp.value?.key ?? 'trade'])
+const errorText = computed(() => ({ gps: null, bank: props.bankError, trade: props.error, admin: props.adminError })[openApp.value?.key ?? 'trade'])
 const enterHint = computed(() => (openApp.value ? openApp.value.enterLabel : t('watch.keys.open')))
 
 const screenRef = ref<HTMLElement | null>(null)
@@ -153,7 +161,22 @@ onUnmounted(() => {
               {{ t(`watch.apps.${app.key}`) }}
             </li>
           </ul>
-          <WatchBankApp v-else-if="openApp.key === 'bank'" ref="appRef" :screen="bankScreen" :selected="selectedRow" />
+          <WatchGpsApp
+            v-else-if="openApp.key === 'gps'"
+            ref="appRef"
+            :places="gpsPlaces"
+            :target-id="gpsTargetId"
+            :selected="selectedRow"
+            @toggle="(place) => emit('gpsToggle', place)"
+          />
+          <WatchBankApp
+            v-else-if="openApp.key === 'bank'"
+            ref="appRef"
+            :screen="bankScreen"
+            :atm-distance="atmDistance"
+            :selected="selectedRow"
+            @route-atm="emit('routeAtm')"
+          />
           <WatchTradeApp
             v-else-if="openApp.key === 'trade'"
             ref="appRef"

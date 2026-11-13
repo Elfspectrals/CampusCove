@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { groundDistance, relativeBearingDegrees, type GpsPlace } from '../../game/watch/gps'
 import { labelRows, worldToMap, type MapMarker, type MapMarkerKind, type WorldMapImage } from '../../game/world/minimap'
 import type { UiIconName } from '../ui/icons'
 import UiIcon from '../ui/UiIcon.vue'
@@ -12,6 +13,7 @@ const props = defineProps<{
   insideName: string | null
   fullOpen: boolean
   mapKey: string
+  target?: GpsPlace | null
 }>()
 
 const emit = defineEmits<{ close: [] }>()
@@ -56,6 +58,25 @@ const cornerMarkers = computed(() =>
   }),
 )
 
+const cornerTarget = computed(() => {
+  const target = props.target
+  if (!target) return null
+  let dx = (target.x - props.player.x) * PX_PER_M
+  let dy = (target.z - props.player.z) * PX_PER_M
+  const d = Math.hypot(dx, dy)
+  if (d > RIM) {
+    dx *= RIM / d
+    dy *= RIM / d
+  }
+  return { left: SIZE / 2 + dx, top: SIZE / 2 + dy }
+})
+const route = computed(() =>
+  props.target
+    ? { name: props.target.name, distance: Math.round(groundDistance(props.player, props.target)), bearing: relativeBearingDegrees(props.target, props.player) }
+    : null,
+)
+const fullTarget = computed(() => (props.target && props.image ? worldToMap(props.target.x, props.target.z, props.image.area) : null))
+
 const fullMapRef = ref<HTMLElement | null>(null)
 const fullMapPx = ref({ w: 0, h: 0 })
 const resizeObserver = new ResizeObserver(([entry]) => {
@@ -97,11 +118,21 @@ const fullAspect = computed(() => {
       >
         <UiIcon :name="MARKER_STYLE[m.kind].icon" :size="11" :stroke-width="2.6" />
       </span>
+      <span v-if="cornerTarget" class="cc-map-pin cc-map-target absolute" :style="{ left: `${cornerTarget.left}px`, top: `${cornerTarget.top}px` }">
+        <UiIcon name="flag" :size="11" :stroke-width="2.6" />
+      </span>
       <span class="cc-map-player absolute left-1/2 top-1/2" :style="{ transform: `translate(-50%, -50%) rotate(${player.heading}deg)` }" />
       <span class="absolute left-1/2 top-1 -translate-x-1/2 font-display text-[10px] text-fog [text-shadow:0_1px_2px_rgb(0_0_0)]">N</span>
     </div>
     <span class="cc-hud px-2 py-0.5 text-[10px] font-bold text-fog">
       <template v-if="insideName">In {{ insideName }} · </template><span class="text-mist">{{ mapKey }}</span> Map
+    </span>
+    <span v-if="route" class="cc-hud inline-flex max-w-[200px] items-center gap-1.5 px-2.5 py-1 text-xs font-bold text-fog" role="status">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" class="shrink-0 text-sun" :style="{ transform: `rotate(${route.bearing}deg)` }" aria-hidden="true">
+        <path d="M12 2 20 21 12 17 4 21z" />
+      </svg>
+      <span class="truncate">{{ route.name }}</span>
+      <span class="shrink-0 text-mist">{{ route.distance }} m</span>
     </span>
   </div>
 
@@ -138,6 +169,13 @@ const fullAspect = computed(() => {
         </span>
       </template>
       <span
+        v-if="fullTarget"
+        class="cc-map-pin cc-map-target absolute"
+        :style="{ left: `${fullTarget.u * 100}%`, top: `${fullTarget.v * 100}%` }"
+      >
+        <UiIcon name="flag" :size="12" :stroke-width="2.6" />
+      </span>
+      <span
         v-if="fullPlayer"
         class="cc-map-player absolute"
         :style="{ left: `${fullPlayer.u * 100}%`, top: `${fullPlayer.v * 100}%`, transform: `translate(-50%, -50%) rotate(${player.heading}deg)` }"
@@ -161,6 +199,10 @@ const fullAspect = computed(() => {
   border-radius: 9999px;
   color: rgb(var(--cc-ink-950));
   box-shadow: 0 0 0 2px rgb(0 0 0 / 0.55);
+}
+.cc-map-target {
+  background: rgb(var(--cc-sun));
+  box-shadow: 0 0 0 2px rgb(var(--cc-ink-950)), 0 0 0 4px rgb(var(--cc-sun) / 0.5);
 }
 .cc-map-pin.absolute {
   transform: translate(-50%, -50%);

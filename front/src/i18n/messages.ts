@@ -343,8 +343,9 @@ export const messages = {
     watch: {
       label: 'Watch',
       meters: '{d} m',
-      apps: { bank: 'Bank', trade: 'Trade', admin: 'Admin' },
-      bank: { loading: 'Loading…', atmOnly: 'Deposit and withdraw at an ATM.', empty: 'No operations yet.' },
+      apps: { gps: 'GPS', bank: 'Bank', trade: 'Trade', admin: 'Admin' },
+      gps: { enter: 'follow / stop', following: 'following', loading: 'Loading the map…', atm: 'ATM', arrived: 'You are at {name}.', noAtm: 'No ATM in this town.' },
+      bank: { enter: 'go', loading: 'Loading…', atmOnly: 'Deposit, withdraw: ATM', empty: 'No operations yet.' },
       keys: { choose: 'choose', open: 'open', back: 'back', close: 'close' },
       trade: {
         enter: 'ask',
@@ -755,8 +756,9 @@ export const messages = {
     watch: {
       label: 'Montre',
       meters: '{d} m',
-      apps: { bank: 'Banque', trade: 'Échange', admin: 'Admin' },
-      bank: { loading: 'Chargement…', atmOnly: 'Dépôt et retrait au distributeur.', empty: 'Aucune opération pour l’instant.' },
+      apps: { gps: 'GPS', bank: 'Banque', trade: 'Échange', admin: 'Admin' },
+      gps: { enter: 'suivre / arrêter', following: 'suivi', loading: 'Chargement de la carte…', atm: 'Distributeur', arrived: 'Tu es arrivé : {name}.', noAtm: 'Aucun distributeur dans cette ville.' },
+      bank: { enter: 'y aller', loading: 'Chargement…', atmOnly: 'Dépôt, retrait : distributeur', empty: 'Aucune opération pour l’instant.' },
       keys: { choose: 'choisir', open: 'ouvrir', back: 'retour', close: 'fermer' },
       trade: {
         enter: 'demander',

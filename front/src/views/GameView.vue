@@ -77,6 +77,7 @@ import { useSurvival } from '../composables/game/useSurvival'
 import { useTrade } from '../composables/game/useTrade'
 import { useAdminWatch } from '../composables/game/useAdminWatch'
 import { useWatchBank } from '../composables/game/useWatchBank'
+import { useGps } from '../composables/game/useGps'
 import { usePunch } from '../composables/game/usePunch'
 import { useShopPurchase } from '../composables/useShopPurchase'
 import { toggleCollisionDebug } from '../game/collision/collisionDebug'
@@ -799,6 +800,15 @@ const minimap = useMinimap({
   buildingKey: () => currentHouseKey.value,
 })
 const mapKey = computed(() => actionKeyLabels('map')[0] ?? 'M')
+const gps = useGps({
+  markers: () => minimap.markers.value,
+  atms: () => zoneDecor.atms.value,
+  player: minimap.player,
+  atmName: () => t('watch.gps.atm'),
+  say: (text) => survival.say(text),
+  arrivedText: (name) => t('watch.gps.arrived', { name }),
+  noAtmText: () => t('watch.gps.noAtm'),
+})
 // Esc frees the mouse and opens the pause menu: the full map gives way to it
 watch(pointerLocked, (locked) => {
   if (!locked) minimap.fullOpen.value = false
@@ -1349,6 +1359,7 @@ const crosshairClass = computed(() => {
       :inside-name="minimap.insideName.value"
       :full-open="minimap.fullOpen.value"
       :map-key="mapKey"
+      :target="gps.target.value"
       @close="minimap.fullOpen.value = false"
     />
     <GameHudToolbar
@@ -1561,12 +1572,17 @@ const crosshairClass = computed(() => {
       :cash="walletBalances.cash"
       :bank-screen="watchBank.screen.value"
       :bank-error="watchBank.error.value"
+      :gps-places="gps.places.value"
+      :gps-target-id="gps.target.value?.id ?? null"
+      :atm-distance="gps.places.value.find((place) => place.kind === 'atm')?.distance ?? null"
       @request="trade.request"
       @respond="trade.respond"
       @cancel="trade.cancel"
       @close="trade.closeMenu"
       @admin-open="adminWatch.load"
       @bank-open="watchBank.load"
+      @gps-toggle="gps.toggle"
+      @route-atm="gps.routeToNearestAtm"
       @teleport="adminTeleport"
       @summon="adminSummon"
     />

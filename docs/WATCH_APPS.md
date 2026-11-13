@@ -27,6 +27,7 @@ The screen is 228 × 272 px: keep a row to one line (name and a short meta) and 
 
 | App | Shows | Enter |
 |---|---|---|
-| Bank (read only) | cash, bank, recent operations (`GET /api/bank`, loaded when the app opens); deposit and withdraw stay at the ATM | nothing |
+| GPS | the nearest ATM and the map's places (shops, jobs, your home), closest first | follow the place (a flag on the corner and full map, an arrow and the distance under the corner map), or stop; it clears within 8 m (`front/src/game/watch/gps.ts`, tested) |
+| Bank (read only) | cash, bank, recent operations (`GET /api/bank`, loaded when the app opens); deposit and withdraw stay at the ATM | first row: follow the nearest ATM on the GPS |
 | Trade | nearby players, the pending request | ask the chosen player, or cancel the request |
 | Admin (admins only) | public places, online players | teleport there, or bring the player here |
