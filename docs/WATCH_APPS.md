@@ -31,4 +31,5 @@ The screen is 228 × 272 px: keep a row to one line (name and a short meta) and 
 | Bank (read only) | cash, bank, recent operations (`GET /api/bank`, loaded when the app opens); deposit and withdraw stay at the ATM | first row: follow the nearest ATM on the GPS |
 | Contacts | friend requests received, friends in this town (distance), players within 30 m who are not friends, friends elsewhere (`GET /friends`, `GET /friends/pending`; `front/src/game/watch/contacts.ts`, tested) | accept the request, follow the friend live on the GPS, or send a friend request to the player |
 | Trade | nearby players, the pending request | ask the chosen player, or cancel the request |
+| Alarm | the alarms of your house: each one that went off while you were in town, and when you come back the break-in attempts made while you were away (`POST /api/house-alarms/report`, read once at join); a badge until you open it, a message and the siren when one goes off (`docs/LOCKPICK.md`) | nothing |
 | Admin (admins only) | public places, online players | teleport there, or bring the player here |

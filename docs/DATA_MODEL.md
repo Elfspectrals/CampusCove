@@ -237,6 +237,12 @@ erDiagram
     ROOMS ||--o{ ROOM_MUTES : "rend muet"
     ROOMS ||--o{ ROOM_AUDIT_LOGS : journalise
     ROOMS ||--o{ CHAT_LOGS : discussions
+    HOUSING_UNITS ||--o{ LOCKPICK_ATTEMPTS : crochetée
+    ACCOUNTS ||--o{ LOCKPICK_ATTEMPTS : cambrioleur
+    ACCOUNTS ||--o| LOCKPICK_WEAR : "crochet entamé"
+    ROOM_FURNITURES ||--o| FURNITURE_STORAGES : "rangement"
+    ACCOUNTS ||--o| ACCOUNT_RESPAWN_BEDS : "lit de réveil"
+    HOUSING_UNITS ||--o{ HOUSE_ALARM_EVENTS : "alarme"
 
     HOUSING_UNITS {
         bigint unit_id PK
@@ -272,7 +278,45 @@ erDiagram
         bigint account_id PK, FK
         room_role role
     }
+    LOCKPICK_ATTEMPTS {
+        bigint id PK
+        bigint burglar_account_id FK
+        bigint unit_id FK
+        smallint misses
+        text outcome "null | success | broke | abandoned"
+        timestamptz started_at
+        timestamptz ended_at
+    }
+    LOCKPICK_WEAR {
+        bigint account_id PK, FK
+        smallint uses_spent "1 à 5"
+    }
+    FURNITURE_STORAGES {
+        bigint room_furniture_id PK, FK
+        bigint container_id FK
+    }
+    ACCOUNT_RESPAWN_BEDS {
+        bigint account_id PK, FK
+        bigint room_furniture_id FK
+        timestamptz set_at
+    }
+    HOUSE_ALARM_EVENTS {
+        bigint id PK
+        bigint unit_id FK
+        bigint owner_account_id FK
+        bigint attempt_id FK "unique"
+        timestamptz triggered_at
+        timestamptz seen_at
+    }
 ```
+
+- **Alarme** : `house_alarm_events` garde chaque déclenchement (au plus un par séance de crochetage) pour le bilan que le propriétaire lit à son retour. Voir `docs/LOCKPICK.md`.
+
+- **Lit de réveil** : `account_respawn_beds` garde le lit posé que le joueur a choisi ; la ligne disparaît avec le lit. Voir `docs/RESPAWN_BED.md`.
+
+- **Rangement** : un meuble de rangement posé (commode, coffre à jouets, frigo) a une ligne `furniture_storages` qui le relie à son conteneur ; les objets rangés sont les `inventory_stacks` de ce conteneur. Voir `docs/STORAGE.md`.
+
+- **Crochetage** : une ligne `lockpick_attempts` par séance devant une porte (une seule ouverte par cambrioleur). Les réussites servent aux limites : maison protégée 24 h, cambrioleur en attente 30 min. `lockpick_wear` compte les usages du crochet entamé ; au 5e usage ou à la casse, un crochet est retiré de l'inventaire. Voir `docs/LOCKPICK.md`.
 
 ## 5. Échanges entre joueurs
 

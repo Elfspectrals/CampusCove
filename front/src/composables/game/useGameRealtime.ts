@@ -63,6 +63,12 @@ import type {
   ZoneSellErrorPayload,
   ZoneSoldPayload,
   AtmDonePayload,
+  LockpickErrorPayload,
+  LockpickPinPayload,
+  LockpickResultPayload,
+  BedErrorPayload,
+  StorageErrorPayload,
+  StorageScreenPayload,
   AtmErrorPayload,
   CashBagErrorPayload,
   CashBagPayload,
@@ -177,6 +183,23 @@ export interface GameRealtimeDeps {
   atm: {
     onDone: (data: AtmDonePayload) => void
     onError: (data: AtmErrorPayload) => void
+  }
+  bed: {
+    onDone: () => void
+    onError: (data: BedErrorPayload) => void
+  }
+  storage: {
+    onScreen: (data: StorageScreenPayload) => void
+    onError: (data: StorageErrorPayload) => void
+  }
+  lockpick: {
+    onPin: (data: LockpickPinPayload) => void
+    onResult: (data: LockpickResultPayload) => void
+    onError: (data: LockpickErrorPayload) => void
+    onReinforced: () => void
+    onReinforceError: (data: LockpickErrorPayload) => void
+    onAlarmSiren: (data: { door: string }) => void
+    onHouseAlarm: () => void
   }
   voice: {
     onToken: (payload: VoiceTokenPayload) => void
@@ -353,6 +376,17 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('zone_sell_error', (data: ZoneSellErrorPayload) => deps.zoneBuyers.onError(data))
     room.onMessage('atm_done', (data: AtmDonePayload) => deps.atm.onDone(data))
     room.onMessage('atm_error', (data: AtmErrorPayload) => deps.atm.onError(data))
+    room.onMessage('lockpick_pin', (data: LockpickPinPayload) => deps.lockpick.onPin(data))
+    room.onMessage('lockpick_result', (data: LockpickResultPayload) => deps.lockpick.onResult(data))
+    room.onMessage('lockpick_error', (data: LockpickErrorPayload) => deps.lockpick.onError(data))
+    room.onMessage('door_reinforced', () => deps.lockpick.onReinforced())
+    room.onMessage('door_reinforce_error', (data: LockpickErrorPayload) => deps.lockpick.onReinforceError(data))
+    room.onMessage('alarm_siren', (data: { door: string }) => deps.lockpick.onAlarmSiren(data))
+    room.onMessage('house_alarm', () => deps.lockpick.onHouseAlarm())
+    room.onMessage('storage_screen', (data: StorageScreenPayload) => deps.storage.onScreen(data))
+    room.onMessage('storage_error', (data: StorageErrorPayload) => deps.storage.onError(data))
+    room.onMessage('bed_set_done', () => deps.bed.onDone())
+    room.onMessage('bed_error', (data: BedErrorPayload) => deps.bed.onError(data))
     room.onMessage('cash_bag_dropped', (data: CashBagPayload) => deps.cashBags.onDropped(data))
     room.onMessage('cash_bag_removed', (data: { id: number }) => deps.cashBags.onRemoved(data))
     room.onMessage('cash_bag_picked', (data: CashBagPickedPayload) => deps.cashBags.onPicked(data))

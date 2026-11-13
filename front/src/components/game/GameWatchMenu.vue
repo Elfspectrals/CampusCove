@@ -10,7 +10,9 @@ import type { AdminMenuPayload, TradeNearbyPlayer, TradePendingPayload, TradeReq
 import type { UiIconName } from '../ui/icons'
 import UiCurrency from '../ui/UiCurrency.vue'
 import UiIcon from '../ui/UiIcon.vue'
+import type { AlarmAlert } from '../../game/watch/alarms'
 import WatchAdminApp from './watch/WatchAdminApp.vue'
+import WatchAlarmApp from './watch/WatchAlarmApp.vue'
 import WatchBankApp from './watch/WatchBankApp.vue'
 import WatchContactsApp from './watch/WatchContactsApp.vue'
 import WatchGpsApp from './watch/WatchGpsApp.vue'
@@ -38,6 +40,8 @@ const props = defineProps<{
   contactRows: ContactRow[] | null
   contactsError: string | null
   followedSessionId: string | null
+  alarmAlerts: readonly AlarmAlert[]
+  alarmUnseen: boolean
 }>()
 
 const emit = defineEmits<{
@@ -55,11 +59,12 @@ const emit = defineEmits<{
   contactAsk: [pseudo: string]
   teleport: [key: string]
   summon: [sessionId: string]
+  alarmOpen: []
 }>()
 
 const { t } = useI18n()
 
-type AppKey = 'gps' | 'bank' | 'contacts' | 'trade' | 'admin'
+type AppKey = 'gps' | 'bank' | 'contacts' | 'trade' | 'alarm' | 'admin'
 
 interface WatchApp {
   key: AppKey
@@ -74,6 +79,7 @@ const apps = computed<WatchApp[]>(() => [
   { key: 'bank', icon: 'bank', tile: 'bg-mint', badge: false, enterLabel: t('watch.bank.enter') },
   { key: 'contacts', icon: 'users', tile: 'bg-pool', badge: false, enterLabel: t('watch.contacts.enter') },
   { key: 'trade', icon: 'hand', tile: 'bg-grape', badge: props.incoming !== null, enterLabel: t('watch.trade.enter') },
+  { key: 'alarm', icon: 'alert', tile: 'bg-coral', badge: props.alarmUnseen, enterLabel: null },
   ...(props.isAdmin ? [{ key: 'admin', icon: 'shield', tile: 'bg-coral', badge: false, enterLabel: t('watch.admin.enter') } as const] : []),
 ])
 
@@ -98,7 +104,7 @@ function tickClock(): void {
 }
 let clockTimer: number | undefined
 
-const errorText = computed(() => ({ gps: null, contacts: props.contactsError, bank: props.bankError, trade: props.error, admin: props.adminError })[openApp.value?.key ?? 'trade'])
+const errorText = computed(() => ({ gps: null, alarm: null, contacts: props.contactsError, bank: props.bankError, trade: props.error, admin: props.adminError })[openApp.value?.key ?? 'trade'])
 const enterHint = computed(() => (openApp.value ? openApp.value.enterLabel : t('watch.keys.open')))
 
 const screenRef = ref<HTMLElement | null>(null)
@@ -130,6 +136,7 @@ function openedApp(index: number): void {
   if (key === 'admin') emit('adminOpen')
   else if (key === 'bank') emit('bankOpen')
   else if (key === 'contacts') emit('contactsOpen')
+  else if (key === 'alarm') emit('alarmOpen')
 }
 
 onMounted(() => {
@@ -216,6 +223,7 @@ onUnmounted(() => {
             @request="(player) => emit('request', player)"
             @cancel="emit('cancel')"
           />
+          <WatchAlarmApp v-else-if="openApp.key === 'alarm'" ref="appRef" :alerts="alarmAlerts" :selected="selectedRow" />
           <WatchAdminApp
             v-else
             ref="appRef"

@@ -82,7 +82,9 @@ export interface Player extends Vec3 {
   lastBouncerBlockAt: number
   orchardPick: { tree: number, startedAt: number } | null
   farmPick: { plant: number, startedAt: number } | null
+  lockpick: LockpickSession | null
   lastPickStartAt: number
+  lastStorageAt: number
   decoratedTemplateKey?: string | null
   appearance: Record<AppearanceSlot, number | null>
   slotHexes: Record<AppearanceSlot, string>
@@ -103,6 +105,23 @@ export interface CharacterLook {
 }
 
 /** A house as the Laravel API lists it (GET /housing/units). */
+export interface LockpickPin {
+  period: number
+  phase: number
+  shownAt: number
+}
+
+export interface LockpickSession {
+  unitId: string
+  attemptId: number | null
+  pins: number
+  pinsSet: number
+  misses: number
+  pin: LockpickPin
+  readyAt: number
+  busy: boolean
+}
+
 export interface HousingUnit {
   public_id: string
   template_key: string
@@ -117,10 +136,12 @@ export interface HousingUnit {
 }
 
 export interface FurnitureObject {
+  objectId: string
   objectKey: string
   x: number
   y: number
   z: number
+  rotY?: number
 }
 
 /** The objects placed in one house (GET /apartments/houses). */

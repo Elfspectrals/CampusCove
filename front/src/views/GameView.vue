@@ -26,6 +26,8 @@ import GameSettingsDialog from '../components/game/GameSettingsDialog.vue'
 import GameStoreItemCard from '../components/game/GameStoreItemCard.vue'
 import GameZoneBuyerMenu from '../components/game/GameZoneBuyerMenu.vue'
 import GameAtmScreen from '../components/game/GameAtmScreen.vue'
+import GameLockpick from '../components/game/GameLockpick.vue'
+import GameFurnitureStorage from '../components/game/GameFurnitureStorage.vue'
 import GamePubMenu from '../components/game/GamePubMenu.vue'
 import GamePubSecretDialog from '../components/game/GamePubSecretDialog.vue'
 import GameChat from '../components/game/GameChat.vue'
@@ -60,6 +62,11 @@ import { usePlayerInventory } from '../composables/game/usePlayerInventory'
 import { useOrchard } from '../composables/game/useOrchard'
 import { useZoneBuyers } from '../composables/game/useZoneBuyers'
 import { useAtm } from '../composables/game/useAtm'
+import { useLockpick } from '../composables/game/useLockpick'
+import { useFurnitureStorage } from '../composables/game/useFurnitureStorage'
+import { useRespawnBed } from '../composables/game/useRespawnBed'
+import { useHouseAlarms } from '../composables/game/useHouseAlarms'
+import type { HouseFurniturePayload } from '../types/gameRealtime'
 import { useCashBags } from '../composables/game/useCashBags'
 import { useProximityVoice } from '../composables/game/useProximityVoice'
 import { mutedAccounts, playerVolumes, setPlayerVolume, toggleMuteAccount } from '../composables/game/useVoiceSettings'
@@ -347,12 +354,28 @@ watch(storeConfirmItem, (item, previous) => {
 // ---------------------------------------------------------------- town: houses, doors, environment
 
 const holdingHouseKey = () => selectedItem.value?.code === 'house_key'
+const holdingLockpick = () => selectedItem.value?.code === 'tool_lockpick'
+const holdingReinforcedLock = () => selectedItem.value?.code === 'tool_reinforced_lock'
+
+const lockpick = useLockpick({
+  gameRoomRef,
+  onOutcome: (outcome) => {
+    if (outcome === 'open' || outcome === 'broke' || outcome === 'abandoned') void refreshOwnedItems()
+  },
+})
+const { open: lockpickOpen } = lockpick
+watch(lockpickOpen, (open) => {
+  if (!open && !document.pointerLockElement) requestPointerLock()
+})
 
 const housing = useCityHousing({
   myAccountId,
   gameRoomRef,
   roomMessage,
   holdingHouseKey,
+  holdingLockpick,
+  holdingReinforcedLock,
+  startLockpick: lockpick.start,
 })
 
 // ---------------------------------------------------------------- The Salty Shamrock: seats, bar, games
@@ -492,6 +515,39 @@ const atm = useAtm({
   timeoutMessage: () => t('atm.timeout'),
 })
 const { open: atmOpen } = atm
+const houseAlarms = useHouseAlarms({
+  gameRoomRef,
+  say: (text) => survival.say(text),
+  ring: () => sfx.play('alarm_siren'),
+  liveMessage: () => t('watch.alarm.alert'),
+  awayMessage: (count) => t('watch.alarm.away', { count }),
+})
+const furnishedHouses = shallowRef<HouseFurniturePayload[]>([])
+const storage = useFurnitureStorage({
+  myPosition,
+  getCamera,
+  canvasRef,
+  gameRoomRef,
+  promptsHidden: () => inventoryOpen.value || !canUsePub(),
+  houses: () => furnishedHouses.value,
+  promptLabel: () => t('storage.prompt'),
+  onChanged: () => refreshOwnedItems(),
+})
+const { open: storageOpen } = storage
+const respawnBed = useRespawnBed({
+  myPosition,
+  getCamera,
+  canvasRef,
+  gameRoomRef,
+  promptsHidden: () => inventoryOpen.value || !canUsePub(),
+  houses: () => furnishedHouses.value,
+  promptLabel: () => t('bed.prompt'),
+  say: (text) => survival.say(text),
+  doneMessage: () => t('bed.set'),
+})
+watch(storageOpen, (open) => {
+  if (!open && !document.pointerLockElement) requestPointerLock()
+})
 const cashBags = useCashBags({
   myPosition,
   getScene,
@@ -528,7 +584,7 @@ const interactions = useInteractionTargets({
   myPosition,
   getCamera,
   canvasRef,
-  promptsHidden: () => inventoryOpen.value || housing.claimInFlight.value,
+  promptsHidden: () => inventoryOpen.value || housing.claimInFlight.value || lockpickOpen.value,
   housingUnits: housing.units,
   nearbyHousingUnit: housing.nearbyUnit,
   housingActionFor: housing.actionFor,
@@ -537,7 +593,7 @@ const interactions = useInteractionTargets({
     const unit = housing.nearbyUnit.value
     const action = unit ? housing.actionFor(unit) : null
     if (action === 'open' || action === 'close' || action === 'locked') arms?.use('door')
-    else if (action === 'lock') arms?.use('key')
+    else if (action === 'lock' || action === 'pick') arms?.use('key')
     void housing.interact()
   },
   onWorkDoor: (lot) => {
@@ -559,7 +615,7 @@ const interactions = useInteractionTargets({
     if (activeFurniture.value?.store.hasCounter.value) activeFurniture.value.store.toggleTarget(useWithShift)
     else openStorePurchase()
   },
-  sources: [pub.source, pubChallenge.source, pubGames.source, seats.source, orchard.source, farm.source, zoneBuyers.source, atm.source, cashBags.source],
+  sources: [pub.source, pubChallenge.source, pubGames.source, seats.source, orchard.source, farm.source, zoneBuyers.source, atm.source, storage.source, respawnBed.source, cashBags.source],
 })
 const { doorPrompt } = interactions
 
@@ -949,6 +1005,8 @@ const pauseMenuOpen = computed(
     !pubUiOpen.value &&
     !zoneBuyerOpen.value &&
     !atmOpen.value &&
+    !lockpickOpen.value &&
+    !storageOpen.value &&
     !playerListOpen.value &&
     !settingsOpen.value &&
     !creator.value,
@@ -982,7 +1040,7 @@ function isWalkWithWatchKey(code: string): boolean {
 }
 
 function handleExtraKeyDown(e: KeyboardEvent): boolean {
-  if (chatOpen.value || atmOpen.value || playerListOpen.value) return true
+  if (chatOpen.value || atmOpen.value || lockpickOpen.value || storageOpen.value || playerListOpen.value) return true
   // the character screen owns the keyboard (Esc closes the editor)
   if (creator.value) return true
   // the trade window takes the keyboard (coins field, Esc): no game key behind it
@@ -1167,7 +1225,10 @@ const realtime = useGameRealtime({
   },
   loadTown,
   onHousingUnitsSync: housing.applyUnits,
-  onHouseFurnitureSync: houseFurniture.applyHouses,
+  onHouseFurnitureSync: (houses) => {
+    furnishedHouses.value = houses
+    houseFurniture.applyHouses(houses)
+  },
   onDoorsSync: housing.applyOpenDoors,
   onDoorSound: ({ door, sound }) => {
     const node = frontDoorNode(door)
@@ -1193,6 +1254,21 @@ const realtime = useGameRealtime({
   orchard: orchard.handlers,
   zoneBuyers: zoneBuyers.handlers,
   atm: atm.handlers,
+  lockpick: {
+    ...lockpick.handlers,
+    onReinforced: () => {
+      survival.say(t('lockpick.reinforced'))
+      void refreshOwnedItems()
+    },
+    onReinforceError: (data) => survival.say(data.message),
+    onHouseAlarm: () => houseAlarms.onLive(),
+    onAlarmSiren: ({ door }) => {
+      const node = frontDoorNode(door)
+      if (node) sfx.playOn('alarm_siren', node)
+    },
+  },
+  storage: storage.handlers,
+  bed: respawnBed.handlers,
   cashBags: cashBags.handlers,
   voice: { onToken: voice.onToken, disconnect: voice.disconnect },
   farm: farm.handlers,
@@ -1592,6 +1668,9 @@ const crosshairClass = computed(() => {
       :contact-rows="watchContacts.rows.value"
       :contacts-error="watchContacts.error.value"
       :followed-session-id="followedSessionId"
+      :alarm-alerts="houseAlarms.alerts.value"
+      :alarm-unseen="houseAlarms.unseen.value"
+      @alarm-open="houseAlarms.markSeen"
       @request="trade.request"
       @respond="trade.respond"
       @cancel="trade.cancel"
@@ -1620,6 +1699,17 @@ const crosshairClass = computed(() => {
       @confirm="trade.confirm"
       @cancel="trade.cancel"
     />
+    <GameFurnitureStorage
+      v-if="storageOpen"
+      :screen="storage.screen.value"
+      :storable="storage.storable.value"
+      :pending="storage.pending.value"
+      :error="storage.error.value"
+      @deposit="storage.deposit"
+      @take="storage.take"
+      @close="storage.close"
+    />
+    <GameLockpick v-if="lockpick.board.value" :board="lockpick.board.value" @press="lockpick.press" @close="lockpick.close" />
     <GameAtmScreen v-if="atmOpen" :screen="atm.screen.value" :pending="atm.pending.value" :feedback="atm.feedback.value" @run="atm.run" @clear-feedback="atm.clearFeedback" @close="atm.close" />
     <GameZoneBuyerMenu
       v-if="zoneBuyerOpen"

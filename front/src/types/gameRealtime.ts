@@ -65,6 +65,7 @@ export interface HousingUnitPayload {
   occupant_name: string | null
   tax_due_at: string | null
   door_locked: boolean
+  reinforced_lock: boolean
   room_public_id: string | null
   template_key: string
   key_holder_account_ids: number[]
@@ -101,10 +102,48 @@ export interface AdminSummonedPayload {
   byPseudo: string
 }
 
-/** 'door_sound': only sent to players within 5 m of the door. `door` is the building key (house model key or work key). */
+/** 'door_sound': only sent to players within 5 m of the door (12 m for lockpicking). `door` is the building key (house model key or work key). */
 export interface DoorSoundPayload {
   door: string
-  sound: 'open' | 'close' | 'lock' | 'unlock' | 'rattle'
+  sound: 'open' | 'close' | 'lock' | 'unlock' | 'rattle' | 'pick_click' | 'pick_scrape'
+}
+
+/** 'lockpick_pin': the next pin to set (docs/LOCKPICK.md). `phase` is the needle position (0 to 1) when sent. */
+export interface LockpickPinPayload {
+  pinsSet: number
+  pins: number
+  period: number
+  phase: number
+  window: number
+  readyInMs: number
+}
+
+export interface StorageScreenPayload {
+  object_id: string
+  code: string
+  slots: number
+  food_only: boolean
+  can_deposit: boolean
+  items: { code: string; name: string; kind: string; quantity: number; preview_image: string | null }[]
+}
+
+export interface BedErrorPayload {
+  message: string
+  code: string
+}
+
+export interface StorageErrorPayload {
+  message: string
+  code: string
+}
+
+export interface LockpickResultPayload {
+  outcome: 'set' | 'miss' | 'broke' | 'open' | 'abandoned'
+}
+
+export interface LockpickErrorPayload {
+  message: string
+  code: string
 }
 
 export interface HouseFurniturePayload {

@@ -15,6 +15,9 @@ import {
   lockChanges,
   workDoorId
 } from './doors.ts'
+import { onDoorReinforce, onLockpickCancel, onLockpickPress, onLockpickStart } from './lockpick.ts'
+import { onStorage } from './storage.ts'
+import { onBedSet } from './bed.ts'
 import { moveRejection, onJump, spendSprintStamina } from './movement.ts'
 import { onOrchardPick, onOrchardPickCancel, onOrchardPickStart } from './orchard.ts'
 import { onFarmPick, onFarmPickStart } from './farm.ts'
@@ -116,6 +119,14 @@ export class CityRoom extends Room implements GameRoom {
     this.onMessage('housing_refresh', (client) => this.onHousingRefresh(client))
     this.onMessage('door_toggle', (client, payload: ClientPayload) => this.onDoorToggle(client, payload))
     this.onMessage('door_rattle', (client, payload: ClientPayload) => this.onDoorRattle(client, payload))
+    this.onMessage('lockpick_start', (client, payload: ClientPayload) => void onLockpickStart(this, client, payload))
+    this.onMessage('lockpick_press', (client) => void onLockpickPress(this, client))
+    this.onMessage('lockpick_cancel', (client) => onLockpickCancel(this, client))
+    this.onMessage('door_reinforce', (client, payload: ClientPayload) => void onDoorReinforce(this, client, payload))
+    this.onMessage('storage_open', (client, payload: ClientPayload) => void onStorage(this, client, 'open', payload))
+    this.onMessage('storage_deposit', (client, payload: ClientPayload) => void onStorage(this, client, 'deposit', payload))
+    this.onMessage('storage_take', (client, payload: ClientPayload) => void onStorage(this, client, 'take', payload))
+    this.onMessage('bed_set', (client, payload: ClientPayload) => void onBedSet(this, client, payload))
     this.onMessage('decorate_house', (client, payload: ClientPayload) => setDecoratedHouse(this, client, payload))
     this.onMessage('apartment_spawn_request', (client, payload: ClientPayload) => saveObject(this, client, payload, true))
     this.onMessage('apartment_transform_request', (client, payload: ClientPayload) => saveObject(this, client, payload, false))
