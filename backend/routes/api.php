@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AccountPrivacyController;
+use App\Http\Controllers\AdminGameController;
 use App\Http\Controllers\AdminHousingController;
 use App\Http\Controllers\AdminInventoryController;
 use App\Http\Controllers\AdminSecurityController;
@@ -150,6 +151,14 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
         Route::post('/market/lots', [MarketController::class, 'listLot']);
         Route::post('/market/lots/{id}/withdraw', [MarketController::class, 'withdrawLot'])->whereNumber('id');
         Route::post('/market/lots/{id}/buy', [MarketController::class, 'buy'])->whereNumber('id');
+        Route::middleware('admin')->prefix('admin/game')->group(function () {
+            Route::get('/items', [AdminGameController::class, 'items']);
+            Route::post('/money', [AdminGameController::class, 'grantMoney']);
+            Route::post('/items', [AdminGameController::class, 'grantItem']);
+            Route::post('/taxes/collect', [AdminGameController::class, 'collectTaxes']);
+            Route::post('/market/open', [AdminGameController::class, 'openMarket']);
+            Route::post('/market/close', [AdminGameController::class, 'closeMarket']);
+        });
     });
     Route::get('/bank', [BankController::class, 'show']);
     Route::get('/market', [MarketController::class, 'show']);

@@ -268,6 +268,14 @@ Decision (2026-11-12): villas keep the standard house tax of 5 % of the price pe
 
 Decision (2026-11-12): executive homes (B lots) get a 9 k interior triangle budget; B-01 is accepted at 9.5 k. B-01 keeps W 11.0 and every later B house planned at 11.0 changes its width by at least 0.4 m. A house may have a real back door; it shares the front door's open state and lock.
 
+## In-game admin panel (doing, branch feat/admin-watch-tools)
+
+Decision (2026-11-13): an admin, in the game, gives money (cash or bank) or items to themselves or any online player, and starts events on demand: pub quiz, storage sale, market open or close now, house tax collection now. Laravel re-checks the admin on every call; contract in `docs/ADMIN.md`.
+
+- [done] Laravel routes (`/api/admin/game/*`, realtime + admin): item list, money grant with an `admin_grant` ledger row and an idempotency ref, item grant with its own ref (`admin_item_grants`), tax collection, market open or close override. Items bought with gems are never given (decided 2026-11-13).
+- [done] Socket messages calling them for the admin (`admin_items`, `admin_give_money`, `admin_give_item`, `admin_market`, `admin_taxes`): the target's account comes from the socket, one ref per action, the receiver's cash, bank or inventory refreshed, a fresh `market_sync` after a market change, the housing units reloaded after taxes.
+- [done] Front admin panel (`GameAdminPanel.vue`), opened from the watch's Admin app: target, money, searchable items, events. Playtested 2026-11-13 as an admin on themself: 500 cash, an apple (in the hotbar at once), market open for 10 minutes (town banner and `market_sync`). Giving to a second player was not played.
+
 ## Later
 
 - Fishing as the second job (reuse the darts power meter or the Drink Fast balance bar; rod and fish models exist).

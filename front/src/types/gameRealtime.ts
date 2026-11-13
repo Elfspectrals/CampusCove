@@ -109,6 +109,30 @@ export interface AdminSummonedPayload {
   byPseudo: string
 }
 
+export type AdminWallet = 'cash' | 'bank'
+
+export interface AdminItem {
+  code: string
+  name: string
+  kind: string
+}
+
+export interface AdminItemsPayload {
+  items: AdminItem[]
+}
+
+export type AdminResultPayload =
+  | { action: 'money'; ok: true; pseudo: string; wallet: AdminWallet; amount: number }
+  | { action: 'item'; ok: true; pseudo: string; code: string; quantity: number }
+  | { action: 'market_open'; ok: true; closesAt: string }
+  | { action: 'market_close'; ok: true; returned: number }
+  | { action: 'taxes'; ok: true; charged: number; seized: number }
+  | { action: 'items' | 'money' | 'item' | 'market_open' | 'market_close' | 'taxes'; ok: false; message: string }
+
+export type AdminGrantedPayload =
+  | { kind: 'money'; byPseudo: string; wallet: AdminWallet; amount: number; cash: number; bank: number }
+  | { kind: 'item'; byPseudo: string; code: string; quantity: number }
+
 /** 'door_sound': only sent to players within 5 m of the door (12 m for lockpicking). `door` is the building key (house model key or work key). */
 export type DoorSide = 'front' | 'back'
 

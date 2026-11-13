@@ -20,7 +20,7 @@ export type MarketIntent =
   | { action: 'withdraw', lotId: number }
   | { action: 'buy', lotId: number, quantity: number, ref: string }
 
-function intIn(raw: unknown, min: number, max: number): number | null {
+export function intIn(raw: unknown, min: number, max: number): number | null {
   return Number.isInteger(raw) && (raw as number) >= min && (raw as number) <= max ? raw as number : null
 }
 

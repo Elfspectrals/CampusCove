@@ -4,6 +4,7 @@ namespace App\Support;
 
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
+use Illuminate\Support\Facades\Cache;
 
 final class MarketSchedule
 {
@@ -15,8 +16,59 @@ final class MarketSchedule
 
     public const CLOSES_AT = '17:00';
 
+    public const OVERRIDE_CACHE_KEY = 'market.admin_override';
+
     /** @return array{open: bool, market_date: string, opens_at: CarbonImmutable, closes_at: CarbonImmutable} */
     public static function window(CarbonInterface $now): array
+    {
+        $override = Cache::get(self::OVERRIDE_CACHE_KEY);
+        if ($override === null) {
+            return self::plannedWindow($now);
+        }
+        $until = CarbonImmutable::parse($override['until'])->setTimezone(self::TIMEZONE);
+        if ($override['open']) {
+            return [
+                'open' => true,
+                'market_date' => $override['market_date'],
+                'opens_at' => CarbonImmutable::parse($override['opens_at'])->setTimezone(self::TIMEZONE),
+                'closes_at' => $until,
+            ];
+        }
+
+        return ['open' => false] + self::plannedWindow($until);
+    }
+
+    public static function openNow(CarbonInterface $now, int $minutes): void
+    {
+        $current = self::window($now);
+        $opensAt = CarbonImmutable::instance($now)->setTimezone(self::TIMEZONE);
+        $planned = self::plannedWindow($now);
+        $until = $opensAt->addMinutes($minutes);
+        if ($planned['open'] && $planned['closes_at'] > $until) {
+            $until = $planned['closes_at'];
+        }
+        Cache::put(self::OVERRIDE_CACHE_KEY, [
+            'open' => true,
+            'market_date' => $current['open'] ? $current['market_date'] : $opensAt->toDateString(),
+            'opens_at' => $current['open'] ? $current['opens_at']->toIso8601String() : $opensAt->toIso8601String(),
+            'until' => $until->toIso8601String(),
+        ], $until);
+    }
+
+    public static function closeNow(CarbonInterface $now): void
+    {
+        Cache::forget(self::OVERRIDE_CACHE_KEY);
+        $planned = self::plannedWindow($now);
+        if ($planned['open']) {
+            Cache::put(self::OVERRIDE_CACHE_KEY, [
+                'open' => false,
+                'until' => $planned['closes_at']->toIso8601String(),
+            ], $planned['closes_at']);
+        }
+    }
+
+    /** @return array{open: bool, market_date: string, opens_at: CarbonImmutable, closes_at: CarbonImmutable} */
+    private static function plannedWindow(CarbonInterface $now): array
     {
         $local = CarbonImmutable::instance($now)->setTimezone(self::TIMEZONE);
         $day = $local->startOfDay();

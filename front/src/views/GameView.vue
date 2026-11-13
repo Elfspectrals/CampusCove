@@ -25,6 +25,7 @@ import GamePointerLockOverlay from '../components/game/GamePointerLockOverlay.vu
 import GameSettingsDialog from '../components/game/GameSettingsDialog.vue'
 import GameStoreItemCard from '../components/game/GameStoreItemCard.vue'
 import GameZoneBuyerMenu from '../components/game/GameZoneBuyerMenu.vue'
+import GameAdminPanel from '../components/game/GameAdminPanel.vue'
 import GameAtmScreen from '../components/game/GameAtmScreen.vue'
 import GameLockpick from '../components/game/GameLockpick.vue'
 import GameFurnitureStorage from '../components/game/GameFurnitureStorage.vue'
@@ -113,6 +114,7 @@ import { useSeats } from '../composables/game/useSeats'
 import { useSurvival } from '../composables/game/useSurvival'
 import { useTrade } from '../composables/game/useTrade'
 import { useAdminWatch } from '../composables/game/useAdminWatch'
+import { adminGrantedMessage } from '../game/admin/adminPanel'
 import { useWatchBank } from '../composables/game/useWatchBank'
 import { useGps } from '../composables/game/useGps'
 import { useWatchContacts } from '../composables/game/useWatchContacts'
@@ -963,8 +965,24 @@ const watchKey = computed(() => actionKeyLabels('survivalWatch')[0] ?? 'T')
 // ---------------------------------------------------------------- watch apps: admin teleports
 
 const watchBank = useWatchBank()
-const adminWatch = useAdminWatch({ gameRoomRef, say: (text) => survival.say(text) })
-const { isAdmin, menu: adminMenu, error: adminError } = adminWatch
+const adminWatch = useAdminWatch({
+  gameRoomRef,
+  say: (text) => survival.say(text),
+  grantedMessage: (data) => {
+    const { key, params } = adminGrantedMessage(data)
+    return t(key, params)
+  },
+  refreshInventory: () => refreshOwnedItems(),
+})
+const { isAdmin, menu: adminMenu, error: adminError, panelOpen: adminPanelOpen } = adminWatch
+function openAdminPanel(): void {
+  trade.closeMenu()
+  adminWatch.openPanel()
+}
+watch(adminPanelOpen, (open) => {
+  if (open && document.pointerLockElement) document.exitPointerLock()
+  if (!open && !document.pointerLockElement) requestPointerLock()
+})
 function adminTeleport(key: string): void {
   adminWatch.teleport(key)
   trade.closeMenu()
@@ -1323,6 +1341,7 @@ const pauseMenuOpen = computed(
     !lockpickOpen.value &&
     !storageOpen.value &&
     !marketPanelOpen.value &&
+    !adminPanelOpen.value &&
     !playerListOpen.value &&
     !tasksOpen.value &&
     !settingsOpen.value &&
@@ -1359,7 +1378,7 @@ function isWalkWithWatchKey(code: string): boolean {
 }
 
 function handleExtraKeyDown(e: KeyboardEvent): boolean {
-  if (chatOpen.value || atmOpen.value || lockpickOpen.value || storageOpen.value || marketPanelOpen.value || playerListOpen.value || tasksOpen.value) return true
+  if (chatOpen.value || atmOpen.value || lockpickOpen.value || storageOpen.value || marketPanelOpen.value || adminPanelOpen.value || playerListOpen.value || tasksOpen.value) return true
   // the character screen owns the keyboard (Esc closes the editor)
   if (creator.value) return true
   // the trade window takes the keyboard (coins field, Esc): no game key behind it
@@ -2099,6 +2118,7 @@ const crosshairClass = computed(() => {
       @teleport="adminTeleport"
       @summon="adminSummon"
       @storage-sale="adminWatch.startStorageSale"
+      @admin-panel="openAdminPanel"
     />
     <GameTradeWindow
       v-if="tradeWindowOpen && tradeState"
@@ -2124,6 +2144,22 @@ const crosshairClass = computed(() => {
       @close="storage.close"
     />
     <GameLockpick v-if="lockpick.board.value" :board="lockpick.board.value" @press="lockpick.press" @close="lockpick.close" />
+    <GameAdminPanel
+      v-if="adminPanelOpen && gameRoomRef"
+      :own-session-id="gameRoomRef.sessionId"
+      :menu="adminMenu"
+      :items="adminWatch.items.value"
+      :result="adminWatch.result.value"
+      :error="adminError"
+      @give-money="adminWatch.giveMoney"
+      @give-item="adminWatch.giveItem"
+      @start-quiz="adminWatch.startQuiz"
+      @start-storage-sale="adminWatch.startStorageSale"
+      @open-market="adminWatch.openMarket"
+      @close-market="adminWatch.closeMarket"
+      @collect-taxes="adminWatch.collectTaxes"
+      @close="adminWatch.closePanel"
+    />
     <GameAtmScreen v-if="atmOpen" :screen="atm.screen.value" :pending="atm.pending.value" :feedback="atm.feedback.value" @run="atm.run" @clear-feedback="atm.clearFeedback" @close="atm.close" />
     <GameMarketPanel
       v-if="market.panel.value"

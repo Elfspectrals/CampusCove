@@ -6,18 +6,20 @@ import WatchRow from './WatchRow.vue'
 
 const props = defineProps<{ menu: AdminMenuPayload | null; selected: number }>()
 
-const emit = defineEmits<{ teleport: [key: string]; summon: [sessionId: string]; storageSale: [] }>()
+const emit = defineEmits<{ teleport: [key: string]; summon: [sessionId: string]; storageSale: []; panel: [] }>()
 
 const { t } = useI18n()
 
 const destinations = computed(() => props.menu?.destinations ?? [])
 const players = computed(() => props.menu?.players ?? [])
-const events = ['storage-sale'] as const
+const events = ['panel', 'storage-sale'] as const
 
 function activate(index: number): void {
   const destination = destinations.value[index]
   if (destination) return emit('teleport', destination.key)
-  if (events[index - destinations.value.length]) return emit('storageSale')
+  const event = events[index - destinations.value.length]
+  if (event === 'panel') return emit('panel')
+  if (event === 'storage-sale') return emit('storageSale')
   const player = players.value[index - destinations.value.length - events.length]
   if (!player) throw new Error(`[WatchAdminApp] no row ${index}`)
   emit('summon', player.sessionId)
@@ -46,7 +48,8 @@ defineExpose({
       </ul>
       <p class="m-0 px-2 pb-1 pt-2 text-[11px] font-bold text-mist">{{ t('watch.admin.events') }}</p>
       <ul class="m-0 flex list-none flex-col gap-0.5 p-0">
-        <WatchRow :selected="destinations.length === selected" dot="sun" :name="t('watch.admin.storageSale')" meta="" />
+        <WatchRow :selected="destinations.length === selected" dot="coral" :name="t('watch.admin.panel')" meta="" />
+        <WatchRow :selected="destinations.length + 1 === selected" dot="sun" :name="t('watch.admin.storageSale')" meta="" />
       </ul>
       <p class="m-0 px-2 pb-1 pt-2 text-[11px] font-bold text-mist">{{ t('watch.admin.bring') }}</p>
       <p v-if="players.length === 0" class="m-0 px-2 py-2 text-center text-xs text-mist">{{ t('watch.admin.nobody') }}</p>

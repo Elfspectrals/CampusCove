@@ -20,6 +20,8 @@ A market is identified by its date (`market_date`, the Saturday in Paris time, `
 
 Playtest: `MARKET_OPEN_NOW=1` in `backend/.env` opens the market all day, every day, when `APP_ENV=local` (ignored in any other environment). Put it in `.env` rather than in the container environment: `php artisan serve` only passes a few variables to the PHP server.
 
+An admin can also open or close the market now from the game; the override wins over the schedule and the playtest switch until it ends (`docs/ADMIN.md`).
+
 ## Rules
 
 | Rule | Value |
