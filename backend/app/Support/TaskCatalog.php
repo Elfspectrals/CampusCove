@@ -21,6 +21,10 @@ final class TaskCatalog
             'cook' => ['counter' => ActionCounter::DishesCooked, 'tiers' => [10, 100, 500]],
             'loyal_customer' => ['counter' => ActionCounter::ShopBaskets, 'tiers' => [10, 100, 300]],
             'dapper' => ['counter' => ActionCounter::ClothesBought, 'tiers' => [3, 10, 25]],
+            'regular' => ['counter' => ActionCounter::PubOrderDays, 'tiers' => [3, 15, 50]],
+            'pub_games' => ['counter' => ActionCounter::PubGames, 'tiers' => [10, 50, 150]],
+            'duellist' => ['counter' => ActionCounter::DuelsWon, 'tiers' => [1, 5, 15]],
+            'insider' => ['counter' => ActionCounter::SecretRoomWeeks, 'tiers' => [1, 4, 12]],
         ];
     }
 

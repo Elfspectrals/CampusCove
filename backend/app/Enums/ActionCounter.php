@@ -18,4 +18,8 @@ enum ActionCounter: string
     case DishesCooked = 'dishes_cooked';
     case ShopBaskets = 'shop_baskets';
     case ClothesBought = 'clothes_bought';
+    case PubOrderDays = 'pub_order_days';
+    case PubGames = 'pub_games';
+    case DuelsWon = 'duels_won';
+    case SecretRoomWeeks = 'secret_room_weeks';
 }

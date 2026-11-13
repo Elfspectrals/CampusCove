@@ -27,6 +27,10 @@ Laravel owns every counter. A counter counts one real action, bumped by the serv
 | `dishes_cooked` | one raw item cooked on a stove or barbecue | `SurvivalService::cook` |
 | `shop_baskets` | one paid basket per shop and per clock hour in Paris (14:00 to 14:59); a zone checkout counts its zone, a pub order counts as shop `pub` | `PlayerActivityService::basketPaid` from `ZoneShopController::checkout` and `PubService::order` |
 | `clothes_bought` | one piece of clothing (item kind `cosmetic`) bought in a zone checkout for the first time; buying it again after losing it counts nothing | `PlayerActivityService::basketPaid` |
+| `pub_order_days` | one day (Paris) with at least one drink ordered at the pub counter | `PlayerActivityService::pubOrder` from `PubService::order` |
+| `pub_games` | one finished Drink Fast race or Meter Shot run, at most 5 a day (Paris) and only when the player's drunkenness before the game's drink is 50 or less (0 to 100) | socket `reportPubGame` (`pubGames.ts`), then `POST /tasks/pub-game` (realtime) `{ game: drink_fast | meter_shot, intoxication: int 0-100 }` |
+| `duels_won` | one darts or Drink Fast game won against other players (placement 1), whoever the opponents are | `PubService::reward` |
+| `secret_room_weeks` | one week (Monday to Sunday, Paris, ISO week) in which the player stood in the pub's secret room | socket `taskTracking.ts` (once a day per account), then `POST /tasks/secret-room` (realtime, no body) |
 | `foods_tasted` | one food or drink tasted for the first time (any group of `FoodCatalog` but `medical`), once per item code | `SurvivalService::consume` |
 
 ## Tiers
@@ -49,6 +53,10 @@ Every task lives in `App\Support\TaskCatalog`: a key, the counter it reads and i
 | `cook` | `dishes_cooked` | 10 / 100 / 500 |
 | `loyal_customer` | `shop_baskets` | 10 / 100 / 300 |
 | `dapper` | `clothes_bought` | 3 / 10 / 25 |
+| `regular` | `pub_order_days` | 3 / 15 / 50 |
+| `pub_games` | `pub_games` | 10 / 50 / 150 |
+| `duellist` | `duels_won` | 1 / 5 / 15 |
+| `insider` | `secret_room_weeks` | 1 / 4 / 12 |
 
 ## Notification
 

@@ -241,8 +241,11 @@ test('a full Drink Fast race: lobby, start, replayed progress, rewards with each
   const end = received(cw, 'pub_race_end').at(-1)
   assert.deepEqual(end.ranking, expected)
   assert.deepEqual(end.rewards, [{ sessionId: expected[0].sessionId, coins: 40 }, { sessionId: expected[1].sessionId, coins: 15 }])
-  assert.deepEqual(apiCalls.slice(2).map((c) => [c.token, c.body]), expected.map((row, i) => [
+  assert.deepEqual(apiCalls.slice(2).filter((c) => c.path === '/pub/reward').map((c) => [c.token, c.body]), expected.map((row, i) => [
     `token-${row.sessionId}`, { game: 'drink_fast', placement: i + 1, score: row.ms }
+  ]))
+  assert.deepEqual(apiCalls.filter((c) => c.path === '/tasks/pub-game').map((c) => [c.token, c.body]), expected.map((row) => [
+    `token-${row.sessionId}`, { game: 'drink_fast', intoxication: 0 }
   ]))
   assert.equal(a.intoxication, 24)
   assert.equal(b.intoxication, 24)
@@ -281,7 +284,8 @@ test('standing up forfeits the race and a lone finisher wins solo', async () => 
   sendDrinkFast(room, ca, plan.toggles, t0 + RACE_LOBBY_MS, drinkingMs(plan.finishStep!) + 500)
   await new Promise((resolve) => setImmediate(resolve))
   const score = drinkingMs(plan.finishStep!) + plan.spillsAt.at(-1)! * RACE_SPILL_PENALTY_MS
-  assert.deepEqual(apiCalls.map((c) => c.body), [{ game: 'drink_fast', placement: 0, score }])
+  assert.deepEqual(apiCalls.filter((c) => c.path === '/pub/reward').map((c) => c.body), [{ game: 'drink_fast', placement: 0, score }])
+  assert.deepEqual(apiCalls.filter((c) => c.path === '/tasks/pub-game').map((c) => [c.token, c.body]), [['token-a', { game: 'drink_fast', intoxication: 0 }]])
   assert.equal(b.intoxication, 0)
   assert.equal(a.intoxication, 24)
 })
@@ -355,6 +359,7 @@ test('Meter Shot: paid start, result rewarded, drink seen by the others', async 
   assert.equal(me.pubShots, null)
   assert.equal(me.intoxication, 24)
   assert.deepEqual(apiCalls[1].body, { game: 'meter_shot', placement: 0, score: 5000 })
+  assert.deepEqual([apiCalls[2].path, apiCalls[2].body], ['/tasks/pub-game', { game: 'meter_shot', intoxication: 0 }])
   assert.equal(received(cMe, 'pub_shots_result')[0].ms, 5000)
   assert.deepEqual(received(cOther, 'user_action'), [{ sessionId: 'me', action: 'drink', code: 'drink_vodka' }])
 })

@@ -21,6 +21,7 @@ import {
   SHOTS_MIN_MS
 } from './pubConstants.ts'
 import { addIntoxication } from './survivalStats.ts'
+import { reportPubGame } from './taskTracking.ts'
 import type { ClientPayload, DartsGame, DartsPlayer, GameClient, GameRoom, Player, PubChallenge, PubRace, PubRacer } from './types.ts'
 import { worldPub } from './world.ts'
 
@@ -305,6 +306,10 @@ export async function endRace(room: GameRoom, race: PubRace): Promise<void> {
     sessionId,
     coins: await payReward(room, sessionId, 'drink_fast', rewardPlacement(rank, participants.length), ms)
   })))
+  for (const { sessionId } of ranking) {
+    const racer = room.players.get(sessionId)
+    if (racer) reportPubGame(racer, 'drink_fast', racer.intoxication)
+  }
   for (const [sessionId, racer] of participants) drink(room, sessionId, racer.alcohol)
   const payload = { ranking, rewards }
   forEachPubClient(room, (c) => c.send('pub_race_end', payload))
@@ -505,8 +510,10 @@ export async function onShotsDone(room: GameRoom, client: GameClient, now = Date
     sendPubError(client, 'That was not how it went.', 'shots_implausible')
     return
   }
+  const intoxicationBefore = player.intoxication
   drink(room, player.sessionId, shots.alcohol)
   const coins = await payReward(room, player.sessionId, 'meter_shot', 0, ms)
+  reportPubGame(player, 'meter_shot', intoxicationBefore)
   client.send('pub_shots_result', { ms, coins })
   const action = { sessionId: player.sessionId, action: 'drink', code: 'drink_vodka' }
   room.forEachClient((c) => c.send('user_action', action), client)

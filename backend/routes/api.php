@@ -98,6 +98,8 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
         Route::post('/cash-drops/{id}/pick', [CashDropController::class, 'pick'])->whereNumber('id');
         Route::post('/tasks/zone-visited', [TaskController::class, 'zoneVisited']);
         Route::post('/tasks/active-day', [TaskController::class, 'activeDay']);
+        Route::post('/tasks/pub-game', [TaskController::class, 'pubGame']);
+        Route::post('/tasks/secret-room', [TaskController::class, 'secretRoom']);
     });
     Route::get('/bank', [BankController::class, 'show']);
     Route::get('/tasks', [TaskController::class, 'index']);

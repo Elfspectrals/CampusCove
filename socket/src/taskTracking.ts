@@ -1,6 +1,7 @@
 import { callRealtimeBackend } from './backend.ts'
+import { inSecretVolume } from './pub.ts'
 import type { Player } from './types.ts'
-import { worldZoneKeysAt } from './world.ts'
+import { worldPub, worldZoneKeysAt } from './world.ts'
 
 export const ACTIVE_WINDOW_MS = 60_000
 export const ACTIVE_MIN_DISTANCE_M = 2
@@ -38,6 +39,7 @@ export function isActiveDayToReport(state: ActivityDay): boolean {
 
 const activityByAccount = new Map<number, ActivityDay>()
 const zonesReportedByAccount = new Map<number, Set<string>>()
+const secretRoomDayByAccount = new Map<number, string>()
 
 function warn(context: string, error: unknown): void {
   console.warn(`[tasks] ${context}:`, error instanceof Error ? error.message : error)
@@ -67,8 +69,27 @@ function reportActivity(player: Player, distance: number, now: number): void {
   })
 }
 
+function reportSecretRoom(player: Player, now: number): void {
+  const pub = worldPub()
+  if (pub === null || !inSecretVolume(pub, player.x, player.y, player.z)) return
+  const day = parisDay(now)
+  if (secretRoomDayByAccount.get(player.accountId) === day) return
+  secretRoomDayByAccount.set(player.accountId, day)
+  callRealtimeBackend(player.token, '/tasks/secret-room', 'POST').catch((error: unknown) => {
+    secretRoomDayByAccount.delete(player.accountId)
+    warn('secret room not counted', error)
+  })
+}
+
 export function onTaskMove(player: Player, distance: number, now: number): void {
   if (player.token === null) return
   reportNewZones(player)
   reportActivity(player, distance, now)
+  reportSecretRoom(player, now)
+}
+
+export function reportPubGame(player: Player, game: 'drink_fast' | 'meter_shot', intoxicationBefore: number): void {
+  if (player.token === null) return
+  callRealtimeBackend(player.token, '/tasks/pub-game', 'POST', { game, intoxication: Math.round(intoxicationBefore) })
+    .catch((error: unknown) => warn(`${game} game not counted`, error))
 }

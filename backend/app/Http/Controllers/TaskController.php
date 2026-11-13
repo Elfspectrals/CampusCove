@@ -27,6 +27,24 @@ class TaskController extends Controller
         return response()->json(['ok' => true]);
     }
 
+    public function pubGame(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'game' => 'required|string|in:drink_fast,meter_shot',
+            'intoxication' => 'required|integer|min:0|max:100',
+        ]);
+        $this->activity->pubGamePlayed($this->accountId($request), (int) $validated['intoxication']);
+
+        return response()->json(['ok' => true]);
+    }
+
+    public function secretRoom(Request $request): JsonResponse
+    {
+        $this->activity->secretRoomEntered($this->accountId($request));
+
+        return response()->json(['ok' => true]);
+    }
+
     public function activeDay(Request $request): JsonResponse
     {
         $this->activity->activeDay($this->accountId($request));
