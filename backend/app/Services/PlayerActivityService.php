@@ -22,7 +22,7 @@ final class PlayerActivityService
     }
 
     /** @param list<int> $shopCatalogItemIds */
-    public function basketPaid(int $accountId, string $shop, array $shopCatalogItemIds = []): void
+    public function basketPaid(int $accountId, string $shop, array $shopCatalogItemIds): void
     {
         $this->counters->bumpOncePerKey($accountId, ActionCounter::ShopBaskets, $shop.':'.now(self::DAY_TIMEZONE)->format('Y-m-d H'));
         $clothes = ShopCatalogItem::query()

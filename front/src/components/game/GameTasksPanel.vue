@@ -1,15 +1,14 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { fetchTasks, type TaskProgress } from '../../api/tasks'
+import { useTasks } from '../../composables/useTasks'
 import { matches } from '../../config/keybindings'
 import TaskProgressList from '../tasks/TaskProgressList.vue'
 
 const emit = defineEmits<{ close: [] }>()
 
 const { t } = useI18n()
-const tasks = ref<TaskProgress[] | null>(null)
-const error = ref<string | null>(null)
+const { tasks, error } = useTasks()
 
 function onKey(e: KeyboardEvent): void {
   if (e.key !== 'Escape' && !matches('tasks', e.code)) return
@@ -18,13 +17,7 @@ function onKey(e: KeyboardEvent): void {
   emit('close')
 }
 
-
-onMounted(() => {
-  window.addEventListener('keydown', onKey, true)
-  fetchTasks()
-    .then((list) => (tasks.value = list))
-    .catch((err: unknown) => (error.value = err instanceof Error ? err.message : String(err)))
-})
+onMounted(() => window.addEventListener('keydown', onKey, true))
 onUnmounted(() => window.removeEventListener('keydown', onKey, true))
 </script>
 

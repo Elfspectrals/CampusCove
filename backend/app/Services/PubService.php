@@ -45,7 +45,7 @@ final class PubService
         return DB::transaction(function () use ($accountId, $def, $price): array {
             $balance = $this->debit($accountId, $price, 'pub_order', ['code' => $def->code]);
             $this->inventory->grantItem($accountId, $def, 1);
-            $this->activity->basketPaid($accountId, 'pub');
+            $this->activity->basketPaid($accountId, 'pub', []);
             $this->activity->pubOrder($accountId);
 
             return ['code' => (string) $def->code, 'price' => $price, 'balance_after' => $balance];
