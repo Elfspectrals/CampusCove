@@ -343,7 +343,8 @@ export const messages = {
     watch: {
       label: 'Watch',
       meters: '{d} m',
-      apps: { trade: 'Trade', admin: 'Admin' },
+      apps: { bank: 'Bank', trade: 'Trade', admin: 'Admin' },
+      bank: { loading: 'Loading…', atmOnly: 'Deposit and withdraw at an ATM.', empty: 'No operations yet.' },
       keys: { choose: 'choose', open: 'open', back: 'back', close: 'close' },
       trade: {
         enter: 'ask',
@@ -754,7 +755,8 @@ export const messages = {
     watch: {
       label: 'Montre',
       meters: '{d} m',
-      apps: { trade: 'Échange', admin: 'Admin' },
+      apps: { bank: 'Banque', trade: 'Échange', admin: 'Admin' },
+      bank: { loading: 'Chargement…', atmOnly: 'Dépôt et retrait au distributeur.', empty: 'Aucune opération pour l’instant.' },
       keys: { choose: 'choisir', open: 'ouvrir', back: 'retour', close: 'fermer' },
       trade: {
         enter: 'demander',

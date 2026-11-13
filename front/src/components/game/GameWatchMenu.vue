@@ -3,10 +3,13 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { actionKeyLabels, matches } from '../../config/keybindings'
 import { WATCH_HOME, stepWatch, watchKeyOf, type WatchView } from '../../game/watch/watchNav'
+import type { BankScreen } from '../../api/bank'
 import type { AdminMenuPayload, TradeNearbyPlayer, TradePendingPayload, TradeRequestedPayload } from '../../types/gameRealtime'
 import type { UiIconName } from '../ui/icons'
+import UiCurrency from '../ui/UiCurrency.vue'
 import UiIcon from '../ui/UiIcon.vue'
 import WatchAdminApp from './watch/WatchAdminApp.vue'
+import WatchBankApp from './watch/WatchBankApp.vue'
 import WatchTradeApp from './watch/WatchTradeApp.vue'
 
 /**
@@ -22,6 +25,9 @@ const props = defineProps<{
   isAdmin: boolean
   adminMenu: AdminMenuPayload | null
   adminError: string | null
+  cash: number | null
+  bankScreen: BankScreen | null
+  bankError: string | null
 }>()
 
 const emit = defineEmits<{
@@ -30,23 +36,25 @@ const emit = defineEmits<{
   cancel: []
   close: []
   adminOpen: []
+  bankOpen: []
   teleport: [key: string]
   summon: [sessionId: string]
 }>()
 
 const { t } = useI18n()
 
-type AppKey = 'trade' | 'admin'
+type AppKey = 'bank' | 'trade' | 'admin'
 
 interface WatchApp {
   key: AppKey
   icon: UiIconName
   tile: string
   badge: boolean
-  enterLabel: string
+  enterLabel: string | null
 }
 
 const apps = computed<WatchApp[]>(() => [
+  { key: 'bank', icon: 'bank', tile: 'bg-mint', badge: false, enterLabel: null },
   { key: 'trade', icon: 'hand', tile: 'bg-grape', badge: props.incoming !== null, enterLabel: t('watch.trade.enter') },
   ...(props.isAdmin ? [{ key: 'admin', icon: 'shield', tile: 'bg-coral', badge: false, enterLabel: t('watch.admin.enter') } as const] : []),
 ])
@@ -66,7 +74,8 @@ function tickClock(): void {
 }
 let clockTimer: number | undefined
 
-const errorText = computed(() => (openApp.value?.key === 'admin' ? props.adminError : props.error))
+const errorText = computed(() => ({ bank: props.bankError, trade: props.error, admin: props.adminError })[openApp.value?.key ?? 'trade'])
+const enterHint = computed(() => (openApp.value ? openApp.value.enterLabel : t('watch.keys.open')))
 
 const screenRef = ref<HTMLElement | null>(null)
 watch(view, () => {
@@ -88,8 +97,14 @@ function onKey(e: KeyboardEvent): void {
   const step = stepWatch(view.value, key, { apps: apps.value.length, rows: appRef.value?.rowCount ?? 0 })
   view.value = step.view
   if (step.effect?.kind === 'close') emit('close')
-  else if (step.effect?.kind === 'open' && apps.value[step.effect.app]?.key === 'admin') emit('adminOpen')
+  else if (step.effect?.kind === 'open') openedApp(step.effect.app)
   else if (step.effect?.kind === 'activate') appRef.value?.activate(step.effect.row)
+}
+
+function openedApp(index: number): void {
+  const key = apps.value[index]?.key
+  if (key === 'admin') emit('adminOpen')
+  else if (key === 'bank') emit('bankOpen')
 }
 
 onMounted(() => {
@@ -112,6 +127,7 @@ onUnmounted(() => {
       <div class="flex h-[272px] flex-col overflow-hidden rounded-[18px] bg-ink-900 text-fog ring-1 ring-line/5">
         <div class="flex items-center justify-between px-3 pb-1 pt-2 text-xs font-bold text-mist">
           <span class="font-display text-base text-fog">{{ clock }}</span>
+          <UiCurrency currency="coins" :amount="cash" :size="12" />
         </div>
 
         <div v-if="openApp" class="flex items-center gap-1.5 px-3 pb-2 font-display text-lg font-extrabold">
@@ -137,6 +153,7 @@ onUnmounted(() => {
               {{ t(`watch.apps.${app.key}`) }}
             </li>
           </ul>
+          <WatchBankApp v-else-if="openApp.key === 'bank'" ref="appRef" :screen="bankScreen" :selected="selectedRow" />
           <WatchTradeApp
             v-else-if="openApp.key === 'trade'"
             ref="appRef"
@@ -163,7 +180,7 @@ onUnmounted(() => {
 
         <div class="flex justify-center gap-2.5 border-t border-line/10 px-2 pb-2 pt-1.5 text-[11px] font-semibold text-mist">
           <span><kbd class="rounded bg-ink-700 px-1 text-[10px] font-bold text-fog">↑↓</kbd> {{ t('watch.keys.choose') }}</span>
-          <span><kbd class="rounded bg-ink-700 px-1 text-[10px] font-bold text-fog">↵</kbd> {{ openApp ? openApp.enterLabel : t('watch.keys.open') }}</span>
+          <span v-if="enterHint"><kbd class="rounded bg-ink-700 px-1 text-[10px] font-bold text-fog">↵</kbd> {{ enterHint }}</span>
           <span><kbd class="rounded bg-ink-700 px-1 text-[10px] font-bold text-fog">⌫</kbd> {{ openApp ? t('watch.keys.back') : t('watch.keys.close') }}</span>
         </div>
       </div>

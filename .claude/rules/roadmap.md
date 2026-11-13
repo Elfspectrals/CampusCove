@@ -131,7 +131,7 @@ Decision (2026-11-12): voice goes through a self-hosted LiveKit SFU (open source
 Decision (2026-11-13): no separate phone. The survival watch is the player's phone, always owned, never lost or stolen. A tap on the watch key (T, rebindable) opens its apps in the bottom left corner, styled as a smartwatch on every HUD theme (mockup `docs/mockups/watch-apps.html`). The player keeps walking and looking around: arrows choose, Enter acts, Backspace goes back, Y / N answer a trade request. Other features (police, jobs, house alarm, quiz, market) add their app to the watch instead of a menu of their own, following `docs/WATCH_APPS.md`.
 
 - [done] App shell: corner watch driven by the keyboard (`front/src/game/watch/watchNav.ts`, tested), movement and mouse look kept, other game keys ignored, Esc closes it. Trade and Admin moved in as apps. Played: open, browse, walk, teleport, ask, cancel, decline (N) and accept (Y) a trade.
-- [todo] Bank (read only): cash, bank, recent operations from `GET /api/bank`; deposit and withdraw stay at the ATM.
+- [done] Bank (read only): cash, bank, recent operations from `GET /api/bank`, loaded when the app opens; deposit and withdraw stay at the ATM. The cash on you also shows in the watch's top bar.
 - [todo] GPS: places and ATMs by distance, a marker on the corner and full map, cleared on arrival.
 - [todo] Contacts: friends with their status, the ones in this town first, follow one on the GPS.
 

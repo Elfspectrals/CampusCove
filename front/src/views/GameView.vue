@@ -76,6 +76,7 @@ import { useSeats } from '../composables/game/useSeats'
 import { useSurvival } from '../composables/game/useSurvival'
 import { useTrade } from '../composables/game/useTrade'
 import { useAdminWatch } from '../composables/game/useAdminWatch'
+import { useWatchBank } from '../composables/game/useWatchBank'
 import { usePunch } from '../composables/game/usePunch'
 import { useShopPurchase } from '../composables/useShopPurchase'
 import { toggleCollisionDebug } from '../game/collision/collisionDebug'
@@ -618,6 +619,7 @@ const watchKey = computed(() => actionKeyLabels('survivalWatch')[0] ?? 'T')
 
 // ---------------------------------------------------------------- watch apps: admin teleports
 
+const watchBank = useWatchBank()
 const adminWatch = useAdminWatch({ gameRoomRef, say: (text) => survival.say(text) })
 const { isAdmin, menu: adminMenu, error: adminError } = adminWatch
 function adminTeleport(key: string): void {
@@ -1556,11 +1558,15 @@ const crosshairClass = computed(() => {
       :is-admin="isAdmin"
       :admin-menu="adminMenu"
       :admin-error="adminError"
+      :cash="walletBalances.cash"
+      :bank-screen="watchBank.screen.value"
+      :bank-error="watchBank.error.value"
       @request="trade.request"
       @respond="trade.respond"
       @cancel="trade.cancel"
       @close="trade.closeMenu"
       @admin-open="adminWatch.load"
+      @bank-open="watchBank.load"
       @teleport="adminTeleport"
       @summon="adminSummon"
     />
