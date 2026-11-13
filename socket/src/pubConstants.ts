@@ -45,3 +45,13 @@ export const DARTS_MAX_OFFSET_CM = 25
 export const DARTS_POWER_IDEAL = 0.76
 /** No vertical drop or rise while the power is within this distance of the ideal. */
 export const DARTS_POWER_DEAD_ZONE = 0.05
+
+export const QUIZ_TIME_ZONE = 'Europe/Paris'
+export const QUIZ_START_HOUR = 21
+export const QUIZ_ANNOUNCE_MS = 10 * 60_000
+export const QUIZ_LAST_CALL_MS = 60_000
+export const QUIZ_MIN_CONTESTANTS = 2
+export const QUIZ_QUESTION_COUNT = 15
+export const QUIZ_ANSWER_MS = 15_000
+export const QUIZ_POINTS_BASE = 500
+export const QUIZ_POINTS_SPEED = 500
