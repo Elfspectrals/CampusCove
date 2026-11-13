@@ -300,6 +300,10 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       deps.seats.onSeated(data, room.sessionId)
     })
 
+    room.onMessage('user_held', (data: { sessionId: string; code: string | null }) => {
+      if (data.sessionId !== room.sessionId) remotes.setHeldTool(data.sessionId, typeof data.code === 'string' ? data.code : null)
+    })
+
     room.onMessage('user_picking', (data: UserPickingPayload) => {
       if (data.sessionId !== room.sessionId) remotes.setPicking(data.sessionId, data.picking === true)
     })

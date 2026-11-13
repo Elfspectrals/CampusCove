@@ -85,6 +85,11 @@ export interface Player extends Vec3 {
   lockpick: LockpickSession | null
   lastPickStartAt: number
   lastStorageAt: number
+  /** Job tool in hand, checked against the inventory (src/tools.ts, docs/TOOLS.md). */
+  heldTool: string | null
+  wantedTool: string | null
+  holdSyncing: boolean
+  lastHoldCheckAt: number
   decoratedTemplateKey?: string | null
   appearance: Record<AppearanceSlot, number | null>
   slotHexes: Record<AppearanceSlot, string>

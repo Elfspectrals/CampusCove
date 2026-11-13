@@ -15,6 +15,8 @@ export interface RemoteUserPayload {
   character?: unknown
   /** Pub seat the player sits on (socket/src/pub.ts), null or absent when standing. */
   seatId?: string | null
+  /** Job tool in hand, checked by the socket (docs/TOOLS.md). */
+  heldTool?: string | null
 }
 
 /** 'user_seated': a visible player sat down on a pub seat, or stood up (`seatId` null). */

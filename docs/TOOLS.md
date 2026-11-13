@@ -17,6 +17,15 @@ Tools sold in the hardware store aisle. Each one gives a job bonus and hits hard
 - One use is spent per orchard pick done with the tool and per hit that lands on a player.
 - No buyer takes tools back.
 
+Realtime routes (socket only):
+
+| Route | Body | Answer | Refusal |
+|---|---|---|---|
+| `POST /api/tools/hold` | `{ code }` | `{ code, uses_left }` of the carried tool with the fewest uses | 422 `tool_not_carried` (not in the inventory, locked in a trade, or not a weapon tool) |
+| `POST /api/tools/wear` | `{ code }` | `{ code, uses_left }` after one use; `uses_left: 0` means it broke and is deleted | 422 `tool_not_carried` |
+
+A carried tool is an instance in the player's inventory (gift inbox container), not locked by a trade.
+
 ## Combat (socket)
 
 | Hand | Damage | Cooldown | Reach |

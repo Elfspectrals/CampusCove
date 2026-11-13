@@ -41,6 +41,7 @@ import {
   standUp
 } from './pubGames.ts'
 import { onPunch } from './punch.ts'
+import { onHold } from './tools.ts'
 import { onChat } from './chat.ts'
 import { onAtm } from './atm.ts'
 import { onCashBagPick } from './cashBags.ts'
@@ -137,6 +138,7 @@ export class CityRoom extends Room implements GameRoom {
     this.onMessage('clinic_heal', (client) => void onClinicHeal(this, client))
     this.onMessage('jump', (client) => onJump(this.players.get(client.sessionId), Date.now()))
     this.onMessage('punch', (client, payload: ClientPayload) => onPunch(this, client, payload))
+    this.onMessage('hold', (client, payload: ClientPayload) => onHold(this, client, payload))
     this.onMessage('chat', (client, payload: ClientPayload) => onChat(this, client, payload))
     this.onMessage('atm', (client, payload: ClientPayload) => void onAtm(this, client, payload))
     this.onMessage('cash_bag_pick', (client, payload: ClientPayload) => void onCashBagPick(this, client, payload))
