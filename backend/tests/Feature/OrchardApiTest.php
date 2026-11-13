@@ -73,6 +73,47 @@ class OrchardApiTest extends TestCase
         $this->assertSame(1, $this->hotbarItem($other['token'], 'farm_apple')['quantity']);
     }
 
+    public function test_secateurs_allow_picks_one_and_three_quarter_seconds_apart_and_spend_one_use_each(): void
+    {
+        $player = $this->registerAndCreditWallet(0, 'cash');
+        $this->grant($player['account_id'], 'tool_secateurs', 1);
+        $pick = fn () => $this->postJson('/api/orchard/pick', ['tool' => 'tool_secateurs'], $this->auth($player['token'], self::SECRET));
+        $this->freezeTime();
+
+        $pick()->assertOk()->assertExactJson(['code' => 'farm_apple', 'quantity' => 1, 'tool' => ['code' => 'tool_secateurs', 'uses_left' => 599]]);
+        $this->travel(OrchardService::MIN_PICK_INTERVAL_WITH_TOOL_MS - 1)->milliseconds();
+        $pick()->assertStatus(422)->assertJsonPath('code', 'pick_too_fast');
+        $this->travel(1)->milliseconds();
+        $pick()->assertOk()->assertJsonPath('quantity', 2)->assertJsonPath('tool.uses_left', 598);
+    }
+
+    public function test_a_pick_with_secateurs_not_carried_gives_no_apple(): void
+    {
+        $player = $this->registerAndCreditWallet(0, 'cash');
+
+        $this->postJson('/api/orchard/pick', ['tool' => 'tool_secateurs'], $this->auth($player['token'], self::SECRET))
+            ->assertStatus(422)
+            ->assertJsonPath('code', 'tool_not_carried');
+        $this->postJson('/api/orchard/pick', ['tool' => 'tool_crowbar'], $this->auth($player['token'], self::SECRET))
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('tool');
+
+        $this->assertNull($this->hotbarItem($player['token'], 'farm_apple'));
+    }
+
+    public function test_a_full_basket_spends_no_use_of_the_secateurs(): void
+    {
+        $player = $this->registerAndCreditWallet(0, 'cash');
+        $this->grant($player['account_id'], 'tool_secateurs', 1);
+        $this->grant($player['account_id'], 'farm_apple', 20);
+
+        $this->postJson('/api/orchard/pick', ['tool' => 'tool_secateurs'], $this->auth($player['token'], self::SECRET))
+            ->assertStatus(422)
+            ->assertJsonPath('code', 'basket_full');
+
+        $this->assertSame(600, (int) DB::table('item_instances')->where('owner_account_id', $player['account_id'])->value('uses_left'));
+    }
+
     public function test_selling_apples_pays_three_coins_each_and_keeps_the_rest(): void
     {
         $player = $this->registerAndCreditWallet(10, 'cash');

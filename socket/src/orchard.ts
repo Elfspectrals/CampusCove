@@ -1,8 +1,11 @@
 import { callRealtimeBackend, errorPayload } from './backend.ts'
 import type { ClientPayload, GameClient, GameRoom, Player, Vec3 } from './types.ts'
+import { onToolUsed } from './tools.ts'
 import { worldOrchard } from './world.ts'
 
 export const PICK_MS = 3000
+export const PICK_TOOL = 'tool_secateurs'
+export const TOOL_PICK_MS = 2000
 const PICK_LAG_MARGIN_MS = 250
 export const PICK_RESTART_MS = 300
 const TREE_REACH = 2.5
@@ -52,7 +55,10 @@ export function onOrchardPickStart(room: GameRoom, client: GameClient, payload: 
     return
   }
   player.lastPickStartAt = now
-  player.orchardPick = { tree: treeIndex, startedAt: now }
+  const tool = player.heldTool === PICK_TOOL ? PICK_TOOL : null
+  const durationMs = tool ? TOOL_PICK_MS : PICK_MS
+  player.orchardPick = { tree: treeIndex, startedAt: now, tool, durationMs }
+  client.send('orchard_pick_started', { tree: treeIndex, durationMs })
   broadcastPicking(room, client, true)
 }
 
@@ -73,7 +79,8 @@ export async function onOrchardPick(room: GameRoom, client: GameClient, now = Da
     return
   }
   broadcastPicking(room, client, false)
-  if (now - pick.startedAt < PICK_MS - PICK_LAG_MARGIN_MS) {
+  const tool = pick.tool !== null && player.heldTool === pick.tool ? pick.tool : null
+  if (now - pick.startedAt < (tool ? pick.durationMs : PICK_MS) - PICK_LAG_MARGIN_MS) {
     sendOrchardError(client, 'Keep picking a little longer.', 'orchard_too_fast')
     return
   }
@@ -83,7 +90,9 @@ export async function onOrchardPick(room: GameRoom, client: GameClient, now = Da
     return
   }
   try {
-    client.send('orchard_picked', await callRealtimeBackend(player.token, '/orchard/pick', 'POST', {}))
+    const picked = await callRealtimeBackend(player.token, '/orchard/pick', 'POST', tool ? { tool } : {})
+    client.send('orchard_picked', picked)
+    if (tool && picked?.tool) onToolUsed(room, client, player, tool, Number(picked.tool.uses_left))
   } catch (error) {
     warn('pick failed', error)
     client.send('orchard_error', errorPayload(error, 'The apple slipped from your hand.', 'orchard_pick_failed'))

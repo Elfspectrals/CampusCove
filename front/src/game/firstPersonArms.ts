@@ -84,10 +84,11 @@ export function createFirstPersonArms(container: THREE.Group) {
     base = next
   }
 
-  function playOnce(name: (typeof ONE_SHOT_CLIPS)[number], fadeS = ONE_SHOT_FADE_S): void {
+  function playOnce(name: (typeof ONE_SHOT_CLIPS)[number], fadeS = ONE_SHOT_FADE_S, durationS?: number): void {
     if (!mixer) return
     const next = action(name)
     oneShot?.stop()
+    next.timeScale = durationS ? next.getClip().duration / durationS : 1
     next.reset().fadeIn(fadeS).play()
     base?.fadeOut(fadeS)
     oneShot = next
@@ -235,7 +236,7 @@ export function createFirstPersonArms(container: THREE.Group) {
       lastPunchAt = now
       playOnce(lastPunch === 'jab' ? 'PunchL' : 'Punch', PUNCH_FADE_S)
     },
-    pick: () => playOnce('Pick'),
+    pick: (durationMs?: number) => playOnce('Pick', ONE_SHOT_FADE_S, durationMs && durationMs / 1000),
     cancelPick,
     hitStop: (seconds: number) => {
       frozenFor = seconds

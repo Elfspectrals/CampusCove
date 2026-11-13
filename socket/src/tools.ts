@@ -74,16 +74,21 @@ export function onHold(room: GameRoom, client: GameClient, payload: ClientPayloa
   void syncHeld(room, client, player)
 }
 
+export function onToolUsed(room: GameRoom, client: GameClient, player: Player, code: string, usesLeft: number): void {
+  client.send('tool_worn', { code, usesLeft })
+  if (usesLeft > 0 || player.heldTool !== code) return
+  player.wantedTool = null
+  setHeld(room, client, player, null)
+}
+
 export async function wearHeldTool(room: GameRoom, client: GameClient, player: Player, code: string): Promise<void> {
   try {
     const data = await callRealtimeBackend(player.token, '/tools/wear', 'POST', { code })
-    const usesLeft = Number(data?.uses_left)
-    client.send('tool_worn', { code, usesLeft })
-    if (usesLeft > 0 || player.heldTool !== code) return
+    onToolUsed(room, client, player, code, Number(data?.uses_left))
   } catch (error) {
     warn('wear failed', error)
     if (player.heldTool !== code) return
+    player.wantedTool = null
+    setHeld(room, client, player, null)
   }
-  player.wantedTool = null
-  setHeld(room, client, player, null)
 }

@@ -14,6 +14,7 @@ Décisions produit (validées les 02 et 03/11/2026) :
 - Prix : **3 coins** la pomme. Pas de plafond journalier (il bloquerait ceux qui veulent farmer) mais un **prix dégressif** :
   les 300 premières pommes vendues par compte sur 24 h glissantes paient 3 coins, les suivantes rien (0 depuis le 2026-11-13, pour que le sécateur fasse gagner du temps et pas d'argent).
 - Intervalle minimum de **2,5 s** entre deux cueillettes, vérifié par l'API (le socket ne fait pas foi pour le temps).
+- Sécateur en main (`docs/TOOLS.md`) : le socket fixe la cueillette à **2,0 s** au départ et l'envoie au client (`orchard_pick_started { tree, durationMs }`), puis appelle `/orchard/pick` avec `{ tool: 'tool_secateurs' }`. L'API vérifie que le sécateur est porté, accepte **1,75 s** entre deux cueillettes et retire une usure dans la même transaction que la pomme (`tool` dans la réponse). Ranger le sécateur pendant la cueillette ramène la règle des 3,0 s.
 - Le fermier porte une tenue en pièces modulaires (chapeau de paille, chemise à carreaux avec tablier, salopette,
   bottes), au même format que les vêtements des joueurs, pour pouvoir les vendre plus tard (règle `CLAUDE.md`).
 - Modèle de la pomme : **provisoire**, copie de `items/sweets/candy_apple`. À remplacer par la pomme de l'épicerie une

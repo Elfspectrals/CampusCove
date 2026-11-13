@@ -26,6 +26,8 @@ Realtime routes (socket only):
 
 A carried tool is an instance in the player's inventory (gift inbox container), not locked by a trade.
 
+Orchard: `POST /api/orchard/pick` takes an optional `{ tool: 'tool_secateurs' }`; with it the minimum interval is 1,750 ms instead of 2,500 ms and one use is spent with the apple, answered as `tool: { code, uses_left }` (details in `docs/ORCHARD.md`).
+
 ## Combat (socket)
 
 | Hand | Damage | Cooldown | Reach |

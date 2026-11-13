@@ -80,7 +80,7 @@ export interface Player extends Vec3 {
   lastPubBellAt: number
   /** Last pub_bouncer_block broadcast for this player (rate limit). */
   lastBouncerBlockAt: number
-  orchardPick: { tree: number, startedAt: number } | null
+  orchardPick: { tree: number, startedAt: number, tool: string | null, durationMs: number } | null
   farmPick: { plant: number, startedAt: number } | null
   lockpick: LockpickSession | null
   lastPickStartAt: number

@@ -213,6 +213,7 @@ export interface GameRealtimeDeps {
     onError: (data: CashBagErrorPayload) => void
   }
   orchard: {
+    onPickStarted: (data: { tree: number; durationMs: number }) => void
     onPicked: (data: OrchardPickedPayload) => void
     onError: (data: OrchardErrorPayload) => void
   }
@@ -374,6 +375,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('pub_race_challenge_sent', (data: PubRaceChallengeSentPayload) => deps.pubChallenge.onSent(data))
     room.onMessage('pub_race_challenge_result', (data: PubRaceChallengeResultPayload) => deps.pubChallenge.onResult(data))
     room.onMessage('pub_race_challenge_cancelled', (data: PubRaceChallengeCancelledPayload) => deps.pubChallenge.onCancelled(data))
+    room.onMessage('orchard_pick_started', (data: { tree: number; durationMs: number }) => deps.orchard.onPickStarted(data))
     room.onMessage('orchard_picked', (data: OrchardPickedPayload) => deps.orchard.onPicked(data))
     room.onMessage('orchard_error', (data: OrchardErrorPayload) => deps.orchard.onError(data))
     room.onMessage('zone_sold', (data: ZoneSoldPayload) => deps.zoneBuyers.onSold(data))
