@@ -33,6 +33,7 @@ import GameDrunkEffects from '../components/game/GameDrunkEffects.vue'
 import GameDrinkFast from '../components/game/GameDrinkFast.vue'
 import GamePubChallenge from '../components/game/GamePubChallenge.vue'
 import GamePubRaceBoard from '../components/game/GamePubRaceBoard.vue'
+import GameStorageBoard from '../components/game/GameStorageBoard.vue'
 import GameMeterShot from '../components/game/GameMeterShot.vue'
 import GameMinimap from '../components/game/GameMinimap.vue'
 import GameDarts from '../components/game/GameDarts.vue'
@@ -61,6 +62,8 @@ import { useOrchard } from '../composables/game/useOrchard'
 import { useZoneBuyers } from '../composables/game/useZoneBuyers'
 import { useAtm } from '../composables/game/useAtm'
 import { useCashBags } from '../composables/game/useCashBags'
+import { useStorageAuction } from '../composables/game/useStorageAuction'
+import { useStorageWarehouse } from '../composables/game/useStorageWarehouse'
 import { useProximityVoice } from '../composables/game/useProximityVoice'
 import { mutedAccounts, playerVolumes, setPlayerVolume, toggleMuteAccount } from '../composables/game/useVoiceSettings'
 import GamePlayerList from '../components/game/GamePlayerList.vue'
@@ -258,7 +261,9 @@ const zoneDecor = useZoneDecor({
   getGameRoom: () => gameRoomRef.value,
   onStaff: (role, npc) => {
     if (role === 'bartender' || role === 'bouncer') pub.onStaff(role, npc)
+    if (role === 'auctioneer') storageWarehouse.setAuctioneer(npc)
   },
+  npcSpeed: (npc) => storageWarehouse.npcSpeed(npc),
 })
 const activeFurniture = computed(() => {
   const keys = [mallCellTemplates.currentStoreKey.value, zoneDecor.currentStoreKey.value]
@@ -506,6 +511,26 @@ const cashBags = useCashBags({
   say: (text) => survival.say(text),
   pickedMessage: (amount) => t('cashBag.picked', { amount }),
 })
+let storageUnits: readonly { id: string; door: string; threshold: [number, number, number]; inside: [number, number, number] }[] = []
+const storageAuction = useStorageAuction({
+  myPosition,
+  getCamera,
+  canvasRef,
+  gameRoomRef,
+  myAccountId: () => myAccountId.value,
+  units: () => storageUnits,
+  inWarehouse: () => currentHouseKey.value === 'storage',
+  promptsHidden: () => inventoryOpen.value || !canUsePub(),
+  t: (key, params) => t(key, params ?? {}),
+  say: (text) => survival.say(text),
+})
+const storageBoard = storageAuction.board
+const storageWarehouse = useStorageWarehouse({
+  getScene,
+  sale: storageAuction.sale,
+  units: () => storageUnits,
+  playOn: (name, object) => sfx.playOn(name, object),
+})
 watch(atmOpen, (open) => {
   if (!open && !document.pointerLockElement) requestPointerLock()
 })
@@ -562,7 +587,7 @@ const interactions = useInteractionTargets({
     if (activeFurniture.value?.store.hasCounter.value) activeFurniture.value.store.toggleTarget(useWithShift)
     else openStorePurchase()
   },
-  sources: [pub.source, pubChallenge.source, pubGames.source, seats.source, orchard.source, farm.source, zoneBuyers.source, atm.source, cashBags.source],
+  sources: [pub.source, pubChallenge.source, pubGames.source, seats.source, orchard.source, farm.source, zoneBuyers.source, atm.source, cashBags.source, storageAuction.source],
 })
 const { doorPrompt } = interactions
 
@@ -814,6 +839,7 @@ const environment = useRoomEnvironment({
   getRenderer,
   onTownLoaded: (manifest) => {
     interactions.setWorldManifest(manifest)
+    storageUnits = manifest.storage?.units ?? []
     const musicZone = manifest.zones.find((zone) => zone.music)
     if (musicZone?.music && !zoneMusic) {
       zoneMusic = createAmbientLoop(musicZone.music.url, 0.14, sfx.listener)
@@ -1062,6 +1088,8 @@ const movement = useGameMovement({
     mallCellTemplates.tick(dt, myPosition)
     zoneDecor.tick(dt, myPosition)
     cashBags.tick(dt)
+    storageAuction.tick()
+    storageWarehouse.tick(dt)
     voice.tick()
     for (const { store } of furnitureStores) store.update(dt)
     threadsMusic.update(dt, inThreads.value)
@@ -1170,6 +1198,13 @@ const realtime = useGameRealtime({
   zoneBuyers: zoneBuyers.handlers,
   atm: atm.handlers,
   cashBags: cashBags.handlers,
+  storageAuction: {
+    ...storageAuction.handlers,
+    onOpened: (data) => {
+      storageAuction.handlers.onOpened(data)
+      storageWarehouse.onOpened(data)
+    },
+  },
   voice: { onToken: voice.onToken, disconnect: voice.disconnect },
   farm: farm.handlers,
   pubChallenge: pubChallenge.handlers,
@@ -1283,6 +1318,7 @@ onUnmounted(() => {
   placement.dispose()
   clearApartmentObjects()
   houseFurniture.dispose()
+  storageWarehouse.dispose()
   window.clearInterval(doorSignTimer)
   doorSigns.dispose()
   arms?.dispose()
@@ -1565,6 +1601,7 @@ const crosshairClass = computed(() => {
       @admin-open="adminWatch.load"
       @teleport="adminTeleport"
       @summon="adminSummon"
+      @storage-sale="adminWatch.startStorageSale"
     />
     <GameTradeWindow
       v-if="tradeWindowOpen && tradeState"
@@ -1649,6 +1686,7 @@ const crosshairClass = computed(() => {
       @close="closePubRace"
     />
     <GamePubRaceBoard v-if="pubRaceBoard" :board="pubRaceBoard" />
+    <GameStorageBoard v-if="storageBoard" :board="storageBoard" />
     <GamePubChallenge
       v-if="!pubGamesOpen"
       :incoming="pubChallengeIncoming"

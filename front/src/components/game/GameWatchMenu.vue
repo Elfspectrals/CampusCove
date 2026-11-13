@@ -25,6 +25,7 @@ const emit = defineEmits<{
   adminOpen: []
   teleport: [key: string]
   summon: [sessionId: string]
+  storageSale: []
 }>()
 
 const app = ref<'home' | 'trade' | 'admin'>('home')
@@ -113,6 +114,8 @@ onUnmounted(() => window.removeEventListener('keydown', onKey, true))
               </button>
             </li>
           </ul>
+          <p class="m-0 px-1 pb-2 pt-4 text-[11px] font-bold uppercase tracking-wider text-mist">Events</p>
+          <button type="button" class="cc-btn cc-btn-sm w-full" @click="emit('storageSale')">Start the storage sale</button>
           <p class="m-0 px-1 pb-2 pt-4 text-[11px] font-bold uppercase tracking-wider text-mist">Bring a player here</p>
           <p v-if="adminMenu.players.length === 0" class="m-0 px-1 py-3 text-center text-sm text-mist">Nobody else is online.</p>
           <ul v-else class="m-0 list-none p-0">

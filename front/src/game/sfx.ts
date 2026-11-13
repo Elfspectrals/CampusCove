@@ -26,6 +26,9 @@ const SOUNDS = {
   door_lock: { urls: doorUrls('lock', 2), volume: 0.9, ...DOOR_RANGE },
   door_unlock: { urls: doorUrls('unlock', 2), volume: 0.9, ...DOOR_RANGE },
   door_rattle: { urls: doorUrls('rattle', 3), volume: 0.9, ...DOOR_RANGE },
+  storage_shutter: { urls: doorUrls('rattle', 3), volume: 1, refDistance: 3, maxDistance: 20 },
+  storage_bid: { urls: ['/assets/sfx/storage/bid.mp3'], volume: 0.7, refDistance: 3, maxDistance: 20 },
+  storage_gavel: { urls: ['/assets/sfx/storage/gavel.mp3'], volume: 1, refDistance: 4, maxDistance: 25 },
 } satisfies Record<string, SoundDef>
 
 export type SfxName = keyof typeof SOUNDS
