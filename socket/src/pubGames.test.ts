@@ -35,7 +35,8 @@ globalThis.fetch = async (url: string | URL | Request, init?: RequestInit) => {
   apiCalls.push({ token, path: path.replace(/^.*\/api/, ''), body: init?.body ? JSON.parse(String(init.body)) : null })
   if (path.endsWith('/pub/play')) return new Response(JSON.stringify(freeDartsTokens.has(token) ? { alcohol: 0, fee: 0 } : { alcohol: 24 }))
   if (path.endsWith('/pub/reward')) {
-    const { placement } = JSON.parse(String(init?.body))
+    const { placement, free } = JSON.parse(String(init?.body))
+    if (free) return new Response(JSON.stringify({ coins: 0 }))
     return new Response(JSON.stringify({ coins: placement === 1 ? 40 : placement === 2 ? 15 : 0 }))
   }
   return new Response(JSON.stringify({}))
@@ -465,7 +466,7 @@ test('Darts: lobby, three darts each in turn, a timed-out turn loses its darts, 
   assert.equal(game.players[1].darts.filter((d) => d.score === 0).length, 2)
 })
 
-test('Darts: a game with a free tutorial entry pays nobody', async () => {
+test('Darts: a game with a free tutorial entry still counts for everyone and pays nobody', async () => {
   const a = fakePlayer('a', 84, -139)
   const newcomer = fakePlayer('newcomer', 84.5, -139)
   const { room, clients, timers } = fakeRoom(a, newcomer)
@@ -485,7 +486,10 @@ test('Darts: a game with a free tutorial entry pays nobody', async () => {
 
   assert.equal(room.pub.darts, null)
   assert.deepEqual(received(ca, 'pub_darts_end').at(-1).rewards, [{ sessionId: 'a', coins: 0 }, { sessionId: 'newcomer', coins: 0 }])
-  assert.deepEqual(apiCalls.filter((c) => c.path === '/pub/reward'), [])
+  assert.deepEqual(apiCalls.filter((c) => c.path === '/pub/reward').map((c) => [c.token, c.body.free]), [
+    ['token-a', true],
+    ['token-newcomer', true]
+  ])
 })
 
 test('the race state carries spills, and a new spill skips the state throttle', async () => {

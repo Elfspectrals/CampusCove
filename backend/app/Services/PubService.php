@@ -72,12 +72,12 @@ final class PubService
     }
 
     /** @return array{coins: int, cooldown: bool, balance_after: int} */
-    public function reward(int $accountId, string $game, int $placement, int $score): array
+    public function reward(int $accountId, string $game, int $placement, int $score, bool $freeGame = false): array
     {
         if (! array_key_exists($game, self::GAMES)) {
             throw new PubRejectedException('unknown_game', 'There is no such game at the pub.');
         }
-        $coins = self::rewardCoins($game, $placement, $score);
+        $coins = $freeGame ? 0 : self::rewardCoins($game, $placement, $score);
         $reason = 'pub_reward_'.$game;
 
         return DB::transaction(function () use ($accountId, $game, $placement, $score, $coins, $reason): array {

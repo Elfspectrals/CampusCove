@@ -67,11 +67,11 @@ async function payEntryWithFee(client: GameClient, player: Player, game: PubGame
   }
 }
 
-async function payReward(room: GameRoom, sessionId: string, game: PubGame, placement: number, score: number): Promise<number> {
+async function payReward(room: GameRoom, sessionId: string, game: PubGame, placement: number, score: number, free = false): Promise<number> {
   const player = room.players.get(sessionId)
   if (!player) return 0
   try {
-    const data = await callRealtimeBackend(player.token, '/pub/reward', 'POST', { game, placement, score })
+    const data = await callRealtimeBackend(player.token, '/pub/reward', 'POST', free ? { game, placement, score, free } : { game, placement, score })
     return Number(data?.coins) || 0
   } catch (error) {
     warn(`${game} reward failed`, error)
@@ -647,7 +647,7 @@ export async function endDarts(room: GameRoom, game: DartsGame): Promise<void> {
   const hasFreeEntry = game.players.some((p) => p.free)
   const rewards = await Promise.all(ranking.map(async ({ sessionId, total }, rank) => ({
     sessionId,
-    coins: hasFreeEntry ? 0 : await payReward(room, sessionId, 'darts', rewardPlacement(rank, ranking.length), total)
+    coins: await payReward(room, sessionId, 'darts', rewardPlacement(rank, ranking.length), total, hasFreeEntry)
   })))
   for (const p of game.players) drink(room, p.sessionId, p.alcohol)
   const payload = { ranking, rewards }

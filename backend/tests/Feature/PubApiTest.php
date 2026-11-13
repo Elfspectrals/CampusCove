@@ -159,6 +159,18 @@ class PubApiTest extends TestCase
             ->assertJsonPath('code', 'pub_cooldown');
     }
 
+    public function test_a_free_darts_game_counts_as_played_and_pays_nothing(): void
+    {
+        $player = $this->registerAndCreditWallet(0, 'cash');
+
+        $this->postJson('/api/pub/reward', ['game' => 'darts', 'placement' => 1, 'score' => 90, 'free' => true], $this->auth($player['token'], self::SECRET))
+            ->assertOk()
+            ->assertJsonPath('coins', 0);
+
+        $this->assertSame(0, $this->balance($player['account_id']));
+        $this->assertSame(1, (int) DB::table('account_counters')->where('account_id', $player['account_id'])->where('counter', 'darts_played')->value('value'));
+    }
+
     /** @return array<string, array{string, int, int, int}> */
     public static function rewardTable(): array
     {

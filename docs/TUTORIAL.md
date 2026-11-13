@@ -16,7 +16,7 @@ In order (`TutorialService::STEPS`):
 
 ## Free darts game
 
-While the tutorial is `active` at `play_darts`, `POST /pub/play` for `darts` answers `fee: 0` and debits nothing (the 60 s reward wait still applies). The socket then pays no reward to anyone in that darts game, so an established player gains nothing by playing against a new account.
+While the tutorial is `active` at `play_darts`, `POST /pub/play` for `darts` answers `fee: 0` and debits nothing (the 60 s reward wait still applies). At the end of that darts game the socket sends `POST /pub/reward` with `free: true` for every player: the game counts as played (`darts_played`, which ends the tutorial step) but pays 0 coins to anyone, so an established player gains nothing by playing against a new account.
 
 Finishing gives the "New citizen" badge next to the pseudo. No coins.
 
