@@ -643,10 +643,14 @@ watch(() => selectedItem.value?.code ?? null, () => arms?.equip())
 /** Model shown in the right hand: tools and food (a half-eaten item is drawn smaller). */
 const FIRST_PERSON_TOOL_SCALE = 0.6
 
+function holdingJobTool(): boolean {
+  return heldTool.code.value !== null && heldTool.code.value === selectedItem.value?.code
+}
+
 function heldModel(): { url: string | null; scale: number } {
   const item = selectedItem.value
   if (!item || (item.kind !== 'tool' && item.kind !== 'consumable')) return { url: null, scale: 1 }
-  if (item.code.startsWith('tool_')) return { url: item.model_glb, scale: FIRST_PERSON_TOOL_SCALE }
+  if (holdingJobTool()) return { url: item.model_glb, scale: FIRST_PERSON_TOOL_SCALE }
   const eaten = item.portions && item.portions_left ? item.portions_left / item.portions : 1
   return { url: item.model_glb, scale: 0.55 + 0.45 * eaten }
 }
@@ -1164,7 +1168,7 @@ const movement = useGameMovement({
     updateFrontDoors(dt, isBuildingDoorOpen)
     arms?.update(dt, myPosition)
     const held = heldModel()
-    arms?.setHolding(selectedItem.value?.kind === 'tool' && selectedItem.value.code.startsWith('tool_'))
+    arms?.setHolding(holdingJobTool())
     heldItem.update(arms?.rightHand() ?? null, held.url, held.scale)
     survival.tick(dt)
     stamina.value = punch.staminaNow()

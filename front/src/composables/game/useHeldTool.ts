@@ -14,10 +14,12 @@ export interface HeldToolDeps {
 
 export function useHeldTool(deps: HeldToolDeps) {
   const cooldownMs = ref(PUNCH_COOLDOWN_MS)
+  const code = ref<string | null>(null)
 
   function bindRoom(room: Room): void {
     room.onMessage('tool_held', (data: { code: string | null; cooldownMs: number }) => {
       cooldownMs.value = data.cooldownMs
+      code.value = data.code
     })
     room.onMessage('tool_worn', (data: { code: string; usesLeft: number }) => {
       if (data.usesLeft > 0) return
@@ -35,5 +37,5 @@ export function useHeldTool(deps: HeldToolDeps) {
     room?.send('hold', { code })
   })
 
-  return { cooldownMs }
+  return { cooldownMs, code }
 }
