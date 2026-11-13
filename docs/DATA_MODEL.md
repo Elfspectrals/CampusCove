@@ -237,6 +237,9 @@ erDiagram
     ROOMS ||--o{ ROOM_MUTES : "rend muet"
     ROOMS ||--o{ ROOM_AUDIT_LOGS : journalise
     ROOMS ||--o{ CHAT_LOGS : discussions
+    HOUSING_UNITS ||--o{ LOCKPICK_ATTEMPTS : crochetée
+    ACCOUNTS ||--o{ LOCKPICK_ATTEMPTS : cambrioleur
+    ACCOUNTS ||--o| LOCKPICK_WEAR : "crochet entamé"
 
     HOUSING_UNITS {
         bigint unit_id PK
@@ -272,7 +275,22 @@ erDiagram
         bigint account_id PK, FK
         room_role role
     }
+    LOCKPICK_ATTEMPTS {
+        bigint id PK
+        bigint burglar_account_id FK
+        bigint unit_id FK
+        smallint misses
+        text outcome "null | success | broke | abandoned"
+        timestamptz started_at
+        timestamptz ended_at
+    }
+    LOCKPICK_WEAR {
+        bigint account_id PK, FK
+        smallint uses_spent "1 à 5"
+    }
 ```
+
+- **Crochetage** : une ligne `lockpick_attempts` par séance devant une porte (une seule ouverte par cambrioleur). Les réussites servent aux limites : maison protégée 24 h, cambrioleur en attente 30 min. `lockpick_wear` compte les usages du crochet entamé ; au 5e usage ou à la casse, un crochet est retiré de l'inventaire. Voir `docs/LOCKPICK.md`.
 
 ## 5. Échanges entre joueurs
 

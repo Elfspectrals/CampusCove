@@ -7,7 +7,8 @@
     "decor_stepladder": 140,
     "decor_toolbox": 90,
     "decor_wheelbarrow": 180,
-    "decor_workbench": 340
+    "decor_workbench": 340,
+    "tool_lockpick": 120
   },
   "buyers": {}
 }

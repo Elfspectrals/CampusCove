@@ -327,6 +327,26 @@
       "description": "Red steel toolbox, latches included."
     },
     {
+      "id": "crispins_hardware_lockpick",
+      "kind": "item",
+      "key": "lockpick",
+      "code": "tool_lockpick",
+      "forSale": true,
+      "price": 120,
+      "position": [
+        -363.75,
+        1.53,
+        -80.91
+      ],
+      "yaw": 0.6,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Steel hook pick. Five uses, snaps on a bad miss."
+    },
+    {
       "id": "crispins_hardware_paint_cans",
       "kind": "item",
       "key": "paint_cans",

@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Services\LockpickService;
 use App\Services\StarterCosmeticGrantService;
 use App\Support\FoodCatalog;
 use Illuminate\Database\Seeder;
@@ -81,6 +82,18 @@ class ShopSeeder extends Seeder
             self::decor('decor_paint_cans', 'Paint Can Pallet', 'paint_cans', 1, 3),
             self::decor('decor_wheelbarrow', 'Garden Wheelbarrow', 'wheelbarrow', 2, 2),
             self::decor('decor_metal_shelving', 'Warehouse Shelving', 'metal_shelving', 2, 3),
+            [
+                'code' => LockpickService::ITEM_CODE,
+                'name' => 'Lockpick',
+                'kind' => 'tool',
+                'rarity' => 2,
+                'tradable' => true,
+                'premium_only' => false,
+                'bind' => 'none',
+                'max_stack' => 10,
+                'preview_image' => '/assets/items/tools/lockpick/preview.png',
+                'model_glb' => '/assets/items/tools/lockpick/model.glb',
+            ],
             [
                 'code' => 'emote_wave',
                 'name' => 'Wave Emote',
@@ -389,6 +402,7 @@ class ShopSeeder extends Seeder
             self::coins('decor_paint_cans', 110, 143),
             self::coins('decor_wheelbarrow', 180, 144),
             self::coins('decor_metal_shelving', 260, 145),
+            self::coins(LockpickService::ITEM_CODE, 120, 146),
         ];
         foreach (FoodCatalog::items() as $i => $food) {
             if ($food['price'] !== null) {

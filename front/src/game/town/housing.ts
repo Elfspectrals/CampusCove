@@ -7,12 +7,13 @@ import type { HousingUnitPayload } from '../../types/gameRealtime'
 
 export type HousingUnit = HousingUnitPayload
 
-export type HousingAction = 'buy' | 'open' | 'close' | 'lock' | 'unlock' | 'locked'
+export type HousingAction = 'buy' | 'open' | 'close' | 'lock' | 'unlock' | 'locked' | 'pick'
 
 export interface DoorContext {
   myAccountId: number | null
   doorOpen: boolean
   holdingHouseKey: boolean
+  holdingLockpick?: boolean
 }
 
 /** Extra XZ reach beyond half the unit size for the door prompt. */
@@ -52,7 +53,7 @@ export function housingActionFor(unit: HousingUnit, door: DoorContext): HousingA
   if (unit.status === 'vacant') return unit.offer_type === 'buy' ? 'buy' : null
   const keys = hasHouseKeys(unit, door.myAccountId)
   if (door.holdingHouseKey && keys) return unit.door_locked ? 'unlock' : 'lock'
-  if (unit.door_locked) return 'locked'
+  if (unit.door_locked) return door.holdingLockpick && !keys ? 'pick' : 'locked'
   return door.doorOpen ? 'close' : 'open'
 }
 
@@ -71,5 +72,7 @@ export function housingPromptLabel(unit: HousingUnit, action: HousingAction): { 
       return { action: 'Unlock' }
     case 'locked':
       return { action: 'Locked' }
+    case 'pick':
+      return { action: 'Pick the lock' }
   }
 }

@@ -26,6 +26,7 @@ import GameSettingsDialog from '../components/game/GameSettingsDialog.vue'
 import GameStoreItemCard from '../components/game/GameStoreItemCard.vue'
 import GameZoneBuyerMenu from '../components/game/GameZoneBuyerMenu.vue'
 import GameAtmScreen from '../components/game/GameAtmScreen.vue'
+import GameLockpick from '../components/game/GameLockpick.vue'
 import GamePubMenu from '../components/game/GamePubMenu.vue'
 import GamePubSecretDialog from '../components/game/GamePubSecretDialog.vue'
 import GameChat from '../components/game/GameChat.vue'
@@ -60,6 +61,7 @@ import { usePlayerInventory } from '../composables/game/usePlayerInventory'
 import { useOrchard } from '../composables/game/useOrchard'
 import { useZoneBuyers } from '../composables/game/useZoneBuyers'
 import { useAtm } from '../composables/game/useAtm'
+import { useLockpick } from '../composables/game/useLockpick'
 import { useCashBags } from '../composables/game/useCashBags'
 import { useProximityVoice } from '../composables/game/useProximityVoice'
 import { mutedAccounts, playerVolumes, setPlayerVolume, toggleMuteAccount } from '../composables/game/useVoiceSettings'
@@ -347,12 +349,26 @@ watch(storeConfirmItem, (item, previous) => {
 // ---------------------------------------------------------------- town: houses, doors, environment
 
 const holdingHouseKey = () => selectedItem.value?.code === 'house_key'
+const holdingLockpick = () => selectedItem.value?.code === 'tool_lockpick'
+
+const lockpick = useLockpick({
+  gameRoomRef,
+  onOutcome: (outcome) => {
+    if (outcome === 'open' || outcome === 'broke' || outcome === 'abandoned') void refreshOwnedItems()
+  },
+})
+const { open: lockpickOpen } = lockpick
+watch(lockpickOpen, (open) => {
+  if (!open && !document.pointerLockElement) requestPointerLock()
+})
 
 const housing = useCityHousing({
   myAccountId,
   gameRoomRef,
   roomMessage,
   holdingHouseKey,
+  holdingLockpick,
+  startLockpick: lockpick.start,
 })
 
 // ---------------------------------------------------------------- The Salty Shamrock: seats, bar, games
@@ -528,7 +544,7 @@ const interactions = useInteractionTargets({
   myPosition,
   getCamera,
   canvasRef,
-  promptsHidden: () => inventoryOpen.value || housing.claimInFlight.value,
+  promptsHidden: () => inventoryOpen.value || housing.claimInFlight.value || lockpickOpen.value,
   housingUnits: housing.units,
   nearbyHousingUnit: housing.nearbyUnit,
   housingActionFor: housing.actionFor,
@@ -537,7 +553,7 @@ const interactions = useInteractionTargets({
     const unit = housing.nearbyUnit.value
     const action = unit ? housing.actionFor(unit) : null
     if (action === 'open' || action === 'close' || action === 'locked') arms?.use('door')
-    else if (action === 'lock') arms?.use('key')
+    else if (action === 'lock' || action === 'pick') arms?.use('key')
     void housing.interact()
   },
   onWorkDoor: (lot) => {
@@ -949,6 +965,7 @@ const pauseMenuOpen = computed(
     !pubUiOpen.value &&
     !zoneBuyerOpen.value &&
     !atmOpen.value &&
+    !lockpickOpen.value &&
     !playerListOpen.value &&
     !settingsOpen.value &&
     !creator.value,
@@ -982,7 +999,7 @@ function isWalkWithWatchKey(code: string): boolean {
 }
 
 function handleExtraKeyDown(e: KeyboardEvent): boolean {
-  if (chatOpen.value || atmOpen.value || playerListOpen.value) return true
+  if (chatOpen.value || atmOpen.value || lockpickOpen.value || playerListOpen.value) return true
   // the character screen owns the keyboard (Esc closes the editor)
   if (creator.value) return true
   // the trade window takes the keyboard (coins field, Esc): no game key behind it
@@ -1193,6 +1210,7 @@ const realtime = useGameRealtime({
   orchard: orchard.handlers,
   zoneBuyers: zoneBuyers.handlers,
   atm: atm.handlers,
+  lockpick: lockpick.handlers,
   cashBags: cashBags.handlers,
   voice: { onToken: voice.onToken, disconnect: voice.disconnect },
   farm: farm.handlers,
@@ -1620,6 +1638,7 @@ const crosshairClass = computed(() => {
       @confirm="trade.confirm"
       @cancel="trade.cancel"
     />
+    <GameLockpick v-if="lockpick.board.value" :board="lockpick.board.value" @press="lockpick.press" @close="lockpick.close" />
     <GameAtmScreen v-if="atmOpen" :screen="atm.screen.value" :pending="atm.pending.value" :feedback="atm.feedback.value" @run="atm.run" @clear-feedback="atm.clearFeedback" @close="atm.close" />
     <GameZoneBuyerMenu
       v-if="zoneBuyerOpen"

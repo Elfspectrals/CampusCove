@@ -63,6 +63,9 @@ import type {
   ZoneSellErrorPayload,
   ZoneSoldPayload,
   AtmDonePayload,
+  LockpickErrorPayload,
+  LockpickPinPayload,
+  LockpickResultPayload,
   AtmErrorPayload,
   CashBagErrorPayload,
   CashBagPayload,
@@ -177,6 +180,11 @@ export interface GameRealtimeDeps {
   atm: {
     onDone: (data: AtmDonePayload) => void
     onError: (data: AtmErrorPayload) => void
+  }
+  lockpick: {
+    onPin: (data: LockpickPinPayload) => void
+    onResult: (data: LockpickResultPayload) => void
+    onError: (data: LockpickErrorPayload) => void
   }
   voice: {
     onToken: (payload: VoiceTokenPayload) => void
@@ -353,6 +361,9 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('zone_sell_error', (data: ZoneSellErrorPayload) => deps.zoneBuyers.onError(data))
     room.onMessage('atm_done', (data: AtmDonePayload) => deps.atm.onDone(data))
     room.onMessage('atm_error', (data: AtmErrorPayload) => deps.atm.onError(data))
+    room.onMessage('lockpick_pin', (data: LockpickPinPayload) => deps.lockpick.onPin(data))
+    room.onMessage('lockpick_result', (data: LockpickResultPayload) => deps.lockpick.onResult(data))
+    room.onMessage('lockpick_error', (data: LockpickErrorPayload) => deps.lockpick.onError(data))
     room.onMessage('cash_bag_dropped', (data: CashBagPayload) => deps.cashBags.onDropped(data))
     room.onMessage('cash_bag_removed', (data: { id: number }) => deps.cashBags.onRemoved(data))
     room.onMessage('cash_bag_picked', (data: CashBagPickedPayload) => deps.cashBags.onPicked(data))
