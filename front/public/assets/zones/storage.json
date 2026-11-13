@@ -8,11 +8,11 @@
       "kind": "npc",
       "role": "auctioneer",
       "position": [
-        163.605,
+        13.099,
         0.8,
-        9.0
+        -123.605
       ],
-      "yaw": 1.5708,
+      "yaw": 3.1416,
       "scale": [
         1,
         1,
@@ -56,11 +56,11 @@
       "code": "decor_promo_pallet",
       "forSale": false,
       "position": [
-        133.805,
+        7.499,
         0.2,
-        3.4
+        -93.805
       ],
-      "yaw": 0.0,
+      "yaw": 1.5708,
       "scale": [
         1,
         1,
@@ -74,11 +74,11 @@
       "code": "decor_promo_pallet",
       "forSale": false,
       "position": [
-        133.805,
+        18.699,
         0.2,
-        14.6
+        -93.805
       ],
-      "yaw": 0.3,
+      "yaw": 1.8708,
       "scale": [
         1,
         1,
@@ -92,11 +92,11 @@
       "code": "decor_vegetable_crate",
       "forSale": false,
       "position": [
-        164.805,
+        7.499,
         0.2,
-        3.4
+        -124.805
       ],
-      "yaw": 0.0,
+      "yaw": 1.5708,
       "scale": [
         1,
         1,
@@ -110,11 +110,11 @@
       "code": "decor_vegetable_crate",
       "forSale": false,
       "position": [
-        164.005,
+        7.899,
         0.2,
-        3.8
+        -124.005
       ],
-      "yaw": 0.5,
+      "yaw": 2.0708,
       "scale": [
         1,
         1,
@@ -128,11 +128,11 @@
       "code": "decor_promo_pallet",
       "forSale": false,
       "position": [
-        164.805,
+        18.699,
         0.2,
-        14.6
+        -124.805
       ],
-      "yaw": 1.57,
+      "yaw": 3.1408,
       "scale": [
         1,
         1,
