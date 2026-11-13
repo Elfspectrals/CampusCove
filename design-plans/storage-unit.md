@@ -13,7 +13,7 @@ Approved by the user on 2026-11-13. The storage warehouse holds 12 roll-up stora
 
 - Zone `storage`, built like the clinic: a standalone `work` building (`build_storage_warehouse.py` interior, `build_storage_warehouse_ext.py` exterior, `build_storage_site.py` site and path, `apply-storage.mjs`), flat ground.
 - About 34 × 16 m inside: 2 rows of 6 units along the long walls (4 m deep each), a 6 m aisle between them, the auctioneer's stage at the far end with a lot board above it, the entrance at the other end. Strip lights, concrete floor, metal walls.
-- Placed around x 150, z 0. A path leaves the town hedge on the east side between Sunny Nook (house_03) and Mint Villa (house_04), around (44, -10), and runs straight to the warehouse door, about 100 m.
+- Placed south of the pond park, between the orchard and the pub, centred on x 13, z -110, door facing the pond. A gate in the pond fence at (13.1, -78.5), with its own spur from the pond loop, leads straight to the warehouse door, about 12 m. Moved there on 2026-11-13: the first site, around x 150 reached from the east hedge, crossed the market and the police station.
 - Auctioneer NPC in work clothes: coveralls and ear defenders, built like player clothes on the base body, standing on the stage.
 
 ## Contents
@@ -26,7 +26,7 @@ Approved by the user on 2026-11-13. The storage warehouse holds 12 roll-up stora
 
 ## Questions answered
 
-- Location: far edge of the world, around x 150 (2026-11-13).
+- Location: far edge of the world, around x 150 (2026-11-13); moved south of the pond park, between the orchard and the pub, the same day.
 - Building: indoor warehouse (2026-11-13).
 - 12 units, 2 × 6, 4 × 4 m each (2026-11-13).
 - Auctioneer in work clothes: coveralls and ear defenders (2026-11-13).

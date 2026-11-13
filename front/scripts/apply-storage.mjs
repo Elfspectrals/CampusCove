@@ -1,20 +1,13 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { NodeIO } from '@gltf-transform/core'
-import { ALL_EXTENSIONS } from '@gltf-transform/extensions'
-import draco3d from 'draco3dgltf'
 
 const FRONT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const ASSETS = join(FRONT, 'public/assets')
-const TOWN_GLB = join(ASSETS, 'town/town.glb')
 const TOWN_COL = join(ASSETS, 'town/town.collision.json')
 const WORLD_MANIFEST = join(ASSETS, 'world.manifest.json')
 const SITE_LAYOUT = join(ASSETS, 'park/storage_site/storage_site.layout.json')
 const STORAGE_INTERIOR = join(ASSETS, 'work/storage/interior.glb')
-
-const GATE_COLLIDERS = new Set(['COL_Hedge_46'])
-const HEDGE_RING_MIN_RADIUS = 40
 
 for (const file of [SITE_LAYOUT, STORAGE_INTERIOR]) {
   if (!existsSync(file)) {
@@ -25,65 +18,11 @@ for (const file of [SITE_LAYOUT, STORAGE_INTERIOR]) {
 const site = JSON.parse(readFileSync(SITE_LAYOUT, 'utf8'))
 const round4 = (n) => Math.round(n * 10000) / 10000
 
-function dropTriangles(node, shouldDrop) {
-  const mesh = node.getMesh()
-  if (!mesh) return 0
-  const m = node.getMatrix()
-  let dropped = 0
-  for (const prim of mesh.listPrimitives()) {
-    const pos = prim.getAttribute('POSITION').getArray()
-    const idxAcc = prim.getIndices()
-    if (!idxAcc) continue
-    const idx = idxAcc.getArray()
-    const keep = []
-    for (let t = 0; t + 2 < idx.length; t += 3) {
-      let cx = 0
-      let cy = 0
-      let cz = 0
-      for (let k = 0; k < 3; k++) {
-        const i = idx[t + k] * 3
-        const x = pos[i]
-        const y = pos[i + 1]
-        const z = pos[i + 2]
-        cx += m[0] * x + m[4] * y + m[8] * z + m[12]
-        cy += m[1] * x + m[5] * y + m[9] * z + m[13]
-        cz += m[2] * x + m[6] * y + m[10] * z + m[14]
-      }
-      if (shouldDrop(cx / 3, cy / 3, cz / 3)) {
-        dropped++
-        continue
-      }
-      keep.push(idx[t], idx[t + 1], idx[t + 2])
-    }
-    if (keep.length !== idx.length) idxAcc.setArray(new idx.constructor(keep))
-  }
-  return dropped
-}
-
 const { gate } = site
-const inGate = (x, z) => Math.hypot(x - gate.x, z - gate.z) <= gate.width / 2 + 0.5 && Math.hypot(x, z) >= HEDGE_RING_MIN_RADIUS
-
-const io = new NodeIO()
-  .registerExtensions(ALL_EXTENSIONS)
-  .registerDependencies({
-    'draco3d.decoder': await draco3d.createDecoderModule(),
-    'draco3d.encoder': await draco3d.createEncoderModule(),
-  })
-const doc = await io.read(TOWN_GLB)
-let removedHedge = 0
-for (const node of doc.getRoot().listNodes()) {
-  if (/^HedgeRing/i.test(node.getName() || '')) removedHedge += dropTriangles(node, (x, _y, z) => inGate(x, z))
-}
-if (removedHedge > 0) {
-  await io.write(TOWN_GLB, doc)
-  console.log(`town.glb: removed ${removedHedge} hedge triangles (east gate)`)
-} else {
-  console.log('town.glb: east gate already clear')
-}
 
 const col = JSON.parse(readFileSync(TOWN_COL, 'utf8'))
 const before = col.cuboids.length
-col.cuboids = col.cuboids.filter((c) => !GATE_COLLIDERS.has(c.name) && !c.name.startsWith('COL_Storage_') && c.name !== 'COL_Work_storage')
+col.cuboids = col.cuboids.filter((c) => !c.name.startsWith('COL_Storage_') && c.name !== 'COL_Work_storage')
 for (const c of site.collision) {
   col.cuboids.push({
     name: c.name,
