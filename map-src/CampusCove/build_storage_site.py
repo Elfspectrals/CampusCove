@@ -1,4 +1,4 @@
-"""Cove Storage site: lawn, path from the east hedge gate, lamps and way sign. Run build_storage_warehouse.py first. Outputs: out/park/storage_site/{storage_site.glb,storage_site.layout.json}, then `npm run assets:optimize -- park` and `node scripts/apply-storage.mjs`."""
+"""Cove Storage site, south of the pond park: lawn, path from the pond's storage gate, forecourt and lamps. Run build_pond.py and build_storage_warehouse.py first. Outputs: out/park/storage_site/{storage_site.glb,storage_site.layout.json}, then `npm run assets:optimize -- park` and `node scripts/apply-storage.mjs`."""
 import importlib
 import json
 import math
@@ -13,12 +13,13 @@ import lib_common as L
 importlib.reload(L)
 import bpy
 
-STORAGE_POS = (150.0, 9.0)
-STORAGE_YAW = -math.pi / 2
-GATE = {"x": 45.12, "z": 8.97, "width": 6.0}
 PATH_W = 2.6
 OUT = os.path.join(L.OUT_ROOT, "park", "storage_site")
 STORAGE_OUT = os.path.join(L.OUT_ROOT, "work", "storage")
+pond_gate = json.load(open(os.path.join(L.OUT_ROOT, "park", "pond", "pond.layout.json")))["storageGate"]
+GATE = {"x": pond_gate["x"], "z": pond_gate["z"], "width": pond_gate["width"]}
+STORAGE_POS = (GATE["x"], -110.0)
+STORAGE_YAW = 0.0
 
 ext = json.load(open(os.path.join(STORAGE_OUT, "exterior.layout.json")))
 inner = json.load(open(os.path.join(STORAGE_OUT, "interior.layout.json")))
@@ -39,7 +40,7 @@ def world_yaw(local_yaw):
 
 
 door = to_world(*ext["doorLocal"])
-step_end_x = door[0] - 2.0
+step_end_z = door[2] + 2.0
 
 sc = L.new_build_scene("PARK_storage_site")
 coll = bpy.data.collections.new("StorageSite")
@@ -51,8 +52,6 @@ P = {
     "grass": L.make_mat("TW_GrassStorage", "#79b765", 1.0, "noise", 0.06),
     "metal": L.make_mat("TW_MetalStorage", "#3a3f47", 0.4, "noise", 0.03),
     "lamp": L.make_mat("TW_LampGlowStorage", "#fff1c4", 0.5, "noise", 0.0, emit="#fff1c4"),
-    "board": L.make_mat("TW_StorageSignBoard", "#20262b", 0.7, "noise", 0.02),
-    "sign": L.make_mat("TW_StorageSignGlow", "#ffd36a", 0.4, "noise", 0.0, emit="#ffc84a", emit_strength=1.2),
 }
 so = []
 col = []
@@ -62,41 +61,34 @@ def add_col(name, gx, gz, sx, sz, h):
     col.append({"name": name, "cx": round(gx, 3), "cz": round(gz, 3), "hx": round(sx / 2, 3), "hz": round(sz / 2, 3), "hy": round(h / 2, 3), "cy": round(h / 2, 3), "yaw": 0.0})
 
 
-LAWN = (GATE["x"] + 0.5, 178.0, -14.0, 32.0)
+LAWN = (GATE["x"] - 13.0, GATE["x"] + 13.0, -132.0, -84.0)
 so.append(L.box(coll, "SS_Lawn", (LAWN[0] + LAWN[1]) / 2, (LAWN[2] + LAWN[3]) / 2, 0.0, LAWN[1] - LAWN[0], LAWN[3] - LAWN[2], 0.02, P["grass"], tile=2.0))
-path_x0, path_x1 = GATE["x"] + 0.5, step_end_x + 0.2
-so.append(L.box(coll, "SS_Path", (path_x0 + path_x1) / 2, GATE["z"], 0.0, path_x1 - path_x0, PATH_W, 0.04, P["paving"], tile=2.0))
-for side, dz in (("N", -PATH_W / 2 - 0.1), ("S", PATH_W / 2 + 0.1)):
-    so.append(L.box(coll, f"SS_Curb{side}", (path_x0 + path_x1) / 2, GATE["z"] + dz, 0.0, path_x1 - path_x0, 0.2, 0.08, P["curb"]))
-so.append(L.box(coll, "SS_Forecourt", step_end_x - 4.0, GATE["z"], 0.0, 8.0, 14.0, 0.035, P["asphalt"], tile=2.0))
+FORECOURT_D = 6.0
+path_z0, path_z1 = GATE["z"] - 1.5, step_end_z + FORECOURT_D - 0.2
+so.append(L.box(coll, "SS_Path", GATE["x"], (path_z0 + path_z1) / 2, 0.0, PATH_W, path_z0 - path_z1, 0.04, P["paving"], tile=2.0))
+for side, dx in (("W", -PATH_W / 2 - 0.1), ("E", PATH_W / 2 + 0.1)):
+    so.append(L.box(coll, f"SS_Curb{side}", GATE["x"] + dx, (path_z0 + path_z1) / 2, 0.0, 0.2, path_z0 - path_z1, 0.08, P["curb"]))
+so.append(L.box(coll, "SS_Forecourt", GATE["x"], step_end_z + FORECOURT_D / 2, 0.0, 14.0, FORECOURT_D, 0.035, P["asphalt"], tile=2.0))
 
-for i, gx in enumerate(range(52, int(step_end_x - 6), 12)):
-    gz = GATE["z"] + (PATH_W / 2 + 0.8) * (1 if i % 2 == 0 else -1)
+for i, dx in enumerate((-6.5, 6.5)):
+    gx, gz = GATE["x"] + dx, step_end_z + FORECOURT_D - 0.5
     so.append(L.cyl(coll, f"SS_Lamp{i}_Pole", gx, gz, 0.0, 0.07, 3.2, P["metal"], seg=6))
     so.append(L.box(coll, f"SS_Lamp{i}_Head", gx, gz, 3.2, 0.5, 0.5, 0.3, P["lamp"], bevel=0.03))
     add_col(f"COL_Storage_Lamp{i}", gx, gz, 0.3, 0.3, 3.4)
 
-sign_x, sign_z = GATE["x"] + 3.0, GATE["z"] + PATH_W / 2 + 1.4
-so.append(L.box(coll, "SS_WayPost", sign_x, sign_z, 0.0, 0.14, 0.14, 2.3, P["metal"]))
-so.append(L.box(coll, "SS_WayBoard", sign_x, sign_z, 1.5, 0.12, 2.6, 0.8, P["board"]))
-way_text = L.text_mesh(coll, "SS_WayText", "STORAGE  >", sign_x - 0.07, sign_z, 1.68, 0.32, 0.0, P["sign"])
-way_text.rotation_euler[2] = -math.pi / 2
-so.append(way_text)
-add_col("COL_Storage_WaySign", sign_x, sign_z, 0.3, 2.6, 2.3)
-
-bad = L.check_grounded(so, allow=("SS_Lawn", "SS_Path", "SS_Curb", "SS_Forecourt", "SS_Lamp", "SS_Way"))
+bad = L.check_grounded(so, allow=("SS_Lawn", "SS_Path", "SS_Curb", "SS_Forecourt", "SS_Lamp"))
 print("SITE grounded violations:", bad)
 assert not bad, bad
 
 fp_w, fp_d = ext["footprint"]
 body_center = to_world(0.0, 0.0, ext["footprintCenterZ"])
 body = ext["collision"][0]
-add_col("COL_Work_storage", body_center[0], body_center[2], 2 * body["hz"], 2 * body["hx"], 2 * body["hy"])
+add_col("COL_Work_storage", body_center[0], body_center[2], 2 * body["hx"], 2 * body["hz"], 2 * body["hy"])
 
 L.export_glb(os.path.join(OUT, "storage_site.glb"), so)
 L.write_json(os.path.join(OUT, "storage_site.layout.json"), {
     "version": 1,
-    "bounds": {"minX": GATE["x"], "maxX": LAWN[1], "minZ": LAWN[2], "maxZ": LAWN[3]},
+    "bounds": {"minX": LAWN[0], "maxX": LAWN[1], "minZ": LAWN[2], "maxZ": GATE["z"]},
     "gate": GATE,
     "storage": {
         "key": "storage", "name": ext["name"],
@@ -118,4 +110,4 @@ L.write_json(os.path.join(OUT, "storage_site.layout.json"), {
 })
 tris = sum(len(p.vertices) - 2 for o in so for p in o.data.polygons)
 print("site:", len(so), "objects,", tris, "triangles,", len(col), "collision boxes, door", door)
-L.snapshot(sc, os.path.join(OUT, "site_preview.png"), (40, 30, 9), (140, 0, 9), lens=24, res=(960, 540))
+L.snapshot(sc, os.path.join(OUT, "site_preview.png"), (GATE["x"], 30, GATE["z"] + 10), (GATE["x"], 0, -110), lens=24, res=(960, 540))
