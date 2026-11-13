@@ -70,4 +70,17 @@ class HousingUnit extends Model
     {
         return 'housing_'.$this->unit_id;
     }
+
+    public const SQUARE_METRES_PER_PLACED_OBJECT = 5.0;
+
+    public const STOREY_HEIGHT = 3.0;
+
+    public function furnitureLimit(): int
+    {
+        $bounds = $this->interior_bounds;
+        $floorArea = ($bounds['maxX'] - $bounds['minX']) * ($bounds['maxZ'] - $bounds['minZ']);
+        $storeys = (int) ceil(($bounds['maxY'] ?? self::STOREY_HEIGHT) / self::STOREY_HEIGHT);
+
+        return (int) floor($floorArea * $storeys / self::SQUARE_METRES_PER_PLACED_OBJECT);
+    }
 }

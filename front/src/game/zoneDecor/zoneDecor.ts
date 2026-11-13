@@ -183,7 +183,7 @@ function zoneItemAt(raw: unknown, path: string): ItemProp {
   return priced === undefined ? item : { ...item, price: priced }
 }
 
-const STAFF_ZONE: Record<StaffRole, string> = { bartender: 'pub', bouncer: 'pub', quizmaster: 'pub', nurse: 'clinic' }
+const STAFF_ZONE: Record<StaffRole, string> = { bartender: 'pub', bouncer: 'pub', quizmaster: 'pub', nurse: 'clinic', auctioneer: 'storage' }
 
 function zoneNpcAt(raw: unknown, path: string, zone: string): NpcProp {
   const { role, ...rest } = raw as Record<string, unknown>
@@ -219,6 +219,11 @@ export function withStaff(manifest: WorldManifest, decor: ZoneDecor): WorldManif
     if (role === 'nurse') {
       if (!next.clinic) throw new TemplateError('zone.props', 'world.manifest.json has no clinic for the nurse')
       next = { ...next, clinic: { ...next.clinic, nurse: position } }
+      continue
+    }
+    if (role === 'auctioneer') {
+      if (!next.storage) throw new TemplateError('zone.props', 'world.manifest.json has no storage for the auctioneer')
+      next = { ...next, storage: { ...next.storage, auctioneer: position } }
       continue
     }
     if (!next.pub) throw new TemplateError('zone.props', `world.manifest.json has no pub for the ${role}`)

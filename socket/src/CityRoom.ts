@@ -46,6 +46,7 @@ import { onHold } from './tools.ts'
 import { onChat } from './chat.ts'
 import { onAtm } from './atm.ts'
 import { onCashBagPick } from './cashBags.ts'
+import { STORAGE_TICK_MS, newStorageAuction, onAdminStorageSale, onStorageBid, onStorageOpen, onStorageOpenMine, storageSnapshot, tickStorageAuction } from './storageAuction.ts'
 import { voiceRoomName, voiceToken } from './voice.ts'
 import { VOICE_SYNC_MS, createVoiceSync, liveKitService, onVoiceMute } from './voiceSync.ts'
 import {
@@ -114,6 +115,7 @@ export class CityRoom extends Room implements GameRoom {
   trades = new Map<string, Trade>()
   seats = new Map<string, string>()
   cashBags = new Map<number, CashBag>()
+  storageAuction = newStorageAuction()
   pub: PubState = { secretOpen: false, race: null, darts: null, challenges: new Map(), challengeSentAt: new Map(), quiz: null, quizSchedule: 0 }
 
   onCreate() {
@@ -186,6 +188,11 @@ export class CityRoom extends Room implements GameRoom {
     this.onMessage('admin_open', (client) => onAdminOpen(this, client))
     this.onMessage('admin_teleport', (client, payload: ClientPayload) => onAdminTeleport(this, client, payload))
     this.onMessage('admin_summon', (client, payload: ClientPayload) => onAdminSummon(this, client, payload))
+    this.onMessage('admin_storage_sale', (client) => void onAdminStorageSale(this, client))
+    this.onMessage('storage_bid', (client) => void onStorageBid(this, client))
+    this.onMessage('storage_lot_open', (client, payload: ClientPayload) => void onStorageOpen(this, client, payload))
+    this.onMessage('storage_open_mine', (client) => void onStorageOpenMine(this, client))
+    this.clock.setInterval(() => void tickStorageAuction(this, Date.now()).catch((error) => warn('storage auction tick failed', error)), STORAGE_TICK_MS)
     this.onMessage('admin_quiz_start', (client) => onAdminQuizStart(this, client))
     scheduleNextQuiz(this)
     this.clock.setInterval(() => void this.pollHousingUnits(), HOUSING_POLL_MS)
@@ -236,6 +243,7 @@ export class CityRoom extends Room implements GameRoom {
       cashBags: [...this.cashBags.values()],
       isAdmin: player.isAdmin
     })
+    client.send('storage_sale', storageSnapshot(this, Date.now()))
     this.forEachClient((c) => c.send('user_joined', publicPlayer(player)), client)
     if (LIVEKIT) {
       await voiceToken(LIVEKIT, this.roomId, client.sessionId, player.pseudo)

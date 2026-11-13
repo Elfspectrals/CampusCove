@@ -45,6 +45,7 @@ export interface ZoneDecorDeps {
   insideOtherStore: () => boolean
   getGameRoom: () => Room | null
   onStaff: (role: StaffRole, npc: THREE.Object3D) => void
+  npcSpeed?: (npc: THREE.Object3D) => number
 }
 
 interface StoreArea {
@@ -294,7 +295,7 @@ export function useZoneDecor(deps: ZoneDecorDeps) {
 
   function tick(dt: number, at: { x: number; y: number; z: number }): void {
     cullZones(at)
-    for (const npc of npcs) if (npc.parent?.visible) updateAvatarAnimation(npc, dt, 0)
+    for (const npc of npcs) if (npc.parent?.visible) updateAvatarAnimation(npc, dt, deps.npcSpeed?.(npc) ?? 0)
     wander(dt)
     const inside = deps.insideOtherStore() ? undefined : storeAreas.find((a) => insideZone(a.bounds, at))
     currentStoreKey.value = inside?.key ?? null

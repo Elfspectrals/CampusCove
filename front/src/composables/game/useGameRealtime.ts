@@ -82,6 +82,8 @@ import type {
   AtmErrorPayload,
   CashBagErrorPayload,
   CashBagPayload,
+  StorageOpenedPayload,
+  StorageSalePayload,
   CashBagPickedPayload,
 } from '../../types/gameRealtime'
 import { useRemoteAvatars, type SeatPose } from './useRemoteAvatars'
@@ -225,6 +227,14 @@ export interface GameRealtimeDeps {
   voice: {
     onToken: (payload: VoiceTokenPayload) => void
     disconnect: () => Promise<void>
+  }
+  storageAuction: {
+    onSale: (data: StorageSalePayload) => void
+    onSoon: () => void
+    onStarted: (data: { count: number }) => void
+    onEnded: () => void
+    onOpened: (data: StorageOpenedPayload) => void
+    onError: (data: { message: string }) => void
   }
   cashBags: {
     onSync: (bags: CashBagPayload[]) => void
@@ -410,6 +420,12 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('zone_sell_error', (data: ZoneSellErrorPayload) => deps.zoneBuyers.onError(data))
     room.onMessage('atm_done', (data: AtmDonePayload) => deps.atm.onDone(data))
     room.onMessage('atm_error', (data: AtmErrorPayload) => deps.atm.onError(data))
+    room.onMessage('storage_sale', (data: StorageSalePayload) => deps.storageAuction.onSale(data))
+    room.onMessage('storage_sale_soon', () => deps.storageAuction.onSoon())
+    room.onMessage('storage_sale_started', (data: { count: number }) => deps.storageAuction.onStarted(data))
+    room.onMessage('storage_sale_ended', () => deps.storageAuction.onEnded())
+    room.onMessage('storage_opened', (data: StorageOpenedPayload) => deps.storageAuction.onOpened(data))
+    room.onMessage('storage_sale_error', (data: { message: string }) => deps.storageAuction.onError(data))
     room.onMessage('task_done', (data: TaskDonePayload) => deps.tasks.onDone(data))
     room.onMessage('tutorial_state', (data: unknown) => deps.tutorial.onState(data))
     room.onMessage('user_badges', (data: { sessionId: string; badges: string[] }) => remotes.setBadges(data.sessionId, data.badges))

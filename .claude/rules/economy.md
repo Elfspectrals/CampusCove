@@ -29,4 +29,4 @@ Two agents, two roles:
 - **Orchard is the main job**: 3 coins per apple, 300 apples per rolling 24 h at full price, then 0 (since 2026-11-13). Fun features and tools (golden apple, sweet spot, daily order, ranks, secateurs) must not raise daily income. The ~900 coins/day cap applies per job.
 - **The pub is a place to spend, not to earn.** You go there to drink and play. Solo games may cost a little, skill earns a little back, and the UI says so up front (fee and best payout shown before you play). A duel winner earns at most about +20 coins/min.
 - **Welcome bonus and referrals** must not be farmable with alt accounts (see `roadmap.md`).
-- Premium skins are never sold for coins. Housing leases last 7 days and expired furniture is deleted on purpose.
+- Premium skins are never sold for coins. Housing leases last 7 days. Furniture of a house seized for unpaid tax goes to a storage lot sold at the nightly auction; the price paid is destroyed.

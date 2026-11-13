@@ -59,6 +59,7 @@ const emit = defineEmits<{
   contactAsk: [pseudo: string]
   teleport: [key: string]
   summon: [sessionId: string]
+  storageSale: []
   alarmOpen: []
 }>()
 
@@ -231,6 +232,7 @@ onUnmounted(() => {
             :selected="selectedRow"
             @teleport="(key) => emit('teleport', key)"
             @summon="(sessionId) => emit('summon', sessionId)"
+            @storage-sale="emit('storageSale')"
           />
         </div>
 

@@ -61,6 +61,15 @@ export function clientIp(headers: Headers, peerIp: string | string[]): string {
   return forwarded.at(-1) ?? (Array.isArray(peerIp) ? peerIp[0] : peerIp)
 }
 
+async function jsonOrThrow(res: Response): Promise<Json> {
+  const data: Json = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    const message = typeof data?.message === 'string' ? data.message : `backend error ${res.status}`
+    throw Object.assign(new Error(message), { code: typeof data?.code === 'string' ? data.code : 'backend_error' })
+  }
+  return data
+}
+
 // JSON request; rejects with the API's message (and `code`) on a non-2xx answer.
 export async function callBackendJson(
   token: string | null,
@@ -83,17 +92,21 @@ export async function callBackendJson(
     },
     body: body !== null ? JSON.stringify(body) : undefined
   })
-  const data: Json = await res.json().catch(() => ({}))
-  if (!res.ok) {
-    const message = typeof data?.message === 'string' ? data.message : `backend error ${res.status}`
-    throw Object.assign(new Error(message), { code: typeof data?.code === 'string' ? data.code : 'backend_error' })
-  }
-  return data
+  return jsonOrThrow(res)
 }
 
 // Same call on a route reserved to this server (the API checks the shared secret).
 export function callRealtimeBackend(token: string | null, path: string, method: HttpMethod = 'POST', body: unknown = null): Promise<Json> {
   return callBackendJson(token, path, method, body, { 'X-Realtime-Secret': REALTIME_SHARED_SECRET })
+}
+
+export async function callServerBackend(path: string, method: HttpMethod = 'POST', body: unknown = null): Promise<Json> {
+  const res = await fetch(`${BACKEND_API_URL}${path}`, {
+    method,
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-Realtime-Secret': REALTIME_SHARED_SECRET },
+    body: body !== null ? JSON.stringify(body) : undefined
+  })
+  return jsonOrThrow(res)
 }
 
 // Error payload sent back to the client for a failed backend call.

@@ -30,6 +30,7 @@ use App\Http\Controllers\ReferralController;
 use App\Http\Controllers\RespawnBedController;
 use App\Http\Controllers\SecurityScanController;
 use App\Http\Controllers\ShopController;
+use App\Http\Controllers\StorageAuctionController;
 use App\Http\Controllers\StripeWebhookController;
 use App\Http\Controllers\SurvivalController;
 use App\Http\Controllers\TaskController;
@@ -56,6 +57,11 @@ Route::get('/assets/public/{path}', [AssetController::class, 'publicDisk'])->whe
 
 // Called by Stripe (signed body), never by the browser: no session, no CORS.
 Route::post('/stripe/webhook', StripeWebhookController::class);
+
+Route::middleware('realtime')->group(function () {
+    Route::post('/storage/sale', [StorageAuctionController::class, 'openSale']);
+    Route::post('/storage/lots/{publicId}/hammer', [StorageAuctionController::class, 'hammer'])->whereUuid('publicId');
+});
 
 Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
     Route::get('/user', [AuthController::class, 'user']);
@@ -106,6 +112,9 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
         Route::post('/bank/withdraw', [BankController::class, 'withdraw']);
         Route::post('/bank/transfer', [BankController::class, 'transfer']);
         Route::post('/cash-drops/{id}/pick', [CashDropController::class, 'pick'])->whereNumber('id');
+        Route::post('/storage/lots/{publicId}/bid', [StorageAuctionController::class, 'bid'])->whereUuid('publicId');
+        Route::post('/storage/lots/{publicId}/open', [StorageAuctionController::class, 'open'])->whereUuid('publicId');
+        Route::post('/storage/won/open', [StorageAuctionController::class, 'openAllWon']);
         Route::post('/tasks/zone-visited', [TaskController::class, 'zoneVisited']);
         Route::post('/tasks/active-day', [TaskController::class, 'activeDay']);
         Route::post('/tasks/pub-game', [TaskController::class, 'pubGame']);

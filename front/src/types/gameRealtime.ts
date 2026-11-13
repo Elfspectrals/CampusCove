@@ -74,6 +74,7 @@ export interface HousingUnitPayload {
   room_public_id: string | null
   template_key: string
   key_holder_account_ids: number[]
+  furniture_limit: number
 }
 
 export interface RoomInitPayload {
@@ -508,4 +509,44 @@ export interface CashBagErrorPayload {
   id: number | null
   message: string
   code: string
+}
+
+export interface StorageLotContent {
+  code: string
+  name: string
+  rarity: number
+  model_glb: string | null
+  quantity: number
+}
+
+interface StorageWonBox {
+  lotId: string
+  unitId: string
+  winnerAccountId: number
+  winnerPseudo: string
+}
+
+export interface StorageSalePayload {
+  active: boolean
+  serverNow: number
+  auctioneer: { x: number; y: number; z: number; yaw?: number } | null
+  won: StorageWonBox[]
+  night?: string
+  phase?: 'walking' | 'preview' | 'bidding' | 'hammering' | 'result'
+  endsAt?: number
+  index?: number
+  count?: number
+  unitId?: string
+  lot?: { id: string; source: 'seized' | 'generated'; formerOwnerName: string | null; openingBid: number; contents: StorageLotContent[] }
+  bidZone?: { x: number; z: number; radius: number }
+  leader?: { pseudo: string; amount: number } | null
+  nextBid?: number
+  result?: { status: 'sold' | 'listed' | 'destroyed'; winnerAccountId: number | null; price: number | null } | null
+}
+
+export interface StorageOpenedPayload {
+  lotId: string
+  unitId: string | null
+  pseudo: string
+  contents: StorageLotContent[]
 }

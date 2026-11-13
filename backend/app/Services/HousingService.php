@@ -31,7 +31,10 @@ final class HousingService
 
     private const HOUSE_KEY_CODE = 'house_key';
 
-    public function __construct(private readonly AccountInventoryService $inventoryService) {}
+    public function __construct(
+        private readonly AccountInventoryService $inventoryService,
+        private readonly StorageAuctionService $storageAuction,
+    ) {}
 
     public function collectDueTaxes(): int
     {
@@ -61,6 +64,7 @@ final class HousingService
                 $dueAt = $unit->tax_due_at->copy();
                 while ($dueAt->lte(now())) {
                     if (Wallet::lockForAccount($ownerId, self::CURRENCY)->balance() < $tax) {
+                        $this->storageAuction->boxSeizedHouse($unit);
                         $this->resetExpiredUnit($unit);
                         $seized++;
 
@@ -482,6 +486,7 @@ final class HousingService
             'door_locked' => (bool) $unit->door_locked,
             'reinforced_lock' => (bool) $unit->reinforced_lock,
             'interior_bounds' => $unit->interior_bounds,
+            'furniture_limit' => $unit->furnitureLimit(),
             'room_public_id' => $unit->room !== null ? (string) $unit->room->public_id : null,
             'template_key' => $unit->templateKey(),
             'key_holder_account_ids' => $this->keyHolderIds($unit),

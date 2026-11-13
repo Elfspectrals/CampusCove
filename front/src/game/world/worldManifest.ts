@@ -84,6 +84,21 @@ interface ClinicLayout {
   beds: ClinicBed[]
 }
 
+interface StorageUnit {
+  id: string
+  door: string
+  threshold: Vec3
+  inside: Vec3
+  size: Vec3
+  yaw: number
+}
+
+interface StorageLayout {
+  auctioneer: Vec3
+  lotBoard: Vec3
+  units: StorageUnit[]
+}
+
 type PubSeatKind = 'stool' | 'chair' | 'bench' | 'armchair' | 'sofa' | 'garden'
 
 export interface PubSeat {
@@ -135,6 +150,7 @@ export interface WorldManifest {
   fountains?: Vec3[]
   clinic?: ClinicLayout
   pub?: PubLayout
+  storage?: StorageLayout
   orchard?: OrchardLayout
   crops?: CropPlant[]
 }

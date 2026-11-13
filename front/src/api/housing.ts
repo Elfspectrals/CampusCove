@@ -31,6 +31,7 @@ function parseHousingUnit(raw: unknown): HousingUnitPayload | null {
   if (!(raw.room_public_id === null || typeof raw.room_public_id === 'string')) return null
   if (typeof raw.template_key !== 'string') return null
   if (!Array.isArray(raw.key_holder_account_ids) || !raw.key_holder_account_ids.every((id) => typeof id === 'number')) return null
+  if (typeof raw.furniture_limit !== 'number') return null
 
   return {
     unit_id: raw.unit_id,
@@ -53,6 +54,7 @@ function parseHousingUnit(raw: unknown): HousingUnitPayload | null {
     room_public_id: raw.room_public_id,
     template_key: raw.template_key,
     key_holder_account_ids: raw.key_holder_account_ids,
+    furniture_limit: raw.furniture_limit,
   }
 }
 

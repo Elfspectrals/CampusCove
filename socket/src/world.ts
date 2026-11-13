@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import type { Json } from './backend.ts'
+import type { StorageUnit } from './storageSale.ts'
 import type { Bounds, Vec3 } from './types.ts'
 
 const WORLD_MANIFEST_URL = process.env.WORLD_MANIFEST_URL
@@ -95,6 +96,12 @@ interface World {
   orchard: WorldOrchard | null
   cropPlants: WorldCropPlant[]
   zoneBounds: Map<string, Bounds>
+  storage: WorldStorage | null
+}
+
+export interface WorldStorage {
+  auctioneer: Vec3
+  units: StorageUnit[]
 }
 
 let world: World | null = null
@@ -133,6 +140,25 @@ function parseClinic(raw: Json): WorldClinic | null {
         position: parseVec3(bed.position, `position of clinic bed ${bed.id}`),
         bed: parseVec3(bed.bed, `bed of clinic bed ${bed.id}`),
         yaw: bed.yaw
+      }
+    })
+  }
+}
+
+function parseStorage(raw: Json): WorldStorage | null {
+  if (raw === undefined) return null
+  if (!Array.isArray(raw?.units) || raw.units.length === 0) throw new Error('world manifest: storage has no units')
+  return {
+    auctioneer: parseVec3(raw.auctioneer, 'storage auctioneer'),
+    units: raw.units.map((unit: Json, i: number): StorageUnit => {
+      if (typeof unit?.id !== 'string' || typeof unit.door !== 'string') {
+        throw new Error(`world manifest: invalid storage unit ${i} ${JSON.stringify(unit)}`)
+      }
+      return {
+        id: unit.id,
+        door: unit.door,
+        threshold: parseVec3(unit.threshold, `threshold of storage unit ${unit.id}`),
+        inside: parseVec3(unit.inside, `inside of storage unit ${unit.id}`)
       }
     })
   }
@@ -299,7 +325,8 @@ function parseWorld(manifest: Json): World {
     pubZone: parsePubZone(manifest.zones, pub),
     orchard,
     cropPlants: parseCropPlants(manifest.crops),
-    zoneBounds: new Map(manifest.zones.filter((zone: Json) => zone.bounds !== undefined).map((zone: Json) => [zone.key, parseBounds(zone.bounds, `${zone.key} zone bounds`)]))
+    zoneBounds: new Map(manifest.zones.filter((zone: Json) => zone.bounds !== undefined).map((zone: Json) => [zone.key, parseBounds(zone.bounds, `${zone.key} zone bounds`)])),
+    storage: parseStorage(manifest.storage)
   }
 }
 
@@ -417,6 +444,10 @@ export function worldHouse(houseKey: string): WorldHouse | null {
 
 export function worldClinic(): WorldClinic | null {
   return loadedWorld().clinic
+}
+
+export function worldStorage(): WorldStorage | null {
+  return loadedWorld().storage
 }
 
 export function worldPub(): WorldPub | null {

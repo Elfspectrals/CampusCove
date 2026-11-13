@@ -35,6 +35,7 @@ import GameDrunkEffects from '../components/game/GameDrunkEffects.vue'
 import GameDrinkFast from '../components/game/GameDrinkFast.vue'
 import GamePubChallenge from '../components/game/GamePubChallenge.vue'
 import GamePubRaceBoard from '../components/game/GamePubRaceBoard.vue'
+import GameStorageBoard from '../components/game/GameStorageBoard.vue'
 import GamePubQuizBoard from '../components/game/GamePubQuizBoard.vue'
 import GameQuiz from '../components/game/GameQuiz.vue'
 import GameMeterShot from '../components/game/GameMeterShot.vue'
@@ -80,6 +81,8 @@ import { useRespawnBed } from '../composables/game/useRespawnBed'
 import { useHouseAlarms } from '../composables/game/useHouseAlarms'
 import type { HouseFurniturePayload } from '../types/gameRealtime'
 import { useCashBags } from '../composables/game/useCashBags'
+import { useStorageAuction } from '../composables/game/useStorageAuction'
+import { useStorageWarehouse } from '../composables/game/useStorageWarehouse'
 import { useProximityVoice } from '../composables/game/useProximityVoice'
 import { mutedAccounts, playerVolumes, setPlayerVolume, toggleMuteAccount } from '../composables/game/useVoiceSettings'
 import GamePlayerList from '../components/game/GamePlayerList.vue'
@@ -204,6 +207,11 @@ const houseFurniture = useHouseFurniture({
   editableHouseObjects: { ensureApartmentObjectsFromServer, clearApartmentObjects },
 })
 
+const furnitureUsage = computed(() => {
+  const unit = housing.units.value.find((u) => u.model_key === editableHouseKey.value)
+  return unit ? { placed: apartmentObjectIds.value.length, limit: unit.furniture_limit } : null
+})
+
 const placement = useApartmentPlacement({
   getScene,
   getCamera,
@@ -211,6 +219,7 @@ const placement = useApartmentPlacement({
   getApartmentObjectMesh,
   getApartmentInventoryOpen: () => inventoryOpen.value,
   canDecorate,
+  furnitureUsage,
   pointerLocked,
   persistApartmentTransformForMesh,
   refreshApartmentInventory: () => refreshOwnedItems(),
@@ -277,7 +286,9 @@ const zoneDecor = useZoneDecor({
   getGameRoom: () => gameRoomRef.value,
   onStaff: (role, npc) => {
     if (role === 'bartender' || role === 'bouncer') pub.onStaff(role, npc)
+    if (role === 'auctioneer') storageWarehouse.setAuctioneer(npc)
   },
+  npcSpeed: (npc) => storageWarehouse.npcSpeed(npc),
 })
 const activeFurniture = computed(() => {
   const keys = [mallCellTemplates.currentStoreKey.value, zoneDecor.currentStoreKey.value]
@@ -624,6 +635,26 @@ const cashBags = useCashBags({
   },
   onToolsPicked: () => refreshOwnedItems(),
 })
+let storageUnits: readonly { id: string; door: string; threshold: [number, number, number]; inside: [number, number, number] }[] = []
+const storageAuction = useStorageAuction({
+  myPosition,
+  getCamera,
+  canvasRef,
+  gameRoomRef,
+  myAccountId: () => myAccountId.value,
+  units: () => storageUnits,
+  inWarehouse: () => currentHouseKey.value === 'storage',
+  promptsHidden: () => inventoryOpen.value || !canUsePub(),
+  t: (key, params) => t(key, params ?? {}),
+  say: (text) => survival.say(text),
+})
+const storageBoard = storageAuction.board
+const storageWarehouse = useStorageWarehouse({
+  getScene,
+  sale: storageAuction.sale,
+  units: () => storageUnits,
+  playOn: (name, object) => sfx.playOn(name, object),
+})
 watch(atmOpen, (open) => {
   if (!open && !document.pointerLockElement) requestPointerLock()
 })
@@ -681,7 +712,7 @@ const interactions = useInteractionTargets({
     if (activeFurniture.value?.store.hasCounter.value) activeFurniture.value.store.toggleTarget(useWithShift)
     else openStorePurchase()
   },
-  sources: [pub.source, pubQuiz.source, pubChallenge.source, pubGames.source, seats.source, orchard.source, farm.source, zoneBuyers.source, atm.source, storage.source, respawnBed.source, cashBags.source],
+  sources: [pub.source, pubQuiz.source, pubChallenge.source, pubGames.source, seats.source, orchard.source, farm.source, zoneBuyers.source, atm.source, storage.source, respawnBed.source, cashBags.source, storageAuction.source],
 })
 const { doorPrompt } = interactions
 
@@ -966,6 +997,7 @@ const environment = useRoomEnvironment({
   getRenderer,
   onTownLoaded: (manifest) => {
     interactions.setWorldManifest(manifest)
+    storageUnits = manifest.storage?.units ?? []
     const musicZone = manifest.zones.find((zone) => zone.music)
     if (musicZone?.music && !zoneMusic) {
       zoneMusic = createAmbientLoop(musicZone.music.url, 0.14, sfx.listener)
@@ -1215,7 +1247,10 @@ const movement = useGameMovement({
   updateProximity: interactions.updateProximity,
   onToggleInventory: toggleInventory,
   onHotbarDigit: selectHotbarIndex,
-  onHotbarScroll: (step) => selectHotbarIndex((selectedHotbarIndex.value + step + 9) % 9),
+  onHotbarScroll: (step) => {
+    if (placement.onWheelStep(step)) return
+    selectHotbarIndex((selectedHotbarIndex.value + step + 9) % 9)
+  },
   handleExtraKeyDown,
   onCanvasMouseDown: (e) => {
     // furniture placement keeps its own clicks (left: pick / place, right: cancel)
@@ -1236,6 +1271,8 @@ const movement = useGameMovement({
     mallCellTemplates.tick(dt, myPosition)
     zoneDecor.tick(dt, myPosition)
     cashBags.tick(dt)
+    storageAuction.tick()
+    storageWarehouse.tick(dt)
     voice.tick()
     for (const { store } of furnitureStores) store.update(dt)
     threadsMusic.update(dt, inThreads.value)
@@ -1385,6 +1422,13 @@ const realtime = useGameRealtime({
   storage: storage.handlers,
   bed: respawnBed.handlers,
   cashBags: cashBags.handlers,
+  storageAuction: {
+    ...storageAuction.handlers,
+    onOpened: (data) => {
+      storageAuction.handlers.onOpened(data)
+      storageWarehouse.onOpened(data)
+    },
+  },
   voice: { onToken: voice.onToken, disconnect: voice.disconnect },
   farm: farm.handlers,
   pubChallenge: pubChallenge.handlers,
@@ -1507,6 +1551,7 @@ onUnmounted(() => {
   placement.dispose()
   clearApartmentObjects()
   houseFurniture.dispose()
+  storageWarehouse.dispose()
   window.clearInterval(doorSignTimer)
   doorSigns.dispose()
   arms?.dispose()
@@ -1831,6 +1876,7 @@ const crosshairClass = computed(() => {
       @contact-ask="watchContacts.ask"
       @teleport="adminTeleport"
       @summon="adminSummon"
+      @storage-sale="adminWatch.startStorageSale"
     />
     <GameTradeWindow
       v-if="tradeWindowOpen && tradeState"
@@ -1927,6 +1973,7 @@ const crosshairClass = computed(() => {
       @close="closePubRace"
     />
     <GamePubRaceBoard v-if="pubRaceBoard" :board="pubRaceBoard" />
+    <GameStorageBoard v-if="storageBoard" :board="storageBoard" />
     <GamePubQuizBoard v-if="pubQuizBoard" :board="pubQuizBoard" />
     <GameQuiz
       v-if="pubQuizScreen"
