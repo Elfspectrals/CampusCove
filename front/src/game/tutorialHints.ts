@@ -1,10 +1,10 @@
 import type { Vec3 } from './mallTemplates/mallTemplate.ts'
 
-export const HINT_KINDS = ['atm', 'npc', 'door'] as const
+const HINT_KINDS = ['atm', 'npc', 'door'] as const
 
 export type HintKind = (typeof HINT_KINDS)[number]
 
-export const HINT_REACH = 4
+const HINT_REACH = 4
 
 export const HINT_DURATION_MS = 6000
 
