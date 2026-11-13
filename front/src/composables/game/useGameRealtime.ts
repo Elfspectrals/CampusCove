@@ -251,6 +251,7 @@ export interface GameRealtimeDeps {
     onReinforceError: (data: LockpickErrorPayload) => void
     onAlarmSiren: (data: { door: string }) => void
     onHouseAlarm: () => void
+  }
   market: {
     onSync: (data: MarketSnapshot) => void
     onDone: (data: MarketDonePayload) => void
