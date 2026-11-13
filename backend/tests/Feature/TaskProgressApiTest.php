@@ -108,6 +108,19 @@ class TaskProgressApiTest extends TestCase
         $this->assertSame(5, $this->counter($player['account_id'], ActionCounter::ApplesSold));
     }
 
+    public function test_apples_sold_to_the_orchard_buyer_in_game_are_counted(): void
+    {
+        $player = $this->registerAndCreditWallet(0, 'cash');
+        $headers = $this->auth($player['token'], self::SECRET);
+        $this->grant($player['account_id'], 'farm_apple', 4);
+
+        $this->postJson('/api/zone/sell', ['zone' => 'orchard', 'area' => 'apple_buyer', 'code' => 'farm_apple', 'quantity' => 5], $headers)->assertStatus(422);
+        $this->assertSame(0, $this->counter($player['account_id'], ActionCounter::ApplesSold));
+
+        $this->postJson('/api/zone/sell', ['zone' => 'orchard', 'area' => 'apple_buyer', 'code' => 'farm_apple', 'quantity' => 4], $headers)->assertOk();
+        $this->assertSame(4, $this->counter($player['account_id'], ActionCounter::ApplesSold));
+    }
+
     public function test_each_bite_counts_one_food_eaten(): void
     {
         $player = $this->registerAndCreditWallet(0, 'cash');

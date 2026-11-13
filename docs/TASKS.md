@@ -15,7 +15,7 @@ Laravel owns every counter. A counter counts one real action, bumped by the serv
 | Counter (`App\Enums\ActionCounter`) | One unit | Bumped by |
 |---|---|---|
 | `apples_picked` | one apple put in the inventory by a successful orchard pick | `OrchardService::pick` |
-| `apples_sold` | one apple sold to the orchard farmer | `OrchardService::sell` |
+| `apples_sold` | one apple (`farm_apple`) sold to a zone buyer; in game the orchard's `apple_buyer` is the only one | `ZoneBuyerService::sell` (in game, socket `zone_sell`), `OrchardService::sell` |
 | `food_eaten` | one portion eaten or drunk (an apple is two bites), drinks included | `SurvivalService::consume` |
 | `atm_deposits` | one deposit at an ATM, whatever the amount; a replayed `ref` counts nothing | `BankService::deposit` |
 | `darts_played` | one finished darts game, for each player, even while its coin reward is on cooldown | `PubService::reward` |
