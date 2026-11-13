@@ -20,6 +20,11 @@ class StorageLot extends Model
         'nights_listed',
         'status',
         'closed_at',
+        'generated_for',
+        'generated_slot',
+        'winner_account_id',
+        'sale_price',
+        'opened_at',
     ];
 
     protected function casts(): array
@@ -33,6 +38,10 @@ class StorageLot extends Model
             'nights_listed' => 'integer',
             'created_at' => 'datetime',
             'closed_at' => 'datetime',
+            'generated_slot' => 'integer',
+            'winner_account_id' => 'integer',
+            'sale_price' => 'integer',
+            'opened_at' => 'datetime',
         ];
     }
 }
