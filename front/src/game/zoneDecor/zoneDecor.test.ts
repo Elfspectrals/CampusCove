@@ -258,15 +258,13 @@ test('any prop can belong to a group, saved with it', () => {
   assert.throws(() => parseZoneDecor(decor([{ ...barnProp, group: 7 }]), orchard), /props\[0\].group: expected a non-empty string/)
 })
 
-test('a seller area can show a price tag in front of each item, and an item for sale can carry a description', () => {
+test('an item for sale can carry a description, and a seller area draws no price tag', () => {
   const described = { ...lamp, description: 'Arc lamp, warm light.' }
-  const parsed = parseZoneDecor(decor([described, cashier], { areas: [{ ...stall, priceTags: true }] }), orchard)
+  const parsed = parseZoneDecor(decor([described, cashier], { areas: [stall] }), orchard)
   const [display] = areaStoreLayout(parsed, parsed.areas[0]!, new Map([['i1', [0.4, 1.6, 0.4]]])).displays
   assert.equal(display!.description, 'Arc lamp, warm light.')
-  assert.deepEqual(display!.tag.position.map((v) => Number(v.toFixed(3))), [-21, 1.32, -87.5])
-  const untagged = parseZoneDecor(decor([described, cashier], { areas: [stall] }), orchard)
-  assert.deepEqual(areaStoreLayout(untagged, untagged.areas[0]!, new Map([['i1', [0.4, 1.6, 0.4]]])).displays[0]!.tag.position, lamp.position)
-  assert.throws(() => parseZoneDecor(decor([lamp, cashier, farmer], { areas: [stall, { ...buyer, priceTags: true }] }), orchard), /only a seller area shows price tags/)
+  assert.equal('tag' in display!, false)
+  assert.throws(() => parseZoneDecor(decor([described, cashier], { areas: [{ ...stall, priceTags: true }] }), orchard), /priceTags/)
   assert.throws(() => parseZoneDecor(decor([{ ...crate, kind: 'item', code: 'decor_sofa_classic', forSale: false, description: 'x' }]), orchard), /only items for sale have a description/)
 })
 
@@ -376,9 +374,6 @@ test('each filled slot is a display of its seller area, aimed at its slot box', 
   const [front, back] = displays
   assert.ok(front!.position[2] > -86 && front!.yaw === 0)
   assert.ok(back!.position[2] < -86 && Math.abs(back!.yaw - Math.PI) < 1e-9)
-  assert.ok(front!.tag.position[2] > front!.position[2])
-  const tagged = parseZoneDecor(decor([cashier, gondola], { areas: [{ ...stall, priceTags: true }] }), orchard)
-  assert.deepEqual(areaStoreLayout(tagged, tagged.areas[0]!, new Map()).displays[0]!.tag, front!.tag)
 })
 
 test('a zone shows its props within 20 m of its rectangle and hides them past 26 m', () => {

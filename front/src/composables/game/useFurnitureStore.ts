@@ -8,10 +8,11 @@ import { createGltfLoader } from '../../game/gltfLoaderFactory'
 import { instancedParts, stackPlacements } from '../../game/mallTemplates/templateProps'
 import { configureRoomMeshShadows } from '../../game/sceneLighting'
 import { freshDisplayGroup } from '../../game/store/displayGroup'
-import { createPriceTag, type PriceTagContent } from '../../game/store/priceTag'
 import { createStoreClerk, type ClerkPiece } from '../../game/store/storeClerk'
+import type { CartItem } from '../../game/store/shopCart'
 import { openHouseInterior } from '../../game/town/openHouses'
 import type { ScreenPrompt } from './useInteractionTargets'
+import type { CartPayer, ShopCart } from './useShopCart'
 
 /** The item the player is looking at in the store. */
 export interface StoreTarget {
@@ -21,11 +22,11 @@ export interface StoreTarget {
   name: string
   departmentLabel: string
   coins: number | null
-  /** The item is already in the basket (stores with a counter); a click puts it back. */
-  inBasket: boolean
+  /** How many are in the cart from this store (stores with a counter); a click adds one more. */
+  inCart: number
   owned: boolean
-  /** World position of the prompt: the price tag, or just above the model in a store without tags. */
-  tagPosition: [number, number, number]
+  /** World position of the prompt, just above the model. */
+  promptPosition: [number, number, number]
 }
 
 export interface FurnitureStoreDeps {
@@ -37,32 +38,31 @@ export interface FurnitureStoreDeps {
   store: FurnitureStoreSpec
   /** Stores with a counter draw the "Pay" prompt on the canvas and refresh the inventory after paying. */
   canvasRef?: Ref<HTMLCanvasElement | null>
+  /** The cart shared by every store with a counter; each store's lines are paid at its own cashier. */
+  cart: ShopCart
   promptsHidden?: () => boolean
   onPurchased?: () => void
 }
 
 interface FurnitureStoreSpec {
   key: string
+  /** Shop name in the cart. */
+  name: string
   interiorLayoutUrl?: string
   layout?: StoreLayout
   clerkOutfit?: ClerkPiece[]
   clerkBrighten?: boolean
   /** GLB shown on the display spot (a decor piece, a food item...). */
   modelUrl: (display: StoreDisplay) => string
-  /** Uniform colours of the cashier; a store whose layout has a `counter` sells through a basket paid there. */
+  /** Uniform colours of the cashier; a store whose layout has a `counter` sells through the cart, paid there. */
   clerkColors?: CosmeticColors
-  /** IKEA-style price tag next to each display (Cove Home); the mall stores show the model alone. Default true. */
-  priceTags?: boolean
   coinPrices?: ReadonlyMap<string, number>
-  checkout?: (shopCatalogItemIds: number[]) => Promise<unknown>
+  checkout?: CartPayer
 }
 
-/** Furthest (XZ, metres) an item can be picked from, and the widest angle off the crosshair. */
+/** Furthest (XZ, metres) an item can be picked from. */
 const PICK_DISTANCE = 4.2
-const PICK_ANGLE = 0.32
-const CLOSE_DISTANCE = 1.6
-const CLOSE_ANGLE = 0.7
-/** Stores without tags: the crosshair may miss a small item by this much (radians) if nothing hides it. */
+/** The crosshair may miss a small item by this much (radians) if nothing hides it. */
 const AIM_SLACK = 0.09
 /** Seconds between two raycasts of the aim (the interior meshes are big merged nodes). */
 const AIM_INTERVAL = 0.08
@@ -73,14 +73,12 @@ const PROMPT_LIFT = 0.18
 const HIGHLIGHT = new THREE.Color(0x3a3a2a)
 const INSTANCE_HIGHLIGHT = new THREE.Color(1.6, 1.6, 1.35)
 const INSTANCE_PLAIN = new THREE.Color(1, 1, 1)
-const SHELF_TAG_SCALE = 0.35
 
 interface DisplayRuntime {
   display: StoreDisplay
-  tag: ReturnType<typeof createPriceTag> | null
   /** Look-at point (middle of the model), world space. */
   center: THREE.Vector3
-  tagPosition: [number, number, number]
+  promptPosition: [number, number, number]
   /** The display's own material copies (shared by its stacked copies), lit up while it is aimed at. */
   materials: THREE.MeshStandardMaterial[]
   instances: Array<{ mesh: THREE.InstancedMesh; id: number }>
@@ -126,31 +124,25 @@ function ownMaterials(model: THREE.Object3D): THREE.MeshStandardMaterial[] {
 /**
  * A store selling from display spots: puts every model of the store layout on its spot (decor pieces at Cove Home
  * and the mall's furniture stores, foods at GreenCart and Candy Cloud), and tracks which item the player is
- * looking at so a click buys it (Cove Home) or puts it in the basket (stores with a counter). Cove Home draws an
+ * looking at so a click buys it (Cove Home) or adds one to the cart (stores with a counter). Cove Home draws an
  * IKEA-style price tag next to each piece; the mall stores show the model alone, its name and price come up in the
  * item card while it is aimed at.
  */
 export function useFurnitureStore(deps: FurnitureStoreDeps) {
   const loader = createGltfLoader()
   const store = deps.store
-  const withTags = store.priceTags ?? true
   const layout = shallowRef<StoreLayout | null>(null)
   const catalogByCode = shallowRef<Map<string, ShopItem>>(new Map())
   const ownedCosmetics = shallowRef<Set<number>>(new Set())
   const target = shallowRef<StoreTarget | null>(null)
   const currentDepartment = ref<string | null>(null)
-  const basket = ref<ShopItem[]>([])
-  const checkoutOpen = ref(false)
-  const paying = ref(false)
-  const feedback = ref<{ kind: 'success' | 'error'; text: string } | null>(null)
+  const cart = deps.cart
   const counterPrompt = ref<ScreenPrompt | null>(null)
-  const basketTotal = computed(() => basket.value.reduce((sum, item) => sum + (coinsPrice(item) ?? 0), 0))
   const hasCounter = computed(() => layout.value?.counter !== undefined)
   const clerk = store.clerkColors ? createStoreClerk(store.key, store.clerkColors, { outfit: store.clerkOutfit, brighten: store.clerkBrighten }) : null
   const runtimes: DisplayRuntime[] = []
   let attachedTo: THREE.Group | null = null
   let attachToken = 0
-  let wasInStore = false
   let aimClock = AIM_INTERVAL
   const forward = new THREE.Vector3()
   const toItem = new THREE.Vector3()
@@ -198,16 +190,6 @@ export function useFurnitureStore(deps: FurnitureStoreDeps) {
     return item?.options.find((o) => o.currency === 'coins')?.price ?? null
   }
 
-  function tagContent(display: StoreDisplay): PriceTagContent {
-    const item = catalogByCode.value.get(display.code) ?? null
-    return {
-      name: item?.name ?? prettyName(display.key),
-      department: departmentLabels.value.get(display.department) ?? display.department,
-      description: display.description,
-      price: coinsPrice(item),
-    }
-  }
-
   /** The model on its spot; a `stack` lines up copies in a grid so small goods read as a filled shelf. */
   async function placeModel(group: THREE.Group, rt: DisplayRuntime, index: number): Promise<void> {
     const { display } = rt
@@ -242,10 +224,7 @@ export function useFurnitureStore(deps: FurnitureStoreDeps) {
     const token = ++attachToken
     const [storeLayout] = await Promise.all([loadLayout(), refreshCatalog()])
     if (token !== attachToken) return
-    if (attachedTo === group) {
-      for (const rt of runtimes) rt.tag?.update(tagContent(rt.display))
-      return
-    }
+    if (attachedTo === group) return
     attachedTo = group
     runtimes.length = 0
     const displays = freshDisplayGroup(group, 'StoreDisplays')
@@ -254,20 +233,8 @@ export function useFurnitureStore(deps: FurnitureStoreDeps) {
     for (const display of storeLayout.displays) {
       const [x, y, z] = display.position
       const center = new THREE.Vector3(x, y + display.size[1] / 2, z).applyMatrix4(group.matrixWorld)
-      let tag: DisplayRuntime['tag'] = null
-      let tagPosition: [number, number, number]
-      if (withTags) {
-        tag = createPriceTag(tagContent(display))
-        tag.object.position.fromArray(display.tag.position)
-        tag.object.rotation.y = display.tag.yaw
-        if (display.shelfSlot) tag.object.scale.setScalar(SHELF_TAG_SCALE)
-        displays.add(tag.object)
-        displays.updateWorldMatrix(true, true)
-        tagPosition = tag.object.getWorldPosition(new THREE.Vector3()).toArray()
-      } else {
-        tagPosition = new THREE.Vector3(x, y + display.size[1] + PROMPT_LIFT, z).applyMatrix4(group.matrixWorld).toArray()
-      }
-      runtimes.push({ display, tag, center, tagPosition, materials: [], instances: [] })
+      const promptPosition = new THREE.Vector3(x, y + display.size[1] + PROMPT_LIFT, z).applyMatrix4(group.matrixWorld).toArray()
+      runtimes.push({ display, center, promptPosition, materials: [], instances: [] })
     }
     await Promise.all(runtimes.map((rt, i) => placeModel(displays, rt, i)))
   }
@@ -276,7 +243,6 @@ export function useFurnitureStore(deps: FurnitureStoreDeps) {
     const current = target.value?.display
     if ((next?.display ?? null) === (current ?? null)) return
     for (const rt of runtimes) {
-      rt.tag?.object.scale.setScalar(rt === next ? 1.18 : 1)
       for (const m of rt.materials) {
         m.emissive.copy(m.userData.baseEmissive as THREE.Color)
         if (rt === next) m.emissive.add(HIGHLIGHT)
@@ -297,20 +263,27 @@ export function useFurnitureStore(deps: FurnitureStoreDeps) {
       name: item?.name ?? prettyName(next.display.key),
       departmentLabel: departmentLabels.value.get(next.display.department) ?? next.display.department,
       coins: coinsPrice(item),
-      inBasket: item ? inBasket(item) : false,
+      inCart: item ? cart.quantityOf(store.key, item.shop_catalog_item_id) : 0,
       owned: item ? ownedCosmetics.value.has(item.item_def_id) : false,
-      tagPosition: next.tagPosition,
+      promptPosition: next.promptPosition,
     }
   }
 
-  function inBasket(item: ShopItem): boolean {
-    return basket.value.some((b) => b.item_def_id === item.item_def_id)
+  function cartItem(item: ShopItem): CartItem {
+    return {
+      shopCatalogItemId: item.shop_catalog_item_id,
+      itemDefId: item.item_def_id,
+      name: item.name,
+      previewImage: item.preview_image,
+      unitPrice: coinsPrice(item) ?? 0,
+      oneAtATime: item.kind === 'cosmetic',
+    }
   }
 
-  /**
-   * Click on a display in a store with a counter: the item goes into the basket, a second click puts it back
-   * (one of each, like the clothing stores: POST /shop/checkout refuses the same item twice).
-   */
+  function inCart(item: ShopItem): number {
+    return cart.quantityOf(store.key, item.shop_catalog_item_id)
+  }
+
   function bindFigure(propId: string, figure: THREE.Object3D): void {
     runtimes.forEach((rt, index) => {
       if (rt.display.figure?.prop !== propId) return
@@ -337,28 +310,25 @@ export function useFurnitureStore(deps: FurnitureStoreDeps) {
     displays.forEach((index, id) => runtimes[index]!.instances.push({ mesh: goods, id }))
   }
 
+  /** Shift-click on a dressed mannequin: every piece of the look the player does not own or carry yet. */
   function addLook(current: StoreTarget): void {
     const look = current.display.figure?.prop
     const lookItems = runtimes
       .filter((rt) => rt.display.figure?.prop === look)
       .map((rt) => catalogByCode.value.get(rt.display.code))
       .filter((item): item is ShopItem => !!item && coinsPrice(item) !== null && !ownedCosmetics.value.has(item.item_def_id))
-    const missing = lookItems.filter((item) => !inBasket(item))
-    if (lookItems.length === 0) {
-      feedback.value = { kind: 'error', text: 'You already own every piece of this look.' }
-      return
+    const missing = lookItems.filter((item) => inCart(item) === 0)
+    if (lookItems.length === 0) cart.notify({ kind: 'error', key: 'cart.lookOwned' })
+    else if (missing.length === 0) cart.notify({ kind: 'error', key: 'cart.lookInCart' })
+    else {
+      for (const item of missing) cart.add(store.key, store.name, cartItem(item))
+      cart.notify({ kind: 'success', key: 'cart.lookAdded', params: { names: missing.map((p) => p.name).join(', ') } })
     }
-    if (missing.length === 0) {
-      for (const item of lookItems) removeFromBasket(item)
-      feedback.value = { kind: 'success', text: 'The whole look is put back.' }
-    } else {
-      basket.value = [...basket.value, ...missing]
-      feedback.value = { kind: 'success', text: `${missing.map((p) => p.name).join(', ')} added to your basket. Pay at the counter.` }
-    }
-    target.value = { ...current, inBasket: current.item ? inBasket(current.item) : false }
+    target.value = { ...current, inCart: current.item ? inCart(current.item) : 0 }
   }
 
-  function toggleTarget(wholeLook = false): void {
+  /** Click on a display in a store with a counter: one more in the cart (Shift on a mannequin: the whole look). */
+  function addTarget(wholeLook = false): void {
     const current = target.value
     if (!current) return
     if (wholeLook && current.display.figure) {
@@ -366,25 +336,18 @@ export function useFurnitureStore(deps: FurnitureStoreDeps) {
       return
     }
     if (!current.item || current.coins === null) {
-      feedback.value = { kind: 'error', text: `${current.name} is not on sale yet.` }
+      cart.notify({ kind: 'error', key: 'cart.notOnSale', params: { name: current.name } })
       return
     }
     if (current.owned) {
-      feedback.value = { kind: 'error', text: `You already own ${current.name}.` }
+      cart.notify({ kind: 'error', key: 'cart.owned', params: { name: current.name } })
       return
     }
-    if (inBasket(current.item)) {
-      removeFromBasket(current.item)
-      feedback.value = { kind: 'success', text: `${current.name} put back.` }
-    } else {
-      basket.value = [...basket.value, current.item]
-      feedback.value = { kind: 'success', text: `${current.name} is in your basket. Pay at the counter.` }
-    }
-    target.value = { ...current, inBasket: inBasket(current.item) }
-  }
-
-  function removeFromBasket(item: ShopItem): void {
-    basket.value = basket.value.filter((b) => b.item_def_id !== item.item_def_id)
+    const before = inCart(current.item)
+    const now = cart.add(store.key, store.name, cartItem(current.item))
+    if (now === before) cart.notify({ kind: 'error', key: before === 1 ? 'cart.onlyOne' : 'cart.lineFull', params: { name: current.name } })
+    else cart.notify({ kind: 'success', key: 'cart.added', params: { name: current.name, n: now } })
+    target.value = { ...current, inCart: now }
   }
 
   function counterPosition(): THREE.Vector3 | null {
@@ -399,33 +362,24 @@ export function useFurnitureStore(deps: FurnitureStoreDeps) {
     return at !== null && Math.hypot(at.x - deps.myPosition.x, at.z - deps.myPosition.z) <= COUNTER_REACH
   }
 
+  /** Use at the counter: the cart opens with this store's lines payable here. */
   function tryOpenCheckout(): boolean {
     if (!deps.inStore() || !isNearCounter()) return false
-    if (document.pointerLockElement) document.exitPointerLock()
-    checkoutOpen.value = true
+    cart.openAtCounter(store.key, pay)
     return true
   }
 
-  async function pay(): Promise<void> {
-    if (paying.value || basket.value.length === 0) return
-    paying.value = true
-    try {
-      await (store.checkout ?? checkoutShopBasket)(basket.value.map((item) => item.shop_catalog_item_id))
-      feedback.value = { kind: 'success', text: 'Paid! Your items are in your inventory.' }
-      basket.value = []
-      checkoutOpen.value = false
-      deps.onPurchased?.()
-      await refreshCatalog()
-    } catch (e) {
-      feedback.value = { kind: 'error', text: e instanceof Error ? e.message : 'Payment failed.' }
-    } finally {
-      paying.value = false
-    }
+  async function pay(lines: Array<{ id: number; quantity: number }>, checkoutKey: string): Promise<void> {
+    await (store.checkout ?? checkoutShopBasket)(lines, checkoutKey)
+    deps.onPurchased?.()
+    await refreshCatalog()
   }
 
   /** The "Pay" prompt over the cashier (or the counter) while the player stands at the counter. */
   function updatePrompt(): void {
-    const at = deps.inStore() && !deps.promptsHidden?.() && !checkoutOpen.value && isNearCounter() ? (clerk?.present ? clerk.head : counter) : null
+    const near = deps.inStore() && isNearCounter()
+    if (!near) cart.leaveCounter(store.key)
+    const at = near && !deps.promptsHidden?.() && !cart.open.value ? (clerk?.present ? clerk.head : counter) : null
     const camera = deps.getCamera()
     const canvas = deps.canvasRef?.value
     if (!at || !camera || !canvas || projection.copy(at).project(camera).z > 1) {
@@ -437,7 +391,7 @@ export function useFurnitureStore(deps: FurnitureStoreDeps) {
       x: (projection.x * 0.5 + 0.5) * rect.width,
       y: (-projection.y * 0.5 + 0.5) * rect.height,
       action: 'Pay',
-      detail: basket.value.length > 0 ? `Cashier · ${basket.value.length} item(s) · ${basketTotal.value} coins` : 'Cashier · basket is empty',
+      detail: cart.shopCount(store.key) > 0 ? `Cashier · ${cart.shopCount(store.key)} in your cart · ${cart.shopTotal(store.key)} coins` : 'Cashier · open your cart',
     }
   }
 
@@ -457,7 +411,7 @@ export function useFurnitureStore(deps: FurnitureStoreDeps) {
     return { display: null, distance: hit.distance }
   }
 
-  /** Stores without tags: the model under the crosshair, else a model just next to it that nothing hides. */
+  /** The model under the crosshair, else a model just next to it that nothing hides. */
   function aimedModel(camera: THREE.Camera): DisplayRuntime | null {
     camera.getWorldPosition(eye)
     const direct = firstHitAlong(forward).display
@@ -480,37 +434,9 @@ export function useFurnitureStore(deps: FurnitureStoreDeps) {
     return hit.display === best || hit.distance >= reach - SEE_THROUGH_SLACK ? best : null
   }
 
-  /** Stores with tags (Cove Home, big furniture): the display closest to the crosshair within reach. */
-  function nearestToCrosshair(): DisplayRuntime | null {
-    const { x, y, z } = deps.myPosition
-    let best: DisplayRuntime | null = null
-    let bestScore = Infinity
-    for (const rt of runtimes) {
-      const dx = rt.center.x - x
-      const dz = rt.center.z - z
-      const dist = Math.hypot(dx, dz)
-      if (dist > PICK_DISTANCE) continue
-      toItem.set(dx, rt.center.y - y, dz).normalize()
-      const angle = forward.angleTo(toItem)
-      const limit = dist < CLOSE_DISTANCE ? CLOSE_ANGLE : PICK_ANGLE
-      if (angle > limit) continue
-      const score = angle + dist * 0.04
-      if (score < bestScore) {
-        bestScore = score
-        best = rt
-      }
-    }
-    return best
-  }
-
   /** Every frame: the display the player aims at, and the department around the player. */
   function update(dt = 0): void {
     const inside = deps.inStore()
-    if (wasInStore && !inside) {
-      basket.value = []
-      checkoutOpen.value = false
-    }
-    wasInStore = inside
     clerk?.update(dt, inside, deps.myPosition)
     const camera = deps.getCamera()
     if (!inside || !camera || runtimes.length === 0) {
@@ -519,13 +445,10 @@ export function useFurnitureStore(deps: FurnitureStoreDeps) {
       return
     }
     camera.getWorldDirection(forward)
-    if (withTags) setTarget(nearestToCrosshair())
-    else {
-      aimClock += dt
-      if (aimClock >= AIM_INTERVAL) {
-        aimClock = 0
-        setTarget(aimedModel(camera))
-      }
+    aimClock += dt
+    if (aimClock >= AIM_INTERVAL) {
+      aimClock = 0
+      setTarget(aimedModel(camera))
     }
     const { x, z } = deps.myPosition
     let nearest: DisplayRuntime | null = null
@@ -546,24 +469,14 @@ export function useFurnitureStore(deps: FurnitureStoreDeps) {
     target: target as Readonly<Ref<StoreTarget | null>>,
     currentDepartment,
     hasCounter,
-    basket,
-    basketTotal,
-    checkoutOpen,
-    paying,
-    feedback,
     counterPrompt,
     attach,
     update,
     updatePrompt,
-    toggleTarget,
+    addTarget,
     bindFigure,
     bindShelfGoods,
-    removeFromBasket,
     tryOpenCheckout,
-    pay,
-    closeCheckout: () => {
-      checkoutOpen.value = false
-    },
   }
 }
 

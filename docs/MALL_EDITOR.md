@@ -196,11 +196,12 @@ Commiter `zones/`, `backend/resources/zones/`, le GLB et le layout de la zone, `
 
 Toutes les boutiques marchent pareil : une zone **Seller** autour de la boutique, un vendeur debout derrière un comptoir
 (`decor/checkout_counter`, dossier **Shop**, ou le comptoir du bâtiment), les objets **For sale** et les mannequins dans
-la zone. Le joueur remplit son panier en visant les objets, puis paie au vendeur. Cove Home, Cove Threads, la pharmacie
+la zone. Le joueur remplit son panier en visant les objets (un panier commun à toutes les boutiques, chaque boutique
+payée à son vendeur, `docs/SHOP_CART.md`). Aucune étiquette de prix n'est posée en jeu : seuls les modèles sont
+visibles, le prix s'affiche quand on vise l'objet et dans le panier. Cove Home, Cove Threads, la pharmacie
 de la clinique, le Campus Cafe et les six boutiques du mall sont dans `zones/retail_park.json`, `fashion.json`,
 `clinic.json`, `work_district.json` et un fichier par boutique du mall (`hearth_hollow.json`, `greencart.json`…) ; leurs anciens layouts d'intérieur ne sont plus lus pour les ventes.
 
-- **Price tags beside each item** (carte Sellers) pose une étiquette de prix devant chaque objet de la zone.
 - Un objet à vendre peut avoir une **Description**, affichée quand on le vise.
 - Un mannequin vend les pièces cochées **For sale**, chacune à son **Price (coins)** ; **Clothes only (no body)**
   n'affiche que les vêtements (une pièce sur un portant).
@@ -219,7 +220,7 @@ de la clinique, le Campus Cafe et les six boutiques du mall sont dans `zones/ret
   - Northline : portants à miroir, mur à chaussures, tables à têtes, tables de pliés, portants ronds, cubes, podium,
     plantes.
   - GreenCart : les rayons sont des étagères à emplacements (gondoles, frigos muraux et allée surgelés, bacs réfrigérés,
-    étagère de la boulangerie) garnies de ses 18 produits ; quelques emplacements sont vides exprès (« out of stock »).
+    étagère de la boulangerie) garnies de ses 18 produits ; quelques emplacements sont vides exprès (un cube coloré les remplace, il ne se vend pas).
     Bananes et pommes restent sur leurs tables, viennoiseries et pain sur le comptoir de la boulangerie. Autour : caisses
     à tapis, parc à chariots, bacs et palettes promo, tables de fruits et légumes, balance, comptoirs boulangerie et
     poissonnerie, fours, poubelles, plantes.

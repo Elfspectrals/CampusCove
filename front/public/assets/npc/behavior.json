@@ -1,0 +1,296 @@
+{
+  "version": 1,
+  "trees": {
+    "friendly_local": {
+      "name": "Friendly local",
+      "points": [
+        "spot"
+      ],
+      "root": {
+        "id": "root",
+        "decorators": [],
+        "type": "selector",
+        "services": [
+          {
+            "type": "perceive_players",
+            "radius": 5,
+            "interval": 0.5
+          }
+        ],
+        "children": [
+          {
+            "id": "greet",
+            "decorators": [
+              {
+                "type": "has_target",
+                "invert": false,
+                "abort": "lower"
+              },
+              {
+                "type": "cooldown",
+                "seconds": 25
+              }
+            ],
+            "type": "sequence",
+            "services": [],
+            "children": [
+              {
+                "id": "face_player",
+                "decorators": [],
+                "type": "face",
+                "point": "target"
+              },
+              {
+                "id": "hello",
+                "decorators": [],
+                "type": "say",
+                "lines": [
+                  "Hi there!",
+                  "Lovely apples this year.",
+                  "Watch out, the farmer counts them."
+                ],
+                "seconds": 4
+              },
+              {
+                "id": "pause",
+                "decorators": [],
+                "type": "wait",
+                "min": 1,
+                "max": 2
+              }
+            ]
+          },
+          {
+            "id": "watch",
+            "decorators": [
+              {
+                "type": "has_target",
+                "invert": false,
+                "abort": "both"
+              }
+            ],
+            "type": "sequence",
+            "services": [],
+            "children": [
+              {
+                "id": "look_at_player",
+                "decorators": [],
+                "type": "face",
+                "point": "target"
+              },
+              {
+                "id": "look_wait",
+                "decorators": [],
+                "type": "wait",
+                "min": 0.5,
+                "max": 0.5
+              }
+            ]
+          },
+          {
+            "id": "idle",
+            "decorators": [],
+            "type": "random",
+            "services": [],
+            "children": [
+              {
+                "id": "stroll",
+                "decorators": [],
+                "weight": 3,
+                "type": "sequence",
+                "services": [],
+                "children": [
+                  {
+                    "id": "wander",
+                    "decorators": [],
+                    "type": "wander",
+                    "radius": 6,
+                    "speed": "walk"
+                  },
+                  {
+                    "id": "rest",
+                    "decorators": [],
+                    "type": "wait",
+                    "min": 3,
+                    "max": 8
+                  }
+                ]
+              },
+              {
+                "id": "snack",
+                "decorators": [],
+                "weight": 1,
+                "type": "sequence",
+                "services": [],
+                "children": [
+                  {
+                    "id": "go_spot",
+                    "decorators": [],
+                    "type": "move_to",
+                    "point": "spot",
+                    "speed": "walk"
+                  },
+                  {
+                    "id": "eat_apple",
+                    "decorators": [
+                      {
+                        "type": "loop",
+                        "count": 3
+                      }
+                    ],
+                    "type": "animate",
+                    "clip": "eat",
+                    "seconds": 1.5
+                  },
+                  {
+                    "id": "go_home",
+                    "decorators": [],
+                    "type": "move_to",
+                    "point": "home",
+                    "speed": "walk"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "field_worker": {
+      "name": "Field worker",
+      "points": [],
+      "root": {
+        "id": "root",
+        "type": "sequence",
+        "decorators": [],
+        "services": [],
+        "children": [
+          {
+            "id": "pick_field",
+            "type": "pick_crop",
+            "decorators": [
+              {
+                "type": "loop",
+                "count": 5
+              }
+            ],
+            "crop": "any",
+            "radius": 50,
+            "speed": "walk"
+          },
+          {
+            "id": "back_home",
+            "type": "move_to",
+            "decorators": [],
+            "point": "home",
+            "speed": "walk"
+          },
+          {
+            "id": "break",
+            "type": "wait",
+            "decorators": [],
+            "min": 5,
+            "max": 10
+          }
+        ]
+      }
+    },
+    "shopper": {
+      "name": "Shopper",
+      "points": [],
+      "root": {
+        "id": "root",
+        "type": "sequence",
+        "decorators": [],
+        "services": [],
+        "children": [
+          {
+            "id": "browse",
+            "type": "browse_shelf",
+            "decorators": [
+              {
+                "type": "loop",
+                "count": 3
+              }
+            ],
+            "radius": 20,
+            "seconds": 4,
+            "take": 50
+          },
+          {
+            "id": "pay_if_holding",
+            "type": "selector",
+            "decorators": [],
+            "services": [],
+            "children": [
+              {
+                "id": "pay",
+                "type": "checkout",
+                "decorators": []
+              },
+              {
+                "id": "nothing_to_buy",
+                "type": "wait",
+                "decorators": [],
+                "min": 1,
+                "max": 1
+              }
+            ]
+          },
+          {
+            "id": "back",
+            "type": "move_to",
+            "decorators": [],
+            "point": "home",
+            "speed": "walk"
+          },
+          {
+            "id": "rest",
+            "type": "wait",
+            "decorators": [],
+            "min": 3,
+            "max": 8
+          }
+        ]
+      }
+    }
+  },
+  "npcs": [
+    {
+      "zone": "orchard",
+      "npc": "p4",
+      "tree": "friendly_local",
+      "points": {
+        "spot": [
+          -16,
+          0,
+          -74
+        ]
+      }
+    },
+    {
+      "zone": "farm",
+      "npc": "farmhand",
+      "tree": "field_worker",
+      "points": {}
+    },
+    {
+      "zone": "greencart",
+      "npc": "greencart_shopper_1",
+      "tree": "shopper",
+      "points": {}
+    },
+    {
+      "zone": "greencart",
+      "npc": "greencart_shopper_2",
+      "tree": "shopper",
+      "points": {}
+    },
+    {
+      "zone": "greencart",
+      "npc": "greencart_shopper_3",
+      "tree": "shopper",
+      "points": {}
+    }
+  ]
+}

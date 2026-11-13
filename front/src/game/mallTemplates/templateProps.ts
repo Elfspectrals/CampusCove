@@ -13,7 +13,7 @@ import { applyLook, type OwnParts } from './templateSurfaces'
 import { CROPS_URL, fieldPlantsLocal, parseCrops, type CropTable } from '../crops/crops.ts'
 import { ANIMALS_URL, ANIMAL_CLIPS, animalModelUrl, parseAnimals, type AnimalClip, type AnimalTable } from '../animals/animals.ts'
 import { BUILDINGS_URL, buildingPreviewKey, parseBuildings, type BuildingTable } from '../buildings/buildings.ts'
-import { shelfPieces, slotBoxes, slotCopies, slotTag, type SlotBox, type SlotCopy } from '../shelves/shelves.ts'
+import { shelfPieces, slotBoxes, slotCopies, emptySlotCube, lowDetailCopies, type SlotBox, type SlotCopy } from '../shelves/shelves.ts'
 import { itemModelUrl, parseDecorParts, type AnimalProp, type BuildingProp, type DecorProp, type FieldProp, type MaskedParts, type LightProp, type MannequinProp, type NpcProp, type ShelfProp, type TemplateProp, type Vec3 } from './mallTemplate.ts'
 
 export const MARKET_STALL_FOLDED = 'market_stall_folded'
@@ -22,9 +22,8 @@ const SOIL_HEIGHT = 0.03
 const SOIL_COLOR = 0x6e4b32
 const PEN_COLOR = 0xe8c26a
 const PEN_LIFT = 0.05
-const OUT_OF_STOCK_SIZE = [0.2, 0.05] as const
-const OUT_OF_STOCK_CANVAS = [256, 64] as const
-let outOfStockMaterial: THREE.MeshBasicMaterial | null = null
+let emptySlotMaterial: THREE.MeshLambertMaterial | null = null
+const EMPTY_SLOT_CUBE = new THREE.BoxGeometry(1, 1, 1)
 let cropTable: Promise<CropTable> | null = null
 let animalTable: Promise<AnimalTable> | null = null
 let buildingTable: Promise<BuildingTable> | null = null
@@ -339,27 +338,25 @@ async function createBuilding(prop: BuildingProp): Promise<THREE.Object3D> {
   return (await loader.loadAsync(url)).scene
 }
 
-function outOfStockTag(): THREE.Mesh {
-  if (!outOfStockMaterial) {
-    const canvas = document.createElement('canvas')
-    ;[canvas.width, canvas.height] = OUT_OF_STOCK_CANVAS
-    const ctx = canvas.getContext('2d')
-    if (!ctx) throw new Error('no 2D canvas for the out of stock tag')
-    ctx.fillStyle = '#e0534f'
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
-    ctx.fillStyle = '#ffffff'
-    ctx.font = 'bold 34px sans-serif'
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'middle'
-    ctx.fillText('OUT OF STOCK', canvas.width / 2, canvas.height / 2)
-    const map = new THREE.CanvasTexture(canvas)
-    map.colorSpace = THREE.SRGBColorSpace
-    outOfStockMaterial = new THREE.MeshBasicMaterial({ map })
-  }
-  const tag = new THREE.Mesh(new THREE.PlaneGeometry(...OUT_OF_STOCK_SIZE), outOfStockMaterial)
-  tag.name = 'ShelfOutOfStock'
-  tag.userData.sharedMaterials = true
-  return tag
+/**
+ * Empty slots of a shelf: one coloured cube each, all in one instanced mesh (one draw call per shelf, plain Lambert
+ * so it stays cheap on the low tier). It carries no `shelfSlots`, so aiming at it never offers it for sale.
+ */
+function emptySlotCubes(prop: ShelfProp, boxes: SlotBox[]): THREE.InstancedMesh | null {
+  if (boxes.length === 0) return null
+  emptySlotMaterial ??= new THREE.MeshLambertMaterial()
+  const cubes = new THREE.InstancedMesh(EMPTY_SLOT_CUBE, emptySlotMaterial, boxes.length)
+  const color = new THREE.Color()
+  boxes.forEach((box, i) => {
+    const { position, side, yaw, color: hex } = emptySlotCube(box, `${prop.id}#${box.key}`)
+    cubes.setMatrixAt(i, placement(position, new THREE.Euler(0, yaw, 0), [side, side, side]))
+    cubes.setColorAt(i, color.set(hex))
+  })
+  cubes.computeBoundingSphere()
+  cubes.name = 'ShelfEmptySlots'
+  cubes.userData.sharedGeometry = true
+  cubes.userData.sharedMaterials = true
+  return cubes
 }
 
 function footed(model: THREE.Object3D): THREE.Group {
@@ -393,17 +390,18 @@ export function instancedParts(model: THREE.Object3D, placements: readonly THREE
   return parts
 }
 
-function filledSlot(prop: ShelfProp, box: SlotBox, size: Vec3): SlotCopy[] {
+function filledSlot(prop: ShelfProp, box: SlotBox, size: Vec3, lowDetail: boolean): SlotCopy[] {
   const fill = prop.fill[box.key]!
   try {
-    return slotCopies(box.size, size, fill.count, fill.arrange, `${prop.id}#${box.key}`)
+    const copies = slotCopies(box.size, size, fill.count, fill.arrange, `${prop.id}#${box.key}`)
+    return lowDetail ? lowDetailCopies(copies, fill.arrange) : copies
   } catch (error) {
     if (error instanceof RangeError) throw new RangeError(`slot ${box.key} (${fill.code}): ${error.message}`)
     throw error
   }
 }
 
-async function createShelf(prop: ShelfProp): Promise<THREE.Group> {
+async function createShelf(prop: ShelfProp, lowDetail: boolean): Promise<THREE.Group> {
   const group = new THREE.Group()
   const pieces = shelfPieces(prop)
   const kit = new Map(await Promise.all([...new Set(pieces.map((p) => p.key))].map(async (key) => [key, await modelTemplate(decorModelUrl(key))] as const)))
@@ -412,13 +410,8 @@ async function createShelf(prop: ShelfProp): Promise<THREE.Group> {
     group.add(...instancedParts(model, placed))
   }
   const boxes = slotBoxes(prop)
-  for (const box of boxes.filter((b) => !prop.fill[b.key])) {
-    const tag = outOfStockTag()
-    const { position, yaw } = slotTag(prop, box)
-    tag.position.fromArray(position)
-    tag.rotation.y = yaw
-    group.add(tag)
-  }
+  const empty = emptySlotCubes(prop, boxes.filter((b) => !prop.fill[b.key]))
+  if (empty) group.add(empty)
   const byModel = new Map<string, SlotBox[]>()
   for (const box of boxes) {
     const fill = prop.fill[box.key]
@@ -433,7 +426,7 @@ async function createShelf(prop: ShelfProp): Promise<THREE.Group> {
     for (const box of filled) {
       const [x, y, z] = box.center
       const slotMatrix = placement([x, y - box.size[1] / 2, z], new THREE.Euler(0, box.yaw, 0), [1, 1, 1])
-      for (const { position, yaw, tipped } of filledSlot(prop, box, size)) {
+      for (const { position, yaw, tipped } of filledSlot(prop, box, size, lowDetail)) {
         placements.push(slotMatrix.clone().multiply(placement(position, new THREE.Euler(0, yaw, tipped ? Math.PI / 2 : 0), [1, 1, 1])))
         slotOfCopy.push(box.key)
       }
@@ -451,8 +444,9 @@ export async function instancedCopies(url: string, placements: readonly THREE.Ma
   return instancedParts(footed(await modelTemplate(url)), placements)
 }
 
-export async function createPropObject(prop: TemplateProp): Promise<THREE.Object3D> {
-  if (prop.kind === 'shelf') return createShelf(prop)
+/** `lowDetail`: the low graphics tier (a shelf draws only the front row of each slot). */
+export async function createPropObject(prop: TemplateProp, { lowDetail = false } = {}): Promise<THREE.Object3D> {
+  if (prop.kind === 'shelf') return createShelf(prop, lowDetail)
   if (prop.kind === 'field') return createField(prop)
   if (prop.kind === 'building') return createBuilding(prop)
   if (prop.kind === 'animal') return createAnimalPen(prop)

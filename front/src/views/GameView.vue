@@ -46,7 +46,8 @@ import GameQuiz from '../components/game/GameQuiz.vue'
 import GameMeterShot from '../components/game/GameMeterShot.vue'
 import GameMinimap from '../components/game/GameMinimap.vue'
 import GameDarts from '../components/game/GameDarts.vue'
-import GameBasketCheckout from '../components/game/GameBasketCheckout.vue'
+import GameCartButton from '../components/game/GameCartButton.vue'
+import GameShopCart from '../components/game/GameShopCart.vue'
 import GameCharacterCreator from '../components/game/GameCharacterCreator.vue'
 import GameWardrobe from '../components/game/GameWardrobe.vue'
 import GameSurvivalEffects from '../components/game/GameSurvivalEffects.vue'
@@ -103,7 +104,9 @@ import GamePlayerList from '../components/game/GamePlayerList.vue'
 import GameTasksPanel from '../components/game/GameTasksPanel.vue'
 import { useFarm } from '../composables/game/useFarm'
 import { useMallCellTemplates, type CellStoreEntry } from '../composables/game/useMallCellTemplates'
+import { useShopCart } from '../composables/game/useShopCart'
 import { useZoneDecor } from '../composables/game/useZoneDecor'
+import { useNpcBrains } from '../composables/game/useNpcBrains'
 import { usePub } from '../composables/game/usePub'
 import { usePubChallenge } from '../composables/game/usePubChallenge'
 import { usePubGames } from '../composables/game/usePubGames'
@@ -284,13 +287,15 @@ const {
   onQuickWear: (slotIndex) => void wardrobeRef.value?.wearFromSlot(slotIndex),
 })
 
-// ---------------------------------------------------------------- stores: Cove Home (click to buy), the mall's shops (basket paid at the cashier), Cove Threads, Northline and Summit (basket)
+// ---------------------------------------------------------------- stores: Cove Home (click to buy), shops with a cashier (one cart, each shop paid at its own cashier)
 
-/** The mall stores sell through a basket: the cashier prompt needs the canvas, paying refreshes the inventory. */
+/** One cart for every shop with a cashier; the cashier prompt needs the canvas, paying refreshes the inventory. */
+const cart = useShopCart()
 const mallStoreDeps = {
   getCamera,
   myPosition,
   canvasRef,
+  cart,
   promptsHidden: () => inventoryOpen.value,
   onPurchased: () => refreshOwnedItems(),
 }
@@ -308,6 +313,7 @@ const zoneDecor = useZoneDecor({
   },
   npcSpeed: (npc) => storageWarehouse.npcSpeed(npc),
 })
+const npcBrains = useNpcBrains({ driveNpc: zoneDecor.driveNpc, releaseNpc: zoneDecor.releaseNpc })
 const activeFurniture = computed(() => {
   const keys = [mallCellTemplates.currentStoreKey.value, zoneDecor.currentStoreKey.value]
   return keys.map((key) => furnitureStores.find((s) => s.key === key)).find((store) => store !== undefined) ?? null
@@ -332,16 +338,12 @@ function onOutfit(change: { state: CharacterCosmeticsState; returnedCode: string
   if (change.returnedCode && change.toSlot !== null) placeInSlot(change.returnedCode, change.toSlot, change.wornCode)
   refreshOwnedItems()
 }
-/** The store whose basket the HUD shows: a clothing store, or a mall store that pays at its counter. */
-const basketStore = computed(() => (activeFurniture.value?.store.hasCounter.value ? activeFurniture.value.store : null))
-const basketTitle = computed(() => activeFurniture.value?.brand ?? '')
-const basketItems = computed(() => basketStore.value?.basket.value ?? [])
-const basketTotal = computed(() => basketStore.value?.basketTotal.value ?? 0)
-const checkoutOpen = computed(() => furnitureStores.some((s) => s.store.checkoutOpen.value))
-const basketPaying = computed(() => basketStore.value?.paying.value ?? false)
-const basketFeedback = computed(() => basketStore.value?.feedback.value ?? null)
-const counterPrompt = computed(() => basketStore.value?.counterPrompt.value ?? null)
-watch(checkoutOpen, (open) => {
+/** The store the player is in, when it sells through the cart (it has a cashier). */
+const cartStore = computed(() => (activeFurniture.value?.store.hasCounter.value ? activeFurniture.value.store : null))
+const counterPrompt = computed(() => cartStore.value?.counterPrompt.value ?? null)
+const cartOpen = cart.open
+const cartNoticeText = computed(() => (cart.notice.value ? { kind: cart.notice.value.kind, text: t(cart.notice.value.key, cart.notice.value.params ?? {}) } : null))
+watch(cartOpen, (open) => {
   if (!open && !document.pointerLockElement) requestPointerLock()
 })
 const storeShop = useShopPurchase()
@@ -863,7 +865,7 @@ const interactions = useInteractionTargets({
   myPosition,
   getCamera,
   canvasRef,
-  promptsHidden: () => inventoryOpen.value || housing.claimInFlight.value || lockpickOpen.value,
+  promptsHidden: () => inventoryOpen.value || cart.open.value || housing.claimInFlight.value || lockpickOpen.value,
   housingUnits: housing.units,
   nearbyHousingUnit: housing.nearbyUnit,
   housingActionFor: housing.actionFor,
@@ -886,13 +888,13 @@ const interactions = useInteractionTargets({
     const target = storeTarget.value
     if (!target) return null
     const price = target.coins !== null ? `${target.name} · ${target.coins} coins` : target.name
-    if (!activeFurniture.value?.store.hasCounter.value) return { position: target.tagPosition, detail: price }
-    if (target.owned) return { position: target.tagPosition, detail: `${target.name} · already in your wardrobe` }
+    if (!activeFurniture.value?.store.hasCounter.value) return { position: target.promptPosition, detail: price }
+    if (target.owned) return { position: target.promptPosition, detail: `${target.name} · already in your wardrobe` }
     const look = target.display.figure ? ' · Shift: whole look' : ''
-    return { position: target.tagPosition, detail: `${target.inBasket ? `${price} · in basket` : price}${look}`, action: target.inBasket ? 'Remove' : 'Add' }
+    return { position: target.promptPosition, detail: `${target.inCart > 0 ? `${price} · ${target.inCart} in cart` : price}${look}`, action: 'Add' }
   },
   onStoreTarget: () => {
-    if (activeFurniture.value?.store.hasCounter.value) activeFurniture.value.store.toggleTarget(useWithShift)
+    if (activeFurniture.value?.store.hasCounter.value) activeFurniture.value.store.addTarget(useWithShift)
     else openStorePurchase()
   },
   sources: [pub.source, pubQuiz.source, pubChallenge.source, pubGames.source, seats.source, orchard.source, farm.source, zoneBuyers.source, atm.source, storage.source, respawnBed.source, cashBags.source, storageAuction.source, jailCell.source, police.source, pickpocket.source, market.source],
@@ -1179,6 +1181,7 @@ const minimap = useMinimap({
   buildingKey: () => currentHouseKey.value,
 })
 const mapKey = computed(() => actionKeyLabels('map')[0] ?? 'M')
+const cartKey = computed(() => actionKeyLabels('cart')[0] ?? 'U')
 const gps = useGps({
   markers: () => minimap.markers.value,
   atms: () => zoneDecor.atms.value,
@@ -1333,7 +1336,7 @@ const pauseMenuOpen = computed(
     !pointerLocked.value &&
     !inventoryOpen.value &&
     !switchingRoom.value &&
-    !checkoutOpen.value &&
+    !cartOpen.value &&
     !tradeWindowOpen.value &&
     !pubUiOpen.value &&
     !zoneBuyerOpen.value &&
@@ -1405,6 +1408,11 @@ function handleExtraKeyDown(e: KeyboardEvent): boolean {
   if (runUseOrPunch(e.code, e.repeat, e.shiftKey)) return true
   if (matches('characterEditor', e.code) && !e.repeat) {
     void openCharacterEditor()
+    return true
+  }
+  if (matches('cart', e.code) && !e.repeat) {
+    e.preventDefault()
+    if (!furnitureStores.some((s) => s.store.tryOpenCheckout())) cart.openCart()
     return true
   }
   if (matches('playerList', e.code) && !e.repeat) {
@@ -1490,6 +1498,7 @@ const movement = useGameMovement({
     placement.tick(dt)
     mallCellTemplates.tick(dt, myPosition)
     zoneDecor.tick(dt, myPosition)
+    npcBrains.tick(dt)
     marketCrowd.tick(dt)
     cashBags.tick(dt)
     storageAuction.tick()
@@ -1650,6 +1659,7 @@ const realtime = useGameRealtime({
   bed: respawnBed.handlers,
   market: { ...marketStalls.handlers, ...market.handlers },
   cashBags: cashBags.handlers,
+  npcs: npcBrains.handlers,
   jail: { ...jail.handlers, onTray: jailCell.onTray },
   police: police.handlers,
   pickpocket: pickpocket.handlers,
@@ -1942,11 +1952,11 @@ const crosshairClass = computed(() => {
       <span class="text-sun">{{ storeBrand }}</span> · {{ storeDepartment }}
     </div>
     <GameStoreItemCard
-      v-if="storeTarget && !inventoryOpen"
+      v-if="storeTarget && !inventoryOpen && !cartOpen"
       :target="storeTarget"
-      :feedback="storeFeedback"
+      :feedback="cartStore ? cartNoticeText : storeFeedback"
       :brand="storeBrand"
-      :basket="activeFurniture?.store.hasCounter.value"
+      :cart="cartStore !== null"
     />
     <p
       v-else-if="activeFurniture && storeFeedback && !inventoryOpen"
@@ -2035,8 +2045,11 @@ const crosshairClass = computed(() => {
       @saved="onCharacterSaved"
       @close="closeCharacterEditor"
     />
-    <div v-show="pointerLocked" class="absolute right-3 top-3 z-10">
+    <!-- z-[21]: the cart button stays clickable above the pause screen (z-20), where the cursor is free -->
+    <div class="absolute right-3 top-3 z-[21] flex items-center gap-2">
+      <GameCartButton v-if="cart.count.value > 0 && !cartOpen" :count="cart.count.value" :key-label="cartKey" @open="cart.openCart()" />
       <button
+        v-show="pointerLocked"
         type="button"
         class="cc-hud inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-extrabold text-fog transition hover:border-coral/70 hover:text-coral"
         @click="logout"
@@ -2051,28 +2064,30 @@ const crosshairClass = computed(() => {
       {{ placementHelp }}
     </p>
     <div
-      v-if="basketStore && !inventoryOpen"
+      v-if="cartStore && cart.count.value > 0 && !inventoryOpen && !storeDepartment"
       class="cc-hud pointer-events-none absolute left-1/2 top-3 z-10 -translate-x-1/2 px-4 py-1.5 font-display text-xs uppercase tracking-[0.2em] text-fog"
     >
-      <span class="text-sun">{{ basketTitle }}</span> · Basket {{ basketItems.length }} · {{ basketTotal }} coins
+      <span class="text-sun">{{ t('cart.chip', { n: cart.count.value, total: cart.total.value }) }}</span>
     </div>
     <p
-      v-if="basketStore && basketFeedback && !inventoryOpen && !checkoutOpen && !storeTarget"
+      v-if="cartStore && cartNoticeText && !inventoryOpen && !cartOpen && !storeTarget"
       class="cc-hud pointer-events-none absolute bottom-24 right-3 z-20 max-w-xs px-3 py-2 text-xs font-bold"
-      :class="basketFeedback.kind === 'success' ? 'text-mint' : 'text-coral'"
+      :class="cartNoticeText.kind === 'success' ? 'text-mint' : 'text-coral'"
     >
-      {{ basketFeedback.text }}
+      {{ cartNoticeText.text }}
     </p>
-    <GameBasketCheckout
-      v-if="checkoutOpen"
-      :title="basketTitle"
-      :items="basketItems"
-      :total="basketTotal"
-      :paying="basketPaying"
-      :feedback="basketFeedback"
-      @pay="basketStore?.pay()"
-      @remove="(item) => basketStore?.removeFromBasket(item)"
-      @close="basketStore?.closeCheckout()"
+    <GameShopCart
+      v-if="cartOpen"
+      :shops="cart.shops.value"
+      :count="cart.count.value"
+      :total="cart.total.value"
+      :payable-shop="cart.payableShop.value"
+      :paying-shop="cart.payingShop.value"
+      :notice="cart.notice.value"
+      @set-quantity="cart.setQuantity"
+      @remove="cart.remove"
+      @pay="cart.payAtCounter()"
+      @close="cart.close()"
     />
     <p
       v-if="tradeIncoming && !watchMenuOpen"

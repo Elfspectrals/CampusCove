@@ -165,30 +165,49 @@ final class ShopPurchaseService
         });
     }
 
+    /** Most of one item in a basket line; the clothes sold one at a time cap it at 1. */
+    public const MAX_LINE_QUANTITY = 20;
+
     /**
-     * @param  list<int>  $shopCatalogItemIds
+     * Pays a basket in cash. Every line is checked (on sale, price, stock, quantity) before anything is taken, and
+     * the whole basket is paid or nothing is. The same `$checkoutKey` sent again (a retry after a lost answer)
+     * returns the first payment instead of paying twice.
+     *
+     * @param  array<int, int>  $quantities  shop_catalog_item_id => quantity
      * @param  array<string, int>|null  $coinPriceByCode  item code => zone price, null for the catalogue prices
      * @return list<ShopPurchaseResult>
      */
-    public function checkoutWithCoins(Account $account, array $shopCatalogItemIds, ?array $coinPriceByCode = null): array
+    public function checkoutWithCoins(Account $account, array $quantities, string $checkoutKey, ?array $coinPriceByCode = null): array
     {
-        if ($shopCatalogItemIds === []) {
+        if ($quantities === []) {
             throw new ShopPurchaseRejectedException('empty_basket', 'Your basket is empty.', 422);
         }
-        if (count(array_unique($shopCatalogItemIds)) !== count($shopCatalogItemIds)) {
-            throw new ShopPurchaseRejectedException('duplicate_item', 'The same item is in your basket more than once.', 422);
+        foreach ($quantities as $quantity) {
+            if ($quantity < 1 || $quantity > self::MAX_LINE_QUANTITY) {
+                throw new ShopPurchaseRejectedException('invalid_quantity', 'Choose between 1 and '.self::MAX_LINE_QUANTITY.' of each item.', 422);
+            }
         }
+        $accountId = (int) $account->getAuthIdentifier();
 
-        return DB::transaction(function () use ($account, $shopCatalogItemIds, $coinPriceByCode): array {
+        return DB::transaction(function () use ($account, $accountId, $quantities, $checkoutKey, $coinPriceByCode): array {
+            $claimed = DB::affectingStatement(
+                'INSERT INTO shop_checkouts (account_id, checkout_key) VALUES (?, ?) ON CONFLICT DO NOTHING',
+                [$accountId, $checkoutKey]
+            );
+            if ($claimed === 0) {
+                return $this->replayCheckout($accountId, $checkoutKey);
+            }
+
+            $ids = array_keys($quantities);
             $catalogItems = ShopCatalogItem::query()
-                ->whereIn('shop_catalog_item_id', $shopCatalogItemIds)
+                ->whereIn('shop_catalog_item_id', $ids)
                 ->orderBy('shop_catalog_item_id')
                 ->lockForUpdate()
                 ->with('itemDef')
                 ->get()
                 ->keyBy('shop_catalog_item_id');
 
-            if ($catalogItems->count() !== count($shopCatalogItemIds)) {
+            if ($catalogItems->count() !== count($ids)) {
                 throw new ShopPurchaseRejectedException('invalid_shop_item', 'Shop item not found.', 404);
             }
 
@@ -203,24 +222,62 @@ final class ShopPurchaseService
 
                 return $coinPriceByCode[$code];
             };
-            $totalDebit = $catalogItems->sum(fn (ShopCatalogItem $catalogItem): int => $zonePrice($catalogItem) ?? $this->resolvePricing($catalogItem, 'coins')[1]);
+            $totalDebit = 0;
+            foreach ($quantities as $id => $quantity) {
+                $catalogItem = $catalogItems[$id];
+                if ($quantity > 1 && $this->soldOneAtATime($catalogItem)) {
+                    throw new ShopPurchaseRejectedException('invalid_quantity', 'You can only buy one '.$catalogItem->itemDef?->name.'.', 422);
+                }
+                $totalDebit += ($zonePrice($catalogItem) ?? $this->resolvePricing($catalogItem, 'coins')[1]) * $quantity;
+            }
 
-            $wallet = Wallet::lockForAccount((int) $account->getAuthIdentifier(), Wallet::CASH);
+            $wallet = Wallet::lockForAccount($accountId, Wallet::CASH);
             if ($wallet->balance() < $totalDebit) {
                 throw new ShopPurchaseRejectedException('not_enough_coins', 'Not enough cash on you for this basket. Withdraw some at an ATM.', 422);
             }
 
-            return array_map(
-                fn (int $shopCatalogItemId): ShopPurchaseResult => $this->purchaseByCatalogPublicId(
+            $results = [];
+            foreach ($quantities as $id => $quantity) {
+                $results[] = $this->purchaseByCatalogPublicId(
                     $account,
-                    (string) $catalogItems[$shopCatalogItemId]->public_id,
-                    1,
+                    (string) $catalogItems[$id]->public_id,
+                    $quantity,
                     'coins',
-                    $zonePrice($catalogItems[$shopCatalogItemId])
-                ),
-                $shopCatalogItemIds
+                    $zonePrice($catalogItems[$id])
+                );
+            }
+
+            DB::update(
+                'UPDATE shop_checkouts SET purchase_ids = ?::jsonb, balance_after = ? WHERE account_id = ? AND checkout_key = ?',
+                [json_encode(array_map(fn (ShopPurchaseResult $r): int => (int) $r->purchase->getKey(), $results)), $results[array_key_last($results)]->balanceAfter, $accountId, $checkoutKey]
             );
+
+            return $results;
         });
+    }
+
+    /** A unique item, or a piece of clothing (owned one at a time, lost when passing out). */
+    private function soldOneAtATime(ShopCatalogItem $catalogItem): bool
+    {
+        $itemDef = $catalogItem->itemDef;
+
+        return $catalogItem->is_unique_per_account || ($itemDef?->kind === 'cosmetic' && (int) $itemDef->max_stack === 1);
+    }
+
+    /** @return list<ShopPurchaseResult> the purchases of a basket already paid with this key */
+    private function replayCheckout(int $accountId, string $checkoutKey): array
+    {
+        $row = DB::selectOne('SELECT purchase_ids, balance_after FROM shop_checkouts WHERE account_id = ? AND checkout_key = ?', [$accountId, $checkoutKey]);
+        $ids = json_decode((string) $row->purchase_ids, true);
+
+        return AccountShopPurchase::query()
+            ->whereIn((new AccountShopPurchase)->getKeyName(), $ids)
+            ->where('account_id', $accountId)
+            ->with('shopCatalogItem.itemDef')
+            ->get()
+            ->map(fn (AccountShopPurchase $purchase): ShopPurchaseResult => new ShopPurchaseResult($purchase, (int) $row->balance_after))
+            ->values()
+            ->all();
     }
 
     /**

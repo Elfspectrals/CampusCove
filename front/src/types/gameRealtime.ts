@@ -1,3 +1,4 @@
+import type { NpcClip } from '../game/npcBehavior/npcBehavior'
 import type { QuizChoice, QuizRankingEntry, QuizText } from '../game/pub/quiz'
 
 export interface RemoteUserPayload {
@@ -721,6 +722,21 @@ export interface CashBagErrorPayload {
   id: number | null
   message: string
   code: string
+}
+
+/** A behavior-tree NPC driven by the socket (docs/NPC_BEHAVIOR.md). Positions are feet, not eyes. */
+export interface NpcStatePayload {
+  id: string
+  x: number
+  y: number
+  z: number
+  ry: number
+  clip: NpcClip
+  clipSeq: number
+  move: { x: number; y: number; z: number; ms: number } | null
+  say: string | null
+  /** Item a shopper carries from a shelf to the checkout (`code` + model `key`, as on the shelf). */
+  held: { code: string; key: string } | null
 }
 
 export interface StorageLotContent {

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ShopCheckoutRequest;
 use App\Http\Resources\ShopPurchaseResource;
 use App\Models\Account;
 use App\Services\PlayerActivityService;
@@ -16,21 +17,18 @@ use Illuminate\Support\Facades\DB;
 
 class ZoneShopController extends Controller
 {
-    public function checkout(Request $request, ShopPurchaseService $shop, ZonePriceBook $prices, ReferralService $referrals, PlayerActivityService $activity): JsonResponse
+    public function checkout(ShopCheckoutRequest $request, ShopPurchaseService $shop, ZonePriceBook $prices, ReferralService $referrals, PlayerActivityService $activity): JsonResponse
     {
-        $validated = $request->validate([
-            'zone' => ['required', 'string', 'regex:/^[a-z0-9_]+$/'],
-            'items' => 'required|array|min:1|max:50',
-            'items.*' => 'required|integer|min:1',
-        ]);
+        $zone = $request->validate(['zone' => ['required', 'string', 'regex:/^[a-z0-9_]+$/']])['zone'];
 
         /** @var Account $account */
         $account = $request->user();
 
-        $itemIds = array_map(fn (mixed $id): int => (int) $id, $validated['items']);
-        $results = DB::transaction(function () use ($shop, $prices, $activity, $account, $itemIds, $validated): array {
-            $results = $shop->checkoutWithCoins($account, $itemIds, $prices->prices($validated['zone']));
-            $activity->basketPaid((int) $account->getAuthIdentifier(), $validated['zone'], $itemIds);
+        $quantities = $request->quantities();
+        $results = DB::transaction(function () use ($shop, $prices, $activity, $account, $quantities, $request, $zone): array {
+            $results = $shop->checkoutWithCoins($account, $quantities, $request->checkoutKey(), $prices->prices($zone));
+            // counted once per shop and hour, so a retried checkout key does not count twice
+            $activity->basketPaid((int) $account->getAuthIdentifier(), $zone, array_keys($quantities));
 
             return $results;
         });

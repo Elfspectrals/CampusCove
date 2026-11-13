@@ -179,7 +179,7 @@ function pick(key: string): void {
           type="button"
           class="flex h-9 items-center justify-center overflow-hidden rounded-md bg-white/5 text-mist hover:bg-white/10"
           :class="selected === cell.key ? 'ring-2 ring-pool' : ''"
-          :title="cell.fill?.code ?? 'Empty: shows out of stock'"
+          :title="cell.fill?.code ?? 'Empty: shows a coloured cube'"
           @click="pick(cell.key)"
         >
           <img v-if="cell.preview" :src="cell.preview" alt="" class="h-full w-full object-contain" />
@@ -215,6 +215,6 @@ function pick(key: string): void {
       </template>
       <p v-if="notice" class="m-0 text-xs text-coral">{{ notice }}</p>
     </div>
-    <p v-else class="m-0 text-[11px] text-mist">Click a slot to fill it. An empty slot shows "out of stock".</p>
+    <p v-else class="m-0 text-[11px] text-mist">Click a slot to fill it. An empty slot shows a coloured cube.</p>
   </div>
 </template>

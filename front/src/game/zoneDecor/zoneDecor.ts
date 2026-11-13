@@ -4,7 +4,7 @@ import type { SaleCurve } from '../economy/sharemath.ts'
 import { MAX_PEN_SIDE, MIN_PEN_SIDE, type AnimalTable } from '../animals/animals.ts'
 import { MAX_ROOF, MIN_ROOF, ROOF_OVERHANG, checkBuilding, colorsAt, openingAt, texturesAt, type BuildingTable } from '../buildings/buildings.ts'
 import { FIELD_PATTERNS, MAX_FIELD_PLANTS, fieldCorners, fieldPlants, type CropTable, type PlantSpot } from '../crops/crops.ts'
-import { MAX_SHELF_LENGTH, MAX_SHELF_SLOTS, MAX_SLOT_COPIES, MIN_SHELF_LENGTH, SHELF_ARRANGES, SHELF_TYPES, shelfFaces, shelfMaxLevels, slotBoxes, slotTag, type ShelfArrange, type ShelfType } from '../shelves/shelves.ts'
+import { MAX_SHELF_LENGTH, MAX_SHELF_SLOTS, MAX_SLOT_COPIES, MIN_SHELF_LENGTH, SHELF_ARRANGES, SHELF_TYPES, shelfFaces, shelfMaxLevels, slotBoxes, type ShelfArrange, type ShelfType } from '../shelves/shelves.ts'
 import {
   TEMPLATE_DEPARTMENT,
   TEMPLATE_KEY,
@@ -50,11 +50,9 @@ const MIN_FIELD_SIDE = 1
 const MAX_FIELD_SIDE = 60
 const PLANT_TOLERANCE = 1e-3
 const MAX_ZONE_PRICE = 100_000
-const PRICE_TAG_GAP = 0.3
-const PRICE_TAG_HEIGHT = 1.32
 const MAX_DAILY_QUOTA = 10_000
 const MIN_AREA_SIDE = 1
-const AREA_KEYS = ['id', 'name', 'role', 'npc', 'bounds', 'offers', 'priceTags']
+const AREA_KEYS = ['id', 'name', 'role', 'npc', 'bounds', 'offers']
 const OFFER_KEYS = ['code', 'price', 'quota', 'overPrice']
 export const SALE_ROLES = ['seller', 'buyer'] as const
 export type SaleRole = (typeof SALE_ROLES)[number]
@@ -70,7 +68,6 @@ export interface SaleArea {
   npc: string
   bounds: WorldBounds
   offers: SaleOffer[]
-  priceTags?: boolean
 }
 
 export interface ZoneDecor {
@@ -422,7 +419,6 @@ function areaAt(raw: unknown, path: string, zone: { key: string; bounds: WorldBo
   if (!Array.isArray(json.offers)) throw new TemplateError(`${path}.offers`, 'expected an array')
   const name = stringAt(json.name, `${path}.name`)
   if (name.trim() === '') throw new TemplateError(`${path}.name`, 'expected a non-empty string')
-  if (json.priceTags !== undefined && (json.priceTags !== true || role !== 'seller')) throw new TemplateError(`${path}.priceTags`, 'only a seller area shows price tags, set true or leave it out')
   return {
     id: stringAt(json.id, `${path}.id`),
     name,
@@ -430,7 +426,6 @@ function areaAt(raw: unknown, path: string, zone: { key: string; bounds: WorldBo
     npc: stringAt(json.npc, `${path}.npc`),
     bounds: areaBoundsAt(json.bounds, `${path}.bounds`, zone),
     offers: json.offers.map((o, i) => offerAt(o, `${path}.offers[${i}]`)),
-    ...(json.priceTags ? { priceTags: true } : {}),
   }
 }
 
@@ -600,9 +595,8 @@ export function areaStoreLayout(decor: ZoneDecor, area: SaleArea, modelSizes: Re
   const sold = decor.props.filter((p) => soldCodes(p).length > 0 && insideBounds(p.position, area.bounds))
   const props = [...sold, { ...areaSeller(decor, area), vendor: true }]
   const layout = templateStoreLayout({ version: 1, key: `${decor.zone}_${area.id}`, name: area.name, preset: { width: 0, depth: 0 }, props }, modelSizes)
-  const displays = area.priceTags ? layout.displays.map((d) => ({ ...d, tag: priceTagBeside(d) })) : layout.displays
   const shelves = sold.filter((p): p is ShelfProp => p.kind === 'shelf').flatMap(shelfDisplays)
-  return { ...layout, displays: [...displays, ...shelves], bounds: { ...area.bounds } }
+  return { ...layout, displays: [...layout.displays, ...shelves], bounds: { ...area.bounds } }
 }
 
 function shelfDisplays(shelf: ShelfProp): StoreDisplay[] {
@@ -611,7 +605,6 @@ function shelfDisplays(shelf: ShelfProp): StoreDisplay[] {
     const fill = shelf.fill[box.key]
     if (!fill) return []
     const [x, y, z] = box.center
-    const tag = slotTag(shelf, box)
     return [{
       key: fill.key,
       code: fill.code,
@@ -621,16 +614,8 @@ function shelfDisplays(shelf: ShelfProp): StoreDisplay[] {
       yaw: shelf.yaw + box.yaw,
       size: box.size,
       shelfSlot: { prop: shelf.id, slot: box.key },
-      tag: { position: toWorld(placement, tag.position), yaw: shelf.yaw + tag.yaw },
     }]
   })
-}
-
-function priceTagBeside(display: StoreDisplay): StoreDisplay['tag'] {
-  const [x, y, z] = display.position
-  const ahead = display.size[2] / 2 + PRICE_TAG_GAP
-  const lift = display.figure ? 0 : PRICE_TAG_HEIGHT
-  return { position: [x + Math.sin(display.yaw) * ahead, y + lift, z + Math.cos(display.yaw) * ahead], yaw: display.yaw }
 }
 
 export function zoneShown(bounds: WorldBounds, at: { x: number; z: number }, shown: boolean, showWithin: number, hideBeyond: number): boolean {

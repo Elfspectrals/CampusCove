@@ -164,6 +164,7 @@ const adminNavItems: NavItem[] = [
   { name: 'admin-housing', icon: 'home', label: 'Housing' },
   { name: 'admin-planner', icon: 'map', label: 'World Planner' },
   { name: 'admin-editor', icon: 'grid', label: 'Editor' },
+  { name: 'admin-npc', icon: 'users', label: 'NPC Interface' },
   { name: 'admin-security', icon: 'shield', label: 'Security' },
   { name: 'new-nation', icon: 'globe', label: 'New Nation' },
 ]

@@ -27,8 +27,9 @@ const TUB_WALL = 0.05
 const CLEARANCE = 0.03
 const SLOT_GAP = 0.02
 const COPY_GAP = 0.01
-const TAG_DROP = 0.01
-const TAG_AHEAD = 0.004
+/** An empty slot shows a cube of this share of its smallest side, in one of these readable colours. */
+const EMPTY_CUBE_SHARE = 0.6
+export const EMPTY_SLOT_COLORS = ['#e8604c', '#f2a93b', '#f4d35e', '#5cb85c', '#3fa7d6', '#7a6ff0', '#e36fb2', '#2ec4b6'] as const
 const MESSY_SHIFT = 0.25
 const MESSY_TURN = 0.6
 const KNOCKED_CHANCE = 1 / 6
@@ -165,13 +166,15 @@ export function slotBoxes(shape: ShelfShape): SlotBox[] {
   return boxes
 }
 
-export function slotTag(shape: ShelfShape, box: SlotBox): { position: Vec3; yaw: number } {
-  const { faceFront, ceiling } = BUILDS[shape.shelf]
-  const along = turned(box.center, -box.yaw)[0]
-  const local: Vec3 = shape.shelf === 'chiller'
-    ? [along, ceiling - TUB_WALL, faceFront + TUB_WALL + TAG_AHEAD]
-    : [along, box.center[1] - box.size[1] / 2 - TAG_DROP, faceFront + TAG_AHEAD]
-  return { position: turned(local, box.yaw), yaw: box.yaw }
+/**
+ * The coloured cube standing in an empty slot: centred in the slot, resting on its floor, its colour picked from
+ * the slot's seed so a shelf mixes colours and keeps them between visits.
+ */
+export function emptySlotCube(box: SlotBox, seed: string): { position: Vec3; side: number; yaw: number; color: string } {
+  const side = Math.min(...box.size) * EMPTY_CUBE_SHARE
+  const [x, y, z] = box.center
+  const color = EMPTY_SLOT_COLORS[Math.floor(seededRandom(seed)() * EMPTY_SLOT_COLORS.length)]!
+  return { position: [x, y - box.size[1] / 2 + side / 2, z], side, yaw: box.yaw, color }
 }
 
 function across(span: number, size: number): number {
@@ -285,6 +288,13 @@ export function slotCopies(box: Vec3, size: Vec3, count: number, arrange: ShelfA
   return rowCopies(box, size, count)
 }
 
-export function lighterStock<P extends Pick<ShelfProp, 'fill'>>(shelf: P): P {
-  return { ...shelf, fill: Object.fromEntries(Object.entries(shelf.fill).map(([key, slot]) => [key, { ...slot, count: Math.ceil(slot.count / 2) }])) }
+/**
+ * Low graphics tier: a slot packed in depth keeps only its front-most row (what the aisle sees), so a full shelf
+ * still reads as full for far fewer copies; a messy slot, with no rows, keeps every other copy.
+ */
+export function lowDetailCopies(copies: SlotCopy[], arrange: ShelfArrange): SlotCopy[] {
+  if (copies.length <= 1) return copies
+  if (arrange === 'messy') return copies.filter((_, i) => i % 2 === 0)
+  const front = Math.max(...copies.map((c) => c.position[2]))
+  return copies.filter((c) => c.position[2] > front - EPS)
 }

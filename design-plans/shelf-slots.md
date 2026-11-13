@@ -1,7 +1,7 @@
 # Shelves with item slots
 
 Approved by the user on 2026-11-10. A shelf is a zone prop whose shelves hold item slots; a filled slot shows the item
-(a chosen number of copies, arranged in a chosen style) and sells it, an empty slot shows an "out of stock" marker.
+(a chosen number of copies, arranged in a chosen style) and sells it, an empty slot shows a coloured cube (not for sale).
 
 ## Prop
 
@@ -38,7 +38,7 @@ slot boxes (centre, width, depth, height) per face.
 count, arrange, seed)` returns positions and yaws; the seed is `<shelf id>#<slot key>` (`seededRandom`) so every player
 sees the same mess. Capacity per arrangement comes from the same function (editor max for `count`).
 
-Empty slot: a small "OUT OF STOCK" tag on the shelf edge, in the editor and in game.
+Empty slot: a coloured cube standing in the slot (colour picked per slot from a fixed palette), in the editor and in game. It is not a display, so it cannot be bought (replaced the "OUT OF STOCK" tag on 2026-11-12).
 
 ## Buying
 

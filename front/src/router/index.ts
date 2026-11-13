@@ -102,6 +102,12 @@ const router = createRouter({
       component: () => import('../views/admin/AdminMallEditorView.vue'),
       meta: { requiresAdmin: true, title: 'Admin â€” Editor', fullBleed: true, immersive: true },
     },
+    {
+      path: '/admin/npc',
+      name: 'admin-npc',
+      component: () => import('../views/admin/AdminNpcView.vue'),
+      meta: { requiresAdmin: true, title: 'Admin — NPC Interface', fullBleed: true, immersive: true },
+    },
     { path: '/:pathMatch(.*)*', name: 'not-found', component: NotFoundView, meta: { title: 'Not found' } },
   ],
   scrollBehavior(to, _from, saved) {

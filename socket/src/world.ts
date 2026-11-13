@@ -438,6 +438,12 @@ function zoneBuyers(zone: string, decor: Json): WorldBuyer[] {
   })
 }
 
+/** A JSON file next to the world manifest (zones/, npc/), retried like the manifest. */
+export function readWorldFile(path: string): Promise<Json> {
+  if (!WORLD_MANIFEST_URL) throw new Error('WORLD_MANIFEST_URL is not set')
+  return readManifest(besideManifest(path))
+}
+
 export async function loadZoneBuyers(): Promise<void> {
   if (!WORLD_MANIFEST_URL) throw new Error('WORLD_MANIFEST_URL is not set')
   const index = await readManifest(besideManifest('zones/index.json'))

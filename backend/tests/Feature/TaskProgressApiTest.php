@@ -12,6 +12,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 use InvalidArgumentException;
 use Tests\Concerns\SetsWalletBalance;
 use Tests\TestCase;
@@ -332,18 +333,18 @@ class TaskProgressApiTest extends TestCase
     {
         $player = $this->registerAndCreditWallet(500, 'cash');
         $headers = $this->auth($player['token'], self::SECRET);
-        $coffee = ['zone' => 'greencart', 'items' => [$this->catalogId('food_coffee')]];
+        $coffee = fn (): array => $this->basket('greencart', [$this->catalogId('food_coffee')]);
 
         $this->travelTo(now()->parse('2026-11-13 13:05:00', 'UTC'));
-        $this->postJson('/api/zone/checkout', $coffee, $headers)->assertOk();
+        $this->postJson('/api/zone/checkout', $coffee(), $headers)->assertOk();
         $this->travelTo(now()->parse('2026-11-13 13:50:00', 'UTC'));
-        $this->postJson('/api/zone/checkout', $coffee, $headers)->assertOk();
+        $this->postJson('/api/zone/checkout', $coffee(), $headers)->assertOk();
         $this->postJson('/api/pub/order', ['code' => 'drink_stout'], $headers)->assertOk();
         $this->postJson('/api/pub/order', ['code' => 'drink_stout'], $headers)->assertOk();
         $this->assertSame(2, $this->counter($player['account_id'], ActionCounter::ShopBaskets));
 
         $this->travelTo(now()->parse('2026-11-13 14:01:00', 'UTC'));
-        $this->postJson('/api/zone/checkout', $coffee, $headers)->assertOk();
+        $this->postJson('/api/zone/checkout', $coffee(), $headers)->assertOk();
         $this->assertSame(3, $this->counter($player['account_id'], ActionCounter::ShopBaskets));
     }
 
@@ -351,14 +352,14 @@ class TaskProgressApiTest extends TestCase
     {
         $player = $this->registerAndCreditWallet(1_000, 'cash');
         $headers = $this->auth($player['token'], self::SECRET);
-        $basket = ['zone' => 'fashion', 'items' => [$this->catalogId('COS_WEAR_BOTTOM_JEANS'), $this->catalogId('COS_WEAR_BOTTOM_SHORTS')]];
+        $basket = fn (): array => $this->basket('fashion', [$this->catalogId('COS_WEAR_BOTTOM_JEANS'), $this->catalogId('COS_WEAR_BOTTOM_SHORTS')]);
 
-        $this->postJson('/api/zone/checkout', $basket, $headers)->assertOk();
+        $this->postJson('/api/zone/checkout', $basket(), $headers)->assertOk();
         foreach (['COS_WEAR_BOTTOM_JEANS', 'COS_WEAR_BOTTOM_SHORTS'] as $code) {
             app(AccountInventoryService::class)->revokeItem($player['account_id'], ItemDef::query()->where('code', $code)->firstOrFail(), 1);
         }
         $this->travel(2)->hours();
-        $this->postJson('/api/zone/checkout', $basket, $headers)->assertOk();
+        $this->postJson('/api/zone/checkout', $basket(), $headers)->assertOk();
 
         $this->assertSame(2, $this->counter($player['account_id'], ActionCounter::ClothesBought));
     }
@@ -505,5 +506,15 @@ class TaskProgressApiTest extends TestCase
         $this->setWalletBalance($accountId, $currency, $coins);
 
         return ['token' => $token, 'account_id' => $accountId, 'username' => $username];
+    }
+
+    /** A zone basket in the cart format (docs/SHOP_CART.md): one of each item, a fresh checkout key. */
+    private function basket(string $zone, array $itemIds): array
+    {
+        return [
+            'zone' => $zone,
+            'checkout_key' => (string) Str::uuid(),
+            'items' => array_map(fn (int $id): array => ['shop_catalog_item_id' => $id, 'quantity' => 1], $itemIds),
+        ];
     }
 }

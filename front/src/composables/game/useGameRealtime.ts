@@ -92,6 +92,7 @@ import type {
   StorageOpenedPayload,
   StorageSalePayload,
   CashBagPickedPayload,
+  NpcStatePayload,
   WantedPayload,
   JailStatePayload,
   JailReleasedPayload,
@@ -267,6 +268,10 @@ export interface GameRealtimeDeps {
   voice: {
     onToken: (payload: VoiceTokenPayload) => void
     disconnect: () => Promise<void>
+  }
+  npcs: {
+    onSnapshot: (payload: { npcs?: NpcStatePayload[] }) => void
+    onState: (state: NpcStatePayload) => void
   }
   storageAuction: {
     onSale: (data: StorageSalePayload) => void
@@ -497,6 +502,8 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('zone_sell_error', (data: ZoneSellErrorPayload) => deps.zoneBuyers.onError(data))
     room.onMessage('atm_done', (data: AtmDonePayload) => deps.atm.onDone(data))
     room.onMessage('atm_error', (data: AtmErrorPayload) => deps.atm.onError(data))
+    room.onMessage('npcs', (data: { npcs?: NpcStatePayload[] }) => deps.npcs.onSnapshot(data))
+    room.onMessage('npc_state', (data: NpcStatePayload) => deps.npcs.onState(data))
     room.onMessage('storage_sale', (data: StorageSalePayload) => deps.storageAuction.onSale(data))
     room.onMessage('storage_sale_soon', () => deps.storageAuction.onSoon())
     room.onMessage('storage_sale_started', (data: { count: number }) => deps.storageAuction.onStarted(data))

@@ -132,6 +132,20 @@ Decision (2026-11-12): voice goes through a self-hosted LiveKit SFU (open source
 - [done] Voice from another PC on the same network: `make up` gives LiveKit the network address, `make share-local` reaches LiveKit through the page (`/livekit` proxy) over https (2026-11-12).
 - [todo] Deploy LiveKit on a VPS with TURN; privacy page mentions voice.
 
+## NPC Interface: behavior trees (doing, branch feat/npc-behavior-trees)
+
+Decision (2026-11-12): zone NPCs get UE5-style behavior trees (composites, tasks, decorators with observer aborts, services) edited in the admin at `/admin/npc` and saved to `npc/behavior.json`. The socket runs the trees and is the authority (position, moves, clips, speech, perceived player); the front only shows them. v1 nodes: selector, sequence, random; move to, wander, wait, face, play animation, say; has target, time of day (Paris), chance, cooldown, loop; perceive players. Contract in `docs/NPC_BEHAVIOR.md`.
+
+- [done] Contract, server validation and runtime (`npcBehavior.ts`, `npcBrain.ts`, `npcs.ts`), 100 ms tick, the file re-read every 5 s. Checked live with a socket client: the farmhand picks three times, walks between its rows at 2.5 m/s and goes home; p4 wanders.
+- [done] Admin NPC Interface: tree graph with execution order, right-click menu, Details panel, blackboard points, undo/redo, dev-only save that refuses sellers, staff and points over 60 m; NPCs tab with a map to place each NPC's points.
+- [doing] In-game display (`useNpcBrains`): glide along the server's moves, clips, speech bubbles. Typechecked and unit-tested, not yet seen in a playtest.
+- Only NPCs without a role or sale area can get a tree; NPCs walk in straight lines (no navmesh) and have no collision while driven.
+- [done] Pick Crop task (decided 2026-11-12, after the first look: the farmhand picked in the void): walks to a random crop or orchard tree of the chosen kind within a radius of home, faces it and plays Pick for 3 s. Visual only, nothing is harvested. The farmhand now picks 5 random plants of the field, then goes home for a break. The editor map shows the zone's plants.
+- [doing] GreenCart shoppers (decided 2026-11-12): Browse Shelf (walk to a stocked shelf slot, look, maybe take an item into the hand, stock untouched) and Checkout (queue at the clerk, move up, pay, fake buying) tasks; three shoppers in GreenCart on a Shopper tree; Browse, TakeItem and Pay clips on the base body; in shop zones the socket walks NPCs around the shelves (grid A*, `shopNav.ts`). Checked live with a socket client; not yet seen in a playtest.
+- [todo] Clothes shops: Window Shop at mannequins, hold a piece up at the mirror.
+- [todo] Mall corridor: foot traffic between shop doors with bags, benches, pairs chatting, phone and coffee (needs a `mall` zone or points between the doors).
+- [todo] Reactions everywhere: wave at a player, step aside, follow with the head.
+- [todo] Live debugging like UE5: highlight the running branch of a chosen NPC in the graph.
 ## Police (doing, branch feat/police)
 
 Decision (2026-11-13): a dedicated police zone east of the town, a wanted level owned by the socket, a police job played by players (licence bought for 300 coins, lost at death), an NPC fallback that jails a wanted player at death, and a hard pickpocket that takes one item stack, never cash, with no safe zone. The officer's bounty is capped and never comes from a fine; fines are destroyed. Full plan in `design-plans/police.md`.
@@ -290,6 +304,19 @@ Decision (2026-11-10): every shop works the same way (items and shelves in a sel
 - [done] Furniture of the six mall shops as decor props (`build_shop_decor.py`), interiors rebuilt and re-lit.
 - [done] Shelf prop with item slots (gondola, wall, fridge, chiller): per slot item, count shown, arrangement (rows, messy, stack, front), "out of stock" tag, sold from the slot; GreenCart stocked with it. Spec in `design-plans/shelf-slots.md`.
 - [todo] Playtest the shops in game (basket from slots, frame rate in GreenCart).
+
+## Multi-shop cart (doing, branch feat/multi-shop-cart)
+
+Decision (2026-11-12): one cart for every shop with a cashier, instead of one basket per shop emptied on leaving. A click on an item adds one to the cart (again for one more); the cart screen (U, rebindable, or Use at a cashier; moved from L on 2026-11-13 by the user, L stays the pickpocket's) shows every shop's lines with quantity, remove and totals. Each shop's lines are paid at that shop's own cashier, in cash. Clothes stay one at a time. A payment carries a checkout key so a retry never charges twice. Contract in `docs/SHOP_CART.md`.
+
+- [doing] Cart and cart screen, quantities on `/shop/checkout` and `zone_checkout`, `shop_checkouts` idempotency table. Server checks tested; waiting for a playtest.
+- [done] No price card in shops (decided 2026-11-12 from the user's screenshot of the GreenCart orange juice card): only the item models show; the price is in the aim prompt, the item card and the cart. The `priceTags` area option, its editor checkbox and `priceTag.ts` are gone.
+- [done] Cart button in the HUD (user's choice, 2026-11-12): cart icon with the number of items, next to Log out, shown only while the cart holds something. The cursor is captured in game, so the button also shows its key (U); it is clickable whenever the cursor is free (pause, inventory, a shop screen).
+- [done] Empty shelf slot = coloured cube (user's choice, 2026-11-12), replacing the "OUT OF STOCK" tag: one cube per empty slot, its colour picked per slot from a fixed palette, one instanced mesh per shelf with a plain Lambert material (cheap on the low tier). Not a display, so it can never be bought or added to the cart.
+- [done] One place per product in GreenCart, packed shelves (user's choice, 2026-11-12, from real-store photos; replaces the earlier "neighbours differ" mix): each product fills one shelf face as a single block and is sold nowhere else in the store; every stocked slot is filled to its capacity (tight rows or stacks for packaged goods, heaps for loose produce and chips). GreenCart has 36 shelf faces and 23 products, so 13 faces stay empty and show the coloured cubes (user's choice: existing items only, keep the cubes, no colour variants or new models).
+- [done] GreenCart sells existing items it lacked: raw fish (15) and the farm crops corn (7), potato (6), cabbage (8), pumpkin (14). This reverses the earlier "crops are not sold in any shop" rule; every shop price stays above what any zone buyer pays for the same item (feature test), so nothing can be bought and sold back for a profit.
+- [done] Low tier: a shelf slot draws only its front row (a messy slot every other copy) instead of half its copies (`lowDetailCopies`, replaces `lighterStock`). Measured before on the low tier: GreenCart's shelf goods were 336 draw calls and 1,030,016 triangles. After: about 697,000 triangles, estimated from the model files, not measured in game yet.
+- [todo] Playtest the restocked GreenCart: shelves all load (counts keep a 2 % margin under each slot's capacity), aisle screenshot, low-tier draw calls and triangles measured at the back of the pasta aisle.
 
 ## Mall editor (in progress, branch feat-shop-editor)
 
