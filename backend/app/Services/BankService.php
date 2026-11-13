@@ -84,6 +84,25 @@ final class BankService
         });
     }
 
+    /** @return array{cash: int, bank: int} */
+    public function adminGrant(int $adminAccountId, int $toAccountId, string $currency, int $amount, string $ref): array
+    {
+        return DB::transaction(function () use ($adminAccountId, $toAccountId, $currency, $amount, $ref): array {
+            $cash = Wallet::lockForAccount($toAccountId, Wallet::CASH);
+            $bank = Wallet::lockForAccount($toAccountId, Wallet::BANK);
+            $this->refuseReplay('admin_grant', $ref);
+            $txId = $this->transaction($adminAccountId, 'admin_grant', [
+                'amount' => $amount,
+                'ref' => $ref,
+                'currency' => $currency,
+                'to_account_id' => $toAccountId,
+            ]);
+            $this->entry($currency === Wallet::CASH ? $cash : $bank, $txId, $amount, 'admin_grant');
+
+            return ['cash' => $cash->balance(), 'bank' => $bank->balance()];
+        });
+    }
+
     /** @return array{cash: int, bank: int, history: list<array{reason: string, delta: int, at: string, from: ?string, to: ?string}>} */
     public function summary(int $accountId): array
     {

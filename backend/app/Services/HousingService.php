@@ -38,6 +38,13 @@ final class HousingService
 
     public function collectDueTaxes(): int
     {
+        return $this->collectDueTaxesSummary()['seized'];
+    }
+
+    /** @return array{charged: int, seized: int} */
+    public function collectDueTaxesSummary(): array
+    {
+        $charged = 0;
         $seized = 0;
         $dueIds = HousingUnit::query()
             ->where('status', 'occupied')
@@ -45,7 +52,7 @@ final class HousingService
             ->pluck('unit_id');
 
         foreach ($dueIds as $unitId) {
-            DB::transaction(function () use ($unitId, &$seized): void {
+            DB::transaction(function () use ($unitId, &$charged, &$seized): void {
                 /** @var HousingUnit|null $unit */
                 $unit = HousingUnit::query()
                     ->where('unit_id', $unitId)
@@ -62,14 +69,19 @@ final class HousingService
                 $ownerId = (int) $unit->occupant_account_id;
                 $tax = $this->taxFor($unit);
                 $dueAt = $unit->tax_due_at->copy();
+                $paidOnce = false;
                 while ($dueAt->lte(now())) {
                     if (Wallet::lockForAccount($ownerId, self::CURRENCY)->balance() < $tax) {
                         $this->storageAuction->boxSeizedHouse($unit);
                         $this->resetExpiredUnit($unit);
                         $seized++;
+                        if ($paidOnce) {
+                            $charged++;
+                        }
 
                         return;
                     }
+                    $paidOnce = true;
                     $this->debitCoins($ownerId, $tax, 'housing_tax', [
                         'housing_unit_id' => $unit->unit_id,
                         'housing_unit_public_id' => $unit->public_id,
@@ -78,10 +90,11 @@ final class HousingService
                     $dueAt->addHours(self::TAX_PERIOD_HOURS);
                 }
                 $unit->update(['tax_due_at' => $dueAt, 'updated_at' => now()]);
+                $charged++;
             });
         }
 
-        return $seized;
+        return ['charged' => $charged, 'seized' => $seized];
     }
 
     /** Daily property tax charged to the owner: the base tax plus a surcharge per flatmate. */

@@ -167,6 +167,8 @@ erDiagram
     SHOP_CATALOG_ITEMS ||--o{ ACCOUNT_SHOP_PURCHASES : vendu
     ACCOUNTS ||--o{ ACCOUNT_SHOP_PURCHASES : achète
     TRANSACTIONS ||--|| ACCOUNT_SHOP_PURCHASES : "débit"
+    ACCOUNTS ||--o{ ADMIN_ITEM_GRANTS : "reçoit d'un admin"
+    ITEM_DEFS ||--o{ ADMIN_ITEM_GRANTS : donné
 
     ITEM_DEFS {
         bigint item_def_id PK
@@ -217,6 +219,14 @@ erDiagram
         bigint tx_id FK
         bigint total_debit
         currency_code currency
+    }
+    ADMIN_ITEM_GRANTS {
+        bigint id PK
+        uuid ref UK
+        bigint admin_account_id FK
+        bigint to_account_id FK
+        bigint item_def_id FK
+        int quantity "1 à 999"
     }
 ```
 
@@ -458,6 +468,7 @@ erDiagram
 - **Échanges sûrs** : un objet engagé est bloqué (`locked_tx_id`) et les biens passent par un séquestre (`trade_escrows`, `escrow_container_id`) ; l'échange se valide en une seule transaction SQL ou pas du tout.
 - **Logement = pièce + offre** : `rooms` est l'espace jouable (meubles, accès, modération) ; `housing_units` ajoute l'offre commerciale (prix, bail de 7 jours, taxe, porte verrouillée). Un même type de pièce sert aux appartements, au centre commercial ou au pub.
 - **Garde-meuble** : quand une maison est saisie pour taxe impayée, ses meubles posés et son coffre partent dans une ligne `storage_lots` (`source` `seized`, ancien propriétaire, maison, valeur en boutique, mise de départ, nuits en vente, statut `listed` / `sold` / `destroyed`), dont le contenu vit dans un conteneur `storage_lot`. Le jeu y ajoute des box `generated` (`generated_for`, `generated_slot`). Les offres sont des lignes `storage_bids` (montant, transaction de blocage, transaction de remboursement quand elle est dépassée) ; le box vendu garde son gagnant, son prix et la date d'ouverture (`docs/STORAGE_AUCTION.md`). Une maison vide ne crée pas de box. Le reset admin et la suppression de compte détruisent toujours le contenu.
+- **Dons d'admin en jeu** : un don d'argent est une transaction `admin_grant` (référence dans `meta_json.ref`) avec une ligne `admin_grant` du grand livre sur le liquide ou la banque ; un don d'objets est une ligne `admin_item_grants` (`ref` unique, admin, bénéficiaire, objet, quantité) écrite dans la même transaction que les objets, pour qu'un appel rejoué ne donne qu'une fois. Les objets achetés en gemmes ne se donnent pas ; voir `docs/ADMIN.md`.
 - **Paiement idempotent** : `gem_orders.idempotency_key` et `stripe_webhook_events.event_id` uniques garantissent qu'un webhook reçu deux fois ne crédite jamais deux fois.
 - **Types énumérés PostgreSQL** (`account_status`, `item_kind`, `tx_type`...) : la base refuse une valeur inconnue, sans dépendre du code.
 - **Exceptions assumées** : `wallets` utilise `owner_type` + `owner_id` (polymorphe, sans clé étrangère) pour qu'une guilde ou un serveur puisse un jour avoir un portefeuille ; `wallet_ledger.tx_id` est contrôlé par le service, pas par une clé étrangère.

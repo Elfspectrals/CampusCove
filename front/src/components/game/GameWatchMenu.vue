@@ -60,6 +60,7 @@ const emit = defineEmits<{
   teleport: [key: string]
   summon: [sessionId: string]
   storageSale: []
+  adminPanel: []
   alarmOpen: []
 }>()
 
@@ -233,6 +234,7 @@ onUnmounted(() => {
             @teleport="(key) => emit('teleport', key)"
             @summon="(sessionId) => emit('summon', sessionId)"
             @storage-sale="emit('storageSale')"
+            @panel="emit('adminPanel')"
           />
         </div>
 

@@ -257,6 +257,22 @@ final class MarketService
         });
     }
 
+    /** @return array{open: bool, market_date: string, opens_at: string, closes_at: string, stall_fee: int, stalls: list<array<string, mixed>>} */
+    public function openNow(int $minutes): array
+    {
+        MarketSchedule::openNow(now(), $minutes);
+
+        return $this->current();
+    }
+
+    /** @return array{returned: int, market: array{open: bool, market_date: string, opens_at: string, closes_at: string, stall_fee: int, stalls: list<array<string, mixed>>}} */
+    public function closeNow(): array
+    {
+        MarketSchedule::closeNow(now());
+
+        return ['returned' => $this->closePastMarkets(), 'market' => $this->current()];
+    }
+
     public function closePastMarkets(): int
     {
         $openDate = MarketSchedule::openMarketDate(now());
