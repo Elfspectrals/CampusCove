@@ -75,7 +75,7 @@ The others are `realtime` routes: the socket calls them with the player's token 
 
 ## Socket
 
-`socket/src/market.ts`. Stall positions come from the zone files: a prop with `key: "market_stall"` and `stallNo` 1-6 (unique) is stall `stallNo`. The socket refuses every action made more than 3 m (`STALL_REACH`) from the stall it targets: the claimed stall, the player's own stall for a lot, the lot's stall for a withdrawal or a purchase.
+`socket/src/market.ts`. Stall positions come from the zone files: a prop with `kind: "market_stall"` and `stallNo` 1-6 (unique, checked by the front zone parser and the socket) is stall `stallNo`; the six stalls are in `front/public/assets/zones/town_market.json`. The socket refuses every action made more than 3 m (`STALL_REACH`) from the stall it targets: the claimed stall, the player's own stall for a lot, the lot's stall for a withdrawal or a purchase.
 
 Client to server, one message `market`:
 

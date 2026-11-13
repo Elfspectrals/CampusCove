@@ -14,8 +14,8 @@ const marketZone = {
   zone: 'town_market',
   name: 'Market',
   props: [
-    { id: 'stall_1', kind: 'decor', key: 'market_stall', stallNo: 1, position: [0, 0, 0] },
-    { id: 'stall_2', kind: 'decor', key: 'market_stall', stallNo: 2, position: [10, 0, 0] }
+    { id: 'stall_1', kind: 'market_stall', stallNo: 1, position: [0, 0, 0] },
+    { id: 'stall_2', kind: 'market_stall', stallNo: 2, position: [10, 0, 0] }
   ],
   areas: []
 }

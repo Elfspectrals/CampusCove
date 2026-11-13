@@ -4,7 +4,7 @@ Approved by the user on 2026-11-13. Product choices come from the user; technica
 
 ## Square
 
-- Zone `town_market`, east of the town: x 52 to 98, z -41 to 7 (46 × 48 m). Two hedge segments of the town ring are removed between `house_03` and `house_04` (around x 42, z -17) and a path leads from that opening to the square.
+- Zone `town_market`, east of the town: lawn x 52 to 98, z -41 to 7, with a paved square of 34 × 34 m (x 58 to 92, z -34 to 0); the first render of a 46 × 48 m paved square looked empty with six stalls. Two hedge segments of the town ring (`COL_Hedge_02`, `_03`) are removed between `house_03` and `house_04` (gate x 42.6, z -17.6, 12.2 m) by `front/scripts/apply-market.mjs`, a 4 m path leads to the square, and the pond terrain and fence are cut along it (`market_gate_cut` in `build_pond.py`).
 - Six stalls in an open U around the centre, the open side facing the hedge opening.
 - Centre: a small bandstand, where the market music comes from, with benches around it.
 - The square stays all week: paving, bandstand, benches, unlit bunting, a sign "Market on Saturday, 15:00-17:00".
@@ -46,4 +46,4 @@ Approved by the user on 2026-11-13. Product choices come from the user; technica
 
 - Randomness: fixed hand-made versions for the stall (one model, three states, six colours); heaps seeded per lot id by the front.
 - Triangle budget: stall about 1,200 triangles in each state; bandstand about 2,500; items as their own models, at most 8 per lot, so at most 48 copies per stall.
-- Positions: each stall is a zone prop with `key: "market_stall"` and `stallNo` 1 to 6 (read by the socket for the reach check).
+- Positions: each stall is a runtime zone prop `kind: "market_stall"` with `stallNo` 1 to 6 (read by the socket for the reach check), not a baked decor, so the front can swap its state. Stalls 1-2 face south on the north arm, 3-4 face west at the far end, 5-6 face north on the south arm, about 9 m from the bandstand. Benches are baked zone decor (`garden_bench`).

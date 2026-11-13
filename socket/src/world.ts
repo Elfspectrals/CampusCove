@@ -446,7 +446,7 @@ export async function loadMarketStalls(): Promise<void> {
   for (const zone of index.zones) {
     const decor = await readManifest(besideManifest(`zones/${zone}.json`))
     if (!Array.isArray(decor?.props)) throw new Error(`zones/${zone}.json: missing props`)
-    for (const prop of decor.props.filter((p: Json) => p.key === 'market_stall')) {
+    for (const prop of decor.props.filter((p: Json) => p.kind === 'market_stall')) {
       const { stallNo } = prop
       if (!Number.isInteger(stallNo) || stallNo < 1 || found.has(stallNo)) throw new Error(`zones/${zone}.json: invalid or duplicate stallNo of ${prop.id}`)
       const [x, y, z] = prop.position

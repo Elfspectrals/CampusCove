@@ -1,0 +1,166 @@
+{
+  "version": 1,
+  "bounds": {
+    "minX": 42.6,
+    "maxX": 98.0,
+    "minZ": -41.0,
+    "maxZ": 7.0
+  },
+  "gate": {
+    "x": 42.6,
+    "z": -17.6,
+    "width": 12.2
+  },
+  "collision": [
+    {
+      "name": "COL_Market_Bandstand",
+      "cx": 75.0,
+      "cz": -17.0,
+      "hx": 3.0,
+      "hz": 3.0,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Market_Lamp0",
+      "cx": 59.5,
+      "cz": -32.5,
+      "hx": 0.15,
+      "hz": 0.15,
+      "hy": 1.7,
+      "cy": 1.7,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Market_Lamp1",
+      "cx": 90.5,
+      "cz": -32.5,
+      "hx": 0.15,
+      "hz": 0.15,
+      "hy": 1.7,
+      "cy": 1.7,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Market_Lamp2",
+      "cx": 90.5,
+      "cz": -1.5,
+      "hx": 0.15,
+      "hz": 0.15,
+      "hy": 1.7,
+      "cy": 1.7,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Market_Lamp3",
+      "cx": 59.5,
+      "cz": -1.5,
+      "hx": 0.15,
+      "hz": 0.15,
+      "hy": 1.7,
+      "cy": 1.7,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Market_Tree0",
+      "cx": 56.0,
+      "cz": -25.0,
+      "hx": 0.3,
+      "hz": 0.3,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Market_Tree1",
+      "cx": 56.0,
+      "cz": -9.0,
+      "hx": 0.3,
+      "hz": 0.3,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Market_Tree2",
+      "cx": 95.0,
+      "cz": -17.0,
+      "hx": 0.3,
+      "hz": 0.3,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Market_Tree3",
+      "cx": 66.0,
+      "cz": 3.0,
+      "hx": 0.3,
+      "hz": 0.3,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Market_Tree4",
+      "cx": 84.0,
+      "cz": 3.0,
+      "hx": 0.3,
+      "hz": 0.3,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Market_Tree5",
+      "cx": 66.0,
+      "cz": -37.0,
+      "hx": 0.3,
+      "hz": 0.3,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Market_Tree6",
+      "cx": 84.0,
+      "cz": -37.0,
+      "hx": 0.3,
+      "hz": 0.3,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Market_Sign",
+      "cx": 56.5,
+      "cz": -20.8,
+      "hx": 0.15,
+      "hz": 1.3,
+      "hy": 1.15,
+      "cy": 1.15,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Market_ZD_market_bench_0_0",
+      "cx": 71.429,
+      "cy": 0.453,
+      "cz": -13.499,
+      "hx": 0.8,
+      "hy": 0.453,
+      "hz": 0.3,
+      "yaw": -3.927
+    },
+    {
+      "name": "COL_Market_ZD_market_bench_1_0",
+      "cx": 71.499,
+      "cy": 0.453,
+      "cz": -20.571,
+      "hx": 0.8,
+      "hy": 0.453,
+      "hz": 0.3,
+      "yaw": -5.4978
+    }
+  ]
+}

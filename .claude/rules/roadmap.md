@@ -134,7 +134,8 @@ Decision (2026-11-13): every Saturday from 15:00 to 17:00 (Paris time), six stal
 - [done] Socket: one `market` message (claim, list, withdraw, buy) checked within 3 m of the stall, state broadcast as `market_sync`, refreshed at opening and closing (`socket/src/market.ts`). Stall positions come from `market_stall` props in the zone files, so nothing is reachable until the market zone exists.
 - [done] Stall variety plan validated (`design-plans/market-stall.md`, 2026-11-13): square east of the town through an opening in the town hedge, six long-table stalls in an open U around a bandstand, stalls folded outside market hours, bare when free, canopy in the seller's colour when taken, the seller picks crate, basket or flat for each lot (`container`), one item model per unit up to 8.
 - [done] Stall models (`build_market_decor.py`): `decor/market_stall_folded`, `market_stall_free`, `market_stall_taken`, one shared builder, 176 to 368 triangles; the canopy stripe colour of a taken stall comes from `variants.json` (created with it). Decor category Market.
-- [todo] Bandstand, square zone with its ground, path and hedge opening, NPC outfits, first dressing.
+- [done] Market square (`build_market_site.py`, `park/market_site`, zone `town_market`): paved square, bandstand, lamps, bunting, sign, trees, baked benches; hedge opening and site collisions by `front/scripts/apply-market.mjs`; pond terrain and fence cut along the path (`market_gate_cut`). Stalls are a runtime zone prop kind `market_stall` (zone parser, editor outliner), shown folded for now.
+- [todo] Market NPC outfits.
 - [todo] Stall UI: claim, canopy colour, lay out a lot with its price, buy; opening and closing announcement.
 - [todo] Ambience: strolling NPCs, market music, bunting and lanterns.
 - [todo] Playtest with the two playtest accounts.

@@ -1,0 +1,136 @@
+{
+  "version": 1,
+  "zone": "town_market",
+  "name": "Town market",
+  "props": [
+    {
+      "id": "market_stall_1",
+      "kind": "market_stall",
+      "stallNo": 1,
+      "position": [
+        71.0,
+        0.0,
+        -26.5
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "market_stall_2",
+      "kind": "market_stall",
+      "stallNo": 2,
+      "position": [
+        79.0,
+        0.0,
+        -26.5
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "market_stall_3",
+      "kind": "market_stall",
+      "stallNo": 3,
+      "position": [
+        84.5,
+        0.0,
+        -21.0
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "market_stall_4",
+      "kind": "market_stall",
+      "stallNo": 4,
+      "position": [
+        84.5,
+        0.0,
+        -13.0
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "market_stall_5",
+      "kind": "market_stall",
+      "stallNo": 5,
+      "position": [
+        79.0,
+        0.0,
+        -7.5
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "market_stall_6",
+      "kind": "market_stall",
+      "stallNo": 6,
+      "position": [
+        71.0,
+        0.0,
+        -7.5
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "market_bench_0",
+      "kind": "decor",
+      "key": "garden_bench",
+      "position": [
+        71.464,
+        0.0,
+        -13.464
+      ],
+      "yaw": -3.927,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "market_bench_1",
+      "kind": "decor",
+      "key": "garden_bench",
+      "position": [
+        71.464,
+        0.0,
+        -20.536
+      ],
+      "yaw": -5.4978,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    }
+  ],
+  "areas": []
+}

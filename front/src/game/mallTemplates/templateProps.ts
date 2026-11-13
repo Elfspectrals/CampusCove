@@ -16,6 +16,7 @@ import { BUILDINGS_URL, buildingPreviewKey, parseBuildings, type BuildingTable }
 import { shelfPieces, slotBoxes, slotCopies, slotTag, type SlotBox, type SlotCopy } from '../shelves/shelves.ts'
 import { itemModelUrl, parseDecorParts, type AnimalProp, type BuildingProp, type DecorProp, type FieldProp, type MaskedParts, type LightProp, type MannequinProp, type NpcProp, type ShelfProp, type TemplateProp, type Vec3 } from './mallTemplate.ts'
 
+export const MARKET_STALL_FOLDED = 'market_stall_folded'
 const STACK_GAP = 0.02
 const SOIL_HEIGHT = 0.03
 const SOIL_COLOR = 0x6e4b32
@@ -50,6 +51,7 @@ export function decorParts(key: string): Promise<Record<string, MaskedParts>> {
 function propModelUrl(prop: TemplateProp): string | null {
   if (prop.kind === 'decor') return decorModelUrl(prop.key)
   if (prop.kind === 'item') return itemModelUrl(prop)
+  if (prop.kind === 'market_stall') return decorModelUrl(MARKET_STALL_FOLDED)
   return null
 }
 

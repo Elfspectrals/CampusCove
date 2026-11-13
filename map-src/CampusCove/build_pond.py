@@ -52,6 +52,7 @@ ORCHARD_GATE = fence_post(ORCHARD_GATE_I)
 ORCHARD_GATE_PILLARS = (fence_post(ORCHARD_GATE_I - 1), fence_post(ORCHARD_GATE_I + 1))
 ORCHARD_GATE_TH = math.atan2(ORCHARD_GATE[0], -ORCHARD_GATE[1])
 ORCHARD_GATE_U = (math.sin(ORCHARD_GATE_TH), -math.cos(ORCHARD_GATE_TH))
+MARKET_GATE_X, MARKET_GATE_Z, MARKET_HW = 42.6, -17.6, 3.0
 GAZEBO_C, GAZEBO_R = (35.0, -55.0 - PUSH), 2.9
 KIOSK = (22.5, -51.5 - PUSH)
 GRID_X0, GRID_Z0, GRID_COLS, GRID_ROWS = -48.0, -76.0 - PUSH, 97, 73 + int(PUSH)
@@ -149,6 +150,14 @@ def in_orchard_way(x, z, margin):
     return in_corridor or min_dist(ORCHARD_SPUR, x, z) < PATH_W / 2 + 0.6 + margin
 
 
+def market_gate_cut(x, z):
+    return (1.0 - ss(MARKET_HW - 0.4, MARKET_HW + 3.0, abs(z - MARKET_GATE_Z))) * ss(MARKET_GATE_X - 4.0, MARKET_GATE_X, x)
+
+
+def in_market_way(x, z, margin):
+    return x > MARKET_GATE_X - 4.0 and abs(z - MARKET_GATE_Z) < MARKET_HW + 0.5 + margin
+
+
 def terrain_h(x, z):
     r = math.hypot(x, z)
     ax = abs(x)
@@ -159,7 +168,7 @@ def terrain_h(x, z):
     hills = sum(h * math.exp(-((x - hx) ** 2 + (z - hz) ** 2) / (2 * s * s)) for hx, hz, h, s in HILLS)
     und = max(0.0, 0.12 + 0.22 * math.sin(x * 0.21 + 0.7) * math.sin(z * 0.17 + 1.9) + 0.1 * math.sin(x * 0.47 + z * 0.31))
     berm = 1.6 * ss(45.4, 46.5, ax) * hedge
-    h = (hedge * (hills + und) + berm) * edge_fade * (1.0 - max(pub_gate_cut(x, z), orchard_gate_cut(x, z)))
+    h = (hedge * (hills + und) + berm) * edge_fade * (1.0 - max(pub_gate_cut(x, z), orchard_gate_cut(x, z), market_gate_cut(x, z)))
     e = pond_e(x, z)
     if e < 1.9:
         hp = BED_H + 0.3 * ss(1.0, 1.3, e)
@@ -877,7 +886,8 @@ for sgn in (-1, 1):
         fence_pts = list(reversed(side)) + fence_pts
     else:
         fence_pts = fence_pts + side
-in_gate = lambda fx, fz: math.hypot(fx - PUB_GATE[0], fz - PUB_GATE[1]) < 1.0 or math.hypot(fx - ORCHARD_GATE[0], fz - ORCHARD_GATE[1]) < 1.0
+in_gate = lambda fx, fz: math.hypot(fx - PUB_GATE[0], fz - PUB_GATE[1]) < 1.0 or math.hypot(fx - ORCHARD_GATE[0], fz - ORCHARD_GATE[1]) < 1.0 \
+    or in_market_way(fx, fz, 0.0)
 for i, (fx, fz) in enumerate(fence_pts):
     if in_gate(fx, fz):
         continue
@@ -911,12 +921,12 @@ add_col("COL_Pond_PubSign", pub_sign[0], pub_sign[1], 2.2, 0.3, 2.4, -PUB_GATE_T
 placed.append((pub_sign[0], pub_sign[1], 1.0))
 
 scatter_tag = re.compile(r"^PD_((?:Tree[RPBW]|Bush|Flowers?|Tuft|RockBig)\d{3})")
-blocked = {m.group(1) for o in objs if (m := scatter_tag.match(o.name)) and in_orchard_way(o.location.x, -o.location.y, 0.8)}
+blocked = {m.group(1) for o in objs if (m := scatter_tag.match(o.name)) and (in_orchard_way(o.location.x, -o.location.y, 0.8) or in_market_way(o.location.x, -o.location.y, 0.8))}
 for o in [o for o in objs if (m := scatter_tag.match(o.name)) and m.group(1) in blocked]:
     objs.remove(o)
     bpy.data.objects.remove(o)
 col[:] = [c for c in col if c["name"].removeprefix("COL_Pond_").removeprefix("PD_") not in blocked]
-print("orchard way cleared:", sorted(blocked))
+print("orchard and market ways cleared:", sorted(blocked))
 
 for tag, (gx, gz) in zip("WE", ORCHARD_GATE_PILLARS):
     gy = ground(gx, gz, 0.4) - 0.05
