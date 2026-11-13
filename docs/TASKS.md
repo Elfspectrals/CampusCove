@@ -43,3 +43,4 @@ When `TaskProgressService` records a new tier (and only then), Laravel calls the
 
 - `GET /api/tasks` (signed-in player, read only) returns `{ tasks: [{ task: string, value: int, tiers: int[3], reached: int[] }] }`, every task of the catalog in its order, `value` 0 when never bumped, `reached` the tiers recorded in `account_task_tiers`.
 - In game, J (rebindable, action `tasks`) opens the menu; J or Esc closes it. One line per task: its name, three dots filled in the tier colour when reached, a bar from 0 to the next threshold with "value / threshold", and the next tier's badge. Past the last threshold the bar is full and reads "Complete".
+- The Home page shows the same list (`TaskProgressList.vue`) in a Tasks panel. Medal colours: bronze `#c27a3e`, silver `#a9b4bf`, gold `#e5b53a` (`TIER_TONE` in `front/src/game/taskProgress.ts`), the same on every theme.

@@ -8,7 +8,7 @@ export function nextGoal(value: number, tiers: readonly number[]): NextGoal {
 }
 
 export const TIER_TONE = {
-  1: { text: 'text-[#d08a4e]', border: 'border-[#d08a4e]/70', fill: 'bg-[#d08a4e]' },
-  2: { text: 'text-[#d6dde4]', border: 'border-[#d6dde4]/70', fill: 'bg-[#d6dde4]' },
-  3: { text: 'text-sun', border: 'border-sun/70', fill: 'bg-sun' },
+  1: { text: 'text-[#c27a3e]', border: 'border-[#c27a3e]', fill: 'bg-[#c27a3e]' },
+  2: { text: 'text-[#a9b4bf]', border: 'border-[#a9b4bf]', fill: 'bg-[#a9b4bf]' },
+  3: { text: 'text-[#e5b53a]', border: 'border-[#e5b53a]', fill: 'bg-[#e5b53a]' },
 } as const
