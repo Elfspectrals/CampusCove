@@ -25,6 +25,7 @@ export type SkinKey =
 export type HouseKey =
   | 'house_01' | 'house_02' | 'house_03' | 'house_04' | 'house_05'
   | 'house_06' | 'house_07' | 'house_08' | 'house_09' | 'house_10'
+  | 'cove_villa_a02' | 'cove_villa_a01' | 'cove_villa_a03' | 'cove_villa_a04' | 'cove_home_b01'
 
 export interface SkinAsset {
   key: SkinKey
@@ -107,6 +108,11 @@ const HOUSES: readonly HouseAsset[] = [
   house('house_08', 'Modern Cube'),
   house('house_09', 'Neon Loft'),
   house('house_10', 'Forest Lodge'),
+  house('cove_villa_a02', 'Colonial Villa'), // Cove Heights lot A-02, two storeys + walk-in garage
+  house('cove_villa_a01', 'Villa Serena'), // Cove Heights lot A-01, Tuscan, loggia + balcony, two-bay garage
+  house('cove_villa_a03', 'Harbor Shingle House'),
+  house('cove_villa_a04', 'Skyline Residence'),
+  house('cove_home_b01', 'Tidewater House'),
 ]
 
 /**
@@ -114,8 +120,8 @@ const HOUSES: readonly HouseAsset[] = [
  * Built by map-src/CampusCove/build_work_*.py → public/assets/work/<key>/ (see docs/ASSETS_STYLE_GUIDE.md §7).
  * `interior.layout.json` lists the stations (`station_<job>_NN`) that the job gameplay attaches to.
  */
-export type WorkKey = 'tech_hub' | 'boutique' | 'cafe' | 'clinic' | 'pub'
-export type WorkJob = 'dev' | 'commerce' | 'resto' | 'medic' | 'barman'
+export type WorkKey = 'tech_hub' | 'boutique' | 'cafe' | 'clinic' | 'pub' | 'storage' | 'police'
+export type WorkJob = 'dev' | 'commerce' | 'resto' | 'medic' | 'barman' | 'auction' | 'police'
 
 export interface WorkAsset {
   key: WorkKey
@@ -149,6 +155,8 @@ const WORKS: readonly WorkAsset[] = [
   work('cafe', 'Campus Cafe', 'resto'),
   work('clinic', 'Cove Clinic', 'medic'),
   work('pub', 'The Salty Shamrock', 'barman'),
+  work('storage', 'Cove Storage', 'auction'),
+  work('police', 'Cove Police', 'police'),
 ]
 
 export function findWork(key: string | null | undefined): WorkAsset | null {
@@ -253,6 +261,18 @@ export function consumablePreviewUrl(code: string): string {
 /** The model of a consumable: on the GreenCart and Candy Cloud shelves, and on the pub bar while the barman pours it. */
 export function consumableModelUrl(code: string): string {
   return `${consumableFolder(code)}/model.glb`
+}
+
+const TOOL_PREFIX = 'tool_'
+
+export function isToolCode(code: string): boolean {
+  return code.startsWith(TOOL_PREFIX)
+}
+
+/** A tool sold in a shop: `tool_<key>` -> public/assets/items/tools/<key>/model.glb. */
+export function toolModelUrl(code: string): string {
+  if (!isToolCode(code)) throw new Error(`No asset folder for tool code "${code}"`)
+  return `${ROOT}/items/tools/${code.slice(TOOL_PREFIX.length)}/model.glb`
 }
 
 /** Furniture model shown in the store and placed in houses: public/assets/decor/<key>/model.glb. */

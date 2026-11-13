@@ -2,6 +2,8 @@
 
 namespace App\Support;
 
+use LogicException;
+
 /**
  * Food and drinks (item kind 'consumable'). Values are per portion: an item with 4 portions is eaten in four
  * bites (4/4 -> 3/4 -> ...). Assets: front/public/assets/items/<group>/<asset>/{model.glb,preview.png}
@@ -21,6 +23,16 @@ final class FoodCatalog
     public const COOKING = [
         'food_fish_raw' => 'food_fish_grilled',
     ];
+
+    public static function groupOf(string $code): string
+    {
+        foreach (self::items() as $item) {
+            if ($item['code'] === $code) {
+                return $item['group'];
+            }
+        }
+        throw new LogicException("{$code} is not in the food catalog.");
+    }
 
     /**
      * @return list<array{code: string, name: string, asset: string, portions: int, hunger: int, thirst: int,

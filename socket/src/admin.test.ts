@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { type AdminRoom, SUMMON_DISTANCE, onAdminOpen, onAdminSummon, onAdminTeleport } from './admin.ts'
+import { type AdminPanelRoom, type AdminRoom, SUMMON_DISTANCE, onAdminGiveItem, onAdminGiveMoney, onAdminItems, onAdminMarket, onAdminOpen, onAdminSummon, onAdminTaxes, onAdminTeleport } from './admin.ts'
 import type { Player } from './types.ts'
 import { type TeleportDestination, doorDestination, orchardDestination, zoneGateDestination } from './world.ts'
 
@@ -33,15 +33,17 @@ function fakePlayer(sessionId: string, isAdmin: boolean, x = 0, z = 0, ry = 0): 
 function fakeRoom(...players: Player[]): AdminRoom & { clients: FakeClient[], moves: string[] } {
   const moves: string[] = []
   return {
+    roomId: 'room-1',
     players: new Map(players.map((p) => [p.sessionId, p])),
     cashBags: new Map(),
+    market: null,
     clients: players.map((p) => fakeClient(p.sessionId)),
     housingUnits: [],
     houseFurniture: [],
     openDoors: new Set(),
     clinicBeds: new Map(),
     seats: new Map(),
-    pub: { secretOpen: false, race: null, darts: null, challenges: new Map(), challengeSentAt: new Map() },
+    pub: { secretOpen: false, race: null, darts: null, challenges: new Map(), challengeSentAt: new Map(), quiz: null, quizSchedule: 0 },
     trades: new Map(),
     clock: { setTimeout: () => undefined },
     forEachClient: () => undefined,
@@ -127,4 +129,157 @@ test('players cannot summon, and the clinic keeps its patients', () => {
   onAdminSummon(room, admin, { sessionId: 'c' }, 1000)
   assert.equal(room.players.get('c')!.x, 5)
   assert.equal(received(admin, 'admin_error').length, 1)
+})
+
+const apiCalls: Array<{ method: string, path: string, body: any, token: string | null }> = []
+const apiAnswers = new Map<string, unknown>()
+let nextApiError: { status: number, code: string, message: string } | null = null
+
+globalThis.fetch = async (url: string | URL | Request, init?: RequestInit) => {
+  const path = String(url).replace(/^.*\/api/, '')
+  const method = init?.method ?? 'GET'
+  apiCalls.push({ method, path, body: init?.body ? JSON.parse(String(init.body)) : null, token: new Headers(init?.headers).get('authorization') })
+  if (nextApiError) {
+    const { status, code, message } = nextApiError
+    nextApiError = null
+    return new Response(JSON.stringify({ code, message }), { status })
+  }
+  return new Response(JSON.stringify(apiAnswers.get(`${method} ${path}`) ?? {}))
+}
+
+const MARKET = { open: true, market_date: '2026-11-13', opens_at: '2026-11-13T10:00:00Z', closes_at: '2026-11-13T10:10:00Z', stalls: [] }
+apiAnswers.set('POST /admin/game/money', { cash: 600, bank: 50 })
+apiAnswers.set('POST /admin/game/items', { account_id: 7, code: 'farm_apple', quantity: 2 })
+apiAnswers.set('GET /admin/game/items', { items: [{ code: 'farm_apple', name: 'Apple', kind: 'consumable' }] })
+apiAnswers.set('POST /admin/game/market/open', MARKET)
+apiAnswers.set('POST /admin/game/market/close', { returned: 3, market: { ...MARKET, open: false } })
+apiAnswers.set('GET /market', MARKET)
+apiAnswers.set('POST /admin/game/taxes/collect', { charged: 2, seized: 1 })
+
+function panelRoom(): AdminPanelRoom & { clients: FakeClient[], moves: string[], housingPolls: number } {
+  const admin = Object.assign(fakePlayer('a', true), { accountId: 1, token: 'admin-token' })
+  const player = Object.assign(fakePlayer('b', false), { accountId: 7, token: 'player-token' })
+  const room = Object.assign(fakeRoom(admin, player), {
+    housingPolls: 0,
+    pollHousingUnits: async () => void (room.housingPolls += 1)
+  })
+  room.forEachClient = (callback, except) => room.clients.filter((c) => c !== except).forEach(callback)
+  apiCalls.length = 0
+  return room
+}
+
+test('a player sending admin panel messages is ignored and nothing reaches the API', async () => {
+  const room = panelRoom()
+  const [, player] = room.clients
+  await onAdminItems(room, player, 1000)
+  await onAdminGiveMoney(room, player, { sessionId: 'b', wallet: 'cash', amount: 500 }, 2000)
+  await onAdminGiveItem(room, player, { sessionId: 'b', code: 'farm_apple', quantity: 1 }, 3000)
+  await onAdminMarket(room, player, { action: 'open', minutes: 10 }, 4000)
+  await onAdminTaxes(room, player, 5000)
+  assert.deepEqual(apiCalls, [])
+  assert.deepEqual(player.sent, [])
+})
+
+test('an admin gives cash to a player: the account id comes from the socket and the target is told', async () => {
+  const room = panelRoom()
+  const [admin, target] = room.clients
+  await onAdminGiveMoney(room, admin, { sessionId: 'b', wallet: 'cash', amount: 500, account_id: 99, ref: 'forged' }, 1000, () => 'ref-1')
+  assert.deepEqual(apiCalls, [{ method: 'POST', path: '/admin/game/money', body: { account_id: 7, wallet: 'cash', amount: 500, ref: 'ref-1' }, token: 'Bearer admin-token' }])
+  assert.deepEqual(received(admin, 'admin_result'), [{ action: 'money', ok: true, pseudo: 'B', wallet: 'cash', amount: 500 }])
+  assert.deepEqual(received(target, 'admin_granted'), [{ kind: 'money', byPseudo: 'A', wallet: 'cash', amount: 500, cash: 600, bank: 50 }])
+})
+
+test('each money message gets a new ref', async () => {
+  const room = panelRoom()
+  const [admin] = room.clients
+  await onAdminGiveMoney(room, admin, { sessionId: 'a', wallet: 'bank', amount: 1 }, 1000)
+  await onAdminGiveMoney(room, admin, { sessionId: 'a', wallet: 'bank', amount: 1 }, 2000)
+  const [first, second] = apiCalls.map((c) => c.body.ref)
+  assert.match(first, /^[0-9a-f-]{36}$/)
+  assert.notEqual(first, second)
+  assert.equal(apiCalls[0].body.account_id, 1)
+})
+
+test('money outside 1..100000, an unknown wallet or a missing target is refused before the API', async () => {
+  const room = panelRoom()
+  const [admin] = room.clients
+  const payloads = [
+    { sessionId: 'b', wallet: 'cash', amount: 0 },
+    { sessionId: 'b', wallet: 'cash', amount: 100_001 },
+    { sessionId: 'b', wallet: 'cash', amount: 1.5 },
+    { sessionId: 'b', wallet: 'gems', amount: 10 },
+    { sessionId: 'gone', wallet: 'cash', amount: 10 }
+  ]
+  for (const [i, payload] of payloads.entries()) await onAdminGiveMoney(room, admin, payload, 1000 * (i + 1))
+  assert.deepEqual(apiCalls, [])
+  assert.deepEqual(received(admin, 'admin_result').map((r) => r.ok), [false, false, false, false, false])
+  await onAdminGiveMoney(room, admin, { sessionId: 'b', wallet: 'cash', amount: 100_000 }, 9000)
+  assert.equal(apiCalls.length, 1)
+})
+
+test('admin actions inside the cooldown are dropped', async () => {
+  const room = panelRoom()
+  const [admin] = room.clients
+  await onAdminGiveMoney(room, admin, { sessionId: 'b', wallet: 'cash', amount: 5 }, 1000)
+  await onAdminGiveMoney(room, admin, { sessionId: 'b', wallet: 'cash', amount: 5 }, 1400)
+  assert.equal(apiCalls.length, 1)
+})
+
+test('an admin gives an item; the quantity stays within 1..999', async () => {
+  const room = panelRoom()
+  const [admin, target] = room.clients
+  await onAdminGiveItem(room, admin, { sessionId: 'b', code: 'farm_apple', quantity: 1000 }, 1000)
+  await onAdminGiveItem(room, admin, { sessionId: 'b', code: 'farm apple', quantity: 2 }, 2000)
+  assert.equal(apiCalls.length, 0)
+  await onAdminGiveItem(room, admin, { sessionId: 'b', code: 'farm_apple', quantity: 2 }, 3000, () => 'ref-2')
+  assert.deepEqual(apiCalls.map((c) => c.body), [{ account_id: 7, code: 'farm_apple', quantity: 2, ref: 'ref-2' }])
+  assert.deepEqual(received(admin, 'admin_result').at(-1), { action: 'item', ok: true, pseudo: 'B', code: 'farm_apple', quantity: 2 })
+  assert.deepEqual(received(target, 'admin_granted'), [{ kind: 'item', byPseudo: 'A', code: 'farm_apple', quantity: 2 }])
+})
+
+test('an API refusal reaches the admin and the target is not told', async () => {
+  const room = panelRoom()
+  const [admin, target] = room.clients
+  nextApiError = { status: 422, code: 'admin_item_premium', message: 'This item is bought with gems.' }
+  await onAdminGiveItem(room, admin, { sessionId: 'b', code: 'skin_night_owl', quantity: 1 }, 1000)
+  assert.deepEqual(received(admin, 'admin_result'), [{ action: 'item', ok: false, message: 'This item is bought with gems.' }])
+  assert.deepEqual(target.sent, [])
+})
+
+test('the item list goes back to the admin only', async () => {
+  const room = panelRoom()
+  const [admin, player] = room.clients
+  await onAdminItems(room, admin, 1000)
+  assert.deepEqual(received(admin, 'admin_items'), [{ items: [{ code: 'farm_apple', name: 'Apple', kind: 'consumable' }] }])
+  assert.deepEqual(player.sent, [])
+})
+
+test('opening the market for 10 minutes sends a fresh market_sync to everyone', async () => {
+  const room = panelRoom()
+  const [admin, player] = room.clients
+  await onAdminMarket(room, admin, { action: 'open', minutes: 10 }, 1000)
+  assert.deepEqual(apiCalls.map((c) => `${c.method} ${c.path}`), ['POST /admin/game/market/open', 'GET /market'])
+  assert.deepEqual(apiCalls[0].body, { minutes: 10 })
+  assert.deepEqual(received(admin, 'admin_result'), [{ action: 'market_open', ok: true, closesAt: MARKET.closes_at }])
+  assert.deepEqual(received(player, 'market_sync'), [MARKET])
+  assert.deepEqual(received(admin, 'market_sync'), [MARKET])
+})
+
+test('market minutes outside 1..240 are refused; closing reports the lots returned', async () => {
+  const room = panelRoom()
+  const [admin, player] = room.clients
+  await onAdminMarket(room, admin, { action: 'open', minutes: 241 }, 1000)
+  await onAdminMarket(room, admin, { action: 'open', minutes: 0 }, 2000)
+  assert.deepEqual(apiCalls, [])
+  await onAdminMarket(room, admin, { action: 'close' }, 3000)
+  assert.deepEqual(received(admin, 'admin_result').at(-1), { action: 'market_close', ok: true, returned: 3 })
+  assert.equal(received(player, 'market_sync').length, 1)
+})
+
+test('collecting taxes reports the houses charged and seized, then reloads the housing units', async () => {
+  const room = panelRoom()
+  const [admin] = room.clients
+  await onAdminTaxes(room, admin, 1000)
+  assert.deepEqual(received(admin, 'admin_result'), [{ action: 'taxes', ok: true, charged: 2, seized: 1 }])
+  assert.equal(room.housingPolls, 1)
 })

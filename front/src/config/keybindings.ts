@@ -29,6 +29,8 @@ const BINDABLE_ACTIONS = [
   'pushToTalk',
   'playerList',
   'cart',
+  'pickpocket',
+  'tasks',
   'hotbar1',
   'hotbar2',
   'hotbar3',
@@ -77,8 +79,10 @@ const DEFAULT_BINDINGS: Readonly<Record<BindableAction, readonly string[]>> = {
   chat: ['Enter'],
   pushToTalk: ['KeyB'],
   playerList: ['Tab'],
-  /** Opens the shopping cart anywhere; at a cashier, Use opens it with that shop's lines payable. */
-  cart: ['KeyL'],
+  /** Opens the shopping cart anywhere; at a cashier, Use opens it with that shop's lines payable. L is the pickpocket's. */
+  cart: ['KeyU'],
+  pickpocket: ['KeyL'],
+  tasks: ['KeyJ'],
   hotbar1: ['Digit1'],
   hotbar2: ['Digit2'],
   hotbar3: ['Digit3'],

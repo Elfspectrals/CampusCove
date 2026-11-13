@@ -1,0 +1,144 @@
+{
+  "version": 1,
+  "zone": "storage",
+  "name": "Cove Storage",
+  "props": [
+    {
+      "id": "storage_auctioneer",
+      "kind": "npc",
+      "role": "auctioneer",
+      "position": [
+        13.099,
+        0.8,
+        -123.605
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pose": "idle",
+      "vendor": false,
+      "body": "#c98f6a",
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "buzz",
+          "color": "#2b2119"
+        },
+        {
+          "slot": "top",
+          "key": "tee",
+          "color": "#2f4a6b"
+        },
+        {
+          "slot": "bottom",
+          "key": "dungarees",
+          "color": "#2f4a6b"
+        },
+        {
+          "slot": "shoes",
+          "key": "boots",
+          "color": "#3a2e24"
+        },
+        {
+          "slot": "head_accessory",
+          "key": "studio",
+          "color": "#e2b53a"
+        }
+      ]
+    },
+    {
+      "id": "storage_pallet_entry_w",
+      "kind": "item",
+      "key": "promo_pallet",
+      "code": "decor_promo_pallet",
+      "forSale": false,
+      "position": [
+        7.499,
+        0.2,
+        -93.805
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "storage_pallet_entry_e",
+      "kind": "item",
+      "key": "promo_pallet",
+      "code": "decor_promo_pallet",
+      "forSale": false,
+      "position": [
+        18.699,
+        0.2,
+        -93.805
+      ],
+      "yaw": 1.8708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "storage_crate_stage_w",
+      "kind": "item",
+      "key": "vegetable_crate",
+      "code": "decor_vegetable_crate",
+      "forSale": false,
+      "position": [
+        7.499,
+        0.2,
+        -124.805
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "storage_crate_stage_w2",
+      "kind": "item",
+      "key": "vegetable_crate",
+      "code": "decor_vegetable_crate",
+      "forSale": false,
+      "position": [
+        7.899,
+        0.2,
+        -124.005
+      ],
+      "yaw": 2.0708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "storage_pallet_stage_e",
+      "kind": "item",
+      "key": "promo_pallet",
+      "code": "decor_promo_pallet",
+      "forSale": false,
+      "position": [
+        18.699,
+        0.2,
+        -124.805
+      ],
+      "yaw": 3.1408,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    }
+  ],
+  "areas": []
+}

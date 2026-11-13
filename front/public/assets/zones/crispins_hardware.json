@@ -327,6 +327,66 @@
       "description": "Red steel toolbox, latches included."
     },
     {
+      "id": "crispins_hardware_lockpick",
+      "kind": "item",
+      "key": "lockpick",
+      "code": "tool_lockpick",
+      "forSale": true,
+      "price": 120,
+      "position": [
+        -363.75,
+        1.53,
+        -80.91
+      ],
+      "yaw": 0.6,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Steel hook pick. Five uses, snaps on a bad miss."
+    },
+    {
+      "id": "crispins_hardware_reinforced_lock",
+      "kind": "item",
+      "key": "reinforced_lock",
+      "code": "tool_reinforced_lock",
+      "forSale": true,
+      "price": 600,
+      "position": [
+        -363.25,
+        1.53,
+        -80.91
+      ],
+      "yaw": 0.4,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Fit it on your front door: picking it then takes five pins."
+    },
+    {
+      "id": "crispins_hardware_alarm",
+      "kind": "item",
+      "key": "alarm",
+      "code": "decor_alarm",
+      "forSale": true,
+      "price": 400,
+      "position": [
+        -364.85,
+        1.53,
+        -80.91
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Place it in your house: a picked door sets off the siren and warns you on your watch."
+    },
+    {
       "id": "crispins_hardware_paint_cans",
       "kind": "item",
       "key": "paint_cans",
@@ -385,6 +445,86 @@
         1
       ],
       "description": "Orange warehouse shelving, boxes included."
+    },
+    {
+      "id": "crispins_hardware_secateurs",
+      "kind": "item",
+      "key": "secateurs",
+      "code": "tool_secateurs",
+      "forSale": true,
+      "price": 180,
+      "position": [
+        -376.425,
+        1.45,
+        -88.2
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Bypass pruning secateurs. Pick apples in 2 s instead of 3. 600 uses."
+    },
+    {
+      "id": "crispins_hardware_wrench",
+      "kind": "item",
+      "key": "wrench",
+      "code": "tool_wrench",
+      "forSale": true,
+      "price": 120,
+      "position": [
+        -376.425,
+        1.45,
+        -87.0
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Adjustable steel wrench. Hits for 12 every 1.1 s. 300 hits."
+    },
+    {
+      "id": "crispins_hardware_hammer",
+      "kind": "item",
+      "key": "hammer",
+      "code": "tool_hammer",
+      "forSale": true,
+      "price": 120,
+      "position": [
+        -376.425,
+        1.4,
+        -84.8
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Claw hammer. Hits for 15 every 1.4 s. 300 hits."
+    },
+    {
+      "id": "crispins_hardware_crowbar",
+      "kind": "item",
+      "key": "crowbar",
+      "code": "tool_crowbar",
+      "forSale": true,
+      "price": 120,
+      "position": [
+        -376.425,
+        1.2,
+        -82.0
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Steel crowbar. Hits for 18 every 1.7 s. 300 hits."
     }
   ],
   "areas": [

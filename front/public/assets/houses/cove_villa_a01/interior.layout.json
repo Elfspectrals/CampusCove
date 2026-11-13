@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "key": "cove_villa_a01",
+  "levels": [
+    {
+      "id": "L0",
+      "y": 0.0,
+      "height": 2.8,
+      "rects": [
+        {
+          "minX": -6.595,
+          "maxX": 6.595,
+          "minZ": -5.4,
+          "maxZ": 5.2
+        },
+        {
+          "minX": 6.595,
+          "maxX": 13.995,
+          "minZ": -2.59,
+          "maxZ": 5.0
+        }
+      ]
+    },
+    {
+      "id": "L1",
+      "y": 3.0,
+      "height": 2.6,
+      "rects": [
+        {
+          "minX": 1.6,
+          "maxX": 6.595,
+          "minZ": -5.4,
+          "maxZ": 5.0
+        },
+        {
+          "minX": -6.595,
+          "maxX": -1.6,
+          "minZ": -5.4,
+          "maxZ": 5.0
+        },
+        {
+          "minX": -1.6,
+          "maxX": 1.6,
+          "minZ": -5.4,
+          "maxZ": -0.4
+        },
+        {
+          "minX": -1.6,
+          "maxX": 0.34,
+          "minZ": -0.4,
+          "maxZ": 0.6
+        }
+      ]
+    }
+  ],
+  "stairs": [
+    {
+      "name": "Stair_Main",
+      "minX": 0.34,
+      "maxX": 1.54,
+      "minZ": -0.4,
+      "maxZ": 4.2,
+      "y0": 0.0,
+      "y1": 3.0,
+      "rise": "-z"
+    }
+  ]
+}

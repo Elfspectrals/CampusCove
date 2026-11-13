@@ -45,6 +45,7 @@ final class CharacterAppearanceService
     public function __construct(
         private readonly AccountCosmeticService $cosmetics,
         private readonly StarterCosmeticGrantService $grants,
+        private readonly TutorialService $tutorial,
     ) {}
 
     /**
@@ -108,6 +109,7 @@ final class CharacterAppearanceService
 
             if ($firstTime) {
                 $this->dressAsNewcomer($accountId);
+                $this->tutorial->start($accountId);
             }
         });
 

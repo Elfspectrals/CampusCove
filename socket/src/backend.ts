@@ -3,6 +3,7 @@
 import { createHash, timingSafeEqual } from 'node:crypto'
 import { BACKEND_API_URL, CLOUDFLARE_ENFORCE_ORIGIN, CLOUDFLARE_ORIGIN_SECRET, REALTIME_SHARED_SECRET } from './config.ts'
 import type { Identity } from './types.ts'
+import { parseBadges } from './badges.ts'
 
 /** Unvalidated JSON from the API or a client: callers check every field they read. */
 export type Json = any
@@ -39,7 +40,7 @@ export async function resolveIdentity(options: Json, ip: string): Promise<Identi
   const accountId = parseAccountId(data?.user?.account_id)
   if (accountId === null) throw new Error('invalid account id in auth payload')
   const pseudo = firstNonEmpty(data?.user?.display_name, data?.user?.username) ?? `User_${accountId}`
-  return { accountId, pseudo, token, isAdmin: data?.user?.is_admin === true, ip }
+  return { accountId, pseudo, token, isAdmin: data?.user?.is_admin === true, badges: parseBadges(data?.user?.badges), ip }
 }
 
 const sha256 = (value: string) => createHash('sha256').update(value).digest()
@@ -58,6 +59,15 @@ export function clientIp(headers: Headers, peerIp: string | string[]): string {
   if (cameThroughCloudflare(headers)) return headers.get('cf-connecting-ip') as string
   const forwarded = (headers.get('x-forwarded-for') ?? '').split(',').map((ip) => ip.trim()).filter(Boolean)
   return forwarded.at(-1) ?? (Array.isArray(peerIp) ? peerIp[0] : peerIp)
+}
+
+async function jsonOrThrow(res: Response): Promise<Json> {
+  const data: Json = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    const message = typeof data?.message === 'string' ? data.message : `backend error ${res.status}`
+    throw Object.assign(new Error(message), { code: typeof data?.code === 'string' ? data.code : 'backend_error' })
+  }
+  return data
 }
 
 // JSON request; rejects with the API's message (and `code`) on a non-2xx answer.
@@ -82,17 +92,21 @@ export async function callBackendJson(
     },
     body: body !== null ? JSON.stringify(body) : undefined
   })
-  const data: Json = await res.json().catch(() => ({}))
-  if (!res.ok) {
-    const message = typeof data?.message === 'string' ? data.message : `backend error ${res.status}`
-    throw Object.assign(new Error(message), { code: typeof data?.code === 'string' ? data.code : 'backend_error' })
-  }
-  return data
+  return jsonOrThrow(res)
 }
 
 // Same call on a route reserved to this server (the API checks the shared secret).
 export function callRealtimeBackend(token: string | null, path: string, method: HttpMethod = 'POST', body: unknown = null): Promise<Json> {
   return callBackendJson(token, path, method, body, { 'X-Realtime-Secret': REALTIME_SHARED_SECRET })
+}
+
+export async function callServerBackend(path: string, method: HttpMethod = 'POST', body: unknown = null): Promise<Json> {
+  const res = await fetch(`${BACKEND_API_URL}${path}`, {
+    method,
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-Realtime-Secret': REALTIME_SHARED_SECRET },
+    body: body !== null ? JSON.stringify(body) : undefined
+  })
+  return jsonOrThrow(res)
 }
 
 // Error payload sent back to the client for a failed backend call.

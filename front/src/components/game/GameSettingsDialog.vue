@@ -9,11 +9,22 @@ import { useDialogFocus } from '../../composables/useDialogFocus'
 import { comfortSettings, setComfortFov, setReduceCameraMotion } from '../../composables/game/useComfortSettings'
 import { MAX_FOV, MIN_FOV } from '../../game/comfort'
 import GameVoiceSettings from './GameVoiceSettings.vue'
+import { resumeTheTutorial, tutorial } from '../../composables/game/useTutorial'
 
 const emit = defineEmits<{ close: [] }>()
 const { t } = useI18n()
 const dialogEl = ref<HTMLElement | null>(null)
 useDialogFocus(dialogEl, { onEscape: () => emit('close') })
+const resumeError = ref<string | null>(null)
+
+async function resume(): Promise<void> {
+  resumeError.value = null
+  try {
+    await resumeTheTutorial()
+  } catch (error) {
+    resumeError.value = error instanceof Error ? error.message : String(error)
+  }
+}
 </script>
 
 <template>
@@ -31,6 +42,12 @@ useDialogFocus(dialogEl, { onEscape: () => emit('close') })
           <UiIcon name="x" :size="16" />
         </button>
       </div>
+      <section v-if="tutorial?.status === 'skipped'" class="mt-3" aria-labelledby="game-tutorial-title">
+        <h3 id="game-tutorial-title" class="m-0 mb-1 text-sm font-extrabold text-fog">{{ t('tutorial.settingsTitle') }}</h3>
+        <p class="m-0 text-sm font-semibold text-mist">{{ t('tutorial.settingsIntro') }}</p>
+        <button type="button" class="cc-btn cc-btn-sm mt-3 min-h-11" @click="resume">{{ t('tutorial.resume') }}</button>
+        <p v-if="resumeError" class="m-0 mt-2 text-sm font-bold text-coral" role="alert">{{ resumeError }}</p>
+      </section>
       <section class="mt-3" aria-labelledby="game-style-title">
         <h3 id="game-style-title" class="m-0 mb-1 text-sm font-extrabold text-fog">{{ t('settings.style') }}</h3>
         <p class="m-0 text-sm font-semibold text-mist">{{ t('settings.styleIntro') }}</p>

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -33,6 +34,8 @@ class ItemDef extends Model
         'health_per_portion',
         'alcohol_per_portion',
         'consume_effect',
+        'max_uses',
+        'weapon',
     ];
 
     protected function casts(): array
@@ -48,7 +51,15 @@ class ItemDef extends Model
             'thirst_per_portion' => 'integer',
             'health_per_portion' => 'integer',
             'alcohol_per_portion' => 'integer',
+            'max_uses' => 'integer',
+            'weapon' => 'boolean',
         ];
+    }
+
+    public function scopeBoughtWithGems(Builder $query): void
+    {
+        $query->where(fn (Builder $def) => $def->where('premium_only', true)
+            ->orWhereHas('shopCatalogItems', fn (Builder $row) => $row->where('allow_premium', true)->where('allow_coins', false)));
     }
 
     public function shopCatalogItems(): HasMany

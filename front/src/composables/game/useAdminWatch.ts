@@ -1,10 +1,13 @@
 import { ref, type ShallowRef } from 'vue'
 import type { Room } from '@colyseus/sdk'
-import type { AdminMenuPayload, AdminSummonedPayload } from '../../types/gameRealtime'
+import { applyCachedBalanceAfterPurchase } from '../../api/session'
+import type { AdminGrantedPayload, AdminItem, AdminItemsPayload, AdminMenuPayload, AdminResultPayload, AdminSummonedPayload, AdminWallet } from '../../types/gameRealtime'
 
 export interface AdminWatchDeps {
   gameRoomRef: ShallowRef<Room | null>
   say: (text: string) => void
+  grantedMessage: (data: AdminGrantedPayload) => string
+  refreshInventory: () => void
 }
 
 /**
@@ -15,6 +18,9 @@ export function useAdminWatch(deps: AdminWatchDeps) {
   const isAdmin = ref(false)
   const menu = ref<AdminMenuPayload | null>(null)
   const error = ref<string | null>(null)
+  const panelOpen = ref(false)
+  const items = ref<AdminItem[] | null>(null)
+  const result = ref<AdminResultPayload | null>(null)
 
   const send = (type: string, payload?: unknown) => deps.gameRoomRef.value?.send(type, payload)
 
@@ -35,6 +41,37 @@ export function useAdminWatch(deps: AdminWatchDeps) {
     send('admin_summon', { sessionId })
   }
 
+  function startStorageSale(): void {
+    error.value = null
+    result.value = null
+    send('admin_storage_sale')
+  }
+
+  function openPanel(): void {
+    if (!isAdmin.value) return
+    panelOpen.value = true
+    result.value = null
+    load()
+    if (items.value === null) send('admin_items')
+  }
+
+  function closePanel(): void {
+    panelOpen.value = false
+  }
+
+  function act(type: string, payload?: unknown): void {
+    error.value = null
+    result.value = null
+    send(type, payload)
+  }
+
+  const giveMoney = (sessionId: string, wallet: AdminWallet, amount: number) => act('admin_give_money', { sessionId, wallet, amount })
+  const giveItem = (sessionId: string, code: string, quantity: number) => act('admin_give_item', { sessionId, code, quantity })
+  const openMarket = (minutes: number) => act('admin_market', { action: 'open', minutes })
+  const closeMarket = () => act('admin_market', { action: 'close' })
+  const collectTaxes = () => act('admin_taxes')
+  const startQuiz = () => act('admin_quiz_start')
+
   return {
     isAdmin,
     menu,
@@ -42,6 +79,18 @@ export function useAdminWatch(deps: AdminWatchDeps) {
     load,
     teleport,
     summon,
+    startStorageSale,
+    panelOpen,
+    items,
+    result,
+    openPanel,
+    closePanel,
+    giveMoney,
+    giveItem,
+    openMarket,
+    closeMarket,
+    collectTaxes,
+    startQuiz,
     handlers: {
       onInit: (admin: boolean) => {
         isAdmin.value = admin
@@ -56,6 +105,21 @@ export function useAdminWatch(deps: AdminWatchDeps) {
         error.value = data.message
       },
       onSummoned: (data: AdminSummonedPayload) => deps.say(`${data.byPseudo} brought you here.`),
+      onItems: (data: AdminItemsPayload) => {
+        items.value = data.items
+      },
+      onResult: (data: AdminResultPayload) => {
+        result.value = data
+      },
+      onGranted: (data: AdminGrantedPayload) => {
+        if (data.kind === 'money') {
+          applyCachedBalanceAfterPurchase('cash', data.cash)
+          applyCachedBalanceAfterPurchase('coins', data.bank)
+        } else {
+          deps.refreshInventory()
+        }
+        deps.say(deps.grantedMessage(data))
+      },
     },
   }
 }

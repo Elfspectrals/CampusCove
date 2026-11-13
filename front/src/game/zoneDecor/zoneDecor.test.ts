@@ -286,14 +286,19 @@ test('the pub staff come from the pub zone file and land in the manifest', () =>
   const pub = { key: 'pub', bounds: { minX: 80, maxX: 110, minZ: -150, maxZ: -110 } }
   const barman = { ...cashier, id: 'b1', role: 'bartender', position: [98.3, 0.2, -133.505], yaw: -Math.PI / 2 }
   const doorman = { ...cashier, id: 'b2', role: 'bouncer', position: [94, 0.2, -137.955] }
-  const pubDecor = parseZoneDecor({ version: 1, zone: 'pub', name: 'Pub', props: [barman, doorman], areas: [] }, pub)
-  const manifest = { zones: [], pub: { bartender: [0, 0, 0], bartenderYaw: 0, bouncer: [0, 0, 0] } } as unknown as Parameters<typeof withStaff>[0]
+  const host = { ...cashier, id: 'b4', role: 'quizmaster', position: [91, 0.2, -123.5] }
+  const pubDecor = parseZoneDecor({ version: 1, zone: 'pub', name: 'Pub', props: [barman, doorman, host], areas: [] }, pub)
+  const manifest = { zones: [], pub: { bartender: [0, 0, 0], bartenderYaw: 0, bouncer: [0, 0, 0], quizmaster: [0, 0, 0] } } as unknown as Parameters<typeof withStaff>[0]
   const staffed = withStaff(manifest, pubDecor)
-  assert.deepEqual([staffed.pub!.bartender, staffed.pub!.bartenderYaw, staffed.pub!.bouncer], [[98.3, 0.2, -133.505], 1.5708, [94, 0.2, -137.955]])
-  assert.throws(() => parseZoneDecor({ version: 1, zone: 'pub', name: 'Pub', props: [barman], areas: [] }, pub), /the bouncer is missing/)
-  assert.throws(() => parseZoneDecor({ version: 1, zone: 'pub', name: 'Pub', props: [barman, doorman, { ...barman, id: 'b3' }], areas: [] }, pub), /only one bartender/)
+  assert.deepEqual(
+    [staffed.pub!.bartender, staffed.pub!.bartenderYaw, staffed.pub!.bouncer, staffed.pub!.quizmaster],
+    [[98.3, 0.2, -133.505], 1.5708, [94, 0.2, -137.955], [91, 0.2, -123.5]]
+  )
+  assert.throws(() => parseZoneDecor({ version: 1, zone: 'pub', name: 'Pub', props: [barman, host], areas: [] }, pub), /the bouncer is missing/)
+  assert.throws(() => parseZoneDecor({ version: 1, zone: 'pub', name: 'Pub', props: [barman, doorman], areas: [] }, pub), /the quizmaster is missing/)
+  assert.throws(() => parseZoneDecor({ version: 1, zone: 'pub', name: 'Pub', props: [barman, doorman, host, { ...barman, id: 'b3' }], areas: [] }, pub), /only one bartender/)
   assert.throws(() => parseZoneDecor(decor([{ ...cashier, role: 'bartender' }]), orchard), /the bartender works in zone pub/)
-  assert.throws(() => parseZoneDecor(decor([{ ...cashier, role: 'chef' }]), orchard), /role: expected one of bartender, bouncer, nurse/)
+  assert.throws(() => parseZoneDecor(decor([{ ...cashier, role: 'chef' }]), orchard), /role: expected one of bartender, bouncer, quizmaster, nurse/)
 })
 
 test('a shop zone lives inside its parent zone and keeps its own bounds', () => {

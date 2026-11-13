@@ -3,7 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Services\CashDropService;
+use App\Services\JailService;
+use App\Services\PoliceLicenceService;
 use App\Services\SurvivalService;
+use App\Services\WantedService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -12,6 +15,8 @@ class SurvivalController extends Controller
     public function __construct(
         private readonly SurvivalService $survival,
         private readonly CashDropService $cashDrops,
+        private readonly PoliceLicenceService $licences,
+        private readonly JailService $jail,
     ) {}
 
     public function show(Request $request): JsonResponse
@@ -57,13 +62,21 @@ class SurvivalController extends Controller
     public function hospital(Request $request): JsonResponse
     {
         $accountId = $this->accountId($request);
-        $killer = $request->validate(['killer_account_id' => 'nullable|integer|min:1|exists:accounts,account_id'])['killer_account_id'] ?? null;
-        $bill = $this->survival->billHospital($accountId);
+        $validated = $request->validate([
+            'killer_account_id' => 'nullable|integer|min:1|exists:accounts,account_id',
+            'jailed' => 'sometimes|boolean',
+            'jail_stars' => 'required_if_accepted:jailed|integer|min:0|max:'.WantedService::MAX_STARS,
+        ]);
+        $killer = $validated['killer_account_id'] ?? null;
+        $bill = ($validated['jailed'] ?? false)
+            ? $this->jail->billDeathInCell($accountId, (int) $validated['jail_stars'])
+            : [...$this->survival->billHospital($accountId), 'jail_tax' => 0];
 
         return response()->json([
             ...$bill,
             'lost' => $this->survival->loseBelongings($accountId),
             'cash_drop' => $this->cashDrops->dropAtDeath($accountId, $killer === null ? null : (int) $killer),
+            'licence_lost' => $this->licences->loseAtDeath($accountId),
         ]);
     }
 
@@ -74,7 +87,12 @@ class SurvivalController extends Controller
 
     public function hangover(Request $request): JsonResponse
     {
-        return response()->json($this->survival->billHangover($this->accountId($request)));
+        $accountId = $this->accountId($request);
+
+        return response()->json([
+            ...$this->survival->billHangover($accountId),
+            'licence_lost' => $this->licences->loseAtDeath($accountId),
+        ]);
     }
 
     private function accountId(Request $request): int

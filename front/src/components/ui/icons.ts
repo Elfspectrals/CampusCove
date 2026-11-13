@@ -55,6 +55,7 @@ export const ICONS = {
   grid: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z',
   hand: 'M8 13V5.5a1.5 1.5 0 0 1 3 0V11M11 10V4.5a1.5 1.5 0 0 1 3 0V11M14 10.5V6a1.5 1.5 0 0 1 3 0v8a7 7 0 0 1-7 7h-.5A6.5 6.5 0 0 1 4 15.5L3 12a1.5 1.5 0 0 1 2.7-1.3L8 14',
   monitor: 'M3 4h18v12H3zM8 20h8M12 16v4',
+  bank: 'M3 10 12 4l9 6M5 10v8M10 10v8M14 10v8M19 10v8M3 20h18',
 } as const
 
 export type UiIconName = keyof typeof ICONS

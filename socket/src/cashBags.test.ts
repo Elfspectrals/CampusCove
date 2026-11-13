@@ -14,7 +14,7 @@ globalThis.fetch = async (url: string | URL | Request) => {
     nextApiError = null
     return new Response(JSON.stringify({ code, message }), { status })
   }
-  return new Response(JSON.stringify({ amount: 240, cash: 250 }))
+  return new Response(JSON.stringify({ amount: 240, tools: ['tool_crowbar'], cash: 250 }))
 }
 
 const { CASH_BAG_REACH, dropCashBag, onCashBagPick } = await import('./cashBags.ts')
@@ -42,14 +42,14 @@ function setup() {
   return { room, timers, join }
 }
 
-const drop = (id: number, inMs = 300_000) => ({ id, amount: 240, expires_at: new Date(Date.now() + inMs).toISOString() })
+const drop = (id: number, inMs = 300_000) => ({ id, amount: 240, tools: [], expires_at: new Date(Date.now() + inMs).toISOString() })
 
 test('a drop appears where the player died, for everyone, and is removed when it expires', () => {
   const { room, timers, join } = setup()
   const watcher = join('w', 50, 50)
   dropCashBag(room, { x: 3, y: 1.6, z: 4 }, drop(7))
   assert.deepEqual(watcher.sent[0].type, 'cash_bag_dropped')
-  assert.deepEqual({ ...watcher.sent[0].payload, expiresAt: 0 }, { id: 7, x: 3, y: 1.6, z: 4, expiresAt: 0 })
+  assert.deepEqual({ ...watcher.sent[0].payload, expiresAt: 0 }, { id: 7, x: 3, y: 1.6, z: 4, expiresAt: 0, tools: [] })
   assert.ok(Math.abs(timers[0].ms - 300_000) < 1000)
   timers[0].run()
   assert.equal(room.cashBags.size, 0)
@@ -71,7 +71,7 @@ test('a player within reach picks up the bag through the API and everyone sees i
   dropCashBag(room, { x: 3, y: 1.6, z: 4 }, drop(7))
   await onCashBagPick(room, finder, { id: 7 }, 10_000)
   assert.deepEqual(apiCalls, ['/cash-drops/7/pick'])
-  assert.deepEqual(finder.sent.at(-1), { type: 'cash_bag_picked', payload: { id: 7, amount: 240, cash: 250 } })
+  assert.deepEqual(finder.sent.at(-1), { type: 'cash_bag_picked', payload: { id: 7, amount: 240, cash: 250, tools: ['tool_crowbar'] } })
   assert.deepEqual(watcher.sent.at(-1), { type: 'cash_bag_removed', payload: { id: 7 } })
 })
 

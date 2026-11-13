@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import type { Json } from './backend.ts'
+import type { StorageUnit } from './storageSale.ts'
 import type { Bounds, Vec3 } from './types.ts'
 
 const WORLD_MANIFEST_URL = process.env.WORLD_MANIFEST_URL
@@ -13,6 +14,7 @@ export interface WorldHouse {
   position: Vec3
   rotationY: number
   interiorOffset: Vec3
+  backDoor?: Vec3
 }
 
 export interface ClinicBed {
@@ -44,6 +46,7 @@ export interface WorldPub {
   bartender: Vec3
   bartenderYaw: number
   bouncer: Vec3
+  quizmaster: Vec3
   counter: Vec3
   taps: Vec3
   serve: Vec3
@@ -60,6 +63,23 @@ export interface WorldPub {
 
 export interface WorldOrchard {
   trees: Vec3[]
+}
+
+export interface PoliceCell {
+  id: string
+  position: Vec3
+  door: Vec3
+  tap: Vec3
+  hatch: Vec3
+  bounds: Bounds
+}
+
+export interface WorldPolice {
+  cells: PoliceCell[]
+  exit: TeleportDestination
+  desk: Vec3
+  officer: Vec3
+  lockers: Vec3
 }
 
 export type Crop = 'corn' | 'potato' | 'cabbage' | 'pumpkin'
@@ -93,7 +113,14 @@ interface World {
   pubZone: Bounds | null
   orchard: WorldOrchard | null
   cropPlants: WorldCropPlant[]
+  police: WorldPolice | null
   zoneBounds: Map<string, Bounds>
+  storage: WorldStorage | null
+}
+
+export interface WorldStorage {
+  auctioneer: Vec3
+  units: StorageUnit[]
 }
 
 let world: World | null = null
@@ -109,12 +136,23 @@ export interface WorldBuyer {
 let buyerZones = new Set<string>()
 let shopBounds = new Map<string, Bounds>()
 let atms: Vec3[] = []
+let marketStalls = new Map<number, Vec3>()
 
 function parseVec3(raw: Json, what: string): Vec3 {
   if (!Array.isArray(raw) || raw.length !== 3 || !raw.every(Number.isFinite)) {
     throw new Error(`world manifest: invalid ${what} ${JSON.stringify(raw)}`)
   }
   return { x: raw[0], y: raw[1], z: raw[2] }
+}
+
+export function parseHouse(building: Json): WorldHouse {
+  const house: WorldHouse = {
+    position: parseVec3(building.position, `position of ${building.key}`),
+    rotationY: building.rotationY,
+    interiorOffset: parseVec3(building.interiorOffset, `interiorOffset of ${building.key}`)
+  }
+  if (building.backDoor !== undefined) house.backDoor = parseVec3(building.backDoor, `backDoor of ${building.key}`)
+  return house
 }
 
 function parseClinic(raw: Json): WorldClinic | null {
@@ -132,6 +170,25 @@ function parseClinic(raw: Json): WorldClinic | null {
         position: parseVec3(bed.position, `position of clinic bed ${bed.id}`),
         bed: parseVec3(bed.bed, `bed of clinic bed ${bed.id}`),
         yaw: bed.yaw
+      }
+    })
+  }
+}
+
+function parseStorage(raw: Json): WorldStorage | null {
+  if (raw === undefined) return null
+  if (!Array.isArray(raw?.units) || raw.units.length === 0) throw new Error('world manifest: storage has no units')
+  return {
+    auctioneer: parseVec3(raw.auctioneer, 'storage auctioneer'),
+    units: raw.units.map((unit: Json, i: number): StorageUnit => {
+      if (typeof unit?.id !== 'string' || typeof unit.door !== 'string') {
+        throw new Error(`world manifest: invalid storage unit ${i} ${JSON.stringify(unit)}`)
+      }
+      return {
+        id: unit.id,
+        door: unit.door,
+        threshold: parseVec3(unit.threshold, `threshold of storage unit ${unit.id}`),
+        inside: parseVec3(unit.inside, `inside of storage unit ${unit.id}`)
       }
     })
   }
@@ -172,6 +229,30 @@ function parseCropPlants(raw: Json): WorldCropPlant[] {
   })
 }
 
+function parsePolice(raw: Json, destinations: TeleportDestination[]): WorldPolice | null {
+  if (raw === undefined || raw === null) return null
+  if (!Array.isArray(raw.cells) || raw.cells.length === 0) throw new Error('world manifest: police has no cells')
+  const exit = destinations.find((d) => d.key === 'police')
+  if (!exit) throw new Error('world manifest: police section without a police building')
+  return {
+    exit,
+    desk: parseVec3(raw.desk, 'police desk'),
+    officer: parseVec3(raw.officer, 'police officer'),
+    lockers: parseVec3(raw.lockers, 'police lockers'),
+    cells: raw.cells.map((cell: Json, i: number): PoliceCell => {
+      if (typeof cell?.id !== 'string') throw new Error(`world manifest: invalid police cell ${i} ${JSON.stringify(cell)}`)
+      return {
+        id: cell.id,
+        position: parseVec3(cell.position, `position of police cell ${cell.id}`),
+        door: parseVec3(cell.door, `door of police cell ${cell.id}`),
+        tap: parseVec3(cell.tap, `tap of police cell ${cell.id}`),
+        hatch: parseVec3(cell.hatch, `hatch of police cell ${cell.id}`),
+        bounds: parseBounds(cell.bounds, `bounds of police cell ${cell.id}`)
+      }
+    })
+  }
+}
+
 function parsePub(raw: Json): WorldPub | null {
   if (raw === undefined || raw === null) return null
   if (!Array.isArray(raw?.seats) || raw.seats.length === 0) throw new Error('world manifest: pub has no seats')
@@ -191,6 +272,7 @@ function parsePub(raw: Json): WorldPub | null {
     bartender: parseVec3(raw.bartender, 'pub bartender'),
     bartenderYaw: parseYaw(raw.bartenderYaw, 'pub bartenderYaw'),
     bouncer: parseVec3(raw.bouncer, 'pub bouncer'),
+    quizmaster: parseVec3(raw.quizmaster, 'pub quizmaster'),
     counter: parseVec3(raw.counter, 'pub counter'),
     taps: parseVec3(raw.taps, 'pub taps'),
     serve: parseVec3(raw.serve, 'pub serve'),
@@ -252,6 +334,19 @@ export function doorDestination(key: string, name: string, building: Vec3, door:
   }
 }
 
+/** Extra admin teleport points written by zone apply scripts (`manifest.adminDestinations`), e.g. outside a gate.
+ * Entries without a key, a name or a valid position are skipped; position y is replaced by the eye height. */
+export function parseAdminDestinations(raw: Json): TeleportDestination[] {
+  if (!Array.isArray(raw)) return []
+  const out: TeleportDestination[] = []
+  for (const entry of raw) {
+    const p = entry?.position
+    if (typeof entry?.key !== 'string' || typeof entry?.name !== 'string' || !Array.isArray(p) || !Number.isFinite(p[0]) || !Number.isFinite(p[2])) continue
+    out.push({ key: entry.key, name: entry.name, position: { x: p[0], y: EYE_HEIGHT, z: p[2] }, yaw: Number.isFinite(entry.yaw) ? entry.yaw : 0 })
+  }
+  return out
+}
+
 function parseWorld(manifest: Json): World {
   if (!Array.isArray(manifest?.zones)) throw new Error('world manifest: missing zones')
   const workDoors: World['workDoors'] = new Map()
@@ -262,19 +357,14 @@ function parseWorld(manifest: Json): World {
   const fountains = (manifest.fountains ?? []).map((raw: Json, i: number) => parseVec3(raw, `fountain ${i}`))
   for (const zone of manifest.zones) {
     for (const building of zone.buildings ?? []) {
-      if (building.kind === 'house' && building.interiorOffset) {
-        houses.set(building.key, {
-          position: parseVec3(building.position, `position of ${building.key}`),
-          rotationY: building.rotationY,
-          interiorOffset: parseVec3(building.interiorOffset, `interiorOffset of ${building.key}`)
-        })
-      }
+      if (building.kind === 'house' && building.interiorOffset) houses.set(building.key, parseHouse(building))
       if (building.kind !== 'work' && building.kind !== 'store') continue
       const door = parseVec3(building.door, `door of ${building.key}`)
       workDoors.set(building.key, { x: door.x, z: door.z })
       destinations.push(doorDestination(building.key, typeof building.name === 'string' ? building.name : building.key, parseVec3(building.position, `position of ${building.key}`), door))
     }
   }
+  destinations.push(...parseAdminDestinations(manifest.adminDestinations))
   const b = manifest.bounds
   if (![b?.minX, b?.maxX, b?.minZ, b?.maxZ].every(Number.isFinite)) throw new Error('world manifest: invalid bounds')
   const pub = parsePub(manifest.pub)
@@ -284,6 +374,11 @@ function parseWorld(manifest: Json): World {
   if (farm?.gate !== undefined) {
     if (![farm.gate?.x, farm.gate?.z].every(Number.isFinite)) throw new Error(`world manifest: invalid farm gate ${JSON.stringify(farm.gate)}`)
     destinations.push(zoneGateDestination('farm', 'Farm', farm.gate, parseBounds(farm.bounds, 'farm zone bounds')))
+  }
+  const market = manifest.zones.find((zone: Json) => zone.key === 'town_market')
+  if (market?.gate !== undefined) {
+    if (![market.gate?.x, market.gate?.z].every(Number.isFinite)) throw new Error(`world manifest: invalid market gate ${JSON.stringify(market.gate)}`)
+    destinations.push(zoneGateDestination('market', 'Market', market.gate, parseBounds(market.bounds, 'market zone bounds')))
   }
   return {
     citySpawn: parseVec3(manifest.spawn, 'spawn'),
@@ -297,7 +392,9 @@ function parseWorld(manifest: Json): World {
     pubZone: parsePubZone(manifest.zones, pub),
     orchard,
     cropPlants: parseCropPlants(manifest.crops),
-    zoneBounds: new Map(manifest.zones.filter((zone: Json) => zone.bounds !== undefined).map((zone: Json) => [zone.key, parseBounds(zone.bounds, `${zone.key} zone bounds`)]))
+    police: parsePolice(manifest.police, destinations),
+    zoneBounds: new Map(manifest.zones.filter((zone: Json) => zone.bounds !== undefined).map((zone: Json) => [zone.key, parseBounds(zone.bounds, `${zone.key} zone bounds`)])),
+    storage: parseStorage(manifest.storage)
   }
 }
 
@@ -423,6 +520,10 @@ export function worldClinic(): WorldClinic | null {
   return loadedWorld().clinic
 }
 
+export function worldStorage(): WorldStorage | null {
+  return loadedWorld().storage
+}
+
 export function worldPub(): WorldPub | null {
   return loadedWorld().pub
 }
@@ -439,6 +540,39 @@ export function worldCropPlants(): WorldCropPlant[] {
   return loadedWorld().cropPlants
 }
 
+export function worldPolice(): WorldPolice | null {
+  return loadedWorld().police
+}
+
+export function worldZoneKeysAt(x: number, z: number): string[] {
+  const inside = ([, b]: [string, Bounds]) => x >= b.minX && x <= b.maxX && z >= b.minZ && z <= b.maxZ
+  return [...loadedWorld().zoneBounds, ...shopBounds].filter(inside).map(([key]) => key)
+}
+
 export function worldZoneBounds(key: string): Bounds | null {
   return loadedWorld().zoneBounds.get(key) ?? shopBounds.get(key) ?? null
+}
+
+export async function loadMarketStalls(): Promise<void> {
+  if (!WORLD_MANIFEST_URL) throw new Error('WORLD_MANIFEST_URL is not set')
+  const index = await readManifest(besideManifest('zones/index.json'))
+  if (!Array.isArray(index?.zones)) throw new Error('zones/index.json: missing zones')
+  const found = new Map<number, Vec3>()
+  for (const zone of index.zones) {
+    const decor = await readManifest(besideManifest(`zones/${zone}.json`))
+    if (!Array.isArray(decor?.props)) throw new Error(`zones/${zone}.json: missing props`)
+    for (const prop of decor.props.filter((p: Json) => p.kind === 'market_stall')) {
+      const { stallNo } = prop
+      if (!Number.isInteger(stallNo) || stallNo < 1 || found.has(stallNo)) throw new Error(`zones/${zone}.json: invalid or duplicate stallNo of ${prop.id}`)
+      const [x, y, z] = prop.position
+      if (![x, y, z].every(Number.isFinite)) throw new Error(`zones/${zone}.json: invalid position of ${prop.id}`)
+      found.set(stallNo, { x, y, z })
+    }
+  }
+  marketStalls = found
+  console.log(`[world] ${found.size} market stall(s) loaded`)
+}
+
+export function worldMarketStall(stallNo: number): Vec3 | null {
+  return marketStalls.get(stallNo) ?? null
 }

@@ -27,12 +27,24 @@ final class HousingService
 
     private const TAX_PERIOD_HOURS = 24;
 
+    private const FLATMATE_TAX_SURCHARGE = 0.25;
+
     private const HOUSE_KEY_CODE = 'house_key';
 
-    public function __construct(private readonly AccountInventoryService $inventoryService) {}
+    public function __construct(
+        private readonly AccountInventoryService $inventoryService,
+        private readonly StorageAuctionService $storageAuction,
+    ) {}
 
     public function collectDueTaxes(): int
     {
+        return $this->collectDueTaxesSummary()['seized'];
+    }
+
+    /** @return array{charged: int, seized: int} */
+    public function collectDueTaxesSummary(): array
+    {
+        $charged = 0;
         $seized = 0;
         $dueIds = HousingUnit::query()
             ->where('status', 'occupied')
@@ -40,7 +52,7 @@ final class HousingService
             ->pluck('unit_id');
 
         foreach ($dueIds as $unitId) {
-            DB::transaction(function () use ($unitId, &$seized): void {
+            DB::transaction(function () use ($unitId, &$charged, &$seized): void {
                 /** @var HousingUnit|null $unit */
                 $unit = HousingUnit::query()
                     ->where('unit_id', $unitId)
@@ -57,13 +69,19 @@ final class HousingService
                 $ownerId = (int) $unit->occupant_account_id;
                 $tax = $this->taxFor($unit);
                 $dueAt = $unit->tax_due_at->copy();
+                $paidOnce = false;
                 while ($dueAt->lte(now())) {
                     if (Wallet::lockForAccount($ownerId, self::CURRENCY)->balance() < $tax) {
+                        $this->storageAuction->boxSeizedHouse($unit);
                         $this->resetExpiredUnit($unit);
                         $seized++;
+                        if ($paidOnce) {
+                            $charged++;
+                        }
 
                         return;
                     }
+                    $paidOnce = true;
                     $this->debitCoins($ownerId, $tax, 'housing_tax', [
                         'housing_unit_id' => $unit->unit_id,
                         'housing_unit_public_id' => $unit->public_id,
@@ -72,14 +90,22 @@ final class HousingService
                     $dueAt->addHours(self::TAX_PERIOD_HOURS);
                 }
                 $unit->update(['tax_due_at' => $dueAt, 'updated_at' => now()]);
+                $charged++;
             });
         }
 
-        return $seized;
+        return ['charged' => $charged, 'seized' => $seized];
     }
 
-    /** Daily property tax: the admin-set amount, else a share of the purchase price. */
+    /** Daily property tax charged to the owner: the base tax plus a surcharge per flatmate. */
     public function taxFor(HousingUnit $unit): int
+    {
+        $flatmates = count($this->keyHolderIds($unit));
+
+        return (int) ceil($this->baseTaxFor($unit) * (1 + self::FLATMATE_TAX_SURCHARGE * $flatmates));
+    }
+
+    public function baseTaxFor(HousingUnit $unit): int
     {
         if ($unit->tax_coins !== null) {
             return (int) $unit->tax_coins;
@@ -99,6 +125,7 @@ final class HousingService
                 $this->inventoryService->revokeItem($keyHolderId, $this->houseKey(), 1);
             }
             $containerId = RoomFurnitureContainer::query()->where('room_id', $roomId)->value('container_id');
+            FurnitureStorageService::destroy(RoomFurniture::query()->where('room_id', $roomId)->pluck('room_furniture_id')->all());
             RoomFurniture::query()->where('room_id', $roomId)->delete();
             if ($containerId !== null) {
                 ItemInstance::query()->where('container_id', (int) $containerId)->delete();
@@ -113,6 +140,7 @@ final class HousingService
             'lease_expires_at' => null,
             'tax_due_at' => null,
             'door_locked' => false,
+            'reinforced_lock' => false,
             'room_id' => null,
             'updated_at' => now(),
         ]);
@@ -201,6 +229,21 @@ final class HousingService
         }
 
         return $removed > 0;
+    }
+
+    public function leaveFlatshare(Account $flatmate, string $unitPublicId): HousingUnit
+    {
+        $flatmateId = (int) $flatmate->getAuthIdentifier();
+        $unit = HousingUnit::query()->where('public_id', $unitPublicId)->first();
+        if ($unit === null) {
+            throw new HousingRejectedException('unit_not_found', 'Housing unit not found.', 404);
+        }
+        if ((int) $unit->occupant_account_id === $flatmateId) {
+            throw new HousingRejectedException('owner_cannot_leave', 'You own this house.', 422);
+        }
+        DB::transaction(fn () => $this->revokeKeyHolder($unit, $flatmateId));
+
+        return $unit->fresh(['room']);
     }
 
     public function setDoorLocked(Account $account, string $unitPublicId, bool $locked): HousingUnit
@@ -454,7 +497,9 @@ final class HousingService
                 : null,
             'tax_due_at' => $unit->tax_due_at?->toIso8601String(),
             'door_locked' => (bool) $unit->door_locked,
+            'reinforced_lock' => (bool) $unit->reinforced_lock,
             'interior_bounds' => $unit->interior_bounds,
+            'furniture_limit' => $unit->furnitureLimit(),
             'room_public_id' => $unit->room !== null ? (string) $unit->room->public_id : null,
             'template_key' => $unit->templateKey(),
             'key_holder_account_ids' => $this->keyHolderIds($unit),

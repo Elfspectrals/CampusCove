@@ -102,6 +102,47 @@
         1,
         1
       ]
+    },
+    {
+      "id": "pub_quizmaster",
+      "kind": "npc",
+      "role": "quizmaster",
+      "position": [
+        94.6,
+        0.2,
+        -129.8
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pose": "idle",
+      "vendor": false,
+      "body": "#c98e6a",
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "curly",
+          "color": "#6b3a1e"
+        },
+        {
+          "slot": "top",
+          "key": "flannel_jacket",
+          "color": "#2e6b4a"
+        },
+        {
+          "slot": "bottom",
+          "key": "jeans",
+          "color": "#2a2c33"
+        },
+        {
+          "slot": "shoes",
+          "key": "boots",
+          "color": "#3a2a20"
+        }
+      ]
     }
   ],
   "areas": []

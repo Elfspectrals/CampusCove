@@ -2,7 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Models\ItemDef;
 use App\Models\Wallet;
+use App\Services\AccountInventoryService;
 use App\Services\CashDropService;
 use App\Services\SurvivalService;
 use App\Services\TradeService;
@@ -62,7 +64,7 @@ class CashDropApiTest extends TestCase
         $other = $this->player(cash: 0, bank: 0);
         $drop = $this->die($victim)->json('cash_drop');
 
-        $this->pick($finder, $drop['id'])->assertOk()->assertExactJson(['amount' => 240, 'cash' => 250]);
+        $this->pick($finder, $drop['id'])->assertOk()->assertExactJson(['amount' => 240, 'tools' => [], 'cash' => 250]);
         $this->pick($other, $drop['id'])->assertStatus(409)->assertJsonPath('code', 'cash_drop_gone');
 
         $this->assertSame(0, $this->balance($other['account_id'], Wallet::CASH));
@@ -113,6 +115,64 @@ class CashDropApiTest extends TestCase
     }
 
     /** @param array{token: string} $player */
+    public function test_dying_drops_every_job_tool_carried_in_the_bag_and_keeps_the_house_key(): void
+    {
+        $victim = $this->player(cash: 0, bank: 500);
+        $this->grant($victim['account_id'], 'tool_crowbar');
+        $this->grant($victim['account_id'], 'tool_secateurs');
+        $this->grant($victim['account_id'], 'house_key');
+
+        $drop = $this->die($victim)->assertOk()->json('cash_drop');
+
+        $this->assertSame(0, $drop['amount']);
+        $this->assertSame(['tool_crowbar', 'tool_secateurs'], $drop['tools']);
+        $this->assertSame(['house_key'], $this->carriedCodes($victim['account_id']));
+    }
+
+    public function test_the_finder_gets_the_tools_of_the_bag_with_their_wear(): void
+    {
+        $victim = $this->player(cash: 40, bank: 0);
+        $finder = $this->player(cash: 0, bank: 0);
+        $this->grant($victim['account_id'], 'tool_hammer');
+        DB::table('item_instances')->where('owner_account_id', $victim['account_id'])->update(['uses_left' => 12]);
+        $drop = $this->die($victim)->json('cash_drop');
+
+        $this->pick($finder, $drop['id'])->assertOk()->assertExactJson(['amount' => 40, 'tools' => ['tool_hammer'], 'cash' => 40]);
+
+        $this->assertSame(['tool_hammer'], $this->carriedCodes($finder['account_id']));
+        $this->assertSame(12, (int) DB::table('item_instances')->where('owner_account_id', $finder['account_id'])->value('uses_left'));
+    }
+
+    public function test_a_new_account_loses_its_tools_without_leaving_a_bag(): void
+    {
+        $player = $this->player(cash: 0, bank: 0, ageHours: TradeService::MIN_GIVER_AGE_HOURS - 1);
+        $this->grant($player['account_id'], 'tool_wrench');
+
+        $this->die($player)->assertOk()->assertJsonPath('cash_drop', null);
+
+        $this->assertSame([], $this->carriedCodes($player['account_id']));
+        $this->assertSame(0, DB::table('item_instances')->where('owner_account_id', $player['account_id'])->count());
+        $this->assertSame(0, DB::table('cash_drops')->count());
+    }
+
+    private function grant(int $accountId, string $code): void
+    {
+        app(AccountInventoryService::class)->grantItem($accountId, ItemDef::query()->where('code', $code)->firstOrFail(), 1);
+    }
+
+    /** @return list<string> */
+    private function carriedCodes(int $accountId): array
+    {
+        $gift = (int) DB::table('gift_inboxes')->where('account_id', $accountId)->value('container_id');
+
+        $codes = fn (string $table) => DB::table($table)->join('item_defs', 'item_defs.item_def_id', '=', "{$table}.item_def_id")
+            ->where("{$table}.container_id", $gift)->pluck('item_defs.code')->all();
+        $all = [...$codes('item_instances'), ...$codes('inventory_stacks')];
+        sort($all);
+
+        return $all;
+    }
+
     private function die(array $player, ?int $killerAccountId = null): TestResponse
     {
         return $this->postJson('/api/survival/hospital', array_filter(['killer_account_id' => $killerAccountId]), $this->auth($player['token'], self::SECRET));

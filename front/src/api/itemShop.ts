@@ -8,7 +8,7 @@ import { applyCachedBalanceAfterPurchase } from './session'
 import { normalizeApiAssetUrl } from './url'
 
 export type ShopCurrency = 'coins' | 'premium'
-type ShopItemKind = 'furniture' | 'cosmetic' | 'consumable' | 'misc' | 'apartment_asset'
+type ShopItemKind = 'furniture' | 'cosmetic' | 'consumable' | 'misc' | 'apartment_asset' | 'tool'
 
 export interface ShopItemCurrencyOption {
   shop_catalog_item_id: number
@@ -68,7 +68,7 @@ function parseCurrency(value: unknown): ShopCurrency | null {
 }
 
 function parseItemKind(value: unknown): ShopItemKind | null {
-  if (value === 'furniture' || value === 'cosmetic' || value === 'consumable' || value === 'misc' || value === 'apartment_asset') {
+  if (value === 'furniture' || value === 'cosmetic' || value === 'consumable' || value === 'misc' || value === 'apartment_asset' || value === 'tool') {
     return value
   }
   return null

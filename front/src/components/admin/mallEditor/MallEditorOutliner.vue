@@ -38,12 +38,13 @@ function label(prop: TemplateProp): string {
   if (prop.kind === 'mannequin') return 'Mannequin'
   if (prop.kind === 'light') return prop.light === 'spot' ? 'Spot light' : 'Point light'
   if (prop.kind === 'item') return prop.code
+  if (prop.kind === 'market_stall') return `Market stall ${prop.stallNo}`
   return prop.key
 }
 
 function typeOf(prop: TemplateProp): string {
   if (prop.kind === 'item') return prop.forSale ? 'For sale' : 'Prop'
-  return { decor: 'Decor', npc: 'NPC', mannequin: 'Mannequin', light: 'Light', field: 'Field', animal: 'Animal', building: 'Building', shelf: 'Shelf' }[prop.kind]
+  return { decor: 'Decor', npc: 'NPC', mannequin: 'Mannequin', light: 'Light', field: 'Field', animal: 'Animal', building: 'Building', shelf: 'Shelf', market_stall: 'Market stall' }[prop.kind]
 }
 
 type SortColumn = 'label' | 'type' | 'sale'

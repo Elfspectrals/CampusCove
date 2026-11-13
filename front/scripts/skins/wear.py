@@ -33,6 +33,28 @@ def add_cap(M, m, radii, front_z, back_z, center=HEAD_C, seg=20, rings=12, lift=
     return M
 
 
+def add_ai_part(M, m, name, loc, rot=(0, 0, 0), scale=1.0):
+    before = set(bpy.data.objects)
+    bpy.ops.import_scene.gltf(filepath=SKINS_DIR + "ai/%s.glb" % name)
+    imported = [o for o in bpy.data.objects if o not in before]
+    old = set(M.bm.faces)
+    for o in imported:
+        if o.type == 'MESH':
+            me = o.data.copy()
+            me.transform(o.matrix_world)
+            M.bm.from_mesh(me)
+            bpy.data.meshes.remove(me)
+    for o in imported:
+        bpy.data.objects.remove(o, do_unlink=True)
+    faces = _new_faces(M.bm, old)
+    if not faces:
+        raise RuntimeError("ai/%s.glb holds no mesh" % name)
+    for f in faces:
+        f.material_index = M.mi(m)
+    _xf(M.bm, list({v for f in faces for v in f.verts}), loc=loc, rot=rot, scale=(scale, scale, scale))
+    return faces
+
+
 def hair_cap(M, m, puff=0.008, front_z=1.795, back_z=1.66):
     add_cap(M, m, (HEAD_R[0] + puff, HEAD_R[1] + puff, HEAD_R[2] + puff * 0.6), front_z, back_z)
     for sg in (1, -1):
@@ -154,6 +176,21 @@ def plaid_shirt(M, m):
         add_box(M, m["accent"], S((0.09, -0.159, 1.40), sg), (0.074, 0.004, 0.012), bevel=0.0)
 
 
+def sheriff_shirt(M, m):
+    torso(M, m["main"], puff=1.1)
+    sleeves(M, m["main"], 4, puff=1.12, cuff=m["main"])
+    add_sweep(M, m["main"], [(0, 0, 1.54), (0, 0, 1.605)], [(0.124, 0.11), (0.102, 0.094)], seg=18, per=1)
+    add_box(M, m["accent"], (0, -0.156, 1.24), (0.016, 0.006, 0.5), bevel=0.0)
+    for z, y in SHIRT_BUTTONS:
+        add_cyl(M, m["accent"], (0, y - 0.008, z), (0, y - 0.016, z), 0.007, 0.007, seg=6)
+    for sg in (1, -1):
+        add_box(M, m["main"], S((0.035, -0.112, 1.575), sg), (0.05, 0.012, 0.035), rot=(0.45, 0, sg * 0.5), bevel=0.004)
+        add_box(M, m["main"], S((0.095, -0.161, 1.35), sg), (0.07, 0.008, 0.075), bevel=0.004)
+        add_box(M, m["accent"], S((0.095, -0.168, 1.382), sg), (0.074, 0.006, 0.024), bevel=0.002)
+        add_box(M, m["accent"], S((0.135, 0.0, 1.548), sg), (0.11, 0.05, 0.012), rot=(0, sg * 0.42, 0), bevel=0.003)
+    add_ai_part(M, m["badge"], "sheriff_star", (0.095, -0.173, 1.406), rot=(-0.12, 0, 0), scale=0.85)
+
+
 def work_apron(M, m):
     add_box(M, m["apron"], (0, -0.16, 1.20), (0.26, 0.01, 0.40), rot=(0.0575, 0, 0), bevel=0.003)
     add_box(M, m["apron"], (0, -0.165, 0.835), (0.36, 0.01, 0.34), bevel=0.003)
@@ -168,6 +205,8 @@ def work_apron(M, m):
 def build_top(key, M, m):
     if key == "plaid_shirt":
         plaid_shirt(M, m)
+    elif key == "sheriff_shirt":
+        sheriff_shirt(M, m)
     elif key == "farm_apron":
         plaid_shirt(M, m)
         work_apron(M, m)
@@ -381,6 +420,8 @@ def build_shoes(key, M, m):
                       [(0.004, 0.012)] * 3, seg=6, per=2, ref=(1, 0, 0))
 
 
+SHERIFF_BADGE = dict(color="d9a93a", metal=0.7, rough=0.35)
+
 TOP_BONES = ['Hips', 'Spine', 'Chest', 'Neck', 'Shoulder.L', 'Shoulder.R', 'UpperArm.L', 'UpperArm.R', 'LowerArm.L', 'LowerArm.R', 'Hand.L', 'Hand.R']
 
 WEAR = {
@@ -400,6 +441,7 @@ WEAR = {
         "pilot": dict(main="5c6340", accent="2a2c22", hides=[]),
         "straw_hat": dict(main="d8b56a", accent="7a3b2b", builder=build_straw_hat, hides=[]),
         "bandana": dict(main="c8322f", accent="f2f0ea", builder=build_bandana, hides=[]),
+        "sheriff_hat": dict(main="d8c39a", accent="6b4a2e", extra={"badge": SHERIFF_BADGE}, hides=[]),
     }),
     "top": dict(builder=build_top, bones=TOP_BONES, items={
         "basic": dict(main="6f8fb8", accent="5a789c", hides=["chest"]),
@@ -416,6 +458,7 @@ WEAR = {
         "newcomer": dict(main="f7c948", accent="2f8f9c", extra={"trim": dict(color="e0534f", rough=0.6), "card": dict(color="f4f2ec", rough=0.5)}, hides=["chest"]),
         "flannel_jacket": dict(main="5f7d4a", accent="2b2a24", hides=["chest", "upper_arms", "forearms"]),
         "staff_polo": dict(main="f2c230", accent="1f3a6b", hides=["chest"]),
+        "sheriff_shirt": dict(main="d8c39a", accent="6b4a2e", extra={"badge": SHERIFF_BADGE}, hides=["chest", "upper_arms", "forearms"]),
     }),
     "bottom": dict(builder=build_bottom, bones=['Hips', 'Spine', 'UpperLeg.L', 'UpperLeg.R', 'LowerLeg.L', 'LowerLeg.R'], items={
         "basic": dict(main="4b5669", accent="3a4352", hides=["hips", "thighs", "shins"]),

@@ -2,7 +2,7 @@
 
 Un seul panier pour toutes les boutiques qui ont une caisse (boutiques du centre commercial, zones de vente des
 fichiers de zone, Cove Threads, Northline...). Le joueur clique sur un article pour en ajouter un au panier, de
-n'importe quelle boutique, puis ouvre le panier (touche **L**, modifiable, ou **Utiliser** devant une caisse). Le panier
+n'importe quelle boutique, puis ouvre le panier (touche **U**, modifiable ; L est au vol à la tire, ou **Utiliser** devant une caisse). Le panier
 range les lignes par boutique ; **chaque boutique se paie à sa propre caisse**, en liquide (`docs/BANK.md`). Cove Home
 (sans caisse) garde l'achat immédiat au clic.
 

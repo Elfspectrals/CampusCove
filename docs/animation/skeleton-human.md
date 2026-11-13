@@ -87,7 +87,7 @@ First-person arms (`map-src/CampusCove/build_fp_arms.py`, `front/src/game/firstP
 object-level clips per wear top: Idle 3.2 s, Walk 0.8 s (designed for 5 m/s, `timeScale = clamp(v / 5, 0.8, 1.3)`),
 one-shots Equip, UseDoor, UseKey, PunchL (left jab, 0.4 s) and Punch (right cross, 0.53 s), both with contact at frame
 5 = `PUNCH_IMPACT_S`, Pick (3.0 s), and the Eat and Drink loops (1.0 s, `LoopRepeat` while the click is held,
-hand already at the mouth on frame 0, one bite or sip peaking at frame 10; the left arm stays slightly lowered). Punch poses are solved by `fist_at` (fist centre on screen, forearm direction, back of the hand
+hand already at the mouth on frame 0, one bite or sip peaking at frame 10; the left arm stays slightly lowered), and the Hold loop (3.2 s, base clip instead of Idle / Walk while a job tool is in hand, `setHolding`: right hand low on the right in the grip, tool tilted forward and out so the crosshair stays clear, left arm as in Idle). Punch poses are solved by `fist_at` (fist centre on screen, forearm direction, back of the hand
 up for the corkscrew); the arm that does not punch rises to a guard with a loose fist.
 
 Each first-person hand is built in code (`build_hand`), not cut from the body: an armature `HandRig_{R,L}` under
@@ -99,7 +99,7 @@ the bone's local X curls a finger towards the palm on both sides, and positive s
 thumb (local Z, sign -1 on R and +1 on L). For the thumb, `Thumb1` flex crosses the palm towards the pinky and
 `ThumbS` lifts it away from the palm. Clips: Idle, Walk and Equip relaxed; the punching hand is a fist by frame 4 and opens
 on recovery; Eat and Drink hold the grip on a 3 cm handle for the whole loop; Pick opens (16-20), grabs (26-74); UseKey pinches the key
-(8-20); UseDoor hooks the handle (7-10).
+(8-20); UseDoor hooks the handle (7-10); Hold keeps the grip and closes it 5 % towards the fist on each breath, so its finger channels are not constant and survive the export.
 
 ## Gates
 

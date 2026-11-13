@@ -76,7 +76,6 @@ export function useTrade(deps: TradeDeps) {
 
   function openMenu(): void {
     if (windowOpen.value) return
-    if (document.pointerLockElement) document.exitPointerLock()
     error.value = null
     menuOpen.value = true
   }

@@ -83,6 +83,7 @@ export interface PubGamesDeps {
   say: (text: string) => void
   /** Another racer's avatar lifts a pint drunk to `progress`, or puts it down (null). */
   setRacePint: (sessionId: string, progress: number | null) => void
+  dartsFree: () => boolean
 }
 
 /**
@@ -318,7 +319,8 @@ export function usePubGames(deps: PubGamesDeps) {
     if (near(layout.darts.oche, DARTS_REACH)) {
       const [x, , z] = layout.darts.oche
       const lobby = darts.value !== null && darts.value.ranking === null
-      return { action: lobby ? 'Join the darts' : 'Darts', detail: '3 darts each · 10 coins', at: [x, GAME_PROMPT_HEIGHT, z], go: () => send('pub_darts_join') }
+      const fee = deps.dartsFree() ? 'free' : '10 coins'
+      return { action: lobby ? 'Join the darts' : 'Darts', detail: `3 darts each · ${fee}`, at: [x, GAME_PROMPT_HEIGHT, z], go: () => send('pub_darts_join') }
     }
     return null
   }

@@ -51,6 +51,7 @@ regions listed in its `extras.hides`. Pieces are weighted from the nearest body 
 | `sculpt_prep.py` | one-time: places a raw haircut sculpt on our head and saves it in `sculpts/` |
 | `sculpt_bake.py` | wraps a haircut onto its sculpt and bakes the locks into a normal map |
 | `wear_preview.py` | 256 px preview per piece |
+| `ai/` | shapes made once with `make model` and placed by `wear.py` / `stylized_base.py` (sheriff hat, sheriff star badge) |
 | `run_wear.py` | entry point |
 
 **One skeleton for every character.** The base body ships in six fits, `m_slim`, `m_normal`, `m_broad`, `f_slim`,

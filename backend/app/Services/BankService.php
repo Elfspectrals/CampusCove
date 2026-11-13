@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\ActionCounter;
 use App\Exceptions\BankRejectedException;
 use App\Models\Account;
 use App\Models\AccountHandle;
@@ -14,12 +15,20 @@ final class BankService
 {
     public const HISTORY_SIZE = 20;
 
-    public function __construct(private readonly WalletSummaryService $wallets) {}
+    public function __construct(
+        private readonly WalletSummaryService $wallets,
+        private readonly ActionCounterService $counters,
+    ) {}
 
     /** @return array{cash: int, bank: int} */
     public function deposit(int $accountId, int $amount, string $ref): array
     {
-        return $this->move($accountId, $amount, $ref, Wallet::CASH, Wallet::BANK, 'bank_deposit', 'Not enough cash on you.');
+        return DB::transaction(function () use ($accountId, $amount, $ref): array {
+            $balances = $this->move($accountId, $amount, $ref, Wallet::CASH, Wallet::BANK, 'bank_deposit', 'Not enough cash on you.');
+            $this->counters->bump($accountId, ActionCounter::AtmDeposits);
+
+            return $balances;
+        });
     }
 
     /** @return array{cash: int, bank: int} */
@@ -72,6 +81,25 @@ final class BankService
             $this->entry($wallets[$toAccountId], $txId, $amount, 'bank_transfer_in');
 
             return ['bank' => $balance - $amount];
+        });
+    }
+
+    /** @return array{cash: int, bank: int} */
+    public function adminGrant(int $adminAccountId, int $toAccountId, string $currency, int $amount, string $ref): array
+    {
+        return DB::transaction(function () use ($adminAccountId, $toAccountId, $currency, $amount, $ref): array {
+            $cash = Wallet::lockForAccount($toAccountId, Wallet::CASH);
+            $bank = Wallet::lockForAccount($toAccountId, Wallet::BANK);
+            $this->refuseReplay('admin_grant', $ref);
+            $txId = $this->transaction($adminAccountId, 'admin_grant', [
+                'amount' => $amount,
+                'ref' => $ref,
+                'currency' => $currency,
+                'to_account_id' => $toAccountId,
+            ]);
+            $this->entry($currency === Wallet::CASH ? $cash : $bank, $txId, $amount, 'admin_grant');
+
+            return ['cash' => $cash->balance(), 'bank' => $bank->balance()];
         });
     }
 

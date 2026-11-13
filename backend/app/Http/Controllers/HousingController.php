@@ -54,6 +54,15 @@ class HousingController extends Controller
         return response()->json(['unit' => $this->housing->serializeUnit($unit)]);
     }
 
+    public function leaveFlatshare(Request $request, string $publicId): JsonResponse
+    {
+        /** @var Account $account */
+        $account = $request->user();
+        $unit = $this->housing->leaveFlatshare($account, $publicId);
+
+        return response()->json(['unit' => $this->housing->serializeUnit($unit)]);
+    }
+
     public function buy(Request $request, string $publicId): JsonResponse
     {
         /** @var Account $account */

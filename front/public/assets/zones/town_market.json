@@ -1,0 +1,381 @@
+{
+  "version": 1,
+  "zone": "town_market",
+  "name": "Town market",
+  "props": [
+    {
+      "id": "market_stall_1",
+      "kind": "market_stall",
+      "stallNo": 1,
+      "position": [
+        71.0,
+        0.0,
+        -26.5
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "market_stall_2",
+      "kind": "market_stall",
+      "stallNo": 2,
+      "position": [
+        79.0,
+        0.0,
+        -26.5
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "market_stall_3",
+      "kind": "market_stall",
+      "stallNo": 3,
+      "position": [
+        84.5,
+        0.0,
+        -21.0
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "market_stall_4",
+      "kind": "market_stall",
+      "stallNo": 4,
+      "position": [
+        84.5,
+        0.0,
+        -13.0
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "market_stall_5",
+      "kind": "market_stall",
+      "stallNo": 5,
+      "position": [
+        79.0,
+        0.0,
+        -7.5
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "market_stall_6",
+      "kind": "market_stall",
+      "stallNo": 6,
+      "position": [
+        71.0,
+        0.0,
+        -7.5
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "market_bench_0",
+      "kind": "decor",
+      "key": "garden_bench",
+      "position": [
+        71.464,
+        0.0,
+        -13.464
+      ],
+      "yaw": -3.927,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "market_bench_1",
+      "kind": "decor",
+      "key": "garden_bench",
+      "position": [
+        71.464,
+        0.0,
+        -20.536
+      ],
+      "yaw": -5.4978,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "market_shopper_0",
+      "kind": "npc",
+      "position": [
+        69.0,
+        0.0,
+        -20.0
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pose": "idle",
+      "vendor": false,
+      "body": "#e0b48f",
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "long",
+          "color": "#3b2a20"
+        },
+        {
+          "slot": "top",
+          "key": "sweater",
+          "color": "#c8463c"
+        },
+        {
+          "slot": "bottom",
+          "key": "jeans",
+          "color": "#34506e"
+        },
+        {
+          "slot": "shoes",
+          "key": "sneakers",
+          "color": "#f0f0f0"
+        }
+      ]
+    },
+    {
+      "id": "market_shopper_1",
+      "kind": "npc",
+      "position": [
+        69.0,
+        0.0,
+        -18.8
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pose": "idle",
+      "vendor": false,
+      "body": "#a7714f",
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "short",
+          "color": "#6b4a2f"
+        },
+        {
+          "slot": "top",
+          "key": "plaid_shirt",
+          "color": "#4f7a46"
+        },
+        {
+          "slot": "bottom",
+          "key": "cargo",
+          "color": "#6b6a45"
+        },
+        {
+          "slot": "shoes",
+          "key": "boots",
+          "color": "#4a3322"
+        }
+      ]
+    },
+    {
+      "id": "market_shopper_2",
+      "kind": "npc",
+      "position": [
+        69.0,
+        0.0,
+        -17.6
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pose": "idle",
+      "vendor": false,
+      "body": "#f1cfae",
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "ponytail",
+          "color": "#d9b36c"
+        },
+        {
+          "slot": "top",
+          "key": "tee",
+          "color": "#e3b83a"
+        },
+        {
+          "slot": "bottom",
+          "key": "skirt",
+          "color": "#8657a8"
+        },
+        {
+          "slot": "shoes",
+          "key": "runners",
+          "color": "#ffffff"
+        }
+      ]
+    },
+    {
+      "id": "market_shopper_3",
+      "kind": "npc",
+      "position": [
+        69.0,
+        0.0,
+        -16.4
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pose": "idle",
+      "vendor": false,
+      "body": "#6b4630",
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "curly",
+          "color": "#1f1a17"
+        },
+        {
+          "slot": "top",
+          "key": "hoodie",
+          "color": "#3f6fb5"
+        },
+        {
+          "slot": "bottom",
+          "key": "joggers",
+          "color": "#444444"
+        },
+        {
+          "slot": "shoes",
+          "key": "high_tops",
+          "color": "#c8463c"
+        }
+      ]
+    },
+    {
+      "id": "market_shopper_4",
+      "kind": "npc",
+      "position": [
+        69.0,
+        0.0,
+        -15.2
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pose": "idle",
+      "vendor": false,
+      "body": "#c99a74",
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "basic",
+          "color": "#8a8a8a"
+        },
+        {
+          "slot": "top",
+          "key": "flannel_jacket",
+          "color": "#a0522d"
+        },
+        {
+          "slot": "bottom",
+          "key": "dungarees",
+          "color": "#3f5f8a"
+        },
+        {
+          "slot": "shoes",
+          "key": "rubber_boots",
+          "color": "#3f7a4a"
+        },
+        {
+          "slot": "head_accessory",
+          "key": "straw_hat",
+          "color": "#d8b56a"
+        }
+      ]
+    },
+    {
+      "id": "market_shopper_5",
+      "kind": "npc",
+      "position": [
+        69.0,
+        0.0,
+        -14.0
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pose": "idle",
+      "vendor": false,
+      "body": "#8a5a3c",
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "buzz",
+          "color": "#2b2b2b"
+        },
+        {
+          "slot": "top",
+          "key": "varsity",
+          "color": "#2f6f63"
+        },
+        {
+          "slot": "bottom",
+          "key": "track_pants",
+          "color": "#222222"
+        },
+        {
+          "slot": "shoes",
+          "key": "slides",
+          "color": "#e07a35"
+        }
+      ]
+    }
+  ],
+  "areas": []
+}
