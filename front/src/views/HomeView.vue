@@ -6,7 +6,7 @@ import { getStoredAuth } from '../api/session'
 import { activeLayout } from '../composables/useTheme'
 import { useWalletBalances } from '../composables/useWalletBalances'
 import * as friendsApi from '../api/friends'
-import { fetchTasks, type TaskProgress } from '../api/tasks'
+import { useTasks } from '../composables/useTasks'
 import type { Friend } from '../api/friends'
 import UiIcon from '../components/ui/UiIcon.vue'
 import UiCurrency from '../components/ui/UiCurrency.vue'
@@ -40,8 +40,7 @@ const lobbyGridClass = computed(() => ({
 const wideProfile = computed(() => activeLayout.value.lobby === 'stacked' || activeLayout.value.lobby === 'profileTop')
 
 const friends = ref<Friend[]>([])
-const tasks = ref<TaskProgress[] | null>(null)
-const tasksError = ref<string | null>(null)
+const { tasks, error: tasksError } = useTasks()
 const friendsLoading = ref(false)
 
 const onlineCount = computed(() => friends.value.filter((f) => f.status === 'online' || f.status === 'playing').length)
@@ -51,9 +50,6 @@ const sortedFriends = computed(() => {
 })
 
 onMounted(async () => {
-  fetchTasks()
-    .then((list) => (tasks.value = list))
-    .catch((err: unknown) => (tasksError.value = err instanceof Error ? err.message : String(err)))
   await loadFriends()
 })
 

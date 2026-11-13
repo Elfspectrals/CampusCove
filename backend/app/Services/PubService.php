@@ -29,6 +29,7 @@ final class PubService
         private readonly CoinRewardService $coinRewards,
         private readonly TutorialService $tutorial,
         private readonly ActionCounterService $counters,
+        private readonly PlayerActivityService $activity,
     ) {}
 
     /** @return array{code: string, price: int, balance_after: int} */
@@ -45,6 +46,8 @@ final class PubService
         return DB::transaction(function () use ($accountId, $def, $price): array {
             $balance = $this->debit($accountId, $price, 'pub_order', ['code' => $def->code]);
             $this->inventory->grantItem($accountId, $def, 1);
+            $this->activity->basketPaid($accountId, 'pub', []);
+            $this->activity->pubOrder($accountId);
 
             return ['code' => (string) $def->code, 'price' => $price, 'balance_after' => $balance];
         });
@@ -87,6 +90,9 @@ final class PubService
             }
             if ($game === 'darts' && $placement > 0 && $score >= self::DARTS_BONUS_SCORE) {
                 $this->counters->bump($accountId, ActionCounter::DartsDuels80);
+            }
+            if (in_array($game, ['darts', 'drink_fast'], true) && $placement === 1) {
+                $this->counters->bump($accountId, ActionCounter::DuelsWon);
             }
             if ($this->cooldownSecondsLeft($wallet, $reason) > 0) {
                 return ['coins' => 0, 'cooldown' => true, 'balance_after' => $wallet->balance()];

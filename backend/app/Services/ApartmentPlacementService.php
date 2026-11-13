@@ -353,6 +353,10 @@ class ApartmentPlacementService
             if ($furniture === null) {
                 throw new ApartmentPlacementException('object_not_found', 'Could not find this object in apartment.');
             }
+            if (! FurnitureStorageService::isEmpty((int) $furniture->room_furniture_id)) {
+                throw new ApartmentPlacementException('storage_not_empty', 'Empty it before picking it up.');
+            }
+            FurnitureStorageService::destroy([(int) $furniture->room_furniture_id]);
 
             $state = is_array($furniture->state_json) ? $furniture->state_json : [];
             $returnedToAccountId = $ownerAccountId;

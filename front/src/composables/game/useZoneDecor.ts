@@ -4,7 +4,7 @@ import type { Room } from '@colyseus/sdk'
 import { applyCachedBalanceAfterPurchase } from '../../api/session'
 import { disposeObject3D } from '../../avatar/compositeAvatar'
 import { disposeAvatarAnimations, updateAvatarAnimation } from '../../avatar/glbCharacter'
-import { decorModelUrl, isConsumableCode } from '../../game/assets/catalog'
+import { decorModelUrl, isConsumableCode, isToolCode } from '../../game/assets/catalog'
 import { fetchCollisionFile, setPropBlocker } from '../../game/collision/worldCollision'
 import { ANIMALS_URL, animalPose, type AnimalClip, type AnimalDef } from '../../game/animals/animals.ts'
 import { itemModelUrl, type AnimalProp, type ItemProp, type MannequinProp, type NpcProp, type ShelfProp, type StaffRole, type Vec3 } from '../../game/mallTemplates/mallTemplate.ts'
@@ -109,7 +109,7 @@ export function useZoneDecor(deps: ZoneDecorDeps) {
   async function addItem(zone: string, group: THREE.Group, item: ItemProp): Promise<void> {
     const [object, collision] = await Promise.all([
       createPropObject(item),
-      isConsumableCode(item.code) ? null : fetchCollisionFile(decorModelUrl(item.key).replace(/model\.glb$/, 'collision.json')),
+      isConsumableCode(item.code) || isToolCode(item.code) ? null : fetchCollisionFile(decorModelUrl(item.key).replace(/model\.glb$/, 'collision.json')),
     ])
     if (disposed) return disposeObject3D(object)
     configureRoomMeshShadows(object)
@@ -120,7 +120,7 @@ export function useZoneDecor(deps: ZoneDecorDeps) {
   }
 
   async function blockSoldItem(zone: string, item: ItemProp): Promise<void> {
-    if (isConsumableCode(item.code)) return
+    if (isConsumableCode(item.code) || isToolCode(item.code)) return
     const collision = await fetchCollisionFile(decorModelUrl(item.key).replace(/model\.glb$/, 'collision.json'))
     if (disposed || !collision) return
     const spot = new THREE.Object3D()

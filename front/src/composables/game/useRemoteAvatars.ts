@@ -30,6 +30,7 @@ import { createHitFlash } from '../../game/hitFlash'
 import { advanceHitStop, idleHitStop, scheduleHitStop, type HitStop } from '../../game/punchFeel'
 import { createRacePint, type RacePint } from '../../game/pub/racePint'
 import { seatedAvatarFeetY } from '../../game/pub/seats'
+import { createRemoteHeldTool, type RemoteHeldTool } from '../../game/remoteHeldTool'
 import type { SfxName } from '../../game/sfx'
 import type { RemoteUserPayload } from '../../types/gameRealtime'
 import { BADGES, overHeadBadges, shownBadges, type BadgeCode } from '../../game/badges'
@@ -68,6 +69,7 @@ interface RemoteAvatar {
   /** Drink Fast: the pint raised while this player races. */
   racePint: RacePint | null
   raceProgress: number
+  heldTool: RemoteHeldTool | null
 }
 
 /** Where a seated avatar rests: seat top and sitting direction (camera yaw convention). */
@@ -270,6 +272,7 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
       seat,
       racePint: null,
       raceProgress: 0,
+      heldTool: data.heldTool ? createRemoteHeldTool(group, data.heldTool) : null,
     })
     sessionByUserId.set(data.id, sessionId)
     if (seat) applySeat(avatars.get(sessionId)!)
@@ -317,9 +320,10 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     scene.add(group)
     const racePint = latest.racePint ? createRacePint(group) : null
     racePint?.setProgress(latest.raceProgress)
+    const heldTool = latest.heldTool ? createRemoteHeldTool(group, latest.heldTool.code) : null
     const nameTag = createNameTag(group, latest.pseudo, badgeIconPaths(latest.badges))
     const voiceIcon = createVoiceIcon(group)
-    const rebuilt = { ...latest, group, nameTag, voiceIcon, chatBubble: null, outfit, punchOffsetX: 0, punchOffsetZ: 0, racePint }
+    const rebuilt = { ...latest, group, nameTag, voiceIcon, chatBubble: null, outfit, punchOffsetX: 0, punchOffsetZ: 0, racePint, heldTool }
     avatars.set(sessionId, rebuilt)
     applySeat(rebuilt)
   }
@@ -346,6 +350,13 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
   function setPicking(sessionId: string, picking: boolean) {
     const entry = avatars.get(sessionId)
     if (entry) setAvatarPicking(entry.group, picking)
+  }
+
+  function setHeldTool(sessionId: string, code: string | null) {
+    const entry = avatars.get(sessionId)
+    if (!entry || (entry.heldTool?.code ?? null) === code) return
+    entry.heldTool?.dispose()
+    entry.heldTool = code ? createRemoteHeldTool(entry.group, code) : null
   }
 
   function setVoiceState(sessionId: string, state: VoiceIconState): void {
@@ -509,5 +520,5 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     }
   }
 
-  return { upsert, updateAppearance, setTarget, setSeated, setPicking, setRacePint, setBadges, pseudoOf, positionOf, setVoiceState, players, accountOf, showAction, showChat, showPunch, showHit, remove, clear, tick }
+  return { upsert, updateAppearance, setTarget, setSeated, setPicking, setHeldTool, setRacePint, setBadges, pseudoOf, positionOf, setVoiceState, players, accountOf, showAction, showChat, showPunch, showHit, remove, clear, tick }
 }

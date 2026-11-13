@@ -1,5 +1,5 @@
 {
-  "apple": { "price": 3, "quota": 300, "overPrice": 1 },
+  "apple": { "price": 3, "quota": 300, "overPrice": 0 },
   "vectors": [
     { "curve": { "price": 3, "quota": 300, "overPrice": 1 }, "soldToday": 0, "quantity": 0, "coins": 0, "fullPriceLeft": 300 },
     { "curve": { "price": 3, "quota": 300, "overPrice": 1 }, "soldToday": 0, "quantity": 10, "coins": 30, "fullPriceLeft": 290 },

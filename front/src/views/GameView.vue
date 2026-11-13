@@ -26,6 +26,8 @@ import GameSettingsDialog from '../components/game/GameSettingsDialog.vue'
 import GameStoreItemCard from '../components/game/GameStoreItemCard.vue'
 import GameZoneBuyerMenu from '../components/game/GameZoneBuyerMenu.vue'
 import GameAtmScreen from '../components/game/GameAtmScreen.vue'
+import GameLockpick from '../components/game/GameLockpick.vue'
+import GameFurnitureStorage from '../components/game/GameFurnitureStorage.vue'
 import GamePubMenu from '../components/game/GamePubMenu.vue'
 import GamePubSecretDialog from '../components/game/GamePubSecretDialog.vue'
 import GameChat from '../components/game/GameChat.vue'
@@ -69,6 +71,12 @@ import { useOrchard } from '../composables/game/useOrchard'
 import { useZoneBuyers } from '../composables/game/useZoneBuyers'
 import { useAtm } from '../composables/game/useAtm'
 import { useTaskBanner } from '../composables/game/useTaskBanner'
+
+import { useLockpick } from '../composables/game/useLockpick'
+import { useFurnitureStorage } from '../composables/game/useFurnitureStorage'
+import { useRespawnBed } from '../composables/game/useRespawnBed'
+import { useHouseAlarms } from '../composables/game/useHouseAlarms'
+import type { HouseFurniturePayload } from '../types/gameRealtime'
 import { useCashBags } from '../composables/game/useCashBags'
 import { useProximityVoice } from '../composables/game/useProximityVoice'
 import { mutedAccounts, playerVolumes, setPlayerVolume, toggleMuteAccount } from '../composables/game/useVoiceSettings'
@@ -86,7 +94,11 @@ import { useSeats } from '../composables/game/useSeats'
 import { useSurvival } from '../composables/game/useSurvival'
 import { useTrade } from '../composables/game/useTrade'
 import { useAdminWatch } from '../composables/game/useAdminWatch'
+import { useWatchBank } from '../composables/game/useWatchBank'
+import { useGps } from '../composables/game/useGps'
+import { useWatchContacts } from '../composables/game/useWatchContacts'
 import { usePunch } from '../composables/game/usePunch'
+import { useHeldTool } from '../composables/game/useHeldTool'
 import { useShopPurchase } from '../composables/useShopPurchase'
 import { toggleCollisionDebug } from '../game/collision/collisionDebug'
 import { toggleTerrainDebug } from '../game/town/terrainDebug'
@@ -354,12 +366,28 @@ watch(storeConfirmItem, (item, previous) => {
 // ---------------------------------------------------------------- town: houses, doors, environment
 
 const holdingHouseKey = () => selectedItem.value?.code === 'house_key'
+const holdingLockpick = () => selectedItem.value?.code === 'tool_lockpick'
+const holdingReinforcedLock = () => selectedItem.value?.code === 'tool_reinforced_lock'
+
+const lockpick = useLockpick({
+  gameRoomRef,
+  onOutcome: (outcome) => {
+    if (outcome === 'open' || outcome === 'broke' || outcome === 'abandoned') void refreshOwnedItems()
+  },
+})
+const { open: lockpickOpen } = lockpick
+watch(lockpickOpen, (open) => {
+  if (!open && !document.pointerLockElement) requestPointerLock()
+})
 
 const housing = useCityHousing({
   myAccountId,
   gameRoomRef,
   roomMessage,
   holdingHouseKey,
+  holdingLockpick,
+  holdingReinforcedLock,
+  startLockpick: lockpick.start,
 })
 
 // ---------------------------------------------------------------- The Salty Shamrock: seats, bar, games
@@ -533,6 +561,39 @@ const tutorialHints = useTutorialHints({
 })
 const { bubble: tutorialHintBubble } = tutorialHints
 const interactKeys = computed(() => actionKeyLabels('interact').join(' / '))
+const houseAlarms = useHouseAlarms({
+  gameRoomRef,
+  say: (text) => survival.say(text),
+  ring: () => sfx.play('alarm_siren'),
+  liveMessage: () => t('watch.alarm.alert'),
+  awayMessage: (count) => t('watch.alarm.away', { count }),
+})
+const furnishedHouses = shallowRef<HouseFurniturePayload[]>([])
+const storage = useFurnitureStorage({
+  myPosition,
+  getCamera,
+  canvasRef,
+  gameRoomRef,
+  promptsHidden: () => inventoryOpen.value || !canUsePub(),
+  houses: () => furnishedHouses.value,
+  promptLabel: () => t('storage.prompt'),
+  onChanged: () => refreshOwnedItems(),
+})
+const { open: storageOpen } = storage
+const respawnBed = useRespawnBed({
+  myPosition,
+  getCamera,
+  canvasRef,
+  gameRoomRef,
+  promptsHidden: () => inventoryOpen.value || !canUsePub(),
+  houses: () => furnishedHouses.value,
+  promptLabel: () => t('bed.prompt'),
+  say: (text) => survival.say(text),
+  doneMessage: () => t('bed.set'),
+})
+watch(storageOpen, (open) => {
+  if (!open && !document.pointerLockElement) requestPointerLock()
+})
 const cashBags = useCashBags({
   myPosition,
   getScene,
@@ -542,7 +603,11 @@ const cashBags = useCashBags({
   promptsHidden: () => inventoryOpen.value || !canUsePub(),
   promptLabel: () => t('cashBag.prompt'),
   say: (text) => survival.say(text),
-  pickedMessage: (amount) => t('cashBag.picked', { amount }),
+  pickedMessage: (amount, toolCount) => {
+    if (toolCount === 0) return t('cashBag.picked', { amount })
+    return amount > 0 ? t('cashBag.pickedTools', { amount, count: toolCount }) : t('cashBag.pickedOnlyTools', { count: toolCount })
+  },
+  onToolsPicked: () => refreshOwnedItems(),
 })
 watch(atmOpen, (open) => {
   if (!open && !document.pointerLockElement) requestPointerLock()
@@ -569,7 +634,7 @@ const interactions = useInteractionTargets({
   myPosition,
   getCamera,
   canvasRef,
-  promptsHidden: () => inventoryOpen.value || housing.claimInFlight.value,
+  promptsHidden: () => inventoryOpen.value || housing.claimInFlight.value || lockpickOpen.value,
   housingUnits: housing.units,
   nearbyHousingUnit: housing.nearbyUnit,
   housingActionFor: housing.actionFor,
@@ -578,7 +643,7 @@ const interactions = useInteractionTargets({
     const unit = housing.nearbyUnit.value
     const action = unit ? housing.actionFor(unit) : null
     if (action === 'open' || action === 'close' || action === 'locked') arms?.use('door')
-    else if (action === 'lock') arms?.use('key')
+    else if (action === 'lock' || action === 'pick') arms?.use('key')
     void housing.interact()
   },
   onWorkDoor: (lot) => {
@@ -600,7 +665,7 @@ const interactions = useInteractionTargets({
     if (activeFurniture.value?.store.hasCounter.value) activeFurniture.value.store.toggleTarget(useWithShift)
     else openStorePurchase()
   },
-  sources: [pub.source, pubChallenge.source, pubGames.source, seats.source, orchard.source, farm.source, zoneBuyers.source, atm.source, cashBags.source],
+  sources: [pub.source, pubChallenge.source, pubGames.source, seats.source, orchard.source, farm.source, zoneBuyers.source, atm.source, storage.source, respawnBed.source, cashBags.source],
 })
 const { doorPrompt } = interactions
 
@@ -621,9 +686,16 @@ let arms: ReturnType<typeof createFirstPersonArms> | null = null
 watch(() => selectedItem.value?.code ?? null, () => arms?.equip())
 
 /** Model shown in the right hand: tools and food (a half-eaten item is drawn smaller). */
+const FIRST_PERSON_TOOL_SCALE = 0.6
+
+function holdingJobTool(): boolean {
+  return heldTool.code.value !== null && heldTool.code.value === selectedItem.value?.code
+}
+
 function heldModel(): { url: string | null; scale: number } {
   const item = selectedItem.value
   if (!item || (item.kind !== 'tool' && item.kind !== 'consumable')) return { url: null, scale: 1 }
+  if (holdingJobTool()) return { url: item.model_glb, scale: FIRST_PERSON_TOOL_SCALE }
   const eaten = item.portions && item.portions_left ? item.portions_left / item.portions : 1
   return { url: item.model_glb, scale: 0.55 + 0.45 * eaten }
 }
@@ -655,15 +727,14 @@ const {
   error: tradeError,
   syncing: tradeSyncing,
 } = trade
-const tradeUiOpen = computed(() => watchMenuOpen.value || tradeWindowOpen.value)
-// Back to mouse look once the watch and the trade window are closed.
-watch(tradeUiOpen, (open) => {
+watch(tradeWindowOpen, (open) => {
   if (!open && !document.pointerLockElement) requestPointerLock()
 })
 const watchKey = computed(() => actionKeyLabels('survivalWatch')[0] ?? 'T')
 
 // ---------------------------------------------------------------- watch apps: admin teleports
 
+const watchBank = useWatchBank()
 const adminWatch = useAdminWatch({ gameRoomRef, say: (text) => survival.say(text) })
 const { isAdmin, menu: adminMenu, error: adminError } = adminWatch
 function adminTeleport(key: string): void {
@@ -693,6 +764,10 @@ const survival = useSurvival({
     applyCachedBalanceAfterPurchase('cash', 0)
     survival.say(t('cashBag.dropped', { amount }))
   },
+  onToolsLost: (count) => {
+    refreshOwnedItems()
+    survival.say(t('cashBag.droppedTools', { count }))
+  },
   onBelongingsLost: (clothes) => {
     refreshOwnedItems()
     if (clothes) for (const { store } of furnitureStores) void store.refreshOwned()
@@ -710,7 +785,8 @@ const survival = useSurvival({
   onStamina: (value) => punch.syncStamina(value),
   onIntoxication: (value) => intoxication.set(value),
   onWatchTap: () => {
-    if (pointerLocked.value && !inventoryOpen.value) trade.openMenu()
+    if (watchMenuOpen.value) trade.closeMenu()
+    else if (pointerLocked.value && !inventoryOpen.value) trade.openMenu()
   },
 })
 const {
@@ -842,9 +918,31 @@ const minimap = useMinimap({
   buildingKey: () => currentHouseKey.value,
 })
 const mapKey = computed(() => actionKeyLabels('map')[0] ?? 'M')
+const gps = useGps({
+  markers: () => minimap.markers.value,
+  atms: () => zoneDecor.atms.value,
+  player: minimap.player,
+  atmName: () => t('watch.gps.atm'),
+  say: (text) => survival.say(text),
+  arrivedText: (name) => t('watch.gps.arrived', { name }),
+  noAtmText: () => t('watch.gps.noAtm'),
+  positionOf: (sessionId) => realtime.remotePosition(sessionId),
+  leftText: (name) => t('watch.gps.left', { name }),
+})
+const watchContacts = useWatchContacts({
+  players: () => realtime.remotePlayers(),
+  positionOf: (sessionId) => realtime.remotePosition(sessionId),
+  me: minimap.player,
+  isOpen: () => watchMenuOpen.value,
+  say: (text) => survival.say(text),
+  acceptedText: (name) => t('watch.contacts.accepted', { name }),
+  askedText: (pseudo) => t('watch.contacts.sent', { name: pseudo }),
+})
+const followedSessionId = computed(() => (gps.target.value?.kind === 'friend' ? gps.target.value.id.slice('friend:'.length) : null))
 // Esc frees the mouse and opens the pause menu: the full map gives way to it
 watch(pointerLocked, (locked) => {
   if (!locked) minimap.fullOpen.value = false
+  if (!locked) trade.closeMenu()
 })
 
 const environment = useRoomEnvironment({
@@ -970,10 +1068,12 @@ const pauseMenuOpen = computed(
     !inventoryOpen.value &&
     !switchingRoom.value &&
     !checkoutOpen.value &&
-    !tradeUiOpen.value &&
+    !tradeWindowOpen.value &&
     !pubUiOpen.value &&
     !zoneBuyerOpen.value &&
     !atmOpen.value &&
+    !lockpickOpen.value &&
+    !storageOpen.value &&
     !playerListOpen.value &&
     !tasksOpen.value &&
     !settingsOpen.value &&
@@ -1003,12 +1103,19 @@ function sendChat(text: string): void {
   gameRoomRef.value?.send('chat', { text })
 }
 
+const WALK_WITH_WATCH_ACTIONS = ['moveForward', 'moveBack', 'moveLeft', 'moveRight', 'jump', 'survivalWatch'] as const
+
+function isWalkWithWatchKey(code: string): boolean {
+  return code === 'ShiftLeft' || code === 'ShiftRight' || WALK_WITH_WATCH_ACTIONS.some((action) => matches(action, code))
+}
+
 function handleExtraKeyDown(e: KeyboardEvent): boolean {
-  if (chatOpen.value || atmOpen.value || playerListOpen.value || tasksOpen.value) return true
+  if (chatOpen.value || atmOpen.value || lockpickOpen.value || storageOpen.value || playerListOpen.value || tasksOpen.value) return true
   // the character screen owns the keyboard (Esc closes the editor)
   if (creator.value) return true
-  // the watch and the trade window take the keyboard (coins field, Esc): no game key behind them
-  if (tradeUiOpen.value) return true
+  // the trade window takes the keyboard (coins field, Esc): no game key behind it
+  if (tradeWindowOpen.value) return true
+  if (watchMenuOpen.value && !isWalkWithWatchKey(e.code)) return true
   // the bouncer's text field and the pub games (Space holds the pint) take the keyboard too
   if (pubSecretOpen.value || pubGamesOpen.value) return true
   // Y / N answer a Drink Fast challenge
@@ -1120,6 +1227,7 @@ const movement = useGameMovement({
     updateFrontDoors(dt, isBuildingDoorOpen)
     arms?.update(dt, myPosition)
     const held = heldModel()
+    arms?.setHolding(holdingJobTool())
     heldItem.update(arms?.rightHand() ?? null, held.url, held.scale)
     survival.tick(dt)
     stamina.value = punch.staminaNow()
@@ -1133,10 +1241,19 @@ const movement = useGameMovement({
     farm.tick()
     if (!doorSigns.group.parent) getScene()?.add(doorSigns.group)
     minimap.tick()
+    gps.tick()
   },
 })
 const { requestPointerLock, onCanvasMouseDown } = movement
 
+const heldTool = useHeldTool({
+  gameRoomRef,
+  selectedCode: () => selectedItem.value?.code ?? null,
+  itemName: (code) => (selectedItem.value?.code === code ? selectedItem.value.name.toLowerCase() : 'tool'),
+  say: (text) => survival.say(text),
+  playSound: sfx.play,
+  refreshInventory: () => refreshOwnedItems(),
+})
 const punch = usePunch({
   gameRoomRef,
   getScene,
@@ -1152,6 +1269,7 @@ const punch = usePunch({
   joltCamera: movement.joltCamera,
   knockBack: movement.knockBack,
   playSound: sfx.play,
+  cooldownMs: () => heldTool.cooldownMs.value,
 })
 const { hitMarker } = punch
 
@@ -1194,7 +1312,10 @@ const realtime = useGameRealtime({
   },
   loadTown,
   onHousingUnitsSync: housing.applyUnits,
-  onHouseFurnitureSync: houseFurniture.applyHouses,
+  onHouseFurnitureSync: (houses) => {
+    furnishedHouses.value = houses
+    houseFurniture.applyHouses(houses)
+  },
   onDoorsSync: housing.applyOpenDoors,
   onDoorSound: ({ door, sound }) => {
     const node = frontDoorNode(door)
@@ -1228,6 +1349,21 @@ const realtime = useGameRealtime({
       if (!wasDone && tutorial.value?.status === 'done') survival.say(t('tutorial.welcome'))
     },
   },
+  lockpick: {
+    ...lockpick.handlers,
+    onReinforced: () => {
+      survival.say(t('lockpick.reinforced'))
+      void refreshOwnedItems()
+    },
+    onReinforceError: (data) => survival.say(data.message),
+    onHouseAlarm: () => houseAlarms.onLive(),
+    onAlarmSiren: ({ door }) => {
+      const node = frontDoorNode(door)
+      if (node) sfx.playOn('alarm_siren', node)
+    },
+  },
+  storage: storage.handlers,
+  bed: respawnBed.handlers,
   cashBags: cashBags.handlers,
   voice: { onToken: voice.onToken, disconnect: voice.disconnect },
   farm: farm.handlers,
@@ -1438,6 +1574,7 @@ const crosshairClass = computed(() => {
       :inside-name="minimap.insideName.value"
       :full-open="minimap.fullOpen.value"
       :map-key="mapKey"
+      :target="gps.target.value"
       @close="minimap.fullOpen.value = false"
     />
     <GameHudToolbar
@@ -1647,11 +1784,30 @@ const crosshairClass = computed(() => {
       :is-admin="isAdmin"
       :admin-menu="adminMenu"
       :admin-error="adminError"
+      :cash="walletBalances.cash"
+      :bank-screen="watchBank.screen.value"
+      :bank-error="watchBank.error.value"
+      :gps-places="gps.places.value"
+      :gps-target-id="gps.target.value?.id ?? null"
+      :atm-distance="gps.places.value.find((place) => place.kind === 'atm')?.distance ?? null"
+      :contact-rows="watchContacts.rows.value"
+      :contacts-error="watchContacts.error.value"
+      :followed-session-id="followedSessionId"
+      :alarm-alerts="houseAlarms.alerts.value"
+      :alarm-unseen="houseAlarms.unseen.value"
+      @alarm-open="houseAlarms.markSeen"
       @request="trade.request"
       @respond="trade.respond"
       @cancel="trade.cancel"
       @close="trade.closeMenu"
       @admin-open="adminWatch.load"
+      @bank-open="watchBank.load"
+      @gps-toggle="gps.toggle"
+      @route-atm="gps.routeToNearestAtm"
+      @contacts-open="watchContacts.load"
+      @contact-accept="watchContacts.accept"
+      @contact-follow="gps.togglePlayer"
+      @contact-ask="watchContacts.ask"
       @teleport="adminTeleport"
       @summon="adminSummon"
     />
@@ -1668,6 +1824,17 @@ const crosshairClass = computed(() => {
       @confirm="trade.confirm"
       @cancel="trade.cancel"
     />
+    <GameFurnitureStorage
+      v-if="storageOpen"
+      :screen="storage.screen.value"
+      :storable="storage.storable.value"
+      :pending="storage.pending.value"
+      :error="storage.error.value"
+      @deposit="storage.deposit"
+      @take="storage.take"
+      @close="storage.close"
+    />
+    <GameLockpick v-if="lockpick.board.value" :board="lockpick.board.value" @press="lockpick.press" @close="lockpick.close" />
     <GameAtmScreen v-if="atmOpen" :screen="atm.screen.value" :pending="atm.pending.value" :feedback="atm.feedback.value" @run="atm.run" @clear-feedback="atm.clearFeedback" @close="atm.close" />
     <GameZoneBuyerMenu
       v-if="zoneBuyerOpen"

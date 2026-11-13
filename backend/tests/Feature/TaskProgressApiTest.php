@@ -203,6 +203,17 @@ class TaskProgressApiTest extends TestCase
                 ['task' => 'darts', 'value' => 0, 'tiers' => [10, 50, 200], 'reached' => []],
                 ['task' => 'sharp_eye', 'value' => 0, 'tiers' => [1, 10, 50], 'reached' => []],
                 ['task' => 'gourmet', 'value' => 0, 'tiers' => [5, 15, 30], 'reached' => []],
+                ['task' => 'explorer', 'value' => 0, 'tiers' => [5, 10, 15], 'reached' => []],
+                ['task' => 'loyal', 'value' => 0, 'tiers' => [7, 30, 100], 'reached' => []],
+                ['task' => 'market_gardener', 'value' => 0, 'tiers' => [100, 1000, 5000], 'reached' => []],
+                ['task' => 'trader', 'value' => 0, 'tiers' => [50, 500, 2500], 'reached' => []],
+                ['task' => 'cook', 'value' => 0, 'tiers' => [10, 100, 500], 'reached' => []],
+                ['task' => 'loyal_customer', 'value' => 0, 'tiers' => [10, 100, 300], 'reached' => []],
+                ['task' => 'dapper', 'value' => 0, 'tiers' => [3, 10, 25], 'reached' => []],
+                ['task' => 'regular', 'value' => 0, 'tiers' => [3, 15, 50], 'reached' => []],
+                ['task' => 'pub_games', 'value' => 0, 'tiers' => [10, 50, 150], 'reached' => []],
+                ['task' => 'duellist', 'value' => 0, 'tiers' => [1, 5, 15], 'reached' => []],
+                ['task' => 'insider', 'value' => 0, 'tiers' => [1, 4, 12], 'reached' => []],
             ]]);
     }
 
@@ -221,7 +232,8 @@ class TaskProgressApiTest extends TestCase
         }
 
         $this->assertSame(2, $this->counter($player['account_id'], ActionCounter::DartsDuels80));
-        $this->assertSame([['sharp_eye', 1]], $this->tiers($player['account_id']));
+        $this->assertContains(['sharp_eye', 1], $this->tiers($player['account_id']));
+        $this->assertNotContains(['sharp_eye', 2], $this->tiers($player['account_id']));
     }
 
     public function test_gourmet_counts_each_food_once_and_never_care_items(): void
@@ -238,6 +250,192 @@ class TaskProgressApiTest extends TestCase
 
         $this->assertSame(2, $this->counter($player['account_id'], ActionCounter::FoodsTasted));
         $this->assertSame(5, $this->counter($player['account_id'], ActionCounter::FoodEaten));
+    }
+
+    public function test_each_zone_counts_once_for_the_explorer(): void
+    {
+        $player = $this->registerAndCreditWallet(0, 'cash');
+        $headers = $this->auth($player['token'], self::SECRET);
+
+        foreach (['orchard', 'orchard', 'greencart', 'mall'] as $zone) {
+            $this->postJson('/api/tasks/zone-visited', ['zone' => $zone], $headers)->assertOk();
+        }
+        $this->postJson('/api/tasks/zone-visited', ['zone' => 'Orchard!'], $headers)->assertStatus(422);
+
+        $this->assertSame(3, $this->counter($player['account_id'], ActionCounter::ZonesVisited));
+    }
+
+    public function test_an_active_day_counts_once_per_day_in_paris(): void
+    {
+        $player = $this->registerAndCreditWallet(0, 'cash');
+        $headers = $this->auth($player['token'], self::SECRET);
+
+        $this->travelTo(now()->parse('2026-11-13 22:30:00', 'UTC'));
+        $this->postJson('/api/tasks/active-day', [], $headers)->assertOk();
+        $this->postJson('/api/tasks/active-day', [], $headers)->assertOk();
+        $this->assertSame(1, $this->counter($player['account_id'], ActionCounter::ActiveDays));
+
+        $this->travelTo(now()->parse('2026-11-13 23:00:00', 'UTC'));
+        $this->postJson('/api/tasks/active-day', [], $headers)->assertOk();
+        $this->assertSame(2, $this->counter($player['account_id'], ActionCounter::ActiveDays));
+    }
+
+    public function test_activity_routes_need_the_realtime_server(): void
+    {
+        $player = $this->registerAndCreditWallet(0, 'cash');
+
+        $this->postJson('/api/tasks/zone-visited', ['zone' => 'orchard'], $this->auth($player['token']))->assertForbidden();
+        $this->postJson('/api/tasks/active-day', [], $this->auth($player['token']))->assertForbidden();
+        $this->postJson('/api/tasks/pub-game', ['game' => 'drink_fast', 'intoxication' => 0], $this->auth($player['token']))->assertForbidden();
+        $this->postJson('/api/tasks/secret-room', [], $this->auth($player['token']))->assertForbidden();
+    }
+
+    public function test_each_farm_harvest_counts_for_the_market_gardener(): void
+    {
+        $player = $this->registerAndCreditWallet(0, 'cash');
+        $headers = $this->auth($player['token'], self::SECRET);
+
+        $this->postJson('/api/farm/pick', ['crop' => 'corn'], $headers)->assertOk();
+        $this->travel(3)->seconds();
+        $this->postJson('/api/farm/pick', ['crop' => 'potato'], $headers)->assertOk();
+        $this->postJson('/api/farm/pick', ['crop' => 'potato'], $headers)->assertStatus(422);
+
+        $this->assertSame(2, $this->counter($player['account_id'], ActionCounter::FarmHarvests));
+    }
+
+    public function test_the_trader_counts_items_sold_to_buyers_but_not_apples(): void
+    {
+        $player = $this->registerAndCreditWallet(0, 'cash');
+        $headers = $this->auth($player['token'], self::SECRET);
+        $this->grant($player['account_id'], 'farm_corn', 3);
+        $this->grant($player['account_id'], 'farm_apple', 2);
+
+        $this->postJson('/api/zone/sell', ['zone' => 'farm', 'area' => 'stand', 'code' => 'farm_corn', 'quantity' => 3], $headers)->assertOk();
+        $this->postJson('/api/zone/sell', ['zone' => 'orchard', 'area' => 'apple_buyer', 'code' => 'farm_apple', 'quantity' => 2], $headers)->assertOk();
+
+        $this->assertSame(3, $this->counter($player['account_id'], ActionCounter::ItemsSoldToBuyers));
+    }
+
+    public function test_each_dish_cooked_counts_for_the_cook(): void
+    {
+        $player = $this->registerAndCreditWallet(0, 'cash');
+        $headers = $this->auth($player['token'], self::SECRET);
+        $this->grant($player['account_id'], 'food_fish_raw', 1);
+
+        $this->postJson('/api/survival/cook', ['code' => 'food_fish_raw'], $headers)->assertOk();
+        $this->postJson('/api/survival/cook', ['code' => 'food_fish_raw'], $headers)->assertStatus(422);
+
+        $this->assertSame(1, $this->counter($player['account_id'], ActionCounter::DishesCooked));
+    }
+
+    public function test_one_basket_per_shop_and_per_clock_hour_in_paris_counts(): void
+    {
+        $player = $this->registerAndCreditWallet(500, 'cash');
+        $headers = $this->auth($player['token'], self::SECRET);
+        $coffee = ['zone' => 'greencart', 'items' => [$this->catalogId('food_coffee')]];
+
+        $this->travelTo(now()->parse('2026-11-13 13:05:00', 'UTC'));
+        $this->postJson('/api/zone/checkout', $coffee, $headers)->assertOk();
+        $this->travelTo(now()->parse('2026-11-13 13:50:00', 'UTC'));
+        $this->postJson('/api/zone/checkout', $coffee, $headers)->assertOk();
+        $this->postJson('/api/pub/order', ['code' => 'drink_stout'], $headers)->assertOk();
+        $this->postJson('/api/pub/order', ['code' => 'drink_stout'], $headers)->assertOk();
+        $this->assertSame(2, $this->counter($player['account_id'], ActionCounter::ShopBaskets));
+
+        $this->travelTo(now()->parse('2026-11-13 14:01:00', 'UTC'));
+        $this->postJson('/api/zone/checkout', $coffee, $headers)->assertOk();
+        $this->assertSame(3, $this->counter($player['account_id'], ActionCounter::ShopBaskets));
+    }
+
+    public function test_dapper_counts_each_different_piece_of_clothing_once(): void
+    {
+        $player = $this->registerAndCreditWallet(1_000, 'cash');
+        $headers = $this->auth($player['token'], self::SECRET);
+        $basket = ['zone' => 'fashion', 'items' => [$this->catalogId('COS_WEAR_BOTTOM_JEANS'), $this->catalogId('COS_WEAR_BOTTOM_SHORTS')]];
+
+        $this->postJson('/api/zone/checkout', $basket, $headers)->assertOk();
+        foreach (['COS_WEAR_BOTTOM_JEANS', 'COS_WEAR_BOTTOM_SHORTS'] as $code) {
+            app(AccountInventoryService::class)->revokeItem($player['account_id'], ItemDef::query()->where('code', $code)->firstOrFail(), 1);
+        }
+        $this->travel(2)->hours();
+        $this->postJson('/api/zone/checkout', $basket, $headers)->assertOk();
+
+        $this->assertSame(2, $this->counter($player['account_id'], ActionCounter::ClothesBought));
+    }
+
+    public function test_the_regular_counts_one_day_per_paris_day_with_a_pub_order(): void
+    {
+        $player = $this->registerAndCreditWallet(500, 'cash');
+        $headers = $this->auth($player['token'], self::SECRET);
+
+        $this->travelTo(now()->parse('2026-11-13 20:00:00', 'UTC'));
+        $this->postJson('/api/pub/order', ['code' => 'drink_stout'], $headers)->assertOk();
+        $this->postJson('/api/pub/order', ['code' => 'drink_stout'], $headers)->assertOk();
+        $this->assertSame(1, $this->counter($player['account_id'], ActionCounter::PubOrderDays));
+
+        $this->travelTo(now()->parse('2026-11-13 23:05:00', 'UTC'));
+        $this->postJson('/api/pub/order', ['code' => 'drink_stout'], $headers)->assertOk();
+        $this->assertSame(2, $this->counter($player['account_id'], ActionCounter::PubOrderDays));
+    }
+
+    public function test_pub_games_count_five_a_day_and_none_above_fifty_drunkenness(): void
+    {
+        $player = $this->registerAndCreditWallet(0, 'cash');
+        $headers = $this->auth($player['token'], self::SECRET);
+        $this->travelTo(now()->parse('2026-11-13 12:00:00', 'UTC'));
+
+        $this->postJson('/api/tasks/pub-game', ['game' => 'meter_shot', 'intoxication' => 51], $headers)->assertOk();
+        $this->assertSame(0, $this->counter($player['account_id'], ActionCounter::PubGames));
+        foreach (range(1, 6) as $game) {
+            $this->postJson('/api/tasks/pub-game', ['game' => 'drink_fast', 'intoxication' => 50], $headers)->assertOk();
+        }
+        $this->assertSame(5, $this->counter($player['account_id'], ActionCounter::PubGames));
+
+        $this->travelTo(now()->parse('2026-11-14 12:00:00', 'UTC'));
+        $this->postJson('/api/tasks/pub-game', ['game' => 'meter_shot', 'intoxication' => 0], $headers)->assertOk();
+        $this->assertSame(6, $this->counter($player['account_id'], ActionCounter::PubGames));
+
+        $this->postJson('/api/tasks/pub-game', ['game' => 'darts', 'intoxication' => 0], $headers)->assertStatus(422);
+        $this->postJson('/api/tasks/pub-game', ['game' => 'meter_shot', 'intoxication' => 101], $headers)->assertStatus(422);
+    }
+
+    public function test_every_duel_won_at_darts_or_drink_fast_counts(): void
+    {
+        $player = $this->registerAndCreditWallet(0, 'cash');
+        $headers = $this->auth($player['token'], self::SECRET);
+
+        foreach ([['darts', 1], ['drink_fast', 1], ['darts', 2], ['darts', 0], ['meter_shot', 0]] as [$game, $placement]) {
+            $this->postJson('/api/pub/reward', ['game' => $game, 'placement' => $placement, 'score' => 50], $headers)->assertOk();
+        }
+
+        $this->assertSame(2, $this->counter($player['account_id'], ActionCounter::DuelsWon));
+    }
+
+    public function test_the_insider_counts_one_week_per_monday_to_sunday_in_paris(): void
+    {
+        $player = $this->registerAndCreditWallet(0, 'cash');
+        $headers = $this->auth($player['token'], self::SECRET);
+
+        $this->travelTo(now()->parse('2026-11-16 09:00:00', 'UTC'));
+        $this->postJson('/api/tasks/secret-room', [], $headers)->assertOk();
+        $this->travelTo(now()->parse('2026-11-22 22:30:00', 'UTC'));
+        $this->postJson('/api/tasks/secret-room', [], $headers)->assertOk();
+        $this->assertSame(1, $this->counter($player['account_id'], ActionCounter::SecretRoomWeeks));
+
+        $this->travelTo(now()->parse('2026-11-22 23:30:00', 'UTC'));
+        $this->postJson('/api/tasks/secret-room', [], $headers)->assertOk();
+        $this->assertSame(2, $this->counter($player['account_id'], ActionCounter::SecretRoomWeeks));
+    }
+
+    private function catalogId(string $code): int
+    {
+        $id = DB::table('shop_catalog_items')
+            ->join('item_defs', 'item_defs.item_def_id', '=', 'shop_catalog_items.item_def_id')
+            ->where('item_defs.code', $code)
+            ->value('shop_catalog_items.shop_catalog_item_id');
+        $this->assertNotNull($id, $code);
+
+        return (int) $id;
     }
 
     private function counter(int $accountId, ActionCounter $counter): int
