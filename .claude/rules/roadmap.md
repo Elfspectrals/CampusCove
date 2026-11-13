@@ -152,7 +152,7 @@ Decision (2026-11-13): assets that were only decoration get a use, and house doo
 Decision (2026-11-13): job tools are sold in an aisle of the hardware store (the store itself belongs to the useful-items work). Each tool has a job bonus and a combat use, stronger but slower than the punch, with a damage per second close to it; hits are owned by the socket. Tools wear out per use (pick or landed hit) and break at 0. At death the held tools drop on the ground for 5 minutes, with the cash bag rules (72 h giver age, not for the killer, house key excluded). A tool is visible only when held; items carry a `weapon` flag for the police. The ~900 coins/day cap applies per job; the orchard after-quota price is 0 for everyone so the secateurs save time, not money. The hoe waits for the farm quotas (about 3,200 coins/day today) to be cut to about 900 by the branch that owns the farm. Economist review: go under those conditions. Contract in `docs/TOOLS.md`.
 
 - [done] Items and data: secateurs, crowbar, hammer, wrench with uses and the `weapon` flag; orchard after-quota price 0.
-- [todo] Models in hand (first and third person) through `make model`.
+- [done] Models through `make model` (`build_job_tools.py`, 500-700 triangles, standing upright with the handle at the bottom so the held-item grip lands on it). First person uses the existing held-item code for every `tool`; not checked in game yet (comes with the combat playtest). Third person comes with the combat step, once the socket knows the held tool.
 - [todo] Combat with the held tool, wear per landed hit.
 - [todo] Secateurs at the orchard: 2.0 s pick, server-side interval, wear per pick.
 - [todo] Tools dropped at death.
