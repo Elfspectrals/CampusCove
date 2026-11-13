@@ -29,7 +29,8 @@ export interface CashBagsDeps {
   promptsHidden: () => boolean
   promptLabel: () => string
   say: (text: string) => void
-  pickedMessage: (amount: number) => string
+  pickedMessage: (amount: number, toolCount: number) => string
+  onToolsPicked: () => void
 }
 
 export function useCashBags(deps: CashBagsDeps) {
@@ -95,7 +96,9 @@ export function useCashBags(deps: CashBagsDeps) {
   function onPicked(data: CashBagPickedPayload): void {
     remove(data.id)
     applyCachedBalanceAfterPurchase('cash', data.cash)
-    deps.say(deps.pickedMessage(data.amount))
+    const toolCount = data.tools?.length ?? 0
+    deps.say(deps.pickedMessage(data.amount, toolCount))
+    if (toolCount > 0) deps.onToolsPicked()
   }
 
   function onError(data: CashBagErrorPayload): void {

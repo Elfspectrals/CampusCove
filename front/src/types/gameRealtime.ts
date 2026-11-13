@@ -448,6 +448,8 @@ export interface CashBagPickedPayload {
   id: number
   amount: number
   cash: number
+  /** Job tools that were in the bag, now in the picker's inventory (docs/TOOLS.md). */
+  tools?: string[]
 }
 
 export interface CashBagErrorPayload {

@@ -240,6 +240,7 @@ export interface CashBag {
   y: number
   z: number
   expiresAt: number
+  tools: string[]
 }
 
 export interface GameRoom {

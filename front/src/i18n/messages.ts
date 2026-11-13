@@ -412,7 +412,7 @@ export const messages = {
       done: 'Back off',
       reinforced: 'Reinforced lock fitted: picking your door now takes five pins.',
     },
-    cashBag: { prompt: 'Pick up the cash', picked: '+{amount} coins picked up', dropped: 'You dropped {amount} coins where you fell. Anyone can pick them up for 5 minutes.' },
+    cashBag: { prompt: 'Pick up the cash', picked: '+{amount} coins picked up', pickedTools: '+{amount} coins and {count} tool(s) picked up', pickedOnlyTools: '{count} tool(s) picked up', droppedTools: 'You dropped {count} tool(s) in your bag where you fell. Anyone can pick them up for 5 minutes.', dropped: 'You dropped {amount} coins where you fell. Anyone can pick them up for 5 minutes.' },
     atm: {
       prompt: 'Use the ATM',
       title: 'ATM',
@@ -874,7 +874,7 @@ export const messages = {
       done: 'Reculer',
       reinforced: 'Serrure renforcée posée : crocheter ta porte demande maintenant cinq goupilles.',
     },
-    cashBag: { prompt: 'Ramasser l’argent', picked: '+{amount} pièces ramassées', dropped: 'Tu as lâché {amount} pièces là où tu es tombé. N’importe qui peut les ramasser pendant 5 minutes.' },
+    cashBag: { prompt: 'Ramasser l’argent', picked: '+{amount} pièces ramassées', pickedTools: '+{amount} pièces et {count} outil(s) ramassés', pickedOnlyTools: '{count} outil(s) ramassé(s)', droppedTools: 'Tu as lâché {count} outil(s) dans ton sac là où tu es tombé. N’importe qui peut les ramasser pendant 5 minutes.', dropped: 'Tu as lâché {amount} pièces là où tu es tombé. N’importe qui peut les ramasser pendant 5 minutes.' },
     atm: {
       prompt: 'Utiliser le distributeur',
       title: 'Distributeur',

@@ -74,6 +74,11 @@ export function onHold(room: GameRoom, client: GameClient, payload: ClientPayloa
   void syncHeld(room, client, player)
 }
 
+export function emptyHand(room: GameRoom, client: GameClient, player: Player): void {
+  player.wantedTool = null
+  setHeld(room, client, player, null)
+}
+
 export function onToolUsed(room: GameRoom, client: GameClient, player: Player, code: string, usesLeft: number): void {
   client.send('tool_worn', { code, usesLeft })
   if (usesLeft > 0 || player.heldTool !== code) return

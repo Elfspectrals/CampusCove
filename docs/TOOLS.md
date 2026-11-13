@@ -42,7 +42,7 @@ Health is 100. Every swing costs stamina like the punch. The held tool is read b
 
 ## Death
 
-The held tools drop on the ground and anyone can pick them up for 5 minutes, then they are gone. Same rules as the cash bag: an account younger than 72 h drops nothing (its tools are destroyed), the killer cannot pick up their victim's tools. The house key never drops.
+Every job tool carried (not the house key) goes into the death bag with the cash (`CashDropService::dropAtDeath`): the tool instances move to a `death_drop` container linked by `cash_drops.container_id`, so they leave the victim's inventory. A bag exists when it holds cash or tools (`amount = 0` only with a container). Whoever picks the bag up within 5 minutes gets the cash and the tools, with their wear kept; the API answers `tools` (codes) on the drop and on the pickup, and the hospital bill carries `lostTools`. Same rules as the cash: an account younger than 72 h drops nothing (its tools are deleted), the killer cannot pick up the bag. After 5 minutes the tools stay in the dead container and are gone from the game. The socket empties the victim's hand when they are knocked out.
 
 ## Income
 

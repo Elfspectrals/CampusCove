@@ -558,7 +558,11 @@ const cashBags = useCashBags({
   promptsHidden: () => inventoryOpen.value || !canUsePub(),
   promptLabel: () => t('cashBag.prompt'),
   say: (text) => survival.say(text),
-  pickedMessage: (amount) => t('cashBag.picked', { amount }),
+  pickedMessage: (amount, toolCount) => {
+    if (toolCount === 0) return t('cashBag.picked', { amount })
+    return amount > 0 ? t('cashBag.pickedTools', { amount, count: toolCount }) : t('cashBag.pickedOnlyTools', { count: toolCount })
+  },
+  onToolsPicked: () => refreshOwnedItems(),
 })
 watch(atmOpen, (open) => {
   if (!open && !document.pointerLockElement) requestPointerLock()
@@ -710,6 +714,10 @@ const survival = useSurvival({
   onCashLost: (amount) => {
     applyCachedBalanceAfterPurchase('cash', 0)
     survival.say(t('cashBag.dropped', { amount }))
+  },
+  onToolsLost: (count) => {
+    refreshOwnedItems()
+    survival.say(t('cashBag.droppedTools', { count }))
   },
   onBelongingsLost: (clothes) => {
     refreshOwnedItems()
