@@ -4,7 +4,10 @@ import { randomUUID } from 'node:crypto'
 import { callRealtimeBackend, errorPayload, parseAccountId } from './backend.ts'
 import { intIn, refreshMarket } from './market.ts'
 import { leavePub } from './pubGames.ts'
+import { parisHourAfter, quizStartAfter } from './pubQuiz.ts'
 import { startQuizSoon } from './pubQuizEvent.ts'
+import type { StorageRoom } from './storageAuction.ts'
+import { SALE_HOUR_PARIS } from './storageSale.ts'
 import { type TradeRoom, checkTradeDistance } from './trade.ts'
 import type { ClientPayload, GameClient, GameRoom, Player, Vec3 } from './types.ts'
 import { type TeleportDestination, teleportDestinations } from './world.ts'
@@ -21,6 +24,12 @@ type AdminAction = 'items' | 'money' | 'item' | 'market_open' | 'market_close' |
 
 export type AdminRoom = GameRoom & TradeRoom
 export type AdminPanelRoom = AdminRoom & { pollHousingUnits(): Promise<void> }
+export type AdminMenuRoom = AdminRoom & StorageRoom
+
+type ScheduledEvent = { state: 'scheduled', startsAt: number }
+type QuizEvent = ScheduledEvent | { state: 'registration' | 'running', startsAt: number }
+type StorageEvent = ScheduledEvent | { state: 'running', index: number, count: number }
+type MarketEvent = { open: boolean, opensAt: string, closesAt: string } | null
 
 type Destinations = () => TeleportDestination[]
 
@@ -44,15 +53,34 @@ export function teleportPlayer(room: AdminRoom, player: Player, to: Vec3, yaw: n
   checkTradeDistance(room, player)
 }
 
-/** 'admin_open': the places and the players the watch's admin app lists. */
-export function onAdminOpen(room: AdminRoom, client: GameClient, destinations: Destinations = teleportDestinations): void {
+function quizEvent(room: AdminMenuRoom, now: number): QuizEvent {
+  const quiz = room.pub.quiz
+  if (quiz?.phase.kind === 'registration') return { state: 'registration', startsAt: quiz.startsAt }
+  if (quiz?.phase.kind === 'question') return { state: 'running', startsAt: quiz.startsAt }
+  return { state: 'scheduled', startsAt: quizStartAfter(now) }
+}
+
+function storageEvent(room: AdminMenuRoom, now: number): StorageEvent {
+  const sale = room.storageAuction.sale
+  if (sale) return { state: 'running', index: sale.index, count: sale.lots.length }
+  return { state: 'scheduled', startsAt: parisHourAfter(now, SALE_HOUR_PARIS) }
+}
+
+function marketEvent(room: AdminMenuRoom): MarketEvent {
+  const market = room.market
+  return market ? { open: market.open, opensAt: market.opens_at, closesAt: market.closes_at } : null
+}
+
+/** 'admin_open': the places, the players and the state of each event the watch's admin app lists. */
+export function onAdminOpen(room: AdminMenuRoom, client: GameClient, destinations: Destinations = teleportDestinations, now = Date.now()): void {
   const admin = adminOf(room, client)
   if (!admin) return
   const players = [...room.players.values()]
     .filter((p) => p.sessionId !== admin.sessionId)
-    .map((p) => ({ sessionId: p.sessionId, pseudo: p.pseudo, distance: Math.hypot(p.x - admin.x, p.z - admin.z) }))
+    .map((p) => ({ sessionId: p.sessionId, pseudo: p.pseudo, distance: Math.hypot(p.x - admin.x, p.z - admin.z), stars: p.wantedStars }))
     .sort((a, b) => a.pseudo.localeCompare(b.pseudo))
-  client.send('admin_menu', { destinations: destinations().map(({ key, name }) => ({ key, name })), players })
+  const events = { quiz: quizEvent(room, now), storage: storageEvent(room, now), market: marketEvent(room) }
+  client.send('admin_menu', { destinations: destinations().map(({ key, name }) => ({ key, name })), players, events })
 }
 
 function coolingDown(admin: Player, now: number): boolean {
@@ -97,6 +125,41 @@ export function onAdminSummon(room: AdminRoom, client: GameClient, payload: Clie
   teleportPlayer(room, target, to, admin.ry + Math.PI, now)
   const targetClient = room.clients.find((c) => c.sessionId === target.sessionId)
   targetClient?.send('admin_summoned', { byPseudo: admin.pseudo })
+}
+
+function otherPlayer(room: AdminRoom, admin: Player, payload: ClientPayload): Player | null {
+  const targetId = typeof payload?.sessionId === 'string' ? payload.sessionId : null
+  const target = targetId ? room.players.get(targetId) : undefined
+  return target && target.sessionId !== admin.sessionId ? target : null
+}
+
+export function onAdminGoto(room: AdminRoom, client: GameClient, payload: ClientPayload, now = Date.now()): void {
+  const admin = adminOf(room, client)
+  if (!admin || coolingDown(admin, now)) return
+  const target = otherPlayer(room, admin, payload)
+  if (!target) {
+    sendError(client, 'This player is no longer here.')
+    return
+  }
+  const to = {
+    x: target.x - Math.sin(target.ry) * SUMMON_DISTANCE,
+    y: target.y,
+    z: target.z - Math.cos(target.ry) * SUMMON_DISTANCE
+  }
+  teleportPlayer(room, admin, to, target.ry + Math.PI, now)
+}
+
+export async function onAdminPlayer(room: AdminRoom, client: GameClient, payload: ClientPayload): Promise<void> {
+  const admin = adminOf(room, client)
+  if (!admin) return
+  const target = grantTarget(room, payload)
+  if (!target) return sendError(client, 'This player is no longer here.')
+  try {
+    const wallets = await callRealtimeBackend(admin.token, `/admin/game/wallets?account_id=${target.accountId}`, 'GET')
+    client.send('admin_player', { sessionId: target.player.sessionId, cash: wallets.cash, bank: wallets.bank, stars: target.player.wantedStars })
+  } catch (error) {
+    sendError(client, errorPayload(error, 'Could not read this player.', 'admin_failed').message)
+  }
 }
 
 export function onAdminQuizStart(room: AdminRoom, client: GameClient, now = Date.now()): void {
@@ -147,7 +210,7 @@ export async function onAdminGiveMoney(room: AdminRoom, client: GameClient, payl
   const ref = newRef()
   try {
     const balances = await callRealtimeBackend(admin.token, '/admin/game/money', 'POST', { account_id: target.accountId, wallet, amount, ref })
-    client.send('admin_result', { action: 'money', ok: true, pseudo: target.player.pseudo, wallet, amount })
+    client.send('admin_result', { action: 'money', ok: true, sessionId: target.player.sessionId, pseudo: target.player.pseudo, wallet, amount, cash: balances.cash, bank: balances.bank })
     clientOf(room, target.player)?.send('admin_granted', { kind: 'money', byPseudo: admin.pseudo, wallet, amount, cash: balances.cash, bank: balances.bank })
   } catch (error) {
     sendFailure(client, 'money', error, 'Could not give the money.')

@@ -978,6 +978,7 @@ const { isAdmin, menu: adminMenu, error: adminError, panelOpen: adminPanelOpen }
 function openAdminPanel(): void {
   trade.closeMenu()
   adminWatch.openPanel()
+  if (document.pointerLockElement) document.exitPointerLock()
 }
 watch(adminPanelOpen, (open) => {
   if (open && document.pointerLockElement) document.exitPointerLock()
@@ -985,6 +986,10 @@ watch(adminPanelOpen, (open) => {
 })
 function adminTeleport(key: string): void {
   adminWatch.teleport(key)
+  trade.closeMenu()
+}
+function adminGoTo(sessionId: string): void {
+  adminWatch.goTo(sessionId)
   trade.closeMenu()
 }
 function adminSummon(sessionId: string): void {
@@ -1373,12 +1378,17 @@ function sendChat(text: string): void {
 
 const WALK_WITH_WATCH_ACTIONS = ['moveForward', 'moveBack', 'moveLeft', 'moveRight', 'jump', 'survivalWatch'] as const
 
+function isEditableTarget(target: EventTarget | null): boolean {
+  return target instanceof HTMLInputElement || target instanceof HTMLSelectElement || target instanceof HTMLTextAreaElement
+}
+
 function isWalkWithWatchKey(code: string): boolean {
   return code === 'ShiftLeft' || code === 'ShiftRight' || WALK_WITH_WATCH_ACTIONS.some((action) => matches(action, code))
 }
 
 function handleExtraKeyDown(e: KeyboardEvent): boolean {
-  if (chatOpen.value || atmOpen.value || lockpickOpen.value || storageOpen.value || marketPanelOpen.value || adminPanelOpen.value || playerListOpen.value || tasksOpen.value) return true
+  if (chatOpen.value || atmOpen.value || lockpickOpen.value || storageOpen.value || marketPanelOpen.value || playerListOpen.value || tasksOpen.value) return true
+  if (adminPanelOpen.value && (isEditableTarget(e.target) || !pointerLocked.value)) return true
   // the character screen owns the keyboard (Esc closes the editor)
   if (creator.value) return true
   // the trade window takes the keyboard (coins field, Esc): no game key behind it
@@ -1475,6 +1485,10 @@ const movement = useGameMovement({
   onCanvasMouseDown: (e) => {
     // furniture placement keeps its own clicks (left: pick / place, right: cancel)
     if (placement.onPointerDown(e)) return true
+    if (adminPanelOpen.value && !pointerLocked.value) {
+      requestPointerLock()
+      return true
+    }
     return pointerLocked.value && runUseOrPunch(mouseButtonCode(e.button), false, e.shiftKey)
   },
   speedFactor: () => survival.speedFactor() * intoxication.walkFactor(),
@@ -2089,7 +2103,8 @@ const crosshairClass = computed(() => {
       :outgoing="tradeOutgoing"
       :error="tradeError"
       :is-admin="isAdmin"
-      :admin-menu="adminMenu"
+      :admin="adminWatch"
+      :own-session-id="gameRoomRef?.sessionId ?? ''"
       :admin-error="adminError"
       :cash="walletBalances.cash"
       :bank-screen="watchBank.screen.value"
@@ -2117,6 +2132,7 @@ const crosshairClass = computed(() => {
       @contact-ask="watchContacts.ask"
       @teleport="adminTeleport"
       @summon="adminSummon"
+      @go-to="adminGoTo"
       @storage-sale="adminWatch.startStorageSale"
       @admin-panel="openAdminPanel"
     />
@@ -2150,6 +2166,8 @@ const crosshairClass = computed(() => {
       :menu="adminMenu"
       :items="adminWatch.items.value"
       :result="adminWatch.result.value"
+      :log="adminWatch.log.value"
+      :recent-place="adminWatch.recentPlace.value"
       :error="adminError"
       @give-money="adminWatch.giveMoney"
       @give-item="adminWatch.giveItem"
@@ -2158,6 +2176,9 @@ const crosshairClass = computed(() => {
       @open-market="adminWatch.openMarket"
       @close-market="adminWatch.closeMarket"
       @collect-taxes="adminWatch.collectTaxes"
+      @teleport="adminWatch.teleport"
+      @go-to="adminWatch.goTo"
+      @summon="adminSummon"
       @close="adminWatch.closePanel"
     />
     <GameAtmScreen v-if="atmOpen" :screen="atm.screen.value" :pending="atm.pending.value" :feedback="atm.feedback.value" @run="atm.run" @clear-feedback="atm.clearFeedback" @close="atm.close" />

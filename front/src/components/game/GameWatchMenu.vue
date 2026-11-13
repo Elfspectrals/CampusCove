@@ -2,11 +2,12 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { actionKeyLabels, matches } from '../../config/keybindings'
-import { WATCH_HOME, keepSelectedRow, stepWatch, watchKeyOf, type WatchView } from '../../game/watch/watchNav'
+import { WATCH_HOME, keepSelectedRow, stepWatch, watchKeyOf, type WatchKey, type WatchView } from '../../game/watch/watchNav'
+import type { useAdminWatch } from '../../composables/game/useAdminWatch'
 import type { BankScreen } from '../../api/bank'
 import type { ContactRow } from '../../game/watch/contacts'
 import type { GpsPlace, GpsPlaceAt } from '../../game/watch/gps'
-import type { AdminMenuPayload, TradeNearbyPlayer, TradePendingPayload, TradeRequestedPayload } from '../../types/gameRealtime'
+import type { TradeNearbyPlayer, TradePendingPayload, TradeRequestedPayload } from '../../types/gameRealtime'
 import type { UiIconName } from '../ui/icons'
 import UiCurrency from '../ui/UiCurrency.vue'
 import UiIcon from '../ui/UiIcon.vue'
@@ -29,7 +30,8 @@ const props = defineProps<{
   outgoing: TradePendingPayload | null
   error: string | null
   isAdmin: boolean
-  adminMenu: AdminMenuPayload | null
+  admin: ReturnType<typeof useAdminWatch>
+  ownSessionId: string
   adminError: string | null
   cash: number | null
   bankScreen: BankScreen | null
@@ -59,6 +61,7 @@ const emit = defineEmits<{
   contactAsk: [pseudo: string]
   teleport: [key: string]
   summon: [sessionId: string]
+  goTo: [sessionId: string]
   storageSale: []
   adminPanel: []
   alarmOpen: []
@@ -89,7 +92,16 @@ const view = ref<WatchView>(WATCH_HOME)
 const openApp = computed(() => (view.value.screen === 'app' ? apps.value[view.value.app] ?? null : null))
 const selectedRow = computed(() => (view.value.screen === 'app' ? view.value.row : -1))
 
-const appRef = ref<{ rowKeys: string[]; activate: (row: number) => void } | null>(null)
+interface WatchAppHandle {
+  rowKeys: string[]
+  activate: (row: number) => void
+  key?: (key: WatchKey, row: number) => number | null
+  text?: (e: KeyboardEvent) => boolean
+  title?: string
+  keyHint?: string | null
+}
+
+const appRef = ref<WatchAppHandle | null>(null)
 watch(
   () => appRef.value?.rowKeys ?? [],
   (keys, previousKeys) => {
@@ -108,7 +120,7 @@ let clockTimer: number | undefined
 
 const errorText = computed(() => ({ gps: null, alarm: null, contacts: props.contactsError, bank: props.bankError, trade: props.error, admin: props.adminError })[openApp.value?.key ?? 'trade'])
 const chooseKeys = `${actionKeyLabels('moveForward').slice(-1)[0] ?? '↑'}${actionKeyLabels('moveBack')[0] ?? '↓'}`
-const enterHint = computed(() => (openApp.value ? openApp.value.enterLabel : t('watch.keys.open')))
+const enterHint = computed(() => appRef.value?.keyHint ?? (openApp.value ? openApp.value.enterLabel : t('watch.keys.open')))
 
 const screenRef = ref<HTMLElement | null>(null)
 watch(view, () => {
@@ -122,11 +134,24 @@ function onKey(e: KeyboardEvent): void {
     e.stopPropagation()
     return
   }
+  if (view.value.screen === 'app' && !e.code.startsWith('Arrow') && appRef.value?.text?.(e)) {
+    e.preventDefault()
+    e.stopPropagation()
+    return
+  }
   const key = watchKeyOf(e.code, matches)
   if (!key) return
   e.preventDefault()
   e.stopPropagation()
   if (e.repeat && (key === 'enter' || key === 'back')) return
+  const appView = view.value
+  if (appView.screen === 'app') {
+    const row = appRef.value?.key?.(key, appView.row) ?? null
+    if (row !== null) {
+      view.value = { ...appView, row }
+      return
+    }
+  }
   const step = stepWatch(view.value, key, { apps: apps.value.length, rows: appRef.value?.rowKeys.length ?? 0 })
   view.value = step.view
   if (step.effect?.kind === 'close') emit('close')
@@ -162,12 +187,13 @@ onUnmounted(() => {
       <div class="flex h-[272px] flex-col overflow-hidden rounded-[18px] bg-ink-900 text-fog ring-1 ring-line/5">
         <div class="flex items-center justify-between px-3 pb-1 pt-2 text-xs font-bold text-mist">
           <span class="font-display text-base text-fog">{{ clock }}</span>
+          <span v-if="openApp?.key === 'admin'" class="rounded-full bg-coral px-1.5 text-[10px] font-extrabold tracking-wider text-ink-950">{{ t('watch.admin.badge') }}</span>
           <UiCurrency currency="coins" :amount="cash" :size="12" />
         </div>
 
         <div v-if="openApp" class="flex items-center gap-1.5 px-3 pb-2 font-display text-lg font-extrabold">
           <UiIcon name="chevron-left" :size="16" class="text-mist" />
-          {{ t(`watch.apps.${openApp.key}`) }}
+          {{ appRef?.title ?? t(`watch.apps.${openApp.key}`) }}
         </div>
 
         <div ref="screenRef" class="min-h-0 flex-1 overflow-y-auto px-2">
@@ -230,10 +256,12 @@ onUnmounted(() => {
           <WatchAdminApp
             v-else
             ref="appRef"
-            :menu="adminMenu"
+            :admin="admin"
+            :own-session-id="ownSessionId"
             :selected="selectedRow"
             @teleport="(key) => emit('teleport', key)"
             @summon="(sessionId) => emit('summon', sessionId)"
+            @go-to="(sessionId) => emit('goTo', sessionId)"
             @storage-sale="emit('storageSale')"
             @panel="emit('adminPanel')"
           />

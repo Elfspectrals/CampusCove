@@ -41,6 +41,7 @@ class AdminGameApiTest extends TestCase
         $player = $this->player();
         $routes = [
             ['GET', '/api/admin/game/items'],
+            ['GET', '/api/admin/game/wallets'],
             ['POST', '/api/admin/game/money'],
             ['POST', '/api/admin/game/items'],
             ['POST', '/api/admin/game/taxes/collect'],
@@ -71,6 +72,30 @@ class AdminGameApiTest extends TestCase
             $this->assertNull($items->firstWhere('code', $code), "{$code} is bought with gems");
         }
         $this->assertNotNull($items->firstWhere('code', 'COS_WEAR_BODY_STREET_RUNNER'));
+    }
+
+    public function test_the_wallets_of_a_player_give_their_cash_and_bank(): void
+    {
+        $admin = $this->player(admin: true);
+        $player = $this->player(bank: 1240, cash: 85);
+
+        $this->getJson('/api/admin/game/wallets?account_id='.$player['account_id'], $this->auth($admin['token'], self::SECRET))
+            ->assertOk()
+            ->assertExactJson(['cash' => 85, 'bank' => 1240]);
+    }
+
+    public function test_the_wallets_need_a_live_account(): void
+    {
+        $admin = $this->player(admin: true);
+        $player = $this->player();
+        DB::table('accounts')->where('account_id', $player['account_id'])->update(['deleted_at' => now()]);
+
+        $this->getJson('/api/admin/game/wallets?account_id='.$player['account_id'], $this->auth($admin['token'], self::SECRET))
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('account_id');
+        $this->getJson('/api/admin/game/wallets', $this->auth($admin['token'], self::SECRET))
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('account_id');
     }
 
     public function test_a_grant_to_the_bank_writes_an_admin_grant_ledger_row(): void
