@@ -24,6 +24,10 @@ Finishing gives the "New citizen" badge next to the pseudo. No coins.
 
 The front points at the objective of the current step (`front/src/game/tutorialMarker.ts`): the nearest orchard tree, nothing while eating (any place works), the orchard farmer, the nearest ATM, then the darts oche at the pub. The marker shows the ground distance in metres, through walls, and sticks to the screen edge with an arrow when the target is out of view.
 
+## First-time bubbles
+
+While the tutorial is active and the game is loaded, the first time the player comes within 4 m (ground distance) of an ATM, an NPC (zone buyers, the pub bartender) or a shop or work building door, a bubble explains it for 6 s over the nearest one (`front/src/game/tutorialHints.ts`). Order when several are in reach: ATM, NPC, door. Each kind shows once per account in this browser (`localStorage` key `cc.tutorialHints.<account_id>`).
+
 ## State
 
 Table `account_tutorials`, one row per account, created by the first save of the character (`CharacterAppearanceService::save`). Accounts whose character existed before have no row: status `none`, they never see the tutorial.

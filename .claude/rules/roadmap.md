@@ -135,7 +135,7 @@ Decision (2026-11-13): a new account plays a 5-minute tutorial right after the c
 - [done] Free darts game at the tutorial step: no fee, and a darts game with a free entry pays nobody.
 - [done] One-line quest log under the minimap, skip with confirmation, resume in the in-game settings.
 - [done] Marker to the objective: a diamond with the distance over the nearest orchard tree, the farmer, the nearest ATM or the darts oche, stuck to the screen edge with an arrow when out of view; none while eating.
-- [todo] Bubbles the first time near an ATM, a door or an NPC.
+- [done] Bubbles the first time within 4 m of an ATM, an NPC (zone buyers, bartender) or a shop or work door, 6 s over the place, once per kind, while the tutorial is active; remembered in this browser per account (`cc.tutorialHints.<account>`).
 - [todo] "New citizen" badge next to the pseudo.
 - [todo] Playtest in the game.
 

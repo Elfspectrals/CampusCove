@@ -7,7 +7,7 @@ const { t } = useI18n()
 
 <template>
   <div
-    class="pointer-events-none absolute z-10 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-0.5"
+    class="pointer-events-none absolute z-20 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-0.5"
     :style="{ left: `${x}px`, top: `${y}px` }"
     aria-hidden="true"
   >
