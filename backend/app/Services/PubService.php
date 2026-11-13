@@ -28,6 +28,7 @@ final class PubService
         private readonly AccountInventoryService $inventory,
         private readonly CoinRewardService $coinRewards,
         private readonly ActionCounterService $counters,
+        private readonly PlayerActivityService $activity,
     ) {}
 
     /** @return array{code: string, price: int, balance_after: int} */
@@ -44,6 +45,7 @@ final class PubService
         return DB::transaction(function () use ($accountId, $def, $price): array {
             $balance = $this->debit($accountId, $price, 'pub_order', ['code' => $def->code]);
             $this->inventory->grantItem($accountId, $def, 1);
+            $this->activity->basketPaid($accountId, 'pub');
 
             return ['code' => (string) $def->code, 'price' => $price, 'balance_after' => $balance];
         });

@@ -43,6 +43,8 @@ final class ZoneBuyerService
             $this->coinRewards->creditCash($accountId, self::SOURCE, $payout['coins'], ['quantity' => $quantity, 'zone' => $zone, 'area' => $area, 'code' => $code]);
             if ($code === OrchardService::APPLE_CODE) {
                 $this->counters->bump($accountId, ActionCounter::ApplesSold, $quantity);
+            } else {
+                $this->counters->bump($accountId, ActionCounter::ItemsSoldToBuyers, $quantity);
             }
 
             return [

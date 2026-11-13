@@ -22,6 +22,11 @@ Laravel owns every counter. A counter counts one real action, bumped by the serv
 | `darts_duels_80` | one finished darts game against other players (placement 1 or more) with 80 points or more, won or lost; solo games do not count | `PubService::reward` |
 | `zones_visited` | one zone entered for the first time: a zone of the world manifest with bounds or a shop zone (`zones/index.json` with a parent); a shop inside the mall also counts the mall. New zones count without a change | socket `taskTracking.ts` on every accepted move, then `POST /tasks/zone-visited` (realtime) `{ zone: [a-z0-9_]{1,40} }` |
 | `active_days` | one day (midnight to midnight, Europe/Paris) with 10 active minutes; a minute is a 60 s window, counted from the player's first move, in which the player walked at least 2 m (accepted moves only). Kept per account in the socket's memory, so a restart of the socket loses the minutes of the day | socket `taskTracking.ts`, then `POST /tasks/active-day` (realtime, no body); Laravel picks the date |
+| `farm_harvests` | one crop put in the inventory by a successful farm pick | `FarmService::pick` |
+| `items_sold_to_buyers` | one item sold to a zone buyer, apples left out (they count for the orchard) | `ZoneBuyerService::sell` |
+| `dishes_cooked` | one raw item cooked on a stove or barbecue | `SurvivalService::cook` |
+| `shop_baskets` | one paid basket per shop and per clock hour in Paris (14:00 to 14:59); a zone checkout counts its zone, a pub order counts as shop `pub` | `PlayerActivityService::basketPaid` from `ZoneShopController::checkout` and `PubService::order` |
+| `clothes_bought` | one piece of clothing (item kind `cosmetic`) bought in a zone checkout for the first time; buying it again after losing it counts nothing | `PlayerActivityService::basketPaid` |
 | `foods_tasted` | one food or drink tasted for the first time (any group of `FoodCatalog` but `medical`), once per item code | `SurvivalService::consume` |
 
 ## Tiers
@@ -39,6 +44,11 @@ Every task lives in `App\Support\TaskCatalog`: a key, the counter it reads and i
 | `gourmet` | `foods_tasted` | 5 / 15 / 30 (fixed, so it does not move when foods are added) |
 | `explorer` | `zones_visited` | 5 / 10 / 15 (fixed, 16 places today) |
 | `loyal` | `active_days` | 7 / 30 / 100 |
+| `market_gardener` | `farm_harvests` | 100 / 1,000 / 5,000 |
+| `trader` | `items_sold_to_buyers` | 50 / 500 / 2,500 |
+| `cook` | `dishes_cooked` | 10 / 100 / 500 |
+| `loyal_customer` | `shop_baskets` | 10 / 100 / 300 |
+| `dapper` | `clothes_bought` | 3 / 10 / 25 |
 
 ## Notification
 

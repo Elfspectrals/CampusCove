@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\ShopPurchaseResource;
 use App\Models\Account;
+use App\Services\PlayerActivityService;
 use App\Services\ReferralService;
 use App\Services\ShopPurchaseResult;
 use App\Services\ShopPurchaseService;
@@ -11,10 +12,11 @@ use App\Services\ZoneBuyerService;
 use App\Services\ZonePriceBook;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ZoneShopController extends Controller
 {
-    public function checkout(Request $request, ShopPurchaseService $shop, ZonePriceBook $prices, ReferralService $referrals): JsonResponse
+    public function checkout(Request $request, ShopPurchaseService $shop, ZonePriceBook $prices, ReferralService $referrals, PlayerActivityService $activity): JsonResponse
     {
         $validated = $request->validate([
             'zone' => ['required', 'string', 'regex:/^[a-z0-9_]+$/'],
@@ -25,11 +27,13 @@ class ZoneShopController extends Controller
         /** @var Account $account */
         $account = $request->user();
 
-        $results = $shop->checkoutWithCoins(
-            $account,
-            array_map(fn (mixed $id): int => (int) $id, $validated['items']),
-            $prices->prices($validated['zone'])
-        );
+        $itemIds = array_map(fn (mixed $id): int => (int) $id, $validated['items']);
+        $results = DB::transaction(function () use ($shop, $prices, $activity, $account, $itemIds, $validated): array {
+            $results = $shop->checkoutWithCoins($account, $itemIds, $prices->prices($validated['zone']));
+            $activity->basketPaid((int) $account->getAuthIdentifier(), $validated['zone'], $itemIds);
+
+            return $results;
+        });
 
         $referrals->checkQualification((int) $account->getAuthIdentifier());
 

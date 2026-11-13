@@ -141,6 +141,7 @@ final class SurvivalService
             }
             $this->inventory->revokeItem($accountId, $raw, 1);
             $this->inventory->grantItem($accountId, $cooked, 1);
+            $this->counters->bump($accountId, ActionCounter::DishesCooked);
         });
 
         return ['code' => $cookedCode];

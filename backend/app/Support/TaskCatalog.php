@@ -16,6 +16,11 @@ final class TaskCatalog
             'gourmet' => ['counter' => ActionCounter::FoodsTasted, 'tiers' => [5, 15, 30]],
             'explorer' => ['counter' => ActionCounter::ZonesVisited, 'tiers' => [5, 10, 15]],
             'loyal' => ['counter' => ActionCounter::ActiveDays, 'tiers' => [7, 30, 100]],
+            'market_gardener' => ['counter' => ActionCounter::FarmHarvests, 'tiers' => [100, 1000, 5000]],
+            'trader' => ['counter' => ActionCounter::ItemsSoldToBuyers, 'tiers' => [50, 500, 2500]],
+            'cook' => ['counter' => ActionCounter::DishesCooked, 'tiers' => [10, 100, 500]],
+            'loyal_customer' => ['counter' => ActionCounter::ShopBaskets, 'tiers' => [10, 100, 300]],
+            'dapper' => ['counter' => ActionCounter::ClothesBought, 'tiers' => [3, 10, 25]],
         ];
     }
 

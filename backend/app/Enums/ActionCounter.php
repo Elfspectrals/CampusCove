@@ -13,4 +13,9 @@ enum ActionCounter: string
     case FoodsTasted = 'foods_tasted';
     case ZonesVisited = 'zones_visited';
     case ActiveDays = 'active_days';
+    case FarmHarvests = 'farm_harvests';
+    case ItemsSoldToBuyers = 'items_sold_to_buyers';
+    case DishesCooked = 'dishes_cooked';
+    case ShopBaskets = 'shop_baskets';
+    case ClothesBought = 'clothes_bought';
 }
