@@ -44,6 +44,7 @@ import GameTradeWindow from '../components/game/GameTradeWindow.vue'
 import GameWatchMenu from '../components/game/GameWatchMenu.vue'
 import ItemShopPurchaseConfirmModal from '../components/shop/ItemShopPurchaseConfirmModal.vue'
 import GameRoomMessageBanner from '../components/game/GameRoomMessageBanner.vue'
+import GameTaskBanner from '../components/game/GameTaskBanner.vue'
 import UiIcon from '../components/ui/UiIcon.vue'
 import { useApartmentObjects } from '../composables/game/useApartmentObjects'
 import { useClinic } from '../composables/game/useClinic'
@@ -60,6 +61,7 @@ import { usePlayerInventory } from '../composables/game/usePlayerInventory'
 import { useOrchard } from '../composables/game/useOrchard'
 import { useZoneBuyers } from '../composables/game/useZoneBuyers'
 import { useAtm } from '../composables/game/useAtm'
+import { useTaskBanner } from '../composables/game/useTaskBanner'
 import { useCashBags } from '../composables/game/useCashBags'
 import { useProximityVoice } from '../composables/game/useProximityVoice'
 import { mutedAccounts, playerVolumes, setPlayerVolume, toggleMuteAccount } from '../composables/game/useVoiceSettings'
@@ -478,6 +480,7 @@ const zoneBuyers = useZoneBuyers({
   buyers: () => zoneDecor.buyers.value,
 })
 const { openBuyer: zoneBuyerOpen, selling: zoneBuyerSelling, feedback: zoneBuyerFeedback } = zoneBuyers
+const { shown: taskDone, handlers: taskHandlers } = useTaskBanner()
 const atm = useAtm({
   myPosition,
   getCamera,
@@ -1160,6 +1163,7 @@ const realtime = useGameRealtime({
   orchard: orchard.handlers,
   zoneBuyers: zoneBuyers.handlers,
   atm: atm.handlers,
+  tasks: taskHandlers,
   cashBags: cashBags.handlers,
   voice: { onToken: voice.onToken, disconnect: voice.disconnect },
   farm: farm.handlers,
@@ -1324,6 +1328,7 @@ const crosshairClass = computed(() => {
     />
     <GameDrunkEffects :effects="drunkEffects" />
     <GameRoomMessageBanner v-if="roomMessage" :message="roomMessage" />
+    <GameTaskBanner v-if="taskDone" :key="`${taskDone.task}-${taskDone.tier}`" :done="taskDone" />
     <!-- an error during boot drops the loading screen so its banner is seen; the character creator shows over the load -->
     <Transition leave-active-class="transition-opacity duration-500" leave-to-class="opacity-0">
       <GameLoadingScreen

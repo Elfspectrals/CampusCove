@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\DB;
 
 final class TaskProgressService
 {
+    public function __construct(private readonly RealtimeNotifier $notifier) {}
+
     public function recordReachedTiers(int $accountId, ActionCounter $counter, int $value): void
     {
         foreach (TaskCatalog::tiersReading($counter) as $task => $thresholds) {
@@ -15,11 +17,14 @@ final class TaskProgressService
                 if ($value < $threshold) {
                     break;
                 }
-                DB::table('account_task_tiers')->insertOrIgnore([
+                $inserted = DB::table('account_task_tiers')->insertOrIgnore([
                     'account_id' => $accountId,
                     'task' => $task,
                     'tier' => $index + 1,
                 ]);
+                if ($inserted === 1) {
+                    $this->notifier->taskTierReached($accountId, $task, $index + 1, $threshold);
+                }
             }
         }
     }

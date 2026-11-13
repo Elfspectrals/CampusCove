@@ -9,7 +9,9 @@ use App\Services\ActionCounterService;
 use App\Services\OrchardService;
 use Database\Seeders\ShopSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use InvalidArgumentException;
 use Tests\Concerns\SetsWalletBalance;
 use Tests\TestCase;
@@ -156,6 +158,24 @@ class TaskProgressApiTest extends TestCase
         app(ActionCounterService::class)->bump($player['account_id'], ActionCounter::DartsPlayed);
 
         $this->assertSame([['darts', 1]], $this->tiers($player['account_id']));
+    }
+
+    public function test_the_socket_is_told_once_when_a_tier_is_reached(): void
+    {
+        config(['services.realtime.url' => 'http://socket.test:3000']);
+        Http::fake(['socket.test:3000/*' => Http::response(['ok' => true])]);
+        $player = $this->registerAndCreditWallet(0, 'cash');
+        $counters = app(ActionCounterService::class);
+
+        $counters->bump($player['account_id'], ActionCounter::DartsPlayed, 9);
+        Http::assertNothingSent();
+        $counters->bump($player['account_id'], ActionCounter::DartsPlayed);
+        $counters->bump($player['account_id'], ActionCounter::DartsPlayed);
+
+        Http::assertSentCount(1);
+        Http::assertSent(fn (Request $request): bool => $request->url() === 'http://socket.test:3000/internal/task-tier-reached'
+            && $request->header('X-Realtime-Secret') === [self::SECRET]
+            && $request->data() === ['accountId' => $player['account_id'], 'task' => 'darts', 'tier' => 1, 'threshold' => 10]);
     }
 
     private function counter(int $accountId, ActionCounter $counter): int

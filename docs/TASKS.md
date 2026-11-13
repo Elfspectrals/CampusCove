@@ -30,3 +30,11 @@ Every task lives in `App\Support\TaskCatalog`: a key, the counter it reads and i
 |---|---|---|
 | `orchard` | `apples_picked` | 100 / 1,000 / 5,000 |
 | `darts` | `darts_played` | 10 / 50 / 200 |
+
+## Notification
+
+When `TaskProgressService` records a new tier (and only then), Laravel calls the socket:
+
+- `POST /internal/task-tier-reached` with `X-Realtime-Secret`, body `{ accountId: int > 0, task: string [a-z_]{1,40}, tier: 1 | 2 | 3, threshold: int > 0 }`. The socket refuses any other body with 422. Best effort: a failed call is logged and the tier stays recorded.
+- The socket sends `task_done` `{ task, tier, threshold }` to every client of that account in every city room.
+- The front shows a banner at the top centre for 4 s (one at a time, queued) with a two-note chime: "Task complete", the task name and its tier name (Bronze, Silver, Gold), and the goal reached.

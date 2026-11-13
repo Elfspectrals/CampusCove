@@ -382,6 +382,12 @@ export interface ZoneSellErrorPayload {
   code: string
 }
 
+export interface TaskDonePayload {
+  task: string
+  tier: 1 | 2 | 3
+  threshold: number
+}
+
 export interface AtmDonePayload {
   action: 'deposit' | 'withdraw' | 'transfer'
   bank: number
