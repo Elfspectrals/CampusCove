@@ -39,6 +39,7 @@ export interface PunchDeps {
   joltCamera: (dirX: number, dirZ: number, strength: number) => void
   knockBack: (dirX: number, dirZ: number, distance: number) => void
   playSound: (name: SfxName) => void
+  cooldownMs?: () => number
 }
 
 export function usePunch(deps: PunchDeps) {
@@ -71,7 +72,7 @@ export function usePunch(deps: PunchDeps) {
   function tryPunch(): boolean {
     if (!deps.pointerLocked.value || deps.knockedOut.value) return false
     const now = Date.now()
-    if (now - lastPunchAt < PUNCH_COOLDOWN_MS) return true
+    if (now - lastPunchAt < (deps.cooldownMs?.() ?? PUNCH_COOLDOWN_MS)) return true
     const targetSessionId = findTarget()
     const spent = spendPunchStamina(staminaState, now, targetSessionId !== null)
     if (!spent) {

@@ -212,7 +212,7 @@ final class TradeService
     }
 
     /** Quantity held in the inventory (or the clothes locker), read under the inventory row locks. */
-    private function ownedQuantity(int $accountId, ItemDef $def): int
+    public function ownedQuantity(int $accountId, ItemDef $def): int
     {
         if ($def->kind === 'cosmetic') {
             return (int) (DB::table('account_locker_cosmetics')
@@ -239,7 +239,7 @@ final class TradeService
     }
 
     /** @return list<int> */
-    private function wornItemDefIds(int $accountId): array
+    public function wornItemDefIds(int $accountId): array
     {
         return DB::table('account_cosmetic_equipment')
             ->where('account_id', $accountId)

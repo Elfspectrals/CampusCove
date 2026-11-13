@@ -179,6 +179,8 @@ erDiagram
         text cosmetic_slot
         smallint hunger_per_portion
         smallint thirst_per_portion
+        int max_uses "outil de métier, voir TOOLS.md"
+        bool weapon "outil qui frappe plus fort que le poing"
     }
     ITEM_INSTANCES {
         bigint item_instance_id PK
@@ -186,6 +188,7 @@ erDiagram
         bigint owner_account_id FK
         bigint container_id FK
         bigint locked_tx_id FK "verrou pendant un échange"
+        int uses_left "usures restantes d'un outil"
     }
     CONTAINERS {
         bigint container_id PK
@@ -237,6 +240,12 @@ erDiagram
     ROOMS ||--o{ ROOM_MUTES : "rend muet"
     ROOMS ||--o{ ROOM_AUDIT_LOGS : journalise
     ROOMS ||--o{ CHAT_LOGS : discussions
+    HOUSING_UNITS ||--o{ LOCKPICK_ATTEMPTS : crochetée
+    ACCOUNTS ||--o{ LOCKPICK_ATTEMPTS : cambrioleur
+    ACCOUNTS ||--o| LOCKPICK_WEAR : "crochet entamé"
+    ROOM_FURNITURES ||--o| FURNITURE_STORAGES : "rangement"
+    ACCOUNTS ||--o| ACCOUNT_RESPAWN_BEDS : "lit de réveil"
+    HOUSING_UNITS ||--o{ HOUSE_ALARM_EVENTS : "alarme"
 
     HOUSING_UNITS {
         bigint unit_id PK
@@ -272,7 +281,45 @@ erDiagram
         bigint account_id PK, FK
         room_role role
     }
+    LOCKPICK_ATTEMPTS {
+        bigint id PK
+        bigint burglar_account_id FK
+        bigint unit_id FK
+        smallint misses
+        text outcome "null | success | broke | abandoned"
+        timestamptz started_at
+        timestamptz ended_at
+    }
+    LOCKPICK_WEAR {
+        bigint account_id PK, FK
+        smallint uses_spent "1 à 5"
+    }
+    FURNITURE_STORAGES {
+        bigint room_furniture_id PK, FK
+        bigint container_id FK
+    }
+    ACCOUNT_RESPAWN_BEDS {
+        bigint account_id PK, FK
+        bigint room_furniture_id FK
+        timestamptz set_at
+    }
+    HOUSE_ALARM_EVENTS {
+        bigint id PK
+        bigint unit_id FK
+        bigint owner_account_id FK
+        bigint attempt_id FK "unique"
+        timestamptz triggered_at
+        timestamptz seen_at
+    }
 ```
+
+- **Alarme** : `house_alarm_events` garde chaque déclenchement (au plus un par séance de crochetage) pour le bilan que le propriétaire lit à son retour. Voir `docs/LOCKPICK.md`.
+
+- **Lit de réveil** : `account_respawn_beds` garde le lit posé que le joueur a choisi ; la ligne disparaît avec le lit. Voir `docs/RESPAWN_BED.md`.
+
+- **Rangement** : un meuble de rangement posé (commode, coffre à jouets, frigo) a une ligne `furniture_storages` qui le relie à son conteneur ; les objets rangés sont les `inventory_stacks` de ce conteneur. Voir `docs/STORAGE.md`.
+
+- **Crochetage** : une ligne `lockpick_attempts` par séance devant une porte (une seule ouverte par cambrioleur). Les réussites servent aux limites : maison protégée 24 h, cambrioleur en attente 30 min. `lockpick_wear` compte les usages du crochet entamé ; au 5e usage ou à la casse, un crochet est retiré de l'inventaire. Voir `docs/LOCKPICK.md`.
 
 ## 5. Échanges entre joueurs
 
@@ -400,7 +447,7 @@ erDiagram
 - **Authentification à part** : `account_auth_local` et `account_auth_oauth` isolent les secrets de `accounts`. Ajouter un fournisseur OAuth ne touche pas la table principale ; l'anonymisation RGPD efface ces lignes et garde l'historique économique.
 - **Argent en grand livre** : pas de colonne solde. Chaque mouvement est une ligne de `wallet_ledger` rattachée à une `transactions` ; le solde est `SUM(delta)`. Un achat, un échange ou une taxe est donc toujours traçable et auditable, et on ne peut pas « créer » de pièces en modifiant un nombre.
 - **Deux monnaies, un modèle** : `currency_code` (`coins` gagnés en jeu, `premium` achetés) partage la même mécanique ; les skins premium ne se vendent qu'en `premium`.
-- **Liquide et banque** : les pièces gagnées en jeu vivent dans deux portefeuilles. `cash` est l'argent sur soi : les jobs (verger, acheteurs de zone, récompenses du pub) y versent, les boutiques, le pub, les soins de la clinique et les échanges entre joueurs y prennent. `coins` est la banque : maison, taxe, hôpital et gueule de bois y sont prélevés, bonus de bienvenue et parrainage y sont versés. Dépôt, retrait et virement (`BankService`, types `bank_deposit`, `bank_withdraw`, `bank_transfer`) déplacent l'argent entre les deux. À la mort, le liquide part dans une ligne `cash_drops` (propriétaire, tueur éventuel, montant, transactions de chute et de ramassage, expiration à 5 min) que n'importe qui sauf le tueur ramasse une seule fois ; voir `docs/BANK.md`.
+- **Liquide et banque** : les pièces gagnées en jeu vivent dans deux portefeuilles. `cash` est l'argent sur soi : les jobs (verger, acheteurs de zone, récompenses du pub) y versent, les boutiques, le pub, les soins de la clinique et les échanges entre joueurs y prennent. `coins` est la banque : maison, taxe, hôpital et gueule de bois y sont prélevés, bonus de bienvenue et parrainage y sont versés. Dépôt, retrait et virement (`BankService`, types `bank_deposit`, `bank_withdraw`, `bank_transfer`) déplacent l'argent entre les deux. À la mort, le liquide part dans une ligne `cash_drops` (propriétaire, tueur éventuel, montant, transactions de chute et de ramassage, expiration à 5 min) que n'importe qui sauf le tueur ramasse une seule fois ; voir `docs/BANK.md`. Les outils de métier portés y partent aussi : ils passent dans un conteneur `death_drop` relié par `cash_drops.container_id` (un sac sans liquide n'existe qu'avec ce conteneur), puis dans l'inventaire de celui qui ramasse le sac ; voir `docs/TOOLS.md`.
 - **Définition vs exemplaire** : `item_defs` décrit un type d'objet ; un objet unique (meuble, outil, vêtement échangeable) est une `item_instances`, un consommable est une ligne de `inventory_stacks` avec une quantité. On évite des milliers de lignes pour 99 pommes, tout en gardant un historique par meuble.
 - **Conteneurs génériques** : sac, coffre de meuble, séquestre d'échange, boîte de cadeaux sont tous des `containers`. Déplacer un objet revient à changer `container_id`, avec la même logique partout.
 - **Échanges sûrs** : un objet engagé est bloqué (`locked_tx_id`) et les biens passent par un séquestre (`trade_escrows`, `escrow_container_id`) ; l'échange se valide en une seule transaction SQL ou pas du tout.
