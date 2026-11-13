@@ -27,6 +27,7 @@ final class PubService
     public function __construct(
         private readonly AccountInventoryService $inventory,
         private readonly CoinRewardService $coinRewards,
+        private readonly PubQuizService $quiz,
         private readonly TutorialService $tutorial,
         private readonly ActionCounterService $counters,
         private readonly PlayerActivityService $activity,
@@ -44,7 +45,12 @@ final class PubService
         $price = (int) $drink['price'];
 
         return DB::transaction(function () use ($accountId, $def, $price): array {
-            $balance = $this->debit($accountId, $price, 'pub_order', ['code' => $def->code]);
+            if ($this->quiz->redeemPint($accountId, (string) $def->code)) {
+                $price = 0;
+                $balance = Wallet::lockForAccount($accountId, Wallet::CASH)->balance();
+            } else {
+                $balance = $this->debit($accountId, $price, 'pub_order', ['code' => $def->code]);
+            }
             $this->inventory->grantItem($accountId, $def, 1);
             $this->activity->basketPaid($accountId, 'pub', []);
             $this->activity->pubOrder($accountId);

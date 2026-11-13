@@ -1,3 +1,5 @@
+import type { QuizChoice, QuizRankingEntry, QuizText } from '../game/pub/quiz'
+
 export interface RemoteUserPayload {
   sessionId: string
   id: string
@@ -81,6 +83,7 @@ export interface RoomInitPayload {
   houseFurniture?: HouseFurniturePayload[]
   openDoors?: string[]
   pubSecretOpen?: boolean
+  pubQuiz?: PubQuizAnnouncePayload | null
   cashBags?: CashBagPayload[]
   /** The API flags this account is_admin: the watch shows its Admin app (the server re-checks every admin message). */
   isAdmin?: boolean
@@ -293,6 +296,48 @@ export interface PubBouncerBlockPayload {
 
 export interface PubBellPayload {
   sessionId: string
+}
+
+export interface PubQuizAnnouncePayload {
+  startsAt: number
+}
+
+export interface PubQuizLobbyPayload {
+  startsAt: number
+  contestants: Array<{ sessionId: string; pseudo: string }>
+}
+
+export interface PubQuizCancelledPayload {
+  reason: 'not_enough_players'
+}
+
+export interface PubQuizQuestionPayload {
+  index: number
+  count: number
+  prompt: QuizText
+  choices: [QuizText, QuizText, QuizText, QuizText]
+  closesAt: number
+}
+
+export interface PubQuizRevealPayload {
+  index: number
+  answer: QuizChoice
+  ranking: QuizRankingEntry[]
+}
+
+export interface PubQuizResultsPayload {
+  ranking: QuizRankingEntry[]
+}
+
+export interface PubQuizPrizePayload {
+  sessionId: string
+  pseudo: string
+  coins: number
+  pint: boolean
+}
+
+export interface PubQuizAnsweredPayload {
+  choice: QuizChoice
 }
 
 export interface PubRewardPayload {

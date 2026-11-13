@@ -89,7 +89,7 @@ export interface OutfitPiece {
 
 export type NpcPose = 'idle' | 'sit'
 
-export const STAFF_ROLES = ['bartender', 'bouncer', 'nurse'] as const
+export const STAFF_ROLES = ['bartender', 'bouncer', 'quizmaster', 'nurse'] as const
 export type StaffRole = (typeof STAFF_ROLES)[number]
 
 export interface NpcProp extends PropBase {

@@ -93,6 +93,7 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
         Route::post('/pub/order', [PubController::class, 'order']);
         Route::post('/pub/play', [PubController::class, 'play']);
         Route::post('/pub/reward', [PubController::class, 'reward']);
+        Route::post('/pub/quiz/reward', [PubController::class, 'quizReward']);
         Route::post('/orchard/pick', [OrchardController::class, 'pick']);
         Route::post('/orchard/sell', [OrchardController::class, 'sell']);
         Route::post('/farm/pick', [FarmController::class, 'pick']);

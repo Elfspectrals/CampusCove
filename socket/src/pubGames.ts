@@ -20,6 +20,7 @@ import {
   RACE_TIMEOUT_MS,
   SHOTS_MIN_MS
 } from './pubConstants.ts'
+import { withdrawFromPubQuiz } from './pubQuizEvent.ts'
 import { addIntoxication } from './survivalStats.ts'
 import { reportPubGame } from './taskTracking.ts'
 import type { ClientPayload, DartsGame, DartsPlayer, GameClient, GameRoom, Player, PubChallenge, PubRace, PubRacer } from './types.ts'
@@ -106,6 +107,7 @@ export function leavePub(room: GameRoom, player: Player): void {
   player.pubShots = null
   standUp(room, player)
   leaveDarts(room, player)
+  withdrawFromPubQuiz(room, player)
 }
 
 
