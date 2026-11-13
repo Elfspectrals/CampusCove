@@ -126,6 +126,13 @@ Decision (2026-11-12): voice goes through a self-hosted LiveKit SFU (open source
 - [done] Voice from another PC on the same network: `make up` gives LiveKit the network address, `make share-local` reaches LiveKit through the page (`/livekit` proxy) over https (2026-11-12).
 - [todo] Deploy LiveKit on a VPS with TURN; privacy page mentions voice.
 
+## Flatshare (doing, branch feat/flatshare)
+
+Decision (2026-11-13): no player groups or crews, and no rented space or stalls at the mall (the town market covers selling). Only the flatshare: a flatmate is anyone the owner gave the keys to, with no limit on their number or account age. The owner pays the whole housing tax from the bank; each flatmate adds 25 % of the base tax (economist: keeps housing a coin sink when it is shared). Rent between flatmates is paid in cash through the existing trade, and the owner alone decides to keep or remove a flatmate who does not pay. A flatmate can leave by themselves at the house door.
+
+- [done] Tax = base tax × (1 + 0.25 per flatmate), rounded up, counted when it is charged; the admin still edits the base tax.
+- [done] A flatmate leaves at the door (F2, then F2 again within 3 s) and gives the key back; in game "Give/Take keys" reads "Add/Remove flatmate". Played with two accounts on 2026-11-13: add, the 213 tax with one flatmate on a 170 house, leave, back to 170.
+
 ## First day in town tutorial (doing, branch feat/first-day-tutorial)
 
 Decision (2026-11-13): a new account plays a 5-minute tutorial right after the character creator, the orchard farmer as guide: pick 6 apples, eat one, sell the others, deposit at the orchard ATM (cash drops at death, the bank does not), one free darts game at the pub that pays 0 coins to anyone. GreenCart is left out (312 m away, and a deposit before a shop leaves no cash). New hunger stays at 100. Reward: a "New citizen" badge next to the pseudo, the same for everyone, never traded or lost, zero coins. Skipping gives no badge; the player can resume later. Accounts that existed before never see it. Every step is validated by the server, on the action counters of the tasks branch once they are validated. Contract in `docs/TUTORIAL.md`.

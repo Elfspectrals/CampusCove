@@ -50,6 +50,10 @@ function hasHouseKeys(unit: HousingUnit, accountId: number | null): boolean {
   return unit.occupant_account_id === accountId || unit.key_holder_account_ids.includes(accountId)
 }
 
+export function isFlatmate(unit: HousingUnit, accountId: number | null): boolean {
+  return accountId !== null && unit.status === 'occupied' && unit.key_holder_account_ids.includes(accountId)
+}
+
 export function housingActionFor(unit: HousingUnit, door: DoorContext): HousingAction | null {
   if (unit.status === 'vacant') return unit.offer_type === 'buy' ? 'buy' : null
   const keys = hasHouseKeys(unit, door.myAccountId)
