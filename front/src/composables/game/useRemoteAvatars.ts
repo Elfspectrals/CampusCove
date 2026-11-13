@@ -126,6 +126,7 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
   const sessionByUserId = new Map<string, string>()
   /** Appearance received before the avatar finished its first load. */
   const pendingAppearance = new Map<string, AppearanceUpdate>()
+  const wantedStarsBySession = new Map<string, number>()
   const upsertTokenByUserId = new Map<string, number>()
   const renderTokenBySessionId = new Map<string, number>()
   /** Eat / drink bubbles over other players' heads (they live on the avatar group). */
@@ -181,6 +182,7 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     if (sessionByUserId.get(entry.userId) === sessionId) sessionByUserId.delete(entry.userId)
     pendingAppearance.delete(sessionId)
     renderTokenBySessionId.delete(sessionId)
+    wantedStarsBySession.delete(sessionId)
   }
 
   function removeOtherSessionsOf(userId: string, keepSessionId: string) {
@@ -244,7 +246,7 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
       userId: data.id,
       pseudo: data.pseudo,
       group,
-      nameTag: createNameTag(group, data.pseudo),
+      nameTag: createNameTag(group, data.pseudo, wantedStarsBySession.get(sessionId) ?? 0),
       voiceIcon: createVoiceIcon(group),
       voiceState: null,
       chatBubble: null,
@@ -309,7 +311,7 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     scene.add(group)
     const racePint = latest.racePint ? createRacePint(group) : null
     racePint?.setProgress(latest.raceProgress)
-    const nameTag = createNameTag(group, latest.pseudo)
+    const nameTag = createNameTag(group, latest.pseudo, wantedStarsBySession.get(sessionId) ?? 0)
     const voiceIcon = createVoiceIcon(group)
     const rebuilt = { ...latest, group, nameTag, voiceIcon, chatBubble: null, outfit, punchOffsetX: 0, punchOffsetZ: 0, racePint }
     avatars.set(sessionId, rebuilt)
@@ -338,6 +340,12 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
   function setPicking(sessionId: string, picking: boolean) {
     const entry = avatars.get(sessionId)
     if (entry) setAvatarPicking(entry.group, picking)
+  }
+
+  function setWantedStars(sessionId: string, stars: number): void {
+    if (stars > 0) wantedStarsBySession.set(sessionId, stars)
+    else wantedStarsBySession.delete(sessionId)
+    avatars.get(sessionId)?.nameTag.setStars(stars)
   }
 
   function setVoiceState(sessionId: string, state: VoiceIconState): void {
@@ -493,5 +501,5 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     }
   }
 
-  return { upsert, updateAppearance, setTarget, setSeated, setPicking, setRacePint, pseudoOf, positionOf, setVoiceState, players, accountOf, showAction, showChat, showPunch, showHit, remove, clear, tick }
+  return { upsert, updateAppearance, setTarget, setSeated, setPicking, setRacePint, pseudoOf, positionOf, setVoiceState, setWantedStars, players, accountOf, showAction, showChat, showPunch, showHit, remove, clear, tick }
 }

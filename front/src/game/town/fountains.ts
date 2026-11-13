@@ -4,7 +4,7 @@ import { createGltfLoader } from '../gltfLoaderFactory'
 import { terrainHeightAt } from './terrainHeight'
 
 /** Same reach as FOUNTAIN_REACH in socket/src/survival.ts (the server re-checks it). */
-const FOUNTAIN_REACH = 2.0
+export const FOUNTAIN_REACH = 2.0
 
 export type Fountain = { x: number; y: number; z: number }
 

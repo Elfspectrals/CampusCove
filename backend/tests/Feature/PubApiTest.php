@@ -182,7 +182,7 @@ class PubApiTest extends TestCase
 
         $this->postJson('/api/survival/hangover', [], $this->auth($player['token'], self::SECRET))
             ->assertOk()
-            ->assertExactJson(['billed' => SurvivalService::HANGOVER_FEE, 'balance_after' => 500 - SurvivalService::HANGOVER_FEE]);
+            ->assertExactJson(['billed' => SurvivalService::HANGOVER_FEE, 'balance_after' => 500 - SurvivalService::HANGOVER_FEE, 'licence_lost' => false]);
 
         $this->assertSame(500 - SurvivalService::HANGOVER_FEE, $this->balance($accountId, 'coins'));
         $this->assertSame(3, $this->hotbarItem($player['token'], 'food_sandwich')['quantity']);
@@ -204,10 +204,10 @@ class PubApiTest extends TestCase
 
         $this->postJson('/api/survival/hangover', [], $headers)
             ->assertOk()
-            ->assertExactJson(['billed' => 15, 'balance_after' => 0]);
+            ->assertExactJson(['billed' => 15, 'balance_after' => 0, 'licence_lost' => false]);
         $this->postJson('/api/survival/hangover', [], $headers)
             ->assertOk()
-            ->assertExactJson(['billed' => 0, 'balance_after' => 0]);
+            ->assertExactJson(['billed' => 0, 'balance_after' => 0, 'licence_lost' => false]);
 
         $this->assertSame(0, $this->balance($poor['account_id'], 'coins'));
     }

@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "key": "black_white_checkerboard_marble_floor",
+  "label": "Black white checkerboard marble floor",
+  "tileMeters": 2.0,
+  "maps": {
+    "color": "color.png",
+    "mask": "mask.png"
+  },
+  "parts": [
+    {
+      "id": "white_tiles",
+      "label": "White_tiles",
+      "color": "#e8eaee"
+    },
+    {
+      "id": "black_tiles",
+      "label": "Black_tiles",
+      "color": "#40454c"
+    },
+    {
+      "id": "detail",
+      "label": "Detail",
+      "color": "#8f949f"
+    }
+  ]
+}

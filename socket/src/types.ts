@@ -90,7 +90,70 @@ export interface Player extends Vec3 {
   slotModels: Record<WearSlot, string | null>
   /** Body built in the character creator (docs/CHARACTER.md); null until the player has made one. */
   character: CharacterLook | null
+  wantedStars: number
+  wantedDecayMs: number
+  wantedDirty: boolean
+  lastHitAt: Map<number, number>
+  lastAssaultAt: Map<number, number>
+  jail: JailSentence | null
+  jailDirty: boolean
+  jailPayPending: boolean
+  lastJailPayAt: number
+  mealTrayInMs: number | null
+  policeLicence: boolean | null
+  policeLicencePrice: number | null
+  onDuty: boolean
+  policePending: boolean
+  lastPoliceActionAt: number
+  lastStepAt: number
+  cuffAttempt: CuffAttempt | null
+  cuffedBy: Cuffs | null
+  pickpocket: PickpocketGame | null
+  lastPickpocketAt: number
 }
+
+export type JailKind = 'npc' | 'officer'
+
+export interface JailSentence {
+  kind: JailKind
+  stars: number
+  msLeft: number
+  cellId: string | null
+}
+
+export interface CuffAttempt {
+  targetSessionId: string
+  startedAt: number
+}
+
+export interface Cuffs {
+  officerSessionId: string
+  since: number
+}
+
+export interface PickpocketWindow {
+  center: number
+  width: number
+}
+
+export interface PickpocketLootItem {
+  code: string
+  name: string
+  kind: string
+  quantity: number
+  previewImage: string | null
+}
+
+interface PickpocketTarget {
+  victimSessionId: string
+  victimAccountId: number
+  victimPseudo: string
+}
+
+export type PickpocketGame =
+  | PickpocketTarget & { phase: 'checking' }
+  | PickpocketTarget & { phase: 'playing', attemptId: number, windows: PickpocketWindow[], startedAt: number, stops: number }
+  | PickpocketTarget & { phase: 'looting', attemptId: number, witnessed: boolean, loot: PickpocketLootItem[] | null, endsAt: number, taking: boolean }
 
 export type CharacterSex = 'm' | 'f'
 export type CharacterBuild = 'slim' | 'normal' | 'broad'
@@ -214,6 +277,7 @@ export interface CashBag {
   y: number
   z: number
   expiresAt: number
+  murderVictimAccountId: number | null
 }
 
 export interface GameRoom {

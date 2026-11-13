@@ -67,6 +67,28 @@ import type {
   CashBagErrorPayload,
   CashBagPayload,
   CashBagPickedPayload,
+  WantedPayload,
+  JailStatePayload,
+  JailReleasedPayload,
+  JailErrorPayload,
+  JailTrayPayload,
+  PoliceDutyEndedPayload,
+  PoliceBountyPayload,
+  PoliceCuffCancelledPayload,
+  PoliceCuffStartedPayload,
+  PoliceCuffsPayload,
+  PoliceErrorPayload,
+  PoliceLicenceBoughtPayload,
+  PoliceStatePayload,
+  PickpocketAlertPayload,
+  PickpocketErrorPayload,
+  PickpocketFailedPayload,
+  PickpocketLootPayload,
+  PickpocketMissingPayload,
+  PickpocketProgressPayload,
+  PickpocketStartedPayload,
+  PickpocketSucceededPayload,
+  PickpocketTakenPayload,
 } from '../../types/gameRealtime'
 import { useRemoteAvatars, type SeatPose } from './useRemoteAvatars'
 import { PUNCH_DAMAGE } from '../../game/punch'
@@ -113,8 +135,10 @@ export interface GameRealtimeDeps {
   onDoorsSync: (openDoorIds: string[]) => void
   onDoorSound: (data: DoorSoundPayload) => void
   onMyOutfit: (models: WearModels) => void
+  onMyShownTop: (top: string | null) => void
   onPunched: (data: UserPunchedPayload, mySessionId: string) => void
   onPunchTired: (data: PunchTiredPayload) => void
+  onMyWanted: (stars: number) => void
   playSoundOn: (name: SfxName, object: THREE.Object3D, delayS: number) => void
   punchHitTiming: (data: UserPunchedPayload, mySessionId: string) => { delay: number; hitStop: number }
   /** Player trades (useTrade). */
@@ -188,6 +212,34 @@ export interface GameRealtimeDeps {
     onRemoved: (data: { id: number }) => void
     onPicked: (data: CashBagPickedPayload) => void
     onError: (data: CashBagErrorPayload) => void
+  }
+  jail: {
+    onState: (data: JailStatePayload) => void
+    onReleased: (data: JailReleasedPayload) => void
+    onError: (data: JailErrorPayload) => void
+    onTray: (data: JailTrayPayload) => void
+  }
+  police: {
+    onState: (data: PoliceStatePayload) => void
+    onBought: (data: PoliceLicenceBoughtPayload) => void
+    onDutyEnded: (data: PoliceDutyEndedPayload) => void
+    onError: (data: PoliceErrorPayload) => void
+    onCuffStarted: (data: PoliceCuffStartedPayload) => void
+    onCuffCancelled: (data: PoliceCuffCancelledPayload) => void
+    onCuffs: (data: PoliceCuffsPayload) => void
+    onBounty: (data: PoliceBountyPayload) => void
+  }
+  pickpocket: {
+    onStarted: (data: PickpocketStartedPayload) => void
+    onProgress: (data: PickpocketProgressPayload) => void
+    onFailed: (data: PickpocketFailedPayload) => void
+    onSucceeded: (data: PickpocketSucceededPayload) => void
+    onLoot: (data: PickpocketLootPayload) => void
+    onTaken: (data: PickpocketTakenPayload) => void
+    onLootClosed: () => void
+    onAlert: (data: PickpocketAlertPayload) => void
+    onMissing: (data: PickpocketMissingPayload) => void
+    onError: (data: PickpocketErrorPayload) => void
   }
   orchard: {
     onPicked: (data: OrchardPickedPayload) => void
@@ -289,6 +341,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       'appearance_updated',
       (data: { sessionId: string; slotHexes?: Record<string, string>; bodyModelGlb?: string | null; slotModels?: Record<string, string | null>; character?: unknown }) => {
         if (data.sessionId !== room.sessionId) void remotes.updateAppearance(data.sessionId, data)
+        else if (data.slotModels) deps.onMyShownTop(data.slotModels.top ?? null)
       },
     )
 
@@ -319,6 +372,11 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     })
 
     room.onMessage('punch_tired', (data: PunchTiredPayload) => deps.onPunchTired(data))
+
+    room.onMessage('wanted', (data: WantedPayload) => {
+      if (data.sessionId === room.sessionId) deps.onMyWanted(data.stars)
+      else remotes.setWantedStars(data.sessionId, data.stars)
+    })
 
     room.onMessage('trade_nearby', (data: { players: TradeNearbyPlayer[] }) => deps.trade.onNearby(Array.isArray(data.players) ? data.players : []))
     room.onMessage('trade_requested', (data: TradeRequestedPayload) => deps.trade.onRequested(data))
@@ -357,6 +415,28 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('cash_bag_removed', (data: { id: number }) => deps.cashBags.onRemoved(data))
     room.onMessage('cash_bag_picked', (data: CashBagPickedPayload) => deps.cashBags.onPicked(data))
     room.onMessage('cash_bag_error', (data: CashBagErrorPayload) => deps.cashBags.onError(data))
+    room.onMessage('jail_state', (data: JailStatePayload) => deps.jail.onState(data))
+    room.onMessage('jail_released', (data: JailReleasedPayload) => deps.jail.onReleased(data))
+    room.onMessage('jail_error', (data: JailErrorPayload) => deps.jail.onError(data))
+    room.onMessage('jail_tray', (data: JailTrayPayload) => deps.jail.onTray(data))
+    room.onMessage('police_state', (data: PoliceStatePayload) => deps.police.onState(data))
+    room.onMessage('police_licence_bought', (data: PoliceLicenceBoughtPayload) => deps.police.onBought(data))
+    room.onMessage('police_duty_ended', (data: PoliceDutyEndedPayload) => deps.police.onDutyEnded(data))
+    room.onMessage('police_error', (data: PoliceErrorPayload) => deps.police.onError(data))
+    room.onMessage('police_cuff_started', (data: PoliceCuffStartedPayload) => deps.police.onCuffStarted(data))
+    room.onMessage('police_cuff_cancelled', (data: PoliceCuffCancelledPayload) => deps.police.onCuffCancelled(data))
+    room.onMessage('police_cuffs', (data: PoliceCuffsPayload) => deps.police.onCuffs(data))
+    room.onMessage('police_bounty', (data: PoliceBountyPayload) => deps.police.onBounty(data))
+    room.onMessage('pickpocket_started', (data: PickpocketStartedPayload) => deps.pickpocket.onStarted(data))
+    room.onMessage('pickpocket_progress', (data: PickpocketProgressPayload) => deps.pickpocket.onProgress(data))
+    room.onMessage('pickpocket_failed', (data: PickpocketFailedPayload) => deps.pickpocket.onFailed(data))
+    room.onMessage('pickpocket_succeeded', (data: PickpocketSucceededPayload) => deps.pickpocket.onSucceeded(data))
+    room.onMessage('pickpocket_loot', (data: PickpocketLootPayload) => deps.pickpocket.onLoot(data))
+    room.onMessage('pickpocket_taken', (data: PickpocketTakenPayload) => deps.pickpocket.onTaken(data))
+    room.onMessage('pickpocket_loot_closed', () => deps.pickpocket.onLootClosed())
+    room.onMessage('pickpocket_alert', (data: PickpocketAlertPayload) => deps.pickpocket.onAlert(data))
+    room.onMessage('pickpocket_missing', (data: PickpocketMissingPayload) => deps.pickpocket.onMissing(data))
+    room.onMessage('pickpocket_error', (data: PickpocketErrorPayload) => deps.pickpocket.onError(data))
     room.onMessage('farm_picked', (data: FarmPickedPayload) => deps.farm.onPicked(data))
     room.onMessage('farm_error', (data: FarmErrorPayload) => deps.farm.onError(data))
     room.onMessage('pub_shots_ready', (data: PubShotsReadyPayload) => deps.pubGames.onShotsReady(data))

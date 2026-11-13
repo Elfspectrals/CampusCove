@@ -391,7 +391,7 @@ test('a drunk player blacks out: hangover bill, seat released, 30 of intoxicatio
   assert.deepEqual(received(cMe, 'survival_knocked_out').map((m) => m.cause), ['alcohol'])
   await new Promise((resolve) => setImmediate(resolve))
   assert.deepEqual(apiCalls, ['/survival/hangover'])
-  assert.deepEqual(received(cMe, 'survival_hospital_bill'), [{ cause: 'alcohol', billed: 40, balanceAfter: 60, lostItems: 0, lostClothes: 0, lostCash: 0 }])
+  assert.deepEqual(received(cMe, 'survival_hospital_bill'), [{ cause: 'alcohol', billed: 40, jailTax: 0, balanceAfter: 60, lostItems: 0, lostClothes: 0, lostCash: 0 }])
 
   timers.shift()!()
   assert.equal(me.intoxication, HANGOVER_INTOXICATION)

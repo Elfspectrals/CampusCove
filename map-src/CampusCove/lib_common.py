@@ -578,6 +578,57 @@ def gable_roof(coll, name, gx, gz, y0, sx, sz, h, mat, ridge_axis="x", tile=2.0)
     return ob
 
 
+def column(coll, name, gx, gz, y0, h, radius, mat, trim_mat, block_h=0.3, seg=12, tile=1.0):
+    base_w = 3 * radius
+    return [
+        box(coll, f"{name}_Base", gx, gz, y0, base_w, base_w, block_h, trim_mat, bevel=0.03),
+        cyl(coll, f"{name}_Shaft", gx, gz, y0 + block_h, radius, h - 2 * block_h, mat, seg=seg, tile=tile),
+        box(coll, f"{name}_Capital", gx, gz, y0 + h - block_h, base_w - 0.04, base_w - 0.04, block_h, trim_mat, bevel=0.03),
+    ]
+
+
+def pediment(coll, name, gx, gz, y0, sx, sz, h, mat, ledge_mat, ledge_h=0.2, side_overhang=0.2, front_overhang=0.3, tile=2.0):
+    return [
+        box(coll, f"{name}_Ledge", gx, gz + front_overhang / 2, y0, sx + 2 * side_overhang, sz + front_overhang, ledge_h, ledge_mat),
+        gable_roof(coll, name, gx, gz, y0 + ledge_h, sx, sz, h, mat, ridge_axis="z", tile=tile),
+    ]
+
+
+def cornice(coll, name, W, zf, zb, y0, attic_top, mat, attic_mat, projection=0.25, band_h=0.45, attic_projection=0.1, attic_thick=0.35, tile=2.0):
+    attic_y0 = y0 + band_h
+    return (perimeter(coll, f"{name}_Band", W + 2 * projection, zf + projection, zb - projection, y0, band_h, 2 * projection, mat, tile=tile)
+            + perimeter(coll, f"{name}_Attic", W + 2 * attic_projection, zf + attic_projection, zb - attic_projection, attic_y0, attic_top - attic_y0,
+                        attic_thick, attic_mat, tile=tile))
+
+
+def _bar_grille_parts(coll, name, x0, x1, gz, h, mat, bar, step, inset, rail_h, mid_y):
+    parts = []
+    x = x0 + inset
+    while x < x1 - 0.02:
+        parts.append(box(coll, f"{name}_Bar{len(parts)}", x, gz, rail_h, bar, bar, h - 2 * rail_h, mat))
+        x += step
+    for part, y, rail in (("Bottom", 0.0, rail_h), ("Mid", mid_y, rail_h * 2 / 3), ("Top", h - rail_h, rail_h)):
+        parts.append(box(coll, f"{name}_{part}", (x0 + x1) / 2, gz, y, x1 - x0, rail_h, rail, mat))
+    return parts
+
+
+def bar_grille(coll, name, x0, x1, gz, h, mat, extra=(), bar=0.035, step=0.13, inset=0.1, rail_h=0.06, mid_y=1.12):
+    return join(coll, name, _bar_grille_parts(coll, name, x0, x1, gz, h, mat, bar, step, inset, rail_h, mid_y) + list(extra))
+
+
+def bar_door(coll, name, hinge_x, free_x, gz, h, mat, lock_mat, bar=0.035, step=0.13, inset=0.08, rail_h=0.06, mid_y=1.12, stile_w=0.05):
+    x0, x1 = sorted((hinge_x, free_x))
+    toward_hinge = 1 if hinge_x > free_x else -1
+    parts = _bar_grille_parts(coll, name, x0, x1, gz, h, mat, bar, step, inset, rail_h, mid_y)
+    parts += [box(coll, f"{name}_Stile{k}", sx, gz, 0.0, stile_w, 0.07, h - 0.02, mat) for k, sx in enumerate((x0 + stile_w / 2, x1 - stile_w / 2))]
+    parts.append(box(coll, f"{name}_Lock", free_x + toward_hinge * 0.1, gz, 0.95, 0.14, 0.12, 0.22, lock_mat))
+    door = join(coll, name, parts)
+    pivot = Vector(b(hinge_x, gz, 0.0))
+    door.data.transform(Matrix.Translation(door.location - pivot))
+    door.location = pivot
+    return door
+
+
 REF_TEXTURE_SIZE = 256
 FLAT_EDGE_PX = 3
 PALETTE_SMOOTH_PASSES = 2

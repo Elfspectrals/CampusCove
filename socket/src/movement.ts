@@ -1,4 +1,5 @@
 import { canUseDoor } from './doors.ts'
+import { cellOf, insideCell } from './jail.ts'
 import { inSecretVolume } from './pub.ts'
 import { drainStamina, JUMP_STAMINA_COST, SPRINT_STAMINA_PER_S } from './stamina.ts'
 import { SPEED_BOOST_FACTOR } from './survivalStats.ts'
@@ -11,7 +12,7 @@ const MAX_SPRINT_SPEED = 8.5 * 1.25
 const MAX_MOVE_BUDGET_SECONDS = 1
 const MOVE_MARGIN = 1.5
 
-export type MoveRejection = 'out_of_world' | 'knocked_out' | 'too_fast' | 'locked_in' | 'locked_house' | 'secret_room_closed'
+export type MoveRejection = 'out_of_world' | 'knocked_out' | 'cuffed' | 'jailed' | 'too_fast' | 'locked_in' | 'locked_house' | 'secret_room_closed'
 
 export function toInterior(house: WorldHouse, x: number, z: number): { x: number, z: number } {
   const dx = x - house.position.x
@@ -51,6 +52,9 @@ export function moveRejection(room: GameRoom, player: Player, x: number, y: numb
   const b = worldBounds()
   if (x < b.minX || x > b.maxX || z < b.minZ || z > b.maxZ) return 'out_of_world'
   if (now < player.knockedOutUntil) return 'knocked_out'
+  if (player.cuffedBy) return 'cuffed'
+  const cell = cellOf(player)
+  if (cell && !insideCell(cell.bounds, x, z)) return 'jailed'
   const elapsed = Math.min((now - player.lastMoveAt) / 1000, MAX_MOVE_BUDGET_SECONDS)
   const baseSpeed = sprinting ? MAX_SPRINT_SPEED : MAX_WALK_SPEED
   const maxSpeed = now < player.speedBoostUntil ? baseSpeed * SPEED_BOOST_FACTOR : baseSpeed
