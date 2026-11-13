@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "key": "dark_grey_asphalt",
+  "label": "Dark grey asphalt",
+  "tileMeters": 3.0,
+  "maps": {
+    "color": "color.png"
+  }
+}

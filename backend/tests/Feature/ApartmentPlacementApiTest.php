@@ -179,6 +179,43 @@ class ApartmentPlacementApiTest extends TestCase
         ])->assertStatus(422)->assertJsonPath('code', 'out_of_bounds');
     }
 
+    public function test_spawn_is_rejected_once_the_house_holds_its_furniture_limit(): void
+    {
+        $catalog = $this->createApartmentAssetCatalog();
+        $owner = $this->registerAndCreditWallet(10_000, 'coins');
+        $templateKey = $this->buyHouse($owner);
+        $this->postJson('/api/shop/purchase', [
+            'shop_item_public_id' => $catalog->public_id,
+            'quantity' => 3,
+        ], [
+            'Authorization' => 'Bearer '.$owner['token'],
+        ])->assertOk();
+        $unit = $this->boughtUnit($owner);
+        $unit->interior_bounds = ['minX' => -2.0, 'maxX' => 2.0, 'minZ' => -1.5, 'maxZ' => 1.5];
+        $unit->save();
+        $this->assertSame(2, $unit->fresh()->furnitureLimit());
+
+        $headers = ['Authorization' => 'Bearer '.$owner['token']];
+        $first = $this->spawnPayload($owner['account_id'], $templateKey, 0, 0);
+        $this->postJson('/api/apartments/spawn', $first, $headers)->assertOk();
+        $this->postJson('/api/apartments/spawn', $this->spawnPayload($owner['account_id'], $templateKey, 1, 0), $headers)->assertOk();
+        $this->postJson('/api/apartments/spawn', $this->spawnPayload($owner['account_id'], $templateKey, -1, 0), $headers)
+            ->assertStatus(422)->assertJsonPath('code', 'furniture_limit_reached');
+
+        $this->patchJson('/api/apartments/transform', [...$first, 'x' => 0.5], $headers)->assertOk();
+    }
+
+    public function test_furniture_limit_is_one_object_per_five_square_metres_of_every_storey(): void
+    {
+        $this->seed(HousingUnitSeeder::class);
+        $limits = HousingUnit::query()->get()->mapWithKeys(fn (HousingUnit $unit): array => [$unit->model_key => $unit->furnitureLimit()]);
+
+        $this->assertSame(26, $limits['house_01']);
+        $this->assertSame(31, $limits['house_10']);
+        $this->assertSame(45, $limits['house_05']);
+        $this->assertSame(51, $limits['house_08']);
+    }
+
     public function test_furniture_above_a_single_storey_house_is_rejected(): void
     {
         $catalog = $this->createApartmentAssetCatalog();

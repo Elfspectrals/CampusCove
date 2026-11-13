@@ -76,6 +76,10 @@ function modelTemplate(url: string): Promise<THREE.Object3D> {
   return template
 }
 
+export async function cloneModel(url: string): Promise<THREE.Object3D> {
+  return (await modelTemplate(url)).clone(true)
+}
+
 export async function modelSize(url: string): Promise<Vec3> {
   const size = new THREE.Box3().setFromObject(await modelTemplate(url)).getSize(new THREE.Vector3())
   return [size.x, size.y, size.z]

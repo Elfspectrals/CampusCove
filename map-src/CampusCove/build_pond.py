@@ -53,6 +53,11 @@ ORCHARD_GATE_PILLARS = (fence_post(ORCHARD_GATE_I - 1), fence_post(ORCHARD_GATE_
 ORCHARD_GATE_TH = math.atan2(ORCHARD_GATE[0], -ORCHARD_GATE[1])
 ORCHARD_GATE_U = (math.sin(ORCHARD_GATE_TH), -math.cos(ORCHARD_GATE_TH))
 MARKET_GATE_X, MARKET_GATE_Z, MARKET_HW = 42.6, -17.6, 3.0
+STORAGE_GATE_I = round((math.asin(12.0 / FENCE_R) - FENCE_TH0) * FENCE_N / (2 * abs(FENCE_TH0)))
+STORAGE_GATE = fence_post(STORAGE_GATE_I)
+STORAGE_GATE_PILLARS = (fence_post(STORAGE_GATE_I - 1), fence_post(STORAGE_GATE_I + 1))
+STORAGE_GATE_TH = math.atan2(STORAGE_GATE[0], -STORAGE_GATE[1])
+STORAGE_GATE_U = (math.sin(STORAGE_GATE_TH), -math.cos(STORAGE_GATE_TH))
 GAZEBO_C, GAZEBO_R = (35.0, -55.0 - PUSH), 2.9
 KIOSK = (22.5, -51.5 - PUSH)
 GRID_X0, GRID_Z0, GRID_COLS, GRID_ROWS = -48.0, -76.0 - PUSH, 97, 73 + int(PUSH)
@@ -158,6 +163,22 @@ def in_market_way(x, z, margin):
     return x > MARKET_GATE_X - 4.0 and abs(z - MARKET_GATE_Z) < MARKET_HW + 0.5 + margin
 
 
+STORAGE_SPUR = resample(chaikin([ellipse(0.0, CZ, LOOP_RX + PATH_W / 2 - 0.3, LOOP_RZ + PATH_W / 2 - 0.3, -0.96), STORAGE_GATE,
+                                 (STORAGE_GATE[0] + 2.0 * STORAGE_GATE_U[0], STORAGE_GATE[1] + 2.0 * STORAGE_GATE_U[1])]), 0.7)
+
+
+def storage_gate_cut(x, z):
+    along = x * STORAGE_GATE_U[0] + z * STORAGE_GATE_U[1]
+    across = abs(x * STORAGE_GATE_U[1] - z * STORAGE_GATE_U[0])
+    return (1.0 - ss(PUB_GATE_HW - 0.4, PUB_GATE_HW + 3.0, across)) * ss(FENCE_R - 14.0, FENCE_R - 6.0, along)
+
+
+def in_storage_way(x, z, margin):
+    along = x * STORAGE_GATE_U[0] + z * STORAGE_GATE_U[1]
+    in_corridor = along > FENCE_R - 12.0 and abs(x * STORAGE_GATE_U[1] - z * STORAGE_GATE_U[0]) < PUB_GATE_HW + 0.5 + margin
+    return in_corridor or min_dist(STORAGE_SPUR, x, z) < PATH_W / 2 + 0.6 + margin
+
+
 def terrain_h(x, z):
     r = math.hypot(x, z)
     ax = abs(x)
@@ -168,7 +189,7 @@ def terrain_h(x, z):
     hills = sum(h * math.exp(-((x - hx) ** 2 + (z - hz) ** 2) / (2 * s * s)) for hx, hz, h, s in HILLS)
     und = max(0.0, 0.12 + 0.22 * math.sin(x * 0.21 + 0.7) * math.sin(z * 0.17 + 1.9) + 0.1 * math.sin(x * 0.47 + z * 0.31))
     berm = 1.6 * ss(45.4, 46.5, ax) * hedge
-    h = (hedge * (hills + und) + berm) * edge_fade * (1.0 - max(pub_gate_cut(x, z), orchard_gate_cut(x, z), market_gate_cut(x, z)))
+    h = (hedge * (hills + und) + berm) * edge_fade * (1.0 - max(pub_gate_cut(x, z), orchard_gate_cut(x, z), market_gate_cut(x, z), storage_gate_cut(x, z)))
     e = pond_e(x, z)
     if e < 1.9:
         hp = BED_H + 0.3 * ss(1.0, 1.3, e)
@@ -569,6 +590,7 @@ ribbon("PD_PathWest", TRAIL_W, PATH_W, P["path"], lift=0.035)
 ribbon("PD_PathGazebo", SPUR, 1.3, P["path"], lift=0.036)
 ribbon("PD_PathPub", PUB_SPUR, PATH_W, P["path"], lift=0.037)
 ribbon("PD_PathOrchard", ORCHARD_SPUR, PATH_W, P["path"], lift=0.037)
+ribbon("PD_PathStorage", STORAGE_SPUR, PATH_W, P["path"], lift=0.037)
 objs.append(L.box(coll, "PD_Avenue", 0, -34.5 - PUSH / 2, 0.0, 6.0, 27.0 + PUSH, 0.03, P["avenue"], tile=2.0))
 objs.append(L.box(coll, "PD_GateApron", 0, -46.8, 0.0, 14.0, 5.6, 0.035, P["avenue"], tile=2.0))
 for nm, gx in (("PD_CurbAvenueE", 3.15), ("PD_CurbAvenueW", -3.15)):
@@ -887,7 +909,7 @@ for sgn in (-1, 1):
     else:
         fence_pts = fence_pts + side
 in_gate = lambda fx, fz: math.hypot(fx - PUB_GATE[0], fz - PUB_GATE[1]) < 1.0 or math.hypot(fx - ORCHARD_GATE[0], fz - ORCHARD_GATE[1]) < 1.0 \
-    or in_market_way(fx, fz, 0.0)
+    or math.hypot(fx - STORAGE_GATE[0], fz - STORAGE_GATE[1]) < 1.0 or in_market_way(fx, fz, 0.0)
 for i, (fx, fz) in enumerate(fence_pts):
     if in_gate(fx, fz):
         continue
@@ -921,12 +943,12 @@ add_col("COL_Pond_PubSign", pub_sign[0], pub_sign[1], 2.2, 0.3, 2.4, -PUB_GATE_T
 placed.append((pub_sign[0], pub_sign[1], 1.0))
 
 scatter_tag = re.compile(r"^PD_((?:Tree[RPBW]|Bush|Flowers?|Tuft|RockBig)\d{3})")
-blocked = {m.group(1) for o in objs if (m := scatter_tag.match(o.name)) and (in_orchard_way(o.location.x, -o.location.y, 0.8) or in_market_way(o.location.x, -o.location.y, 0.8))}
+blocked = {m.group(1) for o in objs if (m := scatter_tag.match(o.name)) and (in_orchard_way(o.location.x, -o.location.y, 0.8) or in_market_way(o.location.x, -o.location.y, 0.8) or in_storage_way(o.location.x, -o.location.y, 0.8))}
 for o in [o for o in objs if (m := scatter_tag.match(o.name)) and m.group(1) in blocked]:
     objs.remove(o)
     bpy.data.objects.remove(o)
 col[:] = [c for c in col if c["name"].removeprefix("COL_Pond_").removeprefix("PD_") not in blocked]
-print("orchard and market ways cleared:", sorted(blocked))
+print("orchard, market and storage ways cleared:", sorted(blocked))
 
 for tag, (gx, gz) in zip("WE", ORCHARD_GATE_PILLARS):
     gy = ground(gx, gz, 0.4) - 0.05
@@ -943,6 +965,22 @@ orchard_sign_text = L.text_mesh(coll, "PD_OrchardSignText", "< COVE ORCHARD", or
 orchard_sign_text.rotation_euler = (math.pi / 2, 0, -ORCHARD_GATE_TH)
 objs.append(orchard_sign_text)
 add_col("COL_Pond_OrchardSign", orchard_sign[0], orchard_sign[1], 2.2, 0.3, 2.4, -ORCHARD_GATE_TH)
+
+for tag, (gx, gz) in zip("WE", STORAGE_GATE_PILLARS):
+    gy = ground(gx, gz, 0.4) - 0.05
+    objs.append(L.box(coll, f"PD_StorageGatePillar{tag}", gx, gz, gy, 0.7, 0.7, 2.2, P["stone"], rot=STORAGE_GATE_TH, bevel=0.03, tile=1.0))
+    objs.append(L.box(coll, f"PD_StorageGateCap{tag}", gx, gz, gy + 2.2, 0.9, 0.9, 0.16, P["stone"], rot=STORAGE_GATE_TH, bevel=0.03))
+    objs.append(L.box(coll, f"PD_StorageGateLamp{tag}", gx, gz, gy + 2.36, 0.4, 0.4, 0.4, P["lamp"], rot=STORAGE_GATE_TH, bevel=0.04))
+    add_col(f"COL_Pond_StorageGatePillar{tag}", gx, gz, 0.9, 0.9, 2.6, STORAGE_GATE_TH)
+storage_sign = (STORAGE_GATE[0] - 3.2 * STORAGE_GATE_U[0] + 2.0 * STORAGE_GATE_U[1], STORAGE_GATE[1] - 3.2 * STORAGE_GATE_U[1] - 2.0 * STORAGE_GATE_U[0])
+storage_sign_y = ground(*storage_sign, 0.2)
+objs.append(L.box(coll, "PD_StorageSignPole", storage_sign[0], storage_sign[1], storage_sign_y, 0.14, 0.14, 2.4, P["post"]))
+objs.append(L.box(coll, "PD_StorageSignBoard", storage_sign[0], storage_sign[1], storage_sign_y + 1.75, 2.2, 0.06, 0.34, P["deck"], rot=-STORAGE_GATE_TH))
+storage_sign_text = L.text_mesh(coll, "PD_StorageSignText", "COVE STORAGE", storage_sign[0] - 0.04 * STORAGE_GATE_U[0], storage_sign[1] - 0.04 * STORAGE_GATE_U[1],
+                                storage_sign_y + 1.83, 0.17, 0.015, P["sign"], facing="+z")
+storage_sign_text.rotation_euler = (math.pi / 2, 0, -STORAGE_GATE_TH)
+objs.append(storage_sign_text)
+add_col("COL_Pond_StorageSign", storage_sign[0], storage_sign[1], 2.2, 0.3, 2.4, -STORAGE_GATE_TH)
 
 heights = [round(walk_h(GRID_X0 + i, GRID_Z0 + j), 3) for j in range(GRID_ROWS) for i in range(GRID_COLS)]
 # The heightmap must follow the drawn terrain: off the mesh and on its rim the ground is the neighbours' flat y = 0,
@@ -963,6 +1001,8 @@ with open(os.path.join(OUT, "pond.layout.json"), "w", encoding="utf-8") as fh:
         "pubGate": {"x": round(PUB_GATE[0], 3), "z": round(PUB_GATE[1], 3), "width": round(math.dist(*PUB_GATE_PILLARS) - 0.7, 3), "yaw": round(PUB_GATE_TH, 4)},
         "orchardGate": {"x": round(ORCHARD_GATE[0], 3), "z": round(ORCHARD_GATE[1], 3), "width": round(math.dist(*ORCHARD_GATE_PILLARS) - 0.7, 3),
                         "yaw": round(ORCHARD_GATE_TH, 4)},
+        "storageGate": {"x": round(STORAGE_GATE[0], 3), "z": round(STORAGE_GATE[1], 3), "width": round(math.dist(*STORAGE_GATE_PILLARS) - 0.7, 3),
+                        "yaw": round(STORAGE_GATE_TH, 4)},
         "bounds": {"minZ": -71.0 - PUSH},
         "center": [0.0, 0.0, CZ],
         "fishingSpots": spots,

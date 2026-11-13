@@ -1,7 +1,9 @@
 // Player state kept by the room, and what other clients get to see of it.
 import type { Client } from 'colyseus'
 import type { Json } from './backend.ts'
+import { shownAppearance } from './police.ts'
 import { MAX_STAMINA } from './stamina.ts'
+import { WANTED_DECAY_MS } from './wanted.ts'
 import type { AppearanceSlot, CharacterBuild, CharacterLook, CharacterSex, Player, Vec3, WearSlot } from './types.ts'
 
 const COLORS = [
@@ -91,6 +93,7 @@ export function createPlayer(client: Client, options: Json, colorIndex: number, 
     pseudo: client.auth?.pseudo,
     token: client.auth?.token ?? null,
     isAdmin: client.auth?.isAdmin === true,
+    badges: client.auth?.badges,
     color: COLORS[colorIndex % COLORS.length],
     ...spawn,
     ry: 0,
@@ -129,12 +132,38 @@ export function createPlayer(client: Client, options: Json, colorIndex: number, 
     lastBouncerBlockAt: 0,
     orchardPick: null,
     farmPick: null,
+    lockpick: null,
     lastPickStartAt: 0,
+    lastStorageAt: 0,
+    heldTool: null,
+    wantedTool: null,
+    holdSyncing: false,
+    lastHoldCheckAt: 0,
     appearance: normalizeAppearanceIds(options?.appearance),
     slotHexes: normalizeSlotHexes(options?.slotHexes),
     bodyModelGlb: normalizeBodyModelGlb(options?.bodyModelGlb),
     slotModels: normalizeSlotModels(options?.slotModels),
-    character: normalizeCharacter(options?.character)
+    character: normalizeCharacter(options?.character),
+    wantedStars: 0,
+    wantedDecayMs: WANTED_DECAY_MS,
+    wantedDirty: false,
+    lastHitAt: new Map(),
+    lastAssaultAt: new Map(),
+    jail: null,
+    jailDirty: false,
+    jailPayPending: false,
+    lastJailPayAt: 0,
+    mealTrayInMs: null,
+    policeLicence: null,
+    policeLicencePrice: null,
+    onDuty: false,
+    policePending: false,
+    lastPoliceActionAt: 0,
+    lastStepAt: Date.now(),
+    cuffAttempt: null,
+    cuffedBy: null,
+    pickpocket: null,
+    lastPickpocketAt: 0
   }
 }
 
@@ -143,16 +172,14 @@ export function publicPlayer(player: Player) {
     sessionId: player.sessionId,
     id: String(player.accountId),
     pseudo: player.pseudo,
+    badges: [...player.badges],
     color: player.color,
     x: player.x,
     y: player.y,
     z: player.z,
     ry: player.ry,
     seatId: player.seatId,
-    appearance: { ...player.appearance },
-    slotHexes: { ...player.slotHexes },
-    bodyModelGlb: player.bodyModelGlb,
-    slotModels: { ...player.slotModels },
-    character: player.character && { ...player.character }
+    heldTool: player.heldTool,
+    ...shownAppearance(player)
   }
 }

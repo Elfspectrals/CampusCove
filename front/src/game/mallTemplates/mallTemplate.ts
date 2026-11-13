@@ -1,5 +1,5 @@
 import { WEAR_SLOTS, type WearSlot } from '../../avatar/modularCharacterLogic.ts'
-import { consumableModelUrl, decorModelUrl, isConsumableCode, type StoreDisplay, type StoreLayout } from '../assets/catalog.ts'
+import { consumableModelUrl, decorModelUrl, isConsumableCode, isToolCode, toolModelUrl, type StoreDisplay, type StoreLayout } from '../assets/catalog.ts'
 import type { ShelfArrange, ShelfType } from '../shelves/shelves.ts'
 
 export type Vec3 = [number, number, number]
@@ -94,7 +94,7 @@ export interface OutfitPiece {
 
 export type NpcPose = 'idle' | 'sit'
 
-export const STAFF_ROLES = ['bartender', 'bouncer', 'nurse'] as const
+export const STAFF_ROLES = ['bartender', 'bouncer', 'quizmaster', 'nurse', 'auctioneer'] as const
 export type StaffRole = (typeof STAFF_ROLES)[number]
 
 export interface NpcProp extends PropBase {
@@ -314,6 +314,7 @@ export function vendorCounter(vendor: Pick<NpcProp, 'position' | 'yaw'>): Vec3 {
 }
 
 export function itemModelUrl(item: Pick<ItemProp, 'key' | 'code'>): string {
+  if (isToolCode(item.code)) return toolModelUrl(item.code)
   return isConsumableCode(item.code) ? consumableModelUrl(item.code) : decorModelUrl(item.key)
 }
 
@@ -326,7 +327,7 @@ export function withSale(prop: TemplateProp, on: boolean, saleCode: string | und
   }
   if (prop.kind !== 'item' || prop.forSale === on) return null
   const { stack: _, price: _price, description: _description, ...rest } = prop
-  if (!on && !isConsumableCode(prop.code)) {
+  if (!on && !isConsumableCode(prop.code) && !isToolCode(prop.code)) {
     const { code: __, forSale: ___, ...plain } = rest
     return { ...plain, kind: 'decor' }
   }

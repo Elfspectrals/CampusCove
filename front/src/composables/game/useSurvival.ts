@@ -8,7 +8,7 @@ import { lookAngles, recoveryProgress } from '../../game/clinic'
 import { consumeKind, eatStep, isFull, type ConsumeKind } from '../../game/holdToEat'
 import { screenEffects, walkSpeedFactor, type SurvivalStats } from '../../game/survival'
 import { createSurvivalWatch } from '../../game/survivalWatch'
-import { createFountains } from '../../game/town/fountains'
+import { createFountains, type Fountain } from '../../game/town/fountains'
 import type { WorldManifest } from '../../game/world/worldManifest'
 import type { ApartmentInventoryItem } from '../../types/gameRealtime'
 import type { ScreenPrompt } from './useInteractionTargets'
@@ -40,6 +40,7 @@ export interface SurvivalDeps {
   /** Passing out took the inventory and the clothes (backend SurvivalService::loseBelongings). */
   onBelongingsLost: (clothes: boolean) => void
   onCashLost: (amount: number) => void
+  onToolsLost: (count: number) => void
   /** Moves the local player (respawn after passing out). */
   teleport: (x: number, y: number, z: number) => void
   setLook: (yaw: number, pitch: number) => void
@@ -49,6 +50,8 @@ export interface SurvivalDeps {
   onIntoxication: (intoxication: number) => void
   /** Quick tap on the watch key: open the watch apps (trade, ...). */
   onWatchTap: () => void
+  cellTap: () => Fountain | null
+  cellTapPrompt: () => { action: string; detail: string }
 }
 
 /** Why the player went down: starvation / wounds, or a drunken black-out (socket/src/survival.ts). */
@@ -72,7 +75,9 @@ export function useSurvival(deps: SurvivalDeps) {
   const healUntil = ref(0)
   const knockedOut = ref(false)
   const knockoutCause = ref<KnockoutCause>('health')
+  const knockedOutToJail = ref(false)
   const hospitalBill = ref<number | null>(null)
+  const jailTax = ref(0)
   const lostBelongings = ref(false)
   /** Bumped on every hit, so the damage flash replays. */
   const damageFlash = ref(0)
@@ -134,15 +139,18 @@ export function useSurvival(deps: SurvivalDeps) {
       fountainReadyAt = Date.now() + data.remainingMs
     })
     room.onMessage('survival_error', (data: { message?: string }) => say(data.message ?? 'Not possible.'))
-    room.onMessage('survival_knocked_out', (data: { cause?: KnockoutCause }) => {
+    room.onMessage('survival_knocked_out', (data: { cause?: KnockoutCause; jailed?: boolean }) => {
       knockedOut.value = true
       knockoutCause.value = data.cause ?? 'health'
+      knockedOutToJail.value = data.jailed === true
       hospitalBill.value = null
+      jailTax.value = 0
       lostBelongings.value = false
       deps.getArms()?.raiseWatch(false)
     })
-    room.onMessage('survival_hospital_bill', (data: { billed: number; balanceAfter: number | null; lostItems: number; lostClothes: number; lostCash: number }) => {
+    room.onMessage('survival_hospital_bill', (data: { billed: number; jailTax: number; balanceAfter: number | null; lostItems: number; lostClothes: number; lostCash: number; lostTools: number }) => {
       hospitalBill.value = data.billed
+      jailTax.value = data.jailTax
       // the wallet in the header reads this cache
       if (typeof data.balanceAfter === 'number') applyCachedBalanceAfterPurchase('coins', data.balanceAfter)
       if (data.lostItems > 0 || data.lostClothes > 0) {
@@ -150,6 +158,7 @@ export function useSurvival(deps: SurvivalDeps) {
         deps.onBelongingsLost(data.lostClothes > 0)
       }
       if (data.lostCash > 0) deps.onCashLost(data.lostCash)
+      if (data.lostTools > 0) deps.onToolsLost(data.lostTools)
     })
     room.onMessage(
       'survival_respawn',
@@ -188,6 +197,8 @@ export function useSurvival(deps: SurvivalDeps) {
     return fountains?.nearest(deps.myPosition.x, deps.myPosition.z) ?? null
   }
 
+  const nearWater = () => nearFountain() ?? deps.cellTap()
+
   const fountainDry = () => Date.now() < fountainReadyAt
 
   function formatWait(ms: number): string {
@@ -196,18 +207,22 @@ export function useSurvival(deps: SurvivalDeps) {
   }
 
   function sip(): void {
-    if (!nearFountain() || knockedOut.value || recovery.value || fountainDry()) return
+    if (!nearWater() || knockedOut.value || recovery.value || fountainDry()) return
     deps.gameRoomRef.value?.send('drink_fountain')
-    if (!eating && deps.getArms()?.startEating('drink')) {
-      eating = { kind: 'drink', code: null, button: null, startedAt: performance.now(), bites: 1, released: true }
+    playOneShot('drink')
+  }
+
+  function playOneShot(kind: ConsumeKind): void {
+    if (!eating && deps.getArms()?.startEating(kind)) {
+      eating = { kind, code: null, button: null, startedAt: performance.now(), bites: 1, released: true }
     }
-    particles?.burst('drink')
+    particles?.burst(kind)
   }
 
   /** Interact (nothing else in front): returns true when it was used here. */
   function onPrimaryDown(button: string): boolean {
     if (!deps.pointerLocked.value || knockedOut.value || recovery.value) return false
-    if (nearFountain()) {
+    if (nearWater()) {
       if (fountainDry()) {
         say(`You already drank. Fountains are available again in ${formatWait(fountainReadyAt - Date.now())}.`)
         return true
@@ -324,6 +339,14 @@ export function useSurvival(deps: SurvivalDeps) {
       if (fountainDry()) return { ...screen, action: 'Drinking fountain', detail: `Available in ${formatWait(fountainReadyAt - Date.now())}` }
       return { ...screen, action: 'Drink', detail: 'Drinking fountain' }
     }
+    const tap = deps.cellTap()
+    if (tap) {
+      const screen = projectToScreen(tap.x, tap.y + 1.25, tap.z)
+      if (!screen) return null
+      const label = deps.cellTapPrompt()
+      if (fountainDry()) return { ...screen, action: label.detail, detail: `Available in ${formatWait(fountainReadyAt - Date.now())}` }
+      return { ...screen, ...label }
+    }
     return null
   }
 
@@ -381,7 +404,9 @@ export function useSurvival(deps: SurvivalDeps) {
     effects,
     knockedOut,
     knockoutCause,
+    knockedOutToJail,
     hospitalBill,
+    jailTax,
     lostBelongings,
     damageFlash,
     message,
@@ -390,6 +415,7 @@ export function useSurvival(deps: SurvivalDeps) {
     recovering,
     say,
     heldConsumable,
+    playOneShot,
     onTownLoaded,
     onPrimaryDown,
     startEating,

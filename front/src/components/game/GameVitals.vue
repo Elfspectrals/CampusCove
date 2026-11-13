@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { MAX_STAMINA, isTired } from '../../game/stamina'
 import { GAUGE_COLORS, isLow } from '../../game/survival'
 
 /** Health and stamina above the hotbar, always shown (hunger and thirst stay on the watch). */
-const props = defineProps<{ health: number | null; healUntil: number; stamina: number; reducedEffects: boolean }>()
+const props = defineProps<{ health: number | null; healUntil: number; stamina: number; reducedEffects: boolean; wantedStars?: number; onDuty?: boolean }>()
+const { t } = useI18n()
+const MAX_WANTED_STARS = 5
 
 const now = ref(Date.now())
 const clock = window.setInterval(() => (now.value = Date.now()), 250)
@@ -57,6 +60,21 @@ const blink = computed(() => !props.reducedEffects)
         <div class="cc-vital-fill" :class="tired ? 'bg-coral' : 'bg-mint'" :style="{ width: `${(stamina / MAX_STAMINA) * 100}%` }" />
       </div>
       <span class="cc-vital-value">{{ Math.round(stamina) }}</span>
+    </div>
+
+    <span v-if="onDuty" class="cc-chip cc-chip-pool shrink-0">{{ t('police.badge') }}</span>
+
+    <div v-if="wantedStars" class="flex items-center gap-0.5" role="img" :aria-label="t('wanted.label', { n: wantedStars }, wantedStars)">
+      <svg
+        v-for="star in MAX_WANTED_STARS"
+        :key="star"
+        viewBox="0 0 24 24"
+        class="h-5 w-5 shrink-0 drop-shadow"
+        :class="star <= wantedStars ? 'fill-sun' : 'fill-white/25'"
+        aria-hidden="true"
+      >
+        <path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8L12 2.5z" />
+      </svg>
     </div>
   </div>
 </template>

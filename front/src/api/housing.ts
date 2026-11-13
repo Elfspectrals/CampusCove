@@ -27,9 +27,11 @@ function parseHousingUnit(raw: unknown): HousingUnitPayload | null {
   if (!(raw.occupant_name === null || typeof raw.occupant_name === 'string')) return null
   if (!(raw.tax_due_at === null || typeof raw.tax_due_at === 'string')) return null
   if (typeof raw.door_locked !== 'boolean') return null
+  if (typeof raw.reinforced_lock !== 'boolean') return null
   if (!(raw.room_public_id === null || typeof raw.room_public_id === 'string')) return null
   if (typeof raw.template_key !== 'string') return null
   if (!Array.isArray(raw.key_holder_account_ids) || !raw.key_holder_account_ids.every((id) => typeof id === 'number')) return null
+  if (typeof raw.furniture_limit !== 'number') return null
 
   return {
     unit_id: raw.unit_id,
@@ -48,9 +50,11 @@ function parseHousingUnit(raw: unknown): HousingUnitPayload | null {
     occupant_name: raw.occupant_name,
     tax_due_at: raw.tax_due_at,
     door_locked: raw.door_locked,
+    reinforced_lock: raw.reinforced_lock,
     room_public_id: raw.room_public_id,
     template_key: raw.template_key,
     key_holder_account_ids: raw.key_holder_account_ids,
+    furniture_limit: raw.furniture_limit,
   }
 }
 
@@ -92,6 +96,10 @@ export async function giveHouseKeys(accountId: number): Promise<void> {
 
 export async function takeHouseKeys(accountId: number): Promise<void> {
   await apiRequest(`/housing/keys/${accountId}`, { method: 'DELETE' })
+}
+
+export async function leaveFlatshare(publicId: string): Promise<void> {
+  await apiRequest(`/housing/units/${encodeURIComponent(publicId)}/leave`, { method: 'POST' })
 }
 
 export async function setHouseDoorLocked(publicId: string, locked: boolean): Promise<void> {

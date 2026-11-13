@@ -193,6 +193,71 @@ HEADSET_STYLE = {  # band width, cup radius
 }
 
 
+SHERIFF_HAT_SEAT_Z = 1.79
+SHERIFF_HAT_CENTER = (0, -0.004)
+SHERIFF_HAT_CROWN = (0.125, 0.135)
+SHERIFF_HAT_BAND_Z = (0.035, 0.075)
+SHERIFF_HAT_CLEARANCE = 0.0085
+SHERIFF_STAR_HEIGHT = 0.06
+
+
+def inflated_tree(head, offset):
+    bm = bmesh.new()
+    bm.from_mesh(head.data)
+    bm.normal_update()
+    for v in bm.verts:
+        v.co += v.normal * offset
+    tree = BVHTree.FromBMesh(bm)
+    bm.free()
+    return tree
+
+
+def in_crown(co):
+    return (co.x / SHERIFF_HAT_CROWN[0]) ** 2 + (co.y / SHERIFF_HAT_CROWN[1]) ** 2 < 1.0
+
+
+def sheriff_hat(M, m, head):
+    faces = add_ai_part(M, m["main"], "sheriff_hat", (0, 0, 0), rot=(0, 0, -PI / 2))
+    verts = list({v for f in faces for v in f.verts})
+    index = {v: i for i, v in enumerate(verts)}
+    rest = [v.co.copy() for v in verts]
+    opening = [f for f in faces if f.normal.z < -0.7 and in_crown(f.calc_center_median()) and f.calc_center_median().z < SHERIFF_HAT_BAND_Z[0]]
+    shell = [[index[v] for v in f.verts] for f in faces if f not in opening]
+    opening_z = sum(f.calc_center_median().z for f in opening) / len(opening)
+    head_tree = inflated_tree(head, SHERIFF_HAT_CLEARANCE)
+
+    def placed(scale, z):
+        return [V3((co.x * scale + SHERIFF_HAT_CENTER[0], co.y * scale + SHERIFF_HAT_CENTER[1], co.z * scale + z)) for co in rest]
+
+    def resting_z(scale):
+        z = 2.0
+        while not BVHTree.FromPolygons(placed(scale, z - 0.002), shell).overlap(head_tree):
+            z -= 0.002
+            if z < 1.6:
+                raise RuntimeError("the sheriff hat never touches the head at scale %.2f" % scale)
+        return z
+
+    fit = next(((sc, z) for sc, z in ((sc, resting_z(sc)) for sc in [0.9 + i * 0.01 for i in range(50)])
+                if z + sc * opening_z <= SHERIFF_HAT_SEAT_Z), None)
+    if fit is None:
+        raise RuntimeError("no scale seats the sheriff hat at z %.2f" % SHERIFF_HAT_SEAT_Z)
+    scale, z = fit
+    for v, co in zip(verts, placed(scale, z)):
+        v.co = co
+    M.bm.normal_update()
+    for f in faces:
+        local = (f.calc_center_median() - V3((SHERIFF_HAT_CENTER[0], SHERIFF_HAT_CENTER[1], z))) / scale
+        if abs(f.normal.z) < 0.6 and in_crown(local) and SHERIFF_HAT_BAND_Z[0] <= local.z <= SHERIFF_HAT_BAND_Z[1]:
+            f.material_index = M.mi(m["accent"])
+    band_z = z + scale * sum(SHERIFF_HAT_BAND_Z) / 2
+    hit, normal, _i, _d = BVHTree.FromBMesh(M.bm).ray_cast(V3((0, -0.5, band_z)), V3((0, 1, 0)))
+    tilt = -math.asin(max(-1.0, min(1.0, normal.z)))
+    star_scale = scale * (SHERIFF_HAT_BAND_Z[1] - SHERIFF_HAT_BAND_Z[0]) / SHERIFF_STAR_HEIGHT
+    lift = Euler((tilt, 0, 0)).to_matrix() @ V3((0, 0, SHERIFF_STAR_HEIGHT * star_scale / 2))
+    add_ai_part(M, m["badge"], "sheriff_star", tuple(hit + normal * 0.003 - lift), rot=(tilt, 0, 0), scale=star_scale)
+    print("sheriff_hat scale %.2f, opening at z %.3f" % (scale, z + scale * opening_z))
+
+
 def build_stylized_headwear(coll, arm, key, head):
     """Headsets and the straw hat over a short hair cap (W_head_accessory_<key>_Hair, tinted with the hair colour in
     the game), placed on the real head surface."""
@@ -206,6 +271,8 @@ def build_stylized_headwear(coll, arm, key, head):
         add_cyl(M, m["main"], c, (0, -0.004, 1.94), 0.114, 0.098, seg=22, sx=0.92)
         add_cyl(M, m["main"], (0, -0.004, 1.795), (0, -0.004, 1.808), 0.21, 0.21, seg=28)
         add_cyl(M, m["accent"], (0, -0.004, 1.808), (0, -0.004, 1.84), 0.1155, 0.113, seg=22, cap=False, sx=0.92)
+    elif key == "sheriff_hat":
+        sheriff_hat(M, m, head)
     elif key == "bandana":
         # a cloth tied over the skull (the cap is merged below), a hem band on the forehead, a knot and two tails at the back
         band = [tuple(on_head(tree, (math.sin(math.radians(a)), -math.cos(math.radians(a)), 0.32 + 0.2 * math.cos(math.radians(a))), 0.008))

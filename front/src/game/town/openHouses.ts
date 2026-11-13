@@ -63,7 +63,8 @@ const interiorsByHouse = new Map<string, THREE.Group>()
 const TOGGLED_INTERIOR_COLLIDERS = new Set(['COL_Door_Secret'])
 const FRONT_DOOR_NODE = 'Door'
 export const MOVING_EXTERIOR_NODES: ReadonlySet<string> = new Set([FRONT_DOOR_NODE])
-const MOVING_INTERIOR_NODES: ReadonlySet<string> = new Set(['Door_Secret', 'Bell'])
+const STORAGE_ROLLUP_DOORS = Array.from({ length: 12 }, (_, i) => `Door_Rollup_${String(i + 1).padStart(2, '0')}`)
+const MOVING_INTERIOR_NODES: ReadonlySet<string> = new Set(['Door_Secret', 'Bell', 'Cell_01_Door', 'Cell_02_Door', 'Cell_03_Door', ...STORAGE_ROLLUP_DOORS])
 const toggledColliders = new Map<string, CollisionCuboidJson>()
 
 interface FrontDoor {

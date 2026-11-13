@@ -1,4 +1,6 @@
 import type { HouseKey, StoreKey, WorkJob, WorkKey } from '../assets/catalog'
+import type { JailCellLayout } from '../police/jailCell'
+import type { PoliceStationLayout } from '../police/policeStation'
 
 type Vec3 = [number, number, number]
 
@@ -84,6 +86,21 @@ interface ClinicLayout {
   beds: ClinicBed[]
 }
 
+interface StorageUnit {
+  id: string
+  door: string
+  threshold: Vec3
+  inside: Vec3
+  size: Vec3
+  yaw: number
+}
+
+interface StorageLayout {
+  auctioneer: Vec3
+  lotBoard: Vec3
+  units: StorageUnit[]
+}
+
 type PubSeatKind = 'stool' | 'chair' | 'bench' | 'armchair' | 'sofa' | 'garden'
 
 export interface PubSeat {
@@ -99,6 +116,7 @@ export interface PubLayout {
   bartender: Vec3
   bartenderYaw: number
   bouncer: Vec3
+  quizmaster: Vec3
   counter: Vec3
   taps: Vec3
   serve: Vec3
@@ -134,8 +152,10 @@ export interface WorldManifest {
   fountains?: Vec3[]
   clinic?: ClinicLayout
   pub?: PubLayout
+  storage?: StorageLayout
   orchard?: OrchardLayout
   crops?: CropPlant[]
+  police?: { cells: JailCellLayout[] } & PoliceStationLayout
 }
 
 const WORLD_MANIFEST_URL = '/assets/world.manifest.json'

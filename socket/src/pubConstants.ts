@@ -2,6 +2,7 @@ export const SEAT_REACH = 2.5
 export const COUNTER_REACH = 2.6
 export const BARTENDER_REACH = 3.6
 export const BOUNCER_REACH = 2.6
+export const QUIZMASTER_REACH = 3
 export const POUR_MS = 3000
 /** One phrase per week, cycled in order; add more to rotate (the front must not hard-code it). */
 export const SECRET_PHRASES: readonly string[] = ['paris wiener']
@@ -45,3 +46,15 @@ export const DARTS_MAX_OFFSET_CM = 25
 export const DARTS_POWER_IDEAL = 0.76
 /** No vertical drop or rise while the power is within this distance of the ideal. */
 export const DARTS_POWER_DEAD_ZONE = 0.05
+
+export const QUIZ_TIME_ZONE = 'Europe/Paris'
+export const QUIZ_START_HOUR = 21
+export const QUIZ_ANNOUNCE_MS = 10 * 60_000
+export const QUIZ_LAST_CALL_MS = 60_000
+export const QUIZ_MIN_CONTESTANTS = 2
+export const QUIZ_QUESTION_COUNT = 15
+export const QUIZ_ANSWER_MS = 15_000
+export const QUIZ_POINTS_BASE = 500
+export const QUIZ_POINTS_SPEED = 500
+export const QUIZ_REVEAL_MS = 5000
+export const QUIZ_ADMIN_LEAD_MS = 30_000

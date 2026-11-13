@@ -32,7 +32,7 @@ export async function onAtm(room: GameRoom, client: GameClient, payload: ClientP
   const raw = payload?.request
   const request = Number.isSafeInteger(raw) ? raw as number : null
   const player = room.players.get(client.sessionId)
-  if (!player?.token || now < player.knockedOutUntil) {
+  if (!player?.token || now < player.knockedOutUntil || player.jail || player.cuffedBy) {
     sendAtmError(client, request, 'You cannot use the ATM right now.', 'atm_cannot_use')
     return
   }

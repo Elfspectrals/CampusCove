@@ -35,6 +35,11 @@ export function useAdminWatch(deps: AdminWatchDeps) {
     send('admin_summon', { sessionId })
   }
 
+  function startStorageSale(): void {
+    error.value = null
+    send('admin_storage_sale')
+  }
+
   return {
     isAdmin,
     menu,
@@ -42,6 +47,7 @@ export function useAdminWatch(deps: AdminWatchDeps) {
     load,
     teleport,
     summon,
+    startStorageSale,
     handlers: {
       onInit: (admin: boolean) => {
         isAdmin.value = admin

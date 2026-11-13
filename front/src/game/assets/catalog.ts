@@ -114,8 +114,8 @@ const HOUSES: readonly HouseAsset[] = [
  * Built by map-src/CampusCove/build_work_*.py → public/assets/work/<key>/ (see docs/ASSETS_STYLE_GUIDE.md §7).
  * `interior.layout.json` lists the stations (`station_<job>_NN`) that the job gameplay attaches to.
  */
-export type WorkKey = 'tech_hub' | 'boutique' | 'cafe' | 'clinic' | 'pub'
-export type WorkJob = 'dev' | 'commerce' | 'resto' | 'medic' | 'barman'
+export type WorkKey = 'tech_hub' | 'boutique' | 'cafe' | 'clinic' | 'pub' | 'storage' | 'police'
+export type WorkJob = 'dev' | 'commerce' | 'resto' | 'medic' | 'barman' | 'auction' | 'police'
 
 export interface WorkAsset {
   key: WorkKey
@@ -149,6 +149,8 @@ const WORKS: readonly WorkAsset[] = [
   work('cafe', 'Campus Cafe', 'resto'),
   work('clinic', 'Cove Clinic', 'medic'),
   work('pub', 'The Salty Shamrock', 'barman'),
+  work('storage', 'Cove Storage', 'auction'),
+  work('police', 'Cove Police', 'police'),
 ]
 
 export function findWork(key: string | null | undefined): WorkAsset | null {
@@ -253,6 +255,18 @@ export function consumablePreviewUrl(code: string): string {
 /** The model of a consumable: on the GreenCart and Candy Cloud shelves, and on the pub bar while the barman pours it. */
 export function consumableModelUrl(code: string): string {
   return `${consumableFolder(code)}/model.glb`
+}
+
+const TOOL_PREFIX = 'tool_'
+
+export function isToolCode(code: string): boolean {
+  return code.startsWith(TOOL_PREFIX)
+}
+
+/** A tool sold in a shop: `tool_<key>` -> public/assets/items/tools/<key>/model.glb. */
+export function toolModelUrl(code: string): string {
+  if (!isToolCode(code)) throw new Error(`No asset folder for tool code "${code}"`)
+  return `${ROOT}/items/tools/${code.slice(TOOL_PREFIX.length)}/model.glb`
 }
 
 /** Furniture model shown in the store and placed in houses: public/assets/decor/<key>/model.glb. */

@@ -1,5 +1,6 @@
 // Shared shapes of the realtime server. Room helpers take a GameRoom (not CityRoom) so tests can pass fakes.
 import type { DrinkFastSim } from './drinkFastSim.ts'
+import type { PubQuiz } from './pubQuiz.ts'
 
 export interface Vec3 {
   x: number
@@ -35,6 +36,7 @@ export interface Identity {
   token: string
   /** GET /user's is_admin: unlocks the watch's admin app (src/admin.ts). */
   isAdmin: boolean
+  badges: string[]
   ip: string
 }
 
@@ -44,6 +46,7 @@ export interface Player extends Vec3 {
   pseudo: string
   token: string | null
   isAdmin: boolean
+  badges: string[]
   color: number
   ry: number
   lastMoveAt: number
@@ -81,9 +84,16 @@ export interface Player extends Vec3 {
   lastPubBellAt: number
   /** Last pub_bouncer_block broadcast for this player (rate limit). */
   lastBouncerBlockAt: number
-  orchardPick: { tree: number, startedAt: number } | null
+  orchardPick: { tree: number, startedAt: number, tool: string | null, durationMs: number } | null
   farmPick: { plant: number, startedAt: number } | null
+  lockpick: LockpickSession | null
   lastPickStartAt: number
+  lastStorageAt: number
+  /** Job tool in hand, checked against the inventory (src/tools.ts, docs/TOOLS.md). */
+  heldTool: string | null
+  wantedTool: string | null
+  holdSyncing: boolean
+  lastHoldCheckAt: number
   decoratedTemplateKey?: string | null
   appearance: Record<AppearanceSlot, number | null>
   slotHexes: Record<AppearanceSlot, string>
@@ -91,7 +101,70 @@ export interface Player extends Vec3 {
   slotModels: Record<WearSlot, string | null>
   /** Body built in the character creator (docs/CHARACTER.md); null until the player has made one. */
   character: CharacterLook | null
+  wantedStars: number
+  wantedDecayMs: number
+  wantedDirty: boolean
+  lastHitAt: Map<number, number>
+  lastAssaultAt: Map<number, number>
+  jail: JailSentence | null
+  jailDirty: boolean
+  jailPayPending: boolean
+  lastJailPayAt: number
+  mealTrayInMs: number | null
+  policeLicence: boolean | null
+  policeLicencePrice: number | null
+  onDuty: boolean
+  policePending: boolean
+  lastPoliceActionAt: number
+  lastStepAt: number
+  cuffAttempt: CuffAttempt | null
+  cuffedBy: Cuffs | null
+  pickpocket: PickpocketGame | null
+  lastPickpocketAt: number
 }
+
+export type JailKind = 'npc' | 'officer'
+
+export interface JailSentence {
+  kind: JailKind
+  stars: number
+  msLeft: number
+  cellId: string | null
+}
+
+export interface CuffAttempt {
+  targetSessionId: string
+  startedAt: number
+}
+
+export interface Cuffs {
+  officerSessionId: string
+  since: number
+}
+
+export interface PickpocketWindow {
+  center: number
+  width: number
+}
+
+export interface PickpocketLootItem {
+  code: string
+  name: string
+  kind: string
+  quantity: number
+  previewImage: string | null
+}
+
+interface PickpocketTarget {
+  victimSessionId: string
+  victimAccountId: number
+  victimPseudo: string
+}
+
+export type PickpocketGame =
+  | PickpocketTarget & { phase: 'checking' }
+  | PickpocketTarget & { phase: 'playing', attemptId: number, windows: PickpocketWindow[], startedAt: number, stops: number }
+  | PickpocketTarget & { phase: 'looting', attemptId: number, witnessed: boolean, loot: PickpocketLootItem[] | null, endsAt: number, taking: boolean }
 
 export type CharacterSex = 'm' | 'f'
 export type CharacterBuild = 'slim' | 'normal' | 'broad'
@@ -104,6 +177,23 @@ export interface CharacterLook {
 }
 
 /** A house as the Laravel API lists it (GET /housing/units). */
+export interface LockpickPin {
+  period: number
+  phase: number
+  shownAt: number
+}
+
+export interface LockpickSession {
+  unitId: string
+  attemptId: number | null
+  pins: number
+  pinsSet: number
+  misses: number
+  pin: LockpickPin
+  readyAt: number
+  busy: boolean
+}
+
 export interface HousingUnit {
   public_id: string
   template_key: string
@@ -118,10 +208,12 @@ export interface HousingUnit {
 }
 
 export interface FurnitureObject {
+  objectId: string
   objectKey: string
   x: number
   y: number
   z: number
+  rotY?: number
 }
 
 /** The objects placed in one house (GET /apartments/houses). */
@@ -168,6 +260,7 @@ export interface DartsPlayer {
   sessionId: string
   darts: DartsThrow[]
   alcohol: number
+  free: boolean
 }
 
 export interface DartsGame {
@@ -194,6 +287,8 @@ export interface PubState {
   challenges: Map<string, PubChallenge>
   /** Last challenge sent per challenger (rate limit), pruned as it goes. */
   challengeSentAt: Map<string, number>
+  quiz: PubQuiz | null
+  quizSchedule: number
 }
 
 export interface ClinicBedOccupant {
@@ -215,6 +310,8 @@ export interface CashBag {
   y: number
   z: number
   expiresAt: number
+  murderVictimAccountId: number | null
+  tools: string[]
 }
 
 export interface MarketLotView {
@@ -237,6 +334,7 @@ export interface MarketSnapshot {
 }
 
 export interface GameRoom {
+  roomId: string
   players: Map<string, Player>
   market: MarketSnapshot | null
   cashBags: Map<number, CashBag>

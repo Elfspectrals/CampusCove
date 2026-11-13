@@ -13,6 +13,9 @@ const REF_DISTANCE = 2
 const MAX_DISTANCE = 15
 /** Door sounds are discreet: the socket only sends them within 5 m (DOOR_SOUND_RADIUS), faded out by then. */
 const DOOR_RANGE = { refDistance: 1, maxDistance: 5 }
+/** Lockpicking is louder: the socket sends it within 12 m (LOCKPICK_NOISE_RADIUS). */
+const LOCKPICK_RANGE = { refDistance: 2, maxDistance: 12 }
+const ALARM_RANGE = { refDistance: 4, maxDistance: 25 }
 
 const doorUrls = (name: string, count: number) => Array.from({ length: count }, (_, i) => `/assets/sfx/door/${name}_${i + 1}.mp3`)
 
@@ -26,6 +29,12 @@ const SOUNDS = {
   door_lock: { urls: doorUrls('lock', 2), volume: 0.9, ...DOOR_RANGE },
   door_unlock: { urls: doorUrls('unlock', 2), volume: 0.9, ...DOOR_RANGE },
   door_rattle: { urls: doorUrls('rattle', 3), volume: 0.9, ...DOOR_RANGE },
+  storage_shutter: { urls: doorUrls('rattle', 3), volume: 1, refDistance: 3, maxDistance: 20 },
+  storage_bid: { urls: ['/assets/sfx/storage/bid.mp3'], volume: 0.7, refDistance: 3, maxDistance: 20 },
+  storage_gavel: { urls: ['/assets/sfx/storage/gavel.mp3'], volume: 1, refDistance: 4, maxDistance: 25 },
+  door_pick_click: { urls: doorUrls('pick_click', 2), volume: 0.9, ...LOCKPICK_RANGE },
+  door_pick_scrape: { urls: doorUrls('pick_scrape', 2), volume: 1, ...LOCKPICK_RANGE },
+  alarm_siren: { urls: ['/assets/sfx/alarm/siren_1.mp3'], volume: 1, ...ALARM_RANGE },
   market_bell: { urls: ['/assets/sfx/market/bell.mp3'], volume: 0.6 },
   market_bought: { urls: ['/assets/sfx/market/bought.mp3'], volume: 0.7 },
   market_sold: { urls: ['/assets/sfx/market/sold.mp3'], volume: 0.7 },

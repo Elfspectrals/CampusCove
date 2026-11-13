@@ -11,7 +11,7 @@ export interface Payout {
   fullPriceLeft: number
 }
 
-export const APPLE_SALE: SaleCurve = { price: 3, quota: 300, overPrice: 1 }
+export const APPLE_SALE: SaleCurve = { price: 3, quota: 300, overPrice: 0 }
 export const PICKS_PER_HOUR = 3_600_000 / PICK_MS
 
 export function salePayout(curve: SaleCurve, soldToday: number, quantity: number): Payout {

@@ -8,6 +8,7 @@ use App\Models\AccountHandle;
 use App\Models\SecurityEvent;
 use App\Services\AccountMailer;
 use App\Services\AccountRegistrationService;
+use App\Services\BadgeService;
 use App\Services\ReferralService;
 use App\Services\SecurityEventLogger;
 use App\Services\WalletSummaryService;
@@ -26,6 +27,7 @@ class AuthController extends Controller
 
     public function __construct(
         private readonly WalletSummaryService $walletSummary,
+        private readonly BadgeService $badges,
     ) {
     }
 
@@ -208,6 +210,7 @@ class AuthController extends Controller
             // false when the terms / privacy policy changed since the player accepted them: the front asks again
             'terms_current' => $account->terms_version === self::TERMS_VERSION,
             'wallet_summary' => $this->walletSummary->forAccountId((int) $account->account_id),
+            'badges' => $this->badges->badges((int) $account->account_id),
         ];
     }
 }
