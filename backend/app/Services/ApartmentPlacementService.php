@@ -211,6 +211,7 @@ class ApartmentPlacementService
             if ($itemDef === null) {
                 throw new ApartmentPlacementException('asset_not_found', 'This apartment asset does not exist.');
             }
+            $this->assertRoomHasSpaceLeft($house, $room);
 
             $placedByAccountId = $actorAccountId;
             $itemInstance = $this->consumeOneOwnedItemForPlacement(
@@ -679,6 +680,15 @@ class ApartmentPlacementService
             && $position['y'] >= -self::FLOOR_TOLERANCE && $position['y'] <= ($bounds['maxY'] ?? self::ROOM_HEIGHT);
         if (! $inside) {
             throw new ApartmentPlacementException('out_of_bounds', 'Furniture must stay inside the house.', 422);
+        }
+    }
+
+    private function assertRoomHasSpaceLeft(HousingUnit $house, Room $room): void
+    {
+        Room::query()->whereKey($room->room_id)->lockForUpdate()->first();
+        $placed = RoomFurniture::query()->where('room_id', (int) $room->room_id)->count();
+        if ($placed >= $house->furnitureLimit()) {
+            throw new ApartmentPlacementException('furniture_limit_reached', 'This house cannot hold more objects.', 422);
         }
     }
 

@@ -53,6 +53,7 @@ export interface ApartmentPlacementDeps {
   getColyseusRoom: () => Room | null
   getApartmentObjectMesh: (objectId: string) => THREE.Mesh | undefined
   canDecorate: Ref<boolean>
+  furnitureUsage: Ref<{ placed: number; limit: number } | null>
   pointerLocked: Ref<boolean>
   getApartmentInventoryOpen: () => boolean
   persistApartmentTransformForMesh: (mesh: THREE.Mesh, force: boolean) => void
@@ -143,6 +144,19 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
   }
 
   /** Put the ghost in the scene, two metres in front of the camera. */
+  function houseIsFull(): boolean {
+    const usage = deps.furnitureUsage.value
+    return usage !== null && usage.placed >= usage.limit
+  }
+
+  function newObjectHint(): string {
+    if (!deps.canDecorate.value) return NOT_HERE_HINT
+    const usage = deps.furnitureUsage.value
+    if (!usage) return placeHint()
+    if (houseIsFull()) return `This house is full (${usage.placed}/${usage.limit}): put something away first`
+    return `${usage.placed}/${usage.limit} objects · ${placeHint()}`
+  }
+
   function showGhost(hint: string): void {
     hudHints.value = [hint]
     crosshairTint.value = 'valid'
@@ -172,7 +186,7 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
       if (currentState.value.kind === 'preview_new' && q <= 0) cancelPreview()
     })
     currentState.value = { kind: 'preview_new', itemDef, ownedCountRef }
-    showGhost(deps.canDecorate.value ? placeHint() : NOT_HERE_HINT)
+    showGhost(newObjectHint())
     loadGhostVisual(itemDef)
     void ensureWorld()
   }
@@ -340,9 +354,9 @@ export function useApartmentPlacement(deps: ApartmentPlacementDeps) {
 
     const ignored = new Set([movingId, supportPropId].filter(Boolean))
     const valid = deps.canDecorate.value && ghostInsideRoom() && !physics.ghostIntersects(ghost.root, ignored)
-      && !ghostOverlapsPlayer()
+      && !ghostOverlapsPlayer() && !(st.kind === 'preview_new' && houseIsFull())
     if (st.kind === 'preview_new') {
-      const hint = deps.canDecorate.value ? placeHint() : NOT_HERE_HINT
+      const hint = newObjectHint()
       if (hudHints.value[0] !== hint) hudHints.value = [hint]
     }
     if (ghost.setValid(valid)) {

@@ -179,6 +179,11 @@ const houseFurniture = useHouseFurniture({
   editableHouseObjects: { ensureApartmentObjectsFromServer, clearApartmentObjects },
 })
 
+const furnitureUsage = computed(() => {
+  const unit = housing.units.value.find((u) => u.model_key === editableHouseKey.value)
+  return unit ? { placed: apartmentObjectIds.value.length, limit: unit.furniture_limit } : null
+})
+
 const placement = useApartmentPlacement({
   getScene,
   getCamera,
@@ -186,6 +191,7 @@ const placement = useApartmentPlacement({
   getApartmentObjectMesh,
   getApartmentInventoryOpen: () => inventoryOpen.value,
   canDecorate,
+  furnitureUsage,
   pointerLocked,
   persistApartmentTransformForMesh,
   refreshApartmentInventory: () => refreshOwnedItems(),

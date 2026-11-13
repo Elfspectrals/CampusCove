@@ -455,6 +455,7 @@ final class HousingService
             'tax_due_at' => $unit->tax_due_at?->toIso8601String(),
             'door_locked' => (bool) $unit->door_locked,
             'interior_bounds' => $unit->interior_bounds,
+            'furniture_limit' => $unit->furnitureLimit(),
             'room_public_id' => $unit->room !== null ? (string) $unit->room->public_id : null,
             'template_key' => $unit->templateKey(),
             'key_holder_account_ids' => $this->keyHolderIds($unit),

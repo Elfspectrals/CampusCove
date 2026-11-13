@@ -68,6 +68,7 @@ export interface HousingUnitPayload {
   room_public_id: string | null
   template_key: string
   key_holder_account_ids: number[]
+  furniture_limit: number
 }
 
 export interface RoomInitPayload {
