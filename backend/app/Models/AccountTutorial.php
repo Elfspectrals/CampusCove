@@ -18,6 +18,7 @@ class AccountTutorial extends Model
         'account_id',
         'step',
         'status',
+        'step_baseline',
         'started_at',
         'completed_at',
     ];
@@ -26,6 +27,7 @@ class AccountTutorial extends Model
     {
         return [
             'account_id' => 'integer',
+            'step_baseline' => 'integer',
             'started_at' => 'datetime',
             'completed_at' => 'datetime',
         ];

@@ -50,7 +50,7 @@ import { useTutorialMarker } from '../composables/game/useTutorialMarker'
 import { useTutorialHints } from '../composables/game/useTutorialHints'
 import GameTutorialHint from '../components/game/GameTutorialHint.vue'
 import type { Vec3 } from '../game/mallTemplates/mallTemplate'
-import { loadTutorial, skipTheTutorial, tutorial } from '../composables/game/useTutorial'
+import { applyTutorialState, loadTutorial, skipTheTutorial, tutorial } from '../composables/game/useTutorial'
 import GameTaskBanner from '../components/game/GameTaskBanner.vue'
 import UiIcon from '../components/ui/UiIcon.vue'
 import { useApartmentObjects } from '../composables/game/useApartmentObjects'
@@ -1220,6 +1220,13 @@ const realtime = useGameRealtime({
   zoneBuyers: zoneBuyers.handlers,
   atm: atm.handlers,
   tasks: taskHandlers,
+  tutorial: {
+    onState: (data) => {
+      const wasDone = tutorial.value?.status === 'done'
+      applyTutorialState(data)
+      if (!wasDone && tutorial.value?.status === 'done') survival.say(t('tutorial.welcome'))
+    },
+  },
   cashBags: cashBags.handlers,
   voice: { onToken: voice.onToken, disconnect: voice.disconnect },
   farm: farm.handlers,

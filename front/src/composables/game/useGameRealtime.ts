@@ -201,6 +201,9 @@ export interface GameRealtimeDeps {
   tasks: {
     onDone: (data: TaskDonePayload) => void
   }
+  tutorial: {
+    onState: (data: unknown) => void
+  }
 }
 
 /** Colyseus 'city' room: connection, server message bindings and other players' avatars. */
@@ -358,6 +361,8 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('atm_done', (data: AtmDonePayload) => deps.atm.onDone(data))
     room.onMessage('atm_error', (data: AtmErrorPayload) => deps.atm.onError(data))
     room.onMessage('task_done', (data: TaskDonePayload) => deps.tasks.onDone(data))
+    room.onMessage('tutorial_state', (data: unknown) => deps.tutorial.onState(data))
+    room.onMessage('user_badges', (data: { sessionId: string; badges: string[] }) => remotes.setBadges(data.sessionId, data.badges))
     room.onMessage('cash_bag_dropped', (data: CashBagPayload) => deps.cashBags.onDropped(data))
     room.onMessage('cash_bag_removed', (data: { id: number }) => deps.cashBags.onRemoved(data))
     room.onMessage('cash_bag_picked', (data: CashBagPickedPayload) => deps.cashBags.onPicked(data))

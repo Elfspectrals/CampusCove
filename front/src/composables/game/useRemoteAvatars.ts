@@ -394,6 +394,14 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     entry.chatBubble = createChatBubble(entry.group, text)
   }
 
+  function setBadges(sessionId: string, codes: readonly string[]): void {
+    const entry = avatars.get(sessionId)
+    if (!entry) return
+    entry.badges = shownBadges(codes)
+    entry.nameTag.dispose()
+    entry.nameTag = createNameTag(entry.group, entry.pseudo, badgeIconPaths(entry.badges))
+  }
+
   /** Drink Fast: the player races with a pint `progress` drunk (0..1), or puts it down (null). */
   function setRacePint(sessionId: string, progress: number | null) {
     const entry = avatars.get(sessionId)
@@ -501,5 +509,5 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     }
   }
 
-  return { upsert, updateAppearance, setTarget, setSeated, setPicking, setRacePint, pseudoOf, positionOf, setVoiceState, players, accountOf, showAction, showChat, showPunch, showHit, remove, clear, tick }
+  return { upsert, updateAppearance, setTarget, setSeated, setPicking, setRacePint, setBadges, pseudoOf, positionOf, setVoiceState, players, accountOf, showAction, showChat, showPunch, showHit, remove, clear, tick }
 }

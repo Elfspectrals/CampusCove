@@ -6,13 +6,17 @@ Runs once for a new account, right after the character creator. The farmer at th
 
 In order (`TutorialService::STEPS`):
 
-| Step | Done when (checked by the server) |
-|---|---|
-| `pick_apples` | 6 apples picked |
-| `eat_apple` | 1 apple eaten |
-| `sell_apples` | apples sold to the farmer |
-| `deposit_cash` | one deposit at an ATM ("cash drops at death, the bank does not") |
-| `play_darts` | one darts game played at the pub, free, paying 0 coins to anyone |
+| Step | Done when (checked by the server) | Counter |
+|---|---|---|
+| `pick_apples` | 6 apples picked | `apples_picked` |
+| `eat_apple` | 1 bite eaten or drunk (an apple is two bites) | `food_eaten` |
+| `sell_apples` | 1 apple sold to the farmer | `apples_sold` |
+| `deposit_cash` | one deposit at an ATM ("cash drops at death, the bank does not") | `atm_deposits` |
+| `play_darts` | one darts game played at the pub, free, paying 0 coins to anyone | `darts_played` |
+
+Only what the player does during a step counts (decided 2026-11-13): entering a step, or resuming a skipped tutorial, stores the step's counter in `step_baseline`, and the step ends when the counter has gone up by the goal since then. One action moves one step at most. The listener `AdvanceTutorial` reads every `CounterBumped` (tasks branch, `docs/TASKS.md`); the last step sets `done`, `completed_at` and grants the `new_citizen` badge.
+
+Each move is sent to the socket (`POST /internal/tutorial-changed` `{ accountId, status, step }`, `X-Realtime-Secret`), which sends `tutorial_state { status, step }` to that player. On `done` it adds `new_citizen` to the player's badges and sends `user_badges { sessionId, badges }` to the other players; the player sees "Welcome to town, new citizen!".
 
 ## Free darts game
 

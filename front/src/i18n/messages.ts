@@ -42,6 +42,7 @@ export const messages = {
       settingsIntro: 'You skipped the first day tutorial. Pick it up where you left it.',
       resume: 'Resume the tutorial',
       metres: '{n} m',
+      welcome: 'Welcome to town, new citizen!',
       hints: {
         atm: 'ATM: put in or take out your money. Cash drops when you die, the bank keeps it.',
         door: 'Door: press {key} to go in.',
@@ -471,6 +472,7 @@ export const messages = {
       settingsIntro: 'Tu as passé le tutoriel du premier jour. Reprends-le là où tu l’avais laissé.',
       resume: 'Reprendre le tutoriel',
       metres: '{n} m',
+      welcome: 'Bienvenue en ville, nouveau citoyen !',
       hints: {
         atm: 'Distributeur : dépose ou retire ton argent. Le cash tombe à ta mort, la banque le garde.',
         door: 'Porte : appuie sur {key} pour entrer.',

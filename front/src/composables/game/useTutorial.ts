@@ -1,5 +1,5 @@
 import { readonly, ref } from 'vue'
-import { fetchTutorial, resumeTutorial, skipTutorial, type TutorialState } from '../../api/tutorial'
+import { fetchTutorial, parseTutorial, resumeTutorial, skipTutorial, type TutorialState } from '../../api/tutorial'
 
 const state = ref<TutorialState | null>(null)
 
@@ -15,4 +15,8 @@ export async function skipTheTutorial(): Promise<void> {
 
 export async function resumeTheTutorial(): Promise<void> {
   state.value = await resumeTutorial()
+}
+
+export function applyTutorialState(data: unknown): void {
+  state.value = parseTutorial(data)
 }

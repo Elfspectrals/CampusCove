@@ -91,6 +91,7 @@ import type {
 } from './types.ts'
 import { citySpawn, workDoor } from './world.ts'
 import { sendTaskTierReached, type TaskTierReached } from './tasks.ts'
+import { applyTutorialChange, type TutorialChange } from './tutorial.ts'
 
 function warn(context: string, error: unknown): void {
   console.warn(`[colyseus] ${context}:`, error instanceof Error ? error.message : error)
@@ -357,6 +358,10 @@ export class CityRoom extends Room implements GameRoom {
 
   onTaskTierReached(reached: TaskTierReached): void {
     sendTaskTierReached(this, reached)
+  }
+
+  onTutorialChanged(change: TutorialChange): void {
+    applyTutorialChange(this, change)
   }
 
   async fetchHouseFurniture(token: string): Promise<void> {
