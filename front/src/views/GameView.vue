@@ -35,6 +35,7 @@ import GamePubSecretDialog from '../components/game/GamePubSecretDialog.vue'
 import GamePoliceLicenceDialog from '../components/game/GamePoliceLicenceDialog.vue'
 import GameSportsPassDesk from '../components/game/GameSportsPassDesk.vue'
 import GameSportsSignup from '../components/game/GameSportsSignup.vue'
+import GameClimbHud from '../components/game/GameClimbHud.vue'
 import GameChat from '../components/game/GameChat.vue'
 import GameDrunkEffects from '../components/game/GameDrunkEffects.vue'
 import GameDrinkFast from '../components/game/GameDrinkFast.vue'
@@ -101,6 +102,7 @@ import { usePolice } from '../composables/game/usePolice'
 import { useSportsPass } from '../composables/game/useSportsPass'
 import { passValid } from '../game/sports/sportsPass'
 import { useSportsSignup } from '../composables/game/useSportsSignup'
+import { useClimbing } from '../composables/game/useClimbing'
 import { usePickpocket } from '../composables/game/usePickpocket'
 import { useStorageAuction } from '../composables/game/useStorageAuction'
 import { useStorageWarehouse } from '../composables/game/useStorageWarehouse'
@@ -875,6 +877,24 @@ const { open: sportsSignupOpen, choices: sportsVenueChoices, canPickVenue: sport
 watch(sportsSignupOpen, (open) => {
   if (!open && !document.pointerLockElement) requestPointerLock()
 })
+const CLIMB_SOUNDS = { hold: 'door_pick_click', miss: 'door_pick_scrape', fall: 'impact', top: 'market_bell' } as const
+const climbing = useClimbing({
+  myPosition,
+  getScene,
+  getCamera,
+  canvasRef,
+  gameRoomRef,
+  promptsHidden: () => inventoryOpen.value,
+  startPrompt: (line) => ({
+    action: t('climbing.startAction', { name: line.name }),
+    detail: t('climbing.startDetail', { colour: t(`climbing.colours.${line.colour}`), kind: t(`climbing.kinds.${line.kind}`), holds: line.holds.length }),
+  }),
+  resultText: (state) => t(`climbing.results.${state.result ?? 'fell'}`, { time: ((state.timeMs ?? 0) / 1000).toFixed(2) }),
+  errorText: (error) => (te(`climbing.errors.${error.code}`) ? t(`climbing.errors.${error.code}`) : error.message),
+  say: (text) => survival.say(text),
+  play: (sound) => sfx.play(CLIMB_SOUNDS[sound]),
+})
+const { hud: climbHud, climbing: climbingNow } = climbing
 const PICKPOCKET_ERROR_KEYS = new Set([
   'pickpocket_on_duty',
   'pickpocket_jailed',
@@ -963,7 +983,7 @@ const interactions = useInteractionTargets({
     if (activeFurniture.value?.store.hasCounter.value) activeFurniture.value.store.toggleTarget(useWithShift)
     else openStorePurchase()
   },
-  sources: [townBus.source, pub.source, pubQuiz.source, pubChallenge.source, pubGames.source, seats.source, orchard.source, farm.source, zoneBuyers.source, atm.source, storage.source, respawnBed.source, cashBags.source, storageAuction.source, jailCell.source, police.source, pickpocket.source, market.source, sportsPass.source, sportsSignup.source],
+  sources: [townBus.source, pub.source, pubQuiz.source, pubChallenge.source, pubGames.source, seats.source, orchard.source, farm.source, zoneBuyers.source, atm.source, storage.source, respawnBed.source, cashBags.source, storageAuction.source, jailCell.source, police.source, pickpocket.source, market.source, sportsPass.source, sportsSignup.source, climbing.source],
 })
 const { doorPrompt } = interactions
 
@@ -1296,6 +1316,7 @@ const environment = useRoomEnvironment({
     jailCell.onTownLoaded(manifest)
     police.onTownLoaded(manifest)
     seats.onTownLoaded(manifest)
+    climbing.onTownLoaded()
     pub.onTownLoaded(manifest)
     pubQuiz.onTownLoaded(manifest)
     pubGames.onTownLoaded(manifest)
@@ -1471,6 +1492,7 @@ function handleExtraKeyDown(e: KeyboardEvent): boolean {
   if (pubChallenge.onKeyDown(e)) return true
   // seated at the pub: a step or a jump stands the player up instead of moving
   if (seats.onKeyDown(e)) return true
+  if (climbing.onKeyDown(e)) return true
   // defaultPrevented: the inventory / cafe menu already used this Esc to close themselves
   if (e.code === 'Escape' && !e.repeat && !e.defaultPrevented && pauseMenuOpen.value && !placementPreviewActive.value) {
     toggleEscapeMenu(e)
@@ -1559,10 +1581,11 @@ const movement = useGameMovement({
       requestPointerLock()
       return true
     }
+    if (pointerLocked.value && climbing.onMouseDown(e.button)) return true
     return pointerLocked.value && runUseOrPunch(mouseButtonCode(e.button), false, e.shiftKey)
   },
   speedFactor: () => survival.speedFactor() * intoxication.walkFactor() * (adminWatch.hasMyPower('speed') ? SPEED_POWER_FACTOR : 1),
-  movementLocked: () => seats.seated.value || townBus.riding.value || police.cuffedBy.value !== null || adminWatch.hasMyPower('freeze'),
+  movementLocked: () => seats.seated.value || townBus.riding.value || police.cuffedBy.value !== null || adminWatch.hasMyPower('freeze') || climbingNow.value,
   flying: () => adminWatch.hasMyPower('fly'),
   afterCameraPlaced: intoxication.applyToCamera,
   trySpendJump: () => adminWatch.hasMyPower('endless_stamina') || punch.trySpendJump(),
@@ -1605,6 +1628,7 @@ const movement = useGameMovement({
     farm.tick()
     police.tick()
     sportsSignup.tick()
+    climbing.tick()
     if (!doorSigns.group.parent) getScene()?.add(doorSigns.group)
     minimap.tick()
     gps.tick()
@@ -1749,6 +1773,7 @@ const realtime = useGameRealtime({
     onError: sportsSignup.handlers.onError,
     onRoomJoined: sportsSignup.handlers.onRoomJoined,
   },
+  climbing: climbing.handlers,
   pickpocket: pickpocket.handlers,
   storageAuction: {
     ...storageAuction.handlers,
@@ -2324,6 +2349,7 @@ const crosshairClass = computed(() => {
       @confirm="police.confirmBuy"
       @close="police.closeConfirm"
     />
+    <GameClimbHud v-if="climbHud" :hud="climbHud" />
     <GameSportsPassDesk
       v-if="sportsPassOpen && sportsPassState"
       :pass="sportsPassState"

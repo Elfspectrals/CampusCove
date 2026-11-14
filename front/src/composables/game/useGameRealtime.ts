@@ -128,6 +128,7 @@ import type {
 import { useRemoteAvatars, type SeatPose } from './useRemoteAvatars'
 import { PUNCH_DAMAGE } from '../../game/punch'
 import { applySportsLoans, clearSportsLoans, forgetSportsLoans } from '../../game/sports/sportsLoans'
+import type { ClimbErrorPayload, ClimbStatePayload } from '../../game/sports/climbing'
 
 const REALTIME_HTTP_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000'
 
@@ -326,6 +327,11 @@ export interface GameRealtimeDeps {
     onError: (data: SportsErrorPayload) => void
     onRoomJoined: () => void
   }
+  climbing: {
+    onState: (data: ClimbStatePayload) => void
+    onError: (data: ClimbErrorPayload) => void
+    onRoomJoined: () => void
+  }
   pickpocket: {
     onStarted: (data: PickpocketStartedPayload) => void
     onProgress: (data: PickpocketProgressPayload) => void
@@ -413,6 +419,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       deps.admin.onInit(payload.isAdmin === true)
       clearSportsLoans()
       deps.sports.onRoomJoined()
+      deps.climbing.onRoomJoined()
     })
 
     room.onMessage('housing_units_sync', (data: { units?: unknown }) => syncHousingUnits(data.units))
@@ -580,6 +587,8 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('sports_lobby', (data: SportsLobbyPayload) => deps.sports.onLobby(data))
     room.onMessage('sports_lobby_closed', (data: SportsLobbyClosedPayload) => deps.sports.onLobbyClosed(data))
     room.onMessage('sports_error', (data: SportsErrorPayload) => deps.sports.onError(data))
+    room.onMessage('climb_state', (data: ClimbStatePayload) => deps.climbing.onState(data))
+    room.onMessage('climb_error', (data: ClimbErrorPayload) => deps.climbing.onError(data))
     room.onMessage('sports_loans', (data: SportsLoansPayload) => applySportsLoans(data))
     room.onMessage('pickpocket_started', (data: PickpocketStartedPayload) => deps.pickpocket.onStarted(data))
     room.onMessage('pickpocket_progress', (data: PickpocketProgressPayload) => deps.pickpocket.onProgress(data))
