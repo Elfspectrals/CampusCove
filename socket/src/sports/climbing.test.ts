@@ -109,7 +109,8 @@ test('a topped boulder ends at once on the mat and records the time; nothing for
   const body = call.body as { sport: string, venue: string, startedAt: number, endedAt: number, players: unknown[] }
   assert.deepEqual([body.sport, body.venue, body.startedAt, body.endedAt], ['climbing', 'boulder_1', NOW + 800, end])
   assert.deepEqual(body.players, [{ accountId: 10, team: null, result: 'finished', timeMs: 3200 }])
-  assert.deepEqual(api.calls.find((c) => c.url === '/tasks/climb-topped')?.body, { line: 'boulder_1', colour: 'green' })
+  assert.equal(api.calls.some((c) => c.url === '/tasks/climb-topped'), false)
+  assert.deepEqual((call.body as { settings: unknown }).settings, { line: 'boulder_1' })
 })
 
 test('a fall on the lead wall lowers the climber for 2 s and records no time', async () => {
@@ -183,6 +184,9 @@ test('speed duel: the coach starts both climbers on the twin lanes and the first
   const record = api.calls.find((c) => c.url === '/sports/matches')?.body as { venue: string, players: { accountId: number, result: string, timeMs?: number }[] }
   assert.equal(record.venue, 'climbing_duel')
   assert.deepEqual(record.players.map((p) => [p.accountId, p.result, p.timeMs]), [[50, 'win', 14 * 800 - 800], [51, 'loss', undefined]])
+  await new Promise((resolve) => setImmediate(resolve))
+  const counted = api.calls.filter((c) => c.url === '/tasks/climb-topped').map((c) => c.body)
+  assert.deepEqual(counted, [{ ref: match.id, line: 'speed_1', colour: 'red' }])
 })
 
 test('speed duel: when both climbers fall nobody wins', async () => {

@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { boardRows, climbAnimation, climbSeconds, DUEL_BOARD, gripShare, holdPosition, isOnWall, nearestStart, parseClimbingSpec, ringStage, startSpot, type ClimbStatePayload } from './climbing.ts'
+import { boardRows, climbAnimation, climbBoardKey, climbSeconds, gripShare, holdPosition, isOnWall, nearestStart, parseClimbingSpec, ringStage, startSpot, type ClimbStatePayload } from './climbing.ts'
 
 const spec = parseClimbingSpec(JSON.parse(readFileSync(new URL('../../../public/assets/sports/rules/climbing.json', import.meta.url), 'utf8')))
 const line = (id: string) => spec.lines.find((l) => l.id === id)!
@@ -52,16 +52,16 @@ test('time and grip shown in the HUD', () => {
   assert.equal(isOnWall(state({ phase: 'ended' })), false)
 })
 
-test('the board lists every line in the wall order, then the speed duel, with last week champion', () => {
-  const rows = boardRows(spec, {
-    boards: [{ venue: 'route_4', entries: [{ name: 'Ana#0001', timeMs: 15000 }] }, { venue: 'climbing_duel', entries: [{ name: 'Ben#0002', timeMs: 9000 }] }],
-    champions: [{ venue: 'route_1', name: 'Cy#0003', timeMs: 7000 }],
-  })
-  assert.equal(rows.length, 13)
-  assert.equal(rows[0]!.id, 'route_1')
-  assert.deepEqual(rows[0]!.champion, { name: 'Cy#0003', timeMs: 7000 })
-  assert.deepEqual(rows.find((r) => r.id === 'route_4')!.entries, [{ name: 'Ana#0001', timeMs: 15000 }])
-  assert.deepEqual([rows.at(-1)!.id, rows.at(-1)!.name, rows.at(-1)!.entries.length], [DUEL_BOARD, null, 1])
+test('the board shows one core board per line (climb_<line>), in the wall order, with last week champion', () => {
+  const rows = boardRows(spec, [
+    { board: 'climb_route_4', entries: [{ name: 'Ana#0001', value: 15000 }], champion: null },
+    { board: 'climb_route_1', entries: [], champion: { name: 'Cy#0003', value: 7000 } },
+  ])
+  assert.equal(rows.length, 12)
+  assert.equal(climbBoardKey(line('boulder_6')), 'climb_boulder_6')
+  assert.deepEqual(rows[0], { id: 'route_1', name: 'Fern Line', hex: line('route_1').hex, entries: [], champion: { name: 'Cy#0003', value: 7000 } })
+  assert.deepEqual(rows.find((r) => r.id === 'route_4')!.entries, [{ name: 'Ana#0001', value: 15000 }])
+  assert.deepEqual(rows.find((r) => r.id === 'boulder_1')!.entries, [])
 })
 
 test('remote climbers: reach with the hand on the side of the new hold, hang, lower, fall only off a boulder', () => {

@@ -61,8 +61,19 @@ final class PlayerActivityService
         $this->counters->bumpOncePerKey($accountId, ActionCounter::SecretRoomWeeks, now(self::DAY_TIMEZONE)->format('o-\\WW'));
     }
 
-    public function climbTopped(int $accountId, string $line, string $colour): void
+    public function climbTopped(int $accountId, string $ref, string $line, string $colour): void
     {
+        $counted = DB::table('sports_matches as m')
+            ->join('sports_match_players as p', 'p.match_id', '=', 'm.id')
+            ->where('m.ref', $ref)
+            ->where('m.sport', 'climbing')
+            ->where('m.counts_for_tasks', true)
+            ->where('p.account_id', $accountId)
+            ->whereIn('p.result', ['win', 'finished'])
+            ->exists();
+        if (! $counted) {
+            return;
+        }
         $key = $this->today().':'.$line;
         $this->counters->bumpOncePerKey($accountId, ActionCounter::ClimbLinesTopped, $key);
         if ($colour === 'black') {

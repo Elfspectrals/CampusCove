@@ -48,10 +48,11 @@ class TaskController extends Controller
     public function climbTopped(Request $request): JsonResponse
     {
         $validated = $request->validate([
+            'ref' => 'required|string|min:1|max:64',
             'line' => ['required', 'string', 'regex:/^[a-z0-9_]{1,40}$/'],
             'colour' => 'required|string|in:green,blue,red,black',
         ]);
-        $this->activity->climbTopped($this->accountId($request), (string) $validated['line'], (string) $validated['colour']);
+        $this->activity->climbTopped($this->accountId($request), (string) $validated['ref'], (string) $validated['line'], (string) $validated['colour']);
 
         return response()->json(['ok' => true]);
     }

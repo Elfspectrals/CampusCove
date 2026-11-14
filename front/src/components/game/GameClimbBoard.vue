@@ -37,19 +37,19 @@ onUnmounted(() => window.removeEventListener('keydown', onKeyDown))
         <li v-for="row in rows" :key="row.id" class="rounded-lg bg-ink-950/50 p-2">
           <p class="m-0 mb-1 flex items-center gap-2 text-xs font-bold text-fog">
             <span class="inline-block h-3 w-3 shrink-0 rounded-full" :style="{ backgroundColor: row.hex }" />
-            <span class="min-w-0 flex-1 truncate">{{ row.name ?? t('climbing.board.duel') }}</span>
+            <span class="min-w-0 flex-1 truncate">{{ row.name }}</span>
           </p>
           <ol class="m-0 flex list-none flex-col gap-0.5 p-0">
             <li v-for="(entry, i) in row.entries" :key="entry.name" class="flex items-center gap-1.5 text-xs font-bold" :class="i === 0 ? 'text-sun' : 'text-fog'">
               <span class="w-4">{{ i + 1 }}</span>
               <span class="min-w-0 flex-1 truncate">{{ entry.name }}</span>
-              <span>{{ seconds(entry.timeMs) }}</span>
+              <span>{{ seconds(entry.value) }}</span>
             </li>
             <li v-if="row.entries.length === 0" class="text-xs text-mist">{{ t('climbing.board.empty') }}</li>
           </ol>
           <p v-if="row.champion" class="m-0 mt-1 flex items-center gap-1 text-[11px] text-mist">
             <UiIcon name="crown" :size="12" />
-            {{ t('climbing.board.champion', { name: row.champion.name, time: seconds(row.champion.timeMs) }) }}
+            {{ t('climbing.board.champion', { name: row.champion.name, time: seconds(row.champion.value) }) }}
           </p>
         </li>
       </ul>

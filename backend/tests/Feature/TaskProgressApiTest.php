@@ -429,25 +429,36 @@ class TaskProgressApiTest extends TestCase
         $this->assertSame(2, $this->counter($player['account_id'], ActionCounter::SecretRoomWeeks));
     }
 
-    public function test_a_climb_line_counts_once_a_day_and_black_lines_count_for_the_feat(): void
+    public function test_a_climb_line_counts_only_from_a_counted_match_once_a_day_and_black_lines_count_for_the_feat(): void
     {
-        $player = $this->registerAndCreditWallet(0, 'cash');
-        $headers = $this->auth($player['token'], self::SECRET);
-
+        $winner = $this->registerAndCreditWallet(0, 'cash');
+        $rival = $this->registerAndCreditWallet(0, 'cash');
+        DB::table('accounts')->whereIn('account_id', [$winner['account_id'], $rival['account_id']])->update(['created_at' => now()->subHours(100)]);
+        $headers = $this->auth($winner['token'], self::SECRET);
         $this->travelTo(now()->parse('2026-11-16 09:00:00', 'UTC'));
-        foreach ([['route_1', 'green'], ['route_1', 'green'], ['route_4', 'black'], ['boulder_4', 'black']] as [$line, $colour]) {
-            $this->postJson('/api/tasks/climb-topped', ['line' => $line, 'colour' => $colour], $headers)->assertOk();
+        $record = function (string $ref, array $players) use ($headers): void {
+            $end = now()->getTimestampMs();
+            $this->postJson('/api/sports/matches', ['ref' => $ref, 'sport' => 'climbing', 'venue' => 'climbing_duel', 'settings' => [],
+                'startedAt' => $end - 9000, 'endedAt' => $end, 'players' => $players], $headers)->assertOk();
+        };
+        $duel = fn (string $ref) => $record($ref, [
+            ['accountId' => $winner['account_id'], 'team' => null, 'result' => 'win', 'timeMs' => 9000],
+            ['accountId' => $rival['account_id'], 'team' => null, 'result' => 'loss'],
+        ]);
+        $duel('duel-1');
+        $duel('duel-2');
+        $record('solo-1', [['accountId' => $winner['account_id'], 'team' => null, 'result' => 'finished', 'timeMs' => 5000]]);
+
+        foreach ([['duel-1', 'speed_1', 'red'], ['duel-2', 'speed_1', 'red'], ['solo-1', 'route_4', 'black'], ['unknown', 'route_4', 'black'], ['duel-1', 'route_4', 'black']] as [$ref, $line, $colour]) {
+            $this->postJson('/api/tasks/climb-topped', ['ref' => $ref, 'line' => $line, 'colour' => $colour], $headers)->assertOk();
         }
-        $this->assertSame(3, $this->counter($player['account_id'], ActionCounter::ClimbLinesTopped));
-        $this->assertSame(2, $this->counter($player['account_id'], ActionCounter::BlackLinesTopped));
+        $this->assertSame(2, $this->counter($winner['account_id'], ActionCounter::ClimbLinesTopped));
+        $this->assertSame(1, $this->counter($winner['account_id'], ActionCounter::BlackLinesTopped));
 
-        $this->travelTo(now()->parse('2026-11-16 23:30:00', 'UTC'));
-        $this->postJson('/api/tasks/climb-topped', ['line' => 'route_4', 'colour' => 'black'], $headers)->assertOk();
-        $this->assertSame(4, $this->counter($player['account_id'], ActionCounter::ClimbLinesTopped));
-        $this->assertSame(3, $this->counter($player['account_id'], ActionCounter::BlackLinesTopped));
-
-        $this->postJson('/api/tasks/climb-topped', ['line' => 'route_4', 'colour' => 'purple'], $headers)->assertUnprocessable();
-        $this->postJson('/api/tasks/climb-topped', ['line' => 'route_4', 'colour' => 'black'], $this->auth($player['token']))->assertForbidden();
+        $this->postJson('/api/tasks/climb-topped', ['ref' => 'duel-1', 'line' => 'speed_1', 'colour' => 'red'], $this->auth($rival['token'], self::SECRET))->assertOk();
+        $this->assertSame(0, $this->counter($rival['account_id'], ActionCounter::ClimbLinesTopped));
+        $this->postJson('/api/tasks/climb-topped', ['ref' => 'duel-1', 'line' => 'route_4', 'colour' => 'purple'], $headers)->assertUnprocessable();
+        $this->postJson('/api/tasks/climb-topped', ['ref' => 'duel-1', 'line' => 'route_4', 'colour' => 'black'], $this->auth($winner['token']))->assertForbidden();
     }
 
     private function catalogId(string $code): int

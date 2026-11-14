@@ -1,8 +1,8 @@
 import { computed, ref, shallowRef, type Ref, type ShallowRef } from 'vue'
 import * as THREE from 'three'
-import { fetchClimbingBoard, type ClimbingBoard } from '../../api/climbingBoard'
+import { fetchSportsBoard, type SportsBoard } from '../../api/sportsBoard'
 import { isAimingAtNpc } from '../../game/pub/npcAim'
-import { boardRows, type ClimbingSpec } from '../../game/sports/climbing'
+import { boardRows, climbBoardKey, type ClimbingSpec } from '../../game/sports/climbing'
 import type { InteractionSource, ScreenPrompt } from './useInteractionTargets'
 
 const ZONE_FILE = '/assets/zones/sports_climbing.json'
@@ -34,14 +34,14 @@ async function attendantPosition(): Promise<Vec3> {
 
 export function useClimbingBoard(deps: ClimbingBoardDeps) {
   const open = ref(false)
-  const board = shallowRef<ClimbingBoard | null>(null)
+  const boards = shallowRef<SportsBoard[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
   let attendant: Vec3 | null = null
   const forward = new THREE.Vector3()
   const projection = new THREE.Vector3()
 
-  const rows = computed(() => (board.value && deps.spec.value ? boardRows(deps.spec.value, board.value) : []))
+  const rows = computed(() => (deps.spec.value ? boardRows(deps.spec.value, boards.value) : []))
 
   function onTownLoaded(): void {
     if (attendant) return
@@ -77,9 +77,10 @@ export function useClimbingBoard(deps: ClimbingBoardDeps) {
     open.value = true
     loading.value = true
     error.value = null
-    fetchClimbingBoard().then(
+    const lines = deps.spec.value?.lines ?? []
+    Promise.all(lines.map((line) => fetchSportsBoard(climbBoardKey(line)))).then(
       (loaded) => {
-        board.value = loaded
+        boards.value = loaded
         loading.value = false
       },
       (err: unknown) => {
@@ -96,7 +97,7 @@ export function useClimbingBoard(deps: ClimbingBoardDeps) {
 
   return {
     open,
-    week: computed(() => board.value?.week ?? null),
+    week: computed(() => boards.value[0]?.week ?? null),
     rows,
     loading,
     error,

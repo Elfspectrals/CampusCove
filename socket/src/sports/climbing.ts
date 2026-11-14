@@ -44,6 +44,7 @@ interface ActiveClimb extends Climb {
 
 interface DuelState {
   results: Map<number, MatchResult>
+  winnerLine?: ClimbLine
 }
 
 let rules: ClimbingRules | null = null
@@ -192,7 +193,7 @@ function recordFreeTop(room: GameRoom, climb: ActiveClimb, timeMs: number, now: 
     ref: randomUUID(),
     sport: 'climbing',
     venue: climb.line.id,
-    settings: {},
+    settings: { line: climb.line.id },
     startedAt: climb.startedAt,
     endedAt: now,
     players: [{ accountId: climb.accountId, team: null, result: 'finished', timeMs }]
@@ -226,18 +227,19 @@ function closeDuelIfOver(room: GameRoom, matchId: string, now: number): void {
   if (match && match.id === matchId && duelOver(match)) endMatch(room, CLIMBING_DUEL, { reason: 'finished' }, now)
 }
 
-function reportTop(room: GameRoom, climb: ActiveClimb): void {
-  const token = room.players.get(climb.sessionId)?.token
+function reportDuelTop(room: GameRoom, match: Match, accountId: number, line: ClimbLine): void {
+  const token = [...room.players.values()].find((p) => p.accountId === accountId)?.token
   if (!token) return
-  callRealtimeBackend(token, '/tasks/climb-topped', 'POST', { line: climb.line.id, colour: climb.line.colour }).catch((error) => {
-    console.warn(`[sports] climb top on ${climb.line.id} not counted:`, error instanceof Error ? error.message : error)
+  callRealtimeBackend(token, '/tasks/climb-topped', 'POST', { ref: match.id, line: line.id, colour: line.colour }).catch((error) => {
+    console.warn(`[sports] duel top on ${line.id} not counted:`, error instanceof Error ? error.message : error)
   })
 }
 
 function topOut(room: GameRoom, climb: ActiveClimb, now: number): void {
   const timeMs = climbTime(climb, now)
-  reportTop(room, climb)
   if (climb.duel) {
+    const duel = duels.get(climb.duel)
+    if (duel && !duel.winnerLine) duel.winnerLine = climb.line
     duelResult(climb, { accountId: climb.accountId, team: null, result: 'win', place: 1, timeMs })
     broadcastClimb(room, climb, 'top', now)
     finish(room, climb, 'won', now, timeMs)
@@ -387,7 +389,10 @@ function duelEnd(room: GameRoom, match: Match, _end: MatchEnd): void {
     finish(room, climb, someoneWon ? 'beaten' : 'cancelled', now)
   }
   const results = match.players.map((p) => duel.results.get(p.accountId) ?? { accountId: p.accountId, team: null, result: 'dnf' as const })
-  void recordMatch(room, match, results, now)
+  const winner = results.find((r) => r.result === 'win')
+  void recordMatch(room, match, results, now).then(() => {
+    if (winner && duel.winnerLine) reportDuelTop(room, match, winner.accountId, duel.winnerLine)
+  })
 }
 
 registerVenue({

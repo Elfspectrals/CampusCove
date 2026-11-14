@@ -689,9 +689,8 @@ export const messages = {
         title: 'Climbing board',
         loading: 'Loading…',
         empty: 'No time yet this week.',
-        duel: 'Speed duel',
         champion: 'Last week: {name}, {time}',
-        rules: 'Best time per climber, Monday to Sunday (Paris). The fastest of each line gets the Climbing champion badge.',
+        rules: 'Best free climb time per climber, Monday to Sunday (Paris). The fastest of each line gets the weekly sports champion badge.',
       },
       results: {
         topped: 'Topped in {time} s!',
@@ -1777,9 +1776,8 @@ export const messages = {
         title: 'Classement escalade',
         loading: 'Chargement…',
         empty: 'Pas encore de temps cette semaine.',
-        duel: 'Duel de vitesse',
         champion: 'Semaine dernière : {name}, {time}',
-        rules: 'Meilleur temps par grimpeur, du lundi au dimanche (Paris). Le plus rapide de chaque voie reçoit le badge Champion d’escalade.',
+        rules: 'Meilleur temps en grimpe libre par grimpeur, du lundi au dimanche (Paris). Le plus rapide de chaque voie reçoit le badge de champion sportif de la semaine.',
       },
       results: {
         topped: 'Sommet en {time} s !',

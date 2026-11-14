@@ -151,27 +151,26 @@ export function gripShare(state: ClimbStatePayload): number {
   return state.gripMax > 0 ? Math.max(0, Math.min(1, state.grip / state.gripMax)) : 0
 }
 
-export const DUEL_BOARD = 'climbing_duel'
+export function climbBoardKey(line: ClimbLine): string {
+  return `climb_${line.id}`
+}
 
 export interface BoardRow {
   id: string
-  name: string | null
+  name: string
   hex: string
-  entries: { name: string; timeMs: number }[]
-  champion: { name: string; timeMs: number } | null
+  entries: { name: string; value: number }[]
+  champion: { name: string; value: number } | null
 }
 
 export function boardRows(
   spec: ClimbingSpec,
-  board: { boards: { venue: string; entries: { name: string; timeMs: number }[] }[]; champions: { venue: string; name: string; timeMs: number }[] },
+  boards: readonly { board: string; entries: { name: string; value: number }[]; champion: { name: string; value: number } | null }[],
 ): BoardRow[] {
-  const entriesOf = (id: string) => board.boards.find((b) => b.venue === id)?.entries ?? []
-  const championOf = (id: string) => {
-    const found = board.champions.find((c) => c.venue === id)
-    return found ? { name: found.name, timeMs: found.timeMs } : null
-  }
-  const lines = spec.lines.map((line) => ({ id: line.id, name: line.name, hex: line.hex, entries: entriesOf(line.id), champion: championOf(line.id) }))
-  return [...lines, { id: DUEL_BOARD, name: null, hex: '#e07a2f', entries: entriesOf(DUEL_BOARD), champion: championOf(DUEL_BOARD) }]
+  return spec.lines.map((line) => {
+    const board = boards.find((b) => b.board === climbBoardKey(line))
+    return { id: line.id, name: line.name, hex: line.hex, entries: board?.entries ?? [], champion: board?.champion ?? null }
+  })
 }
 
 export type ClimbPose = 'hang' | 'lower' | null

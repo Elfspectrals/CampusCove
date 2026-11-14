@@ -25,6 +25,18 @@ final class SportsBoardService
         'skate_1' => ['sport' => 'skating', 'settings' => ['laps' => 1], 'metric' => 'time'],
         'skate_3' => ['sport' => 'skating', 'settings' => ['laps' => 3], 'metric' => 'time'],
         'skate_5' => ['sport' => 'skating', 'settings' => ['laps' => 5], 'metric' => 'time'],
+        'climb_route_1' => ['sport' => 'climbing', 'settings' => ['line' => 'route_1'], 'metric' => 'time'],
+        'climb_route_2' => ['sport' => 'climbing', 'settings' => ['line' => 'route_2'], 'metric' => 'time'],
+        'climb_speed_1' => ['sport' => 'climbing', 'settings' => ['line' => 'speed_1'], 'metric' => 'time'],
+        'climb_speed_2' => ['sport' => 'climbing', 'settings' => ['line' => 'speed_2'], 'metric' => 'time'],
+        'climb_route_3' => ['sport' => 'climbing', 'settings' => ['line' => 'route_3'], 'metric' => 'time'],
+        'climb_route_4' => ['sport' => 'climbing', 'settings' => ['line' => 'route_4'], 'metric' => 'time'],
+        'climb_boulder_1' => ['sport' => 'climbing', 'settings' => ['line' => 'boulder_1'], 'metric' => 'time'],
+        'climb_boulder_2' => ['sport' => 'climbing', 'settings' => ['line' => 'boulder_2'], 'metric' => 'time'],
+        'climb_boulder_3' => ['sport' => 'climbing', 'settings' => ['line' => 'boulder_3'], 'metric' => 'time'],
+        'climb_boulder_4' => ['sport' => 'climbing', 'settings' => ['line' => 'boulder_4'], 'metric' => 'time'],
+        'climb_boulder_5' => ['sport' => 'climbing', 'settings' => ['line' => 'boulder_5'], 'metric' => 'time'],
+        'climb_boulder_6' => ['sport' => 'climbing', 'settings' => ['line' => 'boulder_6'], 'metric' => 'time'],
     ];
 
     public static function week(CarbonImmutable $at): string
