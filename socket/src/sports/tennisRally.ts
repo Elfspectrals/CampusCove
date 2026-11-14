@@ -1,3 +1,4 @@
+import type { Bounds } from '../types.ts'
 import type { Team } from './signup.ts'
 import {
   AIM_NET_GAP,
@@ -5,6 +6,7 @@ import {
   BALL_RADIUS,
   BOUNCE_KEEP,
   COURT_HALF_LENGTH,
+  DOUBLES_HALF_WIDTH,
   DRIVE_SPEED,
   GRAVITY,
   HIT_ALLOWANCE_MS,
@@ -16,6 +18,8 @@ import {
   NET_HALF_SPAN,
   NET_HEIGHT,
   OWN_HALF_TOLERANCE,
+  PLAY_AREA_END_MARGIN,
+  PLAY_AREA_SIDE_MARGIN,
   POINT_PAUSE_MS,
   REACH_M,
   RESTITUTION,
@@ -66,6 +70,12 @@ export interface Aim {
 }
 
 type Where = (sessionId: string) => { x: number, z: number } | null
+
+export function playAreaFor(cx: number, netZ: number): Bounds {
+  const halfX = DOUBLES_HALF_WIDTH + PLAY_AREA_SIDE_MARGIN
+  const halfZ = COURT_HALF_LENGTH + PLAY_AREA_END_MARGIN
+  return { minX: cx - halfX, maxX: cx + halfX, minZ: netZ - halfZ, maxZ: netZ + halfZ }
+}
 
 export function sideSign(team: Team): number {
   return team === 'red' ? 1 : -1
@@ -227,4 +237,13 @@ export function hit(rally: Rally, hitter: Hitter, aim: Aim, lob: boolean, now: n
   const contact = bestContact(rally.ball, hitter.team, court, hitter, now)
   if (!contact) return null
   return strike(court, hitter.team, ballAt(rally.ball, contact.t), aim, lob ? LOB_SPEED : DRIVE_SPEED, contactQuality(contact.d), now)
+}
+
+export type Stroke = 'serve' | 'forehand' | 'backhand' | 'lob' | 'celebrate'
+
+export function strokeOf(before: Rally, after: Rally, hitter: Hitter, lob: boolean): Stroke | null {
+  if (before.phase === 'serve_wait' && after.phase === 'toss') return 'serve'
+  if (before.phase !== 'flight' || after.phase !== 'flight') return null
+  if (lob) return 'lob'
+  return (after.ball.x - hitter.x) * sideSign(hitter.team) >= 0 ? 'forehand' : 'backhand'
 }

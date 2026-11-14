@@ -899,6 +899,21 @@ export interface TennisBall {
   t: number
 }
 
+export interface TennisStrokePayload {
+  sessionId: string
+  stroke: 'serve' | 'forehand' | 'backhand' | 'lob' | 'celebrate'
+}
+
+export interface TennisFreePayload {
+  court: string
+  geometry: { cx: number; netZ: number; halfWidth: number } | null
+  phase: 'idle' | 'serve_wait' | 'toss' | 'flight' | 'point'
+  ball: TennisBall | null
+  hitter: TennisTeam | null
+  call: TennisStatePayload['call']
+  serverNow: number
+}
+
 export interface TennisStatePayload {
   venue: string
   court: { cx: number; netZ: number; halfWidth: number }

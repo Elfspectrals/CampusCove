@@ -16,6 +16,7 @@ const DOOR_RANGE = { refDistance: 1, maxDistance: 5 }
 /** Lockpicking is louder: the socket sends it within 12 m (LOCKPICK_NOISE_RADIUS). */
 const LOCKPICK_RANGE = { refDistance: 2, maxDistance: 12 }
 const ALARM_RANGE = { refDistance: 4, maxDistance: 25 }
+const TENNIS_RANGE = { refDistance: 3, maxDistance: 30 }
 
 const doorUrls = (name: string, count: number) => Array.from({ length: count }, (_, i) => `/assets/sfx/door/${name}_${i + 1}.mp3`)
 
@@ -38,6 +39,11 @@ const SOUNDS = {
   market_bell: { urls: ['/assets/sfx/market/bell.mp3'], volume: 0.6 },
   market_bought: { urls: ['/assets/sfx/market/bought.mp3'], volume: 0.7 },
   market_sold: { urls: ['/assets/sfx/market/sold.mp3'], volume: 0.7 },
+  tennis_swing: { urls: ['/assets/sfx/tennis/swing.mp3'], volume: 0.6 },
+  tennis_hit: { urls: ['/assets/sfx/tennis/hit.mp3'], volume: 1, ...TENNIS_RANGE },
+  tennis_bounce: { urls: ['/assets/sfx/tennis/bounce.mp3'], volume: 0.8, ...TENNIS_RANGE },
+  tennis_net: { urls: ['/assets/sfx/tennis/net.mp3'], volume: 0.8 },
+  tennis_call: { urls: ['/assets/sfx/tennis/call.mp3'], volume: 0.7 },
 } satisfies Record<string, SoundDef>
 
 export type SfxName = keyof typeof SOUNDS

@@ -56,7 +56,13 @@ Leaver past the 30 s grace: the other side wins.
   tosses automatically.
 - **Doubles**: either partner hits; once a side has hit, the ball belongs to the other side, so partners cannot both hit
   the same ball. The serve rotates between partners each time their side serves again.
-- **Free play** is not built yet: balls exist only during a structured match.
+- **Free play**: a ball basket stands by each court in the coach strip (x −444.7 and −442.3, z −266). A player with a
+  valid pass and a racket takes a ball there (lent, taken back on leaving `sports_tennis`). Anyone holding a ball can
+  toss and serve on a court with no match and hit the balls coming to their half; no score, the rally ends on the same
+  calls as a match and the court is free again after the 2 s pause. A match kick-off on that court stops it.
+- **Animations**: `TennisReady` loops while a player plays (match or ball in hand) and stands still; `TennisServe` plays
+  at the toss (contact at 0.55 s, the top of the toss is at 0.51 s), `TennisForehand` / `TennisBackhand` on the racket
+  side or the other side of the player facing the net, `TennisLob` on a right click, `TennisCelebrate` for the winners.
 - No drag; bounce keeps 75 % of the vertical speed and 80 % of the horizontal speed. Lines count as in. A ball that
   catches the net (under 0.914 m between the posts) loses the point.
 
@@ -69,6 +75,9 @@ Socket constants: `socket/src/sports/tennisConstants.ts`, mirrored in `front/pub
 |---|---|---|
 | `tennis_hit` | client → server | `{ aimX: number, aimZ: number, lob?: boolean }` (finite numbers; the aim is clamped to the receiving half, from 1 m past the net to 3 m past its lines). 120 ms between two hits of one player. Only a player of a running tennis match, back on court. |
 | `tennis_state` | server → match players and players in `sports_tennis` | `{ venue, court: { cx, netZ, halfWidth }, mode, format, phase: 'serve_wait' \| 'toss' \| 'flight' \| 'point' \| 'ended', games, points (labels '0', '15', '30', '40', 'AD' or tie-break counts), tiebreak, serving, server: sessionId \| null, ball: { x, y, z, vx, vy, vz, t (server ms) } \| null, hitter, call: 'out' \| 'net' \| 'double_bounce' \| 'missed_toss' \| null, pointWinner, winner, players: [{ sessionId, team }], serverNow }`, sent at kick-off, on each toss, hit, bounce and point, and once with `phase: 'ended'`. |
+| `tennis_ball_take` | client → server | `{ court: 'tennis_1' \| 'tennis_2' }` within 2.5 m of its basket: lends `tennis_ball` (`sports_loans`), or `sports_error` (`sports_too_far`, `sports_no_pass`, `sports_no_gear`, `sports_venue_busy`). |
+| `tennis_free` | server → players in `sports_tennis` | `{ court, geometry: { cx, netZ, halfWidth } \| null, phase: 'idle' \| 'serve_wait' \| 'toss' \| 'flight' \| 'point', ball, hitter, call, serverNow }` for a free rally; `idle` when the court is free again. |
+| `tennis_stroke` | server → players in `sports_tennis` but the striker | `{ sessionId, stroke: 'serve' \| 'forehand' \| 'backhand' \| 'lob' \| 'celebrate' }`, for the third-person clip. |
 
 The client draws the ball from `ball` on the server clock (`serverNow`); the socket alone judges hits, bounces and points.
 Results: `win` / `loss` per side, `dnf` for a player out past the grace, `score` = games won (short set) or tie-break

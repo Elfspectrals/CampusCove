@@ -133,6 +133,138 @@ def pose_drink(extras=None):
             extras(ph, P, 0.0, 1.0)
     return f
 
+TENNIS_READY = {("Hips", "dz"): -0.09, ("Spine", "x"): 14, ("Chest", "x"): 4, ("Head", "x"): -12,
+                ("UpperArm.R", "x"): -30, ("UpperArm.R", "z"): 25, ("UpperArm.R", "y"): -15, ("LowerArm.R", "x"): -70,
+                ("UpperArm.L", "x"): -30, ("UpperArm.L", "z"): -25, ("UpperArm.L", "y"): 15, ("LowerArm.L", "x"): -70,
+                ("Foot.L", "ax"): 0.07, ("Foot.L", "ay"): -0.02, ("Foot.R", "ax"): -0.07, ("Foot.R", "ay"): -0.02}
+
+TENNIS_GRIP = {("Hand.R", "x"): 10}
+
+
+def _tennis_apply(P, pose):
+    bones = P.arm.data.bones
+    P.move("Hips", pose.get(("Hips", "dx"), 0.0), 0, pose.get(("Hips", "dz"), 0.0))
+    for (bone, axis), value in pose.items():
+        if axis in ("x", "y", "z"):
+            getattr(P, "r" + axis)(bone, value)
+    for side in (".L", ".R"):
+        foot = "Foot" + side
+        rest = bones[foot].head_local
+        ankle = Vector((rest.x + pose.get((foot, "ax"), 0.0), rest.y + pose.get((foot, "ay"), 0.0),
+                        rest.z + pose.get((foot, "az"), 0.0)))
+        leg_ik(P, side, ankle)
+
+
+def _tennis_keys(keys):
+    return key_poses([(t, {**TENNIS_GRIP, **pose}) for t, pose in keys])
+
+
+def _over(base, **changes):
+    pose = dict(base)
+    for name, value in changes.items():
+        bone, axis = name.rsplit("_", 1)
+        pose[(bone.replace("__", "."), axis)] = value
+    return pose
+
+
+def pose_tennis_ready():
+    def f(ph, P):
+        a = 2 * math.pi * ph
+        pose = {**TENNIS_GRIP, **TENNIS_READY}
+        pose[("Hips", "dz")] -= 0.012 * (1 - math.cos(2 * a)) / 2
+        pose[("Hips", "dx")] = 0.012 * S_(a)
+        pose[("Hips", "y")] = -2 * S_(a)
+        pose[("Head", "z")] = 3 * S_(a)
+        pose[("Hand.R", "x")] += 4 * S_(2 * a)
+        pose[("LowerArm.R", "x")] += 3 * S_(2 * a - 0.5)
+        pose[("LowerArm.L", "x")] += 3 * S_(2 * a - 0.5)
+        _tennis_apply(P, pose)
+    return f
+
+
+def pose_tennis_forehand():
+    back = _over(TENNIS_READY, Hips_z=-25, Chest_z=-20, Hips_dx=-0.04, UpperArm__R_x=20, UpperArm__R_y=30, UpperArm__R_z=-10,
+                 LowerArm__R_x=-30, UpperArm__L_x=-60, UpperArm__L_z=-30, UpperArm__L_y=0, LowerArm__L_x=-20)
+    contact = _over(TENNIS_READY, Hips_z=5, Chest_z=5, Hips_dx=0.0, UpperArm__R_x=-35, UpperArm__R_y=25, UpperArm__R_z=20,
+                    LowerArm__R_x=-20, UpperArm__L_x=-20, UpperArm__L_z=-10, UpperArm__L_y=10, LowerArm__L_x=-40)
+    finish = _over(TENNIS_READY, Hips_z=25, Chest_z=25, Hips_dx=0.03, UpperArm__R_x=-120, UpperArm__R_y=0, UpperArm__R_z=60,
+                   LowerArm__R_x=-90, UpperArm__L_x=10, UpperArm__L_z=0, UpperArm__L_y=10, LowerArm__L_x=-60)
+    pose_at = _tennis_keys([(0.0, TENNIS_READY), (0.33, back), (0.5, contact), (0.68, finish), (1.0, TENNIS_READY)])
+    return lambda ph, P: _tennis_apply(P, pose_at(ph))
+
+
+def pose_tennis_backhand():
+    back = _over(TENNIS_READY, Hips_z=30, Chest_z=25, Hips_dx=0.03, UpperArm__R_x=-40, UpperArm__R_z=70, UpperArm__R_y=-20,
+                 LowerArm__R_x=-40, UpperArm__L_x=-30, UpperArm__L_z=-20, UpperArm__L_y=15, LowerArm__L_x=-80)
+    contact = _over(TENNIS_READY, Hips_z=5, Chest_z=0, Hips_dx=-0.03, UpperArm__R_x=-40, UpperArm__R_z=20, UpperArm__R_y=20,
+                    LowerArm__R_x=-5, UpperArm__L_x=25, UpperArm__L_z=0, UpperArm__L_y=-30, LowerArm__L_x=-20)
+    finish = _over(TENNIS_READY, Hips_z=-15, Chest_z=-15, Hips_dx=-0.02, UpperArm__R_x=-110, UpperArm__R_z=-10, UpperArm__R_y=50,
+                   LowerArm__R_x=-10, UpperArm__L_x=30, UpperArm__L_z=0, UpperArm__L_y=-40, LowerArm__L_x=-15)
+    pose_at = _tennis_keys([(0.0, TENNIS_READY), (0.33, back), (0.5, contact), (0.7, finish), (1.0, TENNIS_READY)])
+    return lambda ph, P: _tennis_apply(P, pose_at(ph))
+
+
+def pose_tennis_lob():
+    drop = _over(TENNIS_READY, Hips_dz=-0.15, Spine_x=20, Hips_z=-20, Chest_z=-15, Hips_dx=-0.03, UpperArm__R_x=15,
+                 UpperArm__R_y=25, UpperArm__R_z=0, LowerArm__R_x=-15, Hand__R_x=30, UpperArm__L_x=-45, UpperArm__L_z=-30,
+                 UpperArm__L_y=0, LowerArm__L_x=-30)
+    contact = _over(TENNIS_READY, Hips_dz=-0.11, Spine_x=12, Hips_z=0, UpperArm__R_x=-50, UpperArm__R_y=15, UpperArm__R_z=10,
+                    LowerArm__R_x=-10, Hand__R_x=30, UpperArm__L_x=-30, UpperArm__L_z=-20, UpperArm__L_y=0, LowerArm__L_x=-40)
+    finish = _over(TENNIS_READY, Hips_dz=-0.05, Spine_x=2, Chest_x=-8, Head_x=-20, Hips_z=5, Hips_dx=0.02, UpperArm__R_x=-150,
+                   UpperArm__R_y=10, UpperArm__R_z=15, LowerArm__R_x=-15, Hand__R_x=20, UpperArm__L_x=-40, UpperArm__L_z=0,
+                   UpperArm__L_y=-20, LowerArm__L_x=-20)
+    pose_at = _tennis_keys([(0.0, TENNIS_READY), (0.3, drop), (0.5, contact), (0.72, finish), (1.0, TENNIS_READY)])
+    return lambda ph, P: _tennis_apply(P, pose_at(ph))
+
+
+def pose_tennis_serve():
+    setup = {("Hips", "z"): -35, ("Chest", "z"): -10, ("UpperArm.L", "x"): -25, ("UpperArm.L", "z"): -15,
+             ("LowerArm.L", "x"): -30, ("UpperArm.R", "x"): -20, ("UpperArm.R", "z"): 15, ("LowerArm.R", "x"): -30}
+    toss = {("Hips", "z"): -40, ("Hips", "dz"): -0.10, ("Chest", "x"): -12, ("Head", "x"): -25,
+            ("UpperArm.L", "x"): -160, ("LowerArm.L", "x"): -5,
+            ("UpperArm.R", "x"): 30, ("UpperArm.R", "y"): 80, ("LowerArm.R", "x"): -100}
+    drop = {**toss, ("Hips", "z"): -30, ("UpperArm.L", "x"): -130, ("UpperArm.R", "x"): 10, ("UpperArm.R", "y"): 85,
+            ("LowerArm.R", "x"): -130}
+    contact = {("Hips", "z"): 0, ("Chest", "x"): -5, ("Chest", "z"): 10, ("Head", "x"): -25,
+               ("UpperArm.R", "x"): -170, ("UpperArm.R", "y"): 10, ("LowerArm.R", "x"): -5,
+               ("UpperArm.L", "x"): -40, ("UpperArm.L", "z"): -20, ("LowerArm.L", "x"): -60}
+    follow = {("Hips", "z"): 20, ("Hips", "dz"): -0.08, ("Spine", "x"): 25, ("Chest", "z"): 25,
+              ("UpperArm.R", "x"): -30, ("UpperArm.R", "z"): 60, ("UpperArm.R", "y"): -10, ("LowerArm.R", "x"): -40,
+              ("UpperArm.L", "x"): 10, ("LowerArm.L", "x"): -50,
+              ("Foot.L", "ax"): 0.03, ("Foot.L", "ay"): -0.01, ("Foot.R", "ax"): -0.03, ("Foot.R", "ay"): -0.01}
+    step = {**follow, ("Foot.L", "az"): 0.03, ("Foot.R", "az"): 0.03, ("Foot.L", "ax"): 0.05, ("Foot.R", "ax"): -0.05}
+    pose_at = _tennis_keys([(0.0, {}), (0.12, setup), (0.32, toss), (0.41, drop), (0.55, contact), (0.72, follow),
+                            (0.84, step), (1.0, TENNIS_READY)])
+    return lambda ph, P: _tennis_apply(P, pose_at(ph))
+
+
+def pose_tennis_celebrate():
+    crouch = _over(TENNIS_READY, Hips_dz=-0.12, Spine_x=20, UpperArm__R_x=20, UpperArm__R_z=0, UpperArm__R_y=0, LowerArm__R_x=-40,
+                   UpperArm__L_x=20, UpperArm__L_z=0, UpperArm__L_y=0, LowerArm__L_x=-40)
+    pump = {("Hips", "dz"): -0.04, ("Chest", "x"): -10, ("Head", "x"): -15,
+            ("UpperArm.R", "x"): -40, ("UpperArm.R", "y"): 20, ("LowerArm.R", "x"): -130,
+            ("UpperArm.L", "x"): -20, ("LowerArm.L", "x"): -60,
+            ("Foot.L", "ax"): 0.04, ("Foot.R", "ax"): -0.04}
+    dip = {**pump, ("Hips", "dz"): -0.07, ("UpperArm.R", "x"): -20, ("LowerArm.R", "x"): -110}
+    arms_up = {("Chest", "x"): -12, ("Head", "x"): -20, ("UpperArm.R", "x"): -150, ("UpperArm.R", "y"): 20,
+               ("UpperArm.L", "x"): -150, ("UpperArm.L", "y"): -20, ("LowerArm.R", "x"): -10, ("LowerArm.L", "x"): -10,
+               ("Foot.L", "ax"): 0.04, ("Foot.R", "ax"): -0.04}
+    arms_held = {**arms_up, ("UpperArm.R", "y"): 30, ("UpperArm.L", "y"): -30, ("Head", "x"): -14}
+    pose_at = _tennis_keys([(0.0, TENNIS_READY), (0.12, crouch), (0.26, pump), (0.36, dip), (0.46, pump), (0.62, arms_up),
+                            (0.82, arms_held), (1.0, {})])
+    return lambda ph, P: _tennis_apply(P, pose_at(ph))
+
+
+def tennis_clips():
+    return {
+        "TennisReady": (36, pose_tennis_ready()),
+        "TennisForehand": (18, pose_tennis_forehand()),
+        "TennisBackhand": (18, pose_tennis_backhand()),
+        "TennisLob": (21, pose_tennis_lob()),
+        "TennisServe": (30, pose_tennis_serve()),
+        "TennisCelebrate": (45, pose_tennis_celebrate()),
+    }
+
 def make_clips(extras):
     return {
         "Idle": (120, gait_idle(None, extras)),

@@ -1,26 +1,25 @@
-import type { Bounds, ClientPayload, GameClient, GameRoom } from '../types.ts'
+import type { ClientPayload, GameClient, GameRoom } from '../types.ts'
 import { worldSportsPassArea } from '../world.ts'
 import { type Match, type MatchPlayer, type SettingSpec, type Settings, type Team, activePlayers, matchPlayer } from './signup.ts'
-import { type Court, type Rally, hit, serveWait, sideSign, step } from './tennisRally.ts'
+import { type Court, type Rally, hit, playAreaFor, serveWait, sideSign, step, strokeOf } from './tennisRally.ts'
 import {
   BASELINE_STANDBY_M,
   COURT_HALF_LENGTH,
   DOUBLES_HALF_WIDTH,
   DOUBLES_SPREAD_M,
-  PLAY_AREA_END_MARGIN,
-  PLAY_AREA_SIDE_MARGIN,
   REJOIN_GRACE_MS,
   SINGLES_HALF_WIDTH,
   TENNIS_COACH,
   TENNIS_COURTS,
+  TENNIS_GEAR,
   TENNIS_HIT_COOLDOWN_MS,
   TENNIS_NET_Z,
   TENNIS_ZONE
 } from './tennisConstants.ts'
 import { type TennisScore, awardPoint, newScore, other, parseFormat, pointLabels } from './tennisScore.ts'
+import { freeHit, sendStroke, stopFreeRally } from './tennisFree.ts'
 import { type MatchEnd, type MatchResult, endMatch, recordMatch, registerCoach, registerVenue } from './venues.ts'
 
-export const TENNIS_GEAR = 'gear_tennis_racket'
 export const TENNIS_SETTINGS: readonly SettingSpec[] = [
   { key: 'mode', label: 'Mode', options: ['singles', 'doubles'] },
   { key: 'format', label: 'Format', options: ['short_set_4', 'tiebreak_7'] }
@@ -56,12 +55,6 @@ export function playersFor(settings: Settings): { min: number, max: number } {
 
 export function courtFor(cx: number, settings: Settings): Court {
   return { cx, netZ: TENNIS_NET_Z, halfWidth: settings.mode === 'doubles' ? DOUBLES_HALF_WIDTH : SINGLES_HALF_WIDTH }
-}
-
-export function playAreaFor(cx: number): Bounds {
-  const halfX = DOUBLES_HALF_WIDTH + PLAY_AREA_SIDE_MARGIN
-  const halfZ = COURT_HALF_LENGTH + PLAY_AREA_END_MARGIN
-  return { minX: cx - halfX, maxX: cx + halfX, minZ: TENNIS_NET_Z - halfZ, maxZ: TENNIS_NET_Z + halfZ }
 }
 
 function teamPlayers(match: Match, team: Team): MatchPlayer[] {
@@ -132,6 +125,7 @@ export function startTennis(room: GameRoom, match: Match, cx: number, firstServe
   const game: TennisGame = { venue: match.venue, court, score, rally: serveWait('', firstServer, now), turns: { [firstServer]: 0, [other(firstServer)]: -1 } as Record<Team, number>, lastHitAt: new Map() }
   game.rally = nextServe(match, game, now)
   roomGames(room).set(match.venue, game)
+  stopFreeRally(room, match.venue, now)
   placeOnBaselines(room, match, court)
   broadcast(room, match, game, now)
   return game
@@ -180,12 +174,16 @@ export function onTennisHit(room: GameRoom, client: GameClient, payload: ClientP
     game.lastHitAt.set(player.accountId, now)
     runTennis(room, match, now)
     if (roomGames(room).get(venue) !== game) return
-    const next = hit(game.rally, { sessionId: player.sessionId, team: mp.team, x: player.x, z: player.z }, { x: payload.aimX, z: payload.aimZ }, payload.lob === true, now, game.court)
+    const hitter = { sessionId: player.sessionId, team: mp.team, x: player.x, z: player.z }
+    const before = game.rally
+    const next = hit(before, hitter, { x: payload.aimX, z: payload.aimZ }, payload.lob === true, now, game.court)
     if (!next) return
     game.rally = next
     broadcast(room, match, game, now)
+    sendStroke(room, player.sessionId, strokeOf(before, next, hitter, payload.lob === true))
     return
   }
+  freeHit(room, player, { x: payload.aimX, z: payload.aimZ }, payload.lob === true, now)
 }
 
 export function tennisResults(match: Match, game: TennisGame | null, end: MatchEnd): MatchResult[] {
@@ -203,6 +201,8 @@ function endTennis(room: GameRoom, match: Match, end: MatchEnd): void {
   const game = tennisGame(room, match.venue)
   roomGames(room).delete(match.venue)
   if (game) broadcast(room, match, game, Date.now(), true)
+  const winner = end.reason === 'finished' ? game?.score.winner : end.loser && other(end.loser)
+  for (const p of activePlayers(match)) if (winner && p.team === winner) sendStroke(room, p.sessionId, 'celebrate')
   void recordMatch(room, match, tennisResults(match, game, end))
 }
 
@@ -212,7 +212,7 @@ for (const { id, cx } of TENNIS_COURTS) {
     sport: 'tennis',
     zone: TENNIS_ZONE,
     coach: { x: TENNIS_COACH.x, z: TENNIS_COACH.z },
-    playArea: playAreaFor(cx),
+    playArea: playAreaFor(cx, TENNIS_NET_Z),
     gear: TENNIS_GEAR,
     teams: true,
     settings: TENNIS_SETTINGS,

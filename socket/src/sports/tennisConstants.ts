@@ -43,3 +43,10 @@ export const TENNIS_HIT_COOLDOWN_MS = 120
 export const REJOIN_GRACE_MS = 30_000
 export const BASELINE_STANDBY_M = 1.0
 export const DOUBLES_SPREAD_M = 2.5
+export const TENNIS_BALL_LOAN = 'tennis_ball'
+export const BALL_BASKET_REACH = 2.5
+export const BALL_BASKETS = [
+  { court: 'tennis_1', x: -444.7, z: -266.0 },
+  { court: 'tennis_2', x: -442.3, z: -266.0 }
+] as const
+export const TENNIS_GEAR = 'gear_tennis_racket'

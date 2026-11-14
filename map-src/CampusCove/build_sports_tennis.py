@@ -20,6 +20,7 @@ import bpy
 KEY = "sports_tennis"
 OUT = os.path.join(L.OUT_ROOT, "park", KEY)
 RACKET_OUT = os.path.join(L.OUT_ROOT, "decor", "tennis_racket")
+BASKET_OUT = os.path.join(L.OUT_ROOT, "decor", "tennis_ball_basket")
 FP = SP.FOOTPRINTS[KEY]
 STUB = SP.DOOR_STUBS[KEY]
 Y = SP.Y
@@ -196,11 +197,34 @@ for k, z in enumerate((NET_Z - 8.0, NET_Z + 8.0)):
 for k, (x, z) in enumerate(((FENCE[0] - 1.2, FENCE[2] - 1.2), (FENCE[1] + 1.2, FENCE[2] - 1.2), (FENCE[0] - 1.2, FENCE[3] + 1.2), (FENCE[1] + 1.2, FENCE[3] + 1.2))):
     S.street_lamp(site, f"ST_Lamp{k}", x, z, M)
 
+STAND_ROWS = 3
+STAND_RISE = 0.3
+STAND_DEPTH = 0.85
+STAND_GAP = 0.3
+STAND_LEN = 2 * DOUBLES_HW + 1.0
+M["stand"] = L.make_mat("TW_TennisStandConcrete", "#c9c5bc", 0.9, "noise", 0.03)
+M["seat"] = L.make_mat("TW_TennisStandSeat", "#2a9d8f", 0.6, "planks", 0.03, accent="#258c80")
+
+
+def stand(name, cx, fence_z, away):
+    for k in range(STAND_ROWS):
+        z0 = fence_z + away * (STAND_GAP + STAND_DEPTH * k)
+        zc = z0 + away * STAND_DEPTH / 2
+        h = STAND_RISE * (k + 1)
+        site.add(L.box(coll, f"{name}_Step{k}", cx, zc, Y["paving"], STAND_LEN, STAND_DEPTH, h - Y["paving"], M["stand"], tile=2.0))
+        site.add(L.box(coll, f"{name}_Seat{k}", cx, zc - away * 0.1, h, STAND_LEN - 0.4, 0.4, 0.04, M["seat"]))
+        site.col(f"{name.replace('ST_', '')}Step{k}", cx, zc, STAND_LEN, STAND_DEPTH, h)
+
+
+for i, cx in enumerate(COURT_CX):
+    stand(f"ST_StandN{i + 1}", cx, FENCE[2], -1)
+    stand(f"ST_StandS{i + 1}", cx, FENCE[3], 1)
+
 for c in site.cols:
     assert FP[0] <= c["cx"] - c["hx"] and c["cx"] + c["hx"] <= FP[1] and FP[2] <= c["cz"] - c["hz"] and c["cz"] + c["hz"] <= FP[3], c
 assert FP[0] < OUTER[0] and OUTER[1] < FP[1] and FP[2] < OUTER[2] and OUTER[3] < FP[3], OUTER
 assert STRIP[0] == round(COURT_CX[0] + DOUBLES_HW + RUNOFF_SIDE, 3) and STRIP[1] == round(COURT_CX[1] - DOUBLES_HW - RUNOFF_SIDE, 3), STRIP
-feet = [o for o in site.objs if o.type == "MESH" and (o.name.endswith("_Base") or "Bench" in o.name)]
+feet = [o for o in site.objs if o.type == "MESH" and (o.name.endswith("_Base") or "Bench" in o.name or "_Step" in o.name)]
 assert not L.check_grounded(feet), L.check_grounded(feet)
 
 L.export_glb(os.path.join(OUT, f"{KEY}.glb"), site.objs, use_active_scene=True)
@@ -262,3 +286,41 @@ racket = [L.join(coll_r, "Racket_Frame", [p for p in parts if p.name.startswith(
 L.export_glb(os.path.join(RACKET_OUT, "model.glb"), racket, use_active_scene=True)
 L.snapshot(sc_r, os.path.join(RACKET_OUT, "preview.png"), (0.6, 0.45, 0.9), (0.0, 0.35, 0.0), lens=50, res=(512, 512))
 print("tennis_racket:", sum(len(p.vertices) - 2 for o in racket for p in o.data.polygons), "tris")
+
+sc_b = L.new_build_scene("DECOR_tennis_ball_basket")
+coll_b = bpy.data.collections.new("tennis_ball_basket")
+sc_b.collection.children.link(coll_b)
+B = {
+    "frame": L.make_mat("IT_BasketFrame", "#2e3236", 0.5, "noise", 0.02),
+    "wire": mesh_material("IT_BasketWire", 8, 2, (0.18, 0.2, 0.22), 0.6),
+    "ball": L.make_mat("IT_TennisBall", "#d8f04a", 0.7, "noise", 0.03),
+}
+BASKET_R, BASKET_Y0, BASKET_H = 0.24, 0.45, 0.45
+parts = [L.cyl(coll_b, f"Basket_Leg{k}", 0.2 * math.cos(a), 0.2 * math.sin(a), 0.0, 0.012, BASKET_Y0, B["frame"], seg=6)
+         for k, a in enumerate((0.25 * math.pi, 0.75 * math.pi, 1.25 * math.pi, 1.75 * math.pi))]
+parts.append(L.cyl(coll_b, "Basket_Bottom", 0.0, 0.0, BASKET_Y0, BASKET_R, 0.02, B["frame"], seg=12))
+wall = L.cyl(coll_b, "Basket_Wall", 0.0, 0.0, BASKET_Y0, BASKET_R, BASKET_H, B["wire"], seg=12, tile=0.12)
+bpy.ops.mesh.primitive_torus_add(major_radius=BASKET_R, minor_radius=0.01, major_segments=16, minor_segments=4, location=L.b(0.0, 0.0, BASKET_Y0 + BASKET_H))
+rim = bpy.context.active_object
+rim.name = "Basket_Rim"
+for c in rim.users_collection:
+    c.objects.unlink(rim)
+coll_b.objects.link(rim)
+rim.data.materials.append(B["frame"])
+parts.append(rim)
+rnd = __import__("random").Random(17)
+balls = []
+for k in range(10):
+    a, r = rnd.uniform(0, 2 * math.pi), rnd.uniform(0, BASKET_R - 0.04)
+    bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=2, radius=0.033, location=L.b(r * math.cos(a), r * math.sin(a), BASKET_Y0 + BASKET_H - 0.05 + rnd.uniform(-0.02, 0.03)))
+    ball = bpy.context.active_object
+    ball.name = f"Basket_Ball{k:02d}"
+    for c in ball.users_collection:
+        c.objects.unlink(ball)
+    coll_b.objects.link(ball)
+    ball.data.materials.append(B["ball"])
+    balls.append(ball)
+basket = [L.join(coll_b, "Basket_Frame", parts), wall, L.join(coll_b, "Basket_Balls", balls)]
+L.export_glb(os.path.join(BASKET_OUT, "model.glb"), basket, use_active_scene=True)
+L.snapshot(sc_b, os.path.join(BASKET_OUT, "preview.png"), (0.9, 1.1, 1.2), (0.0, 0.6, 0.0), lens=50, res=(512, 512))
+print("tennis_ball_basket:", sum(len(p.vertices) - 2 for o in basket for p in o.data.polygons), "tris")

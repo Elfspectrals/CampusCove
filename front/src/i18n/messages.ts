@@ -397,8 +397,8 @@ export const messages = {
       complete: 'Complete',
       progress: '{value} / {target}',
       tiers: { 1: 'Bronze', 2: 'Silver', 3: 'Gold' },
-      names: { orchard: 'Orchard', darts: 'Darts', sharp_eye: 'Sharp eye', gourmet: 'Gourmet', explorer: 'Explorer', loyal: 'Steady', market_gardener: 'Market gardener', trader: 'Trader', cook: 'Cook', loyal_customer: 'Loyal customer', dapper: 'Dapper', regular: 'Regular at the pub', pub_games: 'Pub games', duellist: 'Duellist', insider: 'Insider' },
-      goals: { orchard: '{n} apples picked', darts: '{n} games of darts', sharp_eye: '{n} darts duels of 80 points or more', gourmet: '{n} different foods tasted', explorer: '{n} places visited', loyal: '{n} days with 10 minutes of walking', market_gardener: '{n} farm crops harvested', trader: '{n} goods sold to buyers', cook: '{n} dishes cooked', loyal_customer: '{n} shop visits', dapper: '{n} different clothes bought', regular: '{n} days with an order at the pub', pub_games: '{n} games of Drink Fast or Meter Shot', duellist: '{n} duels won', insider: '{n} weeks in the secret room' },
+      names: { orchard: 'Orchard', darts: 'Darts', sharp_eye: 'Sharp eye', gourmet: 'Gourmet', explorer: 'Explorer', loyal: 'Steady', market_gardener: 'Market gardener', trader: 'Trader', cook: 'Cook', loyal_customer: 'Loyal customer', dapper: 'Dapper', regular: 'Regular at the pub', pub_games: 'Pub games', duellist: 'Duellist', insider: 'Insider', tennis: 'Tennis player', tennis_whitewash: 'Whitewash' },
+      goals: { orchard: '{n} apples picked', darts: '{n} games of darts', sharp_eye: '{n} darts duels of 80 points or more', gourmet: '{n} different foods tasted', explorer: '{n} places visited', loyal: '{n} days with 10 minutes of walking', market_gardener: '{n} farm crops harvested', trader: '{n} goods sold to buyers', cook: '{n} dishes cooked', loyal_customer: '{n} shop visits', dapper: '{n} different clothes bought', regular: '{n} days with an order at the pub', pub_games: '{n} games of Drink Fast or Meter Shot', duellist: '{n} duels won', insider: '{n} weeks in the secret room', tennis: '{n} tennis matches played', tennis_whitewash: '{n} short sets won 4–0' },
     },
     watch: {
       label: 'Watch',
@@ -758,6 +758,10 @@ export const messages = {
         lost: 'Match lost.',
         winner: '{team} wins the match.',
         calls: { out: 'Out', net: 'Net', double_bounce: 'Point', missed_toss: 'Missed toss' },
+        basketAction: 'Take a ball',
+        basketDetail: 'Free play on this court (racket needed)',
+        freePlay: 'Free play',
+        freeControls: 'Click to toss, click again at the top to serve. Left click: hit · Right click: lob',
       },
       options: {
         solo: 'Solo',
@@ -1459,8 +1463,8 @@ export const messages = {
       complete: 'Terminée',
       progress: '{value} / {target}',
       tiers: { 1: 'Bronze', 2: 'Argent', 3: 'Or' },
-      names: { orchard: 'Verger', darts: 'Fléchettes', sharp_eye: 'Œil de lynx', gourmet: 'Gourmet', explorer: 'Explorateur', loyal: 'Fidèle', market_gardener: 'Maraîcher', trader: 'Commerçant', cook: 'Cuistot', loyal_customer: 'Client fidèle', dapper: 'Coquet', regular: 'Habitué', pub_games: 'Jeux du pub', duellist: 'Duelliste', insider: 'Initié' },
-      goals: { orchard: '{n} pommes cueillies', darts: '{n} parties de fléchettes', sharp_eye: '{n} duels de fléchettes à 80 points ou plus', gourmet: '{n} aliments différents goûtés', explorer: '{n} lieux visités', loyal: '{n} jours avec 10 minutes de marche', market_gardener: '{n} récoltes à la ferme', trader: '{n} marchandises vendues aux acheteurs', cook: '{n} plats cuisinés', loyal_customer: '{n} passages en caisse', dapper: '{n} vêtements différents achetés', regular: '{n} jours avec une commande au pub', pub_games: '{n} parties de Drink Fast ou de Meter Shot', duellist: '{n} duels gagnés', insider: '{n} semaines dans la salle secrète' },
+      names: { orchard: 'Verger', darts: 'Fléchettes', sharp_eye: 'Œil de lynx', gourmet: 'Gourmet', explorer: 'Explorateur', loyal: 'Fidèle', market_gardener: 'Maraîcher', trader: 'Commerçant', cook: 'Cuistot', loyal_customer: 'Client fidèle', dapper: 'Coquet', regular: 'Habitué', pub_games: 'Jeux du pub', duellist: 'Duelliste', insider: 'Initié', tennis: 'Joueur de tennis', tennis_whitewash: 'Roue de vélo' },
+      goals: { orchard: '{n} pommes cueillies', darts: '{n} parties de fléchettes', sharp_eye: '{n} duels de fléchettes à 80 points ou plus', gourmet: '{n} aliments différents goûtés', explorer: '{n} lieux visités', loyal: '{n} jours avec 10 minutes de marche', market_gardener: '{n} récoltes à la ferme', trader: '{n} marchandises vendues aux acheteurs', cook: '{n} plats cuisinés', loyal_customer: '{n} passages en caisse', dapper: '{n} vêtements différents achetés', regular: '{n} jours avec une commande au pub', pub_games: '{n} parties de Drink Fast ou de Meter Shot', duellist: '{n} duels gagnés', insider: '{n} semaines dans la salle secrète', tennis: '{n} matchs de tennis joués', tennis_whitewash: '{n} sets courts gagnés 4–0' },
     },
     watch: {
       label: 'Montre',
@@ -1820,6 +1824,10 @@ export const messages = {
         lost: 'Match perdu.',
         winner: '{team} gagne le match.',
         calls: { out: 'Faute', net: 'Filet', double_bounce: 'Point', missed_toss: 'Lancer raté' },
+        basketAction: 'Prendre une balle',
+        basketDetail: 'Jeu libre sur ce court (raquette requise)',
+        freePlay: 'Jeu libre',
+        freeControls: 'Clique pour lancer, reclique en haut pour servir. Clic gauche : frapper · Clic droit : lob',
       },
       options: {
         solo: 'Solo',

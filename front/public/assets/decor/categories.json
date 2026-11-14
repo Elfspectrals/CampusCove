@@ -23,6 +23,6 @@
     { "id": "police", "label": "Police", "keys": ["police_lockers", "wanted_board", "bike_rack", "parking_barrier", "patrol_car"] },
     { "id": "security", "label": "Security", "keys": ["alarm"] },
     { "id": "market", "label": "Market", "keys": ["market_stall_free", "market_stall_taken", "market_stall_folded", "market_crate", "market_basket"] },
-    { "id": "sports_tennis", "label": "Tennis", "keys": ["tennis_racket"] }
+    { "id": "sports_tennis", "label": "Tennis", "keys": ["tennis_racket", "tennis_ball_basket"] }
   ]
 }

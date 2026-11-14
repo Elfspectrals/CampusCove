@@ -116,14 +116,23 @@ interface AvatarAnimState {
   current: THREE.AnimationAction | null
   selector: AvatarClipSelector
   seated: boolean
+  tennis: boolean
   oneShot: OneShotClip | null
 }
 
 const CROSSFADE_S = 0.22
 const SIT_CLIP = 'Sit'
 const PICK_CLIP = 'Pick'
-const ONE_SHOT_CLIPS = [PICK_CLIP, 'Eat', 'Drink'] as const
+const TENNIS_READY_CLIP = 'TennisReady'
+const TENNIS_STROKE_CLIPS = { serve: 'TennisServe', forehand: 'TennisForehand', backhand: 'TennisBackhand', lob: 'TennisLob', celebrate: 'TennisCelebrate' } as const
+export type TennisStroke = keyof typeof TENNIS_STROKE_CLIPS
+type TennisStrokeClip = (typeof TENNIS_STROKE_CLIPS)[TennisStroke]
+const ONE_SHOT_CLIPS = [PICK_CLIP, 'Eat', 'Drink', ...Object.values(TENNIS_STROKE_CLIPS)] as const
 type OneShotClip = (typeof ONE_SHOT_CLIPS)[number]
+
+function isTennisStroke(clip: OneShotClip | null): clip is TennisStrokeClip {
+  return clip !== null && (Object.values(TENNIS_STROKE_CLIPS) as string[]).includes(clip)
+}
 
 /**
  * Premium skins ship rigged with "Idle" / "Walk" / "Run" clips. Starts a mixer on the instance (no-op for
@@ -135,7 +144,7 @@ export function attachAvatarAnimations(root: THREE.Object3D): void {
   const mixer = new THREE.AnimationMixer(root)
   const actions = new Map<string, THREE.AnimationAction>()
   for (const clip of clips) actions.set(clip.name, mixer.clipAction(clip))
-  const state: AvatarAnimState = { mixer, actions, current: null, selector: new AvatarClipSelector(), seated: false, oneShot: null }
+  const state: AvatarAnimState = { mixer, actions, current: null, selector: new AvatarClipSelector(), seated: false, tennis: false, oneShot: null }
   animStateByRoot.set(root, state)
   for (const name of ONE_SHOT_CLIPS) {
     const action = actions.get(name)
@@ -181,6 +190,17 @@ export function setAvatarEating(root: THREE.Object3D, kind: 'eat' | 'drink'): vo
   playOneShot(state, kind === 'eat' ? 'Eat' : 'Drink')
 }
 
+export function setAvatarTennis(root: THREE.Object3D, on: boolean): void {
+  const state = animStateByRoot.get(root)
+  if (state) state.tennis = on && state.actions.has(TENNIS_READY_CLIP)
+}
+
+export function playAvatarTennisStroke(root: THREE.Object3D, stroke: TennisStroke): void {
+  const state = animStateByRoot.get(root)
+  if (!state || state.seated) return
+  playOneShot(state, TENNIS_STROKE_CLIPS[stroke])
+}
+
 function playClip(state: AvatarAnimState, name: string, timeScale: number): void {
   const next = state.actions.get(name)
   if (!next) return
@@ -202,8 +222,8 @@ export function updateAvatarAnimation(root: THREE.Object3D, dt: number, speed: n
     playClip(state, SIT_CLIP, 1)
   } else {
     const { clip, timeScale } = state.selector.update(dt, speed)
-    if (state.oneShot !== PICK_CLIP && clip !== 'Idle') state.oneShot = null
-    if (state.oneShot === null) playClip(state, clip, timeScale)
+    if (state.oneShot !== PICK_CLIP && !isTennisStroke(state.oneShot) && clip !== 'Idle') state.oneShot = null
+    if (state.oneShot === null) playClip(state, state.tennis && clip === 'Idle' ? TENNIS_READY_CLIP : clip, timeScale)
   }
   state.mixer.update(clampDt(dt))
 }

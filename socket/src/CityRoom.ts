@@ -126,6 +126,7 @@ import {
   tickSports
 } from './sports/index.ts'
 import { onTennisHit } from './sports/tennis.ts'
+import { onTennisBallTake, tickTennisFree } from './sports/tennisFree.ts'
 
 function warn(context: string, error: unknown): void {
   console.warn(`[colyseus] ${context}:`, error instanceof Error ? error.message : error)
@@ -255,9 +256,11 @@ export class CityRoom extends Room implements GameRoom {
     this.onMessage('sports_signup', (client, payload: ClientPayload) => void onSportsSignup(this, client, payload).catch((error) => warn('sports sign-up failed', error)))
     this.onMessage('sports_signup_leave', (client) => onSportsSignupLeave(this, client))
     this.onMessage('tennis_hit', (client, payload: ClientPayload) => onTennisHit(this, client, payload))
+    this.onMessage('tennis_ball_take', (client, payload: ClientPayload) => void onTennisBallTake(this, client, payload).catch((error) => warn('tennis ball failed', error)))
     this.clock.setInterval(() => {
       try {
         tickSports(this)
+        tickTennisFree(this)
       } catch (error) {
         warn('sports tick failed', error)
       }

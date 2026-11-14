@@ -46,6 +46,8 @@ Clips are phase functions `f(ph, P)` sampled by `sample_actions(arm, clips, fps=
     positive raises the right arm sideways.
   - `Hips` `ry` positive lowers the left hip.
   - `Hand` `rx` negative bends the hand toward the face, like a negative `LowerArm` `rx`.
+  - `Hips`, `Spine` and `Chest` `rz` positive turn the torso to the character's left (tennis renders, 2026-11-14).
+  - `UpperArm.R` `rz` positive and `UpperArm.L` `rz` negative swing the arm forward across the body.
   Any other sign is checked on a render before it is trusted.
 - `sample_actions` deletes every NLA track first: always pass the full clip dict.
 
@@ -60,6 +62,12 @@ Clips are phase functions `f(ph, P)` sampled by `sample_actions(arm, clips, fps=
 | Eat | 30 | 1.0 | one-shot | `pose_eat`, hand at the mouth from 0.33 s, two bites, chew (upper body only) |
 | Drink | 30 | 1.0 | one-shot | `pose_drink`, hand at the mouth from 0.33 s, head back 22° (upper body only) |
 | Pick | 90 | 3.0 | one-shot | `pose_pick`, base body only (`run_wear.py`) |
+| TennisReady | 36 | 1.2 | yes | `pose_tennis_ready`, split-step stance, base body only (`tennis_clips`) |
+| TennisForehand | 18 | 0.6 | one-shot | `pose_tennis_forehand`, contact at 0.3 s, starts and ends on TennisReady frame 0 |
+| TennisBackhand | 18 | 0.6 | one-shot | `pose_tennis_backhand`, one-handed, contact at 0.3 s, starts and ends on TennisReady |
+| TennisLob | 21 | 0.7 | one-shot | `pose_tennis_lob`, contact at 0.35 s, finishes high, starts and ends on TennisReady |
+| TennisServe | 30 | 1.0 | one-shot | `pose_tennis_serve`, from the rest pose, toss 0.32 s, contact 0.55 s, ends on TennisReady |
+| TennisCelebrate | 45 | 1.5 | one-shot | `pose_tennis_celebrate`, from TennisReady, fist pumps then both arms up, ends on the rest pose |
 
 Every clip is keyed from frame 0 (glTF time starts at 0). Gaits plant the feet with `leg_ik` (analytic two-bone IK,
 knee forward): the stance foot moves back at exactly the design speed, so there is no slide at timeScale 1.

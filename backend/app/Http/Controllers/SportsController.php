@@ -6,9 +6,11 @@ use App\Services\SportsBoardService;
 use App\Services\SportsGearService;
 use App\Services\SportsMatchService;
 use App\Services\SportsPassService;
+use App\Services\TennisTaskService;
 use Closure;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class SportsController extends Controller
@@ -18,6 +20,7 @@ class SportsController extends Controller
         private readonly SportsGearService $gear,
         private readonly SportsMatchService $matches,
         private readonly SportsBoardService $boards,
+        private readonly TennisTaskService $tennisTasks,
     ) {}
 
     public function pass(Request $request): JsonResponse
@@ -70,15 +73,24 @@ class SportsController extends Controller
             'players.*.score' => ['nullable', 'integer', $strictInt, 'min:-1000000', 'max:1000000'],
         ]);
 
-        return response()->json(['match' => $this->matches->record(
-            $validated['ref'],
-            $validated['sport'],
-            $validated['venue'],
-            $validated['settings'],
-            $validated['startedAt'],
-            $validated['endedAt'],
-            array_values($validated['players']),
-        )]);
+        $match = DB::transaction(function () use ($validated): array {
+            $match = $this->matches->record(
+                $validated['ref'],
+                $validated['sport'],
+                $validated['venue'],
+                $validated['settings'],
+                $validated['startedAt'],
+                $validated['endedAt'],
+                array_values($validated['players']),
+            );
+            if ($match['recorded'] && $match['countsForTasks'] && $validated['sport'] === 'tennis') {
+                $this->tennisTasks->matchRecorded($validated['settings'], array_values($validated['players']));
+            }
+
+            return $match;
+        });
+
+        return response()->json(['match' => $match]);
     }
 
     public function board(string $board): JsonResponse

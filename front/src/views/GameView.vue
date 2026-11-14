@@ -103,6 +103,7 @@ import { useSportsPass } from '../composables/game/useSportsPass'
 import { passValid } from '../game/sports/sportsPass'
 import { useSportsSignup } from '../composables/game/useSportsSignup'
 import { useTennis } from '../composables/game/useTennis'
+import { TENNIS_RACKET } from '../game/sports/tennis'
 import { usePickpocket } from '../composables/game/usePickpocket'
 import { useStorageAuction } from '../composables/game/useStorageAuction'
 import { useStorageWarehouse } from '../composables/game/useStorageWarehouse'
@@ -877,12 +878,22 @@ const tennis = useTennis({
   gameRoomRef,
   getScene,
   getCamera,
+  canvasRef,
   myPosition,
   pointerLocked: () => pointerLocked.value,
-  onSwing: () => sfx.play('whoosh'),
-  onBallHit: (ball) => sfx.playOn('impact', ball),
+  promptsHidden: () => inventoryOpen.value,
+  basketPrompt: () => ({ action: t('sports.tennis.basketAction'), detail: t('sports.tennis.basketDetail') }),
+  onSwing: () => sfx.play('tennis_swing'),
+  onBallHit: (ball) => sfx.playOn('tennis_hit', ball),
+  onBounce: (ball) => sfx.playOn('tennis_bounce', ball),
+  onCall: (call) => sfx.play(call === 'net' ? 'tennis_net' : 'tennis_call'),
+  setRemoteRacket: (sessionId, holding) => {
+    realtime.setRemoteHeldTool(sessionId, holding ? TENNIS_RACKET : null)
+    realtime.setRemoteTennis(sessionId, holding)
+  },
+  remoteSessions: () => realtime.remotePlayers().map((p) => p.sessionId),
 })
-const tennisHud = tennis.hud
+const { hud: tennisHud, cue: tennisCue, call: tennisCall, freePlay: tennisFreePlay } = tennis
 const { open: sportsSignupOpen, choices: sportsVenueChoices, canPickVenue: sportsCanPickVenue, lobby: sportsLobby, spec: sportsSpec, team: sportsTeam, settings: sportsSettings, pending: sportsSignupPending, error: sportsSignupError, clientNow: sportsClientNow, clockOffset: sportsClockOffset } = sportsSignup
 watch(sportsSignupOpen, (open) => {
   if (!open && !document.pointerLockElement) requestPointerLock()
@@ -975,7 +986,7 @@ const interactions = useInteractionTargets({
     if (activeFurniture.value?.store.hasCounter.value) activeFurniture.value.store.toggleTarget(useWithShift)
     else openStorePurchase()
   },
-  sources: [townBus.source, pub.source, pubQuiz.source, pubChallenge.source, pubGames.source, seats.source, orchard.source, farm.source, zoneBuyers.source, atm.source, storage.source, respawnBed.source, cashBags.source, storageAuction.source, jailCell.source, police.source, pickpocket.source, market.source, sportsPass.source, sportsSignup.source],
+  sources: [townBus.source, pub.source, pubQuiz.source, pubChallenge.source, pubGames.source, seats.source, orchard.source, farm.source, zoneBuyers.source, atm.source, storage.source, respawnBed.source, cashBags.source, storageAuction.source, jailCell.source, police.source, pickpocket.source, market.source, sportsPass.source, sportsSignup.source, tennis.source],
 })
 const { doorPrompt } = interactions
 
@@ -997,6 +1008,7 @@ watch(() => selectedItem.value?.code ?? null, () => arms?.equip())
 
 /** Model shown in the right hand: tools and food (a half-eaten item is drawn smaller). */
 const FIRST_PERSON_TOOL_SCALE = 0.6
+const TENNIS_RACKET_URL = '/assets/decor/tennis_racket/model.glb'
 
 function holdingJobTool(): boolean {
   return heldTool.code.value !== null && heldTool.code.value === selectedItem.value?.code
@@ -1602,8 +1614,8 @@ const movement = useGameMovement({
     houseKeys.updateKeyPrompt()
     updateFrontDoors(dt, isBuildingDoorOpen)
     arms?.update(dt, myPosition)
-    const held = heldModel()
-    arms?.setHolding(holdingJobTool())
+    const held = tennis.holdingRacket() ? { url: TENNIS_RACKET_URL, scale: FIRST_PERSON_TOOL_SCALE } : heldModel()
+    arms?.setHolding(holdingJobTool() || tennis.holdingRacket())
     heldItem.update(arms?.rightHand() ?? null, held.url, held.scale)
     survival.tick(dt)
     stamina.value = punch.staminaNow()
@@ -1763,6 +1775,7 @@ const realtime = useGameRealtime({
     onError: sportsSignup.handlers.onError,
     onRoomJoined: sportsSignup.handlers.onRoomJoined,
     onTennisState: tennis.handlers.onState,
+    onTennisFree: tennis.handlers.onFree,
   },
   pickpocket: pickpocket.handlers,
   storageAuction: {
@@ -2387,7 +2400,7 @@ const crosshairClass = computed(() => {
       @close="closePubRace"
     />
     <GamePubRaceBoard v-if="pubRaceBoard" :board="pubRaceBoard" />
-    <GameTennisHud v-if="tennisHud" :hud="tennisHud" />
+    <GameTennisHud :hud="tennisHud" :cue="tennisCue" :call="tennisCall" :free-play="tennisFreePlay" />
     <GameJail v-if="jailSentence && !knockedOut" :sentence="jailSentence" :error="jailError" :paying="jailPaying" @pay="jail.pay" />
     <GameCuffed v-if="policeCuffedBy && !knockedOut" :officer="realtime.remotePseudo(policeCuffedBy) ?? '…'" />
     <GamePickpocket v-if="!knockedOut" :game="pickpocketGame" :loot="pickpocketLoot" @take="pickpocket.take" />

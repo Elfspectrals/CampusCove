@@ -31,6 +31,8 @@ Laravel owns every counter. A counter counts one real action, bumped by the serv
 | `pub_games` | one finished Drink Fast race or Meter Shot run, at most 5 a day (Paris) and only when the player's drunkenness before the game's drink is 50 or less (0 to 100) | socket `reportPubGame` (`pubGames.ts`), then `POST /tasks/pub-game` (realtime) `{ game: drink_fast | meter_shot, intoxication: int 0-100 }` |
 | `duels_won` | one darts or Drink Fast game won against other players (placement 1), whoever the opponents are | `PubService::reward` |
 | `secret_room_weeks` | one week (Monday to Sunday, Paris, ISO week) in which the player stood in the pub's secret room | socket `taskTracking.ts` (once a day per account), then `POST /tasks/secret-room` (realtime, no body) |
+| `tennis_matches` | one tennis match ended on the score (not a forfeit), for each player still on court, when every player of the match has an account of 72 h or more; at most 5 a day (Paris) | `TennisTaskService::matchRecorded`, from `POST /sports/matches` (realtime) |
+| `tennis_whitewashes` | one short set won 4–0 (never a tie-break), counted under the same conditions, once a day per opposing line-up (1 or 2 accounts) | `TennisTaskService::matchRecorded` |
 | `foods_tasted` | one food or drink tasted for the first time (any group of `FoodCatalog` but `medical`), once per item code | `SurvivalService::consume` |
 
 ## Tiers
@@ -57,6 +59,8 @@ Every task lives in `App\Support\TaskCatalog`: a key, the counter it reads and i
 | `pub_games` | `pub_games` | 10 / 50 / 150 |
 | `duellist` | `duels_won` | 1 / 5 / 15 |
 | `insider` | `secret_room_weeks` | 1 / 4 / 12 |
+| `tennis` | `tennis_matches` | 5 / 25 / 100 |
+| `tennis_whitewash` | `tennis_whitewashes` | 1 / 5 / 15 |
 
 ## Notification
 

@@ -5,7 +5,7 @@ import {
   type CosmeticColors,
 } from '../../api/characterCosmetics'
 import { buildCompositeAvatar, disposeObject3D } from '../../avatar/compositeAvatar'
-import { setAvatarEating, setAvatarPicking, setAvatarSeated, updateAvatarAnimation } from '../../avatar/glbCharacter'
+import { playAvatarTennisStroke, setAvatarEating, setAvatarPicking, setAvatarSeated, setAvatarTennis, updateAvatarAnimation, type TennisStroke } from '../../avatar/glbCharacter'
 import { parseCharacterLook, type CharacterLook } from '../../avatar/characterLook'
 import { createModularCharacter } from '../../avatar/modularCharacter'
 import { WEAR_SLOTS, wearSignature, type WearModels } from '../../avatar/modularCharacterLogic'
@@ -349,6 +349,16 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     applySeat(entry)
   }
 
+  function setTennis(sessionId: string, on: boolean) {
+    const entry = avatars.get(sessionId)
+    if (entry) setAvatarTennis(entry.group, on)
+  }
+
+  function tennisStroke(sessionId: string, stroke: TennisStroke) {
+    const entry = avatars.get(sessionId)
+    if (entry) playAvatarTennisStroke(entry.group, stroke)
+  }
+
   function setPicking(sessionId: string, picking: boolean) {
     const entry = avatars.get(sessionId)
     if (entry) setAvatarPicking(entry.group, picking)
@@ -528,5 +538,5 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     }
   }
 
-  return { upsert, updateAppearance, setTarget, setSeated, setPicking, setHeldTool, setRacePint, setBadges, pseudoOf, positionOf, setVoiceState, setWantedStars, players, accountOf, showAction, showChat, showPunch, showHit, remove, clear, tick }
+  return { upsert, updateAppearance, setTarget, setSeated, setPicking, setTennis, tennisStroke, setHeldTool, setRacePint, setBadges, pseudoOf, positionOf, setVoiceState, setWantedStars, players, accountOf, showAction, showChat, showPunch, showHit, remove, clear, tick }
 }

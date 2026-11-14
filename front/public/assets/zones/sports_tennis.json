@@ -80,6 +80,38 @@
         1,
         1
       ]
+    },
+    {
+      "id": "sports_tennis_ball_basket_1",
+      "kind": "decor",
+      "key": "tennis_ball_basket",
+      "position": [
+        -444.7,
+        0.08,
+        -266.0
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "sports_tennis_ball_basket_2",
+      "kind": "decor",
+      "key": "tennis_ball_basket",
+      "position": [
+        -442.3,
+        0.08,
+        -266.0
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
     }
   ],
   "areas": []

@@ -2,8 +2,9 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import type { TennisStatePayload } from '../../types/gameRealtime'
-import { TENNIS_BOUNCE_KEEP, TENNIS_GRAVITY, TENNIS_HALF_LENGTH, TENNIS_REACH_M, TENNIS_RESTITUTION, aimOnCourt, ballComing, ballPosition, iServe, myTeam } from './tennis.ts'
+import { BALL_BASKETS, TENNIS_BOUNCE_KEEP, TENNIS_COURTS, TENNIS_GRAVITY, TENNIS_HALF_LENGTH, TENNIS_NET_Z, TENNIS_REACH_M, TENNIS_RESTITUTION, aimOnCourt, ballComing, ballPosition, freeCourtAt, iServe, myTeam, sideAt } from './tennis.ts'
 
+const ZONE = JSON.parse(readFileSync(new URL('../../../public/assets/zones/sports_tennis.json', import.meta.url), 'utf8'))
 const RULES = JSON.parse(readFileSync(new URL('../../../public/assets/sports/rules/tennis.json', import.meta.url), 'utf8'))
 
 function state(extra: Partial<TennisStatePayload> = {}): TennisStatePayload {
@@ -46,17 +47,17 @@ test('the ball follows its arc, then bounces up instead of sinking before the se
 test('the hitting cue shows only for the side the ball comes to, when it is about to pass within reach', () => {
   const s = state()
   const landing = ballPosition(s.ball!, 1400)
-  assert.equal(ballComing(s, 'red', { x: landing.x, z: landing.z }, 1300), true)
-  assert.equal(ballComing(s, 'red', { x: landing.x + 3, z: landing.z }, 1300), false)
-  assert.equal(ballComing(s, 'blue', { x: landing.x, z: landing.z }, 1300), false)
-  assert.equal(ballComing(state({ phase: 'point' }), 'red', { x: landing.x, z: landing.z }, 1300), false)
+  assert.equal(ballComing({ ...s, netZ: s.court.netZ }, 'red', { x: landing.x, z: landing.z }, 1300), true)
+  assert.equal(ballComing({ ...s, netZ: s.court.netZ }, 'red', { x: landing.x + 3, z: landing.z }, 1300), false)
+  assert.equal(ballComing({ ...s, netZ: s.court.netZ }, 'blue', { x: landing.x, z: landing.z }, 1300), false)
+  assert.equal(ballComing({ ...state({ phase: 'point' }), netZ: 0 }, 'red', { x: landing.x, z: landing.z }, 1300), false)
 })
 
 test('the aim is where the view meets the ground, or the far baseline when looking level', () => {
   const s = state()
-  assert.deepEqual(aimOnCourt(s, 'red', { x: 0, y: 1.6, z: 10 }, { x: 0, y: -0.2, z: -1 }), { x: 0, z: 2 })
-  assert.deepEqual(aimOnCourt(s, 'red', { x: 1, y: 1.6, z: 10 }, { x: 0.1, y: 0, z: -1 }), { x: 1 + 0.1 * (10 + TENNIS_HALF_LENGTH), z: -TENNIS_HALF_LENGTH })
-  assert.deepEqual(aimOnCourt(s, 'red', { x: 0, y: 1.6, z: 10 }, { x: 0, y: 0, z: 1 }), { x: 0, z: -TENNIS_HALF_LENGTH })
+  assert.deepEqual(aimOnCourt(s.court, 'red', { x: 0, y: 1.6, z: 10 }, { x: 0, y: -0.2, z: -1 }), { x: 0, z: 2 })
+  assert.deepEqual(aimOnCourt(s.court, 'red', { x: 1, y: 1.6, z: 10 }, { x: 0.1, y: 0, z: -1 }), { x: 1 + 0.1 * (10 + TENNIS_HALF_LENGTH), z: -TENNIS_HALF_LENGTH })
+  assert.deepEqual(aimOnCourt(s.court, 'red', { x: 0, y: 1.6, z: 10 }, { x: 0, y: 0, z: 1 }), { x: 0, z: -TENNIS_HALF_LENGTH })
 })
 
 test('my side and my serve come from the server state', () => {
@@ -64,4 +65,17 @@ test('my side and my serve come from the server state', () => {
   assert.equal(myTeam(state(), 'x'), null)
   assert.equal(iServe(state({ phase: 'serve_wait', server: 'b' }), 'b'), true)
   assert.equal(iServe(state({ phase: 'flight', server: null }), 'b'), false)
+})
+
+test('courts and ball baskets match the rules and the zone file', () => {
+  assert.deepEqual(RULES.courts.map((c: { id: string; centre: number[] }) => [c.id, c.centre[0], c.centre[2]]), TENNIS_COURTS.map((c) => [c.id, c.cx, TENNIS_NET_Z]))
+  const baskets = ZONE.props.filter((p: { key?: string }) => p.key === 'tennis_ball_basket').map((p: { position: number[] }) => [p.position[0], p.position[2]])
+  assert.deepEqual(baskets, BALL_BASKETS.map((b) => [b.position[0], b.position[2]]))
+})
+
+test('free play happens inside a court play area, the side comes from the half you stand on', () => {
+  assert.equal(freeCourtAt(TENNIS_COURTS[1].cx + 6, TENNIS_NET_Z + 15)?.id, 'tennis_2')
+  assert.equal(freeCourtAt(-443.5, TENNIS_NET_Z), null)
+  assert.equal(sideAt(TENNIS_NET_Z + 1), 'red')
+  assert.equal(sideAt(TENNIS_NET_Z - 1), 'blue')
 })

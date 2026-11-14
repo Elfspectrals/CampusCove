@@ -10,7 +10,7 @@ const { loadWorld } = await import('../world.ts')
 await loadWorld()
 const tennis = await import('./tennis.ts')
 const C = await import('./tennisConstants.ts')
-const { tossPeak } = await import('./tennisRally.ts')
+const { playAreaFor, tossPeak } = await import('./tennisRally.ts')
 
 const RULES = JSON.parse(readFileSync(new URL('../../../front/public/assets/sports/rules/tennis.json', import.meta.url), 'utf8'))
 const [COURT_1] = C.TENNIS_COURTS
@@ -48,13 +48,13 @@ test('the rules file says what the socket plays', () => {
   assert.deepEqual([RULES.hit.driveSpeedMs, RULES.lob.speedMs, RULES.serve.speedMs], [C.DRIVE_SPEED, C.LOB_SPEED, C.SERVE_SPEED])
   assert.deepEqual([RULES.serve.tossStartY, RULES.serve.tossSpeedMs, RULES.serve.windowMs, RULES.serve.autoTossAfterMs], [C.TOSS_START_Y, C.TOSS_SPEED, C.SERVE_WINDOW_MS, C.SERVE_WAIT_MS])
   assert.equal(RULES.rejoinGraceSec * 1000, C.REJOIN_GRACE_MS)
-  assert.deepEqual(RULES.gear, [tennis.TENNIS_GEAR])
+  assert.deepEqual(RULES.gear, [C.TENNIS_GEAR])
 })
 
 test('the two courts and the coach between them sit inside the venue footprint', () => {
   const footprint = { minX: -467, maxX: -420, minZ: -293, maxZ: -250 }
   for (const { cx } of C.TENNIS_COURTS) {
-    const area = tennis.playAreaFor(cx)
+    const area = playAreaFor(cx, C.TENNIS_NET_Z)
     assert.ok(area.minX > footprint.minX && area.maxX < footprint.maxX && area.minZ > footprint.minZ && area.maxZ < footprint.maxZ)
     assert.ok(Math.abs(C.TENNIS_COACH.x - cx) > C.DOUBLES_HALF_WIDTH + C.PLAY_AREA_SIDE_MARGIN)
   }

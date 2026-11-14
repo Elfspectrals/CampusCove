@@ -173,6 +173,126 @@
       "hy": 1.0,
       "cy": 1.0,
       "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsTennis_StandN1Step0",
+      "cx": -454.645,
+      "cz": -290.81,
+      "hx": 5.985,
+      "hz": 0.425,
+      "hy": 0.15,
+      "cy": 0.15,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsTennis_StandN1Step1",
+      "cx": -454.645,
+      "cz": -291.66,
+      "hx": 5.985,
+      "hz": 0.425,
+      "hy": 0.3,
+      "cy": 0.3,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsTennis_StandN1Step2",
+      "cx": -454.645,
+      "cz": -292.51,
+      "hx": 5.985,
+      "hz": 0.425,
+      "hy": 0.45,
+      "cy": 0.45,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsTennis_StandS1Step0",
+      "cx": -454.645,
+      "cz": -252.19,
+      "hx": 5.985,
+      "hz": 0.425,
+      "hy": 0.15,
+      "cy": 0.15,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsTennis_StandS1Step1",
+      "cx": -454.645,
+      "cz": -251.34,
+      "hx": 5.985,
+      "hz": 0.425,
+      "hy": 0.3,
+      "cy": 0.3,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsTennis_StandS1Step2",
+      "cx": -454.645,
+      "cz": -250.49,
+      "hx": 5.985,
+      "hz": 0.425,
+      "hy": 0.45,
+      "cy": 0.45,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsTennis_StandN2Step0",
+      "cx": -432.355,
+      "cz": -290.81,
+      "hx": 5.985,
+      "hz": 0.425,
+      "hy": 0.15,
+      "cy": 0.15,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsTennis_StandN2Step1",
+      "cx": -432.355,
+      "cz": -291.66,
+      "hx": 5.985,
+      "hz": 0.425,
+      "hy": 0.3,
+      "cy": 0.3,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsTennis_StandN2Step2",
+      "cx": -432.355,
+      "cz": -292.51,
+      "hx": 5.985,
+      "hz": 0.425,
+      "hy": 0.45,
+      "cy": 0.45,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsTennis_StandS2Step0",
+      "cx": -432.355,
+      "cz": -252.19,
+      "hx": 5.985,
+      "hz": 0.425,
+      "hy": 0.15,
+      "cy": 0.15,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsTennis_StandS2Step1",
+      "cx": -432.355,
+      "cz": -251.34,
+      "hx": 5.985,
+      "hz": 0.425,
+      "hy": 0.3,
+      "cy": 0.3,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsTennis_StandS2Step2",
+      "cx": -432.355,
+      "cz": -250.49,
+      "hx": 5.985,
+      "hz": 0.425,
+      "hy": 0.45,
+      "cy": 0.45,
+      "yaw": 0.0
     }
   ]
 }

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { COURT_HALF_LENGTH, POINT_PAUSE_MS, SERVE_WAIT_MS, SERVE_WINDOW_MS, SINGLES_HALF_WIDTH, TOSS_FALL_MS } from './tennisConstants.ts'
-import { type Court, type Rally, ballAt, contactQuality, groundTime, hit, landsIn, serveWait, shoot, step, tossBall, tossPeak } from './tennisRally.ts'
+import { type Court, type Rally, ballAt, strokeOf, contactQuality, groundTime, hit, landsIn, serveWait, shoot, step, tossBall, tossPeak } from './tennisRally.ts'
 
 const COURT: Court = { cx: 0, netZ: 0, halfWidth: SINGLES_HALF_WIDTH }
 const T0 = 1_000_000
@@ -119,4 +119,20 @@ test('aims are kept on the receiving half; lines count as in', () => {
   assert.equal(landsIn(COURT, 'red', 0, -1), false)
   assert.equal(contactQuality(0.2), 1)
   assert.equal(contactQuality(1.6), 0)
+})
+
+test('the stroke shown to others: serve at the toss, forehand on the racket side, backhand on the other, lob on right click', () => {
+  const waiting = serveWait('b', 'blue', T0)
+  const tossing = hit(waiting, BLUE_SERVER, { x: 0, z: 8 }, false, T0, COURT) as Rally
+  assert.equal(strokeOf(waiting, tossing, BLUE_SERVER, false), 'serve')
+  const ball = served({ x: 0, z: 8 })
+  assert.equal(strokeOf(tossing, ball, BLUE_SERVER, false), null)
+  const bounced = flight(step(ball, groundTime(ball.ball) + 1, COURT, nowhere))
+  const t = bounced.ball.t + 300
+  const at = ballAt(bounced.ball, t)
+  for (const [dx, lob, stroke] of [[-0.4, false, 'forehand'], [0.4, false, 'backhand'], [0.4, true, 'lob']] as const) {
+    const receiver = { ...RED_RECEIVER, x: at.x + dx, z: at.z }
+    const back = flight(hit(bounced, receiver, { x: 0, z: -9 }, lob, t, COURT))
+    assert.equal(strokeOf(bounced, back, receiver, lob), stroke)
+  }
 })

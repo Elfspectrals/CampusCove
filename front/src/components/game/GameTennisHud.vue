@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import type { TennisHud } from '../../composables/game/useTennis'
+import type { TennisCall, TennisHud } from '../../composables/game/useTennis'
 
-defineProps<{ hud: TennisHud }>()
+defineProps<{ hud: TennisHud | null; cue: boolean; call: TennisCall; freePlay: boolean }>()
 const { t } = useI18n()
 const TEAMS = ['red', 'blue'] as const
 </script>
 
 <template>
-  <section class="cc-hud pointer-events-none absolute left-1/2 top-3 z-10 w-56 -translate-x-1/2 px-3 py-2 text-xs" :aria-label="t('sports.tennis.board')">
+  <section v-if="hud" class="cc-hud pointer-events-none absolute left-1/2 top-3 z-10 w-56 -translate-x-1/2 px-3 py-2 text-xs" :aria-label="t('sports.tennis.board')">
     <p class="m-0 mb-1 font-display text-[11px] uppercase tracking-[0.16em] text-mint">
       {{ t('sports.sports.tennis') }}<span v-if="hud.tiebreak" class="text-mist"> · {{ t('sports.tennis.tiebreak') }}</span>
     </p>
@@ -28,10 +28,14 @@ const TEAMS = ['red', 'blue'] as const
     <p v-else-if="hud.iServe" class="m-0 mt-1 text-mist">{{ hud.tossing ? t('sports.tennis.hitToss') : t('sports.tennis.serve') }}</p>
     <p v-else-if="hud.myTeam" class="m-0 mt-1 text-mist">{{ t('sports.tennis.controls') }}</p>
   </section>
-  <p v-if="hud.cue" class="cc-hud pointer-events-none absolute left-1/2 top-1/2 z-10 m-0 -translate-x-1/2 translate-y-8 px-3 py-1 text-sm font-bold text-sun">
+  <section v-else-if="freePlay" class="cc-hud pointer-events-none absolute left-1/2 top-3 z-10 w-56 -translate-x-1/2 px-3 py-2 text-xs" :aria-label="t('sports.tennis.freePlay')">
+    <p class="m-0 mb-1 font-display text-[11px] uppercase tracking-[0.16em] text-mint">{{ t('sports.tennis.freePlay') }}</p>
+    <p class="m-0 text-mist">{{ t('sports.tennis.freeControls') }}</p>
+  </section>
+  <p v-if="cue" class="cc-hud pointer-events-none absolute left-1/2 top-1/2 z-10 m-0 -translate-x-1/2 translate-y-8 px-3 py-1 text-sm font-bold text-sun">
     {{ t('sports.tennis.hit') }}
   </p>
-  <p v-if="hud.call" class="pointer-events-none absolute left-1/2 top-1/3 z-10 m-0 -translate-x-1/2 font-display text-4xl uppercase text-sun drop-shadow">
-    {{ t(`sports.tennis.calls.${hud.call}`) }}
+  <p v-if="call" class="pointer-events-none absolute left-1/2 top-1/3 z-10 m-0 -translate-x-1/2 font-display text-4xl uppercase text-sun drop-shadow">
+    {{ t(`sports.tennis.calls.${call}`) }}
   </p>
 </template>
