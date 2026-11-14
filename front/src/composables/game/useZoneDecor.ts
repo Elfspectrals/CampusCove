@@ -253,7 +253,6 @@ export function useZoneDecor(deps: ZoneDecorDeps) {
         key,
         layout,
         modelUrl: (display) => itemModelUrl(display),
-        priceTags: area.priceTags ?? false,
         coinPrices: new Map(Object.entries(zonePrices(decor))),
         checkout: (items) => zoneCheckout(zone.key, items),
         clerkColors: npcColors(vendor),

@@ -179,7 +179,6 @@ export function useMallCellTemplates(deps: MallCellTemplatesDeps) {
         key,
         layout,
         modelUrl: (display) => itemModelUrl(display),
-        priceTags: false,
         ...(vendor ? { clerkColors: npcColors(vendor), clerkOutfit: vendor.outfit, clerkBrighten: false } : {}),
       },
     })

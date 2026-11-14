@@ -112,17 +112,10 @@ function update(area: SaleArea): void {
   emit('change', props.areas.map((a) => (a.id === area.id ? area : a)))
 }
 
-function setPriceTags(on: boolean): void {
-  if (!selected.value) return
-  const { priceTags: _, ...area } = selected.value
-  update(on ? { ...area, priceTags: true } : area)
-}
-
 function setRole(role: string): void {
   if (!selected.value) return
   const next = role as SaleRole
-  const { priceTags: _, ...area } = selected.value
-  update({ ...area, role: next, offers: next === 'buyer' ? [{ ...NEW_OFFER }] : [] })
+  update({ ...selected.value, role: next, offers: next === 'buyer' ? [{ ...NEW_OFFER }] : [] })
   chartOffer.value = 0
 }
 
@@ -289,10 +282,6 @@ useDialogFocus(dialogEl, { onEscape: () => (drawing.value ? (drawing.value = nul
               <button type="button" class="cc-btn cc-btn-sm cc-btn-ghost flex-1" @click="drawing = 'redraw'"><UiIcon name="edit" :size="14" /> Redraw</button>
               <button type="button" class="cc-btn cc-btn-sm cc-btn-ghost flex-1 text-coral" @click="removeArea"><UiIcon name="trash" :size="14" /> Delete</button>
             </div>
-            <label v-if="selected.role === 'seller'" class="flex items-center gap-2 text-xs text-fog">
-              <input type="checkbox" :checked="selected.priceTags === true" @change="setPriceTags(($event.target as HTMLInputElement).checked)" />
-              Price tags beside each item
-            </label>
             <p v-if="selected.role === 'seller'" class="m-0 text-xs text-mist">
               Sells {{ soldHere.length }} item{{ soldHere.length === 1 ? '' : 's' }} for sale in this area<template v-if="soldHere.length">: {{ soldHere.map((p) => (p.kind === 'item' ? `${p.code} (${p.price ?? '?'})` : '')).join(', ') }}</template>.
             </p>

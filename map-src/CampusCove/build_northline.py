@@ -29,7 +29,6 @@ X0, X1, Z0, Z1 = -16.0, 16.0, -25.0, 5.0
 BODY_SCALE = 0.936
 BODY_LIFT = 0.009
 RAIL_Y = 1.95
-TAG_Y = 0.72
 SHELF_Y = 1.05
 TABLE_Y = 0.9
 HEAD_Y = 1.55
@@ -116,10 +115,6 @@ displays = []
 dept_info = []
 
 
-def tag_at(gx, gz, yaw, y=TAG_Y):
-    return {"position": [round(gx, 3), y, round(gz, 3)], "yaw": round(yaw, 4)}
-
-
 def dept_board(slot, gx, gz, yaw, along_x):
     add(L.box(coll, f"Sign_{slot}_Board", gx, gz, 3.2, 2.8 if along_x else 0.06, 0.06 if along_x else 2.8, 0.62, M["black"]))
     fx, fz = math.sin(yaw), math.cos(yaw)
@@ -139,7 +134,6 @@ def hanging_rail(slot, x_start, z_wall):
             "slot": slot, "key": key, "department": slot,
             "position": [round(gx, 3), y, round(z, 3)], "yaw": 0.0,
             "center": [round(gx, 3), round(RAIL_Y - 0.45, 3), round(z, 3)],
-            "tag": tag_at(gx, z_wall + 0.1, 0.0),
         })
 
 
@@ -155,7 +149,6 @@ def shoe_wall(x_wall, z_start):
             "slot": "shoes", "key": key, "department": "shoes",
             "position": [round(x, 3), round(SHELF_Y - BODY_LIFT, 3), round(gz, 3)], "yaw": round(math.pi / 2, 4),
             "center": [round(x, 3), round(SHELF_Y + 0.12, 3), round(gz, 3)],
-            "tag": tag_at(x_wall + 0.1, gz, math.pi / 2),
         })
 
 
@@ -171,7 +164,6 @@ def head_table(slot, x_wall, z_start):
             "slot": slot, "key": key, "department": slot,
             "position": [round(x, 3), round(HEAD_Y - 1.745 * BODY_SCALE - BODY_LIFT, 3), round(gz, 3)], "yaw": round(-math.pi / 2, 4),
             "center": [round(x, 3), HEAD_Y, round(gz, 3)],
-            "tag": tag_at(x - 0.42, gz, -math.pi / 2, y=0.62),
         })
 
 
@@ -237,7 +229,6 @@ for i, pieces in enumerate(OUTFITS):
         "pieces": [{"slot": s, "key": k} for s, k in pieces],
         "position": [round(gx, 3), 0.14, round(gz, 3)], "yaw": round(math.radians(10 - i * 7), 4),
         "center": [round(gx, 3), 1.1, round(gz, 3)],
-        "tag": tag_at(gx, gz + 0.75, 0.0, y=0.4),
     })
 add(L.box(coll, "Podium_Board", PLAT[0], PLAT[1] - 3.2, 3.2, 3.2, 0.06, 0.62, M["black"]))
 text("Podium_Text", "NEW ARRIVALS", PLAT[0], PLAT[1] - 3.16, 3.36, 0.34, M["sign"], 0.0)

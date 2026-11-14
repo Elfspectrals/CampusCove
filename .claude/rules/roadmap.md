@@ -299,6 +299,11 @@ Decision (2026-11-10): every shop works the same way (items and shelves in a sel
 - [done] Shelf prop with item slots (gondola, wall, fridge, chiller): per slot item, count shown, arrangement (rows, messy, stack, front), "out of stock" tag, sold from the slot; GreenCart stocked with it. Spec in `design-plans/shelf-slots.md`.
 - [todo] Playtest the shops in game (basket from slots, frame rate in GreenCart).
 
+Decision (2026-11-14): no more price tags in the shops, nor a prompt bubble over the aimed item. Aiming at an item shows only the item card in the bottom right, which now gives the item's type (clothing, food, drink, care, furniture, tool) and, when it has one, the place or activity it is used for (`front/src/game/store/itemType.ts`).
+
+- [done] Price tags removed everywhere (front, zone and layout data, mall editor, store build scripts); the card shows type and use. Played in Summit Sports and Crispin's Hardware on 2026-11-14. The tag posts are gone from the Cove Home and Cove Threads interiors and from both mannequin podiums (rebuilt and rebaked, lightmap brightness unchanged). `.claude/rules/global.md` and `noPriceTags.test.ts` keep them from coming back.
+- [todo] Ice skates read "Skating" on the card once the ice rink (PR #108) is merged.
+
 ## Mall editor (in progress, branch feat-shop-editor)
 
 - [in progress] `/admin/editor`, a UE5-style level editor: templates built per cell size (decor by category, items for sale or as props, NPC extras, one vendor, dressable mannequins), saved as committed JSON by a dev-only endpoint, assigned to free planned cells, opened by a `build_mall.py` rebuild.

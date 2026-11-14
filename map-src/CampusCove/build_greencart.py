@@ -1,5 +1,5 @@
 """GreenCart: the supermarket of the Cove Parkview Mall (docs/MALL.md). Layout contract of Cove Home (departments +
-displays with a price tag), read by useFurnitureStore with items/<group>/<key>/model.glb: the bananas and apples on their
+displays), read by useFurnitureStore with items/<group>/<key>/model.glb: the bananas and apples on their
 produce tables and the croissants, bread and cookies on the bakery counter are on display.
 
 A real supermarket plan: entrance east with a cart pen and promo bins, produce then bakery near the entrance, dairy and
@@ -144,13 +144,12 @@ def hanging_sign(dep, gx, gz, yaw, width=3.0, y=3.6):
     dept_info.append({"id": dep, "label": label, "color": DEPARTMENTS[dep][1], "sign": [round(gx, 3), y + 0.3, round(gz, 3)]})
 
 
-def food_display(key, dep, gx, gy, gz, yaw, tag_x, tag_z, tag_y=1.32, stack=(1, 1)):
+def food_display(key, dep, gx, gy, gz, yaw, stack=(1, 1)):
     """One food on sale; `stack` = (columns, rows) of copies the front lines up on the spot, so a 10 cm cookie
     reads as a filled shelf facing instead of a lone crumb."""
     code, name, blurb, size = FOODS[key]
     displays.append({"key": key, "code": code, "department": dep, "description": blurb,
-                     "position": [round(gx, 3), round(gy, 3), round(gz, 3)], "yaw": round(yaw, 4), "size": size, "stack": list(stack),
-                     "tag": {"position": [round(tag_x, 3), tag_y, round(tag_z, 3)], "yaw": round(yaw, 4)}})
+                     "position": [round(gx, 3), round(gy, 3), round(gz, 3)], "yaw": round(yaw, 4), "size": size, "stack": list(stack)})
 
 
 def pendant(name, gx, gz, y=2.6):
@@ -229,14 +228,14 @@ for i, (gx, gz) in enumerate(((2.3, 3.0), (4.0, 1.2), (6.5, 0.6))):
 # ---------------------------------------------------------------- produce (east, by the entrance)
 hanging_sign("produce", 14.0, -3.0, math.pi / 2, width=4.0)
 for key, gx, stack in PRODUCE_DISPLAYS:
-    food_display(key, "produce", gx, 0.8, -1.0, 0.0, gx, -1.75, tag_y=1.3, stack=stack)
+    food_display(key, "produce", gx, 0.8, -1.0, 0.0, stack=stack)
 
 # ---------------------------------------------------------------- bakery (back east)
 hanging_sign("bakery", 14.0, -22.0, math.pi / 2, width=3.0)
 for i, gz in enumerate((-21.0, -25.0)):
     pendant(f"Lamp_Bakery{i}", 13.5, gz)
 for key, gz, stack in BAKERY_DISPLAYS:
-    food_display(key, "bakery", 13.4, 1.05, gz, -math.pi / 2, 12.7, gz, tag_y=1.3, stack=stack)
+    food_display(key, "bakery", 13.4, 1.05, gz, -math.pi / 2, stack=stack)
 
 # ---------------------------------------------------------------- fish & meat (back centre), dairy (back west + west wall), frozen
 hanging_sign("fresh", 0.0, -27.0, 0.0, width=3.0)

@@ -59,7 +59,7 @@ test('a gondola has slots on both faces, slot 0 on the left seen from each aisle
   assert.deepEqual(slotBoxes({ shelf: 'chiller', length: 2, levels: 1, slots: 4 }).map((b) => b.key), ['0.0.0', '0.0.1', '0.0.2', '0.0.3'])
 })
 
-test('the price tag of a slot sits on the front edge of its board, on the rim of a chiller', () => {
+test('the out-of-stock tag of a slot sits on the front edge of its board, on the rim of a chiller', () => {
   const front = slotBoxes(gondola)[0]!
   assert.deepEqual(round(slotTag(gondola, front).position), [-0.73, 0.11, 0.454])
   const chiller = { shelf: 'chiller', length: 2, levels: 1, slots: 1 } as const
