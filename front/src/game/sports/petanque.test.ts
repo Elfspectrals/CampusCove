@@ -8,8 +8,10 @@ const rulesJson: unknown = JSON.parse(readFileSync(new URL('../../../public/asse
 test('reads the client fields of the rules file', () => {
   const rules = parsePetanqueClientRules(rulesJson)
   assert.equal(rules.riseMs, 1200)
+  assert.deepEqual(rules.pistes.map((p) => p.id), ['petanque_1', 'petanque_2', 'petanque_3', 'petanque_4'])
+  assert.deepEqual(rules.pistes[0].freeCircle, { x: -406.3, z: -258, axisZ: -1 })
   assert.ok(Math.abs(rules.bouleRadiusM - 0.0375) < 1e-6)
-  assert.throws(() => parsePetanqueClientRules({}), /boule.radiusM/)
+  assert.throws(() => parsePetanqueClientRules({}), /circleFromEndM/)
 })
 
 test('mirrors the server power meter', () => {

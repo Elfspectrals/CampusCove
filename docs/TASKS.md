@@ -32,6 +32,8 @@ Laravel owns every counter. A counter counts one real action, bumped by the serv
 | `duels_won` | one darts or Drink Fast game won against other players (placement 1), whoever the opponents are | `PubService::reward` |
 | `secret_room_weeks` | one week (Monday to Sunday, Paris, ISO week) in which the player stood in the pub's secret room | socket `taskTracking.ts` (once a day per account), then `POST /tasks/secret-room` (realtime, no body) |
 | `foods_tasted` | one food or drink tasted for the first time (any group of `FoodCatalog` but `medical`), once per item code | `SurvivalService::consume` |
+| `petanque_games` | one pétanque coach game played to its end (not a forfeit), at most 5 a day (Paris), counted only when each team has an account aged 72 h or more; a replayed `ref` counts nothing | socket `petanque.ts` once the match is recorded, then `POST /sports/petanque/tally` (realtime) `{ ref: string 1-64, carreaux: int 0-30 }`; `PetanqueTallyService` (409 `petanque_match_unknown`, `petanque_not_in_match`) |
+| `petanque_carreaux` | one carreau thrown in a game that counts for `petanque_games` | the same tally, bumped by its `carreaux` |
 
 ## Tiers
 
@@ -57,6 +59,8 @@ Every task lives in `App\Support\TaskCatalog`: a key, the counter it reads and i
 | `pub_games` | `pub_games` | 10 / 50 / 150 |
 | `duellist` | `duels_won` | 1 / 5 / 15 |
 | `insider` | `secret_room_weeks` | 1 / 4 / 12 |
+| `petanque` | `petanque_games` | 5 / 25 / 75 |
+| `carreau` | `petanque_carreaux` | 1 / 10 / 50 |
 
 ## Notification
 

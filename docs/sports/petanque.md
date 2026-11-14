@@ -51,7 +51,9 @@ Leaver past the 30 s grace: their boules are skipped; a team at 0 players loses.
 - **Ground**: a rolling boule slows down at 0.9 m/s². Balls bounce off each other (restitution 0.75). A ball touching a board is dead and stays where it stopped.
 - **Own boules required**: the coach refuses a sign-up without `gear_boules` (`sports_no_gear`). No lent boules.
 - **Full teams only**: each format needs exactly 2 × team size players (2, 4 or 6), so a game kicks off as soon as it is full.
-- **Free play is not built yet**: only coach games are simulated.
+- **Free play**: on a piste with no coach game, anyone with their own boules throws from the south circle. The first throw is the jack; each player keeps at most 3 boules on the piste, and a 4th throw picks up their earlier ones. A piste unused for 2 minutes is cleared. Nothing is recorded.
+- **Tasks**: `petanque` (games played to the end, 5 / 25 / 75) and `carreau` (1 / 10 / 50), counted by Laravel from one tally per player after a finished game (docs/TASKS.md). At most 5 games a day count, only when each team has an account aged 72 h or more; forfeits count nothing.
+- **Look and feel**: boules on the pistes and in the thrower's hand use the Set of Boules model (`decor/petanque_boules`), tinted per team. Sounds: landing, clack, carreau, point (`sfx/petanque/`, `build_petanque_sfx.py`). Clips `PetanquePoint`, `PetanqueShoot`, `PetanqueCelebrate` (third person) and the first-person throws, played from the server's throw and end messages. The coach wears a béret (`wear/head_accessory/beret`), a checked shirt and beige trousers. The boulodrome has a sign, a slate per piste and two boule racks.
 - **Jack**: valid between 6 and 10 m from the circle and 0.5 m from the side boards. Otherwise the socket moves it to the nearest valid spot, or to 8 m on the axis if it died.
 - **Shot clock**: 40 s per throw. When it runs out the boule is lost, or the socket places the jack at 8 m.
 - **Who throws**: the team not holding the point. Within a team, the player with the most boules left goes first. When the jack dies, a team that still has boules scores them all; if both teams still have boules, nobody scores.
@@ -67,6 +69,7 @@ Rules file `front/public/assets/sports/rules/petanque.json`, read by the socket 
 | `petanque_throw` | client → server | `{ yaw: number (rad, \|yaw\| ≤ π, clamped to ±maxAimDeg from the throwing axis, positive toward +x), mode: 'point' \| 'shoot' }`, the release. Power = the triangle wave of (release − press) / `riseMs` on the socket clock. Any other field is ignored. |
 | `petanque_throw` | server → site | `{ venue, kind: 'jack' \| 'boule', mode, thrower, team, ball, from, landing, airMs, frames: [tMs, [id, x, z]...][], carreau, serverNow }`. The frames start at the landing. |
 | `petanque_state` | server → site and players | `{ venue, phase: 'jack' \| 'boules' \| 'between', format, target, score, end, circle: { x, z, axisZ }, jackTeam, thrower, busyUntil, turnEndsAt, serverNow, players: [{ sessionId, name, team, out, left }], balls, point, distancesCm, lastEnd }`. Sent on every change and every 5 s. |
+| `petanque_free` | server → site | `{ venue, circle, balls, point, distancesCm, busyUntil, serverNow }`, free play state of one piste |
 | `petanque_closed` | server → site and players | `{ venue, score, reason: 'finished' \| 'forfeit' }` |
 | `sports_error` | server → client | `petanque_not_your_turn`, `petanque_wait`, `petanque_not_in_circle` |
 
@@ -74,8 +77,8 @@ Results: `win` or `loss` per team, with `score` = that team's points (`draw` whe
 
 ## Open points
 
-- Free play on a free piste with your own boules.
-- A carreau counter for the feat task (needs a field in `sports_match_players` or a task counter).
+- `PetanqueCrouch` (loop) exists in the GLBs but is not played yet.
+- Release palm up (as asked); real pétanque releases palm down with backspin (`PALM_UP` in `clips.py`, `BOULE_PALM` in `build_fp_arms.py`).
 
 ## Proposed placeholder JSON fields
 

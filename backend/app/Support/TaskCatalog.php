@@ -25,6 +25,8 @@ final class TaskCatalog
             'pub_games' => ['counter' => ActionCounter::PubGames, 'tiers' => [10, 50, 150]],
             'duellist' => ['counter' => ActionCounter::DuelsWon, 'tiers' => [1, 5, 15]],
             'insider' => ['counter' => ActionCounter::SecretRoomWeeks, 'tiers' => [1, 4, 12]],
+            'petanque' => ['counter' => ActionCounter::PetanqueGames, 'tiers' => [5, 25, 75]],
+            'carreau' => ['counter' => ActionCounter::PetanqueCarreaux, 'tiers' => [1, 10, 50]],
         ];
     }
 

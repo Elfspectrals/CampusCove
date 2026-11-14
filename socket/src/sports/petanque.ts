@@ -1,5 +1,7 @@
 import type { Bounds, ClientPayload, GameClient, GameRoom, Player } from '../types.ts'
+import { callRealtimeBackend } from '../backend.ts'
 import { readSportRules } from '../world.ts'
+import { ownedGear } from './gear.ts'
 import { inPassArea } from './pass.ts'
 import {
   type Ball,
@@ -38,10 +40,24 @@ interface Game {
   turnEndsAt: number
   lastEnd: EndScore | null
   lastSyncAt: number
+  carreaux: Map<number, number>
+}
+
+interface FreePiste {
+  venue: string
+  piste: Bounds
+  balls: Ball[]
+  busyUntil: number
+  lastAt: number
+  press: { accountId: number, at: number } | null
 }
 
 const SYNC_MS = 5_000
 const games = new WeakMap<Match, Game>()
+const FREE_IDLE_MS = 120_000
+const GEAR_CHECK_MS = 60_000
+const freePistes = new WeakMap<GameRoom, Map<string, FreePiste>>()
+const gearChecks = new WeakMap<Player, { owned: boolean, at: number }>()
 
 let rules: PetanqueRules | null = null
 const pistes = new Map<string, PetanquePiste>()
@@ -185,8 +201,10 @@ function kickoff(room: GameRoom, match: Match): void {
     busyUntil: now,
     turnEndsAt: now,
     lastEnd: null,
-    lastSyncAt: now
+    lastSyncAt: now,
+    carreaux: new Map()
   }
+  clearFree(room, match.venue, now)
   games.set(match, game)
   startEnd(game, match, now)
   sync(room, match, game, now)
@@ -260,7 +278,30 @@ function finish(room: GameRoom, match: Match, end: MatchEnd): void {
   const game = games.get(match)
   games.delete(match)
   sendToSite(room, match, 'petanque_closed', { venue: match.venue, score: game?.score ?? null, reason: end.reason })
-  void recordMatch(room, match, matchResults(match, game, end))
+  void recordAndTally(room, match, game, end)
+}
+
+async function recordAndTally(room: GameRoom, match: Match, game: Game | undefined, end: MatchEnd): Promise<void> {
+  await recordMatch(room, match, matchResults(match, game, end))
+  if (end.reason !== 'finished' || !game) return
+  await Promise.all(match.players.map((p) => tally(room, p.accountId, '/sports/petanque/tally', { ref: match.id, carreaux: game.carreaux.get(p.accountId) ?? 0 })))
+}
+
+function warn(context: string, error: unknown): void {
+  console.warn(`[petanque] ${context}:`, error instanceof Error ? error.message : error)
+}
+
+async function tally(room: GameRoom, accountId: number, path: string, body: Record<string, unknown>): Promise<void> {
+  const player = [...room.players.values()].find((p) => p.accountId === accountId && p.token)
+  if (!player) {
+    warn(`${path} for account ${accountId} not sent`, 'player offline')
+    return
+  }
+  try {
+    await callRealtimeBackend(player.token, path, 'POST', body)
+  } catch (error) {
+    warn(`${path} for account ${accountId} failed`, error)
+  }
 }
 
 function activeGame(room: GameRoom, client: GameClient): { player: Player, match: Match, game: Game } | null {
@@ -281,9 +322,12 @@ function refusal(player: Player, game: Game, now: number): { code: string, messa
   return null
 }
 
-export function onPetanqueAim(room: GameRoom, client: GameClient, now = Date.now()): void {
+export async function onPetanqueAim(room: GameRoom, client: GameClient, now = Date.now()): Promise<void> {
   const active = activeGame(room, client)
-  if (!active) return
+  if (!active) {
+    await freeAim(room, client, now)
+    return
+  }
   const refused = refusal(active.player, active.game, now)
   if (refused) {
     client.send('sports_error', refused)
@@ -314,6 +358,7 @@ function applyThrow(game: Game, match: Match, player: Player, result: ThrowResul
     return
   }
   game.balls = result.balls
+  if (result.carreau) game.carreaux.set(player.accountId, (game.carreaux.get(player.accountId) ?? 0) + 1)
   game.left.set(player.accountId, Math.max(0, (game.left.get(player.accountId) ?? 0) - 1))
   game.lastTeam = matchPlayer(match, player.accountId)?.team ?? null
   nextTurn(game, match, readyAt)
@@ -322,7 +367,11 @@ function applyThrow(game: Game, match: Match, player: Player, result: ThrowResul
 export function onPetanqueThrow(room: GameRoom, client: GameClient, payload: ClientPayload, now = Date.now(), random: () => number = Math.random): void {
   const active = activeGame(room, client)
   const input = parseThrow(payload)
-  if (!active || !input) return
+  if (!input) return
+  if (!active) {
+    freeThrow(room, client, input, now, random)
+    return
+  }
   const { player, match, game } = active
   const refused = refusal(player, game, now)
   if (refused) {
@@ -392,4 +441,125 @@ export function registerPetanque(parsed: PetanqueRules): void {
 export async function loadPetanque(): Promise<void> {
   registerPetanque(parsePetanqueRules(await readSportRules('petanque')))
   console.log(`[sports] petanque: ${pistes.size} pistes loaded`)
+}
+
+function sendToPassArea(room: GameRoom, type: string, payload: unknown): void {
+  room.forEachClient((c) => {
+    const listener = room.players.get(c.sessionId)
+    if (listener && inPassArea(listener.x, listener.z)) c.send(type, payload)
+  })
+}
+
+function freeCircle(piste: Bounds): { x: number, z: number, axisZ: 1 | -1 } {
+  return { x: (piste.minX + piste.maxX) / 2, z: piste.maxZ - loaded().circleFromEndM, axisZ: -1 }
+}
+
+function freeView(free: FreePiste, now: number) {
+  const holder = pointHolder(free.balls, loaded())
+  return {
+    venue: free.venue,
+    circle: freeCircle(free.piste),
+    balls: free.balls,
+    point: holder ? { team: holder.team, ball: holder.ballId } : null,
+    distancesCm: holder?.distancesCm ?? [],
+    busyUntil: free.busyUntil,
+    serverNow: now
+  }
+}
+
+function clearFree(room: GameRoom, venue: string, now: number): void {
+  const free = freePistes.get(room)?.get(venue)
+  if (!free) return
+  freePistes.get(room)?.delete(venue)
+  sendToPassArea(room, 'petanque_free', { ...freeView(free, now), balls: [], point: null, distancesCm: [] })
+}
+
+function freePisteAt(room: GameRoom, player: Player, now: number): FreePiste | null {
+  for (const piste of pistes.values()) {
+    if (room.sports.matches.has(piste.id)) continue
+    const circle = freeCircle(piste.bounds)
+    if (Math.hypot(player.x - circle.x, player.z - circle.z) > loaded().circleReachM) continue
+    let byVenue = freePistes.get(room)
+    if (!byVenue) {
+      byVenue = new Map()
+      freePistes.set(room, byVenue)
+    }
+    const known = byVenue.get(piste.id)
+    if (known && now - known.lastAt < FREE_IDLE_MS) return known
+    if (known) clearFree(room, piste.id, now)
+    const fresh: FreePiste = { venue: piste.id, piste: piste.bounds, balls: [], busyUntil: now, lastAt: now, press: null }
+    ;(freePistes.get(room) as Map<string, FreePiste>).set(piste.id, fresh)
+    return fresh
+  }
+  return null
+}
+
+async function ownsBoules(player: Player, now: number): Promise<boolean> {
+  const cached = gearChecks.get(player)
+  if (cached && now - cached.at < GEAR_CHECK_MS) return cached.owned
+  const owned = (await ownedGear(player)).includes(loaded().gear)
+  gearChecks.set(player, { owned, at: now })
+  return owned
+}
+
+async function freeAim(room: GameRoom, client: GameClient, now: number): Promise<void> {
+  const player = room.players.get(client.sessionId)
+  if (!player?.token) return
+  const free = freePisteAt(room, player, now)
+  if (!free) {
+    client.send('sports_error', { code: 'petanque_not_in_circle', message: 'Stand in the circle of a free piste to throw.' })
+    return
+  }
+  if (now < free.busyUntil) {
+    client.send('sports_error', { code: 'petanque_wait', message: 'Wait until the boules stop.' })
+    return
+  }
+  let owned: boolean
+  try {
+    owned = await ownsBoules(player, now)
+  } catch (error) {
+    warn('gear check failed', error)
+    client.send('sports_error', { code: 'sports_gear_failed', message: 'Your gear could not be checked.' })
+    return
+  }
+  if (!owned) {
+    client.send('sports_error', { code: 'sports_no_gear', message: 'You need your own boules (Summit Sports, mall).' })
+    return
+  }
+  free.press = { accountId: player.accountId, at: now }
+}
+
+function freeThrow(room: GameRoom, client: GameClient, input: { yaw: number, mode: ThrowMode }, now: number, random: () => number): void {
+  const player = room.players.get(client.sessionId)
+  if (!player) return
+  const free = freePisteAt(room, player, now)
+  if (!free || free.press?.accountId !== player.accountId || now < free.busyUntil) return
+  const power = meterPower(now - free.press.at, loaded().riseMs)
+  free.press = null
+  const jack = free.balls.find((b) => b.kind === 'jack' && !b.dead)
+  const kind = jack ? 'boule' : 'jack'
+  const perPlayer = Math.max(...loaded().formats.map((f) => f.boules))
+  const mine = free.balls.filter((b) => b.owner === player.accountId)
+  const before = kind === 'jack' ? [] : mine.length >= perPlayer ? free.balls.filter((b) => b.owner !== player.accountId) : free.balls
+  const circle = freeCircle(free.piste)
+  const mode = kind === 'jack' ? 'point' : input.mode
+  const result = simulateThrow(before, { kind, mode, from: circle, axisZ: circle.axisZ, yaw: input.yaw, power, team: kind === 'jack' ? null : 'red', owner: kind === 'jack' ? null : player.accountId }, free.piste, loaded(), random)
+  free.balls = result.balls
+  free.busyUntil = now + result.airMs + result.rollMs
+  free.lastAt = now
+  sendToPassArea(room, 'petanque_throw', {
+    venue: free.venue,
+    kind,
+    mode,
+    thrower: player.sessionId,
+    team: null,
+    ball: result.ball.id,
+    from: { x: circle.x, z: circle.z },
+    landing: result.landing,
+    airMs: result.airMs,
+    frames: result.frames,
+    carreau: result.carreau,
+    serverNow: now
+  })
+  sendToPassArea(room, 'petanque_free', freeView(free, now))
 }

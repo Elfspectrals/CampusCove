@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { PetanqueMode, PetanqueStatePayload } from '../../game/sports/petanque'
 import type { SportsTeam } from '../../game/sports/sportsSignup'
+import GamePetanqueThrow from './GamePetanqueThrow.vue'
 
 const props = defineProps<{
   game: PetanqueStatePayload
@@ -43,8 +44,6 @@ const distances = computed(() =>
     return { ...d, team: ball?.team ?? null, point: props.game.point?.ball === d.id }
   }),
 )
-
-const powerPercent = computed(() => Math.round((props.power ?? 0) * 100))
 </script>
 
 <template>
@@ -88,16 +87,7 @@ const powerPercent = computed(() => Math.round((props.power ?? 0) * 100))
         </ol>
       </div>
 
-      <div v-if="myTurn && game.phase !== 'between'" class="flex flex-col gap-1 border-t border-line pt-2">
-        <p class="m-0 flex items-center justify-between font-bold text-fog">
-          <span>{{ game.phase === 'jack' ? t('petanque.modes.jack') : t(`petanque.modes.${mode}`) }}</span>
-          <span v-if="game.phase === 'boules'" class="text-mist">{{ t('petanque.switchMode') }}</span>
-        </p>
-        <span class="block h-2 overflow-hidden rounded-full bg-ink-950/70" role="meter" :aria-label="t('petanque.power')" aria-valuemin="0" aria-valuemax="100" :aria-valuenow="powerPercent">
-          <span class="block h-full rounded-full bg-sun" :style="{ width: `${powerPercent}%` }" />
-        </span>
-        <p class="m-0 text-mist">{{ t('petanque.howTo') }}</p>
-      </div>
+      <GamePetanqueThrow v-if="myTurn && game.phase !== 'between'" :kind="game.phase === 'jack' ? 'jack' : 'boule'" :mode="mode" :power="power" />
     </div>
   </section>
 </template>

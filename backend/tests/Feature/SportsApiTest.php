@@ -138,7 +138,7 @@ class SportsApiTest extends TestCase
         $this->assertSame(100, $this->balance($player['account_id'], Wallet::CASH));
     }
 
-    public function test_the_six_gear_items_are_seeded_with_their_sport_and_slot_and_not_on_sale(): void
+    public function test_the_six_gear_items_are_seeded_with_their_sport_and_slot_and_only_the_listed_ones_are_on_sale(): void
     {
         $gear = DB::table('item_defs')->where('kind', SportsGearService::KIND)->orderBy('code')->get();
 
@@ -148,7 +148,12 @@ class SportsApiTest extends TestCase
         );
         $this->assertEquals(['sport' => 'skating', 'slot' => 'shoes'], json_decode($gear->firstWhere('code', 'gear_ice_skates')->meta_json, true));
         $this->assertTrue($gear->every(fn (object $def): bool => $def->tradable && $def->max_uses === null && ! $def->weapon && $def->model_glb === null));
-        $this->assertSame(0, DB::table('shop_catalog_items')->whereIn('item_def_id', $gear->pluck('item_def_id'))->count());
+        $onSale = DB::table('shop_catalog_items')
+            ->join('item_defs', 'item_defs.item_def_id', '=', 'shop_catalog_items.item_def_id')
+            ->where('item_defs.kind', SportsGearService::KIND)
+            ->pluck('shop_catalog_items.coins_price', 'item_defs.code')
+            ->all();
+        $this->assertEquals(['gear_boules' => 150], $onSale);
     }
 
     public function test_gear_lists_the_codes_owned_in_the_inventory(): void

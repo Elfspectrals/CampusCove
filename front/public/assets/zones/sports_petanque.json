@@ -28,23 +28,23 @@
         },
         {
           "slot": "head_accessory",
-          "key": "straw_hat",
-          "color": "#e3c98f"
+          "key": "beret",
+          "color": "#1f2230"
         },
         {
           "slot": "top",
-          "key": "staff_polo",
-          "color": "#2a9d8f"
+          "key": "plaid_shirt",
+          "color": "#3d6b8f"
         },
         {
           "slot": "bottom",
-          "key": "track_pants",
-          "color": "#2e3440"
+          "key": "basic",
+          "color": "#c9b48a"
         },
         {
           "slot": "shoes",
-          "key": "runners",
-          "color": "#f2f2f2"
+          "key": "basic",
+          "color": "#5a4030"
         }
       ],
       "coach": "petanque_coach"

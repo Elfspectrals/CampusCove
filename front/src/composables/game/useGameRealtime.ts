@@ -719,5 +719,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     remotePlayers: remotes.players,
     remoteAccount: remotes.accountOf,
     setRemoteRacePint: remotes.setRacePint,
+    remoteHand: remotes.handOf,
+    playRemotePetanque: remotes.playPetanque,
   }
 }

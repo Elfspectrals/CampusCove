@@ -224,6 +224,76 @@
       "hy": 1.5,
       "cy": 1.5,
       "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsPetanque_SP_Sign",
+      "cx": -405.5,
+      "cz": -251.25,
+      "hx": 1.6,
+      "hz": 0.35,
+      "hy": 0.9,
+      "cy": 0.9,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsPetanque_SP_Slate1",
+      "cx": -406.3,
+      "cz": -273.55,
+      "hx": 0.15,
+      "hz": 0.15,
+      "hy": 0.75,
+      "cy": 0.75,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsPetanque_SP_Slate2",
+      "cx": -402.1,
+      "cz": -273.55,
+      "hx": 0.15,
+      "hz": 0.15,
+      "hy": 0.75,
+      "cy": 0.75,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsPetanque_SP_Slate3",
+      "cx": -397.9,
+      "cz": -273.55,
+      "hx": 0.15,
+      "hz": 0.15,
+      "hy": 0.75,
+      "cy": 0.75,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsPetanque_SP_Slate4",
+      "cx": -393.7,
+      "cz": -273.55,
+      "hx": 0.15,
+      "hz": 0.15,
+      "hy": 0.75,
+      "cy": 0.75,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsPetanque_SP_Rack0",
+      "cx": -409.6,
+      "cz": -256.5,
+      "hx": 0.475,
+      "hz": 0.175,
+      "hy": 0.415,
+      "cy": 0.415,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsPetanque_SP_Rack1",
+      "cx": -390.4,
+      "cz": -256.5,
+      "hx": 0.475,
+      "hz": 0.175,
+      "hy": 0.415,
+      "cy": 0.415,
+      "yaw": 0.0
     }
   ]
 }

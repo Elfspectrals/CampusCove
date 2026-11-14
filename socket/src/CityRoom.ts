@@ -254,7 +254,7 @@ export class CityRoom extends Room implements GameRoom {
     this.onMessage('sports_coach_open', (client, payload: ClientPayload) => onSportsCoachOpen(this, client, payload))
     this.onMessage('sports_signup', (client, payload: ClientPayload) => void onSportsSignup(this, client, payload).catch((error) => warn('sports sign-up failed', error)))
     this.onMessage('sports_signup_leave', (client) => onSportsSignupLeave(this, client))
-    this.onMessage('petanque_aim', (client) => onPetanqueAim(this, client))
+    this.onMessage('petanque_aim', (client) => void onPetanqueAim(this, client).catch((error) => warn('petanque aim failed', error)))
     this.onMessage('petanque_throw', (client, payload: ClientPayload) => onPetanqueThrow(this, client, payload))
     this.clock.setInterval(() => {
       try {

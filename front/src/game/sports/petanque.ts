@@ -56,7 +56,23 @@ export interface PetanqueClosedPayload {
   reason: 'finished' | 'forfeit'
 }
 
+export interface PetanqueFreePayload {
+  venue: string
+  circle: { x: number; z: number; axisZ: 1 | -1 }
+  balls: PetanqueBall[]
+  point: { team: SportsTeam; ball: number } | null
+  distancesCm: { id: number; cm: number }[]
+  busyUntil: number
+  serverNow: number
+}
+
+interface PetanquePisteSpot {
+  id: string
+  freeCircle: { x: number; z: number; axisZ: 1 | -1 }
+}
+
 export interface PetanqueClientRules {
+  pistes: PetanquePisteSpot[]
   bouleRadiusM: number
   jackRadiusM: number
   circleReachM: number
@@ -74,9 +90,21 @@ function positive(value: unknown, what: string): number {
   return value
 }
 
+function pisteSpot(raw: unknown, circleFromEndM: number): PetanquePisteSpot {
+  const { id, centre, sizeM } = (raw ?? {}) as { id?: unknown; centre?: unknown; sizeM?: unknown }
+  const pair = (v: unknown) => Array.isArray(v) && v.length === 2 && v.every((n) => typeof n === 'number' && Number.isFinite(n))
+  if (typeof id !== 'string' || !pair(centre) || !pair(sizeM)) throw new Error(`petanque rules: invalid piste ${JSON.stringify(raw)}`)
+  const [x, z] = centre as [number, number]
+  const length = (sizeM as [number, number])[1]
+  return { id, freeCircle: { x, z: z + length / 2 - circleFromEndM, axisZ: -1 } }
+}
+
 export function parsePetanqueClientRules(raw: unknown): PetanqueClientRules {
-  const r = (raw ?? {}) as { boule?: { radiusM?: unknown }; jack?: { radiusM?: unknown }; throw?: Record<string, unknown>; powerMeter?: { riseMs?: unknown } }
+  const r = (raw ?? {}) as { pistes?: unknown; boule?: { radiusM?: unknown }; jack?: { radiusM?: unknown }; throw?: Record<string, unknown>; powerMeter?: { riseMs?: unknown } }
+  const circleFromEndM = positive(r.throw?.circleFromEndM, 'throw.circleFromEndM')
+  if (!Array.isArray(r.pistes) || r.pistes.length === 0) throw new Error('petanque rules: invalid pistes')
   return {
+    pistes: r.pistes.map((p) => pisteSpot(p, circleFromEndM)),
     bouleRadiusM: positive(r.boule?.radiusM, 'boule.radiusM'),
     jackRadiusM: positive(r.jack?.radiusM, 'jack.radiusM'),
     circleReachM: positive(r.throw?.circleReachM, 'throw.circleReachM'),

@@ -122,7 +122,7 @@ interface AvatarAnimState {
 const CROSSFADE_S = 0.22
 const SIT_CLIP = 'Sit'
 const PICK_CLIP = 'Pick'
-const ONE_SHOT_CLIPS = [PICK_CLIP, 'Eat', 'Drink'] as const
+const ONE_SHOT_CLIPS = [PICK_CLIP, 'Eat', 'Drink', 'PetanquePoint', 'PetanqueShoot', 'PetanqueCelebrate'] as const
 type OneShotClip = (typeof ONE_SHOT_CLIPS)[number]
 
 /**
@@ -179,6 +179,14 @@ export function setAvatarEating(root: THREE.Object3D, kind: 'eat' | 'drink'): vo
   const state = animStateByRoot.get(root)
   if (!state || state.seated || state.oneShot === PICK_CLIP || state.selector.clip !== 'Idle') return
   playOneShot(state, kind === 'eat' ? 'Eat' : 'Drink')
+}
+
+export type PetanqueClip = 'PetanquePoint' | 'PetanqueShoot' | 'PetanqueCelebrate'
+
+export function setAvatarPetanque(root: THREE.Object3D, clip: PetanqueClip): void {
+  const state = animStateByRoot.get(root)
+  if (!state || state.seated || state.oneShot === PICK_CLIP || state.selector.clip !== 'Idle') return
+  playOneShot(state, clip)
 }
 
 function playClip(state: AvatarAnimState, name: string, timeScale: number): void {

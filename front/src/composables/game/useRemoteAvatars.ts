@@ -5,7 +5,7 @@ import {
   type CosmeticColors,
 } from '../../api/characterCosmetics'
 import { buildCompositeAvatar, disposeObject3D } from '../../avatar/compositeAvatar'
-import { setAvatarEating, setAvatarPicking, setAvatarSeated, updateAvatarAnimation } from '../../avatar/glbCharacter'
+import { setAvatarEating, setAvatarPetanque, setAvatarPicking, setAvatarSeated, updateAvatarAnimation, type PetanqueClip } from '../../avatar/glbCharacter'
 import { parseCharacterLook, type CharacterLook } from '../../avatar/characterLook'
 import { createModularCharacter } from '../../avatar/modularCharacter'
 import { WEAR_SLOTS, wearSignature, type WearModels } from '../../avatar/modularCharacterLogic'
@@ -367,6 +367,10 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     entry.heldTool = code ? createRemoteHeldTool(entry.group, code) : null
   }
 
+  function handOf(sessionId: string): THREE.Object3D | null {
+    return avatars.get(sessionId)?.group.getObjectByName('HandR') ?? null
+  }
+
   function setVoiceState(sessionId: string, state: VoiceIconState): void {
     const entry = avatars.get(sessionId)
     if (entry) entry.voiceState = state
@@ -404,6 +408,11 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     if (!entry) return
     bubbles.push(createActionBubble(entry.group, action, code))
     setAvatarEating(entry.group, action)
+  }
+
+  function playPetanque(sessionId: string, clip: PetanqueClip): void {
+    const entry = avatars.get(sessionId)
+    if (entry) setAvatarPetanque(entry.group, clip)
   }
 
   function showChat(sessionId: string, text: string) {
@@ -528,5 +537,5 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     }
   }
 
-  return { upsert, updateAppearance, setTarget, setSeated, setPicking, setHeldTool, setRacePint, setBadges, pseudoOf, positionOf, setVoiceState, setWantedStars, players, accountOf, showAction, showChat, showPunch, showHit, remove, clear, tick }
+  return { upsert, updateAppearance, setTarget, setSeated, setPicking, setHeldTool, handOf, playPetanque, setRacePint, setBadges, pseudoOf, positionOf, setVoiceState, setWantedStars, players, accountOf, showAction, showChat, showPunch, showHit, remove, clear, tick }
 }

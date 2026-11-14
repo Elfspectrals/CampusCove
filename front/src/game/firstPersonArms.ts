@@ -9,7 +9,7 @@ const BASE_FADE_S = 0.2
 const ONE_SHOT_FADE_S = 0.06
 const PUNCH_FADE_S = 0.02
 const PICK_CANCEL_FADE_S = 0.15
-const ONE_SHOT_CLIPS = ['Equip', 'UseDoor', 'UseKey', 'Punch', 'PunchL', 'Pick'] as const
+const ONE_SHOT_CLIPS = ['Equip', 'UseDoor', 'UseKey', 'Punch', 'PunchL', 'Pick', 'PetanquePoint', 'PetanqueShoot'] as const
 const HELD_CLIPS = ['Pick'] as const
 const EAT_CLIPS = { eat: 'Eat', drink: 'Drink' } as const
 const EAT_FADE_S = 0.25
@@ -237,6 +237,7 @@ export function createFirstPersonArms(container: THREE.Group) {
       playOnce(lastPunch === 'jab' ? 'PunchL' : 'Punch', PUNCH_FADE_S)
     },
     pick: (durationMs?: number) => playOnce('Pick', ONE_SHOT_FADE_S, durationMs && durationMs / 1000),
+    throwBoule: (mode: 'point' | 'shoot') => playOnce(mode === 'shoot' ? 'PetanqueShoot' : 'PetanquePoint'),
     cancelPick,
     hitStop: (seconds: number) => {
       frozenFor = seconds

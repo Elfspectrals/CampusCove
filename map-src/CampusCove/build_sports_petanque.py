@@ -112,6 +112,37 @@ trees = [(x, z) for x in (FP[0] + 1.5, FP[1] - 1.5) for z in (-271.0, -264.5, -2
 for k, (x, z) in enumerate(trees):
     S.tree(site, f"SP_PlaneTree{k}", x, z, M, scale=1.15)
 
+M.update({
+    "stone": L.make_mat("TW_SportsSignStone", "#b9b2a4", 0.9, "noise", 0.04),
+    "plaster": L.make_mat("TW_SportsSignPlaster", "#2a6f5f", 0.8, "noise", 0.03),
+    "coping": L.make_mat("TW_SportsSignCoping", "#d9d6cf", 0.9, "noise", 0.03),
+    "gold": L.make_mat("TW_SportsSignLetters", "#f3e3b0", 0.6, "noise", 0.0),
+    "slate": L.make_mat("TW_SportsPetanqueSlate", "#2b3033", 0.9, "noise", 0.03),
+    "chalk": L.make_mat("TW_SportsPetanqueChalk", "#f2f0ea", 0.9, "noise", 0.0),
+})
+S.monument_sign(site, "SP_Sign", -405.5, -251.25, PI, "BOULODROME", M)
+
+
+def slate_board(name, gx, gz, number):
+    site.add(L.box(coll, f"{name}_Post", gx, gz, 0.0, 0.08, 0.08, 1.5, M["board"]))
+    site.add(L.box(coll, f"{name}_Slate", gx, gz + 0.05, 0.9, 0.7, 0.03, 0.5, M["slate"], bevel=0.01))
+    site.add(L.text_mesh(coll, f"{name}_Number", str(number), gx, gz + 0.068, 1.02, 0.24, 0.004, M["chalk"], facing="+z", resolution=2))
+    site.col(name, gx, gz, 0.3, 0.3, 1.5)
+
+
+def boule_rack(name, gx, gz):
+    site.add(L.furn(coll, name, gx, gz, 0.0, [
+        *[(px, 0.0, 0.0, 0.05, 0.3, 0.8, M["board"]) for px in (-0.42, 0.42)],
+        *[(0.0, 0.0, y, 0.9, 0.3, 0.03, M["board"]) for y in (0.25, 0.55, 0.8)],
+    ]))
+    site.col(name, gx, gz, 0.95, 0.35, 0.83)
+
+
+for k, b in enumerate(PISTES, start=1):
+    slate_board(f"SP_Slate{k}", (b[0] + b[1]) / 2, OUTER[2] + 0.45, k)
+for k, x in enumerate((OUTER[0] + 1.4, OUTER[1] - 1.4)):
+    boule_rack(f"SP_Rack{k}", x, -256.5)
+
 for c in site.cols:
     assert FP[0] <= c["cx"] - c["hx"] and c["cx"] + c["hx"] <= FP[1] and FP[2] <= c["cz"] - c["hz"] and c["cz"] + c["hz"] <= FP[3], c
     assert not any(b[0] <= c["cx"] <= b[1] and b[2] <= c["cz"] <= b[3] for b in PISTES), ("collision on a piste", c)

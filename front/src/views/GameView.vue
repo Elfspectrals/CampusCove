@@ -36,6 +36,7 @@ import GamePoliceLicenceDialog from '../components/game/GamePoliceLicenceDialog.
 import GameSportsPassDesk from '../components/game/GameSportsPassDesk.vue'
 import GameSportsSignup from '../components/game/GameSportsSignup.vue'
 import GamePetanque from '../components/game/GamePetanque.vue'
+import GamePetanqueFree from '../components/game/GamePetanqueFree.vue'
 import GameChat from '../components/game/GameChat.vue'
 import GameDrunkEffects from '../components/game/GameDrunkEffects.vue'
 import GameDrinkFast from '../components/game/GameDrinkFast.vue'
@@ -883,8 +884,13 @@ const petanque = usePetanque({
   getCamera,
   myPosition,
   pointerLocked: () => pointerLocked.value,
+  rightHand: () => arms?.rightHand() ?? null,
+  remoteHand: (sessionId) => realtime.remoteHand(sessionId),
+  throwArms: (mode) => arms?.throwBoule(mode),
+  playRemote: (sessionId, clip) => realtime.playRemotePetanque(sessionId, clip),
   say: (text) => survival.say(text),
   playSound: (name) => sfx.play(name),
+  playSoundOn: (name, object, delayS) => sfx.playOn(name, object, delayS),
   closedText: (data) => {
     if (data.reason === 'forfeit' || !data.score) return t('petanque.closed.forfeit')
     const team = petanque.myTeam.value
@@ -892,7 +898,7 @@ const petanque = usePetanque({
     return t(won ? 'petanque.closed.won' : 'petanque.closed.lost', data.score)
   },
 })
-const { myGame: petanqueGame, myTurn: petanqueMyTurn, standingInCircle: petanqueInCircle, busy: petanqueBusy, mode: petanqueMode, power: petanquePower, carreau: petanqueCarreau, turnSecondsLeft: petanqueSecondsLeft } = petanque
+const { freePlay: petanqueFree, myGame: petanqueGame, myTurn: petanqueMyTurn, standingInCircle: petanqueInCircle, busy: petanqueBusy, mode: petanqueMode, power: petanquePower, carreau: petanqueCarreau, turnSecondsLeft: petanqueSecondsLeft } = petanque
 const PICKPOCKET_ERROR_KEYS = new Set([
   'pickpocket_on_duty',
   'pickpocket_jailed',
@@ -2364,6 +2370,15 @@ const crosshairClass = computed(() => {
       :power="petanquePower"
       :carreau="petanqueCarreau"
       :seconds-left="petanqueSecondsLeft"
+    />
+    <GamePetanqueFree
+      v-if="petanqueFree && !petanqueGame"
+      :piste="petanqueFree.piste"
+      :kind="petanqueFree.kind"
+      :distances="petanqueFree.distances"
+      :busy="petanqueFree.busy"
+      :mode="petanqueMode"
+      :power="petanquePower"
     />
     <GameSportsSignup
       v-if="sportsSignupOpen"

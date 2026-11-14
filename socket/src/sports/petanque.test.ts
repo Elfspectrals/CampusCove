@@ -55,7 +55,7 @@ function throwTurn(room: FakeRoom, players: Player[], at: number, payload = { ya
   thrower.x = state.circle.x
   thrower.z = state.circle.z
   const start = Math.max(at, state.busyUntil)
-  petanque.onPetanqueAim(room, clientOf(room, thrower), start)
+  void petanque.onPetanqueAim(room, clientOf(room, thrower), start)
   petanque.onPetanqueThrow(room, clientOf(room, thrower), payload, start + 700, still)
   return start + 700
 }
@@ -159,4 +159,57 @@ test('the sign-up needs a full team on each side and the player\'s own boules', 
   await venues.onSportsSignup(room, clientOf(room, lonely), { coach: 'petanque_coach', venue: 'petanque_2', team: 'red', settings: { format: '2v2_3', targetPoints: 13 } }, NOW + 1_000)
   const lobby = room.sports.lobbies.get('petanque_2')
   assert.deepEqual(lobby && [lobby.range.min, lobby.range.max], [4, 4])
+})
+
+test('free play: an owner of boules at the circle of a free piste throws the jack, then boules', async () => {
+  api.replies.set('GET /sports/gear', () => json({ gear: ['gear_boules'] }))
+  const piste = rules.pistes[2].bounds
+  const circle = { x: (piste.minX + piste.maxX) / 2, z: piste.maxZ - rules.circleFromEndM }
+  const solo = await makePlayer(401, circle.x, circle.z)
+  const room = await fakeRoom([solo])
+  const client = clientOf(room, solo)
+  const free = () => sentOf(client, 'petanque_free').at(-1) as { venue: string, balls: { kind: string, owner: number | null }[], busyUntil: number }
+  let at = NOW
+  const throwOnce = async () => {
+    await petanque.onPetanqueAim(room, client, at)
+    petanque.onPetanqueThrow(room, client, { yaw: 0, mode: 'point' }, at + 500, still)
+    at = free().busyUntil + 1
+  }
+  await throwOnce()
+  assert.equal(free().venue, 'petanque_3')
+  assert.deepEqual(free().balls.map((b) => b.kind), ['jack'])
+  for (let i = 0; i < 3; i++) await throwOnce()
+  assert.equal(free().balls.filter((b) => b.owner === 401).length, 3)
+  await throwOnce()
+  assert.equal(free().balls.filter((b) => b.owner === 401).length, 1)
+  assert.equal(free().balls.filter((b) => b.kind === 'jack').length, 1)
+})
+
+test('free play needs your own boules and a piste with no game on it', async () => {
+  const { room, players } = await startGame()
+  const piste = rules.pistes[0].bounds
+  const circle = { x: (piste.minX + piste.maxX) / 2, z: piste.maxZ - rules.circleFromEndM }
+  const visitor = await makePlayer(402, circle.x, circle.z)
+  room.players.set(visitor.sessionId, visitor)
+  room.clients.push((await import('./testWorld.ts')).fakeClient(visitor.sessionId))
+  await petanque.onPetanqueAim(room, clientOf(room, visitor), NOW + 2_000)
+  assert.equal((sentOf(clientOf(room, visitor), 'sports_error').at(-1) as { code: string }).code, 'petanque_not_in_circle')
+  const other = rules.pistes[1].bounds
+  visitor.x = (other.minX + other.maxX) / 2
+  visitor.z = other.maxZ - rules.circleFromEndM
+  api.replies.set('GET /sports/gear', () => json({ gear: [] }))
+  await petanque.onPetanqueAim(room, clientOf(room, visitor), NOW + 2_000)
+  assert.equal((sentOf(clientOf(room, visitor), 'sports_error').at(-1) as { code: string }).code, 'sports_no_gear')
+  api.replies.set('GET /sports/gear', () => json({ gear: ['gear_boules'] }))
+  assert.ok(players.length === 2)
+})
+
+test('a forfeited game is recorded but sends no task tally', async () => {
+  const { room, players } = await startGame()
+  api.calls.length = 0
+  venues.leaveSports(room, players[0], NOW + 2_000)
+  venues.tickSports(room, NOW + 2_000 + rules.rejoinGraceMs + 1)
+  await new Promise((resolve) => setTimeout(resolve, 20))
+  assert.ok(api.calls.some((c) => c.url === '/sports/matches'))
+  assert.equal(api.calls.some((c) => c.url === '/sports/petanque/tally'), false)
 })

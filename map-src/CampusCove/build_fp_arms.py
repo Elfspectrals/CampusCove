@@ -614,6 +614,30 @@ PICK_KEYS = eased(90, [
 ])
 PICK_BALANCE = eased(90, [(0, {}), (20, {"z": -0.01, "rx": -0.06}), (63, {"z": -0.01, "rx": -0.06}), (74, {}), (90, {})])
 
+PETANQUE_FRAMES = 48
+BOULE_PALM = 70
+POINT_FOLLOW = {"x": -0.05, "y": 0.2, "z": 0.0, "rx": -0.02, "twist": BOULE_PALM, "flex": -0.1}
+PETANQUE_POINT = eased(PETANQUE_FRAMES, [
+    (0, {}),
+    (3, {"z": -0.02, "rx": -0.08}),
+    (14, {"x": 0.03, "y": -0.12, "z": -0.32, "rx": -1.1}),
+    (23, {"y": 0.1, "z": -0.11, "rx": -0.28, "twist": BOULE_PALM}),
+    (29, POINT_FOLLOW),
+    (37, POINT_FOLLOW),
+    (PETANQUE_FRAMES, {}),
+])
+SHOOT_FOLLOW = {"y": 0.2, "z": 0.1, "rx": 0.45, "flex": -0.08}
+PETANQUE_SHOOT = eased(PETANQUE_FRAMES, [
+    (0, {}),
+    (3, {"y": 0.02, "z": 0.02, "rx": 0.08}),
+    (15, {"x": 0.03, "y": -0.15, "z": -0.35, "rx": -1.3}),
+    (22, {"y": 0.18, "z": 0.0, "rx": 0.12}),
+    (27, SHOOT_FOLLOW),
+    (34, SHOOT_FOLLOW),
+    (PETANQUE_FRAMES, {}),
+])
+PETANQUE_BALANCE = eased(PETANQUE_FRAMES, [(0, {}), (10, {"z": -0.03, "rx": -0.1}), (36, {"z": -0.03, "rx": -0.1}), (PETANQUE_FRAMES, {})])
+
 
 MOUTH = Vector((0.0, -0.04, -0.085))
 HELD_GRIP = Vector((-0.032, 0.1, 0.0))
@@ -700,6 +724,8 @@ CROSS_HAND = eased(CROSS_FRAMES, [(0, RELAXED), (4, FIST), (10, FIST), (CROSS_FR
 PICK_HAND = eased(90, [(0, RELAXED), (4, RELAXED), (16, OPEN), (20, OPEN), (26, GRAB), (74, GRAB), (86, RELAXED), (90, RELAXED)])
 KEY_HAND = eased(24, [(0, RELAXED), (3, RELAXED), (8, PINCH), (20, PINCH), (24, RELAXED)])
 DOOR_HAND = eased(16, [(0, RELAXED), (3, OPEN), (7, HOOK), (10, HOOK), (16, RELAXED)])
+POINT_HAND = eased(PETANQUE_FRAMES, [(0, RELAXED), (3, GRAB), (21, GRAB), (24, OPEN), (37, OPEN), (PETANQUE_FRAMES, RELAXED)])
+SHOOT_HAND = eased(PETANQUE_FRAMES, [(0, RELAXED), (3, GRAB), (20, GRAB), (23, OPEN), (34, OPEN), (PETANQUE_FRAMES, RELAXED)])
 
 
 def hold_hand(fr):
@@ -725,6 +751,8 @@ def finger_clips(side):
         "Eat": (30, main(lambda fr: GRIP)),
         "Drink": (30, main(lambda fr: GRIP)),
         "Hold": (HOLD_FRAMES, main(hold_hand)),
+        "PetanquePoint": (PETANQUE_FRAMES, main(POINT_HAND)),
+        "PetanqueShoot": (PETANQUE_FRAMES, main(SHOOT_HAND)),
     }
 
 
@@ -775,6 +803,10 @@ def animate(arm, hand):
         bake(arm["L"], clip, 30, lambda fr: OFF_HAND_LOW)
     bake(arm["R"], "Hold", HOLD_FRAMES, hold_tool(hand["R"].location))
     bake(arm["L"], "Hold", HOLD_FRAMES, idle(HOLD_FRAMES, 0.9, -1))
+    for clip, pose_at in (("PetanquePoint", PETANQUE_POINT), ("PetanqueShoot", PETANQUE_SHOOT)):
+        bake(arm["R"], clip, PETANQUE_FRAMES, pose_at)
+        bake(hand["R"], clip, PETANQUE_FRAMES, pose_at, move_hand)
+        bake(arm["L"], clip, PETANQUE_FRAMES, PETANQUE_BALANCE)
 
 
 def build(key, load=import_skin, out_rel=("skins",), fp_proportions=False):
