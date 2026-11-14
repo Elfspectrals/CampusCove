@@ -112,6 +112,7 @@ test('moves on the ice follow the replayed pushes during a race', async () => {
   assert.equal(step(room, p, GRID[0][0] + 4, GRID[0][1], goAt + 1000), 'too_fast', 'no push, no speed')
   rink.onSkatePush(room, client, goAt + 100)
   rink.onSkatePush(room, client, goAt + 750)
+  assert.equal(sentOf(client, 'skate_pushed').length, 0, 'the pusher is not told about their own push')
   assert.equal(step(room, p, GRID[0][0] + 3, GRID[0][1], goAt + 1500), null)
 })
 
@@ -212,4 +213,14 @@ test('a skater who hits the boards fast falls, a slow one does not', async () =>
   q.z = RINK.minZ + 0.5
   rink.tickSkating(slowRoom, NOW + 1100 + 10_000)
   assert.equal(sentOf(clientOf(slowRoom, q), 'skate_fall').length, 0)
+})
+
+test('a push is relayed to the other players in the rink, not to the pusher', async () => {
+  const { room, players: [a, b] } = await arrive([21, 22])
+  a.x = RINK.maxX + 0.5
+  a.z = -120
+  assert.equal(step(room, a, RINK.maxX - 1, -120, NOW + 1000), null)
+  rink.onSkatePush(room, clientOf(room, a), NOW + 1100)
+  assert.deepEqual(sentOf(clientOf(room, b), 'skate_pushed'), [{ sessionId: a.sessionId }])
+  assert.equal(sentOf(clientOf(room, a), 'skate_pushed').length, 0)
 })

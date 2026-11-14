@@ -164,6 +164,10 @@ export function onSkatePush(room: GameRoom, client: GameClient, now = Date.now()
   const speed = speedOf(skater, now)
   if (speed.lastPushAt !== null && now - speed.lastPushAt < MIN_PUSH_INTERVAL_MS) return
   applyPush(rules.skate, speed, now)
+  room.forEachClient((c) => {
+    const listener = room.players.get(c.sessionId)
+    if (listener && inZone(listener.x, listener.z)) c.send('skate_pushed', { sessionId: player.sessionId })
+  }, client)
 }
 
 export function onSkateBrake(room: GameRoom, client: GameClient, payload: ClientPayload, now = Date.now()): void {
