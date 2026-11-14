@@ -5,7 +5,7 @@ import type { Player } from '../types.ts'
 import { type FakeRoom, api, clientOf, fakeRoom, installWorld, json, makePlayer, manifest, sentOf } from './testWorld.ts'
 
 const RULES = JSON.parse(readFileSync(new URL('../../../front/public/assets/sports/rules/petanque.json', import.meta.url), 'utf8'))
-manifest.zones.push({ key: 'sports_petanque', sportsPass: true, bounds: { minX: -414, maxX: -386, minZ: -275, maxZ: -250 } })
+manifest.zones = manifest.zones.map((z) => (z.key === 'sports_petanque' ? { ...z, bounds: { minX: -414, maxX: -386, minZ: -275, maxZ: -250 } } : z))
 api.files.set('sports/rules/petanque.json', RULES)
 api.replies.set('GET /sports/gear', () => json({ gear: ['gear_boules'] }))
 api.replies.set('POST /sports/matches', () => json({ match: { id: 1, recorded: true } }))
