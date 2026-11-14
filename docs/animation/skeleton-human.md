@@ -46,7 +46,7 @@ Clips are phase functions `f(ph, P)` sampled by `sample_actions(arm, clips, fps=
     positive raises the right arm sideways.
   - `Hips` `ry` positive lowers the left hip.
   - `Hand` `rx` negative bends the hand toward the face, like a negative `LowerArm` `rx`.
-  - `LowerArm.R` `rz` −90° turns the right palm up when the arm swings forward (`PALM_UP`, `clips.py`).
+  - `LowerArm.R` `rz` −90° turns the right palm up when the arm swings forward, +90° turns it down (`PALM_DOWN`, `clips.py`, the pétanque release); first-person wrist twist −110° is palm down (`BOULE_PALM_DOWN`, `build_fp_arms.py`).
   - `Hips` `rx` positive tilts the pelvis and the torso forward; `leg_ik` keeps the feet planted (pétanque clips).
   Any other sign is checked on a render before it is trusted.
 - `sample_actions` deletes every NLA track first: always pass the full clip dict.

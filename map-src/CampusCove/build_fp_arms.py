@@ -615,23 +615,23 @@ PICK_KEYS = eased(90, [
 PICK_BALANCE = eased(90, [(0, {}), (20, {"z": -0.01, "rx": -0.06}), (63, {"z": -0.01, "rx": -0.06}), (74, {}), (90, {})])
 
 PETANQUE_FRAMES = 48
-BOULE_PALM = 70
-POINT_FOLLOW = {"x": -0.05, "y": 0.2, "z": 0.0, "rx": -0.02, "twist": BOULE_PALM, "flex": -0.1}
+BOULE_PALM_DOWN = -110
+POINT_FOLLOW = {"x": -0.05, "y": 0.2, "z": 0.0, "rx": -0.02, "twist": BOULE_PALM_DOWN, "flex": -0.1}
 PETANQUE_POINT = eased(PETANQUE_FRAMES, [
     (0, {}),
     (3, {"z": -0.02, "rx": -0.08}),
     (14, {"x": 0.03, "y": -0.12, "z": -0.32, "rx": -1.1}),
-    (23, {"y": 0.1, "z": -0.11, "rx": -0.28, "twist": BOULE_PALM}),
+    (23, {"y": 0.1, "z": -0.11, "rx": -0.28, "twist": BOULE_PALM_DOWN}),
     (29, POINT_FOLLOW),
     (37, POINT_FOLLOW),
     (PETANQUE_FRAMES, {}),
 ])
-SHOOT_FOLLOW = {"y": 0.2, "z": 0.1, "rx": 0.45, "flex": -0.08}
+SHOOT_FOLLOW = {"y": 0.2, "z": 0.1, "rx": 0.45, "twist": BOULE_PALM_DOWN, "flex": -0.08}
 PETANQUE_SHOOT = eased(PETANQUE_FRAMES, [
     (0, {}),
     (3, {"y": 0.02, "z": 0.02, "rx": 0.08}),
     (15, {"x": 0.03, "y": -0.15, "z": -0.35, "rx": -1.3}),
-    (22, {"y": 0.18, "z": 0.0, "rx": 0.12}),
+    (22, {"y": 0.18, "z": 0.0, "rx": 0.12, "twist": BOULE_PALM_DOWN}),
     (27, SHOOT_FOLLOW),
     (34, SHOOT_FOLLOW),
     (PETANQUE_FRAMES, {}),

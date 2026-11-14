@@ -133,7 +133,7 @@ def pose_drink(extras=None):
             extras(ph, P, 0.0, 1.0)
     return f
 
-PALM_UP = -90
+PALM_DOWN = 90
 ARM_TUCK = -25
 CROUCH_HIPS = (-0.46, 0.12, 18)
 CROUCH_ARM = (-38, 55, -60)
@@ -156,12 +156,12 @@ def _apply_body(P, pose):
 def pose_petanque_point(extras=None):
     crouch = {("Hips", "mz"): -0.14, ("Hips", "my"): 0.04, ("Spine", "x"): 12, ("Chest", "x"): 8, ("Head", "x"): -14,
               ("UpperArm.L", "x"): -22, ("UpperArm.L", "y"): 10, ("LowerArm.L", "x"): -35}
-    back = {**crouch, ("UpperArm.R", "x"): 40, ("UpperArm.R", "y"): ARM_TUCK, ("LowerArm.R", "x"): -12, ("LowerArm.R", "z"): PALM_UP}
-    release = {**crouch, ("UpperArm.R", "x"): -55, ("UpperArm.R", "y"): ARM_TUCK, ("LowerArm.R", "x"): -8, ("LowerArm.R", "z"): PALM_UP, ("Hand.R", "x"): -12}
+    back = {**crouch, ("UpperArm.R", "x"): 40, ("UpperArm.R", "y"): ARM_TUCK, ("LowerArm.R", "x"): -12, ("LowerArm.R", "z"): PALM_DOWN}
+    release = {**crouch, ("UpperArm.R", "x"): -55, ("UpperArm.R", "y"): ARM_TUCK, ("LowerArm.R", "x"): -8, ("LowerArm.R", "z"): PALM_DOWN, ("Hand.R", "x"): -12}
     follow = {**release, ("UpperArm.R", "x"): -78, ("LowerArm.R", "x"): -4, ("Hand.R", "x"): 6, ("Head", "x"): -16}
     pose_at = key_poses([
         (0.0, {}),
-        (0.07, {("Hips", "mz"): -0.03, ("UpperArm.R", "x"): -15, ("LowerArm.R", "x"): -20, ("LowerArm.R", "z"): PALM_UP}),
+        (0.07, {("Hips", "mz"): -0.03, ("UpperArm.R", "x"): -15, ("LowerArm.R", "x"): -20, ("LowerArm.R", "z"): PALM_DOWN}),
         (0.30, back),
         (0.48, release),
         (0.60, follow),
@@ -176,15 +176,15 @@ def pose_petanque_point(extras=None):
     return f
 
 def pose_petanque_shoot(extras=None):
-    aim = {("Hips", "mz"): -0.03, ("UpperArm.R", "x"): -25, ("LowerArm.R", "x"): -25, ("Head", "x"): -3}
+    aim = {("Hips", "mz"): -0.03, ("UpperArm.R", "x"): -25, ("LowerArm.R", "x"): -25, ("LowerArm.R", "z"): PALM_DOWN, ("Head", "x"): -3}
     back = {("Hips", "mz"): -0.06, ("Hips", "my"): 0.03, ("Spine", "x"): 8, ("Chest", "x"): 6, ("Head", "x"): -10,
-            ("UpperArm.R", "x"): 75, ("UpperArm.R", "y"): ARM_TUCK, ("LowerArm.R", "x"): -6, ("UpperArm.L", "x"): -28, ("LowerArm.L", "x"): -25,
+            ("UpperArm.R", "x"): 75, ("UpperArm.R", "y"): ARM_TUCK, ("LowerArm.R", "x"): -6, ("LowerArm.R", "z"): PALM_DOWN, ("UpperArm.L", "x"): -28, ("LowerArm.L", "x"): -25,
             ("Foot.L", "sy"): -0.12, ("Foot.L", "sz"): 0.07}
     planted = {("Hips", "mz"): -0.06, ("Hips", "my"): -0.12, ("Spine", "x"): 6, ("Chest", "x"): 4, ("Head", "x"): -8,
                ("Foot.L", "sy"): -0.30, ("Foot.R", "pitch"): 18}
-    release = {**planted, ("UpperArm.R", "x"): -95, ("UpperArm.R", "y"): ARM_TUCK, ("LowerArm.R", "x"): -6, ("Hand.R", "x"): -10,
+    release = {**planted, ("UpperArm.R", "x"): -95, ("UpperArm.R", "y"): ARM_TUCK, ("LowerArm.R", "z"): PALM_DOWN, ("LowerArm.R", "x"): -6, ("Hand.R", "x"): -10,
                ("UpperArm.L", "x"): 10, ("LowerArm.L", "x"): -20}
-    follow = {**planted, ("UpperArm.R", "x"): -135, ("UpperArm.R", "y"): ARM_TUCK, ("LowerArm.R", "x"): -10, ("Hand.R", "x"): 8, ("Head", "x"): -12,
+    follow = {**planted, ("UpperArm.R", "x"): -135, ("UpperArm.R", "y"): ARM_TUCK, ("LowerArm.R", "z"): PALM_DOWN, ("LowerArm.R", "x"): -10, ("Hand.R", "x"): 8, ("Head", "x"): -12,
               ("UpperArm.L", "x"): 18, ("LowerArm.L", "x"): -18}
     pose_at = key_poses([
         (0.0, {}),
