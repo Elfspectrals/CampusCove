@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { type BoxingStatePayload, boxerFor, clockLabel, isFighting, percentOf, punchKindFor, secondsUntil, serverClock } from './boxing.ts'
+import { type BoxingStatePayload, bagInFront, boxerFor, clockLabel, isFighting, parsePunchBags, percentOf, punchKindFor, rockAngle, secondsUntil, serverClock, trianglesBySide } from './boxing.ts'
 
 const boxer = (sessionId: string, corner: 'red' | 'blue') => ({
   sessionId, name: sessionId, corner, health: 120, maxHealth: 120, endurance: 100, maxEndurance: 100,
@@ -41,4 +41,32 @@ test('a player fights while their bout is not over; a spectator never does', () 
   assert.equal(isFighting(state('over'), 'a'), false)
   assert.equal(isFighting(state('round'), 'spectator'), false)
   assert.equal(isFighting(null, 'a'), false)
+})
+
+test('the punch bags come from the rules, and a broken list is an error', () => {
+  assert.deepEqual(parsePunchBags({ punchBags: [{ x: 1, z: 2 }] }), [{ x: 1, z: 2 }])
+  assert.throws(() => parsePunchBags({ punchBags: [] }), /punchBags/)
+  assert.throws(() => parsePunchBags({ punchBags: [{ x: 1 }] }), /punchBags\.0/)
+})
+
+test('a bag is hit when it is within 1.3 m and in front; the nearest wins', () => {
+  const bags = [{ x: 0, z: -1 }, { x: 0, z: -1.2 }, { x: 5, z: 0 }]
+  assert.equal(bagInFront(bags, 0, 0, 0, -1), 0)
+  assert.equal(bagInFront(bags, 0, 0, 0, 1), null)
+  assert.equal(bagInFront([{ x: 0, z: -1.3 }], 0, 0, 0, -1), 0)
+  assert.equal(bagInFront([{ x: 0, z: -1.31 }], 0, 0, 0, -1), null)
+})
+
+test('a hit bag rocks and settles back to rest after 0.9 s', () => {
+  assert.equal(rockAngle(0), 0)
+  assert.ok(Math.abs(rockAngle(0.08)) > 0.02)
+  assert.equal(rockAngle(0.9), 0)
+  assert.equal(rockAngle(-0.1), 0)
+})
+
+test('the gloves pair splits into one glove per side by triangle centre, indexed or not', () => {
+  const positions = [-2, 0, 0, -1, 0, 0, -1.5, 1, 0, 1, 0, 0, 2, 0, 0, 1.5, 1, 0]
+  assert.deepEqual(trianglesBySide(positions, null, 0), { left: [3, 4, 5], right: [0, 1, 2] })
+  assert.deepEqual(trianglesBySide(positions, [3, 4, 5, 0, 1, 2], 0), { left: [3, 4, 5], right: [0, 1, 2] })
+  assert.throws(() => trianglesBySide(positions, [0, 1], 0), /whole triangles/)
 })

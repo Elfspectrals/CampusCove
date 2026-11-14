@@ -123,6 +123,7 @@ export function useZoneDecor(deps: ZoneDecorDeps) {
     configureRoomMeshShadows(object)
     normalizeRoomMaterials(object, 'city')
     placeProp(object, item)
+    object.userData.zoneProp = { id: item.id, key: item.key }
     group.add(object)
     if (collision) worldCuboids(object, collision.cuboids).forEach((c, i) => block(blockerKey(zone, item.id, i), c))
   }
