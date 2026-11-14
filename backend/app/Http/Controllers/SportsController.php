@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\SportsBoardService;
 use App\Services\SportsGearService;
 use App\Services\SportsMatchService;
 use App\Services\SportsPassService;
@@ -16,6 +17,7 @@ class SportsController extends Controller
         private readonly SportsPassService $passes,
         private readonly SportsGearService $gear,
         private readonly SportsMatchService $matches,
+        private readonly SportsBoardService $boards,
     ) {}
 
     public function pass(Request $request): JsonResponse
@@ -77,6 +79,13 @@ class SportsController extends Controller
             $validated['endedAt'],
             array_values($validated['players']),
         )]);
+    }
+
+    public function board(string $board): JsonResponse
+    {
+        abort_unless(array_key_exists($board, SportsBoardService::BOARDS), 404);
+
+        return response()->json(['board' => $this->boards->board($board)]);
     }
 
     private function accountId(Request $request): int

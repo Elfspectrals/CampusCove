@@ -6,7 +6,7 @@ import { WATCH_HOME, keepSelectedRow, stepWatch, watchKeyOf, type WatchKey, type
 import type { BankScreen } from '../../api/bank'
 import type { ContactRow } from '../../game/watch/contacts'
 import type { GpsPlace, GpsPlaceAt } from '../../game/watch/gps'
-import type { TradeNearbyPlayer, TradePendingPayload, TradeRequestedPayload } from '../../types/gameRealtime'
+import type { SportsLobbyPayload, TradeNearbyPlayer, TradePendingPayload, TradeRequestedPayload } from '../../types/gameRealtime'
 import type { UiIconName } from '../ui/icons'
 import UiCurrency from '../ui/UiCurrency.vue'
 import UiIcon from '../ui/UiIcon.vue'
@@ -15,6 +15,7 @@ import WatchAlarmApp from './watch/WatchAlarmApp.vue'
 import WatchBankApp from './watch/WatchBankApp.vue'
 import WatchContactsApp from './watch/WatchContactsApp.vue'
 import WatchGpsApp from './watch/WatchGpsApp.vue'
+import WatchSportsApp from './watch/WatchSportsApp.vue'
 import WatchTradeApp from './watch/WatchTradeApp.vue'
 
 /**
@@ -28,6 +29,7 @@ const props = defineProps<{
   outgoing: TradePendingPayload | null
   error: string | null
   isAdmin: boolean
+  ownSessionId: string
   cash: number | null
   bankScreen: BankScreen | null
   bankError: string | null
@@ -39,6 +41,9 @@ const props = defineProps<{
   followedSessionId: string | null
   alarmAlerts: readonly AlarmAlert[]
   alarmUnseen: boolean
+  sportsPassUntil: number | null
+  sportsLobbies: readonly SportsLobbyPayload[]
+  sportsClockOffset: number
 }>()
 
 const emit = defineEmits<{
@@ -60,7 +65,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 
-type AppKey = 'gps' | 'bank' | 'contacts' | 'trade' | 'alarm' | 'admin'
+type AppKey = 'gps' | 'bank' | 'contacts' | 'trade' | 'alarm' | 'sports' | 'admin'
 
 interface WatchApp {
   key: AppKey
@@ -76,6 +81,7 @@ const apps = computed<WatchApp[]>(() => [
   { key: 'contacts', icon: 'users', tile: 'bg-pool', badge: false, enterLabel: t('watch.contacts.enter') },
   { key: 'trade', icon: 'hand', tile: 'bg-grape', badge: props.incoming !== null, enterLabel: t('watch.trade.enter') },
   { key: 'alarm', icon: 'alert', tile: 'bg-coral', badge: props.alarmUnseen, enterLabel: null },
+  { key: 'sports', icon: 'trophy', tile: 'bg-sun', badge: false, enterLabel: null },
   ...(props.isAdmin ? [{ key: 'admin', icon: 'shield', tile: 'bg-coral', badge: false, enterLabel: null } as const] : []),
 ])
 
@@ -109,7 +115,7 @@ function tickClock(): void {
 }
 let clockTimer: number | undefined
 
-const errorText = computed(() => ({ gps: null, alarm: null, contacts: props.contactsError, bank: props.bankError, trade: props.error, admin: null })[openApp.value?.key ?? 'trade'])
+const errorText = computed(() => ({ gps: null, alarm: null, sports: null, contacts: props.contactsError, bank: props.bankError, trade: props.error, admin: null })[openApp.value?.key ?? 'trade'])
 const chooseKeys = `${actionKeyLabels('moveForward').slice(-1)[0] ?? '↑'}${actionKeyLabels('moveBack')[0] ?? '↓'}`
 const enterHint = computed(() => appRef.value?.keyHint ?? (openApp.value ? openApp.value.enterLabel : t('watch.keys.open')))
 
@@ -246,6 +252,15 @@ onUnmounted(() => {
             @cancel="emit('cancel')"
           />
           <WatchAlarmApp v-else-if="openApp.key === 'alarm'" ref="appRef" :alerts="alarmAlerts" :selected="selectedRow" />
+          <WatchSportsApp
+            v-else-if="openApp.key === 'sports'"
+            ref="appRef"
+            :pass-until="sportsPassUntil"
+            :lobbies="sportsLobbies"
+            :session-id="ownSessionId"
+            :clock-offset="sportsClockOffset"
+            :selected="selectedRow"
+          />
         </div>
 
         <p v-if="openApp && errorText" class="m-0 bg-coral/20 px-3 py-1.5 text-[11px] font-bold text-coral">{{ errorText }}</p>

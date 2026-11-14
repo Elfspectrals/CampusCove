@@ -32,6 +32,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withSchedule(function (Schedule $schedule): void {
         $schedule->command('housing:collect-taxes')->everyMinute();
         $schedule->command('market:close')->everyMinute()->withoutOverlapping();
+        $schedule->command('sports:close-boards')->hourly();
         $schedule->command('accounts:purge-inactive')->dailyAt('04:00');
         // safety net behind the Stripe webhook; does nothing while Stripe is not configured
         $schedule->command('gems:reconcile')->everyTenMinutes()->withoutOverlapping();

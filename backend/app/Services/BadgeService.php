@@ -8,6 +8,8 @@ final class BadgeService
 {
     public const NEW_CITIZEN = 'new_citizen';
 
+    public function __construct(private readonly SportsBoardService $sportsBoards) {}
+
     public function grant(int $accountId, string $badge): void
     {
         DB::table('account_badges')->insertOrIgnore(['account_id' => $accountId, 'badge' => $badge]);
@@ -16,7 +18,7 @@ final class BadgeService
     /** @return list<string> */
     public function badges(int $accountId): array
     {
-        return DB::table('account_badges')
+        $badges = DB::table('account_badges')
             ->where('account_id', $accountId)
             ->orderBy('granted_at')
             ->orderBy('badge')
@@ -24,5 +26,7 @@ final class BadgeService
             ->map(fn ($badge): string => (string) $badge)
             ->values()
             ->all();
+
+        return $this->sportsBoards->isChampion($accountId) ? [...$badges, SportsBoardService::CHAMPION_BADGE] : $badges;
     }
 }

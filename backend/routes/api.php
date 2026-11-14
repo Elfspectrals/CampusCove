@@ -174,6 +174,7 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
     Route::get('/bank', [BankController::class, 'show']);
     Route::get('/market', [MarketController::class, 'show']);
     Route::get('/tasks', [TaskController::class, 'index']);
+    Route::get('/sports/boards/{board}', [SportsController::class, 'board']);
     Route::post('/house-alarms/report', [HouseAlarmController::class, 'report']);
     Route::get('/trades/offerable', [TradeController::class, 'offerable']);
 

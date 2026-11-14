@@ -238,6 +238,10 @@ class ShopSeeder extends Seeder
             self::wear('bottom', 'track_pants', 'Summit Track Pants', 2),
             self::wear('bottom', 'basketball_shorts', 'Summit Court Shorts', 1),
             self::wear('bottom', 'leggings', 'Summit Leggings', 1),
+            self::wear('top', 'team_jersey_red', 'Summit Team Jersey (Red)', 1),
+            self::wear('top', 'team_jersey_blue', 'Summit Team Jersey (Blue)', 1),
+            self::wear('top', 'tracksuit', 'Summit Tracksuit Top', 2),
+            self::wear('bottom', 'tracksuit', 'Summit Tracksuit Bottoms', 2),
             // ---- newcomer outfit: given by the character creator and worn again after each death, never sold
             self::starterWear('top', 'newcomer', 'Newcomer Tee'),
             self::starterWear('bottom', 'newcomer', 'Newcomer Joggers'),
@@ -437,6 +441,10 @@ class ShopSeeder extends Seeder
             self::coins('tool_wrench', 120, 150),
             self::coins('tool_hammer', 120, 151),
             self::coins('tool_crowbar', 120, 152),
+            self::coins('COS_WEAR_TOP_TEAM_JERSEY_RED', 110, 331),
+            self::coins('COS_WEAR_TOP_TEAM_JERSEY_BLUE', 110, 332),
+            self::coins('COS_WEAR_TOP_TRACKSUIT', 240, 333),
+            self::coins('COS_WEAR_BOTTOM_TRACKSUIT', 140, 334),
         ];
         foreach (FoodCatalog::items() as $i => $food) {
             if ($food['price'] !== null) {

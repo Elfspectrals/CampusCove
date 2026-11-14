@@ -146,7 +146,7 @@ l'axe) et une **avenue** de 7 m avec trottoirs, bordures, lignes, lampadaires, a
 |---|---|---|---|---|
 | `crispins_hardware` | `N_out_a` (x [-377.5, -360.5], absorbe le bout ouest du couloir de service) | 16,6 × 11,6, H 4,2 | Cove Home, `decor/<key>` | `decor_workbench`, `decor_stepladder`, `decor_toolbox`, `decor_paint_cans`, `decor_wheelbarrow`, `decor_metal_shelving` (`build_hardware_items.py`, tailles dans `out/decor/hardware.manifest.json`, `preview.png` écrit directement dans `front/public/assets/decor/<key>/`, puis `node scripts/apply-decor-collision.mjs` pour le `collision.json` de chaque pièce) |
 | `candy_cloud` | `W_out_b` première cellule (z [0, 25.5]) | 25,1 × 9,3, H 4,2 | Cove Home, `items/sweets/<key>` | `candy_cotton`, `candy_lollipop`, `candy_bag`, `candy_licorice`, `candy_gum`, `candy_apple` (`build_sweets_items.py`, `FoodCatalog` groupe `sweets`) |
-| `summit_sports` | `S_out_b` deux premières cellules (x [-300, -268.3]) | 31,3 × 9,3, H 4,2 | Cove Threads v2 | `COS_WEAR_TOP_{TRACK_JACKET,JERSEY,SPORTS_BRA}`, `COS_WEAR_BOTTOM_{TRACK_PANTS,BASKETBALL_SHORTS,LEGGINGS}` (`front/scripts/skins/wear.py`, `fp_arms` par haut) |
+| `summit_sports` | `S_out_b` deux premières cellules (x [-300, -268.3]) | 31,3 × 9,3, H 4,2 | Cove Threads v2 | `COS_WEAR_TOP_{TRACK_JACKET,JERSEY,SPORTS_BRA,TEAM_JERSEY_RED,TEAM_JERSEY_BLUE,TRACKSUIT}`, `COS_WEAR_BOTTOM_{TRACK_PANTS,BASKETBALL_SHORTS,LEGGINGS,TRACKSUIT}` (`front/scripts/skins/wear.py`, `fp_arms` par haut) |
 
 Les pièces Summit sont des entrées de `WEAR` dans `wear.py` (formes paramétriques `build_top` / `build_bottom`) ;
 `run_wear.py` reconstruit **toutes** les pièces (bruit flottant sur les fichiers existants : restaurer les pièces

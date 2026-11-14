@@ -25,6 +25,7 @@ export const messages = {
     },
     badges: {
       new_citizen: 'New citizen',
+      sports_champion: 'Weekly sports champion',
     },
     tutorial: {
       title: 'First day · {n}/{total}',
@@ -381,7 +382,17 @@ export const messages = {
     watch: {
       label: 'Watch',
       meters: '{d} m',
-      apps: { gps: 'GPS', bank: 'Bank', contacts: 'Contacts', trade: 'Trade', alarm: 'Alarm', admin: 'Admin' },
+      apps: { gps: 'GPS', bank: 'Bank', contacts: 'Contacts', trade: 'Trade', alarm: 'Alarm', sports: 'Sport', admin: 'Admin' },
+      sports: {
+        pass: 'Sports pass',
+        noPass: 'No sports pass',
+        atReception: 'at the reception',
+        until: 'until {end}',
+        noMatch: 'Not signed up for a match. Talk to a coach.',
+        players: '{n}/{max} players',
+        kickoff: 'kick-off in {s} s',
+        playing: 'playing',
+      },
       alarm: {
         empty: 'All quiet at home.',
         live: 'Your alarm went off',
@@ -1043,6 +1054,7 @@ export const messages = {
     },
     badges: {
       new_citizen: 'Nouveau citoyen',
+      sports_champion: 'Champion sportif de la semaine',
     },
     tutorial: {
       title: 'Premier jour · {n}/{total}',
@@ -1398,7 +1410,17 @@ export const messages = {
     watch: {
       label: 'Montre',
       meters: '{d} m',
-      apps: { gps: 'GPS', bank: 'Banque', contacts: 'Contacts', trade: 'Échange', alarm: 'Alarme', admin: 'Admin' },
+      apps: { gps: 'GPS', bank: 'Banque', contacts: 'Contacts', trade: 'Échange', alarm: 'Alarme', sports: 'Sport', admin: 'Admin' },
+      sports: {
+        pass: 'Pass sport',
+        noPass: 'Pas de pass sport',
+        atReception: 'à l’accueil',
+        until: 'jusqu’à {end}',
+        noMatch: 'Pas inscrit à un match. Parle à un coach.',
+        players: '{n}/{max} joueurs',
+        kickoff: 'coup d’envoi dans {s} s',
+        playing: 'en jeu',
+      },
       alarm: {
         empty: 'Tout est calme chez toi.',
         live: 'Ton alarme a sonné',

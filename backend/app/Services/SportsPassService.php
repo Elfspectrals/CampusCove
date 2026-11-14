@@ -66,7 +66,7 @@ final class SportsPassService
                 'ref' => $ref,
                 'kind' => $kind,
                 'tx_id' => $tx->tx_id,
-                'valid_until' => $end,
+                'valid_until' => $end->toIso8601String(),
                 'cash_after' => $balance - $price,
             ]);
 
@@ -86,6 +86,6 @@ final class SportsPassService
     {
         $valid = $end !== null && $end->isFuture();
 
-        return ['validUntil' => $valid ? $end->toRfc3339String(true) : null, 'prices' => self::PRICES];
+        return ['validUntil' => $valid ? $end->utc()->toRfc3339String(true) : null, 'prices' => self::PRICES];
     }
 }

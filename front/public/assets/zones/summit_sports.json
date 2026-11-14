@@ -491,6 +491,113 @@
           "price": 220
         }
       ]
+    },
+    {
+      "id": "summit_sports_rail_team",
+      "kind": "item",
+      "key": "clothes_wall_rail",
+      "code": "decor_clothes_wall_rail",
+      "forSale": false,
+      "position": [
+        -278.75,
+        0.2,
+        86.589
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "summit_sports_top_team_jersey_red",
+      "kind": "mannequin",
+      "position": [
+        -277.5,
+        0.463,
+        86.485
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "top",
+          "key": "team_jersey_red",
+          "color": "#d62a2a",
+          "forSale": true,
+          "code": "COS_WEAR_TOP_TEAM_JERSEY_RED",
+          "price": 110
+        }
+      ]
+    },
+    {
+      "id": "summit_sports_top_team_jersey_blue",
+      "kind": "mannequin",
+      "position": [
+        -278.75,
+        0.463,
+        86.485
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "top",
+          "key": "team_jersey_blue",
+          "color": "#2457c5",
+          "forSale": true,
+          "code": "COS_WEAR_TOP_TEAM_JERSEY_BLUE",
+          "price": 110
+        }
+      ]
+    },
+    {
+      "id": "summit_sports_tracksuit",
+      "kind": "mannequin",
+      "position": [
+        -280.0,
+        0.463,
+        86.485
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "body": "#8b7aa8",
+      "bodyHidden": true,
+      "outfit": [
+        {
+          "slot": "top",
+          "key": "tracksuit",
+          "color": "#1d5c50",
+          "forSale": true,
+          "code": "COS_WEAR_TOP_TRACKSUIT",
+          "price": 240
+        },
+        {
+          "slot": "bottom",
+          "key": "tracksuit",
+          "color": "#1d5c50",
+          "forSale": true,
+          "code": "COS_WEAR_BOTTOM_TRACKSUIT",
+          "price": 140
+        }
+      ]
     }
   ],
   "areas": [

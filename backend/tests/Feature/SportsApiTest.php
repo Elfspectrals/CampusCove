@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\ItemDef;
 use App\Models\Wallet;
 use App\Services\AccountInventoryService;
+use App\Services\BadgeService;
 use App\Services\SportsGearService;
 use App\Services\SurvivalService;
 use Carbon\CarbonImmutable;
@@ -196,7 +197,7 @@ class SportsApiTest extends TestCase
         ]);
 
         $id = $this->recordMatch($red, $body)->assertOk()->assertJsonPath('match.recorded', true)->json('match.id');
-        $this->recordMatch($red, $body)->assertOk()->assertExactJson(['match' => ['id' => $id, 'recorded' => false]]);
+        $this->recordMatch($red, $body)->assertOk()->assertExactJson(['match' => ['id' => $id, 'recorded' => false, 'countsForTasks' => true]]);
 
         $this->assertSame(1, DB::table('sports_matches')->count());
         $row = DB::table('sports_matches')->first();
@@ -254,6 +255,82 @@ class SportsApiTest extends TestCase
         $this->assertSame(0, DB::table('sports_matches')->count());
     }
 
+    public function test_a_match_counts_for_tasks_three_times_a_day_per_pair_of_accounts_older_than_72_hours(): void
+    {
+        $red = $this->player(cash: 0);
+        $blue = $this->player(cash: 0);
+        $sameDay = CarbonImmutable::parse('2026-11-14 22:59:00', 'UTC');
+        $nextDay = CarbonImmutable::parse('2026-11-14 23:00:00', 'UTC');
+        $duel = fn (string $ref, CarbonImmutable $end): array => $this->timedMatch($ref, $end, [$red, $blue]);
+
+        foreach (['m1', 'm2', 'm3'] as $ref) {
+            $this->recordMatch($red, $duel($ref, $sameDay))->assertOk()->assertJsonPath('match.countsForTasks', true);
+        }
+        $this->recordMatch($red, $duel('m4', $sameDay))->assertOk()->assertJsonPath('match.countsForTasks', false);
+        $this->recordMatch($red, $duel('m4', $sameDay))->assertOk()->assertJsonPath('match.countsForTasks', false);
+        $this->recordMatch($red, $duel('m5', $nextDay))->assertOk()->assertJsonPath('match.countsForTasks', true);
+        $this->recordMatch($red, array_merge($duel('m6', $sameDay), ['sport' => 'basketball']))->assertOk()->assertJsonPath('match.countsForTasks', true);
+        $this->assertSame(5, DB::table('sports_matches')->where('counts_for_tasks', true)->count());
+    }
+
+    public function test_a_new_pair_in_a_match_lets_it_count_and_new_accounts_or_solo_runs_never_count(): void
+    {
+        $red = $this->player(cash: 0);
+        $blue = $this->player(cash: 0);
+        $third = $this->player(cash: 0);
+        $young = $this->player(cash: 0, ageHours: 71);
+        $end = CarbonImmutable::parse('2026-11-14 10:00:00', 'UTC');
+        foreach (['m1', 'm2', 'm3'] as $ref) {
+            $this->recordMatch($red, $this->timedMatch($ref, $end, [$red, $blue]))->assertOk();
+        }
+
+        $this->recordMatch($red, $this->timedMatch('m4', $end, [$red, $blue, $third]))->assertOk()->assertJsonPath('match.countsForTasks', true);
+        $this->recordMatch($red, $this->timedMatch('m5', $end, [$red, $young]))->assertOk()->assertJsonPath('match.countsForTasks', false);
+        $this->recordMatch($red, $this->timedMatch('m6', $end, [$third]))->assertOk()->assertJsonPath('match.countsForTasks', false);
+    }
+
+    public function test_a_weekly_board_keeps_each_account_best_finished_time_of_the_matching_distance(): void
+    {
+        $fast = $this->player(cash: 0);
+        $slow = $this->player(cash: 0);
+        $tied = $this->player(cash: 0);
+        $now = CarbonImmutable::now();
+        $this->race('r1', $now->subHours(3), 50, [[$slow, 'finished', 40_000], [$fast, 'finished', 33_000]]);
+        $this->race('r2', $now->subHours(2), 50, [[$fast, 'finished', 31_500], [$tied, 'finished', 33_000]]);
+        $this->race('r3', $now->subHours(1), 50, [[$slow, 'dnf', null], [$tied, 'finished', 33_000]]);
+        $this->race('r4', $now->subHour(), 25, [[$slow, 'finished', 10_000]]);
+        $this->race('r5', CarbonImmutable::parse('2026-11-08 22:59:00', 'UTC'), 50, [[$slow, 'finished', 1_000]]);
+
+        $board = $this->getJson('/api/sports/boards/swim_50', $this->auth($fast['token']))->assertOk()->json('board');
+
+        $this->assertSame('2026-W46', $board['week']);
+        $this->assertSame(
+            [[1, $fast['account_id'], 31_500], [2, $tied['account_id'], 33_000], [3, $slow['account_id'], 40_000]],
+            array_map(fn (array $e): array => [$e['rank'], $e['accountId'], $e['value']], $board['entries']),
+        );
+        $this->assertNull($board['champion']);
+        $this->getJson('/api/sports/boards/golf_18', $this->auth($fast['token']))->assertNotFound();
+    }
+
+    public function test_the_first_of_a_finished_paris_week_is_crowned_once_and_gets_the_champion_badge(): void
+    {
+        $winner = $this->player(cash: 0);
+        $second = $this->player(cash: 0);
+        $this->race('r1', CarbonImmutable::parse('2026-11-15 22:30:00', 'UTC'), 50, [[$winner, 'finished', 30_000], [$second, 'finished', 31_000]]);
+        $this->race('r2', CarbonImmutable::parse('2026-11-15 23:30:00', 'UTC'), 50, [[$second, 'finished', 20_000]]);
+        $this->travelTo(CarbonImmutable::parse('2026-11-16 08:00:00', 'UTC'));
+
+        $this->artisan('sports:close-boards')->assertSuccessful();
+        $this->artisan('sports:close-boards')->assertSuccessful();
+
+        $this->assertSame(1, DB::table('sports_board_champions')->count());
+        $this->assertSame(1, DB::table('sports_board_champions')->where('board', 'swim_50')->where('week', '2026-W46')->where('account_id', $winner['account_id'])->count());
+        $this->assertSame(['sports_champion'], app(BadgeService::class)->badges($winner['account_id']));
+        $this->assertSame([], app(BadgeService::class)->badges($second['account_id']));
+        $board = $this->getJson('/api/sports/boards/swim_50', $this->auth($winner['token']))->assertOk()->json('board');
+        $this->assertSame(['week' => '2026-W46', 'accountId' => $winner['account_id'], 'value' => 30_000], array_diff_key($board['champion'], ['name' => 0]));
+    }
+
     private function assertEndsIn(?string $validUntil, int $hours): void
     {
         $this->assertNotNull($validUntil);
@@ -278,6 +355,42 @@ class SportsApiTest extends TestCase
             'endedAt' => 1_763_114_700_000,
             'players' => $players,
         ];
+    }
+
+    /**
+     * @param  list<array{token: string, account_id: int}>  $players
+     * @return array<string, mixed>
+     */
+    private function timedMatch(string $ref, CarbonImmutable $end, array $players): array
+    {
+        return array_merge($this->match(array_map(fn (array $p, int $i): array => [
+            'accountId' => $p['account_id'],
+            'team' => $i % 2 === 0 ? 'red' : 'blue',
+            'result' => $i % 2 === 0 ? 'win' : 'loss',
+        ], $players, array_keys($players))), [
+            'ref' => $ref,
+            'startedAt' => $end->subMinutes(5)->getTimestampMs(),
+            'endedAt' => $end->getTimestampMs(),
+        ]);
+    }
+
+    /** @param list<array{0: array{token: string, account_id: int}, 1: string, 2: int|null}> $results */
+    private function race(string $ref, CarbonImmutable $end, int $distanceM, array $results): void
+    {
+        $body = array_merge($this->match(array_map(fn (array $r): array => [
+            'accountId' => $r[0]['account_id'],
+            'team' => null,
+            'result' => $r[1],
+            'timeMs' => $r[2],
+        ], $results)), [
+            'ref' => $ref,
+            'sport' => 'swimming',
+            'venue' => 'pool_lanes',
+            'settings' => ['distanceM' => $distanceM],
+            'startedAt' => $end->subMinutes(2)->getTimestampMs(),
+            'endedAt' => $end->getTimestampMs(),
+        ]);
+        $this->recordMatch($results[0][0], $body)->assertOk();
     }
 
     /**

@@ -239,6 +239,7 @@ erDiagram
     TRANSACTIONS ||--|| SPORTS_PASS_PURCHASES : "débit cash détruit"
     SPORTS_MATCHES ||--o{ SPORTS_MATCH_PLAYERS : "résultats"
     ACCOUNTS ||--o{ SPORTS_MATCH_PLAYERS : joue
+    ACCOUNTS ||--o{ SPORTS_BOARD_CHAMPIONS : "champion de la semaine"
 
     SPORTS_PASS_PURCHASES {
         bigint id PK
@@ -256,6 +257,13 @@ erDiagram
         jsonb settings
         timestamptz started_at
         timestamptz ended_at
+        boolean counts_for_tasks "anti-farm : 2 comptes de 72 h, 3 matchs par paire et par jour"
+    }
+    SPORTS_BOARD_CHAMPIONS {
+        text board PK "swim_50, run_400..."
+        char week PK "YYYY-Www, semaine de Paris"
+        bigint account_id FK
+        int value "temps en ms ou score"
     }
     SPORTS_MATCH_PLAYERS {
         bigint sports_match_id FK

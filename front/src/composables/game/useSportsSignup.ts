@@ -196,6 +196,7 @@ export function useSportsSignup(deps: SportsSignupDeps) {
   }
 
   return {
+    lobbies: computed(() => [...lobbies.value.values()]),
     lobby,
     choices,
     canPickVenue,

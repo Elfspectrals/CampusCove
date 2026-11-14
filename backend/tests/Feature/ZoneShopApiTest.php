@@ -67,6 +67,25 @@ class ZoneShopApiTest extends TestCase
             ->value('uses_left'));
     }
 
+    public function test_summit_sports_sells_the_team_jerseys_and_the_tracksuit(): void
+    {
+        $player = $this->registerAndCreditWallet(600, 'cash');
+        $codes = ['COS_WEAR_TOP_TEAM_JERSEY_RED', 'COS_WEAR_TOP_TEAM_JERSEY_BLUE', 'COS_WEAR_TOP_TRACKSUIT', 'COS_WEAR_BOTTOM_TRACKSUIT'];
+        $items = array_map(fn (string $code): int => $this->catalogId($code), $codes);
+
+        $this->postJson('/api/zone/checkout', ['zone' => 'summit_sports', 'items' => $items], $this->auth($player['token'], self::SECRET))
+            ->assertOk()
+            ->assertJsonPath('balance_after', 0)
+            ->assertJsonPath('purchases.0.unit_price', 110)
+            ->assertJsonPath('purchases.1.unit_price', 110)
+            ->assertJsonPath('purchases.2.unit_price', 240)
+            ->assertJsonPath('purchases.3.unit_price', 140);
+        foreach ($codes as $code) {
+            $itemDefId = (int) ItemDef::query()->where('code', $code)->value('item_def_id');
+            $this->assertTrue(app(AccountInventoryService::class)->accountHasPositiveQuantity($player['account_id'], $itemDefId), $code);
+        }
+    }
+
     public function test_an_item_the_zone_does_not_sell_buys_nothing(): void
     {
         $player = $this->registerAndCreditWallet(1_000, 'cash');

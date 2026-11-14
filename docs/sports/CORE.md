@@ -161,8 +161,34 @@ registerVenue({
 `POST /api/sports/matches` with `{ ref, sport, venue, settings, startedAt, endedAt` (epoch ms)`, players: [{ accountId,
 team: 'red' \| 'blue' \| null, result: 'win' \| 'loss' \| 'draw' \| 'finished' \| 'dnf', place?: int, timeMs?: int,
 score?: int }] }`. One row per match (`sports_matches`, unique `ref`) and one per player (`sports_match_players`). The
-same `ref` twice is ignored. Reply `{ match: { id, recorded } }` (`recorded: false` on a replay). The socket sends it from `onEnd` through `recordMatch(match, players)`. Tasks, boards and
-badges read these rows later (each building session, with the `game-designer`). No coins, ever.
+same `ref` twice is ignored. Reply `{ match: { id, recorded, countsForTasks } }` (`recorded: false` on a replay, which
+returns the stored `countsForTasks`). The socket sends it from `onEnd` through `recordMatch(match, players)`. No coins,
+ever.
+
+**Anti-farm (`countsForTasks`, `SportsMatchService`).** A match counts for the "games played" tasks only when at least 2
+of its accounts are 72 h old or more (`TradeService::MIN_GIVER_AGE_HOURS`), and at least one pair of those accounts has
+played fewer than `TASK_MATCHES_PER_PAIR_PER_DAY` = 3 counted matches of that sport together on the same Paris day
+(day of `endedAt`). A solo run never counts for tasks. The flag is stored on `sports_matches.counts_for_tasks`; task
+counters read only counted matches. Examples: A and B play their 4th football match of the day: not counted; A, B and
+C play next: counted (A–C is a new pair); the next day at 00:00 Paris A and B count again; basketball has its own cap.
+
+### Weekly boards
+
+`SportsBoardService::BOARDS` lists each board: `{ sport, settings, metric }`. `settings` must be contained in the
+match settings, `metric` is `time` (best `timeMs` of a `finished` result, lowest first) or `score` (highest first).
+Each account keeps its best value of the week; ties go to whoever reached it first. Weeks run Monday 00:00 to Monday
+00:00 Paris time, named `YYYY-Www` (ISO week). Solo runs count. Boards declared by the core: `swim_25`, `swim_50`,
+`swim_100` (`distanceM`), `run_100`, `run_400`, `run_1500` (`distanceM`), `skate_1`, `skate_3`, `skate_5` (`laps`). A
+venue adds its own boards (climbing routes, dance songs) to the list.
+
+- `GET /api/sports/boards/{board}` (player, not realtime): `{ board: { board, week, entries: [{ rank, accountId, name,
+  value }] (top 10 of the current week), champion: { week, accountId, name, value } | null (last week) } }`; 404 for an
+  unknown board.
+- `sports:close-boards`, hourly: crowns the first of each board for the week that just ended
+  (`sports_board_champions`, one row per board and week, so running it again changes nothing). A board with no
+  result that week has no champion. Zero coins.
+- Badge: an account with at least one crown gets `sports_champion` in `BadgeService::badges()`, shown in the Tab list,
+  never over the head.
 
 ## 5. Sport rules JSON (placeholders)
 
@@ -179,6 +205,8 @@ Values the doc leaves open are `null`. A building session fills its own file and
 
 - `useSportsPass` (pass state, prompt at the clerk, "You need a sports pass" toast on a `no_pass` correction) and
   `GameSportsPassDesk.vue` (two buttons, prices, current end).
+- Watch app **Sport** (`WatchSportsApp.vue`, `front/src/game/watch/sports.ts`, tested): the pass and its end, then
+  each match the player is signed up for (players, kick-off countdown, playing).
 - `useSportsSignup` and `GameSportsSignup.vue`: the coach panel built from the sport JSON `signup` block: settings for the
   first player, red / blue choice, player list, countdown, leave. A venue only needs a coach NPC prop with
   `"coach": "<coach id>"` in its zone JSON.
@@ -197,7 +225,8 @@ Values the doc leaves open are `null`. A building session fills its own file and
 ## 8. Explorer task
 
 Only `sports_complex` counts as an explorer zone (past the gate, so with a pass). The venue, reception, entrance and
-road zones are not explorer zones.
+road zones are not explorer zones: the socket skips every zone whose key starts with `sports_` except `sports_complex`
+(`socket/src/sports/explorer.ts`), so a venue zone needs nothing to stay out.
 
 ## 9. Core-owned files
 

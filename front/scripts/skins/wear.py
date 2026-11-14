@@ -202,6 +202,51 @@ def work_apron(M, m):
     add_sweep(M, m["apron"], [(0.18, -0.165, 1.0), (0.19, 0, 1.0), (0, 0.135, 1.0), (-0.19, 0, 1.0), (-0.18, -0.165, 1.0)], [(0.008, 0.008)] * 5, seg=6, per=2)
 
 
+DIGIT_SEGMENTS = {"0": "abcdef", "1": "bc", "2": "abged", "3": "abgcd", "4": "fgbc", "5": "afgcd", "6": "afgedc", "7": "abc", "8": "abcdefg", "9": "abcdfg"}
+
+
+def jersey_digit(M, m, digit, cx, z, h, y, right, stroke):
+    w = h * 0.55
+    hx, hz = w / 2 - stroke / 2, h / 2 - stroke / 2
+    bars = {"a": (0, hz, w, stroke), "g": (0, 0, w, stroke), "d": (0, -hz, w, stroke),
+            "f": (-hx, hz / 2, stroke, h / 2), "b": (hx, hz / 2, stroke, h / 2),
+            "e": (-hx, -hz / 2, stroke, h / 2), "c": (hx, -hz / 2, stroke, h / 2)}
+    for seg in DIGIT_SEGMENTS[digit]:
+        dx, dz, sx, sz = bars[seg]
+        add_box(M, m, (cx + right * dx, y, z + dz), (sx, 0.006, sz), bevel=0.0)
+
+
+def jersey_number(M, m, number, z, h, y, right):
+    gap = h * 0.7
+    for i, digit in enumerate(number):
+        jersey_digit(M, m, digit, right * (i - (len(number) - 1) / 2) * gap, z, h, y, right, h * 0.18)
+
+
+def team_jersey(M, m):
+    torso(M, m["main"], puff=1.05)
+    sleeves(M, m["main"], 1, puff=1.15, cuff=m["accent"])
+    add_sweep(M, m["accent"], [(0, 0, 1.555), (0, 0, 1.59)], [(0.104, 0.095), (0.09, 0.084)], seg=18, per=1)
+    add_sweep(M, m["accent"], [(0, 0, 0.965), (0, 0, 0.99)], [(0.18, 0.127), (0.177, 0.125)], seg=18, per=1)
+    for sg in (1, -1):
+        add_sweep(M, m["accent"], SP([(0.179, 0, 0.99), (0.168, 0, 1.10), (0.2, 0, 1.28), (0.218, 0, 1.40)], sg),
+                  [(0.005, 0.024)] * 4, seg=6, per=2)
+    jersey_number(M, m["accent"], "10", 1.33, 0.1, -0.15, 1)
+    jersey_number(M, m["accent"], "10", 1.33, 0.17, 0.155, -1)
+
+
+def tracksuit_top(M, m):
+    torso(M, m["main"], puff=1.08)
+    sleeves(M, m["main"], 4, puff=1.12, cuff=m["accent"])
+    add_sweep(M, m["accent"], [(0, 0, 1.38), (0, 0, 1.43), (0, 0, 1.50)],
+              [(0.2047 * 1.095, 0.1383 * 1.095), (0.212 * 1.095, 0.141 * 1.095), (0.1716 * 1.095, 0.1231 * 1.095)], seg=18, per=2, caps=(False, False))
+    add_sweep(M, m["accent"], [(0, 0, 0.955), (0, 0, 0.995)], [(0.182, 0.129), (0.182, 0.129)], seg=18, per=1)
+    add_sweep(M, m["accent"], [(0, 0, 1.55), (0, 0, 1.63)], [(0.105, 0.095), (0.1, 0.09)], seg=18, per=1)
+    add_box(M, m["trim"], (0, -0.157, 1.25), (0.01, 0.006, 0.52), bevel=0.0)
+    for sg in (1, -1):
+        add_sweep(M, m["trim"], SP([(0.2, -0.004, 1.48), (0.27, -0.004, 1.39), (0.365, -0.004, 1.21), (0.42, -0.004, 1.09)], sg),
+                  [(0.008, 0.08)] * 4, seg=6, per=2)
+
+
 def build_top(key, M, m):
     if key == "plaid_shirt":
         plaid_shirt(M, m)
@@ -299,6 +344,10 @@ def build_top(key, M, m):
         for sg in (1, -1):
             add_sweep(M, m["main"], SP([(0.08, 0.0, 1.47), (0.11, 0.0, 1.55)], sg), [(0.028, 0.11), (0.024, 0.09)], seg=8, per=1)
         add_sweep(M, m["accent"], [(0, 0, 1.275), (0, 0, 1.30)], [(0.192, 0.135), (0.19, 0.134)], seg=18, per=1)
+    elif key in ("team_jersey_red", "team_jersey_blue"):
+        team_jersey(M, m)
+    elif key == "tracksuit":
+        tracksuit_top(M, m)
 
 
 LEG_PATH = [(0.10, 0, 0.93), (0.10, 0, 0.72), (0.10, -0.005, 0.50), (0.10, 0.003, 0.30), (0.10, 0.01, 0.11)]
@@ -381,6 +430,16 @@ def build_bottom(key, M, m):
         add_sweep(M, m["accent"], [(0, 0, 0.98), (0, 0, 1.06)], [(0.172, 0.121), (0.168, 0.118)], seg=18, per=1)
         for sg in (1, -1):
             add_sweep(M, m["accent"], SP([(0.10 + 0.08, -0.01, 0.6), (0.10 + 0.07, -0.01, 0.45)], sg), [(0.01, 0.02), (0.01, 0.02)], seg=6, per=1)
+    elif key == "tracksuit":
+        waist(M, m["main"])
+        legs(M, m["main"], 4, puff=1.06)
+        for sg in (1, -1):
+            add_sweep(M, m["accent"], SP([(0.10, 0.01, 0.15), (0.10, 0.01, 0.11)], sg), [(0.052, 0.056), (0.052, 0.056)], seg=14, per=1)
+            add_sweep(M, m["accent"], SP([(0.10 + 0.095, 0, 0.92), (0.10 + 0.088, 0, 0.72), (0.10 + 0.072, -0.005, 0.50), (0.10 + 0.068, 0.003, 0.30), (0.10 + 0.06, 0.01, 0.15)], sg),
+                      [(0.006, 0.02)] * 5, seg=6, per=2)
+            add_sweep(M, m["trim"], SP([(0.10 + 0.1, 0, 0.92), (0.10 + 0.093, 0, 0.72), (0.10 + 0.077, -0.005, 0.50), (0.10 + 0.073, 0.003, 0.30), (0.10 + 0.065, 0.01, 0.15)], sg),
+                      [(0.004, 0.006)] * 5, seg=6, per=2)
+        add_sweep(M, m["accent"], [(0, 0, 1.0), (0, 0, 1.05)], [(0.174, 0.123), (0.174, 0.123)], seg=18, per=1)
 
 
 def shoe(M, m, sg, collar_z=0.11, sole_h=0.03, toe_cap=False, slide=False):
@@ -459,6 +518,9 @@ WEAR = {
         "flannel_jacket": dict(main="5f7d4a", accent="2b2a24", hides=["chest", "upper_arms", "forearms"]),
         "staff_polo": dict(main="f2c230", accent="1f3a6b", hides=["chest"]),
         "sheriff_shirt": dict(main="d8c39a", accent="6b4a2e", extra={"badge": SHERIFF_BADGE}, hides=["chest", "upper_arms", "forearms"]),
+        "team_jersey_red": dict(main="d62a2a", accent="f4f2ec", hides=["chest"]),
+        "team_jersey_blue": dict(main="2457c5", accent="f4f2ec", hides=["chest"]),
+        "tracksuit": dict(main="1d5c50", accent="f2ede0", extra={"trim": dict(color="e07a35", rough=0.6)}, hides=["chest", "upper_arms", "forearms"]),
     }),
     "bottom": dict(builder=build_bottom, bones=['Hips', 'Spine', 'UpperLeg.L', 'UpperLeg.R', 'LowerLeg.L', 'LowerLeg.R'], items={
         "basic": dict(main="4b5669", accent="3a4352", hides=["hips", "thighs", "shins"]),
@@ -472,6 +534,7 @@ WEAR = {
         "leggings": dict(main="2a2c33", accent="b73cc9", hides=["hips", "thighs", "shins"]),
         "dungarees": dict(main="41618f", accent="c9a23f", hides=["hips", "thighs", "shins"]),
         "newcomer": dict(main="2f8f9c", accent="f7c948", hides=["hips", "thighs", "shins"]),
+        "tracksuit": dict(main="1d5c50", accent="f2ede0", extra={"trim": dict(color="e07a35", rough=0.6)}, hides=["hips", "thighs", "shins"]),
     }),
     "shoes": dict(builder=build_shoes, bones=['LowerLeg.L', 'LowerLeg.R', 'Foot.L', 'Foot.R', 'Toe.L', 'Toe.R'], items={
         "basic": dict(main="e9e6df", accent="9a9ca4", hides=["feet"]),
