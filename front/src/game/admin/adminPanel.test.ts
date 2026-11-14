@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { HousingUnitPayload } from '../../types/gameRealtime.ts'
-import { ADMIN_MAX_MONEY, adminGrantedMessage, adminResultMessage, adminTargets, filterAdminItems, vacantHouses, wholeIn } from './adminPanel.ts'
+import { ADMIN_MAX_MONEY, adminGrantedMessage, adminResultMessage, adminTargets, filterAdminItems, housePins, wholeIn } from './adminPanel.ts'
 
 const apple = { code: 'farm_apple', name: 'Apple', kind: 'consumable', preview: null, portion: null }
 const hat = { code: 'wear_straw_hat', name: 'Straw hat', kind: 'cosmetic', preview: null, portion: null }
@@ -59,11 +59,16 @@ test('the player who received a grant is told by whom', () => {
   assert.deepEqual(adminGrantedMessage({ kind: 'house', byPseudo: 'Admin', modelKey: 'unknown_villa' }), { key: 'adminPanel.granted.house', params: { name: 'Admin', house: 'unknown_villa' } })
 })
 
-test('only vacant houses can be given, cheapest first, with their name and picture', () => {
-  const unit = (public_id: string, model_key: string | null, status: string, price_coins: number) => ({ public_id, model_key, status, price_coins }) as HousingUnitPayload
-  const houses = vacantHouses([unit('a', 'house_02', 'vacant', 900), unit('b', 'house_01', 'occupied', 100), unit('c', 'house_01', 'vacant', 500)])
-  assert.deepEqual(houses, [
-    { unit: 'c', name: 'Maple Cottage', preview: '/assets/houses/house_01/preview.png', price: 500 },
-    { unit: 'a', name: 'Bluebell Bungalow', preview: '/assets/houses/house_02/preview.png', price: 900 },
+test('each house is pinned on the town picture as free, owned by the chosen player or by someone else', () => {
+  const unit = (public_id: string, status: string, occupant: number | null, pos_x: number, pos_z: number) =>
+    ({ public_id, model_key: 'house_01', status, price_coins: 500, occupant_account_id: occupant, occupant_name: occupant ? `p${occupant}` : null, pos_x, pos_z }) as HousingUnitPayload
+  const area = { minX: -100, maxX: 100, minZ: -50, maxZ: 50 }
+  const pins = housePins([unit('a', 'vacant', null, -100, -50), unit('b', 'occupied', 7, 0, 0), unit('c', 'occupied', 8, 100, 50)], area, 7)
+  assert.deepEqual(pins.map((p) => [p.unit, p.state, p.owner, p.u, p.v]), [
+    ['a', 'vacant', null, 0, 0],
+    ['b', 'theirs', 'p7', 0.5, 0.5],
+    ['c', 'taken', 'p8', 1, 1],
   ])
+  assert.equal(pins[0]!.name, 'Maple Cottage')
+  assert.equal(housePins([unit('b', 'occupied', 7, 0, 0)], area, null)[0]!.state, 'taken')
 })

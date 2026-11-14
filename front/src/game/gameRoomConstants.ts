@@ -45,3 +45,6 @@ export const DARTS_POWER_DEAD_ZONE = 0.05
 export const INTOXICATION_MAX = 100
 export const TIPSY_AT = 30
 export const DRUNK_AT = 60
+
+/** Close code of a connection an admin kicked; matches KICK_CLOSE_CODE in socket/src/admin.ts. */
+export const ADMIN_KICK_CLOSE_CODE = 4002

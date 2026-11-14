@@ -26,6 +26,7 @@ import GameSettingsDialog from '../components/game/GameSettingsDialog.vue'
 import GameStoreItemCard from '../components/game/GameStoreItemCard.vue'
 import GameZoneBuyerMenu from '../components/game/GameZoneBuyerMenu.vue'
 import GameAdminPanel from '../components/game/GameAdminPanel.vue'
+import { SPEED_POWER_FACTOR } from '../game/admin/selfPowers'
 import GameAtmScreen from '../components/game/GameAtmScreen.vue'
 import GameLockpick from '../components/game/GameLockpick.vue'
 import GameFurnitureStorage from '../components/game/GameFurnitureStorage.vue'
@@ -954,7 +955,7 @@ watch(tradeWindowOpen, (open) => {
 })
 const watchKey = computed(() => actionKeyLabels('survivalWatch')[0] ?? 'T')
 
-// ---------------------------------------------------------------- watch apps: admin teleports
+// ---------------------------------------------------------------- watch apps and the admin console
 
 const watchBank = useWatchBank()
 const adminWatch = useAdminWatch({
@@ -966,8 +967,9 @@ const adminWatch = useAdminWatch({
   },
   refreshInventory: () => refreshOwnedItems(),
   houses: housing.units,
+  translate: (key) => t(key),
 })
-const { isAdmin, error: adminError, panelOpen: adminPanelOpen } = adminWatch
+const { isAdmin, panelOpen: adminPanelOpen } = adminWatch
 function openAdminPanel(): void {
   trade.closeMenu()
   adminWatch.openPanel()
@@ -977,14 +979,6 @@ watch(adminPanelOpen, (open) => {
   if (open && document.pointerLockElement) document.exitPointerLock()
   if (!open && !document.pointerLockElement) requestPointerLock()
 })
-function adminTeleport(key: string): void {
-  adminWatch.teleport(key)
-  trade.closeMenu()
-}
-function adminGoTo(sessionId: string): void {
-  adminWatch.goTo(sessionId)
-  trade.closeMenu()
-}
 function adminSummon(sessionId: string): void {
   adminWatch.summon(sessionId)
   adminWatch.load()
@@ -1484,11 +1478,12 @@ const movement = useGameMovement({
     }
     return pointerLocked.value && runUseOrPunch(mouseButtonCode(e.button), false, e.shiftKey)
   },
-  speedFactor: () => survival.speedFactor() * intoxication.walkFactor(),
-  movementLocked: () => seats.seated.value || police.cuffedBy.value !== null,
+  speedFactor: () => survival.speedFactor() * intoxication.walkFactor() * (adminWatch.hasMyPower('speed') ? SPEED_POWER_FACTOR : 1),
+  movementLocked: () => seats.seated.value || police.cuffedBy.value !== null || adminWatch.hasMyPower('freeze'),
+  flying: () => adminWatch.hasMyPower('fly'),
   afterCameraPlaced: intoxication.applyToCamera,
-  trySpendJump: () => punch.trySpendJump(),
-  trySpendSprint: (dt, wasSprinting) => punch.trySpendSprint(dt, wasSprinting),
+  trySpendJump: () => adminWatch.hasMyPower('endless_stamina') || punch.trySpendJump(),
+  trySpendSprint: (dt, wasSprinting) => adminWatch.hasMyPower('endless_stamina') || punch.trySpendSprint(dt, wasSprinting),
   onBeforeRender: (dt) => {
     if (import.meta.env.DEV) renderStats.tick(dt)
     positionLabel.value = formatPosition()
@@ -2096,9 +2091,6 @@ const crosshairClass = computed(() => {
       :outgoing="tradeOutgoing"
       :error="tradeError"
       :is-admin="isAdmin"
-      :admin="adminWatch"
-      :own-session-id="gameRoomRef?.sessionId ?? ''"
-      :admin-error="adminError"
       :cash="walletBalances.cash"
       :bank-screen="watchBank.screen.value"
       :bank-error="watchBank.error.value"
@@ -2115,7 +2107,6 @@ const crosshairClass = computed(() => {
       @respond="trade.respond"
       @cancel="trade.cancel"
       @close="trade.closeMenu"
-      @admin-open="adminWatch.load"
       @bank-open="watchBank.load"
       @gps-toggle="gps.toggle"
       @route-atm="gps.routeToNearestAtm"
@@ -2123,10 +2114,6 @@ const crosshairClass = computed(() => {
       @contact-accept="watchContacts.accept"
       @contact-follow="gps.togglePlayer"
       @contact-ask="watchContacts.ask"
-      @teleport="adminTeleport"
-      @summon="adminSummon"
-      @go-to="adminGoTo"
-      @storage-sale="adminWatch.startStorageSale"
       @admin-panel="openAdminPanel"
     />
     <GameTradeWindow
@@ -2153,7 +2140,7 @@ const crosshairClass = computed(() => {
       @close="storage.close"
     />
     <GameLockpick v-if="lockpick.board.value" :board="lockpick.board.value" @press="lockpick.press" @close="lockpick.close" />
-    <GameAdminPanel v-if="adminPanelOpen && gameRoomRef" :admin="adminWatch" :own-session-id="gameRoomRef.sessionId" @summon="adminSummon" @close="adminWatch.closePanel" />
+    <GameAdminPanel v-if="adminPanelOpen && gameRoomRef" :admin="adminWatch" :own-session-id="gameRoomRef.sessionId" :map-image="minimap.image.value" @summon="adminSummon" @close="adminWatch.closePanel" />
     <GameAtmScreen v-if="atmOpen" :screen="atm.screen.value" :pending="atm.pending.value" :feedback="atm.feedback.value" @run="atm.run" @clear-feedback="atm.clearFeedback" @close="atm.close" />
     <GameMarketPanel
       v-if="market.panel.value"

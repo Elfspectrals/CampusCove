@@ -145,6 +145,18 @@ final class AdminHousingService
         return $unit;
     }
 
+    /** Takes back the house an account owns, as kickOwner does (keys revoked, contents seized). */
+    public function takeFrom(Account $admin, int $accountId): HousingUnit
+    {
+        $unit = $this->housing->findOccupiedUnitForAccount($accountId);
+        if ($unit === null) {
+            throw new HousingRejectedException('unit_not_occupied', 'This player owns no house.', 422);
+        }
+        $this->kickOwner($admin, (string) $unit->public_id);
+
+        return $unit;
+    }
+
     public function kickKeyHolder(Account $admin, string $publicId, int $accountId): void
     {
         DB::transaction(function () use ($admin, $publicId, $accountId): void {

@@ -2,35 +2,29 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { useAdminWatch } from '../../composables/game/useAdminWatch'
-import { SECTION_ICON, groupedItems, itemSection, quickQuantities, sectionsWithItems, type ItemSection } from '../../game/admin/adminItems.ts'
-import {
-  ADMIN_BOOSTS,
-  ADMIN_MAX_MARKET_MINUTES,
-  ADMIN_MAX_MONEY,
-  ADMIN_MAX_QUANTITY,
-  ADMIN_TOGGLES,
-  POWER_ICON,
-  adminResultMessage,
-  adminTargets,
-  wholeIn,
-} from '../../game/admin/adminPanel.ts'
-import { EVENT_ROWS, HOLD_MS, QUICK_AMOUNTS, eventStatus, isLive, placesWithRecentFirst, type EventRow, type EventStatus } from '../../game/admin/adminWatch.ts'
-import type { AdminItem, AdminResultPayload, AdminToggle, AdminWallet } from '../../types/gameRealtime'
+import { useHoldAction } from '../../composables/game/useHoldAction'
+import { ADMIN_MAX_MARKET_MINUTES, POWER_ICON, adminResultMessage, adminTargets, wholeIn } from '../../game/admin/adminPanel.ts'
+import { EVENT_ROWS, eventStatus, isLive, placesWithRecentFirst, type EventRow, type EventStatus } from '../../game/admin/adminConsole.ts'
+import type { WorldMapImage } from '../../game/world/minimap'
+import type { AdminResultPayload } from '../../types/gameRealtime'
 import type { UiIconName } from '../ui/icons'
 import UiIcon from '../ui/UiIcon.vue'
-import AdminThumb from './AdminThumb.vue'
+import AdminGiveTab from './admin/AdminGiveTab.vue'
+import AdminHoldButton from './admin/AdminHoldButton.vue'
+import AdminHouseTab from './admin/AdminHouseTab.vue'
+import AdminPowersTab from './admin/AdminPowersTab.vue'
 
-const props = defineProps<{ admin: ReturnType<typeof useAdminWatch>; ownSessionId: string }>()
+/** The admin console docked on the right, opened by the watch's Admin tile: who it acts on stays in view on top. */
+const props = defineProps<{ admin: ReturnType<typeof useAdminWatch>; ownSessionId: string; mapImage: WorldMapImage | null }>()
 
 const emit = defineEmits<{ summon: [sessionId: string]; close: [] }>()
 
 const { t } = useI18n()
+const hold = useHoldAction()
 
-const WALLETS: AdminWallet[] = ['cash', 'bank']
 const TABS = ['give', 'powers', 'house', 'places', 'events'] as const
 type Tab = (typeof TABS)[number]
 const TAB_ICON: Record<Tab, UiIconName> = { give: 'backpack', powers: 'bolt', house: 'home', places: 'map', events: 'flag' }
-type HeldAction = 'taxes' | 'closeMarket' | `house:${string}`
 
 const tab = ref<Tab>('give')
 const menu = computed(() => props.admin.menu.value)
@@ -42,27 +36,9 @@ const targetIsHere = computed(() => targets.value.some((p) => p.sessionId === ta
 const targetName = computed(() => (isMe.value ? t('adminPanel.me') : (targetPlayer.value?.pseudo ?? t('watch.admin.gone'))))
 const sheet = computed(() => (props.admin.sheet.value?.sessionId === target.value ? props.admin.sheet.value : null))
 
-const amountInput = ref('500')
-const wallet = ref<AdminWallet>('cash')
-const query = ref('')
-const section = ref<ItemSection>('food')
-const picked = ref<AdminItem | null>(null)
-const quantityInput = ref('1')
 const minutesInput = ref('10')
-const holding = ref<HeldAction | null>(null)
-let holdTimer: number | undefined
-
-const amount = computed(() => wholeIn(amountInput.value, 1, ADMIN_MAX_MONEY))
-const quantity = computed(() => wholeIn(quantityInput.value, 1, ADMIN_MAX_QUANTITY))
 const minutes = computed(() => wholeIn(minutesInput.value, 1, ADMIN_MAX_MARKET_MINUTES))
-const allItems = computed(() => props.admin.items.value ?? [])
-const sections = computed(() => sectionsWithItems(allItems.value))
-const groups = computed(() => groupedItems(allItems.value, section.value, query.value))
-const searching = computed(() => query.value.trim() !== '')
-const showGroupTitles = computed(() => searching.value || groups.value.length > 1)
-const pickedQuick = computed(() => (picked.value ? quickQuantities(itemSection(picked.value)) : []))
 const places = computed(() => placesWithRecentFirst(menu.value?.destinations ?? [], props.admin.recentPlace.value))
-const houses = computed(() => props.admin.houses.value)
 const events = computed(() =>
   EVENT_ROWS.filter((row): row is Exclude<EventRow, 'taxes'> => row !== 'taxes').map((row) => {
     const status: EventStatus = menu.value ? eventStatus(row, menu.value.events) : { key: 'unknown' }
@@ -83,8 +59,9 @@ watch(
   },
   { immediate: true },
 )
-watch(sections, (list) => {
-  if (list.length > 0 && !list.some((s) => s.section === section.value)) section.value = list[0]!.section
+// a kicked or departed target falls back to the admin
+watch(targetIsHere, (here) => {
+  if (!here && menu.value) target.value = props.ownSessionId
 })
 
 const itemName = (itemCode: string) => props.admin.items.value?.find((i) => i.code === itemCode)?.name ?? itemCode
@@ -121,54 +98,10 @@ function statusText(status: EventStatus): string {
   }
 }
 
-function hasPower(toggle: AdminToggle): boolean {
-  return sheet.value?.powers.includes(toggle) ?? false
-}
-
-function pick(item: AdminItem): void {
-  picked.value = item
-  quantityInput.value = '1'
-}
-
 function startEvent(row: Exclude<EventRow, 'taxes'>): void {
   if (row === 'quiz') props.admin.startQuiz()
   else if (row === 'storage') props.admin.startStorageSale()
   else if (minutes.value !== null) props.admin.openMarket(minutes.value)
-}
-
-function giveMoney(): void {
-  if (amount.value === null || !targetIsHere.value) return
-  props.admin.giveMoney(target.value, wallet.value, amount.value)
-}
-
-function giveItem(): void {
-  if (picked.value === null || quantity.value === null || !targetIsHere.value) return
-  props.admin.giveItem(target.value, picked.value.code, quantity.value)
-}
-
-function stepQuantity(delta: number): void {
-  const next = Math.min(Math.max((quantity.value ?? 1) + delta, 1), ADMIN_MAX_QUANTITY)
-  quantityInput.value = String(next)
-}
-
-function runHeld(action: HeldAction): void {
-  if (action === 'taxes') props.admin.collectTaxes()
-  else if (action === 'closeMarket') props.admin.closeMarket()
-  else if (targetIsHere.value) props.admin.giveHouse(target.value, action.slice('house:'.length))
-}
-
-function startHold(action: HeldAction): void {
-  cancelHold()
-  holding.value = action
-  holdTimer = window.setTimeout(() => {
-    holding.value = null
-    runHeld(action)
-  }, HOLD_MS)
-}
-
-function cancelHold(): void {
-  window.clearTimeout(holdTimer)
-  holding.value = null
 }
 
 function onKey(e: KeyboardEvent): void {
@@ -178,10 +111,7 @@ function onKey(e: KeyboardEvent): void {
 }
 
 onMounted(() => window.addEventListener('keydown', onKey, true))
-onUnmounted(() => {
-  window.removeEventListener('keydown', onKey, true)
-  window.clearTimeout(holdTimer)
-})
+onUnmounted(() => window.removeEventListener('keydown', onKey, true))
 </script>
 
 <template>
@@ -264,183 +194,17 @@ onUnmounted(() => {
     </div>
 
     <div class="relative mx-2.5 flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto rounded-b-lg bg-ink-800 p-3">
-      <template v-if="tab === 'give'">
-        <form class="flex flex-col gap-2 rounded-lg bg-ink-900 p-2.5" @submit.prevent="giveMoney">
-          <h3 class="m-0 flex items-center gap-1.5 text-xs font-bold text-fog"><UiIcon name="bank" :size="14" class="text-sun" />{{ t('adminPanel.money') }}</h3>
-          <div class="flex gap-1" role="radiogroup" :aria-label="t('adminPanel.wallet')">
-            <button
-              v-for="w in WALLETS"
-              :key="w"
-              type="button"
-              role="radio"
-              :aria-checked="wallet === w"
-              :class="['min-h-11 flex-1 rounded-lg text-xs font-bold', wallet === w ? 'bg-sun text-ink-950' : 'bg-ink-800 text-mist hover:text-fog']"
-              @click="wallet = w"
-            >
-              {{ t(`adminPanel.wallets.${w}`) }}
-            </button>
-          </div>
-          <div class="grid grid-cols-[1fr_auto] gap-1">
-            <input v-model="amountInput" type="number" min="1" :max="ADMIN_MAX_MONEY" class="cc-input min-h-11" :aria-label="t('adminPanel.amount', { max: ADMIN_MAX_MONEY })" />
-            <button type="submit" class="cc-btn min-h-11" :disabled="amount === null || !targetIsHere">{{ t('adminPanel.give') }}</button>
-          </div>
-          <div class="flex gap-1">
-            <button
-              v-for="quick in QUICK_AMOUNTS"
-              :key="quick"
-              type="button"
-              :class="['min-h-11 flex-1 rounded-full text-xs font-bold', amount === quick ? 'bg-sun text-ink-950' : 'bg-ink-800 text-fog']"
-              @click="amountInput = String(quick)"
-            >
-              {{ quick.toLocaleString() }}
-            </button>
-          </div>
-        </form>
-
-        <section class="flex flex-col gap-2" :aria-label="t('adminPanel.items')">
-          <h3 class="m-0 flex items-center gap-1.5 text-xs font-bold text-fog"><UiIcon name="backpack" :size="14" class="text-mint" />{{ t('adminPanel.items') }}</h3>
-          <input v-model="query" type="search" class="cc-input min-h-11" :placeholder="t('adminPanel.search')" :aria-label="t('adminPanel.search')" />
-          <div v-if="!searching" class="flex flex-wrap gap-1" role="tablist" :aria-label="t('adminPanel.items')">
-            <button
-              v-for="s in sections"
-              :key="s.section"
-              type="button"
-              role="tab"
-              :aria-selected="section === s.section"
-              :class="['inline-flex min-h-9 items-center gap-1 rounded-full px-2.5 text-xs font-bold', section === s.section ? 'bg-mint text-ink-950' : 'bg-ink-900 text-mist hover:text-fog']"
-              @click="section = s.section"
-            >
-              <UiIcon :name="SECTION_ICON[s.section]" :size="13" />
-              {{ t(`adminPanel.sections.${s.section}`) }}
-              <span class="opacity-70">{{ s.count }}</span>
-            </button>
-          </div>
-
-          <p v-if="admin.items.value === null" class="m-0 text-xs text-mist">{{ t('adminPanel.loading') }}</p>
-          <p v-else-if="groups.length === 0" class="m-0 text-xs text-mist">{{ t('adminPanel.noItem') }}</p>
-          <div v-for="group in groups" v-else :key="group.group" class="flex flex-col gap-1">
-            <h4 v-if="showGroupTitles" class="m-0 text-[11px] font-bold text-mist">{{ t(searching ? `adminPanel.sections.${group.group}` : `adminPanel.groups.${group.group}`) }}</h4>
-            <ul class="m-0 grid list-none grid-cols-3 gap-1.5 p-0" role="listbox" :aria-label="group.group">
-              <li v-for="item in group.items" :key="item.code" role="option" :aria-selected="picked?.code === item.code">
-                <button
-                  type="button"
-                  :class="['flex w-full flex-col items-center gap-1 rounded-lg p-1.5 text-center', picked?.code === item.code ? 'bg-sun/20 ring-2 ring-sun' : 'bg-ink-900 hover:bg-ink-700']"
-                  :title="item.code"
-                  @click="pick(item)"
-                >
-                  <AdminThumb :src="item.preview" :icon="SECTION_ICON[itemSection(item)]" :size="52" />
-                  <span class="line-clamp-2 min-h-[2lh] text-[11px] font-bold leading-tight text-fog">{{ item.name }}</span>
-                </button>
-              </li>
-            </ul>
-          </div>
-        </section>
-
-        <form v-if="picked" class="sticky -bottom-3 -mx-3 -mb-3 mt-auto flex flex-col gap-2 border-t border-line/10 bg-ink-900 p-2.5 shadow-[0_-8px_16px_rgb(0_0_0/0.25)]" @submit.prevent="giveItem">
-          <div class="flex items-center gap-2">
-            <AdminThumb :src="picked.preview" :icon="SECTION_ICON[itemSection(picked)]" :size="44" />
-            <div class="min-w-0 flex-1">
-              <b class="block truncate text-sm text-fog">{{ picked.name }}</b>
-              <span v-if="picked.portion" class="flex gap-2 text-[11px] text-mist">
-                <span v-if="picked.portion.hunger" class="inline-flex items-center gap-0.5"><UiIcon name="apple" :size="11" />+{{ picked.portion.hunger }}</span>
-                <span v-if="picked.portion.thirst" class="inline-flex items-center gap-0.5"><UiIcon name="droplet" :size="11" />+{{ picked.portion.thirst }}</span>
-                <span v-if="picked.portion.health" class="inline-flex items-center gap-0.5"><UiIcon name="heart" :size="11" />+{{ picked.portion.health }}</span>
-              </span>
-              <span v-else class="text-[11px] text-mist">{{ t(`adminPanel.sections.${itemSection(picked)}`) }}</span>
-            </div>
-            <button type="button" class="inline-flex min-h-11 min-w-11 items-center justify-center text-mist hover:text-fog" :aria-label="t('adminPanel.unpick')" @click="picked = null">
-              <UiIcon name="x" :size="16" />
-            </button>
-          </div>
-          <div class="flex items-center gap-1">
-            <button type="button" class="min-h-11 min-w-11 rounded-lg bg-ink-800 text-lg font-bold text-fog" :aria-label="t('adminPanel.less')" @click="stepQuantity(-1)">−</button>
-            <input v-model="quantityInput" type="number" min="1" :max="ADMIN_MAX_QUANTITY" class="cc-input min-h-11 w-16 text-center" :aria-label="t('adminPanel.quantity', { max: ADMIN_MAX_QUANTITY })" />
-            <button type="button" class="min-h-11 min-w-11 rounded-lg bg-ink-800 text-lg font-bold text-fog" :aria-label="t('adminPanel.more')" @click="stepQuantity(1)">+</button>
-            <button
-              v-for="quick in pickedQuick"
-              :key="quick"
-              type="button"
-              :class="['min-h-11 flex-1 rounded-full text-xs font-bold', quantity === quick ? 'bg-mint text-ink-950' : 'bg-ink-800 text-fog']"
-              @click="quantityInput = String(quick)"
-            >
-              ×{{ quick }}
-            </button>
-          </div>
-          <button type="submit" class="cc-btn min-h-11" :disabled="quantity === null || !targetIsHere">
-            {{ t('adminPanel.giveItem', { quantity: quantity ?? '?', item: picked.name, name: targetName }) }}
-          </button>
-        </form>
-      </template>
-
-      <template v-else-if="tab === 'powers'">
-        <p v-if="!targetIsHere" class="m-0 text-xs text-coral">{{ t('adminPanel.targetGone') }}</p>
-        <section class="flex flex-col gap-1.5" :aria-label="t('adminPanel.lasting')">
-          <h3 class="m-0 text-xs font-bold text-fog">{{ t('adminPanel.lasting') }}</h3>
-          <p class="m-0 text-[11px] text-mist">{{ t('adminPanel.lastingHint') }}</p>
-          <button
-            v-for="toggle in ADMIN_TOGGLES"
-            :key="toggle"
-            type="button"
-            role="switch"
-            :aria-checked="hasPower(toggle)"
-            :disabled="!sheet"
-            class="flex min-h-11 items-center gap-2.5 rounded-lg bg-ink-900 px-2.5 py-2 text-left hover:bg-ink-700 disabled:opacity-50"
-            @click="admin.power(target, toggle, !hasPower(toggle))"
-          >
-            <span :class="['grid size-8 shrink-0 place-items-center rounded-lg', hasPower(toggle) ? 'bg-mint text-ink-950' : 'bg-ink-800 text-mist']">
-              <UiIcon :name="POWER_ICON[toggle]" :size="16" />
-            </span>
-            <span class="min-w-0 flex-1">
-              <b class="block text-sm text-fog">{{ t(`adminPanel.powers.${toggle}`) }}</b>
-              <small class="block text-[11px] text-mist">{{ t(`adminPanel.powerHints.${toggle}`) }}</small>
-            </span>
-            <span :class="['relative h-6 w-10 shrink-0 rounded-full transition-colors', hasPower(toggle) ? 'bg-mint' : 'bg-ink-700']" aria-hidden="true">
-              <span :class="['absolute top-0.5 size-5 rounded-full bg-fog transition-[left]', hasPower(toggle) ? 'left-[18px]' : 'left-0.5']" />
-            </span>
-          </button>
-        </section>
-        <section class="flex flex-col gap-1.5" :aria-label="t('adminPanel.instant')">
-          <h3 class="m-0 text-xs font-bold text-fog">{{ t('adminPanel.instant') }}</h3>
-          <div class="grid grid-cols-2 gap-1.5">
-            <button
-              v-for="boost in ADMIN_BOOSTS"
-              :key="boost"
-              type="button"
-              :disabled="!targetIsHere"
-              class="flex min-h-11 items-center gap-2 rounded-lg bg-ink-900 px-2.5 py-2 text-left text-xs font-bold text-fog hover:bg-ink-700 disabled:opacity-50"
-              @click="admin.power(target, boost)"
-            >
-              <UiIcon :name="POWER_ICON[boost]" :size="16" class="text-sun" />
-              {{ t(`adminPanel.powers.${boost}`) }}
-            </button>
-          </div>
-        </section>
-      </template>
-
-      <template v-else-if="tab === 'house'">
-        <p class="m-0 text-[11px] text-mist">{{ t('adminPanel.houseHint', { name: targetName }) }}</p>
-        <p v-if="houses.length === 0" class="m-0 text-xs text-mist">{{ t('adminPanel.noHouse') }}</p>
-        <ul v-else class="m-0 flex list-none flex-col gap-1.5 p-0">
-          <li v-for="house in houses" :key="house.unit" class="flex items-center gap-2.5 rounded-lg bg-ink-900 p-2">
-            <AdminThumb :src="house.preview" icon="home" :size="56" />
-            <div class="min-w-0 flex-1">
-              <b class="block truncate text-sm text-fog">{{ house.name }}</b>
-              <small class="text-[11px] text-mist">{{ t('adminPanel.houseWorth', { price: house.price.toLocaleString() }) }}</small>
-            </div>
-            <button
-              type="button"
-              class="cc-btn cc-btn-sm relative min-h-11 shrink-0 overflow-hidden"
-              :disabled="!targetIsHere"
-              @pointerdown="startHold(`house:${house.unit}`)"
-              @pointerup="cancelHold"
-              @pointerleave="cancelHold"
-            >
-              <span v-if="holding === `house:${house.unit}`" class="hold-fill absolute inset-y-0 left-0 bg-coral/40" aria-hidden="true" />
-              <span class="relative">{{ t('adminPanel.give') }}</span>
-            </button>
-          </li>
-        </ul>
-      </template>
+      <AdminGiveTab v-if="tab === 'give'" :admin="admin" :target="target" :target-name="targetName" :target-is-here="targetIsHere" :sheet="sheet" />
+      <AdminPowersTab v-else-if="tab === 'powers'" :admin="admin" :target="target" :target-is-here="targetIsHere" :is-me="isMe" :sheet="sheet" />
+      <AdminHouseTab
+        v-else-if="tab === 'house'"
+        :admin="admin"
+        :map-image="mapImage"
+        :target="target"
+        :target-name="targetName"
+        :target-is-here="targetIsHere"
+        :sheet="sheet"
+      />
 
       <ul v-else-if="tab === 'places'" class="m-0 flex list-none flex-col gap-1 p-0">
         <li v-for="place in places" :key="place.key">
@@ -467,26 +231,24 @@ onUnmounted(() => {
             <button type="button" class="cc-btn cc-btn-sm min-h-11" :disabled="event.row === 'market' && minutes === null" @click="startEvent(event.row)">
               {{ t(`adminPanel.start.${event.row}`) }}
             </button>
-            <button
+            <AdminHoldButton
               v-if="event.row === 'market'"
-              type="button"
-              class="cc-btn cc-btn-sm relative min-h-11 overflow-hidden"
-              @pointerdown="startHold('closeMarket')"
-              @pointerup="cancelHold"
-              @pointerleave="cancelHold"
-            >
-              <span v-if="holding === 'closeMarket'" class="hold-fill absolute inset-y-0 left-0 bg-coral/40" aria-hidden="true" />
-              <span class="relative">{{ t('adminPanel.holdTo', { action: t('adminPanel.closeMarket') }) }}</span>
-            </button>
+              :holding="hold.holding.value === 'closeMarket'"
+              :label="t('adminPanel.holdTo', { action: t('adminPanel.closeMarket') })"
+              @start="hold.start('closeMarket', admin.closeMarket)"
+              @cancel="hold.cancel"
+            />
           </div>
         </div>
         <div class="flex flex-col gap-1.5 rounded-lg bg-ink-900 p-2">
           <span class="text-sm font-bold text-fog">{{ t('watch.admin.event.taxes') }}</span>
           <p class="m-0 text-xs text-mist">{{ t('adminPanel.taxesWarning') }}</p>
-          <button type="button" class="cc-btn cc-btn-sm relative min-h-11 overflow-hidden" @pointerdown="startHold('taxes')" @pointerup="cancelHold" @pointerleave="cancelHold">
-            <span v-if="holding === 'taxes'" class="hold-fill absolute inset-y-0 left-0 bg-coral/40" aria-hidden="true" />
-            <span class="relative">{{ t('adminPanel.holdTo', { action: t('adminPanel.collectTaxes') }) }}</span>
-          </button>
+          <AdminHoldButton
+            :holding="hold.holding.value === 'taxes'"
+            :label="t('adminPanel.holdTo', { action: t('adminPanel.collectTaxes') })"
+            @start="hold.start('taxes', admin.collectTaxes)"
+            @cancel="hold.cancel"
+          />
         </div>
       </template>
     </div>
@@ -505,18 +267,3 @@ onUnmounted(() => {
     </section>
   </section>
 </template>
-
-<style scoped>
-.hold-fill {
-  animation: cc-hold 1s linear forwards;
-}
-
-@keyframes cc-hold {
-  from {
-    width: 0;
-  }
-  to {
-    width: 100%;
-  }
-}
-</style>

@@ -35,7 +35,7 @@ export interface ItemGroup {
   items: AdminItem[]
 }
 
-export function itemSection(item: AdminItem): ItemSection {
+export function itemSection(item: Pick<AdminItem, 'kind'>): ItemSection {
   return SECTION_OF_KIND[item.kind] ?? 'other'
 }
 
@@ -46,7 +46,7 @@ function clothesGroup(code: string): string {
   return [...WEAR_SLOTS].sort((a, b) => b.length - a.length).find((slot) => rest.startsWith(`${slot}_`)) ?? 'other'
 }
 
-export function itemGroup(item: AdminItem): string {
+export function itemGroup(item: Pick<AdminItem, 'code' | 'kind'>): string {
   const section = itemSection(item)
   if (section === 'food') return CONSUMABLE_FOLDERS.find(([prefix]) => item.code.startsWith(prefix))?.[1] ?? 'other'
   if (section === 'clothes') return clothesGroup(item.code)

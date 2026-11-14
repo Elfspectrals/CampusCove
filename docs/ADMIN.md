@@ -76,6 +76,19 @@ Gives a vacant house for free, as if bought (`AdminHousingService::assign`, `Hou
 | `unit_not_vacant` | 422 | someone owns it (evict them from the web admin first) |
 | `already_owns_unit` | 422 | the receiver already owns a house |
 
+### Taking back
+
+Everything the console gives can be taken back. Money and items need the same `ref` UUID as a grant; replaying a `ref` takes nothing more.
+
+| Route | Body | Answer | Refusals |
+|---|---|---|---|
+| `POST /api/admin/game/money/take` | `account_id`, `wallet` (`cash` or `bank`), `amount` 1 to 100,000, `ref` | `{ cash, bank }` | `bank_insufficient_funds` 422 (the wallet holds less), `bank_already_done` 409 |
+| `GET /api/admin/game/inventory?account_id=<id>` | | `{ items: [{ code, name, kind, preview, quantity }] }`: what the account holds that can be taken (never an item bought with gems) | |
+| `POST /api/admin/game/items/take` | `account_id`, `code`, `quantity` 1 to 999, `ref` | the same `{ items }` list after the take | `admin_take_too_many` 422, `admin_item_premium` 422, `admin_grant_already_done` 409 |
+| `POST /api/admin/game/house/take` | `account_id` | `{ account_id, unit_id, model_key }` | `unit_not_occupied` 422 (the account owns no house) |
+
+A money take is a `transactions` row of type `admin_take` (`meta_json`: `amount`, `ref`, `currency`, `from_account_id`) and a negative `wallet_ledger` row with reason `admin_take`. An item take is an `admin_item_grants` row with `direction` `take` (`give` for a grant) and `AccountInventoryService::revokeItem`. A house take is the web admin's eviction (`AdminHousingService::kickOwner`, as a seizure: keys revoked, contents boxed), audited `housing.kick_owner`.
+
 ### `POST /api/admin/game/taxes/collect`
 
 No body. Runs the same collection as `php artisan housing:collect-taxes` (`HousingService::collectDueTaxesSummary`): only houses whose tax is due are charged. Answer: `{ "charged": <houses that paid at least one day>, "seized": <houses seized for unpaid tax> }`. Running it twice charges nothing the second time, since the due dates have moved on.
@@ -110,7 +123,7 @@ When an opening ends, the scheduled `market:close` (every minute) returns the lo
 
 ## Socket messages
 
-The watch's Admin app (`WatchAdminApp.vue`, keyboard only) and the console docked on the right (`GameAdminPanel.vue`, opened from the app's Console tile, mouse) talk only to the socket (`socket/src/admin.ts`). A message from a player who is not an admin (`is_admin` at join) is ignored, with no answer. Every admin message shares the 500 ms admin cooldown; one inside it is dropped.
+The watch's Admin tile opens the console docked on the right (`GameAdminPanel.vue` and its tabs in `components/game/admin/`), which talks only to the socket (`socket/src/admin.ts`). The House tab pins every house on the town picture of the full map (`housePins`): free houses can be given, the chosen player's own house taken back. A message from a player who is not an admin (`is_admin` at join) is ignored, with no answer. Every admin message shares the 500 ms admin cooldown; one inside it is dropped.
 
 ### Client to socket
 
@@ -125,8 +138,13 @@ The watch's Admin app (`WatchAdminApp.vue`, keyboard only) and the console docke
 | `admin_give_money` | `{ sessionId: string, wallet: 'cash' \| 'bank', amount: integer }` | `amount` 1 to 100,000 |
 | `admin_give_item` | `{ sessionId: string, code: string, quantity: integer }` | `code` `[A-Za-z0-9_]{1,64}`, `quantity` 1 to 999 |
 | `admin_market` | `{ action: 'open', minutes: integer }` or `{ action: 'close' }` | `minutes` 1 to 240 |
-| `admin_power` | `{ sessionId: string, power: string, on?: boolean }` | a toggle `god`, `endless_food`, `endless_water` with `on`; or a boost `heal`, `feed`, `drink`, `sober`, `clear_wanted` (no `on`) |
+| `admin_power` | `{ sessionId: string, power: string, on?: boolean }` | a toggle (see Powers) with `on`; or a boost `heal`, `feed`, `drink`, `sober`, `clear_wanted` (no `on`) |
+| `admin_moderate` | `{ sessionId: string, action, minutes?, stars?, key? }` | `kick` (never oneself), `jail` with `minutes` 1 to 60 (an officer-held cell: no fine to pay, refused when already jailed), `release` (refused when not jailed), `stars` with `stars` 0 to 5, `send` with a listed place `key` (refused at the clinic, knocked out or jailed) |
 | `admin_house` | `{ sessionId: string, unit: string }` | `unit` a UUID; calls `POST /api/admin/game/house` |
+| `admin_take_money` | `{ sessionId, wallet, amount }` | as `admin_give_money`; calls `POST /api/admin/game/money/take` |
+| `admin_inventory` | `{ sessionId }` | answered by `admin_inventory`; no admin cooldown (a read) |
+| `admin_take_item` | `{ sessionId, code, quantity }` | as `admin_give_item`; answered by `admin_result` and a fresh `admin_inventory` |
+| `admin_take_house` | `{ sessionId }` | calls `POST /api/admin/game/house/take`, then reloads the housing units |
 | `admin_taxes` | none | |
 | `admin_quiz_start` | none | starts the pub quiz soon (existing) |
 | `admin_storage_sale` | none | starts the storage sale (existing, errors as `admin_error`) |
@@ -138,10 +156,16 @@ The watch's Admin app (`WatchAdminApp.vue`, keyboard only) and the console docke
 | Message | To | Payload |
 |---|---|---|
 | `admin_menu` | the admin | `{ destinations: [{ key, name }], players: [{ sessionId, pseudo, distance, stars }], events }`, `events` = `{ quiz: { state: 'scheduled' \| 'registration' \| 'running', startsAt }, storage: { state: 'scheduled', startsAt } \| { state: 'running', index, count }, market: { open, opensAt, closesAt } \| null }` (times in ms, market times ISO) |
-| `admin_player` | the admin | `{ sessionId, cash, bank, stars, vitals: { health, hunger, thirst, intoxication }, powers: string[] }` (cash and bank from `GET /api/admin/game/wallets`, the rest from the socket) |
-| `admin_items` | the admin | `{ items: [{ code, name, kind }] }` |
-| `admin_result` | the admin | success: `{ action: 'money', ok: true, sessionId, pseudo, wallet, amount, cash, bank }` (the receiver's new balances), `{ action: 'item', ok: true, pseudo, code, quantity }`, `{ action: 'market_open', ok: true, closesAt }`, `{ action: 'market_close', ok: true, returned }`, `{ action: 'taxes', ok: true, charged, seized }`, `{ action: 'power', ok: true, sessionId, pseudo, power, on, stars, vitals, powers }` (`on` null for a boost), `{ action: 'house', ok: true, sessionId, pseudo, unit, modelKey }`; failure: `{ action, ok: false, message }` (`action` also `items`), `message` from Laravel when it refused |
-| `admin_granted` | the receiver (the admin too, when they gave to themself) | `{ kind: 'money', byPseudo, wallet, amount, cash, bank }` (the receiver's new balances) or `{ kind: 'item', byPseudo, code, quantity }` (the receiver reloads their inventory), `{ kind: 'power', byPseudo, power, on }`, `{ kind: 'house', byPseudo, modelKey }` (the receiver reloads their inventory for the key) |
+| `admin_player` | the admin | `{ sessionId, accountId, cash, bank, stars, vitals: { health, hunger, thirst, intoxication }, powers: string[] }` (cash and bank from `GET /api/admin/game/wallets`, the rest from the socket) |
+| `admin_items` | the admin | `{ items: [{ code, name, kind, preview, portion }] }` |
+| `admin_inventory` | the admin | `{ sessionId, items: [{ code, name, kind, preview, quantity }] }` |
+| `admin_powers` | the player whose toggles changed | `{ powers: string[] }`: the client moves accordingly (fly, speed x2, freeze, endless stamina) |
+| `chat_muted` | a muted player who chats | `{}` |
+| `user_left` / `user_joined` | everyone else | when invisible is turned on / off |
+| `admin_result` | the admin | success: `{ action: 'money', ok: true, sessionId, pseudo, wallet, amount, cash, bank }` (the receiver's new balances), `{ action: 'item', ok: true, pseudo, code, quantity }`, `{ action: 'market_open', ok: true, closesAt }`, `{ action: 'market_close', ok: true, returned }`, `{ action: 'taxes', ok: true, charged, seized }`, `{ action: 'power', ok: true, sessionId, pseudo, power, on, stars, vitals, powers }` (`on` null for a boost), `{ action: 'house', ok: true, sessionId, pseudo, unit, modelKey }`, `{ action: 'moderate', ok: true, sessionId, pseudo, moderation, minutes?, stars?, place?, stars, vitals, powers }`, `{ action: 'take_money', ok: true, sessionId, pseudo, wallet, amount, cash, bank }`, `{ action: 'take_item', ok: true, sessionId, pseudo, code, quantity }`, `{ action: 'take_house', ok: true, sessionId, pseudo, modelKey }`; failure: `{ action, ok: false, message }` (`action` also `items`), `message` from Laravel when it refused |
+| `admin_granted` | the receiver (the admin too, when they gave to themself) | `{ kind: 'money', byPseudo, wallet, amount, cash, bank }` (the receiver's new balances) or `{ kind: 'item', byPseudo, code, quantity }` (the receiver reloads their inventory), `{ kind: 'power', byPseudo, power, on }`, `{ kind: 'house', byPseudo, modelKey }` (the receiver reloads their inventory for the key), `{ kind: 'moderate', byPseudo, moderation: 'jail', minutes }`, `{ kind: 'take_money', byPseudo, wallet, amount, cash, bank }`, `{ kind: 'take_item', byPseudo, code, quantity }`, `{ kind: 'take_house', byPseudo, modelKey }` |
+
+A kicked player's connection is closed with code 4002 (`KICK_CLOSE_CODE`, front `ADMIN_KICK_CLOSE_CODE`); the page says an admin kicked them and they can come back.
 | `market_sync` | everyone | sent after a market open or close (the socket reads `GET /api/market` again) |
 | `housing_units_sync` | everyone | after `admin_taxes` or `admin_house`, when a house changed hands (housing units reloaded) |
 
@@ -159,3 +183,10 @@ Owned by the socket (`socket/src/adminPowers.ts`), never saved: toggles stay on 
 | `drink` | boost | thirst to 100 |
 | `sober` | boost | intoxication to 0 |
 | `clear_wanted` | boost | wanted stars to 0 (`wanted.clearWanted`, saved and broadcast) |
+| `endless_stamina` | toggle | sprint, jump and punch spend no stamina (socket and client) |
+| `fly` | toggle | the move check only keeps the world bounds and knock-outs: through walls, locked doors and cells, at any speed. The client flies along the look (Space up, Ctrl down, Shift faster) without collisions. No fall damage while flying, and the landing after it is turned off is free |
+| `speed` | toggle | the move check allows twice the walk and run speed (`SPEED_POWER_FACTOR`); the client moves twice as fast |
+| `freeze` | toggle | every move is refused (`frozen`); the client stops sending moves |
+| `invisible` | toggle | the others get `user_left`, no more `user_moved`, the player is left out of the join list, chat and voice reach nobody; off sends `user_joined` |
+| `mute` | toggle | chat reaches nobody (the player gets `chat_muted`) and the voice sync subscribes nobody to them |
+| `one_punch` | toggle | each landed punch does 100 damage |

@@ -1,5 +1,6 @@
 import { type AuthContext, type Client, Room } from 'colyseus'
-import { onAdminGiveItem, onAdminGiveMoney, onAdminGoto, onAdminHouse, onAdminItems, onAdminMarket, onAdminOpen, onAdminPlayer, onAdminPower, onAdminQuizStart, onAdminSummon, onAdminTaxes, onAdminTeleport } from './admin.ts'
+import { hasPower } from './adminPowers.ts'
+import { onAdminGiveItem, onAdminGiveMoney, onAdminGoto, onAdminHouse, onAdminInventory, onAdminItems, onAdminModerate, onAdminMarket, onAdminOpen, onAdminPlayer, onAdminPower, onAdminQuizStart, onAdminSummon, onAdminTakeHouse, onAdminTakeItem, onAdminTakeMoney, onAdminTaxes, onAdminTeleport } from './admin.ts'
 import { pickupObject, saveObject, setDecoratedHouse } from './apartments.ts'
 import { type Json, callBackendJson, clientIp, isDirectOrigin, parseAccountId, resolveIdentity } from './backend.ts'
 import { CITY_MAX_PLAYERS, CITY_SPAWN_RADIUS, LIVEKIT } from './config.ts'
@@ -222,6 +223,11 @@ export class CityRoom extends Room implements GameRoom {
     this.onMessage('admin_taxes', (client) => void onAdminTaxes(this, client))
     this.onMessage('admin_power', (client, payload: ClientPayload) => onAdminPower(this, client, payload))
     this.onMessage('admin_house', (client, payload: ClientPayload) => void onAdminHouse(this, client, payload))
+    this.onMessage('admin_moderate', (client, payload: ClientPayload) => onAdminModerate(this, client, payload))
+    this.onMessage('admin_take_money', (client, payload: ClientPayload) => void onAdminTakeMoney(this, client, payload))
+    this.onMessage('admin_inventory', (client, payload: ClientPayload) => void onAdminInventory(this, client, payload))
+    this.onMessage('admin_take_item', (client, payload: ClientPayload) => void onAdminTakeItem(this, client, payload))
+    this.onMessage('admin_take_house', (client, payload: ClientPayload) => void onAdminTakeHouse(this, client, payload))
     this.onMessage('storage_bid', (client) => void onStorageBid(this, client))
     this.onMessage('storage_lot_open', (client, payload: ClientPayload) => void onStorageOpen(this, client, payload))
     this.onMessage('storage_open_mine', (client) => void onStorageOpenMine(this, client))
@@ -329,7 +335,7 @@ export class CityRoom extends Room implements GameRoom {
   }
 
   otherPlayers(client: GameClient) {
-    return [...this.players.values()].filter((u) => u.sessionId !== client.sessionId).map(publicPlayer)
+    return [...this.players.values()].filter((u) => u.sessionId !== client.sessionId && !hasPower(u, 'invisible')).map(publicPlayer)
   }
 
   // ------------------------------------------------------------ presence
@@ -373,6 +379,7 @@ export class CityRoom extends Room implements GameRoom {
   }
 
   broadcastMove(client: GameClient, player: Player): void {
+    if (hasPower(player, 'invisible')) return
     const { x, y, z, ry } = player
     this.forEachClient((c) => c.send('user_moved', { sessionId: client.sessionId, x, y, z, ry }), client)
   }

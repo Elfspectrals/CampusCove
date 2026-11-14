@@ -155,6 +155,10 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
             Route::get('/items', [AdminGameController::class, 'items']);
             Route::get('/wallets', [AdminGameController::class, 'wallets']);
             Route::post('/money', [AdminGameController::class, 'grantMoney']);
+            Route::post('/money/take', [AdminGameController::class, 'takeMoney']);
+            Route::get('/inventory', [AdminGameController::class, 'inventory']);
+            Route::post('/items/take', [AdminGameController::class, 'takeItem']);
+            Route::post('/house/take', [AdminGameController::class, 'takeHouse']);
             Route::post('/items', [AdminGameController::class, 'grantItem']);
             Route::post('/house', [AdminGameController::class, 'assignHouse']);
             Route::post('/taxes/collect', [AdminGameController::class, 'collectTaxes']);

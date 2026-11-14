@@ -1,15 +1,10 @@
 <script setup lang="ts">
-import type { UiIconName } from '../../ui/icons'
-import AdminThumb from '../AdminThumb.vue'
-
 defineProps<{
   selected: boolean
   dot: 'sun' | 'mint' | 'pool' | 'grape' | 'coral' | 'mist'
   name: string
   meta: string
   metaClass?: string
-  /** A small picture (or its icon) in place of the dot. */
-  thumb?: { src: string | null; icon: UiIconName }
 }>()
 
 const DOT_CLASSES = { sun: 'bg-sun', mint: 'bg-mint', pool: 'bg-pool', grape: 'bg-grape', coral: 'bg-coral', mist: 'bg-mist/40' } as const
@@ -23,8 +18,7 @@ const DOT_CLASSES = { sun: 'bg-sun', mint: 'bg-mint', pool: 'bg-pool', grape: 'b
       selected ? 'bg-ink-700 shadow-[inset_3px_0_0_rgb(var(--cc-sun))]' : '',
     ]"
   >
-    <AdminThumb v-if="thumb" :src="thumb.src" :icon="thumb.icon" :size="24" />
-    <span v-else :class="['size-2 shrink-0 rounded-full', DOT_CLASSES[dot]]" />
+    <span :class="['size-2 shrink-0 rounded-full', DOT_CLASSES[dot]]" />
     <span class="min-w-0 flex-1 truncate font-bold text-fog">{{ name }}</span>
     <span :class="['min-w-0 max-w-[50%] truncate text-[11px]', metaClass ?? 'text-mist']">{{ meta }}</span>
   </li>

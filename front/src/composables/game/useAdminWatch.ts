@@ -1,16 +1,21 @@
-import { computed, ref, type Ref, type ShallowRef } from 'vue'
+import { ref, type Ref, type ShallowRef } from 'vue'
 import type { Room } from '@colyseus/sdk'
 import { applyCachedBalanceAfterPurchase } from '../../api/session'
-import { isToggle, vacantHouses } from '../../game/admin/adminPanel'
+import { isToggle } from '../../game/admin/adminPanel'
 import type {
   AdminGrantedPayload,
+  AdminHeldItem,
+  AdminInventoryPayload,
   AdminItem,
   AdminItemsPayload,
+  AdminModeration,
   AdminMenuPayload,
   AdminPlayerPayload,
   AdminPower,
+  AdminPowersPayload,
   AdminResultPayload,
   AdminSummonedPayload,
+  AdminToggle,
   AdminWallet,
   HousingUnitPayload,
 } from '../../types/gameRealtime'
@@ -27,8 +32,10 @@ export interface AdminWatchDeps {
   say: (text: string) => void
   grantedMessage: (data: AdminGrantedPayload) => string
   refreshInventory: () => void
-  /** The town's houses (housing_units_sync), for the give-a-house list. */
+  /** The town's houses (housing_units_sync), for the house map. */
   houses: Ref<HousingUnitPayload[]>
+  /** Translates a message key (kicked, chat muted). */
+  translate: (key: string) => string
 }
 
 /**
@@ -45,7 +52,9 @@ export function useAdminWatch(deps: AdminWatchDeps) {
   const log = ref<AdminLogEntry[]>([])
   const sheet = ref<AdminPlayerPayload | null>(null)
   const recentPlace = ref<string | null>(null)
-  const houses = computed(() => vacantHouses(deps.houses.value))
+  /** Toggles an admin turned on for this player (any player, admin or not): fly, speed, freeze... */
+  const myPowers = ref<ReadonlySet<AdminToggle>>(new Set())
+  const inventory = ref<{ sessionId: string; items: AdminHeldItem[] } | null>(null)
 
   const send = (type: string, payload?: unknown) => deps.gameRoomRef.value?.send(type, payload)
 
@@ -114,6 +123,16 @@ export function useAdminWatch(deps: AdminWatchDeps) {
   /** A toggle needs `on`; a one-shot boost sends none. */
   const power = (sessionId: string, name: AdminPower, on?: boolean) => act('admin_power', isToggle(name) ? { sessionId, power: name, on: on === true } : { sessionId, power: name })
   const giveHouse = (sessionId: string, unit: string) => act('admin_house', { sessionId, unit })
+  const moderate = (sessionId: string, action: AdminModeration, extra: { minutes?: number; stars?: number; key?: string } = {}) =>
+    act('admin_moderate', { sessionId, action, ...extra })
+  const takeMoney = (sessionId: string, wallet: AdminWallet, amount: number) => act('admin_take_money', { sessionId, wallet, amount })
+  const takeItem = (sessionId: string, code: string, quantity: number) => act('admin_take_item', { sessionId, code, quantity })
+  const takeHouse = (sessionId: string) => act('admin_take_house', { sessionId })
+  function loadInventory(sessionId: string): void {
+    if (inventory.value?.sessionId !== sessionId) inventory.value = null
+    send('admin_inventory', { sessionId })
+  }
+  const hasMyPower = (power: AdminToggle) => myPowers.value.has(power)
   function startQuiz(): void {
     act('admin_quiz_start')
     load()
@@ -145,7 +164,15 @@ export function useAdminWatch(deps: AdminWatchDeps) {
     collectTaxes,
     power,
     giveHouse,
-    houses,
+    houses: deps.houses,
+    moderate,
+    takeMoney,
+    takeItem,
+    takeHouse,
+    inventory,
+    loadInventory,
+    myPowers,
+    hasMyPower,
     startQuiz,
     handlers: {
       onInit: (admin: boolean) => {
@@ -169,19 +196,29 @@ export function useAdminWatch(deps: AdminWatchDeps) {
         result.value = data
         log.value = [{ at: Date.now(), result: data }, ...log.value].slice(0, LOG_SIZE)
         if (data.ok && data.action === 'money' && sheet.value?.sessionId === data.sessionId) sheet.value = { ...sheet.value, cash: data.cash, bank: data.bank }
-        if (data.ok && data.action === 'power' && sheet.value?.sessionId === data.sessionId) {
+        if (data.ok && (data.action === 'power' || data.action === 'moderate') && sheet.value?.sessionId === data.sessionId) {
           sheet.value = { ...sheet.value, stars: data.stars, vitals: data.vitals, powers: data.powers }
         }
+        if (data.ok && data.action === 'take_money' && sheet.value?.sessionId === data.sessionId) sheet.value = { ...sheet.value, cash: data.cash, bank: data.bank }
+        if (data.ok && data.action === 'moderate' && data.moderation === 'kick') load()
         if (data.ok && (data.action === 'market_open' || data.action === 'market_close')) load()
       },
       onPlayer: (data: AdminPlayerPayload) => {
         sheet.value = data
       },
+      onPowers: (data: AdminPowersPayload) => {
+        myPowers.value = new Set(Array.isArray(data.powers) ? data.powers : [])
+      },
+      onInventory: (data: AdminInventoryPayload) => {
+        inventory.value = { sessionId: data.sessionId, items: Array.isArray(data.items) ? data.items : [] }
+      },
+      onChatMuted: () => deps.say(deps.translate('adminPanel.chatMuted')),
+      kickedMessage: () => deps.translate('adminPanel.kicked'),
       onGranted: (data: AdminGrantedPayload) => {
-        if (data.kind === 'money') {
+        if (data.kind === 'money' || data.kind === 'take_money') {
           applyCachedBalanceAfterPurchase('cash', data.cash)
           applyCachedBalanceAfterPurchase('coins', data.bank)
-        } else if (data.kind === 'item' || data.kind === 'house') {
+        } else if (data.kind === 'item' || data.kind === 'house' || data.kind === 'take_item' || data.kind === 'take_house') {
           deps.refreshInventory()
         }
         deps.say(deps.grantedMessage(data))

@@ -68,3 +68,15 @@ test('the back landing of a locked house is refused without the key and open wit
   const keyed = { ...tidewater, key_holder_account_ids: [2] }
   assert.equal(moveRejection(room(keyed), player(2, landing), -273.5, 1.6, inside, 1000), null)
 })
+
+test('admin powers: freeze refuses every move, fly goes through a locked door, speed x2 allows twice the run', () => {
+  const landing = worldZ(-5.9)
+  const inside = worldZ(-5.0)
+  const powered = (power: 'freeze' | 'fly' | 'speed') => Object.assign(player(2, landing), { adminPowers: new Set([power]) })
+  assert.equal(moveRejection(room(tidewater), powered('freeze'), -273.5, 1.6, landing, 1000), 'frozen')
+  assert.equal(moveRejection(room(tidewater), powered('fly'), -273.5, 1.6, inside, 1000), null)
+  const runner = (p: Player) => Object.assign(p, { x: 0, z: 0, lastMoveAt: 0 })
+  const far = 8.5 * 1.25 * 1.5 + 1.6
+  assert.equal(moveRejection(room(tidewater), runner(player(2, 0)), far, 1.6, 0, 1000, true), 'too_fast')
+  assert.equal(moveRejection(room(tidewater), runner(powered('speed')), far, 1.6, 0, 1000, true), null)
+})

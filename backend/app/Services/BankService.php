@@ -103,6 +103,33 @@ final class BankService
         });
     }
 
+    /**
+     * The admin takes coins back from one wallet of an account; refused when the wallet holds less.
+     *
+     * @return array{cash: int, bank: int}
+     */
+    public function adminTake(int $adminAccountId, int $fromAccountId, string $currency, int $amount, string $ref): array
+    {
+        return DB::transaction(function () use ($adminAccountId, $fromAccountId, $currency, $amount, $ref): array {
+            $cash = Wallet::lockForAccount($fromAccountId, Wallet::CASH);
+            $bank = Wallet::lockForAccount($fromAccountId, Wallet::BANK);
+            $this->refuseReplay('admin_take', $ref);
+            $wallet = $currency === Wallet::CASH ? $cash : $bank;
+            if ($wallet->balance() < $amount) {
+                throw new BankRejectedException('bank_insufficient_funds', 'This player does not have that much.');
+            }
+            $txId = $this->transaction($adminAccountId, 'admin_take', [
+                'amount' => $amount,
+                'ref' => $ref,
+                'currency' => $currency,
+                'from_account_id' => $fromAccountId,
+            ]);
+            $this->entry($wallet, $txId, -$amount, 'admin_take');
+
+            return ['cash' => $cash->balance(), 'bank' => $bank->balance()];
+        });
+    }
+
     /** @return array{cash: int, bank: int, history: list<array{reason: string, delta: int, at: string, from: ?string, to: ?string}>} */
     public function summary(int $accountId): array
     {

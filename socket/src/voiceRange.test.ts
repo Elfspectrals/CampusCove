@@ -3,7 +3,7 @@ import { test } from 'node:test'
 import { VOICE_RANGE, VOICE_RELEASE_RANGE, desiredVoices, type VoiceListener } from './voiceRange.ts'
 
 const player = (sessionId: string, x: number, z = 0, extra: Partial<VoiceListener> = {}): VoiceListener =>
-  ({ sessionId, accountId: `acc-${sessionId}`, x, z, unit: null, muted: new Set(), ...extra })
+  ({ sessionId, accountId: `acc-${sessionId}`, x, z, unit: null, muted: new Set(), silent: false, ...extra })
 
 const heard = (players: VoiceListener[], current = new Map<string, Set<string>>()) =>
   Object.fromEntries([...desiredVoices(players, current)].map(([k, v]) => [k, [...v].sort()]))
@@ -27,4 +27,9 @@ test('a muted account is never heard by the player who muted it, the other way s
 test('a wall between a house and the street cuts the voice', () => {
   const house = { id: 1 }
   assert.deepEqual(heard([player('a', 0, 0, { unit: house }), player('b', 2)]), { a: [], b: [] })
+})
+
+test('an invisible or muted speaker is heard by nobody but still hears the others', () => {
+  const players = [player('a', 0, 0, { silent: true }), player('b', 1)]
+  assert.deepEqual(heard(players), { a: ['b'], b: [] })
 })

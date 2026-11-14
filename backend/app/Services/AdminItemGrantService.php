@@ -40,24 +40,74 @@ final class AdminItemGrantService
 
     public function grant(int $adminAccountId, int $toAccountId, string $code, int $quantity, string $ref): void
     {
-        $def = ItemDef::query()->where('code', $code)->firstOrFail();
-        if (ItemDef::query()->whereKey($def->item_def_id)->boughtWithGems()->exists()) {
-            throw new AdminGrantRejectedException('admin_item_premium', 'Items bought with gems cannot be given.');
-        }
+        $def = $this->grantableDef($code, 'Items bought with gems cannot be given.');
 
         DB::transaction(function () use ($adminAccountId, $toAccountId, $def, $quantity, $ref): void {
-            try {
-                DB::table('admin_item_grants')->insert([
-                    'ref' => $ref,
-                    'admin_account_id' => $adminAccountId,
-                    'to_account_id' => $toAccountId,
-                    'item_def_id' => $def->item_def_id,
-                    'quantity' => $quantity,
-                ]);
-            } catch (UniqueConstraintViolationException) {
-                throw new AdminGrantRejectedException('admin_grant_already_done', 'This grant was already done.', 409);
-            }
+            $this->log($adminAccountId, $toAccountId, $def, $quantity, $ref, 'give');
             $this->inventory->grantItem($toAccountId, $def, $quantity);
         });
+    }
+
+    /**
+     * What an account holds that the admin may take back (never the items bought with gems).
+     *
+     * @return list<array{code: string, name: string, kind: string, preview: string|null, quantity: int}>
+     */
+    public function takeable(int $accountId): array
+    {
+        $gemCodes = ItemDef::query()->boughtWithGems()->pluck('code')->all();
+
+        return $this->inventory->aggregatedItemsForAccount($accountId, null, null)
+            ->reject(fn (object $row): bool => in_array($row->code, $gemCodes, true) || (int) $row->quantity <= 0)
+            ->map(fn (object $row): array => [
+                'code' => (string) $row->code,
+                'name' => (string) $row->name,
+                'kind' => (string) $row->kind,
+                'preview' => $row->preview_image,
+                'quantity' => (int) $row->quantity,
+            ])
+            ->values()
+            ->all();
+    }
+
+    /** Removes items from an account; refused when it holds fewer. Logged like a grant, direction 'take'. */
+    public function take(int $adminAccountId, int $fromAccountId, string $code, int $quantity, string $ref): void
+    {
+        $def = $this->grantableDef($code, 'Items bought with gems cannot be taken.');
+
+        DB::transaction(function () use ($adminAccountId, $fromAccountId, $def, $quantity, $ref): void {
+            $this->log($adminAccountId, $fromAccountId, $def, $quantity, $ref, 'take');
+            $held = collect($this->takeable($fromAccountId))->firstWhere('code', $def->code)['quantity'] ?? 0;
+            if ($held < $quantity) {
+                throw new AdminGrantRejectedException('admin_take_too_many', "This player only has {$held}.");
+            }
+            $this->inventory->revokeItem($fromAccountId, $def, $quantity);
+        });
+    }
+
+    private function grantableDef(string $code, string $premiumMessage): ItemDef
+    {
+        $def = ItemDef::query()->where('code', $code)->firstOrFail();
+        if (ItemDef::query()->whereKey($def->item_def_id)->boughtWithGems()->exists()) {
+            throw new AdminGrantRejectedException('admin_item_premium', $premiumMessage);
+        }
+
+        return $def;
+    }
+
+    private function log(int $adminAccountId, int $accountId, ItemDef $def, int $quantity, string $ref, string $direction): void
+    {
+        try {
+            DB::table('admin_item_grants')->insert([
+                'ref' => $ref,
+                'admin_account_id' => $adminAccountId,
+                'to_account_id' => $accountId,
+                'item_def_id' => $def->item_def_id,
+                'quantity' => $quantity,
+                'direction' => $direction,
+            ]);
+        } catch (UniqueConstraintViolationException) {
+            throw new AdminGrantRejectedException('admin_grant_already_done', 'This was already done.', 409);
+        }
     }
 }

@@ -1,8 +1,10 @@
 // Admin tools on the watch: teleport to a public place, or bring a player next to you. Only accounts the API
 // flags is_admin (GET /user at join) get an answer; everyone else is ignored.
 import { randomUUID } from 'node:crypto'
-import { type AdminBoost, type AdminToggle, boostedStats, parseBoost, parseToggle, withToggle } from './adminPowers.ts'
+import { type AdminBoost, type AdminToggle, boostedStats, hasPower, parseBoost, parseToggle, withToggle } from './adminPowers.ts'
 import { callRealtimeBackend, errorPayload, parseAccountId } from './backend.ts'
+import { lockUpOnJoin, release, saveJail } from './jail.ts'
+import { publicPlayer } from './players.ts'
 import { intIn, refreshMarket } from './market.ts'
 import { leavePub } from './pubGames.ts'
 import { parisHourAfter, quizStartAfter } from './pubQuiz.ts'
@@ -12,7 +14,7 @@ import { SALE_HOUR_PARIS } from './storageSale.ts'
 import { sendStats, setStats } from './survival.ts'
 import { type TradeRoom, checkTradeDistance } from './trade.ts'
 import type { ClientPayload, GameClient, GameRoom, Player, Vec3 } from './types.ts'
-import { clearWanted } from './wanted.ts'
+import { clearWanted, setWantedStars } from './wanted.ts'
 import { type TeleportDestination, teleportDestinations } from './world.ts'
 
 /** A summoned player lands this far in front of the admin, facing them. */
@@ -24,7 +26,23 @@ export const ADMIN_MAX_MARKET_MINUTES = 240
 const ITEM_CODE = /^[A-Za-z0-9_]{1,64}$/
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const WALLETS = ['cash', 'bank'] as const
-type AdminAction = 'items' | 'money' | 'item' | 'market_open' | 'market_close' | 'taxes' | 'power' | 'house'
+type AdminAction =
+  | 'items'
+  | 'money'
+  | 'item'
+  | 'market_open'
+  | 'market_close'
+  | 'taxes'
+  | 'power'
+  | 'house'
+  | 'moderate'
+  | 'take_money'
+  | 'take_item'
+  | 'take_house'
+  | 'inventory'
+export const ADMIN_MAX_JAIL_MINUTES = 60
+/** Close code of a kicked player's connection; the front shows why (useGameRealtime). */
+export const KICK_CLOSE_CODE = 4002
 
 export type AdminRoom = GameRoom & TradeRoom
 export type AdminPanelRoom = AdminRoom & { pollHousingUnits(): Promise<void> }
@@ -160,7 +178,7 @@ export async function onAdminPlayer(room: AdminRoom, client: GameClient, payload
   if (!target) return sendError(client, 'This player is no longer here.')
   try {
     const wallets = await callRealtimeBackend(admin.token, `/admin/game/wallets?account_id=${target.accountId}`, 'GET')
-    client.send('admin_player', { sessionId: target.player.sessionId, cash: wallets.cash, bank: wallets.bank, ...liveSheet(target.player) })
+    client.send('admin_player', { sessionId: target.player.sessionId, accountId: target.accountId, cash: wallets.cash, bank: wallets.bank, ...liveSheet(target.player) })
   } catch (error) {
     sendError(client, errorPayload(error, 'Could not read this player.', 'admin_failed').message)
   }
@@ -306,13 +324,20 @@ export function onAdminPower(room: AdminRoom, client: GameClient, payload: Clien
   const target = grantTarget(room, payload)
   if (!target?.player.stats) return refuse(client, 'power', 'This player is no longer here.')
   const player = target.player
+  const targetClient = clientOf(room, player)
   if (toggle) {
+    const wasInvisible = hasPower(player, 'invisible')
+    const wasFlying = hasPower(player, 'fly')
     player.adminPowers = withToggle(player.adminPowers, toggle, on === true)
+    // the drop back to the ground after a flight is never a fall
+    if (wasFlying && !hasPower(player, 'fly')) player.fallPeakY = Number.NEGATIVE_INFINITY
     if (player.stats) setStats(player, player.stats)
+    if (wasInvisible !== hasPower(player, 'invisible')) showOrHide(room, player)
+    // the target's own client needs fly, speed, freeze and stamina to move the way the server now allows
+    targetClient?.send('admin_powers', { powers: [...player.adminPowers] })
   } else if (boost) {
     applyBoost(room, player, boost)
   }
-  const targetClient = clientOf(room, player)
   if (targetClient) sendStats(targetClient, player)
   const power = toggle ?? boost
   client.send('admin_result', { action: 'power', ok: true, sessionId: player.sessionId, pseudo: player.pseudo, power, on: toggle ? on : null, ...liveSheet(player) })
@@ -333,6 +358,143 @@ export async function onAdminHouse(room: AdminPanelRoom, client: GameClient, pay
     clientOf(room, target.player)?.send('admin_granted', { kind: 'house', byPseudo: admin.pseudo, modelKey: house.model_key ?? null })
   } catch (error) {
     return sendFailure(client, 'house', error, 'Could not give the house.')
+  }
+  await room.pollHousingUnits()
+}
+
+/** Invisible on: the others see the player leave. Off: they see them come back where they stand. */
+function showOrHide(room: AdminRoom, player: Player): void {
+  const self = clientOf(room, player)
+  if (hasPower(player, 'invisible')) room.forEachClient((c) => c.send('user_left', { sessionId: player.sessionId }), self)
+  else room.forEachClient((c) => c.send('user_joined', publicPlayer(player)), self)
+}
+
+type Moderation = 'kick' | 'jail' | 'release' | 'stars' | 'send'
+const MODERATIONS: readonly Moderation[] = ['kick', 'jail', 'release', 'stars', 'send']
+
+function moderated(client: GameClient, player: Player, action: Moderation, extra: Record<string, unknown> = {}): void {
+  client.send('admin_result', { action: 'moderate', ok: true, sessionId: player.sessionId, pseudo: player.pseudo, moderation: action, ...extra, ...liveSheet(player) })
+}
+
+/**
+ * 'admin_moderate' { sessionId, action, minutes?, stars?, key? }: kick (never oneself), jail for 1 to 60 minutes in
+ * an officer-held cell (no fine to pay), release from jail, set 0 to 5 wanted stars, or send to a listed place.
+ */
+export function onAdminModerate(room: AdminRoom, client: GameClient, payload: ClientPayload, now = Date.now(), destinations: Destinations = teleportDestinations): void {
+  const admin = adminOf(room, client)
+  if (!admin || coolingDown(admin, now)) return
+  const action = MODERATIONS.find((m) => m === payload?.action) ?? null
+  if (action === null) return refuse(client, 'moderate', 'This action is not valid.')
+  const target = grantTarget(room, payload)
+  if (!target) return refuse(client, 'moderate', 'This player is no longer here.')
+  const player = target.player
+  const targetClient = clientOf(room, player)
+  switch (action) {
+    case 'kick': {
+      if (player === admin) return refuse(client, 'moderate', 'You cannot kick yourself.')
+      moderated(client, player, action)
+      targetClient?.leave?.(KICK_CLOSE_CODE, `kicked by ${admin.pseudo}`)
+      return
+    }
+    case 'jail': {
+      const minutes = intIn(payload?.minutes, 1, ADMIN_MAX_JAIL_MINUTES)
+      if (minutes === null) return refuse(client, 'moderate', 'Choose between 1 and 60 minutes.')
+      if (player.jail) return refuse(client, 'moderate', `${player.pseudo} is already in jail.`)
+      player.jail = { kind: 'officer', stars: player.wantedStars, msLeft: minutes * 60_000, cellId: null }
+      player.jailDirty = true
+      void saveJail(player)
+      lockUpOnJoin(room, player)
+      moderated(client, player, action, { minutes })
+      targetClient?.send('admin_granted', { kind: 'moderate', byPseudo: admin.pseudo, moderation: action, minutes })
+      return
+    }
+    case 'release': {
+      if (!player.jail) return refuse(client, 'moderate', `${player.pseudo} is not in jail.`)
+      release(room, player, 'released')
+      moderated(client, player, action)
+      return
+    }
+    case 'stars': {
+      const stars = intIn(payload?.stars, 0, 5)
+      if (stars === null) return refuse(client, 'moderate', 'Choose between 0 and 5 stars.')
+      setWantedStars(room, player, stars)
+      moderated(client, player, action, { stars })
+      return
+    }
+    case 'send': {
+      const destination = destinations().find((d) => d.key === payload?.key)
+      if (!destination) return refuse(client, 'moderate', 'Unknown place.')
+      if (now < player.knockedOutUntil || player.clinicBedId || player.jail) return refuse(client, 'moderate', `${player.pseudo} cannot be moved right now.`)
+      teleportPlayer(room, player, destination.position, destination.yaw, now)
+      moderated(client, player, action, { place: destination.name })
+      if (player !== admin) targetClient?.send('admin_summoned', { byPseudo: admin.pseudo })
+    }
+  }
+}
+
+/** 'admin_take_money' { sessionId, wallet, amount }: takes coins back; Laravel refuses more than the wallet holds. */
+export async function onAdminTakeMoney(room: AdminRoom, client: GameClient, payload: ClientPayload, now = Date.now(), newRef: () => string = randomUUID): Promise<void> {
+  const admin = adminOf(room, client)
+  if (!admin || coolingDown(admin, now)) return
+  const wallet = WALLETS.find((w) => w === payload?.wallet) ?? null
+  const amount = intIn(payload?.amount, 1, ADMIN_MAX_MONEY)
+  if (wallet === null || amount === null) return refuse(client, 'take_money', 'This amount is not valid.')
+  const target = grantTarget(room, payload)
+  if (!target) return refuse(client, 'take_money', 'This player is no longer here.')
+  try {
+    const balances = await callRealtimeBackend(admin.token, '/admin/game/money/take', 'POST', { account_id: target.accountId, wallet, amount, ref: newRef() })
+    client.send('admin_result', { action: 'take_money', ok: true, sessionId: target.player.sessionId, pseudo: target.player.pseudo, wallet, amount, cash: balances.cash, bank: balances.bank })
+    clientOf(room, target.player)?.send('admin_granted', { kind: 'take_money', byPseudo: admin.pseudo, wallet, amount, cash: balances.cash, bank: balances.bank })
+  } catch (error) {
+    sendFailure(client, 'take_money', error, 'Could not take the money.')
+  }
+}
+
+/** 'admin_inventory' { sessionId }: what the player holds that can be taken back (a read, no cooldown). */
+export async function onAdminInventory(room: AdminRoom, client: GameClient, payload: ClientPayload): Promise<void> {
+  const admin = adminOf(room, client)
+  if (!admin) return
+  const target = grantTarget(room, payload)
+  if (!target) return refuse(client, 'inventory', 'This player is no longer here.')
+  try {
+    const data = await callRealtimeBackend(admin.token, `/admin/game/inventory?account_id=${target.accountId}`, 'GET')
+    client.send('admin_inventory', { sessionId: target.player.sessionId, items: Array.isArray(data?.items) ? data.items : [] })
+  } catch (error) {
+    sendFailure(client, 'inventory', error, 'Could not read the inventory.')
+  }
+}
+
+/** 'admin_take_item' { sessionId, code, quantity }: removes items; Laravel refuses more than the player holds. */
+export async function onAdminTakeItem(room: AdminRoom, client: GameClient, payload: ClientPayload, now = Date.now(), newRef: () => string = randomUUID): Promise<void> {
+  const admin = adminOf(room, client)
+  if (!admin || coolingDown(admin, now)) return
+  const code = typeof payload?.code === 'string' && ITEM_CODE.test(payload.code) ? payload.code : null
+  const quantity = intIn(payload?.quantity, 1, ADMIN_MAX_QUANTITY)
+  if (code === null || quantity === null) return refuse(client, 'take_item', 'This item or quantity is not valid.')
+  const target = grantTarget(room, payload)
+  if (!target) return refuse(client, 'take_item', 'This player is no longer here.')
+  try {
+    const data = await callRealtimeBackend(admin.token, '/admin/game/items/take', 'POST', { account_id: target.accountId, code, quantity, ref: newRef() })
+    client.send('admin_result', { action: 'take_item', ok: true, sessionId: target.player.sessionId, pseudo: target.player.pseudo, code, quantity })
+    client.send('admin_inventory', { sessionId: target.player.sessionId, items: Array.isArray(data?.items) ? data.items : [] })
+    clientOf(room, target.player)?.send('admin_granted', { kind: 'take_item', byPseudo: admin.pseudo, code, quantity })
+  } catch (error) {
+    sendFailure(client, 'take_item', error, 'Could not take the item.')
+  }
+}
+
+/** 'admin_take_house' { sessionId }: evicts the player from the house they own (as a seizure). */
+export async function onAdminTakeHouse(room: AdminPanelRoom, client: GameClient, payload: ClientPayload, now = Date.now()): Promise<void> {
+  const admin = adminOf(room, client)
+  if (!admin || coolingDown(admin, now)) return
+  const target = grantTarget(room, payload)
+  if (!target) return refuse(client, 'take_house', 'This player is no longer here.')
+  try {
+    const house = await callRealtimeBackend(admin.token, '/admin/game/house/take', 'POST', { account_id: target.accountId })
+    client.send('admin_result', { action: 'take_house', ok: true, sessionId: target.player.sessionId, pseudo: target.player.pseudo, modelKey: house.model_key ?? null })
+    clientOf(room, target.player)?.send('admin_granted', { kind: 'take_house', byPseudo: admin.pseudo, modelKey: house.model_key ?? null })
+  } catch (error) {
+    return sendFailure(client, 'take_house', error, 'Could not take the house back.')
   }
   await room.pollHousingUnits()
 }

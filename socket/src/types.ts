@@ -305,6 +305,8 @@ export type ClientPayload = { readonly [key: string]: unknown } | null | undefin
 export interface GameClient {
   sessionId: string
   send(type: string, payload?: unknown): void
+  /** Closes the connection (Colyseus Client.leave); only an admin kick uses it. */
+  leave?(code?: number, reason?: string): void
 }
 
 export interface CashBag {

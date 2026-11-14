@@ -1,4 +1,6 @@
+import { hasPower } from './adminPowers.ts'
 import { unitAt } from './movement.ts'
+import { MAX_STAT } from './survivalStats.ts'
 import { hurt } from './survival.ts'
 import { spendPunchStamina, staminaAt } from './stamina.ts'
 import { FIST, handStats, wearHeldTool, type HandStats } from './tools.ts'
@@ -42,7 +44,7 @@ export function onPunch(room: GameRoom, client: GameClient, payload: ClientPaylo
   const targetSessionId = typeof payload?.targetSessionId === 'string' ? payload.targetSessionId : null
   const target = targetSessionId ? room.players.get(targetSessionId) : null
   const hit = canHit(room, attacker, target, hand, now)
-  const stamina = spendPunchStamina(attacker.stamina, attacker.staminaSpentAt, now, hit)
+  const stamina = hasPower(attacker, 'endless_stamina') ? attacker.stamina : spendPunchStamina(attacker.stamina, attacker.staminaSpentAt, now, hit)
   if (stamina === null) {
     client.send('punch_tired', { stamina: staminaAt(attacker.stamina, attacker.staminaSpentAt, now) })
     return
@@ -63,7 +65,7 @@ export function onPunch(room: GameRoom, client: GameClient, payload: ClientPaylo
   if (!hit) return
   const targetClient = room.clients.find((c) => c.sessionId === targetSessionId)
   if (targetClient) {
-    hurt(room, targetClient, target, hand.damage, 'punch', attacker)
+    hurt(room, targetClient, target, hasPower(attacker, 'one_punch') ? MAX_STAT : hand.damage, 'punch', attacker)
     if (target.stats && target.stats.health > 0) reportAssault(room, attacker, target, now)
   }
   if (tool) void wearHeldTool(room, client, attacker, tool)

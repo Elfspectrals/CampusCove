@@ -12,6 +12,7 @@ import { createCameraShake, createKnockback } from '../../game/punch'
 import { advanceHitStop, cameraJolt, idleHitStop, punchKick, scheduleHitStop } from '../../game/punchFeel'
 import { cameraMotionScale, createStepSmoother, verticalFovFor } from '../../game/comfort'
 import { comfortSettings } from './useComfortSettings'
+import { flyStep } from '../../game/admin/selfPowers'
 
 /** Takeoff speed and gravity (m/s, m/s²): a ~0.95 m hop that lasts ~0.6 s. */
 const JUMP_VELOCITY = 6.5
@@ -57,6 +58,8 @@ export interface UseGameMovementDeps {
   onBeforeRender: (dt: number) => void
   /** Seated on a pub seat: the mouse still looks around, but the body stays put and no `move` is sent. */
   movementLocked?: () => boolean
+  /** Admin fly power: free flight through walls along the look, Space up and Ctrl down. */
+  flying?: () => boolean
   /** Runs once the camera is placed each frame, for extra camera motion (drunken sway). */
   afterCameraPlaced?: (camera: THREE.PerspectiveCamera, dt: number) => void
 }
@@ -64,7 +67,7 @@ export interface UseGameMovementDeps {
 /** First-person controls (WASD/ZQSD + pointer-lock mouse look), position sync, and the render loop. */
 export function useGameMovement(deps: UseGameMovementDeps) {
   const { pointerLocked, myPosition } = deps
-  const keys = { forward: false, back: false, left: false, right: false, sprint: false }
+  const keys = { forward: false, back: false, left: false, right: false, sprint: false, up: false, down: false }
   let sprinting = false
   let jumpRequested = false
   /** Height of the feet above the ground while jumping, and its vertical speed. */
@@ -108,7 +111,22 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     const feetY = myPosition.y - EYE_HEIGHT - airY
     const push = knockback.step(dt)
     const locked = deps.movementLocked?.() ?? false
-    if (!deps.inventoryOpen.value && !locked) {
+    const flying = !locked && (deps.flying?.() ?? false)
+    if (flying && !deps.inventoryOpen.value) {
+      const fly = flyStep(
+        yaw,
+        pitch,
+        { forward: keys.forward ? 1 : keys.back ? -1 : 0, right: keys.right ? 1 : keys.left ? -1 : 0, up: keys.up ? 1 : keys.down ? -1 : 0 },
+        keys.sprint,
+        dt,
+      )
+      airY = 0
+      airVelocity = 0
+      myPosition.x += fly.dx
+      myPosition.z += fly.dz
+      const ground = EYE_HEIGHT + (buildingFloorAt(myPosition.x, myPosition.z, myPosition.y - EYE_HEIGHT) ?? terrainHeightAt(myPosition.x, myPosition.z))
+      myPosition.y = Math.max(ground, myPosition.y + fly.dy)
+    } else if (!deps.inventoryOpen.value && !locked) {
       const forward = keys.forward ? 1 : keys.back ? -1 : 0
       const right = keys.right ? 1 : keys.left ? -1 : 0
       const speedFactor = deps.speedFactor()
@@ -127,7 +145,7 @@ export function useGameMovement(deps: UseGameMovementDeps) {
       sprinting = false
     }
     jumpRequested = false
-    if (!locked) {
+    if (!locked && !flying) {
       if (airY > 0 || airVelocity > 0) {
         airVelocity -= GRAVITY * dt
         airY = Math.max(0, airY + airVelocity * dt)
@@ -243,6 +261,7 @@ export function useGameMovement(deps: UseGameMovementDeps) {
 
   function setMoveKey(code: string, down: boolean): void {
     if (code === 'ShiftLeft' || code === 'ShiftRight') keys.sprint = down
+    else if (code === 'ControlLeft' || code === 'ControlRight') keys.down = down
     else if (matches('moveForward', code)) keys.forward = down
     else if (matches('moveBack', code)) keys.back = down
     else if (matches('moveLeft', code)) keys.left = down
@@ -264,6 +283,7 @@ export function useGameMovement(deps: UseGameMovementDeps) {
       // Space would otherwise press a focused button or scroll the page
       e.preventDefault()
       if (!e.repeat && pointerLocked.value) jumpRequested = true
+      keys.up = true
       return
     }
     setMoveKey(e.code, true)
@@ -282,6 +302,7 @@ export function useGameMovement(deps: UseGameMovementDeps) {
   }
 
   function onKeyUp(e: KeyboardEvent) {
+    if (matches('jump', e.code)) keys.up = false
     setMoveKey(e.code, false)
   }
 

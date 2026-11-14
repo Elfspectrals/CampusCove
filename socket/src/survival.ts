@@ -243,6 +243,10 @@ export function releaseClinicBed(room: GameRoom, player: Player): void {
 
 /** Called for every accepted move: tracks the highest point of a fall and hurts on landing. */
 export function onSurvivalMove(room: GameRoom, client: GameClient, player: Player, previousY: number, distXZ: number): void {
+  if (player.adminPowers?.has('fly')) {
+    player.fallPeakY = player.y
+    return
+  }
   const drop = previousY - player.y
   if (isWalkingDescent(drop, distXZ)) player.fallPeakY -= drop
   if (player.y >= previousY - 0.01) {
