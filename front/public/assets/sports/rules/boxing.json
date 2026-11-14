@@ -114,7 +114,20 @@
     "facingCos": 0.3,
     "heightM": 1
   },
-  "punchBags": "decor punch_bag props in zones/sports_boxing.json",
+  "punchBags": [
+    {
+      "x": -386.25,
+      "z": -221.8
+    },
+    {
+      "x": -382.45,
+      "z": -221.8
+    },
+    {
+      "x": -378.65,
+      "z": -221.8
+    }
+  ],
   "minPlayers": 2,
   "maxPlayers": 2,
   "rejoinGraceSec": 30,

@@ -1,5 +1,6 @@
 import lib_common as L
 
+PUNCH_BAG_ARM = 0.55
 ROPE_HEIGHTS = (0.45, 0.8, 1.15, 1.5)
 ROPE_WALL_H = 2.4
 STEP_COUNT = 3
@@ -76,7 +77,7 @@ class Ring:
 
 
 def punch_bag_parts(coll, M):
-    bag_x = 0.55
+    bag_x = PUNCH_BAG_ARM
     parts = [
         L.box(coll, "PB_Base", 0.0, 0.0, 0.0, 0.8, 0.8, 0.08, M["frame"], bevel=0.02),
         L.box(coll, "PB_Weight", 0.0, 0.0, 0.08, 0.5, 0.5, 0.12, M["weight"], bevel=0.03),

@@ -20,6 +20,7 @@ import {
   setGuard,
   startBout
 } from './boxingBout.ts'
+import { ownedGear } from './gear.ts'
 import { type Match, activePlayers, matchPlayer, parseSignupRules } from './signup.ts'
 import { type MatchEnd, type MatchResult, endMatch, recordMatch, registerCoach, registerVenue } from './venues.ts'
 
@@ -27,6 +28,9 @@ export const BOXING_VENUE = 'boxing_ring'
 const STATE_EVERY_MS = 250
 const RING_LEAVE_MARGIN_M = 0.5
 const DODGE_SIDES = ['left', 'right'] as const
+const BAG_REACH_M = 1.3
+const BAG_HIT_GAP_MS = 400
+const GLOVES_CHECK_TTL_MS = 60_000
 
 interface Fight {
   bout: Bout
@@ -35,6 +39,8 @@ interface Fight {
 }
 
 const fights = new Map<string, Fight>()
+const glovesChecks = new Map<number, { owned: Promise<boolean>, at: number }>()
+const lastBagHitAt = new Map<number, number>()
 let boxingRules: BoxingRules | null = null
 
 function rulesOf(): BoxingRules {
@@ -212,13 +218,28 @@ function end(room: GameRoom, match: Match, _end: MatchEnd): void {
   void recordMatch(room, match, boutResults(fight.bout), now)
 }
 
-function fightOf(room: GameRoom, client: GameClient): { fight: Fight, player: Player } | null {
-  const player = room.players.get(client.sessionId)
-  if (!player) return null
+function fightOfPlayer(room: GameRoom, player: Player): Fight | null {
+  if (fights.size === 0) return null
   const match = room.sports.matches.get(BOXING_VENUE)
   const fight = match && fights.get(match.id)
   if (!fight || !boxerOf(fight.bout, player.accountId) || matchPlayer(fight.match, player.accountId)?.sessionId !== player.sessionId) return null
-  return { fight, player }
+  return fight
+}
+
+function fightOf(room: GameRoom, client: GameClient): { fight: Fight, player: Player } | null {
+  const player = room.players.get(client.sessionId)
+  const fight = player && fightOfPlayer(room, player)
+  return player && fight ? { fight, player } : null
+}
+
+export function boxerIsDown(room: GameRoom, player: Player): boolean {
+  const fight = fightOfPlayer(room, player)
+  return fight !== null && fight.bout.phase !== 'over' && boxerOf(fight.bout, player.accountId)?.down != null
+}
+
+export function inBoutTogether(room: GameRoom, a: Player, b: Player): boolean {
+  const fight = fightOfPlayer(room, a)
+  return fight !== null && fight === fightOfPlayer(room, b)
 }
 
 function opponentPlayer(room: GameRoom, fight: Fight, accountId: number): Player | null {
@@ -270,6 +291,50 @@ export function onBoxingGetUp(room: GameRoom, client: GameClient, now = Date.now
   const found = fightOf(room, client)
   const boxer = found && boxerOf(found.fight.bout, found.player.accountId)
   if (found && boxer && getUpPress(found.fight.bout, boxer, now)) sendState(room, found.fight, now)
+}
+
+function ownsGloves(player: Player, now: number): Promise<boolean> {
+  const cached = glovesChecks.get(player.accountId)
+  if (cached && now - cached.at < GLOVES_CHECK_TTL_MS) return cached.owned
+  const owned = ownedGear(player).then((codes) => codes.includes(rulesOf().gear))
+  glovesChecks.set(player.accountId, { owned, at: now })
+  owned.catch(() => glovesChecks.delete(player.accountId))
+  return owned
+}
+
+function facingBag(player: Player, bag: { x: number, z: number }): boolean {
+  const dx = bag.x - player.x
+  const dz = bag.z - player.z
+  const dist = Math.hypot(dx, dz)
+  if (dist > BAG_REACH_M) return false
+  return dist === 0 || (-Math.sin(player.ry) * dx - Math.cos(player.ry) * dz) / dist >= rulesOf().hit.facingCos
+}
+
+export async function onBoxingBag(room: GameRoom, client: GameClient, payload: ClientPayload, now = Date.now()): Promise<void> {
+  const player = room.players.get(client.sessionId)
+  const index = payload?.bag
+  const kind = payload?.kind
+  if (!player?.token || !Number.isInteger(index) || !PUNCH_KINDS.includes(kind as PunchKind)) return
+  const bag = rulesOf().punchBags[index as number]
+  if (!bag || !facingBag(player, bag) || now - (lastBagHitAt.get(player.accountId) ?? 0) < BAG_HIT_GAP_MS) return
+  lastBagHitAt.set(player.accountId, now)
+  let owned: boolean
+  try {
+    owned = await ownsGloves(player, now)
+  } catch (error) {
+    console.warn('[sports] boxing gloves check failed:', error instanceof Error ? error.message : error)
+    client.send('boxing_no_gloves', { reason: 'check_failed' })
+    return
+  }
+  if (!owned) {
+    client.send('boxing_no_gloves', { reason: 'missing' })
+    return
+  }
+  const hall = worldSportsPassArea(rulesOf().zone)
+  room.forEachClient((c) => {
+    const listener = room.players.get(c.sessionId)
+    if (listener && hall && inside(hall, listener.x, listener.z)) c.send('boxing_bag_hit', { bag: index, sessionId: player.sessionId, kind })
+  })
 }
 
 export function boxingFight(matchId: string): Fight | undefined {

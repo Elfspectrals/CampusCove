@@ -23,6 +23,7 @@ export interface BoxingRules {
   ringHalfM: number
   corners: Record<Corner, Point3>
   exits: Record<Corner, Point3>
+  punchBags: { x: number, z: number }[]
   minPlayers: number
   maxPlayers: number
   rejoinGraceSec: number
@@ -337,6 +338,11 @@ function punchRules(raw: unknown, kind: PunchKind): PunchRules {
   }
 }
 
+function bagsOf(raw: unknown): { x: number, z: number }[] {
+  if (!Array.isArray(raw) || raw.length === 0) throw new Error('boxing rules: punchBags must list the bags')
+  return raw.map((bag, i) => point(bag, `punchBags.${i}`))
+}
+
 function gearOf(raw: unknown): string {
   if (!Array.isArray(raw) || raw.length !== 1 || typeof raw[0] !== 'string' || raw[0] === '') throw new Error('boxing rules: gear must list one item code')
   return raw[0]
@@ -365,6 +371,7 @@ export function parseBoxingRules(raw: unknown): BoxingRules {
     ringHalfM: num(ring, 'halfM', 'ring', 1),
     corners: { red: point3(corners.red, 'corners.red'), blue: point3(corners.blue, 'corners.blue') },
     exits: { red: point3(exits.red, 'exits.red'), blue: point3(exits.blue, 'exits.blue') },
+    punchBags: bagsOf(r.punchBags),
     minPlayers: num(r, 'minPlayers', 'root', 2),
     maxPlayers: num(r, 'maxPlayers', 'root', 2),
     rejoinGraceSec: num(r, 'rejoinGraceSec', 'root'),
