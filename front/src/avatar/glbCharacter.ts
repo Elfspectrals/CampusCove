@@ -116,11 +116,13 @@ interface AvatarAnimState {
   current: THREE.AnimationAction | null
   selector: AvatarClipSelector
   seated: boolean
+  crouching: boolean
   oneShot: OneShotClip | null
 }
 
 const CROSSFADE_S = 0.22
 const SIT_CLIP = 'Sit'
+const CROUCH_CLIP = 'PetanqueCrouch'
 const PICK_CLIP = 'Pick'
 const ONE_SHOT_CLIPS = [PICK_CLIP, 'Eat', 'Drink', 'PetanquePoint', 'PetanqueShoot', 'PetanqueCelebrate'] as const
 type OneShotClip = (typeof ONE_SHOT_CLIPS)[number]
@@ -135,7 +137,7 @@ export function attachAvatarAnimations(root: THREE.Object3D): void {
   const mixer = new THREE.AnimationMixer(root)
   const actions = new Map<string, THREE.AnimationAction>()
   for (const clip of clips) actions.set(clip.name, mixer.clipAction(clip))
-  const state: AvatarAnimState = { mixer, actions, current: null, selector: new AvatarClipSelector(), seated: false, oneShot: null }
+  const state: AvatarAnimState = { mixer, actions, current: null, selector: new AvatarClipSelector(), seated: false, crouching: false, oneShot: null }
   animStateByRoot.set(root, state)
   for (const name of ONE_SHOT_CLIPS) {
     const action = actions.get(name)
@@ -158,6 +160,11 @@ export function setAvatarSeated(root: THREE.Object3D, seated: boolean): boolean 
   if (!state) return false
   state.seated = seated && state.actions.has(SIT_CLIP)
   return state.seated
+}
+
+export function setAvatarCrouching(root: THREE.Object3D, crouching: boolean): void {
+  const state = animStateByRoot.get(root)
+  if (state) state.crouching = crouching && state.actions.has(CROUCH_CLIP)
 }
 
 function playOneShot(state: AvatarAnimState, name: OneShotClip): void {
@@ -211,7 +218,7 @@ export function updateAvatarAnimation(root: THREE.Object3D, dt: number, speed: n
   } else {
     const { clip, timeScale } = state.selector.update(dt, speed)
     if (state.oneShot !== PICK_CLIP && clip !== 'Idle') state.oneShot = null
-    if (state.oneShot === null) playClip(state, clip, timeScale)
+    if (state.oneShot === null) playClip(state, state.crouching && clip === 'Idle' ? CROUCH_CLIP : clip, timeScale)
   }
   state.mixer.update(clampDt(dt))
 }

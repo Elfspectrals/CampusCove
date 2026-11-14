@@ -5,7 +5,7 @@ import {
   type CosmeticColors,
 } from '../../api/characterCosmetics'
 import { buildCompositeAvatar, disposeObject3D } from '../../avatar/compositeAvatar'
-import { setAvatarEating, setAvatarPetanque, setAvatarPicking, setAvatarSeated, updateAvatarAnimation, type PetanqueClip } from '../../avatar/glbCharacter'
+import { setAvatarCrouching, setAvatarEating, setAvatarPetanque, setAvatarPicking, setAvatarSeated, updateAvatarAnimation, type PetanqueClip } from '../../avatar/glbCharacter'
 import { parseCharacterLook, type CharacterLook } from '../../avatar/characterLook'
 import { createModularCharacter } from '../../avatar/modularCharacter'
 import { WEAR_SLOTS, wearSignature, type WearModels } from '../../avatar/modularCharacterLogic'
@@ -410,6 +410,11 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     setAvatarEating(entry.group, action)
   }
 
+  function setCrouching(sessionId: string, crouching: boolean): void {
+    const entry = avatars.get(sessionId)
+    if (entry) setAvatarCrouching(entry.group, crouching)
+  }
+
   function playPetanque(sessionId: string, clip: PetanqueClip): void {
     const entry = avatars.get(sessionId)
     if (entry) setAvatarPetanque(entry.group, clip)
@@ -537,5 +542,5 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     }
   }
 
-  return { upsert, updateAppearance, setTarget, setSeated, setPicking, setHeldTool, handOf, playPetanque, setRacePint, setBadges, pseudoOf, positionOf, setVoiceState, setWantedStars, players, accountOf, showAction, showChat, showPunch, showHit, remove, clear, tick }
+  return { upsert, updateAppearance, setTarget, setSeated, setPicking, setHeldTool, handOf, playPetanque, setCrouching, setRacePint, setBadges, pseudoOf, positionOf, setVoiceState, setWantedStars, players, accountOf, showAction, showChat, showPunch, showHit, remove, clear, tick }
 }

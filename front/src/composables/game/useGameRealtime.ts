@@ -721,5 +721,6 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     setRemoteRacePint: remotes.setRacePint,
     remoteHand: remotes.handOf,
     playRemotePetanque: remotes.playPetanque,
+    setRemoteCrouching: remotes.setCrouching,
   }
 }

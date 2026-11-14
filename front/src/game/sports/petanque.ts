@@ -165,3 +165,36 @@ export function rollDurationMs(frames: readonly PetanqueFrame[]): number {
 export function teamLeft(state: PetanqueStatePayload, team: SportsTeam): number {
   return state.players.filter((p) => p.team === team && !p.out).reduce((sum, p) => sum + p.left, 0)
 }
+
+export const WATCH_JACK_M = 2
+export const FREE_HOLD_MS = 120_000
+
+type Spot = { x: number; z: number }
+
+export function jackWatchers(state: PetanqueStatePayload, positionOf: (sessionId: string) => Spot | null): Set<string> {
+  const watchers = new Set<string>()
+  const jack = state.balls.find((b) => b.kind === 'jack' && !b.dead)
+  if (!jack || state.phase === 'between') return watchers
+  for (const p of state.players) {
+    if (p.out || p.sessionId === state.thrower) continue
+    const at = positionOf(p.sessionId)
+    if (at && Math.hypot(at.x - jack.x, at.z - jack.z) <= WATCH_JACK_M) watchers.add(p.sessionId)
+  }
+  return watchers
+}
+
+export function freePlayers(
+  lastFreeThrow: ReadonlyMap<string, { venue: string; at: number }>,
+  freeCircles: ReadonlyMap<string, Spot>,
+  reachM: number,
+  now: number,
+  positionOf: (sessionId: string) => Spot | null,
+): Set<string> {
+  const holders = new Set<string>()
+  for (const [sessionId, last] of lastFreeThrow) {
+    const circle = freeCircles.get(last.venue)
+    const at = positionOf(sessionId)
+    if (circle && at && now - last.at < FREE_HOLD_MS && inCircle(at.x, at.z, circle, reachM)) holders.add(sessionId)
+  }
+  return holders
+}

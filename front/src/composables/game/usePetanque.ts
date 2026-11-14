@@ -3,6 +3,8 @@ import type { Room } from '@colyseus/sdk'
 import * as THREE from 'three'
 import {
   PETANQUE_SPORT,
+  freePlayers,
+  jackWatchers,
   flightPoint,
   inCircle,
   meterPower,
@@ -46,6 +48,8 @@ export interface PetanqueDeps {
   remoteHand: (sessionId: string) => THREE.Object3D | null
   throwArms: (mode: PetanqueMode) => void
   playRemote: (sessionId: string, clip: PetanqueClip) => void
+  remotePosition: (sessionId: string) => { x: number; z: number } | null
+  setCrouching: (sessionId: string, crouching: boolean) => void
 }
 
 type Look = 'jack' | keyof typeof TINTS
@@ -86,6 +90,8 @@ export function usePetanque(deps: PetanqueDeps) {
   const forward = new THREE.Vector3()
   const templates = shallowRef<Record<Look, THREE.Object3D> | null>(null)
   const held = new Map<string, Held>()
+  const crouched = new Set<string>()
+  const lastFreeThrow = new Map<string, { venue: string; at: number }>()
   const circleGeometry = new THREE.RingGeometry(CIRCLE_RADIUS - 0.03, CIRCLE_RADIUS, 24)
   const markerGeometry = new THREE.ConeGeometry(0.05, 0.12, 8)
   const materials = {
@@ -231,6 +237,7 @@ export function usePetanque(deps: PetanqueDeps) {
     if (!scene.balls.has(shot.ball)) ballObject(scene, shot.ball, lookOf({ kind: shot.kind, team: shot.team, dead: false }))
     scene.marker.visible = false
     flights.set(shot.venue, { shot, startedAt: Date.now(), moved: new Set([shot.ball]) })
+    if (!games.value.has(shot.venue)) lastFreeThrow.set(shot.thrower, { venue: shot.venue, at: Date.now() })
     if (shot.thrower === mySessionId()) deps.throwArms(shot.mode)
     else deps.playRemote(shot.thrower, shot.mode === 'shoot' ? 'PetanqueShoot' : 'PetanquePoint')
     deps.playSound('whoosh')
@@ -315,6 +322,23 @@ export function usePetanque(deps: PetanqueDeps) {
     const here = game ? undefined : r.pistes.find((p) => !games.value.has(p.id) && inCircle(deps.myPosition.x, deps.myPosition.z, p.freeCircle, r.circleReachM))
     freeVenue.value = here?.id ?? null
     syncHands()
+    syncCrouching()
+  }
+
+  function syncCrouching(): void {
+    const me = mySessionId()
+    const wanted = new Set<string>()
+    for (const game of games.value.values()) for (const id of jackWatchers(game, deps.remotePosition)) if (id !== me) wanted.add(id)
+    for (const id of crouched) {
+      if (wanted.has(id)) continue
+      deps.setCrouching(id, false)
+      crouched.delete(id)
+    }
+    for (const id of wanted) {
+      if (crouched.has(id)) continue
+      deps.setCrouching(id, true)
+      crouched.add(id)
+    }
   }
 
   function wantedHands(): Map<string, Look> {
@@ -326,6 +350,11 @@ export function usePetanque(deps: PetanqueDeps) {
       wanted.set(game.thrower, game.phase === 'jack' ? 'jack' : team === 'blue' ? 'blue' : 'red')
     }
     const me = mySessionId()
+    const r = rules.value
+    if (r) {
+      const circles = new Map(r.pistes.filter((p) => !games.value.has(p.id)).map((p) => [p.id, p.freeCircle]))
+      for (const id of freePlayers(lastFreeThrow, circles, r.circleReachM, Date.now(), deps.remotePosition)) if (id !== me) wanted.set(id, 'red')
+    }
     const venue = freeVenue.value
     if (me && venue && !myGame.value) {
       const free = frees.value.get(venue)

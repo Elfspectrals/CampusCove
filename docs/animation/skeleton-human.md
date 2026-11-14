@@ -46,6 +46,8 @@ Clips are phase functions `f(ph, P)` sampled by `sample_actions(arm, clips, fps=
     positive raises the right arm sideways.
   - `Hips` `ry` positive lowers the left hip.
   - `Hand` `rx` negative bends the hand toward the face, like a negative `LowerArm` `rx`.
+  - `LowerArm.R` `rz` −90° turns the right palm up when the arm swings forward (`PALM_UP`, `clips.py`).
+  - `Hips` `rx` positive tilts the pelvis and the torso forward; `leg_ik` keeps the feet planted (pétanque clips).
   Any other sign is checked on a render before it is trusted.
 - `sample_actions` deletes every NLA track first: always pass the full clip dict.
 
@@ -60,6 +62,10 @@ Clips are phase functions `f(ph, P)` sampled by `sample_actions(arm, clips, fps=
 | Eat | 30 | 1.0 | one-shot | `pose_eat`, hand at the mouth from 0.33 s, two bites, chew (upper body only) |
 | Drink | 30 | 1.0 | one-shot | `pose_drink`, hand at the mouth from 0.33 s, head back 22° (upper body only) |
 | Pick | 90 | 3.0 | one-shot | `pose_pick`, base body only (`run_wear.py`) |
+| PetanquePoint | 48 | 1.6 | one-shot | `pose_petanque_point`: crouch (Hips −0.14 m), right arm back then low forward, release at hip height at 0.77 s |
+| PetanqueShoot | 48 | 1.6 | one-shot | `pose_petanque_shoot`: left foot 0.30 m forward, arm high behind, release at shoulder height at 0.8 s |
+| PetanqueCrouch | 120 | 4.0 | yes | `pose_petanque_crouch`: deep squat (Hips −0.46 m), hands on the knees, head scanning |
+| PetanqueCelebrate | 45 | 1.5 | one-shot | `pose_petanque_celebrate`: right fist pump, twice |
 
 Every clip is keyed from frame 0 (glTF time starts at 0). Gaits plant the feet with `leg_ik` (analytic two-bone IK,
 knee forward): the stance foot moves back at exactly the design speed, so there is no slide at timeScale 1.
@@ -73,7 +79,10 @@ enters at 6.7 and exits under 5.8 m/s. `timeScale` is speed over design speed: W
 `clamp(v / 8.5, 0.8, 1.3)` (`WALK_DESIGN_SPEED`, `RUN_DESIGN_SPEED`). Sit goes through `setAvatarSeated`, Pick
 through `setAvatarPicking`, Eat and Drink through `setAvatarEating` (one one-shot at a time, LoopOnce + clamp, back
 to the selector on `finished` or cancel; Sit wins; Eat and Drink only play while the selector is on Idle, because
-the clips carry rest-pose leg tracks). Remote players see Pick through `user_picking { sessionId, picking }`
+the clips carry rest-pose leg tracks). The pétanque one-shots go through `setAvatarPetanque` with the same gates, and
+`PetanqueCrouch` through `setAvatarCrouching`, a state flag that replaces Idle while it is set (Sit still wins); the
+front sets it on match players standing within 2 m of the jack and plays the throws and the celebration from
+`petanque_throw` and `petanque_state` (`docs/sports/petanque.md`). Remote players see Pick through `user_picking { sessionId, picking }`
 (`docs/ORCHARD.md`) and Eat/Drink through the existing `user_action { sessionId, action: 'eat' | 'drink', code }`,
 sent by the socket once it accepted the consume or the fountain sip.
 
@@ -81,7 +90,7 @@ First-person arms (`map-src/CampusCove/build_fp_arms.py`, `front/src/game/firstP
 object-level clips per wear top: Idle 3.2 s, Walk 0.8 s (designed for 5 m/s, `timeScale = clamp(v / 5, 0.8, 1.3)`),
 one-shots Equip, UseDoor, UseKey, PunchL (left jab, 0.4 s) and Punch (right cross, 0.53 s), both with contact at frame
 5 = `PUNCH_IMPACT_S`, Pick (3.0 s), and the Eat and Drink loops (1.0 s, `LoopRepeat` while the click is held,
-hand already at the mouth on frame 0, one bite or sip peaking at frame 10; the left arm stays slightly lowered), and the Hold loop (3.2 s, base clip instead of Idle / Walk while a job tool is in hand, `setHolding`: right hand low on the right in the grip, tool tilted forward and out so the crosshair stays clear, left arm as in Idle). Punch poses are solved by `fist_at` (fist centre on screen, forearm direction, back of the hand
+hand already at the mouth on frame 0, one bite or sip peaking at frame 10; the left arm stays slightly lowered), the pétanque one-shots PetanquePoint and PetanqueShoot (1.6 s: the arm leaves the view, comes back holding the boule and opens the hand at about 0.77 s and 0.7 s, `throwBoule`), and the Hold loop (3.2 s, base clip instead of Idle / Walk while a job tool is in hand, `setHolding`: right hand low on the right in the grip, tool tilted forward and out so the crosshair stays clear, left arm as in Idle). Punch poses are solved by `fist_at` (fist centre on screen, forearm direction, back of the hand
 up for the corkscrew); the arm that does not punch rises to a guard with a loose fist.
 
 Each first-person hand is built in code (`build_hand`), not cut from the body: an armature `HandRig_{R,L}` under

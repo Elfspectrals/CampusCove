@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { flightPoint, inCircle, meterPower, parsePetanqueClientRules, rollPositions, teamLeft, throwYaw, type PetanqueFrame, type PetanqueStatePayload } from './petanque.ts'
+import { freePlayers, jackWatchers, flightPoint, inCircle, meterPower, parsePetanqueClientRules, rollPositions, teamLeft, throwYaw, type PetanqueFrame, type PetanqueStatePayload } from './petanque.ts'
 
 const rulesJson: unknown = JSON.parse(readFileSync(new URL('../../../public/assets/sports/rules/petanque.json', import.meta.url), 'utf8'))
 
@@ -51,4 +51,24 @@ test('adds the boules left of the players still in the game', () => {
   const state = { players: [{ team: 'red', out: false, left: 2 }, { team: 'red', out: true, left: 3 }, { team: 'blue', out: false, left: 1 }] } as PetanqueStatePayload
   assert.equal(teamLeft(state, 'red'), 2)
   assert.equal(teamLeft(state, 'blue'), 1)
+})
+
+test('players of the match standing near the jack watch it, the thrower and the players far away do not', () => {
+  const state = {
+    phase: 'boules',
+    thrower: 'a',
+    balls: [{ id: 1, kind: 'jack', team: null, owner: null, x: 0, z: -8, dead: false }],
+    players: [{ sessionId: 'a', out: false }, { sessionId: 'b', out: false }, { sessionId: 'c', out: false }, { sessionId: 'd', out: true }],
+  } as unknown as PetanqueStatePayload
+  const at: Record<string, { x: number; z: number }> = { a: { x: 0, z: -8 }, b: { x: 1, z: -8.5 }, c: { x: 0, z: 0 }, d: { x: 0, z: -8 } }
+  assert.deepEqual([...jackWatchers(state, (id) => at[id] ?? null)], ['b'])
+  assert.equal(jackWatchers({ ...state, phase: 'between' }, (id) => at[id] ?? null).size, 0)
+})
+
+test('a free player holds a boule while back in the circle of the piste they threw on, for two minutes', () => {
+  const circles = new Map([['petanque_1', { x: 0, z: 0 }]])
+  const last = new Map([['a', { venue: 'petanque_1', at: 1_000 }], ['b', { venue: 'petanque_1', at: 1_000 }]])
+  const at: Record<string, { x: number; z: number }> = { a: { x: 0.5, z: 0 }, b: { x: 5, z: 0 } }
+  assert.deepEqual([...freePlayers(last, circles, 1.2, 2_000, (id) => at[id] ?? null)], ['a'])
+  assert.equal(freePlayers(last, circles, 1.2, 1_000 + 120_000, (id) => at[id] ?? null).size, 0)
 })
