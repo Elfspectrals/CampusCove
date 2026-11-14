@@ -42,18 +42,30 @@ class PetanqueTallyApiTest extends TestCase
 
     public function test_at_most_five_games_a_day_count(): void
     {
-        [$red, $blue] = [$this->player(), $this->player()];
+        $red = $this->player();
+        $opponents = [$this->player(), $this->player(), $this->player()];
         for ($i = 1; $i <= 6; $i++) {
-            $this->recordGame("game-{$i}", $red, $blue);
+            $this->recordGame("game-{$i}", $red, $opponents[$i % 3]);
             $this->tally($red, "game-{$i}", 1)->assertOk()->assertExactJson(['counted' => $i <= 5]);
         }
         $this->assertSame(5, $this->value($red, ActionCounter::PetanqueGames));
         $this->assertSame(5, $this->value($red, ActionCounter::PetanqueCarreaux));
 
         $this->travelTo(CarbonImmutable::parse('2026-11-15 10:00:00'));
-        $this->recordGame('game-7', $red, $blue);
+        $this->recordGame('game-7', $red, $opponents[0], endedAt: 1_763_200_000_000);
         $this->tally($red, 'game-7', 0)->assertOk()->assertExactJson(['counted' => true]);
         $this->tally($red, 'game-1', 1)->assertOk()->assertExactJson(['counted' => false]);
+    }
+
+    public function test_a_game_the_core_does_not_count_for_tasks_counts_nothing(): void
+    {
+        [$red, $blue] = [$this->player(), $this->player()];
+        for ($i = 1; $i <= 4; $i++) {
+            $this->recordGame("game-{$i}", $red, $blue);
+        }
+
+        $this->tally($red, 'game-4', 2)->assertOk()->assertExactJson(['counted' => false]);
+        $this->assertSame(0, $this->value($red, ActionCounter::PetanqueGames));
     }
 
     public function test_a_game_against_young_accounts_only_counts_nothing(): void
@@ -82,7 +94,7 @@ class PetanqueTallyApiTest extends TestCase
      * @param  array{token: string, account_id: int}  $red
      * @param  array{token: string, account_id: int}  $blue
      */
-    private function recordGame(string $ref, array $red, array $blue): void
+    private function recordGame(string $ref, array $red, array $blue, int $endedAt = 1_763_115_000_000): void
     {
         $this->postJson('/api/sports/matches', [
             'ref' => $ref,
@@ -90,7 +102,7 @@ class PetanqueTallyApiTest extends TestCase
             'venue' => 'petanque_1',
             'settings' => ['format' => '1v1_3', 'targetPoints' => 7],
             'startedAt' => 1_763_114_400_000,
-            'endedAt' => 1_763_115_000_000,
+            'endedAt' => $endedAt,
             'players' => [
                 ['accountId' => $red['account_id'], 'team' => 'red', 'result' => 'win', 'score' => 7],
                 ['accountId' => $blue['account_id'], 'team' => 'blue', 'result' => 'loss', 'score' => 4],
