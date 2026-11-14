@@ -28,6 +28,7 @@ const rules: SkatingRules = {
 rink.registerSkating(rules, 'test_rink', COACH, [{ key: 'laps', label: 'Laps', options: [1, 3, 5] }])
 api.replies.set('GET /sports/gear', () => json({ gear: ['gear_ice_skates'] }))
 api.replies.set('POST /sports/matches', () => json({ match: { id: 1, recorded: true } }))
+api.replies.set('POST /tasks/skate-race', () => json({ ok: true }))
 
 const NOW = 9_000_000
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0))
@@ -132,6 +133,7 @@ test('a race counts laps, adds a penalty for a cut, ends and records the result'
   const record = api.calls.find((c) => c.url === '/sports/matches')?.body as { venue: string, players: unknown[] }
   assert.equal(record.venue, rink.SKATING_VENUE)
   assert.deepEqual(record.players, [{ accountId: 12, team: null, result: 'finished', place: 1, timeMs: end - goAt + 2000 }])
+  assert.deepEqual(api.calls.find((c) => c.url === '/tasks/skate-race')?.body, { laps: 1, timeMs: end - goAt + 2000, penaltyMs: 2000 })
 })
 
 test('leaving the ice during a race is a did-not-finish', async () => {

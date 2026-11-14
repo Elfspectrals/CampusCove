@@ -888,8 +888,9 @@ const skating = useSkating({
   onFall: () => movement.kickCamera(),
   knockBack: (dirX, dirZ, distance) => movement.knockBack(dirX, dirZ, distance),
   playSound: (name) => sfx.play(name),
+  inRink: () => currentHouseKey.value === 'sports_ice_rink',
 })
-const { active: skatingActive, speed: skatingSpeed, cue: skatingCue, rhythmZone: skatingWindow, lastPush: skatingLastPush, race: skatingRace, rows: skatingRows, clock: skatingClock, result: skatingResult } = skating
+const { boardShown: skatingBoard, active: skatingActive, speed: skatingSpeed, cue: skatingCue, rhythmZone: skatingWindow, lastPush: skatingLastPush, race: skatingRace, rows: skatingRows, clock: skatingClock, result: skatingResult } = skating
 const PICKPOCKET_ERROR_KEYS = new Set([
   'pickpocket_on_duty',
   'pickpocket_jailed',
@@ -2382,6 +2383,7 @@ const crosshairClass = computed(() => {
       :rows="skatingRows"
       :result="skatingResult"
       :my-session-id="gameRoomRef?.sessionId ?? null"
+      :board="skatingBoard"
     />
     <GamePubSecretDialog
       v-if="pubSecretOpen"

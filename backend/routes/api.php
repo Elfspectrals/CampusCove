@@ -35,6 +35,7 @@ use App\Http\Controllers\ReferralController;
 use App\Http\Controllers\RespawnBedController;
 use App\Http\Controllers\SecurityScanController;
 use App\Http\Controllers\ShopController;
+use App\Http\Controllers\SkatingBoardController;
 use App\Http\Controllers\SportsController;
 use App\Http\Controllers\StorageAuctionController;
 use App\Http\Controllers\StripeWebhookController;
@@ -138,6 +139,7 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
         Route::post('/tasks/active-day', [TaskController::class, 'activeDay']);
         Route::post('/tasks/pub-game', [TaskController::class, 'pubGame']);
         Route::post('/tasks/secret-room', [TaskController::class, 'secretRoom']);
+        Route::post('/tasks/skate-race', [TaskController::class, 'skateRace']);
         Route::post('/lockpicks/attempts', [LockpickController::class, 'start']);
         Route::post('/lockpicks/attempts/{attemptId}/miss', [LockpickController::class, 'miss'])->whereNumber('attemptId');
         Route::post('/lockpicks/attempts/{attemptId}/success', [LockpickController::class, 'succeed'])->whereNumber('attemptId');

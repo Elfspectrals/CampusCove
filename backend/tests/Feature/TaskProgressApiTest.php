@@ -214,6 +214,8 @@ class TaskProgressApiTest extends TestCase
                 ['task' => 'pub_games', 'value' => 0, 'tiers' => [10, 50, 150], 'reached' => []],
                 ['task' => 'duellist', 'value' => 0, 'tiers' => [1, 5, 15], 'reached' => []],
                 ['task' => 'insider', 'value' => 0, 'tiers' => [1, 4, 12], 'reached' => []],
+                ['task' => 'races_skated', 'value' => 0, 'tiers' => [10, 50, 150], 'reached' => []],
+                ['task' => 'skate_3_clean', 'value' => 0, 'tiers' => [1, 10, 30], 'reached' => []],
             ]]);
     }
 
@@ -288,6 +290,7 @@ class TaskProgressApiTest extends TestCase
         $this->postJson('/api/tasks/active-day', [], $this->auth($player['token']))->assertForbidden();
         $this->postJson('/api/tasks/pub-game', ['game' => 'drink_fast', 'intoxication' => 0], $this->auth($player['token']))->assertForbidden();
         $this->postJson('/api/tasks/secret-room', [], $this->auth($player['token']))->assertForbidden();
+        $this->postJson('/api/tasks/skate-race', ['laps' => 3, 'timeMs' => 50_000, 'penaltyMs' => 0], $this->auth($player['token']))->assertForbidden();
     }
 
     public function test_each_farm_harvest_counts_for_the_market_gardener(): void
@@ -397,6 +400,27 @@ class TaskProgressApiTest extends TestCase
 
         $this->postJson('/api/tasks/pub-game', ['game' => 'darts', 'intoxication' => 0], $headers)->assertStatus(422);
         $this->postJson('/api/tasks/pub-game', ['game' => 'meter_shot', 'intoxication' => 101], $headers)->assertStatus(422);
+    }
+
+    public function test_skate_races_count_five_a_day_and_clean_three_lap_runs_count_as_the_feat(): void
+    {
+        $player = $this->registerAndCreditWallet(0, 'cash');
+        $headers = $this->auth($player['token'], self::SECRET);
+        $this->travelTo(now()->parse('2026-11-13 12:00:00', 'UTC'));
+
+        $this->postJson('/api/tasks/skate-race', ['laps' => 3, 'timeMs' => 58_000, 'penaltyMs' => 0], $headers)->assertOk();
+        $this->postJson('/api/tasks/skate-race', ['laps' => 3, 'timeMs' => 58_000, 'penaltyMs' => 2000], $headers)->assertOk();
+        $this->postJson('/api/tasks/skate-race', ['laps' => 3, 'timeMs' => 60_001, 'penaltyMs' => 0], $headers)->assertOk();
+        $this->postJson('/api/tasks/skate-race', ['laps' => 5, 'timeMs' => 50_000, 'penaltyMs' => 0], $headers)->assertOk();
+        $this->assertSame(4, $this->counter($player['account_id'], ActionCounter::SkateRaces));
+        $this->assertSame(1, $this->counter($player['account_id'], ActionCounter::SkateCleanRuns));
+        foreach (range(1, 3) as $race) {
+            $this->postJson('/api/tasks/skate-race', ['laps' => 1, 'timeMs' => 20_000, 'penaltyMs' => 0], $headers)->assertOk();
+        }
+        $this->assertSame(5, $this->counter($player['account_id'], ActionCounter::SkateRaces));
+
+        $this->postJson('/api/tasks/skate-race', ['laps' => 2, 'timeMs' => 20_000, 'penaltyMs' => 0], $headers)->assertStatus(422);
+        $this->postJson('/api/tasks/skate-race', ['laps' => 3, 'timeMs' => 0, 'penaltyMs' => 0], $headers)->assertStatus(422);
     }
 
     public function test_every_duel_won_at_darts_or_drink_fast_counts(): void

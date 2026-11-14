@@ -80,10 +80,17 @@ which the Blender build (`build_sports_ice_rink.py`), the socket and the front a
 | Turn rate (follows the camera) | 3.2 rad/s standing, 0.9 rad/s at top speed; side keys turn 1.6 rad/s |
 
 - Stepping on the ice without `gear_ice_skates` in the inventory is refused (`position_correction`, reason
-  `no_skates`). Ownership is read from Laravel (`GET /api/sports/gear`) each time the player enters the venue zone.
+  `no_skates`). Ownership is read from Laravel (`GET /api/sports/gear`) each time the player enters the venue zone,
+  and again at most every 5 s while a player who was refused tries the ice (skates bought inside the rink count).
+- Every avatar standing on the ice shows the `shoes/ice_skates` wear piece instead of its shoes (position only: the
+  socket already refuses the ice without skates).
 - During a race the socket replays the pushes on its clock: a move may not go further than the replayed glide since
   the last accepted move, plus 1.5 m (`too_fast`).
-- Hitting the boards at 6.5 m/s or more makes the skater fall for 1.5 s (front only: it only slows the faller).
+- Collisions, for every skater on the ice (`tickSkating`, every 100 ms): two skaters closer than 0.9 m both fall for
+  1.5 s when one of them is at 6.5 m/s or more (replayed speed), then cannot fall again for 2 s; slower, they are pushed
+  1 m apart and lose 30 % of their speed (`skate_bump`, at most one per 600 ms). Moving towards a board at 6.5 m/s or
+  more within 0.6 m of it is a fall too. A fallen skater's moves are refused (`skate_fallen`). The front predicts the
+  board fall when its collision stops a fast skater.
 
 ### Race
 
@@ -100,4 +107,21 @@ ice, the venue or the game is a did-not-finish. Time limit 60 s + 40 s per lap. 
 | `skate_brake` | client → server | `{ on: boolean }` |
 | `skate_race` | server → players in the venue and racers | `{ venue, phase: 'countdown' \| 'racing', laps, goAt, serverNow, racers: [{ sessionId, name, lap, penaltyMs, finishedMs: number \| null, dnf }] }`, at kick-off, at the start and on each change |
 | `skate_fall` | server → same | `{ sessionId, until, serverNow }` |
+| `skate_bump` | server → the pushed skater | `{ sessionId, dirX, dirZ, distance, serverNow }` (the front applies it as a knockback) |
 | `skate_result` | server → same | `{ venue, laps, results: [{ sessionId, name, place: number \| null, timeMs: number \| null, penaltyMs, dnf }] }` |
+
+### Tasks, boards and sounds
+
+- Each finisher is reported with their own token: `POST /api/tasks/skate-race` (realtime)
+  `{ laps: 1 | 3 | 5, timeMs, penaltyMs }`. Counters `skate_races` (at most 5 a day) and `skate_clean_runs` (3 laps,
+  no penalty, 60 s or less, at most 5 a day). Tasks `races_skated` 10 / 50 / 150 and `skate_3_clean` 1 / 10 / 30,
+  badges only (`docs/TASKS.md`).
+- Weekly boards per lap count from the recorded matches: `GET /api/sports/skating/board` →
+  `{ week, boards: [{ laps, entries: [{ name, timeMs }] }], champions: [{ laps, name, timeMs }] }`, top 5, week Monday to
+  Sunday in Paris. `sports:skating-board-close` (Monday 00:05 Paris) stores the fastest of each lap count in
+  `skating_board_wins` (one row per week and lap count) and grants the `skating_champion` badge. The HUD shows the
+  boards while the player is in the hall and not skating or racing.
+- Sounds (`build_skating_sfx.py`, Earshot bank): `skate_push`, `skate_brake`, `skate_fall`, `skate_bump`,
+  `skate_start`.
+- Stands: one walkable level per tier (`interior.layout.json` `levels`), a 2 m aisle through the seat rows. Sitting
+  is not built (the seat system is the pub's only).

@@ -53,6 +53,7 @@ STAND_X = RINK_X1 + WALKWAY
 STAND_ROWS = 4
 ROW_DEPTH = (X1 - STAND_X) / STAND_ROWS
 ROW_RISE = 0.45
+AISLE_W = 2.0
 assert abs(RINK_X1 - RINK_X0 - RULES["rink"]["sizeM"][1]) < 1e-6 and abs(RINK_Z1 - RINK_Z0 - RULES["rink"]["sizeM"][0]) < 1e-6
 assert RINK_Z1 <= LOBBY_Z - WALKWAY + 0.01 and RINK_Z0 >= Z0 + WALKWAY, ("rink does not fit the hall", RINK_Z0, RINK_Z1)
 
@@ -193,8 +194,9 @@ for side, sign in (("W", -1), ("E", 1)):
         cx = sign * (x_in + width_r / 2)
         objs.append(L.box(coll, f"Stand_{side}_Tier{r}", cx, (RINK_Z0 + RINK_Z1) / 2, 0.0, width_r, RINK_Z1 - RINK_Z0, ROW_RISE * (r + 1), M["tier"], tile=2.0))
         seat_x = sign * (x_in + 0.35)
-        objs.append(L.box(coll, f"Stand_{side}_Seats{r}", seat_x, (RINK_Z0 + RINK_Z1) / 2, ROW_RISE * (r + 1), 0.45, RINK_Z1 - RINK_Z0 - 0.4, 0.42, M["seat"], tile=0.5))
-    cols.add(f"Stand_{side}", sign * (STAND_X + (X1 - STAND_X) / 2), (RINK_Z0 + RINK_Z1) / 2, 0.0, X1 - STAND_X, RINK_Z1 - RINK_Z0, ROW_RISE * STAND_ROWS + 0.42)
+        half = (RINK_Z1 - RINK_Z0 - 0.4 - AISLE_W) / 2
+        for k, sz in enumerate((RINK_Z0 + 0.2 + half / 2, RINK_Z1 - 0.2 - half / 2)):
+            objs.append(L.box(coll, f"Stand_{side}_Seats{r}{k}", seat_x, sz, ROW_RISE * (r + 1), 0.45, half, 0.42, M["seat"], tile=0.5))
 
 for k, bx in enumerate((-12.0, -7.0, 7.0, 12.0)):
     objs.append(L.furn(coll, f"SkateBench_{k:02d}", bx, LOBBY_Z + 1.4, 0.0, [
@@ -234,6 +236,12 @@ L.write_json(os.path.join(OUT, "interior.layout.json"), {
     "stations": [],
     "npcs": {"rinkCoach": [round(coach[0], 3), 0.0, round(coach[1], 3)]},
     "seats": [],
+    "levels": [{"id": "L0", "y": 0.0, "height": H, "rects": [{"minX": X0, "maxX": X1, "minZ": Z0, "maxZ": Z1}]}] + [
+        {"id": f"Stand{side}{r}", "y": round(ROW_RISE * (r + 1), 3), "height": round(H - ROW_RISE * (r + 1), 3),
+         "rects": [{"minX": round(min(sign * x0, sign * x1), 3), "maxX": round(max(sign * x0, sign * x1), 3), "minZ": round(RINK_Z0, 3), "maxZ": round(RINK_Z1, 3)}]}
+        for side, sign in (("W", -1), ("E", 1)) for r in range(STAND_ROWS)
+        for x0, x1 in [(STAND_X + r * ROW_DEPTH, STAND_X + (r + 1) * ROW_DEPTH)]],
+    "stairs": [],
 })
 
 

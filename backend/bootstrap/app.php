@@ -38,6 +38,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('gems:reconcile')->everyTenMinutes()->withoutOverlapping();
         $schedule->command('model:prune', ['--model' => [SecurityEvent::class, IpReputation::class]])->dailyAt('04:30');
         $schedule->command('security:sync-cloudflare')->everyTenMinutes()->withoutOverlapping();
+        $schedule->command('sports:skating-board-close')->weeklyOn(1, '00:05')->timezone('Europe/Paris');
     })
     ->withRouting(
         web: __DIR__.'/../routes/web.php',

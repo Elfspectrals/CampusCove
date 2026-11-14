@@ -14,6 +14,12 @@ final class PlayerActivityService
 
     public const PUB_GAMES_MAX_INTOXICATION = 50;
 
+    public const SKATE_RACES_PER_DAY = 5;
+
+    public const SKATE_CLEAN_LAPS = 3;
+
+    public const SKATE_CLEAN_MAX_MS = 60_000;
+
     public function __construct(private readonly ActionCounterService $counters) {}
 
     public function zoneVisited(int $accountId, string $zone): void
@@ -45,14 +51,27 @@ final class PlayerActivityService
         if ($intoxicationBefore > self::PUB_GAMES_MAX_INTOXICATION) {
             return;
         }
+        $this->bumpCappedPerDay($accountId, ActionCounter::PubGames, self::PUB_GAMES_PER_DAY);
+    }
+
+    public function skateRaceFinished(int $accountId, int $laps, int $timeMs, int $penaltyMs): void
+    {
+        $this->bumpCappedPerDay($accountId, ActionCounter::SkateRaces, self::SKATE_RACES_PER_DAY);
+        if ($laps === self::SKATE_CLEAN_LAPS && $penaltyMs === 0 && $timeMs <= self::SKATE_CLEAN_MAX_MS) {
+            $this->bumpCappedPerDay($accountId, ActionCounter::SkateCleanRuns, self::SKATE_RACES_PER_DAY);
+        }
+    }
+
+    private function bumpCappedPerDay(int $accountId, ActionCounter $counter, int $cap): void
+    {
         $today = $this->today();
         $countedToday = DB::table('account_counter_keys')
             ->where('account_id', $accountId)
-            ->where('counter', ActionCounter::PubGames->value)
+            ->where('counter', $counter->value)
             ->where('key', 'like', $today.':%')
             ->count();
-        if ($countedToday < self::PUB_GAMES_PER_DAY) {
-            $this->counters->bumpOncePerKey($accountId, ActionCounter::PubGames, $today.':'.($countedToday + 1));
+        if ($countedToday < $cap) {
+            $this->counters->bumpOncePerKey($accountId, $counter, $today.':'.($countedToday + 1));
         }
     }
 

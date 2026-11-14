@@ -1,3 +1,4 @@
+import { callRealtimeBackend } from '../backend.ts'
 import type { ClientPayload, GameClient, GameRoom, Player } from '../types.ts'
 import { worldSportsPassArea } from '../world.ts'
 import { ownedGear } from './gear.ts'
@@ -357,6 +358,15 @@ function raceResults(race: Race): { view: object[], records: MatchResult[] } {
   }
 }
 
+function reportTasks(room: GameRoom, race: Race): void {
+  for (const racer of race.racers.values()) {
+    const player = room.players.get(racer.sessionId)
+    if (racer.finishedMs === null || !player?.token || player.accountId !== racer.accountId) continue
+    callRealtimeBackend(player.token, '/tasks/skate-race', 'POST', { laps: race.laps, timeMs: Math.max(1, racer.finishedMs), penaltyMs: racer.penaltyMs })
+      .catch((error) => console.warn('[skating] race task not counted:', error instanceof Error ? error.message : error))
+  }
+}
+
 function end(room: GameRoom, match: Match): void {
   const race = races.get(room)
   if (!race || race.matchId !== match.id) return
@@ -365,6 +375,7 @@ function end(room: GameRoom, match: Match): void {
   const { view, records } = raceResults(race)
   sendToRink(room, 'skate_result', { venue: SKATING_VENUE, laps: race.laps, results: view }, race)
   void recordMatch(room, match, records)
+  reportTasks(room, race)
 }
 
 export function registerSkating(parsed: SkatingRules, venueZone: string, coach: { id: string, x: number, z: number }, settings: readonly SettingSpec[]): void {

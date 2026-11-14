@@ -19,6 +19,7 @@ import {
 } from '../../game/sports/skating/skateMotion'
 import type { SkateBumpPayload, SkateFallPayload, SkateRacePayload, SkateResultPayload } from '../../types/gameRealtime'
 import type { SfxName } from '../../game/sfx'
+import { fetchSkatingBoard, type SkatingBoard } from '../../api/skatingBoard'
 
 export interface SkatingDeps {
   myPosition: { x: number; y: number; z: number }
@@ -29,6 +30,7 @@ export interface SkatingDeps {
   onFall: () => void
   knockBack: (dirX: number, dirZ: number, distance: number) => void
   playSound: (name: SfxName) => void
+  inRink: () => boolean
 }
 
 export interface SkateKeys {
@@ -46,6 +48,7 @@ export interface SkateRaceRow {
 }
 
 const RESULT_SHOWN_MS = 12_000
+const BOARD_REFRESH_AFTER_RACE_MS = 3000
 
 export function useSkating(deps: SkatingDeps) {
   const spec = shallowRef<SkatingSpec | null>(null)
@@ -61,6 +64,17 @@ export function useSkating(deps: SkatingDeps) {
   let forwardHeld = false
   let braking = false
   let resultUntil = 0
+  const inRinkNow = ref(false)
+  const board = shallowRef<SkatingBoard | null>(null)
+
+  function loadBoard(): void {
+    fetchSkatingBoard().then(
+      (loaded) => {
+        board.value = loaded
+      },
+      (error: unknown) => console.error('[skating] board not loaded:', error),
+    )
+  }
 
   void fetch(SKATING_RULES_URL)
     .then((response) => {
@@ -172,6 +186,9 @@ export function useSkating(deps: SkatingDeps) {
 
   function tick(): void {
     clientNow.value = Date.now()
+    const inRink = deps.inRink()
+    if (inRink && !inRinkNow.value) loadBoard()
+    inRinkNow.value = inRink
     if (result.value && Date.now() > resultUntil) result.value = null
   }
 
@@ -202,6 +219,7 @@ export function useSkating(deps: SkatingDeps) {
       race.value = null
       result.value = data
       resultUntil = Date.now() + RESULT_SHOWN_MS
+      window.setTimeout(loadBoard, BOARD_REFRESH_AFTER_RACE_MS)
       const mine = data.results.find((r) => r.sessionId === mySessionId())
       if (mine) deps.playSound('market_sold')
     },
@@ -217,5 +235,7 @@ export function useSkating(deps: SkatingDeps) {
     },
   }
 
-  return { active, speed, cue, rhythmZone, isOnIce, lastPush, race, rows, clock, result, step, afterMove, tick, handlers }
+  const boardShown = computed(() => (inRinkNow.value && !active.value && race.value === null && result.value === null ? board.value : null))
+
+  return { boardShown, active, speed, cue, rhythmZone, isOnIce, lastPush, race, rows, clock, result, step, afterMove, tick, handlers }
 }

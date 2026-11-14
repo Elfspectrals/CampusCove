@@ -22,5 +22,125 @@
       -5.395
     ]
   },
-  "seats": []
+  "seats": [],
+  "levels": [
+    {
+      "id": "L0",
+      "y": 0.0,
+      "height": 9.0,
+      "rects": [
+        {
+          "minX": -21.8,
+          "maxX": 21.8,
+          "minZ": -69.6,
+          "maxZ": 5.0
+        }
+      ]
+    },
+    {
+      "id": "StandW0",
+      "y": 0.45,
+      "height": 8.55,
+      "rects": [
+        {
+          "minX": -18.2,
+          "maxX": -17.0,
+          "minZ": -66.995,
+          "maxZ": -6.995
+        }
+      ]
+    },
+    {
+      "id": "StandW1",
+      "y": 0.9,
+      "height": 8.1,
+      "rects": [
+        {
+          "minX": -19.4,
+          "maxX": -18.2,
+          "minZ": -66.995,
+          "maxZ": -6.995
+        }
+      ]
+    },
+    {
+      "id": "StandW2",
+      "y": 1.35,
+      "height": 7.65,
+      "rects": [
+        {
+          "minX": -20.6,
+          "maxX": -19.4,
+          "minZ": -66.995,
+          "maxZ": -6.995
+        }
+      ]
+    },
+    {
+      "id": "StandW3",
+      "y": 1.8,
+      "height": 7.2,
+      "rects": [
+        {
+          "minX": -21.8,
+          "maxX": -20.6,
+          "minZ": -66.995,
+          "maxZ": -6.995
+        }
+      ]
+    },
+    {
+      "id": "StandE0",
+      "y": 0.45,
+      "height": 8.55,
+      "rects": [
+        {
+          "minX": 17.0,
+          "maxX": 18.2,
+          "minZ": -66.995,
+          "maxZ": -6.995
+        }
+      ]
+    },
+    {
+      "id": "StandE1",
+      "y": 0.9,
+      "height": 8.1,
+      "rects": [
+        {
+          "minX": 18.2,
+          "maxX": 19.4,
+          "minZ": -66.995,
+          "maxZ": -6.995
+        }
+      ]
+    },
+    {
+      "id": "StandE2",
+      "y": 1.35,
+      "height": 7.65,
+      "rects": [
+        {
+          "minX": 19.4,
+          "maxX": 20.6,
+          "minZ": -66.995,
+          "maxZ": -6.995
+        }
+      ]
+    },
+    {
+      "id": "StandE3",
+      "y": 1.8,
+      "height": 7.2,
+      "rects": [
+        {
+          "minX": 20.6,
+          "maxX": 21.8,
+          "minZ": -66.995,
+          "maxZ": -6.995
+        }
+      ]
+    }
+  ],
+  "stairs": []
 }

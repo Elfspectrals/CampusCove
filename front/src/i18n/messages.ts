@@ -397,8 +397,8 @@ export const messages = {
       complete: 'Complete',
       progress: '{value} / {target}',
       tiers: { 1: 'Bronze', 2: 'Silver', 3: 'Gold' },
-      names: { orchard: 'Orchard', darts: 'Darts', sharp_eye: 'Sharp eye', gourmet: 'Gourmet', explorer: 'Explorer', loyal: 'Steady', market_gardener: 'Market gardener', trader: 'Trader', cook: 'Cook', loyal_customer: 'Loyal customer', dapper: 'Dapper', regular: 'Regular at the pub', pub_games: 'Pub games', duellist: 'Duellist', insider: 'Insider' },
-      goals: { orchard: '{n} apples picked', darts: '{n} games of darts', sharp_eye: '{n} darts duels of 80 points or more', gourmet: '{n} different foods tasted', explorer: '{n} places visited', loyal: '{n} days with 10 minutes of walking', market_gardener: '{n} farm crops harvested', trader: '{n} goods sold to buyers', cook: '{n} dishes cooked', loyal_customer: '{n} shop visits', dapper: '{n} different clothes bought', regular: '{n} days with an order at the pub', pub_games: '{n} games of Drink Fast or Meter Shot', duellist: '{n} duels won', insider: '{n} weeks in the secret room' },
+      names: { orchard: 'Orchard', darts: 'Darts', sharp_eye: 'Sharp eye', gourmet: 'Gourmet', explorer: 'Explorer', loyal: 'Steady', market_gardener: 'Market gardener', trader: 'Trader', cook: 'Cook', loyal_customer: 'Loyal customer', dapper: 'Dapper', regular: 'Regular at the pub', pub_games: 'Pub games', duellist: 'Duellist', insider: 'Insider', races_skated: 'Skater', skate_3_clean: 'Clean skate' },
+      goals: { orchard: '{n} apples picked', darts: '{n} games of darts', sharp_eye: '{n} darts duels of 80 points or more', gourmet: '{n} different foods tasted', explorer: '{n} places visited', loyal: '{n} days with 10 minutes of walking', market_gardener: '{n} farm crops harvested', trader: '{n} goods sold to buyers', cook: '{n} dishes cooked', loyal_customer: '{n} shop visits', dapper: '{n} different clothes bought', regular: '{n} days with an order at the pub', pub_games: '{n} games of Drink Fast or Meter Shot', duellist: '{n} duels won', insider: '{n} weeks in the secret room', races_skated: '{n} ice rink races finished', skate_3_clean: '{n} 3-lap races under 1:00 with no penalty' },
     },
     watch: {
       label: 'Watch',
@@ -785,6 +785,7 @@ export const messages = {
       controls: 'Forward: push · Mouse, side keys: turn · Space: brake',
       push: { good: 'Good push', normal: 'Push', early: 'Too fast' },
       fell: 'You fell!',
+      board: { week: 'Best times · week {week}', laps: '{n} laps', empty: 'No time yet this week', champions: 'Last week’s champions' },
       corrections: {
         no_skates: 'You need your own ice skates to step on the ice (Summit Sports, mall).',
         skate_start: 'Wait for the start.',
@@ -1463,8 +1464,8 @@ export const messages = {
       complete: 'Terminée',
       progress: '{value} / {target}',
       tiers: { 1: 'Bronze', 2: 'Argent', 3: 'Or' },
-      names: { orchard: 'Verger', darts: 'Fléchettes', sharp_eye: 'Œil de lynx', gourmet: 'Gourmet', explorer: 'Explorateur', loyal: 'Fidèle', market_gardener: 'Maraîcher', trader: 'Commerçant', cook: 'Cuistot', loyal_customer: 'Client fidèle', dapper: 'Coquet', regular: 'Habitué', pub_games: 'Jeux du pub', duellist: 'Duelliste', insider: 'Initié' },
-      goals: { orchard: '{n} pommes cueillies', darts: '{n} parties de fléchettes', sharp_eye: '{n} duels de fléchettes à 80 points ou plus', gourmet: '{n} aliments différents goûtés', explorer: '{n} lieux visités', loyal: '{n} jours avec 10 minutes de marche', market_gardener: '{n} récoltes à la ferme', trader: '{n} marchandises vendues aux acheteurs', cook: '{n} plats cuisinés', loyal_customer: '{n} passages en caisse', dapper: '{n} vêtements différents achetés', regular: '{n} jours avec une commande au pub', pub_games: '{n} parties de Drink Fast ou de Meter Shot', duellist: '{n} duels gagnés', insider: '{n} semaines dans la salle secrète' },
+      names: { orchard: 'Verger', darts: 'Fléchettes', sharp_eye: 'Œil de lynx', gourmet: 'Gourmet', explorer: 'Explorateur', loyal: 'Fidèle', market_gardener: 'Maraîcher', trader: 'Commerçant', cook: 'Cuistot', loyal_customer: 'Client fidèle', dapper: 'Coquet', regular: 'Habitué', pub_games: 'Jeux du pub', duellist: 'Duelliste', insider: 'Initié', races_skated: 'Patineur', skate_3_clean: 'Glisse parfaite' },
+      goals: { orchard: '{n} pommes cueillies', darts: '{n} parties de fléchettes', sharp_eye: '{n} duels de fléchettes à 80 points ou plus', gourmet: '{n} aliments différents goûtés', explorer: '{n} lieux visités', loyal: '{n} jours avec 10 minutes de marche', market_gardener: '{n} récoltes à la ferme', trader: '{n} marchandises vendues aux acheteurs', cook: '{n} plats cuisinés', loyal_customer: '{n} passages en caisse', dapper: '{n} vêtements différents achetés', regular: '{n} jours avec une commande au pub', pub_games: '{n} parties de Drink Fast ou de Meter Shot', duellist: '{n} duels gagnés', insider: '{n} semaines dans la salle secrète', races_skated: '{n} courses terminées à la patinoire', skate_3_clean: '{n} courses de 3 tours sous 1:00 sans pénalité' },
     },
     watch: {
       label: 'Montre',
@@ -1851,6 +1852,7 @@ export const messages = {
       controls: 'Avancer : pousser · Souris, touches de côté : tourner · Espace : freiner',
       push: { good: 'Belle poussée', normal: 'Poussée', early: 'Trop vite' },
       fell: 'Tu es tombé !',
+      board: { week: 'Meilleurs temps · semaine {week}', laps: '{n} tours', empty: 'Pas encore de temps cette semaine', champions: 'Champions de la semaine dernière' },
       corrections: {
         no_skates: 'Il te faut tes propres patins pour aller sur la glace (Summit Sports, centre commercial).',
         skate_start: 'Attends le départ.',
