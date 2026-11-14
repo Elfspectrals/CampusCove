@@ -429,36 +429,41 @@ class TaskProgressApiTest extends TestCase
         $this->assertSame(2, $this->counter($player['account_id'], ActionCounter::SecretRoomWeeks));
     }
 
-    public function test_a_climb_line_counts_only_from_a_counted_match_once_a_day_and_black_lines_count_for_the_feat(): void
+    public function test_a_climb_line_counts_from_a_recorded_top_of_an_account_older_than_72_hours_once_a_day(): void
     {
-        $winner = $this->registerAndCreditWallet(0, 'cash');
+        $climber = $this->registerAndCreditWallet(0, 'cash');
         $rival = $this->registerAndCreditWallet(0, 'cash');
-        DB::table('accounts')->whereIn('account_id', [$winner['account_id'], $rival['account_id']])->update(['created_at' => now()->subHours(100)]);
-        $headers = $this->auth($winner['token'], self::SECRET);
+        $newcomer = $this->registerAndCreditWallet(0, 'cash');
+        DB::table('accounts')->whereIn('account_id', [$climber['account_id'], $rival['account_id']])->update(['created_at' => now()->subHours(100)]);
+        $headers = $this->auth($climber['token'], self::SECRET);
         $this->travelTo(now()->parse('2026-11-16 09:00:00', 'UTC'));
-        $record = function (string $ref, array $players) use ($headers): void {
+        $record = function (string $ref, string $venue, array $players) use ($headers): void {
             $end = now()->getTimestampMs();
-            $this->postJson('/api/sports/matches', ['ref' => $ref, 'sport' => 'climbing', 'venue' => 'climbing_duel', 'settings' => [],
+            $this->postJson('/api/sports/matches', ['ref' => $ref, 'sport' => 'climbing', 'venue' => $venue, 'settings' => [],
                 'startedAt' => $end - 9000, 'endedAt' => $end, 'players' => $players], $headers)->assertOk();
         };
-        $duel = fn (string $ref) => $record($ref, [
-            ['accountId' => $winner['account_id'], 'team' => null, 'result' => 'win', 'timeMs' => 9000],
+        $solo = fn (array $player, string $ref, string $line) => $record($ref, $line, [['accountId' => $player['account_id'], 'team' => null, 'result' => 'finished', 'timeMs' => 5000]]);
+        $solo($climber, 'r1', 'route_1');
+        $solo($climber, 'r1b', 'route_1');
+        $solo($climber, 'r4', 'route_4');
+        $solo($newcomer, 'n1', 'route_1');
+        $record('duel-1', 'climbing_duel', [
+            ['accountId' => $climber['account_id'], 'team' => null, 'result' => 'win', 'timeMs' => 9000],
             ['accountId' => $rival['account_id'], 'team' => null, 'result' => 'loss'],
         ]);
-        $duel('duel-1');
-        $duel('duel-2');
-        $record('solo-1', [['accountId' => $winner['account_id'], 'team' => null, 'result' => 'finished', 'timeMs' => 5000]]);
 
-        foreach ([['duel-1', 'speed_1', 'red'], ['duel-2', 'speed_1', 'red'], ['solo-1', 'route_4', 'black'], ['unknown', 'route_4', 'black'], ['duel-1', 'route_4', 'black']] as [$ref, $line, $colour]) {
+        foreach ([['r1', 'route_1', 'green'], ['r1b', 'route_1', 'green'], ['r4', 'route_4', 'black'], ['r4', 'boulder_4', 'black'], ['unknown', 'route_2', 'blue'], ['duel-1', 'speed_1', 'red']] as [$ref, $line, $colour]) {
             $this->postJson('/api/tasks/climb-topped', ['ref' => $ref, 'line' => $line, 'colour' => $colour], $headers)->assertOk();
         }
-        $this->assertSame(2, $this->counter($winner['account_id'], ActionCounter::ClimbLinesTopped));
-        $this->assertSame(1, $this->counter($winner['account_id'], ActionCounter::BlackLinesTopped));
+        $this->assertSame(3, $this->counter($climber['account_id'], ActionCounter::ClimbLinesTopped));
+        $this->assertSame(1, $this->counter($climber['account_id'], ActionCounter::BlackLinesTopped));
 
         $this->postJson('/api/tasks/climb-topped', ['ref' => 'duel-1', 'line' => 'speed_1', 'colour' => 'red'], $this->auth($rival['token'], self::SECRET))->assertOk();
+        $this->postJson('/api/tasks/climb-topped', ['ref' => 'n1', 'line' => 'route_1', 'colour' => 'green'], $this->auth($newcomer['token'], self::SECRET))->assertOk();
         $this->assertSame(0, $this->counter($rival['account_id'], ActionCounter::ClimbLinesTopped));
-        $this->postJson('/api/tasks/climb-topped', ['ref' => 'duel-1', 'line' => 'route_4', 'colour' => 'purple'], $headers)->assertUnprocessable();
-        $this->postJson('/api/tasks/climb-topped', ['ref' => 'duel-1', 'line' => 'route_4', 'colour' => 'black'], $this->auth($winner['token']))->assertForbidden();
+        $this->assertSame(0, $this->counter($newcomer['account_id'], ActionCounter::ClimbLinesTopped));
+        $this->postJson('/api/tasks/climb-topped', ['ref' => 'r1', 'line' => 'route_1', 'colour' => 'purple'], $headers)->assertUnprocessable();
+        $this->postJson('/api/tasks/climb-topped', ['ref' => 'r1', 'line' => 'route_1', 'colour' => 'green'], $this->auth($climber['token']))->assertForbidden();
     }
 
     private function catalogId(string $code): int

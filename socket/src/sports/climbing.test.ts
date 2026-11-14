@@ -109,7 +109,8 @@ test('a topped boulder ends at once on the mat and records the time; nothing for
   const body = call.body as { sport: string, venue: string, startedAt: number, endedAt: number, players: unknown[] }
   assert.deepEqual([body.sport, body.venue, body.startedAt, body.endedAt], ['climbing', 'boulder_1', NOW + 800, end])
   assert.deepEqual(body.players, [{ accountId: 10, team: null, result: 'finished', timeMs: 3200 }])
-  assert.equal(api.calls.some((c) => c.url === '/tasks/climb-topped'), false)
+  await new Promise((resolve) => setImmediate(resolve))
+  assert.deepEqual(api.calls.find((c) => c.url === '/tasks/climb-topped')?.body, { ref: (call.body as { ref: string }).ref, line: 'boulder_1', colour: 'green' })
   assert.deepEqual((call.body as { settings: unknown }).settings, { line: 'boulder_1' })
 })
 

@@ -198,9 +198,11 @@ function recordFreeTop(room: GameRoom, climb: ActiveClimb, timeMs: number, now: 
     endedAt: now,
     players: [{ accountId: climb.accountId, team: null, result: 'finished', timeMs }]
   }
-  callRealtimeBackend(player.token, '/sports/matches', 'POST', record).catch((error) => {
-    console.warn(`[sports] climb on ${climb.line.id} not recorded:`, error instanceof Error ? error.message : error)
-  })
+  const token = player.token
+  callRealtimeBackend(token, '/sports/matches', 'POST', record).then(
+    () => reportTop(token, record.ref, climb.line),
+    (error) => console.warn(`[sports] climb on ${climb.line.id} not recorded:`, error instanceof Error ? error.message : error)
+  )
 }
 
 function finish(room: GameRoom, climb: ActiveClimb, result: ClimbResult, now: number, timeMs?: number): void {
@@ -227,12 +229,15 @@ function closeDuelIfOver(room: GameRoom, matchId: string, now: number): void {
   if (match && match.id === matchId && duelOver(match)) endMatch(room, CLIMBING_DUEL, { reason: 'finished' }, now)
 }
 
+function reportTop(token: string, ref: string, line: ClimbLine): void {
+  callRealtimeBackend(token, '/tasks/climb-topped', 'POST', { ref, line: line.id, colour: line.colour }).catch((error) => {
+    console.warn(`[sports] top on ${line.id} not counted:`, error instanceof Error ? error.message : error)
+  })
+}
+
 function reportDuelTop(room: GameRoom, match: Match, accountId: number, line: ClimbLine): void {
   const token = [...room.players.values()].find((p) => p.accountId === accountId)?.token
-  if (!token) return
-  callRealtimeBackend(token, '/tasks/climb-topped', 'POST', { ref: match.id, line: line.id, colour: line.colour }).catch((error) => {
-    console.warn(`[sports] duel top on ${line.id} not counted:`, error instanceof Error ? error.message : error)
-  })
+  if (token) reportTop(token, match.id, line)
 }
 
 function topOut(room: GameRoom, climb: ActiveClimb, now: number): void {

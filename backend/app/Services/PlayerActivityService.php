@@ -14,6 +14,8 @@ final class PlayerActivityService
 
     public const PUB_GAMES_MAX_INTOXICATION = 50;
 
+    public const CLIMBING_DUEL_VENUE = 'climbing_duel';
+
     public function __construct(private readonly ActionCounterService $counters) {}
 
     public function zoneVisited(int $accountId, string $zone): void
@@ -63,15 +65,19 @@ final class PlayerActivityService
 
     public function climbTopped(int $accountId, string $ref, string $line, string $colour): void
     {
-        $counted = DB::table('sports_matches as m')
+        $oldEnough = DB::table('accounts')
+            ->where('account_id', $accountId)
+            ->where('created_at', '<=', now()->subHours(TradeService::MIN_GIVER_AGE_HOURS))
+            ->exists();
+        $topped = DB::table('sports_matches as m')
             ->join('sports_match_players as p', 'p.match_id', '=', 'm.id')
             ->where('m.ref', $ref)
             ->where('m.sport', 'climbing')
-            ->where('m.counts_for_tasks', true)
+            ->whereIn('m.venue', [$line, self::CLIMBING_DUEL_VENUE])
             ->where('p.account_id', $accountId)
             ->whereIn('p.result', ['win', 'finished'])
             ->exists();
-        if (! $counted) {
+        if (! $oldEnough || ! $topped) {
             return;
         }
         $key = $this->today().':'.$line;

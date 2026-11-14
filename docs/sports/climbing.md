@@ -86,7 +86,8 @@ knocked out, loses the shoes or is moved off the wall.
   `sports_champion` badge. In the hall the shoe attendant NPC (`climbing_shoe_attendant`) opens all twelve boards
   (`GET /api/sports/boards/climb_<line>`).
 - Tasks (badges only, see `docs/TASKS.md`): `routes_topped` 10 / 50 / 200 and `black_route` 1 / 10 / 30, each line counted
-  at most once a day, and only from a match the core counts for tasks (`counts_for_tasks`): today that is the speed duel
-  winner (solo runs never count). The socket sends `POST /tasks/climb-topped { ref, line, colour }` after the duel is
-  recorded; Laravel checks the match is climbing, counted, and that the account won or finished it. Thresholds proposed,
-  to review with the `game-designer`.
+  at most once a day (so at most 12 a day), for accounts 72 h old or more, from a recorded top: a free climb (solo
+  `sports_matches` row of that line) or a won speed duel. Decided 2026-11-14: climbing is solo by design, so it does not
+  use the core's `counts_for_tasks` rule (which never counts solo runs); the daily cap per line and the 72 h age stop
+  farming. After the record, the socket sends `POST /tasks/climb-topped { ref, line, colour }`; Laravel checks the match
+  is climbing, of that line or the duel, and that the account finished or won it.

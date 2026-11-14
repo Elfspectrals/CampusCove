@@ -32,7 +32,7 @@ Laravel owns every counter. A counter counts one real action, bumped by the serv
 | `duels_won` | one darts or Drink Fast game won against other players (placement 1), whoever the opponents are | `PubService::reward` |
 | `secret_room_weeks` | one week (Monday to Sunday, Paris, ISO week) in which the player stood in the pub's secret room | socket `taskTracking.ts` (once a day per account), then `POST /tasks/secret-room` (realtime, no body) |
 | `foods_tasted` | one food or drink tasted for the first time (any group of `FoodCatalog` but `medical`), once per item code | `SurvivalService::consume` |
-| `climb_lines_topped` | one climbing line topped in a match counted for tasks (`sports_matches.counts_for_tasks`, today the speed duel winner), at most once per line and day (Paris) | socket `climbing.ts` after the duel is recorded, then `POST /tasks/climb-topped` (realtime) `{ ref: the match ref, line: [a-z0-9_]{1,40}, colour: green \| blue \| red \| black }`; Laravel checks the match and that the account won or finished it |
+| `climb_lines_topped` | one climbing line topped (free climb or won speed duel), at most once per line and day (Paris), accounts 72 h old or more | socket `climbing.ts` after the climb or duel is recorded, then `POST /tasks/climb-topped` (realtime) `{ ref: the match ref, line: [a-z0-9_]{1,40}, colour: green \| blue \| red \| black }`; Laravel checks the match is climbing, of that line or `climbing_duel`, and that the account finished or won it |
 | `black_lines_topped` | one black line topped, at most once per line and day (Paris) | same call, colour `black` |
 
 ## Tiers
