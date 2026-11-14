@@ -15,7 +15,8 @@
     "COS_WEAR_TOP_TEAM_JERSEY_BLUE": 110,
     "COS_WEAR_TOP_TEAM_JERSEY_RED": 110,
     "COS_WEAR_TOP_TRACK_JACKET": 260,
-    "COS_WEAR_TOP_TRACKSUIT": 240
+    "COS_WEAR_TOP_TRACKSUIT": 240,
+    "gear_ice_skates": 260
   },
   "buyers": {}
 }

@@ -35,6 +35,7 @@ import GamePubSecretDialog from '../components/game/GamePubSecretDialog.vue'
 import GamePoliceLicenceDialog from '../components/game/GamePoliceLicenceDialog.vue'
 import GameSportsPassDesk from '../components/game/GameSportsPassDesk.vue'
 import GameSportsSignup from '../components/game/GameSportsSignup.vue'
+import GameSkatingHud from '../components/game/GameSkatingHud.vue'
 import GameChat from '../components/game/GameChat.vue'
 import GameDrunkEffects from '../components/game/GameDrunkEffects.vue'
 import GameDrinkFast from '../components/game/GameDrinkFast.vue'
@@ -101,6 +102,8 @@ import { usePolice } from '../composables/game/usePolice'
 import { useSportsPass } from '../composables/game/useSportsPass'
 import { passValid } from '../game/sports/sportsPass'
 import { useSportsSignup } from '../composables/game/useSportsSignup'
+import { useSkating } from '../composables/game/useSkating'
+import { ICE_SKATES_CODE } from '../game/sports/skating/skateMotion'
 import { usePickpocket } from '../composables/game/usePickpocket'
 import { useStorageAuction } from '../composables/game/useStorageAuction'
 import { useStorageWarehouse } from '../composables/game/useStorageWarehouse'
@@ -875,6 +878,17 @@ const { open: sportsSignupOpen, choices: sportsVenueChoices, canPickVenue: sport
 watch(sportsSignupOpen, (open) => {
   if (!open && !document.pointerLockElement) requestPointerLock()
 })
+const SKATING_CORRECTIONS = new Set(['no_skates', 'skate_start', 'skate_fallen'])
+const skating = useSkating({
+  myPosition,
+  gameRoomRef,
+  ownsSkates: () => ICE_SKATES_CODE in itemByCode.value,
+  say: (text) => survival.say(text),
+  correctionText: (reason) => (SKATING_CORRECTIONS.has(reason) ? t(`skating.corrections.${reason}`) : null),
+  onFall: () => movement.kickCamera(),
+  playSound: (name) => sfx.play(name),
+})
+const { active: skatingActive, speed: skatingSpeed, cue: skatingCue, rhythmZone: skatingWindow, lastPush: skatingLastPush, race: skatingRace, rows: skatingRows, clock: skatingClock, result: skatingResult } = skating
 const PICKPOCKET_ERROR_KEYS = new Set([
   'pickpocket_on_duty',
   'pickpocket_jailed',
@@ -1565,6 +1579,8 @@ const movement = useGameMovement({
   movementLocked: () => seats.seated.value || townBus.riding.value || police.cuffedBy.value !== null || adminWatch.hasMyPower('freeze'),
   flying: () => adminWatch.hasMyPower('fly'),
   afterCameraPlaced: intoxication.applyToCamera,
+  skate: skating.step,
+  afterSkate: skating.afterMove,
   trySpendJump: () => adminWatch.hasMyPower('endless_stamina') || punch.trySpendJump(),
   trySpendSprint: (dt, wasSprinting) => adminWatch.hasMyPower('endless_stamina') || punch.trySpendSprint(dt, wasSprinting),
   onBeforeRender: (dt) => {
@@ -1577,6 +1593,7 @@ const movement = useGameMovement({
     mallCellTemplates.tick(dt, myPosition)
     zoneDecor.tick(dt, myPosition)
     marketCrowd.tick(dt)
+    skating.tick()
     cashBags.tick(dt)
     storageAuction.tick()
     storageWarehouse.tick(dt)
@@ -1749,6 +1766,7 @@ const realtime = useGameRealtime({
     onError: sportsSignup.handlers.onError,
     onRoomJoined: sportsSignup.handlers.onRoomJoined,
   },
+  skating: skating.handlers,
   pickpocket: pickpocket.handlers,
   storageAuction: {
     ...storageAuction.handlers,
@@ -2351,6 +2369,18 @@ const crosshairClass = computed(() => {
       @sign-up="sportsSignup.signUp"
       @leave="sportsSignup.leave"
       @close="sportsSignup.close"
+    />
+    <GameSkatingHud
+      :active="skatingActive"
+      :speed="skatingSpeed"
+      :cue="skatingCue"
+      :rhythm-window="skatingWindow"
+      :last-push="skatingLastPush"
+      :laps="skatingRace?.laps ?? null"
+      :clock="skatingClock"
+      :rows="skatingRows"
+      :result="skatingResult"
+      :my-session-id="gameRoomRef?.sessionId ?? null"
     />
     <GamePubSecretDialog
       v-if="pubSecretOpen"

@@ -1248,6 +1248,46 @@
         "z": -186,
         "width": 7.2
       }
+    },
+    {
+      "key": "sports_ice_rink",
+      "optional": true,
+      "bounds": {
+        "minX": -562,
+        "maxX": -481,
+        "minZ": -301,
+        "maxZ": -250
+      },
+      "modelUrl": "/assets/park/sports_ice_rink/sports_ice_rink.glb",
+      "sportsPass": true,
+      "buildings": [
+        {
+          "kind": "work",
+          "key": "sports_ice_rink",
+          "name": "Cove Ice Rink",
+          "job": "sports",
+          "position": [
+            -521.5,
+            0,
+            -275.5
+          ],
+          "rotationY": 1.5708,
+          "door": [
+            -484,
+            1.25,
+            -275.5
+          ],
+          "footprint": [
+            45,
+            75.41
+          ],
+          "interiorOffset": [
+            0,
+            0.2,
+            32.095
+          ]
+        }
+      ]
     }
   ],
   "fountains": [
@@ -12115,6 +12155,16 @@
         -181
       ],
       "yaw": 0
+    },
+    {
+      "key": "sports_ice_rink",
+      "name": "Cove Ice Rink",
+      "position": [
+        -481.5,
+        0,
+        -275.5
+      ],
+      "yaw": 1.5708
     }
   ],
   "sportsComplex": {

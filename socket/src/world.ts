@@ -416,7 +416,7 @@ function parseWorld(manifest: Json): World {
 
 // An http(s) URL in dev (the front serves it), a file path in the production image. In dev the front container can
 // still be starting or restarting when this one boots, so every world file is retried, not only the manifest.
-async function readManifest(source: string): Promise<Json> {
+export async function readManifest(source: string): Promise<Json> {
   if (!/^https?:\/\//.test(source)) return JSON.parse(await readFile(source, 'utf8'))
   for (let attempt = 1; ; attempt++) {
     try {
@@ -438,7 +438,7 @@ export async function loadWorld(): Promise<void> {
   console.log(`[world] manifest loaded from ${WORLD_MANIFEST_URL}: ${loaded.workDoors.size} public buildings, ${loaded.houses.size} houses`)
 }
 
-function besideManifest(path: string): string {
+export function besideManifest(path: string): string {
   const manifest = WORLD_MANIFEST_URL!
   return /^https?:\/\//.test(manifest) ? new URL(path, manifest).href : join(dirname(manifest), path)
 }

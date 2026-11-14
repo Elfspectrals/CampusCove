@@ -113,6 +113,9 @@ import type {
   SportsLobbyClosedPayload,
   SportsLobbyPayload,
   SportsLoansPayload,
+  SkateFallPayload,
+  SkateRacePayload,
+  SkateResultPayload,
   SportsPassBoughtPayload,
   SportsPassStatePayload,
   PickpocketAlertPayload,
@@ -326,6 +329,13 @@ export interface GameRealtimeDeps {
     onError: (data: SportsErrorPayload) => void
     onRoomJoined: () => void
   }
+  skating: {
+    onRace: (data: SkateRacePayload) => void
+    onFall: (data: SkateFallPayload) => void
+    onResult: (data: SkateResultPayload) => void
+    onCorrection: (reason: string | undefined) => void
+    onRoomJoined: () => void
+  }
   pickpocket: {
     onStarted: (data: PickpocketStartedPayload) => void
     onProgress: (data: PickpocketProgressPayload) => void
@@ -413,6 +423,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       deps.admin.onInit(payload.isAdmin === true)
       clearSportsLoans()
       deps.sports.onRoomJoined()
+      deps.skating.onRoomJoined()
     })
 
     room.onMessage('housing_units_sync', (data: { units?: unknown }) => syncHousingUnits(data.units))
@@ -422,6 +433,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('position_correction', (data: { x: number; y: number; z: number; reason?: string }) => {
       setMyPosition(data.x, data.y, data.z)
       deps.sports.onCorrection(data.reason)
+      deps.skating.onCorrection(data.reason)
     })
     room.onMessage('door_error', (data: { message: string }) => {
       deps.roomMessage.value = data.message
@@ -581,6 +593,9 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('sports_lobby_closed', (data: SportsLobbyClosedPayload) => deps.sports.onLobbyClosed(data))
     room.onMessage('sports_error', (data: SportsErrorPayload) => deps.sports.onError(data))
     room.onMessage('sports_loans', (data: SportsLoansPayload) => applySportsLoans(data))
+    room.onMessage('skate_race', (data: SkateRacePayload) => deps.skating.onRace(data))
+    room.onMessage('skate_fall', (data: SkateFallPayload) => deps.skating.onFall(data))
+    room.onMessage('skate_result', (data: SkateResultPayload) => deps.skating.onResult(data))
     room.onMessage('pickpocket_started', (data: PickpocketStartedPayload) => deps.pickpocket.onStarted(data))
     room.onMessage('pickpocket_progress', (data: PickpocketProgressPayload) => deps.pickpocket.onProgress(data))
     room.onMessage('pickpocket_failed', (data: PickpocketFailedPayload) => deps.pickpocket.onFailed(data))

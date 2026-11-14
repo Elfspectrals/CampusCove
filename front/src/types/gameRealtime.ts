@@ -896,3 +896,33 @@ export interface SportsLoansPayload {
   sessionId: string
   loans: string[]
 }
+
+interface SkateRacerPayload {
+  sessionId: string
+  name: string
+  lap: number
+  penaltyMs: number
+  finishedMs: number | null
+  dnf: boolean
+}
+
+export interface SkateRacePayload {
+  venue: string
+  phase: 'countdown' | 'racing'
+  laps: number
+  goAt: number
+  serverNow: number
+  racers: SkateRacerPayload[]
+}
+
+export interface SkateFallPayload {
+  sessionId: string
+  until: number
+  serverNow: number
+}
+
+export interface SkateResultPayload {
+  venue: string
+  laps: number
+  results: { sessionId: string; name: string; place: number | null; timeMs: number | null; penaltyMs: number; dnf: boolean }[]
+}

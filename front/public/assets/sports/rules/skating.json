@@ -1,7 +1,7 @@
 {
   "version": 1,
   "sport": "skating",
-  "status": "placeholder",
+  "status": "ready",
   "zone": "sports_ice_rink",
   "coachId": "rink_coach",
   "signup": {
@@ -23,10 +23,75 @@
       60,
       30
     ],
-    "boards": null,
-    "hockeyMarkings": null
+    "bounds": {
+      "minX": -556.4,
+      "maxX": -496.4,
+      "minZ": -290.5,
+      "maxZ": -260.5
+    },
+    "cornerRadius": 4,
+    "boards": {
+      "height": 1.1,
+      "gates": [
+        {
+          "z": -272.5,
+          "width": 1.6
+        },
+        {
+          "z": -278.5,
+          "width": 1.6
+        }
+      ]
+    },
+    "hockeyMarkings": true
   },
-  "raceOval": null,
+  "raceOval": {
+    "a": [
+      -540.4,
+      -275.5
+    ],
+    "b": [
+      -512.4,
+      -275.5
+    ],
+    "radius": 6,
+    "cones": 22,
+    "startLineX": -526.4,
+    "grid": [
+      [
+        -528.4,
+        -268.3
+      ],
+      [
+        -528.4,
+        -266.1
+      ],
+      [
+        -528.4,
+        -263.9
+      ],
+      [
+        -528.4,
+        -261.7
+      ],
+      [
+        -530.4,
+        -268.3
+      ],
+      [
+        -530.4,
+        -266.1
+      ],
+      [
+        -530.4,
+        -263.9
+      ],
+      [
+        -530.4,
+        -261.7
+      ]
+    ]
+  },
   "lapsChoices": [
     1,
     3,
@@ -35,18 +100,32 @@
   "minPlayers": 1,
   "maxPlayers": 8,
   "cutPenaltyMs": 2000,
+  "startCountdownMs": 3000,
+  "raceTimeLimitMs": {
+    "base": 60000,
+    "perLap": 40000
+  },
   "skate": {
-    "pushGain": null,
-    "rhythmMs": null,
-    "toleranceMs": null,
-    "friction": null,
-    "maxSpeed": null,
-    "turnRadiusBySpeed": null,
-    "brake": null
+    "pushGain": 1.6,
+    "goodPushGain": 2.6,
+    "earlyPushGain": 0.4,
+    "rhythmMs": 650,
+    "toleranceMs": 150,
+    "serverAllowanceMs": 100,
+    "friction": 0.5,
+    "maxSpeed": 9,
+    "turnRate": {
+      "still": 3.2,
+      "atMaxSpeed": 0.9
+    },
+    "brake": 7,
+    "moveMarginM": 1.5
   },
   "crash": {
-    "speedThreshold": null,
-    "fallMs": 1500
+    "speedThreshold": 6.5,
+    "contactRadius": 0.9,
+    "fallMs": 1500,
+    "immuneMs": 2000
   },
   "gear": [
     "gear_ice_skates"

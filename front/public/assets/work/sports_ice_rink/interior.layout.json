@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "key": "sports_ice_rink",
+  "name": "Cove Ice Rink",
+  "spawn": [
+    0.0,
+    1.6,
+    3.7
+  ],
+  "exit": {
+    "position": [
+      0.0,
+      4.75
+    ],
+    "radius": 1.4
+  },
+  "stations": [],
+  "npcs": {
+    "rinkCoach": [
+      0.0,
+      0.0,
+      -5.395
+    ]
+  },
+  "seats": []
+}
