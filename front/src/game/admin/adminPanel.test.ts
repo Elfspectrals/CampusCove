@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { HousingUnitPayload } from '../../types/gameRealtime.ts'
-import { ADMIN_MAX_MONEY, adminGrantedMessage, adminResultMessage, adminTargets, filterAdminItems, housePins, wholeIn } from './adminPanel.ts'
+import { ADMIN_MAX_MONEY, adminGrantedMessage, adminResultMessage, adminTargets, filterAdminItems, housePins, houseRegions, regionCrop, wholeIn } from './adminPanel.ts'
 
 const apple = { code: 'farm_apple', name: 'Apple', kind: 'consumable', preview: null, portion: null }
 const hat = { code: 'wear_straw_hat', name: 'Straw hat', kind: 'cosmetic', preview: null, portion: null }
@@ -71,4 +71,23 @@ test('each house is pinned on the town picture as free, owned by the chosen play
   ])
   assert.equal(pins[0]!.name, 'Maple Cottage')
   assert.equal(housePins([unit('b', 'occupied', 7, 0, 0)], area, null)[0]!.state, 'taken')
+})
+
+test('regions are the zones with a house, with a margin; a house on an overlap belongs to the first zone', () => {
+  const unit = (public_id: string, pos_x: number, pos_z: number) => ({ public_id, model_key: null, status: 'vacant', price_coins: 1, occupant_account_id: null, occupant_name: null, pos_x, pos_z }) as HousingUnitPayload
+  const zones = [
+    { key: 'town', bounds: { minX: -10, maxX: 10, minZ: -10, maxZ: 10 } },
+    { key: 'pond', bounds: { minX: -5, maxX: 40, minZ: 0, maxZ: 10 } },
+    { key: 'heights', bounds: { minX: 100, maxX: 200, minZ: 100, maxZ: 200 } },
+  ]
+  const units = [unit('a', 0, 0), unit('b', 150, 150)]
+  const regions = houseRegions(zones, units)
+  assert.deepEqual(regions.map((r) => r.key), ['town', 'heights'])
+  assert.deepEqual(regions[0]!.area, { minX: -16, maxX: 16, minZ: -16, maxZ: 16 })
+  assert.deepEqual(regions.map((r) => r.units.map((u) => u.public_id)), [['a'], ['b']])
+})
+
+test('the town picture is cropped to a region by width and offset in percent', () => {
+  const crop = regionCrop({ minX: -100, maxX: 100, minZ: -50, maxZ: 50 }, { minX: 0, maxX: 50, minZ: 0, maxZ: 25 })
+  assert.deepEqual(crop, { width: 400, left: -200, top: -200 })
 })

@@ -134,7 +134,7 @@ import { createGameScene, disposeGameScene, renderGameFrame, resizeViewmodel, ty
 import { createFirstPersonArms } from '../game/firstPersonArms'
 import { createHeldItem } from '../game/heldItem'
 import { COVE_HOME, COVE_THREADS, findHouse, findStore, findWork } from '../game/assets/catalog'
-import { storeBuildings, workBuildings, type WorldBounds } from '../game/world/worldManifest'
+import { storeBuildings, workBuildings, type WorldBounds, type WorldZone } from '../game/world/worldManifest'
 import type { GearSlot } from '../game/wardrobeSlots'
 import type { PoliceBountyPayload, PoliceCuffCancelledPayload } from '../types/gameRealtime'
 import { createSfx } from '../game/sfx'
@@ -970,6 +970,8 @@ const adminWatch = useAdminWatch({
   translate: (key) => t(key),
 })
 const { isAdmin, panelOpen: adminPanelOpen } = adminWatch
+/** The world manifest's zones, for the admin console's house map by region. */
+const worldZones = shallowRef<WorldZone[]>([])
 function openAdminPanel(): void {
   trade.closeMenu()
   adminWatch.openPanel()
@@ -1024,7 +1026,9 @@ const survival = useSurvival({
   onStamina: (value) => punch.syncStamina(value),
   onIntoxication: (value) => intoxication.set(value),
   onWatchTap: () => {
-    if (watchMenuOpen.value) trade.closeMenu()
+    // with the admin console open, the watch key hands the mouse back to it instead of opening the watch
+    if (adminPanelOpen.value && pointerLocked.value) document.exitPointerLock()
+    else if (watchMenuOpen.value) trade.closeMenu()
     else if (pointerLocked.value && !inventoryOpen.value) trade.openMenu()
   },
   cellTap: () => jailCell.tap(),
@@ -1203,6 +1207,7 @@ const environment = useRoomEnvironment({
   getRenderer,
   onTownLoaded: (manifest) => {
     interactions.setWorldManifest(manifest)
+    worldZones.value = manifest.zones
     storageUnits = manifest.storage?.units ?? []
     const musicZone = manifest.zones.find((zone) => zone.music)
     if (musicZone?.music && !zoneMusic) {
@@ -2140,7 +2145,17 @@ const crosshairClass = computed(() => {
       @close="storage.close"
     />
     <GameLockpick v-if="lockpick.board.value" :board="lockpick.board.value" @press="lockpick.press" @close="lockpick.close" />
-    <GameAdminPanel v-if="adminPanelOpen && gameRoomRef" :admin="adminWatch" :own-session-id="gameRoomRef.sessionId" :map-image="minimap.image.value" @summon="adminSummon" @close="adminWatch.closePanel" />
+    <GameAdminPanel
+      v-if="adminPanelOpen && gameRoomRef"
+      :admin="adminWatch"
+      :own-session-id="gameRoomRef.sessionId"
+      :map-image="minimap.image.value"
+      :zones="worldZones"
+      :game-has-mouse="pointerLocked"
+      :watch-key="watchKey"
+      @summon="adminSummon"
+      @close="adminWatch.closePanel"
+    />
     <GameAtmScreen v-if="atmOpen" :screen="atm.screen.value" :pending="atm.pending.value" :feedback="atm.feedback.value" @run="atm.run" @clear-feedback="atm.clearFeedback" @close="atm.close" />
     <GameMarketPanel
       v-if="market.panel.value"

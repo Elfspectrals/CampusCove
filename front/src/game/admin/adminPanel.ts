@@ -46,6 +46,43 @@ function houseName(modelKey: string | null): string {
   return findHouse(modelKey)?.name ?? modelKey ?? '?'
 }
 
+/** A part of the town that holds houses, shown on its own on the admin map (a world manifest zone). */
+export interface HouseRegion {
+  key: string
+  area: WorldBounds
+  /** The houses of this region: each house belongs to the first zone that holds it, zones overlap at their edges. */
+  units: HousingUnitPayload[]
+}
+
+/** Ground kept around a zone on the admin map, in metres. */
+const REGION_MARGIN = 6
+
+function inside(area: WorldBounds, x: number, z: number): boolean {
+  return x >= area.minX && x <= area.maxX && z >= area.minZ && z <= area.maxZ
+}
+
+/** The zones that hold at least one house, in manifest order, each with a little ground around it. */
+export function houseRegions(zones: ReadonlyArray<{ key: string; bounds: WorldBounds }>, units: readonly HousingUnitPayload[]): HouseRegion[] {
+  const zoneOf = (u: HousingUnitPayload) => zones.find((zone) => inside(zone.bounds, u.pos_x, u.pos_z))?.key
+  return zones.flatMap(({ key, bounds }) => {
+    const own = units.filter((u) => zoneOf(u) === key)
+    if (own.length === 0) return []
+    const area = { minX: bounds.minX - REGION_MARGIN, maxX: bounds.maxX + REGION_MARGIN, minZ: bounds.minZ - REGION_MARGIN, maxZ: bounds.maxZ + REGION_MARGIN }
+    return [{ key, area, units: own }]
+  })
+}
+
+/** Where the whole-town picture sits behind one region, as percents of the region's box (width, left and top). */
+export function regionCrop(picture: WorldBounds, region: WorldBounds): { width: number; left: number; top: number } {
+  const w = region.maxX - region.minX
+  const h = region.maxZ - region.minZ
+  return {
+    width: ((picture.maxX - picture.minX) / w) * 100,
+    left: ((picture.minX - region.minX) / w) * 100,
+    top: ((picture.minZ - region.minZ) / h) * 100,
+  }
+}
+
 /** A house on the admin map: free to give, owned by the chosen player (take back) or by someone else. */
 export interface HousePin {
   unit: string
@@ -59,6 +96,7 @@ export interface HousePin {
   v: number
 }
 
+/** The houses placed on `area` (a region's own houses, or the whole town). */
 export function housePins(units: readonly HousingUnitPayload[], area: WorldBounds, targetAccountId: number | null): HousePin[] {
   return units.map((u) => {
     const state = u.status === 'vacant' ? 'vacant' : u.occupant_account_id === targetAccountId && targetAccountId !== null ? 'theirs' : 'taken'

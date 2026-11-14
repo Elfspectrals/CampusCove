@@ -6,6 +6,7 @@ import { useHoldAction } from '../../composables/game/useHoldAction'
 import { ADMIN_MAX_MARKET_MINUTES, POWER_ICON, adminResultMessage, adminTargets, wholeIn } from '../../game/admin/adminPanel.ts'
 import { EVENT_ROWS, eventStatus, isLive, placesWithRecentFirst, type EventRow, type EventStatus } from '../../game/admin/adminConsole.ts'
 import type { WorldMapImage } from '../../game/world/minimap'
+import type { WorldZone } from '../../game/world/worldManifest'
 import type { AdminResultPayload } from '../../types/gameRealtime'
 import type { UiIconName } from '../ui/icons'
 import UiIcon from '../ui/UiIcon.vue'
@@ -15,7 +16,15 @@ import AdminHouseTab from './admin/AdminHouseTab.vue'
 import AdminPowersTab from './admin/AdminPowersTab.vue'
 
 /** The admin console docked on the right, opened by the watch's Admin tile: who it acts on stays in view on top. */
-const props = defineProps<{ admin: ReturnType<typeof useAdminWatch>; ownSessionId: string; mapImage: WorldMapImage | null }>()
+const props = defineProps<{
+  admin: ReturnType<typeof useAdminWatch>
+  ownSessionId: string
+  mapImage: WorldMapImage | null
+  zones: readonly WorldZone[]
+  /** The game holds the mouse (pointer lock): the console stays open, the watch key gives the mouse back. */
+  gameHasMouse: boolean
+  watchKey: string
+}>()
 
 const emit = defineEmits<{ summon: [sessionId: string]; close: [] }>()
 
@@ -104,8 +113,17 @@ function startEvent(row: Exclude<EventRow, 'taxes'>): void {
   else if (minutes.value !== null) props.admin.openMarket(minutes.value)
 }
 
+/** Esc that only released the mouse from the game must not close the console too. */
+let mouseReleasedAt = 0
+watch(
+  () => props.gameHasMouse,
+  (has) => {
+    if (!has) mouseReleasedAt = performance.now()
+  },
+)
+
 function onKey(e: KeyboardEvent): void {
-  if (e.key !== 'Escape') return
+  if (e.key !== 'Escape' || props.gameHasMouse || performance.now() - mouseReleasedAt < 250) return
   emit('close')
   e.preventDefault()
 }
@@ -115,13 +133,22 @@ onUnmounted(() => window.removeEventListener('keydown', onKey, true))
 </script>
 
 <template>
-  <section class="cc-hud absolute bottom-4 right-4 top-4 z-[40] flex w-[min(420px,calc(100vw-2rem))] animate-cc-pop flex-col overflow-hidden p-0" :aria-label="t('adminPanel.title')">
+  <section
+    :class="['cc-hud absolute bottom-4 right-4 top-4 z-[40] flex w-[min(420px,calc(100vw-2rem))] animate-cc-pop flex-col overflow-hidden p-0 transition-opacity', gameHasMouse ? 'opacity-70' : '']"
+    :aria-label="t('adminPanel.title')"
+  >
     <header class="flex items-center justify-between bg-coral px-4 py-1 text-ink-950">
       <span class="font-display text-sm uppercase tracking-[0.18em]">{{ t('adminPanel.title') }}</span>
       <button type="button" class="inline-flex min-h-11 min-w-11 items-center justify-center" :aria-label="t('adminPanel.close')" @click="emit('close')">
         <UiIcon name="x" :size="18" />
       </button>
     </header>
+
+    <p v-if="gameHasMouse" class="m-0 flex items-center gap-2 bg-ink-950 px-4 py-1.5 text-xs font-bold text-fog" role="status">
+      <kbd class="rounded bg-sun px-1.5 text-[11px] font-extrabold text-ink-950">{{ watchKey }}</kbd>
+      {{ t('adminPanel.backToConsole') }}
+    </p>
+    <p v-else class="m-0 bg-ink-950 px-4 py-1 text-[11px] text-mist">{{ t('adminPanel.playHint', { key: watchKey }) }}</p>
 
     <!-- Target: always in view, so every action says who it lands on -->
     <section class="border-b border-line/10 px-2.5 pb-2 pt-2" :aria-label="t('adminPanel.target')">
@@ -200,6 +227,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey, true))
         v-else-if="tab === 'house'"
         :admin="admin"
         :map-image="mapImage"
+        :zones="zones"
         :target="target"
         :target-name="targetName"
         :target-is-here="targetIsHere"

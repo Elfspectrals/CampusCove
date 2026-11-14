@@ -123,7 +123,7 @@ When an opening ends, the scheduled `market:close` (every minute) returns the lo
 
 ## Socket messages
 
-The watch's Admin tile opens the console docked on the right (`GameAdminPanel.vue` and its tabs in `components/game/admin/`), which talks only to the socket (`socket/src/admin.ts`). The House tab pins every house on the town picture of the full map (`housePins`): free houses can be given, the chosen player's own house taken back. A message from a player who is not an admin (`is_admin` at join) is ignored, with no answer. Every admin message shares the 500 ms admin cooldown; one inside it is dropped.
+The watch's Admin tile opens the console docked on the right (`GameAdminPanel.vue` and its tabs in `components/game/admin/`), which talks only to the socket (`socket/src/admin.ts`). The House tab shows one part of town at a time (each world manifest zone that holds a house, the first zone in manifest order owning a house on an overlap; `houseRegions`), cropped from the full map's picture (`regionCrop`), with arrows to the next one; every house of it is pinned (`housePins`): free houses can be given, the chosen player's own house taken back. The console stays open while the admin plays: a click on the game takes the mouse, Esc or the watch key (T) gives it back to the console without closing it. A message from a player who is not an admin (`is_admin` at join) is ignored, with no answer. Every admin message shares the 500 ms admin cooldown; one inside it is dropped.
 
 ### Client to socket
 
