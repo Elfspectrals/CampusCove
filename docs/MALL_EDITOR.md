@@ -200,8 +200,7 @@ la zone. Le joueur remplit son panier en visant les objets, puis paie au vendeur
 de la clinique, le Campus Cafe et les six boutiques du mall sont dans `zones/retail_park.json`, `fashion.json`,
 `clinic.json`, `work_district.json` et un fichier par boutique du mall (`hearth_hollow.json`, `greencart.json`…) ; leurs anciens layouts d'intérieur ne sont plus lus pour les ventes.
 
-- **Price tags beside each item** (carte Sellers) pose une étiquette de prix devant chaque objet de la zone.
-- Un objet à vendre peut avoir une **Description**, affichée quand on le vise.
+- Un objet à vendre peut avoir une **Description**. Quand on le vise, la fiche en bas à droite donne son nom, son type, son usage et son prix.
 - Un mannequin vend les pièces cochées **For sale**, chacune à son **Price (coins)** ; **Clothes only (no body)**
   n'affiche que les vêtements (une pièce sur un portant).
 - Les vendeurs portent des pièces de `wear/` : celui de Cove Home porte `top/staff_polo` (polo jaune « CH »).

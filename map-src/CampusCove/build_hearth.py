@@ -66,7 +66,6 @@ ISLANDS = {
     "kitchen_bath": [("bar_stool", "floor"), ("dining_bench", "floor"), ("wooden_chair", "floor"), ("towel_rack", "floor"), ("aquarium", "floor")],
     "outdoor": [("garden_bench", "floor"), ("parasol", "floor"), ("sun_lounger", "floor"), ("bbq_grill", "floor")],
 }
-COL_OVERRIDE = {"parasol": [0.5, 0.5]}
 
 sc = L.new_build_scene("STORE_" + KEY + "_interior")
 coll = bpy.data.collections.new("Interior")
@@ -192,10 +191,8 @@ def island(dep, cx, cz, dx, dz):
             gx = cx - tw / 2 + 0.6 + i * 0.7
             gz = cz
             w_, h_, d_ = manifest[key]
-            tx, tz = gx, cz + 0.75
             displays.append({"key": key, "code": code_of(key), "department": dep, "description": BLURB[key],
-                             "position": [round(gx, 3), TABLE_Y, round(gz, 3)], "yaw": 0.0, "size": [w_, h_, d_],
-                             "tag": {"position": [round(tx, 3), 1.22, round(tz, 3)], "yaw": 0.0}})
+                             "position": [round(gx, 3), TABLE_Y, round(gz, 3)], "yaw": 0.0, "size": [w_, h_, d_]})
     n = len(floor_items)
     for i, key in enumerate(floor_items):
         w_, h_, d_ = manifest[key]
@@ -203,12 +200,8 @@ def island(dep, cx, cz, dx, dz):
         gx, gz = cx + dx * math.cos(a), cz + dz * math.sin(a)
         yaw = facing_yaw(cx - gx, cz - gz) + math.pi
         y0 = 0.4 if max(w_, d_) < 0.5 and h_ < 0.9 else 0.0
-        cw, cd = COL_OVERRIDE.get(key, [w_, d_])
-        r_tag = math.hypot(gx - cx, gz - cz) + max(cw, cd) / 2 + 0.3
-        tx, tz = cx + r_tag * math.cos(a), cz + r_tag * math.sin(a)
         displays.append({"key": key, "code": code_of(key), "department": dep, "description": BLURB[key],
-                         "position": [round(gx, 3), y0, round(gz, 3)], "yaw": round(yaw, 4), "size": [w_, h_, d_],
-                         "tag": {"position": [round(tx, 3), 1.32, round(tz, 3)], "yaw": round(facing_yaw(cx - tx, cz - tz) + math.pi, 4)}})
+                         "position": [round(gx, 3), y0, round(gz, 3)], "yaw": round(yaw, 4), "size": [w_, h_, d_]})
     add(L.box(coll, f"Sign_{dep}_Board", cx, cz, 3.0, 2.6, 0.08, 0.55, DM[dep]))
     for o_ in (-1.1, 1.1):
         add(L.cyl(coll, f"Sign_{dep}_Wire{int(o_ * 10)}", cx + o_, cz, 3.55, 0.01, H - 3.55, M["steel"], seg=4))
@@ -227,8 +220,7 @@ counter_x, counter_z = 10.5, 1.5
 add(L.box(coll, "Counter_SignBoard", counter_x, counter_z - 0.35, 2.5, 2.2, 0.08, 0.6, M["slat"]))
 text("Counter_SignText", "PAY HERE", counter_x, counter_z - 0.29, 2.62, 0.34, M["sign"], 0.0)
 
-bad = L.check_grounded(objs, allow=L.ALLOW_INTERIOR + ("Ceiling", "Truss_", "Pendant_", "Bulb_", "Brand_", "Ochre_", "Sign_", "Counter_Sign", "TagPost_",
-                                                      "TagFoot_", "Column_"))
+bad = L.check_grounded(objs, allow=L.ALLOW_INTERIOR + ("Ceiling", "Truss_", "Pendant_", "Bulb_", "Brand_", "Ochre_", "Sign_", "Counter_Sign", "Column_"))
 print("HEARTH grounded violations:", bad)
 assert not bad, bad
 

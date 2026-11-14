@@ -382,14 +382,6 @@ class Kit:
             self.part(f"{name}_Wire{i}", gx, gz, yaw, lx, 0.0, y + h, 0.02, 0.02, ceiling_y - y - h, mat_wire)
         return board
 
-    def price_tag(self, name, gx, gz, yaw, mat_post, mat_tag, h=1.05):
-        """Floor-standing tag post with a small plate at the top, facing -Z at yaw 0. Returns the plate centre
-        (x, y, z) where the game draws the label."""
-        self.part(f"{name}_Foot", gx, gz, yaw, 0.0, 0.0, 0.0, 0.16, 0.16, 0.03, mat_post)
-        self.part(f"{name}_Post", gx, gz, yaw, 0.0, 0.0, 0.03, 0.04, 0.04, h - 0.03, mat_post)
-        plate = self.part(f"{name}_Plate", gx, gz, yaw, 0.0, -0.03, h - 0.09, 0.14, 0.02, 0.09, mat_tag)
-        return ((plate.x0 + plate.x1) / 2, h - 0.045, (plate.z0 + plate.z1) / 2)
-
     def planter(self, name, gx, gz, w, d, mat_box, mat_leaf, h=0.55, foliage=0.3):
         """Planter box with a foliage block inset 0.1 m on top; the box collides."""
         if min(w, d) <= 0.2:

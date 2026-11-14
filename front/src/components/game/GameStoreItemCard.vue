@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { StoreTarget } from '../../composables/game/useFurnitureStore'
+import { itemType } from '../../game/store/itemType'
 import { itemRarity, rarityClass } from '../../utils/itemShopPresentation'
 import UiCurrency from '../ui/UiCurrency.vue'
 
@@ -20,10 +21,14 @@ const dimensions = computed(() => {
   return `${w.toFixed(1)} × ${d.toFixed(1)} × ${h.toFixed(1)} m`
 })
 const rarity = computed(() => (props.target.item ? itemRarity(props.target.item) : null))
+const type = computed(() => (props.target.item ? itemType(props.target.item) : null))
 const actionLabel = computed(() => {
   if (!props.basket) return 'Click to buy'
+  if (props.target.owned) return 'Already in your wardrobe'
   return props.target.inBasket ? 'In basket · click to put back' : 'Click to add to basket'
 })
+/** A piece worn by a mannequin: Shift + click takes the whole outfit. */
+const lookHint = computed(() => props.basket && props.target.display.figure && !props.target.owned)
 </script>
 
 <template>
@@ -40,6 +45,8 @@ const actionLabel = computed(() => {
       <img :src="previewSrc" :alt="`${target.name} preview`" class="h-24 w-24 shrink-0 rounded-xl bg-ink-950/40 object-contain" />
       <div class="min-w-0 flex-1">
         <p class="cc-display m-0 truncate text-xl leading-tight text-fog">{{ target.name }}</p>
+        <p v-if="type" class="m-0 mt-1 text-[11px] font-extrabold uppercase tracking-wider text-sun">{{ type.label }}</p>
+        <p v-if="type?.use" class="m-0 text-[11px] font-semibold leading-snug text-fog">{{ type.use }}</p>
         <p class="m-0 mt-1 text-[11px] font-semibold leading-snug text-mist">{{ target.display.description }}</p>
         <p class="m-0 mt-1 font-mono text-[10px] text-mist/80">{{ dimensions }}</p>
       </div>
@@ -49,6 +56,7 @@ const actionLabel = computed(() => {
       <span v-else class="text-sm font-bold text-mist">Not on sale yet</span>
       <span v-if="target.item" class="text-[11px] font-extrabold uppercase tracking-wider text-fog">{{ actionLabel }}</span>
     </div>
+    <p v-if="lookHint" class="m-0 bg-ink-950/50 px-3 pb-2 text-right text-[10px] font-bold uppercase tracking-wider text-mist">Shift + click: whole look</p>
     <p
       v-if="feedback"
       class="m-0 px-3 py-1.5 text-[11px] font-bold"

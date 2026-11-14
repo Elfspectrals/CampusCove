@@ -8,7 +8,6 @@ import { createGltfLoader } from '../../game/gltfLoaderFactory'
 import { instancedParts, stackPlacements } from '../../game/mallTemplates/templateProps'
 import { configureRoomMeshShadows } from '../../game/sceneLighting'
 import { freshDisplayGroup } from '../../game/store/displayGroup'
-import { createPriceTag, type PriceTagContent } from '../../game/store/priceTag'
 import { createStoreClerk, type ClerkPiece } from '../../game/store/storeClerk'
 import { openHouseInterior } from '../../game/town/openHouses'
 import type { ScreenPrompt } from './useInteractionTargets'
@@ -24,8 +23,6 @@ export interface StoreTarget {
   /** The item is already in the basket (stores with a counter); a click puts it back. */
   inBasket: boolean
   owned: boolean
-  /** World position of the prompt: the price tag, or just above the model in a store without tags. */
-  tagPosition: [number, number, number]
 }
 
 export interface FurnitureStoreDeps {
@@ -51,36 +48,27 @@ interface FurnitureStoreSpec {
   modelUrl: (display: StoreDisplay) => string
   /** Uniform colours of the cashier; a store whose layout has a `counter` sells through a basket paid there. */
   clerkColors?: CosmeticColors
-  /** IKEA-style price tag next to each display (Cove Home); the mall stores show the model alone. Default true. */
-  priceTags?: boolean
   coinPrices?: ReadonlyMap<string, number>
   checkout?: (shopCatalogItemIds: number[]) => Promise<unknown>
 }
 
-/** Furthest (XZ, metres) an item can be picked from, and the widest angle off the crosshair. */
+/** Furthest (XZ, metres) an item can be picked from. */
 const PICK_DISTANCE = 4.2
-const PICK_ANGLE = 0.32
-const CLOSE_DISTANCE = 1.6
-const CLOSE_ANGLE = 0.7
-/** Stores without tags: the crosshair may miss a small item by this much (radians) if nothing hides it. */
+/** The crosshair may miss a small item by this much (radians) if nothing hides it. */
 const AIM_SLACK = 0.09
 /** Seconds between two raycasts of the aim (the interior meshes are big merged nodes). */
 const AIM_INTERVAL = 0.08
 /** A hit this close before an item's middle still counts as the item (its own shelf, the copy next to it). */
 const SEE_THROUGH_SLACK = 0.15
 const COUNTER_REACH = 2.2
-const PROMPT_LIFT = 0.18
 const HIGHLIGHT = new THREE.Color(0x3a3a2a)
 const INSTANCE_HIGHLIGHT = new THREE.Color(1.6, 1.6, 1.35)
 const INSTANCE_PLAIN = new THREE.Color(1, 1, 1)
-const SHELF_TAG_SCALE = 0.35
 
 interface DisplayRuntime {
   display: StoreDisplay
-  tag: ReturnType<typeof createPriceTag> | null
   /** Look-at point (middle of the model), world space. */
   center: THREE.Vector3
-  tagPosition: [number, number, number]
   /** The display's own material copies (shared by its stacked copies), lit up while it is aimed at. */
   materials: THREE.MeshStandardMaterial[]
   instances: Array<{ mesh: THREE.InstancedMesh; id: number }>
@@ -126,14 +114,12 @@ function ownMaterials(model: THREE.Object3D): THREE.MeshStandardMaterial[] {
 /**
  * A store selling from display spots: puts every model of the store layout on its spot (decor pieces at Cove Home
  * and the mall's furniture stores, foods at GreenCart and Candy Cloud), and tracks which item the player is
- * looking at so a click buys it (Cove Home) or puts it in the basket (stores with a counter). Cove Home draws an
- * IKEA-style price tag next to each piece; the mall stores show the model alone, its name and price come up in the
- * item card while it is aimed at.
+ * looking at so a click buys it (Cove Home) or puts it in the basket (stores with a counter). Its name, type and
+ * price come up in the item card while it is aimed at.
  */
 export function useFurnitureStore(deps: FurnitureStoreDeps) {
   const loader = createGltfLoader()
   const store = deps.store
-  const withTags = store.priceTags ?? true
   const layout = shallowRef<StoreLayout | null>(null)
   const catalogByCode = shallowRef<Map<string, ShopItem>>(new Map())
   const ownedCosmetics = shallowRef<Set<number>>(new Set())
@@ -184,7 +170,7 @@ export function useFurnitureStore(deps: FurnitureStoreDeps) {
       catalogByCode.value = new Map(items.map((item) => [item.code, withStorePrice(item)]))
       if (cosmetics) ownedCosmetics.value = new Set(cosmetics.items.map((row) => row.item.item_def_id))
     } catch (error) {
-      console.warn('[store] catalogue failed to load, tags show no prices', error)
+      console.warn('[store] catalogue failed to load, items show no prices', error)
     }
   }
 
@@ -196,16 +182,6 @@ export function useFurnitureStore(deps: FurnitureStoreDeps) {
 
   function coinsPrice(item: ShopItem | null): number | null {
     return item?.options.find((o) => o.currency === 'coins')?.price ?? null
-  }
-
-  function tagContent(display: StoreDisplay): PriceTagContent {
-    const item = catalogByCode.value.get(display.code) ?? null
-    return {
-      name: item?.name ?? prettyName(display.key),
-      department: departmentLabels.value.get(display.department) ?? display.department,
-      description: display.description,
-      price: coinsPrice(item),
-    }
   }
 
   /** The model on its spot; a `stack` lines up copies in a grid so small goods read as a filled shelf. */
@@ -236,16 +212,12 @@ export function useFurnitureStore(deps: FurnitureStoreDeps) {
 
   /**
    * Called when the store interior is in the scene. The interior group is cached and reused between visits, so
-   * the models are added once; the price tags are redrawn on every visit with the current catalogue.
+   * the models are added once; the catalogue is fetched again on every visit.
    */
   async function attach(group: THREE.Group): Promise<void> {
     const token = ++attachToken
     const [storeLayout] = await Promise.all([loadLayout(), refreshCatalog()])
-    if (token !== attachToken) return
-    if (attachedTo === group) {
-      for (const rt of runtimes) rt.tag?.update(tagContent(rt.display))
-      return
-    }
+    if (token !== attachToken || attachedTo === group) return
     attachedTo = group
     runtimes.length = 0
     const displays = freshDisplayGroup(group, 'StoreDisplays')
@@ -254,20 +226,7 @@ export function useFurnitureStore(deps: FurnitureStoreDeps) {
     for (const display of storeLayout.displays) {
       const [x, y, z] = display.position
       const center = new THREE.Vector3(x, y + display.size[1] / 2, z).applyMatrix4(group.matrixWorld)
-      let tag: DisplayRuntime['tag'] = null
-      let tagPosition: [number, number, number]
-      if (withTags) {
-        tag = createPriceTag(tagContent(display))
-        tag.object.position.fromArray(display.tag.position)
-        tag.object.rotation.y = display.tag.yaw
-        if (display.shelfSlot) tag.object.scale.setScalar(SHELF_TAG_SCALE)
-        displays.add(tag.object)
-        displays.updateWorldMatrix(true, true)
-        tagPosition = tag.object.getWorldPosition(new THREE.Vector3()).toArray()
-      } else {
-        tagPosition = new THREE.Vector3(x, y + display.size[1] + PROMPT_LIFT, z).applyMatrix4(group.matrixWorld).toArray()
-      }
-      runtimes.push({ display, tag, center, tagPosition, materials: [], instances: [] })
+      runtimes.push({ display, center, materials: [], instances: [] })
     }
     await Promise.all(runtimes.map((rt, i) => placeModel(displays, rt, i)))
   }
@@ -276,7 +235,6 @@ export function useFurnitureStore(deps: FurnitureStoreDeps) {
     const current = target.value?.display
     if ((next?.display ?? null) === (current ?? null)) return
     for (const rt of runtimes) {
-      rt.tag?.object.scale.setScalar(rt === next ? 1.18 : 1)
       for (const m of rt.materials) {
         m.emissive.copy(m.userData.baseEmissive as THREE.Color)
         if (rt === next) m.emissive.add(HIGHLIGHT)
@@ -299,7 +257,6 @@ export function useFurnitureStore(deps: FurnitureStoreDeps) {
       coins: coinsPrice(item),
       inBasket: item ? inBasket(item) : false,
       owned: item ? ownedCosmetics.value.has(item.item_def_id) : false,
-      tagPosition: next.tagPosition,
     }
   }
 
@@ -457,7 +414,7 @@ export function useFurnitureStore(deps: FurnitureStoreDeps) {
     return { display: null, distance: hit.distance }
   }
 
-  /** Stores without tags: the model under the crosshair, else a model just next to it that nothing hides. */
+  /** The model under the crosshair, else a model just next to it that nothing hides. */
   function aimedModel(camera: THREE.Camera): DisplayRuntime | null {
     camera.getWorldPosition(eye)
     const direct = firstHitAlong(forward).display
@@ -480,29 +437,6 @@ export function useFurnitureStore(deps: FurnitureStoreDeps) {
     return hit.display === best || hit.distance >= reach - SEE_THROUGH_SLACK ? best : null
   }
 
-  /** Stores with tags (Cove Home, big furniture): the display closest to the crosshair within reach. */
-  function nearestToCrosshair(): DisplayRuntime | null {
-    const { x, y, z } = deps.myPosition
-    let best: DisplayRuntime | null = null
-    let bestScore = Infinity
-    for (const rt of runtimes) {
-      const dx = rt.center.x - x
-      const dz = rt.center.z - z
-      const dist = Math.hypot(dx, dz)
-      if (dist > PICK_DISTANCE) continue
-      toItem.set(dx, rt.center.y - y, dz).normalize()
-      const angle = forward.angleTo(toItem)
-      const limit = dist < CLOSE_DISTANCE ? CLOSE_ANGLE : PICK_ANGLE
-      if (angle > limit) continue
-      const score = angle + dist * 0.04
-      if (score < bestScore) {
-        bestScore = score
-        best = rt
-      }
-    }
-    return best
-  }
-
   /** Every frame: the display the player aims at, and the department around the player. */
   function update(dt = 0): void {
     const inside = deps.inStore()
@@ -519,13 +453,10 @@ export function useFurnitureStore(deps: FurnitureStoreDeps) {
       return
     }
     camera.getWorldDirection(forward)
-    if (withTags) setTarget(nearestToCrosshair())
-    else {
-      aimClock += dt
-      if (aimClock >= AIM_INTERVAL) {
-        aimClock = 0
-        setTarget(aimedModel(camera))
-      }
+    aimClock += dt
+    if (aimClock >= AIM_INTERVAL) {
+      aimClock = 0
+      setTarget(aimedModel(camera))
     }
     const { x, z } = deps.myPosition
     let nearest: DisplayRuntime | null = null

@@ -5,7 +5,7 @@ One-way route, marked by yellow floor arrows:
   entrance hall (z -4..5)  ->  lane W heading -Z (living, bedroom, kitchen)  ->  back aisle heading +X (workspace, kids)
   ->  lane E heading +Z (bathroom, storage, plants, outdoor)  ->  checkouts  ->  door.
 The furniture itself is NOT in interior.glb: the game loads assets/decor/<key>/model.glb at every `displays[]` entry of
-interior.layout.json (so the showroom always shows the exact item that is sold) and draws the price tag at `tag`.
+interior.layout.json (so the showroom always shows the exact item that is sold).
 Item footprints come from out/decor/furniture.manifest.json (written by build_furniture.py).
 
 Outputs: out/store/cove_home/{interior.glb, interior.colsrc.glb, interior.layout.json}
@@ -298,16 +298,9 @@ for A in AISLES:
                         cols.add(f"Item_{key}", gx, gz, y0, cd, cw, h_)
                     else:
                         cols.add(f"Item_{key}", gx, gz, y0, cw, cd, h_)
-                # price-tag post at the path edge, near the item's left corner (seen from the path)
-                t_along = along - w / 2 + 0.3 if w > 0.8 else along
-                tperp = PATH_HW + 0.35
-                tx, tz = sx0 + dx * t_along + rx * side * tperp, sz0 + dz * t_along + rz * side * tperp
-                add(L.cyl(coll, f"TagPost_{key}", tx, tz, 0.0, 0.025, 1.05, M["metal"], seg=6))
-                add(L.cyl(coll, f"TagFoot_{key}", tx, tz, 0.0, 0.16, 0.03, M["metal"], seg=10))
                 displays.append({
                     "key": key, "code": code_of(key), "department": dep, "description": BLURB[key],
                     "position": [round(gx, 3), y0, round(gz, 3)], "yaw": round(yaw, 4), "size": [w_, h_, d_],
-                    "tag": {"position": [round(tx, 3), 1.32, round(tz, 3)], "yaw": round(yaw, 4)},
                 })
                 cur += w + 0.7
         # hanging department sign at the start of the section, facing the people walking in

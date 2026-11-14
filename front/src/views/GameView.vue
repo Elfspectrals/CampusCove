@@ -882,15 +882,7 @@ const interactions = useInteractionTargets({
   },
   // Fishing gameplay is not built yet: the spots only show their prompt.
   onFishingSpot: () => window.alert('implement pechee'),
-  storeTarget: () => {
-    const target = storeTarget.value
-    if (!target) return null
-    const price = target.coins !== null ? `${target.name} · ${target.coins} coins` : target.name
-    if (!activeFurniture.value?.store.hasCounter.value) return { position: target.tagPosition, detail: price }
-    if (target.owned) return { position: target.tagPosition, detail: `${target.name} · already in your wardrobe` }
-    const look = target.display.figure ? ' · Shift: whole look' : ''
-    return { position: target.tagPosition, detail: `${target.inBasket ? `${price} · in basket` : price}${look}`, action: target.inBasket ? 'Remove' : 'Add' }
-  },
+  aimsAtStoreItem: () => storeTarget.value !== null,
   onStoreTarget: () => {
     if (activeFurniture.value?.store.hasCounter.value) activeFurniture.value.store.toggleTarget(useWithShift)
     else openStorePurchase()

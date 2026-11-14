@@ -167,7 +167,7 @@ export function findWork(key: string | null | undefined): WorkAsset | null {
  * Cove Home, the furniture store east of the business-district plaza: furniture is bought by walking its
  * showroom (no web shop). Built by map-src/CampusCove/build_store.py + build_store_ext.py → public/assets/store/.
  * Walked into like the work buildings (public door, never locked; world.manifest.json zone `retail_park`).
- * `interior.layout.json` lists the displays (decor model + price tag per shop code), see `StoreLayout`.
+ * `interior.layout.json` lists the displays (decor model per shop code), see `StoreLayout`.
  */
 export const COVE_HOME = {
   key: 'cove_home',
@@ -310,8 +310,6 @@ export interface StoreDisplay {
   scale?: [number, number, number]
   figure?: { prop: string; slot: string }
   shelfSlot?: { prop: string; slot: string }
-  /** Price-tag board (centre) at the edge of the route. */
-  tag: { position: [number, number, number]; yaw: number }
 }
 
 export const SHOWROOM = {

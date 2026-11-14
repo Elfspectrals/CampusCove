@@ -21,6 +21,10 @@
 
 CampusCove is presented as a real product. Never mention a school, course, assignment, grade, teacher or "projet annuel" in code, comments, docs, commits, PRs, UI text, SEO content or legal pages.
 
+## Shops: no price tags
+
+Shops show no price tag, tag post or prompt bubble over an item (decided 2026-11-14). Aiming at an item shows only the item card in the bottom right (`GameStoreItemCard.vue`: name, type, use, price). Never add a tag board, a `tag` / `priceTags` field, a tag post mesh or a price-tag helper, and when merging or rebasing a branch written before this decision, drop its tags instead of keeping them. `front/src/game/store/noPriceTags.test.ts` fails if one comes back.
+
 ## New assets
 
 Before planning a new asset that holds items or a new plant, even from a zone file or game code, follow "Variety before building" in `.claude/rules/assets.md`: variety plan, product questions, explicit validation, then build.

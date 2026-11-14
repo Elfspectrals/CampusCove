@@ -263,16 +263,9 @@ def basketball_hoop():
     ]
 
 
-def mannequin_podium(radius, seg, edge, tag_posts):
+def mannequin_podium(radius, seg, edge):
     m = sport_mats()
-    parts = [L.cyl(coll, "Platform", 0.0, 0.0, 0.0, radius, 0.14, m["white"], seg=seg), L.cyl(coll, "Edge", 0.0, 0.0, 0.14, radius, 0.02, m[edge], seg=seg)]
-    parts += [L.cyl(coll, f"TagPost{i}", x, z, 0.14, 0.02, 0.18, m["chrome"], seg=6) for i, (x, z) in enumerate(tag_posts)]
-    return parts
-
-
-def wide_podium_tag_posts():
-    angles = [math.radians(-40 + i * 26.7) for i in range(4)]
-    return [(1.7 * math.sin(a), 0.35 + 0.5 * math.cos(a)) for a in angles]
+    return [L.cyl(coll, "Platform", 0.0, 0.0, 0.0, radius, 0.14, m["white"], seg=seg), L.cyl(coll, "Edge", 0.0, 0.0, 0.14, radius, 0.02, m[edge], seg=seg)]
 
 
 def shoe_wall_shelf(length=6.4):
@@ -680,7 +673,7 @@ DECOR = {
     "yoga_mat_rolls": yoga_mat_rolls,
     "treadmill": treadmill,
     "basketball_hoop": basketball_hoop,
-    "mannequin_podium": lambda: mannequin_podium(1.8, 24, "yellow", ((-0.8, 0.55), (0.8, 0.55))),
+    "mannequin_podium": lambda: mannequin_podium(1.8, 24, "yellow"),
     "knick_shelf": knick_shelf,
     "wood_display_table": lambda: wood_display_table(2.6),
     "wood_display_table_small": lambda: wood_display_table(1.2),
@@ -693,7 +686,7 @@ DECOR = {
     "white_clothes_table_long": lambda: folded_clothes_table(4.0, 1.6, sport_mats()["white"], NORTHLINE_STACKS),
     "round_clothes_rail": round_clothes_rail,
     "display_cube_stacks": display_cube_stacks,
-    "mannequin_podium_wide": lambda: mannequin_podium(2.5, 32, "chrome", wide_podium_tag_posts()),
+    "mannequin_podium_wide": lambda: mannequin_podium(2.5, 32, "chrome"),
     "produce_table": produce_table,
     "produce_table_citrus": lambda: produce_table(("#f28c28", "#f6d04d")),
     "produce_table_greens": lambda: produce_table(("#79b765", "#a9c99a")),

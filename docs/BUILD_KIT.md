@@ -77,7 +77,6 @@ Tous sont des méthodes de `Kit` et renvoient la ou les `Box` créées sauf ment
 | `podium` | `podium(name, gx, gz, yaw, w, d, h, mat)` | estrade (boîte qui collisionne) |
 | `mannequin` | `mannequin(name, gx, gz, yaw, mat, y0=0.0)` | silhouette simple de 1,76 m, posée sur `y0` |
 | `hanging_sign` | `hanging_sign(name, gx, gz, yaw, w, h, y, ceiling_y, mat, mat_wire)` → `Box` | panneau suspendu par deux fils au plafond ; le texte va à 2 cm de ses faces |
-| `price_tag` | `price_tag(name, gx, gz, yaw, mat_post, mat_tag, h=1.05)` → `(x, y, z)` | pied d'étiquette, renvoie le centre de la plaque (`displays[].tag.position`) |
 | `planter` | `planter(name, gx, gz, w, d, mat_box, mat_leaf, h=0.55)` | jardinière + feuillage |
 | `bench` | `bench(name, gx, gz, yaw, mat_seat, mat_leg, w=1.7, d=0.45)` | banc à dossier, une COL |
 | `build` | `build(coll, cols=None, prefix="Kit", merge=True)` → objets | objets Blender joints par matériau (`<prefix>_<matériau>`), `COL_` dans `cols` (`lib_common.Collisions`, créé sur `coll` si `None`, puis `kit.cols`) |

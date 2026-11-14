@@ -1,5 +1,5 @@
 """Crispin's Hardware: the mall's hardware store, in its North Plaza cell (docs/MALL.md). Cove Home layout contract
-(departments + displays with a price tag), read by useFurnitureStore with decor/<key>/model.glb: the six pieces of
+(departments + displays), read by useFurnitureStore with decor/<key>/model.glb: the six pieces of
 build_hardware_items.py are on display; its racks, lumber rack, pegboards, paint chips, key kiosk and checkout counter are
 zone props in zones/crispins_hardware.json (build_shop_decor.py), not baked here.
 
@@ -140,14 +140,10 @@ for i, dep in enumerate(("tools", "paint", "garden", "storage")):
 for key, (dep, blurb, (gx, gz), yaw) in ITEMS.items():
     w_, h_, d_ = manifest[key]
     y0 = 0.9 if key == "toolbox" else 0.0
-    side = max(w_, d_)
-    fx, fz = math.sin(yaw), math.cos(yaw)
-    tx, tz = gx + fx * (side / 2 + 0.45), gz + fz * (side / 2 + 0.45)
     displays.append({"key": key, "code": "decor_" + key, "department": dep, "description": blurb,
-                     "position": [round(gx, 3), y0, round(gz, 3)], "yaw": round(yaw, 4), "size": [w_, h_, d_],
-                     "tag": {"position": [round(tx, 3), 1.32, round(tz, 3)], "yaw": round(yaw, 4)}})
+                     "position": [round(gx, 3), y0, round(gz, 3)], "yaw": round(yaw, 4), "size": [w_, h_, d_]})
 
-bad = L.check_grounded(objs, allow=L.ALLOW_INTERIOR + ("Ceiling", "Sign_", "Brand_", "Wall_Band", "Counter_Sign", "TagPost_", "TagFoot_"))
+bad = L.check_grounded(objs, allow=L.ALLOW_INTERIOR + ("Ceiling", "Sign_", "Brand_", "Wall_Band", "Counter_Sign"))
 print("CRISPINS grounded violations:", bad)
 assert not bad, bad
 by_mat = {}

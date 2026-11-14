@@ -48,8 +48,8 @@ export interface InteractionTargetsDeps {
   onHousingDoor: () => void
   onWorkDoor: (lot: PublicLot) => void
   onFishingSpot: (spot: FishingSpot) => void
-  /** Inside Cove Home: the item being looked at (its price-tag anchor + prompt text), and buying it. */
-  storeTarget: () => { position: [number, number, number]; detail: string; action?: string } | null
+  /** Inside a store: an item is aimed at (its card says what a click does, so no bubble is drawn), and the click on it. */
+  aimsAtStoreItem: () => boolean
   onStoreTarget: () => void
   /** Lower-priority targets (pub counters, seats, games), in priority order. */
   sources?: InteractionSource[]
@@ -89,7 +89,7 @@ export function useInteractionTargets(deps: InteractionTargetsDeps) {
   function tryInteract(): boolean {
     // Recompute on the input itself so it works even if the last movement frame was skipped.
     updateProximity()
-    if (deps.storeTarget()) {
+    if (deps.aimsAtStoreItem()) {
       deps.onStoreTarget()
       return true
     }
@@ -116,13 +116,7 @@ export function useInteractionTargets(deps: InteractionTargetsDeps) {
   }
 
   function currentPrompt(): ScreenPrompt | null {
-    if (deps.promptsHidden()) return null
-    const item = deps.storeTarget()
-    if (item) {
-      const [tx, ty, tz] = item.position
-      const screen = projectToScreen(tx, ty + 0.55, tz)
-      return screen && { ...screen, action: item.action ?? 'Buy', detail: item.detail }
-    }
+    if (deps.promptsHidden() || deps.aimsAtStoreItem()) return null
     const target = deps.nearbyHousingUnit.value
     if (target) {
       const action = deps.housingActionFor(target.unit)

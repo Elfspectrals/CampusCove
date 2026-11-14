@@ -1,6 +1,6 @@
 """Candy Cloud: the mall's sweet shop, in its Wonderland Plaza cell (docs/MALL.md). Cove Home layout contract with
 `displays[].key` = asset folder (items/sweets/<key>) and `code` = candy_*, read by useFurnitureStore: the six sweets of
-build_sweets_items.py are on display, each with a price tag; the jar shelves, pick-and-mix island, lollipop tree, cotton
+build_sweets_items.py are on display; the jar shelves, pick-and-mix island, lollipop tree, cotton
 candy machine, apple tray, gum stand and checkout counter are zone props in zones/candy_cloud.json (build_shop_decor.py),
 not baked here.
 
@@ -108,13 +108,12 @@ def hanging_sign(dep, gx, gz, yaw):
     dept_info.append({"id": dep, "label": label, "color": DEPARTMENTS[dep][1], "sign": [round(gx, 3), 3.3, round(gz, 3)]})
 
 
-def display(key, gx, gy, gz, yaw, tag_x, tag_z, tag_y=1.3, stack=(1, 1)):
+def display(key, gx, gy, gz, yaw, stack=(1, 1)):
     """One sweet on sale; `stack` = (columns, rows) of copies the front lines up on the spot so the small
     models read as a filled shelf."""
     code, dep, blurb, size = SWEETS[key]
     displays.append({"key": key, "code": code, "department": dep, "description": blurb,
-                     "position": [round(gx, 3), round(gy, 3), round(gz, 3)], "yaw": round(yaw, 4), "size": size, "stack": list(stack),
-                     "tag": {"position": [round(tag_x, 3), tag_y, round(tag_z, 3)], "yaw": round(yaw, 4)}})
+                     "position": [round(gx, 3), round(gy, 3), round(gz, 3)], "yaw": round(yaw, 4), "size": size, "stack": list(stack)})
 
 
 # ---------------------------------------------------------------- shell
@@ -146,19 +145,19 @@ text("Brand_Tag", "sweets for everyone", 0.0, Z0 + 0.1, 3.0, 0.26, M["sign"], 0.
 for gx in (-6.0, 6.0):
     add(L.cyl(coll, f"Cane_{int(gx)}", gx, 1.5, 0.0, 0.18, H, M["stripe"], seg=10))
     cols.add(f"Cane_{int(gx)}", gx, 1.5, 0.0, 0.5, 0.5, H)
-display("bag", 0.0, 0.9, -0.9, 0.0, 0.0, -1.6, stack=(4, 2))
-display("licorice", -1.2, 0.9, 1.2, math.pi / 2, -1.9, 1.5, tag_y=1.3, stack=(3, 2))
-display("lollipop", -8.0, 1.7, -1.0, 0.0, -8.0, -0.1, tag_y=1.2, stack=(3, 1))
-display("cotton", 7.5, 0.93, -1.5, 0.0, 7.5, -0.7, tag_y=1.35, stack=(2, 1))
-display("apple", 9.4, 0.9, 1.3, 0.0, 9.4, 1.6, tag_y=1.3, stack=(3, 2))
+display("bag", 0.0, 0.9, -0.9, 0.0, stack=(4, 2))
+display("licorice", -1.2, 0.9, 1.2, math.pi / 2, stack=(3, 2))
+display("lollipop", -8.0, 1.7, -1.0, 0.0, stack=(3, 1))
+display("cotton", 7.5, 0.93, -1.5, 0.0, stack=(2, 1))
+display("apple", 9.4, 0.9, 1.3, 0.0, stack=(3, 2))
 add(L.box(coll, "Awning", -5.0, 2.6, 2.6, 4.0, 1.6, 0.1, M["stripe"]))
 add(L.box(coll, "Counter_SignBoard", -5.0, 2.65, 2.2, 2.2, 0.08, 0.5, M["mint"], bevel=0.03))
 text("Counter_SignText", "PAY HERE", -5.0, 2.71, 2.32, 0.28, M["sign"], 0.0)
-display("gum", -3.8, 1.51, 3.0, 0.0, -3.4, 3.6, tag_y=1.25, stack=(3, 2))
+display("gum", -3.8, 1.51, 3.0, 0.0, stack=(3, 2))
 for i, dep in enumerate(("pickmix", "lollipops", "fair", "counter")):
     hanging_sign(dep, (0.0, -8.0, 8.5, -5.0)[i], (-2.4, -2.6, -2.8, 0.8)[i], 0.0)
 
-bad = L.check_grounded(objs, allow=L.ALLOW_INTERIOR + ("Ceiling", "Sign_", "Brand_", "Cloud", "Awning", "Counter_Sign", "TagPost_"))
+bad = L.check_grounded(objs, allow=L.ALLOW_INTERIOR + ("Ceiling", "Sign_", "Brand_", "Cloud", "Awning", "Counter_Sign"))
 print("CANDY grounded violations:", bad)
 assert not bad, bad
 by_mat = {}

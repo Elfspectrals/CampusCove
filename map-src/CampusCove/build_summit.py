@@ -30,7 +30,6 @@ X0, X1, Z0, Z1 = -15.1, 15.1, -3.5, 5.0
 BODY_SCALE = 0.936
 BODY_LIFT = 0.009
 RAIL_Y = 1.95
-TAG_Y = 0.72
 DEPARTMENTS = {"top": "PERFORMANCE TOPS", "bottom": "TRAINING BOTTOMS"}
 ITEMS = {"top": ["track_jacket", "jersey", "sports_bra"], "bottom": ["track_pants", "basketball_shorts", "leggings"]}
 PIECE_TOP = {"top": 1.707, "bottom": 1.05}
@@ -97,10 +96,6 @@ def text(name, body, gx, gz, y0, size, mat, yaw):
     return add(ob)
 
 
-def tag_at(gx, gz, yaw, y=TAG_Y):
-    return {"position": [round(gx, 3), y, round(gz, 3)], "yaw": round(yaw, 4)}
-
-
 def dept_board(slot, gx, gz):
     add(L.box(coll, f"Sign_{slot}_Board", gx, gz, 3.0, 3.0, 0.06, 0.55, M["black"]))
     text(f"Sign_{slot}_Text", DEPARTMENTS[slot], gx, gz + 0.04, 3.14, 0.3, M["sign"], 0.0)
@@ -117,8 +112,7 @@ def hanging_rail(slot, x_start, z_wall):
         y = root_y_for_top(PIECE_TOP[slot], RAIL_Y - 0.08)
         displays.append({"slot": slot, "key": key, "department": slot,
                          "position": [round(gx, 3), y, round(z, 3)], "yaw": 0.0,
-                         "center": [round(gx, 3), round(RAIL_Y - 0.45, 3), round(z, 3)],
-                         "tag": tag_at(gx, z_wall + 0.1, 0.0)})
+                         "center": [round(gx, 3), round(RAIL_Y - 0.45, 3), round(z, 3)]})
 
 
 # ---------------------------------------------------------------- shell
@@ -160,8 +154,7 @@ for i, pieces in enumerate(OUTFITS):
     gz = PLAT[1] - 0.2
     outfits.append({"pieces": [{"slot": s, "key": k} for s, k in pieces],
                     "position": [round(gx, 3), 0.14, round(gz, 3)], "yaw": round(0.12 - i * 0.24, 4),
-                    "center": [round(gx, 3), 1.1, round(gz, 3)],
-                    "tag": tag_at(gx, gz + 0.75, 0.0, y=0.4)})
+                    "center": [round(gx, 3), 1.1, round(gz, 3)]})
 add(L.box(coll, "Podium_Board", PLAT[0], PLAT[1] - 2.4, 3.0, 3.0, 0.06, 0.55, M["black"]))
 text("Podium_Text", "TEAM LOOKS", PLAT[0], PLAT[1] - 2.36, 3.14, 0.3, M["sign"], 0.0)
 counter_x, counter_z = 10.0, 3.2
