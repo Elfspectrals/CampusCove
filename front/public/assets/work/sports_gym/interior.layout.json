@@ -1,0 +1,91 @@
+{
+  "version": 1,
+  "key": "sports_gym",
+  "name": "Cove Gymnasium",
+  "spawn": [
+    0.0,
+    1.6,
+    3.7
+  ],
+  "exit": {
+    "position": [
+      0.0,
+      4.75
+    ],
+    "radius": 1.4
+  },
+  "stations": [],
+  "npcs": {
+    "coach": [
+      -12.1,
+      0.0,
+      -26.9
+    ]
+  },
+  "seats": [],
+  "court": {
+    "ceilingY": 9.0,
+    "arena": {
+      "minX": -11.2,
+      "maxX": 16.6,
+      "minZ": -50.9,
+      "maxZ": -2.9
+    },
+    "playArea": {
+      "minX": -11.2,
+      "maxX": 15.0,
+      "minZ": -50.1,
+      "maxZ": -3.7
+    },
+    "court": {
+      "minX": -9.3,
+      "maxX": 14.7,
+      "minZ": -48.9,
+      "maxZ": -4.9
+    },
+    "centre": [
+      2.700000000000001,
+      -26.9
+    ],
+    "goals": {
+      "west": {
+        "lineZ": -4.899999999999999,
+        "out": 1,
+        "minX": 1.200000000000001,
+        "maxX": 4.200000000000001,
+        "height": 2
+      },
+      "east": {
+        "lineZ": -48.9,
+        "out": -1,
+        "minX": 1.200000000000001,
+        "maxX": 4.200000000000001,
+        "height": 2
+      }
+    },
+    "baskets": {
+      "west": {
+        "x": 2.700000000000001,
+        "z": -6.475,
+        "y": 3.05,
+        "rimRadius": 0.225,
+        "boardZ": -6.1,
+        "boardHalfWidth": 0.9,
+        "boardBottom": 2.9,
+        "boardTop": 3.95,
+        "threePointRadius": 6.75
+      },
+      "east": {
+        "x": 2.700000000000001,
+        "z": -47.325,
+        "y": 3.05,
+        "rimRadius": 0.225,
+        "boardZ": -47.7,
+        "boardHalfWidth": 0.9,
+        "boardBottom": 2.9,
+        "boardTop": 3.95,
+        "threePointRadius": 6.75
+      }
+    }
+  }
+}

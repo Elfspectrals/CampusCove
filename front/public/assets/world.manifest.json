@@ -1248,6 +1248,46 @@
         "z": -186,
         "width": 7.2
       }
+    },
+    {
+      "key": "sports_gym",
+      "optional": true,
+      "bounds": {
+        "minX": -467,
+        "maxX": -404,
+        "minZ": -231,
+        "maxZ": -191
+      },
+      "modelUrl": "/assets/park/sports_gym/sports_gym.glb",
+      "sportsPass": true,
+      "buildings": [
+        {
+          "kind": "work",
+          "key": "sports_gym",
+          "name": "Cove Gymnasium",
+          "job": "sports",
+          "position": [
+            -435.5,
+            0,
+            -211
+          ],
+          "rotationY": -1.5708,
+          "door": [
+            -464,
+            1.25,
+            -211
+          ],
+          "footprint": [
+            34,
+            56.81
+          ],
+          "interiorOffset": [
+            0,
+            0.2,
+            23.095
+          ]
+        }
+      ]
     }
   ],
   "fountains": [
