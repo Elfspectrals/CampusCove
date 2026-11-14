@@ -1,0 +1,121 @@
+{
+  "version": 1,
+  "zone": "sports_reception",
+  "name": "Cove Sports Park reception",
+  "props": [
+    {
+      "id": "sports_pass_clerk",
+      "kind": "npc",
+      "position": [
+        -444.145,
+        0.2,
+        -176.8
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pose": "idle",
+      "vendor": false,
+      "body": "#c98f6a",
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "short",
+          "color": "#3b2a1f"
+        },
+        {
+          "slot": "top",
+          "key": "staff_polo",
+          "color": "#2a9d8f"
+        },
+        {
+          "slot": "bottom",
+          "key": "track_pants",
+          "color": "#2e3440"
+        },
+        {
+          "slot": "shoes",
+          "key": "runners",
+          "color": "#f2f2f2"
+        }
+      ],
+      "sportsPassDesk": true
+    },
+    {
+      "id": "sports_reception_shoe_shelf_01",
+      "kind": "item",
+      "key": "shoe_wall_shelf",
+      "code": "decor_shoe_wall_shelf",
+      "forSale": false,
+      "position": [
+        -437.16,
+        0.2,
+        -176.8
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "sports_reception_yoga_mats_01",
+      "kind": "item",
+      "key": "yoga_mat_rolls",
+      "code": "decor_yoga_mat_rolls",
+      "forSale": false,
+      "position": [
+        -439.2,
+        0.2,
+        -181.4
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "sports_reception_monstera_01",
+      "kind": "item",
+      "key": "monstera",
+      "code": "decor_monstera",
+      "forSale": false,
+      "position": [
+        -446.2,
+        0.2,
+        -181.5
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "sports_reception_trash_bin_01",
+      "kind": "item",
+      "key": "trash_bin",
+      "code": "decor_trash_bin",
+      "forSale": false,
+      "position": [
+        -451.3,
+        0.2,
+        -178.6
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    }
+  ],
+  "areas": []
+}

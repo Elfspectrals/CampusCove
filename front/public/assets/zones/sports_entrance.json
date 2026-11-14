@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "zone": "sports_entrance",
+  "name": "Cove Sports Park entrance",
+  "props": [
+    {
+      "id": "atm_sports_park",
+      "kind": "item",
+      "key": "atm",
+      "code": "decor_atm",
+      "forSale": false,
+      "position": [-455.5, 0.08, -180.0],
+      "yaw": -1.5708,
+      "scale": [1, 1, 1]
+    },
+    {
+      "id": "sports_entrance_bike_rack_01",
+      "kind": "item",
+      "key": "bike_rack",
+      "code": "decor_bike_rack",
+      "forSale": false,
+      "position": [-484.0, 0.08, -175.0],
+      "yaw": 0.0,
+      "scale": [1, 1, 1]
+    },
+    {
+      "id": "sports_entrance_bike_rack_02",
+      "kind": "item",
+      "key": "bike_rack",
+      "code": "decor_bike_rack",
+      "forSale": false,
+      "position": [-464.0, 0.08, -175.0],
+      "yaw": 0.0,
+      "scale": [1, 1, 1]
+    },
+    {
+      "id": "sports_entrance_trash_bin_01",
+      "kind": "item",
+      "key": "trash_bin",
+      "code": "decor_trash_bin",
+      "forSale": false,
+      "position": [-479.5, 0.08, -184.2],
+      "yaw": 0.0,
+      "scale": [1, 1, 1]
+    }
+  ],
+  "areas": []
+}

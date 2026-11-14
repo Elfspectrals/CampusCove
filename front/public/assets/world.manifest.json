@@ -7,10 +7,10 @@
   ],
   "spawnYaw": 0,
   "bounds": {
-    "minX": -500,
-    "maxX": 500,
-    "minZ": -500,
-    "maxZ": 500
+    "minX": -650,
+    "maxX": 650,
+    "minZ": -650,
+    "maxZ": 650
   },
   "zones": [
     {
@@ -1170,6 +1170,84 @@
         "maxZ": -17.3
       },
       "modelUrl": "/assets/park/cove_heights/cove_road_mall.glb"
+    },
+    {
+      "key": "sports_road",
+      "optional": true,
+      "bounds": {
+        "minX": -429.5,
+        "maxX": -258.95,
+        "minZ": -151.95,
+        "maxZ": -140.05
+      },
+      "modelUrl": "/assets/park/sports_site/sports_road.glb"
+    },
+    {
+      "key": "sports_entrance",
+      "optional": true,
+      "bounds": {
+        "minX": -526,
+        "maxX": -429.5,
+        "minZ": -186,
+        "maxZ": -140.05
+      },
+      "modelUrl": "/assets/park/sports_site/sports_entrance.glb"
+    },
+    {
+      "key": "sports_reception",
+      "optional": true,
+      "bounds": {
+        "minX": -453.5,
+        "maxX": -429.5,
+        "minZ": -183,
+        "maxZ": -155
+      },
+      "modelUrl": "/assets/park/sports_site/sports_reception.glb",
+      "buildings": [
+        {
+          "kind": "work",
+          "key": "sports_reception",
+          "name": "Cove Sports Park",
+          "job": "sports",
+          "position": [
+            -444.5,
+            0,
+            -176.8
+          ],
+          "rotationY": -1.5708,
+          "door": [
+            -452.5,
+            1.25,
+            -176.8
+          ],
+          "footprint": [
+            12,
+            16.01
+          ],
+          "interiorOffset": [
+            0,
+            0.2,
+            2.595
+          ]
+        }
+      ]
+    },
+    {
+      "key": "sports_complex",
+      "optional": true,
+      "bounds": {
+        "minX": -586,
+        "maxX": -362,
+        "minZ": -426,
+        "maxZ": -186
+      },
+      "modelUrl": "/assets/park/sports_site/sports_complex.glb",
+      "sportsPass": true,
+      "gate": {
+        "x": -474,
+        "z": -186,
+        "width": 7.2
+      }
     }
   ],
   "fountains": [
@@ -12027,6 +12105,445 @@
         -158
       ],
       "yaw": 0
+    },
+    {
+      "key": "sports_gate",
+      "name": "Cove Sports Park gate",
+      "position": [
+        -474,
+        0,
+        -181
+      ],
+      "yaw": 0
     }
-  ]
+  ],
+  "sportsComplex": {
+    "gate": {
+      "toggle": [
+        {
+          "name": "COL_SportsSite_GateE1",
+          "cx": -476.6,
+          "cz": -186,
+          "hx": 0.6,
+          "hz": 0.15,
+          "cy": 1.1,
+          "hy": 1.1,
+          "yaw": 0,
+          "direction": "in"
+        },
+        {
+          "name": "COL_SportsSite_GateE2",
+          "cx": -475,
+          "cz": -186,
+          "hx": 0.6,
+          "hz": 0.15,
+          "cy": 1.1,
+          "hy": 1.1,
+          "yaw": 0,
+          "direction": "in"
+        },
+        {
+          "name": "COL_SportsSite_GateW",
+          "cx": -473.2,
+          "cz": -186,
+          "hx": 0.8,
+          "hz": 0.15,
+          "cy": 1.1,
+          "hy": 1.1,
+          "yaw": 0,
+          "direction": "both"
+        },
+        {
+          "name": "COL_SportsSite_GateX",
+          "cx": -471.4,
+          "cz": -186,
+          "hx": 0.6,
+          "hz": 0.15,
+          "cy": 1.1,
+          "hy": 1.1,
+          "yaw": 0,
+          "direction": "out"
+        }
+      ],
+      "trigger": {
+        "minX": -477.6,
+        "maxX": -472.4,
+        "minZ": -188.5,
+        "maxZ": -186.15
+      },
+      "readers": [
+        [
+          -477.4,
+          1.13,
+          -185.75
+        ],
+        [
+          -475.8,
+          1.13,
+          -185.75
+        ],
+        [
+          -474.2,
+          1.13,
+          -185.75
+        ]
+      ]
+    },
+    "serviceGate": {
+      "x": -401,
+      "z": -186,
+      "width": 6,
+      "locked": true
+    },
+    "busStop": {
+      "id": "sports_complex",
+      "name": "Cove Sports Park",
+      "pole": [
+        -457,
+        0,
+        -149.65
+      ],
+      "boarding": [
+        -452,
+        0,
+        -150.6
+      ],
+      "bus": {
+        "minX": -457,
+        "maxX": -445,
+        "z": -147.5
+      },
+      "yaw": 1.5707963267948966
+    },
+    "turningBulb": {
+      "center": [
+        -474,
+        0,
+        -156
+      ],
+      "radius": 13
+    },
+    "carPark": {
+      "bounds": {
+        "minX": -526,
+        "maxX": -490,
+        "minZ": -166,
+        "maxZ": -146
+      },
+      "stalls": [
+        {
+          "row": "S",
+          "center": [
+            -520.75,
+            0,
+            -150.5
+          ],
+          "size": [
+            2.5,
+            5
+          ],
+          "accessible": false
+        },
+        {
+          "row": "S",
+          "center": [
+            -518.25,
+            0,
+            -150.5
+          ],
+          "size": [
+            2.5,
+            5
+          ],
+          "accessible": false
+        },
+        {
+          "row": "S",
+          "center": [
+            -515.75,
+            0,
+            -150.5
+          ],
+          "size": [
+            2.5,
+            5
+          ],
+          "accessible": false
+        },
+        {
+          "row": "S",
+          "center": [
+            -513.25,
+            0,
+            -150.5
+          ],
+          "size": [
+            2.5,
+            5
+          ],
+          "accessible": false
+        },
+        {
+          "row": "S",
+          "center": [
+            -510.75,
+            0,
+            -150.5
+          ],
+          "size": [
+            2.5,
+            5
+          ],
+          "accessible": false
+        },
+        {
+          "row": "S",
+          "center": [
+            -508.25,
+            0,
+            -150.5
+          ],
+          "size": [
+            2.5,
+            5
+          ],
+          "accessible": false
+        },
+        {
+          "row": "S",
+          "center": [
+            -505.75,
+            0,
+            -150.5
+          ],
+          "size": [
+            2.5,
+            5
+          ],
+          "accessible": false
+        },
+        {
+          "row": "S",
+          "center": [
+            -503.25,
+            0,
+            -150.5
+          ],
+          "size": [
+            2.5,
+            5
+          ],
+          "accessible": false
+        },
+        {
+          "row": "S",
+          "center": [
+            -500.75,
+            0,
+            -150.5
+          ],
+          "size": [
+            2.5,
+            5
+          ],
+          "accessible": false
+        },
+        {
+          "row": "S",
+          "center": [
+            -498.25,
+            0,
+            -150.5
+          ],
+          "size": [
+            2.5,
+            5
+          ],
+          "accessible": false
+        },
+        {
+          "row": "S",
+          "center": [
+            -495.75,
+            0,
+            -150.5
+          ],
+          "size": [
+            2.5,
+            5
+          ],
+          "accessible": false
+        },
+        {
+          "row": "S",
+          "center": [
+            -493.25,
+            0,
+            -150.5
+          ],
+          "size": [
+            2.5,
+            5
+          ],
+          "accessible": false
+        },
+        {
+          "row": "N",
+          "center": [
+            -522.95,
+            0,
+            -161.5
+          ],
+          "size": [
+            2.5,
+            5
+          ],
+          "accessible": false
+        },
+        {
+          "row": "N",
+          "center": [
+            -520.45,
+            0,
+            -161.5
+          ],
+          "size": [
+            2.5,
+            5
+          ],
+          "accessible": false
+        },
+        {
+          "row": "N",
+          "center": [
+            -517.95,
+            0,
+            -161.5
+          ],
+          "size": [
+            2.5,
+            5
+          ],
+          "accessible": false
+        },
+        {
+          "row": "N",
+          "center": [
+            -515.45,
+            0,
+            -161.5
+          ],
+          "size": [
+            2.5,
+            5
+          ],
+          "accessible": false
+        },
+        {
+          "row": "N",
+          "center": [
+            -512.95,
+            0,
+            -161.5
+          ],
+          "size": [
+            2.5,
+            5
+          ],
+          "accessible": false
+        },
+        {
+          "row": "N",
+          "center": [
+            -510.45,
+            0,
+            -161.5
+          ],
+          "size": [
+            2.5,
+            5
+          ],
+          "accessible": false
+        },
+        {
+          "row": "N",
+          "center": [
+            -507.95,
+            0,
+            -161.5
+          ],
+          "size": [
+            2.5,
+            5
+          ],
+          "accessible": false
+        },
+        {
+          "row": "N",
+          "center": [
+            -505.45,
+            0,
+            -161.5
+          ],
+          "size": [
+            2.5,
+            5
+          ],
+          "accessible": false
+        },
+        {
+          "row": "N",
+          "center": [
+            -502.95,
+            0,
+            -161.5
+          ],
+          "size": [
+            2.5,
+            5
+          ],
+          "accessible": false
+        },
+        {
+          "row": "N",
+          "center": [
+            -500.45,
+            0,
+            -161.5
+          ],
+          "size": [
+            2.5,
+            5
+          ],
+          "accessible": false
+        },
+        {
+          "row": "N",
+          "center": [
+            -497.4,
+            0,
+            -161.5
+          ],
+          "size": [
+            3.6,
+            5
+          ],
+          "accessible": true
+        },
+        {
+          "row": "N",
+          "center": [
+            -493.8,
+            0,
+            -161.5
+          ],
+          "size": [
+            3.6,
+            5
+          ],
+          "accessible": true
+        }
+      ]
+    }
+  }
 }
