@@ -598,6 +598,26 @@
           "price": 140
         }
       ]
+    },
+    {
+      "id": "summit_sports_boules",
+      "kind": "item",
+      "key": "petanque_boules",
+      "code": "gear_boules",
+      "forSale": true,
+      "price": 150,
+      "position": [
+        -277.0,
+        1.34,
+        82.905
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Three steel boules and a jack. Needed for a game at the boulodrome, Cove Sports Park."
     }
   ],
   "areas": [

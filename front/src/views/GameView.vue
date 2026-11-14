@@ -35,6 +35,7 @@ import GamePubSecretDialog from '../components/game/GamePubSecretDialog.vue'
 import GamePoliceLicenceDialog from '../components/game/GamePoliceLicenceDialog.vue'
 import GameSportsPassDesk from '../components/game/GameSportsPassDesk.vue'
 import GameSportsSignup from '../components/game/GameSportsSignup.vue'
+import GamePetanque from '../components/game/GamePetanque.vue'
 import GameChat from '../components/game/GameChat.vue'
 import GameDrunkEffects from '../components/game/GameDrunkEffects.vue'
 import GameDrinkFast from '../components/game/GameDrinkFast.vue'
@@ -101,6 +102,7 @@ import { usePolice } from '../composables/game/usePolice'
 import { useSportsPass } from '../composables/game/useSportsPass'
 import { passValid } from '../game/sports/sportsPass'
 import { useSportsSignup } from '../composables/game/useSportsSignup'
+import { usePetanque } from '../composables/game/usePetanque'
 import { usePickpocket } from '../composables/game/usePickpocket'
 import { useStorageAuction } from '../composables/game/useStorageAuction'
 import { useStorageWarehouse } from '../composables/game/useStorageWarehouse'
@@ -875,6 +877,22 @@ const { open: sportsSignupOpen, choices: sportsVenueChoices, canPickVenue: sport
 watch(sportsSignupOpen, (open) => {
   if (!open && !document.pointerLockElement) requestPointerLock()
 })
+const petanque = usePetanque({
+  gameRoomRef,
+  getScene,
+  getCamera,
+  myPosition,
+  pointerLocked: () => pointerLocked.value,
+  say: (text) => survival.say(text),
+  playSound: (name) => sfx.play(name),
+  closedText: (data) => {
+    if (data.reason === 'forfeit' || !data.score) return t('petanque.closed.forfeit')
+    const team = petanque.myTeam.value
+    const won = team !== null && data.score[team] > data.score[team === 'red' ? 'blue' : 'red']
+    return t(won ? 'petanque.closed.won' : 'petanque.closed.lost', data.score)
+  },
+})
+const { myGame: petanqueGame, myTurn: petanqueMyTurn, standingInCircle: petanqueInCircle, busy: petanqueBusy, mode: petanqueMode, power: petanquePower, carreau: petanqueCarreau, turnSecondsLeft: petanqueSecondsLeft } = petanque
 const PICKPOCKET_ERROR_KEYS = new Set([
   'pickpocket_on_duty',
   'pickpocket_jailed',
@@ -1549,12 +1567,14 @@ const movement = useGameMovement({
   onHotbarDigit: selectHotbarIndex,
   onHotbarScroll: (step) => {
     if (placement.onWheelStep(step)) return
+    if (petanque.onWheelStep()) return
     selectHotbarIndex((selectedHotbarIndex.value + step + 9) % 9)
   },
   handleExtraKeyDown,
   onCanvasMouseDown: (e) => {
     // furniture placement keeps its own clicks (left: pick / place, right: cancel)
     if (placement.onPointerDown(e)) return true
+    if (petanque.onPointerDown(e)) return true
     if (adminPanelOpen.value && !pointerLocked.value) {
       requestPointerLock()
       return true
@@ -1605,6 +1625,7 @@ const movement = useGameMovement({
     farm.tick()
     police.tick()
     sportsSignup.tick()
+    petanque.tick()
     if (!doorSigns.group.parent) getScene()?.add(doorSigns.group)
     minimap.tick()
     gps.tick()
@@ -2331,6 +2352,18 @@ const crosshairClass = computed(() => {
       :error="sportsPassError"
       @buy="sportsPass.buy"
       @close="sportsPass.close"
+    />
+    <GamePetanque
+      v-if="petanqueGame"
+      :game="petanqueGame"
+      :my-session-id="gameRoomRef?.sessionId ?? null"
+      :my-turn="petanqueMyTurn"
+      :in-circle="petanqueInCircle"
+      :busy="petanqueBusy"
+      :mode="petanqueMode"
+      :power="petanquePower"
+      :carreau="petanqueCarreau"
+      :seconds-left="petanqueSecondsLeft"
     />
     <GameSportsSignup
       v-if="sportsSignupOpen"

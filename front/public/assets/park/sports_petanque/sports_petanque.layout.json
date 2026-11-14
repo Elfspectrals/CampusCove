@@ -1,0 +1,229 @@
+{
+  "version": 1,
+  "zone": {
+    "minX": -414.0,
+    "maxX": -386.0,
+    "minZ": -275.0,
+    "maxZ": -250.0
+  },
+  "pistes": [
+    {
+      "id": "petanque_1",
+      "bounds": {
+        "minX": -408.3,
+        "maxX": -404.3,
+        "minZ": -272.0,
+        "maxZ": -257.0
+      }
+    },
+    {
+      "id": "petanque_2",
+      "bounds": {
+        "minX": -404.1,
+        "maxX": -400.1,
+        "minZ": -272.0,
+        "maxZ": -257.0
+      }
+    },
+    {
+      "id": "petanque_3",
+      "bounds": {
+        "minX": -399.9,
+        "maxX": -395.9,
+        "minZ": -272.0,
+        "maxZ": -257.0
+      }
+    },
+    {
+      "id": "petanque_4",
+      "bounds": {
+        "minX": -395.7,
+        "maxX": -391.7,
+        "minZ": -272.0,
+        "maxZ": -257.0
+      }
+    }
+  ],
+  "collision": [
+    {
+      "name": "COL_SportsPetanque_SP_Bench0",
+      "cx": -407.0,
+      "cz": -254.0,
+      "hx": 0.85,
+      "hz": 0.25,
+      "hy": 0.45,
+      "cy": 0.45,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsPetanque_SP_Bench1",
+      "cx": -404.0,
+      "cz": -254.0,
+      "hx": 0.85,
+      "hz": 0.25,
+      "hy": 0.45,
+      "cy": 0.45,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsPetanque_SP_Bench2",
+      "cx": -396.0,
+      "cz": -254.0,
+      "hx": 0.85,
+      "hz": 0.25,
+      "hy": 0.45,
+      "cy": 0.45,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsPetanque_SP_Bench3",
+      "cx": -393.0,
+      "cz": -254.0,
+      "hx": 0.85,
+      "hz": 0.25,
+      "hy": 0.45,
+      "cy": 0.45,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsPetanque_SP_Bench4",
+      "cx": -410.0,
+      "cz": -268.0,
+      "hx": 0.25,
+      "hz": 0.85,
+      "hy": 0.45,
+      "cy": 0.45,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsPetanque_SP_Bench5",
+      "cx": -410.0,
+      "cz": -261.0,
+      "hx": 0.25,
+      "hz": 0.85,
+      "hy": 0.45,
+      "cy": 0.45,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsPetanque_SP_Bench6",
+      "cx": -390.0,
+      "cz": -268.0,
+      "hx": 0.25,
+      "hz": 0.85,
+      "hy": 0.45,
+      "cy": 0.45,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsPetanque_SP_Bench7",
+      "cx": -390.0,
+      "cz": -261.0,
+      "hx": 0.25,
+      "hz": 0.85,
+      "hy": 0.45,
+      "cy": 0.45,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsPetanque_SP_Lamp0",
+      "cx": -410.5,
+      "cz": -273.5,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsPetanque_SP_Lamp1",
+      "cx": -389.5,
+      "cz": -273.5,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsPetanque_SP_Lamp2",
+      "cx": -410.5,
+      "cz": -253.5,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsPetanque_SP_Lamp3",
+      "cx": -389.5,
+      "cz": -253.5,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsPetanque_SP_PlaneTree0",
+      "cx": -412.5,
+      "cz": -271.0,
+      "hx": 0.287,
+      "hz": 0.287,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsPetanque_SP_PlaneTree1",
+      "cx": -412.5,
+      "cz": -264.5,
+      "hx": 0.287,
+      "hz": 0.287,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsPetanque_SP_PlaneTree2",
+      "cx": -412.5,
+      "cz": -258.0,
+      "hx": 0.287,
+      "hz": 0.287,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsPetanque_SP_PlaneTree3",
+      "cx": -387.5,
+      "cz": -271.0,
+      "hx": 0.287,
+      "hz": 0.287,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsPetanque_SP_PlaneTree4",
+      "cx": -387.5,
+      "cz": -264.5,
+      "hx": 0.287,
+      "hz": 0.287,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsPetanque_SP_PlaneTree5",
+      "cx": -387.5,
+      "cz": -258.0,
+      "hx": 0.287,
+      "hz": 0.287,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    }
+  ]
+}
