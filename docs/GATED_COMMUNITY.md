@@ -452,7 +452,18 @@ later B house planned at W 11.0 changes its width by at least 0.4 m (7.2c.3); a 
 the front door's open state and lock (7.2c.8 T7); walkable terraces and galleries are upper-floor rects of the house with
 guards 1.2 m above the deck.
 
-**Known follow-ups**: A-03 (12.4 k) and B-01 (9.5 k) are over their interior budgets, accepted; A-04's floor band stands
+**Bathrooms and passages (2026-11-14, after a walk-through)**: each house has the ground-floor powder room and one bathroom
+upstairs, bath 2, off the corridor (shower, WC, vanity); the former primary bath is an empty `Sitting` room off the suite, and
+the closet of the estate plan is 1.8 m wide (`CX = HX + 1.8`, upper back row 1.4 m behind the corridor front). Every inner
+doorway is at least 1.0 m (`MIN_DOOR`); `build_house_v2.py` fails when a room or the garage keeps more than 0.5 m² that a
+walker 0.95 m wide (`WALK_CLEAR`) cannot reach from the front door or the stair top (`unreachable_rooms`). The bath fixtures
+and door positions in the 7.2d tables predate this and are superseded by the code. Interiors after it: A-01 10.2 k,
+A-02 11.1 k, A-03 11.8 k, A-04 9.8 k, B-01 8.8 k triangles, all inside their budgets.
+The collision extractor (`front/scripts/extract-collision.mjs`) no longer builds its furniture platforms from `COL_Wall_*`
+and `COL_Fit_*` boxes: short wall stubs and bath fixtures were read as small props and walled off A-03's upper corridor
+and bath 2 of A-02 and B-01. The build check runs before that extractor, so it does not see such platforms.
+
+**Known follow-ups**: A-04's floor band stands
 4 cm proud at the terrace doorway (visual only); the A-03 and A-04 `preview.png` crop the west wing; B-01's haint-blue
 gallery ceilings read dark in unlit renders; the harbor plan asserts its own size (W 13.0, back −6.0) and is not reusable
 at another size; the residents-only gate logic is not started.

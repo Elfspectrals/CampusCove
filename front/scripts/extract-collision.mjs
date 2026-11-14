@@ -363,7 +363,7 @@ function isSeatNamed(c) {
 }
 
 function isSurfaceMarker(c) {
-  if (/^Synth_/i.test(c.name || '')) return false
+  if (/^(Synth_|COL_Wall_|COL_Fit_)/i.test(c.name || '')) return false
   if (isSeatNamed(c)) return false
   if (isThinWallCuboid(c)) return false
   const hm = horizSpan(c)
