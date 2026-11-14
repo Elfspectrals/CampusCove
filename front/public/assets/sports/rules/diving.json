@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "sport": "diving",
+  "status": "placeholder",
+  "zone": "sports_pool",
+  "coachId": null,
+  "signup": null,
+  "boards": [
+    {
+      "heightM": 1,
+      "kind": "board",
+      "position": null,
+      "edgeZone": null
+    },
+    {
+      "heightM": 3,
+      "kind": "board",
+      "position": null,
+      "edgeZone": null
+    },
+    {
+      "heightM": 5,
+      "kind": "platform",
+      "position": null,
+      "edgeZone": null
+    }
+  ],
+  "pitDepthM": 4.5,
+  "tricks": [
+    "twist",
+    "somersault",
+    "cannonball"
+  ],
+  "gear": [
+    "gear_swimsuit"
+  ],
+  "tasks": [
+    "platform_dives"
+  ]
+}

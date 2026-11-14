@@ -1,0 +1,106 @@
+{
+  "version": 1,
+  "sport": "football",
+  "status": "placeholder",
+  "zone": "sports_gym",
+  "coachId": "gym_coach",
+  "signup": {
+    "teams": true,
+    "settings": [
+      {
+        "key": "teamSize",
+        "label": "Format",
+        "options": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "key": "durationSec",
+        "label": "Length",
+        "options": [
+          240,
+          360,
+          480
+        ]
+      }
+    ]
+  },
+  "venues": [
+    {
+      "id": "gym_court",
+      "zone": "sports_gym",
+      "sizeM": [
+        44,
+        24
+      ],
+      "goalSizeM": [
+        3,
+        2
+      ],
+      "walls": true,
+      "coachId": "gym_coach"
+    },
+    {
+      "id": "athletics_pitch",
+      "zone": "sports_athletics",
+      "sizeM": [
+        55,
+        35
+      ],
+      "goalSizeM": [
+        5,
+        2
+      ],
+      "walls": false,
+      "coachId": "athletics_coach"
+    }
+  ],
+  "formats": {
+    "gym_court": [
+      2,
+      3,
+      4,
+      5
+    ],
+    "athletics_pitch": [
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ]
+  },
+  "durationsSec": [
+    240,
+    360,
+    480
+  ],
+  "minPlayers": 4,
+  "kickoffCountdownSec": 60,
+  "rejoinGraceSec": 30,
+  "ball": {
+    "radiusM": null,
+    "massKg": null,
+    "restitution": null,
+    "friction": null
+  },
+  "passPower": null,
+  "shotPowerRange": null,
+  "tackle": {
+    "reachM": null,
+    "cooldownMs": 3000,
+    "groundMs": 800
+  },
+  "dribbleReachM": null,
+  "gear": [],
+  "tasks": [
+    "matches_played",
+    "hat_trick"
+  ]
+}

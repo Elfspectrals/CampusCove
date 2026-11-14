@@ -1,0 +1,62 @@
+{
+  "version": 1,
+  "sport": "boxing",
+  "status": "placeholder",
+  "zone": "sports_boxing",
+  "coachId": "boxing_coach",
+  "signup": {
+    "teams": false,
+    "settings": [
+      {
+        "key": "rounds",
+        "label": "Rounds",
+        "options": [
+          1,
+          3,
+          5
+        ]
+      }
+    ]
+  },
+  "ring": {
+    "centre": null,
+    "sizeM": 6.1,
+    "ropes": null
+  },
+  "roundsChoices": [
+    1,
+    3,
+    5
+  ],
+  "roundSec": 60,
+  "restSec": 20,
+  "health": null,
+  "endurance": null,
+  "punches": {
+    "jab": null,
+    "cross": null,
+    "hook": null
+  },
+  "guard": {
+    "damageFactor": null,
+    "drainPerSec": null
+  },
+  "dodge": {
+    "cooldownMs": null
+  },
+  "knockdown": {
+    "countSec": 10,
+    "maxPerFight": 3,
+    "getUpPerRound": 1
+  },
+  "punchBags": null,
+  "minPlayers": 2,
+  "maxPlayers": 2,
+  "rejoinGraceSec": 30,
+  "gear": [
+    "gear_boxing_gloves"
+  ],
+  "tasks": [
+    "fights_won_distinct"
+  ]
+}

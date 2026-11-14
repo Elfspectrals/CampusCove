@@ -1,0 +1,98 @@
+{
+  "version": 1,
+  "sport": "climbing",
+  "status": "placeholder",
+  "zone": "sports_climbing",
+  "coachId": "climbing_coach",
+  "signup": {
+    "teams": false,
+    "settings": []
+  },
+  "boulders": [
+    {
+      "id": "boulder_1",
+      "colour": null,
+      "holds": null,
+      "windowMs": null
+    },
+    {
+      "id": "boulder_2",
+      "colour": null,
+      "holds": null,
+      "windowMs": null
+    },
+    {
+      "id": "boulder_3",
+      "colour": null,
+      "holds": null,
+      "windowMs": null
+    },
+    {
+      "id": "boulder_4",
+      "colour": null,
+      "holds": null,
+      "windowMs": null
+    },
+    {
+      "id": "boulder_5",
+      "colour": null,
+      "holds": null,
+      "windowMs": null
+    },
+    {
+      "id": "boulder_6",
+      "colour": null,
+      "holds": null,
+      "windowMs": null
+    }
+  ],
+  "routes": [
+    {
+      "id": "route_1",
+      "colour": null,
+      "heightM": 12,
+      "holds": null,
+      "windowMs": null
+    },
+    {
+      "id": "route_2",
+      "colour": null,
+      "heightM": 12,
+      "holds": null,
+      "windowMs": null
+    },
+    {
+      "id": "route_3",
+      "colour": null,
+      "heightM": 12,
+      "holds": null,
+      "windowMs": null
+    },
+    {
+      "id": "route_4",
+      "colour": null,
+      "heightM": 12,
+      "holds": null,
+      "windowMs": null
+    }
+  ],
+  "twinRoutes": null,
+  "grip": {
+    "max": null,
+    "lossPerMiss": null,
+    "lossPerLateMs": null
+  },
+  "belayLowerSec": 2,
+  "allowanceMs": null,
+  "minPlayers": 2,
+  "maxPlayers": 2,
+  "gear": [],
+  "lentAtReception": [
+    "climbing_shoes"
+  ],
+  "boards": null,
+  "tasks": [
+    "routes_topped",
+    "black_route"
+  ]
+}

@@ -1,0 +1,78 @@
+{
+  "version": 1,
+  "sport": "basketball",
+  "status": "placeholder",
+  "zone": "sports_gym",
+  "coachId": "gym_coach",
+  "signup": {
+    "teams": true,
+    "settings": [
+      {
+        "key": "teamSize",
+        "label": "Format",
+        "options": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      },
+      {
+        "key": "durationSec",
+        "label": "Length",
+        "options": [
+          240,
+          360,
+          480
+        ]
+      }
+    ]
+  },
+  "court": {
+    "sizeM": [
+      44,
+      24
+    ],
+    "baskets": null,
+    "rimHeightM": 3.05,
+    "threePointRadiusM": null
+  },
+  "formats": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "durationsSec": [
+    240,
+    360,
+    480
+  ],
+  "minPlayers": 2,
+  "kickoffCountdownSec": 60,
+  "rejoinGraceSec": 30,
+  "ball": {
+    "radiusM": null,
+    "massKg": null,
+    "restitution": null
+  },
+  "shotMeter": {
+    "riseMs": null,
+    "windowMsByDistance": null
+  },
+  "aimAssistMax": null,
+  "dunkRangeM": 1.5,
+  "steal": {
+    "reachM": null,
+    "chance": 0.4,
+    "cooldownMs": 2000
+  },
+  "blockWindowMs": null,
+  "gear": [],
+  "tasks": [
+    "matches_played",
+    "three_pointers"
+  ]
+}
