@@ -896,3 +896,35 @@ export interface SportsLoansPayload {
   sessionId: string
   loans: string[]
 }
+
+export type GymSport = 'football' | 'basketball'
+export type GymTeam = 'red' | 'blue'
+
+export interface GymStatePayload {
+  venue: string
+  sport: GymSport
+  ball: [number, number, number, number, number, number]
+  owner: string | null
+  score: Record<GymTeam, number>
+  half: number
+  halves: number
+  endsAt: number
+  restartTeam: GymTeam | null
+  players: { sessionId: string; team: GymTeam }[]
+  serverNow: number
+}
+
+export type GymEventPayload =
+  | { venue: string; kind: 'score'; team: GymTeam; points: number; dunk: boolean; scorer: string | null; sessionId: string | null }
+  | { venue: string; kind: 'kick'; shot: boolean; sessionId: string | null }
+  | { venue: string; kind: 'tackle' | 'steal'; won: boolean; sessionId: string | null }
+  | { venue: string; kind: 'block'; sessionId: string | null }
+  | { venue: string; kind: 'half'; half: number; sessionId: null }
+
+export interface GymEndPayload {
+  venue: string
+  sport: GymSport
+  score: Record<GymTeam, number>
+  winner: GymTeam | null
+  reason: 'finished' | 'forfeit'
+}

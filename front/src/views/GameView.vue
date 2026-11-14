@@ -35,6 +35,7 @@ import GamePubSecretDialog from '../components/game/GamePubSecretDialog.vue'
 import GamePoliceLicenceDialog from '../components/game/GamePoliceLicenceDialog.vue'
 import GameSportsPassDesk from '../components/game/GameSportsPassDesk.vue'
 import GameSportsSignup from '../components/game/GameSportsSignup.vue'
+import GameGymMatchHud from '../components/game/GameGymMatchHud.vue'
 import GameChat from '../components/game/GameChat.vue'
 import GameDrunkEffects from '../components/game/GameDrunkEffects.vue'
 import GameDrinkFast from '../components/game/GameDrinkFast.vue'
@@ -101,6 +102,7 @@ import { usePolice } from '../composables/game/usePolice'
 import { useSportsPass } from '../composables/game/useSportsPass'
 import { passValid } from '../game/sports/sportsPass'
 import { useSportsSignup } from '../composables/game/useSportsSignup'
+import { useGymMatch } from '../composables/game/useGymMatch'
 import { usePickpocket } from '../composables/game/usePickpocket'
 import { useStorageAuction } from '../composables/game/useStorageAuction'
 import { useStorageWarehouse } from '../composables/game/useStorageWarehouse'
@@ -875,6 +877,14 @@ const { open: sportsSignupOpen, choices: sportsVenueChoices, canPickVenue: sport
 watch(sportsSignupOpen, (open) => {
   if (!open && !document.pointerLockElement) requestPointerLock()
 })
+const gymMatch = useGymMatch({
+  gameRoomRef,
+  pointerLocked,
+  myPosition,
+  getScene,
+  playOn: (name, object) => sfx.playOn(name, object),
+})
+const { hud: gymHud, banner: gymBanner } = gymMatch
 const PICKPOCKET_ERROR_KEYS = new Set([
   'pickpocket_on_duty',
   'pickpocket_jailed',
@@ -1482,6 +1492,7 @@ function handleExtraKeyDown(e: KeyboardEvent): boolean {
   if (houseKeys.onKeyDown(e)) return true
   if (survival.onKeyDown(e)) return true
   if (pickpocket.onKeyDown(e)) return true
+  if (gymMatch.onPress(e.code, e.repeat)) return true
   if (runUseOrPunch(e.code, e.repeat, e.shiftKey)) return true
   if (matches('characterEditor', e.code) && !e.repeat) {
     void openCharacterEditor()
@@ -1559,6 +1570,7 @@ const movement = useGameMovement({
       requestPointerLock()
       return true
     }
+    if (gymMatch.onPress(mouseButtonCode(e.button), false)) return true
     return pointerLocked.value && runUseOrPunch(mouseButtonCode(e.button), false, e.shiftKey)
   },
   speedFactor: () => survival.speedFactor() * intoxication.walkFactor() * (adminWatch.hasMyPower('speed') ? SPEED_POWER_FACTOR : 1),
@@ -1605,6 +1617,7 @@ const movement = useGameMovement({
     farm.tick()
     police.tick()
     sportsSignup.tick()
+    gymMatch.tick()
     if (!doorSigns.group.parent) getScene()?.add(doorSigns.group)
     minimap.tick()
     gps.tick()
@@ -1749,6 +1762,7 @@ const realtime = useGameRealtime({
     onError: sportsSignup.handlers.onError,
     onRoomJoined: sportsSignup.handlers.onRoomJoined,
   },
+  gym: gymMatch.handlers,
   pickpocket: pickpocket.handlers,
   storageAuction: {
     ...storageAuction.handlers,
@@ -2332,6 +2346,7 @@ const crosshairClass = computed(() => {
       @buy="sportsPass.buy"
       @close="sportsPass.close"
     />
+    <GameGymMatchHud :hud="gymHud" :banner="gymBanner" />
     <GameSportsSignup
       v-if="sportsSignupOpen"
       :lobby="sportsLobby"

@@ -113,6 +113,9 @@ import type {
   SportsLobbyClosedPayload,
   SportsLobbyPayload,
   SportsLoansPayload,
+  GymEndPayload,
+  GymEventPayload,
+  GymStatePayload,
   SportsPassBoughtPayload,
   SportsPassStatePayload,
   PickpocketAlertPayload,
@@ -325,6 +328,11 @@ export interface GameRealtimeDeps {
     onLobbyClosed: (data: SportsLobbyClosedPayload) => void
     onError: (data: SportsErrorPayload) => void
     onRoomJoined: () => void
+  }
+  gym: {
+    onState: (data: GymStatePayload) => void
+    onEvent: (data: GymEventPayload) => void
+    onEnd: (data: GymEndPayload) => void
   }
   pickpocket: {
     onStarted: (data: PickpocketStartedPayload) => void
@@ -581,6 +589,9 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('sports_lobby_closed', (data: SportsLobbyClosedPayload) => deps.sports.onLobbyClosed(data))
     room.onMessage('sports_error', (data: SportsErrorPayload) => deps.sports.onError(data))
     room.onMessage('sports_loans', (data: SportsLoansPayload) => applySportsLoans(data))
+    room.onMessage('gym_state', (data: GymStatePayload) => deps.gym.onState(data))
+    room.onMessage('gym_event', (data: GymEventPayload) => deps.gym.onEvent(data))
+    room.onMessage('gym_end', (data: GymEndPayload) => deps.gym.onEnd(data))
     room.onMessage('pickpocket_started', (data: PickpocketStartedPayload) => deps.pickpocket.onStarted(data))
     room.onMessage('pickpocket_progress', (data: PickpocketProgressPayload) => deps.pickpocket.onProgress(data))
     room.onMessage('pickpocket_failed', (data: PickpocketFailedPayload) => deps.pickpocket.onFailed(data))
