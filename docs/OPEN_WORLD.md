@@ -118,8 +118,24 @@ Un fichier `world.manifest.json` remplace la liste codée en dur dans `loadTownE
 | `modelUrl` | GLB de la zone |
 | `collisionUrl` | Collision de la zone |
 | `buildings[]` | Clé, position, rotation, `interiorOffset [x, y, z]`, empreinte au sol, position de porte, extérieur, intérieur, `hideNodes` |
+| `groundHole` | Optionnel. Rectangle XZ `{ minX, maxX, minZ, maxZ }` retiré du disque `Ground` de `town.glb` (voir « Trous dans le sol ») |
 
 Ajouter une zone de décor = une entrée au manifeste. Une zone avec gameplay dédié (comme l'étang : `setTerrainHeightmap`, `animatePondWater`, fishing spots) reste du code spécifique.
+
+### Trous dans le sol
+
+Le disque `Ground` de `town.glb` (herbe double face, dessus vers `y = 0`) couvre tout le monde. Une zone qui descend
+sous le niveau du sol (le bassin de la piscine du complexe sportif) le perce avec `groundHole` sur son entrée de
+manifeste : un rectangle XZ en coordonnées monde, sans recouvrement avec un autre trou, à plus de 1 m du bord du disque.
+
+- `fitTownBackdrop` (`front/scripts/lib/worldBackdrop.mjs`) reconstruit à chaque passage le dessus et le dessous du
+  disque à partir de ses points de bord, moins les rectangles `groundHole` lus dans le manifeste. Sans trou, le disque
+  est le même qu'avant (mêmes sommets, même aire). Un trou retiré du manifeste referme le sol au passage suivant.
+- Le trou est appliqué par `apply-world-bounds.mjs` et `apply-store.mjs`, qui appellent `fitTownBackdrop` avec le
+  manifeste. Le script d'apply de la zone qui pose le trou l'appelle aussi après avoir écrit son entrée de manifeste.
+- La zone couvre tout son trou avec son propre sol (et son script d'apply échoue si un point du trou reste découvert) :
+  le trou ne laisse voir que ce que la zone y dessine.
+- Aucun trou ne change la hauteur de marche : elle vient des sols de la zone et de ses niveaux de bâtiment.
 
 ### Chargement : tout précharger, visibilité par proximité
 

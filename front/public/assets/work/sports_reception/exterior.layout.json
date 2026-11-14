@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "key": "sports_reception",
+  "name": "Cove Sports Park",
+  "footprint": [
+    12.0,
+    16.009999999999998
+  ],
+  "footprintCenterZ": -0.004999999999999005,
+  "doorLocal": [
+    0.0,
+    1.25,
+    8.0
+  ],
+  "interiorOffset": [
+    0.0,
+    0.2,
+    2.595
+  ],
+  "collision": [
+    {
+      "cx": 0.0,
+      "cz": -0.004999999999999005,
+      "hx": 6.2,
+      "hz": 8.204999999999998,
+      "hy": 2.2
+    }
+  ]
+}
