@@ -36,6 +36,7 @@ import GamePoliceLicenceDialog from '../components/game/GamePoliceLicenceDialog.
 import GameSportsPassDesk from '../components/game/GameSportsPassDesk.vue'
 import GameSportsSignup from '../components/game/GameSportsSignup.vue'
 import GameGymMatchHud from '../components/game/GameGymMatchHud.vue'
+import GameGymFreePlay from '../components/game/GameGymFreePlay.vue'
 import GameChat from '../components/game/GameChat.vue'
 import GameDrunkEffects from '../components/game/GameDrunkEffects.vue'
 import GameDrinkFast from '../components/game/GameDrinkFast.vue'
@@ -103,6 +104,7 @@ import { useSportsPass } from '../composables/game/useSportsPass'
 import { passValid } from '../game/sports/sportsPass'
 import { useSportsSignup } from '../composables/game/useSportsSignup'
 import { useGymMatch } from '../composables/game/useGymMatch'
+import { GYM_COACH } from '../game/sports/gymMatch'
 import { usePickpocket } from '../composables/game/usePickpocket'
 import { useStorageAuction } from '../composables/game/useStorageAuction'
 import { useStorageWarehouse } from '../composables/game/useStorageWarehouse'
@@ -882,9 +884,17 @@ const gymMatch = useGymMatch({
   pointerLocked,
   myPosition,
   getScene,
+  getCamera,
+  canvasRef,
+  remoteAvatar: (sessionId) => realtime.remoteAvatar(sessionId),
+  remoteSportsMove: (sessionId, clip) => realtime.remoteSportsMove(sessionId, clip),
+  setRemoteDribbling: (sessionId, dribbling) => realtime.setRemoteDribbling(sessionId, dribbling),
   playOn: (name, object) => sfx.playOn(name, object),
+  say: (text) => survival.say(text),
+  errorText: ({ code, message }) => (te(`sports.gym.errors.${code}`) ? t(`sports.gym.errors.${code}`) : message),
 })
-const { hud: gymHud, banner: gymBanner } = gymMatch
+const { hud: gymHud, freeHud: gymFreeHud, banner: gymBanner, rimPop: gymRimPop, myBall: gymMyBall } = gymMatch
+const gymCoachOpen = computed(() => sportsSignupOpen.value && sportsVenueChoices.value.some((c) => c.lobby.coach === GYM_COACH))
 const PICKPOCKET_ERROR_KEYS = new Set([
   'pickpocket_on_duty',
   'pickpocket_jailed',
@@ -1574,7 +1584,7 @@ const movement = useGameMovement({
     return pointerLocked.value && runUseOrPunch(mouseButtonCode(e.button), false, e.shiftKey)
   },
   speedFactor: () => survival.speedFactor() * intoxication.walkFactor() * (adminWatch.hasMyPower('speed') ? SPEED_POWER_FACTOR : 1),
-  movementLocked: () => seats.seated.value || townBus.riding.value || police.cuffedBy.value !== null || adminWatch.hasMyPower('freeze'),
+  movementLocked: () => seats.seated.value || townBus.riding.value || police.cuffedBy.value !== null || adminWatch.hasMyPower('freeze') || gymMatch.down(),
   flying: () => adminWatch.hasMyPower('fly'),
   afterCameraPlaced: intoxication.applyToCamera,
   trySpendJump: () => adminWatch.hasMyPower('endless_stamina') || punch.trySpendJump(),
@@ -2346,7 +2356,8 @@ const crosshairClass = computed(() => {
       @buy="sportsPass.buy"
       @close="sportsPass.close"
     />
-    <GameGymMatchHud :hud="gymHud" :banner="gymBanner" />
+    <GameGymMatchHud :hud="gymHud" :free-hud="gymFreeHud" :banner="gymBanner" :rim-pop="gymRimPop" />
+    <GameGymFreePlay v-if="gymCoachOpen" :my-ball="gymMyBall" @borrow="gymMatch.borrow" @give-back="gymMatch.giveBack" />
     <GameSportsSignup
       v-if="sportsSignupOpen"
       :lobby="sportsLobby"

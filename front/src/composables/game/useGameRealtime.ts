@@ -114,6 +114,8 @@ import type {
   SportsLobbyPayload,
   SportsLoansPayload,
   GymEndPayload,
+  GymErrorPayload,
+  GymFreePayload,
   GymEventPayload,
   GymStatePayload,
   SportsPassBoughtPayload,
@@ -333,6 +335,8 @@ export interface GameRealtimeDeps {
     onState: (data: GymStatePayload) => void
     onEvent: (data: GymEventPayload) => void
     onEnd: (data: GymEndPayload) => void
+    onFree: (data: GymFreePayload) => void
+    onError: (data: GymErrorPayload) => void
   }
   pickpocket: {
     onStarted: (data: PickpocketStartedPayload) => void
@@ -592,6 +596,8 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('gym_state', (data: GymStatePayload) => deps.gym.onState(data))
     room.onMessage('gym_event', (data: GymEventPayload) => deps.gym.onEvent(data))
     room.onMessage('gym_end', (data: GymEndPayload) => deps.gym.onEnd(data))
+    room.onMessage('gym_free', (data: GymFreePayload) => deps.gym.onFree(data))
+    room.onMessage('gym_error', (data: GymErrorPayload) => deps.gym.onError(data))
     room.onMessage('pickpocket_started', (data: PickpocketStartedPayload) => deps.pickpocket.onStarted(data))
     room.onMessage('pickpocket_progress', (data: PickpocketProgressPayload) => deps.pickpocket.onProgress(data))
     room.onMessage('pickpocket_failed', (data: PickpocketFailedPayload) => deps.pickpocket.onFailed(data))
@@ -726,6 +732,9 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     tickRemoteAvatars: remotes.tick,
     remotePseudo: remotes.pseudoOf,
     remotePosition: remotes.positionOf,
+    remoteAvatar: remotes.avatarOf,
+    remoteSportsMove: remotes.playSportsMove,
+    setRemoteDribbling: remotes.setDribbling,
     setRemoteVoiceState: remotes.setVoiceState,
     remotePlayers: remotes.players,
     remoteAccount: remotes.accountOf,

@@ -928,3 +928,21 @@ export interface GymEndPayload {
   winner: GymTeam | null
   reason: 'finished' | 'forfeit'
 }
+
+export interface GymFreeBall {
+  id: string
+  sport: GymSport
+  lender: string | null
+  ball: [number, number, number, number, number, number]
+  owner: string | null
+}
+
+export interface GymFreePayload {
+  balls: GymFreeBall[]
+  serverNow: number
+}
+
+export interface GymErrorPayload {
+  code: string
+  message: string
+}

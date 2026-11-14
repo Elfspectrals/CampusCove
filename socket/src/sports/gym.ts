@@ -1,7 +1,10 @@
-import type { ClientPayload, GameClient, GameRoom } from '../types.ts'
+import { callRealtimeBackend } from '../backend.ts'
+import type { ClientPayload, GameClient, GameRoom, Player } from '../types.ts'
 import { worldSportsPassArea } from '../world.ts'
 import type { GymCourt } from './gymCourt.ts'
+import { freeAction, onGymBall as freeBall, onGymBallReturn as freeBallReturn, tickGymFree } from './gymFree.ts'
 import { type Athlete, type GymActionKind, type GymEvent, type GymGame, GYM_ACTIONS, actGym, dropOwner, newGymGame, outcomeFor, restartHalf, stepGym } from './gymMatch.ts'
+import { MotionTracker } from './gymMotion.ts'
 import { type GymRules, halvesOf } from './gymRules.ts'
 import type { Match, SettingSpec, Team } from './signup.ts'
 import { type MatchEnd, type MatchResult, endMatch, recordMatch, registerVenue } from './venues.ts'
@@ -10,7 +13,6 @@ export const GYM_ZONE = 'sports_gym'
 export const GYM_COURT_AREA = 'gym_court'
 const STEP_S = 1 / 60
 const MAX_TICK_S = 0.5
-const MAX_ATHLETE_SPEED = 12
 const ACTION_GAP_MS = 60
 
 interface Live {
@@ -20,8 +22,7 @@ interface Live {
   halves: number
   half: number
   lastAt: number
-  seen: Map<number, { x: number, z: number, at: number }>
-  speed: Map<number, { vx: number, vz: number }>
+  motion: MotionTracker
 }
 
 export interface GymVenueSpec {
@@ -104,16 +105,7 @@ function athletesOf(room: GameRoom, match: Match, live: Live, now: number): Athl
     if (p.out || p.awaySince !== null || p.team === null) continue
     const player = room.players.get(p.sessionId)
     if (!player) continue
-    const seen = live.seen.get(p.accountId)
-    const dt = seen ? (now - seen.at) / 1000 : 0
-    if (!seen || dt > 0) {
-      const raw = seen && dt > 0 ? { vx: (player.x - seen.x) / dt, vz: (player.z - seen.z) / dt } : { vx: 0, vz: 0 }
-      const speed = Math.hypot(raw.vx, raw.vz)
-      const k = speed > MAX_ATHLETE_SPEED ? MAX_ATHLETE_SPEED / speed : 1
-      live.speed.set(p.accountId, { vx: raw.vx * k, vz: raw.vz * k })
-      live.seen.set(p.accountId, { x: player.x, z: player.z, at: now })
-    }
-    const v = live.speed.get(p.accountId) ?? { vx: 0, vz: 0 }
+    const v = live.motion.track(player, now)
     out.push({ accountId: p.accountId, team: p.team, x: player.x, z: player.z, vx: v.vx, vz: v.vz, ry: player.ry })
   }
   return out
@@ -131,6 +123,28 @@ function results(match: Match, live: Live, end: MatchEnd): MatchResult[] {
     result: p.out ? 'dnf' : outcomeFor(p.team as Team, live.game.score, loser),
     score: live.game.tallies.get(p.accountId) ?? 0
   }))
+}
+
+function taskRecord(match: Match, live: Live) {
+  const feat = live.rules.sport === 'football' ? live.game.tallies : live.game.threes
+  const key = live.rules.sport === 'football' ? 'goals' : 'threes'
+  return {
+    ref: match.id,
+    sport: live.rules.sport,
+    players: match.players.filter((p) => !p.out).map((p) => ({ accountId: p.accountId, [key]: feat.get(p.accountId) ?? 0 }))
+  }
+}
+
+async function recordWithTasks(room: GameRoom, match: Match, live: Live, end: MatchEnd): Promise<void> {
+  await recordMatch(room, match, results(match, live, end))
+  const record = taskRecord(match, live)
+  if (record.players.length === 0) return
+  const token = [...room.players.values()].find((p) => p.token && match.players.some((m) => m.accountId === p.accountId))?.token ?? null
+  try {
+    await callRealtimeBackend(token, '/sports/gym/tasks', 'POST', record)
+  } catch (error) {
+    console.warn(`[sports] gym tasks of match ${match.id} not counted:`, error instanceof Error ? error.message : error)
+  }
 }
 
 function winnerOf(live: Live, end: MatchEnd): Team | null {
@@ -161,8 +175,7 @@ export function registerGymVenue(spec: GymVenueSpec): void {
         halves: halvesOf(spec.rules, durationSec),
         half: 1,
         lastAt: match.startedAt,
-        seen: new Map(),
-        speed: new Map()
+        motion: new MotionTracker()
       }
       livesOf(room).set(match.venue, live)
       sendToGym(room, match, 'gym_state', stateView(match, live, match.startedAt))
@@ -199,7 +212,7 @@ export function registerGymVenue(spec: GymVenueSpec): void {
       if (!live) throw new Error(`gym match ${match.id}: no live state at the end`)
       livesOf(room).delete(match.venue)
       sendToGym(room, match, 'gym_end', { venue: match.venue, sport: spec.rules.sport, score: { ...live.game.score }, winner: winnerOf(live, end), reason: end.reason })
-      void recordMatch(room, match, results(match, live, end))
+      void recordWithTasks(room, match, live, end)
     }
   })
 }
@@ -207,6 +220,15 @@ export function registerGymVenue(spec: GymVenueSpec): void {
 function parseKind(payload: ClientPayload): GymActionKind | null {
   const kind = payload?.kind
   return typeof kind === 'string' && (GYM_ACTIONS as readonly string[]).includes(kind) ? kind as GymActionKind : null
+}
+
+function lockIfDown(player: Player, game: GymGame, events: readonly GymEvent[]): void {
+  if (!events.some((e) => e.kind === 'tackle' && !e.won && e.accountId === player.accountId)) return
+  player.sportsDownUntil = game.groundedUntil.get(player.accountId) ?? 0
+}
+
+function courtBusy(room: GameRoom): boolean {
+  return [...venueIds].some((id) => room.sports.matches.has(id))
 }
 
 export function onGymAction(room: GameRoom, client: GameClient, payload: ClientPayload, now = Date.now()): void {
@@ -222,7 +244,23 @@ export function onGymAction(room: GameRoom, client: GameClient, payload: ClientP
     const athletes = athletesOf(room, match, live, now)
     const actor = athletes.find((a) => a.accountId === player.accountId && match.players.some((p) => p.accountId === a.accountId && p.sessionId === client.sessionId))
     if (!actor) continue
-    broadcastEvents(room, match, actGym(live.game, live.rules, actor, athletes, kind, now, Math.random))
+    const events = actGym(live.game, live.rules, actor, athletes, kind, now, Math.random)
+    lockIfDown(player, live.game, events)
+    broadcastEvents(room, match, events)
     return
   }
+  const free = freeAction(room, player, kind, now)
+  if (free) lockIfDown(player, free.game, free.events)
+}
+
+export function onGymBall(room: GameRoom, client: GameClient, payload: ClientPayload, now = Date.now()): void {
+  freeBall(room, client, payload, courtBusy(room), now)
+}
+
+export function onGymBallReturn(room: GameRoom, client: GameClient, now = Date.now()): void {
+  freeBallReturn(room, client, now)
+}
+
+export function tickGym(room: GameRoom, now = Date.now()): void {
+  tickGymFree(room, courtBusy(room), now)
 }

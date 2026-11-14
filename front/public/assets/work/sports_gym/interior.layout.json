@@ -53,14 +53,16 @@
         "out": 1,
         "minX": 1.200000000000001,
         "maxX": 4.200000000000001,
-        "height": 2
+        "height": 2,
+        "depth": 1.0
       },
       "east": {
         "lineZ": -48.9,
         "out": -1,
         "minX": 1.200000000000001,
         "maxX": 4.200000000000001,
-        "height": 2
+        "height": 2,
+        "depth": 1.0
       }
     },
     "baskets": {
@@ -69,23 +71,89 @@
         "z": -6.475,
         "y": 3.05,
         "rimRadius": 0.225,
-        "boardZ": -6.1,
-        "boardHalfWidth": 0.9,
-        "boardBottom": 2.9,
-        "boardTop": 3.95,
-        "threePointRadius": 6.75
+        "threePointRadius": 6.75,
+        "board": {
+          "minX": 1.8,
+          "maxX": 3.6,
+          "minY": 2.9,
+          "maxY": 3.95,
+          "minZ": -6.115,
+          "maxZ": -6.085
+        }
       },
       "east": {
         "x": 2.700000000000001,
         "z": -47.325,
         "y": 3.05,
         "rimRadius": 0.225,
-        "boardZ": -47.7,
-        "boardHalfWidth": 0.9,
-        "boardBottom": 2.9,
-        "boardTop": 3.95,
-        "threePointRadius": 6.75
+        "threePointRadius": 6.75,
+        "board": {
+          "minX": 1.8,
+          "maxX": 3.6,
+          "minY": 2.9,
+          "maxY": 3.95,
+          "minZ": -47.715,
+          "maxZ": -47.685
+        }
       }
-    }
+    },
+    "sideBaskets": [
+      {
+        "x": 15.325,
+        "z": -42.9,
+        "y": 3.05,
+        "rimRadius": 0.225,
+        "board": {
+          "minX": 15.685,
+          "maxX": 15.715,
+          "minY": 2.9,
+          "maxY": 3.95,
+          "minZ": -43.8,
+          "maxZ": -42.0
+        }
+      },
+      {
+        "x": 15.325,
+        "z": -34.9,
+        "y": 3.05,
+        "rimRadius": 0.225,
+        "board": {
+          "minX": 15.685,
+          "maxX": 15.715,
+          "minY": 2.9,
+          "maxY": 3.95,
+          "minZ": -35.8,
+          "maxZ": -34.0
+        }
+      },
+      {
+        "x": 15.325,
+        "z": -18.9,
+        "y": 3.05,
+        "rimRadius": 0.225,
+        "board": {
+          "minX": 15.685,
+          "maxX": 15.715,
+          "minY": 2.9,
+          "maxY": 3.95,
+          "minZ": -19.8,
+          "maxZ": -18.0
+        }
+      },
+      {
+        "x": 15.325,
+        "z": -10.9,
+        "y": 3.05,
+        "rimRadius": 0.225,
+        "board": {
+          "minX": 15.685,
+          "maxX": 15.715,
+          "minY": 2.9,
+          "maxY": 3.95,
+          "minZ": -11.8,
+          "maxZ": -10.0
+        }
+      }
+    ]
   }
 }

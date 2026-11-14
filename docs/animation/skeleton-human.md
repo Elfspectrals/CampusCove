@@ -46,6 +46,13 @@ Clips are phase functions `f(ph, P)` sampled by `sample_actions(arm, clips, fps=
     positive raises the right arm sideways.
   - `Hips` `ry` positive lowers the left hip.
   - `Hand` `rx` negative bends the hand toward the face, like a negative `LowerArm` `rx`.
+  - Measured 2026-11-14 for the sports clips: `Hips` `rx` negative tilts the whole body back (legs forward);
+    `Spine` `rx` positive leans the torso forward; `Chest` `rz` positive turns the shoulders to the left; `Foot` `rx`
+    positive points the toes down; `UpperLeg` `rz` after a forward swing swings the leg across the body (+ toward +X
+    on `.R`), so a twist of the leg about its own axis is composed in rest space (`("UpperLeg.R", "t")` in
+    `sport_clip`, negative turns the right toes out); with the arm overhead, `UpperArm.R` `ry` negative and
+    `UpperArm.L` `ry` positive spread the arms into a V; `Shoulder.R` `ry` positive and `Shoulder.L` `ry` negative
+    raise the shoulders, which hides the shoulder pinch of an overhead arm.
   Any other sign is checked on a render before it is trusted.
 - `sample_actions` deletes every NLA track first: always pass the full clip dict.
 
@@ -60,6 +67,15 @@ Clips are phase functions `f(ph, P)` sampled by `sample_actions(arm, clips, fps=
 | Eat | 30 | 1.0 | one-shot | `pose_eat`, hand at the mouth from 0.33 s, two bites, chew (upper body only) |
 | Drink | 30 | 1.0 | one-shot | `pose_drink`, hand at the mouth from 0.33 s, head back 22° (upper body only) |
 | Pick | 90 | 3.0 | one-shot | `pose_pick`, base body only (`run_wear.py`) |
+| Kick | 14 | 0.467 | one-shot | `pose_kick`, right side-foot pass, contact at frame 6 (0.20 s), left foot planted |
+| Shot | 21 | 0.7 | one-shot | `pose_shot`, wind-up at frame 8, right instep strike at frame 11 (0.367 s) |
+| Tackle | 36 | 1.2 | one-shot | `pose_tackle`, on the left hip from frame 10 (0.333 s) to 20 (0.667 s), Hips at −0.67 m, then gets up |
+| Celebrate | 36 | 1.2 | one-shot | `pose_celebrate`, hop with arms up in a V (top at frame 9, Hips +0.16 m), two fist pumps |
+| JumpShot | 24 | 0.8 | one-shot | `pose_jump_shot`, release at the top, frame 11 (0.367 s), Hips +0.18 m |
+| Dunk | 27 | 0.9 | one-shot | `pose_dunk`, right arm high, peak at frame 12 (Hips +0.45 m), slam at frame 15 (0.5 s) |
+| Block | 18 | 0.6 | one-shot | `pose_block`, both arms straight up, top at frame 9 (0.3 s), Hips +0.22 m |
+| Steal | 14 | 0.467 | one-shot | `pose_steal`, low right-hand swipe, contact at frame 6 (0.20 s), feet planted |
+| Dribble | 30 | 1.0 | yes | `gait_dribble`: two Walk-style strides (`DRIBBLE`, 0.5 s each, designed for 5 m/s), right hand lowest at 0.08 and 0.58 s, ball on the floor at 0.25 and 0.75 s, back in the hand at 0.42 and 0.92 s |
 
 Every clip is keyed from frame 0 (glTF time starts at 0). Gaits plant the feet with `leg_ik` (analytic two-bone IK,
 knee forward): the stance foot moves back at exactly the design speed, so there is no slide at timeScale 1.

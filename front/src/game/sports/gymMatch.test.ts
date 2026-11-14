@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 import type { GymStatePayload } from '../../types/gameRealtime.ts'
-import { clockText, goodWindowStart, meterFill, myTeam, parseGymCourtView, parseGymHudRules, predictBall } from './gymMatch.ts'
+import { carriedSpot, clockText, dribbleBeat, dribbleHeight, goodWindowStart, meterFill, myTeam, nearestFreeBall, parseGymCourtView, parseGymHudRules, predictBall } from './gymMatch.ts'
 
 const rules = (sport: string) => JSON.parse(readFileSync(new URL(`../../../public/assets/sports/rules/${sport}.json`, import.meta.url), 'utf8'))
 
@@ -10,6 +10,7 @@ test('the HUD reads its numbers from the shipped rules files', () => {
   const football = parseGymHudRules('football', rules('football'))
   assert.deepEqual(football.meter, { kind: 'charge', chargeMs: 1000 })
   assert.equal(football.defendCooldownMs, 3000)
+  assert.equal(football.downMs, 800)
   const basketball = parseGymHudRules('basketball', rules('basketball'))
   assert.equal(basketball.meter.kind, 'bounce')
   assert.equal(basketball.defendCooldownMs, 2000)
@@ -56,4 +57,22 @@ test('the shipped court contract gives the floor and the basket each team attack
   assert.equal(court.floorY, 0.2)
   assert.ok(court.baskets.red.x > court.baskets.blue.x)
   assert.throws(() => parseGymCourtView({ floorY: 0.2, baskets: {} }), /baskets.red.x/)
+})
+
+test('a basketball bounces between the hand and the floor, a football rolls just ahead of the toe', () => {
+  assert.equal(dribbleHeight(1.0, 0.2, 0.12, 0), 1.0)
+  assert.ok(Math.abs(dribbleHeight(1.0, 0.2, 0.12, 0.25) - 0.32) < 1e-9)
+  const foot = carriedSpot('football', { x: 1, y: 0.25, z: 2 }, 0, 0.2, 0.11, 3)
+  assert.ok(Math.abs(foot.z - 2.15) < 1e-9 && Math.abs(foot.y - 0.31) < 1e-9)
+  assert.equal(carriedSpot('basketball', { x: 1, y: 1, z: 2 }, 0, 0.2, 0.12, 0).y, 1)
+  assert.equal(dribbleBeat(0.2), dribbleBeat(0.24))
+  assert.notEqual(dribbleBeat(0.24), dribbleBeat(0.26))
+})
+
+test('the ball a free player acts on is the one they hold, else the nearest loose one in reach', () => {
+  const ball = (id: string, x: number, owner: string | null) => ({ id, sport: 'football' as const, lender: null, ball: [x, 0.31, 0, 0, 0, 0] as [number, number, number, number, number, number], owner })
+  const balls = [ball('a', 1.5, null), ball('b', 0.8, null), ball('c', 9, 'me')]
+  assert.equal(nearestFreeBall(balls, 'me', 0, 0, 2)?.id, 'c')
+  assert.equal(nearestFreeBall(balls.slice(0, 2), 'me', 0, 0, 2)?.id, 'b')
+  assert.equal(nearestFreeBall(balls.slice(0, 2), 'me', 5, 0, 2), null)
 })

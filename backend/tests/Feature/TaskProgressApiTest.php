@@ -214,6 +214,10 @@ class TaskProgressApiTest extends TestCase
                 ['task' => 'pub_games', 'value' => 0, 'tiers' => [10, 50, 150], 'reached' => []],
                 ['task' => 'duellist', 'value' => 0, 'tiers' => [1, 5, 15], 'reached' => []],
                 ['task' => 'insider', 'value' => 0, 'tiers' => [1, 4, 12], 'reached' => []],
+                ['task' => 'football', 'value' => 0, 'tiers' => [5, 25, 100], 'reached' => []],
+                ['task' => 'basketball', 'value' => 0, 'tiers' => [10, 40, 150], 'reached' => []],
+                ['task' => 'hat_trick', 'value' => 0, 'tiers' => [1, 5, 25], 'reached' => []],
+                ['task' => 'sharpshooter', 'value' => 0, 'tiers' => [1, 5, 15], 'reached' => []],
             ]]);
     }
 

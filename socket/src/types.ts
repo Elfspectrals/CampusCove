@@ -133,6 +133,7 @@ export interface Player extends Vec3 {
   sportsLoans: Map<string, string>
   sportsPending: boolean
   lastSportsAt: number
+  sportsDownUntil: number
 }
 
 export type JailKind = 'npc' | 'officer'

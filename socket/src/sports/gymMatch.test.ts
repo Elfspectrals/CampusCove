@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
-import { type Ball, droppedThroughRim, launchToward, stepBall } from './gymBall.ts'
-import { type GymCourt, parseGymCourt } from './gymCourt.ts'
+import { type Ball, bounceBody, droppedThroughRim, launchToward, stepBall } from './gymBall.ts'
+import { type GymCourt, courtObstacles, parseGymCourt } from './gymCourt.ts'
 import { type Athlete, type GymEvent, type GymGame, actGym, chargeOf, goodWindow, meterOf, newGymGame, outcomeFor, stepGym } from './gymMatch.ts'
 import { type BasketballRules, type FootballRules, gymPlayerRules, halvesOf, parseBasketballRules, parseFootballRules } from './gymRules.ts'
 
@@ -13,8 +13,11 @@ const EAST = -Math.PI / 2
 const WEST = Math.PI / 2
 
 function basket(side: 1 | -1) {
-  return { x: side * 20.425, y: 3.25, z: 0, rimRadius: 0.225, boardX: side * 20.8, boardHalfWidth: 0.9, boardBottom: 3.1, boardTop: 4.15, threePointRadius: 6.75 }
+  const board = { minX: side * 20.8 - 0.025, maxX: side * 20.8 + 0.025, minY: 3.1, maxY: 4.15, minZ: -0.9, maxZ: 0.9 }
+  return { x: side * 20.425, y: 3.25, z: 0, rimRadius: 0.225, board, threePointRadius: 6.75 }
 }
+
+const SIDE_HOOP = { x: -8, y: 3.25, z: 12.625, rimRadius: 0.225, board: { minX: -8.9, maxX: -7.1, minY: 3.1, maxY: 4.15, minZ: 12.975, maxZ: 13.025 } }
 
 const COURT: GymCourt = parseGymCourt({
   floorY: 0.2,
@@ -24,13 +27,16 @@ const COURT: GymCourt = parseGymCourt({
   court: { minX: -22, maxX: 22, minZ: -12, maxZ: 12 },
   centre: { x: 0, z: 0 },
   coach: { x: 0, z: -13 },
-  goals: { red: { lineX: 22, inward: 1, minZ: -1.5, maxZ: 1.5, height: 2 }, blue: { lineX: -22, inward: -1, minZ: -1.5, maxZ: 1.5, height: 2 } },
-  baskets: { red: basket(1), blue: basket(-1) }
+  goals: { red: { lineX: 22, inward: 1, minZ: -1.5, maxZ: 1.5, height: 2, depth: 1 }, blue: { lineX: -22, inward: -1, minZ: -1.5, maxZ: 1.5, height: 2, depth: 1 } },
+  baskets: { red: basket(1), blue: basket(-1) },
+  sideBaskets: [SIDE_HOOP]
 })
+const EMPTY_WORLD = { floorY: 0.2, ceilingY: 9, arena: COURT.arena, rims: [], boxes: [] }
+const COURT_WORLD = { floorY: 0.2, ceilingY: 9, arena: COURT.arena, ...courtObstacles(COURT) }
 
 const T0 = 1_000_000
 
-function athlete(accountId: number, team: 'red' | 'blue', x: number, z: number, ry = EAST, vx = 0): Athlete {
+function athlete(accountId: number, team: 'red' | 'blue' | null, x: number, z: number, ry = EAST, vx = 0): Athlete {
   return { accountId, team, x, z, vx, vz: 0, ry }
 }
 
@@ -72,7 +78,7 @@ test('a court whose lines leave the arena is refused', () => {
 
 test('a dropped ball bounces, then rests and rolls to a stop on the floor', () => {
   const ball: Ball = { x: 0, y: 3, z: 0, vx: 3, vy: 0, vz: 0 }
-  const world = { floorY: 0.2, ceilingY: 9, arena: COURT.arena, baskets: [] }
+  const world = EMPTY_WORLD
   for (let i = 0; i < 600; i++) stepBall(ball, FOOTBALL.ball, world, 1 / 60)
   assert.ok(Math.abs(ball.y - (0.2 + FOOTBALL.ball.radius)) < 1e-9)
   assert.equal(ball.vy, 0)
@@ -81,7 +87,7 @@ test('a dropped ball bounces, then rests and rolls to a stop on the floor', () =
 
 test('the ball bounces back off a wall instead of leaving the arena', () => {
   const ball: Ball = { x: 23.5, y: 0.31, z: 0, vx: 10, vy: 0, vz: 0 }
-  stepBall(ball, FOOTBALL.ball, { floorY: 0.2, ceilingY: 9, arena: COURT.arena, baskets: [] }, 0.1)
+  stepBall(ball, FOOTBALL.ball, EMPTY_WORLD, 0.1)
   assert.ok(ball.x <= 24 - FOOTBALL.ball.radius)
   assert.ok(ball.vx < 0)
 })
@@ -91,12 +97,13 @@ test('a launch aimed at the rim drops through it', () => {
   const v = launchToward(15, 2.3, 0, rim.x, rim.y, rim.z, (52 * Math.PI) / 180)
   assert.ok(v)
   const ball: Ball = { x: 15, y: 2.3, z: 0, ...v }
-  const world = { floorY: 0.2, ceilingY: 9, arena: COURT.arena, baskets: [] }
+  const world = EMPTY_WORLD
+  const rimSpot = { x: rim.x, y: rim.y, z: rim.z, radius: rim.rimRadius }
   let through = false
   for (let i = 0; i < 240 && !through; i++) {
     const before = { ...ball }
     stepBall(ball, BASKETBALL.ball, world, 1 / 120)
-    through = droppedThroughRim(before, ball, rim)
+    through = droppedThroughRim(before, ball, rimSpot)
   }
   assert.ok(through)
 })
@@ -253,4 +260,65 @@ test('match outcome per team, a forfeit counts against the empty team', () => {
   assert.equal(outcomeFor('blue', { red: 2, blue: 2 }, undefined), 'draw')
   assert.equal(outcomeFor('red', { red: 5, blue: 0 }, 'red'), 'loss')
   assert.equal(outcomeFor('blue', { red: 0, blue: 0 }, null), 'draw')
+})
+
+test('a ball kicked at a post bounces back, and the net stops a ball inside the goal', () => {
+  const post: Ball = { x: 20, y: 0.5, z: 1.5, vx: 12, vy: 0, vz: 0 }
+  for (let i = 0; i < 30; i++) stepBall(post, FOOTBALL.ball, COURT_WORLD, 1 / 60)
+  assert.ok(post.vx < 0 && post.x < 22)
+  const net: Ball = { x: 22.3, y: 0.5, z: 0, vx: 15, vy: 0, vz: 0 }
+  for (let i = 0; i < 30; i++) stepBall(net, FOOTBALL.ball, COURT_WORLD, 1 / 60)
+  assert.ok(net.x < 23 && Math.abs(net.vx) < 3)
+})
+
+test('a free ball bounces off a player in its way and keeps out of the body', () => {
+  const ball: Ball = { x: 0.3, y: 0.31, z: 0, vx: -8, vy: 0, vz: 0 }
+  assert.equal(bounceBody(ball, 0.11, 0.2, { x: 0, z: 0, vx: 0, vz: 0 }), true)
+  assert.ok(ball.vx > 0 && ball.x >= 0.46 - 1e-9)
+  const over: Ball = { x: 0.1, y: 2.5, z: 0, vx: -8, vy: 0, vz: 0 }
+  assert.equal(bounceBody(over, 0.12, 0.2, { x: 0, z: 0, vx: 0, vz: 0 }), false)
+})
+
+test('football: a player who may not touch the ball blocks it with his body', () => {
+  const game = freshGame(FOOTBALL)
+  game.restart = { team: 'blue', until: T0 + 3000 }
+  game.ball = { x: -3, y: 0.31, z: 0, vx: 10, vy: 0, vz: 0 }
+  const red = athlete(1, 'red', 0, 0)
+  run(game, FOOTBALL, [red], 0.5, T0)
+  assert.equal(game.owner, null)
+  assert.ok(game.ball.x < 0 && game.ball.vx <= 0)
+})
+
+test('free play: anyone takes the ball, a goal or a basket counts nothing, a steal works without teams', () => {
+  const football = newGymGame(COURT, FOOTBALL, T0, 'free', { x: 21.5, z: 0 })
+  const a = athlete(1, null, 21, 0, EAST)
+  stepGym(football, FOOTBALL, [a], 1 / 60, T0)
+  assert.equal(football.owner, 1)
+  actGym(football, FOOTBALL, a, [a], 'shot_start', T0 + 10, () => 0.5)
+  actGym(football, FOOTBALL, a, [a], 'shot_release', T0 + 900, () => 0.5)
+  a.x = 0
+  assert.deepEqual(scores(run(football, FOOTBALL, [a], 2, T0 + 950)), [])
+  assert.deepEqual(football.score, { red: 0, blue: 0 })
+  const basketball = newGymGame(COURT, BASKETBALL, T0, 'free')
+  const carrier = athlete(2, null, 0, 0)
+  const thief = athlete(3, null, 1, 0, WEST)
+  basketball.owner = 2
+  assert.deepEqual(actGym(basketball, BASKETBALL, thief, [carrier, thief], 'tackle', T0, () => 0.1), [{ kind: 'steal', accountId: 3, won: true }])
+})
+
+test('free play basketball: a shot goes to the hoop the player faces, side hoops included', () => {
+  const game = newGymGame(COURT, BASKETBALL, T0, 'free')
+  const a = athlete(4, null, -8, 8, Math.PI)
+  game.owner = 4
+  actGym(game, BASKETBALL, a, [a], 'shot_start', T0, () => 0.5)
+  actGym(game, BASKETBALL, a, [a], 'shot_release', T0 + 900, () => 0.5)
+  assert.ok(game.ball.vz > 0 && Math.abs(game.ball.vx) < 0.5)
+  a.x = 20
+  let through = false
+  for (let i = 0; i < 180 && !through; i++) {
+    const before = { ...game.ball }
+    stepGym(game, BASKETBALL, [a], 1 / 60, T0 + 900 + i * 16)
+    through = droppedThroughRim(before, game.ball, { x: SIDE_HOOP.x, y: SIDE_HOOP.y, z: SIDE_HOOP.z, radius: SIDE_HOOP.rimRadius })
+  }
+  assert.ok(through)
 })

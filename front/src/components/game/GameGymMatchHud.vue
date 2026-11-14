@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { actionKeyLabels } from '../../config/keybindings'
-import type { GymBanner } from '../../composables/game/useGymMatch'
+import type { GymBanner, GymRimPop } from '../../composables/game/useGymMatch'
 import type { GymSport, GymTeam } from '../../types/gameRealtime'
 
 const props = defineProps<{
@@ -16,7 +16,9 @@ const props = defineProps<{
     meter: { fill: number; goodFrom: number | null } | null
     cooldown: number | null
   } | null
+  freeHud: { sport: GymSport; meter: { fill: number; goodFrom: number | null } | null } | null
   banner: GymBanner | null
+  rimPop: GymRimPop | null
 }>()
 
 const { t } = useI18n()
@@ -50,8 +52,9 @@ const bannerTone = computed(() => {
 
 const hint = computed(() => {
   const h = props.hud
-  if (!h?.team) return null
-  return t('sports.gym.hint', { key: actionKeyLabels('sportsTackle').join(' / '), defend: t(`sports.gym.defend.${h.sport}`) })
+  const sport = h?.team ? h.sport : props.freeHud?.sport
+  if (!sport) return null
+  return t('sports.gym.hint', { key: actionKeyLabels('sportsTackle').join(' / '), defend: t(`sports.gym.defend.${sport}`) })
 })
 </script>
 
@@ -82,6 +85,22 @@ const hint = computed(() => {
     </div>
     <p v-if="hint" class="m-0 text-[10px] text-mist">{{ hint }}</p>
   </section>
+  <section v-if="!hud && freeHud" class="cc-hud pointer-events-none absolute left-1/2 top-3 z-10 flex -translate-x-1/2 flex-col items-center gap-1 px-4 py-2" :aria-label="t('sports.gym.free.title')">
+    <p class="m-0 font-display text-[11px] uppercase tracking-[0.16em] text-mint">{{ t(`sports.sports.${freeHud.sport}`) }} · {{ t('sports.gym.free.title') }}</p>
+    <span v-if="freeHud.meter" class="relative block h-2 w-48 overflow-hidden rounded-full bg-ink-950/70">
+      <span class="relative block h-full rounded-full bg-sun" :style="{ width: `${freeHud.meter.fill * 100}%` }" />
+    </span>
+    <p v-if="hint" class="m-0 text-[10px] text-mist">{{ hint }}</p>
+  </section>
+  <p
+    v-if="rimPop"
+    class="pointer-events-none absolute z-10 m-0 -translate-x-1/2 -translate-y-1/2 font-display text-4xl drop-shadow"
+    :class="TEAM_TEXT[rimPop.team]"
+    :style="{ left: `${rimPop.x}px`, top: `${rimPop.y}px` }"
+    aria-hidden="true"
+  >
+    {{ rimPop.text }}
+  </p>
   <p
     v-if="bannerText"
     :key="banner?.kind"

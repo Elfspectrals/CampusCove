@@ -398,8 +398,8 @@ export const messages = {
       complete: 'Complete',
       progress: '{value} / {target}',
       tiers: { 1: 'Bronze', 2: 'Silver', 3: 'Gold' },
-      names: { orchard: 'Orchard', darts: 'Darts', sharp_eye: 'Sharp eye', gourmet: 'Gourmet', explorer: 'Explorer', loyal: 'Steady', market_gardener: 'Market gardener', trader: 'Trader', cook: 'Cook', loyal_customer: 'Loyal customer', dapper: 'Dapper', regular: 'Regular at the pub', pub_games: 'Pub games', duellist: 'Duellist', insider: 'Insider' },
-      goals: { orchard: '{n} apples picked', darts: '{n} games of darts', sharp_eye: '{n} darts duels of 80 points or more', gourmet: '{n} different foods tasted', explorer: '{n} places visited', loyal: '{n} days with 10 minutes of walking', market_gardener: '{n} farm crops harvested', trader: '{n} goods sold to buyers', cook: '{n} dishes cooked', loyal_customer: '{n} shop visits', dapper: '{n} different clothes bought', regular: '{n} days with an order at the pub', pub_games: '{n} games of Drink Fast or Meter Shot', duellist: '{n} duels won', insider: '{n} weeks in the secret room' },
+      names: { orchard: 'Orchard', darts: 'Darts', sharp_eye: 'Sharp eye', gourmet: 'Gourmet', explorer: 'Explorer', loyal: 'Steady', market_gardener: 'Market gardener', trader: 'Trader', cook: 'Cook', loyal_customer: 'Loyal customer', dapper: 'Dapper', regular: 'Regular at the pub', pub_games: 'Pub games', duellist: 'Duellist', insider: 'Insider', football: 'Footballer', basketball: 'Baller', hat_trick: 'Hat trick', sharpshooter: 'Sharpshooter' },
+      goals: { orchard: '{n} apples picked', darts: '{n} games of darts', sharp_eye: '{n} darts duels of 80 points or more', gourmet: '{n} different foods tasted', explorer: '{n} places visited', loyal: '{n} days with 10 minutes of walking', market_gardener: '{n} farm crops harvested', trader: '{n} goods sold to buyers', cook: '{n} dishes cooked', loyal_customer: '{n} shop visits', dapper: '{n} different clothes bought', regular: '{n} days with an order at the pub', pub_games: '{n} games of Drink Fast or Meter Shot', duellist: '{n} duels won', insider: '{n} weeks in the secret room', football: '{n} football matches played', basketball: '{n} basketball matches played', hat_trick: '{n} football matches with 3 goals or more', sharpshooter: '{n} basketball matches with 5 three-pointers or more' },
     },
     watch: {
       label: 'Watch',
@@ -749,6 +749,16 @@ export const messages = {
         defend: { football: 'Tackle', basketball: 'Steal' },
         spectating: 'Watching',
         hint: 'Left click: pass · Hold right click: shoot · {key}: {defend}',
+        free: {
+          title: 'Free play',
+          rules: 'Borrow a ball from the coach. Goals and baskets are not counted; the ball comes back when you leave the gym.',
+          borrow: 'Ball: {sport}',
+          giveBack: 'Give the ball back',
+        },
+        errors: {
+          gym_too_far: 'Walk up to the coach.',
+          gym_court_busy: 'A match is on. Come back after it.',
+        },
       },
       settings: {
         teamSize: 'Format',
@@ -1471,8 +1481,8 @@ export const messages = {
       complete: 'Terminée',
       progress: '{value} / {target}',
       tiers: { 1: 'Bronze', 2: 'Argent', 3: 'Or' },
-      names: { orchard: 'Verger', darts: 'Fléchettes', sharp_eye: 'Œil de lynx', gourmet: 'Gourmet', explorer: 'Explorateur', loyal: 'Fidèle', market_gardener: 'Maraîcher', trader: 'Commerçant', cook: 'Cuistot', loyal_customer: 'Client fidèle', dapper: 'Coquet', regular: 'Habitué', pub_games: 'Jeux du pub', duellist: 'Duelliste', insider: 'Initié' },
-      goals: { orchard: '{n} pommes cueillies', darts: '{n} parties de fléchettes', sharp_eye: '{n} duels de fléchettes à 80 points ou plus', gourmet: '{n} aliments différents goûtés', explorer: '{n} lieux visités', loyal: '{n} jours avec 10 minutes de marche', market_gardener: '{n} récoltes à la ferme', trader: '{n} marchandises vendues aux acheteurs', cook: '{n} plats cuisinés', loyal_customer: '{n} passages en caisse', dapper: '{n} vêtements différents achetés', regular: '{n} jours avec une commande au pub', pub_games: '{n} parties de Drink Fast ou de Meter Shot', duellist: '{n} duels gagnés', insider: '{n} semaines dans la salle secrète' },
+      names: { orchard: 'Verger', darts: 'Fléchettes', sharp_eye: 'Œil de lynx', gourmet: 'Gourmet', explorer: 'Explorateur', loyal: 'Fidèle', market_gardener: 'Maraîcher', trader: 'Commerçant', cook: 'Cuistot', loyal_customer: 'Client fidèle', dapper: 'Coquet', regular: 'Habitué', pub_games: 'Jeux du pub', duellist: 'Duelliste', insider: 'Initié', football: 'Footballeur', basketball: 'Basketteur', hat_trick: 'Triplé', sharpshooter: 'Sniper' },
+      goals: { orchard: '{n} pommes cueillies', darts: '{n} parties de fléchettes', sharp_eye: '{n} duels de fléchettes à 80 points ou plus', gourmet: '{n} aliments différents goûtés', explorer: '{n} lieux visités', loyal: '{n} jours avec 10 minutes de marche', market_gardener: '{n} récoltes à la ferme', trader: '{n} marchandises vendues aux acheteurs', cook: '{n} plats cuisinés', loyal_customer: '{n} passages en caisse', dapper: '{n} vêtements différents achetés', regular: '{n} jours avec une commande au pub', pub_games: '{n} parties de Drink Fast ou de Meter Shot', duellist: '{n} duels gagnés', insider: '{n} semaines dans la salle secrète', football: '{n} matchs de foot joués', basketball: '{n} matchs de basket joués', hat_trick: '{n} matchs de foot à 3 buts ou plus', sharpshooter: '{n} matchs de basket à 5 paniers à trois points ou plus' },
     },
     watch: {
       label: 'Montre',
@@ -1822,6 +1832,16 @@ export const messages = {
         defend: { football: 'Tacle', basketball: 'Vol de balle' },
         spectating: 'Spectateur',
         hint: 'Clic gauche : passe · Clic droit maintenu : tir · {key} : {defend}',
+        free: {
+          title: 'Jeu libre',
+          rules: 'Emprunte un ballon au coach. Buts et paniers ne comptent pas ; le ballon revient quand tu quittes le gymnase.',
+          borrow: 'Ballon : {sport}',
+          giveBack: 'Rendre le ballon',
+        },
+        errors: {
+          gym_too_far: 'Approche-toi du coach.',
+          gym_court_busy: 'Un match est en cours. Reviens après.',
+        },
       },
       settings: {
         teamSize: 'Format',

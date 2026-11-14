@@ -32,6 +32,10 @@ Laravel owns every counter. A counter counts one real action, bumped by the serv
 | `duels_won` | one darts or Drink Fast game won against other players (placement 1), whoever the opponents are | `PubService::reward` |
 | `secret_room_weeks` | one week (Monday to Sunday, Paris, ISO week) in which the player stood in the pub's secret room | socket `taskTracking.ts` (once a day per account), then `POST /tasks/secret-room` (realtime, no body) |
 | `foods_tasted` | one food or drink tasted for the first time (any group of `FoodCatalog` but `medical`), once per item code | `SurvivalService::consume` |
+| `football_matches` | one structured gym football match recorded with the player not out (`dnf`), whatever the result; every recorded match counts | socket `gym.ts` after `recordMatch`, then `POST /sports/gym/tasks` (realtime) `{ ref, sport: football, players: [{ accountId, goals }] }`; `GymTaskService` reads `sports_match_players`, once per match `ref` (`bumpOncePerKey`) |
+| `basketball_matches` | the same for a gym basketball match | same route, `sport: basketball`, `players: [{ accountId, threes }]` |
+| `hat_tricks` | one gym football match in which the player scored 3 goals or more | same route (`goals` >= 3) |
+| `sharpshooter_matches` | one gym basketball match in which the player scored 5 three-pointers or more | same route (`threes` >= 5) |
 
 ## Tiers
 
@@ -57,6 +61,10 @@ Every task lives in `App\Support\TaskCatalog`: a key, the counter it reads and i
 | `pub_games` | `pub_games` | 10 / 50 / 150 |
 | `duellist` | `duels_won` | 1 / 5 / 15 |
 | `insider` | `secret_room_weeks` | 1 / 4 / 12 |
+| `football` | `football_matches` | 5 / 25 / 100 |
+| `basketball` | `basketball_matches` | 10 / 40 / 150 |
+| `hat_trick` | `hat_tricks` | 1 / 5 / 25 |
+| `sharpshooter` | `sharpshooter_matches` | 1 / 5 / 15 |
 
 ## Notification
 

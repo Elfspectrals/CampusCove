@@ -194,6 +194,27 @@ BOARD_W, BOARD_H = HOOP["boardSizeM"]
 BOARD_BOTTOM = HOOP["boardBottomM"]
 
 
+SIDE_HOOP_Z = tuple(round(COURT_CZ + d, 3) for d in (-16.0, -8.0, 8.0, 16.0))
+SIDE_ARM = 0.9
+BOARD_T = 0.03
+
+
+def rim_ring(name, cx, cz, bx, bz):
+    ring = []
+    seg = 16
+    for k in range(seg):
+        a, b2 = 2 * math.pi * k / seg, 2 * math.pi * (k + 1) / seg
+        ax, az = cx + RIM_R * math.cos(a), cz + RIM_R * math.sin(a)
+        ex, ez = cx + RIM_R * math.cos(b2), cz + RIM_R * math.sin(b2)
+        ring.append(L.box(coll, f"{name}_Rim{k:02d}", (ax + ex) / 2, (az + ez) / 2, RIM_Y - 0.01, math.hypot(ex - ax, ez - az) + 0.02, 0.02, 0.02,
+                          M["rim"], rot=LS.seg_yaw(ax, az, ex, ez)))
+    length = math.hypot(cx - bx, cz - bz)
+    ux, uz = (cx - bx) / length, (cz - bz) / length
+    ex, ez = cx - ux * RIM_R, cz - uz * RIM_R
+    ring.append(L.box(coll, f"{name}_RimArm", (bx + ex) / 2, (bz + ez) / 2, RIM_Y - 0.01, length - RIM_R, 0.04, 0.02, M["rim"], rot=LS.seg_yaw(bx, bz, ex, ez)))
+    return L.join(coll, f"{name}_Rim", ring)
+
+
 def hoop(end, zl, inward):
     rim_z = baskets[end]
     board_z = zl + inward * HOOP["boardFromEndLineM"]
@@ -202,21 +223,29 @@ def hoop(end, zl, inward):
              L.box(coll, f"Hoop_{end}_Post", COURT_CX, post_z, 0.3, 0.16, 0.16, BOARD_BOTTOM + 0.3, M["hoop"]),
              L.box(coll, f"Hoop_{end}_Arm", COURT_CX, (post_z + board_z) / 2, BOARD_BOTTOM + 0.3, 0.12, abs(board_z - post_z), 0.12, M["hoop"])]
     cols.add(f"Hoop_{end}_Base", COURT_CX, post_z, 0.0, 0.5, 0.5, BOARD_BOTTOM + 0.6)
-    ring = []
-    seg = 16
-    for k in range(seg):
-        a, b2 = 2 * math.pi * k / seg, 2 * math.pi * (k + 1) / seg
-        ax, az = COURT_CX + RIM_R * math.cos(a), rim_z + RIM_R * math.sin(a)
-        bx, bz = COURT_CX + RIM_R * math.cos(b2), rim_z + RIM_R * math.sin(b2)
-        ring.append(L.box(coll, f"Hoop_{end}_Rim{k:02d}", (ax + bx) / 2, (az + bz) / 2, RIM_Y - 0.01, math.hypot(bx - ax, bz - az) + 0.02, 0.02, 0.02,
-                          M["rim"], rot=LS.seg_yaw(ax, az, bx, bz)))
-    ring.append(L.box(coll, f"Hoop_{end}_RimArm", COURT_CX, (board_z + rim_z - inward * RIM_R) / 2, RIM_Y - 0.01, 0.04, abs(rim_z - board_z) - RIM_R, 0.02, M["rim"]))
-    return [L.join(coll, f"Hoop_{end}_Frame", parts), L.join(coll, f"Hoop_{end}_Rim", ring),
-            L.box(coll, f"Hoop_{end}_Board", COURT_CX, board_z, BOARD_BOTTOM, BOARD_W, 0.03, BOARD_H, M["board"])]
+    return [L.join(coll, f"Hoop_{end}_Frame", parts), rim_ring(f"Hoop_{end}", COURT_CX, rim_z, COURT_CX, board_z),
+            L.box(coll, f"Hoop_{end}_Board", COURT_CX, board_z, BOARD_BOTTOM, BOARD_W, BOARD_T, BOARD_H, M["board"])]
+
+
+def side_hoop(i, hz):
+    board_x = X1 - SIDE_ARM
+    rim_x = board_x - (RIM_FROM_LINE - HOOP["boardFromEndLineM"])
+    name = f"Hoop_side{i}"
+    frame = L.join(coll, f"{name}_Frame", [
+        L.box(coll, f"{name}_Plate", X1 - 0.04, hz, BOARD_BOTTOM - 0.3, 0.08, 0.6, BOARD_H + 0.4, M["hoop"]),
+        L.box(coll, f"{name}_Arm", (X1 + board_x) / 2, hz, BOARD_BOTTOM + 0.3, SIDE_ARM, 0.12, 0.12, M["hoop"]),
+        L.box(coll, f"{name}_Brace", (X1 + board_x) / 2, hz, BOARD_BOTTOM - 0.25, SIDE_ARM, 0.08, 0.08, M["hoop"])])
+    return [frame, rim_ring(name, rim_x, hz, board_x, hz),
+            L.box(coll, f"{name}_Board", board_x, hz, BOARD_BOTTOM, BOARD_T, BOARD_W, BOARD_H, M["board"])], rim_x
 
 
 objs += goal("west", cz1, 1) + goal("east", cz0, -1)
 objs += hoop("west", cz1, -1) + hoop("east", cz0, 1)
+side_rims = []
+for i, hz in enumerate(SIDE_HOOP_Z):
+    pieces, rim_x = side_hoop(i, hz)
+    objs += pieces
+    side_rims.append(rim_x)
 
 objs.append(L.box(coll, "Wall_Scoreboard", COURT_CX, Z0 + 0.08, 5.2, 5.0, 0.12, 2.0, M["dark"]))
 objs.append(L.text_mesh(coll, "Wall_ScoreboardTitle", "COVE GYM", COURT_CX, Z0 + 0.15, 6.55, 0.4, 0.01, M["sign"]))
@@ -242,9 +271,20 @@ def bounds(x0, x1, z0, z1):
     return {"minX": round(min(x0, x1), 4), "maxX": round(max(x0, x1), 4), "minZ": round(min(z0, z1), 4), "maxZ": round(max(z0, z1), 4)}
 
 
+def board_box(x0, x1, z0, z1):
+    return {"minX": round(x0, 4), "maxX": round(x1, 4), "minY": BOARD_BOTTOM, "maxY": BOARD_BOTTOM + BOARD_H, "minZ": round(z0, 4), "maxZ": round(z1, 4)}
+
+
 def hoop_layout(end, zl, inward):
-    return {"x": COURT_CX, "z": round(baskets[end], 4), "y": RIM_Y, "rimRadius": RIM_R, "boardZ": round(zl + inward * HOOP["boardFromEndLineM"], 4),
-            "boardHalfWidth": BOARD_W / 2, "boardBottom": BOARD_BOTTOM, "boardTop": BOARD_BOTTOM + BOARD_H, "threePointRadius": THREE}
+    board_z = zl + inward * HOOP["boardFromEndLineM"]
+    return {"x": COURT_CX, "z": round(baskets[end], 4), "y": RIM_Y, "rimRadius": RIM_R, "threePointRadius": THREE,
+            "board": board_box(COURT_CX - BOARD_W / 2, COURT_CX + BOARD_W / 2, board_z - BOARD_T / 2, board_z + BOARD_T / 2)}
+
+
+def side_hoop_layout(rim_x, hz):
+    board_x = X1 - SIDE_ARM
+    return {"x": round(rim_x, 4), "z": hz, "y": RIM_Y, "rimRadius": RIM_R,
+            "board": board_box(board_x - BOARD_T / 2, board_x + BOARD_T / 2, hz - BOARD_W / 2, hz + BOARD_W / 2)}
 
 
 L.write_json(os.path.join(OUT, "interior.layout.json"), {
@@ -259,9 +299,10 @@ L.write_json(os.path.join(OUT, "interior.layout.json"), {
         "playArea": bounds(ARENA[0], ARENA[1] - 1.6, ARENA[2] - 0.8, ARENA[3] + 0.8),
         "court": bounds(*COURT),
         "centre": [COURT_CX, COURT_CZ],
-        "goals": {end: {"lineZ": zl, "out": out, "minX": COURT_CX - GOAL_W / 2, "maxX": COURT_CX + GOAL_W / 2, "height": GOAL_H}
+        "goals": {end: {"lineZ": zl, "out": out, "minX": COURT_CX - GOAL_W / 2, "maxX": COURT_CX + GOAL_W / 2, "height": GOAL_H, "depth": GOAL_DEPTH}
                   for end, zl, out in (("west", cz1, 1), ("east", cz0, -1))},
         "baskets": {"west": hoop_layout("west", cz1, -1), "east": hoop_layout("east", cz0, 1)},
+        "sideBaskets": [side_hoop_layout(rx, hz) for rx, hz in zip(side_rims, SIDE_HOOP_Z)],
     },
 })
 

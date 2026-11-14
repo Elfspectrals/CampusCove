@@ -1,6 +1,7 @@
-import type { GymSport, GymStatePayload, GymTeam } from '../../types/gameRealtime'
+import type { GymFreeBall, GymSport, GymStatePayload, GymTeam } from '../../types/gameRealtime'
 
 const GRAVITY = 9.81
+export const GYM_COACH = 'gym_coach'
 
 export type GymMeter = { kind: 'charge'; chargeMs: number } | { kind: 'bounce'; riseMs: number; windowNear: number; windowFar: number; farDistanceM: number }
 
@@ -9,6 +10,7 @@ export interface GymHudRules {
   ballRadius: number
   meter: GymMeter
   defendCooldownMs: number
+  downMs: number | null
 }
 
 type Raw = Record<string, unknown>
@@ -33,6 +35,7 @@ export function parseGymHudRules(sport: GymSport, raw: unknown): GymHudRules {
       ballRadius,
       meter: { kind: 'charge', chargeMs: positive(r.shotChargeMs, 'football.shotChargeMs') },
       defendCooldownMs: positive(block(r, 'tackle', sport).cooldownMs, 'football.tackle.cooldownMs'),
+      downMs: positive(block(r, 'tackle', sport).groundMs, 'football.tackle.groundMs'),
     }
   }
   const m = block(r, 'shotMeter', sport)
@@ -47,6 +50,7 @@ export function parseGymHudRules(sport: GymSport, raw: unknown): GymHudRules {
       farDistanceM: positive(m.farDistanceM, 'basketball.shotMeter.farDistanceM'),
     },
     defendCooldownMs: positive(block(r, 'steal', sport).cooldownMs, 'basketball.steal.cooldownMs'),
+    downMs: null,
   }
 }
 
@@ -84,7 +88,7 @@ export function myTeam(state: GymStatePayload | null, sessionId: string | null):
 
 export interface GymCourtView {
   floorY: number
-  baskets: Record<GymTeam, { x: number; z: number }>
+  baskets: Record<GymTeam, { x: number; y: number; z: number }>
 }
 
 function finite(raw: unknown, what: string): number {
@@ -95,6 +99,41 @@ function finite(raw: unknown, what: string): number {
 export function parseGymCourtView(raw: unknown): GymCourtView {
   const r = (raw ?? {}) as Raw
   const baskets = (r.baskets ?? {}) as Record<string, Raw | undefined>
-  const spot = (team: GymTeam) => ({ x: finite(baskets[team]?.x, `baskets.${team}.x`), z: finite(baskets[team]?.z, `baskets.${team}.z`) })
+  const spot = (team: GymTeam) => ({ x: finite(baskets[team]?.x, `baskets.${team}.x`), y: finite(baskets[team]?.y, `baskets.${team}.y`), z: finite(baskets[team]?.z, `baskets.${team}.z`) })
   return { floorY: finite(r.floorY, 'floorY'), baskets: { red: spot('red'), blue: spot('blue') } }
+}
+
+const DRIBBLE_PERIOD_S = 0.5
+const TOE_AHEAD_M = 0.15
+
+export interface Spot {
+  x: number
+  y: number
+  z: number
+}
+
+export function dribbleHeight(handY: number, floorY: number, radius: number, seconds: number): number {
+  const low = floorY + radius
+  return low + Math.max(0, handY - low) * Math.abs(Math.cos((Math.PI * seconds) / DRIBBLE_PERIOD_S))
+}
+
+export function dribbleBeat(seconds: number): number {
+  return Math.floor(seconds / DRIBBLE_PERIOD_S + 0.5)
+}
+
+export function carriedSpot(sport: GymSport, anchor: Spot, yaw: number, floorY: number, radius: number, seconds: number): Spot {
+  if (sport === 'football') return { x: anchor.x + Math.sin(yaw) * TOE_AHEAD_M, y: floorY + radius, z: anchor.z + Math.cos(yaw) * TOE_AHEAD_M }
+  return { x: anchor.x, y: dribbleHeight(anchor.y, floorY, radius, seconds), z: anchor.z }
+}
+
+export function nearestFreeBall(balls: readonly GymFreeBall[], me: string, x: number, z: number, reach: number): GymFreeBall | null {
+  const mine = balls.find((b) => b.owner === me)
+  if (mine) return mine
+  let best: { ball: GymFreeBall; d: number } | null = null
+  for (const ball of balls) {
+    if (ball.owner !== null) continue
+    const d = Math.hypot(ball.ball[0] - x, ball.ball[2] - z)
+    if (d <= reach && (!best || d < best.d)) best = { ball, d }
+  }
+  return best?.ball ?? null
 }

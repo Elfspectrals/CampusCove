@@ -5,7 +5,7 @@ import {
   type CosmeticColors,
 } from '../../api/characterCosmetics'
 import { buildCompositeAvatar, disposeObject3D } from '../../avatar/compositeAvatar'
-import { setAvatarEating, setAvatarPicking, setAvatarSeated, updateAvatarAnimation } from '../../avatar/glbCharacter'
+import { type SportsMoveClip, playAvatarSportsMove, setAvatarDribbling, setAvatarEating, setAvatarPicking, setAvatarSeated, updateAvatarAnimation } from '../../avatar/glbCharacter'
 import { parseCharacterLook, type CharacterLook } from '../../avatar/characterLook'
 import { createModularCharacter } from '../../avatar/modularCharacter'
 import { WEAR_SLOTS, wearSignature, type WearModels } from '../../avatar/modularCharacterLogic'
@@ -380,6 +380,20 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     return avatars.get(sessionId)?.userId ?? null
   }
 
+  function playSportsMove(sessionId: string, clip: SportsMoveClip): void {
+    const entry = avatars.get(sessionId)
+    if (entry) playAvatarSportsMove(entry.group, clip)
+  }
+
+  function setDribbling(sessionId: string, dribbling: boolean): void {
+    const entry = avatars.get(sessionId)
+    if (entry) setAvatarDribbling(entry.group, dribbling)
+  }
+
+  function avatarOf(sessionId: string): THREE.Object3D | null {
+    return avatars.get(sessionId)?.group ?? null
+  }
+
   function positionOf(sessionId: string): THREE.Vector3 | null {
     return avatars.get(sessionId)?.group.position ?? null
   }
@@ -528,5 +542,5 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     }
   }
 
-  return { upsert, updateAppearance, setTarget, setSeated, setPicking, setHeldTool, setRacePint, setBadges, pseudoOf, positionOf, setVoiceState, setWantedStars, players, accountOf, showAction, showChat, showPunch, showHit, remove, clear, tick }
+  return { upsert, updateAppearance, setTarget, setSeated, setPicking, setHeldTool, setRacePint, setBadges, pseudoOf, positionOf, avatarOf, playSportsMove, setDribbling, setVoiceState, setWantedStars, players, accountOf, showAction, showChat, showPunch, showHit, remove, clear, tick }
 }

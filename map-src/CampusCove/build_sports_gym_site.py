@@ -47,6 +47,16 @@ def world_bounds(b):
     return {"minX": min(a[0], c[0]), "maxX": max(a[0], c[0]), "minZ": min(a[2], c[2]), "maxZ": max(a[2], c[2])}
 
 
+def world_box(b):
+    flat = world_bounds(b)
+    return {"minX": flat["minX"], "maxX": flat["maxX"], "minY": round(b["minY"] + oy, 4), "maxY": round(b["maxY"] + oy, 4), "minZ": flat["minZ"], "maxZ": flat["maxZ"]}
+
+
+def world_hoop(b):
+    rim = interior_to_world(b["x"], b["y"], b["z"])
+    return {"x": rim[0], "y": round(rim[1], 4), "z": rim[2], "rimRadius": b["rimRadius"], "board": world_box(b["board"])}
+
+
 def world_xz(x, z):
     p = interior_to_world(x, 0.0, z)
     return {"x": p[0], "z": p[2]}
@@ -58,14 +68,9 @@ for end, g in court_in["goals"].items():
     line = interior_to_world(0.0, 0.0, g["lineZ"])[0]
     a, c = world_xz(g["minX"], g["lineZ"]), world_xz(g["maxX"], g["lineZ"])
     inward = 1 if interior_to_world(0.0, 0.0, g["lineZ"] + g["out"])[0] > line else -1
-    goals[TEAM_OF_END[end]] = {"lineX": line, "inward": inward, "minZ": min(a["z"], c["z"]), "maxZ": max(a["z"], c["z"]), "height": g["height"]}
+    goals[TEAM_OF_END[end]] = {"lineX": line, "inward": inward, "minZ": min(a["z"], c["z"]), "maxZ": max(a["z"], c["z"]), "height": g["height"], "depth": g["depth"]}
 for end, b in court_in["baskets"].items():
-    rim = interior_to_world(b["x"], b["y"], b["z"])
-    baskets[TEAM_OF_END[end]] = {
-        "x": rim[0], "y": round(rim[1], 4), "z": rim[2], "rimRadius": b["rimRadius"],
-        "boardX": interior_to_world(0.0, 0.0, b["boardZ"])[0], "boardHalfWidth": b["boardHalfWidth"],
-        "boardBottom": round(b["boardBottom"] + oy, 4), "boardTop": round(b["boardTop"] + oy, 4), "threePointRadius": b["threePointRadius"],
-    }
+    baskets[TEAM_OF_END[end]] = {**world_hoop(b), "threePointRadius": b["threePointRadius"]}
 coach = interior_to_world(*inner["npcs"]["coach"])
 court = {
     "version": 1,
@@ -78,6 +83,7 @@ court = {
     "coach": {"x": coach[0], "z": coach[2]},
     "goals": goals,
     "baskets": baskets,
+    "sideBaskets": [world_hoop(b) for b in court_in["sideBaskets"]],
 }
 for key in ("arena", "playArea", "court"):
     b = court[key]

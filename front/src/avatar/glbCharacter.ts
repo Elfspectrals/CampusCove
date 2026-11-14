@@ -116,14 +116,19 @@ interface AvatarAnimState {
   current: THREE.AnimationAction | null
   selector: AvatarClipSelector
   seated: boolean
+  dribbling: boolean
   oneShot: OneShotClip | null
 }
 
 const CROSSFADE_S = 0.22
 const SIT_CLIP = 'Sit'
 const PICK_CLIP = 'Pick'
-const ONE_SHOT_CLIPS = [PICK_CLIP, 'Eat', 'Drink'] as const
+const SPORTS_MOVE_CLIPS = ['Kick', 'Shot', 'Tackle', 'Celebrate', 'JumpShot', 'Dunk', 'Block', 'Steal'] as const
+export type SportsMoveClip = (typeof SPORTS_MOVE_CLIPS)[number]
+const DRIBBLE_CLIP = 'Dribble'
+const ONE_SHOT_CLIPS = [PICK_CLIP, 'Eat', 'Drink', ...SPORTS_MOVE_CLIPS] as const
 type OneShotClip = (typeof ONE_SHOT_CLIPS)[number]
+const MOVING_ONE_SHOTS: ReadonlySet<OneShotClip> = new Set<OneShotClip>([PICK_CLIP, ...SPORTS_MOVE_CLIPS])
 
 /**
  * Premium skins ship rigged with "Idle" / "Walk" / "Run" clips. Starts a mixer on the instance (no-op for
@@ -135,7 +140,7 @@ export function attachAvatarAnimations(root: THREE.Object3D): void {
   const mixer = new THREE.AnimationMixer(root)
   const actions = new Map<string, THREE.AnimationAction>()
   for (const clip of clips) actions.set(clip.name, mixer.clipAction(clip))
-  const state: AvatarAnimState = { mixer, actions, current: null, selector: new AvatarClipSelector(), seated: false, oneShot: null }
+  const state: AvatarAnimState = { mixer, actions, current: null, selector: new AvatarClipSelector(), seated: false, dribbling: false, oneShot: null }
   animStateByRoot.set(root, state)
   for (const name of ONE_SHOT_CLIPS) {
     const action = actions.get(name)
@@ -181,6 +186,17 @@ export function setAvatarEating(root: THREE.Object3D, kind: 'eat' | 'drink'): vo
   playOneShot(state, kind === 'eat' ? 'Eat' : 'Drink')
 }
 
+export function playAvatarSportsMove(root: THREE.Object3D, clip: SportsMoveClip): void {
+  const state = animStateByRoot.get(root)
+  if (!state || state.seated) return
+  playOneShot(state, clip)
+}
+
+export function setAvatarDribbling(root: THREE.Object3D, dribbling: boolean): void {
+  const state = animStateByRoot.get(root)
+  if (state) state.dribbling = dribbling && state.actions.has(DRIBBLE_CLIP)
+}
+
 function playClip(state: AvatarAnimState, name: string, timeScale: number): void {
   const next = state.actions.get(name)
   if (!next) return
@@ -202,8 +218,8 @@ export function updateAvatarAnimation(root: THREE.Object3D, dt: number, speed: n
     playClip(state, SIT_CLIP, 1)
   } else {
     const { clip, timeScale } = state.selector.update(dt, speed)
-    if (state.oneShot !== PICK_CLIP && clip !== 'Idle') state.oneShot = null
-    if (state.oneShot === null) playClip(state, clip, timeScale)
+    if (state.oneShot !== null && !MOVING_ONE_SHOTS.has(state.oneShot) && clip !== 'Idle') state.oneShot = null
+    if (state.oneShot === null) playClip(state, state.dribbling && clip !== 'Idle' ? DRIBBLE_CLIP : clip, timeScale)
   }
   state.mixer.update(clampDt(dt))
 }

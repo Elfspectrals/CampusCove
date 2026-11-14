@@ -1,11 +1,11 @@
-import { type Ball, type BallWorld, droppedThroughRim, launchToward, stepBall } from './gymBall.ts'
-import type { Basket, GymCourt } from './gymCourt.ts'
+import { type Ball, type BallWorld, type Body, droppedThroughRim, launchToward, stepBall } from './gymBall.ts'
+import { type GymCourt, type Hoop, courtHoops, courtObstacles } from './gymCourt.ts'
 import type { BasketballRules, FootballRules, GymRules } from './gymRules.ts'
 import type { Team } from './signup.ts'
 
 export interface Athlete {
   accountId: number
-  team: Team
+  team: Team | null
   x: number
   z: number
   vx: number
@@ -30,11 +30,15 @@ interface Shot {
   points: 2 | 3
 }
 
+export type GymMode = 'match' | 'free'
+
 export interface GymGame {
+  mode: GymMode
   court: GymCourt
+  world: BallWorld
   ball: Ball
   owner: number | null
-  lastTouch: { accountId: number, team: Team } | null
+  lastTouch: { accountId: number, team: Team | null } | null
   kickedBy: { accountId: number, until: number } | null
   restart: { team: Team, until: number } | null
   score: Record<Team, number>
@@ -61,14 +65,20 @@ function restingBall(court: GymCourt, x: number, z: number, radius: number): Bal
   return { x, y: court.floorY + radius, z, vx: 0, vy: 0, vz: 0 }
 }
 
-export function newGymGame(court: GymCourt, rules: GymRules, now: number): GymGame {
+function worldOf(court: GymCourt): BallWorld {
+  return { floorY: court.floorY, ceilingY: court.ceilingY, arena: court.arena, ...courtObstacles(court) }
+}
+
+export function newGymGame(court: GymCourt, rules: GymRules, now: number, mode: GymMode = 'match', at: { x: number, z: number } = court.centre): GymGame {
   return {
+    mode,
     court,
-    ball: restingBall(court, court.centre.x, court.centre.z, rules.ball.radius),
+    world: worldOf(court),
+    ball: restingBall(court, at.x, at.z, rules.ball.radius),
     owner: null,
     lastTouch: null,
     kickedBy: null,
-    restart: { team: 'red', until: now + rules.restartMs },
+    restart: mode === 'match' ? { team: 'red', until: now + rules.restartMs } : null,
     score: { red: 0, blue: 0 },
     tallies: new Map(),
     threes: new Map(),
@@ -78,11 +88,6 @@ export function newGymGame(court: GymCourt, rules: GymRules, now: number): GymGa
     jumpedAt: new Map(),
     lastShot: null
   }
-}
-
-function ballWorld(game: GymGame, rules: GymRules): BallWorld {
-  const { court } = game
-  return { floorY: court.floorY, ceilingY: court.ceilingY, arena: court.arena, baskets: rules.sport === 'basketball' ? [court.baskets.red, court.baskets.blue] : [] }
 }
 
 function facing(a: Athlete): { x: number, z: number } {
@@ -174,9 +179,15 @@ function goalScored(before: Ball, after: Ball, game: GymGame, rules: FootballRul
 
 function basketScored(before: Ball, after: Ball, game: GymGame): Team | null {
   for (const team of ['red', 'blue'] as const) {
-    if (droppedThroughRim(before, after, game.court.baskets[team])) return team
+    const { x, y, z, rimRadius } = game.court.baskets[team]
+    if (droppedThroughRim(before, after, { x, y, z, radius: rimRadius })) return team
   }
   return null
+}
+
+function bodiesOf(game: GymGame, athletes: readonly Athlete[], now: number): Body[] {
+  const kicker = game.kickedBy && now < game.kickedBy.until ? game.kickedBy.accountId : null
+  return athletes.filter((a) => a.accountId !== kicker)
 }
 
 function scorerFor(game: GymGame, team: Team): number | null {
@@ -192,7 +203,11 @@ export function stepGym(game: GymGame, rules: GymRules, athletes: readonly Athle
     return []
   }
   const before = { ...game.ball }
-  stepBall(game.ball, rules.ball, ballWorld(game, rules), dt)
+  stepBall(game.ball, rules.ball, game.world, dt, bodiesOf(game, athletes, now))
+  if (game.mode === 'free') {
+    pickUp(game, rules, athletes, now)
+    return []
+  }
   if (rules.sport === 'football') {
     const team = goalScored(before, game.ball, game, rules)
     if (team) return [award(game, rules, team, scorerFor(game, team), 1, false, now)]
@@ -291,7 +306,7 @@ function wrapAngle(a: number): number {
   return Math.atan2(Math.sin(a), Math.cos(a))
 }
 
-function shotPoints(a: Athlete, basket: Basket): 2 | 3 {
+function shotPoints(a: Athlete, basket: Hoop & { threePointRadius: number }): 2 | 3 {
   return flatDistance(a.x, a.z, basket.x, basket.z) > basket.threePointRadius ? 3 : 2
 }
 
@@ -299,19 +314,24 @@ function speedOf(a: Athlete): number {
   return Math.hypot(a.vx, a.vz)
 }
 
-function dunk(game: GymGame, rules: BasketballRules, a: Athlete, basket: Basket, now: number, rng: Rng): GymEvent[] {
+function dunk(game: GymGame, rules: BasketballRules, a: Athlete, basket: Hoop, now: number, rng: Rng): GymEvent[] {
   release(game, a, now, rules.kickIgnoreMs)
-  if (rng() < rules.dunkChance) return [award(game, rules, a.team, a.accountId, DUNK_POINTS, true, now)]
+  const made = rng() < rules.dunkChance
+  if (made && game.mode === 'match' && a.team) return [award(game, rules, a.team, a.accountId, DUNK_POINTS, true, now)]
+  if (made) {
+    game.ball = { x: basket.x, y: basket.y + 0.15, z: basket.z, vx: 0, vy: -2, vz: 0 }
+    return [{ kind: 'kick', accountId: a.accountId, shot: true }]
+  }
   game.ball = { x: basket.x, y: basket.y + 0.3, z: basket.z, vx: (rng() - 0.5) * 3, vy: 2.5, vz: (rng() - 0.5) * 3 }
   return [{ kind: 'kick', accountId: a.accountId, shot: true }]
 }
 
 function blocker(game: GymGame, rules: BasketballRules, a: Athlete, athletes: readonly Athlete[], now: number): Athlete | null {
-  return athletes.find((o) => o.team !== a.team && flatDistance(o.x, o.z, a.x, a.z) <= rules.blockReachM &&
+  return athletes.find((o) => o.accountId !== a.accountId && (o.team === null || o.team !== a.team) && flatDistance(o.x, o.z, a.x, a.z) <= rules.blockReachM &&
     now - (game.jumpedAt.get(o.accountId) ?? -Infinity) <= rules.blockWindowMs) ?? null
 }
 
-function throwShot(game: GymGame, rules: BasketballRules, a: Athlete, basket: Basket, heldMs: number, rng: Rng): void {
+function throwShot(game: GymGame, rules: BasketballRules, a: Athlete, basket: Hoop, heldMs: number, rng: Rng): void {
   const y0 = game.court.floorY + rules.releaseHeightM
   const distance = flatDistance(a.x, a.z, basket.x, basket.z)
   const meter = meterOf(heldMs, rules.shotMeter.riseMs)
@@ -332,6 +352,17 @@ function throwShot(game: GymGame, rules: BasketballRules, a: Athlete, basket: Ba
   game.ball = { x: a.x, y: y0, z: a.z, ...v }
 }
 
+function targetHoop(game: GymGame, a: Athlete): Hoop {
+  if (game.mode === 'match' && a.team) return game.court.baskets[a.team]
+  const f = facing(a)
+  const score = (h: Hoop) => {
+    const d = flatDistance(a.x, a.z, h.x, h.z)
+    const ahead = d < 1e-6 ? 1 : ((h.x - a.x) * f.x + (h.z - a.z) * f.z) / d
+    return d * (2 - ahead)
+  }
+  return courtHoops(game.court).reduce((best, h) => (score(h) < score(best) ? h : best))
+}
+
 function basketballAction(game: GymGame, rules: BasketballRules, a: Athlete, athletes: readonly Athlete[], kind: GymActionKind, now: number, rng: Rng): GymEvent[] {
   if (kind === 'jump') {
     game.jumpedAt.set(a.accountId, now)
@@ -340,7 +371,7 @@ function basketballAction(game: GymGame, rules: BasketballRules, a: Athlete, ath
   if (kind === 'tackle') {
     if ((game.cooldownUntil.get(a.accountId) ?? 0) > now) return []
     const holder = owned(game, athletes)
-    if (!holder || holder.team === a.team || flatDistance(holder.x, holder.z, a.x, a.z) > rules.steal.reachM) return []
+    if (!holder || holder.accountId === a.accountId || (holder.team !== null && holder.team === a.team) || flatDistance(holder.x, holder.z, a.x, a.z) > rules.steal.reachM) return []
     game.cooldownUntil.set(a.accountId, now + rules.steal.cooldownMs)
     if (rng() >= rules.steal.chance) return [{ kind: 'steal', accountId: a.accountId, won: false }]
     game.owner = a.accountId
@@ -366,7 +397,7 @@ function basketballAction(game: GymGame, rules: BasketballRules, a: Athlete, ath
   const started = game.shotStartedAt.get(a.accountId)
   game.shotStartedAt.delete(a.accountId)
   if (started === undefined || now - started > MAX_SHOT_HOLD_MS) return []
-  const basket = game.court.baskets[a.team]
+  const basket = targetHoop(game, a)
   if (flatDistance(a.x, a.z, basket.x, basket.z) <= rules.dunkRangeM && speedOf(a) >= rules.dunkSpeed) return dunk(game, rules, a, basket, now, rng)
   const block = blocker(game, rules, a, athletes, now)
   release(game, a, now, rules.kickIgnoreMs)
@@ -378,7 +409,7 @@ function basketballAction(game: GymGame, rules: BasketballRules, a: Athlete, ath
     return [{ kind: 'block', accountId: block.accountId }]
   }
   throwShot(game, rules, a, basket, now - started, rng)
-  game.lastShot = { accountId: a.accountId, team: a.team, basket: a.team, points: shotPoints(a, basket) }
+  if (game.mode === 'match' && a.team) game.lastShot = { accountId: a.accountId, team: a.team, basket: a.team, points: shotPoints(a, game.court.baskets[a.team]) }
   return [{ kind: 'kick', accountId: a.accountId, shot: true }]
 }
 

@@ -15,7 +15,7 @@ const MAX_SPRINT_SPEED = 8.5 * 1.25
 const MAX_MOVE_BUDGET_SECONDS = 1
 const MOVE_MARGIN = 1.5
 
-export type MoveRejection = 'out_of_world' | 'frozen' | 'knocked_out' | 'cuffed' | 'jailed' | 'too_fast' | 'locked_in' | 'locked_house' | 'secret_room_closed' | 'no_pass' | 'venue_reserved'
+export type MoveRejection = 'out_of_world' | 'frozen' | 'knocked_out' | 'cuffed' | 'jailed' | 'too_fast' | 'locked_in' | 'locked_house' | 'secret_room_closed' | 'no_pass' | 'venue_reserved' | 'tackled'
 
 export function toInterior(house: WorldHouse, x: number, z: number): { x: number, z: number } {
   const dx = x - house.position.x
@@ -59,6 +59,7 @@ export function moveRejection(room: GameRoom, player: Player, x: number, y: numb
   // fly (noclip): through walls, locked doors and cells, at any speed
   if (hasPower(player, 'fly')) return null
   if (player.cuffedBy) return 'cuffed'
+  if (now < player.sportsDownUntil) return 'tackled'
   const cell = cellOf(player)
   if (cell && !insideCell(cell.bounds, x, z)) return 'jailed'
   const elapsed = Math.min((now - player.lastMoveAt) / 1000, MAX_MOVE_BUDGET_SECONDS)
