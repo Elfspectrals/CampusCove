@@ -1248,6 +1248,46 @@
         "z": -186,
         "width": 7.2
       }
+    },
+    {
+      "key": "sports_boxing",
+      "optional": true,
+      "bounds": {
+        "minX": -398,
+        "maxX": -368,
+        "minZ": -240,
+        "maxZ": -216
+      },
+      "modelUrl": "/assets/park/sports_boxing/sports_boxing.glb",
+      "sportsPass": true,
+      "buildings": [
+        {
+          "kind": "work",
+          "key": "sports_boxing",
+          "name": "Cove Boxing Club",
+          "job": "sports",
+          "position": [
+            -386.805,
+            0,
+            -228
+          ],
+          "rotationY": -1.5708,
+          "door": [
+            -394.805,
+            1.25,
+            -228
+          ],
+          "footprint": [
+            18,
+            23.61
+          ],
+          "interiorOffset": [
+            0,
+            0.2,
+            2.595
+          ]
+        }
+      ]
     }
   ],
   "fountains": [
@@ -12115,6 +12155,16 @@
         -181
       ],
       "yaw": 0
+    },
+    {
+      "key": "sports_boxing",
+      "name": "Cove Boxing Club",
+      "position": [
+        -397,
+        0,
+        -228
+      ],
+      "yaw": -1.5708
     }
   ],
   "sportsComplex": {
