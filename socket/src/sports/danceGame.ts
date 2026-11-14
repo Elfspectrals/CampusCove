@@ -269,6 +269,18 @@ export function fullCombo(dancer: Dancer): boolean {
   return dancer.counts.miss === 0 && dancer.judged.every((j) => j !== null)
 }
 
+export function danceRunRecord(game: DanceGame, ref: string, endedAt: number) {
+  return {
+    ref,
+    song: game.song.id,
+    difficulty: game.difficulty,
+    mode: game.mode,
+    endedAt,
+    teamScore: game.mode === 'team' ? teamScore(game) : null,
+    dancers: game.dancers.map((d) => ({ accountId: d.accountId, score: d.score, fullCombo: fullCombo(d), finished: !d.out }))
+  }
+}
+
 export function danceResults(game: DanceGame): MatchResult[] {
   const active = game.dancers.filter((d) => !d.out)
   if (game.mode === 'solo' || game.mode === 'team') {

@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { DANCE_LANES, type DanceEnd, type DanceMode, type FallingNote, type Judgement } from '../../game/sports/danceHud'
 import type { DancerScore } from '../../composables/game/useDance'
+import type { SportsBoard } from '../../api/sportsBoards'
 
 const props = defineProps<{
   mode: DanceMode
@@ -16,6 +17,8 @@ const props = defineProps<{
   judgement: { judgement: Judgement; synced: boolean } | null
   litLanes: boolean[]
   result: DanceEnd | null
+  boards: { solo: SportsBoard; team: SportsBoard } | null
+  boardsFailed: boolean
   reducedEffects: boolean
 }>()
 
@@ -24,6 +27,7 @@ const { t, te } = useI18n()
 const LANE_COLOURS = ['#ff5fa2', '#38c6f4', '#ffd23f', '#5fd068']
 const LANE_ARROWS = ['←', '↓', '↑', '→']
 const HIGHWAY_PX = 300
+const BOARD_ROWS = 5
 const LINE_PX = 260
 
 const lanes = Array.from({ length: DANCE_LANES }, (_, i) => i)
@@ -108,6 +112,24 @@ function resultLabel(row: DanceEnd['dancers'][number]): string {
             <span>{{ row.score }}</span>
           </li>
         </ol>
+        <div class="grid grid-cols-2 gap-3 rounded-lg bg-ink-950/50 p-2">
+          <div v-for="kind in (['solo', 'team'] as const)" :key="kind" class="min-w-0">
+            <p class="m-0 text-xs font-bold uppercase tracking-[0.14em] text-mist">{{ t(`sports.dance.boards.${kind}`) }}</p>
+            <p v-if="boardsFailed" class="m-0 text-xs text-coral">{{ t('sports.dance.boards.failed') }}</p>
+            <p v-else-if="!boards" class="m-0 text-xs text-mist">{{ t('sports.signup.loading') }}</p>
+            <ol v-else class="m-0 flex list-none flex-col gap-0.5 p-0">
+              <li v-for="row in boards[kind].entries.slice(0, BOARD_ROWS)" :key="row.accountId" class="flex justify-between gap-2 text-xs font-bold text-fog">
+                <span class="min-w-0 truncate">{{ row.rank }}. {{ row.name }}</span>
+                <span>{{ row.value }}</span>
+              </li>
+              <li v-if="boards[kind].entries.length === 0" class="text-xs text-mist">{{ t('sports.dance.boards.empty') }}</li>
+            </ol>
+            <p v-if="boards?.[kind].champion" class="m-0 mt-1 text-[11px] text-sun">
+              {{ t('sports.dance.boards.champion', { name: boards[kind].champion?.name ?? '', week: boards[kind].champion?.week ?? '' }) }}
+            </p>
+          </div>
+        </div>
+        <p v-if="boards" class="m-0 text-xs text-mist">{{ t('sports.dance.boards.week', { week: boards.solo.week }) }}</p>
         <p class="m-0 text-xs text-mist">{{ t('sports.dance.closeHint') }}</p>
       </div>
     </section>

@@ -5,7 +5,7 @@ import {
   type CosmeticColors,
 } from '../../api/characterCosmetics'
 import { buildCompositeAvatar, disposeObject3D } from '../../avatar/compositeAvatar'
-import { setAvatarDancing, setAvatarEating, setAvatarPicking, setAvatarSeated, setAvatarStumbling, updateAvatarAnimation } from '../../avatar/glbCharacter'
+import { setAvatarDanceMove, setAvatarDancing, setAvatarEating, setAvatarPicking, setAvatarSeated, setAvatarStumbling, updateAvatarAnimation } from '../../avatar/glbCharacter'
 import { parseCharacterLook, type CharacterLook } from '../../avatar/characterLook'
 import { createModularCharacter } from '../../avatar/modularCharacter'
 import { WEAR_SLOTS, wearSignature, type WearModels } from '../../avatar/modularCharacterLogic'
@@ -406,9 +406,14 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     setAvatarEating(entry.group, action)
   }
 
-  function setDancing(sessionId: string, timeScale: number | null) {
+  function setDancing(sessionId: string, dance: { clip: string; timeScale: number } | null) {
     const entry = avatars.get(sessionId)
-    if (entry) setAvatarDancing(entry.group, timeScale)
+    if (entry) setAvatarDancing(entry.group, dance)
+  }
+
+  function danceMove(sessionId: string, lane: number) {
+    const entry = avatars.get(sessionId)
+    if (entry) setAvatarDanceMove(entry.group, lane)
   }
 
   function stumble(sessionId: string) {
@@ -538,5 +543,5 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     }
   }
 
-  return { upsert, updateAppearance, setTarget, setSeated, setPicking, setDancing, stumble, setHeldTool, setRacePint, setBadges, pseudoOf, positionOf, setVoiceState, setWantedStars, players, accountOf, showAction, showChat, showPunch, showHit, remove, clear, tick }
+  return { upsert, updateAppearance, setTarget, setSeated, setPicking, setDancing, danceMove, stumble, setHeldTool, setRacePint, setBadges, pseudoOf, positionOf, setVoiceState, setWantedStars, players, accountOf, showAction, showChat, showPunch, showHit, remove, clear, tick }
 }

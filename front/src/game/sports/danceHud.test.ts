@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { NOTE_LEAD_MS, NOTE_TAIL_MS, danceTimeScale, fallingNotes, laneOfKey, parseDanceStart, songTimeMs } from './danceHud.ts'
+import { NOTE_LEAD_MS, NOTE_TAIL_MS, danceBoardId, danceTimeScale, fallingNotes, laneOfKey, parseDanceStart, songTimeMs } from './danceHud.ts'
 
 const azerty = (action: string, code: string) =>
   ({ moveForward: 'KeyW', moveBack: 'KeyS', moveLeft: 'KeyA', moveRight: 'KeyD' } as Record<string, string>)[action] === code
@@ -51,4 +51,9 @@ test('a note shows from its lead time, reaches the line at progress 1 and drops 
 test('the 4-beat dance clip plays at song speed', () => {
   assert.equal(danceTimeScale(120), 1)
   assert.equal(danceTimeScale(90), 0.75)
+})
+
+test('a song and difficulty name their solo and team core boards', () => {
+  assert.equal(danceBoardId('cove_groove', 'hard', 'solo'), 'dance_cove_groove_hard_solo')
+  assert.equal(danceBoardId('night_sprint', 'easy', 'team'), 'dance_night_sprint_easy_team')
 })

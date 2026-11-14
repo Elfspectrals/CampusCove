@@ -116,16 +116,17 @@ interface AvatarAnimState {
   current: THREE.AnimationAction | null
   selector: AvatarClipSelector
   seated: boolean
-  dancing: number | null
+  dancing: { clip: string; timeScale: number } | null
   oneShot: OneShotClip | null
 }
 
 const CROSSFADE_S = 0.22
 const SIT_CLIP = 'Sit'
 const PICK_CLIP = 'Pick'
-const DANCE_CLIP = 'Dance'
 const STUMBLE_CLIP = 'Stumble'
-const ONE_SHOT_CLIPS = [PICK_CLIP, 'Eat', 'Drink', STUMBLE_CLIP] as const
+const DANCE_MOVE_CLIPS = ['DanceMoveLeft', 'DanceMoveDown', 'DanceMoveUp', 'DanceMoveRight'] as const
+const ONE_SHOT_CLIPS = [PICK_CLIP, 'Eat', 'Drink', STUMBLE_CLIP, ...DANCE_MOVE_CLIPS] as const
+const DANCE_ONE_SHOTS: readonly OneShotClip[] = [STUMBLE_CLIP, ...DANCE_MOVE_CLIPS]
 type OneShotClip = (typeof ONE_SHOT_CLIPS)[number]
 
 /**
@@ -163,16 +164,22 @@ export function setAvatarSeated(root: THREE.Object3D, seated: boolean): boolean 
   return state.seated
 }
 
-export function setAvatarDancing(root: THREE.Object3D, timeScale: number | null): void {
+export function setAvatarDancing(root: THREE.Object3D, dance: { clip: string; timeScale: number } | null): void {
   const state = animStateByRoot.get(root)
-  if (!state || !state.actions.has(DANCE_CLIP)) return
-  state.dancing = timeScale
-  if (timeScale === null && state.oneShot === STUMBLE_CLIP) state.oneShot = null
+  if (!state || (dance && !state.actions.has(dance.clip))) return
+  state.dancing = dance
+  if (dance === null && state.oneShot !== null && DANCE_ONE_SHOTS.includes(state.oneShot)) state.oneShot = null
 }
 
 export function setAvatarStumbling(root: THREE.Object3D): void {
   const state = animStateByRoot.get(root)
   if (state?.dancing != null) playOneShot(state, STUMBLE_CLIP)
+}
+
+export function setAvatarDanceMove(root: THREE.Object3D, lane: number): void {
+  const state = animStateByRoot.get(root)
+  const clip = DANCE_MOVE_CLIPS[lane]
+  if (state?.dancing != null && clip) playOneShot(state, clip)
 }
 
 function playOneShot(state: AvatarAnimState, name: OneShotClip): void {
@@ -216,7 +223,7 @@ export function updateAvatarAnimation(root: THREE.Object3D, dt: number, speed: n
   if (state.seated) {
     playClip(state, SIT_CLIP, 1)
   } else if (state.dancing !== null) {
-    if (state.oneShot !== STUMBLE_CLIP) playClip(state, DANCE_CLIP, state.dancing)
+    if (state.oneShot === null || !DANCE_ONE_SHOTS.includes(state.oneShot)) playClip(state, state.dancing.clip, state.dancing.timeScale)
   } else {
     const { clip, timeScale } = state.selector.update(dt, speed)
     if (state.oneShot !== PICK_CLIP && clip !== 'Idle') state.oneShot = null

@@ -35,6 +35,7 @@ async function signup(room: FakeRoom, p: Player, settings: Record<string, string
 test('a solo song: kickoff at once, dancer on the first spot, socket judges and records the result', async () => {
   api.calls.length = 0
   api.replies.set('POST /sports/matches', () => json({ match: { id: 1, recorded: true } }))
+  api.replies.set('POST /sports/dance/runs', () => json({ recorded: true }))
   const { room, players: [p] } = await studio(1)
   await signup(room, p, { mode: 'solo', song: 'cove_groove', difficulty: 'easy' }, NOW)
   venues.tickSports(room, NOW)
@@ -60,6 +61,9 @@ test('a solo song: kickoff at once, dancer on the first spot, socket judges and 
   const record = api.calls.find((c) => c.url === '/sports/matches')?.body as { sport: string, players: { result: string, score: number }[] }
   assert.equal(record.sport, 'dance')
   assert.deepEqual(record.players.map((r) => [r.result, r.score]), [['finished', 300]])
+  const run = api.calls.find((c) => c.url === '/sports/dance/runs')?.body as { song: string, difficulty: string, mode: string, dancers: unknown[] }
+  assert.deepEqual([run.song, run.difficulty, run.mode], ['cove_groove', 'easy', 'solo'])
+  assert.deepEqual(run.dancers, [{ accountId: 200, score: 300, fullCombo: false, finished: true }])
 })
 
 test('a press from someone not dancing is ignored', async () => {

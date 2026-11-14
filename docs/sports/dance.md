@@ -87,6 +87,45 @@ Dancers are moved to their spot at kick-off (`position_correction`, reason `danc
 song. Other players see them play the `Dance` clip at `bpm / 120` and `Stumble` on a miss. The music is synthesised
 in the browser (`front/src/game/sports/danceMusic.ts`) on the song clock; it decides nothing.
 
+## Tasks and boards (built 2026-11-14)
+
+Laravel owns the song, difficulty and mode lists (`DanceService::SONGS`, `DIFFICULTIES`, `MODES`); they must match
+`signup.settings` of `rules/dance.json`. Badges only, never coins.
+
+`POST /api/sports/dance/runs` (realtime), sent by the socket at the end of a song, once per match:
+
+| Field | Type |
+|---|---|
+| `ref` | string 1-64, the match ref |
+| `song` | `harbour_sway` \| `cove_groove` \| `night_sprint` |
+| `difficulty` | `easy` \| `normal` \| `hard` |
+| `mode` | `solo` (1 dancer) \| `team` (2-4) \| `duel` (2-4) |
+| `endedAt` | int, epoch ms, at most 60 s ahead of the Laravel clock |
+| `teamScore` | int 0-1,000,000 in team mode, `null` otherwise |
+| `dancers` | 1 to 4 `{ accountId: int (distinct, existing), score: int 0-1,000,000, fullCombo: bool, finished: bool }` |
+
+One `dance_runs` row per dancer, unique (ref, account); the team key is the sorted account ids of the run joined by
+`-`; the week is the ISO week of `endedAt` in Europe/Paris. Reply `{ recorded: true }`, or `{ recorded: false }` when
+the ref was already recorded (nothing changes). A bad field is a 422 (Laravel validation); a dancer count that does
+not fit the mode is `dance_bad_dancer_count`, a team score outside team mode or missing in it `dance_bad_team_score`
+(422 `{ code, message }`).
+
+Tasks (badges only), counted per dancer only when the match counts for tasks: `sports_matches.counts_for_tasks`, set
+by the core anti-farm rule (`docs/sports/CORE.md` § 4: 2 accounts of 72 h or more, at most 3 counted matches per pair
+a day; a solo song never counts). The socket records the match before the dance run, so the flag is known.
+
+| Task | Counts when | Tiers |
+|---|---|---|
+| `songs_danced` | the match counts, the dancer `finished` with `score > 0` | 10 / 50 / 200 |
+| `full_combo_hard` | the match counts, `difficulty = hard`, `finished` and `fullCombo` | 1 / 10 / 50 |
+
+The tiers of `songs_danced` unlock the dances `spin` (Bronze), `disco` (Silver) and `twist` (Gold) of the emote wheel.
+
+Weekly boards are core boards (`SportsBoardService::BOARDS`, metric `score`): `dance_<song>_<difficulty>_solo` and
+`dance_<song>_<difficulty>_team`, read from the match results (`GET /api/sports/boards/{board}`); in team mode every
+dancer's result carries the team score. The core crowns the first of each board every week (`sports_champion` badge).
+Duels are on no board.
+
 ## Proposed placeholder JSON fields
 
 `sport` ("dance"), `freeEmotes` (4 ids), `unlockableEmotes` (ids with their task tier), `songs` ([{ id, bpm, lengthSec, charts: { easy, normal, hard } }]), `modes` (["solo", "team", "duel"]), `maxPlayers` (4), `windowsMs` ({ perfect, good }), `syncBonus`, `allowanceMs`, `gear` ([]), `coachId`, `boards` (per song × difficulty × solo/team), `tasks` (["songs_danced", "full_combo_hard"]).

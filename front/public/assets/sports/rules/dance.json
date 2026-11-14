@@ -36,8 +36,44 @@
       }
     ]
   },
-  "freeEmotes": null,
-  "unlockableEmotes": null,
+  "freeEmotes": [
+    {
+      "id": "bounce",
+      "clip": "Dance"
+    },
+    {
+      "id": "sway",
+      "clip": "DanceSway"
+    },
+    {
+      "id": "robot",
+      "clip": "DanceRobot"
+    },
+    {
+      "id": "shuffle",
+      "clip": "DanceShuffle"
+    }
+  ],
+  "unlockableEmotes": [
+    {
+      "id": "spin",
+      "clip": "DanceSpin",
+      "task": "songs_danced",
+      "tier": 1
+    },
+    {
+      "id": "disco",
+      "clip": "DanceDisco",
+      "task": "songs_danced",
+      "tier": 2
+    },
+    {
+      "id": "twist",
+      "clip": "DanceTwist",
+      "task": "songs_danced",
+      "tier": 3
+    }
+  ],
   "songs": [
     {
       "id": "harbour_sway",

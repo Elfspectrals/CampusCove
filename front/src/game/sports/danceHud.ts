@@ -105,6 +105,7 @@ export function fallingNotes(notes: readonly DanceNote[], songMs: number, judged
   return shown
 }
 
+export const RHYTHM_DANCE_CLIP = 'Dance'
 export const CLIP_BEATS_PER_LOOP = 4
 export const CLIP_LOOP_S = 2
 
@@ -128,4 +129,10 @@ export interface DanceEnd {
   mode: DanceMode
   teamScore: number | null
   dancers: DanceEndRow[]
+}
+
+export type DanceBoardKind = 'solo' | 'team'
+
+export function danceBoardId(song: string, difficulty: string, kind: DanceBoardKind): string {
+  return `dance_${song}_${difficulty}_${kind}`
 }

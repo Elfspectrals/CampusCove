@@ -276,6 +276,30 @@ erDiagram
     }
 ```
 
+```mermaid
+erDiagram
+    ACCOUNTS ||--o{ DANCE_RUNS : danse
+
+    DANCE_RUNS {
+        bigint id PK
+        text ref "id de match du socket, unique avec account_id"
+        bigint account_id FK
+        text song "harbour_sway, cove_groove, night_sprint"
+        text difficulty "easy, normal, hard"
+        text mode "solo, team, duel"
+        int score
+        bool full_combo
+        bool finished
+        text team_key "ids triés de l'équipe, mode team seulement"
+        int team_score "mode team seulement"
+        text week "semaine ISO à Paris, YYYY-Www"
+        timestamptz ended_at
+    }
+```
+
+Les classements hebdomadaires de danse sont des classements du cœur (`SportsBoardService::BOARDS`), lus dans
+`sports_match_players` ; `dance_runs` garde le combo parfait et sert aux tâches. Contrat : `docs/sports/dance.md`.
+
 Le matériel de sport est un `item_kind` `sports_gear` (pile de 1, jamais usé, pas une arme), qui tombe dans le sac de
 mort avec le cash et n'est jamais volé.
 

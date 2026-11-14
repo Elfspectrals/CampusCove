@@ -1,3 +1,4 @@
+import { callRealtimeBackend } from '../backend.ts'
 import type { ClientPayload, GameClient, GameRoom } from '../types.ts'
 import { readSportRules, worldSportsPassArea } from '../world.ts'
 import {
@@ -9,6 +10,7 @@ import {
   DANCE_MODES,
   DIFFICULTIES,
   danceResults,
+  danceRunRecord,
   expireNotes,
   fullCombo,
   newDanceGame,
@@ -17,6 +19,7 @@ import {
   songOver,
   teamScore
 } from './danceGame.ts'
+import { onEmotePlay, parseEmoteRules, setEmoteRules, stopEmote } from './danceEmotes.ts'
 import { type Match, type Settings, activePlayers, parseSignupRules } from './signup.ts'
 import { endMatch, recordMatch, registerVenue } from './venues.ts'
 
@@ -83,6 +86,7 @@ export function startDance(room: GameRoom, match: Match): DanceGame {
   if (!song || !difficulty) throw new Error(`dance: invalid settings ${JSON.stringify(match.settings)}`)
   const game = newDanceGame(modeOf(match.settings), song, difficulty, match.startedAt + r.leadInMs, match.players)
   games.set(match.id, game)
+  for (const d of game.dancers) stopEmote(room, d.sessionId)
   placeDancers(room, game)
   sendToStudio(room, game, 'dance_start', {
     venue: DANCE_VENUE,
@@ -143,7 +147,17 @@ export function finishDance(room: GameRoom, match: Match, now = Date.now()): voi
       return { sessionId: d.sessionId, name: d.name, score: d.score, maxCombo: d.maxCombo, fullCombo: fullCombo(d), counts: d.counts, result: r?.result ?? 'dnf', place: r?.place ?? null }
     })
   })
-  void recordMatch(room, match, results, now)
+  void recordMatch(room, match, results, now).then(() => recordDanceRun(room, game, match, now))
+}
+
+async function recordDanceRun(room: GameRoom, game: DanceGame, match: Match, endedAt: number): Promise<void> {
+  const tokens = [...room.players.values()].filter((p) => p.token)
+  const token = (tokens.find((p) => game.dancers.some((d) => d.accountId === p.accountId)) ?? tokens[0])?.token ?? null
+  try {
+    await callRealtimeBackend(token, '/sports/dance/runs', 'POST', danceRunRecord(game, match.id, endedAt))
+  } catch (error) {
+    console.warn(`[sports] dance run ${match.id} not recorded:`, error instanceof Error ? error.message : error)
+  }
 }
 
 export function registerDanceVenue(raw: unknown): void {
@@ -153,7 +167,9 @@ export function registerDanceVenue(raw: unknown): void {
   if (songOptions.length !== loaded.songs.length || !loaded.songs.every((s) => songOptions.includes(s.id))) {
     throw new Error('sports/rules/dance.json: signup song options must list every song id')
   }
+  const emotes = parseEmoteRules(raw)
   rules = loaded
+  setEmoteRules(emotes)
   const { venue, maxPlayers } = loaded
   registerVenue({
     id: DANCE_VENUE,
@@ -170,6 +186,15 @@ export function registerDanceVenue(raw: unknown): void {
     onLeave: (_room, match, accountId) => dancerLeft(match, accountId),
     onEnd: (room, match) => finishDance(room, match)
   })
+}
+
+export function isDancing(room: GameRoom, accountId: number): boolean {
+  const current = currentGame(room)
+  return current !== null && current.game.dancers.some((d) => d.accountId === accountId && !d.out)
+}
+
+export function onDanceEmotePlay(room: GameRoom, client: GameClient, payload: ClientPayload): Promise<void> {
+  return onEmotePlay(room, client, payload, (player) => isDancing(room, player.accountId))
 }
 
 export async function loadDanceVenue(): Promise<void> {

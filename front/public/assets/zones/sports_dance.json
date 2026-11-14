@@ -133,6 +133,132 @@
         1,
         1
       ]
+    },
+    {
+      "id": "sports_dance_speaker_01",
+      "kind": "item",
+      "key": "dance_speaker",
+      "code": "decor_dance_speaker",
+      "forSale": false,
+      "position": [
+        -375.995,
+        0.2,
+        -205.8
+      ],
+      "yaw": -0.7854,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "sports_dance_speaker_02",
+      "kind": "item",
+      "key": "dance_speaker",
+      "code": "decor_dance_speaker",
+      "forSale": false,
+      "position": [
+        -375.995,
+        0.2,
+        -195.2
+      ],
+      "yaw": -2.3562,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "sports_dance_barre_01",
+      "kind": "item",
+      "key": "dance_barre",
+      "code": "decor_dance_barre",
+      "forSale": false,
+      "position": [
+        -378.595,
+        0.2,
+        -206.219
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "sports_dance_barre_02",
+      "kind": "item",
+      "key": "dance_barre",
+      "code": "decor_dance_barre",
+      "forSale": false,
+      "position": [
+        -382.595,
+        0.2,
+        -206.219
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "sports_dance_barre_03",
+      "kind": "item",
+      "key": "dance_barre",
+      "code": "decor_dance_barre",
+      "forSale": false,
+      "position": [
+        -378.595,
+        0.2,
+        -194.781
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "sports_dance_barre_04",
+      "kind": "item",
+      "key": "dance_barre",
+      "code": "decor_dance_barre",
+      "forSale": false,
+      "position": [
+        -382.595,
+        0.2,
+        -194.781
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "sports_dance_disco_ball_01",
+      "kind": "item",
+      "key": "disco_ball",
+      "code": "decor_disco_ball",
+      "forSale": false,
+      "position": [
+        -382.295,
+        4.2,
+        -200.5
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
     }
   ],
   "areas": []

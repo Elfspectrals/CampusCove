@@ -32,6 +32,8 @@ Laravel owns every counter. A counter counts one real action, bumped by the serv
 | `duels_won` | one darts or Drink Fast game won against other players (placement 1), whoever the opponents are | `PubService::reward` |
 | `secret_room_weeks` | one week (Monday to Sunday, Paris, ISO week) in which the player stood in the pub's secret room | socket `taskTracking.ts` (once a day per account), then `POST /tasks/secret-room` (realtime, no body) |
 | `foods_tasted` | one food or drink tasted for the first time (any group of `FoodCatalog` but `medical`), once per item code | `SurvivalService::consume` |
+| `songs_danced` | one finished dance song with a score above 0, for each dancer, in a match that counts for tasks (`counts_for_tasks`, `docs/sports/CORE.md` § 4) | `DanceService::recordRuns` (`POST /sports/dance/runs`, realtime) |
+| `full_combo_hard` | one full combo on hard, in a match that counts for tasks | `DanceService::recordRuns` |
 
 ## Tiers
 
@@ -57,6 +59,8 @@ Every task lives in `App\Support\TaskCatalog`: a key, the counter it reads and i
 | `pub_games` | `pub_games` | 10 / 50 / 150 |
 | `duellist` | `duels_won` | 1 / 5 / 15 |
 | `insider` | `secret_room_weeks` | 1 / 4 / 12 |
+| `songs_danced` | `songs_danced` | 10 / 50 / 200 |
+| `full_combo_hard` | `full_combo_hard` | 1 / 10 / 50 |
 
 ## Notification
 

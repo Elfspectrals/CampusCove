@@ -2,6 +2,7 @@ import { computed, ref, shallowRef, type ShallowRef } from 'vue'
 import type { Room } from '@colyseus/sdk'
 import {
   DANCE_LANES,
+  danceBoardId,
   JUDGEMENT_SHOW_MS,
   LANE_FLASH_MS,
   fallingNotes,
@@ -14,6 +15,7 @@ import {
   type MoveAction,
 } from '../../game/sports/danceHud'
 import { startDanceMusic, type DanceMusic } from '../../game/sports/danceMusic'
+import { fetchSportsBoard, type SportsBoard } from '../../api/sportsBoards'
 
 export interface DanceDeps {
   gameRoomRef: ShallowRef<Room | null>
@@ -31,6 +33,8 @@ export interface DancerScore {
 export function useDance(deps: DanceDeps) {
   const start = shallowRef<DanceStart | null>(null)
   const result = shallowRef<DanceEnd | null>(null)
+  const boards = shallowRef<{ solo: SportsBoard; team: SportsBoard } | null>(null)
+  const boardsFailed = ref(false)
   const scores = shallowRef<ReadonlyMap<string, { score: number; combo: number }>>(new Map())
   const judged = shallowRef<ReadonlySet<number>>(new Set())
   const lastJudgement = shallowRef<{ judgement: Judgement; at: number; synced: boolean } | null>(null)
@@ -98,6 +102,18 @@ export function useDance(deps: DanceDeps) {
     stopMusic()
     result.value = data
     for (const d of data.dancers) setScore(d.sessionId, d.score, 0)
+    const played = start.value
+    boards.value = null
+    boardsFailed.value = false
+    if (!played) return
+    Promise.all([fetchSportsBoard(danceBoardId(played.song, played.difficulty, 'solo')), fetchSportsBoard(danceBoardId(played.song, played.difficulty, 'team'))])
+      .then(([solo, team]) => {
+        if (start.value === played) boards.value = { solo, team }
+      })
+      .catch((err: unknown) => {
+        console.error('[dance] boards not loaded', err)
+        boardsFailed.value = true
+      })
   }
 
   function close(): void {
@@ -128,6 +144,8 @@ export function useDance(deps: DanceDeps) {
   return {
     start,
     result,
+    boards,
+    boardsFailed,
     dancing,
     notes,
     songMs,

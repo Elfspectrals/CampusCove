@@ -36,6 +36,7 @@ import GamePoliceLicenceDialog from '../components/game/GamePoliceLicenceDialog.
 import GameSportsPassDesk from '../components/game/GameSportsPassDesk.vue'
 import GameSportsSignup from '../components/game/GameSportsSignup.vue'
 import GameDance from '../components/game/GameDance.vue'
+import GameEmoteWheel from '../components/game/GameEmoteWheel.vue'
 import GameChat from '../components/game/GameChat.vue'
 import GameDrunkEffects from '../components/game/GameDrunkEffects.vue'
 import GameDrinkFast from '../components/game/GameDrinkFast.vue'
@@ -103,6 +104,7 @@ import { useSportsPass } from '../composables/game/useSportsPass'
 import { passValid } from '../game/sports/sportsPass'
 import { useSportsSignup } from '../composables/game/useSportsSignup'
 import { useDance } from '../composables/game/useDance'
+import { useEmoteWheel } from '../composables/game/useEmoteWheel'
 import { usePickpocket } from '../composables/game/usePickpocket'
 import { useStorageAuction } from '../composables/game/useStorageAuction'
 import { useStorageWarehouse } from '../composables/game/useStorageWarehouse'
@@ -858,7 +860,15 @@ watch(sportsPassOpen, (open) => {
   if (!open && !document.pointerLockElement) requestPointerLock()
 })
 const dance = useDance({ gameRoomRef, isMoveKey: (action, code) => matches(action, code) })
-const { start: danceStart, result: danceResult, dancing, notes: danceNotes, songMs: danceSongMs, board: danceBoard, mine: danceMine, teamScore: danceTeamScore, judgementShown: danceJudgement, litLanes: danceLitLanes } = dance
+const { start: danceStart, result: danceResult, boards: danceBoards, boardsFailed: danceBoardsFailed, dancing, notes: danceNotes, songMs: danceSongMs, board: danceBoard, mine: danceMine, teamScore: danceTeamScore, judgementShown: danceJudgement, litLanes: danceLitLanes } = dance
+const emoteWheel = useEmoteWheel({
+  gameRoomRef,
+  isWheelKey: (code) => matches('emoteWheel', code),
+  blocked: () => dancing.value,
+  lockedText: () => t('emotes.locked'),
+  say: (text) => survival.say(text),
+})
+const { open: emoteWheelOpen, rows: emoteRows, myEmote } = emoteWheel
 const sportsSignup = useSportsSignup({
   myPosition,
   getCamera,
@@ -1471,6 +1481,7 @@ function handleExtraKeyDown(e: KeyboardEvent): boolean {
   // the bouncer's text field and the pub games (Space holds the pint) take the keyboard too
   if (pubSecretOpen.value || pubGamesOpen.value) return true
   if (dance.onKeyDown(e)) return true
+  if (emoteWheel.onKeyDown(e)) return true
   if (pubQuiz.onKeyDown(e)) return true
   // Y / N answer a Drink Fast challenge
   if (pubChallenge.onKeyDown(e)) return true
@@ -1756,6 +1767,7 @@ const realtime = useGameRealtime({
     onRoomJoined: sportsSignup.handlers.onRoomJoined,
   },
   dance: dance.handlers,
+  emotes: { ...emoteWheel.handlers, clipOf: emoteWheel.clipOf },
   pickpocket: pickpocket.handlers,
   storageAuction: {
     ...storageAuction.handlers,
@@ -2339,6 +2351,10 @@ const crosshairClass = computed(() => {
       @buy="sportsPass.buy"
       @close="sportsPass.close"
     />
+    <GameEmoteWheel v-if="emoteWheelOpen" :rows="emoteRows" :current="myEmote" />
+    <p v-else-if="myEmote" class="cc-hud pointer-events-none absolute bottom-28 left-1/2 z-[36] m-0 -translate-x-1/2 px-3 py-1 text-sm font-bold text-sun">
+      {{ t('emotes.dancing', { name: t(`emotes.names.${myEmote}`) }) }}
+    </p>
     <GameDance
       v-if="danceStart"
       :mode="danceStart.mode"
@@ -2352,6 +2368,8 @@ const crosshairClass = computed(() => {
       :judgement="danceJudgement"
       :lit-lanes="danceLitLanes"
       :result="danceResult"
+      :boards="danceBoards"
+      :boards-failed="danceBoardsFailed"
       :reduced-effects="reducedEffects"
     />
     <GameSportsSignup

@@ -128,7 +128,9 @@ import type {
 import { useRemoteAvatars, type SeatPose } from './useRemoteAvatars'
 import { PUNCH_DAMAGE } from '../../game/punch'
 import { applySportsLoans, clearSportsLoans, forgetSportsLoans } from '../../game/sports/sportsLoans'
-import { danceTimeScale, parseDanceStart, type DanceEnd, type DanceJudge, type DanceStart } from '../../game/sports/danceHud'
+import type { UserEmotePayload } from './useEmoteWheel'
+import { EMOTE_TIME_SCALE } from '../../game/sports/danceEmotes'
+import { RHYTHM_DANCE_CLIP, danceTimeScale, parseDanceStart, type DanceEnd, type DanceJudge, type DanceStart } from '../../game/sports/danceHud'
 
 const REALTIME_HTTP_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000'
 
@@ -332,6 +334,12 @@ export interface GameRealtimeDeps {
     onJudge: (data: DanceJudge) => void
     onStray: () => void
     onEnd: (data: DanceEnd) => void
+  }
+  emotes: {
+    clipOf: (id: string) => string | null
+    onUserEmote: (data: UserEmotePayload, mySessionId: string) => void
+    onList: (data: { unlocked: string[] }) => void
+    onError: (data: { message: string }) => void
   }
   pickpocket: {
     onStarted: (data: PickpocketStartedPayload) => void
@@ -590,14 +598,26 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('sports_loans', (data: SportsLoansPayload) => applySportsLoans(data))
     room.onMessage('dance_start', (raw: unknown) => {
       const start = parseDanceStart(raw)
-      for (const d of start.dancers) if (d.sessionId !== room.sessionId) remotes.setDancing(d.sessionId, danceTimeScale(start.bpm))
+      for (const d of start.dancers) if (d.sessionId !== room.sessionId) remotes.setDancing(d.sessionId, { clip: RHYTHM_DANCE_CLIP, timeScale: danceTimeScale(start.bpm) })
       deps.dance.onStart(start)
     })
     room.onMessage('dance_judge', (data: DanceJudge) => {
       if (data.sessionId !== room.sessionId && data.judgement === 'miss') remotes.stumble(data.sessionId)
+      else if (data.sessionId !== room.sessionId) remotes.danceMove(data.sessionId, data.lane)
       deps.dance.onJudge(data)
     })
     room.onMessage('dance_stray', () => deps.dance.onStray())
+    const showEmote = (data: UserEmotePayload) => {
+      if (data.sessionId !== room.sessionId) {
+        const clip = data.emote === null ? null : deps.emotes.clipOf(data.emote)
+        remotes.setDancing(data.sessionId, clip === null ? null : { clip, timeScale: EMOTE_TIME_SCALE })
+      }
+      deps.emotes.onUserEmote(data, room.sessionId)
+    }
+    room.onMessage('user_emote', showEmote)
+    room.onMessage('user_emotes', (data: { emotes: UserEmotePayload[] }) => data.emotes.forEach(showEmote))
+    room.onMessage('emote_list', (data: { unlocked: string[] }) => deps.emotes.onList(data))
+    room.onMessage('emote_error', (data: { message: string }) => deps.emotes.onError(data))
     room.onMessage('dance_end', (data: DanceEnd) => {
       for (const d of data.dancers) if (d.sessionId !== room.sessionId) remotes.setDancing(d.sessionId, null)
       deps.dance.onEnd(data)

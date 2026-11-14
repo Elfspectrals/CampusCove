@@ -40,11 +40,8 @@ M["lobby_floor"] = L.make_mat("IN_DanceLobbyFloor", "#c9c6bf", 0.8, "tiles", 0.0
 M["plum"] = L.make_mat("IN_DancePlum", "#7b3f72", 0.7, "noise", 0.03)
 M["mirror"] = L.make_mat("IN_DanceMirror", "#dde8ee", 0.04, "noise", 0.0)
 M["mirror_frame"] = L.make_mat("IN_DanceMirrorFrame", "#3a3f45", 0.4, "noise", 0.01)
-M["barre"] = L.make_mat("IN_DanceBarre", "#c9a36a", 0.4, "planks", 0.03, accent="#a98550")
 M["locker"] = L.make_mat("IN_DanceLocker", "#4f7fa8", 0.6, "stripes", 0.02, accent="#46739a")
 M["curtain"] = L.make_mat("IN_DanceCurtain", "#a04e8c", 0.95, "stripes", 0.05, accent="#8d437b")
-M["speaker"] = L.make_mat("IN_DanceSpeaker", "#1d1f24", 0.6, "noise", 0.02)
-M["cone"] = L.make_mat("IN_DanceSpeakerCone", "#3a3d44", 0.5, "noise", 0.01)
 M["sign"] = L.make_mat("IN_DanceSignText", "#ffffff", 0.4, "noise", 0.0, emit="#ffffff", emit_strength=0.8)
 M["seat"] = L.make_mat("IN_DanceSeat", "#7b3f72", 0.8, "noise", 0.03)
 for i, hex_colour in enumerate(LANE_COLOURS):
@@ -75,30 +72,8 @@ objs.append(L.box(coll, "Wall_StudioStripe", 0, MIRROR_Z + 0.01, 3.1, X1 - X0 - 
 objs.append(L.text_mesh(coll, "Wall_StudioName", "COVE DANCE STUDIO", 0, MIRROR_Z + 0.04, 3.16, 0.2, 0.01, M["sign"]))
 
 
-def barre(name, x, z0, z1):
-    side = 1.0 if x > 0 else -1.0
-    parts = [(0, 0, 1.0, 0.06, z1 - z0, 0.06, M["barre"], 0.01)]
-    for k in range(4):
-        bz = -(z1 - z0) / 2 + 0.3 + k * (z1 - z0 - 0.6) / 3
-        parts.append((side * 0.1, bz, 0.95, 0.2, 0.04, 0.04, M["steel"]))
-    return L.furn(coll, name, x - side * 0.25, (z0 + z1) / 2, 0.0, parts)
-
-
-objs.append(barre("Barre_W", X0, -12.8, -1.4))
-objs.append(barre("Barre_E", X1, -12.8, -1.4))
 for i, x in enumerate(SPOT_XS):
     objs.append(L.box(coll, f"DanceSpot_{i}", x, SPOT_Z, 0.0, 0.9, 0.9, 0.006, M[f"lane{i}"]))
-
-
-def speaker(name, x, z, rot):
-    return L.furn(coll, name, x, z, rot, [
-        (0, 0, 0.0, 0.6, 0.5, 1.2, M["speaker"], 0.02),
-        (0, -0.26, 0.25, 0.4, 0.02, 0.4, M["cone"]), (0, -0.26, 0.8, 0.22, 0.02, 0.22, M["cone"])])
-
-
-for k, (x, rot) in enumerate(((X0 + 0.5, -math.pi / 4), (X1 - 0.5, math.pi / 4))):
-    objs.append(speaker(f"Speaker_{k:02d}", x, Z0 + 0.6, rot))
-    cols.add(f"Speaker_{k:02d}", x, Z0 + 0.6, 0.0, 0.7, 0.7, 1.2)
 
 for k in range(5):
     x = X0 + 0.35
@@ -132,7 +107,7 @@ for nm, gx, gz, sx, sz in [("Sky_Back", 0, Z0 - 6, 44, 0.05), ("Sky_Front", 0, Z
                           ("Sky_West", X0 - 6, (Z0 + Z1) / 2, 0.05, 44), ("Sky_East", X1 + 6, (Z0 + Z1) / 2, 0.05, 44)]:
     objs.append(L.box(coll, nm, gx, gz, -3.0, sx, sz, 10.0, M["sky"]))
 
-bad = L.check_grounded(objs, allow=L.ALLOW_INTERIOR + ("Ceiling", "Barre_", "ChangingBooth_"))
+bad = L.check_grounded(objs, allow=L.ALLOW_INTERIOR + ("Ceiling", "ChangingBooth_"))
 print("INTERIOR grounded violations:", bad)
 assert not bad, bad
 L.export_glb(os.path.join(OUT, "interior.glb"), objs)
