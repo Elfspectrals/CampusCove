@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Services\HouseAlarmService;
 use App\Services\LockpickService;
+use App\Services\SportsGearService;
 use App\Services\StarterCosmeticGrantService;
 use App\Support\FoodCatalog;
 use Illuminate\Database\Seeder;
@@ -241,6 +242,12 @@ class ShopSeeder extends Seeder
             self::starterWear('top', 'newcomer', 'Newcomer Tee'),
             self::starterWear('bottom', 'newcomer', 'Newcomer Joggers'),
             self::starterWear('shoes', 'newcomer', 'Newcomer Sneakers'),
+            self::sportsGear('gear_swimsuit', 'Swimsuit', 'swimming', 'bottom'),
+            self::sportsGear('gear_boxing_gloves', 'Boxing Gloves', 'boxing', 'hands'),
+            self::sportsGear('gear_boules', 'Set of Boules', 'petanque', 'held'),
+            self::sportsGear('gear_tennis_racket', 'Tennis Racket', 'tennis', 'held'),
+            self::sportsGear('gear_running_spikes', 'Running Spikes', 'running', 'shoes'),
+            self::sportsGear('gear_ice_skates', 'Ice Skates', 'skating', 'shoes'),
         ];
         // ---- food and drinks (eaten from the hotbar; sold at the Campus Cafe counter)
         foreach (FoodCatalog::items() as $food) {
@@ -254,6 +261,9 @@ class ShopSeeder extends Seeder
                 $itemDefIds[$def['code']] = (int) $existing;
                 if (array_key_exists('portions', $def)) {
                     DB::table('item_defs')->where('code', $def['code'])->update(self::foodColumns($def));
+                }
+                if (array_key_exists('meta_json', $def)) {
+                    DB::table('item_defs')->where('code', $def['code'])->update(['meta_json' => json_encode($def['meta_json'], JSON_THROW_ON_ERROR)]);
                 }
                 if (array_key_exists('cosmetic_slot', $def) || array_key_exists('preview_image', $def) || array_key_exists('model_glb', $def)) {
                     DB::table('item_defs')->where('code', $def['code'])->update(array_filter([
@@ -289,6 +299,9 @@ class ShopSeeder extends Seeder
             }
             if (array_key_exists('portions', $def)) {
                 $insert = array_merge($insert, self::foodColumns($def));
+            }
+            if (array_key_exists('meta_json', $def)) {
+                $insert['meta_json'] = json_encode($def['meta_json'], JSON_THROW_ON_ERROR);
             }
 
             $itemDefIds[$def['code']] = (int) DB::table('item_defs')->insertGetId($insert, 'item_def_id');
@@ -603,6 +616,22 @@ class ShopSeeder extends Seeder
     private static function starterWear(string $slot, string $key, string $name): array
     {
         return array_merge(self::wear($slot, $key, $name, 0), ['tradable' => false, 'bind' => 'bound', 'max_stack' => 99]);
+    }
+
+    /** @return array<string, mixed> */
+    private static function sportsGear(string $code, string $name, string $sport, string $slot): array
+    {
+        return [
+            'code' => $code,
+            'name' => $name,
+            'kind' => SportsGearService::KIND,
+            'rarity' => 1,
+            'tradable' => true,
+            'premium_only' => false,
+            'bind' => 'none',
+            'max_stack' => 1,
+            'meta_json' => ['sport' => $sport, 'slot' => $slot],
+        ];
     }
 
     /** @return array<string, mixed> */

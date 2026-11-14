@@ -183,6 +183,7 @@ erDiagram
         smallint thirst_per_portion
         int max_uses "outil de métier, voir TOOLS.md"
         bool weapon "outil qui frappe plus fort que le poing"
+        jsonb meta_json "matériel de sport : sport et slot, voir sports/CORE.md"
     }
     ITEM_INSTANCES {
         bigint item_instance_id PK
@@ -229,6 +230,46 @@ erDiagram
         int quantity "1 à 999"
     }
 ```
+
+### Complexe sportif (`docs/sports/CORE.md`)
+
+```mermaid
+erDiagram
+    ACCOUNTS ||--o{ SPORTS_PASS_PURCHASES : "achète un pass"
+    TRANSACTIONS ||--|| SPORTS_PASS_PURCHASES : "débit cash détruit"
+    SPORTS_MATCHES ||--o{ SPORTS_MATCH_PLAYERS : "résultats"
+    ACCOUNTS ||--o{ SPORTS_MATCH_PLAYERS : joue
+
+    SPORTS_PASS_PURCHASES {
+        bigint id PK
+        bigint account_id FK
+        text ref "unique par compte (idempotence)"
+        text kind "day ou week"
+        timestamptz valid_until "fin du pass après cet achat"
+        bigint cash_after
+    }
+    SPORTS_MATCHES {
+        bigint id PK
+        text ref UK "id de match du socket"
+        text sport "un des 11 sports"
+        text venue
+        jsonb settings
+        timestamptz started_at
+        timestamptz ended_at
+    }
+    SPORTS_MATCH_PLAYERS {
+        bigint sports_match_id FK
+        bigint account_id FK
+        text team "red, blue ou null"
+        text result "win, loss, draw, finished, dnf"
+        smallint place
+        int time_ms
+        int score
+    }
+```
+
+Le matériel de sport est un `item_kind` `sports_gear` (pile de 1, jamais usé, pas une arme), qui tombe dans le sac de
+mort avec le cash et n'est jamais volé.
 
 ## 4. Monde & logement
 

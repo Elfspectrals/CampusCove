@@ -16,7 +16,7 @@ final class PickpocketService
 
     public const OUTCOMES = ['failed', 'succeeded'];
 
-    public const NEVER_STOLEN_KINDS = ['furniture', 'apartment_asset', 'tool'];
+    public const NEVER_STOLEN_KINDS = ['furniture', 'apartment_asset', 'tool', SportsGearService::KIND];
 
     public function __construct(
         private readonly AccountInventoryService $inventory,

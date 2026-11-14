@@ -35,6 +35,7 @@ use App\Http\Controllers\ReferralController;
 use App\Http\Controllers\RespawnBedController;
 use App\Http\Controllers\SecurityScanController;
 use App\Http\Controllers\ShopController;
+use App\Http\Controllers\SportsController;
 use App\Http\Controllers\StorageAuctionController;
 use App\Http\Controllers\StripeWebhookController;
 use App\Http\Controllers\SurvivalController;
@@ -151,6 +152,10 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
         Route::post('/market/lots', [MarketController::class, 'listLot']);
         Route::post('/market/lots/{id}/withdraw', [MarketController::class, 'withdrawLot'])->whereNumber('id');
         Route::post('/market/lots/{id}/buy', [MarketController::class, 'buy'])->whereNumber('id');
+        Route::get('/sports/pass', [SportsController::class, 'pass']);
+        Route::post('/sports/pass', [SportsController::class, 'buyPass']);
+        Route::get('/sports/gear', [SportsController::class, 'gear']);
+        Route::post('/sports/matches', [SportsController::class, 'recordMatch']);
         Route::middleware('admin')->prefix('admin/game')->group(function () {
             Route::get('/items', [AdminGameController::class, 'items']);
             Route::get('/wallets', [AdminGameController::class, 'wallets']);

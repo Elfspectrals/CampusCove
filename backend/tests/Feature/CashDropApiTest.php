@@ -64,7 +64,7 @@ class CashDropApiTest extends TestCase
         $other = $this->player(cash: 0, bank: 0);
         $drop = $this->die($victim)->json('cash_drop');
 
-        $this->pick($finder, $drop['id'])->assertOk()->assertExactJson(['amount' => 240, 'tools' => [], 'cash' => 250]);
+        $this->pick($finder, $drop['id'])->assertOk()->assertExactJson(['amount' => 240, 'tools' => [], 'gear' => [], 'cash' => 250]);
         $this->pick($other, $drop['id'])->assertStatus(409)->assertJsonPath('code', 'cash_drop_gone');
 
         $this->assertSame(0, $this->balance($other['account_id'], Wallet::CASH));
@@ -137,7 +137,7 @@ class CashDropApiTest extends TestCase
         DB::table('item_instances')->where('owner_account_id', $victim['account_id'])->update(['uses_left' => 12]);
         $drop = $this->die($victim)->json('cash_drop');
 
-        $this->pick($finder, $drop['id'])->assertOk()->assertExactJson(['amount' => 40, 'tools' => ['tool_hammer'], 'cash' => 40]);
+        $this->pick($finder, $drop['id'])->assertOk()->assertExactJson(['amount' => 40, 'tools' => ['tool_hammer'], 'gear' => [], 'cash' => 40]);
 
         $this->assertSame(['tool_hammer'], $this->carriedCodes($finder['account_id']));
         $this->assertSame(12, (int) DB::table('item_instances')->where('owner_account_id', $finder['account_id'])->value('uses_left'));
@@ -153,6 +153,59 @@ class CashDropApiTest extends TestCase
         $this->assertSame([], $this->carriedCodes($player['account_id']));
         $this->assertSame(0, DB::table('item_instances')->where('owner_account_id', $player['account_id'])->count());
         $this->assertSame(0, DB::table('cash_drops')->count());
+    }
+
+    public function test_dying_drops_every_sports_gear_carried_in_the_bag_beside_the_tools(): void
+    {
+        $victim = $this->player(cash: 30, bank: 500);
+        $this->grant($victim['account_id'], 'gear_swimsuit');
+        $this->grant($victim['account_id'], 'gear_ice_skates');
+        $this->grant($victim['account_id'], 'tool_crowbar');
+
+        $drop = $this->die($victim)->assertOk()->json('cash_drop');
+
+        $this->assertSame(['tool_crowbar'], $drop['tools']);
+        $this->assertSame(['gear_swimsuit', 'gear_ice_skates'], $drop['gear']);
+        $this->assertSame([], $this->carriedCodes($victim['account_id']));
+    }
+
+    public function test_the_finder_gets_the_gear_of_the_bag_and_the_killer_cannot(): void
+    {
+        $victim = $this->player(cash: 0, bank: 500);
+        $killer = $this->player(cash: 0, bank: 0);
+        $finder = $this->player(cash: 0, bank: 0);
+        $this->grant($victim['account_id'], 'gear_tennis_racket');
+        $drop = $this->die($victim, $killer['account_id'])->json('cash_drop');
+
+        $this->pick($killer, $drop['id'])->assertForbidden()->assertJsonPath('code', 'cash_drop_killer');
+        $this->pick($finder, $drop['id'])->assertOk()->assertExactJson(['amount' => 0, 'tools' => [], 'gear' => ['gear_tennis_racket'], 'cash' => 0]);
+
+        $this->assertSame(['gear_tennis_racket'], $this->carriedCodes($finder['account_id']));
+        $this->assertSame([], $this->carriedCodes($killer['account_id']));
+    }
+
+    public function test_a_new_account_keeps_its_gear_and_loses_its_tools_and_cash(): void
+    {
+        $player = $this->player(cash: 50, bank: 0, ageHours: TradeService::MIN_GIVER_AGE_HOURS - 1);
+        $this->grant($player['account_id'], 'gear_boxing_gloves');
+        $this->grant($player['account_id'], 'tool_wrench');
+
+        $this->die($player)->assertOk()->assertJsonPath('cash_drop', null);
+
+        $this->assertSame(['gear_boxing_gloves'], $this->carriedCodes($player['account_id']));
+        $this->assertSame(0, $this->balance($player['account_id'], Wallet::CASH));
+        $this->assertSame(0, DB::table('cash_drops')->count());
+    }
+
+    public function test_a_new_account_with_only_gear_drops_nothing(): void
+    {
+        $player = $this->player(cash: 0, bank: 0, ageHours: TradeService::MIN_GIVER_AGE_HOURS - 1);
+        $this->grant($player['account_id'], 'gear_boules');
+
+        $this->die($player)->assertOk()->assertJsonPath('cash_drop', null);
+
+        $this->assertSame(['gear_boules'], $this->carriedCodes($player['account_id']));
+        $this->assertSame(0, DB::table('transactions')->where('type', 'cash_drop')->count());
     }
 
     private function grant(int $accountId, string $code): void
