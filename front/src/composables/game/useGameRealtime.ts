@@ -125,7 +125,8 @@ import type {
   PickpocketSucceededPayload,
   PickpocketTakenPayload,
 } from '../../types/gameRealtime'
-import type { BoxingDodgedPayload, BoxingHitPayload, BoxingStatePayload } from '../../game/sports/boxing'
+import { type BoxingBagHitPayload, type BoxingDodgedPayload, type BoxingHitPayload, type BoxingStatePayload, boxerPose } from '../../game/sports/boxing'
+import { punchClip } from '../../avatar/boxingAnimLogic'
 import { useRemoteAvatars, type SeatPose } from './useRemoteAvatars'
 import { PUNCH_DAMAGE } from '../../game/punch'
 import { applySportsLoans, clearSportsLoans, forgetSportsLoans } from '../../game/sports/sportsLoans'
@@ -134,6 +135,7 @@ const REALTIME_HTTP_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3
 
 /** Minimum delay between two cosmetics re-checks triggered by window focus. */
 const APPEARANCE_REFRESH_MIN_INTERVAL_MS = 10_000
+const BOXER_UNDRESS_MS = 6000
 
 function toWsUrl(rawUrl: string): string {
   if (rawUrl.startsWith('https://')) return `wss://${rawUrl.slice('https://'.length)}`
@@ -332,6 +334,8 @@ export interface GameRealtimeDeps {
     onHit: (data: BoxingHitPayload, mySessionId: string) => void
     onDodged: (data: BoxingDodgedPayload) => void
     onTired: () => void
+    onBagHit: (data: BoxingBagHitPayload) => void
+    onNoGloves: () => void
     onRoomLeft: () => void
   }
   pickpocket: {
@@ -372,6 +376,8 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
   let isInitialInventoryLoad = true
 
   const remotes = useRemoteAvatars({ getScene: deps.getScene, myPosition: deps.myPosition, playSoundOn: deps.playSoundOn })
+  let dressedBoxers = new Set<string>()
+  let undressTimer: ReturnType<typeof setTimeout> | null = null
 
   function setMyPosition(x: number, y: number, z: number): void {
     deps.myPosition.x = x
@@ -590,21 +596,45 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('sports_lobby_closed', (data: SportsLobbyClosedPayload) => deps.sports.onLobbyClosed(data))
     room.onMessage('sports_error', (data: SportsErrorPayload) => deps.sports.onError(data))
     room.onMessage('sports_loans', (data: SportsLoansPayload) => applySportsLoans(data))
-    room.onMessage('boxing_state', (data: BoxingStatePayload) => deps.boxing.onState(data))
+    room.onMessage('boxing_state', (data: BoxingStatePayload) => {
+      const boxers = new Set(data.boxers.flatMap((b) => (b.sessionId && b.sessionId !== room.sessionId ? [b.sessionId] : [])))
+      for (const sessionId of dressedBoxers) if (!boxers.has(sessionId)) remotes.setBoxer(sessionId, false)
+      if (undressTimer) clearTimeout(undressTimer)
+      undressTimer = null
+      for (const b of data.boxers) {
+        if (!b.sessionId || !boxers.has(b.sessionId)) continue
+        remotes.setBoxer(b.sessionId, true)
+        remotes.boxerPose(b.sessionId, boxerPose(data, b))
+      }
+      dressedBoxers = boxers
+      if (data.phase === 'over') {
+        undressTimer = setTimeout(() => {
+          for (const sessionId of dressedBoxers) remotes.setBoxer(sessionId, false)
+          dressedBoxers = new Set()
+        }, BOXER_UNDRESS_MS)
+      }
+      deps.boxing.onState(data)
+    })
     room.onMessage('boxing_hit', (data: BoxingHitPayload) => {
-      if (data.sessionId !== room.sessionId) remotes.showPunch(data.sessionId)
+      if (data.sessionId !== room.sessionId) remotes.boxerShot(data.sessionId, punchClip(data.kind))
       if (data.outcome === 'landed' && data.targetSessionId !== room.sessionId) {
         const from = remotes.positionOf(data.sessionId)
         const to = remotes.positionOf(data.targetSessionId)
         const dx = from && to ? to.x - from.x : 0
         const dz = from && to ? to.z - from.z : 0
         const len = Math.hypot(dx, dz) || 1
-        remotes.showHit(data.targetSessionId, dx / len, dz / len, data.damage, { delay: 0, hitStop: 0 })
+        remotes.showHit(data.targetSessionId, dx / len, dz / len, data.damage, { delay: 0, hitStop: 0 }, 'glove_hit')
+        remotes.boxerShot(data.targetSessionId, 'HitReact')
       }
       deps.boxing.onHit(data, room.sessionId)
     })
-    room.onMessage('boxing_dodged', (data: BoxingDodgedPayload) => deps.boxing.onDodged(data))
+    room.onMessage('boxing_dodged', (data: BoxingDodgedPayload) => {
+      if (data.sessionId !== room.sessionId) remotes.boxerShot(data.sessionId, data.side === 'left' ? 'DodgeL' : 'DodgeR')
+      deps.boxing.onDodged(data)
+    })
     room.onMessage('boxing_tired', () => deps.boxing.onTired())
+    room.onMessage('boxing_bag_hit', (data: BoxingBagHitPayload) => deps.boxing.onBagHit(data))
+    room.onMessage('boxing_no_gloves', () => deps.boxing.onNoGloves())
     room.onMessage('pickpocket_started', (data: PickpocketStartedPayload) => deps.pickpocket.onStarted(data))
     room.onMessage('pickpocket_progress', (data: PickpocketProgressPayload) => deps.pickpocket.onProgress(data))
     room.onMessage('pickpocket_failed', (data: PickpocketFailedPayload) => deps.pickpocket.onFailed(data))

@@ -117,6 +117,7 @@ interface AvatarAnimState {
   selector: AvatarClipSelector
   seated: boolean
   oneShot: OneShotClip | null
+  override?: ((dt: number, speed: number) => void) | null
 }
 
 const CROSSFADE_S = 0.22
@@ -198,7 +199,12 @@ function playClip(state: AvatarAnimState, name: string, timeScale: number): void
 export function updateAvatarAnimation(root: THREE.Object3D, dt: number, speed: number): void {
   const state = animStateByRoot.get(root)
   if (!state) return
-  if (state.seated) {
+  if (state.override) {
+    state.current?.fadeOut(CROSSFADE_S)
+    state.current = null
+    state.oneShot = null
+    state.override(clampDt(dt), speed)
+  } else if (state.seated) {
     playClip(state, SIT_CLIP, 1)
   } else {
     const { clip, timeScale } = state.selector.update(dt, speed)
@@ -206,6 +212,15 @@ export function updateAvatarAnimation(root: THREE.Object3D, dt: number, speed: n
     if (state.oneShot === null) playClip(state, clip, timeScale)
   }
   state.mixer.update(clampDt(dt))
+}
+
+export function avatarMixer(root: THREE.Object3D): THREE.AnimationMixer | null {
+  return animStateByRoot.get(root)?.mixer ?? null
+}
+
+export function setAvatarAnimationOverride(root: THREE.Object3D, override: ((dt: number, speed: number) => void) | null): void {
+  const state = animStateByRoot.get(root)
+  if (state) state.override = override
 }
 
 /** Stop and forget an instance's mixer (call before disposing the avatar). */

@@ -877,15 +877,18 @@ const { open: sportsSignupOpen, choices: sportsVenueChoices, canPickVenue: sport
 watch(sportsSignupOpen, (open) => {
   if (!open && !document.pointerLockElement) requestPointerLock()
 })
-const BOXING_HIT_STOP_S = 0.08
 const boxing = useBoxing({
   gameRoomRef,
   pointerLocked: () => pointerLocked.value,
-  punchArms: () => arms?.punch(),
-  shakeOnHit: () => arms?.hitStop(BOXING_HIT_STOP_S),
+  arms: () => arms,
   play: (sound) => sfx.play(sound),
+  playOn: (sound, object) => sfx.playOn(sound, object),
   say: (text) => survival.say(text),
   tiredText: () => t('sports.boxing.tired'),
+  noGlovesText: () => t('sports.boxing.noGloves'),
+  myPosition,
+  getCamera,
+  getScene,
 })
 const { view: boxingView, fighting: boxingFighting } = boxing
 const PICKPOCKET_ERROR_KEYS = new Set([
