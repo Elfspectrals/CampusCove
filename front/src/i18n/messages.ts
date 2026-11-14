@@ -749,6 +749,7 @@ export const messages = {
         defend: { football: 'Tackle', basketball: 'Steal' },
         spectating: 'Watching',
         hint: 'Left click: pass · Hold right click: shoot · {key}: {defend}',
+        release: { perfect: 'Perfect', good: 'Good', early: 'Early', late: 'Late' },
         free: {
           title: 'Free play',
           rules: 'Borrow a ball from the coach. Goals and baskets are not counted; the ball comes back when you leave the gym.',
@@ -1832,6 +1833,7 @@ export const messages = {
         defend: { football: 'Tacle', basketball: 'Vol de balle' },
         spectating: 'Spectateur',
         hint: 'Clic gauche : passe · Clic droit maintenu : tir · {key} : {defend}',
+        release: { perfect: 'Parfait', good: 'Bien', early: 'Trop tôt', late: 'Trop tard' },
         free: {
           title: 'Jeu libre',
           rules: 'Emprunte un ballon au coach. Buts et paniers ne comptent pas ; le ballon revient quand tu quittes le gymnase.',

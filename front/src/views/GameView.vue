@@ -893,7 +893,7 @@ const gymMatch = useGymMatch({
   say: (text) => survival.say(text),
   errorText: ({ code, message }) => (te(`sports.gym.errors.${code}`) ? t(`sports.gym.errors.${code}`) : message),
 })
-const { hud: gymHud, freeHud: gymFreeHud, banner: gymBanner, rimPop: gymRimPop, myBall: gymMyBall } = gymMatch
+const { hud: gymHud, freeHud: gymFreeHud, banner: gymBanner, rimPop: gymRimPop, releaseLabel: gymReleaseLabel, myBall: gymMyBall } = gymMatch
 const gymCoachOpen = computed(() => sportsSignupOpen.value && sportsVenueChoices.value.some((c) => c.lobby.coach === GYM_COACH))
 const PICKPOCKET_ERROR_KEYS = new Set([
   'pickpocket_on_duty',
@@ -2356,7 +2356,7 @@ const crosshairClass = computed(() => {
       @buy="sportsPass.buy"
       @close="sportsPass.close"
     />
-    <GameGymMatchHud :hud="gymHud" :free-hud="gymFreeHud" :banner="gymBanner" :rim-pop="gymRimPop" />
+    <GameGymMatchHud :hud="gymHud" :free-hud="gymFreeHud" :banner="gymBanner" :rim-pop="gymRimPop" :release-label="gymReleaseLabel" />
     <GameGymFreePlay v-if="gymCoachOpen" :my-ball="gymMyBall" @borrow="gymMatch.borrow" @give-back="gymMatch.giveBack" />
     <GameSportsSignup
       v-if="sportsSignupOpen"

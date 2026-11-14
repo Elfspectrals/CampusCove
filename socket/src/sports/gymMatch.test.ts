@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 import { type Ball, bounceBody, droppedThroughRim, launchToward, stepBall } from './gymBall.ts'
 import { type GymCourt, courtObstacles, parseGymCourt } from './gymCourt.ts'
-import { type Athlete, type GymEvent, type GymGame, actGym, chargeOf, goodWindow, meterOf, newGymGame, outcomeFor, stepGym } from './gymMatch.ts'
+import { type Athlete, type GymEvent, type GymGame, actGym, chargeOf, goodWindow, meterOf, newGymGame, outcomeFor, releaseOf, stepGym } from './gymMatch.ts'
 import { type BasketballRules, type FootballRules, gymPlayerRules, halvesOf, parseBasketballRules, parseFootballRules } from './gymRules.ts'
 
 const rulesFile = (sport: string) => JSON.parse(readFileSync(new URL(`../../../front/public/assets/sports/rules/${sport}.json`, import.meta.url), 'utf8'))
@@ -321,4 +321,23 @@ test('free play basketball: a shot goes to the hoop the player faces, side hoops
     through = droppedThroughRim(before, game.ball, { x: SIDE_HOOP.x, y: SIDE_HOOP.y, z: SIDE_HOOP.z, radius: SIDE_HOOP.rimRadius })
   }
   assert.ok(through)
+})
+
+test('basketball: a release in the green window always scores, even from deep with the aim off', () => {
+  for (const [x, aimOff] of [[12, 0.2], [10, -0.25], [17, 0.1]] as const) {
+    const { events } = shoot(x, 900, EAST + aimOff)
+    assert.equal(events.length, 1, `from ${20.425 - x} m, aim off ${aimOff}`)
+  }
+})
+
+test('basketball: the release is perfect at the top of the window, good below, early or late outside', () => {
+  assert.equal(releaseOf(BASKETBALL, 900, 5), 'perfect')
+  assert.equal(releaseOf(BASKETBALL, 900 * 0.8, 5), 'good')
+  assert.equal(releaseOf(BASKETBALL, 300, 5), 'early')
+  assert.equal(releaseOf(BASKETBALL, 1500, 5), 'late')
+  const game = freshGame(BASKETBALL)
+  const a = athlete(9, 'red', 16, 0)
+  game.owner = 9
+  actGym(game, BASKETBALL, a, [a], 'shot_start', T0, () => 0.5)
+  assert.deepEqual(actGym(game, BASKETBALL, a, [a], 'shot_release', T0 + 900, () => 0.5), [{ kind: 'kick', accountId: 9, shot: true, release: 'perfect' }])
 })

@@ -20,7 +20,7 @@ import {
   predictBall,
 } from '../../game/sports/gymMatch'
 import { sportRulesUrl } from '../../game/sports/sportsSignup'
-import type { GymEndPayload, GymErrorPayload, GymEventPayload, GymFreePayload, GymSport, GymStatePayload, GymTeam } from '../../types/gameRealtime'
+import type { GymEndPayload, GymErrorPayload, GymEventPayload, GymFreePayload, GymShotRelease, GymSport, GymStatePayload, GymTeam } from '../../types/gameRealtime'
 
 export interface GymMatchDeps {
   gameRoomRef: ShallowRef<Room | null>
@@ -55,6 +55,9 @@ const GYM_COURT_URL = '/assets/sports/gym/court.json'
 const BANNER_MS = 2600
 const END_BANNER_MS = 6000
 const RIM_POP_MS = 1600
+const RELEASE_LABEL_MS = 1200
+const MARKER_RADII: readonly [number, number] = [0.45, 0.6]
+const MARKER_COLOURS = { red: 0xe0604a, blue: 0x3f8fd1, free: 0xf2c230 } as const
 const RIM_POP_RISE_M = 0.8
 const FREE_REACH_M = 2
 const MY_FOOT_AHEAD_M = 0.6
@@ -76,6 +79,8 @@ export function useGymMatch(deps: GymMatchDeps) {
   const free = shallowRef<GymFreePayload | null>(null)
   const banner = shallowRef<GymBanner | null>(null)
   const rimPop = shallowRef<GymRimPop | null>(null)
+  const releaseLabel = ref<GymShotRelease | null>(null)
+  let releaseUntil = 0
   const rules = shallowRef<Partial<Record<GymSport, GymHudRules>>>({})
   const clientNow = ref(Date.now())
   const holdStartedAt = ref<number | null>(null)
@@ -89,6 +94,7 @@ export function useGymMatch(deps: GymMatchDeps) {
   let rimPopAt: { team: GymTeam; text: string; until: number } | null = null
   const meshes = new Map<string, THREE.Mesh>()
   const dribbles = new Map<THREE.Mesh, number>()
+  const markers = new Map<string, THREE.Mesh>()
   let dribblers = new Set<string>()
   const anchor = new THREE.Vector3()
   const forward = new THREE.Vector3()
@@ -125,7 +131,35 @@ export function useGymMatch(deps: GymMatchDeps) {
   }
 
   function hideAll(except: ReadonlySet<THREE.Mesh> = new Set()): void {
-    for (const mesh of meshes.values()) if (!except.has(mesh)) mesh.removeFromParent()
+    for (const mesh of [...meshes.values(), ...markers.values()]) if (!except.has(mesh)) mesh.removeFromParent()
+  }
+
+  function markerFor(key: string, tone: keyof typeof MARKER_COLOURS): THREE.Mesh {
+    let marker = markers.get(key)
+    if (!marker) {
+      marker = new THREE.Mesh(
+        new THREE.RingGeometry(MARKER_RADII[0], MARKER_RADII[1], 32).rotateX(-Math.PI / 2),
+        new THREE.MeshBasicMaterial({ color: MARKER_COLOURS[tone], transparent: true, opacity: 0.85, depthWrite: false }),
+      )
+      marker.name = `gym_carrier_${key}`
+      markers.set(key, marker)
+    }
+    return marker
+  }
+
+  function carrierSpot(owner: string): { x: number; z: number } | null {
+    if (owner === mySessionId()) return { x: deps.myPosition.x, z: deps.myPosition.z }
+    const avatar = deps.remoteAvatar(owner)
+    return avatar ? { x: avatar.position.x, z: avatar.position.z } : null
+  }
+
+  function placeMarker(shown: Set<THREE.Mesh>, owner: string | null, tone: keyof typeof MARKER_COLOURS, key: string): void {
+    if (!owner || !court) return
+    const spot = carrierSpot(owner)
+    if (!spot) return
+    const marker = markerFor(key, tone)
+    marker.position.set(spot.x, court.floorY + 0.02, spot.z)
+    shown.add(marker)
   }
 
   function show(next: GymBanner, ms = BANNER_MS): void {
@@ -181,6 +215,10 @@ export function useGymMatch(deps: GymMatchDeps) {
       if (sport === 'basketball') rimPopAt = { team: data.team, text: `+${data.points}`, until: Date.now() + RIM_POP_MS }
       soundAtBalls('market_bell')
     } else if (data.kind === 'kick') {
+      if (mine && data.release) {
+        releaseLabel.value = data.release
+        releaseUntil = Date.now() + RELEASE_LABEL_MS
+      }
       soundAtBalls(data.shot || sportOfEvent(data) !== 'basketball' ? 'gym_kick' : 'gym_bounce')
     } else if (data.kind === 'half') {
       show({ kind: 'half', half: data.half })
@@ -267,7 +305,7 @@ export function useGymMatch(deps: GymMatchDeps) {
     window.removeEventListener('mouseup', onMouseUp)
     window.removeEventListener('blur', onBlur)
     hideAll()
-    for (const mesh of meshes.values()) {
+    for (const mesh of [...meshes.values(), ...markers.values()]) {
       mesh.geometry.dispose()
       ;(mesh.material as THREE.Material).dispose()
     }
@@ -349,6 +387,7 @@ export function useGymMatch(deps: GymMatchDeps) {
     const now = Date.now()
     clientNow.value = now
     if (banner.value && now > bannerUntil) banner.value = null
+    if (releaseLabel.value && now > releaseUntil) releaseLabel.value = null
     if (state.value && now - receivedAt > STALE_MS) state.value = null
     if (free.value && now - freeReceivedAt > STALE_MS) free.value = null
     updateRimPop(now)
@@ -361,6 +400,8 @@ export function useGymMatch(deps: GymMatchDeps) {
       const mesh = meshFor(MATCH_BALL, current.sport, matchRules.ballRadius)
       place(mesh, current.sport, current.ball, current.owner, (now - receivedAt) / 1000, seconds)
       shown.add(mesh)
+      const ownerTeam = current.players.find((p) => p.sessionId === current.owner)?.team ?? null
+      placeMarker(shown, current.owner, ownerTeam ?? 'free', `match:${ownerTeam ?? 'free'}`)
     }
     for (const ball of free.value?.balls ?? []) {
       const r = rules.value[ball.sport]
@@ -368,6 +409,7 @@ export function useGymMatch(deps: GymMatchDeps) {
       const mesh = meshFor(ball.id, ball.sport, r.ballRadius)
       place(mesh, ball.sport, ball.ball, ball.owner, (now - freeReceivedAt) / 1000, seconds)
       shown.add(mesh)
+      placeMarker(shown, ball.owner, 'free', `free:${ball.id}`)
     }
     updateDribblers()
     hideAll(shown)
@@ -413,5 +455,5 @@ export function useGymMatch(deps: GymMatchDeps) {
 
   const down = () => downUntil.value > Date.now()
 
-  return { hud, freeHud, banner, rimPop, myBall, handlers: { onState, onEvent, onEnd, onFree, onError }, onPress, borrow, giveBack, down, tick }
+  return { hud, freeHud, banner, rimPop, releaseLabel, myBall, handlers: { onState, onEvent, onEnd, onFree, onError }, onPress, borrow, giveBack, down, tick }
 }

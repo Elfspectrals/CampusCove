@@ -82,9 +82,24 @@ The gym tasks count every recorded match and ignore the core's `counts_for_tasks
 - 2 × 4 min is `durationSec: 480` with `halvesByDurationSec: { "480": 2 }`: blue kicks off the second half from the centre.
 - A tackle takes the ball when it is within 1.8 m in a 70° cone in front, else the tackler is down 0.8 s; cooldown 3 s.
 - Only a free ball is picked up by running into it; an owned football is only won by a tackle, an owned basketball by a steal.
-- Basketball shot: the meter rises over 0.9 s then falls; inside the good window (18 % of the meter near the rim, 7 % at 12 m)
-  the socket removes 80 % of the aim error. A block is an opponent within 1.6 m who jumped in the last 350 ms before the
-  release. A dunk is a release within 1.5 m of the rim while moving at 4 m/s or more, 95 % success.
+- Basketball shot, forgiving on purpose (after the first test, 2026-11-14, in the spirit of NBA 2K): the meter rises over
+  0.9 s then falls. A release in the good window (30 % of the meter near the rim, 15 % at 12 m) always scores: the socket
+  removes all of the aim error and all timing error. The top 40 % of the window is "Perfect", the rest "Good"; outside it
+  is "Early" or "Late", and the socket then removes half the aim error and lets the ball land short or long by a quarter
+  of the timing error. The rim is softer (restitution 0.4). The shooter sees the label after each shot.
+- A block is an opponent within 1.6 m who jumped in the last 350 ms before the release. A dunk is a release within 1.5 m
+  of the rim while moving at 4 m/s or more, 95 % success.
+- Football (after the first test): the ball is 0.18 m in radius (bigger than a real futsal ball, to see who has it), a
+  pass leaves at 8 m/s and a shot at 8 to 17 m/s. A coloured ring on the floor marks whoever holds a ball: the team
+  colour in a match, yellow in free play.
+- The changing-room lockers stand against its west wall, clear of the door.
+- Hat trick tiers 1 / 10 / 40 (economist, 2026-11-14): a 2 v 2 gives a hat trick often, so 1 / 5 / 25 made its gold
+  easier than the matches-played gold.
+- Not built, on purpose: a half-court 3 v 3 on the side hoops (it would overlap the main court, which runs one match at a
+  time; the side hoops stay free play), and players blocking each other's movement (a game-wide movement change, not a
+  gym file; the ball already bounces off players).
+- Venues register at boot from `server.ts` (`loadGymVenues()`), not by an import in `sports/index.ts`: their rules are
+  read over HTTP at boot, and reading them at import breaks the socket tests that import the index.
 - After a goal or a basket only the conceding team may touch the ball for 3 s (football: centre; basketball: under the basket).
 
 ## Animations
@@ -97,4 +112,8 @@ Clips on the shared human rig (`front/scripts/skins/clips.py`, table in `docs/an
 
 ## Not built yet
 
-- A referee whistle and a net swish (needs real recordings).
+- A referee whistle and a net swish: needs real recordings, not downloaded. Candidates, all Creative Commons 0 on
+  Freesound (licence to confirm on each page before use): whistle "Referee whistle blow, gymnasium" by SpliceSound
+  (sound 218318, recorded in a gym) or "Referee whistle sound" by Rosa-Orenes256 (538422, 0.5 s); swish "Outdoor
+  Basketball Shot" by fattirewhitey (381410, a swish to cut) or "Basketball dribbling and shooting" by OBXJohn (262506,
+  swishes to cut).

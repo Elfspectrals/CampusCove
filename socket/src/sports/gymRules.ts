@@ -27,9 +27,11 @@ export interface BasketballRules {
   releaseHeightM: number
   passSpeed: number
   passLift: number
-  shotMeter: { riseMs: number, windowNear: number, windowFar: number, farDistanceM: number }
+  shotMeter: { riseMs: number, windowNear: number, windowFar: number, farDistanceM: number, perfectShare: number }
   shotAngleDeg: number
   aimAssistMax: number
+  missAimAssist: number
+  missReachError: number
   dunkRangeM: number
   dunkSpeed: number
   dunkChance: number
@@ -132,10 +134,13 @@ export function parseBasketballRules(raw: unknown): BasketballRules {
       riseMs: positive(meter.riseMs, 'basketball.shotMeter.riseMs'),
       windowNear: fraction(meter.windowNear, 'basketball.shotMeter.windowNear'),
       windowFar: fraction(meter.windowFar, 'basketball.shotMeter.windowFar'),
-      farDistanceM: positive(meter.farDistanceM, 'basketball.shotMeter.farDistanceM')
+      farDistanceM: positive(meter.farDistanceM, 'basketball.shotMeter.farDistanceM'),
+      perfectShare: fraction(meter.perfectShare, 'basketball.shotMeter.perfectShare')
     },
     shotAngleDeg: positive(r.shotAngleDeg, 'basketball.shotAngleDeg'),
     aimAssistMax: fraction(r.aimAssistMax, 'basketball.aimAssistMax'),
+    missAimAssist: fraction(r.missAimAssist, 'basketball.missAimAssist'),
+    missReachError: fraction(r.missReachError, 'basketball.missReachError'),
     dunkRangeM: positive(r.dunkRangeM, 'basketball.dunkRangeM'),
     dunkSpeed: positive(r.dunkSpeed, 'basketball.dunkSpeed'),
     dunkChance: fraction(r.dunkChance, 'basketball.dunkChance'),

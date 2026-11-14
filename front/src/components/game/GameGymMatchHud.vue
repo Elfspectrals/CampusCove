@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { actionKeyLabels } from '../../config/keybindings'
 import type { GymBanner, GymRimPop } from '../../composables/game/useGymMatch'
-import type { GymSport, GymTeam } from '../../types/gameRealtime'
+import type { GymShotRelease, GymSport, GymTeam } from '../../types/gameRealtime'
 
 const props = defineProps<{
   hud: {
@@ -19,11 +19,13 @@ const props = defineProps<{
   freeHud: { sport: GymSport; meter: { fill: number; goodFrom: number | null } | null } | null
   banner: GymBanner | null
   rimPop: GymRimPop | null
+  releaseLabel: GymShotRelease | null
 }>()
 
 const { t } = useI18n()
 const TEAM_TEXT: Record<GymTeam, string> = { red: 'text-coral', blue: 'text-pool' }
 const TEAM_BG: Record<GymTeam, string> = { red: 'bg-coral', blue: 'bg-pool' }
+const RELEASE_TONE: Record<GymShotRelease, string> = { perfect: 'text-mint', good: 'text-sun', early: 'text-coral', late: 'text-coral' }
 
 const teamName = (team: GymTeam) => t(`sports.teams.${team}`)
 
@@ -92,6 +94,16 @@ const hint = computed(() => {
     </span>
     <p v-if="hint" class="m-0 text-[10px] text-mist">{{ hint }}</p>
   </section>
+  <p
+    v-if="releaseLabel"
+    :key="releaseLabel"
+    class="pointer-events-none absolute left-1/2 top-[58%] z-10 m-0 -translate-x-1/2 animate-cc-pop font-display text-2xl uppercase tracking-[0.12em] drop-shadow"
+    :class="RELEASE_TONE[releaseLabel]"
+    role="status"
+    aria-live="polite"
+  >
+    {{ t(`sports.gym.release.${releaseLabel}`) }}
+  </p>
   <p
     v-if="rimPop"
     class="pointer-events-none absolute z-10 m-0 -translate-x-1/2 -translate-y-1/2 font-display text-4xl drop-shadow"

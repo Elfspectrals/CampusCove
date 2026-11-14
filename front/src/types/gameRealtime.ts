@@ -899,6 +899,7 @@ export interface SportsLoansPayload {
 
 export type GymSport = 'football' | 'basketball'
 export type GymTeam = 'red' | 'blue'
+export type GymShotRelease = 'perfect' | 'good' | 'early' | 'late'
 
 export interface GymStatePayload {
   venue: string
@@ -916,7 +917,7 @@ export interface GymStatePayload {
 
 export type GymEventPayload =
   | { venue: string; kind: 'score'; team: GymTeam; points: number; dunk: boolean; scorer: string | null; sessionId: string | null }
-  | { venue: string; kind: 'kick'; shot: boolean; sessionId: string | null }
+  | { venue: string; kind: 'kick'; shot: boolean; release?: GymShotRelease; sessionId: string | null }
   | { venue: string; kind: 'tackle' | 'steal'; won: boolean; sessionId: string | null }
   | { venue: string; kind: 'block'; sessionId: string | null }
   | { venue: string; kind: 'half'; half: number; sessionId: null }

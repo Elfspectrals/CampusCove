@@ -27,7 +27,7 @@ final class TaskCatalog
             'insider' => ['counter' => ActionCounter::SecretRoomWeeks, 'tiers' => [1, 4, 12]],
             'football' => ['counter' => ActionCounter::FootballMatches, 'tiers' => [5, 25, 100]],
             'basketball' => ['counter' => ActionCounter::BasketballMatches, 'tiers' => [10, 40, 150]],
-            'hat_trick' => ['counter' => ActionCounter::HatTricks, 'tiers' => [1, 5, 25]],
+            'hat_trick' => ['counter' => ActionCounter::HatTricks, 'tiers' => [1, 10, 40]],
             'sharpshooter' => ['counter' => ActionCounter::SharpshooterMatches, 'tiers' => [1, 5, 15]],
         ];
     }

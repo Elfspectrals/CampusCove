@@ -68,7 +68,7 @@
     "massKg": 0.6,
     "restitution": 0.75,
     "wallRestitution": 0.7,
-    "rimRestitution": 0.55,
+    "rimRestitution": 0.4,
     "friction": 0.8
   },
   "carryAheadM": 0.45,
@@ -80,12 +80,15 @@
   "passLift": 2.0,
   "shotMeter": {
     "riseMs": 900,
-    "windowNear": 0.18,
-    "windowFar": 0.07,
-    "farDistanceM": 12
+    "windowNear": 0.3,
+    "windowFar": 0.15,
+    "farDistanceM": 12,
+    "perfectShare": 0.4
   },
   "shotAngleDeg": 52,
-  "aimAssistMax": 0.8,
+  "aimAssistMax": 1,
+  "missAimAssist": 0.5,
+  "missReachError": 0.25,
   "dunkRangeM": 1.5,
   "dunkSpeed": 4,
   "dunkChance": 0.95,

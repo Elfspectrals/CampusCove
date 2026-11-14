@@ -196,11 +196,11 @@
       "code": "decor_police_lockers",
       "forSale": false,
       "position": [
-        -461.6,
+        -463.11,
         0.2,
-        -204.4
+        -204.0
       ],
-      "yaw": 0.0,
+      "yaw": 1.5708,
       "scale": [
         1,
         1,
@@ -214,11 +214,11 @@
       "code": "decor_police_lockers",
       "forSale": false,
       "position": [
-        -459.8,
+        -463.11,
         0.2,
-        -204.4
+        -202.2
       ],
-      "yaw": 0.0,
+      "yaw": 1.5708,
       "scale": [
         1,
         1,

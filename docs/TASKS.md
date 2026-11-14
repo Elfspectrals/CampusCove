@@ -63,7 +63,7 @@ Every task lives in `App\Support\TaskCatalog`: a key, the counter it reads and i
 | `insider` | `secret_room_weeks` | 1 / 4 / 12 |
 | `football` | `football_matches` | 5 / 25 / 100 |
 | `basketball` | `basketball_matches` | 10 / 40 / 150 |
-| `hat_trick` | `hat_tricks` | 1 / 5 / 25 |
+| `hat_trick` | `hat_tricks` | 1 / 10 / 40 |
 | `sharpshooter` | `sharpshooter_matches` | 1 / 5 / 15 |
 
 ## Notification

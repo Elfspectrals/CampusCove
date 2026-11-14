@@ -86,7 +86,7 @@
   "kickoffCountdownSec": 60,
   "rejoinGraceSec": 30,
   "ball": {
-    "radiusM": 0.11,
+    "radiusM": 0.18,
     "massKg": 0.43,
     "restitution": 0.55,
     "wallRestitution": 0.7,
@@ -96,15 +96,15 @@
   "carryAheadM": 0.55,
   "dribbleReachM": 0.9,
   "pickupHeightM": 0.6,
-  "passPower": 11,
-  "passLift": 0.8,
+  "passPower": 8,
+  "passLift": 0.6,
   "shotPowerRange": [
-    10,
-    24
+    8,
+    17
   ],
   "shotLiftRange": [
     1,
-    5
+    4
   ],
   "shotChargeMs": 1000,
   "tackle": {

@@ -13,12 +13,14 @@ export interface Athlete {
   ry: number
 }
 
+export type ShotRelease = 'perfect' | 'good' | 'early' | 'late'
+
 export type GymActionKind = 'pass' | 'shot_start' | 'shot_release' | 'tackle' | 'jump'
 export const GYM_ACTIONS: readonly GymActionKind[] = ['pass', 'shot_start', 'shot_release', 'tackle', 'jump']
 
 export type GymEvent =
   | { kind: 'score', team: Team, scorer: number | null, points: number, dunk: boolean }
-  | { kind: 'kick', accountId: number, shot: boolean }
+  | { kind: 'kick', accountId: number, shot: boolean, release?: ShotRelease }
   | { kind: 'tackle', accountId: number, won: boolean }
   | { kind: 'steal', accountId: number, won: boolean }
   | { kind: 'block', accountId: number }
@@ -331,17 +333,26 @@ function blocker(game: GymGame, rules: BasketballRules, a: Athlete, athletes: re
     now - (game.jumpedAt.get(o.accountId) ?? -Infinity) <= rules.blockWindowMs) ?? null
 }
 
-function throwShot(game: GymGame, rules: BasketballRules, a: Athlete, basket: Hoop, heldMs: number, rng: Rng): void {
+export function releaseOf(rules: BasketballRules, heldMs: number, distance: number): ShotRelease {
+  const meter = meterOf(heldMs, rules.shotMeter.riseMs)
+  const window = goodWindow(rules, distance)
+  if (meter.value >= 1 - window * rules.shotMeter.perfectShare) return 'perfect'
+  if (meter.value >= 1 - window) return 'good'
+  return meter.rising ? 'early' : 'late'
+}
+
+function throwShot(game: GymGame, rules: BasketballRules, a: Athlete, basket: Hoop, heldMs: number, rng: Rng): ShotRelease {
   const y0 = game.court.floorY + rules.releaseHeightM
   const distance = flatDistance(a.x, a.z, basket.x, basket.z)
   const meter = meterOf(heldMs, rules.shotMeter.riseMs)
-  const good = meter.value >= 1 - goodWindow(rules, distance)
+  const quality = releaseOf(rules, heldMs, distance)
+  const good = quality === 'perfect' || quality === 'good'
   const toRim = Math.atan2(basket.x - a.x, basket.z - a.z)
   const aim = Math.atan2(-Math.sin(a.ry), -Math.cos(a.ry))
   const aimError = wrapAngle(aim - toRim)
   const miss = 1 - meter.value
-  const lateral = aimError * (good ? 1 - rules.aimAssistMax : 1) + (rng() * 2 - 1) * (good ? 0.004 : 0.03 + 0.05 * miss)
-  const reachScale = good ? 1 + (rng() - 0.5) * 0.01 : 1 + (meter.rising ? -1 : 1) * miss * 0.45
+  const lateral = good ? aimError * (1 - rules.aimAssistMax) : aimError * (1 - rules.missAimAssist) + (rng() * 2 - 1) * (0.02 + 0.03 * miss)
+  const reachScale = good ? 1 : 1 + (meter.rising ? -1 : 1) * miss * rules.missReachError
   const heading = toRim + lateral
   const reach = distance * reachScale
   const tx = a.x + Math.sin(heading) * reach
@@ -350,6 +361,7 @@ function throwShot(game: GymGame, rules: BasketballRules, a: Athlete, basket: Ho
   const v = launchToward(a.x, y0, a.z, tx, basket.y, tz, angle) ?? launchToward(a.x, y0, a.z, tx, basket.y, tz, 1.25)
   if (!v) throw new Error('basketball shot: no trajectory to the rim')
   game.ball = { x: a.x, y: y0, z: a.z, ...v }
+  return quality
 }
 
 function targetHoop(game: GymGame, a: Athlete): Hoop {
@@ -408,9 +420,9 @@ function basketballAction(game: GymGame, rules: BasketballRules, a: Athlete, ath
     game.lastShot = null
     return [{ kind: 'block', accountId: block.accountId }]
   }
-  throwShot(game, rules, a, basket, now - started, rng)
+  const quality = throwShot(game, rules, a, basket, now - started, rng)
   if (game.mode === 'match' && a.team) game.lastShot = { accountId: a.accountId, team: a.team, basket: a.team, points: shotPoints(a, game.court.baskets[a.team]) }
-  return [{ kind: 'kick', accountId: a.accountId, shot: true }]
+  return [{ kind: 'kick', accountId: a.accountId, shot: true, release: quality }]
 }
 
 export function actGym(game: GymGame, rules: GymRules, actor: Athlete, athletes: readonly Athlete[], kind: GymActionKind, now: number, rng: Rng): GymEvent[] {
