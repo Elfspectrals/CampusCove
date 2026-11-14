@@ -9,6 +9,9 @@ export const GYM = { minX: -380, maxX: -360, minZ: -180, maxZ: -160 }
 export const COURT = { minX: -378, maxX: -362, minZ: -178, maxZ: -162 }
 export const DESK = { x: -410, y: 0, z: -145 }
 
+const VENUE_ZONES = ['sports_pool', 'sports_athletics', 'sports_ice_rink', 'sports_boxing', 'sports_climbing', 'sports_dance', 'sports_tennis', 'sports_petanque']
+const venueZones = VENUE_ZONES.map((key, i) => ({ key, sportsPass: true, bounds: { minX: -490 + i * 10, maxX: -482 + i * 10, minZ: -490, maxZ: -482 } }))
+
 export const manifest = {
   spawn: [0, 1.6, 13],
   bounds: { minX: -500, maxX: 500, minZ: -500, maxZ: 500 },
@@ -16,7 +19,8 @@ export const manifest = {
     { key: 'sports_reception', bounds: { minX: -420, maxX: -405, minZ: -150, maxZ: -140 } },
     { key: 'sports_complex', sportsPass: true, bounds: SITE },
     { key: 'sports_gym', sportsPass: true, bounds: GYM },
-    { key: 'sports_road', sportsPass: false, bounds: { minX: -430, maxX: -401, minZ: -152, maxZ: -140 } }
+    { key: 'sports_road', sportsPass: false, bounds: { minX: -430, maxX: -401, minZ: -152, maxZ: -140 } },
+    ...venueZones,
   ]
 }
 

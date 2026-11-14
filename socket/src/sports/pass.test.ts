@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { DESK, api, clientOf, fakeRoom, installWorld, json, makePlayer, sentOf } from './testWorld.ts'
+import { DESK, api, clientOf, fakeRoom, installWorld, json, makePlayer, manifest, sentOf } from './testWorld.ts'
 
 installWorld()
 const { loadSportsPassDesk, loadWorld, parseSportsPassAreas, parseSportsPassDesk, worldSportsPassAreas, worldSportsPassDesk } = await import('../world.ts')
@@ -13,7 +13,10 @@ const PASS = { validUntil: '2026-11-15T12:00:00Z', prices: { day: 40, week: 200 
 const UNTIL = Date.parse(PASS.validUntil)
 
 test('manifest zones flagged sportsPass are the pass areas, and a bad flag throws', () => {
-  assert.deepEqual([...worldSportsPassAreas().keys()], ['sports_complex', 'sports_gym'])
+  const areas = [...worldSportsPassAreas().keys()]
+  assert.deepEqual(areas, manifest.zones.filter((zone) => 'sportsPass' in zone && zone.sportsPass).map((zone) => zone.key))
+  assert.ok(areas.includes('sports_complex') && areas.includes('sports_gym'))
+  assert.ok(!areas.includes('sports_road') && !areas.includes('sports_reception'))
   assert.equal(parseSportsPassAreas([{ key: 'a', bounds: { minX: 0, maxX: 1, minZ: 0, maxZ: 1 } }]).size, 0)
   assert.throws(() => parseSportsPassAreas([{ key: 'a', sportsPass: 'yes' }]), /sportsPass/)
   assert.throws(() => parseSportsPassAreas([{ key: 'a', sportsPass: true }]), /bounds/)
