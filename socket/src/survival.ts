@@ -45,6 +45,7 @@ import {
 import { emptyHand } from './tools.ts'
 import type { ClientPayload, GameClient, GameRoom, JailSentence, Player, Stats } from './types.ts'
 import { reportCrime } from './wanted.ts'
+import { sportsDeath } from './sports/index.ts'
 import { type ClinicBed, citySpawn, worldClinic, worldFountains, worldHouse } from './world.ts'
 
 export const SURVIVAL_TICK_MS = 2000
@@ -166,6 +167,7 @@ function knockOut(room: GameRoom, client: GameClient, player: Player, cause: Kno
   emptyHand(room, client, player)
   leavePub(room, player)
   endDuty(room, player, 'death')
+  sportsDeath(room, player)
   releaseCuffs(room, player, 'suspect_down')
   const jailed = cause === 'health' && goesToNpcJail(player)
   const sentenceSaved = jailed ? sentenceAtDeath(room, player) : null
@@ -184,7 +186,8 @@ function knockOut(room: GameRoom, client: GameClient, player: Player, cause: Kno
         lostItems: Number(data?.lost?.items) || 0,
         lostClothes: Number(data?.lost?.clothes) || 0,
         lostCash: Number(data?.cash_drop?.amount) || 0,
-        lostTools: Array.isArray(data?.cash_drop?.tools) ? data.cash_drop.tools.length : 0
+        lostTools: Array.isArray(data?.cash_drop?.tools) ? data.cash_drop.tools.length : 0,
+        lostGear: Array.isArray(data?.cash_drop?.gear) ? data.cash_drop.gear.length : 0
       })
       if (data?.licence_lost === true && room.players.get(client.sessionId) === player) loseLicence(room, player)
       if (cause === 'health') dropCashBag(room, diedAt, data?.cash_drop, killerAccountId === null ? null : player.accountId)
