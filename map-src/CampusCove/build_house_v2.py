@@ -8,7 +8,7 @@ Exterior: origin = lot origin, front outer face at z=ZF, door on +Z, `Door` node
 Outputs: out/houses/<key>/{exterior.glb,interior.glb,interior.colsrc.glb,interior.layout.json,preview.png}.
 `interior=dict(plan="estate", ...)` (Cove Heights villas) swaps the duplex for a luxury plan: centre hall with the stair
 facing the door and a double-height void under a gallery, formal front rooms, great room with kitchen island and
-fireplace, powder room, primary suite with walk-in closet and bath; a style kit (STYLES) dresses it (floors, mouldings,
+fireplace, powder room, primary suite with walk-in closet and sitting room; a style kit (STYLES) dresses it (floors, mouldings,
 ceilings, arches, stair, fittings from lib_interior.py).
 Run with HOUSE_KEYS = ["house_03"] in the exec globals to build a subset.
 Then: `npm run assets:optimize -- houses`, bake (build_house_lightmaps.py -- <keys>), optimize again.
@@ -39,6 +39,8 @@ WIN = (0.9, 2.2)
 ENTRANCE = (-0.6, 0.6, 0.0, 2.2)
 L0_H, L1_Y, L1_H = 2.8, 3.0, 2.6
 STAIR_W, STAIR_LEN = 1.2, 4.6
+MIN_DOOR = 1.0
+WALK_CLEAR = 0.95
 EAVE = 0.6
 BB_H, BB_T = 0.09, 0.02
 CAS_W, CAS_T = 0.07, 0.025
@@ -170,7 +172,7 @@ HOUSES = {
                            # centre hall, stair on the west side, library study (west) and formal dining (east) in front;
                            # five-bay facade: four windows + door downstairs, five windows upstairs
                            interior=dict(plan="estate", style="colonial", stair="west", side_room="Study", open_room="Dining",
-                                         side_door=(-3.3, -2.4), open_door=(2.9, 4.5, 2.4, "cased"),
+                                         side_door=(-3.35, -2.35), open_door=(2.9, 4.5, 2.4, "cased"),
                                          front0=[(-4.7, 1.1), (-2.3, 1.1), (2.3, 1.1), (4.7, 1.1)],
                                          front1=[(-4.7, 1.1), (-2.3, 1.1), (0.0, 1.2), (2.3, 1.1), (4.7, 1.1)], open_side0=[])),
     # Cove Heights lot A-01 (docs/GATED_COMMUNITY.md 7.2c.4): Tuscan villa, hip roof, three-arch loggia carrying a balcony,
@@ -444,6 +446,9 @@ class Plan:
         """doors: (a, b) or (a, b, height, style) with style 'cased' (casings) or 'arch' (plaster arch, no casing).
         h: wall height when it must run past the room height (beside the double-height void)."""
         ds = [(d[0], d[1], d[2] if len(d) > 2 else DOOR_H, d[3] if len(d) > 3 else "cased") for d in doors]
+        if self.h.get("interior"):
+            narrow = [(a, b) for a, b, *_ in ds if b - a < MIN_DOOR - 1e-6]
+            assert not narrow, ("doorway narrower than MIN_DOOR", name, narrow)
         self.partitions.append(dict(name=name, axis=axis, fixed=fixed, a0=a0, a1=a1, level=level, doors=ds, h=h))
         for a, b, hh, st in ds:
             self.doorways.append(dict(axis=axis, fixed=fixed, a=a, b=b, level=level, h=hh, style=st))
@@ -558,7 +563,7 @@ class Plan:
         great room), an open room through a wide opening, great room across the back (family + fireplace west, kitchen
         with island east), powder room in the west back corner.
         L1: corridor and gallery over the hall, bedrooms 2 and 3 on the stair side, bath 2 at the back, the primary
-        suite (bedroom, walk-in closet, bath with tub) on the other side."""
+        suite (bedroom, walk-in closet, sitting room) on the other side."""
         I = self.h["interior"]
         S = STYLES[I["style"]]
         assert self.wing and self.h["floors"] == 2 and not self.h["mirror"], "the estate plan is a duplex with the east garage"
@@ -587,9 +592,9 @@ class Plan:
         FOOT = zf - 0.8             # stair foot
         TOP = FOOT - STAIR_LEN      # stair top = upper corridor front edge
         ZP = TOP + 0.4              # back partition of the hall and the front rooms
-        CB = TOP - 1.2              # upper back row: bedroom 3, bath 2, closet, primary bath
+        CB = TOP - 1.4              # upper back row: bedroom 3, bath 2, closet, sitting room
         GZ = TOP + 1.0              # gallery edge over the hall
-        CX = HX + 1.3               # closet | primary bath
+        CX = HX + 1.8               # closet | sitting room
         sx0 = -HX + e
         sx1 = sx0 + STAIR_W
         PX, PZ = -3.6, zb + 1.56    # powder room in the west back corner
@@ -615,7 +620,7 @@ class Plan:
         Pz("Walls_StairBoxW", -HX, TOP - PT, ZP, 0)
         Pz("Walls_StairBoxE", sx1 + e, TOP - PT, ZP, 0)
         Px("Walls_StairBoxBack", TOP - e, -HX, sx1 + PT, 0)
-        self.partition("Walls_PowderN", "x", PZ, -xi, PX + e, 0, doors=[(-5.3, -4.5)])
+        self.partition("Walls_PowderN", "x", PZ, -xi, PX + e, 0, doors=[(-5.4, -4.4)])
         self.partition("Walls_PowderE", "z", PX, zb, PZ + e, 0)
         for c, w, *_ in I["front0"]:
             self.window("front", *centered(c, w))
@@ -636,13 +641,13 @@ class Plan:
         R("Bath2", 1, -HX + e, HX - e, zb, CB - e, floor="bath", wainscot=True, baseboard=False)
         R("Suite", 1, HX + e, xi, CB + e, zf, paint="suite")
         R("Closet", 1, HX + e, CX - e, zb, CB - e)
-        R("PrimaryBath", 1, CX + e, xi, zb, CB - e, floor="bath", wainscot=True, baseboard=False)
+        R("Sitting", 1, CX + e, xi, zb, CB - e, paint="suite")
         R("FoyerUpper", 1, sx1, HX - e, GZ, zf, floor=None, paint="foyer", baseboard=False, light=False)
         R("StairWell", 1, -HX + e, sx1, TOP, zf, floor=None, paint="foyer", baseboard=False, light=False)
         Pz("Walls_StairWell", -HX, TOP, zf, 1)
-        Px("Walls_Bed2S", TOP + e, -xi, -HX, 1, doors=[(-3.6, -2.7)])
-        Px("Walls_BackRow", CB, -xi, xi, 1, doors=[(-3.6, -2.7), (-0.45, 0.45), (HX + 0.25, HX + 0.95), (CX + 0.6, CX + 1.4)])
-        Pz("Walls_SuiteW", HX, zb, zf, 1, doors=[(CB + 0.25, TOP - 0.15)])
+        Px("Walls_Bed2S", TOP + e, -xi, -HX, 1, doors=[(-3.65, -2.65)])
+        Px("Walls_BackRow", CB, -xi, xi, 1, doors=[(-3.65, -2.65), (-0.5, 0.5), (HX + 0.4, HX + 1.4), (CX + 0.5, CX + 1.5)])
+        Pz("Walls_SuiteW", HX, zb, zf, 1, doors=[(CB + 0.2, CB + 1.2)])
         Pz("Walls_Bed3E", -HX, zb, CB, 1)
         Pz("Walls_Closet", CX, zb, CB, 1)
         for c, w, *kind in I["front1"]:
@@ -679,10 +684,10 @@ class Plan:
         self.room("Parlour", 0, 2.66, xi, -1.48, zf, paint="parlour")
         self.room("Kitchen", 0, -xi, 0.0, zb, -1.6, light=False)
         self.room("Sunroom", 0, 0.12, xi, zb, -1.6, floor="foyer", paint="sunroom", panel=True)
-        self.partition("Walls_Row", "x", -1.54, -xi, xi, 0, doors=[(-5.2, -4.3), (-3.0, -1.0, *cased), (0.25, 1.15), (3.9, 4.8)])
+        self.partition("Walls_Row", "x", -1.54, -xi, xi, 0, doors=[(-5.3, -4.3), (-3.0, -1.0, *cased), (0.2, 1.2), (3.85, 4.85)])
         self.partition("Walls_HallW", "z", -3.43, -1.54, zf, 0, h=L1_Y)
         self.partition("Walls_HallE", "z", 2.6, -1.54, zf, 0, doors=[(1.9, 4.4, *cased)])
-        self.partition("Walls_Powder", "x", 3.0, -xi, -3.43, 0, doors=[(-5.3, -4.5)])
+        self.partition("Walls_Powder", "x", 3.0, -xi, -3.43, 0, doors=[(-5.4, -4.4)])
         self.partition("Walls_KitchenE", "z", 0.06, zb, -1.54, 0, doors=[(-4.4, -2.6, *cased)])
 
         self.room("CorridorW", 1, -xi, -3.37, -0.69, 0.6375, open=("E",), light=False)
@@ -695,13 +700,13 @@ class Plan:
         self.room("Bed4", 1, -xi, -2.35, zb, -0.81, paint="bed")
         self.room("Bath2", 1, -2.23, 0.35, zb, -0.81, floor="bath", wainscot=True, baseboard=False)
         self.room("Closet", 1, 0.47, 2.54, zb, -0.81)
-        self.room("PrimaryBath", 1, 2.66, xi, zb, -0.81, floor="bath", wainscot=True, baseboard=False)
-        self.partition("Walls_FrontRowW", "x", 0.6975, -xi, -3.43, 1, doors=[(-5.2, -4.3)])
-        self.partition("Walls_FrontRowE", "x", 0.6975, -2.11, 2.6, 1, doors=[(-1.6, -0.7)])
+        self.room("Sitting", 1, 2.66, xi, zb, -0.81, paint="suite")
+        self.partition("Walls_FrontRowW", "x", 0.6975, -xi, -3.43, 1, doors=[(-5.3, -4.3)])
+        self.partition("Walls_FrontRowE", "x", 0.6975, -2.11, 2.6, 1, doors=[(-1.65, -0.65)])
         self.partition("Walls_WellW", "z", -3.43, 0.6375, zf, 1)
         self.partition("Walls_WellE", "z", -2.11, 0.6375, zf, 1)
-        self.partition("Walls_SuiteW", "z", 2.6, zb, zf, 1, doors=[(-0.5, 0.4), (-5.3, -4.5)])
-        self.partition("Walls_BackRow", "x", -0.75, -xi, xi, 1, doors=[(-3.3, -2.5), (-1.6, -0.8), (4.1, 4.9)])
+        self.partition("Walls_SuiteW", "z", 2.6, zb, zf, 1, doors=[(-0.55, 0.45), (-5.4, -4.4)])
+        self.partition("Walls_BackRow", "x", -0.75, -xi, xi, 1, doors=[(-3.4, -2.4), (-1.7, -0.7), (4.0, 5.0)])
         self.partition("Walls_Bed4E", "z", -2.29, zb, -0.75, 1)
         self.partition("Walls_Bath2E", "z", 0.41, zb, -0.75, 1)
 
@@ -765,16 +770,16 @@ class Plan:
         self.room("Powder", 0, MX + e, SP - e, S0, STZ - e, floor="bath", wainscot=True, baseboard=False)
         self.room("Pantry", 0, MX + e, SP - e, SZ + e, FZ - e, floor="tile")
         self.room("Mudroom", 0, -xi, MX - e, SZ + e, STZ - e, floor="foyer", paint="mudroom")
-        self.partition("Walls_Spine", "z", SP, SZ, zf, 0, doors=[(SZ + 0.3, SZ + 1.1), (FZ + 0.26, FZ + 1.06), (STZ + 1.0, STZ + 1.9)])
+        self.partition("Walls_Spine", "z", SP, SZ, zf, 0, doors=[(SZ + 0.2, SZ + 1.2), (FZ + 0.21, FZ + 1.21), (STZ + 0.95, STZ + 1.95)])
         self.partition("Walls_ServiceBack", "x", SZ, -xi, SP, 0)
-        self.partition("Walls_MudE", "z", MX, SZ, STZ, 0, doors=[(SZ + 0.3, SZ + 1.1)])
+        self.partition("Walls_MudE", "z", MX, SZ, STZ, 0, doors=[(SZ + 0.2, SZ + 1.2)])
         self.partition("Walls_PowderS", "x", FZ, MX, SP, 0)
         self.partition("Walls_StudyBack", "x", STZ, -xi, SP, 0)
         self.partition("Walls_Feature", "x", FZ, VX, SX1, 0, h=L1_Y)
 
         self.room("Suite", 1, -xi, SP - e, BZ + e, zf, paint="suite")
         self.room("Closet", 1, -xi, SP - e, CZ + e, BZ - e)
-        self.room("PrimaryBath", 1, -xi, SP - e, zb, CZ - e, floor="bath", wainscot=True, baseboard=False)
+        self.room("Sitting", 1, -xi, SP - e, zb, CZ - e, paint="suite")
         self.room("Corridor", 1, SP + e, VX, BZ + e, S0, open=("E",), light=False)
         self.room("Gallery", 1, VX, xi, BZ + e, S0, open=("W", "N"), light=False)
         self.room("Landing", 1, SX1, xi, S0, S1, open=("S", "W", "N"), light=False)
@@ -785,11 +790,12 @@ class Plan:
         self.room("Bath2", 1, B2W + e, B2E - e, zb, BZ - e, floor="bath", wainscot=True, baseboard=False)
         self.room("Bed4", 1, B2E + e, xi, zb, BZ - e, paint="bed")
         closet_mid = (-xi + SP - e) / 2
-        self.partition("Walls_SpineL1", "z", SP, zb, zf, 1, doors=[(BZ + 0.2, BZ + 1.1)])
+        self.partition("Walls_SpineL1", "z", SP, zb, zf, 1, doors=[(BZ + 0.15, BZ + 1.15)])
         self.partition("Walls_BackRowL1", "x", BZ, -xi, xi, 1,
-                       doors=[centered(closet_mid, 0.9), (SP + 0.6, SP + 1.5), centered((B2W + B2E) / 2, 0.8), centered((B2E + e + xi) / 2, 0.9)])
-        self.partition("Walls_ClosetBack", "x", CZ, -xi, SP, 1, doors=[centered(closet_mid, 0.9)])
-        self.partition("Walls_Bed2Front", "x", FRZ, SP, VX - e, 1, doors=[(SP + 0.5, SP + 1.4)])
+                       doors=[centered(closet_mid, MIN_DOOR), (SP + 0.55, SP + 1.55), centered((B2W + B2E) / 2, MIN_DOOR),
+                              centered((B2E + e + xi) / 2, MIN_DOOR)])
+        self.partition("Walls_ClosetBack", "x", CZ, -xi, SP, 1, doors=[centered(closet_mid, MIN_DOOR)])
+        self.partition("Walls_Bed2Front", "x", FRZ, SP, VX - e, 1, doors=[(SP + 0.45, SP + 1.45)])
         self.partition("Walls_Bed2E", "z", VX - e, S0, zf, 1)
         self.partition("Walls_Bath2W", "z", B2W, zb, BZ, 1)
         self.partition("Walls_Bath2E", "z", B2E, zb, BZ, 1)
@@ -830,11 +836,11 @@ class Plan:
         self.room("Powder", 0, MX + e, -HX - e, BZ + e, FZ - e, floor="bath", baseboard=False)
         self.room("Living", 0, HX + e, xi, BZ + e, zf, paint="living")
         self.room("Great", 0, -xi, xi, zb, BZ - e, light=False)
-        self.partition("Walls_HallW", "z", -HX, BZ, zf, 0, doors=[(FZ + 0.7, FZ + 2.7, *cased), (BZ + 0.7, BZ + 1.5)])
+        self.partition("Walls_HallW", "z", -HX, BZ, zf, 0, doors=[(FZ + 0.7, FZ + 2.7, *cased), (BZ + 0.6, BZ + 1.6)])
         self.partition("Walls_HallE", "z", HX, BZ, zf, 0, doors=[(ST + 0.15, zf - 0.1, *cased)], h=L1_Y)
         self.partition("Walls_DiningBack", "x", FZ, -xi, -HX, 0)
         self.partition("Walls_MudE", "z", MX, BZ, FZ, 0)
-        self.partition("Walls_BackW", "x", BZ, -xi, -HX, 0, doors=[(-xi + 0.5, -xi + 1.3)])
+        self.partition("Walls_BackW", "x", BZ, -xi, -HX, 0, doors=[(-xi + 0.4, -xi + 1.4)])
         self.partition("Walls_BackE", "x", BZ, HX, xi, 0, doors=[(HX + 0.74, xi - 0.695, *cased)])
 
         self.room("UpperHall", 1, -HX + e, HX - e, ST, zf, paint="hall", open=("S",))
@@ -845,11 +851,11 @@ class Plan:
         self.room("Bed3", 1, -xi, -HX - e, zb, WZ - e, paint="bed")
         self.room("Bath2", 1, -HX + e, HX - e, zb, BZ - e, floor="bath", wainscot=True, baseboard=False)
         self.room("Suite", 1, HX + e, xi, BZ + e, zf, paint="suite")
-        self.room("PrimaryBath", 1, HX + e, xi, zb, BZ - e, floor="bath", wainscot=True, baseboard=False)
-        self.partition("Walls_CorridorW", "z", -HX, zb, zf, 1, doors=[(WZ + 0.5, WZ + 1.4), (WZ - 1.0, WZ - 0.2)])
+        self.room("Sitting", 1, HX + e, xi, zb, BZ - e, paint="suite")
+        self.partition("Walls_CorridorW", "z", -HX, zb, zf, 1, doors=[(WZ + 0.45, WZ + 1.45), (WZ - 1.1, WZ - 0.1)])
         self.partition("Walls_Bed23", "x", WZ, -xi, -HX, 1)
-        self.partition("Walls_SuiteW", "z", HX, zb, zf, 1, doors=[(ST + 0.2, ST + 1.1)])
-        self.partition("Walls_BackRowL1", "x", BZ, -HX, xi, 1, doors=[(-HX + 0.36, -HX + 1.16), (HX + 1.74, HX + 2.54)])
+        self.partition("Walls_SuiteW", "z", HX, zb, zf, 1, doors=[(ST + 0.15, ST + 1.15)])
+        self.partition("Walls_BackRowL1", "x", BZ, -HX, xi, 1, doors=[(-HX + 0.26, -HX + 1.26), (HX + 1.64, HX + 2.64)])
         bad = [r["name"] for r in self.rooms if not (r["rect"][1] > r["rect"][0] and r["rect"][3] > r["rect"][2])]
         assert not bad, ("tidewater rooms without a positive size", bad)
 
@@ -1338,7 +1344,7 @@ def build_estate(B, M, P):
     # powder room
     out += LI.vanity(B, "Fit_PowderVanity", ((-5.6, zb), "+z"), 0.0, 0.6, M)
     out += LI.wc(B, "Fit_PowderWC", ((-4.05, zb), "+z"), 0.0, M)
-    # upstairs: wardrobes, walk-in closet, bath 2, primary bath, suite ceiling
+    # upstairs: wardrobes, walk-in closet, bath 2, suite ceiling
     out += LI.wardrobe(B, "Fit_WardrobeBed2", ((m * (-HX - e), TOP + PT + 1.15), fx("-x")), Y1, 2.0, M)
     out += LI.wardrobe(B, "Fit_WardrobeBed3", ((m * (-HX - e), (zb + CB - e) / 2), fx("-x")), Y1, min(2.0, CB - e - zb - 0.4), M)
     cl = CB - e - zb - 0.75
@@ -1346,11 +1352,6 @@ def build_estate(B, M, P):
     out += LI.shower(B, "Fit_Bath2Shower", (m * (-HX + e), zb), m, 1, Y1, M)
     out += LI.vanity(B, "Fit_Bath2Vanity", ((m * 0.6, zb), "+z"), Y1, 0.9, M)
     out += LI.wc(B, "Fit_Bath2WC", ((m * (HX - e), (zb + CB - e) / 2 + 0.2), fx("-x")), Y1, M)
-    bx0, bx1 = CX + e, xi
-    out += LI.tub(B, "Fit_Tub", m * (bx0 + bx1) / 2, zb + 0.5, Y1, 1.7, 0.8, "x", M)
-    out += LI.vanity(B, "Fit_SuiteVanity", ((m * bx0, (zb + CB - e) / 2 + 0.25), fx("+x")), Y1, 1.5, M, basins=2, depth=0.55)
-    out += LI.shower(B, "Fit_SuiteShower", (m * bx1, CB - e), -m, -1, Y1, M)
-    out += LI.wc(B, "Fit_SuiteWC", ((m * bx1, CB - e - 1.5), fx("-x")), Y1, M)
     x0, x1, z0, z1 = rect("Suite")
     if S["suite_ceiling"] == "tray":
         out += LI.tray(B, "Fit_SuiteTray", x0, x1, z0, z1, Y1T, M)
@@ -1406,7 +1407,7 @@ def build_harbor(B, M, P):
 
     Y1, Y1T = L1_Y, L1_Y + L1_H
     hall, mud, powder, kitchen = (rect(nm, 0) for nm in ("Hall", "Mudroom", "Powder", "Kitchen"))
-    well, bed2, bed4, bath2, closet, pbath, suite = (rect(nm, 1) for nm in ("StairWell", "Bed2", "Bed4", "Bath2", "Closet", "PrimaryBath", "Suite"))
+    well, bed2, bed4, bath2, closet, suite = (rect(nm, 1) for nm in ("StairWell", "Bed2", "Bed4", "Bath2", "Closet", "Suite"))
     hearth = ((hall[1], hall[2] + 1.53), "-x")
     out = LI.fireplace(B, "Fit_Fireplace", hearth, 0.0, L0_H, M, P.fit["S"]["fire"])
     out += LI.inglenook(B, "Fit_Inglenook", hearth, 0.0, M, width=2.9, depth=1.3, header_y=2.25)
@@ -1419,14 +1420,10 @@ def build_harbor(B, M, P):
     out += LI.vanity(B, "Fit_PowderVanity", ((powder[0], powder[3] - 0.6), "+x"), 0.0, 0.6, M)
     out += LI.wc(B, "Fit_PowderWC", ((powder[1], powder[3] - 0.7), "-x"), 0.0, M)
     out += LI.wardrobe(B, "Fit_WardrobeBed2", ((bed2[0], bed2[3] - 2.1), "+x"), Y1, 2.0, M)
-    out += LI.wardrobe(B, "Fit_WardrobeBed4", ((bed4[1], bed4[2] + 2.5), "-x"), Y1, 2.0, M)
+    out += LI.wardrobe(B, "Fit_WardrobeBed4", ((bed4[1], bed4[2] + 2.0), "-x"), Y1, 2.0, M)
     out += LI.shower(B, "Fit_Bath2Shower", (bath2[0], bath2[2]), 1, 1, Y1, M)
     out += LI.vanity(B, "Fit_Bath2Vanity", ((bath2[1], bath2[2] + 2.2), "-x"), Y1, 0.9, M)
     out += LI.wc(B, "Fit_Bath2WC", ((bath2[1], bath2[2] + 3.6), "-x"), Y1, M)
-    out += LI.tub(B, "Fit_Tub", pbath[0] + 1.64, pbath[2] + 1.3, Y1, 1.7, 0.8, "x", M)
-    out += LI.vanity(B, "Fit_SuiteVanity", ((pbath[0], pbath[3] - 1.69), "+x"), Y1, 1.5, M, basins=2, depth=0.55)
-    out += LI.shower(B, "Fit_SuiteShower", (pbath[1], pbath[3]), -1, -1, Y1, M)
-    out += LI.wc(B, "Fit_SuiteWC", ((pbath[1], pbath[3] - 1.59), "-x"), Y1, M)
     out += LI.closet_rail(B, "Fit_ClosetRailW", ((closet[0], closet[2] + 2.5), "+x"), Y1, 4.0, M)
     out += LI.closet_rail(B, "Fit_ClosetRailE", ((closet[1], closet[2] + 3.15), "-x"), Y1, 3.3, M)
     out += LI.beams(B, "Fit_BeamSuite", *suite, Y1T, M, axis="x", spacing=(suite[3] - suite[2]) / 4)
@@ -1466,7 +1463,7 @@ def build_skyline(B, M, P):
     S = P.fit["S"]
     f = P.flights[0]
     liv, great, study, pantry, powder, mud = (rect(nm, 0) for nm in ("Living", "Great", "Study", "Pantry", "Powder", "Mudroom"))
-    bed2, bed3, bed4, bath2, pbath, closet, landing = (rect(nm, 1) for nm in ("Bed2", "Bed3", "Bed4", "Bath2", "PrimaryBath", "Closet", "Landing"))
+    bed2, bed3, bed4, bath2, closet, landing = (rect(nm, 1) for nm in ("Bed2", "Bed3", "Bed4", "Bath2", "Closet", "Landing"))
     out = build_stair_float(B, M, P)
     out += [B.box("Fit_VoidEdgeW", liv[0] + 0.015, (f["z0"] + liv[3]) / 2, L0_H, 0.03, liv[3] - f["z0"], Y1 - L0_H + 0.02, M["trim"]),
             B.box("Fit_LandingEdgeN", (landing[0] + landing[1]) / 2, landing[3] + 0.015, L0_H, landing[1] - landing[0], 0.03,
@@ -1493,10 +1490,6 @@ def build_skyline(B, M, P):
     out += LI.shower(B, "Fit_Bath2Shower", (bath2[0], bath2[2]), 1, 1, Y1, M)
     out += LI.vanity(B, "Fit_Bath2Vanity", ((bath2[0], bath2[3] - 2.4), "+x"), Y1, 1.5, M, basins=2, depth=0.55)
     out += LI.wc(B, "Fit_Bath2WC", ((bath2[1], bath2[2] + 1.6), "-x"), Y1, M)
-    out += LI.tub(B, "Fit_Tub", (pbath[0] + pbath[1]) / 2, pbath[2] + 0.7, Y1, 1.7, 0.8, "x", M)
-    out += LI.vanity(B, "Fit_SuiteVanity", ((pbath[1], (pbath[2] + pbath[3]) / 2), "-x"), Y1, 1.5, M, basins=2, depth=0.55)
-    out += LI.shower(B, "Fit_SuiteShower", (pbath[0], pbath[3]), 1, -1, Y1, M)
-    out += LI.wc(B, "Fit_SuiteWC", ((pbath[0], pbath[2] + 1.6), "+x"), Y1, M)
     cl_mid, cl_len = (closet[2] + closet[3]) / 2, closet[3] - closet[2] - 0.2
     out += LI.closet_rail(B, "Fit_ClosetRailW", ((closet[0], cl_mid), "+x"), Y1, cl_len, M)
     out += LI.closet_rail(B, "Fit_ClosetRailE", ((closet[1], cl_mid), "-x"), Y1, cl_len, M)
@@ -1511,7 +1504,7 @@ def build_tidewater(B, M, P):
     S = P.fit["S"]
     k = P.kitchen
     liv, great, mud, pw = (rect(nm, 0) for nm in ("Living", "Great", "Mudroom", "Powder"))
-    b2, bath2, pb, su = (rect(nm, 1) for nm in ("Bed2", "Bath2", "PrimaryBath", "Suite"))
+    b2, bath2, su = (rect(nm, 1) for nm in ("Bed2", "Bath2", "Suite"))
     out = LI.fireplace(B, "Fit_Fireplace", ((liv[1], (liv[2] + liv[3]) / 2), "-x"), 0.0, L0_H, M, S["fire"])
     hood_x = -k["hood"][0]
     out.append(B.box("Fit_Cooktop", hood_x, great[2] + 0.33, K_H + 0.04, 0.76, 0.5, 0.012, M["dark"]))
@@ -1524,10 +1517,6 @@ def build_tidewater(B, M, P):
     out += LI.shower(B, "Fit_Bath2Shower", (bath2[0], bath2[2]), 1, 1, Y1, M)
     out += LI.vanity(B, "Fit_Bath2Vanity", ((bath2[1], bath2[2] + 1.8), "-x"), Y1, 0.9, M)
     out += LI.wc(B, "Fit_Bath2WC", ((bath2[1], bath2[3] - 0.66), "-x"), Y1, M)
-    out += LI.tub(B, "Fit_Tub", (pb[0] + pb[1]) / 2, pb[2] + 0.7, Y1, 1.7, 0.8, "x", M)
-    out += LI.vanity(B, "Fit_SuiteVanity", ((pb[1], (pb[2] + pb[3]) / 2), "-x"), Y1, 1.5, M, basins=2, depth=0.55)
-    out += LI.shower(B, "Fit_SuiteShower", (pb[0], pb[3]), 1, -1, Y1, M)
-    out += LI.wc(B, "Fit_SuiteWC", ((pb[0], pb[2] + 1.6), "+x"), Y1, M)
     out += LI.wardrobe(B, "Fit_WardrobeSuiteA", ((su[0], su[2] + 1.54), "+x"), Y1, 2.0, M)
     out += LI.wardrobe(B, "Fit_WardrobeSuiteB", ((su[0], su[2] + 3.74), "+x"), Y1, 2.0, M)
     return out
@@ -2440,11 +2429,84 @@ def render_preview(scene, path, dims):
     bpy.data.objects.remove(cam, do_unlink=True)
 
 
+def unreachable_rooms(P, layout, cols, m, step=0.025, lost_max=0.5):
+    """Rooms of a walk-in plan with more than `lost_max` m² of floor a player cannot reach from the front door (ground
+    floor) or the top of the stair (upper floor), every COL_ box grown by half of WALK_CLEAR."""
+    import numpy as np
+    from mathutils import Matrix, Vector
+
+    def world(o):
+        return (world(o.parent) @ o.matrix_parent_inverse if o.parent else Matrix()) @ o.matrix_basis
+
+    r = WALK_CLEAR / 2
+    boxes = []
+    for o in cols.items:
+        if o.name.startswith("COL_Stair"):
+            continue
+        mw = world(o)
+        pts = [mw @ Vector(c) for c in o.bound_box]
+        boxes.append((min(p.x for p in pts), max(p.x for p in pts), min(-p.y for p in pts), max(-p.y for p in pts),
+                      min(p.z for p in pts), max(p.z for p in pts)))
+    rects = [q for lv in layout["levels"] for q in lv["rects"]]
+    x0, z0 = min(q["minX"] for q in rects) - 0.5, min(q["minZ"] for q in rects) - 0.5
+    xs = np.arange(x0, max(q["maxX"] for q in rects) + 0.5, step) + step / 2
+    zs = np.arange(z0, max(q["maxZ"] for q in rects) + 0.5, step) + step / 2
+    X, Z = np.meshgrid(xs, zs)
+    top = max(layout["stairs"], key=lambda s: s["y1"]) if layout["stairs"] else None
+    bad = []
+    for li, lv in enumerate(layout["levels"]):
+        y = lv["y"]
+        free = np.zeros(X.shape, bool)
+        for q in lv["rects"]:
+            free |= (X >= q["minX"]) & (X <= q["maxX"]) & (Z >= q["minZ"]) & (Z <= q["maxZ"])
+        for bx0, bx1, bz0, bz1, by0, by1 in boxes:
+            if by1 < y + 0.35 or by0 > y + 1.8:
+                continue
+            dx = np.maximum(np.maximum(bx0 - X, X - bx1), 0)
+            dz = np.maximum(np.maximum(bz0 - Z, Z - bz1), 0)
+            free &= dx * dx + dz * dz > r * r
+        if li == 0:
+            seed = (0.0, P.zi_f - 0.6)
+        else:
+            cx, cz = (top["minX"] + top["maxX"]) / 2, (top["minZ"] + top["maxZ"]) / 2
+            seed = {"-z": (cx, top["minZ"] - 0.3), "+z": (cx, top["maxZ"] + 0.3),
+                    "-x": (top["minX"] - 0.3, cz), "+x": (top["maxX"] + 0.3, cz)}[top["rise"]]
+        reach = np.zeros(X.shape, bool)
+        i, j = int((seed[1] - z0) / step), int((seed[0] - x0) / step)
+        assert free[i, j], ("walk check seed is blocked", lv["id"], seed)
+        reach[i, j] = True
+        while True:
+            grown = reach.copy()
+            grown[1:] |= reach[:-1]
+            grown[:-1] |= reach[1:]
+            grown[:, 1:] |= reach[:, :-1]
+            grown[:, :-1] |= reach[:, 1:]
+            grown &= free
+            if (grown == reach).all():
+                break
+            reach = grown
+        lost = free & ~reach
+        areas = [(rm["name"], rm["rect"]) for rm in P.rooms if rm["level"] == li and rm["floor"] is not None]
+        if P.wing and li == 0:
+            g = P.wing
+            areas.append(("Garage", (g["s"] * P.xi, g["s"] * g["xi"], g["zb"], g["zf"])))
+        for name, rect in areas:
+            (rx0, rx1), (rz0, rz1) = sorted((m * rect[0], m * rect[1])), rect[2:]
+            area = (lost & (X >= rx0) & (X <= rx1) & (Z >= rz0) & (Z <= rz1)).sum() * step * step
+            if area > lost_max:
+                bad.append((lv["id"], name, round(float(area), 2)))
+    return bad
+
+
 def build(key):
     h = dict(HOUSES[key], key=key)
     out_dir = os.path.join(L.OUT_ROOT, "houses", key)
     P = Plan(h)
     sc_in, io, cols, B = build_interior(key, h, P)
+    layout = P.layout(B)
+    if h.get("interior"):
+        stuck = unreachable_rooms(P, layout, cols, B.m)
+        assert not stuck, ("rooms a player cannot walk into", key, stuck)
     sc_ext, xo, offset, dims = build_exterior(key, h, P)
     os.makedirs(out_dir, exist_ok=True)
     L.export_glb(os.path.join(out_dir, "exterior.glb"), xo)
@@ -2452,7 +2514,7 @@ def build(key):
     bpy.context.window.scene = sc_in
     L.export_glb(os.path.join(out_dir, "interior.glb"), io)
     L.export_glb(os.path.join(out_dir, "interior.colsrc.glb"), io + cols.items)
-    L.write_json(os.path.join(out_dir, "interior.layout.json"), P.layout(B))
+    L.write_json(os.path.join(out_dir, "interior.layout.json"), layout)
     ext_cols = porch_collision(h, P)
     bd = h.get("back_door")
     if ext_cols or bd:

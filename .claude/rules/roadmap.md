@@ -262,6 +262,10 @@ Decision (2026-11-06): a walled estate north of the mall, reached by Cove Road f
 - [todo] Playtest the five houses in game (buy, walkable terrace and gallery, back door, lock): needs `make seed` and the dev stack on this branch.
 - [todo] Residents-only gate logic.
 
+Decision (2026-11-14, after a walk-through): a house has one bathroom upstairs (bath 2, off the corridor) plus the ground-floor powder room; the former primary bath becomes an empty sitting room off the suite. Inner doorways are at least 1.0 m and every room and the garage must be reachable by a walker 0.95 m wide; the house build checks both.
+
+- [done] The five built houses rebuilt to that rule: one shower each, doors widened, the estate closet widened to 1.8 m. Not walked in game yet.
+
 Decision (2026-11-12): rule R8 allows an open wrap porch up to 2.0 m into a side setback when the neighbouring building stays at least 4.0 m away. A-03 keeps W 13.0 like A-02 and its interior goes 0.4 k over the 12 k triangle ceiling.
 
 Decision (2026-11-12): villas keep the standard house tax of 5 % of the price per 24 h (A-02 1 000, A-01 1 300, A-03 1 400 coins a day), above the orchard's ~900 a day on purpose: taxes are there to make owners keep playing. No `tax_coins` override for villas.
