@@ -46,6 +46,8 @@ Clips are phase functions `f(ph, P)` sampled by `sample_actions(arm, clips, fps=
     positive raises the right arm sideways.
   - `Hips` `ry` positive lowers the left hip.
   - `Hand` `rx` negative bends the hand toward the face, like a negative `LowerArm` `rx`.
+  - `Hips` as a whole-body root (skating clips, `_skate_apply`, 2026-11-14): `Rx` positive leans the body forward,
+    negative back; `rz` positive turns the body to its left (front toward +X); `move` y positive pushes the pelvis back.
   Any other sign is checked on a render before it is trusted.
 - `sample_actions` deletes every NLA track first: always pass the full clip dict.
 
@@ -60,6 +62,11 @@ Clips are phase functions `f(ph, P)` sampled by `sample_actions(arm, clips, fps=
 | Eat | 30 | 1.0 | one-shot | `pose_eat`, hand at the mouth from 0.33 s, two bites, chew (upper body only) |
 | Drink | 30 | 1.0 | one-shot | `pose_drink`, hand at the mouth from 0.33 s, head back 22° (upper body only) |
 | Pick | 90 | 3.0 | one-shot | `pose_pick`, base body only (`run_wear.py`) |
+| SkatePush | 39 | 1.3 | yes | `skate_push`, left stroke 0-0.5 then right stroke (650 ms each, `docs/sports/skating.md`), glide foot under the body, push foot out 0.41 m and back 0.2 m |
+| SkateGlide | 60 | 2.0 | yes | `skate_glide`, both feet on the ice, knees bent, 18° lean, slow sway |
+| SkateBrake | 15 | 0.5 | one-shot | `skate_brake`, hockey stop to the left (hips turned 80°), ends on the held stop pose |
+| SkateFall | 45 | 1.5 | one-shot | `skate_fall`, slip, seated on the ice at 0.27-0.45, back up, ends on the SkateGlide start pose |
+| SkateStumble | 12 | 0.4 | one-shot | `skate_stumble`, left foot slips, arms out, ends on the SkateGlide start pose |
 
 Every clip is keyed from frame 0 (glTF time starts at 0). Gaits plant the feet with `leg_ik` (analytic two-bone IK,
 knee forward): the stance foot moves back at exactly the design speed, so there is no slide at timeScale 1.
@@ -107,7 +114,8 @@ on recovery; Eat and Drink hold the grip on a 3 cm handle for the whole loop; Pi
 blender --background --factory-startup --python front/scripts/skins/run_wear.py
 ```
 
-It rewrites `front/public/assets/wear/**`. Pieces carry no clip, so only `wear/base/model.glb` should change when a
+It rewrites `front/public/assets/wear/**`; `-- only=base` exports only the six base GLBs, `-- only=slot/key,...` only
+those pieces. Pieces carry no clip, so only `wear/base/model.glb` should change when a
 clip is added. List what changed (`git status --short front/public/assets/wear`); a piece whose glTF structure is
 unchanged and has no animation differs only by float noise. Tell the user before restoring it with `git checkout`.
 
