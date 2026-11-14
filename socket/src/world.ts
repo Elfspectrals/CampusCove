@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import type { Json } from './backend.ts'
+import { type BusLine, parseBusLine } from './busLine.ts'
 import type { StorageUnit } from './storageSale.ts'
 import type { Bounds, Vec3 } from './types.ts'
 
@@ -117,6 +118,7 @@ interface World {
   zoneBounds: Map<string, Bounds>
   sportsPassAreas: Map<string, Bounds>
   storage: WorldStorage | null
+  busLine: BusLine | null
 }
 
 export interface WorldStorage {
@@ -407,7 +409,8 @@ function parseWorld(manifest: Json): World {
     police: parsePolice(manifest.police, destinations),
     zoneBounds: new Map(manifest.zones.filter((zone: Json) => zone.bounds !== undefined).map((zone: Json) => [zone.key, parseBounds(zone.bounds, `${zone.key} zone bounds`)])),
     sportsPassAreas: parseSportsPassAreas(manifest.zones),
-    storage: parseStorage(manifest.storage)
+    storage: parseStorage(manifest.storage),
+    busLine: parseBusLine(manifest.bus)
   }
 }
 
@@ -525,6 +528,10 @@ export function worldHouse(houseKey: string): WorldHouse | null {
 
 export function worldClinic(): WorldClinic | null {
   return loadedWorld().clinic
+}
+
+export function worldBusLine(): BusLine | null {
+  return loadedWorld().busLine
 }
 
 export function worldStorage(): WorldStorage | null {

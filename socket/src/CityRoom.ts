@@ -107,7 +107,9 @@ import type {
   Player,
   PubState
 } from './types.ts'
-import { type WorldHouse, citySpawn, workDoor, worldHouse } from './world.ts'
+import { type WorldHouse, citySpawn, workDoor, worldBusLine, worldHouse } from './world.ts'
+import { isRidingBus, leaveBus, newBusState, onBusAlight, onBusBoard, tickBus } from './bus.ts'
+import { BUS_SYNC_MS } from './busConstants.ts'
 import { sendTaskTierReached, type TaskTierReached } from './tasks.ts'
 import { applyTutorialChange, type TutorialChange } from './tutorial.ts'
 import { onTaskMove } from './taskTracking.ts'
@@ -142,6 +144,7 @@ export class CityRoom extends Room implements GameRoom {
   market: MarketSnapshot | null = null
   storageAuction = newStorageAuction()
   sports = newSportsState()
+  bus = newBusState(worldBusLine())
   pub: PubState = { secretOpen: false, race: null, darts: null, challenges: new Map(), challengeSentAt: new Map(), quiz: null, quizSchedule: 0 }
 
   onCreate() {
@@ -257,6 +260,9 @@ export class CityRoom extends Room implements GameRoom {
         warn('sports tick failed', error)
       }
     }, SPORTS_TICK_MS)
+    this.onMessage('bus_board', (client, payload: ClientPayload) => onBusBoard(this, client, payload))
+    this.onMessage('bus_alight', (client, payload: ClientPayload) => onBusAlight(this, client, payload))
+    this.clock.setInterval(() => tickBus(this), BUS_SYNC_MS)
     scheduleNextQuiz(this)
     this.clock.setInterval(() => void this.pollHousingUnits(), HOUSING_POLL_MS)
     this.clock.setInterval(() => tickSurvival(this, SURVIVAL_TICK_MS / 1000), SURVIVAL_TICK_MS)
@@ -291,6 +297,7 @@ export class CityRoom extends Room implements GameRoom {
         leaveSportsRoom(this, stale, Date.now())
         leaveCuffs(this, stale)
         leavePickpocket(this, stale)
+        leaveBus(this, stale)
       }
       this.players.delete(staleSessionId)
       // saved before this session loads them
@@ -340,6 +347,7 @@ export class CityRoom extends Room implements GameRoom {
     releaseClinicBed(this, player)
     leaveCuffs(this, player)
     leavePickpocket(this, player)
+    leaveBus(this, player)
     onTradeLeave(this, player)
     leavePub(this, player)
     leaveSportsRoom(this, player, Date.now())
@@ -369,7 +377,7 @@ export class CityRoom extends Room implements GameRoom {
 
   onMove(client: Client, payload: ClientPayload): void {
     const player = this.players.get(client.sessionId)
-    if (!player || !payload || typeof payload !== 'object') return
+    if (!player || !payload || typeof payload !== 'object' || isRidingBus(this, player)) return
     const x = normalizeNumber(payload.x, player.x)
     const y = normalizeNumber(payload.y, player.y)
     const z = normalizeNumber(payload.z, player.z)

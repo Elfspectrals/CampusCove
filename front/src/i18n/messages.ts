@@ -2,6 +2,27 @@
 export const messages = {
   en: {
     a11y: { skip: 'Skip to main content' },
+    bus: {
+      board: 'Board the bus',
+      boardDetail: 'To {stop}, leaves in {s} s',
+      title: 'Town bus',
+      nextStop: 'Next stop: {stop}',
+      atStop: 'At {stop}, leaves in {s} s',
+      getOffHere: '{key} to get off here',
+      getOffNext: '{key} to get off at the next stop',
+      gettingOff: 'Getting off at {stop}',
+      chooseStop: 'Get off at',
+      errors: {
+        unknown_bus: 'This bus is not in service.',
+        riding: 'You are already on the bus.',
+        not_riding: 'You are not on the bus.',
+        unavailable: 'You cannot ride the bus right now.',
+        not_docked: 'The bus has left the stop.',
+        too_far: 'Walk up to the bus door.',
+        full: 'The bus is full, wait for the next one.',
+        unknown_stop: 'This bus does not stop there.',
+      },
+    },
     nav: { home: 'Home', lobby: 'Lobby', skins: 'Skins', gems: 'Gems', friends: 'Friends', settings: 'Settings', play: 'Play', signIn: 'Sign in', shop: 'Shop', profile: 'Profile', logout: 'Log out', openMenu: 'Open menu', closeMenu: 'Close menu' },
     landing: { playFree: 'Play free', haveAccount: 'I have an account' },
     footer: {
@@ -1031,6 +1052,27 @@ export const messages = {
   },
   fr: {
     a11y: { skip: 'Aller au contenu principal' },
+    bus: {
+      board: 'Monter dans le bus',
+      boardDetail: 'Vers {stop}, départ dans {s} s',
+      title: 'Bus de la ville',
+      nextStop: 'Prochain arrêt : {stop}',
+      atStop: 'À {stop}, départ dans {s} s',
+      getOffHere: '{key} pour descendre ici',
+      getOffNext: '{key} pour descendre au prochain arrêt',
+      gettingOff: 'Vous descendez à {stop}',
+      chooseStop: 'Descendre à',
+      errors: {
+        unknown_bus: 'Ce bus n’est pas en service.',
+        riding: 'Vous êtes déjà dans le bus.',
+        not_riding: 'Vous n’êtes pas dans le bus.',
+        unavailable: 'Vous ne pouvez pas prendre le bus pour l’instant.',
+        not_docked: 'Le bus a quitté l’arrêt.',
+        too_far: 'Approchez-vous de la porte du bus.',
+        full: 'Le bus est plein, attendez le suivant.',
+        unknown_stop: 'Ce bus ne s’arrête pas là.',
+      },
+    },
     nav: { home: 'Accueil', lobby: 'Lobby', skins: 'Skins', gems: 'Gems', friends: 'Amis', settings: 'Paramètres', play: 'Jouer', signIn: 'Connexion', shop: 'Boutique', profile: 'Profil', logout: 'Se déconnecter', openMenu: 'Ouvrir le menu', closeMenu: 'Fermer le menu' },
     landing: { playFree: 'Jouer gratuitement', haveAccount: 'J’ai déjà un compte' },
     footer: {

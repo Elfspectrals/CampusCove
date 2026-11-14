@@ -58,6 +58,7 @@ import GameWatchMenu from '../components/game/GameWatchMenu.vue'
 import ItemShopPurchaseConfirmModal from '../components/shop/ItemShopPurchaseConfirmModal.vue'
 import GameRoomMessageBanner from '../components/game/GameRoomMessageBanner.vue'
 import GameTutorialQuest from '../components/game/GameTutorialQuest.vue'
+import GameBusHud from '../components/game/GameBusHud.vue'
 import GameTutorialMarker from '../components/game/GameTutorialMarker.vue'
 import { useTutorialMarker } from '../composables/game/useTutorialMarker'
 import { useTutorialHints } from '../composables/game/useTutorialHints'
@@ -117,6 +118,7 @@ import { usePubQuiz } from '../composables/game/usePubQuiz'
 import { useRenderStats } from '../composables/game/useRenderStats'
 import { useRoomEnvironment } from '../composables/game/useRoomEnvironment'
 import { useSeats } from '../composables/game/useSeats'
+import { useTownBus } from '../composables/game/useTownBus'
 import { useSurvival } from '../composables/game/useSurvival'
 import { useTrade } from '../composables/game/useTrade'
 import { useAdminWatch } from '../composables/game/useAdminWatch'
@@ -446,6 +448,25 @@ const seats = useSeats({
   },
   setLook: (yaw, pitch) => movement.setLook(yaw, pitch),
 })
+
+const townBus = useTownBus({
+  getScene,
+  getCamera,
+  canvasRef,
+  gameRoomRef,
+  myPosition,
+  promptsHidden: () => inventoryOpen.value,
+  canRide: canUsePub,
+  teleport: (x, y, z) => {
+    Object.assign(myPosition, { x, y, z })
+    getCamera()?.position.set(x, y, z)
+  },
+  playOn: (name, object) => sfx.playOn(name, object),
+  say: (text) => survival.say(text),
+  t: (key, values) => t(key, values ?? {}),
+})
+const busHud = townBus.hud
+const busStops = townBus.stops
 
 /** The drink picked up on the bar goes straight in hand. */
 function selectHotbarItem(code: string): void {
@@ -942,7 +963,7 @@ const interactions = useInteractionTargets({
     if (activeFurniture.value?.store.hasCounter.value) activeFurniture.value.store.toggleTarget(useWithShift)
     else openStorePurchase()
   },
-  sources: [pub.source, pubQuiz.source, pubChallenge.source, pubGames.source, seats.source, orchard.source, farm.source, zoneBuyers.source, atm.source, storage.source, respawnBed.source, cashBags.source, storageAuction.source, jailCell.source, police.source, pickpocket.source, market.source, sportsPass.source, sportsSignup.source],
+  sources: [townBus.source, pub.source, pubQuiz.source, pubChallenge.source, pubGames.source, seats.source, orchard.source, farm.source, zoneBuyers.source, atm.source, storage.source, respawnBed.source, cashBags.source, storageAuction.source, jailCell.source, police.source, pickpocket.source, market.source, sportsPass.source, sportsSignup.source],
 })
 const { doorPrompt } = interactions
 
@@ -1291,6 +1312,7 @@ const environment = useRoomEnvironment({
       zoneDecor.onTownLoaded(manifest).catch((error: unknown) => console.error('[zones] zone decor failed to load', error)),
     ]).then(() => boot.complete('decor'))
     minimap.onTownLoaded(manifest)
+    townBus.onTownLoaded(manifest).catch((error: unknown) => console.error('[bus] town bus failed to load', error))
     houseFurniture.onTownReady()
   },
   onTownShown: (group) => {
@@ -1540,12 +1562,13 @@ const movement = useGameMovement({
     return pointerLocked.value && runUseOrPunch(mouseButtonCode(e.button), false, e.shiftKey)
   },
   speedFactor: () => survival.speedFactor() * intoxication.walkFactor() * (adminWatch.hasMyPower('speed') ? SPEED_POWER_FACTOR : 1),
-  movementLocked: () => seats.seated.value || police.cuffedBy.value !== null || adminWatch.hasMyPower('freeze'),
+  movementLocked: () => seats.seated.value || townBus.riding.value || police.cuffedBy.value !== null || adminWatch.hasMyPower('freeze'),
   flying: () => adminWatch.hasMyPower('fly'),
   afterCameraPlaced: intoxication.applyToCamera,
   trySpendJump: () => adminWatch.hasMyPower('endless_stamina') || punch.trySpendJump(),
   trySpendSprint: (dt, wasSprinting) => adminWatch.hasMyPower('endless_stamina') || punch.trySpendSprint(dt, wasSprinting),
   onBeforeRender: (dt) => {
+    townBus.tick()
     if (import.meta.env.DEV) renderStats.tick(dt)
     positionLabel.value = formatPosition()
     realtime.tickRemoteAvatars(dt)
@@ -1941,6 +1964,7 @@ const crosshairClass = computed(() => {
       :y="tutorialHintBubble.y"
       :use-key="interactKeys"
     />
+    <GameBusHud v-if="busHud && !loadingShown" :hud="busHud" :stops="busStops" @alight="townBus.alightAt" />
     <GameTutorialQuest
       v-if="tutorial?.status === 'active' && !loadingShown"
       :step="tutorial.step"

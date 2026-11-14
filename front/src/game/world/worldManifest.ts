@@ -1,6 +1,7 @@
 import type { HouseKey, StoreKey, WorkJob, WorkKey } from '../assets/catalog'
 import type { JailCellLayout } from '../police/jailCell'
 import type { PoliceStationLayout } from '../police/policeStation'
+import type { BusLineLayout } from '../bus/townBus'
 
 type Vec3 = [number, number, number]
 
@@ -157,6 +158,7 @@ export interface WorldManifest {
   orchard?: OrchardLayout
   crops?: CropPlant[]
   police?: { cells: JailCellLayout[] } & PoliceStationLayout
+  bus?: BusLineLayout
 }
 
 const WORLD_MANIFEST_URL = '/assets/world.manifest.json'

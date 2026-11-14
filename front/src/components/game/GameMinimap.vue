@@ -29,6 +29,7 @@ const MARKER_STYLE: Record<MapMarkerKind, { icon: UiIconName; color: string; lab
   store: { icon: 'shop', color: 'rgb(var(--cc-coral))', label: 'Shop' },
   work: { icon: 'briefcase', color: 'rgb(var(--cc-pool))', label: 'Job' },
   home: { icon: 'home', color: 'rgb(var(--cc-sun))', label: 'Your home' },
+  bus: { icon: 'bus', color: 'rgb(var(--cc-mint))', label: 'Bus stop' },
 }
 
 const cornerBackground = computed(() => {

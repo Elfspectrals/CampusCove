@@ -10,7 +10,7 @@ const emit = defineEmits<{ toggle: [place: GpsPlace] }>()
 
 const { t } = useI18n()
 
-const DOTS = { atm: 'mint', store: 'coral', work: 'pool', home: 'sun', friend: 'grape' } as const
+const DOTS = { atm: 'mint', store: 'coral', work: 'pool', home: 'sun', friend: 'grape', bus: 'mint' } as const
 
 function meta(place: GpsPlaceAt): string {
   const distance = t('watch.meters', { d: Math.round(place.distance) })
