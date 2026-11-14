@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
-import { consumablePreviewUrl, findWork, toolModelUrl, wearTopFpArmsUrl } from './catalog.ts'
+import { consumablePreviewUrl, findStore, findWork, toolModelUrl, wearTopFpArmsUrl } from './catalog.ts'
 
 test('every top, the newcomer tee included, has its first-person arms; no top means bare arms', () => {
   assert.equal(wearTopFpArmsUrl('/assets/wear/top/newcomer/model.glb'), '/assets/wear/top/newcomer/fp_arms.glb')
@@ -34,4 +35,17 @@ test('a tool code resolves to the tools folder, any other code is an explicit er
 test('the clinic is a medic work building', () => {
   assert.equal(findWork('clinic')?.job, 'medic')
   assert.equal(findWork('clinic')?.interiorUrl, '/assets/work/clinic/interior.glb')
+})
+
+test('every work and store building of the world manifest has its catalogue entry, or the town collision cannot be composed', () => {
+  const manifest = JSON.parse(readFileSync(new URL('../../../public/assets/world.manifest.json', import.meta.url), 'utf8')) as {
+    zones: { key: string; buildings?: { kind: string; key: string }[] }[]
+  }
+  const missing = manifest.zones.flatMap((zone) =>
+    (zone.buildings ?? []).flatMap((b) => {
+      const known = b.kind === 'work' ? findWork(b.key) : b.kind === 'store' ? findStore(b.key) : true
+      return known ? [] : [`${zone.key}: ${b.kind} ${b.key}`]
+    }),
+  )
+  assert.deepEqual(missing, [])
 })
