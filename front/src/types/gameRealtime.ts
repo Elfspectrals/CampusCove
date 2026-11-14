@@ -897,6 +897,57 @@ export interface SportsLoansPayload {
   loans: string[]
 }
 
+export type SportsRunnerState = 'set' | 'running' | 'finished' | 'dnf'
+type SportsRunDnf = 'false_start' | 'missed_gate' | 'left' | 'knocked_out' | 'time'
+
+export interface SportsRunner {
+  sessionId: string
+  name: string
+  lane: number
+  x: number
+  z: number
+  ry: number
+  speed: number
+  quality: number
+  lastStepAt: number | null
+  state: SportsRunnerState
+  gate: number
+  lap: number
+  next: { x: number; z: number } | null
+  timeMs: number | null
+  dnf: SportsRunDnf | null
+}
+
+export interface SportsRunStatePayload {
+  venue: string
+  distanceM: number
+  laps: number
+  gateCount: number
+  phase: 'marks' | 'set' | 'running'
+  beepAt: number | null
+  endsAt: number | null
+  serverNow: number
+  goodStepMs: number
+  toleranceMs: number
+  runners: SportsRunner[]
+}
+
+interface SportsRunResult {
+  sessionId: string
+  name: string
+  accountId: number
+  result: 'finished' | 'dnf'
+  place?: number
+  timeMs?: number
+  dnf: SportsRunDnf | null
+}
+
+export interface SportsRunResultPayload {
+  venue: string
+  distanceM: number
+  results: SportsRunResult[]
+}
+
 export type GymSport = 'football' | 'basketball'
 export type GymTeam = 'red' | 'blue'
 export type GymShotRelease = 'perfect' | 'good' | 'early' | 'late'
@@ -932,6 +983,7 @@ export interface GymEndPayload {
 
 export interface GymFreeBall {
   id: string
+  court: string
   sport: GymSport
   lender: string | null
   ball: [number, number, number, number, number, number]

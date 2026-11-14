@@ -33,13 +33,14 @@ Written by `apply-sports-gym.mjs` from the site layout (the Blender build owns t
 
 | Field | Type | Meaning |
 |---|---|---|
+| `walls` | boolean | `true` in the hall: the ball bounces off `arena`. `false` on an open pitch (`sports/athletics/pitch.json`): a ball or a carrier leaving `court` comes back on the line, 0.3 m inside; in a match it is a throw-in for the team that did not touch it last |
 | `floorY`, `ceilingY` | number | hall floor (0.2) and ceiling |
 | `arena` | bounds | walls the ball bounces off (barrier, south wall, lobby wall, east wall) |
 | `playArea` | bounds | reserved during a match (`registerVenue`), kept inside the walls so a pushed-out player stays in the hall |
 | `court` | bounds | the painted lines, inside `arena` |
 | `centre`, `coach` | `{ x, z }` | kick-off spot, coach spot (aisle, halfway line) |
 | `goals.red`, `goals.blue` | `{ lineX, inward: 1 \| -1, minZ, maxZ, height, depth }` | the goal that team attacks; a goal is the ball crossing `lineX` in the `inward` direction inside the mouth; posts, bar and nets (`depth` behind the line) are solid for the ball |
-| `baskets.red`, `baskets.blue` | `{ x, y, z, rimRadius, board: { minX, maxX, minY, maxY, minZ, maxZ }, threePointRadius }` | the basket that team attacks, its rim and its backboard box |
+| `baskets.red`, `baskets.blue` | `{ x, y, z, rimRadius, board: { minX, maxX, minY, maxY, minZ, maxZ }, threePointRadius }` | the basket that team attacks, its rim and its backboard box; absent on a football-only pitch (a basketball venue refuses a court without baskets) |
 | `sideBaskets` | list of `{ x, y, z, rimRadius, board }` | the free-play hoops; no score |
 
 Red attacks east (+x), blue attacks west. Sides do not swap at half time.
@@ -62,7 +63,7 @@ the rules are read over HTTP. Logic: `gymBall.ts` (ball physics, exact parabolic
 | `gym_free` | server → everyone in `sports_gym`, every 100 ms while balls exist | `{ balls: [{ id, sport, lender: sessionId \| null, ball: [x, y, z, vx, vy, vz], owner: sessionId \| null }], serverNow }` |
 | `gym_error` | server → client | `{ code: 'gym_too_far' \| 'gym_court_busy', message }` |
 
-Free play: anyone on the court takes a loose ball by running into it and uses the same `gym_action` intents on the ball they hold or the nearest loose one within 2 m; no team, no score, every hoop and goal is free. A ball disappears when its lender gives it back, leaves the gym, disconnects or dies, and every free ball is taken back when a match kicks off.
+Free play is a list of courts (`addGymFreeCourt`: id, court, sports lent, zone, busy rule): the gym lends footballs and basketballs, the athletics coach lends footballs on the outdoor pitch (busy during a race or a football match there). The coach the player stands near picks the court; the ball spawns inside its arena, on the coach side, and `gym_free` tags each ball with its `court`. Anyone on the court takes a loose ball by running into it and uses the same `gym_action` intents on the ball they hold or the nearest loose one within 2 m; no team, no score, every hoop and goal is free. A ball disappears when its lender gives it back, leaves the gym, disconnects or dies, and every free ball is taken back when a match kicks off.
 
 Ball physics: walls, floor and ceiling, goal posts, bar and nets, backboards and rims, and every player as a 0.35 m cylinder up to 1.9 m (the kicker is ignored for 350 ms). The ball sub-steps so it never moves more than half its radius per step.
 

@@ -477,6 +477,10 @@ def build_shoes(key, M, m):
             shoe(M, m, sg, sole_h=0.045, toe_cap=True)
             add_sweep(M, m["accent"], SP([(0.10 + 0.052, 0.04, 0.08), (0.10 + 0.054, -0.04, 0.09), (0.10 + 0.05, -0.12, 0.07)], sg),
                       [(0.004, 0.012)] * 3, seg=6, per=2, ref=(1, 0, 0))
+        elif key == "running_spikes":
+            shoe(M, m, sg, sole_h=0.022, toe_cap=True)
+            add_sweep(M, m["accent"], SP([(0.10 + 0.05, 0.03, 0.06), (0.10 + 0.052, -0.05, 0.075), (0.10 + 0.048, -0.13, 0.055)], sg),
+                      [(0.004, 0.014)] * 3, seg=6, per=2, ref=(1, 0, 0))
 
 
 SHERIFF_BADGE = dict(color="d9a93a", metal=0.7, rough=0.35)
@@ -544,6 +548,7 @@ WEAR = {
         "rubber_boots": dict(main="3f7a4a", accent="2a2c22", hides=["feet"]),
         "slides": dict(main="2f6f63", accent="ece8de", hides=[]),
         "runners": dict(main="ff9a3c", accent="2a2c33", hides=["feet"]),
+        "running_spikes": dict(main="f4f2ec", accent="f08a3c", hides=["feet"]),
         "newcomer": dict(main="f4f2ec", accent="f7c948", hides=["feet"]),
     }),
 }

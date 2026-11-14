@@ -1,7 +1,6 @@
 import type { GymFreeBall, GymSport, GymStatePayload, GymTeam } from '../../types/gameRealtime'
 
 const GRAVITY = 9.81
-export const GYM_COACH = 'gym_coach'
 
 export function teamJerseyUrl(team: GymTeam): string {
   return `/assets/wear/top/team_jersey_${team}/model.glb`
@@ -90,7 +89,7 @@ export function myTeam(state: GymStatePayload | null, sessionId: string | null):
   return state.players.find((p) => p.sessionId === sessionId)?.team ?? null
 }
 
-interface GymScreen {
+export interface GymScreen {
   x: number
   y: number
   z: number
@@ -101,8 +100,29 @@ interface GymScreen {
 
 export interface GymCourtView {
   floorY: number
-  baskets: Record<GymTeam, { x: number; y: number; z: number }>
-  scoreboard: GymScreen
+  baskets: Record<GymTeam, { x: number; y: number; z: number }> | null
+  scoreboard: GymScreen | null
+}
+
+const COURT_URLS: Record<string, string> = {
+  gym: '/assets/sports/gym/court.json',
+  gym_football: '/assets/sports/gym/court.json',
+  gym_basketball: '/assets/sports/gym/court.json',
+  athletics: '/assets/sports/athletics/pitch.json',
+  athletics_football: '/assets/sports/athletics/pitch.json',
+}
+
+export const COURT_FILES: readonly string[] = [...new Set(Object.values(COURT_URLS))]
+
+export const FREE_PLAY_COACHES: Readonly<Record<string, readonly GymSport[]>> = {
+  gym_coach: ['football', 'basketball'],
+  athletics_coach: ['football'],
+}
+
+export function courtUrlOf(courtOrVenue: string): string {
+  const url = COURT_URLS[courtOrVenue]
+  if (!url) throw new Error(`no court file for ${courtOrVenue}`)
+  return url
 }
 
 function finite(raw: unknown, what: string): number {
@@ -110,14 +130,18 @@ function finite(raw: unknown, what: string): number {
   return raw
 }
 
-export function parseGymCourtView(raw: unknown): GymCourtView {
-  const r = (raw ?? {}) as Raw
-  const baskets = (r.baskets ?? {}) as Record<string, Raw | undefined>
+function parseBaskets(raw: unknown): GymCourtView['baskets'] {
+  if (raw === undefined) return null
+  const baskets = (raw ?? {}) as Record<string, Raw | undefined>
   const spot = (team: GymTeam) => ({ x: finite(baskets[team]?.x, `baskets.${team}.x`), y: finite(baskets[team]?.y, `baskets.${team}.y`), z: finite(baskets[team]?.z, `baskets.${team}.z`) })
-  const hoops = { red: spot('red'), blue: spot('blue') }
-  const s = (r.scoreboard ?? {}) as Raw
+  return { red: spot('red'), blue: spot('blue') }
+}
+
+function parseScreen(raw: unknown): GymScreen | null {
+  if (raw === undefined) return null
+  const s = (raw ?? {}) as Raw
   const facing = Array.isArray(s.facing) ? s.facing : []
-  const scoreboard: GymScreen = {
+  return {
     x: finite(s.x, 'scoreboard.x'),
     y: finite(s.y, 'scoreboard.y'),
     z: finite(s.z, 'scoreboard.z'),
@@ -125,7 +149,11 @@ export function parseGymCourtView(raw: unknown): GymCourtView {
     height: finite(s.height, 'scoreboard.height'),
     facing: [finite(facing[0], 'scoreboard.facing[0]'), finite(facing[1], 'scoreboard.facing[1]')],
   }
-  return { floorY: finite(r.floorY, 'floorY'), baskets: hoops, scoreboard }
+}
+
+export function parseGymCourtView(raw: unknown): GymCourtView {
+  const r = (raw ?? {}) as Raw
+  return { floorY: finite(r.floorY, 'floorY'), baskets: parseBaskets(r.baskets), scoreboard: parseScreen(r.scoreboard) }
 }
 
 export function scoreboardLines(state: { score: Record<GymTeam, number>; clock: string; half: number; halves: number } | null): [string, string] {

@@ -2,11 +2,10 @@
 import { useI18n } from 'vue-i18n'
 import type { GymSport } from '../../types/gameRealtime'
 
-defineProps<{ myBall: GymSport | null }>()
+const props = withDefaults(defineProps<{ myBall: GymSport | null; sports?: readonly GymSport[] }>(), { sports: () => ['football', 'basketball'] })
 const emit = defineEmits<{ borrow: [sport: GymSport]; giveBack: [] }>()
 
 const { t } = useI18n()
-const SPORTS: readonly GymSport[] = ['football', 'basketball']
 </script>
 
 <template>
@@ -18,7 +17,7 @@ const SPORTS: readonly GymSport[] = ['football', 'basketball']
     <p class="m-0 text-xs text-mist">{{ t('sports.gym.free.rules') }}</p>
     <div class="flex flex-wrap gap-2">
       <button
-        v-for="sport in SPORTS"
+        v-for="sport in props.sports"
         :key="sport"
         type="button"
         class="cc-btn cc-btn-sm min-h-11"

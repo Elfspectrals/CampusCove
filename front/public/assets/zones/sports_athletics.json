@@ -1,0 +1,157 @@
+{
+  "version": 1,
+  "zone": "sports_athletics",
+  "name": "Cove Sports Park athletics track",
+  "props": [
+    {
+      "id": "athletics_coach",
+      "kind": "npc",
+      "position": [
+        -428,
+        0.06,
+        -320.5
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pose": "idle",
+      "vendor": false,
+      "body": "#a8714f",
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "buzz",
+          "color": "#2b2018"
+        },
+        {
+          "slot": "top",
+          "key": "jersey",
+          "color": "#c0392b"
+        },
+        {
+          "slot": "bottom",
+          "key": "track_pants",
+          "color": "#1f2a44"
+        },
+        {
+          "slot": "shoes",
+          "key": "runners",
+          "color": "#f2f2f2"
+        }
+      ],
+      "coach": "athletics_coach"
+    },
+    {
+      "id": "sports_athletics_garden_bench_01",
+      "kind": "item",
+      "key": "garden_bench",
+      "code": "decor_garden_bench",
+      "forSale": false,
+      "position": [
+        -424.5,
+        0.06,
+        -319.2
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "sports_athletics_trash_bin_01",
+      "kind": "item",
+      "key": "trash_bin",
+      "code": "decor_trash_bin",
+      "forSale": false,
+      "position": [
+        -487.5,
+        0.02,
+        -318
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "sports_athletics_trash_bin_02",
+      "kind": "item",
+      "key": "trash_bin",
+      "code": "decor_trash_bin",
+      "forSale": false,
+      "position": [
+        -432.5,
+        0.02,
+        -316
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "sports_athletics_garden_bench_02",
+      "kind": "item",
+      "key": "garden_bench",
+      "code": "decor_garden_bench",
+      "forSale": false,
+      "position": [
+        -500,
+        0.02,
+        -418.6
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "sports_athletics_garden_bench_03",
+      "kind": "item",
+      "key": "garden_bench",
+      "code": "decor_garden_bench",
+      "forSale": false,
+      "position": [
+        -474,
+        0.02,
+        -418.6
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "sports_athletics_garden_bench_04",
+      "kind": "item",
+      "key": "garden_bench",
+      "code": "decor_garden_bench",
+      "forSale": false,
+      "position": [
+        -448,
+        0.02,
+        -418.6
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    }
+  ],
+  "areas": []
+}

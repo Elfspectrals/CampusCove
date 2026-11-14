@@ -76,6 +76,9 @@ Clips are phase functions `f(ph, P)` sampled by `sample_actions(arm, clips, fps=
 | Block | 18 | 0.6 | one-shot | `pose_block`, both arms straight up, top at frame 9 (0.3 s), Hips +0.22 m |
 | Steal | 14 | 0.467 | one-shot | `pose_steal`, low right-hand swipe, contact at frame 6 (0.20 s), feet planted |
 | Dribble | 30 | 1.0 | yes | `gait_dribble`: two Walk-style strides (`DRIBBLE`, 0.5 s each, designed for 5 m/s), right hand lowest at 0.08 and 0.58 s, ball on the floor at 0.25 and 0.75 s, back in the hand at 0.42 and 0.92 s |
+| RunSet | 45 | 1.5 | loop | `pose_run_set`, standing start crouch, left foot forward, base body only |
+| RunLean | 24 | 0.8 | one-shot | `pose_run_lean`, finish dip over the Run legs, base body only |
+| Breathless | 60 | 2.0 | loop | `pose_breathless`, hands on knees, base body only |
 
 Every clip is keyed from frame 0 (glTF time starts at 0). Gaits plant the feet with `leg_ik` (analytic two-bone IK,
 knee forward): the stance foot moves back at exactly the design speed, so there is no slide at timeScale 1.

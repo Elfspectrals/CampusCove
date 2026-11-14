@@ -41,6 +41,11 @@ export function shownAppearance(player: Player): ShownAppearance {
     slotModels: { ...player.slotModels },
     character: player.character && { ...player.character }
   }
+  for (const [slot, piece] of Object.entries(player.sportsWear) as [WearSlot, { model: string, hex: string }][]) {
+    shown.appearance[slot] = null
+    shown.slotHexes[slot] = piece.hex
+    shown.slotModels[slot] = piece.model
+  }
   if (!isOnDuty(player)) return shown
   shown.bodyModelGlb = null
   for (const [slot, piece] of Object.entries(DUTY_UNIFORM) as [keyof typeof DUTY_UNIFORM, { model: string, hex: string }][]) {
