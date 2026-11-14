@@ -46,6 +46,12 @@ Clips are phase functions `f(ph, P)` sampled by `sample_actions(arm, clips, fps=
     positive raises the right arm sideways.
   - `Hips` `ry` positive lowers the left hip.
   - `Hand` `rx` negative bends the hand toward the face, like a negative `LowerArm` `rx`.
+  - `Hips` `rx` positive pitches the whole body forward (head toward -Y); `rz` positive turns it counter-clockwise
+    seen from above. Whole-body turns go through `_turn_hips(P, matrix, pivot)` (`clips.py`), which sets the Hips
+    rotation from a matrix and offsets its location so the body turns about `pivot` (relative to the Hips head).
+  - Once `rx` has swung a limb forward, `ry` no longer abducts it: on an overhead `UpperArm.L` (`rx` −172) `ry`
+    negative brings the arm in, and on a forearm bent forward (`LowerArm` `rx` −100) `rz` −sgn crosses it over the
+    chest. On a thigh raised forward, `UpperLeg.L` `rz` positive spreads it out (renders, 2026-11-14).
   Any other sign is checked on a render before it is trusted.
 - `sample_actions` deletes every NLA track first: always pass the full clip dict.
 
@@ -60,6 +66,12 @@ Clips are phase functions `f(ph, P)` sampled by `sample_actions(arm, clips, fps=
 | Eat | 30 | 1.0 | one-shot | `pose_eat`, hand at the mouth from 0.33 s, two bites, chew (upper body only) |
 | Drink | 30 | 1.0 | one-shot | `pose_drink`, hand at the mouth from 0.33 s, head back 22° (upper body only) |
 | Pick | 90 | 3.0 | one-shot | `pose_pick`, base body only (`run_wear.py`) |
+| Swim | 30 | 1.0 | yes | `pose_swim`, front crawl, base body only: Hips pitched 78° (`SWIM_PITCH`), +0.05 m, head at 1.15 m, one stroke per arm, six-beat kick |
+| Tread | 48 | 1.6 | yes | `pose_tread`, base body only: Hips at −0.33 m (`TREAD_DROP`), head at 1.29-1.33 m, sculling arms, egg-beater legs |
+| Dive | 24 | 0.8 | one-shot, ends held | `pose_dive`, base body only: crouch, toes planted by `leg_ik` until 0.56, ends straight, arms ahead, pitched 25° nose down |
+| Somersault | 30 | 1.0 | one-shot | `pose_somersault`, base body only: tucked 360° forward turn of Hips about the tuck centre, ends at rest |
+| Twist | 30 | 1.0 | one-shot | `pose_twist`, base body only: 360° turn of Hips about the vertical, arms crossed on the chest, ends at rest |
+| Cannonball | 30 | 1.0 | one-shot, ends held | `pose_cannonball`, base body only: tuck by 0.26, held |
 
 Every clip is keyed from frame 0 (glTF time starts at 0). Gaits plant the feet with `leg_ik` (analytic two-bone IK,
 knee forward): the stance foot moves back at exactly the design speed, so there is no slide at timeScale 1.

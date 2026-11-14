@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Services\SportsBoardService;
+use App\Services\SportsDiveService;
 use App\Services\SportsGearService;
 use App\Services\SportsMatchService;
 use App\Services\SportsPassService;
+use Carbon\CarbonImmutable;
 use Closure;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -18,6 +20,7 @@ class SportsController extends Controller
         private readonly SportsGearService $gear,
         private readonly SportsMatchService $matches,
         private readonly SportsBoardService $boards,
+        private readonly SportsDiveService $dives,
     ) {}
 
     public function pass(Request $request): JsonResponse
@@ -86,6 +89,16 @@ class SportsController extends Controller
         abort_unless(array_key_exists($board, SportsBoardService::BOARDS), 404);
 
         return response()->json(['board' => $this->boards->board($board)]);
+    }
+
+    public function recordDive(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'ref' => 'required|string|min:1|max:64',
+            'board' => ['required', 'string', Rule::in([SportsDiveService::COUNTED_BOARD])],
+        ]);
+
+        return response()->json(['dive' => $this->dives->platformDive($this->accountId($request), $validated['ref'], CarbonImmutable::now())]);
     }
 
     private function accountId(Request $request): int

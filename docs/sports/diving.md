@@ -31,9 +31,13 @@ Ladder climb, edge stance, jump, twist, somersault, cannonball, entry; splash ef
 
 ## Decided at build time (2026-11-14)
 
-- Tricks: twist (Left arrow), somersault (Up arrow), cannonball (Down arrow), one per jump, while in the air (`trickKeys` in `diving.json`). Fixed keys, not in the rebindable list.
-- No edge lock and no tasks counter yet: the edge lock stays a proposal, and the "dives from the 5 m platform" task waits for the tasks branch.
+- Tricks: twist (Left arrow), somersault (Up arrow), cannonball (Down arrow), one per jump, while in the air. Rebindable in Settings (`diveTwist`, `diveSomersault`, `diveCannonball`).
+- The splash grows with the board height, and a cannonball's is 1.8 times bigger.
+- Each trick plays its clip (`Twist`, `Somersault`, `Cannonball`) on the diver for the other players.
+- One diver at a time on a board edge: the socket refuses a move onto an edge zone (at that board's height) while another player stands on it (`board_taken`); whoever is there can stay and leave.
 - The board ends are over the water, so standing on them needs the swimsuit too.
+
+- Task "High diver" (badges only): dives from the 5 m platform, tiers 10 / 50 / 200. The socket reports each accepted jump from `platform_5m` (`POST /api/sports/dives { ref, board }`, realtime route, reply `{ dive: { counted } }`); Laravel counts at most 10 a day per account (Paris day), the same `ref` once.
 
 ## Socket contract
 

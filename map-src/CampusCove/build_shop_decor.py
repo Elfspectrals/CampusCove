@@ -251,7 +251,6 @@ def swimsuit_stand():
         L.box(coll, "SuitStripe", 0.0, -0.03, 0.08, 0.3, 0.04, 0.005, stripe),
         L.box(coll, "SuitShown", 0.0, 0.04, 0.12, 0.26, 0.015, 0.2, suit, bevel=0.01),
         L.box(coll, "SuitShownStripe", 0.0, 0.03, 0.2, 0.26, 0.004, 0.035, stripe),
-        L.box(coll, "PriceTag", 0.13, -0.13, 0.03, 0.08, 0.01, 0.05, m["white"]),
     ]
 
 

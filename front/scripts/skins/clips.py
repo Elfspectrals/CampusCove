@@ -133,6 +133,150 @@ def pose_drink(extras=None):
             extras(ph, P, 0.0, 1.0)
     return f
 
+def _rot(axis, deg):
+    return Matrix.Rotation(math.radians(deg), 3, axis)
+
+def _turn_hips(P, rot, pivot):
+    _set_rot(P, "Hips", rot)
+    p = Vector(pivot)
+    P.move("Hips", *(p - rot @ p))
+
+SWIM_PITCH = 78
+SWIM_LIFT = 0.05
+TREAD_DROP = -0.33
+
+def _stroke(s):
+    w = s - 0.5 / (2 * math.pi) * (S_(2 * math.pi * (s - 0.25)) + 1)
+    pull = s < 0.6
+    bend = S_(math.pi * s / 0.6) ** 2 if pull else S_(math.pi * (s - 0.6) / 0.4) ** 2
+    return -180 + 360 * w, pull, bend
+
+def pose_swim():
+    def f(ph, P):
+        a = 2 * math.pi * ph
+        roll = 32 * S_(a)
+        _turn_hips(P, _rot("X", SWIM_PITCH) @ _rot("Z", 0.4 * roll), (0, 0, 0))
+        P.move("Hips", 0, 0, SWIM_LIFT + 0.01 * S_(2 * a))
+        P.rz("Spine", 0.3 * roll); P.rz("Chest", 0.3 * roll)
+        P.rx("Neck", -18); P.rx("Head", -28); P.rz("Head", -0.8 * roll)
+        for side, sgn, off in SIDES:
+            theta, pull, bend = _stroke((ph - off) % 1.0)
+            spread = sgn * (18 if pull else 18 - 28 * bend)
+            twist = sgn * (110 * bend if pull else -60 * bend)
+            _set_rot(P, "UpperArm" + side, _rot("X", theta) @ _rot("Y", spread) @ _rot("Z", twist))
+            P.rx("LowerArm" + side, -(12 + (55 if pull else 85) * bend))
+            P.rx("Hand" + side, 10 * bend)
+            k = 3 * a + math.pi * (off * 2)
+            P.rx("UpperLeg" + side, -2 + 12 * S_(k)); P.ry("UpperLeg" + side, sgn * 4)
+            P.rx("LowerLeg" + side, 14 + 12 * S_(k - 1.2))
+            P.rx("Foot" + side, 45 + 8 * S_(k - 1.8))
+    return f
+
+def pose_tread():
+    def f(ph, P):
+        a = 2 * math.pi * ph
+        P.move("Hips", 0, 0, TREAD_DROP + 0.02 * S_(2 * a))
+        P.rx("Spine", 4); P.rx("Chest", 2 + 1.5 * S_(2 * a - 0.5)); P.rx("Head", -6 + 1.5 * S_(2 * a - 1.0))
+        for side, sgn, off in SIDES:
+            scull = S_(2 * a)
+            P.rx("UpperArm" + side, -48); P.ry("UpperArm" + side, -sgn * 6); P.rz("UpperArm" + side, sgn * (22 + 18 * scull))
+            P.rx("LowerArm" + side, -62); P.rz("LowerArm" + side, sgn * (6 - 10 * scull))
+            P.rx("Hand" + side, 12 * math.cos(2 * a))
+            k = 2 * a + 2 * math.pi * off
+            P.rx("UpperLeg" + side, -78 + 8 * S_(k)); P.rz("UpperLeg" + side, sgn * 34)
+            P.rx("LowerLeg" + side, 92 + 16 * S_(k + 1.0)); P.rz("LowerLeg" + side, sgn * (-12 + 30 * math.cos(k)))
+            P.rx("Foot" + side, -10 + 10 * S_(k + 1.6))
+    return f
+
+def _tuck():
+    pose = {("Spine", "x"): 20, ("Chest", "x"): 14, ("Neck", "x"): 8, ("Head", "x"): 10}
+    for side, sgn, _ in SIDES:
+        pose.update({("UpperLeg" + side, "x"): -128, ("LowerLeg" + side, "x"): 148, ("Foot" + side, "x"): 35,
+                     ("UpperArm" + side, "x"): -8, ("UpperArm" + side, "y"): sgn * 22, ("LowerArm" + side, "x"): -34,
+                     ("LowerArm" + side, "z"): -sgn * 42})
+    return pose
+
+TUCK_PIVOT = (0, -0.14, 0.10)
+
+def pose_dive():
+    crouch = {("Hips", "pitch"): 42, ("Hips", "y"): 0.06, ("Hips", "z"): -0.30, ("Spine", "x"): 14, ("Chest", "x"): 10,
+              ("Head", "x"): 12}
+    for side, sgn, _ in SIDES:
+        crouch.update({("UpperArm" + side, "x"): -72, ("LowerArm" + side, "x"): -12})
+    stretch = {("Hips", "pitch"): 72, ("Hips", "y"): -0.24, ("Hips", "z"): -0.02, ("Spine", "x"): 2, ("Head", "x"): 6}
+    for side, sgn, _ in SIDES:
+        stretch.update({("UpperArm" + side, "x"): -172, ("UpperArm" + side, "y"): -sgn * 26})
+    glide = {("Hips", "pitch"): 115, ("Hips", "y"): -0.20, ("Head", "x"): 8}
+    for side, sgn, _ in SIDES:
+        glide.update({("UpperArm" + side, "x"): -176, ("UpperArm" + side, "y"): -sgn * 30, ("Foot" + side, "x"): 40})
+    pose_at = key_poses([
+        (0.0, {}),
+        (0.30, crouch),
+        (0.40, crouch),
+        (0.58, stretch),
+        (1.0, glide),
+    ])
+    push_at = key_poses([(0.0, {"p": 0.0}), (0.40, {"p": 0.0}), (0.58, {"p": 40.0}), (1.0, {"p": 40.0})])
+    free_at = key_poses([(0.0, {"u": 0.0}), (0.56, {"u": 0.0}), (0.74, {"u": 1.0}), (1.0, {"u": 1.0})])
+
+    def f(ph, P):
+        pose = pose_at(ph)
+        rot = _rot("X", pose.pop(("Hips", "pitch"), 0.0))
+        _turn_hips(P, rot, (0, 0, 0))
+        P.move("Hips", 0, pose.pop(("Hips", "y"), 0.0), pose.pop(("Hips", "z"), 0.0))
+        _apply_rotations(P, {k: v for k, v in pose.items() if not k[0].startswith(("Foot", "UpperLeg", "LowerLeg"))})
+        bones = P.arm.data.bones
+        hips = bones["Hips"].head_local
+        hip_pos = hips + P.loc["Hips"]
+        pitch, u = push_at(ph)["p"], free_at(ph)["u"]
+        p = math.radians(pitch)
+        for side, sgn, _ in SIDES:
+            ankle, ball = bones["Foot" + side].head_local, bones["Toe" + side].head_local
+            by, bz = ankle.y - ball.y, ankle.z - ball.z
+            planted = Vector((ankle.x, ball.y + by * math.cos(p) - bz * math.sin(p), ball.z + by * math.sin(p) + bz * math.cos(p)))
+            straight = hip_pos + rot @ (ankle - hips) * 0.995
+            leg_ik(P, side, planted.lerp(straight, u), pitch * (1 - u), 0.0)
+            P.rx("Foot" + side, pose.get(("Foot" + side, "x"), 0.0) * u)
+    return f
+
+def _tuck_spin(pose, P, rot):
+    _turn_hips(P, rot, TUCK_PIVOT)
+    _apply_rotations(P, pose)
+
+def pose_somersault():
+    pose_at = key_poses([(0.0, {}), (0.06, {("UpperArm.L", "x"): -20, ("UpperArm.R", "x"): -20, ("Spine", "x"): -4}),
+                         (0.20, _tuck()), (0.74, _tuck()), (0.94, {}), (1.0, {})])
+
+    def f(ph, P):
+        spin = 360 * min_jerk(min(1.0, max(0.0, (ph - 0.08) / 0.72)))
+        _tuck_spin(pose_at(ph), P, _rot("X", spin))
+    return f
+
+def pose_twist():
+    hug = {}
+    for side, sgn, _ in SIDES:
+        hug.update({("UpperArm" + side, "x"): -20, ("UpperArm" + side, "y"): sgn * 30, ("LowerArm" + side, "x"): -100,
+                    ("LowerArm" + side, "z"): -sgn * 75, ("Foot" + side, "x"): 30, ("UpperLeg" + side, "y"): sgn * 3})
+    pose_at = key_poses([(0.0, {}), (0.14, hug), (0.84, hug), (1.0, {})])
+
+    def f(ph, P):
+        spin = 360 * min_jerk(min(1.0, max(0.0, (ph - 0.06) / 0.80)))
+        _turn_hips(P, _rot("Z", spin), (0, 0, 0.0))
+        _apply_rotations(P, pose_at(ph))
+    return f
+
+def pose_cannonball():
+    ball = {**_tuck(), ("Spine", "x"): 10, ("Chest", "x"): 8}
+    pose_at = key_poses([(0.0, {}), (0.06, {("UpperArm.L", "x"): -24, ("UpperArm.R", "x"): -24}), (0.26, ball), (1.0, ball)])
+
+    def f(ph, P):
+        squeeze = 3 * S_(math.pi * min(1.0, max(0.0, (ph - 0.26) / 0.74)))
+        pose = pose_at(ph)
+        for side, _, _ in SIDES:
+            pose[("LowerLeg" + side, "x")] = pose.get(("LowerLeg" + side, "x"), 0.0) + squeeze
+        _tuck_spin(pose, P, _rot("X", -8 * min_jerk(min(1.0, ph / 0.26))))
+    return f
+
 def make_clips(extras):
     return {
         "Idle": (120, gait_idle(None, extras)),

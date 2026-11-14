@@ -156,6 +156,7 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
         Route::post('/sports/pass', [SportsController::class, 'buyPass']);
         Route::get('/sports/gear', [SportsController::class, 'gear']);
         Route::post('/sports/matches', [SportsController::class, 'recordMatch']);
+        Route::post('/sports/dives', [SportsController::class, 'recordDive']);
         Route::middleware('admin')->prefix('admin/game')->group(function () {
             Route::get('/items', [AdminGameController::class, 'items']);
             Route::get('/wallets', [AdminGameController::class, 'wallets']);

@@ -12,6 +12,9 @@ import {
   mySwimmer,
   parsePoolRules,
   racingPhase,
+  splashScale,
+  swimmingAt,
+  trickForKey,
   type PoolDive,
   type PoolRaceResult,
   type PoolRaceStart,
@@ -28,14 +31,20 @@ const SWIM_GLIDE_MPS = 4
 const TOAST_GAP_MS = 3000
 const TRICK_SHOWN_MS = 3000
 const FALL_MARGIN_MS = 400
+const TRICK_CLIPS = { twist: 'Twist', somersault: 'Somersault', cannonball: 'Cannonball' } as const
 
 export interface PoolRaceDeps {
   gameRoomRef: ShallowRef<Room | null>
   myPosition: { x: number; y: number; z: number }
   mySessionId: () => string | null
   getScene: () => THREE.Scene | undefined
+  remotePlayers: () => readonly { sessionId: string }[]
+  remotePosition: (sessionId: string) => THREE.Vector3 | null
+  setRemoteSwimwear: (sessionId: string, on: boolean) => void
+  playRemoteClip: (sessionId: string, clip: 'Dive' | 'Somersault' | 'Twist' | 'Cannonball') => void
   say: (text: string) => void
   noSwimsuitText: () => string
+  boardTakenText: () => string
   falseStartText: () => string
   marksText: () => string
   trickText: (name: string, trick: Trick) => string
@@ -58,6 +67,7 @@ export function usePoolRace(deps: PoolRaceDeps) {
   let resultUntil = 0
   let lastToastAt = -Infinity
   let jump: { at: number; airMs: number } | null = null
+  const pendingTricks = new Map<string, Trick>()
   const splashes = createPoolSplashes(deps.getScene)
 
   Promise.all([fetchJson(sportRulesUrl('swimming')), fetchJson(sportRulesUrl('diving'))])
@@ -97,15 +107,23 @@ export function usePoolRace(deps: PoolRaceDeps) {
       }
       return false
     }
-    const trick = pool.trickKeys[e.code]
+    const trick = trickForKey(e.code, matches)
     if (!trick || !jump || performance.now() - jump.at > jump.airMs) return false
     send('pool_trick', { trick })
     jump = null
     return true
   }
 
+  function dressSwimmers(pool: PoolRules): void {
+    for (const { sessionId } of deps.remotePlayers()) {
+      const p = deps.remotePosition(sessionId)
+      if (p) deps.setRemoteSwimwear(sessionId, swimmingAt(pool, p.x, p.y, p.z))
+    }
+  }
+
   function tick(dt: number): void {
     splashes.tick(dt)
+    if (rules.value) dressSwimmers(rules.value)
     if (start.value || result.value || lastTrick.value) now.value = performance.now()
     if (result.value && now.value > resultUntil) result.value = null
     if (lastTrick.value && now.value - lastTrick.value.at > TRICK_SHOWN_MS) lastTrick.value = null
@@ -180,7 +198,12 @@ export function usePoolRace(deps: PoolRaceDeps) {
       playStartBeep()
     },
     onState(data: PoolRaceState) {
-      if (start.value?.venue === data.venue) state.value = data
+      if (start.value?.venue !== data.venue) return
+      for (const s of data.swimmers) {
+        const before = state.value?.swimmers.find((v) => v.sessionId === s.sessionId)
+        if (before?.phase === 'marks' && s.phase === 'swimming' && s.sessionId !== deps.mySessionId()) deps.playRemoteClip(s.sessionId, 'Dive')
+      }
+      state.value = data
     },
     onStrokeResult(data: { result: StrokeResult }) {
       lastStroke.value = { at: performance.now(), result: data.result }
@@ -188,7 +211,7 @@ export function usePoolRace(deps: PoolRaceDeps) {
         playFalseStart()
         deps.say(deps.falseStartText())
       } else if (data.result === 'started') {
-        playSplash(0.5, 0)
+        playSplash(splashScale(0.5, null))
       } else {
         playStroke(data.result === 'good')
       }
@@ -208,17 +231,24 @@ export function usePoolRace(deps: PoolRaceDeps) {
       const fallMs = Math.max(0, data.airMs - FALL_MARGIN_MS)
       const e = board.edgeZone
       const waterY = rules.value.waterY
-      playSplash(data.heightM, fallMs / 1000)
-      window.setTimeout(() => splashes.spawn((e.minX + e.maxX) / 2, waterY, e.minZ - 0.5, data.heightM), fallMs)
+      pendingTricks.delete(data.sessionId)
+      window.setTimeout(() => {
+        const scale = splashScale(data.heightM, pendingTricks.get(data.sessionId) ?? null)
+        pendingTricks.delete(data.sessionId)
+        playSplash(scale)
+        splashes.spawn((e.minX + e.maxX) / 2, waterY, e.minZ - 0.5, scale)
+      }, fallMs)
     },
     onTrick(data: { sessionId: string; name: string; trick: Trick }) {
+      pendingTricks.set(data.sessionId, data.trick)
+      if (data.sessionId !== deps.mySessionId()) deps.playRemoteClip(data.sessionId, TRICK_CLIPS[data.trick])
       const name = data.sessionId === deps.mySessionId() ? '' : data.name
       lastTrick.value = { at: performance.now(), text: deps.trickText(name, data.trick) }
     },
     onCorrection(reason: string | undefined) {
-      if (reason !== 'no_swimsuit' || performance.now() - lastToastAt < TOAST_GAP_MS) return
+      if ((reason !== 'no_swimsuit' && reason !== 'board_taken') || performance.now() - lastToastAt < TOAST_GAP_MS) return
       lastToastAt = performance.now()
-      deps.say(deps.noSwimsuitText())
+      deps.say(reason === 'no_swimsuit' ? deps.noSwimsuitText() : deps.boardTakenText())
     },
     onRoomJoined() {
       start.value = null
