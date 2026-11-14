@@ -1248,6 +1248,18 @@
         "z": -186,
         "width": 7.2
       }
+    },
+    {
+      "key": "sports_tennis",
+      "optional": true,
+      "bounds": {
+        "minX": -467,
+        "maxX": -420,
+        "minZ": -293,
+        "maxZ": -250
+      },
+      "modelUrl": "/assets/park/sports_tennis/sports_tennis.glb",
+      "sportsPass": true
     }
   ],
   "fountains": [

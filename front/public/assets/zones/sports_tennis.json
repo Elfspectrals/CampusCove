@@ -1,0 +1,86 @@
+{
+  "version": 1,
+  "zone": "sports_tennis",
+  "name": "Cove Sports Park tennis courts",
+  "props": [
+    {
+      "id": "sports_tennis_coach",
+      "kind": "npc",
+      "position": [
+        -443.5,
+        0.08,
+        -271.5
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pose": "idle",
+      "vendor": false,
+      "body": "#a8714f",
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "short",
+          "color": "#2b1d14"
+        },
+        {
+          "slot": "top",
+          "key": "staff_polo",
+          "color": "#f4f4ef"
+        },
+        {
+          "slot": "bottom",
+          "key": "shorts",
+          "color": "#2a9d8f"
+        },
+        {
+          "slot": "shoes",
+          "key": "sneakers",
+          "color": "#f2f2f2"
+        },
+        {
+          "slot": "head_accessory",
+          "key": "studio",
+          "color": "#2a9d8f"
+        }
+      ],
+      "coach": "tennis_coach"
+    },
+    {
+      "id": "sports_tennis_racket_01",
+      "kind": "decor",
+      "key": "tennis_racket",
+      "position": [
+        -443.9,
+        0.5,
+        -263.5
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "sports_tennis_racket_02",
+      "kind": "decor",
+      "key": "tennis_racket",
+      "position": [
+        -443.1,
+        0.5,
+        -279.5
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    }
+  ],
+  "areas": []
+}

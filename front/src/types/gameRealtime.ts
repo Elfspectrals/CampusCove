@@ -887,6 +887,38 @@ export interface SportsLobbyPayload {
   serverNow: number
 }
 
+export type TennisTeam = 'red' | 'blue'
+
+export interface TennisBall {
+  x: number
+  y: number
+  z: number
+  vx: number
+  vy: number
+  vz: number
+  t: number
+}
+
+export interface TennisStatePayload {
+  venue: string
+  court: { cx: number; netZ: number; halfWidth: number }
+  mode: string
+  format: 'short_set_4' | 'tiebreak_7'
+  phase: 'serve_wait' | 'toss' | 'flight' | 'point' | 'ended'
+  games: Record<TennisTeam, number>
+  points: Record<TennisTeam, string>
+  tiebreak: boolean
+  serving: TennisTeam
+  server: string | null
+  ball: TennisBall | null
+  hitter: TennisTeam | null
+  call: 'out' | 'net' | 'double_bounce' | 'missed_toss' | null
+  pointWinner: TennisTeam | null
+  winner: TennisTeam | null
+  players: { sessionId: string; team: TennisTeam }[]
+  serverNow: number
+}
+
 export interface SportsLobbyClosedPayload {
   venue: string
   reason: 'kickoff' | 'cancelled' | 'ended'

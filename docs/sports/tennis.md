@@ -45,10 +45,34 @@ Ready stance, side step, forehand, backhand, lob, serve, celebration.
 
 Leaver past the 30 s grace: the other side wins.
 
-## Open points
+## Decisions (2026-11-14, building session)
 
-- Size of the hitting window and how much timing changes power.
-- Whether doubles partners can both hit the same ball.
+- **Hitting window**: the socket looks back 150 ms from the moment it receives the click and takes the closest point of the
+  ball's path within 1.6 m of the player (ball height up to 2.8 m, on the player's half). Within 0.6 m the shot is perfect;
+  from 0.6 m to 1.6 m the quality falls linearly to 0. Quality sets the speed (drive 10 to 20 m/s, lob 6.5 to 8.5 m/s,
+  serve 12 to 22 m/s) and the accuracy: a shot of quality q lands up to (1 − q) × 4 m long, along its line.
+- **Serve**: the first click tosses the ball (1.8 m, 5 m/s up), the second click within 250 ms of the top of the toss
+  serves; the timing gives the quality. A toss left to fall gives the point to the receivers. A server who waits 10 s
+  tosses automatically.
+- **Doubles**: either partner hits; once a side has hit, the ball belongs to the other side, so partners cannot both hit
+  the same ball. The serve rotates between partners each time their side serves again.
+- **Free play** is not built yet: balls exist only during a structured match.
+- No drag; bounce keeps 75 % of the vertical speed and 80 % of the horizontal speed. Lines count as in. A ball that
+  catches the net (under 0.914 m between the posts) loses the point.
+
+## Contract
+
+Socket constants: `socket/src/sports/tennisConstants.ts`, mirrored in `front/public/assets/sports/rules/tennis.json`
+(a socket test and a front test check they agree). Red plays the south half (larger z), blue the north half.
+
+| Message | Direction | Payload |
+|---|---|---|
+| `tennis_hit` | client → server | `{ aimX: number, aimZ: number, lob?: boolean }` (finite numbers; the aim is clamped to the receiving half, from 1 m past the net to 3 m past its lines). 120 ms between two hits of one player. Only a player of a running tennis match, back on court. |
+| `tennis_state` | server → match players and players in `sports_tennis` | `{ venue, court: { cx, netZ, halfWidth }, mode, format, phase: 'serve_wait' \| 'toss' \| 'flight' \| 'point' \| 'ended', games, points (labels '0', '15', '30', '40', 'AD' or tie-break counts), tiebreak, serving, server: sessionId \| null, ball: { x, y, z, vx, vy, vz, t (server ms) } \| null, hitter, call: 'out' \| 'net' \| 'double_bounce' \| 'missed_toss' \| null, pointWinner, winner, players: [{ sessionId, team }], serverNow }`, sent at kick-off, on each toss, hit, bounce and point, and once with `phase: 'ended'`. |
+
+The client draws the ball from `ball` on the server clock (`serverNow`); the socket alone judges hits, bounces and points.
+Results: `win` / `loss` per side, `dnf` for a player out past the grace, `score` = games won (short set) or tie-break
+points.
 
 ## Proposed placeholder JSON fields
 

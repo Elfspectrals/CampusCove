@@ -598,6 +598,26 @@
           "price": 140
         }
       ]
+    },
+    {
+      "id": "summit_sports_tennis_racket",
+      "kind": "item",
+      "key": "tennis_racket",
+      "code": "gear_tennis_racket",
+      "forSale": true,
+      "price": 180,
+      "position": [
+        -276.0,
+        0.2,
+        79.7
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Tennis racket for the Cove Sports Park courts. Never wears out."
     }
   ],
   "areas": [

@@ -40,6 +40,7 @@ import GameDrunkEffects from '../components/game/GameDrunkEffects.vue'
 import GameDrinkFast from '../components/game/GameDrinkFast.vue'
 import GamePubChallenge from '../components/game/GamePubChallenge.vue'
 import GamePubRaceBoard from '../components/game/GamePubRaceBoard.vue'
+import GameTennisHud from '../components/game/GameTennisHud.vue'
 import GameJail from '../components/game/GameJail.vue'
 import GameCuffed from '../components/game/GameCuffed.vue'
 import GamePickpocket from '../components/game/GamePickpocket.vue'
@@ -101,6 +102,7 @@ import { usePolice } from '../composables/game/usePolice'
 import { useSportsPass } from '../composables/game/useSportsPass'
 import { passValid } from '../game/sports/sportsPass'
 import { useSportsSignup } from '../composables/game/useSportsSignup'
+import { useTennis } from '../composables/game/useTennis'
 import { usePickpocket } from '../composables/game/usePickpocket'
 import { useStorageAuction } from '../composables/game/useStorageAuction'
 import { useStorageWarehouse } from '../composables/game/useStorageWarehouse'
@@ -871,6 +873,16 @@ const sportsSignup = useSportsSignup({
     survival.say(t('sports.signedUp'))
   },
 })
+const tennis = useTennis({
+  gameRoomRef,
+  getScene,
+  getCamera,
+  myPosition,
+  pointerLocked: () => pointerLocked.value,
+  onSwing: () => sfx.play('whoosh'),
+  onBallHit: (ball) => sfx.playOn('impact', ball),
+})
+const tennisHud = tennis.hud
 const { open: sportsSignupOpen, choices: sportsVenueChoices, canPickVenue: sportsCanPickVenue, lobby: sportsLobby, spec: sportsSpec, team: sportsTeam, settings: sportsSettings, pending: sportsSignupPending, error: sportsSignupError, clientNow: sportsClientNow, clockOffset: sportsClockOffset } = sportsSignup
 watch(sportsSignupOpen, (open) => {
   if (!open && !document.pointerLockElement) requestPointerLock()
@@ -1555,6 +1567,7 @@ const movement = useGameMovement({
   onCanvasMouseDown: (e) => {
     // furniture placement keeps its own clicks (left: pick / place, right: cancel)
     if (placement.onPointerDown(e)) return true
+    if (tennis.onPointerDown(e)) return true
     if (adminPanelOpen.value && !pointerLocked.value) {
       requestPointerLock()
       return true
@@ -1605,6 +1618,7 @@ const movement = useGameMovement({
     farm.tick()
     police.tick()
     sportsSignup.tick()
+    tennis.tick()
     if (!doorSigns.group.parent) getScene()?.add(doorSigns.group)
     minimap.tick()
     gps.tick()
@@ -1748,6 +1762,7 @@ const realtime = useGameRealtime({
     onLobbyClosed: sportsSignup.handlers.onLobbyClosed,
     onError: sportsSignup.handlers.onError,
     onRoomJoined: sportsSignup.handlers.onRoomJoined,
+    onTennisState: tennis.handlers.onState,
   },
   pickpocket: pickpocket.handlers,
   storageAuction: {
@@ -2372,6 +2387,7 @@ const crosshairClass = computed(() => {
       @close="closePubRace"
     />
     <GamePubRaceBoard v-if="pubRaceBoard" :board="pubRaceBoard" />
+    <GameTennisHud v-if="tennisHud" :hud="tennisHud" />
     <GameJail v-if="jailSentence && !knockedOut" :sentence="jailSentence" :error="jailError" :paying="jailPaying" @pay="jail.pay" />
     <GameCuffed v-if="policeCuffedBy && !knockedOut" :officer="realtime.remotePseudo(policeCuffedBy) ?? '…'" />
     <GamePickpocket v-if="!knockedOut" :game="pickpocketGame" :loot="pickpocketLoot" @take="pickpocket.take" />

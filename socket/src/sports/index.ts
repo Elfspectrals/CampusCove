@@ -2,6 +2,7 @@ import type { GameClient, GameRoom, Player } from '../types.ts'
 import { sendLoansOnJoin, takeBackAll, updateLoansOnMove } from './loans.ts'
 import { loadSportsPass } from './pass.ts'
 import { leaveSports, updateMatchesOnMove } from './venues.ts'
+import './tennis.ts'
 
 export { onSportsPassBuy } from './pass.ts'
 export { SPORTS_TICK_MS } from './sportsConstants.ts'

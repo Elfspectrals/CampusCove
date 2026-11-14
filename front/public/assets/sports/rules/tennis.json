@@ -1,7 +1,7 @@
 {
   "version": 1,
   "sport": "tennis",
-  "status": "placeholder",
+  "status": "ready",
   "zone": "sports_tennis",
   "coachId": "tennis_coach",
   "signup": {
@@ -28,7 +28,11 @@
   "courts": [
     {
       "id": "tennis_1",
-      "centre": null,
+      "centre": [
+        -454.645,
+        0,
+        -271.5
+      ],
       "sizeM": [
         10.97,
         23.77
@@ -37,7 +41,11 @@
     },
     {
       "id": "tennis_2",
-      "centre": null,
+      "centre": [
+        -432.355,
+        0,
+        -271.5
+      ],
       "sizeM": [
         10.97,
         23.77
@@ -49,21 +57,49 @@
     "singles",
     "doubles"
   ],
+  "players": {
+    "singles": 2,
+    "doubles": 4
+  },
   "formats": [
     "short_set_4",
     "tiebreak_7"
   ],
   "ball": {
     "radiusM": 0.033,
-    "restitution": null,
-    "drag": null
+    "restitution": 0.75,
+    "bounceKeep": 0.8,
+    "drag": 0,
+    "gravity": 9.81
   },
   "hit": {
-    "windowMs": null,
-    "reachM": null,
-    "powerByTiming": null
+    "windowMs": 150,
+    "reachM": 1.6,
+    "sweetSpotM": 0.6,
+    "maxHeightM": 2.8,
+    "driveSpeedMs": [
+      10,
+      20
+    ],
+    "missM": 4,
+    "powerByTiming": "linear"
   },
-  "lob": null,
+  "lob": {
+    "speedMs": [
+      6.5,
+      8.5
+    ]
+  },
+  "serve": {
+    "tossStartY": 1.8,
+    "tossSpeedMs": 5,
+    "windowMs": 250,
+    "speedMs": [
+      12,
+      22
+    ],
+    "autoTossAfterMs": 10000
+  },
   "faults": "simplified",
   "rejoinGraceSec": 30,
   "gear": [
