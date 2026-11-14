@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { type AdminMenuRoom, type AdminPanelRoom, SUMMON_DISTANCE, onAdminGiveItem, onAdminGiveMoney, onAdminGoto, onAdminItems, onAdminMarket, onAdminOpen, onAdminPlayer, onAdminSummon, onAdminTaxes, onAdminTeleport } from './admin.ts'
+import { newSportsState } from './sports/venues.ts'
 import { newStorageAuction } from './storageAuction.ts'
 import type { Player } from './types.ts'
 import { type TeleportDestination, doorDestination, orchardDestination, zoneGateDestination } from './world.ts'
@@ -52,6 +53,7 @@ function fakeRoom(...players: Player[]): AdminMenuRoom & { clients: FakeClient[]
     broadcastMove: (client) => void moves.push(client.sessionId),
     refreshHouseFurniture: async () => undefined,
     storageAuction: newStorageAuction(),
+    sports: newSportsState(),
     moves
   }
 }

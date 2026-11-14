@@ -94,6 +94,18 @@ class PickpocketApiTest extends TestCase
         $this->take($thief, $id, self::TEE)->assertOk();
     }
 
+    public function test_sports_gear_is_never_stolen(): void
+    {
+        $thief = $this->veteran();
+        $victim = $this->veteran();
+        $this->grant($victim['account_id'], 'gear_running_spikes', 1);
+        $id = $this->open($thief, $victim)->json('attempt.id');
+
+        $this->assertSame([], $this->settle($thief, $id, 'succeeded')->json('loot'));
+        $this->take($thief, $id, 'gear_running_spikes')->assertUnprocessable()->assertJsonPath('code', 'pickpocket_not_stealable');
+        $this->assertSame(1, $this->owned($victim['token'], 'gear_running_spikes'));
+    }
+
     public function test_nothing_is_taken_from_a_failed_attempt(): void
     {
         $thief = $this->veteran();

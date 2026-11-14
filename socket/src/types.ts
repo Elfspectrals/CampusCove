@@ -1,6 +1,8 @@
 // Shared shapes of the realtime server. Room helpers take a GameRoom (not CityRoom) so tests can pass fakes.
 import type { DrinkFastSim } from './drinkFastSim.ts'
 import type { PubQuiz } from './pubQuiz.ts'
+import type { SportsPassPrices } from './sports/pass.ts'
+import type { SportsRoomState } from './sports/venues.ts'
 
 export interface Vec3 {
   x: number
@@ -121,6 +123,13 @@ export interface Player extends Vec3 {
   cuffedBy: Cuffs | null
   pickpocket: PickpocketGame | null
   lastPickpocketAt: number
+  sportsPassUntil: number | null
+  sportsPassPrices: SportsPassPrices | null
+  sportsPassPending: boolean
+  lastSportsPassAt: number
+  sportsLoans: Map<string, string>
+  sportsPending: boolean
+  lastSportsAt: number
 }
 
 export type JailKind = 'npc' | 'officer'
@@ -344,6 +353,7 @@ export interface GameRoom {
   clinicBeds: Map<string, ClinicBedOccupant>
   seats: Map<string, string>
   pub: PubState
+  sports: SportsRoomState
   clients: readonly GameClient[]
   clock: { setTimeout(handler: () => void, ms: number): unknown }
   forEachClient(callback: (client: GameClient) => void, exceptClient?: GameClient): void

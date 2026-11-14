@@ -120,6 +120,7 @@ function setup() {
       lastJailPayAt: 0,
       mealTrayInMs: null,
       lastSipAt: 0,
+      sportsLoans: new Map(),
       ...extra
     } as unknown as Player
     const sent: Sent[] = []

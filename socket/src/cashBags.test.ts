@@ -14,7 +14,7 @@ globalThis.fetch = async (url: string | URL | Request) => {
     nextApiError = null
     return new Response(JSON.stringify({ code, message }), { status })
   }
-  return new Response(JSON.stringify({ amount: 240, tools: ['tool_crowbar'], cash: 250 }))
+  return new Response(JSON.stringify({ amount: 240, tools: ['tool_crowbar'], gear: ['gear_boules'], cash: 250 }))
 }
 
 const { CASH_BAG_REACH, dropCashBag, onCashBagPick } = await import('./cashBags.ts')
@@ -71,7 +71,7 @@ test('a player within reach picks up the bag through the API and everyone sees i
   dropCashBag(room, { x: 3, y: 1.6, z: 4 }, drop(7))
   await onCashBagPick(room, finder, { id: 7 }, 10_000)
   assert.deepEqual(apiCalls, ['/cash-drops/7/pick'])
-  assert.deepEqual(finder.sent.at(-1), { type: 'cash_bag_picked', payload: { id: 7, amount: 240, cash: 250, tools: ['tool_crowbar'] } })
+  assert.deepEqual(finder.sent.at(-1), { type: 'cash_bag_picked', payload: { id: 7, amount: 240, cash: 250, tools: ['tool_crowbar'], gear: ['gear_boules'] } })
   assert.deepEqual(watcher.sent.at(-1), { type: 'cash_bag_removed', payload: { id: 7 } })
 })
 

@@ -210,9 +210,19 @@ function zoneItemAt(raw: unknown, path: string): ItemProp {
 
 const STAFF_ZONE: Record<StaffRole, string> = { bartender: 'pub', bouncer: 'pub', quizmaster: 'pub', nurse: 'clinic', auctioneer: 'storage' }
 
+const SPORTS_PASS_DESK_ZONE = 'sports_reception'
+
+function sportsNpcFields(sportsPassDesk: unknown, coach: unknown, path: string, zone: string): Pick<NpcProp, 'sportsPassDesk' | 'coach'> {
+  if (sportsPassDesk !== undefined && sportsPassDesk !== true) throw new TemplateError(`${path}.sportsPassDesk`, 'set true or leave it out')
+  if (sportsPassDesk && zone !== SPORTS_PASS_DESK_ZONE) throw new TemplateError(`${path}.sportsPassDesk`, `the pass desk works in zone ${SPORTS_PASS_DESK_ZONE}`)
+  if (coach === undefined) return sportsPassDesk ? { sportsPassDesk } : {}
+  if (sportsPassDesk) throw new TemplateError(`${path}.coach`, 'the pass desk clerk is not a coach')
+  return { coach: stringAt(coach, `${path}.coach`, TEMPLATE_KEY) }
+}
+
 function zoneNpcAt(raw: unknown, path: string, zone: string): NpcProp {
-  const { role, ...rest } = raw as Record<string, unknown>
-  const npc = propAt(rest, path) as NpcProp
+  const { role, sportsPassDesk, coach, ...rest } = raw as Record<string, unknown>
+  const npc: NpcProp = { ...(propAt(rest, path) as NpcProp), ...sportsNpcFields(sportsPassDesk, coach, path, zone) }
   if (role === undefined) return npc
   if (!STAFF_ROLES.includes(role as StaffRole)) throw new TemplateError(`${path}.role`, `expected one of ${STAFF_ROLES.join(', ')}`)
   const staff = role as StaffRole

@@ -190,9 +190,9 @@ for nm, a, b in (("S", (224.35, LOOP["zs"]), (135.65, LOOP["zs"])), ("W", (LOOP[
 # ---------------------------------------------------------------- entry boulevard (z -161 -> loop)
 zb0 = ROAD_Z + 3.0  # -161: Cove Road south carriageway edge
 S.rect(est, "CH_BlvdAsphalt", BLVD["x0"], zb0, BLVD["x1"], BLVD["z_end"], 0.0, Y["asphalt"], M["asphalt"])
-# Cove Road joins from the east: the east edge starts at the road's north edge, the west edge closes on its south bands
-S.rect(est, "CH_BlvdWalkW", 172.05, zb0 + 0.15, 173.85, BLVD["z_end"], 0.0, Y["walk"], M["walk"])
-S.rect(est, "CH_BlvdCurbW", 173.85, zb0, 174.0, BLVD["z_end"], 0.0, Y["curb"], M["curb"])
+# Cove Road crosses the boulevard's south end (the sports spur carries it on west): both edges start at the road's north edge
+S.rect(est, "CH_BlvdWalkW", 172.05, ROAD_Z - 3.0, 173.85, BLVD["z_end"], 0.0, Y["walk"], M["walk"])
+S.rect(est, "CH_BlvdCurbW", 173.85, ROAD_Z - 3.0, 174.0, BLVD["z_end"], 0.0, Y["curb"], M["curb"])
 S.rect(est, "CH_BlvdCurbE", 189.6, ROAD_Z - 3.0, 189.75, BLVD["z_end"], 0.0, Y["curb"], M["curb"])
 S.rect(est, "CH_BlvdWalkE", 189.75, ROAD_Z - 3.0, 191.55, BLVD["z_end"], 0.0, Y["walk"], M["walk"])
 # island (guardhouse) and divider (resident lane), raised paving inside a curb ring

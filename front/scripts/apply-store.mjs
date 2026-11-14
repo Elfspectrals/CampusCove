@@ -72,5 +72,5 @@ writeFileSync(WORLD_MANIFEST, JSON.stringify(manifest, null, 2) + '\n')
 console.log(`world.manifest.json: store "${park.store.name}" door at ${JSON.stringify(park.store.door)}, bounds ${JSON.stringify(manifest.bounds)}`)
 
 // ---------------------------------------------------------------- 3. skyline ring + ground disc
-const backdrop = await fitTownBackdrop(TOWN_GLB, manifest.bounds)
+const backdrop = await fitTownBackdrop(TOWN_GLB, manifest)
 console.log(`town.glb: Sky_Ring radius ${backdrop.skyRadius.toFixed(1)} and Ground radius ${backdrop.groundRadius.toFixed(1)} around (${backdrop.cx.toFixed(1)}, ${backdrop.cz.toFixed(1)})`)

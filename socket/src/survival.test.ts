@@ -125,7 +125,8 @@ function eatingRoom(x: number) {
   const clients = [eater, watcher]
   const player = {
     sessionId: 's1', accountId: 1, token: 't', x, y: 1.6, z: 0, knockedOutUntil: 0, lastConsumeAt: -Infinity, lastSipAt: -Infinity,
-    intoxication: 0, healOverTime: null, stats: { health: 100, hunger: 50, thirst: 50 }
+    intoxication: 0, healOverTime: null, stats: { health: 100, hunger: 50, thirst: 50 },
+    sportsLoans: new Map()
   } as unknown as Player
   const room = {
     players: new Map([['s1', player]]),

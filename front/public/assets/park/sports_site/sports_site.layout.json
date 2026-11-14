@@ -1,0 +1,1972 @@
+{
+  "version": 1,
+  "zones": {
+    "sports_road": {
+      "minX": -429.5,
+      "maxX": -258.95,
+      "minZ": -151.95,
+      "maxZ": -140.05
+    },
+    "sports_entrance": {
+      "minX": -526.0,
+      "maxX": -429.5,
+      "minZ": -186.0,
+      "maxZ": -140.05
+    },
+    "sports_reception": {
+      "minX": -453.5,
+      "maxX": -429.5,
+      "minZ": -183.0,
+      "maxZ": -155.0
+    },
+    "sports_complex": {
+      "minX": -586.0,
+      "maxX": -362.0,
+      "minZ": -426.0,
+      "maxZ": -186.0
+    }
+  },
+  "gate": {
+    "x": -474.0,
+    "z": -186.0,
+    "width": 7.2
+  },
+  "sportsComplex": {
+    "gate": {
+      "toggle": [
+        {
+          "name": "COL_SportsSite_GateE1",
+          "cx": -476.6,
+          "cz": -186.0,
+          "hx": 0.6,
+          "hz": 0.15,
+          "cy": 1.1,
+          "hy": 1.1,
+          "yaw": 0.0,
+          "direction": "in"
+        },
+        {
+          "name": "COL_SportsSite_GateE2",
+          "cx": -475.0,
+          "cz": -186.0,
+          "hx": 0.6,
+          "hz": 0.15,
+          "cy": 1.1,
+          "hy": 1.1,
+          "yaw": 0.0,
+          "direction": "in"
+        },
+        {
+          "name": "COL_SportsSite_GateW",
+          "cx": -473.2,
+          "cz": -186.0,
+          "hx": 0.8,
+          "hz": 0.15,
+          "cy": 1.1,
+          "hy": 1.1,
+          "yaw": 0.0,
+          "direction": "both"
+        },
+        {
+          "name": "COL_SportsSite_GateX",
+          "cx": -471.4,
+          "cz": -186.0,
+          "hx": 0.6,
+          "hz": 0.15,
+          "cy": 1.1,
+          "hy": 1.1,
+          "yaw": 0.0,
+          "direction": "out"
+        }
+      ],
+      "trigger": {
+        "minX": -477.6,
+        "maxX": -472.4,
+        "minZ": -188.5,
+        "maxZ": -186.15
+      },
+      "readers": [
+        [
+          -477.4,
+          1.13,
+          -185.75
+        ],
+        [
+          -475.8,
+          1.13,
+          -185.75
+        ],
+        [
+          -474.2,
+          1.13,
+          -185.75
+        ]
+      ]
+    },
+    "serviceGate": {
+      "x": -401.0,
+      "z": -186.0,
+      "width": 6.0,
+      "locked": true
+    },
+    "busStop": {
+      "id": "sports_complex",
+      "name": "Cove Sports Park",
+      "pole": [
+        -457.0,
+        0.0,
+        -149.65
+      ],
+      "boarding": [
+        -452.0,
+        0.0,
+        -150.6
+      ],
+      "bus": {
+        "minX": -457.0,
+        "maxX": -445.0,
+        "z": -147.5
+      },
+      "yaw": 1.5707963267948966
+    },
+    "turningBulb": {
+      "center": [
+        -474.0,
+        0.0,
+        -156.0
+      ],
+      "radius": 13.0
+    },
+    "carPark": {
+      "bounds": {
+        "minX": -526.0,
+        "maxX": -490.0,
+        "minZ": -166.0,
+        "maxZ": -146.0
+      },
+      "stalls": [
+        {
+          "row": "S",
+          "center": [
+            -520.75,
+            0.0,
+            -150.5
+          ],
+          "size": [
+            2.5,
+            5.0
+          ],
+          "accessible": false
+        },
+        {
+          "row": "S",
+          "center": [
+            -518.25,
+            0.0,
+            -150.5
+          ],
+          "size": [
+            2.5,
+            5.0
+          ],
+          "accessible": false
+        },
+        {
+          "row": "S",
+          "center": [
+            -515.75,
+            0.0,
+            -150.5
+          ],
+          "size": [
+            2.5,
+            5.0
+          ],
+          "accessible": false
+        },
+        {
+          "row": "S",
+          "center": [
+            -513.25,
+            0.0,
+            -150.5
+          ],
+          "size": [
+            2.5,
+            5.0
+          ],
+          "accessible": false
+        },
+        {
+          "row": "S",
+          "center": [
+            -510.75,
+            0.0,
+            -150.5
+          ],
+          "size": [
+            2.5,
+            5.0
+          ],
+          "accessible": false
+        },
+        {
+          "row": "S",
+          "center": [
+            -508.25,
+            0.0,
+            -150.5
+          ],
+          "size": [
+            2.5,
+            5.0
+          ],
+          "accessible": false
+        },
+        {
+          "row": "S",
+          "center": [
+            -505.75,
+            0.0,
+            -150.5
+          ],
+          "size": [
+            2.5,
+            5.0
+          ],
+          "accessible": false
+        },
+        {
+          "row": "S",
+          "center": [
+            -503.25,
+            0.0,
+            -150.5
+          ],
+          "size": [
+            2.5,
+            5.0
+          ],
+          "accessible": false
+        },
+        {
+          "row": "S",
+          "center": [
+            -500.75,
+            0.0,
+            -150.5
+          ],
+          "size": [
+            2.5,
+            5.0
+          ],
+          "accessible": false
+        },
+        {
+          "row": "S",
+          "center": [
+            -498.25,
+            0.0,
+            -150.5
+          ],
+          "size": [
+            2.5,
+            5.0
+          ],
+          "accessible": false
+        },
+        {
+          "row": "S",
+          "center": [
+            -495.75,
+            0.0,
+            -150.5
+          ],
+          "size": [
+            2.5,
+            5.0
+          ],
+          "accessible": false
+        },
+        {
+          "row": "S",
+          "center": [
+            -493.25,
+            0.0,
+            -150.5
+          ],
+          "size": [
+            2.5,
+            5.0
+          ],
+          "accessible": false
+        },
+        {
+          "row": "N",
+          "center": [
+            -522.95,
+            0.0,
+            -161.5
+          ],
+          "size": [
+            2.5,
+            5.0
+          ],
+          "accessible": false
+        },
+        {
+          "row": "N",
+          "center": [
+            -520.45,
+            0.0,
+            -161.5
+          ],
+          "size": [
+            2.5,
+            5.0
+          ],
+          "accessible": false
+        },
+        {
+          "row": "N",
+          "center": [
+            -517.95,
+            0.0,
+            -161.5
+          ],
+          "size": [
+            2.5,
+            5.0
+          ],
+          "accessible": false
+        },
+        {
+          "row": "N",
+          "center": [
+            -515.45,
+            0.0,
+            -161.5
+          ],
+          "size": [
+            2.5,
+            5.0
+          ],
+          "accessible": false
+        },
+        {
+          "row": "N",
+          "center": [
+            -512.95,
+            0.0,
+            -161.5
+          ],
+          "size": [
+            2.5,
+            5.0
+          ],
+          "accessible": false
+        },
+        {
+          "row": "N",
+          "center": [
+            -510.45,
+            0.0,
+            -161.5
+          ],
+          "size": [
+            2.5,
+            5.0
+          ],
+          "accessible": false
+        },
+        {
+          "row": "N",
+          "center": [
+            -507.95,
+            0.0,
+            -161.5
+          ],
+          "size": [
+            2.5,
+            5.0
+          ],
+          "accessible": false
+        },
+        {
+          "row": "N",
+          "center": [
+            -505.45,
+            0.0,
+            -161.5
+          ],
+          "size": [
+            2.5,
+            5.0
+          ],
+          "accessible": false
+        },
+        {
+          "row": "N",
+          "center": [
+            -502.95,
+            0.0,
+            -161.5
+          ],
+          "size": [
+            2.5,
+            5.0
+          ],
+          "accessible": false
+        },
+        {
+          "row": "N",
+          "center": [
+            -500.45,
+            0.0,
+            -161.5
+          ],
+          "size": [
+            2.5,
+            5.0
+          ],
+          "accessible": false
+        },
+        {
+          "row": "N",
+          "center": [
+            -497.4,
+            0.0,
+            -161.5
+          ],
+          "size": [
+            3.6,
+            5.0
+          ],
+          "accessible": true
+        },
+        {
+          "row": "N",
+          "center": [
+            -493.8,
+            0.0,
+            -161.5
+          ],
+          "size": [
+            3.6,
+            5.0
+          ],
+          "accessible": true
+        }
+      ]
+    }
+  },
+  "adminTeleport": {
+    "position": [
+      -474.0,
+      0.0,
+      -181.0
+    ],
+    "yaw": 0.0
+  },
+  "reception": {
+    "kind": "work",
+    "key": "sports_reception",
+    "name": "Cove Sports Park",
+    "job": "sports",
+    "position": [
+      -444.5,
+      0.0,
+      -176.8
+    ],
+    "rotationY": -1.5708,
+    "door": [
+      -452.5,
+      1.25,
+      -176.8
+    ],
+    "footprint": [
+      12.0,
+      16.01
+    ],
+    "interiorOffset": [
+      0.0,
+      0.2,
+      2.595
+    ]
+  },
+  "points": {
+    "passClerk": [
+      -444.145,
+      0.2,
+      -176.8
+    ],
+    "passCounter": [
+      -445.095,
+      0.2,
+      -176.8
+    ],
+    "clerkYaw": -1.5708
+  },
+  "collision": [
+    {
+      "name": "COL_SportsRoad_SR_LampSpur00",
+      "cx": -275.0,
+      "cz": -142.35,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsRoad_SR_LampSpur01",
+      "cx": -295.0,
+      "cz": -142.35,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsRoad_SR_LampSpur02",
+      "cx": -315.0,
+      "cz": -142.35,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsRoad_SR_LampSpur03",
+      "cx": -335.0,
+      "cz": -142.35,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsRoad_SR_LampSpur04",
+      "cx": -355.0,
+      "cz": -142.35,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsRoad_SR_LampSpur05",
+      "cx": -375.0,
+      "cz": -142.35,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsRoad_SR_LampSpur06",
+      "cx": -395.0,
+      "cz": -142.35,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsRoad_SR_LampSpur07",
+      "cx": -415.0,
+      "cz": -142.35,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsRoad_SR_Signpost",
+      "cx": -262.0,
+      "cz": -142.35,
+      "hx": 0.15,
+      "hz": 0.15,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SE_BusShelter_Back",
+      "cx": -448.5,
+      "cz": -154.31,
+      "hx": 2.0,
+      "hz": 0.1,
+      "hy": 1.2,
+      "cy": 1.2,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SE_BusShelter_SideW",
+      "cx": -446.54,
+      "cz": -153.6,
+      "hx": 0.1,
+      "hz": 0.75,
+      "hy": 1.2,
+      "cy": 1.2,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SE_BusShelter_SideE",
+      "cx": -450.46,
+      "cz": -153.6,
+      "hx": 0.1,
+      "hz": 0.75,
+      "hy": 1.2,
+      "cy": 1.2,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SE_BusShelter_Seat",
+      "cx": -448.5,
+      "cz": -154.0,
+      "hx": 1.2,
+      "hz": 0.225,
+      "hy": 0.25,
+      "cy": 0.25,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_BusStopPole",
+      "cx": -457.0,
+      "cz": -149.65,
+      "hx": 0.1,
+      "hz": 0.1,
+      "hy": 1.0,
+      "cy": 1.12,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SE_LampSpur08",
+      "cx": -435.0,
+      "cz": -142.35,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SE_LampSpur09",
+      "cx": -455.0,
+      "cz": -142.35,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SE_Lamp0",
+      "cx": -474.0,
+      "cz": -169.65,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SE_Lamp1",
+      "cx": -525.0,
+      "cz": -156.0,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SE_Lamp2",
+      "cx": -488.0,
+      "cz": -184.0,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SE_Lamp3",
+      "cx": -459.0,
+      "cz": -184.0,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SE_Tree00",
+      "cx": -521.0,
+      "cz": -179.0,
+      "hx": 0.25,
+      "hz": 0.25,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SE_Tree01",
+      "cx": -511.0,
+      "cz": -178.5,
+      "hx": 0.27,
+      "hz": 0.27,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SE_Tree02",
+      "cx": -501.0,
+      "cz": -179.0,
+      "hx": 0.29,
+      "hz": 0.29,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SE_Tree03",
+      "cx": -521.0,
+      "cz": -143.0,
+      "hx": 0.25,
+      "hz": 0.25,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SE_Tree04",
+      "cx": -508.0,
+      "cz": -143.2,
+      "hx": 0.27,
+      "hz": 0.27,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SE_Tree05",
+      "cx": -495.0,
+      "cz": -143.0,
+      "hx": 0.29,
+      "hz": 0.29,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsReception_SRc_Tree0",
+      "cx": -432.5,
+      "cz": -160.0,
+      "hx": 0.225,
+      "hz": 0.225,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsReception_SRc_Tree1",
+      "cx": -432.5,
+      "cz": -168.0,
+      "hx": 0.25,
+      "hz": 0.25,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsReception_SRc_Tree2",
+      "cx": -432.5,
+      "cz": -178.5,
+      "hx": 0.225,
+      "hz": 0.225,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsReception_SRc_Tree3",
+      "cx": -446.0,
+      "cz": -161.0,
+      "hx": 0.25,
+      "hz": 0.25,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Work_sports_reception",
+      "cx": -444.495,
+      "cz": -176.8,
+      "hx": 8.205,
+      "hz": 6.2,
+      "hy": 2.2,
+      "cy": 2.2,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_FenceN",
+      "cx": -474.0,
+      "cz": -426.0,
+      "hx": 112.0,
+      "hz": 0.15,
+      "hy": 1.3,
+      "cy": 1.3,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_FenceW",
+      "cx": -586.0,
+      "cz": -306.0,
+      "hx": 0.15,
+      "hz": 120.0,
+      "hy": 1.3,
+      "cy": 1.3,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_FenceE",
+      "cx": -362.0,
+      "cz": -306.0,
+      "hx": 0.15,
+      "hz": 120.0,
+      "hy": 1.3,
+      "cy": 1.3,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_FenceS0",
+      "cx": -531.8,
+      "cz": -186.0,
+      "hx": 54.2,
+      "hz": 0.15,
+      "hy": 1.3,
+      "cy": 1.3,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_FenceS1",
+      "cx": -437.2,
+      "cz": -186.0,
+      "hx": 33.2,
+      "hz": 0.15,
+      "hy": 1.3,
+      "cy": 1.3,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_FenceS2",
+      "cx": -380.0,
+      "cz": -186.0,
+      "hx": 18.0,
+      "hz": 0.15,
+      "hy": 1.3,
+      "cy": 1.3,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_GateP1",
+      "cx": -477.4,
+      "cz": -186.0,
+      "hx": 0.2,
+      "hz": 0.2,
+      "hy": 1.3,
+      "cy": 1.3,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_GateP2",
+      "cx": -475.8,
+      "cz": -186.0,
+      "hx": 0.2,
+      "hz": 0.2,
+      "hy": 1.3,
+      "cy": 1.3,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_GateP3",
+      "cx": -474.2,
+      "cz": -186.0,
+      "hx": 0.2,
+      "hz": 0.2,
+      "hy": 1.3,
+      "cy": 1.3,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_GateP4",
+      "cx": -472.2,
+      "cz": -186.0,
+      "hx": 0.2,
+      "hz": 0.2,
+      "hy": 1.3,
+      "cy": 1.3,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_GateP5",
+      "cx": -470.6,
+      "cz": -186.0,
+      "hx": 0.2,
+      "hz": 0.2,
+      "hy": 1.3,
+      "cy": 1.3,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_ServiceGate",
+      "cx": -401.0,
+      "cz": -186.0,
+      "hx": 2.95,
+      "hz": 0.15,
+      "hy": 1.13,
+      "cy": 1.13,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_UtilityWallN",
+      "cx": -573.0,
+      "cz": -269.9,
+      "hx": 7.0,
+      "hz": 0.1,
+      "hy": 1.13,
+      "cy": 1.13,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_UtilityWallW",
+      "cx": -579.9,
+      "cz": -262.4,
+      "hx": 0.1,
+      "hz": 7.4,
+      "hy": 1.13,
+      "cy": 1.13,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_UtilityWallE",
+      "cx": -566.1,
+      "cz": -262.4,
+      "hx": 0.1,
+      "hz": 7.4,
+      "hy": 1.13,
+      "cy": 1.13,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_UtilityWallS0",
+      "cx": -577.15,
+      "cz": -255.1,
+      "hx": 2.65,
+      "hz": 0.1,
+      "hy": 1.13,
+      "cy": 1.13,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_UtilityWallS1",
+      "cx": -568.85,
+      "cz": -255.1,
+      "hx": 2.65,
+      "hz": 0.1,
+      "hy": 1.13,
+      "cy": 1.13,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_UtilityGate",
+      "cx": -573.0,
+      "cz": -255.1,
+      "hx": 1.5,
+      "hz": 0.15,
+      "hy": 1.03,
+      "cy": 1.03,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_Transformer",
+      "cx": -576.0,
+      "cz": -265.0,
+      "hx": 1.25,
+      "hz": 0.95,
+      "hy": 0.95,
+      "cy": 0.95,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_TelecomCabinet",
+      "cx": -570.0,
+      "cz": -267.5,
+      "hx": 0.5,
+      "hz": 0.3,
+      "hy": 0.85,
+      "cy": 0.85,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_WasteBins",
+      "cx": -575.9,
+      "cz": -258.0,
+      "hx": 2.2,
+      "hz": 0.55,
+      "hy": 0.7,
+      "cy": 0.7,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Lamp00",
+      "cx": -478.5,
+      "cz": -196,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Lamp01",
+      "cx": -469.5,
+      "cz": -196,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Lamp02",
+      "cx": -478.5,
+      "cz": -216,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Lamp03",
+      "cx": -469.5,
+      "cz": -216,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Lamp04",
+      "cx": -478.5,
+      "cz": -236,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Lamp05",
+      "cx": -469.5,
+      "cz": -236,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Lamp06",
+      "cx": -478.5,
+      "cz": -256,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Lamp07",
+      "cx": -469.5,
+      "cz": -256,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Lamp08",
+      "cx": -478.5,
+      "cz": -276,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Lamp09",
+      "cx": -469.5,
+      "cz": -276,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Lamp10",
+      "cx": -478.5,
+      "cz": -296,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Lamp11",
+      "cx": -469.5,
+      "cz": -296,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Lamp12",
+      "cx": -575.0,
+      "cz": -242.5,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Lamp13",
+      "cx": -550.0,
+      "cz": -242.5,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Lamp14",
+      "cx": -525.0,
+      "cz": -242.5,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Lamp15",
+      "cx": -500.0,
+      "cz": -242.5,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Lamp16",
+      "cx": -450.0,
+      "cz": -242.5,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Lamp17",
+      "cx": -425.0,
+      "cz": -242.5,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Lamp18",
+      "cx": -375.0,
+      "cz": -242.5,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Lamp19",
+      "cx": -575.0,
+      "cz": -309.5,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Lamp20",
+      "cx": -550.0,
+      "cz": -309.5,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Lamp21",
+      "cx": -525.0,
+      "cz": -309.5,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Lamp22",
+      "cx": -500.0,
+      "cz": -309.5,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Lamp23",
+      "cx": -450.0,
+      "cz": -309.5,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Lamp24",
+      "cx": -425.0,
+      "cz": -309.5,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Lamp25",
+      "cx": -400.0,
+      "cz": -309.5,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Lamp26",
+      "cx": -375.0,
+      "cz": -309.5,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Bench0",
+      "cx": -405.0,
+      "cz": -284.0,
+      "hx": 0.85,
+      "hz": 0.25,
+      "hy": 0.45,
+      "cy": 0.45,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Bench1",
+      "cx": -395.0,
+      "cz": -284.0,
+      "hx": 0.85,
+      "hz": 0.25,
+      "hy": 0.45,
+      "cy": 0.45,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Bench2",
+      "cx": -385.0,
+      "cz": -284.0,
+      "hx": 0.85,
+      "hz": 0.25,
+      "hy": 0.45,
+      "cy": 0.45,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Bench3",
+      "cx": -375.0,
+      "cz": -284.0,
+      "hx": 0.85,
+      "hz": 0.25,
+      "hy": 0.45,
+      "cy": 0.45,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Bench4",
+      "cx": -376.0,
+      "cz": -264.0,
+      "hx": 0.25,
+      "hz": 0.85,
+      "hy": 0.45,
+      "cy": 0.45,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Bench5",
+      "cx": -376.0,
+      "cz": -258.0,
+      "hx": 0.25,
+      "hz": 0.85,
+      "hy": 0.45,
+      "cy": 0.45,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree00",
+      "cx": -580.92,
+      "cz": -409.97,
+      "hx": 0.24,
+      "hz": 0.24,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree01",
+      "cx": -579.5,
+      "cz": -402.09,
+      "hx": 0.265,
+      "hz": 0.265,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree02",
+      "cx": -579.18,
+      "cz": -390.99,
+      "hx": 0.285,
+      "hz": 0.285,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree03",
+      "cx": -578.04,
+      "cz": -367.63,
+      "hx": 0.278,
+      "hz": 0.278,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree04",
+      "cx": -577.91,
+      "cz": -346.05,
+      "hx": 0.258,
+      "hz": 0.258,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree05",
+      "cx": -580.78,
+      "cz": -337.5,
+      "hx": 0.285,
+      "hz": 0.285,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree06",
+      "cx": -578.83,
+      "cz": -331.32,
+      "hx": 0.24,
+      "hz": 0.24,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree07",
+      "cx": -578.28,
+      "cz": -322.97,
+      "hx": 0.253,
+      "hz": 0.253,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree08",
+      "cx": -580.37,
+      "cz": -295.21,
+      "hx": 0.263,
+      "hz": 0.263,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree09",
+      "cx": -577.84,
+      "cz": -233.29,
+      "hx": 0.297,
+      "hz": 0.297,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree10",
+      "cx": -578.43,
+      "cz": -219.97,
+      "hx": 0.27,
+      "hz": 0.27,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree11",
+      "cx": -570.37,
+      "cz": -420.34,
+      "hx": 0.245,
+      "hz": 0.245,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree12",
+      "cx": -570.69,
+      "cz": -410.98,
+      "hx": 0.228,
+      "hz": 0.228,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree13",
+      "cx": -571.78,
+      "cz": -401.44,
+      "hx": 0.233,
+      "hz": 0.233,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree14",
+      "cx": -571.02,
+      "cz": -383.34,
+      "hx": 0.258,
+      "hz": 0.258,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree15",
+      "cx": -570.45,
+      "cz": -377.12,
+      "hx": 0.285,
+      "hz": 0.285,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree16",
+      "cx": -572.86,
+      "cz": -364.38,
+      "hx": 0.29,
+      "hz": 0.29,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree17",
+      "cx": -569.35,
+      "cz": -348.88,
+      "hx": 0.258,
+      "hz": 0.258,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree18",
+      "cx": -570.04,
+      "cz": -336.83,
+      "hx": 0.247,
+      "hz": 0.247,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree19",
+      "cx": -571.28,
+      "cz": -295.05,
+      "hx": 0.228,
+      "hz": 0.228,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree20",
+      "cx": -570.76,
+      "cz": -283.51,
+      "hx": 0.275,
+      "hz": 0.275,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree21",
+      "cx": -568.65,
+      "cz": -275.65,
+      "hx": 0.25,
+      "hz": 0.25,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree22",
+      "cx": -564.35,
+      "cz": -237.65,
+      "hx": 0.28,
+      "hz": 0.28,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree23",
+      "cx": -561.16,
+      "cz": -230.93,
+      "hx": 0.292,
+      "hz": 0.292,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree24",
+      "cx": -560.88,
+      "cz": -220.16,
+      "hx": 0.253,
+      "hz": 0.253,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree25",
+      "cx": -551.81,
+      "cz": -232.57,
+      "hx": 0.278,
+      "hz": 0.278,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree26",
+      "cx": -551.31,
+      "cz": -224.31,
+      "hx": 0.245,
+      "hz": 0.245,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree27",
+      "cx": -517.65,
+      "cz": -238.72,
+      "hx": 0.295,
+      "hz": 0.295,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree28",
+      "cx": -497.49,
+      "cz": -239.13,
+      "hx": 0.247,
+      "hz": 0.247,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree29",
+      "cx": -489.0,
+      "cz": -239.25,
+      "hx": 0.235,
+      "hz": 0.235,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree30",
+      "cx": -461.24,
+      "cz": -296.43,
+      "hx": 0.23,
+      "hz": 0.23,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree31",
+      "cx": -454.27,
+      "cz": -238.31,
+      "hx": 0.287,
+      "hz": 0.287,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree32",
+      "cx": -447.28,
+      "cz": -295.71,
+      "hx": 0.29,
+      "hz": 0.29,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree33",
+      "cx": -436.09,
+      "cz": -238.79,
+      "hx": 0.237,
+      "hz": 0.237,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree34",
+      "cx": -417.15,
+      "cz": -295.72,
+      "hx": 0.237,
+      "hz": 0.237,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree35",
+      "cx": -417.02,
+      "cz": -260.14,
+      "hx": 0.265,
+      "hz": 0.265,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree36",
+      "cx": -409.37,
+      "cz": -293.01,
+      "hx": 0.292,
+      "hz": 0.292,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree37",
+      "cx": -408.42,
+      "cz": -239.28,
+      "hx": 0.29,
+      "hz": 0.29,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree38",
+      "cx": -398.54,
+      "cz": -291.73,
+      "hx": 0.268,
+      "hz": 0.268,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree39",
+      "cx": -389.49,
+      "cz": -296.03,
+      "hx": 0.29,
+      "hz": 0.29,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree40",
+      "cx": -390.14,
+      "cz": -282.95,
+      "hx": 0.242,
+      "hz": 0.242,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree41",
+      "cx": -392.32,
+      "cz": -212.58,
+      "hx": 0.242,
+      "hz": 0.242,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree42",
+      "cx": -383.19,
+      "cz": -291.82,
+      "hx": 0.282,
+      "hz": 0.282,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree43",
+      "cx": -382.93,
+      "cz": -275.27,
+      "hx": 0.228,
+      "hz": 0.228,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree44",
+      "cx": -381.88,
+      "cz": -269.11,
+      "hx": 0.268,
+      "hz": 0.268,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree45",
+      "cx": -380.93,
+      "cz": -258.95,
+      "hx": 0.285,
+      "hz": 0.285,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree46",
+      "cx": -372.18,
+      "cz": -420.82,
+      "hx": 0.237,
+      "hz": 0.237,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree47",
+      "cx": -372.87,
+      "cz": -412.44,
+      "hx": 0.242,
+      "hz": 0.242,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree48",
+      "cx": -374.37,
+      "cz": -400.84,
+      "hx": 0.228,
+      "hz": 0.228,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree49",
+      "cx": -373.64,
+      "cz": -390.68,
+      "hx": 0.29,
+      "hz": 0.29,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree50",
+      "cx": -375.45,
+      "cz": -381.67,
+      "hx": 0.275,
+      "hz": 0.275,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree51",
+      "cx": -370.98,
+      "cz": -366.46,
+      "hx": 0.295,
+      "hz": 0.295,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree52",
+      "cx": -371.72,
+      "cz": -358.75,
+      "hx": 0.297,
+      "hz": 0.297,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree53",
+      "cx": -373.93,
+      "cz": -347.76,
+      "hx": 0.28,
+      "hz": 0.28,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree54",
+      "cx": -370.62,
+      "cz": -340.79,
+      "hx": 0.273,
+      "hz": 0.273,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree55",
+      "cx": -372.59,
+      "cz": -328.66,
+      "hx": 0.258,
+      "hz": 0.258,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree56",
+      "cx": -371.68,
+      "cz": -319.12,
+      "hx": 0.285,
+      "hz": 0.285,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree57",
+      "cx": -372.08,
+      "cz": -294.12,
+      "hx": 0.225,
+      "hz": 0.225,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree58",
+      "cx": -371.03,
+      "cz": -283.39,
+      "hx": 0.245,
+      "hz": 0.245,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree59",
+      "cx": -371.38,
+      "cz": -273.55,
+      "hx": 0.258,
+      "hz": 0.258,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsSite_SC_Tree60",
+      "cx": -372.05,
+      "cz": -266.78,
+      "hx": 0.263,
+      "hz": 0.263,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    }
+  ]
+}

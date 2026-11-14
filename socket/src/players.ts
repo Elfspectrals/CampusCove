@@ -163,7 +163,14 @@ export function createPlayer(client: Client, options: Json, colorIndex: number, 
     cuffAttempt: null,
     cuffedBy: null,
     pickpocket: null,
-    lastPickpocketAt: 0
+    lastPickpocketAt: 0,
+    sportsPassUntil: null,
+    sportsPassPrices: null,
+    sportsPassPending: false,
+    lastSportsPassAt: 0,
+    sportsLoans: new Map(),
+    sportsPending: false,
+    lastSportsAt: 0
   }
 }
 

@@ -110,6 +110,18 @@ import { type WorldHouse, citySpawn, workDoor, worldHouse } from './world.ts'
 import { sendTaskTierReached, type TaskTierReached } from './tasks.ts'
 import { applyTutorialChange, type TutorialChange } from './tutorial.ts'
 import { onTaskMove } from './taskTracking.ts'
+import {
+  SPORTS_TICK_MS,
+  joinSports,
+  leaveSportsRoom,
+  moveInSports,
+  newSportsState,
+  onSportsCoachOpen,
+  onSportsPassBuy,
+  onSportsSignup,
+  onSportsSignupLeave,
+  tickSports
+} from './sports/index.ts'
 
 function warn(context: string, error: unknown): void {
   console.warn(`[colyseus] ${context}:`, error instanceof Error ? error.message : error)
@@ -128,6 +140,7 @@ export class CityRoom extends Room implements GameRoom {
   cashBags = new Map<number, CashBag>()
   market: MarketSnapshot | null = null
   storageAuction = newStorageAuction()
+  sports = newSportsState()
   pub: PubState = { secretOpen: false, race: null, darts: null, challenges: new Map(), challengeSentAt: new Map(), quiz: null, quizSchedule: 0 }
 
   onCreate() {
@@ -225,6 +238,17 @@ export class CityRoom extends Room implements GameRoom {
     this.onMessage('storage_open_mine', (client) => void onStorageOpenMine(this, client))
     this.clock.setInterval(() => void tickStorageAuction(this, Date.now()).catch((error) => warn('storage auction tick failed', error)), STORAGE_TICK_MS)
     this.onMessage('admin_quiz_start', (client) => onAdminQuizStart(this, client))
+    this.onMessage('sports_pass_buy', (client, payload: ClientPayload) => void onSportsPassBuy(this, client, payload))
+    this.onMessage('sports_coach_open', (client, payload: ClientPayload) => onSportsCoachOpen(this, client, payload))
+    this.onMessage('sports_signup', (client, payload: ClientPayload) => void onSportsSignup(this, client, payload).catch((error) => warn('sports sign-up failed', error)))
+    this.onMessage('sports_signup_leave', (client) => onSportsSignupLeave(this, client))
+    this.clock.setInterval(() => {
+      try {
+        tickSports(this)
+      } catch (error) {
+        warn('sports tick failed', error)
+      }
+    }, SPORTS_TICK_MS)
     scheduleNextQuiz(this)
     this.clock.setInterval(() => void this.pollHousingUnits(), HOUSING_POLL_MS)
     this.clock.setInterval(() => tickSurvival(this, SURVIVAL_TICK_MS / 1000), SURVIVAL_TICK_MS)
@@ -256,6 +280,7 @@ export class CityRoom extends Room implements GameRoom {
       if (stale) {
         onTradeLeave(this, stale)
         leavePub(this, stale)
+        leaveSportsRoom(this, stale, Date.now())
         leaveCuffs(this, stale)
         leavePickpocket(this, stale)
       }
@@ -296,6 +321,7 @@ export class CityRoom extends Room implements GameRoom {
       await loadPoliceLicence(this, client, player)
       await loadSurvival(client, player)
     }
+    await joinSports(this, client, player)
     await sendMarketOnJoin(this, client, player)
   }
 
@@ -308,6 +334,7 @@ export class CityRoom extends Room implements GameRoom {
     leavePickpocket(this, player)
     onTradeLeave(this, player)
     leavePub(this, player)
+    leaveSportsRoom(this, player, Date.now())
     void saveSurvival(player)
     void saveWanted(player)
     void saveJail(player)
@@ -351,7 +378,7 @@ export class CityRoom extends Room implements GameRoom {
       return
     }
     if (rejection !== null) {
-      client.send('position_correction', { x: player.x, y: player.y, z: player.z })
+      client.send('position_correction', { x: player.x, y: player.y, z: player.z, reason: rejection })
       return
     }
     const previousY = player.y
@@ -368,6 +395,7 @@ export class CityRoom extends Room implements GameRoom {
     checkTradeDistance(this, player)
     onSurvivalMove(this, client, player, previousY, distXZ)
     onTaskMove(player, distXZ, now)
+    moveInSports(this, player, now)
   }
 
   broadcastMove(client: GameClient, player: Player): void {

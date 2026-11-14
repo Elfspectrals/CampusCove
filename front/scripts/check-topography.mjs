@@ -10,6 +10,8 @@
 //   sunk     the drawn ground is above the walk height: the player walks inside a slope
 //   floating the walk height is above the drawn ground with no deck under the feet: a climb into the void
 //   conflict two zone heightmaps cover the same point with different heights (the game keeps the higher one)
+//   void     no ground is drawn at all under a zone sample (a hole in the Ground disc left uncovered, docs/OPEN_WORLD.md
+//            "Trous dans le sol"); points inside a building's interior (its levels) are skipped
 //   walk-through a solid surface (step, deck, plinth, ramp) stands 0.15 to MAX_STEP above the walk height with no
 //            collision box: the player walks through it at shin height instead of climbing it or being stopped
 // Exit code 1 when anything is found. Docs: docs/ASSETS_STYLE_GUIDE.md "Relief".
@@ -25,7 +27,7 @@ const FRONT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const PUBLIC = join(FRONT, 'public')
 
 /** Materials players stand on outdoors. Upper mall floors are inside a building (buildingFloorAt), not terrain. */
-const GROUND = /Grass|Meadow|Hill|Sand|PondBed|Path|Paving|Avenue|Asphalt|Cobble|Street|MallFloor$|SoftFloor|OrchardRows|Flagstone|CreekBank|Lawn/
+const GROUND = /Grass|Meadow|Hill|Sand|PondBed|Path|Paving|Avenue|Asphalt|Cobble|Street|MallFloor$|SoftFloor|OrchardRows|Flagstone|CreekBank|Lawn|Turf|Court|Track|Gravel/
 /** Walkable structures above the ground (jetty, bridges, gazebo floor): the walk height may sit on them. */
 const DECK = /Plank|Deck|Bridge|Step/
 /** Things a player walks through without harm: foliage, flowers, small decals and glows. */
@@ -228,6 +230,27 @@ function walkThrough(x, z, walk) {
   return raised
 }
 
+/** Interior collision bounds of every walk-in building, as placed in the world (the interior levels players stand in). */
+const INTERIOR_DIRS = { house: 'houses', work: 'work', store: 'store' }
+const interiors = manifest.zones.flatMap((z) => z.buildings ?? []).filter((b) => b.interiorOffset).map((b) => {
+  const dir = INTERIOR_DIRS[b.kind]
+  if (!dir) throw new Error(`world.manifest.json: building ${b.key} has an unknown kind ${b.kind}`)
+  const { bounds } = JSON.parse(readFileSync(join(PUBLIC, `assets/${dir}/${b.key}/interior.collision.json`), 'utf8'))
+  if (!bounds) throw new Error(`assets/${dir}/${b.key}/interior.collision.json has no bounds`)
+  return { position: b.position, yaw: b.rotationY, offset: b.interiorOffset, bounds }
+})
+
+/** Inside a building interior: the walk height comes from buildingFloorAt there, not from the ground. */
+function inBuilding(x, z) {
+  return interiors.some(({ position, yaw, offset, bounds }) => {
+    const dx = x - position[0]
+    const dz = z - position[2]
+    const lx = dx * Math.cos(yaw) - dz * Math.sin(yaw) - offset[0]
+    const lz = dx * Math.sin(yaw) + dz * Math.cos(yaw) - offset[2]
+    return lx >= bounds.minX && lx <= bounds.maxX && lz >= bounds.minZ && lz <= bounds.maxZ
+  })
+}
+
 /** Two zone grids covering the same point must agree, or the higher one silently wins in the game. */
 function gridConflict(x, z) {
   const values = gridZones.map((g) => ({ key: g.key, h: heightmapAt(g.map, x, z) })).filter((v) => v.h !== null)
@@ -264,6 +287,9 @@ for (const zone of zones) {
       } else if (walk - (top ?? 0) > TOLERANCE && !stepsOntoDeck(x, z, walk, top)) {
         kind = 'floating'
         err = walk - (top ?? 0)
+      } else if (top === null && !inBuilding(x, z)) {
+        kind = 'void'
+        err = walk
       } else {
         const raised = walkThrough(x, z, walk)
         if (raised) {

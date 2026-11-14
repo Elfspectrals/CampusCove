@@ -1,0 +1,56 @@
+{
+  "version": 1,
+  "sport": "dance",
+  "status": "placeholder",
+  "zone": "sports_dance",
+  "coachId": "dance_coach",
+  "signup": {
+    "teams": false,
+    "settings": [
+      {
+        "key": "mode",
+        "label": "Mode",
+        "options": [
+          "solo",
+          "team",
+          "duel"
+        ]
+      },
+      {
+        "key": "song",
+        "label": "Song",
+        "options": []
+      },
+      {
+        "key": "difficulty",
+        "label": "Difficulty",
+        "options": [
+          "easy",
+          "normal",
+          "hard"
+        ]
+      }
+    ]
+  },
+  "freeEmotes": null,
+  "unlockableEmotes": null,
+  "songs": [],
+  "modes": [
+    "solo",
+    "team",
+    "duel"
+  ],
+  "maxPlayers": 4,
+  "windowsMs": {
+    "perfect": null,
+    "good": null
+  },
+  "syncBonus": null,
+  "allowanceMs": null,
+  "gear": [],
+  "boards": null,
+  "tasks": [
+    "songs_danced",
+    "full_combo_hard"
+  ]
+}

@@ -115,6 +115,7 @@ interface World {
   cropPlants: WorldCropPlant[]
   police: WorldPolice | null
   zoneBounds: Map<string, Bounds>
+  sportsPassAreas: Map<string, Bounds>
   storage: WorldStorage | null
 }
 
@@ -137,6 +138,7 @@ let buyerZones = new Set<string>()
 let shopBounds = new Map<string, Bounds>()
 let atms: Vec3[] = []
 let marketStalls = new Map<number, Vec3>()
+let sportsPassDesk: Vec3 | null = null
 
 function parseVec3(raw: Json, what: string): Vec3 {
   if (!Array.isArray(raw) || raw.length !== 3 || !raw.every(Number.isFinite)) {
@@ -347,6 +349,16 @@ export function parseAdminDestinations(raw: Json): TeleportDestination[] {
   return out
 }
 
+export function parseSportsPassAreas(zones: Json[]): Map<string, Bounds> {
+  const areas = new Map<string, Bounds>()
+  for (const zone of zones) {
+    if (zone.sportsPass === undefined) continue
+    if (typeof zone.sportsPass !== 'boolean') throw new Error(`world manifest: invalid sportsPass of ${zone.key} ${JSON.stringify(zone.sportsPass)}`)
+    if (zone.sportsPass) areas.set(zone.key, parseBounds(zone.bounds, `${zone.key} sports pass area bounds`))
+  }
+  return areas
+}
+
 function parseWorld(manifest: Json): World {
   if (!Array.isArray(manifest?.zones)) throw new Error('world manifest: missing zones')
   const workDoors: World['workDoors'] = new Map()
@@ -394,6 +406,7 @@ function parseWorld(manifest: Json): World {
     cropPlants: parseCropPlants(manifest.crops),
     police: parsePolice(manifest.police, destinations),
     zoneBounds: new Map(manifest.zones.filter((zone: Json) => zone.bounds !== undefined).map((zone: Json) => [zone.key, parseBounds(zone.bounds, `${zone.key} zone bounds`)])),
+    sportsPassAreas: parseSportsPassAreas(manifest.zones),
     storage: parseStorage(manifest.storage)
   }
 }
@@ -569,4 +582,45 @@ export async function loadMarketStalls(): Promise<void> {
 
 export function worldMarketStall(stallNo: number): Vec3 | null {
   return marketStalls.get(stallNo) ?? null
+}
+
+export function worldSportsPassAreas(): ReadonlyMap<string, Bounds> {
+  return loadedWorld().sportsPassAreas
+}
+
+export function worldSportsPassArea(key: string): Bounds | null {
+  return loadedWorld().sportsPassAreas.get(key) ?? null
+}
+
+export function parseSportsPassDesk(decor: Json): Vec3 | null {
+  if (!Array.isArray(decor?.props)) throw new Error('zones/sports_reception.json: missing props')
+  const desks = decor.props.filter((p: Json) => p.sportsPassDesk === true)
+  if (desks.length > 1) throw new Error(`zones/sports_reception.json: ${desks.length} props with sportsPassDesk, expected one`)
+  if (desks.length === 0) return null
+  const [x, y, z] = Array.isArray(desks[0].position) ? desks[0].position : []
+  if (![x, y, z].every(Number.isFinite)) throw new Error(`zones/sports_reception.json: invalid position of ${desks[0].id}`)
+  return { x, y, z }
+}
+
+export async function loadSportsPassDesk(): Promise<void> {
+  if (!WORLD_MANIFEST_URL) throw new Error('WORLD_MANIFEST_URL is not set')
+  const index = await readManifest(besideManifest('zones/index.json'))
+  if (!Array.isArray(index?.zones)) throw new Error('zones/index.json: missing zones')
+  if (!index.zones.includes('sports_reception')) {
+    sportsPassDesk = null
+    console.log('[world] no sports_reception zone: the sports pass desk is closed')
+    return
+  }
+  sportsPassDesk = parseSportsPassDesk(await readManifest(besideManifest('zones/sports_reception.json')))
+  console.log(sportsPassDesk ? '[world] sports pass desk loaded' : '[world] sports_reception has no sportsPassDesk prop: the sports pass desk is closed')
+}
+
+export function worldSportsPassDesk(): Vec3 | null {
+  return sportsPassDesk
+}
+
+export async function readSportRules(sport: string): Promise<Json> {
+  if (!WORLD_MANIFEST_URL) throw new Error('WORLD_MANIFEST_URL is not set')
+  if (!/^[a-z_]+$/.test(sport)) throw new Error(`invalid sport id ${JSON.stringify(sport)}`)
+  return readManifest(besideManifest(`sports/rules/${sport}.json`))
 }

@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "sport": "running",
+  "status": "placeholder",
+  "zone": "sports_athletics",
+  "coachId": "athletics_coach",
+  "signup": {
+    "teams": false,
+    "settings": [
+      {
+        "key": "distanceM",
+        "label": "Distance",
+        "options": [
+          100,
+          400,
+          1500
+        ]
+      }
+    ]
+  },
+  "track": {
+    "centreLine": null,
+    "gates": null,
+    "startLines": null,
+    "finishLine": null,
+    "lanes": 8
+  },
+  "distancesM": [
+    100,
+    400,
+    1500
+  ],
+  "minPlayers": 1,
+  "maxPlayers": 8,
+  "startBeepDelayRangeMs": null,
+  "falseStart": "disqualify",
+  "stride": {
+    "goodCadenceMs": null,
+    "toleranceMs": null,
+    "speedCurve": null
+  },
+  "gear": [
+    "gear_running_spikes"
+  ],
+  "boards": [
+    "run_100",
+    "run_400",
+    "run_1500"
+  ],
+  "tasks": [
+    "races_run",
+    "run_400_time"
+  ]
+}

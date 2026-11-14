@@ -1,0 +1,9 @@
+export const SPORTS_PASS_DESK_REACH = 3
+export const SPORTS_COACH_REACH = 3
+export const SPORTS_ACTION_COOLDOWN_MS = 500
+export const SPORTS_TICK_MS = 100
+export const KICKOFF_COUNTDOWN_MS = 60_000
+export const LOBBY_IDLE_CANCEL_MS = 5 * 60_000
+export const SPORTS_SITE_ZONE = 'sports_complex'
+export const CLIMBING_SHOES = 'climbing_shoes'
+export const SPORTS_PASS_KINDS = ['day', 'week'] as const
