@@ -57,6 +57,7 @@ Every task lives in `App\Support\TaskCatalog`: a key, the counter it reads and i
 | `pub_games` | `pub_games` | 10 / 50 / 150 |
 | `duellist` | `duels_won` | 1 / 5 / 15 |
 | `insider` | `secret_room_weeks` | 1 / 4 / 12 |
+| `boxer` | `boxing_wins` | 1 / 5 / 15 |
 
 ## Notification
 

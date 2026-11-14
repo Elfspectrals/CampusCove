@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\BoxingWinService;
 use App\Services\SportsBoardService;
 use App\Services\SportsGearService;
 use App\Services\SportsMatchService;
@@ -18,6 +19,7 @@ class SportsController extends Controller
         private readonly SportsGearService $gear,
         private readonly SportsMatchService $matches,
         private readonly SportsBoardService $boards,
+        private readonly BoxingWinService $boxingWins,
     ) {}
 
     public function pass(Request $request): JsonResponse
@@ -70,15 +72,21 @@ class SportsController extends Controller
             'players.*.score' => ['nullable', 'integer', $strictInt, 'min:-1000000', 'max:1000000'],
         ]);
 
-        return response()->json(['match' => $this->matches->record(
+        $players = array_values($validated['players']);
+        $match = $this->matches->record(
             $validated['ref'],
             $validated['sport'],
             $validated['venue'],
             $validated['settings'],
             $validated['startedAt'],
             $validated['endedAt'],
-            array_values($validated['players']),
-        )]);
+            $players,
+        );
+        if ($match['recorded'] && $match['countsForTasks']) {
+            $this->boxingWins->count($validated['sport'], $validated['endedAt'], $players);
+        }
+
+        return response()->json(['match' => $match]);
     }
 
     public function board(string $board): JsonResponse
