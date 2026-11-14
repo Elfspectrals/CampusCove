@@ -10,6 +10,7 @@ RUN npm ci --omit=dev
 COPY . .
 COPY --from=world world.manifest.json ./world.manifest.json
 COPY --from=world zones ./zones
+COPY --from=world sports/rules ./sports/rules
 ENV WORLD_MANIFEST_URL=/app/world.manifest.json
 USER node
 EXPOSE 3000
