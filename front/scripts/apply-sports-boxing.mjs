@@ -73,6 +73,7 @@ const xyz = ([x, y, z]) => ({ x, y, z })
 const { ring, corners, exits } = site.boxing
 rules.ring = { ...rules.ring, centre: { x: ring.centre[0], y: ring.centre[1], z: ring.centre[2] }, halfM: ring.half }
 rules.coach = xz(site.boxing.coach)
+rules.punchBags = site.boxing.bagHits.map(([x, z]) => ({ x, z }))
 rules.corners = { red: xyz(corners.red), blue: xyz(corners.blue) }
 rules.exits = { red: xyz(exits.red), blue: xyz(exits.blue) }
 writeFileSync(RULES, JSON.stringify(rules, null, 2) + '\n')

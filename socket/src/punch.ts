@@ -7,6 +7,7 @@ import { FIST, handStats, wearHeldTool, type HandStats } from './tools.ts'
 import type { ClientPayload, GameClient, GameRoom, Player } from './types.ts'
 import { reportAssault } from './wanted.ts'
 import { cancelCuffsOn } from './handcuffs.ts'
+import { inBoutTogether } from './sports/boxing.ts'
 
 export const PUNCH_DAMAGE = FIST.damage
 const COOLDOWN_JITTER_MS = 100
@@ -27,6 +28,7 @@ export function punchDirection(attacker: Player, target: Player): { x: number, z
 
 export function canHit(room: GameRoom, attacker: Player, target: Player | null | undefined, hand: HandStats, now: number): target is Player {
   if (!target?.stats || target === attacker || target.jail || now < target.knockedOutUntil) return false
+  if (inBoutTogether(room, attacker, target)) return false
   const dir = punchDirection(attacker, target)
   if (!dir || dir.dist > hand.reach || Math.abs(target.y - attacker.y) > PUNCH_HEIGHT_REACH) return false
   const facing = -Math.sin(attacker.ry) * dir.x - Math.cos(attacker.ry) * dir.z

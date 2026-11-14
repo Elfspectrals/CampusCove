@@ -4,7 +4,7 @@ import { loadSportsPass } from './pass.ts'
 import { leaveSports, updateMatchesOnMove } from './venues.ts'
 
 export { onSportsPassBuy } from './pass.ts'
-export { onBoxingDodge, onBoxingGetUp, onBoxingGuard, onBoxingPunch, registerBoxing } from './boxing.ts'
+export { onBoxingBag, onBoxingDodge, onBoxingGetUp, onBoxingGuard, onBoxingPunch, registerBoxing } from './boxing.ts'
 export { SPORTS_TICK_MS } from './sportsConstants.ts'
 export { assertVenueZones, newSportsState, onSportsCoachOpen, onSportsSignup, onSportsSignupLeave, tickSports } from './venues.ts'
 

@@ -114,3 +114,56 @@ test('guard, dodge and get-up presses only count for a boxer of the running bout
   boxing.onBoxingDodge(room, clientOf(room, red), { side: 'left' }, ROUND_START)
   assert.deepEqual(sentOf(clientOf(room, blue), 'boxing_dodged'), [{ sessionId: red.sessionId, side: 'left' }])
 })
+
+test('the street punch never lands between the two boxers of a bout', async () => {
+  const { onPunch } = await import('../punch.ts')
+  const { room, red, blue } = await bout()
+  venues.tickSports(room, ROUND_START)
+  faceOff(red, blue)
+  for (const p of [red, blue]) p.stats = { health: 100, hunger: 100, thirst: 100 }
+  red.lastPunchAt = 0
+  onPunch(room, clientOf(room, red), { targetSessionId: blue.sessionId })
+  const sent = sentOf(clientOf(room, blue), 'user_punched').at(-1) as { targetSessionId: string | null }
+  assert.equal(sent.targetSessionId, null)
+  assert.equal(blue.stats?.health, 100)
+})
+
+test('a boxer on the canvas cannot walk away until they get up', async () => {
+  const { moveRejection } = await import('../movement.ts')
+  const { room, red, blue, matchId } = await bout()
+  venues.tickSports(room, ROUND_START)
+  faceOff(red, blue)
+  const fight = boxing.boxingFight(matchId)
+  assert.ok(fight)
+  fight.bout.boxers[1].health = 1
+  boxing.onBoxingPunch(room, clientOf(room, red), { kind: 'jab' }, ROUND_START)
+  blue.lastMoveAt = ROUND_START
+  assert.equal(moveRejection(room, blue, blue.x + 2, blue.y, blue.z, ROUND_START + 1000), 'boxing_down')
+  assert.equal(moveRejection(room, red, red.x - 2, red.y, red.z, ROUND_START + 1000), null)
+})
+
+test('a punch bag answers a gloved player in reach and facing it, at most every 400 ms', async () => {
+  const [player] = await Promise.all([makePlayer(401, 6, 1)])
+  const room = await fakeRoom([player])
+  Object.assign(player, { x: 6, z: 1, ry: 0 })
+  await boxing.onBoxingBag(room, clientOf(room, player), { bag: 0, kind: 'jab' }, NOW)
+  await boxing.onBoxingBag(room, clientOf(room, player), { bag: 0, kind: 'jab' }, NOW + 399)
+  await boxing.onBoxingBag(room, clientOf(room, player), { bag: 1, kind: 'jab' }, NOW + 400)
+  await boxing.onBoxingBag(room, clientOf(room, player), { bag: 7, kind: 'jab' }, NOW + 800)
+  await boxing.onBoxingBag(room, clientOf(room, player), { bag: 0, kind: 'uppercut' }, NOW + 1200)
+  assert.deepEqual(sentOf(clientOf(room, player), 'boxing_bag_hit'), [{ bag: 0, sessionId: player.sessionId, kind: 'jab' }])
+  player.ry = Math.PI
+  await boxing.onBoxingBag(room, clientOf(room, player), { bag: 0, kind: 'cross' }, NOW + 2000)
+  assert.equal(sentOf(clientOf(room, player), 'boxing_bag_hit').length, 1)
+})
+
+test('a player without gloves is told so and the bag does not move', async () => {
+  const [player] = await Promise.all([makePlayer(402, 6, 1)])
+  const room = await fakeRoom([player])
+  Object.assign(player, { x: 6, z: 1, ry: 0 })
+  api.replies.set('GET /sports/gear', () => json({ gear: [] }))
+  await boxing.onBoxingBag(room, clientOf(room, player), { bag: 0, kind: 'hook' }, NOW)
+  api.replies.set('GET /sports/gear', () => json({ gear: ['gear_boxing_gloves'] }))
+  assert.deepEqual(sentOf(clientOf(room, player), 'boxing_no_gloves'), [{ reason: 'missing' }])
+  assert.equal(sentOf(clientOf(room, player), 'boxing_bag_hit').length, 0)
+})

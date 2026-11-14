@@ -15,6 +15,8 @@ import lib_site as S
 importlib.reload(S)
 import lib_sports as SP
 importlib.reload(SP)
+import lib_boxing as B
+importlib.reload(B)
 import bpy
 
 KEY = "sports_boxing"
@@ -89,6 +91,7 @@ L.write_json(os.path.join(OUT, f"{KEY}.layout.json"), {
         "coach": interior_to_world(inner["npcs"]["coach"]),
         "coachYaw": round(YAW, 4),
         "bags": [interior_to_world(b) for b in box["bags"]],
+        "bagHits": [[x + B.PUNCH_BAG_ARM, z] for x, _, z in (interior_to_world(b) for b in box["bags"])],
     },
     "adminTeleport": {"position": [round(X0 + 1.0, 3), 0.0, DOOR_Z], "yaw": round(YAW, 4)},
     "collision": site.cols,

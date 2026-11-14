@@ -116,6 +116,7 @@ import { onTaskMove } from './taskTracking.ts'
 import {
   SPORTS_TICK_MS,
   joinSports,
+  onBoxingBag,
   onBoxingDodge,
   onBoxingGetUp,
   onBoxingGuard,
@@ -261,6 +262,7 @@ export class CityRoom extends Room implements GameRoom {
     this.onMessage('boxing_guard', (client, payload: ClientPayload) => onBoxingGuard(this, client, payload))
     this.onMessage('boxing_dodge', (client, payload: ClientPayload) => onBoxingDodge(this, client, payload))
     this.onMessage('boxing_getup', (client) => onBoxingGetUp(this, client))
+    this.onMessage('boxing_bag', (client, payload: ClientPayload) => void onBoxingBag(this, client, payload).catch((error) => warn('boxing bag failed', error)))
     this.clock.setInterval(() => {
       try {
         tickSports(this)
