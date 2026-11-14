@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { climbSeconds, gripShare, holdPosition, isOnWall, nearestStart, parseClimbingSpec, ringStage, startSpot, type ClimbStatePayload } from './climbing.ts'
+import { boardRows, climbAnimation, climbSeconds, DUEL_BOARD, gripShare, holdPosition, isOnWall, nearestStart, parseClimbingSpec, ringStage, startSpot, type ClimbStatePayload } from './climbing.ts'
 
 const spec = parseClimbingSpec(JSON.parse(readFileSync(new URL('../../../public/assets/sports/rules/climbing.json', import.meta.url), 'utf8')))
 const line = (id: string) => spec.lines.find((l) => l.id === id)!
@@ -50,4 +50,27 @@ test('time and grip shown in the HUD', () => {
   assert.equal(gripShare(state({ grip: 65 })), 0.65)
   assert.equal(isOnWall(state({ phase: 'lowering' })), true)
   assert.equal(isOnWall(state({ phase: 'ended' })), false)
+})
+
+test('the board lists every line in the wall order, then the speed duel, with last week champion', () => {
+  const rows = boardRows(spec, {
+    boards: [{ venue: 'route_4', entries: [{ name: 'Ana#0001', timeMs: 15000 }] }, { venue: 'climbing_duel', entries: [{ name: 'Ben#0002', timeMs: 9000 }] }],
+    champions: [{ venue: 'route_1', name: 'Cy#0003', timeMs: 7000 }],
+  })
+  assert.equal(rows.length, 13)
+  assert.equal(rows[0]!.id, 'route_1')
+  assert.deepEqual(rows[0]!.champion, { name: 'Cy#0003', timeMs: 7000 })
+  assert.deepEqual(rows.find((r) => r.id === 'route_4')!.entries, [{ name: 'Ana#0001', timeMs: 15000 }])
+  assert.deepEqual([rows.at(-1)!.id, rows.at(-1)!.name, rows.at(-1)!.entries.length], [DUEL_BOARD, null, 1])
+})
+
+test('remote climbers: reach with the hand on the side of the new hold, hang, lower, fall only off a boulder', () => {
+  const route = line('route_1')
+  const right = route.holds[1]!.u > route.holds[0]!.u ? 'reachR' : 'reachL'
+  assert.deepEqual(climbAnimation(state({ event: 'hold', next: 2 }), route), { pose: 'hang', move: right })
+  assert.deepEqual(climbAnimation(state({ event: 'miss', next: 2 }), route), { pose: 'hang', move: null })
+  assert.deepEqual(climbAnimation(state({ event: 'top', phase: 'lowering', next: 10 }), route), { pose: 'lower', move: 'top' })
+  assert.deepEqual(climbAnimation(state({ event: 'fall', phase: 'lowering' }), route), { pose: 'lower', move: null })
+  assert.deepEqual(climbAnimation(state({ event: 'end', phase: 'ended', result: 'fell' }), line('boulder_1')), { pose: null, move: 'fall' })
+  assert.deepEqual(climbAnimation(state({ event: 'end', phase: 'ended', result: 'fell' }), route), { pose: null, move: null })
 })

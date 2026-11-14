@@ -150,3 +150,42 @@ export function climbSeconds(state: ClimbStatePayload, serverNow: number): numbe
 export function gripShare(state: ClimbStatePayload): number {
   return state.gripMax > 0 ? Math.max(0, Math.min(1, state.grip / state.gripMax)) : 0
 }
+
+export const DUEL_BOARD = 'climbing_duel'
+
+export interface BoardRow {
+  id: string
+  name: string | null
+  hex: string
+  entries: { name: string; timeMs: number }[]
+  champion: { name: string; timeMs: number } | null
+}
+
+export function boardRows(
+  spec: ClimbingSpec,
+  board: { boards: { venue: string; entries: { name: string; timeMs: number }[] }[]; champions: { venue: string; name: string; timeMs: number }[] },
+): BoardRow[] {
+  const entriesOf = (id: string) => board.boards.find((b) => b.venue === id)?.entries ?? []
+  const championOf = (id: string) => {
+    const found = board.champions.find((c) => c.venue === id)
+    return found ? { name: found.name, timeMs: found.timeMs } : null
+  }
+  const lines = spec.lines.map((line) => ({ id: line.id, name: line.name, hex: line.hex, entries: entriesOf(line.id), champion: championOf(line.id) }))
+  return [...lines, { id: DUEL_BOARD, name: null, hex: '#e07a2f', entries: entriesOf(DUEL_BOARD), champion: championOf(DUEL_BOARD) }]
+}
+
+export type ClimbPose = 'hang' | 'lower' | null
+export type ClimbMove = 'reachL' | 'reachR' | 'top' | 'fall'
+
+export function climbAnimation(state: ClimbStatePayload, line: ClimbLine | null): { pose: ClimbPose; move: ClimbMove | null } {
+  if (state.phase === 'ended') {
+    const dropped = state.result === 'fell' || state.result === 'let_go'
+    return { pose: null, move: dropped && line?.kind === 'boulder' ? 'fall' : null }
+  }
+  const pose: ClimbPose = state.phase === 'lowering' ? 'lower' : 'hang'
+  if (state.event === 'top') return { pose, move: 'top' }
+  if (state.event !== 'hold' || !line || state.next < 1) return { pose, move: null }
+  const reached = line.holds[state.next - 1]
+  const before = state.next >= 2 ? line.holds[state.next - 2] : { u: 0 }
+  return { pose, move: reached && reached.u > before!.u ? 'reachR' : 'reachL' }
+}

@@ -5,7 +5,7 @@ import {
   type CosmeticColors,
 } from '../../api/characterCosmetics'
 import { buildCompositeAvatar, disposeObject3D } from '../../avatar/compositeAvatar'
-import { setAvatarEating, setAvatarPicking, setAvatarSeated, updateAvatarAnimation } from '../../avatar/glbCharacter'
+import { playAvatarClimbMove, setAvatarClimbPose, setAvatarEating, setAvatarPicking, setAvatarSeated, updateAvatarAnimation, type AvatarClimbMove, type AvatarClimbPose } from '../../avatar/glbCharacter'
 import { parseCharacterLook, type CharacterLook } from '../../avatar/characterLook'
 import { createModularCharacter } from '../../avatar/modularCharacter'
 import { WEAR_SLOTS, wearSignature, type WearModels } from '../../avatar/modularCharacterLogic'
@@ -354,6 +354,13 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     if (entry) setAvatarPicking(entry.group, picking)
   }
 
+  function setClimbAnimation(sessionId: string, pose: AvatarClimbPose, move: AvatarClimbMove | null) {
+    const entry = avatars.get(sessionId)
+    if (!entry) return
+    setAvatarClimbPose(entry.group, pose)
+    if (move) playAvatarClimbMove(entry.group, move)
+  }
+
   function setWantedStars(sessionId: string, stars: number): void {
     if (stars > 0) wantedStarsBySession.set(sessionId, stars)
     else wantedStarsBySession.delete(sessionId)
@@ -528,5 +535,5 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     }
   }
 
-  return { upsert, updateAppearance, setTarget, setSeated, setPicking, setHeldTool, setRacePint, setBadges, pseudoOf, positionOf, setVoiceState, setWantedStars, players, accountOf, showAction, showChat, showPunch, showHit, remove, clear, tick }
+  return { upsert, updateAppearance, setTarget, setSeated, setPicking, setClimbAnimation, setHeldTool, setRacePint, setBadges, pseudoOf, positionOf, setVoiceState, setWantedStars, players, accountOf, showAction, showChat, showPunch, showHit, remove, clear, tick }
 }

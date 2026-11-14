@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "materials": {
+    "DC_ChalkBag": {
+      "mask": "parts_DC_ChalkBag.png",
+      "parts": [
+        {
+          "id": "main",
+          "label": "Main",
+          "color": "#be9878"
+        },
+        {
+          "id": "accent",
+          "label": "Accent",
+          "color": "#d75453"
+        },
+        {
+          "id": "detail",
+          "label": "Detail",
+          "color": "#e9cec4"
+        }
+      ]
+    }
+  }
+}

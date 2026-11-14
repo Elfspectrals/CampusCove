@@ -25,6 +25,8 @@ final class TaskCatalog
             'pub_games' => ['counter' => ActionCounter::PubGames, 'tiers' => [10, 50, 150]],
             'duellist' => ['counter' => ActionCounter::DuelsWon, 'tiers' => [1, 5, 15]],
             'insider' => ['counter' => ActionCounter::SecretRoomWeeks, 'tiers' => [1, 4, 12]],
+            'routes_topped' => ['counter' => ActionCounter::ClimbLinesTopped, 'tiers' => [10, 50, 200]],
+            'black_route' => ['counter' => ActionCounter::BlackLinesTopped, 'tiers' => [1, 10, 30]],
         ];
     }
 

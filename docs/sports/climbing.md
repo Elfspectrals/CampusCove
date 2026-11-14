@@ -77,3 +77,16 @@ knocked out, loses the shoes or is moved off the wall.
 ## Proposed placeholder JSON fields
 
 `sport` ("climbing"), `boulders` (6 × { id, colour, holds: positions, windowMs }), `routes` (4 × { id, colour, heightM, holds, windowMs }), `twinRoutes` (pair of route ids for duels), `grip` (max, lossPerMiss, lossPerLateMs), `belayLowerSec` (2), `allowanceMs`, `gear` ([], `lentAtReception`: ["climbing_shoes"]), `coachId`, `boards` (one per route and boulder), `tasks` (["routes_topped", "black_route"]).
+
+## Weekly board, badge and tasks
+
+- `GET /api/sports/climbing/board` (signed in) → `{ week: 'YYYY-Www', boards: [{ venue, entries: [{ name, timeMs }] }], champions: [{ venue, name, timeMs }] }`:
+  the 5 best climbers of the current week (Monday 00:00 to Sunday 24:00, Paris) per line, from the `sports_matches` rows
+  (result `finished` or `win`, one best time per climber), and last week's champion per line. The speed duel has its own
+  board (`climbing_duel`). Opened in the hall from the shoe attendant NPC (`climbing_shoe_attendant`).
+- `sports:climbing-board-close` (Mondays 00:05 Paris) records the fastest climber of each line for the week that ended in
+  `climbing_board_wins` (one row per week and line, a rerun inserts nothing) and grants the `climbing_champion` badge
+  (once per account; the dated wins stay in the table).
+- Tasks (badges only, see `docs/TASKS.md`): `routes_topped` 10 / 50 / 200 and `black_route` 1 / 10 / 30, each line counted
+  at most once a day. Thresholds proposed, to review with the `game-designer`.
+

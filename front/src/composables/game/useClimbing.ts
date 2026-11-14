@@ -2,6 +2,7 @@ import { computed, ref, shallowRef, type Ref, type ShallowRef } from 'vue'
 import type { Room } from '@colyseus/sdk'
 import * as THREE from 'three'
 import { matches } from '../../config/keybindings'
+import { getGraphicsQuality } from '../../game/graphicsQuality'
 import {
   climbSeconds,
   gripShare,
@@ -11,7 +12,10 @@ import {
   parseClimbingSpec,
   ringStage,
   wallNormal,
+  climbAnimation,
   type ClimbErrorPayload,
+  type ClimbMove,
+  type ClimbPose,
   type ClimbLine,
   type ClimbStatePayload,
   type ClimbingSpec,
@@ -23,6 +27,10 @@ const HOLD_RADIUS = 0.11
 const RING_RADIUS = 0.2
 const PROMPT_HEIGHT = 1.4
 const CLICK_REACH = 6
+const SPECTATOR_OPACITY = 0.45
+const PUFF_PARTICLES = 14
+const PUFF_SECONDS = 0.6
+const PUFF_SPREAD = 0.35
 
 export type ClimbSound = 'hold' | 'miss' | 'fall' | 'top'
 
@@ -38,11 +46,20 @@ export interface ClimbingDeps {
   errorText: (error: ClimbErrorPayload) => string
   say: (text: string) => void
   play: (sound: ClimbSound) => void
+  animate: (sessionId: string, pose: ClimbPose, move: ClimbMove | null) => void
 }
 
 interface LineMeshes {
   line: ClimbLine
   mesh: THREE.InstancedMesh
+}
+
+type Ring = THREE.Mesh<THREE.TorusGeometry, THREE.MeshBasicMaterial>
+
+interface Puff {
+  points: THREE.Points<THREE.BufferGeometry, THREE.PointsMaterial>
+  velocities: Float32Array
+  age: number
 }
 
 export function useClimbing(deps: ClimbingDeps) {
@@ -52,7 +69,10 @@ export function useClimbing(deps: ClimbingDeps) {
   const clientNow = ref(Date.now())
   const lineMeshes = new Map<string, LineMeshes>()
   let group: THREE.Group | null = null
-  let ring: THREE.Mesh<THREE.TorusGeometry, THREE.MeshBasicMaterial> | null = null
+  let ring: Ring | null = null
+  const spectatorRings = new Map<string, Ring>()
+  const puffs: Puff[] = []
+  let lastTickAt = performance.now()
   const raycaster = new THREE.Raycaster()
   const forward = new THREE.Vector3()
   const projection = new THREE.Vector3()
@@ -119,11 +139,93 @@ export function useClimbing(deps: ClimbingDeps) {
       group.add(mesh)
       lineMeshes.set(line.id, { line, mesh })
     }
-    ring = new THREE.Mesh(new THREE.TorusGeometry(RING_RADIUS, 0.018, 6, 24), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.9, depthTest: false }))
-    ring.renderOrder = 10
-    ring.visible = false
-    group.add(ring)
+    ring = makeRing(0.9)
     scene.add(group)
+  }
+
+  function makeRing(opacity: number): Ring {
+    const made: Ring = new THREE.Mesh(new THREE.TorusGeometry(RING_RADIUS, 0.018, 6, 24), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity, depthTest: false }))
+    made.renderOrder = 10
+    made.visible = false
+    group?.add(made)
+    return made
+  }
+
+  function lineOf(state: ClimbStatePayload): ClimbLine | null {
+    return lineMeshes.get(state.line)?.line ?? null
+  }
+
+  function placeRing(target: Ring, state: ClimbStatePayload, line: ClimbLine, serverNow: number): void {
+    if (!spec.value || state.phase !== 'climbing' || state.next >= line.holds.length) {
+      target.visible = false
+      return
+    }
+    const { stage, scale } = ringStage(state, serverNow)
+    target.visible = stage !== 'waiting'
+    if (!target.visible) return
+    const p = holdPosition(spec.value, line, state.next)
+    const n = wallNormal(line)
+    target.position.set(p.x + n.x * 0.05, p.y, p.z + n.z * 0.05)
+    target.rotation.set(0, Math.atan2(n.x, n.z), 0)
+    target.scale.setScalar(scale)
+    target.material.color.set(stage === 'open' ? '#ffe066' : stage === 'late' ? '#ff5a5a' : line.hex)
+  }
+
+  function spawnPuff(state: ClimbStatePayload): void {
+    const line = lineOf(state)
+    if (!group || !spec.value || !line || state.next < 1 || getGraphicsQuality() === 'low') return
+    const p = holdPosition(spec.value, line, Math.min(state.next, line.holds.length) - 1)
+    const positions = new Float32Array(PUFF_PARTICLES * 3)
+    const velocities = new Float32Array(PUFF_PARTICLES * 3)
+    const n = wallNormal(line)
+    for (let i = 0; i < PUFF_PARTICLES; i++) {
+      positions.set([p.x, p.y, p.z], i * 3)
+      const a = Math.random() * Math.PI * 2
+      velocities.set([Math.cos(a) * PUFF_SPREAD + n.x * 0.3, Math.random() * 0.4 - 0.1, Math.sin(a) * PUFF_SPREAD + n.z * 0.3], i * 3)
+    }
+    const geometry = new THREE.BufferGeometry()
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+    const points = new THREE.Points(geometry, new THREE.PointsMaterial({ color: '#f4f1ea', size: 0.06, transparent: true, opacity: 0.85, depthWrite: false }))
+    group.add(points)
+    puffs.push({ points, velocities, age: 0 })
+  }
+
+  function tickPuffs(dt: number): void {
+    for (let i = puffs.length - 1; i >= 0; i--) {
+      const puff = puffs[i]!
+      puff.age += dt
+      const attribute = puff.points.geometry.getAttribute('position') as THREE.BufferAttribute
+      const array = attribute.array as Float32Array
+      for (let k = 0; k < array.length; k++) array[k]! += puff.velocities[k]! * dt
+      attribute.needsUpdate = true
+      puff.points.material.opacity = 0.85 * Math.max(0, 1 - puff.age / PUFF_SECONDS)
+      if (puff.age < PUFF_SECONDS) continue
+      group?.remove(puff.points)
+      puff.points.geometry.dispose()
+      puff.points.material.dispose()
+      puffs.splice(i, 1)
+    }
+  }
+
+  function tickSpectatorRings(serverNow: number): void {
+    const me = mySessionId()
+    for (const [sessionId, target] of spectatorRings) {
+      if (climbs.value.has(sessionId)) continue
+      group?.remove(target)
+      target.geometry.dispose()
+      target.material.dispose()
+      spectatorRings.delete(sessionId)
+    }
+    for (const state of climbs.value.values()) {
+      const line = lineOf(state)
+      if (state.sessionId === me || !line) continue
+      let target = spectatorRings.get(state.sessionId)
+      if (!target) {
+        target = makeRing(SPECTATOR_OPACITY)
+        spectatorRings.set(state.sessionId, target)
+      }
+      placeRing(target, state, line, serverNow)
+    }
   }
 
   async function load(): Promise<void> {
@@ -198,23 +300,18 @@ export function useClimbing(deps: ClimbingDeps) {
   }
 
   function tick(): void {
+    const now = performance.now()
+    const dt = Math.min(0.1, (now - lastTickAt) / 1000)
+    lastTickAt = now
     clientNow.value = Date.now()
     if (!ring) return
+    const serverNow = clientNow.value + clockOffset.value
     const state = mine.value
     const line = myLine.value
-    if (!state || !line || !spec.value || state.phase !== 'climbing' || state.next >= line.holds.length) {
-      ring.visible = false
-      return
-    }
-    const { stage, scale } = ringStage(state, clientNow.value + clockOffset.value)
-    ring.visible = stage !== 'waiting'
-    if (!ring.visible) return
-    const p = holdPosition(spec.value, line, state.next)
-    const n = wallNormal(line)
-    ring.position.set(p.x + n.x * 0.05, p.y, p.z + n.z * 0.05)
-    ring.rotation.set(0, Math.atan2(n.x, n.z), 0)
-    ring.scale.setScalar(scale)
-    ring.material.color.set(stage === 'open' ? '#ffe066' : stage === 'late' ? '#ff5a5a' : line.hex)
+    if (state && line) placeRing(ring, state, line, serverNow)
+    else ring.visible = false
+    tickSpectatorRings(serverNow)
+    tickPuffs(dt)
   }
 
   function soundFor(state: ClimbStatePayload): ClimbSound | null {
@@ -232,6 +329,11 @@ export function useClimbing(deps: ClimbingDeps) {
       if (data.phase === 'ended') next.delete(data.sessionId)
       else next.set(data.sessionId, data)
       climbs.value = next
+      if (data.event === 'hold' || data.event === 'top') spawnPuff(data)
+      if (data.sessionId !== mySessionId()) {
+        const { pose, move } = climbAnimation(data, lineOf(data))
+        deps.animate(data.sessionId, pose, move)
+      }
       if (data.sessionId !== mySessionId()) return
       const sound = soundFor(data)
       if (sound) deps.play(sound)
@@ -246,6 +348,7 @@ export function useClimbing(deps: ClimbingDeps) {
   }
 
   return {
+    spec,
     hud,
     climbing: computed(() => mine.value !== null),
     onTownLoaded,

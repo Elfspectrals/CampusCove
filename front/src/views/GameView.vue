@@ -36,6 +36,7 @@ import GamePoliceLicenceDialog from '../components/game/GamePoliceLicenceDialog.
 import GameSportsPassDesk from '../components/game/GameSportsPassDesk.vue'
 import GameSportsSignup from '../components/game/GameSportsSignup.vue'
 import GameClimbHud from '../components/game/GameClimbHud.vue'
+import GameClimbBoard from '../components/game/GameClimbBoard.vue'
 import GameChat from '../components/game/GameChat.vue'
 import GameDrunkEffects from '../components/game/GameDrunkEffects.vue'
 import GameDrinkFast from '../components/game/GameDrinkFast.vue'
@@ -103,6 +104,7 @@ import { useSportsPass } from '../composables/game/useSportsPass'
 import { passValid } from '../game/sports/sportsPass'
 import { useSportsSignup } from '../composables/game/useSportsSignup'
 import { useClimbing } from '../composables/game/useClimbing'
+import { useClimbingBoard } from '../composables/game/useClimbingBoard'
 import { usePickpocket } from '../composables/game/usePickpocket'
 import { useStorageAuction } from '../composables/game/useStorageAuction'
 import { useStorageWarehouse } from '../composables/game/useStorageWarehouse'
@@ -893,8 +895,21 @@ const climbing = useClimbing({
   errorText: (error) => (te(`climbing.errors.${error.code}`) ? t(`climbing.errors.${error.code}`) : error.message),
   say: (text) => survival.say(text),
   play: (sound) => sfx.play(CLIMB_SOUNDS[sound]),
+  animate: (sessionId, pose, move) => realtime.setRemoteClimbAnimation(sessionId, pose, move),
 })
 const { hud: climbHud, climbing: climbingNow } = climbing
+const climbingBoard = useClimbingBoard({
+  myPosition,
+  getCamera,
+  canvasRef,
+  spec: climbing.spec,
+  promptsHidden: () => inventoryOpen.value,
+  prompt: () => ({ action: t('climbing.board.action'), detail: t('climbing.board.detail') }),
+})
+const { open: climbingBoardOpen, week: climbingBoardWeek, rows: climbingBoardRows, loading: climbingBoardLoading, error: climbingBoardError } = climbingBoard
+watch(climbingBoardOpen, (open) => {
+  if (!open && !document.pointerLockElement) requestPointerLock()
+})
 const PICKPOCKET_ERROR_KEYS = new Set([
   'pickpocket_on_duty',
   'pickpocket_jailed',
@@ -983,7 +998,7 @@ const interactions = useInteractionTargets({
     if (activeFurniture.value?.store.hasCounter.value) activeFurniture.value.store.toggleTarget(useWithShift)
     else openStorePurchase()
   },
-  sources: [townBus.source, pub.source, pubQuiz.source, pubChallenge.source, pubGames.source, seats.source, orchard.source, farm.source, zoneBuyers.source, atm.source, storage.source, respawnBed.source, cashBags.source, storageAuction.source, jailCell.source, police.source, pickpocket.source, market.source, sportsPass.source, sportsSignup.source, climbing.source],
+  sources: [townBus.source, pub.source, pubQuiz.source, pubChallenge.source, pubGames.source, seats.source, orchard.source, farm.source, zoneBuyers.source, atm.source, storage.source, respawnBed.source, cashBags.source, storageAuction.source, jailCell.source, police.source, pickpocket.source, market.source, sportsPass.source, sportsSignup.source, climbing.source, climbingBoard.source],
 })
 const { doorPrompt } = interactions
 
@@ -1317,6 +1332,7 @@ const environment = useRoomEnvironment({
     police.onTownLoaded(manifest)
     seats.onTownLoaded(manifest)
     climbing.onTownLoaded()
+    climbingBoard.onTownLoaded()
     pub.onTownLoaded(manifest)
     pubQuiz.onTownLoaded(manifest)
     pubGames.onTownLoaded(manifest)
@@ -1437,6 +1453,7 @@ const pauseMenuOpen = computed(
     !marketPanelOpen.value &&
     !sportsPassOpen.value &&
     !sportsSignupOpen.value &&
+    !climbingBoardOpen.value &&
     !adminPanelOpen.value &&
     !playerListOpen.value &&
     !tasksOpen.value &&
@@ -2350,6 +2367,14 @@ const crosshairClass = computed(() => {
       @close="police.closeConfirm"
     />
     <GameClimbHud v-if="climbHud" :hud="climbHud" />
+    <GameClimbBoard
+      v-if="climbingBoardOpen"
+      :week="climbingBoardWeek"
+      :rows="climbingBoardRows"
+      :loading="climbingBoardLoading"
+      :error="climbingBoardError"
+      @close="climbingBoard.close"
+    />
     <GameSportsPassDesk
       v-if="sportsPassOpen && sportsPassState"
       :pass="sportsPassState"

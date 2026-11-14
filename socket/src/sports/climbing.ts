@@ -50,6 +50,7 @@ let rules: ClimbingRules | null = null
 const climbsByRoom = new WeakMap<GameRoom, Map<string, ActiveClimb>>()
 const duels = new Map<string, DuelState>()
 const lastStartAt = new WeakMap<Player, number>()
+const watchersByRoom = new WeakMap<GameRoom, Set<string>>()
 
 export function setClimbingRules(raw: unknown): ClimbingRules {
   const parsed = parseClimbingRules(raw)
@@ -96,10 +97,10 @@ function sendError(client: GameClient, code: string, message: string): void {
   client.send('climb_error', { code, message })
 }
 
-function broadcastClimb(room: GameRoom, climb: ActiveClimb, event: ClimbEvent, now: number, end?: { result: ClimbResult, timeMs?: number }): void {
+function climbPayload(climb: ActiveClimb, event: ClimbEvent, now: number, end?: { result: ClimbResult, timeMs?: number }) {
   const r = loadedRules()
   const { opensAt, closesAt } = windowOf(r, climb)
-  const payload = {
+  return {
     sessionId: climb.sessionId,
     line: climb.line.id,
     event,
@@ -116,6 +117,10 @@ function broadcastClimb(room: GameRoom, climb: ActiveClimb, event: ClimbEvent, n
     duel: climb.duel !== null,
     ...(end ? { result: end.result, ...(end.timeMs === undefined ? {} : { timeMs: end.timeMs }) } : {})
   }
+}
+
+function broadcastClimb(room: GameRoom, climb: ActiveClimb, event: ClimbEvent, now: number, end?: { result: ClimbResult, timeMs?: number }): void {
+  const payload = climbPayload(climb, event, now, end)
   room.forEachClient((c) => {
     const listener = room.players.get(c.sessionId)
     if (listener && (c.sessionId === climb.sessionId || inClimbingHall(listener))) c.send('climb_state', payload)
@@ -221,8 +226,17 @@ function closeDuelIfOver(room: GameRoom, matchId: string, now: number): void {
   if (match && match.id === matchId && duelOver(match)) endMatch(room, CLIMBING_DUEL, { reason: 'finished' }, now)
 }
 
+function reportTop(room: GameRoom, climb: ActiveClimb): void {
+  const token = room.players.get(climb.sessionId)?.token
+  if (!token) return
+  callRealtimeBackend(token, '/tasks/climb-topped', 'POST', { line: climb.line.id, colour: climb.line.colour }).catch((error) => {
+    console.warn(`[sports] climb top on ${climb.line.id} not counted:`, error instanceof Error ? error.message : error)
+  })
+}
+
 function topOut(room: GameRoom, climb: ActiveClimb, now: number): void {
   const timeMs = climbTime(climb, now)
+  reportTop(room, climb)
   if (climb.duel) {
     duelResult(climb, { accountId: climb.accountId, team: null, result: 'win', place: 1, timeMs })
     broadcastClimb(room, climb, 'top', now)
@@ -230,14 +244,15 @@ function topOut(room: GameRoom, climb: ActiveClimb, now: number): void {
     closeDuelIfOver(room, climb.duel, now)
     return
   }
-  broadcastClimb(room, climb, 'top', now)
   recordFreeTop(room, climb, timeMs, now)
   if (climb.line.kind === 'boulder') {
+    broadcastClimb(room, climb, 'top', now)
     finish(room, climb, 'topped', now, timeMs)
     return
   }
   climb.timeMs = timeMs
   startLowering(climb, climb.pose.y, now)
+  broadcastClimb(room, climb, 'top', now)
 }
 
 function fall(room: GameRoom, climb: ActiveClimb, result: 'fell' | 'let_go', now: number): void {
@@ -293,10 +308,26 @@ function stillOnWall(room: GameRoom, climb: ActiveClimb, now: number): boolean {
   return Math.hypot(player.x - climb.pose.x, player.z - climb.pose.z) <= POSE_DRIFT_M
 }
 
+function syncNewWatchers(room: GameRoom, now: number): void {
+  const before = watchersByRoom.get(room) ?? new Set<string>()
+  const inside = new Set<string>()
+  const climbs = [...(climbsByRoom.get(room)?.values() ?? [])]
+  room.forEachClient((c) => {
+    const player = room.players.get(c.sessionId)
+    if (!player || !inClimbingHall(player)) return
+    inside.add(c.sessionId)
+    if (before.has(c.sessionId)) return
+    for (const climb of climbs) if (climb.sessionId !== c.sessionId) c.send('climb_state', climbPayload(climb, 'start', now))
+  })
+  watchersByRoom.set(room, inside)
+}
+
 export function tickClimbing(room: GameRoom, now = Date.now()): void {
   const r = rules
+  if (!r) return
+  syncNewWatchers(room, now)
   const climbs = climbsByRoom.get(room)
-  if (!r || !climbs) return
+  if (!climbs) return
   for (const climb of [...climbs.values()]) {
     if (!room.players.has(climb.sessionId)) {
       climbs.delete(climb.sessionId)

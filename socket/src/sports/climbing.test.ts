@@ -15,6 +15,7 @@ const { CLIMBING_SHOES } = await import('./sportsConstants.ts')
 await loadWorld()
 const rules = climbing.setClimbingRules(JSON.parse(await readFile(new URL('../../../front/public/assets/sports/rules/climbing.json', import.meta.url), 'utf8')))
 api.replies.set('POST /sports/matches', () => json({ match: { id: 1, recorded: true } }))
+api.replies.set('POST /tasks/climb-topped', () => json({ ok: true }))
 
 const NOW = 10_000_000
 const COACH = { x: -571.8, z: -203.5 }
@@ -108,6 +109,7 @@ test('a topped boulder ends at once on the mat and records the time; nothing for
   const body = call.body as { sport: string, venue: string, startedAt: number, endedAt: number, players: unknown[] }
   assert.deepEqual([body.sport, body.venue, body.startedAt, body.endedAt], ['climbing', 'boulder_1', NOW + 800, end])
   assert.deepEqual(body.players, [{ accountId: 10, team: null, result: 'finished', timeMs: 3200 }])
+  assert.deepEqual(api.calls.find((c) => c.url === '/tasks/climb-topped')?.body, { line: 'boulder_1', colour: 'green' })
 })
 
 test('a fall on the lead wall lowers the climber for 2 s and records no time', async () => {
@@ -148,7 +150,7 @@ test('a topped route is lowered and ends with its time', async () => {
   const room = await fakeRoom([p])
   climbing.onClimbStart(room, clientOf(room, p), { line: 'route_1' }, NOW)
   const end = climbAll(room, p, 10, NOW)
-  assert.deepEqual([last(room, p).event, last(room, p).phase], ['top', 'climbing'])
+  assert.deepEqual([last(room, p).event, last(room, p).phase], ['top', 'lowering'])
   climbing.tickClimbing(room, end + 2000)
   assert.deepEqual([last(room, p).result, last(room, p).timeMs], ['topped', 7200])
 })
@@ -197,4 +199,17 @@ test('speed duel: when both climbers fall nobody wins', async () => {
   await new Promise((resolve) => setImmediate(resolve))
   const record = api.calls.find((c) => c.url === '/sports/matches')?.body as { players: { result: string }[] }
   assert.deepEqual(record.players.map((p) => p.result), ['dnf', 'dnf'])
+})
+
+test('a player walking into the hall gets the climbs already on the wall', async () => {
+  const climberIn = await climber(70, standAt('route_3'))
+  const visitor = await climber(71, { x: -540, z: -203.5 })
+  const room = await fakeRoom([climberIn, visitor])
+  climbing.tickClimbing(room, NOW)
+  climbing.onClimbStart(room, clientOf(room, climberIn), { line: 'route_3' }, NOW)
+  assert.equal(states(room, visitor).length, 0)
+  Object.assign(visitor, { x: -550, z: -203.5 })
+  climbing.tickClimbing(room, NOW + 100)
+  climbing.tickClimbing(room, NOW + 200)
+  assert.deepEqual(states(room, visitor).map((s) => [s.sessionId, s.line]), [[climberIn.sessionId, 'route_3']])
 })

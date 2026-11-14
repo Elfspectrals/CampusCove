@@ -45,6 +45,17 @@ class TaskController extends Controller
         return response()->json(['ok' => true]);
     }
 
+    public function climbTopped(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'line' => ['required', 'string', 'regex:/^[a-z0-9_]{1,40}$/'],
+            'colour' => 'required|string|in:green,blue,red,black',
+        ]);
+        $this->activity->climbTopped($this->accountId($request), (string) $validated['line'], (string) $validated['colour']);
+
+        return response()->json(['ok' => true]);
+    }
+
     public function activeDay(Request $request): JsonResponse
     {
         $this->activity->activeDay($this->accountId($request));

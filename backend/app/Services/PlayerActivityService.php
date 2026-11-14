@@ -61,6 +61,15 @@ final class PlayerActivityService
         $this->counters->bumpOncePerKey($accountId, ActionCounter::SecretRoomWeeks, now(self::DAY_TIMEZONE)->format('o-\\WW'));
     }
 
+    public function climbTopped(int $accountId, string $line, string $colour): void
+    {
+        $key = $this->today().':'.$line;
+        $this->counters->bumpOncePerKey($accountId, ActionCounter::ClimbLinesTopped, $key);
+        if ($colour === 'black') {
+            $this->counters->bumpOncePerKey($accountId, ActionCounter::BlackLinesTopped, $key);
+        }
+    }
+
     public function activeDay(int $accountId): void
     {
         $this->counters->bumpOncePerKey($accountId, ActionCounter::ActiveDays, $this->today());

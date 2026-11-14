@@ -728,5 +728,6 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     remotePlayers: remotes.players,
     remoteAccount: remotes.accountOf,
     setRemoteRacePint: remotes.setRacePint,
+    setRemoteClimbAnimation: remotes.setClimbAnimation,
   }
 }

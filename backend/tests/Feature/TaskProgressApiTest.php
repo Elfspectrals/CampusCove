@@ -214,6 +214,8 @@ class TaskProgressApiTest extends TestCase
                 ['task' => 'pub_games', 'value' => 0, 'tiers' => [10, 50, 150], 'reached' => []],
                 ['task' => 'duellist', 'value' => 0, 'tiers' => [1, 5, 15], 'reached' => []],
                 ['task' => 'insider', 'value' => 0, 'tiers' => [1, 4, 12], 'reached' => []],
+                ['task' => 'routes_topped', 'value' => 0, 'tiers' => [10, 50, 200], 'reached' => []],
+                ['task' => 'black_route', 'value' => 0, 'tiers' => [1, 10, 30], 'reached' => []],
             ]]);
     }
 
@@ -425,6 +427,27 @@ class TaskProgressApiTest extends TestCase
         $this->travelTo(now()->parse('2026-11-22 23:30:00', 'UTC'));
         $this->postJson('/api/tasks/secret-room', [], $headers)->assertOk();
         $this->assertSame(2, $this->counter($player['account_id'], ActionCounter::SecretRoomWeeks));
+    }
+
+    public function test_a_climb_line_counts_once_a_day_and_black_lines_count_for_the_feat(): void
+    {
+        $player = $this->registerAndCreditWallet(0, 'cash');
+        $headers = $this->auth($player['token'], self::SECRET);
+
+        $this->travelTo(now()->parse('2026-11-16 09:00:00', 'UTC'));
+        foreach ([['route_1', 'green'], ['route_1', 'green'], ['route_4', 'black'], ['boulder_4', 'black']] as [$line, $colour]) {
+            $this->postJson('/api/tasks/climb-topped', ['line' => $line, 'colour' => $colour], $headers)->assertOk();
+        }
+        $this->assertSame(3, $this->counter($player['account_id'], ActionCounter::ClimbLinesTopped));
+        $this->assertSame(2, $this->counter($player['account_id'], ActionCounter::BlackLinesTopped));
+
+        $this->travelTo(now()->parse('2026-11-16 23:30:00', 'UTC'));
+        $this->postJson('/api/tasks/climb-topped', ['line' => 'route_4', 'colour' => 'black'], $headers)->assertOk();
+        $this->assertSame(4, $this->counter($player['account_id'], ActionCounter::ClimbLinesTopped));
+        $this->assertSame(3, $this->counter($player['account_id'], ActionCounter::BlackLinesTopped));
+
+        $this->postJson('/api/tasks/climb-topped', ['line' => 'route_4', 'colour' => 'purple'], $headers)->assertUnprocessable();
+        $this->postJson('/api/tasks/climb-topped', ['line' => 'route_4', 'colour' => 'black'], $this->auth($player['token']))->assertForbidden();
     }
 
     private function catalogId(string $code): int

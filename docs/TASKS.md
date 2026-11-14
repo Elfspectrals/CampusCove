@@ -32,6 +32,8 @@ Laravel owns every counter. A counter counts one real action, bumped by the serv
 | `duels_won` | one darts or Drink Fast game won against other players (placement 1), whoever the opponents are | `PubService::reward` |
 | `secret_room_weeks` | one week (Monday to Sunday, Paris, ISO week) in which the player stood in the pub's secret room | socket `taskTracking.ts` (once a day per account), then `POST /tasks/secret-room` (realtime, no body) |
 | `foods_tasted` | one food or drink tasted for the first time (any group of `FoodCatalog` but `medical`), once per item code | `SurvivalService::consume` |
+| `climb_lines_topped` | one climbing line (route, speed lane or boulder) topped, free climb or duel, at most once per line and day (Paris) | socket `climbing.ts` on a top, then `POST /tasks/climb-topped` (realtime) `{ line: [a-z0-9_]{1,40}, colour: green \| blue \| red \| black }` |
+| `black_lines_topped` | one black line topped, at most once per line and day (Paris) | same call, colour `black` |
 
 ## Tiers
 
@@ -57,6 +59,8 @@ Every task lives in `App\Support\TaskCatalog`: a key, the counter it reads and i
 | `pub_games` | `pub_games` | 10 / 50 / 150 |
 | `duellist` | `duels_won` | 1 / 5 / 15 |
 | `insider` | `secret_room_weeks` | 1 / 4 / 12 |
+| `routes_topped` | `climb_lines_topped` | 10 / 50 / 200 |
+| `black_route` | `black_lines_topped` | 1 / 10 / 30 |
 
 ## Notification
 
