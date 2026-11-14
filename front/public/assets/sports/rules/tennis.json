@@ -1,0 +1,76 @@
+{
+  "version": 1,
+  "sport": "tennis",
+  "status": "placeholder",
+  "zone": "sports_tennis",
+  "coachId": "tennis_coach",
+  "signup": {
+    "teams": true,
+    "settings": [
+      {
+        "key": "mode",
+        "label": "Mode",
+        "options": [
+          "singles",
+          "doubles"
+        ]
+      },
+      {
+        "key": "format",
+        "label": "Format",
+        "options": [
+          "short_set_4",
+          "tiebreak_7"
+        ]
+      }
+    ]
+  },
+  "courts": [
+    {
+      "id": "tennis_1",
+      "centre": null,
+      "sizeM": [
+        10.97,
+        23.77
+      ],
+      "netHeightM": 0.914
+    },
+    {
+      "id": "tennis_2",
+      "centre": null,
+      "sizeM": [
+        10.97,
+        23.77
+      ],
+      "netHeightM": 0.914
+    }
+  ],
+  "modes": [
+    "singles",
+    "doubles"
+  ],
+  "formats": [
+    "short_set_4",
+    "tiebreak_7"
+  ],
+  "ball": {
+    "radiusM": 0.033,
+    "restitution": null,
+    "drag": null
+  },
+  "hit": {
+    "windowMs": null,
+    "reachM": null,
+    "powerByTiming": null
+  },
+  "lob": null,
+  "faults": "simplified",
+  "rejoinGraceSec": 30,
+  "gear": [
+    "gear_tennis_racket"
+  ],
+  "tasks": [
+    "matches_played",
+    "set_4_0"
+  ]
+}

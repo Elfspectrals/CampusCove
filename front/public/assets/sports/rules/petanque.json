@@ -1,0 +1,112 @@
+{
+  "version": 1,
+  "sport": "petanque",
+  "status": "placeholder",
+  "zone": "sports_petanque",
+  "coachId": "petanque_coach",
+  "signup": {
+    "teams": true,
+    "settings": [
+      {
+        "key": "format",
+        "label": "Format",
+        "options": [
+          "1v1_3",
+          "2v2_3",
+          "3v3_2"
+        ]
+      },
+      {
+        "key": "targetPoints",
+        "label": "Game to",
+        "options": [
+          7,
+          13
+        ]
+      }
+    ]
+  },
+  "pistes": [
+    {
+      "id": "petanque_1",
+      "centre": null,
+      "sizeM": [
+        4,
+        15
+      ],
+      "boundaries": null
+    },
+    {
+      "id": "petanque_2",
+      "centre": null,
+      "sizeM": [
+        4,
+        15
+      ],
+      "boundaries": null
+    },
+    {
+      "id": "petanque_3",
+      "centre": null,
+      "sizeM": [
+        4,
+        15
+      ],
+      "boundaries": null
+    },
+    {
+      "id": "petanque_4",
+      "centre": null,
+      "sizeM": [
+        4,
+        15
+      ],
+      "boundaries": null
+    }
+  ],
+  "formats": [
+    {
+      "id": "1v1_3",
+      "teamSize": 1,
+      "boules": 3
+    },
+    {
+      "id": "2v2_3",
+      "teamSize": 2,
+      "boules": 3
+    },
+    {
+      "id": "3v3_2",
+      "teamSize": 3,
+      "boules": 2
+    }
+  ],
+  "targetPoints": [
+    7,
+    13
+  ],
+  "boule": {
+    "radiusM": null,
+    "massKg": null,
+    "friction": null
+  },
+  "jack": {
+    "radiusM": null,
+    "throwDistanceRangeM": null
+  },
+  "throwModes": [
+    "point",
+    "shoot"
+  ],
+  "powerMeter": {
+    "riseMs": null
+  },
+  "rejoinGraceSec": 30,
+  "gear": [
+    "gear_boules"
+  ],
+  "tasks": [
+    "games_played",
+    "carreau"
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "version": 1,
+  "sport": "swimming",
+  "status": "placeholder",
+  "zone": "sports_pool",
+  "coachId": "pool_coach",
+  "signup": {
+    "teams": false,
+    "settings": [
+      {
+        "key": "distanceM",
+        "label": "Distance",
+        "options": [
+          25,
+          50,
+          100
+        ]
+      }
+    ]
+  },
+  "pool": {
+    "lengthM": 25,
+    "lanes": 6,
+    "lanePositions": null,
+    "blockPositions": null,
+    "waterVolume": null,
+    "depthsM": null,
+    "exits": null
+  },
+  "distancesM": [
+    25,
+    50,
+    100
+  ],
+  "minPlayers": 1,
+  "maxPlayers": 6,
+  "startBeepDelayRangeMs": null,
+  "falseStart": "disqualify",
+  "stroke": {
+    "goodCadenceMs": null,
+    "toleranceMs": null,
+    "speedCurve": null
+  },
+  "turnBonus": null,
+  "gear": [
+    "gear_swimsuit"
+  ],
+  "boards": [
+    "swim_25",
+    "swim_50",
+    "swim_100"
+  ],
+  "tasks": [
+    "races_swum",
+    "swim_50_time"
+  ]
+}

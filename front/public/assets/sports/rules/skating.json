@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "sport": "skating",
+  "status": "placeholder",
+  "zone": "sports_ice_rink",
+  "coachId": "rink_coach",
+  "signup": {
+    "teams": false,
+    "settings": [
+      {
+        "key": "laps",
+        "label": "Laps",
+        "options": [
+          1,
+          3,
+          5
+        ]
+      }
+    ]
+  },
+  "rink": {
+    "sizeM": [
+      60,
+      30
+    ],
+    "boards": null,
+    "hockeyMarkings": null
+  },
+  "raceOval": null,
+  "lapsChoices": [
+    1,
+    3,
+    5
+  ],
+  "minPlayers": 1,
+  "maxPlayers": 8,
+  "cutPenaltyMs": 2000,
+  "skate": {
+    "pushGain": null,
+    "rhythmMs": null,
+    "toleranceMs": null,
+    "friction": null,
+    "maxSpeed": null,
+    "turnRadiusBySpeed": null,
+    "brake": null
+  },
+  "crash": {
+    "speedThreshold": null,
+    "fallMs": 1500
+  },
+  "gear": [
+    "gear_ice_skates"
+  ],
+  "boards": [
+    "skate_1",
+    "skate_3",
+    "skate_5"
+  ],
+  "tasks": [
+    "races_skated",
+    "skate_3_clean"
+  ]
+}
