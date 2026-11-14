@@ -4,7 +4,7 @@ import { Server, WebSocketTransport } from 'colyseus'
 import { CITY_MAX_PLAYERS, LIVEKIT, PORT } from './src/config.ts'
 import { CityRoom } from './src/CityRoom.ts'
 import { internalRoutes } from './src/internal.ts'
-import { assertVenueZones } from './src/sports/index.ts'
+import { assertVenueZones, registerBoxing } from './src/sports/index.ts'
 import { loadAtms, loadMarketStalls, loadSportsPassDesk, loadWorld, loadZoneBuyers } from './src/world.ts'
 
 async function boot() {
@@ -13,6 +13,7 @@ async function boot() {
   await loadAtms()
   await loadMarketStalls()
   await loadSportsPassDesk()
+  await registerBoxing()
   assertVenueZones()
   const gameServer = new Server({ transport: new WebSocketTransport() })
   gameServer.define('city', CityRoom)
