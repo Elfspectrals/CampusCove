@@ -59,11 +59,13 @@ class TennisTaskApiTest extends TestCase
 
     public function test_at_most_five_matches_count_a_day_and_the_count_starts_again_the_next_day(): void
     {
-        [$red, $blue] = [$this->player(), $this->player()];
+        $red = $this->player();
+        $opponents = [$this->player(), $this->player(), $this->player()];
         for ($i = 0; $i < 7; $i++) {
-            $this->record($red, 'tiebreak_7', [[$red, 'red', 'win', 7], [$blue, 'blue', 'loss', 3]])->assertOk();
+            $this->record($red, 'tiebreak_7', [[$red, 'red', 'win', 7], [$opponents[$i % 3], 'blue', 'loss', 3]])->assertOk();
         }
         $this->assertSame(5, $this->value($red, ActionCounter::TennisMatches));
+        $blue = $opponents[0];
 
         $this->travelTo(CarbonImmutable::parse('2026-11-15 10:00:00'));
         $this->record($red, 'tiebreak_7', [[$red, 'red', 'win', 7], [$blue, 'blue', 'loss', 3]])->assertOk();
@@ -114,8 +116,8 @@ class TennisTaskApiTest extends TestCase
             'sport' => $sport,
             'venue' => 'tennis_1',
             'settings' => ['mode' => count($players) > 2 ? 'doubles' : 'singles', 'format' => $format],
-            'startedAt' => 1_763_114_400_000,
-            'endedAt' => 1_763_114_700_000,
+            'startedAt' => now()->subMinutes(10)->getTimestampMs(),
+            'endedAt' => now()->getTimestampMs(),
             'players' => array_map(fn (array $p): array => ['accountId' => $p[0]['account_id'], 'team' => $p[1], 'result' => $p[2], 'score' => $p[3]], $players),
         ];
     }
