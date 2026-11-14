@@ -73,6 +73,7 @@ and the basketball meter come from the socket clock between `shot_start` and `sh
 steals and dunks are rolled by the socket. Results go to `POST /api/sports/matches` through `recordMatch` with
 `score` = goals (football) or points (basketball) per player; a player out of the match records `dnf`. No coins.
 Then the socket sends the feats to `POST /api/sports/gym/tasks` (tasks in [../TASKS.md](../TASKS.md)): matches played, hat tricks (3 goals or more), sharpshooter matches (5 three-pointers or more), once per match `ref`.
+The gym tasks count every recorded match and ignore the core's `counts_for_tasks` anti-farm flag (decided 2026-11-14).
 
 ## Decisions taken in this venue
 
