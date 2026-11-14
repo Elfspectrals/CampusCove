@@ -4,8 +4,10 @@ import { test } from 'node:test'
 import type { Player } from '../types.ts'
 import { type FakeRoom, api, clientOf, fakeRoom, installWorld, json, makePlayer, manifest, sentOf } from './testWorld.ts'
 
-const TENNIS = { minX: -467, maxX: -420, minZ: -293, maxZ: -250 }
-manifest.zones.push({ key: 'sports_tennis', sportsPass: true, bounds: TENNIS })
+const tennisZone = manifest.zones.find((z) => z.key === 'sports_tennis')
+if (!tennisZone) throw new Error('the test world has no sports_tennis zone')
+tennisZone.bounds = { minX: -467, maxX: -420, minZ: -293, maxZ: -250 }
+
 installWorld()
 const { loadWorld } = await import('../world.ts')
 await loadWorld()
