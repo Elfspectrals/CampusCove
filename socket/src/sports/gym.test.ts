@@ -5,8 +5,8 @@ import { api, clientOf, fakeRoom, installWorld, json, makePlayer, sentOf } from 
 
 installWorld()
 const { loadWorld } = await import('../world.ts')
-const { registerGymVenue, onGymAction, onGymBall, onGymBallReturn, tickGym } = await import('./gym.ts')
-const { configureGymFreePlay } = await import('./gymFree.ts')
+const { registerGymVenue, gymAreaBusy, onGymAction, onGymBall, onGymBallReturn, tickGym } = await import('./gym.ts')
+const { addGymFreeCourt } = await import('./gymFree.ts')
 const { parseFootballRules } = await import('./gymRules.ts')
 const { moveRejection } = await import('../movement.ts')
 const { parseGymCourt } = await import('./gymCourt.ts')
@@ -16,6 +16,7 @@ await loadWorld()
 
 const raw = JSON.parse(readFileSync(new URL('../../../front/public/assets/sports/rules/basketball.json', import.meta.url), 'utf8'))
 const court = parseGymCourt({
+  walls: true,
   floorY: 0.2,
   ceilingY: 9,
   arena: { minX: -379, maxX: -361, minZ: -178, maxZ: -162 },
@@ -30,9 +31,9 @@ const court = parseGymCourt({
   },
   sideBaskets: []
 })
-registerGymVenue({ id: 'gym_test_basketball', court, rules: parseBasketballRules(raw), settings: raw.signup.settings, minPlayers: 2, rejoinGraceMs: 30_000 })
+registerGymVenue({ id: 'gym_test_basketball', zone: 'sports_gym', playAreaId: 'gym_test_court', court, rules: parseBasketballRules(raw), settings: raw.signup.settings, minPlayers: 2, rejoinGraceMs: 30_000 })
 const footballRaw = JSON.parse(readFileSync(new URL('../../../front/public/assets/sports/rules/football.json', import.meta.url), 'utf8'))
-configureGymFreePlay({ court, rules: { football: parseFootballRules(footballRaw), basketball: parseBasketballRules(raw) }, zone: 'sports_gym' })
+addGymFreeCourt({ id: 'gym_test', court, rules: { football: parseFootballRules(footballRaw), basketball: parseBasketballRules(raw) }, zone: 'sports_gym', busy: (room) => gymAreaBusy(room, 'gym_test_court') })
 
 const NOW = 9_000_000
 const SETTINGS = { teamSize: 1, durationSec: 240 }

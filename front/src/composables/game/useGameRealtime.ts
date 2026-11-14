@@ -113,6 +113,8 @@ import type {
   SportsLobbyClosedPayload,
   SportsLobbyPayload,
   SportsLoansPayload,
+  SportsRunResultPayload,
+  SportsRunStatePayload,
   GymEndPayload,
   GymErrorPayload,
   GymFreePayload,
@@ -330,6 +332,8 @@ export interface GameRealtimeDeps {
     onLobbyClosed: (data: SportsLobbyClosedPayload) => void
     onError: (data: SportsErrorPayload) => void
     onRoomJoined: () => void
+    onRunState: (data: SportsRunStatePayload) => void
+    onRunResult: (data: SportsRunResultPayload) => void
   }
   gym: {
     onState: (data: GymStatePayload) => void
@@ -593,6 +597,8 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('sports_lobby_closed', (data: SportsLobbyClosedPayload) => deps.sports.onLobbyClosed(data))
     room.onMessage('sports_error', (data: SportsErrorPayload) => deps.sports.onError(data))
     room.onMessage('sports_loans', (data: SportsLoansPayload) => applySportsLoans(data))
+    room.onMessage('sports_run_state', (data: SportsRunStatePayload) => deps.sports.onRunState(data))
+    room.onMessage('sports_run_result', (data: SportsRunResultPayload) => deps.sports.onRunResult(data))
     room.onMessage('gym_state', (data: GymStatePayload) => deps.gym.onState(data))
     room.onMessage('gym_event', (data: GymEventPayload) => deps.gym.onEvent(data))
     room.onMessage('gym_end', (data: GymEndPayload) => deps.gym.onEnd(data))
@@ -739,5 +745,6 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     remotePlayers: remotes.players,
     remoteAccount: remotes.accountOf,
     setRemoteRacePint: remotes.setRacePint,
+    setRemoteRacePose: remotes.setRacePose,
   }
 }

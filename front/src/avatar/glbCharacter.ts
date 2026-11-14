@@ -118,6 +118,7 @@ interface AvatarAnimState {
   seated: boolean
   dribbling: boolean
   oneShot: OneShotClip | null
+  racePose: RacePoseClip | null
 }
 
 const CROSSFADE_S = 0.22
@@ -126,9 +127,12 @@ const PICK_CLIP = 'Pick'
 const SPORTS_MOVE_CLIPS = ['Kick', 'Shot', 'Tackle', 'Celebrate', 'JumpShot', 'Dunk', 'Block', 'Steal'] as const
 export type SportsMoveClip = (typeof SPORTS_MOVE_CLIPS)[number]
 const DRIBBLE_CLIP = 'Dribble'
-const ONE_SHOT_CLIPS = [PICK_CLIP, 'Eat', 'Drink', ...SPORTS_MOVE_CLIPS] as const
+const LEAN_CLIP = 'RunLean'
+const ONE_SHOT_CLIPS = [PICK_CLIP, 'Eat', 'Drink', LEAN_CLIP, ...SPORTS_MOVE_CLIPS] as const
 type OneShotClip = (typeof ONE_SHOT_CLIPS)[number]
-const MOVING_ONE_SHOTS: ReadonlySet<OneShotClip> = new Set<OneShotClip>([PICK_CLIP, ...SPORTS_MOVE_CLIPS])
+const MOVING_ONE_SHOTS: ReadonlySet<OneShotClip> = new Set<OneShotClip>([PICK_CLIP, LEAN_CLIP, ...SPORTS_MOVE_CLIPS])
+type RacePoseClip = 'RunSet' | 'Breathless'
+export type RacePose = 'set' | 'lean' | 'breathless'
 
 /**
  * Premium skins ship rigged with "Idle" / "Walk" / "Run" clips. Starts a mixer on the instance (no-op for
@@ -140,7 +144,7 @@ export function attachAvatarAnimations(root: THREE.Object3D): void {
   const mixer = new THREE.AnimationMixer(root)
   const actions = new Map<string, THREE.AnimationAction>()
   for (const clip of clips) actions.set(clip.name, mixer.clipAction(clip))
-  const state: AvatarAnimState = { mixer, actions, current: null, selector: new AvatarClipSelector(), seated: false, dribbling: false, oneShot: null }
+  const state: AvatarAnimState = { mixer, actions, current: null, selector: new AvatarClipSelector(), seated: false, dribbling: false, oneShot: null, racePose: null }
   animStateByRoot.set(root, state)
   for (const name of ONE_SHOT_CLIPS) {
     const action = actions.get(name)
@@ -197,6 +201,26 @@ export function setAvatarDribbling(root: THREE.Object3D, dribbling: boolean): vo
   if (state) state.dribbling = dribbling && state.actions.has(DRIBBLE_CLIP)
 }
 
+export function setAvatarRacePose(root: THREE.Object3D, pose: RacePose | null): void {
+  const state = animStateByRoot.get(root)
+  if (!state) return
+  if (pose === 'lean') {
+    playOneShot(state, LEAN_CLIP)
+    return
+  }
+  state.racePose = pose === 'set' ? 'RunSet' : pose === 'breathless' ? 'Breathless' : null
+}
+
+function racePoseClip(state: AvatarAnimState, clip: string): RacePoseClip | null {
+  const pose = state.racePose
+  if (!pose || !state.actions.has(pose)) return null
+  if (pose === 'Breathless' && clip !== 'Idle') {
+    state.racePose = null
+    return null
+  }
+  return pose
+}
+
 function playClip(state: AvatarAnimState, name: string, timeScale: number): void {
   const next = state.actions.get(name)
   if (!next) return
@@ -219,7 +243,8 @@ export function updateAvatarAnimation(root: THREE.Object3D, dt: number, speed: n
   } else {
     const { clip, timeScale } = state.selector.update(dt, speed)
     if (state.oneShot !== null && !MOVING_ONE_SHOTS.has(state.oneShot) && clip !== 'Idle') state.oneShot = null
-    if (state.oneShot === null) playClip(state, state.dribbling && clip !== 'Idle' ? DRIBBLE_CLIP : clip, timeScale)
+    const pose = racePoseClip(state, clip)
+    if (state.oneShot === null) playClip(state, pose ?? (state.dribbling && clip !== 'Idle' ? DRIBBLE_CLIP : clip), pose ? 1 : timeScale)
   }
   state.mixer.update(clampDt(dt))
 }

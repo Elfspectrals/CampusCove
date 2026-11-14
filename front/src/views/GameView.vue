@@ -35,6 +35,8 @@ import GamePubSecretDialog from '../components/game/GamePubSecretDialog.vue'
 import GamePoliceLicenceDialog from '../components/game/GamePoliceLicenceDialog.vue'
 import GameSportsPassDesk from '../components/game/GameSportsPassDesk.vue'
 import GameSportsSignup from '../components/game/GameSportsSignup.vue'
+import GameRunningHud from '../components/game/GameRunningHud.vue'
+import GameRunningBoard from '../components/game/GameRunningBoard.vue'
 import GameGymMatchHud from '../components/game/GameGymMatchHud.vue'
 import GameGymFreePlay from '../components/game/GameGymFreePlay.vue'
 import GameChat from '../components/game/GameChat.vue'
@@ -103,8 +105,9 @@ import { usePolice } from '../composables/game/usePolice'
 import { useSportsPass } from '../composables/game/useSportsPass'
 import { passValid } from '../game/sports/sportsPass'
 import { useSportsSignup } from '../composables/game/useSportsSignup'
+import { useRunningRace } from '../composables/game/useRunningRace'
 import { useGymMatch } from '../composables/game/useGymMatch'
-import { GYM_COACH } from '../game/sports/gymMatch'
+import { FREE_PLAY_COACHES } from '../game/sports/gymMatch'
 import { usePickpocket } from '../composables/game/usePickpocket'
 import { useStorageAuction } from '../composables/game/useStorageAuction'
 import { useStorageWarehouse } from '../composables/game/useStorageWarehouse'
@@ -859,6 +862,17 @@ const { open: sportsPassOpen, state: sportsPassState, buying: sportsPassBuying, 
 watch(sportsPassOpen, (open) => {
   if (!open && !document.pointerLockElement) requestPointerLock()
 })
+const runningRace = useRunningRace({
+  gameRoomRef,
+  myPosition,
+  getCamera,
+  canvasRef,
+  setLook: (yaw, pitch) => movement.setLook(yaw, pitch),
+  onFinished: () => sfx.play('out_of_breath'),
+  onStep: (inRhythm) => sfx.play(inRhythm ? 'run_step_good' : 'run_step_off'),
+  setRacePose: (sessionId, pose) => realtime.setRemoteRacePose(sessionId, pose),
+})
+const { state: runState, runner: myRunnerState, result: runResult, clientNow: runClientNow, clockOffset: runClockOffset, lastStepAt: runLastStepAt, gateBearing: runGateBearing, board: runBoard } = runningRace
 const sportsSignup = useSportsSignup({
   myPosition,
   getCamera,
@@ -894,7 +908,11 @@ const gymMatch = useGymMatch({
   errorText: ({ code, message }) => (te(`sports.gym.errors.${code}`) ? t(`sports.gym.errors.${code}`) : message),
 })
 const { hud: gymHud, freeHud: gymFreeHud, banner: gymBanner, rimPop: gymRimPop, releaseLabel: gymReleaseLabel, myBall: gymMyBall } = gymMatch
-const gymCoachOpen = computed(() => sportsSignupOpen.value && sportsVenueChoices.value.some((c) => c.lobby.coach === GYM_COACH))
+const gymFreeSports = computed(() => {
+  if (!sportsSignupOpen.value) return null
+  const coach = sportsVenueChoices.value.find((c) => FREE_PLAY_COACHES[c.lobby.coach])?.lobby.coach
+  return coach ? FREE_PLAY_COACHES[coach]! : null
+})
 const PICKPOCKET_ERROR_KEYS = new Set([
   'pickpocket_on_duty',
   'pickpocket_jailed',
@@ -1576,6 +1594,7 @@ const movement = useGameMovement({
   onCanvasMouseDown: (e) => {
     // furniture placement keeps its own clicks (left: pick / place, right: cancel)
     if (placement.onPointerDown(e)) return true
+    if (runningRace.onMouseDown(e)) return true
     if (adminPanelOpen.value && !pointerLocked.value) {
       requestPointerLock()
       return true
@@ -1584,7 +1603,7 @@ const movement = useGameMovement({
     return pointerLocked.value && runUseOrPunch(mouseButtonCode(e.button), false, e.shiftKey)
   },
   speedFactor: () => survival.speedFactor() * intoxication.walkFactor() * (adminWatch.hasMyPower('speed') ? SPEED_POWER_FACTOR : 1),
-  movementLocked: () => seats.seated.value || townBus.riding.value || police.cuffedBy.value !== null || adminWatch.hasMyPower('freeze') || gymMatch.down(),
+  movementLocked: () => seats.seated.value || townBus.riding.value || police.cuffedBy.value !== null || adminWatch.hasMyPower('freeze') || gymMatch.down() || runningRace.racing.value,
   flying: () => adminWatch.hasMyPower('fly'),
   afterCameraPlaced: intoxication.applyToCamera,
   trySpendJump: () => adminWatch.hasMyPower('endless_stamina') || punch.trySpendJump(),
@@ -1627,6 +1646,7 @@ const movement = useGameMovement({
     farm.tick()
     police.tick()
     sportsSignup.tick()
+    runningRace.tick(dt)
     gymMatch.tick()
     if (!doorSigns.group.parent) getScene()?.add(doorSigns.group)
     minimap.tick()
@@ -1770,7 +1790,12 @@ const realtime = useGameRealtime({
     onLobby: sportsSignup.handlers.onLobby,
     onLobbyClosed: sportsSignup.handlers.onLobbyClosed,
     onError: sportsSignup.handlers.onError,
-    onRoomJoined: sportsSignup.handlers.onRoomJoined,
+    onRoomJoined: () => {
+      sportsSignup.handlers.onRoomJoined()
+      runningRace.onRoomJoined()
+    },
+    onRunState: runningRace.onState,
+    onRunResult: runningRace.onResult,
   },
   gym: gymMatch.handlers,
   pickpocket: pickpocket.handlers,
@@ -2356,8 +2381,17 @@ const crosshairClass = computed(() => {
       @buy="sportsPass.buy"
       @close="sportsPass.close"
     />
+    <GameRunningHud
+      :state="runState"
+      :runner="myRunnerState"
+      :result="runResult"
+      :client-now="runClientNow"
+      :clock-offset="runClockOffset"
+      :last-step-at="runLastStepAt"
+      :gate-bearing="runGateBearing"
+    />
     <GameGymMatchHud :hud="gymHud" :free-hud="gymFreeHud" :banner="gymBanner" :rim-pop="gymRimPop" :release-label="gymReleaseLabel" />
-    <GameGymFreePlay v-if="gymCoachOpen" :my-ball="gymMyBall" @borrow="gymMatch.borrow" @give-back="gymMatch.giveBack" />
+    <GameGymFreePlay v-if="gymFreeSports" :my-ball="gymMyBall" :sports="gymFreeSports" @borrow="gymMatch.borrow" @give-back="gymMatch.giveBack" />
     <GameSportsSignup
       v-if="sportsSignupOpen"
       :lobby="sportsLobby"
@@ -2398,6 +2432,7 @@ const crosshairClass = computed(() => {
       @close="closePubRace"
     />
     <GamePubRaceBoard v-if="pubRaceBoard" :board="pubRaceBoard" />
+    <GameRunningBoard v-if="runBoard" :board="runBoard" />
     <GameJail v-if="jailSentence && !knockedOut" :sentence="jailSentence" :error="jailError" :paying="jailPaying" @pay="jail.pay" />
     <GameCuffed v-if="policeCuffedBy && !knockedOut" :officer="realtime.remotePseudo(policeCuffedBy) ?? '…'" />
     <GamePickpocket v-if="!knockedOut" :game="pickpocketGame" :loot="pickpocketLoot" @take="pickpocket.take" />

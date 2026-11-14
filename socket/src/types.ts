@@ -132,6 +132,7 @@ export interface Player extends Vec3 {
   lastSportsPassAt: number
   sportsLoans: Map<string, string>
   sportsPending: boolean
+  sportsWear: Partial<Record<WearSlot, { model: string, hex: string }>>
   lastSportsAt: number
   sportsDownUntil: number
 }

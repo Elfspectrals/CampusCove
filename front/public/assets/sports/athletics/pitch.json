@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "walls": false,
+  "floorY": 0.03,
+  "ceilingY": 30,
+  "arena": {
+    "minX": -505.5,
+    "maxX": -442.5,
+    "minZ": -391.25,
+    "maxZ": -348.25
+  },
+  "playArea": {
+    "minX": -503.0,
+    "maxX": -445.0,
+    "minZ": -388.75,
+    "maxZ": -350.75
+  },
+  "court": {
+    "minX": -501.5,
+    "maxX": -446.5,
+    "minZ": -387.25,
+    "maxZ": -352.25
+  },
+  "centre": {
+    "x": -474.0,
+    "z": -369.75
+  },
+  "coach": {
+    "x": -428,
+    "z": -320.5
+  },
+  "goals": {
+    "blue": {
+      "lineX": -501.5,
+      "inward": -1,
+      "minZ": -372.25,
+      "maxZ": -367.25,
+      "height": 2,
+      "depth": 1.2
+    },
+    "red": {
+      "lineX": -446.5,
+      "inward": 1,
+      "minZ": -372.25,
+      "maxZ": -367.25,
+      "height": 2,
+      "depth": 1.2
+    }
+  },
+  "sideBaskets": []
+}

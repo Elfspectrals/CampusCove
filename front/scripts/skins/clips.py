@@ -347,6 +347,70 @@ def gait_dribble(extras=None):
         P.rx('UpperArm.L', -20); P.ry('UpperArm.L', -6); P.rx('LowerArm.L', -10)
     return f
 
+def _ankle_on_ball(P, side, ball_y, pitch):
+    bones = P.arm.data.bones
+    ankle, ball = bones['Foot' + side].head_local, bones['Toe' + side].head_local
+    by, bz = ankle.y - ball.y, ankle.z - ball.z
+    p = math.radians(pitch)
+    return (ankle.x, ball_y + by * math.cos(p) - bz * math.sin(p), ball.z + by * math.sin(p) + bz * math.cos(p))
+
+def pose_run_set():
+    def f(ph, P):
+        a = 2 * math.pi * ph
+        breath = S_(2 * a)
+        P.move('Hips', 0, 0.02 + 0.008 * S_(a), -0.17 + 0.004 * breath)
+        P.rx('Hips', 20); P.rx('Spine', 12 - 0.6 * breath); P.rx('Chest', 10 - 1.2 * breath)
+        P.rx('Head', -28 + 0.8 * S_(2 * a - 0.6))
+        front = P.arm.data.bones['Foot.L'].head_local
+        leg_ik(P, '.L', (front.x + 0.01, -0.30, front.z))
+        leg_ik(P, '.R', _ankle_on_ball(P, '.R', 0.42, 30), 30, 0)
+        for side, sgn, arm_x, elbow in (('.L', 1, 30, -35), ('.R', -1, -35, -60)):
+            P.move('Shoulder' + side, 0, 0, 0.004 * breath)
+            P.rx('UpperArm' + side, arm_x + 1.0 * S_(a)); P.ry('UpperArm' + side, sgn * 10)
+            P.rx('LowerArm' + side, elbow)
+    return f
+
+def pose_run_lean():
+    run = gait_run()
+    dip_at = key_poses([
+        (0.0, {}),
+        (0.12, {"w": -0.12}),
+        (0.38, {"w": 1.0, "a": 1.0}),
+        (0.50, {"w": 1.0, "a": 1.0}),
+        (1.0, {}),
+    ])
+    frames = 24
+
+    def f(ph, P):
+        k = dip_at(ph)
+        w, arms = k.get("w", 0.0), max(0.0, k.get("a", 0.0))
+        P.rx('Hips', 6 * w); P.move('Hips', 0, -0.03 * w, -0.03 * w)
+        run((ph * frames / SPRINT["frames"]) % 1.0, P)
+        P.rx('Spine', 16 * w); P.rx('Chest', 18 * w); P.rx('Head', -14 * w)
+        for side in ('.L', '.R'):
+            for bone, target in (('UpperArm' + side, 35), ('LowerArm' + side, -20)):
+                r = P.rot.setdefault(bone, [0.0, 0.0, 0.0])
+                r[0] = r[0] * (1 - arms) + math.radians(target) * arms
+    return f
+
+def pose_breathless():
+    def f(ph, P):
+        a = 2 * math.pi * ph
+        breath = S_(2 * a)
+        P.move('Hips', 0, 0.10, -0.14)
+        P.rx('Hips', 30); P.rx('Spine', 18 - 0.5 * breath); P.rx('Chest', 12 - 3.5 * breath)
+        P.rx('Head', -40 + 2.5 * S_(2 * a - 0.8)); P.rz('Head', 3 * S_(a))
+        for side, sgn, _ in SIDES:
+            ankle = P.arm.data.bones['Foot' + side].head_local
+            leg_ik(P, side, (ankle.x + sgn * 0.04, ankle.y - 0.01, ankle.z))
+            P.move('Shoulder' + side, 0, 0, 0.004 * breath)
+            P.rx('UpperArm' + side, BREATHLESS_ARM[0] + BREATHLESS_ARM[5] * breath); P.ry('UpperArm' + side, sgn * BREATHLESS_ARM[1])
+            P.rx('LowerArm' + side, BREATHLESS_ARM[2] + BREATHLESS_ARM[6] * breath); P.ry('LowerArm' + side, sgn * BREATHLESS_ARM[3])
+            P.rx('Hand' + side, BREATHLESS_ARM[4] + BREATHLESS_ARM[7] * breath)
+    return f
+
+BREATHLESS_ARM = (-34, 26, -22, 33, -45, 3.5, -2, 3)
+
 def make_clips(extras):
     return {
         "Idle": (120, gait_idle(None, extras)),

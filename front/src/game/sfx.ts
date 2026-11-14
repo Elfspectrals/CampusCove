@@ -40,6 +40,8 @@ const SOUNDS = {
   market_sold: { urls: ['/assets/sfx/market/sold.mp3'], volume: 0.7 },
   gym_kick: { urls: ['/assets/sfx/gym/kick.mp3'], volume: 0.8, refDistance: 3, maxDistance: 25 },
   gym_bounce: { urls: ['/assets/sfx/gym/bounce.mp3'], volume: 0.6, refDistance: 3, maxDistance: 25 },
+  run_step_good: { urls: ['/assets/sfx/running/step_good.mp3'], volume: 1 },
+  run_step_off: { urls: ['/assets/sfx/running/step_off.mp3'], volume: 0.5 },
 } satisfies Record<string, SoundDef>
 
 export type SfxName = keyof typeof SOUNDS

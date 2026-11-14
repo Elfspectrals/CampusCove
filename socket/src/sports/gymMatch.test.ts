@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 import { type Ball, bounceBody, droppedThroughRim, launchToward, stepBall } from './gymBall.ts'
-import { type GymCourt, courtObstacles, parseGymCourt } from './gymCourt.ts'
+import { type GymCourt, basketsOf, courtObstacles, parseGymCourt } from './gymCourt.ts'
 import { type Athlete, type GymEvent, type GymGame, actGym, chargeOf, goodWindow, meterOf, newGymGame, outcomeFor, releaseOf, stepGym } from './gymMatch.ts'
 import { type BasketballRules, type FootballRules, gymPlayerRules, halvesOf, parseBasketballRules, parseFootballRules } from './gymRules.ts'
 
@@ -20,6 +20,7 @@ function basket(side: 1 | -1) {
 const SIDE_HOOP = { x: -8, y: 3.25, z: 12.625, rimRadius: 0.225, board: { minX: -8.9, maxX: -7.1, minY: 3.1, maxY: 4.15, minZ: 12.975, maxZ: 13.025 } }
 
 const COURT: GymCourt = parseGymCourt({
+  walls: true,
   floorY: 0.2,
   ceilingY: 9,
   arena: { minX: -24, maxX: 24, minZ: -14, maxZ: 14 },
@@ -69,7 +70,7 @@ test('the shipped rules files parse, and the 2 x 4 min length has two halves', (
 test('the shipped court contract parses and red attacks east', () => {
   const shipped = parseGymCourt(JSON.parse(readFileSync(new URL('../../../front/public/assets/sports/gym/court.json', import.meta.url), 'utf8')))
   assert.ok(shipped.goals.red.lineX > shipped.goals.blue.lineX)
-  assert.ok(shipped.baskets.red.x > shipped.centre.x && shipped.baskets.blue.x < shipped.centre.x)
+  assert.ok(basketsOf(shipped).red.x > shipped.centre.x && basketsOf(shipped).blue.x < shipped.centre.x)
 })
 
 test('a court whose lines leave the arena is refused', () => {
@@ -93,7 +94,7 @@ test('the ball bounces back off a wall instead of leaving the arena', () => {
 })
 
 test('a launch aimed at the rim drops through it', () => {
-  const rim = COURT.baskets.red
+  const rim = basketsOf(COURT).red
   const v = launchToward(15, 2.3, 0, rim.x, rim.y, rim.z, (52 * Math.PI) / 180)
   assert.ok(v)
   const ball: Ball = { x: 15, y: 2.3, z: 0, ...v }
@@ -214,7 +215,7 @@ test('basketball: good timing corrects a small aim error, bad timing misses', ()
 test('basketball: after a basket the other team restarts under it', () => {
   const { game } = shoot(16, 900)
   assert.equal(game.restart?.team, 'blue')
-  assert.ok(Math.abs(game.ball.x - (COURT.baskets.red.x - 1.2)) < 1e-9)
+  assert.ok(Math.abs(game.ball.x - (basketsOf(COURT).red.x - 1.2)) < 1e-9)
 })
 
 test('basketball: a steal is rolled by the server and has a cooldown', () => {
@@ -340,4 +341,70 @@ test('basketball: the release is perfect at the top of the window, good below, e
   game.owner = 9
   actGym(game, BASKETBALL, a, [a], 'shot_start', T0, () => 0.5)
   assert.deepEqual(actGym(game, BASKETBALL, a, [a], 'shot_release', T0 + 900, () => 0.5), [{ kind: 'kick', accountId: 9, shot: true, release: 'perfect' }])
+})
+
+const PITCH: GymCourt = parseGymCourt(JSON.parse(readFileSync(new URL('../../../front/public/assets/sports/athletics/pitch.json', import.meta.url), 'utf8')))
+
+function restartTeam(game: GymGame): string | null {
+  return game.restart?.team ?? null
+}
+
+function pitchGame(mode: 'match' | 'free' = 'match'): GymGame {
+  const game = newGymGame(PITCH, FOOTBALL, T0, mode)
+  game.restart = null
+  return game
+}
+
+test('the outdoor pitch has no walls and no baskets', () => {
+  assert.equal(PITCH.walls, false)
+  assert.equal(PITCH.baskets, null)
+  assert.throws(() => basketsOf(PITCH), /no baskets/)
+  assert.throws(() => parseGymCourt({ ...PITCH, walls: undefined }), /walls/)
+})
+
+test('outdoors, a ball over the side line comes back on the line, for the team that did not touch it last', () => {
+  const game = pitchGame()
+  const { centre, court } = PITCH
+  const a = athlete(1, 'red', centre.x, court.minZ + 1.5, 0)
+  game.ball = { x: centre.x, y: PITCH.floorY + FOOTBALL.ball.radius, z: court.minZ + 1, vx: 0, vy: 0, vz: -10 }
+  run(game, FOOTBALL, [], 2, T0)
+  assert.equal(game.lastTouch, null)
+  assert.equal(restartTeam(game), 'red')
+  assert.ok(Math.abs(game.ball.z - (court.minZ + 0.3)) < 1e-9)
+  assert.equal(game.ball.vz, 0)
+  game.restart = null
+  game.lastTouch = { accountId: a.accountId, team: 'red' }
+  game.ball = { x: centre.x, y: PITCH.floorY + FOOTBALL.ball.radius, z: court.minZ + 1, vx: 0, vy: 0, vz: -10 }
+  run(game, FOOTBALL, [], 2, T0 + 5000)
+  assert.equal(restartTeam(game), 'blue')
+})
+
+test('outdoors, a carrier who runs off the pitch loses the ball to the other team', () => {
+  const game = pitchGame()
+  const { centre, court } = PITCH
+  const a = athlete(1, 'blue', centre.x, court.maxZ - 0.5, Math.PI)
+  game.ball = { x: centre.x, y: PITCH.floorY + FOOTBALL.ball.radius, z: court.maxZ - 0.5, vx: 0, vy: 0, vz: 0 }
+  stepGym(game, FOOTBALL, [a], 1 / 60, T0)
+  assert.equal(game.owner, 1)
+  a.z = court.maxZ + 1
+  stepGym(game, FOOTBALL, [a], 1 / 60, T0 + 20)
+  assert.equal(game.owner, null)
+  assert.equal(restartTeam(game), 'red')
+  assert.ok(Math.abs(game.ball.z - (court.maxZ - 0.3)) < 1e-9)
+})
+
+test('in free play outdoors a ball that leaves the pitch rests on the line, with no restart', () => {
+  const game = pitchGame('free')
+  const { centre, court } = PITCH
+  game.ball = { x: court.maxX - 0.5, y: PITCH.floorY + FOOTBALL.ball.radius, z: centre.z, vx: 10, vy: 0, vz: 0 }
+  run(game, FOOTBALL, [], 2, T0)
+  assert.equal(game.restart, null)
+  assert.ok(Math.abs(game.ball.x - (court.maxX - 0.3)) < 1e-9)
+})
+
+test('indoors the side wall still bounces the ball back instead of a throw-in', () => {
+  const game = freshGame(FOOTBALL)
+  game.ball = { x: 0, y: COURT.floorY + FOOTBALL.ball.radius, z: 11.5, vx: 0, vy: 0, vz: 8 }
+  run(game, FOOTBALL, [], 1, T0)
+  assert.equal(game.restart, null)
 })

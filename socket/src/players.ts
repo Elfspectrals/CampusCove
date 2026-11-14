@@ -170,6 +170,7 @@ export function createPlayer(client: Client, options: Json, colorIndex: number, 
     lastSportsPassAt: 0,
     sportsLoans: new Map(),
     sportsPending: false,
+    sportsWear: {},
     lastSportsAt: 0,
     sportsDownUntil: 0
   }

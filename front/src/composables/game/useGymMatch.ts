@@ -5,10 +5,12 @@ import { matches, mouseButtonCode } from '../../config/keybindings'
 import type { SportsMoveClip } from '../../avatar/glbCharacter'
 import type { SfxName } from '../../game/sfx'
 import {
+  COURT_FILES,
   type GymCourtView,
   type GymHudRules,
   type Spot,
   carriedSpot,
+  courtUrlOf,
   dribbleBeat,
   clockText,
   goodWindowStart,
@@ -51,7 +53,6 @@ export interface GymRimPop {
 }
 
 const STALE_MS = 3000
-const GYM_COURT_URL = '/assets/sports/gym/court.json'
 const BANNER_MS = 2600
 const END_BANNER_MS = 6000
 const RIM_POP_MS = 1600
@@ -86,7 +87,7 @@ export function useGymMatch(deps: GymMatchDeps) {
   const holdStartedAt = ref<number | null>(null)
   const cooldownUntil = ref(0)
   const downUntil = ref(0)
-  let court: GymCourtView | null = null
+  const courts = new Map<string, GymCourtView>()
   let clockOffset = 0
   let receivedAt = 0
   let freeReceivedAt = 0
@@ -112,9 +113,9 @@ export function useGymMatch(deps: GymMatchDeps) {
       ...SPORTS.map((sport) => fetchJson(sportRulesUrl(sport)).then((raw) => {
         rules.value = { ...rules.value, [sport]: parseGymHudRules(sport, raw) }
       })),
-      fetchJson(GYM_COURT_URL).then((raw) => {
-        court = parseGymCourtView(raw)
-      }),
+      ...COURT_FILES.map((url) => fetchJson(url).then((raw) => {
+        courts.set(url, parseGymCourtView(raw))
+      })),
     ]).then(() => undefined)
     loading.catch((error) => console.error('[gym] rules or court', error))
   }
@@ -153,8 +154,12 @@ export function useGymMatch(deps: GymMatchDeps) {
     return avatar ? { x: avatar.position.x, z: avatar.position.z } : null
   }
 
-  function placeMarker(shown: Set<THREE.Mesh>, owner: string | null, tone: keyof typeof MARKER_COLOURS, key: string): void {
-    if (!owner || !court) return
+  function courtOf(courtOrVenue: string): GymCourtView | null {
+    return courts.get(courtUrlOf(courtOrVenue)) ?? null
+  }
+
+  function placeMarker(shown: Set<THREE.Mesh>, owner: string | null, tone: keyof typeof MARKER_COLOURS, key: string, court: GymCourtView): void {
+    if (!owner) return
     const spot = carrierSpot(owner)
     if (!spot) return
     const marker = markerFor(key, tone)
@@ -331,9 +336,9 @@ export function useGymMatch(deps: GymMatchDeps) {
     return { spot: { x: anchor.x, y: anchor.y, z: anchor.z }, yaw: avatar.rotation.y }
   }
 
-  function place(mesh: THREE.Mesh, sport: GymSport, ball: GymStatePayload['ball'], owner: string | null, ageS: number, seconds: number): void {
+  function place(mesh: THREE.Mesh, sport: GymSport, ball: GymStatePayload['ball'], owner: string | null, ageS: number, seconds: number, court: GymCourtView): void {
     const r = rules.value[sport]
-    if (!r || !court) return
+    if (!r) return
     if (owner !== null) {
       const held = owner === mySessionId() ? myAnchor(sport, court.floorY) : remoteAnchor(owner, sport)
       if (held) {
@@ -354,7 +359,8 @@ export function useGymMatch(deps: GymMatchDeps) {
   }
 
   function updateRimPop(now: number): void {
-    if (!rimPopAt || now > rimPopAt.until || !court) {
+    const baskets = state.value ? courtOf(state.value.venue)?.baskets ?? null : null
+    if (!rimPopAt || now > rimPopAt.until || !baskets) {
       rimPopAt = null
       rimPop.value = null
       return
@@ -362,7 +368,7 @@ export function useGymMatch(deps: GymMatchDeps) {
     const camera = deps.getCamera()
     const canvas = deps.canvasRef.value
     if (!camera || !canvas) return
-    const basket = court.baskets[rimPopAt.team]
+    const basket = baskets[rimPopAt.team]
     const rise = 1 - (rimPopAt.until - now) / RIM_POP_MS
     projected.set(basket.x, basket.y + 0.4 + rise * RIM_POP_RISE_M, basket.z).project(camera)
     if (projected.z > 1) {
@@ -396,20 +402,22 @@ export function useGymMatch(deps: GymMatchDeps) {
     const seconds = now / 1000
     const current = state.value
     const matchRules = current ? rules.value[current.sport] : undefined
-    if (current && matchRules) {
+    const matchCourt = current ? courtOf(current.venue) : null
+    if (current && matchRules && matchCourt) {
       const mesh = meshFor(MATCH_BALL, current.sport, matchRules.ballRadius)
-      place(mesh, current.sport, current.ball, current.owner, (now - receivedAt) / 1000, seconds)
+      place(mesh, current.sport, current.ball, current.owner, (now - receivedAt) / 1000, seconds, matchCourt)
       shown.add(mesh)
       const ownerTeam = current.players.find((p) => p.sessionId === current.owner)?.team ?? null
-      placeMarker(shown, current.owner, ownerTeam ?? 'free', `match:${ownerTeam ?? 'free'}`)
+      placeMarker(shown, current.owner, ownerTeam ?? 'free', `match:${ownerTeam ?? 'free'}`, matchCourt)
     }
     for (const ball of free.value?.balls ?? []) {
       const r = rules.value[ball.sport]
-      if (!r) continue
+      const ballCourt = courtOf(ball.court)
+      if (!r || !ballCourt) continue
       const mesh = meshFor(ball.id, ball.sport, r.ballRadius)
-      place(mesh, ball.sport, ball.ball, ball.owner, (now - freeReceivedAt) / 1000, seconds)
+      place(mesh, ball.sport, ball.ball, ball.owner, (now - freeReceivedAt) / 1000, seconds, ballCourt)
       shown.add(mesh)
-      placeMarker(shown, ball.owner, 'free', `free:${ball.id}`)
+      placeMarker(shown, ball.owner, 'free', `free:${ball.id}`, ballCourt)
     }
     updateDribblers()
     hideAll(shown)
@@ -422,7 +430,8 @@ export function useGymMatch(deps: GymMatchDeps) {
     const remaining = current.endsAt - (clientNow.value + clockOffset)
     const r = rules.value[current.sport]
     const held = holdStartedAt.value
-    const basket = team.value && court ? court.baskets[team.value] : null
+    const baskets = courtOf(current.venue)?.baskets ?? null
+    const basket = team.value && baskets ? baskets[team.value] : null
     const distance = basket ? Math.hypot(deps.myPosition.x - basket.x, deps.myPosition.z - basket.z) : 0
     const meter = r && held !== null ? { fill: meterFill(r.meter, clientNow.value - held), goodFrom: goodWindowStart(r.meter, distance) } : null
     const cooldown = r && cooldownUntil.value > clientNow.value ? (cooldownUntil.value - clientNow.value) / r.defendCooldownMs : null

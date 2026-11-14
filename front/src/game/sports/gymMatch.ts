@@ -1,7 +1,6 @@
 import type { GymFreeBall, GymSport, GymStatePayload, GymTeam } from '../../types/gameRealtime'
 
 const GRAVITY = 9.81
-export const GYM_COACH = 'gym_coach'
 
 export type GymMeter = { kind: 'charge'; chargeMs: number } | { kind: 'bounce'; riseMs: number; windowNear: number; windowFar: number; farDistanceM: number }
 
@@ -88,7 +87,28 @@ export function myTeam(state: GymStatePayload | null, sessionId: string | null):
 
 export interface GymCourtView {
   floorY: number
-  baskets: Record<GymTeam, { x: number; y: number; z: number }>
+  baskets: Record<GymTeam, { x: number; y: number; z: number }> | null
+}
+
+const COURT_URLS: Record<string, string> = {
+  gym: '/assets/sports/gym/court.json',
+  gym_football: '/assets/sports/gym/court.json',
+  gym_basketball: '/assets/sports/gym/court.json',
+  athletics: '/assets/sports/athletics/pitch.json',
+  athletics_football: '/assets/sports/athletics/pitch.json',
+}
+
+export const COURT_FILES: readonly string[] = [...new Set(Object.values(COURT_URLS))]
+
+export const FREE_PLAY_COACHES: Readonly<Record<string, readonly GymSport[]>> = {
+  gym_coach: ['football', 'basketball'],
+  athletics_coach: ['football'],
+}
+
+export function courtUrlOf(courtOrVenue: string): string {
+  const url = COURT_URLS[courtOrVenue]
+  if (!url) throw new Error(`no court file for ${courtOrVenue}`)
+  return url
 }
 
 function finite(raw: unknown, what: string): number {
@@ -98,6 +118,7 @@ function finite(raw: unknown, what: string): number {
 
 export function parseGymCourtView(raw: unknown): GymCourtView {
   const r = (raw ?? {}) as Raw
+  if (r.baskets === undefined) return { floorY: finite(r.floorY, 'floorY'), baskets: null }
   const baskets = (r.baskets ?? {}) as Record<string, Raw | undefined>
   const spot = (team: GymTeam) => ({ x: finite(baskets[team]?.x, `baskets.${team}.x`), y: finite(baskets[team]?.y, `baskets.${team}.y`), z: finite(baskets[team]?.z, `baskets.${team}.z`) })
   return { floorY: finite(r.floorY, 'floorY'), baskets: { red: spot('red'), blue: spot('blue') } }

@@ -33,6 +33,7 @@ export interface Basket extends Hoop {
 }
 
 export interface GymCourt {
+  walls: boolean
   floorY: number
   ceilingY: number
   arena: Bounds
@@ -41,7 +42,7 @@ export interface GymCourt {
   centre: { x: number, z: number }
   coach: { x: number, z: number }
   goals: Record<Team, Goal>
-  baskets: Record<Team, Basket>
+  baskets: Record<Team, Basket> | null
   sideBaskets: Hoop[]
 }
 
@@ -113,7 +114,9 @@ function basket(raw: unknown, what: string): Basket {
 export function parseGymCourt(raw: unknown): GymCourt {
   const c = (raw ?? {}) as Raw
   if (!Array.isArray(c.sideBaskets)) throw new Error('gym court: sideBaskets must be a list')
+  if (typeof c.walls !== 'boolean') throw new Error(`gym court: walls must be true or false, got ${JSON.stringify(c.walls)}`)
   const court: GymCourt = {
+    walls: c.walls,
     floorY: num(c.floorY, 'floorY'),
     ceilingY: num(c.ceilingY, 'ceilingY'),
     arena: bounds(c.arena, 'arena'),
@@ -122,7 +125,7 @@ export function parseGymCourt(raw: unknown): GymCourt {
     centre: point(c.centre, 'centre'),
     coach: point(c.coach, 'coach'),
     goals: { red: goal((c.goals as Raw)?.red, 'goals.red'), blue: goal((c.goals as Raw)?.blue, 'goals.blue') },
-    baskets: { red: basket((c.baskets as Raw)?.red, 'baskets.red'), blue: basket((c.baskets as Raw)?.blue, 'baskets.blue') },
+    baskets: c.baskets === undefined ? null : { red: basket((c.baskets as Raw)?.red, 'baskets.red'), blue: basket((c.baskets as Raw)?.blue, 'baskets.blue') },
     sideBaskets: c.sideBaskets.map((s, i) => hoop(s, `sideBaskets[${i}]`))
   }
   if (court.ceilingY <= court.floorY + 4) throw new Error('gym court: ceiling too low')
@@ -147,8 +150,13 @@ function goalBoxes(g: Goal, floorY: number): Box[] {
   ]
 }
 
+export function basketsOf(court: GymCourt): Record<Team, Basket> {
+  if (!court.baskets) throw new Error('gym court: this court has no baskets')
+  return court.baskets
+}
+
 export function courtHoops(court: GymCourt): Hoop[] {
-  return [court.baskets.red, court.baskets.blue, ...court.sideBaskets]
+  return [...(court.baskets ? [court.baskets.red, court.baskets.blue] : []), ...court.sideBaskets]
 }
 
 export function courtObstacles(court: GymCourt): { boxes: Box[], rims: Rim[] } {
