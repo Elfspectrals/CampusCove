@@ -35,7 +35,6 @@ use App\Http\Controllers\ReferralController;
 use App\Http\Controllers\RespawnBedController;
 use App\Http\Controllers\SecurityScanController;
 use App\Http\Controllers\ShopController;
-use App\Http\Controllers\SkatingBoardController;
 use App\Http\Controllers\SportsController;
 use App\Http\Controllers\StorageAuctionController;
 use App\Http\Controllers\StripeWebhookController;

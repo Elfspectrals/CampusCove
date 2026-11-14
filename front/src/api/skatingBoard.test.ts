@@ -1,14 +1,25 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { parseSkatingBoard } from './skatingBoard.ts'
+import { parseCoreBoard, skatingBoard } from './skatingBoard.ts'
 
-test('a skating board parses its lap boards and last week champions', () => {
-  const raw = { week: '2026-W47', boards: [{ laps: 3, entries: [{ name: 'Ana#0001', timeMs: 58000 }] }], champions: [{ laps: 5, name: 'Ben#0002', timeMs: 95000 }] }
-  assert.deepEqual(parseSkatingBoard(raw), raw)
+const reply = (entries: number[], champion: number | null) => ({
+  board: {
+    board: 'skate_3',
+    week: '2026-W47',
+    entries: entries.map((value, i) => ({ rank: i + 1, accountId: i + 1, name: `P${i + 1}`, value })),
+    champion: champion === null ? null : { week: '2026-W46', accountId: 9, name: 'Champ', value: champion },
+  },
 })
 
-test('a malformed skating board is refused', () => {
-  assert.throws(() => parseSkatingBoard({ week: '2026-W47', boards: [{ laps: '3', entries: [] }], champions: [] }), /lap count/)
-  assert.throws(() => parseSkatingBoard({ week: '2026-W47', boards: [{ laps: 3, entries: [{ name: 'Ana' }] }], champions: [] }), /entry/)
-  assert.throws(() => parseSkatingBoard(null), /Invalid skating board/)
+test('the three core boards become the skating lap boards, top 5 each, with last week champions', () => {
+  const board = skatingBoard([reply([21000], null), reply([58000, 59000, 60000, 61000, 62000, 63000], 57000), reply([], 95000)].map(parseCoreBoard))
+  assert.equal(board.week, '2026-W47')
+  assert.deepEqual(board.boards.map((b) => [b.laps, b.entries.length]), [[1, 1], [3, 5], [5, 0]])
+  assert.deepEqual(board.champions, [{ laps: 3, name: 'Champ', timeMs: 57000 }, { laps: 5, name: 'Champ', timeMs: 95000 }])
+})
+
+test('a malformed core board is refused', () => {
+  assert.throws(() => parseCoreBoard({ board: { week: '2026-W47', entries: [{ name: 'A' }], champion: null } }), /entry/)
+  assert.throws(() => parseCoreBoard({}), /Invalid skating board/)
+  assert.throws(() => skatingBoard([]), /count/)
 })

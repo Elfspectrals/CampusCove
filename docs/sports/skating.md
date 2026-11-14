@@ -112,15 +112,14 @@ ice, the venue or the game is a did-not-finish. Time limit 60 s + 40 s per lap. 
 
 ### Tasks, boards and sounds
 
-- Each finisher is reported with their own token: `POST /api/tasks/skate-race` (realtime)
-  `{ laps: 1 | 3 | 5, timeMs, penaltyMs }`. Counters `skate_races` (at most 5 a day) and `skate_clean_runs` (3 laps,
-  no penalty, 60 s or less, at most 5 a day). Tasks `races_skated` 10 / 50 / 150 and `skate_3_clean` 1 / 10 / 30,
-  badges only (`docs/TASKS.md`).
-- Weekly boards per lap count from the recorded matches: `GET /api/sports/skating/board` →
-  `{ week, boards: [{ laps, entries: [{ name, timeMs }] }], champions: [{ laps, name, timeMs }] }`, top 5, week Monday to
-  Sunday in Paris. `sports:skating-board-close` (Monday 00:05 Paris) stores the fastest of each lap count in
-  `skating_board_wins` (one row per week and lap count) and grants the `skating_champion` badge. The HUD shows the
-  boards while the player is in the hall and not skating or racing.
+- After `recordMatch`, each finisher is reported with their own token: `POST /api/tasks/skate-race` (realtime)
+  `{ ref, penaltyMs }`. Laravel counts it only when the stored match has `counts_for_tasks` (core anti-farm, so solo
+  races never count) and the player finished; laps and time come from the stored match. Counters `skate_races` and
+  `skate_clean_runs` (3 laps, no penalty, 60 s or less), each at most 5 a day and once per match. Tasks `races_skated`
+  10 / 50 / 150 and `skate_3_clean` 1 / 10 / 30, badges only (`docs/TASKS.md`).
+- Weekly boards are the core's `skate_1`, `skate_3` and `skate_5` (`GET /api/sports/boards/{board}`, CORE.md § Weekly
+  boards, `sports_champion` badge). The HUD shows the top 5 of each and last week's champions while the player is in
+  the hall and not skating or racing.
 - Sounds (`build_skating_sfx.py`, Earshot bank): `skate_push`, `skate_brake`, `skate_fall`, `skate_bump`,
   `skate_start`.
 - Stands: one walkable level per tier (`interior.layout.json` `levels`), a 2 m aisle through the seat rows. Sitting

@@ -54,15 +54,26 @@ final class PlayerActivityService
         $this->bumpCappedPerDay($accountId, ActionCounter::PubGames, self::PUB_GAMES_PER_DAY);
     }
 
-    public function skateRaceFinished(int $accountId, int $laps, int $timeMs, int $penaltyMs): void
+    public function skateRaceFinished(int $accountId, string $ref, int $penaltyMs): void
     {
-        $this->bumpCappedPerDay($accountId, ActionCounter::SkateRaces, self::SKATE_RACES_PER_DAY);
-        if ($laps === self::SKATE_CLEAN_LAPS && $penaltyMs === 0 && $timeMs <= self::SKATE_CLEAN_MAX_MS) {
-            $this->bumpCappedPerDay($accountId, ActionCounter::SkateCleanRuns, self::SKATE_RACES_PER_DAY);
+        $race = DB::table('sports_matches as m')
+            ->join('sports_match_players as p', 'p.match_id', '=', 'm.id')
+            ->where('m.ref', $ref)
+            ->where('m.sport', 'skating')
+            ->where('m.counts_for_tasks', true)
+            ->where('p.account_id', $accountId)
+            ->where('p.result', 'finished')
+            ->first([DB::raw("(m.settings->>'laps')::int AS laps"), 'p.time_ms']);
+        if ($race === null || $race->time_ms === null) {
+            return;
+        }
+        $this->bumpCappedPerDay($accountId, ActionCounter::SkateRaces, self::SKATE_RACES_PER_DAY, $ref);
+        if ((int) $race->laps === self::SKATE_CLEAN_LAPS && $penaltyMs === 0 && (int) $race->time_ms <= self::SKATE_CLEAN_MAX_MS) {
+            $this->bumpCappedPerDay($accountId, ActionCounter::SkateCleanRuns, self::SKATE_RACES_PER_DAY, $ref);
         }
     }
 
-    private function bumpCappedPerDay(int $accountId, ActionCounter $counter, int $cap): void
+    private function bumpCappedPerDay(int $accountId, ActionCounter $counter, int $cap, ?string $id = null): void
     {
         $today = $this->today();
         $countedToday = DB::table('account_counter_keys')
@@ -71,7 +82,7 @@ final class PlayerActivityService
             ->where('key', 'like', $today.':%')
             ->count();
         if ($countedToday < $cap) {
-            $this->counters->bumpOncePerKey($accountId, $counter, $today.':'.($countedToday + 1));
+            $this->counters->bumpOncePerKey($accountId, $counter, $today.':'.($id ?? $countedToday + 1));
         }
     }
 

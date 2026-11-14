@@ -5,7 +5,7 @@ import {
   type CosmeticColors,
 } from '../../api/characterCosmetics'
 import { buildCompositeAvatar, disposeObject3D } from '../../avatar/compositeAvatar'
-import { setAvatarEating, setAvatarPicking, setAvatarSeated, updateAvatarAnimation } from '../../avatar/glbCharacter'
+import { markAvatarSkatePush, playAvatarSkateMove, setAvatarEating, setAvatarPicking, setAvatarSeated, setAvatarSkating, updateAvatarAnimation } from '../../avatar/glbCharacter'
 import { parseCharacterLook, type CharacterLook } from '../../avatar/characterLook'
 import { createModularCharacter } from '../../avatar/modularCharacter'
 import { WEAR_SLOTS, wearSignature, type WearModels } from '../../avatar/modularCharacterLogic'
@@ -364,6 +364,16 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     if (entry) setAvatarPicking(entry.group, picking)
   }
 
+  function skatePushed(sessionId: string): void {
+    const entry = avatars.get(sessionId)
+    if (entry) markAvatarSkatePush(entry.group, Date.now())
+  }
+
+  function skateFell(sessionId: string): void {
+    const entry = avatars.get(sessionId)
+    if (entry) playAvatarSkateMove(entry.group, 'fall')
+  }
+
   function setWantedStars(sessionId: string, stars: number): void {
     if (stars > 0) wantedStarsBySession.set(sessionId, stars)
     else wantedStarsBySession.delete(sessionId)
@@ -511,6 +521,7 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
         void updateAppearance(sessionId, entry.appearance)
       }
       const group = entry.group
+      setAvatarSkating(group, entry.skating)
       if (entry.chatBubble && !entry.chatBubble.update(dt)) entry.chatBubble = null
       const tagVisible = nameTagVisible(group.position.x - deps.myPosition.x, group.position.z - deps.myPosition.z)
       entry.nameTag.setVisible(tagVisible)
@@ -542,5 +553,5 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     }
   }
 
-  return { upsert, updateAppearance, setTarget, setSeated, setPicking, setHeldTool, setRacePint, setBadges, pseudoOf, positionOf, setVoiceState, setWantedStars, players, accountOf, showAction, showChat, showPunch, showHit, remove, clear, tick }
+  return { skatePushed, skateFell, upsert, updateAppearance, setTarget, setSeated, setPicking, setHeldTool, setRacePint, setBadges, pseudoOf, positionOf, setVoiceState, setWantedStars, players, accountOf, showAction, showChat, showPunch, showHit, remove, clear, tick }
 }

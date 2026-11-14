@@ -117,6 +117,9 @@ interface AvatarAnimState {
   selector: AvatarClipSelector
   seated: boolean
   oneShot: OneShotClip | null
+  skating: boolean
+  skatePushedAt: number
+  skateMove: string | null
 }
 
 const CROSSFADE_S = 0.22
@@ -124,6 +127,11 @@ const SIT_CLIP = 'Sit'
 const PICK_CLIP = 'Pick'
 const ONE_SHOT_CLIPS = [PICK_CLIP, 'Eat', 'Drink'] as const
 type OneShotClip = (typeof ONE_SHOT_CLIPS)[number]
+export type AvatarSkateMove = 'fall' | 'stumble' | 'brake'
+const SKATE_MOVE_CLIPS: Record<AvatarSkateMove, string> = { fall: 'SkateFall', stumble: 'SkateStumble', brake: 'SkateBrake' }
+const SKATE_GLIDE_CLIP = 'SkateGlide'
+const SKATE_PUSH_CLIP = 'SkatePush'
+const SKATE_PUSH_SHOWN_MS = 900
 
 /**
  * Premium skins ship rigged with "Idle" / "Walk" / "Run" clips. Starts a mixer on the instance (no-op for
@@ -135,9 +143,9 @@ export function attachAvatarAnimations(root: THREE.Object3D): void {
   const mixer = new THREE.AnimationMixer(root)
   const actions = new Map<string, THREE.AnimationAction>()
   for (const clip of clips) actions.set(clip.name, mixer.clipAction(clip))
-  const state: AvatarAnimState = { mixer, actions, current: null, selector: new AvatarClipSelector(), seated: false, oneShot: null }
+  const state: AvatarAnimState = { mixer, actions, current: null, selector: new AvatarClipSelector(), seated: false, oneShot: null, skating: false, skatePushedAt: -Infinity, skateMove: null }
   animStateByRoot.set(root, state)
-  for (const name of ONE_SHOT_CLIPS) {
+  for (const name of [...ONE_SHOT_CLIPS, ...Object.values(SKATE_MOVE_CLIPS)]) {
     const action = actions.get(name)
     if (!action) continue
     action.setLoop(THREE.LoopOnce, 1)
@@ -145,6 +153,7 @@ export function attachAvatarAnimations(root: THREE.Object3D): void {
   }
   mixer.addEventListener('finished', (e) => {
     if (state.oneShot && e.action === actions.get(state.oneShot)) state.oneShot = null
+    if (state.skateMove && e.action === actions.get(state.skateMove)) state.skateMove = null
   })
   playClip(state, 'Idle', 1)
 }
@@ -158,6 +167,29 @@ export function setAvatarSeated(root: THREE.Object3D, seated: boolean): boolean 
   if (!state) return false
   state.seated = seated && state.actions.has(SIT_CLIP)
   return state.seated
+}
+
+export function setAvatarSkating(root: THREE.Object3D, skating: boolean): void {
+  const state = animStateByRoot.get(root)
+  if (!state) return
+  state.skating = skating && state.actions.has(SKATE_GLIDE_CLIP)
+  if (!state.skating) state.skateMove = null
+}
+
+export function markAvatarSkatePush(root: THREE.Object3D, now: number): void {
+  const state = animStateByRoot.get(root)
+  if (state?.skating) state.skatePushedAt = now
+}
+
+export function playAvatarSkateMove(root: THREE.Object3D, move: AvatarSkateMove): void {
+  const state = animStateByRoot.get(root)
+  const name = SKATE_MOVE_CLIPS[move]
+  const action = state?.actions.get(name)
+  if (!state?.skating || !action) return
+  state.skateMove = name
+  state.oneShot = null
+  if (state.current === action) action.reset().play()
+  else playClip(state, name, 1)
 }
 
 function playOneShot(state: AvatarAnimState, name: OneShotClip): void {
@@ -198,7 +230,11 @@ function playClip(state: AvatarAnimState, name: string, timeScale: number): void
 export function updateAvatarAnimation(root: THREE.Object3D, dt: number, speed: number): void {
   const state = animStateByRoot.get(root)
   if (!state) return
-  if (state.seated) {
+  if (state.skateMove) {
+    playClip(state, state.skateMove, 1)
+  } else if (state.skating) {
+    playClip(state, Date.now() - state.skatePushedAt < SKATE_PUSH_SHOWN_MS ? SKATE_PUSH_CLIP : SKATE_GLIDE_CLIP, 1)
+  } else if (state.seated) {
     playClip(state, SIT_CLIP, 1)
   } else {
     const { clip, timeScale } = state.selector.update(dt, speed)

@@ -134,7 +134,10 @@ test('a race counts laps, adds a penalty for a cut, ends and records the result'
   const record = api.calls.find((c) => c.url === '/sports/matches')?.body as { venue: string, players: unknown[] }
   assert.equal(record.venue, rink.SKATING_VENUE)
   assert.deepEqual(record.players, [{ accountId: 12, team: null, result: 'finished', place: 1, timeMs: end - goAt + 2000 }])
-  assert.deepEqual(api.calls.find((c) => c.url === '/tasks/skate-race')?.body, { laps: 1, timeMs: end - goAt + 2000, penaltyMs: 2000 })
+  const recorded = api.calls.findIndex((c) => c.url === '/sports/matches')
+  const task = api.calls.findIndex((c) => c.url === '/tasks/skate-race')
+  assert.ok(recorded >= 0 && task > recorded, 'the race task is reported after the match is recorded')
+  assert.deepEqual(api.calls[task]?.body, { ref: (api.calls[recorded]?.body as { ref: string }).ref, penaltyMs: 2000 })
 })
 
 test('leaving the ice during a race is a did-not-finish', async () => {

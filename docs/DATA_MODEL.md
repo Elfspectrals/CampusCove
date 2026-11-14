@@ -279,11 +279,6 @@ erDiagram
 Le matériel de sport est un `item_kind` `sports_gear` (pile de 1, jamais usé, pas une arme), qui tombe dans le sac de
 mort avec le cash et n'est jamais volé.
 
-Patinoire : `skating_board_wins` garde le plus rapide de chaque semaine (`week` `YYYY-Www`, Paris) et de chaque nombre de
-tours (`laps` 1, 3 ou 5, clé primaire `(week, laps)`, donc un seul champion même si la clôture repasse), avec son temps ;
-la clôture donne le badge `skating_champion`. Les classements en cours se lisent dans `sports_matches` /
-`sports_match_players`. Voir `docs/sports/skating.md`.
-
 ## 4. Monde & logement
 
 ```mermaid

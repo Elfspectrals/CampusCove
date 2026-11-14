@@ -597,7 +597,11 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('sports_error', (data: SportsErrorPayload) => deps.sports.onError(data))
     room.onMessage('sports_loans', (data: SportsLoansPayload) => applySportsLoans(data))
     room.onMessage('skate_race', (data: SkateRacePayload) => deps.skating.onRace(data))
-    room.onMessage('skate_fall', (data: SkateFallPayload) => deps.skating.onFall(data))
+    room.onMessage('skate_fall', (data: SkateFallPayload) => {
+      if (data.sessionId === room.sessionId) deps.skating.onFall(data)
+      else remotes.skateFell(data.sessionId)
+    })
+    room.onMessage('skate_pushed', (data: { sessionId: string }) => remotes.skatePushed(data.sessionId))
     room.onMessage('skate_bump', (data: SkateBumpPayload) => deps.skating.onBump(data))
     room.onMessage('skate_result', (data: SkateResultPayload) => deps.skating.onResult(data))
     room.onMessage('pickpocket_started', (data: PickpocketStartedPayload) => deps.pickpocket.onStarted(data))
