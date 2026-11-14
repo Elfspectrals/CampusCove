@@ -119,6 +119,7 @@ import {
   leaveSportsRoom,
   moveInSports,
   newSportsState,
+  onDancePress,
   onSportsCoachOpen,
   onSportsPassBuy,
   onSportsSignup,
@@ -253,6 +254,7 @@ export class CityRoom extends Room implements GameRoom {
     this.onMessage('sports_coach_open', (client, payload: ClientPayload) => onSportsCoachOpen(this, client, payload))
     this.onMessage('sports_signup', (client, payload: ClientPayload) => void onSportsSignup(this, client, payload).catch((error) => warn('sports sign-up failed', error)))
     this.onMessage('sports_signup_leave', (client) => onSportsSignupLeave(this, client))
+    this.onMessage('dance_press', (client, payload: ClientPayload) => onDancePress(this, client, payload))
     this.clock.setInterval(() => {
       try {
         tickSports(this)

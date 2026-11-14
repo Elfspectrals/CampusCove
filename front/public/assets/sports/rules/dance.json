@@ -1,9 +1,9 @@
 {
   "version": 1,
   "sport": "dance",
-  "status": "placeholder",
+  "status": "ready",
   "zone": "sports_dance",
-  "coachId": "dance_coach",
+  "coachId": "dance_studio",
   "signup": {
     "teams": false,
     "settings": [
@@ -19,7 +19,11 @@
       {
         "key": "song",
         "label": "Song",
-        "options": []
+        "options": [
+          "harbour_sway",
+          "cove_groove",
+          "night_sprint"
+        ]
       },
       {
         "key": "difficulty",
@@ -34,7 +38,59 @@
   },
   "freeEmotes": null,
   "unlockableEmotes": null,
-  "songs": [],
+  "songs": [
+    {
+      "id": "harbour_sway",
+      "name": "Harbour Sway",
+      "bpm": 90,
+      "lengthSec": 90,
+      "charts": {
+        "easy": {
+          "stepBeats": 2
+        },
+        "normal": {
+          "stepBeats": 1
+        },
+        "hard": {
+          "stepBeats": 0.5
+        }
+      }
+    },
+    {
+      "id": "cove_groove",
+      "name": "Cove Groove",
+      "bpm": 112,
+      "lengthSec": 90,
+      "charts": {
+        "easy": {
+          "stepBeats": 2
+        },
+        "normal": {
+          "stepBeats": 1
+        },
+        "hard": {
+          "stepBeats": 0.5
+        }
+      }
+    },
+    {
+      "id": "night_sprint",
+      "name": "Night Sprint",
+      "bpm": 136,
+      "lengthSec": 90,
+      "charts": {
+        "easy": {
+          "stepBeats": 2
+        },
+        "normal": {
+          "stepBeats": 1
+        },
+        "hard": {
+          "stepBeats": 0.5
+        }
+      }
+    }
+  ],
   "modes": [
     "solo",
     "team",
@@ -42,15 +98,52 @@
   ],
   "maxPlayers": 4,
   "windowsMs": {
-    "perfect": null,
-    "good": null
+    "perfect": 45,
+    "good": 110
   },
-  "syncBonus": null,
-  "allowanceMs": null,
+  "allowanceMs": 120,
+  "points": {
+    "perfect": 300,
+    "good": 100
+  },
+  "comboForDouble": 40,
+  "syncBonus": 50,
+  "leadInMs": 4000,
+  "laneCooldownMs": 80,
   "gear": [],
   "boards": null,
   "tasks": [
     "songs_danced",
     "full_combo_hard"
-  ]
+  ],
+  "venue": {
+    "coach": [
+      -376.995,
+      -200.5
+    ],
+    "playArea": {
+      "minX": -385.195,
+      "maxX": -376.195,
+      "minZ": -205.5,
+      "maxZ": -195.5
+    },
+    "spots": [
+      [
+        -380.995,
+        -203.5
+      ],
+      [
+        -380.995,
+        -201.5
+      ],
+      [
+        -380.995,
+        -199.5
+      ],
+      [
+        -380.995,
+        -197.5
+      ]
+    ]
+  }
 }

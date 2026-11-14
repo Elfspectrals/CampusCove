@@ -1,0 +1,123 @@
+{
+  "version": 1,
+  "zone": {
+    "minX": -398.0,
+    "maxX": -372.0,
+    "minZ": -210.0,
+    "maxZ": -191.0
+  },
+  "studio": {
+    "kind": "work",
+    "key": "sports_dance",
+    "name": "Cove Dance Studio",
+    "job": "sports",
+    "position": [
+      -385.0,
+      0.0,
+      -200.5
+    ],
+    "rotationY": -1.5708,
+    "door": [
+      -395.0,
+      1.25,
+      -200.5
+    ],
+    "footprint": [
+      13.0,
+      20.01
+    ],
+    "interiorOffset": [
+      0.0,
+      0.2,
+      4.595
+    ]
+  },
+  "dance": {
+    "coach": [
+      -376.995,
+      -200.5
+    ],
+    "coachPosition": [
+      -376.995,
+      0.2,
+      -200.5
+    ],
+    "coachYaw": -1.5708,
+    "playArea": {
+      "minX": -385.195,
+      "maxX": -376.195,
+      "minZ": -205.5,
+      "maxZ": -195.5
+    },
+    "spots": [
+      [
+        -380.995,
+        -203.5
+      ],
+      [
+        -380.995,
+        -201.5
+      ],
+      [
+        -380.995,
+        -199.5
+      ],
+      [
+        -380.995,
+        -197.5
+      ]
+    ]
+  },
+  "collision": [
+    {
+      "name": "COL_SportsDance_SD_Tree0",
+      "cx": -396.0,
+      "cz": -193.0,
+      "hx": 0.237,
+      "hz": 0.237,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsDance_SD_Tree1",
+      "cx": -396.0,
+      "cz": -208.0,
+      "hx": 0.263,
+      "hz": 0.263,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsDance_SD_Tree2",
+      "cx": -373.5,
+      "cz": -192.5,
+      "hx": 0.2,
+      "hz": 0.2,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsDance_SD_Bench0",
+      "cx": -396.9,
+      "cz": -204.6,
+      "hx": 0.25,
+      "hz": 0.85,
+      "hy": 0.45,
+      "cy": 0.45,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_Work_sports_dance",
+      "cx": -384.995,
+      "cz": -200.5,
+      "hx": 10.205,
+      "hz": 6.7,
+      "hy": 2.6,
+      "cy": 2.6,
+      "yaw": 0.0
+    }
+  ]
+}

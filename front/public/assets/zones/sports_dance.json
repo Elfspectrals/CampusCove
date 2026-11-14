@@ -1,0 +1,139 @@
+{
+  "version": 1,
+  "zone": "sports_dance",
+  "name": "Cove Dance Studio",
+  "props": [
+    {
+      "id": "dance_coach",
+      "kind": "npc",
+      "position": [
+        -376.995,
+        0.2,
+        -200.5
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pose": "idle",
+      "vendor": false,
+      "body": "#a8714f",
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "ponytail",
+          "color": "#2b1b14"
+        },
+        {
+          "slot": "top",
+          "key": "tank",
+          "color": "#7b3f72"
+        },
+        {
+          "slot": "bottom",
+          "key": "leggings",
+          "color": "#2e3440"
+        },
+        {
+          "slot": "shoes",
+          "key": "sneakers",
+          "color": "#f2f2f2"
+        }
+      ],
+      "coach": "dance_studio"
+    },
+    {
+      "id": "sports_dance_yoga_mats_01",
+      "kind": "item",
+      "key": "yoga_mat_rolls",
+      "code": "decor_yoga_mat_rolls",
+      "forSale": false,
+      "position": [
+        -388.9,
+        0.2,
+        -205.1
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "sports_dance_towel_rack_01",
+      "kind": "item",
+      "key": "towel_rack",
+      "code": "decor_towel_rack",
+      "forSale": false,
+      "position": [
+        -388.9,
+        0.2,
+        -195.9
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "sports_dance_bean_bag_01",
+      "kind": "item",
+      "key": "bean_bag",
+      "code": "decor_bean_bag",
+      "forSale": false,
+      "position": [
+        -387.6,
+        0.2,
+        -203.5
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "sports_dance_bean_bag_02",
+      "kind": "item",
+      "key": "bean_bag",
+      "code": "decor_bean_bag",
+      "forSale": false,
+      "position": [
+        -387.6,
+        0.2,
+        -197.5
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "sports_dance_trash_bin_01",
+      "kind": "item",
+      "key": "trash_bin",
+      "code": "decor_trash_bin",
+      "forSale": false,
+      "position": [
+        -394.1,
+        0.2,
+        -197.1
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    }
+  ],
+  "areas": []
+}

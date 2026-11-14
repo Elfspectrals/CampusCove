@@ -116,13 +116,16 @@ interface AvatarAnimState {
   current: THREE.AnimationAction | null
   selector: AvatarClipSelector
   seated: boolean
+  dancing: number | null
   oneShot: OneShotClip | null
 }
 
 const CROSSFADE_S = 0.22
 const SIT_CLIP = 'Sit'
 const PICK_CLIP = 'Pick'
-const ONE_SHOT_CLIPS = [PICK_CLIP, 'Eat', 'Drink'] as const
+const DANCE_CLIP = 'Dance'
+const STUMBLE_CLIP = 'Stumble'
+const ONE_SHOT_CLIPS = [PICK_CLIP, 'Eat', 'Drink', STUMBLE_CLIP] as const
 type OneShotClip = (typeof ONE_SHOT_CLIPS)[number]
 
 /**
@@ -135,7 +138,7 @@ export function attachAvatarAnimations(root: THREE.Object3D): void {
   const mixer = new THREE.AnimationMixer(root)
   const actions = new Map<string, THREE.AnimationAction>()
   for (const clip of clips) actions.set(clip.name, mixer.clipAction(clip))
-  const state: AvatarAnimState = { mixer, actions, current: null, selector: new AvatarClipSelector(), seated: false, oneShot: null }
+  const state: AvatarAnimState = { mixer, actions, current: null, selector: new AvatarClipSelector(), seated: false, dancing: null, oneShot: null }
   animStateByRoot.set(root, state)
   for (const name of ONE_SHOT_CLIPS) {
     const action = actions.get(name)
@@ -158,6 +161,18 @@ export function setAvatarSeated(root: THREE.Object3D, seated: boolean): boolean 
   if (!state) return false
   state.seated = seated && state.actions.has(SIT_CLIP)
   return state.seated
+}
+
+export function setAvatarDancing(root: THREE.Object3D, timeScale: number | null): void {
+  const state = animStateByRoot.get(root)
+  if (!state || !state.actions.has(DANCE_CLIP)) return
+  state.dancing = timeScale
+  if (timeScale === null && state.oneShot === STUMBLE_CLIP) state.oneShot = null
+}
+
+export function setAvatarStumbling(root: THREE.Object3D): void {
+  const state = animStateByRoot.get(root)
+  if (state?.dancing != null) playOneShot(state, STUMBLE_CLIP)
 }
 
 function playOneShot(state: AvatarAnimState, name: OneShotClip): void {
@@ -200,6 +215,8 @@ export function updateAvatarAnimation(root: THREE.Object3D, dt: number, speed: n
   if (!state) return
   if (state.seated) {
     playClip(state, SIT_CLIP, 1)
+  } else if (state.dancing !== null) {
+    if (state.oneShot !== STUMBLE_CLIP) playClip(state, DANCE_CLIP, state.dancing)
   } else {
     const { clip, timeScale } = state.selector.update(dt, speed)
     if (state.oneShot !== PICK_CLIP && clip !== 'Idle') state.oneShot = null

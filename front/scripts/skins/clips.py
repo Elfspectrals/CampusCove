@@ -133,6 +133,73 @@ def pose_drink(extras=None):
             extras(ph, P, 0.0, 1.0)
     return f
 
+DANCE_FRAMES = 60
+DANCE_STEP = 0.18
+DANCE_SWING = 0.15
+DANCE_LIFT = 0.06
+DANCE_STEPS = {'.R': ((0.25, 0.0, -DANCE_STEP), (1.0, -DANCE_STEP, 0.0)),
+               '.L': ((0.5, 0.0, -DANCE_STEP), (0.75, -DANCE_STEP, 0.0))}
+
+def _dance_foot(side, ph):
+    for land, x0, x1 in DANCE_STEPS[side]:
+        if land - DANCE_SWING <= ph <= land:
+            u = (ph - land + DANCE_SWING) / DANCE_SWING
+            return x0 + (x1 - x0) * min_jerk(u), DANCE_LIFT * S_(math.pi * u), S_(math.pi * u)
+    x = DANCE_STEPS[side][0][2] if DANCE_STEPS[side][0][0] < ph < DANCE_STEPS[side][1][0] - DANCE_SWING else 0.0
+    return x, 0.0, 0.0
+
+def _dance_frame(ph, P):
+    C = math.cos
+    beat = C(2 * math.pi * 4 * ph)
+    bar = C(2 * math.pi * 2 * ph)
+    feet = {side: _dance_foot(side, ph) for side in ('.L', '.R')}
+    hike = feet['.R'][2] - feet['.L'][2]
+    P.move('Hips', (feet['.L'][0] + feet['.R'][0]) / 2, 0, -0.045 - 0.025 * beat)
+    P.rx('Hips', 3); P.ry('Hips', 6 * hike)
+    P.rx('Spine', 2 + 2 * beat); P.ry('Spine', -4 * hike)
+    P.rx('Chest', 2); P.rz('Chest', 8 * bar)
+    P.rx('Head', -2 + 3 * beat); P.rz('Head', -4 * bar)
+    lift = 6 * (1 - C(2 * math.pi * ph))
+    for side, sgn, _ in SIDES:
+        P.rx('UpperArm' + side, -22 + sgn * 32 * bar)
+        P.ry('UpperArm' + side, -sgn * (8 + lift))
+        P.rx('LowerArm' + side, -(78 + 12 * beat))
+        P.rx('Hand' + side, -6 + 4 * beat)
+        rest = P.arm.data.bones['Foot' + side].head_local
+        x, z, _ = feet[side]
+        leg_ik(P, side, (rest.x + x, rest.y, rest.z + z))
+
+def pose_dance(extras=None):
+    def f(ph, P):
+        _dance_frame(ph, P)
+        if extras:
+            extras(ph, P, 0.35, 4)
+    return f
+
+def pose_stumble(extras=None):
+    trip = {("Hips", "mz"): -0.07, ("Hips", "mx"): 0.05, ("Hips", "y"): 6, ("Spine", "x"): 6, ("Chest", "x"): 10,
+            ("Head", "x"): -10, ("UpperArm.L", "y"): -45, ("UpperArm.L", "x"): 10, ("LowerArm.L", "x"): 25,
+            ("UpperArm.R", "y"): 38, ("UpperArm.R", "x"): 35, ("LowerArm.R", "x"): 45}
+    catch = {("Hips", "mz"): -0.05, ("Hips", "mx"): -0.035, ("Hips", "y"): -5, ("Spine", "x"): -2, ("Chest", "x"): -7,
+             ("Chest", "z"): 8, ("Head", "x"): 6, ("Head", "z"): -5, ("UpperArm.L", "y"): -25, ("UpperArm.L", "x"): 15,
+             ("UpperArm.R", "y"): 65, ("UpperArm.R", "x"): 30, ("LowerArm.R", "x"): 50}
+    settle = {("Hips", "mz"): -0.025, ("Hips", "mx"): 0.012, ("Hips", "y"): 2, ("Chest", "x"): 3, ("Chest", "z"): -3,
+              ("UpperArm.L", "y"): -10, ("UpperArm.R", "y"): 15}
+    pose_at = key_poses([(0.0, {}), (0.15, trip), (0.38, catch), (0.62, settle), (1.0, {})])
+
+    def f(ph, P):
+        for (bone, axis), value in pose_at(ph).items():
+            if axis == "mx":
+                P.move(bone, value, 0, 0)
+            elif axis == "mz":
+                P.move(bone, 0, 0, value)
+            else:
+                getattr(P, 'r' + axis)(bone, value)
+        _dance_frame(0.0, P)
+        if extras:
+            extras(ph, P, 0.35, 4)
+    return f
+
 def make_clips(extras):
     return {
         "Idle": (120, gait_idle(None, extras)),
@@ -141,4 +208,6 @@ def make_clips(extras):
         "Sit": (120, pose_sit(extras)),
         "Eat": (30, pose_eat(extras)),
         "Drink": (30, pose_drink(extras)),
+        "Dance": (DANCE_FRAMES, pose_dance(extras)),
+        "Stumble": (18, pose_stumble(extras)),
     }

@@ -35,6 +35,7 @@ import GamePubSecretDialog from '../components/game/GamePubSecretDialog.vue'
 import GamePoliceLicenceDialog from '../components/game/GamePoliceLicenceDialog.vue'
 import GameSportsPassDesk from '../components/game/GameSportsPassDesk.vue'
 import GameSportsSignup from '../components/game/GameSportsSignup.vue'
+import GameDance from '../components/game/GameDance.vue'
 import GameChat from '../components/game/GameChat.vue'
 import GameDrunkEffects from '../components/game/GameDrunkEffects.vue'
 import GameDrinkFast from '../components/game/GameDrinkFast.vue'
@@ -101,6 +102,7 @@ import { usePolice } from '../composables/game/usePolice'
 import { useSportsPass } from '../composables/game/useSportsPass'
 import { passValid } from '../game/sports/sportsPass'
 import { useSportsSignup } from '../composables/game/useSportsSignup'
+import { useDance } from '../composables/game/useDance'
 import { usePickpocket } from '../composables/game/usePickpocket'
 import { useStorageAuction } from '../composables/game/useStorageAuction'
 import { useStorageWarehouse } from '../composables/game/useStorageWarehouse'
@@ -855,6 +857,8 @@ const { open: sportsPassOpen, state: sportsPassState, buying: sportsPassBuying, 
 watch(sportsPassOpen, (open) => {
   if (!open && !document.pointerLockElement) requestPointerLock()
 })
+const dance = useDance({ gameRoomRef, isMoveKey: (action, code) => matches(action, code) })
+const { start: danceStart, result: danceResult, dancing, notes: danceNotes, songMs: danceSongMs, board: danceBoard, mine: danceMine, teamScore: danceTeamScore, judgementShown: danceJudgement, litLanes: danceLitLanes } = dance
 const sportsSignup = useSportsSignup({
   myPosition,
   getCamera,
@@ -1466,6 +1470,7 @@ function handleExtraKeyDown(e: KeyboardEvent): boolean {
   if (watchMenuOpen.value && !isWalkWithWatchKey(e.code)) return true
   // the bouncer's text field and the pub games (Space holds the pint) take the keyboard too
   if (pubSecretOpen.value || pubGamesOpen.value) return true
+  if (dance.onKeyDown(e)) return true
   if (pubQuiz.onKeyDown(e)) return true
   // Y / N answer a Drink Fast challenge
   if (pubChallenge.onKeyDown(e)) return true
@@ -1562,7 +1567,7 @@ const movement = useGameMovement({
     return pointerLocked.value && runUseOrPunch(mouseButtonCode(e.button), false, e.shiftKey)
   },
   speedFactor: () => survival.speedFactor() * intoxication.walkFactor() * (adminWatch.hasMyPower('speed') ? SPEED_POWER_FACTOR : 1),
-  movementLocked: () => seats.seated.value || townBus.riding.value || police.cuffedBy.value !== null || adminWatch.hasMyPower('freeze'),
+  movementLocked: () => seats.seated.value || townBus.riding.value || police.cuffedBy.value !== null || adminWatch.hasMyPower('freeze') || dancing.value,
   flying: () => adminWatch.hasMyPower('fly'),
   afterCameraPlaced: intoxication.applyToCamera,
   trySpendJump: () => adminWatch.hasMyPower('endless_stamina') || punch.trySpendJump(),
@@ -1605,6 +1610,7 @@ const movement = useGameMovement({
     farm.tick()
     police.tick()
     sportsSignup.tick()
+    dance.tick()
     if (!doorSigns.group.parent) getScene()?.add(doorSigns.group)
     minimap.tick()
     gps.tick()
@@ -1749,6 +1755,7 @@ const realtime = useGameRealtime({
     onError: sportsSignup.handlers.onError,
     onRoomJoined: sportsSignup.handlers.onRoomJoined,
   },
+  dance: dance.handlers,
   pickpocket: pickpocket.handlers,
   storageAuction: {
     ...storageAuction.handlers,
@@ -2331,6 +2338,21 @@ const crosshairClass = computed(() => {
       :error="sportsPassError"
       @buy="sportsPass.buy"
       @close="sportsPass.close"
+    />
+    <GameDance
+      v-if="danceStart"
+      :mode="danceStart.mode"
+      :song="danceStart.song"
+      :dancing="dancing"
+      :song-ms="danceSongMs"
+      :notes="danceNotes"
+      :board="danceBoard"
+      :mine="danceMine"
+      :team-score="danceTeamScore"
+      :judgement="danceJudgement"
+      :lit-lanes="danceLitLanes"
+      :result="danceResult"
+      :reduced-effects="reducedEffects"
     />
     <GameSportsSignup
       v-if="sportsSignupOpen"
