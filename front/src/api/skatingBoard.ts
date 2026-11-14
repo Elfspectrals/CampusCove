@@ -1,10 +1,10 @@
 import { apiRequest, isRecord } from './http.ts'
 import { getStoredAuth } from './session.ts'
 
-export const SKATING_BOARD_LAPS = [1, 3, 5] as const
+const SKATING_BOARD_LAPS = [1, 3, 5] as const
 const SHOWN_ENTRIES = 5
 
-export interface SkatingBoardEntry {
+interface SkatingBoardEntry {
   name: string
   timeMs: number
 }

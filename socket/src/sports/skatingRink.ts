@@ -29,6 +29,7 @@ const SKATE_SPEED_MARGIN = 1.25
 const STILL_EPSILON_M = 0.3
 const MIN_PUSH_INTERVAL_MS = 150
 const SKATES_RECHECK_MS = 5000
+const BRAKE_SHOWN_ABOVE = 1
 
 export type SkatingRejection = 'no_skates' | 'skate_start' | 'skate_fallen' | 'too_fast'
 
@@ -163,17 +164,24 @@ export function onSkatePush(room: GameRoom, client: GameClient, now = Date.now()
   if (skater.owns !== true || now < skater.fallenUntil) return
   const speed = speedOf(skater, now)
   if (speed.lastPushAt !== null && now - speed.lastPushAt < MIN_PUSH_INTERVAL_MS) return
-  applyPush(rules.skate, speed, now)
+  relayMove(room, player, applyPush(rules.skate, speed, now) === 'early' ? 'stumble' : 'push')
+}
+
+export type SkateMove = 'push' | 'brake' | 'stumble'
+
+function relayMove(room: GameRoom, player: Player, move: SkateMove): void {
   room.forEachClient((c) => {
     const listener = room.players.get(c.sessionId)
-    if (listener && inZone(listener.x, listener.z)) c.send('skate_pushed', { sessionId: player.sessionId })
-  }, client)
+    if (c.sessionId !== player.sessionId && listener && inZone(listener.x, listener.z)) c.send('skate_move', { sessionId: player.sessionId, move })
+  })
 }
 
 export function onSkateBrake(room: GameRoom, client: GameClient, payload: ClientPayload, now = Date.now()): void {
   const player = room.players.get(client.sessionId)
   if (!rules || !player || typeof payload?.on !== 'boolean') return
-  setBraking(rules.skate, speedOf(skaterOf(player), now), payload.on, now)
+  const speed = speedOf(skaterOf(player), now)
+  setBraking(rules.skate, speed, payload.on, now)
+  if (payload.on && speed.speed > BRAKE_SHOWN_ABOVE && onIce(player.x, player.z)) relayMove(room, player, 'brake')
 }
 
 function raceView(race: Race, now: number) {
@@ -262,6 +270,7 @@ function bump(room: GameRoom, player: Player, skater: Skater, dirX: number, dirZ
   speed.speed *= 1 - r.crash.bumpSpeedLoss
   skater.acceptedDistance -= r.crash.bumpDistanceM
   clientOf(room, player.sessionId)?.send('skate_bump', { sessionId: player.sessionId, dirX, dirZ, distance: r.crash.bumpDistanceM, serverNow: now })
+  relayMove(room, player, 'stumble')
 }
 
 function collide(room: GameRoom, a: Player, b: Player, now: number): void {

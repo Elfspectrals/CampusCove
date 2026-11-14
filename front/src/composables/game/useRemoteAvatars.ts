@@ -5,7 +5,7 @@ import {
   type CosmeticColors,
 } from '../../api/characterCosmetics'
 import { buildCompositeAvatar, disposeObject3D } from '../../avatar/compositeAvatar'
-import { markAvatarSkatePush, playAvatarSkateMove, setAvatarEating, setAvatarPicking, setAvatarSeated, setAvatarSkating, updateAvatarAnimation } from '../../avatar/glbCharacter'
+import { markAvatarSkatePush, playAvatarSkateMove, type AvatarSkateMove, setAvatarEating, setAvatarPicking, setAvatarSeated, setAvatarSkating, updateAvatarAnimation } from '../../avatar/glbCharacter'
 import { parseCharacterLook, type CharacterLook } from '../../avatar/characterLook'
 import { createModularCharacter } from '../../avatar/modularCharacter'
 import { WEAR_SLOTS, wearSignature, type WearModels } from '../../avatar/modularCharacterLogic'
@@ -369,9 +369,9 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     if (entry) markAvatarSkatePush(entry.group, Date.now())
   }
 
-  function skateFell(sessionId: string): void {
+  function skateMove(sessionId: string, move: AvatarSkateMove): void {
     const entry = avatars.get(sessionId)
-    if (entry) playAvatarSkateMove(entry.group, 'fall')
+    if (entry) playAvatarSkateMove(entry.group, move)
   }
 
   function setWantedStars(sessionId: string, stars: number): void {
@@ -553,5 +553,5 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     }
   }
 
-  return { skatePushed, skateFell, upsert, updateAppearance, setTarget, setSeated, setPicking, setHeldTool, setRacePint, setBadges, pseudoOf, positionOf, setVoiceState, setWantedStars, players, accountOf, showAction, showChat, showPunch, showHit, remove, clear, tick }
+  return { skatePushed, skateMove, upsert, updateAppearance, setTarget, setSeated, setPicking, setHeldTool, setRacePint, setBadges, pseudoOf, positionOf, setVoiceState, setWantedStars, players, accountOf, showAction, showChat, showPunch, showHit, remove, clear, tick }
 }

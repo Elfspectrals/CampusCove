@@ -108,6 +108,7 @@ ice, the venue or the game is a did-not-finish. Time limit 60 s + 40 s per lap. 
 | `skate_race` | server → players in the venue and racers | `{ venue, phase: 'countdown' \| 'racing', laps, goAt, serverNow, racers: [{ sessionId, name, lap, penaltyMs, finishedMs: number \| null, dnf }] }`, at kick-off, at the start and on each change |
 | `skate_fall` | server → same | `{ sessionId, until, serverNow }` |
 | `skate_bump` | server → the pushed skater | `{ sessionId, dirX, dirZ, distance, serverNow }` (the front applies it as a knockback) |
+| `skate_move` | server → the other players in the venue | `{ sessionId, move: 'push' \| 'brake' \| 'stumble' }`: a push (`stumble` when it came too early), a brake above 1 m/s, or a bump; drives the other players' avatar clips |
 | `skate_result` | server → same | `{ venue, laps, results: [{ sessionId, name, place: number \| null, timeMs: number \| null, penaltyMs, dnf }] }` |
 
 ### Tasks, boards and sounds
@@ -123,4 +124,5 @@ ice, the venue or the game is a did-not-finish. Time limit 60 s + 40 s per lap. 
 - Sounds (`build_skating_sfx.py`, Earshot bank): `skate_push`, `skate_brake`, `skate_fall`, `skate_bump`,
   `skate_start`.
 - Stands: one walkable level per tier (`interior.layout.json` `levels`), a 2 m aisle through the seat rows. Sitting
-  is not built (the seat system is the pub's only).
+  is not built on purpose (decided 2026-11-14): the seat system belongs to the pub (socket `pub.ts`, front seats) and
+  sharing it is a change of its own; spectators stand on the tiers.
