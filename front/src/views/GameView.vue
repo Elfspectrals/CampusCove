@@ -35,6 +35,7 @@ import GamePubSecretDialog from '../components/game/GamePubSecretDialog.vue'
 import GamePoliceLicenceDialog from '../components/game/GamePoliceLicenceDialog.vue'
 import GameSportsPassDesk from '../components/game/GameSportsPassDesk.vue'
 import GameSportsSignup from '../components/game/GameSportsSignup.vue'
+import GameBoxingHud from '../components/game/GameBoxingHud.vue'
 import GameChat from '../components/game/GameChat.vue'
 import GameDrunkEffects from '../components/game/GameDrunkEffects.vue'
 import GameDrinkFast from '../components/game/GameDrinkFast.vue'
@@ -101,6 +102,7 @@ import { usePolice } from '../composables/game/usePolice'
 import { useSportsPass } from '../composables/game/useSportsPass'
 import { passValid } from '../game/sports/sportsPass'
 import { useSportsSignup } from '../composables/game/useSportsSignup'
+import { useBoxing } from '../composables/game/useBoxing'
 import { usePickpocket } from '../composables/game/usePickpocket'
 import { useStorageAuction } from '../composables/game/useStorageAuction'
 import { useStorageWarehouse } from '../composables/game/useStorageWarehouse'
@@ -875,6 +877,17 @@ const { open: sportsSignupOpen, choices: sportsVenueChoices, canPickVenue: sport
 watch(sportsSignupOpen, (open) => {
   if (!open && !document.pointerLockElement) requestPointerLock()
 })
+const BOXING_HIT_STOP_S = 0.08
+const boxing = useBoxing({
+  gameRoomRef,
+  pointerLocked: () => pointerLocked.value,
+  punchArms: () => arms?.punch(),
+  shakeOnHit: () => arms?.hitStop(BOXING_HIT_STOP_S),
+  play: (sound) => sfx.play(sound),
+  say: (text) => survival.say(text),
+  tiredText: () => t('sports.boxing.tired'),
+})
+const { view: boxingView, fighting: boxingFighting } = boxing
 const PICKPOCKET_ERROR_KEYS = new Set([
   'pickpocket_on_duty',
   'pickpocket_jailed',
@@ -1482,6 +1495,7 @@ function handleExtraKeyDown(e: KeyboardEvent): boolean {
   if (houseKeys.onKeyDown(e)) return true
   if (survival.onKeyDown(e)) return true
   if (pickpocket.onKeyDown(e)) return true
+  if (boxing.onKeyDown(e)) return true
   if (runUseOrPunch(e.code, e.repeat, e.shiftKey)) return true
   if (matches('characterEditor', e.code) && !e.repeat) {
     void openCharacterEditor()
@@ -1559,6 +1573,7 @@ const movement = useGameMovement({
       requestPointerLock()
       return true
     }
+    if (boxing.onPointerDown(e)) return true
     return pointerLocked.value && runUseOrPunch(mouseButtonCode(e.button), false, e.shiftKey)
   },
   speedFactor: () => survival.speedFactor() * intoxication.walkFactor() * (adminWatch.hasMyPower('speed') ? SPEED_POWER_FACTOR : 1),
@@ -1749,6 +1764,7 @@ const realtime = useGameRealtime({
     onError: sportsSignup.handlers.onError,
     onRoomJoined: sportsSignup.handlers.onRoomJoined,
   },
+  boxing: boxing.handlers,
   pickpocket: pickpocket.handlers,
   storageAuction: {
     ...storageAuction.handlers,
@@ -2352,6 +2368,7 @@ const crosshairClass = computed(() => {
       @leave="sportsSignup.leave"
       @close="sportsSignup.close"
     />
+    <GameBoxingHud v-if="boxingView" :view="boxingView" :fighting="boxingFighting" :guard-key="actionKeyLabels('cook')[0] ?? ''" />
     <GamePubSecretDialog
       v-if="pubSecretOpen"
       :greeting="pub.bouncerGreeting"
