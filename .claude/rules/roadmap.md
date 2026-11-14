@@ -276,6 +276,10 @@ Decision (2026-11-13): an admin, in the game, gives money (cash or bank) or item
 - [done] Socket messages calling them for the admin (`admin_items`, `admin_give_money`, `admin_give_item`, `admin_market`, `admin_taxes`): the target's account comes from the socket, one ref per action, the receiver's cash, bank or inventory refreshed, a fresh `market_sync` after a market change, the housing units reloaded after taxes.
 - [done] Front admin panel (`GameAdminPanel.vue`), opened from the watch's Admin app: target, money, searchable items, events. Playtested 2026-11-13 as an admin on themself: 500 cash, an apple (in the hotbar at once), market open for 10 minutes (town banner and `market_sync`). Giving to a second player was not played.
 
+Decision (2026-11-14, from the mockups `docs/mockups/admin-watch.html`, directions A, B, C and D kept, E dropped): the watch's Admin app does everything from the keyboard, and the panel becomes a console docked on the right for mouse use and a log.
+
+- [doing] Admin watch redesign (branch `feat/admin-watch-redesign`): four tiles (Players, Places, Events, Console); a player sheet with cash, bank and wanted stars (`GET /api/admin/game/wallets`, socket `admin_player`), go to the player (new `admin_goto`) or bring them, give money on a stepper with quick amounts or an item searched by typing; the last place used first; event states (quiz, storage sale, market) and Enter held 1 s for taxes and closing the market; an ADMIN badge on the watch; the console docked on the right with tabs, quick amounts and the last 5 results, the game keeps running behind it (a click on the game takes the mouse back). Built, not played in game.
+
 ## Later
 
 - Fishing as the second job (reuse the darts power meter or the Drink Fast balance bar; rod and fish models exist).

@@ -1,7 +1,14 @@
 import { ref, type ShallowRef } from 'vue'
 import type { Room } from '@colyseus/sdk'
 import { applyCachedBalanceAfterPurchase } from '../../api/session'
-import type { AdminGrantedPayload, AdminItem, AdminItemsPayload, AdminMenuPayload, AdminResultPayload, AdminSummonedPayload, AdminWallet } from '../../types/gameRealtime'
+import type { AdminGrantedPayload, AdminItem, AdminItemsPayload, AdminMenuPayload, AdminPlayerPayload, AdminResultPayload, AdminSummonedPayload, AdminWallet } from '../../types/gameRealtime'
+
+const LOG_SIZE = 5
+
+export interface AdminLogEntry {
+  at: number
+  result: AdminResultPayload
+}
 
 export interface AdminWatchDeps {
   gameRoomRef: ShallowRef<Room | null>
@@ -21,6 +28,9 @@ export function useAdminWatch(deps: AdminWatchDeps) {
   const panelOpen = ref(false)
   const items = ref<AdminItem[] | null>(null)
   const result = ref<AdminResultPayload | null>(null)
+  const log = ref<AdminLogEntry[]>([])
+  const sheet = ref<AdminPlayerPayload | null>(null)
+  const recentPlace = ref<string | null>(null)
 
   const send = (type: string, payload?: unknown) => deps.gameRoomRef.value?.send(type, payload)
 
@@ -33,7 +43,23 @@ export function useAdminWatch(deps: AdminWatchDeps) {
 
   function teleport(key: string): void {
     error.value = null
+    recentPlace.value = key
     send('admin_teleport', { key })
+  }
+
+  function goTo(sessionId: string): void {
+    error.value = null
+    send('admin_goto', { sessionId })
+  }
+
+  function loadPlayer(sessionId: string): void {
+    error.value = null
+    sheet.value = null
+    send('admin_player', { sessionId })
+  }
+
+  function loadItems(): void {
+    if (items.value === null) send('admin_items')
   }
 
   function summon(sessionId: string): void {
@@ -52,7 +78,7 @@ export function useAdminWatch(deps: AdminWatchDeps) {
     panelOpen.value = true
     result.value = null
     load()
-    if (items.value === null) send('admin_items')
+    loadItems()
   }
 
   function closePanel(): void {
@@ -70,7 +96,10 @@ export function useAdminWatch(deps: AdminWatchDeps) {
   const openMarket = (minutes: number) => act('admin_market', { action: 'open', minutes })
   const closeMarket = () => act('admin_market', { action: 'close' })
   const collectTaxes = () => act('admin_taxes')
-  const startQuiz = () => act('admin_quiz_start')
+  function startQuiz(): void {
+    act('admin_quiz_start')
+    load()
+  }
 
   return {
     isAdmin,
@@ -79,6 +108,12 @@ export function useAdminWatch(deps: AdminWatchDeps) {
     load,
     teleport,
     summon,
+    goTo,
+    loadPlayer,
+    loadItems,
+    sheet,
+    log,
+    recentPlace,
     startStorageSale,
     panelOpen,
     items,
@@ -99,6 +134,7 @@ export function useAdminWatch(deps: AdminWatchDeps) {
         menu.value = {
           destinations: Array.isArray(data.destinations) ? data.destinations : [],
           players: Array.isArray(data.players) ? data.players : [],
+          events: data.events,
         }
       },
       onError: (data: { message: string }) => {
@@ -110,6 +146,12 @@ export function useAdminWatch(deps: AdminWatchDeps) {
       },
       onResult: (data: AdminResultPayload) => {
         result.value = data
+        log.value = [{ at: Date.now(), result: data }, ...log.value].slice(0, LOG_SIZE)
+        if (data.ok && data.action === 'money' && sheet.value?.sessionId === data.sessionId) sheet.value = { ...sheet.value, cash: data.cash, bank: data.bank }
+        if (data.ok && (data.action === 'market_open' || data.action === 'market_close')) load()
+      },
+      onPlayer: (data: AdminPlayerPayload) => {
+        sheet.value = data
       },
       onGranted: (data: AdminGrantedPayload) => {
         if (data.kind === 'money') {

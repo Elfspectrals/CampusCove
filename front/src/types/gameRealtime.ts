@@ -101,7 +101,28 @@ export interface TeleportedPayload {
 /** 'admin_menu': what the watch's Admin app lists (answer to 'admin_open'). */
 export interface AdminMenuPayload {
   destinations: { key: string; name: string }[]
-  players: { sessionId: string; pseudo: string; distance: number }[]
+  players: AdminMenuPlayer[]
+  events: AdminEvents
+}
+
+export interface AdminMenuPlayer {
+  sessionId: string
+  pseudo: string
+  distance: number
+  stars: number
+}
+
+export interface AdminEvents {
+  quiz: { state: 'scheduled' | 'registration' | 'running'; startsAt: number }
+  storage: { state: 'scheduled'; startsAt: number } | { state: 'running'; index: number; count: number }
+  market: { open: boolean; opensAt: string; closesAt: string } | null
+}
+
+export interface AdminPlayerPayload {
+  sessionId: string
+  cash: number
+  bank: number
+  stars: number
 }
 
 /** 'admin_summoned': an admin brought this player next to them. */
@@ -122,7 +143,7 @@ export interface AdminItemsPayload {
 }
 
 export type AdminResultPayload =
-  | { action: 'money'; ok: true; pseudo: string; wallet: AdminWallet; amount: number }
+  | { action: 'money'; ok: true; sessionId: string; pseudo: string; wallet: AdminWallet; amount: number; cash: number; bank: number }
   | { action: 'item'; ok: true; pseudo: string; code: string; quantity: number }
   | { action: 'market_open'; ok: true; closesAt: string }
   | { action: 'market_close'; ok: true; returned: number }

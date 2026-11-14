@@ -153,6 +153,7 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
         Route::post('/market/lots/{id}/buy', [MarketController::class, 'buy'])->whereNumber('id');
         Route::middleware('admin')->prefix('admin/game')->group(function () {
             Route::get('/items', [AdminGameController::class, 'items']);
+            Route::get('/wallets', [AdminGameController::class, 'wallets']);
             Route::post('/money', [AdminGameController::class, 'grantMoney']);
             Route::post('/items', [AdminGameController::class, 'grantItem']);
             Route::post('/taxes/collect', [AdminGameController::class, 'collectTaxes']);

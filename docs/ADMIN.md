@@ -26,6 +26,14 @@ An item bought with gems (real money) is never listed nor given (`ItemDef::scope
 { "items": [ { "code": "farm_apple", "name": "Apple", "kind": "consumable" } ] }
 ```
 
+### `GET /api/admin/game/wallets?account_id=<id>`
+
+The cash and bank of one account, for the player sheet of the watch. `account_id` is an existing, not deleted account (422 otherwise).
+
+```json
+{ "cash": 85, "bank": 1240 }
+```
+
 ### `POST /api/admin/game/money`
 
 | Field | Type | Rule |
@@ -87,12 +95,17 @@ When an opening ends, the scheduled `market:close` (every minute) returns the lo
 
 ## Socket messages
 
-The panel (`front/src/components/game/GameAdminPanel.vue`, opened from the watch's Admin app) talks only to the socket (`socket/src/admin.ts`). A message from a player who is not an admin (`is_admin` at join) is ignored, with no answer. Every admin message shares the 500 ms admin cooldown; one inside it is dropped.
+The watch's Admin app (`WatchAdminApp.vue`, keyboard only) and the console docked on the right (`GameAdminPanel.vue`, opened from the app's Console tile, mouse) talk only to the socket (`socket/src/admin.ts`). A message from a player who is not an admin (`is_admin` at join) is ignored, with no answer. Every admin message shares the 500 ms admin cooldown; one inside it is dropped.
 
 ### Client to socket
 
 | Message | Payload | Rule |
 |---|---|---|
+| `admin_open` | none | answered by `admin_menu` |
+| `admin_teleport` | `{ key: string }` | a listed place |
+| `admin_summon` | `{ sessionId: string }` | the player lands 1.5 m in front of the admin, facing them; refused while they are at the clinic |
+| `admin_goto` | `{ sessionId: string }` | the admin lands 1.5 m in front of the player, facing them; not the admin's own id |
+| `admin_player` | `{ sessionId: string }` | answered by `admin_player`; no admin cooldown (a read) |
 | `admin_items` | none | answered by `admin_items` |
 | `admin_give_money` | `{ sessionId: string, wallet: 'cash' \| 'bank', amount: integer }` | `amount` 1 to 100,000 |
 | `admin_give_item` | `{ sessionId: string, code: string, quantity: integer }` | `code` `[A-Za-z0-9_]{1,64}`, `quantity` 1 to 999 |
@@ -107,8 +120,10 @@ The panel (`front/src/components/game/GameAdminPanel.vue`, opened from the watch
 
 | Message | To | Payload |
 |---|---|---|
+| `admin_menu` | the admin | `{ destinations: [{ key, name }], players: [{ sessionId, pseudo, distance, stars }], events }`, `events` = `{ quiz: { state: 'scheduled' \| 'registration' \| 'running', startsAt }, storage: { state: 'scheduled', startsAt } \| { state: 'running', index, count }, market: { open, opensAt, closesAt } \| null }` (times in ms, market times ISO) |
+| `admin_player` | the admin | `{ sessionId, cash, bank, stars }` (cash and bank from `GET /api/admin/game/wallets`) |
 | `admin_items` | the admin | `{ items: [{ code, name, kind }] }` |
-| `admin_result` | the admin | success: `{ action: 'money', ok: true, pseudo, wallet, amount }`, `{ action: 'item', ok: true, pseudo, code, quantity }`, `{ action: 'market_open', ok: true, closesAt }`, `{ action: 'market_close', ok: true, returned }`, `{ action: 'taxes', ok: true, charged, seized }`; failure: `{ action, ok: false, message }` (`action` also `items`), `message` from Laravel when it refused |
+| `admin_result` | the admin | success: `{ action: 'money', ok: true, sessionId, pseudo, wallet, amount, cash, bank }` (the receiver's new balances), `{ action: 'item', ok: true, pseudo, code, quantity }`, `{ action: 'market_open', ok: true, closesAt }`, `{ action: 'market_close', ok: true, returned }`, `{ action: 'taxes', ok: true, charged, seized }`; failure: `{ action, ok: false, message }` (`action` also `items`), `message` from Laravel when it refused |
 | `admin_granted` | the receiver (the admin too, when they gave to themself) | `{ kind: 'money', byPseudo, wallet, amount, cash, bank }` (the receiver's new balances) or `{ kind: 'item', byPseudo, code, quantity }` (the receiver reloads their inventory) |
 | `market_sync` | everyone | sent after a market open or close (the socket reads `GET /api/market` again) |
 | `housing_units_sync` | everyone | after `admin_taxes`, when a house was seized (housing units reloaded) |

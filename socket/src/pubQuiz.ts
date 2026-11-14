@@ -73,17 +73,21 @@ function zoneOffsetMs(ms: number): number {
   return wallClockAsUtc(ms) - Math.floor(ms / 1000) * 1000
 }
 
-function quizStartOnWallDay(wallDayUtc: number): number {
-  const wallStart = wallDayUtc + QUIZ_START_HOUR * HOUR_MS
+function hourOnWallDay(wallDayUtc: number, hour: number): number {
+  const wallStart = wallDayUtc + hour * HOUR_MS
   const firstGuess = wallStart - zoneOffsetMs(wallStart)
   return wallStart - zoneOffsetMs(firstGuess)
 }
 
-export function quizStartAfter(nowMs: number): number {
+export function parisHourAfter(nowMs: number, hour: number): number {
   const wallNow = wallClockAsUtc(nowMs)
   const wallToday = wallNow - (wallNow % DAY_MS)
-  const today = quizStartOnWallDay(wallToday)
-  return today > nowMs ? today : quizStartOnWallDay(wallToday + DAY_MS)
+  const today = hourOnWallDay(wallToday, hour)
+  return today > nowMs ? today : hourOnWallDay(wallToday + DAY_MS, hour)
+}
+
+export function quizStartAfter(nowMs: number): number {
+  return parisHourAfter(nowMs, QUIZ_START_HOUR)
 }
 
 export function pickQuizQuestions(bank: readonly QuizQuestion[], count: number, random: () => number): QuizQuestion[] {

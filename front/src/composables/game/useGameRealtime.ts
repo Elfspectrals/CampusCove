@@ -17,6 +17,7 @@ import type { SfxName } from '../../game/sfx'
 import type {
   AdminMenuPayload,
   AdminGrantedPayload,
+  AdminPlayerPayload,
   AdminItemsPayload,
   AdminResultPayload,
   AdminSummonedPayload,
@@ -185,6 +186,7 @@ export interface GameRealtimeDeps {
     onItems: (data: AdminItemsPayload) => void
     onResult: (data: AdminResultPayload) => void
     onGranted: (data: AdminGrantedPayload) => void
+    onPlayer: (data: AdminPlayerPayload) => void
   }
   /** The server moved this player (admin teleport / summon): place the camera and the look. */
   onTeleported: (data: TeleportedPayload) => void
@@ -474,6 +476,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('admin_items', (data: AdminItemsPayload) => deps.admin.onItems(data))
     room.onMessage('admin_result', (data: AdminResultPayload) => deps.admin.onResult(data))
     room.onMessage('admin_granted', (data: AdminGrantedPayload) => deps.admin.onGranted(data))
+    room.onMessage('admin_player', (data: AdminPlayerPayload) => deps.admin.onPlayer(data))
 
     room.onMessage('pub_pouring', (data: PubPouringPayload) => deps.pub.onPouring(data, room.sessionId))
     room.onMessage('pub_served', (data: PubServedPayload) => deps.pub.onServed(data))

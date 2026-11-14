@@ -27,6 +27,16 @@ class AdminGameController extends Controller
         return response()->json(['items' => $grants->grantable()]);
     }
 
+    public function wallets(Request $request, BankService $bank): JsonResponse
+    {
+        $validated = $request->validate([
+            'account_id' => ['required', 'integer', $this->liveAccount()],
+        ]);
+        $summary = $bank->summary((int) $validated['account_id']);
+
+        return response()->json(['cash' => $summary['cash'], 'bank' => $summary['bank']]);
+    }
+
     public function grantMoney(Request $request, BankService $bank): JsonResponse
     {
         $validated = $request->validate([
