@@ -231,6 +231,26 @@
       ]
     },
     {
+      "id": "summit_sports_swimsuit",
+      "kind": "item",
+      "key": "swimsuit_stand",
+      "code": "gear_swimsuit",
+      "forSale": true,
+      "price": 90,
+      "position": [
+        -293.1,
+        1.23,
+        80.205
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Swimsuit for the Cove Pool: needed to swim, race and dive."
+    },
+    {
       "id": "summit_sports_top_track_jacket",
       "kind": "mannequin",
       "position": [

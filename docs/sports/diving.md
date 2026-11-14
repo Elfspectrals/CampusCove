@@ -29,10 +29,20 @@ No score. Proposed task "dives from the 5 m platform" (badges only), counted by 
 
 Ladder climb, edge stance, jump, twist, somersault, cannonball, entry; splash effect and sound.
 
-## Open points
+## Decided at build time (2026-11-14)
 
-- Exact trick list and keys.
-- Whether a tasks counter is wanted at all for diving.
+- Tricks: twist (Left arrow), somersault (Up arrow), cannonball (Down arrow), one per jump, while in the air (`trickKeys` in `diving.json`). Fixed keys, not in the rebindable list.
+- No edge lock and no tasks counter yet: the edge lock stays a proposal, and the "dives from the 5 m platform" task waits for the tasks branch.
+- The board ends are over the water, so standing on them needs the swimsuit too.
+
+## Socket contract
+
+| Message | Direction | Payload |
+|---|---|---|
+| `pool_jump` | client -> server | `{ board }`, sent with Space; accepted only on the board's `edgeZone` with the feet within 0.4 m of its height, once every 1.5 s |
+| `pool_trick` | client -> server | `{ trick }`, one of `tricks`, within the fall time of the last accepted jump (+ 0.4 s) |
+| `pool_dive` | server -> players in the pool | `{ sessionId, board, heightM, airMs, serverNow }`: the front plays the splash when the diver hits the water |
+| `pool_dive_trick` | server -> same | `{ sessionId, name, board, trick }` |
 
 ## Proposed placeholder JSON fields
 

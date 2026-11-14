@@ -35,6 +35,7 @@ import GamePubSecretDialog from '../components/game/GamePubSecretDialog.vue'
 import GamePoliceLicenceDialog from '../components/game/GamePoliceLicenceDialog.vue'
 import GameSportsPassDesk from '../components/game/GameSportsPassDesk.vue'
 import GameSportsSignup from '../components/game/GameSportsSignup.vue'
+import GamePoolRace from '../components/game/GamePoolRace.vue'
 import GameChat from '../components/game/GameChat.vue'
 import GameDrunkEffects from '../components/game/GameDrunkEffects.vue'
 import GameDrinkFast from '../components/game/GameDrinkFast.vue'
@@ -101,6 +102,7 @@ import { usePolice } from '../composables/game/usePolice'
 import { useSportsPass } from '../composables/game/useSportsPass'
 import { passValid } from '../game/sports/sportsPass'
 import { useSportsSignup } from '../composables/game/useSportsSignup'
+import { usePoolRace } from '../composables/game/usePoolRace'
 import { usePickpocket } from '../composables/game/usePickpocket'
 import { useStorageAuction } from '../composables/game/useStorageAuction'
 import { useStorageWarehouse } from '../composables/game/useStorageWarehouse'
@@ -871,6 +873,18 @@ const sportsSignup = useSportsSignup({
     survival.say(t('sports.signedUp'))
   },
 })
+const poolRace = usePoolRace({
+  gameRoomRef,
+  myPosition,
+  mySessionId: () => gameRoomRef.value?.sessionId ?? null,
+  getScene,
+  say: (text) => survival.say(text),
+  noSwimsuitText: () => t('sports.pool.noSwimsuit'),
+  falseStartText: () => t('sports.pool.falseStart'),
+  marksText: () => t('sports.pool.marks'),
+  trickText: (name, trick) => (name ? t('sports.pool.trickBy', { name, trick: t(`sports.pool.trick.${trick}`) }) : t(`sports.pool.trick.${trick}`)),
+})
+const { hud: poolHud, board: poolBoard, trickLine: poolTrickLine } = poolRace
 const { open: sportsSignupOpen, choices: sportsVenueChoices, canPickVenue: sportsCanPickVenue, lobby: sportsLobby, spec: sportsSpec, team: sportsTeam, settings: sportsSettings, pending: sportsSignupPending, error: sportsSignupError, clientNow: sportsClientNow, clockOffset: sportsClockOffset } = sportsSignup
 watch(sportsSignupOpen, (open) => {
   if (!open && !document.pointerLockElement) requestPointerLock()
@@ -1471,6 +1485,7 @@ function handleExtraKeyDown(e: KeyboardEvent): boolean {
   if (pubChallenge.onKeyDown(e)) return true
   // seated at the pub: a step or a jump stands the player up instead of moving
   if (seats.onKeyDown(e)) return true
+  if (poolRace.onKeyDown(e)) return true
   // defaultPrevented: the inventory / cafe menu already used this Esc to close themselves
   if (e.code === 'Escape' && !e.repeat && !e.defaultPrevented && pauseMenuOpen.value && !placementPreviewActive.value) {
     toggleEscapeMenu(e)
@@ -1562,7 +1577,7 @@ const movement = useGameMovement({
     return pointerLocked.value && runUseOrPunch(mouseButtonCode(e.button), false, e.shiftKey)
   },
   speedFactor: () => survival.speedFactor() * intoxication.walkFactor() * (adminWatch.hasMyPower('speed') ? SPEED_POWER_FACTOR : 1),
-  movementLocked: () => seats.seated.value || townBus.riding.value || police.cuffedBy.value !== null || adminWatch.hasMyPower('freeze'),
+  movementLocked: () => seats.seated.value || townBus.riding.value || police.cuffedBy.value !== null || adminWatch.hasMyPower('freeze') || poolRace.locked.value,
   flying: () => adminWatch.hasMyPower('fly'),
   afterCameraPlaced: intoxication.applyToCamera,
   trySpendJump: () => adminWatch.hasMyPower('endless_stamina') || punch.trySpendJump(),
@@ -1605,6 +1620,7 @@ const movement = useGameMovement({
     farm.tick()
     police.tick()
     sportsSignup.tick()
+    poolRace.tick(dt)
     if (!doorSigns.group.parent) getScene()?.add(doorSigns.group)
     minimap.tick()
     gps.tick()
@@ -1749,6 +1765,7 @@ const realtime = useGameRealtime({
     onError: sportsSignup.handlers.onError,
     onRoomJoined: sportsSignup.handlers.onRoomJoined,
   },
+  pool: poolRace.handlers,
   pickpocket: pickpocket.handlers,
   storageAuction: {
     ...storageAuction.handlers,
@@ -2324,6 +2341,7 @@ const crosshairClass = computed(() => {
       @confirm="police.confirmBuy"
       @close="police.closeConfirm"
     />
+    <GamePoolRace v-if="poolHud || poolBoard || poolTrickLine" :hud="poolHud" :board="poolBoard" :trick-line="poolTrickLine" />
     <GameSportsPassDesk
       v-if="sportsPassOpen && sportsPassState"
       :pass="sportsPassState"
