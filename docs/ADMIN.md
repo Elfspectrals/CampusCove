@@ -1,6 +1,6 @@
 # In-game admin tools
 
-An admin can, from inside the game, give money or items to themselves or to another player, collect the house taxes now, and open or close the town market now. The socket calls these Laravel routes for the admin. The pub quiz and the storage sale are started by the socket alone (`POST /api/storage/sale` already exists).
+An admin can, from inside the game, give money, items or a vacant house to themselves or to another player, turn powers on them (invincible, never hungry, never thirsty, full health, full stomach, quenched, sober, stars cleared), collect the house taxes now, and open or close the town market now. The socket calls these Laravel routes for the admin. The pub quiz and the storage sale are started by the socket alone (`POST /api/storage/sale` already exists).
 
 ## Who may call
 
@@ -18,12 +18,12 @@ Every route is in the `realtime` group inside `auth:sanctum` (`backend/routes/ap
 
 ### `GET /api/admin/game/items`
 
-Every item that can be given, for the item picker, sorted by kind then name.
+Every item that can be given, for the item picker, sorted by kind then name, with its picture (`item_defs.preview_image`, null when it has none) and, for a consumable, what one portion restores. The front sorts them into sections by `kind` and into groups by code prefix (`front/src/game/admin/adminItems.ts`).
 
 An item bought with gems (real money) is never listed nor given (`ItemDef::scopeBoughtWithGems`): its `item_defs.premium_only` is true (the premium skins), or a shop catalog row sells it for gems only (`allow_premium` true and `allow_coins` false, deleted rows ignored, for example `title_freshman`).
 
 ```json
-{ "items": [ { "code": "farm_apple", "name": "Apple", "kind": "consumable" } ] }
+{ "items": [ { "code": "farm_apple", "name": "Apple", "kind": "consumable", "preview": "/assets/items/farm/apple/preview.png", "portion": { "hunger": 12, "thirst": 2, "health": 0 } } ] }
 ```
 
 ### `GET /api/admin/game/wallets?account_id=<id>`
@@ -60,6 +60,21 @@ Answer: `{ "account_id", "code", "quantity" }`. One `admin_item_grants` row (`re
 |---|---|---|
 | `admin_item_premium` | 422 | the item is bought with gems |
 | `admin_grant_already_done` | 409 | this `ref` was already used: nothing more is given |
+
+### `POST /api/admin/game/house`
+
+| Field | Type | Rule |
+|---|---|---|
+| `account_id` | integer | existing, not deleted |
+| `unit_id` | string | UUID, a `housing_units.public_id` |
+
+Gives a vacant house for free, as if bought (`AdminHousingService::assign`, `HousingService::occupy`): apartment room, first tax due in 24 h, one house key. No money moves. One `staff_audit_logs` row `housing.assign` (`account_id` = the receiver) and the realtime server is told the housing changed. Answer: `{ "account_id", "unit_id", "model_key" }`.
+
+| Refusal | Status | When |
+|---|---|---|
+| `unit_not_found` | 404 | no house with this id |
+| `unit_not_vacant` | 422 | someone owns it (evict them from the web admin first) |
+| `already_owns_unit` | 422 | the receiver already owns a house |
 
 ### `POST /api/admin/game/taxes/collect`
 
@@ -110,6 +125,8 @@ The watch's Admin app (`WatchAdminApp.vue`, keyboard only) and the console docke
 | `admin_give_money` | `{ sessionId: string, wallet: 'cash' \| 'bank', amount: integer }` | `amount` 1 to 100,000 |
 | `admin_give_item` | `{ sessionId: string, code: string, quantity: integer }` | `code` `[A-Za-z0-9_]{1,64}`, `quantity` 1 to 999 |
 | `admin_market` | `{ action: 'open', minutes: integer }` or `{ action: 'close' }` | `minutes` 1 to 240 |
+| `admin_power` | `{ sessionId: string, power: string, on?: boolean }` | a toggle `god`, `endless_food`, `endless_water` with `on`; or a boost `heal`, `feed`, `drink`, `sober`, `clear_wanted` (no `on`) |
+| `admin_house` | `{ sessionId: string, unit: string }` | `unit` a UUID; calls `POST /api/admin/game/house` |
 | `admin_taxes` | none | |
 | `admin_quiz_start` | none | starts the pub quiz soon (existing) |
 | `admin_storage_sale` | none | starts the storage sale (existing, errors as `admin_error`) |
@@ -121,9 +138,24 @@ The watch's Admin app (`WatchAdminApp.vue`, keyboard only) and the console docke
 | Message | To | Payload |
 |---|---|---|
 | `admin_menu` | the admin | `{ destinations: [{ key, name }], players: [{ sessionId, pseudo, distance, stars }], events }`, `events` = `{ quiz: { state: 'scheduled' \| 'registration' \| 'running', startsAt }, storage: { state: 'scheduled', startsAt } \| { state: 'running', index, count }, market: { open, opensAt, closesAt } \| null }` (times in ms, market times ISO) |
-| `admin_player` | the admin | `{ sessionId, cash, bank, stars }` (cash and bank from `GET /api/admin/game/wallets`) |
+| `admin_player` | the admin | `{ sessionId, cash, bank, stars, vitals: { health, hunger, thirst, intoxication }, powers: string[] }` (cash and bank from `GET /api/admin/game/wallets`, the rest from the socket) |
 | `admin_items` | the admin | `{ items: [{ code, name, kind }] }` |
-| `admin_result` | the admin | success: `{ action: 'money', ok: true, sessionId, pseudo, wallet, amount, cash, bank }` (the receiver's new balances), `{ action: 'item', ok: true, pseudo, code, quantity }`, `{ action: 'market_open', ok: true, closesAt }`, `{ action: 'market_close', ok: true, returned }`, `{ action: 'taxes', ok: true, charged, seized }`; failure: `{ action, ok: false, message }` (`action` also `items`), `message` from Laravel when it refused |
-| `admin_granted` | the receiver (the admin too, when they gave to themself) | `{ kind: 'money', byPseudo, wallet, amount, cash, bank }` (the receiver's new balances) or `{ kind: 'item', byPseudo, code, quantity }` (the receiver reloads their inventory) |
+| `admin_result` | the admin | success: `{ action: 'money', ok: true, sessionId, pseudo, wallet, amount, cash, bank }` (the receiver's new balances), `{ action: 'item', ok: true, pseudo, code, quantity }`, `{ action: 'market_open', ok: true, closesAt }`, `{ action: 'market_close', ok: true, returned }`, `{ action: 'taxes', ok: true, charged, seized }`, `{ action: 'power', ok: true, sessionId, pseudo, power, on, stars, vitals, powers }` (`on` null for a boost), `{ action: 'house', ok: true, sessionId, pseudo, unit, modelKey }`; failure: `{ action, ok: false, message }` (`action` also `items`), `message` from Laravel when it refused |
+| `admin_granted` | the receiver (the admin too, when they gave to themself) | `{ kind: 'money', byPseudo, wallet, amount, cash, bank }` (the receiver's new balances) or `{ kind: 'item', byPseudo, code, quantity }` (the receiver reloads their inventory), `{ kind: 'power', byPseudo, power, on }`, `{ kind: 'house', byPseudo, modelKey }` (the receiver reloads their inventory for the key) |
 | `market_sync` | everyone | sent after a market open or close (the socket reads `GET /api/market` again) |
-| `housing_units_sync` | everyone | after `admin_taxes`, when a house was seized (housing units reloaded) |
+| `housing_units_sync` | everyone | after `admin_taxes` or `admin_house`, when a house changed hands (housing units reloaded) |
+
+## Powers
+
+Owned by the socket (`socket/src/adminPowers.ts`), never saved: toggles stay on until the admin turns them off or the player leaves the room. Every change of the gauges goes through `survival.setStats`, which holds the toggled gauges at 100.
+
+| Power | Kind | Effect |
+|---|---|---|
+| `god` | toggle | health held at 100, no damage message, never knocked out by damage or alcohol |
+| `endless_food` | toggle | hunger held at 100 |
+| `endless_water` | toggle | thirst held at 100 |
+| `heal` | boost | health to 100 |
+| `feed` | boost | hunger to 100 |
+| `drink` | boost | thirst to 100 |
+| `sober` | boost | intoxication to 0 |
+| `clear_wanted` | boost | wanted stars to 0 (`wanted.clearWanted`, saved and broadcast) |

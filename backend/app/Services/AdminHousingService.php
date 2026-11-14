@@ -123,6 +123,28 @@ final class AdminHousingService
         $this->realtime->housingChanged();
     }
 
+    /** Gives a vacant house to an account for free, as if bought: it pays the daily tax from tomorrow. */
+    public function assign(Account $admin, string $publicId, int $accountId): HousingUnit
+    {
+        $unit = DB::transaction(function () use ($admin, $publicId, $accountId): HousingUnit {
+            $this->housing->collectDueTaxes();
+            $unit = $this->lockedUnit($publicId);
+            if ($unit->status !== 'vacant') {
+                throw new HousingRejectedException('unit_not_vacant', 'Someone already owns this house.', 422);
+            }
+            if ($this->housing->findOccupiedUnitForAccount($accountId) !== null) {
+                throw new HousingRejectedException('already_owns_unit', 'This player already owns a house.', 422);
+            }
+            $unit = $this->housing->occupy($unit, $accountId);
+            $this->audit($admin, 'assign', $unit, ['account_id' => $accountId]);
+
+            return $unit;
+        });
+        $this->realtime->housingChanged();
+
+        return $unit;
+    }
+
     public function kickKeyHolder(Account $admin, string $publicId, int $accountId): void
     {
         DB::transaction(function () use ($admin, $publicId, $accountId): void {

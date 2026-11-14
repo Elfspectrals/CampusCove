@@ -44,6 +44,7 @@ class AdminGameApiTest extends TestCase
             ['GET', '/api/admin/game/wallets'],
             ['POST', '/api/admin/game/money'],
             ['POST', '/api/admin/game/items'],
+            ['POST', '/api/admin/game/house'],
             ['POST', '/api/admin/game/taxes/collect'],
             ['POST', '/api/admin/game/market/open'],
             ['POST', '/api/admin/game/market/close'],
@@ -67,7 +68,12 @@ class AdminGameApiTest extends TestCase
             ->assertOk()
             ->json('items'));
 
-        $this->assertSame(['code', 'name', 'kind'], array_keys($items->firstWhere('code', self::APPLE)));
+        $apple = $items->firstWhere('code', self::APPLE);
+        $this->assertSame(['code', 'name', 'kind', 'preview', 'portion'], array_keys($apple));
+        $this->assertSame('/assets/items/farm/apple/preview.png', $apple['preview']);
+        $this->assertSame(['hunger', 'thirst', 'health'], array_keys($apple['portion']));
+        $this->assertGreaterThan(0, $apple['portion']['hunger']);
+        $this->assertNull($items->firstWhere('kind', 'furniture')['portion']);
         foreach ([self::PREMIUM_SKIN, self::GEM_TITLE] as $code) {
             $this->assertNull($items->firstWhere('code', $code), "{$code} is bought with gems");
         }
@@ -272,6 +278,43 @@ class AdminGameApiTest extends TestCase
         $this->assertSame('vacant', $second->refresh()->status);
     }
 
+    public function test_a_vacant_house_is_given_for_free_with_its_key_and_an_audit_row(): void
+    {
+        $this->seed(HousingUnitSeeder::class);
+        $admin = $this->player(admin: true);
+        $player = $this->player();
+        $unit = HousingUnit::query()->where('status', 'vacant')->orderBy('price_coins')->firstOrFail();
+
+        $this->assignHouse($admin, $player['account_id'], $unit->public_id)
+            ->assertOk()
+            ->assertExactJson(['account_id' => $player['account_id'], 'unit_id' => $unit->public_id, 'model_key' => $unit->model_key]);
+
+        $unit->refresh();
+        $this->assertSame(['occupied', $player['account_id']], [$unit->status, (int) $unit->occupant_account_id]);
+        $this->assertNotNull($unit->tax_due_at);
+        $this->assertSame(0, $this->balance($player['account_id'], Wallet::BANK));
+        $this->assertSame(1, $this->owned($player['token'], 'house_key'));
+        $audit = DB::table('staff_audit_logs')->where('action', 'housing.assign')->sole();
+        $this->assertSame($admin['account_id'], (int) $audit->staff_account_id);
+        $this->assertSame($player['account_id'], json_decode((string) $audit->target_json, true)['account_id']);
+    }
+
+    public function test_a_house_is_given_only_when_vacant_and_to_a_player_without_one(): void
+    {
+        $this->seed(HousingUnitSeeder::class);
+        $admin = $this->player(admin: true);
+        $player = $this->player();
+        $other = $this->player();
+        [$first, $second] = HousingUnit::query()->where('status', 'vacant')->orderBy('price_coins')->limit(2)->get()->all();
+        $this->assignHouse($admin, $player['account_id'], $first->public_id)->assertOk();
+
+        $this->assignHouse($admin, $other['account_id'], $first->public_id)->assertStatus(422)->assertJsonPath('code', 'unit_not_vacant');
+        $this->assignHouse($admin, $player['account_id'], $second->public_id)->assertStatus(422)->assertJsonPath('code', 'already_owns_unit');
+        $this->assignHouse($admin, $other['account_id'], (string) Str::uuid())->assertNotFound()->assertJsonPath('code', 'unit_not_found');
+        $this->assignHouse($admin, $other['account_id'], 'not-a-uuid')->assertStatus(422)->assertJsonValidationErrors('unit_id');
+        $this->assertSame('vacant', $second->refresh()->status);
+    }
+
     public function test_opening_the_market_now_lasts_the_chosen_minutes(): void
     {
         $this->travelToParis('2026-11-12 10:00:00');
@@ -391,6 +434,11 @@ class AdminGameApiTest extends TestCase
             ['account_id' => $accountId, 'code' => $code, 'quantity' => $quantity, 'ref' => $ref ?? (string) Str::uuid()],
             $this->auth($admin['token'], self::SECRET),
         );
+    }
+
+    private function assignHouse(array $admin, int $accountId, string $unitId): TestResponse
+    {
+        return $this->postJson('/api/admin/game/house', ['account_id' => $accountId, 'unit_id' => $unitId], $this->auth($admin['token'], self::SECRET));
     }
 
     private function openMarket(array $admin, ?int $minutes): TestResponse

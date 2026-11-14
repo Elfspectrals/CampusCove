@@ -1,6 +1,7 @@
 // Admin tools on the watch: teleport to a public place, or bring a player next to you. Only accounts the API
 // flags is_admin (GET /user at join) get an answer; everyone else is ignored.
 import { randomUUID } from 'node:crypto'
+import { type AdminBoost, type AdminToggle, boostedStats, parseBoost, parseToggle, withToggle } from './adminPowers.ts'
 import { callRealtimeBackend, errorPayload, parseAccountId } from './backend.ts'
 import { intIn, refreshMarket } from './market.ts'
 import { leavePub } from './pubGames.ts'
@@ -8,8 +9,10 @@ import { parisHourAfter, quizStartAfter } from './pubQuiz.ts'
 import { startQuizSoon } from './pubQuizEvent.ts'
 import type { StorageRoom } from './storageAuction.ts'
 import { SALE_HOUR_PARIS } from './storageSale.ts'
+import { sendStats, setStats } from './survival.ts'
 import { type TradeRoom, checkTradeDistance } from './trade.ts'
 import type { ClientPayload, GameClient, GameRoom, Player, Vec3 } from './types.ts'
+import { clearWanted } from './wanted.ts'
 import { type TeleportDestination, teleportDestinations } from './world.ts'
 
 /** A summoned player lands this far in front of the admin, facing them. */
@@ -19,8 +22,9 @@ export const ADMIN_MAX_MONEY = 100_000
 export const ADMIN_MAX_QUANTITY = 999
 export const ADMIN_MAX_MARKET_MINUTES = 240
 const ITEM_CODE = /^[A-Za-z0-9_]{1,64}$/
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const WALLETS = ['cash', 'bank'] as const
-type AdminAction = 'items' | 'money' | 'item' | 'market_open' | 'market_close' | 'taxes'
+type AdminAction = 'items' | 'money' | 'item' | 'market_open' | 'market_close' | 'taxes' | 'power' | 'house'
 
 export type AdminRoom = GameRoom & TradeRoom
 export type AdminPanelRoom = AdminRoom & { pollHousingUnits(): Promise<void> }
@@ -156,7 +160,7 @@ export async function onAdminPlayer(room: AdminRoom, client: GameClient, payload
   if (!target) return sendError(client, 'This player is no longer here.')
   try {
     const wallets = await callRealtimeBackend(admin.token, `/admin/game/wallets?account_id=${target.accountId}`, 'GET')
-    client.send('admin_player', { sessionId: target.player.sessionId, cash: wallets.cash, bank: wallets.bank, stars: target.player.wantedStars })
+    client.send('admin_player', { sessionId: target.player.sessionId, cash: wallets.cash, bank: wallets.bank, ...liveSheet(target.player) })
   } catch (error) {
     sendError(client, errorPayload(error, 'Could not read this player.', 'admin_failed').message)
   }
@@ -268,6 +272,67 @@ export async function onAdminTaxes(room: AdminPanelRoom, client: GameClient, now
     client.send('admin_result', { action: 'taxes', ok: true, charged: summary.charged, seized: summary.seized })
   } catch (error) {
     return sendFailure(client, 'taxes', error, 'Could not collect the taxes.')
+  }
+  await room.pollHousingUnits()
+}
+
+/** The live part of a player sheet: gauges, wanted stars and the admin toggles on them. */
+function liveSheet(player: Player) {
+  const stats = player.stats ?? { health: 0, hunger: 0, thirst: 0 }
+  return {
+    stars: player.wantedStars,
+    vitals: { health: Math.round(stats.health), hunger: Math.round(stats.hunger), thirst: Math.round(stats.thirst), intoxication: Math.round(player.intoxication) },
+    powers: [...(player.adminPowers ?? [])]
+  }
+}
+
+function applyBoost(room: AdminRoom, player: Player, boost: AdminBoost): void {
+  if (boost === 'sober') player.intoxication = 0
+  else if (boost === 'clear_wanted') clearWanted(room, player)
+  else if (player.stats) setStats(player, boostedStats(player.stats, boost))
+}
+
+/**
+ * 'admin_power' { sessionId, power, on? }: a toggle (god, endless_food, endless_water) with `on` true or false, or a
+ * one-shot boost (heal, feed, drink, sober, clear_wanted). Only on a connected player whose gauges are loaded.
+ */
+export function onAdminPower(room: AdminRoom, client: GameClient, payload: ClientPayload, now = Date.now()): void {
+  const admin = adminOf(room, client)
+  if (!admin || coolingDown(admin, now)) return
+  const toggle: AdminToggle | null = parseToggle(payload?.power)
+  const boost: AdminBoost | null = toggle ? null : parseBoost(payload?.power)
+  const on = typeof payload?.on === 'boolean' ? payload.on : null
+  if ((!toggle && !boost) || (toggle && on === null)) return refuse(client, 'power', 'This power is not valid.')
+  const target = grantTarget(room, payload)
+  if (!target?.player.stats) return refuse(client, 'power', 'This player is no longer here.')
+  const player = target.player
+  if (toggle) {
+    player.adminPowers = withToggle(player.adminPowers, toggle, on === true)
+    if (player.stats) setStats(player, player.stats)
+  } else if (boost) {
+    applyBoost(room, player, boost)
+  }
+  const targetClient = clientOf(room, player)
+  if (targetClient) sendStats(targetClient, player)
+  const power = toggle ?? boost
+  client.send('admin_result', { action: 'power', ok: true, sessionId: player.sessionId, pseudo: player.pseudo, power, on: toggle ? on : null, ...liveSheet(player) })
+  targetClient?.send('admin_granted', { kind: 'power', byPseudo: admin.pseudo, power, on: toggle ? on : null })
+}
+
+/** 'admin_house' { sessionId, unit }: gives a vacant house to the player for free (Laravel checks it is vacant). */
+export async function onAdminHouse(room: AdminPanelRoom, client: GameClient, payload: ClientPayload, now = Date.now()): Promise<void> {
+  const admin = adminOf(room, client)
+  if (!admin || coolingDown(admin, now)) return
+  const unit = typeof payload?.unit === 'string' && UUID.test(payload.unit) ? payload.unit : null
+  if (unit === null) return refuse(client, 'house', 'This house is not valid.')
+  const target = grantTarget(room, payload)
+  if (!target) return refuse(client, 'house', 'This player is no longer here.')
+  try {
+    const house = await callRealtimeBackend(admin.token, '/admin/game/house', 'POST', { account_id: target.accountId, unit_id: unit })
+    client.send('admin_result', { action: 'house', ok: true, sessionId: target.player.sessionId, pseudo: target.player.pseudo, unit, modelKey: house.model_key ?? null })
+    clientOf(room, target.player)?.send('admin_granted', { kind: 'house', byPseudo: admin.pseudo, modelKey: house.model_key ?? null })
+  } catch (error) {
+    return sendFailure(client, 'house', error, 'Could not give the house.')
   }
   await room.pollHousingUnits()
 }

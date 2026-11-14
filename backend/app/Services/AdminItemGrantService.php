@@ -12,15 +12,29 @@ final class AdminItemGrantService
 {
     public function __construct(private readonly AccountInventoryService $inventory) {}
 
-    /** @return list<array{code: string, name: string, kind: string}> */
+    /**
+     * The picker of the admin give screen: a picture, and what one portion restores for food and drinks.
+     *
+     * @return list<array{code: string, name: string, kind: string, preview: string|null, portion: array{hunger: int, thirst: int, health: int}|null}>
+     */
     public function grantable(): array
     {
         return ItemDef::query()
             ->whereNot(fn (Builder $query) => $query->boughtWithGems())
             ->orderBy('kind')
             ->orderBy('name')
-            ->get(['code', 'name', 'kind'])
-            ->map(fn (ItemDef $def): array => ['code' => $def->code, 'name' => $def->name, 'kind' => $def->kind])
+            ->get(['code', 'name', 'kind', 'preview_image', 'hunger_per_portion', 'thirst_per_portion', 'health_per_portion'])
+            ->map(fn (ItemDef $def): array => [
+                'code' => $def->code,
+                'name' => $def->name,
+                'kind' => $def->kind,
+                'preview' => $def->preview_image,
+                'portion' => $def->kind === 'consumable' ? [
+                    'hunger' => (int) $def->hunger_per_portion,
+                    'thirst' => (int) $def->thirst_per_portion,
+                    'health' => (int) $def->health_per_portion,
+                ] : null,
+            ])
             ->all();
     }
 

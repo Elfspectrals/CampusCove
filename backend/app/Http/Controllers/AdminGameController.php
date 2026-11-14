@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Wallet;
+use App\Services\AdminHousingService;
 use App\Services\AdminItemGrantService;
 use App\Services\BankService;
 use App\Services\HousingService;
@@ -76,6 +77,21 @@ class AdminGameController extends Controller
             'account_id' => (int) $validated['account_id'],
             'code' => (string) $validated['code'],
             'quantity' => (int) $validated['quantity'],
+        ]);
+    }
+
+    public function assignHouse(Request $request, AdminHousingService $housing): JsonResponse
+    {
+        $validated = $request->validate([
+            'account_id' => ['required', 'integer', $this->liveAccount()],
+            'unit_id' => ['required', 'uuid'],
+        ]);
+        $unit = $housing->assign($request->user(), (string) $validated['unit_id'], (int) $validated['account_id']);
+
+        return response()->json([
+            'account_id' => (int) $validated['account_id'],
+            'unit_id' => (string) $unit->public_id,
+            'model_key' => $unit->model_key,
         ]);
     }
 

@@ -23,14 +23,17 @@ test('back goes one page up, and the home page has no parent', () => {
   assert.deepEqual(parentPage({ kind: 'players' }), { kind: 'home' })
   assert.deepEqual(parentPage({ kind: 'player', sessionId: 'b' }), { kind: 'players' })
   assert.deepEqual(parentPage({ kind: 'money', sessionId: 'b' }), { kind: 'player', sessionId: 'b' })
-  assert.deepEqual(parentPage({ kind: 'item', sessionId: 'b' }), { kind: 'player', sessionId: 'b' })
+  assert.deepEqual(parentPage({ kind: 'item', sessionId: 'b', section: null }), { kind: 'player', sessionId: 'b' })
+  assert.deepEqual(parentPage({ kind: 'item', sessionId: 'b', section: 'food' }), { kind: 'item', sessionId: 'b', section: null })
+  assert.deepEqual(parentPage({ kind: 'powers', sessionId: 'b' }), { kind: 'player', sessionId: 'b' })
+  assert.deepEqual(parentPage({ kind: 'house', sessionId: 'b' }), { kind: 'player', sessionId: 'b' })
   assert.deepEqual(parentPage({ kind: 'market' }), { kind: 'events' })
   assert.deepEqual(parentPage({ kind: 'events' }), { kind: 'home' })
 })
 
 test('my own sheet only gives, another player can also be reached or brought', () => {
-  assert.deepEqual(playerActions(true), ['money', 'item'])
-  assert.deepEqual(playerActions(false), ['goto', 'bring', 'money', 'item'])
+  assert.deepEqual(playerActions(true), ['powers', 'money', 'item', 'house'])
+  assert.deepEqual(playerActions(false), ['goto', 'bring', 'powers', 'money', 'item', 'house'])
 })
 
 test('players are listed nearest first', () => {
@@ -78,6 +81,8 @@ test('only collecting taxes and closing the market need a held Enter', () => {
   assert.equal(isHoldRow({ kind: 'market' }, 2), true)
   assert.equal(isHoldRow({ kind: 'market' }, 1), false)
   assert.equal(isHoldRow({ kind: 'players' }, 3), false)
+  assert.equal(isHoldRow({ kind: 'house', sessionId: 'b' }, 0), true)
+  assert.equal(isHoldRow({ kind: 'powers', sessionId: 'b' }, 0), false)
 })
 
 test('item search: letters and digits type, space does not, Backspace erases only when there is text', () => {

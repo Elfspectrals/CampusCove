@@ -965,8 +965,9 @@ const adminWatch = useAdminWatch({
     return t(key, params)
   },
   refreshInventory: () => refreshOwnedItems(),
+  houses: housing.units,
 })
-const { isAdmin, menu: adminMenu, error: adminError, panelOpen: adminPanelOpen } = adminWatch
+const { isAdmin, error: adminError, panelOpen: adminPanelOpen } = adminWatch
 function openAdminPanel(): void {
   trade.closeMenu()
   adminWatch.openPanel()
@@ -2152,27 +2153,7 @@ const crosshairClass = computed(() => {
       @close="storage.close"
     />
     <GameLockpick v-if="lockpick.board.value" :board="lockpick.board.value" @press="lockpick.press" @close="lockpick.close" />
-    <GameAdminPanel
-      v-if="adminPanelOpen && gameRoomRef"
-      :own-session-id="gameRoomRef.sessionId"
-      :menu="adminMenu"
-      :items="adminWatch.items.value"
-      :result="adminWatch.result.value"
-      :log="adminWatch.log.value"
-      :recent-place="adminWatch.recentPlace.value"
-      :error="adminError"
-      @give-money="adminWatch.giveMoney"
-      @give-item="adminWatch.giveItem"
-      @start-quiz="adminWatch.startQuiz"
-      @start-storage-sale="adminWatch.startStorageSale"
-      @open-market="adminWatch.openMarket"
-      @close-market="adminWatch.closeMarket"
-      @collect-taxes="adminWatch.collectTaxes"
-      @teleport="adminWatch.teleport"
-      @go-to="adminWatch.goTo"
-      @summon="adminSummon"
-      @close="adminWatch.closePanel"
-    />
+    <GameAdminPanel v-if="adminPanelOpen && gameRoomRef" :admin="adminWatch" :own-session-id="gameRoomRef.sessionId" @summon="adminSummon" @close="adminWatch.closePanel" />
     <GameAtmScreen v-if="atmOpen" :screen="atm.screen.value" :pending="atm.pending.value" :feedback="atm.feedback.value" @run="atm.run" @clear-feedback="atm.clearFeedback" @close="atm.close" />
     <GameMarketPanel
       v-if="market.panel.value"

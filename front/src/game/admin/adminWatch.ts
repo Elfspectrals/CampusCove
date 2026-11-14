@@ -1,11 +1,16 @@
-import type { AdminEvents, AdminMenuPayload, AdminMenuPlayer } from '../../types/gameRealtime.ts'
+import type { AdminEvents, AdminMenuPayload, AdminMenuPlayer, AdminPower } from '../../types/gameRealtime.ts'
+import type { ItemSection } from './adminItems.ts'
+import { ADMIN_BOOSTS, ADMIN_TOGGLES } from './adminPanel.ts'
 
 export type AdminPage =
   | { kind: 'home' }
   | { kind: 'players' }
   | { kind: 'player'; sessionId: string }
   | { kind: 'money'; sessionId: string }
-  | { kind: 'item'; sessionId: string }
+  /** `section` null lists the sections; a typed search lists matching items from every section. */
+  | { kind: 'item'; sessionId: string; section: ItemSection | null }
+  | { kind: 'powers'; sessionId: string }
+  | { kind: 'house'; sessionId: string }
   | { kind: 'places' }
   | { kind: 'events' }
   | { kind: 'market' }
@@ -21,7 +26,9 @@ export const QUICK_AMOUNTS = [100, 500, 1_000, 5_000] as const
 export const MARKET_MINUTE_STEPS = [5, 10, 15, 30, 60, 120, 240] as const
 export const HOLD_MS = 1_000
 
-export type PlayerAction = 'goto' | 'bring' | 'money' | 'item'
+export type PlayerAction = 'goto' | 'bring' | 'money' | 'item' | 'powers' | 'house'
+/** Rows of the powers page: the lasting toggles first, then the one-shot boosts. */
+export const POWER_ROWS: readonly AdminPower[] = [...ADMIN_TOGGLES, ...ADMIN_BOOSTS]
 export type EventRow = 'quiz' | 'storage' | 'market' | 'taxes'
 export const EVENT_ROWS: readonly EventRow[] = ['quiz', 'storage', 'market', 'taxes']
 export type MoneyRow = 'wallet' | 'amount' | 'give'
@@ -35,8 +42,11 @@ export function parentPage(page: AdminPage): AdminPage | null {
       return null
     case 'player':
       return { kind: 'players' }
-    case 'money':
     case 'item':
+      return page.section === null ? { kind: 'player', sessionId: page.sessionId } : { ...page, section: null }
+    case 'money':
+    case 'powers':
+    case 'house':
       return { kind: 'player', sessionId: page.sessionId }
     case 'market':
       return { kind: 'events' }
@@ -46,7 +56,7 @@ export function parentPage(page: AdminPage): AdminPage | null {
 }
 
 export function playerActions(isMe: boolean): PlayerAction[] {
-  return isMe ? ['money', 'item'] : ['goto', 'bring', 'money', 'item']
+  return isMe ? ['powers', 'money', 'item', 'house'] : ['goto', 'bring', 'powers', 'money', 'item', 'house']
 }
 
 export function playersByDistance(players: readonly AdminMenuPlayer[]): AdminMenuPlayer[] {
@@ -76,7 +86,8 @@ export function moveOnHome(tile: number, key: 'up' | 'down' | 'left' | 'right'):
 export function isHoldRow(page: AdminPage, row: number): boolean {
   if (page.kind === 'events') return EVENT_ROWS[row] === 'taxes'
   if (page.kind === 'market') return MARKET_ROWS[row] === 'close'
-  return false
+  // a house is given for good: hold, so a stray Enter while scrolling gives nothing
+  return page.kind === 'house'
 }
 
 export function editsSearch(key: string, query: string): boolean {

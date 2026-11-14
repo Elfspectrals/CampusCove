@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { ADMIN_MAX_MONEY, adminGrantedMessage, adminResultMessage, adminTargets, filterAdminItems, wholeIn } from './adminPanel.ts'
+import type { HousingUnitPayload } from '../../types/gameRealtime.ts'
+import { ADMIN_MAX_MONEY, adminGrantedMessage, adminResultMessage, adminTargets, filterAdminItems, vacantHouses, wholeIn } from './adminPanel.ts'
 
-const apple = { code: 'farm_apple', name: 'Apple', kind: 'consumable' }
-const hat = { code: 'wear_straw_hat', name: 'Straw hat', kind: 'cosmetic' }
+const apple = { code: 'farm_apple', name: 'Apple', kind: 'consumable', preview: null, portion: null }
+const hat = { code: 'wear_straw_hat', name: 'Straw hat', kind: 'cosmetic', preview: null, portion: null }
 const names = (code: string) => (code === 'farm_apple' ? 'Apple' : code)
 const clock = (iso: string) => iso.slice(11, 16)
 
@@ -42,10 +43,27 @@ test('each server result has its own message', () => {
   assert.deepEqual(adminResultMessage({ action: 'market_open', ok: true, closesAt: '2026-11-13T10:10:00Z' }, names, clock), { key: 'adminPanel.result.marketOpen', params: { time: '10:10' } })
   assert.deepEqual(adminResultMessage({ action: 'market_close', ok: true, returned: 0 }, names, clock), { key: 'adminPanel.result.marketClose', params: { n: 0 } })
   assert.deepEqual(adminResultMessage({ action: 'taxes', ok: true, charged: 2, seized: 1 }, names, clock), { key: 'adminPanel.result.taxes', params: { charged: 2, seized: 1 } })
+  const live = { stars: 0, vitals: { health: 100, hunger: 100, thirst: 100, intoxication: 0 }, powers: [] }
+  assert.deepEqual(adminResultMessage({ action: 'power', ok: true, sessionId: 'b', pseudo: 'Bea', power: 'god', on: true, ...live }, names, clock), { key: 'adminPanel.result.on.god', params: { name: 'Bea' } })
+  assert.deepEqual(adminResultMessage({ action: 'power', ok: true, sessionId: 'b', pseudo: 'Bea', power: 'endless_food', on: false, ...live }, names, clock), { key: 'adminPanel.result.off.endless_food', params: { name: 'Bea' } })
+  assert.deepEqual(adminResultMessage({ action: 'power', ok: true, sessionId: 'b', pseudo: 'Bea', power: 'heal', on: null, ...live }, names, clock), { key: 'adminPanel.result.boost.heal', params: { name: 'Bea' } })
+  assert.deepEqual(adminResultMessage({ action: 'house', ok: true, sessionId: 'b', pseudo: 'Bea', unit: 'u', modelKey: 'house_01' }, names, clock), { key: 'adminPanel.result.house', params: { name: 'Bea', house: 'Maple Cottage' } })
   assert.deepEqual(adminResultMessage({ action: 'item', ok: false, message: 'This item is bought with gems.' }, names, clock), { key: 'adminPanel.result.failed', params: { message: 'This item is bought with gems.' } })
 })
 
 test('the player who received a grant is told by whom', () => {
   assert.deepEqual(adminGrantedMessage({ kind: 'money', byPseudo: 'Admin', wallet: 'cash', amount: 500, cash: 600, bank: 0 }), { key: 'adminPanel.granted.cash', params: { amount: 500, name: 'Admin' } })
   assert.deepEqual(adminGrantedMessage({ kind: 'item', byPseudo: 'Admin', code: 'farm_apple', quantity: 3 }), { key: 'adminPanel.granted.item', params: { quantity: 3, name: 'Admin' } })
+  assert.deepEqual(adminGrantedMessage({ kind: 'power', byPseudo: 'Admin', power: 'endless_water', on: true }), { key: 'adminPanel.granted.on.endless_water', params: { name: 'Admin' } })
+  assert.deepEqual(adminGrantedMessage({ kind: 'power', byPseudo: 'Admin', power: 'sober', on: null }), { key: 'adminPanel.granted.boost.sober', params: { name: 'Admin' } })
+  assert.deepEqual(adminGrantedMessage({ kind: 'house', byPseudo: 'Admin', modelKey: 'unknown_villa' }), { key: 'adminPanel.granted.house', params: { name: 'Admin', house: 'unknown_villa' } })
+})
+
+test('only vacant houses can be given, cheapest first, with their name and picture', () => {
+  const unit = (public_id: string, model_key: string | null, status: string, price_coins: number) => ({ public_id, model_key, status, price_coins }) as HousingUnitPayload
+  const houses = vacantHouses([unit('a', 'house_02', 'vacant', 900), unit('b', 'house_01', 'occupied', 100), unit('c', 'house_01', 'vacant', 500)])
+  assert.deepEqual(houses, [
+    { unit: 'c', name: 'Maple Cottage', preview: '/assets/houses/house_01/preview.png', price: 500 },
+    { unit: 'a', name: 'Bluebell Bungalow', preview: '/assets/houses/house_02/preview.png', price: 900 },
+  ])
 })

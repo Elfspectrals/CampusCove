@@ -365,20 +365,29 @@ final class HousingService
                 'housing_unit_public_id' => $unit->public_id,
             ]);
 
-            $room = $this->createApartmentRoom($accountId, $unit->templateKey());
-
-            $unit->update([
-                'status' => 'occupied',
-                'occupant_account_id' => $accountId,
-                'lease_expires_at' => null,
-                'tax_due_at' => now()->addHours(self::TAX_PERIOD_HOURS),
-                'room_id' => (int) $room->room_id,
-                'updated_at' => now(),
-            ]);
-            $this->inventoryService->grantItem($accountId, $this->houseKey(), 1);
-
-            return $unit->fresh(['room']);
+            return $this->occupy($unit, $accountId);
         });
+    }
+
+    /**
+     * Hands a vacant unit to an account: its apartment room, the first tax day and a house key. The caller holds the
+     * unit's lock and has checked it is vacant and that the account owns no other house.
+     */
+    public function occupy(HousingUnit $unit, int $accountId): HousingUnit
+    {
+        $room = $this->createApartmentRoom($accountId, $unit->templateKey());
+
+        $unit->update([
+            'status' => 'occupied',
+            'occupant_account_id' => $accountId,
+            'lease_expires_at' => null,
+            'tax_due_at' => now()->addHours(self::TAX_PERIOD_HOURS),
+            'room_id' => (int) $room->room_id,
+            'updated_at' => now(),
+        ]);
+        $this->inventoryService->grantItem($accountId, $this->houseKey(), 1);
+
+        return $unit->fresh(['room']);
     }
 
     private function houseKey(): ItemDef

@@ -1,7 +1,19 @@
-import { ref, type ShallowRef } from 'vue'
+import { computed, ref, type Ref, type ShallowRef } from 'vue'
 import type { Room } from '@colyseus/sdk'
 import { applyCachedBalanceAfterPurchase } from '../../api/session'
-import type { AdminGrantedPayload, AdminItem, AdminItemsPayload, AdminMenuPayload, AdminPlayerPayload, AdminResultPayload, AdminSummonedPayload, AdminWallet } from '../../types/gameRealtime'
+import { isToggle, vacantHouses } from '../../game/admin/adminPanel'
+import type {
+  AdminGrantedPayload,
+  AdminItem,
+  AdminItemsPayload,
+  AdminMenuPayload,
+  AdminPlayerPayload,
+  AdminPower,
+  AdminResultPayload,
+  AdminSummonedPayload,
+  AdminWallet,
+  HousingUnitPayload,
+} from '../../types/gameRealtime'
 
 const LOG_SIZE = 5
 
@@ -15,6 +27,8 @@ export interface AdminWatchDeps {
   say: (text: string) => void
   grantedMessage: (data: AdminGrantedPayload) => string
   refreshInventory: () => void
+  /** The town's houses (housing_units_sync), for the give-a-house list. */
+  houses: Ref<HousingUnitPayload[]>
 }
 
 /**
@@ -31,6 +45,7 @@ export function useAdminWatch(deps: AdminWatchDeps) {
   const log = ref<AdminLogEntry[]>([])
   const sheet = ref<AdminPlayerPayload | null>(null)
   const recentPlace = ref<string | null>(null)
+  const houses = computed(() => vacantHouses(deps.houses.value))
 
   const send = (type: string, payload?: unknown) => deps.gameRoomRef.value?.send(type, payload)
 
@@ -96,6 +111,9 @@ export function useAdminWatch(deps: AdminWatchDeps) {
   const openMarket = (minutes: number) => act('admin_market', { action: 'open', minutes })
   const closeMarket = () => act('admin_market', { action: 'close' })
   const collectTaxes = () => act('admin_taxes')
+  /** A toggle needs `on`; a one-shot boost sends none. */
+  const power = (sessionId: string, name: AdminPower, on?: boolean) => act('admin_power', isToggle(name) ? { sessionId, power: name, on: on === true } : { sessionId, power: name })
+  const giveHouse = (sessionId: string, unit: string) => act('admin_house', { sessionId, unit })
   function startQuiz(): void {
     act('admin_quiz_start')
     load()
@@ -125,6 +143,9 @@ export function useAdminWatch(deps: AdminWatchDeps) {
     openMarket,
     closeMarket,
     collectTaxes,
+    power,
+    giveHouse,
+    houses,
     startQuiz,
     handlers: {
       onInit: (admin: boolean) => {
@@ -148,6 +169,9 @@ export function useAdminWatch(deps: AdminWatchDeps) {
         result.value = data
         log.value = [{ at: Date.now(), result: data }, ...log.value].slice(0, LOG_SIZE)
         if (data.ok && data.action === 'money' && sheet.value?.sessionId === data.sessionId) sheet.value = { ...sheet.value, cash: data.cash, bank: data.bank }
+        if (data.ok && data.action === 'power' && sheet.value?.sessionId === data.sessionId) {
+          sheet.value = { ...sheet.value, stars: data.stars, vitals: data.vitals, powers: data.powers }
+        }
         if (data.ok && (data.action === 'market_open' || data.action === 'market_close')) load()
       },
       onPlayer: (data: AdminPlayerPayload) => {
@@ -157,7 +181,7 @@ export function useAdminWatch(deps: AdminWatchDeps) {
         if (data.kind === 'money') {
           applyCachedBalanceAfterPurchase('cash', data.cash)
           applyCachedBalanceAfterPurchase('coins', data.bank)
-        } else {
+        } else if (data.kind === 'item' || data.kind === 'house') {
           deps.refreshInventory()
         }
         deps.say(deps.grantedMessage(data))

@@ -2,7 +2,8 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { useAdminWatch } from '../../../composables/game/useAdminWatch'
-import { ADMIN_MAX_QUANTITY, adminResultMessage, filterAdminItems } from '../../../game/admin/adminPanel'
+import { SECTION_ICON, groupedItems, itemSection, sectionsWithItems } from '../../../game/admin/adminItems'
+import { ADMIN_MAX_QUANTITY, POWER_ICON, adminResultMessage, filterAdminItems, isToggle } from '../../../game/admin/adminPanel'
 import {
   ADMIN_HOME,
   EVENT_ROWS,
@@ -12,6 +13,7 @@ import {
   MARKET_ROWS,
   MONEY_ROWS,
   MONEY_STEPS,
+  POWER_ROWS,
   QUICK_AMOUNTS,
   editsSearch,
   eventStatus,
@@ -33,6 +35,7 @@ import type { WatchKey } from '../../../game/watch/watchNav'
 import type { AdminWallet } from '../../../types/gameRealtime'
 import type { UiIconName } from '../../ui/icons'
 import UiIcon from '../../ui/UiIcon.vue'
+import AdminThumb from '../AdminThumb.vue'
 import WatchRow from './WatchRow.vue'
 
 const props = defineProps<{ admin: ReturnType<typeof useAdminWatch>; ownSessionId: string; selected: number }>()
@@ -60,7 +63,18 @@ let holdTimer: number | undefined
 const menu = computed(() => props.admin.menu.value)
 const players = computed(() => playersByDistance(menu.value?.players ?? []))
 const places = computed(() => placesWithRecentFirst(menu.value?.destinations ?? [], props.admin.recentPlace.value))
-const items = computed(() => filterAdminItems(props.admin.items.value ?? [], query.value))
+const allItems = computed(() => props.admin.items.value ?? [])
+const sections = computed(() => sectionsWithItems(allItems.value))
+const itemPage = computed(() => (page.value.kind === 'item' ? page.value : null))
+/** The item page lists sections until one is opened; typing searches every section at once. */
+const listsSections = computed(() => itemPage.value !== null && itemPage.value.section === null && query.value === '')
+const items = computed(() => {
+  const p = itemPage.value
+  if (!p) return []
+  if (query.value !== '') return filterAdminItems(allItems.value, query.value)
+  return p.section ? groupedItems(allItems.value, p.section, '').flatMap((g) => g.items) : []
+})
+const houses = computed(() => props.admin.houses.value)
 const targetId = computed(() => ('sessionId' in page.value ? page.value.sessionId : null))
 const isMe = computed(() => targetId.value === props.ownSessionId)
 const targetName = computed(() => {
@@ -82,7 +96,11 @@ const rowKeys = computed<string[]>(() => {
     case 'money':
       return MONEY_ROWS.map((r) => `money-${r}`)
     case 'item':
-      return items.value.map((i) => `item-${i.code}`)
+      return listsSections.value ? sections.value.map((s) => `section-${s.section}`) : items.value.map((i) => `item-${i.code}`)
+    case 'powers':
+      return POWER_ROWS.map((r) => `power-${r}`)
+    case 'house':
+      return houses.value.map((h) => `house-${h.unit}`)
     case 'places':
       return places.value.map((d) => `places-${d.key}`)
     case 'events':
@@ -144,6 +162,7 @@ function goPage(next: AdminPage): number {
     quantity.value = 1
     props.admin.loadItems()
   }
+  if (next.kind === 'powers') props.admin.loadPlayer(next.sessionId)
   return 0
 }
 
@@ -166,6 +185,7 @@ function enter(row: number): number {
       const action = actions.value[row]
       if (action === 'goto') emit('goTo', p.sessionId)
       else if (action === 'bring') emit('summon', p.sessionId)
+      else if (action === 'item') return goPage({ kind: 'item', sessionId: p.sessionId, section: null })
       else if (action) return goPage({ kind: action, sessionId: p.sessionId })
       return row
     }
@@ -176,10 +196,25 @@ function enter(row: number): number {
       return row
     }
     case 'item': {
+      if (listsSections.value) {
+        const opened = sections.value[row]
+        if (!opened) return row
+        page.value = { ...p, section: opened.section }
+        quantity.value = 1
+        return 0
+      }
       const item = items.value[row]
       if (item) props.admin.giveItem(p.sessionId, item.code, quantity.value)
       return row
     }
+    case 'powers': {
+      const power = POWER_ROWS[row]
+      if (power && isToggle(power)) props.admin.power(p.sessionId, power, !sheet.value?.powers.includes(power))
+      else if (power) props.admin.power(p.sessionId, power)
+      return row
+    }
+    case 'house':
+      return row
     case 'places': {
       const place = places.value[row]
       if (place) emit('teleport', place.key)
@@ -199,6 +234,11 @@ function enter(row: number): number {
 }
 
 function runHeld(row: number): void {
+  const p = page.value
+  if (p.kind === 'house') {
+    const house = houses.value[row]
+    if (house) props.admin.giveHouse(p.sessionId, house.unit)
+  }
   if (page.value.kind === 'events' && EVENT_ROWS[row] === 'taxes') props.admin.collectTaxes()
   if (page.value.kind === 'market' && MARKET_ROWS[row] === 'close') props.admin.closeMarket()
 }
@@ -222,8 +262,12 @@ function back(): number | null {
   const parent = parentPage(p)
   if (!parent) return null
   page.value = parent
+  if (p.kind === 'item' && p.section !== null) {
+    query.value = ''
+    return Math.max(sections.value.findIndex((s) => s.section === p.section), 0)
+  }
   if (p.kind === 'player') return Math.max(players.value.findIndex((pl) => pl.sessionId === p.sessionId) + 1, 0)
-  if (p.kind === 'money' || p.kind === 'item') return actions.value.indexOf(p.kind)
+  if (p.kind === 'money' || p.kind === 'item' || p.kind === 'powers' || p.kind === 'house') return actions.value.indexOf(p.kind)
   if (p.kind === 'market') return EVENT_ROWS.indexOf('market')
   return Math.max(HOME_TILES.indexOf(p.kind as HomeTile), 0)
 }
@@ -232,7 +276,7 @@ function side(direction: -1 | 1, row: number): void {
   const p = page.value
   if (p.kind === 'money' && MONEY_ROWS[row] === 'wallet') wallet.value = wallet.value === 'cash' ? 'bank' : 'cash'
   if (p.kind === 'money' && MONEY_ROWS[row] === 'amount') amount.value = stepThrough(MONEY_STEPS, amount.value, direction)
-  if (p.kind === 'item') quantity.value = stepQuantity(quantity.value, direction, ADMIN_MAX_QUANTITY)
+  if (p.kind === 'item' && !listsSections.value) quantity.value = stepQuantity(quantity.value, direction, ADMIN_MAX_QUANTITY)
   if (p.kind === 'market' && MARKET_ROWS[row] === 'minutes') marketMinutes.value = stepThrough(MARKET_MINUTE_STEPS, marketMinutes.value, direction)
 }
 
@@ -276,13 +320,21 @@ const TITLE_OF: Record<AdminPage['kind'], string> = {
   player: 'watch.admin.tiles.players',
   money: 'watch.admin.giveMoney',
   item: 'watch.admin.giveItem',
+  powers: 'watch.admin.actions.powers',
+  house: 'watch.admin.actions.house',
   places: 'watch.admin.tiles.places',
   events: 'watch.admin.tiles.events',
   market: 'watch.admin.market',
 }
-const title = computed(() => t(TITLE_OF[page.value.kind]))
+const title = computed(() => {
+  const p = page.value
+  if (p.kind === 'item' && p.section !== null && query.value === '') return t(`adminPanel.sections.${p.section}`)
+  return t(TITLE_OF[p.kind])
+})
 const keyHint = computed(() => {
-  if (page.value.kind === 'item') return t('watch.admin.hints.item')
+  if (page.value.kind === 'item') return listsSections.value ? t('watch.admin.hints.section') : t('watch.admin.hints.item')
+  if (page.value.kind === 'powers') return t('watch.admin.hints.power')
+  if (page.value.kind === 'house') return t('watch.admin.hints.house')
   if (page.value.kind === 'money' || page.value.kind === 'market') return t('watch.admin.hints.stepper')
   return null
 })
@@ -337,9 +389,9 @@ defineExpose({ rowKeys, activate: enter, key, text, title, keyHint })
           v-for="(action, index) in actions"
           :key="action"
           :selected="selected === index"
-          :dot="action === 'goto' || action === 'bring' ? 'pool' : action === 'money' ? 'sun' : 'mint'"
+          :dot="action === 'goto' || action === 'bring' ? 'pool' : action === 'money' ? 'sun' : action === 'powers' ? 'grape' : 'mint'"
           :name="t(`watch.admin.actions.${action}`)"
-          :meta="action === 'money' || action === 'item' ? '›' : ''"
+          :meta="action === 'goto' || action === 'bring' ? '' : '›'"
         />
       </ul>
     </template>
@@ -366,9 +418,62 @@ defineExpose({ rowKeys, activate: enter, key, text, title, keyHint })
         <span class="ml-auto text-[11px] text-mist">◀ ×{{ quantity }} ▶</span>
       </div>
       <p v-if="admin.items.value === null" class="m-0 px-2 py-2 text-center text-xs text-mist">{{ t('watch.admin.loading') }}</p>
+      <ul v-else-if="listsSections" class="m-0 flex list-none flex-col gap-0.5 p-0">
+        <WatchRow
+          v-for="(s, index) in sections"
+          :key="s.section"
+          :selected="selected === index"
+          dot="mint"
+          :thumb="{ src: null, icon: SECTION_ICON[s.section] }"
+          :name="t(`adminPanel.sections.${s.section}`)"
+          :meta="`${s.count} ›`"
+        />
+      </ul>
       <p v-else-if="items.length === 0" class="m-0 px-2 py-2 text-center text-xs text-mist">{{ t('adminPanel.noItem') }}</p>
       <ul v-else class="m-0 flex list-none flex-col gap-0.5 p-0">
-        <WatchRow v-for="(item, index) in items" :key="item.code" :selected="selected === index" dot="mint" :name="item.name" :meta="item.kind" />
+        <WatchRow
+          v-for="(item, index) in items"
+          :key="item.code"
+          :selected="selected === index"
+          dot="mint"
+          :thumb="{ src: item.preview, icon: SECTION_ICON[itemSection(item)] }"
+          :name="item.name"
+          :meta="query ? t(`adminPanel.sections.${itemSection(item)}`) : ''"
+        />
+      </ul>
+    </template>
+
+    <template v-else-if="page.kind === 'powers'">
+      <p class="m-0 px-2 pb-1 text-[11px] text-mist">{{ t('watch.admin.to', { name: targetName }) }}</p>
+      <ul class="m-0 flex list-none flex-col gap-0.5 p-0">
+        <WatchRow
+          v-for="(power, index) in POWER_ROWS"
+          :key="power"
+          :selected="selected === index"
+          dot="grape"
+          :thumb="{ src: null, icon: POWER_ICON[power] }"
+          :name="t(`adminPanel.powers.${power}`)"
+          :meta="isToggle(power) ? (sheet?.powers.includes(power) ? t('watch.admin.on') : t('watch.admin.off')) : '↵'"
+          :meta-class="isToggle(power) && sheet?.powers.includes(power) ? 'font-bold text-mint' : undefined"
+        />
+      </ul>
+    </template>
+
+    <template v-else-if="page.kind === 'house'">
+      <p class="m-0 px-2 pb-1 text-[11px] text-mist">{{ t('watch.admin.to', { name: targetName }) }}</p>
+      <p v-if="houses.length === 0" class="m-0 px-2 py-2 text-center text-xs text-mist">{{ t('adminPanel.noHouse') }}</p>
+      <ul v-else class="m-0 flex list-none flex-col gap-0.5 p-0">
+        <li
+          v-for="(house, index) in houses"
+          :key="house.unit"
+          :data-watch-selected="selected === index || undefined"
+          :class="['relative flex items-center gap-2 overflow-hidden rounded-[10px] px-2 py-1.5 text-[13px]', selected === index ? 'bg-ink-700 shadow-[inset_3px_0_0_rgb(var(--cc-sun))]' : '']"
+        >
+          <span v-if="holdingRow === index" class="hold-fill absolute inset-y-0 left-0 bg-coral/30" aria-hidden="true" />
+          <AdminThumb :src="house.preview" icon="home" :size="28" class="relative" />
+          <span class="relative min-w-0 flex-1 truncate font-bold text-fog">{{ house.name }}</span>
+          <span class="relative text-[11px] text-mist">{{ house.price.toLocaleString() }}</span>
+        </li>
       </ul>
     </template>
 

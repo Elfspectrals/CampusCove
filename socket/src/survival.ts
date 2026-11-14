@@ -1,5 +1,6 @@
 // Hunger, thirst and health of the connected players. The live values are kept here (the rules are in
 // survivalStats.ts); the API stores them, owns the food items and bills the hospital (callRealtimeBackend).
+import { withPowers } from './adminPowers.ts'
 import { callRealtimeBackend, errorPayload } from './backend.ts'
 import { type RespawnBed, fetchRespawnBed, homeWakeUp } from './bed.ts'
 import { dropCashBag } from './cashBags.ts'
@@ -76,7 +77,7 @@ function warn(context: string, error: unknown): void {
   console.warn(`[survival] ${context}:`, error instanceof Error ? error.message : error)
 }
 
-function sendStats(client: GameClient, player: Player): void {
+export function sendStats(client: GameClient, player: Player): void {
   if (!player.stats) return
   const { health, hunger, thirst } = player.stats
   client.send('survival', {
@@ -90,8 +91,9 @@ function sendStats(client: GameClient, player: Player): void {
   })
 }
 
-function setStats(player: Player, stats: Stats): void {
-  player.stats = stats
+/** Every change of the gauges goes through here, so an admin power (god, endless food or water) always holds. */
+export function setStats(player: Player, stats: Stats): void {
+  player.stats = withPowers(stats, player.adminPowers)
   player.statsDirty = true
 }
 
@@ -129,19 +131,20 @@ export function tickSurvival(room: GameRoom, dtSeconds: number): void {
     const { stats: decayed, damage } = tickStats(player.stats, dtSeconds, SURVIVAL_TIME_SCALE)
     const { stats, healOverTime } = tickHealOverTime(decayed, player.healOverTime, now)
     player.healOverTime = healOverTime
-    const blackingOut = player.intoxication >= INTOXICATION_MAX
+    const god = player.adminPowers?.has('god') === true
+    const blackingOut = player.intoxication >= INTOXICATION_MAX && !god
     player.intoxication = decayIntoxication(player.intoxication, dtSeconds, SURVIVAL_TIME_SCALE)
     setStats(player, stats)
-    if (damage > 0) client.send('survival_damage', { amount: damage, cause: stats.hunger === 0 ? 'hunger' : 'thirst' })
+    if (damage > 0 && !god) client.send('survival_damage', { amount: damage, cause: stats.hunger === 0 ? 'hunger' : 'thirst' })
     sendStats(client, player)
-    if (stats.health <= 0) knockOut(room, client, player, 'health')
+    if (player.stats.health <= 0) knockOut(room, client, player, 'health')
     else if (blackingOut) blackOut(room, client, player)
     else if (now - player.lastStatsSavedAt >= SAVE_EVERY_MS) void saveSurvival(player)
   })
 }
 
 export function hurt(room: GameRoom, client: GameClient, player: Player, amount: number, cause: DamageCause, attacker: Player | null = null): void {
-  if (!player.stats || amount <= 0 || Date.now() < player.knockedOutUntil) return
+  if (!player.stats || amount <= 0 || Date.now() < player.knockedOutUntil || player.adminPowers?.has('god')) return
   setStats(player, { ...player.stats, health: Math.max(0, player.stats.health - amount) })
   client.send('survival_damage', { amount, cause })
   sendStats(client, player)
@@ -283,7 +286,7 @@ export async function onConsume(room: GameRoom, client: GameClient, payload: Cli
     const action = (portion.thirst ?? 0) > (portion.hunger ?? 0) ? 'drink' : 'eat'
     room.forEachClient((c) => c.send('user_action', { sessionId: client.sessionId, action, code }), client)
     if (player.stats.health <= 0) knockOut(room, client, player, 'health')
-    else if (player.intoxication >= INTOXICATION_MAX) blackOut(room, client, player)
+    else if (player.intoxication >= INTOXICATION_MAX && !player.adminPowers?.has('god')) blackOut(room, client, player)
   } catch (error) {
     client.send('survival_error', errorPayload(error, 'You cannot eat this.', 'consume_failed'))
   }

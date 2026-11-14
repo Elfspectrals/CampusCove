@@ -1,5 +1,5 @@
 import { type AuthContext, type Client, Room } from 'colyseus'
-import { onAdminGiveItem, onAdminGiveMoney, onAdminGoto, onAdminItems, onAdminMarket, onAdminOpen, onAdminPlayer, onAdminQuizStart, onAdminSummon, onAdminTaxes, onAdminTeleport } from './admin.ts'
+import { onAdminGiveItem, onAdminGiveMoney, onAdminGoto, onAdminHouse, onAdminItems, onAdminMarket, onAdminOpen, onAdminPlayer, onAdminPower, onAdminQuizStart, onAdminSummon, onAdminTaxes, onAdminTeleport } from './admin.ts'
 import { pickupObject, saveObject, setDecoratedHouse } from './apartments.ts'
 import { type Json, callBackendJson, clientIp, isDirectOrigin, parseAccountId, resolveIdentity } from './backend.ts'
 import { CITY_MAX_PLAYERS, CITY_SPAWN_RADIUS, LIVEKIT } from './config.ts'
@@ -220,6 +220,8 @@ export class CityRoom extends Room implements GameRoom {
     this.onMessage('admin_give_item', (client, payload: ClientPayload) => void onAdminGiveItem(this, client, payload))
     this.onMessage('admin_market', (client, payload: ClientPayload) => void onAdminMarket(this, client, payload))
     this.onMessage('admin_taxes', (client) => void onAdminTaxes(this, client))
+    this.onMessage('admin_power', (client, payload: ClientPayload) => onAdminPower(this, client, payload))
+    this.onMessage('admin_house', (client, payload: ClientPayload) => void onAdminHouse(this, client, payload))
     this.onMessage('storage_bid', (client) => void onStorageBid(this, client))
     this.onMessage('storage_lot_open', (client, payload: ClientPayload) => void onStorageOpen(this, client, payload))
     this.onMessage('storage_open_mine', (client) => void onStorageOpenMine(this, client))
