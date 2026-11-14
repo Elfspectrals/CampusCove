@@ -921,6 +921,14 @@ export interface SkateFallPayload {
   serverNow: number
 }
 
+export interface SkateBumpPayload {
+  sessionId: string
+  dirX: number
+  dirZ: number
+  distance: number
+  serverNow: number
+}
+
 export interface SkateResultPayload {
   venue: string
   laps: number

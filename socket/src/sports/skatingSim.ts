@@ -26,6 +26,10 @@ export interface CrashRules {
   contactRadius: number
   fallMs: number
   immuneMs: number
+  bumpDistanceM: number
+  bumpSpeedLoss: number
+  bumpCooldownMs: number
+  boardMarginM: number
 }
 
 export interface SkatingRules {
@@ -102,7 +106,11 @@ export function parseSkatingRules(raw: unknown): SkatingRules {
       speedThreshold: num(c.speedThreshold, 'crash.speedThreshold'),
       contactRadius: num(c.contactRadius, 'crash.contactRadius', 0.1),
       fallMs: num(c.fallMs, 'crash.fallMs'),
-      immuneMs: num(c.immuneMs, 'crash.immuneMs')
+      immuneMs: num(c.immuneMs, 'crash.immuneMs'),
+      bumpDistanceM: num(c.bumpDistanceM, 'crash.bumpDistanceM'),
+      bumpSpeedLoss: num(c.bumpSpeedLoss, 'crash.bumpSpeedLoss'),
+      bumpCooldownMs: num(c.bumpCooldownMs, 'crash.bumpCooldownMs'),
+      boardMarginM: num(c.boardMarginM, 'crash.boardMarginM')
     }
   }
 }
@@ -192,6 +200,19 @@ export function startProgress(oval: RaceOval, x: number, z: number): number {
 
 export function progressStep(oval: RaceOval, fromX: number, fromZ: number, toX: number, toZ: number): number {
   return -wrapAngle(ovalAngle(oval, toX, toZ) - ovalAngle(oval, fromX, fromZ))
+}
+
+export function boardImpactSpeed(rink: Bounds, fromX: number, fromZ: number, toX: number, toZ: number, dtMs: number, margin: number): number {
+  if (dtMs <= 0) return 0
+  const vx = ((toX - fromX) * 1000) / dtMs
+  const vz = ((toZ - fromZ) * 1000) / dtMs
+  const towards = [
+    toX - rink.minX <= margin ? -vx : 0,
+    rink.maxX - toX <= margin ? vx : 0,
+    toZ - rink.minZ <= margin ? -vz : 0,
+    rink.maxZ - toZ <= margin ? vz : 0
+  ]
+  return Math.max(0, ...towards)
 }
 
 export const FULL_LAP = 2 * Math.PI

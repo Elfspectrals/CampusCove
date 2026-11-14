@@ -9,6 +9,7 @@ import { setAvatarEating, setAvatarPicking, setAvatarSeated, updateAvatarAnimati
 import { parseCharacterLook, type CharacterLook } from '../../avatar/characterLook'
 import { createModularCharacter } from '../../avatar/modularCharacter'
 import { WEAR_SLOTS, wearSignature, type WearModels } from '../../avatar/modularCharacterLogic'
+import { skatingWear } from '../../game/sports/skating/skateWear'
 import { createActionBubble, type AvatarAction } from '../../game/actionBubble'
 import { createChatBubble, type ChatBubble } from '../../game/chatBubble'
 import { EYE_HEIGHT } from '../../game/gameRoomConstants'
@@ -59,6 +60,8 @@ interface RemoteAvatar {
   ry: number
   color: number
   outfit: string
+  appearance: AppearanceUpdate
+  skating: boolean
   punchPose: PunchPose
   punchOffsetX: number
   punchOffsetZ: number
@@ -91,6 +94,7 @@ export interface RemoteAvatarsDeps {
   getScene: () => THREE.Scene | undefined
   myPosition: { x: number; y: number; z: number }
   playSoundOn: (name: SfxName, object: THREE.Object3D, delayS: number) => void
+  onIce?: (x: number, z: number) => boolean
 }
 
 function parseSlotHexes(raw: Record<string, string> | null | undefined): CosmeticColors {
@@ -235,7 +239,8 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     }
 
     const colors = parseSlotHexes(data.slotHexes)
-    const models = parseSlotModels(data.slotModels)
+    const skating = deps.onIce?.(data.x, data.z) ?? false
+    const models = skatingWear(parseSlotModels(data.slotModels), skating)
     const look = parseCharacterLook(data.character)
     const group = await loadModel(models, colors, look, data.color)
     if (upsertTokenByUserId.get(data.id) !== token || renderTokenBySessionId.get(sessionId) !== renderToken) {
@@ -266,6 +271,8 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
       ry,
       color: data.color,
       outfit: wearSignature(models, colors, look),
+      appearance: { slotHexes: data.slotHexes, slotModels: data.slotModels, character: data.character },
+      skating,
       punchPose: idlePunchPose(),
       punchOffsetX: 0,
       punchOffsetZ: 0,
@@ -296,9 +303,12 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
       return
     }
     const colors = parseSlotHexes(update.slotHexes)
-    const models = parseSlotModels(update.slotModels)
+    const skating = deps.onIce?.(entry.x, entry.z) ?? false
+    const models = skatingWear(parseSlotModels(update.slotModels), skating)
     const look = parseCharacterLook(update.character)
     const outfit = wearSignature(models, colors, look)
+    entry.appearance = update
+    entry.skating = skating
     if (outfit === entry.outfit) return
 
     const renderToken = nextRenderToken(sessionId)
@@ -325,7 +335,7 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     const heldTool = latest.heldTool ? createRemoteHeldTool(group, latest.heldTool.code) : null
     const nameTag = createNameTag(group, latest.pseudo, badgeIconPaths(latest.badges), wantedStarsBySession.get(sessionId) ?? 0)
     const voiceIcon = createVoiceIcon(group)
-    const rebuilt = { ...latest, group, nameTag, voiceIcon, chatBubble: null, outfit, punchOffsetX: 0, punchOffsetZ: 0, racePint, heldTool }
+    const rebuilt = { ...latest, group, nameTag, voiceIcon, chatBubble: null, outfit, appearance: update, skating, punchOffsetX: 0, punchOffsetZ: 0, racePint, heldTool }
     avatars.set(sessionId, rebuilt)
     applySeat(rebuilt)
   }
@@ -495,7 +505,11 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     if (flashes.length > 0) flashes = flashes.filter((f) => f.update(dt))
     if (damageNumbers.length > 0) damageNumbers = damageNumbers.filter((d) => d.update(dt))
     const t = 1 - Math.exp(-REMOTE_SMOOTHING * dt)
-    for (const entry of avatars.values()) {
+    for (const [sessionId, entry] of avatars) {
+      if (deps.onIce && deps.onIce(entry.x, entry.z) !== entry.skating) {
+        entry.skating = !entry.skating
+        void updateAppearance(sessionId, entry.appearance)
+      }
       const group = entry.group
       if (entry.chatBubble && !entry.chatBubble.update(dt)) entry.chatBubble = null
       const tagVisible = nameTagVisible(group.position.x - deps.myPosition.x, group.position.z - deps.myPosition.z)

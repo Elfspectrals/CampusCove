@@ -4,6 +4,7 @@ import { test } from 'node:test'
 import {
   FULL_LAP,
   advanceSpeed,
+  boardImpactSpeed,
   applyPush,
   insideCones,
   insideRink,
@@ -86,4 +87,12 @@ test('finishers are ranked by time, then sign-up order', () => {
     { accountId: 3, timeMs: 30_000, signedAt: 2 }
   ])
   assert.deepEqual(ranked.map((r) => [r.accountId, r.place]), [[2, 1], [1, 2], [3, 3]])
+})
+
+test('board impact speed counts only the speed towards a board within the margin', () => {
+  const box = { minX: 0, maxX: 10, minZ: 0, maxZ: 10 }
+  assert.ok(Math.abs(boardImpactSpeed(box, 9, 5, 9.7, 5, 100, 0.6) - 7) < 1e-9)
+  assert.equal(boardImpactSpeed(box, 5, 5, 5.7, 5, 100, 0.6), 0, 'far from the boards')
+  assert.equal(boardImpactSpeed(box, 9.7, 5, 9.7, 5.7, 100, 0.6), 0, 'gliding along the board')
+  assert.ok(Math.abs(boardImpactSpeed(box, 1, 1, 0.3, 0.3, 100, 0.6) - 7) < 1e-9)
 })

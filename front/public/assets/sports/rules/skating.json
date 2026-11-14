@@ -125,7 +125,11 @@
     "speedThreshold": 6.5,
     "contactRadius": 0.9,
     "fallMs": 1500,
-    "immuneMs": 2000
+    "immuneMs": 2000,
+    "bumpDistanceM": 1.0,
+    "bumpSpeedLoss": 0.3,
+    "bumpCooldownMs": 600,
+    "boardMarginM": 0.6
   },
   "gear": [
     "gear_ice_skates"

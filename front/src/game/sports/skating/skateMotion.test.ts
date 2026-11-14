@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
-import { glide, hitBoards, newSkater, onIce, parseSkatingSpec, push, pushKind, raceClock, rhythmCue, skateStep, speedKmh, steer, turnRate } from './skateMotion.ts'
+import { bumped, glide, hitBoards, newSkater, onIce, parseSkatingSpec, push, pushKind, raceClock, rhythmCue, skateStep, speedKmh, steer, turnRate } from './skateMotion.ts'
 
 const raw = JSON.parse(readFileSync(new URL('../../../../public/assets/sports/rules/skating.json', import.meta.url), 'utf8'))
 const spec = parseSkatingSpec(raw)
@@ -59,4 +59,11 @@ test('HUD helpers', () => {
   assert.equal(rhythmCue(t, s, 400), 0.5)
   assert.equal(speedKmh(s), 6)
   assert.equal(raceClock(83_456), '1:23.4')
+})
+
+test('a bump costs a share of the speed', () => {
+  const s = newSkater(0)
+  s.speed = 5
+  bumped(spec, s)
+  assert.ok(Math.abs(s.speed - 3.5) < 1e-9)
 })

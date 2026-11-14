@@ -23,6 +23,7 @@ export interface SkatingSpec {
   rink: RinkBounds
   crashSpeed: number
   fallMs: number
+  bumpSpeedLoss: number
 }
 
 export type PushKind = 'good' | 'normal' | 'early'
@@ -79,6 +80,7 @@ export function parseSkatingSpec(raw: unknown): SkatingSpec {
     },
     crashSpeed: num(crash, 'speedThreshold', 'crash'),
     fallMs: num(crash, 'fallMs', 'crash'),
+    bumpSpeedLoss: num(crash, 'bumpSpeedLoss', 'crash'),
   }
 }
 
@@ -142,6 +144,10 @@ export function hitBoards(spec: SkatingSpec, s: Skater, wanted: number, moved: n
   s.speed = 0
   if (fell) s.fallenUntil = now + spec.fallMs
   return fell
+}
+
+export function bumped(spec: SkatingSpec, s: Skater): void {
+  s.speed *= 1 - spec.bumpSpeedLoss
 }
 
 export function fall(s: Skater, until: number): void {

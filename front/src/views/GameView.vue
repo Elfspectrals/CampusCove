@@ -886,6 +886,7 @@ const skating = useSkating({
   say: (text) => survival.say(text),
   correctionText: (reason) => (SKATING_CORRECTIONS.has(reason) ? t(`skating.corrections.${reason}`) : null),
   onFall: () => movement.kickCamera(),
+  knockBack: (dirX, dirZ, distance) => movement.knockBack(dirX, dirZ, distance),
   playSound: (name) => sfx.play(name),
 })
 const { active: skatingActive, speed: skatingSpeed, cue: skatingCue, rhythmZone: skatingWindow, lastPush: skatingLastPush, race: skatingRace, rows: skatingRows, clock: skatingClock, result: skatingResult } = skating
@@ -1766,7 +1767,7 @@ const realtime = useGameRealtime({
     onError: sportsSignup.handlers.onError,
     onRoomJoined: sportsSignup.handlers.onRoomJoined,
   },
-  skating: skating.handlers,
+  skating: { ...skating.handlers, isOnIce: skating.isOnIce },
   pickpocket: pickpocket.handlers,
   storageAuction: {
     ...storageAuction.handlers,

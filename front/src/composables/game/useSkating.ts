@@ -3,6 +3,7 @@ import type { Room } from '@colyseus/sdk'
 import {
   SKATING_RULES_URL,
   fall,
+  bumped,
   hitBoards,
   newSkater,
   onIce,
@@ -16,7 +17,7 @@ import {
   type PushKind,
   type SkatingSpec,
 } from '../../game/sports/skating/skateMotion'
-import type { SkateFallPayload, SkateRacePayload, SkateResultPayload } from '../../types/gameRealtime'
+import type { SkateBumpPayload, SkateFallPayload, SkateRacePayload, SkateResultPayload } from '../../types/gameRealtime'
 import type { SfxName } from '../../game/sfx'
 
 export interface SkatingDeps {
@@ -26,6 +27,7 @@ export interface SkatingDeps {
   say: (text: string) => void
   correctionText: (reason: string) => string | null
   onFall: () => void
+  knockBack: (dirX: number, dirZ: number, distance: number) => void
   playSound: (name: SfxName) => void
 }
 
@@ -88,9 +90,14 @@ export function useSkating(deps: SkatingDeps) {
     return r !== null && serverNow() < r.goAt && r.racers.some((x) => x.sessionId === mySessionId())
   }
 
+  function isOnIce(x: number, z: number): boolean {
+    return spec.value !== null && onIce(spec.value.rink, x, z)
+  }
+
   function setBraking(on: boolean): void {
     if (on === braking) return
     braking = on
+    if (on && skater.speed > 1) deps.playSound('skate_brake')
     deps.gameRoomRef.value?.send('skate_brake', { on })
   }
 
@@ -120,7 +127,7 @@ export function useSkating(deps: SkatingDeps) {
     if (keys.forward && !forwardHeld && now >= skater.fallenUntil) {
       lastPush.value = push(s.tuning, skater, now)
       deps.gameRoomRef.value?.send('skate_push', {})
-      deps.playSound('whoosh')
+      deps.playSound('skate_push')
     }
     forwardHeld = keys.forward
     setBraking(keys.brake)
@@ -134,7 +141,7 @@ export function useSkating(deps: SkatingDeps) {
     const s = spec.value
     if (!s || !active.value) return
     if (hitBoards(s, skater, wanted, moved, Date.now())) {
-      deps.playSound('impact')
+      deps.playSound('skate_fall')
       deps.onFall()
     }
   }
@@ -172,15 +179,24 @@ export function useSkating(deps: SkatingDeps) {
     onRace(data: SkateRacePayload): void {
       clockOffset.value = data.serverNow - Date.now()
       const before = race.value
-      if (data.phase === 'racing' && before?.phase === 'countdown') deps.playSound('market_bell')
+      if (data.phase === 'racing' && before?.phase === 'countdown') deps.playSound('skate_start')
       race.value = data
       result.value = null
     },
     onFall(data: SkateFallPayload): void {
       if (data.sessionId !== mySessionId()) return
+      const alreadyDown = Date.now() < skater.fallenUntil
       fall(skater, Date.now() + Math.max(0, data.until - data.serverNow))
-      deps.playSound('impact')
+      if (alreadyDown) return
+      deps.playSound('skate_fall')
       deps.onFall()
+    },
+    onBump(data: SkateBumpPayload): void {
+      const s = spec.value
+      if (!s || data.sessionId !== mySessionId()) return
+      bumped(s, skater)
+      deps.knockBack(data.dirX, data.dirZ, data.distance)
+      deps.playSound('skate_bump')
     },
     onResult(data: SkateResultPayload): void {
       race.value = null
@@ -201,5 +217,5 @@ export function useSkating(deps: SkatingDeps) {
     },
   }
 
-  return { active, speed, cue, rhythmZone, lastPush, race, rows, clock, result, step, afterMove, tick, handlers }
+  return { active, speed, cue, rhythmZone, isOnIce, lastPush, race, rows, clock, result, step, afterMove, tick, handlers }
 }

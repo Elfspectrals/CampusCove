@@ -473,6 +473,14 @@ def build_shoes(key, M, m):
             add_sweep(M, m["accent"], SP([(0.10, 0.012, 0.345), (0.10, 0.012, 0.37)], sg), [(0.082, 0.088), (0.082, 0.088)], seg=14, per=1)
         elif key == "slides":
             shoe(M, m, sg, slide=True)
+        elif key == "ice_skates":
+            shoe(M, m, sg, collar_z=0.24, sole_h=0.03)
+            add_sweep(M, m["main"], SP([(0.10, 0.012, 0.2), (0.10, 0.012, 0.24)], sg), [(0.054, 0.06), (0.054, 0.06)], seg=14, per=1)
+            for lace_z in (0.09, 0.13, 0.17, 0.21):
+                add_box(M, m["accent"], S((0.10, -0.045, lace_z), sg), (0.05, 0.006, 0.006), bevel=0.001)
+            add_box(M, m["blade"], S((0.10, -0.07, 0.0), sg), (0.008, 0.34, 0.024), bevel=0.003)
+            for post_y in (0.03, -0.15):
+                add_box(M, m["blade"], S((0.10, post_y, 0.02), sg), (0.016, 0.03, 0.02), bevel=0.002)
         elif key == "runners":
             shoe(M, m, sg, sole_h=0.045, toe_cap=True)
             add_sweep(M, m["accent"], SP([(0.10 + 0.052, 0.04, 0.08), (0.10 + 0.054, -0.04, 0.09), (0.10 + 0.05, -0.12, 0.07)], sg),
@@ -544,6 +552,7 @@ WEAR = {
         "rubber_boots": dict(main="3f7a4a", accent="2a2c22", hides=["feet"]),
         "slides": dict(main="2f6f63", accent="ece8de", hides=[]),
         "runners": dict(main="ff9a3c", accent="2a2c33", hides=["feet"]),
+        "ice_skates": dict(main="f4f4f2", accent="d8dbe0", hides=["feet"], extra={"blade": dict(color="c9ccd2", metal=0.8, rough=0.25)}),
         "newcomer": dict(main="f4f2ec", accent="f7c948", hides=["feet"]),
     }),
 }

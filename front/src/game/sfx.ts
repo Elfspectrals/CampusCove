@@ -38,6 +38,11 @@ const SOUNDS = {
   market_bell: { urls: ['/assets/sfx/market/bell.mp3'], volume: 0.6 },
   market_bought: { urls: ['/assets/sfx/market/bought.mp3'], volume: 0.7 },
   market_sold: { urls: ['/assets/sfx/market/sold.mp3'], volume: 0.7 },
+  skate_push: { urls: ['/assets/sfx/skating/push.mp3'], volume: 0.5 },
+  skate_brake: { urls: ['/assets/sfx/skating/brake.mp3'], volume: 0.6 },
+  skate_fall: { urls: ['/assets/sfx/skating/fall.mp3'], volume: 0.9 },
+  skate_bump: { urls: ['/assets/sfx/skating/bump.mp3'], volume: 0.8 },
+  skate_start: { urls: ['/assets/sfx/skating/start.mp3'], volume: 0.8 },
 } satisfies Record<string, SoundDef>
 
 export type SfxName = keyof typeof SOUNDS

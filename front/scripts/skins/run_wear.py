@@ -33,8 +33,11 @@ woman_top = build_woman_top(body_coll, arm, body_objs)
 sample_actions(arm, {**make_clips(None), "Pick": (90, pose_pick())})
 piece_coll = wipe("WEAR_PIECES")
 pieces = {}
+only = next((a.split("=", 1)[1].split(",") for a in argv if a.startswith("only=")), None)
 for slot, spec in WEAR.items():
     for key in spec["items"]:
+        if only and "%s/%s" % (slot, key) not in only:
+            continue
         if slot == "hair":
             pieces[(slot, key)] = build_stylized_hair(piece_coll, arm, key, heads["m"])
         elif slot == "head_accessory":
@@ -68,11 +71,12 @@ if "build" not in argv:
         sex = fit.split("_")[0]
         own = body_objs + [heads[sex]] + ([woman_top] if sex == "f" else [])
         bodies = own if fit == REFERENCE_FIT else [fitted_copy(o, arm, fit, body_coll) for o in own]
-        export_piece_glb(OUT_WEAR + "base/model%s.glb" % fit_url_suffix(fit), [arm] + bodies + faces[sex], animations=True)
+        if not only:
+            export_piece_glb(OUT_WEAR + "base/model%s.glb" % fit_url_suffix(fit), [arm] + bodies + faces[sex], animations=True)
         trees[fit] = body_tree(bodies)
         if fit != REFERENCE_FIT:
             remove_copies(bodies)
-    files = len(FIT_KEYS)
+    files = 0 if only else len(FIT_KEYS)
     for (slot, key), ob in pieces.items():
         d = OUT_WEAR + "%s/%s/" % (slot, key)
         os.makedirs(d, exist_ok=True)

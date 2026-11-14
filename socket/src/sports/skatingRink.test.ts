@@ -84,6 +84,9 @@ test('without skates the ice refuses the player, with skates the skate speed is 
   const { room, players: [p] } = await arrive([1])
   assert.equal(step(room, p, COACH.x, RINK.maxZ - 1, NOW + 4000), 'no_skates')
   api.replies.set('GET /sports/gear', () => json({ gear: ['gear_ice_skates'] }))
+  assert.equal(step(room, p, COACH.x, RINK.maxZ - 1, NOW + 5100), 'no_skates')
+  await flush()
+  assert.equal(step(room, p, COACH.x, RINK.maxZ - 1, NOW + 5200), null, 'skates bought inside the rink count at the next try')
   const { room: room2, players: [q] } = await arrive([2])
   q.x = RINK.maxX + 1
   q.z = -120
@@ -152,7 +155,7 @@ test('two fast skaters who touch both fall', async () => {
   a.z = -118
   b.x = -325.4
   b.z = -118
-  venues.tickSports(room, goAt + 4000)
+  rink.tickSkating(room, goAt + 4000)
   const falls = sentOf(clientOf(room, a), 'skate_fall') as { sessionId: string, until: number }[]
   assert.deepEqual(falls.map((f) => f.sessionId).sort(), [a.sessionId, b.sessionId].sort())
   assert.equal(falls[0].until, goAt + 4000 + rules.crash.fallMs)
@@ -167,4 +170,44 @@ test('the shipped zone file holds the rink coach off the ice, in the venue footp
   const { insideRink } = await import('./skatingSim.ts')
   assert.ok(!insideRink(shipped.rink, coach.x, coach.z))
   assert.throws(() => coachProp(zoneFile, 'nobody', 'sports_ice_rink'), /no coach prop/)
+})
+
+test('slow skaters who touch push each other apart without falling', async () => {
+  const { room, players: [a, b] } = await arrive([17, 18])
+  for (const [p, z] of [[a, -118], [b, -118.5]] as const) {
+    p.x = RINK.maxX + 0.5
+    p.z = z
+    assert.equal(step(room, p, RINK.maxX - 1, z, NOW + 1000), null)
+  }
+  rink.tickSkating(room, NOW + 1100)
+  const bumpA = sentOf(clientOf(room, a), 'skate_bump') as { dirZ: number, distance: number }[]
+  const bumpB = sentOf(clientOf(room, b), 'skate_bump') as { dirZ: number }[]
+  assert.equal(bumpA.length, 1)
+  assert.ok(bumpA[0].dirZ > 0 && bumpB[0].dirZ < 0, 'pushed away from each other')
+  assert.equal(sentOf(clientOf(room, a), 'skate_fall').length, 0)
+  rink.tickSkating(room, NOW + 1200)
+  assert.equal(sentOf(clientOf(room, a), 'skate_bump').length, 1, 'one bump per cooldown')
+})
+
+test('a skater who hits the boards fast falls, a slow one does not', async () => {
+  const { room, players: [p] } = await arrive([19])
+  p.x = RINK.maxX + 0.5
+  p.z = -125
+  assert.equal(step(room, p, RINK.maxX - 3, -125, NOW + 1000), null)
+  rink.tickSkating(room, NOW + 1100)
+  p.x = RINK.maxX - 3
+  p.z = RINK.minZ + 1.2
+  rink.tickSkating(room, NOW + 1200)
+  p.z = RINK.minZ + 0.3
+  rink.tickSkating(room, NOW + 1300)
+  assert.equal(sentOf(clientOf(room, p), 'skate_fall').length, 1, '9 m/s into the boards')
+  assert.equal(step(room, p, RINK.maxX - 5, RINK.minZ + 2, NOW + 1500), 'skate_fallen')
+  const { room: slowRoom, players: [q] } = await arrive([20])
+  q.x = RINK.maxX + 0.5
+  q.z = -125
+  assert.equal(step(slowRoom, q, RINK.maxX - 3, -125, NOW + 1000), null)
+  rink.tickSkating(slowRoom, NOW + 1100)
+  q.z = RINK.minZ + 0.5
+  rink.tickSkating(slowRoom, NOW + 1100 + 10_000)
+  assert.equal(sentOf(clientOf(slowRoom, q), 'skate_fall').length, 0)
 })

@@ -10,6 +10,7 @@ import {
   advanceSpeed,
   applyPush,
   insideCones,
+  boardImpactSpeed,
   insideRink,
   lapOf,
   newSpeedState,
@@ -26,6 +27,7 @@ export const ICE_SKATES = 'gear_ice_skates'
 const SKATE_SPEED_MARGIN = 1.25
 const STILL_EPSILON_M = 0.3
 const MIN_PUSH_INTERVAL_MS = 150
+const SKATES_RECHECK_MS = 5000
 
 export type SkatingRejection = 'no_skates' | 'skate_start' | 'skate_fallen' | 'too_fast'
 
@@ -54,11 +56,14 @@ interface Race {
 interface Skater {
   owns: boolean | null
   checking: boolean
+  checkedAt: number
   inZone: boolean
   speed: SpeedState | null
   acceptedDistance: number
   fallenUntil: number
   immuneUntil: number
+  bumpUntil: number
+  sample: { x: number, z: number, at: number } | null
 }
 
 let rules: SkatingRules | null = null
@@ -69,7 +74,7 @@ const races = new WeakMap<GameRoom, Race>()
 function skaterOf(player: Player): Skater {
   let s = skaters.get(player)
   if (!s) {
-    s = { owns: null, checking: false, inZone: false, speed: null, acceptedDistance: 0, fallenUntil: 0, immuneUntil: 0 }
+    s = { owns: null, checking: false, checkedAt: -Infinity, inZone: false, speed: null, acceptedDistance: 0, fallenUntil: 0, immuneUntil: 0, bumpUntil: 0, sample: null }
     skaters.set(player, s)
   }
   return s
@@ -84,9 +89,10 @@ function onIce(x: number, z: number): boolean {
   return rules !== null && insideRink(rules.rink, x, z)
 }
 
-function refreshSkates(player: Player, skater: Skater): void {
+function refreshSkates(player: Player, skater: Skater, now: number): void {
   if (skater.checking || !player.token) return
   skater.checking = true
+  skater.checkedAt = now
   ownedGear(player)
     .then((gear) => {
       skater.owns = gear.includes(ICE_SKATES)
@@ -118,22 +124,23 @@ export function skatingRejection(room: GameRoom, player: Player, x: number, z: n
   if (!rules) return null
   const skater = skaterOf(player)
   const entersZone = inZone(x, z)
-  if (entersZone && !skater.inZone) refreshSkates(player, skater)
+  if (entersZone && !skater.inZone) refreshSkates(player, skater, now)
   skater.inZone = entersZone
   const wasOnIce = onIce(player.x, player.z)
   const toIce = onIce(x, z)
   if (toIce && !wasOnIce) {
-    if (skater.owns === null) refreshSkates(player, skater)
+    if (skater.owns !== true && now - skater.checkedAt >= SKATES_RECHECK_MS) refreshSkates(player, skater, now)
     if (skater.owns !== true) return 'no_skates'
     skater.speed = newSpeedState(now)
     skater.acceptedDistance = 0
+    skater.sample = null
   }
+  const moved = Math.hypot(x - player.x, z - player.z)
+  if (wasOnIce && now < skater.fallenUntil) return moved > STILL_EPSILON_M ? 'skate_fallen' : null
   const racer = racerOf(room, player)
   if (!racer || racer.finishedMs !== null || racer.dnf) return null
-  const moved = Math.hypot(x - player.x, z - player.z)
   const race = races.get(room) as Race
   if (now < race.goAt) return moved > STILL_EPSILON_M ? 'skate_start' : null
-  if (now < skater.fallenUntil) return moved > STILL_EPSILON_M ? 'skate_fallen' : null
   const speed = speedOf(skater, now)
   advanceSpeed(rules.skate, speed, now)
   if (moved > speed.distance - skater.acceptedDistance + rules.skate.moveMarginM) return 'too_fast'
@@ -231,33 +238,67 @@ function running(r: Racer): boolean {
   return r.finishedMs === null && !r.dnf
 }
 
-function crash(room: GameRoom, race: Race, now: number): boolean {
+function knockDown(room: GameRoom, player: Player, skater: Skater, now: number): void {
   const r = rules as SkatingRules
-  const live = [...race.racers.values()].filter(running).map((racer) => ({ racer, player: room.players.get(racer.sessionId) }))
-  let changed = false
-  for (let i = 0; i < live.length; i++) {
-    for (let j = i + 1; j < live.length; j++) {
-      const a = live[i].player
-      const b = live[j].player
-      if (!a || !b || Math.hypot(a.x - b.x, a.z - b.z) >= r.crash.contactRadius) continue
-      const sa = skaterOf(a)
-      const sb = skaterOf(b)
-      if (now < sa.immuneUntil || now < sb.immuneUntil) continue
-      advanceSpeed(r.skate, speedOf(sa, now), now)
-      advanceSpeed(r.skate, speedOf(sb, now), now)
-      if (Math.max(speedOf(sa, now).speed, speedOf(sb, now).speed) < r.crash.speedThreshold) continue
-      for (const [player, skater] of [[a, sa], [b, sb]] as const) {
-        skater.fallenUntil = now + r.crash.fallMs
-        skater.immuneUntil = now + r.crash.fallMs + r.crash.immuneMs
-        const speed = speedOf(skater, now)
-        speed.speed = 0
-        speed.braking = false
-        sendToRink(room, 'skate_fall', { sessionId: player.sessionId, until: skater.fallenUntil, serverNow: now }, race)
-      }
-      changed = true
-    }
+  skater.fallenUntil = now + r.crash.fallMs
+  skater.immuneUntil = now + r.crash.fallMs + r.crash.immuneMs
+  const speed = speedOf(skater, now)
+  advanceSpeed(r.skate, speed, now)
+  speed.speed = 0
+  speed.braking = false
+  sendToRink(room, 'skate_fall', { sessionId: player.sessionId, until: skater.fallenUntil, serverNow: now }, races.get(room) ?? null)
+}
+
+function bump(room: GameRoom, player: Player, skater: Skater, dirX: number, dirZ: number, now: number): void {
+  const r = rules as SkatingRules
+  skater.bumpUntil = now + r.crash.bumpCooldownMs
+  const speed = speedOf(skater, now)
+  advanceSpeed(r.skate, speed, now)
+  speed.speed *= 1 - r.crash.bumpSpeedLoss
+  skater.acceptedDistance -= r.crash.bumpDistanceM
+  clientOf(room, player.sessionId)?.send('skate_bump', { sessionId: player.sessionId, dirX, dirZ, distance: r.crash.bumpDistanceM, serverNow: now })
+}
+
+function collide(room: GameRoom, a: Player, b: Player, now: number): void {
+  const r = rules as SkatingRules
+  const gap = Math.hypot(a.x - b.x, a.z - b.z)
+  if (gap >= r.crash.contactRadius) return
+  const sa = skaterOf(a)
+  const sb = skaterOf(b)
+  if (now < sa.fallenUntil || now < sb.fallenUntil) return
+  advanceSpeed(r.skate, speedOf(sa, now), now)
+  advanceSpeed(r.skate, speedOf(sb, now), now)
+  const fast = Math.max(speedOf(sa, now).speed, speedOf(sb, now).speed) >= r.crash.speedThreshold
+  if (fast && now >= sa.immuneUntil && now >= sb.immuneUntil) {
+    knockDown(room, a, sa, now)
+    knockDown(room, b, sb, now)
+    return
   }
-  return changed
+  if (now < sa.bumpUntil || now < sb.bumpUntil) return
+  const dirX = gap > 0 ? (a.x - b.x) / gap : 1
+  const dirZ = gap > 0 ? (a.z - b.z) / gap : 0
+  bump(room, a, sa, dirX, dirZ, now)
+  bump(room, b, sb, -dirX, -dirZ, now)
+}
+
+function hitsBoards(player: Player, skater: Skater, now: number): boolean {
+  const r = rules as SkatingRules
+  const last = skater.sample
+  skater.sample = { x: player.x, z: player.z, at: now }
+  if (!last || now < skater.fallenUntil || now < skater.immuneUntil) return false
+  return boardImpactSpeed(r.rink, last.x, last.z, player.x, player.z, now - last.at, r.crash.boardMarginM) >= r.crash.speedThreshold
+}
+
+export function tickSkating(room: GameRoom, now = Date.now()): void {
+  if (!rules) return
+  const onTheIce = [...room.players.values()].filter((p) => skaters.get(p)?.owns === true && onIce(p.x, p.z))
+  for (let i = 0; i < onTheIce.length; i++) {
+    for (let j = i + 1; j < onTheIce.length; j++) collide(room, onTheIce[i], onTheIce[j], now)
+  }
+  for (const player of onTheIce) {
+    const skater = skaterOf(player)
+    if (hitsBoards(player, skater, now)) knockDown(room, player, skater, now)
+  }
 }
 
 function advanceRacer(room: GameRoom, race: Race, racer: Racer, now: number): boolean {
@@ -293,7 +334,6 @@ function tick(room: GameRoom, match: Match, elapsedMs: number): void {
   for (const racer of race.racers.values()) {
     if (running(racer) && advanceRacer(room, race, racer, now)) changed = true
   }
-  if (crash(room, race, now)) changed = true
   const overTime = now - race.goAt >= raceTimeLimit(rules as SkatingRules, race.laps)
   if (overTime) for (const racer of race.racers.values()) if (running(racer)) racer.dnf = true
   if (changed || overTime) sendToRink(room, 'skate_race', raceView(race, now), race)

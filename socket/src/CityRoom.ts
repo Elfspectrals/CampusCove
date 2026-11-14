@@ -125,7 +125,7 @@ import {
   onSportsSignupLeave,
   tickSports
 } from './sports/index.ts'
-import { onSkateBrake, onSkatePush } from './sports/skatingRink.ts'
+import { onSkateBrake, onSkatePush, tickSkating } from './sports/skatingRink.ts'
 
 function warn(context: string, error: unknown): void {
   console.warn(`[colyseus] ${context}:`, error instanceof Error ? error.message : error)
@@ -259,6 +259,7 @@ export class CityRoom extends Room implements GameRoom {
     this.clock.setInterval(() => {
       try {
         tickSports(this)
+        tickSkating(this)
       } catch (error) {
         warn('sports tick failed', error)
       }

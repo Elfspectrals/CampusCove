@@ -113,6 +113,7 @@ import type {
   SportsLobbyClosedPayload,
   SportsLobbyPayload,
   SportsLoansPayload,
+  SkateBumpPayload,
   SkateFallPayload,
   SkateRacePayload,
   SkateResultPayload,
@@ -332,6 +333,8 @@ export interface GameRealtimeDeps {
   skating: {
     onRace: (data: SkateRacePayload) => void
     onFall: (data: SkateFallPayload) => void
+    onBump: (data: SkateBumpPayload) => void
+    isOnIce: (x: number, z: number) => boolean
     onResult: (data: SkateResultPayload) => void
     onCorrection: (reason: string | undefined) => void
     onRoomJoined: () => void
@@ -373,7 +376,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
   let previousQuantityByCode: Record<string, number> = {}
   let isInitialInventoryLoad = true
 
-  const remotes = useRemoteAvatars({ getScene: deps.getScene, myPosition: deps.myPosition, playSoundOn: deps.playSoundOn })
+  const remotes = useRemoteAvatars({ getScene: deps.getScene, myPosition: deps.myPosition, playSoundOn: deps.playSoundOn, onIce: deps.skating.isOnIce })
 
   function setMyPosition(x: number, y: number, z: number): void {
     deps.myPosition.x = x
@@ -595,6 +598,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('sports_loans', (data: SportsLoansPayload) => applySportsLoans(data))
     room.onMessage('skate_race', (data: SkateRacePayload) => deps.skating.onRace(data))
     room.onMessage('skate_fall', (data: SkateFallPayload) => deps.skating.onFall(data))
+    room.onMessage('skate_bump', (data: SkateBumpPayload) => deps.skating.onBump(data))
     room.onMessage('skate_result', (data: SkateResultPayload) => deps.skating.onResult(data))
     room.onMessage('pickpocket_started', (data: PickpocketStartedPayload) => deps.pickpocket.onStarted(data))
     room.onMessage('pickpocket_progress', (data: PickpocketProgressPayload) => deps.pickpocket.onProgress(data))
