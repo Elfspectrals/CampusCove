@@ -125,6 +125,7 @@ import {
   onSportsSignupLeave,
   tickSports
 } from './sports/index.ts'
+import { CLIMB_TICK_MS, onClimbHold, onClimbLetGo, onClimbStart, tickClimbing } from './sports/climbing.ts'
 
 function warn(context: string, error: unknown): void {
   console.warn(`[colyseus] ${context}:`, error instanceof Error ? error.message : error)
@@ -253,6 +254,16 @@ export class CityRoom extends Room implements GameRoom {
     this.onMessage('sports_coach_open', (client, payload: ClientPayload) => onSportsCoachOpen(this, client, payload))
     this.onMessage('sports_signup', (client, payload: ClientPayload) => void onSportsSignup(this, client, payload).catch((error) => warn('sports sign-up failed', error)))
     this.onMessage('sports_signup_leave', (client) => onSportsSignupLeave(this, client))
+    this.onMessage('climb_start', (client, payload: ClientPayload) => onClimbStart(this, client, payload))
+    this.onMessage('climb_hold', (client, payload: ClientPayload) => onClimbHold(this, client, payload))
+    this.onMessage('climb_let_go', (client) => onClimbLetGo(this, client))
+    this.clock.setInterval(() => {
+      try {
+        tickClimbing(this)
+      } catch (error) {
+        warn('climbing tick failed', error)
+      }
+    }, CLIMB_TICK_MS)
     this.clock.setInterval(() => {
       try {
         tickSports(this)

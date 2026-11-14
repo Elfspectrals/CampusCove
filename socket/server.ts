@@ -5,6 +5,7 @@ import { CITY_MAX_PLAYERS, LIVEKIT, PORT } from './src/config.ts'
 import { CityRoom } from './src/CityRoom.ts'
 import { internalRoutes } from './src/internal.ts'
 import { assertVenueZones } from './src/sports/index.ts'
+import { loadClimbing } from './src/sports/climbing.ts'
 import { loadAtms, loadMarketStalls, loadSportsPassDesk, loadWorld, loadZoneBuyers } from './src/world.ts'
 
 async function boot() {
@@ -14,6 +15,7 @@ async function boot() {
   await loadMarketStalls()
   await loadSportsPassDesk()
   assertVenueZones()
+  await loadClimbing()
   const gameServer = new Server({ transport: new WebSocketTransport() })
   gameServer.define('city', CityRoom)
   // extended with Colyseus' own matchmaking routes when it listens
