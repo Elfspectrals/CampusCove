@@ -626,6 +626,11 @@ export function worldSportsPassDesk(): Vec3 | null {
   return sportsPassDesk
 }
 
+export async function readGymCourt(): Promise<Json> {
+  if (!WORLD_MANIFEST_URL) throw new Error('WORLD_MANIFEST_URL is not set')
+  return readManifest(besideManifest('sports/gym/court.json'))
+}
+
 export async function readSportRules(sport: string): Promise<Json> {
   if (!WORLD_MANIFEST_URL) throw new Error('WORLD_MANIFEST_URL is not set')
   if (!/^[a-z_]+$/.test(sport)) throw new Error(`invalid sport id ${JSON.stringify(sport)}`)

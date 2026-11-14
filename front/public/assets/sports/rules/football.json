@@ -1,7 +1,7 @@
 {
   "version": 1,
   "sport": "football",
-  "status": "placeholder",
+  "status": "ready",
   "zone": "sports_gym",
   "coachId": "gym_coach",
   "signup": {
@@ -14,9 +14,7 @@
           2,
           3,
           4,
-          5,
-          6,
-          7
+          5
         ]
       },
       {
@@ -81,23 +79,42 @@
     360,
     480
   ],
+  "halvesByDurationSec": {
+    "480": 2
+  },
   "minPlayers": 4,
   "kickoffCountdownSec": 60,
   "rejoinGraceSec": 30,
   "ball": {
-    "radiusM": null,
-    "massKg": null,
-    "restitution": null,
-    "friction": null
+    "radiusM": 0.11,
+    "massKg": 0.43,
+    "restitution": 0.55,
+    "wallRestitution": 0.7,
+    "rimRestitution": 0.5,
+    "friction": 1.4
   },
-  "passPower": null,
-  "shotPowerRange": null,
+  "carryAheadM": 0.55,
+  "dribbleReachM": 0.9,
+  "pickupHeightM": 0.6,
+  "passPower": 11,
+  "passLift": 0.8,
+  "shotPowerRange": [
+    10,
+    24
+  ],
+  "shotLiftRange": [
+    1,
+    5
+  ],
+  "shotChargeMs": 1000,
   "tackle": {
-    "reachM": null,
+    "reachM": 1.8,
+    "coneDeg": 70,
     "cooldownMs": 3000,
     "groundMs": 800
   },
-  "dribbleReachM": null,
+  "kickIgnoreMs": 350,
+  "restartMs": 3000,
   "gear": [],
   "tasks": [
     "matches_played",

@@ -1,0 +1,228 @@
+import type { ClientPayload, GameClient, GameRoom } from '../types.ts'
+import { worldSportsPassArea } from '../world.ts'
+import type { GymCourt } from './gymCourt.ts'
+import { type Athlete, type GymActionKind, type GymEvent, type GymGame, GYM_ACTIONS, actGym, dropOwner, newGymGame, outcomeFor, restartHalf, stepGym } from './gymMatch.ts'
+import { type GymRules, halvesOf } from './gymRules.ts'
+import type { Match, SettingSpec, Team } from './signup.ts'
+import { type MatchEnd, type MatchResult, endMatch, recordMatch, registerVenue } from './venues.ts'
+
+export const GYM_ZONE = 'sports_gym'
+export const GYM_COURT_AREA = 'gym_court'
+const STEP_S = 1 / 60
+const MAX_TICK_S = 0.5
+const MAX_ATHLETE_SPEED = 12
+const ACTION_GAP_MS = 60
+
+interface Live {
+  game: GymGame
+  rules: GymRules
+  durationMs: number
+  halves: number
+  half: number
+  lastAt: number
+  seen: Map<number, { x: number, z: number, at: number }>
+  speed: Map<number, { vx: number, vz: number }>
+}
+
+export interface GymVenueSpec {
+  id: string
+  court: GymCourt
+  rules: GymRules
+  settings: readonly SettingSpec[]
+  minPlayers: number
+  rejoinGraceMs: number
+}
+
+const lives = new WeakMap<GameRoom, Map<string, Live>>()
+const venueIds = new Set<string>()
+const lastActionAt = new Map<number, number>()
+
+function livesOf(room: GameRoom): Map<string, Live> {
+  let map = lives.get(room)
+  if (!map) {
+    map = new Map()
+    lives.set(room, map)
+  }
+  return map
+}
+
+function inGym(x: number, z: number): boolean {
+  const b = worldSportsPassArea(GYM_ZONE)
+  return b !== null && x >= b.minX && x <= b.maxX && z >= b.minZ && z <= b.maxZ
+}
+
+function sendToGym(room: GameRoom, match: Match, type: string, payload: unknown): void {
+  const accounts = new Set(match.players.map((p) => p.accountId))
+  room.forEachClient((c) => {
+    const p = room.players.get(c.sessionId)
+    if (p && (accounts.has(p.accountId) || inGym(p.x, p.z))) c.send(type, payload)
+  })
+}
+
+function sessionOf(match: Match, accountId: number | null): string | null {
+  return accountId === null ? null : match.players.find((p) => p.accountId === accountId)?.sessionId ?? null
+}
+
+function round(n: number): number {
+  return Math.round(n * 1000) / 1000
+}
+
+function stateView(match: Match, live: Live, now: number) {
+  const { game } = live
+  const b = game.ball
+  return {
+    venue: match.venue,
+    sport: live.rules.sport,
+    ball: [b.x, b.y, b.z, b.vx, b.vy, b.vz].map(round),
+    owner: sessionOf(match, game.owner),
+    score: { ...game.score },
+    half: live.half,
+    halves: live.halves,
+    endsAt: match.startedAt + live.durationMs,
+    restartTeam: game.restart?.team ?? null,
+    players: match.players.filter((p) => !p.out).map(({ sessionId, team }) => ({ sessionId, team })),
+    serverNow: now
+  }
+}
+
+function eventView(match: Match, event: GymEvent) {
+  if (event.kind === 'score') {
+    const scorer = event.scorer === null ? null : match.players.find((p) => p.accountId === event.scorer) ?? null
+    return { venue: match.venue, kind: 'score', team: event.team, points: event.points, dunk: event.dunk, scorer: scorer?.name ?? null, sessionId: scorer?.sessionId ?? null }
+  }
+  const { accountId, ...rest } = event
+  return { venue: match.venue, ...rest, sessionId: sessionOf(match, accountId) }
+}
+
+function broadcastEvents(room: GameRoom, match: Match, events: readonly GymEvent[]): void {
+  for (const event of events) sendToGym(room, match, 'gym_event', eventView(match, event))
+}
+
+function athletesOf(room: GameRoom, match: Match, live: Live, now: number): Athlete[] {
+  const out: Athlete[] = []
+  for (const p of match.players) {
+    if (p.out || p.awaySince !== null || p.team === null) continue
+    const player = room.players.get(p.sessionId)
+    if (!player) continue
+    const seen = live.seen.get(p.accountId)
+    const dt = seen ? (now - seen.at) / 1000 : 0
+    if (!seen || dt > 0) {
+      const raw = seen && dt > 0 ? { vx: (player.x - seen.x) / dt, vz: (player.z - seen.z) / dt } : { vx: 0, vz: 0 }
+      const speed = Math.hypot(raw.vx, raw.vz)
+      const k = speed > MAX_ATHLETE_SPEED ? MAX_ATHLETE_SPEED / speed : 1
+      live.speed.set(p.accountId, { vx: raw.vx * k, vz: raw.vz * k })
+      live.seen.set(p.accountId, { x: player.x, z: player.z, at: now })
+    }
+    const v = live.speed.get(p.accountId) ?? { vx: 0, vz: 0 }
+    out.push({ accountId: p.accountId, team: p.team, x: player.x, z: player.z, vx: v.vx, vz: v.vz, ry: player.ry })
+  }
+  return out
+}
+
+function halfAt(live: Live, elapsedMs: number): number {
+  return Math.min(live.halves, Math.floor(elapsedMs / (live.durationMs / live.halves)) + 1)
+}
+
+function results(match: Match, live: Live, end: MatchEnd): MatchResult[] {
+  const loser = end.reason === 'forfeit' ? end.loser : undefined
+  return match.players.map((p) => ({
+    accountId: p.accountId,
+    team: p.team,
+    result: p.out ? 'dnf' : outcomeFor(p.team as Team, live.game.score, loser),
+    score: live.game.tallies.get(p.accountId) ?? 0
+  }))
+}
+
+function winnerOf(live: Live, end: MatchEnd): Team | null {
+  if (end.reason === 'forfeit') return end.loser === null ? null : end.loser === 'red' ? 'blue' : 'red'
+  const { red, blue } = live.game.score
+  return red === blue ? null : red > blue ? 'red' : 'blue'
+}
+
+export function registerGymVenue(spec: GymVenueSpec): void {
+  venueIds.add(spec.id)
+  registerVenue({
+    id: spec.id,
+    sport: spec.rules.sport,
+    zone: GYM_ZONE,
+    coach: spec.court.coach,
+    playArea: spec.court.playArea,
+    playAreaId: GYM_COURT_AREA,
+    teams: true,
+    settings: spec.settings,
+    players: (settings) => ({ min: spec.minPlayers, max: 2 * Number(settings.teamSize) }),
+    rejoinGraceMs: spec.rejoinGraceMs,
+    onKickoff(room, match) {
+      const durationSec = Number(match.settings.durationSec)
+      const live: Live = {
+        game: newGymGame(spec.court, spec.rules, match.startedAt),
+        rules: spec.rules,
+        durationMs: durationSec * 1000,
+        halves: halvesOf(spec.rules, durationSec),
+        half: 1,
+        lastAt: match.startedAt,
+        seen: new Map(),
+        speed: new Map()
+      }
+      livesOf(room).set(match.venue, live)
+      sendToGym(room, match, 'gym_state', stateView(match, live, match.startedAt))
+    },
+    onTick(room, match, elapsedMs) {
+      const live = livesOf(room).get(match.venue)
+      if (!live) throw new Error(`gym match ${match.id}: no live state`)
+      const now = match.startedAt + elapsedMs
+      if (elapsedMs >= live.durationMs) {
+        endMatch(room, match.venue, { reason: 'finished' }, now)
+        return
+      }
+      const half = halfAt(live, elapsedMs)
+      if (half > live.half) {
+        live.half = half
+        restartHalf(live.game, live.rules, 'blue', now)
+        sendToGym(room, match, 'gym_event', { venue: match.venue, kind: 'half', half, sessionId: null })
+      }
+      const athletes = athletesOf(room, match, live, now)
+      const span = Math.min(MAX_TICK_S, Math.max(0, (now - live.lastAt) / 1000))
+      live.lastAt = now
+      const steps = Math.ceil(span / STEP_S)
+      const events: GymEvent[] = []
+      for (let i = 0; i < steps; i++) events.push(...stepGym(live.game, live.rules, athletes, span / steps, now))
+      broadcastEvents(room, match, events)
+      sendToGym(room, match, 'gym_state', stateView(match, live, now))
+    },
+    onLeave(room, match, accountId) {
+      const live = livesOf(room).get(match.venue)
+      if (live) dropOwner(live.game, accountId)
+    },
+    onEnd(room, match, end) {
+      const live = livesOf(room).get(match.venue)
+      if (!live) throw new Error(`gym match ${match.id}: no live state at the end`)
+      livesOf(room).delete(match.venue)
+      sendToGym(room, match, 'gym_end', { venue: match.venue, sport: spec.rules.sport, score: { ...live.game.score }, winner: winnerOf(live, end), reason: end.reason })
+      void recordMatch(room, match, results(match, live, end))
+    }
+  })
+}
+
+function parseKind(payload: ClientPayload): GymActionKind | null {
+  const kind = payload?.kind
+  return typeof kind === 'string' && (GYM_ACTIONS as readonly string[]).includes(kind) ? kind as GymActionKind : null
+}
+
+export function onGymAction(room: GameRoom, client: GameClient, payload: ClientPayload, now = Date.now()): void {
+  const player = room.players.get(client.sessionId)
+  const kind = parseKind(payload)
+  if (!player || !kind) return
+  if (now - (lastActionAt.get(player.accountId) ?? -Infinity) < ACTION_GAP_MS && kind !== 'shot_release') return
+  lastActionAt.set(player.accountId, now)
+  for (const venue of venueIds) {
+    const match = room.sports.matches.get(venue)
+    const live = livesOf(room).get(venue)
+    if (!match || !live) continue
+    const athletes = athletesOf(room, match, live, now)
+    const actor = athletes.find((a) => a.accountId === player.accountId && match.players.some((p) => p.accountId === a.accountId && p.sessionId === client.sessionId))
+    if (!actor) continue
+    broadcastEvents(room, match, actGym(live.game, live.rules, actor, athletes, kind, now, Math.random))
+    return
+  }
+}

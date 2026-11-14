@@ -1,7 +1,7 @@
 {
   "version": 1,
   "sport": "basketball",
-  "status": "placeholder",
+  "status": "ready",
   "zone": "sports_gym",
   "coachId": "gym_coach",
   "signup": {
@@ -34,9 +34,16 @@
       44,
       24
     ],
-    "baskets": null,
     "rimHeightM": 3.05,
-    "threePointRadiusM": null
+    "rimRadiusM": 0.225,
+    "rimFromEndLineM": 1.575,
+    "boardFromEndLineM": 1.2,
+    "boardSizeM": [
+      1.8,
+      1.05
+    ],
+    "boardBottomM": 2.9,
+    "threePointRadiusM": 6.75
   },
   "formats": [
     1,
@@ -50,26 +57,47 @@
     360,
     480
   ],
+  "halvesByDurationSec": {
+    "480": 2
+  },
   "minPlayers": 2,
   "kickoffCountdownSec": 60,
   "rejoinGraceSec": 30,
   "ball": {
-    "radiusM": null,
-    "massKg": null,
-    "restitution": null
+    "radiusM": 0.12,
+    "massKg": 0.6,
+    "restitution": 0.75,
+    "wallRestitution": 0.7,
+    "rimRestitution": 0.55,
+    "friction": 0.8
   },
+  "carryAheadM": 0.45,
+  "carryHeightM": 0.9,
+  "catchReachM": 1.0,
+  "catchHeightM": 2.3,
+  "releaseHeightM": 2.1,
+  "passPower": 9,
+  "passLift": 2.0,
   "shotMeter": {
-    "riseMs": null,
-    "windowMsByDistance": null
+    "riseMs": 900,
+    "windowNear": 0.18,
+    "windowFar": 0.07,
+    "farDistanceM": 12
   },
-  "aimAssistMax": null,
+  "shotAngleDeg": 52,
+  "aimAssistMax": 0.8,
   "dunkRangeM": 1.5,
+  "dunkSpeed": 4,
+  "dunkChance": 0.95,
   "steal": {
-    "reachM": null,
+    "reachM": 1.5,
     "chance": 0.4,
     "cooldownMs": 2000
   },
-  "blockWindowMs": null,
+  "blockReachM": 1.6,
+  "blockWindowMs": 350,
+  "kickIgnoreMs": 350,
+  "restartMs": 3000,
   "gear": [],
   "tasks": [
     "matches_played",
