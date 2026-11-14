@@ -783,3 +783,47 @@ export interface StorageOpenedPayload {
   pseudo: string
   contents: StorageLotContent[]
 }
+
+export interface SportsPassStatePayload {
+  validUntil: number | null
+  prices: { day: number; week: number }
+}
+
+export interface SportsPassBoughtPayload {
+  validUntil: number | null
+  cash: number
+}
+
+export interface SportsErrorPayload {
+  code: string
+  message: string
+}
+
+export interface SportsLobbyPlayer {
+  sessionId: string
+  name: string
+  team: 'red' | 'blue' | null
+}
+
+export interface SportsLobbyPayload {
+  venue: string
+  coach: string
+  sport: string
+  phase: 'open' | 'countdown' | 'playing'
+  settings: Record<string, string | number>
+  players: SportsLobbyPlayer[]
+  min: number
+  max: number
+  kickoffAt: number | null
+  serverNow: number
+}
+
+export interface SportsLobbyClosedPayload {
+  venue: string
+  reason: 'kickoff' | 'cancelled' | 'ended'
+}
+
+export interface SportsLoansPayload {
+  sessionId: string
+  loans: string[]
+}

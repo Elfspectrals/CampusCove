@@ -32,6 +32,8 @@ import GameFurnitureStorage from '../components/game/GameFurnitureStorage.vue'
 import GamePubMenu from '../components/game/GamePubMenu.vue'
 import GamePubSecretDialog from '../components/game/GamePubSecretDialog.vue'
 import GamePoliceLicenceDialog from '../components/game/GamePoliceLicenceDialog.vue'
+import GameSportsPassDesk from '../components/game/GameSportsPassDesk.vue'
+import GameSportsSignup from '../components/game/GameSportsSignup.vue'
 import GameChat from '../components/game/GameChat.vue'
 import GameDrunkEffects from '../components/game/GameDrunkEffects.vue'
 import GameDrinkFast from '../components/game/GameDrinkFast.vue'
@@ -94,6 +96,9 @@ import { useCashBags } from '../composables/game/useCashBags'
 import { useJailCell } from '../composables/game/useJailCell'
 import { useJail } from '../composables/game/useJail'
 import { usePolice } from '../composables/game/usePolice'
+import { useSportsPass } from '../composables/game/useSportsPass'
+import { passValid } from '../game/sports/sportsPass'
+import { useSportsSignup } from '../composables/game/useSportsSignup'
 import { usePickpocket } from '../composables/game/usePickpocket'
 import { useStorageAuction } from '../composables/game/useStorageAuction'
 import { useStorageWarehouse } from '../composables/game/useStorageWarehouse'
@@ -135,7 +140,7 @@ import { createHeldItem } from '../game/heldItem'
 import { COVE_HOME, COVE_THREADS, findHouse, findStore, findWork } from '../game/assets/catalog'
 import { storeBuildings, workBuildings, type WorldBounds } from '../game/world/worldManifest'
 import type { GearSlot } from '../game/wardrobeSlots'
-import type { PoliceBountyPayload, PoliceCuffCancelledPayload } from '../types/gameRealtime'
+import type { PoliceBountyPayload, PoliceCuffCancelledPayload, SportsErrorPayload } from '../types/gameRealtime'
 import { createSfx } from '../game/sfx'
 import { createAmbientLoop } from '../game/ambientLoop'
 import { MAX_STAMINA } from '../game/stamina'
@@ -799,6 +804,55 @@ const { cuffedBy: policeCuffedBy, onDuty: policeOnDuty, confirmOpen: policeConfi
 watch(policeConfirmOpen, (open) => {
   if (!open && !document.pointerLockElement) requestPointerLock()
 })
+function sportsErrorText({ code, message }: SportsErrorPayload): string {
+  const key = `sports.errors.${code}`
+  return te(key) ? t(key) : message
+}
+const sportsPass = useSportsPass({
+  myPosition,
+  getCamera,
+  canvasRef,
+  gameRoomRef,
+  promptsHidden: () => inventoryOpen.value,
+  desks: () => zoneDecor.sportsPassDesks.value,
+  deskPrompt: ({ validUntil, prices }) => ({
+    action: t('sports.pass.deskAction'),
+    detail: validUntil !== null && passValid(validUntil, Date.now())
+      ? t('sports.pass.deskValid', { end: new Date(validUntil).toLocaleString(locale.value === 'fr' ? 'fr-FR' : 'en-GB', { dateStyle: 'short', timeStyle: 'short' }) })
+      : t('sports.pass.deskDetail', prices),
+  }),
+  errorText: sportsErrorText,
+  noPassText: () => t('sports.noPass'),
+  say: (text) => survival.say(text),
+  onBought: () => {
+    sfx.play('market_bought')
+    survival.say(t('sports.bought'))
+  },
+})
+const { open: sportsPassOpen, state: sportsPassState, buying: sportsPassBuying, error: sportsPassError } = sportsPass
+watch(sportsPassOpen, (open) => {
+  if (!open && !document.pointerLockElement) requestPointerLock()
+})
+const sportsSignup = useSportsSignup({
+  myPosition,
+  getCamera,
+  canvasRef,
+  gameRoomRef,
+  promptsHidden: () => inventoryOpen.value,
+  coaches: () => zoneDecor.sportsCoaches.value,
+  coachPrompt: () => ({ action: t('sports.signup.coachAction'), detail: t('sports.signup.coachDetail') }),
+  errorText: sportsErrorText,
+  closedText: (reason) => t(`sports.signup.closed.${reason}`),
+  say: (text) => survival.say(text),
+  onSignedUp: () => {
+    sfx.play('market_bell')
+    survival.say(t('sports.signedUp'))
+  },
+})
+const { open: sportsSignupOpen, choices: sportsVenueChoices, canPickVenue: sportsCanPickVenue, lobby: sportsLobby, spec: sportsSpec, team: sportsTeam, settings: sportsSettings, pending: sportsSignupPending, error: sportsSignupError, clientNow: sportsClientNow, clockOffset: sportsClockOffset } = sportsSignup
+watch(sportsSignupOpen, (open) => {
+  if (!open && !document.pointerLockElement) requestPointerLock()
+})
 const PICKPOCKET_ERROR_KEYS = new Set([
   'pickpocket_on_duty',
   'pickpocket_jailed',
@@ -895,7 +949,7 @@ const interactions = useInteractionTargets({
     if (activeFurniture.value?.store.hasCounter.value) activeFurniture.value.store.toggleTarget(useWithShift)
     else openStorePurchase()
   },
-  sources: [pub.source, pubQuiz.source, pubChallenge.source, pubGames.source, seats.source, orchard.source, farm.source, zoneBuyers.source, atm.source, storage.source, respawnBed.source, cashBags.source, storageAuction.source, jailCell.source, police.source, pickpocket.source, market.source],
+  sources: [pub.source, pubQuiz.source, pubChallenge.source, pubGames.source, seats.source, orchard.source, farm.source, zoneBuyers.source, atm.source, storage.source, respawnBed.source, cashBags.source, storageAuction.source, jailCell.source, police.source, pickpocket.source, market.source, sportsPass.source, sportsSignup.source],
 })
 const { doorPrompt } = interactions
 
@@ -1346,6 +1400,8 @@ const pauseMenuOpen = computed(
     !lockpickOpen.value &&
     !storageOpen.value &&
     !marketPanelOpen.value &&
+    !sportsPassOpen.value &&
+    !sportsSignupOpen.value &&
     !adminPanelOpen.value &&
     !playerListOpen.value &&
     !tasksOpen.value &&
@@ -1355,7 +1411,7 @@ const pauseMenuOpen = computed(
 /** Back in the game with the menu closed, but the browser hasn't given the pointer back yet. */
 const resumedWithoutLock = computed(() => pauseMenuOpen.value && pauseDismissed.value)
 
-const { t } = useI18n()
+const { t, te, locale } = useI18n()
 const walletBalances = useWalletBalances()
 
 watch(inventoryOpen, (open) => {
@@ -1532,6 +1588,7 @@ const movement = useGameMovement({
     tutorialHints.tick()
     farm.tick()
     police.tick()
+    sportsSignup.tick()
     if (!doorSigns.group.parent) getScene()?.add(doorSigns.group)
     minimap.tick()
     gps.tick()
@@ -1666,6 +1723,16 @@ const realtime = useGameRealtime({
   cashBags: cashBags.handlers,
   jail: { ...jail.handlers, onTray: jailCell.onTray },
   police: police.handlers,
+  sports: {
+    onPassState: sportsPass.handlers.onState,
+    onPassBought: sportsPass.handlers.onBought,
+    onPassError: sportsPass.handlers.onError,
+    onCorrection: sportsPass.onCorrection,
+    onLobby: sportsSignup.handlers.onLobby,
+    onLobbyClosed: sportsSignup.handlers.onLobbyClosed,
+    onError: sportsSignup.handlers.onError,
+    onRoomJoined: sportsSignup.handlers.onRoomJoined,
+  },
   pickpocket: pickpocket.handlers,
   storageAuction: {
     ...storageAuction.handlers,
@@ -2253,6 +2320,34 @@ const crosshairClass = computed(() => {
       :error="policeError"
       @confirm="police.confirmBuy"
       @close="police.closeConfirm"
+    />
+    <GameSportsPassDesk
+      v-if="sportsPassOpen && sportsPassState"
+      :pass="sportsPassState"
+      :buying="sportsPassBuying"
+      :error="sportsPassError"
+      @buy="sportsPass.buy"
+      @close="sportsPass.close"
+    />
+    <GameSportsSignup
+      v-if="sportsSignupOpen"
+      :lobby="sportsLobby"
+      :choices="sportsVenueChoices"
+      :can-pick-venue="sportsCanPickVenue"
+      :spec="sportsSpec"
+      :team="sportsTeam"
+      :settings="sportsSettings"
+      :my-session-id="gameRoomRef?.sessionId ?? null"
+      :pending="sportsSignupPending"
+      :error="sportsSignupError"
+      :client-now="sportsClientNow"
+      :clock-offset="sportsClockOffset"
+      @pick-team="(side) => (sportsTeam = side)"
+      @set-setting="(key, value) => (sportsSettings = { ...sportsSettings, [key]: value })"
+      @pick-venue="sportsSignup.pickVenue"
+      @sign-up="sportsSignup.signUp"
+      @leave="sportsSignup.leave"
+      @close="sportsSignup.close"
     />
     <GamePubSecretDialog
       v-if="pubSecretOpen"

@@ -389,3 +389,16 @@ test('a zone shows its props within 20 m of its rectangle and hides them past 26
   assert.equal(zoneShown(shop, { x: 37, z: 5 }, true, 20, 26), false)
   assert.equal(zoneShown(shop, { x: 25, z: 25 }, false, 20, 26), false)
 })
+
+test('the sports pass desk clerk works at the reception, a coach NPC names its coach', () => {
+  const reception = { key: 'sports_reception', bounds: { minX: -30, maxX: -10, minZ: -100, maxZ: -80 } }
+  const receptionDecor = (props: unknown[]) => ({ version: 1, zone: 'sports_reception', name: 'Reception', props, areas: [] })
+  const clerk = { ...cashier, sportsPassDesk: true }
+  const coach = { ...cashier, id: 'n2', coach: 'gym_coach' }
+  const parsed = parseZoneDecor(receptionDecor([clerk, coach]), reception)
+  assert.deepEqual(parsed.props.map((p) => p.kind === 'npc' && [p.sportsPassDesk, p.coach]), [[true, undefined], [undefined, 'gym_coach']])
+  assert.throws(() => parseZoneDecor(decor([clerk]), orchard), /the pass desk works in zone sports_reception/)
+  assert.throws(() => parseZoneDecor(receptionDecor([{ ...cashier, sportsPassDesk: false }]), reception), /sportsPassDesk: set true/)
+  assert.throws(() => parseZoneDecor(receptionDecor([{ ...clerk, coach: 'gym_coach' }]), reception), /the pass desk clerk is not a coach/)
+  assert.throws(() => parseZoneDecor(receptionDecor([{ ...coach, coach: 'Gym Coach' }]), reception), /coach/)
+})
