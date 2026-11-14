@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "key": "sports_climbing",
+  "name": "Cove Climbing Hall",
+  "footprint": [
+    19.0,
+    31.0
+  ],
+  "footprintCenterZ": -8.881784197001252e-16,
+  "doorLocal": [
+    0.0,
+    1.25,
+    15.5
+  ],
+  "interiorOffset": [
+    0.0,
+    0.2,
+    10.095
+  ],
+  "position": [
+    -561.5,
+    0.0,
+    -203.5
+  ],
+  "rotationY": 1.5708,
+  "collision": [
+    {
+      "cx": 0.0,
+      "cz": -8.881784197001252e-16,
+      "hx": 9.7,
+      "hz": 15.7,
+      "hy": 7.1
+    }
+  ]
+}
