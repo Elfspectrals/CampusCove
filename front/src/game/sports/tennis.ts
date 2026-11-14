@@ -97,3 +97,11 @@ export function sideAt(z: number): TennisTeam {
   return z > TENNIS_NET_Z ? 'red' : 'blue'
 }
 
+
+export type TennisSwing = 'serve' | 'forehand' | 'backhand' | 'lob'
+
+export function swingFor(serving: boolean, lob: boolean, team: TennisTeam, me: { x: number }, ballX: number | null): TennisSwing {
+  if (serving) return 'serve'
+  if (lob) return 'lob'
+  return ballX === null || (ballX - me.x) * sideSign(team) >= 0 ? 'forehand' : 'backhand'
+}

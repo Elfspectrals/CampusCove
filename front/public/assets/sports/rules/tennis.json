@@ -106,7 +106,7 @@
     "gear_tennis_racket"
   ],
   "tasks": [
-    "matches_played",
-    "set_4_0"
+    "tennis",
+    "tennis_whitewash"
   ]
 }

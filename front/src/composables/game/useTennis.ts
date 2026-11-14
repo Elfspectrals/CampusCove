@@ -17,7 +17,9 @@ import {
   iServe,
   myTeam,
   sideAt,
+  swingFor,
   type BallPlay,
+  type TennisSwing,
 } from '../../game/sports/tennis'
 import { hasSportsLoan } from '../../game/sports/sportsLoans'
 import type { TennisBall, TennisFreePayload, TennisStatePayload, TennisTeam } from '../../types/gameRealtime'
@@ -52,7 +54,7 @@ export interface TennisDeps {
   pointerLocked: () => boolean
   promptsHidden: () => boolean
   basketPrompt: () => { action: string; detail?: string }
-  onSwing: () => void
+  onSwing: (swing: TennisSwing) => void
   onBallHit: (ball: THREE.Object3D) => void
   onBounce: (ball: THREE.Object3D) => void
   onCall: (call: NonNullable<TennisCall>) => void
@@ -142,12 +144,15 @@ export function useTennis(deps: TennisDeps) {
     return playing() !== null || holdingBall()
   }
 
-  function swing(): { team: TennisTeam; court: { cx: number; netZ: number } } | null {
+  function swing(): { team: TennisTeam; court: { cx: number; netZ: number }; serving: boolean; ball: THREE.Mesh } | null {
     const s = playing()
     const team = s && myTeam(s, mySessionId())
-    if (s && team) return { team, court: s.court }
+    if (s && team) return { team, court: s.court, serving: iServe(s, mySessionId()), ball: matchBall }
     const court = holdingBall() ? freeCourtAt(deps.myPosition.x, deps.myPosition.z) : null
-    return court ? { team: sideAt(deps.myPosition.z), court: { cx: court.cx, netZ: TENNIS_NET_Z } } : null
+    if (!court) return null
+    const phase = free.value.get(court.id)?.phase
+    const serving = phase === undefined || phase === 'toss' || phase === 'point'
+    return { team: sideAt(deps.myPosition.z), court: { cx: court.cx, netZ: TENNIS_NET_Z }, serving, ball: freeBalls.get(court.id)! }
   }
 
   function onPointerDown(e: MouseEvent): boolean {
@@ -159,8 +164,9 @@ export function useTennis(deps: TennisDeps) {
     camera.getWorldPosition(eye)
     camera.getWorldDirection(forward)
     const aim = aimOnCourt(shot.court, shot.team, eye, forward)
-    room.send('tennis_hit', { aimX: aim.x, aimZ: aim.z, lob: e.button === RIGHT_BUTTON })
-    deps.onSwing()
+    const lob = e.button === RIGHT_BUTTON
+    room.send('tennis_hit', { aimX: aim.x, aimZ: aim.z, lob })
+    deps.onSwing(swingFor(shot.serving, lob, shot.team, deps.myPosition, shot.ball.visible ? shot.ball.position.x : null))
     return true
   }
 

@@ -883,7 +883,10 @@ const tennis = useTennis({
   pointerLocked: () => pointerLocked.value,
   promptsHidden: () => inventoryOpen.value,
   basketPrompt: () => ({ action: t('sports.tennis.basketAction'), detail: t('sports.tennis.basketDetail') }),
-  onSwing: () => sfx.play('tennis_swing'),
+  onSwing: (swing) => {
+    sfx.play('tennis_swing')
+    arms?.tennisSwing(swing)
+  },
   onBallHit: (ball) => sfx.playOn('tennis_hit', ball),
   onBounce: (ball) => sfx.playOn('tennis_bounce', ball),
   onCall: (call) => sfx.play(call === 'net' ? 'tennis_net' : 'tennis_call'),

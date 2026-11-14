@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\ActionCounter;
 use App\Services\ActionCounterService;
+use App\Services\SportsMatchService;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -46,45 +47,45 @@ class TennisTaskApiTest extends TestCase
         $this->assertSame(1, $this->value($red, ActionCounter::TennisMatches));
     }
 
-    public function test_a_forfeit_a_young_account_or_another_sport_counts_nothing(): void
+    public function test_a_leaver_past_the_grace_counts_nothing_and_the_player_left_on_court_counts(): void
+    {
+        [$red, $blue] = [$this->player(), $this->player()];
+
+        $this->record($red, 'short_set_4', [[$red, 'red', 'win', 1], [$blue, 'blue', 'dnf', 0]])->assertOk();
+
+        $this->assertSame([1, 0], [$this->value($red, ActionCounter::TennisMatches), $this->value($blue, ActionCounter::TennisMatches)]);
+        $this->assertSame(0, $this->value($red, ActionCounter::TennisWhitewashes));
+    }
+
+    public function test_a_match_the_core_does_not_count_for_tasks_or_another_sport_counts_nothing(): void
     {
         [$red, $blue, $young] = [$this->player(), $this->player(), $this->player(ageHours: 10)];
 
-        $this->record($red, 'short_set_4', [[$red, 'red', 'win', 1], [$blue, 'blue', 'dnf', 0]])->assertOk();
-        $this->record($red, 'short_set_4', [[$red, 'red', 'win', 4], [$young, 'blue', 'loss', 0]])->assertOk();
+        $this->record($red, 'short_set_4', [[$red, 'red', 'win', 4], [$young, 'blue', 'loss', 0]])->assertOk()->assertJsonPath('match.countsForTasks', false);
         $this->postJson('/api/sports/matches', $this->body('football', 'short_set_4', [[$red, 'red', 'win', 4], [$blue, 'blue', 'loss', 0]]), $this->auth($red))->assertOk();
 
         $this->assertSame([0, 0], [$this->value($red, ActionCounter::TennisMatches), $this->value($red, ActionCounter::TennisWhitewashes)]);
     }
 
-    public function test_at_most_five_matches_count_a_day_and_the_count_starts_again_the_next_day(): void
+    public function test_the_core_cap_of_matches_per_pair_and_per_day_applies(): void
     {
-        $red = $this->player();
-        $opponents = [$this->player(), $this->player(), $this->player()];
-        for ($i = 0; $i < 7; $i++) {
-            $this->record($red, 'tiebreak_7', [[$red, 'red', 'win', 7], [$opponents[$i % 3], 'blue', 'loss', 3]])->assertOk();
+        [$red, $blue] = [$this->player(), $this->player()];
+        for ($i = 0; $i < 4; $i++) {
+            $this->record($red, 'tiebreak_7', [[$red, 'red', 'win', 7], [$blue, 'blue', 'loss', 3]])->assertOk();
         }
-        $this->assertSame(5, $this->value($red, ActionCounter::TennisMatches));
-        $blue = $opponents[0];
 
-        $this->travelTo(CarbonImmutable::parse('2026-11-15 10:00:00'));
-        $this->record($red, 'tiebreak_7', [[$red, 'red', 'win', 7], [$blue, 'blue', 'loss', 3]])->assertOk();
-
-        $this->assertSame(6, $this->value($red, ActionCounter::TennisMatches));
+        $this->assertSame(SportsMatchService::TASK_MATCHES_PER_PAIR_PER_DAY, $this->value($red, ActionCounter::TennisMatches));
     }
 
-    public function test_a_short_set_won_4_0_counts_once_a_day_per_opposing_line_up_and_never_in_a_tie_break(): void
+    public function test_a_short_set_won_4_0_counts_for_every_winner_but_a_tie_break_7_0_does_not(): void
     {
         [$a, $b, $c, $d] = [$this->player(), $this->player(), $this->player(), $this->player()];
 
         $this->record($a, 'short_set_4', [[$a, 'red', 'win', 4], [$b, 'red', 'win', 4], [$c, 'blue', 'loss', 0], [$d, 'blue', 'loss', 0]])->assertOk();
-        $this->record($a, 'short_set_4', [[$a, 'red', 'win', 4], [$b, 'red', 'win', 4], [$c, 'blue', 'loss', 0], [$d, 'blue', 'loss', 0]])->assertOk();
-        $this->record($a, 'short_set_4', [[$a, 'red', 'win', 4], [$c, 'blue', 'loss', 0]])->assertOk();
+        $this->record($a, 'short_set_4', [[$a, 'red', 'win', 4], [$c, 'blue', 'loss', 1]])->assertOk();
         $this->record($a, 'tiebreak_7', [[$a, 'red', 'win', 7], [$d, 'blue', 'loss', 0]])->assertOk();
 
-        $this->assertSame(2, $this->value($a, ActionCounter::TennisWhitewashes));
-        $this->assertSame(1, $this->value($b, ActionCounter::TennisWhitewashes));
-        $this->assertSame(0, $this->value($c, ActionCounter::TennisWhitewashes));
+        $this->assertSame([1, 1, 0], [$this->value($a, ActionCounter::TennisWhitewashes), $this->value($b, ActionCounter::TennisWhitewashes), $this->value($c, ActionCounter::TennisWhitewashes)]);
     }
 
     public function test_the_tennis_tasks_reach_their_first_tier(): void

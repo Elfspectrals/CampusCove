@@ -84,7 +84,7 @@ class SportsController extends Controller
                 array_values($validated['players']),
             );
             if ($match['recorded'] && $match['countsForTasks'] && $validated['sport'] === 'tennis') {
-                $this->tennisTasks->matchRecorded($validated['settings'], array_values($validated['players']));
+                $this->tennisTasks->matchCounted($validated['settings'], array_values($validated['players']));
             }
 
             return $match;

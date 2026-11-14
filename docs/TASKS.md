@@ -31,8 +31,8 @@ Laravel owns every counter. A counter counts one real action, bumped by the serv
 | `pub_games` | one finished Drink Fast race or Meter Shot run, at most 5 a day (Paris) and only when the player's drunkenness before the game's drink is 50 or less (0 to 100) | socket `reportPubGame` (`pubGames.ts`), then `POST /tasks/pub-game` (realtime) `{ game: drink_fast | meter_shot, intoxication: int 0-100 }` |
 | `duels_won` | one darts or Drink Fast game won against other players (placement 1), whoever the opponents are | `PubService::reward` |
 | `secret_room_weeks` | one week (Monday to Sunday, Paris, ISO week) in which the player stood in the pub's secret room | socket `taskTracking.ts` (once a day per account), then `POST /tasks/secret-room` (realtime, no body) |
-| `tennis_matches` | one tennis match ended on the score (not a forfeit), for each player still on court, when every player of the match has an account of 72 h or more; at most 5 a day (Paris) | `TennisTaskService::matchRecorded`, from `POST /sports/matches` (realtime) |
-| `tennis_whitewashes` | one short set won 4–0 (never a tie-break), counted under the same conditions, once a day per opposing line-up (1 or 2 accounts) | `TennisTaskService::matchRecorded` |
+| `tennis_matches` | one tennis match won or lost (not a leaver past the grace) in a match the core counts for tasks (`counts_for_tasks`, docs/sports/CORE.md § 4) | `TennisTaskService::matchCounted`, from `POST /sports/matches` (realtime) |
+| `tennis_whitewashes` | one short set won 4–0 (never a tie-break) in a match counted for tasks | `TennisTaskService::matchCounted` |
 | `foods_tasted` | one food or drink tasted for the first time (any group of `FoodCatalog` but `medical`), once per item code | `SurvivalService::consume` |
 
 ## Tiers
