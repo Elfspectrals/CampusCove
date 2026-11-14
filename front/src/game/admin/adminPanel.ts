@@ -1,8 +1,121 @@
-import type { AdminGrantedPayload, AdminItem, AdminMenuPayload, AdminResultPayload } from '../../types/gameRealtime.ts'
+import type { AdminBoost, AdminGrantedPayload, AdminItem, AdminMenuPayload, AdminPower, AdminResultPayload, AdminToggle, HousingUnitPayload } from '../../types/gameRealtime.ts'
+import type { UiIconName } from '../../components/ui/icons.ts'
+import { findHouse } from '../assets/catalog.ts'
+import { worldToMap } from '../world/minimap.ts'
+import type { WorldBounds } from '../world/worldManifest.ts'
 
 export const ADMIN_MAX_MONEY = 100_000
 export const ADMIN_MAX_QUANTITY = 999
 export const ADMIN_MAX_MARKET_MINUTES = 240
+
+/** Lasting powers, on until turned off or the player leaves, shown in these groups. */
+export const TOGGLE_GROUPS: ReadonlyArray<{ group: 'survival' | 'movement' | 'presence' | 'combat'; toggles: readonly AdminToggle[] }> = [
+  { group: 'survival', toggles: ['god', 'endless_food', 'endless_water', 'endless_stamina'] },
+  { group: 'movement', toggles: ['fly', 'speed', 'freeze'] },
+  { group: 'presence', toggles: ['invisible', 'mute'] },
+  { group: 'combat', toggles: ['one_punch'] },
+]
+const ADMIN_TOGGLES: readonly AdminToggle[] = TOGGLE_GROUPS.flatMap((g) => g.toggles)
+/** One-shot powers. */
+export const ADMIN_BOOSTS: readonly AdminBoost[] = ['heal', 'feed', 'drink', 'sober', 'clear_wanted']
+
+export const POWER_ICON: Record<AdminPower, UiIconName> = {
+  god: 'shield',
+  endless_food: 'apple',
+  endless_water: 'droplet',
+  endless_stamina: 'bolt',
+  fly: 'sparkles',
+  speed: 'walk',
+  freeze: 'pause',
+  invisible: 'eye',
+  mute: 'message',
+  one_punch: 'hand',
+  heal: 'heart',
+  feed: 'apple',
+  drink: 'droplet',
+  sober: 'sparkles',
+  clear_wanted: 'ban',
+}
+
+export function isToggle(power: AdminPower): power is AdminToggle {
+  return (ADMIN_TOGGLES as readonly string[]).includes(power)
+}
+
+/** The name of a house model, or its key when the catalog does not know it. */
+function houseName(modelKey: string | null): string {
+  return findHouse(modelKey)?.name ?? modelKey ?? '?'
+}
+
+/** A part of the town that holds houses, shown on its own on the admin map (a world manifest zone). */
+export interface HouseRegion {
+  key: string
+  area: WorldBounds
+  /** The houses of this region: each house belongs to the first zone that holds it, zones overlap at their edges. */
+  units: HousingUnitPayload[]
+}
+
+/** Ground kept around a zone on the admin map, in metres. */
+const REGION_MARGIN = 6
+
+function inside(area: WorldBounds, x: number, z: number): boolean {
+  return x >= area.minX && x <= area.maxX && z >= area.minZ && z <= area.maxZ
+}
+
+/** The zones that hold at least one house, in manifest order, each with a little ground around it. */
+export function houseRegions(zones: ReadonlyArray<{ key: string; bounds: WorldBounds }>, units: readonly HousingUnitPayload[]): HouseRegion[] {
+  const zoneOf = (u: HousingUnitPayload) => zones.find((zone) => inside(zone.bounds, u.pos_x, u.pos_z))?.key
+  return zones.flatMap(({ key, bounds }) => {
+    const own = units.filter((u) => zoneOf(u) === key)
+    if (own.length === 0) return []
+    const area = { minX: bounds.minX - REGION_MARGIN, maxX: bounds.maxX + REGION_MARGIN, minZ: bounds.minZ - REGION_MARGIN, maxZ: bounds.maxZ + REGION_MARGIN }
+    return [{ key, area, units: own }]
+  })
+}
+
+/** Where the whole-town picture sits behind one region, as percents of the region's box (width, left and top). */
+export function regionCrop(picture: WorldBounds, region: WorldBounds): { width: number; left: number; top: number } {
+  const w = region.maxX - region.minX
+  const h = region.maxZ - region.minZ
+  return {
+    width: ((picture.maxX - picture.minX) / w) * 100,
+    left: ((picture.minX - region.minX) / w) * 100,
+    top: ((picture.minZ - region.minZ) / h) * 100,
+  }
+}
+
+/** A house on the admin map: free to give, owned by the chosen player (take back) or by someone else. */
+export interface HousePin {
+  unit: string
+  name: string
+  preview: string | null
+  price: number
+  owner: string | null
+  state: 'vacant' | 'theirs' | 'taken'
+  /** Position on the town picture, 0 to 1 from its top-left corner. */
+  u: number
+  v: number
+}
+
+/** The houses placed on `area` (a region's own houses, or the whole town). */
+export function housePins(units: readonly HousingUnitPayload[], area: WorldBounds, targetAccountId: number | null): HousePin[] {
+  return units.map((u) => {
+    const state = u.status === 'vacant' ? 'vacant' : u.occupant_account_id === targetAccountId && targetAccountId !== null ? 'theirs' : 'taken'
+    return {
+      unit: u.public_id,
+      name: houseName(u.model_key),
+      preview: findHouse(u.model_key)?.previewUrl ?? null,
+      price: u.price_coins,
+      owner: u.occupant_name,
+      state,
+      ...worldToMap(u.pos_x, u.pos_z, area),
+    }
+  })
+}
+
+function powerKey(prefix: string, power: AdminPower, on: boolean | null): string {
+  if (!isToggle(power)) return `${prefix}.boost.${power}`
+  return `${prefix}.${on ? 'on' : 'off'}.${power}`
+}
 
 export interface AdminTarget {
   sessionId: string
@@ -42,10 +155,38 @@ export function adminResultMessage(result: AdminResultPayload, itemName: (code: 
       return { key: 'adminPanel.result.marketClose', params: { n: result.returned } }
     case 'taxes':
       return { key: 'adminPanel.result.taxes', params: { charged: result.charged, seized: result.seized } }
+    case 'power':
+      return { key: powerKey('adminPanel.result', result.power, result.on), params: { name: result.pseudo } }
+    case 'house':
+      return { key: 'adminPanel.result.house', params: { name: result.pseudo, house: houseName(result.modelKey) } }
+    case 'moderate':
+      return { key: `adminPanel.result.moderate.${result.moderation}`, params: { name: result.pseudo, minutes: result.minutes ?? 0, stars: result.stars ?? 0, place: result.place ?? '' } }
+    case 'take_money':
+      return { key: `adminPanel.result.takeMoney.${result.wallet}`, params: { amount: result.amount, name: result.pseudo } }
+    case 'take_item':
+      return { key: 'adminPanel.result.takeItem', params: { quantity: result.quantity, item: itemName(result.code), name: result.pseudo } }
+    case 'take_house':
+      return { key: 'adminPanel.result.takeHouse', params: { name: result.pseudo, house: houseName(result.modelKey) } }
   }
 }
 
 export function adminGrantedMessage(granted: AdminGrantedPayload): AdminMessage {
-  if (granted.kind === 'money') return { key: `adminPanel.granted.${granted.wallet}`, params: { amount: granted.amount, name: granted.byPseudo } }
-  return { key: 'adminPanel.granted.item', params: { quantity: granted.quantity, name: granted.byPseudo } }
+  switch (granted.kind) {
+    case 'money':
+      return { key: `adminPanel.granted.${granted.wallet}`, params: { amount: granted.amount, name: granted.byPseudo } }
+    case 'item':
+      return { key: 'adminPanel.granted.item', params: { quantity: granted.quantity, name: granted.byPseudo } }
+    case 'power':
+      return { key: powerKey('adminPanel.granted', granted.power, granted.on), params: { name: granted.byPseudo } }
+    case 'house':
+      return { key: 'adminPanel.granted.house', params: { name: granted.byPseudo, house: houseName(granted.modelKey) } }
+    case 'moderate':
+      return { key: 'adminPanel.granted.jail', params: { name: granted.byPseudo, minutes: granted.minutes } }
+    case 'take_money':
+      return { key: `adminPanel.granted.takeMoney.${granted.wallet}`, params: { amount: granted.amount, name: granted.byPseudo } }
+    case 'take_item':
+      return { key: 'adminPanel.granted.takeItem', params: { quantity: granted.quantity, name: granted.byPseudo } }
+    case 'take_house':
+      return { key: 'adminPanel.granted.takeHouse', params: { name: granted.byPseudo, house: houseName(granted.modelKey) } }
+  }
 }

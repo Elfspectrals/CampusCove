@@ -105,7 +105,7 @@ export interface AdminMenuPayload {
   events: AdminEvents
 }
 
-export interface AdminMenuPlayer {
+interface AdminMenuPlayer {
   sessionId: string
   pseudo: string
   distance: number
@@ -118,11 +118,60 @@ export interface AdminEvents {
   market: { open: boolean; opensAt: string; closesAt: string } | null
 }
 
-export interface AdminPlayerPayload {
+export type AdminToggle =
+  | 'god'
+  | 'endless_food'
+  | 'endless_water'
+  | 'endless_stamina'
+  | 'fly'
+  | 'speed'
+  | 'invisible'
+  | 'one_punch'
+  | 'freeze'
+  | 'mute'
+export type AdminModeration = 'kick' | 'jail' | 'release' | 'stars' | 'send'
+
+/** 'admin_powers': the toggles an admin turned on for this player, so the own movement follows (fly, speed...). */
+export interface AdminPowersPayload {
+  powers: AdminToggle[]
+}
+
+/** One stack the admin may take back from a player ('admin_inventory'). */
+export interface AdminHeldItem {
+  code: string
+  name: string
+  kind: string
+  preview: string | null
+  quantity: number
+}
+
+export interface AdminInventoryPayload {
   sessionId: string
+  items: AdminHeldItem[]
+}
+export type AdminBoost = 'heal' | 'feed' | 'drink' | 'sober' | 'clear_wanted'
+export type AdminPower = AdminToggle | AdminBoost
+
+interface AdminVitals {
+  health: number
+  hunger: number
+  thirst: number
+  intoxication: number
+}
+
+/** The live part of a player sheet, from the socket (also in a power result). */
+interface AdminLiveSheet {
+  stars: number
+  vitals: AdminVitals
+  powers: AdminToggle[]
+}
+
+export interface AdminPlayerPayload extends AdminLiveSheet {
+  sessionId: string
+  /** The player's account, to find the house they own on the admin map. */
+  accountId: number
   cash: number
   bank: number
-  stars: number
 }
 
 /** 'admin_summoned': an admin brought this player next to them. */
@@ -136,6 +185,10 @@ export interface AdminItem {
   code: string
   name: string
   kind: string
+  /** Picture of the item (`item_defs.preview_image`), null when it has none. */
+  preview: string | null
+  /** What one portion restores, for food and drinks only. */
+  portion: { hunger: number; thirst: number; health: number } | null
 }
 
 export interface AdminItemsPayload {
@@ -148,11 +201,27 @@ export type AdminResultPayload =
   | { action: 'market_open'; ok: true; closesAt: string }
   | { action: 'market_close'; ok: true; returned: number }
   | { action: 'taxes'; ok: true; charged: number; seized: number }
-  | { action: 'items' | 'money' | 'item' | 'market_open' | 'market_close' | 'taxes'; ok: false; message: string }
+  | ({ action: 'power'; ok: true; sessionId: string; pseudo: string; power: AdminPower; on: boolean | null } & AdminLiveSheet)
+  | { action: 'house'; ok: true; sessionId: string; pseudo: string; unit: string; modelKey: string | null }
+  | ({ action: 'moderate'; ok: true; sessionId: string; pseudo: string; moderation: AdminModeration; minutes?: number; stars?: number; place?: string } & AdminLiveSheet)
+  | { action: 'take_money'; ok: true; sessionId: string; pseudo: string; wallet: AdminWallet; amount: number; cash: number; bank: number }
+  | { action: 'take_item'; ok: true; sessionId: string; pseudo: string; code: string; quantity: number }
+  | { action: 'take_house'; ok: true; sessionId: string; pseudo: string; modelKey: string | null }
+  | {
+      action: 'items' | 'money' | 'item' | 'market_open' | 'market_close' | 'taxes' | 'power' | 'house' | 'moderate' | 'take_money' | 'take_item' | 'take_house' | 'inventory'
+      ok: false
+      message: string
+    }
 
 export type AdminGrantedPayload =
   | { kind: 'money'; byPseudo: string; wallet: AdminWallet; amount: number; cash: number; bank: number }
   | { kind: 'item'; byPseudo: string; code: string; quantity: number }
+  | { kind: 'power'; byPseudo: string; power: AdminPower; on: boolean | null }
+  | { kind: 'house'; byPseudo: string; modelKey: string | null }
+  | { kind: 'moderate'; byPseudo: string; moderation: 'jail'; minutes: number }
+  | { kind: 'take_money'; byPseudo: string; wallet: AdminWallet; amount: number; cash: number; bank: number }
+  | { kind: 'take_item'; byPseudo: string; code: string; quantity: number }
+  | { kind: 'take_house'; byPseudo: string; modelKey: string | null }
 
 /** 'door_sound': only sent to players within 5 m of the door (12 m for lockpicking). `door` is the building key (house model key or work key). */
 export type DoorSide = 'front' | 'back'

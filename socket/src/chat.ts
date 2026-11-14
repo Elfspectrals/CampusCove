@@ -1,3 +1,4 @@
+import { hasPower, isSilenced } from './adminPowers.ts'
 import { unitAt } from './movement.ts'
 import type { ClientPayload, GameClient, GameRoom, Player } from './types.ts'
 
@@ -22,6 +23,11 @@ export function onChat(room: GameRoom, client: GameClient, payload: ClientPayloa
   const text = chatText(payload?.text)
   const now = Date.now()
   if (!speaker || !text || now - speaker.lastChatAt < CHAT_COOLDOWN_MS) return
+  if (isSilenced(speaker)) {
+    // an invisible admin still sees their own line; a muted player is told why nobody hears them
+    if (hasPower(speaker, 'mute')) client.send('chat_muted', {})
+    return
+  }
   speaker.lastChatAt = now
   room.forEachClient((c) => {
     const listener = room.players.get(c.sessionId)

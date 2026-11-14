@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Wallet;
+use App\Services\AdminHousingService;
 use App\Services\AdminItemGrantService;
 use App\Services\BankService;
 use App\Services\HousingService;
@@ -55,6 +56,62 @@ class AdminGameController extends Controller
         ));
     }
 
+    public function takeMoney(Request $request, BankService $bank): JsonResponse
+    {
+        $validated = $request->validate([
+            'account_id' => ['required', 'integer', $this->liveAccount()],
+            'wallet' => ['required', 'string', Rule::in(array_keys(self::WALLETS))],
+            'amount' => ['required', 'integer', 'min:1', 'max:'.self::MAX_MONEY_GRANT],
+            'ref' => ['required', 'uuid'],
+        ]);
+
+        return response()->json($bank->adminTake(
+            (int) $request->user()->getAuthIdentifier(),
+            (int) $validated['account_id'],
+            self::WALLETS[$validated['wallet']],
+            (int) $validated['amount'],
+            (string) $validated['ref'],
+        ));
+    }
+
+    public function inventory(Request $request, AdminItemGrantService $grants): JsonResponse
+    {
+        $validated = $request->validate([
+            'account_id' => ['required', 'integer', $this->liveAccount()],
+        ]);
+
+        return response()->json(['items' => $grants->takeable((int) $validated['account_id'])]);
+    }
+
+    public function takeItem(Request $request, AdminItemGrantService $grants): JsonResponse
+    {
+        $validated = $request->validate([
+            'account_id' => ['required', 'integer', $this->liveAccount()],
+            'code' => ['required', 'string', 'max:255', 'exists:item_defs,code'],
+            'quantity' => ['required', 'integer', 'min:1', 'max:'.self::MAX_ITEM_GRANT],
+            'ref' => ['required', 'uuid'],
+        ]);
+        $grants->take(
+            (int) $request->user()->getAuthIdentifier(),
+            (int) $validated['account_id'],
+            (string) $validated['code'],
+            (int) $validated['quantity'],
+            (string) $validated['ref'],
+        );
+
+        return response()->json(['items' => $grants->takeable((int) $validated['account_id'])]);
+    }
+
+    public function takeHouse(Request $request, AdminHousingService $housing): JsonResponse
+    {
+        $validated = $request->validate([
+            'account_id' => ['required', 'integer', $this->liveAccount()],
+        ]);
+        $unit = $housing->takeFrom($request->user(), (int) $validated['account_id']);
+
+        return response()->json(['account_id' => (int) $validated['account_id'], 'unit_id' => (string) $unit->public_id, 'model_key' => $unit->model_key]);
+    }
+
     public function grantItem(Request $request, AdminItemGrantService $grants): JsonResponse
     {
         $validated = $request->validate([
@@ -76,6 +133,21 @@ class AdminGameController extends Controller
             'account_id' => (int) $validated['account_id'],
             'code' => (string) $validated['code'],
             'quantity' => (int) $validated['quantity'],
+        ]);
+    }
+
+    public function assignHouse(Request $request, AdminHousingService $housing): JsonResponse
+    {
+        $validated = $request->validate([
+            'account_id' => ['required', 'integer', $this->liveAccount()],
+            'unit_id' => ['required', 'uuid'],
+        ]);
+        $unit = $housing->assign($request->user(), (string) $validated['unit_id'], (int) $validated['account_id']);
+
+        return response()->json([
+            'account_id' => (int) $validated['account_id'],
+            'unit_id' => (string) $unit->public_id,
+            'model_key' => $unit->model_key,
         ]);
     }
 

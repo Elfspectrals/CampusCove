@@ -1,3 +1,4 @@
+import { ADMIN_KICK_CLOSE_CODE } from '../../game/gameRoomConstants'
 import { ref, type Ref, type ShallowRef } from 'vue'
 import type { Router } from 'vue-router'
 import type * as THREE from 'three'
@@ -17,7 +18,9 @@ import type { SfxName } from '../../game/sfx'
 import type {
   AdminMenuPayload,
   AdminGrantedPayload,
+  AdminInventoryPayload,
   AdminPlayerPayload,
+  AdminPowersPayload,
   AdminItemsPayload,
   AdminResultPayload,
   AdminSummonedPayload,
@@ -187,6 +190,11 @@ export interface GameRealtimeDeps {
     onResult: (data: AdminResultPayload) => void
     onGranted: (data: AdminGrantedPayload) => void
     onPlayer: (data: AdminPlayerPayload) => void
+    onPowers: (data: AdminPowersPayload) => void
+    onInventory: (data: AdminInventoryPayload) => void
+    onChatMuted: () => void
+    /** The text shown in place of the usual disconnect message. */
+    kickedMessage: () => string
   }
   /** The server moved this player (admin teleport / summon): place the camera and the look. */
   onTeleported: (data: TeleportedPayload) => void
@@ -477,6 +485,9 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('admin_result', (data: AdminResultPayload) => deps.admin.onResult(data))
     room.onMessage('admin_granted', (data: AdminGrantedPayload) => deps.admin.onGranted(data))
     room.onMessage('admin_player', (data: AdminPlayerPayload) => deps.admin.onPlayer(data))
+    room.onMessage('admin_powers', (data: AdminPowersPayload) => deps.admin.onPowers(data))
+    room.onMessage('admin_inventory', (data: AdminInventoryPayload) => deps.admin.onInventory(data))
+    room.onMessage('chat_muted', () => deps.admin.onChatMuted())
 
     room.onMessage('pub_pouring', (data: PubPouringPayload) => deps.pub.onPouring(data, room.sessionId))
     room.onMessage('pub_served', (data: PubServedPayload) => deps.pub.onServed(data))
@@ -581,9 +592,10 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     })
 
     room.onMessage('voice_token', (data: VoiceTokenPayload) => deps.voice.onToken(data))
-    room.onLeave(() => {
+    room.onLeave((code: number) => {
       void deps.voice.disconnect()
-      if (!switchingRoom.value) deps.roomMessage.value = 'Disconnected from realtime room.'
+      if (code === ADMIN_KICK_CLOSE_CODE) deps.roomMessage.value = deps.admin.kickedMessage()
+      else if (!switchingRoom.value) deps.roomMessage.value = 'Disconnected from realtime room.'
     })
   }
 

@@ -1,4 +1,5 @@
 // Shared shapes of the realtime server. Room helpers take a GameRoom (not CityRoom) so tests can pass fakes.
+import type { AdminPowers } from './adminPowers.ts'
 import type { DrinkFastSim } from './drinkFastSim.ts'
 import type { PubQuiz } from './pubQuiz.ts'
 
@@ -77,6 +78,8 @@ export interface Player extends Vec3 {
   tradeId: string | null
   lastTradeRequestAt: number
   lastAdminActionAt: number
+  /** Toggles an admin turned on for this player (src/adminPowers.ts); absent means none. Not saved. */
+  adminPowers?: AdminPowers
   seatId: string | null
   intoxication: number
   pubSecretUntil: number
@@ -302,6 +305,8 @@ export type ClientPayload = { readonly [key: string]: unknown } | null | undefin
 export interface GameClient {
   sessionId: string
   send(type: string, payload?: unknown): void
+  /** Closes the connection (Colyseus Client.leave); only an admin kick uses it. */
+  leave?(code?: number, reason?: string): void
 }
 
 export interface CashBag {

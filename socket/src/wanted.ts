@@ -71,6 +71,11 @@ function setWanted(room: GameRoom, player: Player, next: WantedState): void {
   void saveWanted(player)
 }
 
+/** An admin sets the stars (0 to 5); the usual decay starts again from there. */
+export function setWantedStars(room: GameRoom, player: Player, stars: number): void {
+  setWanted(room, player, { stars: Math.max(0, Math.min(MAX_WANTED_STARS, stars)), decayMs: WANTED_DECAY_MS })
+}
+
 export function clearWanted(room: GameRoom, player: Player): void {
   setWanted(room, player, { stars: 0, decayMs: WANTED_DECAY_MS })
 }

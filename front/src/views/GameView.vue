@@ -26,6 +26,7 @@ import GameSettingsDialog from '../components/game/GameSettingsDialog.vue'
 import GameStoreItemCard from '../components/game/GameStoreItemCard.vue'
 import GameZoneBuyerMenu from '../components/game/GameZoneBuyerMenu.vue'
 import GameAdminPanel from '../components/game/GameAdminPanel.vue'
+import { SPEED_POWER_FACTOR } from '../game/admin/selfPowers'
 import GameAtmScreen from '../components/game/GameAtmScreen.vue'
 import GameLockpick from '../components/game/GameLockpick.vue'
 import GameFurnitureStorage from '../components/game/GameFurnitureStorage.vue'
@@ -133,7 +134,7 @@ import { createGameScene, disposeGameScene, renderGameFrame, resizeViewmodel, ty
 import { createFirstPersonArms } from '../game/firstPersonArms'
 import { createHeldItem } from '../game/heldItem'
 import { COVE_HOME, COVE_THREADS, findHouse, findStore, findWork } from '../game/assets/catalog'
-import { storeBuildings, workBuildings, type WorldBounds } from '../game/world/worldManifest'
+import { storeBuildings, workBuildings, type WorldBounds, type WorldZone } from '../game/world/worldManifest'
 import type { GearSlot } from '../game/wardrobeSlots'
 import type { PoliceBountyPayload, PoliceCuffCancelledPayload } from '../types/gameRealtime'
 import { createSfx } from '../game/sfx'
@@ -954,7 +955,7 @@ watch(tradeWindowOpen, (open) => {
 })
 const watchKey = computed(() => actionKeyLabels('survivalWatch')[0] ?? 'T')
 
-// ---------------------------------------------------------------- watch apps: admin teleports
+// ---------------------------------------------------------------- watch apps and the admin console
 
 const watchBank = useWatchBank()
 const adminWatch = useAdminWatch({
@@ -965,8 +966,12 @@ const adminWatch = useAdminWatch({
     return t(key, params)
   },
   refreshInventory: () => refreshOwnedItems(),
+  houses: housing.units,
+  translate: (key) => t(key),
 })
-const { isAdmin, menu: adminMenu, error: adminError, panelOpen: adminPanelOpen } = adminWatch
+const { isAdmin, panelOpen: adminPanelOpen } = adminWatch
+/** The world manifest's zones, for the admin console's house map by region. */
+const worldZones = shallowRef<WorldZone[]>([])
 function openAdminPanel(): void {
   trade.closeMenu()
   adminWatch.openPanel()
@@ -976,14 +981,6 @@ watch(adminPanelOpen, (open) => {
   if (open && document.pointerLockElement) document.exitPointerLock()
   if (!open && !document.pointerLockElement) requestPointerLock()
 })
-function adminTeleport(key: string): void {
-  adminWatch.teleport(key)
-  trade.closeMenu()
-}
-function adminGoTo(sessionId: string): void {
-  adminWatch.goTo(sessionId)
-  trade.closeMenu()
-}
 function adminSummon(sessionId: string): void {
   adminWatch.summon(sessionId)
   adminWatch.load()
@@ -1029,7 +1026,9 @@ const survival = useSurvival({
   onStamina: (value) => punch.syncStamina(value),
   onIntoxication: (value) => intoxication.set(value),
   onWatchTap: () => {
-    if (watchMenuOpen.value) trade.closeMenu()
+    // with the admin console open, the watch key hands the mouse back to it instead of opening the watch
+    if (adminPanelOpen.value && pointerLocked.value) document.exitPointerLock()
+    else if (watchMenuOpen.value) trade.closeMenu()
     else if (pointerLocked.value && !inventoryOpen.value) trade.openMenu()
   },
   cellTap: () => jailCell.tap(),
@@ -1208,6 +1207,7 @@ const environment = useRoomEnvironment({
   getRenderer,
   onTownLoaded: (manifest) => {
     interactions.setWorldManifest(manifest)
+    worldZones.value = manifest.zones
     storageUnits = manifest.storage?.units ?? []
     const musicZone = manifest.zones.find((zone) => zone.music)
     if (musicZone?.music && !zoneMusic) {
@@ -1483,11 +1483,12 @@ const movement = useGameMovement({
     }
     return pointerLocked.value && runUseOrPunch(mouseButtonCode(e.button), false, e.shiftKey)
   },
-  speedFactor: () => survival.speedFactor() * intoxication.walkFactor(),
-  movementLocked: () => seats.seated.value || police.cuffedBy.value !== null,
+  speedFactor: () => survival.speedFactor() * intoxication.walkFactor() * (adminWatch.hasMyPower('speed') ? SPEED_POWER_FACTOR : 1),
+  movementLocked: () => seats.seated.value || police.cuffedBy.value !== null || adminWatch.hasMyPower('freeze'),
+  flying: () => adminWatch.hasMyPower('fly'),
   afterCameraPlaced: intoxication.applyToCamera,
-  trySpendJump: () => punch.trySpendJump(),
-  trySpendSprint: (dt, wasSprinting) => punch.trySpendSprint(dt, wasSprinting),
+  trySpendJump: () => adminWatch.hasMyPower('endless_stamina') || punch.trySpendJump(),
+  trySpendSprint: (dt, wasSprinting) => adminWatch.hasMyPower('endless_stamina') || punch.trySpendSprint(dt, wasSprinting),
   onBeforeRender: (dt) => {
     if (import.meta.env.DEV) renderStats.tick(dt)
     positionLabel.value = formatPosition()
@@ -2095,9 +2096,6 @@ const crosshairClass = computed(() => {
       :outgoing="tradeOutgoing"
       :error="tradeError"
       :is-admin="isAdmin"
-      :admin="adminWatch"
-      :own-session-id="gameRoomRef?.sessionId ?? ''"
-      :admin-error="adminError"
       :cash="walletBalances.cash"
       :bank-screen="watchBank.screen.value"
       :bank-error="watchBank.error.value"
@@ -2114,7 +2112,6 @@ const crosshairClass = computed(() => {
       @respond="trade.respond"
       @cancel="trade.cancel"
       @close="trade.closeMenu"
-      @admin-open="adminWatch.load"
       @bank-open="watchBank.load"
       @gps-toggle="gps.toggle"
       @route-atm="gps.routeToNearestAtm"
@@ -2122,10 +2119,6 @@ const crosshairClass = computed(() => {
       @contact-accept="watchContacts.accept"
       @contact-follow="gps.togglePlayer"
       @contact-ask="watchContacts.ask"
-      @teleport="adminTeleport"
-      @summon="adminSummon"
-      @go-to="adminGoTo"
-      @storage-sale="adminWatch.startStorageSale"
       @admin-panel="openAdminPanel"
     />
     <GameTradeWindow
@@ -2154,22 +2147,12 @@ const crosshairClass = computed(() => {
     <GameLockpick v-if="lockpick.board.value" :board="lockpick.board.value" @press="lockpick.press" @close="lockpick.close" />
     <GameAdminPanel
       v-if="adminPanelOpen && gameRoomRef"
+      :admin="adminWatch"
       :own-session-id="gameRoomRef.sessionId"
-      :menu="adminMenu"
-      :items="adminWatch.items.value"
-      :result="adminWatch.result.value"
-      :log="adminWatch.log.value"
-      :recent-place="adminWatch.recentPlace.value"
-      :error="adminError"
-      @give-money="adminWatch.giveMoney"
-      @give-item="adminWatch.giveItem"
-      @start-quiz="adminWatch.startQuiz"
-      @start-storage-sale="adminWatch.startStorageSale"
-      @open-market="adminWatch.openMarket"
-      @close-market="adminWatch.closeMarket"
-      @collect-taxes="adminWatch.collectTaxes"
-      @teleport="adminWatch.teleport"
-      @go-to="adminWatch.goTo"
+      :map-image="minimap.image.value"
+      :zones="worldZones"
+      :game-has-mouse="pointerLocked"
+      :watch-key="watchKey"
       @summon="adminSummon"
       @close="adminWatch.closePanel"
     />

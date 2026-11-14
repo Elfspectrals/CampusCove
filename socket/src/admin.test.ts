@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { type AdminMenuRoom, type AdminPanelRoom, SUMMON_DISTANCE, onAdminGiveItem, onAdminGiveMoney, onAdminGoto, onAdminItems, onAdminMarket, onAdminOpen, onAdminPlayer, onAdminSummon, onAdminTaxes, onAdminTeleport } from './admin.ts'
+import { type AdminMenuRoom, type AdminPanelRoom, SUMMON_DISTANCE, onAdminGiveItem, onAdminGiveMoney, onAdminGoto, onAdminHouse, onAdminItems, onAdminMarket, onAdminOpen, onAdminModerate, onAdminPlayer, onAdminPower, onAdminSummon, onAdminTakeHouse, onAdminTakeItem, onAdminTakeMoney, onAdminTaxes, onAdminTeleport } from './admin.ts'
 import { newStorageAuction } from './storageAuction.ts'
 import type { Player } from './types.ts'
 import { type TeleportDestination, doorDestination, orchardDestination, zoneGateDestination } from './world.ts'
@@ -28,6 +28,7 @@ function fakePlayer(sessionId: string, isAdmin: boolean, x = 0, z = 0, ry = 0): 
     knockedOutUntil: 0,
     lastAdminActionAt: 0,
     wantedStars: 0,
+    intoxication: 0,
     pubShots: null
   } as Player
 }
@@ -351,7 +352,138 @@ test('the player sheet reads the cash and bank from the API and the stars from t
   assert.deepEqual(apiCalls, [])
   await onAdminPlayer(room, admin, { sessionId: 'b' })
   assert.deepEqual(apiCalls, [{ method: 'GET', path: '/admin/game/wallets?account_id=7', body: null, token: 'Bearer admin-token' }])
-  assert.deepEqual(received(admin, 'admin_player'), [{ sessionId: 'b', cash: 85, bank: 1240, stars: 3 }])
+  assert.deepEqual(received(admin, 'admin_player'), [{ sessionId: 'b', accountId: 7, cash: 85, bank: 1240, stars: 3, vitals: { health: 0, hunger: 0, thirst: 0, intoxication: 0 }, powers: [] }])
   await onAdminPlayer(room, admin, { sessionId: 'gone' })
   assert.equal(received(admin, 'admin_error').length, 1)
+})
+
+function poweredRoom() {
+  const room = panelRoom()
+  const target = room.players.get('b')!
+  Object.assign(target, { stats: { health: 30, hunger: 10, thirst: 5 }, intoxication: 70, wantedStars: 2, wantedDecayMs: 0, badges: [], appearance: {}, slotHexes: {}, slotModels: {} })
+  return { room, target, admin: room.clients[0]!, player: room.clients[1]! }
+}
+
+test('a toggle holds the gauge full, tells the target and is listed on the sheet', () => {
+  const { room, target, admin, player } = poweredRoom()
+  onAdminPower(room, admin, { sessionId: 'b', power: 'god', on: true }, 1000)
+  assert.deepEqual(target.stats, { health: 100, hunger: 10, thirst: 5 })
+  const result = received(admin, 'admin_result').at(-1)
+  assert.equal(result.power, 'god')
+  assert.equal(result.on, true)
+  assert.deepEqual(result.powers, ['god'])
+  assert.deepEqual(received(player, 'admin_granted'), [{ kind: 'power', byPseudo: 'A', power: 'god', on: true }])
+  assert.equal(received(player, 'survival').at(-1).health, 100)
+  onAdminPower(room, admin, { sessionId: 'b', power: 'god', on: false }, 2000)
+  assert.deepEqual([...target.adminPowers!], [])
+})
+
+test('boosts fill a gauge once, sober the player or clear their stars', () => {
+  const { room, target, admin } = poweredRoom()
+  onAdminPower(room, admin, { sessionId: 'b', power: 'feed' }, 1000)
+  assert.deepEqual(target.stats, { health: 30, hunger: 100, thirst: 5 })
+  onAdminPower(room, admin, { sessionId: 'b', power: 'sober' }, 2000)
+  assert.equal(target.intoxication, 0)
+  onAdminPower(room, admin, { sessionId: 'b', power: 'clear_wanted' }, 3000)
+  assert.equal(target.wantedStars, 0)
+  assert.equal(target.adminPowers, undefined, 'a boost turns no toggle on')
+})
+
+test('a power is refused when unknown, a toggle without on, or from a non admin', () => {
+  const { room, target, admin, player } = poweredRoom()
+  onAdminPower(room, player, { sessionId: 'b', power: 'heal' }, 1000)
+  assert.equal(target.stats!.health, 30)
+  onAdminPower(room, admin, { sessionId: 'b', power: 'fly' }, 1000)
+  onAdminPower(room, admin, { sessionId: 'b', power: 'god' }, 2000)
+  onAdminPower(room, admin, { sessionId: 'gone', power: 'heal' }, 3000)
+  assert.deepEqual(received(admin, 'admin_result').map((r) => r.ok), [false, false, false])
+  assert.equal(target.stats!.health, 30)
+})
+
+const UNIT = '9b2f3c1e-1d2a-4b5c-8d9e-0f1a2b3c4d5e'
+apiAnswers.set('POST /admin/game/house', { account_id: 7, unit_id: UNIT, model_key: 'colonial_villa' })
+
+test('giving a house calls Laravel with the target account, tells both players and reloads the houses', async () => {
+  const room = panelRoom()
+  const [admin, player] = room.clients
+  await onAdminHouse(room, admin, { sessionId: 'b', unit: 'not-a-uuid' }, 1000)
+  assert.deepEqual(apiCalls, [])
+  await onAdminHouse(room, admin, { sessionId: 'b', unit: UNIT }, 2000)
+  const calls: Array<{ path: string, body: unknown }> = apiCalls
+  assert.deepEqual(calls.map((c) => [c.path, c.body]), [['/admin/game/house', { account_id: 7, unit_id: UNIT }]])
+  assert.deepEqual(received(admin, 'admin_result').at(-1), { action: 'house', ok: true, sessionId: 'b', pseudo: 'B', unit: UNIT, modelKey: 'colonial_villa' })
+  assert.deepEqual(received(player, 'admin_granted'), [{ kind: 'house', byPseudo: 'A', modelKey: 'colonial_villa' }])
+  assert.equal(room.housingPolls, 1)
+})
+
+test('a house Laravel refuses comes back as a failed result', async () => {
+  const room = panelRoom()
+  const [admin] = room.clients
+  nextApiError = { status: 422, code: 'unit_not_vacant', message: 'Someone already owns this house.' }
+  await onAdminHouse(room, admin, { sessionId: 'b', unit: UNIT }, 1000)
+  assert.deepEqual(received(admin, 'admin_result').at(-1), { action: 'house', ok: false, message: 'Someone already owns this house.' })
+  assert.equal(room.housingPolls, 0)
+})
+
+test('invisible makes the player leave the others\' view and come back when turned off', () => {
+  const { room, target, admin, player } = poweredRoom()
+  onAdminPower(room, admin, { sessionId: 'b', power: 'invisible', on: true }, 1000)
+  assert.deepEqual(received(admin, 'user_left'), [{ sessionId: 'b' }])
+  assert.deepEqual(received(player, 'user_left'), [], 'the invisible player still sees themself')
+  assert.deepEqual(received(player, 'admin_powers').at(-1), { powers: ['invisible'] })
+  onAdminPower(room, admin, { sessionId: 'b', power: 'invisible', on: false }, 2000)
+  assert.equal(received(admin, 'user_joined').at(-1).sessionId, 'b')
+  assert.deepEqual([...target.adminPowers!], [])
+})
+
+test('moderation sets stars, sends to a place, refuses a bad jail and a release of a free player', () => {
+  const { room, target, admin } = poweredRoom()
+  onAdminModerate(room, admin, { sessionId: 'b', action: 'stars', stars: 4 }, 1000)
+  assert.equal(target.wantedStars, 4)
+  onAdminModerate(room, admin, { sessionId: 'b', action: 'send', key: 'clinic' }, 2000, destinations)
+  assert.equal(target.x, CLINIC.position.x)
+  onAdminModerate(room, admin, { sessionId: 'b', action: 'jail', minutes: 61 }, 3000)
+  onAdminModerate(room, admin, { sessionId: 'b', action: 'release' }, 4000)
+  onAdminModerate(room, admin, { sessionId: 'b', action: 'dance' }, 5000)
+  const results = received(admin, 'admin_result')
+  assert.deepEqual(results.map((r) => [r.moderation ?? null, r.ok]), [['stars', true], ['send', true], [null, false], [null, false], [null, false]])
+})
+
+test('a kick closes the target\'s connection but never the admin\'s own', () => {
+  const { room, admin, player } = poweredRoom()
+  const closed: number[] = []
+  Object.assign(player, { leave: (code: number) => void closed.push(code) })
+  Object.assign(admin, { leave: (code: number) => void closed.push(-code) })
+  onAdminModerate(room, admin, { sessionId: 'a', action: 'kick' }, 1000)
+  onAdminModerate(room, admin, { sessionId: 'b', action: 'kick' }, 2000)
+  assert.deepEqual(closed, [4002])
+})
+
+apiAnswers.set('POST /admin/game/money/take', { cash: 0, bank: 50 })
+apiAnswers.set('POST /admin/game/items/take', { items: [{ code: 'farm_apple', name: 'Apple', kind: 'consumable', preview: null, quantity: 1 }] })
+apiAnswers.set('POST /admin/game/house/take', { account_id: 7, unit_id: UNIT, model_key: 'house_01' })
+
+test('taking back money, an item and the house calls Laravel and tells the player', async () => {
+  const room = panelRoom()
+  const [admin, player] = room.clients
+  await onAdminTakeMoney(room, admin, { sessionId: 'b', wallet: 'cash', amount: 80 }, 1000, () => 'ref-t')
+  await onAdminTakeItem(room, admin, { sessionId: 'b', code: 'farm_apple', quantity: 2 }, 2000, () => 'ref-i')
+  await onAdminTakeHouse(room, admin, { sessionId: 'b' }, 3000)
+  const calls: Array<{ path: string, body: unknown }> = apiCalls
+  assert.deepEqual(calls.map((c) => [c.path, c.body]), [
+    ['/admin/game/money/take', { account_id: 7, wallet: 'cash', amount: 80, ref: 'ref-t' }],
+    ['/admin/game/items/take', { account_id: 7, code: 'farm_apple', quantity: 2, ref: 'ref-i' }],
+    ['/admin/game/house/take', { account_id: 7 }]
+  ])
+  assert.deepEqual(received(player, 'admin_granted').map((g) => g.kind), ['take_money', 'take_item', 'take_house'])
+  assert.equal(received(admin, 'admin_inventory').at(-1).items.length, 1)
+  assert.equal(room.housingPolls, 1)
+})
+
+test('landing after a flight costs no health', () => {
+  const { room, target, admin } = poweredRoom()
+  onAdminPower(room, admin, { sessionId: 'b', power: 'fly', on: true }, 1000)
+  Object.assign(target, { y: 40, fallPeakY: 40 })
+  onAdminPower(room, admin, { sessionId: 'b', power: 'fly', on: false }, 2000)
+  assert.equal(target.fallPeakY, Number.NEGATIVE_INFINITY)
 })

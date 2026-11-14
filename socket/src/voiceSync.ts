@@ -1,4 +1,5 @@
 import { RoomServiceClient, TrackSource } from 'livekit-server-sdk'
+import { isSilenced } from './adminPowers.ts'
 import type { LiveKitConfig } from './config.ts'
 import { unitAt } from './movement.ts'
 import type { ClientPayload, GameClient, GameRoom } from './types.ts'
@@ -35,7 +36,7 @@ export function createVoiceSync(room: GameRoom, service: VoiceService, roomName:
       const micOf = new Map(participants.map((p) => [p.identity, p.tracks.filter((t) => t.source === TrackSource.MICROPHONE).map((t) => t.sid)]))
       const players = [...room.players.values()]
         .filter((p) => micOf.has(p.sessionId))
-        .map((p) => ({ sessionId: p.sessionId, accountId: String(p.accountId), x: p.x, z: p.z, unit: unitAt(room.housingUnits, p.x, p.z), muted: p.voiceMuted }))
+        .map((p) => ({ sessionId: p.sessionId, accountId: String(p.accountId), x: p.x, z: p.z, unit: unitAt(room.housingUnits, p.x, p.z), muted: p.voiceMuted, silent: isSilenced(p) }))
       const desired = desiredVoices(players, heard)
       const next = new Map<string, Set<string>>()
       for (const [listener, speakers] of desired) {

@@ -1,3 +1,4 @@
+import { SPEED_POWER_FACTOR, hasPower } from './adminPowers.ts'
 import { canUseDoor } from './doors.ts'
 import { cellOf, insideCell } from './jail.ts'
 import { inSecretVolume } from './pub.ts'
@@ -12,7 +13,7 @@ const MAX_SPRINT_SPEED = 8.5 * 1.25
 const MAX_MOVE_BUDGET_SECONDS = 1
 const MOVE_MARGIN = 1.5
 
-export type MoveRejection = 'out_of_world' | 'knocked_out' | 'cuffed' | 'jailed' | 'too_fast' | 'locked_in' | 'locked_house' | 'secret_room_closed'
+export type MoveRejection = 'out_of_world' | 'frozen' | 'knocked_out' | 'cuffed' | 'jailed' | 'too_fast' | 'locked_in' | 'locked_house' | 'secret_room_closed'
 
 export function toInterior(house: WorldHouse, x: number, z: number): { x: number, z: number } {
   const dx = x - house.position.x
@@ -51,13 +52,17 @@ function isLockedFor(room: GameRoom, unit: HousingUnit, player: Player): boolean
 export function moveRejection(room: GameRoom, player: Player, x: number, y: number, z: number, now: number, sprinting = false): MoveRejection | null {
   const b = worldBounds()
   if (x < b.minX || x > b.maxX || z < b.minZ || z > b.maxZ) return 'out_of_world'
+  if (hasPower(player, 'freeze')) return 'frozen'
   if (now < player.knockedOutUntil) return 'knocked_out'
+  // fly (noclip): through walls, locked doors and cells, at any speed
+  if (hasPower(player, 'fly')) return null
   if (player.cuffedBy) return 'cuffed'
   const cell = cellOf(player)
   if (cell && !insideCell(cell.bounds, x, z)) return 'jailed'
   const elapsed = Math.min((now - player.lastMoveAt) / 1000, MAX_MOVE_BUDGET_SECONDS)
   const baseSpeed = sprinting ? MAX_SPRINT_SPEED : MAX_WALK_SPEED
-  const maxSpeed = now < player.speedBoostUntil ? baseSpeed * SPEED_BOOST_FACTOR : baseSpeed
+  const boosted = now < player.speedBoostUntil ? baseSpeed * SPEED_BOOST_FACTOR : baseSpeed
+  const maxSpeed = hasPower(player, 'speed') ? boosted * SPEED_POWER_FACTOR : boosted
   if (Math.hypot(x - player.x, z - player.z) > maxSpeed * elapsed + MOVE_MARGIN) return 'too_fast'
   if (entersClosedSecretRoom(player, x, y, z, now)) return 'secret_room_closed'
   const from = unitAt(room.housingUnits, player.x, player.z)
@@ -69,6 +74,7 @@ export function moveRejection(room: GameRoom, player: Player, x: number, y: numb
 }
 
 function spendStamina(player: Player, now: number, amount: number): void {
+  if (hasPower(player, 'endless_stamina')) return
   player.stamina = drainStamina(player.stamina, player.staminaSpentAt, now, amount)
   player.staminaSpentAt = now
 }
