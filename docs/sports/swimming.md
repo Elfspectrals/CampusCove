@@ -54,7 +54,11 @@ Block stance, start dive, front crawl in the water, wall turn, finish touch. Cal
 - The turn is automatic, no bonus (`turnBonus` 0).
 - The beep comes 1.5 to 3 s after "take your marks", rolled by the socket. Reaction time is measured from the tick that sent the beep.
 - A race stops after 60 s per length; whoever is still swimming did not finish.
+- The swimsuit look: knee-length navy swim shorts with a red waistband and side stripe (`wear/bottom/swimsuit`, built in `wear.py` for every body and build). A player with the feet in the pool water is shown in it, with no top, shoes or headwear; women keep the base body's chest band. Out of the water the outfit comes back. It is never sold as clothing: the `gear_swimsuit` item is what the gate checks.
+- Animations: `Swim` while moving in the water, `Tread` while still, `Dive` when a racer leaves the block (clips on the base body).
 - Swimsuit check at the water edge: the socket asks Laravel once when the player enters the pool zone (`ownedGear`) and refuses a move into the water without one (`no_swimsuit`). Leaving the water is always allowed.
+
+- Tasks (badges only, counted matches only, so never a solo race): "Swimmer" = races swum (every result but `dnf`, and a false start is recorded as `dnf`), tiers 5 / 25 / 100; "Fast lane" = 50 m finished under 30 s, tiers 1 / 5 / 20 (`SportsTaskCounters`).
 
 ## Socket contract
 

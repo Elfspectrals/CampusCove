@@ -5,7 +5,7 @@ import {
   type CosmeticColors,
 } from '../../api/characterCosmetics'
 import { buildCompositeAvatar, disposeObject3D } from '../../avatar/compositeAvatar'
-import { setAvatarEating, setAvatarPicking, setAvatarSeated, updateAvatarAnimation } from '../../avatar/glbCharacter'
+import { playAvatarPoolClip, setAvatarEating, setAvatarPicking, setAvatarSeated, setAvatarSwimming, updateAvatarAnimation, type PoolClip } from '../../avatar/glbCharacter'
 import { parseCharacterLook, type CharacterLook } from '../../avatar/characterLook'
 import { createModularCharacter } from '../../avatar/modularCharacter'
 import { WEAR_SLOTS, wearSignature, type WearModels } from '../../avatar/modularCharacterLogic'
@@ -31,6 +31,7 @@ import { advanceHitStop, idleHitStop, scheduleHitStop, type HitStop } from '../.
 import { createRacePint, type RacePint } from '../../game/pub/racePint'
 import { seatedAvatarFeetY } from '../../game/pub/seats'
 import { createRemoteHeldTool, type RemoteHeldTool } from '../../game/remoteHeldTool'
+import { swimwearOutfit } from '../../game/sports/pool/poolRace'
 import type { SfxName } from '../../game/sfx'
 import type { RemoteUserPayload } from '../../types/gameRealtime'
 import { BADGES, overHeadBadges, shownBadges, type BadgeCode } from '../../game/badges'
@@ -135,6 +136,8 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
   const sessionByUserId = new Map<string, string>()
   /** Appearance received before the avatar finished its first load. */
   const pendingAppearance = new Map<string, AppearanceUpdate>()
+  const ownAppearance = new Map<string, { models: WearModels; colors: CosmeticColors; look: CharacterLook | null }>()
+  const swimwear = new Set<string>()
   const wantedStarsBySession = new Map<string, number>()
   const upsertTokenByUserId = new Map<string, number>()
   const renderTokenBySessionId = new Map<string, number>()
@@ -174,6 +177,8 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
   }
 
   function remove(sessionId: string) {
+    ownAppearance.delete(sessionId)
+    swimwear.delete(sessionId)
     const entry = avatars.get(sessionId)
     if (!entry) return
     const scene = deps.getScene()
@@ -235,8 +240,10 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     }
 
     const colors = parseSlotHexes(data.slotHexes)
-    const models = parseSlotModels(data.slotModels)
+    const ownModels = parseSlotModels(data.slotModels)
     const look = parseCharacterLook(data.character)
+    ownAppearance.set(sessionId, { models: ownModels, colors, look })
+    const models = shownModels(sessionId, ownModels)
     const group = await loadModel(models, colors, look, data.color)
     if (upsertTokenByUserId.get(data.id) !== token || renderTokenBySessionId.get(sessionId) !== renderToken) {
       disposeObject3D(group)
@@ -250,6 +257,7 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     tagAvatar(group, sessionId, data.id, data.pseudo)
     const ry = parseYaw(data.ry)
     placeAvatar(group, data.x, data.y, data.z, ry)
+    setAvatarSwimming(group, swimwear.has(sessionId))
     scene.add(group)
     avatars.set(sessionId, {
       userId: data.id,
@@ -296,8 +304,36 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
       return
     }
     const colors = parseSlotHexes(update.slotHexes)
-    const models = parseSlotModels(update.slotModels)
+    const ownModels = parseSlotModels(update.slotModels)
     const look = parseCharacterLook(update.character)
+    ownAppearance.set(sessionId, { models: ownModels, colors, look })
+    await rebuild(sessionId, shownModels(sessionId, ownModels), colors, look)
+  }
+
+  /** Swimwear in the pool water: the swimsuit replaces the outfit until the player is out of the water. */
+  function setSwimwear(sessionId: string, on: boolean) {
+    if (swimwear.has(sessionId) === on) return
+    if (on) swimwear.add(sessionId)
+    else swimwear.delete(sessionId)
+    const entry = avatars.get(sessionId)
+    if (entry) setAvatarSwimming(entry.group, on)
+    const own = ownAppearance.get(sessionId)
+    if (own) void rebuild(sessionId, shownModels(sessionId, own.models), own.colors, own.look)
+  }
+
+  function playPoolClip(sessionId: string, clip: PoolClip) {
+    const entry = avatars.get(sessionId)
+    if (entry) playAvatarPoolClip(entry.group, clip)
+  }
+
+  function shownModels(sessionId: string, models: WearModels): WearModels {
+    return swimwear.has(sessionId) ? swimwearOutfit(models) : models
+  }
+
+  async function rebuild(sessionId: string, models: WearModels, colors: CosmeticColors, look: CharacterLook | null) {
+    const scene = deps.getScene()
+    const entry = avatars.get(sessionId)
+    if (!scene || !entry) return
     const outfit = wearSignature(models, colors, look)
     if (outfit === entry.outfit) return
 
@@ -319,6 +355,7 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     latest.chatBubble?.dispose()
     disposeObject3D(latest.group)
     placeAvatar(group, latest.x, latest.y, latest.z, latest.ry)
+    setAvatarSwimming(group, swimwear.has(sessionId))
     scene.add(group)
     const racePint = latest.racePint ? createRacePint(group) : null
     racePint?.setProgress(latest.raceProgress)
@@ -528,5 +565,5 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     }
   }
 
-  return { upsert, updateAppearance, setTarget, setSeated, setPicking, setHeldTool, setRacePint, setBadges, pseudoOf, positionOf, setVoiceState, setWantedStars, players, accountOf, showAction, showChat, showPunch, showHit, remove, clear, tick }
+  return { upsert, updateAppearance, setSwimwear, playPoolClip, setTarget, setSeated, setPicking, setHeldTool, setRacePint, setBadges, pseudoOf, positionOf, setVoiceState, setWantedStars, players, accountOf, showAction, showChat, showPunch, showHit, remove, clear, tick }
 }

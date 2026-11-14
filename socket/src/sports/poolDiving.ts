@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto'
+import { callRealtimeBackend } from '../backend.ts'
 import type { Bounds, ClientPayload, GameClient, GameRoom, Player } from '../types.ts'
 import { worldSportsPassArea } from '../world.ts'
 
@@ -23,6 +25,7 @@ const FEET_TOLERANCE_M = 0.4
 const GRAVITY = 9.8
 const AIR_MARGIN_MS = 400
 export const DIVE_COOLDOWN_MS = 1500
+export const COUNTED_DIVE_BOARD = 'platform_5m'
 
 const jumps = new WeakMap<Player, Jump>()
 let divingRules: DivingRules | null = null
@@ -55,10 +58,20 @@ export function useDivingRules(rules: DivingRules, zone: string): void {
   poolZone = zone
 }
 
-function onBoardEdge(board: DiveBoard, player: Player): boolean {
+function onEdge(board: DiveBoard, x: number, y: number, z: number): boolean {
   const e = board.edgeZone
-  const feet = player.y - EYE_HEIGHT
-  return player.x >= e.minX && player.x <= e.maxX && player.z >= e.minZ && player.z <= e.maxZ && Math.abs(feet - board.heightM) <= FEET_TOLERANCE_M
+  return x >= e.minX && x <= e.maxX && z >= e.minZ && z <= e.maxZ && Math.abs(y - EYE_HEIGHT - board.heightM) <= FEET_TOLERANCE_M
+}
+
+function onBoardEdge(board: DiveBoard, player: Player): boolean {
+  return onEdge(board, player.x, player.y, player.z)
+}
+
+export function entersTakenBoardEdge(room: Pick<GameRoom, 'players'>, player: Player, x: number, y: number, z: number): boolean {
+  const board = divingRules?.boards.find((b) => onEdge(b, x, y, z) && !onBoardEdge(b, player))
+  if (!board) return false
+  for (const other of room.players.values()) if (other !== player && onBoardEdge(board, other)) return true
+  return false
 }
 
 export function airTimeMs(heightM: number): number {
@@ -82,6 +95,11 @@ export function onPoolJump(room: GameRoom, client: GameClient, payload: ClientPa
   if (last && now - last.at < DIVE_COOLDOWN_MS) return
   jumps.set(player, { board, at: now, trick: null })
   sendToPool(room, 'pool_dive', { sessionId: player.sessionId, board: board.id, heightM: board.heightM, airMs: Math.round(airTimeMs(board.heightM)), serverNow: now })
+  if (board.id === COUNTED_DIVE_BOARD && player.token) {
+    callRealtimeBackend(player.token, '/sports/dives', 'POST', { ref: randomUUID(), board: board.id }).catch((error: unknown) => {
+      console.warn('[sports] platform dive not counted:', error instanceof Error ? error.message : error)
+    })
+  }
 }
 
 export function onPoolTrick(room: GameRoom, client: GameClient, payload: ClientPayload, now = Date.now()): void {

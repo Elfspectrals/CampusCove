@@ -77,10 +77,19 @@ export interface PoolRules {
   wadeY: number
   water: Rect[]
   boards: DiveBoard[]
-  trickKeys: Record<string, Trick>
 }
 
 export const RESULTS_SHOWN_MS = 10_000
+export const SWIMSUIT_WEAR = 'swimsuit'
+const SWIMMING_FEET_BELOW = -0.5
+
+export function swimwearOutfit<T extends { top: string | null; bottom: string | null; shoes: string | null; head_accessory: string | null }>(models: T): T {
+  return { ...models, top: null, bottom: SWIMSUIT_WEAR, shoes: null, head_accessory: null }
+}
+
+export function swimmingAt(rules: PoolRules, x: number, feetY: number, z: number): boolean {
+  return feetY < SWIMMING_FEET_BELOW && inWater(rules, x, z)
+}
 export const EDGE_FEET_TOLERANCE_M = 0.4
 const CADENCE_SPAN = 1.5
 
@@ -96,7 +105,17 @@ function rect(raw: unknown, what: string): Rect {
   return { minX: finite(r?.minX, `${what}.minX`), maxX: finite(r?.maxX, `${what}.maxX`), minZ: finite(r?.minZ, `${what}.minZ`), maxZ: finite(r?.maxZ, `${what}.maxZ`) }
 }
 
-const TRICKS: readonly string[] = ['twist', 'somersault', 'cannonball']
+export const TRICK_ACTIONS = { diveTwist: 'twist', diveSomersault: 'somersault', diveCannonball: 'cannonball' } as const
+const CANNONBALL_SPLASH = 1.8
+
+export function trickForKey(code: string, matches: (action: keyof typeof TRICK_ACTIONS, code: string) => boolean): Trick | null {
+  const action = (Object.keys(TRICK_ACTIONS) as (keyof typeof TRICK_ACTIONS)[]).find((a) => matches(a, code))
+  return action ? TRICK_ACTIONS[action] : null
+}
+
+export function splashScale(heightM: number, trick: Trick | null): number {
+  return (1 + heightM / 5) * (trick === 'cannonball' ? CANNONBALL_SPLASH : 1)
+}
 
 export function parsePoolRules(swimming: unknown, diving: unknown): PoolRules {
   const s = swimming as Json | null
@@ -105,19 +124,12 @@ export function parsePoolRules(swimming: unknown, diving: unknown): PoolRules {
   const stroke = s?.stroke as Json | undefined
   if (s?.status !== 'ready' || d?.status !== 'ready' || !pool || !stroke) throw new Error('pool rules: swimming or diving rules are not ready')
   if (!Array.isArray(pool.waterVolume) || !Array.isArray(d.boards)) throw new Error('pool rules: missing water or boards')
-  const keys = (d.trickKeys ?? {}) as Json
-  const trickKeys: Record<string, Trick> = {}
-  for (const [trick, code] of Object.entries(keys)) {
-    if (!TRICKS.includes(trick) || typeof code !== 'string') throw new Error(`pool rules: invalid trick key ${trick}`)
-    trickKeys[code] = trick as Trick
-  }
   return {
     stroke: { goodCadenceMs: finite(stroke.goodCadenceMs, 'goodCadenceMs'), toleranceMs: finite(stroke.toleranceMs, 'toleranceMs') },
     waterY: finite(pool.waterY, 'waterY'),
     wadeY: finite(pool.wadeY, 'wadeY'),
     water: pool.waterVolume.map((w, i) => rect(w, `waterVolume[${i}]`)),
     boards: d.boards.map((b: Json, i: number) => ({ id: String(b.id), heightM: finite(b.heightM, `boards[${i}].heightM`), edgeZone: rect(b.edgeZone, `boards[${i}].edgeZone`) })),
-    trickKeys,
   }
 }
 

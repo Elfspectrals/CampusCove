@@ -30,7 +30,9 @@ body_objs = build_stylized_base(body_coll, arm)
 heads = {sex: build_stylized_head(body_coll, arm, sex) for sex in ("m", "f")}
 faces = {sex: build_face_presets(body_coll, arm, heads[sex], sex) for sex in ("m", "f")}
 woman_top = build_woman_top(body_coll, arm, body_objs)
-sample_actions(arm, {**make_clips(None), "Pick": (90, pose_pick())})
+sample_actions(arm, {**make_clips(None), "Pick": (90, pose_pick()), "Swim": (30, pose_swim()), "Tread": (48, pose_tread()),
+                     "Dive": (24, pose_dive()), "Somersault": (30, pose_somersault()), "Twist": (30, pose_twist()),
+                     "Cannonball": (30, pose_cannonball())})
 piece_coll = wipe("WEAR_PIECES")
 pieces = {}
 for slot, spec in WEAR.items():

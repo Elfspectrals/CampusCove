@@ -727,6 +727,8 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     tickRemoteAvatars: remotes.tick,
     remotePseudo: remotes.pseudoOf,
     remotePosition: remotes.positionOf,
+    setRemoteSwimwear: remotes.setSwimwear,
+    playRemotePoolClip: remotes.playPoolClip,
     setRemoteVoiceState: remotes.setVoiceState,
     remotePlayers: remotes.players,
     remoteAccount: remotes.accountOf,

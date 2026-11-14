@@ -58,9 +58,9 @@ export function playFalseStart(): void {
   tone(196, 0.5, 0.25, 'sawtooth')
 }
 
-export function playSplash(heightM: number, delayS: number): void {
-  const size = Math.min(1, 0.35 + heightM / 7)
-  noise(0.4 + size * 0.6, 0.25 + size * 0.35, 900 + size * 1600, delayS)
+export function playSplash(scale: number): void {
+  const size = Math.min(1, scale / 3.6)
+  noise(0.4 + size * 0.8, 0.2 + size * 0.4, 800 + size * 1800)
 }
 
 export function playFinish(): void {

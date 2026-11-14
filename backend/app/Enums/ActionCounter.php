@@ -22,4 +22,7 @@ enum ActionCounter: string
     case PubGames = 'pub_games';
     case DuelsWon = 'duels_won';
     case SecretRoomWeeks = 'secret_room_weeks';
+    case SwimRaces = 'swim_races';
+    case SwimFast50 = 'swim_fast_50';
+    case PlatformDives = 'platform_dives';
 }

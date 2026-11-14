@@ -66,11 +66,6 @@
   "tasks": [
     "platform_dives"
   ],
-  "trickKeys": {
-    "somersault": "ArrowUp",
-    "twist": "ArrowLeft",
-    "cannonball": "ArrowDown"
-  },
   "pit": {
     "minX": -533,
     "maxX": -520,

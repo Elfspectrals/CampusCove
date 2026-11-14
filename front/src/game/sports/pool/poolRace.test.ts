@@ -1,16 +1,15 @@
 import { readFileSync } from 'node:fs'
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { approach, boardEdgeAt, cadenceMeter, formatRaceTime, inWater, parsePoolRules, racingPhase } from './poolRace.ts'
+import { approach, boardEdgeAt, cadenceMeter, formatRaceTime, inWater, parsePoolRules, racingPhase, splashScale, swimmingAt, swimwearOutfit, trickForKey } from './poolRace.ts'
 
 const read = (sport: string) => JSON.parse(readFileSync(new URL(`../../../../public/assets/sports/rules/${sport}.json`, import.meta.url), 'utf8'))
 const rules = parsePoolRules(read('swimming'), read('diving'))
 const stroke = { goodCadenceMs: 450, toleranceMs: 150 }
 
-test('reads the water, the three boards and the trick keys of the ready rules', () => {
+test('reads the water and the three boards of the ready rules', () => {
   assert.equal(rules.water.length, 2)
   assert.deepEqual(rules.boards.map((b) => b.heightM), [1, 3, 5])
-  assert.equal(rules.trickKeys.ArrowUp, 'somersault')
   assert.ok(rules.wadeY < rules.waterY)
 })
 
@@ -59,4 +58,32 @@ test('approaches a target without overshooting', () => {
   assert.ok(Math.abs(approach(0, 1, 0.3) - 0.3) < 1e-9)
   assert.equal(approach(0.9, 1, 0.3), 1)
   assert.equal(approach(1, 0, 0.5), 0.5)
+})
+
+test('a trick key maps to its trick through the bindings', () => {
+  const bound: Record<string, string> = { diveTwist: 'ArrowLeft', diveSomersault: 'ArrowUp', diveCannonball: 'KeyC' }
+  const matches = (action: string, code: string) => bound[action] === code
+  assert.equal(trickForKey('KeyC', matches), 'cannonball')
+  assert.equal(trickForKey('ArrowUp', matches), 'somersault')
+  assert.equal(trickForKey('KeyW', matches), null)
+})
+
+test('a cannonball makes a bigger splash than any other entry from the same height', () => {
+  assert.ok(splashScale(5, 'cannonball') > splashScale(5, 'somersault'))
+  assert.equal(splashScale(5, null), splashScale(5, 'twist'))
+  assert.ok(splashScale(5, null) > splashScale(1, null))
+})
+
+test('in the water the swimsuit replaces the top, bottom, shoes and headwear, the hair stays', () => {
+  const own = { hair: 'curly', head_accessory: 'gamer', top: 'hoodie', bottom: 'jeans', shoes: 'boots' }
+  assert.deepEqual(swimwearOutfit(own), { hair: 'curly', head_accessory: null, top: null, bottom: 'swimsuit', shoes: null })
+})
+
+test('a player swims only with the feet down in the pool water, not on a board above it', () => {
+  const platform = rules.boards[2]!
+  const x = (platform.edgeZone.minX + platform.edgeZone.maxX) / 2
+  const z = (platform.edgeZone.minZ + platform.edgeZone.maxZ) / 2
+  assert.equal(swimmingAt(rules, x, rules.wadeY, z), true)
+  assert.equal(swimmingAt(rules, x, 5, z), false)
+  assert.equal(swimmingAt(rules, -493, rules.wadeY, -212), false)
 })
