@@ -1,31 +1,60 @@
 {
   "version": 1,
   "sport": "diving",
-  "status": "placeholder",
+  "status": "ready",
   "zone": "sports_pool",
   "coachId": null,
   "signup": null,
   "boards": [
     {
+      "id": "board_1m",
       "heightM": 1,
       "kind": "board",
-      "position": null,
-      "edgeZone": null
+      "position": [
+        -522,
+        1,
+        -207
+      ],
+      "edgeZone": {
+        "minX": -522.4,
+        "maxX": -521.6,
+        "minZ": -207,
+        "maxZ": -205.8
+      }
     },
     {
+      "id": "board_3m",
       "heightM": 3,
       "kind": "board",
-      "position": null,
-      "edgeZone": null
+      "position": [
+        -526.6,
+        3,
+        -207.6
+      ],
+      "edgeZone": {
+        "minX": -527,
+        "maxX": -526.2,
+        "minZ": -207.6,
+        "maxZ": -206.4
+      }
     },
     {
+      "id": "platform_5m",
       "heightM": 5,
       "kind": "platform",
-      "position": null,
-      "edgeZone": null
+      "position": [
+        -531.4,
+        5,
+        -206.6
+      ],
+      "edgeZone": {
+        "minX": -532.6,
+        "maxX": -530.2,
+        "minZ": -206.6,
+        "maxZ": -205.4
+      }
     }
   ],
-  "pitDepthM": 4.5,
   "tricks": [
     "twist",
     "somersault",
@@ -36,5 +65,17 @@
   ],
   "tasks": [
     "platform_dives"
-  ]
+  ],
+  "trickKeys": {
+    "somersault": "ArrowUp",
+    "twist": "ArrowLeft",
+    "cannonball": "ArrowDown"
+  },
+  "pit": {
+    "minX": -533,
+    "maxX": -520,
+    "minZ": -219.5,
+    "maxZ": -204.5
+  },
+  "pitDepthM": 4.5
 }

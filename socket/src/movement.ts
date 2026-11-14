@@ -5,6 +5,7 @@ import { inSecretVolume } from './pub.ts'
 import { drainStamina, JUMP_STAMINA_COST, SPRINT_STAMINA_PER_S } from './stamina.ts'
 import { SPEED_BOOST_FACTOR } from './survivalStats.ts'
 import { entersPassAreaWithoutPass } from './sports/pass.ts'
+import { entersPoolWaterWithoutSwimsuit } from './sports/poolWater.ts'
 import { entersReservedVenue } from './sports/venues.ts'
 import type { GameRoom, HousingUnit, Player } from './types.ts'
 import { type WorldHouse, worldBounds, worldHouse, worldPub } from './world.ts'
@@ -15,7 +16,7 @@ const MAX_SPRINT_SPEED = 8.5 * 1.25
 const MAX_MOVE_BUDGET_SECONDS = 1
 const MOVE_MARGIN = 1.5
 
-export type MoveRejection = 'out_of_world' | 'frozen' | 'knocked_out' | 'cuffed' | 'jailed' | 'too_fast' | 'locked_in' | 'locked_house' | 'secret_room_closed' | 'no_pass' | 'venue_reserved'
+export type MoveRejection = 'out_of_world' | 'frozen' | 'knocked_out' | 'cuffed' | 'jailed' | 'too_fast' | 'locked_in' | 'locked_house' | 'secret_room_closed' | 'no_pass' | 'venue_reserved' | 'no_swimsuit'
 
 export function toInterior(house: WorldHouse, x: number, z: number): { x: number, z: number } {
   const dx = x - house.position.x
@@ -69,6 +70,7 @@ export function moveRejection(room: GameRoom, player: Player, x: number, y: numb
   if (entersClosedSecretRoom(player, x, y, z, now)) return 'secret_room_closed'
   if (entersPassAreaWithoutPass(player, x, z, now)) return 'no_pass'
   if (entersReservedVenue(room, player, x, z)) return 'venue_reserved'
+  if (entersPoolWaterWithoutSwimsuit(player, x, z)) return 'no_swimsuit'
   const from = unitAt(room.housingUnits, player.x, player.z)
   const to = unitAt(room.housingUnits, x, z)
   if (from === to) return null

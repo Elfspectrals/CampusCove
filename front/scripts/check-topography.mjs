@@ -251,6 +251,16 @@ function inBuilding(x, z) {
   })
 }
 
+const zoneLevels = manifest.zones.filter((z) => z.layoutUrl).map((z) => JSON.parse(readFileSync(join(PUBLIC, z.layoutUrl), 'utf8')))
+const inRect = (r, x, z) => x >= r.minX && x <= r.maxX && z >= r.minZ && z <= r.maxZ
+function walkFromZoneLayout(x, z) {
+  return zoneLevels.some((layout) => {
+    const covering = (layout.levels ?? []).filter((level) => level.rects.some((r) => inRect(r, x, z)))
+    const onStair = (layout.stairs ?? []).some((s) => inRect(s, x, z))
+    return (covering.length > 0 || onStair) && !covering.some((level) => level.y === 0)
+  })
+}
+
 /** Two zone grids covering the same point must agree, or the higher one silently wins in the game. */
 function gridConflict(x, z) {
   const values = gridZones.map((g) => ({ key: g.key, h: heightmapAt(g.map, x, z) })).filter((v) => v.h !== null)
@@ -270,6 +280,7 @@ for (const zone of zones) {
   for (let x = Math.ceil(b.minX) + 0.5; x < b.maxX; x += 1) {
     for (let z = Math.ceil(b.minZ) + 0.5; z < b.maxZ; z += 1) {
       samples++
+      if (walkFromZoneLayout(x, z)) continue
       const walk = terrainHeightIn(heightmaps, x, z)
       const top = groundAt(x, z)
       if (top !== null) onGround++

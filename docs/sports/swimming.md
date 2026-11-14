@@ -47,10 +47,28 @@ Block stance, start dive, front crawl in the water, wall turn, finish touch. Cal
 - Leaving the lane or the water during a race: did not finish.
 - Disconnect: did not finish (no grace in a solo timed race).
 
-## Open points
+## Decided at build time (2026-11-14)
 
-- Cadence window and speed curve (to be tuned like Drink Fast, with a golden test shared by front and socket).
-- Does the turn timing matter, or is it automatic?
+- Free swimming is a wade: the water of the basin and the pit has a walk floor at -1.3 m (water surface -0.3 m), so the head stays out of the water; real swimming movement is the later swimming task. Steps lead out of the basin at both ends and out of the pit.
+- Stroke model (`socket/src/sports/swimRace.ts`, values in `swimming.json`): the dive after the beep glides 3 m at 1.8 m/s; a stroke in the window 450 +/- 150 ms after the previous one, on the other side, adds 0.55 m/s up to 2.2 m/s; a slower one adds 0.25 m/s; the same side twice or a faster one multiplies the speed by 0.6; the water slows the swimmer by 60 % of the speed per second. A steady good cadence swims 25 m in about 13 s.
+- The turn is automatic, no bonus (`turnBonus` 0).
+- The beep comes 1.5 to 3 s after "take your marks", rolled by the socket. Reaction time is measured from the tick that sent the beep.
+- A race stops after 60 s per length; whoever is still swimming did not finish.
+- Swimsuit check at the water edge: the socket asks Laravel once when the player enters the pool zone (`ownedGear`) and refuses a move into the water without one (`no_swimsuit`). Leaving the water is always allowed.
+
+## Socket contract
+
+| Message | Direction | Payload |
+|---|---|---|
+| `pool_dive` | client -> server | `{}`, the dive key of a signed-up swimmer on the block |
+| `pool_stroke` | client -> server | `{ side: 'left' \| 'right' }` |
+| `pool_race_start` | server -> swimmers and players in the pool | `{ venue, distanceM, lengthM, lanes: [{ sessionId, name, lane }], serverNow }` |
+| `pool_race_beep` | server -> same | `{ venue, serverNow }` |
+| `pool_race_state` | server -> same, every sports tick | `{ venue, clockMs \| null, swimmers: [{ sessionId, lane, phase, distanceM, x, z, length, lengths, speedMps, reactionMs, timeMs }] }` |
+| `pool_stroke_result` | server -> the swimmer | `{ result: 'started' \| 'good' \| 'slow' \| 'off' \| 'false_start', reactionMs }` |
+| `pool_race_result` | server -> same | `{ venue, distanceM, results: [{ sessionId, name, lane, status, place, timeMs, reactionMs }] }` |
+
+`phase` / `status`: `marks`, `swimming`, `finished`, `disqualified`, `dnf`. The socket places the swimmers (`position_correction` reason `pool_block` at kick-off, then their position each tick); the client locks its movement while it is on the block or swimming. The match is recorded with `result: 'finished'`, `place` and `timeMs`, or `dnf` (a false start is a `dnf`).
 
 ## Proposed placeholder JSON fields
 

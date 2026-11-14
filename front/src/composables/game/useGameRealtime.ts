@@ -128,6 +128,8 @@ import type {
 import { useRemoteAvatars, type SeatPose } from './useRemoteAvatars'
 import { PUNCH_DAMAGE } from '../../game/punch'
 import { applySportsLoans, clearSportsLoans, forgetSportsLoans } from '../../game/sports/sportsLoans'
+import type { PoolDive, PoolRaceResult, PoolRaceStart, PoolRaceState, StrokeResult, Trick } from '../../game/sports/pool/poolRace'
+import type { usePoolRace } from './usePoolRace'
 
 const REALTIME_HTTP_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000'
 
@@ -326,6 +328,7 @@ export interface GameRealtimeDeps {
     onError: (data: SportsErrorPayload) => void
     onRoomJoined: () => void
   }
+  pool: ReturnType<typeof usePoolRace>['handlers']
   pickpocket: {
     onStarted: (data: PickpocketStartedPayload) => void
     onProgress: (data: PickpocketProgressPayload) => void
@@ -413,6 +416,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       deps.admin.onInit(payload.isAdmin === true)
       clearSportsLoans()
       deps.sports.onRoomJoined()
+      deps.pool.onRoomJoined()
     })
 
     room.onMessage('housing_units_sync', (data: { units?: unknown }) => syncHousingUnits(data.units))
@@ -422,6 +426,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('position_correction', (data: { x: number; y: number; z: number; reason?: string }) => {
       setMyPosition(data.x, data.y, data.z)
       deps.sports.onCorrection(data.reason)
+      deps.pool.onCorrection(data.reason)
     })
     room.onMessage('door_error', (data: { message: string }) => {
       deps.roomMessage.value = data.message
@@ -581,6 +586,13 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('sports_lobby_closed', (data: SportsLobbyClosedPayload) => deps.sports.onLobbyClosed(data))
     room.onMessage('sports_error', (data: SportsErrorPayload) => deps.sports.onError(data))
     room.onMessage('sports_loans', (data: SportsLoansPayload) => applySportsLoans(data))
+    room.onMessage('pool_race_start', (data: PoolRaceStart) => deps.pool.onStart(data))
+    room.onMessage('pool_race_beep', () => deps.pool.onBeep())
+    room.onMessage('pool_race_state', (data: PoolRaceState) => deps.pool.onState(data))
+    room.onMessage('pool_stroke_result', (data: { result: StrokeResult }) => deps.pool.onStrokeResult(data))
+    room.onMessage('pool_race_result', (data: PoolRaceResult) => deps.pool.onResult(data))
+    room.onMessage('pool_dive', (data: PoolDive) => deps.pool.onDive(data))
+    room.onMessage('pool_dive_trick', (data: { sessionId: string; name: string; trick: Trick }) => deps.pool.onTrick(data))
     room.onMessage('pickpocket_started', (data: PickpocketStartedPayload) => deps.pickpocket.onStarted(data))
     room.onMessage('pickpocket_progress', (data: PickpocketProgressPayload) => deps.pickpocket.onProgress(data))
     room.onMessage('pickpocket_failed', (data: PickpocketFailedPayload) => deps.pickpocket.onFailed(data))

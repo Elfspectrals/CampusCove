@@ -1,0 +1,193 @@
+{
+  "version": 1,
+  "zone": "sports_pool",
+  "name": "Cove Pool",
+  "props": [
+    {
+      "id": "sports_pool_coach",
+      "kind": "npc",
+      "position": [
+        -492.7,
+        0.0,
+        -221.2
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "pose": "idle",
+      "vendor": false,
+      "body": "#b07a55",
+      "outfit": [
+        {
+          "slot": "hair",
+          "key": "short",
+          "color": "#1f1a17"
+        },
+        {
+          "slot": "top",
+          "key": "staff_polo",
+          "color": "#2f6fa8"
+        },
+        {
+          "slot": "bottom",
+          "key": "basketball_shorts",
+          "color": "#1d2b44"
+        },
+        {
+          "slot": "shoes",
+          "key": "slides",
+          "color": "#f2f2f2"
+        }
+      ],
+      "coach": "pool_lanes"
+    },
+    {
+      "id": "sports_pool_towel_rack_01",
+      "kind": "item",
+      "key": "towel_rack",
+      "code": "decor_towel_rack",
+      "forSale": false,
+      "position": [
+        -490.3,
+        0.02,
+        -227.6
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "sports_pool_towel_rack_02",
+      "kind": "item",
+      "key": "towel_rack",
+      "code": "decor_towel_rack",
+      "forSale": false,
+      "position": [
+        -490.3,
+        0.02,
+        -199.4
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "sports_pool_plant_01",
+      "kind": "item",
+      "key": "potted_plant",
+      "code": "decor_potted_plant",
+      "forSale": false,
+      "position": [
+        -485.0,
+        0.02,
+        -214.6
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "sports_pool_plant_02",
+      "kind": "item",
+      "key": "potted_plant",
+      "code": "decor_potted_plant",
+      "forSale": false,
+      "position": [
+        -485.0,
+        0.02,
+        -209.4
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "sports_pool_trash_bin_01",
+      "kind": "item",
+      "key": "trash_bin",
+      "code": "decor_trash_bin",
+      "forSale": false,
+      "position": [
+        -490.8,
+        0.02,
+        -215.2
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "sports_pool_bench_01",
+      "kind": "item",
+      "key": "garden_bench",
+      "code": "decor_garden_bench",
+      "forSale": false,
+      "position": [
+        -482.4,
+        0.06,
+        -217.0
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "sports_pool_bench_02",
+      "kind": "item",
+      "key": "garden_bench",
+      "code": "decor_garden_bench",
+      "forSale": false,
+      "position": [
+        -482.4,
+        0.06,
+        -207.0
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "sports_pool_trash_bin_02",
+      "kind": "item",
+      "key": "trash_bin",
+      "code": "decor_trash_bin",
+      "forSale": false,
+      "position": [
+        -482.3,
+        0.06,
+        -204.0
+      ],
+      "yaw": -1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    }
+  ],
+  "areas": []
+}
