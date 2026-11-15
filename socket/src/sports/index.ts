@@ -5,7 +5,7 @@ import { leaveSports, updateMatchesOnMove } from './venues.ts'
 import './tennis.ts'
 import './climbing.ts'
 
-export { loadDanceVenue, onDanceEmotePlay, onDancePress } from './dance.ts'
+export { loadDanceVenue, moveDanceSpectator, onDanceEmotePlay, onDancePress } from './dance.ts'
 export { moveEmote, onEmoteList, sendEmotesOnJoin, stopEmote } from './danceEmotes.ts'
 export { onSportsPassBuy } from './pass.ts'
 export { onBoxingBag, onBoxingDodge, onBoxingGetUp, onBoxingGuard, onBoxingPunch, registerBoxing } from './boxing.ts'

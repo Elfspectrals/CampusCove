@@ -51,7 +51,7 @@ function resultLabel(row: DanceEnd['dancers'][number]): string {
 <template>
   <div class="pointer-events-none absolute inset-0 z-[35] flex items-end justify-center pb-24 select-none">
     <section v-if="!result" class="cc-hud pointer-events-auto flex animate-cc-pop items-stretch gap-4 p-3" :aria-label="t('sports.dance.title')">
-      <div class="relative overflow-hidden rounded-lg border-2 border-line/15 bg-ink-950/80" :style="{ width: `${DANCE_LANES * 56}px`, height: `${HIGHWAY_PX}px` }">
+      <div v-if="dancing" class="relative overflow-hidden rounded-lg border-2 border-line/15 bg-ink-950/80" :style="{ width: `${DANCE_LANES * 56}px`, height: `${HIGHWAY_PX}px` }">
         <div
           v-for="lane in lanes"
           :key="`col-${lane}`"
@@ -80,8 +80,10 @@ function resultLabel(row: DanceEnd['dancers'][number]): string {
       </div>
       <div class="flex w-48 flex-col gap-2">
         <p class="m-0 font-display text-sm uppercase tracking-[0.16em] text-mist">{{ songName }}</p>
-        <p class="m-0 font-display text-3xl text-fog">{{ mine?.score ?? 0 }}</p>
-        <p class="m-0 text-sm font-bold text-mist">{{ t('sports.dance.combo', { n: mine?.combo ?? 0 }) }}</p>
+        <template v-if="dancing">
+          <p class="m-0 font-display text-3xl text-fog">{{ mine?.score ?? 0 }}</p>
+          <p class="m-0 text-sm font-bold text-mist">{{ t('sports.dance.combo', { n: mine?.combo ?? 0 }) }}</p>
+        </template>
         <p v-if="judgement" :key="`${judgement.judgement}-${songMs}`" class="m-0 font-display text-2xl" :class="[judgementClass[judgement.judgement], reducedEffects ? '' : 'animate-cc-pop']">
           {{ t(`sports.dance.judgements.${judgement.judgement}`) }}
         </p>

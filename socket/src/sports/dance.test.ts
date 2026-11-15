@@ -78,6 +78,32 @@ test('a press from someone not dancing is ignored', async () => {
   venues.endMatch(room, dance.DANCE_VENUE, { reason: 'finished' }, NOW + 1)
 })
 
+test('a player who walks into the studio during a song gets its start, and its stop on leaving', async () => {
+  const { room, players: [a] } = await studio(1)
+  const late = await makePlayer(299, STUDIO.minX - 20, -200)
+  late.sportsPassUntil = NOW * 10
+  room.players.set(late.sessionId, late)
+  room.clients.push((await import('./testWorld.ts')).fakeClient(late.sessionId))
+  await signup(room, a, { mode: 'solo', song: 'cove_groove', difficulty: 'easy' }, NOW)
+  venues.tickSports(room, NOW)
+  assert.equal(sentOf(clientOf(room, late), 'dance_start').length, 0)
+
+  late.x = COACH_X - 6
+  dance.moveDanceSpectator(room, late.sessionId, NOW + 5000)
+  dance.moveDanceSpectator(room, late.sessionId, NOW + 5100)
+  const starts = sentOf(clientOf(room, late), 'dance_start') as (Start & { serverNow: number })[]
+  assert.equal(starts.length, 1)
+  assert.equal(starts[0].serverNow, NOW + 5000)
+  assert.deepEqual(starts[0].dancers.map((d) => d.sessionId), [a.sessionId])
+
+  late.x = STUDIO.minX - 20
+  dance.moveDanceSpectator(room, late.sessionId, NOW + 6000)
+  assert.equal(sentOf(clientOf(room, late), 'dance_stop').length, 1)
+  dance.moveDanceSpectator(room, a.sessionId, NOW + 6000)
+  assert.equal(sentOf(clientOf(room, a), 'dance_stop').length, 0)
+  venues.endMatch(room, dance.DANCE_VENUE, { reason: 'finished' }, NOW + 7000)
+})
+
 test('team mode: two dancers hitting the same note share the sync bonus', async () => {
   const { room, players: [a, b] } = await studio(2)
   await signup(room, a, { mode: 'team', song: 'night_sprint', difficulty: 'hard' }, NOW)

@@ -124,6 +124,7 @@ import {
   leaveSportsRoom,
   moveInSports,
   newSportsState,
+  moveDanceSpectator,
   moveEmote,
   onDanceEmotePlay,
   onDancePress,
@@ -471,6 +472,7 @@ export class CityRoom extends Room implements GameRoom {
     onTaskMove(player, distXZ, now)
     moveInSports(this, player, now)
     moveEmote(this, player)
+    moveDanceSpectator(this, player.sessionId, now)
   }
 
   broadcastMove(client: GameClient, player: Player): void {

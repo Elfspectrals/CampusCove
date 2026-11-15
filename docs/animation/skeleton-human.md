@@ -67,6 +67,11 @@ Clips are phase functions `f(ph, P)` sampled by `sample_actions(arm, clips, fps=
   - Once `rx` has swung a limb forward, `ry` no longer abducts it: on an overhead `UpperArm.L` (`rx` −172) `ry`
     negative brings the arm in, and on a forearm bent forward (`LowerArm` `rx` −100) `rz` −sgn crosses it over the
     chest. On a thigh raised forward, `UpperLeg.L` `rz` positive spreads it out (renders, 2026-11-14).
+  - On `UpperArm.L` with `ry` −45, `LowerArm.L` `ry` −100 points the forearm up (goalpost, `DanceRobot`); `ry` −125
+    on `UpperArm.L` points the arm up and out; `rx` −165 with `ry` −20 throws both arms overhead in a V
+    (`DanceMoveUp`). Mirrored on `.R` (renders of 2026-11-15).
+  - Side raises past about 60° (`UpperArm` `ry` ±60 and more) pull the chest skin into a visible flap on the base
+    body: keep held poses at or under that.
   Any other sign is checked on a render before it is trusted.
 - `sample_actions` deletes every NLA track first: always pass the full clip dict.
 
@@ -82,6 +87,16 @@ Clips are phase functions `f(ph, P)` sampled by `sample_actions(arm, clips, fps=
 | Drink | 30 | 1.0 | one-shot | `pose_drink`, hand at the mouth from 0.33 s, head back 22° (upper body only) |
 | Dance | 60 | 2.0 | yes | `pose_dance`: 4 beats at 120 bpm (one beat = 15 frames), knee bounce on each beat, step-touch to the character's right and back (18 cm, feet planted by `leg_ik`), alternating arm pumps |
 | Stumble | 18 | 0.6 | one-shot | `pose_stumble`: knees buckle, arms flail, feet planted; starts and ends on the `Dance` frame-0 pose |
+| DanceSway | 60 | 2.0 | yes | `pose_dance_sway`: hips sway 7 cm side to side once every 2 beats with a hip roll, soft knee bounce on each beat, arms low and loose waving sideways with elbow and wrist lag; feet planted |
+| DanceRobot | 60 | 2.0 | yes | `pose_dance_robot`: four held hits, each reached in 4 frames before the beat (`_beat_hits`): both forearms forward, both goalposts, left goalpost and right forearm forward, then the mirror; head ticks 20°, knee dip on each hit; feet planted |
+| DanceShuffle | 60 | 2.0 | yes | `pose_dance_shuffle`: one foot per beat (right on beats 1 and 3) taps the heel 15 cm forward (toes up 30°) then the ball 15 cm back (heel up 30°, ankle raised by `_on_ball`), weight shifts to the other foot, bounce on every half beat, forearms pumping low |
+| DanceSpin | 60 | 2.0 | yes | `pose_dance_spin`: Hips `rz` 0 to 360° (turns to the character's left), eight steps of 90° (left foot on the first half of each beat, right on the second) placed by `leg_ik(..., yaw=)` so a planted foot never turns; arms open from the `Dance` pose to straight out and close again at the seam |
+| DanceDisco | 60 | 2.0 | yes | `pose_dance_disco`: left hand across to the right hip, right arm points up and out, right hand across to the left hip, left arm points up; the free forearm stays forward at the waist; hips pushed toward the pointing side's opposite; feet planted |
+| DanceTwist | 60 | 2.0 | yes | `pose_dance_twist`: hips −0.14 m (knees bent), Hips `rz` ±28° once per beat, Spine and Chest −50° the other way, so the shoulders turn against the hips; elbows bent 95° at the sides; feet planted |
+| DanceMoveLeft | 15 | 0.5 | one-shot | `pose_dance_move_side('.L')`: anticipation dip, left foot steps 14 cm out to the character's left while the right foot taps up on the ball, left arm points out, torso leans left; starts and ends on the `Dance` frame-0 pose |
+| DanceMoveRight | 15 | 0.5 | one-shot | mirror of `DanceMoveLeft` |
+| DanceMoveUp | 15 | 0.5 | one-shot | `pose_dance_move_up`: dip, then both arms thrown up in a V and a rise on the balls (22°), head up; starts and ends on the `Dance` frame-0 pose |
+| DanceMoveDown | 15 | 0.5 | one-shot | `pose_dance_move_down`: small rise, then a squat (hips −0.2 m, torso forward), hands down to the knees; starts and ends on the `Dance` frame-0 pose |
 | Pick | 90 | 3.0 | one-shot | `pose_pick`, base body only (`run_wear.py`) |
 | Kick | 14 | 0.467 | one-shot | `pose_kick`, right side-foot pass, contact at frame 6 (0.20 s), left foot planted |
 | Shot | 21 | 0.7 | one-shot | `pose_shot`, wind-up at frame 8, right instep strike at frame 11 (0.367 s) |
@@ -128,7 +143,12 @@ Hips > Spine > Chest > Shoulder chain, elbow towards the hint), feet with `leg_i
 | Twist | 30 | 1.0 | one-shot | `pose_twist`, base body only: 360° turn of Hips about the vertical, arms crossed on the chest, ends at rest |
 | Cannonball | 30 | 1.0 | one-shot, ends held | `pose_cannonball`, base body only: tuck by 0.26, held |
 
-Every clip is keyed from frame 0 (glTF time starts at 0). Gaits plant the feet with `leg_ik` (analytic two-bone IK,
+Every clip is keyed from frame 0 (glTF time starts at 0). Every clip keys translation, rotation and scale on all 21
+bones (plus the skin's extra bones), so a crossfade never lets a bone fall back to the rest pose. The one-shots
+`Stumble` and `DanceMove*` start and end exactly on the `Dance` frame-0 pose; the dance loops start within 15-66°
+of it per bone (`DanceSpin` 15°, `DanceTwist` 43°, `DanceShuffle` 46°, `DanceRobot` 47°, `DanceSway` 51°,
+`DanceDisco` 66°, measured 2026-11-15), never on the rest pose. `leg_ik(..., yaw=deg)` turns a foot and its knee
+to a world heading (default: the foot faces -Y and the knee follows the hips). Gaits plant the feet with `leg_ik` (analytic two-bone IK,
 knee forward): the stance foot moves back at exactly the design speed, so there is no slide at timeScale 1.
 
 `make_clips` (`clips.py`) ships its clips in four GLBs: `wear/base` and the three skins. A clip meant for the base

@@ -366,6 +366,7 @@ export interface GameRealtimeDeps {
     onJudge: (data: DanceJudge) => void
     onStray: () => void
     onEnd: (data: DanceEnd) => void
+    onStop: () => void
   }
   emotes: {
     clipOf: (id: string) => string | null
@@ -674,8 +675,10 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('tennis_stroke', (data: TennisStrokePayload) => {
       if (data.sessionId !== room.sessionId) remotes.tennisStroke(data.sessionId, data.stroke)
     })
+    let danceDancers: string[] = []
     room.onMessage('dance_start', (raw: unknown) => {
       const start = parseDanceStart(raw)
+      danceDancers = start.dancers.map((d) => d.sessionId)
       for (const d of start.dancers) if (d.sessionId !== room.sessionId) remotes.setDancing(d.sessionId, { clip: RHYTHM_DANCE_CLIP, timeScale: danceTimeScale(start.bpm) })
       deps.dance.onStart(start)
     })
@@ -698,6 +701,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('emote_error', (data: { message: string }) => deps.emotes.onError(data))
     room.onMessage('dance_end', (data: DanceEnd) => {
       for (const d of data.dancers) if (d.sessionId !== room.sessionId) remotes.setDancing(d.sessionId, null)
+      danceDancers = []
       deps.dance.onEnd(data)
     })
     room.onMessage('boxing_state', (data: BoxingStatePayload) => {
@@ -757,6 +761,11 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('pool_race_result', (data: PoolRaceResult) => deps.pool.onResult(data))
     room.onMessage('pool_dive', (data: PoolDive) => deps.pool.onDive(data))
     room.onMessage('pool_dive_trick', (data: { sessionId: string; name: string; trick: Trick }) => deps.pool.onTrick(data))
+    room.onMessage('dance_stop', () => {
+      for (const sessionId of danceDancers) remotes.setDancing(sessionId, null)
+      danceDancers = []
+      deps.dance.onStop()
+    })
     room.onMessage('pickpocket_started', (data: PickpocketStartedPayload) => deps.pickpocket.onStarted(data))
     room.onMessage('pickpocket_progress', (data: PickpocketProgressPayload) => deps.pickpocket.onProgress(data))
     room.onMessage('pickpocket_failed', (data: PickpocketFailedPayload) => deps.pickpocket.onFailed(data))

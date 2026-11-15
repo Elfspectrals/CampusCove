@@ -87,3 +87,7 @@ export class AvatarClipSelector {
     }
   }
 }
+
+export function startsDanceOneShot(playing: string | null, next: string): boolean {
+  return playing !== next
+}

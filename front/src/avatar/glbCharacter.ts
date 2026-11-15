@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js'
-import { AvatarClipSelector, clampDt } from './avatarAnimationLogic'
+import { AvatarClipSelector, clampDt, startsDanceOneShot } from './avatarAnimationLogic'
 
 /** Animation clips per loaded / cloned root (kept out of userData, which three JSON-clones). */
 const clipsByRoot = new WeakMap<THREE.Object3D, THREE.AnimationClip[]>()
@@ -212,13 +212,13 @@ export function setAvatarDancing(root: THREE.Object3D, dance: { clip: string; ti
 
 export function setAvatarStumbling(root: THREE.Object3D): void {
   const state = animStateByRoot.get(root)
-  if (state?.dancing != null) playOneShot(state, STUMBLE_CLIP)
+  if (state?.dancing != null && startsDanceOneShot(state.oneShot, STUMBLE_CLIP)) playOneShot(state, STUMBLE_CLIP)
 }
 
 export function setAvatarDanceMove(root: THREE.Object3D, lane: number): void {
   const state = animStateByRoot.get(root)
   const clip = DANCE_MOVE_CLIPS[lane]
-  if (state?.dancing != null && clip) playOneShot(state, clip)
+  if (state?.dancing != null && clip && startsDanceOneShot(state.oneShot, clip)) playOneShot(state, clip)
 }
 
 export function setAvatarClimbPose(root: THREE.Object3D, pose: AvatarClimbPose): void {
