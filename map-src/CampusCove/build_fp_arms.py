@@ -667,6 +667,87 @@ def hold_tool(wrist):
     return pose_at
 
 
+SWING_FRAMES = 14
+LOB_FRAMES = 15
+SERVE_FRAMES = 27
+LEFT_HOLD = idle(HOLD_FRAMES, 0.9, -1)(0)
+
+
+def racket(wrist, grip, up, forearm):
+    return hold_at(wrist, Vector(grip), Vector(up), Vector(forearm))
+
+
+def offset(pose, delta):
+    return {k: pose.get(k, 0.0) + delta.get(k, 0.0) for k in pose.keys() | delta.keys()}
+
+
+def forehand(wrist):
+    rest = hold_tool(wrist)(0)
+    return eased(SWING_FRAMES, [
+        (0, rest),
+        (3, racket(wrist, (0.34, 0.24, -0.2), (0.5, -0.8, 0.3), (0.8, 0.5, 0.0))),
+        (6, racket(wrist, (0.12, 0.44, -0.16), (1.0, 0.2, 0.1), (-0.15, 1.0, 0.2))),
+        (9, racket(wrist, (-0.22, 0.4, -0.06), (-0.6, -0.6, 0.5), (-0.4, 0.8, 0.45))),
+        (SWING_FRAMES, rest),
+    ])
+
+
+def backhand(wrist):
+    rest = hold_tool(wrist)(0)
+    return eased(SWING_FRAMES, [
+        (0, rest),
+        (3, racket(wrist, (-0.24, 0.3, -0.26), (-0.3, -0.8, 0.5), (-0.6, 0.3, 0.1))),
+        (6, racket(wrist, (-0.08, 0.42, -0.1), (-1.0, 0.0, 0.1), (0.1, 0.8, 0.6))),
+        (9, racket(wrist, (0.3, 0.36, -0.04), (0.2, -0.5, 1.0), (0.5, 0.7, 0.3))),
+        (SWING_FRAMES, rest),
+    ])
+
+
+def lob(wrist):
+    rest = hold_tool(wrist)(0)
+    return eased(LOB_FRAMES, [
+        (0, rest),
+        (4, racket(wrist, (0.32, 0.24, -0.3), (0.4, -0.6, -0.6), (0.6, 0.6, -0.2))),
+        (7.5, racket(wrist, (0.12, 0.42, -0.14), (1.0, 0.2, -0.15), (-0.1, 0.6, 0.8))),
+        (11, racket(wrist, (0.04, 0.4, 0.06), (0.1, -0.86, 0.5), (-0.1, 0.5, 0.86))),
+        (LOB_FRAMES, rest),
+    ])
+
+
+def serve(wrist):
+    rest = hold_tool(wrist)(0)
+    return eased(SERVE_FRAMES, [
+        (0, rest),
+        (4, racket(wrist, (0.22, 0.3, -0.28), (0.3, 0.6, -0.6), (0.2, 0.6, 0.7))),
+        (8, racket(wrist, (0.32, 0.0, 0.06), (0.3, -0.6, 0.8), (0.4, 0.8, 0.6))),
+        (11, racket(wrist, (0.26, -0.02, 0.2), (0.1, -0.6, -0.8), (0.3, 0.8, -0.6))),
+        (15, racket(wrist, (0.1, 0.45, 0.12), (0.0, 0.7, 1.0), (0.0, 1.0, -0.7))),
+        (19, racket(wrist, (-0.18, 0.3, -0.24), (-0.6, 0.5, -0.6), (0.2, 0.6, 0.3))),
+        (SERVE_FRAMES, rest),
+    ])
+
+
+def toss(wrist):
+    up, back = Vector((0.05, 0.6, 0.8)), Vector((0.2, -0.3, -1.0))
+    return eased(SERVE_FRAMES, [
+        (0, LEFT_HOLD),
+        (4, offset(LEFT_HOLD, {"z": -0.03, "y": 0.02})),
+        (9, fist_at("L", wrist, Vector((-0.06, 0.38, 0.0)), up, back)),
+        (13, fist_at("L", wrist, Vector((-0.05, 0.38, 0.06)), up, back)),
+        (18, offset(LEFT_HOLD, {"x": 0.04, "y": -0.04, "z": -0.04})),
+        (SERVE_FRAMES, LEFT_HOLD),
+    ])
+
+
+def balance(frames, reach, tuck, contact):
+    return eased(frames, [
+        (0, LEFT_HOLD),
+        (contact - 3, offset(LEFT_HOLD, reach)),
+        (contact + 3, offset(LEFT_HOLD, tuck)),
+        (frames, LEFT_HOLD),
+    ])
+
+
 def pick(fr):
     pose = PICK_KEYS(fr)
     if 26 < fr < 63:
@@ -706,6 +787,16 @@ def hold_hand(fr):
     return blend(GRIP, FIST, 0.05 * (1 - math.cos(2 * math.pi * fr / HOLD_FRAMES)) / 2)
 
 
+SWING_GRIP = blend(GRIP, FIST, 0.3)
+
+
+def swing_hand(frames, contact):
+    return eased(frames, [(0, GRIP), (contact, SWING_GRIP), (frames, GRIP)])
+
+
+TOSS_HAND = eased(SERVE_FRAMES, [(0, RELAXED), (4, GRAB), (8, GRAB), (10, OPEN), (18, RELAXED), (SERVE_FRAMES, RELAXED)])
+
+
 def guard_hand(frames):
     return eased(frames, [(0, RELAXED), (3, LOOSE_FIST), (frames - 4, LOOSE_FIST), (frames, RELAXED)])
 
@@ -725,6 +816,10 @@ def finger_clips(side):
         "Eat": (30, main(lambda fr: GRIP)),
         "Drink": (30, main(lambda fr: GRIP)),
         "Hold": (HOLD_FRAMES, main(hold_hand)),
+        "TennisForehand": (SWING_FRAMES, main(swing_hand(SWING_FRAMES, 6))),
+        "TennisBackhand": (SWING_FRAMES, main(swing_hand(SWING_FRAMES, 6))),
+        "TennisLob": (LOB_FRAMES, main(swing_hand(LOB_FRAMES, 7.5))),
+        "TennisServe": (SERVE_FRAMES, swing_hand(SERVE_FRAMES, 15) if side == "R" else TOSS_HAND),
     }
 
 
@@ -775,6 +870,14 @@ def animate(arm, hand):
         bake(arm["L"], clip, 30, lambda fr: OFF_HAND_LOW)
     bake(arm["R"], "Hold", HOLD_FRAMES, hold_tool(hand["R"].location))
     bake(arm["L"], "Hold", HOLD_FRAMES, idle(HOLD_FRAMES, 0.9, -1))
+    bake(arm["R"], "TennisForehand", SWING_FRAMES, forehand(hand["R"].location))
+    bake(arm["L"], "TennisForehand", SWING_FRAMES, balance(SWING_FRAMES, {"x": 0.05, "y": 0.08, "z": 0.06, "rx": 0.2}, {"x": -0.06, "y": -0.03, "z": -0.03}, 6))
+    bake(arm["R"], "TennisBackhand", SWING_FRAMES, backhand(hand["R"].location))
+    bake(arm["L"], "TennisBackhand", SWING_FRAMES, balance(SWING_FRAMES, {"x": 0.04, "y": 0.05}, {"x": -0.08, "y": -0.04}, 6))
+    bake(arm["R"], "TennisLob", LOB_FRAMES, lob(hand["R"].location))
+    bake(arm["L"], "TennisLob", LOB_FRAMES, balance(LOB_FRAMES, {"x": 0.04, "y": 0.06, "z": 0.03, "rx": 0.15}, {"x": -0.05, "y": -0.03, "z": 0.02}, 7))
+    bake(arm["R"], "TennisServe", SERVE_FRAMES, serve(hand["R"].location))
+    bake(arm["L"], "TennisServe", SERVE_FRAMES, toss(hand["L"].location))
 
 
 def build(key, load=import_skin, out_rel=("skins",), fp_proportions=False):

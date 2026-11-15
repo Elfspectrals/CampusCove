@@ -120,6 +120,9 @@ import type {
   GymFreePayload,
   GymEventPayload,
   GymStatePayload,
+  TennisFreePayload,
+  TennisStrokePayload,
+  TennisStatePayload,
   SportsPassBoughtPayload,
   SportsPassStatePayload,
   PickpocketAlertPayload,
@@ -332,6 +335,8 @@ export interface GameRealtimeDeps {
     onLobbyClosed: (data: SportsLobbyClosedPayload) => void
     onError: (data: SportsErrorPayload) => void
     onRoomJoined: () => void
+    onTennisState: (data: TennisStatePayload) => void
+    onTennisFree: (data: TennisFreePayload) => void
     onRunState: (data: SportsRunStatePayload) => void
     onRunResult: (data: SportsRunResultPayload) => void
   }
@@ -604,6 +609,11 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('gym_end', (data: GymEndPayload) => deps.gym.onEnd(data))
     room.onMessage('gym_free', (data: GymFreePayload) => deps.gym.onFree(data))
     room.onMessage('gym_error', (data: GymErrorPayload) => deps.gym.onError(data))
+    room.onMessage('tennis_state', (data: TennisStatePayload) => deps.sports.onTennisState(data))
+    room.onMessage('tennis_free', (data: TennisFreePayload) => deps.sports.onTennisFree(data))
+    room.onMessage('tennis_stroke', (data: TennisStrokePayload) => {
+      if (data.sessionId !== room.sessionId) remotes.tennisStroke(data.sessionId, data.stroke)
+    })
     room.onMessage('pickpocket_started', (data: PickpocketStartedPayload) => deps.pickpocket.onStarted(data))
     room.onMessage('pickpocket_progress', (data: PickpocketProgressPayload) => deps.pickpocket.onProgress(data))
     room.onMessage('pickpocket_failed', (data: PickpocketFailedPayload) => deps.pickpocket.onFailed(data))
@@ -747,5 +757,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     remoteAccount: remotes.accountOf,
     setRemoteRacePint: remotes.setRacePint,
     setRemoteRacePose: remotes.setRacePose,
+    setRemoteHeldTool: remotes.setHeldTool,
+    setRemoteTennis: remotes.setTennis,
   }
 }

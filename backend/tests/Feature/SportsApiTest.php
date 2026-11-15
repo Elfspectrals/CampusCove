@@ -155,6 +155,7 @@ class SportsApiTest extends TestCase
             $this->assertSame($prices[$code], (int) $price, $code);
         }
         $this->assertSame(260, (int) $onSale['gear_running_spikes']);
+        $this->assertSame(180, (int) $onSale['gear_tennis_racket']);
     }
 
     public function test_gear_lists_the_codes_owned_in_the_inventory(): void

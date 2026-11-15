@@ -31,6 +31,8 @@ final class TaskCatalog
             'sharpshooter' => ['counter' => ActionCounter::SharpshooterMatches, 'tiers' => [1, 5, 15]],
             'races_run' => ['counter' => ActionCounter::RacesRun, 'tiers' => [10, 50, 200]],
             'fast_400' => ['counter' => ActionCounter::Fast400Runs, 'tiers' => [1, 10, 50]],
+            'tennis' => ['counter' => ActionCounter::TennisMatches, 'tiers' => [5, 25, 100]],
+            'tennis_whitewash' => ['counter' => ActionCounter::TennisWhitewashes, 'tiers' => [1, 5, 15]],
         ];
     }
 

@@ -5,7 +5,10 @@ const TOOL_CODE = /^tool_([a-z]+)$/
 const GRIP_HEIGHT = 0.35
 const loader = createGltfLoader()
 
+const HELD_GEAR: Record<string, string> = { gear_tennis_racket: '/assets/decor/tennis_racket/model.glb' }
+
 function heldToolUrl(code: string): string | null {
+  if (HELD_GEAR[code]) return HELD_GEAR[code]
   const key = TOOL_CODE.exec(code)?.[1]
   return key ? `/assets/items/tools/${key}/model.glb` : null
 }

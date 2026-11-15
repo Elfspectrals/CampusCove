@@ -44,6 +44,7 @@ import GameDrunkEffects from '../components/game/GameDrunkEffects.vue'
 import GameDrinkFast from '../components/game/GameDrinkFast.vue'
 import GamePubChallenge from '../components/game/GamePubChallenge.vue'
 import GamePubRaceBoard from '../components/game/GamePubRaceBoard.vue'
+import GameTennisHud from '../components/game/GameTennisHud.vue'
 import GameJail from '../components/game/GameJail.vue'
 import GameCuffed from '../components/game/GameCuffed.vue'
 import GamePickpocket from '../components/game/GamePickpocket.vue'
@@ -108,6 +109,8 @@ import { useSportsSignup } from '../composables/game/useSportsSignup'
 import { useRunningRace } from '../composables/game/useRunningRace'
 import { useGymMatch } from '../composables/game/useGymMatch'
 import { FREE_PLAY_COACHES } from '../game/sports/gymMatch'
+import { useTennis } from '../composables/game/useTennis'
+import { TENNIS_RACKET } from '../game/sports/tennis'
 import { usePickpocket } from '../composables/game/usePickpocket'
 import { useStorageAuction } from '../composables/game/useStorageAuction'
 import { useStorageWarehouse } from '../composables/game/useStorageWarehouse'
@@ -889,6 +892,29 @@ const sportsSignup = useSportsSignup({
     survival.say(t('sports.signedUp'))
   },
 })
+const tennis = useTennis({
+  gameRoomRef,
+  getScene,
+  getCamera,
+  canvasRef,
+  myPosition,
+  pointerLocked: () => pointerLocked.value,
+  promptsHidden: () => inventoryOpen.value,
+  basketPrompt: () => ({ action: t('sports.tennis.basketAction'), detail: t('sports.tennis.basketDetail') }),
+  onSwing: (swing) => {
+    sfx.play('tennis_swing')
+    arms?.tennisSwing(swing)
+  },
+  onBallHit: (ball) => sfx.playOn('tennis_hit', ball),
+  onBounce: (ball) => sfx.playOn('tennis_bounce', ball),
+  onCall: (call) => sfx.play(call === 'net' ? 'tennis_net' : 'tennis_call'),
+  setRemoteRacket: (sessionId, holding) => {
+    realtime.setRemoteHeldTool(sessionId, holding ? TENNIS_RACKET : null)
+    realtime.setRemoteTennis(sessionId, holding)
+  },
+  remoteSessions: () => realtime.remotePlayers().map((p) => p.sessionId),
+})
+const { hud: tennisHud, cue: tennisCue, call: tennisCall, freePlay: tennisFreePlay } = tennis
 const { open: sportsSignupOpen, choices: sportsVenueChoices, canPickVenue: sportsCanPickVenue, lobby: sportsLobby, spec: sportsSpec, team: sportsTeam, settings: sportsSettings, pending: sportsSignupPending, error: sportsSignupError, clientNow: sportsClientNow, clockOffset: sportsClockOffset } = sportsSignup
 watch(sportsSignupOpen, (open) => {
   if (!open && !document.pointerLockElement) requestPointerLock()
@@ -1003,7 +1029,7 @@ const interactions = useInteractionTargets({
     if (activeFurniture.value?.store.hasCounter.value) activeFurniture.value.store.toggleTarget(useWithShift)
     else openStorePurchase()
   },
-  sources: [townBus.source, pub.source, pubQuiz.source, pubChallenge.source, pubGames.source, seats.source, orchard.source, farm.source, zoneBuyers.source, atm.source, storage.source, respawnBed.source, cashBags.source, storageAuction.source, jailCell.source, police.source, pickpocket.source, market.source, sportsPass.source, sportsSignup.source],
+  sources: [townBus.source, pub.source, pubQuiz.source, pubChallenge.source, pubGames.source, seats.source, orchard.source, farm.source, zoneBuyers.source, atm.source, storage.source, respawnBed.source, cashBags.source, storageAuction.source, jailCell.source, police.source, pickpocket.source, market.source, sportsPass.source, sportsSignup.source, tennis.source],
 })
 const { doorPrompt } = interactions
 
@@ -1025,6 +1051,8 @@ watch(() => selectedItem.value?.code ?? null, () => arms?.equip())
 
 /** Model shown in the right hand: tools and food (a half-eaten item is drawn smaller). */
 const FIRST_PERSON_TOOL_SCALE = 0.6
+const TENNIS_RACKET_URL = '/assets/decor/tennis_racket/model.glb'
+const TENNIS_RACKET_GRIP = 0.12
 
 function holdingJobTool(): boolean {
   return heldTool.code.value !== null && heldTool.code.value === selectedItem.value?.code
@@ -1597,6 +1625,7 @@ const movement = useGameMovement({
     // furniture placement keeps its own clicks (left: pick / place, right: cancel)
     if (placement.onPointerDown(e)) return true
     if (runningRace.onMouseDown(e)) return true
+    if (tennis.onPointerDown(e)) return true
     if (adminPanelOpen.value && !pointerLocked.value) {
       requestPointerLock()
       return true
@@ -1632,9 +1661,9 @@ const movement = useGameMovement({
     houseKeys.updateKeyPrompt()
     updateFrontDoors(dt, isBuildingDoorOpen)
     arms?.update(dt, myPosition)
-    const held = heldModel()
-    arms?.setHolding(holdingJobTool())
-    heldItem.update(arms?.rightHand() ?? null, held.url, held.scale)
+    const held = tennis.holdingRacket() ? { url: TENNIS_RACKET_URL, scale: FIRST_PERSON_TOOL_SCALE, grip: TENNIS_RACKET_GRIP } : heldModel()
+    arms?.setHolding(holdingJobTool() || tennis.holdingRacket())
+    heldItem.update(arms?.rightHand() ?? null, held.url, held.scale, 'grip' in held ? held.grip : undefined)
     survival.tick(dt)
     stamina.value = punch.staminaNow()
     for (const { store } of furnitureStores) store.updatePrompt()
@@ -1650,6 +1679,7 @@ const movement = useGameMovement({
     sportsSignup.tick()
     runningRace.tick(dt)
     gymMatch.tick()
+    tennis.tick()
     if (!doorSigns.group.parent) getScene()?.add(doorSigns.group)
     minimap.tick()
     gps.tick()
@@ -1798,6 +1828,8 @@ const realtime = useGameRealtime({
     },
     onRunState: runningRace.onState,
     onRunResult: runningRace.onResult,
+    onTennisState: tennis.handlers.onState,
+    onTennisFree: tennis.handlers.onFree,
   },
   gym: gymMatch.handlers,
   pickpocket: pickpocket.handlers,
@@ -2435,6 +2467,7 @@ const crosshairClass = computed(() => {
     />
     <GamePubRaceBoard v-if="pubRaceBoard" :board="pubRaceBoard" />
     <GameRunningBoard v-if="runBoard" :board="runBoard" />
+    <GameTennisHud :hud="tennisHud" :cue="tennisCue" :call="tennisCall" :free-play="tennisFreePlay" />
     <GameJail v-if="jailSentence && !knockedOut" :sentence="jailSentence" :error="jailError" :paying="jailPaying" @pay="jail.pay" />
     <GameCuffed v-if="policeCuffedBy && !knockedOut" :officer="realtime.remotePseudo(policeCuffedBy) ?? '…'" />
     <GamePickpocket v-if="!knockedOut" :game="pickpocketGame" :loot="pickpocketLoot" @take="pickpocket.take" />

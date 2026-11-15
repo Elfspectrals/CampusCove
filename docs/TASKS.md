@@ -31,6 +31,8 @@ Laravel owns every counter. A counter counts one real action, bumped by the serv
 | `pub_games` | one finished Drink Fast race or Meter Shot run, at most 5 a day (Paris) and only when the player's drunkenness before the game's drink is 50 or less (0 to 100) | socket `reportPubGame` (`pubGames.ts`), then `POST /tasks/pub-game` (realtime) `{ game: drink_fast | meter_shot, intoxication: int 0-100 }` |
 | `duels_won` | one darts or Drink Fast game won against other players (placement 1), whoever the opponents are | `PubService::reward` |
 | `secret_room_weeks` | one week (Monday to Sunday, Paris, ISO week) in which the player stood in the pub's secret room | socket `taskTracking.ts` (once a day per account), then `POST /tasks/secret-room` (realtime, no body) |
+| `tennis_matches` | one tennis match won or lost (not a leaver past the grace) in a match the core counts for tasks (`counts_for_tasks`, docs/sports/CORE.md § 4) | `TennisTaskService::matchCounted`, from `POST /sports/matches` (realtime) |
+| `tennis_whitewashes` | one short set won 4–0 (never a tie-break) in a match counted for tasks | `TennisTaskService::matchCounted` |
 | `foods_tasted` | one food or drink tasted for the first time (any group of `FoodCatalog` but `medical`), once per item code | `SurvivalService::consume` |
 | `football_matches` | one structured gym football match recorded with the player not out (`dnf`), whatever the result; every recorded match counts | socket `gym.ts` after `recordMatch`, then `POST /sports/gym/tasks` (realtime) `{ ref, sport: football, players: [{ accountId, goals }] }`; `GymTaskService` reads `sports_match_players`, once per match `ref` (`bumpOncePerKey`) |
 | `basketball_matches` | the same for a gym basketball match | same route, `sport: basketball`, `players: [{ accountId, threes }]` |
@@ -65,6 +67,8 @@ Every task lives in `App\Support\TaskCatalog`: a key, the counter it reads and i
 | `basketball` | `basketball_matches` | 10 / 40 / 150 |
 | `hat_trick` | `hat_tricks` | 1 / 10 / 40 |
 | `sharpshooter` | `sharpshooter_matches` | 1 / 5 / 15 |
+| `tennis` | `tennis_matches` | 5 / 25 / 100 |
+| `tennis_whitewash` | `tennis_whitewashes` | 1 / 5 / 15 |
 
 ## Notification
 

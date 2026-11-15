@@ -1,0 +1,378 @@
+{
+  "version": 1,
+  "zone": {
+    "key": "sports_tennis",
+    "bounds": {
+      "minX": -467.0,
+      "maxX": -420.0,
+      "minZ": -293.0,
+      "maxZ": -250.0
+    }
+  },
+  "courts": [
+    {
+      "id": "tennis_1",
+      "centre": [
+        -454.645,
+        0.0,
+        -271.5
+      ],
+      "halfWidth": 5.485,
+      "halfLength": 11.885,
+      "netHeight": 0.914
+    },
+    {
+      "id": "tennis_2",
+      "centre": [
+        -432.355,
+        0.0,
+        -271.5
+      ],
+      "halfWidth": 5.485,
+      "halfLength": 11.885,
+      "netHeight": 0.914
+    }
+  ],
+  "gate": {
+    "x": -464.09000000000003,
+    "z": -271.5,
+    "width": 4.0
+  },
+  "coach": [
+    -443.5,
+    0.0,
+    -271.5
+  ],
+  "collision": [
+    {
+      "name": "COL_SportsTennis_Net1",
+      "cx": -454.645,
+      "cz": -271.5,
+      "hx": 6.449,
+      "hz": 0.1,
+      "hy": 0.535,
+      "cy": 0.535,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsTennis_Net2",
+      "cx": -432.355,
+      "cz": -271.5,
+      "hx": 6.449,
+      "hz": 0.1,
+      "hy": 0.535,
+      "cy": 0.535,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsTennis_FenceN",
+      "cx": -443.5,
+      "cz": -290.085,
+      "hx": 20.59,
+      "hz": 0.15,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsTennis_FenceS",
+      "cx": -443.5,
+      "cz": -252.915,
+      "hx": 20.59,
+      "hz": 0.15,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsTennis_FenceE",
+      "cx": -422.91,
+      "cz": -271.5,
+      "hx": 0.15,
+      "hz": 18.585,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsTennis_FenceW0",
+      "cx": -464.09,
+      "cz": -281.793,
+      "hx": 0.15,
+      "hz": 8.292,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsTennis_FenceW1",
+      "cx": -464.09,
+      "cz": -261.207,
+      "hx": 0.15,
+      "hz": 8.293,
+      "hy": 1.5,
+      "cy": 1.5,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsTennis_ST_Bench0",
+      "cx": -443.5,
+      "cz": -279.5,
+      "hx": 0.25,
+      "hz": 0.85,
+      "hy": 0.45,
+      "cy": 0.45,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsTennis_ST_Bench1",
+      "cx": -443.5,
+      "cz": -263.5,
+      "hx": 0.25,
+      "hz": 0.85,
+      "hy": 0.45,
+      "cy": 0.45,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsTennis_ST_Lamp0",
+      "cx": -465.29,
+      "cz": -291.285,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsTennis_ST_Lamp1",
+      "cx": -421.71,
+      "cz": -291.285,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsTennis_ST_Lamp2",
+      "cx": -465.29,
+      "cz": -251.715,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsTennis_ST_Lamp3",
+      "cx": -421.71,
+      "cz": -251.715,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsTennis_StandN1Step0",
+      "cx": -454.645,
+      "cz": -290.81,
+      "hx": 5.985,
+      "hz": 0.425,
+      "hy": 0.15,
+      "cy": 0.15,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsTennis_StandN1Step1",
+      "cx": -454.645,
+      "cz": -291.66,
+      "hx": 5.985,
+      "hz": 0.425,
+      "hy": 0.3,
+      "cy": 0.3,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsTennis_StandN1Step2",
+      "cx": -454.645,
+      "cz": -292.51,
+      "hx": 5.985,
+      "hz": 0.425,
+      "hy": 0.45,
+      "cy": 0.45,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsTennis_StandS1Step0",
+      "cx": -454.645,
+      "cz": -252.19,
+      "hx": 5.985,
+      "hz": 0.425,
+      "hy": 0.15,
+      "cy": 0.15,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsTennis_StandS1Step1",
+      "cx": -454.645,
+      "cz": -251.34,
+      "hx": 5.985,
+      "hz": 0.425,
+      "hy": 0.3,
+      "cy": 0.3,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsTennis_StandS1Step2",
+      "cx": -454.645,
+      "cz": -250.49,
+      "hx": 5.985,
+      "hz": 0.425,
+      "hy": 0.45,
+      "cy": 0.45,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsTennis_StandN2Step0",
+      "cx": -432.355,
+      "cz": -290.81,
+      "hx": 5.985,
+      "hz": 0.425,
+      "hy": 0.15,
+      "cy": 0.15,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsTennis_StandN2Step1",
+      "cx": -432.355,
+      "cz": -291.66,
+      "hx": 5.985,
+      "hz": 0.425,
+      "hy": 0.3,
+      "cy": 0.3,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsTennis_StandN2Step2",
+      "cx": -432.355,
+      "cz": -292.51,
+      "hx": 5.985,
+      "hz": 0.425,
+      "hy": 0.45,
+      "cy": 0.45,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsTennis_StandS2Step0",
+      "cx": -432.355,
+      "cz": -252.19,
+      "hx": 5.985,
+      "hz": 0.425,
+      "hy": 0.15,
+      "cy": 0.15,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsTennis_StandS2Step1",
+      "cx": -432.355,
+      "cz": -251.34,
+      "hx": 5.985,
+      "hz": 0.425,
+      "hy": 0.3,
+      "cy": 0.3,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsTennis_StandS2Step2",
+      "cx": -432.355,
+      "cz": -250.49,
+      "hx": 5.985,
+      "hz": 0.425,
+      "hy": 0.45,
+      "cy": 0.45,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsTennis_ZD_sports_tennis_racket_01_0",
+      "cx": -443.88,
+      "cy": 0.84,
+      "cz": -263.467,
+      "hx": 0.15,
+      "hy": 0.34,
+      "hz": 0.05,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsTennis_ZD_sports_tennis_racket_02_0",
+      "cx": -443.12,
+      "cy": 0.84,
+      "cz": -279.533,
+      "hx": 0.15,
+      "hy": 0.34,
+      "hz": 0.05,
+      "yaw": 3.1416
+    },
+    {
+      "name": "COL_SportsTennis_ZD_sports_tennis_ball_basket_1_0",
+      "cx": -444.7,
+      "cy": 0.536,
+      "cz": -266.0,
+      "hx": 0.25,
+      "hy": 0.457,
+      "hz": 0.25,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsTennis_ZD_sports_tennis_ball_basket_1_1",
+      "cx": -444.65,
+      "cy": 0.536,
+      "cz": -266.0,
+      "hx": 0.3,
+      "hy": 0.457,
+      "hz": 0.05,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsTennis_ZD_sports_tennis_ball_basket_1_2",
+      "cx": -444.7,
+      "cy": 0.535,
+      "cz": -265.95,
+      "hx": 0.05,
+      "hy": 0.455,
+      "hz": 0.3,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsTennis_ZD_sports_tennis_ball_basket_2_0",
+      "cx": -442.3,
+      "cy": 0.536,
+      "cz": -266.0,
+      "hx": 0.25,
+      "hy": 0.457,
+      "hz": 0.25,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsTennis_ZD_sports_tennis_ball_basket_2_1",
+      "cx": -442.25,
+      "cy": 0.536,
+      "cz": -266.0,
+      "hx": 0.3,
+      "hy": 0.457,
+      "hz": 0.05,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsTennis_ZD_sports_tennis_ball_basket_2_2",
+      "cx": -442.3,
+      "cy": 0.535,
+      "cz": -265.95,
+      "hx": 0.05,
+      "hy": 0.455,
+      "hz": 0.3,
+      "yaw": 0.0
+    }
+  ]
+}

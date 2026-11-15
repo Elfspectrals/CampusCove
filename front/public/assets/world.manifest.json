@@ -1300,6 +1300,18 @@
       },
       "modelUrl": "/assets/park/sports_athletics/sports_athletics.glb",
       "sportsPass": true
+    },
+    {
+      "key": "sports_tennis",
+      "optional": true,
+      "bounds": {
+        "minX": -467,
+        "maxX": -420,
+        "minZ": -293,
+        "maxZ": -250
+      },
+      "modelUrl": "/assets/park/sports_tennis/sports_tennis.glb",
+      "sportsPass": true
     }
   ],
   "fountains": [

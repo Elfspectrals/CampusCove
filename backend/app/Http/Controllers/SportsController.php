@@ -7,9 +7,11 @@ use App\Services\SportsBoardService;
 use App\Services\SportsGearService;
 use App\Services\SportsMatchService;
 use App\Services\SportsPassService;
+use App\Services\TennisTaskService;
 use Closure;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class SportsController extends Controller
@@ -20,6 +22,7 @@ class SportsController extends Controller
         private readonly SportsMatchService $matches,
         private readonly RunningService $running,
         private readonly SportsBoardService $boards,
+        private readonly TennisTaskService $tennisTasks,
     ) {}
 
     public function pass(Request $request): JsonResponse
@@ -73,18 +76,25 @@ class SportsController extends Controller
         ]);
 
         $players = array_values($validated['players']);
-        $match = $this->matches->record(
-            $validated['ref'],
-            $validated['sport'],
-            $validated['venue'],
-            $validated['settings'],
-            $validated['startedAt'],
-            $validated['endedAt'],
-            $players,
-        );
-        if ($match['recorded'] && $match['countsForTasks'] && $validated['sport'] === RunningService::SPORT) {
-            $this->running->countRace($validated['settings'], $players);
-        }
+        $match = DB::transaction(function () use ($validated, $players): array {
+            $match = $this->matches->record(
+                $validated['ref'],
+                $validated['sport'],
+                $validated['venue'],
+                $validated['settings'],
+                $validated['startedAt'],
+                $validated['endedAt'],
+                $players,
+            );
+            if ($match['recorded'] && $match['countsForTasks'] && $validated['sport'] === RunningService::SPORT) {
+                $this->running->countRace($validated['settings'], $players);
+            }
+            if ($match['recorded'] && $match['countsForTasks'] && $validated['sport'] === 'tennis') {
+                $this->tennisTasks->matchCounted($validated['settings'], $players);
+            }
+
+            return $match;
+        });
 
         return response()->json(['match' => $match]);
     }
