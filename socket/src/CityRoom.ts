@@ -125,6 +125,7 @@ import {
   onSportsSignupLeave,
   tickSports
 } from './sports/index.ts'
+import { isRacing, onRunLook, onRunStep } from './sports/runningVenue.ts'
 import { onGymAction, onGymBall, onGymBallReturn, tickGym } from './sports/gym.ts'
 
 function warn(context: string, error: unknown): void {
@@ -254,6 +255,8 @@ export class CityRoom extends Room implements GameRoom {
     this.onMessage('sports_coach_open', (client, payload: ClientPayload) => onSportsCoachOpen(this, client, payload))
     this.onMessage('sports_signup', (client, payload: ClientPayload) => void onSportsSignup(this, client, payload).catch((error) => warn('sports sign-up failed', error)))
     this.onMessage('sports_signup_leave', (client) => onSportsSignupLeave(this, client))
+    this.onMessage('sports_run_step', (client, payload: ClientPayload) => onRunStep(this, client, payload))
+    this.onMessage('sports_run_look', (client, payload: ClientPayload) => onRunLook(this, client, payload))
     this.onMessage('gym_action', (client, payload: ClientPayload) => onGymAction(this, client, payload))
     this.onMessage('gym_ball', (client, payload: ClientPayload) => onGymBall(this, client, payload))
     this.onMessage('gym_ball_return', (client) => onGymBallReturn(this, client))
@@ -382,7 +385,7 @@ export class CityRoom extends Room implements GameRoom {
 
   onMove(client: Client, payload: ClientPayload): void {
     const player = this.players.get(client.sessionId)
-    if (!player || !payload || typeof payload !== 'object' || isRidingBus(this, player)) return
+    if (!player || !payload || typeof payload !== 'object' || isRidingBus(this, player) || isRacing(this, player)) return
     const x = normalizeNumber(payload.x, player.x)
     const y = normalizeNumber(payload.y, player.y)
     const z = normalizeNumber(payload.z, player.z)

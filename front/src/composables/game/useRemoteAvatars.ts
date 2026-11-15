@@ -5,7 +5,7 @@ import {
   type CosmeticColors,
 } from '../../api/characterCosmetics'
 import { buildCompositeAvatar, disposeObject3D } from '../../avatar/compositeAvatar'
-import { type SportsMoveClip, playAvatarSportsMove, setAvatarDribbling, setAvatarEating, setAvatarPicking, setAvatarSeated, updateAvatarAnimation } from '../../avatar/glbCharacter'
+import { type SportsMoveClip, playAvatarSportsMove, setAvatarDribbling, setAvatarEating, setAvatarPicking, setAvatarRacePose, setAvatarSeated, updateAvatarAnimation, type RacePose } from '../../avatar/glbCharacter'
 import { parseCharacterLook, type CharacterLook } from '../../avatar/characterLook'
 import { createModularCharacter } from '../../avatar/modularCharacter'
 import { WEAR_SLOTS, wearSignature, type WearModels } from '../../avatar/modularCharacterLogic'
@@ -370,6 +370,11 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     if (entry) setAvatarPicking(entry.group, picking)
   }
 
+  function setRacePose(sessionId: string, pose: RacePose | null) {
+    const entry = avatars.get(sessionId)
+    if (entry) setAvatarRacePose(entry.group, pose)
+  }
+
   function setWantedStars(sessionId: string, stars: number): void {
     if (stars > 0) wantedStarsBySession.set(sessionId, stars)
     else wantedStarsBySession.delete(sessionId)
@@ -566,5 +571,5 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     }
   }
 
-  return { upsert, updateAppearance, setTarget, setSeated, setPicking, setHeldTool, setRacePint, setBadges, pseudoOf, positionOf, avatarOf, playSportsMove, setDribbling, setTopOverride, setVoiceState, setWantedStars, players, accountOf, showAction, showChat, showPunch, showHit, remove, clear, tick }
+  return { upsert, updateAppearance, setTarget, setSeated, setPicking, setRacePose, setHeldTool, setRacePint, setBadges, pseudoOf, positionOf, avatarOf, playSportsMove, setDribbling, setTopOverride, setVoiceState, setWantedStars, players, accountOf, showAction, showChat, showPunch, showHit, remove, clear, tick }
 }

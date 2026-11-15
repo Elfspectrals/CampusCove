@@ -30,7 +30,8 @@ function fakePlayer(sessionId: string, isAdmin: boolean, x = 0, z = 0, ry = 0): 
     lastAdminActionAt: 0,
     wantedStars: 0,
     intoxication: 0,
-    pubShots: null
+    pubShots: null,
+    sportsWear: {}
   } as Player
 }
 

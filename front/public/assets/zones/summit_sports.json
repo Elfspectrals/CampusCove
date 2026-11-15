@@ -598,6 +598,26 @@
           "price": 140
         }
       ]
+    },
+    {
+      "id": "summit_sports_running_spikes",
+      "kind": "item",
+      "key": "running_spikes",
+      "code": "gear_running_spikes",
+      "forSale": true,
+      "price": 260,
+      "position": [
+        -289.6,
+        1.34,
+        82.905
+      ],
+      "yaw": 0.6,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Running spikes for timed races on the Cove Sports Park track. Never wear out."
     }
   ],
   "areas": [

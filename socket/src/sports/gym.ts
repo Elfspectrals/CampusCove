@@ -27,6 +27,8 @@ interface Live {
 
 export interface GymVenueSpec {
   id: string
+  zone: string
+  playAreaId: string
   court: GymCourt
   rules: GymRules
   settings: readonly SettingSpec[]
@@ -35,7 +37,7 @@ export interface GymVenueSpec {
 }
 
 const lives = new WeakMap<GameRoom, Map<string, Live>>()
-const venueIds = new Set<string>()
+const venues = new Map<string, { zone: string, playAreaId: string }>()
 const lastActionAt = new Map<number, number>()
 
 function livesOf(room: GameRoom): Map<string, Live> {
@@ -47,16 +49,18 @@ function livesOf(room: GameRoom): Map<string, Live> {
   return map
 }
 
-function inGym(x: number, z: number): boolean {
-  const b = worldSportsPassArea(GYM_ZONE)
+function inZone(zone: string, x: number, z: number): boolean {
+  const b = worldSportsPassArea(zone)
   return b !== null && x >= b.minX && x <= b.maxX && z >= b.minZ && z <= b.maxZ
 }
 
 function sendToGym(room: GameRoom, match: Match, type: string, payload: unknown): void {
   const accounts = new Set(match.players.map((p) => p.accountId))
+  const venue = venues.get(match.venue)
+  if (!venue) throw new Error(`gym venue ${match.venue}: unknown`)
   room.forEachClient((c) => {
     const p = room.players.get(c.sessionId)
-    if (p && (accounts.has(p.accountId) || inGym(p.x, p.z))) c.send(type, payload)
+    if (p && (accounts.has(p.accountId) || inZone(venue.zone, p.x, p.z))) c.send(type, payload)
   })
 }
 
@@ -154,14 +158,15 @@ function winnerOf(live: Live, end: MatchEnd): Team | null {
 }
 
 export function registerGymVenue(spec: GymVenueSpec): void {
-  venueIds.add(spec.id)
+  if (spec.rules.sport === 'basketball' && !spec.court.baskets) throw new Error(`gym venue ${spec.id}: basketball needs a court with baskets`)
+  venues.set(spec.id, { zone: spec.zone, playAreaId: spec.playAreaId })
   registerVenue({
     id: spec.id,
     sport: spec.rules.sport,
-    zone: GYM_ZONE,
+    zone: spec.zone,
     coach: spec.court.coach,
     playArea: spec.court.playArea,
-    playAreaId: GYM_COURT_AREA,
+    playAreaId: spec.playAreaId,
     teams: true,
     settings: spec.settings,
     players: (settings) => ({ min: spec.minPlayers, max: 2 * Number(settings.teamSize) }),
@@ -227,8 +232,8 @@ function lockIfDown(player: Player, game: GymGame, events: readonly GymEvent[]):
   player.sportsDownUntil = game.groundedUntil.get(player.accountId) ?? 0
 }
 
-function courtBusy(room: GameRoom): boolean {
-  return [...venueIds].some((id) => room.sports.matches.has(id))
+export function gymAreaBusy(room: GameRoom, playAreaId: string): boolean {
+  return [...venues].some(([id, venue]) => venue.playAreaId === playAreaId && room.sports.matches.has(id))
 }
 
 export function onGymAction(room: GameRoom, client: GameClient, payload: ClientPayload, now = Date.now()): void {
@@ -237,7 +242,7 @@ export function onGymAction(room: GameRoom, client: GameClient, payload: ClientP
   if (!player || !kind) return
   if (now - (lastActionAt.get(player.accountId) ?? -Infinity) < ACTION_GAP_MS && kind !== 'shot_release') return
   lastActionAt.set(player.accountId, now)
-  for (const venue of venueIds) {
+  for (const venue of venues.keys()) {
     const match = room.sports.matches.get(venue)
     const live = livesOf(room).get(venue)
     if (!match || !live) continue
@@ -254,7 +259,7 @@ export function onGymAction(room: GameRoom, client: GameClient, payload: ClientP
 }
 
 export function onGymBall(room: GameRoom, client: GameClient, payload: ClientPayload, now = Date.now()): void {
-  freeBall(room, client, payload, courtBusy(room), now)
+  freeBall(room, client, payload, now)
 }
 
 export function onGymBallReturn(room: GameRoom, client: GameClient, now = Date.now()): void {
@@ -262,5 +267,5 @@ export function onGymBallReturn(room: GameRoom, client: GameClient, now = Date.n
 }
 
 export function tickGym(room: GameRoom, now = Date.now()): void {
-  tickGymFree(room, courtBusy(room), now)
+  tickGymFree(room, now)
 }

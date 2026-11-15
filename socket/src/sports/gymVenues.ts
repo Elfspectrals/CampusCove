@@ -1,6 +1,6 @@
 import { readGymCourt, readSportRules } from '../world.ts'
-import { GYM_ZONE, registerGymVenue } from './gym.ts'
-import { configureGymFreePlay } from './gymFree.ts'
+import { GYM_COURT_AREA, GYM_ZONE, gymAreaBusy, registerGymVenue } from './gym.ts'
+import { addGymFreeCourt } from './gymFree.ts'
 import { parseGymCourt } from './gymCourt.ts'
 import { gymPlayerRules, parseBasketballRules, parseFootballRules } from './gymRules.ts'
 import { parseSignupRules } from './signup.ts'
@@ -16,6 +16,8 @@ export async function loadGymVenues(): Promise<void> {
   const basketballRules = parseBasketballRules(basketballRaw)
   registerGymVenue({
     id: 'gym_football',
+    zone: GYM_ZONE,
+    playAreaId: GYM_COURT_AREA,
     court,
     rules: footballRules,
     settings: parseSignupRules(footballRaw, 'football').settings,
@@ -24,6 +26,8 @@ export async function loadGymVenues(): Promise<void> {
   })
   registerGymVenue({
     id: 'gym_basketball',
+    zone: GYM_ZONE,
+    playAreaId: GYM_COURT_AREA,
     court,
     rules: basketballRules,
     settings: parseSignupRules(basketballRaw, 'basketball').settings,
@@ -31,6 +35,6 @@ export async function loadGymVenues(): Promise<void> {
     rejoinGraceMs: basketball.rejoinGraceMs
   })
   registerCoach({ id: football.coachId, x: court.coach.x, z: court.coach.z, venues: ['gym_football', 'gym_basketball'] })
-  configureGymFreePlay({ court, rules: { football: footballRules, basketball: basketballRules }, zone: GYM_ZONE })
+  addGymFreeCourt({ id: 'gym', court, rules: { football: footballRules, basketball: basketballRules }, zone: GYM_ZONE, busy: (room) => gymAreaBusy(room, GYM_COURT_AREA) })
   console.log('[sports] gym venues loaded: football and basketball')
 }

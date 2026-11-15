@@ -18,6 +18,7 @@ const BALL_SPAWN_IN = 1.2
 interface FreeBall {
   sport: GymSport
   game: GymGame
+  court: GymFreeCourt
 }
 
 interface FreeRoom {
@@ -26,22 +27,26 @@ interface FreeRoom {
   lastAt: number | null
 }
 
-export interface GymFreeConfig {
+export interface GymFreeCourt {
+  id: string
   court: GymCourt
-  rules: Record<GymSport, GymRules>
+  rules: Partial<Record<GymSport, GymRules>>
   zone: string
+  busy: (room: GameRoom) => boolean
 }
 
-let config: GymFreeConfig | null = null
+const courts = new Map<string, GymFreeCourt>()
 const rooms = new WeakMap<GameRoom, FreeRoom>()
 
-export function configureGymFreePlay(next: GymFreeConfig): void {
-  config = next
+export function addGymFreeCourt(court: GymFreeCourt): void {
+  if (courts.has(court.id)) throw new Error(`gym free play: duplicate court ${court.id}`)
+  courts.set(court.id, court)
 }
 
-function setup(): GymFreeConfig {
-  if (!config) throw new Error('gym free play: not configured (loadGymVenues)')
-  return config
+function rulesOf(ball: FreeBall): GymRules {
+  const rules = ball.court.rules[ball.sport]
+  if (!rules) throw new Error(`gym free play: ${ball.court.id} has no ${ball.sport}`)
+  return rules
 }
 
 function roomOf(room: GameRoom): FreeRoom {
@@ -69,8 +74,10 @@ function sessionOf(room: GameRoom, accountId: number | null): string | null {
 }
 
 function inGymZone(player: Player): boolean {
-  const b = worldSportsPassArea(setup().zone)
-  return b !== null && player.x >= b.minX && player.x <= b.maxX && player.z >= b.minZ && player.z <= b.maxZ
+  return [...courts.values()].some((c) => {
+    const b = worldSportsPassArea(c.zone)
+    return b !== null && player.x >= b.minX && player.x <= b.maxX && player.z >= b.minZ && player.z <= b.maxZ
+  })
 }
 
 function sendToGymZone(room: GameRoom, type: string, payload: unknown): void {
@@ -84,6 +91,7 @@ function freeView(room: GameRoom, free: FreeRoom, now: number) {
   return {
     balls: [...free.balls.entries()].map(([lender, b]) => ({
       id: String(lender),
+      court: b.court.id,
       sport: b.sport,
       lender: sessionOf(room, lender),
       ball: [b.game.ball.x, b.game.ball.y, b.game.ball.z, b.game.ball.vx, b.game.ball.vy, b.game.ball.vz].map(round),
@@ -99,8 +107,7 @@ function eventView(room: GameRoom, event: GymEvent) {
   return { venue: 'gym_free', ...rest, sessionId: sessionOf(room, accountId) }
 }
 
-function athletes(room: GameRoom, free: FreeRoom, now: number): Athlete[] {
-  const { court } = setup()
+function athletes(room: GameRoom, free: FreeRoom, now: number, court: GymCourt): Athlete[] {
   const out: Athlete[] = []
   for (const p of room.players.values()) {
     if (!inside(p, court)) continue
@@ -124,25 +131,37 @@ function nearCoach(player: Player, court: GymCourt): boolean {
   return Math.hypot(player.x - court.coach.x, player.z - court.coach.z) <= SPORTS_COACH_REACH
 }
 
-export function onGymBall(room: GameRoom, client: GameClient, payload: ClientPayload, courtBusy: boolean, now: number): void {
+function spawnSpot(court: GymCourt): { x: number, z: number } {
+  const a = court.arena
+  return {
+    x: Math.min(a.maxX - BALL_SPAWN_IN, Math.max(a.minX + BALL_SPAWN_IN, court.coach.x)),
+    z: Math.min(a.maxZ - BALL_SPAWN_IN, Math.max(a.minZ + BALL_SPAWN_IN, court.coach.z))
+  }
+}
+
+export function onGymBall(room: GameRoom, client: GameClient, payload: ClientPayload, now: number): void {
   const player = room.players.get(client.sessionId)
   const sport = parseSport(payload)
   if (!player || !sport) return
-  const { court, rules, zone } = setup()
-  if (!nearCoach(player, court)) {
+  const free = [...courts.values()].find((c) => nearCoach(player, c.court))
+  if (!free) {
     client.send('gym_error', { code: 'gym_too_far', message: 'Walk up to the coach.' })
     return
   }
-  if (courtBusy) {
+  const rules = free.rules[sport]
+  if (!rules) {
+    client.send('gym_error', { code: 'gym_no_sport', message: 'This coach has no ball for that sport.' })
+    return
+  }
+  if (free.busy(room)) {
     client.send('gym_error', { code: 'gym_court_busy', message: 'A match is on. Come back after it.' })
     return
   }
-  const free = roomOf(room)
-  removeBall(room, free, player.accountId)
-  if (!lend(room, player, GYM_BALL_LOAN, zone)) return
-  const spawn = { x: court.coach.x, z: court.arena.minZ + BALL_SPAWN_IN }
-  free.balls.set(player.accountId, { sport, game: newGymGame(court, rules[sport], now, 'free', spawn) })
-  sendToGymZone(room, 'gym_free', freeView(room, free, now))
+  const state = roomOf(room)
+  removeBall(room, state, player.accountId)
+  if (!lend(room, player, GYM_BALL_LOAN, free.zone)) return
+  state.balls.set(player.accountId, { sport, court: free, game: newGymGame(free.court, rules, now, 'free', spawnSpot(free.court)) })
+  sendToGymZone(room, 'gym_free', freeView(room, state, now))
 }
 
 export function onGymBallReturn(room: GameRoom, client: GameClient, now: number): void {
@@ -167,17 +186,17 @@ function ballFor(free: FreeRoom, actor: Athlete): FreeBall | null {
 export function freeAction(room: GameRoom, player: Player, kind: GymActionKind, now: number): { game: GymGame, events: GymEvent[] } | null {
   const free = rooms.get(room)
   if (!free || free.balls.size === 0) return null
-  const all = athletes(room, free, now)
+  const all = [...courts.values()].flatMap((c) => athletes(room, free, now, c.court))
   const actor = all.find((a) => a.accountId === player.accountId)
   if (!actor) return null
   const ball = ballFor(free, actor)
   if (!ball) return null
-  const events = actGym(ball.game, setup().rules[ball.sport], actor, all, kind, now, Math.random)
+  const events = actGym(ball.game, rulesOf(ball), actor, all, kind, now, Math.random)
   for (const event of events) sendToGymZone(room, 'gym_event', eventView(room, event))
   return { game: ball.game, events }
 }
 
-export function tickGymFree(room: GameRoom, courtBusy: boolean, now: number): void {
+export function tickGymFree(room: GameRoom, now: number): void {
   const free = rooms.get(room)
   if (!free || free.balls.size === 0) {
     if (free) free.lastAt = null
@@ -186,16 +205,17 @@ export function tickGymFree(room: GameRoom, courtBusy: boolean, now: number): vo
   const before = free.balls.size
   for (const lender of [...free.balls.keys()]) {
     const holder = [...room.players.values()].find((p) => p.accountId === lender)
-    if (courtBusy || !holder || !hasLoan(holder, GYM_BALL_LOAN)) removeBall(room, free, lender)
+    const ball = free.balls.get(lender) as FreeBall
+    if (ball.court.busy(room) || !holder || !hasLoan(holder, GYM_BALL_LOAN)) removeBall(room, free, lender)
   }
   const span = free.lastAt === null ? 0 : Math.min(MAX_TICK_S, Math.max(0, (now - free.lastAt) / 1000))
   free.lastAt = now
-  const all = athletes(room, free, now)
   const steps = Math.ceil(span / STEP_S)
+  const byCourt = new Map([...courts.values()].map((c) => [c.id, athletes(room, free, now, c.court)]))
   for (const ball of free.balls.values()) {
     const others = new Set([...free.balls.values()].filter((b) => b !== ball && b.game.owner !== null).map((b) => b.game.owner))
-    const players = all.filter((a) => !others.has(a.accountId))
-    for (let i = 0; i < steps; i++) stepGym(ball.game, setup().rules[ball.sport], players, span / steps, now)
+    const players = (byCourt.get(ball.court.id) ?? []).filter((a) => !others.has(a.accountId))
+    for (let i = 0; i < steps; i++) stepGym(ball.game, rulesOf(ball), players, span / steps, now)
   }
   if (free.balls.size > 0 || before > 0) sendToGymZone(room, 'gym_free', freeView(room, free, now))
 }

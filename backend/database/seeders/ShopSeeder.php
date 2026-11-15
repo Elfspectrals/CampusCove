@@ -445,6 +445,7 @@ class ShopSeeder extends Seeder
             self::coins('COS_WEAR_TOP_TEAM_JERSEY_BLUE', 110, 332),
             self::coins('COS_WEAR_TOP_TRACKSUIT', 240, 333),
             self::coins('COS_WEAR_BOTTOM_TRACKSUIT', 140, 334),
+            self::coins('gear_running_spikes', 260, 336),
         ];
         foreach (FoodCatalog::items() as $i => $food) {
             if ($food['price'] !== null) {

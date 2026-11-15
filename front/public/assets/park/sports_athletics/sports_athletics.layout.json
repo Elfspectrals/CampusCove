@@ -1,0 +1,154 @@
+{
+  "version": 1,
+  "zone": {
+    "minX": -566.5,
+    "maxX": -381.5,
+    "minZ": -420.0,
+    "maxZ": -310.0
+  },
+  "coach": [
+    -428,
+    0.0,
+    -320.5
+  ],
+  "adminTeleport": {
+    "position": [
+      -431.0,
+      0.0,
+      -320.5
+    ],
+    "yaw": 1.5707963267948966
+  },
+  "collision": [
+    {
+      "name": "COL_SportsAthletics_GoalWestPostN",
+      "cx": -501.5,
+      "cz": -372.25,
+      "hx": 0.1,
+      "hz": 0.1,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsAthletics_GoalWestPostS",
+      "cx": -501.5,
+      "cz": -367.25,
+      "hx": 0.1,
+      "hz": 0.1,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsAthletics_GoalWestBack",
+      "cx": -502.7,
+      "cz": -369.75,
+      "hx": 0.1,
+      "hz": 2.5,
+      "hy": 0.7,
+      "cy": 0.7,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsAthletics_GoalEastPostN",
+      "cx": -446.5,
+      "cz": -372.25,
+      "hx": 0.1,
+      "hz": 0.1,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsAthletics_GoalEastPostS",
+      "cx": -446.5,
+      "cz": -367.25,
+      "hx": 0.1,
+      "hz": 0.1,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsAthletics_GoalEastBack",
+      "cx": -445.3,
+      "cz": -369.75,
+      "hx": 0.1,
+      "hz": 2.5,
+      "hy": 0.7,
+      "cy": 0.7,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsAthletics_StandW",
+      "cx": -481.0,
+      "cz": -318.0,
+      "hx": 5.0,
+      "hz": 4.0,
+      "hy": 1.55,
+      "cy": 1.55,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsAthletics_StandE",
+      "cx": -453.0,
+      "cz": -318.0,
+      "hx": 19.0,
+      "hz": 4.0,
+      "hy": 1.55,
+      "cy": 1.55,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsAthletics_Scoreboard",
+      "cx": -436,
+      "cz": -342,
+      "hx": 3.0,
+      "hz": 0.25,
+      "hy": 2.25,
+      "cy": 2.25,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsAthletics_SA_Mast0",
+      "cx": -560.0,
+      "cz": -416.0,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsAthletics_SA_Mast1",
+      "cx": -388.0,
+      "cz": -416.0,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsAthletics_SA_Mast2",
+      "cx": -560.0,
+      "cz": -326.0,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsAthletics_SA_Mast3",
+      "cx": -388.0,
+      "cz": -326.0,
+      "hx": 0.175,
+      "hz": 0.175,
+      "hy": 1.0,
+      "cy": 1.0,
+      "yaw": 0.0
+    }
+  ]
+}

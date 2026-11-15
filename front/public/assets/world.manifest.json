@@ -1288,6 +1288,18 @@
           ]
         }
       ]
+    },
+    {
+      "key": "sports_athletics",
+      "optional": true,
+      "bounds": {
+        "minX": -566.5,
+        "maxX": -381.5,
+        "minZ": -420,
+        "maxZ": -310
+      },
+      "modelUrl": "/assets/park/sports_athletics/sports_athletics.glb",
+      "sportsPass": true
     }
   ],
   "fountains": [
@@ -12155,6 +12167,16 @@
         -181
       ],
       "yaw": 0
+    },
+    {
+      "key": "sports_athletics",
+      "name": "Athletics track",
+      "position": [
+        -431,
+        0,
+        -320.5
+      ],
+      "yaw": 1.5707963267948966
     }
   ],
   "sportsComplex": {

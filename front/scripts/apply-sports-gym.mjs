@@ -70,7 +70,7 @@ else manifest.zones.push(zone)
 writeFileSync(WORLD_MANIFEST, JSON.stringify(manifest, null, 2) + '\n')
 console.log(`world.manifest.json: zone ${ZONE_KEY}, door ${JSON.stringify(site.gym.door)}`)
 
-writeFileSync(COURT_CONTRACT, JSON.stringify(site.court, null, 2) + '\n')
+writeFileSync(COURT_CONTRACT, JSON.stringify({ ...site.court, walls: true }, null, 2) + '\n')
 console.log(`sports/gym/court.json: coach ${JSON.stringify(site.court.coach)}, centre ${JSON.stringify(site.court.centre)}`)
 
 const index = JSON.parse(readFileSync(ZONE_INDEX, 'utf8'))

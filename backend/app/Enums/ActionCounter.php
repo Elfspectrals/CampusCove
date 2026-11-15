@@ -26,4 +26,6 @@ enum ActionCounter: string
     case BasketballMatches = 'basketball_matches';
     case HatTricks = 'hat_tricks';
     case SharpshooterMatches = 'sharpshooter_matches';
+    case RacesRun = 'races_run';
+    case Fast400Runs = 'fast_400_runs';
 }

@@ -29,6 +29,8 @@ final class TaskCatalog
             'basketball' => ['counter' => ActionCounter::BasketballMatches, 'tiers' => [10, 40, 150]],
             'hat_trick' => ['counter' => ActionCounter::HatTricks, 'tiers' => [1, 10, 40]],
             'sharpshooter' => ['counter' => ActionCounter::SharpshooterMatches, 'tiers' => [1, 5, 15]],
+            'races_run' => ['counter' => ActionCounter::RacesRun, 'tiers' => [10, 50, 200]],
+            'fast_400' => ['counter' => ActionCounter::Fast400Runs, 'tiers' => [1, 10, 50]],
         ];
     }
 

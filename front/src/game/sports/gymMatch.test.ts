@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 import type { GymStatePayload } from '../../types/gameRealtime.ts'
-import { carriedSpot, clockText, scoreboardLines, dribbleBeat, dribbleHeight, goodWindowStart, meterFill, myTeam, nearestFreeBall, parseGymCourtView, parseGymHudRules, predictBall } from './gymMatch.ts'
+import { COURT_FILES, FREE_PLAY_COACHES, carriedSpot, clockText, courtUrlOf, scoreboardLines, dribbleBeat, dribbleHeight, goodWindowStart, meterFill, myTeam, nearestFreeBall, parseGymCourtView, parseGymHudRules, predictBall } from './gymMatch.ts'
 
 const rules = (sport: string) => JSON.parse(readFileSync(new URL(`../../../public/assets/sports/rules/${sport}.json`, import.meta.url), 'utf8'))
 
@@ -70,7 +70,7 @@ test('a basketball bounces between the hand and the floor, a football rolls just
 })
 
 test('the ball a free player acts on is the one they hold, else the nearest loose one in reach', () => {
-  const ball = (id: string, x: number, owner: string | null) => ({ id, sport: 'football' as const, lender: null, ball: [x, 0.31, 0, 0, 0, 0] as [number, number, number, number, number, number], owner })
+  const ball = (id: string, x: number, owner: string | null) => ({ id, court: 'gym', sport: 'football' as const, lender: null, ball: [x, 0.31, 0, 0, 0, 0] as [number, number, number, number, number, number], owner })
   const balls = [ball('a', 1.5, null), ball('b', 0.8, null), ball('c', 9, 'me')]
   assert.equal(nearestFreeBall(balls, 'me', 0, 0, 2)?.id, 'c')
   assert.equal(nearestFreeBall(balls.slice(0, 2), 'me', 0, 0, 2)?.id, 'b')
@@ -85,6 +85,18 @@ test('the scoreboard shows the score and the clock in a match, the gym name othe
 
 test('the shipped court contract gives the live scoreboard screen', () => {
   const court = parseGymCourtView(JSON.parse(readFileSync(new URL('../../../public/assets/sports/gym/court.json', import.meta.url), 'utf8')))
+  assert.ok(court.scoreboard)
   assert.ok(court.scoreboard.width > 1 && court.scoreboard.height > 0.5)
   assert.deepEqual(court.scoreboard.facing, [-1, 0])
+})
+
+test('each venue and free-play court reads its own court file; the pitch has no baskets and its coach lends only footballs', () => {
+  assert.equal(courtUrlOf('gym_basketball'), '/assets/sports/gym/court.json')
+  assert.equal(courtUrlOf('athletics'), '/assets/sports/athletics/pitch.json')
+  assert.equal(courtUrlOf('athletics_football'), '/assets/sports/athletics/pitch.json')
+  assert.throws(() => courtUrlOf('nowhere'), /nowhere/)
+  assert.deepEqual(COURT_FILES, ['/assets/sports/gym/court.json', '/assets/sports/athletics/pitch.json'])
+  assert.deepEqual(FREE_PLAY_COACHES.athletics_coach, ['football'])
+  const pitch = parseGymCourtView(JSON.parse(readFileSync(new URL('../../../public/assets/sports/athletics/pitch.json', import.meta.url), 'utf8')))
+  assert.deepEqual(pitch, { floorY: 0.03, baskets: null, scoreboard: null })
 })
