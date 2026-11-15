@@ -202,6 +202,7 @@ def world_extent(obj):
 
 
 def face_and_fit(obj, facing, scale):
+    obj.rotation_mode = "XYZ"
     obj.rotation_euler = (0, 0, math.atan2(facing[0], facing[1]))
     obj.scale = scale
     apply_transforms(obj)

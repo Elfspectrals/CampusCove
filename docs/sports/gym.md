@@ -119,6 +119,7 @@ the arc after.
   in a match, in free play the hoop the socket picks (`hoopAhead`, the same rule as `targetHoop`: nearest, a hoop behind
   counting up to three times its distance).
 - **Free play meter**: the good window is drawn on the meter in free play too (it was only drawn in a match).
+- **Goals and hoops facing the court**: the build turned each goal and hoop with `rotation_euler`, which Blender ignores on an object imported from glTF (its rotation mode is quaternion), so none was turned: the west goal and the west hoop faced the wall, and the four side hoops stood sideways, off their wall arm. `face_and_fit` now sets the rotation mode first. Interior rebuilt, lightmap baked again, `court.json` rewritten (the west backboard is now 0.67 m behind its rim like the east one, it was 0.35 m).
 
 ## Animations
 
