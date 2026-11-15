@@ -11,6 +11,7 @@ import {
   clampDt,
   firstPersonWalkTimeScale,
   runTimeScale,
+  startsDanceOneShot,
   walkTimeScale,
 } from './avatarAnimationLogic.ts'
 
@@ -109,4 +110,11 @@ test('first-person walk time scale is speed over 5 m/s, clamped to 0.8..1.3', ()
   assert.equal(firstPersonWalkTimeScale(5), 1)
   assert.equal(firstPersonWalkTimeScale(4.5), 0.9)
   assert.equal(firstPersonWalkTimeScale(8.5), 1.3)
+})
+
+test('a dance move repeated while it plays is not restarted, so the pose never jumps back to its first frame', () => {
+  assert.equal(startsDanceOneShot(null, 'DanceMoveLeft'), true)
+  assert.equal(startsDanceOneShot('DanceMoveLeft', 'DanceMoveLeft'), false)
+  assert.equal(startsDanceOneShot('DanceMoveLeft', 'DanceMoveUp'), true)
+  assert.equal(startsDanceOneShot('DanceMoveUp', 'Stumble'), true)
 })

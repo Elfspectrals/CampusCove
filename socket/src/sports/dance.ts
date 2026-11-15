@@ -27,6 +27,7 @@ export const DANCE_VENUE = 'dance_studio'
 export const DANCE_ZONE = 'sports_dance'
 
 const games = new Map<string, DanceGame>()
+const spectators = new WeakMap<DanceGame, Set<string>>()
 let rules: DanceRules | null = null
 
 function danceRules(): DanceRules {
@@ -88,19 +89,45 @@ export function startDance(room: GameRoom, match: Match): DanceGame {
   games.set(match.id, game)
   for (const d of game.dancers) stopEmote(room, d.sessionId)
   placeDancers(room, game)
-  sendToStudio(room, game, 'dance_start', {
-    venue: DANCE_VENUE,
-    mode: game.mode,
-    song: song.id,
-    difficulty,
-    bpm: song.bpm,
-    lengthMs: song.lengthSec * 1000,
-    startAt: game.startAt,
-    serverNow: match.startedAt,
-    notes: game.notes.map((n) => [n.t, n.lane]),
-    dancers: game.dancers.map((d) => ({ sessionId: d.sessionId, name: d.name }))
+  const informed = new Set<string>()
+  spectators.set(game, informed)
+  const dancers = new Set(game.dancers.map((d) => d.sessionId))
+  room.forEachClient((c) => {
+    if (!dancers.has(c.sessionId) && !inStudio(room, c.sessionId)) return
+    c.send('dance_start', startPayload(game, match.startedAt))
+    informed.add(c.sessionId)
   })
   return game
+}
+
+function startPayload(game: DanceGame, serverNow: number) {
+  return {
+    venue: DANCE_VENUE,
+    mode: game.mode,
+    song: game.song.id,
+    difficulty: game.difficulty,
+    bpm: game.song.bpm,
+    lengthMs: game.song.lengthSec * 1000,
+    startAt: game.startAt,
+    serverNow,
+    notes: game.notes.map((n) => [n.t, n.lane]),
+    dancers: game.dancers.map((d) => ({ sessionId: d.sessionId, name: d.name }))
+  }
+}
+
+export function moveDanceSpectator(room: GameRoom, sessionId: string, now = Date.now()): void {
+  const current = currentGame(room)
+  const informed = current ? spectators.get(current.game) : undefined
+  if (!current || !informed || current.game.dancers.some((d) => d.sessionId === sessionId)) return
+  const client = room.clients.find((c) => c.sessionId === sessionId)
+  if (!client) return
+  const inside = inStudio(room, sessionId)
+  if (inside && !informed.has(sessionId)) {
+    client.send('dance_start', startPayload(current.game, now))
+    informed.add(sessionId)
+  } else if (!inside && informed.delete(sessionId)) {
+    client.send('dance_stop', { venue: DANCE_VENUE })
+  }
 }
 
 function currentGame(room: GameRoom): { match: Match, game: DanceGame } | null {

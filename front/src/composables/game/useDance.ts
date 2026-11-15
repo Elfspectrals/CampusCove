@@ -154,7 +154,7 @@ export function useDance(deps: DanceDeps) {
     teamScore,
     judgementShown,
     litLanes,
-    handlers: { onStart, onJudge, onStray, onEnd },
+    handlers: { onStart, onJudge, onStray, onEnd, onStop: close },
     onKeyDown,
     tick,
     close,

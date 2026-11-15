@@ -148,7 +148,7 @@ def _dance_foot(side, ph):
     x = DANCE_STEPS[side][0][2] if DANCE_STEPS[side][0][0] < ph < DANCE_STEPS[side][1][0] - DANCE_SWING else 0.0
     return x, 0.0, 0.0
 
-def _dance_frame(ph, P):
+def _dance_frame(ph, P, feet_extra=None):
     C = math.cos
     beat = C(2 * math.pi * 4 * ph)
     bar = C(2 * math.pi * 2 * ph)
@@ -167,7 +167,8 @@ def _dance_frame(ph, P):
         P.rx('Hand' + side, -6 + 4 * beat)
         rest = P.arm.data.bones['Foot' + side].head_local
         x, z, _ = feet[side]
-        leg_ik(P, side, (rest.x + x, rest.y, rest.z + z))
+        dx, dy, dz, pitch = (feet_extra or {}).get(side, (0.0, 0.0, 0.0, 0.0))
+        leg_ik(P, side, (rest.x + x + dx, rest.y + dy, rest.z + z + dz), pitch)
 
 def pose_dance(extras=None):
     def f(ph, P):
@@ -200,6 +201,259 @@ def pose_stumble(extras=None):
             extras(ph, P, 0.35, 4)
     return f
 
+def _clamp01(u):
+    return max(0.0, min(1.0, u))
+
+def _plant(P, side, dx=0.0, dy=0.0, dz=0.0, pitch=0.0, yaw=None):
+    rest = P.arm.data.bones['Foot' + side].head_local
+    leg_ik(P, side, (rest.x + dx, rest.y + dy, rest.z + dz), pitch, yaw=yaw)
+
+def _on_ball(P, side, pitch):
+    bones = P.arm.data.bones
+    ankle, ball = bones['Foot' + side].head_local, bones['Toe' + side].head_local
+    by, bz = ankle.y - ball.y, ankle.z - ball.z
+    p = math.radians(pitch)
+    return -by + by * math.cos(p) - bz * math.sin(p), by * math.sin(p) + bz * math.cos(p) - bz
+
+def _beat_hits(hits, ph, lead):
+    b = 4 * ph + lead
+    k = int(math.floor(b))
+    w = min_jerk(_clamp01((b - k) / lead))
+    prev, cur = hits[(k - 1) % len(hits)], hits[k % len(hits)]
+    return {key: prev.get(key, 0.0) + (cur.get(key, 0.0) - prev.get(key, 0.0)) * w for key in prev.keys() | cur.keys()}, b - k
+
+def _apply_pose(P, pose):
+    for (bone, axis), value in pose.items():
+        if axis == 'mx':
+            P.move(bone, value, 0, 0)
+        elif axis == 'mz':
+            P.move(bone, 0, 0, value)
+        else:
+            getattr(P, 'r' + axis)(bone, value)
+
+def pose_dance_sway(extras=None):
+    def f(ph, P):
+        C = math.cos
+        a = 2 * math.pi * 2 * ph
+        sway = S_(a)
+        P.move('Hips', 0.07 * sway, 0, -0.06 - 0.015 * C(2 * a))
+        P.rx('Hips', 2); P.ry('Hips', -6 * sway)
+        P.rx('Spine', 2); P.ry('Spine', 4 * S_(a - 0.5))
+        P.rx('Chest', 2); P.ry('Chest', 3 * S_(a - 0.9))
+        P.rx('Head', -2); P.ry('Head', -3 * S_(a - 1.2)); P.rz('Head', 6 * S_(a - 0.6))
+        for side, sgn, _ in SIDES:
+            P.rx('UpperArm' + side, -12 + 6 * S_(2 * a - sgn))
+            P.ry('UpperArm' + side, -sgn * 8 - 22 * S_(a - 0.8))
+            P.rx('LowerArm' + side, -(55 + 15 * S_(a - 1.3)))
+            P.ry('LowerArm' + side, -12 * S_(a - 1.3))
+            P.ry('Hand' + side, -20 * S_(a - 1.8))
+            _plant(P, side)
+        if extras:
+            extras(ph, P, 0.3, 2)
+    return f
+
+def _goalpost(side, sgn):
+    return {('UpperArm' + side, 'y'): -sgn * 45, ('LowerArm' + side, 'y'): -sgn * 100, ('Hand' + side, 'y'): sgn * 40}
+
+def _robot_forward(side, sgn):
+    return {('UpperArm' + side, 'x'): -15, ('UpperArm' + side, 'y'): sgn * 5, ('LowerArm' + side, 'x'): -90,
+            ('Hand' + side, 'x'): 35}
+
+ROBOT_HITS = [
+    {**_robot_forward('.L', 1), **_robot_forward('.R', -1), ('UpperArm.L', 'y'): -35, ('UpperArm.R', 'y'): 35,
+     ('Hand.L', 'x'): 0, ('Hand.R', 'x'): 0, ('Hand.L', 'y'): 35, ('Hand.R', 'y'): -35, ('Head', 'x'): 12},
+    {**_goalpost('.L', 1), **_goalpost('.R', -1), ('Head', 'x'): -10, ('Chest', 'x'): -4},
+    {**_goalpost('.L', 1), **_robot_forward('.R', -1), ('Head', 'z'): 20, ('Chest', 'z'): -6, ('Hips', 'z'): 5},
+    {**_goalpost('.R', -1), **_robot_forward('.L', 1), ('Head', 'z'): -20, ('Chest', 'z'): 6, ('Hips', 'z'): -5},
+]
+
+def pose_dance_robot(extras=None):
+    def f(ph, P):
+        pose, u = _beat_hits(ROBOT_HITS, ph, 0.27)
+        P.move('Hips', 0, 0, -0.04 - 0.03 * S_(math.pi * _clamp01(u / 0.6)))
+        P.rx('Spine', 3)
+        _apply_pose(P, pose)
+        for side, sgn, _ in SIDES:
+            _plant(P, side)
+        if extras:
+            extras(ph, P, 0.35, 4)
+    return f
+
+def _shuffle_foot(P, side, u):
+    y = -0.15 * S_(2 * math.pi * u)
+    pitch = -30 * S_(2 * math.pi * u)
+    dy, dz = _on_ball(P, side, max(0.0, pitch))
+    lift = 0.035 * S_(2 * math.pi * 2 * u) ** 2
+    _plant(P, side, 0.0, y + dy, dz + lift, pitch)
+
+def pose_dance_shuffle(extras=None):
+    def f(ph, P):
+        C = math.cos
+        shift = S_(2 * math.pi * 2 * ph)
+        P.move('Hips', 0.03 * shift, 0, -0.05 - 0.015 * C(2 * math.pi * 8 * ph))
+        P.rx('Hips', 3); P.ry('Hips', -3 * shift)
+        P.rx('Spine', 4); P.rz('Chest', 6 * S_(2 * math.pi * 4 * ph))
+        P.rx('Head', 4 * C(2 * math.pi * 8 * ph))
+        b = 4 * ph
+        k = int(math.floor(b)) % 4
+        active = '.R' if k % 2 == 0 else '.L'
+        for side, sgn, _ in SIDES:
+            pump = S_(2 * math.pi * 4 * ph) * sgn
+            P.rx('UpperArm' + side, -12 + 30 * pump)
+            P.ry('UpperArm' + side, sgn * 10)
+            P.rx('LowerArm' + side, -(85 - 12 * pump))
+            P.rx('Hand' + side, -5)
+            if side == active:
+                _shuffle_foot(P, side, b - math.floor(b))
+            else:
+                _plant(P, side)
+        if extras:
+            extras(ph, P, 0.35, 4)
+    return f
+
+def _spin_heading(ph, offset):
+    h = 8 * ph - offset
+    k = math.floor(h / 2)
+    return 90 * k + 90 * min_jerk(_clamp01(h - 2 * k)), _clamp01(h - 2 * k)
+
+def pose_dance_spin(extras=None):
+    def f(ph, P):
+        P.move('Hips', 0, 0, -0.06 - 0.015 * math.cos(2 * math.pi * 8 * ph))
+        P.rz('Hips', 360 * ph)
+        P.rx('Spine', 2); P.rz('Chest', 6)
+        P.rx('Head', -4); P.rz('Head', 10)
+        spread = min_jerk(_clamp01(0.8 * (1 - math.cos(2 * math.pi * ph))))
+        for side, sgn, off in SIDES:
+            tuck = 1 - spread
+            P.rx('UpperArm' + side, -10 * spread + (-22 + sgn * 32) * tuck)
+            P.ry('UpperArm' + side, -sgn * (58 + 5 * S_(2 * math.pi * 4 * ph)) * spread - sgn * 8 * tuck)
+            P.rx('LowerArm' + side, -20 * spread - 90 * tuck)
+            P.ry('LowerArm' + side, -sgn * 10 * spread)
+            heading, u = _spin_heading(ph, 2 * off)
+            rest = P.arm.data.bones['Foot' + side].head_local
+            r = math.radians(heading)
+            x = rest.x * math.cos(r) - rest.y * math.sin(r)
+            y = rest.x * math.sin(r) + rest.y * math.cos(r)
+            lift = 0.05 * S_(math.pi * u)
+            leg_ik(P, side, (x, y, rest.z + lift), yaw=heading)
+        if extras:
+            extras(ph, P, 0.35, 4)
+    return f
+
+def _disco_point(side, sgn):
+    return {('UpperArm' + side, 'y'): -sgn * 125, ('UpperArm' + side, 'x'): -15, ('LowerArm' + side, 'x'): -5}
+
+def _disco_hip(side, sgn):
+    return {('UpperArm' + side, 'y'): sgn * 45, ('UpperArm' + side, 'x'): -30, ('LowerArm' + side, 'x'): -60,
+            ('LowerArm' + side, 'y'): sgn * 30}
+
+def _disco_waist(side, sgn):
+    return {('UpperArm' + side, 'y'): -sgn * 8, ('UpperArm' + side, 'x'): -35, ('LowerArm' + side, 'x'): -90}
+
+DISCO_HITS = [
+    {**_disco_hip('.L', 1), **_disco_waist('.R', -1), ('Head', 'x'): 8, ('Head', 'z'): -10, ('Hips', 'mx'): 0.02},
+    {**_disco_point('.R', -1), **_disco_waist('.L', 1), ('Head', 'x'): -15, ('Head', 'z'): -20, ('Hips', 'mx'): 0.05},
+    {**_disco_hip('.R', -1), **_disco_waist('.L', 1), ('Head', 'x'): 8, ('Head', 'z'): 10, ('Hips', 'mx'): -0.02},
+    {**_disco_point('.L', 1), **_disco_waist('.R', -1), ('Head', 'x'): -15, ('Head', 'z'): 20, ('Hips', 'mx'): -0.05},
+]
+
+def pose_dance_disco(extras=None):
+    def f(ph, P):
+        pose, _ = _beat_hits(DISCO_HITS, ph, 0.45)
+        hips_x = pose.pop(('Hips', 'mx'))
+        P.move('Hips', hips_x, 0, -0.05 - 0.015 * math.cos(2 * math.pi * 4 * ph))
+        P.rx('Hips', 3); P.ry('Hips', -120 * hips_x)
+        P.ry('Spine', 60 * hips_x); P.rx('Chest', 2)
+        _apply_pose(P, pose)
+        for side, sgn, _ in SIDES:
+            _plant(P, side)
+        if extras:
+            extras(ph, P, 0.35, 4)
+    return f
+
+def pose_dance_twist(extras=None):
+    def f(ph, P):
+        a = 2 * math.pi * 4 * ph
+        t = S_(a)
+        P.move('Hips', 0, 0, -0.14 + 0.02 * math.cos(2 * a))
+        P.rx('Hips', 6); P.rz('Hips', 28 * t)
+        P.rx('Spine', 8); P.rz('Spine', -24 * t)
+        P.rz('Chest', -26 * t)
+        P.rx('Head', -6); P.rz('Head', 16 * t)
+        for side, sgn, _ in SIDES:
+            P.rx('UpperArm' + side, -20 + 20 * sgn * t)
+            P.ry('UpperArm' + side, -sgn * 35)
+            P.rx('LowerArm' + side, -95)
+            P.rx('Hand' + side, -10)
+            _plant(P, side)
+        if extras:
+            extras(ph, P, 0.35, 4)
+    return f
+
+def _dance_arm_to(side, sgn, upper_x, upper_y, lower_x, lower_y=0.0, hand_x=-2.0):
+    return {('UpperArm' + side, 'x'): upper_x - (-22 + sgn * 32), ('UpperArm' + side, 'y'): upper_y + sgn * 8,
+            ('LowerArm' + side, 'x'): lower_x + 90, ('LowerArm' + side, 'y'): lower_y, ('Hand' + side, 'x'): hand_x + 2}
+
+def _dance_move(keys, feet, extras):
+    pose_at = key_poses(keys)
+
+    def f(ph, P):
+        _apply_pose(P, pose_at(ph))
+        _dance_frame(0.0, P, feet(ph, P))
+        if extras:
+            extras(ph, P, 0.35, 4)
+    return f
+
+def pose_dance_move_side(side, extras=None):
+    sgn = 1 if side == '.L' else -1
+    other = '.R' if side == '.L' else '.L'
+    lean = {('Spine', 'y'): sgn * 6, ('Chest', 'y'): sgn * 6, ('Head', 'z'): sgn * 15, ('Head', 'y'): -sgn * 4}
+    point = {**_dance_arm_to(side, sgn, -5, -sgn * 72, -5), **_dance_arm_to(other, -sgn, -40, 0, -100)}
+    keys = [
+        (0.0, {}),
+        (0.13, {('Hips', 'mz'): -0.02, ('Hips', 'mx'): -sgn * 0.015}),
+        (0.43, {**point, **lean, ('Hips', 'mx'): sgn * 0.06, ('Hips', 'mz'): -0.03}),
+        (0.67, {**point, **lean, ('UpperArm' + side, 'y'): point[('UpperArm' + side, 'y')] - sgn * 5,
+                ('Hips', 'mx'): sgn * 0.065, ('Hips', 'mz'): -0.03}),
+        (1.0, {}),
+    ]
+
+    def feet(ph, P):
+        out = min_jerk(_clamp01((ph - 0.13) / 0.3))
+        back = min_jerk(_clamp01((ph - 0.67) / 0.33))
+        swing = S_(math.pi * _clamp01((ph - 0.13) / 0.3)) + S_(math.pi * _clamp01((ph - 0.67) / 0.33))
+        touch = 20 * S_(math.pi * _clamp01((ph - 0.35) / 0.4))
+        dy, dz = _on_ball(P, other, touch)
+        return {side: (sgn * 0.14 * (out - back), 0.0, 0.035 * swing, 0.0), other: (0.0, dy, dz, touch)}
+    return _dance_move(keys, feet, extras)
+
+def pose_dance_move_up(extras=None):
+    dip = {('Hips', 'mz'): -0.04, ('Head', 'x'): 4}
+    up = {('Hips', 'mz'): 0.05, ('Chest', 'x'): -8, ('Head', 'x'): -15}
+    for side, sgn, _ in SIDES:
+        dip.update(_dance_arm_to(side, sgn, 15, -sgn * 15, -60))
+        up.update(_dance_arm_to(side, sgn, -165, -sgn * 20, -5, 0.0, 0.0))
+    keys = [(0.0, {}), (0.2, dip), (0.5, up), (0.7, {**up, ('Hips', 'mz'): 0.045}), (1.0, {})]
+    rise = key_poses([(0.0, {}), (0.2, {}), (0.5, {'p': 22}), (0.7, {'p': 20}), (1.0, {})])
+
+    def feet(ph, P):
+        pitch = rise(ph).get('p', 0.0)
+        out = {}
+        for side, _, _ in SIDES:
+            dy, dz = _on_ball(P, side, pitch)
+            out[side] = (0.0, dy, dz, pitch)
+        return out
+    return _dance_move(keys, feet, extras)
+
+def pose_dance_move_down(extras=None):
+    rise = {('Hips', 'mz'): 0.01}
+    squat = {('Hips', 'mz'): -0.2, ('Hips', 'x'): 12, ('Spine', 'x'): 12, ('Chest', 'x'): 8, ('Head', 'x'): -20}
+    for side, sgn, _ in SIDES:
+        rise.update(_dance_arm_to(side, sgn, -15, -sgn * 12, -80))
+        squat.update(_dance_arm_to(side, sgn, -45, -sgn * 10, -15, 0.0, 10.0))
+    keys = [(0.0, {}), (0.13, rise), (0.43, squat), (0.67, {**squat, ('Hips', 'mz'): -0.19}), (1.0, {})]
+    return _dance_move(keys, lambda ph, P: None, extras)
+
 def make_clips(extras):
     return {
         "Idle": (120, gait_idle(None, extras)),
@@ -210,4 +464,14 @@ def make_clips(extras):
         "Drink": (30, pose_drink(extras)),
         "Dance": (DANCE_FRAMES, pose_dance(extras)),
         "Stumble": (18, pose_stumble(extras)),
+        "DanceSway": (DANCE_FRAMES, pose_dance_sway(extras)),
+        "DanceRobot": (DANCE_FRAMES, pose_dance_robot(extras)),
+        "DanceShuffle": (DANCE_FRAMES, pose_dance_shuffle(extras)),
+        "DanceSpin": (DANCE_FRAMES, pose_dance_spin(extras)),
+        "DanceDisco": (DANCE_FRAMES, pose_dance_disco(extras)),
+        "DanceTwist": (DANCE_FRAMES, pose_dance_twist(extras)),
+        "DanceMoveLeft": (15, pose_dance_move_side('.L', extras)),
+        "DanceMoveRight": (15, pose_dance_move_side('.R', extras)),
+        "DanceMoveUp": (15, pose_dance_move_up(extras)),
+        "DanceMoveDown": (15, pose_dance_move_down(extras)),
     }

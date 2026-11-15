@@ -3,7 +3,7 @@ import { sendLoansOnJoin, takeBackAll, updateLoansOnMove } from './loans.ts'
 import { loadSportsPass } from './pass.ts'
 import { leaveSports, updateMatchesOnMove } from './venues.ts'
 
-export { loadDanceVenue, onDanceEmotePlay, onDancePress } from './dance.ts'
+export { loadDanceVenue, moveDanceSpectator, onDanceEmotePlay, onDancePress } from './dance.ts'
 export { moveEmote, onEmoteList, sendEmotesOnJoin, stopEmote } from './danceEmotes.ts'
 export { onSportsPassBuy } from './pass.ts'
 export { SPORTS_TICK_MS } from './sportsConstants.ts'

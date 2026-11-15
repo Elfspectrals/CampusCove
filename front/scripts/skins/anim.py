@@ -119,7 +119,7 @@ def _set_rot(P, bone, m):
     P.rx(bone, math.degrees(e.x)); P.ry(bone, math.degrees(e.y)); P.rz(bone, math.degrees(e.z))
 
 
-def leg_ik(P, side, ankle, pitch=0.0, toe=0.0):
+def leg_ik(P, side, ankle, pitch=0.0, toe=0.0, yaw=None):
     bones = P.arm.data.bones
     hips, ul, ll = bones['Hips'], bones['UpperLeg' + side], bones['LowerLeg' + side]
     rh = Euler(P.rot.get('Hips', (0.0, 0.0, 0.0)), 'XYZ').to_matrix()
@@ -129,7 +129,7 @@ def leg_ik(P, side, ankle, pitch=0.0, toe=0.0):
     d = Vector(ankle) - hip
     dist = min(d.length, 0.9995 * (l1 + l2))
     dn = d.normalized()
-    hinge = rh @ Vector((1, 0, 0))
+    hinge = (rh if yaw is None else Matrix.Rotation(math.radians(yaw), 3, 'Z')) @ Vector((1, 0, 0))
     hinge = (hinge - hinge.dot(dn) * dn).normalized()
     cos_a = (l1 * l1 + dist * dist - l2 * l2) / (2 * l1 * dist)
     a = math.acos(max(-1.0, min(1.0, cos_a)))
@@ -138,7 +138,8 @@ def leg_ik(P, side, ankle, pitch=0.0, toe=0.0):
     r2 = _aim(shin, hip + dist * dn - knee, hinge)
     _set_rot(P, 'UpperLeg' + side, rh.transposed() @ r1)
     _set_rot(P, 'LowerLeg' + side, r1.transposed() @ r2)
-    _set_rot(P, 'Foot' + side, r2.transposed() @ Matrix.Rotation(math.radians(pitch), 3, 'X'))
+    heading = Matrix.Rotation(math.radians(yaw or 0.0), 3, 'Z')
+    _set_rot(P, 'Foot' + side, r2.transposed() @ heading @ Matrix.Rotation(math.radians(pitch), 3, 'X'))
     _set_rot(P, 'Toe' + side, Matrix.Rotation(math.radians(toe - pitch), 3, 'X'))
 
 
