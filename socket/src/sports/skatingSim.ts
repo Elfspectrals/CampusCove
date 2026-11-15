@@ -32,6 +32,18 @@ export interface CrashRules {
   boardMarginM: number
 }
 
+export interface BalanceRules {
+  carveLimit: number
+  carveDrainPerUnit: number
+  brakeSpeed: number
+  brakeDrainPerS: number
+  earlyPushLoss: number
+  bumpLoss: number
+  recoverPerS: number
+  minMoveM: number
+  reportStep: number
+}
+
 export interface SkatingRules {
   rink: Bounds
   oval: RaceOval
@@ -42,6 +54,7 @@ export interface SkatingRules {
   timeLimit: { base: number, perLap: number }
   skate: SkateRules
   crash: CrashRules
+  balance: BalanceRules
 }
 
 type Json = Record<string, unknown>
@@ -82,6 +95,7 @@ export function parseSkatingRules(raw: unknown): SkatingRules {
   const s = obj(r.skate, 'skate')
   const c = obj(r.crash, 'crash')
   const t = obj(r.raceTimeLimitMs, 'raceTimeLimitMs')
+  const bal = obj(r.balance, 'balance')
   return {
     rink,
     oval,
@@ -111,6 +125,17 @@ export function parseSkatingRules(raw: unknown): SkatingRules {
       bumpSpeedLoss: num(c.bumpSpeedLoss, 'crash.bumpSpeedLoss'),
       bumpCooldownMs: num(c.bumpCooldownMs, 'crash.bumpCooldownMs'),
       boardMarginM: num(c.boardMarginM, 'crash.boardMarginM')
+    },
+    balance: {
+      carveLimit: num(bal.carveLimit, 'balance.carveLimit'),
+      carveDrainPerUnit: num(bal.carveDrainPerUnit, 'balance.carveDrainPerUnit'),
+      brakeSpeed: num(bal.brakeSpeed, 'balance.brakeSpeed'),
+      brakeDrainPerS: num(bal.brakeDrainPerS, 'balance.brakeDrainPerS'),
+      earlyPushLoss: num(bal.earlyPushLoss, 'balance.earlyPushLoss'),
+      bumpLoss: num(bal.bumpLoss, 'balance.bumpLoss'),
+      recoverPerS: num(bal.recoverPerS, 'balance.recoverPerS'),
+      minMoveM: num(bal.minMoveM, 'balance.minMoveM'),
+      reportStep: num(bal.reportStep, 'balance.reportStep', 0.001)
     }
   }
 }
@@ -213,6 +238,25 @@ export function boardImpactSpeed(rink: Bounds, fromX: number, fromZ: number, toX
     rink.maxZ - toZ <= margin ? vz : 0
   ]
   return Math.max(0, ...towards)
+}
+
+export interface BalanceInput {
+  speed: number
+  lateral: number
+  braking: boolean
+}
+
+export function lateralAcceleration(speed: number, fromAngle: number, toAngle: number, dtMs: number): number {
+  if (dtMs <= 0) return 0
+  return speed * Math.abs(wrapAngle(toAngle - fromAngle)) * 1000 / dtMs
+}
+
+export function balanceStep(b: BalanceRules, balance: number, input: BalanceInput, dtMs: number): number {
+  const dt = Math.max(0, dtMs) / 1000
+  const carve = Math.max(0, input.lateral - b.carveLimit) * b.carveDrainPerUnit
+  const brake = input.braking && input.speed > b.brakeSpeed ? b.brakeDrainPerS : 0
+  const drain = carve + brake
+  return Math.min(1, Math.max(0, balance + (drain > 0 ? -drain : b.recoverPerS) * dt))
 }
 
 export const FULL_LAP = 2 * Math.PI

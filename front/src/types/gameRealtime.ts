@@ -921,6 +921,10 @@ export interface SkateFallPayload {
   serverNow: number
 }
 
+export interface SkateBalancePayload {
+  value: number
+}
+
 export interface SkateMovePayload {
   sessionId: string
   move: 'push' | 'brake' | 'stumble'

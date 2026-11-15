@@ -119,7 +119,11 @@
       "atMaxSpeed": 0.9
     },
     "brake": 7,
-    "moveMarginM": 1.5
+    "moveMarginM": 1.5,
+    "grip": {
+      "still": 8,
+      "atMaxSpeed": 2.2
+    }
   },
   "crash": {
     "speedThreshold": 6.5,
@@ -130,6 +134,17 @@
     "bumpSpeedLoss": 0.3,
     "bumpCooldownMs": 600,
     "boardMarginM": 0.6
+  },
+  "balance": {
+    "carveLimit": 6,
+    "carveDrainPerUnit": 0.1,
+    "brakeSpeed": 6,
+    "brakeDrainPerS": 0.45,
+    "earlyPushLoss": 0.15,
+    "bumpLoss": 0.3,
+    "recoverPerS": 0.25,
+    "minMoveM": 0.15,
+    "reportStep": 0.05
   },
   "gear": [
     "gear_ice_skates"

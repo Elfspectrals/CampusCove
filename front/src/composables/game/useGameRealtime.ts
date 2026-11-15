@@ -113,6 +113,7 @@ import type {
   SportsLobbyClosedPayload,
   SportsLobbyPayload,
   SportsLoansPayload,
+  SkateBalancePayload,
   SkateBumpPayload,
   SkateFallPayload,
   SkateMovePayload,
@@ -335,6 +336,7 @@ export interface GameRealtimeDeps {
     onRace: (data: SkateRacePayload) => void
     onFall: (data: SkateFallPayload) => void
     onBump: (data: SkateBumpPayload) => void
+    onBalance: (data: SkateBalancePayload) => void
     isOnIce: (x: number, z: number) => boolean
     onResult: (data: SkateResultPayload) => void
     onCorrection: (reason: string | undefined) => void
@@ -602,6 +604,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       if (data.sessionId === room.sessionId) deps.skating.onFall(data)
       else remotes.skateMove(data.sessionId, 'fall')
     })
+    room.onMessage('skate_balance', (data: SkateBalancePayload) => deps.skating.onBalance(data))
     room.onMessage('skate_move', (data: SkateMovePayload) => {
       if (data.move === 'push') remotes.skatePushed(data.sessionId)
       else remotes.skateMove(data.sessionId, data.move)

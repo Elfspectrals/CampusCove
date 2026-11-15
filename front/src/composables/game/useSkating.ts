@@ -4,6 +4,7 @@ import {
   SKATING_RULES_URL,
   fall,
   bumped,
+  leanAngle,
   hitBoards,
   newSkater,
   onIce,
@@ -17,7 +18,7 @@ import {
   type PushKind,
   type SkatingSpec,
 } from '../../game/sports/skating/skateMotion'
-import type { SkateBumpPayload, SkateFallPayload, SkateRacePayload, SkateResultPayload } from '../../types/gameRealtime'
+import type { SkateBalancePayload, SkateBumpPayload, SkateFallPayload, SkateRacePayload, SkateResultPayload } from '../../types/gameRealtime'
 import type { SfxName } from '../../game/sfx'
 import { fetchSkatingBoard, type SkatingBoard } from '../../api/skatingBoard'
 
@@ -49,12 +50,19 @@ export interface SkateRaceRow {
 
 const RESULT_SHOWN_MS = 12_000
 const BOARD_REFRESH_AFTER_RACE_MS = 3000
+const CAMERA_LEAN_SHARE = 0.5
+const LEAN_SMOOTHING_S = 0.15
+const WOBBLE_RATE = 9
+const WOBBLE_MAX = 0.06
 
 export function useSkating(deps: SkatingDeps) {
   const spec = shallowRef<SkatingSpec | null>(null)
   const skater = newSkater(0)
   const active = ref(false)
   const speed = ref(0)
+  const balance = ref(1)
+  let roll = 0
+  let wobble = 0
   const cue = ref(0)
   const lastPush = ref<PushKind | null>(null)
   const race = shallowRef<SkateRacePayload | null>(null)
@@ -104,6 +112,14 @@ export function useSkating(deps: SkatingDeps) {
     return r !== null && serverNow() < r.goAt && r.racers.some((x) => x.sessionId === mySessionId())
   }
 
+  function cameraRoll(dt: number): number {
+    const target = active.value ? leanAngle(skater.speed, skater.turning) * CAMERA_LEAN_SHARE : 0
+    roll += (target - roll) * Math.min(1, dt / LEAN_SMOOTHING_S)
+    wobble += dt * WOBBLE_RATE
+    const shaky = active.value ? (1 - balance.value) * WOBBLE_MAX * Math.sin(wobble) : 0
+    return roll + shaky
+  }
+
   function isOnIce(x: number, z: number): boolean {
     return spec.value !== null && onIce(spec.value.rink, x, z)
   }
@@ -130,6 +146,7 @@ export function useSkating(deps: SkatingDeps) {
     if (!active.value) {
       active.value = true
       skater.heading = yaw
+      skater.travel = yaw
       skater.speed = 0
     }
     if (waitingForStart()) {
@@ -208,6 +225,9 @@ export function useSkating(deps: SkatingDeps) {
       deps.playSound('skate_fall')
       deps.onFall()
     },
+    onBalance(data: SkateBalancePayload): void {
+      if (typeof data.value === 'number' && Number.isFinite(data.value)) balance.value = Math.min(1, Math.max(0, data.value))
+    },
     onBump(data: SkateBumpPayload): void {
       const s = spec.value
       if (!s || data.sessionId !== mySessionId()) return
@@ -237,5 +257,5 @@ export function useSkating(deps: SkatingDeps) {
 
   const boardShown = computed(() => (inRinkNow.value && !active.value && race.value === null && result.value === null ? board.value : null))
 
-  return { boardShown, active, speed, cue, rhythmZone, isOnIce, lastPush, race, rows, clock, result, step, afterMove, tick, handlers }
+  return { cameraRoll, balance, boardShown, active, speed, cue, rhythmZone, isOnIce, lastPush, race, rows, clock, result, step, afterMove, tick, handlers }
 }

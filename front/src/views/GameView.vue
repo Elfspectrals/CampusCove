@@ -890,7 +890,7 @@ const skating = useSkating({
   playSound: (name) => sfx.play(name),
   inRink: () => currentHouseKey.value === 'sports_ice_rink',
 })
-const { boardShown: skatingBoard, active: skatingActive, speed: skatingSpeed, cue: skatingCue, rhythmZone: skatingWindow, lastPush: skatingLastPush, race: skatingRace, rows: skatingRows, clock: skatingClock, result: skatingResult } = skating
+const { balance: skatingBalance, boardShown: skatingBoard, active: skatingActive, speed: skatingSpeed, cue: skatingCue, rhythmZone: skatingWindow, lastPush: skatingLastPush, race: skatingRace, rows: skatingRows, clock: skatingClock, result: skatingResult } = skating
 const PICKPOCKET_ERROR_KEYS = new Set([
   'pickpocket_on_duty',
   'pickpocket_jailed',
@@ -1582,6 +1582,7 @@ const movement = useGameMovement({
   flying: () => adminWatch.hasMyPower('fly'),
   afterCameraPlaced: intoxication.applyToCamera,
   skate: skating.step,
+  cameraRoll: skating.cameraRoll,
   afterSkate: skating.afterMove,
   trySpendJump: () => adminWatch.hasMyPower('endless_stamina') || punch.trySpendJump(),
   trySpendSprint: (dt, wasSprinting) => adminWatch.hasMyPower('endless_stamina') || punch.trySpendSprint(dt, wasSprinting),
@@ -2384,6 +2385,7 @@ const crosshairClass = computed(() => {
       :result="skatingResult"
       :my-session-id="gameRoomRef?.sessionId ?? null"
       :board="skatingBoard"
+      :balance="skatingBalance"
     />
     <GamePubSecretDialog
       v-if="pubSecretOpen"

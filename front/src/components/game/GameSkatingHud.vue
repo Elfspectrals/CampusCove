@@ -17,6 +17,7 @@ defineProps<{
   result: SkateResultPayload | null
   mySessionId: string | null
   board: SkatingBoard | null
+  balance: number
 }>()
 
 const { t } = useI18n()
@@ -92,6 +93,13 @@ const { t } = useI18n()
           :style="{ left: `${rhythmWindow.from * 100}%`, width: `${(rhythmWindow.to - rhythmWindow.from) * 100}%` }"
         />
         <span class="absolute inset-y-0 left-0 rounded-full bg-sun" :style="{ width: `${cue * 100}%` }" />
+      </span>
+      <p class="m-0 mt-0.5 flex items-center justify-between text-[10px] text-mist">
+        <span>{{ t('skating.balance') }}</span>
+        <span :class="balance < 0.35 ? 'text-coral' : 'text-fog'">{{ Math.round(balance * 100) }}%</span>
+      </p>
+      <span class="block h-1.5 overflow-hidden rounded-full bg-ink-950/70" :aria-label="t('skating.balance')">
+        <span class="block h-full rounded-full transition-[width] duration-150" :class="balance < 0.35 ? 'bg-coral' : 'bg-mint'" :style="{ width: `${balance * 100}%` }" />
       </span>
       <p class="m-0 text-[10px] text-mist">{{ t('skating.controls') }}</p>
     </div>

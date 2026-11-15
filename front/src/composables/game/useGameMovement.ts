@@ -63,6 +63,7 @@ export interface UseGameMovementDeps {
   flying?: () => boolean
   /** Runs once the camera is placed each frame, for extra camera motion (drunken sway). */
   afterCameraPlaced?: (camera: THREE.PerspectiveCamera, dt: number) => void
+  cameraRoll?: (dt: number) => number
   skate?: (dt: number, yaw: number, keys: { forward: boolean; brake: boolean }) => { dx: number; dz: number } | null
   afterSkate?: (wanted: number, moved: number) => void
 }
@@ -171,7 +172,7 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     const motion = cameraMotionScale(comfortSettings.reduceCameraMotion)
     camera.rotation.y = yaw
     camera.rotation.x = pitch + (shake.pitch + kick.pitch) * motion.shake
-    camera.rotation.z = shake.roll * motion.roll
+    camera.rotation.z = (shake.roll + (deps.cameraRoll?.(dt) ?? 0)) * motion.roll
     const fov = verticalFovFor(comfortSettings.fov, camera.aspect) + kick.fov * motion.fovKick
     if (fov !== camera.fov) {
       camera.fov = fov

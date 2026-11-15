@@ -12,7 +12,9 @@ import {
   applyPush,
   insideCones,
   boardImpactSpeed,
+  balanceStep,
   insideRink,
+  lateralAcceleration,
   lapOf,
   newSpeedState,
   progressStep,
@@ -66,6 +68,9 @@ interface Skater {
   immuneUntil: number
   bumpUntil: number
   sample: { x: number, z: number, at: number } | null
+  dir: number | null
+  balance: number
+  reportedBalance: number
 }
 
 let rules: SkatingRules | null = null
@@ -76,7 +81,7 @@ const races = new WeakMap<GameRoom, Race>()
 function skaterOf(player: Player): Skater {
   let s = skaters.get(player)
   if (!s) {
-    s = { owns: null, checking: false, checkedAt: -Infinity, inZone: false, speed: null, acceptedDistance: 0, fallenUntil: 0, immuneUntil: 0, bumpUntil: 0, sample: null }
+    s = { owns: null, checking: false, checkedAt: -Infinity, inZone: false, speed: null, acceptedDistance: 0, fallenUntil: 0, immuneUntil: 0, bumpUntil: 0, sample: null, dir: null, balance: 1, reportedBalance: 1 }
     skaters.set(player, s)
   }
   return s
@@ -164,7 +169,9 @@ export function onSkatePush(room: GameRoom, client: GameClient, now = Date.now()
   if (skater.owns !== true || now < skater.fallenUntil) return
   const speed = speedOf(skater, now)
   if (speed.lastPushAt !== null && now - speed.lastPushAt < MIN_PUSH_INTERVAL_MS) return
-  relayMove(room, player, applyPush(rules.skate, speed, now) === 'early' ? 'stumble' : 'push')
+  const kind = applyPush(rules.skate, speed, now)
+  relayMove(room, player, kind === 'early' ? 'stumble' : 'push')
+  if (kind === 'early') loseBalance(room, player, skater, rules.balance.earlyPushLoss, now)
 }
 
 export type SkateMove = 'push' | 'brake' | 'stumble'
@@ -251,8 +258,26 @@ function running(r: Racer): boolean {
   return r.finishedMs === null && !r.dnf
 }
 
+function reportBalance(room: GameRoom, player: Player, skater: Skater): void {
+  const step = (rules as SkatingRules).balance.reportStep
+  const settled = (skater.balance === 1 || skater.balance === 0) && skater.reportedBalance !== skater.balance
+  if (!settled && Math.abs(skater.balance - skater.reportedBalance) < step) return
+  skater.reportedBalance = skater.balance
+  clientOf(room, player.sessionId)?.send('skate_balance', { value: Math.round(skater.balance * 100) / 100 })
+}
+
+function loseBalance(room: GameRoom, player: Player, skater: Skater, loss: number, now: number): void {
+  if (now < skater.fallenUntil) return
+  skater.balance = Math.max(0, skater.balance - loss)
+  if (skater.balance === 0) knockDown(room, player, skater, now)
+  else reportBalance(room, player, skater)
+}
+
 function knockDown(room: GameRoom, player: Player, skater: Skater, now: number): void {
   const r = rules as SkatingRules
+  skater.balance = 1
+  skater.dir = null
+  reportBalance(room, player, skater)
   skater.fallenUntil = now + r.crash.fallMs
   skater.immuneUntil = now + r.crash.fallMs + r.crash.immuneMs
   const speed = speedOf(skater, now)
@@ -271,6 +296,7 @@ function bump(room: GameRoom, player: Player, skater: Skater, dirX: number, dirZ
   skater.acceptedDistance -= r.crash.bumpDistanceM
   clientOf(room, player.sessionId)?.send('skate_bump', { sessionId: player.sessionId, dirX, dirZ, distance: r.crash.bumpDistanceM, serverNow: now })
   relayMove(room, player, 'stumble')
+  loseBalance(room, player, skater, r.balance.bumpLoss, now)
 }
 
 function collide(room: GameRoom, a: Player, b: Player, now: number): void {
@@ -295,12 +321,32 @@ function collide(room: GameRoom, a: Player, b: Player, now: number): void {
   bump(room, b, sb, -dirX, -dirZ, now)
 }
 
-function hitsBoards(player: Player, skater: Skater, now: number): boolean {
+function balanceAfterMove(room: GameRoom, player: Player, skater: Skater, last: { x: number, z: number, at: number }, now: number): void {
+  const r = rules as SkatingRules
+  const dx = player.x - last.x
+  const dz = player.z - last.z
+  const moved = Math.hypot(dx, dz) >= r.balance.minMoveM
+  const dir = moved ? Math.atan2(dz, dx) : skater.dir
+  const speed = speedOf(skater, now)
+  advanceSpeed(r.skate, speed, now)
+  const lateral = moved && skater.dir !== null && dir !== null ? lateralAcceleration(speed.speed, skater.dir, dir, now - last.at) : 0
+  skater.dir = dir
+  skater.balance = balanceStep(r.balance, skater.balance, { speed: speed.speed, lateral, braking: speed.braking }, now - last.at)
+  if (skater.balance === 0) knockDown(room, player, skater, now)
+  else reportBalance(room, player, skater)
+}
+
+function moveOnIce(room: GameRoom, player: Player, skater: Skater, now: number): void {
   const r = rules as SkatingRules
   const last = skater.sample
   skater.sample = { x: player.x, z: player.z, at: now }
-  if (!last || now < skater.fallenUntil || now < skater.immuneUntil) return false
-  return boardImpactSpeed(r.rink, last.x, last.z, player.x, player.z, now - last.at, r.crash.boardMarginM) >= r.crash.speedThreshold
+  if (!last || now < skater.fallenUntil) {
+    skater.dir = null
+    return
+  }
+  const fast = boardImpactSpeed(r.rink, last.x, last.z, player.x, player.z, now - last.at, r.crash.boardMarginM) >= r.crash.speedThreshold
+  if (fast && now >= skater.immuneUntil) knockDown(room, player, skater, now)
+  else balanceAfterMove(room, player, skater, last, now)
 }
 
 export function tickSkating(room: GameRoom, now = Date.now()): void {
@@ -309,10 +355,7 @@ export function tickSkating(room: GameRoom, now = Date.now()): void {
   for (let i = 0; i < onTheIce.length; i++) {
     for (let j = i + 1; j < onTheIce.length; j++) collide(room, onTheIce[i], onTheIce[j], now)
   }
-  for (const player of onTheIce) {
-    const skater = skaterOf(player)
-    if (hitsBoards(player, skater, now)) knockDown(room, player, skater, now)
-  }
+  for (const player of onTheIce) moveOnIce(room, player, skaterOf(player), now)
 }
 
 function advanceRacer(room: GameRoom, race: Race, racer: Racer, now: number): boolean {
