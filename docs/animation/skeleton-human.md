@@ -91,6 +91,17 @@ Clips are phase functions `f(ph, P)` sampled by `sample_actions(arm, clips, fps=
 | TennisLob | 21 | 0.7 | one-shot | `pose_tennis_lob`, contact at 0.35 s, finishes high, starts and ends on TennisReady |
 | TennisServe | 30 | 1.0 | one-shot | `pose_tennis_serve`, from the rest pose, toss 0.32 s, contact 0.55 s, ends on TennisReady |
 | TennisCelebrate | 45 | 1.5 | one-shot | `pose_tennis_celebrate`, from TennisReady, fist pumps then both arms up, ends on the rest pose |
+| ClimbReachL, ClimbReachR | 18 | 0.6 | one-shot | `pose_climb_reach`: from the hang pose, dip, feet push the hips up 15 cm while one hand reaches 0.4 m above and 0.3 m to its side, back to the hang pose |
+| ClimbHang | 60 | 2.0 | yes | `pose_climb_hang`: hands on the wall 1.95 m up, toes on the wall, breathing sway (hands and feet pinned by IK) |
+| ClimbFall | 24 | 0.8 | one-shot | `pose_climb_fall`: hang pose 0.45 m above the root, hands open, gravity drop to the mat at 0.32 s, crouch, ends on the rest pose |
+| ClimbLower | 30 | 1.0 | yes | `pose_climb_lower`: seated in the harness, soles on the wall, hands on the rope at chest height, 2 cm bounce |
+| ClimbTop | 36 | 1.2 | one-shot | `pose_climb_top`: right hand reaches up, left fist pump, back to the hang pose |
+
+Climbing clips assume the wall plane at y = -0.58 m in front of the root and the root 1.6 m under the eye
+(`eyeHeightM`, `standoffM` and `reachBelowM` in `front/public/assets/sports/rules/climbing.json`): the hang hands sit
+0.08 m under the last hold. Hands are placed with `arm_ik` (`anim.py`, two-bone IK from the shoulder through the
+Hips > Spine > Chest > Shoulder chain, elbow towards the hint), feet with `leg_ik`. Measured on renders: a negative
+`leg_ik` pitch turns the toes up (-75° puts the sole flat on the wall), a positive pitch points them down.
 
 Every clip is keyed from frame 0 (glTF time starts at 0). Gaits plant the feet with `leg_ik` (analytic two-bone IK,
 knee forward): the stance foot moves back at exactly the design speed, so there is no slide at timeScale 1.

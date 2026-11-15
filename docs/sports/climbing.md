@@ -44,11 +44,50 @@ Reach to a hold (left and right), hang idle, fall from a boulder, lowered on the
 
 Disconnect or letting go: the climb stops, no time recorded.
 
-## Open points
+## Decided (2026-11-14)
 
-- Click windows per colour and grip loss per miss.
-- How the lent shoes are shown (worn automatically on the wall, or not shown).
+- Click windows per colour (green 900 ms, blue 700, red 550, black 420), each opening 700 ms after the hold lights while
+  its ring closes; 150 ms network allowance after the window. Grip 100, a miss costs 20 / 25 / 30 / 35 by colour.
+  A click before the window, after it, or on another hold is a miss and lights the same hold again.
+- The lent shoes are not shown: no shoes model, the loan only unlocks the wall.
+- 6 lead wall lanes of 2.9 m: 4 coloured routes and 2 twin speed lanes (`speed_1`, `speed_2`, red, 14 holds) in the
+  middle, the coach at their foot. A topped route is lowered by the belay too, with its time kept.
+- Every topped free climb is recorded as a solo `sports_matches` row (venue = line id, result `finished`, `timeMs`) for
+  the weekly boards; the duel is recorded under venue `climbing_duel` (`win` with the time, `loss`, or `dnf`).
+
+## Contract
+
+Rules and hold layout: `front/public/assets/sports/rules/climbing.json` (lines in world coordinates: `base` [x, z] on the
+wall face, `face` the direction the wall faces, holds [u, y] with u to the climber's right and y above `floorY`). The socket
+(`socket/src/sports/climbingLogic.ts`), the front (`front/src/game/sports/climbing.ts`) and the hall build
+(`build_sports_climbing.py`, which checks every wall face against it) read it.
+
+| Message | Direction | Payload |
+|---|---|---|
+| `climb_start` | client → server | `{ line }`, inside `sports_climbing`, within `startReachM` (2.5 m) of the spot 1.1 m in front of the line, with the lent `climbing_shoes`, not signed up for a duel, line free, 1 s between starts |
+| `climb_hold` | client → server | `{ hold: int }`, the clicked hold index of the climb's line, `-1` for a click on anything else |
+| `climb_let_go` | client → server | `{}` |
+| `climb_state` | server → climber and everyone in the hall | `{ sessionId, line, event: 'start' \| 'hold' \| 'miss' \| 'fall' \| 'top' \| 'end', phase: 'climbing' \| 'lowering' \| 'ended', next, holds, grip, gripMax, litAt, opensAt, closesAt, startedAt, serverNow, duel, result?: 'topped' \| 'fell' \| 'let_go' \| 'cancelled' \| 'won' \| 'beaten', timeMs? }` |
+| `climb_error` | server → client | `{ code, message }`: `climb_no_shoes`, `climb_too_far`, `climb_already`, `climb_signed_up`, `climb_lane_reserved`, `climb_line_taken`, `climb_cooldown` |
+
+The server moves the climber (`position_correction` reason `climbing`, `user_moved` for the others) to the pose under
+the last hold reached, and back to the mat at the end. A climb stops with no time when the player disconnects, is
+knocked out, loses the shoes or is moved off the wall.
 
 ## Proposed placeholder JSON fields
 
 `sport` ("climbing"), `boulders` (6 × { id, colour, holds: positions, windowMs }), `routes` (4 × { id, colour, heightM, holds, windowMs }), `twinRoutes` (pair of route ids for duels), `grip` (max, lossPerMiss, lossPerLateMs), `belayLowerSec` (2), `allowanceMs`, `gear` ([], `lentAtReception`: ["climbing_shoes"]), `coachId`, `boards` (one per route and boulder), `tasks` (["routes_topped", "black_route"]).
+
+## Weekly boards and tasks
+
+- Boards are the core's (`SportsBoardService::BOARDS`, `docs/sports/CORE.md` § 4): one per line, `climb_<line>`
+  (`settings: { line }`, metric `time`), fed by every topped free climb, which is recorded as a solo `sports_matches` row
+  with `settings: { line }`. The duel (settings `{}`) has no board. The champion of each board gets the core's
+  `sports_champion` badge. In the hall the shoe attendant NPC (`climbing_shoe_attendant`) opens all twelve boards
+  (`GET /api/sports/boards/climb_<line>`).
+- Tasks (badges only, see `docs/TASKS.md`): `routes_topped` 10 / 50 / 200 and `black_route` 1 / 10 / 30, each line counted
+  at most once a day (so at most 12 a day), for accounts 72 h old or more, from a recorded top: a free climb (solo
+  `sports_matches` row of that line) or a won speed duel. Decided 2026-11-14: climbing is solo by design, so it does not
+  use the core's `counts_for_tasks` rule (which never counts solo runs); the daily cap per line and the 72 h age stop
+  farming. After the record, the socket sends `POST /tasks/climb-topped { ref, line, colour }`; Laravel checks the match
+  is climbing, of that line or the duel, and that the account finished or won it.

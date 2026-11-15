@@ -7,6 +7,7 @@ import { internalRoutes } from './src/internal.ts'
 import { loadGymVenues } from './src/sports/gymVenues.ts'
 import { assertVenueZones, loadDanceVenue } from './src/sports/index.ts'
 import { loadAthleticsVenues } from './src/sports/athleticsVenues.ts'
+import { loadClimbing } from './src/sports/climbing.ts'
 import { loadAtms, loadMarketStalls, loadSportsPassDesk, loadWorld, loadZoneBuyers } from './src/world.ts'
 
 async function boot() {
@@ -19,6 +20,7 @@ async function boot() {
   await loadAthleticsVenues()
   await loadDanceVenue()
   assertVenueZones()
+  await loadClimbing()
   const gameServer = new Server({ transport: new WebSocketTransport() })
   gameServer.define('city', CityRoom)
   // extended with Colyseus' own matchmaking routes when it listens

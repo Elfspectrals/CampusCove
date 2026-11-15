@@ -40,6 +40,8 @@ Laravel owns every counter. A counter counts one real action, bumped by the serv
 | `sharpshooter_matches` | one gym basketball match in which the player scored 5 three-pointers or more | same route (`threes` >= 5) |
 | `songs_danced` | one finished dance song with a score above 0, for each dancer, in a match that counts for tasks (`counts_for_tasks`, `docs/sports/CORE.md` § 4) | `DanceService::recordRuns` (`POST /sports/dance/runs`, realtime) |
 | `full_combo_hard` | one full combo on hard, in a match that counts for tasks | `DanceService::recordRuns` |
+| `climb_lines_topped` | one climbing line topped (free climb or won speed duel), at most once per line and day (Paris), accounts 72 h old or more | socket `climbing.ts` after the climb or duel is recorded, then `POST /tasks/climb-topped` (realtime) `{ ref: the match ref, line: [a-z0-9_]{1,40}, colour: green \| blue \| red \| black }`; Laravel checks the match is climbing, of that line or `climbing_duel`, and that the account finished or won it |
+| `black_lines_topped` | one black line topped, at most once per line and day (Paris) | same call, colour `black` |
 
 ## Tiers
 
@@ -73,6 +75,8 @@ Every task lives in `App\Support\TaskCatalog`: a key, the counter it reads and i
 | `tennis_whitewash` | `tennis_whitewashes` | 1 / 5 / 15 |
 | `songs_danced` | `songs_danced` | 10 / 50 / 200 |
 | `full_combo_hard` | `full_combo_hard` | 1 / 10 / 50 |
+| `routes_topped` | `climb_lines_topped` | 10 / 50 / 200 |
+| `black_route` | `black_lines_topped` | 1 / 10 / 30 |
 
 ## Notification
 

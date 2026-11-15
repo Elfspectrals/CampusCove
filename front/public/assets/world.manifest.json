@@ -1352,6 +1352,46 @@
           ]
         }
       ]
+    },
+    {
+      "key": "sports_climbing",
+      "optional": true,
+      "bounds": {
+        "minX": -580,
+        "maxX": -543,
+        "minZ": -216,
+        "maxZ": -191
+      },
+      "modelUrl": "/assets/park/sports_climbing/sports_climbing.glb",
+      "sportsPass": true,
+      "buildings": [
+        {
+          "kind": "work",
+          "key": "sports_climbing",
+          "name": "Cove Climbing Hall",
+          "job": "sports",
+          "position": [
+            -561.5,
+            0,
+            -203.5
+          ],
+          "rotationY": 1.5708,
+          "door": [
+            -546,
+            1.25,
+            -203.5
+          ],
+          "footprint": [
+            19,
+            31
+          ],
+          "interiorOffset": [
+            0,
+            0.2,
+            10.095
+          ]
+        }
+      ]
     }
   ],
   "fountains": [

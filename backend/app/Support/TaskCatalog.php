@@ -35,6 +35,8 @@ final class TaskCatalog
             'tennis_whitewash' => ['counter' => ActionCounter::TennisWhitewashes, 'tiers' => [1, 5, 15]],
             'songs_danced' => ['counter' => ActionCounter::SongsDanced, 'tiers' => [10, 50, 200]],
             'full_combo_hard' => ['counter' => ActionCounter::FullComboHard, 'tiers' => [1, 10, 50]],
+            'routes_topped' => ['counter' => ActionCounter::ClimbLinesTopped, 'tiers' => [10, 50, 200]],
+            'black_route' => ['counter' => ActionCounter::BlackLinesTopped, 'tiers' => [1, 10, 30]],
         ];
     }
 

@@ -5,7 +5,7 @@ import {
   type CosmeticColors,
 } from '../../api/characterCosmetics'
 import { buildCompositeAvatar, disposeObject3D } from '../../avatar/compositeAvatar'
-import { type SportsMoveClip, type TennisStroke, playAvatarSportsMove, playAvatarTennisStroke, setAvatarDanceMove, setAvatarDancing, setAvatarDribbling, setAvatarEating, setAvatarPicking, setAvatarRacePose, setAvatarSeated, setAvatarStumbling, setAvatarTennis, updateAvatarAnimation, type RacePose } from '../../avatar/glbCharacter'
+import { playAvatarClimbMove, setAvatarClimbPose, type SportsMoveClip, type TennisStroke, playAvatarSportsMove, playAvatarTennisStroke, setAvatarDanceMove, setAvatarDancing, setAvatarDribbling, setAvatarEating, setAvatarPicking, setAvatarRacePose, setAvatarSeated, setAvatarStumbling, setAvatarTennis, updateAvatarAnimation, type RacePose, type AvatarClimbMove, type AvatarClimbPose } from '../../avatar/glbCharacter'
 import { parseCharacterLook, type CharacterLook } from '../../avatar/characterLook'
 import { createModularCharacter } from '../../avatar/modularCharacter'
 import { WEAR_SLOTS, wearSignature, type WearModels } from '../../avatar/modularCharacterLogic'
@@ -385,6 +385,13 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     if (entry) setAvatarRacePose(entry.group, pose)
   }
 
+  function setClimbAnimation(sessionId: string, pose: AvatarClimbPose, move: AvatarClimbMove | null) {
+    const entry = avatars.get(sessionId)
+    if (!entry) return
+    setAvatarClimbPose(entry.group, pose)
+    if (move) playAvatarClimbMove(entry.group, move)
+  }
+
   function setWantedStars(sessionId: string, stars: number): void {
     if (stars > 0) wantedStarsBySession.set(sessionId, stars)
     else wantedStarsBySession.delete(sessionId)
@@ -596,5 +603,5 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     }
   }
 
-  return { upsert, updateAppearance, setTarget, setSeated, setPicking, setRacePose, setTennis, tennisStroke, setDancing, danceMove, stumble, setHeldTool, setRacePint, setBadges, pseudoOf, positionOf, avatarOf, playSportsMove, setDribbling, setTopOverride, setVoiceState, setWantedStars, players, accountOf, showAction, showChat, showPunch, showHit, remove, clear, tick }
+  return { upsert, updateAppearance, setTarget, setSeated, setPicking, setRacePose, setClimbAnimation, setTennis, tennisStroke, setDancing, danceMove, stumble, setHeldTool, setRacePint, setBadges, pseudoOf, positionOf, avatarOf, playSportsMove, setDribbling, setTopOverride, setVoiceState, setWantedStars, players, accountOf, showAction, showChat, showPunch, showHit, remove, clear, tick }
 }

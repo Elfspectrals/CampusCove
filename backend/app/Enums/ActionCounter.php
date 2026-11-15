@@ -32,4 +32,6 @@ enum ActionCounter: string
     case TennisWhitewashes = 'tennis_whitewashes';
     case SongsDanced = 'songs_danced';
     case FullComboHard = 'full_combo_hard';
+    case ClimbLinesTopped = 'climb_lines_topped';
+    case BlackLinesTopped = 'black_lines_topped';
 }

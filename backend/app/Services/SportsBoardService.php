@@ -43,6 +43,18 @@ final class SportsBoardService
         'dance_night_sprint_normal_team' => ['sport' => 'dance', 'settings' => ['song' => 'night_sprint', 'difficulty' => 'normal', 'mode' => 'team'], 'metric' => 'score'],
         'dance_night_sprint_hard_solo' => ['sport' => 'dance', 'settings' => ['song' => 'night_sprint', 'difficulty' => 'hard', 'mode' => 'solo'], 'metric' => 'score'],
         'dance_night_sprint_hard_team' => ['sport' => 'dance', 'settings' => ['song' => 'night_sprint', 'difficulty' => 'hard', 'mode' => 'team'], 'metric' => 'score'],
+        'climb_route_1' => ['sport' => 'climbing', 'settings' => ['line' => 'route_1'], 'metric' => 'time'],
+        'climb_route_2' => ['sport' => 'climbing', 'settings' => ['line' => 'route_2'], 'metric' => 'time'],
+        'climb_speed_1' => ['sport' => 'climbing', 'settings' => ['line' => 'speed_1'], 'metric' => 'time'],
+        'climb_speed_2' => ['sport' => 'climbing', 'settings' => ['line' => 'speed_2'], 'metric' => 'time'],
+        'climb_route_3' => ['sport' => 'climbing', 'settings' => ['line' => 'route_3'], 'metric' => 'time'],
+        'climb_route_4' => ['sport' => 'climbing', 'settings' => ['line' => 'route_4'], 'metric' => 'time'],
+        'climb_boulder_1' => ['sport' => 'climbing', 'settings' => ['line' => 'boulder_1'], 'metric' => 'time'],
+        'climb_boulder_2' => ['sport' => 'climbing', 'settings' => ['line' => 'boulder_2'], 'metric' => 'time'],
+        'climb_boulder_3' => ['sport' => 'climbing', 'settings' => ['line' => 'boulder_3'], 'metric' => 'time'],
+        'climb_boulder_4' => ['sport' => 'climbing', 'settings' => ['line' => 'boulder_4'], 'metric' => 'time'],
+        'climb_boulder_5' => ['sport' => 'climbing', 'settings' => ['line' => 'boulder_5'], 'metric' => 'time'],
+        'climb_boulder_6' => ['sport' => 'climbing', 'settings' => ['line' => 'boulder_6'], 'metric' => 'time'],
     ];
 
     public static function week(CarbonImmutable $at): string
