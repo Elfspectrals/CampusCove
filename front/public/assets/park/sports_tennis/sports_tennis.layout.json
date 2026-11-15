@@ -293,6 +293,86 @@
       "hy": 0.45,
       "cy": 0.45,
       "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsTennis_ZD_sports_tennis_racket_01_0",
+      "cx": -443.88,
+      "cy": 0.84,
+      "cz": -263.467,
+      "hx": 0.15,
+      "hy": 0.34,
+      "hz": 0.05,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsTennis_ZD_sports_tennis_racket_02_0",
+      "cx": -443.12,
+      "cy": 0.84,
+      "cz": -279.533,
+      "hx": 0.15,
+      "hy": 0.34,
+      "hz": 0.05,
+      "yaw": 3.1416
+    },
+    {
+      "name": "COL_SportsTennis_ZD_sports_tennis_ball_basket_1_0",
+      "cx": -444.7,
+      "cy": 0.536,
+      "cz": -266.0,
+      "hx": 0.25,
+      "hy": 0.457,
+      "hz": 0.25,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsTennis_ZD_sports_tennis_ball_basket_1_1",
+      "cx": -444.65,
+      "cy": 0.536,
+      "cz": -266.0,
+      "hx": 0.3,
+      "hy": 0.457,
+      "hz": 0.05,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsTennis_ZD_sports_tennis_ball_basket_1_2",
+      "cx": -444.7,
+      "cy": 0.535,
+      "cz": -265.95,
+      "hx": 0.05,
+      "hy": 0.455,
+      "hz": 0.3,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsTennis_ZD_sports_tennis_ball_basket_2_0",
+      "cx": -442.3,
+      "cy": 0.536,
+      "cz": -266.0,
+      "hx": 0.25,
+      "hy": 0.457,
+      "hz": 0.25,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsTennis_ZD_sports_tennis_ball_basket_2_1",
+      "cx": -442.25,
+      "cy": 0.536,
+      "cz": -266.0,
+      "hx": 0.3,
+      "hy": 0.457,
+      "hz": 0.05,
+      "yaw": 0.0
+    },
+    {
+      "name": "COL_SportsTennis_ZD_sports_tennis_ball_basket_2_2",
+      "cx": -442.3,
+      "cy": 0.535,
+      "cz": -265.95,
+      "hx": 0.05,
+      "hy": 0.455,
+      "hz": 0.3,
+      "yaw": 0.0
     }
   ]
 }

@@ -1012,6 +1012,7 @@ watch(() => selectedItem.value?.code ?? null, () => arms?.equip())
 /** Model shown in the right hand: tools and food (a half-eaten item is drawn smaller). */
 const FIRST_PERSON_TOOL_SCALE = 0.6
 const TENNIS_RACKET_URL = '/assets/decor/tennis_racket/model.glb'
+const TENNIS_RACKET_GRIP = 0.12
 
 function holdingJobTool(): boolean {
   return heldTool.code.value !== null && heldTool.code.value === selectedItem.value?.code
@@ -1617,9 +1618,9 @@ const movement = useGameMovement({
     houseKeys.updateKeyPrompt()
     updateFrontDoors(dt, isBuildingDoorOpen)
     arms?.update(dt, myPosition)
-    const held = tennis.holdingRacket() ? { url: TENNIS_RACKET_URL, scale: FIRST_PERSON_TOOL_SCALE } : heldModel()
+    const held = tennis.holdingRacket() ? { url: TENNIS_RACKET_URL, scale: FIRST_PERSON_TOOL_SCALE, grip: TENNIS_RACKET_GRIP } : heldModel()
     arms?.setHolding(holdingJobTool() || tennis.holdingRacket())
-    heldItem.update(arms?.rightHand() ?? null, held.url, held.scale)
+    heldItem.update(arms?.rightHand() ?? null, held.url, held.scale, 'grip' in held ? held.grip : undefined)
     survival.tick(dt)
     stamina.value = punch.staminaNow()
     for (const { store } of furnitureStores) store.updatePrompt()

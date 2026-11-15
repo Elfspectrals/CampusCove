@@ -13,12 +13,12 @@ export function createHeldItem() {
   let shown: THREE.Object3D | null = null
   let scale = 1
 
-  function load(url: string): Promise<THREE.Object3D> {
+  function load(url: string, grip: number): Promise<THREE.Object3D> {
     let model = models.get(url)
     if (!model) {
       model = loader.loadAsync(url).then((gltf) => {
         const box = new THREE.Box3().setFromObject(gltf.scene)
-        gltf.scene.position.y = -(box.min.y + GRIP_HEIGHT * (box.max.y - box.min.y))
+        gltf.scene.position.y = -(box.min.y + grip * (box.max.y - box.min.y))
         const held = new THREE.Group()
         held.add(gltf.scene)
         held.position.copy(HELD_ITEM_GRIP)
@@ -31,7 +31,7 @@ export function createHeldItem() {
   }
 
   /** `nextScale` shrinks a half-eaten food item (portions left / portions). */
-  function update(nextHands: THREE.Object3D | null, nextModelUrl: string | null, nextScale = 1): void {
+  function update(nextHands: THREE.Object3D | null, nextModelUrl: string | null, nextScale = 1, grip = GRIP_HEIGHT): void {
     if (nextScale !== scale) {
       scale = nextScale
       shown?.scale.setScalar(HELD_ITEM_SCALE * scale)
@@ -44,7 +44,7 @@ export function createHeldItem() {
     if (!hands || !modelUrl) return
     const wantedHands = hands
     const wantedUrl = modelUrl
-    load(wantedUrl)
+    load(wantedUrl, grip)
       .then((model) => {
         if (hands !== wantedHands || modelUrl !== wantedUrl) return
         model.scale.setScalar(HELD_ITEM_SCALE * scale)

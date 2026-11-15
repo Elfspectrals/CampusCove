@@ -211,7 +211,7 @@ def stand(name, cx, fence_z, away):
         z0 = fence_z + away * (STAND_GAP + STAND_DEPTH * k)
         zc = z0 + away * STAND_DEPTH / 2
         h = STAND_RISE * (k + 1)
-        site.add(L.box(coll, f"{name}_Step{k}", cx, zc, Y["paving"], STAND_LEN, STAND_DEPTH, h - Y["paving"], M["stand"], tile=2.0))
+        site.add(L.box(coll, f"{name}_Step{k}", cx, zc, 0.0, STAND_LEN, STAND_DEPTH, h, M["stand"], tile=2.0))
         site.add(L.box(coll, f"{name}_Seat{k}", cx, zc - away * 0.1, h, STAND_LEN - 0.4, 0.4, 0.04, M["seat"]))
         site.col(f"{name.replace('ST_', '')}Step{k}", cx, zc, STAND_LEN, STAND_DEPTH, h)
 
@@ -219,6 +219,11 @@ def stand(name, cx, fence_z, away):
 for i, cx in enumerate(COURT_CX):
     stand(f"ST_StandN{i + 1}", cx, FENCE[2], -1)
     stand(f"ST_StandS{i + 1}", cx, FENCE[3], 1)
+
+decor_objs, decor_cols, _ = L.zone_decor(coll, KEY, "COL_SportsTennis_")
+for o in decor_objs:
+    site.add(o)
+site.cols += decor_cols
 
 for c in site.cols:
     assert FP[0] <= c["cx"] - c["hx"] and c["cx"] + c["hx"] <= FP[1] and FP[2] <= c["cz"] - c["hz"] and c["cz"] + c["hz"] <= FP[3], c
