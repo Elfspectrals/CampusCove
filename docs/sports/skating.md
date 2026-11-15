@@ -7,7 +7,7 @@ Indoor ice rink, 60 × 30 m with stands. Free skating and timed races. Shared ru
 - Sliding movement with inertia: the skater keeps speed, turns wide, brakes on purpose.
 - **Races**: laps of an oval marked by cones; the first player chooses **1, 3 or 5 laps**, 1 to 8 skaters. Cutting inside a cone adds a **2 s penalty**.
 - Skaters push each other on contact; a crash at full speed makes both fall for 1.5 s. Hitting the boards too fast is a fall too.
-- **Hockey later**: goals and lines are drawn on the ice for a future hockey game, not playable now.
+- **Hockey later**: lines are drawn on the ice for a future hockey game, not playable now. What it will need: [hockey.md](hockey.md).
 
 ## Controls
 
@@ -78,6 +78,7 @@ which the Blender build (`build_sports_ice_rink.py`), the socket and the front a
 | Glide friction / brake (Space) | 0.5 / 7 m/s² |
 | Top speed | 9 m/s; the socket's move check allows 9 × 1.25 on the ice with skates |
 | Turn rate (follows the camera) | 3.2 rad/s standing, 0.9 rad/s at top speed; side keys turn 1.6 rad/s |
+| Grip (the travel direction catches up with the facing) | 8 rad/s standing, 2.2 rad/s at top speed |
 
 - Stepping on the ice without `gear_ice_skates` in the inventory is refused (`position_correction`, reason
   `no_skates`). Ownership is read from Laravel (`GET /api/sports/gear`) each time the player enters the venue zone,
@@ -91,6 +92,30 @@ which the Blender build (`build_sports_ice_rink.py`), the socket and the front a
   1 m apart and lose 30 % of their speed (`skate_bump`, at most one per 600 ms). Moving towards a board at 6.5 m/s or
   more within 0.6 m of it is a fall too. A fallen skater's moves are refused (`skate_fallen`). The front predicts the
   board fall when its collision stops a fast skater.
+
+### Ice feel and balance (decided 2026-11-15)
+
+Skating should feel like real ice: you glide on your momentum, you carve wide at speed, and a skater who skates badly
+falls.
+
+- **Glide**: low friction (0.5 m/s²): a skater who stops pushing keeps sliding for many metres. Speed only comes from
+  pushes in the rhythm.
+- **Carving**: the facing follows the camera at the turn rate, and the travel direction follows the facing at the grip
+  rate. At speed the grip is weak, so a sharp turn first slides the old way before the blades bite (front only: it
+  shapes the path, the socket judges the path it receives).
+- **Balance** (0 to 1, owned by the socket, `tickSkating` every 100 ms, numbers in `skating.json` `balance`):
+  - lateral acceleration = replayed speed × turn rate of the travel direction measured from the accepted positions
+    (moves under 0.15 m keep the last direction); above 6 m/s² it drains 0.1 per m/s² over the limit per second (an
+    honest skater at top speed in the sharpest turn reaches about 8 m/s²: a long hard carve at full speed is a fall, a
+    modified client that turns on the spot falls at once);
+  - braking while faster than 6 m/s drains 0.45 per second (a full stop from top speed costs about 0.2);
+  - a push too early costs 0.15, a bump costs 0.3;
+  - otherwise it comes back at 0.25 per second, up to 1;
+  - at 0 the skater falls (the 1.5 s fall of a crash), and balance is full again after the fall.
+- The socket sends `skate_balance { value }` to the skater when it moves by 0.05 or more and when it reaches 0 or 1. The
+  HUD shows it as a bar, and the camera wobbles more as it gets low.
+- **Lean**: the skater leans into the carve, `atan(speed × turn rate / 9.81)`, at most 20°: the camera rolls by half of
+  it (scaled by the comfort setting "reduce camera motion"), and other players see the body roll around the feet.
 
 ### Race
 
@@ -108,6 +133,7 @@ ice, the venue or the game is a did-not-finish. Time limit 60 s + 40 s per lap. 
 | `skate_race` | server → players in the venue and racers | `{ venue, phase: 'countdown' \| 'racing', laps, goAt, serverNow, racers: [{ sessionId, name, lap, penaltyMs, finishedMs: number \| null, dnf }] }`, at kick-off, at the start and on each change |
 | `skate_fall` | server → same | `{ sessionId, until, serverNow }` |
 | `skate_bump` | server → the pushed skater | `{ sessionId, dirX, dirZ, distance, serverNow }` (the front applies it as a knockback) |
+| `skate_balance` | server → the skater | `{ value: 0..1 }` (2 decimals) |
 | `skate_move` | server → the other players in the venue | `{ sessionId, move: 'push' \| 'brake' \| 'stumble' }`: a push (`stumble` when it came too early), a brake above 1 m/s, or a bump; drives the other players' avatar clips |
 | `skate_result` | server → same | `{ venue, laps, results: [{ sessionId, name, place: number \| null, timeMs: number \| null, penaltyMs, dnf }] }` |
 
@@ -124,5 +150,4 @@ ice, the venue or the game is a did-not-finish. Time limit 60 s + 40 s per lap. 
 - Sounds (`build_skating_sfx.py`, Earshot bank): `skate_push`, `skate_brake`, `skate_fall`, `skate_bump`,
   `skate_start`.
 - Stands: one walkable level per tier (`interior.layout.json` `levels`), a 2 m aisle through the seat rows. Sitting
-  is not built on purpose (decided 2026-11-14): the seat system belongs to the pub (socket `pub.ts`, front seats) and
-  sharing it is a change of its own; spectators stand on the tiers.
+  in the stands is dropped (decided by the user 2026-11-15): spectators stand on the tiers.
