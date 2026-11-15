@@ -46,7 +46,7 @@ test('the rules file says what the socket plays', () => {
   assert.deepEqual(RULES.ball, { radiusM: C.BALL_RADIUS, restitution: C.RESTITUTION, bounceKeep: C.BOUNCE_KEEP, drag: 0, gravity: C.GRAVITY })
   assert.deepEqual([RULES.hit.windowMs, RULES.hit.reachM, RULES.hit.sweetSpotM, RULES.hit.maxHeightM, RULES.hit.missM], [C.HIT_ALLOWANCE_MS, C.REACH_M, C.SWEET_M, C.HIT_MAX_HEIGHT, C.MISS_M])
   assert.deepEqual([RULES.hit.swingAheadMs, RULES.hit.perfectTimingMs, RULES.hit.timingFloor, RULES.hit.netClearM, RULES.serve.floor], [C.SWING_AHEAD_MS, C.TIMING_PERFECT_MS, C.TIMING_FLOOR, C.NET_CLEAR_M, C.SERVE_FLOOR])
-  assert.deepEqual([RULES.hit.smashTimingMs, RULES.hit.smashSpeedMs, RULES.serve.reachM], [C.TIMING_SMASH_MS, C.SMASH_SPEED, C.SERVE_REACH_M])
+  assert.deepEqual([RULES.hit.chargeMs, RULES.hit.smashSpeedMs, RULES.serve.reachM], [C.CHARGE_MS, C.SMASH_SPEED, C.SERVE_REACH_M])
   assert.deepEqual([RULES.hit.cooldownMs, RULES.hit.whiffRecoveryMs], [C.TENNIS_HIT_COOLDOWN_MS, C.TENNIS_WHIFF_RECOVERY_MS])
   assert.deepEqual([RULES.hit.driveSpeedMs, RULES.lob.speedMs, RULES.serve.speedMs], [C.DRIVE_SPEED, C.LOB_SPEED, C.SERVE_SPEED])
   assert.deepEqual([RULES.serve.tossStartY, RULES.serve.tossSpeedMs, RULES.serve.windowMs, RULES.serve.autoTossAfterMs], [C.TOSS_START_Y, C.TOSS_SPEED, C.SERVE_WINDOW_MS, C.SERVE_WAIT_MS])

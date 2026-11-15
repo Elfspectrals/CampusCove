@@ -90,10 +90,7 @@
     ],
     "timingFloor": 0.5,
     "netClearM": 0.35,
-    "smashTimingMs": [
-      0,
-      100
-    ],
+    "chargeMs": 600,
     "smashSpeedMs": 25,
     "cooldownMs": 400,
     "whiffRecoveryMs": 700

@@ -5,7 +5,7 @@ import { usableGear } from './gear.ts'
 import { hasLoan, lend } from './loans.ts'
 import { hasValidPass } from './pass.ts'
 import type { Team } from './signup.ts'
-import { type Court, type Rally, type Stroke, hit, playAreaFor, serveWait, step, strokeOf } from './tennisRally.ts'
+import { type Court, type Rally, type Stroke, hit, playAreaFor, serveWait, step, strokeOf, trackReady } from './tennisRally.ts'
 import {
   BALL_BASKETS,
   BALL_BASKET_REACH,
@@ -102,7 +102,7 @@ export function freeHit(room: GameRoom, player: Player, aim: { x: number, z: num
   const geometry = { cx: court.cx, netZ: TENNIS_NET_Z, halfWidth: DOUBLES_HALF_WIDTH }
   const rally = !current || current.rally.phase === 'point' ? serveWait(player.sessionId, team, now) : current.rally
   const hitter = { sessionId: player.sessionId, team, x: player.x, z: player.z }
-  const next = hit(rally, hitter, aim, lob, now, geometry)
+  const next = hit(rally, hitter, aim, lob, now, geometry, trackReady(player, rally, geometry, hitter, now))
   if (!next) return
   rallies.set(court.id, { court: court.id, geometry, rally: next })
   broadcastFree(room, court.id, now)
@@ -117,6 +117,9 @@ function tickFreeCourt(room: GameRoom, court: string, now: number): void {
     return
   }
   const next = step(free.rally, now, free.geometry, (sessionId) => room.players.get(sessionId) ?? null)
+  for (const player of room.players.values()) {
+    if (courtAt(player.x, player.z)?.id === court) trackReady(player, next, free.geometry, { sessionId: player.sessionId, team: sideOf(player.z), x: player.x, z: player.z }, now)
+  }
   if (next === free.rally) return
   free.rally = next
   broadcastFree(room, court, now)

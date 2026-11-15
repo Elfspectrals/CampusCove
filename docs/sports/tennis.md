@@ -103,14 +103,10 @@ impossible. Reworked on the model of Wii Sports Tennis (automatic positioning, t
   the court lines (`position_correction`, reason `tennis_serve`). The front locks their movement while they serve (match:
   from the serve wait to the hit; free play: during their own toss, `tennis_free.server`). The socket only accepts the
   serve hit from a server within 1.0 m of the tossed ball: a server who walked away from the toss could still hit it.
-- **Smash**: a fifth timing. A drive struck from 0 to 100 ms after the click, with a quality of 0.85 or more (ball within
-  0.95 m), leaves at 25 m/s whatever the quality range of a drive (11 to 19 m/s). Examples: click 50 ms before a ball at
-  0.3 m: smash; 101 ms before: perfect; 50 ms before a ball at 1.0 m: good; a lob is never a smash.
+- **Smash**: a fifth timing, earned by being early (second review, 2026-11-15, on the model of the star of Mario Tennis; it was a click in a 100 ms window before). A player is *in position* when the incoming ball will pass within 0.8 m of them at a height they can hit (2.8 m at most), on their half. Standing in position for 0.6 s without a break charges the shot (`chargeMs`, `trackReady` in `tennisRally.ts`, followed on each sports tick and at the click); stepping out, a new ball or their own shot starts the charge again. A charged drive struck in the perfect window (60 ms late to 200 ms early) with a quality of 0.85 or more leaves at 25 m/s. Examples: in position for 600 ms, click 50 ms before the ball: smash; in position for 599 ms: perfect; charged but 201 ms early: early; out and back 300 ms before the click: perfect; a lob is never a smash.
 - **A swing at nothing** (decided 2026-11-15, under the "Emergent gameplay" rule): clicking in bursts returned the ball about 6 times in 10 without reading the ring. A click that finds no ball to strike while the ball is coming now costs 700 ms before the next click instead of 400 ms, in a match. Free play keeps 400 ms.
-- **Swing ring**: a ring on the ground around the player, from 900 ms before the ball passes closest, shrinking from
-  2.4 m to 0.6 m as it comes. Its colour is what a click now would give: red a miss (more than 350 ms early, more than
-  150 ms late, or out of reach), orange a weak shot, green a good one, purple a smash. Purple rather than yellow: yellow
-  is the aim target. Front only (`swingRing`, `swingTone`), from the same constants as the socket.
+- **Mark on the court**: as soon as the other side hits, a disc of 0.8 m is drawn where the player should stand for that ball (`interceptSpot`, the spot the auto-run goes to); a star 1.5 times wider for a high ball (apex of 4 m or more). It is pale yellow, turquoise once the player is in position, and a white disc grows inside it while the charge builds, purple when it is full. The front shows its own estimate (`inPlace`, `chargeFill`, the same numbers as the socket); the socket decides.
+- **Swing ring**: a ring on the ground around that mark (around the player when there is no mark), from 900 ms before the ball passes closest, shrinking from 2.4 m to 0.6 m as it comes. Its colour is what a click now would give: red a miss (more than 350 ms early, more than 150 ms late, or out of reach), orange a weak shot, green a good one, purple a smash (charged). Purple rather than yellow: yellow is the aim target. Front only (`swingRing`, `swingTone`), from the same constants as the socket; a ball passing higher than 2.8 m over the player no longer counts as a pass.
 
 ## Contract
 

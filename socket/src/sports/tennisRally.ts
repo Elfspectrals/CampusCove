@@ -5,6 +5,7 @@ import {
   AIM_OUT_MARGIN,
   BALL_RADIUS,
   BOUNCE_KEEP,
+  CHARGE_MS,
   CLEAR_QUALITY,
   COURT_HALF_LENGTH,
   DOUBLES_HALF_WIDTH,
@@ -36,7 +37,6 @@ import {
   SWING_AHEAD_MS,
   TIMING_FLOOR,
   TIMING_PERFECT_MS,
-  TIMING_SMASH_MS,
   TOSS_FALL_MS,
   TOSS_SPEED,
   TOSS_START_Y
@@ -259,14 +259,14 @@ export function timingFactor(offsetMs: number): number {
   return 1
 }
 
-export function timingOf(offsetMs: number, quality: number): Timing {
+export function timingOf(offsetMs: number, quality: number, charged: boolean): Timing {
   if (offsetMs > TIMING_PERFECT_MS[1]) return 'early'
   if (offsetMs < TIMING_PERFECT_MS[0]) return 'late'
   if (quality < PERFECT_QUALITY) return 'good'
-  return offsetMs >= TIMING_SMASH_MS[0] && offsetMs <= TIMING_SMASH_MS[1] ? 'smash' : 'perfect'
+  return charged ? 'smash' : 'perfect'
 }
 
-function plannedContact(flight: Flight, court: Court, hitter: Hitter, now: number): { t: number, d: number, x: number } | null {
+function nearestContact(flight: Flight, court: Court, hitter: Hitter, now: number): { t: number, d: number, x: number } | null {
   let best: { t: number, d: number, x: number } | null = null
   let ball = flight.ball
   let dies = flight.netAt ?? Infinity
@@ -284,10 +284,36 @@ function plannedContact(flight: Flight, court: Court, hitter: Hitter, now: numbe
     ball = bounce(ball, landing)
     dies = Infinity
   }
-  return best && best.t <= now + SWING_AHEAD_MS ? best : null
+  return best
 }
 
-export function hit(rally: Rally, hitter: Hitter, aim: Aim, lob: boolean, now: number, court: Court): Rally | null {
+function plannedContact(flight: Flight, court: Court, hitter: Hitter, now: number): { t: number, d: number, x: number } | null {
+  const contact = nearestContact(flight, court, hitter, now)
+  return contact && contact.t <= now + SWING_AHEAD_MS ? contact : null
+}
+
+export function inPosition(rally: Rally, court: Court, hitter: Hitter, now: number): boolean {
+  if (rally.phase !== 'flight' || rally.hitter === hitter.team || rally.swing) return false
+  const contact = nearestContact(rally, court, hitter, now)
+  return contact !== null && contact.d <= SWEET_M
+}
+
+const readyOf = new WeakMap<object, { shot: Shot | null, since: number }>()
+
+export function trackReady(who: object, rally: Rally, court: Court, hitter: Hitter, now: number): boolean {
+  if (rally.phase !== 'flight' || !inPosition(rally, court, hitter, now)) {
+    readyOf.delete(who)
+    return false
+  }
+  const ready = readyOf.get(who)
+  if (!ready || ready.shot !== rally.shot) {
+    readyOf.set(who, { shot: rally.shot, since: now })
+    return false
+  }
+  return now - ready.since >= CHARGE_MS
+}
+
+export function hit(rally: Rally, hitter: Hitter, aim: Aim, lob: boolean, now: number, court: Court, charged = false): Rally | null {
   if (!onHalf(court, hitter.team, hitter.z, OWN_HALF_TOLERANCE)) return null
   if (rally.phase === 'serve_wait') {
     if (hitter.sessionId !== rally.server) return null
@@ -303,7 +329,7 @@ export function hit(rally: Rally, hitter: Hitter, aim: Aim, lob: boolean, now: n
   const contact = plannedContact(rally, court, hitter, now)
   if (!contact) return null
   const quality = contactQuality(contact.d) * timingFactor(contact.t - now)
-  const swing: Swing = { sessionId: hitter.sessionId, team: hitter.team, at: contact.t, contactX: contact.x, aim, lob, quality, timing: timingOf(contact.t - now, quality) }
+  const swing: Swing = { sessionId: hitter.sessionId, team: hitter.team, at: contact.t, contactX: contact.x, aim, lob, quality, timing: timingOf(contact.t - now, quality, charged) }
   return step({ ...rally, swing }, now, court, () => null)
 }
 

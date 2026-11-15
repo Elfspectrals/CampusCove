@@ -1,7 +1,7 @@
 import type { ClientPayload, GameClient, GameRoom } from '../types.ts'
 import { worldSportsPassArea } from '../world.ts'
 import { type Match, type MatchPlayer, type SettingSpec, type Settings, type Team, activePlayers, matchPlayer } from './signup.ts'
-import { type Court, type Rally, hit, playAreaFor, serveWait, sideSign, step, strokeOf } from './tennisRally.ts'
+import { type Court, type Rally, hit, playAreaFor, serveWait, sideSign, step, strokeOf, trackReady } from './tennisRally.ts'
 import {
   BASELINE_STANDBY_M,
   COURT_HALF_LENGTH,
@@ -167,6 +167,10 @@ export function runTennis(room: GameRoom, match: Match, now: number): void {
     return
   }
   const next = step(game.rally, now, game.court, where)
+  for (const mp of match.players) {
+    const player = room.players.get(mp.sessionId)
+    if (player && !mp.out && mp.team !== null) trackReady(player, next, game.court, { sessionId: mp.sessionId, team: mp.team, x: player.x, z: player.z }, now)
+  }
   if (next === game.rally) return
   game.rally = next
   if (next.phase === 'point') score(game, next.winner)
@@ -191,7 +195,7 @@ export function onTennisHit(room: GameRoom, client: GameClient, payload: ClientP
     if (roomGames(room).get(venue) !== game) return
     const hitter = { sessionId: player.sessionId, team: mp.team, x: player.x, z: player.z }
     const before = game.rally
-    const next = hit(before, hitter, { x: payload.aimX, z: payload.aimZ }, payload.lob === true, now, game.court)
+    const next = hit(before, hitter, { x: payload.aimX, z: payload.aimZ }, payload.lob === true, now, game.court, trackReady(player, before, game.court, hitter, now))
     if (!next) {
       if (before.phase === 'flight' && before.hitter !== mp.team && !before.swing) game.lastHitAt.set(player.accountId, now + TENNIS_WHIFF_RECOVERY_MS - TENNIS_HIT_COOLDOWN_MS)
       return

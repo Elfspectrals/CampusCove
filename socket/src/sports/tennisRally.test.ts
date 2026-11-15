@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { COURT_HALF_LENGTH, POINT_PAUSE_MS, REACH_M, SERVE_WAIT_MS, SERVE_WINDOW_MS, SINGLES_HALF_WIDTH, SMASH_SPEED, TOSS_FALL_MS } from './tennisConstants.ts'
-import { type Court, type Rally, ballAt, strokeOf, contactQuality, groundTime, hit, landsIn, serveWait, shoot, step, timingFactor, timingOf, tossBall, tossPeak } from './tennisRally.ts'
+import { type Court, type Rally, ballAt, strokeOf, contactQuality, groundTime, hit, inPosition, landsIn, serveWait, shoot, step, timingFactor, timingOf, tossBall, tossPeak, trackReady } from './tennisRally.ts'
 
 const COURT: Court = { cx: 0, netZ: 0, halfWidth: SINGLES_HALF_WIDTH }
 const T0 = 1_000_000
@@ -104,8 +104,11 @@ test('the receiver returns the ball when it is within reach on their half, the t
   assert.equal(back.bounces, 0)
   const landing = ballAt(back.ball, groundTime(back.ball))
   assert.ok(Math.abs(landing.z + 9) < 1e-6)
-  assert.equal(back.shot?.timing, 'smash')
-  assert.ok(Math.abs(Math.hypot(back.ball.vx, back.ball.vz) - SMASH_SPEED) < 1e-6)
+  assert.equal(back.shot?.timing, 'perfect')
+  assert.ok(Math.hypot(back.ball.vx, back.ball.vz) < 19 + 1e-6)
+  const charged = flight(hit(bounced, receiver, { x: 0, z: -9 }, false, t, COURT, true))
+  assert.equal(charged.shot?.timing, 'smash')
+  assert.ok(Math.abs(Math.hypot(charged.ball.vx, charged.ball.vz) - SMASH_SPEED) < 1e-6)
   const ahead = flight(step(flight(hit(bounced, receiver, { x: 0, z: -9 }, false, t - 150, COURT)), t + 20, COURT, nowhere))
   assert.equal(ahead.shot?.timing, 'perfect')
   assert.ok(Math.hypot(ahead.ball.vx, ahead.ball.vz) < 19 + 1e-6)
@@ -149,19 +152,48 @@ test('a click up to 350 ms before the ball passes closest commits the swing, whi
   assert.equal(hit(bounced, receiver, { x: 0, z: -9 }, false, contactAt - 360, COURT), null)
 })
 
-test('the timing keeps the full quality from 60 ms late to 200 ms early and halves it at the edges; a clean hit up to 100 ms early is a smash', () => {
+test('the timing keeps the full quality from 60 ms late to 200 ms early and halves it at the edges; a clean hit in that window is a smash only when charged', () => {
   for (const [offset, factor] of [[0, 1], [200, 1], [275, 0.75], [350, 0.5], [-60, 1], [-105, 0.75], [-150, 0.5]] as const) {
     assert.ok(Math.abs(timingFactor(offset) - factor) < 1e-9, `${offset} ms gives ${timingFactor(offset)}`)
   }
-  assert.equal(timingOf(300, 1), 'early')
-  assert.equal(timingOf(-100, 1), 'late')
-  assert.equal(timingOf(150, 0.9), 'perfect')
-  assert.equal(timingOf(-30, 0.9), 'perfect')
-  assert.equal(timingOf(0, 0.6), 'good')
-  assert.equal(timingOf(0, 0.9), 'smash')
-  assert.equal(timingOf(100, 0.9), 'smash')
-  assert.equal(timingOf(101, 0.9), 'perfect')
-  assert.equal(timingOf(50, 0.84), 'good')
+  assert.equal(timingOf(300, 1, false), 'early')
+  assert.equal(timingOf(-100, 1, false), 'late')
+  assert.equal(timingOf(150, 0.9, false), 'perfect')
+  assert.equal(timingOf(-30, 0.9, false), 'perfect')
+  assert.equal(timingOf(0, 0.6, false), 'good')
+  assert.equal(timingOf(0, 0.9, false), 'perfect')
+  assert.equal(timingOf(0, 0.9, true), 'smash')
+  assert.equal(timingOf(200, 0.9, true), 'smash')
+  assert.equal(timingOf(-60, 0.9, true), 'smash')
+  assert.equal(timingOf(201, 1, true), 'early')
+  assert.equal(timingOf(-61, 1, true), 'late')
+  assert.equal(timingOf(50, 0.84, true), 'good')
+})
+
+test('a receiver is charged after standing 0.6 s where the ball comes; stepping out, a new ball or their own shot starts again', () => {
+  const ball = served({ x: 0, z: 8 })
+  const bounced = flight(step(ball, groundTime(ball.ball) + 1, COURT, nowhere))
+  const contactAt = bounced.ball.t + 300
+  const at = ballAt(bounced.ball, contactAt)
+  const inPlace = { ...RED_RECEIVER, x: at.x + 0.3, z: at.z }
+  const away = { ...RED_RECEIVER, x: at.x + 2.0, z: at.z }
+  const who = {}
+  const start = contactAt - 1100
+  assert.equal(inPosition(ball, COURT, inPlace, start), true)
+  assert.equal(inPosition(ball, COURT, { ...inPlace, x: at.x + 0.8 }, start), true)
+  assert.equal(inPosition(ball, COURT, { ...inPlace, x: at.x + 0.81 }, start), false)
+  assert.equal(inPosition(ball, COURT, { ...inPlace, team: 'blue' }, start), false)
+  assert.equal(trackReady(who, ball, COURT, inPlace, start), false)
+  assert.equal(trackReady(who, ball, COURT, inPlace, start + 599), false)
+  assert.equal(trackReady(who, ball, COURT, inPlace, start + 600), true)
+  assert.equal(trackReady(who, bounced, COURT, inPlace, start + 1050), true)
+  assert.equal(trackReady(who, bounced, COURT, away, start + 1060), false)
+  assert.equal(trackReady(who, bounced, COURT, inPlace, start + 1070), false)
+  const other = {}
+  assert.equal(trackReady(other, ball, COURT, inPlace, start), false)
+  const next = { ...ball, shot: { sessionId: 'b', timing: 'good' as const } }
+  assert.equal(trackReady(other, next, COURT, inPlace, start + 1000), false)
+  assert.equal(trackReady(other, serveWait('b', 'blue', T0), COURT, inPlace, start + 2000), false)
 })
 
 test('a lob flies higher and slower than a drive to the same spot', () => {

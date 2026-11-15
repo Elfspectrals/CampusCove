@@ -13,11 +13,15 @@ import {
   TENNIS_DOUBLES_HALF_WIDTH,
   TENNIS_HALF_LENGTH,
   TENNIS_NET_Z,
+  TENNIS_SWEET_M,
   aimMoved,
   ballComing,
   ballPosition,
   defaultAim,
   freeCourtAt,
+  chargeFill,
+  highBall,
+  inPlace,
   interceptSpot,
   iServe,
   landingSpot,
@@ -62,6 +66,16 @@ const TIMING_SHOWN_MS = 900
 const SWING_RING_COLOURS: Record<SwingTone, number> = { miss: 0xe0483c, weak: 0xf29a2e, good: 0x4cc46a, smash: 0xa45cf0 }
 const SWING_RING_Y = 0.11
 const SWING_RING_INNER_SHARE = 0.9
+const STAND_MARK_Y = 0.105
+const STAND_MARK_COLOUR = 0xffe9a8
+const STAND_MARK_READY_COLOUR = 0x2fd6c4
+const STAND_MARK_OPACITY = 0.45
+const CHARGE_Y = 0.108
+const CHARGE_COLOUR = 0xffffff
+const CHARGE_SHARE = 0.6
+const STAR_POINTS = 5
+const STAR_INNER_SHARE = 0.45
+const STAR_SCALE = 1.5
 
 export interface TennisHud {
   games: Record<TennisTeam, number>
@@ -126,6 +140,26 @@ function newGroundRing(color: number, radius: number, opacity: number, innerShar
   return mesh
 }
 
+function starShape(): THREE.Shape {
+  const shape = new THREE.Shape()
+  for (let i = 0; i < STAR_POINTS * 2; i += 1) {
+    const radius = i % 2 === 0 ? 1 : STAR_INNER_SHARE
+    const angle = (i * Math.PI) / STAR_POINTS
+    const x = Math.sin(angle) * radius
+    const y = Math.cos(angle) * radius
+    if (i === 0) shape.moveTo(x, y)
+    else shape.lineTo(x, y)
+  }
+  shape.closePath()
+  return shape
+}
+
+function newGroundShape(geometry: THREE.BufferGeometry, color: number, opacity: number): THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial> {
+  const mesh = new THREE.Mesh(geometry.rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color, transparent: true, opacity, depthWrite: false }))
+  mesh.visible = false
+  return mesh
+}
+
 function newShadowMesh(): THREE.Mesh {
   const mesh = new THREE.Mesh(
     new THREE.CircleGeometry(SHADOW_RADIUS_M, 14).rotateX(-Math.PI / 2),
@@ -160,6 +194,12 @@ export function useTennis(deps: TennisDeps) {
   const aimRing = newGroundRing(AIM_COLOR, AIM_RADIUS_M, 0.9)
   const landingRing = newGroundRing(LANDING_COLOR, LANDING_RADIUS_M, 0.7)
   const swingRingMesh = newGroundRing(SWING_RING_COLOURS.miss, 1, 0.95, SWING_RING_INNER_SHARE)
+  const standDisc = newGroundShape(new THREE.CircleGeometry(1, 40), STAND_MARK_COLOUR, STAND_MARK_OPACITY)
+  const standStar = newGroundShape(new THREE.ShapeGeometry(starShape()), STAND_MARK_COLOUR, STAND_MARK_OPACITY)
+  const chargeDisc = newGroundShape(new THREE.CircleGeometry(1, 40), CHARGE_COLOUR, 0.75)
+  let readySince: number | null = null
+  let readyFor: TennisTeam | null = null
+  let highShot = false
   const shadows = new Map<THREE.Mesh, THREE.Mesh>()
   const timing = ref<TennisTiming | null>(null)
   let timingUntil = 0
@@ -352,18 +392,48 @@ export function useTennis(deps: TennisDeps) {
   function placeGuides(): void {
     const scene = deps.getScene()
     const here = stance()
-    if (scene && !aimRing.parent) scene.add(aimRing, landingRing, swingRingMesh)
+    if (scene && !aimRing.parent) scene.add(aimRing, landingRing, swingRingMesh, standDisc, standStar, chargeDisc)
     aimRing.visible = here !== null
     landingRing.visible = false
     swingRingMesh.visible = false
-    if (!here) return
+    standDisc.visible = false
+    standStar.visible = false
+    chargeDisc.visible = false
+    if (!here) {
+      readySince = null
+      return
+    }
     const target = aimFor(here)
     aimRing.position.set(target.x, AIM_Y, target.z)
     const play = incoming(here)
-    const ring = play ? swingRing(play, here.team, deps.myPosition, Date.now() + clockOffset.value) : null
+    const now = Date.now() + clockOffset.value
+    const receiving = play !== null && play.phase === 'flight' && play.ball !== null && play.hitter !== here.team
+    const spot = play && receiving ? interceptSpot(play, here.team, now) : null
+    const ready = play !== null && spot !== null && inPlace(play, here.team, deps.myPosition, now)
+    if (!ready || play?.hitter !== readyFor) readySince = ready ? now : null
+    readyFor = play?.hitter ?? null
+    const charge = chargeFill(readySince, now)
+    if (play?.ball && receiving && play.bounces === 0) highShot = highBall(play.ball)
+    if (spot) {
+      const mark = highShot ? standStar : standDisc
+      const size = TENNIS_SWEET_M * (highShot ? STAR_SCALE : 1)
+      mark.visible = true
+      mark.position.set(spot.x, STAND_MARK_Y, spot.z)
+      mark.scale.set(size, 1, size)
+      mark.material.color.setHex(ready ? STAND_MARK_READY_COLOUR : STAND_MARK_COLOUR)
+      if (charge > 0) {
+        chargeDisc.visible = true
+        chargeDisc.position.set(spot.x, CHARGE_Y, spot.z)
+        const filled = TENNIS_SWEET_M * CHARGE_SHARE * charge
+        chargeDisc.scale.set(filled, 1, filled)
+        chargeDisc.material.color.setHex(charge >= 1 ? SWING_RING_COLOURS.smash : CHARGE_COLOUR)
+      }
+    }
+    const ring = play ? swingRing(play, here.team, deps.myPosition, now, charge >= 1) : null
     if (ring) {
+      const centre = spot ?? deps.myPosition
       swingRingMesh.visible = true
-      swingRingMesh.position.set(deps.myPosition.x, SWING_RING_Y, deps.myPosition.z)
+      swingRingMesh.position.set(centre.x, SWING_RING_Y, centre.z)
       swingRingMesh.scale.set(ring.radius, 1, ring.radius)
       swingRingMesh.material.color.setHex(SWING_RING_COLOURS[ring.tone])
     }
