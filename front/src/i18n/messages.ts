@@ -907,7 +907,11 @@ export const messages = {
         shoot: 'Shot',
         defend: { football: 'Tackle', basketball: 'Steal' },
         spectating: 'Watching',
-        hint: 'Left click: pass · Hold right click: shoot · {key}: {defend}',
+        lob: 'Lob',
+        hints: {
+          football: 'Left click: pass, hold for a lob · Hold right click: shoot, stop before the red · {key}: tackle · {view}: view',
+          basketball: 'Left click: pass · Hold right click: shoot in the green, a defender narrows it · {key}: steal · {view}: view',
+        },
         release: { perfect: 'Perfect', good: 'Good', early: 'Early', late: 'Late' },
         free: {
           title: 'Free play',
@@ -2218,7 +2222,11 @@ export const messages = {
         shoot: 'Tir',
         defend: { football: 'Tacle', basketball: 'Vol de balle' },
         spectating: 'Spectateur',
-        hint: 'Clic gauche : passe · Clic droit maintenu : tir · {key} : {defend}',
+        lob: 'Lob',
+        hints: {
+          football: 'Clic gauche : passe, maintenir pour un lob · Clic droit maintenu : tir, relâche avant le rouge · {key} : tacle · {view} : vue',
+          basketball: 'Clic gauche : passe · Clic droit maintenu : tir dans le vert, un défenseur le réduit · {key} : interception · {view} : vue',
+        },
         release: { perfect: 'Parfait', good: 'Bien', early: 'Trop tôt', late: 'Trop tard' },
         free: {
           title: 'Jeu libre',

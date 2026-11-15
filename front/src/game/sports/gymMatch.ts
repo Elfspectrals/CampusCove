@@ -6,12 +6,21 @@ export function teamJerseyUrl(team: GymTeam): string {
   return `/assets/wear/top/team_jersey_${team}/model.glb`
 }
 
-export type GymMeter = { kind: 'charge'; chargeMs: number } | { kind: 'bounce'; riseMs: number; windowNear: number; windowFar: number; farDistanceM: number }
+interface ShotContest {
+  reachM: number
+  tightM: number
+  minShare: number
+}
+
+export type GymMeter =
+  | { kind: 'charge'; chargeMs: number; overFrom: number }
+  | { kind: 'bounce'; riseMs: number; windowNear: number; windowFar: number; farDistanceM: number; contest: ShotContest }
 
 export interface GymHudRules {
   sport: GymSport
   ballRadius: number
   meter: GymMeter
+  lob: { holdMs: number; chargeMs: number } | null
   defendCooldownMs: number
   downMs: number | null
 }
@@ -36,12 +45,14 @@ export function parseGymHudRules(sport: GymSport, raw: unknown): GymHudRules {
     return {
       sport,
       ballRadius,
-      meter: { kind: 'charge', chargeMs: positive(r.shotChargeMs, 'football.shotChargeMs') },
+      meter: { kind: 'charge', chargeMs: positive(r.shotChargeMs, 'football.shotChargeMs'), overFrom: positive(block(r, 'overcharge', sport).from, 'football.overcharge.from') },
+      lob: { holdMs: positive(block(r, 'lob', sport).holdMs, 'football.lob.holdMs'), chargeMs: positive(block(r, 'lob', sport).chargeMs, 'football.lob.chargeMs') },
       defendCooldownMs: positive(block(r, 'tackle', sport).cooldownMs, 'football.tackle.cooldownMs'),
       downMs: positive(block(r, 'tackle', sport).groundMs, 'football.tackle.groundMs'),
     }
   }
   const m = block(r, 'shotMeter', sport)
+  const c = block(r, 'contest', sport)
   return {
     sport,
     ballRadius,
@@ -51,7 +62,9 @@ export function parseGymHudRules(sport: GymSport, raw: unknown): GymHudRules {
       windowNear: positive(m.windowNear, 'basketball.shotMeter.windowNear'),
       windowFar: positive(m.windowFar, 'basketball.shotMeter.windowFar'),
       farDistanceM: positive(m.farDistanceM, 'basketball.shotMeter.farDistanceM'),
+      contest: { reachM: positive(c.reachM, 'basketball.contest.reachM'), tightM: positive(c.tightM, 'basketball.contest.tightM'), minShare: positive(c.minShare, 'basketball.contest.minShare') },
     },
+    lob: null,
     defendCooldownMs: positive(block(r, 'steal', sport).cooldownMs, 'basketball.steal.cooldownMs'),
     downMs: null,
   }
@@ -69,10 +82,24 @@ export function meterFill(meter: GymMeter, heldMs: number): number {
   return phase <= 1 ? phase : Math.max(0, 2 - phase)
 }
 
-export function goodWindowStart(meter: GymMeter, distanceM: number): number | null {
+function contestShare(contest: ShotContest, defenderM: number | null): number {
+  if (defenderM === null || defenderM >= contest.reachM) return 1
+  return contest.minShare + (1 - contest.minShare) * Math.max(0, (defenderM - contest.tightM) / (contest.reachM - contest.tightM))
+}
+
+export function goodWindowStart(meter: GymMeter, distanceM: number, defenderM: number | null = null): number | null {
   if (meter.kind === 'charge') return null
   const t = Math.min(1, Math.max(0, distanceM / meter.farDistanceM))
-  return 1 - (meter.windowNear + (meter.windowFar - meter.windowNear) * t)
+  return 1 - (meter.windowNear + (meter.windowFar - meter.windowNear) * t) * contestShare(meter.contest, defenderM)
+}
+
+export function overchargeStart(meter: GymMeter): number | null {
+  return meter.kind === 'charge' ? meter.overFrom : null
+}
+
+export function lobFill(lob: { holdMs: number; chargeMs: number } | null, heldMs: number): number | null {
+  if (!lob || heldMs < lob.holdMs) return null
+  return Math.min(1, (heldMs - lob.holdMs) / lob.chargeMs)
 }
 
 export function predictBall(ball: GymStatePayload['ball'], ageS: number, floorY: number, radius: number, held: boolean): [number, number, number] {
@@ -104,8 +131,16 @@ export interface HoopSpot {
   z: number
 }
 
+interface CourtBounds {
+  minX: number
+  maxX: number
+  minZ: number
+  maxZ: number
+}
+
 export interface GymCourtView {
   floorY: number
+  court: CourtBounds
   baskets: Record<GymTeam, HoopSpot> | null
   sideBaskets: HoopSpot[]
   scoreboard: GymScreen | null
@@ -142,6 +177,13 @@ function parseBaskets(raw: unknown): GymCourtView['baskets'] {
   const baskets = (raw ?? {}) as Record<string, Raw | undefined>
   const spot = (team: GymTeam) => ({ x: finite(baskets[team]?.x, `baskets.${team}.x`), y: finite(baskets[team]?.y, `baskets.${team}.y`), z: finite(baskets[team]?.z, `baskets.${team}.z`) })
   return { red: spot('red'), blue: spot('blue') }
+}
+
+function parseBounds(raw: unknown): CourtBounds {
+  const b = (raw ?? {}) as Raw
+  const bounds = { minX: finite(b.minX, 'court.minX'), maxX: finite(b.maxX, 'court.maxX'), minZ: finite(b.minZ, 'court.minZ'), maxZ: finite(b.maxZ, 'court.maxZ') }
+  if (bounds.minX >= bounds.maxX || bounds.minZ >= bounds.maxZ) throw new Error('sports/gym/court.json: court must have a size')
+  return bounds
 }
 
 function parseSideBaskets(raw: unknown): HoopSpot[] {
@@ -183,7 +225,7 @@ function parseScreen(raw: unknown): GymScreen | null {
 
 export function parseGymCourtView(raw: unknown): GymCourtView {
   const r = (raw ?? {}) as Raw
-  return { floorY: finite(r.floorY, 'floorY'), baskets: parseBaskets(r.baskets), sideBaskets: parseSideBaskets(r.sideBaskets), scoreboard: parseScreen(r.scoreboard) }
+  return { floorY: finite(r.floorY, 'floorY'), court: parseBounds(r.court), baskets: parseBaskets(r.baskets), sideBaskets: parseSideBaskets(r.sideBaskets), scoreboard: parseScreen(r.scoreboard) }
 }
 
 export function scoreboardLines(state: { score: Record<GymTeam, number>; clock: string; half: number; halves: number } | null): [string, string] {

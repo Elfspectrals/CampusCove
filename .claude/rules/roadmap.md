@@ -303,6 +303,12 @@ Decision (2026-11-15, from the review of the sports complex): the sports must be
 - [done] Gear lent for a fee at each venue: swimsuit 15, boxing gloves and boules 25, racket 30, spikes and skates 40 in cash, destroyed (economist, 2026-11-15: a sixth of the shop price), kept until the player leaves the venue. Offer shown after a refusal for missing gear, Y to borrow. Played on 2026-11-15 at the pool: refused with too little cash, then 15 taken and the swim allowed. The five other venues are covered by tests only.
 - [done] Gym: the west goal and the west hoop now face the court and the four side hoops sit on their wall arm (the build's rotation was ignored by Blender). Interior rebuilt and lit again on 2026-11-15; seen on the build preview, not walked in game.
 
+Decision (2026-11-15): football plays like FIFA and basketball like NBA 2K, and the swimming race becomes a rhythm game like the dance one. Chosen by the user: a television view from the side for the gym sports (move keys follow the screen, `U` goes to the view behind the player, then first person); no goalkeeper; in the swimming race two lanes of notes, left arm and right arm, plus a breath note now and then, free swimming unchanged.
+
+- [done] Television view for football and basketball (`broadcast` in `sportsCamera.ts`, `moveFrameYaw` in `useGameMovement`). Played alone in the gym on 2026-11-15: the whole court depth in frame, keys following the screen, the camera following the ball without losing the player.
+- [done] Football: assisted and led ground pass, lob on a held pass, ball further ahead at a sprint, shot pulled inside the post in a match, over-hit shot past 90 % of the meter. Played alone in free play (dribble, lob meter, shot); the pass to a team-mate, the lob to a team-mate and the shot help in a match are covered by socket tests, not played.
+- [done] Basketball: assisted and led pass, green zone cut by a defender, lay-up with no meter. Played alone in free play (a "Good" shot with the zone on the meter); the pass, the defender and the lay-up are covered by socket tests, not played.
+
 ## Later
 
 - Fishing as the second job (reuse the darts power meter or the Drink Fast balance bar; rod and fish models exist).

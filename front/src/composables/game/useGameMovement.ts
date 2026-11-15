@@ -22,6 +22,7 @@ const GRAVITY = 22
 const MAX_FRAME_DT = 0.1
 const MOUSE_SENSITIVITY = 0.002
 const SKATE_KEY_TURN = 1.6
+const SCREEN_TURN_PER_S = 14
 /** Position updates sent to the server at most this often (ms). */
 const EMIT_INTERVAL_MS = 50
 
@@ -70,6 +71,7 @@ export interface UseGameMovementDeps {
   afterSkate?: (wanted: number, moved: number) => void
   lockedLook?: () => { yaw: number; pitch: number } | null
   autoRun?: (dt: number) => { dx: number; dz: number } | null
+  moveFrameYaw?: () => number | null
   swim?: {
     waterAt: (x: number, z: number, feetY: number) => WaterRect | null
     step: (water: WaterRect, eyeY: number, vy: number, input: SwimInput, yaw: number, pitch: number, dt: number) => SwimStep
@@ -114,9 +116,22 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     const camera = deps.getCamera()
     if (!camera) return
 
-    yaw -= mouseX * MOUSE_SENSITIVITY
-    pitch -= mouseY * MOUSE_SENSITIVITY
-    pitch = Math.max(-Math.PI / 2 + 0.1, Math.min(Math.PI / 2 - 0.1, pitch))
+    const frameYaw = deps.moveFrameYaw?.() ?? null
+    if (frameYaw === null) {
+      yaw -= mouseX * MOUSE_SENSITIVITY
+      pitch -= mouseY * MOUSE_SENSITIVITY
+      pitch = Math.max(-Math.PI / 2 + 0.1, Math.min(Math.PI / 2 - 0.1, pitch))
+    } else {
+      const ahead = keys.forward ? 1 : keys.back ? -1 : 0
+      const aside = keys.right ? 1 : keys.left ? -1 : 0
+      if (ahead !== 0 || aside !== 0) {
+        const wishX = -Math.sin(frameYaw) * ahead + Math.cos(frameYaw) * aside
+        const wishZ = -Math.cos(frameYaw) * ahead - Math.sin(frameYaw) * aside
+        const turn = Math.atan2(-wishX, -wishZ) - yaw
+        yaw += Math.atan2(Math.sin(turn), Math.cos(turn)) * (1 - Math.exp(-SCREEN_TURN_PER_S * dt))
+      }
+      pitch = 0
+    }
     mouseX = 0
     mouseY = 0
     const lockedLook = deps.lockedLook?.() ?? null
@@ -124,7 +139,7 @@ export function useGameMovement(deps: UseGameMovementDeps) {
       yaw = lockedLook.yaw
       pitch = lockedLook.pitch
     }
-    direction.set(0, 0, -1).applyAxisAngle(THREE.Object3D.DEFAULT_UP, yaw)
+    direction.set(0, 0, -1).applyAxisAngle(THREE.Object3D.DEFAULT_UP, frameYaw ?? yaw)
     rightVec.crossVectors(direction, THREE.Object3D.DEFAULT_UP).normalize()
 
     const feetY = myPosition.y - EYE_HEIGHT - airY

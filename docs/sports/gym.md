@@ -54,7 +54,7 @@ the rules are read over HTTP. Logic: `gymBall.ts` (ball physics, exact parabolic
 
 | Message | Direction | Payload |
 |---|---|---|
-| `gym_action` | client → server | `{ kind: 'pass' \| 'shot_start' \| 'shot_release' \| 'tackle' \| 'jump' }`; ignored unless the sender is an active player of the running gym match; at most one every 60 ms (a release always passes) |
+| `gym_action` | client → server | `{ kind: 'pass' \| 'pass_start' \| 'pass_release' \| 'shot_start' \| 'shot_release' \| 'tackle' \| 'jump' }` (`pass` is the basketball pass, `pass_start` / `pass_release` the football one); ignored unless the sender is an active player of the running gym match; at most one every 60 ms (a release always passes) |
 | `gym_state` | server → players and everyone in `sports_gym`, every 100 ms | `{ venue, sport, ball: [x, y, z, vx, vy, vz], owner: sessionId \| null, score: { red, blue }, half, halves, endsAt, restartTeam, players: [{ sessionId, team }], serverNow }` |
 | `gym_event` | same | `{ venue, kind: 'score', team, points, dunk, scorer: name \| null, sessionId }`, `{ kind: 'kick', shot }`, `{ kind: 'tackle' \| 'steal', won }`, `{ kind: 'block' }`, `{ kind: 'half', half }` (each with `sessionId` of the player) |
 | `gym_end` | same | `{ venue, sport, score, winner: team \| null, reason: 'finished' \| 'forfeit' }` |
@@ -120,6 +120,27 @@ the arc after.
   counting up to three times its distance).
 - **Free play meter**: the good window is drawn on the meter in free play too (it was only drawn in a match).
 - **Goals and hoops facing the court**: the build turned each goal and hoop with `rotation_euler`, which Blender ignores on an object imported from glTF (its rotation mode is quaternion), so none was turned: the west goal and the west hoop faced the wall, and the four side hoops stood sideways, off their wall arm. `face_and_fit` now sets the rotation mode first. Interior rebuilt, lightmap baked again, `court.json` rewritten (the west backboard is now 0.67 m behind its rim like the east one, it was 0.35 m).
+
+## Decisions (2026-11-15, football like FIFA, basketball like NBA 2K)
+
+Asked by the user after the first pass. Decided with them: a television view from the side, no goalkeeper.
+
+- **Television view** (see "Camera" in [README.md](README.md)): a player of a gym match, or whose own ball is out in free
+  play, sees the court from the long side. The move keys follow the screen (up goes away from the camera, left and right
+  along the court) and the body turns to where it runs; the mouse no longer turns it. `U` goes to the view behind the
+  player, then to first person, then back. The socket still judges everything from the player's position and yaw.
+- **Football**: assisted and led ground pass, lob on a held pass, the ball further ahead at a sprint, a shot pulled
+  inside the post in a match, an over-hit shot past 90 % of the meter (red zone on the meter). Numbers in
+  [football.md](football.md) and `football.json` (`passAssist`, `lob`, `sprintCarry`, `shotAssist`, `overcharge`).
+- **Basketball**: assisted and led pass, the green zone cut by a defender, a lay-up with no meter. Numbers in
+  [basketball.md](basketball.md) and `basketball.json` (`passAssist`, `contest`, `layup`).
+- **No goalkeeper** (decided 2026-11-15): matches are 1 to 5 a side with no AI player; the goals of the gym are small.
+- What a player can still do, and what happens: tap or hold the pass with no team-mate (a straight pass, a lob by how
+  long it is held); release the pass after losing the ball (ignored); hold the pass or the shot for ever (the charge
+  stops at full, a hold over 5 s is dropped); over-hit on purpose (the ball lifts over the bar); shoot away from the goal
+  (no pull: only a shot already going within 2.5 m of a post is helped, and only in a match); stand still under the rim
+  (a shot, not a lay-up: the lay-up needs 2.5 m/s); pass to an opponent in the cone (never picked: only team-mates are,
+  anyone in free play).
 
 ## Animations
 

@@ -105,5 +105,22 @@
   "tasks": [
     "matches_played",
     "three_pointers"
-  ]
+  ],
+  "passAssist": {
+    "coneDeg": 70,
+    "maxM": 20,
+    "speedPerM": 0.3,
+    "maxSpeed": 14
+  },
+  "contest": {
+    "reachM": 2.0,
+    "tightM": 0.8,
+    "minShare": 0.45
+  },
+  "layup": {
+    "rangeM": 3.5,
+    "speedMps": 2.5,
+    "chance": 0.85,
+    "contestedChance": 0.5
+  }
 }

@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { EYE_HEIGHT } from '../../game/gameRoomConstants'
 import { worldRayDistance } from '../../game/collision/worldCollision'
-import { BODY_SHOWN_FROM, blendStep, damp, lockedLookFor, poseFor, type SportsView } from '../../game/camera/sportsCamera'
+import { BODY_SHOWN_FROM, blendStep, damp, lockedLookFor, moveFrameYawFor, poseFor, type SportsView } from '../../game/camera/sportsCamera'
 
 const ARM_MARGIN_M = 0.25
 const ARM_MIN_M = 0.6
@@ -17,7 +17,7 @@ export interface SportsCameraDeps {
 }
 
 export function useSportsCamera(deps: SportsCameraDeps) {
-  const firstPersonChosen = new Set<string>()
+  const choiceBySport = new Map<string, number>()
   const announced = new Set<string>()
   const eye = new THREE.Vector3()
   const goal = new THREE.Vector3()
@@ -35,9 +35,16 @@ export function useSportsCamera(deps: SportsCameraDeps) {
   let arm = 0
   let timeS = 0
 
+  function choicesOf(view: SportsView): (SportsView | null)[] {
+    const fallback = view.kind === 'broadcast' ? view.fallback : null
+    return [view, ...(fallback ? [fallback] : []), ...(view.optional ? [null] : [])]
+  }
+
   function activeView(): SportsView | null {
     const view = deps.view()
-    return view && !(view.optional && firstPersonChosen.has(view.sport)) ? view : null
+    if (!view) return null
+    const choices = choicesOf(view)
+    return choices[(choiceBySport.get(view.sport) ?? 0) % choices.length] ?? null
   }
 
   function thirdPerson(): boolean {
@@ -46,8 +53,10 @@ export function useSportsCamera(deps: SportsCameraDeps) {
 
   function toggle(): boolean {
     const view = deps.view()
-    if (!view || !view.optional) return false
-    if (!firstPersonChosen.delete(view.sport)) firstPersonChosen.add(view.sport)
+    if (!view) return false
+    const choices = choicesOf(view)
+    if (choices.length < 2) return false
+    choiceBySport.set(view.sport, ((choiceBySport.get(view.sport) ?? 0) + 1) % choices.length)
     return true
   }
 
@@ -114,5 +123,10 @@ export function useSportsCamera(deps: SportsCameraDeps) {
     }
   }
 
-  return { apply, toggle, thirdPerson, lockedLook }
+  function moveFrameYaw(): number | null {
+    const view = activeView()
+    return view ? moveFrameYawFor(view) : null
+  }
+
+  return { apply, toggle, thirdPerson, lockedLook, moveFrameYaw }
 }

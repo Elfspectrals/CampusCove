@@ -240,7 +240,7 @@ export function onGymAction(room: GameRoom, client: GameClient, payload: ClientP
   const player = room.players.get(client.sessionId)
   const kind = parseKind(payload)
   if (!player || !kind) return
-  if (now - (lastActionAt.get(player.accountId) ?? -Infinity) < ACTION_GAP_MS && kind !== 'shot_release') return
+  if (now - (lastActionAt.get(player.accountId) ?? -Infinity) < ACTION_GAP_MS && kind !== 'shot_release' && kind !== 'pass_release') return
   lastActionAt.set(player.accountId, now)
   for (const venue of venues.keys()) {
     const match = room.sports.matches.get(venue)

@@ -12,9 +12,9 @@ Played on the gymnasium court (44 × 24 m, shared with basketball) and on the ou
 
 ## Controls
 
-- Move and run as usual. Running into the ball dribbles it (it sticks lightly to the feet).
-- **Left click**: pass in the aim direction, fixed medium power.
-- **Right click held**: charged shot, power meter like the darts meter; release shoots in the aim direction.
+- Move and run as usual. Running into the ball dribbles it (it sticks lightly to the feet); at a sprint the ball runs up to 0.6 m further ahead, so a tackle reaches it more easily.
+- **Left click**: a tap is a ground pass. With a team-mate within 30 m in a 70° cone ahead, it goes to where they will be when it arrives, faster the further they are (8 m/s plus 0.35 per metre, 16 at most); with nobody there it goes straight ahead at 8 m/s. **Held 250 ms or more**: a lob at 40° over the defenders, to that team-mate, or 10 to 30 m ahead by how long it is held (full after 1 s) when nobody is there.
+- **Right click held**: charged shot; release shoots where the body faces. In a match a shot that would pass up to 2.5 m wide of a post is pulled 0.35 m inside it. From 90 % of the meter the shot is over-hit: it lifts 3 m/s more and clears the bar from close range, so release before the red zone.
 - **Tackle key** (rebindable): a sliding tackle forward, takes the ball if it reaches it, with a cooldown (proposed 3 s). A missed tackle leaves the player on the ground for about 0.8 s.
 - Players block each other by collision.
 
@@ -34,7 +34,7 @@ Score red–blue, match clock, half indicator, a short "GOAL" banner with the sc
 ## Server authority
 
 - The socket simulates the ball (position, velocity, bounce on walls, posts and players) and decides possession, tackles and goals.
-- The client sends intents: pass (aim direction), shot start and release (aim direction), tackle. Shot power is computed from the socket clock between press and release, never sent by the client.
+- The client sends intents: pass press and release, shot start and release, tackle. Pass and shot power come from the socket clock between press and release, the direction from the player's yaw known to the socket and the team-mate from the socket positions; the client sends none of them.
 - Reach checks: a player can only touch the ball within a short distance of the ball position known to the socket; a tackle is checked against the socket positions.
 
 ## Gear

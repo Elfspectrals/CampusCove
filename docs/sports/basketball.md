@@ -11,9 +11,9 @@ Played on the gymnasium court (44 × 24 m, shared with football: two main basket
 ## Controls
 
 - The ball carrier **dribbles automatically** while moving.
-- **Left click**: pass in the aim direction.
-- **Shot**: hold the shot key, a meter rises; release near its top. Ball flight is real physics, aimed with the mouse, and a good timing adds a small trajectory help toward the rim (the mix the user chose). Distance makes the window smaller.
-- **Dunk**: shooting while running within about 1.5 m of the rim plays a dunk animation that almost always scores.
+- **Left click**: pass. With a team-mate within 20 m in a 70° cone ahead it goes to where they will be when it arrives; else straight ahead.
+- **Shot**: hold the shot key, a meter rises; release in the green zone. No aiming: the shot is locked on the basket. Distance makes the zone smaller, and so does a defender: none within 2 m leaves it whole, one within 0.8 m cuts it to 45 %, in between it shrinks in a straight line. The zone drawn on the meter is the one the socket uses.
+- **Dunk and lay-up**: a shot within 1.5 m of the rim at 4 m/s or more is a dunk (95 %). A shot within 3.5 m while moving at 2.5 m/s or more is a lay-up with no meter: 85 % with no defender within 2 m, 50 % with one within 0.8 m, in between on a straight line.
 - **Steal key** (rebindable): a defender close to the carrier tries to steal, with a chance and a cooldown (proposed 40 %, 2 s).
 - **Jump** (Space) near a shooter blocks the shot if the jump is timed with the release.
 
@@ -29,7 +29,7 @@ Score, clock, half indicator, shot meter with its good window while holding, ste
 ## Server authority
 
 - The socket simulates the ball (flight, rim and backboard bounces, floor), decides possession, steals (chance rolled by the server), blocks and baskets.
-- Shot timing is measured on the socket clock between press and release; the client only sends press, release and aim direction. The trajectory help is applied by the socket only.
+- Shot timing is measured on the socket clock between press and release; the client only sends press and release. The defender's distance, the lay-up roll and the pass target come from the socket positions.
 - The three-point check uses the shooter's position known to the socket at release.
 
 ## Gear

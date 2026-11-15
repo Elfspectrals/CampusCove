@@ -2,17 +2,20 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 import type { GymStatePayload } from '../../types/gameRealtime.ts'
-import { COURT_FILES, FREE_PLAY_COACHES, carriedSpot, clockText, courtHoops, courtUrlOf, dribbleBeat, dribbleHeight, goodWindowStart, hoopAhead, meterFill, myTeam, nearestFreeBall, parseGymCourtView, parseGymHudRules, predictBall, scoreboardLines } from './gymMatch.ts'
+import { COURT_FILES, FREE_PLAY_COACHES, carriedSpot, clockText, courtHoops, courtUrlOf, dribbleBeat, dribbleHeight, goodWindowStart, hoopAhead, lobFill, meterFill, myTeam, nearestFreeBall, parseGymCourtView, overchargeStart, parseGymHudRules, predictBall, scoreboardLines } from './gymMatch.ts'
 
 const rules = (sport: string) => JSON.parse(readFileSync(new URL(`../../../public/assets/sports/rules/${sport}.json`, import.meta.url), 'utf8'))
 
 test('the HUD reads its numbers from the shipped rules files', () => {
   const football = parseGymHudRules('football', rules('football'))
-  assert.deepEqual(football.meter, { kind: 'charge', chargeMs: 1000 })
+  assert.deepEqual(football.meter, { kind: 'charge', chargeMs: 1000, overFrom: 0.9 })
+  assert.deepEqual(football.lob, { holdMs: 250, chargeMs: 750 })
   assert.equal(football.defendCooldownMs, 3000)
   assert.equal(football.downMs, 800)
   const basketball = parseGymHudRules('basketball', rules('basketball'))
   assert.equal(basketball.meter.kind, 'bounce')
+  assert.deepEqual(basketball.meter.kind === 'bounce' && basketball.meter.contest, { reachM: 2, tightM: 0.8, minShare: 0.45 })
+  assert.equal(basketball.lob, null)
   assert.equal(basketball.defendCooldownMs, 2000)
   assert.throws(() => parseGymHudRules('football', { ...rules('football'), shotChargeMs: 0 }), /shotChargeMs/)
 })
@@ -24,16 +27,30 @@ test('the match clock counts down in m:ss and never shows a negative time', () =
 })
 
 test('the football meter fills and holds; the basketball meter rises then falls, its good window narrows with distance', () => {
-  const charge = { kind: 'charge', chargeMs: 1000 } as const
+  const charge = { kind: 'charge', chargeMs: 1000, overFrom: 0.9 } as const
   assert.equal(meterFill(charge, 500), 0.5)
   assert.equal(meterFill(charge, 3000), 1)
-  const bounce = { kind: 'bounce', riseMs: 900, windowNear: 0.18, windowFar: 0.07, farDistanceM: 12 } as const
+  const bounce = { kind: 'bounce', riseMs: 900, windowNear: 0.18, windowFar: 0.07, farDistanceM: 12, contest: { reachM: 2, tightM: 0.8, minShare: 0.45 } } as const
   assert.equal(meterFill(bounce, 450), 0.5)
   assert.equal(meterFill(bounce, 1350), 0.5)
   assert.equal(meterFill(bounce, 2000), 0)
   assert.equal(goodWindowStart(charge, 5), null)
   assert.ok(Math.abs((goodWindowStart(bounce, 0) ?? 0) - 0.82) < 1e-9)
   assert.ok(Math.abs((goodWindowStart(bounce, 24) ?? 0) - 0.93) < 1e-9)
+  assert.ok(Math.abs((goodWindowStart(bounce, 0, 2) ?? 0) - 0.82) < 1e-9)
+  assert.ok(Math.abs((goodWindowStart(bounce, 0, 1.4) ?? 0) - (1 - 0.18 * 0.725)) < 1e-9)
+  assert.ok(Math.abs((goodWindowStart(bounce, 0, 0.5) ?? 0) - (1 - 0.18 * 0.45)) < 1e-9)
+  assert.equal(overchargeStart(charge), 0.9)
+  assert.equal(overchargeStart(bounce), null)
+})
+
+test('the lob meter starts once the pass button is held 250 ms and fills in 750 ms', () => {
+  const lob = { holdMs: 250, chargeMs: 750 }
+  assert.equal(lobFill(lob, 249), null)
+  assert.equal(lobFill(lob, 250), 0)
+  assert.equal(lobFill(lob, 625), 0.5)
+  assert.equal(lobFill(lob, 2000), 1)
+  assert.equal(lobFill(null, 2000), null)
 })
 
 test('the ball is drawn ahead of the last update along its flight and never under the floor', () => {
@@ -56,7 +73,7 @@ test('the shipped court contract gives the floor and the basket each team attack
   const court = parseGymCourtView(JSON.parse(readFileSync(new URL('../../../public/assets/sports/gym/court.json', import.meta.url), 'utf8')))
   assert.equal(court.floorY, 0.2)
   assert.ok(court.baskets !== null && court.baskets.red.x > court.baskets.blue.x)
-  assert.throws(() => parseGymCourtView({ floorY: 0.2, baskets: {} }), /baskets.red.x/)
+  assert.throws(() => parseGymCourtView({ floorY: 0.2, court: { minX: 0, maxX: 44, minZ: 0, maxZ: 24 }, baskets: {} }), /baskets.red.x/)
 })
 
 test('a basketball bounces between the hand and the floor, a football rolls just ahead of the toe', () => {
@@ -97,7 +114,9 @@ test('each venue and free-play court reads its own court file; the pitch has no 
   assert.deepEqual(COURT_FILES, ['/assets/sports/gym/court.json', '/assets/sports/athletics/pitch.json'])
   assert.deepEqual(FREE_PLAY_COACHES.athletics_coach, ['football'])
   const pitch = parseGymCourtView(JSON.parse(readFileSync(new URL('../../../public/assets/sports/athletics/pitch.json', import.meta.url), 'utf8')))
-  assert.deepEqual(pitch, { floorY: 0.03, baskets: null, sideBaskets: [], scoreboard: null })
+  assert.deepEqual({ ...pitch, court: null }, { floorY: 0.03, court: null, baskets: null, sideBaskets: [], scoreboard: null })
+  assert.ok(pitch.court.maxX - pitch.court.minX > 20 && pitch.court.maxZ - pitch.court.minZ > 10)
+  assert.throws(() => parseGymCourtView({ floorY: 0.2, court: { minX: 1, maxX: 1, minZ: 0, maxZ: 5 } }), /court must have a size/)
 })
 
 test('a free-play shot goes to the hoop ahead: the nearest one, a hoop behind counting three times its distance', () => {
@@ -115,5 +134,5 @@ test('the gym court lists its two match baskets and its four free-play hoops', (
   const court = parseGymCourtView(JSON.parse(readFileSync(new URL('../../../public/assets/sports/gym/court.json', import.meta.url), 'utf8')))
   assert.equal(court.sideBaskets.length, 4)
   assert.equal(courtHoops(court).length, 6)
-  assert.throws(() => parseGymCourtView({ floorY: 0.2, sideBaskets: [{ x: 1, y: 2 }] }), /sideBaskets\[0\].z/)
+  assert.throws(() => parseGymCourtView({ floorY: 0.2, court: { minX: 0, maxX: 44, minZ: 0, maxZ: 24 }, sideBaskets: [{ x: 1, y: 2 }] }), /sideBaskets\[0\].z/)
 })

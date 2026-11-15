@@ -16,6 +16,7 @@ export type SportsView =
   | { kind: 'duel'; sport: string; optional: boolean; opponent: { x: number; z: number }; arena: Arena }
   | { kind: 'court'; sport: string; optional: boolean; cx: number; netZ: number; halfLength: number; side: 1 | -1 }
   | { kind: 'stage'; sport: string; optional: boolean; facingYaw: number }
+  | { kind: 'broadcast'; sport: string; optional: boolean; court: Arena; focusX: number; focusZ: number; fallback: SportsView | null }
 
 export interface Arena {
   minX: number
@@ -59,6 +60,13 @@ const STAGE_SWAY_RAD = (18 * Math.PI) / 180
 const STAGE_SWAY_PERIOD_S = 14
 const STAGE_FOV = 40
 const STAGE_SIDE_SHIFT_M = 1.7
+const BROADCAST_BEHIND_LINE_M = 7
+const BROADCAST_HEIGHT_M = 8.5
+const BROADCAST_TARGET_PAST_LINE_M = 5.8
+const BROADCAST_EDGE_M = 9
+const BROADCAST_FOV = 46
+const BROADCAST_DEPTH_FOLLOW = 0.25
+const BROADCAST_LEAD_M = 7
 
 export function blendStep(blend: number, active: boolean, dt: number): number {
   const goal = active ? 1 : 0
@@ -139,7 +147,25 @@ function stagePose(view: Extract<SportsView, { kind: 'stage' }>, frame: ViewFram
   }
 }
 
+function broadcastPose(view: Extract<SportsView, { kind: 'broadcast' }>, frame: ViewFrame): CameraPose {
+  const middle = (view.court.minX + view.court.maxX) / 2
+  const reach = Math.max(0, (view.court.maxX - view.court.minX) / 2 - BROADCAST_EDGE_M)
+  const followed = frame.eye.x + Math.min(BROADCAST_LEAD_M, Math.max(-BROADCAST_LEAD_M, view.focusX - frame.eye.x))
+  const x = Math.min(middle + reach, Math.max(middle - reach, followed))
+  return {
+    position: { x, y: frame.feetY + BROADCAST_HEIGHT_M, z: view.court.minZ - BROADCAST_BEHIND_LINE_M },
+    target: { x, y: frame.feetY, z: view.court.minZ + BROADCAST_TARGET_PAST_LINE_M + (Math.min(view.court.maxZ, Math.max(view.court.minZ, view.focusZ)) - view.court.minZ - BROADCAST_TARGET_PAST_LINE_M) * BROADCAST_DEPTH_FOLLOW },
+    fov: BROADCAST_FOV,
+    pivot: null,
+  }
+}
+
+export function moveFrameYawFor(view: SportsView): number | null {
+  return view.kind === 'broadcast' ? Math.PI : null
+}
+
 export function poseFor(view: SportsView, frame: ViewFrame): CameraPose {
+  if (view.kind === 'broadcast') return broadcastPose(view, frame)
   if (view.kind === 'follow') return followPose(view, frame)
   if (view.kind === 'duel') return duelPose(view, frame)
   if (view.kind === 'court') return courtPose(view, frame)

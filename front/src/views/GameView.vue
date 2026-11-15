@@ -1841,6 +1841,7 @@ const movement = useGameMovement({
     sportsCamera.apply(camera, dt)
   },
   lockedLook: sportsCamera.lockedLook,
+  moveFrameYaw: sportsCamera.moveFrameYaw,
   autoRun: tennis.autoRun,
   skate: skating.step,
   cameraRoll: skating.cameraRoll,

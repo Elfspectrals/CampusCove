@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 import { type Ball, bounceBody, droppedThroughRim, launchToward, stepBall } from './gymBall.ts'
 import { type GymCourt, basketsOf, courtObstacles, parseGymCourt } from './gymCourt.ts'
-import { type Athlete, type GymEvent, type GymGame, actGym, chargeOf, goodWindow, meterOf, newGymGame, outcomeFor, releaseOf, stepGym } from './gymMatch.ts'
+import { type Athlete, type GymEvent, type GymGame, actGym, carryAhead, chargeOf, contestShare, goodWindow, meterOf, newGymGame, outcomeFor, passTarget, releaseOf, stepGym } from './gymMatch.ts'
 import { type BasketballRules, type FootballRules, gymPlayerRules, halvesOf, parseBasketballRules, parseFootballRules } from './gymRules.ts'
 
 const rulesFile = (sport: string) => JSON.parse(readFileSync(new URL(`../../../front/public/assets/sports/rules/${sport}.json`, import.meta.url), 'utf8'))
@@ -143,6 +143,110 @@ test('football: shot power comes from the server clock between press and release
   assert.equal(actGym(game, FOOTBALL, a, [a], 'shot_release', T0 + 1100, () => 0.5).length, 0)
 })
 
+function near(actual: number, expected: number, what: string, within = 1e-6): void {
+  assert.ok(Math.abs(actual - expected) <= within, `${what}: ${actual} is not ${expected}`)
+}
+
+function carrying(a: Athlete): GymGame {
+  const game = freshGame(FOOTBALL)
+  game.owner = a.accountId
+  game.ball = { x: a.x + 0.55, y: 0.2 + FOOTBALL.ball.radius, z: a.z, vx: 0, vy: 0, vz: 0 }
+  return game
+}
+
+test('football: a pass goes to the team-mate most in front within 35 degrees, faster the further he is, never to an opponent', () => {
+  const passer = athlete(1, 'red', 0, 0)
+  const mate = athlete(2, 'red', 10, 2)
+  const wide = athlete(3, 'red', 5, -8)
+  const rival = athlete(4, 'blue', 8, 0)
+  assert.equal(passTarget(passer, [passer, mate, wide, rival], FOOTBALL.passAssist), mate)
+  assert.equal(passTarget(passer, [passer, wide, rival], FOOTBALL.passAssist), null)
+  assert.equal(passTarget(passer, [passer, athlete(5, 'red', 31, 0)], FOOTBALL.passAssist), null)
+  const game = carrying(passer)
+  actGym(game, FOOTBALL, passer, [passer, mate, wide, rival], 'pass', T0, () => 0.5)
+  const d = Math.hypot(10, 2)
+  near(Math.hypot(game.ball.vx, game.ball.vz), 8 + d * 0.35, 'speed')
+  near(game.ball.vz / game.ball.vx, 0.2, 'towards the team-mate')
+  const far = carrying(passer)
+  actGym(far, FOOTBALL, passer, [passer, athlete(6, 'red', 29, 0)], 'pass', T0, () => 0.5)
+  near(Math.hypot(far.ball.vx, far.ball.vz), 16, 'speed capped')
+})
+
+test('football: a pass leads a running team-mate, and with nobody in front it goes straight at the base speed', () => {
+  const passer = athlete(1, 'red', 0, 0)
+  const runner = { ...athlete(2, 'red', 10, 0), vz: 4 }
+  const game = carrying(passer)
+  actGym(game, FOOTBALL, passer, [passer, runner], 'pass', T0, () => 0.5)
+  const flight = 10 / (8 + 10 * 0.35)
+  near(game.ball.vz / game.ball.vx, (4 * flight) / 10, 'aimed where he will be')
+  const alone = carrying(passer)
+  actGym(alone, FOOTBALL, passer, [passer], 'pass', T0, () => 0.5)
+  near(alone.ball.vx, 8, 'straight')
+  near(alone.ball.vz, 0, 'no drift')
+})
+
+test('football: the pass button held under 250 ms is a ground pass, held longer a lob that lands 10 to 30 m ahead of the passer or on the team-mate', () => {
+  const passer = athlete(1, 'red', 0, 0)
+  const range = (game: GymGame) => (Math.hypot(game.ball.vx, game.ball.vz) * 2 * game.ball.vy) / 9.81
+  const tap = carrying(passer)
+  actGym(tap, FOOTBALL, passer, [passer], 'pass_start', T0, () => 0.5)
+  actGym(tap, FOOTBALL, passer, [passer], 'pass_release', T0 + 249, () => 0.5)
+  near(tap.ball.vy, FOOTBALL.passLift, 'ground pass')
+  for (const [heldMs, metres] of [[250, 10], [625, 20], [1000, 30], [3000, 30]] as const) {
+    const game = carrying(passer)
+    actGym(game, FOOTBALL, passer, [passer], 'pass_start', T0, () => 0.5)
+    actGym(game, FOOTBALL, passer, [passer], 'pass_release', T0 + heldMs, () => 0.5)
+    near(range(game), metres - 0.55, `lob held ${heldMs} ms`, 0.05)
+  }
+  const mate = athlete(2, 'red', 15, 0)
+  const toMate = carrying(passer)
+  actGym(toMate, FOOTBALL, passer, [passer, mate], 'pass_start', T0, () => 0.5)
+  actGym(toMate, FOOTBALL, passer, [passer, mate], 'pass_release', T0 + 1000, () => 0.5)
+  near(range(toMate), 15 - 0.55, 'lob to the team-mate', 0.05)
+  const none = carrying(passer)
+  actGym(none, FOOTBALL, passer, [passer], 'pass_release', T0 + 400, () => 0.5)
+  assert.equal(none.owner, 1)
+})
+
+test('football: the ball runs further ahead of a sprinting carrier, 0.55 m walking to 1.15 m at full sprint', () => {
+  for (const [speed, ahead] of [[0, 0.55], [5, 0.55], [6.75, 0.85], [8.5, 1.15], [12, 1.15]] as const) {
+    near(carryAhead(FOOTBALL, athlete(1, 'red', 0, 0, EAST, speed)), ahead, `at ${speed} m/s`)
+  }
+  near(carryAhead(BASKETBALL, athlete(1, 'red', 0, 0, EAST, 8.5)), BASKETBALL.carryAheadM, 'basketball')
+})
+
+test('football: a shot up to 2.5 m wide of a post is pulled 0.35 m inside it; further wide, facing away or in free play it keeps its line', () => {
+  const shot = (ry: number, mode: 'match' | 'free' = 'match') => {
+    const shooter = athlete(1, mode === 'match' ? 'red' : null, 12, 0, ry)
+    const game = mode === 'match' ? carrying(shooter) : { ...carrying(shooter), mode }
+    actGym(game, FOOTBALL, shooter, [shooter], 'shot_start', T0, () => 0.5)
+    actGym(game, FOOTBALL, shooter, [shooter], 'shot_release', T0 + 500, () => 0.5)
+    return game.ball.vz / game.ball.vx
+  }
+  const facingZ = (zAtLine: number) => Math.atan2(-10, -zAtLine)
+  near(shot(facingZ(0.5)), 0.05, 'on target, untouched')
+  near(shot(facingZ(2.5)), 0.115, '1 m wide, pulled inside the post')
+  near(shot(facingZ(-3.9)), -0.115, '2.4 m wide on the other side')
+  near(shot(facingZ(4.1)), 0.41, '2.6 m wide, left alone')
+  near(shot(facingZ(2.5), 'free'), 0.25, 'free play')
+  near(shot(WEST), 0, 'facing away')
+})
+
+test('football: a shot charged to 90 % or more lifts 3 m/s more and flies over the bar from 12 m', () => {
+  const lift = (heldMs: number) => {
+    const shooter = athlete(1, 'red', 12, 0)
+    const game = carrying(shooter)
+    actGym(game, FOOTBALL, shooter, [shooter], 'shot_start', T0, () => 0.5)
+    actGym(game, FOOTBALL, shooter, [shooter], 'shot_release', T0 + heldMs, () => 0.5)
+    return game
+  }
+  near(lift(890).ball.vy, 1 + 3 * 0.89, 'under the limit')
+  near(lift(900).ball.vy, 1 + 3 * 0.9 + 3, 'at the limit')
+  const over = lift(1000)
+  const toLine = (22 - over.ball.x) / over.ball.vx
+  assert.ok(over.ball.y - 0.2 + over.ball.vy * toLine - (9.81 * toLine * toLine) / 2 > 2)
+})
+
 test('football: a ball into the east goal scores for red, credits the shooter and restarts at the centre for blue', () => {
   const game = freshGame(FOOTBALL)
   const a = athlete(7, 'red', 15, 0, EAST)
@@ -257,6 +361,63 @@ test('basketball: a running shot near the rim is a dunk that almost always score
   game.owner = 1
   actGym(game, BASKETBALL, a, [a], 'shot_start', T0, () => 0.5)
   assert.deepEqual(actGym(game, BASKETBALL, a, [a], 'shot_release', T0 + 100, () => 0.5), [{ kind: 'score', team: 'red', scorer: 1, points: 2, dunk: true }])
+})
+
+test('basketball: a defender within 2 m narrows the good window, down to 45 % of it from 0.8 m', () => {
+  for (const [distance, share] of [[null, 1], [2.5, 1], [2, 1], [1.4, 0.725], [0.8, 0.45], [0.3, 0.45]] as const) {
+    near(contestShare(BASKETBALL, distance), share, `defender at ${distance}`)
+  }
+  near(goodWindow(BASKETBALL, 0, 0.45), BASKETBALL.shotMeter.windowNear * 0.45, 'guarded window')
+  assert.equal(releaseOf(BASKETBALL, 720, 4.425), 'good')
+  assert.equal(releaseOf(BASKETBALL, 720, 4.425, 0.45), 'early')
+  const game = freshGame(BASKETBALL)
+  const shooter = athlete(1, 'red', 16, 0)
+  const guard = athlete(2, 'blue', 16.5, 0, WEST)
+  const mate = athlete(3, 'red', 16.2, 0.2)
+  game.owner = 1
+  actGym(game, BASKETBALL, shooter, [shooter, guard, mate], 'shot_start', T0, () => 0.5)
+  assert.deepEqual(actGym(game, BASKETBALL, shooter, [shooter, guard, mate], 'shot_release', T0 + 720, () => 0.5), [{ kind: 'kick', accountId: 1, shot: true, release: 'early' }])
+  const open = freshGame(BASKETBALL)
+  open.owner = 1
+  actGym(open, BASKETBALL, shooter, [shooter, mate], 'shot_start', T0, () => 0.5)
+  assert.deepEqual(actGym(open, BASKETBALL, shooter, [shooter, mate], 'shot_release', T0 + 720, () => 0.5), [{ kind: 'kick', accountId: 1, shot: true, release: 'good' }])
+})
+
+test('basketball: a moving release within 3.5 m of the rim is a lay-up, 85 % open and 50 % under a tight defender, whatever the meter', () => {
+  const layup = (roll: number, guarded: boolean, speed = 3) => {
+    const game = freshGame(BASKETBALL)
+    const a = athlete(1, 'red', 17.5, 0, EAST, speed)
+    const others = guarded ? [athlete(2, 'blue', 18, 0, WEST)] : []
+    game.owner = 1
+    actGym(game, BASKETBALL, a, [a, ...others], 'shot_start', T0, () => roll)
+    return actGym(game, BASKETBALL, a, [a, ...others], 'shot_release', T0 + 100, () => roll)
+  }
+  const made = [{ kind: 'score', team: 'red', scorer: 1, points: 2, dunk: false }]
+  const missed = [{ kind: 'kick', accountId: 1, shot: true }]
+  assert.deepEqual(layup(0.84, false), made)
+  assert.deepEqual(layup(0.86, false), missed)
+  assert.deepEqual(layup(0.49, true), made)
+  assert.deepEqual(layup(0.51, true), missed)
+  assert.deepEqual(layup(0.5, false, 2.4), [{ kind: 'kick', accountId: 1, shot: true, release: 'early' }])
+})
+
+test('basketball: a pass goes to the team-mate in front, led and lifted so it arrives at the height it left', () => {
+  const game = freshGame(BASKETBALL)
+  const passer = athlete(1, 'red', 0, 0)
+  const mate = athlete(2, 'red', 8, 3)
+  const rival = athlete(3, 'blue', 6, 0)
+  game.owner = 1
+  assert.deepEqual(actGym(game, BASKETBALL, passer, [passer, mate, rival], 'pass', T0, () => 0.5), [{ kind: 'kick', accountId: 1, shot: false }])
+  const d = Math.hypot(8, 3)
+  const speed = BASKETBALL.passSpeed + d * 0.3
+  near(Math.hypot(game.ball.vx, game.ball.vz), speed, 'speed')
+  near(game.ball.vz / game.ball.vx, 3 / 8, 'towards the team-mate')
+  near(game.ball.vy, (9.81 * d) / speed / 2, 'lift')
+  const alone = freshGame(BASKETBALL)
+  alone.owner = 1
+  actGym(alone, BASKETBALL, passer, [passer, rival], 'pass', T0, () => 0.5)
+  near(alone.ball.vx, BASKETBALL.passSpeed, 'straight')
+  near(alone.ball.vy, BASKETBALL.passLift, 'usual lift')
 })
 
 test('basketball: only the carrier can pass or shoot', () => {

@@ -117,5 +117,35 @@
   "tasks": [
     "matches_played",
     "hat_trick"
-  ]
+  ],
+  "passAssist": {
+    "coneDeg": 70,
+    "maxM": 30,
+    "speedPerM": 0.35,
+    "maxSpeed": 16
+  },
+  "lob": {
+    "holdMs": 250,
+    "chargeMs": 750,
+    "angleDeg": 40,
+    "rangeM": [
+      10,
+      30
+    ]
+  },
+  "sprintCarry": {
+    "extraM": 0.6,
+    "speedMps": [
+      5,
+      8.5
+    ]
+  },
+  "shotAssist": {
+    "maxOffM": 2.5,
+    "insidePostM": 0.35
+  },
+  "overcharge": {
+    "from": 0.9,
+    "lift": 3
+  }
 }

@@ -12,9 +12,21 @@ export interface FootballRules {
   shotLift: [number, number]
   shotChargeMs: number
   tackle: { reachM: number, coneDeg: number, cooldownMs: number, groundMs: number }
+  passAssist: PassAssist
+  lob: { holdMs: number, chargeMs: number, angleDeg: number, rangeM: [number, number] }
+  sprintCarry: { extraM: number, speedMps: [number, number] }
+  shotAssist: { maxOffM: number, insidePostM: number }
+  overcharge: { from: number, lift: number }
   kickIgnoreMs: number
   restartMs: number
   halvesByDurationSec: Record<string, number>
+}
+
+export interface PassAssist {
+  coneDeg: number
+  maxM: number
+  speedPerM: number
+  maxSpeed: number
 }
 
 export interface BasketballRules {
@@ -35,6 +47,9 @@ export interface BasketballRules {
   dunkRangeM: number
   dunkSpeed: number
   dunkChance: number
+  passAssist: PassAssist
+  contest: { reachM: number, tightM: number, minShare: number }
+  layup: { rangeM: number, speedMps: number, chance: number, contestedChance: number }
   steal: { reachM: number, chance: number, cooldownMs: number }
   blockReachM: number
   blockWindowMs: number
@@ -90,9 +105,23 @@ function halves(raw: Raw, sport: string): Record<string, number> {
   return h as Record<string, number>
 }
 
+function passAssist(raw: Raw, sport: string): PassAssist {
+  const assist = block(raw, 'passAssist', sport)
+  return {
+    coneDeg: positive(assist.coneDeg, `${sport}.passAssist.coneDeg`),
+    maxM: positive(assist.maxM, `${sport}.passAssist.maxM`),
+    speedPerM: positive(assist.speedPerM, `${sport}.passAssist.speedPerM`),
+    maxSpeed: positive(assist.maxSpeed, `${sport}.passAssist.maxSpeed`)
+  }
+}
+
 export function parseFootballRules(raw: unknown): FootballRules {
   const r = (raw ?? {}) as Raw
   const tackle = block(r, 'tackle', 'football')
+  const lob = block(r, 'lob', 'football')
+  const sprintCarry = block(r, 'sprintCarry', 'football')
+  const shotAssist = block(r, 'shotAssist', 'football')
+  const overcharge = block(r, 'overcharge', 'football')
   return {
     sport: 'football',
     ball: ballSpec(r, 'football'),
@@ -110,6 +139,16 @@ export function parseFootballRules(raw: unknown): FootballRules {
       cooldownMs: positive(tackle.cooldownMs, 'football.tackle.cooldownMs'),
       groundMs: positive(tackle.groundMs, 'football.tackle.groundMs')
     },
+    passAssist: passAssist(r, 'football'),
+    lob: {
+      holdMs: positive(lob.holdMs, 'football.lob.holdMs'),
+      chargeMs: positive(lob.chargeMs, 'football.lob.chargeMs'),
+      angleDeg: positive(lob.angleDeg, 'football.lob.angleDeg'),
+      rangeM: range(lob.rangeM, 'football.lob.rangeM')
+    },
+    sprintCarry: { extraM: positive(sprintCarry.extraM, 'football.sprintCarry.extraM'), speedMps: range(sprintCarry.speedMps, 'football.sprintCarry.speedMps') },
+    shotAssist: { maxOffM: positive(shotAssist.maxOffM, 'football.shotAssist.maxOffM'), insidePostM: positive(shotAssist.insidePostM, 'football.shotAssist.insidePostM') },
+    overcharge: { from: fraction(overcharge.from, 'football.overcharge.from'), lift: positive(overcharge.lift, 'football.overcharge.lift') },
     kickIgnoreMs: positive(r.kickIgnoreMs, 'football.kickIgnoreMs'),
     restartMs: positive(r.restartMs, 'football.restartMs'),
     halvesByDurationSec: halves(r, 'football')
@@ -120,6 +159,11 @@ export function parseBasketballRules(raw: unknown): BasketballRules {
   const r = (raw ?? {}) as Raw
   const meter = block(r, 'shotMeter', 'basketball')
   const steal = block(r, 'steal', 'basketball')
+  const contest = block(r, 'contest', 'basketball')
+  const layup = block(r, 'layup', 'basketball')
+  const contestReachM = positive(contest.reachM, 'basketball.contest.reachM')
+  const contestTightM = positive(contest.tightM, 'basketball.contest.tightM')
+  if (contestTightM >= contestReachM) throw new Error('basketball.contest.tightM must be under contest.reachM')
   return {
     sport: 'basketball',
     ball: ballSpec(r, 'basketball'),
@@ -144,6 +188,14 @@ export function parseBasketballRules(raw: unknown): BasketballRules {
     dunkRangeM: positive(r.dunkRangeM, 'basketball.dunkRangeM'),
     dunkSpeed: positive(r.dunkSpeed, 'basketball.dunkSpeed'),
     dunkChance: fraction(r.dunkChance, 'basketball.dunkChance'),
+    passAssist: passAssist(r, 'basketball'),
+    contest: { reachM: contestReachM, tightM: contestTightM, minShare: fraction(contest.minShare, 'basketball.contest.minShare') },
+    layup: {
+      rangeM: positive(layup.rangeM, 'basketball.layup.rangeM'),
+      speedMps: positive(layup.speedMps, 'basketball.layup.speedMps'),
+      chance: fraction(layup.chance, 'basketball.layup.chance'),
+      contestedChance: fraction(layup.contestedChance, 'basketball.layup.contestedChance')
+    },
     steal: {
       reachM: positive(steal.reachM, 'basketball.steal.reachM'),
       chance: fraction(steal.chance, 'basketball.steal.chance'),

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { blendStep, lockedLookFor, lookDirection, poseFor, yawTowards, type SportsView, type ViewFrame } from './sportsCamera.ts'
+import { blendStep, lockedLookFor, lookDirection, moveFrameYawFor, poseFor, yawTowards, type SportsView, type ViewFrame } from './sportsCamera.ts'
 
 const FRAME: ViewFrame = { eye: { x: 0, y: 1.6, z: 0 }, feetY: 0, yaw: 0, pitch: 0, timeS: 0 }
 
@@ -93,4 +93,25 @@ test('views that frame the action lock the body, the follow view leaves it to th
   close(lockedLookFor({ kind: 'duel', sport: 'boxing', optional: true, opponent: { x: -3, z: 0 }, arena: OPEN }, me)!.yaw, Math.PI / 2, 'faces the opponent')
   close(lockedLookFor({ kind: 'court', sport: 'tennis', optional: false, cx: 0, netZ: 0, halfLength: 11.885, side: -1 }, me)!.yaw, Math.PI, 'blue faces +Z')
   close(lockedLookFor({ kind: 'stage', sport: 'dance', optional: false, facingYaw: 1 }, me)!.yaw, 1, 'keeps the dance facing')
+})
+
+test('the broadcast camera sits in the stands, follows the ball no further than 7 m from the player and stops 9 m from each end', () => {
+  const view = (focusX: number): SportsView => ({ kind: 'broadcast', sport: 'gym', optional: true, court: { minX: -22, maxX: 22, minZ: -12, maxZ: 12 }, focusX, focusZ: -6.2, fallback: null })
+  const middle = poseFor(view(4), FRAME)
+  close(middle.position.x, 4, 'follows the ball')
+  close(middle.position.z, -19, 'behind the near line')
+  close(middle.position.y, 8.5, 'height')
+  close(middle.target.z, -6.2, 'looks into the court')
+  assert.equal(middle.fov, 46)
+  close(poseFor({ ...view(4), focusZ: 12 } as SportsView, FRAME).target.z, -1.65, 'looks a quarter further in for a ball on the far line')
+  close(poseFor({ ...view(4), focusZ: 40 } as SportsView, FRAME).target.z, -1.65, 'never past the far line')
+  close(poseFor(view(7), FRAME).position.x, 7, 'a ball 7 m away is still followed')
+  close(poseFor(view(20), FRAME).position.x, 7, 'a far ball leads the player by 7 m')
+  close(poseFor(view(-20), FRAME).position.x, -7, 'on either side')
+  const at = (x: number): ViewFrame => ({ ...FRAME, eye: { ...FRAME.eye, x } })
+  close(poseFor(view(21), at(20)).position.x, 13, 'east stop')
+  close(poseFor(view(-40), at(-38)).position.x, -13, 'west stop')
+  assert.equal(moveFrameYawFor(view(0)), Math.PI)
+  assert.equal(moveFrameYawFor({ kind: 'stage', sport: 'dance', optional: false, facingYaw: 0 }), null)
+  assert.equal(lockedLookFor(view(0), { x: 0, z: 0 }), null)
 })
