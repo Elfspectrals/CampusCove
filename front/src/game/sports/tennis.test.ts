@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import type { TennisStatePayload } from '../../types/gameRealtime'
-import { BALL_BASKETS, TENNIS_BOUNCE_KEEP, TENNIS_COURTS, TENNIS_GRAVITY, TENNIS_HALF_LENGTH, TENNIS_NET_Z, TENNIS_REACH_M, TENNIS_RESTITUTION, TENNIS_MARK_MS, TENNIS_LATE_ALLOWANCE_MS, TENNIS_PERFECT_TIMING_MS, TENNIS_CHARGE_MS, TENNIS_HIT_MAX_HEIGHT, TENNIS_SWEET_M, TENNIS_SWING_AHEAD_MS, aimMoved, ballComing, ballPosition, chargeFill, defaultAim, freeCourtAt, highBall, inPlace, interceptSpot, iServe, markOpacity, markYaw, myTeam, recoverySpot, runStep, sideAt, swingFor, swingRing, swingTone } from './tennis.ts'
+import { BALL_BASKETS, TENNIS_BOUNCE_KEEP, TENNIS_COURTS, TENNIS_GRAVITY, TENNIS_HALF_LENGTH, TENNIS_NET_Z, TENNIS_REACH_M, TENNIS_RESTITUTION, TENNIS_MARK_MS, TENNIS_LATE_ALLOWANCE_MS, TENNIS_PERFECT_TIMING_MS, TENNIS_CHARGE_MS, TENNIS_HIT_MAX_HEIGHT, TENNIS_SERVE_FLOOR, TENNIS_SERVE_WINDOW_MS, serveRing, TENNIS_SWEET_M, TENNIS_SWING_AHEAD_MS, aimMoved, ballComing, ballPosition, chargeFill, defaultAim, freeCourtAt, highBall, inPlace, interceptSpot, iServe, markOpacity, markYaw, myTeam, recoverySpot, runStep, sideAt, swingFor, swingRing, swingTone } from './tennis.ts'
 
 const ZONE = JSON.parse(readFileSync(new URL('../../../public/assets/zones/sports_tennis.json', import.meta.url), 'utf8'))
 const RULES = JSON.parse(readFileSync(new URL('../../../public/assets/sports/rules/tennis.json', import.meta.url), 'utf8'))
@@ -46,6 +46,18 @@ test('the swing ring colour says what a click now would give: red miss, orange w
   ] as const) {
     assert.equal(swingTone(offset, distance), tone, `${offset} ms early at ${distance} m`)
     assert.equal(swingTone(offset, distance, true), charged, `charged, ${offset} ms early at ${distance} m`)
+  }
+})
+
+test('on the serve the ring closes on the server as the toss rises and is green within 60 ms of its top, orange within 280 ms, red outside', () => {
+  assert.deepEqual([RULES.serve.windowMs, RULES.serve.floor], [TENNIS_SERVE_WINDOW_MS, TENNIS_SERVE_FLOOR])
+  const toss = { x: 0, y: RULES.serve.tossStartY, z: 0, vx: 0, vy: RULES.serve.tossSpeedMs, vz: 0, t: 10_000 }
+  const peak = 10_000 + (RULES.serve.tossSpeedMs / TENNIS_GRAVITY) * 1000
+  assert.ok(Math.abs(serveRing(toss, 10_000).radius - 2.4) < 1e-9)
+  assert.ok(Math.abs(serveRing(toss, peak).radius - 0.6) < 1e-9)
+  assert.ok(Math.abs(serveRing(toss, peak + 300).radius - 0.6) < 1e-9)
+  for (const [offset, tone] of [[0, 'good'], [-59, 'good'], [59, 'good'], [-61, 'weak'], [61, 'weak'], [-279, 'weak'], [279, 'weak'], [-281, 'miss'], [281, 'miss']] as const) {
+    assert.equal(serveRing(toss, peak + offset).tone, tone, `${offset} ms from the top`)
   }
 })
 

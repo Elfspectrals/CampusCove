@@ -32,6 +32,8 @@ export const TENNIS_LATE_ALLOWANCE_MS = 150
 export const TENNIS_SWING_AHEAD_MS = 350
 export const TENNIS_PERFECT_TIMING_MS = [-60, 200] as const
 export const TENNIS_CHARGE_MS = 600
+export const TENNIS_SERVE_WINDOW_MS = 400
+export const TENNIS_SERVE_FLOOR = 0.3
 export const TENNIS_HIT_MAX_HEIGHT = 2.8
 const HIGH_BALL_M = 4
 const PERFECT_QUALITY = 0.85
@@ -142,6 +144,16 @@ export function swingRing(play: BallPlay, team: TennisTeam, me: { x: number; z: 
   if (offset > RING_LEAD_MS) return null
   const closing = clamp(offset / RING_LEAD_MS, 0, 1)
   return { radius: RING_RADIUS_M[0] + (RING_RADIUS_M[1] - RING_RADIUS_M[0]) * closing, tone: swingTone(offset, pass.d, charged) }
+}
+
+export function serveRing(toss: TennisBall, serverMs: number): { radius: number; tone: SwingTone } {
+  const peakAt = toss.t + (toss.vy / TENNIS_GRAVITY) * 1000
+  const quality = 1 - Math.abs(serverMs - peakAt) / TENNIS_SERVE_WINDOW_MS
+  const closing = clamp((peakAt - serverMs) / (peakAt - toss.t), 0, 1)
+  return {
+    radius: RING_RADIUS_M[0] + (RING_RADIUS_M[1] - RING_RADIUS_M[0]) * closing,
+    tone: quality >= PERFECT_QUALITY ? 'good' : quality > TENNIS_SERVE_FLOOR ? 'weak' : 'miss',
+  }
 }
 
 export interface CourtView {

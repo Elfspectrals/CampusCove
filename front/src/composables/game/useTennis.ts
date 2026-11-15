@@ -29,6 +29,7 @@ import {
   markYaw,
   myTeam,
   recoverySpot,
+  serveRing,
   runStep,
   sideAt,
   swingFor,
@@ -429,7 +430,8 @@ export function useTennis(deps: TennisDeps) {
         chargeDisc.material.color.setHex(charge >= 1 ? SWING_RING_COLOURS.smash : CHARGE_COLOUR)
       }
     }
-    const ring = play ? swingRing(play, here.team, deps.myPosition, now, charge >= 1) : null
+    const tossed = play && play.phase === 'toss' && play.ball && serving() ? play.ball : null
+    const ring = tossed ? serveRing(tossed, now) : play ? swingRing(play, here.team, deps.myPosition, now, charge >= 1) : null
     if (ring) {
       const centre = spot ?? deps.myPosition
       swingRingMesh.visible = true

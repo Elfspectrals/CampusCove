@@ -321,6 +321,7 @@ Decision (2026-11-15, second review of the sports): the gear loan becomes a bloc
 - [done] Boxing: the first punch on a free bag starts a 60 s round against the bag: a combo of the bout to throw in order (10 points a punch, doubled from the fourth combo in a row), gloves on the hands and on the avatar, the duel view turned to the bag. No board, no reward. Played alone on 2026-11-15 by a script following the combo shown: a full round of 1,690 points and 32 combos, a wrong punch reset the streak, gloves and punches seen in third person, the result shown at the bell. Not seen: the round from another player's screen.
 - [done] Owned sports gear shows in the game (2026-11-15): the bag endpoint (`/apartments/assets`) now sends `sports_gear` items, each gear item has its picture and model, the racket and the boules are drawn in the hand when selected, and gear is never placed like furniture. Worn gear (swimsuit, gloves, spikes, skates) is still only put on inside its sport. Seen in the browser: hotbar pictures, racket and boules in hand.
 - [todo] Ice skating: figure routine on music.
+- [done] Tennis: a timing ring on the serve toss (green within 60 ms of its top), since alone only the serve can be played and the user saw no circle. Covered by tests, not seen in game.
 - [todo] Opponents run by the server for solo play.
 
 ## Later
