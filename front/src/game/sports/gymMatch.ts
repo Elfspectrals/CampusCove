@@ -98,9 +98,16 @@ export interface GymScreen {
   facing: [number, number]
 }
 
+export interface HoopSpot {
+  x: number
+  y: number
+  z: number
+}
+
 export interface GymCourtView {
   floorY: number
-  baskets: Record<GymTeam, { x: number; y: number; z: number }> | null
+  baskets: Record<GymTeam, HoopSpot> | null
+  sideBaskets: HoopSpot[]
   scoreboard: GymScreen | null
 }
 
@@ -137,6 +144,29 @@ function parseBaskets(raw: unknown): GymCourtView['baskets'] {
   return { red: spot('red'), blue: spot('blue') }
 }
 
+function parseSideBaskets(raw: unknown): HoopSpot[] {
+  if (raw === undefined) return []
+  if (!Array.isArray(raw)) throw new Error('sports/gym/court.json: sideBaskets must be a list')
+  return raw.map((hoop: Raw, i) => ({ x: finite(hoop?.x, `sideBaskets[${i}].x`), y: finite(hoop?.y, `sideBaskets[${i}].y`), z: finite(hoop?.z, `sideBaskets[${i}].z`) }))
+}
+
+export function courtHoops(court: GymCourtView): HoopSpot[] {
+  return [...(court.baskets ? [court.baskets.red, court.baskets.blue] : []), ...court.sideBaskets]
+}
+
+export function hoopAhead(hoops: readonly HoopSpot[], me: { x: number; z: number }, yaw: number): HoopSpot | null {
+  const fx = -Math.sin(yaw)
+  const fz = -Math.cos(yaw)
+  let best: { hoop: HoopSpot; score: number } | null = null
+  for (const hoop of hoops) {
+    const d = Math.hypot(hoop.x - me.x, hoop.z - me.z)
+    const ahead = d < 1e-6 ? 1 : ((hoop.x - me.x) * fx + (hoop.z - me.z) * fz) / d
+    const score = d * (2 - ahead)
+    if (!best || score < best.score) best = { hoop, score }
+  }
+  return best?.hoop ?? null
+}
+
 function parseScreen(raw: unknown): GymScreen | null {
   if (raw === undefined) return null
   const s = (raw ?? {}) as Raw
@@ -153,7 +183,7 @@ function parseScreen(raw: unknown): GymScreen | null {
 
 export function parseGymCourtView(raw: unknown): GymCourtView {
   const r = (raw ?? {}) as Raw
-  return { floorY: finite(r.floorY, 'floorY'), baskets: parseBaskets(r.baskets), scoreboard: parseScreen(r.scoreboard) }
+  return { floorY: finite(r.floorY, 'floorY'), baskets: parseBaskets(r.baskets), sideBaskets: parseSideBaskets(r.sideBaskets), scoreboard: parseScreen(r.scoreboard) }
 }
 
 export function scoreboardLines(state: { score: Record<GymTeam, number>; clock: string; half: number; halves: number } | null): [string, string] {

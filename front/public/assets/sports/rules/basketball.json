@@ -87,7 +87,7 @@
   },
   "shotAngleDeg": 52,
   "aimAssistMax": 1,
-  "missAimAssist": 0.5,
+  "missAimAssist": 1,
   "missReachError": 0.25,
   "dunkRangeM": 1.5,
   "dunkSpeed": 4,

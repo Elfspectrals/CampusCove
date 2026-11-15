@@ -17,8 +17,11 @@ import {
   goodWindowStart,
   meterFill,
   myTeam,
+  courtHoops,
+  hoopAhead,
   nearestFreeBall,
   teamJerseyUrl,
+  type HoopSpot,
   parseGymCourtView,
   parseGymHudRules,
   predictBall,
@@ -27,6 +30,7 @@ import {
 import { disposeObject3D } from '../../avatar/compositeAvatar'
 import { createGltfLoader } from '../../game/gltfLoaderFactory'
 import { sportRulesUrl } from '../../game/sports/sportsSignup'
+import type { SportsView } from '../../game/camera/sportsCamera'
 import type { GymEndPayload, GymErrorPayload, GymEventPayload, GymFreePayload, GymShotRelease, GymSport, GymStatePayload, GymTeam } from '../../types/gameRealtime'
 
 export interface GymMatchDeps {
@@ -36,10 +40,12 @@ export interface GymMatchDeps {
   getScene: () => THREE.Scene | undefined
   getCamera: () => THREE.Camera | undefined
   canvasRef: Ref<HTMLCanvasElement | null>
-  remoteAvatar: (sessionId: string) => THREE.Object3D | null
-  remoteSportsMove: (sessionId: string, clip: SportsMoveClip) => void
-  setRemoteDribbling: (sessionId: string, dribbling: boolean) => void
-  setRemoteTopOverride: (sessionId: string, top: string | null) => void
+  avatar: (sessionId: string) => THREE.Object3D | null
+  sportsMove: (sessionId: string, clip: SportsMoveClip) => void
+  setDribbling: (sessionId: string, dribbling: boolean) => void
+  setTopOverride: (sessionId: string, top: string | null) => void
+  ownBodyShown: () => boolean
+  yaw: () => number
   playOn: (name: SfxName, object: THREE.Object3D) => void
   play: (name: SfxName) => void
   say: (text: string) => void
@@ -75,6 +81,11 @@ const MATCH_BALL = 'match'
 const SPORTS: readonly GymSport[] = ['football', 'basketball']
 const BALL_MODEL_URL: Record<GymSport, string> = { football: '/assets/decor/gym_football/model.glb', basketball: '/assets/decor/gym_basketball/model.glb' }
 const ANCHOR_BONE: Record<GymSport, string> = { football: 'ToeR', basketball: 'HandR' }
+const CAMERA_DISTANCE_M = 4.2
+const CAMERA_LIFT_M = 0.5
+const TARGET_RING_RADII: readonly [number, number] = [0.3, 0.42]
+const TARGET_RING_ABOVE_RIM_M = 0.03
+const TARGET_RING_COLOUR = 0xf2c230
 
 async function fetchJson(url: string): Promise<unknown> {
   const response = await fetch(url)
@@ -107,6 +118,10 @@ export function useGymMatch(deps: GymMatchDeps) {
   const loader = createGltfLoader()
   const markers = new Map<string, THREE.Mesh>()
   let dribblers = new Set<string>()
+  const targetRing = new THREE.Mesh(
+    new THREE.RingGeometry(TARGET_RING_RADII[0], TARGET_RING_RADII[1], 32).rotateX(-Math.PI / 2),
+    new THREE.MeshBasicMaterial({ color: TARGET_RING_COLOUR, transparent: true, opacity: 0.9, depthWrite: false, side: THREE.DoubleSide }),
+  )
   let jerseys = new Map<string, string>()
   let screen: { mesh: THREE.Mesh; canvas: HTMLCanvasElement; texture: THREE.CanvasTexture; text: string } | null = null
   const anchor = new THREE.Vector3()
@@ -180,7 +195,7 @@ export function useGymMatch(deps: GymMatchDeps) {
 
   function carrierSpot(owner: string): { x: number; z: number } | null {
     if (owner === mySessionId()) return { x: deps.myPosition.x, z: deps.myPosition.z }
-    const avatar = deps.remoteAvatar(owner)
+    const avatar = deps.avatar(owner)
     return avatar ? { x: avatar.position.x, z: avatar.position.z } : null
   }
 
@@ -243,8 +258,8 @@ export function useGymMatch(deps: GymMatchDeps) {
 
   function onEvent(data: GymEventPayload): void {
     const mine = data.sessionId !== null && data.sessionId === mySessionId()
-    const move = data.sessionId && !mine ? moveFor(data, sportOfEvent(data)) : null
-    if (move && data.sessionId) deps.remoteSportsMove(data.sessionId, move)
+    const move = data.sessionId ? moveFor(data, sportOfEvent(data)) : null
+    if (move && data.sessionId) deps.sportsMove(data.sessionId, move)
     if (data.kind === 'score') {
       const sport = state.value?.sport ?? 'football'
       show({ kind: 'score', team: data.team, points: data.points, dunk: data.dunk, scorer: data.scorer, sport })
@@ -343,6 +358,9 @@ export function useGymMatch(deps: GymMatchDeps) {
     window.removeEventListener('mouseup', onMouseUp)
     window.removeEventListener('blur', onBlur)
     hideAll()
+    targetRing.removeFromParent()
+    targetRing.geometry.dispose()
+    targetRing.material.dispose()
     for (const marker of markers.values()) {
       marker.geometry.dispose()
       ;(marker.material as THREE.Material).dispose()
@@ -369,7 +387,7 @@ export function useGymMatch(deps: GymMatchDeps) {
   }
 
   function remoteAnchor(sessionId: string, sport: GymSport): { spot: Spot; yaw: number } | null {
-    const avatar = deps.remoteAvatar(sessionId)
+    const avatar = deps.avatar(sessionId)
     const bone = avatar?.getObjectByName(ANCHOR_BONE[sport])
     if (!avatar || !bone) return null
     bone.getWorldPosition(anchor)
@@ -380,7 +398,7 @@ export function useGymMatch(deps: GymMatchDeps) {
     const r = rules.value[sport]
     if (!r) return
     if (owner !== null) {
-      const held = owner === mySessionId() ? myAnchor(sport, court.floorY) : remoteAnchor(owner, sport)
+      const held = owner === mySessionId() && !deps.ownBodyShown() ? myAnchor(sport, court.floorY) : remoteAnchor(owner, sport)
       if (held) {
         const spot = carriedSpot(sport, held.spot, held.yaw, court.floorY, r.ballRadius, seconds)
         mesh.position.set(spot.x, spot.y, spot.z)
@@ -419,22 +437,19 @@ export function useGymMatch(deps: GymMatchDeps) {
   }
 
   function updateDribblers(): void {
-    const me = mySessionId()
     const next = new Set<string>()
     if (state.value?.sport === 'basketball' && state.value.owner) next.add(state.value.owner)
     for (const ball of free.value?.balls ?? []) if (ball.sport === 'basketball' && ball.owner) next.add(ball.owner)
-    if (me) next.delete(me)
-    for (const id of dribblers) if (!next.has(id)) deps.setRemoteDribbling(id, false)
-    for (const id of next) if (!dribblers.has(id)) deps.setRemoteDribbling(id, true)
+    for (const id of dribblers) if (!next.has(id)) deps.setDribbling(id, false)
+    for (const id of next) if (!dribblers.has(id)) deps.setDribbling(id, true)
     dribblers = next
   }
 
   function updateJerseys(): void {
-    const me = mySessionId()
     const next = new Map<string, string>()
-    for (const p of state.value?.players ?? []) if (p.sessionId !== me) next.set(p.sessionId, teamJerseyUrl(p.team))
-    for (const id of jerseys.keys()) if (!next.has(id)) deps.setRemoteTopOverride(id, null)
-    for (const [id, url] of next) if (jerseys.get(id) !== url) deps.setRemoteTopOverride(id, url)
+    for (const p of state.value?.players ?? []) next.set(p.sessionId, teamJerseyUrl(p.team))
+    for (const id of jerseys.keys()) if (!next.has(id)) deps.setTopOverride(id, null)
+    for (const [id, url] of next) if (jerseys.get(id) !== url) deps.setTopOverride(id, url)
     jerseys = next
   }
 
@@ -519,6 +534,7 @@ export function useGymMatch(deps: GymMatchDeps) {
     }
     updateDribblers()
     updateJerseys()
+    placeTargetRing(scene)
     const gymCourt = courtOf('gym')
     if (scene && gymCourt?.scoreboard) drawScreen(scene, gymCourt.scoreboard)
     hideAll(shown)
@@ -531,8 +547,7 @@ export function useGymMatch(deps: GymMatchDeps) {
     const remaining = current.endsAt - (clientNow.value + clockOffset)
     const r = rules.value[current.sport]
     const held = holdStartedAt.value
-    const baskets = courtOf(current.venue)?.baskets ?? null
-    const basket = team.value && baskets ? baskets[team.value] : null
+    const basket = shotTarget()
     const distance = basket ? Math.hypot(deps.myPosition.x - basket.x, deps.myPosition.z - basket.z) : 0
     const meter = r && held !== null ? { fill: meterFill(r.meter, clientNow.value - held), goodFrom: goodWindowStart(r.meter, distance) } : null
     const cooldown = r && cooldownUntil.value > clientNow.value ? (cooldownUntil.value - clientNow.value) / r.defendCooldownMs : null
@@ -555,7 +570,9 @@ export function useGymMatch(deps: GymMatchDeps) {
     if (!ball) return null
     const r = rules.value[ball.sport]
     const held = holdStartedAt.value
-    return { sport: ball.sport, meter: r && held !== null ? { fill: meterFill(r.meter, clientNow.value - held), goodFrom: null } : null }
+    const basket = shotTarget()
+    const goodFrom = r && basket ? goodWindowStart(r.meter, Math.hypot(deps.myPosition.x - basket.x, deps.myPosition.z - basket.z)) : null
+    return { sport: ball.sport, meter: r && held !== null ? { fill: meterFill(r.meter, clientNow.value - held), goodFrom } : null }
   })
 
   const myBall = computed(() => {
@@ -565,5 +582,36 @@ export function useGymMatch(deps: GymMatchDeps) {
 
   const down = () => downUntil.value > Date.now()
 
-  return { hud, freeHud, banner, rimPop, releaseLabel, myBall, handlers: { onState, onEvent, onEnd, onFree, onError }, onPress, borrow, giveBack, down, tick }
+  function shotTarget(): HoopSpot | null {
+    const current = state.value
+    if (current) return current.sport === 'basketball' && team.value ? (courtOf(current.venue)?.baskets?.[team.value] ?? null) : null
+    const ball = freeBallNearMe()
+    const court = ball?.sport === 'basketball' ? courtOf(ball.court) : null
+    return court ? hoopAhead(courtHoops(court), deps.myPosition, deps.yaw()) : null
+  }
+
+  function holdingBall(): boolean {
+    const me = mySessionId()
+    if (!me) return false
+    return state.value ? state.value.owner === me : (free.value?.balls.some((b) => b.owner === me) ?? false)
+  }
+
+  function placeTargetRing(scene: THREE.Scene | undefined): void {
+    const target = holdingBall() ? shotTarget() : null
+    if (!scene || !target) {
+      targetRing.removeFromParent()
+      return
+    }
+    targetRing.position.set(target.x, target.y + TARGET_RING_ABOVE_RIM_M, target.z)
+    if (targetRing.parent !== scene) scene.add(targetRing)
+  }
+
+  function cameraView(): SportsView | null {
+    const me = mySessionId()
+    const freeBall = state.value === null && (free.value?.balls.some((b) => b.owner === me || b.lender === me) ?? false)
+    const inPlay = deps.pointerLocked.value && (team.value !== null || freeBall)
+    return inPlay ? { kind: 'follow', sport: 'gym', optional: true, distance: CAMERA_DISTANCE_M, lift: CAMERA_LIFT_M, waterY: null } : null
+  }
+
+  return { hud, freeHud, banner, rimPop, releaseLabel, myBall, handlers: { onState, onEvent, onEnd, onFree, onError }, onPress, borrow, giveBack, down, tick, cameraView }
 }

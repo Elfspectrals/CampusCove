@@ -988,6 +988,7 @@ const { open: sportsSignupOpen, choices: sportsVenueChoices, canPickVenue: sport
 watch(sportsSignupOpen, (open) => {
   if (!open && !document.pointerLockElement) requestPointerLock()
 })
+const isMe = (sessionId: string) => sessionId === gameRoomRef.value?.sessionId
 const gymMatch = useGymMatch({
   gameRoomRef,
   pointerLocked,
@@ -995,10 +996,12 @@ const gymMatch = useGymMatch({
   getScene,
   getCamera,
   canvasRef,
-  remoteAvatar: (sessionId) => realtime.remoteAvatar(sessionId),
-  remoteSportsMove: (sessionId, clip) => realtime.remoteSportsMove(sessionId, clip),
-  setRemoteDribbling: (sessionId, dribbling) => realtime.setRemoteDribbling(sessionId, dribbling),
-  setRemoteTopOverride: (sessionId, top) => realtime.setRemoteTopOverride(sessionId, top),
+  avatar: (sessionId) => (isMe(sessionId) ? realtime.ownAvatar.avatarOf(sessionId) : realtime.remoteAvatar(sessionId)),
+  sportsMove: (sessionId, clip) => (isMe(sessionId) ? realtime.ownAvatar.playSportsMove(sessionId, clip) : realtime.remoteSportsMove(sessionId, clip)),
+  setDribbling: (sessionId, dribbling) => (isMe(sessionId) ? realtime.ownAvatar.setDribbling(sessionId, dribbling) : realtime.setRemoteDribbling(sessionId, dribbling)),
+  setTopOverride: (sessionId, top) => (isMe(sessionId) ? realtime.ownAvatar.setTopOverride(sessionId, top) : realtime.setRemoteTopOverride(sessionId, top)),
+  ownBodyShown: () => sportsCamera.thirdPerson(),
+  yaw: () => movement.look().yaw,
   playOn: (name, object) => sfx.playOn(name, object),
   play: (name) => sfx.play(name),
   say: (text) => survival.say(text),
@@ -1763,7 +1766,7 @@ const sportsCamera = useSportsCamera({
   myPosition,
   pointerLocked: () => pointerLocked.value,
   getFpHands: () => game?.fpHands ?? null,
-  view: () => tennis.cameraView() ?? poolSwim.cameraView(),
+  view: () => tennis.cameraView() ?? poolSwim.cameraView() ?? gymMatch.cameraView(),
   onThirdPerson: () => survival.say(t('sports.camera.thirdPerson', { key: actionKeyLabels('cameraView').join(' / ') })),
 })
 const ownBody = useOwnBody({

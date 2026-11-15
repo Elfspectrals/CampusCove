@@ -212,6 +212,17 @@ test('basketball: good timing corrects a small aim error, bad timing misses', ()
   assert.equal(shoot(16, 300).events.length, 0)
 })
 
+test('basketball: the shot never follows the look, with the back to the basket a good release scores and a bad one stays on the line to the rim', () => {
+  assert.equal(shoot(16, 900, WEST).events.length, 1)
+  const game = freshGame(BASKETBALL)
+  const sideways = athlete(5, 'red', 16, 0, 0)
+  game.owner = 5
+  actGym(game, BASKETBALL, sideways, [sideways], 'shot_start', T0, () => 1)
+  assert.deepEqual(actGym(game, BASKETBALL, sideways, [sideways], 'shot_release', T0 + 300, () => 1), [{ kind: 'kick', accountId: 5, shot: true, release: 'early' }])
+  assert.ok(game.ball.vx > 0)
+  assert.ok(Math.abs(Math.atan2(game.ball.vz, game.ball.vx)) <= 0.05 + 1e-9, `off the line by ${Math.atan2(game.ball.vz, game.ball.vx)} rad`)
+})
+
 test('basketball: after a basket the other team restarts under it', () => {
   const { game } = shoot(16, 900)
   assert.equal(game.restart?.team, 'blue')

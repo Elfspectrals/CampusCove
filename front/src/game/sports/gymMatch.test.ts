@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 import type { GymStatePayload } from '../../types/gameRealtime.ts'
-import { COURT_FILES, FREE_PLAY_COACHES, carriedSpot, clockText, courtUrlOf, dribbleBeat, dribbleHeight, goodWindowStart, meterFill, myTeam, nearestFreeBall, parseGymCourtView, parseGymHudRules, predictBall, scoreboardLines } from './gymMatch.ts'
+import { COURT_FILES, FREE_PLAY_COACHES, carriedSpot, clockText, courtHoops, courtUrlOf, dribbleBeat, dribbleHeight, goodWindowStart, hoopAhead, meterFill, myTeam, nearestFreeBall, parseGymCourtView, parseGymHudRules, predictBall, scoreboardLines } from './gymMatch.ts'
 
 const rules = (sport: string) => JSON.parse(readFileSync(new URL(`../../../public/assets/sports/rules/${sport}.json`, import.meta.url), 'utf8'))
 
@@ -97,5 +97,23 @@ test('each venue and free-play court reads its own court file; the pitch has no 
   assert.deepEqual(COURT_FILES, ['/assets/sports/gym/court.json', '/assets/sports/athletics/pitch.json'])
   assert.deepEqual(FREE_PLAY_COACHES.athletics_coach, ['football'])
   const pitch = parseGymCourtView(JSON.parse(readFileSync(new URL('../../../public/assets/sports/athletics/pitch.json', import.meta.url), 'utf8')))
-  assert.deepEqual(pitch, { floorY: 0.03, baskets: null, scoreboard: null })
+  assert.deepEqual(pitch, { floorY: 0.03, baskets: null, sideBaskets: [], scoreboard: null })
+})
+
+test('a free-play shot goes to the hoop ahead: the nearest one, a hoop behind counting three times its distance', () => {
+  const me = { x: 0, z: 0 }
+  const ahead = { x: 0, y: 3, z: -5 }
+  const behind = { x: 0, y: 3, z: 3 }
+  const beside = { x: 4, y: 3, z: 0 }
+  assert.equal(hoopAhead([behind, beside, ahead], me, 0), ahead)
+  assert.equal(hoopAhead([behind, beside, ahead], me, Math.PI), behind)
+  assert.equal(hoopAhead([{ x: 0, y: 3, z: 1 }, ahead], me, 0)?.z, 1)
+  assert.equal(hoopAhead([], me, 0), null)
+})
+
+test('the gym court lists its two match baskets and its four free-play hoops', () => {
+  const court = parseGymCourtView(JSON.parse(readFileSync(new URL('../../../public/assets/sports/gym/court.json', import.meta.url), 'utf8')))
+  assert.equal(court.sideBaskets.length, 4)
+  assert.equal(courtHoops(court).length, 6)
+  assert.throws(() => parseGymCourtView({ floorY: 0.2, sideBaskets: [{ x: 1, y: 2 }] }), /sideBaskets\[0\].z/)
 })

@@ -104,6 +104,22 @@ The gym tasks count every recorded match and ignore the core's `counts_for_tasks
 - After a goal or a basket only the conceding team may touch the ball for 3 s (football: centre; basketball: under the basket).
 - In first person your dribbled basketball rises into view at the top of each bounce (0.9 m ahead, 1.1 m high), and the football you carry shows at your feet as soon as you look down. No HUD line says you have the ball (decided 2026-11-15: the ball on screen says it).
 
+## Decisions (2026-11-15, gameplay pass after the first review)
+
+The review found the basketball controls hard and the aim weird. NBA 2K never asks the player to aim (the shot is locked
+on the rim, one timing input); `mike007jd/vibebasketball` and the NBA Hangtime source decide the outcome first and aim
+the arc after.
+
+- **No aiming**: `missAimAssist` goes from 0.5 to 1. A missed release no longer follows the look: it flies on the line to
+  the rim, short when early, long when late, with the small random side error only.
+- **Third-person view** (see "Camera" in [README.md](README.md)) for a player of a gym match and for a player whose own
+  ball is out in free play; `U` goes back to first person. In that view the ball is drawn in the hand or at the foot of
+  the player's own avatar, which plays the same clips and wears the same team jersey as the others see.
+- **Target ring**: while a player holds a basketball, a yellow ring sits on the rim the shot will go to: the team's basket
+  in a match, in free play the hoop the socket picks (`hoopAhead`, the same rule as `targetHoop`: nearest, a hoop behind
+  counting up to three times its distance).
+- **Free play meter**: the good window is drawn on the meter in free play too (it was only drawn in a match).
+
 ## Animations
 
 Clips on the shared human rig (`front/scripts/skins/clips.py`, table in `docs/animation/skeleton-human.md`): `Kick`, `Shot`, `Tackle`, `Celebrate`, `JumpShot`, `Dunk`, `Block`, `Steal` (one-shots that keep playing while the player moves) and `Dribble` (replaces Walk and Run while a player carries a basketball). Other players see them from the `gym_event` messages (`playAvatarSportsMove`, `setAvatarDribbling` in `glbCharacter.ts`); first person shows no body clip.
