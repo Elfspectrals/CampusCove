@@ -33,6 +33,8 @@ final class TaskCatalog
             'fast_400' => ['counter' => ActionCounter::Fast400Runs, 'tiers' => [1, 10, 50]],
             'tennis' => ['counter' => ActionCounter::TennisMatches, 'tiers' => [5, 25, 100]],
             'tennis_whitewash' => ['counter' => ActionCounter::TennisWhitewashes, 'tiers' => [1, 5, 15]],
+            'songs_danced' => ['counter' => ActionCounter::SongsDanced, 'tiers' => [10, 50, 200]],
+            'full_combo_hard' => ['counter' => ActionCounter::FullComboHard, 'tiers' => [1, 10, 50]],
         ];
     }
 

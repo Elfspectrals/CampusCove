@@ -222,6 +222,8 @@ class TaskProgressApiTest extends TestCase
                 ['task' => 'fast_400', 'value' => 0, 'tiers' => [1, 10, 50], 'reached' => []],
                 ['task' => 'tennis', 'value' => 0, 'tiers' => [5, 25, 100], 'reached' => []],
                 ['task' => 'tennis_whitewash', 'value' => 0, 'tiers' => [1, 5, 15], 'reached' => []],
+                ['task' => 'songs_danced', 'value' => 0, 'tiers' => [10, 50, 200], 'reached' => []],
+                ['task' => 'full_combo_hard', 'value' => 0, 'tiers' => [1, 10, 50], 'reached' => []],
             ]]);
     }
 

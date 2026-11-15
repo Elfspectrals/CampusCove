@@ -1312,6 +1312,46 @@
       },
       "modelUrl": "/assets/park/sports_tennis/sports_tennis.glb",
       "sportsPass": true
+    },
+    {
+      "key": "sports_dance",
+      "optional": true,
+      "bounds": {
+        "minX": -398,
+        "maxX": -372,
+        "minZ": -210,
+        "maxZ": -191
+      },
+      "modelUrl": "/assets/park/sports_dance/sports_dance.glb",
+      "sportsPass": true,
+      "buildings": [
+        {
+          "kind": "work",
+          "key": "sports_dance",
+          "name": "Cove Dance Studio",
+          "job": "sports",
+          "position": [
+            -385,
+            0,
+            -200.5
+          ],
+          "rotationY": -1.5708,
+          "door": [
+            -395,
+            1.25,
+            -200.5
+          ],
+          "footprint": [
+            13,
+            20.01
+          ],
+          "interiorOffset": [
+            0,
+            0.2,
+            4.595
+          ]
+        }
+      ]
     }
   ],
   "fountains": [

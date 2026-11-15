@@ -38,6 +38,8 @@ Laravel owns every counter. A counter counts one real action, bumped by the serv
 | `basketball_matches` | the same for a gym basketball match | same route, `sport: basketball`, `players: [{ accountId, threes }]` |
 | `hat_tricks` | one gym football match in which the player scored 3 goals or more | same route (`goals` >= 3) |
 | `sharpshooter_matches` | one gym basketball match in which the player scored 5 three-pointers or more | same route (`threes` >= 5) |
+| `songs_danced` | one finished dance song with a score above 0, for each dancer, in a match that counts for tasks (`counts_for_tasks`, `docs/sports/CORE.md` § 4) | `DanceService::recordRuns` (`POST /sports/dance/runs`, realtime) |
+| `full_combo_hard` | one full combo on hard, in a match that counts for tasks | `DanceService::recordRuns` |
 
 ## Tiers
 
@@ -69,6 +71,8 @@ Every task lives in `App\Support\TaskCatalog`: a key, the counter it reads and i
 | `sharpshooter` | `sharpshooter_matches` | 1 / 5 / 15 |
 | `tennis` | `tennis_matches` | 5 / 25 / 100 |
 | `tennis_whitewash` | `tennis_whitewashes` | 1 / 5 / 15 |
+| `songs_danced` | `songs_danced` | 10 / 50 / 200 |
+| `full_combo_hard` | `full_combo_hard` | 1 / 10 / 50 |
 
 ## Notification
 

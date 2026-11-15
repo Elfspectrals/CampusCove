@@ -39,6 +39,8 @@ import GameRunningHud from '../components/game/GameRunningHud.vue'
 import GameRunningBoard from '../components/game/GameRunningBoard.vue'
 import GameGymMatchHud from '../components/game/GameGymMatchHud.vue'
 import GameGymFreePlay from '../components/game/GameGymFreePlay.vue'
+import GameDance from '../components/game/GameDance.vue'
+import GameEmoteWheel from '../components/game/GameEmoteWheel.vue'
 import GameChat from '../components/game/GameChat.vue'
 import GameDrunkEffects from '../components/game/GameDrunkEffects.vue'
 import GameDrinkFast from '../components/game/GameDrinkFast.vue'
@@ -111,6 +113,8 @@ import { useGymMatch } from '../composables/game/useGymMatch'
 import { FREE_PLAY_COACHES } from '../game/sports/gymMatch'
 import { useTennis } from '../composables/game/useTennis'
 import { TENNIS_RACKET } from '../game/sports/tennis'
+import { useDance } from '../composables/game/useDance'
+import { useEmoteWheel } from '../composables/game/useEmoteWheel'
 import { usePickpocket } from '../composables/game/usePickpocket'
 import { useStorageAuction } from '../composables/game/useStorageAuction'
 import { useStorageWarehouse } from '../composables/game/useStorageWarehouse'
@@ -876,6 +880,16 @@ const runningRace = useRunningRace({
   setRacePose: (sessionId, pose) => realtime.setRemoteRacePose(sessionId, pose),
 })
 const { state: runState, runner: myRunnerState, result: runResult, clientNow: runClientNow, clockOffset: runClockOffset, lastStepAt: runLastStepAt, gateBearing: runGateBearing, board: runBoard } = runningRace
+const dance = useDance({ gameRoomRef, isMoveKey: (action, code) => matches(action, code) })
+const { start: danceStart, result: danceResult, boards: danceBoards, boardsFailed: danceBoardsFailed, dancing, notes: danceNotes, songMs: danceSongMs, board: danceBoard, mine: danceMine, teamScore: danceTeamScore, judgementShown: danceJudgement, litLanes: danceLitLanes } = dance
+const emoteWheel = useEmoteWheel({
+  gameRoomRef,
+  isWheelKey: (code) => matches('emoteWheel', code),
+  blocked: () => dancing.value,
+  lockedText: () => t('emotes.locked'),
+  say: (text) => survival.say(text),
+})
+const { open: emoteWheelOpen, rows: emoteRows, myEmote } = emoteWheel
 const sportsSignup = useSportsSignup({
   myPosition,
   getCamera,
@@ -1534,6 +1548,8 @@ function handleExtraKeyDown(e: KeyboardEvent): boolean {
   if (watchMenuOpen.value && !isWalkWithWatchKey(e.code)) return true
   // the bouncer's text field and the pub games (Space holds the pint) take the keyboard too
   if (pubSecretOpen.value || pubGamesOpen.value) return true
+  if (dance.onKeyDown(e)) return true
+  if (emoteWheel.onKeyDown(e)) return true
   if (pubQuiz.onKeyDown(e)) return true
   // Y / N answer a Drink Fast challenge
   if (pubChallenge.onKeyDown(e)) return true
@@ -1634,7 +1650,7 @@ const movement = useGameMovement({
     return pointerLocked.value && runUseOrPunch(mouseButtonCode(e.button), false, e.shiftKey)
   },
   speedFactor: () => survival.speedFactor() * intoxication.walkFactor() * (adminWatch.hasMyPower('speed') ? SPEED_POWER_FACTOR : 1),
-  movementLocked: () => seats.seated.value || townBus.riding.value || police.cuffedBy.value !== null || adminWatch.hasMyPower('freeze') || gymMatch.down() || runningRace.racing.value,
+  movementLocked: () => seats.seated.value || townBus.riding.value || police.cuffedBy.value !== null || adminWatch.hasMyPower('freeze') || gymMatch.down() || runningRace.racing.value || dancing.value,
   flying: () => adminWatch.hasMyPower('fly'),
   afterCameraPlaced: intoxication.applyToCamera,
   trySpendJump: () => adminWatch.hasMyPower('endless_stamina') || punch.trySpendJump(),
@@ -1680,6 +1696,7 @@ const movement = useGameMovement({
     runningRace.tick(dt)
     gymMatch.tick()
     tennis.tick()
+    dance.tick()
     if (!doorSigns.group.parent) getScene()?.add(doorSigns.group)
     minimap.tick()
     gps.tick()
@@ -1832,6 +1849,8 @@ const realtime = useGameRealtime({
     onTennisFree: tennis.handlers.onFree,
   },
   gym: gymMatch.handlers,
+  dance: dance.handlers,
+  emotes: { ...emoteWheel.handlers, clipOf: emoteWheel.clipOf },
   pickpocket: pickpocket.handlers,
   storageAuction: {
     ...storageAuction.handlers,
@@ -2426,6 +2445,27 @@ const crosshairClass = computed(() => {
     />
     <GameGymMatchHud :hud="gymHud" :free-hud="gymFreeHud" :banner="gymBanner" :rim-pop="gymRimPop" :release-label="gymReleaseLabel" />
     <GameGymFreePlay v-if="gymFreeSports" :my-ball="gymMyBall" :sports="gymFreeSports" @borrow="gymMatch.borrow" @give-back="gymMatch.giveBack" />
+    <GameEmoteWheel v-if="emoteWheelOpen" :rows="emoteRows" :current="myEmote" />
+    <p v-else-if="myEmote" class="cc-hud pointer-events-none absolute bottom-28 left-1/2 z-[36] m-0 -translate-x-1/2 px-3 py-1 text-sm font-bold text-sun">
+      {{ t('emotes.dancing', { name: t(`emotes.names.${myEmote}`) }) }}
+    </p>
+    <GameDance
+      v-if="danceStart"
+      :mode="danceStart.mode"
+      :song="danceStart.song"
+      :dancing="dancing"
+      :song-ms="danceSongMs"
+      :notes="danceNotes"
+      :board="danceBoard"
+      :mine="danceMine"
+      :team-score="danceTeamScore"
+      :judgement="danceJudgement"
+      :lit-lanes="danceLitLanes"
+      :result="danceResult"
+      :boards="danceBoards"
+      :boards-failed="danceBoardsFailed"
+      :reduced-effects="reducedEffects"
+    />
     <GameSportsSignup
       v-if="sportsSignupOpen"
       :lobby="sportsLobby"

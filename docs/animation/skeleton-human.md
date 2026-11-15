@@ -55,6 +55,8 @@ Clips are phase functions `f(ph, P)` sampled by `sample_actions(arm, clips, fps=
     raise the shoulders, which hides the shoulder pinch of an overhead arm.
   - `Hips`, `Spine` and `Chest` `rz` positive turn the torso to the character's left (tennis renders, 2026-11-14).
   - `UpperArm.R` `rz` positive and `UpperArm.L` `rz` negative swing the arm forward across the body.
+  - `ry` negative on `UpperArm.L` raises the left arm sideways (render of `Stumble`, 2026-11-14). Raising an arm
+    that is already swung forward (`rx` −50) by `ry` brings the hand to the face: bring `rx` back toward 0 first.
   Any other sign is checked on a render before it is trusted.
 - `sample_actions` deletes every NLA track first: always pass the full clip dict.
 
@@ -68,6 +70,8 @@ Clips are phase functions `f(ph, P)` sampled by `sample_actions(arm, clips, fps=
 | Sit | 120 | 4.0 | yes | `pose_sit` (Hips at −0.45 m, `SIT_HIP_HEIGHT`) |
 | Eat | 30 | 1.0 | one-shot | `pose_eat`, hand at the mouth from 0.33 s, two bites, chew (upper body only) |
 | Drink | 30 | 1.0 | one-shot | `pose_drink`, hand at the mouth from 0.33 s, head back 22° (upper body only) |
+| Dance | 60 | 2.0 | yes | `pose_dance`: 4 beats at 120 bpm (one beat = 15 frames), knee bounce on each beat, step-touch to the character's right and back (18 cm, feet planted by `leg_ik`), alternating arm pumps |
+| Stumble | 18 | 0.6 | one-shot | `pose_stumble`: knees buckle, arms flail, feet planted; starts and ends on the `Dance` frame-0 pose |
 | Pick | 90 | 3.0 | one-shot | `pose_pick`, base body only (`run_wear.py`) |
 | Kick | 14 | 0.467 | one-shot | `pose_kick`, right side-foot pass, contact at frame 6 (0.20 s), left foot planted |
 | Shot | 21 | 0.7 | one-shot | `pose_shot`, wind-up at frame 8, right instep strike at frame 11 (0.367 s) |

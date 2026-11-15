@@ -30,4 +30,6 @@ enum ActionCounter: string
     case Fast400Runs = 'fast_400_runs';
     case TennisMatches = 'tennis_matches';
     case TennisWhitewashes = 'tennis_whitewashes';
+    case SongsDanced = 'songs_danced';
+    case FullComboHard = 'full_combo_hard';
 }

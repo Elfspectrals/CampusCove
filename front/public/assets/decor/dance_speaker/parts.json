@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "materials": {
+    "DC_DanceSpeaker": {
+      "mask": "parts_DC_DanceSpeaker.png",
+      "parts": [
+        {
+          "id": "main",
+          "label": "Main",
+          "color": "#2f2f30"
+        },
+        {
+          "id": "accent",
+          "label": "Accent",
+          "color": "#555556"
+        }
+      ]
+    }
+  }
+}

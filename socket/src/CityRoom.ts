@@ -119,6 +119,12 @@ import {
   leaveSportsRoom,
   moveInSports,
   newSportsState,
+  moveEmote,
+  onDanceEmotePlay,
+  onDancePress,
+  onEmoteList,
+  sendEmotesOnJoin,
+  stopEmote,
   onSportsCoachOpen,
   onSportsPassBuy,
   onSportsSignup,
@@ -264,6 +270,9 @@ export class CityRoom extends Room implements GameRoom {
     this.onMessage('gym_ball_return', (client) => onGymBallReturn(this, client))
     this.onMessage('tennis_hit', (client, payload: ClientPayload) => onTennisHit(this, client, payload))
     this.onMessage('tennis_ball_take', (client, payload: ClientPayload) => void onTennisBallTake(this, client, payload).catch((error) => warn('tennis ball failed', error)))
+    this.onMessage('dance_press', (client, payload: ClientPayload) => onDancePress(this, client, payload))
+    this.onMessage('emote_play', (client, payload: ClientPayload) => void onDanceEmotePlay(this, client, payload).catch((error) => warn('emote failed', error)))
+    this.onMessage('emote_list', (client) => void onEmoteList(this, client).catch((error) => warn('emote list failed', error)))
     this.clock.setInterval(() => {
       try {
         tickSports(this)
@@ -350,6 +359,7 @@ export class CityRoom extends Room implements GameRoom {
       await loadSurvival(client, player)
     }
     await joinSports(this, client, player)
+    sendEmotesOnJoin(this, client)
     await sendMarketOnJoin(this, client, player)
   }
 
@@ -364,6 +374,7 @@ export class CityRoom extends Room implements GameRoom {
     onTradeLeave(this, player)
     leavePub(this, player)
     leaveSportsRoom(this, player, Date.now())
+    stopEmote(this, player.sessionId)
     void saveSurvival(player)
     void saveWanted(player)
     void saveJail(player)
@@ -425,6 +436,7 @@ export class CityRoom extends Room implements GameRoom {
     onSurvivalMove(this, client, player, previousY, distXZ)
     onTaskMove(player, distXZ, now)
     moveInSports(this, player, now)
+    moveEmote(this, player)
   }
 
   broadcastMove(client: GameClient, player: Player): void {
