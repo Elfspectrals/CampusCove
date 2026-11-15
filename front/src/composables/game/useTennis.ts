@@ -15,6 +15,8 @@ import {
   ballPosition,
   freeCourtAt,
   iServe,
+  markOpacity,
+  markYaw,
   myTeam,
   sideAt,
   swingFor,
@@ -30,6 +32,11 @@ const BALL_COLOR = 0xd8f04a
 const LEFT_BUTTON = 0
 const RIGHT_BUTTON = 2
 const PROMPT_HEIGHT = 1.2
+const MARK_COLOR = 0xeef0d2
+const MARK_HALF_WIDTH = 0.035
+const MARK_HALF_LENGTH = 0.07
+const MARK_OPACITY = 0.8
+const MARK_Y = 0.09
 
 export interface TennisHud {
   games: Record<TennisTeam, number>
@@ -62,6 +69,21 @@ export interface TennisDeps {
   remoteSessions: () => readonly string[]
 }
 
+interface OutMark {
+  mesh: THREE.Mesh<THREE.CircleGeometry, THREE.MeshBasicMaterial>
+  shownAt: number
+}
+
+function newMarkMesh(): OutMark['mesh'] {
+  const mesh = new THREE.Mesh(
+    new THREE.CircleGeometry(1, 16).rotateX(-Math.PI / 2),
+    new THREE.MeshBasicMaterial({ color: MARK_COLOR, transparent: true, opacity: MARK_OPACITY, depthWrite: false }),
+  )
+  mesh.scale.set(MARK_HALF_WIDTH, 1, MARK_HALF_LENGTH)
+  mesh.name = 'tennis_out_mark'
+  return mesh
+}
+
 function newBallMesh(): THREE.Mesh {
   const mesh = new THREE.Mesh(new THREE.SphereGeometry(BALL_RADIUS_SHOWN, 12, 8), new THREE.MeshStandardMaterial({ color: BALL_COLOR, roughness: 0.6 }))
   mesh.visible = false
@@ -81,6 +103,7 @@ export function useTennis(deps: TennisDeps) {
   const matchBall = newBallMesh()
   const freeBalls = new Map<string, THREE.Mesh>(TENNIS_COURTS.map((c) => [c.id, newBallMesh()]))
   const racketHolders = new Set<string>()
+  const outMarks = new Map<string, OutMark>()
   const forward = new THREE.Vector3()
   const eye = new THREE.Vector3()
   const projection = new THREE.Vector3()
@@ -89,11 +112,36 @@ export function useTennis(deps: TennisDeps) {
     return deps.gameRoomRef.value?.sessionId ?? null
   }
 
-  function announce(call: TennisCall, ball: TennisBall | null, mesh: THREE.Mesh): void {
+  function showOutMark(court: string, ball: TennisBall): void {
+    const scene = deps.getScene()
+    if (!scene) return
+    const mark = outMarks.get(court) ?? { mesh: newMarkMesh(), shownAt: 0 }
+    mark.mesh.position.set(ball.x, MARK_Y, ball.z)
+    mark.mesh.rotation.y = markYaw(ball)
+    mark.mesh.material.opacity = MARK_OPACITY
+    mark.shownAt = Date.now()
+    outMarks.set(court, mark)
+    if (!mark.mesh.parent) scene.add(mark.mesh)
+  }
+
+  function fadeOutMarks(): void {
+    for (const [court, mark] of outMarks) {
+      const opacity = markOpacity(now.value - mark.shownAt)
+      mark.mesh.material.opacity = MARK_OPACITY * opacity
+      if (opacity > 0) continue
+      mark.mesh.removeFromParent()
+      mark.mesh.geometry.dispose()
+      mark.mesh.material.dispose()
+      outMarks.delete(court)
+    }
+  }
+
+  function announce(court: string, call: TennisCall, ball: TennisBall | null, mesh: THREE.Mesh): void {
     if (!call) return
     lastCall.value = call
     callUntil.value = Date.now() + TENNIS_CALL_MS
     deps.onCall(call)
+    if (call === 'out' && ball) showOutMark(court, ball)
     if (ball && call !== 'net') {
       mesh.position.set(ball.x, ball.y, ball.z)
       deps.onBounce(mesh)
@@ -114,7 +162,7 @@ export function useTennis(deps: TennisDeps) {
     state.value = data
     if (data.phase === 'ended') endedAt.value = Date.now()
     struck(before ?? undefined, data, matchBall)
-    if (before?.phase !== 'point') announce(data.call, data.ball, matchBall)
+    if (before?.phase !== 'point') announce(data.venue, data.call, data.ball, matchBall)
   }
 
   function onFree(data: TennisFreePayload): void {
@@ -127,7 +175,7 @@ export function useTennis(deps: TennisDeps) {
     const mesh = freeBalls.get(data.court)
     if (!mesh) return
     struck(before, data, mesh)
-    if (before?.phase !== 'point') announce(data.call, data.ball, mesh)
+    if (before?.phase !== 'point') announce(data.court, data.call, data.ball, mesh)
   }
 
   function playing(): TennisStatePayload | null {
@@ -232,6 +280,7 @@ export function useTennis(deps: TennisDeps) {
     cue.value = plays.some((p) => ballComing(p, team, deps.myPosition, serverMs))
     freePlay.value = state.value === null && holdingBall()
     updateRackets()
+    fadeOutMarks()
   }
 
   const hud = computed<TennisHud | null>(() => {

@@ -52,13 +52,13 @@
     {
       "id": "sports_tennis_racket_01",
       "kind": "decor",
-      "key": "tennis_racket",
+      "key": "tennis_racket_flat",
       "position": [
-        -443.9,
-        0.5,
-        -263.5
+        -443.5,
+        0.48,
+        -263.8
       ],
-      "yaw": 0.0,
+      "yaw": 0.1,
       "scale": [
         1,
         1,
@@ -68,13 +68,13 @@
     {
       "id": "sports_tennis_racket_02",
       "kind": "decor",
-      "key": "tennis_racket",
+      "key": "tennis_racket_flat",
       "position": [
-        -443.1,
-        0.5,
-        -279.5
+        -443.5,
+        0.48,
+        -279.2
       ],
-      "yaw": 3.1416,
+      "yaw": 3.04,
       "scale": [
         1,
         1,

@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import type { TennisStatePayload } from '../../types/gameRealtime'
-import { BALL_BASKETS, TENNIS_BOUNCE_KEEP, TENNIS_COURTS, TENNIS_GRAVITY, TENNIS_HALF_LENGTH, TENNIS_NET_Z, TENNIS_REACH_M, TENNIS_RESTITUTION, aimOnCourt, ballComing, ballPosition, freeCourtAt, iServe, myTeam, sideAt, swingFor } from './tennis.ts'
+import { BALL_BASKETS, TENNIS_BOUNCE_KEEP, TENNIS_COURTS, TENNIS_GRAVITY, TENNIS_HALF_LENGTH, TENNIS_NET_Z, TENNIS_REACH_M, TENNIS_RESTITUTION, TENNIS_MARK_MS, aimOnCourt, ballComing, ballPosition, freeCourtAt, iServe, markOpacity, markYaw, myTeam, sideAt, swingFor } from './tennis.ts'
 
 const ZONE = JSON.parse(readFileSync(new URL('../../../public/assets/zones/sports_tennis.json', import.meta.url), 'utf8'))
 const RULES = JSON.parse(readFileSync(new URL('../../../public/assets/sports/rules/tennis.json', import.meta.url), 'utf8'))
@@ -87,4 +87,20 @@ test('my own swing: serve while serving, lob on right click, forehand on the rac
   assert.equal(swingFor(false, false, 'red', { x: 0 }, -1), 'backhand')
   assert.equal(swingFor(false, false, 'blue', { x: 0 }, -1), 'forehand')
   assert.equal(swingFor(false, false, 'blue', { x: 0 }, null), 'forehand')
+})
+
+test('an out mark stays fully visible, then fades out over its last 1.5 s', () => {
+  assert.equal(TENNIS_MARK_MS, 4000)
+  assert.equal(markOpacity(0), 1)
+  assert.equal(markOpacity(2500), 1)
+  assert.equal(markOpacity(3250), 0.5)
+  assert.equal(markOpacity(4000), 0)
+  assert.equal(markOpacity(6000), 0)
+  assert.equal(markOpacity(-1), 0)
+})
+
+test('an out mark lies along the direction the ball was travelling', () => {
+  assert.equal(markYaw({ vx: 0, vz: 12 }), 0)
+  assert.equal(markYaw({ vx: 3, vz: 0 }), Math.PI / 2)
+  assert.equal(markYaw({ vx: 0, vz: -12 }), Math.PI)
 })

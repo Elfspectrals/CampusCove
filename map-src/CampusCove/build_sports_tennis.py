@@ -16,10 +16,12 @@ import lib_sports as SP
 importlib.reload(SP)
 import bmesh
 import bpy
+from mathutils import Matrix, Vector
 
 KEY = "sports_tennis"
 OUT = os.path.join(L.OUT_ROOT, "park", KEY)
 RACKET_OUT = os.path.join(L.OUT_ROOT, "decor", "tennis_racket")
+RACKET_FLAT_OUT = os.path.join(L.OUT_ROOT, "decor", "tennis_racket_flat")
 BASKET_OUT = os.path.join(L.OUT_ROOT, "decor", "tennis_ball_basket")
 FP = SP.FOOTPRINTS[KEY]
 STUB = SP.DOOR_STUBS[KEY]
@@ -291,6 +293,25 @@ racket = [L.join(coll_r, "Racket_Frame", [p for p in parts if p.name.startswith(
 L.export_glb(os.path.join(RACKET_OUT, "model.glb"), racket, use_active_scene=True)
 L.snapshot(sc_r, os.path.join(RACKET_OUT, "preview.png"), (0.6, 0.45, 0.9), (0.0, 0.35, 0.0), lens=50, res=(512, 512))
 print("tennis_racket:", sum(len(p.vertices) - 2 for o in racket for p in o.data.polygons), "tris")
+
+lying = Matrix.Rotation(math.pi / 2, 4, "X")
+racket_flat = []
+for o in racket:
+    flat = o.copy()
+    flat.data = o.data.copy()
+    flat.name = o.name + "_Flat"
+    coll_r.objects.link(flat)
+    flat.data.transform(lying @ o.matrix_world)
+    flat.matrix_world = Matrix.Identity(4)
+    racket_flat.append(flat)
+    o.hide_render = True
+corners = [v.co for o in racket_flat for v in o.data.vertices]
+lift = Vector(((min(c.x for c in corners) + max(c.x for c in corners)) / -2, (min(c.y for c in corners) + max(c.y for c in corners)) / -2, -min(c.z for c in corners)))
+for o in racket_flat:
+    o.data.transform(Matrix.Translation(lift))
+L.export_glb(os.path.join(RACKET_FLAT_OUT, "model.glb"), racket_flat, use_active_scene=True)
+L.snapshot(sc_r, os.path.join(RACKET_FLAT_OUT, "preview.png"), (0.6, 0.6, 0.6), (0.0, 0.0, 0.0), lens=50, res=(512, 512))
+print("tennis_racket_flat:", sum(len(p.vertices) - 2 for o in racket_flat for p in o.data.polygons), "tris")
 
 sc_b = L.new_build_scene("DECOR_tennis_ball_basket")
 coll_b = bpy.data.collections.new("tennis_ball_basket")

@@ -23,7 +23,7 @@ Two outdoor courts, with a tennis coach between them. Shared rules in [README.md
 
 ## HUD
 
-Score (games and points), server indicator, hitting zone cue as the ball arrives, "Out" call on the court.
+Score (games and points), server indicator, hitting zone cue as the ball arrives, "Out" call on the court. On an `out` call the ball leaves a mark where it landed (the `ball` of the point state starts at the landing spot), lying along its path; it stays 2.5 s then fades out over 1.5 s. The mark only shows the socket's call, it never decides it.
 
 ## Server authority
 

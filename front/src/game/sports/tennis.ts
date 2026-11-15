@@ -7,6 +7,8 @@ export const TENNIS_REACH_M = 1.6
 export const TENNIS_HALF_LENGTH = 11.885
 export const TENNIS_CALL_MS = 1600
 export const TENNIS_END_SHOWN_MS = 5000
+export const TENNIS_MARK_MS = 4000
+const TENNIS_MARK_FADE_MS = 1500
 export const TENNIS_NET_Z = -271.5
 export const TENNIS_COURTS = [
   { id: 'tennis_1', cx: -454.645 },
@@ -104,4 +106,13 @@ export function swingFor(serving: boolean, lob: boolean, team: TennisTeam, me: {
   if (serving) return 'serve'
   if (lob) return 'lob'
   return ballX === null || (ballX - me.x) * sideSign(team) >= 0 ? 'forehand' : 'backhand'
+}
+
+export function markOpacity(ageMs: number): number {
+  if (ageMs < 0 || ageMs >= TENNIS_MARK_MS) return 0
+  return Math.min(1, (TENNIS_MARK_MS - ageMs) / TENNIS_MARK_FADE_MS)
+}
+
+export function markYaw(ball: { vx: number; vz: number }): number {
+  return Math.atan2(ball.vx, ball.vz)
 }
