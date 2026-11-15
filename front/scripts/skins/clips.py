@@ -969,6 +969,116 @@ def skate_clips(extras):
     }
 
 
+PALM_DOWN = 90
+ARM_TUCK = -25
+CROUCH_HIPS = (-0.46, 0.12, 18)
+CROUCH_ARM = (-38, 55, -60)
+
+def _apply_body(P, pose):
+    P.move("Hips", 0, pose.get(("Hips", "my"), 0.0), pose.get(("Hips", "mz"), 0.0))
+    for (bone, axis), value in pose.items():
+        if axis in ("x", "y", "z"):
+            getattr(P, "r" + axis)(bone, value)
+    bones = P.arm.data.bones
+    for side in (".L", ".R"):
+        ankle, ball = bones["Foot" + side].head_local, bones["Toe" + side].head_local
+        pitch = pose.get(("Foot" + side, "pitch"), 0.0)
+        p = math.radians(pitch)
+        by, bz = ankle.y - ball.y, ankle.z - ball.z
+        heel = Vector((ankle.x, ball.y + by * math.cos(p) - bz * math.sin(p), ball.z + by * math.sin(p) + bz * math.cos(p)))
+        step = Vector((0, pose.get(("Foot" + side, "sy"), 0.0), pose.get(("Foot" + side, "sz"), 0.0)))
+        leg_ik(P, side, heel + step, pitch)
+
+def pose_petanque_point(extras=None):
+    crouch = {("Hips", "mz"): -0.14, ("Hips", "my"): 0.04, ("Spine", "x"): 12, ("Chest", "x"): 8, ("Head", "x"): -14,
+              ("UpperArm.L", "x"): -22, ("UpperArm.L", "y"): 10, ("LowerArm.L", "x"): -35}
+    back = {**crouch, ("UpperArm.R", "x"): 40, ("UpperArm.R", "y"): ARM_TUCK, ("LowerArm.R", "x"): -12, ("LowerArm.R", "z"): PALM_DOWN}
+    release = {**crouch, ("UpperArm.R", "x"): -55, ("UpperArm.R", "y"): ARM_TUCK, ("LowerArm.R", "x"): -8, ("LowerArm.R", "z"): PALM_DOWN, ("Hand.R", "x"): -12}
+    follow = {**release, ("UpperArm.R", "x"): -78, ("LowerArm.R", "x"): -4, ("Hand.R", "x"): 6, ("Head", "x"): -16}
+    pose_at = key_poses([
+        (0.0, {}),
+        (0.07, {("Hips", "mz"): -0.03, ("UpperArm.R", "x"): -15, ("LowerArm.R", "x"): -20, ("LowerArm.R", "z"): PALM_DOWN}),
+        (0.30, back),
+        (0.48, release),
+        (0.60, follow),
+        (0.76, follow),
+        (1.0, {}),
+    ])
+
+    def f(ph, P):
+        _apply_body(P, pose_at(ph))
+        if extras:
+            extras(ph, P, 0.0, 1.0)
+    return f
+
+def pose_petanque_shoot(extras=None):
+    aim = {("Hips", "mz"): -0.03, ("UpperArm.R", "x"): -25, ("LowerArm.R", "x"): -25, ("LowerArm.R", "z"): PALM_DOWN, ("Head", "x"): -3}
+    back = {("Hips", "mz"): -0.06, ("Hips", "my"): 0.03, ("Spine", "x"): 8, ("Chest", "x"): 6, ("Head", "x"): -10,
+            ("UpperArm.R", "x"): 75, ("UpperArm.R", "y"): ARM_TUCK, ("LowerArm.R", "x"): -6, ("LowerArm.R", "z"): PALM_DOWN, ("UpperArm.L", "x"): -28, ("LowerArm.L", "x"): -25,
+            ("Foot.L", "sy"): -0.12, ("Foot.L", "sz"): 0.07}
+    planted = {("Hips", "mz"): -0.06, ("Hips", "my"): -0.12, ("Spine", "x"): 6, ("Chest", "x"): 4, ("Head", "x"): -8,
+               ("Foot.L", "sy"): -0.30, ("Foot.R", "pitch"): 18}
+    release = {**planted, ("UpperArm.R", "x"): -95, ("UpperArm.R", "y"): ARM_TUCK, ("LowerArm.R", "z"): PALM_DOWN, ("LowerArm.R", "x"): -6, ("Hand.R", "x"): -10,
+               ("UpperArm.L", "x"): 10, ("LowerArm.L", "x"): -20}
+    follow = {**planted, ("UpperArm.R", "x"): -135, ("UpperArm.R", "y"): ARM_TUCK, ("LowerArm.R", "z"): PALM_DOWN, ("LowerArm.R", "x"): -10, ("Hand.R", "x"): 8, ("Head", "x"): -12,
+              ("UpperArm.L", "x"): 18, ("LowerArm.L", "x"): -18}
+    pose_at = key_poses([
+        (0.0, {}),
+        (0.07, aim),
+        (0.30, back),
+        (0.42, {**back, **planted, ("UpperArm.R", "x"): 40}),
+        (0.50, release),
+        (0.62, follow),
+        (0.72, follow),
+        (0.84, {("Hips", "mz"): -0.03, ("Hips", "my"): -0.04, ("Foot.L", "sy"): -0.14, ("Foot.L", "sz"): 0.06,
+                ("UpperArm.R", "x"): -20, ("LowerArm.R", "x"): -15}),
+        (1.0, {}),
+    ])
+
+    def f(ph, P):
+        _apply_body(P, pose_at(ph))
+        if extras:
+            extras(ph, P, 0.0, 1.0)
+    return f
+
+def pose_petanque_crouch(extras=None):
+    squat = {("Hips", "mz"): CROUCH_HIPS[0], ("Hips", "my"): CROUCH_HIPS[1], ("Hips", "x"): CROUCH_HIPS[2],
+             ("Spine", "x"): 28, ("Chest", "x"): 18, ("Head", "x"): -48}
+    for side, sgn in ((".L", 1), (".R", -1)):
+        squat.update({("UpperArm" + side, "x"): CROUCH_ARM[0], ("UpperArm" + side, "y"): sgn * CROUCH_ARM[1],
+                      ("LowerArm" + side, "x"): CROUCH_ARM[2], ("Hand" + side, "x"): 20})
+
+    def f(ph, P):
+        a = 2 * math.pi * ph
+        _apply_body(P, {**squat, ("Hips", "mz"): CROUCH_HIPS[0] + 0.006 * S_(a)})
+        P.rx("Chest", -1.5 * S_(a)); P.rx("Spine", -0.8 * S_(a))
+        P.rz("Head", 7 * S_(a + 0.6) + 2 * S_(3 * a)); P.rx("Head", 2 * S_(2 * a - 0.4))
+        if extras:
+            extras(ph, P, 0.0, 1.0)
+    return f
+
+def pose_petanque_celebrate(extras=None):
+    up = {("UpperArm.R", "x"): -70, ("UpperArm.R", "y"): 15, ("LowerArm.R", "x"): -95, ("Head", "x"): -8, ("Chest", "x"): -3}
+    pump = {("UpperArm.R", "x"): -10, ("UpperArm.R", "y"): 8, ("LowerArm.R", "x"): -125, ("Chest", "x"): 7, ("Spine", "x"): 4,
+            ("Head", "x"): 6, ("Hips", "mz"): -0.04, ("UpperArm.L", "x"): -8, ("LowerArm.L", "x"): -20}
+    pose_at = key_poses([
+        (0.0, {}),
+        (0.08, {("Chest", "x"): 3, ("UpperArm.R", "x"): 8, ("Hips", "mz"): -0.01}),
+        (0.26, up),
+        (0.38, pump),
+        (0.50, {**up, ("UpperArm.R", "x"): -55, ("LowerArm.R", "x"): -100}),
+        (0.62, pump),
+        (0.76, pump),
+        (1.0, {}),
+    ])
+
+    def f(ph, P):
+        _apply_body(P, pose_at(ph))
+        if extras:
+            extras(ph, P, 0.0, 1.0)
+    return f
+
+
 def make_clips(extras):
     return {
         "Idle": (120, gait_idle(None, extras)),
@@ -995,4 +1105,8 @@ def make_clips(extras):
         "ClimbLower": (30, pose_climb_lower(extras)),
         "ClimbTop": (36, pose_climb_top(extras)),
         **skate_clips(extras),
+        "PetanquePoint": (48, pose_petanque_point(extras)),
+        "PetanqueShoot": (48, pose_petanque_shoot(extras)),
+        "PetanqueCrouch": (120, pose_petanque_crouch(extras)),
+        "PetanqueCelebrate": (45, pose_petanque_celebrate(extras)),
     }

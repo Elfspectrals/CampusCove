@@ -5,7 +5,7 @@ import {
   type CosmeticColors,
 } from '../../api/characterCosmetics'
 import { buildCompositeAvatar, disposeObject3D } from '../../avatar/compositeAvatar'
-import { markAvatarSkatePush, playAvatarSkateMove, type AvatarSkateMove, setAvatarSkating, playAvatarClimbMove, setAvatarClimbPose, type SportsMoveClip, type TennisStroke, playAvatarSportsMove, playAvatarTennisStroke, setAvatarDanceMove, setAvatarDancing, setAvatarDribbling, setAvatarEating, setAvatarPicking, setAvatarRacePose, setAvatarSeated, setAvatarStumbling, setAvatarTennis, updateAvatarAnimation, type RacePose, type AvatarClimbMove, type AvatarClimbPose } from '../../avatar/glbCharacter'
+import { setAvatarCrouching, setAvatarPetanque, type PetanqueClip, markAvatarSkatePush, playAvatarSkateMove, type AvatarSkateMove, setAvatarSkating, playAvatarClimbMove, setAvatarClimbPose, type SportsMoveClip, type TennisStroke, playAvatarSportsMove, playAvatarTennisStroke, setAvatarDanceMove, setAvatarDancing, setAvatarDribbling, setAvatarEating, setAvatarPicking, setAvatarRacePose, setAvatarSeated, setAvatarStumbling, setAvatarTennis, updateAvatarAnimation, type RacePose, type AvatarClimbMove, type AvatarClimbPose } from '../../avatar/glbCharacter'
 import { parseCharacterLook, type CharacterLook } from '../../avatar/characterLook'
 import { createModularCharacter } from '../../avatar/modularCharacter'
 import { WEAR_SLOTS, wearSignature, type WearModels } from '../../avatar/modularCharacterLogic'
@@ -447,6 +447,10 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     avatars.get(sessionId)?.boxer?.pose(pose)
   }
 
+  function handOf(sessionId: string): THREE.Object3D | null {
+    return avatars.get(sessionId)?.group.getObjectByName('HandR') ?? null
+  }
+
   function setVoiceState(sessionId: string, state: VoiceIconState): void {
     const entry = avatars.get(sessionId)
     if (entry) entry.voiceState = state
@@ -521,6 +525,16 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
   function stumble(sessionId: string) {
     const entry = avatars.get(sessionId)
     if (entry) setAvatarStumbling(entry.group)
+  }
+
+  function setCrouching(sessionId: string, crouching: boolean): void {
+    const entry = avatars.get(sessionId)
+    if (entry) setAvatarCrouching(entry.group, crouching)
+  }
+
+  function playPetanque(sessionId: string, clip: PetanqueClip): void {
+    const entry = avatars.get(sessionId)
+    if (entry) setAvatarPetanque(entry.group, clip)
   }
 
   function showChat(sessionId: string, text: string) {
@@ -650,5 +664,5 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     }
   }
 
-  return { skatePushed, skateMove, upsert, updateAppearance, setTarget, setSeated, setPicking, setRacePose, setClimbAnimation, setTennis, tennisStroke, setDancing, danceMove, stumble, setHeldTool, setBoxer, boxerShot, boxerPose, setRacePint, setBadges, pseudoOf, positionOf, avatarOf, playSportsMove, setDribbling, setTopOverride, setVoiceState, setWantedStars, players, accountOf, showAction, showChat, showPunch, showHit, remove, clear, tick }
+  return { skatePushed, skateMove, upsert, updateAppearance, setTarget, setSeated, setPicking, setRacePose, setClimbAnimation, setTennis, tennisStroke, setDancing, danceMove, stumble, setHeldTool, handOf, playPetanque, setCrouching, setBoxer, boxerShot, boxerPose, setRacePint, setBadges, pseudoOf, positionOf, avatarOf, playSportsMove, setDribbling, setTopOverride, setVoiceState, setWantedStars, players, accountOf, showAction, showChat, showPunch, showHit, remove, clear, tick }
 }

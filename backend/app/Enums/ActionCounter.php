@@ -37,4 +37,6 @@ enum ActionCounter: string
     case ClimbLinesTopped = 'climb_lines_topped';
     case BlackLinesTopped = 'black_lines_topped';
     case BoxingWins = 'boxing_wins';
+    case PetanqueGames = 'petanque_games';
+    case PetanqueCarreaux = 'petanque_carreaux';
 }

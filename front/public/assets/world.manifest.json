@@ -1472,6 +1472,18 @@
           ]
         }
       ]
+    },
+    {
+      "key": "sports_petanque",
+      "optional": true,
+      "bounds": {
+        "minX": -414,
+        "maxX": -386,
+        "minZ": -275,
+        "maxZ": -250
+      },
+      "modelUrl": "/assets/park/sports_petanque/sports_petanque.glb",
+      "sportsPass": true
     }
   ],
   "fountains": [

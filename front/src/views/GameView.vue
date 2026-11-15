@@ -45,6 +45,8 @@ import GameClimbHud from '../components/game/GameClimbHud.vue'
 import GameClimbBoard from '../components/game/GameClimbBoard.vue'
 import GameBoxingHud from '../components/game/GameBoxingHud.vue'
 import GameSkatingHud from '../components/game/GameSkatingHud.vue'
+import GamePetanque from '../components/game/GamePetanque.vue'
+import GamePetanqueFree from '../components/game/GamePetanqueFree.vue'
 import GameChat from '../components/game/GameChat.vue'
 import GameDrunkEffects from '../components/game/GameDrunkEffects.vue'
 import GameDrinkFast from '../components/game/GameDrinkFast.vue'
@@ -124,6 +126,7 @@ import { useClimbingBoard } from '../composables/game/useClimbingBoard'
 import { useBoxing } from '../composables/game/useBoxing'
 import { useSkating } from '../composables/game/useSkating'
 import { ICE_SKATES_CODE } from '../game/sports/skating/skateMotion'
+import { usePetanque } from '../composables/game/usePetanque'
 import { usePickpocket } from '../composables/game/usePickpocket'
 import { useStorageAuction } from '../composables/game/useStorageAuction'
 import { useStorageWarehouse } from '../composables/game/useStorageWarehouse'
@@ -1022,6 +1025,29 @@ const skating = useSkating({
   inRink: () => currentHouseKey.value === 'sports_ice_rink',
 })
 const { boardShown: skatingBoard, active: skatingActive, speed: skatingSpeed, cue: skatingCue, rhythmZone: skatingWindow, lastPush: skatingLastPush, race: skatingRace, rows: skatingRows, clock: skatingClock, result: skatingResult } = skating
+const petanque = usePetanque({
+  gameRoomRef,
+  getScene,
+  getCamera,
+  myPosition,
+  pointerLocked: () => pointerLocked.value,
+  rightHand: () => arms?.rightHand() ?? null,
+  remoteHand: (sessionId) => realtime.remoteHand(sessionId),
+  throwArms: (mode) => arms?.throwBoule(mode),
+  playRemote: (sessionId, clip) => realtime.playRemotePetanque(sessionId, clip),
+  remotePosition: (sessionId) => realtime.remotePosition(sessionId),
+  setCrouching: (sessionId, crouching) => realtime.setRemoteCrouching(sessionId, crouching),
+  say: (text) => survival.say(text),
+  playSound: (name) => sfx.play(name),
+  playSoundOn: (name, object, delayS) => sfx.playOn(name, object, delayS),
+  closedText: (data) => {
+    if (data.reason === 'forfeit' || !data.score) return t('petanque.closed.forfeit')
+    const team = petanque.myTeam.value
+    const won = team !== null && data.score[team] > data.score[team === 'red' ? 'blue' : 'red']
+    return t(won ? 'petanque.closed.won' : 'petanque.closed.lost', data.score)
+  },
+})
+const { freePlay: petanqueFree, myGame: petanqueGame, myTurn: petanqueMyTurn, standingInCircle: petanqueInCircle, busy: petanqueBusy, mode: petanqueMode, power: petanquePower, carreau: petanqueCarreau, turnSecondsLeft: petanqueSecondsLeft } = petanque
 const PICKPOCKET_ERROR_KEYS = new Set([
   'pickpocket_on_duty',
   'pickpocket_jailed',
@@ -1706,6 +1732,7 @@ const movement = useGameMovement({
   onHotbarDigit: selectHotbarIndex,
   onHotbarScroll: (step) => {
     if (placement.onWheelStep(step)) return
+    if (petanque.onWheelStep()) return
     selectHotbarIndex((selectedHotbarIndex.value + step + 9) % 9)
   },
   handleExtraKeyDown,
@@ -1714,6 +1741,7 @@ const movement = useGameMovement({
     if (placement.onPointerDown(e)) return true
     if (runningRace.onMouseDown(e)) return true
     if (tennis.onPointerDown(e)) return true
+    if (petanque.onPointerDown(e)) return true
     if (adminPanelOpen.value && !pointerLocked.value) {
       requestPointerLock()
       return true
@@ -1775,6 +1803,7 @@ const movement = useGameMovement({
     tennis.tick()
     dance.tick()
     climbing.tick()
+    petanque.tick()
     if (!doorSigns.group.parent) getScene()?.add(doorSigns.group)
     minimap.tick()
     gps.tick()
@@ -2555,6 +2584,27 @@ const crosshairClass = computed(() => {
       :boards="danceBoards"
       :boards-failed="danceBoardsFailed"
       :reduced-effects="reducedEffects"
+    />
+    <GamePetanque
+      v-if="petanqueGame"
+      :game="petanqueGame"
+      :my-session-id="gameRoomRef?.sessionId ?? null"
+      :my-turn="petanqueMyTurn"
+      :in-circle="petanqueInCircle"
+      :busy="petanqueBusy"
+      :mode="petanqueMode"
+      :power="petanquePower"
+      :carreau="petanqueCarreau"
+      :seconds-left="petanqueSecondsLeft"
+    />
+    <GamePetanqueFree
+      v-if="petanqueFree && !petanqueGame"
+      :piste="petanqueFree.piste"
+      :kind="petanqueFree.kind"
+      :distances="petanqueFree.distances"
+      :busy="petanqueFree.busy"
+      :mode="petanqueMode"
+      :power="petanquePower"
     />
     <GameSportsSignup
       v-if="sportsSignupOpen"

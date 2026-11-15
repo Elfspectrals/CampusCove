@@ -126,6 +126,12 @@ def build_straw_hat(key, M, m):
     add_cyl(M, m["accent"], (0, -0.012, 1.812), (0, -0.012, 1.842), 0.1135, 0.111, seg=20, cap=False, sx=0.92)
 
 
+def build_beret(key, M, m):
+    hair_cap(M, m["hair"], puff=0.008)
+    add_cyl(M, m["accent"], (0, -0.012, 1.80), (0, -0.012, 1.83), 0.1155, 0.113, seg=22, cap=False, sx=0.92)
+    add_ellipsoid(M, m["main"], (0.014, -0.012, 1.858), (0.136, 0.13, 0.052), rot=(0, 0.14, 0), seg=20, rings=8)
+
+
 TORSO_PATH = [(0, 0, 0.97), (0, 0, 1.10), (0, 0, 1.28), (0, 0, 1.43), (0, 0, 1.52), (0, 0, 1.585)]
 TORSO_R = [(0.168, 0.118), (0.158, 0.112), (0.19, 0.133), (0.212, 0.141), (0.16, 0.118), (0.085, 0.08)]
 ARM_PATH = [(0.17, 0, 1.50), (0.25, 0, 1.40), (0.34, 0, 1.22), (0.395, 0, 1.10), (0.43, 0, 0.975)]
@@ -511,6 +517,7 @@ WEAR = {
         "neon": dict(main="1c1b2a", accent="2e2b4a", extra={"glow": dict(color="6ff3ff", rough=0.3, emit="6ff3ff", estr=1.0)}, hides=[]),
         "pilot": dict(main="5c6340", accent="2a2c22", hides=[]),
         "straw_hat": dict(main="d8b56a", accent="7a3b2b", builder=build_straw_hat, hides=[]),
+        "beret": dict(main="1f2230", accent="3b2a1f", builder=build_beret, hides=[]),
         "bandana": dict(main="c8322f", accent="f2f0ea", builder=build_bandana, hides=[]),
         "sheriff_hat": dict(main="d8c39a", accent="6b4a2e", extra={"badge": SHERIFF_BADGE}, hides=[]),
     }),

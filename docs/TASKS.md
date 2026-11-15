@@ -44,6 +44,8 @@ Laravel owns every counter. A counter counts one real action, bumped by the serv
 | `full_combo_hard` | one full combo on hard, in a match that counts for tasks | `DanceService::recordRuns` |
 | `climb_lines_topped` | one climbing line topped (free climb or won speed duel), at most once per line and day (Paris), accounts 72 h old or more | socket `climbing.ts` after the climb or duel is recorded, then `POST /tasks/climb-topped` (realtime) `{ ref: the match ref, line: [a-z0-9_]{1,40}, colour: green \| blue \| red \| black }`; Laravel checks the match is climbing, of that line or `climbing_duel`, and that the account finished or won it |
 | `black_lines_topped` | one black line topped, at most once per line and day (Paris) | same call, colour `black` |
+| `petanque_games` | one pétanque coach game played to its end (not a forfeit), at most 5 a day (Paris), counted only when each team has an account aged 72 h or more; a replayed `ref` counts nothing | socket `petanque.ts` once the match is recorded, then `POST /sports/petanque/tally` (realtime) `{ ref: string 1-64, carreaux: int 0-30 }`; `PetanqueTallyService` (409 `petanque_match_unknown`, `petanque_not_in_match`) |
+| `petanque_carreaux` | one carreau thrown in a game that counts for `petanque_games` | the same tally, bumped by its `carreaux` |
 
 ## Tiers
 
@@ -82,6 +84,8 @@ Every task lives in `App\Support\TaskCatalog`: a key, the counter it reads and i
 | `routes_topped` | `climb_lines_topped` | 10 / 50 / 200 |
 | `black_route` | `black_lines_topped` | 1 / 10 / 30 |
 | `boxer` | `boxing_wins` | 1 / 5 / 15 |
+| `petanque` | `petanque_games` | 5 / 25 / 75 |
+| `carreau` | `petanque_carreaux` | 1 / 10 / 50 |
 
 ## Notification
 

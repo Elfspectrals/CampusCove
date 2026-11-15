@@ -40,6 +40,8 @@ final class TaskCatalog
             'boxer' => ['counter' => ActionCounter::BoxingWins, 'tiers' => [1, 5, 15]],
             'races_skated' => ['counter' => ActionCounter::SkateRaces, 'tiers' => [10, 50, 150]],
             'skate_3_clean' => ['counter' => ActionCounter::SkateCleanRuns, 'tiers' => [1, 10, 30]],
+            'petanque' => ['counter' => ActionCounter::PetanqueGames, 'tiers' => [5, 25, 75]],
+            'carreau' => ['counter' => ActionCounter::PetanqueCarreaux, 'tiers' => [1, 10, 50]],
         ];
     }
 

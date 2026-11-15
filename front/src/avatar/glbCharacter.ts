@@ -119,6 +119,7 @@ interface AvatarAnimState {
   dribbling: boolean
   tennis: boolean
   dancing: { clip: string; timeScale: number } | null
+  crouching: boolean
   oneShot: OneShotClip | null
   racePose: RacePoseClip | null
   climbPose: AvatarClimbPose
@@ -131,6 +132,7 @@ interface AvatarAnimState {
 
 const CROSSFADE_S = 0.22
 const SIT_CLIP = 'Sit'
+const CROUCH_CLIP = 'PetanqueCrouch'
 const PICK_CLIP = 'Pick'
 const SPORTS_MOVE_CLIPS = ['Kick', 'Shot', 'Tackle', 'Celebrate', 'JumpShot', 'Dunk', 'Block', 'Steal'] as const
 export type SportsMoveClip = (typeof SPORTS_MOVE_CLIPS)[number]
@@ -141,7 +143,7 @@ const TENNIS_STROKE_CLIPS = { serve: 'TennisServe', forehand: 'TennisForehand', 
 export type TennisStroke = keyof typeof TENNIS_STROKE_CLIPS
 const STUMBLE_CLIP = 'Stumble'
 const DANCE_MOVE_CLIPS = ['DanceMoveLeft', 'DanceMoveDown', 'DanceMoveUp', 'DanceMoveRight'] as const
-const ONE_SHOT_CLIPS = [PICK_CLIP, 'Eat', 'Drink', LEAN_CLIP, ...SPORTS_MOVE_CLIPS, ...Object.values(TENNIS_STROKE_CLIPS), STUMBLE_CLIP, ...DANCE_MOVE_CLIPS] as const
+const ONE_SHOT_CLIPS = [PICK_CLIP, 'Eat', 'Drink', LEAN_CLIP, ...SPORTS_MOVE_CLIPS, ...Object.values(TENNIS_STROKE_CLIPS), STUMBLE_CLIP, ...DANCE_MOVE_CLIPS, 'PetanquePoint', 'PetanqueShoot', 'PetanqueCelebrate'] as const
 const DANCE_ONE_SHOTS: readonly OneShotClip[] = [STUMBLE_CLIP, ...DANCE_MOVE_CLIPS]
 type OneShotClip = (typeof ONE_SHOT_CLIPS)[number]
 const MOVING_ONE_SHOTS: ReadonlySet<OneShotClip> = new Set<OneShotClip>([PICK_CLIP, LEAN_CLIP, ...SPORTS_MOVE_CLIPS, ...Object.values(TENNIS_STROKE_CLIPS)])
@@ -168,7 +170,7 @@ export function attachAvatarAnimations(root: THREE.Object3D): void {
   const mixer = new THREE.AnimationMixer(root)
   const actions = new Map<string, THREE.AnimationAction>()
   for (const clip of clips) actions.set(clip.name, mixer.clipAction(clip))
-  const state: AvatarAnimState = { mixer, actions, current: null, selector: new AvatarClipSelector(), seated: false, dribbling: false, tennis: false, dancing: null, oneShot: null, racePose: null, climbPose: null, climbMove: null, skating: false, skatePushedAt: -Infinity, skateMove: null }
+  const state: AvatarAnimState = { mixer, actions, current: null, selector: new AvatarClipSelector(), seated: false, crouching: false, dribbling: false, tennis: false, dancing: null, oneShot: null, racePose: null, climbPose: null, climbMove: null, skating: false, skatePushedAt: -Infinity, skateMove: null }
   animStateByRoot.set(root, state)
   for (const name of [...ONE_SHOT_CLIPS, ...Object.values(CLIMB_MOVE_CLIPS), ...Object.values(SKATE_MOVE_CLIPS)]) {
     const action = actions.get(name)
@@ -252,6 +254,11 @@ export function playAvatarSkateMove(root: THREE.Object3D, move: AvatarSkateMove)
   else playClip(state, name, 1)
 }
 
+export function setAvatarCrouching(root: THREE.Object3D, crouching: boolean): void {
+  const state = animStateByRoot.get(root)
+  if (state) state.crouching = crouching && state.actions.has(CROUCH_CLIP)
+}
+
 function playOneShot(state: AvatarAnimState, name: OneShotClip): void {
   const action = state.actions.get(name)
   if (!action) return
@@ -315,6 +322,14 @@ export function playAvatarTennisStroke(root: THREE.Object3D, stroke: TennisStrok
   playOneShot(state, TENNIS_STROKE_CLIPS[stroke])
 }
 
+export type PetanqueClip = 'PetanquePoint' | 'PetanqueShoot' | 'PetanqueCelebrate'
+
+export function setAvatarPetanque(root: THREE.Object3D, clip: PetanqueClip): void {
+  const state = animStateByRoot.get(root)
+  if (!state || state.seated || state.oneShot === PICK_CLIP || state.selector.clip !== 'Idle') return
+  playOneShot(state, clip)
+}
+
 function playClip(state: AvatarAnimState, name: string, timeScale: number): void {
   const next = state.actions.get(name)
   if (!next) return
@@ -353,7 +368,7 @@ export function updateAvatarAnimation(root: THREE.Object3D, dt: number, speed: n
     const { clip, timeScale } = state.selector.update(dt, speed)
     if (state.oneShot !== null && !MOVING_ONE_SHOTS.has(state.oneShot) && clip !== 'Idle') state.oneShot = null
     const pose = racePoseClip(state, clip)
-    if (state.oneShot === null) playClip(state, pose ?? (state.dribbling && clip !== 'Idle' ? DRIBBLE_CLIP : state.tennis && clip === 'Idle' ? TENNIS_READY_CLIP : clip), pose ? 1 : timeScale)
+    if (state.oneShot === null) playClip(state, pose ?? (state.dribbling && clip !== 'Idle' ? DRIBBLE_CLIP : state.tennis && clip === 'Idle' ? TENNIS_READY_CLIP : state.crouching && clip === 'Idle' ? CROUCH_CLIP : clip), pose ? 1 : timeScale)
   }
   state.mixer.update(clampDt(dt))
 }

@@ -17,6 +17,7 @@ const DOOR_RANGE = { refDistance: 1, maxDistance: 5 }
 const LOCKPICK_RANGE = { refDistance: 2, maxDistance: 12 }
 const ALARM_RANGE = { refDistance: 4, maxDistance: 25 }
 const TENNIS_RANGE = { refDistance: 3, maxDistance: 30 }
+const PETANQUE_RANGE = { refDistance: 3, maxDistance: 25 }
 
 const doorUrls = (name: string, count: number) => Array.from({ length: count }, (_, i) => `/assets/sfx/door/${name}_${i + 1}.mp3`)
 
@@ -59,6 +60,10 @@ const SOUNDS = {
   skate_fall: { urls: ['/assets/sfx/skating/fall.mp3'], volume: 0.9 },
   skate_bump: { urls: ['/assets/sfx/skating/bump.mp3'], volume: 0.8 },
   skate_start: { urls: ['/assets/sfx/skating/start.mp3'], volume: 0.8 },
+  petanque_land: { urls: ['/assets/sfx/petanque/land.mp3'], volume: 0.8, ...PETANQUE_RANGE },
+  petanque_clack: { urls: ['/assets/sfx/petanque/clack.mp3'], volume: 0.9, ...PETANQUE_RANGE },
+  petanque_carreau: { urls: ['/assets/sfx/petanque/carreau.mp3'], volume: 0.8, ...PETANQUE_RANGE },
+  petanque_point: { urls: ['/assets/sfx/petanque/point.mp3'], volume: 0.6 },
 } satisfies Record<string, SoundDef>
 
 export type SfxName = keyof typeof SOUNDS

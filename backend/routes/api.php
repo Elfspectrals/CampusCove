@@ -28,6 +28,7 @@ use App\Http\Controllers\JobToolController;
 use App\Http\Controllers\LockpickController;
 use App\Http\Controllers\MarketController;
 use App\Http\Controllers\OrchardController;
+use App\Http\Controllers\PetanqueController;
 use App\Http\Controllers\PickpocketController;
 use App\Http\Controllers\PlayerInventoryLayoutController;
 use App\Http\Controllers\PlayerReportController;
@@ -162,6 +163,7 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
         Route::post('/sports/matches', [SportsController::class, 'recordMatch']);
         Route::post('/sports/gym/tasks', [GymTaskController::class, 'store']);
         Route::post('/sports/dance/runs', [DanceController::class, 'recordRuns']);
+        Route::post('/sports/petanque/tally', [PetanqueController::class, 'tally']);
         Route::middleware('admin')->prefix('admin/game')->group(function () {
             Route::get('/items', [AdminGameController::class, 'items']);
             Route::get('/wallets', [AdminGameController::class, 'wallets']);
