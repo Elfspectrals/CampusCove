@@ -18,7 +18,7 @@ Played on the gymnasium court (44 × 24 m, shared with basketball) and on the ou
 - **Tackle key** (C, rebindable): under 6.5 m/s a standing tackle (1.1 m of reach in a 90° cone, no fall on a miss, 1 s of cooldown); at 6.5 m/s or more a sliding tackle (1.8 m in a 70° cone, a miss leaves the player on the ground 0.8 s, 3 s of cooldown).
 - **Through ball** (F, rebindable): a ground pass at 13 m/s into the space 5 m ahead of the team-mate's run (5 m past a standing one, on the line to him); straight ahead with no team-mate in the cone.
 - **Face the ball** (X held, rebindable): the player moves at 55 % of the speed and, in the television view, keeps the body turned to the ball, so a standing tackle lands. Front only: the socket still reads the yaw and the speed.
-- **In a match the players stay on the pitch**: the socket refuses a move out of the play area for a match player who is in it (`match_bounds`), and the front holds them at the line. Holding N for 1.5 s leaves the match (`sports_match_leave`): the player is out, the team plays on short, an empty team forfeits.
+- **Players stay on the pitch**: the socket refuses a move out of the play area (`match_bounds`) for a match player who is in it, and in free play for the player who borrowed a ball once they stepped onto the court; the front holds them at the line. "Leave the sport" in the Esc menu (`sports_leave`) lets them out: in a match the player is out, the team plays on short and an empty team forfeits; in free play the ball goes back to the coach. Decided on 2026-11-15 after the user tested alone: free play let them walk off, and every sport needed one way out.
 - Players block each other by collision.
 
 ## Flow

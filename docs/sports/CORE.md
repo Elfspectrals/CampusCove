@@ -192,7 +192,7 @@ registerVenue({
 | `sports_coach_open` | client → server | `{ coach }` within 3 m: replies with one `sports_lobby` per venue of that coach (`phase: 'open'`, `players: []` when idle) |
 | `sports_signup` | client → server | `{ coach, venue, team?: 'red' \| 'blue', settings?: Record<string, string \| number> }` (settings only for the first player) |
 | `sports_signup_leave` | client → server | `{}` |
-| `sports_match_leave` | client → server | `{}`: the sender is out of the match they play in, as if their rejoin time had run out |
+| `sports_leave` | client → server | `{}`, sent by "Leave the sport" in the Esc menu (shown while the player is in a match, a race, a song, a routine or has a gym ball out): the sender is out of the match they play in, as if their rejoin time had run out, and a gym ball they borrowed goes back |
 | `sports_lobby` | server → players in the site | `{ venue, coach, sport, phase: 'open' \| 'countdown' \| 'playing', settings, players: [{ sessionId, name, team }], min, max, kickoffAt: number \| null, serverNow: number }` |
 | `sports_lobby_closed` | server → same | `{ venue, reason: 'kickoff' \| 'cancelled' \| 'ended' }`; after a cancel or an end an idle `sports_lobby` for the venue follows |
 | `sports_error` | server → client | `{ code, message }` (`sports_lobby_full`, `sports_bad_settings`, `sports_already_signed`, `sports_venue_busy`, `sports_no_pass`, `sports_no_gear`, `sports_too_far`) |

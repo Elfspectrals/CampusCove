@@ -99,34 +99,10 @@ test('views that frame the action lock the body, the follow view leaves it to th
   close(lockedLookFor({ kind: 'stage', sport: 'dance', optional: false, facingYaw: 1 }, me)!.yaw, 1, 'keeps the dance facing')
 })
 
-test('the lengthwise camera sits 10 m behind the ball on the court axis, looks at the attacked basket, stays inside the hall and stops 9 m before the end', () => {
-  const hall = { minX: -23.2, maxX: 23.2, minZ: -13.9, maxZ: 12.3 }
-  const view = (focusX: number, focusZ: number, towards: 1 | -1): SportsView => ({ kind: 'lengthwise', sport: 'gym', optional: true, hall, focusX, focusZ, towards, fallback: null })
-  const east = poseFor(view(0, 0, 1), FRAME)
-  close(east.position.x, -10, 'behind the ball')
-  close(east.position.y, 6.5, 'height')
-  close(east.target.x, 3, 'looks 3 m past the ball')
-  close(east.target.y, 1, 'at chest height')
-  assert.equal(east.fov, 50)
-  const west = poseFor(view(0, 0, -1), FRAME)
-  close(west.position.x, 10, 'the other way after a change of possession')
-  close(west.target.x, -3, 'towards the other basket')
-  close(poseFor(view(0, 5, 1), FRAME).position.z, -0.8 + (5 + 0.8) * 0.6, 'follows 60 % of the depth from the hall middle')
-  const at = (x: number): ViewFrame => ({ ...FRAME, eye: { ...FRAME.eye, x } })
-  close(poseFor(view(-20, 0, 1), at(-20)).position.x, -22.7, 'never behind the west wall')
-  close(poseFor(view(20, 0, -1), at(20)).position.x, 22.7, 'never behind the east wall')
-  close(poseFor(view(22, 0, 1), at(22)).target.x, 14.2 + 3, 'a ball under the attacked basket is framed from 9 m before the end wall')
-  close(poseFor(view(-22, 0, -1), at(-22)).position.x, -14.2 + 10, 'the same at the other end')
-  close(poseFor(view(20, 0, 1), FRAME).position.x, -3, 'a far ball leads the player by 7 m')
-  assert.equal(moveFrameYawFor(view(0, 0, 1)), -Math.PI / 2)
-  assert.equal(moveFrameYawFor(view(0, 0, -1)), Math.PI / 2)
-})
-
 test('U goes through a view, its fallbacks, then first person when the view is optional', () => {
   const behind: SportsView = { kind: 'follow', sport: 'gym', optional: true, distance: 4, lift: 0.5, waterY: null }
   const side: SportsView = { kind: 'broadcast', sport: 'gym', optional: true, court: { minX: -22, maxX: 22, minZ: -12, maxZ: 12 }, focusX: 0, focusZ: 0, fallback: behind }
-  const along: SportsView = { kind: 'lengthwise', sport: 'gym', optional: true, hall: { minX: -23, maxX: 23, minZ: -13, maxZ: 13 }, focusX: 0, focusZ: 0, towards: 1, fallback: side }
-  assert.deepEqual(viewChoices(along), [along, side, behind, null])
+  assert.deepEqual(viewChoices(side), [side, behind, null])
   assert.deepEqual(viewChoices(behind), [behind, null])
   assert.deepEqual(viewChoices({ kind: 'stage', sport: 'dance', optional: false, facingYaw: 0 }), [{ kind: 'stage', sport: 'dance', optional: false, facingYaw: 0 }])
 })

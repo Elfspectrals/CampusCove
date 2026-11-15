@@ -130,6 +130,21 @@ test('free play: the coach lends a ball near him, a kick moves it, giving it bac
   assert.deepEqual((sentOf(clientOf(room, p), 'gym_free').at(-1) as FreeState).balls, [])
 })
 
+test('free play: the player who borrowed a ball stays on the court once they stepped on it, until the ball is given back', async () => {
+  const p = await makePlayer(331, -370, -176)
+  p.sportsPassUntil = NOW * 10
+  const room = await fakeRoom([p])
+  onGymBall(room, clientOf(room, p), { sport: 'football' }, NOW)
+  Object.assign(p, { x: -370, z: -177.5, lastMoveAt: NOW })
+  assert.equal(moveRejection(room, p, -370, p.y, -178.5, NOW + 1000), null)
+  assert.equal(moveRejection(room, p, -370, p.y, -176.5, NOW + 1000), null)
+  Object.assign(p, { x: -370, z: -176.5, lastMoveAt: NOW })
+  assert.equal(moveRejection(room, p, -370, p.y, -177.5, NOW + 1000), 'match_bounds')
+  assert.equal(moveRejection(room, p, -370, p.y, -175.5, NOW + 1000), null)
+  onGymBallReturn(room, clientOf(room, p), NOW + 500)
+  assert.equal(moveRejection(room, p, -370, p.y, -177.5, NOW + 1000), null)
+})
+
 test('free play: a ball whose loan was taken back disappears, and a match takes every free ball back', async () => {
   const p = await makePlayer(311, -370, -176)
   const room = await fakeRoom([p])

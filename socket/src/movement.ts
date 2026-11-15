@@ -7,6 +7,7 @@ import { SPEED_BOOST_FACTOR } from './survivalStats.ts'
 import { entersPassAreaWithoutPass } from './sports/pass.ts'
 import { entersTakenBoardEdge } from './sports/poolDiving.ts'
 import { entersPoolWaterWithoutSwimsuit, poolSwimRejection } from './sports/poolWater.ts'
+import { leavesFreeCourt } from './sports/gymFree.ts'
 import { entersReservedVenue, leavesConfinedMatch } from './sports/venues.ts'
 import { boxerIsDown } from './sports/boxing.ts'
 import { skateSpeedCap, skatingRejection } from './sports/skatingRink.ts'
@@ -74,7 +75,7 @@ export function moveRejection(room: GameRoom, player: Player, x: number, y: numb
   if (entersClosedSecretRoom(player, x, y, z, now)) return 'secret_room_closed'
   if (entersPassAreaWithoutPass(player, x, z, now)) return 'no_pass'
   if (entersReservedVenue(room, player, x, z)) return 'venue_reserved'
-  if (leavesConfinedMatch(room, player, x, z)) return 'match_bounds'
+  if (leavesConfinedMatch(room, player, x, z) || leavesFreeCourt(room, player, x, z)) return 'match_bounds'
   if (boxerIsDown(room, player) && Math.hypot(x - player.x, z - player.z) > MOVE_MARGIN) return 'boxing_down'
   const skating = skatingRejection(room, player, x, z, now)
   if (skating) return skating

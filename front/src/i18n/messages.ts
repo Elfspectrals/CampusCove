@@ -762,6 +762,7 @@ export const messages = {
     },
     sports: {
       close: 'Close',
+      leave: 'Leave the sport',
       noPass: 'You need a sports pass. Buy one at the reception.',
       bought: 'Sports pass bought.',
       signedUp: 'You are signed up.',
@@ -912,11 +913,10 @@ export const messages = {
         defend: { football: 'Tackle', basketball: 'Steal' },
         spectating: 'Watching',
         lob: 'Lob',
-        leaving: 'Leaving the match',
         hints: {
           football: 'Left click: pass, hold for a lob · {through}: through ball · Hold right click: shoot, stop before the red · {key}: tackle, sliding at a sprint · Hold {jockey}: face the ball · {view}: view',
           basketball: 'Left click: pass · Hold right click: shoot in the green, a defender narrows it · {through}: dribble move to the side held, or a step back · {key}: steal · Hold {jockey}: face the ball · {view}: view',
-          leave: 'Hold {key}: leave the match',
+          leave: 'Esc: menu, leave the sport',
         },
         release: { perfect: 'Perfect', good: 'Good', early: 'Early', late: 'Late' },
         free: {
@@ -2094,6 +2094,7 @@ export const messages = {
     },
     sports: {
       close: 'Fermer',
+      leave: 'Quitter le sport',
       noPass: 'Il te faut un pass sport. Achète-le à l’accueil.',
       bought: 'Pass sport acheté.',
       signedUp: 'Tu es inscrit.',
@@ -2244,11 +2245,10 @@ export const messages = {
         defend: { football: 'Tacle', basketball: 'Vol de balle' },
         spectating: 'Spectateur',
         lob: 'Lob',
-        leaving: 'Tu quittes le match',
         hints: {
           football: 'Clic gauche : passe, maintenir pour un lob · {through} : passe en profondeur · Clic droit maintenu : tir, relâche avant le rouge · {key} : tacle, glissé en sprint · {jockey} maintenu : face au ballon · {view} : vue',
           basketball: 'Clic gauche : passe · Clic droit maintenu : tir dans le vert, un défenseur le réduit · {through} : dribble vers le côté tenu, ou pas en arrière · {key} : interception · {jockey} maintenu : face au ballon · {view} : vue',
-          leave: '{key} maintenu : quitter le match',
+          leave: 'Échap : menu, quitter le sport',
         },
         release: { perfect: 'Parfait', good: 'Bien', early: 'Trop tôt', late: 'Trop tard' },
         free: {

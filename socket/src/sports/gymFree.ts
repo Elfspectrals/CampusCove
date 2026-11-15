@@ -164,6 +164,13 @@ export function onGymBall(room: GameRoom, client: GameClient, payload: ClientPay
   sendToGymZone(room, 'gym_free', freeView(room, state, now))
 }
 
+export function leavesFreeCourt(room: GameRoom, player: Player, x: number, z: number): boolean {
+  const area = rooms.get(room)?.balls.get(player.accountId)?.court.court.playArea
+  if (!area) return false
+  const within = (px: number, pz: number) => px >= area.minX && px <= area.maxX && pz >= area.minZ && pz <= area.maxZ
+  return within(player.x, player.z) && !within(x, z)
+}
+
 export function onGymBallReturn(room: GameRoom, client: GameClient, now: number): void {
   const player = room.players.get(client.sessionId)
   const free = rooms.get(room)

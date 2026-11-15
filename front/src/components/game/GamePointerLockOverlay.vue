@@ -1,12 +1,18 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import UiIcon from '../ui/UiIcon.vue'
 import UiLogo from '../ui/UiLogo.vue'
+
+defineProps<{ inSport: boolean }>()
 
 const emit = defineEmits<{
   requestPointerLock: []
   openSettings: []
   logout: []
+  leaveSport: []
 }>()
+
+const { t } = useI18n()
 </script>
 
 <template>
@@ -18,6 +24,9 @@ const emit = defineEmits<{
         <p class="cc-eyebrow mt-3">Click play to lock the pointer</p>
         <button type="button" class="cc-btn cc-btn-sun cc-btn-xl cc-btn-shine mt-5 w-full" @click="emit('requestPointerLock')">
           <UiIcon name="play" :size="26" fill /> Play
+        </button>
+        <button v-if="inSport" type="button" class="cc-btn cc-btn-coral mt-3 min-h-11 w-full" @click="emit('leaveSport')">
+          {{ t('sports.leave') }}
         </button>
 
         <div class="mt-5 flex flex-wrap justify-center gap-2">

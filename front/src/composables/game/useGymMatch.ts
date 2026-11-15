@@ -16,19 +16,15 @@ import {
   DRIBBLE_MOVE_COOLDOWN_MS,
   DRIBBLE_MOVE_M,
   JOCKEY_SPEED_FACTOR,
-  LEAVE_HOLD_MS,
-  attackSide,
   clampToArea,
   clockText,
   dribbleMove,
-  halfSide,
   insideArea,
   goodWindowStart,
   meterFill,
   myTeam,
   courtHoops,
   hoopAhead,
-  leaveFill,
   lobFill,
   nearestFreeBall,
   overchargeStart,
@@ -118,7 +114,6 @@ export function useGymMatch(deps: GymMatchDeps) {
   const clientNow = ref(Date.now())
   const holdStartedAt = ref<number | null>(null)
   const passStartedAt = ref<number | null>(null)
-  const leaveStartedAt = ref<number | null>(null)
   const jockeying = ref(false)
   const cooldownUntil = ref(0)
   const cooldownMs = ref(1)
@@ -367,10 +362,6 @@ export function useGymMatch(deps: GymMatchDeps) {
       jockeying.value = true
       return true
     }
-    if (matches('declineChallenge', code) && team.value !== null) {
-      if (!repeat) leaveStartedAt.value = Date.now()
-      return true
-    }
     if (matches('jump', code) && !repeat) send('jump')
     return false
   }
@@ -394,7 +385,6 @@ export function useGymMatch(deps: GymMatchDeps) {
   function onRelease(code: string): void {
     hold(code, false)
     if (matches('sportsJockey', code)) jockeying.value = false
-    if (matches('declineChallenge', code)) leaveStartedAt.value = null
     if (passStartedAt.value !== null && matches('punch', code)) {
       passStartedAt.value = null
       send('pass_release')
@@ -434,7 +424,6 @@ export function useGymMatch(deps: GymMatchDeps) {
   const onBlur = () => {
     holdStartedAt.value = null
     passStartedAt.value = null
-    leaveStartedAt.value = null
     jockeying.value = false
     held.left = false
     held.right = false
@@ -598,7 +587,7 @@ export function useGymMatch(deps: GymMatchDeps) {
     if (state.value && now - receivedAt > STALE_MS) state.value = null
     if (free.value && now - freeReceivedAt > STALE_MS) free.value = null
     updateRimPop(now)
-    holdOnCourt(now)
+    holdOnCourt()
     const scene = deps.getScene()
     const shown = new Set<THREE.Object3D>()
     const seconds = now / 1000
@@ -646,7 +635,6 @@ export function useGymMatch(deps: GymMatchDeps) {
     const passHeld = passStartedAt.value
     const lob = r && passHeld !== null ? lobFill(r.lob, clientNow.value - passHeld) : null
     const cooldown = cooldownUntil.value > clientNow.value ? (cooldownUntil.value - clientNow.value) / cooldownMs.value : null
-    const leaving = leaveStartedAt.value === null ? null : leaveFill(clientNow.value - leaveStartedAt.value)
     return {
       sport: current.sport,
       score: current.score,
@@ -657,7 +645,6 @@ export function useGymMatch(deps: GymMatchDeps) {
       meter,
       lob,
       cooldown,
-      leaving,
     }
   })
 
@@ -686,26 +673,27 @@ export function useGymMatch(deps: GymMatchDeps) {
   const down = () => downUntil.value > Date.now()
   let onCourt = false
   let hopReadyAt = 0
-  let towards: 1 | -1 = 1
   const held = { left: false, right: false, back: false }
 
-  function holdOnCourt(now: number): void {
+  function heldArea(): GymCourtView['playArea'] | null {
     const current = state.value
-    const area = current && team.value !== null ? courtOf(current.venue)?.playArea : null
+    if (current) return team.value !== null ? (courtOf(current.venue)?.playArea ?? null) : null
+    const me = mySessionId()
+    const lent = free.value?.balls.find((b) => b.lender === me)
+    return lent ? (courtOf(lent.court)?.playArea ?? null) : null
+  }
+
+  function holdOnCourt(): void {
+    const area = heldArea()
     if (!area) {
-      leaveStartedAt.value = null
       onCourt = false
       return
     }
     if (insideArea(area, deps.myPosition.x, deps.myPosition.z)) onCourt = true
-    if (onCourt) {
-      const held = clampToArea(area, deps.myPosition.x, deps.myPosition.z)
-      deps.myPosition.x = held.x
-      deps.myPosition.z = held.z
-    }
-    if (leaveStartedAt.value === null || now - leaveStartedAt.value < LEAVE_HOLD_MS) return
-    leaveStartedAt.value = null
-    deps.gameRoomRef.value?.send('sports_match_leave', {})
+    if (!onCourt) return
+    const held = clampToArea(area, deps.myPosition.x, deps.myPosition.z)
+    deps.myPosition.x = held.x
+    deps.myPosition.z = held.z
   }
 
   function ballSpot(): { x: number; z: number } | null {
@@ -724,10 +712,10 @@ export function useGymMatch(deps: GymMatchDeps) {
     return court ? hoopAhead(courtHoops(court), deps.myPosition, deps.yaw()) : null
   }
 
-  function myFreeBall(): { court: GymCourtView | null; x: number; z: number; sport: GymSport } | null {
+  function myFreeBall(): { court: GymCourtView | null; x: number; z: number } | null {
     const me = mySessionId()
     const ball = free.value?.balls.find((b) => b.owner === me) ?? free.value?.balls.find((b) => b.lender === me)
-    return ball ? { court: courtOf(ball.court), x: ball.ball[0], z: ball.ball[2], sport: ball.sport } : null
+    return ball ? { court: courtOf(ball.court), x: ball.ball[0], z: ball.ball[2] } : null
   }
 
   function holdingBall(): boolean {
@@ -751,19 +739,8 @@ export function useGymMatch(deps: GymMatchDeps) {
     const freeBall = state.value === null && (free.value?.balls.some((b) => b.owner === me || b.lender === me) ?? false)
     if (!deps.pointerLocked.value || (team.value === null && !freeBall)) return null
     const behind: SportsView = { kind: 'follow', sport: 'gym', optional: true, distance: CAMERA_DISTANCE_M, lift: CAMERA_LIFT_M, waterY: null }
-    const played = state.value ? { court: courtOf(state.value.venue), x: state.value.ball[0], z: state.value.ball[2], sport: state.value.sport } : myFreeBall()
-    if (!played?.court) return behind
-    const side: SportsView = { kind: 'broadcast', sport: 'gym', optional: true, court: played.court.court, focusX: played.x, focusZ: played.z, fallback: behind }
-    if (played.sport !== 'basketball' || !played.court.baskets) return side
-    towards = attackDirection(played.court)
-    return { kind: 'lengthwise', sport: 'gym', optional: true, hall: played.court.playArea, focusX: played.x, focusZ: played.z, towards, fallback: side }
-  }
-
-  function attackDirection(court: GymCourtView): 1 | -1 {
-    const current = state.value
-    if (!current) return halfSide(court.court, deps.myPosition.x, towards)
-    const holder = current.players.find((p) => p.sessionId === current.owner)?.team ?? null
-    return holder ? attackSide(court, holder) : towards
+    const played = state.value ? { court: courtOf(state.value.venue), x: state.value.ball[0], z: state.value.ball[2] } : myFreeBall()
+    return played?.court ? { kind: 'broadcast', sport: 'gym', optional: true, court: played.court.court, focusX: played.x, focusZ: played.z, fallback: behind } : behind
   }
 
   return { hud, freeHud, banner, rimPop, releaseLabel, myBall, handlers: { onState, onEvent, onEnd, onFree, onError }, onPress, borrow, giveBack, down, faceSpot, speedFactor, tick, cameraView }

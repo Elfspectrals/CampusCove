@@ -1653,6 +1653,23 @@ function toggleEscapeMenu(e: KeyboardEvent): void {
     requestPointerLock()
   }
 }
+const inSport = computed(
+  () =>
+    gymHud.value?.team != null ||
+    gymMyBall.value !== null ||
+    tennisHud.value?.myTeam != null ||
+    boxingFighting.value ||
+    dancing.value ||
+    poolRace.locked.value ||
+    runningRace.racing.value ||
+    climbingNow.value ||
+    skatingRace.value !== null ||
+    petanqueGame.value !== null,
+)
+function leaveSport(): void {
+  gameRoomRef.value?.send('sports_leave', {})
+  requestPointerLock()
+}
 const pauseMenuOpen = computed(
   () =>
     !pointerLocked.value &&
@@ -2435,9 +2452,11 @@ const crosshairClass = computed(() => {
     </GamePlayerInventoryPanel>
     <GamePointerLockOverlay
       v-show="pauseMenuOpen && !pauseDismissed"
+      :in-sport="inSport"
       @request-pointer-lock="requestPointerLock"
       @open-settings="settingsOpen = true"
       @logout="logout"
+      @leave-sport="leaveSport"
     />
     <!-- the game goes on: only a quiet hint while the browser hasn't given the mouse back yet -->
     <p

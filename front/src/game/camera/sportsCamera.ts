@@ -17,7 +17,6 @@ export type SportsView =
   | { kind: 'court'; sport: string; optional: boolean; cx: number; netZ: number; halfLength: number; side: 1 | -1 }
   | { kind: 'stage'; sport: string; optional: boolean; facingYaw: number }
   | { kind: 'broadcast'; sport: string; optional: boolean; court: Arena; focusX: number; focusZ: number; fallback: SportsView | null }
-  | { kind: 'lengthwise'; sport: string; optional: boolean; hall: Arena; focusX: number; focusZ: number; towards: 1 | -1; fallback: SportsView | null }
 
 export interface Arena {
   minX: number
@@ -148,31 +147,8 @@ function stagePose(view: Extract<SportsView, { kind: 'stage' }>, frame: ViewFram
   }
 }
 
-const LENGTHWISE_BACK_M = 10
-const LENGTHWISE_HEIGHT_M = 6.5
-const LENGTHWISE_AHEAD_M = 3
-const LENGTHWISE_TARGET_HEIGHT_M = 1
-const LENGTHWISE_DEPTH_FOLLOW = 0.6
-const LENGTHWISE_WALL_GAP_M = 0.5
-const LENGTHWISE_END_M = 9
-const LENGTHWISE_FOV = 50
-
 function lead(player: number, focus: number): number {
   return player + Math.min(BROADCAST_LEAD_M, Math.max(-BROADCAST_LEAD_M, focus - player))
-}
-
-function lengthwisePose(view: Extract<SportsView, { kind: 'lengthwise' }>, frame: ViewFrame): CameraPose {
-  const followed = lead(frame.eye.x, view.focusX)
-  const x = view.towards === 1 ? Math.min(view.hall.maxX - LENGTHWISE_END_M, followed) : Math.max(view.hall.minX + LENGTHWISE_END_M, followed)
-  const middleZ = (view.hall.minZ + view.hall.maxZ) / 2
-  const z = middleZ + (lead(frame.eye.z, view.focusZ) - middleZ) * LENGTHWISE_DEPTH_FOLLOW
-  const behind = Math.min(view.hall.maxX - LENGTHWISE_WALL_GAP_M, Math.max(view.hall.minX + LENGTHWISE_WALL_GAP_M, x - view.towards * LENGTHWISE_BACK_M))
-  return {
-    position: { x: behind, y: frame.feetY + LENGTHWISE_HEIGHT_M, z },
-    target: { x: x + view.towards * LENGTHWISE_AHEAD_M, y: frame.feetY + LENGTHWISE_TARGET_HEIGHT_M, z },
-    fov: LENGTHWISE_FOV,
-    pivot: null,
-  }
 }
 
 function broadcastPose(view: Extract<SportsView, { kind: 'broadcast' }>, frame: ViewFrame): CameraPose {
@@ -189,7 +165,6 @@ function broadcastPose(view: Extract<SportsView, { kind: 'broadcast' }>, frame: 
 }
 
 export function moveFrameYawFor(view: SportsView): number | null {
-  if (view.kind === 'lengthwise') return (-view.towards * Math.PI) / 2
   return view.kind === 'broadcast' ? Math.PI : null
 }
 
@@ -201,7 +176,6 @@ export function viewChoices(view: SportsView): (SportsView | null)[] {
 
 export function poseFor(view: SportsView, frame: ViewFrame): CameraPose {
   if (view.kind === 'broadcast') return broadcastPose(view, frame)
-  if (view.kind === 'lengthwise') return lengthwisePose(view, frame)
   if (view.kind === 'follow') return followPose(view, frame)
   if (view.kind === 'duel') return duelPose(view, frame)
   if (view.kind === 'court') return courtPose(view, frame)

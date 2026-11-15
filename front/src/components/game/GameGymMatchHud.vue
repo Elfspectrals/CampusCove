@@ -16,7 +16,6 @@ const props = defineProps<{
     meter: { fill: number; goodFrom: number | null; overFrom: number | null } | null
     lob: number | null
     cooldown: number | null
-    leaving: number | null
   } | null
   freeHud: { sport: GymSport; meter: { fill: number; goodFrom: number | null; overFrom: number | null } | null; lob: number | null } | null
   banner: GymBanner | null
@@ -60,7 +59,7 @@ const hint = computed(() => {
   if (!sport) return null
   const key = (action: BindableAction) => actionKeyLabels(action)[0] ?? ''
   const lines = [t(`sports.gym.hints.${sport}`, { key: actionKeyLabels('sportsTackle').join(' / '), through: key('sportsThrough'), jockey: key('sportsJockey'), view: key('cameraView') })]
-  if (h?.team) lines.push(t('sports.gym.hints.leave', { key: key('declineChallenge') }))
+  lines.push(t('sports.gym.hints.leave'))
   return lines.join(' · ')
 })
 </script>
@@ -95,12 +94,6 @@ const hint = computed(() => {
       <span>{{ t(`sports.gym.defend.${hud.sport}`) }}</span>
       <span class="block h-1 flex-1 overflow-hidden rounded-full bg-ink-950/70">
         <span class="block h-full rounded-full" :class="hud.team ? TEAM_BG[hud.team] : 'bg-fog'" :style="{ width: `${hud.cooldown * 100}%` }" />
-      </span>
-    </div>
-    <div v-if="hud.leaving !== null" class="flex w-48 flex-col gap-0.5">
-      <span class="text-[10px] font-bold uppercase tracking-[0.14em] text-coral">{{ t('sports.gym.leaving') }}</span>
-      <span class="block h-2 overflow-hidden rounded-full bg-ink-950/70">
-        <span class="block h-full rounded-full bg-coral" :style="{ width: `${hud.leaving * 100}%` }" />
       </span>
     </div>
     <p v-if="hint" class="m-0 max-w-[30rem] text-center text-[10px] text-mist">{{ hint }}</p>
