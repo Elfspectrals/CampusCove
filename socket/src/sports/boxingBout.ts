@@ -1,7 +1,9 @@
-import type { BagRules } from './boxingBag.ts'
+import type { BagCombo, BagRules } from './boxingBag.ts'
 
 export const PUNCH_KINDS = ['jab', 'cross', 'hook', 'uppercut'] as const
 export type PunchKind = typeof PUNCH_KINDS[number]
+export const BAG_MOVES = [...PUNCH_KINDS, 'dodge_left', 'dodge_right', 'guard'] as const
+export type BagMove = typeof BAG_MOVES[number]
 export const HANDS = ['left', 'right'] as const
 export type Hand = typeof HANDS[number]
 
@@ -36,6 +38,7 @@ export interface BoxingRules {
   exits: Record<Corner, Point3>
   punchBags: { x: number, z: number }[]
   bag: BagRules
+  bagCombos: BagCombo[]
   minPlayers: number
   maxPlayers: number
   rejoinGraceSec: number
@@ -445,6 +448,22 @@ function combosOf(raw: unknown): Combo[] {
   })
 }
 
+function bagCombosOf(raw: unknown, bout: readonly Combo[]): BagCombo[] {
+  if (!Array.isArray(raw)) throw new Error('boxing rules: bag.extra must list the training combos')
+  const extra = raw.map((entry, i) => {
+    const path = `bag.extra.${i}`
+    const c = obj(entry, path)
+    const sequence = c.sequence
+    if (!Array.isArray(sequence) || sequence.length < 2 || !sequence.every((m) => BAG_MOVES.includes(m as BagMove))) {
+      throw new Error(`boxing rules: ${path}.sequence must list at least two bag moves`)
+    }
+    return { id: str(c, 'id', path), sequence: sequence as BagMove[] }
+  })
+  const all = [...bout.map(({ id, sequence }) => ({ id, sequence: [...sequence] as BagMove[] })), ...extra]
+  if (new Set(all.map((c) => c.id)).size !== all.length) throw new Error('boxing rules: a bag combo id is used twice')
+  return all
+}
+
 function bagsOf(raw: unknown): { x: number, z: number }[] {
   if (!Array.isArray(raw) || raw.length === 0) throw new Error('boxing rules: punchBags must list the bags')
   return raw.map((bag, i) => point(bag, `punchBags.${i}`))
@@ -469,6 +488,7 @@ export function parseBoxingRules(raw: unknown): BoxingRules {
   const hit = obj(r.hit, 'hit')
   const hold = obj(r.hold, 'hold')
   const combo = obj(r.combo, 'combo')
+  const boutCombos = combosOf(combo.list)
   const roundsChoices = r.roundsChoices
   if (!Array.isArray(roundsChoices) || roundsChoices.length === 0 || !roundsChoices.every((n) => Number.isInteger(n) && n > 0)) {
     throw new Error('boxing rules: roundsChoices must be positive integers')
@@ -506,7 +526,8 @@ export function parseBoxingRules(raw: unknown): BoxingRules {
     punches: { jab: punchRules(punches.jab, 'jab'), cross: punchRules(punches.cross, 'cross'), hook: punchRules(punches.hook, 'hook'), uppercut: punchRules(punches.uppercut, 'uppercut') },
     holdMs: num(hold, 'ms', 'hold', 1),
     bufferMs: num(r, 'bufferMs', 'root'),
-    combo: { windowMs: num(combo, 'windowMs', 'combo'), list: combosOf(combo.list) },
+    combo: { windowMs: num(combo, 'windowMs', 'combo'), list: boutCombos },
+    bagCombos: bagCombosOf(bag.extra, boutCombos),
     guard: { damageFactor: num(guard, 'damageFactor', 'guard'), drainPerSec: num(guard, 'drainPerSec', 'guard') },
     dodge: { cooldownMs: num(dodgeRules, 'cooldownMs', 'dodge', 1), windowMs: num(dodgeRules, 'windowMs', 'dodge'), enduranceCost: num(dodgeRules, 'enduranceCost', 'dodge') },
     knockdown: {

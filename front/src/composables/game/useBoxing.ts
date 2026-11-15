@@ -11,15 +11,19 @@ import {
   ROCK_DURATION_S,
   bagInFront,
   bagSteps,
+  drillAfter,
   boxerFor,
   clockLabel,
   handFor,
   parseHoldMs,
+  parseBagCombos,
   parseBagDoubleFrom,
   parsePunchBags,
   parseRingArena,
   rockAngle,
   type BagSpot,
+  type BagCombo,
+  type BagMove,
   type BoxingBagEndPayload,
   type BoxingBagHitPayload,
   type BoxingBagRoundPayload,
@@ -51,7 +55,7 @@ export interface BoxingDeps {
   say: (text: string) => void
   tiredText: () => string
   noGlovesText: () => string
-  comboName: (id: BoxingCombo) => string
+  comboName: (id: string) => string
   myPosition: { x: number; z: number }
   getCamera: () => THREE.Camera | undefined
   getScene: () => THREE.Scene | undefined
@@ -85,7 +89,10 @@ export function useBoxing(deps: BoxingDeps) {
   const now = ref(Date.now())
   let guarding = false
   let hideTimer: ReturnType<typeof setTimeout> | null = null
-  const clock = setInterval(() => (now.value = Date.now()), CLOCK_TICK_MS)
+  const clock = setInterval(() => {
+    now.value = Date.now()
+    atBag.value = bagAimed() !== null
+  }, CLOCK_TICK_MS)
   let bags: BagSpot[] = []
   let arena: Arena | null = null
   const rocking = new Map<THREE.Object3D, { start: number, rotationX: number }>()
@@ -98,6 +105,9 @@ export function useBoxing(deps: BoxingDeps) {
   let bagResultTimer: ReturnType<typeof setTimeout> | null = null
   const training = computed(() => bagRound.value !== null)
   const bagDoubleFrom = ref<number | null>(null)
+  const bagCombos = shallowRef<BagCombo[]>([])
+  const drill = ref<string | null>(null)
+  const atBag = ref(false)
   let comboTimer: ReturnType<typeof setTimeout> | null = null
   fetch(sportRulesUrl('boxing'))
     .then((res) => {
@@ -107,6 +117,7 @@ export function useBoxing(deps: BoxingDeps) {
     .then((rules: unknown) => {
       bags = parsePunchBags(rules)
       bagDoubleFrom.value = parseBagDoubleFrom(rules)
+      bagCombos.value = parseBagCombos(rules)
       arena = parseRingArena(rules)
       holdMs = parseHoldMs(rules)
     })
@@ -260,8 +271,30 @@ export function useBoxing(deps: BoxingDeps) {
     if (hand) releaseHand(hand)
   }
 
+  function chooseDrill(step: 1 | -1): void {
+    drill.value = drillAfter(bagCombos.value, drill.value, step)
+    send('boxing_bag_combo', { combo: drill.value })
+  }
+
+  function onBagKey(e: KeyboardEvent): boolean {
+    const bag = bagRound.value?.bag ?? bagAimed()
+    if (bag === null) return false
+    if (e.code === 'ArrowDown' || e.code === 'ArrowUp') {
+      if (!e.repeat) chooseDrill(e.code === 'ArrowDown' ? 1 : -1)
+      return true
+    }
+    if (e.repeat) return false
+    if (matches('cook', e.code)) {
+      send('boxing_bag', { bag, kind: 'guard' })
+      return true
+    }
+    if (matches('moveLeft', e.code)) send('boxing_bag', { bag, kind: 'dodge_left' })
+    if (matches('moveRight', e.code)) send('boxing_bag', { bag, kind: 'dodge_right' })
+    return false
+  }
+
   function onKeyDown(e: KeyboardEvent): boolean {
-    if (!fighting.value) return false
+    if (!fighting.value) return onBagKey(e)
     if (matches('cook', e.code)) {
       if (!e.repeat) setGuard(true)
       return true
@@ -369,6 +402,7 @@ export function useBoxing(deps: BoxingDeps) {
       if (bagResultTimer) clearTimeout(bagResultTimer)
       bagResult.value = null
       bagRound.value = { ...data, receivedAt: Date.now(), key: (bagRound.value?.key ?? 0) + 1 }
+      drill.value = data.drill
       if (data.outcome === 'combo') deps.play('boxing_bell')
       else if (data.outcome === 'wrong' || data.outcome === 'late') deps.play('glove_block')
     },
@@ -397,6 +431,7 @@ export function useBoxing(deps: BoxingDeps) {
     if (!round || doubleFrom === null) return null
     return {
       doubleFrom,
+      drill: round.drill,
       clock: clockLabel(secondsUntil(round.endsAt, serverClock(round, round.receivedAt, now.value))),
       comboName: deps.comboName(round.combo.id),
       steps: bagSteps(round.combo.sequence, round.index),
@@ -406,6 +441,11 @@ export function useBoxing(deps: BoxingDeps) {
       outcome: round.outcome,
       key: round.key,
     }
+  })
+
+  const bagList = computed(() => {
+    if (!atBag.value && !bagRound.value) return null
+    return [{ id: null as string | null, name: null as string | null, sequence: [] as BagMove[] }, ...bagCombos.value.map((c) => ({ id: c.id as string | null, name: deps.comboName(c.id) as string | null, sequence: c.sequence }))].map((row) => ({ ...row, chosen: row.id === drill.value }))
   })
 
   function cameraView(): SportsView | null {
@@ -418,5 +458,5 @@ export function useBoxing(deps: BoxingDeps) {
     return opponent && arena ? { kind: 'duel', sport: 'boxing', optional: true, opponent: { x: opponent.x, z: opponent.z }, arena } : null
   }
 
-  return { view, bagView, bagResult, fighting, handlers, onPointerDown, onKeyDown, cameraView }
+  return { view, bagView, bagResult, bagList, fighting, handlers, onPointerDown, onKeyDown, cameraView }
 }

@@ -221,6 +221,25 @@ test('the first punch on a free bag starts a 60 s round for that player; another
   assert.deepEqual(sentOf(clientOf(room, other), 'boxing_bag_end').at(-1), { bag: 0, sessionId: other.sessionId, score: 0, combos: 0, reason: 'left' })
 })
 
+test('the combo chosen from the list is the one of the next round and replaces the one of a running round; a dodge counts without rocking the bag', async () => {
+  const [player] = await Promise.all([makePlayer(421, 6, 1)])
+  const room = await fakeRoom([player])
+  Object.assign(player, { x: 6, z: 1, ry: 0 })
+  boxing.onBoxingBagCombo(room, clientOf(room, player), { combo: 'no_such_combo' }, NOW)
+  boxing.onBoxingBagCombo(room, clientOf(room, player), { combo: 'slip_counter' }, NOW)
+  assert.equal(sentOf(clientOf(room, player), 'boxing_bag_round').length, 0)
+  await boxing.onBoxingBag(room, clientOf(room, player), { bag: 0, kind: 'dodge_left' }, NOW + 100)
+  const first = sentOf(clientOf(room, player), 'boxing_bag_round').at(-1) as { combo: { id: string, sequence: string[] }, drill: string | null, index: number, outcome: string }
+  assert.deepEqual([first.combo.id, first.drill, first.index, first.outcome], ['slip_counter', 'slip_counter', 1, 'hit'])
+  assert.equal(sentOf(clientOf(room, player), 'boxing_bag_hit').length, 0)
+  boxing.onBoxingBagCombo(room, clientOf(room, player), { combo: 'one_two' }, NOW + 200)
+  const switched = sentOf(clientOf(room, player), 'boxing_bag_round').at(-1) as { combo: { id: string }, drill: string | null, index: number, outcome: string }
+  assert.deepEqual([switched.combo.id, switched.drill, switched.index, switched.outcome], ['one_two', 'one_two', 0, 'drill'])
+  boxing.onBoxingBagCombo(room, clientOf(room, player), { combo: null }, NOW + 300)
+  assert.equal((sentOf(clientOf(room, player), 'boxing_bag_round').at(-1) as { drill: string | null }).drill, null)
+  boxing.tickBoxingBags(room, NOW + 70_000)
+})
+
 test('a player without gloves is told so and the bag does not move', async () => {
   const [player] = await Promise.all([makePlayer(402, 6, 1)])
   const room = await fakeRoom([player])

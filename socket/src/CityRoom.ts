@@ -117,6 +117,7 @@ import {
   SPORTS_TICK_MS,
   joinSports,
   onBoxingBag,
+  onBoxingBagCombo,
   tickBoxingBags,
   onBoxingDodge,
   onBoxingGetUp,
@@ -313,6 +314,7 @@ export class CityRoom extends Room implements GameRoom {
     this.onMessage('boxing_dodge', (client, payload: ClientPayload) => onBoxingDodge(this, client, payload))
     this.onMessage('boxing_getup', (client) => onBoxingGetUp(this, client))
     this.onMessage('boxing_bag', (client, payload: ClientPayload) => void onBoxingBag(this, client, payload).catch((error) => warn('boxing bag failed', error)))
+    this.onMessage('boxing_bag_combo', (client, payload: ClientPayload) => onBoxingBagCombo(this, client, payload))
     this.onMessage('skate_push', (client) => onSkatePush(this, client))
     this.onMessage('figure_press', (client, payload: ClientPayload) => onFigurePress(this, client, payload))
     this.onMessage('figure_release', (client) => onFigureRelease(this, client))

@@ -184,7 +184,16 @@
     "windowMs": 1200,
     "leaveM": 3,
     "pointsPerPunch": 10,
-    "streakForDouble": 3
+    "streakForDouble": 3,
+    "extra": [
+      { "id": "slip_counter", "sequence": ["dodge_left", "cross", "hook"] },
+      { "id": "duck_under", "sequence": ["dodge_right", "hook", "uppercut"] },
+      { "id": "high_guard", "sequence": ["guard", "jab", "cross"] },
+      { "id": "machine_gun", "sequence": ["jab", "jab", "jab", "cross"] },
+      { "id": "body_breaker", "sequence": ["jab", "jab", "hook", "uppercut"] },
+      { "id": "in_and_out", "sequence": ["jab", "dodge_left", "jab", "dodge_right", "cross"] },
+      { "id": "finisher", "sequence": ["jab", "cross", "hook", "uppercut", "cross"] }
+    ]
   },
   "punchBags": [
     {

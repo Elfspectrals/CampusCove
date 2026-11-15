@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { type BoxingStatePayload, bagInFront, bagSteps, boxerFor, parseBagDoubleFrom, clockLabel, isFighting, handFor, parseHoldMs, parsePunchBags, parseRingArena, percentOf, punchKindAfter, rockAngle, secondsUntil, serverClock, trianglesBySide, boundsOfVertices } from './boxing.ts'
+import { type BoxingStatePayload, bagInFront, bagSteps, boxerFor, drillAfter, parseBagCombos, parseBagDoubleFrom, clockLabel, isFighting, handFor, parseHoldMs, parsePunchBags, parseRingArena, percentOf, punchKindAfter, rockAngle, secondsUntil, serverClock, trianglesBySide, boundsOfVertices } from './boxing.ts'
 
 const boxer = (sessionId: string, corner: 'red' | 'blue') => ({
   sessionId, name: sessionId, corner, health: 120, maxHealth: 120, endurance: 100, maxEndurance: 100,
@@ -56,6 +56,18 @@ test('the punch bags come from the rules, and a broken list is an error', () => 
 test('the combo of a bag round shows the punches done, the next one and those to come', () => {
   assert.deepEqual(bagSteps(['jab', 'cross', 'hook'], 0).map((s) => s.state), ['next', 'todo', 'todo'])
   assert.deepEqual(bagSteps(['jab', 'cross', 'hook'], 2), [{ kind: 'jab', state: 'done' }, { kind: 'cross', state: 'done' }, { kind: 'hook', state: 'next' }])
+})
+
+test('the combo list is the combos of the bout then the training ones; the choice goes round the list, random first', () => {
+  const combos = parseBagCombos({ combo: { list: [{ id: 'one_two', sequence: ['jab', 'cross'] }] }, bag: { extra: [{ id: 'slip_counter', sequence: ['dodge_left', 'cross', 'hook'] }] } })
+  assert.deepEqual(combos.map((c) => c.id), ['one_two', 'slip_counter'])
+  assert.throws(() => parseBagCombos({ combo: { list: [] }, bag: { extra: [{ id: 'x', sequence: ['kick'] }] } }), /invalid bag combo 0/)
+  assert.throws(() => parseBagCombos({ combo: { list: [] } }), /bag.extra/)
+  assert.equal(drillAfter(combos, null, 1), 'one_two')
+  assert.equal(drillAfter(combos, 'one_two', 1), 'slip_counter')
+  assert.equal(drillAfter(combos, 'slip_counter', 1), null)
+  assert.equal(drillAfter(combos, null, -1), 'slip_counter')
+  assert.equal(drillAfter(combos, 'one_two', -1), null)
 })
 
 test('the streak that doubles the points of a bag combo comes from the rules', () => {

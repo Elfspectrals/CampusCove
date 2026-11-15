@@ -1095,7 +1095,7 @@ const boxing = useBoxing({
   getScene,
   remotePosition: (sessionId) => realtime.remotePosition(sessionId),
 })
-const { view: boxingView, fighting: boxingFighting, bagView: boxingBagView, bagResult: boxingBagResult } = boxing
+const { view: boxingView, fighting: boxingFighting, bagView: boxingBagView, bagResult: boxingBagResult, bagList: boxingBagList } = boxing
 const SKATING_CORRECTIONS = new Set(['no_skates', 'skate_start', 'skate_fallen'])
 const skating = useSkating({
   myPosition,
@@ -2777,7 +2777,13 @@ const crosshairClass = computed(() => {
       @close="sportsSignup.close"
     />
     <GameBoxingHud v-if="boxingView" :view="boxingView" :fighting="boxingFighting" :guard-key="actionKeyLabels('cook')[0] ?? ''" />
-    <GameBoxingBag v-else-if="boxingBagView || boxingBagResult" :round="boxingBagView" :result="boxingBagResult" />
+    <GameBoxingBag
+      v-else-if="boxingBagView || boxingBagResult || boxingBagList"
+      :round="boxingBagView"
+      :result="boxingBagResult"
+      :list="boxingBagList"
+      :keys="{ dodgeLeft: actionKeyLabels('moveLeft')[0] ?? '', dodgeRight: actionKeyLabels('moveRight')[0] ?? '', guard: actionKeyLabels('cook')[0] ?? '' }"
+    />
     <GameFigureSkating
       v-if="figureHud || figureBoard"
       :hud="figureHud"

@@ -322,7 +322,9 @@ Decision (2026-11-15, second review of the sports): the gear loan becomes a bloc
 - [done] Owned sports gear shows in the game (2026-11-15): the bag endpoint (`/apartments/assets`) now sends `sports_gear` items, each gear item has its picture and model, the racket and the boules are drawn in the hand when selected, and gear is never placed like furniture. Worn gear (swimsuit, gloves, spikes, skates) is still only put on inside its sport. Seen in the browser: hotbar pictures, racket and boules in hand.
 - [done] Ice skating: figure routine on music (`figureSkating.ts`, `figureRink.ts`, `useFigureSkating`, contract `docs/sports/figure-skating.md`): 1 to 4 skaters carried along an oval, twelve elements (jump with turns, spin, spiral) judged on the socket clock, offered by the rink coach beside the race, seen from behind the skater. No board, no reward. Played alone on 2026-11-15 by a script following the prompts: the whole routine, twelve elements Perfect, 6,000 points, the result shown at the end. Not played by hand, not played by several skaters, the jump and spin not seen from another player's screen.
 - [done] Tennis: a timing ring on the serve toss (green within 60 ms of its top), since alone only the serve can be played and the user saw no circle. Covered by tests, not seen in game.
-- [todo] Opponents run by the server for solo play.
+- [done] Boxing combo list (asked on 2026-11-15, on the model of a Mortal Kombat move list): facing a bag, a list of twelve combos and a random entry; the arrows choose the one to drill; seven training combos use the slips and the guard. Played alone on 2026-11-15: the list, a choice, the slip-cross-hook combo scored and came back, a wrong move told.
+- [todo] Basketball like NBA Jam (decided 2026-11-15, replacing the shot meter): jump on the click and release at the top, dunks from further out, turbo, a shove to take the ball, on fire after three baskets.
+- [todo] Opponents run by the server for solo play (decided 2026-11-15: a win against one counts for the tasks, not for the boards; in football and basketball the player chooses one against one or teams filled with robots).
 
 ## Later
 

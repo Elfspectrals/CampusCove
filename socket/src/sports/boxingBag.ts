@@ -1,4 +1,13 @@
-import type { Combo, PunchKind } from './boxingBout.ts'
+import { type BagMove, PUNCH_KINDS, type PunchKind } from './boxingBout.ts'
+
+export interface BagCombo {
+  id: string
+  sequence: BagMove[]
+}
+
+export function isPunch(move: BagMove): move is PunchKind {
+  return (PUNCH_KINDS as readonly string[]).includes(move)
+}
 
 export interface BagRules {
   roundSec: number
@@ -13,7 +22,8 @@ export interface BagRound {
   sessionId: string
   bag: number
   endsAt: number
-  combo: Combo
+  combo: BagCombo
+  drill: BagCombo | null
   index: number
   lastAt: number | null
   score: number
@@ -23,16 +33,22 @@ export interface BagRound {
 
 export type BagOutcome = 'hit' | 'combo' | 'wrong' | 'late' | 'over'
 
-export function nextCombo(list: readonly Combo[], previous: Combo | null, random: () => number): Combo {
+export function nextCombo(list: readonly BagCombo[], previous: BagCombo | null, random: () => number): BagCombo {
   const choices = list.length > 1 ? list.filter((c) => c !== previous) : list
   return choices[Math.min(choices.length - 1, Math.floor(random() * choices.length))]
 }
 
-export function startBagRound(who: { accountId: number, sessionId: string }, bag: number, now: number, rules: BagRules, list: readonly Combo[], random: () => number): BagRound {
-  return { ...who, bag, endsAt: now + rules.roundSec * 1000, combo: nextCombo(list, null, random), index: 0, lastAt: null, score: 0, combos: 0, streak: 0 }
+export function startBagRound(who: { accountId: number, sessionId: string }, bag: number, now: number, rules: BagRules, list: readonly BagCombo[], random: () => number, drill: BagCombo | null = null): BagRound {
+  return { accountId: who.accountId, sessionId: who.sessionId, bag, endsAt: now + rules.roundSec * 1000, combo: drill ?? nextCombo(list, null, random), drill, index: 0, lastAt: null, score: 0, combos: 0, streak: 0 }
 }
 
-export function bagPunch(round: BagRound, kind: PunchKind, now: number, rules: BagRules, list: readonly Combo[], random: () => number): BagOutcome {
+export function setBagDrill(round: BagRound, drill: BagCombo | null, list: readonly BagCombo[], random: () => number): void {
+  round.drill = drill
+  round.combo = drill ?? nextCombo(list, round.combo, random)
+  round.index = 0
+}
+
+export function bagPunch(round: BagRound, kind: BagMove, now: number, rules: BagRules, list: readonly BagCombo[], random: () => number): BagOutcome {
   if (now >= round.endsAt) return 'over'
   const late = round.index > 0 && round.lastAt !== null && now - round.lastAt > rules.windowMs
   round.lastAt = now
@@ -48,7 +64,7 @@ export function bagPunch(round: BagRound, kind: PunchKind, now: number, rules: B
   round.score += round.combo.sequence.length * rules.pointsPerPunch * (round.streak >= rules.streakForDouble ? 2 : 1)
   round.combos += 1
   round.streak += 1
-  round.combo = nextCombo(list, round.combo, random)
+  round.combo = round.drill ?? nextCombo(list, round.combo, random)
   round.index = 0
   return 'combo'
 }

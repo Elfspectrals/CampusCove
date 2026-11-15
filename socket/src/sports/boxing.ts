@@ -4,11 +4,12 @@ import { punchDirection } from '../punch.ts'
 import { readSportRules, worldSportsPassArea } from '../world.ts'
 import {
   type Bout,
+  BAG_MOVES,
+  type BagMove,
   type Boxer,
   type BoxingRules,
   HANDS,
   type Hand,
-  PUNCH_KINDS,
   type Point3,
   type PunchKind,
   advanceBout,
@@ -27,7 +28,7 @@ import {
   startBout,
   takeQueued
 } from './boxingBout.ts'
-import { type BagOutcome, type BagRound, bagPunch, bagRoundOver, startBagRound } from './boxingBag.ts'
+import { type BagCombo, type BagOutcome, type BagRound, bagPunch, bagRoundOver, isPunch, setBagDrill, startBagRound } from './boxingBag.ts'
 import { onGearChanged, usableGear } from './gear.ts'
 import { type Match, activePlayers, matchPlayer, parseSignupRules } from './signup.ts'
 import { type MatchEnd, type MatchResult, endMatch, recordMatch, registerCoach, registerVenue } from './venues.ts'
@@ -50,6 +51,7 @@ const fights = new Map<string, Fight>()
 const glovesChecks = new Map<number, { owned: Promise<boolean>, at: number }>()
 const lastBagHitAt = new Map<number, number>()
 const bagRounds = new WeakMap<GameRoom, Map<number, BagRound>>()
+const bagDrills = new Map<number, string>()
 let boxingRules: BoxingRules | null = null
 
 function rulesOf(): BoxingRules {
@@ -366,7 +368,8 @@ export async function onBoxingBag(room: GameRoom, client: GameClient, payload: C
   const player = room.players.get(client.sessionId)
   const index = payload?.bag
   const kind = payload?.kind
-  if (!player?.token || !Number.isInteger(index) || !PUNCH_KINDS.includes(kind as PunchKind)) return
+  if (!player?.token || !Number.isInteger(index) || !BAG_MOVES.includes(kind as BagMove)) return
+  const move = kind as BagMove
   const bag = rulesOf().punchBags[index as number]
   if (!bag || !facingBag(player, bag) || now - (lastBagHitAt.get(player.accountId) ?? 0) < BAG_HIT_GAP_MS) return
   lastBagHitAt.set(player.accountId, now)
@@ -386,12 +389,31 @@ export async function onBoxingBag(room: GameRoom, client: GameClient, payload: C
   const rules = rulesOf()
   const rounds = bagRoundsOf(room)
   const mine = [...rounds.values()].find((r) => r.accountId === player.accountId) ?? null
-  const round = mine ?? (rounds.has(index as number) ? null : startBagRound(player, index as number, now, rules.bag, rules.combo.list, Math.random))
+  const round = mine ?? (rounds.has(index as number) ? null : startBagRound(player, index as number, now, rules.bag, rules.bagCombos, Math.random, drillOf(player)))
   const counted = round !== null && round.bag === index
   if (round && !mine) rounds.set(round.bag, round)
-  const outcome = round && counted ? bagPunch(round, kind as PunchKind, now, rules.bag, rules.combo.list, Math.random) : null
-  sendToPlayersInHall(room, 'boxing_bag_hit', { bag: index, sessionId: player.sessionId, kind, training: counted })
+  const outcome = round && counted ? bagPunch(round, move, now, rules.bag, rules.bagCombos, Math.random) : null
+  if (isPunch(move)) sendToPlayersInHall(room, 'boxing_bag_hit', { bag: index, sessionId: player.sessionId, kind: move, training: counted })
   if (round && outcome) client.send('boxing_bag_round', bagRoundView(round, outcome, now))
+}
+
+function drillOf(player: Player): BagCombo | null {
+  const id = bagDrills.get(player.accountId)
+  return rulesOf().bagCombos.find((c) => c.id === id) ?? null
+}
+
+export function onBoxingBagCombo(room: GameRoom, client: GameClient, payload: ClientPayload, now = Date.now()): void {
+  const player = room.players.get(client.sessionId)
+  const id = payload?.combo
+  if (!player || (id !== null && typeof id !== 'string')) return
+  const drill = id === null ? null : rulesOf().bagCombos.find((c) => c.id === id)
+  if (drill === undefined) return
+  if (drill) bagDrills.set(player.accountId, drill.id)
+  else bagDrills.delete(player.accountId)
+  const round = [...bagRoundsOf(room).values()].find((r) => r.accountId === player.accountId)
+  if (!round) return
+  setBagDrill(round, drill, rulesOf().bagCombos, Math.random)
+  client.send('boxing_bag_round', bagRoundView(round, 'drill', now))
 }
 
 function bagRoundsOf(room: GameRoom): Map<number, BagRound> {
@@ -411,12 +433,13 @@ function sendToPlayersInHall(room: GameRoom, type: string, payload: unknown): vo
   })
 }
 
-function bagRoundView(round: BagRound, outcome: BagOutcome, now: number) {
+function bagRoundView(round: BagRound, outcome: BagOutcome | 'drill', now: number) {
   return {
     bag: round.bag,
     endsAt: round.endsAt,
     serverNow: now,
     combo: { id: round.combo.id, sequence: round.combo.sequence },
+    drill: round.drill?.id ?? null,
     index: round.index,
     score: round.score,
     combos: round.combos,

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { type BagRound, bagPunch, bagRoundOver, nextCombo, startBagRound } from './boxingBag.ts'
+import { type BagCombo, type BagRound, bagPunch, bagRoundOver, isPunch, nextCombo, setBagDrill, startBagRound } from './boxingBag.ts'
 import type { Combo } from './boxingBout.ts'
 
 const RULES = { roundSec: 60, windowMs: 1200, leaveM: 3, pointsPerPunch: 10, streakForDouble: 3 }
@@ -67,6 +67,25 @@ test('from the fourth combo in a row without a mistake the combo counts double',
   assert.deepEqual([r.score, r.streak], [80, 3])
   play(UPPER_HOOK)
   assert.deepEqual([r.score, r.combos, r.streak], [120, 4, 4])
+})
+
+test('a chosen combo comes back after each success until another choice; a dodge or the guard is a move of a combo like a punch', () => {
+  const SLIP: BagCombo = { id: 'slip_counter', sequence: ['dodge_left', 'cross', 'hook'] }
+  const list = [...LIST, SLIP]
+  const r = startBagRound({ accountId: 1, sessionId: 's1' }, 0, T0, RULES, list, first, SLIP)
+  assert.equal(r.combo, SLIP)
+  assert.equal(bagPunch(r, 'dodge_right', T0, RULES, list, first), 'wrong')
+  assert.equal(bagPunch(r, 'dodge_left', T0 + 400, RULES, list, first), 'hit')
+  assert.equal(bagPunch(r, 'cross', T0 + 800, RULES, list, first), 'hit')
+  assert.equal(bagPunch(r, 'hook', T0 + 1200, RULES, list, first), 'combo')
+  assert.deepEqual([r.combo.id, r.index, r.score], ['slip_counter', 0, 30])
+  bagPunch(r, 'dodge_left', T0 + 1600, RULES, list, first)
+  setBagDrill(r, ONE_TWO_HOOK, list, first)
+  assert.deepEqual([r.combo.id, r.index, r.score], ['one_two_hook', 0, 30])
+  setBagDrill(r, null, list, first)
+  assert.equal(r.drill, null)
+  assert.notEqual(r.combo, ONE_TWO_HOOK)
+  assert.deepEqual(['jab', 'guard', 'dodge_left'].map((m) => isPunch(m as 'jab')), [true, false, false])
 })
 
 test('a punch after the bell does not count; the round is over at the bell, or when the player is gone or more than 3 m from the bag', () => {

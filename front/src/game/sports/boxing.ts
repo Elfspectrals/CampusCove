@@ -112,13 +112,40 @@ export interface BoxingBagHitPayload {
   training: boolean
 }
 
-export type BagOutcome = 'hit' | 'combo' | 'wrong' | 'late' | 'over'
+export type BagOutcome = 'hit' | 'combo' | 'wrong' | 'late' | 'over' | 'drill'
+export type BagMove = BoxingPunchKind | 'dodge_left' | 'dodge_right' | 'guard'
+
+export interface BagCombo {
+  id: string
+  sequence: BagMove[]
+}
+
+const BAG_MOVES: readonly BagMove[] = ['jab', 'cross', 'hook', 'uppercut', 'dodge_left', 'dodge_right', 'guard']
+
+export function parseBagCombos(rules: unknown): BagCombo[] {
+  const r = rules as { combo?: { list?: unknown }; bag?: { extra?: unknown } } | null
+  const bout = r?.combo?.list
+  const extra = r?.bag?.extra
+  if (!Array.isArray(bout) || !Array.isArray(extra)) throw new Error('boxing rules: combo.list and bag.extra must list the combos')
+  return [...bout, ...extra].map((entry: { id?: unknown; sequence?: unknown }, i) => {
+    if (typeof entry?.id !== 'string' || !Array.isArray(entry.sequence) || !entry.sequence.every((m) => BAG_MOVES.includes(m as BagMove))) {
+      throw new Error(`boxing rules: invalid bag combo ${i}`)
+    }
+    return { id: entry.id, sequence: entry.sequence as BagMove[] }
+  })
+}
+
+export function drillAfter(combos: readonly BagCombo[], current: string | null, step: 1 | -1): string | null {
+  const ids = [null, ...combos.map((c) => c.id)]
+  return ids[(ids.indexOf(current) + step + ids.length) % ids.length] ?? null
+}
 
 export interface BoxingBagRoundPayload {
   bag: number
   endsAt: number
   serverNow: number
-  combo: { id: BoxingCombo; sequence: BoxingPunchKind[] }
+  combo: BagCombo
+  drill: string | null
   index: number
   score: number
   combos: number
@@ -135,11 +162,11 @@ export interface BoxingBagEndPayload {
 }
 
 export interface BagStep {
-  kind: BoxingPunchKind
+  kind: BagMove
   state: 'done' | 'next' | 'todo'
 }
 
-export function bagSteps(sequence: readonly BoxingPunchKind[], index: number): BagStep[] {
+export function bagSteps(sequence: readonly BagMove[], index: number): BagStep[] {
   return sequence.map((kind, i) => ({ kind, state: i < index ? 'done' : i === index ? 'next' : 'todo' }))
 }
 
