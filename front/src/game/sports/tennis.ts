@@ -25,8 +25,16 @@ export const BALL_BASKETS = [
   { court: 'tennis_2', position: [-442.3, 0, -266.0] as const },
 ]
 const CUE_AHEAD_MS = 180
-const CUE_SEARCH_MS = 1500
-const CUE_STEP_MS = 20
+const PASS_SEARCH_MS = 1500
+const PASS_STEP_MS = 10
+export const TENNIS_SWEET_M = 0.8
+export const TENNIS_LATE_ALLOWANCE_MS = 150
+export const TENNIS_SWING_AHEAD_MS = 350
+export const TENNIS_PERFECT_TIMING_MS = [-60, 200] as const
+export const TENNIS_SMASH_TIMING_MS = [0, 100] as const
+const PERFECT_QUALITY = 0.85
+const RING_LEAD_MS = 900
+const RING_RADIUS_M = [0.6, 2.4] as const
 export const TENNIS_AUTO_RUN_SHARE = 0.6
 const CONTACT_AFTER_BOUNCE_MS = 350
 const CHASE_AHEAD_MS = 150
@@ -87,14 +95,38 @@ export interface BallPlay {
 }
 
 export function ballComing(play: BallPlay, team: TennisTeam, me: { x: number; z: number }, serverMs: number): boolean {
-  if (play.phase !== 'flight' || !play.ball || play.hitter === team) return false
+  const pass = closestPass(play, team, me, serverMs)
+  return pass !== null && pass.d <= TENNIS_REACH_M && pass.t - serverMs <= CUE_AHEAD_MS
+}
+
+function closestPass(play: BallPlay, team: TennisTeam, me: { x: number; z: number }, serverMs: number): { t: number; d: number } | null {
+  if (play.phase !== 'flight' || !play.ball || play.hitter === team) return null
   let closest = { t: serverMs, d: Infinity }
-  for (let t = serverMs; t <= serverMs + CUE_SEARCH_MS; t += CUE_STEP_MS) {
+  for (let t = Math.max(play.ball.t, serverMs - TENNIS_LATE_ALLOWANCE_MS); t <= serverMs + PASS_SEARCH_MS; t += PASS_STEP_MS) {
     const p = ballPosition(play.ball, t)
     const d = (p.z - play.netZ) * sideSign(team) >= 0 ? Math.hypot(p.x - me.x, p.z - me.z) : Infinity
     if (d < closest.d) closest = { t, d }
   }
-  return closest.d <= TENNIS_REACH_M && closest.t - serverMs <= CUE_AHEAD_MS
+  return closest
+}
+
+export type SwingTone = 'miss' | 'weak' | 'good' | 'smash'
+
+export function swingTone(offsetMs: number, distanceM: number): SwingTone {
+  if (distanceM > TENNIS_REACH_M || offsetMs > TENNIS_SWING_AHEAD_MS || offsetMs < -TENNIS_LATE_ALLOWANCE_MS) return 'miss'
+  if (offsetMs > TENNIS_PERFECT_TIMING_MS[1] || offsetMs < TENNIS_PERFECT_TIMING_MS[0]) return 'weak'
+  const quality = Math.min(1, 1 - (distanceM - TENNIS_SWEET_M) / (TENNIS_REACH_M - TENNIS_SWEET_M))
+  if (quality < PERFECT_QUALITY) return quality < 0.5 ? 'weak' : 'good'
+  return offsetMs >= TENNIS_SMASH_TIMING_MS[0] && offsetMs <= TENNIS_SMASH_TIMING_MS[1] ? 'smash' : 'good'
+}
+
+export function swingRing(play: BallPlay, team: TennisTeam, me: { x: number; z: number }, serverMs: number): { radius: number; tone: SwingTone } | null {
+  const pass = closestPass(play, team, me, serverMs)
+  if (!pass) return null
+  const offset = pass.t - serverMs
+  if (offset > RING_LEAD_MS) return null
+  const closing = clamp(offset / RING_LEAD_MS, 0, 1)
+  return { radius: RING_RADIUS_M[0] + (RING_RADIUS_M[1] - RING_RADIUS_M[0]) * closing, tone: swingTone(offset, pass.d) }
 }
 
 export interface CourtView {

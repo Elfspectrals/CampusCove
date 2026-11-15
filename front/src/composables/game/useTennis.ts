@@ -28,7 +28,9 @@ import {
   runStep,
   sideAt,
   swingFor,
+  swingRing,
   type BallPlay,
+  type SwingTone,
   type CourtView,
   type Spot,
   type TennisSwing,
@@ -57,6 +59,9 @@ const LANDING_RADIUS_M = 0.35
 const SHADOW_RADIUS_M = 0.14
 const SHADOW_OPACITY = 0.35
 const TIMING_SHOWN_MS = 900
+const SWING_RING_COLOURS: Record<SwingTone, number> = { miss: 0xe0483c, weak: 0xf29a2e, good: 0x4cc46a, smash: 0xa45cf0 }
+const SWING_RING_Y = 0.11
+const SWING_RING_INNER_SHARE = 0.9
 
 export interface TennisHud {
   games: Record<TennisTeam, number>
@@ -112,9 +117,9 @@ function newMarkMesh(): OutMark['mesh'] {
   return mesh
 }
 
-function newGroundRing(color: number, radius: number, opacity: number): THREE.Mesh {
+function newGroundRing(color: number, radius: number, opacity: number, innerShare = 0.72): THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial> {
   const mesh = new THREE.Mesh(
-    new THREE.RingGeometry(radius * 0.72, radius, 28).rotateX(-Math.PI / 2),
+    new THREE.RingGeometry(radius * innerShare, radius, 40).rotateX(-Math.PI / 2),
     new THREE.MeshBasicMaterial({ color, transparent: true, opacity, depthWrite: false }),
   )
   mesh.visible = false
@@ -154,6 +159,7 @@ export function useTennis(deps: TennisDeps) {
   const projection = new THREE.Vector3()
   const aimRing = newGroundRing(AIM_COLOR, AIM_RADIUS_M, 0.9)
   const landingRing = newGroundRing(LANDING_COLOR, LANDING_RADIUS_M, 0.7)
+  const swingRingMesh = newGroundRing(SWING_RING_COLOURS.miss, 1, 0.95, SWING_RING_INNER_SHARE)
   const shadows = new Map<THREE.Mesh, THREE.Mesh>()
   const timing = ref<TennisTiming | null>(null)
   let timingUntil = 0
@@ -331,6 +337,13 @@ export function useTennis(deps: TennisDeps) {
     return here.match ? recoverySpot(here.court, here.team, deps.myPosition) : null
   }
 
+  function serving(): boolean {
+    const me = mySessionId()
+    const s = playing()
+    if (s) return iServe(s, me)
+    return me !== null && [...free.value.values()].some((f) => f.phase === 'toss' && f.server === me)
+  }
+
   function autoRun(dt: number): { dx: number; dz: number } | null {
     const spot = runTarget()
     return spot ? runStep(deps.myPosition, spot, WALK_SPEED * TENNIS_AUTO_RUN_SHARE * dt) : null
@@ -339,13 +352,21 @@ export function useTennis(deps: TennisDeps) {
   function placeGuides(): void {
     const scene = deps.getScene()
     const here = stance()
-    if (scene && !aimRing.parent) scene.add(aimRing, landingRing)
+    if (scene && !aimRing.parent) scene.add(aimRing, landingRing, swingRingMesh)
     aimRing.visible = here !== null
     landingRing.visible = false
+    swingRingMesh.visible = false
     if (!here) return
     const target = aimFor(here)
     aimRing.position.set(target.x, AIM_Y, target.z)
     const play = incoming(here)
+    const ring = play ? swingRing(play, here.team, deps.myPosition, Date.now() + clockOffset.value) : null
+    if (ring) {
+      swingRingMesh.visible = true
+      swingRingMesh.position.set(deps.myPosition.x, SWING_RING_Y, deps.myPosition.z)
+      swingRingMesh.scale.set(ring.radius, 1, ring.radius)
+      swingRingMesh.material.color.setHex(SWING_RING_COLOURS[ring.tone])
+    }
     if (!play || play.phase !== 'flight' || !play.ball || play.hitter === here.team || play.bounces !== 0) return
     const landing = landingSpot(play.ball)
     landingRing.position.set(landing.x, AIM_Y, landing.z)
@@ -450,5 +471,5 @@ export function useTennis(deps: TennisDeps) {
   })
   const call = computed<TennisCall>(() => (now.value < callUntil.value ? lastCall.value : null))
 
-  return { hud, cue, call, timing, freePlay, source, holdingRacket, onPointerDown, onMouseMove, cameraView, autoRun, tick, handlers: { onState, onFree } }
+  return { hud, cue, call, timing, freePlay, source, holdingRacket, onPointerDown, onMouseMove, cameraView, autoRun, serving, tick, handlers: { onState, onFree } }
 }

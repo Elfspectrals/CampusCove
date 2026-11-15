@@ -1822,7 +1822,7 @@ const movement = useGameMovement({
     return pointerLocked.value && runUseOrPunch(mouseButtonCode(e.button), false, e.shiftKey)
   },
   speedFactor: () => survival.speedFactor() * intoxication.walkFactor() * (adminWatch.hasMyPower('speed') ? SPEED_POWER_FACTOR : 1),
-  movementLocked: () => seats.seated.value || townBus.riding.value || police.cuffedBy.value !== null || adminWatch.hasMyPower('freeze') || gymMatch.down() || runningRace.racing.value || dancing.value || climbingNow.value || poolRace.locked.value,
+  movementLocked: () => seats.seated.value || townBus.riding.value || police.cuffedBy.value !== null || adminWatch.hasMyPower('freeze') || gymMatch.down() || runningRace.racing.value || dancing.value || climbingNow.value || poolRace.locked.value || tennis.serving(),
   flying: () => adminWatch.hasMyPower('fly'),
   afterCameraPlaced: (camera, dt) => {
     intoxication.applyToCamera(camera, dt)

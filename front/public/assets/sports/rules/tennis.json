@@ -89,7 +89,12 @@
       200
     ],
     "timingFloor": 0.5,
-    "netClearM": 0.35
+    "netClearM": 0.35,
+    "smashTimingMs": [
+      0,
+      100
+    ],
+    "smashSpeedMs": 25
   },
   "lob": {
     "speedMs": [
@@ -106,7 +111,8 @@
       20
     ],
     "autoTossAfterMs": 10000,
-    "floor": 0.3
+    "floor": 0.3,
+    "reachM": 1.0
   },
   "faults": "simplified",
   "rejoinGraceSec": 30,

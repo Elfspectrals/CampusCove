@@ -6,7 +6,7 @@ import type { TennisTiming } from '../../types/gameRealtime'
 defineProps<{ hud: TennisHud | null; cue: boolean; call: TennisCall; timing: TennisTiming | null; freePlay: boolean }>()
 const { t } = useI18n()
 const TEAMS = ['red', 'blue'] as const
-const TIMING_TONE: Record<TennisTiming, string> = { perfect: 'text-mint', good: 'text-sun', early: 'text-coral', late: 'text-coral' }
+const TIMING_TONE: Record<TennisTiming, string> = { smash: 'text-grape', perfect: 'text-mint', good: 'text-sun', early: 'text-coral', late: 'text-coral' }
 </script>
 
 <template>

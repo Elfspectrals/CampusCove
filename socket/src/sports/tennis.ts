@@ -66,8 +66,20 @@ function serverOf(match: Match, game: TennisGame): string | null {
   return team.length === 0 ? null : team[game.turns[game.score.serving] % team.length].sessionId
 }
 
-function nextServe(match: Match, game: TennisGame, now: number): Rally {
-  return serveWait(serverOf(match, game) ?? '', game.score.serving, now)
+function placeServer(room: GameRoom, court: Court, team: Team, sessionId: string): void {
+  const player = room.players.get(sessionId)
+  const client = room.clients.find((c) => c.sessionId === sessionId)
+  if (!player || !client) return
+  player.x = Math.min(court.cx + court.halfWidth, Math.max(court.cx - court.halfWidth, player.x))
+  player.z = court.netZ + sideSign(team) * (COURT_HALF_LENGTH + BASELINE_STANDBY_M)
+  client.send('position_correction', { x: player.x, y: player.y, z: player.z, reason: 'tennis_serve' })
+  room.broadcastMove(client, player)
+}
+
+function nextServe(room: GameRoom, match: Match, game: TennisGame, now: number): Rally {
+  const server = serverOf(match, game)
+  if (server) placeServer(room, game.court, game.score.serving, server)
+  return serveWait(server ?? '', game.score.serving, now)
 }
 
 function stateView(match: Match, game: TennisGame, now: number, ended = false) {
@@ -125,7 +137,7 @@ export function startTennis(room: GameRoom, match: Match, cx: number, firstServe
   const court = courtFor(cx, match.settings)
   const score = newScore(parseFormat(match.settings.format), firstServer)
   const game: TennisGame = { venue: match.venue, court, score, rally: serveWait('', firstServer, now), turns: { [firstServer]: 0, [other(firstServer)]: -1 } as Record<Team, number>, lastHitAt: new Map() }
-  game.rally = nextServe(match, game, now)
+  game.rally = nextServe(room, match, game, now)
   roomGames(room).set(match.venue, game)
   stopFreeRally(room, match.venue, now)
   placeOnBaselines(room, match, court)
@@ -149,7 +161,7 @@ export function runTennis(room: GameRoom, match: Match, now: number): void {
       endMatch(room, match.venue, { reason: 'finished' }, now)
       return
     }
-    game.rally = nextServe(match, game, now)
+    game.rally = nextServe(room, match, game, now)
     broadcast(room, match, game, now)
     return
   }

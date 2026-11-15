@@ -899,7 +899,7 @@ export interface TennisBall {
   t: number
 }
 
-export type TennisTiming = 'perfect' | 'good' | 'early' | 'late'
+export type TennisTiming = 'smash' | 'perfect' | 'good' | 'early' | 'late'
 
 export interface TennisShot {
   sessionId: string
@@ -917,6 +917,7 @@ export interface TennisFreePayload {
   phase: 'idle' | 'serve_wait' | 'toss' | 'flight' | 'point'
   ball: TennisBall | null
   hitter: TennisTeam | null
+  server: string | null
   bounces: number
   shot: TennisShot | null
   call: TennisStatePayload['call']

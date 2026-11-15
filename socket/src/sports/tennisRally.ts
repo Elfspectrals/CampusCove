@@ -27,13 +27,16 @@ import {
   REACH_M,
   RESTITUTION,
   SERVE_FLOOR,
+  SERVE_REACH_M,
   SERVE_SPEED,
   SERVE_WAIT_MS,
   SERVE_WINDOW_MS,
   SWEET_M,
+  SMASH_SPEED,
   SWING_AHEAD_MS,
   TIMING_FLOOR,
   TIMING_PERFECT_MS,
+  TIMING_SMASH_MS,
   TOSS_FALL_MS,
   TOSS_SPEED,
   TOSS_START_Y
@@ -58,7 +61,7 @@ export interface Ball {
 
 export type Call = 'out' | 'net' | 'double_bounce' | 'missed_toss'
 
-export type Timing = 'perfect' | 'good' | 'early' | 'late'
+export type Timing = 'smash' | 'perfect' | 'good' | 'early' | 'late'
 
 export interface Shot {
   sessionId: string
@@ -230,7 +233,8 @@ export function step(rally: Rally, now: number, court: Court, where: Where): Ral
     const landing = groundTime(ball)
     if (swing && swing.at <= Math.min(landing, netAt ?? Infinity)) {
       if (now < swing.at) return current
-      return strike(court, swing.team, ballAt(ball, swing.at), swing.aim, swing.lob ? LOB_SPEED : DRIVE_SPEED, swing.quality, swing.at, { sessionId: swing.sessionId, timing: swing.timing })
+      const speed = swing.lob ? LOB_SPEED : swing.timing === 'smash' ? ([SMASH_SPEED, SMASH_SPEED] as const) : DRIVE_SPEED
+      return strike(court, swing.team, ballAt(ball, swing.at), swing.aim, speed, swing.quality, swing.at, { sessionId: swing.sessionId, timing: swing.timing })
     }
     if (netAt !== null && netAt <= landing) {
       if (now < netAt) return current
@@ -258,7 +262,8 @@ export function timingFactor(offsetMs: number): number {
 export function timingOf(offsetMs: number, quality: number): Timing {
   if (offsetMs > TIMING_PERFECT_MS[1]) return 'early'
   if (offsetMs < TIMING_PERFECT_MS[0]) return 'late'
-  return quality >= PERFECT_QUALITY ? 'perfect' : 'good'
+  if (quality < PERFECT_QUALITY) return 'good'
+  return offsetMs >= TIMING_SMASH_MS[0] && offsetMs <= TIMING_SMASH_MS[1] ? 'smash' : 'perfect'
 }
 
 function plannedContact(flight: Flight, court: Court, hitter: Hitter, now: number): { t: number, d: number, x: number } | null {
@@ -289,7 +294,7 @@ export function hit(rally: Rally, hitter: Hitter, aim: Aim, lob: boolean, now: n
     return { phase: 'toss', server: rally.server, team: rally.team, ball: tossBall(hitter.x, hitter.z, now) }
   }
   if (rally.phase === 'toss') {
-    if (hitter.sessionId !== rally.server) return null
+    if (hitter.sessionId !== rally.server || Math.hypot(hitter.x - rally.ball.x, hitter.z - rally.ball.z) > SERVE_REACH_M) return null
     const quality = Math.max(SERVE_FLOOR, 1 - Math.abs(now - tossPeak(rally.ball)) / SERVE_WINDOW_MS)
     const timing = quality >= PERFECT_QUALITY ? 'perfect' : quality > SERVE_FLOOR ? 'good' : now < tossPeak(rally.ball) ? 'early' : 'late'
     return strike(court, rally.team, ballAt(rally.ball, now), aim, SERVE_SPEED, quality, now, { sessionId: hitter.sessionId, timing })

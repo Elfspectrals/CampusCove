@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import type { TennisStatePayload } from '../../types/gameRealtime'
-import { BALL_BASKETS, TENNIS_BOUNCE_KEEP, TENNIS_COURTS, TENNIS_GRAVITY, TENNIS_HALF_LENGTH, TENNIS_NET_Z, TENNIS_REACH_M, TENNIS_RESTITUTION, TENNIS_MARK_MS, aimMoved, ballComing, ballPosition, defaultAim, freeCourtAt, interceptSpot, iServe, markOpacity, markYaw, myTeam, recoverySpot, runStep, sideAt, swingFor } from './tennis.ts'
+import { BALL_BASKETS, TENNIS_BOUNCE_KEEP, TENNIS_COURTS, TENNIS_GRAVITY, TENNIS_HALF_LENGTH, TENNIS_NET_Z, TENNIS_REACH_M, TENNIS_RESTITUTION, TENNIS_MARK_MS, TENNIS_LATE_ALLOWANCE_MS, TENNIS_PERFECT_TIMING_MS, TENNIS_SMASH_TIMING_MS, TENNIS_SWEET_M, TENNIS_SWING_AHEAD_MS, aimMoved, ballComing, ballPosition, defaultAim, freeCourtAt, interceptSpot, iServe, markOpacity, markYaw, myTeam, recoverySpot, runStep, sideAt, swingFor, swingRing, swingTone } from './tennis.ts'
 
 const ZONE = JSON.parse(readFileSync(new URL('../../../public/assets/zones/sports_tennis.json', import.meta.url), 'utf8'))
 const RULES = JSON.parse(readFileSync(new URL('../../../public/assets/sports/rules/tennis.json', import.meta.url), 'utf8'))
@@ -35,6 +35,37 @@ function state(extra: Partial<TennisStatePayload> = {}): TennisStatePayload {
 test('the ball physics shown match the rules the socket plays', () => {
   assert.deepEqual([RULES.ball.gravity, RULES.ball.restitution, RULES.ball.bounceKeep, RULES.hit.reachM], [TENNIS_GRAVITY, TENNIS_RESTITUTION, TENNIS_BOUNCE_KEEP, TENNIS_REACH_M])
   assert.equal(RULES.courts[0].sizeM[1] / 2, TENNIS_HALF_LENGTH)
+  assert.deepEqual([RULES.hit.sweetSpotM, RULES.hit.windowMs, RULES.hit.swingAheadMs, RULES.hit.perfectTimingMs, RULES.hit.smashTimingMs], [TENNIS_SWEET_M, TENNIS_LATE_ALLOWANCE_MS, TENNIS_SWING_AHEAD_MS, TENNIS_PERFECT_TIMING_MS, TENNIS_SMASH_TIMING_MS])
+})
+
+test('the swing ring colour says what a click now would give: red miss, orange weak, green good, purple smash', () => {
+  for (const [offset, distance, tone] of [
+    [500, 0.3, 'miss'], [351, 0.3, 'miss'], [350, 0.3, 'weak'], [201, 0.3, 'weak'], [200, 0.3, 'good'], [101, 0.3, 'good'],
+    [100, 0.3, 'smash'], [0, 0.3, 'smash'], [-1, 0.3, 'good'], [-60, 0.3, 'good'], [-61, 0.3, 'weak'], [-150, 0.3, 'weak'], [-151, 0.3, 'miss'],
+    [50, 0.95, 'smash'], [50, 1.0, 'good'], [50, 1.3, 'good'], [50, 1.4, 'weak'], [50, 1.8, 'weak'], [50, 1.81, 'miss'],
+  ] as const) {
+    assert.equal(swingTone(offset, distance), tone, `${offset} ms early at ${distance} m`)
+  }
+})
+
+test('the swing ring shows from 900 ms before the ball passes closest and shrinks from 2.4 m to 0.6 m', () => {
+  const s = state()
+  const play = { ...s, netZ: s.court.netZ }
+  const pass = ballPosition(s.ball!, 1400)
+  const me = { x: pass.x, z: pass.z }
+  assert.equal(swingRing(play, 'red', me, 490), null)
+  const far = swingRing(play, 'red', me, 500)!
+  assert.ok(Math.abs(far.radius - 2.4) < 1e-9)
+  assert.equal(far.tone, 'miss')
+  const half = swingRing(play, 'red', me, 950)!
+  assert.ok(Math.abs(half.radius - 1.5) < 1e-9)
+  assert.equal(swingRing(play, 'red', me, 1150)!.tone, 'weak')
+  assert.equal(swingRing(play, 'red', me, 1250)!.tone, 'good')
+  const now = swingRing(play, 'red', me, 1350)!
+  assert.equal(now.tone, 'smash')
+  assert.ok(Math.abs(now.radius - 0.7) < 1e-9)
+  assert.equal(swingRing(play, 'red', me, 1430)!.tone, 'good')
+  assert.equal(swingRing(play, 'blue', me, 1350), null)
 })
 
 test('the ball follows its arc, then bounces up instead of sinking before the server sends the bounce', () => {

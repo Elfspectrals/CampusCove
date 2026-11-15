@@ -46,6 +46,7 @@ test('the rules file says what the socket plays', () => {
   assert.deepEqual(RULES.ball, { radiusM: C.BALL_RADIUS, restitution: C.RESTITUTION, bounceKeep: C.BOUNCE_KEEP, drag: 0, gravity: C.GRAVITY })
   assert.deepEqual([RULES.hit.windowMs, RULES.hit.reachM, RULES.hit.sweetSpotM, RULES.hit.maxHeightM, RULES.hit.missM], [C.HIT_ALLOWANCE_MS, C.REACH_M, C.SWEET_M, C.HIT_MAX_HEIGHT, C.MISS_M])
   assert.deepEqual([RULES.hit.swingAheadMs, RULES.hit.perfectTimingMs, RULES.hit.timingFloor, RULES.hit.netClearM, RULES.serve.floor], [C.SWING_AHEAD_MS, C.TIMING_PERFECT_MS, C.TIMING_FLOOR, C.NET_CLEAR_M, C.SERVE_FLOOR])
+  assert.deepEqual([RULES.hit.smashTimingMs, RULES.hit.smashSpeedMs, RULES.serve.reachM], [C.TIMING_SMASH_MS, C.SMASH_SPEED, C.SERVE_REACH_M])
   assert.deepEqual([RULES.hit.driveSpeedMs, RULES.lob.speedMs, RULES.serve.speedMs], [C.DRIVE_SPEED, C.LOB_SPEED, C.SERVE_SPEED])
   assert.deepEqual([RULES.serve.tossStartY, RULES.serve.tossSpeedMs, RULES.serve.windowMs, RULES.serve.autoTossAfterMs], [C.TOSS_START_Y, C.TOSS_SPEED, C.SERVE_WINDOW_MS, C.SERVE_WAIT_MS])
   assert.equal(RULES.rejoinGraceSec * 1000, C.REJOIN_GRACE_MS)
@@ -71,7 +72,7 @@ test('kick-off puts each side on its baseline and the serving team server waits 
   assert.deepEqual([state.phase, state.server, state.serving, state.points], ['serve_wait', blue.sessionId, 'blue', { red: '0', blue: '0' }])
 })
 
-test('a full point: toss, serve on the socket clock, two bounces, 0-15, then the next serve', async () => {
+test('a full point: toss, serve on the socket clock, two bounces, 0-15, then the next serve from behind the baseline, which a server who walked off the toss cannot hit', async () => {
   const { room, match, red, blue } = await singles()
   const game = tennis.startTennis(room, match, COURT_1.cx, 'blue', T0)
   const aim = { aimX: COURT_1.cx, aimZ: C.TENNIS_NET_Z + 8 }
@@ -87,8 +88,17 @@ test('a full point: toss, serve on the socket clock, two bounces, 0-15, then the
   const point = game.rally as { phase: string, winner: string, call: string, until: number }
   assert.deepEqual([point.phase, point.winner, point.call], ['point', 'blue', 'double_bounce'])
   assert.deepEqual(lastState(room, blue).points, { red: '0', blue: '15' })
+  blue.x = COURT_1.cx + 20
+  blue.z = C.TENNIS_NET_Z - 2
   tennis.runTennis(room, match, point.until)
   assert.deepEqual([phaseOf(game), lastState(room, red).server], ['serve_wait', blue.sessionId])
+  assert.deepEqual([blue.x, blue.z], [COURT_1.cx + C.SINGLES_HALF_WIDTH, C.TENNIS_NET_Z - C.COURT_HALF_LENGTH - C.BASELINE_STANDBY_M])
+  assert.equal((sentOf(clientOf(room, blue), 'position_correction').at(-1) as { reason: string }).reason, 'tennis_serve')
+  tennis.onTennisHit(room, clientOf(room, blue), aim, point.until + 1000)
+  assert.equal(phaseOf(game), 'toss')
+  blue.x -= 2
+  tennis.onTennisHit(room, clientOf(room, blue), aim, point.until + 1500)
+  assert.equal(phaseOf(game), 'toss')
 })
 
 test('hits are rate-limited and malformed hits are ignored', async () => {

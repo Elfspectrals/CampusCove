@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { COURT_HALF_LENGTH, POINT_PAUSE_MS, REACH_M, SERVE_WAIT_MS, SERVE_WINDOW_MS, SINGLES_HALF_WIDTH, TOSS_FALL_MS } from './tennisConstants.ts'
+import { COURT_HALF_LENGTH, POINT_PAUSE_MS, REACH_M, SERVE_WAIT_MS, SERVE_WINDOW_MS, SINGLES_HALF_WIDTH, SMASH_SPEED, TOSS_FALL_MS } from './tennisConstants.ts'
 import { type Court, type Rally, ballAt, strokeOf, contactQuality, groundTime, hit, landsIn, serveWait, shoot, step, timingFactor, timingOf, tossBall, tossPeak } from './tennisRally.ts'
 
 const COURT: Court = { cx: 0, netZ: 0, halfWidth: SINGLES_HALF_WIDTH }
@@ -69,6 +69,14 @@ test('a serve 400 ms off the top of the toss, early or late, flies 2.8 m long an
   assert.deepEqual(out.phase === 'point' && [out.winner, out.call], ['red', 'out'])
 })
 
+test('a toss is only hit by a server still within 1 m of it', () => {
+  const tossing = hit(serveWait('b', 'blue', T0), BLUE_SERVER, { x: 0, z: 8 }, false, T0, COURT) as Extract<Rally, { phase: 'toss' }>
+  assert.equal(tossing.phase, 'toss')
+  const peak = tossPeak(tossing.ball)
+  assert.equal(hit(tossing, { ...BLUE_SERVER, x: tossing.ball.x + 1.2, z: tossing.ball.z }, { x: 0, z: 8 }, false, peak, COURT), null)
+  assert.equal(hit(tossing, { ...BLUE_SERVER, x: tossing.ball.x + 0.9, z: tossing.ball.z }, { x: 0, z: 8 }, false, peak, COURT)?.phase, 'flight')
+})
+
 test('a serve or a toss by another player does nothing', () => {
   const toss: Rally = { phase: 'toss', server: 'b', team: 'blue', ball: tossBall(1, -12, T0) }
   assert.equal(hit(toss, { ...BLUE_SERVER, sessionId: 'b2' }, { x: 0, z: 8 }, false, tossPeak(toss.ball), COURT), null)
@@ -96,7 +104,11 @@ test('the receiver returns the ball when it is within reach on their half, the t
   assert.equal(back.bounces, 0)
   const landing = ballAt(back.ball, groundTime(back.ball))
   assert.ok(Math.abs(landing.z + 9) < 1e-6)
-  assert.equal(back.shot?.timing, 'perfect')
+  assert.equal(back.shot?.timing, 'smash')
+  assert.ok(Math.abs(Math.hypot(back.ball.vx, back.ball.vz) - SMASH_SPEED) < 1e-6)
+  const ahead = flight(step(flight(hit(bounced, receiver, { x: 0, z: -9 }, false, t - 150, COURT)), t + 20, COURT, nowhere))
+  assert.equal(ahead.shot?.timing, 'perfect')
+  assert.ok(Math.hypot(ahead.ball.vx, ahead.ball.vz) < 19 + 1e-6)
   assert.equal(hit(bounced, { ...receiver, x: at.x + 2.0 }, { x: 0, z: -9 }, false, t, COURT), null)
   assert.equal(hit(bounced, { ...BLUE_SERVER, x: at.x, z: at.z }, { x: 0, z: 9 }, false, t, COURT), null)
   assert.equal(hit(bounced, { ...receiver, z: -3 }, { x: 0, z: -9 }, false, t, COURT), null)
@@ -137,14 +149,19 @@ test('a click up to 350 ms before the ball passes closest commits the swing, whi
   assert.equal(hit(bounced, receiver, { x: 0, z: -9 }, false, contactAt - 360, COURT), null)
 })
 
-test('the timing keeps the full quality from 60 ms late to 200 ms early and halves it at the edges', () => {
+test('the timing keeps the full quality from 60 ms late to 200 ms early and halves it at the edges; a clean hit up to 100 ms early is a smash', () => {
   for (const [offset, factor] of [[0, 1], [200, 1], [275, 0.75], [350, 0.5], [-60, 1], [-105, 0.75], [-150, 0.5]] as const) {
     assert.ok(Math.abs(timingFactor(offset) - factor) < 1e-9, `${offset} ms gives ${timingFactor(offset)}`)
   }
   assert.equal(timingOf(300, 1), 'early')
   assert.equal(timingOf(-100, 1), 'late')
-  assert.equal(timingOf(0, 0.9), 'perfect')
+  assert.equal(timingOf(150, 0.9), 'perfect')
+  assert.equal(timingOf(-30, 0.9), 'perfect')
   assert.equal(timingOf(0, 0.6), 'good')
+  assert.equal(timingOf(0, 0.9), 'smash')
+  assert.equal(timingOf(100, 0.9), 'smash')
+  assert.equal(timingOf(101, 0.9), 'perfect')
+  assert.equal(timingOf(50, 0.84), 'good')
 })
 
 test('a lob flies higher and slower than a drive to the same spot', () => {
