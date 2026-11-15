@@ -237,6 +237,8 @@ erDiagram
 erDiagram
     ACCOUNTS ||--o{ SPORTS_PASS_PURCHASES : "achète un pass"
     TRANSACTIONS ||--|| SPORTS_PASS_PURCHASES : "débit cash détruit"
+    ACCOUNTS ||--o{ SPORTS_GEAR_RENTALS : "emprunte du matériel"
+    TRANSACTIONS ||--|| SPORTS_GEAR_RENTALS : "débit cash détruit"
     SPORTS_MATCHES ||--o{ SPORTS_MATCH_PLAYERS : "résultats"
     ACCOUNTS ||--o{ SPORTS_MATCH_PLAYERS : joue
     ACCOUNTS ||--o{ SPORTS_BOARD_CHAMPIONS : "champion de la semaine"
@@ -247,6 +249,14 @@ erDiagram
         text ref "unique par compte (idempotence)"
         text kind "day ou week"
         timestamptz valid_until "fin du pass après cet achat"
+        bigint cash_after
+    }
+    SPORTS_GEAR_RENTALS {
+        bigint id PK
+        bigint account_id FK
+        text ref "unique par compte (idempotence)"
+        text code "code du matériel prêté"
+        bigint price
         bigint cash_after
     }
     SPORTS_MATCHES {

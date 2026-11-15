@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { callRealtimeBackend, errorPayload } from '../backend.ts'
 import type { Bounds, ClientPayload, GameClient, GameRoom, Player } from '../types.ts'
 import { worldSportsPassArea } from '../world.ts'
-import { ownedGear } from './gear.ts'
+import { usableGear } from './gear.ts'
 import { hasValidPass, inPassArea } from './pass.ts'
 import {
   type Lobby,
@@ -124,6 +124,14 @@ function inVenueZone(venue: VenueSpec, player: Player): boolean {
 
 function coachVenues(coach: CoachSpec): VenueSpec[] {
   return coach.venues.map((id) => venues.get(id) as VenueSpec)
+}
+
+export function gearLentAt(player: Pick<Player, 'x' | 'z'>): { gear: string, zone: string } | null {
+  for (const venue of venues.values()) {
+    const area = venue.gear ? worldSportsPassArea(venue.zone) : null
+    if (venue.gear && area && player.x >= area.minX && player.x <= area.maxX && player.z >= area.minZ && player.z <= area.maxZ) return { gear: venue.gear, zone: venue.zone }
+  }
+  return null
 }
 
 function clientOf(room: GameRoom, sessionId: string): GameClient | undefined {
@@ -320,7 +328,7 @@ export async function onSportsSignup(room: GameRoom, client: GameClient, payload
     player.sportsPending = true
     let owned: string[]
     try {
-      owned = await ownedGear(player)
+      owned = await usableGear(player)
     } catch (error) {
       const { code, message } = errorPayload(error, 'Your gear could not be checked.', 'sports_gear_failed')
       sendError(client, code, message)

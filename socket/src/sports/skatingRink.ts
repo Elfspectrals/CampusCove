@@ -1,7 +1,7 @@
 import { callRealtimeBackend } from '../backend.ts'
 import type { ClientPayload, GameClient, GameRoom, Player } from '../types.ts'
 import { worldSportsPassArea } from '../world.ts'
-import { ownedGear } from './gear.ts'
+import { onGearChanged, usableGear } from './gear.ts'
 import type { Match, SettingSpec } from './signup.ts'
 import { activePlayers } from './signup.ts'
 import {
@@ -96,11 +96,16 @@ function onIce(x: number, z: number): boolean {
   return rules !== null && insideRink(rules.rink, x, z)
 }
 
+onGearChanged((player) => {
+  const skater = skaters.get(player)
+  if (skater) skater.checkedAt = -Infinity
+})
+
 function refreshSkates(player: Player, skater: Skater, now: number): void {
   if (skater.checking || !player.token) return
   skater.checking = true
   skater.checkedAt = now
-  ownedGear(player)
+  usableGear(player)
     .then((gear) => {
       skater.owns = gear.includes(ICE_SKATES)
     })

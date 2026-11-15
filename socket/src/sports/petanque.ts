@@ -1,7 +1,7 @@
 import type { Bounds, ClientPayload, GameClient, GameRoom, Player } from '../types.ts'
 import { callRealtimeBackend } from '../backend.ts'
 import { readSportRules } from '../world.ts'
-import { ownedGear } from './gear.ts'
+import { onGearChanged, usableGear } from './gear.ts'
 import { inPassArea } from './pass.ts'
 import {
   type Ball,
@@ -494,10 +494,12 @@ function freePisteAt(room: GameRoom, player: Player, now: number): FreePiste | n
   return null
 }
 
+onGearChanged((player) => gearChecks.delete(player))
+
 async function ownsBoules(player: Player, now: number): Promise<boolean> {
   const cached = gearChecks.get(player)
   if (cached && now - cached.at < GEAR_CHECK_MS) return cached.owned
-  const owned = (await ownedGear(player)).includes(loaded().gear)
+  const owned = (await usableGear(player)).includes(loaded().gear)
   gearChecks.set(player, { owned, at: now })
   return owned
 }

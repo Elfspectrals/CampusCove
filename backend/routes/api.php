@@ -160,6 +160,7 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
         Route::get('/sports/pass', [SportsController::class, 'pass']);
         Route::post('/sports/pass', [SportsController::class, 'buyPass']);
         Route::get('/sports/gear', [SportsController::class, 'gear']);
+        Route::post('/sports/gear/rent', [SportsController::class, 'rentGear']);
         Route::post('/sports/matches', [SportsController::class, 'recordMatch']);
         Route::post('/sports/gym/tasks', [GymTaskController::class, 'store']);
         Route::post('/sports/dance/runs', [DanceController::class, 'recordRuns']);

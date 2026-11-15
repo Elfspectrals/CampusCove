@@ -40,6 +40,7 @@ Product design for the sports of the complex west of Cove Heights (site decision
 - Gear **never wears out**.
 - At death, **all sports gear the player carries or wears drops into the death bag**, with the cash bag rules (5 minutes, 72 h giver age, the killer cannot pick it up). The player respawns in the newcomer outfit as usual.
 - Some gear is lent and not sold: balls (football, basketball, tennis), climbing shoes (lent with the pass at reception).
+- Gear a player does not own can be borrowed at its venue for a fee, until they leave that venue (decided 2026-11-15, fees in [CORE.md](CORE.md) § 3).
 
 | Gear | Sport | Slot |
 |---|---|---|

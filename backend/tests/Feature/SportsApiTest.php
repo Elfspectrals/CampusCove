@@ -171,7 +171,67 @@ class SportsApiTest extends TestCase
 
         $this->getJson('/api/sports/gear', $this->auth($player['token'], self::SECRET))
             ->assertOk()
-            ->assertExactJson(['gear' => ['gear_boules', 'gear_tennis_racket']]);
+            ->assertExactJson([
+                'gear' => ['gear_boules', 'gear_tennis_racket'],
+                'rental' => ['gear_swimsuit' => 15, 'gear_boxing_gloves' => 25, 'gear_boules' => 25, 'gear_tennis_racket' => 30, 'gear_running_spikes' => 40, 'gear_ice_skates' => 40],
+            ]);
+    }
+
+    public function test_lending_a_swimsuit_costs_15_cash_destroyed_and_never_touches_the_bank(): void
+    {
+        $player = $this->player(cash: 20, bank: 500);
+
+        $this->rent($player, 'gear_swimsuit', 'r1')->assertOk()->assertExactJson(['code' => 'gear_swimsuit', 'price' => 15, 'cash' => 5]);
+
+        $this->assertSame(5, $this->balance($player['account_id'], Wallet::CASH));
+        $this->assertSame(500, $this->balance($player['account_id'], Wallet::BANK));
+        $this->assertSame(1, DB::table('wallet_ledger')->where('reason', 'sports_gear_rental')->where('delta', -15)->count());
+        $this->assertSame(1, DB::table('transactions')->where('type', 'sports_gear_rental')->count());
+        $this->assertSame([], app(SportsGearService::class)->owned($player['account_id']));
+    }
+
+    public function test_the_whole_fee_is_paid_or_nothing_is_lent(): void
+    {
+        $short = $this->player(cash: 29, bank: 5000);
+        $exact = $this->player(cash: 30);
+
+        $this->rent($short, 'gear_tennis_racket', 'r1')->assertUnprocessable()->assertJsonPath('code', 'sports_rent_insufficient_cash');
+        $this->rent($exact, 'gear_tennis_racket', 'r1')->assertOk()->assertJsonPath('cash', 0);
+
+        $this->assertSame(29, $this->balance($short['account_id'], Wallet::CASH));
+        $this->assertSame(1, DB::table('sports_gear_rentals')->count());
+    }
+
+    public function test_a_retried_loan_charges_once_and_a_new_one_charges_again(): void
+    {
+        $player = $this->player(cash: 100);
+
+        $first = $this->rent($player, 'gear_boules', 'r1')->assertOk()->json();
+        $this->assertSame($first, $this->rent($player, 'gear_boules', 'r1')->assertOk()->json());
+        $this->assertSame(75, $this->balance($player['account_id'], Wallet::CASH));
+
+        $this->rent($player, 'gear_boules', 'r2')->assertOk()->assertJsonPath('cash', 50);
+    }
+
+    public function test_gear_already_owned_or_not_lent_is_refused_and_a_new_account_can_borrow(): void
+    {
+        $owner = $this->player(cash: 100);
+        $this->grant($owner['account_id'], 'gear_ice_skates');
+        $newcomer = $this->player(cash: 100, ageHours: 1);
+
+        $this->rent($owner, 'gear_ice_skates', 'r1')->assertStatus(409)->assertJsonPath('code', 'sports_rent_owned');
+        $this->rent($owner, 'tool_hammer', 'r2')->assertUnprocessable()->assertJsonPath('code', 'sports_rent_invalid_gear');
+        $this->rent($newcomer, 'gear_ice_skates', 'r1')->assertOk()->assertJsonPath('cash', 60);
+
+        $this->assertSame(100, $this->balance($owner['account_id'], Wallet::CASH));
+    }
+
+    public function test_the_browser_cannot_borrow_gear_without_the_socket(): void
+    {
+        $player = $this->player(cash: 100);
+
+        $this->postJson('/api/sports/gear/rent', ['code' => 'gear_swimsuit', 'ref' => 'r1'], $this->auth($player['token']))->assertForbidden();
+        $this->assertSame(100, $this->balance($player['account_id'], Wallet::CASH));
     }
 
     public function test_the_clothes_lost_at_death_never_include_gear(): void
@@ -182,7 +242,7 @@ class SportsApiTest extends TestCase
         $this->postJson('/api/survival/hospital', [], $this->auth($player['token'], self::SECRET))->assertOk();
 
         $this->assertSame(500 - SurvivalService::HOSPITAL_FEE, $this->balance($player['account_id'], Wallet::BANK));
-        $this->getJson('/api/sports/gear', $this->auth($player['token'], self::SECRET))->assertExactJson(['gear' => ['gear_swimsuit']]);
+        $this->getJson('/api/sports/gear', $this->auth($player['token'], self::SECRET))->assertJsonPath('gear', ['gear_swimsuit']);
     }
 
     public function test_no_zone_buyer_buys_gear(): void
@@ -470,6 +530,11 @@ class SportsApiTest extends TestCase
     private function buy(array $player, string $kind, string $ref): TestResponse
     {
         return $this->postJson('/api/sports/pass', ['kind' => $kind, 'ref' => $ref], $this->auth($player['token'], self::SECRET));
+    }
+
+    private function rent(array $player, string $code, string $ref): TestResponse
+    {
+        return $this->postJson('/api/sports/gear/rent', ['code' => $code, 'ref' => $ref], $this->auth($player['token'], self::SECRET));
     }
 
     private function grant(int $accountId, string $code): void

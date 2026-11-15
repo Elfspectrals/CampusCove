@@ -27,7 +27,7 @@ import {
   startBout,
   takeQueued
 } from './boxingBout.ts'
-import { ownedGear } from './gear.ts'
+import { onGearChanged, usableGear } from './gear.ts'
 import { type Match, activePlayers, matchPlayer, parseSignupRules } from './signup.ts'
 import { type MatchEnd, type MatchResult, endMatch, recordMatch, registerCoach, registerVenue } from './venues.ts'
 
@@ -341,10 +341,12 @@ export function onBoxingGetUp(room: GameRoom, client: GameClient, now = Date.now
   if (found && boxer && getUpPress(found.fight.bout, boxer, now)) sendState(room, found.fight, now)
 }
 
+onGearChanged((player) => glovesChecks.delete(player.accountId))
+
 function ownsGloves(player: Player, now: number): Promise<boolean> {
   const cached = glovesChecks.get(player.accountId)
   if (cached && now - cached.at < GLOVES_CHECK_TTL_MS) return cached.owned
-  const owned = ownedGear(player).then((codes) => codes.includes(rulesOf().gear))
+  const owned = usableGear(player).then((codes) => codes.includes(rulesOf().gear))
   glovesChecks.set(player.accountId, { owned, at: now })
   owned.catch(() => glovesChecks.delete(player.accountId))
   return owned

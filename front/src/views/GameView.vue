@@ -34,6 +34,7 @@ import GamePubMenu from '../components/game/GamePubMenu.vue'
 import GamePubSecretDialog from '../components/game/GamePubSecretDialog.vue'
 import GamePoliceLicenceDialog from '../components/game/GamePoliceLicenceDialog.vue'
 import GameSportsPassDesk from '../components/game/GameSportsPassDesk.vue'
+import GameGearRental from '../components/game/GameGearRental.vue'
 import GameSportsSignup from '../components/game/GameSportsSignup.vue'
 import GameRunningHud from '../components/game/GameRunningHud.vue'
 import GameRunningBoard from '../components/game/GameRunningBoard.vue'
@@ -113,6 +114,7 @@ import { useJailCell } from '../composables/game/useJailCell'
 import { useJail } from '../composables/game/useJail'
 import { usePolice } from '../composables/game/usePolice'
 import { useSportsPass } from '../composables/game/useSportsPass'
+import { useGearRental } from '../composables/game/useGearRental'
 import { passValid } from '../game/sports/sportsPass'
 import { useSportsSignup } from '../composables/game/useSportsSignup'
 import { useRunningRace } from '../composables/game/useRunningRace'
@@ -861,6 +863,15 @@ function sportsErrorText({ code, message }: SportsErrorPayload): string {
   const key = `sports.errors.${code}`
   return te(key) ? t(key) : message
 }
+const gearRental = useGearRental({
+  gameRoomRef,
+  say: (text) => survival.say(text),
+  rentedText: (gear, cash) => {
+    const name = t(`sports.rental.gear.${gear}`)
+    return t('sports.rental.rented', { gear: name.charAt(0).toUpperCase() + name.slice(1), cash })
+  },
+})
+const { offer: gearRentalOffer } = gearRental
 const sportsPass = useSportsPass({
   myPosition,
   getCamera,
@@ -1743,6 +1754,7 @@ function handleExtraKeyDown(e: KeyboardEvent): boolean {
     return housing.buy() || housing.leave()
   }
   if (matches('cameraView', e.code) && !e.repeat && sportsCamera.toggle()) return true
+  if (gearRental.onKeyDown(e)) return true
   // collision overlay: a developer tool, kept off in production so it never steals a player's key
   if (import.meta.env.DEV && e.code === 'KeyC' && !e.repeat) {
     const scene = getScene()
@@ -1876,6 +1888,7 @@ const movement = useGameMovement({
     farm.tick()
     police.tick()
     sportsSignup.tick()
+    gearRental.tick()
     runningRace.tick(dt)
     gymMatch.tick()
     tennis.tick()
@@ -2018,6 +2031,7 @@ const realtime = useGameRealtime({
   cashBags: cashBags.handlers,
   jail: { ...jail.handlers, onTray: jailCell.onTray },
   police: police.handlers,
+  gearRental: gearRental.handlers,
   sports: {
     onPassState: sportsPass.handlers.onState,
     onPassBought: sportsPass.handlers.onBought,
@@ -2029,6 +2043,7 @@ const realtime = useGameRealtime({
     onRoomJoined: () => {
       sportsSignup.handlers.onRoomJoined()
       runningRace.onRoomJoined()
+      gearRental.handlers.onRoomJoined()
     },
     onRunState: runningRace.onState,
     onRunResult: runningRace.onResult,
@@ -2631,6 +2646,7 @@ const crosshairClass = computed(() => {
       @close="climbingBoard.close"
     />
     <GamePoolRace v-if="poolHud || poolBoard || poolTrickLine || poolBreath || poolUnderwater" :hud="poolHud" :board="poolBoard" :trick-line="poolTrickLine" :breath="poolBreath" :underwater="poolUnderwater" />
+    <GameGearRental v-if="gearRentalOffer" :offer="gearRentalOffer" />
     <GameSportsPassDesk
       v-if="sportsPassOpen && sportsPassState"
       :pass="sportsPassState"

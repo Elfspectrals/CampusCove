@@ -300,7 +300,7 @@ Decision (2026-11-15, from the review of the sports complex): the sports must be
 - [done] Basketball and football: third-person view, a missed shot stays on the line to the rim, target ring on the rim, good window shown in free play. Played alone in free play (one perfect shot); no match played, football not played.
 - [done] Boxing and dance views. Seen in a bout against a socket bot (no punch thrown by the player) and in a solo song.
 - [done] Climbing: no more timed click. The next hold stays marked, each hold clicked starts a reflex check (needle and zone, sized by the colour and by the reach), the grip runs down after a long reach and comes back on a short one, a climb lasts 3 minutes at most. Played alone on 2026-11-15: the green route topped in 12.9 s with every check passed by script. Not played: a miss, a fall, the duel, a real hand on the mouse.
-- [todo] Gear lent for a fee at each venue (prices from the `economist`).
+- [done] Gear lent for a fee at each venue: swimsuit 15, boxing gloves and boules 25, racket 30, spikes and skates 40 in cash, destroyed (economist, 2026-11-15: a sixth of the shop price), kept until the player leaves the venue. Offer shown after a refusal for missing gear, Y to borrow. Played on 2026-11-15 at the pool: refused with too little cash, then 15 taken and the swim allowed. The five other venues are covered by tests only.
 - [todo] Gym: the football goal facing the wrong way and the basketball hoops.
 
 ## Later

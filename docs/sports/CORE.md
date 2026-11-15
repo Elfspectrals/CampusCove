@@ -92,6 +92,45 @@ dropped, and they print nothing.
   Socket helper `ownedGear(player)` in `socket/src/sports/gear.ts` (async, call it at a sign-up or a venue door, not
   per move).
 
+### Gear lent for a fee (decided 2026-11-15)
+
+A player who does not own the gear of a sport can borrow it at the venue, for a fee paid in cash and destroyed. The
+loan is socket state like every lent item (§ 2): never an inventory row, never traded, sold, stolen or dropped, taken
+back when the player leaves that venue's pass area, disconnects or dies. Coming back means paying again.
+
+| Code | Buy | Borrow, per stay in the venue |
+|---|---|---|
+| `gear_swimsuit` | 90 | 15 |
+| `gear_boxing_gloves` | 150 | 25 |
+| `gear_boules` | 150 | 25 |
+| `gear_tennis_racket` | 180 | 30 |
+| `gear_running_spikes` | 260 | 40 |
+| `gear_ice_skates` | 260 | 40 |
+
+Fees from the `economist` (2026-11-15): about a sixth of the shop price, so a daily player repays the gear in a week and
+a once-a-week visitor borrows; never above the day pass. Any account age may borrow (the cash is destroyed, nothing is
+created).
+
+- Laravel owns the fees (`SportsGearRentalService::PRICES`). `POST /api/sports/gear/rent { code, ref (1-64) }` (realtime
+  route) replies `{ code, price, cash }`; the whole fee or nothing; the same `ref` twice charges once. Errors:
+  `sports_rent_invalid_gear` (422), `sports_rent_insufficient_cash` (422), `sports_rent_owned` (409). Ledger reason and
+  transaction type `sports_gear_rental`, table `sports_gear_rentals`. `GET /api/sports/gear` now also replies
+  `rental: { code: fee }`.
+- The gear a venue lends is the `gear` of the venues registered in its zone (`gearLentAt`), so nothing else lists it.
+- Every gear check goes through `usableGear(player)` (`socket/src/sports/gear.ts`): the codes owned plus the codes on
+  loan. A venue that caches the answer registers `onGearChanged` to forget it when a loan starts.
+
+| Message | Direction | Payload |
+|---|---|---|
+| `sports_gear_quote` | client → server | `{}`, sent by the front after a refusal for missing gear; at most one a second per player |
+| `sports_gear_offer` | server → client | `{ gear, price }`, only to a player standing in a venue that lends gear they neither own nor have on loan |
+| `sports_gear_rent` | client → server | `{}`: the gear is the one of the venue the player stands in, never a code from the client |
+| `sports_gear_rented` | server → client | `{ gear, cash }`, after Laravel accepted and the loan started |
+| `sports_error` | server → client | `sports_rent_too_far` (not in a venue that lends gear), `sports_rent_already`, `sports_busy`, or the Laravel code |
+
+The front shows the offer for 10 s; the accept key (Y) borrows, the decline key (N) closes it. Not the interact key: it
+also opens doors, and a payment must never be an accident.
+
 ## 4. Coach sign-up and matches
 
 `socket/src/sports/signup.ts` is pure logic (tested); `socket/src/sports/venues.ts` runs it in the room.

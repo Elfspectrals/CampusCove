@@ -2,7 +2,7 @@ import { hasPower } from '../adminPowers.ts'
 import { hurt } from '../survival.ts'
 import type { Bounds, GameRoom, Player } from '../types.ts'
 import { worldSportsPassArea } from '../world.ts'
-import { ownedGear } from './gear.ts'
+import { onGearChanged, usableGear } from './gear.ts'
 import {
   type Breath,
   type SwimPool,
@@ -37,13 +37,15 @@ export function inPoolWater(x: number, z: number): boolean {
   return pool !== null && pool.water.some((b) => inside(b, x, z))
 }
 
+onGearChanged((player) => swimsuits.delete(player))
+
 function checkSwimsuit(player: Player): void {
   if (!player.token) {
     swimsuits.set(player, false)
     return
   }
   swimsuits.set(player, 'pending')
-  ownedGear(player).then(
+  usableGear(player).then(
     (gear) => {
       if (swimsuits.get(player) === 'pending') swimsuits.set(player, gear.includes(SWIMSUIT))
     },

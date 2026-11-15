@@ -138,6 +138,7 @@ import {
   onSportsSignupLeave,
   tickSports
 } from './sports/index.ts'
+import { onGearQuote, onGearRent } from './sports/gearRental.ts'
 import { isRacing, onRunLook, onRunStep } from './sports/runningVenue.ts'
 import { onGymAction, onGymBall, onGymBallReturn, tickGym } from './sports/gym.ts'
 import { onTennisHit } from './sports/tennis.ts'
@@ -276,6 +277,8 @@ export class CityRoom extends Room implements GameRoom {
     this.onMessage('sports_coach_open', (client, payload: ClientPayload) => onSportsCoachOpen(this, client, payload))
     this.onMessage('sports_signup', (client, payload: ClientPayload) => void onSportsSignup(this, client, payload).catch((error) => warn('sports sign-up failed', error)))
     this.onMessage('sports_signup_leave', (client) => onSportsSignupLeave(this, client))
+    this.onMessage('sports_gear_quote', (client) => void onGearQuote(this, client))
+    this.onMessage('sports_gear_rent', (client) => void onGearRent(this, client))
     this.onMessage('sports_run_step', (client, payload: ClientPayload) => onRunStep(this, client, payload))
     this.onMessage('sports_run_look', (client, payload: ClientPayload) => onRunLook(this, client, payload))
     this.onMessage('gym_action', (client, payload: ClientPayload) => onGymAction(this, client, payload))

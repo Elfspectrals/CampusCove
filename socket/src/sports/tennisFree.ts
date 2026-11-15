@@ -1,7 +1,7 @@
 import { errorPayload } from '../backend.ts'
 import type { ClientPayload, GameClient, GameRoom, Player } from '../types.ts'
 import { worldSportsPassArea } from '../world.ts'
-import { ownedGear } from './gear.ts'
+import { usableGear } from './gear.ts'
 import { hasLoan, lend } from './loans.ts'
 import { hasValidPass } from './pass.ts'
 import type { Team } from './signup.ts'
@@ -141,7 +141,7 @@ export async function onTennisBallTake(room: GameRoom, client: GameClient, paylo
   player.sportsPending = true
   let owned: string[]
   try {
-    owned = await ownedGear(player)
+    owned = await usableGear(player)
   } catch (error) {
     const { code, message } = errorPayload(error, 'Your gear could not be checked.', 'sports_gear_failed')
     return send(code, message)

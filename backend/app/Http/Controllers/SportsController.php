@@ -6,6 +6,7 @@ use App\Services\RunningService;
 use App\Services\BoxingWinService;
 use App\Services\SportsBoardService;
 use App\Services\SportsDiveService;
+use App\Services\SportsGearRentalService;
 use App\Services\SportsGearService;
 use App\Services\SportsMatchService;
 use App\Services\SportsPassService;
@@ -22,6 +23,7 @@ class SportsController extends Controller
     public function __construct(
         private readonly SportsPassService $passes,
         private readonly SportsGearService $gear,
+        private readonly SportsGearRentalService $rentals,
         private readonly SportsMatchService $matches,
         private readonly RunningService $running,
         private readonly SportsBoardService $boards,
@@ -47,7 +49,17 @@ class SportsController extends Controller
 
     public function gear(Request $request): JsonResponse
     {
-        return response()->json(['gear' => $this->gear->owned($this->accountId($request))]);
+        return response()->json(['gear' => $this->gear->owned($this->accountId($request)), 'rental' => SportsGearRentalService::PRICES]);
+    }
+
+    public function rentGear(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'code' => 'required|string|max:255',
+            'ref' => 'required|string|min:1|max:64',
+        ]);
+
+        return response()->json($this->rentals->rent($this->accountId($request), $validated['code'], $validated['ref']));
     }
 
     public function recordMatch(Request $request): JsonResponse
