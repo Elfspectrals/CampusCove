@@ -343,9 +343,6 @@ export interface GameRealtimeDeps {
     onBounty: (data: PoliceBountyPayload) => void
   }
   gearRental: {
-    onSportsError: (code: string) => void
-    onCorrection: (reason: string | undefined) => void
-    onNoGear: () => void
     onOffer: (data: { gear: string; price: number }) => void
     onRented: (data: { gear: string; cash: number }) => void
   }
@@ -516,7 +513,6 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       deps.sports.onCorrection(data.reason)
       deps.skating.onCorrection(data.reason)
       deps.pool.onCorrection(data.reason)
-      deps.gearRental.onCorrection(data.reason)
     })
     room.onMessage('door_error', (data: { message: string }) => {
       deps.roomMessage.value = data.message
@@ -677,10 +673,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('sports_pass_error', (data: SportsErrorPayload) => deps.sports.onPassError(data))
     room.onMessage('sports_lobby', (data: SportsLobbyPayload) => deps.sports.onLobby(data))
     room.onMessage('sports_lobby_closed', (data: SportsLobbyClosedPayload) => deps.sports.onLobbyClosed(data))
-    room.onMessage('sports_error', (data: SportsErrorPayload) => {
-      deps.sports.onError(data)
-      deps.gearRental.onSportsError(data.code)
-    })
+    room.onMessage('sports_error', (data: SportsErrorPayload) => deps.sports.onError(data))
     room.onMessage('sports_gear_offer', (data: { gear: string; price: number }) => deps.gearRental.onOffer(data))
     room.onMessage('sports_gear_rented', (data: { gear: string; cash: number }) => deps.gearRental.onRented(data))
     room.onMessage('climb_state', (data: ClimbStatePayload) => deps.climbing.onState(data))
@@ -768,10 +761,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     })
     room.onMessage('boxing_tired', () => deps.boxing.onTired())
     room.onMessage('boxing_bag_hit', (data: BoxingBagHitPayload) => deps.boxing.onBagHit(data))
-    room.onMessage('boxing_no_gloves', () => {
-      deps.boxing.onNoGloves()
-      deps.gearRental.onNoGear()
-    })
+    room.onMessage('boxing_no_gloves', () => deps.boxing.onNoGloves())
     room.onMessage('skate_race', (data: SkateRacePayload) => deps.skating.onRace(data))
     room.onMessage('skate_fall', (data: SkateFallPayload) => {
       if (data.sessionId === room.sessionId) deps.skating.onFall(data)

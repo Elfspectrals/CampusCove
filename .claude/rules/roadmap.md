@@ -310,6 +310,15 @@ Decision (2026-11-15): football plays like FIFA and basketball like NBA 2K, and 
 - [done] Basketball: assisted and led pass, green zone cut by a defender, lay-up with no meter. Played alone in free play (a "Good" shot with the zone on the meter); the pass, the defender and the lay-up are covered by socket tests, not played.
 - [done] Swimming race as a rhythm game (`swimRace.ts`, `GamePoolRace.vue`): notes judged on the socket clock, Perfect, Good, Missed and Out of step, tempo from 560 to 380 ms. Played alone on 2026-11-15 by a script pressing the keys: 25 m in 12.73 s with every note Perfect, 15.43 s with Good notes and four missed. Not played by hand, not played by several swimmers. A perfect 25 m is now about 0.9 s slower than with the old stroke (11.86 s), so times already on the `swim_25`, `swim_50` and `swim_100` boards of a dev database are out of reach; the complex is not merged, so no other board holds any.
 
+Decision (2026-11-15, second review of the sports): the gear loan becomes a block of the coach panel; football players stay on the pitch and get more keys; basketball gets the NBA 2K camera (behind the attacker, turning at each change of possession); the tennis cue becomes a mark on the court where the ball arrives, like the star of Mario Tennis; the punch bag starts a combo round; the dance lanes show their keys; ice skating gets a figure routine on music (the user's choice over a trick line or a better race); every sport must be playable alone, against opponents run by the server (the user's choice over scored drills).
+
+- [done] Gear loan in the coach panel: a block with the price and a Borrow button when the player lacks the gear, no more banner with Y / N. Not played yet.
+- [todo] Basketball: NBA 2K camera, timing words, dribble moves.
+- [todo] Tennis: landing mark on the court, charge while standing in it.
+- [todo] Boxing: combo round on the punch bag, gloves on screen.
+- [todo] Ice skating: figure routine on music.
+- [todo] Opponents run by the server for solo play.
+
 ## Later
 
 - Fishing as the second job (reuse the darts power meter or the Drink Fast balance bar; rod and fish models exist).

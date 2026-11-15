@@ -15,6 +15,7 @@ import {
   type SportsTeam,
   type VenueChoice,
 } from '../../game/sports/sportsSignup'
+import type { GearOffer } from '../../composables/game/useGearRental'
 import type { SportsLobbyPayload } from '../../types/gameRealtime'
 import UiIcon from '../ui/UiIcon.vue'
 
@@ -30,6 +31,7 @@ const props = defineProps<{
   error: string | null
   clientNow: number
   clockOffset: number
+  gearOffer: GearOffer | null
 }>()
 
 const emit = defineEmits<{
@@ -38,6 +40,7 @@ const emit = defineEmits<{
   setSetting: [key: string, value: SettingValue]
   signUp: []
   leave: []
+  rent: []
   close: []
 }>()
 
@@ -123,6 +126,15 @@ onUnmounted(() => window.removeEventListener('keydown', onKey, true))
           <span>{{ status }}</span>
           <span v-if="lobby" class="font-display text-sun">{{ t('sports.signup.count', { n: lobby.players.length, max: lobby.max }) }}</span>
         </p>
+
+        <div v-if="gearOffer" class="flex items-center justify-between gap-3 rounded-lg border-2 border-sun/60 bg-ink-950/50 px-3 py-2" role="group" :aria-label="t('sports.rental.title', { gear: t(`sports.rental.gear.${gearOffer.gear}`) })">
+          <div class="min-w-0">
+            <p class="m-0 text-sm font-bold text-sun">{{ t('sports.rental.title', { gear: t(`sports.rental.gear.${gearOffer.gear}`) }) }}</p>
+            <p class="m-0 text-xs text-fog">{{ t('sports.rental.offer', { price: gearOffer.price }) }}</p>
+            <p class="m-0 text-xs text-mist">{{ t('sports.rental.rule') }}</p>
+          </div>
+          <button type="button" class="cc-btn cc-btn-sm cc-btn-sun min-h-11 shrink-0" @click="emit('rent')">{{ t('sports.rental.borrow') }}</button>
+        </div>
 
         <ul v-if="!lobby && choices.length > 0" class="m-0 flex list-none flex-col gap-2 p-0">
           <li v-for="choice in choices" :key="choice.venue">

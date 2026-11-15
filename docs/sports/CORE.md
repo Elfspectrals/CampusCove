@@ -122,7 +122,7 @@ created).
 
 | Message | Direction | Payload |
 |---|---|---|
-| `sports_gear_quote` | client → server | `{}`, sent by the front after a refusal for missing gear; at most one a second per player |
+| `sports_gear_quote` | client → server | `{}`, sent by the front when the coach panel opens (decided 2026-11-15: lending is a block of that panel with a Borrow button, no longer a banner after a refusal); at most one a second per player |
 | `sports_gear_offer` | server → client | `{ gear, price }`, only to a player standing in a venue that lends gear they neither own nor have on loan |
 | `sports_gear_rent` | client → server | `{}`: the gear is the one of the venue the player stands in, never a code from the client |
 | `sports_gear_rented` | server → client | `{ gear, cash }`, after Laravel accepted and the loan started |

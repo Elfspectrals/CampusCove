@@ -768,7 +768,8 @@ export const messages = {
       },
       rental: {
         title: 'No {gear}?',
-        offer: 'Borrow one here for {price} coins in cash. {yes}: borrow · {no}: no thanks',
+        offer: 'The coach lends one for {price} coins in cash.',
+        borrow: 'Borrow',
         rule: 'Lent until you leave this venue.',
         rented: '{gear} lent until you leave this venue. Cash left: {cash}.',
         gear: {
@@ -809,7 +810,7 @@ export const messages = {
         reaction: 'Reaction {time} s',
         finished: 'Finished in {time} s',
         falseStart: 'False start: you are disqualified.',
-        noSwimsuit: 'Swimsuit required to enter the water (Summit Sports, mall).',
+        noSwimsuit: 'Swimsuit required to enter the water: buy one at Summit Sports (mall) or borrow one from the pool coach.',
         boardTaken: 'Someone is on the edge: wait for their jump.',
         breath: 'Breath',
         rescued: 'Out of breath: the lifeguard pulled you out.',
@@ -941,7 +942,7 @@ export const messages = {
         combo: { one_two: 'One-two', double_jab: 'Double jab', one_two_hook: 'One-two-hook', upper_hook: 'Uppercut-hook', full_combo: 'Full combo' },
         comboCallout: '{name}! {damage}',
         tired: 'Out of breath: lower your guard and breathe.',
-        noGloves: 'You need boxing gloves (Summit Sports, mall).',
+        noGloves: 'You need boxing gloves: buy them at Summit Sports (mall) or borrow them from the boxing coach.',
         result: { ko: '{name} wins by KO', points: '{name} wins on points', forfeit: '{name} wins: the other boxer left', draw: 'Draw on points' },
       },
       settings: {
@@ -1008,7 +1009,7 @@ export const messages = {
         sports_bad_settings: 'These settings are not allowed.',
         sports_already_signed: 'You are already signed up for a match.',
         sports_no_pass: 'You need a sports pass. Buy one at the reception.',
-        sports_no_gear: 'You need gear for this sport: buy it at Summit Sports (mall) or borrow it here.',
+        sports_no_gear: 'You need gear for this sport: buy it at Summit Sports (mall) or borrow it from the coach.',
         sports_rent_insufficient_cash: 'Not enough cash to borrow this gear. The cash machine is at the entrance.',
         sports_rent_owned: 'You already own this gear.',
         sports_rent_already: 'You already have this gear on loan.',
@@ -1036,7 +1037,7 @@ export const messages = {
       fell: 'You fell!',
       board: { week: 'Best times · week {week}', laps: '{n} laps', empty: 'No time yet this week', champions: 'Last week’s champions' },
       corrections: {
-        no_skates: 'You need your own ice skates to step on the ice (Summit Sports, mall).',
+        no_skates: 'You need ice skates to step on the ice: buy them at Summit Sports (mall) or borrow them from the rink coach.',
         skate_start: 'Wait for the start.',
         skate_fallen: 'You fell, getting up.',
       },
@@ -2084,7 +2085,8 @@ export const messages = {
       },
       rental: {
         title: 'Pas de {gear} ?',
-        offer: 'Emprunte-le ici pour {price} pièces en espèces. {yes} : emprunter · {no} : non merci',
+        offer: 'Le coach t’en prête pour {price} pièces en espèces.',
+        borrow: 'Emprunter',
         rule: 'Prêté jusqu’à ce que tu quittes cette salle.',
         rented: '{gear} prêté jusqu’à ce que tu quittes cette salle. Espèces restantes : {cash}.',
         gear: {
@@ -2125,7 +2127,7 @@ export const messages = {
         reaction: 'Réaction {time} s',
         finished: 'Arrivé en {time} s',
         falseStart: 'Faux départ : tu es disqualifié.',
-        noSwimsuit: 'Maillot de bain obligatoire pour entrer dans l’eau (Summit Sports, centre commercial).',
+        noSwimsuit: 'Maillot de bain obligatoire pour entrer dans l’eau : achète-le chez Summit Sports (centre commercial) ou emprunte-le au coach de la piscine.',
         boardTaken: 'Quelqu’un est au bord : attends son saut.',
         breath: 'Souffle',
         rescued: 'À bout de souffle : le maître-nageur t’a sorti de l’eau.',
@@ -2257,7 +2259,7 @@ export const messages = {
         combo: { one_two: 'Un-deux', double_jab: 'Double jab', one_two_hook: 'Un-deux-crochet', upper_hook: 'Uppercut-crochet', full_combo: 'Combo complet' },
         comboCallout: '{name} ! {damage}',
         tired: 'À bout de souffle : baisse la garde et respire.',
-        noGloves: 'Il te faut des gants de boxe (Summit Sports, au centre commercial).',
+        noGloves: 'Il te faut des gants de boxe : achète-les chez Summit Sports (centre commercial) ou emprunte-les au coach de boxe.',
         result: { ko: '{name} gagne par KO', points: '{name} gagne aux points', forfeit: '{name} gagne : l’autre boxeur est parti', draw: 'Match nul aux points' },
       },
       settings: {
@@ -2324,7 +2326,7 @@ export const messages = {
         sports_bad_settings: 'Ces réglages ne sont pas permis.',
         sports_already_signed: 'Tu es déjà inscrit à un match.',
         sports_no_pass: 'Il te faut un pass sport. Achète-le à l’accueil.',
-        sports_no_gear: 'Il te faut le matériel de ce sport : achète-le chez Summit Sports (centre commercial) ou emprunte-le ici.',
+        sports_no_gear: 'Il te faut le matériel de ce sport : achète-le chez Summit Sports (centre commercial) ou emprunte-le au coach.',
         sports_rent_insufficient_cash: 'Pas assez d’espèces pour emprunter ce matériel. Le distributeur est à l’entrée.',
         sports_rent_owned: 'Tu possèdes déjà ce matériel.',
         sports_rent_already: 'Ce matériel t’est déjà prêté.',
@@ -2352,7 +2354,7 @@ export const messages = {
       fell: 'Tu es tombé !',
       board: { week: 'Meilleurs temps · semaine {week}', laps: '{n} tours', empty: 'Pas encore de temps cette semaine', champions: 'Champions de la semaine dernière' },
       corrections: {
-        no_skates: 'Il te faut tes propres patins pour aller sur la glace (Summit Sports, centre commercial).',
+        no_skates: 'Il te faut des patins pour aller sur la glace : achète-les chez Summit Sports (centre commercial) ou emprunte-les au coach de la patinoire.',
         skate_start: 'Attends le départ.',
         skate_fallen: 'Tu es tombé, tu te relèves.',
       },

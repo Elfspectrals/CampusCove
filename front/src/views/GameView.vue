@@ -34,7 +34,6 @@ import GamePubMenu from '../components/game/GamePubMenu.vue'
 import GamePubSecretDialog from '../components/game/GamePubSecretDialog.vue'
 import GamePoliceLicenceDialog from '../components/game/GamePoliceLicenceDialog.vue'
 import GameSportsPassDesk from '../components/game/GameSportsPassDesk.vue'
-import GameGearRental from '../components/game/GameGearRental.vue'
 import GameSportsSignup from '../components/game/GameSportsSignup.vue'
 import GameRunningHud from '../components/game/GameRunningHud.vue'
 import GameRunningBoard from '../components/game/GameRunningBoard.vue'
@@ -998,7 +997,12 @@ const poolSwim = usePoolSwim({
 const { breathHud: poolBreath, underwater: poolUnderwater } = poolSwim
 const { open: sportsSignupOpen, choices: sportsVenueChoices, canPickVenue: sportsCanPickVenue, lobby: sportsLobby, spec: sportsSpec, team: sportsTeam, settings: sportsSettings, pending: sportsSignupPending, error: sportsSignupError, clientNow: sportsClientNow, clockOffset: sportsClockOffset } = sportsSignup
 watch(sportsSignupOpen, (open) => {
-  if (!open && !document.pointerLockElement) requestPointerLock()
+  if (open) {
+    gearRental.ask()
+    return
+  }
+  gearRental.clear()
+  if (!document.pointerLockElement) requestPointerLock()
 })
 const isMe = (sessionId: string) => sessionId === gameRoomRef.value?.sessionId
 const gymMatch = useGymMatch({
@@ -1755,7 +1759,6 @@ function handleExtraKeyDown(e: KeyboardEvent): boolean {
     return housing.buy() || housing.leave()
   }
   if (matches('cameraView', e.code) && !e.repeat && sportsCamera.toggle()) return true
-  if (gearRental.onKeyDown(e)) return true
   // collision overlay: a developer tool, kept off in production so it never steals a player's key
   if (import.meta.env.DEV && e.code === 'KeyC' && !e.repeat) {
     const scene = getScene()
@@ -1890,7 +1893,6 @@ const movement = useGameMovement({
     farm.tick()
     police.tick()
     sportsSignup.tick()
-    gearRental.tick()
     runningRace.tick(dt)
     gymMatch.tick()
     tennis.tick()
@@ -2648,7 +2650,6 @@ const crosshairClass = computed(() => {
       @close="climbingBoard.close"
     />
     <GamePoolRace v-if="poolHud || poolBoard || poolTrickLine || poolBreath || poolUnderwater" :hud="poolHud" :board="poolBoard" :trick-line="poolTrickLine" :breath="poolBreath" :underwater="poolUnderwater" />
-    <GameGearRental v-if="gearRentalOffer" :offer="gearRentalOffer" />
     <GameSportsPassDesk
       v-if="sportsPassOpen && sportsPassState"
       :pass="sportsPassState"
@@ -2723,6 +2724,8 @@ const crosshairClass = computed(() => {
       :error="sportsSignupError"
       :client-now="sportsClientNow"
       :clock-offset="sportsClockOffset"
+      :gear-offer="gearRentalOffer"
+      @rent="gearRental.rent"
       @pick-team="(side) => (sportsTeam = side)"
       @set-setting="(key, value) => (sportsSettings = { ...sportsSettings, [key]: value })"
       @pick-venue="sportsSignup.pickVenue"
