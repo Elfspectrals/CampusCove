@@ -85,6 +85,8 @@ function stateView(match: Match, game: TennisGame, now: number, ended = false) {
     server: rally.phase === 'serve_wait' || rally.phase === 'toss' ? rally.server : null,
     ball: rally.phase === 'serve_wait' ? null : rally.ball,
     hitter: rally.phase === 'flight' ? rally.hitter : null,
+    bounces: rally.phase === 'flight' ? rally.bounces : 0,
+    shot: rally.phase === 'flight' ? rally.shot : null,
     call: rally.phase === 'point' ? rally.call : null,
     pointWinner: rally.phase === 'point' ? rally.winner : null,
     winner: game.score.winner,

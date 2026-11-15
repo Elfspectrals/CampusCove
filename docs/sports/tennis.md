@@ -12,7 +12,10 @@ Two outdoor courts, with a tennis coach between them. Shared rules in [README.md
 
 ## Controls
 
-- Move to the ball; **left click when the ball is in the hitting zone**. The timing gives power and accuracy; the mouse aims at a spot in the opponent's half.
+- The view is third person from behind the player's baseline (see "Camera" in [README.md](README.md)); the body always faces the net.
+- The player **runs to the ball on their own** (60 % of the walking speed) and comes back to the baseline between shots. Any movement key takes over, at full speed.
+- **Left click to swing**. The swing can be started up to 350 ms before the ball passes; the timing and how close the ball passes give power and accuracy.
+- **The mouse moves a yellow target** on the opponent's half: the ball is sent there.
 - **Right click**: lob.
 - Serve: the same click on a ball toss.
 
@@ -23,7 +26,7 @@ Two outdoor courts, with a tennis coach between them. Shared rules in [README.md
 
 ## HUD
 
-Score (games and points), server indicator, hitting zone cue as the ball arrives, "Out" call on the court. On an `out` call the ball leaves a mark where it landed (the `ball` of the point state starts at the landing spot), lying along its path; it stays 2.5 s then fades out over 1.5 s. The mark only shows the socket's call, it never decides it.
+Score (games and points), server indicator, "Hit!" cue from 180 ms before the ball passes closest, a label after each of the player's shots (Perfect, Good, Early, Late), a white ring where the incoming ball will bounce, a shadow under the ball, the yellow target, "Out" call on the court. On an `out` call the ball leaves a mark where it landed (the `ball` of the point state starts at the landing spot), lying along its path; it stays 2.5 s then fades out over 1.5 s. The mark only shows the socket's call, it never decides it.
 
 ## Server authority
 
@@ -66,6 +69,34 @@ Leaver past the 30 s grace: the other side wins.
 - No drag; bounce keeps 75 % of the vertical speed and 80 % of the horizontal speed. Lines count as in. A ball that
   catches the net (under 0.914 m between the posts) loses the point.
 
+## Decisions (2026-11-15, gameplay pass after the first review)
+
+The first version asked for a click within 150 ms of a ball passing within 1.6 m, in first person, and was found
+impossible. Reworked on the model of Wii Sports Tennis (automatic positioning, the player only swings) and of
+`bilalm-19/weblympics` (authoritative server, widened hit window, net-clearing launch):
+
+- **Committed swing**: on a click the socket looks for the point where the ball passes closest to the player (within
+  1.8 m, up to 2.8 m high, on the player's half, through the first bounce) from 150 ms before the click. If that point is
+  at most 350 ms ahead, the swing is committed and the ball is struck when it gets there; further ahead, the click is a
+  miss. One swing at a time per side. 400 ms between two clicks of one player.
+- **Quality** = distance quality x timing factor. Distance: 1 within 0.8 m, falling linearly to 0 at 1.8 m. Timing
+  (contact time minus click time): 1 from 60 ms late to 200 ms early, falling linearly to 0.5 at 150 ms late and at
+  350 ms early. Examples: click 100 ms before contact, ball at 0.5 m: 1; click 275 ms before: 0.75; click 105 ms after:
+  0.75; ball at 1.3 m, good timing: 0.5.
+- **Label** sent with the shot (`shot.timing`): `early` beyond 200 ms early, `late` beyond 60 ms late, else `perfect`
+  from a quality of 0.85, else `good`.
+- **Speed** by quality: drive 11 to 19 m/s, lob 6.5 to 8.5 m/s, serve 12 to 20 m/s. A shot still lands up to
+  (1 - quality) x 4 m long.
+- **Net**: a shot of quality 0.5 or more is given the flight time it needs to cross the net 0.35 m above the tape, and
+  still lands where it was aimed. A weaker shot keeps its flat flight and can catch the net.
+- **Serve**: any click during the toss serves. Quality = 1 - (time from the top of the toss) / 400 ms, never under 0.3.
+- **Auto-run** (front only, the socket only checks the move speed as for any move): towards where the ball will be
+  350 ms after its bounce, 0.6 m to the side so it comes on the racket side, at 60 % of the walking speed; in doubles
+  only the partner nearest to that spot runs. After the player's side has hit, back to the middle of the baseline
+  (singles) or to their side of it (doubles). At 70 % every ball was reachable and no point ended.
+- **Free play**: the side (camera, target) is the half the player stands on when they step on the court with a ball, and
+  stays until they leave the court.
+
 ## Contract
 
 Socket constants: `socket/src/sports/tennisConstants.ts`, mirrored in `front/public/assets/sports/rules/tennis.json`
@@ -73,10 +104,10 @@ Socket constants: `socket/src/sports/tennisConstants.ts`, mirrored in `front/pub
 
 | Message | Direction | Payload |
 |---|---|---|
-| `tennis_hit` | client → server | `{ aimX: number, aimZ: number, lob?: boolean }` (finite numbers; the aim is clamped to the receiving half, from 1 m past the net to 3 m past its lines). 120 ms between two hits of one player. Only a player of a running tennis match, back on court. |
-| `tennis_state` | server → match players and players in `sports_tennis` | `{ venue, court: { cx, netZ, halfWidth }, mode, format, phase: 'serve_wait' \| 'toss' \| 'flight' \| 'point' \| 'ended', games, points (labels '0', '15', '30', '40', 'AD' or tie-break counts), tiebreak, serving, server: sessionId \| null, ball: { x, y, z, vx, vy, vz, t (server ms) } \| null, hitter, call: 'out' \| 'net' \| 'double_bounce' \| 'missed_toss' \| null, pointWinner, winner, players: [{ sessionId, team }], serverNow }`, sent at kick-off, on each toss, hit, bounce and point, and once with `phase: 'ended'`. |
+| `tennis_hit` | client → server | `{ aimX: number, aimZ: number, lob?: boolean }` (finite numbers; the aim is clamped to the receiving half, from 1 m past the net to 3 m past its lines; the front keeps its target 0.5 m inside the lines and 1.5 m from the net). 400 ms between two hits of one player. Only a player of a running tennis match, back on court. |
+| `tennis_state` | server → match players and players in `sports_tennis` | `{ venue, court: { cx, netZ, halfWidth }, mode, format, phase: 'serve_wait' \| 'toss' \| 'flight' \| 'point' \| 'ended', games, points (labels '0', '15', '30', '40', 'AD' or tie-break counts), tiebreak, serving, server: sessionId \| null, ball: { x, y, z, vx, vy, vz, t (server ms) } \| null, hitter, bounces: 0 \| 1, shot: { sessionId, timing: 'perfect' \| 'good' \| 'early' \| 'late' } \| null (the last shot of the ball in flight), call: 'out' \| 'net' \| 'double_bounce' \| 'missed_toss' \| null, pointWinner, winner, players: [{ sessionId, team }], serverNow }`, sent at kick-off, on each toss, hit, bounce and point, and once with `phase: 'ended'`. |
 | `tennis_ball_take` | client → server | `{ court: 'tennis_1' \| 'tennis_2' }` within 2.5 m of its basket: lends `tennis_ball` (`sports_loans`), or `sports_error` (`sports_too_far`, `sports_no_pass`, `sports_no_gear`, `sports_venue_busy`). |
-| `tennis_free` | server → players in `sports_tennis` | `{ court, geometry: { cx, netZ, halfWidth } \| null, phase: 'idle' \| 'serve_wait' \| 'toss' \| 'flight' \| 'point', ball, hitter, call, serverNow }` for a free rally; `idle` when the court is free again. |
+| `tennis_free` | server → players in `sports_tennis` | `{ court, geometry: { cx, netZ, halfWidth } \| null, phase: 'idle' \| 'serve_wait' \| 'toss' \| 'flight' \| 'point', ball, hitter, bounces, shot, call, serverNow }` for a free rally; `idle` when the court is free again. |
 | `tennis_stroke` | server → players in `sports_tennis` but the striker | `{ sessionId, stroke: 'serve' \| 'forehand' \| 'backhand' \| 'lob' \| 'celebrate' }`, for the third-person clip. |
 
 The client draws the ball from `ball` on the server clock (`serverNow`); the socket alone judges hits, bounces and points.

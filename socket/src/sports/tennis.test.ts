@@ -45,6 +45,7 @@ test('the rules file says what the socket plays', () => {
   assert.deepEqual(RULES.players, { singles: tennis.playersFor({ mode: 'singles' }).max, doubles: tennis.playersFor({ mode: 'doubles' }).max })
   assert.deepEqual(RULES.ball, { radiusM: C.BALL_RADIUS, restitution: C.RESTITUTION, bounceKeep: C.BOUNCE_KEEP, drag: 0, gravity: C.GRAVITY })
   assert.deepEqual([RULES.hit.windowMs, RULES.hit.reachM, RULES.hit.sweetSpotM, RULES.hit.maxHeightM, RULES.hit.missM], [C.HIT_ALLOWANCE_MS, C.REACH_M, C.SWEET_M, C.HIT_MAX_HEIGHT, C.MISS_M])
+  assert.deepEqual([RULES.hit.swingAheadMs, RULES.hit.perfectTimingMs, RULES.hit.timingFloor, RULES.hit.netClearM, RULES.serve.floor], [C.SWING_AHEAD_MS, C.TIMING_PERFECT_MS, C.TIMING_FLOOR, C.NET_CLEAR_M, C.SERVE_FLOOR])
   assert.deepEqual([RULES.hit.driveSpeedMs, RULES.lob.speedMs, RULES.serve.speedMs], [C.DRIVE_SPEED, C.LOB_SPEED, C.SERVE_SPEED])
   assert.deepEqual([RULES.serve.tossStartY, RULES.serve.tossSpeedMs, RULES.serve.windowMs, RULES.serve.autoTossAfterMs], [C.TOSS_START_Y, C.TOSS_SPEED, C.SERVE_WINDOW_MS, C.SERVE_WAIT_MS])
   assert.equal(RULES.rejoinGraceSec * 1000, C.REJOIN_GRACE_MS)
@@ -152,7 +153,7 @@ test('the serve rotates between doubles partners each time their side serves aga
     servers.push((game.rally as { server: string }).server)
     const loser = game.score.serving === 'red' ? 'blue' : 'red'
     for (let p = 0; p < 4; p++) {
-      game.rally = { phase: 'flight', ball: { x: COURT_1.cx + 30, y: 0, z: C.TENNIS_NET_Z, vx: 0, vy: 0, vz: 0, t: now }, hitter: loser, bounces: 0, netAt: null }
+      game.rally = { phase: 'flight', ball: { x: COURT_1.cx + 30, y: 0, z: C.TENNIS_NET_Z, vx: 0, vy: 0, vz: 0, t: now }, hitter: loser, bounces: 0, netAt: null, swing: null, shot: null }
       tennis.runTennis(room, match, now)
       now += C.POINT_PAUSE_MS
       tennis.runTennis(room, match, now)

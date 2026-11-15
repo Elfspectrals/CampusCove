@@ -293,9 +293,9 @@ Decision (2026-11-14, second pass): everything the console gives can be taken ba
 
 Decision (2026-11-15, from the review of the sports complex): the sports must be fun before the complex is merged. The first test found tennis impossible, basketball hard to aim, the easy climbing route too hard, no swimming clip in the water, one football goal and the basketball hoops badly placed. Decided with the user: a third-person view switched on by the sport itself (tennis, boxing, the dance rhythm game, swimming, basketball and football), with a key (U) back to first person where the sport stays playable (swimming, boxing, gym), never in tennis or dance; climbing gets an endurance bar and a reflex check on each hold instead of a timed click; every venue lends its gear for a fee while the player stays in its area; each sport is played in the browser before it is handed over. Sources read for the feel are listed in each sport file.
 
-- [done] Third-person view and local avatar (`sportsCamera.ts`, `useSportsCamera`, `useOwnBody`, a second `useRemoteAvatars` for the player's own body). Played at the pool.
+- [done] Third-person view and local avatar (`sportsCamera.ts`, `useSportsCamera`, `useOwnBody`, a second `useRemoteAvatars` for the player's own body). Played at the pool and on both tennis baselines.
 - [done] Swimming: third-person view in the water, swimsuit model fixed (swimmers were the placeholder avatar with no clip), swimmer drawn at the surface. Played alone on 2026-11-15; not seen from a second player's screen.
-- [todo] Tennis on the model of Wii Sports Tennis.
+- [done] Tennis on the model of Wii Sports Tennis: auto-run, committed swing with a 350 ms lead, yellow target moved by the mouse, net-clearing shots, timing label. Played on 2026-11-15 against a socket bot (tie-break won 7-0 with scripted perfect clicks; at 70 % auto-run speed no point ended, so 60 %). Not played by two humans, doubles not played.
 - [todo] Basketball and football: third-person view, shot locked on the basket.
 - [todo] Boxing and dance views.
 - [todo] Climbing: endurance and reflex check.

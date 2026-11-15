@@ -74,15 +74,22 @@
   },
   "hit": {
     "windowMs": 150,
-    "reachM": 1.6,
-    "sweetSpotM": 0.6,
+    "reachM": 1.8,
+    "sweetSpotM": 0.8,
     "maxHeightM": 2.8,
     "driveSpeedMs": [
-      10,
-      20
+      11,
+      19
     ],
     "missM": 4,
-    "powerByTiming": "linear"
+    "powerByTiming": "linear",
+    "swingAheadMs": 350,
+    "perfectTimingMs": [
+      -60,
+      200
+    ],
+    "timingFloor": 0.5,
+    "netClearM": 0.35
   },
   "lob": {
     "speedMs": [
@@ -93,12 +100,13 @@
   "serve": {
     "tossStartY": 1.8,
     "tossSpeedMs": 5,
-    "windowMs": 250,
+    "windowMs": 400,
     "speedMs": [
       12,
-      22
+      20
     ],
-    "autoTossAfterMs": 10000
+    "autoTossAfterMs": 10000,
+    "floor": 0.3
   },
   "faults": "simplified",
   "rejoinGraceSec": 30,

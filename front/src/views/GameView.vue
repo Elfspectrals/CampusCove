@@ -935,6 +935,8 @@ const tennis = useTennis({
   onSwing: (swing) => {
     sfx.play('tennis_swing')
     arms?.tennisSwing(swing)
+    const me = gameRoomRef.value?.sessionId
+    if (me) realtime.ownAvatar.tennisStroke(me, swing)
   },
   onBallHit: (ball) => sfx.playOn('tennis_hit', ball),
   onBounce: (ball) => sfx.playOn('tennis_bounce', ball),
@@ -943,9 +945,16 @@ const tennis = useTennis({
     realtime.setRemoteHeldTool(sessionId, holding ? TENNIS_RACKET : null)
     realtime.setRemoteTennis(sessionId, holding)
   },
+  setOwnRacket: (holding) => {
+    const me = gameRoomRef.value?.sessionId
+    if (!me) return
+    realtime.ownAvatar.setHeldTool(me, holding ? TENNIS_RACKET : null)
+    realtime.ownAvatar.setTennis(me, holding)
+  },
   remoteSessions: () => realtime.remotePlayers().map((p) => p.sessionId),
+  remotePosition: (sessionId) => realtime.remotePosition(sessionId),
 })
-const { hud: tennisHud, cue: tennisCue, call: tennisCall, freePlay: tennisFreePlay } = tennis
+const { hud: tennisHud, cue: tennisCue, call: tennisCall, timing: tennisTiming, freePlay: tennisFreePlay } = tennis
 const poolRace = usePoolRace({
   gameRoomRef,
   myPosition,
@@ -1754,7 +1763,7 @@ const sportsCamera = useSportsCamera({
   myPosition,
   pointerLocked: () => pointerLocked.value,
   getFpHands: () => game?.fpHands ?? null,
-  view: () => poolSwim.cameraView(),
+  view: () => tennis.cameraView() ?? poolSwim.cameraView(),
   onThirdPerson: () => survival.say(t('sports.camera.thirdPerson', { key: actionKeyLabels('cameraView').join(' / ') })),
 })
 const ownBody = useOwnBody({
@@ -1816,6 +1825,7 @@ const movement = useGameMovement({
     sportsCamera.apply(camera, dt)
   },
   lockedLook: sportsCamera.lockedLook,
+  autoRun: tennis.autoRun,
   skate: skating.step,
   cameraRoll: skating.cameraRoll,
   afterSkate: skating.afterMove,
@@ -2140,6 +2150,7 @@ let unbindSurvivalInput: (() => void) | null = null
 onMounted(() => {
   void bootGame()
   unbindInput = movement.bindInputListeners()
+  document.addEventListener('mousemove', tennis.onMouseMove)
   unbindSurvivalInput = survival.bindInputListeners()
   window.addEventListener('beforeunload', leaveRoom)
   window.addEventListener('pagehide', leaveRoom)
@@ -2149,6 +2160,7 @@ onUnmounted(() => {
   unmounted = true
   movement.stopRenderLoop()
   unbindInput?.()
+  document.removeEventListener('mousemove', tennis.onMouseMove)
   unbindSurvivalInput?.()
   survival.dispose()
   poolSwim.dispose()
@@ -2732,7 +2744,7 @@ const crosshairClass = computed(() => {
     />
     <GamePubRaceBoard v-if="pubRaceBoard" :board="pubRaceBoard" />
     <GameRunningBoard v-if="runBoard" :board="runBoard" />
-    <GameTennisHud :hud="tennisHud" :cue="tennisCue" :call="tennisCall" :free-play="tennisFreePlay" />
+    <GameTennisHud :hud="tennisHud" :cue="tennisCue" :call="tennisCall" :timing="tennisTiming" :free-play="tennisFreePlay" />
     <GameJail v-if="jailSentence && !knockedOut" :sentence="jailSentence" :error="jailError" :paying="jailPaying" @pay="jail.pay" />
     <GameCuffed v-if="policeCuffedBy && !knockedOut" :officer="realtime.remotePseudo(policeCuffedBy) ?? '…'" />
     <GamePickpocket v-if="!knockedOut" :game="pickpocketGame" :loot="pickpocketLoot" @take="pickpocket.take" />

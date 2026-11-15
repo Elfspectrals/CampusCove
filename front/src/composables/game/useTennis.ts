@@ -9,22 +9,34 @@ import {
   TENNIS_CALL_MS,
   TENNIS_COURTS,
   TENNIS_END_SHOWN_MS,
+  TENNIS_AUTO_RUN_SHARE,
+  TENNIS_DOUBLES_HALF_WIDTH,
+  TENNIS_HALF_LENGTH,
   TENNIS_NET_Z,
-  aimOnCourt,
+  aimMoved,
   ballComing,
   ballPosition,
+  defaultAim,
   freeCourtAt,
+  interceptSpot,
   iServe,
+  landingSpot,
   markOpacity,
   markYaw,
   myTeam,
+  recoverySpot,
+  runStep,
   sideAt,
   swingFor,
   type BallPlay,
+  type CourtView,
+  type Spot,
   type TennisSwing,
 } from '../../game/sports/tennis'
+import { WALK_SPEED } from '../../game/gameRoomConstants'
+import type { SportsView } from '../../game/camera/sportsCamera'
 import { hasSportsLoan } from '../../game/sports/sportsLoans'
-import type { TennisBall, TennisFreePayload, TennisStatePayload, TennisTeam } from '../../types/gameRealtime'
+import type { TennisBall, TennisFreePayload, TennisShot, TennisStatePayload, TennisTeam, TennisTiming } from '../../types/gameRealtime'
 import type { InteractionSource, ScreenPrompt } from './useInteractionTargets'
 
 const BALL_RADIUS_SHOWN = 0.05
@@ -37,6 +49,14 @@ const MARK_HALF_WIDTH = 0.035
 const MARK_HALF_LENGTH = 0.07
 const MARK_OPACITY = 0.8
 const MARK_Y = 0.09
+const AIM_COLOR = 0xffd34d
+const AIM_RADIUS_M = 0.45
+const AIM_Y = 0.1
+const LANDING_COLOR = 0xffffff
+const LANDING_RADIUS_M = 0.35
+const SHADOW_RADIUS_M = 0.14
+const SHADOW_OPACITY = 0.35
+const TIMING_SHOWN_MS = 900
 
 export interface TennisHud {
   games: Record<TennisTeam, number>
@@ -48,6 +68,12 @@ export interface TennisHud {
   tossing: boolean
   pointWinner: TennisTeam | null
   winner: TennisTeam | null
+}
+
+interface Stance {
+  team: TennisTeam
+  court: CourtView
+  match: TennisStatePayload | null
 }
 
 export type TennisCall = TennisStatePayload['call']
@@ -66,7 +92,9 @@ export interface TennisDeps {
   onBounce: (ball: THREE.Object3D) => void
   onCall: (call: NonNullable<TennisCall>) => void
   setRemoteRacket: (sessionId: string, holding: boolean) => void
+  setOwnRacket: (holding: boolean) => void
   remoteSessions: () => readonly string[]
+  remotePosition: (sessionId: string) => { x: number; z: number } | null
 }
 
 interface OutMark {
@@ -81,6 +109,24 @@ function newMarkMesh(): OutMark['mesh'] {
   )
   mesh.scale.set(MARK_HALF_WIDTH, 1, MARK_HALF_LENGTH)
   mesh.name = 'tennis_out_mark'
+  return mesh
+}
+
+function newGroundRing(color: number, radius: number, opacity: number): THREE.Mesh {
+  const mesh = new THREE.Mesh(
+    new THREE.RingGeometry(radius * 0.72, radius, 28).rotateX(-Math.PI / 2),
+    new THREE.MeshBasicMaterial({ color, transparent: true, opacity, depthWrite: false }),
+  )
+  mesh.visible = false
+  return mesh
+}
+
+function newShadowMesh(): THREE.Mesh {
+  const mesh = new THREE.Mesh(
+    new THREE.CircleGeometry(SHADOW_RADIUS_M, 14).rotateX(-Math.PI / 2),
+    new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: SHADOW_OPACITY, depthWrite: false }),
+  )
+  mesh.visible = false
   return mesh
 }
 
@@ -105,8 +151,16 @@ export function useTennis(deps: TennisDeps) {
   const racketHolders = new Set<string>()
   const outMarks = new Map<string, OutMark>()
   const forward = new THREE.Vector3()
-  const eye = new THREE.Vector3()
   const projection = new THREE.Vector3()
+  const aimRing = newGroundRing(AIM_COLOR, AIM_RADIUS_M, 0.9)
+  const landingRing = newGroundRing(LANDING_COLOR, LANDING_RADIUS_M, 0.7)
+  const shadows = new Map<THREE.Mesh, THREE.Mesh>()
+  const timing = ref<TennisTiming | null>(null)
+  let timingUntil = 0
+  let aim: Spot | null = null
+  let aimSide: TennisTeam | null = null
+  let freeSide: { court: string; team: TennisTeam } | null = null
+  let ownRacket = false
 
   function mySessionId(): string | null {
     return deps.gameRoomRef.value?.sessionId ?? null
@@ -148,8 +202,12 @@ export function useTennis(deps: TennisDeps) {
     }
   }
 
-  function struck(before: { phase: string; hitter: TennisTeam | null; ball: TennisBall | null } | undefined, after: { phase: string; hitter: TennisTeam | null; ball: TennisBall | null }, mesh: THREE.Mesh): void {
-    if (after.phase !== 'flight' || !after.ball) return
+  function struck(before: { phase: string; hitter: TennisTeam | null; ball: TennisBall | null } | undefined, after: { phase: string; hitter: TennisTeam | null; ball: TennisBall | null; shot: TennisShot | null }, mesh: THREE.Mesh): void {
+    if (after.phase !== 'flight' || !after.ball || before?.ball?.t === after.ball.t) return
+    if (before?.hitter !== after.hitter && after.shot?.sessionId === mySessionId()) {
+      timing.value = after.shot.timing
+      timingUntil = Date.now() + TIMING_SHOWN_MS
+    }
     const bounced = before?.phase === 'flight' && before.hitter === after.hitter
     mesh.position.set(after.ball.x, after.ball.y, after.ball.z)
     if (bounced) deps.onBounce(mesh)
@@ -208,14 +266,90 @@ export function useTennis(deps: TennisDeps) {
     const camera = deps.getCamera()
     if (!room || !camera || !deps.pointerLocked() || (e.button !== LEFT_BUTTON && e.button !== RIGHT_BUTTON)) return false
     const shot = swing()
-    if (!shot) return false
-    camera.getWorldPosition(eye)
-    camera.getWorldDirection(forward)
-    const aim = aimOnCourt(shot.court, shot.team, eye, forward)
+    const here = stance()
+    if (!shot || !here) return false
+    const target = aimFor(here)
     const lob = e.button === RIGHT_BUTTON
-    room.send('tennis_hit', { aimX: aim.x, aimZ: aim.z, lob })
+    room.send('tennis_hit', { aimX: target.x, aimZ: target.z, lob })
     deps.onSwing(swingFor(shot.serving, lob, shot.team, deps.myPosition, shot.ball.visible ? shot.ball.position.x : null))
     return true
+  }
+
+  function stance(): Stance | null {
+    const s = playing()
+    const team = s && myTeam(s, mySessionId())
+    if (s && team) return { team, court: s.court, match: s }
+    const court = holdingBall() ? freeCourtAt(deps.myPosition.x, deps.myPosition.z) : null
+    if (!court) {
+      freeSide = null
+      return null
+    }
+    if (freeSide?.court !== court.id) freeSide = { court: court.id, team: sideAt(deps.myPosition.z) }
+    return { team: freeSide.team, court: { cx: court.cx, netZ: TENNIS_NET_Z, halfWidth: free.value.get(court.id)?.geometry?.halfWidth ?? TENNIS_DOUBLES_HALF_WIDTH }, match: null }
+  }
+
+  function aimFor(here: Stance): Spot {
+    if (!aim || aimSide !== here.team) {
+      aim = defaultAim(here.court, here.team)
+      aimSide = here.team
+    }
+    return aim
+  }
+
+  function onMouseMove(e: MouseEvent): void {
+    const here = deps.pointerLocked() ? stance() : null
+    if (here) aim = aimMoved(here.court, here.team, aimFor(here), e.movementX, e.movementY)
+  }
+
+  function cameraView(): SportsView | null {
+    const here = stance()
+    return here ? { kind: 'court', sport: 'tennis', optional: false, cx: here.court.cx, netZ: here.court.netZ, halfLength: TENNIS_HALF_LENGTH, side: here.team === 'red' ? 1 : -1 } : null
+  }
+
+  function incoming(here: Stance): (BallPlay & { bounces: number }) | null {
+    if (here.match) return { ...here.match, netZ: here.match.court.netZ }
+    const rally = [...free.value.values()].find((f) => f.geometry?.cx === here.court.cx)
+    return rally ? { ...rally, netZ: TENNIS_NET_Z } : null
+  }
+
+  function nearestOfMySide(here: Stance, spot: Spot): boolean {
+    if (!here.match) return true
+    const mine = Math.hypot(spot.x - deps.myPosition.x, spot.z - deps.myPosition.z)
+    return here.match.players.every((p) => {
+      if (p.team !== here.team || p.sessionId === mySessionId()) return true
+      const at = deps.remotePosition(p.sessionId)
+      return !at || Math.hypot(spot.x - at.x, spot.z - at.z) >= mine
+    })
+  }
+
+  function runTarget(): Spot | null {
+    const here = stance()
+    const play = here && incoming(here)
+    if (!here || !play || play.phase !== 'flight') return null
+    const spot = interceptSpot(play, here.team, Date.now() + clockOffset.value)
+    if (spot) return nearestOfMySide(here, spot) ? spot : null
+    return here.match ? recoverySpot(here.court, here.team, deps.myPosition) : null
+  }
+
+  function autoRun(dt: number): { dx: number; dz: number } | null {
+    const spot = runTarget()
+    return spot ? runStep(deps.myPosition, spot, WALK_SPEED * TENNIS_AUTO_RUN_SHARE * dt) : null
+  }
+
+  function placeGuides(): void {
+    const scene = deps.getScene()
+    const here = stance()
+    if (scene && !aimRing.parent) scene.add(aimRing, landingRing)
+    aimRing.visible = here !== null
+    landingRing.visible = false
+    if (!here) return
+    const target = aimFor(here)
+    aimRing.position.set(target.x, AIM_Y, target.z)
+    const play = incoming(here)
+    if (!play || play.phase !== 'flight' || !play.ball || play.hitter === here.team || play.bounces !== 0) return
+    const landing = landingSpot(play.ball)
+    landingRing.position.set(landing.x, AIM_Y, landing.z)
+    landingRing.visible = true
   }
 
   function aimedBasket(): (typeof BALL_BASKETS)[number] | null {
@@ -252,9 +386,17 @@ export function useTennis(deps: TennisDeps) {
     const scene = deps.getScene()
     if (scene && !mesh.parent) scene.add(mesh)
     mesh.visible = ball !== null
+    let shadow = shadows.get(mesh)
+    if (!shadow) {
+      shadow = newShadowMesh()
+      shadows.set(mesh, shadow)
+    }
+    if (scene && !shadow.parent) scene.add(shadow)
+    shadow.visible = ball !== null
     if (!ball) return
     const p = ballPosition(ball, serverMs)
     mesh.position.set(p.x, p.y + BALL_RADIUS_SHOWN, p.z)
+    shadow.position.set(p.x, MARK_Y, p.z)
   }
 
   function updateRackets(): void {
@@ -265,6 +407,11 @@ export function useTennis(deps: TennisDeps) {
     for (const id of holders) if (!racketHolders.has(id)) deps.setRemoteRacket(id, true)
     racketHolders.clear()
     for (const id of holders) racketHolders.add(id)
+    const mine = holdingRacket()
+    if (mine !== ownRacket) {
+      ownRacket = mine
+      deps.setOwnRacket(mine)
+    }
   }
 
   function tick(): void {
@@ -281,6 +428,8 @@ export function useTennis(deps: TennisDeps) {
     freePlay.value = state.value === null && holdingBall()
     updateRackets()
     fadeOutMarks()
+    placeGuides()
+    if (timing.value && now.value > timingUntil) timing.value = null
   }
 
   const hud = computed<TennisHud | null>(() => {
@@ -301,5 +450,5 @@ export function useTennis(deps: TennisDeps) {
   })
   const call = computed<TennisCall>(() => (now.value < callUntil.value ? lastCall.value : null))
 
-  return { hud, cue, call, freePlay, source, holdingRacket, onPointerDown, tick, handlers: { onState, onFree } }
+  return { hud, cue, call, timing, freePlay, source, holdingRacket, onPointerDown, onMouseMove, cameraView, autoRun, tick, handlers: { onState, onFree } }
 }

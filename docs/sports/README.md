@@ -59,6 +59,7 @@ person where the sport stays playable that way; the choice is kept per sport unt
 | Sport | View | `U` |
 |---|---|---|
 | Swimming (in the pool water) | follow: 3.6 m behind the look, above the surface while the head is out, under it when diving | yes |
+| Tennis (match, or ball in hand on a court) | court: 16 m behind the player's baseline, 10 m high, the body faces the net | no |
 
 Front only: `front/src/game/camera/sportsCamera.ts` computes the framing (tested), `useSportsCamera` applies it over the
 first-person camera with a short blend and keeps the camera out of walls with a ray cast, `useOwnBody` draws the local

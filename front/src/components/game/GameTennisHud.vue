@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import type { TennisCall, TennisHud } from '../../composables/game/useTennis'
+import type { TennisTiming } from '../../types/gameRealtime'
 
-defineProps<{ hud: TennisHud | null; cue: boolean; call: TennisCall; freePlay: boolean }>()
+defineProps<{ hud: TennisHud | null; cue: boolean; call: TennisCall; timing: TennisTiming | null; freePlay: boolean }>()
 const { t } = useI18n()
 const TEAMS = ['red', 'blue'] as const
+const TIMING_TONE: Record<TennisTiming, string> = { perfect: 'text-mint', good: 'text-sun', early: 'text-coral', late: 'text-coral' }
 </script>
 
 <template>
@@ -34,6 +36,16 @@ const TEAMS = ['red', 'blue'] as const
   </section>
   <p v-if="cue" class="cc-hud pointer-events-none absolute left-1/2 top-1/2 z-10 m-0 -translate-x-1/2 translate-y-8 px-3 py-1 text-sm font-bold text-sun">
     {{ t('sports.tennis.hit') }}
+  </p>
+  <p
+    v-if="timing"
+    :key="timing"
+    class="pointer-events-none absolute left-1/2 top-[58%] z-10 m-0 -translate-x-1/2 animate-cc-pop font-display text-2xl uppercase tracking-[0.12em] drop-shadow"
+    :class="TIMING_TONE[timing]"
+    role="status"
+    aria-live="polite"
+  >
+    {{ t(`sports.tennis.timing.${timing}`) }}
   </p>
   <p v-if="call" class="pointer-events-none absolute left-1/2 top-1/3 z-10 m-0 -translate-x-1/2 font-display text-4xl uppercase text-sun drop-shadow">
     {{ t(`sports.tennis.calls.${call}`) }}

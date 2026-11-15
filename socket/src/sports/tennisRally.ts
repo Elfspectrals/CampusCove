@@ -5,6 +5,7 @@ import {
   AIM_OUT_MARGIN,
   BALL_RADIUS,
   BOUNCE_KEEP,
+  CLEAR_QUALITY,
   COURT_HALF_LENGTH,
   DOUBLES_HALF_WIDTH,
   DRIVE_SPEED,
@@ -15,18 +16,24 @@ import {
   LOB_SPEED,
   MIN_CONTACT_Y,
   MISS_M,
+  NET_CLEAR_M,
   NET_HALF_SPAN,
   NET_HEIGHT,
   OWN_HALF_TOLERANCE,
+  PERFECT_QUALITY,
   PLAY_AREA_END_MARGIN,
   PLAY_AREA_SIDE_MARGIN,
   POINT_PAUSE_MS,
   REACH_M,
   RESTITUTION,
+  SERVE_FLOOR,
   SERVE_SPEED,
   SERVE_WAIT_MS,
   SERVE_WINDOW_MS,
   SWEET_M,
+  SWING_AHEAD_MS,
+  TIMING_FLOOR,
+  TIMING_PERFECT_MS,
   TOSS_FALL_MS,
   TOSS_SPEED,
   TOSS_START_Y
@@ -51,10 +58,30 @@ export interface Ball {
 
 export type Call = 'out' | 'net' | 'double_bounce' | 'missed_toss'
 
+export type Timing = 'perfect' | 'good' | 'early' | 'late'
+
+export interface Shot {
+  sessionId: string
+  timing: Timing
+}
+
+export interface Swing {
+  sessionId: string
+  team: Team
+  at: number
+  contactX: number
+  aim: Aim
+  lob: boolean
+  quality: number
+  timing: Timing
+}
+
+export type Flight = { phase: 'flight', ball: Ball, hitter: Team, bounces: 0 | 1, netAt: number | null, swing: Swing | null, shot: Shot | null }
+
 export type Rally =
   | { phase: 'serve_wait', server: string, team: Team, since: number }
   | { phase: 'toss', server: string, team: Team, ball: Ball }
-  | { phase: 'flight', ball: Ball, hitter: Team, bounces: 0 | 1, netAt: number | null }
+  | Flight
   | { phase: 'point', winner: Team, call: Call, ball: Ball | null, until: number }
 
 export interface Hitter {
@@ -123,10 +150,18 @@ export function netTime(court: Court, ball: Ball): number | null {
   return Math.abs(at.x - court.cx) <= NET_HALF_SPAN && at.y < NET_HEIGHT + BALL_RADIUS ? t : null
 }
 
-export function shoot(court: Court, from: { x: number, y: number, z: number }, target: Aim, speed: number, now: number): { ball: Ball, netAt: number | null } {
+function clearingFlight(court: Court, from: { y: number, z: number }, target: Aim, flight: number): number {
+  const crossing = (court.netZ - from.z) / (target.z - from.z)
+  if (!(crossing > 0 && crossing < 1)) return flight
+  const missing = NET_HEIGHT + NET_CLEAR_M - from.y * (1 - crossing)
+  return missing <= 0 ? flight : Math.max(flight, Math.sqrt((2 * missing) / (GRAVITY * crossing * (1 - crossing))))
+}
+
+export function shoot(court: Court, from: { x: number, y: number, z: number }, target: Aim, speed: number, now: number, clearsNet = false): { ball: Ball, netAt: number | null } {
   const dx = target.x - from.x
   const dz = target.z - from.z
-  const flight = Math.hypot(dx, dz) / speed
+  const direct = Math.hypot(dx, dz) / speed
+  const flight = clearsNet ? clearingFlight(court, from, target, direct) : direct
   const ball = {
     x: from.x,
     y: from.y,
@@ -147,10 +182,10 @@ function missedSpot(from: Aim, target: Aim, quality: number): Aim {
   return length === 0 ? target : { x: target.x + (dx / length) * extra, z: target.z + (dz / length) * extra }
 }
 
-function strike(court: Court, hitter: Team, contact: { x: number, y: number, z: number }, aim: Aim, speed: readonly [number, number], quality: number, now: number): Rally {
+function strike(court: Court, hitter: Team, contact: { x: number, y: number, z: number }, aim: Aim, speed: readonly [number, number], quality: number, now: number, shot: Shot): Rally {
   const target = missedSpot(contact, aimSpot(court, other(hitter), aim), quality)
-  const { ball, netAt } = shoot(court, { ...contact, y: Math.max(contact.y, MIN_CONTACT_Y) }, target, lerp(speed, quality), now)
-  return { phase: 'flight', ball, hitter, bounces: 0, netAt }
+  const { ball, netAt } = shoot(court, { ...contact, y: Math.max(contact.y, MIN_CONTACT_Y) }, target, lerp(speed, quality), now, quality >= CLEAR_QUALITY)
+  return { phase: 'flight', ball, hitter, bounces: 0, netAt, swing: null, shot }
 }
 
 function pointTo(winner: Team, call: Call, ball: Ball | null, now: number): Rally {
@@ -189,10 +224,14 @@ export function step(rally: Rally, now: number, court: Court, where: Where): Ral
     return now - rally.ball.t >= TOSS_FALL_MS ? pointTo(other(rally.team), 'missed_toss', null, rally.ball.t + TOSS_FALL_MS) : rally
   }
   if (rally.phase !== 'flight') return rally
-  let current: Extract<Rally, { phase: 'flight' }> = rally
+  let current: Flight = rally
   for (;;) {
-    const { ball, hitter, bounces, netAt }: Extract<Rally, { phase: 'flight' }> = current
+    const { ball, hitter, bounces, netAt, swing, shot }: Flight = current
     const landing = groundTime(ball)
+    if (swing && swing.at <= Math.min(landing, netAt ?? Infinity)) {
+      if (now < swing.at) return current
+      return strike(court, swing.team, ballAt(ball, swing.at), swing.aim, swing.lob ? LOB_SPEED : DRIVE_SPEED, swing.quality, swing.at, { sessionId: swing.sessionId, timing: swing.timing })
+    }
     if (netAt !== null && netAt <= landing) {
       if (now < netAt) return current
       return pointTo(other(hitter), 'net', null, netAt)
@@ -201,7 +240,7 @@ export function step(rally: Rally, now: number, court: Court, where: Where): Ral
     const at = ballAt(ball, landing)
     if (bounces === 1) return pointTo(hitter, 'double_bounce', bounce(ball, landing), landing)
     if (!landsIn(court, other(hitter), at.x, at.z)) return pointTo(other(hitter), 'out', bounce(ball, landing), landing)
-    current = { phase: 'flight', ball: bounce(ball, landing), hitter, bounces: 1, netAt: null }
+    current = { phase: 'flight', ball: bounce(ball, landing), hitter, bounces: 1, netAt: null, swing, shot }
   }
 }
 
@@ -209,16 +248,38 @@ export function contactQuality(distance: number): number {
   return clamp(1 - (distance - SWEET_M) / (REACH_M - SWEET_M), 0, 1)
 }
 
-function bestContact(ball: Ball, team: Team, court: Court, hitter: Hitter, now: number): { t: number, d: number } | null {
-  let best: { t: number, d: number } | null = null
-  const end = Math.min(now, groundTime(ball))
-  for (let t = Math.max(ball.t, now - HIT_ALLOWANCE_MS); t <= end; t += HIT_SAMPLE_MS) {
-    const at = ballAt(ball, t)
-    if (at.y < 0 || at.y > HIT_MAX_HEIGHT || !onHalf(court, team, at.z, 0)) continue
-    const d = Math.hypot(at.x - hitter.x, at.z - hitter.z)
-    if (d <= REACH_M && (!best || d < best.d)) best = { t, d }
+export function timingFactor(offsetMs: number): number {
+  const [late, early] = TIMING_PERFECT_MS
+  if (offsetMs > early) return 1 - (1 - TIMING_FLOOR) * clamp((offsetMs - early) / (SWING_AHEAD_MS - early), 0, 1)
+  if (offsetMs < late) return 1 - (1 - TIMING_FLOOR) * clamp((late - offsetMs) / (HIT_ALLOWANCE_MS + late), 0, 1)
+  return 1
+}
+
+export function timingOf(offsetMs: number, quality: number): Timing {
+  if (offsetMs > TIMING_PERFECT_MS[1]) return 'early'
+  if (offsetMs < TIMING_PERFECT_MS[0]) return 'late'
+  return quality >= PERFECT_QUALITY ? 'perfect' : 'good'
+}
+
+function plannedContact(flight: Flight, court: Court, hitter: Hitter, now: number): { t: number, d: number, x: number } | null {
+  let best: { t: number, d: number, x: number } | null = null
+  let ball = flight.ball
+  let dies = flight.netAt ?? Infinity
+  for (let segment = flight.bounces; segment <= 1; segment += 1) {
+    const landing = groundTime(ball)
+    const end = Math.min(landing, dies)
+    for (let t = Math.max(ball.t, now - HIT_ALLOWANCE_MS); t <= end; t += HIT_SAMPLE_MS) {
+      const at = ballAt(ball, t)
+      if (at.y < 0 || at.y > HIT_MAX_HEIGHT || !onHalf(court, hitter.team, at.z, 0)) continue
+      const d = Math.hypot(at.x - hitter.x, at.z - hitter.z)
+      if (d <= REACH_M && (!best || d < best.d)) best = { t, d, x: at.x }
+    }
+    const at = ballAt(ball, landing)
+    if (landing >= dies || !landsIn(court, hitter.team, at.x, at.z)) break
+    ball = bounce(ball, landing)
+    dies = Infinity
   }
-  return best
+  return best && best.t <= now + SWING_AHEAD_MS ? best : null
 }
 
 export function hit(rally: Rally, hitter: Hitter, aim: Aim, lob: boolean, now: number, court: Court): Rally | null {
@@ -228,15 +289,17 @@ export function hit(rally: Rally, hitter: Hitter, aim: Aim, lob: boolean, now: n
     return { phase: 'toss', server: rally.server, team: rally.team, ball: tossBall(hitter.x, hitter.z, now) }
   }
   if (rally.phase === 'toss') {
-    const off = Math.abs(now - tossPeak(rally.ball))
-    if (hitter.sessionId !== rally.server || off > SERVE_WINDOW_MS) return null
-    const contact = ballAt(rally.ball, now)
-    return strike(court, rally.team, contact, aim, SERVE_SPEED, 1 - off / SERVE_WINDOW_MS, now)
+    if (hitter.sessionId !== rally.server) return null
+    const quality = Math.max(SERVE_FLOOR, 1 - Math.abs(now - tossPeak(rally.ball)) / SERVE_WINDOW_MS)
+    const timing = quality >= PERFECT_QUALITY ? 'perfect' : quality > SERVE_FLOOR ? 'good' : now < tossPeak(rally.ball) ? 'early' : 'late'
+    return strike(court, rally.team, ballAt(rally.ball, now), aim, SERVE_SPEED, quality, now, { sessionId: hitter.sessionId, timing })
   }
-  if (rally.phase !== 'flight' || rally.hitter === hitter.team) return null
-  const contact = bestContact(rally.ball, hitter.team, court, hitter, now)
+  if (rally.phase !== 'flight' || rally.hitter === hitter.team || rally.swing) return null
+  const contact = plannedContact(rally, court, hitter, now)
   if (!contact) return null
-  return strike(court, hitter.team, ballAt(rally.ball, contact.t), aim, lob ? LOB_SPEED : DRIVE_SPEED, contactQuality(contact.d), now)
+  const quality = contactQuality(contact.d) * timingFactor(contact.t - now)
+  const swing: Swing = { sessionId: hitter.sessionId, team: hitter.team, at: contact.t, contactX: contact.x, aim, lob, quality, timing: timingOf(contact.t - now, quality) }
+  return step({ ...rally, swing }, now, court, () => null)
 }
 
 export type Stroke = 'serve' | 'forehand' | 'backhand' | 'lob' | 'celebrate'
@@ -245,5 +308,6 @@ export function strokeOf(before: Rally, after: Rally, hitter: Hitter, lob: boole
   if (before.phase === 'serve_wait' && after.phase === 'toss') return 'serve'
   if (before.phase !== 'flight' || after.phase !== 'flight') return null
   if (lob) return 'lob'
-  return (after.ball.x - hitter.x) * sideSign(hitter.team) >= 0 ? 'forehand' : 'backhand'
+  const contactX = after.swing ? after.swing.contactX : after.ball.x
+  return (contactX - hitter.x) * sideSign(hitter.team) >= 0 ? 'forehand' : 'backhand'
 }

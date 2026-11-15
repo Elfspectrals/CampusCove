@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import type { TennisStatePayload } from '../../types/gameRealtime'
-import { BALL_BASKETS, TENNIS_BOUNCE_KEEP, TENNIS_COURTS, TENNIS_GRAVITY, TENNIS_HALF_LENGTH, TENNIS_NET_Z, TENNIS_REACH_M, TENNIS_RESTITUTION, TENNIS_MARK_MS, aimOnCourt, ballComing, ballPosition, freeCourtAt, iServe, markOpacity, markYaw, myTeam, sideAt, swingFor } from './tennis.ts'
+import { BALL_BASKETS, TENNIS_BOUNCE_KEEP, TENNIS_COURTS, TENNIS_GRAVITY, TENNIS_HALF_LENGTH, TENNIS_NET_Z, TENNIS_REACH_M, TENNIS_RESTITUTION, TENNIS_MARK_MS, aimMoved, ballComing, ballPosition, defaultAim, freeCourtAt, interceptSpot, iServe, markOpacity, markYaw, myTeam, recoverySpot, runStep, sideAt, swingFor } from './tennis.ts'
 
 const ZONE = JSON.parse(readFileSync(new URL('../../../public/assets/zones/sports_tennis.json', import.meta.url), 'utf8'))
 const RULES = JSON.parse(readFileSync(new URL('../../../public/assets/sports/rules/tennis.json', import.meta.url), 'utf8'))
@@ -21,6 +21,8 @@ function state(extra: Partial<TennisStatePayload> = {}): TennisStatePayload {
     server: null,
     ball: { x: 0, y: 1, z: -10, vx: 0, vy: 4, vz: 15, t: 0 },
     hitter: 'blue',
+    bounces: 0,
+    shot: null,
     call: null,
     pointWinner: null,
     winner: null,
@@ -44,20 +46,64 @@ test('the ball follows its arc, then bounces up instead of sinking before the se
   assert.ok(after.z > (10 * fall) / 1000 && after.z < (10 * fall) / 1000 + 1)
 })
 
-test('the hitting cue shows only for the side the ball comes to, when it is about to pass within reach', () => {
+test('the hitting cue shows only for the side the ball comes to, from 180 ms before it passes closest', () => {
   const s = state()
   const landing = ballPosition(s.ball!, 1400)
   assert.equal(ballComing({ ...s, netZ: s.court.netZ }, 'red', { x: landing.x, z: landing.z }, 1300), true)
+  assert.equal(ballComing({ ...s, netZ: s.court.netZ }, 'red', { x: landing.x, z: landing.z }, 1220), true)
+  assert.equal(ballComing({ ...s, netZ: s.court.netZ }, 'red', { x: landing.x, z: landing.z }, 1200), false)
+  assert.equal(ballComing({ ...s, netZ: s.court.netZ }, 'red', { x: landing.x, z: landing.z }, 1450), true)
   assert.equal(ballComing({ ...s, netZ: s.court.netZ }, 'red', { x: landing.x + 3, z: landing.z }, 1300), false)
   assert.equal(ballComing({ ...s, netZ: s.court.netZ }, 'blue', { x: landing.x, z: landing.z }, 1300), false)
   assert.equal(ballComing({ ...state({ phase: 'point' }), netZ: 0 }, 'red', { x: landing.x, z: landing.z }, 1300), false)
 })
 
-test('the aim is where the view meets the ground, or the far baseline when looking level', () => {
+function near(actual: { x: number; z: number } | null, expected: { x: number; z: number }, what: string): void {
+  assert.ok(actual && Math.abs(actual.x - expected.x) < 1e-6 && Math.abs(actual.z - expected.z) < 1e-6, `${what}: ${JSON.stringify(actual)} is not ${JSON.stringify(expected)}`)
+}
+
+test('the aim mark starts deep in the middle of the other half and follows the mouse as seen from behind the baseline', () => {
+  const court = state().court
+  near(defaultAim(court, 'red'), { x: 0, z: -8.5 }, 'red aims at the blue half')
+  near(defaultAim(court, 'blue'), { x: 0, z: 8.5 }, 'blue aims at the red half')
+  near(aimMoved(court, 'red', { x: 0, z: -8.5 }, 100, 0), { x: 2, z: -8.5 }, 'mouse right, red')
+  near(aimMoved(court, 'red', { x: 0, z: -8.5 }, 0, -100), { x: 0, z: -10.5 }, 'mouse up, red')
+  near(aimMoved(court, 'blue', { x: 0, z: 8.5 }, 100, 0), { x: -2, z: 8.5 }, 'mouse right, blue')
+  near(aimMoved(court, 'blue', { x: 0, z: 8.5 }, 0, -100), { x: 0, z: 10.5 }, 'mouse up, blue')
+})
+
+test('the aim mark stays inside the lines: 0.5 m from them and 1.5 m from the net', () => {
+  const court = state().court
+  near(aimMoved(court, 'red', { x: 0, z: -8.5 }, 1000, 0), { x: 3.615, z: -8.5 }, 'right line')
+  near(aimMoved(court, 'red', { x: 0, z: -8.5 }, -1000, 0), { x: -3.615, z: -8.5 }, 'left line')
+  near(aimMoved(court, 'red', { x: 0, z: -8.5 }, 0, -1000), { x: 0, z: -(TENNIS_HALF_LENGTH - 0.5) }, 'baseline')
+  near(aimMoved(court, 'red', { x: 0, z: -8.5 }, 0, 1000), { x: 0, z: -1.5 }, 'net')
+})
+
+test('the player runs to where the ball will be 350 ms after its bounce, standing 0.6 m off so it comes on the racket side', () => {
   const s = state()
-  assert.deepEqual(aimOnCourt(s.court, 'red', { x: 0, y: 1.6, z: 10 }, { x: 0, y: -0.2, z: -1 }), { x: 0, z: 2 })
-  assert.deepEqual(aimOnCourt(s.court, 'red', { x: 1, y: 1.6, z: 10 }, { x: 0.1, y: 0, z: -1 }), { x: 1 + 0.1 * (10 + TENNIS_HALF_LENGTH), z: -TENNIS_HALF_LENGTH })
-  assert.deepEqual(aimOnCourt(s.court, 'red', { x: 0, y: 1.6, z: 10 }, { x: 0, y: 0, z: 1 }), { x: 0, z: -TENNIS_HALF_LENGTH })
+  const play = { ...s, netZ: s.court.netZ }
+  const landing = (4 + Math.sqrt(16 + 2 * TENNIS_GRAVITY)) / TENNIS_GRAVITY
+  const z = -10 + 15 * landing + 15 * TENNIS_BOUNCE_KEEP * 0.35
+  near(interceptSpot(play, 'red', 0), { x: -0.6, z }, 'before the bounce')
+  assert.equal(interceptSpot(play, 'blue', 0), null)
+  assert.equal(interceptSpot({ ...play, phase: 'point' }, 'red', 0), null)
+  const bounced = { ...play, bounces: 1, ball: { x: 1, y: 0, z: 5, vx: 0, vy: 6, vz: 10, t: 1000 } }
+  near(interceptSpot(bounced, 'red', 1000), { x: 0.4, z: 8.5 }, 'after the bounce')
+  near(interceptSpot(bounced, 'red', 1400), { x: 0.4, z: 10.5 }, 'chasing a ball already past')
+  const long = { ...play, bounces: 1, ball: { x: 0, y: 0, z: 11, vx: 0, vy: 6, vz: 20, t: 0 } }
+  near(interceptSpot(long, 'red', 0), { x: -0.6, z: TENNIS_HALF_LENGTH + 3 }, 'never more than 3 m behind the baseline')
+})
+
+test('between shots a singles player goes back to the middle of the baseline, a doubles player to their side', () => {
+  near(recoverySpot({ cx: 0, netZ: 0, halfWidth: 4.115 }, 'red', { x: 3, z: 5 }), { x: 0, z: TENNIS_HALF_LENGTH + 0.3 }, 'singles red')
+  near(recoverySpot({ cx: 0, netZ: 0, halfWidth: 5.485 }, 'blue', { x: -1, z: -5 }), { x: -2.5, z: -(TENNIS_HALF_LENGTH + 0.3) }, 'doubles blue')
+})
+
+test('a run step never overshoots the spot and stops within 5 cm of it', () => {
+  assert.deepEqual(runStep({ x: 0, z: 0 }, { x: 3, z: 4 }, 1), { dx: 0.6, dz: 0.8 })
+  assert.deepEqual(runStep({ x: 0, z: 0 }, { x: 0.3, z: 0.4 }, 1), { dx: 0.3, dz: 0.4 })
+  assert.deepEqual(runStep({ x: 0, z: 0 }, { x: 0.03, z: 0 }, 1), { dx: 0, dz: 0 })
 })
 
 test('my side and my serve come from the server state', () => {

@@ -60,6 +60,8 @@ function freeView(court: string, free: FreeRally | null, now: number) {
     phase: rally?.phase ?? 'idle',
     ball: !rally || rally.phase === 'serve_wait' ? null : rally.ball,
     hitter: rally?.phase === 'flight' ? rally.hitter : null,
+    bounces: rally?.phase === 'flight' ? rally.bounces : 0,
+    shot: rally?.phase === 'flight' ? rally.shot : null,
     call: rally?.phase === 'point' ? rally.call : null,
     serverNow: now
   }
