@@ -545,7 +545,6 @@ export function useGymMatch(deps: GymMatchDeps) {
       team: team.value,
       meter,
       cooldown,
-      carrying: current.owner !== null && current.owner === mySessionId(),
     }
   })
 
@@ -556,7 +555,7 @@ export function useGymMatch(deps: GymMatchDeps) {
     if (!ball) return null
     const r = rules.value[ball.sport]
     const held = holdStartedAt.value
-    return { sport: ball.sport, meter: r && held !== null ? { fill: meterFill(r.meter, clientNow.value - held), goodFrom: null } : null, carrying: ball.owner === mySessionId() }
+    return { sport: ball.sport, meter: r && held !== null ? { fill: meterFill(r.meter, clientNow.value - held), goodFrom: null } : null }
   })
 
   const myBall = computed(() => {
