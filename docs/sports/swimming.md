@@ -12,7 +12,7 @@ The pool is 25 m with 6 lanes (diving pit apart, see [diving.md](diving.md)). Fr
 ## Controls
 
 - **Start**: the dive key after the beep; the reaction time is measured.
-- **Stroke**: alternate two keys (left / right) in rhythm. A steady cadence in the good window speeds up; too fast or out of step loses speed. Same family as Drink Fast.
+- **Stroke**: a rhythm game, like the dance one. Notes fall in three lanes, left arm (move left or the left arrow), right arm (move right or the right arrow) and, every eighth note, a breath (the jump key). A note hit on time speeds the swimmer up, a missed note or a press with no note slows them down, and the notes come faster as the race goes on.
 - **Turn**: at the wall the swimmer turns on their own (proposed: a well-timed press at the wall gives a better push-off).
 - No steering: a racer stays in their lane.
 
@@ -22,12 +22,12 @@ Sign-up at the pool coach → choose distance → kick-off rules of the README (
 
 ## HUD
 
-Lane number, length counter ("2/4"), race clock, cadence bar with its good window, reaction time at the start, final place and time.
+Lane number, length counter ("2/4"), race clock, the three note lanes with the label of the last note (Perfect, Good, Missed, Out of step), reaction time at the start, final place and time. In the race the body faces down the lane (the look is set by the game), so the third-person view sits behind the swimmer.
 
 ## Server authority
 
-- The socket replays the stroke inputs on its own clock (as Drink Fast) and owns speed, position in the lane, wall touches, finish times and false starts.
-- The client only sends key down / key up with no timestamps trusted.
+- The socket judges each press against the chart on its own clock and owns speed, position in the lane, wall touches, finish times and false starts.
+- The client only sends which key was pressed (left, right, breath), with no timestamp. It builds the same chart from `swimming.json` to draw the notes; a note it draws is never judged by the client.
 
 ## Gear
 
@@ -50,8 +50,9 @@ Block stance, start dive, front crawl in the water, wall turn, finish touch. Cal
 ## Decided at build time (2026-11-14)
 
 - Steps lead out of the basin at both ends and out of the pit. The `Water` walk level at -1.3 m in the layout is only used by those steps; nobody walks on the basin floor (see Free swimming).
-- Stroke model (`socket/src/sports/swimRace.ts`, values in `swimming.json`): the dive after the beep glides 3 m at 1.8 m/s; a stroke in the window 450 +/- 150 ms after the previous one, on the other side, adds 0.55 m/s up to 2.2 m/s; a slower one adds 0.25 m/s; the same side twice or a faster one multiplies the speed by 0.6; the water slows the swimmer by 60 % of the speed per second. A steady good cadence swims 25 m in about 13 s.
+- Stroke model (`socket/src/sports/swimRace.ts`, values in `swimming.json`): the dive after the beep glides 3 m at 1.8 m/s and the water slows the swimmer by 60 % of the speed per second. The chart is the same for everyone and depends only on the note number: the first note is 1200 ms after the beep, the next ones 560 ms apart then 4 ms closer each note down to 380 ms (`noteTimeMs`); left and right arm in turn, every eighth note a breath, the arms carrying on after it (`noteKind`). A press is compared with the first note of its lane not yet hit: never counted early, 120 ms of lag forgiven, then Perfect within 70 ms (+0.6 m/s) or Good within 150 ms (+0.45 m/s), up to 2.2 m/s. A note not hit 270 ms after its time is Missed (speed x 0.85); a press with no note in reach, the wrong arm included, is Out of step (speed x 0.8) and leaves the note to be missed. All Perfect swims 25 m in about 12.7 s, all Good in about 15.5 s.
 - The turn is automatic, no bonus (`turnBonus` 0).
+- What a swimmer can still do during a race, and what happens (decided 2026-11-15, see "Emergent gameplay" in `.claude/rules/global.md`): press before the beep (false start, disqualified); dive late (the notes that passed before the dive are skipped, not missed); press on the block after the beep without diving (ignored); hammer both arms (each press with no note slows the swimmer, so spamming loses); hold a key (one press, key repeat is not sent); hit the next note while the previous one is still in its late window (both count, each in its own lane); skip the breaths (each one is a missed note); move or look around (the socket places the swimmer in the lane and the game sets the look); press after the finish (ignored); leave the pool or disconnect (did not finish). The rules file is refused at boot if one press could reach two notes of the same lane.
 - The beep comes 1.5 to 3 s after "take your marks", rolled by the socket. Reaction time is measured from the tick that sent the beep.
 - A race stops after 60 s per length; whoever is still swimming did not finish.
 - The swimsuit look: knee-length navy swim shorts with a red waistband and side stripe (`wear/bottom/swimsuit`, built in `wear.py` for every body and build). A player with the feet in the pool water is shown in it, with no top, shoes or headwear; women keep the base body's chest band. Out of the water the outfit comes back. It is never sold as clothing: the `gear_swimsuit` item is what the gate checks.
@@ -89,11 +90,11 @@ Decided 2026-11-15: a real pool. The player swims in the water of the basin and 
 | Message | Direction | Payload |
 |---|---|---|
 | `pool_dive` | client -> server | `{}`, the dive key of a signed-up swimmer on the block |
-| `pool_stroke` | client -> server | `{ side: 'left' \| 'right' }` |
+| `pool_stroke` | client -> server | `{ side: 'left' \| 'right' \| 'breath' }` |
 | `pool_race_start` | server -> swimmers and players in the pool | `{ venue, distanceM, lengthM, lanes: [{ sessionId, name, lane }], serverNow }` |
 | `pool_race_beep` | server -> same | `{ venue, serverNow }` |
 | `pool_race_state` | server -> same, every sports tick | `{ venue, clockMs \| null, swimmers: [{ sessionId, lane, phase, distanceM, x, z, length, lengths, speedMps, reactionMs, timeMs }] }` |
-| `pool_stroke_result` | server -> the swimmer | `{ result: 'started' \| 'good' \| 'slow' \| 'off' \| 'false_start', reactionMs }` |
+| `pool_stroke_result` | server -> the swimmer | `{ result: 'started' \| 'perfect' \| 'good' \| 'miss' \| 'stray' \| 'false_start', index: note number \| null, reactionMs }`; `miss` is sent when the note expires |
 | `pool_race_result` | server -> same | `{ venue, distanceM, results: [{ sessionId, name, lane, status, place, timeMs, reactionMs }] }` |
 | `pool_breath` | server -> the swimmer, every 250 ms while under water or not full, once more when full | `{ breathMs, maxMs, underwater }` |
 | `pool_rescued` | server -> the swimmer | `{}`, after the `teleported` to the deck |
@@ -103,4 +104,4 @@ Decided 2026-11-15: a real pool. The player swims in the water of the basin and 
 
 ## Proposed placeholder JSON fields
 
-`sport` ("swimming"), `pool` (lengthM 25, `lanes` 6, lane positions, block positions, water volume and depths, exits), `distancesM` ([25, 50, 100]), `minPlayers` (1), `maxPlayers` (6), `startBeepDelayRangeMs`, `falseStart` ("disqualify"), `stroke` (goodCadenceMs, toleranceMs, speedCurve), `turnBonus`, `gear` (["swimsuit"]), `coachId`, `boards` (["swim_25", "swim_50", "swim_100"]), `tasks` (["races_swum", "swim_50_time"]).
+`sport` ("swimming"), `pool` (lengthM 25, `lanes` 6, lane positions, block positions, water volume and depths, exits), `distancesM` ([25, 50, 100]), `minPlayers` (1), `maxPlayers` (6), `startBeepDelayRangeMs`, `falseStart` ("disqualify"), `stroke` (boostMps perfect and good, missFactor, strayFactor, maxSpeedMps, dragPerS), `rhythm` (leadInMs, intervalMs [first, last], fasterPerNoteMs, breathEvery, windowsMs perfect and good, allowanceMs), `turnBonus`, `gear` (["swimsuit"]), `coachId`, `boards` (["swim_25", "swim_50", "swim_100"]), `tasks` (["races_swum", "swim_50_time"]).

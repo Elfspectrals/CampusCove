@@ -969,6 +969,7 @@ const { hud: tennisHud, cue: tennisCue, call: tennisCall, timing: tennisTiming, 
 const poolRace = usePoolRace({
   gameRoomRef,
   myPosition,
+  setLook: (yaw, pitch) => movement.setLook(yaw, pitch),
   mySessionId: () => gameRoomRef.value?.sessionId ?? null,
   getScene,
   remotePlayers: () => realtime.remotePlayers(),

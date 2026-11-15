@@ -143,13 +143,28 @@
   ],
   "falseStart": "disqualify",
   "stroke": {
-    "goodCadenceMs": 450,
-    "toleranceMs": 150,
-    "boostMps": 0.55,
-    "slowBoostMps": 0.25,
-    "offStepFactor": 0.6,
+    "boostMps": {
+      "perfect": 0.6,
+      "good": 0.45
+    },
+    "missFactor": 0.85,
+    "strayFactor": 0.8,
     "maxSpeedMps": 2.2,
     "dragPerS": 0.6
+  },
+  "rhythm": {
+    "leadInMs": 1200,
+    "intervalMs": [
+      560,
+      380
+    ],
+    "fasterPerNoteMs": 4,
+    "breathEvery": 8,
+    "windowsMs": {
+      "perfect": 70,
+      "good": 150
+    },
+    "allowanceMs": 120
   },
   "dive": {
     "glideM": 3,

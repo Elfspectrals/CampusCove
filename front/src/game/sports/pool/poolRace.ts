@@ -1,5 +1,7 @@
+import { yawTowards } from '../../camera/sportsCamera.ts'
+
 export type SwimmerPhase = 'marks' | 'swimming' | 'finished' | 'disqualified' | 'dnf'
-export type StrokeResult = 'good' | 'slow' | 'off' | 'false_start' | 'started'
+export type StrokeResult = 'perfect' | 'good' | 'miss' | 'stray' | 'false_start' | 'started'
 export type Trick = 'twist' | 'somersault' | 'cannonball'
 
 export interface Rect {
@@ -60,9 +62,19 @@ export interface PoolDive {
   airMs: number
 }
 
-export interface StrokeWindow {
-  goodCadenceMs: number
-  toleranceMs: number
+export type NoteKind = 'left' | 'right' | 'breath'
+
+export interface RhythmRules {
+  leadInMs: number
+  intervalMs: [number, number]
+  fasterPerNoteMs: number
+  breathEvery: number
+}
+
+export interface FallingStroke {
+  index: number
+  kind: NoteKind
+  progress: number
 }
 
 export interface DiveBoard {
@@ -86,7 +98,9 @@ export interface SwimRules {
 }
 
 export interface PoolRules {
-  stroke: StrokeWindow
+  rhythm: RhythmRules
+  startX: number
+  turnX: number
   waterY: number
   wadeY: number
   water: WaterRect[]
@@ -108,7 +122,10 @@ export function swimmingAt(rules: PoolRules, x: number, feetY: number, z: number
   return feetY < SWIMMING_FEET_BELOW && inWater(rules, x, z)
 }
 export const EDGE_FEET_TOLERANCE_M = 0.4
-const CADENCE_SPAN = 1.5
+const STROKE_LEAD_MS = 1200
+const STROKE_TAIL_MS = 270
+export const STROKE_SHOWN_MS = 600
+export const STROKE_LANE_FLASH_MS = 120
 
 type Json = Record<string, unknown>
 
@@ -138,13 +155,22 @@ export function parsePoolRules(swimming: unknown, diving: unknown): PoolRules {
   const s = swimming as Json | null
   const d = diving as Json | null
   const pool = s?.pool as Json | undefined
-  const stroke = s?.stroke as Json | undefined
+  const rhythm = s?.rhythm as Json | undefined
+  const interval = rhythm?.intervalMs
   const swim = s?.swim as Json | undefined
   const breath = s?.breath as Json | undefined
-  if (s?.status !== 'ready' || d?.status !== 'ready' || !pool || !stroke || !swim || !breath) throw new Error('pool rules: swimming or diving rules are not ready')
+  if (s?.status !== 'ready' || d?.status !== 'ready' || !pool || !rhythm || !swim || !breath) throw new Error('pool rules: swimming or diving rules are not ready')
   if (!Array.isArray(pool.waterVolume) || !Array.isArray(pool.exits) || !Array.isArray(d.boards)) throw new Error('pool rules: missing water, exits or boards')
+  if (!Array.isArray(interval) || interval.length !== 2) throw new Error('pool rules: invalid rhythm.intervalMs')
   return {
-    stroke: { goodCadenceMs: finite(stroke.goodCadenceMs, 'goodCadenceMs'), toleranceMs: finite(stroke.toleranceMs, 'toleranceMs') },
+    rhythm: {
+      leadInMs: finite(rhythm.leadInMs, 'rhythm.leadInMs'),
+      intervalMs: [finite(interval[0], 'rhythm.intervalMs'), finite(interval[1], 'rhythm.intervalMs')],
+      fasterPerNoteMs: finite(rhythm.fasterPerNoteMs, 'rhythm.fasterPerNoteMs'),
+      breathEvery: finite(rhythm.breathEvery, 'rhythm.breathEvery'),
+    },
+    startX: finite(pool.startX, 'startX'),
+    turnX: finite(pool.turnX, 'turnX'),
     waterY: finite(pool.waterY, 'waterY'),
     wadeY: finite(pool.wadeY, 'wadeY'),
     water: pool.waterVolume.map((w, i) => ({ ...rect(w, `waterVolume[${i}]`), floorY: finite((w as Json).floorY, `waterVolume[${i}].floorY`) })),
@@ -175,12 +201,37 @@ export function boardEdgeAt(rules: PoolRules, x: number, z: number, feetY: numbe
   return rules.boards.find((b) => inside(b.edgeZone, x, z) && Math.abs(feetY - b.heightM) <= EDGE_FEET_TOLERANCE_M) ?? null
 }
 
-export function cadenceMeter(sinceStrokeMs: number | null, stroke: StrokeWindow): { fill: number; windowFrom: number; windowTo: number; inWindow: boolean } {
-  const span = (stroke.goodCadenceMs + stroke.toleranceMs) * CADENCE_SPAN
-  const windowFrom = (stroke.goodCadenceMs - stroke.toleranceMs) / span
-  const windowTo = (stroke.goodCadenceMs + stroke.toleranceMs) / span
-  const fill = sinceStrokeMs === null ? 0 : Math.min(1, sinceStrokeMs / span)
-  return { fill, windowFrom, windowTo, inWindow: fill >= windowFrom && fill <= windowTo }
+export function noteTimeMs(rhythm: RhythmRules, index: number): number {
+  const [first, last] = rhythm.intervalMs
+  const shrinking = rhythm.fasterPerNoteMs > 0 ? Math.ceil((first - last) / rhythm.fasterPerNoteMs) : Infinity
+  const n = Math.min(index, shrinking)
+  return rhythm.leadInMs + n * first - (rhythm.fasterPerNoteMs * n * (n - 1)) / 2 + (index - n) * last
+}
+
+export function noteKind(rhythm: RhythmRules, index: number): NoteKind {
+  if ((index + 1) % rhythm.breathEvery === 0) return 'breath'
+  return (index - Math.floor((index + 1) / rhythm.breathEvery)) % 2 === 0 ? 'left' : 'right'
+}
+
+export function fallingStrokes(rhythm: RhythmRules, raceMs: number, judged: ReadonlySet<number>): FallingStroke[] {
+  const shown: FallingStroke[] = []
+  for (let index = 0; ; index += 1) {
+    const t = noteTimeMs(rhythm, index)
+    if (t > raceMs + STROKE_LEAD_MS) return shown
+    if (judged.has(index) || t < raceMs - STROKE_TAIL_MS) continue
+    shown.push({ index, kind: noteKind(rhythm, index), progress: 1 - (t - raceMs) / STROKE_LEAD_MS })
+  }
+}
+
+export function swimYaw(rules: Pick<PoolRules, 'startX' | 'turnX'>, length: number): number {
+  const outbound = length % 2 === 1
+  return yawTowards({ x: outbound ? rules.startX : rules.turnX, z: 0 }, { x: outbound ? rules.turnX : rules.startX, z: 0 })
+}
+
+export function noteForKey(code: string, matches: (action: 'moveLeft' | 'moveRight' | 'jump', code: string) => boolean): NoteKind | null {
+  if (code === 'ArrowLeft' || matches('moveLeft', code)) return 'left'
+  if (code === 'ArrowRight' || matches('moveRight', code)) return 'right'
+  return matches('jump', code) ? 'breath' : null
 }
 
 export function formatRaceTime(ms: number | null): string {

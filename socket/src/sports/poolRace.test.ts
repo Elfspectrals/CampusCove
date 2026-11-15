@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { mock, test } from 'node:test'
 import type { Match } from './signup.ts'
+import { noteKind, noteTimeMs } from './swimRace.ts'
 import { api, clientOf, fakeRoom, installWorld, json, makePlayer, manifest, sentOf } from './testWorld.ts'
 
 const RAW = JSON.parse(readFileSync(new URL('../../../front/public/assets/sports/rules/swimming.json', import.meta.url), 'utf8'))
@@ -63,7 +64,7 @@ test('a race: swimmers on their blocks, a false start, the beep, a swim to the w
   assert.equal(sentOf(clientOf(room, a), 'pool_race_start').length, 1)
 
   pool.onPoolStroke(room, clientOf(room, b), { side: 'left' })
-  assert.deepEqual(sentOf(clientOf(room, b), 'pool_stroke_result'), [{ result: 'false_start', reactionMs: null }])
+  assert.deepEqual(sentOf(clientOf(room, b), 'pool_stroke_result'), [{ result: 'false_start', index: null, reactionMs: null }])
   pool.onPoolStroke(room, clientOf(room, a), { side: 'up' })
   assert.equal(sentOf(clientOf(room, a), 'pool_stroke_result').length, 0)
 
@@ -72,15 +73,16 @@ test('a race: swimmers on their blocks, a false start, the beep, a swim to the w
   assert.equal(sentOf(clientOf(room, a), 'pool_race_beep').length, 1)
   mock.timers.setTime(Date.now() + 250)
   pool.onPoolDive(room, clientOf(room, a))
-  assert.deepEqual(sentOf(clientOf(room, a), 'pool_stroke_result').at(-1), { result: 'started', reactionMs: 250 })
+  assert.deepEqual(sentOf(clientOf(room, a), 'pool_stroke_result').at(-1), { result: 'started', index: null, reactionMs: 250 })
 
-  let side: 'left' | 'right' = 'left'
+  const beepAt = T0 + rules.beepDelayMs[0]
   for (let i = 0; i < 80 && room.sports.matches.has(spec.id); i++) {
-    mock.timers.setTime(Date.now() + rules.stroke.goodCadenceMs)
-    pool.onPoolStroke(room, clientOf(room, a), { side })
-    side = side === 'left' ? 'right' : 'left'
+    mock.timers.setTime(beepAt + noteTimeMs(rules.rhythm, i))
+    pool.onPoolStroke(room, clientOf(room, a), { side: noteKind(rules.rhythm, i) })
     venues.tickSports(room)
   }
+  assert.deepEqual(sentOf(clientOf(room, a), 'pool_stroke_result')[1], { result: 'perfect', index: 0, reactionMs: 250 })
+  assert.equal(sentOf(clientOf(room, a), 'pool_stroke_result').some((m) => (m as { result: string }).result === 'miss'), false)
   assert.equal(room.sports.matches.has(spec.id), false)
   assert.ok(a.x <= rules.turnX + 0.01 && a.y < 1)
   const [result] = sentOf(clientOf(room, a), 'pool_race_result') as { results: { sessionId: string, place: number | null, status: string, timeMs: number | null }[] }[]

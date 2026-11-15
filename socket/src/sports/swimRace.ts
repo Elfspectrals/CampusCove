@@ -1,17 +1,30 @@
 import type { Bounds } from '../types.ts'
+import { pressError } from './danceGame.ts'
 
-export type StrokeSide = 'left' | 'right'
+export type NoteKind = 'left' | 'right' | 'breath'
 export type SwimmerPhase = 'marks' | 'swimming' | 'finished' | 'disqualified' | 'dnf'
-export type StrokeResult = 'good' | 'slow' | 'off' | 'false_start' | 'ignored'
+export type StrokeResult = 'perfect' | 'good' | 'miss' | 'stray' | 'false_start' | 'ignored'
 
 export interface StrokeRules {
-  goodCadenceMs: number
-  toleranceMs: number
-  boostMps: number
-  slowBoostMps: number
-  offStepFactor: number
+  boostMps: { perfect: number, good: number }
+  missFactor: number
+  strayFactor: number
   maxSpeedMps: number
   dragPerS: number
+}
+
+export interface RhythmRules {
+  leadInMs: number
+  intervalMs: [number, number]
+  fasterPerNoteMs: number
+  breathEvery: number
+  windowsMs: { perfect: number, good: number }
+  allowanceMs: number
+}
+
+export interface StrokeOutcome {
+  result: StrokeResult
+  index: number | null
 }
 
 export interface DiveRules {
@@ -42,6 +55,7 @@ export interface PoolRules {
   distancesM: number[]
   beepDelayMs: [number, number]
   stroke: StrokeRules
+  rhythm: RhythmRules
   dive: DiveRules
   timeLimitPerLengthMs: number
 }
@@ -55,8 +69,8 @@ export interface Swimmer {
   distanceM: number
   speedMps: number
   at: number
-  lastStrokeAt: number | null
-  lastSide: StrokeSide | null
+  nextNote: number
+  hit: Set<number>
   reactionMs: number | null
   timeMs: number | null
 }
@@ -83,11 +97,32 @@ function bounds(raw: unknown, what: string): Bounds {
   return out
 }
 
+function parseRhythm(raw: unknown): RhythmRules {
+  const r = raw as Json | null
+  const interval = r?.intervalMs
+  const windows = r?.windowsMs as Json | undefined
+  if (!Array.isArray(interval) || interval.length !== 2) throw new Error('swimming rules: invalid rhythm.intervalMs')
+  const rhythm: RhythmRules = {
+    leadInMs: num(r?.leadInMs, 'rhythm.leadInMs'),
+    intervalMs: [num(interval[0], 'rhythm.intervalMs', 1), num(interval[1], 'rhythm.intervalMs', 1)],
+    fasterPerNoteMs: num(r?.fasterPerNoteMs, 'rhythm.fasterPerNoteMs'),
+    breathEvery: num(r?.breathEvery, 'rhythm.breathEvery', 2),
+    windowsMs: { perfect: num(windows?.perfect, 'rhythm.windowsMs.perfect'), good: num(windows?.good, 'rhythm.windowsMs.good') },
+    allowanceMs: num(r?.allowanceMs, 'rhythm.allowanceMs')
+  }
+  if (!Number.isInteger(rhythm.breathEvery)) throw new Error('swimming rules: rhythm.breathEvery is not a whole number')
+  if (rhythm.intervalMs[0] < rhythm.intervalMs[1]) throw new Error('swimming rules: the rhythm must not slow down')
+  if (rhythm.windowsMs.perfect > rhythm.windowsMs.good) throw new Error('swimming rules: the perfect window is wider than the good one')
+  if (2 * rhythm.intervalMs[1] <= 2 * rhythm.windowsMs.good + rhythm.allowanceMs) throw new Error('swimming rules: two notes of the same arm can be hit by one press')
+  return rhythm
+}
+
 export function parsePoolRules(raw: unknown): PoolRules {
   const rules = raw as Json | null
   if (rules?.status !== 'ready') throw new Error('swimming rules: status is not ready')
   const pool = rules.pool as Json | undefined
   const stroke = rules.stroke as Json | undefined
+  const boost = stroke?.boostMps as Json | undefined
   const dive = rules.dive as Json | undefined
   const delay = rules.startBeepDelayRangeMs
   if (!pool || !stroke || !dive) throw new Error('swimming rules: missing pool, stroke or dive block')
@@ -123,14 +158,13 @@ export function parsePoolRules(raw: unknown): PoolRules {
     distancesM,
     beepDelayMs: [delay[0] as number, delay[1] as number],
     stroke: {
-      goodCadenceMs: num(stroke.goodCadenceMs, 'goodCadenceMs', 1),
-      toleranceMs: num(stroke.toleranceMs, 'toleranceMs'),
-      boostMps: num(stroke.boostMps, 'boostMps'),
-      slowBoostMps: num(stroke.slowBoostMps, 'slowBoostMps'),
-      offStepFactor: num(stroke.offStepFactor, 'offStepFactor'),
+      boostMps: { perfect: num(boost?.perfect, 'boostMps.perfect'), good: num(boost?.good, 'boostMps.good') },
+      missFactor: num(stroke.missFactor, 'missFactor'),
+      strayFactor: num(stroke.strayFactor, 'strayFactor'),
       maxSpeedMps: num(stroke.maxSpeedMps, 'maxSpeedMps', 0.1),
       dragPerS: num(stroke.dragPerS, 'dragPerS', 0.01),
     },
+    rhythm: parseRhythm(rules.rhythm),
     dive: { glideM: num(dive.glideM, 'glideM'), speedMps: num(dive.speedMps, 'speedMps') },
     timeLimitPerLengthMs: num(rules.timeLimitPerLengthMs, 'timeLimitPerLengthMs', 1000),
   }
@@ -149,8 +183,8 @@ export function createRace(entrants: { accountId: number, sessionId: string, nam
       distanceM: 0,
       speedMps: 0,
       at: now,
-      lastStrokeAt: null,
-      lastSide: null,
+      nextNote: 0,
+      hit: new Set<number>(),
       reactionMs: null,
       timeMs: null,
     })),
@@ -209,34 +243,65 @@ export function pressDive(race: Race, s: Swimmer, now: number, rules: PoolRules)
   s.distanceM = Math.min(rules.dive.glideM, race.distanceM)
   s.speedMps = rules.dive.speedMps
   s.at = now
+  while (noteTimeMs(rules.rhythm, s.nextNote) < (s.reactionMs as number)) s.nextNote += 1
   return 'started'
 }
 
-export function pressStroke(race: Race, s: Swimmer, side: StrokeSide, now: number, rules: PoolRules): StrokeResult {
-  if (s.phase === 'marks') return falseStart(race, s) ? 'false_start' : 'ignored'
-  if (s.phase !== 'swimming') return 'ignored'
-  glide(race, s, now, rules.stroke)
-  if (s.phase !== 'swimming') return 'ignored'
-  const { goodCadenceMs, toleranceMs, boostMps, slowBoostMps, offStepFactor, maxSpeedMps } = rules.stroke
-  const gap = s.lastStrokeAt === null ? goodCadenceMs : now - s.lastStrokeAt
-  const sameSide = s.lastSide === side
-  s.lastStrokeAt = now
-  s.lastSide = side
-  if (sameSide || gap < goodCadenceMs - toleranceMs) {
-    s.speedMps *= offStepFactor
-    return 'off'
-  }
-  const slow = gap > goodCadenceMs + toleranceMs
-  s.speedMps = Math.min(maxSpeedMps, s.speedMps + (slow ? slowBoostMps : boostMps))
-  return slow ? 'slow' : 'good'
+export function noteTimeMs(rhythm: RhythmRules, index: number): number {
+  const [first, last] = rhythm.intervalMs
+  const shrinking = rhythm.fasterPerNoteMs > 0 ? Math.ceil((first - last) / rhythm.fasterPerNoteMs) : Infinity
+  const n = Math.min(index, shrinking)
+  return rhythm.leadInMs + n * first - (rhythm.fasterPerNoteMs * n * (n - 1)) / 2 + (index - n) * last
 }
 
-export function advanceRace(race: Race, now: number, rules: PoolRules): void {
+export function noteKind(rhythm: RhythmRules, index: number): NoteKind {
+  if ((index + 1) % rhythm.breathEvery === 0) return 'breath'
+  return (index - Math.floor((index + 1) / rhythm.breathEvery)) % 2 === 0 ? 'left' : 'right'
+}
+
+const IGNORED: StrokeOutcome = { result: 'ignored', index: null }
+
+export function pressStroke(race: Race, s: Swimmer, kind: NoteKind, now: number, rules: PoolRules): StrokeOutcome {
+  if (s.phase === 'marks') return falseStart(race, s) ? { result: 'false_start', index: null } : IGNORED
+  if (s.phase !== 'swimming') return IGNORED
+  glide(race, s, now, rules.stroke)
+  if (s.phase !== 'swimming') return IGNORED
+  const raceMs = now - (race.beepAt as number)
+  const { windowsMs, allowanceMs } = rules.rhythm
+  for (let index = s.nextNote; noteTimeMs(rules.rhythm, index) - raceMs <= windowsMs.good; index += 1) {
+    if (s.hit.has(index) || noteKind(rules.rhythm, index) !== kind) continue
+    const error = pressError(noteTimeMs(rules.rhythm, index), raceMs, allowanceMs)
+    if (error > windowsMs.good) continue
+    const result = error <= windowsMs.perfect ? 'perfect' : 'good'
+    s.hit.add(index)
+    s.speedMps = Math.min(rules.stroke.maxSpeedMps, s.speedMps + rules.stroke.boostMps[result])
+    return { result, index }
+  }
+  s.speedMps *= rules.stroke.strayFactor
+  return { result: 'stray', index: null }
+}
+
+function expireNotes(race: Race, s: Swimmer, now: number, rules: PoolRules): number[] {
+  if (s.phase !== 'swimming') return []
+  const deadline = now - (race.beepAt as number) - rules.rhythm.allowanceMs - rules.rhythm.windowsMs.good
+  const missed: number[] = []
+  while (noteTimeMs(rules.rhythm, s.nextNote) < deadline) {
+    if (!s.hit.delete(s.nextNote)) {
+      s.speedMps *= rules.stroke.missFactor
+      missed.push(s.nextNote)
+    }
+    s.nextNote += 1
+  }
+  return missed
+}
+
+export function advanceRace(race: Race, now: number, rules: PoolRules): { swimmer: Swimmer, index: number }[] {
   for (const s of race.swimmers) glide(race, s, now, rules.stroke)
-  if (race.beepAt === null) return
+  if (race.beepAt === null) return []
+  const missed = race.swimmers.flatMap((s) => expireNotes(race, s, now, rules).map((index) => ({ swimmer: s, index })))
   const limit = race.beepAt + (race.distanceM / rules.lengthM) * rules.timeLimitPerLengthMs
-  if (now < limit) return
-  for (const s of race.swimmers) if (s.phase === 'swimming' || s.phase === 'marks') s.phase = 'dnf'
+  if (now >= limit) for (const s of race.swimmers) if (s.phase === 'swimming' || s.phase === 'marks') s.phase = 'dnf'
+  return missed
 }
 
 export function dropSwimmer(race: Race, accountId: number): void {

@@ -789,7 +789,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('pool_rescued', () => deps.poolSwim.onRescued())
     room.onMessage('pool_race_beep', () => deps.pool.onBeep())
     room.onMessage('pool_race_state', (data: PoolRaceState) => deps.pool.onState(data))
-    room.onMessage('pool_stroke_result', (data: { result: StrokeResult }) => deps.pool.onStrokeResult(data))
+    room.onMessage('pool_stroke_result', (data: { result: StrokeResult; index: number | null }) => deps.pool.onStrokeResult(data))
     room.onMessage('pool_race_result', (data: PoolRaceResult) => deps.pool.onResult(data))
     room.onMessage('pool_dive', (data: PoolDive) => deps.pool.onDive(data))
     room.onMessage('pool_dive_trick', (data: { sessionId: string; name: string; trick: Trick }) => deps.pool.onTrick(data))

@@ -5,16 +5,21 @@ import { matches } from '../../config/keybindings'
 import { EYE_HEIGHT } from '../../game/gameRoomConstants'
 import {
   RESULTS_SHOWN_MS,
+  STROKE_LANE_FLASH_MS,
+  STROKE_SHOWN_MS,
   approach,
   boardEdgeAt,
-  cadenceMeter,
+  fallingStrokes,
   formatRaceTime,
   mySwimmer,
+  noteForKey,
   parsePoolRules,
   racingPhase,
   splashScale,
+  swimYaw,
   swimmingAt,
   trickForKey,
+  type NoteKind,
   type PoolDive,
   type PoolRaceResult,
   type PoolRaceStart,
@@ -30,12 +35,14 @@ import { sportRulesUrl } from '../../game/sports/sportsSignup'
 const SWIM_GLIDE_MPS = 4
 const TOAST_GAP_MS = 3000
 const TRICK_SHOWN_MS = 3000
+const RACE_LOOK_PITCH = -0.2
 const FALL_MARGIN_MS = 400
 const TRICK_CLIPS = { twist: 'Twist', somersault: 'Somersault', cannonball: 'Cannonball' } as const
 
 export interface PoolRaceDeps {
   gameRoomRef: ShallowRef<Room | null>
   myPosition: { x: number; y: number; z: number }
+  setLook: (yaw: number, pitch: number) => void
   mySessionId: () => string | null
   getScene: () => THREE.Scene | undefined
   remotePlayers: () => readonly { sessionId: string }[]
@@ -64,6 +71,9 @@ export function usePoolRace(deps: PoolRaceDeps) {
   const lastStroke = shallowRef<{ at: number; result: StrokeResult } | null>(null)
   const lastTrick = shallowRef<{ at: number; text: string } | null>(null)
   const now = ref(performance.now())
+  const beepAt = ref<number | null>(null)
+  const judged = ref(new Set<number>())
+  const pressedAt = ref<Record<NoteKind, number>>({ left: -Infinity, right: -Infinity, breath: -Infinity })
   let resultUntil = 0
   let lastToastAt = -Infinity
   let jump: { at: number; airMs: number } | null = null
@@ -87,13 +97,14 @@ export function usePoolRace(deps: PoolRaceDeps) {
   function onKeyDown(e: KeyboardEvent): boolean {
     if (e.repeat) return false
     if (locked.value) {
-      if (matches('jump', e.code)) {
+      const note = noteForKey(e.code, matches)
+      if (!note) return false
+      if (note === 'breath' && me.value?.phase !== 'swimming') {
         send('pool_dive', {})
         return true
       }
-      const side = matches('moveLeft', e.code) ? 'left' : matches('moveRight', e.code) ? 'right' : null
-      if (!side) return false
-      send('pool_stroke', { side })
+      pressedAt.value = { ...pressedAt.value, [note]: performance.now() }
+      send('pool_stroke', { side: note })
       return true
     }
     const pool = rules.value
@@ -129,6 +140,7 @@ export function usePoolRace(deps: PoolRaceDeps) {
     if (lastTrick.value && now.value - lastTrick.value.at > TRICK_SHOWN_MS) lastTrick.value = null
     const swimmer = me.value
     const pool = rules.value
+    if (pool && locked.value) deps.setLook(swimYaw(pool, swimmer?.length ?? 1), RACE_LOOK_PITCH)
     if (!swimmer || swimmer.phase !== 'swimming' || !pool) return
     const step = SWIM_GLIDE_MPS * dt
     deps.myPosition.x = approach(deps.myPosition.x, swimmer.x, step)
@@ -141,7 +153,8 @@ export function usePoolRace(deps: PoolRaceDeps) {
     const pool = rules.value
     if (!lane || !pool || !start.value) return null
     const swimmer = me.value
-    const since = lastStroke.value && swimmer?.phase === 'swimming' ? now.value - lastStroke.value.at : null
+    const raceMs = beepAt.value === null ? null : now.value - beepAt.value
+    const judgement = lastStroke.value && lastStroke.value.result !== 'started' && lastStroke.value.result !== 'false_start' && now.value - lastStroke.value.at < STROKE_SHOWN_MS ? lastStroke.value.result : null
     return {
       lane: lane.lane,
       length: swimmer?.length ?? 1,
@@ -151,8 +164,9 @@ export function usePoolRace(deps: PoolRaceDeps) {
       phase: swimmer?.phase ?? 'marks',
       reaction: swimmer?.reactionMs === null || swimmer?.reactionMs === undefined ? null : formatRaceTime(swimmer.reactionMs),
       time: formatRaceTime(swimmer?.timeMs ?? null),
-      stroke: lastStroke.value?.result ?? null,
-      cadence: cadenceMeter(since, pool.stroke),
+      judgement,
+      notes: raceMs === null || !racingPhase(swimmer?.phase ?? 'marks') ? [] : fallingStrokes(pool.rhythm, raceMs, judged.value),
+      lit: { left: now.value - pressedAt.value.left < STROKE_LANE_FLASH_MS, right: now.value - pressedAt.value.right < STROKE_LANE_FLASH_MS, breath: now.value - pressedAt.value.breath < STROKE_LANE_FLASH_MS },
     }
   })
 
@@ -190,11 +204,14 @@ export function usePoolRace(deps: PoolRaceDeps) {
       state.value = null
       result.value = null
       lastStroke.value = null
+      beepAt.value = null
+      judged.value = new Set()
       if (!inMyRace()) return
       playMarksCall()
       deps.say(deps.marksText())
     },
     onBeep() {
+      beepAt.value = performance.now()
       playStartBeep()
     },
     onState(data: PoolRaceState) {
@@ -205,15 +222,16 @@ export function usePoolRace(deps: PoolRaceDeps) {
       }
       state.value = data
     },
-    onStrokeResult(data: { result: StrokeResult }) {
+    onStrokeResult(data: { result: StrokeResult; index: number | null }) {
       lastStroke.value = { at: performance.now(), result: data.result }
+      if (data.index !== null) judged.value = new Set(judged.value).add(data.index)
       if (data.result === 'false_start') {
         playFalseStart()
         deps.say(deps.falseStartText())
       } else if (data.result === 'started') {
         playSplash(splashScale(0.5, null))
       } else {
-        playStroke(data.result === 'good')
+        playStroke(data.result === 'perfect' || data.result === 'good')
       }
     },
     onResult(data: PoolRaceResult) {
@@ -254,6 +272,7 @@ export function usePoolRace(deps: PoolRaceDeps) {
       start.value = null
       state.value = null
       result.value = null
+      beepAt.value = null
       jump = null
     },
   }

@@ -1,11 +1,10 @@
 import { readFileSync } from 'node:fs'
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { approach, boardEdgeAt, cadenceMeter, formatRaceTime, inWater, parsePoolRules, racingPhase, splashScale, swimmingAt, swimwearOutfit, trickForKey } from './poolRace.ts'
+import { approach, boardEdgeAt, fallingStrokes, formatRaceTime, inWater, noteForKey, noteKind, noteTimeMs, parsePoolRules, swimYaw, racingPhase, splashScale, swimmingAt, swimwearOutfit, trickForKey } from './poolRace.ts'
 
 const read = (sport: string) => JSON.parse(readFileSync(new URL(`../../../../public/assets/sports/rules/${sport}.json`, import.meta.url), 'utf8'))
 const rules = parsePoolRules(read('swimming'), read('diving'))
-const stroke = { goodCadenceMs: 450, toleranceMs: 150 }
 
 test('reads the water and the three boards of the ready rules', () => {
   assert.equal(rules.water.length, 2)
@@ -27,18 +26,37 @@ test('refuses rules that are still placeholders', () => {
   assert.throws(() => parsePoolRules({ ...read('swimming'), status: 'placeholder' }, read('diving')))
 })
 
-test('is empty before the first stroke and fills with the time since the last one', () => {
-  assert.equal(cadenceMeter(null, stroke).fill, 0)
-  assert.equal(cadenceMeter(450, stroke).inWindow, true)
-  assert.equal(cadenceMeter(250, stroke).inWindow, false)
-  assert.equal(cadenceMeter(700, stroke).inWindow, false)
-  assert.equal(cadenceMeter(10_000, stroke).fill, 1)
+test('the chart matches the socket: 1200 ms lead-in, 560 ms apart then 4 ms closer down to 380 ms, a breath every eighth note', () => {
+  assert.deepEqual([0, 1, 2, 45, 46].map((i) => noteTimeMs(rules.rhythm, i)), [1200, 1760, 2316, 22_440, 22_820])
+  assert.deepEqual([0, 1, 6, 7, 8, 15, 16].map((i) => noteKind(rules.rhythm, i)), ['left', 'right', 'left', 'breath', 'right', 'breath', 'left'])
 })
 
-test('places the good window inside the bar', () => {
-  const { windowFrom, windowTo } = cadenceMeter(0, stroke)
-  assert.ok(windowFrom > 0)
-  assert.ok(windowTo < 1)
+test('a note shows 1200 ms before its time, reaches the line on time and leaves 270 ms later or once judged', () => {
+  assert.deepEqual(fallingStrokes(rules.rhythm, -1, new Set()), [])
+  assert.deepEqual(fallingStrokes(rules.rhythm, 0, new Set()), [{ index: 0, kind: 'left', progress: 0 }])
+  const onTime = fallingStrokes(rules.rhythm, 1200, new Set())
+  assert.deepEqual(onTime.map((n) => [n.index, n.kind]), [[0, 'left'], [1, 'right'], [2, 'left']])
+  assert.equal(onTime[0]!.progress, 1)
+  assert.deepEqual(fallingStrokes(rules.rhythm, 1470, new Set()).map((n) => n.index), [0, 1, 2])
+  assert.deepEqual(fallingStrokes(rules.rhythm, 1471, new Set()).map((n) => n.index), [1, 2])
+  assert.deepEqual(fallingStrokes(rules.rhythm, 1200, new Set([0])).map((n) => n.index), [1, 2])
+})
+
+test('the swimmer faces the turn wall on odd lengths and the start wall on even ones', () => {
+  assert.ok(rules.turnX < rules.startX)
+  assert.equal(swimYaw(rules, 1), Math.PI / 2)
+  assert.equal(swimYaw(rules, 2), -Math.PI / 2)
+  assert.equal(swimYaw(rules, 3), Math.PI / 2)
+})
+
+test('the arms are the left and right keys or arrows, the breath is the jump key', () => {
+  const bound = (action: string, code: string) => ({ moveLeft: 'KeyA', moveRight: 'KeyD', jump: 'Space' })[action] === code
+  assert.equal(noteForKey('KeyA', bound), 'left')
+  assert.equal(noteForKey('ArrowLeft', bound), 'left')
+  assert.equal(noteForKey('KeyD', bound), 'right')
+  assert.equal(noteForKey('ArrowRight', bound), 'right')
+  assert.equal(noteForKey('Space', bound), 'breath')
+  assert.equal(noteForKey('KeyW', bound), null)
 })
 
 test('formats times in seconds, then minutes past a minute', () => {

@@ -4,8 +4,8 @@ import { SWIMSUIT } from './poolWater.ts'
 import { parseSignupRules, type Match } from './signup.ts'
 import {
   type PoolRules,
+  type NoteKind,
   type Race,
-  type StrokeSide,
   type Swimmer,
   advanceRace,
   createRace,
@@ -134,7 +134,7 @@ function tickRace(room: GameRoom, match: Match, rules: PoolRules): void {
   const { race } = live
   const now = Date.now()
   if (fireBeep(race, now)) sendToPool(room, race, 'pool_race_beep', { venue: match.venue, serverNow: now })
-  advanceRace(race, now, rules)
+  for (const { swimmer, index } of advanceRace(race, now, rules)) clientOf(room, swimmer.sessionId)?.send('pool_stroke_result', { result: 'miss', index, reactionMs: swimmer.reactionMs })
   for (const s of race.swimmers) {
     if (s.phase !== 'swimming' && !(s.phase === 'finished' && s.at === now)) continue
     const { x } = lanePosition(rules, s.distanceM)
@@ -195,18 +195,18 @@ export function onPoolDive(room: GameRoom, client: GameClient, now = Date.now())
   const found = swimmerFor(room, client)
   if (!rules || !found) return
   const result = pressDive(found.race, found.swimmer, now, rules)
-  if (result !== 'ignored') client.send('pool_stroke_result', { result, reactionMs: found.swimmer.reactionMs })
+  if (result !== 'ignored') client.send('pool_stroke_result', { result, index: null, reactionMs: found.swimmer.reactionMs })
 }
 
-function parseSide(raw: unknown): StrokeSide | null {
-  return raw === 'left' || raw === 'right' ? raw : null
+function parseKind(raw: unknown): NoteKind | null {
+  return raw === 'left' || raw === 'right' || raw === 'breath' ? raw : null
 }
 
 export function onPoolStroke(room: GameRoom, client: GameClient, payload: ClientPayload, now = Date.now()): void {
   const rules = poolRules
-  const side = parseSide(payload?.side)
-  const found = side && swimmerFor(room, client)
-  if (!rules || !side || !found) return
-  const result = pressStroke(found.race, found.swimmer, side, now, rules)
-  if (result !== 'ignored') client.send('pool_stroke_result', { result, reactionMs: found.swimmer.reactionMs })
+  const kind = parseKind(payload?.side)
+  const found = kind && swimmerFor(room, client)
+  if (!rules || !kind || !found) return
+  const { result, index } = pressStroke(found.race, found.swimmer, kind, now, rules)
+  if (result !== 'ignored') client.send('pool_stroke_result', { result, index, reactionMs: found.swimmer.reactionMs })
 }
