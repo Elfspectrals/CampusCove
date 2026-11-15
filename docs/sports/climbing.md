@@ -49,7 +49,8 @@ Disconnect or letting go: the climb stops, no time recorded.
 - Click windows per colour (green 900 ms, blue 700, red 550, black 420), each opening 700 ms after the hold lights while
   its ring closes; 150 ms network allowance after the window. Grip 100, a miss costs 20 / 25 / 30 / 35 by colour.
   A click before the window, after it, or on another hold is a miss and lights the same hold again.
-- The lent shoes are not shown: no shoes model, the loan only unlocks the wall.
+- The lent shoes are shown (decided 2026-11-15): while a player holds the `climbing_shoes` loan, other players see `wear/shoes/climbing_shoes` in place of their shoes (`front/src/game/sports/climbingWear.ts`), on every body build.
+- First-person arms play their own climbing clips (`FpClimbReachL/R`, `FpClimbHang`, `FpClimbFall`, `FpClimbLower`, `FpClimbTop`), crossfaded like the other arm clips; other players see the third-person `Climb*` clips.
 - 6 lead wall lanes of 2.9 m: 4 coloured routes and 2 twin speed lanes (`speed_1`, `speed_2`, red, 14 holds) in the
   middle, the coach at their foot. A topped route is lowered by the belay too, with its time kept.
 - Every topped free climb is recorded as a solo `sports_matches` row (venue = line id, result `finished`, `timeMs`) for

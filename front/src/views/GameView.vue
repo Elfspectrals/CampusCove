@@ -896,6 +896,10 @@ const climbing = useClimbing({
   say: (text) => survival.say(text),
   play: (sound) => sfx.play(CLIMB_SOUNDS[sound]),
   animate: (sessionId, pose, move) => realtime.setRemoteClimbAnimation(sessionId, pose, move),
+  animateSelf: (pose, move) => {
+    arms?.setClimbPose(pose)
+    if (move) arms?.climbMove(move)
+  },
 })
 const { hud: climbHud, climbing: climbingNow } = climbing
 const climbingBoard = useClimbingBoard({

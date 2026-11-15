@@ -10,6 +10,8 @@ import { parseCharacterLook, type CharacterLook } from '../../avatar/characterLo
 import { createModularCharacter } from '../../avatar/modularCharacter'
 import { WEAR_SLOTS, wearSignature, type WearModels } from '../../avatar/modularCharacterLogic'
 import { createActionBubble, type AvatarAction } from '../../game/actionBubble'
+import { climbingWear } from '../../game/sports/climbingWear'
+import { hasSportsLoan } from '../../game/sports/sportsLoans'
 import { createChatBubble, type ChatBubble } from '../../game/chatBubble'
 import { EYE_HEIGHT } from '../../game/gameRoomConstants'
 import { createNameTag, nameTagVisible, type NameTag } from '../../game/nameTag'
@@ -59,6 +61,7 @@ interface RemoteAvatar {
   ry: number
   color: number
   outfit: string
+  appearance: AppearanceUpdate
   punchPose: PunchPose
   punchOffsetX: number
   punchOffsetZ: number
@@ -129,6 +132,8 @@ function placeAvatar(group: THREE.Group, x: number, y: number, z: number, ry: nu
 function badgeIconPaths(badges: readonly BadgeCode[]): string[] {
   return overHeadBadges(badges).map((badge) => ICONS[BADGES[badge].icon])
 }
+
+const CLIMBING_SHOES_LOAN = 'climbing_shoes'
 
 export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
   const avatars = new Map<string, RemoteAvatar>()
@@ -235,7 +240,7 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     }
 
     const colors = parseSlotHexes(data.slotHexes)
-    const models = parseSlotModels(data.slotModels)
+    const models = climbingWear(parseSlotModels(data.slotModels), hasSportsLoan(sessionId, CLIMBING_SHOES_LOAN))
     const look = parseCharacterLook(data.character)
     const group = await loadModel(models, colors, look, data.color)
     if (upsertTokenByUserId.get(data.id) !== token || renderTokenBySessionId.get(sessionId) !== renderToken) {
@@ -266,6 +271,7 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
       ry,
       color: data.color,
       outfit: wearSignature(models, colors, look),
+      appearance: { slotHexes: data.slotHexes, slotModels: data.slotModels, character: data.character },
       punchPose: idlePunchPose(),
       punchOffsetX: 0,
       punchOffsetZ: 0,
@@ -296,9 +302,10 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
       return
     }
     const colors = parseSlotHexes(update.slotHexes)
-    const models = parseSlotModels(update.slotModels)
+    const models = climbingWear(parseSlotModels(update.slotModels), hasSportsLoan(sessionId, CLIMBING_SHOES_LOAN))
     const look = parseCharacterLook(update.character)
     const outfit = wearSignature(models, colors, look)
+    entry.appearance = update
     if (outfit === entry.outfit) return
 
     const renderToken = nextRenderToken(sessionId)
@@ -325,7 +332,7 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     const heldTool = latest.heldTool ? createRemoteHeldTool(group, latest.heldTool.code) : null
     const nameTag = createNameTag(group, latest.pseudo, badgeIconPaths(latest.badges), wantedStarsBySession.get(sessionId) ?? 0)
     const voiceIcon = createVoiceIcon(group)
-    const rebuilt = { ...latest, group, nameTag, voiceIcon, chatBubble: null, outfit, punchOffsetX: 0, punchOffsetZ: 0, racePint, heldTool }
+    const rebuilt = { ...latest, group, nameTag, voiceIcon, chatBubble: null, outfit, appearance: update, punchOffsetX: 0, punchOffsetZ: 0, racePint, heldTool }
     avatars.set(sessionId, rebuilt)
     applySeat(rebuilt)
   }
@@ -352,6 +359,11 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
   function setPicking(sessionId: string, picking: boolean) {
     const entry = avatars.get(sessionId)
     if (entry) setAvatarPicking(entry.group, picking)
+  }
+
+  function refreshLentWear(sessionId: string) {
+    const entry = avatars.get(sessionId)
+    if (entry) void updateAppearance(sessionId, entry.appearance)
   }
 
   function setClimbAnimation(sessionId: string, pose: AvatarClimbPose, move: AvatarClimbMove | null) {
@@ -535,5 +547,5 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     }
   }
 
-  return { upsert, updateAppearance, setTarget, setSeated, setPicking, setClimbAnimation, setHeldTool, setRacePint, setBadges, pseudoOf, positionOf, setVoiceState, setWantedStars, players, accountOf, showAction, showChat, showPunch, showHit, remove, clear, tick }
+  return { upsert, updateAppearance, refreshLentWear, setTarget, setSeated, setPicking, setClimbAnimation, setHeldTool, setRacePint, setBadges, pseudoOf, positionOf, setVoiceState, setWantedStars, players, accountOf, showAction, showChat, showPunch, showHit, remove, clear, tick }
 }

@@ -12,7 +12,7 @@ const PIECES = {
   head_accessory: ['gamer', 'studio', 'cat_ear', 'neon', 'pilot', 'straw_hat', 'bandana', 'sheriff_hat'],
   top: ['basic', 'tee', 'tank', 'hoodie', 'varsity', 'sweater', 'track_jacket', 'jersey', 'sports_bra', 'plaid_shirt', 'farm_apron', 'flannel_jacket', 'staff_polo', 'newcomer', 'sheriff_shirt', 'team_jersey_red', 'team_jersey_blue', 'tracksuit'],
   bottom: ['basic', 'jeans', 'joggers', 'cargo', 'shorts', 'skirt', 'track_pants', 'basketball_shorts', 'leggings', 'dungarees', 'newcomer', 'tracksuit'],
-  shoes: ['basic', 'sneakers', 'high_tops', 'boots', 'slides', 'runners', 'rubber_boots', 'newcomer'],
+  shoes: ['basic', 'sneakers', 'high_tops', 'boots', 'slides', 'runners', 'rubber_boots', 'newcomer', 'climbing_shoes'],
 }
 /** Body fits (front/scripts/skins/fit.py): m_normal is model.glb, the others model_<fit>.glb, for the base and these slots. */
 const FITS = ['m_slim', 'm_normal', 'm_broad', 'f_slim', 'f_normal', 'f_broad']

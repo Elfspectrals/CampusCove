@@ -47,6 +47,7 @@ export interface ClimbingDeps {
   say: (text: string) => void
   play: (sound: ClimbSound) => void
   animate: (sessionId: string, pose: ClimbPose, move: ClimbMove | null) => void
+  animateSelf: (pose: ClimbPose, move: ClimbMove | null) => void
 }
 
 interface LineMeshes {
@@ -330,10 +331,9 @@ export function useClimbing(deps: ClimbingDeps) {
       else next.set(data.sessionId, data)
       climbs.value = next
       if (data.event === 'hold' || data.event === 'top') spawnPuff(data)
-      if (data.sessionId !== mySessionId()) {
-        const { pose, move } = climbAnimation(data, lineOf(data))
-        deps.animate(data.sessionId, pose, move)
-      }
+      const { pose, move } = climbAnimation(data, lineOf(data))
+      if (data.sessionId === mySessionId()) deps.animateSelf(pose, move)
+      else deps.animate(data.sessionId, pose, move)
       if (data.sessionId !== mySessionId()) return
       const sound = soundFor(data)
       if (sound) deps.play(sound)
@@ -344,6 +344,7 @@ export function useClimbing(deps: ClimbingDeps) {
     },
     onRoomJoined(): void {
       climbs.value = new Map()
+      deps.animateSelf(null, null)
     },
   }
 
