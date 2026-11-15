@@ -39,17 +39,13 @@ export interface DanceJudge {
 }
 
 const ARROW_LANES: Readonly<Record<string, number>> = { ArrowLeft: 0, ArrowDown: 1, ArrowUp: 2, ArrowRight: 3 }
-const MOVE_LANES: ReadonlyArray<[MoveAction, number]> = [
-  ['moveLeft', 0],
-  ['moveBack', 1],
-  ['moveForward', 2],
-  ['moveRight', 3],
-]
+export const DANCE_LANE_ACTIONS: readonly MoveAction[] = ['moveLeft', 'moveBack', 'moveForward', 'moveRight']
 
 export function laneOfKey(code: string, isMoveKey: (action: MoveAction, code: string) => boolean): number | null {
   const arrow = ARROW_LANES[code]
   if (arrow !== undefined) return arrow
-  return MOVE_LANES.find(([action]) => isMoveKey(action, code))?.[1] ?? null
+  const lane = DANCE_LANE_ACTIONS.findIndex((action) => isMoveKey(action, code))
+  return lane < 0 ? null : lane
 }
 
 function finite(v: unknown, what: string): number {

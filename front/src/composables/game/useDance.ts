@@ -40,7 +40,7 @@ export function useDance(deps: DanceDeps) {
   const boardsFailed = ref(false)
   const scores = shallowRef<ReadonlyMap<string, { score: number; combo: number }>>(new Map())
   const judged = shallowRef<ReadonlySet<number>>(new Set())
-  const lastJudgement = shallowRef<{ judgement: Judgement; at: number; synced: boolean } | null>(null)
+  const lastJudgement = shallowRef<{ judgement: Judgement; lane: number; at: number; synced: boolean } | null>(null)
   const teamScore = ref<number | null>(null)
   const clockOffset = ref(0)
   const clientNow = ref(Date.now())
@@ -103,7 +103,7 @@ export function useDance(deps: DanceDeps) {
     if (data.teamScore !== null) teamScore.value = data.teamScore
     if (data.sessionId !== mySessionId()) return
     judged.value = new Set([...judged.value, data.index])
-    lastJudgement.value = { judgement: data.judgement, at: clientNow.value, synced: data.synced }
+    lastJudgement.value = { judgement: data.judgement, lane: data.lane, at: clientNow.value, synced: data.synced }
     music?.hit(data.judgement)
   }
 

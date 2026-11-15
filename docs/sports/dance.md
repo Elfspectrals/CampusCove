@@ -24,7 +24,7 @@ The four arrows or ZQSD / WASD, one per column. Movement is locked during a song
 
 ### HUD
 
-Note highway, judgement ("Perfect", "Good", "Miss"), combo, score; in team mode the sync bonus; in duel mode the other dancers' scores.
+Note highway, judgement ("Perfect", "Good", "Miss"), combo, score. Each lane has its own colour and ends on a keycap that shows the arrow and the key bound to it (read from the player's bindings); the notes carry the same arrow and key, the lane lights up on a press, and the judgement appears over the keycap of its lane, which glows on a hit and greys on a miss (second review, 2026-11-15: the keys to press were not clear); in team mode the sync bonus; in duel mode the other dancers' scores.
 
 ### Server authority
 

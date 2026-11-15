@@ -313,6 +313,7 @@ Decision (2026-11-15): football plays like FIFA and basketball like NBA 2K, and 
 Decision (2026-11-15, second review of the sports): the gear loan becomes a block of the coach panel; football players stay on the pitch and get more keys; basketball gets the NBA 2K camera (behind the attacker, turning at each change of possession); the tennis cue becomes a mark on the court where the ball arrives, like the star of Mario Tennis; the punch bag starts a combo round; the dance lanes show their keys; ice skating gets a figure routine on music (the user's choice over a trick line or a better race); every sport must be playable alone, against opponents run by the server (the user's choice over scored drills).
 
 - [done] Gear loan in the coach panel: a block with the price and a Borrow button when the player lacks the gear, no more banner with Y / N. Not played yet.
+- [done] Dance: a keycap per lane with the arrow and the bound key, tinted lanes, the judgement over its lane. Not played yet.
 - [todo] Basketball: NBA 2K camera, timing words, dribble moves.
 - [todo] Tennis: landing mark on the court, charge while standing in it.
 - [todo] Boxing: combo round on the punch bag, gloves on screen.

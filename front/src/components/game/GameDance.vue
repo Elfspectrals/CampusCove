@@ -14,7 +14,8 @@ const props = defineProps<{
   board: DancerScore[]
   mine: DancerScore | null
   teamScore: number | null
-  judgement: { judgement: Judgement; synced: boolean } | null
+  judgement: { judgement: Judgement; lane: number; synced: boolean } | null
+  laneKeys: string[]
   litLanes: boolean[]
   result: DanceEnd | null
   boards: { solo: SportsBoard; team: SportsBoard } | null
@@ -26,7 +27,11 @@ const { t, te } = useI18n()
 
 const LANE_COLOURS = ['#ff5fa2', '#38c6f4', '#ffd23f', '#5fd068']
 const LANE_ARROWS = ['←', '↓', '↑', '→']
+const MISS_COLOUR = '#7c8496'
 const HIGHWAY_PX = 300
+const LANE_PX = 72
+const KEYCAP_PX = 56
+const NOTE_PX = 60
 const BOARD_ROWS = 5
 const LINE_PX = 260
 
@@ -38,7 +43,17 @@ const judgementClass: Record<Judgement, string> = { perfect: 'text-sun', good: '
 const resultRows = computed(() => [...(props.result?.dancers ?? [])].sort((a, b) => b.score - a.score))
 
 function noteTop(note: FallingNote): string {
-  return `${note.progress * LINE_PX - 14}px`
+  return `${note.progress * LINE_PX - 16}px`
+}
+
+function laneLeft(lane: number, width: number): number {
+  return lane * LANE_PX + (LANE_PX - width) / 2
+}
+
+function receptorTone(lane: number): Record<string, string> {
+  const judged = props.judgement?.lane === lane ? props.judgement.judgement : null
+  const colour = judged === 'miss' ? MISS_COLOUR : LANE_COLOURS[lane]!
+  return { borderColor: colour, color: colour, boxShadow: judged && judged !== 'miss' && !props.reducedEffects ? `0 0 14px ${colour}` : 'none' }
 }
 
 function resultLabel(row: DanceEnd['dancers'][number]): string {
@@ -51,31 +66,43 @@ function resultLabel(row: DanceEnd['dancers'][number]): string {
 <template>
   <div class="pointer-events-none absolute inset-0 z-[35] flex items-end justify-center pb-24 select-none">
     <section v-if="!result" class="cc-hud pointer-events-auto flex animate-cc-pop items-stretch gap-4 p-3" :aria-label="t('sports.dance.title')">
-      <div v-if="dancing" class="relative overflow-hidden rounded-lg border-2 border-line/15 bg-ink-950/80" :style="{ width: `${DANCE_LANES * 56}px`, height: `${HIGHWAY_PX}px` }">
+      <div v-if="dancing" class="relative overflow-hidden rounded-lg border-2 border-line/15 bg-ink-950/80" :style="{ width: `${DANCE_LANES * LANE_PX}px`, height: `${HIGHWAY_PX}px` }">
         <div
           v-for="lane in lanes"
           :key="`col-${lane}`"
           class="absolute inset-y-0 border-r border-line/10 transition-colors"
-          :style="{ left: `${lane * 56}px`, width: '56px', background: litLanes[lane] ? `${LANE_COLOURS[lane]}33` : 'transparent' }"
+          :style="{ left: `${lane * LANE_PX}px`, width: `${LANE_PX}px`, background: `${LANE_COLOURS[lane]}${litLanes[lane] ? '4d' : '14'}` }"
         />
         <div class="absolute inset-x-0 h-1 bg-white/70" :style="{ top: `${LINE_PX}px` }" />
         <div
           v-for="lane in lanes"
           :key="`target-${lane}`"
-          class="absolute flex size-11 items-center justify-center rounded-full border-2 text-lg font-bold"
-          :style="{ left: `${lane * 56 + 6}px`, top: `${LINE_PX - 20}px`, borderColor: LANE_COLOURS[lane], color: LANE_COLOURS[lane] }"
+          class="absolute flex h-12 flex-col items-center justify-center rounded-lg border-2 bg-ink-950/90 leading-none transition-transform"
+          :class="litLanes[lane] ? 'scale-95' : ''"
+          :style="{ left: `${laneLeft(lane, KEYCAP_PX)}px`, top: `${LINE_PX - 22}px`, width: `${KEYCAP_PX}px`, ...receptorTone(lane) }"
         >
-          {{ LANE_ARROWS[lane] }}
+          <span class="text-base font-bold uppercase">{{ laneKeys[lane] }}</span>
+          <span class="text-xs font-bold">{{ LANE_ARROWS[lane] }}</span>
         </div>
         <div
           v-for="note in notes"
           :key="note.index"
-          class="absolute flex h-7 w-11 items-center justify-center rounded-md text-sm font-bold text-ink-950"
+          class="absolute flex h-8 items-center justify-center gap-1 rounded-md text-sm font-bold text-ink-950"
           :class="reducedEffects ? '' : 'shadow-[0_0_10px_rgb(255_255_255/0.35)]'"
-          :style="{ left: `${note.lane * 56 + 6}px`, top: noteTop(note), background: LANE_COLOURS[note.lane] }"
+          :style="{ left: `${laneLeft(note.lane, NOTE_PX)}px`, width: `${NOTE_PX}px`, top: noteTop(note), background: LANE_COLOURS[note.lane] }"
         >
-          {{ LANE_ARROWS[note.lane] }}
+          <span class="uppercase">{{ laneKeys[note.lane] }}</span>
+          <span class="text-xs">{{ LANE_ARROWS[note.lane] }}</span>
         </div>
+        <p
+          v-if="judgement"
+          :key="`${judgement.judgement}-${judgement.lane}-${songMs}`"
+          class="absolute m-0 text-center font-display text-sm"
+          :class="[judgementClass[judgement.judgement], reducedEffects ? '' : 'animate-cc-pop']"
+          :style="{ left: `${judgement.lane * LANE_PX}px`, width: `${LANE_PX}px`, top: `${LINE_PX - 46}px` }"
+        >
+          {{ t(`sports.dance.judgements.${judgement.judgement}`) }}
+        </p>
         <p v-if="countdown > 0" class="absolute inset-x-0 top-1/3 m-0 text-center font-display text-4xl text-sun">{{ countdown }}</p>
       </div>
       <div class="flex w-48 flex-col gap-2">
@@ -84,9 +111,6 @@ function resultLabel(row: DanceEnd['dancers'][number]): string {
           <p class="m-0 font-display text-3xl text-fog">{{ mine?.score ?? 0 }}</p>
           <p class="m-0 text-sm font-bold text-mist">{{ t('sports.dance.combo', { n: mine?.combo ?? 0 }) }}</p>
         </template>
-        <p v-if="judgement" :key="`${judgement.judgement}-${songMs}`" class="m-0 font-display text-2xl" :class="[judgementClass[judgement.judgement], reducedEffects ? '' : 'animate-cc-pop']">
-          {{ t(`sports.dance.judgements.${judgement.judgement}`) }}
-        </p>
         <p v-if="judgement?.synced" class="m-0 text-xs font-bold text-sun">{{ t('sports.dance.sync') }}</p>
         <p v-if="mode === 'team' && teamScore !== null" class="m-0 text-sm font-bold text-fog">{{ t('sports.dance.teamScore', { n: teamScore }) }}</p>
         <ul v-if="mode === 'duel' && others.length" class="m-0 flex list-none flex-col gap-1 rounded-lg bg-ink-950/50 p-2">
@@ -96,7 +120,7 @@ function resultLabel(row: DanceEnd['dancers'][number]): string {
           </li>
         </ul>
         <p v-if="!dancing" class="m-0 text-xs text-mist">{{ t('sports.dance.watching') }}</p>
-        <p v-else class="m-0 text-xs text-mist">{{ t('sports.dance.keys') }}</p>
+        <p v-else class="m-0 text-xs text-mist">{{ t('sports.dance.keys', { keys: laneKeys.join(' ') }) }}</p>
       </div>
     </section>
     <section v-else class="cc-hud pointer-events-auto w-[min(420px,94vw)] animate-cc-pop overflow-hidden p-0" :aria-label="t('sports.dance.resultTitle')">

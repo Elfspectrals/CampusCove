@@ -122,6 +122,7 @@ import { FREE_PLAY_COACHES } from '../game/sports/gymMatch'
 import { useTennis } from '../composables/game/useTennis'
 import { TENNIS_RACKET } from '../game/sports/tennis'
 import { useDance } from '../composables/game/useDance'
+import { DANCE_LANE_ACTIONS } from '../game/sports/danceHud'
 import { useEmoteWheel } from '../composables/game/useEmoteWheel'
 import { useClimbing } from '../composables/game/useClimbing'
 import { useClimbingBoard } from '../composables/game/useClimbingBoard'
@@ -2685,6 +2686,7 @@ const crosshairClass = computed(() => {
       :team-score="danceTeamScore"
       :judgement="danceJudgement"
       :lit-lanes="danceLitLanes"
+      :lane-keys="DANCE_LANE_ACTIONS.map((action) => actionKeyLabels(action)[0] ?? '')"
       :result="danceResult"
       :boards="danceBoards"
       :boards-failed="danceBoardsFailed"
