@@ -15,8 +15,9 @@ const props = defineProps<{
     team: GymTeam | null
     meter: { fill: number; goodFrom: number | null } | null
     cooldown: number | null
+    carrying: boolean
   } | null
-  freeHud: { sport: GymSport; meter: { fill: number; goodFrom: number | null } | null } | null
+  freeHud: { sport: GymSport; meter: { fill: number; goodFrom: number | null } | null; carrying: boolean } | null
   banner: GymBanner | null
   rimPop: GymRimPop | null
   releaseLabel: GymShotRelease | null
@@ -85,6 +86,7 @@ const hint = computed(() => {
         <span class="block h-full rounded-full" :class="hud.team ? TEAM_BG[hud.team] : 'bg-fog'" :style="{ width: `${hud.cooldown * 100}%` }" />
       </span>
     </div>
+    <p v-if="hud.carrying" class="m-0 text-[11px] font-bold uppercase tracking-[0.14em] text-mint">{{ t('sports.gym.carrying') }}</p>
     <p v-if="hint" class="m-0 text-[10px] text-mist">{{ hint }}</p>
   </section>
   <section v-if="!hud && freeHud" class="cc-hud pointer-events-none absolute left-1/2 top-3 z-10 flex -translate-x-1/2 flex-col items-center gap-1 px-4 py-2" :aria-label="t('sports.gym.free.title')">
@@ -92,6 +94,7 @@ const hint = computed(() => {
     <span v-if="freeHud.meter" class="relative block h-2 w-48 overflow-hidden rounded-full bg-ink-950/70">
       <span class="relative block h-full rounded-full bg-sun" :style="{ width: `${freeHud.meter.fill * 100}%` }" />
     </span>
+    <p v-if="freeHud.carrying" class="m-0 text-[11px] font-bold uppercase tracking-[0.14em] text-mint">{{ t('sports.gym.carrying') }}</p>
     <p v-if="hint" class="m-0 text-[10px] text-mist">{{ hint }}</p>
   </section>
   <p

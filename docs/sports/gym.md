@@ -101,6 +101,7 @@ The gym tasks count every recorded match and ignore the core's `counts_for_tasks
 - Venues register at boot from `server.ts` (`loadGymVenues()`), not by an import in `sports/index.ts`: their rules are
   read over HTTP at boot, and reading them at import breaks the socket tests that import the index.
 - After a goal or a basket only the conceding team may touch the ball for 3 s (football: centre; basketball: under the basket).
+- The ball you carry is out of view in first person (a football sits at your feet), so the HUD says "You have the ball" under the score, and your dribbled basketball rises into view at the top of each bounce (0.9 m ahead, 1.1 m high). Decided after the 2026-11-15 playtest, where the carrier could not tell they had the ball.
 
 ## Animations
 
@@ -113,3 +114,23 @@ Clips on the shared human rig (`front/scripts/skins/clips.py`, table in `docs/an
 ## Scoreboard
 
 The `gym_scoreboard` decor on the east wall carries a live screen: `court.json` `scoreboard` (`x, y, z, width, height, facing`) is the screen rectangle, and the front draws the teams' scores and the clock on a canvas plane there during a match.
+
+## Playtest (2026-11-15)
+
+Played on a separate local stack with one browser player and three socket bots. Seen:
+- the hall, with the AI goals and hoops and the live scoreboard;
+- free play: a borrowed basketball and a borrowed football, and a perfect shot that dropped through the hoop;
+- the coach sign-up screen;
+- a 1 v 1 basketball match, ended by forfeit: a 2-pointer, a 3-pointer from the browser with the "Good" label, the "+2" pop, opponents in the team jersey, the scoreboard following the score;
+- a 2 v 2 football match to full time: a goal, a won tackle, the scoreboard.
+
+Checked in the database: `football_matches` +1 for all four players; the forfeited player gets no basketball count.
+
+Also checked:
+- an admin grant of the red team jersey;
+- wearing it from the inventory, and other players receiving its model.
+
+Not played:
+- buying a pass or a jersey at Summit Sports (the passes were bought through `SportsPassService`);
+- the 0.8 s freeze after a missed tackle;
+- hat trick and sharpshooter (covered by tests).

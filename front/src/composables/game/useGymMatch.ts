@@ -67,8 +67,8 @@ const MARKER_COLOURS = { red: 0xe0604a, blue: 0x3f8fd1, free: 0xf2c230 } as cons
 const RIM_POP_RISE_M = 0.8
 const FREE_REACH_M = 2
 const MY_FOOT_AHEAD_M = 0.6
-const MY_HAND_AHEAD_M = 0.45
-const MY_HAND_HEIGHT_M = 0.9
+const MY_HAND_AHEAD_M = 0.9
+const MY_HAND_HEIGHT_M = 1.1
 const MATCH_BALL = 'match'
 const SPORTS: readonly GymSport[] = ['football', 'basketball']
 const BALL_MODEL_URL: Record<GymSport, string> = { football: '/assets/decor/gym_football/model.glb', basketball: '/assets/decor/gym_basketball/model.glb' }
@@ -534,6 +534,7 @@ export function useGymMatch(deps: GymMatchDeps) {
       team: team.value,
       meter,
       cooldown,
+      carrying: current.owner !== null && current.owner === mySessionId(),
     }
   })
 
@@ -544,7 +545,7 @@ export function useGymMatch(deps: GymMatchDeps) {
     if (!ball) return null
     const r = rules.value[ball.sport]
     const held = holdStartedAt.value
-    return { sport: ball.sport, meter: r && held !== null ? { fill: meterFill(r.meter, clientNow.value - held), goodFrom: null } : null }
+    return { sport: ball.sport, meter: r && held !== null ? { fill: meterFill(r.meter, clientNow.value - held), goodFrom: null } : null, carrying: ball.owner === mySessionId() }
   })
 
   const myBall = computed(() => {
