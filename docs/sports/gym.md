@@ -101,7 +101,7 @@ The gym tasks count every recorded match and ignore the core's `counts_for_tasks
 - Venues register at boot from `server.ts` (`loadGymVenues()`), not by an import in `sports/index.ts`: their rules are
   read over HTTP at boot, and reading them at import breaks the socket tests that import the index.
 - After a goal or a basket only the conceding team may touch the ball for 3 s (football: centre; basketball: under the basket).
-- The ball you carry is out of view in first person (a football sits at your feet), so the HUD says "You have the ball" under the score, and your dribbled basketball rises into view at the top of each bounce (0.9 m ahead, 1.1 m high). Decided after the 2026-11-15 playtest, where the carrier could not tell they had the ball.
+- In first person your dribbled basketball rises into view at the top of each bounce (0.9 m ahead, 1.1 m high), and the football you carry shows at your feet as soon as you look down. No HUD line says you have the ball (decided 2026-11-15: the ball on screen says it).
 
 ## Animations
 
@@ -130,7 +130,10 @@ Also checked:
 - an admin grant of the red team jersey;
 - wearing it from the inventory, and other players receiving its model.
 
-Not played:
-- buying a pass or a jersey at Summit Sports (the passes were bought through `SportsPassService`);
-- the 0.8 s freeze after a missed tackle;
-- hat trick and sharpshooter (covered by tests).
+Second session, same day:
+- a football carried in first person shows at your feet when you look down;
+- a day pass bought from the clerk at the reception: 40 cash taken, the end of the pass moved one day later on the panel;
+- the blue team jersey put in the basket at Summit Sports and paid at the counter: 110 cash taken (`shop_purchase`);
+- a missed tackle from the browser: the player stands still for about 0.8 s, then walks again; a bot's moves are refused with `tackled` for the same time;
+- a bot's hat trick in a 2 v 2 football match (3-0 at full time): `hat_tricks` 1, Hat trick bronze reached and `task_done` sent;
+- a bot's five three-pointers in a 1 v 1 basketball match (15-0), watched from the spectator HUD: `sharpshooter_matches` 1, Sharpshooter bronze reached and `task_done` sent.
