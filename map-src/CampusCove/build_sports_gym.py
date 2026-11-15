@@ -13,6 +13,8 @@ importlib.reload(L)
 import lib_site as LS
 importlib.reload(LS)
 import bpy
+from mathutils import Vector
+from mathutils.bvhtree import BVHTree
 
 KEY = "sports_gym"
 NAME = "Cove Gymnasium"
@@ -59,14 +61,9 @@ M["yellow"] = L.make_mat("IN_GymLineYellow", "#f2c230", 0.6, "noise", 0.0)
 M["barrier"] = L.make_mat("IN_GymBarrier", "#24405e", 0.7, "noise", 0.02)
 M["seat"] = L.make_mat("IN_GymSeat", "#2a9d8f", 0.7, "stripes", 0.03, accent="#248a7e")
 M["step"] = L.make_mat("IN_GymStand", "#8d9196", 0.85, "noise", 0.03)
-M["post"] = L.make_mat("IN_GymGoalFrame", "#f4f4f4", 0.4, "noise", 0.0)
-M["net"] = L.make_mat("IN_GymNet", "#ffffff", 0.9, "noise", 0.0, alpha=0.35)
-M["rim"] = L.make_mat("IN_GymRim", "#e4572e", 0.4, "noise", 0.0)
-M["board"] = L.make_mat("IN_GymBackboard", "#dfeff7", 0.1, "noise", 0.0, alpha=0.5)
 M["hoop"] = L.make_mat("IN_GymHoopPost", "#2f3a45", 0.5, "noise", 0.02)
 M["dark"] = L.make_mat("IN_GymScoreboard", "#1c2229", 0.6, "noise", 0.01)
 M["sign"] = L.make_mat("IN_GymSignText", "#ffffff", 0.4, "noise", 0.0, emit="#ffffff", emit_strength=0.8)
-M["score"] = L.make_mat("IN_GymScoreDigits", "#ffb347", 0.4, "noise", 0.0, emit="#ffa531", emit_strength=1.2)
 M["teal"] = L.make_mat("IN_SportsTeal", "#2a9d8f", 0.7, "noise", 0.03)
 
 objs = []
@@ -170,86 +167,150 @@ for k in range(ROWS):
             cols.add(f"StandStair{j}_{k}{s}", (sx0 + sx1) / 2, sz, 0.0, sx1 - sx0, STAIR_W, h)
 
 
-def goal(end, zl, out):
-    gz = zl + out * GOAL_DEPTH / 2
-    parts = []
-    for side, gx in (("N", COURT_CX - GOAL_W / 2), ("S", COURT_CX + GOAL_W / 2)):
-        parts.append(L.box(coll, f"Goal_{end}_Post{side}", gx, zl, 0.0, 0.08, 0.08, GOAL_H, M["post"]))
-        parts.append(L.box(coll, f"Goal_{end}_Back{side}", gx, zl + out * GOAL_DEPTH, 0.0, 0.05, 0.05, GOAL_H * 0.7, M["post"]))
-        parts.append(L.box(coll, f"Goal_{end}_Side{side}", gx, gz, 0.0, 0.03, GOAL_DEPTH, 0.03, M["post"]))
-        cols.add(f"Goal_{end}_Post{side}", gx, zl, 0.0, 0.1, 0.1, GOAL_H)
-        cols.add(f"Goal_{end}_Back{side}", gx, zl + out * GOAL_DEPTH, 0.0, 0.08, 0.08, GOAL_H * 0.7)
-    parts.append(L.box(coll, f"Goal_{end}_Bar", COURT_CX, zl, GOAL_H - 0.08, GOAL_W + 0.08, 0.08, 0.08, M["post"]))
-    frame = L.join(coll, f"Goal_{end}_Frame", parts)
-    net = [L.box(coll, f"Goal_{end}_NetBack", COURT_CX, zl + out * GOAL_DEPTH, 0.0, GOAL_W, 0.01, GOAL_H * 0.7, M["net"]),
-           L.box(coll, f"Goal_{end}_NetTop", COURT_CX, gz, GOAL_H - 0.02, GOAL_W, GOAL_DEPTH, 0.01, M["net"])]
-    for side, gx in (("N", COURT_CX - GOAL_W / 2), ("S", COURT_CX + GOAL_W / 2)):
-        net.append(L.box(coll, f"Goal_{end}_Net{side}", gx, gz, 0.0, 0.01, GOAL_DEPTH, GOAL_H * 0.85, M["net"]))
-    return [frame, L.join(coll, f"Goal_{end}_Net", net)]
-
-
+AI_GOAL = "a_futsal_goal_white_metal_frame_with_a_w"
+AI_HOOP = "a_wall_mounted_basketball_hoop_with_a_gl"
+AI_PALETTE = {"goal": 3, "hoop": 5}
 RIM_Y = HOOP["rimHeightM"]
 RIM_R = HOOP["rimRadiusM"]
 BOARD_W, BOARD_H = HOOP["boardSizeM"]
 BOARD_BOTTOM = HOOP["boardBottomM"]
-
-
 SIDE_HOOP_Z = tuple(round(COURT_CZ + d, 3) for d in (-16.0, -8.0, 8.0, 16.0))
 SIDE_ARM = 0.9
+MAIN_ARM_Y = (BOARD_BOTTOM + 0.25, BOARD_BOTTOM + 0.85)
 BOARD_T = 0.03
 
 
-def rim_ring(name, cx, cz, bx, bz):
-    ring = []
-    seg = 16
-    for k in range(seg):
-        a, b2 = 2 * math.pi * k / seg, 2 * math.pi * (k + 1) / seg
-        ax, az = cx + RIM_R * math.cos(a), cz + RIM_R * math.sin(a)
-        ex, ez = cx + RIM_R * math.cos(b2), cz + RIM_R * math.sin(b2)
-        ring.append(L.box(coll, f"{name}_Rim{k:02d}", (ax + ex) / 2, (az + ez) / 2, RIM_Y - 0.01, math.hypot(ex - ax, ez - az) + 0.02, 0.02, 0.02,
-                          M["rim"], rot=LS.seg_yaw(ax, az, ex, ez)))
-    length = math.hypot(cx - bx, cz - bz)
-    ux, uz = (cx - bx) / length, (cz - bz) / length
-    ex, ez = cx - ux * RIM_R, cz - uz * RIM_R
-    ring.append(L.box(coll, f"{name}_RimArm", (bx + ex) / 2, (bz + ez) / 2, RIM_Y - 0.01, length - RIM_R, 0.04, 0.02, M["rim"], rot=LS.seg_yaw(bx, bz, ex, ez)))
-    return L.join(coll, f"{name}_Rim", ring)
+def ai_object(name, slug, palette):
+    meshes = L.import_ai_model(coll, slug, f"IN_Gym_{name}", palette=palette)
+    obj = L.join(coll, name, meshes)
+    apply_transforms(obj)
+    return obj
+
+
+def apply_transforms(obj):
+    bpy.ops.object.select_all(action="DESELECT")
+    obj.select_set(True)
+    bpy.context.view_layer.objects.active = obj
+    bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+    bpy.context.view_layer.update()
+
+
+def world_extent(obj):
+    corners = [obj.matrix_world @ Vector(c) for c in obj.bound_box]
+    return (min(c.x for c in corners), max(c.x for c in corners), min(c.y for c in corners), max(c.y for c in corners),
+            min(c.z for c in corners), max(c.z for c in corners))
+
+
+def face_and_fit(obj, facing, scale):
+    obj.rotation_euler = (0, 0, math.atan2(facing[0], facing[1]))
+    obj.scale = scale
+    apply_transforms(obj)
+
+
+def goal(end, zl, out):
+    obj = ai_object(f"Goal_{end}", AI_GOAL, AI_PALETTE["goal"])
+    x0, x1, y0, y1, z0, z1 = world_extent(obj)
+    face_and_fit(obj, (0.0, -out), (GOAL_W / (x1 - x0), GOAL_DEPTH / (y1 - y0), GOAL_H / (z1 - z0)))
+    x0, x1, y0, y1, z0, z1 = world_extent(obj)
+    target = Vector(L.b(COURT_CX, zl + out * GOAL_DEPTH / 2, 0.0))
+    obj.location = (target.x - (x0 + x1) / 2, target.y - (y0 + y1) / 2, -z0)
+    apply_transforms(obj)
+    for side, gx in (("N", COURT_CX - GOAL_W / 2), ("S", COURT_CX + GOAL_W / 2)):
+        cols.add(f"Goal_{end}_Post{side}", gx, zl, 0.0, 0.1, 0.1, GOAL_H)
+        cols.add(f"Goal_{end}_Back{side}", gx, zl + out * GOAL_DEPTH, 0.0, 0.08, 0.08, GOAL_H * 0.7)
+    return [obj]
+
+
+def rim_centre(obj, facing, board_gx, board_gz):
+    tree = BVHTree.FromObject(obj, bpy.context.evaluated_depsgraph_get())
+    side = (-facing[1], facing[0])
+    hits = []
+    for i in range(-40, 41, 2):
+        for k in range(10, 100, 2):
+            lat, d = i * 0.01, k * 0.01
+            gx = board_gx + facing[0] * d + side[0] * lat
+            gz = board_gz + facing[1] * d + side[1] * lat
+            hit, _, _, _ = tree.ray_cast(Vector(L.b(gx, gz, BOARD_BOTTOM + BOARD_H + 1.0)), Vector((0, 0, -1)))
+            if hit is not None and hit.z < BOARD_BOTTOM + 0.3:
+                hits.append((gx, gz, hit.z))
+    if not hits:
+        return None
+    top = max(z for _, _, z in hits)
+    ring = [(x, z) for x, z, h in hits if h >= top - 0.04]
+    return sum(x for x, _ in ring) / len(ring), sum(z for _, z in ring) / len(ring), top
+
+
+def hoop_model(name, facing, board_gx, board_gz, rim_gx, rim_gz):
+    obj = ai_object(name, AI_HOOP, AI_PALETTE["hoop"])
+    x0, x1, _, _, _, _ = world_extent(obj)
+    s = BOARD_W / (x1 - x0)
+    face_and_fit(obj, facing, (s, s, s))
+    x0, x1, y0, y1, z0, z1 = world_extent(obj)
+    board = Vector(L.b(board_gx, board_gz, 0.0))
+    back_x = x0 if facing[0] > 0 else x1 if facing[0] < 0 else (x0 + x1) / 2
+    back_y = y1 if facing[1] > 0 else y0 if facing[1] < 0 else (y0 + y1) / 2
+    obj.location = (board.x - back_x if facing[0] else board.x - (x0 + x1) / 2,
+                    board.y - back_y if facing[1] else board.y - (y0 + y1) / 2,
+                    BOARD_BOTTOM + BOARD_H - z1)
+    apply_transforms(obj)
+    rim = rim_centre(obj, facing, board_gx, board_gz)
+    if rim is None:
+        raise RuntimeError(f"{name}: no rim found in front of the board")
+    cx, cz, top_z = rim
+    shift = Vector(L.b(rim_gx - cx, rim_gz - cz, 0.0))
+    obj.location = (shift.x, shift.y, RIM_Y + 0.02 - top_z)
+    apply_transforms(obj)
+    cx, cz, top_z = rim_centre(obj, facing, rim_gx - facing[0] * 0.55, rim_gz - facing[1] * 0.55)
+    shift = Vector(L.b(rim_gx - cx, rim_gz - cz, 0.0))
+    obj.location = (shift.x, shift.y, RIM_Y + 0.02 - top_z)
+    apply_transforms(obj)
+    cx, cz, _ = rim_centre(obj, facing, rim_gx - facing[0] * 0.55, rim_gz - facing[1] * 0.55)
+    x0, x1, y0, y1, _, board_top = world_extent(obj)
+    back = (x1 if facing[0] < 0 else x0) if facing[0] else (-y1 if facing[1] > 0 else -y0)
+    print(f"{name}: rim moved by ({rim_gx - cx:+.3f}, {rim_gz - cz:+.3f}) m, height {RIM_Y + 0.02 - top_z:+.3f} m, board top {board_top:.3f} m, back {back:.3f}")
+    return obj, board_top, back
 
 
 def hoop(end, zl, inward):
     rim_z = baskets[end]
     board_z = zl + inward * HOOP["boardFromEndLineM"]
-    post_z = zl - inward * 0.9
-    parts = [L.box(coll, f"Hoop_{end}_Base", COURT_CX, post_z, 0.0, 0.5, 0.5, 0.3, M["hoop"]),
-             L.box(coll, f"Hoop_{end}_Post", COURT_CX, post_z, 0.3, 0.16, 0.16, BOARD_BOTTOM + 0.3, M["hoop"]),
-             L.box(coll, f"Hoop_{end}_Arm", COURT_CX, (post_z + board_z) / 2, BOARD_BOTTOM + 0.3, 0.12, abs(board_z - post_z), 0.12, M["hoop"])]
-    cols.add(f"Hoop_{end}_Base", COURT_CX, post_z, 0.0, 0.5, 0.5, BOARD_BOTTOM + 0.6)
-    return [L.join(coll, f"Hoop_{end}_Frame", parts), rim_ring(f"Hoop_{end}", COURT_CX, rim_z, COURT_CX, board_z),
-            L.box(coll, f"Hoop_{end}_Board", COURT_CX, board_z, BOARD_BOTTOM, BOARD_W, BOARD_T, BOARD_H, M["board"])]
+    wall_z = HALL_Z1 if inward < 0 else Z0
+    model, board_tops[end], board_planes[end] = hoop_model(f"Hoop_{end}", (0.0, float(inward)), COURT_CX, board_z, COURT_CX, rim_z)
+    span = abs(board_planes[end] - wall_z)
+    mid = (board_planes[end] + wall_z) / 2
+    arm = [L.box(coll, f"Hoop_{end}_WallPlate", COURT_CX, wall_z - inward * 0.04, MAIN_ARM_Y[0] - 0.3, 1.0, 0.08, MAIN_ARM_Y[1] - MAIN_ARM_Y[0] + 0.6, M["hoop"])]
+    for k, y in enumerate(MAIN_ARM_Y):
+        for side, dx in (("N", -0.35), ("S", 0.35)):
+            arm.append(L.box(coll, f"Hoop_{end}_Arm{k}{side}", COURT_CX + dx, mid, y, 0.08, span, 0.08, M["hoop"]))
+    return [model, L.join(coll, f"Hoop_{end}_Frame", arm)]
 
 
 def side_hoop(i, hz):
     board_x = X1 - SIDE_ARM
     rim_x = board_x - (RIM_FROM_LINE - HOOP["boardFromEndLineM"])
     name = f"Hoop_side{i}"
+    model, board_top, back_x = hoop_model(name, (-1.0, 0.0), board_x, hz, rim_x, hz)
+    arm = X1 - back_x
     frame = L.join(coll, f"{name}_Frame", [
         L.box(coll, f"{name}_Plate", X1 - 0.04, hz, BOARD_BOTTOM - 0.3, 0.08, 0.6, BOARD_H + 0.4, M["hoop"]),
-        L.box(coll, f"{name}_Arm", (X1 + board_x) / 2, hz, BOARD_BOTTOM + 0.3, SIDE_ARM, 0.12, 0.12, M["hoop"]),
-        L.box(coll, f"{name}_Brace", (X1 + board_x) / 2, hz, BOARD_BOTTOM - 0.25, SIDE_ARM, 0.08, 0.08, M["hoop"])])
-    return [frame, rim_ring(name, rim_x, hz, board_x, hz),
-            L.box(coll, f"{name}_Board", board_x, hz, BOARD_BOTTOM, BOARD_T, BOARD_W, BOARD_H, M["board"])], rim_x
+        L.box(coll, f"{name}_Arm", (X1 + back_x) / 2, hz, BOARD_BOTTOM + 0.3, arm, 0.12, 0.12, M["hoop"]),
+        L.box(coll, f"{name}_Brace", (X1 + back_x) / 2, hz, BOARD_BOTTOM - 0.25, arm, 0.08, 0.08, M["hoop"])])
+    return [frame, model], rim_x, board_top, back_x
 
 
 objs += goal("west", cz1, 1) + goal("east", cz0, -1)
+board_tops = {}
+board_planes = {}
 objs += hoop("west", cz1, -1) + hoop("east", cz0, 1)
 side_rims = []
+side_tops = []
+side_backs = []
 for i, hz in enumerate(SIDE_HOOP_Z):
-    pieces, rim_x = side_hoop(i, hz)
+    pieces, rim_x, top, back = side_hoop(i, hz)
     objs += pieces
     side_rims.append(rim_x)
-
-objs.append(L.box(coll, "Wall_Scoreboard", COURT_CX, Z0 + 0.08, 5.2, 5.0, 0.12, 2.0, M["dark"]))
-objs.append(L.text_mesh(coll, "Wall_ScoreboardTitle", "COVE GYM", COURT_CX, Z0 + 0.15, 6.55, 0.4, 0.01, M["sign"]))
-objs.append(L.text_mesh(coll, "Wall_ScoreboardDigits", "00 : 00", COURT_CX, Z0 + 0.15, 5.55, 0.7, 0.01, M["score"]))
+    side_tops.append(top)
+    side_backs.append(back)
 
 for i, lz in enumerate(range(-5, int(Z0), -4)):
     for j, lx in enumerate((-14.0, -7.0, 0.0, 7.0, 14.0)):
@@ -271,20 +332,20 @@ def bounds(x0, x1, z0, z1):
     return {"minX": round(min(x0, x1), 4), "maxX": round(max(x0, x1), 4), "minZ": round(min(z0, z1), 4), "maxZ": round(max(z0, z1), 4)}
 
 
-def board_box(x0, x1, z0, z1):
-    return {"minX": round(x0, 4), "maxX": round(x1, 4), "minY": BOARD_BOTTOM, "maxY": BOARD_BOTTOM + BOARD_H, "minZ": round(z0, 4), "maxZ": round(z1, 4)}
+def board_box(x0, x1, z0, z1, top):
+    return {"minX": round(x0, 4), "maxX": round(x1, 4), "minY": round(top - BOARD_H, 4), "maxY": round(top, 4), "minZ": round(z0, 4), "maxZ": round(z1, 4)}
 
 
 def hoop_layout(end, zl, inward):
-    board_z = zl + inward * HOOP["boardFromEndLineM"]
+    board_z = board_planes[end] + inward * BOARD_T / 2
     return {"x": COURT_CX, "z": round(baskets[end], 4), "y": RIM_Y, "rimRadius": RIM_R, "threePointRadius": THREE,
-            "board": board_box(COURT_CX - BOARD_W / 2, COURT_CX + BOARD_W / 2, board_z - BOARD_T / 2, board_z + BOARD_T / 2)}
+            "board": board_box(COURT_CX - BOARD_W / 2, COURT_CX + BOARD_W / 2, board_z - BOARD_T / 2, board_z + BOARD_T / 2, board_tops[end])}
 
 
-def side_hoop_layout(rim_x, hz):
-    board_x = X1 - SIDE_ARM
+def side_hoop_layout(rim_x, hz, top, back):
+    board_x = back - BOARD_T / 2
     return {"x": round(rim_x, 4), "z": hz, "y": RIM_Y, "rimRadius": RIM_R,
-            "board": board_box(board_x - BOARD_T / 2, board_x + BOARD_T / 2, hz - BOARD_W / 2, hz + BOARD_W / 2)}
+            "board": board_box(board_x - BOARD_T / 2, board_x + BOARD_T / 2, hz - BOARD_W / 2, hz + BOARD_W / 2, top)}
 
 
 L.write_json(os.path.join(OUT, "interior.layout.json"), {
@@ -302,7 +363,7 @@ L.write_json(os.path.join(OUT, "interior.layout.json"), {
         "goals": {end: {"lineZ": zl, "out": out, "minX": COURT_CX - GOAL_W / 2, "maxX": COURT_CX + GOAL_W / 2, "height": GOAL_H, "depth": GOAL_DEPTH}
                   for end, zl, out in (("west", cz1, 1), ("east", cz0, -1))},
         "baskets": {"west": hoop_layout("west", cz1, -1), "east": hoop_layout("east", cz0, 1)},
-        "sideBaskets": [side_hoop_layout(rx, hz) for rx, hz in zip(side_rims, SIDE_HOOP_Z)],
+        "sideBaskets": [side_hoop_layout(rx, hz, top, back) for rx, hz, top, back in zip(side_rims, SIDE_HOOP_Z, side_tops, side_backs)],
     },
 })
 

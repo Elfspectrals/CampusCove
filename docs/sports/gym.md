@@ -10,16 +10,16 @@ sports play: [football.md](football.md), [basketball.md](basketball.md). Shared 
 | Hall 48 × 27.8 m (court 44 × 24 + run-off), 9 m high, high windows on both long sides | interior, `build_sports_gym.py` |
 | 4 rows of stands on the north side, 2 stairs, a 1.1 m barrier, a 1.4 m coach aisle in front of the stands | interior |
 | Lobby (door on the west face at z −211), changing room, store | interior |
-| Futsal goals 3 × 2 m on the end lines, hoops with the rim 1.575 m in from the end lines, board 1.2 m | interior |
+| Futsal goals 3 × 2 m on the end lines, hoops with the rim 1.575 m in from the end lines, board 1.2 m. Goal and hoop are `make model` pieces (`AI_GOAL`, `AI_HOOP`) fitted to the physics: each goal stretched to its 3 × 2 × 1 m box, each hoop scaled to the board width and moved until the rim found by ray casts lies within 5 cm of the contract rim; the main hoops hang on steel beams from the end walls | interior |
 | 4 side hoops on the south wall for free play (cross-court, 8 and 16 m either side of the halfway line) | interior |
 | Shell, roof, sign, fire exit on the SE street side | `build_sports_gym_ext.py` |
 | Lawn, entrance apron from the promenade door stub, exit path, lamps, benches, hedges | `build_sports_gym_site.py` |
-| Decor pack, editor category Sports: `gym_team_bench`, `gym_ball_rack` | `build_sports_gym_decor.py` |
+| Decor pack, editor category Sports: `gym_football` (truncated icosahedron built in code), `gym_basketball`, `gym_team_bench`, `gym_ball_rack`, `gym_ball_cart`, `gym_lockers`, `gym_scoreboard` (`make model`, posterized palette) | `build_sports_gym_props.py` |
 | Coach NPC (`"coach": "gym_coach"`) and first dressing | `front/public/assets/zones/sports_gym.json` |
 
 Build order (headless Blender, `exec(open(p).read(), {"__file__": p})`): `build_sports_gym.py` (runs the exterior
-too), `build_house_lightmaps.py -- work sports_gym`, `build_sports_gym_site.py`, `build_sports_gym_decor.py`; then
-from `front/`: `npm run assets:optimize -- work sports_gym`, `-- park sports_gym`, `-- decor gym_team_bench gym_ball_rack`,
+too), `build_house_lightmaps.py -- work sports_gym`, `build_sports_gym_site.py`, `build_sports_gym_props.py`; then
+from `front/`: `npm run assets:optimize -- work sports_gym`, `-- park sports_gym`, `-- decor gym_football gym_basketball gym_team_bench gym_ball_rack gym_ball_cart gym_lockers gym_scoreboard`,
 `node scripts/apply-decor-collision.mjs public/assets/decor/<key>/model.glb` for each decor key,
 `node scripts/apply-sports-gym.mjs` and `npm run zone:prices`.
 
@@ -108,12 +108,8 @@ Clips on the shared human rig (`front/scripts/skins/clips.py`, table in `docs/an
 
 ## Sounds
 
-`map-src/CampusCove/build_gym_sfx.py` synthesizes `sfx/gym/kick.mp3` (a kick, a shot) and `sfx/gym/bounce.mp3` (a basketball pass and each dribble bounce). Earshot hears both as dry punchy hits, not as a ball; a goal or basket still uses the market bell. No referee whistle and no net swish: the synthesized takes sounded like an error buzz and hi-hats, so they were not shipped.
+`map-src/CampusCove/build_gym_sfx.py` synthesizes `sfx/gym/kick.mp3` (a kick, a shot) and `sfx/gym/bounce.mp3` (a basketball pass and each dribble bounce). `sfx/gym/whistle.mp3` (a match kicks off, a goal, half time, full time) and `sfx/gym/swish.mp3` (a basket) are cut with ffmpeg from two Creative Commons 0 recordings on Freesound: "Referee whistle blow, gymnasium" by SpliceSound (218318) and "Basketball dribbling and shooting" by OBXJohn (262506, from 5.78 s, 1.23 s long).
 
-## Not built yet
+## Scoreboard
 
-- A referee whistle and a net swish: needs real recordings, not downloaded. Candidates, all Creative Commons 0 on
-  Freesound (licence to confirm on each page before use): whistle "Referee whistle blow, gymnasium" by SpliceSound
-  (sound 218318, recorded in a gym) or "Referee whistle sound" by Rosa-Orenes256 (538422, 0.5 s); swish "Outdoor
-  Basketball Shot" by fattirewhitey (381410, a swish to cut) or "Basketball dribbling and shooting" by OBXJohn (262506,
-  swishes to cut).
+The `gym_scoreboard` decor on the east wall carries a live screen: `court.json` `scoreboard` (`x, y, z, width, height, facing`) is the screen rectangle, and the front draws the teams' scores and the clock on a canvas plane there during a match.

@@ -90,7 +90,7 @@ export function myTeam(state: GymStatePayload | null, sessionId: string | null):
   return state.players.find((p) => p.sessionId === sessionId)?.team ?? null
 }
 
-export interface GymScreen {
+interface GymScreen {
   x: number
   y: number
   z: number
