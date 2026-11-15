@@ -174,6 +174,7 @@ import { LOCK_RETRY_MS, isLockReleaseEscape } from '../game/pauseMenu'
 import { createGameScene, disposeGameScene, renderGameFrame, resizeViewmodel, type GameScene } from '../game/gameScene'
 import { createFirstPersonArms } from '../game/firstPersonArms'
 import { createHeldItem } from '../game/heldItem'
+import { HELD_GEAR_URLS, heldGearUrl } from '../game/sports/heldGear'
 import { COVE_HOME, COVE_THREADS, findHouse, findStore, findWork } from '../game/assets/catalog'
 import { storeBuildings, workBuildings, type WorldBounds, type WorldZone } from '../game/world/worldManifest'
 import type { GearSlot } from '../game/wardrobeSlots'
@@ -1230,15 +1231,17 @@ watch(() => selectedItem.value?.code ?? null, () => arms?.equip())
 
 /** Model shown in the right hand: tools and food (a half-eaten item is drawn smaller). */
 const FIRST_PERSON_TOOL_SCALE = 0.6
-const TENNIS_RACKET_URL = '/assets/decor/tennis_racket/model.glb'
+const TENNIS_RACKET_URL = HELD_GEAR_URLS[TENNIS_RACKET]!
 const TENNIS_RACKET_GRIP = 0.12
 
 function holdingJobTool(): boolean {
   return heldTool.code.value !== null && heldTool.code.value === selectedItem.value?.code
 }
 
-function heldModel(): { url: string | null; scale: number } {
+function heldModel(): { url: string | null; scale: number; grip?: number } {
   const item = selectedItem.value
+  const gear = heldGearUrl(item?.code)
+  if (gear) return { url: gear, scale: FIRST_PERSON_TOOL_SCALE, ...(item?.code === TENNIS_RACKET ? { grip: TENNIS_RACKET_GRIP } : {}) }
   if (!item || (item.kind !== 'tool' && item.kind !== 'consumable')) return { url: null, scale: 1 }
   if (holdingJobTool()) return { url: item.model_glb, scale: FIRST_PERSON_TOOL_SCALE }
   const eaten = item.portions && item.portions_left ? item.portions_left / item.portions : 1
@@ -1883,7 +1886,7 @@ const movement = useGameMovement({
     updateFrontDoors(dt, isBuildingDoorOpen)
     arms?.update(dt, myPosition)
     const held = tennis.holdingRacket() ? { url: TENNIS_RACKET_URL, scale: FIRST_PERSON_TOOL_SCALE, grip: TENNIS_RACKET_GRIP } : heldModel()
-    arms?.setHolding(holdingJobTool() || tennis.holdingRacket())
+    arms?.setHolding(holdingJobTool() || tennis.holdingRacket() || heldGearUrl(selectedItem.value?.code) !== null)
     heldItem.update(arms?.rightHand() ?? null, held.url, held.scale, 'grip' in held ? held.grip : undefined)
     survival.tick(dt)
     stamina.value = punch.staminaNow()

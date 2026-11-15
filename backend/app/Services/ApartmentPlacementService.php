@@ -27,7 +27,7 @@ class ApartmentPlacementService
      */
     private const PLACEABLE_KINDS = ['apartment_asset', 'furniture'];
 
-    private const HOTBAR_KINDS = [...self::PLACEABLE_KINDS, 'tool', 'consumable'];
+    private const HOTBAR_KINDS = [...self::PLACEABLE_KINDS, 'tool', 'consumable', SportsGearService::KIND];
 
     /**
      * @var list<string>

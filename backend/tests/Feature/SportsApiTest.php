@@ -147,7 +147,8 @@ class SportsApiTest extends TestCase
             $gear->pluck('code')->all(),
         );
         $this->assertEquals(['sport' => 'skating', 'slot' => 'shoes'], json_decode($gear->firstWhere('code', 'gear_ice_skates')->meta_json, true));
-        $this->assertTrue($gear->every(fn (object $def): bool => $def->tradable && $def->max_uses === null && ! $def->weapon && $def->model_glb === null));
+        $this->assertTrue($gear->every(fn (object $def): bool => $def->tradable && $def->max_uses === null && ! $def->weapon
+            && $def->model_glb === str_replace('preview.png', 'model.glb', (string) $def->preview_image)));
         $prices = ['gear_swimsuit' => 90, 'gear_boxing_gloves' => 150, 'gear_boules' => 150, 'gear_tennis_racket' => 180, 'gear_running_spikes' => 260, 'gear_ice_skates' => 260];
         $onSale = DB::table('shop_catalog_items')->join('item_defs', 'item_defs.item_def_id', '=', 'shop_catalog_items.item_def_id')
             ->where('item_defs.kind', SportsGearService::KIND)->pluck('shop_catalog_items.coins_price', 'item_defs.code');
@@ -175,6 +176,19 @@ class SportsApiTest extends TestCase
                 'gear' => ['gear_boules', 'gear_tennis_racket'],
                 'rental' => ['gear_swimsuit' => 15, 'gear_boxing_gloves' => 25, 'gear_boules' => 25, 'gear_tennis_racket' => 30, 'gear_running_spikes' => 40, 'gear_ice_skates' => 40],
             ]);
+    }
+
+    public function test_owned_gear_is_in_the_bag_the_game_shows(): void
+    {
+        $player = $this->player(cash: 0);
+        $this->grant($player['account_id'], 'gear_tennis_racket');
+        $this->grant($player['account_id'], 'gear_swimsuit');
+
+        $items = collect($this->getJson('/api/apartments/assets', $this->auth($player['token']))->assertOk()->json('items'))->keyBy('code');
+
+        $this->assertSame(SportsGearService::KIND, $items['gear_tennis_racket']['kind']);
+        $this->assertSame('/assets/decor/tennis_racket/preview.png', $items['gear_tennis_racket']['preview_image']);
+        $this->assertArrayHasKey('gear_swimsuit', $items->all());
     }
 
     public function test_lending_a_swimsuit_costs_15_cash_destroyed_and_never_touches_the_bank(): void

@@ -246,12 +246,12 @@ class ShopSeeder extends Seeder
             self::starterWear('top', 'newcomer', 'Newcomer Tee'),
             self::starterWear('bottom', 'newcomer', 'Newcomer Joggers'),
             self::starterWear('shoes', 'newcomer', 'Newcomer Sneakers'),
-            self::sportsGear('gear_swimsuit', 'Swimsuit', 'swimming', 'bottom'),
-            self::sportsGear('gear_boxing_gloves', 'Boxing Gloves', 'boxing', 'hands'),
-            self::sportsGear('gear_boules', 'Set of Boules', 'petanque', 'held'),
-            self::sportsGear('gear_tennis_racket', 'Tennis Racket', 'tennis', 'held'),
-            self::sportsGear('gear_running_spikes', 'Running Spikes', 'running', 'shoes'),
-            self::sportsGear('gear_ice_skates', 'Ice Skates', 'skating', 'shoes'),
+            self::sportsGear('gear_swimsuit', 'Swimsuit', 'swimming', 'bottom', 'wear/bottom/swimsuit'),
+            self::sportsGear('gear_boxing_gloves', 'Boxing Gloves', 'boxing', 'hands', 'decor/boxing_gloves'),
+            self::sportsGear('gear_boules', 'Set of Boules', 'petanque', 'held', 'decor/petanque_boules'),
+            self::sportsGear('gear_tennis_racket', 'Tennis Racket', 'tennis', 'held', 'decor/tennis_racket'),
+            self::sportsGear('gear_running_spikes', 'Running Spikes', 'running', 'shoes', 'decor/running_spikes'),
+            self::sportsGear('gear_ice_skates', 'Ice Skates', 'skating', 'shoes', 'decor/ice_skates'),
         ];
         // ---- food and drinks (eaten from the hotbar; sold at the Campus Cafe counter)
         foreach (FoodCatalog::items() as $food) {
@@ -632,11 +632,13 @@ class ShopSeeder extends Seeder
     }
 
     /** @return array<string, mixed> */
-    private static function sportsGear(string $code, string $name, string $sport, string $slot): array
+    private static function sportsGear(string $code, string $name, string $sport, string $slot, string $asset): array
     {
         return [
             'code' => $code,
             'name' => $name,
+            'preview_image' => "/assets/{$asset}/preview.png",
+            'model_glb' => "/assets/{$asset}/model.glb",
             'kind' => SportsGearService::KIND,
             'rarity' => 1,
             'tradable' => true,
