@@ -79,6 +79,20 @@ test('a sign-up needs a pass, a team and offered settings', async () => {
   assert.equal(room.sports.lobbies.size, 0)
 })
 
+test('a sign-up or a leave inside the action cooldown is refused with sports_busy, never dropped', async () => {
+  const { room, players: [p] } = await signed(1)
+  const client = clientOf(room, p)
+  venues.onSportsCoachOpen(room, client, { coach: 'test_coach' }, NOW)
+  await venues.onSportsSignup(room, client, { coach: 'test_coach', venue: 'test_court_a', team: 'red', settings: { length: 5 } }, NOW + 100)
+  assert.deepEqual(errors(room, p).map((e) => e.code), ['sports_busy'])
+  assert.equal(room.sports.lobbies.size, 0)
+  await venues.onSportsSignup(room, client, { coach: 'test_coach', venue: 'test_court_a', team: 'red', settings: { length: 5 } }, NOW + 1000)
+  assert.equal(room.sports.lobbies.size, 1)
+  venues.onSportsSignupLeave(room, client, NOW + 1100)
+  assert.deepEqual(errors(room, p).map((e) => e.code), ['sports_busy', 'sports_busy'])
+  assert.equal(room.sports.lobbies.size, 1)
+})
+
 test('the first player sets the match, the next join it, and a full lobby kicks off and clears the court', async () => {
   const { room, players: [a, b] } = await signed(2)
   const bystander = await makePlayer(900, -370, -165)
