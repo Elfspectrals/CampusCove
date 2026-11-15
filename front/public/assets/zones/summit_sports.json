@@ -105,6 +105,25 @@
       ]
     },
     {
+      "id": "summit_sports_ice_skates",
+      "kind": "item",
+      "key": "ice_skates",
+      "code": "gear_ice_skates",
+      "forSale": true,
+      "price": 260,
+      "position": [
+        -276.9,
+        1.34,
+        82.905
+      ],
+      "yaw": 0.6,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
       "id": "summit_sports_table_e",
       "kind": "item",
       "key": "folded_clothes_table",

@@ -38,6 +38,8 @@ final class TaskCatalog
             'routes_topped' => ['counter' => ActionCounter::ClimbLinesTopped, 'tiers' => [10, 50, 200]],
             'black_route' => ['counter' => ActionCounter::BlackLinesTopped, 'tiers' => [1, 10, 30]],
             'boxer' => ['counter' => ActionCounter::BoxingWins, 'tiers' => [1, 5, 15]],
+            'races_skated' => ['counter' => ActionCounter::SkateRaces, 'tiers' => [10, 50, 150]],
+            'skate_3_clean' => ['counter' => ActionCounter::SkateCleanRuns, 'tiers' => [1, 10, 30]],
         ];
     }
 

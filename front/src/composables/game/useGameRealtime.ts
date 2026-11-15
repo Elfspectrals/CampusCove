@@ -123,6 +123,11 @@ import type {
   TennisFreePayload,
   TennisStrokePayload,
   TennisStatePayload,
+  SkateBumpPayload,
+  SkateFallPayload,
+  SkateMovePayload,
+  SkateRacePayload,
+  SkateResultPayload,
   SportsPassBoughtPayload,
   SportsPassStatePayload,
   PickpocketAlertPayload,
@@ -380,6 +385,15 @@ export interface GameRealtimeDeps {
     onNoGloves: () => void
     onRoomLeft: () => void
   }
+  skating: {
+    onRace: (data: SkateRacePayload) => void
+    onFall: (data: SkateFallPayload) => void
+    onBump: (data: SkateBumpPayload) => void
+    isOnIce: (x: number, z: number) => boolean
+    onResult: (data: SkateResultPayload) => void
+    onCorrection: (reason: string | undefined) => void
+    onRoomJoined: () => void
+  }
   pickpocket: {
     onStarted: (data: PickpocketStartedPayload) => void
     onProgress: (data: PickpocketProgressPayload) => void
@@ -417,7 +431,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
   let previousQuantityByCode: Record<string, number> = {}
   let isInitialInventoryLoad = true
 
-  const remotes = useRemoteAvatars({ getScene: deps.getScene, myPosition: deps.myPosition, playSoundOn: deps.playSoundOn })
+  const remotes = useRemoteAvatars({ getScene: deps.getScene, myPosition: deps.myPosition, playSoundOn: deps.playSoundOn, onIce: deps.skating.isOnIce })
   let dressedBoxers = new Set<string>()
   let undressTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -471,6 +485,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       deps.sports.onRoomJoined()
       deps.climbing.onRoomJoined()
       deps.boxing.onRoomLeft()
+      deps.skating.onRoomJoined()
     })
 
     room.onMessage('housing_units_sync', (data: { units?: unknown }) => syncHousingUnits(data.units))
@@ -480,6 +495,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('position_correction', (data: { x: number; y: number; z: number; reason?: string }) => {
       setMyPosition(data.x, data.y, data.z)
       deps.sports.onCorrection(data.reason)
+      deps.skating.onCorrection(data.reason)
     })
     room.onMessage('door_error', (data: { message: string }) => {
       deps.roomMessage.value = data.message
@@ -718,6 +734,17 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('boxing_tired', () => deps.boxing.onTired())
     room.onMessage('boxing_bag_hit', (data: BoxingBagHitPayload) => deps.boxing.onBagHit(data))
     room.onMessage('boxing_no_gloves', () => deps.boxing.onNoGloves())
+    room.onMessage('skate_race', (data: SkateRacePayload) => deps.skating.onRace(data))
+    room.onMessage('skate_fall', (data: SkateFallPayload) => {
+      if (data.sessionId === room.sessionId) deps.skating.onFall(data)
+      else remotes.skateMove(data.sessionId, 'fall')
+    })
+    room.onMessage('skate_move', (data: SkateMovePayload) => {
+      if (data.move === 'push') remotes.skatePushed(data.sessionId)
+      else remotes.skateMove(data.sessionId, data.move)
+    })
+    room.onMessage('skate_bump', (data: SkateBumpPayload) => deps.skating.onBump(data))
+    room.onMessage('skate_result', (data: SkateResultPayload) => deps.skating.onResult(data))
     room.onMessage('pickpocket_started', (data: PickpocketStartedPayload) => deps.pickpocket.onStarted(data))
     room.onMessage('pickpocket_progress', (data: PickpocketProgressPayload) => deps.pickpocket.onProgress(data))
     room.onMessage('pickpocket_failed', (data: PickpocketFailedPayload) => deps.pickpocket.onFailed(data))

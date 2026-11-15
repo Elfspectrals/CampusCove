@@ -141,6 +141,7 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
         Route::post('/tasks/pub-game', [TaskController::class, 'pubGame']);
         Route::post('/tasks/secret-room', [TaskController::class, 'secretRoom']);
         Route::post('/tasks/climb-topped', [TaskController::class, 'climbTopped']);
+        Route::post('/tasks/skate-race', [TaskController::class, 'skateRace']);
         Route::post('/lockpicks/attempts', [LockpickController::class, 'start']);
         Route::post('/lockpicks/attempts/{attemptId}/miss', [LockpickController::class, 'miss'])->whereNumber('attemptId');
         Route::post('/lockpicks/attempts/{attemptId}/success', [LockpickController::class, 'succeed'])->whereNumber('attemptId');

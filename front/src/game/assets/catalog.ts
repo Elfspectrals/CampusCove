@@ -120,7 +120,7 @@ const HOUSES: readonly HouseAsset[] = [
  * Built by map-src/CampusCove/build_work_*.py → public/assets/work/<key>/ (see docs/ASSETS_STYLE_GUIDE.md §7).
  * `interior.layout.json` lists the stations (`station_<job>_NN`) that the job gameplay attaches to.
  */
-export type WorkKey = 'tech_hub' | 'boutique' | 'cafe' | 'clinic' | 'pub' | 'storage' | 'police' | 'sports_reception' | 'sports_gym' | 'sports_dance' | 'sports_climbing' | 'sports_boxing'
+export type WorkKey = 'tech_hub' | 'boutique' | 'cafe' | 'clinic' | 'pub' | 'storage' | 'police' | 'sports_reception' | 'sports_gym' | 'sports_dance' | 'sports_climbing' | 'sports_boxing' | 'sports_ice_rink'
 export type WorkJob = 'dev' | 'commerce' | 'resto' | 'medic' | 'barman' | 'auction' | 'police' | 'sports'
 
 export interface WorkAsset {
@@ -162,6 +162,7 @@ const WORKS: readonly WorkAsset[] = [
   work('sports_dance', 'Cove Dance Studio', 'sports'),
   work('sports_climbing', 'Cove Climbing Hall', 'sports'),
   work('sports_boxing', 'Cove Boxing Club', 'sports'),
+  work('sports_ice_rink', 'Cove Ice Rink', 'sports'),
 ]
 
 export function findWork(key: string | null | undefined): WorkAsset | null {

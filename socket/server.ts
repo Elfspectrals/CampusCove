@@ -8,6 +8,7 @@ import { loadGymVenues } from './src/sports/gymVenues.ts'
 import { assertVenueZones, loadDanceVenue, registerBoxing } from './src/sports/index.ts'
 import { loadAthleticsVenues } from './src/sports/athleticsVenues.ts'
 import { loadClimbing } from './src/sports/climbing.ts'
+import { loadSkating } from './src/sports/skating.ts'
 import { loadAtms, loadMarketStalls, loadSportsPassDesk, loadWorld, loadZoneBuyers } from './src/world.ts'
 
 async function boot() {
@@ -20,6 +21,7 @@ async function boot() {
   await loadAthleticsVenues()
   await loadDanceVenue()
   await registerBoxing()
+  await loadSkating()
   assertVenueZones()
   await loadClimbing()
   const gameServer = new Server({ transport: new WebSocketTransport() })

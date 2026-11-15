@@ -227,6 +227,8 @@ class TaskProgressApiTest extends TestCase
                 ['task' => 'routes_topped', 'value' => 0, 'tiers' => [10, 50, 200], 'reached' => []],
                 ['task' => 'black_route', 'value' => 0, 'tiers' => [1, 10, 30], 'reached' => []],
                 ['task' => 'boxer', 'value' => 0, 'tiers' => [1, 5, 15], 'reached' => []],
+                ['task' => 'races_skated', 'value' => 0, 'tiers' => [10, 50, 150], 'reached' => []],
+                ['task' => 'skate_3_clean', 'value' => 0, 'tiers' => [1, 10, 30], 'reached' => []],
             ]]);
     }
 
@@ -301,6 +303,7 @@ class TaskProgressApiTest extends TestCase
         $this->postJson('/api/tasks/active-day', [], $this->auth($player['token']))->assertForbidden();
         $this->postJson('/api/tasks/pub-game', ['game' => 'drink_fast', 'intoxication' => 0], $this->auth($player['token']))->assertForbidden();
         $this->postJson('/api/tasks/secret-room', [], $this->auth($player['token']))->assertForbidden();
+        $this->postJson('/api/tasks/skate-race', ['ref' => 'race-1', 'penaltyMs' => 0], $this->auth($player['token']))->assertForbidden();
     }
 
     public function test_each_farm_harvest_counts_for_the_market_gardener(): void
@@ -410,6 +413,47 @@ class TaskProgressApiTest extends TestCase
 
         $this->postJson('/api/tasks/pub-game', ['game' => 'darts', 'intoxication' => 0], $headers)->assertStatus(422);
         $this->postJson('/api/tasks/pub-game', ['game' => 'meter_shot', 'intoxication' => 101], $headers)->assertStatus(422);
+    }
+
+    public function test_skate_races_count_only_counted_matches_five_a_day_and_clean_three_lap_runs_count_as_the_feat(): void
+    {
+        $player = $this->registerAndCreditWallet(0, 'cash');
+        $headers = $this->auth($player['token'], self::SECRET);
+        $this->travelTo(now()->parse('2026-11-13 12:00:00', 'UTC'));
+        $race = fn (string $ref, int $laps, int $timeMs, bool $counted = true, string $result = 'finished') => $this->skateMatch($player['account_id'], $ref, $laps, $timeMs, $counted, $result);
+
+        $race('clean', 3, 58_000);
+        $race('penalty', 3, 58_000);
+        $race('slow', 3, 60_001);
+        $race('long', 5, 50_000);
+        $race('solo', 3, 50_000, false);
+        $race('dnf', 3, 50_000, true, 'dnf');
+        foreach (['clean' => 0, 'penalty' => 2000, 'slow' => 0, 'long' => 0, 'solo' => 0, 'dnf' => 0, 'unknown' => 0] as $ref => $penaltyMs) {
+            $this->postJson('/api/tasks/skate-race', ['ref' => $ref, 'penaltyMs' => $penaltyMs], $headers)->assertOk();
+        }
+        $this->postJson('/api/tasks/skate-race', ['ref' => 'clean', 'penaltyMs' => 0], $headers)->assertOk();
+        $this->assertSame(4, $this->counter($player['account_id'], ActionCounter::SkateRaces));
+        $this->assertSame(1, $this->counter($player['account_id'], ActionCounter::SkateCleanRuns));
+
+        foreach (['a', 'b', 'c'] as $ref) {
+            $race($ref, 1, 20_000);
+            $this->postJson('/api/tasks/skate-race', ['ref' => $ref, 'penaltyMs' => 0], $headers)->assertOk();
+        }
+        $this->assertSame(5, $this->counter($player['account_id'], ActionCounter::SkateRaces));
+        $this->postJson('/api/tasks/skate-race', ['ref' => '', 'penaltyMs' => 0], $headers)->assertStatus(422);
+        $this->postJson('/api/tasks/skate-race', ['ref' => 'clean', 'penaltyMs' => -1], $headers)->assertStatus(422);
+    }
+
+    private function skateMatch(int $accountId, string $ref, int $laps, int $timeMs, bool $counted, string $result): void
+    {
+        $id = DB::table('sports_matches')->insertGetId([
+            'ref' => $ref, 'sport' => 'skating', 'venue' => 'rink_skating', 'settings' => json_encode(['laps' => $laps]),
+            'started_at' => now()->subSeconds(90), 'ended_at' => now(), 'counts_for_tasks' => $counted,
+        ]);
+        DB::table('sports_match_players')->insert([
+            'match_id' => $id, 'account_id' => $accountId, 'team' => null, 'result' => $result,
+            'place' => $result === 'finished' ? 1 : null, 'time_ms' => $result === 'finished' ? $timeMs : null,
+        ]);
     }
 
     public function test_every_duel_won_at_darts_or_drink_fast_counts(): void

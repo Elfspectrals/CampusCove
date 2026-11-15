@@ -38,6 +38,17 @@ class TaskController extends Controller
         return response()->json(['ok' => true]);
     }
 
+    public function skateRace(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'ref' => 'required|string|min:1|max:64',
+            'penaltyMs' => 'required|integer|min:0|max:600000',
+        ]);
+        $this->activity->skateRaceFinished($this->accountId($request), (string) $validated['ref'], (int) $validated['penaltyMs']);
+
+        return response()->json(['ok' => true]);
+    }
+
     public function secretRoom(Request $request): JsonResponse
     {
         $this->activity->secretRoomEntered($this->accountId($request));

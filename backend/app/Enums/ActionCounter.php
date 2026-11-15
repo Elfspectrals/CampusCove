@@ -20,6 +20,8 @@ enum ActionCounter: string
     case ClothesBought = 'clothes_bought';
     case PubOrderDays = 'pub_order_days';
     case PubGames = 'pub_games';
+    case SkateRaces = 'skate_races';
+    case SkateCleanRuns = 'skate_clean_runs';
     case DuelsWon = 'duels_won';
     case SecretRoomWeeks = 'secret_room_weeks';
     case FootballMatches = 'football_matches';

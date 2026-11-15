@@ -19,6 +19,7 @@ const JUMP_VELOCITY = 6.5
 const GRAVITY = 22
 const MAX_FRAME_DT = 0.1
 const MOUSE_SENSITIVITY = 0.002
+const SKATE_KEY_TURN = 1.6
 /** Position updates sent to the server at most this often (ms). */
 const EMIT_INTERVAL_MS = 50
 
@@ -62,12 +63,14 @@ export interface UseGameMovementDeps {
   flying?: () => boolean
   /** Runs once the camera is placed each frame, for extra camera motion (drunken sway). */
   afterCameraPlaced?: (camera: THREE.PerspectiveCamera, dt: number) => void
+  skate?: (dt: number, yaw: number, keys: { forward: boolean; brake: boolean }) => { dx: number; dz: number } | null
+  afterSkate?: (wanted: number, moved: number) => void
 }
 
 /** First-person controls (WASD/ZQSD + pointer-lock mouse look), position sync, and the render loop. */
 export function useGameMovement(deps: UseGameMovementDeps) {
   const { pointerLocked, myPosition } = deps
-  const keys = { forward: false, back: false, left: false, right: false, sprint: false, up: false, down: false }
+  const keys = { forward: false, back: false, left: false, right: false, sprint: false, up: false, down: false, brake: false }
   let sprinting = false
   let jumpRequested = false
   /** Height of the feet above the ground while jumping, and its vertical speed. */
@@ -129,16 +132,19 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     } else if (!deps.inventoryOpen.value && !locked) {
       const forward = keys.forward ? 1 : keys.back ? -1 : 0
       const right = keys.right ? 1 : keys.left ? -1 : 0
+      const skating = deps.skate?.(dt, yaw, { forward: keys.forward, brake: keys.brake }) ?? null
       const speedFactor = deps.speedFactor()
-      const moving = (forward !== 0 || right !== 0) && speedFactor > 0
+      const moving = !skating && (forward !== 0 || right !== 0) && speedFactor > 0
       sprinting = keys.sprint && moving && deps.trySpendSprint(dt, sprinting)
-      if (jumpRequested && airY === 0 && speedFactor > 0 && deps.trySpendJump()) airVelocity = JUMP_VELOCITY
+      if (skating) yaw -= right * SKATE_KEY_TURN * dt
+      else if (jumpRequested && airY === 0 && speedFactor > 0 && deps.trySpendJump()) airVelocity = JUMP_VELOCITY
       const step = (sprinting ? SPRINT_SPEED : WALK_SPEED) * speedFactor * dt
       const pushFactor = speedFactor > 0 ? 1 : 0
-      const dx = direction.x * forward * step + rightVec.x * right * step + push.dx * pushFactor
-      const dz = direction.z * forward * step + rightVec.z * right * step + push.dz * pushFactor
+      const dx = skating ? (skating.dx + push.dx) * pushFactor : direction.x * forward * step + rightVec.x * right * step + push.dx * pushFactor
+      const dz = skating ? (skating.dz + push.dz) * pushFactor : direction.z * forward * step + rightVec.z * right * step + push.dz * pushFactor
       const liftY = capsuleLiftInBuilding(myPosition.x, myPosition.z, feetY)
       const resolved = resolveWorldMovement(myPosition, dx, dz, liftY)
+      if (skating) deps.afterSkate?.(Math.hypot(dx, dz), Math.hypot(resolved.x - myPosition.x, resolved.z - myPosition.z))
       myPosition.x = resolved.x
       myPosition.z = resolved.z
     } else {
@@ -282,6 +288,7 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     if (matches('jump', e.code)) {
       // Space would otherwise press a focused button or scroll the page
       e.preventDefault()
+      keys.brake = true
       if (!e.repeat && pointerLocked.value) jumpRequested = true
       keys.up = true
       return
@@ -302,7 +309,10 @@ export function useGameMovement(deps: UseGameMovementDeps) {
   }
 
   function onKeyUp(e: KeyboardEvent) {
-    if (matches('jump', e.code)) keys.up = false
+    if (matches('jump', e.code)) {
+      keys.up = false
+      keys.brake = false
+    }
     setMoveKey(e.code, false)
   }
 

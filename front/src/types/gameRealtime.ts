@@ -1046,3 +1046,46 @@ export interface GymErrorPayload {
   code: string
   message: string
 }
+
+interface SkateRacerPayload {
+  sessionId: string
+  name: string
+  lap: number
+  penaltyMs: number
+  finishedMs: number | null
+  dnf: boolean
+}
+
+export interface SkateRacePayload {
+  venue: string
+  phase: 'countdown' | 'racing'
+  laps: number
+  goAt: number
+  serverNow: number
+  racers: SkateRacerPayload[]
+}
+
+export interface SkateFallPayload {
+  sessionId: string
+  until: number
+  serverNow: number
+}
+
+export interface SkateMovePayload {
+  sessionId: string
+  move: 'push' | 'brake' | 'stumble'
+}
+
+export interface SkateBumpPayload {
+  sessionId: string
+  dirX: number
+  dirZ: number
+  distance: number
+  serverNow: number
+}
+
+export interface SkateResultPayload {
+  venue: string
+  laps: number
+  results: { sessionId: string; name: string; place: number | null; timeMs: number | null; penaltyMs: number; dnf: boolean }[]
+}

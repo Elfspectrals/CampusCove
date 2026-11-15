@@ -57,6 +57,8 @@ Clips are phase functions `f(ph, P)` sampled by `sample_actions(arm, clips, fps=
   - `UpperArm.R` `rz` positive and `UpperArm.L` `rz` negative swing the arm forward across the body.
   - `ry` negative on `UpperArm.L` raises the left arm sideways (render of `Stumble`, 2026-11-14). Raising an arm
     that is already swung forward (`rx` −50) by `ry` brings the hand to the face: bring `rx` back toward 0 first.
+  - `Hips` as a whole-body root (skating clips, `_skate_apply`, 2026-11-14): `Rx` positive leans the body forward,
+    negative back; `rz` positive turns the body to its left (front toward +X); `move` y positive pushes the pelvis back.
   Any other sign is checked on a render before it is trusted.
 - `sample_actions` deletes every NLA track first: always pass the full clip dict.
 
@@ -102,6 +104,11 @@ Climbing clips assume the wall plane at y = -0.58 m in front of the root and the
 0.08 m under the last hold. Hands are placed with `arm_ik` (`anim.py`, two-bone IK from the shoulder through the
 Hips > Spine > Chest > Shoulder chain, elbow towards the hint), feet with `leg_ik`. Measured on renders: a negative
 `leg_ik` pitch turns the toes up (-75° puts the sole flat on the wall), a positive pitch points them down.
+| SkatePush | 39 | 1.3 | yes | `skate_push`, left stroke 0-0.5 then right stroke (650 ms each, `docs/sports/skating.md`), glide foot under the body, push foot out 0.41 m and back 0.2 m |
+| SkateGlide | 60 | 2.0 | yes | `skate_glide`, both feet on the ice, knees bent, 18° lean, slow sway |
+| SkateBrake | 15 | 0.5 | one-shot | `skate_brake`, hockey stop to the left (hips turned 80°), ends on the held stop pose |
+| SkateFall | 45 | 1.5 | one-shot | `skate_fall`, slip, seated on the ice at 0.27-0.45, back up, ends on the SkateGlide start pose |
+| SkateStumble | 12 | 0.4 | one-shot | `skate_stumble`, left foot slips, arms out, ends on the SkateGlide start pose |
 
 Every clip is keyed from frame 0 (glTF time starts at 0). Gaits plant the feet with `leg_ik` (analytic two-bone IK,
 knee forward): the stance foot moves back at exactly the design speed, so there is no slide at timeScale 1.
@@ -199,7 +206,8 @@ skin stretch at the left armpit when the elbow sat level with the shoulder; the 
 blender --background --factory-startup --python front/scripts/skins/run_wear.py
 ```
 
-It rewrites `front/public/assets/wear/**`. Pieces carry no clip, so only `wear/base/model.glb` should change when a
+It rewrites `front/public/assets/wear/**`; `-- only=base` exports only the six base GLBs, `-- only=slot/key,...` only
+those pieces. Pieces carry no clip, so only `wear/base/model.glb` should change when a
 clip is added. List what changed (`git status --short front/public/assets/wear`); a piece whose glTF structure is
 unchanged and has no animation differs only by float noise. Tell the user before restoring it with `git checkout`.
 
