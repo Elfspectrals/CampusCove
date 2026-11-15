@@ -12,6 +12,7 @@ Product design for the sports of the complex west of Cove Heights (site decision
 | Boxing | [boxing.md](boxing.md) | Boxing hall, ring | Duel mini-game |
 | Climbing | [climbing.md](climbing.md) | Climbing hall, boulders and 12 m wall | Timed, rhythm clicks |
 | Ice skating | [skating.md](skating.md) | Ice rink | Sliding movement, timed race |
+| Figure skating | [figure-skating.md](figure-skating.md) | Ice rink | Routine on music: jumps, spins and spirals timed along a route |
 | Ice hockey (later, not built) | [hockey.md](hockey.md) | Ice rink | Team, puck physics |
 | Running | [running.md](running.md) | 400 m track | Timed race |
 | Tennis | [tennis.md](tennis.md) | 2 outdoor courts | Duel, ball physics |
@@ -64,6 +65,7 @@ view where the sport stays playable that way, first person last; the choice is k
 | Basketball and football (player of a match, or own ball out in free play) | broadcast: from the long side, 7 m behind the touchline and 8.5 m high (inside the gym hall), following the ball along the court but never more than 7 m from the player, stopping 9 m from each end; the move keys follow the screen and the body turns to where it runs | yes: then follow 4.2 m behind the look, then first person |
 | Boxing (boxer of a bout) | duel: over the shoulder, 2.6 to 5.5 m behind by the gap, framing the midpoint; the body always faces the opponent; kept within 3.6 m of the ring, ropes ignored | yes |
 | Dance rhythm game | stage: 4.6 m in front of the dancer, who stays left of the note lanes; slow sway of 18° | no |
+| Figure skating routine | follow: 6 m behind the skater, who faces along the route | no |
 
 Front only: `front/src/game/camera/sportsCamera.ts` computes the framing (tested), `useSportsCamera` applies it over the
 first-person camera with a short blend and keeps the camera out of walls with a ray cast, `useOwnBody` draws the local

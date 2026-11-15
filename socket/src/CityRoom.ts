@@ -146,6 +146,7 @@ import { onGymAction, onGymBall, onGymBallReturn, tickGym } from './sports/gym.t
 import { onTennisHit } from './sports/tennis.ts'
 import { onTennisBallTake, tickTennisFree } from './sports/tennisFree.ts'
 import { CLIMB_TICK_MS, onClimbCheck, onClimbHold, onClimbLetGo, onClimbStart, tickClimbing } from './sports/climbing.ts'
+import { onFigurePress, onFigureRelease } from './sports/figureRink.ts'
 import { onSkateBrake, onSkatePush, tickSkating } from './sports/skatingRink.ts'
 import { onPetanqueAim, onPetanqueThrow } from './sports/petanque.ts'
 import { onPoolJump, onPoolTrick } from './sports/poolDiving.ts'
@@ -313,6 +314,8 @@ export class CityRoom extends Room implements GameRoom {
     this.onMessage('boxing_getup', (client) => onBoxingGetUp(this, client))
     this.onMessage('boxing_bag', (client, payload: ClientPayload) => void onBoxingBag(this, client, payload).catch((error) => warn('boxing bag failed', error)))
     this.onMessage('skate_push', (client) => onSkatePush(this, client))
+    this.onMessage('figure_press', (client, payload: ClientPayload) => onFigurePress(this, client, payload))
+    this.onMessage('figure_release', (client) => onFigureRelease(this, client))
     this.onMessage('skate_brake', (client, payload: ClientPayload) => onSkateBrake(this, client, payload))
     this.onMessage('petanque_aim', (client) => void onPetanqueAim(this, client).catch((error) => warn('petanque aim failed', error)))
     this.onMessage('petanque_throw', (client, payload: ClientPayload) => onPetanqueThrow(this, client, payload))

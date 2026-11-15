@@ -13,6 +13,7 @@ const A3 = 220
 const STYLES: Readonly<Record<string, SongStyle>> = {
   harbour_sway: { chords: [[0, 3, 7], [-4, 0, 3], [3, 7, 10], [-2, 2, 5]], fourOnFloor: false, hatDivision: 2, bassEighths: false, arpeggio: false, wave: 'triangle' },
   cove_groove: { chords: [[5, 8, 12], [1, 5, 8], [-4, 0, 3], [3, 7, 10]], fourOnFloor: true, hatDivision: 2, bassEighths: true, arpeggio: false, wave: 'sawtooth' },
+  ice_waltz: { chords: [[0, 4, 7], [-3, 0, 4], [5, 9, 12], [-5, -1, 2]], fourOnFloor: false, hatDivision: 2, bassEighths: false, arpeggio: true, wave: 'sine' },
   night_sprint: { chords: [[7, 10, 14], [3, 7, 10], [-2, 2, 5], [5, 9, 12]], fourOnFloor: true, hatDivision: 4, bassEighths: true, arpeggio: true, wave: 'square' },
 }
 

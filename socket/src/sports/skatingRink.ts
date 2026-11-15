@@ -438,7 +438,9 @@ function end(room: GameRoom, match: Match): void {
   void recordMatch(room, match, records).then(() => reportTasks(room, race))
 }
 
-export function registerSkating(parsed: SkatingRules, venueZone: string, coach: { id: string, x: number, z: number }, settings: readonly SettingSpec[]): void {
+export const RINK_PLAY_AREA = 'ice_rink'
+
+export function registerSkating(parsed: SkatingRules, venueZone: string, coach: { id: string, x: number, z: number }, settings: readonly SettingSpec[], otherVenues: readonly string[] = []): void {
   rules = parsed
   zone = venueZone
   const r = parsed
@@ -448,6 +450,7 @@ export function registerSkating(parsed: SkatingRules, venueZone: string, coach: 
     zone: venueZone,
     coach,
     playArea: r.rink,
+    playAreaId: RINK_PLAY_AREA,
     gear: ICE_SKATES,
     teams: false,
     settings,
@@ -458,7 +461,7 @@ export function registerSkating(parsed: SkatingRules, venueZone: string, coach: 
     onLeave: leave,
     onEnd: end
   })
-  registerCoach({ id: coach.id, x: coach.x, z: coach.z, venues: [SKATING_VENUE] })
+  registerCoach({ id: coach.id, x: coach.x, z: coach.z, venues: [SKATING_VENUE, ...otherVenues] })
 }
 
 export function racerIn(room: GameRoom, accountId: number): Readonly<Racer> | null {

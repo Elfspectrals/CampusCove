@@ -143,6 +143,7 @@ import type {
 } from '../../types/gameRealtime'
 import { type BoxingBagEndPayload, type BoxingBagHitPayload, type BoxingBagRoundPayload, type BoxingChargePayload, type BoxingDodgedPayload, type BoxingHitPayload, type BoxingStatePayload, boxerPose } from '../../game/sports/boxing'
 import { chargeClip, punchClip } from '../../avatar/boxingAnimLogic'
+import type { FigureEndPayload, FigureEventPayload, FigurePose, FigureStartPayload, FigureStatePayload } from '../../game/sports/skating/figure'
 import { useRemoteAvatars, type SeatPose } from './useRemoteAvatars'
 import { PUNCH_DAMAGE } from '../../game/punch'
 import { applySportsLoans, clearSportsLoans, forgetSportsLoans } from '../../game/sports/sportsLoans'
@@ -374,6 +375,13 @@ export interface GameRealtimeDeps {
     onEnd: (data: DanceEnd) => void
     onStop: () => void
   }
+  figure: {
+    onStart: (data: FigureStartPayload) => void
+    onState: (data: FigureStatePayload) => void
+    onEvent: (data: FigureEventPayload) => void
+    onEnd: (data: FigureEndPayload) => void
+    onRoomJoined: () => void
+  }
   emotes: {
     clipOf: (id: string) => string | null
     onUserEmote: (data: UserEmotePayload, mySessionId: string) => void
@@ -504,6 +512,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       deps.boxing.onRoomLeft()
       deps.skating.onRoomJoined()
       deps.pool.onRoomJoined()
+      deps.figure.onRoomJoined()
     })
 
     room.onMessage('housing_units_sync', (data: { units?: unknown }) => syncHousingUnits(data.units))
@@ -762,6 +771,10 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       deps.boxing.onDodged(data)
     })
     room.onMessage('boxing_tired', () => deps.boxing.onTired())
+    room.onMessage('figure_start', (data: FigureStartPayload) => deps.figure.onStart(data))
+    room.onMessage('figure_state', (data: FigureStatePayload) => deps.figure.onState(data))
+    room.onMessage('figure_event', (data: FigureEventPayload) => deps.figure.onEvent(data))
+    room.onMessage('figure_end', (data: FigureEndPayload) => deps.figure.onEnd(data))
     room.onMessage('boxing_bag_hit', (data: BoxingBagHitPayload) => {
       if (data.training) {
         avatarsOf(data.sessionId).setBoxer(data.sessionId, true)
@@ -952,6 +965,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     setRemoteDribbling: remotes.setDribbling,
     setRemoteTopOverride: remotes.setTopOverride,
     setRemoteSwimwear: remotes.setSwimwear,
+    setFigurePose: (sessionId: string, pose: FigurePose | null) => (sessionId === deps.gameRoomRef.value?.sessionId ? ownAvatar : remotes).setFigurePose(sessionId, pose),
     playRemotePoolClip: remotes.playPoolClip,
     setRemoteVoiceState: remotes.setVoiceState,
     remotePlayers: remotes.players,

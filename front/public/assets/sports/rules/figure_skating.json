@@ -1,0 +1,126 @@
+{
+  "version": 1,
+  "sport": "figure_skating",
+  "status": "ready",
+  "zone": "sports_ice_rink",
+  "coachId": "rink_coach",
+  "venue": "rink_figure",
+  "signup": {
+    "teams": false,
+    "settings": [
+      {
+        "key": "skaters",
+        "label": "Skaters",
+        "options": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    ]
+  },
+  "gear": [
+    "gear_ice_skates"
+  ],
+  "song": "ice_waltz",
+  "bpm": 90,
+  "countdownMs": 4000,
+  "lengthBeats": 112,
+  "route": {
+    "a": [
+      -540.4,
+      -275.5
+    ],
+    "b": [
+      -512.4,
+      -275.5
+    ],
+    "radius": 8,
+    "laneOffsetsM": [
+      0,
+      2,
+      -2,
+      4
+    ],
+    "lapBeats": 32
+  },
+  "elements": [
+    {
+      "kind": "jump",
+      "beat": 8
+    },
+    {
+      "kind": "spin",
+      "beat": 16,
+      "beats": 4
+    },
+    {
+      "kind": "spiral",
+      "beat": 26,
+      "beats": 4
+    },
+    {
+      "kind": "jump",
+      "beat": 36
+    },
+    {
+      "kind": "jump",
+      "beat": 43
+    },
+    {
+      "kind": "spin",
+      "beat": 50,
+      "beats": 4
+    },
+    {
+      "kind": "spiral",
+      "beat": 60,
+      "beats": 6
+    },
+    {
+      "kind": "jump",
+      "beat": 72
+    },
+    {
+      "kind": "spin",
+      "beat": 79,
+      "beats": 4
+    },
+    {
+      "kind": "spiral",
+      "beat": 89,
+      "beats": 4
+    },
+    {
+      "kind": "jump",
+      "beat": 98
+    },
+    {
+      "kind": "jump",
+      "beat": 105
+    }
+  ],
+  "windowsMs": {
+    "perfect": 90,
+    "good": 200
+  },
+  "allowanceMs": 120,
+  "jump": {
+    "airMs": 700,
+    "perfect": 300,
+    "good": 150,
+    "rotation": 100,
+    "maxRotations": 3
+  },
+  "spin": {
+    "perPress": 25,
+    "maxPresses": 16,
+    "perfectPresses": 12,
+    "goodPresses": 6
+  },
+  "spiral": {
+    "perfect": 200,
+    "good": 100
+  }
+}

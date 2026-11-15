@@ -11,6 +11,7 @@ import { createModularCharacter } from '../../avatar/modularCharacter'
 import { WEAR_SLOTS, wearSignature, type WearModels } from '../../avatar/modularCharacterLogic'
 import { skatingWear } from '../../game/sports/skating/skateWear'
 import { leanAngle } from '../../game/sports/skating/skateMotion'
+import type { FigurePose } from '../../game/sports/skating/figure'
 import { createActionBubble, type AvatarAction } from '../../game/actionBubble'
 import { climbingWear } from '../../game/sports/climbingWear'
 import { hasSportsLoan } from '../../game/sports/sportsLoans'
@@ -83,6 +84,7 @@ interface RemoteAvatar {
   raceProgress: number
   heldTool: RemoteHeldTool | null
   boxer: RemoteBoxer | null
+  figure: FigurePose | null
 }
 
 /** Where a seated avatar rests: seat top and sitting direction (camera yaw convention). */
@@ -319,6 +321,7 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
       raceProgress: 0,
       heldTool: data.heldTool ? createRemoteHeldTool(group, data.heldTool) : null,
       boxer: null,
+      figure: null,
     })
     sessionByUserId.set(data.id, sessionId)
     if (seat) applySeat(avatars.get(sessionId)!)
@@ -481,6 +484,11 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     if (!entry || (entry.heldTool?.code ?? null) === code) return
     entry.heldTool?.dispose()
     entry.heldTool = code ? createRemoteHeldTool(entry.group, code) : null
+  }
+
+  function setFigurePose(sessionId: string, pose: FigurePose | null) {
+    const entry = avatars.get(sessionId)
+    if (entry) entry.figure = pose
   }
 
   function setBoxer(sessionId: string, on: boolean) {
@@ -694,7 +702,7 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
       entry.voiceIcon.set(entry.voiceState, tagVisible)
       group.position.x -= entry.punchOffsetX
       group.position.z -= entry.punchOffsetZ
-      const shownY = entry.y + (swimwear.has(sessionId) ? SWIMMER_LIFT_M : 0)
+      const shownY = entry.y + (swimwear.has(sessionId) ? SWIMMER_LIFT_M : 0) + (entry.figure?.lift ?? 0)
       const dx = entry.x - group.position.x
       const dy = shownY - EYE_HEIGHT - group.position.y
       const dz = entry.z - group.position.z
@@ -710,7 +718,7 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
       group.position.y += dy * t
       group.position.z += dz * t
       // shortest way round, so turning from 350° to 10° doesn't spin the long way
-      const target = entry.ry + Math.PI
+      const target = entry.ry + Math.PI + (entry.figure?.spin ?? 0)
       const turn = Math.atan2(Math.sin(target - group.rotation.y), Math.cos(target - group.rotation.y))
       group.rotation.y += turn * t
       const leanTarget = entry.skating && dt > 0 ? -leanAngle(Math.hypot(group.position.x - prevX, group.position.z - prevZ) / dt, (turn * t) / dt) : 0
@@ -723,5 +731,5 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     }
   }
 
-  return { skatePushed, skateMove, upsert, updateAppearance, refreshLentWear, setTarget, setSeated, setPicking, setRacePose, setClimbAnimation, setTennis, tennisStroke, setDancing, danceMove, stumble, setHeldTool, setSwimwear, playPoolClip, handOf, playPetanque, setCrouching, setBoxer, boxerShot, boxerCharge, boxerPose, setRacePint, setBadges, pseudoOf, positionOf, avatarOf, playSportsMove, setDribbling, setTopOverride, setVoiceState, setWantedStars, players, accountOf, showAction, showChat, showPunch, showHit, remove, clear, tick }
+  return { skatePushed, skateMove, setFigurePose, upsert, updateAppearance, refreshLentWear, setTarget, setSeated, setPicking, setRacePose, setClimbAnimation, setTennis, tennisStroke, setDancing, danceMove, stumble, setHeldTool, setSwimwear, playPoolClip, handOf, playPetanque, setCrouching, setBoxer, boxerShot, boxerCharge, boxerPose, setRacePint, setBadges, pseudoOf, positionOf, avatarOf, playSportsMove, setDribbling, setTopOverride, setVoiceState, setWantedStars, players, accountOf, showAction, showChat, showPunch, showHit, remove, clear, tick }
 }
