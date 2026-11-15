@@ -14,6 +14,7 @@ import {
   TENNIS_GEAR,
   TENNIS_HIT_COOLDOWN_MS,
   TENNIS_NET_Z,
+  TENNIS_WHIFF_RECOVERY_MS,
   TENNIS_ZONE
 } from './tennisConstants.ts'
 import { type TennisScore, awardPoint, newScore, other, parseFormat, pointLabels } from './tennisScore.ts'
@@ -191,7 +192,10 @@ export function onTennisHit(room: GameRoom, client: GameClient, payload: ClientP
     const hitter = { sessionId: player.sessionId, team: mp.team, x: player.x, z: player.z }
     const before = game.rally
     const next = hit(before, hitter, { x: payload.aimX, z: payload.aimZ }, payload.lob === true, now, game.court)
-    if (!next) return
+    if (!next) {
+      if (before.phase === 'flight' && before.hitter !== mp.team && !before.swing) game.lastHitAt.set(player.accountId, now + TENNIS_WHIFF_RECOVERY_MS - TENNIS_HIT_COOLDOWN_MS)
+      return
+    }
     game.rally = next
     broadcast(room, match, game, now)
     sendStroke(room, player.sessionId, strokeOf(before, next, hitter, payload.lob === true))

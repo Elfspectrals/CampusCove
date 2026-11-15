@@ -10,7 +10,7 @@ const { loadWorld } = await import('../world.ts')
 await loadWorld()
 const tennis = await import('./tennis.ts')
 const C = await import('./tennisConstants.ts')
-const { playAreaFor, tossPeak } = await import('./tennisRally.ts')
+const { ballAt, groundTime, playAreaFor, tossPeak } = await import('./tennisRally.ts')
 
 const RULES = JSON.parse(readFileSync(new URL('../../../front/public/assets/sports/rules/tennis.json', import.meta.url), 'utf8'))
 const [COURT_1] = C.TENNIS_COURTS
@@ -47,6 +47,7 @@ test('the rules file says what the socket plays', () => {
   assert.deepEqual([RULES.hit.windowMs, RULES.hit.reachM, RULES.hit.sweetSpotM, RULES.hit.maxHeightM, RULES.hit.missM], [C.HIT_ALLOWANCE_MS, C.REACH_M, C.SWEET_M, C.HIT_MAX_HEIGHT, C.MISS_M])
   assert.deepEqual([RULES.hit.swingAheadMs, RULES.hit.perfectTimingMs, RULES.hit.timingFloor, RULES.hit.netClearM, RULES.serve.floor], [C.SWING_AHEAD_MS, C.TIMING_PERFECT_MS, C.TIMING_FLOOR, C.NET_CLEAR_M, C.SERVE_FLOOR])
   assert.deepEqual([RULES.hit.smashTimingMs, RULES.hit.smashSpeedMs, RULES.serve.reachM], [C.TIMING_SMASH_MS, C.SMASH_SPEED, C.SERVE_REACH_M])
+  assert.deepEqual([RULES.hit.cooldownMs, RULES.hit.whiffRecoveryMs], [C.TENNIS_HIT_COOLDOWN_MS, C.TENNIS_WHIFF_RECOVERY_MS])
   assert.deepEqual([RULES.hit.driveSpeedMs, RULES.lob.speedMs, RULES.serve.speedMs], [C.DRIVE_SPEED, C.LOB_SPEED, C.SERVE_SPEED])
   assert.deepEqual([RULES.serve.tossStartY, RULES.serve.tossSpeedMs, RULES.serve.windowMs, RULES.serve.autoTossAfterMs], [C.TOSS_START_Y, C.TOSS_SPEED, C.SERVE_WINDOW_MS, C.SERVE_WAIT_MS])
   assert.equal(RULES.rejoinGraceSec * 1000, C.REJOIN_GRACE_MS)
@@ -113,6 +114,26 @@ test('hits are rate-limited and malformed hits are ignored', async () => {
   const toss = game.rally
   tennis.onTennisHit(room, clientOf(room, blue), { aimX: 0, aimZ: 0 }, T0 + C.TENNIS_HIT_COOLDOWN_MS - 1)
   assert.equal(game.rally, toss)
+})
+
+test('a swing at a ball still out of reach is a miss that costs 700 ms, so clicking in bursts does not return the ball', async () => {
+  const { room, match, red, blue } = await singles()
+  const game = tennis.startTennis(room, match, COURT_1.cx, 'blue', T0)
+  const aim = { aimX: COURT_1.cx, aimZ: C.TENNIS_NET_Z + 8 }
+  tennis.onTennisHit(room, clientOf(room, blue), aim, T0)
+  const peak = tossPeak((game.rally as { ball: Parameters<typeof tossPeak>[0] }).ball)
+  tennis.onTennisHit(room, clientOf(room, blue), aim, peak)
+  const served = game.rally
+  const back = { aimX: COURT_1.cx, aimZ: C.TENNIS_NET_Z - 8 }
+  tennis.onTennisHit(room, clientOf(room, red), back, peak + 100)
+  assert.equal(game.rally, served)
+  const landing = groundTime((served as { ball: Parameters<typeof groundTime>[0] }).ball)
+  const at = ballAt((served as { ball: Parameters<typeof ballAt>[0] }).ball, landing)
+  red.x = at.x
+  red.z = at.z
+  tennis.onTennisHit(room, clientOf(room, red), back, peak + 100 + C.TENNIS_WHIFF_RECOVERY_MS - 1)
+  assert.equal((game.rally as { hitter: string }).hitter, 'blue')
+  assert.equal((game.rally as { swing: unknown }).swing, null)
 })
 
 test('the match ends after the winning point pause and is recorded with the games of each side', async () => {

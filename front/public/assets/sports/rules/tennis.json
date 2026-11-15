@@ -94,7 +94,9 @@
       0,
       100
     ],
-    "smashSpeedMs": 25
+    "smashSpeedMs": 25,
+    "cooldownMs": 400,
+    "whiffRecoveryMs": 700
   },
   "lob": {
     "speedMs": [

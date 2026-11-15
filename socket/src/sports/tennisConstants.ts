@@ -50,6 +50,7 @@ export const TOSS_FALL_MS = 1100
 export const SERVE_WAIT_MS = 10_000
 export const POINT_PAUSE_MS = 2_000
 export const TENNIS_HIT_COOLDOWN_MS = 400
+export const TENNIS_WHIFF_RECOVERY_MS = 700
 export const REJOIN_GRACE_MS = 30_000
 export const BASELINE_STANDBY_M = 1.0
 export const DOUBLES_SPREAD_M = 2.5

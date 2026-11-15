@@ -106,6 +106,7 @@ impossible. Reworked on the model of Wii Sports Tennis (automatic positioning, t
 - **Smash**: a fifth timing. A drive struck from 0 to 100 ms after the click, with a quality of 0.85 or more (ball within
   0.95 m), leaves at 25 m/s whatever the quality range of a drive (11 to 19 m/s). Examples: click 50 ms before a ball at
   0.3 m: smash; 101 ms before: perfect; 50 ms before a ball at 1.0 m: good; a lob is never a smash.
+- **A swing at nothing** (decided 2026-11-15, under the "Emergent gameplay" rule): clicking in bursts returned the ball about 6 times in 10 without reading the ring. A click that finds no ball to strike while the ball is coming now costs 700 ms before the next click instead of 400 ms, in a match. Free play keeps 400 ms.
 - **Swing ring**: a ring on the ground around the player, from 900 ms before the ball passes closest, shrinking from
   2.4 m to 0.6 m as it comes. Its colour is what a click now would give: red a miss (more than 350 ms early, more than
   150 ms late, or out of reach), orange a weak shot, green a good one, purple a smash. Purple rather than yellow: yellow
@@ -118,7 +119,7 @@ Socket constants: `socket/src/sports/tennisConstants.ts`, mirrored in `front/pub
 
 | Message | Direction | Payload |
 |---|---|---|
-| `tennis_hit` | client → server | `{ aimX: number, aimZ: number, lob?: boolean }` (finite numbers; the aim is clamped to the receiving half, from 1 m past the net to 3 m past its lines; the front keeps its target 0.5 m inside the lines and 1.5 m from the net). 400 ms between two hits of one player. Only a player of a running tennis match, back on court. |
+| `tennis_hit` | client → server | `{ aimX: number, aimZ: number, lob?: boolean }` (finite numbers; the aim is clamped to the receiving half, from 1 m past the net to 3 m past its lines; the front keeps its target 0.5 m inside the lines and 1.5 m from the net). 400 ms between two hits of one player, 700 ms after a swing at nothing in a match. Only a player of a running tennis match, back on court. |
 | `tennis_state` | server → match players and players in `sports_tennis` | `{ venue, court: { cx, netZ, halfWidth }, mode, format, phase: 'serve_wait' \| 'toss' \| 'flight' \| 'point' \| 'ended', games, points (labels '0', '15', '30', '40', 'AD' or tie-break counts), tiebreak, serving, server: sessionId \| null, ball: { x, y, z, vx, vy, vz, t (server ms) } \| null, hitter, bounces: 0 \| 1, shot: { sessionId, timing: 'smash' \| 'perfect' \| 'good' \| 'early' \| 'late' } \| null (the last shot of the ball in flight), call: 'out' \| 'net' \| 'double_bounce' \| 'missed_toss' \| null, pointWinner, winner, players: [{ sessionId, team }], serverNow }`, sent at kick-off, on each toss, hit, bounce and point, and once with `phase: 'ended'`. |
 | `tennis_ball_take` | client → server | `{ court: 'tennis_1' \| 'tennis_2' }` within 2.5 m of its basket: lends `tennis_ball` (`sports_loans`), or `sports_error` (`sports_too_far`, `sports_no_pass`, `sports_no_gear`, `sports_venue_busy`). |
 | `tennis_free` | server → players in `sports_tennis` | `{ court, geometry: { cx, netZ, halfWidth } \| null, phase: 'idle' \| 'serve_wait' \| 'toss' \| 'flight' \| 'point', ball, hitter, server: sessionId \| null (who tosses), bounces, shot, call, serverNow }` for a free rally; `idle` when the court is free again. |
