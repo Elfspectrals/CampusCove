@@ -72,6 +72,12 @@ export function parseHoldMs(rules: unknown): number {
   return ms
 }
 
+export function parseBagDoubleFrom(rules: unknown): number {
+  const streak = (rules as { bag?: { streakForDouble?: unknown } } | null)?.bag?.streakForDouble
+  if (typeof streak !== 'number' || !Number.isInteger(streak) || streak <= 0) throw new Error('boxing rules: bag.streakForDouble must be a positive whole number')
+  return streak
+}
+
 export function serverClock(state: Pick<BoxingStatePayload, 'serverNow'>, receivedAt: number, now: number): number {
   return state.serverNow + Math.max(0, now - receivedAt)
 }
@@ -103,6 +109,38 @@ export interface BoxingBagHitPayload {
   bag: number
   sessionId: string
   kind: BoxingPunchKind
+  training: boolean
+}
+
+export type BagOutcome = 'hit' | 'combo' | 'wrong' | 'late' | 'over'
+
+export interface BoxingBagRoundPayload {
+  bag: number
+  endsAt: number
+  serverNow: number
+  combo: { id: BoxingCombo; sequence: BoxingPunchKind[] }
+  index: number
+  score: number
+  combos: number
+  streak: number
+  outcome: BagOutcome
+}
+
+export interface BoxingBagEndPayload {
+  bag: number
+  sessionId: string
+  score: number
+  combos: number
+  reason: 'time' | 'left'
+}
+
+export interface BagStep {
+  kind: BoxingPunchKind
+  state: 'done' | 'next' | 'todo'
+}
+
+export function bagSteps(sequence: readonly BoxingPunchKind[], index: number): BagStep[] {
+  return sequence.map((kind, i) => ({ kind, state: i < index ? 'done' : i === index ? 'next' : 'todo' }))
 }
 
 export interface BagSpot {

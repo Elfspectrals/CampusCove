@@ -117,6 +117,7 @@ import {
   SPORTS_TICK_MS,
   joinSports,
   onBoxingBag,
+  tickBoxingBags,
   onBoxingDodge,
   onBoxingGetUp,
   onBoxingGuard,
@@ -321,6 +322,7 @@ export class CityRoom extends Room implements GameRoom {
         tickSports(this)
         tickGym(this)
         tickTennisFree(this)
+        tickBoxingBags(this)
         tickSkating(this)
       } catch (error) {
         warn('sports tick failed', error)

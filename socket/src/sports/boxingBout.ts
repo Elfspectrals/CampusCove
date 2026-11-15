@@ -1,3 +1,5 @@
+import type { BagRules } from './boxingBag.ts'
+
 export const PUNCH_KINDS = ['jab', 'cross', 'hook', 'uppercut'] as const
 export type PunchKind = typeof PUNCH_KINDS[number]
 export const HANDS = ['left', 'right'] as const
@@ -33,6 +35,7 @@ export interface BoxingRules {
   corners: Record<Corner, Point3>
   exits: Record<Corner, Point3>
   punchBags: { x: number, z: number }[]
+  bag: BagRules
   minPlayers: number
   maxPlayers: number
   rejoinGraceSec: number
@@ -459,6 +462,7 @@ export function parseBoxingRules(raw: unknown): BoxingRules {
   const corners = obj(r.corners, 'corners')
   const exits = obj(r.exits, 'exits')
   const punches = obj(r.punches, 'punches')
+  const bag = obj(r.bag, 'bag')
   const guard = obj(r.guard, 'guard')
   const dodgeRules = obj(r.dodge, 'dodge')
   const knockdown = obj(r.knockdown, 'knockdown')
@@ -478,6 +482,13 @@ export function parseBoxingRules(raw: unknown): BoxingRules {
     corners: { red: point3(corners.red, 'corners.red'), blue: point3(corners.blue, 'corners.blue') },
     exits: { red: point3(exits.red, 'exits.red'), blue: point3(exits.blue, 'exits.blue') },
     punchBags: bagsOf(r.punchBags),
+    bag: {
+      roundSec: num(bag, 'roundSec', 'bag', 1),
+      windowMs: num(bag, 'windowMs', 'bag', 1),
+      leaveM: num(bag, 'leaveM', 'bag'),
+      pointsPerPunch: num(bag, 'pointsPerPunch', 'bag', 1),
+      streakForDouble: num(bag, 'streakForDouble', 'bag', 1)
+    },
     minPlayers: num(r, 'minPlayers', 'root', 2),
     maxPlayers: num(r, 'maxPlayers', 'root', 2),
     rejoinGraceSec: num(r, 'rejoinGraceSec', 'root'),

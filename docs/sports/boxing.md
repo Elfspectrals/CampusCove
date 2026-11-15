@@ -81,7 +81,10 @@ A boxer who leaves the ring or disconnects past the 30 s grace loses the fight.
 - No KO: the points of landed punches decide; equal points are a draw. A boxer outside the ring after the intro, or away past the 30 s grace, loses by forfeit.
 - Get-up is a click mash (the open point is closed).
 - View (2026-11-15): third person during a bout, over the boxer's shoulder, the body always facing the opponent (see "Camera" in [README.md](README.md)); `U` goes back to first person. The player's own boxer plays the punches, charge, guard, dodges and hit reactions the others see. Punch bags stay first person.
-- Punch bags: three `decor/punch_bag` props in the hall. A gloved player in reach punches them with the same four attacks (`boxing_bag { bag, kind }`, one hit every 400 ms); the bag rocks, nothing is scored.
+- Punch bags: three `decor/punch_bag` props in the hall. A gloved player in reach punches them with the same four attacks (`boxing_bag { bag, kind }`, one hit every 400 ms); the bag rocks.
+- **Bag round** (second review, 2026-11-15: the bag must be the boxing game with the bag as the opponent, to work the combos, with the gloves on screen). The first punch on a free bag starts a round of 60 s for that player (`boxingBag.ts`, numbers in `boxing.json` `bag`). The socket draws a combo from the list of the bout (`combo.list`, never the same twice in a row); the player throws its punches in order, less than 1.2 s apart. A full combo scores 10 points a punch, doubled from the fourth combo in a row without a mistake. A wrong punch or a gap over 1.2 s starts the combo again and breaks the streak (a wrong punch that is the first of the combo counts as its first). The round ends at the bell, or when the player walks more than 3 m from the bag or leaves. Nothing is saved and nothing is paid: it is training.
+- What a player can still do, and what happens: hit a bag someone trains on (it rocks, no round, no points for anyone); hit another bag during their own round (it rocks, no points); hammer one button (wrong punches, the score does not move); walk away (the round ends, the score is shown); keep punching after the bell (a new round starts on the next punch); punch faster than every 400 ms (the extra punches are dropped).
+- In a bag round the player wears the gloves in first person and on their avatar (other players see them from the first counted punch), the first-person arms and the avatar play the boxing punches, and the view is the bout's duel view turned to the bag, kept out of the walls (`walls` on the duel view).
 
 ## Socket contract
 
@@ -98,7 +101,9 @@ A boxer who leaves the ring or disconnects past the 30 s grace loses the fight.
 | `boxing_dodged` | server → same | `{ sessionId, side }` |
 | `boxing_tired` | server → the boxer | `{}` |
 | `boxing_bag` | client → server | `{ bag: index in punchBags, kind: 'jab' \| 'cross' \| 'hook' \| 'uppercut' }`, within 1.3 m and facing the bag, gloves owned, one every 400 ms |
-| `boxing_bag_hit` | server → players in `sports_boxing` | `{ bag, sessionId, kind }` |
+| `boxing_bag_hit` | server → players in `sports_boxing` | `{ bag, sessionId, kind, training }`; `training` is true when the punch counts in that player's bag round |
+| `boxing_bag_round` | server → the player in a bag round, after each counted punch | `{ bag, endsAt, serverNow, combo: { id, sequence }, index, score, combos, streak, outcome: 'hit' \| 'combo' \| 'wrong' \| 'late' \| 'over' }` |
+| `boxing_bag_end` | server → players in `sports_boxing` and the player | `{ bag, sessionId, score, combos, reason: 'time' \| 'left' }` |
 | `boxing_no_gloves` | server → the player | `{ reason: 'missing' \| 'check_failed' }` |
 
 The red corner is the first to sign up. At kick-off both boxers are moved into their corners on the ring (`teleported`); at the end they are moved out to the exits in front of the ring. The match is recorded with `recordMatch`: `win`, `loss`, `draw` or `dnf` per boxer, `score` = points. No coins.

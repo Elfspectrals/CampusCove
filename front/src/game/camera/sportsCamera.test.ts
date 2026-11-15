@@ -65,6 +65,10 @@ test('the duel camera never leaves its arena, so a cornered boxer keeps it insid
   const pose = poseFor({ kind: 'duel', sport: 'boxing', optional: true, opponent: { x: 0, z: -2 }, arena: { minX: -1, maxX: 1, minZ: -5, maxZ: 2 } }, FRAME)
   close(pose.position.z, 2, 'kept at the arena edge')
   assert.ok(pose.position.x >= -1 && pose.position.x <= 1)
+  assert.equal(pose.pivot, null)
+  const indoors = poseFor({ kind: 'duel', sport: 'boxing', optional: true, opponent: { x: 0, z: -2 }, arena: OPEN, walls: true }, FRAME)
+  assert.deepEqual([indoors.pivot?.x, indoors.pivot?.z], [0, 0])
+  assert.ok((indoors.pivot?.y ?? 0) > 1)
 })
 
 test('the court camera stays behind the baseline, looks down at the near half and follows the player a little', () => {

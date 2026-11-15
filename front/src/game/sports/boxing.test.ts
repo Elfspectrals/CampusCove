@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { type BoxingStatePayload, bagInFront, boxerFor, clockLabel, isFighting, handFor, parseHoldMs, parsePunchBags, parseRingArena, percentOf, punchKindAfter, rockAngle, secondsUntil, serverClock, trianglesBySide, boundsOfVertices } from './boxing.ts'
+import { type BoxingStatePayload, bagInFront, bagSteps, boxerFor, parseBagDoubleFrom, clockLabel, isFighting, handFor, parseHoldMs, parsePunchBags, parseRingArena, percentOf, punchKindAfter, rockAngle, secondsUntil, serverClock, trianglesBySide, boundsOfVertices } from './boxing.ts'
 
 const boxer = (sessionId: string, corner: 'red' | 'blue') => ({
   sessionId, name: sessionId, corner, health: 120, maxHealth: 120, endurance: 100, maxEndurance: 100,
@@ -51,6 +51,17 @@ test('the punch bags come from the rules, and a broken list is an error', () => 
   assert.deepEqual(parsePunchBags({ punchBags: [{ x: 1, z: 2 }] }), [{ x: 1, z: 2 }])
   assert.throws(() => parsePunchBags({ punchBags: [] }), /punchBags/)
   assert.throws(() => parsePunchBags({ punchBags: [{ x: 1 }] }), /punchBags\.0/)
+})
+
+test('the combo of a bag round shows the punches done, the next one and those to come', () => {
+  assert.deepEqual(bagSteps(['jab', 'cross', 'hook'], 0).map((s) => s.state), ['next', 'todo', 'todo'])
+  assert.deepEqual(bagSteps(['jab', 'cross', 'hook'], 2), [{ kind: 'jab', state: 'done' }, { kind: 'cross', state: 'done' }, { kind: 'hook', state: 'next' }])
+})
+
+test('the streak that doubles the points of a bag combo comes from the rules', () => {
+  assert.equal(parseBagDoubleFrom({ bag: { streakForDouble: 3 } }), 3)
+  assert.throws(() => parseBagDoubleFrom({ bag: {} }), /streakForDouble/)
+  assert.throws(() => parseBagDoubleFrom({}), /streakForDouble/)
 })
 
 test('a bag is hit when it is within 1.3 m and in front; the nearest wins', () => {

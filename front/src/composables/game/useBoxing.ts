@@ -10,15 +10,19 @@ import type { Arena, SportsView } from '../../game/camera/sportsCamera'
 import {
   ROCK_DURATION_S,
   bagInFront,
+  bagSteps,
   boxerFor,
   clockLabel,
   handFor,
   parseHoldMs,
+  parseBagDoubleFrom,
   parsePunchBags,
   parseRingArena,
   rockAngle,
   type BagSpot,
+  type BoxingBagEndPayload,
   type BoxingBagHitPayload,
+  type BoxingBagRoundPayload,
   type BoxingCombo,
   type BoxingHand,
   type BoxingPunchKind,
@@ -34,6 +38,8 @@ import {
 
 const RESULT_SHOWN_MS = 8000
 const COMBO_SHOWN_MS = 1400
+const BAG_RESULT_SHOWN_MS = 6000
+const BAG_ARENA_M = 3
 const CLOCK_TICK_MS = 250
 
 export interface BoxingDeps {
@@ -87,6 +93,11 @@ export function useBoxing(deps: BoxingDeps) {
   let holdMs: number | null = null
   const presses = new Map<BoxingHand, { at: number, charge: ReturnType<typeof setTimeout> | null, fight: boolean }>()
   const combo = shallowRef<{ id: BoxingCombo, name: string, mine: boolean, damage: number, key: number } | null>(null)
+  const bagRound = shallowRef<(BoxingBagRoundPayload & { receivedAt: number, key: number }) | null>(null)
+  const bagResult = shallowRef<{ score: number, combos: number } | null>(null)
+  let bagResultTimer: ReturnType<typeof setTimeout> | null = null
+  const training = computed(() => bagRound.value !== null)
+  const bagDoubleFrom = ref<number | null>(null)
   let comboTimer: ReturnType<typeof setTimeout> | null = null
   fetch(sportRulesUrl('boxing'))
     .then((res) => {
@@ -95,6 +106,7 @@ export function useBoxing(deps: BoxingDeps) {
     })
     .then((rules: unknown) => {
       bags = parsePunchBags(rules)
+      bagDoubleFrom.value = parseBagDoubleFrom(rules)
       arena = parseRingArena(rules)
       holdMs = parseHoldMs(rules)
     })
@@ -194,7 +206,7 @@ export function useBoxing(deps: BoxingDeps) {
     if (fight && state.value?.phase !== 'round') return true
     const wait = holdMs
     releaseTimer(hand)
-    const charge = fight ? setTimeout(() => deps.arms()?.boxingCharge(FP_CHARGE[hand]), wait) : null
+    const charge = fight || training.value ? setTimeout(() => deps.arms()?.boxingCharge(FP_CHARGE[hand]), wait) : null
     presses.set(hand, { at: performance.now(), charge, fight })
     if (fight) send('boxing_press', { hand })
     return true
@@ -218,7 +230,8 @@ export function useBoxing(deps: BoxingDeps) {
       return true
     }
     const bag = bagAimed()
-    deps.arms()?.punch()
+    if (training.value) deps.arms()?.boxingShot(FP_SHOT[kind], FP_START_S[kind])
+    else deps.arms()?.punch()
     if (bag !== null) send('boxing_bag', { bag, kind })
     return true
   }
@@ -282,6 +295,7 @@ export function useBoxing(deps: BoxingDeps) {
     if (rockFrame) cancelAnimationFrame(rockFrame)
     if (hideTimer) clearTimeout(hideTimer)
     if (comboTimer) clearTimeout(comboTimer)
+    if (bagResultTimer) clearTimeout(bagResultTimer)
     for (const hand of presses.keys()) releaseTimer(hand)
     window.removeEventListener('keyup', onKeyUp)
     window.removeEventListener('mouseup', onPointerUp)
@@ -289,7 +303,7 @@ export function useBoxing(deps: BoxingDeps) {
   })
 
   let myGloves: WornGloves | null = null
-  watch(fighting, (on) => {
+  watch(() => fighting.value || training.value, (on) => {
     myGloves?.dispose()
     const arms = deps.arms()
     myGloves = on && arms ? wearFpGloves({ left: arms.leftHand(), right: arms.rightHand() }) : null
@@ -299,7 +313,7 @@ export function useBoxing(deps: BoxingDeps) {
     }
     loadBoxingFpClips()
       .then((clips) => {
-        if (fighting.value) deps.arms()?.setBoxing(clips)
+        if (fighting.value || training.value) deps.arms()?.setBoxing(clips)
       })
       .catch((error: unknown) => console.error('[boxing] first-person clips not loaded', error))
   })
@@ -351,19 +365,58 @@ export function useBoxing(deps: BoxingDeps) {
     onNoGloves() {
       deps.say(deps.noGlovesText())
     },
+    onBagRound(data: BoxingBagRoundPayload) {
+      if (bagResultTimer) clearTimeout(bagResultTimer)
+      bagResult.value = null
+      bagRound.value = { ...data, receivedAt: Date.now(), key: (bagRound.value?.key ?? 0) + 1 }
+      if (data.outcome === 'combo') deps.play('boxing_bell')
+      else if (data.outcome === 'wrong' || data.outcome === 'late') deps.play('glove_block')
+    },
+    onBagEnd(data: BoxingBagEndPayload, mySession: string) {
+      if (data.sessionId !== mySession) return
+      bagRound.value = null
+      dropPresses()
+      bagResult.value = { score: data.score, combos: data.combos }
+      deps.play('boxing_bell')
+      if (bagResultTimer) clearTimeout(bagResultTimer)
+      bagResultTimer = setTimeout(() => (bagResult.value = null), BAG_RESULT_SHOWN_MS)
+    },
     onRoomLeft() {
       state.value = null
+      bagRound.value = null
+      bagResult.value = null
       guarding = false
       for (const hand of presses.keys()) releaseTimer(hand)
       presses.clear()
     },
   }
 
+  const bagView = computed(() => {
+    const round = bagRound.value
+    const doubleFrom = bagDoubleFrom.value
+    if (!round || doubleFrom === null) return null
+    return {
+      doubleFrom,
+      clock: clockLabel(secondsUntil(round.endsAt, serverClock(round, round.receivedAt, now.value))),
+      comboName: deps.comboName(round.combo.id),
+      steps: bagSteps(round.combo.sequence, round.index),
+      score: round.score,
+      combos: round.combos,
+      streak: round.streak,
+      outcome: round.outcome,
+      key: round.key,
+    }
+  })
+
   function cameraView(): SportsView | null {
+    const bag = bagRound.value ? bags[bagRound.value.bag] : undefined
+    if (bag) {
+      return { kind: 'duel', sport: 'boxing', optional: true, opponent: { x: bag.x, z: bag.z }, arena: { minX: bag.x - BAG_ARENA_M, maxX: bag.x + BAG_ARENA_M, minZ: bag.z - BAG_ARENA_M, maxZ: bag.z + BAG_ARENA_M }, walls: true }
+    }
     const rival = fighting.value ? state.value?.boxers.find((b) => b.sessionId !== null && b.sessionId !== mySessionId()) : undefined
     const opponent = rival?.sessionId ? deps.remotePosition(rival.sessionId) : null
     return opponent && arena ? { kind: 'duel', sport: 'boxing', optional: true, opponent: { x: opponent.x, z: opponent.z }, arena } : null
   }
 
-  return { view, fighting, handlers, onPointerDown, onKeyDown, cameraView }
+  return { view, bagView, bagResult, fighting, handlers, onPointerDown, onKeyDown, cameraView }
 }

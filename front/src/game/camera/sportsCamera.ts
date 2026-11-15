@@ -13,7 +13,7 @@ export interface CameraPose {
 
 export type SportsView =
   | { kind: 'follow'; sport: string; optional: boolean; distance: number; lift: number; waterY: number | null }
-  | { kind: 'duel'; sport: string; optional: boolean; opponent: { x: number; z: number }; arena: Arena }
+  | { kind: 'duel'; sport: string; optional: boolean; opponent: { x: number; z: number }; arena: Arena; walls?: boolean }
   | { kind: 'court'; sport: string; optional: boolean; cx: number; netZ: number; halfLength: number; side: 1 | -1 }
   | { kind: 'stage'; sport: string; optional: boolean; facingYaw: number }
   | { kind: 'broadcast'; sport: string; optional: boolean; court: Arena; focusX: number; focusZ: number; fallback: SportsView | null }
@@ -121,7 +121,7 @@ function duelPose(view: Extract<SportsView, { kind: 'duel' }>, frame: ViewFrame)
     },
     target: { x: frame.eye.x + dx / 2, y: frame.feetY + DUEL_TARGET_HEIGHT_M, z: frame.eye.z + dz / 2 },
     fov: DUEL_FOV,
-    pivot: null,
+    pivot: view.walls ? { x: frame.eye.x, y: frame.feetY + DUEL_HEIGHT_M, z: frame.eye.z } : null,
   }
 }
 

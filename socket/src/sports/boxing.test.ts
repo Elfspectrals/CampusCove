@@ -191,10 +191,34 @@ test('a punch bag answers a gloved player in reach and facing it, at most every 
   await boxing.onBoxingBag(room, clientOf(room, player), { bag: 1, kind: 'jab' }, NOW + 400)
   await boxing.onBoxingBag(room, clientOf(room, player), { bag: 7, kind: 'jab' }, NOW + 800)
   await boxing.onBoxingBag(room, clientOf(room, player), { bag: 0, kind: 'haymaker' }, NOW + 1200)
-  assert.deepEqual(sentOf(clientOf(room, player), 'boxing_bag_hit'), [{ bag: 0, sessionId: player.sessionId, kind: 'jab' }])
+  assert.deepEqual(sentOf(clientOf(room, player), 'boxing_bag_hit'), [{ bag: 0, sessionId: player.sessionId, kind: 'jab', training: true }])
   player.ry = Math.PI
   await boxing.onBoxingBag(room, clientOf(room, player), { bag: 0, kind: 'cross' }, NOW + 2000)
   assert.equal(sentOf(clientOf(room, player), 'boxing_bag_hit').length, 1)
+})
+
+test('the first punch on a free bag starts a 60 s round for that player; another player only rocks the bag; the round ends on time or when they walk away', async () => {
+  const [trainee, other] = await Promise.all([makePlayer(411, 6, 1), makePlayer(412, 6, 1)])
+  const room = await fakeRoom([trainee, other])
+  Object.assign(trainee, { x: 6, z: 1, ry: 0 })
+  Object.assign(other, { x: 6, z: 1, ry: 0 })
+  await boxing.onBoxingBag(room, clientOf(room, trainee), { bag: 0, kind: 'jab' }, NOW)
+  const first = sentOf(clientOf(room, trainee), 'boxing_bag_round').at(-1) as { bag: number, endsAt: number, combo: { sequence: string[] }, index: number, outcome: string }
+  assert.equal(first.bag, 0)
+  assert.equal(first.endsAt, NOW + 60_000)
+  assert.equal(first.outcome, first.combo.sequence[0] === 'jab' ? 'hit' : 'wrong')
+  await boxing.onBoxingBag(room, clientOf(room, other), { bag: 0, kind: 'jab' }, NOW + 100)
+  assert.equal(sentOf(clientOf(room, other), 'boxing_bag_round').length, 0)
+  assert.deepEqual(sentOf(clientOf(room, other), 'boxing_bag_hit').at(-1), { bag: 0, sessionId: other.sessionId, kind: 'jab', training: false })
+  boxing.tickBoxingBags(room, NOW + 59_999)
+  assert.equal(sentOf(clientOf(room, trainee), 'boxing_bag_end').length, 0)
+  boxing.tickBoxingBags(room, NOW + 60_000)
+  assert.deepEqual(sentOf(clientOf(room, trainee), 'boxing_bag_end'), [{ bag: 0, sessionId: trainee.sessionId, score: 0, combos: 0, reason: 'time' }])
+  await boxing.onBoxingBag(room, clientOf(room, other), { bag: 0, kind: 'jab' }, NOW + 61_000)
+  assert.equal(sentOf(clientOf(room, other), 'boxing_bag_round').length, 1)
+  other.x = 10
+  boxing.tickBoxingBags(room, NOW + 62_000)
+  assert.deepEqual(sentOf(clientOf(room, other), 'boxing_bag_end').at(-1), { bag: 0, sessionId: other.sessionId, score: 0, combos: 0, reason: 'left' })
 })
 
 test('a player without gloves is told so and the bag does not move', async () => {

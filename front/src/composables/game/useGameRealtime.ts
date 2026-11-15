@@ -141,7 +141,7 @@ import type {
   PickpocketSucceededPayload,
   PickpocketTakenPayload,
 } from '../../types/gameRealtime'
-import { type BoxingBagHitPayload, type BoxingChargePayload, type BoxingDodgedPayload, type BoxingHitPayload, type BoxingStatePayload, boxerPose } from '../../game/sports/boxing'
+import { type BoxingBagEndPayload, type BoxingBagHitPayload, type BoxingBagRoundPayload, type BoxingChargePayload, type BoxingDodgedPayload, type BoxingHitPayload, type BoxingStatePayload, boxerPose } from '../../game/sports/boxing'
 import { chargeClip, punchClip } from '../../avatar/boxingAnimLogic'
 import { useRemoteAvatars, type SeatPose } from './useRemoteAvatars'
 import { PUNCH_DAMAGE } from '../../game/punch'
@@ -391,6 +391,8 @@ export interface GameRealtimeDeps {
     onDodged: (data: BoxingDodgedPayload) => void
     onTired: () => void
     onBagHit: (data: BoxingBagHitPayload) => void
+    onBagRound: (data: BoxingBagRoundPayload) => void
+    onBagEnd: (data: BoxingBagEndPayload, mySessionId: string) => void
     onNoGloves: () => void
     onRoomLeft: () => void
   }
@@ -760,7 +762,18 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       deps.boxing.onDodged(data)
     })
     room.onMessage('boxing_tired', () => deps.boxing.onTired())
-    room.onMessage('boxing_bag_hit', (data: BoxingBagHitPayload) => deps.boxing.onBagHit(data))
+    room.onMessage('boxing_bag_hit', (data: BoxingBagHitPayload) => {
+      if (data.training) {
+        avatarsOf(data.sessionId).setBoxer(data.sessionId, true)
+        avatarsOf(data.sessionId).boxerShot(data.sessionId, punchClip(data.kind))
+      }
+      deps.boxing.onBagHit(data)
+    })
+    room.onMessage('boxing_bag_round', (data: BoxingBagRoundPayload) => deps.boxing.onBagRound(data))
+    room.onMessage('boxing_bag_end', (data: BoxingBagEndPayload) => {
+      if (!dressedBoxers.has(data.sessionId)) avatarsOf(data.sessionId).setBoxer(data.sessionId, false)
+      deps.boxing.onBagEnd(data, room.sessionId)
+    })
     room.onMessage('boxing_no_gloves', () => deps.boxing.onNoGloves())
     room.onMessage('skate_race', (data: SkateRacePayload) => deps.skating.onRace(data))
     room.onMessage('skate_fall', (data: SkateFallPayload) => {

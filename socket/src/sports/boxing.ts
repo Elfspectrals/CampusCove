@@ -27,6 +27,7 @@ import {
   startBout,
   takeQueued
 } from './boxingBout.ts'
+import { type BagOutcome, type BagRound, bagPunch, bagRoundOver, startBagRound } from './boxingBag.ts'
 import { onGearChanged, usableGear } from './gear.ts'
 import { type Match, activePlayers, matchPlayer, parseSignupRules } from './signup.ts'
 import { type MatchEnd, type MatchResult, endMatch, recordMatch, registerCoach, registerVenue } from './venues.ts'
@@ -48,6 +49,7 @@ interface Fight {
 const fights = new Map<string, Fight>()
 const glovesChecks = new Map<number, { owned: Promise<boolean>, at: number }>()
 const lastBagHitAt = new Map<number, number>()
+const bagRounds = new WeakMap<GameRoom, Map<number, BagRound>>()
 let boxingRules: BoxingRules | null = null
 
 function rulesOf(): BoxingRules {
@@ -380,11 +382,68 @@ export async function onBoxingBag(room: GameRoom, client: GameClient, payload: C
     client.send('boxing_no_gloves', { reason: 'missing' })
     return
   }
+  if (room.players.get(client.sessionId) !== player) return
+  const rules = rulesOf()
+  const rounds = bagRoundsOf(room)
+  const mine = [...rounds.values()].find((r) => r.accountId === player.accountId) ?? null
+  const round = mine ?? (rounds.has(index as number) ? null : startBagRound(player, index as number, now, rules.bag, rules.combo.list, Math.random))
+  const counted = round !== null && round.bag === index
+  if (round && !mine) rounds.set(round.bag, round)
+  const outcome = round && counted ? bagPunch(round, kind as PunchKind, now, rules.bag, rules.combo.list, Math.random) : null
+  sendToPlayersInHall(room, 'boxing_bag_hit', { bag: index, sessionId: player.sessionId, kind, training: counted })
+  if (round && outcome) client.send('boxing_bag_round', bagRoundView(round, outcome, now))
+}
+
+function bagRoundsOf(room: GameRoom): Map<number, BagRound> {
+  let rounds = bagRounds.get(room)
+  if (!rounds) {
+    rounds = new Map()
+    bagRounds.set(room, rounds)
+  }
+  return rounds
+}
+
+function sendToPlayersInHall(room: GameRoom, type: string, payload: unknown): void {
   const hall = worldSportsPassArea(rulesOf().zone)
   room.forEachClient((c) => {
     const listener = room.players.get(c.sessionId)
-    if (listener && hall && inside(hall, listener.x, listener.z)) c.send('boxing_bag_hit', { bag: index, sessionId: player.sessionId, kind })
+    if (listener && hall && inside(hall, listener.x, listener.z)) c.send(type, payload)
   })
+}
+
+function bagRoundView(round: BagRound, outcome: BagOutcome, now: number) {
+  return {
+    bag: round.bag,
+    endsAt: round.endsAt,
+    serverNow: now,
+    combo: { id: round.combo.id, sequence: round.combo.sequence },
+    index: round.index,
+    score: round.score,
+    combos: round.combos,
+    streak: round.streak,
+    outcome
+  }
+}
+
+export function tickBoxingBags(room: GameRoom, now = Date.now()): void {
+  const rounds = bagRounds.get(room)
+  if (!rounds || rounds.size === 0 || !boxingRules) return
+  for (const round of [...rounds.values()]) {
+    const player = room.players.get(round.sessionId)
+    const trainee = player && player.accountId === round.accountId ? player : null
+    if (!bagRoundOver(round, trainee, boxingRules.punchBags[round.bag], now, boxingRules.bag)) continue
+    rounds.delete(round.bag)
+    const end = { bag: round.bag, sessionId: round.sessionId, score: round.score, combos: round.combos, reason: now >= round.endsAt ? 'time' : 'left' }
+    sendToPlayersInHall(room, 'boxing_bag_end', end)
+    const client = room.clients.find((c) => c.sessionId === round.sessionId)
+    const stillThere = trainee !== null && client !== undefined
+    if (stillThere && !inHall(trainee)) client.send('boxing_bag_end', end)
+  }
+}
+
+function inHall(player: Player): boolean {
+  const hall = worldSportsPassArea(rulesOf().zone)
+  return hall !== null && inside(hall, player.x, player.z)
 }
 
 export function boxingFight(matchId: string): Fight | undefined {

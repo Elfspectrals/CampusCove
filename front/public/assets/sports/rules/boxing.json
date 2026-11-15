@@ -179,6 +179,13 @@
     "facingCos": 0.3,
     "heightM": 1
   },
+  "bag": {
+    "roundSec": 60,
+    "windowMs": 1200,
+    "leaveM": 3,
+    "pointsPerPunch": 10,
+    "streakForDouble": 3
+  },
   "punchBags": [
     {
       "x": -386.25,

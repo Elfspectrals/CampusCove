@@ -43,6 +43,7 @@ import GameDance from '../components/game/GameDance.vue'
 import GameEmoteWheel from '../components/game/GameEmoteWheel.vue'
 import GameClimbHud from '../components/game/GameClimbHud.vue'
 import GameClimbBoard from '../components/game/GameClimbBoard.vue'
+import GameBoxingBag from '../components/game/GameBoxingBag.vue'
 import GameBoxingHud from '../components/game/GameBoxingHud.vue'
 import GameSkatingHud from '../components/game/GameSkatingHud.vue'
 import GamePetanque from '../components/game/GamePetanque.vue'
@@ -1082,7 +1083,7 @@ const boxing = useBoxing({
   getScene,
   remotePosition: (sessionId) => realtime.remotePosition(sessionId),
 })
-const { view: boxingView, fighting: boxingFighting } = boxing
+const { view: boxingView, fighting: boxingFighting, bagView: boxingBagView, bagResult: boxingBagResult } = boxing
 const SKATING_CORRECTIONS = new Set(['no_skates', 'skate_start', 'skate_fallen'])
 const skating = useSkating({
   myPosition,
@@ -2739,6 +2740,7 @@ const crosshairClass = computed(() => {
       @close="sportsSignup.close"
     />
     <GameBoxingHud v-if="boxingView" :view="boxingView" :fighting="boxingFighting" :guard-key="actionKeyLabels('cook')[0] ?? ''" />
+    <GameBoxingBag v-else-if="boxingBagView || boxingBagResult" :round="boxingBagView" :result="boxingBagResult" />
     <GameSkatingHud
       :active="skatingActive"
       :speed="skatingSpeed"
