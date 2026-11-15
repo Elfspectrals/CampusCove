@@ -127,6 +127,7 @@ import {
 } from './sports/index.ts'
 import { onPoolJump, onPoolTrick } from './sports/poolDiving.ts'
 import { onPoolDive, onPoolStroke } from './sports/poolRace.ts'
+import { POOL_BREATH_TICK_MS, tickPoolBreath } from './sports/poolWater.ts'
 
 function warn(context: string, error: unknown): void {
   console.warn(`[colyseus] ${context}:`, error instanceof Error ? error.message : error)
@@ -266,6 +267,7 @@ export class CityRoom extends Room implements GameRoom {
         warn('sports tick failed', error)
       }
     }, SPORTS_TICK_MS)
+    this.clock.setInterval(() => tickPoolBreath(this, Date.now()), POOL_BREATH_TICK_MS)
     this.onMessage('bus_board', (client, payload: ClientPayload) => onBusBoard(this, client, payload))
     this.onMessage('bus_alight', (client, payload: ClientPayload) => onBusAlight(this, client, payload))
     this.clock.setInterval(() => tickBus(this), BUS_SYNC_MS)

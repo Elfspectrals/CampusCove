@@ -89,13 +89,15 @@
         "minX": -533,
         "maxX": -520,
         "minZ": -219.5,
-        "maxZ": -204.5
+        "maxZ": -204.5,
+        "floorY": -4.5
       },
       {
         "minX": -519,
         "maxX": -494,
         "minZ": -219.5,
-        "maxZ": -204.5
+        "maxZ": -204.5,
+        "floorY": -2
       }
     ],
     "depthsM": {
@@ -125,7 +127,8 @@
     "startX": -494,
     "turnX": -519,
     "waterY": -0.3,
-    "wadeY": -1.3
+    "wadeY": -1.3,
+    "deckY": 0
   },
   "distancesM": [
     25,
@@ -151,6 +154,20 @@
   "dive": {
     "glideM": 3,
     "speedMps": 1.8
+  },
+  "swim": {
+    "speedMps": 2,
+    "fastSpeedMps": 3,
+    "verticalMps": 1.6,
+    "floatEyeAboveWaterM": 0.15,
+    "swimEyeMaxAboveWaterM": 0.5,
+    "underwaterEyeBelowWaterM": 0.05,
+    "minEyeAboveFloorM": 0.3
+  },
+  "breath": {
+    "maxMs": 30000,
+    "refillPerMs": 3,
+    "rescueDamage": 10
   },
   "turn": "automatic",
   "turnBonus": 0,

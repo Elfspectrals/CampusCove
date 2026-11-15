@@ -25,12 +25,19 @@ export interface Lane {
   block: [number, number, number]
 }
 
+export interface WaterRect extends Bounds {
+  floorY: number
+}
+
 export interface PoolRules {
   lengthM: number
   startX: number
   turnX: number
   lanes: Lane[]
-  water: Bounds[]
+  water: WaterRect[]
+  exits: Bounds[]
+  waterY: number
+  deckY: number
   wadeY: number
   distancesM: number[]
   beepDelayMs: [number, number]
@@ -98,6 +105,8 @@ export function parsePoolRules(raw: unknown): PoolRules {
   const lengthM = num(pool.lengthM, 'lengthM', 1)
   const distancesM = rules.distancesM.map((d) => num(d, 'distance', lengthM))
   if (distancesM.some((d) => d % lengthM !== 0)) throw new Error('swimming rules: a distance is not a whole number of lengths')
+  const waterY = num(pool.waterY, 'waterY', -Infinity)
+  if (pool.waterVolume.some((b) => num((b as Json).floorY, 'floorY', -Infinity) >= waterY)) throw new Error('swimming rules: a pool floor is not under the water')
   const startX = num(pool.startX, 'startX', -Infinity)
   const turnX = num(pool.turnX, 'turnX', -Infinity)
   if (Math.abs(Math.abs(startX - turnX) - lengthM) > 1e-6) throw new Error('swimming rules: startX and turnX are not one length apart')
@@ -106,7 +115,10 @@ export function parsePoolRules(raw: unknown): PoolRules {
     startX,
     turnX,
     lanes,
-    water: pool.waterVolume.map((b, i) => bounds(b, `waterVolume[${i}]`)),
+    water: pool.waterVolume.map((b, i) => ({ ...bounds(b, `waterVolume[${i}]`), floorY: num((b as Json).floorY, `waterVolume[${i}].floorY`, -Infinity) })),
+    exits: Array.isArray(pool.exits) ? pool.exits.map((b, i) => bounds(b, `exits[${i}]`)) : [],
+    waterY,
+    deckY: num(pool.deckY, 'deckY', -Infinity),
     wadeY: num(pool.wadeY, 'wadeY', -Infinity),
     distancesM,
     beepDelayMs: [delay[0] as number, delay[1] as number],

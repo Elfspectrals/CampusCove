@@ -13,6 +13,8 @@ import { advanceHitStop, cameraJolt, idleHitStop, punchKick, scheduleHitStop } f
 import { cameraMotionScale, createStepSmoother, verticalFovFor } from '../../game/comfort'
 import { comfortSettings } from './useComfortSettings'
 import { flyStep } from '../../game/admin/selfPowers'
+import type { WaterRect } from '../../game/sports/pool/poolRace'
+import type { SwimInput, SwimStep } from '../../game/sports/pool/swimMotion'
 
 /** Takeoff speed and gravity (m/s, m/s²): a ~0.95 m hop that lasts ~0.6 s. */
 const JUMP_VELOCITY = 6.5
@@ -62,6 +64,10 @@ export interface UseGameMovementDeps {
   flying?: () => boolean
   /** Runs once the camera is placed each frame, for extra camera motion (drunken sway). */
   afterCameraPlaced?: (camera: THREE.PerspectiveCamera, dt: number) => void
+  swim?: {
+    waterAt: (x: number, z: number, feetY: number) => WaterRect | null
+    step: (water: WaterRect, eyeY: number, vy: number, input: SwimInput, yaw: number, pitch: number, dt: number) => SwimStep
+  }
 }
 
 /** First-person controls (WASD/ZQSD + pointer-lock mouse look), position sync, and the render loop. */
@@ -73,6 +79,8 @@ export function useGameMovement(deps: UseGameMovementDeps) {
   /** Height of the feet above the ground while jumping, and its vertical speed. */
   let airY = 0
   let airVelocity = 0
+  let swimVy = 0
+  let wasSwimming = false
   const direction = new THREE.Vector3(0, 0, -1)
   const rightVec = new THREE.Vector3()
   let lastEmit = 0
@@ -112,7 +120,25 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     const push = knockback.step(dt)
     const locked = deps.movementLocked?.() ?? false
     const flying = !locked && (deps.flying?.() ?? false)
-    if (flying && !deps.inventoryOpen.value) {
+    const water = locked || flying ? null : (deps.swim?.waterAt(myPosition.x, myPosition.z, feetY) ?? null)
+    if (water && deps.swim) {
+      if (!wasSwimming) swimVy = airY > 0 ? airVelocity : 0
+      airY = 0
+      airVelocity = 0
+      const free = !deps.inventoryOpen.value
+      const forward = free ? (keys.forward ? 1 : keys.back ? -1 : 0) : 0
+      const right = free ? (keys.right ? 1 : keys.left ? -1 : 0) : 0
+      const speedFactor = deps.speedFactor()
+      sprinting = keys.sprint && (forward !== 0 || right !== 0) && speedFactor > 0 && deps.trySpendSprint(dt, sprinting)
+      const input = { forward, right, up: free && keys.up, down: free && keys.down, fast: sprinting, speedFactor }
+      const swim = deps.swim.step(water, myPosition.y, swimVy, input, yaw, pitch, dt)
+      const pushFactor = speedFactor > 0 ? 1 : 0
+      const resolved = resolveWorldMovement(myPosition, swim.dx + push.dx * pushFactor, swim.dz + push.dz * pushFactor, myPosition.y - EYE_HEIGHT)
+      myPosition.x = resolved.x
+      myPosition.z = resolved.z
+      myPosition.y = swim.y
+      swimVy = swim.vy
+    } else if (flying && !deps.inventoryOpen.value) {
       const fly = flyStep(
         yaw,
         pitch,
@@ -145,7 +171,9 @@ export function useGameMovement(deps: UseGameMovementDeps) {
       sprinting = false
     }
     jumpRequested = false
-    if (!locked && !flying) {
+    wasSwimming = water !== null
+    const intoWater = !water && !locked && !flying && (deps.swim?.waterAt(myPosition.x, myPosition.z, feetY) ?? null) !== null
+    if (!locked && !flying && !water && !intoWater) {
       if (airY > 0 || airVelocity > 0) {
         airVelocity -= GRAVITY * dt
         airY = Math.max(0, airY + airVelocity * dt)

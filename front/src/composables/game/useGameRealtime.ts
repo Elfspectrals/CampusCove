@@ -130,6 +130,7 @@ import { PUNCH_DAMAGE } from '../../game/punch'
 import { applySportsLoans, clearSportsLoans, forgetSportsLoans } from '../../game/sports/sportsLoans'
 import type { PoolDive, PoolRaceResult, PoolRaceStart, PoolRaceState, StrokeResult, Trick } from '../../game/sports/pool/poolRace'
 import type { usePoolRace } from './usePoolRace'
+import type { usePoolSwim } from './usePoolSwim'
 
 const REALTIME_HTTP_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000'
 
@@ -329,6 +330,7 @@ export interface GameRealtimeDeps {
     onRoomJoined: () => void
   }
   pool: ReturnType<typeof usePoolRace>['handlers']
+  poolSwim: ReturnType<typeof usePoolSwim>['handlers']
   pickpocket: {
     onStarted: (data: PickpocketStartedPayload) => void
     onProgress: (data: PickpocketProgressPayload) => void
@@ -587,6 +589,8 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('sports_error', (data: SportsErrorPayload) => deps.sports.onError(data))
     room.onMessage('sports_loans', (data: SportsLoansPayload) => applySportsLoans(data))
     room.onMessage('pool_race_start', (data: PoolRaceStart) => deps.pool.onStart(data))
+    room.onMessage('pool_breath', (data: { breathMs: number; maxMs: number }) => deps.poolSwim.onBreath(data))
+    room.onMessage('pool_rescued', () => deps.poolSwim.onRescued())
     room.onMessage('pool_race_beep', () => deps.pool.onBeep())
     room.onMessage('pool_race_state', (data: PoolRaceState) => deps.pool.onState(data))
     room.onMessage('pool_stroke_result', (data: { result: StrokeResult }) => deps.pool.onStrokeResult(data))
