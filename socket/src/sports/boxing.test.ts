@@ -39,6 +39,11 @@ function lastState(room: FakeRoom, player: Player) {
   return sentOf(clientOf(room, player), 'boxing_state').at(-1) as ReturnType<typeof boxing.boutView>
 }
 
+function throwWith(room: FakeRoom, player: Player, hand: string, at: number, heldMs = 0): void {
+  boxing.onBoxingPress(room, clientOf(room, player), { hand }, at)
+  boxing.onBoxingRelease(room, clientOf(room, player), { hand }, at + heldMs)
+}
+
 async function settle(): Promise<void> {
   await new Promise((resolve) => setImmediate(resolve))
 }
@@ -52,18 +57,53 @@ test('two signed-up boxers are put in their corners and the bout opens with the 
   assert.deepEqual([state.phase, state.rounds, state.boxers.map((b) => b.corner)], ['intro', 1, ['red', 'blue']])
 })
 
-test('a jab within reach and facing lands on the server positions; a punch from a spectator or of an unknown kind is ignored', async () => {
+test('a left tap within reach and facing lands a jab on the server positions; an unknown hand or a release without a press is ignored', async () => {
   const { room, red, blue } = await bout()
   venues.tickSports(room, ROUND_START)
   faceOff(red, blue)
-  boxing.onBoxingPunch(room, clientOf(room, red), { kind: 'uppercut' }, ROUND_START)
-  boxing.onBoxingPunch(room, clientOf(room, red), { kind: 'jab' }, ROUND_START)
+  throwWith(room, red, 'up', ROUND_START)
+  boxing.onBoxingRelease(room, clientOf(room, red), { hand: 'right' }, ROUND_START)
+  throwWith(room, red, 'left', ROUND_START, rules.holdMs - 1)
   const hits = sentOf(clientOf(room, blue), 'boxing_hit') as { outcome: string, kind: string }[]
-  assert.deepEqual(hits, [{ sessionId: red.sessionId, targetSessionId: blue.sessionId, kind: 'jab', outcome: 'landed', damage: rules.punches.jab.damage }])
+  assert.deepEqual(hits, [{ sessionId: red.sessionId, targetSessionId: blue.sessionId, kind: 'jab', outcome: 'landed', damage: rules.punches.jab.damage, combo: null, chain: 1 }])
   assert.equal(lastState(room, blue).boxers[1].health, rules.health - rules.punches.jab.damage)
   blue.ry = FACING_EAST
-  boxing.onBoxingPunch(room, clientOf(room, blue), { kind: 'jab' }, ROUND_START + 10)
+  throwWith(room, blue, 'left', ROUND_START + 10)
   assert.equal((sentOf(clientOf(room, red), 'boxing_hit').at(-1) as { outcome: string }).outcome, 'missed')
+})
+
+test('the socket times each press: a hold of 250 ms shows a wind-up and throws a hook or an uppercut', async () => {
+  const { room, red, blue } = await bout()
+  venues.tickSports(room, ROUND_START)
+  faceOff(red, blue)
+  boxing.onBoxingPress(room, clientOf(room, red), { hand: 'right' }, ROUND_START)
+  venues.tickSports(room, ROUND_START + rules.holdMs - 1)
+  assert.equal(sentOf(clientOf(room, blue), 'boxing_charge').length, 0)
+  venues.tickSports(room, ROUND_START + rules.holdMs)
+  venues.tickSports(room, ROUND_START + rules.holdMs + 100)
+  assert.deepEqual(sentOf(clientOf(room, blue), 'boxing_charge'), [{ sessionId: red.sessionId, hand: 'right', on: true }])
+  boxing.onBoxingRelease(room, clientOf(room, red), { hand: 'right' }, ROUND_START + rules.holdMs + 150)
+  assert.deepEqual(sentOf(clientOf(room, blue), 'boxing_charge').at(-1), { sessionId: red.sessionId, hand: 'right', on: false })
+  assert.equal((sentOf(clientOf(room, blue), 'boxing_hit').at(-1) as { kind: string }).kind, 'uppercut')
+  throwWith(room, red, 'left', ROUND_START + 2000, rules.holdMs)
+  assert.equal((sentOf(clientOf(room, blue), 'boxing_hit').at(-1) as { kind: string }).kind, 'hook')
+})
+
+test('a release just before the cooldown ends is thrown by the tick, and a jab then a cross is a one-two', async () => {
+  const { room, red, blue } = await bout()
+  venues.tickSports(room, ROUND_START)
+  faceOff(red, blue)
+  throwWith(room, red, 'left', ROUND_START)
+  const cooldownEnd = ROUND_START + rules.punches.jab.cooldownMs
+  throwWith(room, red, 'right', cooldownEnd - rules.bufferMs)
+  assert.equal(sentOf(clientOf(room, blue), 'boxing_hit').length, 1)
+  venues.tickSports(room, cooldownEnd)
+  const cross = sentOf(clientOf(room, blue), 'boxing_hit').at(-1) as { kind: string, combo: string | null, damage: number, chain: number }
+  assert.deepEqual([cross.kind, cross.combo, cross.chain], ['cross', 'one_two', 2])
+  assert.equal(cross.damage, rules.punches.cross.damage + 3)
+  throwWith(room, red, 'left', cooldownEnd + rules.punches.cross.cooldownMs - rules.bufferMs - 1)
+  venues.tickSports(room, cooldownEnd + rules.punches.cross.cooldownMs)
+  assert.equal(sentOf(clientOf(room, blue), 'boxing_hit').length, 2)
 })
 
 test('a knockout ends the bout, sends the boxers out of the ring and records a win and a loss', async () => {
@@ -75,7 +115,7 @@ test('a knockout ends the bout, sends the boxers out of the ring and records a w
   fight.bout.boxers[1].knockdowns = rules.knockdown.maxPerFight - 1
   fight.bout.boxers[1].health = 1
   api.calls.length = 0
-  boxing.onBoxingPunch(room, clientOf(room, red), { kind: 'jab' }, ROUND_START)
+  throwWith(room, red, 'left', ROUND_START)
   venues.tickSports(room, ROUND_START + 100)
   await settle()
   assert.equal(room.sports.matches.has(boxing.BOXING_VENUE), false)
@@ -136,7 +176,7 @@ test('a boxer on the canvas cannot walk away until they get up', async () => {
   const fight = boxing.boxingFight(matchId)
   assert.ok(fight)
   fight.bout.boxers[1].health = 1
-  boxing.onBoxingPunch(room, clientOf(room, red), { kind: 'jab' }, ROUND_START)
+  throwWith(room, red, 'left', ROUND_START)
   blue.lastMoveAt = ROUND_START
   assert.equal(moveRejection(room, blue, blue.x + 2, blue.y, blue.z, ROUND_START + 1000), 'boxing_down')
   assert.equal(moveRejection(room, red, red.x - 2, red.y, red.z, ROUND_START + 1000), null)
@@ -150,7 +190,7 @@ test('a punch bag answers a gloved player in reach and facing it, at most every 
   await boxing.onBoxingBag(room, clientOf(room, player), { bag: 0, kind: 'jab' }, NOW + 399)
   await boxing.onBoxingBag(room, clientOf(room, player), { bag: 1, kind: 'jab' }, NOW + 400)
   await boxing.onBoxingBag(room, clientOf(room, player), { bag: 7, kind: 'jab' }, NOW + 800)
-  await boxing.onBoxingBag(room, clientOf(room, player), { bag: 0, kind: 'uppercut' }, NOW + 1200)
+  await boxing.onBoxingBag(room, clientOf(room, player), { bag: 0, kind: 'haymaker' }, NOW + 1200)
   assert.deepEqual(sentOf(clientOf(room, player), 'boxing_bag_hit'), [{ bag: 0, sessionId: player.sessionId, kind: 'jab' }])
   player.ry = Math.PI
   await boxing.onBoxingBag(room, clientOf(room, player), { bag: 0, kind: 'cross' }, NOW + 2000)

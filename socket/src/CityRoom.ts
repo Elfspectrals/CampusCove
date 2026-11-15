@@ -120,7 +120,8 @@ import {
   onBoxingDodge,
   onBoxingGetUp,
   onBoxingGuard,
-  onBoxingPunch,
+  onBoxingPress,
+  onBoxingRelease,
   leaveSportsRoom,
   moveInSports,
   newSportsState,
@@ -294,7 +295,8 @@ export class CityRoom extends Room implements GameRoom {
         warn('climbing tick failed', error)
       }
     }, CLIMB_TICK_MS)
-    this.onMessage('boxing_punch', (client, payload: ClientPayload) => onBoxingPunch(this, client, payload))
+    this.onMessage('boxing_press', (client, payload: ClientPayload) => onBoxingPress(this, client, payload))
+    this.onMessage('boxing_release', (client, payload: ClientPayload) => onBoxingRelease(this, client, payload))
     this.onMessage('boxing_guard', (client, payload: ClientPayload) => onBoxingGuard(this, client, payload))
     this.onMessage('boxing_dodge', (client, payload: ClientPayload) => onBoxingDodge(this, client, payload))
     this.onMessage('boxing_getup', (client) => onBoxingGetUp(this, client))

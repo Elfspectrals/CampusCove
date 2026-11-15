@@ -210,7 +210,10 @@ the chest frame for guard poses and in armature space for punch contacts.
 | Block | 30 | 1.0 | yes | forearms in front of the face |
 | Jab | 13 | 0.433 | one-shot | left, impact frame 5 (0.167 s) |
 | Cross | 24 | 0.8 | one-shot | right with torso turn, impact frame 8 (0.267 s) |
-| Hook | 33 | 1.1 | one-shot | left, horizontal forearm, impact frame 11 (0.367 s) |
+| Hook | 33 | 1.1 | one-shot | left, horizontal forearm, impact frame 11 (0.367 s), charge exit frame 5 (0.167 s) |
+| Uppercut | 28 | 0.933 | one-shot | right, knees dip 4.5 cm at frame 4 then drive up, rear heel lifts 12-14°, torso turns left, impact frame 9 (0.3 s), charge exit frame 4 (0.133 s) |
+| HookCharge | 30 | 1.0 | yes | Hook frame 5 held, Guard bounce, left fist tremble at 6 and 7 Hz |
+| UppercutCharge | 30 | 1.0 | yes | Uppercut frame 4 held (knees dipped), Guard bounce, right fist tremble at 6 and 7 Hz |
 | DodgeL / DodgeR | 12 | 0.4 | one-shot | torso slip to the character's left / right, held frames 4-7 |
 | HitReact | 12 | 0.4 | one-shot | head snaps back at frame 3 |
 | Knockdown | 30 | 1.0 | one-shot | buckle, sit, lie on the back; last frame = Down frame 0 |
@@ -222,10 +225,21 @@ the chest frame for guard poses and in armature space for punch contacts.
 | FpBlock | 30 | 1.0 | yes | fists in front of the face |
 | FpJab | 13 | 0.433 | one-shot | left, contact frame 5 |
 | FpCross | 24 | 0.8 | one-shot | right, contact frame 8 |
-| FpHook | 33 | 1.1 | one-shot | left, contact frame 11 |
+| FpHook | 33 | 1.1 | one-shot | left, contact frame 11, charge exit frame 5 (0.167 s) |
+| FpUppercut | 28 | 0.933 | one-shot | right, fist drops to the bottom edge then rises into view, contact frame 9 (0.3 s), charge exit frame 4 (0.133 s) |
+| FpHookCharge | 30 | 1.0 | yes | FpHook frame 5 held, FpGuard breathing, left fist tremble |
+| FpUppercutCharge | 30 | 1.0 | yes | FpUppercut frame 4 held, FpGuard breathing, right fist tremble |
 | FpHit | 9 | 0.3 | one-shot | both arms shaken |
 
 Every upper one-shot starts and ends on Guard frame 0 and every Fp one-shot on FpGuard frame 0 (within 0.05°).
+Charge exit: frame 0 of a charge loop equals its punch at the charge exit time (0.000°), and that frame is a key pose
+(zero velocity), so on release the front starts the punch at that time with no crossfade needed. Every punch ends
+with one eased segment from its last extended key straight to the guard (no intermediate stop), so a 0.1 s crossfade
+from anywhere in that retraction into frame 0 of another punch reads as one move; crossfades of every punch pair were
+checked for a hand passing through the head or the other arm (third person: no blend closer than the clips
+themselves; first person: fist centres stay 10.7 cm apart or more, the closest being FpHook into the next punch).
+First person keeps the sleeve end (elbow) out of a 62° vertical view at 4:3 and wider on every frame of every clip:
+the forearm rises steeply from below at contact, the fist contact points are unchanged.
 First-person keys interpolate the fist target, forearm and back-of-hand directions and solve `fist_at` on each
 frame, instead of interpolating Euler offsets, which spun the arm between distant poses.
 
@@ -234,7 +248,12 @@ Signs measured on the boxing renders (2026-11-14): `Hips` `rz` negative turns th
 left. Derived from the axes, not rendered alone: `Shoulder.L` `rz` negative brings the left shoulder forward and `ry`
 negative raises it (mirrored on `.R`). Arm IK: the elbow
 goes towards the pole vector, the hinge is `dn × pole` so the arm keeps its natural twist. The left hook raised a
-skin stretch at the left armpit when the elbow sat level with the shoulder; the pole is lowered (−0.25) to limit it.
+skin stretch at the left armpit when the elbow sat level with the shoulder. Fixed by delivering the hook with the
+torso (spine −24°, chest −32° at impact, a 14° lean to the character's right) and raising `Shoulder.L` (`up` 20°,
+`pro` 16°) so the upper arm stays lateral to the chest; the fist sits at 1.48 m with the forearm within 7 cm of level.
+The cocked load (`HOOK_LOAD`, also HookCharge) lowers the elbow (pole z −0.6, `up` 14°). Measured on the base body:
+mean stretch of the left torso edges 1.25 to 1.20 at impact (worst edge 4.1 to 2.6 times its rest length), 1.13 to
+1.09 on the load (worst edge 2.8 to 2.1). The Jab keeps a similar stretch (mean 1.27, worst 4.3) and was not changed.
 
 ## Gates
 

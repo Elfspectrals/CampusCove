@@ -140,8 +140,8 @@ import type {
   PickpocketSucceededPayload,
   PickpocketTakenPayload,
 } from '../../types/gameRealtime'
-import { type BoxingBagHitPayload, type BoxingDodgedPayload, type BoxingHitPayload, type BoxingStatePayload, boxerPose } from '../../game/sports/boxing'
-import { punchClip } from '../../avatar/boxingAnimLogic'
+import { type BoxingBagHitPayload, type BoxingChargePayload, type BoxingDodgedPayload, type BoxingHitPayload, type BoxingStatePayload, boxerPose } from '../../game/sports/boxing'
+import { chargeClip, punchClip } from '../../avatar/boxingAnimLogic'
 import { useRemoteAvatars, type SeatPose } from './useRemoteAvatars'
 import { PUNCH_DAMAGE } from '../../game/punch'
 import { applySportsLoans, clearSportsLoans, forgetSportsLoans } from '../../game/sports/sportsLoans'
@@ -734,6 +734,9 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
         remotes.boxerShot(data.targetSessionId, 'HitReact')
       }
       deps.boxing.onHit(data, room.sessionId)
+    })
+    room.onMessage('boxing_charge', (data: BoxingChargePayload) => {
+      if (data.sessionId !== room.sessionId) remotes.boxerCharge(data.sessionId, chargeClip(data.hand), data.on)
     })
     room.onMessage('boxing_dodged', (data: BoxingDodgedPayload) => {
       if (data.sessionId !== room.sessionId) remotes.boxerShot(data.sessionId, data.side === 'left' ? 'DodgeL' : 'DodgeR')

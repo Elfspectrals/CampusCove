@@ -33,7 +33,7 @@ import { createHitFlash } from '../../game/hitFlash'
 import { advanceHitStop, idleHitStop, scheduleHitStop, type HitStop } from '../../game/punchFeel'
 import { createRacePint, type RacePint } from '../../game/pub/racePint'
 import { seatedAvatarFeetY } from '../../game/pub/seats'
-import type { BoxerPose, UpperShot } from '../../avatar/boxingAnimLogic'
+import type { BoxerPose, UpperCharge, UpperShot } from '../../avatar/boxingAnimLogic'
 import { type RemoteBoxer, dressBoxer } from '../../game/sports/remoteBoxer'
 import { createRemoteHeldTool, type RemoteHeldTool } from '../../game/remoteHeldTool'
 import { swimwearOutfit } from '../../game/sports/pool/poolRace'
@@ -488,6 +488,10 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     avatars.get(sessionId)?.boxer?.shot(clip)
   }
 
+  function boxerCharge(sessionId: string, clip: UpperCharge, on: boolean) {
+    avatars.get(sessionId)?.boxer?.charge(clip, on)
+  }
+
   function boxerPose(sessionId: string, pose: BoxerPose) {
     avatars.get(sessionId)?.boxer?.pose(pose)
   }
@@ -709,5 +713,5 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     }
   }
 
-  return { skatePushed, skateMove, upsert, updateAppearance, refreshLentWear, setTarget, setSeated, setPicking, setRacePose, setClimbAnimation, setTennis, tennisStroke, setDancing, danceMove, stumble, setHeldTool, setSwimwear, playPoolClip, handOf, playPetanque, setCrouching, setBoxer, boxerShot, boxerPose, setRacePint, setBadges, pseudoOf, positionOf, avatarOf, playSportsMove, setDribbling, setTopOverride, setVoiceState, setWantedStars, players, accountOf, showAction, showChat, showPunch, showHit, remove, clear, tick }
+  return { skatePushed, skateMove, upsert, updateAppearance, refreshLentWear, setTarget, setSeated, setPicking, setRacePose, setClimbAnimation, setTennis, tennisStroke, setDancing, danceMove, stumble, setHeldTool, setSwimwear, playPoolClip, handOf, playPetanque, setCrouching, setBoxer, boxerShot, boxerCharge, boxerPose, setRacePint, setBadges, pseudoOf, positionOf, avatarOf, playSportsMove, setDribbling, setTopOverride, setVoiceState, setWantedStars, players, accountOf, showAction, showChat, showPunch, showHit, remove, clear, tick }
 }
