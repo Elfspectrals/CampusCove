@@ -295,26 +295,6 @@
       "yaw": 0.0
     },
     {
-      "name": "COL_SportsTennis_ZD_sports_tennis_racket_01_0",
-      "cx": -443.88,
-      "cy": 0.84,
-      "cz": -263.467,
-      "hx": 0.15,
-      "hy": 0.34,
-      "hz": 0.05,
-      "yaw": 0.0
-    },
-    {
-      "name": "COL_SportsTennis_ZD_sports_tennis_racket_02_0",
-      "cx": -443.12,
-      "cy": 0.84,
-      "cz": -279.533,
-      "hx": 0.15,
-      "hy": 0.34,
-      "hz": 0.05,
-      "yaw": 3.1416
-    },
-    {
       "name": "COL_SportsTennis_ZD_sports_tennis_ball_basket_1_0",
       "cx": -444.7,
       "cy": 0.536,

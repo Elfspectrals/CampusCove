@@ -24,7 +24,7 @@
     { "id": "security", "label": "Security", "keys": ["alarm"] },
     { "id": "market", "label": "Market", "keys": ["market_stall_free", "market_stall_taken", "market_stall_folded", "market_crate", "market_basket"] },
     { "id": "sports", "label": "Sports", "keys": ["gym_ball_rack", "gym_team_bench", "gym_ball_cart", "gym_lockers", "gym_scoreboard", "gym_football", "gym_basketball", "petanque_boules"] },
-    { "id": "sports_tennis", "label": "Tennis", "keys": ["tennis_racket", "tennis_ball_basket"] },
+    { "id": "sports_tennis", "label": "Tennis", "keys": ["tennis_racket", "tennis_racket_flat", "tennis_ball_basket"] },
     { "id": "dance", "label": "Dance", "keys": ["dance_speaker", "disco_ball", "dance_barre"] },
     { "id": "climbing", "label": "Climbing", "keys": ["chalk_bag", "hold_bucket", "rope_coil", "route_board"] },
     { "id": "boxing", "label": "Boxing", "keys": ["punch_bag", "boxing_gloves"] }
