@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 import type { GymStatePayload } from '../../types/gameRealtime.ts'
-import { COURT_FILES, FREE_PLAY_COACHES, carriedSpot, clampToArea, clockText, courtHoops, courtUrlOf, dribbleBeat, dribbleHeight, goodWindowStart, hoopAhead, insideArea, leaveFill, lobFill, meterFill, myTeam, nearestFreeBall, parseGymCourtView, overchargeStart, parseGymHudRules, predictBall, scoreboardLines } from './gymMatch.ts'
+import { COURT_FILES, FREE_PLAY_COACHES, attackSide, carriedSpot, clampToArea, clockText, courtHoops, courtUrlOf, dribbleBeat, dribbleHeight, dribbleMove, halfSide, goodWindowStart, hoopAhead, insideArea, leaveFill, lobFill, meterFill, myTeam, nearestFreeBall, parseGymCourtView, overchargeStart, parseGymHudRules, predictBall, scoreboardLines } from './gymMatch.ts'
 
 const rules = (sport: string) => JSON.parse(readFileSync(new URL(`../../../public/assets/sports/rules/${sport}.json`, import.meta.url), 'utf8'))
 
@@ -134,6 +134,29 @@ test('a match player is held inside the play area, and leaving the match takes a
   assert.equal(leaveFill(750), 0.5)
   assert.equal(leaveFill(1500), 1)
   assert.equal(leaveFill(9000), 1)
+})
+
+test('the 2K camera looks at the basket the team in possession attacks; in free play at the basket of the half the player stands in', () => {
+  const court = parseGymCourtView(JSON.parse(readFileSync(new URL('../../../public/assets/sports/gym/court.json', import.meta.url), 'utf8')))
+  assert.equal(attackSide(court, 'red'), 1)
+  assert.equal(attackSide(court, 'blue'), -1)
+  const bounds = { minX: 0, maxX: 44, minZ: 0, maxZ: 24 }
+  assert.equal(halfSide(bounds, 30, -1), 1)
+  assert.equal(halfSide(bounds, 10, 1), -1)
+  assert.equal(halfSide(bounds, 22.9, -1), -1)
+  assert.equal(halfSide(bounds, 21.1, 1), 1)
+  assert.equal(halfSide(bounds, 23.1, -1), 1)
+})
+
+test('a dribble move hops to the side held on the screen, back with the back key or with no side held', () => {
+  const near = (v: { x: number; z: number }, x: number, z: number) => assert.ok(Math.abs(v.x - x) < 1e-9 && Math.abs(v.z - z) < 1e-9, `${v.x}, ${v.z} is not ${x}, ${z}`)
+  near(dribbleMove(0, 1, false), 1, 0)
+  near(dribbleMove(0, -1, false), -1, 0)
+  near(dribbleMove(0, 0, false), 0, 1)
+  near(dribbleMove(0, 0, true), 0, 1)
+  near(dribbleMove(0, 1, true), Math.SQRT1_2, Math.SQRT1_2)
+  near(dribbleMove(-Math.PI / 2, 0, false), -1, 0)
+  near(dribbleMove(-Math.PI / 2, 1, false), 0, 1)
 })
 
 test('a free-play shot goes to the hoop ahead: the nearest one, a hoop behind counting three times its distance', () => {

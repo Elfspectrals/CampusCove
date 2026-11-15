@@ -315,7 +315,7 @@ Decision (2026-11-15, second review of the sports): the gear loan becomes a bloc
 - [done] Gear loan in the coach panel: a block with the price and a Borrow button when the player lacks the gear, no more banner with Y / N. Not played yet.
 - [done] Dance: a keycap per lane with the arrow and the bound key, tinted lanes, the judgement over its lane. Not played yet.
 - [done] Football: match players held on the pitch (socket `match_bounds`, front clamp), N held 1.5 s to leave the match, through ball (F), standing tackle under 6.5 m/s and sliding tackle above, X held to face the ball. Covered by tests, not played yet.
-- [todo] Basketball: NBA 2K camera, timing words, dribble moves.
+- [done] Basketball: NBA 2K camera (`lengthwise` in `sportsCamera.ts`, behind the ball on the court axis, turning at each change of possession), `U` then goes to the television view, the view behind and first person; a dribble move on F hops 1.4 m to the side held or back. Played alone in free play on 2026-11-15: the view in both halves, a "Good" shot, hops to the right, left and back. The turn at a change of possession in a match is not played (2 players needed). The timing words already existed (Perfect, Good, Early, Late).
 - [todo] Tennis: landing mark on the court, charge while standing in it.
 - [todo] Boxing: combo round on the punch bag, gloves on screen.
 - [todo] Ice skating: figure routine on music.

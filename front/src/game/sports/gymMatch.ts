@@ -198,6 +198,29 @@ export function clampToArea(area: CourtBounds, x: number, z: number): { x: numbe
   return { x: Math.min(area.maxX, Math.max(area.minX, x)), z: Math.min(area.maxZ, Math.max(area.minZ, z)) }
 }
 
+export function attackSide(court: Pick<GymCourtView, 'court' | 'baskets'>, team: GymTeam): 1 | -1 {
+  if (!court.baskets) throw new Error('attackSide: this court has no baskets')
+  return court.baskets[team].x > (court.court.minX + court.court.maxX) / 2 ? 1 : -1
+}
+
+const HALF_COURT_HYSTERESIS_M = 1
+
+export function halfSide(court: CourtBounds, x: number, last: 1 | -1): 1 | -1 {
+  const off = x - (court.minX + court.maxX) / 2
+  return Math.abs(off) <= HALF_COURT_HYSTERESIS_M ? last : off > 0 ? 1 : -1
+}
+
+export const DRIBBLE_MOVE_M = 1.4
+export const DRIBBLE_MOVE_COOLDOWN_MS = 1500
+
+export function dribbleMove(frameYaw: number, aside: -1 | 0 | 1, back: boolean): { x: number; z: number } {
+  const retreat = back || aside === 0 ? 1 : 0
+  const x = Math.cos(frameYaw) * aside + Math.sin(frameYaw) * retreat
+  const z = -Math.sin(frameYaw) * aside + Math.cos(frameYaw) * retreat
+  const length = Math.hypot(x, z)
+  return { x: x / length, z: z / length }
+}
+
 export const LEAVE_HOLD_MS = 1500
 export const JOCKEY_SPEED_FACTOR = 0.55
 

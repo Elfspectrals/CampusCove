@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { EYE_HEIGHT } from '../../game/gameRoomConstants'
 import { worldRayDistance } from '../../game/collision/worldCollision'
-import { BODY_SHOWN_FROM, blendStep, damp, lockedLookFor, moveFrameYawFor, poseFor, type SportsView } from '../../game/camera/sportsCamera'
+import { BODY_SHOWN_FROM, blendStep, damp, lockedLookFor, moveFrameYawFor, poseFor, viewChoices, type SportsView } from '../../game/camera/sportsCamera'
 
 const ARM_MARGIN_M = 0.25
 const ARM_MIN_M = 0.6
@@ -35,15 +35,10 @@ export function useSportsCamera(deps: SportsCameraDeps) {
   let arm = 0
   let timeS = 0
 
-  function choicesOf(view: SportsView): (SportsView | null)[] {
-    const fallback = view.kind === 'broadcast' ? view.fallback : null
-    return [view, ...(fallback ? [fallback] : []), ...(view.optional ? [null] : [])]
-  }
-
   function activeView(): SportsView | null {
     const view = deps.view()
     if (!view) return null
-    const choices = choicesOf(view)
+    const choices = viewChoices(view)
     return choices[(choiceBySport.get(view.sport) ?? 0) % choices.length] ?? null
   }
 
@@ -54,7 +49,7 @@ export function useSportsCamera(deps: SportsCameraDeps) {
   function toggle(): boolean {
     const view = deps.view()
     if (!view) return false
-    const choices = choicesOf(view)
+    const choices = viewChoices(view)
     if (choices.length < 2) return false
     choiceBySport.set(view.sport, ((choiceBySport.get(view.sport) ?? 0) + 1) % choices.length)
     return true

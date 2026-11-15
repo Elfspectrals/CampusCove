@@ -113,11 +113,15 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     return { w: window.innerWidth, h: window.innerHeight }
   }
 
+  let heldFrameYaw: number | null = null
+
   function updateMovement(dt: number) {
     const camera = deps.getCamera()
     if (!camera) return
 
-    const frameYaw = deps.moveFrameYaw?.() ?? null
+    const wantedFrameYaw = deps.moveFrameYaw?.() ?? null
+    if (wantedFrameYaw === null || heldFrameYaw === null || !(keys.forward || keys.back || keys.left || keys.right)) heldFrameYaw = wantedFrameYaw
+    const frameYaw = heldFrameYaw
     if (frameYaw === null) {
       yaw -= mouseX * MOUSE_SENSITIVITY
       pitch -= mouseY * MOUSE_SENSITIVITY

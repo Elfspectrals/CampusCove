@@ -135,6 +135,7 @@ Asked by the user after the first pass. Decided with them: a television view fro
 - **Basketball**: assisted and led pass, the green zone cut by a defender, a lay-up with no meter. Numbers in
   [basketball.md](basketball.md) and `basketball.json` (`passAssist`, `contest`, `layup`).
 - **Second review (2026-11-15)**: a match player could walk off the pitch and the keys were too few. Gym venues are now `confined` (see [CORE.md](CORE.md)), with a held key to leave the match; football gets a through ball, a standing tackle under 6.5 m/s and a held key to face the ball ([football.md](football.md)). Finesse and chip shots are left out until there is a goalkeeper to beat.
+- **Basketball camera (second review, 2026-11-15)**: the side view did not feel like NBA 2K. Basketball now uses the lengthwise view (see "Camera" in [README.md](README.md)); football keeps the television view. A dribble move (F) hops to the side or back.
 - **No goalkeeper** (decided 2026-11-15): matches are 1 to 5 a side with no AI player; the goals of the gym are small.
 - What a player can still do, and what happens: tap or hold the pass with no team-mate (a straight pass, a lob by how
   long it is held); release the pass after losing the ball (ignored); hold the pass or the shot for ever (the charge
