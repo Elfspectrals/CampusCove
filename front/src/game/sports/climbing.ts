@@ -1,7 +1,16 @@
 export type ClimbFace = 'east' | 'north' | 'south'
 export type ClimbPhase = 'climbing' | 'lowering' | 'ended'
 export type ClimbResult = 'topped' | 'fell' | 'let_go' | 'cancelled' | 'won' | 'beaten'
-export type ClimbEvent = 'start' | 'hold' | 'miss' | 'fall' | 'top' | 'end'
+export type ClimbEvent = 'start' | 'reach' | 'hold' | 'great' | 'miss' | 'fall' | 'top' | 'end'
+
+export interface ClimbCheck {
+  hold: number
+  startedAt: number
+  turnMs: number
+  zoneStart: number
+  zoneSize: number
+  greatSize: number
+}
 
 export interface ClimbLine {
   id: string
@@ -30,9 +39,9 @@ export interface ClimbStatePayload {
   holds: number
   grip: number
   gripMax: number
-  litAt: number
-  opensAt: number
-  closesAt: number
+  gripPerSec: number
+  readyAt: number
+  check: ClimbCheck | null
   startedAt: number | null
   serverNow: number
   duel: boolean
@@ -132,13 +141,15 @@ export function isOnWall(state: ClimbStatePayload | null | undefined): state is 
   return !!state && state.phase !== 'ended'
 }
 
-export type RingStage = 'waiting' | 'closing' | 'open' | 'late'
+export type HoldMark = 'waiting' | 'next' | 'checking'
 
-export function ringStage(state: ClimbStatePayload, serverNow: number): { stage: RingStage; scale: number } {
-  if (serverNow < state.litAt) return { stage: 'waiting', scale: 0 }
-  if (serverNow < state.opensAt) return { stage: 'closing', scale: 1 + (2 * (state.opensAt - serverNow)) / (state.opensAt - state.litAt) }
-  if (serverNow <= state.closesAt) return { stage: 'open', scale: 1 }
-  return { stage: 'late', scale: 1 }
+export function holdMark(state: ClimbStatePayload, serverNow: number): HoldMark {
+  if (serverNow < state.readyAt) return 'waiting'
+  return state.check ? 'checking' : 'next'
+}
+
+export function needleAngle(check: ClimbCheck, serverNow: number): number {
+  return Math.min(360, Math.max(0, ((serverNow - check.startedAt) / check.turnMs) * 360))
 }
 
 export function climbSeconds(state: ClimbStatePayload, serverNow: number): number {
@@ -147,8 +158,10 @@ export function climbSeconds(state: ClimbStatePayload, serverNow: number): numbe
   return Math.max(0, serverNow - state.startedAt) / 1000
 }
 
-export function gripShare(state: ClimbStatePayload): number {
-  return state.gripMax > 0 ? Math.max(0, Math.min(1, state.grip / state.gripMax)) : 0
+export function gripShare(state: ClimbStatePayload, serverNow: number): number {
+  if (state.gripMax <= 0) return 0
+  const grip = state.grip + (state.gripPerSec * Math.max(0, serverNow - state.serverNow)) / 1000
+  return Math.max(0, Math.min(1, grip / state.gripMax))
 }
 
 export function climbBoardKey(line: ClimbLine): string {
@@ -183,7 +196,7 @@ export function climbAnimation(state: ClimbStatePayload, line: ClimbLine | null)
   }
   const pose: ClimbPose = state.phase === 'lowering' ? 'lower' : 'hang'
   if (state.event === 'top') return { pose, move: 'top' }
-  if (state.event !== 'hold' || !line || state.next < 1) return { pose, move: null }
+  if ((state.event !== 'hold' && state.event !== 'great') || !line || state.next < 1) return { pose, move: null }
   const reached = line.holds[state.next - 1]
   const before = state.next >= 2 ? line.holds[state.next - 2] : { u: 0 }
   return { pose, move: reached && reached.u > before!.u ? 'reachR' : 'reachL' }

@@ -299,7 +299,7 @@ Decision (2026-11-15, from the review of the sports complex): the sports must be
 - [done] Tennis after the user's first match: the server is put behind the baseline and cannot move, the toss is only hit from under it, a swing ring around the player shrinks as the ball comes and turns red, orange, green then purple, and a purple click is a smash at 25 m/s. Played against the socket bot on 2026-11-15: nine smashes in a row from clicks 90 ms after the cue, the serving player did not move with a key held.
 - [done] Basketball and football: third-person view, a missed shot stays on the line to the rim, target ring on the rim, good window shown in free play. Played alone in free play (one perfect shot); no match played, football not played.
 - [done] Boxing and dance views. Seen in a bout against a socket bot (no punch thrown by the player) and in a solo song.
-- [todo] Climbing: endurance and reflex check.
+- [done] Climbing: no more timed click. The next hold stays marked, each hold clicked starts a reflex check (needle and zone, sized by the colour and by the reach), the grip runs down after a long reach and comes back on a short one, a climb lasts 3 minutes at most. Played alone on 2026-11-15: the green route topped in 12.9 s with every check passed by script. Not played: a miss, a fall, the duel, a real hand on the mouse.
 - [todo] Gear lent for a fee at each venue (prices from the `economist`).
 - [todo] Gym: the football goal facing the wrong way and the basketball hoops.
 

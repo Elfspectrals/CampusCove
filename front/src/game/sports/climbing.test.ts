@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { boardRows, climbAnimation, climbBoardKey, climbSeconds, gripShare, holdPosition, isOnWall, nearestStart, parseClimbingSpec, ringStage, startSpot, type ClimbStatePayload } from './climbing.ts'
+import { boardRows, climbAnimation, climbBoardKey, climbSeconds, gripShare, holdMark, holdPosition, isOnWall, nearestStart, needleAngle, parseClimbingSpec, startSpot, type ClimbStatePayload } from './climbing.ts'
 
 const spec = parseClimbingSpec(JSON.parse(readFileSync(new URL('../../../public/assets/sports/rules/climbing.json', import.meta.url), 'utf8')))
 const line = (id: string) => spec.lines.find((l) => l.id === id)!
@@ -9,7 +9,7 @@ const line = (id: string) => spec.lines.find((l) => l.id === id)!
 function state(over: Partial<ClimbStatePayload> = {}): ClimbStatePayload {
   return {
     sessionId: 's1', line: 'route_1', event: 'start', phase: 'climbing', next: 0, holds: 10, grip: 100, gripMax: 100,
-    litAt: 1000, opensAt: 1700, closesAt: 2600, startedAt: null, serverNow: 1000, duel: false, ...over,
+    gripPerSec: 0, readyAt: 1000, check: null, startedAt: null, serverNow: 1000, duel: false, ...over,
   }
 }
 
@@ -34,20 +34,31 @@ test('the nearest line start within 2.5 m is offered, none further away', () => 
   assert.equal(nearestStart(spec, -560, -203.5), null)
 })
 
-test('the window ring closes from 3x to 1x between lit and open, then stays open until it closes', () => {
-  assert.deepEqual(ringStage(state(), 999), { stage: 'waiting', scale: 0 })
-  assert.deepEqual(ringStage(state(), 1000), { stage: 'closing', scale: 3 })
-  assert.deepEqual(ringStage(state(), 1350), { stage: 'closing', scale: 2 })
-  assert.deepEqual(ringStage(state(), 1700), { stage: 'open', scale: 1 })
-  assert.deepEqual(ringStage(state(), 2600), { stage: 'open', scale: 1 })
-  assert.equal(ringStage(state(), 2601).stage, 'late')
+const CHECK = { hold: 0, startedAt: 2000, turnMs: 2000, zoneStart: 180, zoneSize: 70, greatSize: 17.5 }
+
+test('the next hold is marked once the climb is ready, and differently while its reflex check runs', () => {
+  assert.equal(holdMark(state(), 999), 'waiting')
+  assert.equal(holdMark(state(), 1000), 'next')
+  assert.equal(holdMark(state({ check: CHECK }), 2500), 'checking')
+})
+
+test('the needle turns once in the time the server gave, from the top, and stops after a full turn', () => {
+  assert.equal(needleAngle(CHECK, 1900), 0)
+  assert.equal(needleAngle(CHECK, 2000), 0)
+  assert.equal(needleAngle(CHECK, 3000), 180)
+  assert.equal(needleAngle(CHECK, 4000), 360)
+  assert.equal(needleAngle(CHECK, 4500), 360)
 })
 
 test('time and grip shown in the HUD', () => {
   assert.equal(climbSeconds(state(), 5000), 0)
   assert.equal(climbSeconds(state({ startedAt: 2000 }), 5000), 3)
   assert.equal(climbSeconds(state({ startedAt: 2000, timeMs: 4321 }), 9000), 4.321)
-  assert.equal(gripShare(state({ grip: 65 })), 0.65)
+  assert.equal(gripShare(state({ grip: 65 }), 1000), 0.65)
+  assert.equal(gripShare(state({ grip: 65, gripPerSec: -2.5 }), 5000), 0.55)
+  assert.equal(gripShare(state({ grip: 65, gripPerSec: 6 }), 3000), 0.77)
+  assert.equal(gripShare(state({ grip: 95, gripPerSec: 6 }), 9000), 1)
+  assert.equal(gripShare(state({ grip: 5, gripPerSec: -2.5 }), 9000), 0)
   assert.equal(isOnWall(state({ phase: 'lowering' })), true)
   assert.equal(isOnWall(state({ phase: 'ended' })), false)
 })
@@ -68,6 +79,8 @@ test('remote climbers: reach with the hand on the side of the new hold, hang, lo
   const route = line('route_1')
   const right = route.holds[1]!.u > route.holds[0]!.u ? 'reachR' : 'reachL'
   assert.deepEqual(climbAnimation(state({ event: 'hold', next: 2 }), route), { pose: 'hang', move: right })
+  assert.deepEqual(climbAnimation(state({ event: 'great', next: 2 }), route), { pose: 'hang', move: right })
+  assert.deepEqual(climbAnimation(state({ event: 'reach', next: 1 }), route), { pose: 'hang', move: null })
   assert.deepEqual(climbAnimation(state({ event: 'miss', next: 2 }), route), { pose: 'hang', move: null })
   assert.deepEqual(climbAnimation(state({ event: 'top', phase: 'lowering', next: 10 }), route), { pose: 'lower', move: 'top' })
   assert.deepEqual(climbAnimation(state({ event: 'fall', phase: 'lowering' }), route), { pose: 'lower', move: null })

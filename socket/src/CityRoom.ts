@@ -142,7 +142,7 @@ import { isRacing, onRunLook, onRunStep } from './sports/runningVenue.ts'
 import { onGymAction, onGymBall, onGymBallReturn, tickGym } from './sports/gym.ts'
 import { onTennisHit } from './sports/tennis.ts'
 import { onTennisBallTake, tickTennisFree } from './sports/tennisFree.ts'
-import { CLIMB_TICK_MS, onClimbHold, onClimbLetGo, onClimbStart, tickClimbing } from './sports/climbing.ts'
+import { CLIMB_TICK_MS, onClimbCheck, onClimbHold, onClimbLetGo, onClimbStart, tickClimbing } from './sports/climbing.ts'
 import { onSkateBrake, onSkatePush, tickSkating } from './sports/skatingRink.ts'
 import { onPetanqueAim, onPetanqueThrow } from './sports/petanque.ts'
 import { onPoolJump, onPoolTrick } from './sports/poolDiving.ts'
@@ -288,6 +288,7 @@ export class CityRoom extends Room implements GameRoom {
     this.onMessage('emote_list', (client) => void onEmoteList(this, client).catch((error) => warn('emote list failed', error)))
     this.onMessage('climb_start', (client, payload: ClientPayload) => onClimbStart(this, client, payload))
     this.onMessage('climb_hold', (client, payload: ClientPayload) => onClimbHold(this, client, payload))
+    this.onMessage('climb_check', (client) => onClimbCheck(this, client))
     this.onMessage('climb_let_go', (client) => onClimbLetGo(this, client))
     this.clock.setInterval(() => {
       try {

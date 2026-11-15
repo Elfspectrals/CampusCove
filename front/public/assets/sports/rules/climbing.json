@@ -15,32 +15,42 @@
   "standoffM": 0.55,
   "reachBelowM": 0.35,
   "startReachM": 2.5,
-  "leadMs": 700,
-  "allowanceMs": 150,
   "duelStartDelayMs": 3000,
   "belayLowerSec": 2,
   "grip": {
-    "max": 100
+    "max": 100,
+    "restReachM": 1.4,
+    "strainReachM": 2.4,
+    "regenPerSec": 6,
+    "maxClimbSec": 180
   },
   "colours": {
     "green": {
-      "windowMs": 900,
-      "lossPerMiss": 20,
+      "drainPerSec": 2.5,
+      "lossPerMiss": 12,
+      "zoneDeg": 70,
+      "turnMs": 2000,
       "hex": "#3fae5a"
     },
     "blue": {
-      "windowMs": 700,
-      "lossPerMiss": 25,
+      "drainPerSec": 4,
+      "lossPerMiss": 16,
+      "zoneDeg": 55,
+      "turnMs": 1700,
       "hex": "#3a7bd5"
     },
     "red": {
-      "windowMs": 550,
-      "lossPerMiss": 30,
+      "drainPerSec": 6,
+      "lossPerMiss": 22,
+      "zoneDeg": 42,
+      "turnMs": 1400,
       "hex": "#d64545"
     },
     "black": {
-      "windowMs": 420,
-      "lossPerMiss": 35,
+      "drainPerSec": 8.5,
+      "lossPerMiss": 28,
+      "zoneDeg": 30,
+      "turnMs": 1150,
       "hex": "#2b2e33"
     }
   },
@@ -703,5 +713,13 @@
   "tasks": [
     "routes_topped",
     "black_route"
-  ]
+  ],
+  "check": {
+    "minStartDeg": 120,
+    "endMarginDeg": 10,
+    "greatShare": 0.25,
+    "greatGrip": 8,
+    "strainZoneCut": 0.35,
+    "allowanceMs": 80
+  }
 }

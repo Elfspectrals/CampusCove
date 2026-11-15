@@ -9,7 +9,6 @@ import {
   type Pose,
   climbTime,
   climberPose,
-  clickHold,
   expire,
   loweredY,
   nearStart,
@@ -17,7 +16,10 @@ import {
   standingPose,
   startClimb,
   startLowering,
-  windowOf
+  gripNow,
+  gripRate,
+  pressCheck,
+  reachHold
 } from './climbingLogic.ts'
 import { hasLoan } from './loans.ts'
 import { activePlayers, type Match } from './signup.ts'
@@ -32,7 +34,7 @@ const START_COOLDOWN_MS = 1000
 const POSE_DRIFT_M = 1
 
 type ClimbResult = 'topped' | 'fell' | 'let_go' | 'cancelled' | 'won' | 'beaten'
-type ClimbEvent = 'start' | 'hold' | 'miss' | 'fall' | 'top' | 'end'
+type ClimbEvent = 'start' | 'reach' | 'hold' | 'great' | 'miss' | 'fall' | 'top' | 'end'
 
 interface ActiveClimb extends Climb {
   sessionId: string
@@ -100,7 +102,6 @@ function sendError(client: GameClient, code: string, message: string): void {
 
 function climbPayload(climb: ActiveClimb, event: ClimbEvent, now: number, end?: { result: ClimbResult, timeMs?: number }) {
   const r = loadedRules()
-  const { opensAt, closesAt } = windowOf(r, climb)
   return {
     sessionId: climb.sessionId,
     line: climb.line.id,
@@ -108,11 +109,11 @@ function climbPayload(climb: ActiveClimb, event: ClimbEvent, now: number, end?: 
     phase: end ? 'ended' : climb.phase,
     next: climb.next,
     holds: climb.line.holds.length,
-    grip: climb.grip,
+    grip: gripNow(r, climb, now),
     gripMax: r.gripMax,
-    litAt: climb.litAt,
-    opensAt,
-    closesAt,
+    gripPerSec: gripRate(r, climb),
+    readyAt: climb.readyAt,
+    check: climb.check,
     startedAt: climb.startedAt,
     serverNow: now,
     duel: climb.duel !== null,
@@ -277,12 +278,18 @@ function fall(room: GameRoom, climb: ActiveClimb, result: 'fell' | 'let_go', now
   broadcastClimb(room, climb, 'fall', now)
 }
 
-export function onClimbHold(room: GameRoom, client: GameClient, payload: ClientPayload, now = Date.now()): void {
+export function onClimbHold(room: GameRoom, client: GameClient, payload: ClientPayload, now = Date.now(), rng: () => number = Math.random): void {
   const climb = climbOf(room, client.sessionId)
   const hold = payload?.hold
   if (!climb || typeof hold !== 'number' || !Number.isInteger(hold) || hold < -1 || hold >= climb.line.holds.length) return
+  if (reachHold(loadedRules(), climb, hold, now, rng) === 'reach') broadcastClimb(room, climb, 'reach', now)
+}
+
+export function onClimbCheck(room: GameRoom, client: GameClient, now = Date.now()): void {
+  const climb = climbOf(room, client.sessionId)
+  if (!climb) return
   const r = loadedRules()
-  const outcome = clickHold(r, climb, hold, now)
+  const outcome = pressCheck(r, climb, now)
   if (outcome === 'ignored') return
   if (outcome === 'top') {
     placeClimber(room, climb, climberPose(r, climb.line, climb.next))
@@ -293,7 +300,7 @@ export function onClimbHold(room: GameRoom, client: GameClient, payload: ClientP
     fall(room, climb, 'fell', now)
     return
   }
-  if (outcome === 'hold') placeClimber(room, climb, climberPose(r, climb.line, climb.next))
+  if (outcome !== 'miss') placeClimber(room, climb, climberPose(r, climb.line, climb.next))
   broadcastClimb(room, climb, outcome, now)
 }
 

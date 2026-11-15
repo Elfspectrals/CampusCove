@@ -697,7 +697,8 @@ export const messages = {
       rival: 'Rival {reached}/{holds}',
       startsIn: 'Go in {s}…',
       lowering: 'Lowering…',
-      hint: 'Click the lit hold when its ring closes. {key}: let go',
+      hint: 'Click the marked hold, then click again when the needle is in the zone. {key}: let go',
+      check: 'Reflex check',
       board: {
         action: 'Weekly climbing board',
         detail: 'Best times of the week',
@@ -1988,7 +1989,8 @@ export const messages = {
       rival: 'Rival {reached}/{holds}',
       startsIn: 'Départ dans {s}…',
       lowering: 'Descente…',
-      hint: 'Clique la prise allumée quand son anneau se ferme. {key} : lâcher',
+      hint: 'Clique la prise marquée, puis reclique quand l’aiguille est dans la zone. {key} : lâcher',
+      check: 'Test de réflexe',
       board: {
         action: 'Classement escalade de la semaine',
         detail: 'Meilleurs temps de la semaine',

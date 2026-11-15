@@ -6,11 +6,12 @@ import { getGraphicsQuality } from '../../game/graphicsQuality'
 import {
   climbSeconds,
   gripShare,
+  holdMark,
   holdPosition,
   isOnWall,
   nearestStart,
+  needleAngle,
   parseClimbingSpec,
-  ringStage,
   wallNormal,
   climbAnimation,
   type ClimbErrorPayload,
@@ -25,6 +26,7 @@ import type { InteractionSource, ScreenPrompt } from './useInteractionTargets'
 
 const HOLD_RADIUS = 0.11
 const RING_RADIUS = 0.2
+const RING_PULSE_MS = 900
 const PROMPT_HEIGHT = 1.4
 const CLICK_REACH = 6
 const SPECTATOR_OPACITY = 0.45
@@ -105,14 +107,16 @@ export function useClimbing(deps: ClimbingDeps) {
       hex: line.hex,
       kind: line.kind,
       phase: state.phase,
-      grip: gripShare(state),
+      grip: gripShare(state, serverNow),
+      recovering: state.gripPerSec > 0,
+      check: state.check ? { angle: needleAngle(state.check, serverNow), zoneStart: state.check.zoneStart, zoneSize: state.check.zoneSize, greatSize: state.check.greatSize } : null,
       reached: state.next,
       holds: state.holds,
       seconds: climbSeconds(state, serverNow),
       duel: state.duel,
       rival: rival.value ? { reached: rival.value.next, holds: rival.value.holds } : null,
-      waiting: serverNow < state.litAt,
-      startsIn: Math.max(0, Math.ceil((state.litAt - serverNow) / 1000)),
+      waiting: serverNow < state.readyAt,
+      startsIn: Math.max(0, Math.ceil((state.readyAt - serverNow) / 1000)),
     }
   })
 
@@ -161,15 +165,15 @@ export function useClimbing(deps: ClimbingDeps) {
       target.visible = false
       return
     }
-    const { stage, scale } = ringStage(state, serverNow)
-    target.visible = stage !== 'waiting'
+    const mark = holdMark(state, serverNow)
+    target.visible = mark !== 'waiting'
     if (!target.visible) return
     const p = holdPosition(spec.value, line, state.next)
     const n = wallNormal(line)
     target.position.set(p.x + n.x * 0.05, p.y, p.z + n.z * 0.05)
     target.rotation.set(0, Math.atan2(n.x, n.z), 0)
-    target.scale.setScalar(scale)
-    target.material.color.set(stage === 'open' ? '#ffe066' : stage === 'late' ? '#ff5a5a' : line.hex)
+    target.scale.setScalar(mark === 'checking' ? 1 : 1.25 + 0.25 * Math.sin((serverNow / RING_PULSE_MS) * 2 * Math.PI))
+    target.material.color.set(mark === 'checking' ? '#ffffff' : '#ffe066')
   }
 
   function spawnPuff(state: ClimbStatePayload): void {
@@ -288,7 +292,9 @@ export function useClimbing(deps: ClimbingDeps) {
   function onMouseDown(button: number): boolean {
     const state = mine.value
     if (!state) return false
-    if (button === 0 && state.phase === 'climbing') deps.gameRoomRef.value?.send('climb_hold', { hold: aimedHold() })
+    if (button !== 0 || state.phase !== 'climbing') return true
+    if (state.check) deps.gameRoomRef.value?.send('climb_check', {})
+    else deps.gameRoomRef.value?.send('climb_hold', { hold: aimedHold() })
     return true
   }
 
@@ -296,7 +302,8 @@ export function useClimbing(deps: ClimbingDeps) {
     if (!mine.value) return false
     if (!matches('jump', e.code)) return false
     e.preventDefault()
-    if (mine.value.phase === 'climbing') deps.gameRoomRef.value?.send('climb_let_go', {})
+    if (e.repeat || mine.value.phase !== 'climbing') return true
+    deps.gameRoomRef.value?.send(mine.value.check ? 'climb_check' : 'climb_let_go', {})
     return true
   }
 
@@ -316,7 +323,7 @@ export function useClimbing(deps: ClimbingDeps) {
   }
 
   function soundFor(state: ClimbStatePayload): ClimbSound | null {
-    if (state.event === 'hold') return 'hold'
+    if (state.event === 'hold' || state.event === 'great') return 'hold'
     if (state.event === 'miss') return 'miss'
     if (state.event === 'fall') return 'fall'
     if (state.event === 'top') return 'top'
@@ -330,7 +337,7 @@ export function useClimbing(deps: ClimbingDeps) {
       if (data.phase === 'ended') next.delete(data.sessionId)
       else next.set(data.sessionId, data)
       climbs.value = next
-      if (data.event === 'hold' || data.event === 'top') spawnPuff(data)
+      if (data.event === 'hold' || data.event === 'great' || data.event === 'top') spawnPuff(data)
       const { pose, move } = climbAnimation(data, lineOf(data))
       if (data.sessionId === mySessionId()) deps.animateSelf(pose, move)
       else deps.animate(data.sessionId, pose, move)

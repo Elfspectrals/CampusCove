@@ -27,8 +27,8 @@ interface ClimbState {
   phase: string
   next: number
   grip: number
-  litAt: number
-  opensAt: number
+  readyAt: number
+  check: { hold: number, zoneStart: number } | null
   result?: string
   timeMs?: number
 }
@@ -64,10 +64,14 @@ function errors(room: FakeRoom, player: Player): string[] {
 }
 
 function climbAll(room: FakeRoom, player: Player, holds: number, from: number): number {
+  const climb = climbing.climbOf(room, player.sessionId)
+  assert.ok(climb)
+  const zoneStartMs = Math.ceil((rules.colours.get(climb.line.colour)?.turnMs ?? 0) / 3)
   let at = from
   for (let i = 0; i < holds; i++) {
     at += 800
-    climbing.onClimbHold(room, clientOf(room, player), { hold: i }, at)
+    climbing.onClimbHold(room, clientOf(room, player), { hold: i }, at - zoneStartMs, () => 0)
+    climbing.onClimbCheck(room, clientOf(room, player), at)
   }
   return at
 }
@@ -121,11 +125,20 @@ test('a fall on the lead wall lowers the climber for 2 s and records no time', a
   climbing.onClimbStart(room, clientOf(room, p), { line: 'route_4' }, NOW)
   const reached = climbAll(room, p, 6, NOW)
   const high = p.y
-  for (const at of [reached + 100, reached + 200, reached + 300]) climbing.onClimbHold(room, clientOf(room, p), { hold: 9 }, at)
+  climbing.onClimbHold(room, clientOf(room, p), { hold: 9 }, reached + 50)
+  assert.equal(last(room, p).event, 'great')
+  let fellAt = reached
+  for (let tries = 0; tries < 6 && last(room, p).event !== 'fall'; tries++) {
+    fellAt += 100
+    climbing.onClimbHold(room, clientOf(room, p), { hold: 6 }, fellAt, () => 0)
+    assert.equal(last(room, p).check?.hold, 6)
+    fellAt += 10
+    climbing.onClimbCheck(room, clientOf(room, p), fellAt)
+  }
   assert.deepEqual([last(room, p).event, last(room, p).phase], ['fall', 'lowering'])
-  climbing.tickClimbing(room, reached + 1300)
+  climbing.tickClimbing(room, fellAt + 1000)
   assert.ok(p.y < high && p.y > 0.2 + 1.6)
-  climbing.tickClimbing(room, reached + 2300)
+  climbing.tickClimbing(room, fellAt + 2000)
   assert.deepEqual([last(room, p).phase, last(room, p).result, last(room, p).timeMs], ['ended', 'fell', undefined])
   assert.equal(p.y, 0.2 + 1.6)
   assert.equal(api.calls.length, 0)
@@ -170,7 +183,7 @@ test('speed duel: the coach starts both climbers on the twin lanes and the first
   const match = room.sports.matches.get('climbing_duel')
   assert.ok(match)
   const climbA = own(room, a)
-  assert.deepEqual([climbA.line, climbA.litAt], ['speed_1', match.startedAt + 3000])
+  assert.deepEqual([climbA.line, climbA.readyAt], ['speed_1', match.startedAt + 3000])
   assert.equal(states(room, a).find((s) => s.sessionId === b.sessionId)?.line, 'speed_2')
   Object.assign(free, standAt('speed_1'))
   climbing.onClimbStart(room, clientOf(room, free), { line: 'speed_1' }, NOW + 10)

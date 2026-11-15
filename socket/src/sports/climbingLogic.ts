@@ -18,8 +18,28 @@ export interface ClimbLine {
 }
 
 export interface ColourRule {
-  windowMs: number
+  drainPerSec: number
   lossPerMiss: number
+  zoneDeg: number
+  turnMs: number
+}
+
+export interface CheckRules {
+  minStartDeg: number
+  endMarginDeg: number
+  greatShare: number
+  greatGrip: number
+  strainZoneCut: number
+  allowanceMs: number
+}
+
+export interface Check {
+  hold: number
+  startedAt: number
+  turnMs: number
+  zoneStart: number
+  zoneSize: number
+  greatSize: number
 }
 
 export interface ClimbingRules {
@@ -29,11 +49,14 @@ export interface ClimbingRules {
   standoffM: number
   reachBelowM: number
   startReachM: number
-  leadMs: number
-  allowanceMs: number
   duelStartDelayMs: number
   belayLowerMs: number
   gripMax: number
+  restReachM: number
+  strainReachM: number
+  regenPerSec: number
+  maxClimbMs: number
+  check: CheckRules
   minPlayers: number
   maxPlayers: number
   colours: Map<string, ColourRule>
@@ -48,7 +71,9 @@ export interface Climb {
   line: ClimbLine
   next: number
   grip: number
-  litAt: number
+  gripAt: number
+  readyAt: number
+  check: Check | null
   startedAt: number | null
   phase: ClimbPhase
   lowerFrom: number
@@ -56,7 +81,8 @@ export interface Climb {
   duel: string | null
 }
 
-export type ClickOutcome = 'hold' | 'top' | 'miss' | 'fall' | 'ignored'
+export type ReachOutcome = 'reach' | 'ignored'
+export type CheckOutcome = 'hold' | 'great' | 'top' | 'miss' | 'fall' | 'ignored'
 
 export interface Pose {
   x: number
@@ -98,7 +124,12 @@ function parseColours(raw: unknown): Map<string, ColourRule> {
   const colours = new Map<string, ColourRule>()
   for (const [name, rule] of Object.entries(raw as Json)) {
     const r = (rule ?? {}) as Json
-    colours.set(name, { windowMs: positive(r.windowMs, `colours.${name}.windowMs`), lossPerMiss: positive(r.lossPerMiss, `colours.${name}.lossPerMiss`) })
+    colours.set(name, {
+      drainPerSec: positive(r.drainPerSec, `colours.${name}.drainPerSec`),
+      lossPerMiss: positive(r.lossPerMiss, `colours.${name}.lossPerMiss`),
+      zoneDeg: positive(r.zoneDeg, `colours.${name}.zoneDeg`),
+      turnMs: positive(r.turnMs, `colours.${name}.turnMs`)
+    })
   }
   if (colours.size === 0) fail('no colours')
   return colours
@@ -145,6 +176,17 @@ export function parseClimbingRules(raw: unknown): ClimbingRules {
   const [a, b] = twins.map((id) => lines.get(id) as ClimbLine)
   if (a.colour !== b.colour || JSON.stringify(a.holds) !== JSON.stringify(b.holds)) fail('twinRoutes must be identical')
   const grip = (r.grip ?? {}) as Json
+  const check = (r.check ?? {}) as Json
+  const restReachM = positive(grip.restReachM, 'grip.restReachM')
+  const strainReachM = positive(grip.strainReachM, 'grip.strainReachM')
+  if (strainReachM <= restReachM) fail('grip.strainReachM must be above grip.restReachM')
+  const strainZoneCut = finite(check.strainZoneCut, 'check.strainZoneCut')
+  if (strainZoneCut < 0 || strainZoneCut >= 1) fail('check.strainZoneCut must be from 0 to under 1')
+  const greatShare = positive(check.greatShare, 'check.greatShare')
+  if (greatShare > 1) fail('check.greatShare must be at most 1')
+  const minStartDeg = positive(check.minStartDeg, 'check.minStartDeg')
+  const endMarginDeg = positive(check.endMarginDeg, 'check.endMarginDeg')
+  for (const [name, rule] of colours) if (minStartDeg + rule.zoneDeg + endMarginDeg > 360) fail(`colours.${name}.zoneDeg does not fit after check.minStartDeg`)
   return {
     zone: r.zone,
     floorY: finite(r.floorY, 'floorY'),
@@ -152,11 +194,14 @@ export function parseClimbingRules(raw: unknown): ClimbingRules {
     standoffM: positive(r.standoffM, 'standoffM'),
     reachBelowM: positive(r.reachBelowM, 'reachBelowM'),
     startReachM: positive(r.startReachM, 'startReachM'),
-    leadMs: positive(r.leadMs, 'leadMs'),
-    allowanceMs: positive(r.allowanceMs, 'allowanceMs'),
     duelStartDelayMs: positive(r.duelStartDelayMs, 'duelStartDelayMs'),
     belayLowerMs: positive(r.belayLowerSec, 'belayLowerSec') * 1000,
     gripMax: positive(grip.max, 'grip.max'),
+    restReachM,
+    strainReachM,
+    regenPerSec: positive(grip.regenPerSec, 'grip.regenPerSec'),
+    maxClimbMs: positive(grip.maxClimbSec, 'grip.maxClimbSec') * 1000,
+    check: { minStartDeg, endMarginDeg, greatShare, greatGrip: positive(check.greatGrip, 'check.greatGrip'), strainZoneCut, allowanceMs: positive(check.allowanceMs, 'check.allowanceMs') },
     minPlayers: integer(r.minPlayers, 'minPlayers'),
     maxPlayers: integer(r.maxPlayers, 'maxPlayers'),
     colours,
@@ -171,33 +216,78 @@ function colourOf(rules: ClimbingRules, line: ClimbLine): ColourRule {
 }
 
 export function startClimb(rules: ClimbingRules, line: ClimbLine, now: number, duel: string | null = null, delayMs = 0): Climb {
-  return { line, next: 0, grip: rules.gripMax, litAt: now + delayMs, startedAt: null, phase: 'climbing', lowerFrom: 0, lowerStartedAt: 0, duel }
+  return { line, next: 0, grip: rules.gripMax, gripAt: now + delayMs, readyAt: now + delayMs, check: null, startedAt: null, phase: 'climbing', lowerFrom: 0, lowerStartedAt: 0, duel }
 }
 
-export function windowOf(rules: ClimbingRules, climb: Climb): { opensAt: number, closesAt: number } {
-  const opensAt = climb.litAt + rules.leadMs
-  return { opensAt, closesAt: opensAt + colourOf(rules, climb.line).windowMs }
+export function reachTo(line: ClimbLine, hold: number): number {
+  if (hold <= 0) return 0
+  const from = line.holds[hold - 1]
+  const to = line.holds[hold]
+  return Math.hypot(to.u - from.u, to.y - from.y)
 }
 
-function miss(rules: ClimbingRules, climb: Climb, now: number): 'miss' | 'fall' {
+export function strainOf(rules: ClimbingRules, reachM: number): number {
+  return Math.min(1, Math.max(0, (reachM - rules.restReachM) / (rules.strainReachM - rules.restReachM)))
+}
+
+export function gripRate(rules: ClimbingRules, climb: Climb): number {
+  if (climb.phase !== 'climbing' || climb.next === 0) return 0
+  const strain = strainOf(rules, reachTo(climb.line, climb.next - 1))
+  return strain === 0 ? rules.regenPerSec : -colourOf(rules, climb.line).drainPerSec * (0.4 + 0.6 * strain)
+}
+
+export function gripNow(rules: ClimbingRules, climb: Climb, now: number): number {
+  const elapsed = Math.max(0, now - climb.gripAt) / 1000
+  return Math.min(rules.gripMax, Math.max(0, climb.grip + gripRate(rules, climb) * elapsed))
+}
+
+function settle(rules: ClimbingRules, climb: Climb, now: number): void {
+  climb.grip = gripNow(rules, climb, now)
+  climb.gripAt = Math.max(climb.gripAt, now)
+}
+
+export function reachHold(rules: ClimbingRules, climb: Climb, hold: number, now: number, rng: () => number): ReachOutcome {
+  if (climb.phase !== 'climbing' || now < climb.readyAt || climb.check || hold !== climb.next) return 'ignored'
+  const colour = colourOf(rules, climb.line)
+  const zoneSize = colour.zoneDeg * (1 - rules.check.strainZoneCut * strainOf(rules, reachTo(climb.line, hold)))
+  const latest = 360 - rules.check.endMarginDeg - zoneSize
+  const zoneStart = rules.check.minStartDeg + rng() * (latest - rules.check.minStartDeg)
+  climb.check = { hold, startedAt: now, turnMs: colour.turnMs, zoneStart, zoneSize, greatSize: zoneSize * rules.check.greatShare }
+  return 'reach'
+}
+
+export function needleAngle(check: Check, now: number): number {
+  return ((now - check.startedAt) / check.turnMs) * 360
+}
+
+function failCheck(rules: ClimbingRules, climb: Climb, now: number): 'miss' | 'fall' {
+  settle(rules, climb, now)
+  climb.check = null
   climb.grip = Math.max(0, climb.grip - colourOf(rules, climb.line).lossPerMiss)
-  climb.litAt = now
   return climb.grip === 0 ? 'fall' : 'miss'
 }
 
-export function clickHold(rules: ClimbingRules, climb: Climb, hold: number, now: number): ClickOutcome {
-  if (climb.phase !== 'climbing' || now < climb.litAt) return 'ignored'
-  const { opensAt, closesAt } = windowOf(rules, climb)
-  if (hold !== climb.next || now < opensAt || now > closesAt + rules.allowanceMs) return miss(rules, climb, now)
+export function pressCheck(rules: ClimbingRules, climb: Climb, now: number): CheckOutcome {
+  const check = climb.check
+  if (climb.phase !== 'climbing' || !check) return 'ignored'
+  const angle = needleAngle(check, now)
+  const allowance = (rules.check.allowanceMs / check.turnMs) * 360
+  if (angle < check.zoneStart || angle > check.zoneStart + check.zoneSize + allowance) return failCheck(rules, climb, now)
+  const great = angle <= check.zoneStart + check.greatSize + allowance
+  settle(rules, climb, now)
+  if (great) climb.grip = Math.min(rules.gripMax, climb.grip + rules.check.greatGrip)
   if (climb.next === 0) climb.startedAt = now
   climb.next += 1
-  climb.litAt = now
-  return climb.next === climb.line.holds.length ? 'top' : 'hold'
+  climb.check = null
+  if (climb.next === climb.line.holds.length) return 'top'
+  return great ? 'great' : 'hold'
 }
 
 export function expire(rules: ClimbingRules, climb: Climb, now: number): 'miss' | 'fall' | null {
-  if (climb.phase !== 'climbing' || now <= windowOf(rules, climb).closesAt + rules.allowanceMs) return null
-  return miss(rules, climb, now)
+  if (climb.phase !== 'climbing') return null
+  if (climb.check && now > climb.check.startedAt + climb.check.turnMs + rules.check.allowanceMs) return failCheck(rules, climb, now)
+  if (climb.startedAt !== null && now - climb.startedAt > rules.maxClimbMs) return 'fall'
+  return gripNow(rules, climb, now) === 0 ? 'fall' : null
 }
 
 export function climbTime(climb: Climb, toppedAt: number): number {
