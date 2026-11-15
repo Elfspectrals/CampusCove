@@ -7,7 +7,7 @@ import { SPEED_BOOST_FACTOR } from './survivalStats.ts'
 import { entersPassAreaWithoutPass } from './sports/pass.ts'
 import { entersTakenBoardEdge } from './sports/poolDiving.ts'
 import { entersPoolWaterWithoutSwimsuit, poolSwimRejection } from './sports/poolWater.ts'
-import { entersReservedVenue } from './sports/venues.ts'
+import { entersReservedVenue, leavesConfinedMatch } from './sports/venues.ts'
 import { boxerIsDown } from './sports/boxing.ts'
 import { skateSpeedCap, skatingRejection } from './sports/skatingRink.ts'
 import type { GameRoom, HousingUnit, Player } from './types.ts'
@@ -19,7 +19,7 @@ const MAX_SPRINT_SPEED = 8.5 * 1.25
 const MAX_MOVE_BUDGET_SECONDS = 1
 const MOVE_MARGIN = 1.5
 
-export type MoveRejection = 'out_of_world' | 'frozen' | 'knocked_out' | 'cuffed' | 'jailed' | 'too_fast' | 'locked_in' | 'locked_house' | 'secret_room_closed' | 'no_pass' | 'venue_reserved' | 'tackled' | 'boxing_down' | 'no_skates' | 'skate_start' | 'skate_fallen' | 'no_swimsuit' | 'board_taken' | 'swim_too_fast' | 'below_pool_floor'
+export type MoveRejection = 'out_of_world' | 'frozen' | 'knocked_out' | 'cuffed' | 'jailed' | 'too_fast' | 'locked_in' | 'locked_house' | 'secret_room_closed' | 'no_pass' | 'match_bounds' | 'venue_reserved' | 'tackled' | 'boxing_down' | 'no_skates' | 'skate_start' | 'skate_fallen' | 'no_swimsuit' | 'board_taken' | 'swim_too_fast' | 'below_pool_floor'
 
 export function toInterior(house: WorldHouse, x: number, z: number): { x: number, z: number } {
   const dx = x - house.position.x
@@ -74,6 +74,7 @@ export function moveRejection(room: GameRoom, player: Player, x: number, y: numb
   if (entersClosedSecretRoom(player, x, y, z, now)) return 'secret_room_closed'
   if (entersPassAreaWithoutPass(player, x, z, now)) return 'no_pass'
   if (entersReservedVenue(room, player, x, z)) return 'venue_reserved'
+  if (leavesConfinedMatch(room, player, x, z)) return 'match_bounds'
   if (boxerIsDown(room, player) && Math.hypot(x - player.x, z - player.z) > MOVE_MARGIN) return 'boxing_down'
   const skating = skatingRejection(room, player, x, z, now)
   if (skating) return skating

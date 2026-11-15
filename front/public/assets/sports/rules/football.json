@@ -109,7 +109,17 @@
     "reachM": 1.8,
     "coneDeg": 70,
     "cooldownMs": 3000,
-    "groundMs": 800
+    "groundMs": 800,
+    "slideFromMps": 6.5
+  },
+  "standingTackle": {
+    "reachM": 1.1,
+    "coneDeg": 90,
+    "cooldownMs": 1000
+  },
+  "through": {
+    "leadM": 5,
+    "speed": 13
   },
   "kickIgnoreMs": 350,
   "restartMs": 3000,

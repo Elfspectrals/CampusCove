@@ -11,7 +11,9 @@ export interface FootballRules {
   shotSpeed: [number, number]
   shotLift: [number, number]
   shotChargeMs: number
-  tackle: { reachM: number, coneDeg: number, cooldownMs: number, groundMs: number }
+  tackle: { reachM: number, coneDeg: number, cooldownMs: number, groundMs: number, slideFromMps: number }
+  standingTackle: { reachM: number, coneDeg: number, cooldownMs: number }
+  through: { leadM: number, speed: number }
   passAssist: PassAssist
   lob: { holdMs: number, chargeMs: number, angleDeg: number, rangeM: [number, number] }
   sprintCarry: { extraM: number, speedMps: [number, number] }
@@ -118,6 +120,8 @@ function passAssist(raw: Raw, sport: string): PassAssist {
 export function parseFootballRules(raw: unknown): FootballRules {
   const r = (raw ?? {}) as Raw
   const tackle = block(r, 'tackle', 'football')
+  const standing = block(r, 'standingTackle', 'football')
+  const through = block(r, 'through', 'football')
   const lob = block(r, 'lob', 'football')
   const sprintCarry = block(r, 'sprintCarry', 'football')
   const shotAssist = block(r, 'shotAssist', 'football')
@@ -137,8 +141,15 @@ export function parseFootballRules(raw: unknown): FootballRules {
       reachM: positive(tackle.reachM, 'football.tackle.reachM'),
       coneDeg: positive(tackle.coneDeg, 'football.tackle.coneDeg'),
       cooldownMs: positive(tackle.cooldownMs, 'football.tackle.cooldownMs'),
-      groundMs: positive(tackle.groundMs, 'football.tackle.groundMs')
+      groundMs: positive(tackle.groundMs, 'football.tackle.groundMs'),
+      slideFromMps: positive(tackle.slideFromMps, 'football.tackle.slideFromMps')
     },
+    standingTackle: {
+      reachM: positive(standing.reachM, 'football.standingTackle.reachM'),
+      coneDeg: positive(standing.coneDeg, 'football.standingTackle.coneDeg'),
+      cooldownMs: positive(standing.cooldownMs, 'football.standingTackle.cooldownMs')
+    },
+    through: { leadM: positive(through.leadM, 'football.through.leadM'), speed: positive(through.speed, 'football.through.speed') },
     passAssist: passAssist(r, 'football'),
     lob: {
       holdMs: positive(lob.holdMs, 'football.lob.holdMs'),

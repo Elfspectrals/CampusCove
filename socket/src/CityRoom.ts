@@ -135,6 +135,7 @@ import {
   onSportsCoachOpen,
   onSportsPassBuy,
   onSportsSignup,
+  onSportsMatchLeave,
   onSportsSignupLeave,
   tickSports
 } from './sports/index.ts'
@@ -277,6 +278,7 @@ export class CityRoom extends Room implements GameRoom {
     this.onMessage('sports_coach_open', (client, payload: ClientPayload) => onSportsCoachOpen(this, client, payload))
     this.onMessage('sports_signup', (client, payload: ClientPayload) => void onSportsSignup(this, client, payload).catch((error) => warn('sports sign-up failed', error)))
     this.onMessage('sports_signup_leave', (client) => onSportsSignupLeave(this, client))
+    this.onMessage('sports_match_leave', (client) => onSportsMatchLeave(this, client))
     this.onMessage('sports_gear_quote', (client) => void onGearQuote(this, client))
     this.onMessage('sports_gear_rent', (client) => void onGearRent(this, client))
     this.onMessage('sports_run_step', (client, payload: ClientPayload) => onRunStep(this, client, payload))

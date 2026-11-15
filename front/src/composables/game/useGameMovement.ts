@@ -72,6 +72,7 @@ export interface UseGameMovementDeps {
   lockedLook?: () => { yaw: number; pitch: number } | null
   autoRun?: (dt: number) => { dx: number; dz: number } | null
   moveFrameYaw?: () => number | null
+  faceSpot?: () => { x: number; z: number } | null
   swim?: {
     waterAt: (x: number, z: number, feetY: number) => WaterRect | null
     step: (water: WaterRect, eyeY: number, vy: number, input: SwimInput, yaw: number, pitch: number, dt: number) => SwimStep
@@ -124,9 +125,10 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     } else {
       const ahead = keys.forward ? 1 : keys.back ? -1 : 0
       const aside = keys.right ? 1 : keys.left ? -1 : 0
-      if (ahead !== 0 || aside !== 0) {
-        const wishX = -Math.sin(frameYaw) * ahead + Math.cos(frameYaw) * aside
-        const wishZ = -Math.cos(frameYaw) * ahead - Math.sin(frameYaw) * aside
+      const faced = deps.faceSpot?.() ?? null
+      if (faced || ahead !== 0 || aside !== 0) {
+        const wishX = faced ? faced.x - myPosition.x : -Math.sin(frameYaw) * ahead + Math.cos(frameYaw) * aside
+        const wishZ = faced ? faced.z - myPosition.z : -Math.cos(frameYaw) * ahead - Math.sin(frameYaw) * aside
         const turn = Math.atan2(-wishX, -wishZ) - yaw
         yaw += Math.atan2(Math.sin(turn), Math.cos(turn)) * (1 - Math.exp(-SCREEN_TURN_PER_S * dt))
       }

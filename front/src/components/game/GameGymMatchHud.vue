@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { actionKeyLabels } from '../../config/keybindings'
+import { type BindableAction, actionKeyLabels } from '../../config/keybindings'
 import type { GymBanner, GymRimPop } from '../../composables/game/useGymMatch'
 import type { GymShotRelease, GymSport, GymTeam } from '../../types/gameRealtime'
 
@@ -16,6 +16,7 @@ const props = defineProps<{
     meter: { fill: number; goodFrom: number | null; overFrom: number | null } | null
     lob: number | null
     cooldown: number | null
+    leaving: number | null
   } | null
   freeHud: { sport: GymSport; meter: { fill: number; goodFrom: number | null; overFrom: number | null } | null; lob: number | null } | null
   banner: GymBanner | null
@@ -57,7 +58,10 @@ const hint = computed(() => {
   const h = props.hud
   const sport = h?.team ? h.sport : props.freeHud?.sport
   if (!sport) return null
-  return t(`sports.gym.hints.${sport}`, { key: actionKeyLabels('sportsTackle').join(' / '), view: actionKeyLabels('cameraView')[0] ?? 'U' })
+  const key = (action: BindableAction) => actionKeyLabels(action)[0] ?? ''
+  const lines = [t(`sports.gym.hints.${sport}`, { key: actionKeyLabels('sportsTackle').join(' / '), through: key('sportsThrough'), jockey: key('sportsJockey'), view: key('cameraView') })]
+  if (h?.team) lines.push(t('sports.gym.hints.leave', { key: key('declineChallenge') }))
+  return lines.join(' · ')
 })
 </script>
 
@@ -93,7 +97,13 @@ const hint = computed(() => {
         <span class="block h-full rounded-full" :class="hud.team ? TEAM_BG[hud.team] : 'bg-fog'" :style="{ width: `${hud.cooldown * 100}%` }" />
       </span>
     </div>
-    <p v-if="hint" class="m-0 text-[10px] text-mist">{{ hint }}</p>
+    <div v-if="hud.leaving !== null" class="flex w-48 flex-col gap-0.5">
+      <span class="text-[10px] font-bold uppercase tracking-[0.14em] text-coral">{{ t('sports.gym.leaving') }}</span>
+      <span class="block h-2 overflow-hidden rounded-full bg-ink-950/70">
+        <span class="block h-full rounded-full bg-coral" :style="{ width: `${hud.leaving * 100}%` }" />
+      </span>
+    </div>
+    <p v-if="hint" class="m-0 max-w-[30rem] text-center text-[10px] text-mist">{{ hint }}</p>
   </section>
   <section v-if="!hud && freeHud" class="cc-hud pointer-events-none absolute left-1/2 top-3 z-10 flex -translate-x-1/2 flex-col items-center gap-1 px-4 py-2" :aria-label="t('sports.gym.free.title')">
     <p class="m-0 font-display text-[11px] uppercase tracking-[0.16em] text-mint">{{ t(`sports.sports.${freeHud.sport}`) }} · {{ t('sports.gym.free.title') }}</p>

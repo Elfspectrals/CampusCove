@@ -206,6 +206,13 @@ export function matchPlayer(match: Match, accountId: number): MatchPlayer | null
   return match.players.find((p) => p.accountId === accountId && !p.out) ?? null
 }
 
+export function leaveMatch(match: Match, accountId: number): boolean {
+  const player = matchPlayer(match, accountId)
+  if (!player) return false
+  player.out = true
+  return true
+}
+
 export function markAway(match: Match, accountId: number, now: number): boolean {
   const player = matchPlayer(match, accountId)
   if (!player || player.awaySince !== null) return false

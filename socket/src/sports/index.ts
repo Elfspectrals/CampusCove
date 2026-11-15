@@ -13,7 +13,7 @@ export { loadPetanque } from './petanque.ts'
 export { SPORTS_TICK_MS } from './sportsConstants.ts'
 export { loadSwimming } from './swimming.ts'
 export { loadDiving } from './diving.ts'
-export { assertVenueZones, newSportsState, onSportsCoachOpen, onSportsSignup, onSportsSignupLeave, tickSports } from './venues.ts'
+export { assertVenueZones, newSportsState, onSportsCoachOpen, onSportsMatchLeave, onSportsSignup, onSportsSignupLeave, tickSports } from './venues.ts'
 
 export async function joinSports(room: GameRoom, client: GameClient, player: Player): Promise<void> {
   sendLoansOnJoin(room, client)

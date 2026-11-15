@@ -142,7 +142,7 @@ test('free play: a ball whose loan was taken back disappears, and a match takes 
   assert.equal((sentOf(clientOf(busy, red), 'gym_error').at(-1) as { code: string }).code, 'gym_court_busy')
 })
 
-test('a missed tackle puts the player down: the socket refuses his moves for the ground time', async () => {
+test('a missed sliding tackle puts the player down: the socket refuses his moves for the ground time; a missed standing one does not', async () => {
   const p = await makePlayer(321, -370, -176)
   const room = await fakeRoom([p])
   onGymBall(room, clientOf(room, p), { sport: 'football' }, NOW)
@@ -151,8 +151,16 @@ test('a missed tackle puts the player down: the socket refuses his moves for the
   p.ry = Math.PI
   tickGym(room, NOW + 100)
   onGymAction(room, clientOf(room, p), { kind: 'tackle' }, NOW + 200)
-  assert.equal((sentOf(clientOf(room, p), 'gym_event').at(-1) as { kind: string, won: boolean }).won, false)
-  assert.equal(moveRejection(room, p, p.x + 0.1, p.y, p.z, NOW + 500), 'tackled')
-  p.lastMoveAt = NOW + 1000
-  assert.equal(moveRejection(room, p, p.x + 0.1, p.y, p.z, NOW + 1100), null)
+  assert.deepEqual(sentOf(clientOf(room, p), 'gym_event').at(-1), { venue: 'gym_free', kind: 'tackle', won: false, slide: false, sessionId: p.sessionId })
+  p.lastMoveAt = NOW + 200
+  assert.equal(moveRejection(room, p, p.x + 0.1, p.y, p.z, NOW + 500), null)
+  p.z = -175.7
+  tickGym(room, NOW + 1300)
+  p.z = -174.9
+  tickGym(room, NOW + 1400)
+  onGymAction(room, clientOf(room, p), { kind: 'tackle' }, NOW + 1400)
+  assert.deepEqual(sentOf(clientOf(room, p), 'gym_event').at(-1), { venue: 'gym_free', kind: 'tackle', won: false, slide: true, sessionId: p.sessionId })
+  assert.equal(moveRejection(room, p, p.x + 0.1, p.y, p.z, NOW + 1700), 'tackled')
+  p.lastMoveAt = NOW + 2300
+  assert.equal(moveRejection(room, p, p.x + 0.1, p.y, p.z, NOW + 2400), null)
 })

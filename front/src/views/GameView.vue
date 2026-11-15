@@ -1838,7 +1838,7 @@ const movement = useGameMovement({
     if (boxing.onPointerDown(e)) return true
     return pointerLocked.value && runUseOrPunch(mouseButtonCode(e.button), false, e.shiftKey)
   },
-  speedFactor: () => survival.speedFactor() * intoxication.walkFactor() * (adminWatch.hasMyPower('speed') ? SPEED_POWER_FACTOR : 1),
+  speedFactor: () => survival.speedFactor() * intoxication.walkFactor() * gymMatch.speedFactor() * (adminWatch.hasMyPower('speed') ? SPEED_POWER_FACTOR : 1),
   movementLocked: () => seats.seated.value || townBus.riding.value || police.cuffedBy.value !== null || adminWatch.hasMyPower('freeze') || gymMatch.down() || runningRace.racing.value || dancing.value || climbingNow.value || poolRace.locked.value || tennis.serving(),
   flying: () => adminWatch.hasMyPower('fly'),
   afterCameraPlaced: (camera, dt) => {
@@ -1847,6 +1847,7 @@ const movement = useGameMovement({
   },
   lockedLook: sportsCamera.lockedLook,
   moveFrameYaw: sportsCamera.moveFrameYaw,
+  faceSpot: gymMatch.faceSpot,
   autoRun: tennis.autoRun,
   skate: skating.step,
   cameraRoll: skating.cameraRoll,

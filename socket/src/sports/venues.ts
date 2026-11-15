@@ -17,6 +17,7 @@ import {
   forfeit,
   joinLobby,
   leaveLobby,
+  leaveMatch,
   lobbyDue,
   markAway,
   markBack,
@@ -42,6 +43,7 @@ export interface VenueSpec {
   rejoinGraceMs: number
   gear?: string
   playAreaId?: string
+  confined?: boolean
   onKickoff(room: GameRoom, match: Match): void
   onTick(room: GameRoom, match: Match, elapsedMs: number): void
   onLeave(room: GameRoom, match: Match, accountId: number): void
@@ -460,6 +462,24 @@ export function entersReservedVenue(room: GameRoom, player: Player, x: number, z
     if (match && !matchPlayer(match, player.accountId)) return true
   }
   return false
+}
+
+export function leavesConfinedMatch(room: GameRoom, player: Player, x: number, z: number): boolean {
+  for (const venue of venues.values()) {
+    if (!venue.confined || inside(venue.playArea, x, z) || !inside(venue.playArea, player.x, player.z)) continue
+    const match = room.sports.matches.get(venue.id)
+    if (match && matchPlayer(match, player.accountId)) return true
+  }
+  return false
+}
+
+export function onSportsMatchLeave(room: GameRoom, client: GameClient): void {
+  const player = room.players.get(client.sessionId)
+  if (!player) return
+  for (const venue of venues.values()) {
+    const match = room.sports.matches.get(venue.id)
+    if (match && leaveMatch(match, player.accountId)) venue.onLeave(room, match, player.accountId)
+  }
 }
 
 export function updateMatchesOnMove(room: GameRoom, player: Player, now: number): void {

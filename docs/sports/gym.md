@@ -54,9 +54,9 @@ the rules are read over HTTP. Logic: `gymBall.ts` (ball physics, exact parabolic
 
 | Message | Direction | Payload |
 |---|---|---|
-| `gym_action` | client → server | `{ kind: 'pass' \| 'pass_start' \| 'pass_release' \| 'shot_start' \| 'shot_release' \| 'tackle' \| 'jump' }` (`pass` is the basketball pass, `pass_start` / `pass_release` the football one); ignored unless the sender is an active player of the running gym match; at most one every 60 ms (a release always passes) |
+| `gym_action` | client → server | `{ kind: 'pass' \| 'pass_start' \| 'pass_release' \| 'through' \| 'shot_start' \| 'shot_release' \| 'tackle' \| 'jump' }` (`pass` is the basketball pass, `pass_start` / `pass_release` the football one); ignored unless the sender is an active player of the running gym match; at most one every 60 ms (a release always passes) |
 | `gym_state` | server → players and everyone in `sports_gym`, every 100 ms | `{ venue, sport, ball: [x, y, z, vx, vy, vz], owner: sessionId \| null, score: { red, blue }, half, halves, endsAt, restartTeam, players: [{ sessionId, team }], serverNow }` |
-| `gym_event` | same | `{ venue, kind: 'score', team, points, dunk, scorer: name \| null, sessionId }`, `{ kind: 'kick', shot }`, `{ kind: 'tackle' \| 'steal', won }`, `{ kind: 'block' }`, `{ kind: 'half', half }` (each with `sessionId` of the player) |
+| `gym_event` | same | `{ venue, kind: 'score', team, points, dunk, scorer: name \| null, sessionId }`, `{ kind: 'kick', shot }`, `{ kind: 'tackle', won, slide }`, `{ kind: 'steal', won }`, `{ kind: 'block' }`, `{ kind: 'half', half }` (each with `sessionId` of the player) |
 | `gym_end` | same | `{ venue, sport, score, winner: team \| null, reason: 'finished' \| 'forfeit' }` |
 | `gym_ball` | client → server | `{ sport: 'football' \| 'basketball' }` within 3 m of the coach and while no gym match runs: lends one free-play ball (core loan `gym_ball`, area `sports_gym`), replacing the player's previous one; it appears on the court in front of the coach |
 | `gym_ball_return` | client → server | `{}`: gives the player's ball back |
@@ -134,6 +134,7 @@ Asked by the user after the first pass. Decided with them: a television view fro
   [football.md](football.md) and `football.json` (`passAssist`, `lob`, `sprintCarry`, `shotAssist`, `overcharge`).
 - **Basketball**: assisted and led pass, the green zone cut by a defender, a lay-up with no meter. Numbers in
   [basketball.md](basketball.md) and `basketball.json` (`passAssist`, `contest`, `layup`).
+- **Second review (2026-11-15)**: a match player could walk off the pitch and the keys were too few. Gym venues are now `confined` (see [CORE.md](CORE.md)), with a held key to leave the match; football gets a through ball, a standing tackle under 6.5 m/s and a held key to face the ball ([football.md](football.md)). Finesse and chip shots are left out until there is a goalkeeper to beat.
 - **No goalkeeper** (decided 2026-11-15): matches are 1 to 5 a side with no AI player; the goals of the gym are small.
 - What a player can still do, and what happens: tap or hold the pass with no team-mate (a straight pass, a lob by how
   long it is held); release the pass after losing the ball (ignored); hold the pass or the shot for ever (the charge

@@ -41,6 +41,9 @@ const GYM_COURT = { minX: -379, maxX: -378.6, minZ: -170, maxZ: -169.6 }
 fakeVenue('test_gym_football', { playArea: GYM_COURT, playAreaId: 'test_gym_court' })
 fakeVenue('test_gym_basketball', { sport: 'basketball', playArea: GYM_COURT, playAreaId: 'test_gym_court' })
 venues.registerCoach({ id: 'test_gym_coach', x: COACH.x, z: COACH.z, venues: ['test_gym_football', 'test_gym_basketball'] })
+const CONFINED = { minX: -379, maxX: -377, minZ: -185, maxZ: -183 }
+fakeVenue('test_confined', { playArea: CONFINED, confined: true })
+venues.registerCoach({ id: 'test_confined_coach', x: COACH.x, z: COACH.z, venues: ['test_confined'] })
 fakeVenue('test_gear_court', { playArea: { minX: -379, maxX: -378.5, minZ: -179, maxZ: -178.5 }, gear: 'gear_boxing_gloves' })
 
 const NOW = 5_000_000
@@ -249,6 +252,27 @@ test('a venue sharing its play area refuses a sign-up while the other one is in 
   assert.equal(room.sports.lobbies.get('test_gym_football')?.entrants.length, 2)
   await venues.onSportsSignup(room, clientOf(room, b), { coach: 'test_gym_coach', venue: 'test_court_a', team: 'blue', settings: { length: 10 } }, NOW + 2000)
   assert.equal(room.sports.lobbies.has('test_court_a'), false)
+})
+
+test('a confined venue keeps its match players inside the play area until they leave the match', async () => {
+  const { room, players: [a, b] } = await signed(2)
+  await venues.onSportsSignup(room, clientOf(room, a), { coach: 'test_confined_coach', venue: 'test_confined', team: 'red', settings: { length: 5 } }, NOW)
+  await venues.onSportsSignup(room, clientOf(room, b), { coach: 'test_confined_coach', venue: 'test_confined', team: 'blue' }, NOW + 1000)
+  assert.ok(room.sports.matches.has('test_confined'))
+  Object.assign(a, { x: -378, z: -184, lastMoveAt: NOW })
+  assert.equal(moveRejection(room, a, -376.8, 1.6, -184, NOW + 1000), 'match_bounds')
+  assert.equal(moveRejection(room, a, -377.2, 1.6, -184, NOW + 1000), null)
+  Object.assign(b, { x: -376, z: -184, lastMoveAt: NOW })
+  assert.equal(moveRejection(room, b, -375.5, 1.6, -184, NOW + 1000), null)
+  assert.equal(moveRejection(room, b, -377.5, 1.6, -184, NOW + 1000), null)
+  venues.onSportsMatchLeave(room, clientOf(room, a))
+  assert.ok(events.includes(`leave test_confined ${a.accountId}`))
+  assert.equal(moveRejection(room, a, -376.8, 1.6, -184, NOW + 1000), null)
+  venues.onSportsMatchLeave(room, clientOf(room, a))
+  assert.equal(events.filter((e) => e === `leave test_confined ${a.accountId}`).length, 1)
+  venues.tickSports(room, NOW + 2000)
+  assert.equal(room.sports.matches.has('test_confined'), false)
+  assert.deepEqual(ended.at(-1)?.end, { reason: 'forfeit', loser: 'red' })
 })
 
 test('registrations are checked', () => {

@@ -22,6 +22,7 @@ export interface GymHudRules {
   meter: GymMeter
   lob: { holdMs: number; chargeMs: number } | null
   defendCooldownMs: number
+  standingCooldownMs: number | null
   downMs: number | null
 }
 
@@ -48,6 +49,7 @@ export function parseGymHudRules(sport: GymSport, raw: unknown): GymHudRules {
       meter: { kind: 'charge', chargeMs: positive(r.shotChargeMs, 'football.shotChargeMs'), overFrom: positive(block(r, 'overcharge', sport).from, 'football.overcharge.from') },
       lob: { holdMs: positive(block(r, 'lob', sport).holdMs, 'football.lob.holdMs'), chargeMs: positive(block(r, 'lob', sport).chargeMs, 'football.lob.chargeMs') },
       defendCooldownMs: positive(block(r, 'tackle', sport).cooldownMs, 'football.tackle.cooldownMs'),
+      standingCooldownMs: positive(block(r, 'standingTackle', sport).cooldownMs, 'football.standingTackle.cooldownMs'),
       downMs: positive(block(r, 'tackle', sport).groundMs, 'football.tackle.groundMs'),
     }
   }
@@ -66,6 +68,7 @@ export function parseGymHudRules(sport: GymSport, raw: unknown): GymHudRules {
     },
     lob: null,
     defendCooldownMs: positive(block(r, 'steal', sport).cooldownMs, 'basketball.steal.cooldownMs'),
+    standingCooldownMs: null,
     downMs: null,
   }
 }
@@ -141,6 +144,7 @@ interface CourtBounds {
 export interface GymCourtView {
   floorY: number
   court: CourtBounds
+  playArea: CourtBounds
   baskets: Record<GymTeam, HoopSpot> | null
   sideBaskets: HoopSpot[]
   scoreboard: GymScreen | null
@@ -179,11 +183,26 @@ function parseBaskets(raw: unknown): GymCourtView['baskets'] {
   return { red: spot('red'), blue: spot('blue') }
 }
 
-function parseBounds(raw: unknown): CourtBounds {
+function parseBounds(raw: unknown, what = 'court'): CourtBounds {
   const b = (raw ?? {}) as Raw
-  const bounds = { minX: finite(b.minX, 'court.minX'), maxX: finite(b.maxX, 'court.maxX'), minZ: finite(b.minZ, 'court.minZ'), maxZ: finite(b.maxZ, 'court.maxZ') }
-  if (bounds.minX >= bounds.maxX || bounds.minZ >= bounds.maxZ) throw new Error('sports/gym/court.json: court must have a size')
+  const bounds = { minX: finite(b.minX, `${what}.minX`), maxX: finite(b.maxX, `${what}.maxX`), minZ: finite(b.minZ, `${what}.minZ`), maxZ: finite(b.maxZ, `${what}.maxZ`) }
+  if (bounds.minX >= bounds.maxX || bounds.minZ >= bounds.maxZ) throw new Error(`sports/gym/court.json: ${what} must have a size`)
   return bounds
+}
+
+export function insideArea(area: CourtBounds, x: number, z: number): boolean {
+  return x >= area.minX && x <= area.maxX && z >= area.minZ && z <= area.maxZ
+}
+
+export function clampToArea(area: CourtBounds, x: number, z: number): { x: number; z: number } {
+  return { x: Math.min(area.maxX, Math.max(area.minX, x)), z: Math.min(area.maxZ, Math.max(area.minZ, z)) }
+}
+
+export const LEAVE_HOLD_MS = 1500
+export const JOCKEY_SPEED_FACTOR = 0.55
+
+export function leaveFill(heldMs: number): number {
+  return Math.min(1, Math.max(0, heldMs) / LEAVE_HOLD_MS)
 }
 
 function parseSideBaskets(raw: unknown): HoopSpot[] {
@@ -225,7 +244,7 @@ function parseScreen(raw: unknown): GymScreen | null {
 
 export function parseGymCourtView(raw: unknown): GymCourtView {
   const r = (raw ?? {}) as Raw
-  return { floorY: finite(r.floorY, 'floorY'), court: parseBounds(r.court), baskets: parseBaskets(r.baskets), sideBaskets: parseSideBaskets(r.sideBaskets), scoreboard: parseScreen(r.scoreboard) }
+  return { floorY: finite(r.floorY, 'floorY'), court: parseBounds(r.court), baskets: parseBaskets(r.baskets), sideBaskets: parseSideBaskets(r.sideBaskets), scoreboard: parseScreen(r.scoreboard), playArea: parseBounds(r.playArea, 'playArea') }
 }
 
 export function scoreboardLines(state: { score: Record<GymTeam, number>; clock: string; half: number; halves: number } | null): [string, string] {

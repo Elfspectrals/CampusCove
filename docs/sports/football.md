@@ -15,7 +15,10 @@ Played on the gymnasium court (44 × 24 m, shared with basketball) and on the ou
 - Move and run as usual. Running into the ball dribbles it (it sticks lightly to the feet); at a sprint the ball runs up to 0.6 m further ahead, so a tackle reaches it more easily.
 - **Left click**: a tap is a ground pass. With a team-mate within 30 m in a 70° cone ahead, it goes to where they will be when it arrives, faster the further they are (8 m/s plus 0.35 per metre, 16 at most); with nobody there it goes straight ahead at 8 m/s. **Held 250 ms or more**: a lob at 40° over the defenders, to that team-mate, or 10 to 30 m ahead by how long it is held (full after 1 s) when nobody is there.
 - **Right click held**: charged shot; release shoots where the body faces. In a match a shot that would pass up to 2.5 m wide of a post is pulled 0.35 m inside it. From 90 % of the meter the shot is over-hit: it lifts 3 m/s more and clears the bar from close range, so release before the red zone.
-- **Tackle key** (rebindable): a sliding tackle forward, takes the ball if it reaches it, with a cooldown (proposed 3 s). A missed tackle leaves the player on the ground for about 0.8 s.
+- **Tackle key** (C, rebindable): under 6.5 m/s a standing tackle (1.1 m of reach in a 90° cone, no fall on a miss, 1 s of cooldown); at 6.5 m/s or more a sliding tackle (1.8 m in a 70° cone, a miss leaves the player on the ground 0.8 s, 3 s of cooldown).
+- **Through ball** (F, rebindable): a ground pass at 13 m/s into the space 5 m ahead of the team-mate's run (5 m past a standing one, on the line to him); straight ahead with no team-mate in the cone.
+- **Face the ball** (X held, rebindable): the player moves at 55 % of the speed and, in the television view, keeps the body turned to the ball, so a standing tackle lands. Front only: the socket still reads the yaw and the speed.
+- **In a match the players stay on the pitch**: the socket refuses a move out of the play area for a match player who is in it (`match_bounds`), and the front holds them at the line. Holding N for 1.5 s leaves the match (`sports_match_leave`): the player is out, the team plays on short, an empty team forfeits.
 - Players block each other by collision.
 
 ## Flow

@@ -167,6 +167,7 @@ export function registerGymVenue(spec: GymVenueSpec): void {
     coach: spec.court.coach,
     playArea: spec.court.playArea,
     playAreaId: spec.playAreaId,
+    confined: true,
     teams: true,
     settings: spec.settings,
     players: (settings) => ({ min: spec.minPlayers, max: 2 * Number(settings.teamSize) }),

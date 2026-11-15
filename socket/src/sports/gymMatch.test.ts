@@ -272,19 +272,58 @@ test('football: during the restart only the conceding team may take the ball', (
   assert.equal(game.owner, 2)
 })
 
-test('football: a tackle in front takes the ball; a miss puts the player down and the cooldown holds', () => {
+test('football: a sliding tackle in front takes the ball; a miss puts the player down and the cooldown holds', () => {
   const game = freshGame(FOOTBALL)
   const carrier = athlete(1, 'red', 0, 0, EAST)
-  const defender = athlete(2, 'blue', 2.0, 0, WEST)
+  const defender = athlete(2, 'blue', 2.0, 0, WEST, -7)
   stepGym(game, FOOTBALL, [carrier], 1 / 60, T0)
   stepGym(game, FOOTBALL, [carrier], 1 / 60, T0 + 5)
   assert.equal(game.owner, 1)
-  assert.deepEqual(actGym(game, FOOTBALL, defender, [carrier, defender], 'tackle', T0 + 10, () => 0.5), [{ kind: 'tackle', accountId: 2, won: true }])
+  assert.deepEqual(actGym(game, FOOTBALL, defender, [carrier, defender], 'tackle', T0 + 10, () => 0.5), [{ kind: 'tackle', accountId: 2, won: true, slide: true }])
   assert.equal(game.owner, 2)
   assert.deepEqual(actGym(game, FOOTBALL, defender, [carrier, defender], 'tackle', T0 + 1000, () => 0.5), [])
-  const behind = athlete(3, 'red', 6, 0, EAST)
-  assert.deepEqual(actGym(game, FOOTBALL, behind, [carrier, defender, behind], 'tackle', T0 + 20, () => 0.5), [{ kind: 'tackle', accountId: 3, won: false }])
+  const behind = athlete(3, 'red', 6, 0, EAST, 7)
+  assert.deepEqual(actGym(game, FOOTBALL, behind, [carrier, defender, behind], 'tackle', T0 + 20, () => 0.5), [{ kind: 'tackle', accountId: 3, won: false, slide: true }])
   assert.deepEqual(actGym(game, FOOTBALL, behind, [carrier, defender, behind], 'pass', T0 + 500, () => 0.5), [])
+})
+
+test('football: under 6.5 m/s the tackle is a standing one: 1.1 m of reach, no fall on a miss, 1 s of cooldown', () => {
+  const tackled = (x: number, vx: number) => {
+    const game = carrying(athlete(1, 'red', 0, 0, EAST))
+    const defender = athlete(2, 'blue', x, 0, WEST, vx)
+    return { game, defender, events: actGym(game, FOOTBALL, defender, [athlete(1, 'red', 0, 0, EAST), defender], 'tackle', T0 + 10, () => 0.5) }
+  }
+  const ballX = carryAhead(FOOTBALL, athlete(1, 'red', 0, 0, EAST))
+  const won = tackled(ballX + 1.05, 0)
+  assert.deepEqual(won.events, [{ kind: 'tackle', accountId: 2, won: true, slide: false }])
+  assert.equal(won.game.owner, 2)
+  const missed = tackled(ballX + 1.15, 0)
+  assert.deepEqual(missed.events, [{ kind: 'tackle', accountId: 2, won: false, slide: false }])
+  assert.equal(missed.game.groundedUntil.get(2), undefined)
+  assert.deepEqual(actGym(missed.game, FOOTBALL, missed.defender, [missed.defender], 'tackle', T0 + 1009, () => 0.5), [])
+  assert.equal(actGym(missed.game, FOOTBALL, missed.defender, [missed.defender], 'tackle', T0 + 1010, () => 0.5).length, 1)
+  assert.equal((tackled(ballX + 1.5, -6.4).events[0] as { slide: boolean }).slide, false)
+  assert.deepEqual(tackled(ballX + 1.5, -6.5).events, [{ kind: 'tackle', accountId: 2, won: true, slide: true }])
+})
+
+test('football: a through ball goes 5 m ahead of the running team-mate at 13 m/s, past a standing one, straight ahead with nobody', () => {
+  const passer = athlete(1, 'red', 0, 0, EAST)
+  const thrown = (mates: Athlete[]) => {
+    const game = carrying(passer)
+    const events = actGym(game, FOOTBALL, passer, [passer, ...mates], 'through', T0 + 10, () => 0.5)
+    return { events, vx: game.ball.vx, vz: game.ball.vz, owner: game.owner }
+  }
+  const running = thrown([{ ...athlete(2, 'red', 10, 2, EAST), vx: 0, vz: 5 }])
+  assert.deepEqual(running.events, [{ kind: 'kick', accountId: 1, shot: false }])
+  near(running.vx, (13 * 10) / Math.hypot(10, 7), 'towards the spot 5 m further along his run')
+  near(running.vz, (13 * 7) / Math.hypot(10, 7), 'towards the spot 5 m further along his run')
+  assert.equal(running.owner, null)
+  const standing = thrown([athlete(2, 'red', 10, 0, EAST)])
+  near(standing.vx, 13, 'past a standing team-mate, on the line to him')
+  near(standing.vz, 0, 'no side speed')
+  const alone = thrown([athlete(2, 'blue', 10, 0, EAST)])
+  near(alone.vx, 13, 'straight ahead, never to an opponent')
+  assert.deepEqual(actGym(freshGame(FOOTBALL), FOOTBALL, athlete(9, 'red', 30, 9, EAST), [], 'through', T0, () => 0.5), [])
 })
 
 test('basketball: the meter rises then falls, and the good window narrows with distance', () => {

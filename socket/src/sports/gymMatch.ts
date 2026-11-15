@@ -15,13 +15,13 @@ export interface Athlete {
 
 export type ShotRelease = 'perfect' | 'good' | 'early' | 'late'
 
-export type GymActionKind = 'pass' | 'pass_start' | 'pass_release' | 'shot_start' | 'shot_release' | 'tackle' | 'jump'
-export const GYM_ACTIONS: readonly GymActionKind[] = ['pass', 'pass_start', 'pass_release', 'shot_start', 'shot_release', 'tackle', 'jump']
+export type GymActionKind = 'pass' | 'pass_start' | 'pass_release' | 'through' | 'shot_start' | 'shot_release' | 'tackle' | 'jump'
+export const GYM_ACTIONS: readonly GymActionKind[] = ['pass', 'pass_start', 'pass_release', 'through', 'shot_start', 'shot_release', 'tackle', 'jump']
 
 export type GymEvent =
   | { kind: 'score', team: Team, scorer: number | null, points: number, dunk: boolean }
   | { kind: 'kick', accountId: number, shot: boolean, release?: ShotRelease }
-  | { kind: 'tackle', accountId: number, won: boolean }
+  | { kind: 'tackle', accountId: number, won: boolean, slide: boolean }
   | { kind: 'steal', accountId: number, won: boolean }
   | { kind: 'block', accountId: number }
 
@@ -316,6 +316,17 @@ function groundPass(game: GymGame, rules: FootballRules, a: Athlete, athletes: r
   return kickAlong(game, rules, a, towards(a, ledSpot(mate, d / speed)), speed, rules.passLift, now, false)
 }
 
+const MOVING_MPS = 1
+
+function throughBall(game: GymGame, rules: FootballRules, a: Athlete, athletes: readonly Athlete[], now: number): GymEvent[] {
+  const mate = passTarget(a, athletes, rules.passAssist)
+  if (!mate) return kick(game, rules, a, rules.through.speed, rules.passLift, now, false)
+  const pace = Math.hypot(mate.vx, mate.vz)
+  const run = pace >= MOVING_MPS ? { x: mate.vx / pace, z: mate.vz / pace } : towards(a, mate)
+  const spot = { x: mate.x + run.x * rules.through.leadM, z: mate.z + run.z * rules.through.leadM }
+  return kickAlong(game, rules, a, towards(a, spot), rules.through.speed, rules.passLift, now, false)
+}
+
 function lobFlightS(distance: number, angleRad: number): number {
   return 2 * Math.sin(angleRad) * Math.sqrt(distance / (GRAVITY * Math.sin(2 * angleRad)))
 }
@@ -359,20 +370,22 @@ function inCone(a: Athlete, x: number, z: number, reach: number, coneDeg: number
 function footballAction(game: GymGame, rules: FootballRules, a: Athlete, athletes: readonly Athlete[], kind: GymActionKind, now: number): GymEvent[] {
   if (kind === 'tackle') {
     if ((game.cooldownUntil.get(a.accountId) ?? 0) > now || grounded(game, a.accountId, now)) return []
-    game.cooldownUntil.set(a.accountId, now + rules.tackle.cooldownMs)
+    const slide = Math.hypot(a.vx, a.vz) >= rules.tackle.slideFromMps
+    const reach = slide ? rules.tackle : rules.standingTackle
+    game.cooldownUntil.set(a.accountId, now + reach.cooldownMs)
     const holder = game.owner
     const reachable = holder !== a.accountId && game.ball.y - game.court.floorY <= rules.pickupHeightM &&
-      inCone(a, game.ball.x, game.ball.z, rules.tackle.reachM, rules.tackle.coneDeg)
+      inCone(a, game.ball.x, game.ball.z, reach.reachM, reach.coneDeg)
     if (reachable && (!game.restart || game.restart.team === a.team)) {
       game.owner = a.accountId
       game.lastTouch = { accountId: a.accountId, team: a.team }
       game.kickedBy = null
       game.restart = null
       if (holder !== null) game.shotStartedAt.delete(holder)
-      return [{ kind: 'tackle', accountId: a.accountId, won: true }]
+      return [{ kind: 'tackle', accountId: a.accountId, won: true, slide }]
     }
-    game.groundedUntil.set(a.accountId, now + rules.tackle.groundMs)
-    return [{ kind: 'tackle', accountId: a.accountId, won: false }]
+    if (slide) game.groundedUntil.set(a.accountId, now + rules.tackle.groundMs)
+    return [{ kind: 'tackle', accountId: a.accountId, won: false, slide }]
   }
   if (grounded(game, a.accountId, now)) return []
   if (kind === 'pass') {
@@ -380,6 +393,12 @@ function footballAction(game: GymGame, rules: FootballRules, a: Athlete, athlete
     game.shotStartedAt.delete(a.accountId)
     game.passStartedAt.delete(a.accountId)
     return groundPass(game, rules, a, athletes, now)
+  }
+  if (kind === 'through') {
+    if (!footballHasBall(game, rules, a, now)) return []
+    game.shotStartedAt.delete(a.accountId)
+    game.passStartedAt.delete(a.accountId)
+    return throughBall(game, rules, a, athletes, now)
   }
   if (kind === 'pass_start') {
     game.passStartedAt.set(a.accountId, now)
