@@ -26,6 +26,7 @@ Y = SP.Y
 GYM_POS = (-435.5, -211.0)
 GYM_YAW = -math.pi / 2
 TEAM_OF_END = {"east": "red", "west": "blue"}
+SCOREBOARD_SCREEN = {"x": -408.3, "y": 6.05, "z": -208.3, "width": 1.88, "height": 1.24, "facing": [-1, 0]}
 
 ext = json.load(open(os.path.join(GYM_OUT, "exterior.layout.json")))
 inner = json.load(open(os.path.join(GYM_OUT, "interior.layout.json")))
@@ -84,6 +85,7 @@ court = {
     "goals": goals,
     "baskets": baskets,
     "sideBaskets": [world_hoop(b) for b in court_in["sideBaskets"]],
+    "scoreboard": SCOREBOARD_SCREEN,
 }
 for key in ("arena", "playArea", "court"):
     b = court[key]

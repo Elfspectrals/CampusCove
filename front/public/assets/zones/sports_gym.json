@@ -46,96 +46,6 @@
       "coach": "gym_coach"
     },
     {
-      "id": "sports_gym_gym_team_bench_01",
-      "kind": "item",
-      "key": "gym_team_bench",
-      "code": "decor_gym_team_bench",
-      "forSale": false,
-      "position": [
-        -439.0,
-        0.2,
-        -223.59
-      ],
-      "yaw": 3.1416,
-      "scale": [
-        1,
-        1,
-        1
-      ]
-    },
-    {
-      "id": "sports_gym_gym_team_bench_02",
-      "kind": "item",
-      "key": "gym_team_bench",
-      "code": "decor_gym_team_bench",
-      "forSale": false,
-      "position": [
-        -424.4,
-        0.2,
-        -223.59
-      ],
-      "yaw": 3.1416,
-      "scale": [
-        1,
-        1,
-        1
-      ]
-    },
-    {
-      "id": "sports_gym_gym_ball_rack_01",
-      "kind": "item",
-      "key": "gym_ball_rack",
-      "code": "decor_gym_ball_rack",
-      "forSale": false,
-      "position": [
-        -452.0,
-        0.2,
-        -195.15
-      ],
-      "yaw": 0.0,
-      "scale": [
-        1,
-        1,
-        1
-      ]
-    },
-    {
-      "id": "sports_gym_gym_ball_rack_02",
-      "kind": "item",
-      "key": "gym_ball_rack",
-      "code": "decor_gym_ball_rack",
-      "forSale": false,
-      "position": [
-        -411.4,
-        0.2,
-        -195.15
-      ],
-      "yaw": 0.0,
-      "scale": [
-        1,
-        1,
-        1
-      ]
-    },
-    {
-      "id": "sports_gym_gym_team_bench_03",
-      "kind": "item",
-      "key": "gym_team_bench",
-      "code": "decor_gym_team_bench",
-      "forSale": false,
-      "position": [
-        -459.8,
-        0.2,
-        -227.35
-      ],
-      "yaw": 3.1416,
-      "scale": [
-        1,
-        1,
-        1
-      ]
-    },
-    {
       "id": "sports_gym_potted_plant_01",
       "kind": "item",
       "key": "potted_plant",
@@ -190,17 +100,17 @@
       ]
     },
     {
-      "id": "sports_gym_police_lockers_01",
+      "id": "sports_gym_gym_team_bench_01",
       "kind": "item",
-      "key": "police_lockers",
-      "code": "decor_police_lockers",
+      "key": "gym_team_bench",
+      "code": "decor_gym_team_bench",
       "forSale": false,
       "position": [
-        -463.11,
+        -439.0,
         0.2,
-        -204.0
+        -223.51
       ],
-      "yaw": 1.5708,
+      "yaw": 0.0,
       "scale": [
         1,
         1,
@@ -208,17 +118,35 @@
       ]
     },
     {
-      "id": "sports_gym_police_lockers_02",
+      "id": "sports_gym_gym_team_bench_02",
       "kind": "item",
-      "key": "police_lockers",
-      "code": "decor_police_lockers",
+      "key": "gym_team_bench",
+      "code": "decor_gym_team_bench",
       "forSale": false,
       "position": [
-        -463.11,
+        -424.4,
         0.2,
-        -202.2
+        -223.51
       ],
-      "yaw": 1.5708,
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "sports_gym_gym_team_bench_03",
+      "kind": "item",
+      "key": "gym_team_bench",
+      "code": "decor_gym_team_bench",
+      "forSale": false,
+      "position": [
+        -459.8,
+        0.2,
+        -227.31
+      ],
+      "yaw": 0.0,
       "scale": [
         1,
         1,
@@ -244,6 +172,78 @@
       ]
     },
     {
+      "id": "sports_gym_gym_lockers_01",
+      "kind": "item",
+      "key": "gym_lockers",
+      "code": "decor_gym_lockers",
+      "forSale": false,
+      "position": [
+        -463.18,
+        0.2,
+        -203.9
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "sports_gym_gym_lockers_02",
+      "kind": "item",
+      "key": "gym_lockers",
+      "code": "decor_gym_lockers",
+      "forSale": false,
+      "position": [
+        -463.18,
+        0.2,
+        -201.9
+      ],
+      "yaw": 1.5708,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "sports_gym_gym_ball_rack_01",
+      "kind": "item",
+      "key": "gym_ball_rack",
+      "code": "decor_gym_ball_rack",
+      "forSale": false,
+      "position": [
+        -452.0,
+        0.2,
+        -194.74
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "sports_gym_gym_ball_rack_02",
+      "kind": "item",
+      "key": "gym_ball_rack",
+      "code": "decor_gym_ball_rack",
+      "forSale": false,
+      "position": [
+        -411.4,
+        0.2,
+        -194.74
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
       "id": "sports_gym_gym_ball_rack_03",
       "kind": "item",
       "key": "gym_ball_rack",
@@ -252,9 +252,63 @@
       "position": [
         -461.8,
         0.2,
-        -195.0
+        -194.74
       ],
-      "yaw": 0.0,
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "sports_gym_gym_ball_cart_01",
+      "kind": "item",
+      "key": "gym_ball_cart",
+      "code": "decor_gym_ball_cart",
+      "forSale": false,
+      "position": [
+        -459.3,
+        0.2,
+        -194.83
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "sports_gym_gym_ball_cart_02",
+      "kind": "item",
+      "key": "gym_ball_cart",
+      "code": "decor_gym_ball_cart",
+      "forSale": false,
+      "position": [
+        -440.0,
+        0.2,
+        -194.83
+      ],
+      "yaw": 3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "sports_gym_gym_scoreboard_01",
+      "kind": "item",
+      "key": "gym_scoreboard",
+      "code": "decor_gym_scoreboard",
+      "forSale": false,
+      "position": [
+        -407.935,
+        5.0,
+        -208.3
+      ],
+      "yaw": -1.5708,
       "scale": [
         1,
         1,

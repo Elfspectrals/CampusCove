@@ -3,6 +3,10 @@ import type { GymFreeBall, GymSport, GymStatePayload, GymTeam } from '../../type
 const GRAVITY = 9.81
 export const GYM_COACH = 'gym_coach'
 
+export function teamJerseyUrl(team: GymTeam): string {
+  return `/assets/wear/top/team_jersey_${team}/model.glb`
+}
+
 export type GymMeter = { kind: 'charge'; chargeMs: number } | { kind: 'bounce'; riseMs: number; windowNear: number; windowFar: number; farDistanceM: number }
 
 export interface GymHudRules {
@@ -86,9 +90,19 @@ export function myTeam(state: GymStatePayload | null, sessionId: string | null):
   return state.players.find((p) => p.sessionId === sessionId)?.team ?? null
 }
 
+export interface GymScreen {
+  x: number
+  y: number
+  z: number
+  width: number
+  height: number
+  facing: [number, number]
+}
+
 export interface GymCourtView {
   floorY: number
   baskets: Record<GymTeam, { x: number; y: number; z: number }>
+  scoreboard: GymScreen
 }
 
 function finite(raw: unknown, what: string): number {
@@ -100,7 +114,24 @@ export function parseGymCourtView(raw: unknown): GymCourtView {
   const r = (raw ?? {}) as Raw
   const baskets = (r.baskets ?? {}) as Record<string, Raw | undefined>
   const spot = (team: GymTeam) => ({ x: finite(baskets[team]?.x, `baskets.${team}.x`), y: finite(baskets[team]?.y, `baskets.${team}.y`), z: finite(baskets[team]?.z, `baskets.${team}.z`) })
-  return { floorY: finite(r.floorY, 'floorY'), baskets: { red: spot('red'), blue: spot('blue') } }
+  const hoops = { red: spot('red'), blue: spot('blue') }
+  const s = (r.scoreboard ?? {}) as Raw
+  const facing = Array.isArray(s.facing) ? s.facing : []
+  const scoreboard: GymScreen = {
+    x: finite(s.x, 'scoreboard.x'),
+    y: finite(s.y, 'scoreboard.y'),
+    z: finite(s.z, 'scoreboard.z'),
+    width: finite(s.width, 'scoreboard.width'),
+    height: finite(s.height, 'scoreboard.height'),
+    facing: [finite(facing[0], 'scoreboard.facing[0]'), finite(facing[1], 'scoreboard.facing[1]')],
+  }
+  return { floorY: finite(r.floorY, 'floorY'), baskets: hoops, scoreboard }
+}
+
+export function scoreboardLines(state: { score: Record<GymTeam, number>; clock: string; half: number; halves: number } | null): [string, string] {
+  if (!state) return ['COVE GYM', '']
+  const half = state.halves > 1 ? ` · ${state.half}/${state.halves}` : ''
+  return [`${state.score.red} : ${state.score.blue}`, `${state.clock}${half}`]
 }
 
 const DRIBBLE_PERIOD_S = 0.5

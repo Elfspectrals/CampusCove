@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 import type { GymStatePayload } from '../../types/gameRealtime.ts'
-import { carriedSpot, clockText, dribbleBeat, dribbleHeight, goodWindowStart, meterFill, myTeam, nearestFreeBall, parseGymCourtView, parseGymHudRules, predictBall } from './gymMatch.ts'
+import { carriedSpot, clockText, scoreboardLines, dribbleBeat, dribbleHeight, goodWindowStart, meterFill, myTeam, nearestFreeBall, parseGymCourtView, parseGymHudRules, predictBall } from './gymMatch.ts'
 
 const rules = (sport: string) => JSON.parse(readFileSync(new URL(`../../../public/assets/sports/rules/${sport}.json`, import.meta.url), 'utf8'))
 
@@ -75,4 +75,16 @@ test('the ball a free player acts on is the one they hold, else the nearest loos
   assert.equal(nearestFreeBall(balls, 'me', 0, 0, 2)?.id, 'c')
   assert.equal(nearestFreeBall(balls.slice(0, 2), 'me', 0, 0, 2)?.id, 'b')
   assert.equal(nearestFreeBall(balls.slice(0, 2), 'me', 5, 0, 2), null)
+})
+
+test('the scoreboard shows the score and the clock in a match, the gym name otherwise', () => {
+  assert.deepEqual(scoreboardLines(null), ['COVE GYM', ''])
+  assert.deepEqual(scoreboardLines({ score: { red: 3, blue: 1 }, clock: '2:05', half: 2, halves: 2 }), ['3 : 1', '2:05 · 2/2'])
+  assert.deepEqual(scoreboardLines({ score: { red: 0, blue: 0 }, clock: '4:00', half: 1, halves: 1 }), ['0 : 0', '4:00'])
+})
+
+test('the shipped court contract gives the live scoreboard screen', () => {
+  const court = parseGymCourtView(JSON.parse(readFileSync(new URL('../../../public/assets/sports/gym/court.json', import.meta.url), 'utf8')))
+  assert.ok(court.scoreboard.width > 1 && court.scoreboard.height > 0.5)
+  assert.deepEqual(court.scoreboard.facing, [-1, 0])
 })

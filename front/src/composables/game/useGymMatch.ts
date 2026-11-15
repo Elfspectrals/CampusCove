@@ -15,10 +15,14 @@ import {
   meterFill,
   myTeam,
   nearestFreeBall,
+  teamJerseyUrl,
   parseGymCourtView,
   parseGymHudRules,
   predictBall,
+  scoreboardLines,
 } from '../../game/sports/gymMatch'
+import { disposeObject3D } from '../../avatar/compositeAvatar'
+import { createGltfLoader } from '../../game/gltfLoaderFactory'
 import { sportRulesUrl } from '../../game/sports/sportsSignup'
 import type { GymEndPayload, GymErrorPayload, GymEventPayload, GymFreePayload, GymShotRelease, GymSport, GymStatePayload, GymTeam } from '../../types/gameRealtime'
 
@@ -32,7 +36,9 @@ export interface GymMatchDeps {
   remoteAvatar: (sessionId: string) => THREE.Object3D | null
   remoteSportsMove: (sessionId: string, clip: SportsMoveClip) => void
   setRemoteDribbling: (sessionId: string, dribbling: boolean) => void
+  setRemoteTopOverride: (sessionId: string, top: string | null) => void
   playOn: (name: SfxName, object: THREE.Object3D) => void
+  play: (name: SfxName) => void
   say: (text: string) => void
   errorText: (error: GymErrorPayload) => string
 }
@@ -65,7 +71,7 @@ const MY_HAND_AHEAD_M = 0.45
 const MY_HAND_HEIGHT_M = 0.9
 const MATCH_BALL = 'match'
 const SPORTS: readonly GymSport[] = ['football', 'basketball']
-const BALL_COLOURS: Record<GymSport, number> = { football: 0xf4f4f4, basketball: 0xe07b2c }
+const BALL_MODEL_URL: Record<GymSport, string> = { football: '/assets/decor/gym_football/model.glb', basketball: '/assets/decor/gym_basketball/model.glb' }
 const ANCHOR_BONE: Record<GymSport, string> = { football: 'ToeR', basketball: 'HandR' }
 
 async function fetchJson(url: string): Promise<unknown> {
@@ -92,10 +98,15 @@ export function useGymMatch(deps: GymMatchDeps) {
   let freeReceivedAt = 0
   let bannerUntil = 0
   let rimPopAt: { team: GymTeam; text: string; until: number } | null = null
-  const meshes = new Map<string, THREE.Mesh>()
-  const dribbles = new Map<THREE.Mesh, number>()
+  const meshes = new Map<string, THREE.Object3D>()
+  const dribbles = new Map<THREE.Object3D, number>()
+  const ballTemplates = new Map<GymSport, THREE.Object3D>()
+  const ballLoads = new Set<GymSport>()
+  const loader = createGltfLoader()
   const markers = new Map<string, THREE.Mesh>()
   let dribblers = new Set<string>()
+  let jerseys = new Map<string, string>()
+  let screen: { mesh: THREE.Mesh; canvas: HTMLCanvasElement; texture: THREE.CanvasTexture; text: string } | null = null
   const anchor = new THREE.Vector3()
   const forward = new THREE.Vector3()
   const projected = new THREE.Vector3()
@@ -119,18 +130,36 @@ export function useGymMatch(deps: GymMatchDeps) {
     loading.catch((error) => console.error('[gym] rules or court', error))
   }
 
-  function meshFor(id: string, sport: GymSport, radius: number): THREE.Mesh {
+  function loadBall(sport: GymSport): void {
+    if (ballLoads.has(sport)) return
+    ballLoads.add(sport)
+    loader
+      .loadAsync(BALL_MODEL_URL[sport])
+      .then((gltf) => {
+        const centre = new THREE.Box3().setFromObject(gltf.scene).getCenter(new THREE.Vector3())
+        gltf.scene.position.sub(centre)
+        const template = new THREE.Group()
+        template.add(gltf.scene)
+        ballTemplates.set(sport, template)
+      })
+      .catch((error: unknown) => console.error(`[gym] ${sport} ball model failed`, BALL_MODEL_URL[sport], error))
+  }
+
+  function meshFor(id: string, sport: GymSport): THREE.Object3D | null {
     const key = `${id}:${sport}`
     let mesh = meshes.get(key)
     if (!mesh) {
-      mesh = new THREE.Mesh(new THREE.IcosahedronGeometry(radius, 2), new THREE.MeshStandardMaterial({ color: BALL_COLOURS[sport], roughness: 0.6 }))
+      loadBall(sport)
+      const template = ballTemplates.get(sport)
+      if (!template) return null
+      mesh = template.clone()
       mesh.name = `gym_ball_${key}`
       meshes.set(key, mesh)
     }
     return mesh
   }
 
-  function hideAll(except: ReadonlySet<THREE.Mesh> = new Set()): void {
+  function hideAll(except: ReadonlySet<THREE.Object3D> = new Set()): void {
     for (const mesh of [...meshes.values(), ...markers.values()]) if (!except.has(mesh)) mesh.removeFromParent()
   }
 
@@ -153,7 +182,7 @@ export function useGymMatch(deps: GymMatchDeps) {
     return avatar ? { x: avatar.position.x, z: avatar.position.z } : null
   }
 
-  function placeMarker(shown: Set<THREE.Mesh>, owner: string | null, tone: keyof typeof MARKER_COLOURS, key: string): void {
+  function placeMarker(shown: Set<THREE.Object3D>, owner: string | null, tone: keyof typeof MARKER_COLOURS, key: string): void {
     if (!owner || !court) return
     const spot = carrierSpot(owner)
     if (!spot) return
@@ -172,6 +201,7 @@ export function useGymMatch(deps: GymMatchDeps) {
   }
 
   function onState(data: GymStatePayload): void {
+    if (state.value?.venue !== data.venue) deps.play('gym_whistle')
     loadAll()
     state.value = data
     receivedAt = Date.now()
@@ -213,7 +243,7 @@ export function useGymMatch(deps: GymMatchDeps) {
       const sport = state.value?.sport ?? 'football'
       show({ kind: 'score', team: data.team, points: data.points, dunk: data.dunk, scorer: data.scorer, sport })
       if (sport === 'basketball') rimPopAt = { team: data.team, text: `+${data.points}`, until: Date.now() + RIM_POP_MS }
-      soundAtBalls('market_bell')
+      deps.play(sport === 'football' ? 'gym_whistle' : 'gym_swish')
     } else if (data.kind === 'kick') {
       if (mine && data.release) {
         releaseLabel.value = data.release
@@ -221,6 +251,7 @@ export function useGymMatch(deps: GymMatchDeps) {
       }
       soundAtBalls(data.shot || sportOfEvent(data) !== 'basketball' ? 'gym_kick' : 'gym_bounce')
     } else if (data.kind === 'half') {
+      deps.play('gym_whistle')
       show({ kind: 'half', half: data.half })
     } else {
       const sportRules = rules.value[state.value?.sport ?? (data.kind === 'steal' ? 'basketball' : 'football')]
@@ -239,6 +270,7 @@ export function useGymMatch(deps: GymMatchDeps) {
     const mine = myTeam(state.value, mySessionId())
     if (state.value?.venue === data.venue) state.value = null
     holdStartedAt.value = null
+    deps.play('gym_whistle')
     show({ kind: 'end', winner: data.winner, mine, score: data.score }, END_BANNER_MS)
   }
 
@@ -305,9 +337,16 @@ export function useGymMatch(deps: GymMatchDeps) {
     window.removeEventListener('mouseup', onMouseUp)
     window.removeEventListener('blur', onBlur)
     hideAll()
-    for (const mesh of [...meshes.values(), ...markers.values()]) {
-      mesh.geometry.dispose()
-      ;(mesh.material as THREE.Material).dispose()
+    for (const marker of markers.values()) {
+      marker.geometry.dispose()
+      ;(marker.material as THREE.Material).dispose()
+    }
+    for (const template of ballTemplates.values()) disposeObject3D(template)
+    if (screen) {
+      screen.mesh.removeFromParent()
+      screen.mesh.geometry.dispose()
+      ;(screen.mesh.material as THREE.Material).dispose()
+      screen.texture.dispose()
     }
   })
 
@@ -331,7 +370,7 @@ export function useGymMatch(deps: GymMatchDeps) {
     return { spot: { x: anchor.x, y: anchor.y, z: anchor.z }, yaw: avatar.rotation.y }
   }
 
-  function place(mesh: THREE.Mesh, sport: GymSport, ball: GymStatePayload['ball'], owner: string | null, ageS: number, seconds: number): void {
+  function place(mesh: THREE.Object3D, sport: GymSport, ball: GymStatePayload['ball'], owner: string | null, ageS: number, seconds: number): void {
     const r = rules.value[sport]
     if (!r || !court) return
     if (owner !== null) {
@@ -347,7 +386,7 @@ export function useGymMatch(deps: GymMatchDeps) {
     mesh.position.set(x, y, z)
   }
 
-  function dribbleSound(mesh: THREE.Mesh, seconds: number): void {
+  function dribbleSound(mesh: THREE.Object3D, seconds: number): void {
     const beat = dribbleBeat(seconds)
     if (dribbles.get(mesh) !== beat && dribbles.has(mesh)) deps.playOn('gym_bounce', mesh)
     dribbles.set(mesh, beat)
@@ -383,6 +422,60 @@ export function useGymMatch(deps: GymMatchDeps) {
     dribblers = next
   }
 
+  function updateJerseys(): void {
+    const me = mySessionId()
+    const next = new Map<string, string>()
+    for (const p of state.value?.players ?? []) if (p.sessionId !== me) next.set(p.sessionId, teamJerseyUrl(p.team))
+    for (const id of jerseys.keys()) if (!next.has(id)) deps.setRemoteTopOverride(id, null)
+    for (const [id, url] of next) if (jerseys.get(id) !== url) deps.setRemoteTopOverride(id, url)
+    jerseys = next
+  }
+
+  function screenFor(scene: THREE.Scene, view: GymCourtView) {
+    if (screen) return screen
+    const canvas = document.createElement('canvas')
+    canvas.width = 512
+    canvas.height = Math.round((512 * view.scoreboard.height) / view.scoreboard.width)
+    const texture = new THREE.CanvasTexture(canvas)
+    texture.colorSpace = THREE.SRGBColorSpace
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(view.scoreboard.width, view.scoreboard.height), new THREE.MeshBasicMaterial({ map: texture }))
+    mesh.name = 'gym_scoreboard_screen'
+    mesh.position.set(view.scoreboard.x, view.scoreboard.y, view.scoreboard.z)
+    mesh.rotation.y = Math.atan2(view.scoreboard.facing[0], view.scoreboard.facing[1])
+    scene.add(mesh)
+    screen = { mesh, canvas, texture, text: '' }
+    return screen
+  }
+
+  function drawScreen(scene: THREE.Scene, view: GymCourtView): void {
+    const current = hud.value
+    const lines = scoreboardLines(current ? { score: current.score, clock: current.clock, half: current.half, halves: current.halves } : null)
+    const target = screenFor(scene, view)
+    const text = lines.join('|')
+    if (text === target.text) return
+    target.text = text
+    const ctx = target.canvas.getContext('2d')
+    if (!ctx) throw new Error('gym scoreboard: no 2D canvas context')
+    const { width, height } = target.canvas
+    ctx.fillStyle = '#0d1014'
+    ctx.fillRect(0, 0, width, height)
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillStyle = '#ffb347'
+    ctx.font = `bold ${Math.round(height * 0.42)}px sans-serif`
+    ctx.fillText(lines[0], width / 2, height * 0.38)
+    ctx.fillStyle = '#f4f2ec'
+    ctx.font = `bold ${Math.round(height * 0.24)}px sans-serif`
+    ctx.fillText(lines[1], width / 2, height * 0.78)
+    if (current) {
+      ctx.fillStyle = '#e0604a'
+      ctx.fillRect(width * 0.06, height * 0.2, width * 0.05, height * 0.36)
+      ctx.fillStyle = '#3f8fd1'
+      ctx.fillRect(width * 0.89, height * 0.2, width * 0.05, height * 0.36)
+    }
+    target.texture.needsUpdate = true
+  }
+
   function tick(): void {
     const now = Date.now()
     clientNow.value = now
@@ -392,26 +485,32 @@ export function useGymMatch(deps: GymMatchDeps) {
     if (free.value && now - freeReceivedAt > STALE_MS) free.value = null
     updateRimPop(now)
     const scene = deps.getScene()
-    const shown = new Set<THREE.Mesh>()
+    const shown = new Set<THREE.Object3D>()
     const seconds = now / 1000
     const current = state.value
     const matchRules = current ? rules.value[current.sport] : undefined
     if (current && matchRules) {
-      const mesh = meshFor(MATCH_BALL, current.sport, matchRules.ballRadius)
-      place(mesh, current.sport, current.ball, current.owner, (now - receivedAt) / 1000, seconds)
-      shown.add(mesh)
+      const mesh = meshFor(MATCH_BALL, current.sport)
+      if (mesh) {
+        place(mesh, current.sport, current.ball, current.owner, (now - receivedAt) / 1000, seconds)
+        shown.add(mesh)
+      }
       const ownerTeam = current.players.find((p) => p.sessionId === current.owner)?.team ?? null
       placeMarker(shown, current.owner, ownerTeam ?? 'free', `match:${ownerTeam ?? 'free'}`)
     }
     for (const ball of free.value?.balls ?? []) {
       const r = rules.value[ball.sport]
       if (!r) continue
-      const mesh = meshFor(ball.id, ball.sport, r.ballRadius)
-      place(mesh, ball.sport, ball.ball, ball.owner, (now - freeReceivedAt) / 1000, seconds)
-      shown.add(mesh)
+      const mesh = meshFor(ball.id, ball.sport)
+      if (mesh) {
+        place(mesh, ball.sport, ball.ball, ball.owner, (now - freeReceivedAt) / 1000, seconds)
+        shown.add(mesh)
+      }
       placeMarker(shown, ball.owner, 'free', `free:${ball.id}`)
     }
     updateDribblers()
+    updateJerseys()
+    if (scene && court) drawScreen(scene, court)
     hideAll(shown)
     if (scene) for (const mesh of shown) if (mesh.parent !== scene) scene.add(mesh)
   }

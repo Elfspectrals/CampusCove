@@ -735,6 +735,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     remoteAvatar: remotes.avatarOf,
     remoteSportsMove: remotes.playSportsMove,
     setRemoteDribbling: remotes.setDribbling,
+    setRemoteTopOverride: remotes.setTopOverride,
     setRemoteVoiceState: remotes.setVoiceState,
     remotePlayers: remotes.players,
     remoteAccount: remotes.accountOf,

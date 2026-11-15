@@ -135,6 +135,16 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
   const sessionByUserId = new Map<string, string>()
   /** Appearance received before the avatar finished its first load. */
   const pendingAppearance = new Map<string, AppearanceUpdate>()
+  const lastAppearance = new Map<string, AppearanceUpdate>()
+  const topOverride = new Map<string, string>()
+
+  function withTopOverride(sessionId: string, update: AppearanceUpdate): AppearanceUpdate {
+    const top = topOverride.get(sessionId)
+    if (!top) return update
+    const slotHexes = { ...(update.slotHexes ?? {}) }
+    delete slotHexes.top
+    return { ...update, slotModels: { ...(update.slotModels ?? {}), top }, slotHexes }
+  }
   const wantedStarsBySession = new Map<string, number>()
   const upsertTokenByUserId = new Map<string, number>()
   const renderTokenBySessionId = new Map<string, number>()
@@ -174,6 +184,8 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
   }
 
   function remove(sessionId: string) {
+    lastAppearance.delete(sessionId)
+    topOverride.delete(sessionId)
     const entry = avatars.get(sessionId)
     if (!entry) return
     const scene = deps.getScene()
@@ -234,8 +246,10 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
       pendingAppearance.delete(sessionId)
     }
 
-    const colors = parseSlotHexes(data.slotHexes)
-    const models = parseSlotModels(data.slotModels)
+    lastAppearance.set(sessionId, { slotHexes: data.slotHexes, slotModels: data.slotModels, character: data.character })
+    const shown = withTopOverride(sessionId, data)
+    const colors = parseSlotHexes(shown.slotHexes)
+    const models = parseSlotModels(shown.slotModels)
     const look = parseCharacterLook(data.character)
     const group = await loadModel(models, colors, look, data.color)
     if (upsertTokenByUserId.get(data.id) !== token || renderTokenBySessionId.get(sessionId) !== renderToken) {
@@ -295,8 +309,10 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
       pendingAppearance.set(sessionId, update)
       return
     }
-    const colors = parseSlotHexes(update.slotHexes)
-    const models = parseSlotModels(update.slotModels)
+    lastAppearance.set(sessionId, update)
+    const shown = withTopOverride(sessionId, update)
+    const colors = parseSlotHexes(shown.slotHexes)
+    const models = parseSlotModels(shown.slotModels)
     const look = parseCharacterLook(update.character)
     const outfit = wearSignature(models, colors, look)
     if (outfit === entry.outfit) return
@@ -378,6 +394,14 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
 
   function accountOf(sessionId: string): string | null {
     return avatars.get(sessionId)?.userId ?? null
+  }
+
+  function setTopOverride(sessionId: string, top: string | null): void {
+    if ((topOverride.get(sessionId) ?? null) === top) return
+    if (top) topOverride.set(sessionId, top)
+    else topOverride.delete(sessionId)
+    const last = lastAppearance.get(sessionId)
+    if (last) void updateAppearance(sessionId, last)
   }
 
   function playSportsMove(sessionId: string, clip: SportsMoveClip): void {
@@ -542,5 +566,5 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     }
   }
 
-  return { upsert, updateAppearance, setTarget, setSeated, setPicking, setHeldTool, setRacePint, setBadges, pseudoOf, positionOf, avatarOf, playSportsMove, setDribbling, setVoiceState, setWantedStars, players, accountOf, showAction, showChat, showPunch, showHit, remove, clear, tick }
+  return { upsert, updateAppearance, setTarget, setSeated, setPicking, setHeldTool, setRacePint, setBadges, pseudoOf, positionOf, avatarOf, playSportsMove, setDribbling, setTopOverride, setVoiceState, setWantedStars, players, accountOf, showAction, showChat, showPunch, showHit, remove, clear, tick }
 }

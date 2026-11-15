@@ -889,7 +889,9 @@ const gymMatch = useGymMatch({
   remoteAvatar: (sessionId) => realtime.remoteAvatar(sessionId),
   remoteSportsMove: (sessionId, clip) => realtime.remoteSportsMove(sessionId, clip),
   setRemoteDribbling: (sessionId, dribbling) => realtime.setRemoteDribbling(sessionId, dribbling),
+  setRemoteTopOverride: (sessionId, top) => realtime.setRemoteTopOverride(sessionId, top),
   playOn: (name, object) => sfx.playOn(name, object),
+  play: (name) => sfx.play(name),
   say: (text) => survival.say(text),
   errorText: ({ code, message }) => (te(`sports.gym.errors.${code}`) ? t(`sports.gym.errors.${code}`) : message),
 })

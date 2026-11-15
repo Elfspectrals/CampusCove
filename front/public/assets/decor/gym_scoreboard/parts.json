@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "materials": {
+    "DC_GymScoreboard": {
+      "mask": "parts_DC_GymScoreboard.png",
+      "parts": [
+        {
+          "id": "main",
+          "label": "Main",
+          "color": "#3a3b41"
+        },
+        {
+          "id": "accent",
+          "label": "Accent",
+          "color": "#2a2a2a"
+        },
+        {
+          "id": "detail",
+          "label": "Detail",
+          "color": "#161616"
+        }
+      ]
+    }
+  }
+}
