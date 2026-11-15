@@ -134,6 +134,10 @@ function sendError(client: GameClient, code: string, message: string): void {
   client.send('sports_error', { code, message })
 }
 
+function sendBusy(client: GameClient): void {
+  sendError(client, 'sports_busy', 'Wait a moment and try again.')
+}
+
 function lobbyView(venue: VenueSpec, lobby: Lobby, now: number) {
   return {
     venue: venue.id,
@@ -302,7 +306,11 @@ export async function onSportsSignup(room: GameRoom, client: GameClient, payload
   const player = room.players.get(client.sessionId)
   const coach = coachFrom(payload)
   const venue = coach && venueFrom(coach, payload)
-  if (!player?.token || !coach || !venue || player.sportsPending || !cooledDown(player, now)) return
+  if (!player?.token || !coach || !venue) return
+  if (player.sportsPending || !cooledDown(player, now)) {
+    sendBusy(client)
+    return
+  }
   const refusal = signupRefusal(room, player, coach, venue, now)
   if (refusal) {
     sendError(client, refusal.code, refusal.message)
@@ -350,7 +358,11 @@ function removeFromLobbies(room: GameRoom, accountId: number, now: number): void
 
 export function onSportsSignupLeave(room: GameRoom, client: GameClient, now = Date.now()): void {
   const player = room.players.get(client.sessionId)
-  if (!player || !cooledDown(player, now)) return
+  if (!player) return
+  if (!cooledDown(player, now)) {
+    sendBusy(client)
+    return
+  }
   removeFromLobbies(room, player.accountId, now)
 }
 
