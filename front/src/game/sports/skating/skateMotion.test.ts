@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
-import { bumped, glide, hitBoards, newSkater, onIce, parseSkatingSpec, push, pushKind, raceClock, rhythmCue, skateStep, speedKmh, steer, turnRate } from './skateMotion.ts'
+import { bumped, glide, gripRate, leanAngle, hitBoards, newSkater, onIce, parseSkatingSpec, push, pushKind, raceClock, rhythmCue, skateStep, speedKmh, steer, turnRate } from './skateMotion.ts'
 
 const raw = JSON.parse(readFileSync(new URL('../../../../public/assets/sports/rules/skating.json', import.meta.url), 'utf8'))
 const spec = parseSkatingSpec(raw)
@@ -66,4 +66,21 @@ test('a bump costs a share of the speed', () => {
   s.speed = 5
   bumped(spec, s)
   assert.ok(Math.abs(s.speed - 3.5) < 1e-9)
+})
+
+test('at speed the skates keep sliding the old way for a moment before they bite: the travel lags the facing', () => {
+  assert.ok(gripRate(t, t.maxSpeed) < gripRate(t, 0))
+  const s = newSkater(0)
+  s.speed = t.maxSpeed
+  s.heading = 0.5
+  const { dx, dz } = skateStep(t, s, 0.5, false, 0.1, 0)
+  assert.ok(Math.abs(s.travel - t.gripAtMax * 0.1) < 1e-9, 'the travel turns at the grip rate')
+  assert.ok(Math.abs(Math.atan2(-dx, -dz) - s.travel) < 1e-9, 'the step follows the travel, not the facing')
+  assert.ok(Math.abs(s.turning - t.gripAtMax) < 1e-9)
+})
+
+test('the lean follows the carve and stays within 20 degrees', () => {
+  assert.equal(leanAngle(0, 3), 0)
+  assert.ok(leanAngle(8, 1) > 0 && leanAngle(8, -1) < 0)
+  assert.ok(Math.abs(leanAngle(9, 10) - (20 * Math.PI) / 180) < 1e-9)
 })

@@ -234,3 +234,29 @@ test('pushes, early pushes, brakes and bumps are relayed to the other players in
   ])
   assert.equal(sentOf(clientOf(room, a), 'skate_move').length, 0)
 })
+
+test('a turn too sharp at speed costs balance until the skater falls; an early push costs balance too', async () => {
+  const { room, players: [p] } = await arrive([23])
+  const client = clientOf(room, p)
+  p.x = RINK.maxX + 0.5
+  p.z = -125
+  assert.equal(step(room, p, RINK.maxX - 1, -125, NOW + 1000), null)
+  for (let t = NOW + 1000; t <= NOW + 4900; t += 650) rink.onSkatePush(room, client, t)
+  rink.onSkatePush(room, client, NOW + 5100)
+  const afterEarly = sentOf(client, 'skate_balance').at(-1) as { value: number }
+  assert.ok(afterEarly.value < 1, 'an early push costs balance')
+  let angle = 0
+  let t = NOW + 5100
+  p.x = -330
+  p.z = -125
+  rink.tickSkating(room, t)
+  while (sentOf(client, 'skate_fall').length === 0 && t < NOW + 20_000) {
+    t += 100
+    angle += 0.5
+    p.x += Math.cos(angle) * 0.8
+    p.z += Math.sin(angle) * 0.8
+    rink.tickSkating(room, t)
+  }
+  assert.equal(sentOf(client, 'skate_fall').length, 1, 'carving 5 rad/s at speed ends in a fall')
+  assert.equal((sentOf(client, 'skate_balance').at(-1) as { value: number }).value, 1, 'balance is full again after the fall')
+})

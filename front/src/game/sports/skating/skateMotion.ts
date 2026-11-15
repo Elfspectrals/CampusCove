@@ -9,6 +9,8 @@ export interface SkateTuning {
   maxSpeed: number
   turnStill: number
   turnAtMax: number
+  gripStill: number
+  gripAtMax: number
 }
 
 export interface RinkBounds {
@@ -31,6 +33,8 @@ export type PushKind = 'good' | 'normal' | 'early'
 export interface Skater {
   speed: number
   heading: number
+  travel: number
+  turning: number
   lastPushAt: number | null
   fallenUntil: number
 }
@@ -71,6 +75,8 @@ export function parseSkatingSpec(raw: unknown): SkatingSpec {
       maxSpeed: num(skate, 'maxSpeed', 'skate'),
       turnStill: num(turn, 'still', 'skate.turnRate'),
       turnAtMax: num(turn, 'atMaxSpeed', 'skate.turnRate'),
+      gripStill: num(block(skate.grip, 'skate.grip'), 'still', 'skate.grip'),
+      gripAtMax: num(block(skate.grip, 'skate.grip'), 'atMaxSpeed', 'skate.grip'),
     },
     rink: {
       minX: num(bounds, 'minX', 'rink.bounds'),
@@ -89,7 +95,7 @@ export function onIce(rink: RinkBounds, x: number, z: number): boolean {
 }
 
 export function newSkater(heading: number): Skater {
-  return { speed: 0, heading, lastPushAt: null, fallenUntil: 0 }
+  return { speed: 0, heading, travel: heading, turning: 0, lastPushAt: null, fallenUntil: 0 }
 }
 
 export function pushKind(t: SkateTuning, sinceLastPushMs: number | null): PushKind {
@@ -116,6 +122,18 @@ export function turnRate(t: SkateTuning, speed: number): number {
   return t.turnStill + (t.turnAtMax - t.turnStill) * share
 }
 
+export function gripRate(t: SkateTuning, speed: number): number {
+  const share = Math.min(1, speed / t.maxSpeed)
+  return t.gripStill + (t.gripAtMax - t.gripStill) * share
+}
+
+const GRAVITY = 9.81
+const MAX_LEAN = (20 * Math.PI) / 180
+
+export function leanAngle(speed: number, turning: number): number {
+  return Math.max(-MAX_LEAN, Math.min(MAX_LEAN, Math.atan((speed * turning) / GRAVITY)))
+}
+
 function wrap(a: number): number {
   return Math.atan2(Math.sin(a), Math.cos(a))
 }
@@ -129,13 +147,19 @@ export function steer(t: SkateTuning, s: Skater, yaw: number, dt: number): void 
 export function skateStep(t: SkateTuning, s: Skater, yaw: number, braking: boolean, dt: number, now: number): { dx: number; dz: number } {
   if (now < s.fallenUntil) {
     s.speed = 0
+    s.turning = 0
     return { dx: 0, dz: 0 }
   }
   steer(t, s, yaw, dt)
+  const gap = wrap(s.heading - s.travel)
+  const max = gripRate(t, s.speed) * dt
+  const swing = Math.max(-max, Math.min(max, gap))
+  s.travel = wrap(s.travel + swing)
+  s.turning = dt > 0 ? swing / dt : 0
   const before = s.speed
   glide(t, s, dt, braking)
   const distance = ((before + s.speed) / 2) * dt
-  return { dx: -Math.sin(s.heading) * distance, dz: -Math.cos(s.heading) * distance }
+  return { dx: -Math.sin(s.travel) * distance, dz: -Math.cos(s.travel) * distance }
 }
 
 export function hitBoards(spec: SkatingSpec, s: Skater, wanted: number, moved: number, now: number): boolean {

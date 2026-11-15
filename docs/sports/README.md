@@ -12,6 +12,7 @@ Product design for the sports of the complex west of Cove Heights (site decision
 | Boxing | [boxing.md](boxing.md) | Boxing hall, ring | Duel mini-game |
 | Climbing | [climbing.md](climbing.md) | Climbing hall, boulders and 12 m wall | Timed, rhythm clicks |
 | Ice skating | [skating.md](skating.md) | Ice rink | Sliding movement, timed race |
+| Ice hockey (later, not built) | [hockey.md](hockey.md) | Ice rink | Team, puck physics |
 | Running | [running.md](running.md) | 400 m track | Timed race |
 | Tennis | [tennis.md](tennis.md) | 2 outdoor courts | Duel, ball physics |
 | Pétanque | [petanque.md](petanque.md) | 4 outdoor pistes | Teams, boule physics |

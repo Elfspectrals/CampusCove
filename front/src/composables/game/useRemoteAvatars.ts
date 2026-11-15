@@ -10,6 +10,7 @@ import { parseCharacterLook, type CharacterLook } from '../../avatar/characterLo
 import { createModularCharacter } from '../../avatar/modularCharacter'
 import { WEAR_SLOTS, wearSignature, type WearModels } from '../../avatar/modularCharacterLogic'
 import { skatingWear } from '../../game/sports/skating/skateWear'
+import { leanAngle } from '../../game/sports/skating/skateMotion'
 import { createActionBubble, type AvatarAction } from '../../game/actionBubble'
 import { climbingWear } from '../../game/sports/climbingWear'
 import { hasSportsLoan } from '../../game/sports/sportsLoans'
@@ -44,6 +45,7 @@ import { ICONS } from '../../components/ui/icons'
 
 /** How fast remote avatars catch up with their last known position (1/s; higher = snappier). */
 const REMOTE_SMOOTHING = 12
+const REMOTE_LEAN_SMOOTHING_S = 0.15
 /** Beyond this gap (teleport, spawn), remote avatars jump instead of gliding. */
 const REMOTE_SNAP_DISTANCE = 4
 /** Beyond this distance from the local player a rigged avatar's clips are not advanced (not worth the CPU). */
@@ -67,6 +69,7 @@ interface RemoteAvatar {
   outfit: string
   appearance: AppearanceUpdate
   skating: boolean
+  lean: number
   punchPose: PunchPose
   punchOffsetX: number
   punchOffsetZ: number
@@ -303,6 +306,7 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
       outfit: wearSignature(models, colors, look),
       appearance: { slotHexes: data.slotHexes, slotModels: data.slotModels, character: data.character },
       skating,
+      lean: 0,
       punchPose: idlePunchPose(),
       punchOffsetX: 0,
       punchOffsetZ: 0,
@@ -706,6 +710,9 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
       const target = entry.ry + Math.PI
       const turn = Math.atan2(Math.sin(target - group.rotation.y), Math.cos(target - group.rotation.y))
       group.rotation.y += turn * t
+      const leanTarget = entry.skating && dt > 0 ? -leanAngle(Math.hypot(group.position.x - prevX, group.position.z - prevZ) / dt, (turn * t) / dt) : 0
+      entry.lean += (leanTarget - entry.lean) * Math.min(1, dt / REMOTE_LEAN_SMOOTHING_S)
+      group.rotation.z = entry.lean
       // rigged skins play Idle / Walk / Run from the speed the smoothing actually produced
       const moved = Math.hypot(group.position.x - prevX, group.position.z - prevZ)
       const poseDt = advanceHitStop(entry.hitStop, dt)

@@ -4,6 +4,8 @@ import { test } from 'node:test'
 import {
   FULL_LAP,
   advanceSpeed,
+  balanceStep,
+  lateralAcceleration,
   boardImpactSpeed,
   applyPush,
   insideCones,
@@ -95,4 +97,16 @@ test('board impact speed counts only the speed towards a board within the margin
   assert.equal(boardImpactSpeed(box, 5, 5, 5.7, 5, 100, 0.6), 0, 'far from the boards')
   assert.equal(boardImpactSpeed(box, 9.7, 5, 9.7, 5.7, 100, 0.6), 0, 'gliding along the board')
   assert.ok(Math.abs(boardImpactSpeed(box, 1, 1, 0.3, 0.3, 100, 0.6) - 7) < 1e-9)
+})
+
+test('balance drains on sharp carves at speed and hard braking, and comes back while gliding', () => {
+  const b = rules.balance
+  assert.ok(Math.abs(lateralAcceleration(8, 0, 0.1, 100) - 8) < 1e-9, '1 rad/s at 8 m/s is 8 m/s²')
+  assert.ok(Math.abs(lateralAcceleration(8, Math.PI - 0.05, -Math.PI + 0.05, 100) - 8) < 1e-9, 'across the ±π seam')
+  assert.ok(Math.abs(balanceStep(b, 1, { speed: 8, lateral: 10, braking: false }, 1000) - (1 - 4 * b.carveDrainPerUnit)) < 1e-9)
+  assert.equal(balanceStep(b, 0.5, { speed: 8, lateral: 5, braking: false }, 1000), 0.5 + b.recoverPerS)
+  assert.ok(Math.abs(balanceStep(b, 1, { speed: 7, lateral: 0, braking: true }, 1000) - (1 - b.brakeDrainPerS)) < 1e-9)
+  assert.equal(balanceStep(b, 0.5, { speed: 5, lateral: 0, braking: true }, 1000), 0.5 + b.recoverPerS, 'braking slowly is safe')
+  assert.equal(balanceStep(b, 0.05, { speed: 9, lateral: 40, braking: true }, 1000), 0)
+  assert.equal(balanceStep(b, 0.95, { speed: 2, lateral: 0, braking: false }, 1000), 1)
 })
