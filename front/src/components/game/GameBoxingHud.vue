@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { BoxingCorner, BoxingMethod, BoxingPhase } from '../../game/sports/boxing'
+import type { BoxingCombo, BoxingCorner, BoxingMethod, BoxingPhase } from '../../game/sports/boxing'
 
 interface BoxerRow {
   key: string
@@ -26,6 +26,7 @@ const props = defineProps<{
     clock: string
     boxers: BoxerRow[]
     result: { method: BoxingMethod; winner: string | null; won: boolean } | null
+    combo: { id: BoxingCombo; name: string; mine: boolean; damage: number; key: number } | null
   }
   fighting: boolean
   guardKey: string
@@ -70,6 +71,15 @@ const resultText = computed(() => {
         </span>
       </li>
     </ul>
+    <p
+      v-if="view.combo"
+      :key="view.combo.key"
+      class="m-0 mt-2 animate-cc-pop font-display text-base"
+      :class="view.combo.mine ? 'text-sun' : 'text-coral'"
+      aria-live="polite"
+    >
+      {{ t('sports.boxing.comboCallout', { name: view.combo.name, damage: view.combo.damage }) }}
+    </p>
     <p v-if="resultText" class="m-0 mt-2 font-display text-base text-sun" aria-live="polite">{{ resultText }}</p>
     <p v-else-if="me && me.countLeft !== null" class="m-0 mt-2 font-display text-sm text-fog">
       {{ me.canGetUp ? t('sports.boxing.getUp') : t('sports.boxing.stayDown') }}

@@ -13,11 +13,14 @@ const ONE_SHOT_CLIPS = ['Equip', 'UseDoor', 'UseKey', 'Punch', 'PunchL', 'Pick']
 const HELD_CLIPS = ['Pick'] as const
 const EAT_CLIPS = { eat: 'Eat', drink: 'Drink' } as const
 const EAT_FADE_S = 0.25
-const BOXING_SHOT_FADE_S = 0.05
+const BOXING_SHOT_FADE_S = 0.1
 const BOXING_LOOP_FADE_S = 0.12
+const TWIN_SUFFIX = '#twin'
 export const FP_BOXING_LOOPS = ['FpGuard', 'FpBlock'] as const
-export const FP_BOXING_SHOTS = ['FpJab', 'FpCross', 'FpHook', 'FpHit'] as const
+export const FP_BOXING_SHOTS = ['FpJab', 'FpCross', 'FpHook', 'FpUppercut', 'FpHit'] as const
+const FP_BOXING_CHARGES = ['FpHookCharge', 'FpUppercutCharge'] as const
 export type FpBoxingShot = (typeof FP_BOXING_SHOTS)[number]
+export type FpBoxingCharge = (typeof FP_BOXING_CHARGES)[number]
 
 /**
  * A procedural arm pose, in camera space (the arms root sits at the camera): where the hand goes, which way the
@@ -166,12 +169,17 @@ export function createFirstPersonArms(container: THREE.Group) {
   function applyBoxing(): void {
     if (!mixer || !boxingClips) return
     for (const clip of boxingClips) {
-      const boxingAction = mixer.clipAction(clip)
-      if ((FP_BOXING_SHOTS as readonly string[]).includes(clip.name)) {
-        boxingAction.setLoop(THREE.LoopOnce, 1)
-        boxingAction.clampWhenFinished = true
+      const shot = (FP_BOXING_SHOTS as readonly string[]).includes(clip.name)
+      const twin = clip.clone()
+      twin.name = clip.name + TWIN_SUFFIX
+      for (const one of shot ? [clip, twin] : [clip]) {
+        const boxingAction = mixer.clipAction(one)
+        if (shot) {
+          boxingAction.setLoop(THREE.LoopOnce, 1)
+          boxingAction.clampWhenFinished = true
+        }
+        actions.set(one.name, boxingAction)
       }
-      actions.set(clip.name, boxingAction)
     }
     oneShot?.fadeOut(BOXING_LOOP_FADE_S)
     oneShot = null
@@ -278,13 +286,31 @@ export function createFirstPersonArms(container: THREE.Group) {
     setBoxingBlock: (on: boolean) => {
       boxingBlock = on
     },
-    boxingShot: (name: FpBoxingShot) => {
+    boxingShot: (name: FpBoxingShot, fromS = 0) => {
       if (!mixer || !boxingClips) return
-      const next = action(name)
-      oneShot?.stop()
-      next.reset().fadeIn(BOXING_SHOT_FADE_S).play()
+      const first = action(name)
+      const next = oneShot === first ? action(name + TWIN_SUFFIX) : first
+      next.reset()
+      next.time = fromS
+      next.fadeIn(BOXING_SHOT_FADE_S).play()
+      oneShot?.fadeOut(BOXING_SHOT_FADE_S)
       base?.fadeOut(BOXING_SHOT_FADE_S)
       oneShot = next
+    },
+    boxingCharge: (name: FpBoxingCharge) => {
+      if (!mixer || !boxingClips) return
+      const next = action(name)
+      if (oneShot === next) return
+      next.reset().fadeIn(BOXING_LOOP_FADE_S).play()
+      oneShot?.fadeOut(BOXING_LOOP_FADE_S)
+      base?.fadeOut(BOXING_LOOP_FADE_S)
+      oneShot = next
+    },
+    boxingRelax: () => {
+      if (!mixer || !boxingClips || !oneShot || !(FP_BOXING_CHARGES as readonly string[]).includes(oneShot.getClip().name)) return
+      oneShot.fadeOut(BOXING_LOOP_FADE_S)
+      oneShot = null
+      base?.reset().fadeIn(BOXING_LOOP_FADE_S).play()
     },
     dispose: clear,
   }

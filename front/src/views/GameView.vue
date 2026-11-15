@@ -886,6 +886,7 @@ const boxing = useBoxing({
   say: (text) => survival.say(text),
   tiredText: () => t('sports.boxing.tired'),
   noGlovesText: () => t('sports.boxing.noGloves'),
+  comboName: (id) => t(`sports.boxing.combo.${id}`),
   myPosition,
   getCamera,
   getScene,

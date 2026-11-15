@@ -8,11 +8,14 @@ export const LOWER_BODY_BONES = ['Hips', 'UpperLegL', 'UpperLegR', 'LowerLegL', 
 export const UPPER_BODY_BONES = ['Spine', 'Chest', 'Neck', 'Head', 'ShoulderL', 'ShoulderR', 'UpperArmL', 'UpperArmR', 'LowerArmL', 'LowerArmR', 'HandL', 'HandR'] as const
 
 export type UpperLoop = 'Guard' | 'Block'
-export type UpperShot = 'Jab' | 'Cross' | 'Hook' | 'DodgeL' | 'DodgeR' | 'HitReact'
+export type UpperShot = 'Jab' | 'Cross' | 'Hook' | 'Uppercut' | 'DodgeL' | 'DodgeR' | 'HitReact'
+export type UpperCharge = 'HookCharge' | 'UppercutCharge'
 export type FullBody = 'Knockdown' | 'Down' | 'GetUp' | 'KO' | 'Win'
-export type UpperClip = UpperLoop | UpperShot
+export type UpperClip = UpperLoop | UpperShot | UpperCharge
+export type PunchKind = 'jab' | 'cross' | 'hook' | 'uppercut'
 
-export const UPPER_SHOT_CLIPS: readonly UpperShot[] = ['Jab', 'Cross', 'Hook', 'DodgeL', 'DodgeR', 'HitReact']
+export const UPPER_SHOT_CLIPS: readonly UpperShot[] = ['Jab', 'Cross', 'Hook', 'Uppercut', 'DodgeL', 'DodgeR', 'HitReact']
+export const UPPER_CHARGE_CLIPS: readonly UpperCharge[] = ['HookCharge', 'UppercutCharge']
 export const FULL_BODY_ONE_SHOTS: readonly FullBody[] = ['Knockdown', 'GetUp', 'KO']
 
 function smoothstep(from: number, to: number, x: number): number {
@@ -41,11 +44,19 @@ export class BoxingAnimState {
   upper: UpperClip = 'Guard'
   full: FullBody | null = null
   private wasDown = false
+  private guard = false
 
   shot(clip: UpperShot): UpperClip | null {
     if (this.full !== null) return null
     this.upper = clip
     return clip
+  }
+
+  charge(clip: UpperCharge, on: boolean): UpperClip | null {
+    if (this.full !== null) return null
+    if (on) return (this.upper = clip)
+    if (this.upper !== clip) return null
+    return (this.upper = this.guard ? 'Block' : 'Guard')
   }
 
   shotFinished(clip: UpperShot, guard: boolean): UpperLoop | null {
@@ -61,9 +72,11 @@ export class BoxingAnimState {
     else if (next.result === null && next.down && !this.wasDown) full = this.full = 'Knockdown'
     else if (next.result === null && !next.down && this.wasDown) full = this.full = 'GetUp'
     this.wasDown = next.down
+    this.guard = next.guard
     let upper: UpperClip | null = null
     const loop: UpperLoop = next.guard ? 'Block' : 'Guard'
-    if (!UPPER_SHOT_CLIPS.includes(this.upper as UpperShot) && this.upper !== loop) upper = this.upper = loop
+    const busy = UPPER_SHOT_CLIPS.includes(this.upper as UpperShot) || UPPER_CHARGE_CLIPS.includes(this.upper as UpperCharge)
+    if (!busy && this.upper !== loop) upper = this.upper = loop
     return { upper, full }
   }
 
@@ -74,6 +87,12 @@ export class BoxingAnimState {
   }
 }
 
-export function punchClip(kind: 'jab' | 'cross' | 'hook'): UpperShot {
-  return kind === 'jab' ? 'Jab' : kind === 'cross' ? 'Cross' : 'Hook'
+const PUNCH_CLIPS: Record<PunchKind, UpperShot> = { jab: 'Jab', cross: 'Cross', hook: 'Hook', uppercut: 'Uppercut' }
+
+export function punchClip(kind: PunchKind): UpperShot {
+  return PUNCH_CLIPS[kind]
+}
+
+export function chargeClip(hand: 'left' | 'right'): UpperCharge {
+  return hand === 'left' ? 'HookCharge' : 'UppercutCharge'
 }

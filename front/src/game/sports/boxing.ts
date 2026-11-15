@@ -1,4 +1,6 @@
-export type BoxingPunchKind = 'jab' | 'cross' | 'hook'
+export type BoxingPunchKind = 'jab' | 'cross' | 'hook' | 'uppercut'
+export type BoxingHand = 'left' | 'right'
+export type BoxingCombo = 'one_two' | 'double_jab' | 'one_two_hook' | 'upper_hook' | 'full_combo'
 export type BoxingPhase = 'intro' | 'round' | 'rest' | 'over'
 export type BoxingMethod = 'ko' | 'points' | 'draw' | 'forfeit'
 export type BoxingCorner = 'red' | 'blue'
@@ -37,6 +39,14 @@ export interface BoxingHitPayload {
   kind: BoxingPunchKind
   outcome: BoxingOutcome
   damage: number
+  combo: BoxingCombo | null
+  chain: number
+}
+
+export interface BoxingChargePayload {
+  sessionId: string
+  hand: BoxingHand
+  on: boolean
 }
 
 export interface BoxingDodgedPayload {
@@ -47,10 +57,19 @@ export interface BoxingDodgedPayload {
 const LEFT_BUTTON = 0
 const RIGHT_BUTTON = 2
 
-export function punchKindFor(button: number, shift: boolean): BoxingPunchKind | null {
-  if (button !== LEFT_BUTTON && button !== RIGHT_BUTTON) return null
-  if (shift) return 'hook'
-  return button === LEFT_BUTTON ? 'jab' : 'cross'
+export function handFor(button: number): BoxingHand | null {
+  return button === LEFT_BUTTON ? 'left' : button === RIGHT_BUTTON ? 'right' : null
+}
+
+export function punchKindAfter(hand: BoxingHand, heldMs: number, holdMs: number): BoxingPunchKind {
+  const held = heldMs >= holdMs
+  return hand === 'left' ? (held ? 'hook' : 'jab') : (held ? 'uppercut' : 'cross')
+}
+
+export function parseHoldMs(rules: unknown): number {
+  const ms = (rules as { hold?: { ms?: unknown } } | null)?.hold?.ms
+  if (typeof ms !== 'number' || !Number.isFinite(ms) || ms <= 0) throw new Error('boxing rules: hold.ms must be a positive number')
+  return ms
 }
 
 export function serverClock(state: Pick<BoxingStatePayload, 'serverNow'>, receivedAt: number, now: number): number {
@@ -142,6 +161,20 @@ export function trianglesBySide(positions: ArrayLike<number>, index: ArrayLike<n
     sides[x >= centreX ? 'left' : 'right'].push(...corners)
   }
   return sides
+}
+
+export function boundsOfVertices(positions: ArrayLike<number>, vertices: readonly number[]): { min: [number, number, number]; max: [number, number, number] } {
+  if (vertices.length === 0) throw new Error('boxing gloves: no vertices to bound')
+  const min: [number, number, number] = [Infinity, Infinity, Infinity]
+  const max: [number, number, number] = [-Infinity, -Infinity, -Infinity]
+  for (const v of vertices) {
+    for (let k = 0; k < 3; k++) {
+      const value = positions[v * 3 + k]!
+      if (value < min[k]!) min[k] = value
+      if (value > max[k]!) max[k] = value
+    }
+  }
+  return { min, max }
 }
 
 export function boxerPose(state: BoxingStatePayload, boxer: BoxerView): { guard: boolean; down: boolean; result: 'won' | 'lost' | 'draw' | null } {

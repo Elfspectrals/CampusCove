@@ -15,7 +15,9 @@ Free movement inside the ring, third-person view.
 
 - **Left click**: jab (fast, light).
 - **Right click**: cross (slower, stronger).
-- **Shift + click**: hook (strongest, slowest).
+- **Hold left click**: hook (strong, short reach).
+- **Hold right click**: uppercut (strongest, shortest reach).
+- Punches thrown in a row make **combos** (see below).
 - **Hold F**: guard, blocks most damage, drains endurance.
 - **Q / D**: side dodge.
 - Punching and guarding drain endurance; low endurance makes punches slower.
@@ -45,7 +47,7 @@ Both health and endurance bars, round and clock, knockdown count, final result (
 
 ## Animations
 
-Guard stance and footwork, jab, cross, hook, block hit, dodge, hit reactions, knockdown, get-up, KO, win.
+Guard stance and footwork, jab, cross, hook, uppercut, hook and uppercut wind-ups, punches blending into each other in a combo, block hit, dodge, hit reactions, knockdown, get-up, KO, win.
 
 ## Failure cases
 
@@ -57,30 +59,47 @@ A boxer who leaves the ring or disconnects past the 30 s grace loses the fight.
 - Health 120, endurance 100, regenerating 12/s outside the guard. During the rest endurance refills and health gets back 20.
 - | Punch | Damage | Endurance | Cooldown | Reach | Points |
   |---|---|---|---|---|---|
-  | Jab (click) | 5 | 6 | 450 ms | 1.7 m | 1 |
+  | Jab (left click) | 5 | 6 | 450 ms | 1.7 m | 1 |
   | Cross (right click) | 9 | 11 | 800 ms | 1.9 m | 2 |
-  | Hook (Shift + click) | 14 | 18 | 1150 ms | 1.5 m | 3 |
+  | Hook (hold left click) | 14 | 18 | 1150 ms | 1.5 m | 3 |
+  | Uppercut (hold right click) | 15 | 20 | 1250 ms | 1.3 m | 3 |
   A punch must face the target (cosine 0.3 or more, as for the street punch) and be within 1 m in height. Under 25 endurance every cooldown is 1.5 times longer; a punch the boxer cannot pay for is refused.
+- Tap or hold (decided 2026-11-15): the socket times each button from its press to its release on its own clock; a new press of the same button restarts the timer. Under 250 ms it is a tap (jab or cross), from 250 ms a hold (hook or uppercut), with no upper limit. From 250 ms the other players see the wind-up. A punch is thrown at the release.
+- Input buffer: a release less than 200 ms before the cooldown ends is kept and thrown by the socket when the cooldown ends (on its 100 ms tick); earlier, it is refused.
+- Combos (decided 2026-11-15): each thrown punch joins the boxer's chain when it is thrown at most 500 ms after the previous punch's cooldown ended, otherwise the chain starts again from it. A miss, a dodged punch or a landed punch taken from the opponent clears the chain. When the end of the chain matches a combo (the longest match wins), its last punch gets the bonus: on a landed punch the bonus damage and points, on a blocked one the bonus damage times the guard factor and no points. The chain keeps its last 4 punches, so a combo can be thrown again at once.
+  | Combo | Sequence | Bonus damage | Bonus points |
+  |---|---|---|---|
+  | One-two | jab, cross | +3 | +1 |
+  | Double jab | jab, jab, cross | +5 | +2 |
+  | One-two-hook | jab, cross, hook | +6 | +2 |
+  | Uppercut-hook | uppercut, hook | +5 | +2 |
+  | Full combo | jab, cross, hook, uppercut | +10 | +4 |
+  The full combo lands 5 + 12 + 20 + 25 = 62 damage, about half the health bar, in about 3.5 s and costs 55 endurance.
 - Guard (hold the cook key, F by default): takes 20 % of the damage, scores nothing, drains 10/s and drops at 0. No punching while guarding.
 - Dodge (the strafe keys, Q / D on AZERTY): 400 ms without being hit, 1 s cooldown, 8 endurance.
 - Knockdown at 0 health: the count is 10 s and the round clock waits. Getting up takes 12 clicks at least 80 ms apart and gives back 50 health, once per round; a second knockdown in the same round, a count that reaches 10 or a third knockdown in the fight is a KO.
 - No KO: the points of landed punches decide; equal points are a draw. A boxer outside the ring after the intro, or away past the 30 s grace, loses by forfeit.
 - Get-up is a click mash (the open point is closed).
 - View: first person, as everywhere in the game (no third-person camera exists).
-- Punch bags: three `decor/punch_bag` props in the hall, decor only for now (no training interaction yet).
+- Punch bags: three `decor/punch_bag` props in the hall. A gloved player in reach punches them with the same four attacks (`boxing_bag { bag, kind }`, one hit every 400 ms); the bag rocks, nothing is scored.
 
 ## Socket contract
 
 | Message | Direction | Payload |
 |---|---|---|
-| `boxing_punch` | client → server | `{ kind: 'jab' \| 'cross' \| 'hook' }`, only from a boxer of the running bout; reach, facing and height are checked on the server positions |
+| `boxing_press` | client → server | `{ hand: 'left' \| 'right' }`, a mouse button goes down; only from a boxer of the running bout |
+| `boxing_release` | client → server | `{ hand: 'left' \| 'right' }`, the button goes up; the socket turns the press time into jab, cross, hook or uppercut and throws it; reach, facing and height are checked on the server positions |
+| `boxing_charge` | server → boxers and players in `sports_boxing` | `{ sessionId, hand, on }`, `on: true` when a press passes 250 ms (wind-up shown), `on: false` when that button is released (just before its `boxing_hit`, or alone when the punch is refused) |
 | `boxing_guard` | client → server | `{ up: boolean }` |
 | `boxing_dodge` | client → server | `{ side: 'left' \| 'right' }` |
 | `boxing_getup` | client → server | `{}`, one press of the mash |
 | `boxing_state` | server → boxers and players in `sports_boxing` | `{ venue, phase: 'intro' \| 'round' \| 'rest' \| 'over', round, rounds, maxKnockdowns, phaseEndsAt, serverNow, boxers: [{ sessionId, name, corner: 'red' \| 'blue', health, maxHealth, endurance, maxEndurance, guard, knockdowns, countEndsAt: number \| null, canGetUp, points }], result: { winner: sessionId \| null, method: 'ko' \| 'points' \| 'draw' \| 'forfeit' } \| null }`, at each change and every 250 ms |
-| `boxing_hit` | server → same | `{ sessionId, targetSessionId, kind, outcome: 'landed' \| 'blocked' \| 'dodged' \| 'missed', damage }` |
+| `boxing_hit` | server → same | `{ sessionId, targetSessionId, kind: 'jab' \| 'cross' \| 'hook' \| 'uppercut', outcome: 'landed' \| 'blocked' \| 'dodged' \| 'missed', damage, combo: 'one_two' \| 'double_jab' \| 'one_two_hook' \| 'upper_hook' \| 'full_combo' \| null, chain }`, `chain` = punches in the boxer's chain after this one |
 | `boxing_dodged` | server → same | `{ sessionId, side }` |
 | `boxing_tired` | server → the boxer | `{}` |
+| `boxing_bag` | client → server | `{ bag: index in punchBags, kind: 'jab' \| 'cross' \| 'hook' \| 'uppercut' }`, within 1.3 m and facing the bag, gloves owned, one every 400 ms |
+| `boxing_bag_hit` | server → players in `sports_boxing` | `{ bag, sessionId, kind }` |
+| `boxing_no_gloves` | server → the player | `{ reason: 'missing' \| 'check_failed' }` |
 
 The red corner is the first to sign up. At kick-off both boxers are moved into their corners on the ring (`teleported`); at the end they are moved out to the exits in front of the ring. The match is recorded with `recordMatch`: `win`, `loss`, `draw` or `dnf` per boxer, `score` = points. No coins.
 

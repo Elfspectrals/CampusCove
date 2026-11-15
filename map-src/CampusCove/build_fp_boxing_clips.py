@@ -21,6 +21,10 @@ LOOP_FRAMES = 30
 JAB_FRAMES = 13
 CROSS_FRAMES = 24
 HOOK_FRAMES = 33
+HOOK_EXIT = 5
+UPPERCUT_FRAMES = 28
+UPPERCUT_EXIT = 4
+UPPERCUT_CONTACT = 9
 HIT_FRAMES = 9
 
 
@@ -65,26 +69,44 @@ def breathing(side, wrist, t, frames):
 
 def jab(wrist):
     load = aim((0.11, 0.25, -0.1), (-0.15, 0.35, 1.0), (0.4, 1.0, 0.0))
-    contact = aim((0.03, 0.43, -0.05), (-0.25, 1.0, 0.3), (0.5, 0.0, 1.0))
-    return keyed("L", wrist, JAB_FRAMES, [(0, GUARD), (2, load), (4, blend(load, contact, 0.8)), (5, contact), (7, blend(contact, GUARD, 0.4)), (JAB_FRAMES, GUARD)])
+    contact = aim((0.03, 0.43, -0.05), (-0.4, 1.0, 0.65), (0.5, 0.0, 1.0))
+    return keyed("L", wrist, JAB_FRAMES, [(0, GUARD), (2, load), (4, blend(load, contact, 0.8)), (5, contact), (JAB_FRAMES, GUARD)])
 
 
 def cross(wrist):
     load = aim((0.13, 0.25, -0.11), (-0.15, 0.35, 1.0), (0.4, 1.0, 0.0))
-    contact = aim((0.0, 0.44, -0.05), (-0.3, 1.0, 0.35), (0.5, 0.0, 1.0))
-    through = aim((-0.02, 0.45, -0.055), (-0.35, 1.0, 0.35), (0.5, 0.0, 1.0))
-    return keyed("R", wrist, CROSS_FRAMES, [(0, GUARD), (3, load), (7, blend(load, contact, 0.85)), (8, contact), (10, through), (17, blend(through, GUARD, 0.8)), (CROSS_FRAMES, GUARD)])
+    contact = aim((0.0, 0.44, -0.05), (-0.45, 1.0, 0.7), (0.5, 0.0, 1.0))
+    through = aim((-0.02, 0.45, -0.055), (-0.5, 1.0, 0.7), (0.5, 0.0, 1.0))
+    return keyed("R", wrist, CROSS_FRAMES, [(0, GUARD), (3, load), (7, blend(load, contact, 0.85)), (8, contact), (10, through), (CROSS_FRAMES, GUARD)])
 
 
 def hook(wrist):
-    load = aim((0.3, 0.22, -0.12), (-0.4, 0.5, 0.6), (1.0, 0.0, 0.5))
-    contact = aim((0.0, 0.36, -0.06), (-1.0, 0.25, 0.05), (0.0, 0.2, 1.0))
-    follow = aim((-0.08, 0.33, -0.07), (-1.0, 0.1, 0.05), (0.0, 0.2, 1.0))
-    return keyed("L", wrist, HOOK_FRAMES, [(0, GUARD), (5, load), (10, blend(load, contact, 0.85)), (11, contact), (15, follow), (25, blend(follow, GUARD, 0.85)), (HOOK_FRAMES, GUARD)])
+    load = aim((0.2, 0.26, -0.1), (-0.4, 0.5, 0.6), (1.0, 0.0, 0.5))
+    contact = aim((0.0, 0.36, -0.06), (-1.0, 0.7, 0.95), (0.0, 0.2, 1.0))
+    follow = aim((-0.02, 0.37, -0.06), (-1.0, 0.6, 0.95), (0.0, 0.2, 1.0))
+    return keyed("L", wrist, HOOK_FRAMES, [(0, GUARD), (HOOK_EXIT, load), (10, blend(load, contact, 0.85)), (11, contact), (15, follow), (HOOK_FRAMES, GUARD)])
+
+
+def uppercut(wrist):
+    load = aim((0.11, 0.25, -0.17), (-0.05, 0.3, 1.0), (0.2, 1.0, -0.3))
+    contact = aim((0.02, 0.4, -0.02), (-0.2, 0.3, 1.0), (0.1, 1.0, 0.1))
+    follow = aim((0.01, 0.41, 0.01), (-0.2, 0.25, 1.0), (0.1, 1.0, 0.1))
+    return keyed("R", wrist, UPPERCUT_FRAMES, [(0, GUARD), (UPPERCUT_EXIT, load), (8, blend(load, contact, 0.85)), (UPPERCUT_CONTACT, contact), (11, follow), (UPPERCUT_FRAMES, GUARD)])
 
 
 def pulled_in(wrist, side, frames, at):
     return keyed(side, wrist, frames, [(0, GUARD), (at - 2, TIGHT), (at + 4, TIGHT), (frames, GUARD)])
+
+
+def charged(pose_at, exit_frame, loaded):
+    pose = pose_at(exit_frame)
+
+    def pose_at_loop(fr):
+        a = 4 * math.pi * fr / LOOP_FRAMES
+        shake = 2 * math.pi * fr / LOOP_FRAMES
+        tremble = {"x": 0.0015 * math.sin(6 * shake), "z": 0.0015 * math.sin(7 * shake)} if loaded else {}
+        return plus(plus(pose, {"z": 0.006 * math.sin(a), "rx": 0.01 * math.sin(a)}), tremble)
+    return pose_at_loop
 
 
 def hit(wrist, side):
@@ -100,6 +122,11 @@ def fp_clips(wrist):
         "FpJab": (JAB_FRAMES, {"L": jab(wrist), "R": pulled_in(wrist, "R", JAB_FRAMES, 5)}),
         "FpCross": (CROSS_FRAMES, {"R": cross(wrist), "L": pulled_in(wrist, "L", CROSS_FRAMES, 8)}),
         "FpHook": (HOOK_FRAMES, {"L": hook(wrist), "R": pulled_in(wrist, "R", HOOK_FRAMES, 11)}),
+        "FpUppercut": (UPPERCUT_FRAMES, {"R": uppercut(wrist), "L": pulled_in(wrist, "L", UPPERCUT_FRAMES, UPPERCUT_CONTACT)}),
+        "FpHookCharge": (LOOP_FRAMES, {"L": charged(hook(wrist), HOOK_EXIT, True),
+                                       "R": charged(pulled_in(wrist, "R", HOOK_FRAMES, 11), HOOK_EXIT, False)}),
+        "FpUppercutCharge": (LOOP_FRAMES, {"R": charged(uppercut(wrist), UPPERCUT_EXIT, True),
+                                           "L": charged(pulled_in(wrist, "L", UPPERCUT_FRAMES, UPPERCUT_CONTACT), UPPERCUT_EXIT, False)}),
         "FpHit": (HIT_FRAMES, {"R": hit(wrist, "R"), "L": hit(wrist, "L")}),
     }
 

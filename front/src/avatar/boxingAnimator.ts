@@ -5,11 +5,13 @@ import {
   FULL_BODY_ONE_SHOTS,
   LOWER_BODY_BONES,
   UPPER_BODY_BONES,
+  UPPER_CHARGE_CLIPS,
   UPPER_SHOT_CLIPS,
   footwork,
   keepsTrack,
   type BoxerPose,
   type FullBody,
+  type UpperCharge,
   type UpperClip,
   type UpperShot,
 } from './boxingAnimLogic'
@@ -17,11 +19,14 @@ import { avatarMixer, setAvatarAnimationOverride } from './glbCharacter'
 
 export const BOXING_CLIPS_URL = '/assets/animations/boxing/clips.glb'
 export const BOXING_FP_CLIPS_URL = '/assets/animations/boxing/fp_clips.glb'
-const FP_CLIPS = ['FpGuard', 'FpBlock', 'FpJab', 'FpCross', 'FpHook', 'FpHit'] as const
+const FP_CLIPS = ['FpGuard', 'FpBlock', 'FpJab', 'FpCross', 'FpHook', 'FpUppercut', 'FpHookCharge', 'FpUppercutCharge', 'FpHit'] as const
 const LOWER_CLIPS = ['BoxIdle', 'BoxStep'] as const
-const UPPER_CLIPS: readonly UpperClip[] = ['Guard', 'Block', ...UPPER_SHOT_CLIPS]
+const UPPER_CLIPS: readonly UpperClip[] = ['Guard', 'Block', ...UPPER_SHOT_CLIPS, ...UPPER_CHARGE_CLIPS]
 const FULL_CLIPS: readonly FullBody[] = ['Knockdown', 'Down', 'GetUp', 'KO', 'Win']
 const FADE_RATE = 14
+const TWIN_SUFFIX = '#twin'
+const CHARGE_EXIT_S: Partial<Record<UpperShot, number>> = { Hook: 5 / 30, Uppercut: 4 / 30 }
+export const FP_CHARGE_EXIT_S = { FpHook: 5 / 30, FpUppercut: 4 / 30 } as const
 
 function layerClip(clip: THREE.AnimationClip, bones: readonly string[]): THREE.AnimationClip {
   return new THREE.AnimationClip(clip.name, clip.duration, clip.tracks.filter((track) => keepsTrack(track.name, bones)))
@@ -39,6 +44,11 @@ export function loadBoxingClips(): Promise<Map<string, THREE.AnimationClip>> {
       const layered = new Map<string, THREE.AnimationClip>()
       for (const name of LOWER_CLIPS) layered.set(name, layerClip(byName.get(name)!, LOWER_BODY_BONES))
       for (const name of UPPER_CLIPS) layered.set(name, layerClip(byName.get(name)!, UPPER_BODY_BONES))
+      for (const name of UPPER_SHOT_CLIPS) {
+        const twin = layered.get(name)!.clone()
+        twin.name = name + TWIN_SUFFIX
+        layered.set(twin.name, twin)
+      }
       for (const name of FULL_CLIPS) layered.set(name, byName.get(name)!)
       return layered
     })
@@ -60,6 +70,7 @@ export function loadBoxingFpClips(): Promise<THREE.AnimationClip[]> {
 
 export interface BoxingAnimator {
   shot: (clip: UpperShot) => void
+  charge: (clip: UpperCharge, on: boolean) => void
   pose: (pose: BoxerPose) => void
   dispose: () => void
 }
@@ -71,9 +82,11 @@ export function createBoxingAnimator(root: THREE.Object3D, layered: Map<string, 
   const actions = new Map<string, THREE.AnimationAction>()
   const weights = new Map<string, number>()
   const targets = new Map<string, number>()
+  const clipOf = (name: string) => name.replace(TWIN_SUFFIX, '')
+  let upperInstance: string = state.upper
   for (const [name, clip] of layered) {
     const action = mixer.clipAction(clip, root)
-    const oneShot = UPPER_SHOT_CLIPS.includes(name as UpperShot) || FULL_BODY_ONE_SHOTS.includes(name as FullBody)
+    const oneShot = UPPER_SHOT_CLIPS.includes(clipOf(name) as UpperShot) || FULL_BODY_ONE_SHOTS.includes(name as FullBody)
     if (oneShot) {
       action.setLoop(THREE.LoopOnce, 1)
       action.clampWhenFinished = true
@@ -85,13 +98,27 @@ export function createBoxingAnimator(root: THREE.Object3D, layered: Map<string, 
     targets.set(name, 0)
   }
 
-  function restart(name: string) {
-    actions.get(name)?.reset().play()
+  function restart(name: string, fromS = 0) {
+    const action = actions.get(name)
+    if (!action) return
+    action.reset()
+    action.time = fromS
+    action.play()
+  }
+
+  function setUpper(clip: UpperClip) {
+    const twin = clip + TWIN_SUFFIX
+    upperInstance = upperInstance === clip && actions.has(twin) ? twin : clip
+    restart(upperInstance, CHARGE_EXIT_S[clip as UpperShot] ?? 0)
   }
 
   function onFinished(e: { action: THREE.AnimationAction }) {
-    const name = e.action.getClip().name
-    if (UPPER_SHOT_CLIPS.includes(name as UpperShot)) state.shotFinished(name as UpperShot, state.upper === 'Block')
+    const instance = e.action.getClip().name
+    const name = clipOf(instance)
+    if (UPPER_SHOT_CLIPS.includes(name as UpperShot) && instance === upperInstance) {
+      const loop = state.shotFinished(name as UpperShot, state.upper === 'Block')
+      if (loop) setUpper(loop)
+    }
     if (FULL_BODY_ONE_SHOTS.includes(name as FullBody)) {
       const next = state.fullFinished(name as FullBody)
       if (next) restart(next)
@@ -106,7 +133,7 @@ export function createBoxingAnimator(root: THREE.Object3D, layered: Map<string, 
     targets.set('BoxStep', feet.step * body)
     const step = actions.get('BoxStep')
     if (step) step.timeScale = feet.stepTimeScale
-    for (const name of UPPER_CLIPS) targets.set(name, name === state.upper ? body : 0)
+    for (const name of layered.keys()) if (UPPER_CLIPS.includes(clipOf(name) as UpperClip)) targets.set(name, name === upperInstance ? body : 0)
     for (const name of FULL_CLIPS) targets.set(name, name === state.full ? 1 : 0)
     const k = Math.min(1, dt * FADE_RATE)
     for (const [name, action] of actions) {
@@ -119,11 +146,15 @@ export function createBoxingAnimator(root: THREE.Object3D, layered: Map<string, 
 
   return {
     shot: (clip) => {
-      if (state.shot(clip)) restart(clip)
+      if (state.shot(clip)) setUpper(clip)
+    },
+    charge: (clip, on) => {
+      const next = state.charge(clip, on)
+      if (next) setUpper(next)
     },
     pose: (pose) => {
       const { upper, full } = state.pose(pose)
-      if (upper) restart(upper)
+      if (upper) setUpper(upper)
       if (full !== 'none' && full) restart(full)
     },
     dispose: () => {
