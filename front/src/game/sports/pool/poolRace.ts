@@ -71,11 +71,28 @@ export interface DiveBoard {
   edgeZone: Rect
 }
 
+export interface WaterRect extends Rect {
+  floorY: number
+}
+
+export interface SwimRules {
+  speedMps: number
+  fastSpeedMps: number
+  verticalMps: number
+  floatEyeAboveWaterM: number
+  swimEyeMaxAboveWaterM: number
+  underwaterEyeBelowWaterM: number
+  minEyeAboveFloorM: number
+}
+
 export interface PoolRules {
   stroke: StrokeWindow
   waterY: number
   wadeY: number
-  water: Rect[]
+  water: WaterRect[]
+  exits: Rect[]
+  swim: SwimRules
+  breathMaxMs: number
   boards: DiveBoard[]
 }
 
@@ -122,13 +139,26 @@ export function parsePoolRules(swimming: unknown, diving: unknown): PoolRules {
   const d = diving as Json | null
   const pool = s?.pool as Json | undefined
   const stroke = s?.stroke as Json | undefined
-  if (s?.status !== 'ready' || d?.status !== 'ready' || !pool || !stroke) throw new Error('pool rules: swimming or diving rules are not ready')
-  if (!Array.isArray(pool.waterVolume) || !Array.isArray(d.boards)) throw new Error('pool rules: missing water or boards')
+  const swim = s?.swim as Json | undefined
+  const breath = s?.breath as Json | undefined
+  if (s?.status !== 'ready' || d?.status !== 'ready' || !pool || !stroke || !swim || !breath) throw new Error('pool rules: swimming or diving rules are not ready')
+  if (!Array.isArray(pool.waterVolume) || !Array.isArray(pool.exits) || !Array.isArray(d.boards)) throw new Error('pool rules: missing water, exits or boards')
   return {
     stroke: { goodCadenceMs: finite(stroke.goodCadenceMs, 'goodCadenceMs'), toleranceMs: finite(stroke.toleranceMs, 'toleranceMs') },
     waterY: finite(pool.waterY, 'waterY'),
     wadeY: finite(pool.wadeY, 'wadeY'),
-    water: pool.waterVolume.map((w, i) => rect(w, `waterVolume[${i}]`)),
+    water: pool.waterVolume.map((w, i) => ({ ...rect(w, `waterVolume[${i}]`), floorY: finite((w as Json).floorY, `waterVolume[${i}].floorY`) })),
+    exits: pool.exits.map((e, i) => rect(e, `exits[${i}]`)),
+    swim: {
+      speedMps: finite(swim.speedMps, 'swim.speedMps'),
+      fastSpeedMps: finite(swim.fastSpeedMps, 'swim.fastSpeedMps'),
+      verticalMps: finite(swim.verticalMps, 'swim.verticalMps'),
+      floatEyeAboveWaterM: finite(swim.floatEyeAboveWaterM, 'swim.floatEyeAboveWaterM'),
+      swimEyeMaxAboveWaterM: finite(swim.swimEyeMaxAboveWaterM, 'swim.swimEyeMaxAboveWaterM'),
+      underwaterEyeBelowWaterM: finite(swim.underwaterEyeBelowWaterM, 'swim.underwaterEyeBelowWaterM'),
+      minEyeAboveFloorM: finite(swim.minEyeAboveFloorM, 'swim.minEyeAboveFloorM'),
+    },
+    breathMaxMs: finite(breath.maxMs, 'breath.maxMs'),
     boards: d.boards.map((b: Json, i: number) => ({ id: String(b.id), heightM: finite(b.heightM, `boards[${i}].heightM`), edgeZone: rect(b.edgeZone, `boards[${i}].edgeZone`) })),
   }
 }

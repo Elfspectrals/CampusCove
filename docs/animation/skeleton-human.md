@@ -136,7 +136,7 @@ Hips > Spine > Chest > Shoulder chain, elbow towards the hint), feet with `leg_i
 | PetanqueShoot | 48 | 1.6 | one-shot | `pose_petanque_shoot`: left foot 0.30 m forward, arm high behind, release at shoulder height at 0.8 s |
 | PetanqueCrouch | 120 | 4.0 | yes | `pose_petanque_crouch`: deep squat (Hips −0.46 m), hands on the knees, head scanning |
 | PetanqueCelebrate | 45 | 1.5 | one-shot | `pose_petanque_celebrate`: right fist pump, twice |
-| Swim | 30 | 1.0 | yes | `pose_swim`, front crawl, base body only: Hips pitched 78° (`SWIM_PITCH`), +0.05 m, head at 1.15 m, one stroke per arm, six-beat kick |
+| Swim | 30 | 1.0 | yes | `pose_swim`, front crawl, base body only: Hips pitched 78° (`SWIM_PITCH`), +0.05 m, head at 1.15 m, one stroke per arm on a wrist path solved by two-bone IK (`SWIM_PATH`: entry in front of the shoulder, high-elbow catch, pull under the centre line, push past the hip, high-elbow recovery), body roll 40° toward the pulling arm (`SWIM_ROLL`), six-beat kick |
 | Tread | 48 | 1.6 | yes | `pose_tread`, base body only: Hips at −0.33 m (`TREAD_DROP`), head at 1.29-1.33 m, sculling arms, egg-beater legs |
 | Dive | 24 | 0.8 | one-shot, ends held | `pose_dive`, base body only: crouch, toes planted by `leg_ik` until 0.56, ends straight, arms ahead, pitched 25° nose down |
 | Somersault | 30 | 1.0 | one-shot | `pose_somersault`, base body only: tucked 360° forward turn of Hips about the tuck centre, ends at rest |

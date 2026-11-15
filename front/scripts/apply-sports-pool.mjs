@@ -81,6 +81,7 @@ console.log(`world.manifest.json: zone ${KEY}, ground hole ${JSON.stringify(hole
 const backdrop = await fitTownBackdrop(TOWN_GLB, manifest)
 console.log(`town.glb: Ground radius ${backdrop.groundRadius.toFixed(1)}, ${backdrop.holes} ground hole(s)`)
 
+const sameRect = (a, b) => a.minX === b.minX && a.maxX === b.maxX && a.minZ === b.minZ && a.maxZ === b.maxZ
 const swimming = JSON.parse(readFileSync(SWIMMING_RULES, 'utf8'))
 swimming.coachPosition = layout.pool.coach
 const { lengthM, lanes, water, depthsM, exits, startX, turnX, waterY, wadeY } = layout.pool
@@ -92,8 +93,9 @@ swimming.pool = {
   blockPositions: lanes.map((l) => l.block),
   startX,
   turnX,
-  waterVolume: water,
+  waterVolume: water.map((r) => ({ ...r, floorY: sameRect(r, layout.diving.pit) ? -depthsM.pit : -depthsM.basin })),
   waterY,
+  deckY: layout.levels.find((l) => l.id === 'L0').y,
   wadeY,
   depthsM,
   exits,

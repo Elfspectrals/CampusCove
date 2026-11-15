@@ -1092,31 +1092,68 @@ SWIM_PITCH = 78
 SWIM_LIFT = 0.05
 TREAD_DROP = -0.33
 
-def _stroke(s):
-    w = s - 0.5 / (2 * math.pi) * (S_(2 * math.pi * (s - 0.25)) + 1)
-    pull = s < 0.6
-    bend = S_(math.pi * s / 0.6) ** 2 if pull else S_(math.pi * (s - 0.6) / 0.4) ** 2
-    return -180 + 360 * w, pull, bend
+SWIM_ROLL = 40
+SWIM_PATH = (
+    (0.00, (0.20, -0.10, 2.04), (0.3, 1.0, 0.0)),
+    (0.12, (0.19, -0.16, 2.06), (0.4, 1.0, 0.0)),
+    (0.24, (0.20, -0.32, 1.90), (0.8, 1.0, 0.0)),
+    (0.40, (0.05, -0.40, 1.48), (1.0, 0.6, 0.0)),
+    (0.55, (0.13, -0.24, 1.08), (0.6, 1.0, 0.0)),
+    (0.64, (0.20, -0.08, 0.98), (0.4, 1.0, 0.0)),
+    (0.74, (0.30, 0.10, 1.18), (0.4, 1.0, 0.0)),
+    (0.84, (0.36, 0.12, 1.56), (0.4, 1.0, 0.3)),
+    (0.93, (0.24, 0.04, 1.90), (0.3, 1.0, 0.2)),
+)
+
+def _loop_spline(keys, s):
+    n = len(keys)
+    i = max(k for k in range(n) if keys[k][0] <= s)
+    t0, t1 = keys[i][0], keys[(i + 1) % n][0] + (1.0 if i + 1 == n else 0.0)
+    u = (s - t0) / (t1 - t0)
+    pts = [keys[(i + d) % n] for d in (-1, 0, 1, 2)]
+    out = []
+    for c in (1, 2):
+        p0, p1, p2, p3 = (Vector(k[c]) for k in pts)
+        out.append(0.5 * (2 * p1 + (p2 - p0) * u + (2 * p0 - 5 * p1 + 4 * p2 - p3) * u * u + (3 * p1 - p0 - 3 * p2 + p3) * u ** 3))
+    return out
+
+def _arm_ik(P, side, shoulder, wrist, pole, parent):
+    bones = P.arm.data.bones
+    ua, la = bones["UpperArm" + side], bones["LowerArm" + side]
+    a, b = ua.length, la.length
+    d = wrist - shoulder
+    reach = min(d.length, (a + b) * 0.999)
+    d.normalize()
+    side_dir = (pole - pole.dot(d) * d).normalized()
+    x = (a * a - b * b + reach * reach) / (2 * reach)
+    elbow = shoulder + d * x + side_dir * math.sqrt(max(a * a - x * x, 0.0))
+    hinge = d.cross(side_dir).normalized()
+    upper = _aim(ua.tail_local - ua.head_local, elbow - shoulder, hinge)
+    lower = _aim(la.tail_local - la.head_local, shoulder + d * reach - elbow, hinge)
+    _set_rot(P, "UpperArm" + side, parent.inverted() @ upper)
+    _set_rot(P, "LowerArm" + side, upper.inverted() @ lower)
 
 def pose_swim():
     def f(ph, P):
         a = 2 * math.pi * ph
-        roll = 32 * S_(a)
+        roll = -SWIM_ROLL * math.cos(a - 2 * math.pi * 0.36)
         _turn_hips(P, _rot("X", SWIM_PITCH) @ _rot("Z", 0.4 * roll), (0, 0, 0))
         P.move("Hips", 0, 0, SWIM_LIFT + 0.01 * S_(2 * a))
         P.rz("Spine", 0.3 * roll); P.rz("Chest", 0.3 * roll)
-        P.rx("Neck", -18); P.rx("Head", -28); P.rz("Head", -0.8 * roll)
+        P.rx("Neck", -10); P.rx("Head", -14); P.rz("Head", -0.8 * roll)
+        chest = _rot("Z", roll)
+        bones = P.arm.data.bones
         for side, sgn, off in SIDES:
-            theta, pull, bend = _stroke((ph - off) % 1.0)
-            spread = sgn * (18 if pull else 18 - 28 * bend)
-            twist = sgn * (110 * bend if pull else -60 * bend)
-            _set_rot(P, "UpperArm" + side, _rot("X", theta) @ _rot("Y", spread) @ _rot("Z", twist))
-            P.rx("LowerArm" + side, -(12 + (55 if pull else 85) * bend))
-            P.rx("Hand" + side, 10 * bend)
+            s = (ph - off) % 1.0
+            wrist, pole = _loop_spline(SWIM_PATH, s)
+            mirror = Vector((sgn, 1, 1))
+            shoulder = chest @ bones["UpperArm" + side].head_local
+            _arm_ik(P, side, shoulder, wrist * mirror, pole * mirror, chest)
+            P.rx("Hand" + side, -25 * S_(math.pi * min(1.0, s / 0.64)) ** 2)
             k = 3 * a + math.pi * (off * 2)
-            P.rx("UpperLeg" + side, -2 + 12 * S_(k)); P.ry("UpperLeg" + side, sgn * 4)
-            P.rx("LowerLeg" + side, 14 + 12 * S_(k - 1.2))
-            P.rx("Foot" + side, 45 + 8 * S_(k - 1.8))
+            P.rx("UpperLeg" + side, -3 + 8 * S_(k)); P.ry("UpperLeg" + side, sgn * 3)
+            P.rx("LowerLeg" + side, 14 + 12 * S_(k - 0.4))
+            P.rx("Foot" + side, 55 + 8 * S_(k - 1.6))
     return f
 
 def pose_tread():

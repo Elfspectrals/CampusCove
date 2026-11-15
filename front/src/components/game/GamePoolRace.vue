@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import type { usePoolRace } from '../../composables/game/usePoolRace'
+import type { usePoolSwim } from '../../composables/game/usePoolSwim'
 
 type PoolRace = ReturnType<typeof usePoolRace>
 
@@ -8,12 +9,15 @@ defineProps<{
   hud: PoolRace['hud']['value']
   board: PoolRace['board']['value']
   trickLine: string | null
+  breath?: ReturnType<typeof usePoolSwim>['breathHud']['value']
+  underwater?: boolean
 }>()
 
 const { t } = useI18n()
 </script>
 
 <template>
+  <div v-if="underwater" class="pool-underwater pointer-events-none absolute inset-0 z-[5]" aria-hidden="true" />
   <div class="pointer-events-none absolute inset-x-0 top-16 z-10 flex flex-col items-center gap-2 px-4">
     <section v-if="board" class="cc-hud w-56 px-3 py-2 text-xs" :aria-label="t('sports.pool.boardTitle')">
       <p class="m-0 mb-1 font-display text-[11px] uppercase tracking-[0.16em] text-mint">
@@ -62,4 +66,19 @@ const { t } = useI18n()
 
     <p v-if="trickLine" class="cc-hud m-0 px-3 py-1 text-xs font-bold text-sun">{{ trickLine }}</p>
   </div>
+  <section v-if="breath" class="cc-hud pointer-events-none absolute bottom-40 left-1/2 z-10 w-48 -translate-x-1/2 px-3 py-1.5 text-xs" :aria-label="t('sports.pool.breath')">
+    <p class="m-0 mb-1 flex justify-between font-bold" :class="breath.low ? 'text-coral' : 'text-fog'">
+      <span>{{ t('sports.pool.breath') }}</span>
+      <span class="tabular-nums">{{ Math.ceil(breath.fill * 100) }}%</span>
+    </p>
+    <span class="block h-2 overflow-hidden rounded-full bg-ink-950/70" role="meter" :aria-valuenow="Math.ceil(breath.fill * 100)" aria-valuemin="0" aria-valuemax="100">
+      <span class="block h-full rounded-full transition-[width] duration-200" :class="breath.low ? 'bg-coral' : 'bg-mint'" :style="{ width: `${breath.fill * 100}%` }" />
+    </span>
+  </section>
 </template>
+
+<style scoped>
+.pool-underwater {
+  background: radial-gradient(ellipse at center, rgb(40 150 180 / 0.18) 0%, rgb(10 60 80 / 0.45) 100%);
+}
+</style>

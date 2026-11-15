@@ -1,10 +1,30 @@
 const SILENT_GAIN = 0.0001
 
+const OPEN_HZ = 20000
+const MUFFLED_HZ = 500
+
 let context: AudioContext | null = null
+let muffle: BiquadFilterNode | null = null
 
 function audio(): AudioContext {
   context ??= new AudioContext()
   return context
+}
+
+function output(ctx: AudioContext): BiquadFilterNode {
+  if (!muffle) {
+    muffle = ctx.createBiquadFilter()
+    muffle.type = 'lowpass'
+    muffle.frequency.value = OPEN_HZ
+    muffle.connect(ctx.destination)
+  }
+  return muffle
+}
+
+export function setPoolSoundsMuffled(on: boolean): void {
+  if (!context) return
+  const filter = output(context)
+  filter.frequency.setTargetAtTime(on ? MUFFLED_HZ : OPEN_HZ, context.currentTime, 0.05)
 }
 
 function tone(frequency: number, lengthS: number, peak: number, type: OscillatorType, delayS = 0): void {
@@ -17,7 +37,7 @@ function tone(frequency: number, lengthS: number, peak: number, type: Oscillator
   gain.gain.setValueAtTime(SILENT_GAIN, start)
   gain.gain.exponentialRampToValueAtTime(peak, start + 0.01)
   gain.gain.exponentialRampToValueAtTime(SILENT_GAIN, start + lengthS)
-  oscillator.connect(gain).connect(ctx.destination)
+  oscillator.connect(gain).connect(output(ctx))
   oscillator.start(start)
   oscillator.stop(start + lengthS)
 }
@@ -37,7 +57,7 @@ function noise(lengthS: number, peak: number, cutoffHz: number, delayS = 0): voi
   gain.gain.setValueAtTime(SILENT_GAIN, start)
   gain.gain.exponentialRampToValueAtTime(peak, start + 0.02)
   gain.gain.exponentialRampToValueAtTime(SILENT_GAIN, start + lengthS)
-  source.connect(filter).connect(gain).connect(ctx.destination)
+  source.connect(filter).connect(gain).connect(output(ctx))
   source.start(start)
 }
 
@@ -66,4 +86,14 @@ export function playSplash(scale: number): void {
 export function playFinish(): void {
   tone(784, 0.6, 0.22, 'triangle')
   tone(1175, 0.9, 0.22, 'triangle', 0.12)
+}
+
+export function playSubmerge(): void {
+  noise(0.5, 0.12, 400)
+  noise(0.25, 0.06, 1800, 0.15)
+}
+
+export function playSurface(gasp: boolean): void {
+  noise(0.3, 0.1, 1200)
+  if (gasp) noise(0.45, 0.14, 2600, 0.1)
 }

@@ -15,10 +15,11 @@ const { moveRejection } = await import('../movement.ts')
 const venues = await import('./venues.ts')
 const pool = await import('./poolRace.ts')
 const { configurePoolWater } = await import('./poolWater.ts')
+const { parseSwimPool, rescuePoint } = await import('./poolSwim.ts')
 await loadWorld()
 
 const { rules, spec } = pool.poolVenueSpec(RAW, () => 0)
-configurePoolWater(rules.water, pool.POOL_ZONE)
+configurePoolWater(parseSwimPool(RAW, rules), pool.POOL_ZONE)
 pool.usePoolRules(rules)
 venues.registerVenue(spec)
 const T0 = 2_000_000
@@ -128,4 +129,72 @@ test('the pool water refuses a player without a swimsuit, lets one with a swimsu
   without.x = water.x
   without.z = water.z
   assert.equal(moveRejection(room, without, deck.x, 1.6, deck.z, Date.now()), null)
+})
+
+test('swimming: faster than a fast swimmer or under the pool floor is refused, a diver coming in from above is not speed-checked', async () => {
+  const swimmer = await makePlayer(331, -505, -212)
+  swimmer.y = -0.15
+  swimmer.lastMoveAt = Date.now() - 1000
+  const room = await fakeRoom([swimmer])
+  api.replies.set('GET /sports/gear', () => json({ gear: ['gear_swimsuit'] }))
+  assert.equal(moveRejection(room, swimmer, -505 + 4, -0.15, -212, Date.now()), null)
+  assert.equal(moveRejection(room, swimmer, -505 + 7, -0.15, -212, Date.now()), 'swim_too_fast')
+  assert.equal(moveRejection(room, swimmer, -505, -1.8, -212, Date.now()), 'below_pool_floor')
+  assert.equal(moveRejection(room, swimmer, -505, -1.6, -212, Date.now()), null)
+  const diver = await makePlayer(332, -525, -210)
+  diver.y = 6.6
+  diver.lastMoveAt = Date.now() - 1000
+  assert.equal(moveRejection(room, diver, -525, -3.5, -210, Date.now()), null)
+})
+
+test('breath: drains under water, the lifeguard pulls an empty swimmer onto the deck, the rescue hurts but never knocks out', async () => {
+  const { tickPoolBreath } = await import('./poolWater.ts')
+  const swimmer = await makePlayer(341, -505, -212)
+  swimmer.stats = { health: 5, hunger: 100, thirst: 100 }
+  swimmer.y = -1.2
+  const room = await fakeRoom([swimmer])
+  const client = clientOf(room, swimmer)
+  const start = Date.now()
+  tickPoolBreath(room, start)
+  tickPoolBreath(room, start + 10_000)
+  const [first] = sentOf(client, 'pool_breath').slice(-1) as { breathMs: number, maxMs: number, underwater: boolean }[]
+  assert.deepEqual(first, { breathMs: 20_000, maxMs: 30_000, underwater: true })
+  tickPoolBreath(room, start + 30_000)
+  assert.equal(sentOf(client, 'pool_rescued').length, 1)
+  assert.equal(swimmer.y, 1.6)
+  assert.ok(swimmer.z < -219.5)
+  assert.equal(swimmer.stats?.health, 1)
+  tickPoolBreath(room, start + 40_000)
+  const [last] = sentOf(client, 'pool_breath').slice(-1) as { breathMs: number, underwater: boolean }[]
+  assert.deepEqual(last, { breathMs: 30_000, maxMs: 30_000, underwater: false })
+  const before = client.sent.length
+  tickPoolBreath(room, start + 41_000)
+  assert.equal(client.sent.length, before)
+})
+
+test('a dive from the 5 m platform into the pit does not hurt, the same drop onto the deck does', async () => {
+  const { onSurvivalMove } = await import('../survival.ts')
+  for (const [x, z, hurts] of [[-525, -210, false], [-525, -222, true]] as const) {
+    const diver = await makePlayer(351, x, z)
+    diver.stats = { health: 100, hunger: 100, thirst: 100 }
+    const room = await fakeRoom([diver])
+    diver.fallPeakY = 6.6
+    diver.y = hurts ? 1.6 : -2.4
+    onSurvivalMove(room, clientOf(room, diver), diver, 3, 0)
+    diver.y += 0.2
+    onSurvivalMove(room, clientOf(room, diver), diver, diver.y - 0.2, 0)
+    assert.equal(sentOf(clientOf(room, diver), 'survival_damage').length > 0, hurts)
+  }
+})
+
+test('every rescue point is on the deck beside its water', () => {
+  const layout = JSON.parse(readFileSync(new URL('../../../front/public/assets/park/sports_pool/sports_pool.layout.json', import.meta.url), 'utf8'))
+  const deck = layout.levels.find((l: { id: string }) => l.id === 'L0').rects as { minX: number, maxX: number, minZ: number, maxZ: number }[]
+  const swimPool = parseSwimPool(RAW, rules)
+  for (const w of swimPool.water) {
+    for (const x of [w.minX + 0.1, (w.minX + w.maxX) / 2, w.maxX - 0.1]) {
+      const p = rescuePoint(swimPool, x, (w.minZ + w.maxZ) / 2)
+      assert.ok(p && deck.some((r) => p.x >= r.minX && p.x <= r.maxX && p.z >= r.minZ && p.z <= r.maxZ), `${x} -> ${JSON.stringify(p)}`)
+    }
+  }
 })

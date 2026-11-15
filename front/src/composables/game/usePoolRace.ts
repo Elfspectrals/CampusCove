@@ -258,5 +258,5 @@ export function usePoolRace(deps: PoolRaceDeps) {
     },
   }
 
-  return { locked, hud, board, trickLine, onKeyDown, tick, handlers }
+  return { rules, locked, hud, board, trickLine, onKeyDown, tick, handlers }
 }

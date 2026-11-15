@@ -129,6 +129,7 @@ import { useSkating } from '../composables/game/useSkating'
 import { ICE_SKATES_CODE } from '../game/sports/skating/skateMotion'
 import { usePetanque } from '../composables/game/usePetanque'
 import { usePoolRace } from '../composables/game/usePoolRace'
+import { usePoolSwim } from '../composables/game/usePoolSwim'
 import { usePickpocket } from '../composables/game/usePickpocket'
 import { useStorageAuction } from '../composables/game/useStorageAuction'
 import { useStorageWarehouse } from '../composables/game/useStorageWarehouse'
@@ -960,6 +961,18 @@ const poolRace = usePoolRace({
   trickText: (name, trick) => (name ? t('sports.pool.trickBy', { name, trick: t(`sports.pool.trick.${trick}`) }) : t(`sports.pool.trick.${trick}`)),
 })
 const { hud: poolHud, board: poolBoard, trickLine: poolTrickLine } = poolRace
+const poolSwim = usePoolSwim({
+  rules: () => poolRace.rules.value,
+  myPosition,
+  getScene,
+  getCamera,
+  listener: () => sfx.listener(),
+  remotePlayers: () => realtime.remotePlayers(),
+  remotePosition: (sessionId) => realtime.remotePosition(sessionId),
+  say: (text) => survival.say(text),
+  rescuedText: () => t('sports.pool.rescued'),
+})
+const { breathHud: poolBreath, underwater: poolUnderwater } = poolSwim
 const { open: sportsSignupOpen, choices: sportsVenueChoices, canPickVenue: sportsCanPickVenue, lobby: sportsLobby, spec: sportsSpec, team: sportsTeam, settings: sportsSettings, pending: sportsSignupPending, error: sportsSignupError, clientNow: sportsClientNow, clockOffset: sportsClockOffset } = sportsSignup
 watch(sportsSignupOpen, (open) => {
   if (!open && !document.pointerLockElement) requestPointerLock()
@@ -1783,6 +1796,7 @@ const movement = useGameMovement({
   skate: skating.step,
   cameraRoll: skating.cameraRoll,
   afterSkate: skating.afterMove,
+  swim: poolSwim.swim,
   trySpendJump: () => adminWatch.hasMyPower('endless_stamina') || punch.trySpendJump(),
   trySpendSprint: (dt, wasSprinting) => adminWatch.hasMyPower('endless_stamina') || punch.trySpendSprint(dt, wasSprinting),
   onBeforeRender: (dt) => {
@@ -1831,6 +1845,7 @@ const movement = useGameMovement({
     climbing.tick()
     petanque.tick()
     poolRace.tick(dt)
+    poolSwim.tick(dt)
     if (!doorSigns.group.parent) getScene()?.add(doorSigns.group)
     minimap.tick()
     gps.tick()
@@ -1989,6 +2004,7 @@ const realtime = useGameRealtime({
   boxing: boxing.handlers,
   skating: { ...skating.handlers, isOnIce: skating.isOnIce },
   pool: poolRace.handlers,
+  poolSwim: poolSwim.handlers,
   pickpocket: pickpocket.handlers,
   storageAuction: {
     ...storageAuction.handlers,
@@ -2111,6 +2127,7 @@ onUnmounted(() => {
   unbindInput?.()
   unbindSurvivalInput?.()
   survival.dispose()
+  poolSwim.dispose()
   window.removeEventListener('beforeunload', leaveRoom)
   window.removeEventListener('pagehide', leaveRoom)
   refreshMyAppearance.value = null
@@ -2573,7 +2590,7 @@ const crosshairClass = computed(() => {
       :error="climbingBoardError"
       @close="climbingBoard.close"
     />
-    <GamePoolRace v-if="poolHud || poolBoard || poolTrickLine" :hud="poolHud" :board="poolBoard" :trick-line="poolTrickLine" />
+    <GamePoolRace v-if="poolHud || poolBoard || poolTrickLine || poolBreath || poolUnderwater" :hud="poolHud" :board="poolBoard" :trick-line="poolTrickLine" :breath="poolBreath" :underwater="poolUnderwater" />
     <GameSportsPassDesk
       v-if="sportsPassOpen && sportsPassState"
       :pass="sportsPassState"
