@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 import type { GymStatePayload } from '../../types/gameRealtime.ts'
-import { COURT_FILES, FREE_PLAY_COACHES, carriedSpot, clockText, courtUrlOf, scoreboardLines, dribbleBeat, dribbleHeight, goodWindowStart, meterFill, myTeam, nearestFreeBall, parseGymCourtView, parseGymHudRules, predictBall } from './gymMatch.ts'
+import { COURT_FILES, FREE_PLAY_COACHES, carriedSpot, clockText, courtUrlOf, dribbleBeat, dribbleHeight, goodWindowStart, meterFill, myTeam, nearestFreeBall, parseGymCourtView, parseGymHudRules, predictBall, scoreboardLines } from './gymMatch.ts'
 
 const rules = (sport: string) => JSON.parse(readFileSync(new URL(`../../../public/assets/sports/rules/${sport}.json`, import.meta.url), 'utf8'))
 
@@ -55,7 +55,7 @@ test('only the players listed in the state are in the match', () => {
 test('the shipped court contract gives the floor and the basket each team attacks', () => {
   const court = parseGymCourtView(JSON.parse(readFileSync(new URL('../../../public/assets/sports/gym/court.json', import.meta.url), 'utf8')))
   assert.equal(court.floorY, 0.2)
-  assert.ok(court.baskets.red.x > court.baskets.blue.x)
+  assert.ok(court.baskets !== null && court.baskets.red.x > court.baskets.blue.x)
   assert.throws(() => parseGymCourtView({ floorY: 0.2, baskets: {} }), /baskets.red.x/)
 })
 
@@ -85,12 +85,11 @@ test('the scoreboard shows the score and the clock in a match, the gym name othe
 
 test('the shipped court contract gives the live scoreboard screen', () => {
   const court = parseGymCourtView(JSON.parse(readFileSync(new URL('../../../public/assets/sports/gym/court.json', import.meta.url), 'utf8')))
-  assert.ok(court.scoreboard)
-  assert.ok(court.scoreboard.width > 1 && court.scoreboard.height > 0.5)
-  assert.deepEqual(court.scoreboard.facing, [-1, 0])
+  assert.ok(court.scoreboard !== null && court.scoreboard.width > 1 && court.scoreboard.height > 0.5)
+  assert.deepEqual(court.scoreboard?.facing, [-1, 0])
 })
 
-test('each venue and free-play court reads its own court file; the pitch has no baskets and its coach lends only footballs', () => {
+test('each venue and free-play court reads its own court file; the pitch has no baskets and no gym screen, and its coach lends only footballs', () => {
   assert.equal(courtUrlOf('gym_basketball'), '/assets/sports/gym/court.json')
   assert.equal(courtUrlOf('athletics'), '/assets/sports/athletics/pitch.json')
   assert.equal(courtUrlOf('athletics_football'), '/assets/sports/athletics/pitch.json')

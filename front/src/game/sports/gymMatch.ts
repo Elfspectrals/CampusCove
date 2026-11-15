@@ -130,15 +130,18 @@ function finite(raw: unknown, what: string): number {
   return raw
 }
 
-export function parseGymCourtView(raw: unknown): GymCourtView {
-  const r = (raw ?? {}) as Raw
-  const baskets = (r.baskets ?? {}) as Record<string, Raw | undefined>
+function parseBaskets(raw: unknown): GymCourtView['baskets'] {
+  if (raw === undefined) return null
+  const baskets = (raw ?? {}) as Record<string, Raw | undefined>
   const spot = (team: GymTeam) => ({ x: finite(baskets[team]?.x, `baskets.${team}.x`), y: finite(baskets[team]?.y, `baskets.${team}.y`), z: finite(baskets[team]?.z, `baskets.${team}.z`) })
-  const hoops = r.baskets === undefined ? null : { red: spot('red'), blue: spot('blue') }
-  if (r.scoreboard === undefined) return { floorY: finite(r.floorY, 'floorY'), baskets: hoops, scoreboard: null }
-  const s = r.scoreboard as Raw
+  return { red: spot('red'), blue: spot('blue') }
+}
+
+function parseScreen(raw: unknown): GymScreen | null {
+  if (raw === undefined) return null
+  const s = (raw ?? {}) as Raw
   const facing = Array.isArray(s.facing) ? s.facing : []
-  const scoreboard: GymScreen = {
+  return {
     x: finite(s.x, 'scoreboard.x'),
     y: finite(s.y, 'scoreboard.y'),
     z: finite(s.z, 'scoreboard.z'),
@@ -146,7 +149,11 @@ export function parseGymCourtView(raw: unknown): GymCourtView {
     height: finite(s.height, 'scoreboard.height'),
     facing: [finite(facing[0], 'scoreboard.facing[0]'), finite(facing[1], 'scoreboard.facing[1]')],
   }
-  return { floorY: finite(r.floorY, 'floorY'), baskets: hoops, scoreboard }
+}
+
+export function parseGymCourtView(raw: unknown): GymCourtView {
+  const r = (raw ?? {}) as Raw
+  return { floorY: finite(r.floorY, 'floorY'), baskets: parseBaskets(r.baskets), scoreboard: parseScreen(r.scoreboard) }
 }
 
 export function scoreboardLines(state: { score: Record<GymTeam, number>; clock: string; half: number; halves: number } | null): [string, string] {

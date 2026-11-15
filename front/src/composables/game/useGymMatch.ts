@@ -7,8 +7,8 @@ import type { SfxName } from '../../game/sfx'
 import {
   COURT_FILES,
   type GymCourtView,
-  type GymScreen,
   type GymHudRules,
+  type GymScreen,
   type Spot,
   carriedSpot,
   courtUrlOf,
@@ -438,26 +438,26 @@ export function useGymMatch(deps: GymMatchDeps) {
     jerseys = next
   }
 
-  function screenFor(scene: THREE.Scene, board: GymScreen) {
+  function screenFor(scene: THREE.Scene, view: GymScreen) {
     if (screen) return screen
     const canvas = document.createElement('canvas')
     canvas.width = 512
-    canvas.height = Math.round((512 * board.height) / board.width)
+    canvas.height = Math.round((512 * view.height) / view.width)
     const texture = new THREE.CanvasTexture(canvas)
     texture.colorSpace = THREE.SRGBColorSpace
-    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(board.width, board.height), new THREE.MeshBasicMaterial({ map: texture }))
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(view.width, view.height), new THREE.MeshBasicMaterial({ map: texture }))
     mesh.name = 'gym_scoreboard_screen'
-    mesh.position.set(board.x, board.y, board.z)
-    mesh.rotation.y = Math.atan2(board.facing[0], board.facing[1])
+    mesh.position.set(view.x, view.y, view.z)
+    mesh.rotation.y = Math.atan2(view.facing[0], view.facing[1])
     scene.add(mesh)
     screen = { mesh, canvas, texture, text: '' }
     return screen
   }
 
-  function drawScreen(scene: THREE.Scene, board: GymScreen): void {
-    const current = hud.value
+  function drawScreen(scene: THREE.Scene, view: GymScreen): void {
+    const current = state.value && courtUrlOf(state.value.venue) === courtUrlOf('gym') ? hud.value : null
     const lines = scoreboardLines(current ? { score: current.score, clock: current.clock, half: current.half, halves: current.halves } : null)
-    const target = screenFor(scene, board)
+    const target = screenFor(scene, view)
     const text = lines.join('|')
     if (text === target.text) return
     target.text = text
@@ -519,8 +519,8 @@ export function useGymMatch(deps: GymMatchDeps) {
     }
     updateDribblers()
     updateJerseys()
-    const gymScoreboard = courtOf('gym')?.scoreboard
-    if (scene && gymScoreboard) drawScreen(scene, gymScoreboard)
+    const gymCourt = courtOf('gym')
+    if (scene && gymCourt?.scoreboard) drawScreen(scene, gymCourt.scoreboard)
     hideAll(shown)
     if (scene) for (const mesh of shown) if (mesh.parent !== scene) scene.add(mesh)
   }
