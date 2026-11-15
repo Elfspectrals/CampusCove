@@ -91,7 +91,72 @@
       "cooldownMs": 1150,
       "reachM": 1.5,
       "points": 3
+    },
+    "uppercut": {
+      "damage": 15,
+      "enduranceCost": 20,
+      "cooldownMs": 1250,
+      "reachM": 1.3,
+      "points": 3
     }
+  },
+  "hold": {
+    "ms": 250
+  },
+  "bufferMs": 200,
+  "combo": {
+    "windowMs": 500,
+    "list": [
+      {
+        "id": "one_two",
+        "sequence": [
+          "jab",
+          "cross"
+        ],
+        "bonusDamage": 3,
+        "bonusPoints": 1
+      },
+      {
+        "id": "double_jab",
+        "sequence": [
+          "jab",
+          "jab",
+          "cross"
+        ],
+        "bonusDamage": 5,
+        "bonusPoints": 2
+      },
+      {
+        "id": "one_two_hook",
+        "sequence": [
+          "jab",
+          "cross",
+          "hook"
+        ],
+        "bonusDamage": 6,
+        "bonusPoints": 2
+      },
+      {
+        "id": "upper_hook",
+        "sequence": [
+          "uppercut",
+          "hook"
+        ],
+        "bonusDamage": 5,
+        "bonusPoints": 2
+      },
+      {
+        "id": "full_combo",
+        "sequence": [
+          "jab",
+          "cross",
+          "hook",
+          "uppercut"
+        ],
+        "bonusDamage": 10,
+        "bonusPoints": 4
+      }
+    ]
   },
   "guard": {
     "damageFactor": 0.2,

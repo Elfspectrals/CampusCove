@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { BOX_STEP_DESIGN_SPEED, BoxingAnimState, LOWER_BODY_BONES, footwork, keepsTrack, punchClip } from './boxingAnimLogic.ts'
+import { BOX_STEP_DESIGN_SPEED, BoxingAnimState, LOWER_BODY_BONES, chargeClip, footwork, keepsTrack, punchClip } from './boxingAnimLogic.ts'
 
 test('footwork blends from the bouncing guard into the step as the boxer speeds up, no jump at either end', () => {
   assert.deepEqual(footwork(0), { idle: 1, step: 0, stepTimeScale: 0.7 })
@@ -40,4 +40,20 @@ test('a knockdown goes down, stays down, gets up, and the bout ends on KO or a w
   assert.equal(s.pose({ guard: false, down: false, result: 'lost' }).full, 'KO')
   assert.equal(s.pose({ guard: false, down: false, result: 'lost' }).full, 'none')
   assert.equal(new BoxingAnimState().pose({ guard: false, down: false, result: 'won' }).full, 'Win')
+})
+
+test('a held button shows the wind-up until its punch or its release, and the guard state picks the loop it falls back to', () => {
+  const s = new BoxingAnimState()
+  s.pose({ guard: true, down: false, result: null })
+  assert.equal(s.charge(chargeClip('right'), true), 'UppercutCharge')
+  assert.deepEqual(s.pose({ guard: true, down: false, result: null }), { upper: null, full: 'none' })
+  assert.equal(s.charge('HookCharge', false), null)
+  assert.equal(s.charge('UppercutCharge', false), 'Block')
+  s.charge('HookCharge', true)
+  assert.equal(s.shot(punchClip('hook')), 'Hook')
+  assert.equal(s.charge('HookCharge', false), null)
+})
+
+test('each of the four punches has its clip', () => {
+  assert.deepEqual((['jab', 'cross', 'hook', 'uppercut'] as const).map(punchClip), ['Jab', 'Cross', 'Hook', 'Uppercut'])
 })

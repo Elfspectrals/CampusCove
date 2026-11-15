@@ -4,7 +4,10 @@ import { punchDirection } from '../punch.ts'
 import { readSportRules, worldSportsPassArea } from '../world.ts'
 import {
   type Bout,
+  type Boxer,
   type BoxingRules,
+  HANDS,
+  type Hand,
   PUNCH_KINDS,
   type Point3,
   type PunchKind,
@@ -15,10 +18,14 @@ import {
   dodge,
   forfeitBout,
   getUpPress,
+  newCharges,
   parseBoxingRules,
+  pressHand,
   punch,
+  releaseHand,
   setGuard,
-  startBout
+  startBout,
+  takeQueued
 } from './boxingBout.ts'
 import { ownedGear } from './gear.ts'
 import { type Match, activePlayers, matchPlayer, parseSignupRules } from './signup.ts'
@@ -175,6 +182,8 @@ function tick(room: GameRoom, match: Match, elapsedMs: number): void {
   const now = match.startedAt + elapsedMs
   const before = fight.bout.phase
   advanceBout(fight.bout, now)
+  throwQueued(room, fight, now)
+  sendCharges(room, fight, now)
   if (fight.bout.phase === 'intro') placeAwayFromRing(room, fight, now)
   checkRingExits(room, fight)
   if (fight.bout.phase === 'over') {
@@ -247,15 +256,9 @@ function opponentPlayer(room: GameRoom, fight: Fight, accountId: number): Player
   return other ? playerOfAccount(room, fight.match, other.accountId) : null
 }
 
-export function onBoxingPunch(room: GameRoom, client: GameClient, payload: ClientPayload, now = Date.now()): void {
-  const kind = payload?.kind
-  if (!PUNCH_KINDS.includes(kind as PunchKind)) return
-  const found = fightOf(room, client)
-  if (!found) return
-  const { fight, player } = found
-  const attacker = boxerOf(fight.bout, player.accountId)
+function throwPunch(room: GameRoom, fight: Fight, player: Player, attacker: Boxer, kind: PunchKind, now: number): void {
   const target = opponentPlayer(room, fight, player.accountId)
-  if (!attacker || !target) return
+  if (!target) return
   const dir = punchDirection(player, target)
   const reach = {
     distM: dir ? dir.dist : 0,
@@ -264,11 +267,56 @@ export function onBoxingPunch(room: GameRoom, client: GameClient, payload: Clien
   }
   const defender = boxerOf(fight.bout, target.accountId)
   const healthBefore = defender?.health ?? 0
-  const outcome = punch(fight.bout, attacker, kind as PunchKind, reach, now)
-  if (outcome === 'tired') client.send('boxing_tired', {})
+  const outcome = punch(fight.bout, attacker, kind, reach, now)
+  if (outcome === 'tired') clientOf(room, player.sessionId)?.send('boxing_tired', {})
   if (outcome !== 'landed' && outcome !== 'blocked' && outcome !== 'dodged' && outcome !== 'missed') return
-  sendToHall(room, fight, 'boxing_hit', { sessionId: player.sessionId, targetSessionId: target.sessionId, kind, outcome, damage: Math.max(0, Math.round(healthBefore - (defender?.health ?? 0))) })
+  sendToHall(room, fight, 'boxing_hit', {
+    sessionId: player.sessionId,
+    targetSessionId: target.sessionId,
+    kind,
+    outcome,
+    damage: Math.max(0, Math.round(healthBefore - (defender?.health ?? 0))),
+    combo: attacker.combo,
+    chain: attacker.chain.length
+  })
   sendState(room, fight, now)
+}
+
+function throwQueued(room: GameRoom, fight: Fight, now: number): void {
+  for (const boxer of fight.bout.boxers) {
+    const kind = takeQueued(boxer, now)
+    const player = kind && playerOfAccount(room, fight.match, boxer.accountId)
+    if (kind && player) throwPunch(room, fight, player, boxer, kind, now)
+  }
+}
+
+function sendCharges(room: GameRoom, fight: Fight, now: number): void {
+  for (const { boxer, hand } of newCharges(fight.bout, now)) {
+    const sessionId = sessionOf(fight.match, boxer.accountId)
+    if (sessionId) sendToHall(room, fight, 'boxing_charge', { sessionId, hand, on: true })
+  }
+}
+
+function handOf(payload: ClientPayload): Hand | null {
+  const hand = payload?.hand
+  return HANDS.includes(hand as Hand) ? hand as Hand : null
+}
+
+export function onBoxingPress(room: GameRoom, client: GameClient, payload: ClientPayload, now = Date.now()): void {
+  const hand = handOf(payload)
+  const found = hand && fightOf(room, client)
+  const boxer = found && boxerOf(found.fight.bout, found.player.accountId)
+  if (hand && boxer) pressHand(found.fight.bout, boxer, hand, now)
+}
+
+export function onBoxingRelease(room: GameRoom, client: GameClient, payload: ClientPayload, now = Date.now()): void {
+  const hand = handOf(payload)
+  const found = hand && fightOf(room, client)
+  const boxer = found && boxerOf(found.fight.bout, found.player.accountId)
+  if (!hand || !found || !boxer) return
+  if (boxer.charged[hand]) sendToHall(room, found.fight, 'boxing_charge', { sessionId: found.player.sessionId, hand, on: false })
+  const released = releaseHand(found.fight.bout, boxer, hand, now)
+  if (released && !released.queued) throwPunch(room, found.fight, found.player, boxer, released.kind, now)
 }
 
 export function onBoxingGuard(room: GameRoom, client: GameClient, payload: ClientPayload): void {

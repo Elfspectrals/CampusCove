@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { type BoxingStatePayload, bagInFront, boxerFor, clockLabel, isFighting, parsePunchBags, percentOf, punchKindFor, rockAngle, secondsUntil, serverClock, trianglesBySide } from './boxing.ts'
+import { type BoxingStatePayload, bagInFront, boxerFor, clockLabel, isFighting, handFor, parseHoldMs, parsePunchBags, percentOf, punchKindAfter, rockAngle, secondsUntil, serverClock, trianglesBySide, boundsOfVertices } from './boxing.ts'
 
 const boxer = (sessionId: string, corner: 'red' | 'blue') => ({
   sessionId, name: sessionId, corner, health: 120, maxHealth: 120, endurance: 100, maxEndurance: 100,
@@ -11,13 +11,15 @@ function state(phase: BoxingStatePayload['phase']): BoxingStatePayload {
   return { venue: 'boxing_ring', phase, round: 1, rounds: 3, maxKnockdowns: 3, phaseEndsAt: 70_000, serverNow: 10_000, boxers: [boxer('a', 'red'), boxer('b', 'blue')], result: null }
 }
 
-test('left click is a jab, right click a cross, Shift with either a hook, other buttons nothing', () => {
-  assert.equal(punchKindFor(0, false), 'jab')
-  assert.equal(punchKindFor(2, false), 'cross')
-  assert.equal(punchKindFor(0, true), 'hook')
-  assert.equal(punchKindFor(2, true), 'hook')
-  assert.equal(punchKindFor(1, false), null)
-  assert.equal(punchKindFor(1, true), null)
+test('left and right buttons are the hands; a tap is a jab or a cross, a hold from the rules time a hook or an uppercut', () => {
+  assert.deepEqual([handFor(0), handFor(2), handFor(1)], ['left', 'right', null])
+  assert.equal(punchKindAfter('left', 249, 250), 'jab')
+  assert.equal(punchKindAfter('left', 250, 250), 'hook')
+  assert.equal(punchKindAfter('right', 0, 250), 'cross')
+  assert.equal(punchKindAfter('right', 4000, 250), 'uppercut')
+  assert.equal(parseHoldMs({ hold: { ms: 250 } }), 250)
+  assert.throws(() => parseHoldMs({ hold: { ms: 0 } }), /hold/)
+  assert.throws(() => parseHoldMs({}), /hold/)
 })
 
 test('the round clock runs on the server clock and shows whole seconds, never below zero', () => {
@@ -69,4 +71,11 @@ test('the gloves pair splits into one glove per side by triangle centre, indexed
   assert.deepEqual(trianglesBySide(positions, null, 0), { left: [3, 4, 5], right: [0, 1, 2] })
   assert.deepEqual(trianglesBySide(positions, [3, 4, 5, 0, 1, 2], 0), { left: [3, 4, 5], right: [0, 1, 2] })
   assert.throws(() => trianglesBySide(positions, [0, 1], 0), /whole triangles/)
+})
+
+test('one glove is bounded by its own vertices only, not by the whole pair', () => {
+  const positions = [-3, 0, 0, -2, 1, 0, -1, 0, 2, 1, 0, 0, 2, 3, 0, 3, 0, -1]
+  assert.deepEqual(boundsOfVertices(positions, [3, 4, 5]), { min: [1, 0, -1], max: [3, 3, 0] })
+  assert.deepEqual(boundsOfVertices(positions, [0, 1, 2, 1]), { min: [-3, 0, 0], max: [-1, 1, 2] })
+  assert.throws(() => boundsOfVertices(positions, []), /no vertices/)
 })

@@ -1,9 +1,9 @@
 import { computed, onBeforeUnmount, ref, shallowRef, watch, type ShallowRef } from 'vue'
 import type { Room } from '@colyseus/sdk'
 import * as THREE from 'three'
-import { loadBoxingFpClips } from '../../avatar/boxingAnimator'
-import type { FpBoxingShot } from '../../game/firstPersonArms'
-import { type WornGloves, wearGloves } from '../../game/sports/boxingGloves'
+import { FP_CHARGE_EXIT_S, loadBoxingFpClips } from '../../avatar/boxingAnimator'
+import type { FpBoxingCharge, FpBoxingShot } from '../../game/firstPersonArms'
+import { type WornGloves, wearFpGloves } from '../../game/sports/boxingGloves'
 import { sportRulesUrl } from '../../game/sports/sportsSignup'
 import { matches } from '../../config/keybindings'
 import {
@@ -11,13 +11,18 @@ import {
   bagInFront,
   boxerFor,
   clockLabel,
+  handFor,
+  parseHoldMs,
   parsePunchBags,
   rockAngle,
   type BagSpot,
   type BoxingBagHitPayload,
+  type BoxingCombo,
+  type BoxingHand,
+  type BoxingPunchKind,
   isFighting,
   percentOf,
-  punchKindFor,
+  punchKindAfter,
   secondsUntil,
   serverClock,
   type BoxingDodgedPayload,
@@ -26,6 +31,7 @@ import {
 } from '../../game/sports/boxing'
 
 const RESULT_SHOWN_MS = 8000
+const COMBO_SHOWN_MS = 1400
 const CLOCK_TICK_MS = 250
 
 export interface BoxingDeps {
@@ -37,6 +43,7 @@ export interface BoxingDeps {
   say: (text: string) => void
   tiredText: () => string
   noGlovesText: () => string
+  comboName: (id: BoxingCombo) => string
   myPosition: { x: number; z: number }
   getCamera: () => THREE.Camera | undefined
   getScene: () => THREE.Scene | undefined
@@ -49,11 +56,15 @@ export interface BoxingArms {
   rightHand: () => THREE.Object3D | null
   setBoxing: (clips: THREE.AnimationClip[] | null) => void
   setBoxingBlock: (on: boolean) => void
-  boxingShot: (name: FpBoxingShot) => void
+  boxingShot: (name: FpBoxingShot, fromS?: number) => void
+  boxingCharge: (name: FpBoxingCharge) => void
+  boxingRelax: () => void
 }
 
 const HIT_STOP_S = 0.08
-const FP_SHOT: Record<'jab' | 'cross' | 'hook', FpBoxingShot> = { jab: 'FpJab', cross: 'FpCross', hook: 'FpHook' }
+const FP_SHOT: Record<BoxingPunchKind, FpBoxingShot> = { jab: 'FpJab', cross: 'FpCross', hook: 'FpHook', uppercut: 'FpUppercut' }
+const FP_CHARGE: Record<BoxingHand, FpBoxingCharge> = { left: 'FpHookCharge', right: 'FpUppercutCharge' }
+const FP_START_S: Record<BoxingPunchKind, number> = { jab: 0, cross: 0, hook: FP_CHARGE_EXIT_S.FpHook, uppercut: FP_CHARGE_EXIT_S.FpUppercut }
 
 const BAG_KEY = 'punch_bag'
 const BAG_MATCH_M = 1.5
@@ -69,12 +80,19 @@ export function useBoxing(deps: BoxingDeps) {
   let bags: BagSpot[] = []
   const rocking = new Map<THREE.Object3D, { start: number, rotationX: number }>()
   let rockFrame = 0
+  let holdMs: number | null = null
+  const presses = new Map<BoxingHand, { at: number, charge: ReturnType<typeof setTimeout> | null, fight: boolean }>()
+  const combo = shallowRef<{ id: BoxingCombo, name: string, mine: boolean, damage: number, key: number } | null>(null)
+  let comboTimer: ReturnType<typeof setTimeout> | null = null
   fetch(sportRulesUrl('boxing'))
     .then((res) => {
       if (!res.ok) throw new Error(`${res.url} answered ${res.status}`)
       return res.json()
     })
-    .then((rules: unknown) => (bags = parsePunchBags(rules)))
+    .then((rules: unknown) => {
+      bags = parsePunchBags(rules)
+      holdMs = parseHoldMs(rules)
+    })
     .catch((error: unknown) => console.error('[boxing] punch bags not loaded', error))
 
   const mySessionId = () => deps.gameRoomRef.value?.sessionId ?? null
@@ -109,6 +127,7 @@ export function useBoxing(deps: BoxingDeps) {
         winner: s.boxers.find((b) => b.sessionId !== null && b.sessionId === s.result?.winner)?.name ?? null,
         won: s.result.winner !== null && s.result.winner === mySessionId(),
       },
+      combo: combo.value,
     }
   })
 
@@ -128,16 +147,6 @@ export function useBoxing(deps: BoxingDeps) {
     if (!camera || bags.length === 0) return null
     camera.getWorldDirection(forward)
     return bagInFront(bags, deps.myPosition.x, deps.myPosition.z, forward.x, forward.z)
-  }
-
-  function onBagPointerDown(e: MouseEvent): boolean {
-    const kind = punchKindFor(e.button, e.shiftKey)
-    const bag = kind ? bagAimed() : null
-    if (bag === null) return false
-    deps.arms()?.punch()
-    deps.play('whoosh')
-    send('boxing_bag', { bag, kind })
-    return true
   }
 
   function bagObject(bag: BagSpot): THREE.Object3D | null {
@@ -173,19 +182,64 @@ export function useBoxing(deps: BoxingDeps) {
     if (!rockFrame) rockFrame = requestAnimationFrame(rockStep)
   }
 
+  function pressHand(hand: BoxingHand): boolean {
+    if (holdMs === null) return false
+    const fight = fighting.value
+    if (!fight && bagAimed() === null) return false
+    if (fight && state.value?.phase !== 'round') return true
+    const wait = holdMs
+    releaseTimer(hand)
+    const charge = fight ? setTimeout(() => deps.arms()?.boxingCharge(FP_CHARGE[hand]), wait) : null
+    presses.set(hand, { at: performance.now(), charge, fight })
+    if (fight) send('boxing_press', { hand })
+    return true
+  }
+
+  function releaseTimer(hand: BoxingHand) {
+    const press = presses.get(hand)
+    if (press?.charge) clearTimeout(press.charge)
+  }
+
+  function releaseHand(hand: BoxingHand): boolean {
+    const press = presses.get(hand)
+    if (!press || holdMs === null) return false
+    releaseTimer(hand)
+    presses.delete(hand)
+    const kind = punchKindAfter(hand, performance.now() - press.at, holdMs)
+    deps.play('whoosh')
+    if (press.fight) {
+      send('boxing_release', { hand })
+      deps.arms()?.boxingShot(FP_SHOT[kind], FP_START_S[kind])
+      return true
+    }
+    const bag = bagAimed()
+    deps.arms()?.punch()
+    if (bag !== null) send('boxing_bag', { bag, kind })
+    return true
+  }
+
+  function dropPresses() {
+    for (const [hand, press] of presses) {
+      releaseTimer(hand)
+      if (press.fight) send('boxing_release', { hand })
+    }
+    presses.clear()
+    deps.arms()?.boxingRelax()
+  }
+
   function onPointerDown(e: MouseEvent): boolean {
     if (!deps.pointerLocked()) return false
-    if (!fighting.value) return onBagPointerDown(e)
-    if (me.value?.countEndsAt !== null && me.value?.countEndsAt !== undefined) {
+    if (fighting.value && me.value?.countEndsAt !== null && me.value?.countEndsAt !== undefined) {
       send('boxing_getup')
       return true
     }
-    const kind = punchKindFor(e.button, e.shiftKey)
-    if (!kind) return false
-    deps.arms()?.boxingShot(FP_SHOT[kind])
-    deps.play('whoosh')
-    send('boxing_punch', { kind })
-    return true
+    const hand = handFor(e.button)
+    return hand !== null && pressHand(hand)
+  }
+
+  function onPointerUp(e: MouseEvent) {
+    const hand = handFor(e.button)
+    if (hand) releaseHand(hand)
   }
 
   function onKeyDown(e: KeyboardEvent): boolean {
@@ -195,7 +249,7 @@ export function useBoxing(deps: BoxingDeps) {
       return true
     }
     if (matches('punch', e.code)) {
-      if (!e.repeat) onPointerDown(new MouseEvent('mousedown', { button: 0, shiftKey: e.shiftKey }))
+      if (!e.repeat) onPointerDown(new MouseEvent('mousedown', { button: 0 }))
       return true
     }
     if (!e.repeat && (matches('moveLeft', e.code) || matches('moveRight', e.code))) {
@@ -206,20 +260,26 @@ export function useBoxing(deps: BoxingDeps) {
 
   function onKeyUp(e: KeyboardEvent) {
     if (matches('cook', e.code)) setGuard(false)
+    if (matches('punch', e.code)) releaseHand('left')
   }
 
   function onBlur() {
     setGuard(false)
+    dropPresses()
   }
 
   window.addEventListener('keyup', onKeyUp)
+  window.addEventListener('mouseup', onPointerUp)
   window.addEventListener('blur', onBlur)
   onBeforeUnmount(() => {
     clearInterval(clock)
     myGloves?.dispose()
     if (rockFrame) cancelAnimationFrame(rockFrame)
     if (hideTimer) clearTimeout(hideTimer)
+    if (comboTimer) clearTimeout(comboTimer)
+    for (const hand of presses.keys()) releaseTimer(hand)
     window.removeEventListener('keyup', onKeyUp)
+    window.removeEventListener('mouseup', onPointerUp)
     window.removeEventListener('blur', onBlur)
   })
 
@@ -227,7 +287,7 @@ export function useBoxing(deps: BoxingDeps) {
   watch(fighting, (on) => {
     myGloves?.dispose()
     const arms = deps.arms()
-    myGloves = on && arms ? wearGloves({ left: arms.leftHand(), right: arms.rightHand() }) : null
+    myGloves = on && arms ? wearFpGloves({ left: arms.leftHand(), right: arms.rightHand() }) : null
     if (!on) {
       arms?.setBoxing(null)
       return
@@ -242,8 +302,17 @@ export function useBoxing(deps: BoxingDeps) {
   watch(() => state.value?.phase, (phase, before) => {
     if (phase === 'round' && before !== 'round') deps.play('boxing_bell')
     if (phase === 'over' && before !== 'over') deps.play('boxing_bell')
-    if (phase !== 'round') setGuard(false)
+    if (phase !== 'round') {
+      setGuard(false)
+      dropPresses()
+    }
   })
+
+  function showCombo(id: BoxingCombo, mine: boolean, damage: number) {
+    if (comboTimer) clearTimeout(comboTimer)
+    combo.value = { id, name: deps.comboName(id), mine, damage, key: (combo.value?.key ?? 0) + 1 }
+    comboTimer = setTimeout(() => (combo.value = null), COMBO_SHOWN_MS)
+  }
 
   const handlers = {
     onState(data: BoxingStatePayload) {
@@ -254,6 +323,7 @@ export function useBoxing(deps: BoxingDeps) {
       if (data.phase === 'over') hideTimer = setTimeout(() => (state.value = null), RESULT_SHOWN_MS)
     },
     onHit(data: BoxingHitPayload, mySession: string) {
+      if (data.combo && (data.outcome === 'landed' || data.outcome === 'blocked')) showCombo(data.combo, data.sessionId === mySession, data.damage)
       if (data.outcome === 'blocked') deps.play('glove_block')
       if (data.outcome !== 'landed' || data.targetSessionId !== mySession) return
       deps.play('glove_hit')
@@ -279,6 +349,8 @@ export function useBoxing(deps: BoxingDeps) {
     onRoomLeft() {
       state.value = null
       guarding = false
+      for (const hand of presses.keys()) releaseTimer(hand)
+      presses.clear()
     },
   }
 

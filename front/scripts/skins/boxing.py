@@ -205,7 +205,6 @@ def jab():
         (0, {}),
         (2, JAB_LOAD),
         (JAB_IMPACT, JAB_HIT),
-        (7, _with(JAB_HIT, **{"L_y": -0.52, "L_z": 1.53})),
         (JAB_FRAMES, {}),
     ])
 
@@ -226,30 +225,79 @@ def cross():
         (3, CROSS_LOAD),
         (CROSS_IMPACT, CROSS_HIT),
         (10, _with(CROSS_HIT, **{"R_y": -0.58, "spine_z": 11, "chest_z": 20})),
-        (17, _with(GUARD_POSE, **{"spine_z": 0, "chest_z": -4, "neck_z": 4, "head_z": 15, "R_y": -0.26})),
         (CROSS_FRAMES, {}),
     ])
 
 
 HOOK_FRAMES = 33
 HOOK_IMPACT = 11
+HOOK_EXIT = 5
 HOOK_LOAD = {**_torso((3, 0, 0), (5, 0, -2), (0, 0, 6), (8, 0, 11)),
-             **_arm("L", 0.25, -0.24, 1.48, 1.0, 0.2, -0.3, pro=-4),
+             **_arm("L", 0.25, -0.24, 1.44, 1.0, 0.2, -0.6, pro=-4, up=14),
              **_arm("R", -0.09, -0.19, 1.55, -0.1, 0.2, -1)}
-HOOK_HIT = {**_torso((5, 0, -10), (7, 0, -14), (0, 0, 10), (8, 0, 29)),
-            **_arm("L", 0.0, -0.46, 1.50, 0.8, -0.5, -0.25, pro=10, up=6, w=1),
+HOOK_HIT = {**_torso((5, -8, -24), (7, -6, -32), (0, 4, 18), (8, 6, 40)),
+            **_arm("L", 0.0, -0.46, 1.48, 0.8, -0.5, 0.0, pro=16, up=20, w=1),
             **_arm("R", -0.08, -0.18, 1.56, -0.1, 0.2, -1)}
+HOOK_FOLLOW = _with(HOOK_HIT, **{"L_x": -0.08, "L_y": -0.40, "L_z": 1.49, "spine_z": -27, "chest_z": -36, "head_z": 42})
 
 
 def hook():
     return _upper_clip(HOOK_FRAMES, [
         (0, {}),
-        (5, HOOK_LOAD),
+        (HOOK_EXIT, HOOK_LOAD),
         (HOOK_IMPACT, HOOK_HIT),
-        (15, _with(HOOK_HIT, **{"L_x": -0.08, "L_y": -0.40, "spine_z": -13, "chest_z": -18, "head_z": 35})),
-        (25, _with(GUARD_POSE, **{"chest_z": -13, "head_z": 26, "L_x": 0.14, "L_y": -0.26})),
+        (15, HOOK_FOLLOW),
         (HOOK_FRAMES, {}),
     ])
+
+
+UPPERCUT_FRAMES = 28
+UPPERCUT_EXIT = 4
+UPPERCUT_IMPACT = 9
+UPPERCUT_DIP = -0.045
+UPPERCUT_LOAD = {**_torso((6, -5, -9), (6, -4, -12), (0, 2, 8), (8, 3, 26)),
+                 **_arm("L", 0.17, -0.22, 1.57, 0.6, 0.2, -1),
+                 **_arm("R", -0.19, -0.30, 1.17, -0.3, 1.0, -0.5, pro=-4, up=0, w=1)}
+UPPERCUT_HIT = {**_torso((2, 3, 10), (0, 2, 18), (0, 0, -4), (6, 0, -9)),
+                **_arm("L", 0.11, -0.18, 1.55, 0.1, 0.2, -1),
+                **_arm("R", -0.03, -0.46, 1.45, -0.4, 0.5, -1.0, pro=14, up=4, w=1)}
+UPPERCUT_FOLLOW = _with(UPPERCUT_HIT, **{"R_y": -0.44, "R_z": 1.50, "spine_z": 12, "chest_z": 21})
+
+
+def _uppercut_body(upper_q, dz, heel):
+    def pose(foot):
+        q = idle_lower(0.0, foot)
+        q["hips.z"] += dz
+        x, y0 = BOX_FEET[".R"]
+        y, z = _on_ball(y0, heel, foot)
+        q.update({"R.ax": x, "R.ay": y, "R.az": z, "R.ap": heel})
+        return {**q, **guard_at(0.0), **upper_q}
+    return pose
+
+
+def uppercut():
+    return _full_clip(UPPERCUT_FRAMES, [
+        (0, _uppercut_body({}, 0.0, 0.0)),
+        (UPPERCUT_EXIT, _uppercut_body(UPPERCUT_LOAD, UPPERCUT_DIP, 0.0)),
+        (UPPERCUT_IMPACT, _uppercut_body(UPPERCUT_HIT, 0.0, 12.0)),
+        (11, _uppercut_body(UPPERCUT_FOLLOW, 0.01, 14.0)),
+        (UPPERCUT_FRAMES, _uppercut_body({}, 0.0, 0.0)),
+    ])
+
+
+def charge(load, side, dip=0.0):
+    def f(ph, P):
+        low = idle_lower(ph, _foot(P))
+        low["hips.z"] += dip
+        lower(P, low)
+        q = {**guard_at(0.0), **load}
+        bounce, rest = guard_at(ph), guard_at(0.0)
+        for key in bounce:
+            q[key] += bounce[key] - rest[key]
+        q[side + ".x"] += 0.003 * math.sin(12 * math.pi * ph)
+        q[side + ".z"] += 0.002 * math.sin(14 * math.pi * ph)
+        upper(P, q)
+    return f
 
 
 DODGE_FRAMES = 12
@@ -432,6 +480,9 @@ def boxing_clips():
         "Jab": (JAB_FRAMES, jab()),
         "Cross": (CROSS_FRAMES, cross()),
         "Hook": (HOOK_FRAMES, hook()),
+        "Uppercut": (UPPERCUT_FRAMES, uppercut()),
+        "HookCharge": (30, charge(HOOK_LOAD, "L")),
+        "UppercutCharge": (30, charge(UPPERCUT_LOAD, "R", UPPERCUT_DIP)),
         "DodgeL": (DODGE_FRAMES, dodge(1)),
         "DodgeR": (DODGE_FRAMES, dodge(-1)),
         "HitReact": (HIT_FRAMES, hit_react()),

@@ -30,7 +30,7 @@ import { createHitFlash } from '../../game/hitFlash'
 import { advanceHitStop, idleHitStop, scheduleHitStop, type HitStop } from '../../game/punchFeel'
 import { createRacePint, type RacePint } from '../../game/pub/racePint'
 import { seatedAvatarFeetY } from '../../game/pub/seats'
-import type { BoxerPose, UpperShot } from '../../avatar/boxingAnimLogic'
+import type { BoxerPose, UpperCharge, UpperShot } from '../../avatar/boxingAnimLogic'
 import { type RemoteBoxer, dressBoxer } from '../../game/sports/remoteBoxer'
 import { createRemoteHeldTool, type RemoteHeldTool } from '../../game/remoteHeldTool'
 import type { SfxName } from '../../game/sfx'
@@ -385,6 +385,10 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     avatars.get(sessionId)?.boxer?.shot(clip)
   }
 
+  function boxerCharge(sessionId: string, clip: UpperCharge, on: boolean) {
+    avatars.get(sessionId)?.boxer?.charge(clip, on)
+  }
+
   function boxerPose(sessionId: string, pose: BoxerPose) {
     avatars.get(sessionId)?.boxer?.pose(pose)
   }
@@ -550,5 +554,5 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     }
   }
 
-  return { upsert, updateAppearance, setTarget, setSeated, setPicking, setHeldTool, setBoxer, boxerShot, boxerPose, setRacePint, setBadges, pseudoOf, positionOf, setVoiceState, setWantedStars, players, accountOf, showAction, showChat, showPunch, showHit, remove, clear, tick }
+  return { upsert, updateAppearance, setTarget, setSeated, setPicking, setHeldTool, setBoxer, boxerShot, boxerCharge, boxerPose, setRacePint, setBadges, pseudoOf, positionOf, setVoiceState, setWantedStars, players, accountOf, showAction, showChat, showPunch, showHit, remove, clear, tick }
 }
