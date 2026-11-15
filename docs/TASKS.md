@@ -77,6 +77,7 @@ Every task lives in `App\Support\TaskCatalog`: a key, the counter it reads and i
 | `full_combo_hard` | `full_combo_hard` | 1 / 10 / 50 |
 | `routes_topped` | `climb_lines_topped` | 10 / 50 / 200 |
 | `black_route` | `black_lines_topped` | 1 / 10 / 30 |
+| `boxer` | `boxing_wins` | 1 / 5 / 15 |
 
 ## Notification
 

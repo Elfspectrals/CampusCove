@@ -17,7 +17,8 @@
     "COS_WEAR_TOP_TRACK_JACKET": 260,
     "COS_WEAR_TOP_TRACKSUIT": 240,
     "gear_running_spikes": 260,
-    "gear_tennis_racket": 180
+    "gear_tennis_racket": 180,
+    "gear_boxing_gloves": 150
   },
   "buyers": {}
 }

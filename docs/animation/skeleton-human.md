@@ -137,6 +137,56 @@ thumb (local Z, sign -1 on R and +1 on L). For the thumb, `Thumb1` flex crosses 
 on recovery; Eat and Drink hold the grip on a 3 cm handle for the whole loop; Pick opens (16-20), grabs (26-74); UseKey pinches the key
 (8-20); UseDoor hooks the handle (7-10); Hold keeps the grip and closes it 5 % towards the fist on each breath, so its finger channels are not constant and survive the export. The tennis clips keep the grip and squeeze it 30 % towards the fist at contact; the serve's left hand holds the ball (GRAB) and opens at the toss.
 
+## Boxing clips
+
+Shipped apart from `wear/base` in two clips-only GLBs (no mesh, no Draco), loaded onto the existing rigs by bone name:
+
+- `front/public/assets/animations/boxing/clips.glb`: the 21-bone rig (`Armature_boxing`), built by
+  `front/scripts/skins/boxing.py` through `blender -b --factory-startup --python front/scripts/skins/run_boxing.py`.
+- `front/public/assets/animations/boxing/fp_clips.glb`: the first-person arms nodes `Arm_{R,L}`, `Hand_{R,L}`,
+  `HandRig_{R,L}` and the 16 hand bones per side, built by `map-src/CampusCove/build_fp_boxing_clips.py` (it runs the
+  helpers of `build_fp_arms.py` on the bare arms, keeps nothing but the animated nodes, fists closed on every frame).
+
+Two layers at runtime: the lower layer keeps the Hips, UpperLeg, LowerLeg, Foot and Toe tracks of BoxIdle / BoxStep
+(weight blend by speed), the upper layer keeps Spine, Chest, Neck, Head, Shoulder, UpperArm, LowerArm and Hand of the
+upper clips. Every clip is authored full body on the same orthodox stance (left foot forward, Hips −10 cm, yawed −15°,
+pitched 3°), so a layer read alone still looks right. Hands are placed by a two-bone arm IK (`arm_ik`), targets in
+the chest frame for guard poses and in armature space for punch contacts.
+
+| Clip | Frames | Seconds | Loop | Notes |
+|---|---|---|---|---|
+| BoxIdle | 30 | 1.0 | yes | bounce at 2 Hz, lowest at frame 0, heels lift 7° at the top |
+| BoxStep | 30 | 1.0 | yes | forward skip-shuffle, 2 steps per cycle, design speed 2.5 m/s, stance feet move back at exactly 2.5 m/s (`_foot_track`), lowest at frame 0 like BoxIdle; feet leave the canvas up to 8 cm |
+| Guard | 30 | 1.0 | yes | fists at the chin, elbows in, same bounce phase as BoxIdle |
+| Block | 30 | 1.0 | yes | forearms in front of the face |
+| Jab | 13 | 0.433 | one-shot | left, impact frame 5 (0.167 s) |
+| Cross | 24 | 0.8 | one-shot | right with torso turn, impact frame 8 (0.267 s) |
+| Hook | 33 | 1.1 | one-shot | left, horizontal forearm, impact frame 11 (0.367 s) |
+| DodgeL / DodgeR | 12 | 0.4 | one-shot | torso slip to the character's left / right, held frames 4-7 |
+| HitReact | 12 | 0.4 | one-shot | head snaps back at frame 3 |
+| Knockdown | 30 | 1.0 | one-shot | buckle, sit, lie on the back; last frame = Down frame 0 |
+| Down | 60 | 2.0 | yes | lying, breathing |
+| GetUp | 36 | 1.2 | one-shot | sit, crouch, rise; last frame = BoxIdle frame 0 |
+| KO | 42 | 1.4 | one-shot | falls straight back, small bounce at frame 37, ends lying (clamp) |
+| Win | 60 | 2.0 | yes | arms overhead, pumps and heel bounce at 2 Hz |
+| FpGuard | 30 | 1.0 | yes | fists up either side of the view |
+| FpBlock | 30 | 1.0 | yes | fists in front of the face |
+| FpJab | 13 | 0.433 | one-shot | left, contact frame 5 |
+| FpCross | 24 | 0.8 | one-shot | right, contact frame 8 |
+| FpHook | 33 | 1.1 | one-shot | left, contact frame 11 |
+| FpHit | 9 | 0.3 | one-shot | both arms shaken |
+
+Every upper one-shot starts and ends on Guard frame 0 and every Fp one-shot on FpGuard frame 0 (within 0.05°).
+First-person keys interpolate the fist target, forearm and back-of-hand directions and solve `fist_at` on each
+frame, instead of interpolating Euler offsets, which spun the arm between distant poses.
+
+Signs measured on the boxing renders (2026-11-14): `Hips` `rz` negative turns the character to its right; `Hips`
+`rx` −88° lays the body on its back with the legs forward; `Spine` `ry` positive leans the torso to the character's
+left. Derived from the axes, not rendered alone: `Shoulder.L` `rz` negative brings the left shoulder forward and `ry`
+negative raises it (mirrored on `.R`). Arm IK: the elbow
+goes towards the pole vector, the hinge is `dn × pole` so the arm keeps its natural twist. The left hook raised a
+skin stretch at the left armpit when the elbow sat level with the shoulder; the pole is lowered (−0.25) to limit it.
+
 ## Gates
 
 - `cd front && npm run wear:check`: base has Idle, Walk, Run, under 8000 tris, feet within 5 cm of y = 0; wear

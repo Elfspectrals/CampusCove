@@ -5,7 +5,7 @@ import { CITY_MAX_PLAYERS, LIVEKIT, PORT } from './src/config.ts'
 import { CityRoom } from './src/CityRoom.ts'
 import { internalRoutes } from './src/internal.ts'
 import { loadGymVenues } from './src/sports/gymVenues.ts'
-import { assertVenueZones, loadDanceVenue } from './src/sports/index.ts'
+import { assertVenueZones, loadDanceVenue, registerBoxing } from './src/sports/index.ts'
 import { loadAthleticsVenues } from './src/sports/athleticsVenues.ts'
 import { loadClimbing } from './src/sports/climbing.ts'
 import { loadAtms, loadMarketStalls, loadSportsPassDesk, loadWorld, loadZoneBuyers } from './src/world.ts'
@@ -19,6 +19,7 @@ async function boot() {
   await loadGymVenues()
   await loadAthleticsVenues()
   await loadDanceVenue()
+  await registerBoxing()
   assertVenueZones()
   await loadClimbing()
   const gameServer = new Server({ transport: new WebSocketTransport() })

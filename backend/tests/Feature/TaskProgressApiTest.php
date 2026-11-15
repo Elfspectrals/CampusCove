@@ -226,6 +226,7 @@ class TaskProgressApiTest extends TestCase
                 ['task' => 'full_combo_hard', 'value' => 0, 'tiers' => [1, 10, 50], 'reached' => []],
                 ['task' => 'routes_topped', 'value' => 0, 'tiers' => [10, 50, 200], 'reached' => []],
                 ['task' => 'black_route', 'value' => 0, 'tiers' => [1, 10, 30], 'reached' => []],
+                ['task' => 'boxer', 'value' => 0, 'tiers' => [1, 5, 15], 'reached' => []],
             ]]);
     }
 

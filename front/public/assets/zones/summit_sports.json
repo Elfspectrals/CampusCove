@@ -231,6 +231,26 @@
       ]
     },
     {
+      "id": "summit_sports_boxing_gloves",
+      "kind": "item",
+      "key": "boxing_gloves",
+      "code": "gear_boxing_gloves",
+      "forSale": true,
+      "price": 150,
+      "position": [
+        -277.0,
+        1.34,
+        82.905
+      ],
+      "yaw": 0.0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Red leather boxing gloves. Needed to fight in the ring of the Cove Boxing Club."
+    },
+    {
       "id": "summit_sports_top_track_jacket",
       "kind": "mannequin",
       "position": [

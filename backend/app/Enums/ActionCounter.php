@@ -34,4 +34,5 @@ enum ActionCounter: string
     case FullComboHard = 'full_combo_hard';
     case ClimbLinesTopped = 'climb_lines_topped';
     case BlackLinesTopped = 'black_lines_topped';
+    case BoxingWins = 'boxing_wins';
 }

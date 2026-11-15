@@ -37,6 +37,7 @@ final class TaskCatalog
             'full_combo_hard' => ['counter' => ActionCounter::FullComboHard, 'tiers' => [1, 10, 50]],
             'routes_topped' => ['counter' => ActionCounter::ClimbLinesTopped, 'tiers' => [10, 50, 200]],
             'black_route' => ['counter' => ActionCounter::BlackLinesTopped, 'tiers' => [1, 10, 30]],
+            'boxer' => ['counter' => ActionCounter::BoxingWins, 'tiers' => [1, 5, 15]],
         ];
     }
 

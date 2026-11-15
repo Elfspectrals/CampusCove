@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\RunningService;
+use App\Services\BoxingWinService;
 use App\Services\SportsBoardService;
 use App\Services\SportsGearService;
 use App\Services\SportsMatchService;
@@ -23,6 +24,7 @@ class SportsController extends Controller
         private readonly RunningService $running,
         private readonly SportsBoardService $boards,
         private readonly TennisTaskService $tennisTasks,
+        private readonly BoxingWinService $boxingWins,
     ) {}
 
     public function pass(Request $request): JsonResponse
@@ -91,6 +93,9 @@ class SportsController extends Controller
             }
             if ($match['recorded'] && $match['countsForTasks'] && $validated['sport'] === 'tennis') {
                 $this->tennisTasks->matchCounted($validated['settings'], $players);
+            }
+            if ($match['recorded'] && $match['countsForTasks']) {
+                $this->boxingWins->count($validated['sport'], $validated['endedAt'], $players);
             }
 
             return $match;

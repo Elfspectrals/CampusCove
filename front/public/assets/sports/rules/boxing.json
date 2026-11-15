@@ -1,7 +1,7 @@
 {
   "version": 1,
   "sport": "boxing",
-  "status": "placeholder",
+  "status": "ready",
   "zone": "sports_boxing",
   "coachId": "boxing_coach",
   "signup": {
@@ -19,37 +19,115 @@
     ]
   },
   "ring": {
-    "centre": null,
+    "centre": {
+      "x": -383,
+      "y": 1.1,
+      "z": -229.6
+    },
     "sizeM": 6.1,
-    "ropes": null
+    "halfM": 3.05,
+    "ropes": 4
+  },
+  "coach": {
+    "x": -387,
+    "z": -233.8
+  },
+  "corners": {
+    "red": {
+      "x": -380.55,
+      "y": 1.1,
+      "z": -232.05
+    },
+    "blue": {
+      "x": -385.45,
+      "y": 1.1,
+      "z": -227.15
+    }
+  },
+  "exits": {
+    "red": {
+      "x": -388.45,
+      "y": 0.2,
+      "z": -230.6
+    },
+    "blue": {
+      "x": -388.45,
+      "y": 0.2,
+      "z": -228
+    }
   },
   "roundsChoices": [
     1,
     3,
     5
   ],
+  "introSec": 5,
   "roundSec": 60,
   "restSec": 20,
-  "health": null,
-  "endurance": null,
+  "health": 120,
+  "restHealth": 20,
+  "endurance": 100,
+  "enduranceRegenPerSec": 12,
+  "lowEndurance": 25,
+  "lowEnduranceSlowdown": 1.5,
   "punches": {
-    "jab": null,
-    "cross": null,
-    "hook": null
+    "jab": {
+      "damage": 5,
+      "enduranceCost": 6,
+      "cooldownMs": 450,
+      "reachM": 1.7,
+      "points": 1
+    },
+    "cross": {
+      "damage": 9,
+      "enduranceCost": 11,
+      "cooldownMs": 800,
+      "reachM": 1.9,
+      "points": 2
+    },
+    "hook": {
+      "damage": 14,
+      "enduranceCost": 18,
+      "cooldownMs": 1150,
+      "reachM": 1.5,
+      "points": 3
+    }
   },
   "guard": {
-    "damageFactor": null,
-    "drainPerSec": null
+    "damageFactor": 0.2,
+    "drainPerSec": 10
   },
   "dodge": {
-    "cooldownMs": null
+    "cooldownMs": 1000,
+    "windowMs": 400,
+    "enduranceCost": 8
   },
   "knockdown": {
     "countSec": 10,
     "maxPerFight": 3,
-    "getUpPerRound": 1
+    "getUpPerRound": 1,
+    "getUpPresses": 12,
+    "getUpHealth": 50,
+    "pressGapMs": 80
   },
-  "punchBags": null,
+  "hit": {
+    "facingCos": 0.3,
+    "heightM": 1
+  },
+  "punchBags": [
+    {
+      "x": -386.25,
+      "z": -221.8
+    },
+    {
+      "x": -382.45,
+      "z": -221.8
+    },
+    {
+      "x": -378.65,
+      "z": -221.8
+    }
+  ],
   "minPlayers": 2,
   "maxPlayers": 2,
   "rejoinGraceSec": 30,

@@ -123,6 +123,7 @@ interface AvatarAnimState {
   racePose: RacePoseClip | null
   climbPose: AvatarClimbPose
   climbMove: string | null
+  override?: ((dt: number, speed: number) => void) | null
 }
 
 const CROSSFADE_S = 0.22
@@ -299,7 +300,12 @@ function playClip(state: AvatarAnimState, name: string, timeScale: number): void
 export function updateAvatarAnimation(root: THREE.Object3D, dt: number, speed: number): void {
   const state = animStateByRoot.get(root)
   if (!state) return
-  if (state.climbMove) {
+  if (state.override) {
+    state.current?.fadeOut(CROSSFADE_S)
+    state.current = null
+    state.oneShot = null
+    state.override(clampDt(dt), speed)
+  } else if (state.climbMove) {
     playClip(state, state.climbMove, 1)
   } else if (state.climbPose && state.actions.has(CLIMB_POSE_CLIPS[state.climbPose])) {
     playClip(state, CLIMB_POSE_CLIPS[state.climbPose], 1)
@@ -314,6 +320,15 @@ export function updateAvatarAnimation(root: THREE.Object3D, dt: number, speed: n
     if (state.oneShot === null) playClip(state, pose ?? (state.dribbling && clip !== 'Idle' ? DRIBBLE_CLIP : state.tennis && clip === 'Idle' ? TENNIS_READY_CLIP : clip), pose ? 1 : timeScale)
   }
   state.mixer.update(clampDt(dt))
+}
+
+export function avatarMixer(root: THREE.Object3D): THREE.AnimationMixer | null {
+  return animStateByRoot.get(root)?.mixer ?? null
+}
+
+export function setAvatarAnimationOverride(root: THREE.Object3D, override: ((dt: number, speed: number) => void) | null): void {
+  const state = animStateByRoot.get(root)
+  if (state) state.override = override
 }
 
 /** Stop and forget an instance's mixer (call before disposing the avatar). */

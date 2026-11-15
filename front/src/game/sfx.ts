@@ -50,6 +50,10 @@ const SOUNDS = {
   tennis_bounce: { urls: ['/assets/sfx/tennis/bounce.mp3'], volume: 0.8, ...TENNIS_RANGE },
   tennis_net: { urls: ['/assets/sfx/tennis/net.mp3'], volume: 0.8 },
   tennis_call: { urls: ['/assets/sfx/tennis/call.mp3'], volume: 0.7 },
+  boxing_bell: { urls: ['/assets/sfx/boxing/bell.mp3'], volume: 0.8 },
+  glove_hit: { urls: ['/assets/sfx/boxing/glove_hit.mp3'], volume: 0.9 },
+  glove_block: { urls: ['/assets/sfx/boxing/glove_block.mp3'], volume: 0.7 },
+  bag_hit: { urls: ['/assets/sfx/boxing/bag_hit.mp3'], volume: 0.8 },
 } satisfies Record<string, SoundDef>
 
 export type SfxName = keyof typeof SOUNDS

@@ -30,6 +30,8 @@ import { createHitFlash } from '../../game/hitFlash'
 import { advanceHitStop, idleHitStop, scheduleHitStop, type HitStop } from '../../game/punchFeel'
 import { createRacePint, type RacePint } from '../../game/pub/racePint'
 import { seatedAvatarFeetY } from '../../game/pub/seats'
+import type { BoxerPose, UpperShot } from '../../avatar/boxingAnimLogic'
+import { type RemoteBoxer, dressBoxer } from '../../game/sports/remoteBoxer'
 import { createRemoteHeldTool, type RemoteHeldTool } from '../../game/remoteHeldTool'
 import type { SfxName } from '../../game/sfx'
 import type { RemoteUserPayload } from '../../types/gameRealtime'
@@ -70,6 +72,7 @@ interface RemoteAvatar {
   racePint: RacePint | null
   raceProgress: number
   heldTool: RemoteHeldTool | null
+  boxer: RemoteBoxer | null
 }
 
 /** Where a seated avatar rests: seat top and sitting direction (camera yaw convention). */
@@ -198,6 +201,7 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     entry.nameTag.dispose()
     entry.voiceIcon.dispose()
     entry.chatBubble?.dispose()
+    entry.boxer?.dispose()
     disposeObject3D(entry.group)
     avatars.delete(sessionId)
     if (sessionByUserId.get(entry.userId) === sessionId) sessionByUserId.delete(entry.userId)
@@ -289,6 +293,7 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
       racePint: null,
       raceProgress: 0,
       heldTool: data.heldTool ? createRemoteHeldTool(group, data.heldTool) : null,
+      boxer: null,
     })
     sessionByUserId.set(data.id, sessionId)
     if (seat) applySeat(avatars.get(sessionId)!)
@@ -339,9 +344,11 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     const racePint = latest.racePint ? createRacePint(group) : null
     racePint?.setProgress(latest.raceProgress)
     const heldTool = latest.heldTool ? createRemoteHeldTool(group, latest.heldTool.code) : null
+    latest.boxer?.dispose()
+    const boxer = latest.boxer ? dressBoxer(group) : null
     const nameTag = createNameTag(group, latest.pseudo, badgeIconPaths(latest.badges), wantedStarsBySession.get(sessionId) ?? 0)
     const voiceIcon = createVoiceIcon(group)
-    const rebuilt = { ...latest, group, nameTag, voiceIcon, chatBubble: null, outfit, punchOffsetX: 0, punchOffsetZ: 0, racePint, heldTool }
+    const rebuilt = { ...latest, group, nameTag, voiceIcon, chatBubble: null, outfit, punchOffsetX: 0, punchOffsetZ: 0, racePint, heldTool, boxer }
     avatars.set(sessionId, rebuilt)
     applySeat(rebuilt)
   }
@@ -403,6 +410,21 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     if (!entry || (entry.heldTool?.code ?? null) === code) return
     entry.heldTool?.dispose()
     entry.heldTool = code ? createRemoteHeldTool(entry.group, code) : null
+  }
+
+  function setBoxer(sessionId: string, on: boolean) {
+    const entry = avatars.get(sessionId)
+    if (!entry || (entry.boxer !== null) === on) return
+    entry.boxer?.dispose()
+    entry.boxer = on ? dressBoxer(entry.group) : null
+  }
+
+  function boxerShot(sessionId: string, clip: UpperShot) {
+    avatars.get(sessionId)?.boxer?.shot(clip)
+  }
+
+  function boxerPose(sessionId: string, pose: BoxerPose) {
+    avatars.get(sessionId)?.boxer?.pose(pose)
   }
 
   function setVoiceState(sessionId: string, state: VoiceIconState): void {
@@ -519,7 +541,7 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     deps.playSoundOn('whoosh', entry.group, 0)
   }
 
-  function showHit(sessionId: string, dirX: number, dirZ: number, damage: number, timing: { delay: number; hitStop: number }) {
+  function showHit(sessionId: string, dirX: number, dirZ: number, damage: number, timing: { delay: number; hitStop: number }, sound: SfxName = 'impact') {
     const entry = avatars.get(sessionId)
     if (!entry) return
     startRecoil(entry.punchPose, dirX, dirZ, timing.delay)
@@ -527,7 +549,7 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     impacts.push(createPunchImpact(entry.group, dirX, dirZ, timing.delay))
     flashes.push(createHitFlash(entry.group, timing.delay))
     damageNumbers.push(createDamageNumber(entry.group, damage, timing.delay))
-    deps.playSoundOn('impact', entry.group, timing.delay)
+    deps.playSoundOn(sound, entry.group, timing.delay)
   }
 
   function endFlashOf(group: THREE.Object3D) {
@@ -603,5 +625,5 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     }
   }
 
-  return { upsert, updateAppearance, setTarget, setSeated, setPicking, setRacePose, setClimbAnimation, setTennis, tennisStroke, setDancing, danceMove, stumble, setHeldTool, setRacePint, setBadges, pseudoOf, positionOf, avatarOf, playSportsMove, setDribbling, setTopOverride, setVoiceState, setWantedStars, players, accountOf, showAction, showChat, showPunch, showHit, remove, clear, tick }
+  return { upsert, updateAppearance, setTarget, setSeated, setPicking, setRacePose, setClimbAnimation, setTennis, tennisStroke, setDancing, danceMove, stumble, setHeldTool, setBoxer, boxerShot, boxerPose, setRacePint, setBadges, pseudoOf, positionOf, avatarOf, playSportsMove, setDribbling, setTopOverride, setVoiceState, setWantedStars, players, accountOf, showAction, showChat, showPunch, showHit, remove, clear, tick }
 }

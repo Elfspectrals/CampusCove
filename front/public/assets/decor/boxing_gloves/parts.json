@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "materials": {
+    "DC_BoxingGloves": {
+      "mask": "parts_DC_BoxingGloves.png",
+      "parts": [
+        {
+          "id": "main",
+          "label": "Main",
+          "color": "#e2d2d2"
+        },
+        {
+          "id": "accent",
+          "label": "Accent",
+          "color": "#db716d"
+        },
+        {
+          "id": "detail",
+          "label": "Detail",
+          "color": "#863b3a"
+        }
+      ]
+    }
+  }
+}
