@@ -164,6 +164,7 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
         Route::post('/sports/gym/tasks', [GymTaskController::class, 'store']);
         Route::post('/sports/dance/runs', [DanceController::class, 'recordRuns']);
         Route::post('/sports/petanque/tally', [PetanqueController::class, 'tally']);
+        Route::post('/sports/dives', [SportsController::class, 'recordDive']);
         Route::middleware('admin')->prefix('admin/game')->group(function () {
             Route::get('/items', [AdminGameController::class, 'items']);
             Route::get('/wallets', [AdminGameController::class, 'wallets']);

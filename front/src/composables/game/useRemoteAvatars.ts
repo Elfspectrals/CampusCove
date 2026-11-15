@@ -5,7 +5,7 @@ import {
   type CosmeticColors,
 } from '../../api/characterCosmetics'
 import { buildCompositeAvatar, disposeObject3D } from '../../avatar/compositeAvatar'
-import { setAvatarCrouching, setAvatarPetanque, type PetanqueClip, markAvatarSkatePush, playAvatarSkateMove, type AvatarSkateMove, setAvatarSkating, playAvatarClimbMove, setAvatarClimbPose, type SportsMoveClip, type TennisStroke, playAvatarSportsMove, playAvatarTennisStroke, setAvatarDanceMove, setAvatarDancing, setAvatarDribbling, setAvatarEating, setAvatarPicking, setAvatarRacePose, setAvatarSeated, setAvatarStumbling, setAvatarTennis, updateAvatarAnimation, type RacePose, type AvatarClimbMove, type AvatarClimbPose } from '../../avatar/glbCharacter'
+import { playAvatarPoolClip, setAvatarSwimming, type PoolClip, setAvatarCrouching, setAvatarPetanque, type PetanqueClip, markAvatarSkatePush, playAvatarSkateMove, type AvatarSkateMove, setAvatarSkating, playAvatarClimbMove, setAvatarClimbPose, type SportsMoveClip, type TennisStroke, playAvatarSportsMove, playAvatarTennisStroke, setAvatarDanceMove, setAvatarDancing, setAvatarDribbling, setAvatarEating, setAvatarPicking, setAvatarRacePose, setAvatarSeated, setAvatarStumbling, setAvatarTennis, updateAvatarAnimation, type RacePose, type AvatarClimbMove, type AvatarClimbPose } from '../../avatar/glbCharacter'
 import { parseCharacterLook, type CharacterLook } from '../../avatar/characterLook'
 import { createModularCharacter } from '../../avatar/modularCharacter'
 import { WEAR_SLOTS, wearSignature, type WearModels } from '../../avatar/modularCharacterLogic'
@@ -34,6 +34,7 @@ import { seatedAvatarFeetY } from '../../game/pub/seats'
 import type { BoxerPose, UpperShot } from '../../avatar/boxingAnimLogic'
 import { type RemoteBoxer, dressBoxer } from '../../game/sports/remoteBoxer'
 import { createRemoteHeldTool, type RemoteHeldTool } from '../../game/remoteHeldTool'
+import { swimwearOutfit } from '../../game/sports/pool/poolRace'
 import type { SfxName } from '../../game/sfx'
 import type { RemoteUserPayload } from '../../types/gameRealtime'
 import { BADGES, overHeadBadges, shownBadges, type BadgeCode } from '../../game/badges'
@@ -152,6 +153,8 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     delete slotHexes.top
     return { ...update, slotModels: { ...(update.slotModels ?? {}), top }, slotHexes }
   }
+  const ownAppearance = new Map<string, { models: WearModels; colors: CosmeticColors; look: CharacterLook | null }>()
+  const swimwear = new Set<string>()
   const wantedStarsBySession = new Map<string, number>()
   const upsertTokenByUserId = new Map<string, number>()
   const renderTokenBySessionId = new Map<string, number>()
@@ -193,6 +196,8 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
   function remove(sessionId: string) {
     lastAppearance.delete(sessionId)
     topOverride.delete(sessionId)
+    ownAppearance.delete(sessionId)
+    swimwear.delete(sessionId)
     const entry = avatars.get(sessionId)
     if (!entry) return
     const scene = deps.getScene()
@@ -258,8 +263,10 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     const shown = withTopOverride(sessionId, data)
     const colors = parseSlotHexes(shown.slotHexes)
     const skating = deps.onIce?.(data.x, data.z) ?? false
-    const models = skatingWear(parseSlotModels(shown.slotModels), skating)
+    const ownModels = parseSlotModels(shown.slotModels)
     const look = parseCharacterLook(data.character)
+    ownAppearance.set(sessionId, { models: ownModels, colors, look })
+    const models = shownModels(sessionId, ownModels, skating)
     const group = await loadModel(models, colors, look, data.color)
     if (upsertTokenByUserId.get(data.id) !== token || renderTokenBySessionId.get(sessionId) !== renderToken) {
       disposeObject3D(group)
@@ -273,6 +280,7 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     tagAvatar(group, sessionId, data.id, data.pseudo)
     const ry = parseYaw(data.ry)
     placeAvatar(group, data.x, data.y, data.z, ry)
+    setAvatarSwimming(group, swimwear.has(sessionId))
     scene.add(group)
     avatars.set(sessionId, {
       userId: data.id,
@@ -324,12 +332,39 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     lastAppearance.set(sessionId, update)
     const shown = withTopOverride(sessionId, update)
     const colors = parseSlotHexes(shown.slotHexes)
-    const skating = deps.onIce?.(entry.x, entry.z) ?? false
-    const models = skatingWear(parseSlotModels(shown.slotModels), skating)
+    const ownModels = parseSlotModels(shown.slotModels)
     const look = parseCharacterLook(update.character)
-    const outfit = wearSignature(models, colors, look)
+    ownAppearance.set(sessionId, { models: ownModels, colors, look })
     entry.appearance = update
-    entry.skating = skating
+    entry.skating = deps.onIce?.(entry.x, entry.z) ?? false
+    await rebuild(sessionId, shownModels(sessionId, ownModels, entry.skating), colors, look)
+  }
+
+  /** Swimwear in the pool water: the swimsuit replaces the outfit until the player is out of the water. */
+  function setSwimwear(sessionId: string, on: boolean) {
+    if (swimwear.has(sessionId) === on) return
+    if (on) swimwear.add(sessionId)
+    else swimwear.delete(sessionId)
+    const entry = avatars.get(sessionId)
+    if (entry) setAvatarSwimming(entry.group, on)
+    const own = ownAppearance.get(sessionId)
+    if (own) void rebuild(sessionId, shownModels(sessionId, own.models, entry?.skating ?? false), own.colors, own.look)
+  }
+
+  function playPoolClip(sessionId: string, clip: PoolClip) {
+    const entry = avatars.get(sessionId)
+    if (entry) playAvatarPoolClip(entry.group, clip)
+  }
+
+  function shownModels(sessionId: string, models: WearModels, skating: boolean): WearModels {
+    return swimwear.has(sessionId) ? swimwearOutfit(models) : skatingWear(models, skating)
+  }
+
+  async function rebuild(sessionId: string, models: WearModels, colors: CosmeticColors, look: CharacterLook | null) {
+    const scene = deps.getScene()
+    const entry = avatars.get(sessionId)
+    if (!scene || !entry) return
+    const outfit = wearSignature(models, colors, look)
     if (outfit === entry.outfit) return
 
     const renderToken = nextRenderToken(sessionId)
@@ -350,6 +385,7 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     latest.chatBubble?.dispose()
     disposeObject3D(latest.group)
     placeAvatar(group, latest.x, latest.y, latest.z, latest.ry)
+    setAvatarSwimming(group, swimwear.has(sessionId))
     scene.add(group)
     const racePint = latest.racePint ? createRacePint(group) : null
     racePint?.setProgress(latest.raceProgress)
@@ -358,7 +394,7 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     const boxer = latest.boxer ? dressBoxer(group) : null
     const nameTag = createNameTag(group, latest.pseudo, badgeIconPaths(latest.badges), wantedStarsBySession.get(sessionId) ?? 0)
     const voiceIcon = createVoiceIcon(group)
-    const rebuilt = { ...latest, group, nameTag, voiceIcon, chatBubble: null, outfit, appearance: update, skating, punchOffsetX: 0, punchOffsetZ: 0, racePint, heldTool, boxer }
+    const rebuilt = { ...latest, group, nameTag, voiceIcon, chatBubble: null, outfit, punchOffsetX: 0, punchOffsetZ: 0, racePint, heldTool, boxer }
     avatars.set(sessionId, rebuilt)
     applySeat(rebuilt)
   }
@@ -664,5 +700,5 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     }
   }
 
-  return { skatePushed, skateMove, upsert, updateAppearance, setTarget, setSeated, setPicking, setRacePose, setClimbAnimation, setTennis, tennisStroke, setDancing, danceMove, stumble, setHeldTool, handOf, playPetanque, setCrouching, setBoxer, boxerShot, boxerPose, setRacePint, setBadges, pseudoOf, positionOf, avatarOf, playSportsMove, setDribbling, setTopOverride, setVoiceState, setWantedStars, players, accountOf, showAction, showChat, showPunch, showHit, remove, clear, tick }
+  return { skatePushed, skateMove, upsert, updateAppearance, setTarget, setSeated, setPicking, setRacePose, setClimbAnimation, setTennis, tennisStroke, setDancing, danceMove, stumble, setHeldTool, setSwimwear, playPoolClip, handOf, playPetanque, setCrouching, setBoxer, boxerShot, boxerPose, setRacePint, setBadges, pseudoOf, positionOf, avatarOf, playSportsMove, setDribbling, setTopOverride, setVoiceState, setWantedStars, players, accountOf, showAction, showChat, showPunch, showHit, remove, clear, tick }
 }

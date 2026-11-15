@@ -5,6 +5,8 @@ import { inSecretVolume } from './pub.ts'
 import { drainStamina, JUMP_STAMINA_COST, SPRINT_STAMINA_PER_S } from './stamina.ts'
 import { SPEED_BOOST_FACTOR } from './survivalStats.ts'
 import { entersPassAreaWithoutPass } from './sports/pass.ts'
+import { entersTakenBoardEdge } from './sports/poolDiving.ts'
+import { entersPoolWaterWithoutSwimsuit } from './sports/poolWater.ts'
 import { entersReservedVenue } from './sports/venues.ts'
 import { boxerIsDown } from './sports/boxing.ts'
 import { skateSpeedCap, skatingRejection } from './sports/skatingRink.ts'
@@ -17,7 +19,7 @@ const MAX_SPRINT_SPEED = 8.5 * 1.25
 const MAX_MOVE_BUDGET_SECONDS = 1
 const MOVE_MARGIN = 1.5
 
-export type MoveRejection = 'out_of_world' | 'frozen' | 'knocked_out' | 'cuffed' | 'jailed' | 'too_fast' | 'locked_in' | 'locked_house' | 'secret_room_closed' | 'no_pass' | 'venue_reserved' | 'tackled' | 'boxing_down' | 'no_skates' | 'skate_start' | 'skate_fallen'
+export type MoveRejection = 'out_of_world' | 'frozen' | 'knocked_out' | 'cuffed' | 'jailed' | 'too_fast' | 'locked_in' | 'locked_house' | 'secret_room_closed' | 'no_pass' | 'venue_reserved' | 'tackled' | 'boxing_down' | 'no_skates' | 'skate_start' | 'skate_fallen' | 'no_swimsuit' | 'board_taken'
 
 export function toInterior(house: WorldHouse, x: number, z: number): { x: number, z: number } {
   const dx = x - house.position.x
@@ -75,6 +77,8 @@ export function moveRejection(room: GameRoom, player: Player, x: number, y: numb
   if (boxerIsDown(room, player) && Math.hypot(x - player.x, z - player.z) > MOVE_MARGIN) return 'boxing_down'
   const skating = skatingRejection(room, player, x, z, now)
   if (skating) return skating
+  if (entersPoolWaterWithoutSwimsuit(player, x, z)) return 'no_swimsuit'
+  if (entersTakenBoardEdge(room, player, x, y, z)) return 'board_taken'
   const from = unitAt(room.housingUnits, player.x, player.z)
   const to = unitAt(room.housingUnits, x, z)
   if (from === to) return null

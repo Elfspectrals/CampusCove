@@ -240,6 +240,20 @@ def yoga_mat_rolls():
     return [L.cyl(coll, f"Mat{i}", -0.5 + i * 0.25, 0.0, 0.0, 0.1, 0.6 + 0.05 * (i % 2), blue if i % 2 else red, seg=8) for i in range(5)]
 
 
+def swimsuit_stand():
+    m = sport_mats()
+    suit = L.make_mat("DC_SportSwimsuit", "#1d3f8f", 0.6, "noise", 0.02)
+    stripe = L.make_mat("DC_SportSwimsuitStripe", "#e0534f", 0.6, "noise", 0.02)
+    return [
+        L.box(coll, "Base", 0.0, 0.0, 0.0, 0.42, 0.3, 0.03, m["black"], bevel=0.01),
+        L.box(coll, "Easel", 0.0, 0.06, 0.03, 0.36, 0.02, 0.32, m["chrome"]),
+        L.box(coll, "SuitFolded", 0.0, -0.03, 0.03, 0.3, 0.16, 0.05, suit, bevel=0.015),
+        L.box(coll, "SuitStripe", 0.0, -0.03, 0.08, 0.3, 0.04, 0.005, stripe),
+        L.box(coll, "SuitShown", 0.0, 0.04, 0.12, 0.26, 0.015, 0.2, suit, bevel=0.01),
+        L.box(coll, "SuitShownStripe", 0.0, 0.03, 0.2, 0.26, 0.004, 0.035, stripe),
+    ]
+
+
 def treadmill():
     m = sport_mats()
     return [
@@ -671,6 +685,7 @@ DECOR = {
     "folded_clothes_table": lambda: folded_clothes_table(3.0, 1.2, sport_mats()["black"], SPORT_STACKS),
     "dumbbell_rack": dumbbell_rack,
     "yoga_mat_rolls": yoga_mat_rolls,
+    "swimsuit_stand": swimsuit_stand,
     "treadmill": treadmill,
     "basketball_hoop": basketball_hoop,
     "mannequin_podium": lambda: mannequin_podium(1.8, 24, "yellow"),

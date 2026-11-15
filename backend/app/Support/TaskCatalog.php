@@ -42,6 +42,9 @@ final class TaskCatalog
             'skate_3_clean' => ['counter' => ActionCounter::SkateCleanRuns, 'tiers' => [1, 10, 30]],
             'petanque' => ['counter' => ActionCounter::PetanqueGames, 'tiers' => [5, 25, 75]],
             'carreau' => ['counter' => ActionCounter::PetanqueCarreaux, 'tiers' => [1, 10, 50]],
+            'swimmer' => ['counter' => ActionCounter::SwimRaces, 'tiers' => [5, 25, 100]],
+            'fast_lane' => ['counter' => ActionCounter::SwimFast50, 'tiers' => [1, 5, 20]],
+            'high_diver' => ['counter' => ActionCounter::PlatformDives, 'tiers' => [10, 50, 200]],
         ];
     }
 

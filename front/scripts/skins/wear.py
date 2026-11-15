@@ -420,6 +420,13 @@ def build_bottom(key, M, m):
         for sg in (1, -1):
             add_box(M, m["accent"], S((0.205, 0.0, 0.62), sg), (0.016, 0.06, 0.26), bevel=0.004)
         add_sweep(M, m["accent"], [(0, 0, 1.02), (0, 0, 1.05)], [(0.176, 0.124), (0.176, 0.124)], seg=18, per=1)
+    elif key == "swimsuit":
+        waist(M, m["main"], puff=0.99)
+        legs(M, m["main"], 2, puff=1.0)
+        for sg in (1, -1):
+            add_sweep(M, m["accent"], SP([(0.10 + 0.088, 0, 0.98), (0.10 + 0.082, 0, 0.84), (0.10 + 0.072, -0.004, 0.70)], sg),
+                      [(0.005, 0.016)] * 3, seg=6, per=2)
+        add_sweep(M, m["accent"], [(0, 0, 1.015), (0, 0, 1.045)], [(0.171, 0.12), (0.171, 0.12)], seg=18, per=1)
     elif key == "dungarees":
         waist(M, m["main"], puff=1.03)
         legs(M, m["main"], 4, puff=1.08)
@@ -554,6 +561,7 @@ WEAR = {
         "dungarees": dict(main="41618f", accent="c9a23f", hides=["hips", "thighs", "shins"]),
         "newcomer": dict(main="2f8f9c", accent="f7c948", hides=["hips", "thighs", "shins"]),
         "tracksuit": dict(main="1d5c50", accent="f2ede0", extra={"trim": dict(color="e07a35", rough=0.6)}, hides=["hips", "thighs", "shins"]),
+        "swimsuit": dict(main="1d3f8f", accent="e0534f", hides=["hips", "thighs"]),
     }),
     "shoes": dict(builder=build_shoes, bones=['LowerLeg.L', 'LowerLeg.R', 'Foot.L', 'Foot.R', 'Toe.L', 'Toe.R'], items={
         "basic": dict(main="e9e6df", accent="9a9ca4", hides=["feet"]),

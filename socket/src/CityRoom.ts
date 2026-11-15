@@ -143,6 +143,8 @@ import { onTennisBallTake, tickTennisFree } from './sports/tennisFree.ts'
 import { CLIMB_TICK_MS, onClimbHold, onClimbLetGo, onClimbStart, tickClimbing } from './sports/climbing.ts'
 import { onSkateBrake, onSkatePush, tickSkating } from './sports/skatingRink.ts'
 import { onPetanqueAim, onPetanqueThrow } from './sports/petanque.ts'
+import { onPoolJump, onPoolTrick } from './sports/poolDiving.ts'
+import { onPoolDive, onPoolStroke } from './sports/poolRace.ts'
 
 function warn(context: string, error: unknown): void {
   console.warn(`[colyseus] ${context}:`, error instanceof Error ? error.message : error)
@@ -300,6 +302,10 @@ export class CityRoom extends Room implements GameRoom {
     this.onMessage('skate_brake', (client, payload: ClientPayload) => onSkateBrake(this, client, payload))
     this.onMessage('petanque_aim', (client) => void onPetanqueAim(this, client).catch((error) => warn('petanque aim failed', error)))
     this.onMessage('petanque_throw', (client, payload: ClientPayload) => onPetanqueThrow(this, client, payload))
+    this.onMessage('pool_dive', (client) => onPoolDive(this, client))
+    this.onMessage('pool_stroke', (client, payload: ClientPayload) => onPoolStroke(this, client, payload))
+    this.onMessage('pool_jump', (client, payload: ClientPayload) => onPoolJump(this, client, payload))
+    this.onMessage('pool_trick', (client, payload: ClientPayload) => onPoolTrick(this, client, payload))
     this.clock.setInterval(() => {
       try {
         tickSports(this)

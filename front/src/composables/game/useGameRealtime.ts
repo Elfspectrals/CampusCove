@@ -149,6 +149,8 @@ import type { UserEmotePayload } from './useEmoteWheel'
 import { EMOTE_TIME_SCALE } from '../../game/sports/danceEmotes'
 import { RHYTHM_DANCE_CLIP, danceTimeScale, parseDanceStart, type DanceEnd, type DanceJudge, type DanceStart } from '../../game/sports/danceHud'
 import type { ClimbErrorPayload, ClimbStatePayload } from '../../game/sports/climbing'
+import type { PoolDive, PoolRaceResult, PoolRaceStart, PoolRaceState, StrokeResult, Trick } from '../../game/sports/pool/poolRace'
+import type { usePoolRace } from './usePoolRace'
 
 const REALTIME_HTTP_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000'
 
@@ -394,6 +396,7 @@ export interface GameRealtimeDeps {
     onCorrection: (reason: string | undefined) => void
     onRoomJoined: () => void
   }
+  pool: ReturnType<typeof usePoolRace>['handlers']
   pickpocket: {
     onStarted: (data: PickpocketStartedPayload) => void
     onProgress: (data: PickpocketProgressPayload) => void
@@ -486,6 +489,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       deps.climbing.onRoomJoined()
       deps.boxing.onRoomLeft()
       deps.skating.onRoomJoined()
+      deps.pool.onRoomJoined()
     })
 
     room.onMessage('housing_units_sync', (data: { units?: unknown }) => syncHousingUnits(data.units))
@@ -496,6 +500,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       setMyPosition(data.x, data.y, data.z)
       deps.sports.onCorrection(data.reason)
       deps.skating.onCorrection(data.reason)
+      deps.pool.onCorrection(data.reason)
     })
     room.onMessage('door_error', (data: { message: string }) => {
       deps.roomMessage.value = data.message
@@ -745,6 +750,13 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     })
     room.onMessage('skate_bump', (data: SkateBumpPayload) => deps.skating.onBump(data))
     room.onMessage('skate_result', (data: SkateResultPayload) => deps.skating.onResult(data))
+    room.onMessage('pool_race_start', (data: PoolRaceStart) => deps.pool.onStart(data))
+    room.onMessage('pool_race_beep', () => deps.pool.onBeep())
+    room.onMessage('pool_race_state', (data: PoolRaceState) => deps.pool.onState(data))
+    room.onMessage('pool_stroke_result', (data: { result: StrokeResult }) => deps.pool.onStrokeResult(data))
+    room.onMessage('pool_race_result', (data: PoolRaceResult) => deps.pool.onResult(data))
+    room.onMessage('pool_dive', (data: PoolDive) => deps.pool.onDive(data))
+    room.onMessage('pool_dive_trick', (data: { sessionId: string; name: string; trick: Trick }) => deps.pool.onTrick(data))
     room.onMessage('pickpocket_started', (data: PickpocketStartedPayload) => deps.pickpocket.onStarted(data))
     room.onMessage('pickpocket_progress', (data: PickpocketProgressPayload) => deps.pickpocket.onProgress(data))
     room.onMessage('pickpocket_failed', (data: PickpocketFailedPayload) => deps.pickpocket.onFailed(data))
@@ -883,6 +895,8 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     remoteSportsMove: remotes.playSportsMove,
     setRemoteDribbling: remotes.setDribbling,
     setRemoteTopOverride: remotes.setTopOverride,
+    setRemoteSwimwear: remotes.setSwimwear,
+    playRemotePoolClip: remotes.playPoolClip,
     setRemoteVoiceState: remotes.setVoiceState,
     remotePlayers: remotes.players,
     remoteAccount: remotes.accountOf,

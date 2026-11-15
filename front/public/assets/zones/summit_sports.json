@@ -697,6 +697,26 @@
         1
       ],
       "description": "Three steel boules and a jack. Needed for a game at the boulodrome, Cove Sports Park."
+    },
+    {
+      "id": "summit_sports_swimsuit",
+      "kind": "item",
+      "key": "swimsuit_stand",
+      "code": "gear_swimsuit",
+      "forSale": true,
+      "price": 90,
+      "position": [
+        -293.1,
+        1.23,
+        80.205
+      ],
+      "yaw": -3.1416,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "description": "Swimsuit for the Cove Pool: needed to swim, race and dive."
     }
   ],
   "areas": [

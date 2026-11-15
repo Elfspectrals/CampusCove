@@ -29,10 +29,24 @@ No score. Proposed task "dives from the 5 m platform" (badges only), counted by 
 
 Ladder climb, edge stance, jump, twist, somersault, cannonball, entry; splash effect and sound.
 
-## Open points
+## Decided at build time (2026-11-14)
 
-- Exact trick list and keys.
-- Whether a tasks counter is wanted at all for diving.
+- Tricks: twist (Left arrow), somersault (Up arrow), cannonball (Down arrow), one per jump, while in the air. Rebindable in Settings (`diveTwist`, `diveSomersault`, `diveCannonball`).
+- The splash grows with the board height, and a cannonball's is 1.8 times bigger.
+- Each trick plays its clip (`Twist`, `Somersault`, `Cannonball`) on the diver for the other players.
+- One diver at a time on a board edge: the socket refuses a move onto an edge zone (at that board's height) while another player stands on it (`board_taken`); whoever is there can stay and leave.
+- The board ends are over the water, so standing on them needs the swimsuit too.
+
+- Task "High diver" (badges only): dives from the 5 m platform, tiers 10 / 50 / 200. The socket reports each accepted jump from `platform_5m` (`POST /api/sports/dives { ref, board }`, realtime route, reply `{ dive: { counted } }`); Laravel counts at most 10 a day per account (Paris day), the same `ref` once.
+
+## Socket contract
+
+| Message | Direction | Payload |
+|---|---|---|
+| `pool_jump` | client -> server | `{ board }`, sent with Space; accepted only on the board's `edgeZone` with the feet within 0.4 m of its height, once every 1.5 s |
+| `pool_trick` | client -> server | `{ trick }`, one of `tricks`, within the fall time of the last accepted jump (+ 0.4 s) |
+| `pool_dive` | server -> players in the pool | `{ sessionId, board, heightM, airMs, serverNow }`: the front plays the splash when the diver hits the water |
+| `pool_dive_trick` | server -> same | `{ sessionId, name, board, trick }` |
 
 ## Proposed placeholder JSON fields
 

@@ -20,7 +20,8 @@
     "gear_tennis_racket": 180,
     "gear_boxing_gloves": 150,
     "gear_ice_skates": 260,
-    "gear_boules": 150
+    "gear_boules": 150,
+    "gear_swimsuit": 90
   },
   "buyers": {}
 }

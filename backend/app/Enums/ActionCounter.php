@@ -39,4 +39,7 @@ enum ActionCounter: string
     case BoxingWins = 'boxing_wins';
     case PetanqueGames = 'petanque_games';
     case PetanqueCarreaux = 'petanque_carreaux';
+    case SwimRaces = 'swim_races';
+    case SwimFast50 = 'swim_fast_50';
+    case PlatformDives = 'platform_dives';
 }

@@ -449,6 +449,7 @@ class ShopSeeder extends Seeder
             self::coins('gear_tennis_racket', 180, 340),
             self::coins('gear_boxing_gloves', 150, 160),
             self::coins('gear_boules', 150, 160),
+            self::coins('gear_swimsuit', 90, 153),
         ];
         foreach (FoodCatalog::items() as $i => $food) {
             if ($food['price'] !== null) {

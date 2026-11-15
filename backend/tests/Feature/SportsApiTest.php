@@ -158,6 +158,7 @@ class SportsApiTest extends TestCase
         $this->assertSame(180, (int) $onSale['gear_tennis_racket']);
         $this->assertSame(150, (int) $onSale['gear_boxing_gloves']);
         $this->assertSame(150, (int) $onSale['gear_boules']);
+        $this->assertSame(90, (int) $onSale['gear_swimsuit']);
     }
 
     public function test_gear_lists_the_codes_owned_in_the_inventory(): void
@@ -338,6 +339,60 @@ class SportsApiTest extends TestCase
         $this->assertSame([], app(BadgeService::class)->badges($second['account_id']));
         $board = $this->getJson('/api/sports/boards/swim_50', $this->auth($winner['token']))->assertOk()->json('board');
         $this->assertSame(['week' => '2026-W46', 'accountId' => $winner['account_id'], 'value' => 30_000], array_diff_key($board['champion'], ['name' => 0]));
+    }
+
+    public function test_a_counted_swimming_race_bumps_races_swum_and_the_fast_50_feat_and_a_solo_race_bumps_nothing(): void
+    {
+        $fast = $this->player(cash: 0);
+        $slow = $this->player(cash: 0);
+        $quit = $this->player(cash: 0);
+        $now = CarbonImmutable::now();
+
+        $this->race('r1', $now, 50, [[$fast, 'finished', 29_500], [$slow, 'finished', 30_000], [$quit, 'dnf', null]]);
+        $this->race('r2', $now, 50, [[$fast, 'finished', 20_000]]);
+
+        $this->assertSame(1, $this->counter($fast['account_id'], 'swim_races'));
+        $this->assertSame(1, $this->counter($fast['account_id'], 'swim_fast_50'));
+        $this->assertSame(1, $this->counter($slow['account_id'], 'swim_races'));
+        $this->assertSame(0, $this->counter($slow['account_id'], 'swim_fast_50'));
+        $this->assertSame(0, $this->counter($quit['account_id'], 'swim_races'));
+    }
+
+    public function test_a_replayed_match_does_not_bump_the_counters_twice(): void
+    {
+        $a = $this->player(cash: 0);
+        $b = $this->player(cash: 0);
+        $now = CarbonImmutable::now();
+
+        $this->race('r1', $now, 25, [[$a, 'finished', 14_000], [$b, 'finished', 15_000]]);
+        $this->race('r1', $now, 25, [[$a, 'finished', 14_000], [$b, 'finished', 15_000]]);
+
+        $this->assertSame(1, $this->counter($a['account_id'], 'swim_races'));
+    }
+
+    public function test_platform_dives_count_once_per_ref_and_ten_a_day(): void
+    {
+        $diver = $this->player(cash: 0);
+        $dive = fn (string $ref, string $board = 'platform_5m'): TestResponse => $this->postJson('/api/sports/dives', ['ref' => $ref, 'board' => $board], $this->auth($diver['token'], self::SECRET));
+
+        $dive('d1')->assertOk()->assertExactJson(['dive' => ['counted' => true]]);
+        $dive('d1')->assertOk()->assertExactJson(['dive' => ['counted' => true]]);
+        $this->assertSame(1, $this->counter($diver['account_id'], 'platform_dives'));
+        foreach (range(2, 10) as $n) {
+            $dive("d{$n}")->assertOk();
+        }
+        $dive('d11')->assertOk()->assertExactJson(['dive' => ['counted' => false]]);
+        $this->assertSame(10, $this->counter($diver['account_id'], 'platform_dives'));
+        $this->travelTo(CarbonImmutable::parse('2026-11-15 10:00:00'));
+        $dive('d12')->assertOk()->assertExactJson(['dive' => ['counted' => true]]);
+        $this->assertSame(11, $this->counter($diver['account_id'], 'platform_dives'));
+        $dive('d13', 'board_3m')->assertUnprocessable();
+        $this->postJson('/api/sports/dives', ['ref' => 'd14', 'board' => 'platform_5m'], $this->auth($diver['token']))->assertForbidden();
+    }
+
+    private function counter(int $accountId, string $counter): int
+    {
+        return (int) DB::table('account_counters')->where('account_id', $accountId)->where('counter', $counter)->value('value');
     }
 
     private function assertEndsIn(?string $validUntil, int $hours): void

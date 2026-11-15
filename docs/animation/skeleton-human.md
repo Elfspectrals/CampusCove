@@ -61,6 +61,12 @@ Clips are phase functions `f(ph, P)` sampled by `sample_actions(arm, clips, fps=
     negative back; `rz` positive turns the body to its left (front toward +X); `move` y positive pushes the pelvis back.
   - `LowerArm.R` `rz` −90° turns the right palm up when the arm swings forward, +90° turns it down (`PALM_DOWN`, `clips.py`, the pétanque release); first-person wrist twist −110° is palm down (`BOULE_PALM_DOWN`, `build_fp_arms.py`).
   - `Hips` `rx` positive tilts the pelvis and the torso forward; `leg_ik` keeps the feet planted (pétanque clips).
+  - `Hips` `rx` positive pitches the whole body forward (head toward -Y); `rz` positive turns it counter-clockwise
+    seen from above. Whole-body turns go through `_turn_hips(P, matrix, pivot)` (`clips.py`), which sets the Hips
+    rotation from a matrix and offsets its location so the body turns about `pivot` (relative to the Hips head).
+  - Once `rx` has swung a limb forward, `ry` no longer abducts it: on an overhead `UpperArm.L` (`rx` −172) `ry`
+    negative brings the arm in, and on a forearm bent forward (`LowerArm` `rx` −100) `rz` −sgn crosses it over the
+    chest. On a thigh raised forward, `UpperLeg.L` `rz` positive spreads it out (renders, 2026-11-14).
   Any other sign is checked on a render before it is trusted.
 - `sample_actions` deletes every NLA track first: always pass the full clip dict.
 
@@ -115,6 +121,12 @@ Hips > Spine > Chest > Shoulder chain, elbow towards the hint), feet with `leg_i
 | PetanqueShoot | 48 | 1.6 | one-shot | `pose_petanque_shoot`: left foot 0.30 m forward, arm high behind, release at shoulder height at 0.8 s |
 | PetanqueCrouch | 120 | 4.0 | yes | `pose_petanque_crouch`: deep squat (Hips −0.46 m), hands on the knees, head scanning |
 | PetanqueCelebrate | 45 | 1.5 | one-shot | `pose_petanque_celebrate`: right fist pump, twice |
+| Swim | 30 | 1.0 | yes | `pose_swim`, front crawl, base body only: Hips pitched 78° (`SWIM_PITCH`), +0.05 m, head at 1.15 m, one stroke per arm, six-beat kick |
+| Tread | 48 | 1.6 | yes | `pose_tread`, base body only: Hips at −0.33 m (`TREAD_DROP`), head at 1.29-1.33 m, sculling arms, egg-beater legs |
+| Dive | 24 | 0.8 | one-shot, ends held | `pose_dive`, base body only: crouch, toes planted by `leg_ik` until 0.56, ends straight, arms ahead, pitched 25° nose down |
+| Somersault | 30 | 1.0 | one-shot | `pose_somersault`, base body only: tucked 360° forward turn of Hips about the tuck centre, ends at rest |
+| Twist | 30 | 1.0 | one-shot | `pose_twist`, base body only: 360° turn of Hips about the vertical, arms crossed on the chest, ends at rest |
+| Cannonball | 30 | 1.0 | one-shot, ends held | `pose_cannonball`, base body only: tuck by 0.26, held |
 
 Every clip is keyed from frame 0 (glTF time starts at 0). Gaits plant the feet with `leg_ik` (analytic two-bone IK,
 knee forward): the stance foot moves back at exactly the design speed, so there is no slide at timeScale 1.

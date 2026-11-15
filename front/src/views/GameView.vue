@@ -47,6 +47,7 @@ import GameBoxingHud from '../components/game/GameBoxingHud.vue'
 import GameSkatingHud from '../components/game/GameSkatingHud.vue'
 import GamePetanque from '../components/game/GamePetanque.vue'
 import GamePetanqueFree from '../components/game/GamePetanqueFree.vue'
+import GamePoolRace from '../components/game/GamePoolRace.vue'
 import GameChat from '../components/game/GameChat.vue'
 import GameDrunkEffects from '../components/game/GameDrunkEffects.vue'
 import GameDrinkFast from '../components/game/GameDrinkFast.vue'
@@ -127,6 +128,7 @@ import { useBoxing } from '../composables/game/useBoxing'
 import { useSkating } from '../composables/game/useSkating'
 import { ICE_SKATES_CODE } from '../game/sports/skating/skateMotion'
 import { usePetanque } from '../composables/game/usePetanque'
+import { usePoolRace } from '../composables/game/usePoolRace'
 import { usePickpocket } from '../composables/game/usePickpocket'
 import { useStorageAuction } from '../composables/game/useStorageAuction'
 import { useStorageWarehouse } from '../composables/game/useStorageWarehouse'
@@ -941,6 +943,23 @@ const tennis = useTennis({
   remoteSessions: () => realtime.remotePlayers().map((p) => p.sessionId),
 })
 const { hud: tennisHud, cue: tennisCue, call: tennisCall, freePlay: tennisFreePlay } = tennis
+const poolRace = usePoolRace({
+  gameRoomRef,
+  myPosition,
+  mySessionId: () => gameRoomRef.value?.sessionId ?? null,
+  getScene,
+  remotePlayers: () => realtime.remotePlayers(),
+  remotePosition: (sessionId) => realtime.remotePosition(sessionId),
+  setRemoteSwimwear: (sessionId, on) => realtime.setRemoteSwimwear(sessionId, on),
+  playRemoteClip: (sessionId, clip) => realtime.playRemotePoolClip(sessionId, clip),
+  say: (text) => survival.say(text),
+  noSwimsuitText: () => t('sports.pool.noSwimsuit'),
+  boardTakenText: () => t('sports.pool.boardTaken'),
+  falseStartText: () => t('sports.pool.falseStart'),
+  marksText: () => t('sports.pool.marks'),
+  trickText: (name, trick) => (name ? t('sports.pool.trickBy', { name, trick: t(`sports.pool.trick.${trick}`) }) : t(`sports.pool.trick.${trick}`)),
+})
+const { hud: poolHud, board: poolBoard, trickLine: poolTrickLine } = poolRace
 const { open: sportsSignupOpen, choices: sportsVenueChoices, canPickVenue: sportsCanPickVenue, lobby: sportsLobby, spec: sportsSpec, team: sportsTeam, settings: sportsSettings, pending: sportsSignupPending, error: sportsSignupError, clientNow: sportsClientNow, clockOffset: sportsClockOffset } = sportsSignup
 watch(sportsSignupOpen, (open) => {
   if (!open && !document.pointerLockElement) requestPointerLock()
@@ -1652,6 +1671,7 @@ function handleExtraKeyDown(e: KeyboardEvent): boolean {
   // seated at the pub: a step or a jump stands the player up instead of moving
   if (seats.onKeyDown(e)) return true
   if (climbing.onKeyDown(e)) return true
+  if (poolRace.onKeyDown(e)) return true
   // defaultPrevented: the inventory / cafe menu already used this Esc to close themselves
   if (e.code === 'Escape' && !e.repeat && !e.defaultPrevented && pauseMenuOpen.value && !placementPreviewActive.value) {
     toggleEscapeMenu(e)
@@ -1752,7 +1772,7 @@ const movement = useGameMovement({
     return pointerLocked.value && runUseOrPunch(mouseButtonCode(e.button), false, e.shiftKey)
   },
   speedFactor: () => survival.speedFactor() * intoxication.walkFactor() * (adminWatch.hasMyPower('speed') ? SPEED_POWER_FACTOR : 1),
-  movementLocked: () => seats.seated.value || townBus.riding.value || police.cuffedBy.value !== null || adminWatch.hasMyPower('freeze') || gymMatch.down() || runningRace.racing.value || dancing.value || climbingNow.value,
+  movementLocked: () => seats.seated.value || townBus.riding.value || police.cuffedBy.value !== null || adminWatch.hasMyPower('freeze') || gymMatch.down() || runningRace.racing.value || dancing.value || climbingNow.value || poolRace.locked.value,
   flying: () => adminWatch.hasMyPower('fly'),
   afterCameraPlaced: intoxication.applyToCamera,
   skate: skating.step,
@@ -1804,6 +1824,7 @@ const movement = useGameMovement({
     dance.tick()
     climbing.tick()
     petanque.tick()
+    poolRace.tick(dt)
     if (!doorSigns.group.parent) getScene()?.add(doorSigns.group)
     minimap.tick()
     gps.tick()
@@ -1961,6 +1982,7 @@ const realtime = useGameRealtime({
   climbing: climbing.handlers,
   boxing: boxing.handlers,
   skating: { ...skating.handlers, isOnIce: skating.isOnIce },
+  pool: poolRace.handlers,
   pickpocket: pickpocket.handlers,
   storageAuction: {
     ...storageAuction.handlers,
@@ -2545,6 +2567,7 @@ const crosshairClass = computed(() => {
       :error="climbingBoardError"
       @close="climbingBoard.close"
     />
+    <GamePoolRace v-if="poolHud || poolBoard || poolTrickLine" :hud="poolHud" :board="poolBoard" :trick-line="poolTrickLine" />
     <GameSportsPassDesk
       v-if="sportsPassOpen && sportsPassState"
       :pass="sportsPassState"

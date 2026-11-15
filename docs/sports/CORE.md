@@ -172,6 +172,12 @@ played fewer than `TASK_MATCHES_PER_PAIR_PER_DAY` = 3 counted matches of that sp
 counters read only counted matches. Examples: A and B play their 4th football match of the day: not counted; A, B and
 C play next: counted (A–C is a new pair); the next day at 00:00 Paris A and B count again; basketball has its own cap.
 
+**Task counters (`SportsTaskCounters`).** When a recorded match counts for tasks, `SportsMatchService::record` calls
+`SportsTaskCounters::countMatch`: `rules()` holds one entry per sport, the `ActionCounter` of "games played" (bumped for
+every player whose result is not `dnf`) and an optional feat (`counter` and a `reached(settings, player)` predicate).
+A venue adds its line there, its `ActionCounter` cases and its `TaskCatalog` tasks. Swimming: `swim_races` and the feat
+`swim_fast_50` (50 m finished under 30 s).
+
 ### Weekly boards
 
 `SportsBoardService::BOARDS` lists each board: `{ sport, settings, metric }`. `settings` must be contained in the

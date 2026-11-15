@@ -17,6 +17,8 @@ final class SportsMatchService
 
     public const DAY_TIMEZONE = 'Europe/Paris';
 
+    public function __construct(private readonly SportsTaskCounters $taskCounters) {}
+
     /**
      * @param  array<string, string|int>  $settings
      * @param  list<array{accountId: int, team: string|null, result: string, place?: int|null, timeMs?: int|null, score?: int|null}>  $players
@@ -49,6 +51,9 @@ final class SportsMatchService
             ], $players));
             $countsForTasks = $this->countsForTasks($id, $sport, $endedAtMs, array_column($players, 'accountId'));
             DB::table('sports_matches')->where('id', $id)->update(['counts_for_tasks' => $countsForTasks]);
+            if ($countsForTasks) {
+                $this->taskCounters->countMatch($sport, $settings, $players);
+            }
 
             return ['id' => $id, 'recorded' => true, 'countsForTasks' => $countsForTasks];
         });

@@ -32,7 +32,10 @@ faces = {sex: build_face_presets(body_coll, arm, heads[sex], sex) for sex in ("m
 woman_top = build_woman_top(body_coll, arm, body_objs)
 sample_actions(arm, {**make_clips(None), "Pick": (90, pose_pick()),
                     "RunSet": (45, pose_run_set()), "RunLean": (24, pose_run_lean()), "Breathless": (60, pose_breathless()),
-                    **tennis_clips()})
+                    **tennis_clips(),
+                    "Swim": (30, pose_swim()), "Tread": (48, pose_tread()),
+                    "Dive": (24, pose_dive()), "Somersault": (30, pose_somersault()), "Twist": (30, pose_twist()),
+                    "Cannonball": (30, pose_cannonball())})
 piece_coll = wipe("WEAR_PIECES")
 pieces = {}
 only = next((a.split("=", 1)[1].split(",") for a in argv if a.startswith("only=")), None)

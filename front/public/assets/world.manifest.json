@@ -1484,6 +1484,25 @@
       },
       "modelUrl": "/assets/park/sports_petanque/sports_petanque.glb",
       "sportsPass": true
+    },
+    {
+      "key": "sports_pool",
+      "optional": true,
+      "bounds": {
+        "minX": -537,
+        "maxX": -481,
+        "minZ": -233,
+        "maxZ": -191
+      },
+      "modelUrl": "/assets/park/sports_pool/sports_pool.glb",
+      "layoutUrl": "/assets/park/sports_pool/sports_pool.layout.json",
+      "sportsPass": true,
+      "groundHole": {
+        "minX": -536.5,
+        "maxX": -481.5,
+        "minZ": -232.5,
+        "maxZ": -191.5
+      }
     }
   ],
   "fountains": [
