@@ -662,7 +662,6 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('sports_error', (data: SportsErrorPayload) => deps.sports.onError(data))
     room.onMessage('climb_state', (data: ClimbStatePayload) => deps.climbing.onState(data))
     room.onMessage('climb_error', (data: ClimbErrorPayload) => deps.climbing.onError(data))
-    room.onMessage('sports_loans', (data: SportsLoansPayload) => applySportsLoans(data))
     room.onMessage('sports_run_state', (data: SportsRunStatePayload) => deps.sports.onRunState(data))
     room.onMessage('sports_run_result', (data: SportsRunResultPayload) => deps.sports.onRunResult(data))
     room.onMessage('gym_state', (data: GymStatePayload) => deps.gym.onState(data))
@@ -765,6 +764,10 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       for (const sessionId of danceDancers) remotes.setDancing(sessionId, null)
       danceDancers = []
       deps.dance.onStop()
+    })
+    room.onMessage('sports_loans', (data: SportsLoansPayload) => {
+      applySportsLoans(data)
+      if (data.sessionId !== room.sessionId) remotes.refreshLentWear(data.sessionId)
     })
     room.onMessage('pickpocket_started', (data: PickpocketStartedPayload) => deps.pickpocket.onStarted(data))
     room.onMessage('pickpocket_progress', (data: PickpocketProgressPayload) => deps.pickpocket.onProgress(data))

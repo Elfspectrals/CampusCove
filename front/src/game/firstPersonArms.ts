@@ -13,6 +13,10 @@ const ONE_SHOT_CLIPS = ['Equip', 'UseDoor', 'UseKey', 'Punch', 'PunchL', 'Pick',
 const TENNIS_SWING_CLIPS = { forehand: 'TennisForehand', backhand: 'TennisBackhand', lob: 'TennisLob', serve: 'TennisServe' } as const
 const HELD_CLIPS = ['Pick'] as const
 const EAT_CLIPS = { eat: 'Eat', drink: 'Drink' } as const
+export type ArmsClimbPose = 'hang' | 'lower' | null
+export type ArmsClimbMove = 'reachL' | 'reachR' | 'top' | 'fall'
+const CLIMB_POSE_CLIPS = { hang: 'FpClimbHang', lower: 'FpClimbLower' } as const
+const CLIMB_MOVE_CLIPS: Record<ArmsClimbMove, string> = { reachL: 'FpClimbReachL', reachR: 'FpClimbReachR', top: 'FpClimbTop', fall: 'FpClimbFall' }
 const EAT_FADE_S = 0.25
 const BOXING_SHOT_FADE_S = 0.05
 const BOXING_LOOP_FADE_S = 0.12
@@ -64,6 +68,7 @@ export function createFirstPersonArms(container: THREE.Group) {
   let base: THREE.AnimationAction | null = null
   let oneShot: THREE.AnimationAction | null = null
   let holding = false
+  let climbPose: ArmsClimbPose = null
   let watchTarget = 0
   let watchWeight = 0
   let frozenFor = 0
@@ -84,7 +89,7 @@ export function createFirstPersonArms(container: THREE.Group) {
     return found
   }
 
-  function playBase(name: 'Idle' | 'Walk' | 'Hold' | (typeof FP_BOXING_LOOPS)[number]): void {
+  function playBase(name: 'Idle' | 'Walk' | 'Hold' | (typeof FP_BOXING_LOOPS)[number] | (typeof CLIMB_POSE_CLIPS)[keyof typeof CLIMB_POSE_CLIPS]): void {
     const next = action(name)
     if (base === next) return
     next.reset().fadeIn(BASE_FADE_S).play()
@@ -155,6 +160,11 @@ export function createFirstPersonArms(container: THREE.Group) {
         actions = new Map(gltf.animations.map((clip) => [clip.name, mixer!.clipAction(clip)]))
         for (const name of ONE_SHOT_CLIPS) action(name).setLoop(THREE.LoopOnce, 1)
         for (const name of HELD_CLIPS) action(name).clampWhenFinished = true
+        for (const name of Object.values(CLIMB_MOVE_CLIPS)) {
+          const climbMove = action(name)
+          climbMove.setLoop(THREE.LoopOnce, 1)
+          climbMove.clampWhenFinished = true
+        }
         mixer.addEventListener('finished', onFinished)
         playBase('Idle')
         applyBoxing()
@@ -183,7 +193,7 @@ export function createFirstPersonArms(container: THREE.Group) {
     if (!mixer) return
     const speed = dt > 0 ? Math.hypot(position.x - lastPosition.x, position.z - lastPosition.z) / dt : 0
     lastPosition.set(position.x, 0, position.z)
-    if (!oneShot && !boxingClips) playBase(holding ? 'Hold' : speed > MIN_WALK_SPEED ? 'Walk' : 'Idle')
+    if (!oneShot && !boxingClips) playBase(climbPose ? CLIMB_POSE_CLIPS[climbPose] : holding ? 'Hold' : speed > MIN_WALK_SPEED ? 'Walk' : 'Idle')
     if (!oneShot && boxingClips) playBase(boxingBlock ? 'FpBlock' : 'FpGuard')
     if (base && base === actions.get('Walk')) base.timeScale = firstPersonWalkTimeScale(speed)
     if (frozenFor > 0) frozenFor -= dt
@@ -262,6 +272,17 @@ export function createFirstPersonArms(container: THREE.Group) {
       playOnce(lastPunch === 'jab' ? 'PunchL' : 'Punch', PUNCH_FADE_S)
     },
     tennisSwing: (swing: keyof typeof TENNIS_SWING_CLIPS) => playOnce(TENNIS_SWING_CLIPS[swing], PUNCH_FADE_S),
+    setClimbPose: (pose: ArmsClimbPose) => {
+      climbPose = pose
+    },
+    climbMove: (move: ArmsClimbMove) => {
+      if (!mixer) return
+      const next = action(CLIMB_MOVE_CLIPS[move])
+      oneShot?.stop()
+      next.reset().fadeIn(ONE_SHOT_FADE_S).play()
+      base?.fadeOut(ONE_SHOT_FADE_S)
+      oneShot = next
+    },
     pick: (durationMs?: number) => playOnce('Pick', ONE_SHOT_FADE_S, durationMs && durationMs / 1000),
     throwBoule: (mode: 'point' | 'shoot') => playOnce(mode === 'shoot' ? 'PetanqueShoot' : 'PetanquePoint'),
     cancelPick,

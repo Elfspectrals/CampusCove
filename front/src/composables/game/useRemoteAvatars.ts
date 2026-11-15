@@ -11,6 +11,8 @@ import { createModularCharacter } from '../../avatar/modularCharacter'
 import { WEAR_SLOTS, wearSignature, type WearModels } from '../../avatar/modularCharacterLogic'
 import { skatingWear } from '../../game/sports/skating/skateWear'
 import { createActionBubble, type AvatarAction } from '../../game/actionBubble'
+import { climbingWear } from '../../game/sports/climbingWear'
+import { hasSportsLoan } from '../../game/sports/sportsLoans'
 import { createChatBubble, type ChatBubble } from '../../game/chatBubble'
 import { EYE_HEIGHT } from '../../game/gameRoomConstants'
 import { createNameTag, nameTagVisible, type NameTag } from '../../game/nameTag'
@@ -137,6 +139,8 @@ function placeAvatar(group: THREE.Group, x: number, y: number, z: number, ry: nu
 function badgeIconPaths(badges: readonly BadgeCode[]): string[] {
   return overHeadBadges(badges).map((badge) => ICONS[BADGES[badge].icon])
 }
+
+const CLIMBING_SHOES_LOAN = 'climbing_shoes'
 
 export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
   const avatars = new Map<string, RemoteAvatar>()
@@ -357,7 +361,7 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
   }
 
   function shownModels(sessionId: string, models: WearModels, skating: boolean): WearModels {
-    return swimwear.has(sessionId) ? swimwearOutfit(models) : skatingWear(models, skating)
+    return swimwear.has(sessionId) ? swimwearOutfit(models) : climbingWear(skatingWear(models, skating), hasSportsLoan(sessionId, CLIMBING_SHOES_LOAN))
   }
 
   async function rebuild(sessionId: string, models: WearModels, colors: CosmeticColors, look: CharacterLook | null) {
@@ -436,6 +440,11 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
   function setRacePose(sessionId: string, pose: RacePose | null) {
     const entry = avatars.get(sessionId)
     if (entry) setAvatarRacePose(entry.group, pose)
+  }
+
+  function refreshLentWear(sessionId: string) {
+    const entry = avatars.get(sessionId)
+    if (entry) void updateAppearance(sessionId, entry.appearance)
   }
 
   function setClimbAnimation(sessionId: string, pose: AvatarClimbPose, move: AvatarClimbMove | null) {
@@ -700,5 +709,5 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     }
   }
 
-  return { skatePushed, skateMove, upsert, updateAppearance, setTarget, setSeated, setPicking, setRacePose, setClimbAnimation, setTennis, tennisStroke, setDancing, danceMove, stumble, setHeldTool, setSwimwear, playPoolClip, handOf, playPetanque, setCrouching, setBoxer, boxerShot, boxerPose, setRacePint, setBadges, pseudoOf, positionOf, avatarOf, playSportsMove, setDribbling, setTopOverride, setVoiceState, setWantedStars, players, accountOf, showAction, showChat, showPunch, showHit, remove, clear, tick }
+  return { skatePushed, skateMove, upsert, updateAppearance, refreshLentWear, setTarget, setSeated, setPicking, setRacePose, setClimbAnimation, setTennis, tennisStroke, setDancing, danceMove, stumble, setHeldTool, setSwimwear, playPoolClip, handOf, playPetanque, setCrouching, setBoxer, boxerShot, boxerPose, setRacePint, setBadges, pseudoOf, positionOf, avatarOf, playSportsMove, setDribbling, setTopOverride, setVoiceState, setWantedStars, players, accountOf, showAction, showChat, showPunch, showHit, remove, clear, tick }
 }

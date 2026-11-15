@@ -468,8 +468,24 @@ def shoe(M, m, sg, collar_z=0.11, sole_h=0.03, toe_cap=False, slide=False):
         add_ellipsoid(M, m["accent"], S((0.10, -0.18, sole_h + 0.015), sg), (0.046, 0.036, 0.026), seg=10, rings=6)
 
 
+def climbing_shoe(M, m, sg, sole_h=0.014):
+    add_box(M, m["accent"], S((0.10, -0.065, sole_h / 2), sg), (0.096, 0.29, sole_h), bevel=0.006)
+    add_sweep(M, m["main"], SP([(0.10, 0.05, sole_h + 0.02), (0.10, -0.04, sole_h + 0.028), (0.10, -0.13, sole_h + 0.018), (0.10, -0.2, sole_h + 0.004)], sg),
+              [(0.047, 0.047), (0.049, 0.047), (0.045, 0.033), (0.028, 0.016)], seg=14, per=2)
+    add_sweep(M, m["main"], SP([(0.10, 0.012, sole_h + 0.01), (0.10, 0.012, 0.11)], sg), [(0.048, 0.054), (0.046, 0.051)], seg=14, per=1)
+    add_sweep(M, m["accent"], SP([(0.10, 0.012, 0.094), (0.10, 0.012, 0.112)], sg), [(0.048, 0.053), (0.048, 0.053)], seg=14, per=1)
+    add_ellipsoid(M, m["accent"], S((0.10, -0.172, sole_h + 0.014), sg), (0.05, 0.05, 0.026), seg=12, rings=6)
+    add_ellipsoid(M, m["accent"], S((0.10, 0.055, sole_h + 0.024), sg), (0.05, 0.028, 0.03), seg=12, rings=6)
+    for y0, y1, z, radii in ((-0.03, -0.052, sole_h + 0.028, (0.051, 0.049)), (-0.085, -0.105, sole_h + 0.022, (0.049, 0.041))):
+        add_sweep(M, m["strap"], SP([(0.10, y0, z), (0.10, y1, z)], sg), [radii, radii], seg=14, per=1)
+        add_box(M, m["strap"], S((0.10 + radii[0] + 0.002, (y0 + y1) / 2, z + 0.012), sg), (0.008, 0.024, 0.026), bevel=0.003)
+
+
 def build_shoes(key, M, m):
     for sg in (1, -1):
+        if key == "climbing_shoes":
+            climbing_shoe(M, m, sg)
+            continue
         if key in ("basic", "sneakers", "newcomer"):
             shoe(M, m, sg, toe_cap=key != "basic")
             if key != "basic":
@@ -574,6 +590,7 @@ WEAR = {
         "running_spikes": dict(main="f4f2ec", accent="f08a3c", hides=["feet"]),
         "ice_skates": dict(main="f4f4f2", accent="d8dbe0", hides=["feet"], extra={"blade": dict(color="c9ccd2", metal=0.8, rough=0.25)}),
         "newcomer": dict(main="f4f2ec", accent="f7c948", hides=["feet"]),
+        "climbing_shoes": dict(main="e2683c", accent="26272b", extra={"strap": dict(color="2f3e57", rough=0.7)}, hides=["feet"]),
     }),
 }
 
