@@ -73,7 +73,7 @@ export function parseHoldMs(rules: unknown): number {
 }
 
 export function serverClock(state: Pick<BoxingStatePayload, 'serverNow'>, receivedAt: number, now: number): number {
-  return state.serverNow + (now - receivedAt)
+  return state.serverNow + Math.max(0, now - receivedAt)
 }
 
 export function secondsUntil(endsAt: number, serverNow: number): number {
