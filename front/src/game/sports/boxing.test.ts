@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { type BoxingStatePayload, bagInFront, boxerFor, clockLabel, isFighting, handFor, parseHoldMs, parsePunchBags, percentOf, punchKindAfter, rockAngle, secondsUntil, serverClock, trianglesBySide, boundsOfVertices } from './boxing.ts'
+import { type BoxingStatePayload, bagInFront, boxerFor, clockLabel, isFighting, handFor, parseHoldMs, parsePunchBags, parseRingArena, percentOf, punchKindAfter, rockAngle, secondsUntil, serverClock, trianglesBySide, boundsOfVertices } from './boxing.ts'
 
 const boxer = (sessionId: string, corner: 'red' | 'blue') => ({
   sessionId, name: sessionId, corner, health: 120, maxHealth: 120, endurance: 100, maxEndurance: 100,
@@ -80,4 +80,13 @@ test('one glove is bounded by its own vertices only, not by the whole pair', () 
   assert.deepEqual(boundsOfVertices(positions, [3, 4, 5]), { min: [1, 0, -1], max: [3, 3, 0] })
   assert.deepEqual(boundsOfVertices(positions, [0, 1, 2, 1]), { min: [-3, 0, 0], max: [-1, 1, 2] })
   assert.throws(() => boundsOfVertices(positions, []), /no vertices/)
+})
+
+test('the fight camera stays within 3.6 m of the ring, inside the hall walls', () => {
+  const arena = parseRingArena({ ring: { centre: { x: -383, y: 1.1, z: -229.6 }, halfM: 3.05 } })
+  for (const [side, value] of [['minX', -389.65], ['maxX', -376.35], ['minZ', -236.25], ['maxZ', -222.95]] as const) {
+    assert.ok(Math.abs(arena[side] - value) < 1e-9, `${side} is ${arena[side]}`)
+  }
+  assert.throws(() => parseRingArena({ ring: { centre: { x: 0 }, halfM: 3 } }), /ring/)
+  assert.throws(() => parseRingArena({ ring: { centre: { x: 0, z: 0 }, halfM: 0 } }), /ring/)
 })

@@ -48,14 +48,23 @@ test('the swimming camera stays above the water at the surface and under it when
   close(dive.position.y, 0.7, 'underwater camera')
 })
 
+const OPEN = { minX: -50, maxX: 50, minZ: -50, maxZ: 50 }
+
 test('the duel camera stands behind the player, frames the midpoint and backs off with the gap', () => {
-  const near = poseFor({ kind: 'duel', sport: 'boxing', optional: true, opponent: { x: 0, z: -2 } }, FRAME)
+  const near = poseFor({ kind: 'duel', sport: 'boxing', optional: true, opponent: { x: 0, z: -2 }, arena: OPEN }, FRAME)
   assert.ok(near.position.z > 0, 'behind the player')
-  close(Math.hypot(near.position.x, near.position.z), 4.4, 'distance at 2 m')
+  close(Math.hypot(near.position.x, near.position.z), 3.4, 'distance at 2 m')
   close(near.target.z, -1, 'midpoint')
   assert.equal(near.fov, 52)
-  const far = poseFor({ kind: 'duel', sport: 'boxing', optional: true, opponent: { x: 0, z: -20 } }, FRAME)
-  close(Math.hypot(far.position.x, far.position.z), 6.5, 'distance capped')
+  assert.equal(near.pivot, null)
+  const far = poseFor({ kind: 'duel', sport: 'boxing', optional: true, opponent: { x: 0, z: -20 }, arena: OPEN }, FRAME)
+  close(Math.hypot(far.position.x, far.position.z), 5.5, 'distance capped')
+})
+
+test('the duel camera never leaves its arena, so a cornered boxer keeps it inside the hall', () => {
+  const pose = poseFor({ kind: 'duel', sport: 'boxing', optional: true, opponent: { x: 0, z: -2 }, arena: { minX: -1, maxX: 1, minZ: -5, maxZ: 2 } }, FRAME)
+  close(pose.position.z, 2, 'kept at the arena edge')
+  assert.ok(pose.position.x >= -1 && pose.position.x <= 1)
 })
 
 test('the court camera stays behind the baseline, looks down at the near half and follows the player a little', () => {
@@ -70,16 +79,18 @@ test('the court camera stays behind the baseline, looks down at the near half an
   close(blue.position.z, -27.885, 'blue side')
 })
 
-test('the stage camera faces the dancer', () => {
+test('the stage camera faces the dancer and keeps them left of the middle, clear of the note lanes', () => {
   const pose = poseFor({ kind: 'stage', sport: 'dance', optional: false, facingYaw: 0 }, FRAME)
   close(pose.position.z, -4.6, 'in front')
-  close(pose.target.z, 0, 'looks at the dancer')
+  close(pose.position.x, -1.7, 'camera to its right')
+  close(pose.target.x, -1.7, 'looks beside the dancer')
+  close(pose.target.z, 0, 'at the dancer depth')
 })
 
 test('views that frame the action lock the body, the follow view leaves it to the mouse', () => {
   const me = { x: 0, z: 0 }
   assert.equal(lockedLookFor({ kind: 'follow', sport: 'gym', optional: true, distance: 3, lift: 0.3, waterY: null }, me), null)
-  close(lockedLookFor({ kind: 'duel', sport: 'boxing', optional: true, opponent: { x: -3, z: 0 } }, me)!.yaw, Math.PI / 2, 'faces the opponent')
+  close(lockedLookFor({ kind: 'duel', sport: 'boxing', optional: true, opponent: { x: -3, z: 0 }, arena: OPEN }, me)!.yaw, Math.PI / 2, 'faces the opponent')
   close(lockedLookFor({ kind: 'court', sport: 'tennis', optional: false, cx: 0, netZ: 0, halfLength: 11.885, side: -1 }, me)!.yaw, Math.PI, 'blue faces +Z')
   close(lockedLookFor({ kind: 'stage', sport: 'dance', optional: false, facingYaw: 1 }, me)!.yaw, 1, 'keeps the dance facing')
 })

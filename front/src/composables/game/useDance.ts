@@ -16,9 +16,12 @@ import {
 } from '../../game/sports/danceHud'
 import { startDanceMusic, type DanceMusic } from '../../game/sports/danceMusic'
 import { fetchSportsBoard, type SportsBoard } from '../../api/sportsBoards'
+import { sportRulesUrl } from '../../game/sports/sportsSignup'
+import { yawTowards, type SportsView } from '../../game/camera/sportsCamera'
 
 export interface DanceDeps {
   gameRoomRef: ShallowRef<Room | null>
+  myPosition: { x: number; z: number }
   isMoveKey: (action: MoveAction, code: string) => boolean
 }
 
@@ -43,6 +46,18 @@ export function useDance(deps: DanceDeps) {
   const clientNow = ref(Date.now())
   const pressedAt = ref<readonly number[]>(new Array(DANCE_LANES).fill(Number.NEGATIVE_INFINITY))
   let music: DanceMusic | null = null
+  let coachX: number | null = null
+  fetch(sportRulesUrl('dance'))
+    .then((res) => {
+      if (!res.ok) throw new Error(`${res.url} answered ${res.status}`)
+      return res.json()
+    })
+    .then((rules: { venue?: { coach?: unknown } }) => {
+      const coach = rules.venue?.coach
+      if (!Array.isArray(coach) || typeof coach[0] !== 'number') throw new Error('dance rules: venue.coach must be [x, z]')
+      coachX = coach[0]
+    })
+    .catch((error: unknown) => console.error('[dance] studio layout not loaded', error))
 
   function mySessionId(): string | null {
     return deps.gameRoomRef.value?.sessionId ?? null
@@ -141,6 +156,11 @@ export function useDance(deps: DanceDeps) {
     if (start.value) clientNow.value = Date.now()
   }
 
+  function cameraView(): SportsView | null {
+    if (!dancing.value || coachX === null) return null
+    return { kind: 'stage', sport: 'dance', optional: false, facingYaw: yawTowards(deps.myPosition, { x: coachX, z: deps.myPosition.z }) }
+  }
+
   return {
     start,
     result,
@@ -158,5 +178,6 @@ export function useDance(deps: DanceDeps) {
     onKeyDown,
     tick,
     close,
+    cameraView,
   }
 }

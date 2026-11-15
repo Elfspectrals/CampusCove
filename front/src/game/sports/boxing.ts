@@ -117,6 +117,18 @@ const ROCK_RATE_RAD_S = 18
 const ROCK_DECAY_S = 0.25
 export const ROCK_DURATION_S = 0.9
 
+const RING_CAMERA_MARGIN_M = 3.6
+
+export function parseRingArena(rules: unknown): { minX: number; maxX: number; minZ: number; maxZ: number } {
+  const ring = (rules as { ring?: { centre?: { x?: unknown; z?: unknown }; halfM?: unknown } } | null)?.ring
+  const x = ring?.centre?.x
+  const z = ring?.centre?.z
+  const half = ring?.halfM
+  if (typeof x !== 'number' || typeof z !== 'number' || typeof half !== 'number' || !Number.isFinite(x + z + half) || half <= 0) throw new Error('boxing rules: invalid ring')
+  const reach = half + RING_CAMERA_MARGIN_M
+  return { minX: x - reach, maxX: x + reach, minZ: z - reach, maxZ: z + reach }
+}
+
 export function parsePunchBags(rules: unknown): BagSpot[] {
   const bags = (rules as { punchBags?: unknown } | null)?.punchBags
   if (!Array.isArray(bags) || bags.length === 0) throw new Error('boxing rules: punchBags must list the bags')

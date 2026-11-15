@@ -61,10 +61,12 @@ person where the sport stays playable that way; the choice is kept per sport unt
 | Swimming (in the pool water) | follow: 3.6 m behind the look, above the surface while the head is out, under it when diving | yes |
 | Tennis (match, or ball in hand on a court) | court: 16 m behind the player's baseline, 10 m high, the body faces the net | no |
 | Basketball and football (player of a match, or own ball out in free play) | follow: 4.2 m behind the look | yes |
+| Boxing (boxer of a bout) | duel: over the shoulder, 2.6 to 5.5 m behind by the gap, framing the midpoint; the body always faces the opponent; kept within 3.6 m of the ring, ropes ignored | yes |
+| Dance rhythm game | stage: 4.6 m in front of the dancer, who stays left of the note lanes; slow sway of 18° | no |
 
 Front only: `front/src/game/camera/sportsCamera.ts` computes the framing (tested), `useSportsCamera` applies it over the
 first-person camera with a short blend and keeps the camera out of walls with a ray cast, `useOwnBody` draws the local
-avatar. A sport exposes `cameraView()`; `GameView.vue` lists them in priority order. The socket is not involved: moves,
+avatar. A sport exposes `cameraView()`; `GameView.vue` lists them in priority order (dance, tennis, boxing, swimming, gym). The local avatar gets the same clips as the others from the same socket messages (`avatarsOf` in `useGameRealtime`, and the gym composable's `avatar` / `sportsMove` / `setDribbling` / `setTopOverride`). The socket is not involved: moves,
 aim and reach are still judged from the player's position and yaw.
 
 ### Rewards

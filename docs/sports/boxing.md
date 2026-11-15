@@ -80,7 +80,7 @@ A boxer who leaves the ring or disconnects past the 30 s grace loses the fight.
 - Knockdown at 0 health: the count is 10 s and the round clock waits. Getting up takes 12 clicks at least 80 ms apart and gives back 50 health, once per round; a second knockdown in the same round, a count that reaches 10 or a third knockdown in the fight is a KO.
 - No KO: the points of landed punches decide; equal points are a draw. A boxer outside the ring after the intro, or away past the 30 s grace, loses by forfeit.
 - Get-up is a click mash (the open point is closed).
-- View: first person, as everywhere in the game (no third-person camera exists).
+- View (2026-11-15): third person during a bout, over the boxer's shoulder, the body always facing the opponent (see "Camera" in [README.md](README.md)); `U` goes back to first person. The player's own boxer plays the punches, charge, guard, dodges and hit reactions the others see. Punch bags stay first person.
 - Punch bags: three `decor/punch_bag` props in the hall. A gloved player in reach punches them with the same four attacks (`boxing_bag { bag, kind }`, one hit every 400 ms); the bag rocks, nothing is scored.
 
 ## Socket contract

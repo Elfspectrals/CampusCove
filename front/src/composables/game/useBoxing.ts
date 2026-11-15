@@ -6,6 +6,7 @@ import type { FpBoxingCharge, FpBoxingShot } from '../../game/firstPersonArms'
 import { type WornGloves, wearFpGloves } from '../../game/sports/boxingGloves'
 import { sportRulesUrl } from '../../game/sports/sportsSignup'
 import { matches } from '../../config/keybindings'
+import type { Arena, SportsView } from '../../game/camera/sportsCamera'
 import {
   ROCK_DURATION_S,
   bagInFront,
@@ -14,6 +15,7 @@ import {
   handFor,
   parseHoldMs,
   parsePunchBags,
+  parseRingArena,
   rockAngle,
   type BagSpot,
   type BoxingBagHitPayload,
@@ -47,6 +49,7 @@ export interface BoxingDeps {
   myPosition: { x: number; z: number }
   getCamera: () => THREE.Camera | undefined
   getScene: () => THREE.Scene | undefined
+  remotePosition: (sessionId: string) => { x: number; z: number } | null
 }
 
 export interface BoxingArms {
@@ -78,6 +81,7 @@ export function useBoxing(deps: BoxingDeps) {
   let hideTimer: ReturnType<typeof setTimeout> | null = null
   const clock = setInterval(() => (now.value = Date.now()), CLOCK_TICK_MS)
   let bags: BagSpot[] = []
+  let arena: Arena | null = null
   const rocking = new Map<THREE.Object3D, { start: number, rotationX: number }>()
   let rockFrame = 0
   let holdMs: number | null = null
@@ -91,6 +95,7 @@ export function useBoxing(deps: BoxingDeps) {
     })
     .then((rules: unknown) => {
       bags = parsePunchBags(rules)
+      arena = parseRingArena(rules)
       holdMs = parseHoldMs(rules)
     })
     .catch((error: unknown) => console.error('[boxing] punch bags not loaded', error))
@@ -354,5 +359,11 @@ export function useBoxing(deps: BoxingDeps) {
     },
   }
 
-  return { view, fighting, handlers, onPointerDown, onKeyDown }
+  function cameraView(): SportsView | null {
+    const rival = fighting.value ? state.value?.boxers.find((b) => b.sessionId !== null && b.sessionId !== mySessionId()) : undefined
+    const opponent = rival?.sessionId ? deps.remotePosition(rival.sessionId) : null
+    return opponent && arena ? { kind: 'duel', sport: 'boxing', optional: true, opponent: { x: opponent.x, z: opponent.z }, arena } : null
+  }
+
+  return { view, fighting, handlers, onPointerDown, onKeyDown, cameraView }
 }

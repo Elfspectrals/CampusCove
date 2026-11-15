@@ -297,7 +297,7 @@ Decision (2026-11-15, from the review of the sports complex): the sports must be
 - [done] Swimming: third-person view in the water, swimsuit model fixed (swimmers were the placeholder avatar with no clip), swimmer drawn at the surface. Played alone on 2026-11-15; not seen from a second player's screen.
 - [done] Tennis on the model of Wii Sports Tennis: auto-run, committed swing with a 350 ms lead, yellow target moved by the mouse, net-clearing shots, timing label. Played on 2026-11-15 against a socket bot (tie-break won 7-0 with scripted perfect clicks; at 70 % auto-run speed no point ended, so 60 %). Not played by two humans, doubles not played.
 - [done] Basketball and football: third-person view, a missed shot stays on the line to the rim, target ring on the rim, good window shown in free play. Played alone in free play (one perfect shot); no match played, football not played.
-- [todo] Boxing and dance views.
+- [done] Boxing and dance views. Seen in a bout against a socket bot (no punch thrown by the player) and in a solo song.
 - [todo] Climbing: endurance and reflex check.
 - [todo] Gear lent for a fee at each venue (prices from the `economist`).
 - [todo] Gym: the football goal facing the wrong way and the basketball hoops.

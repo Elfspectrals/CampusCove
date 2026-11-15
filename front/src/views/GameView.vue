@@ -897,7 +897,7 @@ const runningRace = useRunningRace({
   setRacePose: (sessionId, pose) => realtime.setRemoteRacePose(sessionId, pose),
 })
 const { state: runState, runner: myRunnerState, result: runResult, clientNow: runClientNow, clockOffset: runClockOffset, lastStepAt: runLastStepAt, gateBearing: runGateBearing, board: runBoard } = runningRace
-const dance = useDance({ gameRoomRef, isMoveKey: (action, code) => matches(action, code) })
+const dance = useDance({ gameRoomRef, myPosition, isMoveKey: (action, code) => matches(action, code) })
 const { start: danceStart, result: danceResult, boards: danceBoards, boardsFailed: danceBoardsFailed, dancing, notes: danceNotes, songMs: danceSongMs, board: danceBoard, mine: danceMine, teamScore: danceTeamScore, judgementShown: danceJudgement, litLanes: danceLitLanes } = dance
 const emoteWheel = useEmoteWheel({
   gameRoomRef,
@@ -1061,6 +1061,7 @@ const boxing = useBoxing({
   myPosition,
   getCamera,
   getScene,
+  remotePosition: (sessionId) => realtime.remotePosition(sessionId),
 })
 const { view: boxingView, fighting: boxingFighting } = boxing
 const SKATING_CORRECTIONS = new Set(['no_skates', 'skate_start', 'skate_fallen'])
@@ -1766,7 +1767,7 @@ const sportsCamera = useSportsCamera({
   myPosition,
   pointerLocked: () => pointerLocked.value,
   getFpHands: () => game?.fpHands ?? null,
-  view: () => tennis.cameraView() ?? poolSwim.cameraView() ?? gymMatch.cameraView(),
+  view: () => dance.cameraView() ?? tennis.cameraView() ?? boxing.cameraView() ?? poolSwim.cameraView() ?? gymMatch.cameraView(),
   onThirdPerson: () => survival.say(t('sports.camera.thirdPerson', { key: actionKeyLabels('cameraView').join(' / ') })),
 })
 const ownBody = useOwnBody({

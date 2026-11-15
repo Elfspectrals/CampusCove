@@ -87,6 +87,8 @@ Dancers are moved to their spot at kick-off (`position_correction`, reason `danc
 song. Other players see them play the `Dance` clip at `bpm / 120` and `Stumble` on a miss. The music is synthesised
 in the browser (`front/src/game/sports/danceMusic.ts`) on the song clock; it decides nothing.
 
+During the song the view is third person, facing the dancer from the coach's side (see "Camera" in [README.md](README.md), decided 2026-11-15): the dancer stays left of the note lanes and plays the same `Dance`, lane moves and `Stumble` as the others see. A dancer moved out of the studio by an admin teleport stays locked in the song until it ends (known, not fixed).
+
 ## Tasks and boards (built 2026-11-14)
 
 Laravel owns the song, difficulty and mode lists (`DanceService::SONGS`, `DIFFICULTIES`, `MODES`); they must match

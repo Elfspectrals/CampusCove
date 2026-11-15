@@ -13,9 +13,16 @@ export interface CameraPose {
 
 export type SportsView =
   | { kind: 'follow'; sport: string; optional: boolean; distance: number; lift: number; waterY: number | null }
-  | { kind: 'duel'; sport: string; optional: boolean; opponent: { x: number; z: number } }
+  | { kind: 'duel'; sport: string; optional: boolean; opponent: { x: number; z: number }; arena: Arena }
   | { kind: 'court'; sport: string; optional: boolean; cx: number; netZ: number; halfLength: number; side: 1 | -1 }
   | { kind: 'stage'; sport: string; optional: boolean; facingYaw: number }
+
+export interface Arena {
+  minX: number
+  maxX: number
+  minZ: number
+  maxZ: number
+}
 
 export interface ViewFrame {
   eye: Vec3
@@ -34,10 +41,10 @@ const WATER_SURFACE_BAND_M = 0.1
 const CAMERA_ABOVE_WATER_M = 0.6
 const CAMERA_BELOW_WATER_M = 0.3
 const DUEL_SHOULDER_RAD = (32 * Math.PI) / 180
-const DUEL_BASE_M = 2.6
-const DUEL_PER_SEPARATION = 0.9
-const DUEL_DISTANCE_M = [3, 6.5] as const
-const DUEL_HEIGHT_M = 2.05
+const DUEL_BASE_M = 2.0
+const DUEL_PER_SEPARATION = 0.7
+const DUEL_DISTANCE_M = [2.6, 5.5] as const
+const DUEL_HEIGHT_M = 1.9
 const DUEL_TARGET_HEIGHT_M = 1.25
 const DUEL_FOV = 52
 const COURT_BEHIND_BASELINE_M = 16
@@ -51,6 +58,7 @@ const STAGE_TARGET_HEIGHT_M = 1.0
 const STAGE_SWAY_RAD = (18 * Math.PI) / 180
 const STAGE_SWAY_PERIOD_S = 14
 const STAGE_FOV = 40
+const STAGE_SIDE_SHIFT_M = 1.7
 
 export function blendStep(blend: number, active: boolean, dt: number): number {
   const goal = active ? 1 : 0
@@ -97,10 +105,14 @@ function duelPose(view: Extract<SportsView, { kind: 'duel' }>, frame: ViewFrame)
   const bz = ax * sin + az * cos
   const distance = Math.min(DUEL_DISTANCE_M[1], Math.max(DUEL_DISTANCE_M[0], DUEL_BASE_M + separation * DUEL_PER_SEPARATION))
   return {
-    position: { x: frame.eye.x - bx * distance, y: frame.feetY + DUEL_HEIGHT_M, z: frame.eye.z - bz * distance },
+    position: {
+      x: Math.min(view.arena.maxX, Math.max(view.arena.minX, frame.eye.x - bx * distance)),
+      y: frame.feetY + DUEL_HEIGHT_M,
+      z: Math.min(view.arena.maxZ, Math.max(view.arena.minZ, frame.eye.z - bz * distance)),
+    },
     target: { x: frame.eye.x + dx / 2, y: frame.feetY + DUEL_TARGET_HEIGHT_M, z: frame.eye.z + dz / 2 },
     fov: DUEL_FOV,
-    pivot: { x: frame.eye.x, y: frame.feetY + DUEL_TARGET_HEIGHT_M, z: frame.eye.z },
+    pivot: null,
   }
 }
 
@@ -117,9 +129,11 @@ function courtPose(view: Extract<SportsView, { kind: 'court' }>, frame: ViewFram
 function stagePose(view: Extract<SportsView, { kind: 'stage' }>, frame: ViewFrame): CameraPose {
   const sway = STAGE_SWAY_RAD * Math.sin((frame.timeS * 2 * Math.PI) / STAGE_SWAY_PERIOD_S)
   const front = lookDirection(view.facingYaw + sway, 0)
+  const sideX = front.z * STAGE_SIDE_SHIFT_M
+  const sideZ = -front.x * STAGE_SIDE_SHIFT_M
   return {
-    position: { x: frame.eye.x + front.x * STAGE_DISTANCE_M, y: frame.feetY + STAGE_HEIGHT_M, z: frame.eye.z + front.z * STAGE_DISTANCE_M },
-    target: { x: frame.eye.x, y: frame.feetY + STAGE_TARGET_HEIGHT_M, z: frame.eye.z },
+    position: { x: frame.eye.x + front.x * STAGE_DISTANCE_M + sideX, y: frame.feetY + STAGE_HEIGHT_M, z: frame.eye.z + front.z * STAGE_DISTANCE_M + sideZ },
+    target: { x: frame.eye.x + sideX, y: frame.feetY + STAGE_TARGET_HEIGHT_M, z: frame.eye.z + sideZ },
     fov: STAGE_FOV,
     pivot: { x: frame.eye.x, y: frame.feetY + STAGE_TARGET_HEIGHT_M, z: frame.eye.z },
   }
