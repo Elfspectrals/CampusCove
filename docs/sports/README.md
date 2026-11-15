@@ -50,6 +50,21 @@ Product design for the sports of the complex west of Cove Heights (site decision
 | Tennis racket | Tennis | Held |
 | Set of boules | Pétanque | Held |
 
+### Camera (decided 2026-11-15)
+
+The game is first person. Some sports switch to a third-person view on their own, and the player then sees their own
+body (the same avatar, outfit and clips the other players see). `U` (rebindable, action `cameraView`) goes back to first
+person where the sport stays playable that way; the choice is kept per sport until the page is reloaded.
+
+| Sport | View | `U` |
+|---|---|---|
+| Swimming (in the pool water) | follow: 3.6 m behind the look, above the surface while the head is out, under it when diving | yes |
+
+Front only: `front/src/game/camera/sportsCamera.ts` computes the framing (tested), `useSportsCamera` applies it over the
+first-person camera with a short blend and keeps the camera out of walls with a ray cast, `useOwnBody` draws the local
+avatar. A sport exposes `cameraView()`; `GameView.vue` lists them in priority order. The socket is not involved: moves,
+aim and reach are still judged from the player's position and yaw.
+
 ### Rewards
 
 - Sports pay **no coins**, ever.

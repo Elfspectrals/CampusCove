@@ -68,6 +68,7 @@ export interface UseGameMovementDeps {
   cameraRoll?: (dt: number) => number
   skate?: (dt: number, yaw: number, keys: { forward: boolean; brake: boolean }) => { dx: number; dz: number } | null
   afterSkate?: (wanted: number, moved: number) => void
+  lockedLook?: () => { yaw: number; pitch: number } | null
   swim?: {
     waterAt: (x: number, z: number, feetY: number) => WaterRect | null
     step: (water: WaterRect, eyeY: number, vy: number, input: SwimInput, yaw: number, pitch: number, dt: number) => SwimStep
@@ -117,6 +118,11 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     pitch = Math.max(-Math.PI / 2 + 0.1, Math.min(Math.PI / 2 - 0.1, pitch))
     mouseX = 0
     mouseY = 0
+    const lockedLook = deps.lockedLook?.() ?? null
+    if (lockedLook) {
+      yaw = lockedLook.yaw
+      pitch = lockedLook.pitch
+    }
     direction.set(0, 0, -1).applyAxisAngle(THREE.Object3D.DEFAULT_UP, yaw)
     rightVec.crossVectors(direction, THREE.Object3D.DEFAULT_UP).normalize()
 
@@ -245,6 +251,10 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     camera.rotation.order = 'YXZ'
     camera.rotation.y = yaw
     camera.rotation.x = pitch
+  }
+
+  function look(): { yaw: number; pitch: number } {
+    return { yaw, pitch }
   }
 
   function kickCamera(): void {
@@ -377,6 +387,7 @@ export function useGameMovement(deps: UseGameMovementDeps) {
     containerSize,
     requestPointerLock,
     setLook,
+    look,
     onCanvasMouseDown,
     startRenderLoop,
     stopRenderLoop,

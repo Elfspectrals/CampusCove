@@ -6,6 +6,8 @@ import type { PoolRules, WaterRect } from '../../game/sports/pool/poolRace'
 import { playSubmerge, playSurface, setPoolSoundsMuffled } from '../../game/sports/pool/poolSounds'
 import { createPoolWaterSurface } from '../../game/sports/pool/poolWaterSurface'
 import { floatEyeY, isUnderwater, swimStep, swimWaterAt, type SwimInput } from '../../game/sports/pool/swimMotion'
+import { swimmingAt } from '../../game/sports/pool/poolRace'
+import type { SportsView } from '../../game/camera/sportsCamera'
 
 const UNDERWATER_FOG = { color: 0x1b6f86, near: 0.5, far: 14 }
 const MUFFLE_HZ = 700
@@ -13,6 +15,8 @@ const RIPPLE_EVERY_M = 0.7
 const SURFACE_BAND_M = 0.35
 const LOW_BREATH = 0.3
 const GASP_BELOW = 0.5
+const CAMERA_DISTANCE_M = 3.6
+const CAMERA_LIFT_M = 0.5
 
 export interface PoolSwimDeps {
   rules: () => PoolRules | null
@@ -127,5 +131,15 @@ export function usePoolSwim(deps: PoolSwimDeps) {
     if (underwater.value) setUnderwaterLook(false)
   }
 
-  return { swim, breathHud, underwater, handlers, tick, dispose }
+  function swimming(): boolean {
+    const rules = deps.rules()
+    return rules !== null && swimmingAt(rules, deps.myPosition.x, deps.myPosition.y - EYE_HEIGHT, deps.myPosition.z)
+  }
+
+  function cameraView(): SportsView | null {
+    const rules = deps.rules()
+    return rules && swimming() ? { kind: 'follow', sport: 'swimming', optional: true, distance: CAMERA_DISTANCE_M, lift: CAMERA_LIFT_M, waterY: rules.waterY } : null
+  }
+
+  return { swim, breathHud, underwater, handlers, tick, dispose, swimming, cameraView }
 }

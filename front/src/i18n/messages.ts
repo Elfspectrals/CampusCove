@@ -132,6 +132,7 @@ export const messages = {
         tasks: 'Tasks',
         sportsTackle: 'Tackle (football) or steal (basketball) in a gym match',
         emoteWheel: 'Dance (emote wheel)',
+        cameraView: 'Switch between first and third person view in a sport',
         diveTwist: 'Diving: twist in the air',
         diveSomersault: 'Diving: somersault in the air',
         diveCannonball: 'Diving: cannonball',
@@ -761,6 +762,9 @@ export const messages = {
       noPass: 'You need a sports pass. Buy one at the reception.',
       bought: 'Sports pass bought.',
       signedUp: 'You are signed up.',
+      camera: {
+        thirdPerson: 'Third person view. {key}: back to first person.',
+      },
       dance: {
         title: 'Dance',
         combo: 'Combo {n}',
@@ -1419,6 +1423,7 @@ export const messages = {
         tasks: 'Tâches',
         sportsTackle: 'Tacler (football) ou voler le ballon (basket) en match au gymnase',
         emoteWheel: 'Danser (roue des danses)',
+        cameraView: 'Passer de la vue à la première à la troisième personne dans un sport',
         diveTwist: 'Plongeon : vrille en l’air',
         diveSomersault: 'Plongeon : salto en l’air',
         diveCannonball: 'Plongeon : bombe',
@@ -2047,6 +2052,9 @@ export const messages = {
       noPass: 'Il te faut un pass sport. Achète-le à l’accueil.',
       bought: 'Pass sport acheté.',
       signedUp: 'Tu es inscrit.',
+      camera: {
+        thirdPerson: 'Vue à la troisième personne. {key} : revenir à la première personne.',
+      },
       dance: {
         title: 'Danse',
         combo: 'Combo {n}',

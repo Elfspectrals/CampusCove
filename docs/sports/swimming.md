@@ -60,6 +60,16 @@ Block stance, start dive, front crawl in the water, wall turn, finish touch. Cal
 
 - Tasks (badges only, counted matches only, so never a solo race): "Swimmer" = races swum (every result but `dnf`, and a false start is recorded as `dnf`), tiers 5 / 25 / 100; "Fast lane" = 50 m finished under 30 s, tiers 1 / 5 / 20 (`SportsTaskCounters`).
 
+## Decisions (2026-11-15, gameplay pass after the first review)
+
+- In the pool water the view is third person (see "Camera" in [README.md](README.md)), so the swimmer sees their own
+  crawl and tread clips; `U` goes back to first person.
+- A swimmer became the placeholder avatar, with no clip: the swimsuit was given to the avatar loader as a key instead of
+  its model file (`/assets/wear/bottom/swimsuit/model.glb`). Fixed in `swimwearOutfit`.
+- A swimmer is drawn 0.3 m higher than their eye height says (`SWIMMER_LIFT_M`, `useRemoteAvatars`), so the head and the
+  recovering arm break the surface: the first-person eye floats 0.15 m above the water while the clips put the head
+  0.45 m under the standing eye.
+
 ## Free swimming
 
 Decided 2026-11-15: a real pool. The player swims in the water of the basin and the pit, can go under water and holds their breath; nobody walks on the basin floor.

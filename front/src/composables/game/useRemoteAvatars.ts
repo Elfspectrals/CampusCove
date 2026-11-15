@@ -50,6 +50,7 @@ const REMOTE_LEAN_SMOOTHING_S = 0.15
 const REMOTE_SNAP_DISTANCE = 4
 /** Beyond this distance from the local player a rigged avatar's clips are not advanced (not worth the CPU). */
 const ANIMATION_MAX_DISTANCE = 60
+const SWIMMER_LIFT_M = 0.3
 
 interface RemoteAvatar {
   userId: string
@@ -104,6 +105,7 @@ export interface RemoteAvatarsDeps {
   myPosition: { x: number; y: number; z: number }
   playSoundOn: (name: SfxName, object: THREE.Object3D, delayS: number) => void
   onIce?: (x: number, z: number) => boolean
+  own?: boolean
 }
 
 function parseSlotHexes(raw: Record<string, string> | null | undefined): CosmeticColors {
@@ -178,7 +180,7 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
   }
 
   function tagAvatar(group: THREE.Group, sessionId: string, userId: string, pseudo: string): void {
-    group.userData.isRemoteAvatar = true
+    group.userData.isRemoteAvatar = !deps.own
     group.userData.sessionId = sessionId
     group.userData.userId = userId
     group.userData.pseudo = pseudo
@@ -678,7 +680,7 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     if (impacts.length > 0) impacts = impacts.filter((i) => i.update(dt))
     if (flashes.length > 0) flashes = flashes.filter((f) => f.update(dt))
     if (damageNumbers.length > 0) damageNumbers = damageNumbers.filter((d) => d.update(dt))
-    const t = 1 - Math.exp(-REMOTE_SMOOTHING * dt)
+    const t = deps.own ? 1 : 1 - Math.exp(-REMOTE_SMOOTHING * dt)
     for (const [sessionId, entry] of avatars) {
       if (deps.onIce && deps.onIce(entry.x, entry.z) !== entry.skating) {
         entry.skating = !entry.skating
@@ -687,16 +689,17 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
       const group = entry.group
       setAvatarSkating(group, entry.skating)
       if (entry.chatBubble && !entry.chatBubble.update(dt)) entry.chatBubble = null
-      const tagVisible = nameTagVisible(group.position.x - deps.myPosition.x, group.position.z - deps.myPosition.z)
+      const tagVisible = !deps.own && nameTagVisible(group.position.x - deps.myPosition.x, group.position.z - deps.myPosition.z)
       entry.nameTag.setVisible(tagVisible)
       entry.voiceIcon.set(entry.voiceState, tagVisible)
       group.position.x -= entry.punchOffsetX
       group.position.z -= entry.punchOffsetZ
+      const shownY = entry.y + (swimwear.has(sessionId) ? SWIMMER_LIFT_M : 0)
       const dx = entry.x - group.position.x
-      const dy = entry.y - EYE_HEIGHT - group.position.y
+      const dy = shownY - EYE_HEIGHT - group.position.y
       const dz = entry.z - group.position.z
       if (dx * dx + dy * dy + dz * dz > REMOTE_SNAP_DISTANCE * REMOTE_SNAP_DISTANCE) {
-        placeAvatar(group, entry.x, entry.y, entry.z, entry.ry)
+        placeAvatar(group, entry.x, shownY, entry.z, entry.ry)
         const poseDt = advanceHitStop(entry.hitStop, dt)
         applyPunchPose(entry, poseDt, animate(group, poseDt, 0))
         continue

@@ -97,11 +97,11 @@ export interface PoolRules {
 }
 
 export const RESULTS_SHOWN_MS = 10_000
-export const SWIMSUIT_WEAR = 'swimsuit'
+export const SWIMSUIT_WEAR_URL = '/assets/wear/bottom/swimsuit/model.glb'
 const SWIMMING_FEET_BELOW = -0.5
 
 export function swimwearOutfit<T extends { top: string | null; bottom: string | null; shoes: string | null; head_accessory: string | null }>(models: T): T {
-  return { ...models, top: null, bottom: SWIMSUIT_WEAR, shoes: null, head_accessory: null }
+  return { ...models, top: null, bottom: SWIMSUIT_WEAR_URL, shoes: null, head_accessory: null }
 }
 
 export function swimmingAt(rules: PoolRules, x: number, feetY: number, z: number): boolean {

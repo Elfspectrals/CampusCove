@@ -440,6 +440,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
   let isInitialInventoryLoad = true
 
   const remotes = useRemoteAvatars({ getScene: deps.getScene, myPosition: deps.myPosition, playSoundOn: deps.playSoundOn, onIce: deps.skating.isOnIce })
+  const ownAvatar = useRemoteAvatars({ getScene: deps.getScene, myPosition: deps.myPosition, playSoundOn: deps.playSoundOn, onIce: deps.skating.isOnIce, own: true })
   let dressedBoxers = new Set<string>()
   let undressTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -474,10 +475,12 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
   function bindRoomEvents(room: Room) {
     room.onMessage('init', (payload: RoomInitPayload) => {
       remotes.clear()
+      ownAvatar.clear()
       deps.apartment.clearApartmentObjects()
       deps.roomMessage.value = null
       deps.loadTown()
       setMyPosition(payload.me.x, payload.me.y, payload.me.z)
+      void ownAvatar.upsert(room.sessionId, payload.me)
       for (const u of payload.users) {
         if (u.sessionId !== room.sessionId) void remotes.upsert(u.sessionId, u, deps.seats.seatPose(u.seatId))
         deps.seats.onSeated({ sessionId: u.sessionId, seatId: u.seatId ?? null }, room.sessionId)
@@ -537,7 +540,10 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
       'appearance_updated',
       (data: { sessionId: string; slotHexes?: Record<string, string>; bodyModelGlb?: string | null; slotModels?: Record<string, string | null>; character?: unknown }) => {
         if (data.sessionId !== room.sessionId) void remotes.updateAppearance(data.sessionId, data)
-        else if (data.slotModels) deps.onMyShownTop(data.slotModels.top ?? null)
+        else {
+          void ownAvatar.updateAppearance(data.sessionId, data)
+          if (data.slotModels) deps.onMyShownTop(data.slotModels.top ?? null)
+        }
       },
     )
 
@@ -847,7 +853,10 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     if (signature === lastSentSignature) return
     lastSentSignature = signature
     deps.onMyOutfit(payload.slotModels)
-    deps.gameRoomRef.value?.send('appearance', payload)
+    const room = deps.gameRoomRef.value
+    if (!room) return
+    room.send('appearance', payload)
+    void ownAvatar.updateAppearance(room.sessionId, payload)
   }
 
   /**
@@ -885,6 +894,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
         deps.gameRoomRef.value = null
       }
       remotes.clear()
+      ownAvatar.clear()
       deps.apartment.detachForRoomSwitch()
       const room: Room = await colyseusClient.joinOrCreate('city', {
         token: auth.token,
@@ -909,7 +919,11 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     connectRealtime,
     sendMyAppearance,
     switchingRoom,
-    clearRemoteUsers: remotes.clear,
+    clearRemoteUsers: () => {
+      remotes.clear()
+      ownAvatar.clear()
+    },
+    ownAvatar,
     tickRemoteAvatars: remotes.tick,
     remotePseudo: remotes.pseudoOf,
     remotePosition: remotes.positionOf,

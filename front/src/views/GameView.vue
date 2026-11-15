@@ -130,6 +130,8 @@ import { ICE_SKATES_CODE } from '../game/sports/skating/skateMotion'
 import { usePetanque } from '../composables/game/usePetanque'
 import { usePoolRace } from '../composables/game/usePoolRace'
 import { usePoolSwim } from '../composables/game/usePoolSwim'
+import { useSportsCamera } from '../composables/game/useSportsCamera'
+import { useOwnBody } from '../composables/game/useOwnBody'
 import { usePickpocket } from '../composables/game/usePickpocket'
 import { useStorageAuction } from '../composables/game/useStorageAuction'
 import { useStorageWarehouse } from '../composables/game/useStorageWarehouse'
@@ -1727,6 +1729,7 @@ function handleExtraKeyDown(e: KeyboardEvent): boolean {
     e.preventDefault()
     return housing.buy() || housing.leave()
   }
+  if (matches('cameraView', e.code) && !e.repeat && sportsCamera.toggle()) return true
   // collision overlay: a developer tool, kept off in production so it never steals a player's key
   if (import.meta.env.DEV && e.code === 'KeyC' && !e.repeat) {
     const scene = getScene()
@@ -1746,6 +1749,22 @@ function handleExtraKeyDown(e: KeyboardEvent): boolean {
   }
   return placement.onKeyDown(e)
 }
+
+const sportsCamera = useSportsCamera({
+  myPosition,
+  pointerLocked: () => pointerLocked.value,
+  getFpHands: () => game?.fpHands ?? null,
+  view: () => poolSwim.cameraView(),
+  onThirdPerson: () => survival.say(t('sports.camera.thirdPerson', { key: actionKeyLabels('cameraView').join(' / ') })),
+})
+const ownBody = useOwnBody({
+  sessionId: () => gameRoomRef.value?.sessionId ?? null,
+  myPosition,
+  avatar: () => realtime.ownAvatar,
+  yaw: () => movement.look().yaw,
+  shown: sportsCamera.thirdPerson,
+  swimming: poolSwim.swimming,
+})
 
 const movement = useGameMovement({
   pointerLocked,
@@ -1792,7 +1811,11 @@ const movement = useGameMovement({
   speedFactor: () => survival.speedFactor() * intoxication.walkFactor() * (adminWatch.hasMyPower('speed') ? SPEED_POWER_FACTOR : 1),
   movementLocked: () => seats.seated.value || townBus.riding.value || police.cuffedBy.value !== null || adminWatch.hasMyPower('freeze') || gymMatch.down() || runningRace.racing.value || dancing.value || climbingNow.value || poolRace.locked.value,
   flying: () => adminWatch.hasMyPower('fly'),
-  afterCameraPlaced: intoxication.applyToCamera,
+  afterCameraPlaced: (camera, dt) => {
+    intoxication.applyToCamera(camera, dt)
+    sportsCamera.apply(camera, dt)
+  },
+  lockedLook: sportsCamera.lockedLook,
   skate: skating.step,
   cameraRoll: skating.cameraRoll,
   afterSkate: skating.afterMove,
@@ -1804,6 +1827,7 @@ const movement = useGameMovement({
     if (import.meta.env.DEV) renderStats.tick(dt)
     positionLabel.value = formatPosition()
     realtime.tickRemoteAvatars(dt)
+    ownBody.tick(dt)
     currentHouseKey.value = houseKeyAt(myPosition.x, myPosition.z)
     placement.tick(dt)
     mallCellTemplates.tick(dt, myPosition)

@@ -76,7 +76,7 @@ test('a cannonball makes a bigger splash than any other entry from the same heig
 
 test('in the water the swimsuit replaces the top, bottom, shoes and headwear, the hair stays', () => {
   const own = { hair: 'curly', head_accessory: 'gamer', top: 'hoodie', bottom: 'jeans', shoes: 'boots' }
-  assert.deepEqual(swimwearOutfit(own), { hair: 'curly', head_accessory: null, top: null, bottom: 'swimsuit', shoes: null })
+  assert.deepEqual(swimwearOutfit(own), { hair: 'curly', head_accessory: null, top: null, bottom: '/assets/wear/bottom/swimsuit/model.glb', shoes: null })
 })
 
 test('a player swims only with the feet down in the pool water, not on a board above it', () => {

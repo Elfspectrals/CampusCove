@@ -289,6 +289,19 @@ Decision (2026-11-14, second pass): everything the console gives can be taken ba
 - [doing] Give screen by type, powers and houses (decided 2026-11-14): the item picker shows sections (food and drinks, tools, furniture, clothes, sports) split into groups, each item with its picture, and what a portion restores; powers on any online player, kept by the socket and never saved: invincible, never hungry and never thirsty as toggles, full health, full stomach, quench, sober up and clear stars as one-shot boosts; give a vacant house for free (`POST /api/admin/game/house`, audited, the receiver pays the tax from the next day). The console keeps the target, its gauges and active powers in view above Give, Powers, House, Places and Events tabs; the watch gets Powers and Give a house on the player page and sections before items. Played on 2026-11-14 on self: invincible and never thirsty toggled, full stomach, a cookie given, the house list seen. Not played: giving a house in game (feature tests only), powers on a second player.
 - [doing] Admin watch redesign (branch `feat/admin-watch-redesign`): four tiles (Players, Places, Events, Console); a player sheet with cash, bank and wanted stars (`GET /api/admin/game/wallets`, socket `admin_player`), go to the player (new `admin_goto`) or bring them, give money on a stepper with quick amounts or an item searched by typing; the last place used first; event states (quiz, storage sale, market) and Enter held 1 s for taxes and closing the market; an ADMIN badge on the watch; the console docked on the right with tabs, quick amounts and the last 5 results, the game keeps running behind it (a click on the game takes the mouse back). Built, not played in game.
 
+## Sports gameplay pass (doing, branch feat/sports-review)
+
+Decision (2026-11-15, from the review of the sports complex): the sports must be fun before the complex is merged. The first test found tennis impossible, basketball hard to aim, the easy climbing route too hard, no swimming clip in the water, one football goal and the basketball hoops badly placed. Decided with the user: a third-person view switched on by the sport itself (tennis, boxing, the dance rhythm game, swimming, basketball and football), with a key (U) back to first person where the sport stays playable (swimming, boxing, gym), never in tennis or dance; climbing gets an endurance bar and a reflex check on each hold instead of a timed click; every venue lends its gear for a fee while the player stays in its area; each sport is played in the browser before it is handed over. Sources read for the feel are listed in each sport file.
+
+- [done] Third-person view and local avatar (`sportsCamera.ts`, `useSportsCamera`, `useOwnBody`, a second `useRemoteAvatars` for the player's own body). Played at the pool.
+- [done] Swimming: third-person view in the water, swimsuit model fixed (swimmers were the placeholder avatar with no clip), swimmer drawn at the surface. Played alone on 2026-11-15; not seen from a second player's screen.
+- [todo] Tennis on the model of Wii Sports Tennis.
+- [todo] Basketball and football: third-person view, shot locked on the basket.
+- [todo] Boxing and dance views.
+- [todo] Climbing: endurance and reflex check.
+- [todo] Gear lent for a fee at each venue (prices from the `economist`).
+- [todo] Gym: the football goal facing the wrong way and the basketball hoops.
+
 ## Later
 
 - Fishing as the second job (reuse the darts power meter or the Drink Fast balance bar; rod and fish models exist).
