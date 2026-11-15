@@ -86,7 +86,7 @@ const DEFAULT_BINDINGS: Readonly<Record<BindableAction, readonly string[]>> = {
   pickpocket: ['KeyL'],
   tasks: ['KeyJ'],
   sportsTackle: ['KeyC'],
-  emoteWheel: ['KeyU'],
+  emoteWheel: ['KeyC'],
   diveTwist: ['ArrowLeft'],
   diveSomersault: ['ArrowUp'],
   diveCannonball: ['ArrowDown'],
