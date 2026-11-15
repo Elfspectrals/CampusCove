@@ -195,18 +195,36 @@ def block():
 JAB_FRAMES = 13
 JAB_IMPACT = 5
 JAB_LOAD = _with(GUARD_POSE, **{"L_y": -0.18, "L_z": 1.53, "chest_z": -8})
-JAB_HIT = {**_torso((5, 0, -8), (7, 0, -16), (0, 0, 10), (8, 0, 29)),
-           **_arm("L", 0.06, -0.66, 1.55, 1.0, 0.0, -0.4, pro=14, up=6, w=1),
+JAB_HIT = {**_torso((5, -20, -32), (7, 0, -28), (2, 8, 22), (16, 14, 50)),
+           **_arm("L", -0.004, -0.615, 1.571, 1.0, 0.0, 0.0, pro=14, up=10, w=1),
            **_arm("R", -0.08, -0.20, 1.56, -0.1, 0.2, -1)}
 
 
+def _arm_in_world(P, q, k):
+    rot = P.rot
+    P.rot = {b: list(r) for b, r in rot.items()}
+    for bone, t in TORSO_KEYS:
+        P.rx(bone, q[t + ".x"]); P.ry(bone, q[t + ".y"]); P.rz(bone, q[t + ".z"])
+    dc, hc = _posed(P, "Chest")
+    P.rot = rot
+    rest = P.arm.data.bones["Chest"].head_local
+    target = Vector((q[k + ".x"], q[k + ".y"], q[k + ".z"]))
+    pole = Vector((q[k + ".px"], q[k + ".py"], q[k + ".pz"]))
+    w = q[k + ".w"]
+    target = (hc + dc @ (target - rest)).lerp(target, w)
+    pole = (dc @ pole).lerp(pole, w)
+    return {**q, k + ".x": target.x, k + ".y": target.y, k + ".z": target.z,
+            k + ".px": pole.x, k + ".py": pole.y, k + ".pz": pole.z, k + ".w": 1.0}
+
+
 def jab():
-    return _upper_clip(JAB_FRAMES, [
-        (0, {}),
-        (2, JAB_LOAD),
-        (JAB_IMPACT, JAB_HIT),
-        (JAB_FRAMES, {}),
-    ])
+    keys = [(0, {}), (2, JAB_LOAD), (JAB_IMPACT, JAB_HIT), (JAB_FRAMES, {})]
+
+    def f(ph, P):
+        lower(P, idle_lower(0.0, _foot(P)))
+        world = [(fr / JAB_FRAMES, _arm_in_world(P, {**guard_at(0.0), **pose}, "L")) for fr, pose in keys]
+        upper(P, key_poses(world)(ph))
+    return f
 
 
 CROSS_FRAMES = 24

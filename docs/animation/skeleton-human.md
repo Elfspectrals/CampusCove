@@ -208,7 +208,7 @@ the chest frame for guard poses and in armature space for punch contacts.
 | BoxStep | 30 | 1.0 | yes | forward skip-shuffle, 2 steps per cycle, design speed 2.5 m/s, stance feet move back at exactly 2.5 m/s (`_foot_track`), lowest at frame 0 like BoxIdle; feet leave the canvas up to 8 cm |
 | Guard | 30 | 1.0 | yes | fists at the chin, elbows in, same bounce phase as BoxIdle |
 | Block | 30 | 1.0 | yes | forearms in front of the face |
-| Jab | 13 | 0.433 | one-shot | left, impact frame 5 (0.167 s) |
+| Jab | 13 | 0.433 | one-shot | left, impact frame 5 (0.167 s), torso turned and leaning into the punch, fist travels in a straight line in armature space |
 | Cross | 24 | 0.8 | one-shot | right with torso turn, impact frame 8 (0.267 s) |
 | Hook | 33 | 1.1 | one-shot | left, horizontal forearm, impact frame 11 (0.367 s), charge exit frame 5 (0.167 s) |
 | Uppercut | 28 | 0.933 | one-shot | right, knees dip 4.5 cm at frame 4 then drive up, rear heel lifts 12-14°, torso turns left, impact frame 9 (0.3 s), charge exit frame 4 (0.133 s) |
@@ -253,7 +253,13 @@ torso (spine −24°, chest −32° at impact, a 14° lean to the character's ri
 `pro` 16°) so the upper arm stays lateral to the chest; the fist sits at 1.48 m with the forearm within 7 cm of level.
 The cocked load (`HOOK_LOAD`, also HookCharge) lowers the elbow (pole z −0.6, `up` 14°). Measured on the base body:
 mean stretch of the left torso edges 1.25 to 1.20 at impact (worst edge 4.1 to 2.6 times its rest length), 1.13 to
-1.09 on the load (worst edge 2.8 to 2.1). The Jab keeps a similar stretch (mean 1.27, worst 4.3) and was not changed.
+1.09 on the load (worst edge 2.8 to 2.1). The Jab got the same fix: at impact spine (5, −20, −32) and chest (7, 0, −28),
+a 20° lean to the character's right that lifts the left shoulder, neck and head turned back to keep the eyes on the
+target, pole (1, 0, 0) and `up` 10°; same fist contact point (within 2 mm). Every Jab key is converted to an
+armature-space target (`_arm_in_world`), since blending the chest-frame guard into the world contact under a 60°
+torso turn swung the fist 19 cm sideways. Measured on the base body: mean 1.27 to 1.20 at impact (worst edge 4.3 to
+2.6), worst edge over the whole clip 4.3 to 3.3 (frames 7-10 of the retraction). Guard frame 0 itself has a worst
+edge of 2.5 (a front armpit edge weighted 0.36 to `UpperArm.L`), so 2.5 is the floor without reweighting the body.
 
 ## Gates
 

@@ -24,6 +24,8 @@ test('left and right buttons are the hands; a tap is a jab or a cross, a hold fr
 
 test('the round clock runs on the server clock and shows whole seconds, never below zero', () => {
   const now = serverClock(state('round'), 5_000, 5_500)
+  assert.equal(serverClock(state('round'), 5_000, 4_900), 10_000)
+  assert.equal(secondsUntil(20_000, serverClock(state('round'), 5_000, 4_900)), 10)
   assert.equal(now, 10_500)
   assert.equal(secondsUntil(70_000, now), 60)
   assert.equal(secondsUntil(70_000, 69_001), 1)

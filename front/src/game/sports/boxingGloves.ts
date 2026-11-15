@@ -5,6 +5,7 @@ import { type GloveSide, boundsOfVertices, trianglesBySide } from './boxing'
 
 export const GLOVES_KEY = 'boxing_gloves'
 const FP_FINGERS_TURN = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2)
+const FP_GLOVE_SCALE = 0.55
 
 function gloveFrom(mesh: THREE.Mesh, triangles: number[]): THREE.Mesh {
   const geometry = mesh.geometry.clone()
@@ -38,12 +39,17 @@ export function loadGlovePair(): Promise<Record<GloveSide, THREE.Mesh>> {
   return pair
 }
 
-export function attachGlove(hand: THREE.Object3D, template: THREE.Mesh, turn?: THREE.Quaternion): THREE.Object3D {
+interface GloveFit {
+  turn: THREE.Quaternion
+  scale: number
+}
+
+export function attachGlove(hand: THREE.Object3D, template: THREE.Mesh, fit?: GloveFit): THREE.Object3D {
   const glove = template.clone()
   glove.name = 'boxingGlove'
-  if (turn) glove.quaternion.copy(turn)
+  if (fit) glove.quaternion.copy(fit.turn)
   hand.updateWorldMatrix(true, false)
-  glove.scale.setScalar(1 / hand.getWorldScale(new THREE.Vector3()).x)
+  glove.scale.setScalar((fit?.scale ?? 1) / hand.getWorldScale(new THREE.Vector3()).x)
   hand.add(glove)
   return glove
 }
@@ -52,7 +58,7 @@ export interface WornGloves {
   dispose: () => void
 }
 
-function wearGloves(hands: Record<GloveSide, THREE.Object3D | null>, turn?: THREE.Quaternion): WornGloves {
+function wearGloves(hands: Record<GloveSide, THREE.Object3D | null>, fit?: GloveFit): WornGloves {
   let disposed = false
   const worn: THREE.Object3D[] = []
   loadGlovePair()
@@ -60,7 +66,7 @@ function wearGloves(hands: Record<GloveSide, THREE.Object3D | null>, turn?: THRE
       if (disposed) return
       for (const side of ['left', 'right'] as const) {
         const hand = hands[side]
-        if (hand) worn.push(attachGlove(hand, templates[side], turn))
+        if (hand) worn.push(attachGlove(hand, templates[side], fit))
       }
     })
     .catch((error: unknown) => console.error('[boxing] gloves not shown', error))
@@ -72,8 +78,19 @@ function wearGloves(hands: Record<GloveSide, THREE.Object3D | null>, turn?: THRE
   }
 }
 
+const FP_HAND_MESH = /^HandMesh_/
+
 export function wearFpGloves(hands: Record<GloveSide, THREE.Object3D | null>): WornGloves {
-  return wearGloves(hands, FP_FINGERS_TURN)
+  const gloves = wearGloves(hands, { turn: FP_FINGERS_TURN, scale: FP_GLOVE_SCALE })
+  const bareHands: THREE.Object3D[] = []
+  for (const hand of [hands.left, hands.right]) hand?.traverse((o) => FP_HAND_MESH.test(o.name) && bareHands.push(o))
+  for (const mesh of bareHands) mesh.visible = false
+  return {
+    dispose: () => {
+      gloves.dispose()
+      for (const mesh of bareHands) mesh.visible = true
+    },
+  }
 }
 
 export function wearGlovesOn(avatar: THREE.Object3D): WornGloves {
