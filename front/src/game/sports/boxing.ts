@@ -4,7 +4,8 @@ export type BoxingCombo = 'one_two' | 'double_jab' | 'one_two_hook' | 'upper_hoo
 export type BoxingPhase = 'intro' | 'round' | 'rest' | 'over'
 export type BoxingMethod = 'ko' | 'points' | 'draw' | 'forfeit'
 export type BoxingCorner = 'red' | 'blue'
-export type BoxingOutcome = 'landed' | 'blocked' | 'dodged' | 'missed'
+export type BoxingOutcome = 'landed' | 'blocked' | 'parried' | 'guard_broken' | 'dodged' | 'missed'
+export type BoxingCallout = 'parry' | 'counter' | 'guardBreak'
 
 export interface BoxerView {
   sessionId: string | null
@@ -15,6 +16,9 @@ export interface BoxerView {
   endurance: number
   maxEndurance: number
   guard: boolean
+  stunEndsAt: number | null
+  counterEndsAt: number | null
+  weary: boolean
   knockdowns: number
   countEndsAt: number | null
   canGetUp: boolean
@@ -40,7 +44,15 @@ export interface BoxingHitPayload {
   outcome: BoxingOutcome
   damage: number
   combo: BoxingCombo | null
+  counter: boolean
   chain: number
+}
+
+export function calloutOf(hit: Pick<BoxingHitPayload, 'outcome' | 'counter' | 'sessionId' | 'targetSessionId'>, mySession: string): { kind: BoxingCallout; mine: boolean } | null {
+  if (hit.outcome === 'parried') return { kind: 'parry', mine: hit.targetSessionId === mySession }
+  if (hit.outcome === 'guard_broken') return { kind: 'guardBreak', mine: hit.sessionId === mySession }
+  if (hit.outcome === 'landed' && hit.counter) return { kind: 'counter', mine: hit.sessionId === mySession }
+  return null
 }
 
 export interface BoxingChargePayload {

@@ -63,7 +63,7 @@ view where the sport stays playable that way, first person last; the choice is k
 | Swimming (in the pool water) | follow: 3.6 m behind the look, above the surface while the head is out, under it when diving; in a race the look is set down the lane | yes |
 | Tennis (match, or ball in hand on a court) | court: 16 m behind the player's baseline, 10 m high, the body faces the net | no |
 | Basketball and football (player of a match, or own ball out in free play) | broadcast: from the long side, 7 m behind the touchline and 8.5 m high (inside the gym hall), following the ball along the court but never more than 7 m from the player, stopping 9 m from each end; the move keys follow the screen and the body turns to where it runs | yes: then follow 4.2 m behind the look, then first person |
-| Boxing (boxer of a bout) | duel: over the shoulder, 2.6 to 5.5 m behind by the gap, framing the midpoint; the body always faces the opponent; kept within 3.6 m of the ring, ropes ignored | yes |
+| Boxing (boxer of a bout) | duel: over the shoulder, 2.6 to 5.5 m behind by the gap, framing the midpoint; the body always faces the opponent; kept within 3.6 m of the ring, ropes ignored; the bearing has a 20° dead zone and a slow ease | yes |
 | Dance rhythm game | stage: 4.6 m in front of the dancer, who stays left of the note lanes; slow sway of 18° | no |
 | Figure skating routine | follow: 6 m behind the skater, who faces along the route | no |
 

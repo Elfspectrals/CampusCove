@@ -1,12 +1,13 @@
 import * as THREE from 'three'
 import { EYE_HEIGHT } from '../../game/gameRoomConstants'
 import { worldRayDistance } from '../../game/collision/worldCollision'
-import { BODY_SHOWN_FROM, blendStep, damp, lockedLookFor, moveFrameYawFor, poseFor, viewChoices, type SportsView } from '../../game/camera/sportsCamera'
+import { BODY_SHOWN_FROM, DUEL_DEAD_RAD, blendStep, damp, lockedLookFor, moveFrameYawFor, poseFor, settleAxis, viewChoices, yawTowards, type SportsView } from '../../game/camera/sportsCamera'
 
 const ARM_MARGIN_M = 0.25
 const ARM_MIN_M = 0.6
 const ARM_EASE_OUT_PER_S = 5
 const FRAMING_DAMP_PER_S = 7
+const DUEL_DAMP_PER_S = 3
 
 export interface SportsCameraDeps {
   myPosition: { x: number; y: number; z: number }
@@ -33,6 +34,7 @@ export function useSportsCamera(deps: SportsCameraDeps) {
   let shown: SportsView | null = null
   let framing = false
   let arm = 0
+  let duelAxis: number | null = null
   let timeS = 0
 
   function activeView(): SportsView | null {
@@ -88,10 +90,13 @@ export function useSportsCamera(deps: SportsCameraDeps) {
     if (blend === 0 || !shown) {
       framing = false
       arm = 0
+      duelAxis = null
       return
     }
     eye.copy(camera.position)
-    const pose = poseFor(shown, { eye, feetY: deps.myPosition.y - EYE_HEIGHT, yaw: camera.rotation.y, pitch: camera.rotation.x, timeS })
+    duelAxis = shown.kind === 'duel' ? settleAxis(duelAxis, yawTowards(eye, shown.opponent), DUEL_DEAD_RAD) : null
+    const posed = shown.kind === 'duel' && duelAxis !== null ? { ...shown, axisYaw: duelAxis } : shown
+    const pose = poseFor(posed, { eye, feetY: deps.myPosition.y - EYE_HEIGHT, yaw: camera.rotation.y, pitch: camera.rotation.x, timeS })
     goal.set(pose.position.x, pose.position.y, pose.position.z)
     target.set(pose.target.x, pose.target.y, pose.target.z)
     if (pose.pivot) {
@@ -103,7 +108,7 @@ export function useSportsCamera(deps: SportsCameraDeps) {
       shownTarget.copy(target)
       framing = true
     } else {
-      const t = 1 - Math.exp(-FRAMING_DAMP_PER_S * dt)
+      const t = 1 - Math.exp(-(shown.kind === 'duel' ? DUEL_DAMP_PER_S : FRAMING_DAMP_PER_S) * dt)
       shownPosition.lerp(goal, t)
       shownTarget.lerp(target, t)
     }

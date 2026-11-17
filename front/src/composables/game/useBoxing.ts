@@ -27,8 +27,10 @@ import {
   type BoxingBagEndPayload,
   type BoxingBagHitPayload,
   type BoxingBagRoundPayload,
+  type BoxingCallout,
   type BoxingCombo,
   type BoxingHand,
+  calloutOf,
   type BoxingPunchKind,
   isFighting,
   percentOf,
@@ -42,6 +44,7 @@ import {
 
 const RESULT_SHOWN_MS = 8000
 const COMBO_SHOWN_MS = 1400
+const CALLOUT_SHOWN_MS = 1200
 const BAG_RESULT_SHOWN_MS = 6000
 const BAG_ARENA_M = 3
 const CLOCK_TICK_MS = 250
@@ -109,6 +112,8 @@ export function useBoxing(deps: BoxingDeps) {
   const drill = ref<string | null>(null)
   const atBag = ref(false)
   let comboTimer: ReturnType<typeof setTimeout> | null = null
+  const callout = shallowRef<{ kind: BoxingCallout, mine: boolean, key: number } | null>(null)
+  let calloutTimer: ReturnType<typeof setTimeout> | null = null
   fetch(sportRulesUrl('boxing'))
     .then((res) => {
       if (!res.ok) throw new Error(`${res.url} answered ${res.status}`)
@@ -145,6 +150,9 @@ export function useBoxing(deps: BoxingDeps) {
         health: percentOf(b.health, b.maxHealth),
         endurance: percentOf(b.endurance, b.maxEndurance),
         guard: b.guard,
+        stunned: b.stunEndsAt !== null && serverNow < b.stunEndsAt,
+        counter: b.counterEndsAt !== null && serverNow < b.counterEndsAt,
+        weary: b.weary,
         knockdowns: b.knockdowns,
         points: b.points,
         countLeft: b.countEndsAt === null ? null : secondsUntil(b.countEndsAt, serverNow),
@@ -156,8 +164,15 @@ export function useBoxing(deps: BoxingDeps) {
         won: s.result.winner !== null && s.result.winner === mySessionId(),
       },
       combo: combo.value,
+      callout: callout.value,
     }
   })
+
+  function stunned(): boolean {
+    const s = state.value
+    const mine = me.value
+    return s !== null && mine !== null && mine.stunEndsAt !== null && serverClock(s, receivedAt.value, Date.now()) < mine.stunEndsAt
+  }
 
   function send(type: string, payload: Record<string, unknown> = {}) {
     deps.gameRoomRef.value?.send(type, payload)
@@ -372,12 +387,23 @@ export function useBoxing(deps: BoxingDeps) {
       hideTimer = null
       state.value = data
       receivedAt.value = Date.now()
+      if (guarding && boxerFor(data, mySessionId())?.stunEndsAt != null) {
+        guarding = false
+        deps.arms()?.setBoxingBlock(false)
+      }
       if (data.phase === 'over') hideTimer = setTimeout(() => (state.value = null), RESULT_SHOWN_MS)
     },
     onHit(data: BoxingHitPayload, mySession: string) {
       if (data.combo && (data.outcome === 'landed' || data.outcome === 'blocked')) showCombo(data.combo, data.sessionId === mySession, data.damage)
-      if (data.outcome === 'blocked') deps.play('glove_block')
-      if (data.outcome !== 'landed' || data.targetSessionId !== mySession) return
+      if (data.outcome === 'blocked' || data.outcome === 'parried') deps.play('glove_block')
+      if (data.outcome === 'guard_broken') deps.play('glove_hit')
+      const shown = calloutOf(data, mySession)
+      if (shown) {
+        if (calloutTimer) clearTimeout(calloutTimer)
+        callout.value = { ...shown, key: (callout.value?.key ?? 0) + 1 }
+        calloutTimer = setTimeout(() => (callout.value = null), CALLOUT_SHOWN_MS)
+      }
+      if ((data.outcome !== 'landed' && data.outcome !== 'guard_broken') || data.targetSessionId !== mySession) return
       deps.play('glove_hit')
       deps.arms()?.boxingShot('FpHit')
       deps.arms()?.hitStop(HIT_STOP_S)
@@ -458,5 +484,5 @@ export function useBoxing(deps: BoxingDeps) {
     return opponent && arena ? { kind: 'duel', sport: 'boxing', optional: true, opponent: { x: opponent.x, z: opponent.z }, arena } : null
   }
 
-  return { view, bagView, bagResult, bagList, fighting, handlers, onPointerDown, onKeyDown, cameraView }
+  return { view, bagView, bagResult, bagList, fighting, stunned, handlers, onPointerDown, onKeyDown, cameraView }
 }

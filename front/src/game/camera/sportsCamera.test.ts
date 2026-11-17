@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { blendStep, lockedLookFor, lookDirection, moveFrameYawFor, poseFor, viewChoices, yawTowards, type SportsView, type ViewFrame } from './sportsCamera.ts'
+import { blendStep, lockedLookFor, lookDirection, moveFrameYawFor, poseFor, settleAxis, viewChoices, yawTowards, type SportsView, type ViewFrame } from './sportsCamera.ts'
 
 const FRAME: ViewFrame = { eye: { x: 0, y: 1.6, z: 0 }, feetY: 0, yaw: 0, pitch: 0, timeS: 0 }
 
@@ -59,6 +59,27 @@ test('the duel camera stands behind the player, frames the midpoint and backs of
   assert.equal(near.pivot, null)
   const far = poseFor({ kind: 'duel', sport: 'boxing', optional: true, opponent: { x: 0, z: -20 }, arena: OPEN }, FRAME)
   close(Math.hypot(far.position.x, far.position.z), 5.5, 'distance capped')
+})
+
+test('the duel camera axis ignores an opponent who circles within 20 degrees and trails by 20 degrees beyond, also across the half turn', () => {
+  const DEAD = (20 * Math.PI) / 180
+  close(settleAxis(null, 1, DEAD), 1, 'first frame: straight to the opponent')
+  close(settleAxis(0, 0.3, DEAD), 0, '17 degrees: no move')
+  close(settleAxis(0, DEAD, DEAD), 0, 'the edge is inside')
+  close(settleAxis(0, 0.5, DEAD), 0.5 - DEAD, 'beyond: follows at the edge')
+  close(settleAxis(0, -0.5, DEAD), -0.5 + DEAD, 'the other way')
+  close(settleAxis(3.1, -3.1, DEAD), 3.1, 'a small turn across the half turn')
+  close(settleAxis(2.8, -2.8, DEAD), 2.8 + (2 * Math.PI - 5.6) - DEAD, 'a wide turn across the half turn')
+})
+
+test('with a settled axis the duel camera stays where it is while the opponent steps aside, and still frames the midpoint', () => {
+  const settled = { kind: 'duel', sport: 'boxing', optional: true, arena: OPEN, axisYaw: 0 } as const
+  const ahead = poseFor({ ...settled, opponent: { x: 0, z: -2 } }, FRAME)
+  const aside = poseFor({ ...settled, opponent: { x: 0.6, z: -1.9 } }, FRAME)
+  close(Math.atan2(aside.position.x, aside.position.z), Math.atan2(ahead.position.x, ahead.position.z), 'same bearing from the player')
+  close(aside.target.x, 0.3, 'target on the midpoint')
+  const free = poseFor({ kind: 'duel', sport: 'boxing', optional: true, arena: OPEN, opponent: { x: 0.6, z: -1.9 } }, FRAME)
+  assert.ok(Math.abs(Math.atan2(free.position.x, free.position.z) - Math.atan2(ahead.position.x, ahead.position.z)) > 0.2, 'without it the camera swings')
 })
 
 test('the duel camera never leaves its arena, so a cornered boxer keeps it inside the hall', () => {

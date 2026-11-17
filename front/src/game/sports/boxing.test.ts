@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { type BoxingStatePayload, bagInFront, bagSteps, boxerFor, drillAfter, parseBagCombos, parseBagDoubleFrom, clockLabel, isFighting, handFor, parseHoldMs, parsePunchBags, parseRingArena, percentOf, punchKindAfter, rockAngle, secondsUntil, serverClock, trianglesBySide, boundsOfVertices } from './boxing.ts'
+import { type BoxingStatePayload, calloutOf, bagInFront, bagSteps, boxerFor, drillAfter, parseBagCombos, parseBagDoubleFrom, clockLabel, isFighting, handFor, parseHoldMs, parsePunchBags, parseRingArena, percentOf, punchKindAfter, rockAngle, secondsUntil, serverClock, trianglesBySide, boundsOfVertices } from './boxing.ts'
 
 const boxer = (sessionId: string, corner: 'red' | 'blue') => ({
   sessionId, name: sessionId, corner, health: 120, maxHealth: 120, endurance: 100, maxEndurance: 100,
@@ -20,6 +20,16 @@ test('left and right buttons are the hands; a tap is a jab or a cross, a hold fr
   assert.equal(parseHoldMs({ hold: { ms: 250 } }), 250)
   assert.throws(() => parseHoldMs({ hold: { ms: 0 } }), /hold/)
   assert.throws(() => parseHoldMs({}), /hold/)
+})
+
+test('a parry is called for the one who parried, a broken guard and a counter for the one who threw them, nothing for a plain hit', () => {
+  const hit = { sessionId: 'a', targetSessionId: 'b', counter: false }
+  assert.deepEqual(calloutOf({ ...hit, outcome: 'parried' }, 'b'), { kind: 'parry', mine: true })
+  assert.deepEqual(calloutOf({ ...hit, outcome: 'parried' }, 'a'), { kind: 'parry', mine: false })
+  assert.deepEqual(calloutOf({ ...hit, outcome: 'guard_broken' }, 'a'), { kind: 'guardBreak', mine: true })
+  assert.deepEqual(calloutOf({ ...hit, outcome: 'landed', counter: true }, 'b'), { kind: 'counter', mine: false })
+  assert.equal(calloutOf({ ...hit, outcome: 'landed' }, 'a'), null)
+  assert.equal(calloutOf({ ...hit, outcome: 'blocked', counter: true }, 'a'), null)
 })
 
 test('the round clock runs on the server clock and shows whole seconds, never below zero', () => {

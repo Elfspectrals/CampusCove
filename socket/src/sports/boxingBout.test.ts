@@ -17,7 +17,8 @@ import {
   releaseHand,
   setGuard,
   startBout,
-  takeQueued
+  takeQueued,
+  weariness
 } from './boxingBout.ts'
 import { boxingRulesJson } from './boxingTestRules.ts'
 
@@ -87,15 +88,15 @@ test('a jab in reach lands, scores 1 and waits its cooldown; out of reach it mis
 test('the guard blocks most of a punch and scores nothing, drains endurance and drops at 0', () => {
   const bout = fighting()
   const [red, blue] = bout.boxers
-  assert.equal(setGuard(bout, blue, true), true)
+  assert.equal(setGuard(bout, blue, true, ROUND_START), true)
   assert.equal(punch(bout, blue, 'jab', CLOSE, ROUND_START), 'guarding')
-  assert.equal(punch(bout, red, 'hook', CLOSE, ROUND_START), 'blocked')
-  assert.deepEqual([blue.health, red.points], [RULES.health - Math.round(14 * 0.2), 0])
+  assert.equal(punch(bout, red, 'cross', CLOSE, ROUND_START + RULES.parry.windowMs + 1), 'blocked')
+  assert.deepEqual([blue.health, red.points], [RULES.health - Math.round(9 * 0.2), 0])
   advanceBout(bout, ROUND_START + 1000)
   assert.equal(blue.endurance, RULES.endurance - RULES.guard.drainPerSec)
   advanceBout(bout, ROUND_START + 1000 + (RULES.endurance / RULES.guard.drainPerSec) * 1000)
   assert.deepEqual([blue.endurance, blue.guard], [0, false])
-  assert.equal(setGuard(bout, blue, true), false)
+  assert.equal(setGuard(bout, blue, true, bout.updatedAt), false)
 })
 
 test('a dodge lets a punch through only once its window is over, and waits its own cooldown', () => {
@@ -245,7 +246,7 @@ test('a full combo thrown in time adds each combo bonus to its last punch', () =
   const [red, blue] = bout.boxers
   chainOf(bout, ['jab', 'cross', 'hook', 'uppercut'], ROUND_START)
   assert.equal(red.combo, 'full_combo')
-  assert.equal(RULES.health - blue.health, 5 + (9 + 3) + (14 + 6) + (15 + 10))
+  assert.equal(RULES.health - blue.health, 5 + (9 + 3) + (17 + 6) + (21 + 10))
   assert.equal(red.points, 1 + (2 + 1) + (3 + 2) + (3 + 4))
 })
 
@@ -270,10 +271,105 @@ test('a miss or a landed punch taken clears the chain; a blocked combo adds its 
   punch(bout, blue, 'jab', CLOSE, ROUND_START + 2000)
   assert.deepEqual(red.chain, [])
   punch(bout, red, 'jab', CLOSE, red.nextPunchAt)
-  setGuard(bout, blue, true)
+  setGuard(bout, blue, true, red.nextPunchAt - RULES.parry.windowMs - 1)
   const before = blue.health
   punch(bout, red, 'cross', CLOSE, red.nextPunchAt)
   assert.deepEqual([red.combo, before - blue.health], ['one_two', Math.round((9 + 3) * RULES.guard.damageFactor)])
+})
+
+test('punches in a row tire the arms: the first four are whole, each one after costs half more and hits a fifth less, down to 40 %, until 800 ms of rest', () => {
+  const bout = fighting()
+  const [red, blue] = bout.boxers
+  const thrown: [cost: number, damage: number][] = []
+  for (let i = 0; i < 8; i++) {
+    const before = [red.endurance, blue.health]
+    assert.equal(punch(bout, red, 'jab', CLOSE, red.nextPunchAt || ROUND_START), 'landed')
+    thrown.push([before[0] - red.endurance, before[1] - blue.health])
+  }
+  assert.deepEqual(thrown, [[6, 5], [6, 5], [6, 5], [6, 5], [9, 4], [12, 3], [15, 2], [18, 2]])
+  assert.equal(weariness(RULES, red, red.nextPunchAt + RULES.flurry.restMs), 5)
+  assert.equal(weariness(RULES, red, red.nextPunchAt + RULES.flurry.restMs + 1), 0)
+  red.endurance = RULES.endurance
+  const before = blue.health
+  assert.equal(punch(bout, red, 'jab', CLOSE, red.nextPunchAt + RULES.flurry.restMs + 1), 'landed')
+  assert.deepEqual([RULES.endurance - red.endurance, before - blue.health], [6, 5])
+})
+
+test('a guard raised 250 ms or less before the punch is a parry: no damage, the attacker is stunned 900 ms and the next punch of the defender within 1.2 s is a counter at double damage and 2 more points', () => {
+  const bout = fighting()
+  const [red, blue] = bout.boxers
+  const T = ROUND_START + 1000
+  setGuard(bout, blue, true, T)
+  assert.equal(punch(bout, red, 'uppercut', CLOSE, T + RULES.parry.windowMs), 'parried')
+  assert.deepEqual([blue.health, red.points, blue.guard], [RULES.health, 0, true])
+  const hit = T + RULES.parry.windowMs
+  assert.equal(punch(bout, red, 'jab', CLOSE, hit + 2000 - 1101), 'stunned')
+  assert.equal(setGuard(bout, red, true, hit + 899), false)
+  assert.equal(dodge(bout, red, hit + 899), false)
+  assert.equal(pressHand(bout, red, 'left', hit + 899), false)
+  setGuard(bout, blue, false, hit + 50)
+  assert.equal(punch(bout, blue, 'cross', CLOSE, hit + 100), 'landed')
+  assert.deepEqual([RULES.health - red.health, blue.points, blue.countered], [18, 4, true])
+  assert.equal(punch(bout, blue, 'cross', CLOSE, blue.nextPunchAt), 'landed')
+  assert.deepEqual([RULES.health - red.health, blue.points, blue.countered], [27, 6, false])
+  assert.equal(setGuard(bout, red, true, hit + 900), true)
+})
+
+test('a guard held longer than 250 ms only blocks, and a guard raised again less than 600 ms after it dropped cannot parry', () => {
+  const bout = fighting()
+  const [red, blue] = bout.boxers
+  const T = ROUND_START + 1000
+  setGuard(bout, blue, true, T)
+  assert.equal(punch(bout, red, 'jab', CLOSE, T + RULES.parry.windowMs + 1), 'blocked')
+  setGuard(bout, blue, false, T + 400)
+  setGuard(bout, blue, true, T + 400 + RULES.parry.rearmMs - 1)
+  assert.equal(punch(bout, red, 'jab', CLOSE, T + 1000), 'blocked')
+  setGuard(bout, blue, false, T + 2000)
+  setGuard(bout, blue, true, T + 2000 + RULES.parry.rearmMs)
+  assert.equal(punch(bout, red, 'jab', CLOSE, T + 2000 + RULES.parry.rearmMs + 10), 'parried')
+})
+
+test('a hook or an uppercut on a held guard breaks it: half damage, the guard drops and the defender is staggered 700 ms without guard, dodge or punch', () => {
+  const bout = fighting()
+  const [red, blue] = bout.boxers
+  const T = ROUND_START + 1000
+  setGuard(bout, blue, true, T)
+  assert.equal(punch(bout, red, 'hook', CLOSE, T + 300), 'guard_broken')
+  assert.deepEqual([RULES.health - blue.health, red.points, blue.guard], [Math.round(17 * 0.5), 0, false])
+  assert.equal(setGuard(bout, blue, true, T + 999), false)
+  assert.equal(dodge(bout, blue, T + 999), false)
+  assert.equal(punch(bout, blue, 'jab', CLOSE, T + 999), 'stunned')
+  assert.equal(setGuard(bout, blue, true, T + 1000), true)
+  assert.equal(punch(bout, red, 'cross', CLOSE, red.nextPunchAt + 300), 'blocked')
+})
+
+test('a dodged punch opens the same counter, and a counter is spent by the next punch thrown even if it misses', () => {
+  const bout = fighting()
+  const [red, blue] = bout.boxers
+  dodge(bout, blue, ROUND_START)
+  assert.equal(punch(bout, red, 'jab', CLOSE, ROUND_START + 100), 'dodged')
+  assert.equal(punch(bout, blue, 'jab', CLOSE, ROUND_START + 100 + RULES.counter.windowMs - 1), 'landed')
+  assert.deepEqual([RULES.health - red.health, blue.points], [10, 3])
+  dodge(bout, blue, ROUND_START + 5000)
+  punch(bout, red, 'jab', CLOSE, ROUND_START + 5100)
+  assert.equal(punch(bout, blue, 'jab', { ...CLOSE, distM: 5 }, ROUND_START + 5200), 'missed')
+  assert.equal(punch(bout, blue, 'jab', CLOSE, blue.nextPunchAt), 'landed')
+  assert.equal(RULES.health - red.health, 15)
+  dodge(bout, blue, ROUND_START + 9000)
+  punch(bout, red, 'jab', CLOSE, ROUND_START + 9100)
+  assert.equal(punch(bout, blue, 'jab', CLOSE, ROUND_START + 9100 + RULES.counter.windowMs), 'landed')
+  assert.equal(RULES.health - red.health, 20)
+})
+
+test('a parry empties what the stunned boxer had ready: chain, queued punch and held buttons', () => {
+  const bout = fighting()
+  const [red, blue] = bout.boxers
+  punch(bout, red, 'jab', CLOSE, ROUND_START)
+  pressHand(bout, red, 'right', ROUND_START + 100)
+  red.queued = 'cross'
+  setGuard(bout, blue, true, red.nextPunchAt - 10)
+  assert.equal(punch(bout, red, 'cross', CLOSE, red.nextPunchAt), 'parried')
+  assert.deepEqual([red.chain, red.queued, red.pressedAt, red.combo], [[], null, { left: null, right: null }, null])
 })
 
 test('the rules refuse a combo of an unknown punch or a hold time of 0', () => {

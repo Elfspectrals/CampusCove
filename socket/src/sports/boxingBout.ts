@@ -58,6 +58,10 @@ export interface BoxingRules {
   bufferMs: number
   combo: { windowMs: number, list: Combo[] }
   guard: { damageFactor: number, drainPerSec: number }
+  flurry: { freePunches: number, restMs: number, costStep: number, damageStep: number, minDamage: number }
+  parry: { windowMs: number, rearmMs: number, stunMs: number }
+  counter: { windowMs: number, damageFactor: number, bonusPoints: number }
+  guardBreak: { staggerMs: number, damageFactor: number }
   dodge: { cooldownMs: number, windowMs: number, enduranceCost: number }
   knockdown: { countSec: number, maxPerFight: number, getUpPerRound: number, getUpPresses: number, getUpHealth: number, pressGapMs: number }
   hit: { facingCos: number, heightM: number }
@@ -73,6 +77,14 @@ export interface Boxer {
   health: number
   endurance: number
   guard: boolean
+  guardSince: number
+  parryArmed: boolean
+  parryReadyAt: number
+  stunnedUntil: number
+  counterUntil: number
+  countered: boolean
+  row: number
+  rowUntil: number
   nextPunchAt: number
   nextDodgeAt: number
   dodgeUntil: number
@@ -104,8 +116,9 @@ export interface Bout {
   result: BoutResult | null
 }
 
-export type PunchOutcome = 'landed' | 'blocked' | 'dodged' | 'missed'
-export type PunchRefusal = 'not_fighting' | 'cooldown' | 'tired' | 'guarding'
+export const HEAVY_PUNCHES: readonly PunchKind[] = ['hook', 'uppercut']
+export type PunchOutcome = 'landed' | 'blocked' | 'parried' | 'guard_broken' | 'dodged' | 'missed'
+export type PunchRefusal = 'not_fighting' | 'cooldown' | 'tired' | 'guarding' | 'stunned'
 export interface PunchReach {
   distM: number
   facingCos: number
@@ -119,6 +132,14 @@ function newBoxer(accountId: number, corner: Corner, rules: BoxingRules): Boxer 
     health: rules.health,
     endurance: rules.endurance,
     guard: false,
+    guardSince: 0,
+    parryArmed: false,
+    parryReadyAt: 0,
+    stunnedUntil: 0,
+    counterUntil: 0,
+    countered: false,
+    row: 0,
+    rowUntil: 0,
     nextPunchAt: 0,
     nextDodgeAt: 0,
     dodgeUntil: 0,
@@ -279,29 +300,65 @@ function extendChain(rules: BoxingRules, attacker: Boxer, kind: PunchKind, now: 
   return matchCombo(rules.combo.list, attacker.chain)
 }
 
+export function weariness(rules: BoxingRules, boxer: Boxer, now: number): number {
+  const row = now > boxer.rowUntil ? 1 : boxer.row + 1
+  return Math.max(0, row - rules.flurry.freePunches)
+}
+
+function stun(boxer: Boxer, until: number): void {
+  boxer.stunnedUntil = until
+  boxer.guard = false
+  boxer.chain = []
+  boxer.queued = null
+  boxer.pressedAt = { left: null, right: null }
+}
+
 export function punch(bout: Bout, attacker: Boxer, kind: PunchKind, reach: PunchReach, now: number): PunchOutcome | PunchRefusal {
+  const { rules } = bout
   attacker.combo = null
+  attacker.countered = false
   if (!fighting(bout, attacker)) return 'not_fighting'
+  if (now < attacker.stunnedUntil) return 'stunned'
   if (attacker.guard) return 'guarding'
   if (now < attacker.nextPunchAt) return 'cooldown'
-  const spec = bout.rules.punches[kind]
-  if (attacker.endurance < spec.enduranceCost) return 'tired'
-  attacker.endurance -= spec.enduranceCost
-  attacker.nextPunchAt = now + punchCooldownMs(bout.rules, attacker, kind)
-  const combo = extendChain(bout.rules, attacker, kind, now)
+  const spec = rules.punches[kind]
+  const weary = weariness(rules, attacker, now)
+  const cost = Math.round(spec.enduranceCost * (1 + rules.flurry.costStep * weary))
+  if (attacker.endurance < cost) return 'tired'
+  attacker.endurance -= cost
+  attacker.nextPunchAt = now + punchCooldownMs(rules, attacker, kind)
+  attacker.row = now > attacker.rowUntil ? 1 : attacker.row + 1
+  attacker.rowUntil = attacker.nextPunchAt + rules.flurry.restMs
+  const countering = now < attacker.counterUntil
+  attacker.counterUntil = 0
+  const combo = extendChain(rules, attacker, kind, now)
   const target = opponentOf(bout, attacker)
-  const outcome = !inReach(bout.rules, kind, reach) ? 'missed' : now < target.dodgeUntil ? 'dodged' : null
+  const outcome = !inReach(rules, kind, reach) ? 'missed' : now < target.dodgeUntil ? 'dodged' : null
   if (outcome) {
     attacker.chain = []
+    if (outcome === 'dodged') target.counterUntil = now + rules.counter.windowMs
     return outcome
   }
   attacker.combo = combo?.id ?? null
-  const damage = spec.damage + (combo?.bonusDamage ?? 0)
+  const strength = Math.max(rules.flurry.minDamage, 1 - rules.flurry.damageStep * weary) * (countering ? rules.counter.damageFactor : 1)
+  const damage = Math.round((spec.damage + (combo?.bonusDamage ?? 0)) * strength)
   if (target.guard) {
-    target.health = Math.max(1, target.health - Math.round(damage * bout.rules.guard.damageFactor))
+    if (target.parryArmed && now - target.guardSince <= rules.parry.windowMs) {
+      attacker.combo = null
+      stun(attacker, now + rules.parry.stunMs)
+      target.counterUntil = now + rules.counter.windowMs
+      return 'parried'
+    }
+    if (HEAVY_PUNCHES.includes(kind)) {
+      target.health = Math.max(1, target.health - Math.round(damage * rules.guardBreak.damageFactor))
+      stun(target, now + rules.guardBreak.staggerMs)
+      return 'guard_broken'
+    }
+    target.health = Math.max(1, target.health - Math.round(damage * rules.guard.damageFactor))
     return 'blocked'
   }
-  attacker.points += spec.points + (combo?.bonusPoints ?? 0)
+  attacker.countered = countering
+  attacker.points += spec.points + (combo?.bonusPoints ?? 0) + (countering ? rules.counter.bonusPoints : 0)
   target.health -= damage
   target.chain = []
   if (target.health <= 0) knockDown(bout, target, now)
@@ -309,7 +366,7 @@ export function punch(bout: Bout, attacker: Boxer, kind: PunchKind, reach: Punch
 }
 
 export function pressHand(bout: Bout, boxer: Boxer, hand: Hand, now: number): boolean {
-  if (!fighting(bout, boxer)) return false
+  if (!fighting(bout, boxer) || now < boxer.stunnedUntil) return false
   boxer.pressedAt[hand] = now
   boxer.charged[hand] = false
   return true
@@ -347,16 +404,22 @@ export function newCharges(bout: Bout, now: number): { boxer: Boxer, hand: Hand 
   return charges
 }
 
-export function setGuard(bout: Bout, boxer: Boxer, up: boolean): boolean {
-  const next = up && fighting(bout, boxer) && boxer.endurance > 0
+export function setGuard(bout: Bout, boxer: Boxer, up: boolean, now: number): boolean {
+  const next = up && fighting(bout, boxer) && boxer.endurance > 0 && now >= boxer.stunnedUntil
   if (boxer.guard === next) return false
   boxer.guard = next
+  if (next) {
+    boxer.guardSince = now
+    boxer.parryArmed = now >= boxer.parryReadyAt
+  } else {
+    boxer.parryReadyAt = now + bout.rules.parry.rearmMs
+  }
   return true
 }
 
 export function dodge(bout: Bout, boxer: Boxer, now: number): boolean {
   const spec = bout.rules.dodge
-  if (!fighting(bout, boxer) || boxer.guard || now < boxer.nextDodgeAt || boxer.endurance < spec.enduranceCost) return false
+  if (!fighting(bout, boxer) || boxer.guard || now < boxer.stunnedUntil || now < boxer.nextDodgeAt || boxer.endurance < spec.enduranceCost) return false
   boxer.endurance -= spec.enduranceCost
   boxer.nextDodgeAt = now + spec.cooldownMs
   boxer.dodgeUntil = now + spec.windowMs
@@ -484,6 +547,10 @@ export function parseBoxingRules(raw: unknown): BoxingRules {
   const bag = obj(r.bag, 'bag')
   const guard = obj(r.guard, 'guard')
   const dodgeRules = obj(r.dodge, 'dodge')
+  const flurry = obj(r.flurry, 'flurry')
+  const parry = obj(r.parry, 'parry')
+  const counter = obj(r.counter, 'counter')
+  const guardBreak = obj(r.guardBreak, 'guardBreak')
   const knockdown = obj(r.knockdown, 'knockdown')
   const hit = obj(r.hit, 'hit')
   const hold = obj(r.hold, 'hold')
@@ -529,6 +596,16 @@ export function parseBoxingRules(raw: unknown): BoxingRules {
     combo: { windowMs: num(combo, 'windowMs', 'combo'), list: boutCombos },
     bagCombos: bagCombosOf(bag.extra, boutCombos),
     guard: { damageFactor: num(guard, 'damageFactor', 'guard'), drainPerSec: num(guard, 'drainPerSec', 'guard') },
+    flurry: {
+      freePunches: num(flurry, 'freePunches', 'flurry', 1),
+      restMs: num(flurry, 'restMs', 'flurry', 1),
+      costStep: num(flurry, 'costStep', 'flurry'),
+      damageStep: num(flurry, 'damageStep', 'flurry'),
+      minDamage: num(flurry, 'minDamage', 'flurry')
+    },
+    parry: { windowMs: num(parry, 'windowMs', 'parry', 1), rearmMs: num(parry, 'rearmMs', 'parry'), stunMs: num(parry, 'stunMs', 'parry', 1) },
+    counter: { windowMs: num(counter, 'windowMs', 'counter', 1), damageFactor: num(counter, 'damageFactor', 'counter', 1), bonusPoints: num(counter, 'bonusPoints', 'counter') },
+    guardBreak: { staggerMs: num(guardBreak, 'staggerMs', 'guardBreak', 1), damageFactor: num(guardBreak, 'damageFactor', 'guardBreak') },
     dodge: { cooldownMs: num(dodgeRules, 'cooldownMs', 'dodge', 1), windowMs: num(dodgeRules, 'windowMs', 'dodge'), enduranceCost: num(dodgeRules, 'enduranceCost', 'dodge') },
     knockdown: {
       countSec: num(knockdown, 'countSec', 'knockdown', 1),

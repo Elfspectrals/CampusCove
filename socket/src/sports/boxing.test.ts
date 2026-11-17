@@ -65,7 +65,7 @@ test('a left tap within reach and facing lands a jab on the server positions; an
   boxing.onBoxingRelease(room, clientOf(room, red), { hand: 'right' }, ROUND_START)
   throwWith(room, red, 'left', ROUND_START, rules.holdMs - 1)
   const hits = sentOf(clientOf(room, blue), 'boxing_hit') as { outcome: string, kind: string }[]
-  assert.deepEqual(hits, [{ sessionId: red.sessionId, targetSessionId: blue.sessionId, kind: 'jab', outcome: 'landed', damage: rules.punches.jab.damage, combo: null, chain: 1 }])
+  assert.deepEqual(hits, [{ sessionId: red.sessionId, targetSessionId: blue.sessionId, kind: 'jab', outcome: 'landed', damage: rules.punches.jab.damage, combo: null, counter: false, chain: 1 }])
   assert.equal(lastState(room, blue).boxers[1].health, rules.health - rules.punches.jab.damage)
   blue.ry = FACING_EAST
   throwWith(room, blue, 'left', ROUND_START + 10)
@@ -140,6 +140,27 @@ test('a boxer who leaves the ring after the intro loses by forfeit', async () =>
   const record = api.calls.find((c) => c.url === '/sports/matches')?.body as { players: { result: string }[] }
   assert.deepEqual(record.players.map((p) => p.result), ['win', 'loss'])
   assert.deepEqual(lastState(room, red).result, { winner: red.sessionId, method: 'forfeit' })
+})
+
+test('a parry holds the stunned attacker in place and tells both boxers; the counter that follows is flagged; a broken guard holds the defender', async () => {
+  const { room, red, blue } = await bout()
+  venues.tickSports(room, ROUND_START)
+  faceOff(red, blue)
+  const T = ROUND_START + 1000
+  boxing.onBoxingGuard(room, clientOf(room, blue), { up: true }, T)
+  throwWith(room, red, 'left', T + 100)
+  assert.equal((sentOf(clientOf(room, blue), 'boxing_hit').at(-1) as { outcome: string }).outcome, 'parried')
+  assert.equal(red.sportsDownUntil, T + 100 + rules.parry.stunMs)
+  const [stunned, ready] = lastState(room, red).boxers
+  assert.deepEqual([stunned.stunEndsAt, ready.counterEndsAt, ready.health], [T + 100 + rules.parry.stunMs, T + 100 + rules.counter.windowMs, rules.health])
+  boxing.onBoxingGuard(room, clientOf(room, blue), { up: false }, T + 150)
+  throwWith(room, blue, 'right', T + 200)
+  assert.deepEqual(sentOf(clientOf(room, red), 'boxing_hit').at(-1), { sessionId: blue.sessionId, targetSessionId: red.sessionId, kind: 'cross', outcome: 'landed', damage: rules.punches.cross.damage * rules.counter.damageFactor, combo: null, counter: true, chain: 1 })
+  boxing.onBoxingGuard(room, clientOf(room, red), { up: true }, T + 2000)
+  throwWith(room, blue, 'left', T + 2600, rules.holdMs)
+  assert.equal((sentOf(clientOf(room, red), 'boxing_hit').at(-1) as { outcome: string }).outcome, 'guard_broken')
+  assert.equal(red.sportsDownUntil, T + 2600 + rules.holdMs + rules.guardBreak.staggerMs)
+  assert.deepEqual([lastState(room, red).boxers[0].guard, lastState(room, red).boxers[0].stunEndsAt], [false, red.sportsDownUntil])
 })
 
 test('guard, dodge and get-up presses only count for a boxer of the running bout', async () => {

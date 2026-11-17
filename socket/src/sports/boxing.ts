@@ -25,6 +25,7 @@ import {
   punch,
   releaseHand,
   setGuard,
+  weariness,
   startBout,
   takeQueued
 } from './boxingBout.ts'
@@ -127,6 +128,9 @@ export function boutView(fight: Fight, now: number) {
       endurance: Math.round(b.endurance),
       maxEndurance: bout.rules.endurance,
       guard: b.guard,
+      stunEndsAt: b.stunnedUntil > now ? b.stunnedUntil : null,
+      counterEndsAt: b.counterUntil > now ? b.counterUntil : null,
+      weary: weariness(bout.rules, b, now) > 0,
       knockdowns: b.knockdowns,
       countEndsAt: countEndsAt(bout, b),
       canGetUp: canGetUp(bout, b),
@@ -273,7 +277,9 @@ function throwPunch(room: GameRoom, fight: Fight, player: Player, attacker: Boxe
   const healthBefore = defender?.health ?? 0
   const outcome = punch(fight.bout, attacker, kind, reach, now)
   if (outcome === 'tired') clientOf(room, player.sessionId)?.send('boxing_tired', {})
-  if (outcome !== 'landed' && outcome !== 'blocked' && outcome !== 'dodged' && outcome !== 'missed') return
+  if (outcome === 'not_fighting' || outcome === 'cooldown' || outcome === 'tired' || outcome === 'guarding' || outcome === 'stunned') return
+  if (outcome === 'parried') player.sportsDownUntil = attacker.stunnedUntil
+  if (outcome === 'guard_broken' && defender) target.sportsDownUntil = defender.stunnedUntil
   sendToHall(room, fight, 'boxing_hit', {
     sessionId: player.sessionId,
     targetSessionId: target.sessionId,
@@ -281,6 +287,7 @@ function throwPunch(room: GameRoom, fight: Fight, player: Player, attacker: Boxe
     outcome,
     damage: Math.max(0, Math.round(healthBefore - (defender?.health ?? 0))),
     combo: attacker.combo,
+    counter: attacker.countered,
     chain: attacker.chain.length
   })
   sendState(room, fight, now)
@@ -323,11 +330,11 @@ export function onBoxingRelease(room: GameRoom, client: GameClient, payload: Cli
   if (released && !released.queued) throwPunch(room, found.fight, found.player, boxer, released.kind, now)
 }
 
-export function onBoxingGuard(room: GameRoom, client: GameClient, payload: ClientPayload): void {
+export function onBoxingGuard(room: GameRoom, client: GameClient, payload: ClientPayload, now = Date.now()): void {
   if (typeof payload?.up !== 'boolean') return
   const found = fightOf(room, client)
   const boxer = found && boxerOf(found.fight.bout, found.player.accountId)
-  if (found && boxer && setGuard(found.fight.bout, boxer, payload.up)) sendState(room, found.fight, Date.now())
+  if (found && boxer && setGuard(found.fight.bout, boxer, payload.up, now)) sendState(room, found.fight, now)
 }
 
 export function onBoxingDodge(room: GameRoom, client: GameClient, payload: ClientPayload, now = Date.now()): void {

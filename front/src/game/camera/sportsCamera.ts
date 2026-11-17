@@ -13,7 +13,7 @@ export interface CameraPose {
 
 export type SportsView =
   | { kind: 'follow'; sport: string; optional: boolean; distance: number; lift: number; waterY: number | null }
-  | { kind: 'duel'; sport: string; optional: boolean; opponent: { x: number; z: number }; arena: Arena; walls?: boolean }
+  | { kind: 'duel'; sport: string; optional: boolean; opponent: { x: number; z: number }; arena: Arena; walls?: boolean; axisYaw?: number }
   | { kind: 'court'; sport: string; optional: boolean; cx: number; netZ: number; halfLength: number; side: 1 | -1 }
   | { kind: 'stage'; sport: string; optional: boolean; facingYaw: number; others?: readonly { x: number; z: number }[] }
   | { kind: 'broadcast'; sport: string; optional: boolean; court: Arena; focusX: number; focusZ: number; fallback: SportsView | null }
@@ -48,6 +48,7 @@ const DUEL_DISTANCE_M = [2.6, 5.5] as const
 const DUEL_HEIGHT_M = 1.9
 const DUEL_TARGET_HEIGHT_M = 1.25
 const DUEL_FOV = 52
+export const DUEL_DEAD_RAD = (20 * Math.PI) / 180
 const COURT_BEHIND_BASELINE_M = 16
 const COURT_HEIGHT_M = 10
 const COURT_FOLLOW_SHARE = 0.2
@@ -90,6 +91,13 @@ export function yawTowards(from: { x: number; z: number }, to: { x: number; z: n
   return Math.atan2(-(to.x - from.x), -(to.z - from.z))
 }
 
+export function settleAxis(current: number | null, wanted: number, deadRad: number): number {
+  if (current === null) return wanted
+  const turn = Math.atan2(Math.sin(wanted - current), Math.cos(wanted - current))
+  if (Math.abs(turn) <= deadRad) return current
+  return current + turn - Math.sign(turn) * deadRad
+}
+
 function followPose(view: Extract<SportsView, { kind: 'follow' }>, frame: ViewFrame): CameraPose {
   const forward = lookDirection(frame.yaw, frame.pitch)
   const pivot = { x: frame.eye.x, y: frame.eye.y + view.lift, z: frame.eye.z }
@@ -108,8 +116,8 @@ function duelPose(view: Extract<SportsView, { kind: 'duel' }>, frame: ViewFrame)
   const dz = view.opponent.z - frame.eye.z
   const separation = Math.hypot(dx, dz)
   const facing = lookDirection(frame.yaw, 0)
-  const ax = separation > 0.01 ? dx / separation : facing.x
-  const az = separation > 0.01 ? dz / separation : facing.z
+  const towards = separation > 0.01 ? { x: dx / separation, z: dz / separation } : facing
+  const { x: ax, z: az } = view.axisYaw === undefined ? towards : lookDirection(view.axisYaw, 0)
   const cos = Math.cos(DUEL_SHOULDER_RAD)
   const sin = Math.sin(DUEL_SHOULDER_RAD)
   const bx = ax * cos - az * sin
