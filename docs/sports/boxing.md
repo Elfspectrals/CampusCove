@@ -20,7 +20,7 @@ Free movement inside the ring, third-person view.
 - Punches thrown in a row make **combos** (see below).
 - **Hold F**: guard, blocks most damage, drains endurance. Raised just before the hit it is a **parry**.
 - **Q / D**: side dodge.
-- The keys are shown as keycaps in the bout HUD, with what a tap and a hold do.
+- The keys are listed in the pause menu (Options, Controls tab), not in the bout HUD (decided 2026-11-17: no help line on screen during a sport).
 - Punching and guarding drain endurance; low endurance makes punches slower.
 
 ## Flow

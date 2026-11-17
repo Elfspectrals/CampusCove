@@ -1,3 +1,4 @@
+import { gameOptions } from './useGameOptions'
 import type { Ref, ShallowRef } from 'vue'
 import type { Room } from '@colyseus/sdk'
 import * as THREE from 'three'
@@ -120,8 +121,9 @@ export function useGameMovement(deps: UseGameMovementDeps) {
 
     const frameYaw = deps.moveFrameYaw?.() ?? null
     if (frameYaw === null) {
-      yaw -= mouseX * MOUSE_SENSITIVITY
-      pitch -= mouseY * MOUSE_SENSITIVITY
+      const turn = MOUSE_SENSITIVITY * gameOptions.mouseSensitivity
+      yaw -= mouseX * turn
+      pitch -= mouseY * turn * (gameOptions.invertY ? -1 : 1)
       pitch = Math.max(-Math.PI / 2 + 0.1, Math.min(Math.PI / 2 - 0.1, pitch))
     } else {
       const ahead = keys.forward ? 1 : keys.back ? -1 : 0

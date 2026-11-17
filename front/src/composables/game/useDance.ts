@@ -1,3 +1,4 @@
+import { musicGain } from './useGameOptions'
 import { computed, ref, shallowRef, type ShallowRef } from 'vue'
 import type { Room } from '@colyseus/sdk'
 import {
@@ -95,7 +96,7 @@ export function useDance(deps: DanceDeps) {
     teamScore.value = data.mode === 'team' ? 0 : null
     clockOffset.value = data.serverNow - Date.now()
     clientNow.value = Date.now()
-    music = startDanceMusic(data.song, data.bpm, data.lengthMs, data.startAt - data.serverNow)
+    music = startDanceMusic(data.song, data.bpm, data.lengthMs, data.startAt - data.serverNow, musicGain())
   }
 
   function onJudge(data: DanceJudge): void {

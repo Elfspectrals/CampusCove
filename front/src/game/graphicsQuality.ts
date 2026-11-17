@@ -1,6 +1,9 @@
+import { type RenderKey, type RenderSettings, parseRenderOverrides, renderSettingsOf } from './options.ts'
+
 export type GraphicsQuality = 'low' | 'medium' | 'high'
 
 const STORAGE_KEY = 'cc_graphics_quality'
+const OVERRIDES_KEY = 'cc_graphics_overrides'
 
 export function getGraphicsQuality(): GraphicsQuality {
   const stored = localStorage.getItem(STORAGE_KEY)
@@ -10,8 +13,21 @@ export function getGraphicsQuality(): GraphicsQuality {
   return 'low'
 }
 
-function setGraphicsQuality(quality: GraphicsQuality): void {
+export function setGraphicsQuality(quality: GraphicsQuality): void {
   localStorage.setItem(STORAGE_KEY, quality)
+  localStorage.removeItem(OVERRIDES_KEY)
+}
+
+export function getRenderOverrides(): Partial<RenderSettings> {
+  return parseRenderOverrides(localStorage.getItem(OVERRIDES_KEY))
+}
+
+export function setRenderOverride(key: RenderKey, value: boolean): void {
+  localStorage.setItem(OVERRIDES_KEY, JSON.stringify({ ...getRenderOverrides(), [key]: value }))
+}
+
+export function getRenderSettings(): RenderSettings {
+  return renderSettingsOf(getGraphicsQuality(), getRenderOverrides())
 }
 
 export function nextGraphicsQuality(quality: GraphicsQuality): GraphicsQuality {
@@ -27,7 +43,7 @@ export function cycleGraphicsQuality(): GraphicsQuality {
 }
 
 export function supportsRoomMeshShadows(): boolean {
-  return getGraphicsQuality() === 'high'
+  return getRenderSettings().shadows
 }
 
 export function supportsEnvironmentMap(): boolean {

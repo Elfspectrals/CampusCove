@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { cycleGraphicsQuality, getGraphicsQuality } from '../../game/graphicsQuality'
 import UiIcon from '../ui/UiIcon.vue'
+import { gameOptions } from '../../composables/game/useGameOptions'
 
 defineProps<{
   positionLabel: string
@@ -30,7 +31,7 @@ function onToggleGraphicsQuality(): void {
       <UiIcon name="map" :size="16" class="text-sun" />
       {{ placeLabel ?? 'Campus Town' }}
     </span>
-    <span class="cc-hud px-2.5 py-1.5 font-mono text-[11px] text-mist" title="Player world coordinates">
+    <span v-if="gameOptions.showCoordinates" class="cc-hud px-2.5 py-1.5 font-mono text-[11px] text-mist" title="Player world coordinates">
       XYZ {{ positionLabel }}
     </span>
     <span v-if="renderStats" class="cc-hud px-2.5 py-1.5 font-mono text-[11px] text-mist">

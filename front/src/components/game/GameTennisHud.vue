@@ -28,7 +28,6 @@ const TIMING_TONE: Record<TennisTiming, string> = { smash: 'text-grape', perfect
       {{ hud.myTeam === null ? t('sports.tennis.winner', { team: t(`sports.teams.${hud.winner}`) }) : hud.myTeam === hud.winner ? t('sports.tennis.won') : t('sports.tennis.lost') }}
     </p>
     <p v-else-if="hud.iServe" class="m-0 mt-1 text-mist">{{ hud.tossing ? t('sports.tennis.hitToss') : t('sports.tennis.serve') }}</p>
-    <p v-else-if="hud.myTeam" class="m-0 mt-1 text-mist">{{ t('sports.tennis.controls') }}</p>
   </section>
   <section v-else-if="freePlay" class="cc-hud pointer-events-none absolute left-1/2 top-3 z-10 w-56 -translate-x-1/2 px-3 py-2 text-xs" :aria-label="t('sports.tennis.freePlay')">
     <p class="m-0 mb-1 font-display text-[11px] uppercase tracking-[0.16em] text-mint">{{ t('sports.tennis.freePlay') }}</p>

@@ -101,7 +101,6 @@ const { t } = useI18n()
       <span class="block h-1.5 overflow-hidden rounded-full bg-ink-950/70" :aria-label="t('skating.balance')">
         <span class="block h-full rounded-full transition-[width] duration-150" :class="balance < 0.35 ? 'bg-coral' : 'bg-mint'" :style="{ width: `${balance * 100}%` }" />
       </span>
-      <p class="m-0 text-[10px] text-mist">{{ t('skating.controls') }}</p>
     </div>
   </section>
 </template>

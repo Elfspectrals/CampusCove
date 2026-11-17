@@ -21,8 +21,7 @@ import GamePlacementHud from '../components/game/GamePlacementHud.vue'
 import GamePlayerHotbar from '../components/game/GamePlayerHotbar.vue'
 import GameVitals from '../components/game/GameVitals.vue'
 import GamePlayerInventoryPanel from '../components/game/GamePlayerInventoryPanel.vue'
-import GamePointerLockOverlay from '../components/game/GamePointerLockOverlay.vue'
-import GameSettingsDialog from '../components/game/GameSettingsDialog.vue'
+import GamePauseMenu from '../components/game/GamePauseMenu.vue'
 import GameStoreItemCard from '../components/game/GameStoreItemCard.vue'
 import GameZoneBuyerMenu from '../components/game/GameZoneBuyerMenu.vue'
 import GameAdminPanel from '../components/game/GameAdminPanel.vue'
@@ -1417,7 +1416,7 @@ const clinic = useClinic({
 const { prompt: clinicPrompt } = clinic
 
 /** Key settings opened from the pause screen. */
-const settingsOpen = ref(false)
+const pauseMenuRef = ref<InstanceType<typeof GamePauseMenu> | null>(null)
 
 // ---------------------------------------------------------------- character creator / editor (docs/CHARACTER.md)
 
@@ -1708,7 +1707,6 @@ const pauseMenuOpen = computed(
     !adminPanelOpen.value &&
     !playerListOpen.value &&
     !tasksOpen.value &&
-    !settingsOpen.value &&
     !creator.value,
 )
 /** Back in the game with the menu closed, but the browser hasn't given the pointer back yet. */
@@ -1767,6 +1765,7 @@ function handleExtraKeyDown(e: KeyboardEvent): boolean {
   if (poolRace.onKeyDown(e)) return true
   // defaultPrevented: the inventory / cafe menu already used this Esc to close themselves
   if (e.code === 'Escape' && !e.repeat && !e.defaultPrevented && pauseMenuOpen.value && !placementPreviewActive.value) {
+    if (!pauseDismissed.value && pauseMenuRef.value?.back()) return true
     toggleEscapeMenu(e)
     return true
   }
@@ -2474,13 +2473,15 @@ const crosshairClass = computed(() => {
         @outfit="onOutfit"
       />
     </GamePlayerInventoryPanel>
-    <GamePointerLockOverlay
+    <GamePauseMenu
       v-show="pauseMenuOpen && !pauseDismissed"
+      ref="pauseMenuRef"
       :in-sport="inSport"
+      :reduced-effects="reducedEffects"
       @request-pointer-lock="requestPointerLock"
-      @open-settings="settingsOpen = true"
       @logout="logout"
       @leave-sport="leaveSport"
+      @toggle-reduced-effects="survival.toggleReducedEffects"
     />
     <!-- the game goes on: only a quiet hint while the browser hasn't given the mouse back yet -->
     <p
@@ -2489,7 +2490,6 @@ const crosshairClass = computed(() => {
     >
       Click to look around
     </p>
-    <GameSettingsDialog v-if="settingsOpen" @close="settingsOpen = false" />
     <GameCharacterCreator
       v-if="creator"
       :mode="creator.mode"
@@ -2787,13 +2787,7 @@ const crosshairClass = computed(() => {
       @leave="sportsSignup.leave"
       @close="sportsSignup.close"
     />
-    <GameBoxingHud
-      v-if="boxingView"
-      :view="boxingView"
-      :fighting="boxingFighting"
-      :guard-key="actionKeyLabels('cook')[0] ?? ''"
-      :dodge-keys="[actionKeyLabels('moveLeft')[0] ?? '', actionKeyLabels('moveRight')[0] ?? '']"
-    />
+    <GameBoxingHud v-if="boxingView" :view="boxingView" :fighting="boxingFighting" />
     <GameBoxingBag
       v-else-if="boxingBagView || boxingBagResult || boxingBagList"
       :round="boxingBagView"

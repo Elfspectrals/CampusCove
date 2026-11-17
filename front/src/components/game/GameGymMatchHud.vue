@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { type BindableAction, actionKeyLabels } from '../../config/keybindings'
 import type { GymBanner, GymRimPop } from '../../composables/game/useGymMatch'
 import type { GymShotRelease, GymSport, GymTeam } from '../../types/gameRealtime'
 
@@ -53,16 +52,6 @@ const bannerTone = computed(() => {
   if (b?.kind === 'end' && b.winner) return TEAM_TEXT[b.winner]
   return 'text-sun'
 })
-
-const hint = computed(() => {
-  const h = props.hud
-  const sport = h?.team ? h.sport : props.freeHud?.sport
-  if (!sport) return null
-  const key = (action: BindableAction) => actionKeyLabels(action)[0] ?? ''
-  const lines = [t(`sports.gym.hints.${sport}`, { key: actionKeyLabels('sportsTackle').join(' / '), through: key('sportsThrough'), jockey: key('sportsJockey'), view: key('cameraView') })]
-  lines.push(t('sports.gym.hints.leave'))
-  return lines.join(' · ')
-})
 </script>
 
 <template>
@@ -99,7 +88,6 @@ const hint = computed(() => {
         <span class="block h-full rounded-full" :class="hud.team ? TEAM_BG[hud.team] : 'bg-fog'" :style="{ width: `${hud.cooldown * 100}%` }" />
       </span>
     </div>
-    <p v-if="hint" class="m-0 max-w-[30rem] text-center text-[10px] text-mist">{{ hint }}</p>
   </section>
   <section v-if="!hud && freeHud" class="cc-hud pointer-events-none absolute left-1/2 top-3 z-10 flex -translate-x-1/2 flex-col items-center gap-1 px-4 py-2" :aria-label="t('sports.gym.free.title')">
     <p class="m-0 font-display text-[11px] uppercase tracking-[0.16em] text-mint">{{ t(`sports.sports.${freeHud.sport}`) }} · {{ t('sports.gym.free.title') }}</p>
@@ -110,7 +98,6 @@ const hint = computed(() => {
     <span v-if="freeHud.lob !== null" class="block h-2 w-48 overflow-hidden rounded-full bg-ink-950/70">
       <span class="block h-full rounded-full bg-pool" :style="{ width: `${freeHud.lob * 100}%` }" />
     </span>
-    <p v-if="hint" class="m-0 text-[10px] text-mist">{{ hint }}</p>
   </section>
   <p
     v-if="releaseLabel"

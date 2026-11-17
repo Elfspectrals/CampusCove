@@ -53,7 +53,6 @@ const OUTCOME_TONE: Record<BagOutcome, string> = { hit: 'text-mint', combo: 'tex
     <p :key="round.key" class="m-0 mt-1 h-5 animate-cc-pop text-center font-display text-sm" :class="OUTCOME_TONE[round.outcome]" aria-live="polite">
       {{ t(`sports.boxing.bag.outcome.${round.outcome}`) }}
     </p>
-    <p class="m-0 text-[10px] text-mist">{{ t('sports.boxing.bag.hint') }}</p>
   </section>
   <section
     v-else-if="result"

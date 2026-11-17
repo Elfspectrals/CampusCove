@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { gameOptions } from '../composables/game/useGameOptions'
 
 interface SoundDef {
   urls: string[]
@@ -87,6 +88,7 @@ export function createSfx(getCamera: () => THREE.Camera | undefined) {
       camera.add(listener)
     }
     if (listener.context.state === 'suspended') void listener.context.resume()
+    listener.setMasterVolume(gameOptions.masterVolume)
     return listener
   }
 
@@ -94,7 +96,7 @@ export function createSfx(getCamera: () => THREE.Camera | undefined) {
     const buffer = variants[Math.floor(Math.random() * variants.length)]
     if (!buffer) throw new Error(`No sound loaded for ${name}`)
     audio.setBuffer(buffer)
-    audio.setVolume(SOUNDS[name].volume)
+    audio.setVolume(SOUNDS[name].volume * gameOptions.effectsVolume)
     audio.setPlaybackRate(1 + (Math.random() * 2 - 1) * PITCH_SPREAD)
     const ended = audio.onEnded.bind(audio)
     audio.onEnded = () => {

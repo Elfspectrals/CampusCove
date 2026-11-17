@@ -57,11 +57,11 @@ function styleOf(song: string): SongStyle {
   return style
 }
 
-export function startDanceMusic(song: string, bpm: number, lengthMs: number, startsInMs: number): DanceMusic {
+export function startDanceMusic(song: string, bpm: number, lengthMs: number, startsInMs: number, volume: number): DanceMusic {
   const style = styleOf(song)
   const ctx = audioContext()
   const master = ctx.createGain()
-  master.gain.value = MASTER_GAIN
+  master.gain.value = MASTER_GAIN * volume
   master.connect(ctx.destination)
   const noise = ctx.createBuffer(1, ctx.sampleRate * 0.2, ctx.sampleRate)
   const data = noise.getChannelData(0)

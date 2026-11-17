@@ -61,7 +61,6 @@ const arrowDeg = computed(() => (props.gateBearing === null ? null : (-props.gat
       />
       <span class="absolute inset-y-0 w-1 -translate-x-1/2" :class="bar.inWindow ? 'bg-sun' : 'bg-fog'" :style="{ left: `${bar.marker * 100}%` }" />
     </div>
-    <span class="cc-hud px-2 py-0.5 text-xs text-mist">{{ t('sports.running.hint') }}</span>
   </div>
   <section v-if="result" class="cc-hud pointer-events-none absolute left-1/2 top-16 z-20 w-64 -translate-x-1/2 px-4 py-3 text-sm" aria-live="polite">
     <p class="m-0 mb-2 font-display text-[11px] uppercase tracking-[0.16em] text-mint">{{ t('sports.running.results', { m: result.distanceM }) }}</p>

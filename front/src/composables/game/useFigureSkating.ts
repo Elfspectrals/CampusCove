@@ -1,3 +1,4 @@
+import { musicGain } from './useGameOptions'
 import { computed, onBeforeUnmount, ref, shallowRef, type ShallowRef } from 'vue'
 import type { Room } from '@colyseus/sdk'
 import * as THREE from 'three'
@@ -206,7 +207,7 @@ export function useFigureSkating(deps: FigureSkatingDeps) {
       const lane = data.skaters.find((s) => s.sessionId === deps.mySessionId())?.lane
       if (!r || lane === undefined) return
       drawRoute(r, lane, deps.myPosition.y - EYE_HEIGHT)
-      music = startDanceMusic(r.song, r.bpm, r.lengthMs, Math.max(0, data.startAt - data.serverNow))
+      music = startDanceMusic(r.song, r.bpm, r.lengthMs, Math.max(0, data.startAt - data.serverNow), musicGain())
     },
     onState(data: FigureStatePayload): void {
       if (start.value?.venue === data.venue) state.value = data

@@ -22,7 +22,7 @@ const { t } = useI18n()
       <span class="font-bold">{{ t('petanque.free.piste', { n: piste }) }}</span>
     </header>
     <div class="flex flex-col gap-2 px-3 py-2">
-      <p class="m-0 font-bold text-fog" role="status" aria-live="polite">{{ busy ? t('petanque.waitRoll') : t('petanque.free.hint') }}</p>
+      <p v-if="busy" class="m-0 font-bold text-fog" role="status" aria-live="polite">{{ t('petanque.waitRoll') }}</p>
       <ol v-if="distances.length > 0" class="m-0 flex list-none flex-col gap-0.5 p-0">
         <li v-for="row in distances" :key="row.id" class="flex items-center gap-1.5 font-bold text-fog">
           <span class="w-4 text-sun">{{ row.point ? '★' : '' }}</span>

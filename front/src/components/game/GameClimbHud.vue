@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { actionKeyLabels } from '../../config/keybindings'
 
 const props = defineProps<{
   hud: {
@@ -24,7 +23,6 @@ const props = defineProps<{
 }>()
 
 const { t } = useI18n()
-const letGoKey = computed(() => actionKeyLabels('jump')[0] ?? 'Space')
 const DIAL_RADIUS = 44
 const arc = (start: number, size: number) => ({ 'stroke-dasharray': `${size} ${360 - size}`, 'stroke-dashoffset': -start })
 const gripTone = computed(() => (props.hud.grip > 0.5 ? 'bg-mint' : props.hud.grip > 0.25 ? 'bg-sun' : 'bg-coral animate-pulse'))
@@ -72,7 +70,6 @@ const status = computed(() => {
         <span>{{ t('climbing.holds', { reached: hud.reached, holds: hud.holds }) }}</span>
         <span v-if="hud.rival" class="text-coral">{{ t('climbing.rival', { reached: hud.rival.reached, holds: hud.rival.holds }) }}</span>
       </p>
-      <p class="m-0 text-[11px] text-mist">{{ t('climbing.hint', { key: letGoKey }) }}</p>
     </div>
   </section>
 </template>

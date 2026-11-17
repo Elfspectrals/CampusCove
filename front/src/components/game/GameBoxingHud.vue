@@ -33,8 +33,6 @@ const props = defineProps<{
     callout: { kind: BoxingCallout; mine: boolean; key: number } | null
   }
   fighting: boolean
-  guardKey: string
-  dodgeKeys: readonly string[]
 }>()
 
 const { t } = useI18n()
@@ -45,12 +43,6 @@ const resultText = computed(() => {
   if (result.method === 'draw' || result.winner === null) return t('sports.boxing.result.draw')
   return t(`sports.boxing.result.${result.method}`, { name: result.winner })
 })
-const moves = computed(() => [
-  { keys: [t('sports.boxing.keys.leftClick')], tap: t('sports.boxing.bag.punches.jab'), hold: t('sports.boxing.bag.punches.hook') },
-  { keys: [t('sports.boxing.keys.rightClick')], tap: t('sports.boxing.bag.punches.cross'), hold: t('sports.boxing.bag.punches.uppercut') },
-  { keys: [props.guardKey], tap: t('sports.boxing.keys.parry'), hold: t('sports.boxing.guard') },
-  { keys: props.dodgeKeys, tap: t('sports.boxing.keys.dodge'), hold: null },
-])
 const status = computed(() => {
   const mine = me.value
   if (!mine || !props.fighting) return null
@@ -114,16 +106,5 @@ const status = computed(() => {
     <p v-else-if="me && me.countLeft !== null" class="m-0 mt-2 font-display text-sm text-fog">
       {{ me.canGetUp ? t('sports.boxing.getUp') : t('sports.boxing.stayDown') }}
     </p>
-    <div v-else-if="fighting" class="mt-2 flex flex-col gap-1.5">
-      <ul class="m-0 grid list-none grid-cols-2 gap-x-3 gap-y-1.5 p-0">
-        <li v-for="move in moves" :key="move.tap" class="flex items-center gap-1.5">
-          <span v-for="key in move.keys" :key="key" class="rounded-md border-2 border-line/30 bg-ink-950/90 px-1.5 py-0.5 text-[11px] font-bold uppercase leading-none text-fog">{{ key }}</span>
-          <span class="min-w-0 leading-tight text-fog">
-            {{ move.tap }}<span v-if="move.hold" class="block text-[10px] text-mist">{{ t('sports.boxing.keys.held', { move: move.hold }) }}</span>
-          </span>
-        </li>
-      </ul>
-      <p class="m-0 text-[10px] leading-snug text-mist">{{ t('sports.boxing.tips') }}</p>
-    </div>
   </section>
 </template>
