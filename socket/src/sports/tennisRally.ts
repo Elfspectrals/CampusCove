@@ -211,7 +211,7 @@ function baselineCentre(court: Court, team: Team): { x: number, z: number } {
   return { x: court.cx, z: court.netZ + sideSign(team) * COURT_HALF_LENGTH }
 }
 
-function bounce(ball: Ball, t: number): Ball {
+export function bounce(ball: Ball, t: number): Ball {
   const at = ballAt(ball, t)
   const impactVy = ball.vy - (GRAVITY * (t - ball.t)) / 1000
   return { x: at.x, y: 0, z: at.z, vx: ball.vx * BOUNCE_KEEP, vy: Math.abs(impactVy) * RESTITUTION, vz: ball.vz * BOUNCE_KEEP, t }
@@ -266,7 +266,7 @@ export function timingOf(offsetMs: number, quality: number, charged: boolean): T
   return charged ? 'smash' : 'perfect'
 }
 
-function nearestContact(flight: Flight, court: Court, hitter: Hitter, now: number): { t: number, d: number, x: number } | null {
+export function nearestContact(flight: Flight, court: Court, hitter: Hitter, now: number): { t: number, d: number, x: number } | null {
   let best: { t: number, d: number, x: number } | null = null
   let ball = flight.ball
   let dies = flight.netAt ?? Infinity

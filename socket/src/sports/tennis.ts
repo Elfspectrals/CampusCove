@@ -1,7 +1,9 @@
-import type { ClientPayload, GameClient, GameRoom } from '../types.ts'
+import type { ClientPayload, GameClient, GameRoom, Player } from '../types.ts'
 import { worldSportsPassArea } from '../world.ts'
 import { type Match, type MatchPlayer, type SettingSpec, type Settings, type Team, activePlayers, matchPlayer } from './signup.ts'
-import { type Court, type Rally, hit, playAreaFor, serveWait, sideSign, step, strokeOf, trackReady } from './tennisRally.ts'
+import { isRobot, placeRobot, sportsPlayer } from './robots.ts'
+import { type Aim, type Court, type Rally, hit, playAreaFor, serveWait, sideSign, step, strokeOf, trackReady } from './tennisRally.ts'
+import { type Spot, type TennisBrain, netFacing, newTennisBrain, thinkTennis } from './tennisRobot.ts'
 import {
   BASELINE_STANDBY_M,
   COURT_HALF_LENGTH,
@@ -33,6 +35,8 @@ export interface TennisGame {
   rally: Rally
   turns: Record<Team, number>
   lastHitAt: Map<number, number>
+  brains: Map<number, TennisBrain>
+  random: () => number
 }
 
 const games = new WeakMap<GameRoom, Map<string, TennisGame>>()
@@ -67,19 +71,32 @@ function serverOf(match: Match, game: TennisGame): string | null {
   return team.length === 0 ? null : team[game.turns[game.score.serving] % team.length].sessionId
 }
 
-function placeServer(room: GameRoom, court: Court, team: Team, sessionId: string): void {
-  const player = room.players.get(sessionId)
+function putBehindBaseline(room: GameRoom, court: Court, team: Team, sessionId: string, x: number, reason: string, now: number): void {
+  const player = sportsPlayer(room, sessionId)
+  if (!player) return
+  const z = court.netZ + sideSign(team) * (COURT_HALF_LENGTH + BASELINE_STANDBY_M)
+  if (isRobot(player.accountId)) {
+    placeRobot(room, player, x, player.y, z, netFacing(team), now)
+    return
+  }
   const client = room.clients.find((c) => c.sessionId === sessionId)
-  if (!player || !client) return
-  player.x = Math.min(court.cx + court.halfWidth, Math.max(court.cx - court.halfWidth, player.x))
-  player.z = court.netZ + sideSign(team) * (COURT_HALF_LENGTH + BASELINE_STANDBY_M)
-  client.send('position_correction', { x: player.x, y: player.y, z: player.z, reason: 'tennis_serve' })
+  if (!client) return
+  player.x = x
+  player.z = z
+  client.send('position_correction', { x, y: player.y, z, reason })
   room.broadcastMove(client, player)
+}
+
+function placeServer(room: GameRoom, court: Court, team: Team, sessionId: string, now: number): void {
+  const player = sportsPlayer(room, sessionId)
+  if (!player) return
+  const x = Math.min(court.cx + court.halfWidth, Math.max(court.cx - court.halfWidth, player.x))
+  putBehindBaseline(room, court, team, sessionId, x, 'tennis_serve', now)
 }
 
 function nextServe(room: GameRoom, match: Match, game: TennisGame, now: number): Rally {
   const server = serverOf(match, game)
-  if (server) placeServer(room, game.court, game.score.serving, server)
+  if (server) placeServer(room, game.court, game.score.serving, server, now)
   return serveWait(server ?? '', game.score.serving, now)
 }
 
@@ -119,29 +136,35 @@ function broadcast(room: GameRoom, match: Match, game: TennisGame, now: number, 
   })
 }
 
-function placeOnBaselines(room: GameRoom, match: Match, court: Court): void {
+function placeOnBaselines(room: GameRoom, match: Match, court: Court, now: number): void {
   for (const team of ['red', 'blue'] as const) {
     const players = teamPlayers(match, team)
     players.forEach((mp, i) => {
-      const player = room.players.get(mp.sessionId)
-      const client = room.clients.find((c) => c.sessionId === mp.sessionId)
-      if (!player || !client || mp.awaySince !== null) return
-      player.x = court.cx + (players.length === 1 ? 0 : (i === 0 ? -DOUBLES_SPREAD_M : DOUBLES_SPREAD_M))
-      player.z = court.netZ + sideSign(team) * (COURT_HALF_LENGTH + BASELINE_STANDBY_M)
-      client.send('position_correction', { x: player.x, y: player.y, z: player.z, reason: 'tennis_kickoff' })
-      room.broadcastMove(client, player)
+      if (mp.awaySince !== null) return
+      const x = court.cx + (players.length === 1 ? 0 : (i === 0 ? -DOUBLES_SPREAD_M : DOUBLES_SPREAD_M))
+      putBehindBaseline(room, court, team, mp.sessionId, x, 'tennis_kickoff', now)
     })
   }
 }
 
-export function startTennis(room: GameRoom, match: Match, cx: number, firstServer: Team, now: number): TennisGame {
+function robotBrains(room: GameRoom, match: Match, now: number): Map<number, TennisBrain> {
+  const brains = new Map<number, TennisBrain>()
+  for (const mp of match.players) {
+    const robot = isRobot(mp.accountId) ? sportsPlayer(room, mp.sessionId) : undefined
+    if (robot) brains.set(mp.accountId, newTennisBrain(match.robots ?? 'normal', robot, now))
+  }
+  return brains
+}
+
+export function startTennis(room: GameRoom, match: Match, cx: number, firstServer: Team, now: number, random: () => number = Math.random): TennisGame {
   const court = courtFor(cx, match.settings)
   const score = newScore(parseFormat(match.settings.format), firstServer)
-  const game: TennisGame = { venue: match.venue, court, score, rally: serveWait('', firstServer, now), turns: { [firstServer]: 0, [other(firstServer)]: -1 } as Record<Team, number>, lastHitAt: new Map() }
+  const game: TennisGame = { venue: match.venue, court, score, rally: serveWait('', firstServer, now), turns: { [firstServer]: 0, [other(firstServer)]: -1 } as Record<Team, number>, lastHitAt: new Map(), brains: new Map(), random }
   game.rally = nextServe(room, match, game, now)
   roomGames(room).set(match.venue, game)
   stopFreeRally(room, match.venue, now)
-  placeOnBaselines(room, match, court)
+  placeOnBaselines(room, match, court, now)
+  game.brains = robotBrains(room, match, now)
   broadcast(room, match, game, now)
   return game
 }
@@ -156,10 +179,8 @@ function someoneAway(match: Match): boolean {
   return activePlayers(match).some((p) => p.awaySince !== null)
 }
 
-export function runTennis(room: GameRoom, match: Match, now: number): void {
-  const game = tennisGame(room, match.venue)
-  if (!game) return
-  const where = (sessionId: string) => room.players.get(sessionId) ?? null
+function advanceRally(room: GameRoom, match: Match, game: TennisGame, now: number): void {
+  const where = (sessionId: string) => sportsPlayer(room, sessionId) ?? null
   if (game.rally.phase === 'point') {
     if (now < game.rally.until) return
     if (game.score.winner) {
@@ -176,7 +197,7 @@ export function runTennis(room: GameRoom, match: Match, now: number): void {
   }
   const next = step(game.rally, now, game.court, where)
   for (const mp of match.players) {
-    const player = room.players.get(mp.sessionId)
+    const player = sportsPlayer(room, mp.sessionId)
     if (player && !mp.out && mp.team !== null) trackReady(player, next, game.court, { sessionId: mp.sessionId, team: mp.team, x: player.x, z: player.z }, now)
   }
   if (next === game.rally) return
@@ -185,36 +206,72 @@ export function runTennis(room: GameRoom, match: Match, now: number): void {
   broadcast(room, match, game, now)
 }
 
+function spotsOf(room: GameRoom, players: MatchPlayer[]): Spot[] {
+  return players.flatMap((mp) => {
+    const player = sportsPlayer(room, mp.sessionId)
+    return player ? [{ x: player.x, z: player.z }] : []
+  })
+}
+
+function driveRobots(room: GameRoom, match: Match, game: TennisGame, now: number): void {
+  for (const [accountId, brain] of game.brains) {
+    if (tennisGame(room, match.venue) !== game) return
+    const mp = matchPlayer(match, accountId)
+    const robot = mp && sportsPlayer(room, mp.sessionId)
+    if (!mp || !robot || mp.out || mp.team === null) continue
+    const team = mp.team
+    const mates = spotsOf(room, teamPlayers(match, team).filter((p) => p.accountId !== accountId))
+    const foes = spotsOf(room, teamPlayers(match, other(team)))
+    const actions = thinkTennis(brain, { rally: game.rally, court: game.court, team, sessionId: robot.sessionId, at: robot, mates, foes, now, random: game.random })
+    for (const action of actions) {
+      if (action.kind === 'move') placeRobot(room, robot, action.x, robot.y, action.z, action.ry, now)
+      else matchHit(room, match, game, team, robot, action.aim, action.lob, now)
+    }
+  }
+}
+
+export function runTennis(room: GameRoom, match: Match, now: number): void {
+  const game = tennisGame(room, match.venue)
+  if (!game) return
+  advanceRally(room, match, game, now)
+  driveRobots(room, match, game, now)
+}
+
 function finite(v: unknown): v is number {
   return typeof v === 'number' && Number.isFinite(v)
+}
+
+function matchHit(room: GameRoom, match: Match, game: TennisGame, team: Team, player: Player, aim: Aim, lob: boolean, now: number): void {
+  const last = game.lastHitAt.get(player.accountId) ?? -Infinity
+  if (now - last < TENNIS_HIT_COOLDOWN_MS) return
+  game.lastHitAt.set(player.accountId, now)
+  advanceRally(room, match, game, now)
+  if (tennisGame(room, match.venue) !== game) return
+  if (game.rally.phase === 'serve_wait' && someoneAway(match)) return
+  const hitter = { sessionId: player.sessionId, team, x: player.x, z: player.z }
+  const before = game.rally
+  const next = hit(before, hitter, aim, lob, now, game.court, trackReady(player, before, game.court, hitter, now))
+  if (!next) {
+    if (before.phase === 'flight' && before.hitter !== team && !before.swing) game.lastHitAt.set(player.accountId, now + TENNIS_WHIFF_RECOVERY_MS - TENNIS_HIT_COOLDOWN_MS)
+    return
+  }
+  game.rally = next
+  broadcast(room, match, game, now)
+  sendStroke(room, player.sessionId, strokeOf(before, next, hitter, lob))
 }
 
 export function onTennisHit(room: GameRoom, client: GameClient, payload: ClientPayload, now = Date.now()): void {
   const player = room.players.get(client.sessionId)
   if (!player || !finite(payload?.aimX) || !finite(payload?.aimZ) || (payload?.lob !== undefined && typeof payload.lob !== 'boolean')) return
+  const aim = { x: payload.aimX, z: payload.aimZ }
   for (const [venue, game] of roomGames(room)) {
     const match = room.sports.matches.get(venue)
     const mp = match && matchPlayer(match, player.accountId)
     if (!match || !mp || mp.awaySince !== null || mp.team === null) continue
-    const last = game.lastHitAt.get(player.accountId) ?? -Infinity
-    if (now - last < TENNIS_HIT_COOLDOWN_MS) return
-    game.lastHitAt.set(player.accountId, now)
-    runTennis(room, match, now)
-    if (roomGames(room).get(venue) !== game) return
-    if (game.rally.phase === 'serve_wait' && someoneAway(match)) return
-    const hitter = { sessionId: player.sessionId, team: mp.team, x: player.x, z: player.z }
-    const before = game.rally
-    const next = hit(before, hitter, { x: payload.aimX, z: payload.aimZ }, payload.lob === true, now, game.court, trackReady(player, before, game.court, hitter, now))
-    if (!next) {
-      if (before.phase === 'flight' && before.hitter !== mp.team && !before.swing) game.lastHitAt.set(player.accountId, now + TENNIS_WHIFF_RECOVERY_MS - TENNIS_HIT_COOLDOWN_MS)
-      return
-    }
-    game.rally = next
-    broadcast(room, match, game, now)
-    sendStroke(room, player.sessionId, strokeOf(before, next, hitter, payload.lob === true))
+    matchHit(room, match, game, mp.team, player, aim, payload.lob === true, now)
     return
   }
-  freeHit(room, player, { x: payload.aimX, z: payload.aimZ }, payload.lob === true, now)
+  freeHit(room, player, aim, payload.lob === true, now)
 }
 
 export function tennisResults(match: Match, game: TennisGame | null, end: MatchEnd): MatchResult[] {
@@ -246,6 +303,7 @@ for (const { id, cx } of TENNIS_COURTS) {
     playArea: playAreaFor(cx, TENNIS_NET_Z),
     gear: TENNIS_GEAR,
     teams: true,
+    robots: true,
     settings: TENNIS_SETTINGS,
     players: playersFor,
     rejoinGraceMs: REJOIN_GRACE_MS,

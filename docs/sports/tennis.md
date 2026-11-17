@@ -109,6 +109,47 @@ impossible. Reworked on the model of Wii Sports Tennis (automatic positioning, t
 - **Mark on the court**: as soon as the other side hits, a disc of 0.8 m is drawn where the player should stand for that ball (`interceptSpot`, the spot the auto-run goes to); a star 1.5 times wider for a high ball (apex of 4 m or more). It is pale yellow, turquoise once the player is in position, and a white disc grows inside it while the charge builds, purple when it is full. The front shows its own estimate (`inPlace`, `chargeFill`, the same numbers as the socket); the socket decides.
 - **Swing ring**: a ring on the ground around that mark (around the player when there is no mark), from 900 ms before the ball passes closest, shrinking from 2.4 m to 0.6 m as it comes. Its colour is what a click now would give: red a miss (more than 350 ms early, more than 150 ms late, or out of reach), orange a weak shot, green a good one, purple a smash (charged). Purple rather than yellow: yellow is the aim target. Front only (`swingRing`, `swingTone`), from the same constants as the socket; a ball passing higher than 2.8 m over the player no longer counts as a pass.
 
+## Robot opponent (2026-11-17)
+
+Called from the coach panel by the first player signed up (CORE.md § robots), in singles (one robot) or doubles (a
+player alone gets a robot partner and two robot opponents). Each robot is driven on the sports tick (every 100 ms) by
+`tennisRobot.ts` (`thinkTennis`, tested) and plays through the hit path of a player (`matchHit` in `tennis.ts`): same
+reach, 400 ms between hits, 700 ms after a swing at nothing, same timing judgement, charge and smash, same aim clamp.
+It has no rule of its own.
+
+- **Serve**: it waits 1.2 s with the ball, tosses, then hits around the top of the toss. It stays on the spot the
+  socket puts every server on. It never serves while a player of the match is away (the socket's hold applies to it,
+  and the 1.2 s start again when they are back); a robot is never away.
+- **Rally**: after its reaction time it runs, at its level's speed, to the first point of the ball's path after the
+  bounce that it can reach in time (from 200 ms after the bounce), 0.6 m to the side so the ball comes on its
+  forehand, and swings so that the ball is struck in the middle of the perfect window. Its timing and the spot it
+  stands on are off by a random error drawn once per incoming ball. It walks back to its kick-off place after its
+  side has hit. It stays in the play area, at least 1 m from the net.
+- **Balls it leaves**: a ball that will land out or die in the net is left alone (the white ring shows the same to a
+  player).
+- **Doubles**: the robot nearest to the spot goes for the ball, its partner keeps its place; a robot in reach still
+  swings.
+
+| Level | Run | Reaction | Swing timing off by | Standing spot off by | Reached balls it lets through | Aim (width used, depth past the net) | Plays the open side | Lob |
+|---|---|---|---|---|---|---|---|---|
+| Easy | 2.2 m/s | 550 ms | up to 500 ms | up to 1.0 m | 25 % | middle quarter, 6 to 9 m | never | never |
+| Normal | 3.0 m/s | 350 ms | up to 300 ms | up to 0.5 m | 10 % | 60 %, 7 to 10 m | 35 % of shots | 5 % |
+| Hard | 3.8 m/s | 200 ms | up to 150 ms | up to 0.15 m | 4 % | 80 %, 8.5 to 11 m | 80 % of shots | 15 % |
+
+The timing error is the sum of two draws, so small errors are the most common: easy is often early or late (weaker,
+longer shots), hard is on time almost every ball. The open side is the aim spot (left, right or middle) furthest from
+every opponent. For reference a player runs at 3 m/s on the auto-run and 5 m/s with the movement keys. The numbers
+are in one table, `TENNIS_ROBOT`.
+
+Measured with a scripted feeder that never misses (not a playtest): easy sends back about 7 balls in 10 played within
+2 m of the middle and 5 in 10 played to the lines; normal about 9 in 10; hard more than 9 in 10, and it smashes most
+balls it waits for, so a player on the auto-run alone loses about 3 points in 4 against it.
+
+Not covered: the robot never comes to the net or volleys on purpose, plays no drop shot, does not change its play
+with the score, and a robot partner does not cover for the player. A robot's missed swing shows no stroke (as for a
+player, only a struck ball sends `tennis_stroke`). No robot in free play. The levels were tuned on the simulation
+above and have not been played in the game.
+
 ## Contract
 
 Socket constants: `socket/src/sports/tennisConstants.ts`, mirrored in `front/public/assets/sports/rules/tennis.json`
