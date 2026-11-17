@@ -3,6 +3,8 @@ import type { SportsLobbyPayload, SportsLobbyPlayer } from '../../types/gameReal
 export const SPORTS_TEAMS = ['red', 'blue'] as const
 export type SportsTeam = (typeof SPORTS_TEAMS)[number]
 export type SettingValue = string | number
+export const ROBOT_LEVELS = ['easy', 'normal', 'hard'] as const
+export type RobotLevel = (typeof ROBOT_LEVELS)[number]
 
 export const COACH_REACH = 3
 

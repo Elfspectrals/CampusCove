@@ -11,9 +11,10 @@ export { onSportsPassBuy } from './pass.ts'
 export { onBoxingBag, onBoxingBagCombo, onBoxingDodge, onBoxingGetUp, onBoxingGuard, onBoxingPress, onBoxingRelease, registerBoxing, tickBoxingBags } from './boxing.ts'
 export { loadPetanque } from './petanque.ts'
 export { SPORTS_TICK_MS } from './sportsConstants.ts'
+export { useRobotFactory } from './robots.ts'
 export { loadSwimming } from './swimming.ts'
 export { loadDiving } from './diving.ts'
-export { assertVenueZones, newSportsState, onSportsCoachOpen, onSportsMatchLeave, onSportsSignup, onSportsSignupLeave, tickSports } from './venues.ts'
+export { assertVenueZones, newSportsState, onSportsCoachOpen, onSportsMatchLeave, onSportsRobots, onSportsSignup, onSportsSignupLeave, tickSports } from './venues.ts'
 
 export async function joinSports(room: GameRoom, client: GameClient, player: Player): Promise<void> {
   sendLoansOnJoin(room, client)

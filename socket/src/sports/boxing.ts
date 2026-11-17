@@ -29,6 +29,8 @@ import {
   startBout,
   takeQueued
 } from './boxingBout.ts'
+import { type RobotBrain, newRobotBrain, thinkBoxer } from './boxingRobot.ts'
+import { isRobot, placeRobot, sportsPlayer } from './robots.ts'
 import { type BagCombo, type BagOutcome, type BagRound, bagPunch, bagRoundOver, isPunch, setBagDrill, startBagRound } from './boxingBag.ts'
 import { onGearChanged, usableGear } from './gear.ts'
 import { type Match, activePlayers, matchPlayer, parseSignupRules } from './signup.ts'
@@ -46,6 +48,7 @@ interface Fight {
   bout: Bout
   match: Match
   sentAt: number
+  brains: Map<number, RobotBrain>
 }
 
 const fights = new Map<string, Fight>()
@@ -76,11 +79,15 @@ function clientOf(room: GameRoom, sessionId: string): GameClient | undefined {
 
 function playerOfAccount(room: GameRoom, match: Match, accountId: number): Player | null {
   const entry = matchPlayer(match, accountId)
-  const player = entry ? room.players.get(entry.sessionId) : undefined
+  const player = entry ? sportsPlayer(room, entry.sessionId) : undefined
   return player && player.accountId === accountId ? player : null
 }
 
 function moveTo(room: GameRoom, player: Player, x: number, y: number, z: number, yaw: number, now: number): void {
+  if (isRobot(player.accountId)) {
+    placeRobot(room, player, x, y, z, yaw, now)
+    return
+  }
   Object.assign(player, { x, y, z, ry: yaw, fallPeakY: y, lastMoveAt: now })
   const client = clientOf(room, player.sessionId)
   if (!client) return
@@ -158,7 +165,7 @@ function sendOutOfRing(room: GameRoom, fight: Fight, now: number): void {
   const rules = rulesOf()
   const ring = ringBounds(rules)
   for (const b of fight.bout.boxers) {
-    const player = room.players.get(sessionOf(fight.match, b.accountId) ?? '')
+    const player = sportsPlayer(room, sessionOf(fight.match, b.accountId) ?? '')
     if (!player || player.accountId !== b.accountId || !inside(ring, player.x, player.z, RING_LEAVE_MARGIN_M)) continue
     const at = rules.exits[b.corner]
     moveTo(room, player, at.x, at.y + EYE_HEIGHT, at.z, yawTowards(at, rules.ringCentre), now)
@@ -168,7 +175,8 @@ function sendOutOfRing(room: GameRoom, fight: Fight, now: number): void {
 function kickoff(room: GameRoom, match: Match): void {
   const [red, blue] = match.players
   const now = match.startedAt
-  const fight: Fight = { bout: startBout(rulesOf(), Number(match.settings.rounds), red.accountId, blue.accountId, now), match, sentAt: 0 }
+  const brains = new Map(match.players.filter((p) => isRobot(p.accountId)).map((p) => [p.accountId, newRobotBrain(match.robots ?? 'normal', now)]))
+  const fight: Fight = { bout: startBout(rulesOf(), Number(match.settings.rounds), red.accountId, blue.accountId, now), match, sentAt: 0, brains }
   fights.set(match.id, fight)
   placeInCorners(room, fight, now)
   sendState(room, fight, now)
@@ -190,6 +198,7 @@ function tick(room: GameRoom, match: Match, elapsedMs: number): void {
   const now = match.startedAt + elapsedMs
   const before = fight.bout.phase
   advanceBout(fight.bout, now)
+  driveRobots(room, fight, now)
   throwQueued(room, fight, now)
   sendCharges(room, fight, now)
   if (fight.bout.phase === 'intro') placeAwayFromRing(room, fight, now)
@@ -320,14 +329,39 @@ export function onBoxingPress(room: GameRoom, client: GameClient, payload: Clien
   if (hand && boxer) pressHand(found.fight.bout, boxer, hand, now)
 }
 
+function releaseAndThrow(room: GameRoom, fight: Fight, player: Player, boxer: Boxer, hand: Hand, now: number): void {
+  if (boxer.charged[hand]) sendToHall(room, fight, 'boxing_charge', { sessionId: player.sessionId, hand, on: false })
+  const released = releaseHand(fight.bout, boxer, hand, now)
+  if (released && !released.queued) throwPunch(room, fight, player, boxer, released.kind, now)
+}
+
 export function onBoxingRelease(room: GameRoom, client: GameClient, payload: ClientPayload, now = Date.now()): void {
   const hand = handOf(payload)
   const found = hand && fightOf(room, client)
   const boxer = found && boxerOf(found.fight.bout, found.player.accountId)
-  if (!hand || !found || !boxer) return
-  if (boxer.charged[hand]) sendToHall(room, found.fight, 'boxing_charge', { sessionId: found.player.sessionId, hand, on: false })
-  const released = releaseHand(found.fight.bout, boxer, hand, now)
-  if (released && !released.queued) throwPunch(room, found.fight, found.player, boxer, released.kind, now)
+  if (hand && found && boxer) releaseAndThrow(room, found.fight, found.player, boxer, hand, now)
+}
+
+function driveRobots(room: GameRoom, fight: Fight, now: number): void {
+  const ring = ringBounds(rulesOf())
+  for (const [accountId, brain] of fight.brains) {
+    const self = boxerOf(fight.bout, accountId)
+    const robot = playerOfAccount(room, fight.match, accountId)
+    const foePlayer = opponentPlayer(room, fight, accountId)
+    const foe = foePlayer && boxerOf(fight.bout, foePlayer.accountId)
+    if (!self || !robot || !foePlayer || !foe) continue
+    const actions = thinkBoxer(brain, { bout: fight.bout, self, foe, at: robot, foeAt: foePlayer, ring, now, random: Math.random })
+    for (const action of actions) {
+      if (action.kind === 'move') placeRobot(room, robot, action.x, robot.y, action.z, action.ry, now)
+      else if (action.kind === 'press') pressHand(fight.bout, self, action.hand, now)
+      else if (action.kind === 'release') releaseAndThrow(room, fight, robot, self, action.hand, now)
+      else if (action.kind === 'guard') {
+        if (setGuard(fight.bout, self, action.up, now)) sendState(room, fight, now)
+      } else if (action.kind === 'dodge') {
+        if (dodge(fight.bout, self, now)) sendToHall(room, fight, 'boxing_dodged', { sessionId: robot.sessionId, side: action.side })
+      } else if (getUpPress(fight.bout, self, now)) sendState(room, fight, now)
+    }
+  }
 }
 
 export function onBoxingGuard(room: GameRoom, client: GameClient, payload: ClientPayload, now = Date.now()): void {
@@ -491,6 +525,7 @@ export async function registerBoxing(): Promise<BoxingRules> {
     zone: rules.zone,
     coach: rules.coach,
     playArea: ringBounds(rules),
+    robots: true,
     teams: signup.teams,
     settings: signup.settings,
     players: () => ({ min: rules.minPlayers, max: rules.maxPlayers }),

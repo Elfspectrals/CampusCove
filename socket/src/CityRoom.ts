@@ -61,6 +61,7 @@ import { voiceRoomName, voiceToken } from './voice.ts'
 import { VOICE_SYNC_MS, createVoiceSync, liveKitService, onVoiceMute } from './voiceSync.ts'
 import {
   createPlayer,
+  makeRobot,
   normalizeAppearanceIds,
   normalizeBodyModelGlb,
   normalizeNumber,
@@ -68,6 +69,7 @@ import {
   normalizeSlotModels,
   normalizeCharacter,
   publicPlayer,
+  robotView,
   spawnNear
 } from './players.ts'
 import {
@@ -138,7 +140,9 @@ import {
   onSportsPassBuy,
   onSportsSignup,
   onSportsMatchLeave,
+  onSportsRobots,
   onSportsSignupLeave,
+  useRobotFactory,
   tickSports
 } from './sports/index.ts'
 import { onGearQuote, onGearRent } from './sports/gearRental.ts'
@@ -177,6 +181,7 @@ export class CityRoom extends Room implements GameRoom {
 
   onCreate() {
     this.maxClients = CITY_MAX_PLAYERS
+    useRobotFactory(makeRobot)
 
     this.onMessage('move', (client, payload: ClientPayload) => this.onMove(client, payload))
     this.onMessage('appearance', (client, payload: ClientPayload) => this.onAppearance(client, payload))
@@ -281,6 +286,7 @@ export class CityRoom extends Room implements GameRoom {
     this.onMessage('sports_coach_open', (client, payload: ClientPayload) => onSportsCoachOpen(this, client, payload))
     this.onMessage('sports_signup', (client, payload: ClientPayload) => void onSportsSignup(this, client, payload).catch((error) => warn('sports sign-up failed', error)))
     this.onMessage('sports_signup_leave', (client) => onSportsSignupLeave(this, client))
+    this.onMessage('sports_robots', (client, payload: ClientPayload) => onSportsRobots(this, client, payload))
     this.onMessage('sports_leave', (client) => {
       onSportsMatchLeave(this, client)
       onGymBallReturn(this, client)
@@ -449,7 +455,8 @@ export class CityRoom extends Room implements GameRoom {
   }
 
   otherPlayers(client: GameClient) {
-    return [...this.players.values()].filter((u) => u.sessionId !== client.sessionId && !hasPower(u, 'invisible')).map(publicPlayer)
+    const humans = [...this.players.values()].filter((u) => u.sessionId !== client.sessionId && !hasPower(u, 'invisible')).map(publicPlayer)
+    return [...humans, ...[...this.sports.robots.values()].map(robotView)]
   }
 
   // ------------------------------------------------------------ presence

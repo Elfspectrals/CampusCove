@@ -44,6 +44,8 @@ venues.registerCoach({ id: 'test_gym_coach', x: COACH.x, z: COACH.z, venues: ['t
 const CONFINED = { minX: -379, maxX: -377, minZ: -185, maxZ: -183 }
 fakeVenue('test_confined', { playArea: CONFINED, confined: true })
 venues.registerCoach({ id: 'test_confined_coach', x: COACH.x, z: COACH.z, venues: ['test_confined'] })
+fakeVenue('test_robot_court', { playArea: { minX: -379, maxX: -378.5, minZ: -175, maxZ: -174.5 }, robots: true })
+venues.registerCoach({ id: 'test_robot_coach', x: COACH.x, z: COACH.z, venues: ['test_robot_court'] })
 fakeVenue('test_gear_court', { playArea: { minX: -379, maxX: -378.5, minZ: -179, maxZ: -178.5 }, gear: 'gear_boxing_gloves' })
 
 const NOW = 5_000_000
@@ -106,7 +108,7 @@ test('the first player sets the match, the next join it, and a full lobby kicks 
   assert.deepEqual(lobby?.settings, { length: 5 })
   assert.deepEqual(sentOf(clientOf(room, bystander), 'sports_lobby').at(-1), {
     venue: 'test_court_a', coach: 'test_coach', sport: 'football', phase: 'open', settings: { length: 5 },
-    players: [{ sessionId: a.sessionId, name: a.pseudo, team: 'red' }], min: 2, max: 2, kickoffAt: null, serverNow: NOW
+    players: [{ sessionId: a.sessionId, name: a.pseudo, team: 'red' }], min: 2, max: 2, robots: false, kickoffAt: null, serverNow: NOW
   })
   await venues.onSportsSignup(room, clientOf(room, a), { coach: 'test_coach', venue: 'test_court_a', team: 'red' }, NOW + 1000)
   assert.equal(errors(room, a).at(-1)?.code, 'sports_already_signed')
@@ -213,6 +215,51 @@ test('a player who joins again after the grace, or after the match, stays where 
   const client = { sessionId: back.sessionId, send: () => assert.fail('nothing is sent') }
   assert.deepEqual(venues.rejoinMatch(room, client as never, back, NOW + 32_000), [])
   assert.deepEqual([back.x, back.z], [0, 0])
+})
+
+test('the first player signed up calls the robots: the empty places of both teams are filled, the match starts at once, and the robots are shown like players', async () => {
+  const { room, players: [a, b] } = await signed(2)
+  const robotCoach = { coach: 'test_robot_coach', venue: 'test_robot_court' }
+  await venues.onSportsSignup(room, clientOf(room, a), { ...robotCoach, team: 'red', settings: { length: 10 } }, NOW)
+  await venues.onSportsSignup(room, clientOf(room, b), { ...robotCoach, team: 'red' }, NOW + 2000)
+  assert.equal((sentOf(clientOf(room, a), 'sports_lobby').at(-1) as { robots: boolean }).robots, true)
+  venues.onSportsRobots(room, clientOf(room, b), { level: 'hard' }, NOW + 4000)
+  assert.equal(errors(room, b).at(-1)?.code, 'sports_not_first')
+  venues.onSportsRobots(room, clientOf(room, a), { level: 'expert' }, NOW + 4000)
+  assert.equal(room.sports.matches.has('test_robot_court'), false)
+  venues.onSportsRobots(room, clientOf(room, a), { level: 'hard' }, NOW + 4000)
+  const match = room.sports.matches.get('test_robot_court') as Match
+  assert.deepEqual([match.robots, match.startedAt], ['hard', NOW + 4000])
+  assert.deepEqual(match.players.map((p) => [p.team, p.accountId < 0, p.awaySince]), [['red', false, null], ['red', false, null], ['blue', true, null], ['blue', true, null]])
+  const shown = sentOf(clientOf(room, a), 'user_joined') as { sessionId: string, robot: boolean, pseudo: string }[]
+  assert.deepEqual(shown.map((u) => [u.sessionId, u.robot, u.pseudo]), [['robot:1', true, 'Robot 1'], ['robot:2', true, 'Robot 2']])
+  assert.equal(room.sports.robots.size, 2)
+})
+
+test('a robot match ends when its last human leaves, the robots go with it, and the record names humans only', async () => {
+  const { room, players: [a] } = await signed(1)
+  await venues.onSportsSignup(room, clientOf(room, a), { coach: 'test_robot_coach', venue: 'test_robot_court', team: 'blue', settings: { length: 5 } }, NOW)
+  venues.onSportsRobots(room, clientOf(room, a), { level: 'easy' }, NOW + 2000)
+  const match = room.sports.matches.get('test_robot_court') as Match
+  const robot = match.players.find((p) => p.accountId < 0)!
+  api.calls.length = 0
+  api.replies.set('POST /sports/matches', () => json({ ok: true }))
+  await venues.recordMatch(room, match, [{ accountId: a.accountId, team: 'blue', result: 'win', score: 3 }, { accountId: robot.accountId, team: 'red', result: 'loss', score: 1 }], NOW + 9000)
+  assert.deepEqual((api.calls.at(-1)?.body as { players: unknown[] }).players, [{ accountId: a.accountId, team: 'blue', result: 'win', score: 3 }])
+  venues.onSportsMatchLeave(room, clientOf(room, a))
+  venues.tickSports(room, NOW + 10_000)
+  assert.equal(room.sports.matches.has('test_robot_court'), false)
+  assert.equal(room.sports.robots.size, 0)
+  assert.deepEqual(sentOf(clientOf(room, a), 'user_left').at(-1), { sessionId: robot.sessionId })
+  assert.deepEqual(ended.at(-1)?.end, { reason: 'forfeit', loser: null })
+})
+
+test('a venue without robots refuses the call', async () => {
+  const { room, players: [a] } = await signed(1)
+  await venues.onSportsSignup(room, clientOf(room, a), { coach: 'test_coach', venue: 'test_court_a', team: 'red', settings: { length: 5 } }, NOW)
+  venues.onSportsRobots(room, clientOf(room, a), { level: 'easy' }, NOW + 2000)
+  assert.equal(errors(room, a).at(-1)?.code, 'sports_no_robots')
+  assert.equal(room.sports.robots.size, 0)
 })
 
 test('leaving the last place in a lobby cancels it, by message or by disconnect', async () => {

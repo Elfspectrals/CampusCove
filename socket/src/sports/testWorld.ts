@@ -86,6 +86,9 @@ export type FakeRoom = GameRoom & { clients: FakeClient[], moves: string[] }
 
 export async function fakeRoom(players: Player[]): Promise<FakeRoom> {
   const { newSportsState } = await import('./venues.ts')
+  const { makeRobot } = await import('../players.ts')
+  const { useRobotFactory } = await import('./robots.ts')
+  useRobotFactory(makeRobot)
   const clients = players.map((p) => fakeClient(p.sessionId))
   const moves: string[] = []
   const room = {

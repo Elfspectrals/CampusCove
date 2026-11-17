@@ -2775,7 +2775,9 @@ const crosshairClass = computed(() => {
       @pick-team="(side) => (sportsTeam = side)"
       @set-setting="(key, value) => (sportsSettings = { ...sportsSettings, [key]: value })"
       @pick-venue="sportsSignup.pickVenue"
+      :can-call-robots="sportsSignup.canCallRobots.value"
       @sign-up="sportsSignup.signUp"
+      @robots="sportsSignup.callRobots"
       @leave="sportsSignup.leave"
       @close="sportsSignup.close"
     />

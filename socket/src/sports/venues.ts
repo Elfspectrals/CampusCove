@@ -26,8 +26,10 @@ import {
   openLobby,
   parseTeam,
   startMatch,
+  TEAMS,
   validateSettings
 } from './signup.ts'
+import { type RobotLevel, addRobot, isRobot, removeRobot, robotLevelOf, sportsPlayer } from './robots.ts'
 import { SPORTS_ACTION_COOLDOWN_MS, SPORTS_COACH_REACH } from './sportsConstants.ts'
 
 export type MatchEnd = { reason: 'finished' } | { reason: 'forfeit', loser: Team | null }
@@ -45,6 +47,7 @@ export interface VenueSpec {
   gear?: string
   playAreaId?: string
   confined?: boolean
+  robots?: boolean
   onKickoff(room: GameRoom, match: Match): void
   onTick(room: GameRoom, match: Match, elapsedMs: number): void
   onLeave(room: GameRoom, match: Match, accountId: number): void
@@ -73,6 +76,8 @@ export interface SportsRoomState {
   lobbies: Map<string, Lobby>
   matches: Map<string, Match>
   resume: Map<number, MatchResume>
+  robots: Map<string, Player>
+  nextRobot: number
 }
 
 export type MatchResultKind = 'win' | 'loss' | 'draw' | 'finished' | 'dnf'
@@ -97,7 +102,7 @@ function warn(context: string, error: unknown): void {
 }
 
 export function newSportsState(): SportsRoomState {
-  return { lobbies: new Map(), matches: new Map(), resume: new Map() }
+  return { lobbies: new Map(), matches: new Map(), resume: new Map(), robots: new Map(), nextRobot: 1 }
 }
 
 function addCoach(coach: CoachSpec): void {
@@ -171,6 +176,7 @@ function lobbyView(venue: VenueSpec, lobby: Lobby, now: number) {
     players: lobby.entrants.map(({ sessionId, name, team }) => ({ sessionId, name, team })),
     min: lobby.range.min,
     max: lobby.range.max,
+    robots: venue.robots === true,
     kickoffAt: lobby.kickoffAt,
     serverNow: now
   }
@@ -379,6 +385,38 @@ function removeFromLobbies(room: GameRoom, accountId: number, now: number): void
   }
 }
 
+function fillWithRobots(room: GameRoom, venue: VenueSpec, lobby: Lobby, level: RobotLevel, at: Player, now: number): void {
+  const seats: (Team | null)[] = venue.teams ? TEAMS.flatMap((team) => new Array<Team>(Math.max(0, lobby.range.max / 2 - lobby.entrants.filter((e) => e.team === team).length)).fill(team)) : new Array<null>(lobby.range.max - lobby.entrants.length).fill(null)
+  lobby.robots = level
+  for (const team of seats) {
+    const robot = addRobot(room, { x: at.x, y: at.y, z: at.z })
+    joinLobby(lobby, { sessionId: robot.sessionId, accountId: robot.accountId, name: robot.pseudo, team }, now)
+  }
+}
+
+export function onSportsRobots(room: GameRoom, client: GameClient, payload: ClientPayload, now = Date.now()): void {
+  const player = room.players.get(client.sessionId)
+  const level = robotLevelOf(payload?.level)
+  if (!player || level === null) return
+  if (!cooledDown(player, now)) {
+    sendBusy(client)
+    return
+  }
+  for (const venue of venues.values()) {
+    const lobby = room.sports.lobbies.get(venue.id)
+    if (!lobby || lobby.entrants[0]?.accountId !== player.accountId) continue
+    if (!venue.robots) {
+      sendError(client, 'sports_no_robots', 'No robot plays this sport yet.')
+      return
+    }
+    fillWithRobots(room, venue, lobby, level, player, now)
+    broadcastLobby(room, venue, lobby, now)
+    runLobby(room, venue, now)
+    return
+  }
+  sendError(client, 'sports_not_first', 'Only the first player signed up can call the robots.')
+}
+
 export function onSportsSignupLeave(room: GameRoom, client: GameClient, now = Date.now()): void {
   const player = room.players.get(client.sessionId)
   if (!player) return
@@ -420,7 +458,7 @@ function kickoff(room: GameRoom, venue: VenueSpec, lobby: Lobby, now: number): v
   const match = startMatch(lobby, randomUUID(), venue.sport, now)
   room.sports.matches.set(venue.id, match)
   for (const p of match.players) {
-    const player = room.players.get(p.sessionId)
+    const player = sportsPlayer(room, p.sessionId)
     if ((!player || !inVenueZone(venue, player)) && markAway(match, p.accountId, now)) announceAbsence(room, venue, match, p, 'away')
   }
   announceKickoff(room, venue.id, accounts)
@@ -447,6 +485,7 @@ export function endMatch(room: GameRoom, venueId: string, end: MatchEnd, now = D
   const accounts = involvedAccounts(room, venueId)
   room.sports.matches.delete(venueId)
   venue.onEnd(room, match, end)
+  for (const p of match.players) if (isRobot(p.accountId)) removeRobot(room, p.sessionId)
   closeLobby(room, venue, match.coach, 'ended', accounts, now)
 }
 
@@ -455,7 +494,7 @@ function runMatch(room: GameRoom, venue: VenueSpec, match: Match, now: number): 
     announceAbsence(room, venue, match, out, 'out')
     venue.onLeave(room, match, out.accountId)
   }
-  const lost = forfeit(match, venue.teams)
+  const lost = activePlayers(match).some((p) => !isRobot(p.accountId)) ? forfeit(match, venue.teams) : { loser: null }
   if (lost) {
     endMatch(room, venue.id, { reason: 'forfeit', loser: lost.loser }, now)
     return
@@ -585,7 +624,9 @@ function recorderToken(room: GameRoom, match: Match): string | null {
 }
 
 export async function recordMatch(room: GameRoom, match: Match, results: readonly MatchResult[], endedAt = Date.now()): Promise<void> {
-  const record = matchRecord(match, results, endedAt)
+  const humans = results.filter((r) => !isRobot(r.accountId))
+  if (humans.length === 0) return
+  const record = matchRecord(match, humans, endedAt)
   try {
     await callRealtimeBackend(recorderToken(room, match), '/sports/matches', 'POST', record)
   } catch (error) {

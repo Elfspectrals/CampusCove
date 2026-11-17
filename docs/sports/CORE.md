@@ -188,6 +188,16 @@ registerVenue({
    - **Everyone gone**: the match ends with no winner.
    Each change is told to every player of the match with `sports_absence` (not for venues with a grace of 0).
 7. One lobby or match per venue at a time; a player is in at most one lobby or match.
+   **Robots** (decided 2026-11-17, for solo play): a venue with `robots: true` lets the first player signed up fill
+   every empty place with opponents run by the socket and start at once (`sports_robots { level: 'easy' | 'normal' |
+   'hard' }`; in a team sport both teams are filled up to the chosen format, so one against one or full teams is the
+   format the player picked). A robot is a player object kept in `room.sports.robots`, outside `room.players`
+   (negative account id, session id `robot:<n>`): it is drawn by the clients like a player (`user_joined` with
+   `robot: true`, `user_moved`, `user_left`, and in `init.users`) and never listed with them (Tab list, trade,
+   pickpocket, voice). Sports read a player through `sportsPlayer(room, sessionId)`. Robots are never away, are
+   removed when the match ends, and a match with no human left ends with no winner. Robots are left out of the
+   record sent to Laravel, so the humans' results count for the tasks like any match, with no daily limit (decided
+   2026-11-17), and nothing reaches a board.
 8. Dropping under the minimum stops the countdown; the 5-minute cancel counts from the last sign-up while under the
    minimum; the lobby is cancelled when its last player leaves. Settings must hold exactly the spec's keys, each value
    one of its options.
@@ -204,7 +214,9 @@ registerVenue({
 | `sports_signup_leave` | client → server | `{}` |
 | `sports_leave` | client → server | `{}`, sent by "Leave the sport" in the Esc menu (shown while the player is in a match, a race, a song, a routine or has a gym ball out): the sender is out of the match they play in, as if their rejoin time had run out, and a gym ball they borrowed goes back |
 | `sports_lobby` | server → players in the site | `{ venue, coach, sport, phase: 'open' \| 'countdown' \| 'playing', settings, players: [{ sessionId, name, team }], min, max, kickoffAt: number \| null, serverNow: number }` |
+| (in `sports_lobby`) | | `robots: boolean`: the venue has robots, so the first player sees the three level buttons |
 | `sports_lobby_closed` | server → same | `{ venue, reason: 'kickoff' \| 'cancelled' \| 'ended' }`; after a cancel or an end an idle `sports_lobby` for the venue follows |
+| `sports_robots` | client → server | `{ level: 'easy' \| 'normal' \| 'hard' }`, from the first player of an open lobby: fills the empty places with robots and kicks off. Refused with `sports_not_first` or `sports_no_robots` |
 | `sports_absence` | server → the players of the match | `{ venue, sessionId, name, state: 'away' \| 'back' \| 'out', graceSec }`: a player left the venue or disconnected (`away`, out in `graceSec` seconds), came back in time (`back`) or is out for good (`out`). The front shows a line to the others, and "go back" to a player who walked out |
 | `sports_error` | server → client | `{ code, message }` (`sports_lobby_full`, `sports_bad_settings`, `sports_already_signed`, `sports_venue_busy`, `sports_no_pass`, `sports_no_gear`, `sports_too_far`) |
 

@@ -32,6 +32,7 @@ function matchOf(players: { accountId: number, sessionId: string, pseudo: string
     venue: spec.id,
     coach: spec.id,
     sport: 'swimming',
+    robots: null,
     settings: { distanceM },
     range: { min: 1, max: 6 },
     startedAt: T0,

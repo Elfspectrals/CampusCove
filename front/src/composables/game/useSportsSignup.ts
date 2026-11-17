@@ -11,6 +11,7 @@ import {
   signupMessage,
   sportRulesUrl,
   venueChoices,
+  type RobotLevel,
   type SettingValue,
   type SignupSpec,
   type SportsCoachSpot,
@@ -144,6 +145,15 @@ export function useSportsSignup(deps: SportsSignupDeps) {
     room.send('sports_signup', signupMessage(current.coach, current.venue, spec.value, team.value, first ? settings.value : null))
   }
 
+  const canCallRobots = computed(() => {
+    const current = lobby.value
+    return current !== null && current.robots === true && current.phase !== 'playing' && current.players[0]?.sessionId === mySessionId()
+  })
+
+  function callRobots(level: RobotLevel): void {
+    if (canCallRobots.value) deps.gameRoomRef.value?.send('sports_robots', { level })
+  }
+
   function leave(): void {
     const room = deps.gameRoomRef.value
     if (pending.value || !room) return
@@ -215,6 +225,8 @@ export function useSportsSignup(deps: SportsSignupDeps) {
     clientNow,
     pickVenue,
     signUp,
+    canCallRobots,
+    callRobots,
     leave,
     close,
     tick,

@@ -55,6 +55,7 @@ const SWIMMER_LIFT_M = 0.3
 
 interface RemoteAvatar {
   userId: string
+  robot: boolean
   pseudo: string
   badges: BadgeCode[]
   group: THREE.Group
@@ -295,6 +296,7 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
     scene.add(group)
     avatars.set(sessionId, {
       userId: data.id,
+      robot: data.robot === true,
       pseudo: data.pseudo,
       badges: shownBadges(data.badges),
       group,
@@ -520,7 +522,7 @@ export function useRemoteAvatars(deps: RemoteAvatarsDeps) {
   }
 
   function players(): Array<{ sessionId: string; accountId: string; pseudo: string; badges: BadgeCode[] }> {
-    return [...avatars.entries()].map(([sessionId, a]) => ({ sessionId, accountId: a.userId, pseudo: a.pseudo, badges: a.badges }))
+    return [...avatars.entries()].filter(([, a]) => !a.robot).map(([sessionId, a]) => ({ sessionId, accountId: a.userId, pseudo: a.pseudo, badges: a.badges }))
   }
 
   function accountOf(sessionId: string): string | null {

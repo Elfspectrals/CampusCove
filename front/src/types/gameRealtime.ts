@@ -5,6 +5,7 @@ export interface RemoteUserPayload {
   id: string
   pseudo: string
   badges?: string[]
+  robot?: boolean
   color: number
   x: number
   y: number
@@ -891,6 +892,7 @@ export interface SportsLobbyPayload {
   players: SportsLobbyPlayer[]
   min: number
   max: number
+  robots?: boolean
   kickoffAt: number | null
   serverNow: number
 }

@@ -1,3 +1,4 @@
+import type { RobotLevel } from './robots.ts'
 import { KICKOFF_COUNTDOWN_MS, LOBBY_IDLE_CANCEL_MS } from './sportsConstants.ts'
 
 export type Team = 'red' | 'blue'
@@ -41,6 +42,7 @@ export interface Lobby {
   nextOrder: number
   lastJoinAt: number
   kickoffAt: number | null
+  robots?: RobotLevel
 }
 
 export interface MatchPlayer {
@@ -60,6 +62,7 @@ export interface Match {
   settings: Settings
   range: PlayerRange
   startedAt: number
+  robots: RobotLevel | null
   players: MatchPlayer[]
 }
 
@@ -194,6 +197,7 @@ export function startMatch(lobby: Lobby, id: string, sport: string, now: number)
     settings: lobby.settings,
     range: lobby.range,
     startedAt: now,
+    robots: lobby.robots ?? null,
     players: rebalance(lobby.entrants).map(({ accountId, sessionId, name, team }) => ({ accountId, sessionId, name, team, awaySince: null, out: false }))
   }
 }

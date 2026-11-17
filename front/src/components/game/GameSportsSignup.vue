@@ -2,6 +2,7 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
+  ROBOT_LEVELS,
   SPORTS_TEAMS,
   canSignUp,
   choosableSettings,
@@ -9,6 +10,7 @@ import {
   kickoffSeconds,
   lobbyPlayer,
   teamRoster,
+  type RobotLevel,
   type SettingSpec,
   type SettingValue,
   type SignupSpec,
@@ -32,6 +34,7 @@ const props = defineProps<{
   clientNow: number
   clockOffset: number
   gearOffer: GearOffer | null
+  canCallRobots: boolean
 }>()
 
 const emit = defineEmits<{
@@ -39,6 +42,7 @@ const emit = defineEmits<{
   pickTeam: [team: SportsTeam]
   setSetting: [key: string, value: SettingValue]
   signUp: []
+  robots: [level: RobotLevel]
   leave: []
   rent: []
   close: []
@@ -202,6 +206,15 @@ onUnmounted(() => window.removeEventListener('keydown', onKey, true))
         </ul>
 
         <p v-if="lobby && !spec && !error" class="m-0 text-xs text-mist">{{ t('sports.signup.loading') }}</p>
+
+        <div v-if="canCallRobots" class="flex flex-col gap-1.5 border-t border-line/15 pt-2">
+          <p class="m-0 text-xs text-mist">{{ t('sports.signup.robots.title') }}</p>
+          <div class="flex gap-2">
+            <button v-for="level in ROBOT_LEVELS" :key="level" type="button" class="cc-btn cc-btn-sm cc-btn-sun min-h-11 flex-1" @click="emit('robots', level)">
+              {{ t(`sports.signup.robots.${level}`) }}
+            </button>
+          </div>
+        </div>
 
         <div class="flex justify-end gap-2">
           <button v-if="me && lobby?.phase !== 'playing'" type="button" class="cc-btn cc-btn-sm cc-btn-coral min-h-11" :disabled="pending" @click="emit('leave')">

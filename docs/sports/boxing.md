@@ -95,6 +95,18 @@ A boxer who leaves the ring or disconnects past the 10 s grace loses the fight.
 - What a player can still do, and what happens: hit a bag someone trains on (it rocks, no round, no points for anyone); hit another bag during their own round (it rocks, no points); hammer one button (wrong punches, the score does not move); walk away (the round ends, the score is shown); keep punching after the bell (a new round starts on the next punch); punch faster than every 400 ms (the extra punches are dropped).
 - In a bag round the player wears the gloves in first person and on their avatar (other players see them from the first counted punch), the first-person arms and the avatar play the boxing punches, and the view is the bout's duel view turned to the bag, kept out of the walls (`walls` on the duel view).
 
+## Robot opponent (2026-11-17)
+
+Called from the coach panel by the first boxer signed up (CORE.md § robots). The robot is driven on the socket tick by `boxingRobot.ts` (`thinkBoxer`, tested), through the same presses, releases, guard and dodge as a player, so its punches obey the same cooldowns, endurance, wind-up and parry rules. It walks to 1.15 m of its opponent, circles, steps back to breathe when its endurance is low, and stays 0.5 m inside the ropes.
+
+| Level | Reaction to a wind-up | Answer to a wind-up (parry / dodge / held guard) | Combos | Pause between plans | Breaks a held guard after | Walk |
+|---|---|---|---|---|---|---|
+| Easy | 650 ms | 0 % / 10 % / 15 % | single punches | about 1.6 s | 2.5 s | 2.2 m/s |
+| Normal | 420 ms | 25 % / 30 % / 35 % | up to 2 punches | about 1.0 s | 1.4 s | 3.0 m/s |
+| Hard | 260 ms | 45 % / 40 % / 10 % | up to the full combo | about 0.65 s | 0.8 s | 3.8 m/s |
+
+A robot that tried a parry and saw no punch after 240 ms drops its guard and dodges. With a counter open it throws a cross at once. Knocked down, it presses to get up (every 320, 200 or 120 ms). Heavy punches are held past the hold time, so the player sees the wind-up and can parry or dodge. No boxing task exists yet, so a bout against a robot only counts as a recorded match.
+
 ## Socket contract
 
 | Message | Direction | Payload |

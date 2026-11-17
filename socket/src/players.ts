@@ -176,6 +176,20 @@ export function createPlayer(client: Client, options: Json, colorIndex: number, 
   }
 }
 
+function createRobot(number: number, at: Vec3): Player {
+  const client = { sessionId: `robot:${number}`, auth: { accountId: -number, pseudo: `Robot ${number}`, token: null, badges: [] } } as unknown as Client
+  return createPlayer(client, {}, number, at)
+}
+
+export function robotView(robot: Player) {
+  return { ...publicPlayer(robot), robot: true }
+}
+
+export function makeRobot(number: number, at: Vec3): { robot: Player, view: unknown } {
+  const robot = createRobot(number, at)
+  return { robot, view: robotView(robot) }
+}
+
 export function publicPlayer(player: Player) {
   return {
     sessionId: player.sessionId,
