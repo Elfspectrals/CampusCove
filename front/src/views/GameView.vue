@@ -912,7 +912,7 @@ const runningRace = useRunningRace({
   setRacePose: (sessionId, pose) => realtime.setRemoteRacePose(sessionId, pose),
 })
 const { state: runState, runner: myRunnerState, result: runResult, clientNow: runClientNow, clockOffset: runClockOffset, lastStepAt: runLastStepAt, gateBearing: runGateBearing, board: runBoard } = runningRace
-const dance = useDance({ gameRoomRef, myPosition, isMoveKey: (action, code) => matches(action, code) })
+const dance = useDance({ gameRoomRef, myPosition, dancerPosition: (sessionId) => realtime.remotePosition(sessionId), isMoveKey: (action, code) => matches(action, code) })
 const { start: danceStart, result: danceResult, boards: danceBoards, boardsFailed: danceBoardsFailed, dancing, notes: danceNotes, songMs: danceSongMs, board: danceBoard, mine: danceMine, teamScore: danceTeamScore, judgementShown: danceJudgement, litLanes: danceLitLanes } = dance
 const figure = useFigureSkating({
   gameRoomRef,

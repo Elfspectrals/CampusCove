@@ -15,7 +15,7 @@ export type SportsView =
   | { kind: 'follow'; sport: string; optional: boolean; distance: number; lift: number; waterY: number | null }
   | { kind: 'duel'; sport: string; optional: boolean; opponent: { x: number; z: number }; arena: Arena; walls?: boolean }
   | { kind: 'court'; sport: string; optional: boolean; cx: number; netZ: number; halfLength: number; side: 1 | -1 }
-  | { kind: 'stage'; sport: string; optional: boolean; facingYaw: number }
+  | { kind: 'stage'; sport: string; optional: boolean; facingYaw: number; others?: readonly { x: number; z: number }[] }
   | { kind: 'broadcast'; sport: string; optional: boolean; court: Arena; focusX: number; focusZ: number; fallback: SportsView | null }
 
 export interface Arena {
@@ -60,6 +60,9 @@ const STAGE_SWAY_RAD = (18 * Math.PI) / 180
 const STAGE_SWAY_PERIOD_S = 14
 const STAGE_FOV = 40
 const STAGE_SIDE_SHIFT_M = 1.7
+const STAGE_GROUP_MARGIN_M = 0.6
+const STAGE_GROUP_ASPECT = 1.6
+const STAGE_MAX_FOV = 75
 const BROADCAST_BEHIND_LINE_M = 7
 const BROADCAST_HEIGHT_M = 8.5
 const BROADCAST_TARGET_PAST_LINE_M = 5.8
@@ -135,14 +138,22 @@ function courtPose(view: Extract<SportsView, { kind: 'court' }>, frame: ViewFram
 }
 
 function stagePose(view: Extract<SportsView, { kind: 'stage' }>, frame: ViewFrame): CameraPose {
-  const sway = STAGE_SWAY_RAD * Math.sin((frame.timeS * 2 * Math.PI) / STAGE_SWAY_PERIOD_S)
+  const others = view.others ?? []
+  const alone = others.length === 0
+  const sway = alone ? STAGE_SWAY_RAD * Math.sin((frame.timeS * 2 * Math.PI) / STAGE_SWAY_PERIOD_S) : 0
   const front = lookDirection(view.facingYaw + sway, 0)
-  const sideX = front.z * STAGE_SIDE_SHIFT_M
-  const sideZ = -front.x * STAGE_SIDE_SHIFT_M
+  const aside = others.map((o) => (o.x - frame.eye.x) * front.z - (o.z - frame.eye.z) * front.x)
+  const left = Math.min(0, ...aside)
+  const right = Math.max(0, ...aside)
+  const shift = STAGE_SIDE_SHIFT_M + (left + right) / 2
+  const sideX = front.z * shift
+  const sideZ = -front.x * shift
+  const halfAngle = Math.atan(((right - left) / 2 + STAGE_SIDE_SHIFT_M + STAGE_GROUP_MARGIN_M) / STAGE_DISTANCE_M)
+  const groupFov = (2 * Math.atan(Math.tan(halfAngle) / STAGE_GROUP_ASPECT) * 180) / Math.PI
   return {
     position: { x: frame.eye.x + front.x * STAGE_DISTANCE_M + sideX, y: frame.feetY + STAGE_HEIGHT_M, z: frame.eye.z + front.z * STAGE_DISTANCE_M + sideZ },
     target: { x: frame.eye.x + sideX, y: frame.feetY + STAGE_TARGET_HEIGHT_M, z: frame.eye.z + sideZ },
-    fov: STAGE_FOV,
+    fov: alone ? STAGE_FOV : Math.min(STAGE_MAX_FOV, Math.max(STAGE_FOV, groupFov)),
     pivot: { x: frame.eye.x, y: frame.feetY + STAGE_TARGET_HEIGHT_M, z: frame.eye.z },
   }
 }

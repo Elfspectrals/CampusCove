@@ -85,9 +85,9 @@ from `front/` (idempotent: `COL_SportsDance_*` and `COL_Work_sports_dance` only,
 
 Dancers are moved to their spot at kick-off (`position_correction`, reason `dance_spot`) and cannot walk during the
 song. Other players see them play the `Dance` clip at `bpm / 120` and `Stumble` on a miss. The music is synthesised
-in the browser (`front/src/game/sports/danceMusic.ts`) on the song clock; it decides nothing.
+in the browser (`front/src/game/sports/danceMusic.ts`) on the song clock; it decides nothing. Since 2026-11-17 (the music started well after the notes on a fast song) it plays from one audio context kept for the whole session and each beat is scheduled at most 600 ms ahead from the wall clock (`dueBeats`): a slow start of the audio device or a stall drops the beats already past and the next ones stay on time, instead of the whole song sliding late.
 
-During the song the view is third person, facing the dancer from the coach's side (see "Camera" in [README.md](README.md), decided 2026-11-15): the dancer stays left of the note lanes and plays the same `Dance`, lane moves and `Stumble` as the others see. A dancer moved out of the studio by an admin teleport stays locked in the song until it ends (known, not fixed).
+During the song the view is third person, facing the dancer from the coach's side (see "Camera" in [README.md](README.md), decided 2026-11-15): with other dancers in the song the camera stops swaying, centres on the whole line and opens its field (up to 75°) until both ends fit, so everyone is in the picture; the dancer stays left of the note lanes and plays the same `Dance`, lane moves and `Stumble` as the others see. A dancer moved out of the studio by an admin teleport stays locked in the song until it ends (known, not fixed).
 
 ## Tasks and boards (built 2026-11-14)
 

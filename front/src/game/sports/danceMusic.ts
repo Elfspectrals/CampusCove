@@ -20,6 +20,27 @@ const STYLES: Readonly<Record<string, SongStyle>> = {
 const MASTER_GAIN = 0.32
 const SILENT = 0.0001
 const BEATS_PER_CHORD = 4
+const SCHEDULE_EVERY_MS = 100
+const SCHEDULE_AHEAD_MS = 600
+
+let sharedContext: AudioContext | null = null
+
+function audioContext(): AudioContext {
+  sharedContext ??= new AudioContext()
+  if (sharedContext.state === 'suspended') void sharedContext.resume()
+  return sharedContext
+}
+
+export function dueBeats(next: number, beats: number, beatMs: number, startAtMs: number, nowMs: number, aheadMs: number): { due: { beat: number; inMs: number }[]; next: number } {
+  const due: { beat: number; inMs: number }[] = []
+  let beat = next
+  for (; beat < beats; beat++) {
+    const inMs = startAtMs + beat * beatMs - nowMs
+    if (inMs > aheadMs) break
+    if (inMs >= 0) due.push({ beat, inMs })
+  }
+  return { due, next: beat }
+}
 
 function hz(semitones: number): number {
   return A3 * 2 ** (semitones / 12)
@@ -30,10 +51,15 @@ export interface DanceMusic {
   hit(judgement: Judgement): void
 }
 
-export function startDanceMusic(song: string, bpm: number, lengthMs: number, startsInMs: number): DanceMusic {
+function styleOf(song: string): SongStyle {
   const style = STYLES[song]
   if (!style) throw new Error(`No music style for song ${song}`)
-  const ctx = new AudioContext()
+  return style
+}
+
+export function startDanceMusic(song: string, bpm: number, lengthMs: number, startsInMs: number): DanceMusic {
+  const style = styleOf(song)
+  const ctx = audioContext()
   const master = ctx.createGain()
   master.gain.value = MASTER_GAIN
   master.connect(ctx.destination)
@@ -85,11 +111,11 @@ export function startDanceMusic(song: string, bpm: number, lengthMs: number, sta
   pad.frequency.value = 1400
   pad.connect(master)
   const beat = 60 / bpm
-  const origin = ctx.currentTime + startsInMs / 1000
   const beats = Math.floor(lengthMs / 1000 / beat)
-  for (let b = 0; b < beats; b++) {
-    const at = origin + b * beat
-    if (at < ctx.currentTime) continue
+  const startAtMs = performance.now() + startsInMs
+  let next = 0
+
+  function playBeat(b: number, at: number): void {
     const chord = style.chords[Math.floor(b / BEATS_PER_CHORD) % style.chords.length]
     if (!chord) throw new Error(`Song ${song}: no chord for beat ${b}`)
     if (style.fourOnFloor || b % 2 === 0) kick(at)
@@ -101,9 +127,20 @@ export function startDanceMusic(song: string, bpm: number, lengthMs: number, sta
     if (style.arpeggio) chord.forEach((n, i) => tone(hz(n + 12), at + (i * beat) / chord.length, beat / chord.length, 0.05, 'square', pad))
   }
 
+  function schedule(): void {
+    const step = dueBeats(next, beats, beat * 1000, startAtMs, performance.now(), SCHEDULE_AHEAD_MS)
+    next = step.next
+    for (const { beat: b, inMs } of step.due) playBeat(b, ctx.currentTime + inMs / 1000)
+    if (next >= beats) clearInterval(timer)
+  }
+
+  const timer = setInterval(schedule, SCHEDULE_EVERY_MS)
+  schedule()
+
   return {
     stop() {
-      void ctx.close()
+      clearInterval(timer)
+      master.disconnect()
     },
     hit(judgement) {
       const at = ctx.currentTime

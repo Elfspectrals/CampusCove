@@ -22,6 +22,7 @@ import { yawTowards, type SportsView } from '../../game/camera/sportsCamera'
 export interface DanceDeps {
   gameRoomRef: ShallowRef<Room | null>
   myPosition: { x: number; z: number }
+  dancerPosition: (sessionId: string) => { x: number; z: number } | null
   isMoveKey: (action: MoveAction, code: string) => boolean
 }
 
@@ -158,7 +159,9 @@ export function useDance(deps: DanceDeps) {
 
   function cameraView(): SportsView | null {
     if (!dancing.value || coachX === null) return null
-    return { kind: 'stage', sport: 'dance', optional: false, facingYaw: yawTowards(deps.myPosition, { x: coachX, z: deps.myPosition.z }) }
+    const me = mySessionId()
+    const others = (start.value?.dancers ?? []).flatMap((d) => (d.sessionId === me ? [] : (deps.dancerPosition(d.sessionId) ?? [])))
+    return { kind: 'stage', sport: 'dance', optional: false, facingYaw: yawTowards(deps.myPosition, { x: coachX, z: deps.myPosition.z }), others }
   }
 
   return {

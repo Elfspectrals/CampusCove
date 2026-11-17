@@ -327,6 +327,7 @@ Decision (2026-11-15, second review of the sports): the gear loan becomes a bloc
 Decision (2026-11-17, third review of the sports): boxing must reward technique, not hammering one button: a parry, a counter and a guard break, arms that tire in a flurry, the keys shown on screen, and a calmer camera kept behind the shoulder; a player who disconnects can come back to their match, in every sport, and forfeits after 10 s (it was 30 s); the dance music must start with the notes and every dancer must be in the picture.
 
 - [done] Leaving and coming back, every sport: the grace is 10 s; a player who joins again within it is put back where they stood with their lent gear; the others read "left the match: forfeit in 10 s", "is back", "forfeits"; in tennis the serve waits while a player is away. Covered by socket tests, not played with a real disconnection.
+- [done] Dance: the music is scheduled beat by beat on the wall clock from one audio context, so it cannot slide late; with several dancers the camera frames the whole line. Measured in the browser on Night Sprint, hard: music and notes 5 to 8 ms apart. The late start itself was not reproduced here, and the group framing was not seen with a second dancer (unit test only).
 - [todo] Opponents run by the server for solo play (decided 2026-11-15: a win against one counts for the tasks, not for the boards; in football and basketball the player chooses one against one or teams filled with robots).
 
 ## Later

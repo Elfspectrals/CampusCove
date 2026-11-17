@@ -91,6 +91,26 @@ test('the stage camera faces the dancer and keeps them left of the middle, clear
   close(pose.target.z, 0, 'at the dancer depth')
 })
 
+test('with other dancers the stage camera stops swaying, centres on the whole line and opens its field until both ends fit', () => {
+  const stage = { kind: 'stage', sport: 'dance', optional: false, facingYaw: 0 } as const
+  const fits = (pose: { target: { x: number }; fov: number | null }, minX: number, maxX: number) => {
+    const reach = Math.tan((((pose.fov as number) / 2) * Math.PI) / 180) * 1.6 * 4.6
+    return pose.target.x - reach <= minX - 0.5 && pose.target.x + reach >= maxX + 0.5
+  }
+  const fromOneEnd = poseFor({ ...stage, others: [{ x: 2, z: 0 }, { x: 4, z: 0 }, { x: 6, z: 0 }] }, { ...FRAME, timeS: 3 })
+  close(fromOneEnd.target.x, 1.3, 'the middle of the line, less the shift that clears the note lanes')
+  close(fromOneEnd.position.x, 1.3, 'camera in front of that point')
+  close(fromOneEnd.position.z, -4.6, 'same distance')
+  assert.ok(fits(fromOneEnd, 0, 6), 'four dancers in the frame')
+  const fromTheOtherEnd = poseFor({ ...stage, others: [{ x: 0, z: 0 }, { x: 2, z: 0 }, { x: 4, z: 0 }] }, { ...FRAME, eye: { x: 6, y: 1.6, z: 0 } })
+  close(fromTheOtherEnd.target.x, 1.3, 'the same frame for the dancer at the other end')
+  close(fromTheOtherEnd.fov as number, fromOneEnd.fov as number, 'and the same field')
+  const pair = poseFor({ ...stage, others: [{ x: 2, z: 0 }] }, FRAME)
+  assert.ok(fits(pair, 0, 2) && (pair.fov as number) < (fromOneEnd.fov as number), 'two dancers need less field')
+  assert.equal(poseFor(stage, FRAME).fov, 40)
+  assert.equal(poseFor({ ...stage, others: [] }, FRAME).fov, 40)
+})
+
 test('views that frame the action lock the body, the follow view leaves it to the mouse', () => {
   const me = { x: 0, z: 0 }
   assert.equal(lockedLookFor({ kind: 'follow', sport: 'gym', optional: true, distance: 3, lift: 0.3, waterY: null }, me), null)
