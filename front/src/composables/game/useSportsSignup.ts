@@ -16,7 +16,7 @@ import {
   type SportsCoachSpot,
   type SportsTeam,
 } from '../../game/sports/sportsSignup'
-import type { SportsErrorPayload, SportsLobbyClosedPayload, SportsLobbyPayload } from '../../types/gameRealtime'
+import type { SportsAbsencePayload, SportsErrorPayload, SportsLobbyClosedPayload, SportsLobbyPayload } from '../../types/gameRealtime'
 import type { InteractionSource, ScreenPrompt } from './useInteractionTargets'
 
 const PROMPT_HEIGHT = 2.2
@@ -31,6 +31,7 @@ export interface SportsSignupDeps {
   coachPrompt: () => { action: string; detail?: string }
   errorText: (error: SportsErrorPayload) => string
   closedText: (reason: SportsLobbyClosedPayload['reason']) => string
+  absenceText: (absence: SportsAbsencePayload, mine: boolean) => string | null
   say: (text: string) => void
   onSignedUp: () => void
 }
@@ -182,6 +183,10 @@ export function useSportsSignup(deps: SportsSignupDeps) {
       lobbies.value = next
       if (shown) close()
       if (wasIn) deps.say(deps.closedText(data.reason))
+    },
+    onAbsence(data: SportsAbsencePayload): void {
+      const text = deps.absenceText(data, data.sessionId === mySessionId())
+      if (text !== null) deps.say(text)
     },
     onError(data: SportsErrorPayload): void {
       const text = deps.errorText(data)

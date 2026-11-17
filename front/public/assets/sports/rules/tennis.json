@@ -114,7 +114,7 @@
     "reachM": 1.0
   },
   "faults": "simplified",
-  "rejoinGraceSec": 30,
+  "rejoinGraceSec": 10,
   "gear": [
     "gear_tennis_racket"
   ],

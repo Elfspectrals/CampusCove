@@ -941,6 +941,7 @@ const sportsSignup = useSportsSignup({
   coachPrompt: () => ({ action: t('sports.signup.coachAction'), detail: t('sports.signup.coachDetail') }),
   errorText: sportsErrorText,
   closedText: (reason) => t(`sports.signup.closed.${reason}`),
+  absenceText: ({ state, name, graceSec }, mine) => (mine ? (state === 'away' ? t('sports.absence.you', { n: graceSec }) : null) : t(`sports.absence.${state}`, { name, n: graceSec })),
   say: (text) => survival.say(text),
   onSignedUp: () => {
     sfx.play('market_bell')
@@ -2084,6 +2085,7 @@ const realtime = useGameRealtime({
     onLobby: sportsSignup.handlers.onLobby,
     onLobbyClosed: sportsSignup.handlers.onLobbyClosed,
     onError: sportsSignup.handlers.onError,
+    onAbsence: sportsSignup.handlers.onAbsence,
     onRoomJoined: () => {
       sportsSignup.handlers.onRoomJoined()
       runningRace.onRoomJoined()

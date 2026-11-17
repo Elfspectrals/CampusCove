@@ -150,7 +150,7 @@ registerVenue({
   teams: true,                // red / blue, or false for solo races
   settings: SettingsSpec,     // parseSignupRules(await readSportRules(sport)) from the rules JSON (§ 5)
   players: (settings) => ({ min, max }),
-  rejoinGraceMs: 30_000,      // 0 for solo timed races (did not finish at once)
+  rejoinGraceMs: 10_000,      // 0 for solo timed races (did not finish at once)
   onKickoff(room, match), onTick(room, match, elapsedMs), onLeave(room, match, accountId),
   onEnd(room, match, end),    // end: { reason: 'finished' } | { reason: 'forfeit', loser: 'red' | 'blue' | null }
 })
@@ -175,8 +175,18 @@ registerVenue({
    moves to the other one.
 5. During the match the venue is reserved: a move of a non-player into `playArea` is refused (`venue_reserved`),
    non-players inside it at kick-off are moved to its nearest edge.
-6. A player who leaves the venue's pass area or disconnects keeps their place for `rejoinGraceMs`; back in time, they
-   play on. Past it they are out and `onLeave` runs. A team at 0 players loses (`onEnd` with `forfeit`).
+6. A player who leaves the venue's pass area or disconnects keeps their place for `rejoinGraceMs` (10 s in every
+   sport with a grace, decided 2026-11-17); back in time, they play on. Past it they are out and `onLeave` runs. A team
+   at 0 players loses (`onEnd` with `forfeit`). The cases, all with the same rule:
+   - **Disconnect, closed tab, a second tab taking the session**: the socket keeps where the player stood and their lent
+     gear (`room.sports.resume`). A join by the same account while they are still in the match puts them back there
+     (`teleported`), gives the gear back and marks them back (`rejoinMatch`, from `joinSports`). Not for a player who
+     comes back knocked out or in a cell, nor once the match is over or they are out.
+   - **Walking out of the pass area**: away until they walk back in.
+   - **"Leave the sport" in the Esc menu** (`sports_leave`): out at once, no grace.
+   - **Signed up, then gone at kick-off**: away from the kick-off, out 10 s later.
+   - **Everyone gone**: the match ends with no winner.
+   Each change is told to every player of the match with `sports_absence` (not for venues with a grace of 0).
 7. One lobby or match per venue at a time; a player is in at most one lobby or match.
 8. Dropping under the minimum stops the countdown; the 5-minute cancel counts from the last sign-up while under the
    minimum; the lobby is cancelled when its last player leaves. Settings must hold exactly the spec's keys, each value
@@ -195,6 +205,7 @@ registerVenue({
 | `sports_leave` | client → server | `{}`, sent by "Leave the sport" in the Esc menu (shown while the player is in a match, a race, a song, a routine or has a gym ball out): the sender is out of the match they play in, as if their rejoin time had run out, and a gym ball they borrowed goes back |
 | `sports_lobby` | server → players in the site | `{ venue, coach, sport, phase: 'open' \| 'countdown' \| 'playing', settings, players: [{ sessionId, name, team }], min, max, kickoffAt: number \| null, serverNow: number }` |
 | `sports_lobby_closed` | server → same | `{ venue, reason: 'kickoff' \| 'cancelled' \| 'ended' }`; after a cancel or an end an idle `sports_lobby` for the venue follows |
+| `sports_absence` | server → the players of the match | `{ venue, sessionId, name, state: 'away' \| 'back' \| 'out', graceSec }`: a player left the venue or disconnected (`away`, out in `graceSec` seconds), came back in time (`back`) or is out for good (`out`). The front shows a line to the others, and "go back" to a player who walked out |
 | `sports_error` | server → client | `{ code, message }` (`sports_lobby_full`, `sports_bad_settings`, `sports_already_signed`, `sports_venue_busy`, `sports_no_pass`, `sports_no_gear`, `sports_too_far`) |
 
 ### Results

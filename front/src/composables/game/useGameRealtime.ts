@@ -110,6 +110,7 @@ import type {
   PoliceLicenceBoughtPayload,
   PoliceStatePayload,
   SportsErrorPayload,
+  SportsAbsencePayload,
   SportsLobbyClosedPayload,
   SportsLobbyPayload,
   SportsLoansPayload,
@@ -355,6 +356,7 @@ export interface GameRealtimeDeps {
     onLobby: (data: SportsLobbyPayload) => void
     onLobbyClosed: (data: SportsLobbyClosedPayload) => void
     onError: (data: SportsErrorPayload) => void
+    onAbsence: (data: SportsAbsencePayload) => void
     onRoomJoined: () => void
     onTennisState: (data: TennisStatePayload) => void
     onTennisFree: (data: TennisFreePayload) => void
@@ -685,6 +687,7 @@ export function useGameRealtime(deps: GameRealtimeDeps) {
     room.onMessage('sports_lobby', (data: SportsLobbyPayload) => deps.sports.onLobby(data))
     room.onMessage('sports_lobby_closed', (data: SportsLobbyClosedPayload) => deps.sports.onLobbyClosed(data))
     room.onMessage('sports_error', (data: SportsErrorPayload) => deps.sports.onError(data))
+    room.onMessage('sports_absence', (data: SportsAbsencePayload) => deps.sports.onAbsence(data))
     room.onMessage('sports_gear_offer', (data: { gear: string; price: number }) => deps.gearRental.onOffer(data))
     room.onMessage('sports_gear_rented', (data: { gear: string; cash: number }) => deps.gearRental.onRented(data))
     room.onMessage('climb_state', (data: ClimbStatePayload) => deps.climbing.onState(data))

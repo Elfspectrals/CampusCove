@@ -1,7 +1,7 @@
 import type { GameClient, GameRoom, Player } from '../types.ts'
-import { sendLoansOnJoin, takeBackAll, updateLoansOnMove } from './loans.ts'
+import { lend, sendLoansOnJoin, takeBackAll, updateLoansOnMove } from './loans.ts'
 import { loadSportsPass } from './pass.ts'
-import { leaveSports, updateMatchesOnMove } from './venues.ts'
+import { leaveSports, rejoinMatch, updateMatchesOnMove } from './venues.ts'
 import './tennis.ts'
 import './climbing.ts'
 
@@ -17,6 +17,7 @@ export { assertVenueZones, newSportsState, onSportsCoachOpen, onSportsMatchLeave
 
 export async function joinSports(room: GameRoom, client: GameClient, player: Player): Promise<void> {
   sendLoansOnJoin(room, client)
+  for (const [key, area] of rejoinMatch(room, client, player, Date.now())) lend(room, player, key, area)
   if (player.token) await loadSportsPass(room, client, player)
 }
 
@@ -26,8 +27,8 @@ export function moveInSports(room: GameRoom, player: Player, now: number): void 
 }
 
 export function leaveSportsRoom(room: GameRoom, player: Player, now: number): void {
+  leaveSports(room, player, now, [...player.sportsLoans])
   takeBackAll(room, player)
-  leaveSports(room, player, now)
 }
 
 export function sportsDeath(room: GameRoom, player: Player): void {

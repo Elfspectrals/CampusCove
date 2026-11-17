@@ -152,6 +152,10 @@ function score(game: TennisGame, winner: Team): void {
   if (game.score.serving !== before) game.turns[game.score.serving] += 1
 }
 
+function someoneAway(match: Match): boolean {
+  return activePlayers(match).some((p) => p.awaySince !== null)
+}
+
 export function runTennis(room: GameRoom, match: Match, now: number): void {
   const game = tennisGame(room, match.venue)
   if (!game) return
@@ -164,6 +168,10 @@ export function runTennis(room: GameRoom, match: Match, now: number): void {
     }
     game.rally = nextServe(room, match, game, now)
     broadcast(room, match, game, now)
+    return
+  }
+  if (game.rally.phase === 'serve_wait' && someoneAway(match)) {
+    game.rally = { ...game.rally, since: now }
     return
   }
   const next = step(game.rally, now, game.court, where)
@@ -193,6 +201,7 @@ export function onTennisHit(room: GameRoom, client: GameClient, payload: ClientP
     game.lastHitAt.set(player.accountId, now)
     runTennis(room, match, now)
     if (roomGames(room).get(venue) !== game) return
+    if (game.rally.phase === 'serve_wait' && someoneAway(match)) return
     const hitter = { sessionId: player.sessionId, team: mp.team, x: player.x, z: player.z }
     const before = game.rally
     const next = hit(before, hitter, { x: payload.aimX, z: payload.aimZ }, payload.lob === true, now, game.court, trackReady(player, before, game.court, hitter, now))

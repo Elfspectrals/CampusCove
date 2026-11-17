@@ -43,7 +43,7 @@ Pointing throw (low, rolling), shooting throw (high), crouch, walk to the jack, 
 
 ## Failure cases
 
-Leaver past the 30 s grace: their boules are skipped; a team at 0 players loses.
+Leaver past the 10 s grace: their boules are skipped; a team at 0 players loses.
 
 ## Decisions (2026-11-14, building session)
 

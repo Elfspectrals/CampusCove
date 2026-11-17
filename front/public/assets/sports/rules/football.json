@@ -82,7 +82,7 @@
   },
   "minPlayers": 4,
   "kickoffCountdownSec": 60,
-  "rejoinGraceSec": 30,
+  "rejoinGraceSec": 10,
   "ball": {
     "radiusM": 0.18,
     "massKg": 0.43,

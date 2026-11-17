@@ -46,7 +46,7 @@ Ready stance, side step, forehand, backhand, lob, serve, celebration.
 
 ## Failure cases
 
-Leaver past the 30 s grace: the other side wins.
+Leaver past the 10 s grace: the other side wins. While a player of the match is away the serve waits: neither a click nor the automatic toss starts a point, and the wait before the automatic toss starts again when they are back; a ball already in play finishes its point.
 
 ## Decisions (2026-11-14, building session)
 

@@ -211,7 +211,7 @@
   ],
   "minPlayers": 2,
   "maxPlayers": 2,
-  "rejoinGraceSec": 30,
+  "rejoinGraceSec": 10,
   "gear": [
     "gear_boxing_gloves"
   ],

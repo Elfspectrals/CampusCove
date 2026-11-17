@@ -7,6 +7,7 @@ import { hasValidPass, inPassArea } from './pass.ts'
 import {
   type Lobby,
   type Match,
+  type MatchPlayer,
   type PlayerRange,
   type SettingSpec,
   type Settings,
@@ -57,9 +58,21 @@ export interface CoachSpec {
   venues: string[]
 }
 
+export type SportsLoan = [key: string, area: string]
+
+interface MatchResume {
+  matchId: string
+  x: number
+  y: number
+  z: number
+  ry: number
+  loans: SportsLoan[]
+}
+
 export interface SportsRoomState {
   lobbies: Map<string, Lobby>
   matches: Map<string, Match>
+  resume: Map<number, MatchResume>
 }
 
 export type MatchResultKind = 'win' | 'loss' | 'draw' | 'finished' | 'dnf'
@@ -84,7 +97,7 @@ function warn(context: string, error: unknown): void {
 }
 
 export function newSportsState(): SportsRoomState {
-  return { lobbies: new Map(), matches: new Map() }
+  return { lobbies: new Map(), matches: new Map(), resume: new Map() }
 }
 
 function addCoach(coach: CoachSpec): void {
@@ -408,7 +421,7 @@ function kickoff(room: GameRoom, venue: VenueSpec, lobby: Lobby, now: number): v
   room.sports.matches.set(venue.id, match)
   for (const p of match.players) {
     const player = room.players.get(p.sessionId)
-    if (!player || !inVenueZone(venue, player)) markAway(match, p.accountId, now)
+    if ((!player || !inVenueZone(venue, player)) && markAway(match, p.accountId, now)) announceAbsence(room, venue, match, p, 'away')
   }
   announceKickoff(room, venue.id, accounts)
   clearPlayArea(room, venue, match)
@@ -438,7 +451,10 @@ export function endMatch(room: GameRoom, venueId: string, end: MatchEnd, now = D
 }
 
 function runMatch(room: GameRoom, venue: VenueSpec, match: Match, now: number): void {
-  for (const out of expireAway(match, now, venue.rejoinGraceMs)) venue.onLeave(room, match, out.accountId)
+  for (const out of expireAway(match, now, venue.rejoinGraceMs)) {
+    announceAbsence(room, venue, match, out, 'out')
+    venue.onLeave(room, match, out.accountId)
+  }
   const lost = forfeit(match, venue.teams)
   if (lost) {
     endMatch(room, venue.id, { reason: 'forfeit', loser: lost.loser }, now)
@@ -486,14 +502,55 @@ export function updateMatchesOnMove(room: GameRoom, player: Player, now: number)
   for (const venue of venues.values()) {
     const match = room.sports.matches.get(venue.id)
     if (!match || !matchPlayer(match, player.accountId)) continue
-    if (inVenueZone(venue, player)) markBack(match, player.accountId, player.sessionId)
-    else markAway(match, player.accountId, now)
+    const mp = matchPlayer(match, player.accountId)
+    if (!mp) continue
+    if (inVenueZone(venue, player)) comeBack(room, venue, match, mp, player.sessionId)
+    else if (markAway(match, player.accountId, now)) announceAbsence(room, venue, match, mp, 'away')
   }
 }
 
-export function leaveSports(room: GameRoom, player: Player, now: number): void {
+function comeBack(room: GameRoom, venue: VenueSpec, match: Match, mp: MatchPlayer, sessionId: string): void {
+  const wasAway = mp.awaySince !== null
+  markBack(match, mp.accountId, sessionId)
+  if (wasAway) announceAbsence(room, venue, match, mp, 'back')
+}
+
+function announceAbsence(room: GameRoom, venue: VenueSpec, match: Match, mp: MatchPlayer, state: 'away' | 'back' | 'out'): void {
+  if (venue.rejoinGraceMs === 0) return
+  const payload = { venue: venue.id, sessionId: mp.sessionId, name: mp.name, state, graceSec: venue.rejoinGraceMs / 1000 }
+  const accounts = new Set(match.players.map((p) => p.accountId))
+  room.forEachClient((c) => {
+    const listener = room.players.get(c.sessionId)
+    if (listener && accounts.has(listener.accountId)) c.send('sports_absence', payload)
+  })
+}
+
+export function leaveSports(room: GameRoom, player: Player, now: number, loans: SportsLoan[] = []): void {
   removeFromLobbies(room, player.accountId, now)
-  for (const match of room.sports.matches.values()) markAway(match, player.accountId, now)
+  for (const venue of venues.values()) {
+    const match = room.sports.matches.get(venue.id)
+    const mp = match && matchPlayer(match, player.accountId)
+    if (!match || !mp) continue
+    room.sports.resume.set(player.accountId, { matchId: match.id, x: player.x, y: player.y, z: player.z, ry: player.ry, loans })
+    if (markAway(match, player.accountId, now)) announceAbsence(room, venue, match, mp, 'away')
+  }
+}
+
+export function rejoinMatch(room: GameRoom, client: GameClient, player: Player, now: number): SportsLoan[] {
+  const resume = room.sports.resume.get(player.accountId)
+  room.sports.resume.delete(player.accountId)
+  if (!resume || player.jail || now < player.knockedOutUntil) return []
+  for (const venue of venues.values()) {
+    const match = room.sports.matches.get(venue.id)
+    const mp = match && match.id === resume.matchId ? matchPlayer(match, player.accountId) : null
+    if (!match || !mp) continue
+    Object.assign(player, { x: resume.x, y: resume.y, z: resume.z, ry: resume.ry, fallPeakY: resume.y, lastMoveAt: now })
+    client.send('teleported', { x: resume.x, y: resume.y, z: resume.z, ry: resume.ry })
+    room.broadcastMove(client, player)
+    if (inVenueZone(venue, player)) comeBack(room, venue, match, mp, player.sessionId)
+    return resume.loans
+  }
+  return []
 }
 
 function checkResult(match: Match, result: MatchResult): MatchResult {

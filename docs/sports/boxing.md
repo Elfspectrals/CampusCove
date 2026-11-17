@@ -51,7 +51,7 @@ Guard stance and footwork, jab, cross, hook, uppercut, hook and uppercut wind-up
 
 ## Failure cases
 
-A boxer who leaves the ring or disconnects past the 30 s grace loses the fight.
+A boxer who leaves the ring or disconnects past the 10 s grace loses the fight.
 
 ## Decided (2026-11-14, `front/public/assets/sports/rules/boxing.json`, status `ready`)
 
@@ -78,7 +78,7 @@ A boxer who leaves the ring or disconnects past the 30 s grace loses the fight.
 - Guard (hold the cook key, F by default): takes 20 % of the damage, scores nothing, drains 10/s and drops at 0. No punching while guarding.
 - Dodge (the strafe keys, Q / D on AZERTY): 400 ms without being hit, 1 s cooldown, 8 endurance.
 - Knockdown at 0 health: the count is 10 s and the round clock waits. Getting up takes 12 clicks at least 80 ms apart and gives back 50 health, once per round; a second knockdown in the same round, a count that reaches 10 or a third knockdown in the fight is a KO.
-- No KO: the points of landed punches decide; equal points are a draw. A boxer outside the ring after the intro, or away past the 30 s grace, loses by forfeit.
+- No KO: the points of landed punches decide; equal points are a draw. A boxer outside the ring after the intro, or away past the 10 s grace, loses by forfeit.
 - Get-up is a click mash (the open point is closed).
 - View (2026-11-15): third person during a bout, over the boxer's shoulder, the body always facing the opponent (see "Camera" in [README.md](README.md)); `U` goes back to first person. The player's own boxer plays the punches, charge, guard, dodges and hit reactions the others see. Punch bags stay first person.
 - Punch bags: three `decor/punch_bag` props in the hall. A gloved player in reach punches them with the same four attacks (`boxing_bag { bag, kind }`, one hit every 400 ms); the bag rocks.

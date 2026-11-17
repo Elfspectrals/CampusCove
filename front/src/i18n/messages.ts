@@ -850,6 +850,7 @@ export const messages = {
         rules: 'Paid in cash. The pass is yours alone: it is never traded, lost or refunded.',
         extends: 'A new pass starts when yours ends, up to 14 days ahead.',
       },
+      absence: { away: '{name} left the match: forfeit in {n} s.', back: '{name} is back in the match.', out: '{name} forfeits.', you: 'Go back to the venue: forfeit in {n} s.' },
       signup: {
         title: 'Sign up',
         choose: 'Choose a match',
@@ -2203,6 +2204,7 @@ export const messages = {
         rules: 'Payé en liquide. Le pass n’est qu’à toi : jamais échangé, perdu ni remboursé.',
         extends: 'Un nouveau pass commence à la fin du tien, jusqu’à 14 jours à l’avance.',
       },
+      absence: { away: '{name} a quitté le match : forfait dans {n} s.', back: '{name} est de retour dans le match.', out: '{name} est forfait.', you: 'Reviens sur le terrain : forfait dans {n} s.' },
       signup: {
         title: 'Inscription',
         choose: 'Choisis un match',

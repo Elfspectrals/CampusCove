@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 import type { Player } from '../types.ts'
-import { type Match, joinLobby, openLobby, startMatch } from './signup.ts'
+import { type Match, joinLobby, markAway, markBack, openLobby, startMatch } from './signup.ts'
 import { type FakeRoom, api, clientOf, fakeRoom, installWorld, makePlayer, sentOf } from './testWorld.ts'
 
 installWorld()
@@ -99,6 +99,22 @@ test('a full point: toss, serve on the socket clock, two bounces, 0-15, then the
   assert.equal(phaseOf(game), 'toss')
   blue.x -= 2
   tennis.onTennisHit(room, clientOf(room, blue), aim, point.until + 1500)
+  assert.equal(phaseOf(game), 'toss')
+})
+
+test('no serve while a player is away: neither a click nor the automatic toss starts the point, and the wait starts again when they are back', async () => {
+  const { room, match, red, blue } = await singles()
+  const game = tennis.startTennis(room, match, COURT_1.cx, 'blue', T0)
+  const aim = { aimX: COURT_1.cx, aimZ: C.TENNIS_NET_Z + 8 }
+  markAway(match, 1, T0 + 100)
+  tennis.onTennisHit(room, clientOf(room, blue), aim, T0 + 200)
+  assert.equal(phaseOf(game), 'serve_wait')
+  tennis.runTennis(room, match, T0 + C.SERVE_WAIT_MS + 5000)
+  assert.equal(phaseOf(game), 'serve_wait')
+  markBack(match, 1, red.sessionId)
+  tennis.runTennis(room, match, T0 + C.SERVE_WAIT_MS + 5000 + C.SERVE_WAIT_MS - 1)
+  assert.equal(phaseOf(game), 'serve_wait')
+  tennis.onTennisHit(room, clientOf(room, blue), aim, T0 + C.SERVE_WAIT_MS + 6000)
   assert.equal(phaseOf(game), 'toss')
 })
 

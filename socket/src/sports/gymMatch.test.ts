@@ -62,7 +62,7 @@ test('the shipped rules files parse, and the 2 x 4 min length has two halves', (
   assert.equal(BASKETBALL.sport, 'basketball')
   assert.equal(halvesOf(FOOTBALL, 480), 2)
   assert.equal(halvesOf(BASKETBALL, 240), 1)
-  assert.deepEqual(gymPlayerRules(rulesFile('football'), 'football'), { minPlayers: 4, rejoinGraceMs: 30_000, coachId: 'gym_coach' })
+  assert.deepEqual(gymPlayerRules(rulesFile('football'), 'football'), { minPlayers: 4, rejoinGraceMs: 10_000, coachId: 'gym_coach' })
   assert.throws(() => parseFootballRules({ ...rulesFile('football'), passPower: null }), /passPower/)
   assert.throws(() => parseBasketballRules({ ...rulesFile('basketball'), shove: { ...rulesFile('basketball').shove, reachM: -1 } }), /shove.reachM/)
 })

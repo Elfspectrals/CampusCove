@@ -21,7 +21,7 @@ the rink, the skating code and the next session plan for it. Shared rules in [RE
 - **Contact**: the skating crash and bump rules apply (`tickSkating`, skating.md § Ice feel and balance); a deliberate
   check is a bump. No fights, no penalty box in V1; punches stay what they are elsewhere in town (no safe zone so far,
   README open point).
-- **Leaving**: a player who leaves the rink or disconnects keeps their place for 30 s (`rejoinGraceMs`), then the team
+- **Leaving**: a player who leaves the rink or disconnects keeps their place for 10 s (`rejoinGraceMs`), then the team
   plays short; a team at 0 loses by forfeit (CORE.md).
 
 ## Controls

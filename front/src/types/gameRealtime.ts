@@ -868,6 +868,14 @@ export interface SportsErrorPayload {
   message: string
 }
 
+export interface SportsAbsencePayload {
+  venue: string
+  sessionId: string
+  name: string
+  state: 'away' | 'back' | 'out'
+  graceSec: number
+}
+
 export interface SportsLobbyPlayer {
   sessionId: string
   name: string

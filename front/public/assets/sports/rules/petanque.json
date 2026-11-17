@@ -60,7 +60,7 @@
   "endPauseSec": 5,
   "throwModes": ["point", "shoot"],
   "powerMeter": { "riseMs": 1200 },
-  "rejoinGraceSec": 30,
+  "rejoinGraceSec": 10,
   "gear": ["gear_boules"],
   "tasks": ["games_played", "carreau"]
 }

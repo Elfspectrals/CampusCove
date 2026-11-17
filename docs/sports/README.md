@@ -32,7 +32,7 @@ Product design for the sports of the complex west of Cove Heights (site decision
 - **Kick-off**: at once when full; otherwise a 60 s countdown starts as soon as the minimum number of players is reached. Under the minimum, the sign-up stays open (proposed: cancelled after 5 minutes with nobody new).
 - **Teams**: each player picks red or blue when signing up, so friends play together. At kick-off, if one team has 2 or more players than the other, the coach moves the last players who signed up.
 - **Venue reserved**: while a structured match runs, its court, lane set or wall is reserved. Players not signed up are pushed off the playing area and can watch from the stands or the side.
-- **Leaving or disconnecting mid-match**: the match goes on, the player's place is kept 30 s. Past that, their team plays one short. A team that drops to 0 players loses. A solo race simply records "did not finish".
+- **Leaving or disconnecting mid-match**: the match goes on, the player's place is kept 10 s, and a player who reconnects in that time is put back in the match. Past that, their team plays one short. A team that drops to 0 players loses. A solo race simply records "did not finish".
 - **Free play**: outside structured matches the venue is open. For ball sports the ball is asked from the coach and taken back when the player leaves the venue.
 
 ### Gear

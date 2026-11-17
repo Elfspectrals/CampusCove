@@ -178,6 +178,43 @@ test('a player back in the venue zone within the grace plays on', async () => {
   assert.equal(match.players[1].out, false)
 })
 
+test('a player who disconnects in a match and joins again within the grace is put back where they stood, with their lent gear, and the others are told', async () => {
+  const { room, players: [a, b] } = await signed(2)
+  await venues.onSportsSignup(room, clientOf(room, a), { coach: 'test_coach', venue: 'test_court_a', team: 'red', settings: { length: 5 } }, NOW)
+  await venues.onSportsSignup(room, clientOf(room, b), { coach: 'test_coach', venue: 'test_court_a', team: 'blue' }, NOW)
+  const match = room.sports.matches.get('test_court_a') as Match
+  const stood = { x: b.x, y: b.y, z: b.z, ry: b.ry }
+  room.players.delete(b.sessionId)
+  venues.leaveSports(room, b, NOW + 1000, [['racket', 'sports_tennis']])
+  assert.deepEqual(sentOf(clientOf(room, a), 'sports_absence').at(-1), { venue: 'test_court_a', sessionId: b.sessionId, name: match.players[1].name, state: 'away', graceSec: 30 })
+  const back = await makePlayer(b.accountId, 0, 0)
+  back.sessionId = 'reconnected'
+  room.players.set(back.sessionId, back)
+  const client = { sessionId: back.sessionId, sent: [] as { type: string, payload: unknown }[], send(type: string, payload: unknown) { this.sent.push({ type, payload }) } }
+  const loans = venues.rejoinMatch(room, client as never, back, NOW + 9000)
+  assert.deepEqual(loans, [['racket', 'sports_tennis']])
+  assert.deepEqual({ x: back.x, y: back.y, z: back.z, ry: back.ry }, stood)
+  assert.deepEqual(client.sent[0], { type: 'teleported', payload: stood })
+  assert.equal(match.players[1].sessionId, 'reconnected')
+  assert.equal(match.players[1].awaySince, null)
+  assert.equal((sentOf(clientOf(room, a), 'sports_absence').at(-1) as { state: string }).state, 'back')
+  assert.deepEqual(venues.rejoinMatch(room, client as never, back, NOW + 9500), [])
+})
+
+test('a player who joins again after the grace, or after the match, stays where they spawned', async () => {
+  const { room, players: [a, b] } = await signed(2)
+  await venues.onSportsSignup(room, clientOf(room, a), { coach: 'test_coach', venue: 'test_court_a', team: 'red', settings: { length: 5 } }, NOW)
+  await venues.onSportsSignup(room, clientOf(room, b), { coach: 'test_coach', venue: 'test_court_a', team: 'blue' }, NOW)
+  room.players.delete(b.sessionId)
+  venues.leaveSports(room, b, NOW + 1000)
+  venues.tickSports(room, NOW + 31_000)
+  assert.equal((sentOf(clientOf(room, a), 'sports_absence').at(-1) as { state: string }).state, 'out')
+  const back = await makePlayer(b.accountId, 0, 0)
+  const client = { sessionId: back.sessionId, send: () => assert.fail('nothing is sent') }
+  assert.deepEqual(venues.rejoinMatch(room, client as never, back, NOW + 32_000), [])
+  assert.deepEqual([back.x, back.z], [0, 0])
+})
+
 test('leaving the last place in a lobby cancels it, by message or by disconnect', async () => {
   const { room, players: [a, b] } = await signed(2)
   await venues.onSportsSignup(room, clientOf(room, a), { coach: 'test_coach', venue: 'test_court_a', team: 'red', settings: { length: 10 } }, NOW)
