@@ -23,6 +23,7 @@ Played on the gymnasium court (44 × 24 m, shared with football: two main basket
 
 - **Free play**: ball asked from the coach, taken back when leaving the court; every basket is free to use.
 - **Structured match**: sign-up with the gymnasium coach. The first player chooses format 1 v 1 to 5 v 5 and length 4 min, 6 min or 2 × 4 min. Kick-off, teams and leavers as in the README. The court is reserved: no football at the same time.
+- **Robots**: the first player signed up can fill the empty places of both teams with robots of three levels, down to one against one robot; how they play is in [gym.md](gym.md#robots-2026-11-17).
 
 ## HUD
 

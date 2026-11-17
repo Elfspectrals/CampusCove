@@ -29,6 +29,7 @@ Played on the gymnasium court (44 × 24 m, shared with basketball) and on the ou
   - length: 4 min, 6 min or 2 × 4 min.
 - Minimum 4 players (2 v 2). Kick-off rules, teams and leavers as in the README.
 - While a match runs the court is reserved for that sport: no basketball at the same time on the gymnasium court.
+- **Robots** (gymnasium): the first player signed up can fill the empty places of both teams with robots of three levels; how they play is in [gym.md](gym.md#robots-2026-11-17).
 
 ## HUD
 

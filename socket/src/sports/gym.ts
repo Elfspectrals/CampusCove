@@ -1,12 +1,15 @@
 import { callRealtimeBackend } from '../backend.ts'
+import { EYE_HEIGHT } from '../houseObjects.ts'
 import type { ClientPayload, GameClient, GameRoom, Player } from '../types.ts'
 import { worldSportsPassArea } from '../world.ts'
 import type { GymCourt } from './gymCourt.ts'
 import { freeAction, onGymBall as freeBall, onGymBallReturn as freeBallReturn, tickGymFree } from './gymFree.ts'
 import { type Athlete, type GymActionKind, type GymEvent, type GymGame, GYM_ACTIONS, actGym, dropOwner, newGymGame, outcomeFor, restartHalf, stepGym } from './gymMatch.ts'
-import { MotionTracker } from './gymMotion.ts'
+import { type Motion, MotionTracker } from './gymMotion.ts'
+import { type GymRobotBrain, kickoffSpot, newGymRobotBrain, thinkGymRobot } from './gymRobot.ts'
 import { type GymRules, halvesOf } from './gymRules.ts'
-import type { Match, SettingSpec, Team } from './signup.ts'
+import { isRobot, placeRobot, sportsPlayer } from './robots.ts'
+import { type Match, type SettingSpec, type Team, TEAMS } from './signup.ts'
 import { type MatchEnd, type MatchResult, endMatch, recordMatch, registerVenue } from './venues.ts'
 
 export const GYM_ZONE = 'sports_gym'
@@ -23,6 +26,7 @@ interface Live {
   half: number
   lastAt: number
   motion: MotionTracker
+  brains: Map<number, GymRobotBrain>
 }
 
 export interface GymVenueSpec {
@@ -34,6 +38,7 @@ export interface GymVenueSpec {
   settings: readonly SettingSpec[]
   minPlayers: number
   rejoinGraceMs: number
+  robots?: boolean
 }
 
 const lives = new WeakMap<GameRoom, Map<string, Live>>()
@@ -109,9 +114,9 @@ function athletesOf(room: GameRoom, match: Match, live: Live, now: number): Athl
   const out: Athlete[] = []
   for (const p of match.players) {
     if (p.out || p.awaySince !== null || p.team === null) continue
-    const player = room.players.get(p.sessionId)
+    const player = sportsPlayer(room, p.sessionId)
     if (!player) continue
-    const v = live.motion.track(player, now)
+    const v: Motion = live.brains.get(p.accountId) ?? live.motion.track(player, now)
     out.push({ accountId: p.accountId, team: p.team, x: player.x, z: player.z, vx: v.vx, vz: v.vz, ry: player.ry })
   }
   return out
@@ -137,7 +142,7 @@ function taskRecord(match: Match, live: Live) {
   return {
     ref: match.id,
     sport: live.rules.sport,
-    players: match.players.filter((p) => !p.out).map((p) => ({ accountId: p.accountId, [key]: feat.get(p.accountId) ?? 0 }))
+    players: match.players.filter((p) => !p.out && !isRobot(p.accountId)).map((p) => ({ accountId: p.accountId, [key]: feat.get(p.accountId) ?? 0 }))
   }
 }
 
@@ -150,6 +155,34 @@ async function recordWithTasks(room: GameRoom, match: Match, live: Live, end: Ma
     await callRealtimeBackend(token, '/sports/gym/tasks', 'POST', record)
   } catch (error) {
     console.warn(`[sports] gym tasks of match ${match.id} not counted:`, error instanceof Error ? error.message : error)
+  }
+}
+
+function placeRobotsForKickoff(room: GameRoom, match: Match, live: Live): void {
+  const { court } = live.game
+  for (const team of TEAMS) {
+    const robots = match.players.filter((p) => p.team === team && live.brains.has(p.accountId))
+    robots.forEach((p, slot) => {
+      const robot = sportsPlayer(room, p.sessionId)
+      const at = kickoffSpot(court, team, slot, robots.length)
+      if (robot) placeRobot(room, robot, at.x, court.floorY + EYE_HEIGHT, at.z, at.ry, match.startedAt)
+    })
+  }
+}
+
+function driveRobots(room: GameRoom, match: Match, live: Live, athletes: readonly Athlete[], now: number): void {
+  for (const [accountId, brain] of live.brains) {
+    const self = athletes.find((a) => a.accountId === accountId)
+    const robot = self && sportsPlayer(room, sessionOf(match, accountId) ?? '')
+    if (!self || !robot) continue
+    const step = thinkGymRobot(brain, { game: live.game, rules: live.rules, self, athletes, now, random: Math.random })
+    if (step.x !== robot.x || step.z !== robot.z || step.ry !== robot.ry) placeRobot(room, robot, step.x, robot.y, step.z, step.ry, now)
+    Object.assign(self, { x: step.x, z: step.z, ry: step.ry, vx: brain.vx, vz: brain.vz })
+    for (const act of step.acts) {
+      const events = actGym(live.game, live.rules, self, athletes, act.kind, act.at, Math.random)
+      lockIfDown(room, robot, live.game, events)
+      broadcastEvents(room, match, events)
+    }
   }
 }
 
@@ -172,6 +205,7 @@ export function registerGymVenue(spec: GymVenueSpec): void {
     confined: true,
     teams: true,
     settings: spec.settings,
+    robots: spec.robots === true,
     players: (settings) => ({ min: spec.minPlayers, max: 2 * Number(settings.teamSize) }),
     rejoinGraceMs: spec.rejoinGraceMs,
     onKickoff(room, match) {
@@ -183,9 +217,11 @@ export function registerGymVenue(spec: GymVenueSpec): void {
         halves: halvesOf(spec.rules, durationSec),
         half: 1,
         lastAt: match.startedAt,
-        motion: new MotionTracker()
+        motion: new MotionTracker(),
+        brains: new Map(match.players.filter((p) => isRobot(p.accountId)).map((p) => [p.accountId, newGymRobotBrain(match.robots ?? 'normal', match.startedAt)]))
       }
       livesOf(room).set(match.venue, live)
+      placeRobotsForKickoff(room, match, live)
       sendToGym(room, match, 'gym_state', stateView(match, live, match.startedAt))
     },
     onTick(room, match, elapsedMs) {
@@ -203,6 +239,7 @@ export function registerGymVenue(spec: GymVenueSpec): void {
         sendToGym(room, match, 'gym_event', { venue: match.venue, kind: 'half', half, sessionId: null })
       }
       const athletes = athletesOf(room, match, live, now)
+      driveRobots(room, match, live, athletes, now)
       const span = Math.min(MAX_TICK_S, Math.max(0, (now - live.lastAt) / 1000))
       live.lastAt = now
       const steps = Math.ceil(span / STEP_S)

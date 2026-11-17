@@ -144,6 +144,50 @@ Asked by the user after the first pass. Decided with them: a television view fro
   (a shot, not a lay-up: the lay-up needs 2.5 m/s); pass to an opponent in the cone (never picked: only team-mates are,
   anyone in free play).
 
+## Robots (2026-11-17)
+
+Both gym venues take robots ([CORE.md](CORE.md) rule 7): the first player signed up picks a level on the coach panel and
+every empty place of the format is filled, so basketball goes from one against one robot to 5 v 5, football from 2 v 2
+(a robot team-mate against two robots) to 5 v 5. The outdoor football pitch has none yet.
+
+Each robot has a brain (`socket/src/sports/gymRobot.ts`, `thinkFootballer` and `thinkBasketballer`, tested in
+`gymRobot.test.ts`) run by the gym tick every 100 ms, before the ball is stepped. A robot moves with `placeRobot` at its
+level's speed, inside the play area less 0.3 m (inside the lines on a pitch without walls), and acts only through
+`actGym` with its own athlete, so reach, cones, cooldowns, the shot timing, the restart protection and every roll are the
+rules' own. Its speed comes from its own steps, not from the motion tracker. At kick-off the robots of a team are put in
+a line across their half, 5 m behind the centre. A robot's goals are in the score and the events; the match record and
+the gym tasks name humans only, and a human's goals and three-pointers against robots count.
+
+What a robot does, by who has the ball:
+
+| Situation | Football | Basketball |
+|---|---|---|
+| Free ball | The team's nearest robot runs to it (not during the other team's restart); the others cover | The same; the others guard their man |
+| It has the ball | Dribbles at the goal, around a defender standing within 4 m on its line. Passes to an open team-mate (nobody within 2 m of him or on the pass line) who is 3 m closer to the goal or more, or to any open one when a defender is within 2.5 m; a through ball when he runs at the goal. Shoots within 13 m at the first clear line among the middle of the goal and 0.5 m inside each post, and whatever stands in the way within 6 m; the charge is drawn between the level's minimum and 85 %, under the over-hit zone | Drives to the rim and finishes with a dunk as soon as its speed allows one, a lay-up if it is too slow to dunk; or stops between 4.5 and 8.5 m for a jump shot let go at the top of the jump, off by the level's timing error. Passes like the footballer. Never shoots standing within 1.5 m of the rim: it steps out first |
+| A team-mate has it | Runs 7 m ahead of the ball and 7 m to a side | Takes a place on a 6 m arc around the rim |
+| The other team has it | The nearest robot runs at the ball and tries a tackle in reach (sliding at 6.5 m/s or more); the others stand between the ball and their goal, at 20 to 80 % of the way | Each robot stays 1.1 m from its man on the line to the rim, the nearest one on the carrier. It waits at the halfway line while its man is in his backcourt, so nobody is shoved under his own basket after a restart. It tries a shove on a carrier in reach, and may jump 275 ms after a shot starts in reach (later if it reacts slower) |
+
+A human team-mate counts as 5 m better placed than he is, so the robots pass to him when he is open about level with them.
+
+| Level | Run | Reaction to a change of possession | Carrier decides every | Tackle or shove, each try (one every 0.7 s in reach) | Passes when it should | Pass aim error | Football shot: aim error, least charge | Jump shot timing error | Goes to the rim | Tries a block |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Easy | 3.8 m/s | 700 ms | 900 ms | 10 % | 35 % | up to 46° | up to 26°, 25 % | up to 260 ms | 30 % | 10 % |
+| Normal | 6 m/s | 400 ms | 550 ms | 25 % | 55 % | up to 23° | up to 13°, 45 % | up to 160 ms | 55 % | 35 % |
+| Hard | 8 m/s | 220 ms | 300 ms | 45 % | 70 % | up to 9° | up to 6°, 60 % | up to 100 ms | 75 % | 60 % |
+
+What follows from the speeds: an easy robot is slower than a walking player, never slides and never dunks (lay-up
+only); a normal one tackles standing and dunks from 3 m; a hard one slides and dunks from 4.5 m, and stays under a
+player's sprint. A pass aimed more than 35° off leaves the assist cone and goes astray, which only an easy robot does. A
+jump shot from 6.5 m with nobody near is good within 98 ms of the top: about 4 in 10 for easy, 6 in 10 for normal,
+nearly all for hard; a defender within 0.8 m cuts that window to 45 %.
+
+What a robot may do that a player's hands could not quite: it acts at the exact millisecond it planned inside the last
+tick, it starts and lets go a dunk in the same instant, it turns at once, and it never tires.
+
+Not covered: no goalkeeper, no lob, no dribble move; robots do not avoid each other; a ball that stops outside the play
+area is out of their reach as it is out of a player's; no robots on the outdoor pitch; 1 v 1 football is not a format.
+Levels were set with robot against robot runs and a scripted walker, not played in the game.
+
 ## Animations
 
 Clips on the shared human rig (`front/scripts/skins/clips.py`, table in `docs/animation/skeleton-human.md`): `Kick`, `Shot`, `Tackle`, `Celebrate`, `JumpShot`, `Dunk`, `Block`, `Steal` (one-shots that keep playing while the player moves) and `Dribble` (replaces Walk and Run while a player carries a basketball). Other players see them from the `gym_event` messages (`playAvatarSportsMove`, `setAvatarDribbling` in `glbCharacter.ts`); first person shows no body clip.

@@ -22,7 +22,8 @@ export async function loadGymVenues(): Promise<void> {
     rules: footballRules,
     settings: parseSignupRules(footballRaw, 'football').settings,
     minPlayers: football.minPlayers,
-    rejoinGraceMs: football.rejoinGraceMs
+    rejoinGraceMs: football.rejoinGraceMs,
+    robots: true
   })
   registerGymVenue({
     id: 'gym_basketball',
@@ -32,7 +33,8 @@ export async function loadGymVenues(): Promise<void> {
     rules: basketballRules,
     settings: parseSignupRules(basketballRaw, 'basketball').settings,
     minPlayers: basketball.minPlayers,
-    rejoinGraceMs: basketball.rejoinGraceMs
+    rejoinGraceMs: basketball.rejoinGraceMs,
+    robots: true
   })
   registerCoach({ id: football.coachId, x: court.coach.x, z: court.coach.z, venues: ['gym_football', 'gym_basketball'] })
   addGymFreeCourt({ id: 'gym', court, rules: { football: footballRules, basketball: basketballRules }, zone: GYM_ZONE, busy: (room) => gymAreaBusy(room, GYM_COURT_AREA) })
